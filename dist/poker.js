@@ -82,16 +82,31 @@ const canAct = p => !p.folded&&!p.allin&&p.stack>0;
 function nextIndex(g,start,list){for(let d=1;d<=g.players.length;d++){const id=(start+d)%g.players.length;if(list.includes(id))return id;}return -1;}
 function log(g,text,player=null,type='action'){g.logs.unshift({text,player,type,street:g.street});g.logs=g.logs.slice(0,70);}
 function pay(p,amount){const n=Math.min(p.stack,amount);p.stack-=n;p.bet+=n;p.total+=n;p.allin=p.stack===0;return n;}
+// Keep the original deal private to the engine, outside public table and review data.
+const handStarts=new WeakMap();
+const cloneHand=value=>JSON.parse(JSON.stringify(value));
+export const canRestartHand=g=>g.phase==='done'&&handStarts.has(g);
 export function startHand(g) {
   if(g.phase!=='idle'&&g.phase!=='done')throw Error('当前牌局尚未结束。');
-  g.hand++;g.dealer=(g.dealer+1)%g.players.length;g.board=[];g.deck=shuffle(deckOfCards());g.street=0;g.phase='playing';g.currentBet=50;g.minRaise=50;g.winners=[];g.payouts=[];g.pots=[];g.refunds=[];g.showdown=false;g.revealed=false;g.logs=[];g.result='';g.decisions=[];g.history=[];
+  g.replayAttempt=0;g.potAtShowdown=0;g.hand++;g.dealer=(g.dealer+1)%g.players.length;g.board=[];g.deck=shuffle(deckOfCards());g.street=0;g.phase='playing';g.currentBet=50;g.minRaise=50;g.winners=[];g.payouts=[];g.pots=[];g.refunds=[];g.showdown=false;g.revealed=false;g.logs=[];g.result='';g.decisions=[];g.history=[];
   for(const p of g.players){if(p.stack===0){p.stack=5000;if(p.id===0)g.stats.buyin+=5000;log(g,`${p.name} 补充 5,000 虚拟筹码`,p.id,'info');}p.hole=[];p.folded=false;p.allin=false;p.bet=0;p.total=0;p.actedTo=null;p.checked=false;p.action='';}
   for(let round=0;round<2;round++)for(let i=1;i<=g.players.length;i++)g.players[(g.dealer+i)%g.players.length].hole.push(g.deck.pop());
   const sb=(g.dealer+1)%g.players.length,bb=(g.dealer+2)%g.players.length;
   pay(g.players[sb],25);g.players[sb].action=`小盲 ${g.players[sb].bet}`;pay(g.players[bb],50);g.players[bb].action=`大盲 ${g.players[bb].bet}`;
   log(g,`${g.players[sb].name} 小盲 ${g.players[sb].bet} · ${g.players[bb].name} 大盲 ${g.players[bb].bet}`,null,'blind');
   log(g,`第 ${g.hand} 手开始 · 庄家 ${g.players[g.dealer].name}`,null,'street');
-  g.pending=g.players.filter(canAct).map(p=>p.id);g.actor=nextIndex(g,bb,g.pending);return g;
+  g.pending=g.players.filter(canAct).map(p=>p.id);g.actor=nextIndex(g,bb,g.pending);handStarts.set(g,cloneHand(g));return g;
+}
+export function restartHand(g) {
+  if(!canRestartHand(g))throw Error('请在本手结束后重打；需要本手的原始发牌记录。');
+  const original=handStarts.get(g),attempt=(g.replayAttempt||0)+1,difficulty=g.difficulty;
+  // Restore the state after one blind posting, before any player action. This
+  // also rolls back this attempt's awards, refunds, decisions and session stats.
+  const restored=cloneHand(original);
+  for(const key of Object.keys(g))delete g[key];
+  Object.assign(g,restored,{difficulty,replayAttempt:attempt});
+  log(g,`第 ${g.hand} 手 · 第 ${attempt} 次重打，原结算已撤回`,null,'info');
+  return g;
 }
 export function legalActions(g,id=g.actor) {
   const p=g.players[id];

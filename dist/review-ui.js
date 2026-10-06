@@ -75,6 +75,11 @@ export function createReviewController({card}){
       }
       $('#review-hand-button').hidden=!(g.phase==='done'&&last?.key===key);
     },
+    rollback(g,token){
+      const key=token+':'+g.hand;
+      if(last?.key===key){worker?.terminate();worker=null;job++;last=null;selected=0;$('#review-card').hidden=true;}
+      if(seen===key)seen='';dialog.close();$('#review-hand-button').hidden=true;
+    },
     reset(){worker?.terminate();worker=null;job++;last=null;seen='';selected=0;dialog.close();$('#review-card').hidden=true;$('#review-hand-button').hidden=true;},
   };
 }
