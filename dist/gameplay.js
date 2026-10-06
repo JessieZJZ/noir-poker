@@ -1,5 +1,7 @@
 import {newGame,startHand,act,advanceStreet,legalActions,potSize,currentPots,contestableAfterCall,botDecision,evaluate,rankText,seatPosition} from './poker.js';
+import {createReviewController} from './review-ui.js';
 const $ = s => document.querySelector(s);
+const handReview=createReviewController({card});
 let game=newGame(),timer=null,epoch=0,lastBoard=0,lastHand=0,bet=150,hints=true,sound=false,audio=null;
 try {sound=localStorage.getItem('noir-sound')==='true';hints=localStorage.getItem('noir-hints')!=='false';}catch{}
 const format=n=>n.toLocaleString('en-US'),streets=['翻牌前','翻牌','转牌','河牌'],profiles=['YOU','M','A','R','K','L'];
@@ -56,7 +58,7 @@ function render(){
   }else if(done)$('#decision-text').textContent=game.result;
   else if(game.phase==='between')$('#decision-text').textContent='本轮下注结束，正在翻开公共牌…';
   else $('#decision-text').textContent=hero.folded?`${game.players[game.actor]?.name||'对手'} 正在行动，你可以观察这一手。`:`${game.players[game.actor]?.name||'对手'} 正在思考，请稍候。`;
-  updateBet();$('#hand-strength').textContent=hero.hole.length?evaluate([...hero.hole,...game.board]).label:'';updateCoach();lastHand=game.hand;lastBoard=game.board.length;
+  updateBet();$('#hand-strength').textContent=hero.hole.length?evaluate([...hero.hole,...game.board]).label:'';updateCoach();handReview.update(game,epoch);lastHand=game.hand;lastBoard=game.board.length;
 }
 function updateBet(){const legal=legalActions(game,0);$('#bet-value').textContent=format(bet);$('#raise-number')?.remove();const action=legal.enabled&&bet===legal.maxRaiseTo?'全下':game.currentBet===0?'下注':'加注';$('#raise-button').innerHTML=`<span>${action} <b>${format(bet)}</b></span><small>${action==='全下'?'ALL IN':action==='下注'?'BET':'RAISE'}</small>`;}
 function updateCoach(){
@@ -97,7 +99,7 @@ $('#rules-button').onclick=()=>$('#rules-dialog').showModal();$('#reset-button')
 $('#pot-details-button').onclick=()=>$('#pot-dialog').showModal();$('#result-banner').onclick=()=>$('#pot-dialog').showModal();
 document.querySelectorAll('.close-dialog').forEach(b=>b.onclick=()=>b.closest('dialog').close());
 document.querySelectorAll('dialog').forEach(d=>d.addEventListener('click',e=>{if(e.target===d){const r=d.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)d.close();}}));
-$('#confirm-reset').onclick=()=>{const difficulty=game.difficulty;clearTimeout(timer);game=newGame();game.difficulty=difficulty;lastHand=0;$('#reset-dialog').close();nextHand();};
+$('#confirm-reset').onclick=()=>{handReview.reset();const difficulty=game.difficulty;clearTimeout(timer);game=newGame();game.difficulty=difficulty;lastHand=0;$('#reset-dialog').close();nextHand();};
 function publicState(){const details=potDetails();return {hand:game.hand,dealer:game.players[game.dealer].name,seatOrder:"clockwise",street:streets[game.street],phase:game.phase,actor:game.actor===0?'你':game.players[game.actor]?.name||null,pot:game.phase==='done'?game.potAtShowdown:potSize(game),pots:details.pots.map(p=>({label:p.label,amount:p.amount,eligible:p.eligible.map(id=>game.players[id].name),awards:p.awards.map(a=>({name:game.players[a.id].name,amount:a.amount,label:a.label}))})),uncalled:details.refunds.map(r=>({name:game.players[r.id].name,amount:r.amount,returned:game.phase==='done'})),board:game.board.map(c=>rankText(c.rank)+c.symbol),hole:game.players[0].hole.map(c=>rankText(c.rank)+c.symbol),stack:game.players[0].stack,legal:legalActions(game,0),players:game.players.map(p=>({id:p.id,name:p.name,position:seatPosition(game,p.id),stack:p.stack,folded:p.folded,allin:p.allin,bet:p.bet,...((game.showdown||game.revealed)&&!p.folded?{cards:p.hole.map(c=>rankText(c.rank)+c.symbol)}:{})})),result:game.result||null};}
 window.noir={getState:publicState};
 function registerTools(){const context=document.modelContext;if(!context?.registerTool)return;const lifecycle=new AbortController();window.addEventListener('pagehide',()=>lifecycle.abort(),{once:true});const register=tool=>{try{Promise.resolve(context.registerTool(tool,{signal:lifecycle.signal})).catch(()=>{});}catch{}};

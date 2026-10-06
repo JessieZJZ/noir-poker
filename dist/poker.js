@@ -82,7 +82,7 @@ function log(g,text,player=null,type='action'){g.logs.unshift({text,player,type,
 function pay(p,amount){const n=Math.min(p.stack,amount);p.stack-=n;p.bet+=n;p.total+=n;p.allin=p.stack===0;return n;}
 export function startHand(g) {
   if(g.phase!=='idle'&&g.phase!=='done')throw Error('当前牌局尚未结束。');
-  g.hand++;g.dealer=(g.dealer+1)%6;g.board=[];g.deck=shuffle(deckOfCards());g.street=0;g.phase='playing';g.currentBet=50;g.minRaise=50;g.winners=[];g.payouts=[];g.pots=[];g.refunds=[];g.showdown=false;g.revealed=false;g.logs=[];g.result='';
+  g.hand++;g.dealer=(g.dealer+1)%6;g.board=[];g.deck=shuffle(deckOfCards());g.street=0;g.phase='playing';g.currentBet=50;g.minRaise=50;g.winners=[];g.payouts=[];g.pots=[];g.refunds=[];g.showdown=false;g.revealed=false;g.logs=[];g.result='';g.decisions=[];g.history=[];
   for(const p of g.players){if(p.stack===0){p.stack=5000;if(p.id===0)g.stats.buyin+=5000;log(g,`${p.name} 补充 5,000 虚拟筹码`,p.id,'info');}p.hole=[];p.folded=false;p.allin=false;p.bet=0;p.total=0;p.actedTo=null;p.checked=false;p.action='';}
   for(let round=0;round<2;round++)for(let i=1;i<=6;i++)g.players[(g.dealer+i)%6].hole.push(g.deck.pop());
   const sb=(g.dealer+1)%6,bb=(g.dealer+2)%6;
@@ -105,6 +105,14 @@ export function act(g,id,action,amount) {
   if(!['fold','call','check','raise'].includes(action))throw Error('未知的牌桌行动。');
   if(action==='check'&&!legal.canCheck)throw Error('当前需要跟注，不能过牌。');
   if(action==='raise'&&(!legal.canRaise||!Number.isInteger(amount)||amount<legal.minRaiseTo||amount>legal.maxRaiseTo))throw Error('请选择合法的加注总额。');
+  // Capture only information available before the decision. Opponents' hole
+  // cards, the remaining deck and future community cards never enter review.
+  const normalized=action==='call'&&legal.canCheck?'check':action;
+  if(id===0){
+    g.decisions ||= [];
+    g.decisions.push({index:g.decisions.length,hand:g.hand,street:g.street,position:seatPosition(g,id),hole:p.hole.map(c=>({...c})),board:g.board.map(c=>({...c})),stack:p.stack,bet:p.bet,total:p.total,pot:potSize(g),currentBet:g.currentBet,minRaise:g.minRaise,legal:{...legal},pending:[...g.pending],action:normalized,amount:normalized==='raise'?amount:normalized==='call'?legal.callAmount:0,players:g.players.map(o=>({id:o.id,name:o.name,position:seatPosition(g,o.id),stack:o.stack,bet:o.bet,total:o.total,folded:o.folded,allin:o.allin,action:o.action})),history:(g.history||[]).map(a=>({...a}))});
+  }
+  g.history ||= [];g.history.push({street:g.street,id,action:normalized,amount:normalized==='raise'?amount:normalized==='call'?legal.callAmount:0});
   g.pending=g.pending.filter(v=>v!==id);
   if(action==='fold'){p.folded=true;p.action='弃牌';log(g,`${p.name} 弃牌`,id);}
   else if(action==='check'||(action==='call'&&legal.toCall===0)){p.checked=true;p.action='过牌';p.actedTo=g.currentBet;log(g,`${p.name} 过牌`,id);}
