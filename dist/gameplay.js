@@ -1,4 +1,4 @@
-import {newGame,startHand,act,advanceStreet,legalActions,potSize,botDecision,evaluate,rankText} from './poker.js';
+import {newGame,startHand,act,advanceStreet,legalActions,potSize,partitionPots,contestableAfterCall,botDecision,evaluate,rankText} from './poker.js';
 const $ = s => document.querySelector(s);
 let game=newGame(),timer=null,epoch=0,lastBoard=0,lastHand=0,bet=150,hints=true,sound=false,audio=null;
 try {sound=localStorage.getItem('noir-sound')==='true';hints=localStorage.getItem('noir-hints')!=='false';}catch{}
@@ -26,7 +26,7 @@ function render(){
   $('#pot-value').textContent=format(game.phase==='done'?game.potAtShowdown:potSize(game));$('.pot').classList.toggle('pot-changed',boardChanged);
   $('#board').innerHTML=Array.from({length:5},(_,i)=>game.board[i]?card(game.board[i],{animate:i>=lastBoard&&boardChanged,delay:(i-lastBoard)*140,best:heroBest.has(game.board[i].key)}):`<div class="board-slot" aria-label="未发出的公共牌">${['♠','♣','♥','♦','♠'][i]}</div>`).join('');
   $('#seats').innerHTML=game.players.slice(1).map(p=>{
-    const isWinner=game.winners.some(w=>w.id===p.id),reveal=game.showdown&&!p.folded;
+    const isWinner=game.winners.some(w=>w.id===p.id),reveal=(game.showdown||game.revealed)&&!p.folded;
     return `<div class="seat seat-${p.id} ${p.folded?'folded':''} ${game.actor===p.id?'thinking':''} ${isWinner?'winner':''}" data-player="${p.id}"><div class="mini-cards">${reveal?p.hole.map(c=>card(c,{small:true})).join(''):p.hole.map((c,i)=>`<span class="card-back ${newHand?'card-deal':''}" style="--delay:${p.id*65+i*140}ms" aria-label="对手底牌"></span>`).join('')}</div><div class="seat-profile"><span class="avatar avatar-${p.id-1}">${profiles[p.id]}</span><div><strong>${p.name}<span class="position-badge">${position(p.id)}</span></strong><span>${format(p.stack)}</span></div></div><div class="seat-action">${isWinner?'♛ '+evaluate([...p.hole,...game.board]).label:game.actor===p.id?'思考中<span class="thinking-dots">…</span>':p.action||'等待行动'}</div>${p.bet>0&&game.phase!=='done'?`<div class="seat-bet"><i class="bet-chip"></i>${format(p.bet)}</div>`:''}</div>`;
   }).join('');
   $('#hero-cards').innerHTML=hero.hole.map((c,i)=>card(c,{animate:newHand,delay:420+i*130,best:heroBest.has(c.key)})).join('');
@@ -37,8 +37,11 @@ function render(){
   $('#stat-hands').textContent=game.stats.hands;$('#stat-wins').textContent=game.stats.wins;$('#stat-winrate').textContent=game.stats.hands?Math.round(game.stats.wins/game.stats.hands*100)+'%':'—';
   $('#activity-list').innerHTML=game.logs.slice(0,12).map(l=>`<li class="log-${l.type} ${l.player===0?'log-hero':''}">${l.text}</li>`).join('');$('#activity-count').textContent=game.phase==='done'?'FINISHED':'LIVE';
   const done=game.phase==='done';$('#arena').classList.toggle('is-done',done);$('#result-banner').hidden=!done;$('#result-banner').classList.toggle('hero-win',game.winners.some(w=>w.id===0));
-  if(done){const winner=game.winners.find(w=>w.id===0)||game.winners[0];$('#result-banner').innerHTML=`<span>${game.winners.some(w=>w.id===0)?'♛ 漂亮的一手':'本手结果'}</span><strong>${game.winners.length>1?'共享底池':winner.name+' 获得底池'}</strong><small>${winner.label} · ${format(winner.amount)} 筹码</small>`;}
+  if(done){const winner=game.winners.find(w=>w.id===0)||game.winners[0],multiple=game.pots.length>1,split=game.pots.some(p=>p.awards.length>1);$('#result-banner').innerHTML=`<span>${game.winners.some(w=>w.id===0)?'♛ 漂亮的一手':'本手结果'}</span><strong>${multiple?'主池与边池已结算':split?'平分底池':winner.name+' 获得底池'}</strong><small>${multiple?format(game.potAtShowdown)+' 筹码':winner.label+' · '+format(winner.amount)} · 查看明细</small>`;}
   $('#board-caption').textContent=done&&game.showdown?(hero.folded?'摊牌 · 对手亮出底牌':'摊牌 · 亮起的牌组成你的最佳牌型'):game.street===0?'等待翻牌':game.street===1?'FLOP · 三张公共牌':game.street===2?'TURN · 第四张公共牌':'RIVER · 最后的决定';
+  const details=potDetails();$('#pot-details-button').textContent=details.pots.length>1?'总底池 · '+(details.pots.length-1)+' 个边池':'底池 · 明细';
+  if(details.pots.length>1)$('#board-caption').textContent=(done?'已分别结算':'当前投入')+' · 主池 '+format(details.pots[0].amount)+' + '+(details.pots.length-1)+' 个边池';
+  renderPotDetails(details);
   const legal=legalActions(game,0);$('.bet-controls').hidden=done;$('.action-buttons').hidden=done;$('#next-button').hidden=!done;
   $('#next-button').innerHTML=hero.stack===0?'补充筹码，继续练习 <span>♠</span>':'下一手 <span>♠</span>';
   for(const b of [$('#fold-button'),$('#call-button')])b.disabled=!legal.enabled;
@@ -66,7 +69,7 @@ function updateCoach(){
   }else if(e.score[0]>=3)tip=`你已形成${e.label}。考虑通过下注获得价值，同时注意公共牌上可能出现的更强牌型。`;
   else if(e.score[0]>=1)tip=`目前是${e.label}。多位对手参与时，谨慎面对持续的大额加注；一对不总能赢到最后。`;
   else tip='目前尚未成对。别只看能否追到牌，也要考虑跟注价格，以及对手的下注强度。';
-  const legal=legalActions(game,0);if(legal.enabled&&legal.toCall>0)tip+=` 这次跟注占跟注后底池约 ${Math.round(legal.callAmount/(potSize(game)+legal.callAmount)*100)}%。`;
+  const legal=legalActions(game,0);if(legal.enabled&&legal.toCall>0)tip+=` 这次跟注占你可争夺底池约 ${Math.round(legal.callAmount/contestableAfterCall(game,0,legal.callAmount)*100)}%。`;
   $('#coach-stage').textContent=game.phase==='done'?'本手复盘':streets[game.street]+'策略';$('#coach-tip').textContent=tip;
 }
 function schedule(){clearTimeout(timer);const ticket=epoch;if(game.phase==='done')return;
@@ -74,7 +77,13 @@ function schedule(){clearTimeout(timer);const ticket=epoch;if(game.phase==='done
   else if(game.actor!==0){timer=setTimeout(()=>{if(ticket!==epoch)return;const id=game.actor,d=botDecision(game);act(game,id,d.action,d.amount);if(d.action!=='fold'&&d.action!=='check'){flyChips(id);soundEffect();}if(game.phase==='done')soundEffect('win');render();schedule();},650+Math.random()*450);}
 }
 function heroAction(action,amount){if(!legalActions(game,0).enabled)return false;const legal=legalActions(game,0);act(game,0,action,amount);if(action==='raise'||(action==='call'&&legal.toCall>0)){flyChips(0);soundEffect();}if(game.phase==='done')soundEffect('win');render();schedule();return true;}
-function nextHand(){clearTimeout(timer);epoch++;lastBoard=0;startHand(game);const legal=legalActions(game,0);bet=legal.enabled?Math.min(legal.maxRaiseTo,Math.max(legal.minRaiseTo,150)):150;render();soundEffect('deal');schedule();}
+function nextHand(){clearTimeout(timer);epoch++;lastBoard=0;$('#pot-dialog').close();startHand(game);const legal=legalActions(game,0);bet=legal.enabled?Math.min(legal.maxRaiseTo,Math.max(legal.minRaiseTo,150)):150;render();soundEffect('deal');schedule();}
+function potDetails(){return game.phase==='done'?{pots:game.pots,refunds:game.refunds}:partitionPots(game);}
+function renderPotDetails(details){
+  const done=game.phase==='done',hero=game.players[0],eligibilityLabel=pot=>pot.eligible.includes(0)?'你可争夺':done||hero.folded?'你不参与此池':hero.allin?'超出你的全下额度':'你尚未投入此池';$('#pot-dialog-title').textContent=done?'本手分池结算':'主池与边池';
+  $('#pot-dialog-note').textContent=done?'每个底池仅在有资格的玩家之间比较牌型并独立分配。': '按当前累计投入计算；下注仍在进行，未被跟注的部分可能继续被跟注或退还。';
+  $('#pot-dialog-content').innerHTML=details.pots.map(pot=>`<section class="pot-detail-card"><div class="pot-detail-heading"><h3>${pot.label}</h3><strong>${format(pot.amount)}<span>筹码</span></strong></div><div class="pot-eligibility ${pot.eligible.includes(0)?'hero-eligible':''}">${eligibilityLabel(pot)}<span> · ${pot.eligible.length} 人</span></div><p class="pot-player-list">可争夺：${pot.eligible.map(id=>game.players[id].name).join('、')}</p><details class="pot-contributions"><summary>查看各家投入</summary><ul>${pot.contributions.map(c=>`<li><span>${game.players[c.id].name}${game.players[c.id].folded?' · 已弃牌':game.players[c.id].allin?' · 全下':''}</span><b>${format(c.amount)}</b></li>`).join('')}</ul></details>${done?`<div class="pot-awards">${pot.awards.length>1?'<div class="pot-split-label">本池平分 · 零头筹码按庄家左侧顺序分配</div>':''}${pot.awards.map(a=>`<div class="pot-award"><span>${game.players[a.id].name}<small>${a.label}</small></span><strong>+${format(a.amount)}</strong></div>`).join('')}</div>`:''}</section>`).join('')+details.refunds.map(r=>`<div class="pot-refund"><span>${done?'未被跟注 · 已退还':'待跟注或退还'}<b>${game.players[r.id].name}</b></span><strong>${format(r.amount)}</strong></div>`).join('');
+}
 $('#fold-button').onclick=()=>heroAction('fold');$('#call-button').onclick=()=>heroAction('call');$('#raise-button').onclick=()=>heroAction('raise',bet);$('#next-button').onclick=nextHand;
 $('#bet-slider').oninput=e=>{const legal=legalActions(game,0);let v=Number(e.target.value);bet=v===legal.maxRaiseTo?v:Math.max(legal.minRaiseTo,Math.round(v/25)*25);bet=Math.min(legal.maxRaiseTo,bet);updateBet();};
 document.querySelectorAll('[data-preset]').forEach(button=>button.onclick=()=>{const legal=legalActions(game,0);if(!legal.canRaise)return;const value=button.dataset.preset;bet=value==='all'?legal.maxRaiseTo:value==='min'?legal.minRaiseTo:game.currentBet+Math.max(game.minRaise,Math.round(potSize(game)*(value==='half'?.5:1)/25)*25);bet=Math.min(legal.maxRaiseTo,Math.max(legal.minRaiseTo,bet));$('#bet-slider').value=bet;updateBet();});
@@ -83,10 +92,11 @@ function updateSound(){const b=$('#sound-button');b.setAttribute('aria-label',so
 $('#sound-button').onclick=()=>{sound=!sound;try{localStorage.setItem('noir-sound',String(sound));}catch{}updateSound();if(sound)soundEffect('deal');};
 $('#hint-toggle').onclick=()=>{hints=!hints;try{localStorage.setItem('noir-hints',String(hints));}catch{}updateCoach();};
 $('#rules-button').onclick=()=>$('#rules-dialog').showModal();$('#reset-button').onclick=()=>$('#reset-dialog').showModal();
+$('#pot-details-button').onclick=()=>$('#pot-dialog').showModal();$('#result-banner').onclick=()=>$('#pot-dialog').showModal();
 document.querySelectorAll('.close-dialog').forEach(b=>b.onclick=()=>b.closest('dialog').close());
 document.querySelectorAll('dialog').forEach(d=>d.addEventListener('click',e=>{if(e.target===d){const r=d.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)d.close();}}));
 $('#confirm-reset').onclick=()=>{const difficulty=game.difficulty;clearTimeout(timer);game=newGame();game.difficulty=difficulty;lastHand=0;$('#reset-dialog').close();nextHand();};
-function publicState(){return {hand:game.hand,street:streets[game.street],phase:game.phase,actor:game.actor===0?'你':game.players[game.actor]?.name||null,pot:game.phase==='done'?game.potAtShowdown:potSize(game),board:game.board.map(c=>rankText(c.rank)+c.symbol),hole:game.players[0].hole.map(c=>rankText(c.rank)+c.symbol),stack:game.players[0].stack,legal:legalActions(game,0),players:game.players.map(p=>({name:p.name,stack:p.stack,folded:p.folded,allin:p.allin,bet:p.bet})),result:game.result||null};}
+function publicState(){const details=potDetails();return {hand:game.hand,street:streets[game.street],phase:game.phase,actor:game.actor===0?'你':game.players[game.actor]?.name||null,pot:game.phase==='done'?game.potAtShowdown:potSize(game),pots:details.pots.map(p=>({label:p.label,amount:p.amount,eligible:p.eligible.map(id=>game.players[id].name),awards:p.awards.map(a=>({name:game.players[a.id].name,amount:a.amount,label:a.label}))})),uncalled:details.refunds.map(r=>({name:game.players[r.id].name,amount:r.amount,returned:game.phase==='done'})),board:game.board.map(c=>rankText(c.rank)+c.symbol),hole:game.players[0].hole.map(c=>rankText(c.rank)+c.symbol),stack:game.players[0].stack,legal:legalActions(game,0),players:game.players.map(p=>({name:p.name,stack:p.stack,folded:p.folded,allin:p.allin,bet:p.bet,...((game.showdown||game.revealed)&&!p.folded?{cards:p.hole.map(c=>rankText(c.rank)+c.symbol)}:{})})),result:game.result||null};}
 window.noir={getState:publicState};
 function registerTools(){const context=document.modelContext;if(!context?.registerTool)return;const lifecycle=new AbortController();window.addEventListener('pagehide',()=>lifecycle.abort(),{once:true});const register=tool=>{try{Promise.resolve(context.registerTool(tool,{signal:lifecycle.signal})).catch(()=>{});}catch{}};
   register({name:'read_poker_table',title:'读取当前牌桌',description:'Read the public poker table and your legal actions. Does not reveal opponents hidden cards.',inputSchema:{type:'object',properties:{},additionalProperties:false},annotations:{readOnlyHint:true},execute:input=>{if(!input||typeof input!=='object'||Object.keys(input).length)throw Error('请传入空对象。');return publicState();}});
