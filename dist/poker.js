@@ -32,6 +32,8 @@ export function evaluate(cards) {
 export function newGame() {
   return {players:['你','Mia','Alex','River','Kai','Luna'].map((name,id)=>({id,name,stack:5000,hole:[],folded:false,allin:false,bet:0,total:0,actedTo:null,checked:false,action:''})),dealer:5,hand:0,street:-1,board:[],deck:[],currentBet:0,minRaise:50,pending:[],actor:-1,phase:'idle',revealed:false,pots:[],refunds:[],logs:[],winners:[],payouts:[],stats:{hands:0,wins:0,buyin:5000},difficulty:'normal'};
 }
+// Seat IDs follow the physical table clockwise, starting at the hero.
+export const seatPosition = (g,id) => ['BTN','SB','BB','UTG','HJ','CO'][(id-g.dealer+6)%6];
 export const potSize = g => g.players.reduce((sum,p)=>sum+p.total,0);
 // Contribution layers determine eligibility. Folded chips stay in the pots;
 // adjacent layers with the same eligible players belong to the same pot.
@@ -52,6 +54,23 @@ export function partitionPots(g) {
   }
   return {pots,refunds};
 }
+// A live bet difference is not a side pot: callers may still match it.
+// Only an all-in contribution cap separates live main and side pots.
+export function currentPots(g) {
+  if(g.phase==='done')return {pots:g.pots,refunds:g.refunds};
+  const totals=g.players.map(p=>p.total).sort((a,b)=>b-a),ceiling=totals[1]||0;
+  const refunds=g.players.filter(p=>p.total>ceiling).map(p=>({id:p.id,amount:p.total-ceiling}));
+  const levels=[...new Set([...g.players.filter(p=>p.allin&&p.total>0&&p.total<ceiling).map(p=>p.total),ceiling])].filter(n=>n>0).sort((a,b)=>a-b);
+  const pots=[];let previous=0;
+  for(const level of levels){
+    const contributions=g.players.map(p=>({id:p.id,amount:Math.max(0,Math.min(p.total,level)-previous)})).filter(c=>c.amount>0);
+    const eligible=g.players.filter(p=>!p.folded&&(p.total>=level||(!p.allin&&p.total+p.stack>=level))).map(p=>p.id);
+    const amount=contributions.reduce((sum,c)=>sum+c.amount,0);previous=level;
+    if(!amount)continue;
+    pots.push({index:pots.length,label:pots.length?'边池 '+pots.length:'主池',amount,eligible,contributions,awards:[]});
+  }
+  return {pots,refunds};
+}
 export function contestableAfterCall(g,id,amount) {
   const cap=g.players[id].total+amount;
   return g.players.reduce((sum,p)=>sum+Math.min(p.total,cap),0)+amount;
@@ -67,7 +86,7 @@ export function startHand(g) {
   for(const p of g.players){if(p.stack===0){p.stack=5000;if(p.id===0)g.stats.buyin+=5000;log(g,`${p.name} 补充 5,000 虚拟筹码`,p.id,'info');}p.hole=[];p.folded=false;p.allin=false;p.bet=0;p.total=0;p.actedTo=null;p.checked=false;p.action='';}
   for(let round=0;round<2;round++)for(let i=1;i<=6;i++)g.players[(g.dealer+i)%6].hole.push(g.deck.pop());
   const sb=(g.dealer+1)%6,bb=(g.dealer+2)%6;
-  pay(g.players[sb],25);g.players[sb].action='小盲 25';pay(g.players[bb],50);g.players[bb].action=`大盲 ${g.players[bb].bet}`;
+  pay(g.players[sb],25);g.players[sb].action=`小盲 ${g.players[sb].bet}`;pay(g.players[bb],50);g.players[bb].action=`大盲 ${g.players[bb].bet}`;
   log(g,`${g.players[sb].name} 小盲 ${g.players[sb].bet} · ${g.players[bb].name} 大盲 ${g.players[bb].bet}`,null,'blind');
   log(g,`第 ${g.hand} 手开始 · 庄家 ${g.players[g.dealer].name}`,null,'street');
   g.pending=g.players.filter(canAct).map(p=>p.id);g.actor=nextIndex(bb,g.pending);return g;
@@ -76,9 +95,9 @@ export function legalActions(g,id=g.actor) {
   const p=g.players[id];
   if(g.phase!=='playing'||g.actor!==id||!p||!canAct(p))return {enabled:false};
   const owed=Math.max(0,g.currentBet-p.bet),max=p.bet+p.stack,min=g.currentBet===0?50:g.currentBet+g.minRaise;
-  const reopened=p.actedTo===null||p.checked||g.currentBet-p.actedTo>=g.minRaise;
+  const reopened=p.actedTo===null||g.currentBet-p.actedTo>=g.minRaise;
   const other=g.players.some(o=>o.id!==id&&canAct(o));
-  return {enabled:true,toCall:owed,callAmount:Math.min(p.stack,owed),canCheck:owed===0,canRaise:max>g.currentBet&&reopened&&other,minRaiseTo:Math.min(min,max),fullRaiseTo:min,maxRaiseTo:max,isShortAllin:max<min};
+  return {enabled:true,toCall:owed,callAmount:Math.min(p.stack,owed),canCheck:owed===0,raiseReopened:reopened,canRaise:max>g.currentBet&&reopened&&other,minRaiseTo:Math.min(min,max),fullRaiseTo:min,maxRaiseTo:max,isShortAllin:max<min};
 }
 export function act(g,id,action,amount) {
   const legal=legalActions(g,id),p=g.players[id];
