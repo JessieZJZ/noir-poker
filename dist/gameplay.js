@@ -25,6 +25,14 @@ function flyChips(id){
   const a=source.getBoundingClientRect(),b=target.getBoundingClientRect();
   for(let i=0;i<3;i++){const chip=document.createElement('span');chip.className='flying-chip';document.body.append(chip);chip.style.left=(a.left+a.width/2+i*3)+'px';chip.style.top=(a.top+a.height/2-i*3)+'px';const anim=chip.animate([{transform:'translate(0,0) scale(1)',opacity:1},{transform:`translate(${b.left+b.width/2-a.left-a.width/2}px,${b.top+b.height/2-a.top-a.height/2}px) scale(.7)`,opacity:0}],{duration:520,delay:i*60,easing:'cubic-bezier(.2,.7,.3,1)'});anim.onfinish=()=>chip.remove();}
 }
+function seatAction(p){
+  if(game.actor===p.id)return '<span class="seat-action-label thinking-dots">思考中</span>';
+  const match=/^(小盲|大盲|跟注|加注至|下注|全下) (\d+)$/.exec(p.action);
+  if(!match)return `<span class="seat-action-label">${p.action||'等待行动'}</span>`;
+  const label=match[1]==='加注至'?'加注':match[1],amount=Number(match[2]);
+  const meaning=match[1]==='跟注'?`本次补入 ${format(amount)}，本轮累计投入 ${format(p.bet)}`:`本轮累计投入 ${format(amount)}`;
+  return `<span class="seat-action-label">${label}</span><strong class="seat-action-amount" title="${meaning}">${format(amount)}</strong>`;
+}
 const layouts={5:[[15,59],[23,0],[77,0],[85,59]],6:[[14,60],[17,14],[50,0],[83,14],[86,60]],7:[[14,63],[11.5,27],[35,0],[65,0],[88.5,27],[86,63]],8:[[14,68],[11.5,36],[23,6],[50,0],[77,6],[88.5,36],[86,68]],9:[[14,72],[13,45],[16,18],[36,0],[64,0],[84,18],[87,45],[86,72]]};
 function render(){
   const count=game.players.length;$('#arena').dataset.playerCount=count;$('#table-tag').textContent=count+'-MAX';$('#table-size-label').textContent=count+' 人无限注';
@@ -36,7 +44,7 @@ function render(){
   $('#board').innerHTML=Array.from({length:5},(_,i)=>game.board[i]?card(game.board[i],{animate:i>=lastBoard&&boardChanged,delay:(i-lastBoard)*140,best:heroBest.has(game.board[i].key)}):`<div class="board-slot" aria-label="未发出的公共牌">${['♠','♣','♥','♦','♠'][i]}</div>`).join('');
   $('#seats').innerHTML=game.players.slice(1).map(p=>{
     const isWinner=game.winners.some(w=>w.id===p.id),reveal=(game.showdown||game.revealed)&&!p.folded,rank=reveal&&game.board.length===5?evaluate([...p.hole,...game.board]):null,[x,y]=layouts[count][p.id-1];
-    return `<div class="seat seat-${p.id} ${p.folded?'folded':''} ${game.actor===p.id?'thinking':''} ${isWinner?'winner':''}" data-player="${p.id}" style="left:${x}%;top:${y}%"><div class="mini-cards ${reveal?'revealed-cards':''}">${reveal?p.hole.map(c=>card(c,{small:true})).join(''):p.hole.map((c,i)=>`<span class="card-back ${newHand?'card-deal':''}" style="--delay:${p.id*65+i*140}ms" aria-label="对手底牌"></span>`).join('')}</div><div class="seat-profile"><span class="avatar avatar-${p.id-1}">${profiles[p.id]}</span><div><strong>${p.name}${positionBadge(p.id)}</strong><span>${format(p.stack)}</span></div></div>${rank?`<div class="hand-rank ${isWinner?'rank-winner':''}">${isWinner?'♛ ':''}${rank.label}</div>`:''}<div class="seat-action">${game.actor===p.id?'思考中<span class="thinking-dots">…</span>':p.action||'等待行动'}</div>${p.bet>0&&game.phase!=='done'?`<div class="seat-bet"><i class="bet-chip"></i>${format(p.bet)}</div>`:''}</div>`;
+    return `<div class="seat seat-${p.id} ${p.folded?'folded':''} ${game.actor===p.id?'thinking':''} ${isWinner?'winner':''}" data-player="${p.id}" style="left:${x}%;top:${y}%"><div class="mini-cards ${reveal?'revealed-cards':''}">${reveal?p.hole.map(c=>card(c,{small:true})).join(''):p.hole.map((c,i)=>`<span class="card-back ${newHand?'card-deal':''}" style="--delay:${p.id*65+i*140}ms" aria-label="对手底牌"></span>`).join('')}</div><div class="seat-profile"><span class="avatar avatar-${p.id-1}">${profiles[p.id]}</span><div><strong>${p.name}${positionBadge(p.id)}</strong><span>${format(p.stack)}</span></div></div>${rank?`<div class="hand-rank ${isWinner?'rank-winner':''}">${isWinner?'♛ ':''}${rank.label}</div>`:''}<div class="seat-action">${seatAction(p)}</div></div>`;
   }).join('');
   $('#hero-cards').innerHTML=hero.hole.map((c,i)=>card(c,{animate:newHand,delay:420+i*130,best:heroBest.has(c.key)})).join('');
   const heroRank=$('#hero-hand-rank');heroRank.hidden=game.board.length!==5||!(game.revealed||game.showdown);heroRank.textContent=(hero.folded?'已弃牌 · ':'')+evaluate([...hero.hole,...game.board]).label;heroRank.classList.toggle('rank-winner',game.winners.some(w=>w.id===0));
@@ -46,8 +54,12 @@ function render(){
   $('#session-change').textContent=game.stats.hands?`${diff>=0?'+':''}${format(diff)} 筹码 · 本次练习净变化`:'从这一手开始积累经验';$('#session-change').classList.toggle('negative',diff<0);
   $('#stat-hands').textContent=game.stats.hands;$('#stat-wins').textContent=game.stats.wins;$('#stat-winrate').textContent=game.stats.hands?Math.round(game.stats.wins/game.stats.hands*100)+'%':'—';
   $('#activity-list').innerHTML=game.logs.slice(0,12).map(l=>`<li class="log-${l.type} ${l.player===0?'log-hero':''}">${l.text}</li>`).join('');$('#activity-count').textContent=game.phase==='done'?'FINISHED':'LIVE';
-  const done=game.phase==='done';$('#arena').classList.toggle('is-done',done);$('#result-banner').hidden=!done;$('#result-banner').classList.toggle('hero-win',game.winners.some(w=>w.id===0));
-  if(done){const winner=game.winners.find(w=>w.id===0)||game.winners[0],multiple=game.pots.length>1,split=game.pots.some(p=>p.awards.length>1);$('#result-banner').innerHTML=`<span>${game.winners.some(w=>w.id===0)?'♛ 漂亮的一手':'本手结果'}</span><strong>${multiple?'主池与边池已结算':split?'平分底池':winner.name+' 获得底池'}</strong><small>${multiple?format(game.potAtShowdown)+' 筹码':winner.label+' · '+format(winner.amount)} · 查看明细</small>`;}
+  const done=game.phase==='done';$('#arena').classList.toggle('is-done',done);$('#result-banner').hidden=!done;$('#result-banner').classList.toggle('hero-win',game.winners.some(w=>w.id===0));document.querySelectorAll('input[name="difficulty"]').forEach(input=>input.checked=input.value===game.difficulty);
+  if(done){
+    const winner=game.winners.find(w=>w.id===0)||game.winners[0],multiple=game.pots.length>1,split=game.pots.some(p=>p.awards.length>1);
+    const title=multiple?'主池与边池已分别结算':split?'本池平分':winner.name+' 获得底池',label=multiple?game.pots.length+' 个底池':game.showdown?winner.label:'弃牌获胜';
+    $('#result-banner').innerHTML=`<span class="result-copy"><span class="result-kicker">本手结束</span><strong>${title}</strong></span><span class="result-amount"><strong>${format(multiple||split?game.potAtShowdown:winner.amount)}</strong><span>${label} · 筹码</span></span><span class="result-link">底池明细 <span aria-hidden="true">→</span></span>`;
+  }
   $('#board-caption').textContent=done&&game.showdown?(hero.folded?'摊牌 · 对手亮出底牌':'摊牌 · 亮起的牌组成你的最佳牌型'):game.street===0?'等待翻牌':game.street===1?'FLOP · 三张公共牌':game.street===2?'TURN · 第四张公共牌':'RIVER · 最后的决定';
   const details=potDetails();$('#pot-details-button').textContent=details.pots.length>1?'总底池 · '+(details.pots.length-1)+' 个边池':'底池 · 明细';
   if(details.pots.length>1)$('#board-caption').textContent=(done?'已分别结算':'当前投入')+' · 主池 '+format(details.pots[0].amount)+' + '+(details.pots.length-1)+' 个边池';
@@ -59,14 +71,20 @@ function render(){
   document.querySelectorAll('[data-preset]').forEach(b=>b.disabled=!legal.enabled||!legal.canRaise);
   if(legal.enabled){
     const min=legal.minRaiseTo,max=legal.maxRaiseTo;bet=Math.min(max,Math.max(min,bet));const slider=$('#bet-slider');slider.min=min;slider.max=max;slider.step=1;slider.value=bet;
-    $('#call-button').innerHTML=legal.canCheck?'<span>过牌</span><small>CHECK</small>':`<span>${legal.callAmount<legal.toCall?'全下跟注':'跟注'} ${format(legal.callAmount)}</span><small>CALL</small>`;
+    $('#call-button').innerHTML=legal.canCheck?'<span>过牌</span>':`<span>${legal.callAmount<legal.toCall?'全下跟注':'跟注'}</span><strong>${format(legal.callAmount)}</strong>`;$('#call-button').setAttribute('aria-label',legal.canCheck?'过牌':`${legal.callAmount<legal.toCall?'全下跟注':'跟注'} ${format(legal.callAmount)}`);
     $('#decision-text').textContent=legal.canCheck?'轮到你了，可以过牌或主动下注。':`轮到你了，跟注需要 ${format(legal.callAmount)} 筹码。${legal.raiseReopened?'':'本轮加注权未重开，仅可跟注或弃牌。'}`;
   }else if(done)$('#decision-text').textContent=game.result;
   else if(game.phase==='between')$('#decision-text').textContent=game.revealed?(game.board.length===5?'摊牌 · 底牌已亮出，正在结算各底池…':'全下行动结束 · 底牌已亮出，等待剩余公共牌…'):'本轮下注结束，正在翻开公共牌…';
   else $('#decision-text').textContent=hero.folded?`${game.players[game.actor]?.name||'对手'} 正在行动，你可以观察这一手。`:`${game.players[game.actor]?.name||'对手'} 正在思考，请稍候。`;
   updateBet();$('#hand-strength').textContent=hero.hole.length?evaluate([...hero.hole,...game.board]).label:'';updateCoach();handReview.update(game,epoch);showdown.update(game,epoch);lastHand=game.hand;lastBoard=game.board.length;
 }
-function updateBet(){const legal=legalActions(game,0);$('#bet-value').textContent=format(bet);$('#raise-number')?.remove();const action=legal.enabled&&bet===legal.maxRaiseTo?'全下':game.currentBet===0?'下注':'加注';$('#raise-button').innerHTML=`<span>${action} <b>${format(bet)}</b></span><small>${action==='全下'?'ALL IN':action==='下注'?'BET':'RAISE'}</small>`;}
+function updateBet(){
+  const legal=legalActions(game,0);$('#bet-value').textContent=format(bet);
+  const action=legal.enabled&&bet===legal.maxRaiseTo?'全下':game.currentBet===0?'下注':'加注至';
+  $('#raise-button').innerHTML=`<span>${action}</span><strong>${format(bet)}</strong>`;
+  $('#raise-button').setAttribute('aria-label',action+' '+format(bet));
+}
+
 function updateCoach(){
   $('#coach-content').hidden=!hints;$('#hint-toggle').textContent=hints?'已开启':'已关闭';$('#hint-toggle').setAttribute('aria-pressed',String(hints));
   const p=game.players[0],e=evaluate([...p.hole,...game.board]);let tip='';
@@ -107,7 +125,7 @@ $('#bet-slider').oninput=e=>{const legal=legalActions(game,0);let v=Number(e.tar
 document.querySelectorAll('[data-preset]').forEach(button=>button.onclick=()=>{const legal=legalActions(game,0);if(!legal.canRaise)return;const value=button.dataset.preset;bet=value==='all'?legal.maxRaiseTo:value==='min'?legal.minRaiseTo:game.currentBet+Math.max(game.minRaise,Math.round(potSize(game)*(value==='half'?.5:1)/25)*25);bet=Math.min(legal.maxRaiseTo,Math.max(legal.minRaiseTo,bet));$('#bet-slider').value=bet;updateBet();});
 $('#player-count').onchange=e=>{requestedCount=Number(e.target.value);const note=$('#table-change-note');note.hidden=requestedCount===game.players.length;note.textContent=`下一手切换为 ${requestedCount} 人桌 · 筹码恢复 5,000，统计重新开始`;};
 $('#show-hands-button').onclick=()=>{if(game.phase!=='done')return;$('#hands-grid').innerHTML=game.players.slice(1).map(p=>{const winner=game.winners.find(w=>w.id===p.id),rank=game.board.length===5?evaluate([...p.hole,...game.board]):null;return `<section class="hands-player ${winner?'hands-winner':''}"><div class="hands-player-heading"><strong>${p.name} ${positionBadge(p.id)}</strong><span>${p.folded?'已弃牌':winner?'获得 '+format(winner.amount):'未获底池'}</span></div><div class="hands-cards">${p.hole.map(c=>card(c)).join('')}</div><div class="hand-rank ${winner?'rank-winner':''}">${rank?rank.label:'公共牌不足五张'}</div></section>`;}).join('');$('#hands-dialog').showModal();};
-$('#difficulty').onchange=e=>{game.difficulty=e.target.value;};
+$('#difficulty').onchange=e=>{if(e.target.matches('input[name="difficulty"]')&&['easy','normal','hard'].includes(e.target.value))game.difficulty=e.target.value;};
 function updateSound(){const b=$('#sound-button');b.setAttribute('aria-label',sound?'关闭音效':'开启音效');b.setAttribute('aria-pressed',String(sound));b.title=sound?'音效已开启':'音效已关闭';b.innerHTML=sound?'<svg viewBox="0 0 24 24"><path d="M11 5 6 9H3v6h3l5 4V5Z"/><path d="M15 8q6 4 0 8m3-11q9 7 0 14"/></svg>':'<svg viewBox="0 0 24 24"><path d="M11 5 6 9H3v6h3l5 4V5Z"/><path d="m16 9 5 6m0-6-5 6"/></svg>';}
 $('#sound-button').onclick=()=>{sound=!sound;try{localStorage.setItem('noir-sound',String(sound));}catch{}updateSound();if(sound)soundEffect('deal');};
 $('#hint-toggle').onclick=()=>{hints=!hints;try{localStorage.setItem('noir-hints',String(hints));}catch{}updateCoach();};
