@@ -80,8 +80,8 @@ export function analyzeDecision(s,{trials=360}={}){
   const suggestRaise=()=>{alternative={action:'raise',amount:Math.min(s.legal.maxRaiseTo,Math.max(s.legal.minRaiseTo,s.currentBet===50&&s.street===0?150:s.currentBet+Math.max(s.minRaise,Math.round(s.pot*.5/25)*25)))};};
   if(s.action==='fold'&&s.legal.canCheck){
     status='attention';title='可以免费过牌，不必立即弃牌';reason='当时无需跟注。过牌能保留争夺底池的机会，后面遇到下注仍可再决定是否弃牌。';alternative={action:'check',amount:0};lesson='没有下注压力时，先检查能否免费过牌。';
-  }else if(s.street===0&&tier===0&&(s.action==='call'||s.action==='raise')&&(s.currentBet>=150||['UTG','HJ'].includes(s.position))){
-    status='attention';title='起手牌与当前位置不太匹配';reason=`这组起手牌成牌潜力偏低。${['UTG','HJ'].includes(s.position)?'你在较早位置，后面还有玩家可能加注。':'前面已有较大加注，弱牌跟进更容易被更好的牌压制。'}`;alternative={action:s.legal.canCheck?'check':'fold',amount:0};lesson='早位或面对加注时，收紧弱牌范围；不要只因为已经投入盲注就继续。';
+  }else if(s.street===0&&tier===0&&(s.action==='call'||s.action==='raise')&&(s.currentBet>=150||['UTG','UTG+1','MP','LJ','HJ'].includes(s.position))){
+    status='attention';title='起手牌与当前位置不太匹配';reason=`这组起手牌成牌潜力偏低。${['UTG','UTG+1','MP','LJ','HJ'].includes(s.position)?'你在较早位置，后面还有玩家可能加注。':'前面已有较大加注，弱牌跟进更容易被更好的牌压制。'}`;alternative={action:s.legal.canCheck?'check':'fold',amount:0};lesson='早位或面对加注时，收紧弱牌范围；不要只因为已经投入盲注就继续。';
   }else if(s.action==='raise'&&s.amount-s.bet>Math.max(500,s.pot*2.5)&&(s.street===0?tier<2:!strongMade&&!draw.flush&&!draw.straight)){
     status='attention';title='投入很大，需要更明确的下注目的';reason=`你这一行动额外投入 ${number(s.amount-s.bet)} 筹码，而当时底池是 ${number(s.pot)}。牌力和听牌潜力没有提供明显的价值下注依据；诈唬是否有效还取决于对手的弃牌率。`;alternative={action:s.legal.canCheck?'check':high+uncertainty<price.required?'fold':'call',amount:s.legal.callAmount};lesson='先分清价值下注与诈唬；没有明确目标时，优先控制底池。';
   }else if(s.action==='call'&&price.cost>0&&high+uncertainty+.035<price.required){

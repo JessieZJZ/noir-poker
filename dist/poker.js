@@ -29,11 +29,13 @@ export function evaluate(cards) {
   }
   return {score:best,label:best[0]===8&&best[1]===14?'皇家同花顺':RANK_NAMES[best[0]],cards:bestCards};
 }
-export function newGame() {
-  return {players:['你','Mia','Alex','River','Kai','Luna'].map((name,id)=>({id,name,stack:5000,hole:[],folded:false,allin:false,bet:0,total:0,actedTo:null,checked:false,action:''})),dealer:5,hand:0,street:-1,board:[],deck:[],currentBet:0,minRaise:50,pending:[],actor:-1,phase:'idle',revealed:false,pots:[],refunds:[],logs:[],winners:[],payouts:[],stats:{hands:0,wins:0,buyin:5000},difficulty:'normal'};
+export function newGame(playerCount=6) {
+  if(!Number.isInteger(playerCount)||playerCount<5||playerCount>9)throw Error('牌桌人数须为 5–9 人。');
+  return {players:['你','Mia','Alex','River','Kai','Luna','Theo','Jade','Leo'].slice(0,playerCount).map((name,id)=>({id,name,stack:5000,hole:[],folded:false,allin:false,bet:0,total:0,actedTo:null,checked:false,action:''})),dealer:playerCount-1,hand:0,street:-1,board:[],deck:[],currentBet:0,minRaise:50,pending:[],actor:-1,phase:'idle',revealed:false,pots:[],refunds:[],logs:[],winners:[],payouts:[],stats:{hands:0,wins:0,buyin:5000},difficulty:'normal'};
 }
 // Seat IDs follow the physical table clockwise, starting at the hero.
-export const seatPosition = (g,id) => ['BTN','SB','BB','UTG','HJ','CO'][(id-g.dealer+6)%6];
+export const POSITION_ROLES={5:['BTN','SB','BB','UTG','CO'],6:['BTN','SB','BB','UTG','HJ','CO'],7:['BTN','SB','BB','UTG','LJ','HJ','CO'],8:['BTN','SB','BB','UTG','UTG+1','LJ','HJ','CO'],9:['BTN','SB','BB','UTG','UTG+1','MP','LJ','HJ','CO']};
+export const seatPosition = (g,id) => POSITION_ROLES[g.players.length][(id-g.dealer+g.players.length)%g.players.length];
 export const potSize = g => g.players.reduce((sum,p)=>sum+p.total,0);
 // Contribution layers determine eligibility. Folded chips stay in the pots;
 // adjacent layers with the same eligible players belong to the same pot.
@@ -77,19 +79,19 @@ export function contestableAfterCall(g,id,amount) {
 }
 const live = g => g.players.filter(p=>!p.folded);
 const canAct = p => !p.folded&&!p.allin&&p.stack>0;
-function nextIndex(start,list){for(let d=1;d<=6;d++){const id=(start+d)%6;if(list.includes(id))return id;}return -1;}
+function nextIndex(g,start,list){for(let d=1;d<=g.players.length;d++){const id=(start+d)%g.players.length;if(list.includes(id))return id;}return -1;}
 function log(g,text,player=null,type='action'){g.logs.unshift({text,player,type,street:g.street});g.logs=g.logs.slice(0,70);}
 function pay(p,amount){const n=Math.min(p.stack,amount);p.stack-=n;p.bet+=n;p.total+=n;p.allin=p.stack===0;return n;}
 export function startHand(g) {
   if(g.phase!=='idle'&&g.phase!=='done')throw Error('当前牌局尚未结束。');
-  g.hand++;g.dealer=(g.dealer+1)%6;g.board=[];g.deck=shuffle(deckOfCards());g.street=0;g.phase='playing';g.currentBet=50;g.minRaise=50;g.winners=[];g.payouts=[];g.pots=[];g.refunds=[];g.showdown=false;g.revealed=false;g.logs=[];g.result='';g.decisions=[];g.history=[];
+  g.hand++;g.dealer=(g.dealer+1)%g.players.length;g.board=[];g.deck=shuffle(deckOfCards());g.street=0;g.phase='playing';g.currentBet=50;g.minRaise=50;g.winners=[];g.payouts=[];g.pots=[];g.refunds=[];g.showdown=false;g.revealed=false;g.logs=[];g.result='';g.decisions=[];g.history=[];
   for(const p of g.players){if(p.stack===0){p.stack=5000;if(p.id===0)g.stats.buyin+=5000;log(g,`${p.name} 补充 5,000 虚拟筹码`,p.id,'info');}p.hole=[];p.folded=false;p.allin=false;p.bet=0;p.total=0;p.actedTo=null;p.checked=false;p.action='';}
-  for(let round=0;round<2;round++)for(let i=1;i<=6;i++)g.players[(g.dealer+i)%6].hole.push(g.deck.pop());
-  const sb=(g.dealer+1)%6,bb=(g.dealer+2)%6;
+  for(let round=0;round<2;round++)for(let i=1;i<=g.players.length;i++)g.players[(g.dealer+i)%g.players.length].hole.push(g.deck.pop());
+  const sb=(g.dealer+1)%g.players.length,bb=(g.dealer+2)%g.players.length;
   pay(g.players[sb],25);g.players[sb].action=`小盲 ${g.players[sb].bet}`;pay(g.players[bb],50);g.players[bb].action=`大盲 ${g.players[bb].bet}`;
   log(g,`${g.players[sb].name} 小盲 ${g.players[sb].bet} · ${g.players[bb].name} 大盲 ${g.players[bb].bet}`,null,'blind');
   log(g,`第 ${g.hand} 手开始 · 庄家 ${g.players[g.dealer].name}`,null,'street');
-  g.pending=g.players.filter(canAct).map(p=>p.id);g.actor=nextIndex(bb,g.pending);return g;
+  g.pending=g.players.filter(canAct).map(p=>p.id);g.actor=nextIndex(g,bb,g.pending);return g;
 }
 export function legalActions(g,id=g.actor) {
   const p=g.players[id];
@@ -130,8 +132,8 @@ function progress(g,last) {
   if(live(g).length===1){settle(g,false);return;}
   g.pending=g.pending.filter(id=>canAct(g.players[id]));
   if(g.pending.length===1&&g.players[g.pending[0]].bet>=g.currentBet&&g.players.filter(canAct).length===1)g.pending=[];
-  if(g.pending.length){g.actor=nextIndex(last,g.pending);g.phase='playing';}
-  else {g.actor=-1;g.phase='between';if(live(g).some(p=>p.allin)&&g.players.filter(canAct).length<=1)g.revealed=true;}
+  if(g.pending.length){g.actor=nextIndex(g,last,g.pending);g.phase='playing';}
+  else {g.actor=-1;g.phase='between';if(g.street===3||(live(g).some(p=>p.allin)&&g.players.filter(canAct).length<=1))g.revealed=true;}
 }
 export function advanceStreet(g) {
   if(g.phase!=='between')throw Error('本轮行动尚未结束。');
@@ -141,12 +143,12 @@ export function advanceStreet(g) {
   log(g,['','翻牌','转牌','河牌'][g.street]+' · '+g.board.slice(-count).map(c=>rankText(c.rank)+c.symbol).join(' '),null,'street');
   const active=g.players.filter(canAct);
   if(active.length<=1){g.pending=[];g.actor=-1;g.phase='between';if(live(g).some(p=>p.allin))g.revealed=true;}
-  else{g.pending=active.map(p=>p.id);g.actor=nextIndex(g.dealer,g.pending);g.phase='playing';}
+  else{g.pending=active.map(p=>p.id);g.actor=nextIndex(g,g.dealer,g.pending);g.phase='playing';}
   return g;
 }
 export function settle(g,showdown=true) {
   if(g.phase==='done')throw Error('这手牌已经结算。');
-  const {pots,refunds}=partitionPots(g),payouts=Array(6).fill(0),won=Array(6).fill(0);
+  const {pots,refunds}=partitionPots(g),payouts=Array(g.players.length).fill(0),won=Array(g.players.length).fill(0);
   const ranks=new Map(showdown?live(g).map(p=>[p.id,evaluate([...p.hole,...g.board])]):[]);
   for(const refund of refunds)payouts[refund.id]+=refund.amount;
   for(const pot of pots){
@@ -154,7 +156,7 @@ export function settle(g,showdown=true) {
     let winners=[];
     if(!showdown)winners=[eligible[0]];
     else {let best=null;for(const p of eligible){const score=ranks.get(p.id).score;const c=best?compare(score,best):1;if(c>0){best=score;winners=[p];}else if(c===0)winners.push(p);}}
-    winners.sort((a,b)=>((a.id-g.dealer+5)%6)-((b.id-g.dealer+5)%6));
+    winners.sort((a,b)=>((a.id-g.dealer+g.players.length-1)%g.players.length)-((b.id-g.dealer+g.players.length-1)%g.players.length));
     const share=Math.floor(pot.amount/winners.length),remainder=pot.amount%winners.length;
     pot.awards=winners.map((p,i)=>({id:p.id,amount:share+(i<remainder?1:0),label:showdown?ranks.get(p.id).label:'其他玩家弃牌'}));
     for(const award of pot.awards){payouts[award.id]+=award.amount;won[award.id]+=award.amount;}
@@ -182,7 +184,7 @@ export function botDecision(g) {
   const p=g.players[g.actor],legal=legalActions(g),rivals=Math.max(1,live(g).length-1);
   // Only this bot's hole cards and the public board enter the simulation.
   let equity=estimateEquity(p.hole,g.board,rivals,g.difficulty==='hard'?52:28);
-  const personalities=[0,.06,-.01,.10,-.04,.03];equity+=personalities[p.id]+(Math.random()-.5)*(g.difficulty==='easy'?.28:.12);
+  const personalities=[0,.06,-.01,.10,-.04,.03,.02,-.03,.05];equity+=personalities[p.id]+(Math.random()-.5)*(g.difficulty==='easy'?.28:.12);
   const odds=legal.callAmount/(contestableAfterCall(g,p.id,legal.callAmount)||1),pressure=legal.toCall/(p.stack+p.bet||1);
   if(legal.toCall>0&&equity<odds+.025&&Math.random()>.13)return {action:'fold'};
   if(legal.toCall>0&&pressure>.4&&equity<.38&&Math.random()>.15)return {action:'fold'};
