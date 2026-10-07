@@ -329,7 +329,7 @@ function render() {
     const title = multiple ? '主池与边池已分别结算' : split ? '本池平分' : winner.name + ' 获胜',
       label = multiple ? game.pots.length + ' 个底池' : game.showdown ? winner.label : '';
     $('#result-banner').innerHTML =
-      `<span class="result-copy"><span class="result-kicker">本手结束</span><strong>${title}</strong>${!game.showdown ? `<span class="result-reason">${winner.label}</span>` : ''}</span><span class="result-amount"><strong>${format(multiple || split ? game.potAtShowdown : winner.amount)}</strong><span>${label ? label + ' · ' : ''}筹码</span></span>`;
+      `<span class="result-copy"><span class="result-kicker">本手结束</span><strong>${title}</strong>${!game.showdown ? `<span class="result-reason">${winner.label}</span>` : ''}</span><span class="result-amount"><strong>${format(multiple || split ? game.potAtShowdown : winner.amount)}</strong>${label ? `<span>${label}</span>` : ''}</span>`;
   }
   $('#board-caption').textContent = game.practiceBoard
     ? '练习补牌 · 五张公共牌，不影响结算'
@@ -407,10 +407,6 @@ function render() {
       ? `${game.players[game.actor]?.name || '对手'} 正在行动，你可以观察这一手。`
       : `${game.players[game.actor]?.name || '对手'} 正在思考，请稍候。`;
   updateBet();
-  $('#hand-strength').textContent = hero.hole.length
-    ? evaluate([...hero.hole, ...game.board]).label
-    : '';
-  $('#hand-strength').hidden = done && !game.showdown;
   updateCoach();
   handReview.update(game, epoch);
   showdown.update(game, epoch);

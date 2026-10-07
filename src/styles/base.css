@@ -424,12 +424,6 @@ select {
   background: var(--mint);
   border-radius: 50%;
 }
-.strength-badge {
-  margin-left: auto;
-  font-size: 11px;
-  color: #a1b6bb;
-  white-space: nowrap;
-}
 .action-panel {
   padding: 0 25px 23px;
   display: flex;

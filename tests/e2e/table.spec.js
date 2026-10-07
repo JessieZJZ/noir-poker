@@ -141,10 +141,10 @@ test('compact settlement leads with the winner and keeps refunds separate from o
     await page.evaluate(() => window.qa.foldPotRefund());
     await expect(page.locator('#result-banner .result-copy > strong')).toHaveText('Alex 获胜');
     await expect(page.locator('#result-banner .result-reason')).toHaveText('其余玩家均已弃牌');
-    await expect(page.locator('#result-banner .result-amount > span')).toHaveText('筹码');
+    await expect(page.locator('#result-banner .result-amount > span')).toHaveCount(0);
     await expect(page.locator('#decision-text')).toHaveText('Alex 获胜 · 获得 125 筹码');
     await expect(page.locator('#activity-list')).toContainText('Alex 获胜 · 获得 125 筹码');
-    await expect(page.locator('#hand-strength')).toBeHidden();
+    await expect(page.locator('#hand-strength')).toHaveCount(0);
     await expect(page.locator('.seat-2 .winner-indicator')).toHaveAttribute(
       'title',
       '其余玩家均已弃牌 · 获得 125 筹码',
@@ -197,6 +197,7 @@ test('pot details retain per-pot awards, odd split shares and conditional live e
   );
   await page.locator('#pot-details-button').click();
   const state = await page.evaluate(() => window.noir.getState());
+  await expect(page.locator('#result-banner .result-amount > span')).toHaveText('3 个底池');
   await expect(page.locator('.settled-pot h3')).toHaveText(['主池', '边池 1', '边池 2']);
   for (let i = 0; i < state.pots.length; i++) {
     const card = page.locator(`.settled-pot[data-pot-index="${i}"]`);
@@ -286,6 +287,17 @@ test('5–9 player showdown reveals all holes immediately and displays each best
     await expect(page.locator('.seat-peek')).toHaveCount(count - 1);
   }
   await expect(page.locator('#replay-showdown, #show-hands-button, #review-card')).toHaveCount(0);
+  await page.evaluate(() =>
+    window.qa.scene('Ah 2d', 'As Kd 2c 7h 9s', {
+      folded: [0, 2, 3, 4, 5],
+      otherHoles: { 1: 'Ac Qd' },
+    }),
+  );
+  await expect(page.locator('#result-banner .result-copy > strong')).toHaveText('Mia 获胜');
+  await expect(page.locator('#result-banner .result-amount > span')).toHaveText('一对');
+  await expect(page.locator('#result-banner .result-amount')).not.toContainText('筹码');
+  await expect(page.locator('#hero-hand-rank')).toHaveText('已弃牌 · 两对');
+  await expect(page.locator('#hand-strength')).toHaveCount(0);
 });
 
 test('settled seats retain all-in sizes, board and hero action across viewing and all screen sizes', async ({

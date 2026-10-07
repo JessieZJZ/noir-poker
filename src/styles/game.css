@@ -526,9 +526,6 @@ select,
 .primary-button:hover {
   background: #95efd5;
 }
-.strength-badge {
-  font-size: 12px;
-}
 .table-watermark span {
   font-size: 10px;
 }
@@ -1064,10 +1061,6 @@ select,
     padding: 17px 14px 13px;
     gap: 7px;
     font-size: 12px;
-  }
-  .strength-badge {
-    font-size: 10px;
-    max-width: 65px;
   }
   .action-panel {
     padding: 0 14px 17px;
