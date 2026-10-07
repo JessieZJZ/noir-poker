@@ -759,6 +759,98 @@ test('activity shows actual assigned personas across actions and results without
   await expect(page.locator('#activity-list')).not.toContainText('Alex（ST 王）');
 });
 
+test('bots wait for their contextual deadline, reuse it on scheduling and replan after a difficulty change', async ({
+  page,
+}) => {
+  await page.clock.install({ time: new Date('2026-01-01T00:00:00Z') });
+  await page.clock.pauseAt(new Date('2026-01-01T00:00:01Z'));
+  const waiting = await page.evaluate(() => {
+    window.qa.heroTurn(9);
+    document.querySelector('#call-button').click();
+    return window.qa.thinking();
+  });
+  expect(waiting.delayMs).toBeGreaterThanOrEqual(1200);
+  expect(waiting.delayMs).toBeLessThanOrEqual(8000);
+  await expect(page.locator(`.seat-${waiting.actor}`)).toHaveClass(/thinking/);
+  expect(await page.evaluate(() => window.qa.resumeBots())).toEqual(waiting);
+  const live = await page.evaluate(() => window.noir.getState());
+  expect(JSON.stringify(live)).not.toMatch(/thinking|closeness|acting|rawEquity|trace/);
+  await page.clock.runFor(waiting.delayMs - 1);
+  expect(await page.evaluate(() => window.qa.timingRecords())).toEqual([]);
+  expect((await page.evaluate(() => window.qa.thinking())).actor).toBe(waiting.actor);
+  await page.clock.runFor(2);
+  const records = await page.evaluate(() => window.qa.timingRecords());
+  expect(records).toHaveLength(1);
+  expect(records[0].thinking.durationMs).toBe(waiting.delayMs);
+  expect(records[0].thinking.waitedMs).toBeGreaterThanOrEqual(waiting.delayMs);
+  expect(records[0].thinking.expedited).toBe(false);
+  const old = await page.evaluate(() => window.qa.thinking());
+  const updated = await page.evaluate(() => {
+    const input = document.querySelector('input[name="difficulty"][value="hard"]');
+    input.checked = true;
+    input.dispatchEvent(new Event('change', { bubbles: true }));
+    return window.qa.thinking();
+  });
+  expect(updated.actor).toBe(old.actor);
+  expect(updated.startedAt).toBeGreaterThan(old.startedAt);
+  await page.clock.runFor(updated.delayMs + 1);
+  expect(await page.evaluate(() => window.qa.timingRecords())).toHaveLength(2);
+  await page.evaluate(() => window.qa.stop());
+});
+
+test('reset during a thinking pause cancels the old action and leaves the new table untouched', async ({
+  page,
+}) => {
+  await page.clock.install({ time: new Date('2026-01-01T00:00:00Z') });
+  await page.clock.pauseAt(new Date('2026-01-01T00:00:01Z'));
+  await page.evaluate(() => {
+    window.qa.heroTurn(9);
+    document.querySelector('#call-button').click();
+  });
+  await page.clock.runFor(500);
+  await page.evaluate(() => {
+    document.querySelector('#reset-button').click();
+    document.querySelector('#confirm-reset').click();
+    window.qa.stop();
+  });
+  const before = await page.evaluate(() => window.noir.getState());
+  await page.clock.runFor(20000);
+  expect(await page.evaluate(() => window.noir.getState())).toEqual(before);
+  expect(await page.evaluate(() => window.qa.timingRecords())).toEqual([]);
+});
+
+test('fast finish consumes the pending bot plan immediately and retry cancels every old deadline', async ({
+  page,
+}) => {
+  await page.clock.install({ time: new Date('2026-01-01T00:00:00Z') });
+  await page.clock.pauseAt(new Date('2026-01-01T00:00:01Z'));
+  const waiting = await page.evaluate(() => {
+    window.qa.heroTurn(9);
+    document.querySelector('#fold-button').click();
+    return window.qa.thinking();
+  });
+  await page.evaluate(() => document.querySelector('#continue-deal-button').click());
+  await page.clock.runFor(1000);
+  const settled = await page.evaluate(() => window.noir.getState());
+  expect(settled.phase).toBe('done');
+  expect(settled.board).toHaveLength(5);
+  const records = await page.evaluate(() => window.qa.timingRecords());
+  expect(records.length).toBeGreaterThan(0);
+  expect(records[0].id).toBe(waiting.actor);
+  expect(records[0].thinking.durationMs).toBe(waiting.delayMs);
+  expect(records.every((r) => r.thinking.expedited)).toBe(true);
+  await page.clock.runFor(20000);
+  expect(await page.evaluate(() => window.noir.getState())).toEqual(settled);
+  await page.evaluate(() => {
+    document.querySelector('#restart-hand-button').click();
+    window.qa.stop();
+  });
+  const restored = await page.evaluate(() => window.noir.getState());
+  await page.clock.runFor(20000);
+  expect(await page.evaluate(() => window.noir.getState())).toEqual(restored);
+  expect(await page.evaluate(() => window.qa.timingRecords())).toEqual([]);
+});
+
 test('reset cancels queued continuation and table size applies on next deal', async ({ page }) => {
   await page.evaluate(() => window.qa.heroTurn(9));
   await page.locator('#fold-button').click();

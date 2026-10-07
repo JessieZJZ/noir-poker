@@ -12,6 +12,7 @@ import {
   effectiveBotAxes,
 } from './bot-profiles.js';
 import { raiseCaption } from './action-labels.js';
+import { botThinkingTime } from './bot-timing.js';
 export const SUITS = ['♠', '♥', '♣', '♦'];
 export const RANK_NAMES = [
   '高牌',
@@ -743,6 +744,13 @@ export function botDecision(g, random = Math.random, { trials } = {}) {
     street: g.street,
     position: seatPosition(g, p.id),
     count: g.players.length,
+    inPosition:
+      Array.from(
+        { length: g.players.length },
+        (_, i) => g.players[(g.dealer + 1 + i) % g.players.length],
+      )
+        .filter(canAct)
+        .at(-1)?.id === p.id,
     stack: p.stack,
     bet: p.bet,
     pot: potSize(g),
@@ -750,6 +758,9 @@ export function botDecision(g, random = Math.random, { trials } = {}) {
     difficulty: g.difficulty,
     legal,
     rivals,
+    opponents: live(g)
+      .filter((o) => o.id !== p.id)
+      .map((o) => ({ id: o.id, stack: o.stack, bet: o.bet, allin: o.allin })),
     equity: estimateEquity(p.hole, g.board, rivals, equityTrials, random),
     equityTrials,
     contestable: contestableAfterCall(g, p.id, legal.callAmount),
@@ -773,12 +784,48 @@ export function botDecision(g, random = Math.random, { trials } = {}) {
   return { ...decision, trace: { ...decision.trace, view } };
 }
 
-// Record only executed bot actions. Querying a policy never mutates history.
-// Private actor cards/traces are not part of publicState or hero snapshots.
-export function playBotTurn(g, random = Math.random) {
-  const id = g.actor;
-  if (id === 0) throw Error('玩家行动不能使用机器人执行器。');
-  const decision = botDecision(g, random);
+// Opaque plans keep preselected actions and private timing factors off the UI.
+const botPlans = new WeakMap();
+export function planBotTurn(g, random = Math.random, { timingRandom = Math.random } = {}) {
+  if (g.actor === 0) throw Error('玩家行动不能使用机器人执行器。');
+  const decision = botDecision(g, random),
+    thinking = botThinkingTime(decision, timingRandom),
+    plan = Object.freeze({ delayMs: thinking.durationMs });
+  botPlans.set(plan, {
+    game: g,
+    id: g.actor,
+    hand: g.hand,
+    attempt: g.replayAttempt || 0,
+    street: g.street,
+    sequence: g.history.length,
+    difficulty: g.difficulty,
+    stack: g.players[g.actor].stack,
+    bet: g.currentBet,
+    decision,
+    thinking,
+  });
+  return plan;
+}
+export function isBotTurnCurrent(g, plan) {
+  const p = botPlans.get(plan);
+  return !!(
+    p &&
+    p.game === g &&
+    g.phase === 'playing' &&
+    p.id === g.actor &&
+    p.hand === g.hand &&
+    p.attempt === (g.replayAttempt || 0) &&
+    p.street === g.street &&
+    p.sequence === g.history.length &&
+    p.difficulty === g.difficulty &&
+    p.stack === g.players[g.actor].stack &&
+    p.bet === g.currentBet
+  );
+}
+// Only executing a current plan writes an action and its one private record.
+export function executeBotTurn(g, plan, { expedited = false, waitedMs = 0 } = {}) {
+  if (!isBotTurnCurrent(g, plan)) throw Error('机器人行动计划已过期。');
+  const { id, decision, thinking } = botPlans.get(plan);
   const record = JSON.parse(
     JSON.stringify({
       id,
@@ -787,11 +834,18 @@ export function playBotTurn(g, random = Math.random) {
       sequence: g.history.length + 1,
       action: decision.action,
       amount: decision.amount,
-      trace: decision.trace,
+      trace: {
+        ...decision.trace,
+        thinking: { ...thinking, expedited, waitedMs: Math.max(0, waitedMs) },
+      },
     }),
   );
   act(g, id, decision.action, decision.amount);
+  botPlans.delete(plan);
   g.botDecisions ||= [];
   g.botDecisions.push(record);
   return decision;
+}
+export function playBotTurn(g, random = Math.random) {
+  return executeBotTurn(g, planBotTurn(g, random), { expedited: true });
 }

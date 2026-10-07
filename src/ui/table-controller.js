@@ -9,6 +9,9 @@ import {
   currentPots,
   contestableAfterCall,
   playBotTurn,
+  planBotTurn,
+  executeBotTurn,
+  isBotTurnCurrent,
   evaluate,
   rankText,
   seatPosition,
@@ -39,6 +42,7 @@ const tablePreferences = loadTablePreferences();
 let requestedCount = tablePreferences.playerCount;
 let game = newGame(requestedCount),
   timer = null,
+  botWait = null,
   epoch = 0,
   lastBoard = 0,
   lastHand = 0,
@@ -465,11 +469,15 @@ function updateCoach() {
 function schedule() {
   clearTimeout(timer);
   const ticket = epoch;
-  if (game.phase === 'done' || finishing) return;
+  if (game.phase === 'done' || finishing) {
+    botWait = null;
+    return;
+  }
   if (game.phase === 'between') {
+    botWait = null;
     timer = setTimeout(
       () => {
-        if (ticket !== epoch) return;
+        if (ticket !== epoch || game.phase !== 'between' || finishing) return;
         advanceStreet(game);
         soundEffect(game.phase === 'done' ? 'win' : 'deal');
         render();
@@ -478,11 +486,25 @@ function schedule() {
       game.board.length === 5 ? 850 : 1000,
     );
   } else if (game.actor !== 0) {
+    if (!botWait || !isBotTurnCurrent(game, botWait.plan)) {
+      const plan = planBotTurn(game),
+        startedAt = performance.now();
+      botWait = { plan, startedAt, deadline: startedAt + plan.delayMs };
+    }
+    const waiting = botWait;
     timer = setTimeout(
       () => {
-        if (ticket !== epoch) return;
+        if (ticket !== epoch || botWait !== waiting || finishing) return;
+        if (!isBotTurnCurrent(game, waiting.plan)) {
+          botWait = null;
+          schedule();
+          return;
+        }
+        botWait = null;
         const id = game.actor,
-          d = playBotTurn(game);
+          d = executeBotTurn(game, waiting.plan, {
+            waitedMs: performance.now() - waiting.startedAt,
+          });
         if (d.action !== 'fold' && d.action !== 'check') {
           flyChips(id);
           soundEffect();
@@ -491,9 +513,9 @@ function schedule() {
         render();
         schedule();
       },
-      650 + Math.random() * 450,
+      Math.max(0, waiting.deadline - performance.now()),
     );
-  }
+  } else botWait = null;
 }
 function heroAction(action, amount) {
   if (!legalActions(game, 0).enabled) return false;
@@ -518,6 +540,8 @@ function canFastFinish() {
 async function continueDeal() {
   if (!canFastFinish()) return false;
   clearTimeout(timer);
+  const waiting = botWait;
+  botWait = null;
   const ticket = ++epoch;
   finishing = true;
   render();
@@ -527,7 +551,12 @@ async function continueDeal() {
       if (ticket !== epoch) return false;
       if (game.phase === 'between') advanceStreet(game);
       else {
-        playBotTurn(game);
+        if (waiting && isBotTurnCurrent(game, waiting.plan))
+          executeBotTurn(game, waiting.plan, {
+            expedited: true,
+            waitedMs: performance.now() - waiting.startedAt,
+          });
+        else playBotTurn(game);
       }
       if (game.phase === 'between') render();
     }
@@ -543,6 +572,7 @@ async function continueDeal() {
   }
 }
 function nextHand() {
+  botWait = null;
   seatHandVisibility.clear();
   finishing = false;
   clearTimeout(timer);
@@ -568,6 +598,7 @@ function nextHand() {
 }
 function retryHand() {
   if (!canRestartHand(game)) return false;
+  botWait = null;
   seatHandVisibility.clear();
   finishing = false;
   clearTimeout(timer);
@@ -717,6 +748,7 @@ $('#difficulty').onchange = (e) => {
   ) {
     game.difficulty = e.target.value;
     saveTablePreferences({ playerCount: requestedCount, difficulty: game.difficulty });
+    if (game.phase === 'playing' && game.actor !== 0 && !finishing) schedule();
   }
 };
 function updateSound() {

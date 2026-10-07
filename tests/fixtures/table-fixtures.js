@@ -5,6 +5,7 @@ import { deckOfCards, settle } from '../engine/poker.js';
 function fixtureGame(count = 6, heroFirst = false) {
   seatHandVisibility.clear();
   clearTimeout(timer);
+  botWait = null;
   finishing = false;
   showdown.reset();
   handReview.reset();
@@ -24,6 +25,23 @@ window.qa = {
   },
   stop() {
     clearTimeout(timer);
+    botWait = null;
+  },
+  thinking() {
+    return botWait
+      ? { actor: game.actor, delayMs: botWait.plan.delayMs, startedAt: botWait.startedAt }
+      : null;
+  },
+  resumeBots() {
+    schedule();
+    return this.thinking();
+  },
+  timingRecords() {
+    return game.botDecisions.map((r) => ({
+      id: r.id,
+      action: r.action,
+      thinking: r.trace.thinking,
+    }));
   },
   heroTurn(count = 6, unequal = false) {
     fixtureGame(count, true);
