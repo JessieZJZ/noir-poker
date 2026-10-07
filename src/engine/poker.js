@@ -630,7 +630,7 @@ export function settle(g, showdown = true) {
     pot.awards = winners.map((p, i) => ({
       id: p.id,
       amount: share + (i < remainder ? 1 : 0),
-      label: showdown ? ranks.get(p.id).label : '其他玩家弃牌',
+      label: showdown ? ranks.get(p.id).label : '其余玩家均已弃牌',
     }));
     for (const award of pot.awards) {
       payouts[award.id] += award.amount;
@@ -648,7 +648,7 @@ export function settle(g, showdown = true) {
       name: p.name,
       amount: won[p.id],
       profit: payouts[p.id] - p.total,
-      label: showdown ? evaluate([...p.hole, ...g.board]).label : '其他玩家弃牌',
+      label: showdown ? evaluate([...p.hole, ...g.board]).label : '其余玩家均已弃牌',
     }));
   g.potAtShowdown = won.reduce((sum, n) => sum + n, 0);
   g.showdown = showdown;
@@ -660,7 +660,14 @@ export function settle(g, showdown = true) {
   g.result =
     (pots.length > 1 ? '分池结算 · ' : '') +
     g.winners
-      .map((p) => p.name + ' ' + p.label + ' · 获得 ' + p.amount.toLocaleString())
+      .map(
+        (p) =>
+          p.name +
+          (showdown ? ' ' + p.label : ' 获胜') +
+          ' · 获得 ' +
+          p.amount.toLocaleString() +
+          ' 筹码',
+      )
       .join(' / ');
   for (const pot of pots)
     log(

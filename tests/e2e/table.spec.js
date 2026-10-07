@@ -139,6 +139,21 @@ test('compact settlement leads with the winner and keeps refunds separate from o
   for (const width of [320, 390, 1280]) {
     await page.setViewportSize({ width, height: 900 });
     await page.evaluate(() => window.qa.foldPotRefund());
+    await expect(page.locator('#result-banner .result-copy > strong')).toHaveText('Alex 获胜');
+    await expect(page.locator('#result-banner .result-reason')).toHaveText('其余玩家均已弃牌');
+    await expect(page.locator('#result-banner .result-amount > span')).toHaveText('筹码');
+    await expect(page.locator('#decision-text')).toHaveText('Alex 获胜 · 获得 125 筹码');
+    await expect(page.locator('#activity-list')).toContainText('Alex 获胜 · 获得 125 筹码');
+    await expect(page.locator('#hand-strength')).toBeHidden();
+    await expect(page.locator('.seat-2 .winner-indicator')).toHaveAttribute(
+      'title',
+      '其余玩家均已弃牌 · 获得 125 筹码',
+    );
+    await expect(page.locator('#result-banner')).not.toHaveAttribute('aria-haspopup');
+    await expect(page.locator('#result-banner button, .result-link')).toHaveCount(0);
+    expect(await page.locator('#result-banner').evaluate((el) => el.tagName)).toBe('DIV');
+    await page.locator('#result-banner').click();
+    await expect(page.locator('#pot-dialog')).not.toBeVisible();
     await page.locator('#pot-details-button').click();
     await expect(page.locator('#pot-dialog-title')).toHaveText('本手结算');
     await expect(page.locator('#pot-dialog-note')).toBeHidden();
@@ -146,7 +161,7 @@ test('compact settlement leads with the winner and keeps refunds separate from o
     await expect(page.locator('.settled-pot .pot-detail-heading > strong')).toHaveCount(0);
     await expect(page.locator('.pot-award')).toHaveCount(1);
     await expect(page.locator('.pot-award')).toContainText('Alex 获胜');
-    await expect(page.locator('.pot-award')).toContainText('弃牌获胜');
+    await expect(page.locator('.pot-award')).toContainText('其余玩家均已弃牌');
     await expect(page.locator('.pot-award > strong')).toHaveText('+125筹码');
     await expect(page.locator('.compact-refund')).toContainText('未跟注退还 Alex');
     await expect(page.locator('.compact-refund > strong')).toHaveText('75');
@@ -545,7 +560,7 @@ test('fast finish fills all five visible board cards after preflop, flop or turn
     await expect(page.locator('#board .board-slot')).toHaveCount(0);
     await expect(page.locator('#board-caption')).toContainText('练习补牌');
     await expect(page.locator('#result-banner')).toBeVisible();
-    await expect(page.locator('#result-banner')).toContainText('弃牌获胜');
+    await expect(page.locator('#result-banner')).toContainText('其余玩家均已弃牌');
     await expect(page.locator('#showdown-stage')).toBeHidden();
     await expect(page.locator('#stat-hands')).toHaveText('1');
     await expect(page.locator('#continue-deal-button')).toBeHidden();

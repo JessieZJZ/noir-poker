@@ -326,17 +326,13 @@ function render() {
     const winner = game.winners.find((w) => w.id === 0) || game.winners[0],
       multiple = game.pots.length > 1,
       split = game.pots.some((p) => p.awards.length > 1);
-    const title = multiple
-        ? '主池与边池已分别结算'
-        : split
-          ? '本池平分'
-          : winner.name + ' 获得底池',
-      label = multiple ? game.pots.length + ' 个底池' : game.showdown ? winner.label : '弃牌获胜';
+    const title = multiple ? '主池与边池已分别结算' : split ? '本池平分' : winner.name + ' 获胜',
+      label = multiple ? game.pots.length + ' 个底池' : game.showdown ? winner.label : '';
     $('#result-banner').innerHTML =
-      `<span class="result-copy"><span class="result-kicker">本手结束</span><strong>${title}</strong></span><span class="result-amount"><strong>${format(multiple || split ? game.potAtShowdown : winner.amount)}</strong><span>${label} · 筹码</span></span><span class="result-link">底池明细 <span aria-hidden="true">→</span></span>`;
+      `<span class="result-copy"><span class="result-kicker">本手结束</span><strong>${title}</strong>${!game.showdown ? `<span class="result-reason">${winner.label}</span>` : ''}</span><span class="result-amount"><strong>${format(multiple || split ? game.potAtShowdown : winner.amount)}</strong><span>${label ? label + ' · ' : ''}筹码</span></span>`;
   }
   $('#board-caption').textContent = game.practiceBoard
-    ? '练习补牌 · 五张公共牌，弃牌结算不变'
+    ? '练习补牌 · 五张公共牌，不影响结算'
     : done && game.showdown
       ? hero.folded
         ? '摊牌 · 对手亮出底牌'
@@ -414,6 +410,7 @@ function render() {
   $('#hand-strength').textContent = hero.hole.length
     ? evaluate([...hero.hole, ...game.board]).label
     : '';
+  $('#hand-strength').hidden = done && !game.showdown;
   updateCoach();
   handReview.update(game, epoch);
   showdown.update(game, epoch);
@@ -635,7 +632,7 @@ function renderPotDetails(details) {
           const split = pot.awards.length > 1;
           return `<section class="pot-detail-card settled-pot" data-pot-index="${pot.index}">
         <div class="pot-detail-heading"><h3>${pot.label}</h3>${split ? `<span class="pot-split-total">${format(pot.amount)} 筹码 · 平分</span>` : ''}</div>
-        <div class="pot-awards">${pot.awards.map((a) => `<div class="pot-award" data-award-player="${a.id}"><span class="pot-award-player">${crown}<span><b>${game.players[a.id].name}${split ? '' : ' 获胜'}</b><small>${a.label === '其他玩家弃牌' ? '弃牌获胜' : a.label}</small></span></span><strong>+${format(a.amount)}<small>筹码</small></strong></div>`).join('')}</div>
+        <div class="pot-awards">${pot.awards.map((a) => `<div class="pot-award" data-award-player="${a.id}"><span class="pot-award-player">${crown}<span><b>${game.players[a.id].name}${split ? '' : ' 获胜'}</b><small>${a.label}</small></span></span><strong>+${format(a.amount)}<small>筹码</small></strong></div>`).join('')}</div>
         <details class="pot-distribution" data-pot-index="${pot.index}"${expanded.has(pot.index) ? ' open' : ''}><summary>查看分配详情</summary><div class="pot-distribution-body"><p>${eligibilityLabel(pot)} · 结算资格：${participants}</p><h4>本池投入</h4><ul class="pot-contribution-list">${contributions(pot)}</ul>${split ? '<p class="pot-rounding-note">零头筹码按庄家左侧顺序分配。</p>' : ''}</div></details>
       </section>`;
         }
@@ -749,7 +746,6 @@ $('#hint-toggle').onclick = () => {
 $('#rules-button').onclick = () => $('#rules-dialog').showModal();
 $('#reset-button').onclick = () => $('#reset-dialog').showModal();
 $('#pot-details-button').onclick = () => $('#pot-dialog').showModal();
-$('#result-banner').onclick = () => $('#pot-dialog').showModal();
 document
   .querySelectorAll('.close-dialog')
   .forEach((b) => (b.onclick = () => b.closest('dialog').close()));
