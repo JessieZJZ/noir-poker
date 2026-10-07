@@ -371,8 +371,7 @@ function render() {
   $('#action-panel').classList.toggle('folded-actions', hero.folded && !done);
   $('#restart-hand-button').hidden = !canRestartHand(game);
   $('#action-panel').classList.toggle('settled-actions', done);
-  $('#next-button').innerHTML =
-    hero.stack === 0 ? '补充筹码，继续练习 <span>♠</span>' : '下一手 <span>♠</span>';
+  $('#next-button').textContent = hero.stack === 0 ? '补充筹码，继续练习' : '下一手';
   for (const b of [$('#fold-button'), $('#call-button')]) b.disabled = !legal.enabled;
   $('#raise-button').disabled = !legal.enabled || !legal.canRaise;
   $('#bet-slider').disabled = !legal.enabled || !legal.canRaise;

@@ -537,9 +537,6 @@ select {
   margin: auto;
   min-width: 220px;
 }
-.next-button span {
-  margin-left: 15px;
-}
 .table-footer {
   display: flex;
   align-items: center;
