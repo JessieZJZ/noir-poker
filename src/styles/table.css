@@ -30,6 +30,26 @@
 .seat.winner .seat-action-amount {
   color: #e6d3a2;
 }
+.winner-indicator {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+.winner-icon {
+  width: 14px;
+  height: 12px;
+  flex: none;
+  fill: currentColor;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+.arena.is-done .seat.winner .seat-profile {
+  border-color: #e3bf72;
+  box-shadow: 0 0 16px #e3bf7236;
+}
 .action {
   gap: 5px;
   min-height: 69px;

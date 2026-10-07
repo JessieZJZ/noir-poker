@@ -107,10 +107,10 @@ window.qa = {
     render();
     return publicState();
   },
-  foldWin(count = 6) {
+  foldWin(count = 6, winner = count - 1) {
     fixtureGame(count, true);
     startHand(game);
-    while (game.phase === 'playing') act(game, game.actor, 'fold');
+    while (game.phase === 'playing') act(game, game.actor, game.actor === winner ? 'call' : 'fold');
     render();
     return publicState();
   },

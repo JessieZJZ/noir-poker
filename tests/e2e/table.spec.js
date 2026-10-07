@@ -39,6 +39,100 @@ async function assertBestHands(page, count) {
   for (const row of comparisons) expect(row.actual).toEqual(row.expected);
 }
 
+async function assertWinnerIndicators(page) {
+  const state = await page.evaluate(() => window.noir.getState());
+  const awards = new Map();
+  for (const pot of state.pots)
+    for (const award of pot.awards)
+      awards.set(award.name, (awards.get(award.name) || 0) + award.amount);
+  await expect(page.locator('.winner-indicator')).toHaveCount(awards.size);
+  await expect(page.locator('.winner-icon')).toHaveCount(awards.size);
+  for (const p of state.players) {
+    const badge = p.id
+      ? page.locator(`.seat-${p.id} .winner-indicator`)
+      : page.locator('#hero-hand-rank.winner-indicator');
+    if (!awards.has(p.name)) {
+      await expect(badge).toHaveCount(0);
+      continue;
+    }
+    await expect(badge).toBeVisible();
+    await expect(badge).toHaveAttribute(
+      'aria-label',
+      `${p.name} 获得底池 ${awards.get(p.name).toLocaleString('en-US')} 筹码`,
+    );
+    await expect(badge.locator('svg')).toBeVisible();
+  }
+}
+
+test('fold winners keep a visible crown without revealing cards, including practice runout and hero wins', async ({
+  page,
+}) => {
+  for (const width of [320, 390, 768, 1280]) {
+    await page.setViewportSize({ width, height: 900 });
+    for (const count of [5, 6, 7, 8, 9]) {
+      await page.evaluate((n) => window.qa.foldWin(n, 2), count);
+      await assertWinnerIndicators(page);
+      await expect(page.locator('.seat-2 .winner-indicator')).toHaveText('获胜');
+      await expect(page.locator('.seat-2 .playing-card')).toHaveCount(0);
+      await page.locator('#continue-deal-button').click();
+      await expect(page.locator('#board .playing-card')).toHaveCount(5);
+      await assertWinnerIndicators(page);
+      for (let i = 0; i < 2; i++) {
+        await page.locator('[data-peek-player="2"]').click();
+        await assertWinnerIndicators(page);
+        await expect(page.locator('.seat-2 .winner-indicator')).toHaveText('获胜');
+      }
+      const fits = await page.locator('.seat-2 .winner-indicator').evaluate((el) => {
+        const a = el.getBoundingClientRect(),
+          b = document.querySelector('#board').getBoundingClientRect();
+        return (
+          a.left >= 0 &&
+          a.right <= innerWidth &&
+          !(a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top)
+        );
+      });
+      expect(fits).toBe(true);
+      await page.evaluate((n) => window.qa.foldWin(n, 0), count);
+      await assertWinnerIndicators(page);
+      await expect(page.locator('#hero-hand-rank')).toHaveText('获胜');
+    }
+  }
+  await page.locator('#restart-hand-button').click();
+  await page.evaluate(() => window.qa.stop());
+  await expect(page.locator('.winner-icon, .winner-indicator')).toHaveCount(0);
+  await page.evaluate(() => window.qa.foldWin());
+  await page.locator('#next-button').click();
+  await page.evaluate(() => window.qa.stop());
+  await expect(page.locator('.winner-icon, .winner-indicator')).toHaveCount(0);
+});
+
+test('winner crowns follow actual main and side pot awards and survive hidden showdown cards; refunds alone are not wins', async ({
+  page,
+}) => {
+  await page.evaluate(() =>
+    window.qa.scene('As Ac', '2s 3h 4c 8d 9s', {
+      totals: [100, 200, 300, 300, 0, 0],
+      folded: [4, 5],
+      otherHoles: { 1: 'Ks Kc', 2: 'Qd Qh', 3: 'Jh Jd' },
+    }),
+  );
+  await assertWinnerIndicators(page);
+  await expect(page.locator('.winner-indicator')).toHaveCount(3);
+  await page.locator('[data-peek-player="1"]').click();
+  await expect(page.locator('.seat-1 .winner-indicator')).toHaveText('获胜');
+  await assertWinnerIndicators(page);
+  await page.evaluate(() =>
+    window.qa.scene('7c 8d', '2h 4s 6d 9c Kh', {
+      totals: [1000, 200, 100, 100, 100, 100],
+      folded: [2, 3, 4, 5],
+      otherHoles: { 1: 'As Ad' },
+    }),
+  );
+  expect((await page.evaluate(() => window.noir.getState())).uncalled[0].name).toBe('你');
+  await assertWinnerIndicators(page);
+  await expect(page.locator('#hero-hand-rank.winner-indicator')).toHaveCount(0);
+});
+
 test('raise controls, seats, activity and review share street-specific bet ordinals', async ({
   page,
 }) => {

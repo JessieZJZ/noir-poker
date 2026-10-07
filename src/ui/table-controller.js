@@ -65,6 +65,8 @@ const opponents = createOpponentsController({
 const format = (n) => n.toLocaleString('en-US'),
   streets = ['翻牌前', '翻牌', '转牌', '河牌'],
   profiles = ['YOU', 'M', 'A', 'R', 'K', 'L', 'T', 'J', 'L'];
+const winnerIcon =
+  '<svg class="winner-icon" viewBox="0 0 20 16" aria-hidden="true"><path d="M2 4 6 7 10 2 14 7 18 4 16 12H4Z"/><path d="M4 15H16"/></svg>';
 function card(c, options) {
   return renderCard(c, options);
 }
@@ -229,30 +231,45 @@ function render() {
   $('#seats').innerHTML = game.players
     .slice(1)
     .map((p) => {
-      const isWinner = game.winners.some((w) => w.id === p.id),
+      const winner = game.winners.find((w) => w.id === p.id),
+        isWinner = !!winner,
         reveal = isSeatHandVisible(p),
         rank =
           reveal && !p.folded && game.board.length === 5
             ? evaluate([...p.hole, ...game.board])
             : null,
         [x, y] = layouts[count][p.id - 1];
+      const rankMarkup =
+        rank || winner
+          ? `<div class="hand-rank ${winner ? 'rank-winner winner-indicator' : ''}"${winner ? ` aria-label="${p.name} 获得底池 ${format(winner.amount)} 筹码" title="${winner.label} · 获得 ${format(winner.amount)} 筹码"` : ''}>${winner ? winnerIcon : ''}${rank?.label ?? '获胜'}</div>`
+          : '';
       const profile = getBotProfile(p.botProfile),
         mood = game.emotionMode === 'off' ? 'steady' : p.botMood.kind,
         title = `${p.name} · ${profile.short}（训练原型） · 模拟状态：${MOOD_LABELS[mood]}`;
-      return `<div class="seat seat-${p.id} ${p.folded ? 'folded' : ''} ${game.actor === p.id ? 'thinking' : ''} ${isWinner ? 'winner' : ''}" data-player="${p.id}" data-profile="${p.botProfile}" data-mood="${mood}" style="left:${x}%;top:${y}%"><div id="seat-hand-${p.id}" class="mini-cards ${reveal ? 'revealed-cards' : ''}">${reveal ? p.hole.map((c) => card(c, { small: true, best: !!rank && rank.cards.some((best) => best.key === c.key) })).join('') : p.hole.map((c, i) => `<span class="card-back ${newHand ? 'card-deal' : ''}" style="--delay:${p.id * 65 + i * 140}ms" aria-label="对手底牌"></span>`).join('')}</div><div class="seat-profile"><span class="avatar avatar-${p.id - 1}" title="${title}" aria-label="${title}">${profiles[p.id]}</span><div><strong>${p.name}${positionBadge(p.id)}</strong><span class="seat-style-label" data-style-profile="${profile.id}" title="${profile.name} · ${profile.tag}" aria-label="${p.name} 本手风格：${profile.name}">${profile.short}</span><span class="seat-bankroll"><span class="seat-stack">${format(p.stack)}</span>${game.phase === 'done' ? `<button class="seat-peek" data-peek-player="${p.id}" title="${reveal ? '收起底牌' : '查看底牌'}" aria-label="${reveal ? '收起' : '查看'} ${p.name} 的底牌" aria-pressed="${!!reveal}" aria-controls="seat-hand-${p.id}"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M2 10C4 6 7 5 10 5C13 5 16 6 18 10C16 14 13 15 10 15C7 15 4 14 2 10Z"/><circle cx="10" cy="10" r="2.5"/></svg></button>` : ''}</span></div></div>${rank ? `<div class="hand-rank ${isWinner ? 'rank-winner' : ''}">${isWinner ? '♛ ' : ''}${rank.label}</div>` : ''}<div class="seat-action" aria-label="${p.name} 的最近行动">${seatAction(p)}</div></div>`;
+      return `<div class="seat seat-${p.id} ${p.folded ? 'folded' : ''} ${game.actor === p.id ? 'thinking' : ''} ${isWinner ? 'winner' : ''}" data-player="${p.id}" data-profile="${p.botProfile}" data-mood="${mood}" style="left:${x}%;top:${y}%"><div id="seat-hand-${p.id}" class="mini-cards ${reveal ? 'revealed-cards' : ''}">${reveal ? p.hole.map((c) => card(c, { small: true, best: !!rank && rank.cards.some((best) => best.key === c.key) })).join('') : p.hole.map((c, i) => `<span class="card-back ${newHand ? 'card-deal' : ''}" style="--delay:${p.id * 65 + i * 140}ms" aria-label="对手底牌"></span>`).join('')}</div><div class="seat-profile"><span class="avatar avatar-${p.id - 1}" title="${title}" aria-label="${title}">${profiles[p.id]}</span><div><strong>${p.name}${positionBadge(p.id)}</strong><span class="seat-style-label" data-style-profile="${profile.id}" title="${profile.name} · ${profile.tag}" aria-label="${p.name} 本手风格：${profile.name}">${profile.short}</span><span class="seat-bankroll"><span class="seat-stack">${format(p.stack)}</span>${game.phase === 'done' ? `<button class="seat-peek" data-peek-player="${p.id}" title="${reveal ? '收起底牌' : '查看底牌'}" aria-label="${reveal ? '收起' : '查看'} ${p.name} 的底牌" aria-pressed="${!!reveal}" aria-controls="seat-hand-${p.id}"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M2 10C4 6 7 5 10 5C13 5 16 6 18 10C16 14 13 15 10 15C7 15 4 14 2 10Z"/><circle cx="10" cy="10" r="2.5"/></svg></button>` : ''}</span></div></div>${rankMarkup}<div class="seat-action" aria-label="${p.name} 的最近行动">${seatAction(p)}</div></div>`;
     })
     .join('');
   $('#hero-cards').innerHTML = hero.hole
     .map((c, i) => card(c, { animate: newHand, delay: 420 + i * 130, best: heroBest.has(c.key) }))
     .join('');
-  const heroRank = $('#hero-hand-rank');
-  heroRank.hidden = game.board.length !== 5 || !(game.revealed || game.showdown);
-  heroRank.textContent =
-    (hero.folded ? '已弃牌 · ' : '') + evaluate([...hero.hole, ...game.board]).label;
-  heroRank.classList.toggle(
-    'rank-winner',
-    game.winners.some((w) => w.id === 0),
-  );
+  const heroRank = $('#hero-hand-rank'),
+    heroWinner = game.winners.find((w) => w.id === 0),
+    showHeroRank = game.board.length === 5 && (game.revealed || game.showdown);
+  heroRank.hidden = !showHeroRank && !heroWinner;
+  heroRank.innerHTML =
+    (heroWinner ? winnerIcon : '') +
+    (showHeroRank
+      ? (hero.folded ? '已弃牌 · ' : '') + evaluate([...hero.hole, ...game.board]).label
+      : '获胜');
+  heroRank.classList.toggle('rank-winner', !!heroWinner);
+  heroRank.classList.toggle('winner-indicator', !!heroWinner);
+  if (heroWinner) {
+    heroRank.setAttribute('aria-label', `你 获得底池 ${format(heroWinner.amount)} 筹码`);
+    heroRank.title = `${heroWinner.label} · 获得 ${format(heroWinner.amount)} 筹码`;
+  } else {
+    heroRank.removeAttribute('aria-label');
+    heroRank.removeAttribute('title');
+  }
   $('.hero-area').classList.toggle('hero-folded', hero.folded);
   $('.hero-name').classList.toggle('is-active', game.actor === 0);
   $('#hero-stack').textContent = format(hero.stack);
