@@ -1038,6 +1038,78 @@ test('A7 review separates steal, 3bet and 4bet; opponents expose actual decision
   expect(layout.scroll).toBeLessThanOrEqual(layout.width + 1);
 });
 
+test('review timelines hint at horizontal scrolling and keep late selections in place', async ({
+  page,
+}) => {
+  for (const width of [320, 390, 1280]) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.evaluate(() => window.qa.reviewLine());
+    await page.locator('#review-hand-button').click();
+    await expect(page.locator('#review-priority')).toBeVisible({ timeout: 15000 });
+    if (width < 700) {
+      const heroTimeline = page.locator('#review-timeline');
+      const heroIndex = (await heroTimeline.locator('.review-step').count()) - 1;
+      await heroTimeline.evaluate((timeline) => {
+        const item = timeline.lastElementChild.getBoundingClientRect();
+        timeline.scrollLeft += item.left - timeline.getBoundingClientRect().left - 2;
+      });
+      const before = await heroTimeline.evaluate((el) => el.scrollLeft);
+      expect(before).toBeGreaterThan(0);
+      await heroTimeline.locator(`[data-review-index="${heroIndex}"]`).click();
+      await expect(heroTimeline.locator('[aria-current="step"]')).toHaveAttribute(
+        'data-review-index',
+        String(heroIndex),
+      );
+      expect(Math.abs((await heroTimeline.evaluate((el) => el.scrollLeft)) - before)).toBeLessThan(
+        1.1,
+      );
+    }
+    await page.locator('#review-opponents-tab').click();
+    const timeline = page.locator('#review-opponents .review-timeline');
+    if (width < 700) {
+      const preview = await timeline.evaluate((el) => {
+        const second = el.children[1].getBoundingClientRect();
+        return (el.getBoundingClientRect().right - second.left - 2) / second.width;
+      });
+      expect(preview).toBeGreaterThan(0.45);
+      expect(preview).toBeLessThan(0.55);
+    }
+    await timeline.evaluate((el, mobile) => {
+      const item = el.children[5].getBoundingClientRect(),
+        bounds = el.getBoundingClientRect();
+      if (mobile) el.scrollLeft += item.left - bounds.left - 2;
+      else el.scrollTop += item.top - bounds.top - 2;
+    }, width < 700);
+    const before = await timeline.evaluate((el) => ({ left: el.scrollLeft, top: el.scrollTop }));
+    if (width < 700) expect(before.left).toBeGreaterThan(0);
+    const lateCard = timeline.locator('[data-opponent-index="5"]');
+    const heading = await lateCard.locator('small').innerText();
+    await lateCard.click();
+    await expect(lateCard).toHaveAttribute('aria-current', 'step');
+    await expect(page.locator('#review-opponent-detail .review-detail-header h3')).toHaveText(
+      heading,
+    );
+    await expect(lateCard).toBeFocused();
+    await page.keyboard.press('Enter');
+    const after = await timeline.evaluate((el) => ({ left: el.scrollLeft, top: el.scrollTop }));
+    expect(Math.abs(after.left - before.left)).toBeLessThan(1.1);
+    expect(Math.abs(after.top - before.top)).toBeLessThan(1.1);
+    await page.locator('[data-opponent-nav="-1"]').evaluate((button) => button.click());
+    await expect(timeline.locator('[aria-current="step"]')).toHaveAttribute(
+      'data-opponent-index',
+      '4',
+    );
+    if (width < 700) expect(await timeline.evaluate((el) => el.scrollLeft)).toBeGreaterThan(0);
+    await page.locator('#review-opponent-filter').selectOption('1');
+    await expect(timeline.locator('.review-step').first()).toHaveAttribute('aria-current', 'step');
+    await expect(timeline).toContainText('Mia');
+    expect(await timeline.evaluate((el) => el.scrollLeft + el.scrollTop)).toBe(0);
+    await page.locator('#review-opponent-filter').selectOption('all');
+    expect(await timeline.evaluate((el) => el.scrollLeft + el.scrollTop)).toBe(0);
+    await page.locator('#review-dialog .icon-button.close-dialog').click();
+  }
+});
+
 test('fast finish records opponents while live public state never exposes private policy trace', async ({
   page,
 }) => {

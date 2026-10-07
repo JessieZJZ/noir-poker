@@ -17,7 +17,8 @@ export function createReviewController({ card }) {
     seen = '',
     worker = null,
     job = 0,
-    selected = 0;
+    selected = 0,
+    timelineKey = '';
   const dialog = $('#review-dialog');
   const opponents = createOpponentReview({ card });
   function perspective(opponent) {
@@ -76,12 +77,25 @@ export function createReviewController({ card }) {
       $('#review-priority').textContent =
         analysis.attention || analysis.consider ? '查看优先复盘的决策' : '从第一步回看';
     }
-    $('#review-timeline').innerHTML = steps
+    const timeline = $('#review-timeline'),
+      sameHand = timelineKey === last.key,
+      scrollLeft = sameHand ? timeline.scrollLeft : 0,
+      scrollTop = sameHand ? timeline.scrollTop : 0,
+      focusedIndex = timeline.contains(document.activeElement)
+        ? document.activeElement.dataset.reviewIndex
+        : null;
+    timeline.innerHTML = steps
       .map((s, i) => {
         const status = analysis?.steps[i]?.status;
         return `<button class="review-step ${selected === i ? 'selected' : ''}" data-review-index="${i}" aria-current="${selected === i ? 'step' : 'false'}"><span class="review-step-number">${i + 1}</span><span><small>${STREET_NAMES[s.street]} · ${s.position}</small><strong>${actionLabel(s)}</strong></span><span class="review-status ${status || 'pending'}">${status ? statusNames[status] : '待分析'}</span></button>`;
       })
       .join('');
+    timelineKey = last.key;
+    timeline.scrollTo({ left: scrollLeft, top: scrollTop });
+    if (focusedIndex !== null)
+      timeline
+        .querySelector(`[data-review-index="${focusedIndex}"]`)
+        ?.focus({ preventScroll: true });
     $('#review-step-count').textContent = steps.length + ' 次行动';
     $('#review-empty').hidden = !!decision;
     $('#review-detail').hidden = !decision;
