@@ -89,7 +89,6 @@
   position: relative;
   margin-bottom: -8px;
   z-index: -1;
-  transform: rotate(-6deg);
 }
 .card-back {
   width: 29px;
@@ -101,8 +100,14 @@
   border: 2px solid #7da8ad;
   box-shadow: 0 2px 5px #0005;
 }
+.mini-cards > .card-back {
+  transform-origin: 50% 100%;
+}
+.mini-cards > .card-back:first-child {
+  transform: rotate(-6deg);
+}
 .mini-cards > .card-back:last-child {
-  transform: rotate(12deg);
+  transform: rotate(6deg);
 }
 .hero-back {
   width: 63px;
@@ -286,7 +291,6 @@
 }
 .seat.folded .mini-cards {
   opacity: 0.4;
-  transform: translateY(7px) rotate(-9deg);
 }
 .seat-profile,
 .mini-cards {
