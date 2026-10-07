@@ -4,6 +4,7 @@ import {
   newGame,
   startHand,
   botDecision,
+  playBotTurn,
   act,
   advanceStreet,
   legalActions,
@@ -20,6 +21,7 @@ import {
   finishBotHand,
   effectiveBotAxes,
   chooseBotAction,
+  getBotProfile,
 } from '../../src/engine/bot-profiles.js';
 const copy = (v) => JSON.parse(JSON.stringify(v));
 function seeded(seed) {
@@ -53,6 +55,33 @@ test('saved settings reject unknown profiles and malformed modes', () => {
   assert.equal(result.assignments[1], 'tan');
   assert.equal(result.assignments[2], 'balanced');
   assert.equal(Object.keys(result.assignments).length, 8);
+});
+test('all eight mixed 9-max assignments reach the executed policy with the corresponding parameter vector', () => {
+  const assignments = {
+    1: 'tan',
+    2: 'st',
+    3: 'zang',
+    4: 'peter',
+    5: 'abao',
+    6: 'viktor',
+    7: 'jungleman',
+    8: 'dwan',
+  };
+  for (let id = 1; id <= 8; id++) {
+    const g = newGame(9);
+    applyBotSettings(g, { assignments, emotionMode: 'off' });
+    startHand(g);
+    while (g.actor !== id) act(g, g.actor, 'call');
+    const chosen = playBotTurn(g, seeded(id));
+    const executed = g.botDecisions.at(-1);
+    assert.equal(executed.id, id);
+    assert.equal(executed.action, chosen.action);
+    assert.equal(executed.trace.profile, assignments[id]);
+    assert.equal(executed.trace.profileName, getBotProfile(assignments[id]).name);
+    assert.deepEqual(executed.trace.baseAxes, getBotProfile(assignments[id]).axes);
+    assert.deepEqual(executed.trace.axes, getBotProfile(assignments[id]).axes);
+    assert.equal(g.players.reduce((sum, p) => sum + p.stack, 0) + potSize(g), 45000);
+  }
 });
 test('each profile decision ignores opponent holes, future deck and eventual results', () => {
   for (const profile of BOT_PROFILES) {

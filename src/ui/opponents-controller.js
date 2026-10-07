@@ -42,7 +42,7 @@ export function createOpponentsController({ getGame, getCount, getSettings, onSa
           stats?.hands ? `${Math.round((stats[key] / stats.hands) * 100)}%` : '—';
         const mood =
           player && game.emotionMode !== 'off' ? MOOD_LABELS[player.botMood.kind] : '平稳';
-        return `<div class="opponent-row ${id >= count ? 'off-table' : ''}" data-opponent-row="${id}"><div class="opponent-row-title"><strong>${name}</strong><span>${id >= count ? '暂不在桌' : `座位 ${id}`} · ${mood}</span></div><label class="opponent-assignment-label"><span class="sr-only">${name} 的训练风格</span><select data-bot-seat="${id}">${BOT_PROFILES.map((p) => `<option value="${p.id}" ${draft.assignments[id] === p.id ? 'selected' : ''}>${p.short} · ${p.tag.split(' · ')[0]}</option>`).join('')}</select></label><p class="opponent-observed" title="本次练习的机器人已完成手数，换风格后从零累计">${stats?.hands || 0} 手 · VPIP ${ratio('vpip')} · PFR ${ratio('pfr')}</p>${player?.botMood.reason && game.emotionMode !== 'off' ? `<p class="opponent-mood-reason">${player.botMood.reason}</p>` : ''}</div>`;
+        return `<div class="opponent-row ${id >= count ? 'off-table' : ''}" data-opponent-row="${id}"><div class="opponent-row-title"><strong>${name}</strong><span>${id >= count ? '暂不在桌' : `座位 ${id}`} · ${mood}</span></div><label class="opponent-assignment-label"><span class="sr-only">${name} 的训练风格</span><select data-bot-seat="${id}">${BOT_PROFILES.map((p) => `<option value="${p.id}" ${draft.assignments[id] === p.id ? 'selected' : ''}>${p.short} · ${p.tag.split(' · ')[0]}</option>`).join('')}</select></label><p class="opponent-current-style">${player ? `本手实际风格：${getBotProfile(player.botProfile).short}` : '尚未入座，使用已保存的下手设置'}</p><p class="opponent-observed" title="本次练习的机器人已完成手数，换风格后从零累计">${stats?.hands || 0} 手 · VPIP ${ratio('vpip')} · PFR ${ratio('pfr')}</p>${player?.botMood.reason && game.emotionMode !== 'off' ? `<p class="opponent-mood-reason">${player.botMood.reason}</p>` : ''}</div>`;
       })
       .join('');
   }
@@ -105,10 +105,13 @@ export function createOpponentsController({ getGame, getCount, getSettings, onSa
         game.emotionMode !== pending.emotionMode ||
         game.players.slice(1).some((p) => p.botProfile !== pending.assignments[p.id]);
       document.querySelector('#opponents-summary').textContent = changed
-        ? '下手更新'
+        ? '下手生效'
         : named
           ? `${named} 位风格对手`
           : '自定义';
+      const note = document.querySelector('#opponents-change-note');
+      note.hidden = !changed;
+      note.textContent = '对手风格已保存，下一手生效。本手和重打使用座位上标出的当前风格。';
     },
   };
 }

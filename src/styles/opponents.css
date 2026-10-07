@@ -217,7 +217,8 @@
   font-size: 13px;
 }
 .opponent-observed,
-.opponent-mood-reason {
+.opponent-mood-reason,
+.opponent-current-style {
   margin: 9px 0 0 !important;
   font-size: 12px !important;
   line-height: 1.6 !important;
@@ -315,22 +316,17 @@
   clip-path: inset(50%);
   white-space: nowrap;
 }
-.seat .avatar[data-style-label]:not([data-style-label='']) {
-  position: relative;
-}
-.seat .avatar[data-style-label]:not([data-style-label=''])::after {
-  content: attr(data-style-label);
-  position: absolute;
-  bottom: -5px;
-  left: 50%;
-  transform: translateX(-50%);
-  padding: 0 3px;
+.seat-profile > div > span.seat-style-label {
+  display: table;
+  margin: 4px auto 0;
+  padding: 1px 5px;
   border: 1px solid #62988b;
   border-radius: 3px;
   color: #cff0e4;
   background: #1b3d35;
-  font-size: 9px;
-  line-height: 14px;
+  font-size: 12px;
+  line-height: 16px;
+  white-space: nowrap;
 }
 .seat[data-mood='frustrated'] .avatar,
 .seat[data-mood='reactive'] .avatar {

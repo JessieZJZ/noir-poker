@@ -183,4 +183,19 @@ window.qa = {
         game.players.reduce((n, p) => n + p.stack, 0) + (game.phase === 'done' ? 0 : potSize(game)),
     };
   },
+  finishWithProfiles() {
+    clearTimeout(timer);
+    while (game.phase !== 'done') {
+      if (game.phase === 'between') advanceStreet(game);
+      else if (game.actor === 0) act(game, 0, 'call');
+      else playBotTurn(game, () => 0.8);
+    }
+    render();
+    return game.botDecisions.map((r) => ({
+      id: r.id,
+      profile: r.trace.profile,
+      baseAxes: r.trace.baseAxes,
+      axes: r.trace.axes,
+    }));
+  },
 };

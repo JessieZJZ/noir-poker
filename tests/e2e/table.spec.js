@@ -374,7 +374,7 @@ test('per-seat styles apply next hand, survive resize and refresh, and freeze on
     await page.locator(`[data-bot-seat="${id}"]`).selectOption(style);
   await page.locator('#emotion-mode').selectOption('lively');
   await page.locator('#save-opponents').click();
-  await expect(page.locator('#opponents-summary')).toHaveText('下手更新');
+  await expect(page.locator('#opponents-summary')).toHaveText('下手生效');
   expect((await page.evaluate(() => window.noir.getState())).players[1].botProfile).toBe(
     'balanced',
   );
@@ -406,6 +406,70 @@ test('per-seat styles apply next hand, survive resize and refresh, and freeze on
   await page.locator('#opponents-button').click();
   await expect(page.locator('[data-bot-seat="8"]')).toHaveValue('st');
   await expect(page.locator('#opponents-dialog')).toContainText('不是真人的 VPIP');
+});
+
+test('nine-seat style assignment shows every persona at all sizes and executes the selected policies', async ({
+  page,
+}) => {
+  const assignments = {
+    1: 'tan',
+    2: 'st',
+    3: 'zang',
+    4: 'peter',
+    5: 'abao',
+    6: 'viktor',
+    7: 'jungleman',
+    8: 'dwan',
+  };
+  const labels = ['谈老板', 'ST 王', '臧书奴', 'Peter', '阿宝', 'Isildur1', 'Jungleman', 'durrrr'];
+  await page.evaluate(() => window.qa.foldWin(9));
+  await page.locator('#opponents-button').click();
+  await page.locator('#mix-opponents').click();
+  await page.locator('#emotion-mode').selectOption('off');
+  await expect(page.locator('[data-opponent-row="8"] .opponent-current-style')).toHaveText(
+    '本手实际风格：均衡',
+  );
+  await page.locator('#save-opponents').click();
+  await expect(page.locator('#opponents-change-note')).toBeVisible();
+  await expect(page.locator('.seat-8 .seat-style-label')).toHaveText('均衡');
+  await page.locator('#next-button').click();
+  await page.evaluate(() => window.qa.stop());
+  await expect(page.locator('#opponents-change-note')).toBeHidden();
+  for (const width of [320, 390, 768, 1115, 1280]) {
+    await page.setViewportSize({ width, height: 900 });
+    for (let id = 1; id <= 8; id++) {
+      const label = page.locator(`.seat-${id} .seat-style-label`);
+      await expect(label).toBeVisible();
+      await expect(label).toHaveText(labels[id - 1]);
+      await expect(label).toHaveAttribute('data-style-profile', assignments[id]);
+      const fits = await label.evaluate((el) => {
+        const r = el.getBoundingClientRect();
+        return r.left >= 0 && r.right <= innerWidth && el.scrollWidth <= el.clientWidth + 1;
+      });
+      expect(fits).toBe(true);
+    }
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
+      true,
+    );
+  }
+  const traces = await page.evaluate(() => window.qa.finishWithProfiles());
+  const catalog = await page.evaluate(
+    async () => (await import('/src/engine/bot-profiles.js')).BOT_PROFILES,
+  );
+  for (let id = 1; id <= 8; id++) {
+    const actions = traces.filter((r) => r.id === id);
+    expect(actions.length).toBeGreaterThan(0);
+    for (const action of actions) {
+      expect(action.profile).toBe(assignments[id]);
+      const axes = catalog.find((p) => p.id === assignments[id]).axes;
+      expect(action.baseAxes).toEqual(axes);
+      expect(action.axes).toEqual(axes);
+    }
+  }
+  await page.locator('#restart-hand-button').click();
+  await page.evaluate(() => window.qa.stop());
+  for (let id = 1; id <= 8; id++)
+    await expect(page.locator(`.seat-${id} .seat-style-label`)).toHaveText(labels[id - 1]);
 });
 
 test('configured bots use the fast-deal path and observed samples roll back on retry', async ({
