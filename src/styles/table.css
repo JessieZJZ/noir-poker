@@ -770,11 +770,46 @@
 .activity-card {
   flex: 0 0 auto;
 }
-.activity-list {
+.activity-card .activity-list {
+  display: block;
   max-height: none;
   overflow: visible;
-  /* Chronological DOM order reads across each row before moving down. */
-  grid-auto-flow: row;
+  column-count: 1;
+  column-gap: 20px;
+  column-fill: balance;
+}
+.activity-list li {
+  padding: 0 0 14px 30px;
+  border-left: 0;
+  break-inside: avoid-column;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.activity-list li:before {
+  content: attr(value) '.';
+  top: 1px;
+  left: 0;
+  width: 22px;
+  height: auto;
+  background: none;
+  border-radius: 0;
+  font-size: 11px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: currentColor;
+  opacity: 0.65;
+}
+.activity-persona {
+  color: inherit;
+  opacity: 0.75;
+}
+.activity-list .activity-empty:before {
+  content: none;
+}
+@media (max-width: 900px) and (min-width: 361px) {
+  .activity-card .activity-list {
+    column-count: 2;
+  }
 }
 
 .seat-peek[aria-pressed='true'] {

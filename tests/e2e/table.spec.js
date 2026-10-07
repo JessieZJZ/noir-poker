@@ -608,7 +608,7 @@ test('review completes through real worker with facts and a conditional follow-u
   await expect(page.locator('#review-reason')).not.toBeEmpty();
 });
 
-test('activity follows chronological row order at every breakpoint and naturally expands', async ({
+test('activity follows chronological column order at every breakpoint and naturally expands', async ({
   page,
 }) => {
   for (const width of [320, 360, 390, 600, 768, 900, 901, 1280]) {
@@ -627,7 +627,7 @@ test('activity follows chronological row order at every breakpoint and naturally
           return { index, top: rect.top, left: rect.left };
         });
         const readingOrder = rects
-          .sort((a, b) => (Math.abs(a.top - b.top) > 1 ? a.top - b.top : a.left - b.left))
+          .sort((a, b) => (Math.abs(a.left - b.left) > 1 ? a.left - b.left : a.top - b.top))
           .map((rect) => rect.index);
         const milestones = [
           texts.findIndex((text) => /^第 \d+ 手开始/.test(text)),
@@ -652,6 +652,7 @@ test('activity follows chronological row order at every breakpoint and naturally
           width: innerWidth,
           scrollWidth: document.documentElement.scrollWidth,
           logCount: list.children.length,
+          numbers: items.map((item) => item.value),
           actualLogs: window.qa.state().totalLogs,
           texts,
           milestones,
@@ -665,6 +666,7 @@ test('activity follows chronological row order at every breakpoint and naturally
       });
       expect(layout.scrollWidth).toBeLessThanOrEqual(layout.width);
       expect(layout.logCount).toBe(layout.actualLogs);
+      expect(layout.numbers).toEqual(Array.from({ length: layout.logCount }, (_, i) => i + 1));
       expect(layout.milestones[0]).toBe(0);
       for (let i = 1; i < layout.milestones.length; i++)
         expect(layout.milestones[i]).toBeGreaterThan(layout.milestones[i - 1]);
@@ -677,6 +679,84 @@ test('activity follows chronological row order at every breakpoint and naturally
       await expect(page.locator('#activity-list li')).toHaveText(layout.texts);
     }
   }
+});
+
+test('activity shows actual assigned personas across actions and results without changing pending hand identities', async ({
+  page,
+}) => {
+  await page.evaluate(() => window.qa.stop());
+  await page.locator('#opponents-button').click();
+  for (const [id, profile] of Object.entries({
+    1: 'viktor',
+    2: 'st',
+    3: 'jungleman',
+    4: 'dwan',
+  }))
+    await page.locator(`[data-bot-seat="${id}"]`).selectOption(profile);
+  await page.locator('#save-opponents').click();
+
+  for (const count of [6, 9]) {
+    await page.evaluate((n) => {
+      window.qa.river(n);
+      window.qa.finish();
+    }, count);
+    const list = page.locator('#activity-list');
+    await expect(list.locator('.log-blind')).toHaveText(
+      'Mia（Viktor Blom） 小盲 25 · Alex（ST 王） 大盲 50',
+    );
+    for (const label of [
+      'Mia（Viktor Blom）',
+      'Alex（ST 王）',
+      'River（Daniel Cates）',
+      'Kai（Tom Dwan）',
+    ])
+      await expect(list).toContainText(label);
+    await expect(list).not.toContainText('Luna（');
+    await expect(list).not.toContainText('你（');
+    expect(
+      await list.locator('li').evaluateAll((items) => items.map((item) => item.value)),
+    ).toEqual(Array.from({ length: await list.locator('li').count() }, (_, i) => i + 1));
+    const layout = await list.evaluate((el) => {
+      const rects = [...el.children].map((item, index) => {
+        const rect = item.getBoundingClientRect();
+        return { index, left: rect.left, top: rect.top, fragments: item.getClientRects().length };
+      });
+      return {
+        readingOrder: rects
+          .sort((a, b) => (Math.abs(a.left - b.left) > 1 ? a.left - b.left : a.top - b.top))
+          .map((item) => item.index),
+        fragments: rects.map((item) => item.fragments),
+        width: innerWidth,
+        scrollWidth: document.documentElement.scrollWidth,
+      };
+    });
+    expect(layout.readingOrder).toEqual(
+      Array.from({ length: layout.fragments.length }, (_, i) => i),
+    );
+    expect(layout.fragments.every((count) => count === 1)).toBe(true);
+    expect(layout.scrollWidth).toBeLessThanOrEqual(layout.width);
+  }
+
+  await page.evaluate(() => window.qa.foldPotRefund());
+  await expect(page.locator('#activity-list .log-result').last()).toContainText(
+    'Alex（ST 王） 获胜',
+  );
+  await expect(page.locator('#activity-list')).toContainText('Alex（ST 王） 未被跟注的 75');
+  await expect(page.locator('#result-banner')).toContainText('Alex 获胜');
+  await page.locator('#opponents-button').click();
+  await page.locator('[data-bot-seat="2"]').selectOption('abao');
+  await page.locator('#save-opponents').click();
+  await page.locator('.seat-2 .seat-peek').click();
+  await expect(page.locator('#activity-list')).toContainText('Alex（ST 王） 获胜');
+  await expect(page.locator('#activity-list')).not.toContainText('Alex（阿宝）');
+
+  await page.locator('#next-button').click();
+  await page.evaluate(() => {
+    window.qa.stop();
+    window.qa.foldRest();
+  });
+  await expect(page.locator('#activity-list')).toContainText('Alex（阿宝）');
+  await expect(page.locator('#activity-list')).not.toContainText('Alex（ST 王）');
 });
 
 test('reset cancels queued continuation and table size applies on next deal', async ({ page }) => {

@@ -268,7 +268,6 @@ function nextIndex(g, start, list) {
 }
 function log(g, text, player = null, type = 'action') {
   g.logs.unshift({ text, player, type, street: g.street });
-  g.logs = g.logs.slice(0, 70);
 }
 function pay(p, amount) {
   const n = Math.min(p.stack, amount);

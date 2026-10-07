@@ -23,6 +23,7 @@ import { loadTablePreferences, saveTablePreferences } from './preferences.js';
 import { createReviewController } from './review-controller.js';
 import { renderCard } from './cards.js';
 import { createShowdownController } from './showdown.js';
+import { createActivityFormatter } from './activity.js';
 const $ = (s) => document.querySelector(s);
 const handReview = createReviewController({ card });
 const showdown = createShowdownController({ card });
@@ -305,10 +306,14 @@ function render() {
   $('#stat-winrate').textContent = game.stats.hands
     ? Math.round((game.stats.wins / game.stats.hands) * 100) + '%'
     : '—';
+  const activityText = createActivityFormatter(game.players);
   $('#activity-list').innerHTML = game.logs
     .slice()
     .reverse()
-    .map((l) => `<li class="log-${l.type} ${l.player === 0 ? 'log-hero' : ''}">${l.text}</li>`)
+    .map(
+      (l, i) =>
+        `<li value="${i + 1}" class="log-${l.type} ${l.player === 0 ? 'log-hero' : ''}">${activityText(l.text)}</li>`,
+    )
     .join('');
   $('#activity-count').textContent = game.phase === 'done' ? 'FINISHED' : 'LIVE';
   const done = game.phase === 'done';

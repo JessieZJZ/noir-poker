@@ -432,9 +432,6 @@
 .activity-list .log-street {
   color: #cfdee2;
 }
-.log-street:before {
-  background: #8bb8b2 !important;
-}
 .decision-strip {
   font-size: 14px;
 }
