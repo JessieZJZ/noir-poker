@@ -378,16 +378,93 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
             ? 0.95
             : 0.75;
   const raises = view.history.filter((a) => a.street === view.street && a.action === 'raise');
-  let range = (0.16 + width * 0.42) * positionScale * (view.count >= 8 ? 0.9 : 1);
+  const baseRange = (0.16 + width * 0.42) * positionScale * (view.count >= 8 ? 0.9 : 1);
+  let range = baseRange;
   if (raises.length) range *= raises.length === 1 ? 0.68 : 0.42;
   if (view.position === 'BB' && legal.toCall <= 50) range += 0.1;
   const openingRange = range;
+  const preflopHistory = view.history.filter((a) => a.street === 0);
+  const firstOpen = preflopHistory.findIndex((a) => a.action === 'raise');
+  const callers = (history) =>
+    new Set(
+      history
+        .filter(
+          (a) =>
+            a.action === 'call' &&
+            a.amount > 0 &&
+            a.id !== view.id &&
+            a.id !== preflopHistory[firstOpen]?.id &&
+            view.opponents?.some((p) => p.id === a.id),
+        )
+        .map((a) => a.id),
+    ).size;
+  const limpers = callers(preflopHistory.slice(0, firstOpen < 0 ? undefined : firstOpen));
+  const openCallers = firstOpen < 0 ? 0 : callers(preflopHistory.slice(firstOpen + 1));
+  const [high, low] = view.hole.map((c) => c.rank).sort((a, b) => b - a);
+  const suited = view.hole[0].suit === view.hole[1].suit;
+  const pair = high === low;
+  const speculative = pair || (suited && (high === 14 || (high - low <= 2 && low >= 5)));
+  const suitedHigh = suited && high >= 11 && low >= 7;
+  const lastRaiser = view.opponents?.find((p) => p.id === raises.at(-1)?.id);
+  const effectiveBehind = Math.max(
+    0,
+    Math.min(view.stack - legal.callAmount, lastRaiser?.stack ?? 0),
+  );
+  const lowCommitment = pressure <= 0.08 && legal.callAmount < view.stack;
+  const allInPressure = view.opponents?.some((p) => p.allin) || false;
   const cheapEntry =
-    view.street === 0 && !raises.length && view.currentBet <= 50 && legal.toCall <= 50;
-  if (cheapEntry) range = Math.min(0.95, range + 0.08 + width * 0.16);
+    view.street === 0 &&
+    !raises.length &&
+    view.currentBet <= 50 &&
+    legal.toCall <= 50 &&
+    lowCommitment &&
+    !allInPressure;
+  // Small single opens are a different price from 3-bets and shoves. This
+  // bounded calling branch does not compare an all-players showdown estimate
+  // with today's price before anyone behind has actually entered the pot.
+  const affordableOpen =
+    view.street === 0 &&
+    Boolean(lastRaiser) &&
+    raises.length === 1 &&
+    raises[0].id !== view.id &&
+    legal.toCall > 0 &&
+    view.currentBet <= 200 &&
+    legal.callAmount <= 200 &&
+    lowCommitment &&
+    !allInPressure &&
+    effectiveBehind >= Math.max(1000, legal.callAmount * 15);
+  if (cheapEntry)
+    range += 0.14 + width * 0.2 + (speculative || suitedHigh ? Math.min(2, limpers) * 0.04 : 0);
+  if (affordableOpen) {
+    const priceScale = Math.max(0.65, 1.1 - (view.currentBet / 50) * 0.08);
+    const playability = speculative ? 0.09 : suitedHigh ? 0.07 : 0;
+    const callerBonus = speculative || suitedHigh ? Math.min(2, openCallers) * 0.04 : 0;
+    const blindDiscount = view.position === 'BB' ? 0.08 : 0;
+    const dominatedAce = !suited && high === 14 && low <= 8 ? 0.08 : 0;
+    range =
+      baseRange * priceScale +
+      0.12 +
+      width * 0.18 +
+      playability +
+      callerBonus +
+      blindDiscount -
+      dominatedAce;
+  }
+  range = Math.min(0.95, range);
+  // Entering a pot is not automatically a reason to raise again. Separate the
+  // value re-raising candidates so ordinary calls do not start a raise cascade.
+  const raiseRange = raises.length
+    ? Math.min(
+        openingRange,
+        (0.035 + width * 0.085) *
+          (raises.length === 1 ? 1 : 0.58) *
+          (['BTN', 'CO'].includes(view.position) ? 1.15 : 1),
+      )
+    : openingRange;
   const premium = percentile < 0.07,
     admitted = percentile <= range,
     openingAdmitted = percentile <= openingRange,
+    affordableRangePassed = (cheapEntry || affordableOpen) && admitted,
     callTolerance = (callDown - 0.5) * 0.1;
   let sizing = null,
     value = false,
@@ -414,8 +491,12 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
       percentile,
       range,
       openingRange,
+      raiseRange,
       cheapEntry,
       cheapRangePassed: cheapEntry && admitted,
+      affordableOpen,
+      affordableRangePassed,
+      entryContext: { limpers, openCallers, effectiveBehind, speculative, suitedHigh },
       premium,
       admitted,
       callTolerance,
@@ -435,7 +516,7 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
         return finish('fold', 'outside-range');
       exceptions.push('outside-range');
     }
-    if ((!premium || view.street > 0) && !(cheapEntry && admitted)) {
+    if ((!premium || view.street > 0) && !affordableRangePassed) {
       if (equity + callTolerance < odds + 0.02) {
         if (roll('insufficient-equity', 0.03 + callDown * 0.1) > 0.03 + callDown * 0.1)
           return finish('fold', 'insufficient-equity');
@@ -457,9 +538,11 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
           ? 'loose-exception'
           : cheapEntry && admitted
             ? 'affordable-entry'
-            : premium && view.street === 0
-              ? 'premium-continue'
-              : 'price-continue',
+            : affordableOpen && admitted
+              ? 'affordable-open'
+              : premium && view.street === 0
+                ? 'premium-continue'
+                : 'price-continue',
     );
   const headsUp = view.rivals === 1,
     features = view.features;
@@ -482,7 +565,7 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
       (0.015 + bluff * 0.17) * (headsUp ? 1 : 0.2);
   value =
     view.street === 0
-      ? premium || openingAdmitted
+      ? premium || percentile <= raiseRange
       : !view.playsBoard &&
         (equity > (headsUp ? 0.53 : 1 / (view.rivals + 1) + 0.23) ||
           (features.overpair && equity > 0.4));
@@ -549,8 +632,10 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
         ? 'loose-exception'
         : cheapEntry && admitted
           ? 'affordable-entry'
-          : premium && view.street === 0
-            ? 'premium-continue'
-            : 'price-continue',
+          : affordableOpen && admitted
+            ? 'affordable-open'
+            : premium && view.street === 0
+              ? 'premium-continue'
+              : 'price-continue',
   );
 }

@@ -13,7 +13,8 @@ export function botThinkingTime(decision, random = Math.random) {
     lastRaiser = raises.at(-1)?.id;
   const roll = () => clamp(random());
   const priceCloseness =
-    legal.toCall > 0 && !(v.street === 0 && t.cheapEntry && t.admitted)
+    legal.toCall > 0 &&
+    !(v.street === 0 && (t.affordableRangePassed ?? (t.cheapEntry && t.admitted)))
       ? clamp(1 - Math.abs(t.equity + t.callTolerance - t.odds - 0.02) / 0.16)
       : 0;
   const rangeCloseness = v.street === 0 ? clamp(1 - Math.abs(t.percentile - t.range) / 0.15) : 0;

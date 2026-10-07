@@ -58,7 +58,7 @@ tests/
   unit/                     德州规则、边池、同手重打、复盘边界
   e2e/                      浏览器操作与响应式布局
   fixtures/                 仅测试服务注入的可控牌局
-scripts/measure-bots.mjs      固定牌序下的入池率与进攻率测量
+scripts/measure-bots.mjs      固定牌序下的入池率、进攻率与翻牌人数测量
 docs/                       架构、规则、复盘依据与发布说明
 .openai/hosting.json          原 Sites 项目关联与部署入口
 ```
@@ -94,6 +94,6 @@ docs/                       架构、规则、复盘依据与发布说明
 
 ## 策略测量
 
-`npm run measure:bots -- --hands=250 --players=6 --profile=balanced` 在固定牌序、每手 100 BB、无情绪条件下测量当前模拟策略的 VPIP/PFR。可将 profile 改为 `viktor`、`jungleman`、`dwan` 等。玩家使用当前均衡策略，因此结果是该完整模拟环境的表现，不能当作真人频率。
+`npm run measure:bots -- --hands=250 --players=6 --profile=balanced` 在固定牌序、每手 100 BB、无情绪条件下测量当前模拟策略的 VPIP/PFR、真实翻牌人数分布、三人以上翻牌比例及翻前再加注局数。可将 profile 改为 `viktor`、`jungleman`、`dwan` 等，或增加 `--seed=9182 --deck-seed=123` 切换可重现的随机样本。玩家使用当前均衡策略，因此结果是该完整模拟环境的表现，不能当作真人频率；策略及调整前后实测见 [机器人风格与情绪模拟](docs/bots.md)。
 
 复盘比较不同合法行动，抽样未知牌后由同一规则引擎完整结算，并展示范围与抽样不确定性。对手解释独立读取执行记录；不会将真实对手底牌或后来牌序用于评价你的决策。
