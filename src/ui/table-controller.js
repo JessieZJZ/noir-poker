@@ -19,6 +19,7 @@ import {
 import { raiseCaption } from '../engine/action-labels.js';
 import { getBotProfile, MOOD_LABELS } from '../engine/bot-profiles.js';
 import { loadBotSettings, createOpponentsController } from './opponents-controller.js';
+import { loadTablePreferences, saveTablePreferences } from './preferences.js';
 import { createReviewController } from './review-controller.js';
 import { renderCard } from './cards.js';
 import { createShowdownController } from './showdown.js';
@@ -33,8 +34,9 @@ function isSeatHandVisible(player) {
   }
   return (game.showdown || game.revealed) && !player.folded;
 }
-let requestedCount = 6;
-let game = newGame(),
+const tablePreferences = loadTablePreferences();
+let requestedCount = tablePreferences.playerCount;
+let game = newGame(requestedCount),
   timer = null,
   epoch = 0,
   lastBoard = 0,
@@ -44,6 +46,8 @@ let game = newGame(),
   hints = true,
   sound = false,
   audio = null;
+game.difficulty = tablePreferences.difficulty;
+$('#player-count').value = String(requestedCount);
 try {
   sound = localStorage.getItem('noir-sound') === 'true';
   hints = localStorage.getItem('noir-hints') !== 'false';
@@ -624,7 +628,10 @@ document.querySelectorAll('[data-preset]').forEach(
     }),
 );
 $('#player-count').onchange = (e) => {
-  requestedCount = Number(e.target.value);
+  const count = Number(e.target.value);
+  if (!Number.isInteger(count) || count < 5 || count > 9) return;
+  requestedCount = count;
+  saveTablePreferences({ playerCount: requestedCount, difficulty: game.difficulty });
   const note = $('#table-change-note');
   note.hidden = requestedCount === game.players.length;
   note.textContent = `下一手切换为 ${requestedCount} 人桌 · 筹码恢复 5,000，统计重新开始`;
@@ -653,8 +660,10 @@ $('#difficulty').onchange = (e) => {
   if (
     e.target.matches('input[name="difficulty"]') &&
     ['easy', 'normal', 'hard'].includes(e.target.value)
-  )
+  ) {
     game.difficulty = e.target.value;
+    saveTablePreferences({ playerCount: requestedCount, difficulty: game.difficulty });
+  }
 };
 function updateSound() {
   const b = $('#sound-button');

@@ -364,6 +364,88 @@ test('reset cancels queued continuation and table size applies on next deal', as
   await expect(page.getByLabel('进阶', { exact: true })).toBeChecked();
 });
 
+test('first visit presents balanced opponents and safe defaults', async ({ page }) => {
+  await expect(page.locator('#player-count')).toHaveValue('6');
+  await expect(page.getByLabel('标准', { exact: true })).toBeChecked();
+  await expect(page.locator('#opponents-summary')).toHaveText('均衡');
+  await expect(page.locator('.seat-style-label')).toHaveText(Array(5).fill('均衡'));
+  await expect(page.locator('#hint-toggle')).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator('#sound-button')).toHaveAttribute('aria-pressed', 'false');
+  await page.locator('#opponents-button').click();
+  await expect(page.locator('[data-profile-preview="balanced"]')).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  );
+  await expect(page.locator('[data-bot-seat]')).toHaveCount(8);
+  for (let id = 1; id <= 8; id++)
+    await expect(page.locator(`[data-bot-seat="${id}"]`)).toHaveValue('balanced');
+  await expect(page.locator('#emotion-mode')).toHaveValue('subtle');
+  await page.locator('#opponents-dialog .close-dialog').click();
+
+  await page.evaluate(() => localStorage.setItem('noir-table-v1', '{broken'));
+  await page.reload();
+  await page.waitForFunction(() => !!window.qa);
+  await expect(page.locator('#player-count')).toHaveValue('6');
+  await expect(page.getByLabel('标准', { exact: true })).toBeChecked();
+  expect((await page.evaluate(() => window.noir.getState())).playerCount).toBe(6);
+});
+
+test('returning restores all saved options before the first fresh hand, including pending choices', async ({
+  page,
+}) => {
+  await page.locator('#player-count').selectOption('9');
+  await page
+    .locator('.difficulty-option')
+    .filter({ has: page.locator('input[value="hard"]') })
+    .click();
+  await page.locator('#hint-toggle').click();
+  await page.locator('#sound-button').click();
+  await page.locator('#opponents-button').click();
+  await page.locator('#mix-opponents').click();
+  await page.locator('#emotion-mode').selectOption('lively');
+  await page.locator('#save-opponents').click();
+  const previous = await page.evaluate(() => window.noir.getState());
+  expect(previous.playerCount).toBe(6);
+  expect(previous.players[1].botProfile).toBe('balanced');
+  await expect(page.locator('#opponents-summary')).toHaveText('下手生效');
+
+  await page.goto('about:blank');
+  await page.goto('/');
+  await page.waitForFunction(() => !!window.qa);
+  await expect(page.locator('#player-count')).toHaveValue('9');
+  await expect(page.getByLabel('进阶', { exact: true })).toBeChecked();
+  await expect(page.locator('#hint-toggle')).toHaveAttribute('aria-pressed', 'false');
+  await expect(page.locator('#sound-button')).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator('#opponents-summary')).toHaveText('8 位风格对手');
+  await expect(page.locator('#opponents-change-note')).toBeHidden();
+  await expect(page.locator('#table-change-note')).toBeHidden();
+  await expect(page.locator('#stat-hands')).toHaveText('0');
+  const state = await page.evaluate(() => window.noir.getState());
+  expect(state.playerCount).toBe(9);
+  expect(state.emotionMode).toBe('lively');
+  expect(state.players.slice(1).map((p) => p.botProfile)).toEqual([
+    'tan',
+    'st',
+    'zang',
+    'peter',
+    'abao',
+    'viktor',
+    'jungleman',
+    'dwan',
+  ]);
+  expect(state.hand).toBe(1);
+  expect(state.board).toEqual([]);
+  expect(state.result).toBeNull();
+  for (const player of state.players) expect(player.stack + player.bet).toBe(5000);
+  expect(await page.evaluate(() => JSON.parse(localStorage.getItem('noir-table-v1')))).toEqual({
+    playerCount: 9,
+    difficulty: 'hard',
+  });
+  await page.locator('#opponents-button').click();
+  await expect(page.locator('#emotion-mode')).toHaveValue('lively');
+  await expect(page.locator('[data-bot-seat="8"]')).toHaveValue('dwan');
+});
+
 test('per-seat styles apply next hand, survive resize and refresh, and freeze on retry', async ({
   page,
 }) => {
@@ -402,6 +484,8 @@ test('per-seat styles apply next hand, survive resize and refresh, and freeze on
   }
   await page.reload();
   await page.waitForFunction(() => !!window.qa);
+  await expect(page.locator('#player-count')).toHaveValue('9');
+  expect((await page.evaluate(() => window.noir.getState())).playerCount).toBe(9);
   expect((await page.evaluate(() => window.noir.getState())).players[1].botProfile).toBe('tan');
   await page.locator('#opponents-button').click();
   await expect(page.locator('[data-bot-seat="8"]')).toHaveValue('st');

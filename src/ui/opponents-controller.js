@@ -17,7 +17,7 @@ export function loadBotSettings() {
 export function createOpponentsController({ getGame, getCount, getSettings, onSave }) {
   const dialog = document.querySelector('#opponents-dialog');
   let draft = null,
-    selected = 'tan';
+    selected = 'balanced';
   function detail() {
     const profile = getBotProfile(selected);
     document.querySelector('#profile-cards').innerHTML = BOT_PROFILES.map(
@@ -50,7 +50,7 @@ export function createOpponentsController({ getGame, getCount, getSettings, onSa
     draft = sanitizeBotSettings(getSettings());
     document.querySelector('#emotion-mode').value = draft.emotionMode;
     document.querySelector('#opponents-save-note').textContent =
-      '设置在下一手开始时生效；重打本手保留原来的对手。';
+      '保存在此浏览器，下次打开自动恢复；设置下一手生效，重打保留原来的对手。';
     detail();
     roster();
     dialog.showModal();
@@ -108,7 +108,7 @@ export function createOpponentsController({ getGame, getCount, getSettings, onSa
         ? '下手生效'
         : named
           ? `${named} 位风格对手`
-          : '自定义';
+          : '均衡';
       const note = document.querySelector('#opponents-change-note');
       note.hidden = !changed;
       note.textContent = '对手风格已保存，下一手生效。本手和重打使用座位上标出的当前风格。';
