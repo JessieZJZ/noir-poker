@@ -1,0 +1,836 @@
+/* Card faces keep vector geometry at every viewport and in every card size. */
+.playing-card {
+  background: linear-gradient(145deg, #fffdf8, #f3f5f0 58%, #e5eeec);
+  color: #223447;
+  border-color: #edf6f3;
+  box-shadow:
+    0 3px 7px #0004,
+    inset 0 0 0 1px #fff8;
+  border-radius: 7px;
+}
+.playing-card.red {
+  color: #c74760;
+}
+.card-art {
+  display: block;
+  width: 100%;
+  height: 100%;
+  font-family: 'Barlow Condensed', Arial, sans-serif;
+}
+.hero-cards {
+  gap: 10px;
+}
+.hero-cards .playing-card:first-child {
+  transform: rotate(-4deg);
+}
+.hero-cards .playing-card:last-child {
+  transform: rotate(4deg);
+}
+.playing-card.small {
+  width: 38px;
+  height: 53px;
+  border-radius: 5px;
+}
+.mini-cards.revealed-cards {
+  transform: none;
+  z-index: 1;
+  margin-bottom: 6px;
+  gap: 5px;
+}
+.mini-cards.revealed-cards .playing-card {
+  box-shadow: 0 3px 7px #0005;
+}
+.hand-rank {
+  background: #23483f;
+  color: #c6f1df;
+  border: 1px solid #5cbfa35c;
+  border-radius: 5px;
+  padding: 4px 9px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.2;
+  white-space: nowrap;
+  margin-top: 6px;
+  box-shadow: 0 3px 10px #0003;
+}
+.hand-rank.rank-winner {
+  background: #483e26;
+  color: #ffe0a0;
+  border-color: #e3bf72;
+  box-shadow: 0 0 14px #e3bf7229;
+}
+.hero-hand-rank {
+  margin-top: 9px;
+  font-size: 14px;
+}
+.table-settings {
+  display: flex;
+  align-items: center;
+  gap: 17px;
+}
+.table-change-note {
+  font-size: 12px;
+  color: #e3c588;
+  padding: 0 25px 14px;
+  margin: 0;
+  line-height: 1.6;
+}
+.surface-top {
+  gap: 12px;
+}
+.seat {
+  min-width: 0;
+}
+.arena {
+  height: 550px;
+}
+.hero-area {
+  top: 70%;
+}
+.arena[data-player-count='7'] {
+  height: 620px;
+}
+.arena[data-player-count='7'] .hero-area {
+  top: 73%;
+}
+.arena[data-player-count='8'],
+.arena[data-player-count='9'] {
+  height: 690px;
+}
+.arena[data-player-count='8'] .hero-area,
+.arena[data-player-count='9'] .hero-area {
+  top: 76%;
+}
+.arena[data-player-count='8'] .poker-table,
+.arena[data-player-count='9'] .poker-table {
+  inset: 56px 5% 74px;
+}
+.arena[data-player-count='8'] .table-center,
+.arena[data-player-count='9'] .table-center {
+  top: 33%;
+}
+.arena[data-player-count='8'] .result-banner,
+.arena[data-player-count='9'] .result-banner {
+  top: 33%;
+}
+.seat .seat-bet {
+  top: 100%;
+  left: auto;
+  transform: none;
+}
+.seat-action {
+  min-height: 21px;
+}
+.settled-actions {
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+  min-height: 80px;
+}
+.settled-actions .next-button {
+  margin: 0;
+  min-width: 160px;
+}
+.settled-actions .review-button {
+  margin: 0;
+}
+.showdown-stage {
+  border-top: 1px solid #445344;
+  background: radial-gradient(ellipse at 50% 100%, #7b61351f, transparent 70%), #101b22;
+  padding: 22px 25px 20px;
+}
+.showdown-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.showdown-heading .eyebrow {
+  color: #b7a57d;
+  font-size: 10px;
+  letter-spacing: 2px;
+}
+.showdown-heading p {
+  font-size: 13px;
+  margin: 7px 0 0;
+  color: #b9c8c7;
+}
+.showdown-heading button {
+  font-size: 12px;
+  color: #dfc78f;
+  border: 1px solid #6e603c;
+  border-radius: 6px;
+  padding: 7px 11px;
+  white-space: nowrap;
+}
+.showdown-scene {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 23px 0 9px;
+}
+.winning-title strong {
+  display: block;
+  font-size: 30px;
+  font-weight: 500;
+  letter-spacing: 2px;
+  color: #f4d99e;
+}
+.winning-title > span {
+  display: block;
+  font-size: 12px;
+  color: #99b3ab;
+  margin-top: 10px;
+  line-height: 1.6;
+}
+.winning-cards {
+  display: flex;
+  gap: 9px;
+  align-items: center;
+  perspective: 700px;
+  position: relative;
+  padding: 4px;
+}
+.winning-card {
+  position: relative;
+  animation: rank-arrive 0.8s cubic-bezier(0.18, 0.7, 0.25, 1) both;
+  animation-delay: calc(var(--i) * 80ms);
+}
+.winning-card .playing-card {
+  width: 49px;
+  height: 71px;
+}
+.winning-card.rank-match .playing-card {
+  outline: 1px solid #dfc285;
+  outline-offset: 2px;
+  box-shadow:
+    0 0 16px #cfad6525,
+    0 6px 14px #0005;
+}
+.winning-card.kicker {
+  opacity: 0.7;
+}
+.showdown-choices {
+  display: flex;
+  gap: 7px;
+  overflow-x: auto;
+  padding: 12px 0 2px;
+  scrollbar-width: thin;
+}
+.showdown-choices:empty {
+  display: none;
+}
+.showdown-choices button {
+  flex-shrink: 0;
+  text-align: left;
+  font-size: 11px;
+  line-height: 1.7;
+  padding: 7px 11px;
+  border: 1px solid #33413e;
+  border-radius: 7px;
+  background: #1a272b;
+  color: #a2bcb3;
+}
+.showdown-choices button span {
+  display: block;
+  font-size: 12px;
+  color: #e4d3ab;
+}
+.showdown-choices button[aria-pressed='true'] {
+  border-color: #c8a95d;
+  background: #453a222f;
+  color: #f4dcaa;
+}
+.motion-high .rank-match {
+  animation: high-spotlight 1.7s ease-out both;
+}
+.motion-pair .rank-match {
+  animation: pair-heartbeat 1.5s ease-out both;
+  animation-delay: calc(var(--i) * 60ms);
+}
+.motion-two-pair .rank-match {
+  animation: two-pair-join 1.6s ease-out both;
+  animation-delay: calc(var(--i) * 90ms);
+}
+.motion-trips .rank-match {
+  animation: trips-rise 1.6s ease-out both;
+  animation-delay: calc(var(--i) * 150ms);
+}
+.motion-straight .winning-card {
+  animation: straight-step 1.6s ease-out both;
+  animation-delay: calc(var(--i) * 140ms);
+}
+.motion-flush .winning-card {
+  animation: flush-wave 1.8s ease-in-out both;
+  animation-delay: calc(var(--i) * 100ms);
+}
+.motion-full-house .winning-card {
+  animation: house-lock 1.8s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  animation-delay: calc(var(--i) * 80ms);
+}
+.motion-quads .rank-match {
+  animation: quads-impact 1.8s ease-out both;
+  animation-delay: calc(var(--i) * 60ms);
+}
+.motion-straight-flush .winning-card {
+  animation: straight-flush-arc 1.9s ease-out both;
+  animation-delay: calc(var(--i) * 100ms);
+}
+.motion-royal .winning-card {
+  animation: royal-fan 2s ease-out both;
+  animation-delay: calc(var(--i) * 60ms);
+}
+@keyframes rank-arrive {
+  from {
+    opacity: 0;
+    transform: translateY(18px) rotateY(45deg);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes high-spotlight {
+  0% {
+    transform: scale(0.7);
+    filter: brightness(0.6);
+  }
+  40% {
+    transform: translateY(-10px) scale(1.12);
+    filter: brightness(1.12);
+  }
+  100% {
+    transform: translateY(-5px);
+  }
+}
+@keyframes pair-heartbeat {
+  0% {
+    transform: translateY(14px);
+    opacity: 0;
+  }
+  30%,
+  65% {
+    transform: scale(1.08) translateY(-4px);
+  }
+  45%,
+  100% {
+    transform: none;
+    opacity: 1;
+  }
+}
+@keyframes two-pair-join {
+  0% {
+    transform: translateX(calc((1.5 - var(--i)) * 14px)) rotate(calc((var(--i) - 1.5) * 8deg));
+    opacity: 0;
+  }
+  55% {
+    transform: translateY(-7px);
+  }
+  100% {
+    transform: none;
+    opacity: 1;
+  }
+}
+@keyframes trips-rise {
+  0% {
+    transform: translateY(24px);
+    opacity: 0;
+  }
+  45% {
+    transform: translateY(-12px);
+  }
+  70% {
+    transform: translateY(3px);
+  }
+  100% {
+    transform: none;
+    opacity: 1;
+  }
+}
+@keyframes straight-step {
+  0% {
+    transform: translateY(20px) rotateY(90deg);
+    opacity: 0;
+  }
+  50% {
+    transform: translateY(-7px) rotateY(0);
+    opacity: 1;
+  }
+  100% {
+    transform: none;
+  }
+}
+@keyframes flush-wave {
+  0% {
+    transform: rotate(-8deg) translateY(10px);
+    opacity: 0;
+  }
+  35% {
+    transform: rotate(5deg) translateY(-10px);
+    filter: brightness(1.12);
+  }
+  70% {
+    transform: rotate(-2deg) translateY(4px);
+  }
+  100% {
+    transform: none;
+    opacity: 1;
+  }
+}
+@keyframes house-lock {
+  0% {
+    transform: translateX(calc((var(--i) - 2) * 20px)) translateY(14px);
+    opacity: 0;
+  }
+  50% {
+    transform: translateX(calc((2 - var(--i)) * 3px)) translateY(-4px);
+  }
+  100% {
+    transform: none;
+    opacity: 1;
+  }
+}
+@keyframes quads-impact {
+  0% {
+    transform: scale(0.6);
+    opacity: 0;
+  }
+  25% {
+    transform: scale(1.14);
+    filter: brightness(1.16);
+  }
+  45% {
+    transform: scale(0.96);
+  }
+  65% {
+    transform: scale(1.04);
+  }
+  100% {
+    transform: none;
+    opacity: 1;
+  }
+}
+@keyframes straight-flush-arc {
+  0% {
+    transform: translateY(28px) rotateY(100deg);
+    opacity: 0;
+  }
+  40% {
+    transform: translateY(calc((var(--i) - 2) * (var(--i) - 2) * -3px - 7px));
+    filter: brightness(1.15);
+    opacity: 1;
+  }
+  100% {
+    transform: none;
+  }
+}
+@keyframes royal-fan {
+  0% {
+    transform: translateX(calc((2 - var(--i)) * 40px)) rotate(calc((var(--i) - 2) * 14deg));
+    opacity: 0;
+  }
+  50% {
+    transform: translateY(-10px) rotate(calc((var(--i) - 2) * 5deg));
+    filter: brightness(1.14);
+    opacity: 1;
+  }
+  100% {
+    transform: rotate(calc((var(--i) - 2) * 2deg));
+  }
+}
+.hands-dialog {
+  width: min(740px, calc(100% - 24px));
+  max-height: 90dvh;
+  overflow-y: auto;
+}
+.hands-note {
+  font-size: 12px;
+  line-height: 1.7;
+}
+.hands-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.hands-player {
+  border: 1px solid #32483f;
+  border-radius: 10px;
+  background: #13272055;
+  padding: 17px;
+}
+.hands-winner {
+  border-color: #c0a25e;
+  background: #4c3f2022;
+}
+.hands-player-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.hands-player-heading strong {
+  font-size: 14px;
+  font-weight: 500;
+}
+.hands-player-heading > span {
+  font-size: 11px;
+  color: #a3b8ac;
+}
+.hands-cards {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin: 19px 0 14px;
+}
+.hands-cards .playing-card {
+  width: 59px;
+  height: 85px;
+}
+.hands-player > .hand-rank {
+  width: fit-content;
+  margin: 0 auto;
+}
+@media (max-width: 1150px) and (min-width: 901px) {
+  .arena[data-player-count='7'] .avatar,
+  .arena[data-player-count='8'] .avatar,
+  .arena[data-player-count='9'] .avatar {
+    display: none;
+  }
+  .arena[data-player-count='7'] .seat-profile,
+  .arena[data-player-count='8'] .seat-profile,
+  .arena[data-player-count='9'] .seat-profile {
+    min-width: 88px;
+    justify-content: center;
+  }
+  .showdown-scene {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .winning-cards {
+    align-self: center;
+  }
+}
+@media (max-width: 600px) {
+  .surface-top {
+    flex-wrap: wrap;
+    gap: 12px;
+    padding: 16px 14px;
+  }
+  .table-settings {
+    gap: 12px;
+    margin-left: auto;
+  }
+  .difficulty-label {
+    gap: 5px;
+    font-size: 11px;
+  }
+  .table-change-note {
+    padding: 0 14px 12px;
+    font-size: 11px;
+  }
+  .arena {
+    height: 490px;
+  }
+  .arena[data-player-count='7'] {
+    height: 620px;
+  }
+  .arena[data-player-count='7'] .hero-area {
+    top: 77%;
+  }
+  .arena[data-player-count='8'],
+  .arena[data-player-count='9'] {
+    height: 720px;
+  }
+  .arena[data-player-count='8'] .hero-area,
+  .arena[data-player-count='9'] .hero-area {
+    top: 80%;
+  }
+  .arena[data-player-count='8'] .poker-table,
+  .arena[data-player-count='9'] .poker-table {
+    inset: 56px 1.5% 75px;
+  }
+  .arena[data-player-count='7'] .avatar,
+  .arena[data-player-count='8'] .avatar,
+  .arena[data-player-count='9'] .avatar {
+    display: none;
+  }
+  .arena[data-player-count='7'] .seat-profile,
+  .arena[data-player-count='8'] .seat-profile,
+  .arena[data-player-count='9'] .seat-profile {
+    min-width: 78px;
+    justify-content: center;
+    padding: 7px 4px;
+  }
+  .arena[data-player-count='7'] .seat-profile strong,
+  .arena[data-player-count='8'] .seat-profile strong,
+  .arena[data-player-count='9'] .seat-profile strong {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+  }
+  .arena[data-player-count='7'] .position-badge,
+  .arena[data-player-count='8'] .position-badge,
+  .arena[data-player-count='9'] .position-badge {
+    margin-left: 0;
+    font-size: 9px;
+  }
+  .arena[data-player-count='8'] .board > .playing-card,
+  .arena[data-player-count='8'] .board-slot,
+  .arena[data-player-count='9'] .board > .playing-card,
+  .arena[data-player-count='9'] .board-slot {
+    width: 37px;
+    height: 54px;
+  }
+  .arena[data-player-count='8'] .board,
+  .arena[data-player-count='9'] .board {
+    gap: 4px;
+  }
+  .playing-card.small {
+    width: 33px;
+    height: 46px;
+  }
+  .mini-cards.revealed-cards {
+    gap: 4px;
+    margin-bottom: 5px;
+  }
+  .hand-rank {
+    font-size: 11px;
+    padding: 4px 7px;
+  }
+  .hero-hand-rank {
+    font-size: 13px;
+  }
+  .hero-cards {
+    gap: 10px;
+  }
+  .hero-cards .playing-card {
+    border-radius: 6px;
+  }
+  .showdown-stage {
+    padding: 19px 14px 17px;
+  }
+  .showdown-heading p {
+    font-size: 12px;
+  }
+  .showdown-scene {
+    flex-direction: column;
+    gap: 20px;
+    padding-top: 20px;
+    align-items: center;
+  }
+  .winning-title {
+    text-align: center;
+  }
+  .winning-title strong {
+    font-size: 27px;
+  }
+  .winning-title > span {
+    margin-top: 7px;
+  }
+  .winning-cards {
+    gap: 8px;
+  }
+  .winning-card .playing-card {
+    width: 44px;
+    height: 64px;
+  }
+  .settled-actions {
+    flex-direction: row;
+    padding-top: 3px;
+    min-height: 75px;
+    gap: 10px;
+  }
+  .settled-actions .next-button {
+    width: 100%;
+    margin: 0;
+    padding: 13px;
+  }
+  .settled-actions .review-button {
+    flex: 1;
+    white-space: nowrap;
+    padding: 11px 8px;
+    font-size: 12px;
+  }
+  .hands-player {
+    padding: 13px;
+  }
+  .hands-player-heading strong {
+    font-size: 13px;
+  }
+  .hands-cards {
+    gap: 9px;
+  }
+  .hands-cards .playing-card {
+    width: 49px;
+    height: 71px;
+  }
+}
+@media (max-width: 360px) {
+  .table-settings {
+    width: 100%;
+    justify-content: space-between;
+  }
+  .arena .avatar {
+    display: none;
+  }
+  .arena .seat-profile {
+    justify-content: center;
+  }
+  .winning-cards {
+    gap: 7px;
+  }
+  .winning-card .playing-card {
+    width: 40px;
+    height: 58px;
+  }
+  .hands-grid {
+    grid-template-columns: 1fr;
+  }
+  .arena[data-player-count='8'] .board > .playing-card,
+  .arena[data-player-count='8'] .board-slot,
+  .arena[data-player-count='9'] .board > .playing-card,
+  .arena[data-player-count='9'] .board-slot {
+    width: 32px;
+    height: 47px;
+  }
+  .arena[data-player-count='8'] .seat-profile,
+  .arena[data-player-count='9'] .seat-profile {
+    min-width: 72px;
+  }
+  .arena[data-player-count='8'] .seat-profile strong,
+  .arena[data-player-count='9'] .seat-profile strong {
+    gap: 2px;
+    font-size: 11px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .winning-card {
+    animation: none !important;
+    transform: none !important;
+    opacity: 1 !important;
+  }
+}
+.card-art text {
+  fill: currentColor;
+  font-family: Manrope, Arial, sans-serif;
+}
+.hero-area {
+  top: 65%;
+}
+.arena[data-player-count='7'] .hero-area {
+  top: 68%;
+}
+.arena[data-player-count='8'] .hero-area,
+.arena[data-player-count='9'] .hero-area {
+  top: 72%;
+}
+@media (max-width: 600px) {
+  .hero-area {
+    top: 65%;
+  }
+  .arena[data-player-count='7'] .hero-area {
+    top: 72%;
+  }
+  .arena[data-player-count='8'] .hero-area,
+  .arena[data-player-count='9'] .hero-area {
+    top: 77%;
+  }
+}
+@media (max-width: 600px) {
+  .result-banner {
+    width: 36%;
+    min-width: 120px;
+    padding: 7px 5px;
+  }
+  .result-banner strong {
+    font-size: 11px;
+  }
+  .result-banner small {
+    font-size: 9px;
+    line-height: 1.5;
+  }
+  .arena[data-player-count='7'] .board,
+  .arena[data-player-count='8'] .board,
+  .arena[data-player-count='9'] .board {
+    gap: 3px;
+  }
+  .arena[data-player-count='7'] .board > .playing-card,
+  .arena[data-player-count='7'] .board-slot,
+  .arena[data-player-count='8'] .board > .playing-card,
+  .arena[data-player-count='8'] .board-slot,
+  .arena[data-player-count='9'] .board > .playing-card,
+  .arena[data-player-count='9'] .board-slot {
+    width: clamp(28px, 9vw, 37px);
+    height: clamp(41px, 13vw, 54px);
+  }
+}
+
+@media (max-width: 360px) {
+  .arena[data-player-count='7'] .seat-profile {
+    min-width: 72px;
+    padding-left: 3px;
+    padding-right: 3px;
+  }
+  .arena[data-player-count='7'] .seat-profile strong {
+    font-size: 11px;
+    gap: 2px;
+  }
+}
+@media (min-width: 601px) {
+  .result-banner {
+    min-width: 0;
+    width: 230px;
+    padding: 6px 12px;
+  }
+}
+
+.replay-label {
+  display: inline-block;
+  font-size: 11px;
+  color: #ebce92;
+  border: 1px solid #bda36855;
+  background: #5d4d272a;
+  border-radius: 4px;
+  padding: 3px 6px;
+  margin-left: 9px;
+}
+.replay-note {
+  color: #c5b58c;
+  font-size: 12px;
+  line-height: 1.6;
+  margin: 0;
+  padding: 0 25px 15px;
+}
+.restart-hand-button {
+  border-color: #82724d !important;
+  color: #e5ce98 !important;
+  background: #332d1f66 !important;
+}
+.restart-hand-button:hover {
+  background: #63502c55 !important;
+}
+@media (max-width: 600px) {
+  .replay-label {
+    font-size: 10px;
+    margin-left: 7px;
+  }
+  .replay-note {
+    font-size: 11px;
+    padding: 0 14px 14px;
+  }
+  .settled-actions #next-button,
+  .settled-actions #restart-hand-button {
+    flex: 1 1 calc(50% - 5px);
+    min-width: 0;
+    width: auto;
+    font-size: 13px;
+    padding: 13px 8px;
+  }
+  .settled-actions #show-hands-button,
+  .settled-actions #review-hand-button {
+    flex: 1 1 calc(50% - 5px);
+  }
+}

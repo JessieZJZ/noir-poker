@@ -1,0 +1,454 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>NOIR Poker · 德州扑克单机练习</title>
+    <meta
+      name="description"
+      content="无需登录的德州扑克练习桌。可选 5–9 人无限注德州扑克对战，享受流畅发牌与筹码动画。"
+    />
+    <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+  </head>
+  <body>
+    <header class="header">
+      <a class="brand" href="./" aria-label="NOIR Poker 首页"
+        ><span class="brand-mark">♠</span><span>NOIR<span class="brand-light">POKER</span></span></a
+      >
+      <div class="header-center">
+        <span class="live-dot"></span>单机练习场<span class="header-line"></span
+        ><span id="table-size-label">6 人无限注</span>
+      </div>
+      <div class="header-actions">
+        <button class="icon-button" id="sound-button" aria-label="开启音效" title="音效">
+          <svg viewBox="0 0 24 24">
+            <path d="M11 5 6 9H3v6h3l5 4V5Z" />
+            <path d="m16 9 5 6m0-6-5 6" />
+          </svg></button
+        ><button class="quiet-button" id="rules-button">玩法指南 <span>?</span></button>
+      </div>
+    </header>
+    <main class="main">
+      <section class="game-column" aria-label="德州扑克牌桌">
+        <div class="table-heading">
+          <div>
+            <span class="eyebrow">THE PRACTICE ROOM</span>
+            <h1>每一手，都是新的机会<span class="title-dot">.</span></h1>
+          </div>
+          <div class="table-meta">
+            <span class="table-tag" id="table-tag">6-MAX</span><span>盲注 <b>25 / 50</b></span>
+          </div>
+        </div>
+        <div class="game-surface">
+          <div class="surface-top">
+            <div class="hand-label">
+              第 <b id="hand-number">01</b> 手 <span>·</span> <span id="street-label">准备发牌</span
+              ><span id="replay-label" class="replay-label" hidden></span>
+            </div>
+            <div class="table-settings">
+              <label class="difficulty-label"
+                >人数<select id="player-count" aria-label="牌桌人数">
+                  <option value="5">5 人</option>
+                  <option value="6" selected>6 人</option>
+                  <option value="7">7 人</option>
+                  <option value="8">8 人</option>
+                  <option value="9">9 人</option>
+                </select></label
+              >
+              <div class="difficulty-control">
+                <span id="difficulty-label">对手难度</span>
+                <div
+                  id="difficulty"
+                  class="difficulty-options"
+                  role="radiogroup"
+                  aria-labelledby="difficulty-label"
+                >
+                  <label class="difficulty-option"
+                    ><input type="radio" name="difficulty" value="easy" /><span>轻松</span></label
+                  ><label class="difficulty-option"
+                    ><input type="radio" name="difficulty" value="normal" checked /><span
+                      >标准</span
+                    ></label
+                  ><label class="difficulty-option"
+                    ><input type="radio" name="difficulty" value="hard" /><span>进阶</span></label
+                  >
+                </div>
+              </div>
+            </div>
+          </div>
+          <p id="table-change-note" class="table-change-note" role="status" hidden></p>
+          <p id="replay-note" class="replay-note" role="status" hidden>
+            重打本手 · 底牌与发牌顺序不变，原结算已撤回。
+          </p>
+          <div class="arena" id="arena">
+            <div class="poker-table">
+              <div class="table-inner">
+                <div class="table-watermark">N O I R <span>POKER CLUB</span></div>
+              </div>
+            </div>
+            <div class="seats" id="seats"></div>
+            <div class="table-center">
+              <div class="pot">
+                <button
+                  id="pot-details-button"
+                  class="pot-details-trigger"
+                  aria-label="查看底池明细"
+                  aria-haspopup="dialog"
+                  aria-controls="pot-dialog"
+                >
+                  底池 · 明细
+                </button>
+                <div><span class="chip-symbol">◉</span><strong id="pot-value">0</strong></div>
+              </div>
+              <div class="board" id="board">
+                <div class="board-slot">♠</div>
+                <div class="board-slot">♣</div>
+                <div class="board-slot">♥</div>
+                <div class="board-slot">♦</div>
+                <div class="board-slot">♠</div>
+              </div>
+              <div class="board-caption" id="board-caption">五张公共牌 · 一场好决策</div>
+            </div>
+            <div class="hero-area">
+              <div class="hero-cards" id="hero-cards"></div>
+              <div id="hero-hand-rank" class="hand-rank hero-hand-rank" hidden></div>
+              <div class="hero-name">
+                <span class="hero-avatar">YOU</span>
+                <div>
+                  <strong>你 <span id="hero-position" class="position-badge">BTN</span></strong
+                  ><span class="hero-stack" id="hero-stack">5,000</span>
+                </div>
+                <span class="hero-turn" id="hero-turn">准备就绪</span>
+              </div>
+            </div>
+          </div>
+          <button
+            id="result-banner"
+            class="result-summary"
+            aria-label="查看本手底池结算明细"
+            aria-haspopup="dialog"
+            aria-controls="pot-dialog"
+            hidden
+          ></button>
+          <section id="showdown-stage" class="showdown-stage" aria-label="摊牌牌型对比" hidden>
+            <div class="showdown-heading">
+              <div>
+                <span class="eyebrow">SHOWDOWN</span>
+                <p id="showdown-context"></p>
+              </div>
+            </div>
+            <div id="showdown-scene" class="showdown-scene" aria-live="polite"></div>
+          </section>
+          <div class="decision-strip">
+            <span class="decision-indicator"></span
+            ><span id="decision-text" role="status" aria-live="polite"
+              >牌桌已就绪，开始你的第一手。</span
+            ><span id="hand-strength" class="strength-badge">虚拟筹码</span>
+          </div>
+          <div class="action-panel" id="action-panel">
+            <div class="bet-controls">
+              <label for="bet-slider">加注至 <strong id="bet-value">150</strong></label
+              ><input
+                id="bet-slider"
+                type="range"
+                min="100"
+                max="5000"
+                value="150"
+                step="25"
+                aria-label="加注总额"
+              />
+              <div class="bet-presets">
+                <button data-preset="min">最小</button><button data-preset="half">½ 底池</button
+                ><button data-preset="pot">底池</button><button data-preset="all">全下</button>
+              </div>
+            </div>
+            <div class="action-buttons">
+              <button id="raise-button" class="action raise">
+                <span>加注至</span><strong id="raise-number">150</strong></button
+              ><button id="fold-button" class="action fold"><span>弃牌</span></button
+              ><button id="call-button" class="action call"><span>过牌</span></button>
+            </div>
+            <button
+              id="continue-deal-button"
+              class="continue-deal-button"
+              title="加速完成对手剩余行动和本手结算"
+              hidden
+            >
+              继续发牌</button
+            ><button id="next-button" class="next-button" hidden>开始第一手 <span>♠</span></button
+            ><button
+              id="restart-hand-button"
+              class="review-button restart-hand-button"
+              title="恢复本手起始筹码、底牌和发牌顺序，撤回原结算"
+              hidden
+            >
+              ↺ 重打这手牌</button
+            ><button
+              id="review-hand-button"
+              class="review-button review-end-button"
+              aria-haspopup="dialog"
+              aria-controls="review-dialog"
+              hidden
+            >
+              复盘这一手
+            </button>
+          </div>
+        </div>
+        <div class="table-footer">
+          <span><span class="live-dot"></span>本地电脑对手 · 无需登录</span
+          ><span>仅使用虚拟筹码</span><button id="reset-button">重新练习</button>
+        </div>
+      </section>
+      <aside class="sidebar">
+        <section class="session-card">
+          <div class="section-title">
+            <h2>你的练习</h2>
+            <span class="subtle-label">本次牌桌</span>
+          </div>
+          <div class="session-balance">
+            <span>当前筹码</span><strong id="session-stack">5,000<span>CHIPS</span></strong
+            ><span class="session-change" id="session-change">从这一手开始积累经验</span>
+          </div>
+          <div class="session-stats">
+            <div><strong id="stat-hands">0</strong><span>已完成</span></div>
+            <div><strong id="stat-wins">0</strong><span>获胜手数</span></div>
+            <div><strong id="stat-winrate">—</strong><span>胜率</span></div>
+          </div>
+        </section>
+        <section class="coach-card">
+          <div class="section-title">
+            <h2><span class="sparkle">✧</span> 牌桌提示</h2>
+            <button class="tiny-button" id="hint-toggle" aria-pressed="true">已开启</button>
+          </div>
+          <div id="coach-content">
+            <span class="coach-stage" id="coach-stage">起手策略</span>
+            <p id="coach-tip">
+              位置决定信息量。越靠近庄家位，越能观察对手的行动，再做出自己的选择。
+            </p>
+            <div class="coach-footer"><span class="coach-line"></span>每一手，练习一个好决策</div>
+          </div>
+        </section>
+        <section class="activity-card">
+          <div class="section-title">
+            <h2>本局动态</h2>
+            <span class="subtle-label" id="activity-count">LIVE</span>
+          </div>
+          <ol id="activity-list" class="activity-list">
+            <li class="activity-empty">发牌后，这里会记录每一步行动。</li>
+          </ol>
+        </section>
+        <div class="sidebar-footnote">
+          <span>♠</span>
+          <p>保持耐心。<br />好牌会来，好决策由你。</p>
+        </div>
+      </aside>
+    </main>
+    <dialog id="rules-dialog">
+      <div class="dialog-header">
+        <span class="eyebrow">QUICK GUIDE</span
+        ><button class="icon-button close-dialog" aria-label="关闭">×</button>
+      </div>
+      <h2>五分钟，坐上牌桌。</h2>
+      <p>
+        每人两张底牌，结合五张公共牌，选出最好的五张牌。默认 6 人桌，可选择 5–9
+        人，全部使用虚拟筹码对战。
+      </p>
+      <div class="rules-flow">
+        <span>底牌</span><i>·</i><span>翻牌 3 张</span><i>·</i><span>转牌 1 张</span><i>·</i
+        ><span>河牌 1 张</span>
+      </div>
+      <div class="rules-grid">
+        <p><b>弃牌</b>放弃本手，已下注筹码留在底池。</p>
+        <p><b>过牌 / 跟注</b>无需补筹码时过牌，否则补齐当前下注。</p>
+        <p><b>下注 / 加注</b>选择本轮累计投入的总额，至少满足最小加注。</p>
+        <p><b>全下</b>投入全部剩余筹码；筹码不等时自动计算边池。</p>
+      </div>
+      <h3>位置与行动顺序</h3>
+      <p>
+        本桌可选 5–9 人无限注德州扑克，盲注 25 / 50。庄位下一家为 SB，再下一家为
+        BB，其余位置根据人数调整；6 人桌顺时针依次为
+        BTN、SB、BB、UTG、HJ、CO；每手结束后庄位顺时针移动一席。
+      </p>
+      <p>
+        翻牌前从 BB
+        的下一家开始；若无人加注，大盲最后仍可过牌或加注。出现加注后，依次行动直到所有未弃牌、未全下的玩家跟齐且完成行动。翻牌、转牌和河牌从庄位左侧第一位未弃牌且未全下的玩家开始，顺时针行动。
+      </p>
+      <p>
+        最小下注为
+        50；加注增量至少等于本轮上一次完整下注或加注的增量。不足最小额只能全下；不足完整加注的全下不会给已经行动且未面对完整增量的玩家重新加注权。
+      </p>
+      <h3>重打同一手</h3>
+      <p>
+        本手结束后点击“重打这手牌”，保留所有人的底牌、庄位、起始筹码和后续发牌顺序，从翻牌前重新决策。原结算和本手统计会撤回，改用最新一次结果。电脑会重新响应你的选择，收益不保证增加；这是已知牌局的策略练习。
+      </p>
+      <h3>牌型从强到弱</h3>
+      <p class="rank-list">同花顺 · 四条 · 葫芦 · 同花 · 顺子 · 三条 · 两对 · 一对 · 高牌</p>
+      <p class="rules-note">
+        BTN = 庄家 · SB = 小盲 · BB = 大盲<br />从底牌与公共牌中任选五张，允许只用公共牌；牌型与踢脚相同则平分，花色不分大小。各边池独立结算，未被跟注的超额退还。<br />电脑仅根据自己的底牌和公共信息决策。提示是基础练习参考。
+      </p>
+      <button class="primary-button close-dialog">回到牌桌</button>
+    </dialog>
+    <dialog id="reset-dialog">
+      <div class="dialog-header">
+        <span class="eyebrow">FRESH START</span
+        ><button class="icon-button close-dialog" aria-label="关闭">×</button>
+      </div>
+      <h2>重新开始练习？</h2>
+      <p>本局将结束，所有玩家恢复到 5,000 筹码，练习统计归零。</p>
+      <div class="dialog-actions">
+        <button class="quiet-button close-dialog">继续练习</button
+        ><button class="primary-button" id="confirm-reset">重新开始</button>
+      </div>
+    </dialog>
+    <dialog id="pot-dialog">
+      <div class="dialog-header">
+        <span class="eyebrow">POT BREAKDOWN</span
+        ><button class="icon-button close-dialog" aria-label="关闭">×</button>
+      </div>
+      <h2 id="pot-dialog-title">底池明细</h2>
+      <p id="pot-dialog-note" class="pot-note"></p>
+      <div id="pot-dialog-content"></div>
+      <button class="primary-button close-dialog">回到牌桌</button>
+    </dialog>
+    <dialog id="hands-dialog" class="hands-dialog" aria-labelledby="hands-dialog-title">
+      <div class="dialog-header">
+        <span class="eyebrow">HOLE CARDS</span
+        ><button class="icon-button close-dialog" aria-label="关闭底牌查看">×</button>
+      </div>
+      <h2 id="hands-dialog-title">对手底牌</h2>
+      <p id="hands-note" class="hands-note"></p>
+      <div id="hands-grid" class="hands-grid"></div>
+      <button class="primary-button close-dialog">回到牌桌</button>
+    </dialog>
+    <dialog id="review-dialog" class="review-dialog" aria-labelledby="review-dialog-title">
+      <div class="dialog-header">
+        <span class="eyebrow">HAND REVIEW</span
+        ><button class="icon-button close-dialog" aria-label="关闭复盘">×</button>
+      </div>
+      <div class="review-title-row">
+        <div>
+          <h2 id="review-dialog-title">本手决策复盘</h2>
+          <p id="review-result-context"></p>
+        </div>
+        <strong id="review-result-change"></strong>
+      </div>
+      <section class="review-summary">
+        <h3 id="review-summary-title">输牌以后，先看决策</h3>
+        <p id="review-analysis-state" role="status" aria-live="polite"></p>
+        <button id="review-priority" data-review-index="0" hidden>查看优先复盘的决策</button
+        ><button id="review-retry" hidden>重新分析</button>
+      </section>
+      <div class="review-layout">
+        <nav aria-label="本手决策时间线">
+          <div class="review-timeline-title">
+            <strong>你的决策</strong><span id="review-step-count"></span>
+          </div>
+          <div id="review-timeline" class="review-timeline"></div>
+        </nav>
+        <div>
+          <p id="review-empty" class="review-empty" hidden>
+            本手没有主动决策，无法评价选择。盲注是强制投入，不会被归为操作失误。
+          </p>
+          <section id="review-detail">
+            <div class="review-detail-header">
+              <h3 id="review-detail-title"></h3>
+              <span id="review-selected-status" class="review-status pending"></span>
+            </div>
+            <div class="review-scene">
+              <div class="review-card-rows">
+                <div class="review-card-group">
+                  <span>你的底牌</span>
+                  <div id="review-hole" class="review-cards"></div>
+                </div>
+                <div class="review-card-group">
+                  <span>当时的公共牌</span>
+                  <div id="review-board" class="review-cards"></div>
+                </div>
+              </div>
+              <div class="review-scene-meta">
+                <div><span>位置</span><strong id="review-position"></strong></div>
+                <div><span>当时底池</span><strong id="review-pot"></strong></div>
+                <div><span>剩余筹码</span><strong id="review-stack"></strong></div>
+              </div>
+            </div>
+            <div class="review-comparison">
+              <div class="review-choice">
+                <span>你当时选择</span><strong id="review-your-action"></strong>
+              </div>
+              <div class="review-choice suggested">
+                <span>建议处理方式</span><strong id="review-suggestion"></strong>
+              </div>
+            </div>
+            <div class="review-explanation">
+              <h3 id="review-decision-title"></h3>
+              <p id="review-reason"></p>
+            </div>
+            <section class="review-evidence">
+              <div class="review-evidence-heading">
+                <h3>当时的关键条件</h3>
+                <span id="review-confidence"></span>
+              </div>
+              <ul id="review-evidence"></ul>
+            </section>
+            <div class="review-lesson">
+              <span>下一次练习的重点</span>
+              <div id="review-lesson"></div>
+            </div>
+            <section class="review-plan">
+              <h3>后续处理路线</h3>
+              <p id="review-plan"></p>
+            </section>
+            <div class="review-metrics">
+              <div><span>跟注需要权益</span><strong id="review-price"></strong></div>
+              <div><span>两种范围估计</span><strong id="review-equity"></strong></div>
+              <div><span>跟注后可争夺</span><strong id="review-contestable"></strong></div>
+            </div>
+            <p id="review-model-note" class="review-price-note"></p>
+            <p id="review-price-note" class="review-price-note"></p>
+            <details class="review-public-actions">
+              <summary>此前的公开行动</summary>
+              <ul id="review-public-actions"></ul>
+            </details>
+            <div class="review-step-nav">
+              <button id="review-step-prev">上一步</button><span id="review-step-current"></span
+              ><button id="review-step-next">下一步</button>
+            </div>
+          </section>
+        </div>
+      </div>
+      <p class="review-scope">按决策时的信息复盘 · 范围是假设，输赢不直接决定选择好坏。</p>
+      <details class="review-method">
+        <summary>分析依据与范围</summary>
+        <p>
+          只使用决策发生时的底牌、公共牌、公开行动和筹码。对手隐藏底牌、后续发牌和最终赢家不参与决策评价。
+        </p>
+        <p>
+          需要权益 = 有效跟注成本 ÷
+          跟注后你可争夺的底池。主池与边池按参与资格分别估计，未被跟注的退还不当作收益。
+        </p>
+        <p>
+          “两种范围估计”来自随机范围与对主动下注者偏强范围的抽样，范围假设并非对手真实牌力，也不是误差区间。后续下注、弃牌率和潜在收益没有完整建模。分析区分牌型、踢脚、听牌、位置、公共牌结构、人数与下注压力。直接成牌候选不是保证获胜的
+          outs；只显示下一张的成牌比例，不把翻牌到河牌的两张机会当作只付费一次即可获得。河牌单挑枚举所有合法底牌，其他情况使用固定种子的抽样；枚举消除抽样误差，但不能消除对手范围假设的误差。候选下注尺度属于练习路线，没有计算完整未来策略或精确诈唬
+          EV，不是 GTO 求解。
+        </p>
+        <p>
+          参考：<a
+            href="https://www.pokerstars.com/poker/learn/lesson/pot-odds/"
+            target="_blank"
+            rel="noopener noreferrer"
+            >底池赔率</a
+          >
+          ·
+          <a
+            href="https://www.pokerstars.com/poker/learn/lesson/poker-starting-hands/"
+            target="_blank"
+            rel="noopener noreferrer"
+            >起手牌与位置</a
+          >
+        </p>
+      </details>
+      <button class="primary-button close-dialog">回到牌桌</button>
+    </dialog>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
