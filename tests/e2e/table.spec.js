@@ -219,6 +219,53 @@ test('fold continuation settles unequal all-ins once, then retry restores origin
   await expect(page.locator('#review-hand-button')).toBeHidden();
 });
 
+test('fast finish fills all five visible board cards after preflop, flop or turn fold-wins without changing awards', async ({
+  page,
+}) => {
+  for (const street of [0, 1, 2]) {
+    const before = await page.evaluate((s) => window.qa.foldFinished(s), street);
+    expect(before.phase).toBe('done');
+    expect(before.board).toHaveLength([0, 3, 4][street]);
+    expect(before.canContinue).toBe(true);
+    await expect(page.locator('#continue-deal-button')).toBeVisible();
+    await page.locator('#continue-deal-button').evaluate((button) => {
+      button.click();
+      button.click();
+    });
+    const after = await page.evaluate(() => window.qa.state());
+    expect(after.phase).toBe('done');
+    expect(after.board).toHaveLength(5);
+    expect(after.board.slice(0, before.board.length)).toEqual(before.board);
+    expect(after.settlementBoard).toEqual(before.board);
+    expect(after.practiceRunout).toBe(true);
+    expect(after.canContinue).toBe(false);
+    expect(after.players.map((p) => p.stack)).toEqual(before.players.map((p) => p.stack));
+    expect(after.players.map((p) => p.botStats)).toEqual(before.players.map((p) => p.botStats));
+    expect(after.pots).toEqual(before.pots);
+    expect(after.uncalled).toEqual(before.uncalled);
+    expect(after.result).toEqual(before.result);
+    expect(after.wealth).toBe(30000);
+    await expect(page.locator('#board .playing-card')).toHaveCount(5);
+    await expect(page.locator('#board .board-slot')).toHaveCount(0);
+    await expect(page.locator('#board-caption')).toContainText('练习补牌');
+    await expect(page.locator('#result-banner')).toBeVisible();
+    await expect(page.locator('#result-banner')).toContainText('弃牌获胜');
+    await expect(page.locator('#showdown-stage')).toBeHidden();
+    await expect(page.locator('#stat-hands')).toHaveText('1');
+    await expect(page.locator('#continue-deal-button')).toBeHidden();
+    await page.locator('#restart-hand-button').click();
+    const retry = await page.evaluate(() => {
+      window.qa.stop();
+      return window.noir.getState();
+    });
+    expect(retry.board).toHaveLength(0);
+    expect(retry.practiceRunout).toBe(false);
+    expect(retry.hole).toEqual(before.hole);
+    await expect(page.locator('#stat-hands')).toHaveText('0');
+    await expect(page.locator('#board .playing-card')).toHaveCount(0);
+  }
+});
+
 test('review completes through real worker with facts and a conditional follow-up plan', async ({
   page,
 }) => {
@@ -227,6 +274,8 @@ test('review completes through real worker with facts and a conditional follow-u
   await page.evaluate(() => window.qa.stop());
   await page.locator('#continue-deal-button').click();
   await page.waitForFunction(() => window.noir.getState().phase === 'done');
+  await expect(page.locator('#board .playing-card')).toHaveCount(5);
+  await expect(page.locator('#result-banner')).toBeVisible();
   await page.locator('#review-hand-button').click();
   await expect(page.locator('#review-dialog')).toBeVisible();
   await expect(page.locator('#review-priority')).toBeVisible({ timeout: 15000 });

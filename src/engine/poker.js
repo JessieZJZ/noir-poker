@@ -129,6 +129,7 @@ export function newGame(playerCount = 6) {
     hand: 0,
     street: -1,
     board: [],
+    practiceBoard: null,
     deck: [],
     currentBet: 0,
     minRaise: 50,
@@ -287,6 +288,7 @@ export function startHand(g) {
   g.hand++;
   g.dealer = (g.dealer + 1) % g.players.length;
   g.board = [];
+  g.practiceBoard = null;
   g.deck = shuffle(deckOfCards());
   g.street = 0;
   g.phase = 'playing';
@@ -525,6 +527,25 @@ function progress(g, last) {
       g.revealed = true;
   }
 }
+function dealCommunityCards(board, deck, count) {
+  deck.pop(); // Burn one card before each street, including practice runouts.
+  for (let i = 0; i < count; i++) board.push(deck.pop());
+}
+
+export function completeBoardForPractice(g) {
+  if (g.phase !== 'done') throw Error('请先完成本手结算。');
+  if (g.board.length === 5 || g.practiceBoard) return g;
+  if (g.showdown) throw Error('摊牌结算需要完整公共牌。');
+  // These cards are a learning preview after a fold-win, not new game actions.
+  // Keep the actual board, deck, settlement and review evidence untouched.
+  const board = [...g.board],
+    deck = [...g.deck];
+  while (board.length < 5) dealCommunityCards(board, deck, board.length === 0 ? 3 : 1);
+  g.practiceBoard = board;
+  log(g, '练习补牌 · 五张公共牌已展示，弃牌结算不变', null, 'info');
+  return g;
+}
+
 export function advanceStreet(g) {
   if (g.phase !== 'between') throw Error('本轮行动尚未结束。');
   if (g.street === 3) {
@@ -532,9 +553,8 @@ export function advanceStreet(g) {
     return g;
   }
   g.street++;
-  g.deck.pop();
   const count = g.street === 1 ? 3 : 1;
-  for (let i = 0; i < count; i++) g.board.push(g.deck.pop());
+  dealCommunityCards(g.board, g.deck, count);
   g.currentBet = 0;
   g.minRaise = 50;
   for (const p of g.players) {

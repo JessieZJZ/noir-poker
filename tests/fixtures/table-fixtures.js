@@ -53,6 +53,20 @@ window.qa = {
     render();
     return publicState();
   },
+  foldFinished(street = 0) {
+    fixtureGame(6, true);
+    startHand(game);
+    while (game.street < street) {
+      while (game.phase === 'playing') act(game, game.actor, 'call');
+      advanceStreet(game);
+    }
+    if (street > 0) act(game, game.actor, 'raise', 100);
+    while (game.actor !== 0) act(game, game.actor, 'fold');
+    act(game, 0, 'fold');
+    while (game.phase === 'playing') act(game, game.actor, 'fold');
+    render();
+    return publicState();
+  },
   allinRest() {
     clearTimeout(timer);
     while (game.phase === 'playing') {

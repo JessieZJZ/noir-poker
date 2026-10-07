@@ -3,6 +3,7 @@ import {
   startHand,
   act,
   advanceStreet,
+  completeBoardForPractice,
   legalActions,
   potSize,
   currentPots,
@@ -193,9 +194,10 @@ function render() {
   $('#arena').dataset.playerCount = count;
   $('#table-tag').textContent = count + '-MAX';
   $('#table-size-label').textContent = count + ' 人无限注';
+  const displayBoard = game.practiceBoard || game.board;
   const hero = game.players[0],
     newHand = game.hand !== lastHand,
-    boardChanged = game.board.length > lastBoard;
+    boardChanged = displayBoard.length > lastBoard;
   const heroBest =
     game.showdown && !hero.folded
       ? new Set(evaluate([...hero.hole, ...game.board]).cards.map((c) => c.key))
@@ -209,11 +211,11 @@ function render() {
   $('#pot-value').textContent = format(game.phase === 'done' ? game.potAtShowdown : potSize(game));
   $('.pot').classList.toggle('pot-changed', boardChanged);
   $('#board').innerHTML = Array.from({ length: 5 }, (_, i) =>
-    game.board[i]
-      ? card(game.board[i], {
+    displayBoard[i]
+      ? card(displayBoard[i], {
           animate: i >= lastBoard && boardChanged,
           delay: (i - lastBoard) * 140,
-          best: heroBest.has(game.board[i].key),
+          best: heroBest.has(displayBoard[i].key),
         })
       : `<div class="board-slot" aria-label="未发出的公共牌">${['♠', '♣', '♥', '♦', '♠'][i]}</div>`,
   ).join('');
@@ -301,8 +303,9 @@ function render() {
     $('#result-banner').innerHTML =
       `<span class="result-copy"><span class="result-kicker">本手结束</span><strong>${title}</strong></span><span class="result-amount"><strong>${format(multiple || split ? game.potAtShowdown : winner.amount)}</strong><span>${label} · 筹码</span></span><span class="result-link">底池明细 <span aria-hidden="true">→</span></span>`;
   }
-  $('#board-caption').textContent =
-    done && game.showdown
+  $('#board-caption').textContent = game.practiceBoard
+    ? '练习补牌 · 五张公共牌，弃牌结算不变'
+    : done && game.showdown
       ? hero.folded
         ? '摊牌 · 对手亮出底牌'
         : '摊牌 · 亮起的牌组成你的最佳牌型'
@@ -329,7 +332,7 @@ function render() {
   $('.bet-controls').hidden = done || hero.folded;
   $('.action-buttons').hidden = done || hero.folded;
   $('#next-button').hidden = !done;
-  $('#continue-deal-button').hidden = done || !hero.folded;
+  $('#continue-deal-button').hidden = !canFastFinish() && !finishing;
   $('#continue-deal-button').disabled = finishing;
   $('#continue-deal-button').textContent = finishing ? '正在发牌…' : '立刻发完';
   $('#action-panel').classList.toggle('folded-actions', hero.folded && !done);
@@ -383,7 +386,7 @@ function render() {
   handReview.update(game, epoch);
   showdown.update(game, epoch);
   lastHand = game.hand;
-  lastBoard = game.board.length;
+  lastBoard = displayBoard.length;
 }
 function updateBet() {
   const legal = legalActions(game, 0);
@@ -476,8 +479,15 @@ function heroAction(action, amount) {
   schedule();
   return true;
 }
+function canFastFinish() {
+  return (
+    game.players[0].folded &&
+    !finishing &&
+    (game.phase !== 'done' || (game.board.length < 5 && !game.practiceBoard))
+  );
+}
 async function continueDeal() {
-  if (!game.players[0].folded || game.phase === 'done' || finishing) return false;
+  if (!canFastFinish()) return false;
   clearTimeout(timer);
   const ticket = ++epoch;
   finishing = true;
@@ -490,8 +500,9 @@ async function continueDeal() {
       else {
         playBotTurn(game);
       }
-      if (game.phase === 'between' || game.phase === 'done') render();
+      if (game.phase === 'between') render();
     }
+    if (ticket === epoch) completeBoardForPractice(game);
     return ticket === epoch && game.phase === 'done';
   } finally {
     if (ticket === epoch) {
@@ -701,7 +712,7 @@ function publicState() {
   return {
     playerCount: game.players.length,
     emotionMode: game.emotionMode,
-    canContinue: game.players[0].folded && game.phase !== 'done' && !finishing,
+    canContinue: canFastFinish(),
     replayAttempt: game.replayAttempt || 0,
     canRestart: canRestartHand(game),
     hand: game.hand,
@@ -726,7 +737,9 @@ function publicState() {
       amount: r.amount,
       returned: game.phase === 'done',
     })),
-    board: game.board.map((c) => rankText(c.rank) + c.symbol),
+    board: (game.practiceBoard || game.board).map((c) => rankText(c.rank) + c.symbol),
+    settlementBoard: game.board.map((c) => rankText(c.rank) + c.symbol),
+    practiceRunout: !!game.practiceBoard,
     hole: game.players[0].hole.map((c) => rankText(c.rank) + c.symbol),
     stack: game.players[0].stack,
     legal: legalActions(game, 0),
