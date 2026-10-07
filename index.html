@@ -46,6 +46,14 @@
               ><span id="replay-label" class="replay-label" hidden></span>
             </div>
             <div class="table-settings">
+              <button
+                id="opponents-button"
+                class="opponents-button"
+                aria-haspopup="dialog"
+                aria-controls="opponents-dialog"
+              >
+                对手风格 <span id="opponents-summary">自定义</span>
+              </button>
               <label class="difficulty-label"
                 >人数<select id="player-count" aria-label="牌桌人数">
                   <option value="5">5 人</option>
@@ -243,6 +251,60 @@
         </div>
       </aside>
     </main>
+    <dialog id="opponents-dialog" class="opponents-dialog" aria-labelledby="opponents-title">
+      <div class="dialog-header">
+        <span class="eyebrow">OPPONENT LAB</span
+        ><button class="icon-button close-dialog" aria-label="关闭对手设置">×</button>
+      </div>
+      <h2 id="opponents-title">让每个对手都有自己的打法</h2>
+      <p class="opponents-intro">
+        根据公开牌局提炼的训练原型，非本人复刻。0–100 是策略倾向指数，不是真人的 VPIP 或
+        PFR；精彩牌局无法代表长期频率。
+      </p>
+      <div class="opponents-body">
+        <div class="opponents-layout">
+          <section aria-label="牌手原型研究">
+            <div id="profile-cards" class="profile-cards"></div>
+            <div id="profile-detail" class="profile-detail"></div>
+          </section>
+          <section aria-label="分配对手风格">
+            <div class="opponents-roster-toolbar">
+              <h3 class="opponents-roster-heading">分别分配到座位</h3>
+              <button id="mix-opponents" class="opponents-mix-button">混合阵容</button>
+            </div>
+            <div id="opponent-roster" class="opponent-roster"></div>
+            <div class="emotion-setting">
+              <label
+                >真人感情绪模拟<select id="emotion-mode" aria-label="情绪模拟强度">
+                  <option value="off">关闭</option>
+                  <option value="subtle">轻微波动</option>
+                  <option value="lively">明显波动</option>
+                </select></label
+              >
+              <p>
+                大池失利、连胜、连续被同一对手逼退，可触发短暂的追回、避险或反击。两手后衰减，有冷却期。所有原型使用同一合成机制，不代表真人性格。
+              </p>
+            </div>
+          </section>
+        </div>
+        <details class="profile-comparison">
+          <summary>对比全部量化参数与统计口径</summary>
+          <div id="profile-comparison" class="profile-comparison-scroll"></div>
+          <p>
+            入池宽度影响起手牌范围；进攻与诈唬影响适合场景的加注概率；跟到底影响边缘跟注；强牌诱导只在安全牌面提高慢打倾向。位置、人数、牌力与合法动作优先于风格。
+          </p>
+          <p>
+            座位中的 VPIP / PFR 是本次练习已完成牌局的实际统计：自愿入池手数 / 总手数、翻前加注手数
+            /
+            总手数。强制盲注不计入；切换风格重新累计，刷新或重新练习归零。下注区间是常用翻后比例，不限制特殊加注、短码或全下。
+          </p>
+        </details>
+      </div>
+      <div class="opponents-save-row">
+        <p id="opponents-save-note" role="status"></p>
+        <button id="save-opponents" class="primary-button">保存，下一手生效</button>
+      </div>
+    </dialog>
     <dialog id="rules-dialog">
       <div class="dialog-header">
         <span class="eyebrow">QUICK GUIDE</span

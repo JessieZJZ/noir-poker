@@ -274,3 +274,108 @@ test('reset cancels queued continuation and table size applies on next deal', as
     .click();
   await expect(page.getByLabel('进阶', { exact: true })).toBeChecked();
 });
+
+test('per-seat styles apply next hand, survive resize and refresh, and freeze on retry', async ({
+  page,
+}) => {
+  await page.evaluate(() => window.qa.foldWin(6));
+  await page.locator('#opponents-button').click();
+  const assignments = { 1: 'tan', 2: 'st', 3: 'zang', 4: 'peter', 5: 'abao', 8: 'st' };
+  for (const [id, style] of Object.entries(assignments))
+    await page.locator(`[data-bot-seat="${id}"]`).selectOption(style);
+  await page.locator('#emotion-mode').selectOption('lively');
+  await page.locator('#save-opponents').click();
+  await expect(page.locator('#opponents-summary')).toHaveText('下手更新');
+  expect((await page.evaluate(() => window.noir.getState())).players[1].botProfile).toBe(
+    'balanced',
+  );
+  await page.locator('#restart-hand-button').click();
+  await page.evaluate(() => window.qa.stop());
+  expect((await page.evaluate(() => window.noir.getState())).players[1].botProfile).toBe(
+    'balanced',
+  );
+  await page.evaluate(() => window.qa.foldRest());
+  await page.locator('#next-button').click();
+  await page.evaluate(() => window.qa.stop());
+  for (let id = 1; id < 6; id++)
+    await expect(page.locator(`.seat-${id}`)).toHaveAttribute('data-profile', assignments[id]);
+  expect((await page.evaluate(() => window.noir.getState())).emotionMode).toBe('lively');
+  for (const count of [9, 5, 9]) {
+    await page.evaluate(() => window.qa.foldRest());
+    await page.locator('#player-count').selectOption(String(count));
+    await page.locator('#next-button').click();
+    const state = await page.evaluate(() => {
+      window.qa.stop();
+      return window.noir.getState();
+    });
+    expect(state.playerCount).toBe(count);
+    if (count === 9) expect(state.players[8].botProfile).toBe('st');
+  }
+  await page.reload();
+  await page.waitForFunction(() => !!window.qa);
+  expect((await page.evaluate(() => window.noir.getState())).players[1].botProfile).toBe('tan');
+  await page.locator('#opponents-button').click();
+  await expect(page.locator('[data-bot-seat="8"]')).toHaveValue('st');
+  await expect(page.locator('#opponents-dialog')).toContainText('不是真人的 VPIP');
+});
+
+test('configured bots use the fast-deal path and observed samples roll back on retry', async ({
+  page,
+}) => {
+  await page.evaluate(() => window.qa.foldWin(6));
+  await page.locator('#opponents-button').click();
+  for (let id = 1; id < 6; id++) await page.locator(`[data-bot-seat="${id}"]`).selectOption('abao');
+  await page.locator('#save-opponents').click();
+  await page.evaluate(() => window.qa.heroTurn(6));
+  await page.locator('#fold-button').click();
+  await page.evaluate(() => window.qa.stop());
+  await page.locator('#continue-deal-button').click();
+  await page.waitForFunction(() => window.noir.getState().phase === 'done');
+  const state = await page.evaluate(() => window.noir.getState());
+  for (const p of state.players.slice(1)) {
+    expect(p.botProfile).toBe('abao');
+    expect(p.botStats.hands).toBe(1);
+    expect(p.botStats.pfr).toBeLessThanOrEqual(p.botStats.vpip);
+    expect(p.botStats.vpip).toBeLessThanOrEqual(p.botStats.hands);
+  }
+  await page.locator('#restart-hand-button').click();
+  const retry = await page.evaluate(() => {
+    window.qa.stop();
+    return window.noir.getState();
+  });
+  for (const p of retry.players.slice(1)) {
+    expect(p.botProfile).toBe('abao');
+    expect(p.botStats.hands).toBe(0);
+  }
+});
+
+test('loss state is visible and can be disabled; configuration fits narrow screens', async ({
+  page,
+}) => {
+  await page.evaluate(() =>
+    window.qa.scene('As Ah', 'Ac 2h 3d 4c 8s', {
+      totals: [5000, 5000, 50, 50, 50, 50],
+      folded: [2, 3, 4, 5],
+      otherHoles: { 1: 'Ks Kd' },
+    }),
+  );
+  await expect(page.locator('.seat-1')).toHaveAttribute('data-mood', 'frustrated');
+  await page.locator('#opponents-button').click();
+  await expect(page.locator('[data-opponent-row="1"]')).toContainText('急于追回');
+  for (const width of [320, 390, 768, 1280]) {
+    await page.setViewportSize({ width, height: 900 });
+    const overflow = await page
+      .locator('#opponents-dialog')
+      .evaluate((d) => d.scrollWidth - d.clientWidth);
+    expect(overflow).toBeLessThanOrEqual(1);
+  }
+  await page.locator('#emotion-mode').selectOption('off');
+  await page.locator('#save-opponents').click();
+  await page.locator('#next-button').click();
+  const state = await page.evaluate(() => {
+    window.qa.stop();
+    return window.noir.getState();
+  });
+  expect(state.emotionMode).toBe('off');
+  for (const p of state.players.slice(1)) expect(p.mood).toBe('steady');
+});

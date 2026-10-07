@@ -1,0 +1,259 @@
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import {
+  newGame,
+  startHand,
+  botDecision,
+  act,
+  advanceStreet,
+  legalActions,
+  restartHand,
+  applyBotSettings,
+  potSize,
+} from '../../src/engine/poker.js';
+import {
+  BOT_PROFILES,
+  sanitizeBotSettings,
+  freshBotMood,
+  freshBotStats,
+  recordPressureFold,
+  finishBotHand,
+  effectiveBotAxes,
+  chooseBotAction,
+} from '../../src/engine/bot-profiles.js';
+const copy = (v) => JSON.parse(JSON.stringify(v));
+function seeded(seed) {
+  let n = seed;
+  return () => (n = (Math.imul(n, 1664525) + 1013904223) >>> 0) / 4294967296;
+}
+function finish(g, random = seeded(42)) {
+  let actions = 0;
+  while (g.phase !== 'done') {
+    assert.ok(++actions < 1000, 'A hand must finish');
+    if (g.phase === 'between') advanceStreet(g);
+    else {
+      const d = botDecision(g, random),
+        legal = legalActions(g);
+      if (d.action === 'raise') {
+        assert.ok(legal.canRaise);
+        assert.ok(Number.isInteger(d.amount));
+        assert.ok(d.amount >= legal.minRaiseTo && d.amount <= legal.maxRaiseTo);
+      }
+      if (d.action === 'check') assert.ok(legal.canCheck);
+      act(g, g.actor, d.action, d.amount);
+    }
+  }
+}
+test('saved settings reject unknown profiles and malformed modes', () => {
+  const result = sanitizeBotSettings({
+    emotionMode: 'hack',
+    assignments: { 1: 'tan', 2: 'nope', 9: 'peter' },
+  });
+  assert.equal(result.emotionMode, 'subtle');
+  assert.equal(result.assignments[1], 'tan');
+  assert.equal(result.assignments[2], 'balanced');
+  assert.equal(Object.keys(result.assignments).length, 8);
+});
+test('each profile decision ignores opponent holes, future deck and eventual results', () => {
+  for (const profile of BOT_PROFILES) {
+    const g = newGame(9);
+    startHand(g);
+    g.players[g.actor].botProfile = profile.id;
+    const expected = botDecision(g, seeded(50));
+    for (const p of g.players.filter((p) => p.id !== g.actor))
+      Object.defineProperty(p, 'hole', {
+        get() {
+          throw Error('Hidden hole accessed');
+        },
+      });
+    for (const key of ['deck', 'winners', 'decisions'])
+      Object.defineProperty(g, key, {
+        get() {
+          throw Error('Future or result accessed');
+        },
+      });
+    assert.deepEqual(botDecision(g, seeded(50)), expected);
+  }
+});
+test('all profiles and emotion strengths play legal 5–9 person hands and conserve chips', () => {
+  for (let count = 5; count <= 9; count++)
+    for (const emotionMode of ['off', 'subtle', 'lively']) {
+      const g = newGame(count),
+        assignments = {};
+      for (let id = 1; id < count; id++)
+        assignments[id] = BOT_PROFILES[id % BOT_PROFILES.length].id;
+      applyBotSettings(g, { assignments, emotionMode });
+      for (let hand = 0; hand < 4; hand++) {
+        // Unequal stacks exercise short raises, capped calls and multiple pots.
+        g.players.forEach((p, id) => {
+          p.stack = 300 + id * 175;
+        });
+        startHand(g);
+        const wealth = g.players.reduce((n, p) => n + p.stack, 0) + potSize(g);
+        finish(g, seeded(100 + count + hand));
+        assert.equal(
+          g.players.reduce((n, p) => n + p.stack, 0),
+          wealth,
+        );
+      }
+    }
+});
+test('no profile raises when a short all-in has not reopened action', () => {
+  const g = newGame();
+  startHand(g);
+  const first = g.actor;
+  act(g, first, 'raise', 100);
+  const second = g.actor;
+  g.players[second].stack = 125 - g.players[second].bet;
+  act(g, second, 'raise', 125);
+  while (g.actor !== first) act(g, g.actor, 'call');
+  assert.equal(legalActions(g).canRaise, false);
+  for (const profile of BOT_PROFILES) {
+    g.players[first].botProfile = profile.id;
+    for (let seed = 0; seed < 10; seed++)
+      assert.notEqual(botDecision(g, seeded(seed)).action, 'raise');
+  }
+});
+test('loss, win and pressure triggers are bounded, cooled down and can be disabled', () => {
+  const p = { id: 1, botMood: freshBotMood() };
+  assert.equal(finishBotHand(p, -1249, 'subtle'), null);
+  assert.equal(finishBotHand(p, -1250, 'subtle').kind, 'frustrated');
+  assert.equal(finishBotHand(p, -5000, 'subtle'), null, 'Cooldown prevents repeated triggers');
+  const q = { id: 2, botMood: freshBotMood() };
+  assert.equal(finishBotHand(q, -1250, 'lively').kind, 'cautious');
+  const off = { id: 1, botMood: freshBotMood() };
+  assert.equal(finishBotHand(off, -5000, 'off'), null);
+  assert.equal(off.botMood.kind, 'steady');
+  const winner = { id: 1, botMood: freshBotMood() };
+  assert.equal(finishBotHand(winner, 500, 'subtle'), null);
+  assert.equal(finishBotHand(winner, 500, 'subtle').kind, 'confident');
+  const mood = freshBotMood();
+  recordPressureFold(mood, 2, 'subtle');
+  recordPressureFold(mood, 3, 'subtle');
+  assert.equal(recordPressureFold(mood, 2, 'subtle'), null);
+  assert.equal(recordPressureFold(mood, 2, 'subtle'), null);
+  assert.equal(recordPressureFold(mood, 2, 'subtle').kind, 'reactive');
+});
+test('emotions adjust actual policy controls with a smaller subtle effect', () => {
+  const profile = BOT_PROFILES[1],
+    mood = { kind: 'frustrated' };
+  assert.deepEqual(effectiveBotAxes(profile, mood, 'off'), profile.axes);
+  const mild = effectiveBotAxes(profile, mood, 'subtle'),
+    strong = effectiveBotAxes(profile, mood, 'lively');
+  assert.ok(mild[0] > profile.axes[0]);
+  assert.ok(strong[0] > mild[0]);
+  assert.ok(strong[4] < mild[4]);
+});
+test('an intervening hand without pressure breaks the consecutive-fold trigger', () => {
+  const g = newGame();
+  for (let hand = 0; hand < 5; hand++) {
+    g.dealer = 2;
+    startHand(g);
+    assert.equal(g.actor, 0);
+    act(g, 0, hand % 2 ? 'fold' : 'raise', 100);
+    while (g.phase !== 'done') act(g, g.actor, 'fold');
+  }
+  assert.equal(g.players[1].botMood.kind, 'steady');
+});
+test('style differences change entry and value-trap behavior over common decision samples', () => {
+  const view = {
+    id: 1,
+    hole: [
+      { rank: 9, suit: 0 },
+      { rank: 7, suit: 0 },
+    ],
+    board: [],
+    street: 0,
+    position: 'CO',
+    count: 6,
+    stack: 5000,
+    bet: 0,
+    pot: 75,
+    currentBet: 50,
+    contestable: 125,
+    rivals: 5,
+    equity: 0.35,
+    difficulty: 'hard',
+    history: [],
+    features: { wet: false, draw: false, overpair: false },
+    playsBoard: false,
+    legal: {
+      enabled: true,
+      toCall: 50,
+      callAmount: 50,
+      canCheck: false,
+      canRaise: true,
+      minRaiseTo: 100,
+      maxRaiseTo: 5000,
+    },
+  };
+  const decisions = (profile, input) =>
+    Array.from({ length: 300 }, (_, seed) =>
+      chooseBotAction(input, profile, freshBotMood(), 'off', seeded(seed + 100)),
+    );
+  const peter = BOT_PROFILES.find((p) => p.id === 'peter'),
+    st = BOT_PROFILES.find((p) => p.id === 'st');
+  assert.ok(
+    decisions(peter, view).filter((d) => d.action !== 'fold').length >
+      decisions(st, view).filter((d) => d.action !== 'fold').length,
+  );
+  const value = {
+    ...view,
+    street: 2,
+    equity: 0.9,
+    rivals: 1,
+    legal: { ...view.legal, toCall: 0, callAmount: 0, canCheck: true },
+  };
+  assert.ok(
+    decisions(st, value).filter((d) => d.action === 'check').length >
+      decisions(peter, value).filter((d) => d.action === 'check').length,
+  );
+});
+test('uncalled shove refunds are not losses; blind-only hands are not VPIP', () => {
+  const g = newGame();
+  g.dealer = 3;
+  startHand(g);
+  assert.equal(g.actor, 1);
+  act(g, 1, 'raise', 5000);
+  while (g.phase !== 'done') act(g, g.actor, 'fold');
+  assert.ok(g.refunds.some((r) => r.id === 1));
+  assert.equal(g.players[1].botMood.kind, 'steady');
+  assert.deepEqual(
+    [g.players[1].botStats.hands, g.players[1].botStats.vpip, g.players[1].botStats.pfr],
+    [1, 1, 1],
+  );
+  for (const p of g.players.slice(2)) assert.equal(p.botStats.vpip, 0);
+});
+test('retry restores frozen profile, emotion and simulation statistics exactly once', () => {
+  const g = newGame();
+  applyBotSettings(g, { assignments: { 1: 'tan', 2: 'st' }, emotionMode: 'lively' });
+  g.players[1].botMood = {
+    ...freshBotMood(),
+    kind: 'frustrated',
+    remaining: 3,
+    cooldown: 4,
+    reason: '测试公开损失',
+  };
+  startHand(g);
+  const baseline = copy(
+    g.players.map((p) => ({ profile: p.botProfile, mood: p.botMood, stats: p.botStats })),
+  );
+  for (let attempt = 0; attempt < 4; attempt++) {
+    finish(g, seeded(attempt + 5));
+    applyBotSettings(g, { assignments: { 1: 'peter' }, emotionMode: 'off' });
+    restartHand(g);
+    assert.equal(g.emotionMode, 'lively');
+    assert.deepEqual(
+      g.players.map((p) => ({ profile: p.botProfile, mood: p.botMood, stats: p.botStats })),
+      baseline,
+    );
+    assert.equal(g.stats.hands, 0);
+  }
+  assert.throws(() => applyBotSettings(g, {}), /下一手/);
+});
+test('a reassigned profile starts a separate observed sample', () => {
+  const g = newGame();
+  g.players[1].botStats = { ...freshBotStats(), hands: 20, vpip: 10 };
+  applyBotSettings(g, { assignments: { 1: 'peter' } });
+  assert.equal(g.players[1].botStats.hands, 0);
+});

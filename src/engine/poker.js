@@ -1,3 +1,15 @@
+import {
+  getBotProfile,
+  freshBotMood,
+  freshBotStats,
+  sanitizeBotSettings,
+  decayBotMood,
+  finishBotHand,
+  recordPressureFold,
+  MOOD_LABELS,
+  botBoardFeatures,
+  chooseBotAction,
+} from './bot-profiles.js';
 export const SUITS = ['♠', '♥', '♣', '♦'];
 export const RANK_NAMES = [
   '高牌',
@@ -20,9 +32,9 @@ export const deckOfCards = () =>
       key: suit + '-' + (i + 2),
     })),
   );
-function shuffle(a) {
+function shuffle(a, random = Math.random) {
   for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
+    const j = Math.floor(random() * (i + 1));
     [a[i], a[j]] = [a[j], a[i]];
   }
   return a;
@@ -106,6 +118,10 @@ export function newGame(playerCount = 6) {
         actedTo: null,
         checked: false,
         action: '',
+        botProfile: 'balanced',
+        botMood: freshBotMood(),
+        botStats: freshBotStats(),
+        botHand: { vpip: false, pfr: false, pressureRecorded: false },
       })),
     dealer: playerCount - 1,
     hand: 0,
@@ -125,7 +141,21 @@ export function newGame(playerCount = 6) {
     payouts: [],
     stats: { hands: 0, wins: 0, buyin: 5000 },
     difficulty: 'normal',
+    emotionMode: 'subtle',
   };
+}
+export function applyBotSettings(g, value) {
+  if (!['idle', 'done'].includes(g.phase)) throw Error('对手设置在下一手开始时生效。');
+  const settings = sanitizeBotSettings(value);
+  for (const p of g.players.slice(1)) {
+    if (p.botProfile !== settings.assignments[p.id]) {
+      p.botProfile = settings.assignments[p.id];
+      p.botMood = freshBotMood();
+      p.botStats = freshBotStats();
+    }
+    if (settings.emotionMode === 'off') p.botMood = freshBotMood();
+  }
+  g.emotionMode = settings.emotionMode;
 }
 // Seat IDs follow the physical table clockwise, starting at the hero.
 export const POSITION_ROLES = {
@@ -271,6 +301,8 @@ export function startHand(g) {
   g.decisions = [];
   g.history = [];
   for (const p of g.players) {
+    if (p.id) decayBotMood(p.botMood);
+    p.botHand = { vpip: false, pfr: false, pressureRecorded: false };
     if (p.stack === 0) {
       p.stack = 5000;
       if (p.id === 0) g.stats.buyin += 5000;
@@ -357,6 +389,24 @@ export function act(g, id, action, amount) {
   // Capture only information available before the decision. Opponents' hole
   // cards, the remaining deck and future community cards never enter review.
   const normalized = action === 'call' && legal.canCheck ? 'check' : action;
+  if (id !== 0) {
+    if (g.street === 0 && ['call', 'raise'].includes(normalized)) p.botHand.vpip = true;
+    if (g.street === 0 && normalized === 'raise') p.botHand.pfr = true;
+    if (g.street > 0 && ['call', 'check', 'raise'].includes(normalized)) {
+      p.botStats.postActions++;
+      if (normalized === 'raise') p.botStats.postRaises++;
+      if (normalized === 'call') p.botStats.postCalls++;
+    }
+    const facing = [...(g.history || [])]
+      .reverse()
+      .find((a) => a.street === g.street && a.action === 'raise');
+    if (normalized === 'fold' && facing && !p.botHand.pressureRecorded) {
+      p.botHand.pressureRecorded = true;
+      const event = recordPressureFold(p.botMood, facing.id, g.emotionMode);
+      if (event)
+        log(g, `${p.name} 模拟状态：${MOOD_LABELS[event.kind]} · ${event.reason}`, id, 'info');
+    } else if (normalized !== 'fold' && facing) p.botMood.pressureFolds[facing.id] = 0;
+  }
   if (id === 0) {
     g.decisions ||= [];
     g.decisions.push({
@@ -582,14 +632,26 @@ export function settle(g, showdown = true) {
       'info',
     );
   log(g, g.result, null, 'result');
+  for (const p of g.players.slice(1)) {
+    p.botStats.hands++;
+    if (p.botHand.vpip) p.botStats.vpip++;
+    if (p.botHand.pfr) p.botStats.pfr++;
+    if (!p.botHand.pressureRecorded) {
+      p.botMood.pressureFolds = {};
+      p.botMood.lastPressureRaiser = null;
+    }
+    const event = finishBotHand(p, payouts[p.id] - p.total, g.emotionMode);
+    if (event)
+      log(g, `${p.name} 模拟状态：${MOOD_LABELS[event.kind]} · ${event.reason}`, p.id, 'info');
+  }
   return g;
 }
-export function estimateEquity(hole, board, rivals = 1, trials = 35) {
+export function estimateEquity(hole, board, rivals = 1, trials = 35, random = Math.random) {
   const known = new Set([...hole, ...board].map((c) => c.key)),
     available = deckOfCards().filter((c) => !known.has(c.key));
   let wins = 0;
   for (let t = 0; t < trials; t++) {
-    const sample = shuffle([...available]),
+    const sample = shuffle([...available], random),
       community = [...board];
     while (community.length < 5) community.push(sample.pop());
     const score = evaluate([...hole, ...community]).score;
@@ -608,30 +670,38 @@ export function estimateEquity(hole, board, rivals = 1, trials = 35) {
   }
   return wins / trials;
 }
-export function botDecision(g) {
+export function botDecision(g, random = Math.random) {
   const p = g.players[g.actor],
     legal = legalActions(g),
     rivals = Math.max(1, live(g).length - 1);
-  // Only this bot's hole cards and the public board enter the simulation.
-  let equity = estimateEquity(p.hole, g.board, rivals, g.difficulty === 'hard' ? 52 : 28);
-  const personalities = [0, 0.06, -0.01, 0.1, -0.04, 0.03, 0.02, -0.03, 0.05];
-  equity += personalities[p.id] + (Math.random() - 0.5) * (g.difficulty === 'easy' ? 0.28 : 0.12);
-  const odds = legal.callAmount / (contestableAfterCall(g, p.id, legal.callAmount) || 1),
-    pressure = legal.toCall / (p.stack + p.bet || 1);
-  if (legal.toCall > 0 && equity < odds + 0.025 && Math.random() > 0.13) return { action: 'fold' };
-  if (legal.toCall > 0 && pressure > 0.4 && equity < 0.38 && Math.random() > 0.15)
-    return { action: 'fold' };
-  const bluff = Math.random() < (g.difficulty === 'easy' ? 0.035 : 0.07);
-  if (
-    legal.canRaise &&
-    (equity > (g.street === 0 ? 0.43 : 0.56) || bluff) &&
-    Math.random() > 0.28
-  ) {
-    const desired =
-      g.currentBet +
-      Math.max(g.minRaise, Math.round((potSize(g) * (0.45 + Math.random() * 0.35)) / 25) * 25);
-    const amount = Math.min(legal.maxRaiseTo, Math.max(legal.minRaiseTo, desired));
-    if (amount < legal.maxRaiseTo || equity > 0.62 || bluff) return { action: 'raise', amount };
-  }
-  return { action: legal.canCheck ? 'check' : 'call' };
+  if (!p || !legal.enabled) throw Error('机器人当前不能行动。');
+  const score = evaluate([...p.hole, ...g.board]).score;
+  // Explicit actor perspective: no other hole cards, future deck, review
+  // decisions or eventual winners can enter this policy.
+  const view = {
+    id: p.id,
+    hole: p.hole.map((c) => ({ ...c })),
+    board: g.board.map((c) => ({ ...c })),
+    street: g.street,
+    position: seatPosition(g, p.id),
+    count: g.players.length,
+    stack: p.stack,
+    bet: p.bet,
+    pot: potSize(g),
+    currentBet: g.currentBet,
+    difficulty: g.difficulty,
+    legal,
+    rivals,
+    equity: estimateEquity(p.hole, g.board, rivals, g.difficulty === 'hard' ? 52 : 28, random),
+    contestable: contestableAfterCall(g, p.id, legal.callAmount),
+    history: (g.history || []).map(({ id, street, action, amount }) => ({
+      id,
+      street,
+      action,
+      amount,
+    })),
+    features: botBoardFeatures(p.hole, g.board, score),
+    playsBoard: g.board.length === 5 && compare(score, evaluate(g.board).score) === 0,
+  };
+  return chooseBotAction(view, getBotProfile(p.botProfile), p.botMood, g.emotionMode, random);
 }

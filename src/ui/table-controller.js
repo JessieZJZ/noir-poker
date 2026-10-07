@@ -13,7 +13,10 @@ import {
   seatPosition,
   restartHand,
   canRestartHand,
+  applyBotSettings,
 } from '../engine/poker.js';
+import { getBotProfile, MOOD_LABELS } from '../engine/bot-profiles.js';
+import { loadBotSettings, createOpponentsController } from './opponents-controller.js';
 import { createReviewController } from './review-controller.js';
 import { renderCard } from './cards.js';
 import { createShowdownController } from './showdown.js';
@@ -43,6 +46,16 @@ try {
   sound = localStorage.getItem('noir-sound') === 'true';
   hints = localStorage.getItem('noir-hints') !== 'false';
 } catch {}
+let pendingBotSettings = loadBotSettings();
+const opponents = createOpponentsController({
+  getGame: () => game,
+  getCount: () => requestedCount,
+  getSettings: () => pendingBotSettings,
+  onSave: (settings) => {
+    pendingBotSettings = settings;
+    opponents.refresh();
+  },
+});
 const format = (n) => n.toLocaleString('en-US'),
   streets = ['翻牌前', '翻牌', '转牌', '河牌'],
   profiles = ['YOU', 'M', 'A', 'R', 'K', 'L', 'T', 'J', 'L'];
@@ -206,7 +219,11 @@ function render() {
             ? evaluate([...p.hole, ...game.board])
             : null,
         [x, y] = layouts[count][p.id - 1];
-      return `<div class="seat seat-${p.id} ${p.folded ? 'folded' : ''} ${game.actor === p.id ? 'thinking' : ''} ${isWinner ? 'winner' : ''}" data-player="${p.id}" style="left:${x}%;top:${y}%"><div id="seat-hand-${p.id}" class="mini-cards ${reveal ? 'revealed-cards' : ''}">${reveal ? p.hole.map((c) => card(c, { small: true, best: !!rank && rank.cards.some((best) => best.key === c.key) })).join('') : p.hole.map((c, i) => `<span class="card-back ${newHand ? 'card-deal' : ''}" style="--delay:${p.id * 65 + i * 140}ms" aria-label="对手底牌"></span>`).join('')}</div><div class="seat-profile"><span class="avatar avatar-${p.id - 1}">${profiles[p.id]}</span><div><strong>${p.name}${positionBadge(p.id)}</strong><span class="seat-bankroll"><span class="seat-stack">${format(p.stack)}</span>${game.phase === 'done' ? `<button class="seat-peek" data-peek-player="${p.id}" title="${reveal ? '收起底牌' : '查看底牌'}" aria-label="${reveal ? '收起' : '查看'} ${p.name} 的底牌" aria-pressed="${!!reveal}" aria-controls="seat-hand-${p.id}"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M2 10s3-5 8-5 8 5 8 5-3 5-8 5-8-5-8-5Z"/><circle cx="10" cy="10" r="2.5"/></svg></button>` : ''}</span></div></div>${rank ? `<div class="hand-rank ${isWinner ? 'rank-winner' : ''}">${isWinner ? '♛ ' : ''}${rank.label}</div>` : ''}${game.phase === 'done' ? '' : `<div class="seat-action">${seatAction(p)}</div>`}</div>`;
+      const profile = getBotProfile(p.botProfile),
+        styleCode = { tan: '谈', st: 'ST', zang: '臧', peter: 'P', abao: '宝' }[p.botProfile] || '',
+        mood = game.emotionMode === 'off' ? 'steady' : p.botMood.kind,
+        title = `${p.name} · ${profile.short}（训练原型） · 模拟状态：${MOOD_LABELS[mood]}`;
+      return `<div class="seat seat-${p.id} ${p.folded ? 'folded' : ''} ${game.actor === p.id ? 'thinking' : ''} ${isWinner ? 'winner' : ''}" data-player="${p.id}" data-profile="${p.botProfile}" data-mood="${mood}" style="left:${x}%;top:${y}%"><div id="seat-hand-${p.id}" class="mini-cards ${reveal ? 'revealed-cards' : ''}">${reveal ? p.hole.map((c) => card(c, { small: true, best: !!rank && rank.cards.some((best) => best.key === c.key) })).join('') : p.hole.map((c, i) => `<span class="card-back ${newHand ? 'card-deal' : ''}" style="--delay:${p.id * 65 + i * 140}ms" aria-label="对手底牌"></span>`).join('')}</div><div class="seat-profile"><span class="avatar avatar-${p.id - 1}" data-style-label="${styleCode}" title="${title}" aria-label="${title}">${profiles[p.id]}</span><div><strong>${p.name}${positionBadge(p.id)}</strong><span class="seat-bankroll"><span class="seat-stack">${format(p.stack)}</span>${game.phase === 'done' ? `<button class="seat-peek" data-peek-player="${p.id}" title="${reveal ? '收起底牌' : '查看底牌'}" aria-label="${reveal ? '收起' : '查看'} ${p.name} 的底牌" aria-pressed="${!!reveal}" aria-controls="seat-hand-${p.id}"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M2 10s3-5 8-5 8 5 8 5-3 5-8 5-8-5-8-5Z"/><circle cx="10" cy="10" r="2.5"/></svg></button>` : ''}</span></div></div>${rank ? `<div class="hand-rank ${isWinner ? 'rank-winner' : ''}">${isWinner ? '♛ ' : ''}${rank.label}</div>` : ''}${game.phase === 'done' ? '' : `<div class="seat-action">${seatAction(p)}</div>`}</div>`;
     })
     .join('');
   $('#hero-cards').innerHTML = hero.hole
@@ -262,6 +279,7 @@ function render() {
   document
     .querySelectorAll('input[name="difficulty"]')
     .forEach((input) => (input.checked = input.value === game.difficulty));
+  opponents.refresh();
   if (done) {
     const winner = game.winners.find((w) => w.id === 0) || game.winners[0],
       multiple = game.pots.length > 1,
@@ -493,6 +511,7 @@ function nextHand() {
     lastHand = 0;
   }
   $('#table-change-note').hidden = true;
+  applyBotSettings(game, pendingBotSettings);
   startHand(game);
   const legal = legalActions(game, 0);
   bet = legal.enabled ? Math.min(legal.maxRaiseTo, Math.max(legal.minRaiseTo, 150)) : 150;
@@ -674,6 +693,7 @@ function publicState() {
   const details = potDetails();
   return {
     playerCount: game.players.length,
+    emotionMode: game.emotionMode,
     canContinue: game.players[0].folded && game.phase !== 'done' && !finishing,
     replayAttempt: game.replayAttempt || 0,
     canRestart: canRestartHand(game),
@@ -711,6 +731,13 @@ function publicState() {
       folded: p.folded,
       allin: p.allin,
       bet: p.bet,
+      ...(p.id
+        ? {
+            botProfile: p.botProfile,
+            mood: game.emotionMode === 'off' ? 'steady' : p.botMood.kind,
+            botStats: { ...p.botStats },
+          }
+        : {}),
       ...(isSeatHandVisible(p) ? { cards: p.hole.map((c) => rankText(c.rank) + c.symbol) } : {}),
     })),
     result: game.result || null,

@@ -11,6 +11,7 @@ function fixtureGame(count = 6, heroFirst = false) {
   epoch++;
   game = newGame(count);
   if (heroFirst) game.dealer = count - 4;
+  applyBotSettings(game, pendingBotSettings);
   requestedCount = count;
   $('#player-count').value = count;
   lastHand = 0;

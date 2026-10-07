@@ -1,0 +1,375 @@
+.opponents-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 34px;
+  padding: 6px 10px;
+  border: 1px solid #43504f;
+  border-radius: 7px;
+  background: #17272b;
+  color: #d0e4df;
+  font-size: 14px;
+  white-space: nowrap;
+}
+#opponents-summary {
+  color: #8daea6;
+  font-size: 12px;
+}
+.opponents-dialog {
+  width: min(970px, calc(100% - 24px));
+  max-height: calc(100dvh - 32px);
+  padding: 26px;
+}
+.opponents-dialog[open] {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.opponents-dialog > .dialog-header,
+.opponents-dialog > h2,
+.opponents-intro,
+.opponents-save-row {
+  flex-shrink: 0;
+}
+.opponents-body {
+  overflow-y: auto;
+  min-height: 0;
+  padding: 3px;
+}
+.opponents-roster-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+.opponents-roster-toolbar .opponents-roster-heading {
+  margin: 0;
+}
+.opponents-mix-button {
+  border: 1px solid #52796c;
+  border-radius: 6px;
+  color: #9cd7c3;
+  background: #1d3630;
+  padding: 6px 9px;
+  font-size: 13px;
+  white-space: nowrap;
+}
+.opponents-intro {
+  max-width: 780px;
+  margin: 0 0 20px;
+}
+.opponents-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(250px, 1fr);
+  gap: 24px;
+}
+.profile-cards {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+.profile-card {
+  text-align: left;
+  padding: 12px 10px;
+  border: 1px solid #35434a;
+  border-radius: 9px;
+  background: #111a23;
+  min-height: 86px;
+}
+.profile-card strong {
+  display: block;
+  font-size: 15px;
+  font-weight: 600;
+}
+.profile-card span {
+  display: block;
+  margin-top: 6px;
+  color: #93a6ae;
+  font-size: 12px;
+  line-height: 1.6;
+}
+.profile-card.selected {
+  border-color: #73c9ad;
+  background: #1a3833;
+}
+.profile-card.selected strong {
+  color: #8fe1c5;
+}
+.profile-detail {
+  margin-top: 16px;
+  border: 1px solid #354b49;
+  border-radius: 12px;
+  padding: 17px;
+  background: #13282a;
+}
+.profile-detail-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.profile-detail-heading h3 {
+  font-size: 17px;
+  margin: 0;
+}
+.profile-detail-heading > span {
+  color: #85bbaa;
+  font-size: 12px;
+  white-space: nowrap;
+}
+.profile-detail p {
+  margin: 10px 0;
+  font-size: 14px;
+  line-height: 1.8;
+}
+.profile-axes {
+  display: grid;
+  gap: 12px;
+  padding: 12px 0;
+}
+.profile-axes > div {
+  display: grid;
+  grid-template-columns: 100px minmax(0, 1fr) 24px;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+}
+.profile-axes strong {
+  font-size: 14px;
+  color: #d2eee4;
+  font-variant-numeric: tabular-nums;
+}
+.profile-axes meter {
+  width: 100%;
+  height: 12px;
+  accent-color: #69c7a9;
+}
+.profile-axes meter::-webkit-meter-bar {
+  background: #223c3b;
+  border: 0;
+  border-radius: 8px;
+}
+.profile-axes meter::-webkit-meter-optimum-value {
+  background: #69c7a9;
+  border-radius: 8px;
+}
+.profile-axes meter::-moz-meter-bar {
+  background: #69c7a9;
+}
+.profile-sizing strong {
+  color: #dfc98f;
+}
+.profile-evidence {
+  padding-top: 12px;
+  border-top: 1px solid #31504a;
+  color: #a3b8b3;
+}
+.profile-sources {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.profile-sources a {
+  font-size: 13px;
+  color: #86ccb8;
+  line-height: 1.7;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.opponents-roster-heading {
+  margin: 0 0 10px;
+  font-size: 16px;
+}
+.opponent-roster {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 9px;
+}
+.opponent-row {
+  padding: 12px;
+  background: #111b24;
+  border: 1px solid #33424b;
+  border-radius: 9px;
+  min-width: 0;
+}
+.opponent-row.off-table {
+  background: #121a20;
+  border-style: dashed;
+}
+.opponent-row-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 9px;
+}
+.opponent-row-title strong {
+  font-size: 15px;
+}
+.opponent-row-title span {
+  font-size: 12px;
+  color: #8eaaa4;
+}
+.opponent-row select {
+  width: 100%;
+  padding: 8px 24px 8px 9px;
+  font-size: 13px;
+}
+.opponent-observed,
+.opponent-mood-reason {
+  margin: 9px 0 0 !important;
+  font-size: 12px !important;
+  line-height: 1.6 !important;
+  color: #8aa1ad;
+}
+.opponent-mood-reason {
+  color: #d6b887;
+}
+.emotion-setting {
+  margin-top: 16px;
+  padding: 16px;
+  border: 1px solid #554938;
+  border-radius: 10px;
+  background: #2a251d44;
+}
+.emotion-setting label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  font-size: 15px;
+}
+.emotion-setting select {
+  font-size: 14px;
+  padding: 7px 25px 7px 10px;
+}
+.emotion-setting p {
+  margin: 10px 0 0;
+  font-size: 13px;
+  line-height: 1.8;
+}
+.profile-comparison {
+  margin-top: 22px;
+  border-top: 1px solid #34444b;
+  padding-top: 18px;
+}
+.profile-comparison summary {
+  cursor: pointer;
+  font-size: 14px;
+  color: #cadbd7;
+}
+.profile-comparison-scroll {
+  overflow-x: auto;
+  padding: 10px 0;
+}
+.profile-comparison table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  text-align: center;
+}
+.profile-comparison caption {
+  text-align: left;
+  margin: 6px 0 12px;
+  color: #8ca8a0;
+}
+.profile-comparison th,
+.profile-comparison td {
+  padding: 10px 8px;
+  border-bottom: 1px solid #2e4246;
+  min-width: 64px;
+}
+.profile-comparison th {
+  font-weight: 500;
+  color: #c7d9d3;
+}
+.profile-comparison p {
+  font-size: 13px;
+  margin: 8px 0;
+}
+.opponents-save-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid #354b49;
+}
+.opponents-save-row p {
+  margin: 0;
+  font-size: 13px;
+}
+.opponents-save-row .primary-button {
+  width: auto;
+  flex-shrink: 0;
+  margin: 0;
+}
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.seat .avatar[data-style-label]:not([data-style-label='']) {
+  position: relative;
+}
+.seat .avatar[data-style-label]:not([data-style-label=''])::after {
+  content: attr(data-style-label);
+  position: absolute;
+  bottom: -5px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 0 3px;
+  border: 1px solid #62988b;
+  border-radius: 3px;
+  color: #cff0e4;
+  background: #1b3d35;
+  font-size: 9px;
+  line-height: 14px;
+}
+.seat[data-mood='frustrated'] .avatar,
+.seat[data-mood='reactive'] .avatar {
+  outline: 2px solid #d89568;
+  outline-offset: 2px;
+}
+.seat[data-mood='cautious'] .avatar {
+  outline: 2px solid #a2b4d9;
+  outline-offset: 2px;
+}
+.seat[data-mood='confident'] .avatar {
+  outline: 2px solid #e1c173;
+  outline-offset: 2px;
+}
+@media (max-width: 760px) {
+  .opponents-layout {
+    grid-template-columns: 1fr;
+    gap: 22px;
+  }
+  .opponents-dialog {
+    padding: 20px 16px;
+  }
+  .opponents-save-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .opponents-save-row .primary-button {
+    width: 100%;
+  }
+}
+@media (max-width: 380px) {
+  .profile-cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .opponent-roster {
+    grid-template-columns: 1fr;
+  }
+  .profile-axes > div {
+    grid-template-columns: 95px minmax(0, 1fr) 24px;
+    gap: 6px;
+  }
+}
