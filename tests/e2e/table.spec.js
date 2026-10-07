@@ -203,6 +203,10 @@ test('fold continuation settles unequal all-ins once, then retry restores origin
   expect(done.hand).toBe(before.hand);
   expect(done.board).toHaveLength(5);
   expect(done.pots.length).toBeGreaterThan(1);
+  const potLogs = (await page.locator('#activity-list .log-result').allTextContents())
+    .map((text) => /^(主池|边池 \d+) /.exec(text)?.[1])
+    .filter(Boolean);
+  expect(potLogs).toEqual(done.pots.map((pot) => pot.label));
   expect(done.players.reduce((sum, p) => sum + p.stack, 0)).toBe(wealth);
   await expect(page.locator('#stat-hands')).toHaveText('1');
   await assertBestHands(page, 8);
@@ -285,10 +289,10 @@ test('review completes through real worker with facts and a conditional follow-u
   await expect(page.locator('#review-reason')).not.toBeEmpty();
 });
 
-test('activity uses full history; settings, settlement and cards fit narrow screens', async ({
+test('activity follows chronological row order at every breakpoint and naturally expands', async ({
   page,
 }) => {
-  for (const width of [320, 390, 768, 1280]) {
+  for (const width of [320, 360, 390, 600, 768, 900, 901, 1280]) {
     await page.setViewportSize({ width, height: 900 });
     for (const count of [6, 9]) {
       await page.evaluate((n) => {
@@ -297,6 +301,23 @@ test('activity uses full history; settings, settlement and cards fit narrow scre
       }, count);
       const layout = await page.evaluate(() => {
         const list = document.querySelector('#activity-list');
+        const items = [...list.children];
+        const texts = items.map((el) => el.textContent);
+        const rects = items.map((el, index) => {
+          const rect = el.getBoundingClientRect();
+          return { index, top: rect.top, left: rect.left };
+        });
+        const readingOrder = rects
+          .sort((a, b) => (Math.abs(a.top - b.top) > 1 ? a.top - b.top : a.left - b.left))
+          .map((rect) => rect.index);
+        const milestones = [
+          texts.findIndex((text) => /^第 \d+ 手开始/.test(text)),
+          texts.findIndex((text) => text.includes('小盲') && text.includes('大盲')),
+          texts.findIndex((text) => text.startsWith('翻牌 ·')),
+          texts.findIndex((text) => text.startsWith('转牌 ·')),
+          texts.findIndex((text) => text.startsWith('河牌 ·')),
+          texts.indexOf(window.noir.getState().result),
+        ];
         const board = document.querySelector('#board').getBoundingClientRect();
         const banner = document.querySelector('#result-banner').getBoundingClientRect();
         const overlaps = [...document.querySelectorAll('.seat-peek')].some((el) => {
@@ -313,6 +334,9 @@ test('activity uses full history; settings, settlement and cards fit narrow scre
           scrollWidth: document.documentElement.scrollWidth,
           logCount: list.children.length,
           actualLogs: window.qa.state().totalLogs,
+          texts,
+          milestones,
+          readingOrder,
           scrollHeight: list.scrollHeight,
           clientHeight: list.clientHeight,
           overflow: getComputedStyle(list).overflowY,
@@ -322,10 +346,16 @@ test('activity uses full history; settings, settlement and cards fit narrow scre
       });
       expect(layout.scrollWidth).toBeLessThanOrEqual(layout.width);
       expect(layout.logCount).toBe(layout.actualLogs);
+      expect(layout.milestones[0]).toBe(0);
+      for (let i = 1; i < layout.milestones.length; i++)
+        expect(layout.milestones[i]).toBeGreaterThan(layout.milestones[i - 1]);
+      expect(layout.readingOrder).toEqual(Array.from({ length: layout.logCount }, (_, i) => i));
       expect(layout.overflow).toBe('visible');
       expect(layout.scrollHeight - layout.clientHeight).toBeLessThanOrEqual(1);
       expect(layout.bannerOverlaps).toBe(false);
       expect(layout.peekOverlaps).toBe(false);
+      await page.locator('.seat-peek').first().click();
+      await expect(page.locator('#activity-list li')).toHaveText(layout.texts);
     }
   }
 });

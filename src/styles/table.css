@@ -598,6 +598,8 @@
 .activity-list {
   max-height: none;
   overflow: visible;
+  /* Chronological DOM order reads across each row before moving down. */
+  grid-auto-flow: row;
 }
 
 .seat-peek[aria-pressed='true'] {

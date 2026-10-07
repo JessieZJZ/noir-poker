@@ -279,6 +279,8 @@ function render() {
     ? Math.round((game.stats.wins / game.stats.hands) * 100) + '%'
     : '—';
   $('#activity-list').innerHTML = game.logs
+    .slice()
+    .reverse()
     .map((l) => `<li class="log-${l.type} ${l.player === 0 ? 'log-hero' : ''}">${l.text}</li>`)
     .join('');
   $('#activity-count').textContent = game.phase === 'done' ? 'FINISHED' : 'LIVE';

@@ -305,6 +305,7 @@ export function startHand(g) {
   g.decisions = [];
   g.botDecisions = [];
   g.history = [];
+  log(g, `第 ${g.hand} 手开始 · 庄家 ${g.players[g.dealer].name}`, null, 'street');
   for (const p of g.players) {
     if (p.id) decayBotMood(p.botMood);
     p.botHand = { vpip: false, pfr: false, pressureRecorded: false };
@@ -337,7 +338,6 @@ export function startHand(g) {
     null,
     'blind',
   );
-  log(g, `第 ${g.hand} 手开始 · 庄家 ${g.players[g.dealer].name}`, null, 'street');
   g.pending = g.players.filter(canAct).map((p) => p.id);
   g.actor = nextIndex(g, bb, g.pending);
   handStarts.set(g, cloneHand(g));
@@ -653,7 +653,7 @@ export function settle(g, showdown = true) {
     g.winners
       .map((p) => p.name + ' ' + p.label + ' · 获得 ' + p.amount.toLocaleString())
       .join(' / ');
-  for (const pot of [...pots].reverse())
+  for (const pot of pots)
     log(
       g,
       pot.label +
