@@ -113,8 +113,8 @@ export const BOT_PROFILES = [
   },
   {
     id: 'viktor',
-    name: 'Viktor Blom · Isildur1',
-    short: 'Isildur1',
+    name: 'Viktor Blom',
+    short: 'Viktor Blom',
     tag: '松凶施压 · 宽范围争夺',
     description: '更宽地争夺后位和低成本底池，听牌与价值牌共用积极进攻路线，偏好较大尺度。',
     axes: [90, 94, 88, 70, 18],
@@ -134,8 +134,8 @@ export const BOT_PROFILES = [
   },
   {
     id: 'jungleman',
-    name: 'Dan Cates · Jungleman',
-    short: 'Jungleman',
+    name: 'Daniel Cates',
+    short: 'Daniel Cates',
     tag: '计算型进攻 · 强牌诱导',
     description: '保留有价格的防守，兼顾主动施压与强牌诱导；大额继续仍要通过权益和筹码压力检查。',
     axes: [65, 82, 66, 64, 72],
@@ -144,7 +144,7 @@ export const BOT_PROFILES = [
       '本人原访谈强调计算、观察实际行为并调整，避免机械平衡。当前机器人用范围和价格近似这些思路，未复刻职业级读人或动态学习。',
     sources: [
       {
-        label: 'Card Player · Jungleman 原访谈',
+        label: 'Card Player · Daniel Cates 原访谈',
         url: 'https://www.cardplayer.com/cardplayer-poker-magazines/65799-poker-hall-of-fame-23-20/articles/19757-capture-the-flag-daniel-jungleman12-cates',
       },
       {
@@ -155,8 +155,8 @@ export const BOT_PROFILES = [
   },
   {
     id: 'dwan',
-    name: 'Tom Dwan · durrrr',
-    short: 'durrrr',
+    name: 'Tom Dwan',
+    short: 'Tom Dwan',
     tag: '创造性施压 · 多街诈唬',
     description:
       '更积极争夺有位置的底池，在有进攻叙事或听牌时混合多街施压，也能用强牌保留对手范围。',

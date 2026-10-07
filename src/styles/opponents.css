@@ -357,6 +357,19 @@
     width: 100%;
   }
 }
+@media (max-width: 600px) {
+  .seat-profile > div > span.seat-style-label {
+    max-width: 72px;
+    white-space: normal;
+    text-align: center;
+  }
+  .arena.has-full-player-names[data-player-count='8'] {
+    height: 800px;
+  }
+  .arena.has-full-player-names[data-player-count='9'] {
+    height: 820px;
+  }
+}
 @media (max-width: 380px) {
   .profile-cards {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -367,5 +380,13 @@
   .profile-axes > div {
     grid-template-columns: 95px minmax(0, 1fr) 24px;
     gap: 6px;
+  }
+}
+@media (max-width: 360px) {
+  .arena.has-full-player-names[data-player-count='9'] .seat-4 .seat-action {
+    transform: translateX(4px);
+  }
+  .arena.has-full-player-names[data-player-count='9'] .seat-5 .seat-action {
+    transform: translateX(-4px);
   }
 }

@@ -742,7 +742,16 @@ test('nine-seat style assignment shows every persona at all sizes and executes t
     7: 'jungleman',
     8: 'dwan',
   };
-  const labels = ['谈老板', 'ST 王', '臧书奴', 'Peter', '阿宝', 'Isildur1', 'Jungleman', 'durrrr'];
+  const labels = [
+    '谈老板',
+    'ST 王',
+    '臧书奴',
+    'Peter',
+    '阿宝',
+    'Viktor Blom',
+    'Daniel Cates',
+    'Tom Dwan',
+  ];
   await page.evaluate(() => window.qa.foldWin(9));
   await page.locator('#opponents-button').click();
   await page.locator('#mix-opponents').click();
@@ -791,6 +800,32 @@ test('nine-seat style assignment shows every persona at all sizes and executes t
   await page.evaluate(() => window.qa.stop());
   for (let id = 1; id <= 8; id++)
     await expect(page.locator(`.seat-${id} .seat-style-label`)).toHaveText(labels[id - 1]);
+  for (const count of [8, 9]) {
+    await page.evaluate((n) => {
+      window.qa.heroTurn(n);
+      while (window.noir.getState().phase !== 'done') {
+        window.qa.allinRest();
+        window.qa.finish();
+      }
+    }, count);
+    for (const width of [320, 390]) {
+      await page.setViewportSize({ width, height: 1000 });
+      const crowded = await page.evaluate(() => {
+        const overlap = (a, b) =>
+          a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top;
+        return [...document.querySelectorAll('.seat')].some((seat) =>
+          [...seat.querySelectorAll('.seat-action, .hand-rank')].some((label) =>
+            [...document.querySelectorAll('.seat .playing-card')].some(
+              (card) =>
+                !seat.contains(card) &&
+                overlap(label.getBoundingClientRect(), card.getBoundingClientRect()),
+            ),
+          ),
+        );
+      });
+      expect(crowded).toBe(false);
+    }
+  }
 });
 
 test('configured bots use the fast-deal path and observed samples roll back on retry', async ({
@@ -923,6 +958,16 @@ test('foreign style assignments persist and candidate simulation is available in
   ])
     await page.locator(`[data-bot-seat="${seat}"]`).selectOption(profile);
   await expect(page.locator('#profile-cards .profile-card')).toHaveCount(9);
+  for (const [profile, name] of [
+    ['viktor', 'Viktor Blom'],
+    ['jungleman', 'Daniel Cates'],
+    ['dwan', 'Tom Dwan'],
+  ]) {
+    const choice = page.locator(`[data-profile-preview="${profile}"]`);
+    await expect(choice.locator('strong')).toHaveText(name);
+    await choice.click();
+    await expect(page.locator('.profile-detail-heading h3')).toHaveText(name);
+  }
   await page.locator('#save-opponents').click();
   await page.locator('#next-button').click();
   await page.evaluate(() => window.qa.stop());

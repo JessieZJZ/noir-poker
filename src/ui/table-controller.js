@@ -201,6 +201,10 @@ const layouts = {
 function render() {
   const count = game.players.length;
   $('#arena').dataset.playerCount = count;
+  $('#arena').classList.toggle(
+    'has-full-player-names',
+    game.players.slice(1).some((p) => ['viktor', 'jungleman', 'dwan'].includes(p.botProfile)),
+  );
   $('#table-tag').textContent = count + '-MAX';
   $('#table-size-label').textContent = count + ' 人无限注';
   const displayBoard = game.practiceBoard || game.board;
