@@ -134,11 +134,14 @@ function flyChips(id) {
 }
 function seatAction(p) {
   if (game.actor === p.id) return '<span class="seat-action-label thinking-dots">思考中</span>';
+  const retained = game.phase === 'done' ? p.lastAction : null;
+  const action = retained?.text ?? p.action;
   const match =
     /^(?:(\d+-bet) )?(小盲|大盲|跟注|开池至|加注至|下注至|下注|短全下至|全下至|全下) (\d+)$/.exec(
-      p.action,
+      action,
     );
-  if (!match) return `<span class="seat-action-label">${p.action || '等待行动'}</span>`;
+  if (!match)
+    return `<span class="seat-action-label">${action || (game.phase === 'done' ? '未行动' : '等待行动')}</span>`;
   const label = match[1]
       ? match[1] + (match[2] === '短全下至' ? ' 短全下' : match[2] === '全下至' ? ' 全下' : '')
       : match[2] === '加注至'
@@ -147,8 +150,8 @@ function seatAction(p) {
     amount = Number(match[3]);
   const meaning =
     match[2] === '跟注'
-      ? `本次补入 ${format(amount)}，本轮累计投入 ${format(p.bet)}`
-      : `${p.action} · 本轮累计投入 ${format(amount)}`;
+      ? `本次补入 ${format(amount)}，本轮累计投入 ${format(retained?.bet ?? p.bet)}`
+      : `${action} · 本轮累计投入 ${format(amount)}`;
   return `<span class="seat-action-label">${label}</span><strong class="seat-action-amount" title="${meaning}">${format(amount)}</strong>`;
 }
 const layouts = {
@@ -236,7 +239,7 @@ function render() {
       const profile = getBotProfile(p.botProfile),
         mood = game.emotionMode === 'off' ? 'steady' : p.botMood.kind,
         title = `${p.name} · ${profile.short}（训练原型） · 模拟状态：${MOOD_LABELS[mood]}`;
-      return `<div class="seat seat-${p.id} ${p.folded ? 'folded' : ''} ${game.actor === p.id ? 'thinking' : ''} ${isWinner ? 'winner' : ''}" data-player="${p.id}" data-profile="${p.botProfile}" data-mood="${mood}" style="left:${x}%;top:${y}%"><div id="seat-hand-${p.id}" class="mini-cards ${reveal ? 'revealed-cards' : ''}">${reveal ? p.hole.map((c) => card(c, { small: true, best: !!rank && rank.cards.some((best) => best.key === c.key) })).join('') : p.hole.map((c, i) => `<span class="card-back ${newHand ? 'card-deal' : ''}" style="--delay:${p.id * 65 + i * 140}ms" aria-label="对手底牌"></span>`).join('')}</div><div class="seat-profile"><span class="avatar avatar-${p.id - 1}" title="${title}" aria-label="${title}">${profiles[p.id]}</span><div><strong>${p.name}${positionBadge(p.id)}</strong><span class="seat-style-label" data-style-profile="${profile.id}" title="${profile.name} · ${profile.tag}" aria-label="${p.name} 本手风格：${profile.name}">${profile.short}</span><span class="seat-bankroll"><span class="seat-stack">${format(p.stack)}</span>${game.phase === 'done' ? `<button class="seat-peek" data-peek-player="${p.id}" title="${reveal ? '收起底牌' : '查看底牌'}" aria-label="${reveal ? '收起' : '查看'} ${p.name} 的底牌" aria-pressed="${!!reveal}" aria-controls="seat-hand-${p.id}"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M2 10C4 6 7 5 10 5C13 5 16 6 18 10C16 14 13 15 10 15C7 15 4 14 2 10Z"/><circle cx="10" cy="10" r="2.5"/></svg></button>` : ''}</span></div></div>${rank ? `<div class="hand-rank ${isWinner ? 'rank-winner' : ''}">${isWinner ? '♛ ' : ''}${rank.label}</div>` : ''}${game.phase === 'done' ? '' : `<div class="seat-action">${seatAction(p)}</div>`}</div>`;
+      return `<div class="seat seat-${p.id} ${p.folded ? 'folded' : ''} ${game.actor === p.id ? 'thinking' : ''} ${isWinner ? 'winner' : ''}" data-player="${p.id}" data-profile="${p.botProfile}" data-mood="${mood}" style="left:${x}%;top:${y}%"><div id="seat-hand-${p.id}" class="mini-cards ${reveal ? 'revealed-cards' : ''}">${reveal ? p.hole.map((c) => card(c, { small: true, best: !!rank && rank.cards.some((best) => best.key === c.key) })).join('') : p.hole.map((c, i) => `<span class="card-back ${newHand ? 'card-deal' : ''}" style="--delay:${p.id * 65 + i * 140}ms" aria-label="对手底牌"></span>`).join('')}</div><div class="seat-profile"><span class="avatar avatar-${p.id - 1}" title="${title}" aria-label="${title}">${profiles[p.id]}</span><div><strong>${p.name}${positionBadge(p.id)}</strong><span class="seat-style-label" data-style-profile="${profile.id}" title="${profile.name} · ${profile.tag}" aria-label="${p.name} 本手风格：${profile.name}">${profile.short}</span><span class="seat-bankroll"><span class="seat-stack">${format(p.stack)}</span>${game.phase === 'done' ? `<button class="seat-peek" data-peek-player="${p.id}" title="${reveal ? '收起底牌' : '查看底牌'}" aria-label="${reveal ? '收起' : '查看'} ${p.name} 的底牌" aria-pressed="${!!reveal}" aria-controls="seat-hand-${p.id}"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M2 10C4 6 7 5 10 5C13 5 16 6 18 10C16 14 13 15 10 15C7 15 4 14 2 10Z"/><circle cx="10" cy="10" r="2.5"/></svg></button>` : ''}</span></div></div>${rank ? `<div class="hand-rank ${isWinner ? 'rank-winner' : ''}">${isWinner ? '♛ ' : ''}${rank.label}</div>` : ''}<div class="seat-action" aria-label="${p.name} 的最近行动">${seatAction(p)}</div></div>`;
     })
     .join('');
   $('#hero-cards').innerHTML = hero.hole
@@ -267,6 +270,9 @@ function render() {
           : game.phase === 'done'
             ? '本手结束'
             : '等待行动';
+  $('#hero-last-action').hidden = game.phase !== 'done';
+  $('#hero-turn').hidden = game.phase === 'done';
+  $('#hero-last-action').innerHTML = game.phase === 'done' ? seatAction(hero) : '';
   $('#session-stack').innerHTML = `${format(hero.stack)}<span>CHIPS</span>`;
   const diff = hero.stack - game.stats.buyin;
   $('#session-change').textContent = game.stats.hands
@@ -761,6 +767,8 @@ function publicState() {
       folded: p.folded,
       allin: p.allin,
       bet: p.bet,
+      action: p.action,
+      lastAction: p.lastAction ? { ...p.lastAction } : null,
       ...(p.id
         ? {
             botProfile: p.botProfile,

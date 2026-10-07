@@ -94,6 +94,119 @@ test('5–9 player showdown reveals all holes immediately and displays each best
   await expect(page.locator('#replay-showdown, #show-hands-button, #review-card')).toHaveCount(0);
 });
 
+test('settled seats retain all-in sizes, board and hero action across viewing and all screen sizes', async ({
+  page,
+}) => {
+  for (const width of [320, 390, 768, 1280]) {
+    await page.setViewportSize({ width, height: 900 });
+    for (const count of [5, 6, 7, 8, 9]) {
+      await page.evaluate((n) => window.qa.heroTurn(n), count);
+      await page.locator('[data-preset="all"]').click();
+      await page.locator('#raise-button').click();
+      const retained = await page.evaluate(() => {
+        window.qa.stop();
+        window.qa.allinRest();
+        return window.noir.getState().players.map((p) => p.lastAction);
+      });
+      await page.evaluate(() => {
+        while (window.noir.getState().phase !== 'done') window.qa.finish();
+      });
+      const done = await page.evaluate(() => window.noir.getState());
+      expect(done.board).toHaveLength(5);
+      expect(done.players.map((p) => p.lastAction)).toEqual(retained);
+      await expect(page.locator('#hero-last-action')).toBeVisible();
+      await expect(page.locator('#hero-last-action')).toContainText('2-bet 全下');
+      await expect(page.locator('#hero-last-action .seat-action-amount')).toHaveText('5,000');
+      await expect(page.locator('.seat .seat-action')).toHaveCount(count - 1);
+      for (let id = 1; id < count; id++) {
+        await expect(page.locator(`.seat-${id} .seat-action-label`)).toHaveText('全下');
+        await expect(page.locator(`.seat-${id} .seat-action-amount`)).toHaveText('5,000');
+      }
+      const geometry = await page.evaluate(() => {
+        const board = document.querySelector('#board').getBoundingClientRect();
+        const banner = document.querySelector('#result-banner').getBoundingClientRect();
+        const overlaps = (a, b) =>
+          a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top;
+        return {
+          overflowing: document.documentElement.scrollWidth > innerWidth,
+          boardOverlaps: [
+            ...document.querySelectorAll('.seat .seat-action, .seat .hand-rank'),
+          ].some((el) => overlaps(el.getBoundingClientRect(), board)),
+          cardOverlaps: [
+            ...document.querySelectorAll('.seat .playing-card, #hero-cards .playing-card'),
+          ].some((el) => overlaps(el.getBoundingClientRect(), board)),
+          bannerOverlaps: overlaps(
+            document.querySelector('#hero-last-action').getBoundingClientRect(),
+            banner,
+          ),
+        };
+      });
+      expect(geometry).toEqual({
+        overflowing: false,
+        boardOverlaps: false,
+        cardOverlaps: false,
+        bannerOverlaps: false,
+      });
+      await page.locator('.seat-peek').first().click();
+      expect(
+        (await page.evaluate(() => window.noir.getState())).players.map((p) => p.lastAction),
+      ).toEqual(retained);
+      expect((await page.evaluate(() => window.noir.getState())).board).toEqual(done.board);
+    }
+  }
+  await page.locator('#restart-hand-button').click();
+  const retry = await page.evaluate(() => {
+    window.qa.stop();
+    return window.noir.getState();
+  });
+  expect(retry.players[0].lastAction).toBeNull();
+  await expect(page.locator('#hero-last-action')).toBeHidden();
+  expect(retry.players.filter((p) => p.lastAction)).toHaveLength(2);
+});
+
+test('settled raises, calls and folds retain their actual amounts until the next hand', async ({
+  page,
+}) => {
+  await page.evaluate(() => {
+    window.qa.retainedRiver(9);
+    window.qa.finish();
+  });
+  const done = await page.evaluate(() => window.noir.getState());
+  expect(
+    done.players.some((p) => p.lastAction.text === '跟注 200' && p.lastAction.bet === 300),
+  ).toBe(true);
+  expect(done.players.some((p) => p.lastAction.text === '2-bet 加注至 300')).toBe(true);
+  expect(done.players.some((p) => p.lastAction.text === '弃牌')).toBe(true);
+  for (const p of done.players) {
+    const row = p.id
+      ? page.locator(`.seat-${p.id} .seat-action`)
+      : page.locator('#hero-last-action');
+    await expect(row).toBeVisible();
+    if (p.lastAction.text.startsWith('跟注')) {
+      await expect(row.locator('.seat-action-label')).toHaveText('跟注');
+      await expect(row.locator('.seat-action-amount')).toHaveText(
+        String(Number(p.lastAction.text.split(' ')[1])),
+      );
+      await expect(row.locator('.seat-action-amount')).toHaveAttribute('title', /本轮累计投入 300/);
+    } else if (p.lastAction.text === '弃牌') await expect(row).toHaveText('弃牌');
+    else {
+      await expect(row.locator('.seat-action-label')).toHaveText('2-bet');
+      await expect(row.locator('.seat-action-amount')).toHaveText('300');
+    }
+  }
+  await page.locator('#next-button').click();
+  const next = await page.evaluate(() => {
+    window.qa.stop();
+    return window.noir.getState();
+  });
+  expect(next.board).toEqual([]);
+  expect(next.players.filter((p) => p.lastAction)).toHaveLength(2);
+  expect(
+    next.players.filter((p) => p.lastAction).every((p) => /^(小盲|大盲) /.test(p.lastAction.text)),
+  ).toBe(true);
+  await expect(page.locator('#hero-last-action')).toBeHidden();
+});
+
 test('each eye toggles only its seat in place without changing showdown or settlement', async ({
   page,
 }) => {

@@ -86,6 +86,21 @@ window.qa = {
     render();
     return publicState();
   },
+  retainedRiver(count = 6) {
+    fixtureGame(count, true);
+    startHand(game);
+    while (game.street < 3) {
+      if (game.phase === 'between') advanceStreet(game);
+      else act(game, game.actor, 'call');
+    }
+    act(game, game.actor, 'raise', 100);
+    act(game, game.actor, 'call');
+    act(game, game.actor, 'raise', 300);
+    act(game, game.actor, 'fold');
+    while (game.phase === 'playing') act(game, game.actor, 'call');
+    render();
+    return publicState();
+  },
   finish() {
     clearTimeout(timer);
     if (game.phase === 'between') advanceStreet(game);
@@ -133,6 +148,7 @@ window.qa = {
       p.folded = folded.includes(p.id);
       p.allin = false;
       p.action = p.folded ? '弃牌' : '过牌';
+      p.lastAction = { text: p.action, street: 3, bet: p.bet };
     }
     game.street = 3;
     game.phase = 'between';

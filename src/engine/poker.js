@@ -120,6 +120,7 @@ export function newGame(playerCount = 6) {
         actedTo: null,
         checked: false,
         action: '',
+        lastAction: null,
         botProfile: 'balanced',
         botMood: freshBotMood(),
         botStats: freshBotStats(),
@@ -277,6 +278,10 @@ function pay(p, amount) {
   p.allin = p.stack === 0;
   return n;
 }
+// Public presentation only; street bet resets and settlement never overwrite it.
+function rememberAction(g, p) {
+  p.lastAction = { text: p.action, street: g.street, bet: p.bet };
+}
 // Keep the original deal private to the engine, outside public table and review data.
 const handStarts = new WeakMap();
 const cloneHand = (value) => JSON.parse(JSON.stringify(value));
@@ -322,6 +327,7 @@ export function startHand(g) {
     p.actedTo = null;
     p.checked = false;
     p.action = '';
+    p.lastAction = null;
   }
   for (let round = 0; round < 2; round++)
     for (let i = 1; i <= g.players.length; i++)
@@ -330,8 +336,10 @@ export function startHand(g) {
     bb = (g.dealer + 2) % g.players.length;
   pay(g.players[sb], 25);
   g.players[sb].action = `小盲 ${g.players[sb].bet}`;
+  rememberAction(g, g.players[sb]);
   pay(g.players[bb], 50);
   g.players[bb].action = `大盲 ${g.players[bb].bet}`;
+  rememberAction(g, g.players[bb]);
   log(
     g,
     `${g.players[sb].name} 小盲 ${g.players[sb].bet} · ${g.players[bb].name} 大盲 ${g.players[bb].bet}`,
@@ -502,6 +510,7 @@ export function act(g, id, action, amount) {
     p.action = `${betLabel} ${amount}`;
     log(g, `${p.name} ${p.action}`, id);
   }
+  rememberAction(g, p);
   progress(g, id);
   return g;
 }

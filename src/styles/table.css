@@ -454,6 +454,39 @@
 .arena.is-done .seat-action {
   padding-top: 5px;
   min-height: 31px;
+  max-width: 106px;
+  flex-wrap: wrap;
+  white-space: normal;
+  row-gap: 0;
+}
+.arena.is-done .seat-action-label,
+.arena.is-done .seat-action-amount {
+  white-space: nowrap;
+}
+.arena.is-done .hero-last-action {
+  min-height: 0;
+  padding-top: 0;
+  max-width: 130px;
+}
+@media (max-width: 600px) {
+  .arena.is-done[data-player-count='5'],
+  .arena.is-done[data-player-count='6'] {
+    height: 600px;
+  }
+  .arena.is-done[data-player-count='6'] .table-center {
+    top: 34%;
+  }
+  .arena.is-done[data-player-count='6'] .seat-2,
+  .arena.is-done[data-player-count='6'] .seat-4 {
+    transform: translate(-50%, -20px);
+  }
+}
+@media (max-width: 360px) {
+  .arena.is-done[data-player-count='9'] .board > .playing-card,
+  .arena.is-done[data-player-count='9'] .board-slot {
+    width: 26px;
+    height: 38px;
+  }
 }
 .folded-actions {
   justify-content: center;
