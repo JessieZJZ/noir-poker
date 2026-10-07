@@ -20,6 +20,14 @@ import { createShowdownController } from './showdown.js';
 const $ = (s) => document.querySelector(s);
 const handReview = createReviewController({ card });
 const showdown = createShowdownController({ card });
+// Display preferences belong to this hand's UI, never to settlement or review.
+const seatHandVisibility = new Map();
+function isSeatHandVisible(player) {
+  if (game.phase === 'done' && seatHandVisibility.has(player.id)) {
+    return seatHandVisibility.get(player.id);
+  }
+  return (game.showdown || game.revealed) && !player.folded;
+}
 let requestedCount = 6;
 let game = newGame(),
   timer = null,
@@ -192,10 +200,13 @@ function render() {
     .slice(1)
     .map((p) => {
       const isWinner = game.winners.some((w) => w.id === p.id),
-        reveal = (game.showdown || game.revealed) && !p.folded,
-        rank = reveal && game.board.length === 5 ? evaluate([...p.hole, ...game.board]) : null,
+        reveal = isSeatHandVisible(p),
+        rank =
+          reveal && !p.folded && game.board.length === 5
+            ? evaluate([...p.hole, ...game.board])
+            : null,
         [x, y] = layouts[count][p.id - 1];
-      return `<div class="seat seat-${p.id} ${p.folded ? 'folded' : ''} ${game.actor === p.id ? 'thinking' : ''} ${isWinner ? 'winner' : ''}" data-player="${p.id}" style="left:${x}%;top:${y}%"><div class="mini-cards ${reveal ? 'revealed-cards' : ''}">${reveal ? p.hole.map((c) => card(c, { small: true, best: !!rank && rank.cards.some((best) => best.key === c.key) })).join('') : p.hole.map((c, i) => `<span class="card-back ${newHand ? 'card-deal' : ''}" style="--delay:${p.id * 65 + i * 140}ms" aria-label="对手底牌"></span>`).join('')}</div><div class="seat-profile"><span class="avatar avatar-${p.id - 1}">${profiles[p.id]}</span><div><strong>${p.name}${positionBadge(p.id)}</strong><span class="seat-bankroll"><span class="seat-stack">${format(p.stack)}</span>${game.phase === 'done' ? `<button class="seat-peek" data-peek-player="${p.id}" title="查看底牌" aria-label="查看 ${p.name} 的底牌" aria-haspopup="dialog" aria-controls="hands-dialog"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M2 10s3-5 8-5 8 5 8 5-3 5-8 5-8-5-8-5Z"/><circle cx="10" cy="10" r="2.5"/></svg></button>` : ''}</span></div></div>${rank ? `<div class="hand-rank ${isWinner ? 'rank-winner' : ''}">${isWinner ? '♛ ' : ''}${rank.label}</div>` : ''}${game.phase === 'done' ? '' : `<div class="seat-action">${seatAction(p)}</div>`}</div>`;
+      return `<div class="seat seat-${p.id} ${p.folded ? 'folded' : ''} ${game.actor === p.id ? 'thinking' : ''} ${isWinner ? 'winner' : ''}" data-player="${p.id}" style="left:${x}%;top:${y}%"><div id="seat-hand-${p.id}" class="mini-cards ${reveal ? 'revealed-cards' : ''}">${reveal ? p.hole.map((c) => card(c, { small: true, best: !!rank && rank.cards.some((best) => best.key === c.key) })).join('') : p.hole.map((c, i) => `<span class="card-back ${newHand ? 'card-deal' : ''}" style="--delay:${p.id * 65 + i * 140}ms" aria-label="对手底牌"></span>`).join('')}</div><div class="seat-profile"><span class="avatar avatar-${p.id - 1}">${profiles[p.id]}</span><div><strong>${p.name}${positionBadge(p.id)}</strong><span class="seat-bankroll"><span class="seat-stack">${format(p.stack)}</span>${game.phase === 'done' ? `<button class="seat-peek" data-peek-player="${p.id}" title="${reveal ? '收起底牌' : '查看底牌'}" aria-label="${reveal ? '收起' : '查看'} ${p.name} 的底牌" aria-pressed="${!!reveal}" aria-controls="seat-hand-${p.id}"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M2 10s3-5 8-5 8 5 8 5-3 5-8 5-8-5-8-5Z"/><circle cx="10" cy="10" r="2.5"/></svg></button>` : ''}</span></div></div>${rank ? `<div class="hand-rank ${isWinner ? 'rank-winner' : ''}">${isWinner ? '♛ ' : ''}${rank.label}</div>` : ''}${game.phase === 'done' ? '' : `<div class="seat-action">${seatAction(p)}</div>`}</div>`;
     })
     .join('');
   $('#hero-cards').innerHTML = hero.hole
@@ -467,14 +478,13 @@ async function continueDeal() {
   }
 }
 function nextHand() {
+  seatHandVisibility.clear();
   finishing = false;
   clearTimeout(timer);
   showdown.reset();
   epoch++;
   lastBoard = 0;
   $('#pot-dialog').close();
-  $('#hands-dialog').close();
-  $('#hands-grid').innerHTML = '';
   if (requestedCount !== game.players.length) {
     const difficulty = game.difficulty;
     game = newGame(requestedCount);
@@ -492,14 +502,13 @@ function nextHand() {
 }
 function retryHand() {
   if (!canRestartHand(game)) return false;
+  seatHandVisibility.clear();
   finishing = false;
   clearTimeout(timer);
   showdown.reset();
   handReview.rollback(game, epoch);
   epoch++;
   $('#pot-dialog').close();
-  $('#hands-dialog').close();
-  $('#hands-grid').innerHTML = '';
   document.querySelectorAll('.flying-chip').forEach((e) => {
     e.getAnimations().forEach((a) => a.cancel());
     e.remove();
@@ -584,23 +593,29 @@ $('#player-count').onchange = (e) => {
   note.hidden = requestedCount === game.players.length;
   note.textContent = `下一手切换为 ${requestedCount} 人桌 · 筹码恢复 5,000，统计重新开始`;
 };
-function showOpponentHand(id) {
+function toggleOpponentHand(id) {
   const p = game.players[id];
   if (game.phase !== 'done' || !Number.isInteger(id) || id === 0 || !p) return false;
-  const winner = game.winners.find((w) => w.id === id),
-    rank = game.board.length === 5 ? evaluate([...p.hole, ...game.board]) : null;
-  $('#hands-dialog-title').textContent = p.name + ' 的底牌';
-  $('#hands-note').textContent = p.folded
-    ? '已弃牌 · 仅供本手结束后的训练查看，不参与结算。'
-    : '本手已结束 · 牌型由底牌与本手公共牌组成。';
-  $('#hands-grid').innerHTML =
-    `<section class="hands-player ${winner ? 'hands-winner' : ''}"><div class="hands-player-heading"><strong>${p.name} ${positionBadge(id)}</strong><span>${p.folded ? '已弃牌' : winner ? '获得 ' + format(winner.amount) : '未获底池'}</span></div><div class="hands-cards">${p.hole.map((c) => card(c, { best: !p.folded && !!rank && rank.cards.some((best) => best.key === c.key) })).join('')}</div><div class="hand-rank ${winner ? 'rank-winner' : ''}">${rank ? rank.label : '公共牌不足五张'}</div></section>`;
-  $('#hands-dialog').showModal();
+  const visible = !isSeatHandVisible(p);
+  seatHandVisibility.set(id, visible);
+  render();
+  $(`[data-peek-player="${id}"]`).focus({ preventScroll: true });
+  if (visible && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    const hand = $(`#seat-hand-${id}`),
+      transform = getComputedStyle(hand).transform;
+    hand.animate(
+      [
+        { transform: `${transform === 'none' ? '' : transform} rotateY(80deg)`, opacity: 0.2 },
+        { transform, opacity: 1 },
+      ],
+      { duration: 240, easing: 'ease-out' },
+    );
+  }
   return true;
 }
 $('#seats').onclick = (e) => {
   const button = e.target.closest('[data-peek-player]');
-  if (button) showOpponentHand(Number(button.dataset.peekPlayer));
+  if (button) toggleOpponentHand(Number(button.dataset.peekPlayer));
 };
 $('#continue-deal-button').onclick = continueDeal;
 $('#difficulty').onchange = (e) => {
@@ -701,9 +716,7 @@ function publicState() {
       folded: p.folded,
       allin: p.allin,
       bet: p.bet,
-      ...((game.showdown || game.revealed) && !p.folded
-        ? { cards: p.hole.map((c) => rankText(c.rank) + c.symbol) }
-        : {}),
+      ...(isSeatHandVisible(p) ? { cards: p.hole.map((c) => rankText(c.rank) + c.symbol) } : {}),
     })),
     result: game.result || null,
   };

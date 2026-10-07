@@ -3,6 +3,7 @@
 import { deckOfCards, settle } from '../engine/poker.js';
 
 function fixtureGame(count = 6, heroFirst = false) {
+  seatHandVisibility.clear();
   clearTimeout(timer);
   finishing = false;
   showdown.reset();
@@ -17,6 +18,9 @@ function fixtureGame(count = 6, heroFirst = false) {
 }
 
 window.qa = {
+  hole(id) {
+    return game.players[id].hole.map((c) => rankText(c.rank) + c.symbol);
+  },
   stop() {
     clearTimeout(timer);
   },
@@ -49,6 +53,19 @@ window.qa = {
   finish() {
     clearTimeout(timer);
     if (game.phase === 'between') advanceStreet(game);
+    render();
+    return publicState();
+  },
+  foldWin(count = 6) {
+    fixtureGame(count, true);
+    startHand(game);
+    while (game.phase === 'playing') act(game, game.actor, 'fold');
+    render();
+    return publicState();
+  },
+  foldRest() {
+    clearTimeout(timer);
+    while (game.phase === 'playing') act(game, game.actor, 'fold');
     render();
     return publicState();
   },

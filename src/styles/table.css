@@ -455,19 +455,6 @@
   padding-top: 5px;
   min-height: 31px;
 }
-.hands-dialog {
-  width: min(420px, calc(100% - 24px));
-}
-.hands-grid {
-  grid-template-columns: minmax(0, 1fr);
-}
-.hands-cards .playing-card {
-  width: 70px;
-  height: 101px;
-}
-.hands-note {
-  font-size: 13px;
-}
 .folded-actions {
   justify-content: center;
   min-height: 92px;
@@ -527,10 +514,6 @@
   }
   .arena.is-done .seat-action {
     min-height: 30px;
-  }
-  .hands-cards .playing-card {
-    width: 67px;
-    height: 97px;
   }
   .continue-deal-button {
     width: 100%;
@@ -615,4 +598,12 @@
 .activity-list {
   max-height: none;
   overflow: visible;
+}
+
+.seat-peek[aria-pressed='true'] {
+  background: #24483e;
+  border-color: #70b49b;
+}
+.arena.is-done .seat.folded .mini-cards.revealed-cards {
+  opacity: 1;
 }

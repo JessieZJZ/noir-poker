@@ -439,59 +439,6 @@
     transform: rotate(calc((var(--i) - 2) * 2deg));
   }
 }
-.hands-dialog {
-  width: min(740px, calc(100% - 24px));
-  max-height: 90dvh;
-  overflow-y: auto;
-}
-.hands-note {
-  font-size: 12px;
-  line-height: 1.7;
-}
-.hands-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
-}
-.hands-player {
-  border: 1px solid #32483f;
-  border-radius: 10px;
-  background: #13272055;
-  padding: 17px;
-}
-.hands-winner {
-  border-color: #c0a25e;
-  background: #4c3f2022;
-}
-.hands-player-heading {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-.hands-player-heading strong {
-  font-size: 14px;
-  font-weight: 500;
-}
-.hands-player-heading > span {
-  font-size: 11px;
-  color: #a3b8ac;
-}
-.hands-cards {
-  display: flex;
-  justify-content: center;
-  gap: 12px;
-  margin: 19px 0 14px;
-}
-.hands-cards .playing-card {
-  width: 59px;
-  height: 85px;
-}
-.hands-player > .hand-rank {
-  width: fit-content;
-  margin: 0 auto;
-}
 @media (max-width: 1150px) and (min-width: 901px) {
   .arena[data-player-count='7'] .avatar,
   .arena[data-player-count='8'] .avatar,
@@ -654,19 +601,6 @@
     padding: 11px 8px;
     font-size: 12px;
   }
-  .hands-player {
-    padding: 13px;
-  }
-  .hands-player-heading strong {
-    font-size: 13px;
-  }
-  .hands-cards {
-    gap: 9px;
-  }
-  .hands-cards .playing-card {
-    width: 49px;
-    height: 71px;
-  }
 }
 @media (max-width: 360px) {
   .table-settings {
@@ -685,9 +619,6 @@
   .winning-card .playing-card {
     width: 40px;
     height: 58px;
-  }
-  .hands-grid {
-    grid-template-columns: 1fr;
   }
   .arena[data-player-count='8'] .board > .playing-card,
   .arena[data-player-count='8'] .board-slot,
