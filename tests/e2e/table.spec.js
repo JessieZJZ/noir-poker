@@ -133,6 +133,91 @@ test('winner crowns follow actual main and side pot awards and survive hidden sh
   await expect(page.locator('#hero-hand-rank.winner-indicator')).toHaveCount(0);
 });
 
+test('compact settlement leads with the winner and keeps refunds separate from one displayed award', async ({
+  page,
+}) => {
+  for (const width of [320, 390, 1280]) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.evaluate(() => window.qa.foldPotRefund());
+    await page.locator('#pot-details-button').click();
+    await expect(page.locator('#pot-dialog-title')).toHaveText('本手结算');
+    await expect(page.locator('#pot-dialog-note')).toBeHidden();
+    await expect(page.locator('.settled-pot')).toHaveCount(1);
+    await expect(page.locator('.settled-pot .pot-detail-heading > strong')).toHaveCount(0);
+    await expect(page.locator('.pot-award')).toHaveCount(1);
+    await expect(page.locator('.pot-award')).toContainText('Alex 获胜');
+    await expect(page.locator('.pot-award')).toContainText('弃牌获胜');
+    await expect(page.locator('.pot-award > strong')).toHaveText('+125筹码');
+    await expect(page.locator('.compact-refund')).toContainText('未跟注退还 Alex');
+    await expect(page.locator('.compact-refund > strong')).toHaveText('75');
+    await expect(page.locator('.pot-eligibility, .pot-player-list')).toHaveCount(0);
+    await expect(page.locator('.pot-distribution')).not.toHaveAttribute('open');
+    await expect(page.locator('.pot-distribution-body')).toBeHidden();
+    const compact = await page
+      .locator('#pot-dialog')
+      .evaluate(
+        (el) => el.scrollHeight <= el.clientHeight + 1 && el.getBoundingClientRect().height < 600,
+      );
+    expect(compact).toBe(true);
+    await page.locator('.pot-distribution > summary').click();
+    await expect(page.locator('.pot-distribution-body')).toContainText(
+      '你不参与此池 · 结算资格：Alex',
+    );
+    await expect(page.locator('.pot-contribution-list li')).toHaveCount(3);
+    await page.evaluate(() => window.qa.finish());
+    await expect(page.locator('.pot-distribution')).toHaveAttribute('open');
+    await page.locator('#pot-dialog .primary-button').click();
+  }
+});
+
+test('pot details retain per-pot awards, odd split shares and conditional live eligibility', async ({
+  page,
+}) => {
+  await page.evaluate(() =>
+    window.qa.scene('As Ac', '2s 3h 4c 8d 9s', {
+      totals: [100, 200, 300, 300, 0, 0],
+      folded: [4, 5],
+      otherHoles: { 1: 'Ks Kc', 2: 'Qd Qh', 3: 'Jh Jd' },
+    }),
+  );
+  await page.locator('#pot-details-button').click();
+  const state = await page.evaluate(() => window.noir.getState());
+  await expect(page.locator('.settled-pot h3')).toHaveText(['主池', '边池 1', '边池 2']);
+  for (let i = 0; i < state.pots.length; i++) {
+    const card = page.locator(`.settled-pot[data-pot-index="${i}"]`);
+    await expect(card.locator('.pot-award > strong')).toHaveText(
+      state.pots[i].awards.map((a) => `+${a.amount.toLocaleString('en-US')}筹码`),
+    );
+    await expect(card.locator('.pot-distribution')).not.toHaveAttribute('open');
+  }
+  await page.locator('#pot-dialog .primary-button').click();
+  await page.evaluate(() =>
+    window.qa.scene('2c 3d', 'As Ks Qs Js Ts', {
+      count: 5,
+      totals: [100, 100, 1, 1, 1],
+      folded: [2, 3, 4],
+    }),
+  );
+  await page.locator('#pot-details-button').click();
+  await expect(page.locator('.pot-split-total')).toHaveText('203 筹码 · 平分');
+  expect(await page.locator('.pot-award > strong').allTextContents()).toEqual(
+    expect.arrayContaining(['+101筹码', '+102筹码']),
+  );
+  await page.locator('.pot-distribution > summary').click();
+  await expect(page.locator('.pot-rounding-note')).toBeVisible();
+  await page.locator('#pot-dialog .primary-button').click();
+  await page.evaluate(() => window.qa.heroTurn());
+  await page.locator('[data-preset="all"]').click();
+  await page.locator('#raise-button').click();
+  await page.evaluate(() => window.qa.stop());
+  await page.locator('#pot-details-button').click();
+  await expect(page.locator('#pot-dialog-title')).toHaveText('主池与边池');
+  await expect(page.locator('#pot-dialog-note')).toBeVisible();
+  await expect(page.locator('.pot-eligibility.hero-eligible')).toBeVisible();
+  await expect(page.locator('.pot-award, .compact-refund')).toHaveCount(0);
+  await expect(page.locator('.pot-refund')).toContainText('待跟注或退还');
+});
+
 test('raise controls, seats, activity and review share street-specific bet ordinals', async ({
   page,
 }) => {

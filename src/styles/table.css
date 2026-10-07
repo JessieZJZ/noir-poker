@@ -46,6 +46,138 @@
   stroke-linejoin: round;
   stroke-linecap: round;
 }
+/* Lead settlement with its recipients; participation stays one disclosure away. */
+#pot-dialog.is-settled {
+  width: min(520px, calc(100% - 32px));
+  padding: 24px;
+}
+#pot-dialog.is-settled h2 {
+  margin: 16px 0 20px;
+}
+.settled-pot {
+  padding: 16px;
+  background: #102522;
+  border-color: #33564a;
+}
+.settled-pot .pot-detail-heading h3 {
+  font-size: 14px;
+  font-weight: 500;
+  color: #9eb8ae;
+}
+.pot-split-total {
+  color: #b4c6bf;
+  font-size: 13px;
+}
+.settled-pot .pot-awards {
+  border: 0;
+  margin-top: 12px;
+  padding: 0;
+}
+.settled-pot .pot-award {
+  padding: 8px 0;
+  gap: 8px;
+}
+.pot-award-player {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  min-width: 0;
+}
+.pot-award-player b {
+  font-size: 17px;
+  font-weight: 600;
+  color: #edf5f1;
+}
+.pot-award-player > span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.pot-winner-icon {
+  width: 17px;
+  height: 15px;
+  margin-top: 4px;
+  flex: none;
+  fill: #e3bf72;
+  stroke: #e3bf72;
+  stroke-width: 1.5;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+.settled-pot .pot-award > strong {
+  font-size: 25px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.settled-pot .pot-award > strong > small {
+  display: inline;
+  margin-left: 5px;
+  color: #8ea99f;
+  font-size: 12px;
+  font-weight: 400;
+}
+.pot-distribution {
+  margin-top: 12px;
+  border-top: 1px solid #2e4840;
+  padding-top: 10px;
+  font-size: 13px;
+  color: #99b2a6;
+}
+.pot-distribution > summary {
+  cursor: pointer;
+  padding: 3px 0;
+}
+.pot-distribution-body p {
+  font-size: 13px;
+  margin: 12px 0;
+}
+.pot-distribution-body h4 {
+  font-size: 13px;
+  font-weight: 500;
+  margin: 12px 0 4px;
+  color: #c9d9d1;
+}
+.pot-contribution-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.pot-contribution-list li {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 6px 0;
+  color: #a7beb3;
+}
+.pot-contribution-list b {
+  font-family: Manrope, sans-serif;
+  color: #d6e5df;
+  font-weight: 500;
+}
+.pot-refund.compact-refund {
+  border: 0;
+  background: transparent;
+  padding: 10px 3px;
+  margin-bottom: 8px;
+  font-size: 13px;
+}
+.compact-refund > span {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px;
+}
+.compact-refund b {
+  display: inline;
+  margin: 0;
+}
+.compact-refund > strong {
+  font-size: 18px;
+}
+@media (max-width: 600px) {
+  #pot-dialog.is-settled {
+    padding: 20px;
+  }
+}
 .arena.is-done .seat.winner .seat-profile {
   border-color: #e3bf72;
   box-shadow: 0 0 16px #e3bf7236;
@@ -487,6 +619,12 @@
   min-height: 0;
   padding-top: 0;
   max-width: 130px;
+}
+.arena.is-done[data-player-count='6'] {
+  height: 620px;
+}
+.arena.is-done[data-player-count='6'] .table-center {
+  top: 36%;
 }
 @media (max-width: 600px) {
   .arena.is-done[data-player-count='5'],

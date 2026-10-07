@@ -120,6 +120,15 @@ window.qa = {
     render();
     return publicState();
   },
+  foldPotRefund(count = 6) {
+    fixtureGame(count, true);
+    startHand(game);
+    while (game.actor !== 2) act(game, game.actor, 'fold');
+    act(game, 2, 'raise', 125);
+    while (game.phase === 'playing') act(game, game.actor, 'fold');
+    render();
+    return publicState();
+  },
   scene(hole, board, { count = 6, totals, folded = [], otherHoles = {} } = {}) {
     fixtureGame(count);
     startHand(game);

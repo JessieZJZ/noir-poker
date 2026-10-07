@@ -367,7 +367,7 @@
     height: 800px;
   }
   .arena.has-full-player-names[data-player-count='9'] {
-    height: 820px;
+    height: 900px;
   }
 }
 @media (max-width: 380px) {

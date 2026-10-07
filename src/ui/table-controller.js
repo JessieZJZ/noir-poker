@@ -597,6 +597,14 @@ function potDetails() {
 function renderPotDetails(details) {
   const done = game.phase === 'done',
     hero = game.players[0],
+    dialog = $('#pot-dialog'),
+    expanded = new Set(
+      dialog.open
+        ? [...dialog.querySelectorAll('.pot-distribution[open]')].map((el) =>
+            Number(el.dataset.potIndex),
+          )
+        : [],
+    ),
     eligibilityLabel = (pot) =>
       pot.eligible.includes(0)
         ? '你可争夺'
@@ -604,25 +612,45 @@ function renderPotDetails(details) {
           ? '你不参与此池'
           : hero.allin
             ? '超出你的全下额度'
-            : '你尚未投入此池';
-  $('#pot-dialog-title').textContent = done ? '本手分池结算' : '主池与边池';
+            : '你尚未投入此池',
+    contributions = (pot) =>
+      pot.contributions
+        .map(
+          (c) =>
+            `<li><span>${game.players[c.id].name}${game.players[c.id].folded ? ' · 已弃牌' : game.players[c.id].allin ? ' · 全下' : ''}</span><b>${format(c.amount)}</b></li>`,
+        )
+        .join(''),
+    crown = winnerIcon.replace('winner-icon', 'pot-winner-icon');
+  dialog.classList.toggle('is-settled', done);
+  $('#pot-dialog-title').textContent = done ? '本手结算' : '主池与边池';
+  $('#pot-dialog-note').hidden = done;
   $('#pot-dialog-note').textContent = done
-    ? '每个底池仅在有资格的玩家之间比较牌型并独立分配。'
+    ? ''
     : '金额按当前投入显示；尚未行动的玩家需跟注才能保留相应资格。仅全下额度形成边池，未被跟注的部分待跟注或退还。';
   $('#pot-dialog-content').innerHTML =
     details.pots
-      .map(
-        (pot) =>
-          `<section class="pot-detail-card"><div class="pot-detail-heading"><h3>${pot.label}</h3><strong>${format(pot.amount)}<span>筹码</span></strong></div><div class="pot-eligibility ${pot.eligible.includes(0) ? 'hero-eligible' : ''}">${eligibilityLabel(pot)}<span> · ${pot.eligible.length} 人</span></div><p class="pot-player-list">可争夺：${pot.eligible.map((id) => game.players[id].name).join('、')}</p><details class="pot-contributions"><summary>查看各家投入</summary><ul>${pot.contributions.map((c) => `<li><span>${game.players[c.id].name}${game.players[c.id].folded ? ' · 已弃牌' : game.players[c.id].allin ? ' · 全下' : ''}</span><b>${format(c.amount)}</b></li>`).join('')}</ul></details>${done ? `<div class="pot-awards">${pot.awards.length > 1 ? '<div class="pot-split-label">本池平分 · 零头筹码按庄家左侧顺序分配</div>' : ''}${pot.awards.map((a) => `<div class="pot-award"><span>${game.players[a.id].name}<small>${a.label}</small></span><strong>+${format(a.amount)}</strong></div>`).join('')}</div>` : ''}</section>`,
-      )
+      .map((pot) => {
+        const participants = pot.eligible.map((id) => game.players[id].name).join('、');
+        if (done) {
+          const split = pot.awards.length > 1;
+          return `<section class="pot-detail-card settled-pot" data-pot-index="${pot.index}">
+        <div class="pot-detail-heading"><h3>${pot.label}</h3>${split ? `<span class="pot-split-total">${format(pot.amount)} 筹码 · 平分</span>` : ''}</div>
+        <div class="pot-awards">${pot.awards.map((a) => `<div class="pot-award" data-award-player="${a.id}"><span class="pot-award-player">${crown}<span><b>${game.players[a.id].name}${split ? '' : ' 获胜'}</b><small>${a.label === '其他玩家弃牌' ? '弃牌获胜' : a.label}</small></span></span><strong>+${format(a.amount)}<small>筹码</small></strong></div>`).join('')}</div>
+        <details class="pot-distribution" data-pot-index="${pot.index}"${expanded.has(pot.index) ? ' open' : ''}><summary>查看分配详情</summary><div class="pot-distribution-body"><p>${eligibilityLabel(pot)} · 结算资格：${participants}</p><h4>本池投入</h4><ul class="pot-contribution-list">${contributions(pot)}</ul>${split ? '<p class="pot-rounding-note">零头筹码按庄家左侧顺序分配。</p>' : ''}</div></details>
+      </section>`;
+        }
+        return `<section class="pot-detail-card" data-pot-index="${pot.index}"><div class="pot-detail-heading"><h3>${pot.label}</h3><strong>${format(pot.amount)}<span>筹码</span></strong></div><div class="pot-eligibility ${pot.eligible.includes(0) ? 'hero-eligible' : ''}">${eligibilityLabel(pot)}<span> · ${pot.eligible.length} 人</span></div><p class="pot-player-list">可争夺：${participants}</p><details class="pot-contributions"><summary>查看本池投入</summary><ul>${contributions(pot)}</ul></details></section>`;
+      })
       .join('') +
     details.refunds
-      .map(
-        (r) =>
-          `<div class="pot-refund"><span>${done ? '未被跟注 · 已退还' : '待跟注或退还'}<b>${game.players[r.id].name}</b></span><strong>${format(r.amount)}</strong></div>`,
+      .map((r) =>
+        done
+          ? `<div class="pot-refund compact-refund" data-refund-player="${r.id}" aria-label="${game.players[r.id].name} 未跟注的 ${format(r.amount)} 筹码已退还"><span>未跟注退还 <b>${game.players[r.id].name}</b></span><strong>${format(r.amount)}</strong></div>`
+          : `<div class="pot-refund"><span>待跟注或退还<b>${game.players[r.id].name}</b></span><strong>${format(r.amount)}</strong></div>`,
       )
       .join('');
 }
+
 $('#fold-button').onclick = () => heroAction('fold');
 $('#call-button').onclick = () => heroAction('call');
 $('#raise-button').onclick = () => heroAction('raise', bet);
