@@ -319,8 +319,11 @@ select {
   font-weight: 600;
 }
 .chip-symbol {
+  display: block;
+  width: 28px;
+  height: 28px;
+  flex: 0 0 auto;
   color: var(--mint);
-  font-size: 20px;
 }
 .board {
   display: flex;
