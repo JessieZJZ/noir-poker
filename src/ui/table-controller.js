@@ -601,15 +601,10 @@ function toggleOpponentHand(id) {
   render();
   $(`[data-peek-player="${id}"]`).focus({ preventScroll: true });
   if (visible && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
-    const hand = $(`#seat-hand-${id}`),
-      transform = getComputedStyle(hand).transform;
-    hand.animate(
-      [
-        { transform: `${transform === 'none' ? '' : transform} rotateY(80deg)`, opacity: 0.2 },
-        { transform, opacity: 1 },
-      ],
-      { duration: 240, easing: 'ease-out' },
-    );
+    $(`#seat-hand-${id}`).animate([{ opacity: 0.2 }, { opacity: 1 }], {
+      duration: 180,
+      easing: 'ease-out',
+    });
   }
   return true;
 }

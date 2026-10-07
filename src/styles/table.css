@@ -606,4 +606,5 @@
 }
 .arena.is-done .seat.folded .mini-cards.revealed-cards {
   opacity: 1;
+  transform: none;
 }
