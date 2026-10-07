@@ -1,0 +1,191 @@
+import { newGame, deckOfCards, act, advanceStreet, botDecision } from '../engine/poker.js';
+import { getBotProfile, freshBotMood } from '../engine/bot-profiles.js';
+import { rangeWeight, seedRandom, snapshotSeed } from './equity.js';
+const copy = (v) => JSON.parse(JSON.stringify(v));
+export function candidateActions(s, alternatives = []) {
+  const candidates = [
+    { action: 'fold', amount: 0 },
+    { action: s.legal.canCheck ? 'check' : 'call', amount: s.legal.callAmount },
+  ];
+  if (s.legal.canRaise) {
+    const targets =
+      s.street === 0 && s.currentBet <= 50
+        ? [100, 150]
+        : s.currentBet > 0
+          ? [s.currentBet * 2.5, s.currentBet * 3.5]
+          : [s.pot * 0.33, s.pot * 0.65];
+    for (const value of targets)
+      candidates.push({
+        action: 'raise',
+        amount: Math.min(
+          s.legal.maxRaiseTo,
+          Math.max(s.legal.minRaiseTo, Math.round(value / 25) * 25),
+        ),
+      });
+  }
+  candidates.push({ action: s.action, amount: s.amount }, ...alternatives.filter(Boolean));
+  return [
+    ...new Map(
+      candidates
+        .filter(
+          (a) =>
+            ['fold', 'check', 'call', 'raise'].includes(a.action) &&
+            (a.action !== 'raise' ||
+              (s.legal.canRaise &&
+                a.amount >= s.legal.minRaiseTo &&
+                a.amount <= s.legal.maxRaiseTo)) &&
+            (a.action !== 'check' || s.legal.canCheck),
+        )
+        .map((a) => [
+          a.action + (a.action === 'raise' ? a.amount : ''),
+          {
+            action: a.action,
+            amount: a.action === 'raise' ? a.amount : a.action === 'call' ? s.legal.callAmount : 0,
+          },
+        ]),
+    ).values(),
+  ].slice(0, 7);
+}
+function sampledDeal(s, rng, weighted) {
+  const known = new Set([...s.hole, ...s.board].map((c) => c.key));
+  const pool = deckOfCards().filter((c) => !known.has(c.key));
+  const holes = new Map([[0, copy(s.hole)]]);
+  for (const p of [
+    ...s.players.filter((p) => p.id && !p.folded),
+    ...s.players.filter((p) => p.id && p.folded),
+  ]) {
+    let indices;
+    do {
+      const a = Math.floor(rng() * pool.length);
+      let b = Math.floor(rng() * (pool.length - 1));
+      if (b >= a) b++;
+      indices = [a, b];
+    } while (
+      weighted &&
+      !p.folded &&
+      rng() >=
+        rangeWeight(
+          indices.map((i) => pool[i]),
+          s,
+          p,
+        ) /
+          6
+    );
+    holes.set(
+      p.id,
+      indices.map((i) => pool[i]),
+    );
+    for (const i of indices.sort((a, b) => b - a)) pool.splice(i, 1);
+  }
+  for (let i = pool.length - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1));
+    [pool[i], pool[j]] = [pool[j], pool[i]];
+  }
+  return { holes, deck: pool };
+}
+function resume(s, deal) {
+  const g = newGame(s.players.length);
+  const button = s.players.find((p) => p.position === 'BTN')?.id;
+  Object.assign(g, {
+    phase: 'playing',
+    hand: s.hand,
+    street: s.street,
+    actor: 0,
+    dealer: s.dealer ?? button ?? 0,
+    currentBet: s.currentBet,
+    minRaise: s.minRaise,
+    pending: [...s.pending],
+    board: copy(s.board),
+    deck: copy(deal.deck),
+    history: copy(s.history),
+    decisions: [],
+    botDecisions: [],
+    logs: [],
+    emotionMode: s.emotionMode || 'off',
+  });
+  for (const p of s.players) {
+    const mood = freshBotMood();
+    mood.kind = p.botMoodKind || 'steady';
+    Object.assign(g.players[p.id], {
+      stack: p.stack,
+      bet: p.bet,
+      total: p.total,
+      folded: p.folded,
+      allin: p.allin,
+      actedTo: p.actedTo ?? null,
+      checked: p.checked || false,
+      hole: copy(deal.holes.get(p.id)),
+      botProfile: getBotProfile(p.botProfile).id,
+      botMood: mood,
+    });
+  }
+  return g;
+}
+// Sampled private information only: original opponent holes, recorded traces,
+// future deck and outcome never enter these counterfactual hands.
+export function compareCandidateActions(s, alternatives = [], { trials = 40 } = {}) {
+  if (!Number.isInteger(trials) || trials < 2) throw Error('模拟次数至少为 2。');
+  const candidates = candidateActions(s, alternatives);
+  const rows = candidates.map((action) => ({ action, scenarios: [] }));
+  for (const weighted of [false, true]) {
+    const rng = seedRandom(snapshotSeed(s) + (weighted ? 11071 : 2003));
+    const values = rows.map(() => []),
+      immediate = rows.map(() => 0);
+    for (let i = 0; i < trials; i++) {
+      const deal = sampledDeal(s, rng, weighted),
+        policySeed = Math.floor(rng() * 4294967295);
+      for (let c = 0; c < candidates.length; c++) {
+        const g = resume(s, deal),
+          policy = seedRandom(policySeed);
+        act(g, 0, candidates[c].action, candidates[c].amount);
+        let actions = 0;
+        while (g.phase !== 'done') {
+          if (++actions > 400) throw Error('候选行动模拟未能结束。');
+          if (g.phase === 'between') advanceStreet(g);
+          else {
+            const d = botDecision(g, policy, { trials: 8 });
+            act(g, g.actor, d.action, d.amount);
+          }
+        }
+        values[c].push(g.players[0].stack - s.stack);
+        if (
+          g.winners.some((w) => w.id === 0) &&
+          !g.showdown &&
+          g.street === s.street &&
+          candidates[c].action === 'raise'
+        )
+          immediate[c]++;
+      }
+    }
+    rows.forEach((r, c) => {
+      const mean = values[c].reduce((n, v) => n + v, 0) / trials;
+      const variance = values[c].reduce((n, v) => n + (v - mean) ** 2, 0) / (trials - 1);
+      r.scenarios.push({
+        name: weighted ? '公开行动加权范围' : '随机范围',
+        ev: mean,
+        margin: 1.96 * Math.sqrt(variance / trials),
+        immediateFoldWin: immediate[c] / trials,
+      });
+    });
+  }
+  const ranked = [...rows].sort(
+    (a, b) => Math.min(...b.scenarios.map((v) => v.ev)) - Math.min(...a.scenarios.map((v) => v.ev)),
+  );
+  const best = ranked[0];
+  const stable = ranked
+    .slice(1)
+    .every((other) =>
+      best.scenarios.every(
+        (v, i) => v.ev - v.margin > other.scenarios[i].ev + other.scenarios[i].margin,
+      ),
+    );
+  return {
+    rows,
+    trials,
+    policyTrials: 8,
+    best: best.action,
+    stable,
+    method: 'sampled-engine-rollout',
+    note: '从当时局面抽样未知牌，按公开风格继续打完；你后续采用均衡机器人策略，每次判断抽样 8 次。数值是此模拟策略的筹码净变化估计，已投入视为沉没成本，包含分池、退还与之后下注；误差为近似抽样误差，不覆盖范围／策略模型错误。不是 GTO 或真人最优 EV。',
+  };
+}

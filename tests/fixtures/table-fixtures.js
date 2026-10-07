@@ -107,6 +107,39 @@ window.qa = {
     render();
     return publicState();
   },
+  reviewLine() {
+    fixtureGame(6);
+    game.dealer = 5;
+    startHand(game);
+    const deck = deckOfCards();
+    const parse = (s) =>
+      s
+        .split(' ')
+        .map((v) =>
+          deck.find(
+            (c) => c.rank === '23456789TJQKA'.indexOf(v[0]) + 2 && c.suit === 'shcd'.indexOf(v[1]),
+          ),
+        );
+    game.players[0].hole = parse('Ac 7h');
+    const rest = deck.filter((c) => !game.players[0].hole.some((h) => h.key === c.key));
+    for (const p of game.players.slice(1)) p.hole = rest.splice(0, 2);
+    game.deck = rest;
+    while (game.actor !== 0) act(game, game.actor, 'fold');
+    act(game, 0, 'raise', 150);
+    act(game, 1, 'call');
+    act(game, 2, 'raise', 650);
+    act(game, 0, 'call');
+    act(game, 1, 'raise', 1800);
+    act(game, 2, 'call');
+    act(game, 0, 'call');
+    while (game.phase !== 'done') {
+      if (game.phase === 'between') advanceStreet(game);
+      else if (game.actor === 0) act(game, 0, legalActions(game).canCheck ? 'check' : 'call');
+      else playBotTurn(game, () => 0.8);
+    }
+    render();
+    return publicState();
+  },
   state() {
     return {
       ...publicState(),

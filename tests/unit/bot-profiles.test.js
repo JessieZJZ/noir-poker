@@ -194,8 +194,8 @@ test('style differences change entry and value-trap behavior over common decisio
   const peter = BOT_PROFILES.find((p) => p.id === 'peter'),
     st = BOT_PROFILES.find((p) => p.id === 'st');
   assert.ok(
-    decisions(peter, view).filter((d) => d.action !== 'fold').length >
-      decisions(st, view).filter((d) => d.action !== 'fold').length,
+    decisions(peter, view).filter((d) => d.action === 'raise').length >
+      decisions(st, view).filter((d) => d.action === 'raise').length,
   );
   const value = {
     ...view,

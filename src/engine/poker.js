@@ -9,6 +9,7 @@ import {
   MOOD_LABELS,
   botBoardFeatures,
   chooseBotAction,
+  effectiveBotAxes,
 } from './bot-profiles.js';
 export const SUITS = ['♠', '♥', '♣', '♦'];
 export const RANK_NAMES = [
@@ -299,6 +300,7 @@ export function startHand(g) {
   g.logs = [];
   g.result = '';
   g.decisions = [];
+  g.botDecisions = [];
   g.history = [];
   for (const p of g.players) {
     if (p.id) decayBotMood(p.botMood);
@@ -422,6 +424,8 @@ export function act(g, id, action, amount) {
       pot: potSize(g),
       currentBet: g.currentBet,
       minRaise: g.minRaise,
+      dealer: g.dealer,
+      emotionMode: g.emotionMode,
       legal: { ...legal },
       pending: [...g.pending],
       action: normalized,
@@ -436,6 +440,13 @@ export function act(g, id, action, amount) {
         folded: o.folded,
         allin: o.allin,
         action: o.action,
+        botProfile: o.id ? o.botProfile : null,
+        publicAxes: o.id
+          ? effectiveBotAxes(getBotProfile(o.botProfile), o.botMood, g.emotionMode)
+          : null,
+        botMoodKind: o.id ? o.botMood.kind : null,
+        actedTo: o.actedTo,
+        checked: o.checked,
       })),
       history: (g.history || []).map((a) => ({ ...a })),
     });
@@ -670,12 +681,15 @@ export function estimateEquity(hole, board, rivals = 1, trials = 35, random = Ma
   }
   return wins / trials;
 }
-export function botDecision(g, random = Math.random) {
+export function botDecision(g, random = Math.random, { trials } = {}) {
   const p = g.players[g.actor],
     legal = legalActions(g),
     rivals = Math.max(1, live(g).length - 1);
   if (!p || !legal.enabled) throw Error('机器人当前不能行动。');
   const score = evaluate([...p.hole, ...g.board]).score;
+  const equityTrials = trials ?? (g.difficulty === 'hard' ? 52 : 28);
+  if (!Number.isInteger(equityTrials) || equityTrials < 1)
+    throw Error('权益抽样次数必须为正整数。');
   // Explicit actor perspective: no other hole cards, future deck, review
   // decisions or eventual winners can enter this policy.
   const view = {
@@ -692,7 +706,8 @@ export function botDecision(g, random = Math.random) {
     difficulty: g.difficulty,
     legal,
     rivals,
-    equity: estimateEquity(p.hole, g.board, rivals, g.difficulty === 'hard' ? 52 : 28, random),
+    equity: estimateEquity(p.hole, g.board, rivals, equityTrials, random),
+    equityTrials,
     contestable: contestableAfterCall(g, p.id, legal.callAmount),
     history: (g.history || []).map(({ id, street, action, amount }) => ({
       id,
@@ -703,5 +718,35 @@ export function botDecision(g, random = Math.random) {
     features: botBoardFeatures(p.hole, g.board, score),
     playsBoard: g.board.length === 5 && compare(score, evaluate(g.board).score) === 0,
   };
-  return chooseBotAction(view, getBotProfile(p.botProfile), p.botMood, g.emotionMode, random);
+  const decision = chooseBotAction(
+    view,
+    getBotProfile(p.botProfile),
+    p.botMood,
+    g.emotionMode,
+    random,
+  );
+  return { ...decision, trace: { ...decision.trace, view } };
+}
+
+// Record only executed bot actions. Querying a policy never mutates history.
+// Private actor cards/traces are not part of publicState or hero snapshots.
+export function playBotTurn(g, random = Math.random) {
+  const id = g.actor;
+  if (id === 0) throw Error('玩家行动不能使用机器人执行器。');
+  const decision = botDecision(g, random);
+  const record = JSON.parse(
+    JSON.stringify({
+      id,
+      name: g.players[id].name,
+      hand: g.hand,
+      sequence: g.history.length + 1,
+      action: decision.action,
+      amount: decision.amount,
+      trace: decision.trace,
+    }),
+  );
+  act(g, id, decision.action, decision.amount);
+  g.botDecisions ||= [];
+  g.botDecisions.push(record);
+  return decision;
 }

@@ -7,7 +7,7 @@ import {
   potSize,
   currentPots,
   contestableAfterCall,
-  botDecision,
+  playBotTurn,
   evaluate,
   rankText,
   seatPosition,
@@ -440,8 +440,7 @@ function schedule() {
       () => {
         if (ticket !== epoch) return;
         const id = game.actor,
-          d = botDecision(game);
-        act(game, id, d.action, d.amount);
+          d = playBotTurn(game);
         if (d.action !== 'fold' && d.action !== 'check') {
           flyChips(id);
           soundEffect();
@@ -479,9 +478,7 @@ async function continueDeal() {
       if (ticket !== epoch) return false;
       if (game.phase === 'between') advanceStreet(game);
       else {
-        const id = game.actor,
-          d = botDecision(game);
-        act(game, id, d.action, d.amount);
+        playBotTurn(game);
       }
       if (game.phase === 'between' || game.phase === 'done') render();
     }

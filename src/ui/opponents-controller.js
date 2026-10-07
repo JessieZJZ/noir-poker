@@ -79,9 +79,9 @@ export function createOpponentsController({ getGame, getCount, getSettings, onSa
       3: 'zang',
       4: 'peter',
       5: 'abao',
-      6: 'balanced',
-      7: 'balanced',
-      8: 'balanced',
+      6: 'viktor',
+      7: 'jungleman',
+      8: 'dwan',
     };
     selected = 'tan';
     detail();

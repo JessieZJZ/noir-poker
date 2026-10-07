@@ -379,3 +379,89 @@ test('loss state is visible and can be disabled; configuration fits narrow scree
   expect(state.emotionMode).toBe('off');
   for (const p of state.players.slice(1)) expect(p.mood).toBe('steady');
 });
+
+test('A7 review separates steal, 3bet and 4bet; opponents expose actual decisions after settlement', async ({
+  page,
+}) => {
+  await page.evaluate(() => window.qa.reviewLine());
+  await page.locator('#review-hand-button').click();
+  await expect(page.locator('#review-priority')).toBeVisible({ timeout: 15000 });
+  await page.locator('#review-timeline [data-review-index="0"]').click();
+  await expect(page.locator('#review-reason')).toContainText('阻断');
+  await expect(page.locator('#review-suggestion')).not.toHaveText('加注至 150');
+  await expect(page.locator('#review-routes .review-route')).toHaveCount(2);
+  await page.locator('#review-timeline [data-review-index="1"]').click();
+  await expect(page.locator('#review-decision-title')).toContainText('3-bet');
+  await page.locator('#review-timeline [data-review-index="2"]').click();
+  await expect(page.locator('#review-decision-title')).toContainText('多次再加注');
+  await page.locator('#review-opponents-tab').click();
+  await expect(page.locator('#review-hero-panel')).toBeHidden();
+  await expect(page.locator('#review-opponent-detail .review-cards .playing-card')).toHaveCount(5);
+  await expect(page.locator('#review-opponent-detail .review-explanation')).not.toBeEmpty();
+  await expect(page.locator('#review-opponent-detail .review-evidence')).toContainText(
+    '随机对手范围',
+  );
+  await expect(page.locator('#review-opponent-detail')).toContainText('本次没有情绪偏移');
+  await page.locator('#review-opponent-filter').selectOption('1');
+  expect(
+    await page.locator('#review-opponents .review-timeline .review-step').count(),
+  ).toBeGreaterThan(0);
+  await expect(page.locator('#review-opponents .review-timeline')).toContainText('Mia');
+  await expect(page.locator('#review-opponents .review-timeline')).not.toContainText('Alex');
+  await page.locator('#review-hero-tab').click();
+  await expect(page.locator('#review-decision-title')).toContainText('多次再加注');
+  const layout = await page.evaluate(() => {
+    const d = document.querySelector('#review-dialog');
+    return { width: d.clientWidth, scroll: d.scrollWidth };
+  });
+  expect(layout.scroll).toBeLessThanOrEqual(layout.width + 1);
+});
+
+test('fast finish records opponents while live public state never exposes private policy trace', async ({
+  page,
+}) => {
+  await page.evaluate(() => window.qa.heroTurn());
+  const live = await page.evaluate(() => JSON.stringify(window.noir.getState()));
+  expect(live).not.toContain('rawEquity');
+  expect(live).not.toContain('botDecisions');
+  await page.locator('#fold-button').click();
+  await page.evaluate(() => window.qa.stop());
+  await page.locator('#continue-deal-button').click();
+  await page.waitForFunction(() => window.noir.getState().phase === 'done');
+  await page.locator('#review-hand-button').click();
+  await page.locator('#review-opponents-tab').click();
+  await expect(page.locator('#review-opponents .review-step').first()).toBeVisible();
+  await expect(page.locator('#review-opponent-detail .review-evidence')).toContainText('实际');
+  await expect(
+    page.locator('#review-opponent-detail .review-cards').first().locator('.playing-card'),
+  ).toHaveCount(2);
+});
+
+test('foreign style assignments persist and candidate simulation is available in review', async ({
+  page,
+}) => {
+  await page.evaluate(() => window.qa.foldWin(9));
+  await page.locator('#opponents-button').click();
+  for (const [seat, profile] of [
+    [1, 'viktor'],
+    [2, 'jungleman'],
+    [3, 'dwan'],
+  ])
+    await page.locator(`[data-bot-seat="${seat}"]`).selectOption(profile);
+  await expect(page.locator('#profile-cards .profile-card')).toHaveCount(9);
+  await page.locator('#save-opponents').click();
+  await page.locator('#next-button').click();
+  await page.evaluate(() => window.qa.stop());
+  const state = await page.evaluate(() => window.noir.getState());
+  expect(state.players[1].botProfile).toBe('viktor');
+  expect(state.players[2].botProfile).toBe('jungleman');
+  expect(state.players[3].botProfile).toBe('dwan');
+  await page.evaluate(() => window.qa.reviewLine());
+  await page.locator('#review-hand-button').click();
+  await expect(page.locator('#review-priority')).toBeVisible({ timeout: 20000 });
+  await page.locator('#review-timeline [data-review-index="0"]').click();
+  await expect(page.locator('#review-simulation')).toContainText('模拟 40 手');
+  expect(await page.locator('#review-simulation tbody tr').count()).toBeGreaterThanOrEqual(4);
+  await page.locator('#review-simulation summary').click();
+  await expect(page.locator('#review-simulation')).toContainText('不是 GTO');
+});

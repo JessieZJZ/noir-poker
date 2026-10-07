@@ -12,9 +12,10 @@
     "preview": "vite preview --host 127.0.0.1",
     "test": "node --test tests/unit/*.test.js",
     "test:e2e": "playwright test",
-    "format": "prettier --write src tests docs index.html README.md vite.config.js playwright.config.js package.json",
-    "format:check": "prettier --check src tests docs index.html README.md vite.config.js playwright.config.js package.json",
-    "check": "npm run test && npm run build"
+    "format": "prettier --write src tests docs scripts index.html README.md vite.config.js playwright.config.js package.json",
+    "format:check": "prettier --check src tests docs scripts index.html README.md vite.config.js playwright.config.js package.json",
+    "check": "npm run test && npm run build",
+    "measure:bots": "node scripts/measure-bots.mjs"
   },
   "devDependencies": {
     "@playwright/test": "^1.63.0",

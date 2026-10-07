@@ -1,6 +1,6 @@
 import { deckOfCards, evaluate, compare, partitionPots } from '../engine/poker.js';
 import { startingTier } from './context.js';
-function seedRandom(seed) {
+export function seedRandom(seed) {
   let value = seed >>> 0;
   return () => {
     value += 0x6d2b79f5;
@@ -10,13 +10,39 @@ function seedRandom(seed) {
     return ((x ^ (x >>> 14)) >>> 0) / 4294967296;
   };
 }
-function snapshotSeed(s) {
+export function snapshotSeed(s) {
   let seed = 2166136261;
   for (const c of JSON.stringify([
     s.hole,
     s.board,
-    s.players,
-    s.history,
+    s.players.map(
+      ({
+        id,
+        position,
+        stack,
+        bet,
+        total,
+        folded,
+        allin,
+        actedTo,
+        checked,
+        botProfile,
+        botMoodKind,
+      }) => ({
+        id,
+        position,
+        stack,
+        bet,
+        total,
+        folded,
+        allin,
+        actedTo,
+        checked,
+        botProfile,
+        botMoodKind,
+      }),
+    ),
+    s.history.map(({ id, street, action, amount }) => ({ id, street, action, amount })),
     s.street,
     s.legal.callAmount,
   ]))
@@ -26,10 +52,13 @@ function snapshotSeed(s) {
 // A call has different eligible opponents in each side pot. Exclude uncalled
 // refunds and compare its extra cost with what folding would return already.
 export function callPrice(s) {
-  const before = { players: s.players.map((p) => ({ ...p })) },
+  const before = {
+      players: s.players.map((p) => ({ id: p.id, total: p.total, folded: p.folded })),
+    },
     after = {
       players: s.players.map((p) => ({
-        ...p,
+        id: p.id,
+        folded: p.folded,
         total: p.total + (p.id === 0 ? s.legal.callAmount : 0),
       })),
     };
@@ -55,7 +84,10 @@ export function callPrice(s) {
     refundBefore,
     refundAfter,
     required: contestable ? cost / contestable : 0,
-    closing: (s.street === 3 && !otherPending) || allInCovered,
+    closing:
+      (s.street === 3 && !otherPending) ||
+      allInCovered ||
+      s.players.filter((p) => p.id !== 0 && !p.folded).every((p) => p.allin),
   };
 }
 function drawPair(pool, rng) {
@@ -64,20 +96,52 @@ function drawPair(pool, rng) {
   if (b >= a) b++;
   return [a, b];
 }
-function rangeWeight(pair, s, opponent) {
-  const aggressive = s.history.some((a) => a.id === opponent.id && a.action === 'raise');
-  if (!aggressive) {
-    const entered = s.history.some(
-      (a) => a.id === opponent.id && a.street === 0 && a.action === 'call',
-    );
-    return entered && s.street === 0 ? [1, 2, 3, 4][startingTier(pair)] : 1;
+export function rangeWeight(pair, s, opponent) {
+  const prefix = s.history.filter((a) => a.street === 0);
+  const informative = prefix
+    .map((a, i) => ({ a, i }))
+    .filter(({ a }) => a.id === opponent.id && ['call', 'raise'].includes(a.action))
+    .at(-1);
+  let preWeight = 1;
+  if (informative) {
+    const level = prefix
+      .slice(0, informative.i + 1)
+      .filter((a) => a.action === 'raise' && a.amount > 50).length;
+    const tables =
+      informative.a.action === 'raise'
+        ? level >= 3
+          ? [0.04, 0.2, 1.5, 6]
+          : level === 2
+            ? [0.15, 0.7, 3, 6]
+            : [1, 2, 4, 6]
+        : level >= 3
+          ? [0.08, 0.3, 2, 6]
+          : level === 2
+            ? [0.2, 0.8, 3, 6]
+            : [1, 2, 3, 4];
+    preWeight = tables[startingTier(pair)];
   }
-  if (s.street === 0) return [1, 2, 4, 6][startingTier(pair)];
-  const score = evaluate([...pair, ...s.board]).score[0],
-    suitedDraw = [0, 1, 2, 3].some(
-      (suit) => [...pair, ...s.board].filter((c) => c.suit === suit).length === 4,
-    );
-  return score >= 4 ? 6 : score >= 2 ? 5 : score === 1 ? 3 : suitedDraw ? 2 : 1;
+  if (s.street === 0) return preWeight;
+  const current = s.history
+    .filter(
+      (a) => a.street === s.street && a.id === opponent.id && ['call', 'raise'].includes(a.action),
+    )
+    .at(-1);
+  if (!current) return preWeight;
+  const score = evaluate([...pair, ...s.board]).score[0];
+  const suitedDraw = [0, 1, 2, 3].some(
+    (suit) =>
+      [...pair, ...s.board].filter((c) => c.suit === suit).length === 4 &&
+      pair.some((c) => c.suit === suit),
+  );
+  let madeWeight = 1;
+  if (current.action === 'raise')
+    madeWeight = score >= 4 ? 6 : score >= 2 ? 5 : score === 1 ? 3 : suitedDraw ? 2 : 1;
+  else if (current.amount >= Math.max(100, s.pot * 0.2))
+    madeWeight = score >= 2 ? 5 : score === 1 ? 3 : suitedDraw ? 2 : 1;
+  else return preWeight;
+  // Prior preflop information remains relevant; max stays at six for rejection sampling.
+  return informative ? (preWeight * madeWeight) / 6 : madeWeight;
 }
 export function sampleValue(s, price, trials, weighted) {
   if (!price.contestable) return { equity: 0, margin: 0, ev: 0 };

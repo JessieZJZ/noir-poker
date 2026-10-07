@@ -142,9 +142,14 @@ export function decisionContext(s) {
   const raises = s.history.filter((a) => a.action === 'raise'),
     preflopRaises = raises.filter((a) => a.street === 0),
     facingRaise = raises.filter((a) => a.street === s.street).at(-1),
-    pastCalls = s.history.filter(
+    pastCallActions = s.history.filter(
       (a) => a.id === 0 && a.action === 'call' && a.street < s.street,
     ).length;
+  const pastCalls = new Set(
+    s.history
+      .filter((a) => a.id === 0 && a.action === 'call' && a.street < s.street)
+      .map((a) => a.street),
+  ).size;
   const flushSuit =
       texture.maxSuit >= 3
         ? [0, 1, 2, 3].find((suit) => s.board.filter((c) => c.suit === suit).length >= 3)
@@ -168,6 +173,7 @@ export function decisionContext(s) {
     preflopRaises: preflopRaises.length,
     facingRaise,
     pastCalls,
+    pastCallActions,
     nutFlushBlocker,
     missedDraw: !!previousDraw?.outs && made.score[0] < 4,
     tier: startingTier(s.hole),

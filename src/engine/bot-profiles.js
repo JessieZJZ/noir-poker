@@ -111,6 +111,70 @@ export const BOT_PROFILES = [
       },
     ],
   },
+  {
+    id: 'viktor',
+    name: 'Viktor Blom · Isildur1',
+    short: 'Isildur1',
+    tag: '松凶施压 · 宽范围争夺',
+    description: '更宽地争夺后位和低成本底池，听牌与价值牌共用积极进攻路线，偏好较大尺度。',
+    axes: [90, 94, 88, 70, 18],
+    sizing: [0.7, 1.25],
+    evidence:
+      'PokerStars 原访谈与官方回顾支持其历史松凶风格。这里归纳的是训练原型，不是实时打法或真人频率；单挑经验不直接移植成多人精确参数。',
+    sources: [
+      {
+        label: 'PokerStars · Viktor 原访谈',
+        url: 'https://www.pokerstars.com/poker/learn/news/finding-isildur1-viktor-blom-cops-to-his-077269/',
+      },
+      {
+        label: 'PokerStars · 历史诈唬回顾',
+        url: 'https://www.pokerstars.com/poker/learn/news/the-best-and-worst-poker-bluffs-ever/',
+      },
+    ],
+  },
+  {
+    id: 'jungleman',
+    name: 'Dan Cates · Jungleman',
+    short: 'Jungleman',
+    tag: '计算型进攻 · 强牌诱导',
+    description: '保留有价格的防守，兼顾主动施压与强牌诱导；大额继续仍要通过权益和筹码压力检查。',
+    axes: [65, 82, 66, 64, 72],
+    sizing: [0.45, 0.95],
+    evidence:
+      '本人原访谈强调计算、观察实际行为并调整，避免机械平衡。当前机器人用范围和价格近似这些思路，未复刻职业级读人或动态学习。',
+    sources: [
+      {
+        label: 'Card Player · Jungleman 原访谈',
+        url: 'https://www.cardplayer.com/cardplayer-poker-magazines/65799-poker-hall-of-fame-23-20/articles/19757-capture-the-flag-daniel-jungleman12-cates',
+      },
+      {
+        label: 'Card Player · 对手调整访谈',
+        url: 'https://www.cardplayer.com/cardplayer-poker-magazines/66315-jason-mercier-28-23/articles/22601-head-games-heads-up-cash-game-advice-from-the-best-in-the-world',
+      },
+    ],
+  },
+  {
+    id: 'dwan',
+    name: 'Tom Dwan · durrrr',
+    short: 'durrrr',
+    tag: '创造性施压 · 多街诈唬',
+    description:
+      '更积极争夺有位置的底池，在有进攻叙事或听牌时混合多街施压，也能用强牌保留对手范围。',
+    axes: [85, 90, 85, 75, 55],
+    sizing: [0.65, 1.2],
+    evidence:
+      '原采访、同行评价和 PokerStars 回顾支持其历史创造性与多街诈唬风格。参数仅为可调的模拟倾向，不推断真人真实 VPIP 或心理状态。',
+    sources: [
+      {
+        label: 'Card Player · Dwan 原采访',
+        url: 'https://www.cardplayer.com/cardplayer-poker-magazines/65739-tom-dwan-6-4/articles/18288-the-won-39-durrrr-39-ful-life-of-tom-dwan',
+      },
+      {
+        label: 'PokerStars · 历史诈唬回顾',
+        url: 'https://www.pokerstars.com/poker/learn/news/the-best-and-worst-poker-bluffs-ever/',
+      },
+    ],
+  },
 ];
 export const PROFILE_AXES = ['入池宽度', '进攻倾向', '诈唬倾向', '跟到底倾向', '强牌诱导'];
 export const EMOTION_MODES = { off: '关闭', subtle: '轻微波动', lively: '明显波动' };
@@ -280,9 +344,22 @@ export function effectiveBotAxes(profile, mood, mode) {
 export function chooseBotAction(view, profile, mood, mode, random = Math.random) {
   const legal = view.legal;
   if (!legal.enabled) throw Error('机器人当前不能行动。');
-  const [width, attack, bluff, callDown, trap] = effectiveBotAxes(profile, mood, mode).map(
-    (n) => n / 100,
-  );
+  const axes = effectiveBotAxes(profile, mood, mode);
+  const [width, attack, bluff, callDown, trap] = axes.map((n) => n / 100);
+  const checks = [],
+    exceptions = [];
+  const roll = (code, threshold) => {
+    const value = random();
+    checks.push({
+      code,
+      value,
+      threshold,
+      selected: ['outside-range', 'insufficient-equity', 'stack-pressure'].includes(code)
+        ? value <= threshold
+        : value < threshold,
+    });
+    return value;
+  };
   const percentile = startingPercentile(view.hole),
     odds = legal.callAmount / Math.max(1, view.contestable),
     pressure = legal.toCall / Math.max(1, view.stack + view.bet);
@@ -304,47 +381,108 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
   let range = (0.16 + width * 0.42) * positionScale * (view.count >= 8 ? 0.9 : 1);
   if (raises.length) range *= raises.length === 1 ? 0.68 : 0.42;
   if (view.position === 'BB' && legal.toCall <= 50) range += 0.1;
+  const openingRange = range;
+  const cheapEntry =
+    view.street === 0 && !raises.length && view.currentBet <= 50 && legal.toCall <= 50;
+  if (cheapEntry) range = Math.min(0.95, range + 0.08 + width * 0.16);
   const premium = percentile < 0.07,
-    admitted = percentile <= range;
-  const callTolerance = (callDown - 0.5) * 0.1;
+    admitted = percentile <= range,
+    openingAdmitted = percentile <= openingRange,
+    callTolerance = (callDown - 0.5) * 0.1;
+  let sizing = null,
+    value = false,
+    semiBluff = false,
+    pureBluff = false;
+  const finish = (action, reason, amount) => ({
+    action,
+    ...(amount === undefined ? {} : { amount }),
+    trace: {
+      reason,
+      profile: profile.id,
+      profileName: profile.name,
+      mode,
+      mood: { kind: mood?.kind || 'steady', reason: mood?.reason || '' },
+      axes,
+      baseAxes: [...profile.axes],
+      equityModel: 'random-opponents',
+      trials: view.equityTrials || (view.difficulty === 'hard' ? 52 : 28),
+      rawEquity: view.equity,
+      noise,
+      equity,
+      odds,
+      pressure,
+      percentile,
+      range,
+      openingRange,
+      cheapEntry,
+      cheapRangePassed: cheapEntry && admitted,
+      premium,
+      admitted,
+      callTolerance,
+      checks,
+      exceptions,
+      sizing,
+      value,
+      semiBluff,
+      pureBluff,
+      draw: view.features.draw,
+      playsBoard: view.playsBoard,
+    },
+  });
   if (legal.toCall > 0) {
-    if (view.street === 0 && !admitted && !premium && odds > 0.09 && random() > 0.06 * width)
-      return { action: 'fold' };
-    if (!premium || view.street > 0) {
-      if (equity + callTolerance < odds + 0.02 && random() > 0.03 + callDown * 0.1)
-        return { action: 'fold' };
-      if (
-        pressure > 0.4 &&
-        equity + callTolerance < (view.street === 0 ? 0.38 : 0.32) &&
-        random() > 0.03 + callDown * 0.07
-      )
-        return { action: 'fold' };
+    if (view.street === 0 && !admitted && !premium && odds > 0.09) {
+      if (roll('outside-range', 0.06 * width) > 0.06 * width)
+        return finish('fold', 'outside-range');
+      exceptions.push('outside-range');
+    }
+    if ((!premium || view.street > 0) && !(cheapEntry && admitted)) {
+      if (equity + callTolerance < odds + 0.02) {
+        if (roll('insufficient-equity', 0.03 + callDown * 0.1) > 0.03 + callDown * 0.1)
+          return finish('fold', 'insufficient-equity');
+        exceptions.push('insufficient-equity');
+      }
+      if (pressure > 0.4 && equity + callTolerance < (view.street === 0 ? 0.38 : 0.32)) {
+        if (roll('stack-pressure', 0.03 + callDown * 0.07) > 0.03 + callDown * 0.07)
+          return finish('fold', 'stack-pressure');
+        exceptions.push('stack-pressure');
+      }
     }
   }
-  if (!legal.canRaise) return { action: legal.canCheck ? 'check' : 'call' };
+  if (!legal.canRaise)
+    return finish(
+      legal.canCheck ? 'check' : 'call',
+      legal.canCheck
+        ? 'free-check'
+        : exceptions.length
+          ? 'loose-exception'
+          : cheapEntry && admitted
+            ? 'affordable-entry'
+            : premium && view.street === 0
+              ? 'premium-continue'
+              : 'price-continue',
+    );
   const headsUp = view.rivals === 1,
     features = view.features;
   const ownLastRaise =
     [...view.history].reverse().find((a) => a.action === 'raise')?.id === view.id;
-  const semiBluff =
+  semiBluff =
     view.street > 0 &&
     features.draw &&
     view.rivals <= 2 &&
-    random() < (0.12 + bluff * 0.42) * (headsUp ? 1 : 0.45);
-  // Pure bluffs avoid crowded pots and calls for most of the bot's bankroll.
+    roll('semi-bluff', (0.12 + bluff * 0.42) * (headsUp ? 1 : 0.45)) <
+      (0.12 + bluff * 0.42) * (headsUp ? 1 : 0.45);
   const story =
-    view.street === 0
-      ? view.position === 'BTN' || view.position === 'CO'
-      : ownLastRaise || !features.wet;
-  const pureBluff =
+    view.street === 0 ? ['BTN', 'CO'].includes(view.position) : ownLastRaise || !features.wet;
+  pureBluff =
     !view.playsBoard &&
     view.rivals <= 2 &&
     story &&
     pressure < 0.25 &&
-    random() < (0.015 + bluff * 0.17) * (headsUp ? 1 : 0.2);
-  const value =
+    roll('pure-bluff', (0.015 + bluff * 0.17) * (headsUp ? 1 : 0.2)) <
+      (0.015 + bluff * 0.17) * (headsUp ? 1 : 0.2);
+  value =
     view.street === 0
-      ? premium || admitted
+      ? premium || openingAdmitted
       : !view.playsBoard &&
         (equity > (headsUp ? 0.53 : 1 / (view.rivals + 1) + 0.23) ||
           (features.overpair && equity > 0.4));
@@ -354,10 +492,13 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
     legal.canCheck &&
     !features.wet &&
     equity > 0.65 &&
-    random() < trap * 0.52
+    roll('trap', trap * 0.52) < trap * 0.52
   )
-    return { action: 'check' };
-  if ((value || semiBluff || pureBluff) && random() < 0.2 + attack * 0.72) {
+    return finish('check', 'trap');
+  if (
+    (value || semiBluff || pureBluff) &&
+    roll('attack', 0.2 + attack * 0.72) < 0.2 + attack * 0.72
+  ) {
     let fraction = profile.sizing[0] + random() * (profile.sizing[1] - profile.sizing[0]);
     if (profile.id === 'abao' && view.street === 1 && ownLastRaise) fraction = 0.33;
     if (profile.id === 'abao' && view.street === 2 && semiBluff) fraction = 0.9;
@@ -378,13 +519,38 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
       view.hole[0].rank <= 6 &&
       admitted &&
       headsUp &&
-      random() < 0.04
+      roll('rare-pocket-shove', 0.04) < 0.04
     )
       desired = legal.maxRaiseTo;
     const amount = Math.max(legal.minRaiseTo, Math.min(legal.maxRaiseTo, desired));
-    // A style never creates an illegal raise or a forced deep-stack air shove.
-    if (amount !== legal.maxRaiseTo || value || semiBluff || view.stack <= 500)
-      return { action: 'raise', amount };
+    sizing = {
+      fraction,
+      desired,
+      actual: amount,
+      minimum: legal.minRaiseTo,
+      maximum: legal.maxRaiseTo,
+      opening: view.street === 0 && !raises.length,
+      executed: false,
+    };
+    if (amount !== legal.maxRaiseTo || value || semiBluff || view.stack <= 500) {
+      sizing.executed = true;
+      return finish(
+        'raise',
+        value ? 'value-raise' : semiBluff ? 'semi-bluff' : 'pure-bluff',
+        amount,
+      );
+    }
   }
-  return { action: legal.canCheck ? 'check' : 'call' };
+  return finish(
+    legal.canCheck ? 'check' : 'call',
+    legal.canCheck
+      ? 'free-check'
+      : exceptions.length
+        ? 'loose-exception'
+        : cheapEntry && admitted
+          ? 'affordable-entry'
+          : premium && view.street === 0
+            ? 'premium-continue'
+            : 'price-continue',
+  );
 }

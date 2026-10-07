@@ -39,6 +39,10 @@ src/
   review/
     context.js              起手牌、成牌、听牌、牌面、位置与下注上下文
     equity.js               跟注成本、分池资格、枚举/抽样权益
+    preflop.js              开池、隔离、3-bet、4-bet 与位置上下文
+    routes.js               主线、备选与各自成立条件
+    counterfactual.js       未知牌抽样与候选行动的完整牌局模拟
+    opponents.js            机器人实际分支、价格、情绪与尺度解释
     analysis.js             决策评价、依据、候选行动与后续路线
     worker.js               后台复盘任务
   ui/
@@ -46,12 +50,14 @@ src/
     opponents-controller.js 各座位风格分配、量化研究、偏好保存
     cards.js                单个大花色图标的 SVG 牌面
     showdown.js             每位参与者最佳五张牌与赢家动画
-    review-controller.js    复盘对话框、时间线与 Worker 生命周期
+    review-controller.js    我的决策与 Worker 生命周期
+    opponent-review.js      对手决策时间线、筛选与实际依据
   styles/                   按牌桌、复盘、摊牌拆分的样式
 tests/
   unit/                     德州规则、边池、同手重打、复盘边界
   e2e/                      浏览器操作与响应式布局
   fixtures/                 仅测试服务注入的可控牌局
+scripts/measure-bots.mjs      固定牌序下的入池率与进攻率测量
 docs/                       架构、规则、复盘依据与发布说明
 .openai/hosting.json          原 Sites 项目关联与部署入口
 ```
@@ -83,3 +89,9 @@ docs/                       架构、规则、复盘依据与发布说明
 当前在线地址：<https://noir-poker-practice.daring-oak-8798.chatgpt.site/>。
 
 复盘是透明、可修改的训练启发式与范围模型，尚不是 GTO 求解器，也没有联网调用大模型。电脑对手也是本地策略；提高难度会改变行动策略，不会使用玩家隐藏信息。
+
+## 策略测量
+
+`npm run measure:bots -- --hands=250 --players=6 --profile=balanced` 在固定牌序、每手 100 BB、无情绪条件下测量当前模拟策略的 VPIP/PFR。可将 profile 改为 `viktor`、`jungleman`、`dwan` 等。玩家使用当前均衡策略，因此结果是该完整模拟环境的表现，不能当作真人频率。
+
+复盘比较不同合法行动，抽样未知牌后由同一规则引擎完整结算，并展示范围与抽样不确定性。对手解释独立读取执行记录；不会将真实对手底牌或后来牌序用于评价你的决策。

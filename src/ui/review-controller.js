@@ -5,6 +5,7 @@ import {
   analyzeDecision,
   summarizeReview,
 } from '../review/analysis.js';
+import { createOpponentReview } from './opponent-review.js';
 const $ = (selector) => document.querySelector(selector),
   format = (n) => Math.round(n).toLocaleString('en-US'),
   pct = (n) => Math.round(n * 100) + '%';
@@ -17,6 +18,26 @@ export function createReviewController({ card }) {
     job = 0,
     selected = 0;
   const dialog = $('#review-dialog');
+  const opponents = createOpponentReview({ card });
+  function perspective(opponent) {
+    $('#review-hero-tab').setAttribute('aria-selected', String(!opponent));
+    $('#review-opponents-tab').setAttribute('aria-selected', String(opponent));
+    $('#review-hero-panel').hidden = opponent;
+    $('#review-opponents').hidden = !opponent;
+  }
+  $('#review-hero-tab').onclick = () => perspective(false);
+  $('#review-opponents-tab').onclick = () => perspective(true);
+  dialog.querySelector('.review-tabs').addEventListener('keydown', (e) => {
+    if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(e.key)) return;
+    e.preventDefault();
+    const opponent =
+      e.key === 'End' ||
+      (e.key !== 'Home' && $('#review-hero-tab').getAttribute('aria-selected') === 'true');
+    perspective(opponent);
+    $(opponent ? '#review-opponents-tab' : '#review-hero-tab').focus();
+  });
+  const esc = (v) =>
+    String(v).replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
   function renderDialog() {
     if (!last) return;
     const input = last.input,
@@ -76,7 +97,23 @@ export function createReviewController({ card }) {
     $('#review-pot').textContent = format(decision.pot);
     $('#review-stack').textContent = format(decision.stack);
     $('#review-your-action').textContent = actionLabel(decision);
-    $('#review-suggestion').textContent = result?.alternativeLabel || '正在比较可选行动…';
+    $('#review-suggestion').textContent = result?.recommendation || '正在比较可选行动…';
+    $('#review-routes').innerHTML = result
+      ? [result.routes.primary, result.routes.secondary]
+          .filter(Boolean)
+          .map(
+            (route, i) =>
+              `<article class="review-route"><span>${i ? '有条件的备选' : '主线成立的条件'}</span><h4>${esc(route.label)}</h4><p>${esc(route.condition)}</p><small>${esc(route.tradeoff)}</small></article>`,
+          )
+          .join('')
+      : '';
+    const sim = result?.simulation;
+    const signed = (v) => (v > 0 ? '+' : '') + format(v);
+    $('#review-simulation').innerHTML = sim
+      ? `<h3>候选行动模拟</h3><p>${sim.stable ? '本轮抽样中，一条路线在两种范围下都明显领先；仍依赖后续策略假设。' : '范围或抽样误差可能改变排序，暂未证明有唯一最佳行动。'}</p><table><caption>每个行动、每种范围模拟 ${sim.trials} 手 · 从当前决策起的筹码净变化</caption><thead><tr><th scope="col">行动</th><th scope="col">随机范围</th><th scope="col">行动加权</th></tr></thead><tbody>${sim.rows.map((row) => `<tr><th scope="row">${actionLabel(decision, row.action.action, row.action.amount)}</th>${row.scenarios.map((v) => `<td>${signed(v.ev)}<small>约 ±${format(v.margin)}</small></td>`).join('')}</tr>`).join('')}</tbody></table><details><summary>模拟如何处理后续行动</summary><p>${esc(sim.note)}</p><p>收益包含立即弃牌、被跟注、后续加注和摊牌；真实的隐藏底牌、后续牌序与最终赢家均未使用。两种范围结果不是最优收益区间。</p></details>`
+      : result
+        ? '<p class="review-price-note">这个旧快照缺少完整行动状态，无法进行后续行动模拟；保留公开信息的范围与价格分析。</p>'
+        : '<p class="review-price-note">正在模拟各个合法行动与后续牌局…</p>';
     $('#review-decision-title').textContent = result?.title || '依据当时的信息分析';
     $('#review-reason').textContent =
       result?.reason ||
@@ -179,13 +216,18 @@ export function createReviewController({ card }) {
         e.preventDefault();
         if (id === job) fallback(id, input);
       };
-      worker.postMessage({ id, input });
+      // Opponent private traces belong to their own explanation panel only.
+      worker.postMessage({
+        id,
+        input: { hand: input.hand, decisions: input.decisions, outcome: input.outcome },
+      });
     } catch {
       await fallback(id, input);
     }
   }
   function open() {
     if (!last) return;
+    opponents.update(last.input);
     renderDialog();
     if (!dialog.open) dialog.showModal();
     analyze();
@@ -224,6 +266,8 @@ export function createReviewController({ card }) {
           job++;
           last = { key, input, status: 'idle', progress: 0, analysis: null };
           selected = 0;
+          perspective(false);
+          opponents.update(input);
           if (dialog.open) {
             renderDialog();
             analyze();
@@ -252,6 +296,7 @@ export function createReviewController({ card }) {
       last = null;
       seen = '';
       selected = 0;
+      perspective(false);
       dialog.close();
       $('#review-hand-button').hidden = true;
     },

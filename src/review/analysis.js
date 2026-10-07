@@ -1,5 +1,8 @@
 import { callPrice, sampleValue } from './equity.js';
 import { decisionContext, startingTier, drawInfo } from './context.js';
+import { preflopContext } from './preflop.js';
+import { comparisonRoutes } from './routes.js';
+import { compareCandidateActions } from './counterfactual.js';
 export { callPrice } from './equity.js';
 export { startingTier, drawInfo } from './context.js';
 
@@ -30,6 +33,7 @@ export function createReviewInput(g) {
       hand: g.hand,
       hole: g.players[0].hole,
       decisions: g.decisions || [],
+      opponents: g.botDecisions || [],
       outcome: {
         profit: (g.payouts[0] || 0) - g.players[0].total,
         paid: g.players[0].total,
@@ -52,12 +56,16 @@ export function createReviewInput(g) {
     }),
   );
 }
-export function analyzeDecision(s, { trials = 600 } = {}) {
+export function analyzeDecision(
+  s,
+  { trials = 600, rolloutTrials = Math.max(12, Math.min(64, Math.round(trials / 15))) } = {},
+) {
   if (!Number.isInteger(trials) || trials < 1) throw Error('抽样次数必须是正整数。');
   const price = callPrice(s),
     wide = sampleValue(s, price, trials, false),
     strong = sampleValue(s, price, trials, true),
     ctx = decisionContext(s);
+  const pre = s.street === 0 ? preflopContext(s) : null;
   const low = Math.min(wide.equity, strong.equity),
     high = Math.max(wide.equity, strong.equity),
     uncertainty = Math.max(wide.margin, strong.margin);
@@ -101,17 +109,106 @@ export function analyzeDecision(s, { trials = 600 } = {}) {
     lesson = '先免费过牌，面对后续下注再评估价格。';
     plan = '下一步若有人下注，按新的金额和参与人数重新计算，不预先承诺跟到底。';
   } else if (
+    pre?.unopened &&
+    pre.late &&
+    pre.openingCandidate &&
+    tier < 2 &&
+    s.action === 'raise' &&
+    ctx.extra <= 400 &&
+    s.amount < s.legal.maxRaiseTo
+  ) {
+    code = pre.limpers ? 'late-isolation' : 'late-open';
+    title = pre.limpers ? '后位隔离加注，要区分人数与跟注倾向' : '后位主动开池有位置与弃牌权益依据';
+    reason = `${handLabel} 在 ${s.position} ${pre.limpers ? '面对 ' + pre.limpers + ' 位跛入者' : '行动弃到你，前面没有开池'}，加注至 ${number(s.amount)}（${(s.amount / 50).toFixed(1)} BB）。${pre.ace ? 'A 底牌阻断部分 AA、AK、AQ 组合；后位允许比早位更宽的开池范围。' : '后位能以较宽范围争夺盲注，并在翻后获得位置优势。'}加注可让部分弱连张和高牌退出，收益包含弃牌权益；被跟注后，留下的范围可能更强${pre.weakAce ? '，A' + pre.kicker + ' 成顶对仍容易被更好的 A 踢脚压制' : ''}。${pre.limpers ? '这里是隔离加注；已有开池再加平跟后才叫挤压加注。' : '这里是开池／偷盲，不是挤压加注。'}`;
+    alternative = {
+      action: 'raise',
+      amount: Math.min(s.legal.maxRaiseTo, Math.max(s.legal.minRaiseTo, 125 + pre.limpers * 50)),
+    };
+    lesson = '开池能力与接再加注能力分开判断；A high 不是必须弃牌的理由，也不是跟到底的理由。';
+    plan = `${pre.limpers ? '跛入者跟注较多时，提高隔离尺度并收紧范围；多人跟注后减少无依据持续施压。' : '比较 2–3 BB 开池：较小尺度降低偷盲成本，较大尺度提高即时压力，但要看盲位的继续范围。'}面对小额、宽范围 3-bet 才考虑有位置防守；大尺度或 4-bet 优先收紧。翻后顶对弱踢脚以控池为主，未中牌时结合牌面与对手范围决定是否持续下注。`;
+  } else if (
+    pre &&
+    pre.raises >= 2 &&
+    (pre.weakAce || tier === 0) &&
+    ['call', 'raise'].includes(s.action)
+  ) {
+    code = pre.raises >= 3 ? 'weak-fourbet-defense' : 'weak-threebet-defense';
+    status = pre.raises >= 3 || price.cost >= s.stack * 0.1 ? 'attention' : 'consider';
+    title = pre.raises >= 3 ? '多次再加注下，弱牌防守缺少支撑' : '可开池的牌，不等于可以宽接 3-bet';
+    reason = `${handLabel} 在 ${s.position}，${pre.label}，最新总额 ${number(s.currentBet)}，约上一次的 ${pre.ratio.toFixed(1)} 倍。${priced}${estimated}${pre.ownOpen ? '你此前的开池有合理依据，但这一跟注是新的独立决策。' : ''}${pre.weakAce ? '较强 Ax 压制你的踢脚，单靠持有 A 的阻断不够支持大额跟注。' : '弱牌被强范围压制，缺少稳健的翻后实现条件。'}${ctx.pendingOthers ? '后面仍有 ' + ctx.pendingOthers + ' 人可再次行动。' : ''}`;
+    alternative = { action: 'fold', amount: 0 };
+    lesson =
+      pre.raises >= 3
+        ? '已投入的开池和跟注不能成为继续接 4-bet 的依据。'
+        : '区分偷盲范围与防守再加注范围，核对尺度、位置、同花潜力和对手宽度。';
+    plan =
+      pre.raises >= 3
+        ? '对多次加注且缺少宽范围依据的情形，优先停止新增投入；只有清晰的极宽范围证据与有利价格才重新讨论防守。'
+        : `备选为小额有位置跟注，但需要对手 3-bet 足够宽、价格有余量${pre.suited ? '，同花潜力有助于实现权益' : '；不同花弱 A 需要更严格的防守条件'}。低 SPR 或大尺度压力下不要仅为看翻牌继续。`;
+  } else if (
+    pre?.unopened &&
+    pre.late &&
+    pre.openingCandidate &&
+    tier < 2 &&
+    !pre.limpers &&
+    ctx.effective >= 500 &&
+    s.legal.canRaise &&
+    ['fold', 'call'].includes(s.action)
+  ) {
+    code = 'late-passive-entry';
+    status = 'consider';
+    title = '后位可比较主动开池，而非只看起手牌档位';
+    reason = `${handLabel} 在 ${s.position}，无人主动入池。${pre.ace ? 'A 阻断部分强 Ax，后位允许更宽地争夺盲注。' : '翻后位置与对手退出空间支持比较主动开池。'}${s.action === 'call' ? '单纯跛入让盲位低成本看牌，缺少主动弃牌权益。' : '弃牌避免投入，但也放弃了后位争夺盲注的机会。'}这不等于被加注后还应继续；盲位很黏或有效筹码很短时需要另行调整。`;
+    alternative = {
+      action: 'raise',
+      amount: Math.min(s.legal.maxRaiseTo, Math.max(s.legal.minRaiseTo, 125)),
+    };
+    lesson = '把主动开池与接再加注拆成两套继续条件。';
+    plan =
+      '比较 2–3 BB 开池与当前保守路线；若遇大尺度 3-bet 或 4-bet，弱 A 优先收紧。顶对弱踢脚时避免自动把筹码打光。';
+  } else if (
+    pre &&
+    pre.raises === 1 &&
+    pre.callersAfterOpen > 0 &&
+    pre.late &&
+    pre.weakAce &&
+    s.action === 'raise'
+  ) {
+    code = 'squeeze-candidate';
+    status = 'consider';
+    title = '挤压加注需要退出范围支持，A 阻断只是其中一项';
+    reason = `${handLabel} 在 ${s.position}，已有开池及 ${pre.callersAfterOpen} 次平跟，你再加注至 ${number(s.amount)}，属于挤压加注。A 阻断部分强 A 组合，可帮助挑选诈唬候选；但不同花弱 A 被跟注后仍可能被更强 Ax 压制。是否值得挤压，关键是开池者是否足够宽、平跟者是否会退出，以及你面对 4-bet 能否及时停止。`;
+    alternative = { action: 'fold', amount: 0 };
+    lesson = '减少人数不是收益证明；即刻弃牌权益与被继续后的牌力要分开评估。';
+    plan =
+      '没有对手范围与弃牌倾向证据时优先收紧；具备宽开池／可弃平跟的证据时，重打比较有位置挤压与弃牌，避免把持有 A 当成无条件进攻依据。';
+  } else if (
+    pre?.unopened &&
+    early &&
+    pre.suited &&
+    tier === 0 &&
+    ['call', 'raise'].includes(s.action)
+  ) {
+    code = 'early-suited-entry';
+    status = 'consider';
+    title = '早位边缘同花牌，开池取决于后面防守范围';
+    reason = `${handLabel} 确实是同花牌，具备同花潜力；不能按不同花弱牌处理。你在 ${s.position}，后面仍有 ${ctx.pendingOthers} 人可行动。${pre.kicker <= 8 ? '较小踢脚使顶对容易被更强同点数高牌压制，' : ''}同花潜力并不能消除无位置和再加注压力。常规收紧范围可选择弃牌；若后面明显过紧、很少 3-bet，则可以比较小尺度开池利用其弃牌。`;
+    alternative = { action: s.legal.canCheck ? 'check' : 'fold', amount: 0 };
+    lesson = '同花、位置、踢脚与防守倾向一起判断，不能只根据“有高张／同花”入池或根据档位直接判错。';
+    plan =
+      '把当前开池与弃牌放进候选行动模拟，查看对手范围改变时哪条路线占优。面对 3-bet 收紧，顶对弱踢脚控制底池；同花听牌仍按实际价格和后续付费判断。';
+  } else if (
     s.street === 0 &&
     tier === 0 &&
     (s.action === 'call' || s.action === 'raise') &&
-    (s.currentBet >= 150 || early)
+    ((pre.raises > 0 && s.currentBet >= 150) || early)
   ) {
     code = 'weak-entry';
-    status = 'attention';
-    title = '弱起手牌在当前入池条件下风险偏高';
-    reason = `你拿 ${handLabel}，处于 ${s.position}，当前需补 ${number(s.legal.callAmount)}；仍有 ${ctx.pendingOthers} 位玩家尚可行动。${early ? '早位缺少位置优势，低点数不同花牌更难实现权益。' : '前面已有加注，弱牌被更好顶对或更高踢脚压制的风险增加。'}`;
+    status = early && !pre.raises ? 'attention' : 'consider';
+    title = early && !pre.raises ? '早位弱牌入池缺少位置支持' : '面对开池，先核对价格与被压制风险';
+    reason = `你拿 ${handLabel}，处于 ${s.position}，当前需补 ${number(s.legal.callAmount)}；仍有 ${ctx.pendingOthers} 位玩家尚可行动。${early ? '早位缺少位置优势，' + (pre.suited ? '同花潜力仍需承担踢脚、连接性及再加注风险。' : '不同花边缘牌更难实现权益。') : '前面已有加注，弱牌被更好顶对或更高踢脚压制的风险增加。'}`;
     alternative = { action: s.legal.canCheck ? 'check' : 'fold', amount: 0 };
-    lesson = '收紧这类弱牌；把筹码留给位置、同花潜力或点数更好的组合。';
+    lesson = '主动开池、平跟已有开池和防守再加注需要不同范围，不能只按起手牌档位判断。';
     plan = '若以后在大盲面对很小加注，应重新按价格判断，不能把“弱牌”直接等同于必须弃牌。';
   } else if (
     s.action === 'raise' &&
@@ -269,6 +366,49 @@ export function analyzeDecision(s, { trials = 600 } = {}) {
       `直接成牌候选 ${draw.outs} 张（已去重）· 下一张约 ${percent(draw.nextChance)}，不等于获胜率`,
     );
   if (price.cost) evidence.push(priced);
+  if (pre)
+    evidence.push(
+      `入池情境：${pre.label} · 跛入 ${pre.limpers} 人${pre.ace ? ' · A 阻断不等于被跟注后优势' : ''}`,
+    );
+  let routes = comparisonRoutes(s, ctx, { code, status, alternative, pre });
+  let simulation = null;
+  if (Number.isInteger(s.dealer) && s.players.every((p) => 'actedTo' in p)) {
+    simulation = compareCandidateActions(s, [alternative, routes.secondary], {
+      trials: rolloutTrials,
+    });
+    if (!simulation.stable && status !== 'attention')
+      confidence = '范围与后续策略敏感，未证明唯一最优';
+    if (
+      simulation.stable &&
+      !['free-fold', 'expensive-call', 'weak-threebet-defense', 'weak-fourbet-defense'].includes(
+        code,
+      ) &&
+      (simulation.best.action !== alternative.action ||
+        (simulation.best.action === 'raise' && simulation.best.amount !== alternative.amount))
+    ) {
+      const previous = alternative;
+      alternative = simulation.best;
+      status = 'consider';
+      confidence = '两种范围抽样一致，但后续策略仍是模型';
+      reason += ` 候选行动模拟中，${actionLabel(s, alternative.action, alternative.amount)} 在两种范围下均有较明确的筹码收益优势，值得替代原启发式建议进行练习；这个优势依赖模拟继续策略，不是最优打法证明。`;
+      routes = {
+        primary: {
+          ...alternative,
+          label: actionLabel(s, alternative.action, alternative.amount),
+          summary: '模拟候选：' + actionLabel(s, alternative.action, alternative.amount),
+          condition: '本次公开风格、两种起始范围及均衡后续策略能代表练习对局时。',
+          tradeoff: '抽样结果支持优先比较，但真实继续范围与更好的后续打法仍可能改变排序。',
+        },
+        secondary: {
+          ...previous,
+          label: actionLabel(s, previous.action, previous.amount),
+          condition: '改变对手范围或后续策略时，保留原保守／价值路线作对照。',
+          tradeoff: '结合下方数字与具体条件判断，不把模拟领先当成必须执行。',
+        },
+      };
+      plan += ' 重打时优先对照模拟候选与原路线；若对手的防守方式明显不同，重新分析。';
+    }
+  }
   return {
     index: s.index,
     status,
@@ -281,6 +421,9 @@ export function analyzeDecision(s, { trials = 600 } = {}) {
     evidence,
     alternative,
     alternativeLabel: actionLabel(s, alternative.action, alternative.amount),
+    routes,
+    recommendation: routes.primary.summary,
+    simulation,
     metrics: {
       required: price.required,
       equityLow: low,

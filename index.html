@@ -390,7 +390,30 @@
         <button id="review-priority" data-review-index="0" hidden>查看优先复盘的决策</button
         ><button id="review-retry" hidden>重新分析</button>
       </section>
-      <div class="review-layout">
+      <div class="review-tabs" role="tablist" aria-label="复盘视角">
+        <button
+          id="review-hero-tab"
+          role="tab"
+          aria-selected="true"
+          aria-controls="review-hero-panel"
+        >
+          我的决策
+        </button>
+        <button
+          id="review-opponents-tab"
+          role="tab"
+          aria-selected="false"
+          aria-controls="review-opponents"
+        >
+          对手为什么这样打
+        </button>
+      </div>
+      <div
+        id="review-hero-panel"
+        class="review-layout"
+        role="tabpanel"
+        aria-labelledby="review-hero-tab"
+      >
         <nav aria-label="本手决策时间线">
           <div class="review-timeline-title">
             <strong>你的决策</strong><span id="review-step-count"></span>
@@ -428,9 +451,19 @@
                 <span>你当时选择</span><strong id="review-your-action"></strong>
               </div>
               <div class="review-choice suggested">
-                <span>建议处理方式</span><strong id="review-suggestion"></strong>
+                <span>建议主线</span><strong id="review-suggestion"></strong>
               </div>
             </div>
+            <section
+              id="review-routes"
+              class="review-routes"
+              aria-label="两条路线的条件与取舍"
+            ></section>
+            <section
+              id="review-simulation"
+              class="review-simulation"
+              aria-label="候选行动模拟比较"
+            ></section>
             <div class="review-explanation">
               <h3 id="review-decision-title"></h3>
               <p id="review-reason"></p>
@@ -468,6 +501,12 @@
           </section>
         </div>
       </div>
+      <section
+        id="review-opponents"
+        role="tabpanel"
+        aria-labelledby="review-opponents-tab"
+        hidden
+      ></section>
       <p class="review-scope">按决策时的信息复盘 · 范围是假设，输赢不直接决定选择好坏。</p>
       <details class="review-method">
         <summary>分析依据与范围</summary>
@@ -480,8 +519,8 @@
         </p>
         <p>
           “两种范围估计”来自随机范围与对主动下注者偏强范围的抽样，范围假设并非对手真实牌力，也不是误差区间。后续下注、弃牌率和潜在收益没有完整建模。分析区分牌型、踢脚、听牌、位置、公共牌结构、人数与下注压力。直接成牌候选不是保证获胜的
-          outs；只显示下一张的成牌比例，不把翻牌到河牌的两张机会当作只付费一次即可获得。河牌单挑枚举所有合法底牌，其他情况使用固定种子的抽样；枚举消除抽样误差，但不能消除对手范围假设的误差。候选下注尺度属于练习路线，没有计算完整未来策略或精确诈唬
-          EV，不是 GTO 求解。
+          outs；只显示下一张的成牌比例，不把翻牌到河牌的两张机会当作只付费一次即可获得。河牌单挑枚举所有合法底牌，其他情况使用固定种子的抽样；枚举消除抽样误差，但不能消除对手范围假设的误差。候选下注尺度属于练习路线，不是
+          GTO 求解。
         </p>
         <p>
           参考：<a
@@ -497,6 +536,14 @@
             rel="noopener noreferrer"
             >起手牌与位置</a
           >
+        </p>
+        <p>
+          候选行动模拟从当时局面抽样未知牌，使用规则引擎把牌局打完，包含继续下注、弃牌、边池和退还。你后续使用均衡模拟策略，对手沿用公开风格，每次模拟判断使用
+          8
+          次权益抽样。比较的是这些策略下的筹码变化，并非最优后续策略收益；抽样误差也不覆盖范围与模型错误。
+        </p>
+        <p>
+          对手解释在结算后读取实际执行记录，说明它当时的价格、范围、情绪与随机分支；这些私有记录不进入你的决策评价。
         </p>
       </details>
       <button class="primary-button close-dialog">回到牌桌</button>

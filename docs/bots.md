@@ -1,17 +1,20 @@
 # 机器人风格与情绪模拟
 
-五种具名风格来自公开牌局的定性归纳。数字是本项目的训练参数，**不是本人真实 VPIP、PFR 或长期行为统计**，也不是 GTO 求解结果。Peter 指 HCL 常客，阿宝使用 KPC 的 A Bao 标签，不推断本名或职业身份。
+八种具名风格来自公开牌局的定性归纳。数字是本项目的训练参数，**不是本人真实 VPIP、PFR 或长期行为统计**，也不是 GTO 求解结果。Peter 指 HCL 常客，阿宝使用 KPC 的 A Bao 标签，不推断本名或职业身份。
 
 ## 参数与实际作用
 
-| 原型    | 入池宽度 | 进攻 | 诈唬 | 跟到底 | 强牌诱导 | 常用翻后下注 / 池 |
-| ------- | -------: | ---: | ---: | -----: | -------: | ----------------- |
-| 均衡    |       50 |   50 |   40 |     50 |       20 | 45–80%            |
-| 谈老板  |       85 |   90 |   82 |     70 |       25 | 65–115%           |
-| ST Wang |       40 |   65 |   43 |     42 |       78 | 45–90%            |
-| 臧书奴  |       63 |   75 |   62 |     63 |       50 | 60–100%           |
-| Peter   |       92 |   88 |   72 |     84 |       18 | 75–125%           |
-| 阿宝    |       55 |   82 |   72 |     50 |       34 | 50–100%           |
+| 原型      | 入池宽度 | 进攻 | 诈唬 | 跟到底 | 强牌诱导 | 常用翻后下注 / 池 |
+| --------- | -------: | ---: | ---: | -----: | -------: | ----------------- |
+| 均衡      |       50 |   50 |   40 |     50 |       20 | 45–80%            |
+| 谈老板    |       85 |   90 |   82 |     70 |       25 | 65–115%           |
+| ST Wang   |       40 |   65 |   43 |     42 |       78 | 45–90%            |
+| 臧书奴    |       63 |   75 |   62 |     63 |       50 | 60–100%           |
+| Peter     |       92 |   88 |   72 |     84 |       18 | 75–125%           |
+| 阿宝      |       55 |   82 |   72 |     50 |       34 | 50–100%           |
+| Isildur1  |       90 |   94 |   88 |     70 |       18 | 70–125%           |
+| Jungleman |       65 |   82 |   66 |     64 |       72 | 45–95%            |
+| durrrr    |       85 |   90 |   85 |     75 |       55 | 65–120%           |
 
 前五列都是 0–100 的倾向指数。样本不足以从这些数字反推出真人的长期频率。公开依据与链接随每个原型保存在 `src/engine/bot-profiles.js`，可在“对手风格”中查阅。
 
@@ -54,3 +57,17 @@
 实测 VPIP = 已完成牌局中翻前自愿跟注/加注的手数 / 已完成手数。实测 PFR = 翻前至少加注一次的手数 / 已完成手数。强制盲注不计，每手各计一次；只表示该机器人在本次练习中的表现。重打撤销被覆盖的一次样本，换风格或重新练习归零。
 
 回归覆盖：设置清洗、隐藏信息访问保护、5–9 人各风格/情绪的合法行动与筹码守恒、短全下不重开加注、情绪阈值与冷却、连续受压中断、风格实际行为差异、退款、VPIP 分母、重复重打、座位配置持久化与移动布局。
+
+## 低成本入池调整与测量
+
+未加注、最多补一个 BB 时，范围在原位置／风格门槛上增加 `0.08 + width × 0.16`，上限 95%。进入这一区间的牌不再因“对所有尚未弃牌者的随机摊牌权益低于眼前盲注赔率”直接弃牌。原来的开池范围仍独立保留；只进入新增便宜入池范围的牌通常跟注，不自动加注。面对已有加注、明显压力或全下仍使用原有范围与权益过滤。
+
+相同固定牌序、6 人、每手重新设为 100 BB、无情绪、250 手，5 个机器人共 1,250 个完成样本：修改前均衡 VPIP 18.24%、PFR 12.32%；修改后 VPIP 35.76%、PFR 18.48%。玩家也使用各版本的当前均衡策略。此结果是本地实际运行值，不是真人数据，也不保证每种桌况都有该频率；可用 `scripts/measure-bots.mjs` 重现当前版本。
+
+新增国外原型依据：
+
+- Viktor Blom / Isildur1：[PokerStars 原访谈](https://www.pokerstars.com/poker/learn/news/finding-isildur1-viktor-blom-cops-to-his-077269/)，[官方历史回顾](https://www.pokerstars.com/poker/learn/news/the-best-and-worst-poker-bluffs-ever/)。
+- Dan Cates / Jungleman：[本人关于计算与进攻的访谈](https://www.cardplayer.com/cardplayer-poker-magazines/65799-poker-hall-of-fame-23-20/articles/19757-capture-the-flag-daniel-jungleman12-cates)，[关于观察对手并调整的访谈](https://www.cardplayer.com/cardplayer-poker-magazines/66315-jason-mercier-28-23/articles/22601-head-games-heads-up-cash-game-advice-from-the-best-in-the-world)。
+- Tom Dwan / durrrr：[原采访与同行评价](https://www.cardplayer.com/cardplayer-poker-magazines/65739-tom-dwan-6-4/articles/18288-the-won-39-durrrr-39-ful-life-of-tom-dwan)，[PokerStars 历史回顾](https://www.pokerstars.com/poker/learn/news/the-best-and-worst-poker-bluffs-ever/)。
+
+这些资料支持历史风格启发，不足以测量真人频率。情绪仍是独立合成机制。Jungleman 原型当前按价格、范围及进攻／诱导参数近似，并没有复刻职业读人能力。
