@@ -39,6 +39,46 @@ async function assertBestHands(page, count) {
   for (const row of comparisons) expect(row.actual).toEqual(row.expected);
 }
 
+test('raise controls, seats, activity and review share street-specific bet ordinals', async ({
+  page,
+}) => {
+  for (const level of [2, 3, 4]) {
+    await page.evaluate((n) => window.qa.bettingTurn(n), level);
+    await expect(page.locator('#raise-button')).toContainText(`${level}-bet`);
+    if (level >= 3) {
+      await expect(page.locator('.seat-3 .seat-action')).toContainText('2-bet');
+      await expect(page.locator('#activity-list')).toContainText('River 2-bet 开池至 150');
+    }
+    if (level >= 4) await expect(page.locator('.seat-4 .seat-action')).toContainText('3-bet');
+  }
+  for (const street of [1, 2, 3]) {
+    await page.evaluate((s) => window.qa.bettingTurn(1, s), street);
+    await expect(page.locator('#raise-button')).toContainText('1-bet 下注至');
+    await page.evaluate((s) => window.qa.bettingTurn(3, s), street);
+    await expect(page.locator('#raise-button')).toContainText('3-bet 加注至');
+    await expect(page.locator('.seat-1 .seat-action')).toContainText('1-bet');
+    await expect(page.locator('.seat-2 .seat-action')).toContainText('2-bet');
+  }
+  await page.evaluate(() => window.qa.bettingTurn(3, 0, true));
+  await expect(page.locator('#raise-button')).toContainText('3-bet 短全下至');
+  const buttonFits = await page
+    .locator('#raise-button')
+    .evaluate((el) => el.scrollWidth <= el.clientWidth + 1);
+  expect(buttonFits).toBe(true);
+
+  await page.evaluate(() => window.qa.reviewLine());
+  await expect(page.locator('#activity-list')).toContainText('Alex 3-bet 加注至 650');
+  await expect(page.locator('#activity-list')).toContainText('Mia 4-bet 加注至 1800');
+  await page.locator('#review-hand-button').click();
+  await expect(page.locator('#review-priority')).toBeVisible({ timeout: 15000 });
+  await page.locator('#review-timeline [data-review-index="0"]').click();
+  await expect(page.locator('#review-your-action')).toContainText('2-bet 开池至 150');
+  await expect(page.locator('#review-routes')).toContainText('2-bet');
+  await page.locator('#review-timeline [data-review-index="2"]').click();
+  await expect(page.locator('#review-public-actions')).toContainText('3-bet 加注至 650');
+  await expect(page.locator('#review-public-actions')).toContainText('4-bet 加注至 1,800');
+});
+
 test('5–9 player showdown reveals all holes immediately and displays each best five', async ({
   page,
 }) => {
@@ -388,7 +428,7 @@ test('A7 review separates steal, 3bet and 4bet; opponents expose actual decision
   await expect(page.locator('#review-priority')).toBeVisible({ timeout: 15000 });
   await page.locator('#review-timeline [data-review-index="0"]').click();
   await expect(page.locator('#review-reason')).toContainText('阻断');
-  await expect(page.locator('#review-suggestion')).not.toHaveText('加注至 150');
+  await expect(page.locator('#review-suggestion')).not.toHaveText('2-bet 开池至 150');
   await expect(page.locator('#review-routes .review-route')).toHaveCount(2);
   await page.locator('#review-timeline [data-review-index="1"]').click();
   await expect(page.locator('#review-decision-title')).toContainText('3-bet');

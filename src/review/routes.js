@@ -1,14 +1,8 @@
 // Candidate routes are conditional practice plans, not solved EV rankings.
+import { actionLabel } from '../engine/action-labels.js';
+
 export function comparisonRoutes(s, ctx, { code, status, alternative, pre }) {
-  const n = (v) => Math.round(v).toLocaleString('en-US');
-  const label = (a) =>
-    a.action === 'raise'
-      ? `加注总额 ${n(a.amount)}`
-      : a.action === 'call'
-        ? `跟注 ${n(s.legal.callAmount)}`
-        : a.action === 'fold'
-          ? '弃牌'
-          : '过牌';
+  const label = (a) => actionLabel(s, a.action, a.amount);
   const same = (a, b) => a.action === b.action && (a.action !== 'raise' || a.amount === b.amount);
   const actual = { action: s.action, amount: s.amount };
   const primary = {

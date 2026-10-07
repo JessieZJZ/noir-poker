@@ -32,6 +32,27 @@ window.qa = {
     render();
     return publicState();
   },
+  bettingTurn(level = 2, street = 0, short = false) {
+    fixtureGame(6);
+    game.dealer = 5;
+    if (short) game.players[0].stack = 175;
+    startHand(game);
+    if (street === 0) {
+      if (level >= 3) act(game, 3, 'raise', 150);
+      if (level >= 4) act(game, 4, 'raise', 350);
+      while (game.actor !== 0) act(game, game.actor, 'fold');
+    } else {
+      while (game.street < street) {
+        while (game.phase === 'playing') act(game, game.actor, 'call');
+        advanceStreet(game);
+      }
+      if (level >= 2) act(game, 1, 'raise', 100);
+      if (level >= 3) act(game, 2, 'raise', 300);
+      while (game.actor !== 0) act(game, game.actor, level === 1 ? 'check' : 'fold');
+    }
+    render();
+    return publicState();
+  },
   allinRest() {
     clearTimeout(timer);
     while (game.phase === 'playing') {

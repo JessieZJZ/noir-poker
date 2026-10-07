@@ -15,6 +15,7 @@ import {
   canRestartHand,
   applyBotSettings,
 } from '../engine/poker.js';
+import { raiseCaption } from '../engine/action-labels.js';
 import { getBotProfile, MOOD_LABELS } from '../engine/bot-profiles.js';
 import { loadBotSettings, createOpponentsController } from './opponents-controller.js';
 import { createReviewController } from './review-controller.js';
@@ -128,14 +129,21 @@ function flyChips(id) {
 }
 function seatAction(p) {
   if (game.actor === p.id) return '<span class="seat-action-label thinking-dots">思考中</span>';
-  const match = /^(小盲|大盲|跟注|加注至|下注|全下) (\d+)$/.exec(p.action);
+  const match =
+    /^(?:(\d+-bet) )?(小盲|大盲|跟注|开池至|加注至|下注至|下注|短全下至|全下至|全下) (\d+)$/.exec(
+      p.action,
+    );
   if (!match) return `<span class="seat-action-label">${p.action || '等待行动'}</span>`;
-  const label = match[1] === '加注至' ? '加注' : match[1],
-    amount = Number(match[2]);
+  const label = match[1]
+      ? match[1] + (match[2] === '短全下至' ? ' 短全下' : match[2] === '全下至' ? ' 全下' : '')
+      : match[2] === '加注至'
+        ? '加注'
+        : match[2],
+    amount = Number(match[3]);
   const meaning =
-    match[1] === '跟注'
+    match[2] === '跟注'
       ? `本次补入 ${format(amount)}，本轮累计投入 ${format(p.bet)}`
-      : `本轮累计投入 ${format(amount)}`;
+      : `${p.action} · 本轮累计投入 ${format(amount)}`;
   return `<span class="seat-action-label">${label}</span><strong class="seat-action-amount" title="${meaning}">${format(amount)}</strong>`;
 }
 const layouts = {
@@ -380,8 +388,10 @@ function render() {
 function updateBet() {
   const legal = legalActions(game, 0);
   $('#bet-value').textContent = format(bet);
-  const action =
-    legal.enabled && bet === legal.maxRaiseTo ? '全下' : game.currentBet === 0 ? '下注' : '加注至';
+  const action = raiseCaption(
+    { street: game.street, history: game.history, currentBet: game.currentBet, legal },
+    bet,
+  );
   $('#raise-button').innerHTML = `<span>${action}</span><strong>${format(bet)}</strong>`;
   $('#raise-button').setAttribute('aria-label', action + ' ' + format(bet));
 }

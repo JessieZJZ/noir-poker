@@ -11,6 +11,7 @@ import {
   chooseBotAction,
   effectiveBotAxes,
 } from './bot-profiles.js';
+import { raiseCaption } from './action-labels.js';
 export const SUITS = ['♠', '♥', '♣', '♦'];
 export const RANK_NAMES = [
   '高牌',
@@ -391,6 +392,13 @@ export function act(g, id, action, amount) {
   // Capture only information available before the decision. Opponents' hole
   // cards, the remaining deck and future community cards never enter review.
   const normalized = action === 'call' && legal.canCheck ? 'check' : action;
+  const betLabel =
+    normalized === 'raise'
+      ? raiseCaption(
+          { street: g.street, history: g.history, currentBet: g.currentBet, legal },
+          amount,
+        )
+      : null;
   if (id !== 0) {
     if (g.street === 0 && ['call', 'raise'].includes(normalized)) p.botHand.vpip = true;
     if (g.street === 0 && normalized === 'raise') p.botHand.pfr = true;
@@ -457,6 +465,7 @@ export function act(g, id, action, amount) {
     id,
     action: normalized,
     amount: normalized === 'raise' ? amount : normalized === 'call' ? legal.callAmount : 0,
+    ...(betLabel ? { betLabel } : {}),
   });
   g.pending = g.pending.filter((v) => v !== id);
   if (action === 'fold') {
@@ -488,7 +497,7 @@ export function act(g, id, action, amount) {
       for (const o of g.players)
         if (o.id !== id && canAct(o) && o.bet < amount && !g.pending.includes(o.id))
           g.pending.push(o.id);
-    p.action = p.allin ? `全下 ${amount}` : old === 0 ? `下注 ${amount}` : `加注至 ${amount}`;
+    p.action = `${betLabel} ${amount}`;
     log(g, `${p.name} ${p.action}`, id);
   }
   progress(g, id);
@@ -709,11 +718,12 @@ export function botDecision(g, random = Math.random, { trials } = {}) {
     equity: estimateEquity(p.hole, g.board, rivals, equityTrials, random),
     equityTrials,
     contestable: contestableAfterCall(g, p.id, legal.callAmount),
-    history: (g.history || []).map(({ id, street, action, amount }) => ({
+    history: (g.history || []).map(({ id, street, action, amount, betLabel }) => ({
       id,
       street,
       action,
       amount,
+      ...(betLabel ? { betLabel } : {}),
     })),
     features: botBoardFeatures(p.hole, g.board, score),
     playsBoard: g.board.length === 5 && compare(score, evaluate(g.board).score) === 0,

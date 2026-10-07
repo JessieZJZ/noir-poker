@@ -3,6 +3,8 @@ import { decisionContext, startingTier, drawInfo } from './context.js';
 import { preflopContext } from './preflop.js';
 import { comparisonRoutes } from './routes.js';
 import { compareCandidateActions } from './counterfactual.js';
+import { actionLabel } from '../engine/action-labels.js';
+export { actionLabel } from '../engine/action-labels.js';
 export { callPrice } from './equity.js';
 export { startingTier, drawInfo } from './context.js';
 
@@ -11,21 +13,6 @@ const number = (n) => Math.round(n).toLocaleString('en-US');
 const percent = (n) => Math.round(n * 100) + '%';
 const rangeText = (low, high) =>
   percent(low) === percent(high) ? '约 ' + percent(low) : percent(low) + '–' + percent(high);
-export function actionLabel(step, action = step.action, amount = step.amount) {
-  if (action === 'raise')
-    return (
-      (amount === step.legal.maxRaiseTo
-        ? '全下至 '
-        : step.currentBet === 0
-          ? '下注至 '
-          : '加注至 ') + number(amount)
-    );
-  if (action === 'call')
-    return (
-      (step.legal.callAmount === step.stack ? '全下跟注 ' : '跟注 ') + number(step.legal.callAmount)
-    );
-  return action === 'fold' ? '弃牌' : '过牌';
-}
 export function createReviewInput(g) {
   if (g.phase !== 'done') throw Error('牌局结束后才能复盘。');
   return JSON.parse(

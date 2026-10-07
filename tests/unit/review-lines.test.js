@@ -52,7 +52,7 @@ test('A7 offsuit BTN opening has position/blocker rationale and distinct conditi
   assert.match(r.reason, /阻断|后位/);
   assert.match(r.reason, /开池／偷盲/);
   assert.doesNotMatch(r.reason, /没有.*听牌/);
-  assert.notEqual(r.recommendation, '加注至 150');
+  assert.notEqual(r.recommendation, '2-bet 开池至 150');
   assert.equal(r.routes.secondary.action, 'raise');
   assert.notEqual(r.routes.primary.amount, r.routes.secondary.amount);
   assert.ok(r.routes.secondary.amount >= g.decisions[0].legal.minRaiseTo);

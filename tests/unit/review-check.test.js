@@ -326,7 +326,7 @@ check('short all-in raise and all-in call labels use street total versus added a
     stacks: [25, 1000, 0, 0, 0, 0],
     currentBet: 100,
   });
-  assert.equal(actionLabel(s), '全下至 125');
+  assert.equal(actionLabel(s), '2-bet 短全下至 125');
   s.action = 'call';
   s.legal.callAmount = 25;
   assert.equal(actionLabel(s), '全下跟注 25');

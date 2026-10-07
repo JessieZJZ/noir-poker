@@ -6,6 +6,7 @@ import {
   summarizeReview,
 } from '../review/analysis.js';
 import { createOpponentReview } from './opponent-review.js';
+import { historyActionLabel } from '../engine/action-labels.js';
 const $ = (selector) => document.querySelector(selector),
   format = (n) => Math.round(n).toLocaleString('en-US'),
   pct = (n) => Math.round(n * 100) + '%';
@@ -148,13 +149,13 @@ export function createReviewController({ card }) {
       : result?.metrics.closing
         ? '跟注价格按当前可争夺金额计算，已扣除未被跟注的退还。'
         : '价格只作参考，后续下注、其他玩家继续行动和潜在收益尚未计入。';
-    const publicActions = decision.history.filter((a) => a.street === decision.street).slice(-6);
+    const publicActions = decision.history
+      .map((a, index) => ({ ...a, label: historyActionLabel(decision.history, index) }))
+      .filter((a) => a.street === decision.street)
+      .slice(-6);
     $('#review-public-actions').innerHTML = publicActions.length
       ? publicActions
-          .map(
-            (a) =>
-              `<li><span>${decision.players[a.id].name}</span><span>${a.action === 'raise' ? '下注 / 加注至 ' + format(a.amount) : a.action === 'call' ? '跟注 ' + format(a.amount) : a.action === 'fold' ? '弃牌' : '过牌'}</span></li>`,
-          )
+          .map((a) => `<li><span>${decision.players[a.id].name}</span><span>${a.label}</span></li>`)
           .join('')
       : '<li>本轮尚无其他主动行动。</li>';
     $('#review-step-prev').disabled = selected === 0;
