@@ -305,7 +305,7 @@ function render() {
   $('#next-button').hidden = !done;
   $('#continue-deal-button').hidden = done || !hero.folded;
   $('#continue-deal-button').disabled = finishing;
-  $('#continue-deal-button').textContent = finishing ? '正在发牌…' : '继续发牌';
+  $('#continue-deal-button').textContent = finishing ? '正在发牌…' : '立刻发完';
   $('#action-panel').classList.toggle('folded-actions', hero.folded && !done);
   $('#restart-hand-button').hidden = !canRestartHand(game);
   $('#action-panel').classList.toggle('settled-actions', done);
