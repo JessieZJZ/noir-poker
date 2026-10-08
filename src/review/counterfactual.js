@@ -127,10 +127,18 @@ export function compareCandidateActions(s, alternatives = [], { trials = 40 } = 
   if (!Number.isInteger(trials) || trials < 2) throw Error('模拟次数至少为 2。');
   const candidates = candidateActions(s, alternatives);
   const rows = candidates.map((action) => ({ action, scenarios: [] }));
+  const actualIndex = candidates.findIndex(
+    (a) => a.action === s.action && (a.action !== 'raise' || a.amount === s.amount),
+  );
+  if (actualIndex < 0) throw Error('快照中的实际行动不合法，无法比较。');
+  // Conservative paired comparisons across at most seven candidates. These
+  // approximate bounds cover sampling, not range or continuation-policy error.
+  const comparisonCritical = trials >= 30 ? 3.5 : trials >= 12 ? 5 : 20;
   for (const weighted of [false, true]) {
     const rng = seedRandom(snapshotSeed(s) + (weighted ? 11071 : 2003));
     const values = rows.map(() => []),
-      immediate = rows.map(() => 0);
+      immediate = rows.map(() => 0),
+      won = rows.map(() => 0);
     for (let i = 0; i < trials; i++) {
       const deal = sampledDeal(s, rng, weighted),
         policySeed = Math.floor(rng() * 4294967295);
@@ -148,6 +156,7 @@ export function compareCandidateActions(s, alternatives = [], { trials = 40 } = 
           }
         }
         values[c].push(g.players[0].stack - s.stack);
+        if (g.winners.some((w) => w.id === 0)) won[c]++;
         if (
           g.winners.some((w) => w.id === 0) &&
           !g.showdown &&
@@ -160,11 +169,38 @@ export function compareCandidateActions(s, alternatives = [], { trials = 40 } = 
     rows.forEach((r, c) => {
       const mean = values[c].reduce((n, v) => n + v, 0) / trials;
       const variance = values[c].reduce((n, v) => n + (v - mean) ** 2, 0) / (trials - 1);
+      const differences = values[c].map((v, i) => v - values[actualIndex][i]),
+        delta = differences.reduce((sum, v) => sum + v, 0) / trials,
+        deltaVariance = differences.reduce((sum, v) => sum + (v - delta) ** 2, 0) / (trials - 1),
+        deltaMargin = comparisonCritical * Math.sqrt(deltaVariance / trials);
+      // Diversity is only a conservative gate: it does not guarantee coverage
+      // of rare losses that these samples have not observed.
+      const resolution = Math.max(10, Math.round(s.stack * 0.01));
+      const buckets = new Map();
+      for (const value of differences) {
+        const bucket = Math.round(value / resolution);
+        buckets.set(bucket, (buckets.get(bucket) || 0) + 1);
+      }
+      const ordered = [...differences].sort((a, b) => a - b);
+      const informative =
+        trials >= 30 &&
+        buckets.size >= 3 &&
+        Math.max(...buckets.values()) / trials <= 0.8 &&
+        ordered[Math.floor((trials - 1) * 0.9)] - ordered[Math.floor((trials - 1) * 0.1)] >
+          resolution;
       r.scenarios.push({
         name: weighted ? '公开行动加权范围' : '随机范围',
         ev: mean,
         margin: 1.96 * Math.sqrt(variance / trials),
         immediateFoldWin: immediate[c] / trials,
+        winRate: won[c] / trials,
+        vsActual: {
+          delta,
+          margin: deltaMargin,
+          lower: delta - deltaMargin,
+          upper: delta + deltaMargin,
+          informative,
+        },
       });
     });
   }
@@ -185,6 +221,8 @@ export function compareCandidateActions(s, alternatives = [], { trials = 40 } = 
     policyTrials: 8,
     best: best.action,
     stable,
+    comparisonReady: trials >= 30,
+    comparisonCritical,
     method: 'sampled-engine-rollout',
     note: '从当时局面抽样未知牌，按公开风格继续打完；你后续采用均衡机器人策略，每次判断抽样 8 次。数值是此模拟策略的筹码净变化估计，已投入视为沉没成本，包含分池、退还与之后下注；误差为近似抽样误差，不覆盖范围／策略模型错误。不是 GTO 或真人最优 EV。',
   };

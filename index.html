@@ -412,6 +412,7 @@
       <section class="review-summary">
         <h3 id="review-summary-title">输牌以后，先看决策</h3>
         <p id="review-analysis-state" role="status" aria-live="polite"></p>
+        <div id="review-overview" class="review-overview"></div>
         <button id="review-priority" data-review-index="0" hidden>查看优先复盘的决策</button
         ><button id="review-retry" hidden>重新分析</button>
       </section>
@@ -476,48 +477,59 @@
                 <span>你当时选择</span><strong id="review-your-action"></strong>
               </div>
               <div class="review-choice suggested">
-                <span>建议主线</span><strong id="review-suggestion"></strong>
+                <span>下次怎么调整</span><strong id="review-suggestion"></strong>
               </div>
             </div>
-            <section
-              id="review-routes"
-              class="review-routes"
-              aria-label="两条路线的条件与取舍"
-            ></section>
-            <section
-              id="review-simulation"
-              class="review-simulation"
-              aria-label="候选行动模拟比较"
-            ></section>
-            <div class="review-explanation">
-              <h3 id="review-decision-title"></h3>
-              <p id="review-reason"></p>
-            </div>
-            <section class="review-evidence">
-              <div class="review-evidence-heading">
-                <h3>当时的关键条件</h3>
-                <span id="review-confidence"></span>
+            <section class="review-coaching" aria-label="这一步的结论">
+              <p id="review-coach-explanation"></p>
+              <p id="review-coach-ev"></p>
+              <div>
+                <strong>下次练习重点</strong>
+                <p id="review-coach-followup"></p>
               </div>
-              <ul id="review-evidence"></ul>
             </section>
-            <div class="review-lesson">
-              <span>下一次练习的重点</span>
-              <div id="review-lesson"></div>
-            </div>
-            <section class="review-plan">
-              <h3>后续处理路线</h3>
-              <p id="review-plan"></p>
-            </section>
-            <div class="review-metrics">
-              <div><span>跟注需要权益</span><strong id="review-price"></strong></div>
-              <div><span>两种范围估计</span><strong id="review-equity"></strong></div>
-              <div><span>跟注后可争夺</span><strong id="review-contestable"></strong></div>
-            </div>
-            <p id="review-model-note" class="review-price-note"></p>
-            <p id="review-price-note" class="review-price-note"></p>
-            <details class="review-public-actions">
-              <summary>此前的公开行动</summary>
-              <ul id="review-public-actions"></ul>
+            <details id="review-advanced" class="review-advanced">
+              <summary>查看判断依据、其他打法和模拟数字</summary>
+              <section
+                id="review-routes"
+                class="review-routes"
+                aria-label="两条路线的条件与取舍"
+              ></section>
+              <section
+                id="review-simulation"
+                class="review-simulation"
+                aria-label="候选行动模拟比较"
+              ></section>
+              <div class="review-explanation">
+                <h3 id="review-decision-title"></h3>
+                <p id="review-reason"></p>
+              </div>
+              <section class="review-evidence">
+                <div class="review-evidence-heading">
+                  <h3>当时的关键条件</h3>
+                  <span id="review-confidence"></span>
+                </div>
+                <ul id="review-evidence"></ul>
+              </section>
+              <div class="review-lesson">
+                <span>下一次练习的重点</span>
+                <div id="review-lesson"></div>
+              </div>
+              <section class="review-plan">
+                <h3>后续处理路线</h3>
+                <p id="review-plan"></p>
+              </section>
+              <div class="review-metrics">
+                <div><span>跟注需要权益</span><strong id="review-price"></strong></div>
+                <div><span>两种范围估计</span><strong id="review-equity"></strong></div>
+                <div><span>跟注后可争夺</span><strong id="review-contestable"></strong></div>
+              </div>
+              <p id="review-model-note" class="review-price-note"></p>
+              <p id="review-price-note" class="review-price-note"></p>
+              <details class="review-public-actions">
+                <summary>此前的公开行动</summary>
+                <ul id="review-public-actions"></ul>
+              </details>
             </details>
             <div class="review-step-nav">
               <button id="review-step-prev">上一步</button><span id="review-step-current"></span
@@ -532,7 +544,7 @@
         aria-labelledby="review-opponents-tab"
         hidden
       ></section>
-      <p class="review-scope">按决策时的信息复盘 · 范围是假设，输赢不直接决定选择好坏。</p>
+      <p class="review-scope">按当时信息判断，单手输赢不直接决定操作好坏。</p>
       <details class="review-method">
         <summary>分析依据与范围</summary>
         <p>
@@ -543,9 +555,7 @@
           跟注后你可争夺的底池。主池与边池按参与资格分别估计，未被跟注的退还不当作收益。
         </p>
         <p>
-          “两种范围估计”来自随机范围与对主动下注者偏强范围的抽样，范围假设并非对手真实牌力，也不是误差区间。后续下注、弃牌率和潜在收益没有完整建模。分析区分牌型、踢脚、听牌、位置、公共牌结构、人数与下注压力。直接成牌候选不是保证获胜的
-          outs；只显示下一张的成牌比例，不把翻牌到河牌的两张机会当作只付费一次即可获得。河牌单挑枚举所有合法底牌，其他情况使用固定种子的抽样；枚举消除抽样误差，但不能消除对手范围假设的误差。候选下注尺度属于练习路线，不是
-          GTO 求解。
+          比较随机范围和公开行动加权范围，二者都不是对手真实底牌。封口跟注可以核对价格；仍有后续下注时，需要连同后续打法一起比较。听牌改善比例不是获胜率。
         </p>
         <p>
           参考：<a
@@ -563,9 +573,8 @@
           >
         </p>
         <p>
-          候选行动模拟从当时局面抽样未知牌，使用规则引擎把牌局打完，包含继续下注、弃牌、边池和退还。你后续使用均衡模拟策略，对手沿用公开风格，每次模拟判断使用
-          8
-          次权益抽样。比较的是这些策略下的筹码变化，并非最优后续策略收益；抽样误差也不覆盖范围与模型错误。
+          候选动作共享抽样牌局，使用同一规则打到结算，比较收益与获池机会。后续采用模拟策略，并非最佳策略；抽样保护带不覆盖范围和策略错误。只有两种范围都支持改进时，才优先推荐模拟候选；否则保留条件讨论。这不是
+          GTO 求解，也不能保证单次获胜。
         </p>
         <p>
           对手解释在结算后读取实际执行记录，说明它当时的价格、范围、情绪与随机分支；这些私有记录不进入你的决策评价。

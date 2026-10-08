@@ -202,6 +202,40 @@ window.qa = {
     render();
     return publicState();
   },
+  reviewClosingCall(win = true) {
+    fixtureGame(6);
+    game.dealer = 5;
+    startHand(game);
+    const parse = (s) =>
+      s
+        .split(' ')
+        .map((v) =>
+          deckOfCards().find(
+            (c) => c.rank === '23456789TJQKA'.indexOf(v[0]) + 2 && c.suit === 'shcd'.indexOf(v[1]),
+          ),
+        );
+    const board = parse('Qs Jd 9c 8h 2s');
+    game.players[0].hole = parse(win ? '2h 4h' : 'As Ah');
+    game.players[2].hole = parse(win ? 'Ac Kd' : '2c 2d');
+    const reserved = [...board, ...game.players[0].hole, ...game.players[2].hole];
+    const rest = deckOfCards().filter((c) => !reserved.some((r) => r.key === c.key));
+    for (const p of game.players.filter((p) => ![0, 2].includes(p.id))) p.hole = rest.splice(0, 2);
+    game.deck = rest;
+    while (game.actor !== 0) act(game, game.actor, 'fold');
+    act(game, 0, 'call');
+    act(game, 1, 'fold');
+    act(game, 2, 'check');
+    while (game.street < 3) {
+      if (game.phase === 'between') advanceStreet(game);
+      else act(game, game.actor, 'check');
+    }
+    game.board = board;
+    act(game, 2, 'raise', win ? game.players[2].stack : 50);
+    act(game, 0, 'call');
+    if (game.phase === 'between') advanceStreet(game);
+    render();
+    return publicState();
+  },
   reviewLine() {
     fixtureGame(6);
     game.dealer = 5;

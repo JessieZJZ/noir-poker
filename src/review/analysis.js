@@ -3,6 +3,7 @@ import { decisionContext, startingTier, drawInfo } from './context.js';
 import { preflopContext } from './preflop.js';
 import { comparisonRoutes } from './routes.js';
 import { compareCandidateActions } from './counterfactual.js';
+import { coachDecision, buildOverview } from './coaching.js';
 import { actionLabel } from '../engine/action-labels.js';
 export { actionLabel } from '../engine/action-labels.js';
 export { callPrice } from './equity.js';
@@ -27,6 +28,7 @@ export function createReviewInput(g) {
         returned: g.payouts[0] || 0,
         folded: g.players[0].folded,
         wonPot: g.winners.some((w) => w.id === 0),
+        showdown: !!g.showdown,
         board: g.board,
         pots: g.pots.map((p) => ({
           label: p.label,
@@ -267,11 +269,14 @@ export function analyzeDecision(
     code = 'value-check';
     status = 'consider';
     title = '这次过牌可与价值下注比较';
-    reason = `当时是 ${handLabel}，公共牌${texture.label}，仍有 ${ctx.opponents} 位对手。${ctx.inPosition ? '你有最后行动的位置优势。' : '你在其余对手之前行动，过牌可以保留诱导路线。'}${handClass === 'overpair' ? '超对可以向较弱一对或部分听牌取值，但不能忽视更强成牌。' : '当前成牌具备价值潜力；过牌是否更好仍取决于对手跟注和主动下注倾向。'}`;
+    reason = `当时是 ${handLabel}，公共牌${texture.label}，仍有 ${ctx.opponents} 位对手。${s.street === 3 && price.closing ? '河牌最后行动，过牌后直接摊牌，不能再诱导下注。' : ctx.inPosition ? '你有最后行动的位置优势。' : '你在其余对手之前行动，过牌可以保留诱导路线。'}${handClass === 'overpair' ? `超对可以向较弱一对${s.street < 3 ? '或部分听牌' : ''}取值，但不能忽视更强成牌。` : '当前成牌具备价值潜力；过牌是否更好仍取决于对手继续范围。'}`;
     raiseTo();
-    lesson = texture.wet
-      ? '比较价值与保护：让较弱成牌或听牌付费，同时为面对加注保留判断。'
-      : '干燥牌面可以考虑较小价值尺度，给较弱牌留下继续空间。';
+    lesson =
+      s.street === 3
+        ? '河牌价值下注只向更弱的成牌取值，听牌已没有改善机会。'
+        : texture.wet
+          ? '比较价值与保护：让较弱成牌或听牌付费，同时为面对加注保留判断。'
+          : '干燥牌面可以考虑较小价值尺度，给较弱牌留下继续空间。';
     plan = `可用 ${actionLabel(s, alternative.action, alternative.amount)} 比较；若被加注，重新判断其强牌密度，不把“可下注”理解为“必须继续”。`;
   } else if (s.action === 'call' && handClass === 'top-pair' && ctx.opponents > 1 && texture.wet) {
     code = 'multiway-top-pair';
@@ -279,7 +284,11 @@ export function analyzeDecision(
     title = '多人湿润牌面，顶对需要谨慎实现权益';
     reason = `${handLabel} 面对 ${ctx.opponents} 位对手，公共牌${texture.label}。${priced}${estimated}多人底池中，一对的摊牌能力更容易被两对、三条或听牌追上。`;
     lesson = '保留价格判断，同时减少把顶对当成全下价值牌的倾向。';
-    plan = '若下一轮再次遇到大下注，按新牌面重算；不因已经跟过一轮就继续跟注。';
+    plan = price.closing
+      ? '这次跟注后不再有下注决策，重点检验当前价格与对手范围。'
+      : s.street === 3
+        ? '若本轮再遇到加注，按新价格判断，不因已经跟过就继续。'
+        : '若下一轮再次遇到大下注，按新牌面重算；不因已经跟过一轮就继续跟注。';
   } else if (s.action === 'fold' && price.cost > 0 && low - uncertainty > price.required + 0.08) {
     code = 'tight-fold';
     status = 'consider';
@@ -322,7 +331,11 @@ export function analyzeDecision(
       : '先确定哪些对手范围会退出，再衡量被跟注后是否能继续。';
     plan = s.legal.isShortAllin
       ? '这是不足完整加注的全下，对已经行动的玩家不一定重新开放加注权。'
-      : '若被再加注，重新比较价格与范围；若被跟注，按下一轮牌面重新制定价值或退出路线。';
+      : s.amount === s.legal.maxRaiseTo
+        ? '已投入全部筹码，优化应放在全下前的价格、范围与尺度判断。'
+        : s.street === 3
+          ? '若被再加注，重新比较价格与范围；被跟注后直接摊牌。'
+          : '若被再加注，重新比较价格与范围；若被跟注，按下一轮牌面重新制定价值或退出路线。';
   } else {
     code = handClass === 'board' ? 'board-check' : draw.outs ? 'draw-check' : 'pot-control';
     title =
@@ -333,8 +346,14 @@ export function analyzeDecision(
           : '这次过牌可用于控制底池';
     reason = `当时是 ${handLabel}，公共牌${texture.label}，无需补筹码。${draw.outs ? '有 ' + draw.outs + ' 张直接成牌候选，下一张约 ' + percent(draw.nextChance) + '；过牌不额外支付这个机会。' : ctx.pendingOthers ? '之后还有 ' + ctx.pendingOthers + ' 位玩家可行动，过牌并不保证免费看到下一张。' : '你可以观察后面的牌面或进入摊牌。'}`;
     alternative = { action: 'check', amount: 0 };
-    lesson = '过牌后仍应区分免费机会与面对下注时的继续条件。';
-    plan = '遇到下注后按实际金额重算；若公共牌单独成牌，先考虑平分权益，不虚构底牌带来的优势。';
+    lesson =
+      s.street === 3 && price.closing
+        ? '这是最后行动，过牌直接摊牌，比较的是免费摊牌与主动取值。'
+        : '过牌后仍应区分免费机会与面对下注时的继续条件。';
+    plan =
+      s.street === 3 && price.closing
+        ? '重打时比较能否向更弱成牌取值；公共牌单独成牌时，先考虑平分权益。'
+        : '遇到下注后按实际金额重算；若公共牌单独成牌，先考虑平分权益，不虚构底牌带来的优势。';
   }
   if (alternative.action === 'raise' && !s.legal.canRaise)
     alternative = { action: s.legal.canCheck ? 'check' : 'call', amount: s.legal.callAmount };
@@ -367,6 +386,16 @@ export function analyzeDecision(
       confidence = '范围与后续策略敏感，未证明唯一最优';
     if (
       simulation.stable &&
+      simulation.comparisonReady &&
+      simulation.rows
+        .find(
+          (row) =>
+            row.action.action === simulation.best.action &&
+            row.action.amount === simulation.best.amount,
+        )
+        .scenarios.every(
+          (v) => v.vsActual.informative && v.vsActual.lower > Math.max(10, s.pot * 0.01),
+        ) &&
       !['free-fold', 'expensive-call', 'weak-threebet-defense', 'weak-fourbet-defense'].includes(
         code,
       ) &&
@@ -396,7 +425,7 @@ export function analyzeDecision(
       plan += ' 重打时优先对照模拟候选与原路线；若对手的防守方式明显不同，重新分析。';
     }
   }
-  return {
+  const result = {
     index: s.index,
     status,
     code,
@@ -430,37 +459,20 @@ export function analyzeDecision(
     draw,
     context: ctx,
   };
+  result.coaching = coachDecision(s, result);
+  return result;
 }
 export function summarizeReview(input, steps) {
-  const attention = steps.filter((s) => s.status === 'attention'),
-    consider = steps.filter((s) => s.status === 'consider'),
-    priority = [...steps].sort(
-      (a, b) =>
-        ({ attention: 2, consider: 1, sound: 0 })[b.status] -
-        { attention: 2, consider: 1, sound: 0 }[a.status],
-    )[0];
-  const extra = input.decisions.reduce(
-      (sum, s) =>
-        sum +
-        (s.action === 'raise' ? s.amount - s.bet : s.action === 'call' ? s.legal.callAmount : 0),
-      0,
-    ),
-    themes = [...new Set([...attention, ...consider].map((s) => s.title))];
-  const summary = priority
-    ? `${input.decisions.length} 次主动决策，共新增投入 ${number(extra)}。优先回到第 ${priority.index + 1} 步（${STREET_NAMES[input.decisions[priority.index]?.street || 0]}）：${priority.title}。${themes.length > 1 ? '另有 ' + (themes.length - 1) + ' 个不同问题可逐步查看。' : ''}`
-    : '本手没有主动决策；强制盲注不能归为选择失误。';
+  const overview = buildOverview(input, steps);
   return {
     steps,
-    priorityIndex: priority?.index || 0,
-    attention: attention.length,
-    consider: consider.length,
-    themes,
-    title: attention.length
-      ? '优先核对：' + priority.title
-      : consider.length
-        ? '值得比较：' + priority.title
-        : '未发现明显决策失误',
-    summary,
+    priorityIndex: overview.priorityIndex,
+    attention: steps.filter((s) => s.coaching.kind === 'improve').length,
+    consider: steps.filter((s) => ['compare', 'value'].includes(s.coaching.kind)).length,
+    themes: [...new Set(steps.filter((s) => s.coaching.kind !== 'keep').map((s) => s.title))],
+    title: overview.title,
+    summary: overview.summary,
+    overview,
   };
 }
 export function analyzeReview(input, options) {

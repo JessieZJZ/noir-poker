@@ -1,10 +1,12 @@
 // Candidate routes are conditional practice plans, not solved EV rankings.
 import { actionLabel } from '../engine/action-labels.js';
+import { callPrice } from './equity.js';
 
 export function comparisonRoutes(s, ctx, { code, status, alternative, pre }) {
   const label = (a) => actionLabel(s, a.action, a.amount);
   const same = (a, b) => a.action === b.action && (a.action !== 'raise' || a.amount === b.amount);
   const actual = { action: s.action, amount: s.amount };
+  const closing = callPrice(s).closing;
   const primary = {
     ...alternative,
     label: label(alternative),
@@ -84,14 +86,20 @@ export function comparisonRoutes(s, ctx, { code, status, alternative, pre }) {
         : ctx.draw.outs && !['overpair', 'set', 'strong', 'two-pair'].includes(ctx.handClass)
           ? '听牌有被跟注后的权益，且目标范围有足够弃牌。'
           : '列得出会付费的较弱牌，并能承担被加注后重新判断。';
-    primary.tradeoff = '建立底池与保护权益；尺度越大，对手继续范围可能越强。';
+    primary.tradeoff =
+      s.street === 3
+        ? '比较取值和弃牌收益；尺度越大，对手继续范围可能越强。'
+        : '建立底池与保护权益；尺度越大，对手继续范围可能越强。';
     secondary = {
       action: s.legal.canCheck ? 'check' : 'call',
       amount: s.legal.callAmount,
       condition: ctx.inPosition
         ? '对手范围偏强或牌面不利时，利用位置控制投入。'
         : '对手会主动下注或你缺少位置优势时，保留诱导／控池路线。',
-      tradeoff: '减少底池增长，也可能给听牌免费机会或错过价值。',
+      tradeoff:
+        s.street === 3
+          ? '减少投入，也可能错过向更弱成牌取值的机会。'
+          : '减少底池增长，也可能给听牌免费机会或错过价值。',
     };
   } else if (alternative.action === 'fold') {
     primary.condition = '当前价格缺少权益支持，或权益难以实现。';
@@ -105,19 +113,29 @@ export function comparisonRoutes(s, ctx, { code, status, alternative, pre }) {
         }
       : null;
   } else if (alternative.action === 'call') {
-    primary.condition = '对手范围与价格有足够余量，且后续压力可控。';
+    primary.condition = closing
+      ? '对手范围与当前价格有足够余量；这次跟注后不再付后续下注。'
+      : '对手范围与价格有足够余量，且后续压力可控。';
     primary.tradeoff = '保留较宽范围，避免把弱价值牌转成孤立强牌的加注。';
     secondary = {
       action: 'fold',
       amount: 0,
-      condition: '对手价值范围更窄、后面可能再加注，或无法承担后续投入时。',
+      condition: closing
+        ? '对手真实价值范围比当前假设更窄，或当前价格没有足够余量时。'
+        : '对手价值范围更窄、后面可能再加注，或无法承担后续投入时。',
       tradeoff: '让出部分权益，换取更低风险；不因已跟过一轮而自动续跟。',
     };
   } else {
-    primary.condition = ctx.inPosition
-      ? '利用最后行动观察，控制边缘成牌或保留免费听牌。'
-      : '无最后行动优势时，先观察对手下注和牌面变化。';
-    primary.tradeoff = '节省投入；不是保证免费看牌，仍需为后续下注设定条件。';
+    primary.condition =
+      s.street === 3 && closing
+        ? '河牌最后行动，免费摊牌优于没有跟注目标的投入时。'
+        : ctx.inPosition
+          ? '利用最后行动观察，控制边缘成牌或保留免费听牌。'
+          : '无最后行动优势时，先观察对手下注和牌面变化。';
+    primary.tradeoff =
+      s.street === 3 && closing
+        ? '过牌后直接摊牌；可能错过价值，但不会给听牌新的改善机会。'
+        : '节省投入；不是保证免费看牌，仍需为后续下注设定条件。';
     if (ctx.handClass !== 'board' && s.legal.canRaise) {
       secondary = raise(Math.max(50, s.pot * (ctx.texture.wet ? 0.6 : 0.33)));
       if (secondary)

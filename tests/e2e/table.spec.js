@@ -12,6 +12,35 @@ test.afterEach(async ({ page }) => {
   expect(page.errors).toEqual([]);
 });
 
+test('review separates a lucky bad-price win from a reasonable loss and keeps evidence optional', async ({
+  page,
+}) => {
+  for (const win of [true, false]) {
+    await page.evaluate((win) => window.qa.reviewClosingCall(win), win);
+    await page.locator('#review-hand-button').click();
+    await expect(page.locator('#review-priority')).toBeVisible({ timeout: 20000 });
+    await expect(page.locator('#review-summary-title')).toContainText(
+      win ? '不值得长期重复' : '输了',
+    );
+    await expect(page.locator('#review-overview')).toContainText(win ? '优先调整' : '争取更多价值');
+    await expect(page.locator('#review-advanced')).not.toHaveAttribute('open');
+    await expect(page.locator('#review-evidence')).not.toBeVisible();
+    if (win) {
+      await expect(page.locator('#review-suggestion')).toHaveText('弃牌');
+      await expect(page.locator('#review-coach-ev')).toContainText('长期会亏');
+    } else {
+      await page.locator('#review-timeline [data-review-index="3"]').click();
+      await expect(page.locator('#review-selected-status')).toContainText('值得保留');
+      await expect(page.locator('#review-coach-ev')).toContainText('正收益');
+    }
+    await page.locator('#review-advanced > summary').click();
+    await expect(page.locator('#review-evidence')).toBeVisible();
+    await expect(page.locator('#review-simulation')).toContainText('抽样获池');
+    await expect(page.locator('#review-simulation')).toContainText('不等于净盈利');
+    await page.locator('#review-dialog .close-dialog').first().click();
+  }
+});
+
 test('settled controls share a row or each fill the content width, including runout and refill', async ({
   page,
 }) => {
@@ -1819,6 +1848,7 @@ test('foreign style assignments persist and candidate simulation is available in
   await page.locator('#review-timeline [data-review-index="0"]').click();
   await expect(page.locator('#review-simulation')).toContainText('模拟 40 手');
   expect(await page.locator('#review-simulation tbody tr').count()).toBeGreaterThanOrEqual(4);
+  await page.locator('#review-advanced > summary').click();
   await page.locator('#review-simulation summary').click();
   await expect(page.locator('#review-simulation')).toContainText('不是 GTO');
 });
