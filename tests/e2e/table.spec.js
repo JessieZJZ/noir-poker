@@ -12,6 +12,70 @@ test.afterEach(async ({ page }) => {
   expect(page.errors).toEqual([]);
 });
 
+test('settled controls share a row or each fill the content width, including runout and refill', async ({
+  page,
+}) => {
+  for (const mode of ['runout', 'normal', 'refill']) {
+    const refill = mode === 'refill';
+    await page.evaluate((refill) => {
+      if (refill)
+        window.qa.scene('2c 3d', 'As Kd Qh 9s 8c', {
+          totals: [5000, 0, 5000, 0, 0, 0],
+          folded: [1, 3, 4, 5],
+          otherHoles: { 2: 'Ks Kc' },
+        });
+      else window.qa.foldWin(6, 2);
+    }, refill);
+    if (mode !== 'runout' && (await page.locator('#continue-deal-button').isVisible())) {
+      await page.locator('#continue-deal-button').click();
+      await expect(page.locator('#continue-deal-button')).toBeHidden();
+    }
+    await expect(page.locator('#next-button')).toHaveText(refill ? '补充筹码，继续练习' : '下一手');
+    await expect(page.locator('#review-hand-button')).toBeVisible();
+    for (const width of [320, 390, 600, 601, 700, 701, 900, 901, 1150, 1151, 1280, 1600]) {
+      await page.setViewportSize({ width, height: 900 });
+      const layout = await page.locator('#action-panel').evaluate((el) => {
+        const panel = el.getBoundingClientRect(),
+          style = getComputedStyle(el),
+          left = panel.left + parseFloat(style.paddingLeft),
+          right = panel.right - parseFloat(style.paddingRight);
+        return {
+          left,
+          width: right - left,
+          buttons: [...el.querySelectorAll('button')]
+            .filter((b) => b.getBoundingClientRect().height > 0)
+            .map((b) => {
+              const rect = b.getBoundingClientRect();
+              return {
+                left: rect.left,
+                right: rect.right,
+                top: rect.top,
+                bottom: rect.bottom,
+                width: rect.width,
+                textFits: b.scrollWidth <= b.clientWidth,
+              };
+            }),
+        };
+      });
+      expect(layout.buttons).toHaveLength(mode === 'runout' ? 4 : 3);
+      const rows = new Set(layout.buttons.map((b) => Math.round(b.top)));
+      expect([1, layout.buttons.length]).toContain(rows.size);
+      for (const [i, button] of layout.buttons.entries()) {
+        expect(button.textFits).toBe(true);
+        expect(button.left).toBeGreaterThanOrEqual(layout.left - 1);
+        expect(button.right).toBeLessThanOrEqual(layout.left + layout.width + 1);
+        expect(Math.abs(button.width - layout.buttons[0].width)).toBeLessThan(1);
+        if (rows.size > 1) {
+          expect(Math.abs(button.left - layout.left)).toBeLessThan(1);
+          expect(Math.abs(button.width - layout.width)).toBeLessThan(1);
+          if (i) expect(button.top).toBeGreaterThan(layout.buttons[i - 1].bottom);
+        } else if (i) expect(button.left).toBeGreaterThan(layout.buttons[i - 1].right);
+      }
+      if (width >= 1151 || (width >= 701 && width <= 900)) expect(rows.size).toBe(1);
+    }
+  }
+});
+
 async function assertBestHands(page, count) {
   await expect(page.locator('.showdown-player')).toHaveCount(count);
   const comparisons = await page.evaluate(async () => {
