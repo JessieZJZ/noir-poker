@@ -411,7 +411,7 @@ test('showdown participant names include the current named style and stay readab
   await page.locator('#save-opponents').click();
   const names = [
     '你',
-    'Mia（谈老板）',
+    'Mia（谭老板）',
     'Alex（ST 王）',
     'River（臧书奴）',
     'Kai（Peter）',
@@ -1335,7 +1335,7 @@ test('nine-seat style assignment shows every persona at all sizes and executes t
     8: 'dwan',
   };
   const labels = [
-    '谈老板',
+    '谭老板',
     'ST 王',
     '臧书奴',
     'Peter',
@@ -1418,6 +1418,131 @@ test('nine-seat style assignment shows every persona at all sizes and executes t
       expect(crowded).toBe(false);
     }
   }
+});
+
+test('all named portraits preview immediately, follow saved styles next hand and stay frozen on retry', async ({
+  page,
+}) => {
+  const profiles = ['tan', 'st', 'zang', 'peter', 'abao', 'viktor', 'jungleman', 'dwan'];
+  await page.locator('#player-count').selectOption('9');
+  await page.evaluate(() => window.qa.foldWin(9));
+  await page.locator('#opponents-button').click();
+  await expect(page.locator('#profile-cards img')).toHaveCount(8);
+  await expect
+    .poll(() =>
+      page
+        .locator('#profile-cards img')
+        .evaluateAll((images) =>
+          images.every((image) => image.complete && image.naturalWidth > 0 && !image.hidden),
+        ),
+    )
+    .toBe(true);
+  await expect(page.locator('#profile-cards')).toContainText('谭老板');
+  await expect(page.locator('#profile-cards')).not.toContainText('谈老板');
+  await page.locator('#mix-opponents').click();
+  const firstDraft = page.locator('[data-opponent-row="1"] .opponent-portrait');
+  await expect(firstDraft.locator('img')).toHaveAttribute('data-portrait-profile', 'tan');
+  await page.locator('[data-bot-seat="1"]').focus();
+  await page.locator('[data-bot-seat="1"]').selectOption('dwan');
+  await expect(firstDraft.locator('img')).toHaveAttribute('data-portrait-profile', 'dwan');
+  await expect(page.locator('[data-bot-seat="1"]')).toBeFocused();
+  await expect(page.locator('#profile-detail img')).toHaveAttribute(
+    'data-portrait-profile',
+    'dwan',
+  );
+  await expect(page.locator('#profile-detail .profile-photo-credit')).toContainText(
+    'World Poker Tour',
+  );
+  await page.locator('[data-bot-seat="1"]').selectOption('tan');
+  await page.locator('#save-opponents').click();
+  await expect(page.locator('#seats .persona-portrait')).toHaveCount(0);
+  await page.locator('#next-button').click();
+  await page.evaluate(() => window.qa.stop());
+  await expect(page.locator('#seats .persona-portrait')).toHaveCount(8);
+  await expect
+    .poll(() =>
+      page
+        .locator('#seats .persona-portrait')
+        .evaluateAll((images) =>
+          images.every((image) => image.complete && image.naturalWidth > 0 && !image.hidden),
+        ),
+    )
+    .toBe(true);
+  for (const width of [320, 390, 768, 1280]) {
+    await page.setViewportSize({ width, height: 900 });
+    for (let id = 1; id <= 8; id++) {
+      await expect(page.locator(`.seat-${id} .persona-portrait`)).toHaveAttribute(
+        'data-portrait-profile',
+        profiles[id - 1],
+      );
+      await expect(page.locator(`.seat-${id} .persona-portrait`)).toBeVisible();
+      const fits = await page.locator(`.seat-${id} .avatar`).evaluate((avatar) => {
+        const a = avatar.getBoundingClientRect(),
+          p = avatar.closest('.seat-profile').getBoundingClientRect();
+        return (
+          a.width >= 18 &&
+          a.height >= 18 &&
+          a.left >= p.left &&
+          a.right <= p.right &&
+          a.top >= p.top &&
+          a.bottom <= p.bottom &&
+          p.left >= 0 &&
+          p.right <= innerWidth
+        );
+      });
+      expect(fits).toBe(true);
+    }
+  }
+  await page.locator('#opponents-button').click();
+  await page.locator('[data-bot-seat="1"]').selectOption('balanced');
+  await expect(firstDraft.locator('img')).toHaveCount(0);
+  await page.locator('#save-opponents').click();
+  await expect(page.locator('.seat-1 .persona-portrait')).toHaveAttribute(
+    'data-portrait-profile',
+    'tan',
+  );
+  await page.evaluate(() => window.qa.foldRest());
+  await page.locator('#restart-hand-button').click();
+  await page.evaluate(() => window.qa.stop());
+  await expect(page.locator('.seat-1 .persona-portrait')).toHaveAttribute(
+    'data-portrait-profile',
+    'tan',
+  );
+  await page.evaluate(() => window.qa.foldRest());
+  await page.locator('#next-button').click();
+  await page.evaluate(() => window.qa.stop());
+  await expect(page.locator('.seat-1 .persona-portrait')).toHaveCount(0);
+  await page.reload();
+  await page.waitForFunction(() => !!window.qa);
+  await page.evaluate(() => window.qa.stop());
+  await expect(page.locator('#seats .persona-portrait')).toHaveCount(7);
+  await expect(page.locator('.seat-1 .persona-portrait')).toHaveCount(0);
+});
+
+test('a failed portrait keeps its initial and selection controls intact, and another style still loads', async ({
+  page,
+}) => {
+  await page.route('**/portraits/tan.jpeg', (route) => route.abort());
+  await page.locator('#opponents-button').click();
+  const card = page.locator('[data-profile-preview="tan"]');
+  await expect(card.locator('img')).toBeHidden();
+  await expect(card.locator('.portrait-fallback')).toBeVisible();
+  await expect(card.locator('.portrait-fallback')).toHaveText('谭');
+  await page.locator('[data-bot-seat="1"]').focus();
+  await page.locator('[data-bot-seat="1"]').selectOption('tan');
+  const avatar = page.locator('[data-opponent-row="1"] .opponent-portrait');
+  await expect(avatar.locator('img')).toBeHidden();
+  await expect(avatar.locator('.portrait-fallback')).toHaveText('M');
+  const before = await avatar.boundingBox();
+  await page.locator('[data-bot-seat="1"]').selectOption('st');
+  await expect
+    .poll(() => avatar.locator('img').evaluate((image) => image.complete && image.naturalWidth > 0))
+    .toBe(true);
+  await expect(avatar.locator('img')).toBeVisible();
+  const after = await avatar.boundingBox();
+  expect(after.width).toBe(before.width);
+  expect(after.height).toBe(before.height);
+  await expect(page.locator('[data-bot-seat="1"]')).toBeFocused();
 });
 
 test('configured bots use the fast-deal path and observed samples roll back on retry', async ({

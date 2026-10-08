@@ -14,8 +14,8 @@ export const BOT_PROFILES = [
   },
   {
     id: 'tan',
-    name: '谈老板 · Tan Xuan',
-    short: '谈老板',
+    name: '谭老板 · Tan Xuan',
+    short: '谭老板',
     tag: '宽范围 · 多街施压',
     description: '更宽地争夺底池，弱牌与强牌共用进攻路线，偏好持续施压。',
     axes: [85, 90, 82, 70, 25],
