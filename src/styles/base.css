@@ -123,11 +123,16 @@ button[hidden],
   border-radius: 50%;
   display: grid;
   place-items: center;
+  flex-shrink: 0;
+  padding: 0;
+  line-height: 1;
   color: #b6c3cf;
   font-size: 26px;
 }
 .icon-button svg {
+  display: block;
   width: 19px;
+  height: 19px;
   fill: none;
   stroke: currentColor;
   stroke-width: 1.5;
@@ -230,11 +235,17 @@ h1 {
   font-size: 12px;
 }
 select {
-  background: #1b2632;
+  appearance: none;
+  -webkit-appearance: none;
+  background-color: #1b2632;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none'%3E%3Cpath d='m4 6 4 4 4-4' stroke='%23b8cbd6' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-size: 14px 14px;
+  background-position: right 10px center;
   color: #d2dbe3;
   border: 1px solid #34404a;
   border-radius: 6px;
-  padding: 5px 20px 5px 9px;
+  padding: 5px 32px 5px 9px;
   font-size: 12px;
 }
 .arena {

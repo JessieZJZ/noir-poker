@@ -50,12 +50,12 @@ let game = newGame(requestedCount),
   bet = 150,
   finishing = false,
   hints = true,
-  sound = false,
+  sound = true,
   audio = null;
 game.difficulty = tablePreferences.difficulty;
 $('#player-count').value = String(requestedCount);
 try {
-  sound = localStorage.getItem('noir-sound') === 'true';
+  sound = localStorage.getItem('noir-sound') !== 'false';
   hints = localStorage.getItem('noir-hints') !== 'false';
 } catch {}
 let pendingBotSettings = loadBotSettings();
@@ -92,11 +92,26 @@ function positionBadge(id) {
   return `<span class="position-badge" data-position="${role}" title="${positionNames[role]}">${role}</span>`;
 }
 
-function soundEffect(kind = 'chip') {
+async function unlockAudio() {
   if (!sound) return;
   try {
     audio ||= new (window.AudioContext || window.webkitAudioContext)();
-    if (audio.state === 'suspended') audio.resume();
+    if (audio.state !== 'running' && audio.state !== 'closed') await audio.resume();
+  } catch {}
+}
+for (const event of ['pointerdown', 'pointerup', 'keydown']) {
+  document.addEventListener(
+    event,
+    (e) => {
+      if (e.isTrusted) void unlockAudio();
+    },
+    { capture: true },
+  );
+}
+function soundEffect(kind = 'chip') {
+  // Skip sounds until a user gesture unlocks audio; never queue stale table sounds.
+  if (!sound || audio?.state !== 'running') return;
+  try {
     const now = audio.currentTime;
     const notes = kind === 'win' ? [440, 554, 659] : kind === 'deal' ? [820, 570] : [310];
     notes.forEach((hz, i) => {
@@ -755,8 +770,8 @@ function updateSound() {
   b.setAttribute('aria-pressed', String(sound));
   b.title = sound ? '音效已开启' : '音效已关闭';
   b.innerHTML = sound
-    ? '<svg viewBox="0 0 24 24"><path d="M11 5 6 9H3v6h3l5 4V5Z"/><path d="M15 8q6 4 0 8m3-11q9 7 0 14"/></svg>'
-    : '<svg viewBox="0 0 24 24"><path d="M11 5 6 9H3v6h3l5 4V5Z"/><path d="m16 9 5 6m0-6-5 6"/></svg>';
+    ? '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4V5Z"/><path d="M15 8q6 4 0 8m3-11q9 7 0 14"/></svg>'
+    : '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4V5Z"/><path d="m16 9 5 6m0-6-5 6"/></svg>';
 }
 $('#sound-button').onclick = () => {
   sound = !sound;
@@ -764,7 +779,7 @@ $('#sound-button').onclick = () => {
     localStorage.setItem('noir-sound', String(sound));
   } catch {}
   updateSound();
-  if (sound) soundEffect('deal');
+  if (sound) void unlockAudio().then(() => soundEffect('deal'));
 };
 $('#hint-toggle').onclick = () => {
   hints = !hints;

@@ -20,10 +20,16 @@
         ><span id="table-size-label">6 人无限注</span>
       </div>
       <div class="header-actions">
-        <button class="icon-button" id="sound-button" aria-label="开启音效" title="音效">
-          <svg viewBox="0 0 24 24">
+        <button
+          class="icon-button"
+          id="sound-button"
+          aria-label="关闭音效"
+          aria-pressed="true"
+          title="音效已开启"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true">
             <path d="M11 5 6 9H3v6h3l5 4V5Z" />
-            <path d="m16 9 5 6m0-6-5 6" />
+            <path d="M15 8q6 4 0 8m3-11q9 7 0 14" />
           </svg></button
         ><button class="quiet-button" id="rules-button">玩法指南 <span>?</span></button>
       </div>
@@ -279,7 +285,9 @@
     <dialog id="opponents-dialog" class="opponents-dialog" aria-labelledby="opponents-title">
       <div class="dialog-header">
         <span class="eyebrow">OPPONENT LAB</span
-        ><button class="icon-button close-dialog" aria-label="关闭对手设置">×</button>
+        ><button class="icon-button close-dialog" aria-label="关闭对手设置">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" /></svg>
+        </button>
       </div>
       <h2 id="opponents-title">让每个对手都有自己的打法</h2>
       <p class="opponents-intro">
@@ -333,7 +341,9 @@
     <dialog id="rules-dialog">
       <div class="dialog-header">
         <span class="eyebrow">QUICK GUIDE</span
-        ><button class="icon-button close-dialog" aria-label="关闭">×</button>
+        ><button class="icon-button close-dialog" aria-label="关闭">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" /></svg>
+        </button>
       </div>
       <h2>五分钟，坐上牌桌。</h2>
       <p>
@@ -378,7 +388,9 @@
     <dialog id="reset-dialog">
       <div class="dialog-header">
         <span class="eyebrow">FRESH START</span
-        ><button class="icon-button close-dialog" aria-label="关闭">×</button>
+        ><button class="icon-button close-dialog" aria-label="关闭">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" /></svg>
+        </button>
       </div>
       <h2>重新开始练习？</h2>
       <p>本局将结束，所有玩家恢复到 5,000 筹码，练习统计归零。</p>
@@ -390,7 +402,9 @@
     <dialog id="pot-dialog" aria-labelledby="pot-dialog-title">
       <div class="dialog-header">
         <span class="eyebrow">POT BREAKDOWN</span
-        ><button class="icon-button close-dialog" aria-label="关闭">×</button>
+        ><button class="icon-button close-dialog" aria-label="关闭">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" /></svg>
+        </button>
       </div>
       <h2 id="pot-dialog-title">底池明细</h2>
       <p id="pot-dialog-note" class="pot-note"></p>
@@ -400,7 +414,9 @@
     <dialog id="review-dialog" class="review-dialog" aria-labelledby="review-dialog-title">
       <div class="dialog-header">
         <span class="eyebrow">HAND REVIEW</span
-        ><button class="icon-button close-dialog" aria-label="关闭复盘">×</button>
+        ><button class="icon-button close-dialog" aria-label="关闭复盘">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" /></svg>
+        </button>
       </div>
       <div class="review-title-row">
         <div>

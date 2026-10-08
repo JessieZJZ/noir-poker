@@ -1222,13 +1222,14 @@ test('reset cancels queued continuation and table size applies on next deal', as
   await expect(page.getByLabel('进阶', { exact: true })).toBeChecked();
 });
 
-test('first visit presents balanced opponents and safe defaults', async ({ page }) => {
+test('first visit presents balanced opponents with sound enabled', async ({ page }) => {
   await expect(page.locator('#player-count')).toHaveValue('6');
   await expect(page.getByLabel('标准', { exact: true })).toBeChecked();
   await expect(page.locator('#opponents-summary')).toHaveText('均衡');
   await expect(page.locator('.seat-style-label')).toHaveText(Array(5).fill('均衡'));
   await expect(page.locator('#hint-toggle')).toHaveAttribute('aria-pressed', 'true');
-  await expect(page.locator('#sound-button')).toHaveAttribute('aria-pressed', 'false');
+  await expect(page.locator('#sound-button')).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator('#sound-button')).toHaveAttribute('aria-label', '关闭音效');
   await page.locator('#opponents-button').click();
   await expect(page.locator('[data-profile-preview="balanced"]')).toHaveAttribute(
     'aria-pressed',
@@ -1273,7 +1274,7 @@ test('returning restores all saved options before the first fresh hand, includin
   await expect(page.locator('#player-count')).toHaveValue('9');
   await expect(page.getByLabel('进阶', { exact: true })).toBeChecked();
   await expect(page.locator('#hint-toggle')).toHaveAttribute('aria-pressed', 'false');
-  await expect(page.locator('#sound-button')).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator('#sound-button')).toHaveAttribute('aria-pressed', 'false');
   await expect(page.locator('#opponents-summary')).toHaveText('8 位风格对手');
   await expect(page.locator('#opponents-change-note')).toBeHidden();
   await expect(page.locator('#table-change-note')).toBeHidden();

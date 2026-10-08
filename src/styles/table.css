@@ -209,15 +209,6 @@
   gap: 20px;
   flex-wrap: wrap;
 }
-#player-count {
-  appearance: none;
-  -webkit-appearance: none;
-  padding-right: 32px;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none'%3E%3Cpath d='m4 6 4 4 4-4' stroke='%23b8cbd6' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-size: 14px 14px;
-  background-position: right 10px center;
-}
 .difficulty-control {
   display: flex;
   align-items: center;
@@ -702,6 +693,7 @@
   line-height: 1;
 }
 .seat-peek svg {
+  display: block;
   width: 15px;
   height: 15px;
   fill: none;
