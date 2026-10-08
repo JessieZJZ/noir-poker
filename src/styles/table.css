@@ -282,73 +282,9 @@
 .difficulty-option input:focus-visible {
   outline: 0;
 }
-/* Settlement is in document flow below the whole arena, never over any card. */
+/* Keep the total pot visible alongside seat-level winner indicators. */
 .arena.is-done .pot {
   visibility: visible;
-}
-.result-summary {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 24px;
-  width: calc(100% - 50px);
-  margin: 3px 25px 23px;
-  padding: 16px 19px;
-  text-align: left;
-  background: #15222a;
-  border: 1px solid #344c51;
-  border-radius: 10px;
-  color: #e0ece9;
-}
-.result-summary.hero-win {
-  border-color: #567965;
-  background: linear-gradient(115deg, #173b304d, #15232a);
-}
-.result-copy {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-  gap: 7px;
-}
-.result-kicker {
-  font-size: 11px;
-  line-height: 1.4;
-  color: #97b3aa;
-  letter-spacing: 1px;
-}
-.result-copy > strong {
-  font-size: 15px;
-  font-weight: 500;
-  line-height: 1.5;
-  overflow-wrap: anywhere;
-}
-.result-reason {
-  font-size: 12px;
-  line-height: 1.5;
-  color: #a7b8b5;
-}
-.result-amount {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 4px;
-  white-space: nowrap;
-}
-.result-amount > strong {
-  font-family: Manrope, Arial, sans-serif;
-  font-size: 23px;
-  font-weight: 600;
-  line-height: 1.4;
-  font-variant-numeric: tabular-nums;
-  color: #e2d5ab;
-}
-.result-amount > span {
-  font-size: 11px;
-  line-height: 1.5;
-  color: #a7b8b5;
-}
-.result-summary + .showdown-stage {
-  border-top-color: #2d413d;
 }
 @media (max-width: 1150px) and (min-width: 901px) {
   .surface-top {
@@ -405,31 +341,6 @@
   .action.fold span {
     font-size: 14px;
   }
-  .result-summary {
-    width: calc(100% - 28px);
-    margin: 1px 14px 20px;
-    padding: 14px 15px;
-    grid-template-columns: minmax(0, 1fr) auto;
-    gap: 10px 14px;
-  }
-  .result-copy {
-    gap: 6px;
-  }
-  .result-copy > strong {
-    font-size: 13px;
-  }
-  .result-kicker {
-    font-size: 10px;
-  }
-  .result-amount > strong {
-    font-size: 21px;
-  }
-  .result-amount > span {
-    font-size: 10px;
-  }
-  .result-reason {
-    font-size: 11px;
-  }
 }
 @media (max-width: 360px) {
   .table-settings {
@@ -448,14 +359,6 @@
   .difficulty-options {
     gap: 1px;
     padding: 2px;
-  }
-  .result-summary {
-    padding-left: 12px;
-    padding-right: 12px;
-    gap: 10px;
-  }
-  .result-copy > strong {
-    font-size: 12px;
   }
   .seat-action {
     font-size: 10px;
@@ -502,6 +405,9 @@
   font-size: 14px;
 }
 .showdown-player-heading > strong {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  line-height: 1.5;
   font-weight: 600;
   color: #e0eae7;
 }
@@ -599,11 +505,26 @@
 .arena.is-done .seat-action-amount {
   white-space: nowrap;
 }
-.arena.is-done .hero-last-action {
-  min-height: 0;
-  padding-top: 0;
-  max-width: 130px;
+.arena[data-player-count] .hero-area {
+  top: auto;
+  bottom: 20px;
 }
+.hero-last-action {
+  min-height: 24px;
+  padding-top: 6px;
+  max-width: 200px;
+  flex-wrap: wrap;
+  white-space: normal;
+  row-gap: 0;
+}
+.hero-last-action .seat-action-label,
+.hero-last-action .seat-action-amount {
+  white-space: nowrap;
+}
+.arena.is-done .hero-last-action {
+  max-width: 200px;
+}
+.arena.is-done[data-player-count='5'],
 .arena.is-done[data-player-count='6'] {
   height: 620px;
 }

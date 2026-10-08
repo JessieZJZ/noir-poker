@@ -94,6 +94,23 @@ window.qa = {
     render();
     return publicState();
   },
+  respondToHero(raiseTo = 0, nextStreet = false) {
+    clearTimeout(timer);
+    botWait = null;
+    const callUntilHero = () => {
+      while (game.phase === 'playing' && game.actor !== 0) {
+        act(game, game.actor, raiseTo ? 'raise' : 'call', raiseTo);
+        raiseTo = 0;
+      }
+    };
+    callUntilHero();
+    if (nextStreet && game.phase === 'between') {
+      advanceStreet(game);
+      callUntilHero();
+    }
+    render();
+    return publicState();
+  },
   river(count = 6) {
     fixtureGame(count);
     startHand(game);

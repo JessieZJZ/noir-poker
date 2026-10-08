@@ -133,27 +133,21 @@ test('winner crowns follow actual main and side pot awards and survive hidden sh
   await expect(page.locator('#hero-hand-rank.winner-indicator')).toHaveCount(0);
 });
 
-test('compact settlement leads with the winner and keeps refunds separate from one displayed award', async ({
+test('settled table removes redundant result panels while pot details keep awards and refunds separate', async ({
   page,
 }) => {
   for (const width of [320, 390, 1280]) {
     await page.setViewportSize({ width, height: 900 });
     await page.evaluate(() => window.qa.foldPotRefund());
-    await expect(page.locator('#result-banner .result-copy > strong')).toHaveText('Alex 获胜');
-    await expect(page.locator('#result-banner .result-reason')).toHaveText('其余玩家均已弃牌');
-    await expect(page.locator('#result-banner .result-amount > span')).toHaveCount(0);
-    await expect(page.locator('#decision-text')).toHaveText('Alex 获胜 · 获得 125 筹码');
+    await expect(page.locator('#result-banner, .result-summary')).toHaveCount(0);
+    await expect(page.locator('.decision-strip')).toBeHidden();
+    await expect(page.locator('#decision-text')).toBeEmpty();
     await expect(page.locator('#activity-list')).toContainText('Alex 获胜 · 获得 125 筹码');
     await expect(page.locator('#hand-strength')).toHaveCount(0);
     await expect(page.locator('.seat-2 .winner-indicator')).toHaveAttribute(
       'title',
       '其余玩家均已弃牌 · 获得 125 筹码',
     );
-    await expect(page.locator('#result-banner')).not.toHaveAttribute('aria-haspopup');
-    await expect(page.locator('#result-banner button, .result-link')).toHaveCount(0);
-    expect(await page.locator('#result-banner').evaluate((el) => el.tagName)).toBe('DIV');
-    await page.locator('#result-banner').click();
-    await expect(page.locator('#pot-dialog')).not.toBeVisible();
     await page.locator('#pot-details-button').click();
     await expect(page.locator('#pot-dialog-title')).toHaveText('本手结算');
     await expect(page.locator('#pot-dialog-note')).toBeHidden();
@@ -197,7 +191,7 @@ test('pot details retain per-pot awards, odd split shares and conditional live e
   );
   await page.locator('#pot-details-button').click();
   const state = await page.evaluate(() => window.noir.getState());
-  await expect(page.locator('#result-banner .result-amount > span')).toHaveText('3 个底池');
+  await expect(page.locator('#pot-details-button')).toHaveText('总底池 · 2 个边池');
   await expect(page.locator('.settled-pot h3')).toHaveText(['主池', '边池 1', '边池 2']);
   for (let i = 0; i < state.pots.length; i++) {
     const card = page.locator(`.settled-pot[data-pot-index="${i}"]`);
@@ -293,11 +287,177 @@ test('5–9 player showdown reveals all holes immediately and displays each best
       otherHoles: { 1: 'Ac Qd' },
     }),
   );
-  await expect(page.locator('#result-banner .result-copy > strong')).toHaveText('Mia 获胜');
-  await expect(page.locator('#result-banner .result-amount > span')).toHaveText('一对');
-  await expect(page.locator('#result-banner .result-amount')).not.toContainText('筹码');
+  await expect(page.locator('.seat-1 .winner-indicator')).toHaveText('一对');
+  await expect(page.locator('.decision-strip')).toBeHidden();
   await expect(page.locator('#hero-hand-rank')).toHaveText('已弃牌 · 两对');
   await expect(page.locator('#hand-strength')).toHaveCount(0);
+});
+
+test('showdown participant names include the current named style and stay readable on narrow screens', async ({
+  page,
+}, testInfo) => {
+  await page.evaluate(() => window.qa.stop());
+  await page.locator('#opponents-button').click();
+  await page.locator('#mix-opponents').click();
+  await page.locator('#save-opponents').click();
+  const names = [
+    '你',
+    'Mia（谈老板）',
+    'Alex（ST 王）',
+    'River（臧书奴）',
+    'Kai（Peter）',
+    'Luna（阿宝）',
+    'Theo（Viktor Blom）',
+    'Jade（Daniel Cates）',
+    'Leo（Tom Dwan）',
+  ];
+  for (const width of [320, 390, 1280]) {
+    await page.setViewportSize({ width, height: 900 });
+    for (const count of [6, 9]) {
+      await page.evaluate((n) => {
+        window.qa.river(n);
+        window.qa.finish();
+      }, count);
+      await expect(page.locator('.showdown-player-heading > strong')).toHaveText(
+        names.slice(0, count),
+      );
+      await expect(page.locator('#result-banner')).toHaveCount(0);
+      await expect(page.locator('.decision-strip')).toBeHidden();
+      await assertBestHands(page, count);
+      await assertWinnerIndicators(page);
+      const readable = await page.locator('.showdown-player-heading').evaluateAll((rows) =>
+        rows.every((row) => {
+          const name = row.querySelector('strong').getBoundingClientRect();
+          const award = row.querySelector(':scope > span').getBoundingClientRect();
+          return (
+            name.right <= award.left &&
+            name.left >= 0 &&
+            award.right <= innerWidth &&
+            row.scrollWidth <= row.clientWidth + 1
+          );
+        }),
+      );
+      expect(readable).toBe(true);
+      if (width === 390 && count === 9) {
+        await expect(page.locator('.flying-chip')).toHaveCount(0);
+        await page.screenshot({
+          path: `/Users/zjz/Documents/Codex/2026-10-06/create-a-new-site-with-sites/work/showdown-clean-${testInfo.project.name}.png`,
+          fullPage: true,
+        });
+      }
+    }
+  }
+  await page.locator('#opponents-button').click();
+  await page.locator('[data-bot-seat="7"]').selectOption('peter');
+  await page.locator('#save-opponents').click();
+  await expect(
+    page.locator('.showdown-player[data-player="7"] .showdown-player-heading > strong'),
+  ).toHaveText('Jade（Daniel Cates）');
+  await page.locator('#next-button').click();
+  await page.evaluate(() => window.qa.stop());
+  await expect(page.locator('.decision-strip')).toBeVisible();
+  await expect(page.locator('#decision-text')).not.toBeEmpty();
+  await page.evaluate(() => {
+    window.qa.river(9);
+    window.qa.finish();
+  });
+  await expect(
+    page.locator('.showdown-player[data-player="7"] .showdown-player-heading > strong'),
+  ).toHaveText('Jade（Peter）');
+});
+
+test('hero recent actions appear immediately below the role and persist through turns and streets', async ({
+  page,
+}) => {
+  const row = page.locator('#hero-last-action');
+  const assertFits = async () => {
+    expect(
+      await row.evaluate((el) => {
+        const a = el.getBoundingClientRect(),
+          name = document.querySelector('.hero-name').getBoundingClientRect(),
+          arena = document.querySelector('#arena').getBoundingClientRect();
+        return {
+          below: a.top >= name.bottom,
+          inside: a.left >= 0 && a.right <= innerWidth && a.bottom <= arena.bottom,
+          unclipped: el.scrollWidth <= el.clientWidth + 1,
+        };
+      }),
+    ).toEqual({ below: true, inside: true, unclipped: true });
+  };
+  for (const width of [320, 390, 1280]) {
+    await page.setViewportSize({ width, height: 900 });
+    for (const count of [5, 9]) {
+      await page.evaluate((n) => window.qa.heroTurn(n), count);
+      await expect(row).toBeHidden();
+      await page.locator('#call-button').click();
+      await page.evaluate(() => window.qa.stop());
+      await expect(row.locator('.seat-action-label')).toHaveText('跟注');
+      await expect(row.locator('.seat-action-amount')).toHaveText('50');
+      await expect(page.locator('#hero-turn')).toHaveText('等待行动');
+      await assertFits();
+
+      await page.evaluate(() => window.qa.respondToHero(150));
+      await expect(page.locator('#hero-turn')).toHaveText('你的回合');
+      await expect(row.locator('.seat-action-label')).toHaveText('跟注');
+      await page.locator('[data-preset="min"]').click();
+      await page.locator('#raise-button').click();
+      await page.evaluate(() => window.qa.stop());
+      await expect(row.locator('.seat-action-label')).toHaveText('3-bet 加注');
+      await expect(row.locator('.seat-action-amount')).toHaveText('250');
+      await expect(row.locator('.seat-action-amount')).toHaveAttribute('title', /^翻牌前 · /);
+      await assertFits();
+      if (width === 390 && count === 9)
+        await page.screenshot({
+          path: `/Users/zjz/Documents/Codex/2026-10-06/create-a-new-site-with-sites/work/hero-action-${test.info().project.name}.png`,
+          fullPage: true,
+        });
+
+      const flop = await page.evaluate(() => window.qa.respondToHero(0, true));
+      expect(flop.board).toHaveLength(3);
+      expect(flop.players[0].bet).toBe(0);
+      await expect(row.locator('.seat-action-label')).toHaveText('3-bet 加注');
+      await expect(row.locator('.seat-action-amount')).toHaveText('250');
+      await page.locator('#call-button').click();
+      await page.evaluate(() => window.qa.stop());
+      await expect(row).toHaveText('过牌');
+      await expect(row.locator('.seat-action-amount')).toHaveCount(0);
+      await assertFits();
+
+      await page.evaluate(() => window.qa.respondToHero(0, true));
+      await page.locator('#fold-button').click();
+      await page.evaluate(() => window.qa.stop());
+      await expect(row).toHaveText('弃牌');
+      await expect(page.locator('#hero-turn')).toHaveText('已弃牌');
+      await assertFits();
+      await page.evaluate(() => {
+        while (window.noir.getState().phase !== 'done') {
+          if (window.noir.getState().phase === 'between') window.qa.finish();
+          else window.qa.foldRest();
+        }
+      });
+      await expect(row).toHaveText('弃牌');
+      await assertFits();
+      await page.locator('#restart-hand-button').click();
+      await page.evaluate(() => window.qa.stop());
+      await expect(row).toBeHidden();
+      await expect(row).toBeEmpty();
+
+      await page.locator('[data-preset="all"]').click();
+      await page.locator('#raise-button').click();
+      await page.evaluate(() => window.qa.stop());
+      await expect(row.locator('.seat-action-label')).toHaveText('2-bet 全下');
+      await expect(row.locator('.seat-action-amount')).toHaveText('5,000');
+      await expect(page.locator('#hero-turn')).toHaveText('已全下');
+      await assertFits();
+    }
+  }
+  await page.evaluate(() => window.qa.bettingTurn(3, 0, true));
+  await page.locator('[data-preset="all"]').click();
+  await page.locator('#raise-button').click();
+  await page.evaluate(() => window.qa.stop());
+  await expect(row.locator('.seat-action-label')).toHaveText('3-bet 短全下');
+  await expect(row.locator('.seat-action-amount')).toHaveText('175');
+  await assertFits();
 });
 
 test('settled seats retain all-in sizes, board and hero action across viewing and all screen sizes', async ({
@@ -330,7 +490,7 @@ test('settled seats retain all-in sizes, board and hero action across viewing an
       }
       const geometry = await page.evaluate(() => {
         const board = document.querySelector('#board').getBoundingClientRect();
-        const banner = document.querySelector('#result-banner').getBoundingClientRect();
+        const stage = document.querySelector('#showdown-stage').getBoundingClientRect();
         const overlaps = (a, b) =>
           a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top;
         return {
@@ -341,9 +501,9 @@ test('settled seats retain all-in sizes, board and hero action across viewing an
           cardOverlaps: [
             ...document.querySelectorAll('.seat .playing-card, #hero-cards .playing-card'),
           ].some((el) => overlaps(el.getBoundingClientRect(), board)),
-          bannerOverlaps: overlaps(
+          stageOverlaps: overlaps(
             document.querySelector('#hero-last-action').getBoundingClientRect(),
-            banner,
+            stage,
           ),
         };
       });
@@ -351,7 +511,7 @@ test('settled seats retain all-in sizes, board and hero action across viewing an
         overflowing: false,
         boardOverlaps: false,
         cardOverlaps: false,
-        bannerOverlaps: false,
+        stageOverlaps: false,
       });
       await page.locator('.seat-peek').first().click();
       expect(
@@ -396,7 +556,7 @@ test('settled raises, calls and folds retain their actual amounts until the next
       await expect(row.locator('.seat-action-amount')).toHaveAttribute('title', /本轮累计投入 300/);
     } else if (p.lastAction.text === '弃牌') await expect(row).toHaveText('弃牌');
     else {
-      await expect(row.locator('.seat-action-label')).toHaveText('2-bet');
+      await expect(row.locator('.seat-action-label')).toHaveText(p.id ? '2-bet' : '2-bet 加注');
       await expect(row.locator('.seat-action-amount')).toHaveText('300');
     }
   }
@@ -410,7 +570,8 @@ test('settled raises, calls and folds retain their actual amounts until the next
   expect(
     next.players.filter((p) => p.lastAction).every((p) => /^(小盲|大盲) /.test(p.lastAction.text)),
   ).toBe(true);
-  await expect(page.locator('#hero-last-action')).toBeHidden();
+  await expect(page.locator('#hero-last-action .seat-action-label')).toHaveText('大盲');
+  await expect(page.locator('#hero-last-action .seat-action-amount')).toHaveText('50');
 });
 
 test('each eye toggles only its seat in place without changing showdown or settlement', async ({
@@ -571,8 +732,9 @@ test('fast finish fills all five visible board cards after preflop, flop or turn
     await expect(page.locator('#board .playing-card')).toHaveCount(5);
     await expect(page.locator('#board .board-slot')).toHaveCount(0);
     await expect(page.locator('#board-caption')).toContainText('练习补牌');
-    await expect(page.locator('#result-banner')).toBeVisible();
-    await expect(page.locator('#result-banner')).toContainText('其余玩家均已弃牌');
+    await expect(page.locator('#result-banner')).toHaveCount(0);
+    await expect(page.locator('.decision-strip')).toBeHidden();
+    await assertWinnerIndicators(page);
     await expect(page.locator('#showdown-stage')).toBeHidden();
     await expect(page.locator('#stat-hands')).toHaveText('1');
     await expect(page.locator('#continue-deal-button')).toBeHidden();
@@ -598,7 +760,7 @@ test('review completes through real worker with facts and a conditional follow-u
   await page.locator('#continue-deal-button').click();
   await page.waitForFunction(() => window.noir.getState().phase === 'done');
   await expect(page.locator('#board .playing-card')).toHaveCount(5);
-  await expect(page.locator('#result-banner')).toBeVisible();
+  await expect(page.locator('.decision-strip')).toBeHidden();
   await page.locator('#review-hand-button').click();
   await expect(page.locator('#review-dialog')).toBeVisible();
   await expect(page.locator('#review-priority')).toBeVisible({ timeout: 15000 });
@@ -638,7 +800,6 @@ test('activity follows chronological column order at every breakpoint and natura
           texts.indexOf(window.noir.getState().result),
         ];
         const board = document.querySelector('#board').getBoundingClientRect();
-        const banner = document.querySelector('#result-banner').getBoundingClientRect();
         const overlaps = [...document.querySelectorAll('.seat-peek')].some((el) => {
           const a = el.getBoundingClientRect();
           return (
@@ -660,7 +821,6 @@ test('activity follows chronological column order at every breakpoint and natura
           scrollHeight: list.scrollHeight,
           clientHeight: list.clientHeight,
           overflow: getComputedStyle(list).overflowY,
-          bannerOverlaps: banner.bottom > board.top && banner.top < board.bottom,
           peekOverlaps: overlaps,
         };
       });
@@ -673,7 +833,6 @@ test('activity follows chronological column order at every breakpoint and natura
       expect(layout.readingOrder).toEqual(Array.from({ length: layout.logCount }, (_, i) => i));
       expect(layout.overflow).toBe('visible');
       expect(layout.scrollHeight - layout.clientHeight).toBeLessThanOrEqual(1);
-      expect(layout.bannerOverlaps).toBe(false);
       expect(layout.peekOverlaps).toBe(false);
       await page.locator('.seat-peek').first().click();
       await expect(page.locator('#activity-list li')).toHaveText(layout.texts);
@@ -742,7 +901,7 @@ test('activity shows actual assigned personas across actions and results without
     'Alex（ST 王） 获胜',
   );
   await expect(page.locator('#activity-list')).toContainText('Alex（ST 王） 未被跟注的 75');
-  await expect(page.locator('#result-banner')).toContainText('Alex 获胜');
+  await assertWinnerIndicators(page);
   await page.locator('#opponents-button').click();
   await page.locator('[data-bot-seat="2"]').selectOption('abao');
   await page.locator('#save-opponents').click();

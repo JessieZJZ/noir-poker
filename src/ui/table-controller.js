@@ -139,9 +139,10 @@ function flyChips(id) {
     anim.onfinish = () => chip.remove();
   }
 }
-function seatAction(p) {
-  if (game.actor === p.id) return '<span class="seat-action-label thinking-dots">思考中</span>';
-  const retained = game.phase === 'done' ? p.lastAction : null;
+function seatAction(p, { recent = false } = {}) {
+  if (!recent && game.actor === p.id)
+    return '<span class="seat-action-label thinking-dots">思考中</span>';
+  const retained = recent || game.phase === 'done' ? p.lastAction : null;
   const action = retained?.text ?? p.action;
   const match =
     /^(?:(\d+-bet) )?(小盲|大盲|跟注|开池至|加注至|下注至|下注|短全下至|全下至|全下) (\d+)$/.exec(
@@ -150,15 +151,23 @@ function seatAction(p) {
   if (!match)
     return `<span class="seat-action-label">${action || (game.phase === 'done' ? '未行动' : '等待行动')}</span>`;
   const label = match[1]
-      ? match[1] + (match[2] === '短全下至' ? ' 短全下' : match[2] === '全下至' ? ' 全下' : '')
+      ? match[1] +
+        (match[2] === '短全下至'
+          ? ' 短全下'
+          : match[2] === '全下至'
+            ? ' 全下'
+            : recent
+              ? ' ' + match[2].replace(/至$/, '')
+              : '')
       : match[2] === '加注至'
         ? '加注'
         : match[2],
     amount = Number(match[3]);
   const meaning =
-    match[2] === '跟注'
+    (recent && retained ? `${streets[retained.street]} · ` : '') +
+    (match[2] === '跟注'
       ? `本次补入 ${format(amount)}，本轮累计投入 ${format(retained?.bet ?? p.bet)}`
-      : `${action} · 本轮累计投入 ${format(amount)}`;
+      : `${action} · 本轮累计投入 ${format(amount)}`);
   return `<span class="seat-action-label">${label}</span><strong class="seat-action-amount" title="${meaning}">${format(amount)}</strong>`;
 }
 const layouts = {
@@ -296,9 +305,9 @@ function render() {
           : game.phase === 'done'
             ? '本手结束'
             : '等待行动';
-  $('#hero-last-action').hidden = game.phase !== 'done';
+  $('#hero-last-action').hidden = !hero.lastAction;
   $('#hero-turn').hidden = game.phase === 'done';
-  $('#hero-last-action').innerHTML = game.phase === 'done' ? seatAction(hero) : '';
+  $('#hero-last-action').innerHTML = hero.lastAction ? seatAction(hero, { recent: true }) : '';
   $('#session-stack').innerHTML = `${format(hero.stack)}<span>CHIPS</span>`;
   const diff = hero.stack - game.stats.buyin;
   $('#session-change').textContent = game.stats.hands
@@ -322,24 +331,11 @@ function render() {
   $('#activity-count').textContent = game.phase === 'done' ? 'FINISHED' : 'LIVE';
   const done = game.phase === 'done';
   $('#arena').classList.toggle('is-done', done);
-  $('#result-banner').hidden = !done;
-  $('#result-banner').classList.toggle(
-    'hero-win',
-    game.winners.some((w) => w.id === 0),
-  );
+  $('.decision-strip').hidden = done;
   document
     .querySelectorAll('input[name="difficulty"]')
     .forEach((input) => (input.checked = input.value === game.difficulty));
   opponents.refresh();
-  if (done) {
-    const winner = game.winners.find((w) => w.id === 0) || game.winners[0],
-      multiple = game.pots.length > 1,
-      split = game.pots.some((p) => p.awards.length > 1);
-    const title = multiple ? '主池与边池已分别结算' : split ? '本池平分' : winner.name + ' 获胜',
-      label = multiple ? game.pots.length + ' 个底池' : game.showdown ? winner.label : '';
-    $('#result-banner').innerHTML =
-      `<span class="result-copy"><span class="result-kicker">本手结束</span><strong>${title}</strong>${!game.showdown ? `<span class="result-reason">${winner.label}</span>` : ''}</span><span class="result-amount"><strong>${format(multiple || split ? game.potAtShowdown : winner.amount)}</strong>${label ? `<span>${label}</span>` : ''}</span>`;
-  }
   $('#board-caption').textContent = game.practiceBoard
     ? '练习补牌 · 五张公共牌，不影响结算'
     : done && game.showdown
@@ -403,7 +399,7 @@ function render() {
     $('#decision-text').textContent = legal.canCheck
       ? '轮到你了，可以过牌或主动下注。'
       : `轮到你了，跟注需要 ${format(legal.callAmount)} 筹码。${legal.raiseReopened ? '' : '本轮加注权未重开，仅可跟注或弃牌。'}`;
-  } else if (done) $('#decision-text').textContent = game.result;
+  } else if (done) $('#decision-text').textContent = '';
   else if (game.phase === 'between')
     $('#decision-text').textContent = game.revealed
       ? game.board.length === 5
