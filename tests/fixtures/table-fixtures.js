@@ -71,22 +71,37 @@ window.qa = {
     render();
     return publicState();
   },
-  potSizing() {
+  potSizing({ opening = 350, wager = 800, stack = 5025 } = {}) {
     fixtureGame(6);
     game.dealer = 5;
-    game.players[0].stack = 5025;
+    game.players[0].stack = stack;
     startHand(game);
-    act(game, 3, 'raise', 350);
+    act(game, 3, 'raise', opening);
     for (const id of [4, 5, 0]) act(game, id, 'call');
     for (const id of [1, 2]) act(game, id, 'fold');
     advanceStreet(game);
     while (game.phase === 'playing') act(game, game.actor, 'check');
     advanceStreet(game);
-    act(game, 3, 'raise', 800);
+    act(game, 3, 'raise', wager);
     act(game, 4, 'call');
     act(game, 5, 'fold');
     render();
     return publicState();
+  },
+  botFoldTurn() {
+    fixtureGame(6, true);
+    startHand(game);
+    act(game, 0, 'raise', 4000);
+    const id = game.actor;
+    game.players[id].hole = ['7s', '2h'].map((v) =>
+      deckOfCards().find((c) => c.rank === Number(v[0]) && c.suit === 'shcd'.indexOf(v[1])),
+    );
+    const plan = planBotTurn(game, () => 0.99, { timingRandom: () => 0 });
+    const startedAt = performance.now();
+    botWait = { plan, startedAt, deadline: startedAt + plan.delayMs };
+    render();
+    schedule();
+    return { actor: id, delayMs: plan.delayMs };
   },
   foldFinished(street = 0) {
     fixtureGame(6, true);

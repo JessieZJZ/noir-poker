@@ -29,7 +29,9 @@ import { createShowdownController } from './showdown.js';
 import { createActivityFormatter } from './activity.js';
 import { portraitContent, preparePortraits } from './portraits.js';
 import { presetRaiseTo } from './bet-sizing.js';
+import { createSettlementLayout } from './settlement-layout.js';
 const $ = (s) => document.querySelector(s);
+const settlementLayout = createSettlementLayout($('#arena'));
 const handReview = createReviewController({ card });
 const showdown = createShowdownController({ card });
 // Display preferences belong to this hand's UI, never to settlement or review.
@@ -114,6 +116,22 @@ function soundEffect(kind = 'chip') {
   if (!sound || audio?.state !== 'running') return;
   try {
     const now = audio.currentTime;
+    if (kind === 'fold') {
+      // A quiet falling swish, distinct from chip, deal and winning notes.
+      const o = audio.createOscillator(),
+        v = audio.createGain();
+      o.type = 'triangle';
+      o.frequency.setValueAtTime(260, now);
+      o.frequency.exponentialRampToValueAtTime(75, now + 0.14);
+      v.gain.setValueAtTime(0.0001, now);
+      v.gain.exponentialRampToValueAtTime(0.02, now + 0.012);
+      v.gain.exponentialRampToValueAtTime(0.0001, now + 0.16);
+      o.connect(v);
+      v.connect(audio.destination);
+      o.start(now);
+      o.stop(now + 0.18);
+      return;
+    }
     const notes = kind === 'win' ? [440, 554, 659] : kind === 'deal' ? [820, 570] : [310];
     notes.forEach((hz, i) => {
       const o = audio.createOscillator(),
@@ -434,15 +452,11 @@ function render() {
   showdown.update(game, epoch);
   lastHand = game.hand;
   lastBoard = displayBoard.length;
+  settlementLayout.update();
 }
 function updateBet() {
   const legal = legalActions(game, 0);
   $('#bet-value').textContent = format(bet);
-  const sizingNote = $('#bet-sizing-note');
-  sizingNote.hidden = !legal.enabled || !legal.canRaise || legal.canCheck;
-  sizingNote.textContent = sizingNote.hidden
-    ? ''
-    : `底池加注按跟注后的 ${format(potSize(game) + legal.callAmount)} 计算；“加注至”含跟注与本轮已投入。`;
   const action = raiseCaption(
     { street: game.street, history: game.history, currentBet: game.currentBet, legal },
     bet,
@@ -528,6 +542,7 @@ function schedule() {
           flyChips(id);
           soundEffect();
         }
+        if (d.action === 'fold') soundEffect('fold');
         if (game.phase === 'done') soundEffect('win');
         render();
         schedule();
@@ -544,6 +559,7 @@ function heroAction(action, amount) {
     flyChips(0);
     soundEffect();
   }
+  if (action === 'fold') soundEffect('fold');
   if (game.phase === 'done') soundEffect('win');
   render();
   schedule();
@@ -705,9 +721,8 @@ $('#next-button').onclick = nextHand;
 $('#restart-hand-button').onclick = retryHand;
 $('#bet-slider').oninput = (e) => {
   const legal = legalActions(game, 0);
-  let v = Number(e.target.value);
-  bet = v === legal.maxRaiseTo ? v : Math.max(legal.minRaiseTo, Math.round(v / 25) * 25);
-  bet = Math.min(legal.maxRaiseTo, bet);
+  if (!legal.enabled || !legal.canRaise) return;
+  bet = Math.min(legal.maxRaiseTo, Math.max(legal.minRaiseTo, Math.round(Number(e.target.value))));
   updateBet();
 };
 document.querySelectorAll('[data-preset]').forEach(

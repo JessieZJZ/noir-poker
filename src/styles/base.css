@@ -485,13 +485,6 @@ select {
   border-color: #6ee7c56b;
   color: var(--mint);
 }
-.bet-sizing-note {
-  grid-column: 1 / -1;
-  margin: 8px 0 0;
-  color: var(--muted);
-  font-size: 11px;
-  line-height: 1.6;
-}
 .action-buttons {
   display: flex;
   flex: 1;

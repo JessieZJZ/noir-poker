@@ -253,6 +253,50 @@ test('uncalled shove refunds are not losses; blind-only hands are not VPIP', () 
   );
   for (const p of g.players.slice(2)) assert.equal(p.botStats.vpip, 0);
 });
+test('post-flop bot fractions use the after-call pot with integer chip precision', () => {
+  const view = {
+    id: 1,
+    hole: [
+      { rank: 14, suit: 0 },
+      { rank: 13, suit: 0 },
+    ],
+    board: [],
+    street: 2,
+    position: 'BTN',
+    count: 6,
+    stack: 5000,
+    bet: 0,
+    pot: 401,
+    currentBet: 225,
+    contestable: 626,
+    rivals: 1,
+    equity: 0.9,
+    difficulty: 'hard',
+    history: [],
+    features: { wet: false, draw: false, overpair: false },
+    playsBoard: false,
+    legal: {
+      enabled: true,
+      toCall: 225,
+      callAmount: 225,
+      canCheck: false,
+      canRaise: true,
+      minRaiseTo: 450,
+      maxRaiseTo: 5000,
+    },
+  };
+  const decision = chooseBotAction(
+    view,
+    getBotProfile('balanced'),
+    freshBotMood(),
+    'off',
+    () => 0.5,
+  );
+  assert.equal(decision.action, 'raise');
+  assert.equal(decision.trace.sizing.fraction, 0.625);
+  assert.equal(decision.trace.sizing.desired, 616); // 225 + round(626 × .625)
+  assert.equal(decision.amount, 616);
+});
 test('retry restores frozen profile, emotion and simulation statistics exactly once', () => {
   const g = newGame();
   applyBotSettings(g, { assignments: { 1: 'tan', 2: 'st' }, emotionMode: 'lively' });

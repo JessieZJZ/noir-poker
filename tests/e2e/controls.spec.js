@@ -1,5 +1,81 @@
 import { test, expect } from '@playwright/test';
 
+test('hero and bot folds have a distinct falling sound and obey the sound toggle', async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    window.audioEvents = [];
+    window.AudioContext = class {
+      state = 'suspended';
+      currentTime = 0;
+      destination = {};
+      resume() {
+        this.state = 'running';
+        return Promise.resolve();
+      }
+      createOscillator() {
+        const event = { type: '', frequencies: [] };
+        return {
+          type: 'sine',
+          frequency: {
+            setValueAtTime(value) {
+              event.frequencies.push(value);
+            },
+            exponentialRampToValueAtTime(value) {
+              event.frequencies.push(value);
+            },
+          },
+          connect() {},
+          stop() {},
+          start() {
+            event.type = this.type;
+            window.audioEvents.push(event);
+          },
+        };
+      }
+      createGain() {
+        return { gain: { setValueAtTime() {}, exponentialRampToValueAtTime() {} }, connect() {} };
+      }
+    };
+  });
+  await page.goto('/');
+  await page.waitForFunction(() => !!window.qa);
+  await page.clock.install({ time: new Date('2026-01-01T00:00:00Z') });
+  await page.clock.pauseAt(new Date('2026-01-01T00:00:01Z'));
+  await page.keyboard.press('Tab');
+  await page.evaluate(() => window.qa.heroTurn(6));
+  await page.locator('#fold-button').click();
+  await page.evaluate(() => window.qa.stop());
+  const fold = { type: 'triangle', frequencies: [260, 75] };
+  expect(await page.evaluate(() => window.audioEvents)).toEqual([fold]);
+  await page.evaluate(() => window.qa.heroTurn(6));
+  await page.locator('#call-button').click();
+  await page.evaluate(() => window.qa.stop());
+  expect(await page.evaluate(() => window.audioEvents.at(-1))).toEqual({
+    type: 'sine',
+    frequencies: [310],
+  });
+  const waiting = await page.evaluate(() => window.qa.botFoldTurn());
+  await page.clock.runFor(waiting.delayMs + 1);
+  await page.evaluate(() => window.qa.stop());
+  expect((await page.evaluate(() => window.noir.getState())).players[waiting.actor].folded).toBe(
+    true,
+  );
+  expect(await page.evaluate(() => window.audioEvents)).toEqual([
+    fold,
+    { type: 'sine', frequencies: [310] },
+    fold,
+  ]);
+  await page.locator('#sound-button').click();
+  await page.evaluate(() => window.qa.heroTurn(6));
+  await page.locator('#fold-button').click();
+  await page.evaluate(() => window.qa.stop());
+  const muted = await page.evaluate(() => window.qa.botFoldTurn());
+  await page.clock.runFor(muted.delayMs + 1);
+  await page.evaluate(() => window.qa.stop());
+  expect(await page.evaluate(() => window.audioEvents.length)).toBe(3);
+});
+
 test('icon controls and every dropdown remain centered on narrow and wide screens', async ({
   page,
 }) => {

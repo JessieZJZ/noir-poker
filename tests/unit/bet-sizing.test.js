@@ -26,7 +26,7 @@ const view = (overrides = {}, legalOverrides = {}) => ({
 
 test('pot and half-pot raises include the hypothetical call in the pot fraction', () => {
   assert.equal(presetRaiseTo(view(), 'pot'), 4675);
-  assert.equal(presetRaiseTo(view(), 'half'), 2750);
+  assert.equal(presetRaiseTo(view(), 'half'), 2738);
   assert.equal(
     presetRaiseTo(view({ currentBet: 0, pot: 1000 }, { callAmount: 0, minRaiseTo: 50 }), 'pot'),
     1000,
@@ -40,7 +40,32 @@ test('pot and half-pot raises include the hypothetical call in the pot fraction'
 test('existing street contributions are counted once, using the remaining call amount', () => {
   // Hero already has 300 in this street: owes 500 of the current 800.
   assert.equal(presetRaiseTo(view({}, { callAmount: 500 }), 'pot'), 4375);
-  assert.equal(presetRaiseTo(view({}, { callAmount: 500 }), 'half'), 2600);
+  assert.equal(presetRaiseTo(view({}, { callAmount: 500 }), 'half'), 2588);
+});
+
+test('fraction shortcuts preserve one-chip precision rather than rounding to 25', () => {
+  const odd = view({ pot: 401, currentBet: 225 }, { callAmount: 225, minRaiseTo: 450 });
+  assert.equal(presetRaiseTo(odd, 'pot'), 851);
+  assert.equal(presetRaiseTo(odd, 'half'), 538);
+  assert.equal(
+    presetRaiseTo(view({ pot: 401, currentBet: 0 }, { callAmount: 0, minRaiseTo: 50 }), 'half'),
+    201,
+  );
+});
+
+test('ordinary re-raises use the last full increment, and shortcuts obey that minimum', () => {
+  const g = newGame(6);
+  startHand(g, () => 0.5);
+  act(g, g.actor, 'raise', 150); // BB 50 -> 150: a full increment of 100.
+  assert.equal(legalActions(g).fullRaiseTo, 250);
+  act(g, g.actor, 'raise', 350); // 150 -> 350: a full increment of 200.
+  const legal = legalActions(g);
+  assert.equal(legal.fullRaiseTo, 550); // Not double the total 350.
+  assert.equal(presetRaiseTo({ currentBet: 350, pot: potSize(g), legal }, 'min'), 550);
+  const before = g.players.reduce((sum, p) => sum + p.stack, 0) + potSize(g);
+  assert.throws(() => act(g, g.actor, 'raise', 549), /合法/);
+  act(g, g.actor, 'raise', 550);
+  assert.equal(g.players.reduce((sum, p) => sum + p.stack, 0) + potSize(g), before);
 });
 
 test('presets retain exact engine limits for minimum raises, stack caps and short all-ins', () => {
@@ -77,7 +102,7 @@ test('a real turn pot of 3075 facing 800 produces legal targets and conserves ev
     const legal = legalActions(g, 0),
       amount = presetRaiseTo({ currentBet: g.currentBet, pot: potSize(g), legal }, preset);
     assert.equal(legal.callAmount, 800);
-    assert.equal(amount, preset === 'pot' ? 4675 : 2750);
+    assert.equal(amount, preset === 'pot' ? 4675 : 2738);
     act(g, 0, 'raise', amount);
     assert.equal(g.players[0].bet, amount);
     assert.equal(g.players.reduce((n, p) => n + p.stack, 0) + potSize(g), wealth);
