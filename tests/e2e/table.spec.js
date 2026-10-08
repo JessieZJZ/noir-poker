@@ -64,6 +64,48 @@ async function assertWinnerIndicators(page) {
   }
 }
 
+async function assertSettledLayout(page) {
+  await expect
+    .poll(async () =>
+      page.evaluate(() => {
+        const arena = document.querySelector('#arena').getBoundingClientRect(),
+          hero = document.querySelector('.hero-area').getBoundingClientRect(),
+          caption = document.querySelector('#board-caption').getBoundingClientRect(),
+          pot = document.querySelector('#pot-details-button').getBoundingClientRect();
+        const overlaps = (a, b) =>
+          a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top;
+        const seatParts = [
+          ...document.querySelectorAll(
+            '.seat .playing-card, .seat .card-back, .seat-profile, .seat .hand-rank, .seat .seat-action',
+          ),
+        ].map((el) => el.getBoundingClientRect());
+        return {
+          captionSpaced:
+            Math.min(
+              ...[...document.querySelectorAll('#hero-cards .playing-card')].map(
+                (el) => el.getBoundingClientRect().top - caption.bottom,
+              ),
+            ) >= 16,
+          heroInside:
+            hero.top >= arena.top &&
+            hero.bottom <= arena.bottom - 12 &&
+            hero.left >= 0 &&
+            hero.right <= innerWidth,
+          captionClear: !seatParts.some((a) => overlaps(a, caption)),
+          potClear: !seatParts.some((a) => overlaps(a, pot)),
+          overflowing: document.documentElement.scrollWidth > innerWidth,
+        };
+      }),
+    )
+    .toEqual({
+      captionSpaced: true,
+      heroInside: true,
+      captionClear: true,
+      potClear: true,
+      overflowing: false,
+    });
+}
+
 test('fold winners keep a visible crown without revealing cards, including practice runout and hero wins', async ({
   page,
 }) => {
@@ -77,9 +119,11 @@ test('fold winners keep a visible crown without revealing cards, including pract
       await page.locator('#continue-deal-button').click();
       await expect(page.locator('#board .playing-card')).toHaveCount(5);
       await assertWinnerIndicators(page);
+      await assertSettledLayout(page);
       for (let i = 0; i < 2; i++) {
         await page.locator('[data-peek-player="2"]').click();
         await assertWinnerIndicators(page);
+        await assertSettledLayout(page);
         await expect(page.locator('.seat-2 .winner-indicator')).toHaveText('获胜');
       }
       const fits = await page.locator('.seat-2 .winner-indicator').evaluate((el) => {
@@ -95,6 +139,7 @@ test('fold winners keep a visible crown without revealing cards, including pract
       await page.evaluate((n) => window.qa.foldWin(n, 0), count);
       await assertWinnerIndicators(page);
       await expect(page.locator('#hero-hand-rank')).toHaveText('获胜');
+      await assertSettledLayout(page);
     }
   }
   await page.locator('#restart-hand-button').click();
@@ -460,6 +505,45 @@ test('hero recent actions appear immediately below the role and persist through 
   await assertFits();
 });
 
+test('settled public caption and hero remain separated for winners, losers, folded heroes and long personas', async ({
+  page,
+}, testInfo) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.evaluate(() => window.qa.stop());
+  await page.locator('#opponents-button').click();
+  await page.locator('#mix-opponents').click();
+  await page.locator('#save-opponents').click();
+  for (const width of [320, 390, 768, 1280]) {
+    await page.setViewportSize({ width, height: 900 });
+    for (const count of [5, 6, 7, 8, 9]) {
+      for (const mode of ['win', 'lose', 'fold']) {
+        const state = await page.evaluate(
+          ({ count, mode }) =>
+            window.qa.scene(mode === 'lose' ? '2c 3d' : '2c Qs', 'Qh 6d 9s 7c Qc', {
+              count,
+              totals: Array(count).fill(4800),
+              folded: Array.from({ length: count }, (_, id) => id).filter((id) =>
+                id === 0 ? mode === 'fold' : id !== 1 && id !== 4,
+              ),
+              otherHoles: { 1: '9c Ad', 4: 'Td Ts' },
+            }),
+          { count, mode },
+        );
+        expect(state.phase).toBe('done');
+        await assertSettledLayout(page);
+        await assertWinnerIndicators(page);
+        if (mode === 'win') await expect(page.locator('#hero-hand-rank')).toHaveText('三条');
+        if (width === 390 && count === 9)
+          await expect(page.locator('#arena')).toHaveClass(/has-full-player-names/);
+        if (mode === 'win' && count === 6 && (width === 390 || width === 1280))
+          await page.locator('#arena').screenshot({
+            path: `/Users/zjz/Documents/Codex/2026-10-06/create-a-new-site-with-sites/work/settled-spacing-${width}-${testInfo.project.name}.png`,
+          });
+      }
+    }
+  }
+});
+
 test('settled seats retain all-in sizes, board and hero action across viewing and all screen sizes', async ({
   page,
 }) => {
@@ -513,6 +597,7 @@ test('settled seats retain all-in sizes, board and hero action across viewing an
         cardOverlaps: false,
         stageOverlaps: false,
       });
+      await assertSettledLayout(page);
       await page.locator('.seat-peek').first().click();
       expect(
         (await page.evaluate(() => window.noir.getState())).players.map((p) => p.lastAction),

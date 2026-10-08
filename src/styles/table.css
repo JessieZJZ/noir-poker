@@ -524,20 +524,58 @@
 .arena.is-done .hero-last-action {
   max-width: 200px;
 }
-.arena.is-done[data-player-count='5'],
-.arena.is-done[data-player-count='6'] {
-  height: 620px;
+/* Settlement stacks measured content, so a crown or action cannot lift cards over the caption. */
+.arena.is-done[data-player-count] {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 24px;
+  height: auto;
+  min-height: 620px;
+  padding: 224px 0 20px;
 }
-.arena.is-done[data-player-count='6'] .table-center {
-  top: 36%;
+.arena.is-done[data-player-count='8'],
+.arena.is-done[data-player-count='9'] {
+  min-height: 690px;
+}
+.arena.is-done #seats {
+  display: contents;
+}
+.arena.is-done[data-player-count] .table-center,
+.arena.is-done[data-player-count] .hero-area {
+  position: static;
+  transform: none;
+}
+.arena.is-done .table-center {
+  max-width: calc(100% - 24px);
+}
+.arena.is-done .board-caption {
+  max-width: 100%;
+  white-space: normal;
+  text-align: center;
+  line-height: 1.5;
+  letter-spacing: 0;
 }
 @media (max-width: 600px) {
+  .arena.is-done .board-caption {
+    max-width: 128px;
+  }
   .arena.is-done[data-player-count='5'],
   .arena.is-done[data-player-count='6'] {
-    height: 600px;
+    min-height: 600px;
   }
-  .arena.is-done[data-player-count='6'] .table-center {
-    top: 34%;
+  .arena.is-done[data-player-count='8'],
+  .arena.is-done[data-player-count='9'] {
+    min-height: 720px;
+  }
+  .arena.is-done.has-full-player-names[data-player-count='8'] {
+    height: auto;
+    min-height: 800px;
+  }
+  .arena.is-done.has-full-player-names[data-player-count='9'] {
+    height: auto;
+    min-height: 900px;
   }
   .arena.is-done[data-player-count='6'] .seat-2,
   .arena.is-done[data-player-count='6'] .seat-4 {

@@ -341,7 +341,7 @@ function render() {
     : done && game.showdown
       ? hero.folded
         ? '摊牌 · 对手亮出底牌'
-        : '摊牌 · 亮起的牌组成你的最佳牌型'
+        : '摊牌 · 最佳组合已高亮'
       : game.street === 0
         ? '等待翻牌'
         : game.street === 1
