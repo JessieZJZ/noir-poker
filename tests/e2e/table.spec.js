@@ -1494,6 +1494,55 @@ test('all named portraits preview immediately, follow saved styles next hand and
     }
   }
   await page.locator('#opponents-button').click();
+  for (let id = 2; id <= 8; id++)
+    await page.locator(`[data-bot-seat="${id}"]`).selectOption('jungleman');
+  await page.locator('#save-opponents').click();
+  for (const width of [320, 390, 700, 768, 901, 1000, 1150, 1280]) {
+    await page.setViewportSize({ width, height: 900 });
+    for (const count of [5, 6, 7, 8, 9]) {
+      await page.evaluate(
+        (count) =>
+          window.qa.scene('2h 3h', 'Ks Kh 9s 7c 6d', {
+            count,
+            totals: Array(count).fill(5000),
+            otherHoles: { 1: 'Kc Kd' },
+          }),
+        count,
+      );
+      await expect(page.locator('.seat-1 .seat-stack')).toHaveText(
+        (count * 5000).toLocaleString('en-US'),
+      );
+      await expect(page.locator('#seats .persona-portrait')).toHaveCount(count - 1);
+      const readable = await page.locator('.seat-profile').evaluateAll((profiles) => {
+        const overlaps = (a, b) =>
+          a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top;
+        return profiles.every((profile) => {
+          const avatar = profile.querySelector('.avatar').getBoundingClientRect(),
+            eye = profile.querySelector('.seat-peek').getBoundingClientRect(),
+            bounds = profile.getBoundingClientRect(),
+            range = document.createRange();
+          range.selectNodeContents(profile.querySelector('.seat-stack'));
+          const text = range.getBoundingClientRect();
+          range.selectNodeContents(profile.querySelector('.seat-style-label'));
+          const label = range.getBoundingClientRect();
+          return (
+            avatar.width >= 18 &&
+            avatar.height >= 18 &&
+            text.left >= bounds.left &&
+            text.right <= bounds.right &&
+            bounds.left >= 0 &&
+            bounds.right <= innerWidth &&
+            label.left >= bounds.left &&
+            label.right <= bounds.right &&
+            !overlaps(text, avatar) &&
+            !overlaps(text, eye)
+          );
+        });
+      });
+      expect(readable).toBe(true);
+    }
+  }
+  await page.locator('#opponents-button').click();
   await page.locator('[data-bot-seat="1"]').selectOption('balanced');
   await expect(firstDraft.locator('img')).toHaveCount(0);
   await page.locator('#save-opponents').click();
