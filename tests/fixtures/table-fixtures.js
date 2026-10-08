@@ -71,6 +71,23 @@ window.qa = {
     render();
     return publicState();
   },
+  potSizing() {
+    fixtureGame(6);
+    game.dealer = 5;
+    game.players[0].stack = 5025;
+    startHand(game);
+    act(game, 3, 'raise', 350);
+    for (const id of [4, 5, 0]) act(game, id, 'call');
+    for (const id of [1, 2]) act(game, id, 'fold');
+    advanceStreet(game);
+    while (game.phase === 'playing') act(game, game.actor, 'check');
+    advanceStreet(game);
+    act(game, 3, 'raise', 800);
+    act(game, 4, 'call');
+    act(game, 5, 'fold');
+    render();
+    return publicState();
+  },
   foldFinished(street = 0) {
     fixtureGame(6, true);
     startHand(game);

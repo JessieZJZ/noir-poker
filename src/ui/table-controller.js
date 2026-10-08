@@ -28,6 +28,7 @@ import { renderCard } from './cards.js';
 import { createShowdownController } from './showdown.js';
 import { createActivityFormatter } from './activity.js';
 import { portraitContent, preparePortraits } from './portraits.js';
+import { presetRaiseTo } from './bet-sizing.js';
 const $ = (s) => document.querySelector(s);
 const handReview = createReviewController({ card });
 const showdown = createShowdownController({ card });
@@ -437,6 +438,11 @@ function render() {
 function updateBet() {
   const legal = legalActions(game, 0);
   $('#bet-value').textContent = format(bet);
+  const sizingNote = $('#bet-sizing-note');
+  sizingNote.hidden = !legal.enabled || !legal.canRaise || legal.canCheck;
+  sizingNote.textContent = sizingNote.hidden
+    ? ''
+    : `底池加注按跟注后的 ${format(potSize(game) + legal.callAmount)} 计算；“加注至”含跟注与本轮已投入。`;
   const action = raiseCaption(
     { street: game.street, history: game.history, currentBet: game.currentBet, legal },
     bet,
@@ -708,19 +714,12 @@ document.querySelectorAll('[data-preset]').forEach(
   (button) =>
     (button.onclick = () => {
       const legal = legalActions(game, 0);
-      if (!legal.canRaise) return;
-      const value = button.dataset.preset;
-      bet =
-        value === 'all'
-          ? legal.maxRaiseTo
-          : value === 'min'
-            ? legal.minRaiseTo
-            : game.currentBet +
-              Math.max(
-                game.minRaise,
-                Math.round((potSize(game) * (value === 'half' ? 0.5 : 1)) / 25) * 25,
-              );
-      bet = Math.min(legal.maxRaiseTo, Math.max(legal.minRaiseTo, bet));
+      const target = presetRaiseTo(
+        { currentBet: game.currentBet, pot: potSize(game), legal },
+        button.dataset.preset,
+      );
+      if (target === null) return;
+      bet = target;
       $('#bet-slider').value = bet;
       updateBet();
     }),
