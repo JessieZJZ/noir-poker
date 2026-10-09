@@ -5,6 +5,7 @@ import { comparisonRoutes } from './routes.js';
 import { compareCandidateActions } from './counterfactual.js';
 import { coachDecision, buildOverview } from './coaching.js';
 import { actionLabel } from '../engine/action-labels.js';
+import { legalRaiseTo } from '../engine/bet-sizing.js';
 export { actionLabel } from '../engine/action-labels.js';
 export { callPrice } from './equity.js';
 export { startingTier, drawInfo } from './context.js';
@@ -82,10 +83,10 @@ export function analyzeDecision(
       const limpers = s.history.filter((a) => a.street === 0 && a.action === 'call').length;
       target = s.currentBet <= 50 ? 150 + 50 * limpers : s.currentBet * (ctx.inPosition ? 3 : 4);
     } else if (s.currentBet > 0) target = s.currentBet * (ctx.inPosition ? 2.5 : 3);
-    else target = Math.round((s.pot * (texture.wet || ctx.opponents > 1 ? 0.65 : 0.4)) / 25) * 25;
+    else target = s.pot * (texture.wet || ctx.opponents > 1 ? 0.65 : 0.4);
     alternative = {
       action: 'raise',
-      amount: Math.min(s.legal.maxRaiseTo, Math.max(s.legal.minRaiseTo, Math.round(target))),
+      amount: legalRaiseTo(target, s.legal),
     };
   };
   if (s.action === 'fold' && s.legal.canCheck) {
@@ -111,7 +112,7 @@ export function analyzeDecision(
     reason = `${handLabel} 在 ${s.position} ${pre.limpers ? '面对 ' + pre.limpers + ' 位跛入者' : '行动弃到你，前面没有开池'}，加注至 ${number(s.amount)}（${(s.amount / 50).toFixed(1)} BB）。${pre.ace ? 'A 底牌阻断部分 AA、AK、AQ 组合；后位允许比早位更宽的开池范围。' : '后位能以较宽范围争夺盲注，并在翻后获得位置优势。'}加注可让部分弱连张和高牌退出，收益包含弃牌权益；被跟注后，留下的范围可能更强${pre.weakAce ? '，A' + pre.kicker + ' 成顶对仍容易被更好的 A 踢脚压制' : ''}。${pre.limpers ? '这里是隔离加注；已有开池再加平跟后才叫挤压加注。' : '这里是开池／偷盲，不是挤压加注。'}`;
     alternative = {
       action: 'raise',
-      amount: Math.min(s.legal.maxRaiseTo, Math.max(s.legal.minRaiseTo, 125 + pre.limpers * 50)),
+      amount: legalRaiseTo(125 + pre.limpers * 50, s.legal),
     };
     lesson = '开池能力与接再加注能力分开判断；A high 不是必须弃牌的理由，也不是跟到底的理由。';
     plan = `${pre.limpers ? '跛入者跟注较多时，提高隔离尺度并收紧范围；多人跟注后减少无依据持续施压。' : '比较 2–3 BB 开池：较小尺度降低偷盲成本，较大尺度提高即时压力，但要看盲位的继续范围。'}面对小额、宽范围 3-bet 才考虑有位置防守；大尺度或 4-bet 优先收紧。翻后顶对弱踢脚以控池为主，未中牌时结合牌面与对手范围决定是否持续下注。`;
@@ -150,7 +151,7 @@ export function analyzeDecision(
     reason = `${handLabel} 在 ${s.position}，无人主动入池。${pre.ace ? 'A 阻断部分强 Ax，后位允许更宽地争夺盲注。' : '翻后位置与对手退出空间支持比较主动开池。'}${s.action === 'call' ? '单纯跛入让盲位低成本看牌，缺少主动弃牌权益。' : '弃牌避免投入，但也放弃了后位争夺盲注的机会。'}这不等于被加注后还应继续；盲位很黏或有效筹码很短时需要另行调整。`;
     alternative = {
       action: 'raise',
-      amount: Math.min(s.legal.maxRaiseTo, Math.max(s.legal.minRaiseTo, 125)),
+      amount: legalRaiseTo(125, s.legal),
     };
     lesson = '把主动开池与接再加注拆成两套继续条件。';
     plan =

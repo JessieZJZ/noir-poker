@@ -115,14 +115,14 @@ for (let n = 5; n <= 9; n++)
       g.players.forEach((p, i) => {
         p.hole = rest.slice(i * 2, i * 2 + 2);
         p.folded = i >= 3;
-        p.total = i < 2 ? 100 : i === 2 ? 101 : 0;
+        p.total = i < 2 ? 100 : i === 2 ? 125 : 0;
         p.stack = 5000 - p.total;
       });
       settle(g);
       const main = g.pots[0];
       assert.equal(main.amount, 300);
       assert.equal(main.awards.length, 3);
-      assert.equal(g.refunds[0].amount, 1);
+      assert.equal(g.refunds[0].amount, 25);
       assert.equal(
         main.awards[0].id,
         [0, 1, 2].sort((a, b) => ((a - d + n - 1) % n) - ((b - d + n - 1) % n))[0],
@@ -143,7 +143,7 @@ for (let n = 5; n <= 9; n++)
           !cards('As Ah Ks Kh Kc Kd').some((b) => b.key === c.key),
       );
       g.players.forEach((p, i) => {
-        p.total = [100, 301, 301, 101][i] || 0;
+        p.total = [100, 325, 325, 125][i] || 0;
         p.stack = 5000 - p.total;
         p.folded = i >= 3;
         p.hole =
@@ -156,11 +156,11 @@ for (let n = 5; n <= 9; n++)
                 : rest.splice(0, 2);
       });
       settle(g);
-      assert.equal(g.pots[1].amount, 403);
+      assert.equal(g.pots[1].amount, 475);
       assert.equal(g.pots[1].awards.length, 2);
       assert.deepEqual(
         g.pots[1].awards.map((a) => a.amount),
-        [202, 201],
+        [250, 225],
       );
       assert.equal(
         g.pots[1].awards[0].id,

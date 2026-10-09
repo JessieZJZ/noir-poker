@@ -29,6 +29,7 @@ import { createShowdownController } from './showdown.js';
 import { createActivityFormatter } from './activity.js';
 import { portraitContent, preparePortraits } from './portraits.js';
 import { presetRaiseTo } from './bet-sizing.js';
+import { CHIP_UNIT, legalRaiseTo } from '../engine/bet-sizing.js';
 import { createSettlementLayout } from './settlement-layout.js';
 import { preferenceStorage } from '../platform/storage.js';
 import { createActivityClock } from '../platform/activity-clock.js';
@@ -423,11 +424,11 @@ function render() {
   if (legal.enabled) {
     const min = legal.minRaiseTo,
       max = legal.maxRaiseTo;
-    bet = Math.min(max, Math.max(min, bet));
+    bet = legalRaiseTo(bet, legal);
     const slider = $('#bet-slider');
     slider.min = min;
     slider.max = max;
-    slider.step = 1;
+    slider.step = CHIP_UNIT;
     slider.value = bet;
     $('#call-button').innerHTML = legal.canCheck
       ? '<span>过牌</span>'
@@ -646,7 +647,7 @@ function nextHand() {
   applyBotSettings(game, pendingBotSettings);
   startHand(game);
   const legal = legalActions(game, 0);
-  bet = legal.enabled ? Math.min(legal.maxRaiseTo, Math.max(legal.minRaiseTo, 150)) : 150;
+  bet = legal.enabled ? legalRaiseTo(150, legal) : 150;
   render();
   soundEffect('deal');
   schedule();
@@ -742,7 +743,7 @@ $('#restart-hand-button').onclick = retryHand;
 $('#bet-slider').oninput = (e) => {
   const legal = legalActions(game, 0);
   if (!legal.enabled || !legal.canRaise) return;
-  bet = Math.min(legal.maxRaiseTo, Math.max(legal.minRaiseTo, Math.round(Number(e.target.value))));
+  bet = legalRaiseTo(Number(e.target.value), legal);
   updateBet();
 };
 document.querySelectorAll('[data-preset]').forEach(
