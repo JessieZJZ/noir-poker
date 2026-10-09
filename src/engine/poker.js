@@ -13,6 +13,7 @@ import {
 } from './bot-profiles.js';
 import { raiseCaption } from './action-labels.js';
 import { botThinkingTime } from './bot-timing.js';
+import { CHIP_UNIT, isChipAmount } from './bet-sizing.js';
 export const SUITS = ['♠', '♥', '♣', '♦'];
 export const RANK_NAMES = [
   '高牌',
@@ -271,6 +272,7 @@ function log(g, text, player = null, type = 'action') {
   g.logs.unshift({ text, player, type, street: g.street });
 }
 function pay(p, amount) {
+  if (!isChipAmount(amount)) throw Error('投入筹码必须是 25 的倍数。');
   const n = Math.min(p.stack, amount);
   p.stack -= n;
   p.bet += n;
@@ -288,6 +290,7 @@ const cloneHand = (value) => JSON.parse(JSON.stringify(value));
 export const canRestartHand = (g) => g.phase === 'done' && handStarts.has(g);
 export function startHand(g) {
   if (g.phase !== 'idle' && g.phase !== 'done') throw Error('当前牌局尚未结束。');
+  if (g.players.some((p) => !isChipAmount(p.stack))) throw Error('玩家筹码必须是 25 的倍数。');
   g.replayAttempt = 0;
   g.potAtShowdown = 0;
   g.hand++;
@@ -367,6 +370,7 @@ export function restartHand(g) {
 export function legalActions(g, id = g.actor) {
   const p = g.players[id];
   if (g.phase !== 'playing' || g.actor !== id || !p || !canAct(p)) return { enabled: false };
+  assertChipState(g);
   const owed = Math.max(0, g.currentBet - p.bet),
     max = p.bet + p.stack,
     min = g.currentBet === 0 ? 50 : g.currentBet + g.minRaise;
@@ -394,11 +398,11 @@ export function act(g, id, action, amount) {
   if (
     action === 'raise' &&
     (!legal.canRaise ||
-      !Number.isInteger(amount) ||
+      !isChipAmount(amount) ||
       amount < legal.minRaiseTo ||
       amount > legal.maxRaiseTo)
   )
-    throw Error('请选择合法的加注总额。');
+    throw Error('请选择合法的加注总额，金额必须是 25 的倍数。');
   // Capture only information available before the decision. Opponents' hole
   // cards, the remaining deck and future community cards never enter review.
   const normalized = action === 'call' && legal.canCheck ? 'check' : action;
@@ -596,8 +600,19 @@ export function advanceStreet(g) {
   }
   return g;
 }
+// Reject broken ledgers before any action or payout writes. Never round balances
+// to repair them: doing so would create or destroy money.
+function assertChipState(g) {
+  const amounts = [
+    g.currentBet,
+    g.minRaise,
+    ...g.players.flatMap((p) => [p.stack, p.bet, p.total]),
+  ];
+  if (amounts.some((amount) => !isChipAmount(amount))) throw Error('牌桌筹码必须是 25 的倍数。');
+}
 export function settle(g, showdown = true) {
   if (g.phase === 'done') throw Error('这手牌已经结算。');
+  assertChipState(g);
   const { pots, refunds } = partitionPots(g),
     payouts = Array(g.players.length).fill(0),
     won = Array(g.players.length).fill(0);
@@ -625,11 +640,12 @@ export function settle(g, showdown = true) {
         ((a.id - g.dealer + g.players.length - 1) % g.players.length) -
         ((b.id - g.dealer + g.players.length - 1) % g.players.length),
     );
-    const share = Math.floor(pot.amount / winners.length),
-      remainder = pot.amount % winners.length;
+    const chips = pot.amount / CHIP_UNIT,
+      share = Math.floor(chips / winners.length),
+      remainder = chips % winners.length;
     pot.awards = winners.map((p, i) => ({
       id: p.id,
-      amount: share + (i < remainder ? 1 : 0),
+      amount: (share + (i < remainder ? 1 : 0)) * CHIP_UNIT,
       label: showdown ? ranks.get(p.id).label : '其余玩家均已弃牌',
     }));
     for (const award of pot.awards) {

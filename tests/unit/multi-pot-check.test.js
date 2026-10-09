@@ -47,6 +47,12 @@ function conserve(g, before) {
     potSize(g),
   );
   for (const pot of g.pots) {
+    for (const amount of [
+      pot.amount,
+      ...pot.awards.map((a) => a.amount),
+      ...pot.contributions.map((c) => c.amount),
+    ])
+      assert.equal(amount % 25, 0);
     assert.equal(
       pot.awards.reduce((s, a) => s + a.amount, 0),
       pot.amount,
@@ -57,6 +63,8 @@ function conserve(g, before) {
     );
     assert.ok(pot.awards.every((a) => pot.eligible.includes(a.id)));
   }
+  for (const amount of [...g.players.map((p) => p.stack), ...g.refunds.map((r) => r.amount)])
+    assert.equal(amount % 25, 0);
 }
 check('four players: one main pot and two side pots have different winners', () => {
   const g = fixture([100, 300, 500, 500]);
@@ -130,15 +138,15 @@ check(
 );
 check('odd side-pot chip goes to the first tied winner left of the button', () => {
   for (const [dealer, expected] of [
-    [0, [400, 202, 201, 0, 0, 0]],
-    [1, [400, 201, 202, 0, 0, 0]],
+    [0, [400, 250, 225, 0, 0, 0]],
+    [1, [400, 225, 250, 0, 0, 0]],
   ]) {
-    const g = fixture([100, 301, 301, 101], [3], ['As Ah', 'Ks Kh', 'Kc Kd']);
+    const g = fixture([100, 325, 325, 125], [3], ['As Ah', 'Ks Kh', 'Kc Kd']);
     g.dealer = dealer;
     settle(g);
     assert.deepEqual(
       g.pots.map((p) => p.amount),
-      [400, 403],
+      [400, 475],
     );
     assert.deepEqual(g.payouts, expected);
     conserve(g, 30000);
@@ -226,7 +234,7 @@ check('short stack is exposed only when the other deep stacks can no longer bet'
 });
 check('pot odds exclude side pots beyond the short stack cap', () => {
   const g = fixture([0, 100, 100]);
-  assert.equal(contestableAfterCall(g, 0, 20), 60);
+  assert.equal(contestableAfterCall(g, 0, 25), 75);
   assert.equal(contestableAfterCall(g, 0, 100), 300);
 });
 check('several short allins can cumulatively reopen raising', () => {
@@ -237,9 +245,9 @@ check('several short allins can cumulatively reopen raising', () => {
   g.actor = 1;
   g.pending = [1, 2, 3];
   g.players[0].actedTo = 100;
-  g.players[1].stack = 40;
+  g.players[1].stack = 25;
   g.players[2].stack = 100;
-  act(g, 1, 'raise', 140);
+  act(g, 1, 'raise', 125);
   act(g, 2, 'raise', 200);
   act(g, 3, 'call');
   assert.equal(g.actor, 0);
@@ -247,11 +255,11 @@ check('several short allins can cumulatively reopen raising', () => {
   assert.equal(legalActions(g, 0).fullRaiseTo, 300);
 });
 check('folded players do not turn one tied pot into multiple odd-chip awards', () => {
-  const g = fixture([5, 5, 1, 2, 3, 4], [2, 3, 4, 5], ['As Ah', 'Ac Ad']);
+  const g = fixture([125, 125, 25, 50, 75, 100], [2, 3, 4, 5], ['As Ah', 'Ac Ad']);
   settle(g);
   assert.equal(g.pots.length, 1);
-  assert.equal(g.pots[0].amount, 20);
-  assert.deepEqual(g.payouts, [10, 10, 0, 0, 0, 0]);
+  assert.equal(g.pots[0].amount, 500);
+  assert.deepEqual(g.payouts, [250, 250, 0, 0, 0, 0]);
   conserve(g, 30000);
 });
 check('settlement cannot award chips twice', () => {
@@ -259,5 +267,36 @@ check('settlement cannot award chips twice', () => {
   settle(g);
   const before = JSON.stringify(g);
   assert.throws(() => settle(g), /已经结算/);
+  assert.equal(JSON.stringify(g), before);
+});
+
+check('three-way ties distribute one or two whole 25 chips in button order', () => {
+  for (const foldedAmount of [25, 50]) {
+    for (let dealer = 0; dealer < 6; dealer++) {
+      const g = fixture([100, 100, 100, foldedAmount], [3]);
+      g.board = cards('As Ks Qs Js Ts');
+      g.dealer = dealer;
+      settle(g);
+      assert.equal(g.pots.length, 1);
+      assert.equal(g.pots[0].amount, 300 + foldedAmount);
+      const order = [0, 1, 2].sort((a, b) => ((a - dealer + 5) % 6) - ((b - dealer + 5) % 6));
+      assert.deepEqual(
+        g.pots[0].awards.map((a) => a.id),
+        order,
+      );
+      assert.deepEqual(
+        g.pots[0].awards.map((a) => a.amount),
+        foldedAmount === 25 ? [125, 100, 100] : [125, 125, 100],
+      );
+      conserve(g, 30000);
+    }
+  }
+});
+
+check('settlement rejects an off-grid ledger without changing balances or results', () => {
+  const g = fixture([100, 100, 25], [2]);
+  g.players[2].total = 26;
+  const before = JSON.stringify(g);
+  assert.throws(() => settle(g), /25/);
   assert.equal(JSON.stringify(g), before);
 });

@@ -342,14 +342,14 @@ test('pot details retain per-pot awards, odd split shares and conditional live e
   await page.evaluate(() =>
     window.qa.scene('2c 3d', 'As Ks Qs Js Ts', {
       count: 5,
-      totals: [100, 100, 1, 1, 1],
+      totals: [100, 100, 25, 25, 25],
       folded: [2, 3, 4],
     }),
   );
   await page.locator('#pot-details-button').click();
-  await expect(page.locator('.pot-split-total')).toHaveText('203 筹码 · 平分');
+  await expect(page.locator('.pot-split-total')).toHaveText('275 筹码 · 平分');
   expect(await page.locator('.pot-award > strong').allTextContents()).toEqual(
-    expect.arrayContaining(['+101筹码', '+102筹码']),
+    expect.arrayContaining(['+125筹码', '+150筹码']),
   );
   await page.locator('.pot-distribution > summary').click();
   await expect(page.locator('.pot-rounding-note')).toBeVisible();

@@ -1,6 +1,7 @@
 import { newGame, deckOfCards, act, advanceStreet, botDecision } from '../engine/poker.js';
 import { getBotProfile, freshBotMood } from '../engine/bot-profiles.js';
 import { rangeWeight, seedRandom, snapshotSeed } from './equity.js';
+import { isChipAmount, legalRaiseTo } from '../engine/bet-sizing.js';
 const copy = (v) => JSON.parse(JSON.stringify(v));
 export function candidateActions(s, alternatives = []) {
   const candidates = [
@@ -17,10 +18,7 @@ export function candidateActions(s, alternatives = []) {
     for (const value of targets)
       candidates.push({
         action: 'raise',
-        amount: Math.min(
-          s.legal.maxRaiseTo,
-          Math.max(s.legal.minRaiseTo, Math.round(value / 25) * 25),
-        ),
+        amount: legalRaiseTo(value, s.legal),
       });
   }
   candidates.push({ action: s.action, amount: s.amount }, ...alternatives.filter(Boolean));
@@ -32,6 +30,7 @@ export function candidateActions(s, alternatives = []) {
             ['fold', 'check', 'call', 'raise'].includes(a.action) &&
             (a.action !== 'raise' ||
               (s.legal.canRaise &&
+                isChipAmount(a.amount) &&
                 a.amount >= s.legal.minRaiseTo &&
                 a.amount <= s.legal.maxRaiseTo)) &&
             (a.action !== 'check' || s.legal.canCheck),

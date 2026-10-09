@@ -106,7 +106,7 @@ for (let n = 5; n <= 9; n++)
     for (let d = 0; d < n; d++) {
       const g = newGame(n);
       g.dealer = (d + n - 1) % n;
-      g.players.forEach((p, i) => (p.stack = 1000 + i * 123));
+      g.players.forEach((p, i) => (p.stack = 1000 + i * 125));
       g.stats = { hands: 7, wins: 3, buyin: 1000 };
       startHand(g);
       const baseline = copy(g);
@@ -173,20 +173,20 @@ check('nine unequal all-ins retract eight contested pots and one refund', () => 
 check('rebuy and short blind restore once with original actual blind amounts', () => {
   const g = newGame();
   g.players[0].stack = 0;
-  g.players[1].stack = 20;
-  g.players[2].stack = 35;
+  g.players[1].stack = 25;
+  g.players[2].stack = 25;
   startHand(g);
   const baseline = copy(g);
   assert.equal(g.stats.buyin, 10000);
-  assert.equal(g.players[1].bet, 20);
-  assert.equal(g.players[2].bet, 35);
+  assert.equal(g.players[1].bet, 25);
+  assert.equal(g.players[2].bet, 25);
   assert.equal(g.currentBet, 50);
   finish(g);
   restartHand(g);
   assert.deepEqual(withoutRetry(g), withoutRetry(baseline));
   assert.equal(g.stats.buyin, 10000);
   assert.equal(g.players[1].allin, true);
-  assert.equal(potSize(g), 55);
+  assert.equal(potSize(g), 50);
 });
 check('repeated retries keep baseline immutable and count only latest final attempt', () => {
   const g = newGame();

@@ -95,12 +95,12 @@ check('board tie splits main pot', () => {
   g.board = cards('As Ks Qs Js Ts');
   g.players.forEach((p, i) => {
     p.folded = i > 1;
-    p.total = i < 2 ? 101 : 0;
+    p.total = i < 2 ? 100 : 0;
     p.stack = 5000 - p.total;
     p.hole = cards(i === 0 ? '2h 3h' : '4c 5c');
   });
   settle(g, true);
-  assert.deepEqual(g.payouts, [101, 101, 0, 0, 0, 0]);
+  assert.deepEqual(g.payouts, [100, 100, 0, 0, 0, 0]);
 });
 check('short allin does not reopen completed raise', () => {
   const g = newGame();
@@ -156,7 +156,7 @@ check('200 randomized hands conserve chips and end', () => {
       } else act(g, id, 'call');
       for (const p of g.players) {
         assert.ok(p.stack >= 0);
-        assert.ok(Number.isInteger(p.stack));
+        for (const value of [p.stack, p.bet, p.total]) assert.equal(value % 25, 0);
       }
       assert.equal(
         g.players.reduce((s, p) => s + p.stack, 0) + (g.phase === 'done' ? 0 : potSize(g)),
