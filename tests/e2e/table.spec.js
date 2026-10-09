@@ -508,7 +508,7 @@ test('showdown participant names include the current named style and stay readab
   ).toHaveText('Jade（Peter）');
 });
 
-test('hero recent actions appear immediately below the role and persist through turns and streets', async ({
+test('hero recent actions persist within the street and clear on new streets except fold and all-in', async ({
   page,
 }) => {
   const row = page.locator('#hero-last-action');
@@ -557,8 +557,8 @@ test('hero recent actions appear immediately below the role and persist through 
       const flop = await page.evaluate(() => window.qa.respondToHero(0, true));
       expect(flop.board).toHaveLength(3);
       expect(flop.players[0].bet).toBe(0);
-      await expect(row.locator('.seat-action-label')).toHaveText('3-bet 加注');
-      await expect(row.locator('.seat-action-amount')).toHaveText('250');
+      await expect(row).toBeHidden();
+      await expect(row).toBeEmpty();
       await page.locator('#call-button').click();
       await page.evaluate(() => window.qa.stop());
       await expect(row).toHaveText('过牌');
@@ -566,6 +566,7 @@ test('hero recent actions appear immediately below the role and persist through 
       await assertFits();
 
       await page.evaluate(() => window.qa.respondToHero(0, true));
+      await expect(row).toBeHidden();
       await page.locator('#fold-button').click();
       await page.evaluate(() => window.qa.stop());
       await expect(row).toHaveText('弃牌');
@@ -600,6 +601,89 @@ test('hero recent actions appear immediately below the role and persist through 
   await expect(row.locator('.seat-action-label')).toHaveText('3-bet 短全下');
   await expect(row.locator('.seat-action-amount')).toHaveText('175');
   await assertFits();
+});
+
+test('each community-card round clears ordinary actions while fold and all-in persist in 5–9 seats', async ({
+  page,
+}) => {
+  for (const count of [5, 6, 7, 8, 9]) {
+    const before = await page.evaluate((count) => window.qa.roundActions(count), count);
+    expect(before.phase).toBe('between');
+    await expect(page.locator('#hero-last-action')).toContainText('150');
+    await expect(page.locator('.seat-1 .seat-action')).toHaveText(/^跟注\s*150$/);
+    const allin = page.locator('.seat-2 .seat-action');
+    await expect(allin).toHaveText(/^全下\s*150$/);
+    for (const length of [3, 4, 5]) {
+      const next = await page.evaluate(() => window.qa.finish());
+      expect(next.board).toHaveLength(length);
+      await expect(page.locator('#hero-last-action')).toBeHidden();
+      await expect(page.locator('#hero-last-action')).toBeEmpty();
+      await expect(page.locator('.seat-1 .seat-action')).toHaveText('等待行动');
+      await expect(allin).toHaveText(/^全下\s*150$/);
+      await expect(page.locator('.seat-3 .seat-action')).toHaveText('弃牌');
+      expect(next.players[2].lastAction).toEqual(before.players[2].lastAction);
+      expect(next.players[3].lastAction).toEqual(before.players[3].lastAction);
+      const checked = await page.evaluate(() => window.qa.checkRest());
+      expect(checked.phase).toBe('between');
+      await expect(page.locator('#hero-last-action')).toHaveText('过牌');
+      await expect(page.locator('.seat-1 .seat-action')).toHaveText('过牌');
+    }
+    const done = await page.evaluate(() => window.qa.finish());
+    expect(done.phase).toBe('done');
+    await expect(page.locator('#hero-last-action')).toHaveText('过牌');
+    await expect(allin).toHaveText(/^全下\s*150$/);
+    await expect(page.locator('.seat-3 .seat-action')).toHaveText('弃牌');
+  }
+});
+
+test('players forced all-in by their blinds retain all-in status and the original amount across streets', async ({
+  page,
+}) => {
+  const before = await page.evaluate(() => window.qa.roundActions(6, false, true));
+  expect(before.players[4].lastAction.text).toBe('小盲 25');
+  expect(before.players[5].lastAction.text).toBe('大盲 50');
+  for (const length of [3, 4, 5]) {
+    const next = await page.evaluate(() => window.qa.finish());
+    expect(next.board).toHaveLength(length);
+    for (const [id, amount] of [
+      [4, '25'],
+      [5, '50'],
+    ]) {
+      await expect(page.locator(`.seat-${id} .seat-action-label`)).toHaveText('全下');
+      await expect(page.locator(`.seat-${id} .seat-action-amount`)).toHaveText(amount);
+      await expect(page.locator(`.seat-${id} .seat-action-amount`)).toHaveAttribute(
+        'title',
+        /^翻牌前 · /,
+      );
+      expect(next.players[id].lastAction).toEqual(before.players[id].lastAction);
+    }
+    await page.evaluate(() => window.qa.checkRest());
+  }
+  const done = await page.evaluate(() => window.qa.finish());
+  expect(done.phase).toBe('done');
+  await expect(page.locator('.seat-4 .seat-action-label')).toHaveText('全下');
+  await expect(page.locator('.seat-5 .seat-action-label')).toHaveText('全下');
+});
+
+test('automatic all-in runout hides the active player old bet and restores it only at settlement', async ({
+  page,
+}) => {
+  const before = await page.evaluate(() => window.qa.roundActions(6, true));
+  expect(before.players[0].allin).toBe(false);
+  await expect(page.locator('#hero-last-action')).toHaveText(/^2-bet 开池\s*150$/);
+  for (const length of [3, 4, 5]) {
+    const next = await page.evaluate(() => window.qa.finish());
+    expect(next.board).toHaveLength(length);
+    expect(next.phase).toBe('between');
+    expect(next.players[0].lastAction).toEqual(before.players[0].lastAction);
+    await expect(page.locator('#hero-last-action')).toBeHidden();
+    for (const id of [1, 2, 3, 4, 5])
+      await expect(page.locator(`.seat-${id} .seat-action`)).toHaveText(/^全下\s*150$/);
+  }
+  const done = await page.evaluate(() => window.qa.finish());
+  expect(done.phase).toBe('done');
+  await expect(page.locator('#hero-last-action')).toHaveText(/^2-bet 开池\s*150$/);
+  expect(done.players[0].lastAction).toEqual(before.players[0].lastAction);
 });
 
 test('settled public caption and hero remain separated for winners, losers, folded heroes and long personas', async ({

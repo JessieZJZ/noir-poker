@@ -97,6 +97,26 @@ window.qa = {
     render();
     return publicState();
   },
+  roundActions(count = 6, runout = false, blindAllin = false) {
+    fixtureGame(count, true);
+    for (const p of game.players) if (p.id === 2 || (runout && p.id)) p.stack = 150;
+    if (blindAllin) {
+      game.players[count - 2].stack = 25;
+      game.players[count - 1].stack = 50;
+    }
+    startHand(game);
+    act(game, 0, 'raise', 150);
+    while (game.phase === 'playing')
+      act(game, game.actor, !runout && game.actor === 3 ? 'fold' : 'call');
+    render();
+    return publicState();
+  },
+  checkRest() {
+    clearTimeout(timer);
+    while (game.phase === 'playing') act(game, game.actor, 'check');
+    render();
+    return publicState();
+  },
   botFoldTurn() {
     fixtureGame(6, true);
     startHand(game);
