@@ -1,0 +1,69 @@
+name: Mobile build
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mobile-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  android:
+    runs-on: ubuntu-24.04
+    env:
+      NOIR_BUILD_NUMBER: ${{ github.run_number }}
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-node@v7.1.0
+        with:
+          node-version: '22'
+          cache: npm
+      - uses: actions/setup-java@v6.0.1
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Verify the runner's Android SDK 36
+        run: |
+          test -f "$ANDROID_HOME/platforms/android-36/android.jar"
+          test -x "$ANDROID_HOME/build-tools/36.0.0/aapt2"
+      - run: npm ci
+      - run: npm run check
+      - run: npm run mobile:android
+      - name: Unsigned store-bundle compilation check
+        working-directory: android
+        env:
+          NOIR_SKIP_WEB_PREPARE: '1'
+        run: ./gradlew bundleRelease --no-daemon
+      - uses: actions/upload-artifact@v7.0.2
+        with:
+          name: android-debug-apk
+          path: .artifacts/mobile/noir-poker-debug.apk
+      - uses: actions/upload-artifact@v7.0.2
+        with:
+          name: android-unsigned-aab
+          path: android/app/build/outputs/bundle/release/app-release.aab
+
+  ios:
+    runs-on: macos-26
+    env:
+      NOIR_BUILD_NUMBER: ${{ github.run_number }}
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-node@v7.1.0
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npm run mobile:ios
+      - name: Package simulator app without a distribution signature
+        run: ditto -c -k --sequesterRsrc --keepParent .artifacts/mobile/ios/Build/Products/Debug-iphonesimulator/App.app .artifacts/mobile/noir-poker-ios-simulator.zip
+      - uses: actions/upload-artifact@v7.0.2
+        with:
+          name: ios-simulator-app
+          path: .artifacts/mobile/noir-poker-ios-simulator.zip

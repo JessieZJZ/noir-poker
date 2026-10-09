@@ -9,3 +9,5 @@
 - Timer/Worker changes must preserve cancellation on next hand, retry and reset. Retry restores original deal and retracts payouts/statistics exactly once.
 - Validate material changes with `npm run check`; UI changes with `npm run test:e2e`. Use `npm run format:check` before delivering. E2E fixtures run only in Vite test mode and must never enter production.
 - If changing paths or commands, update README and docs in the same change. Do not store publishing credentials in this repository.
+- Web and native apps share `src/` and `index.html`. Native releases must bundle local assets; do not add a production `server.url` or remote code-update mechanism. Keep Xcode/Gradle hooks that rebuild the latest Web source, the source/copy verification, and background cancellation semantics.
+- Native build scripts and configuration changes require `npm run mobile:sync` and `npm run mobile:verify`; actual Xcode/Gradle compilation must be reported separately from browser or resource checks. Keep signing material and generated native Web copies out of Git. Follow `docs/mobile.md` and `docs/mobile-release.md` for version and release operations.

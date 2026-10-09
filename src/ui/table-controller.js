@@ -30,6 +30,12 @@ import { createActivityFormatter } from './activity.js';
 import { portraitContent, preparePortraits } from './portraits.js';
 import { presetRaiseTo } from './bet-sizing.js';
 import { createSettlementLayout } from './settlement-layout.js';
+import { preferenceStorage } from '../platform/storage.js';
+import { createActivityClock } from '../platform/activity-clock.js';
+import { isAppActive } from '../platform/native.js';
+const activityClock = createActivityClock();
+activityClock.setActive(isAppActive());
+let dealWait = null;
 const $ = (s) => document.querySelector(s);
 const settlementLayout = createSettlementLayout($('#arena'));
 const handReview = createReviewController({ card });
@@ -58,8 +64,8 @@ let game = newGame(requestedCount),
 game.difficulty = tablePreferences.difficulty;
 $('#player-count').value = String(requestedCount);
 try {
-  sound = localStorage.getItem('noir-sound') !== 'false';
-  hints = localStorage.getItem('noir-hints') !== 'false';
+  sound = preferenceStorage.getItem('noir-sound') !== 'false';
+  hints = preferenceStorage.getItem('noir-hints') !== 'false';
 } catch {}
 let pendingBotSettings = loadBotSettings();
 const opponents = createOpponentsController({
@@ -113,7 +119,7 @@ for (const event of ['pointerdown', 'pointerup', 'keydown']) {
 }
 function soundEffect(kind = 'chip') {
   // Skip sounds until a user gesture unlocks audio; never queue stale table sounds.
-  if (!sound || audio?.state !== 'running') return;
+  if (!activityClock.active || !sound || audio?.state !== 'running') return;
   try {
     const now = audio.currentTime;
     if (kind === 'fold') {
@@ -501,33 +507,44 @@ function updateCoach() {
 }
 function schedule() {
   clearTimeout(timer);
+  if (!activityClock.active) return;
   const ticket = epoch;
   if (game.phase === 'done' || finishing) {
     botWait = null;
+    dealWait = null;
     return;
   }
   if (game.phase === 'between') {
     botWait = null;
+    if (!dealWait || dealWait.ticket !== ticket || dealWait.street !== game.street)
+      dealWait = {
+        ticket,
+        street: game.street,
+        deadline: activityClock.now() + (game.board.length === 5 ? 850 : 1000),
+      };
     timer = setTimeout(
       () => {
-        if (ticket !== epoch || game.phase !== 'between' || finishing) return;
+        if (!activityClock.active || ticket !== epoch || game.phase !== 'between' || finishing)
+          return;
+        dealWait = null;
         advanceStreet(game);
         soundEffect(game.phase === 'done' ? 'win' : 'deal');
         render();
         schedule();
       },
-      game.board.length === 5 ? 850 : 1000,
+      Math.max(0, dealWait.deadline - activityClock.now()),
     );
   } else if (game.actor !== 0) {
+    dealWait = null;
     if (!botWait || !isBotTurnCurrent(game, botWait.plan)) {
       const plan = planBotTurn(game),
-        startedAt = performance.now();
+        startedAt = activityClock.now();
       botWait = { plan, startedAt, deadline: startedAt + plan.delayMs };
     }
     const waiting = botWait;
     timer = setTimeout(
       () => {
-        if (ticket !== epoch || botWait !== waiting || finishing) return;
+        if (!activityClock.active || ticket !== epoch || botWait !== waiting || finishing) return;
         if (!isBotTurnCurrent(game, waiting.plan)) {
           botWait = null;
           schedule();
@@ -536,7 +553,7 @@ function schedule() {
         botWait = null;
         const id = game.actor,
           d = executeBotTurn(game, waiting.plan, {
-            waitedMs: performance.now() - waiting.startedAt,
+            waitedMs: activityClock.now() - waiting.startedAt,
           });
         if (d.action !== 'fold' && d.action !== 'check') {
           flyChips(id);
@@ -547,11 +564,12 @@ function schedule() {
         render();
         schedule();
       },
-      Math.max(0, waiting.deadline - performance.now()),
+      Math.max(0, waiting.deadline - activityClock.now()),
     );
   } else botWait = null;
 }
 function heroAction(action, amount) {
+  if (!activityClock.active) return false;
   if (!legalActions(game, 0).enabled) return false;
   const legal = legalActions(game, 0);
   act(game, 0, action, amount);
@@ -583,18 +601,20 @@ async function continueDeal() {
   try {
     while (ticket === epoch && game.phase !== 'done') {
       await new Promise((resolve) => setTimeout(resolve, 0));
+      await activityClock.waitUntilActive();
       if (ticket !== epoch) return false;
       if (game.phase === 'between') advanceStreet(game);
       else {
         if (waiting && isBotTurnCurrent(game, waiting.plan))
           executeBotTurn(game, waiting.plan, {
             expedited: true,
-            waitedMs: performance.now() - waiting.startedAt,
+            waitedMs: activityClock.now() - waiting.startedAt,
           });
         else playBotTurn(game);
       }
       if (game.phase === 'between') render();
     }
+    await activityClock.waitUntilActive();
     if (ticket === epoch) completeBoardForPractice(game);
     return ticket === epoch && game.phase === 'done';
   } finally {
@@ -790,7 +810,7 @@ function updateSound() {
 $('#sound-button').onclick = () => {
   sound = !sound;
   try {
-    localStorage.setItem('noir-sound', String(sound));
+    preferenceStorage.setItem('noir-sound', String(sound));
   } catch {}
   updateSound();
   if (sound) void unlockAudio().then(() => soundEffect('deal'));
@@ -798,7 +818,7 @@ $('#sound-button').onclick = () => {
 $('#hint-toggle').onclick = () => {
   hints = !hints;
   try {
-    localStorage.setItem('noir-hints', String(hints));
+    preferenceStorage.setItem('noir-hints', String(hints));
   } catch {}
   updateCoach();
 };
@@ -970,5 +990,13 @@ function registerTools() {
   });
 }
 updateSound();
+document.addEventListener('noir:app-state', ({ detail }) => {
+  if (typeof detail?.active !== 'boolean') return;
+  if (!activityClock.setActive(detail.active)) return;
+  if (!detail.active) {
+    clearTimeout(timer);
+    if (audio?.state === 'running') void audio.suspend().catch(() => {});
+  } else schedule();
+});
 nextHand();
 registerTools();

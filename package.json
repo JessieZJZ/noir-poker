@@ -12,14 +12,33 @@
     "preview": "vite preview --host 127.0.0.1",
     "test": "node --test tests/unit/*.test.js",
     "test:e2e": "playwright test",
-    "format": "prettier --write src tests docs scripts index.html README.md vite.config.js playwright.config.js package.json",
-    "format:check": "prettier --check src tests docs scripts index.html README.md vite.config.js playwright.config.js package.json",
+    "format": "prettier --write src tests docs scripts mobile .github index.html public/app-privacy.html README.md AGENTS.md capacitor.config.json vite.config.js playwright.config.js package.json",
+    "format:check": "prettier --check src tests docs scripts mobile .github index.html public/app-privacy.html README.md AGENTS.md capacitor.config.json vite.config.js playwright.config.js package.json",
     "check": "npm run test && npm run build",
-    "measure:bots": "node scripts/measure-bots.mjs"
+    "measure:bots": "node scripts/measure-bots.mjs",
+    "mobile:doctor": "node scripts/mobile.mjs doctor",
+    "mobile:sync": "node scripts/mobile.mjs sync",
+    "mobile:verify": "node scripts/mobile.mjs verify",
+    "mobile:assets": "node scripts/mobile-assets.mjs",
+    "mobile:ios:open": "npm run mobile:sync && cap open ios",
+    "mobile:android:open": "npm run mobile:sync && cap open android",
+    "mobile:ios": "node scripts/mobile.mjs ios",
+    "mobile:ios:archive": "node scripts/mobile.mjs ios-archive",
+    "mobile:android": "node scripts/mobile.mjs android",
+    "mobile:android:bundle": "node scripts/mobile.mjs android-bundle"
   },
   "devDependencies": {
+    "@capacitor/cli": "8.5.3",
     "@playwright/test": "^1.63.0",
     "prettier": "^3.9.9",
+    "sharp": "0.35.5",
     "vite": "^8.3.3"
+  },
+  "dependencies": {
+    "@capacitor/android": "8.5.3",
+    "@capacitor/app": "8.1.2",
+    "@capacitor/core": "8.5.3",
+    "@capacitor/ios": "8.5.3",
+    "@capacitor/preferences": "8.0.1"
   }
 }

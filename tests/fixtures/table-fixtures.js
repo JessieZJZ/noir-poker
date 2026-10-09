@@ -97,7 +97,7 @@ window.qa = {
       deckOfCards().find((c) => c.rank === Number(v[0]) && c.suit === 'shcd'.indexOf(v[1])),
     );
     const plan = planBotTurn(game, () => 0.99, { timingRandom: () => 0 });
-    const startedAt = performance.now();
+    const startedAt = activityClock.now();
     botWait = { plan, startedAt, deadline: startedAt + plan.delayMs };
     render();
     schedule();

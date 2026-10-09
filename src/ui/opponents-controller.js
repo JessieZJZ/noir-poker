@@ -7,10 +7,11 @@ import {
   MOOD_LABELS,
 } from '../engine/bot-profiles.js';
 import { portraitContent, portraitCredit, preparePortraits } from './portraits.js';
+import { preferenceStorage } from '../platform/storage.js';
 const STORAGE_KEY = 'noir-opponents-v1';
 export function loadBotSettings() {
   try {
-    return sanitizeBotSettings(JSON.parse(localStorage.getItem(STORAGE_KEY)));
+    return sanitizeBotSettings(JSON.parse(preferenceStorage.getItem(STORAGE_KEY)));
   } catch {
     return defaultBotSettings();
   }
@@ -54,7 +55,7 @@ export function createOpponentsController({ getGame, getCount, getSettings, onSa
     draft = sanitizeBotSettings(getSettings());
     document.querySelector('#emotion-mode').value = draft.emotionMode;
     document.querySelector('#opponents-save-note').textContent =
-      '保存在此浏览器，下次打开自动恢复；设置下一手生效，重打保留原来的对手。';
+      '保存在此设备，下次打开自动恢复；设置下一手生效，重打保留原来的对手。';
     detail();
     roster();
     dialog.showModal();
@@ -100,7 +101,7 @@ export function createOpponentsController({ getGame, getCount, getSettings, onSa
   document.querySelector('#save-opponents').onclick = () => {
     const settings = sanitizeBotSettings(draft);
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
+      preferenceStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
     } catch {}
     onSave(settings);
     dialog.close();
