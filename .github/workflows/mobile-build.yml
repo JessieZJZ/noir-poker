@@ -15,7 +15,7 @@ concurrency:
 
 jobs:
   android:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     env:
       NOIR_BUILD_NUMBER: ${{ github.run_number }}
     steps:
@@ -28,8 +28,10 @@ jobs:
         with:
           distribution: temurin
           java-version: '21'
-      - uses: android-actions/setup-android@v3
-      - run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
+      - name: Verify the runner's Android SDK 36
+        run: |
+          test -f "$ANDROID_HOME/platforms/android-36/android.jar"
+          test -x "$ANDROID_HOME/build-tools/36.0.0/aapt2"
       - run: npm ci
       - run: npm run check
       - run: npm run mobile:android
