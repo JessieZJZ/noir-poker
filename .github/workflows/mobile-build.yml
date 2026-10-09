@@ -14,6 +14,24 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  browser-ui:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-node@v7.1.0
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run format:check
+      - run: npm run test:e2e
+      - uses: actions/upload-artifact@v7.0.2
+        if: failure()
+        with:
+          name: browser-test-failures
+          path: test-results/
+
   android:
     runs-on: ubuntu-24.04
     env:

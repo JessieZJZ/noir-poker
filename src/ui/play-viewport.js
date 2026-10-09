@@ -61,7 +61,13 @@ export function createPlayViewport(surface) {
       userScrollUntil = performance.now() + 180;
   });
   const observer = new ResizeObserver(schedule);
-  for (const el of [surface, viewport, surface.querySelector('#arena'), document.body])
+  for (const el of [
+    surface,
+    viewport,
+    surface.querySelector('#arena'),
+    document.querySelector('#coach-content'),
+    document.body,
+  ])
     observer.observe(el);
   window.addEventListener('resize', schedule);
   window.visualViewport?.addEventListener('resize', schedule);

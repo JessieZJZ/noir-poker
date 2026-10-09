@@ -526,37 +526,35 @@ function updateBet() {
 
 function updateCoach() {
   $('#coach-content').hidden = !hints;
-  $('#hint-toggle').textContent = hints ? '已开启' : '已关闭';
-  $('#hint-toggle').setAttribute('aria-pressed', String(hints));
+  const toggle = $('#hint-toggle');
+  toggle.setAttribute('aria-pressed', String(hints));
+  toggle.setAttribute('aria-label', hints ? '关闭牌桌提示' : '开启牌桌提示');
+  toggle.title = hints ? '牌桌提示已开启' : '牌桌提示已关闭';
   const p = game.players[0],
     e = evaluate([...p.hole, ...game.board]);
   let tip = '';
   if (game.phase === 'done')
     tip = p.folded
-      ? '弃牌也是好决策的一部分。观察对手最后亮出的牌，回想本手的下注节奏。'
+      ? '回看弃牌时的价格与对手范围，判断是否值得继续。'
       : game.showdown
-        ? `你的最佳牌型是${e.label}。复盘时注意：对手在哪一轮开始加注？公共牌是否改变了牌面强度？`
-        : '让对手弃牌也能赢得底池。下一手，继续关注位置和下注尺度。';
+        ? `你以${e.label}摊牌。复盘关键下注，区分决策质量与发牌运气。`
+        : '复盘本手加注，判断对手弃牌能否让这条路线长期盈利。';
   else if (game.street === 0) {
     const [a, b] = p.hole;
-    if (a?.rank === b?.rank)
-      tip = '口袋对子有机会在翻牌形成三条。小对子面对大额加注时，也要考虑跟注成本。';
+    if (a?.rank === b?.rank) tip = '口袋对子有成三条的潜力；面对大额加注，先考虑跟注成本。';
     else if (a?.rank >= 11 && b?.rank >= 11)
-      tip = '两张高牌拥有不错的起手潜力。主动加注能缩小对手范围，也要留意前面的大额加注。';
-    else if (a?.suit === b?.suit)
-      tip = '同花底牌增加了成牌潜力，但不代表可以跟注任何价格。留意牌张距离和你的行动位置。';
-    else tip = '起手牌不必手手参与。越早行动，选牌越要谨慎；后位则能利用更多信息。';
-  } else if (e.score[0] >= 3)
-    tip = `你已形成${e.label}。考虑通过下注获得价值，同时注意公共牌上可能出现的更强牌型。`;
-  else if (e.score[0] >= 1)
-    tip = `目前是${e.label}。多位对手参与时，谨慎面对持续的大额加注；一对不总能赢到最后。`;
-  else tip = '目前尚未成对。别只看能否追到牌，也要考虑跟注价格，以及对手的下注强度。';
+      tip = '两张高牌可主动争夺底池；面对大额加注，仍要判断对手范围。';
+    else if (a?.suit === b?.suit) tip = '同花底牌有成牌潜力，仍需结合位置和跟注价格。';
+    else tip = '前位谨慎选牌，后位利用更多信息；结合价格决定是否入池。';
+  } else if (e.score[0] >= 3) tip = `你已形成${e.label}，可考虑价值下注，并留意牌面上更强的组合。`;
+  else if (e.score[0] >= 1) tip = `目前是${e.label}；多人底池或持续大额加注时，谨慎判断。`;
+  else tip = '尚未成对，结合成牌机会、跟注价格与对手范围决定。';
   const legal = legalActions(game, 0);
   if (legal.enabled && legal.toCall > 0)
-    tip += ` 这次跟注占你可争夺底池约 ${Math.round((legal.callAmount / contestableAfterCall(game, 0, legal.callAmount)) * 100)}%。`;
-  $('#coach-stage').textContent =
-    game.phase === 'done' ? '本手复盘' : streets[game.street] + '策略';
-  $('#coach-tip').textContent = tip;
+    tip += ` 跟注占可争夺底池约 ${Math.round((legal.callAmount / contestableAfterCall(game, 0, legal.callAmount)) * 100)}%。`;
+  const stage = game.phase === 'done' ? '本手复盘' : streets[game.street] + '策略';
+  if ($('#coach-stage').textContent !== stage) $('#coach-stage').textContent = stage;
+  if ($('#coach-tip').textContent !== tip) $('#coach-tip').textContent = tip;
 }
 function schedule() {
   clearTimeout(timer);

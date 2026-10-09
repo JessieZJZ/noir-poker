@@ -21,6 +21,18 @@
       </div>
       <div class="header-actions">
         <button
+          class="icon-button hint-button"
+          id="hint-toggle"
+          aria-label="关闭牌桌提示"
+          aria-pressed="true"
+          aria-controls="coach-content"
+          title="牌桌提示已开启"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="m12 3 2.5 6.5L21 12l-6.5 2.5L12 21l-2.5-6.5L3 12l6.5-2.5L12 3Z" />
+          </svg>
+        </button>
+        <button
           class="icon-button"
           id="sound-button"
           aria-label="关闭音效"
@@ -35,6 +47,19 @@
       </div>
     </header>
     <main class="main">
+      <section
+        class="hint-banner"
+        id="coach-content"
+        aria-label="牌桌提示"
+        role="status"
+        aria-live="polite"
+        aria-atomic="true"
+      >
+        <div class="hint-heading">
+          <strong>牌桌提示</strong><span class="hint-stage" id="coach-stage">翻牌前策略</span>
+        </div>
+        <p id="coach-tip">前位谨慎选牌，后位利用更多信息；结合价格决定是否入池。</p>
+      </section>
       <section class="game-column" aria-label="德州扑克牌桌">
         <div class="game-surface">
           <div class="surface-top">
@@ -222,19 +247,6 @@
             <div><strong id="stat-hands">0</strong><span>已完成</span></div>
             <div><strong id="stat-wins">0</strong><span>获胜手数</span></div>
             <div><strong id="stat-winrate">—</strong><span>胜率</span></div>
-          </div>
-        </section>
-        <section class="coach-card">
-          <div class="section-title">
-            <h2><span class="sparkle">✧</span> 牌桌提示</h2>
-            <button class="tiny-button" id="hint-toggle" aria-pressed="true">已开启</button>
-          </div>
-          <div id="coach-content">
-            <span class="coach-stage" id="coach-stage">起手策略</span>
-            <p id="coach-tip">
-              位置决定信息量。越靠近庄家位，越能观察对手的行动，再做出自己的选择。
-            </p>
-            <div class="coach-footer"><span class="coach-line"></span>每一手，练习一个好决策</div>
           </div>
         </section>
         <section class="activity-card">

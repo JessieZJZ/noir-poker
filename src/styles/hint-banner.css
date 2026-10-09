@@ -1,0 +1,65 @@
+.hint-button {
+  width: 44px;
+  height: 44px;
+}
+.hint-button[aria-pressed='true'] {
+  color: var(--mint);
+  border-color: #416b60;
+  background: #17332d;
+}
+.hint-banner {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 12px 18px;
+  margin-bottom: -12px;
+  border: 1px solid #2a4942;
+  border-radius: 10px;
+  background: linear-gradient(110deg, #132b25, #111d23);
+  color: #c1d9d0;
+}
+.hint-heading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: none;
+  font-size: 14px;
+}
+.hint-heading strong {
+  color: var(--mint);
+  font-weight: 600;
+}
+.hint-stage {
+  color: #92aea5;
+  font-size: 12px;
+}
+.hint-banner p {
+  min-width: 0;
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 900px) {
+  .main:has(.hint-banner:not([hidden])) {
+    padding-top: 8px;
+    row-gap: 12px;
+  }
+  .hint-banner {
+    margin-bottom: 0;
+    padding: 8px 12px;
+    gap: 12px;
+  }
+  .hint-heading {
+    display: none;
+  }
+  .sidebar .session-card {
+    grid-column: 1 / -1;
+  }
+}
+@media (max-width: 600px) {
+  .header-actions {
+    gap: 8px;
+  }
+}
