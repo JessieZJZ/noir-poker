@@ -57,9 +57,18 @@ async function assertPublicArea(page) {
           .filter(visible)
           .map((el) => el.getBoundingClientRect());
         const min = table.top + gap;
+        // The reserved gap starts at the visible tilted card edge, not its
+        // unrotated flex wrapper. Scan independently inside that safe band.
+        const heroTop = Math.min(
+          hero.top,
+          ...[...document.querySelectorAll('#hero-cards .playing-card')]
+            .map((el) => el.getBoundingClientRect())
+            .filter((r) => r.width > 0 && r.height > 0)
+            .map((r) => r.top),
+        );
         const max = Math.min(
           table.bottom - group.height - gap,
-          hero.top - group.height - 24 * scale,
+          heroTop - group.height - 24 * scale,
         );
         const ideal = (table.top + table.bottom - group.height) / 2;
         const clearAt = (top) =>
@@ -79,7 +88,9 @@ async function assertPublicArea(page) {
           if (clearAt(top)) best = Math.min(best, Math.abs(top - ideal));
         if (ideal >= min && ideal <= max && clearAt(ideal)) best = 0;
         if (!Number.isFinite(best) || Math.abs(group.top - ideal) > best + 1.5)
-          problems.push('public group is farther from felt center than necessary');
+          problems.push(
+            `public group is farther from felt center than necessary: actual ${Math.abs(group.top - ideal).toFixed(2)}, best ${best.toFixed(2)}`,
+          );
         return problems;
       }),
     )
