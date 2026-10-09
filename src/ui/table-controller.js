@@ -27,7 +27,11 @@ import { createReviewController } from './review-controller.js';
 import { renderCard } from './cards.js';
 import { createShowdownController } from './showdown.js';
 import { createActivityFormatter } from './activity.js';
+import { portraitContent, preparePortraits } from './portraits.js';
+import { presetRaiseTo } from './bet-sizing.js';
+import { createSettlementLayout } from './settlement-layout.js';
 const $ = (s) => document.querySelector(s);
+const settlementLayout = createSettlementLayout($('#arena'));
 const handReview = createReviewController({ card });
 const showdown = createShowdownController({ card });
 // Display preferences belong to this hand's UI, never to settlement or review.
@@ -49,12 +53,12 @@ let game = newGame(requestedCount),
   bet = 150,
   finishing = false,
   hints = true,
-  sound = false,
+  sound = true,
   audio = null;
 game.difficulty = tablePreferences.difficulty;
 $('#player-count').value = String(requestedCount);
 try {
-  sound = localStorage.getItem('noir-sound') === 'true';
+  sound = localStorage.getItem('noir-sound') !== 'false';
   hints = localStorage.getItem('noir-hints') !== 'false';
 } catch {}
 let pendingBotSettings = loadBotSettings();
@@ -91,12 +95,43 @@ function positionBadge(id) {
   return `<span class="position-badge" data-position="${role}" title="${positionNames[role]}">${role}</span>`;
 }
 
-function soundEffect(kind = 'chip') {
+async function unlockAudio() {
   if (!sound) return;
   try {
     audio ||= new (window.AudioContext || window.webkitAudioContext)();
-    if (audio.state === 'suspended') audio.resume();
+    if (audio.state !== 'running' && audio.state !== 'closed') await audio.resume();
+  } catch {}
+}
+for (const event of ['pointerdown', 'pointerup', 'keydown']) {
+  document.addEventListener(
+    event,
+    (e) => {
+      if (e.isTrusted) void unlockAudio();
+    },
+    { capture: true },
+  );
+}
+function soundEffect(kind = 'chip') {
+  // Skip sounds until a user gesture unlocks audio; never queue stale table sounds.
+  if (!sound || audio?.state !== 'running') return;
+  try {
     const now = audio.currentTime;
+    if (kind === 'fold') {
+      // A quiet falling swish, distinct from chip, deal and winning notes.
+      const o = audio.createOscillator(),
+        v = audio.createGain();
+      o.type = 'triangle';
+      o.frequency.setValueAtTime(260, now);
+      o.frequency.exponentialRampToValueAtTime(75, now + 0.14);
+      v.gain.setValueAtTime(0.0001, now);
+      v.gain.exponentialRampToValueAtTime(0.02, now + 0.012);
+      v.gain.exponentialRampToValueAtTime(0.0001, now + 0.16);
+      o.connect(v);
+      v.connect(audio.destination);
+      o.start(now);
+      o.stop(now + 0.18);
+      return;
+    }
     const notes = kind === 'win' ? [440, 554, 659] : kind === 'deal' ? [820, 570] : [310];
     notes.forEach((hz, i) => {
       const o = audio.createOscillator(),
@@ -264,9 +299,10 @@ function render() {
       const profile = getBotProfile(p.botProfile),
         mood = game.emotionMode === 'off' ? 'steady' : p.botMood.kind,
         title = `${p.name} · ${profile.short}（训练原型） · 模拟状态：${MOOD_LABELS[mood]}`;
-      return `<div class="seat seat-${p.id} ${p.folded ? 'folded' : ''} ${game.actor === p.id ? 'thinking' : ''} ${isWinner ? 'winner' : ''}" data-player="${p.id}" data-profile="${p.botProfile}" data-mood="${mood}" style="left:${x}%;top:${y}%"><div id="seat-hand-${p.id}" class="mini-cards ${reveal ? 'revealed-cards' : ''}">${reveal ? p.hole.map((c) => card(c, { small: true, best: !!rank && rank.cards.some((best) => best.key === c.key) })).join('') : p.hole.map((c, i) => `<span class="card-back ${newHand ? 'card-deal' : ''}" style="--delay:${p.id * 65 + i * 140}ms" aria-label="对手底牌"></span>`).join('')}</div><div class="seat-profile"><span class="avatar avatar-${p.id - 1}" title="${title}" aria-label="${title}">${profiles[p.id]}</span><div><strong>${p.name}${positionBadge(p.id)}</strong><span class="seat-style-label" data-style-profile="${profile.id}" title="${profile.name} · ${profile.tag}" aria-label="${p.name} 本手风格：${profile.name}">${profile.short}</span><span class="seat-bankroll"><span class="seat-stack">${format(p.stack)}</span>${game.phase === 'done' ? `<button class="seat-peek" data-peek-player="${p.id}" title="${reveal ? '收起底牌' : '查看底牌'}" aria-label="${reveal ? '收起' : '查看'} ${p.name} 的底牌" aria-pressed="${!!reveal}" aria-controls="seat-hand-${p.id}"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M2 10C4 6 7 5 10 5C13 5 16 6 18 10C16 14 13 15 10 15C7 15 4 14 2 10Z"/><circle cx="10" cy="10" r="2.5"/></svg></button>` : ''}</span></div></div>${rankMarkup}<div class="seat-action" aria-label="${p.name} 的最近行动">${seatAction(p)}</div></div>`;
+      return `<div class="seat seat-${p.id} ${p.folded ? 'folded' : ''} ${game.actor === p.id ? 'thinking' : ''} ${isWinner ? 'winner' : ''}" data-player="${p.id}" data-profile="${p.botProfile}" data-mood="${mood}" style="left:${x}%;top:${y}%"><div id="seat-hand-${p.id}" class="mini-cards ${reveal ? 'revealed-cards' : ''}">${reveal ? p.hole.map((c) => card(c, { small: true, best: !!rank && rank.cards.some((best) => best.key === c.key) })).join('') : p.hole.map((c, i) => `<span class="card-back ${newHand ? 'card-deal' : ''}" style="--delay:${p.id * 65 + i * 140}ms" aria-label="对手底牌"></span>`).join('')}</div><div class="seat-profile"><span class="avatar avatar-${p.id - 1}" title="${title}" aria-label="${title}">${portraitContent(profile.id, profiles[p.id])}</span><div><strong>${p.name}${positionBadge(p.id)}</strong><span class="seat-style-label" data-style-profile="${profile.id}" title="${profile.name} · ${profile.tag}" aria-label="${p.name} 本手风格：${profile.name}">${profile.short}</span><span class="seat-bankroll"><span class="seat-stack">${format(p.stack)}</span>${game.phase === 'done' ? `<button class="seat-peek" data-peek-player="${p.id}" title="${reveal ? '收起底牌' : '查看底牌'}" aria-label="${reveal ? '收起' : '查看'} ${p.name} 的底牌" aria-pressed="${!!reveal}" aria-controls="seat-hand-${p.id}"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M2 10C4 6 7 5 10 5C13 5 16 6 18 10C16 14 13 15 10 15C7 15 4 14 2 10Z"/><circle cx="10" cy="10" r="2.5"/></svg></button>` : ''}</span></div></div>${rankMarkup}<div class="seat-action" aria-label="${p.name} 的最近行动">${seatAction(p)}</div></div>`;
     })
     .join('');
+  preparePortraits($('#seats'));
   $('#hero-cards').innerHTML = hero.hole
     .map((c, i) => card(c, { animate: newHand, delay: 420 + i * 130, best: heroBest.has(c.key) }))
     .join('');
@@ -341,7 +377,7 @@ function render() {
     : done && game.showdown
       ? hero.folded
         ? '摊牌 · 对手亮出底牌'
-        : '摊牌 · 亮起的牌组成你的最佳牌型'
+        : '摊牌 · 最佳组合已高亮'
       : game.street === 0
         ? '等待翻牌'
         : game.street === 1
@@ -416,6 +452,7 @@ function render() {
   showdown.update(game, epoch);
   lastHand = game.hand;
   lastBoard = displayBoard.length;
+  settlementLayout.update();
 }
 function updateBet() {
   const legal = legalActions(game, 0);
@@ -505,6 +542,7 @@ function schedule() {
           flyChips(id);
           soundEffect();
         }
+        if (d.action === 'fold') soundEffect('fold');
         if (game.phase === 'done') soundEffect('win');
         render();
         schedule();
@@ -521,6 +559,7 @@ function heroAction(action, amount) {
     flyChips(0);
     soundEffect();
   }
+  if (action === 'fold') soundEffect('fold');
   if (game.phase === 'done') soundEffect('win');
   render();
   schedule();
@@ -682,28 +721,20 @@ $('#next-button').onclick = nextHand;
 $('#restart-hand-button').onclick = retryHand;
 $('#bet-slider').oninput = (e) => {
   const legal = legalActions(game, 0);
-  let v = Number(e.target.value);
-  bet = v === legal.maxRaiseTo ? v : Math.max(legal.minRaiseTo, Math.round(v / 25) * 25);
-  bet = Math.min(legal.maxRaiseTo, bet);
+  if (!legal.enabled || !legal.canRaise) return;
+  bet = Math.min(legal.maxRaiseTo, Math.max(legal.minRaiseTo, Math.round(Number(e.target.value))));
   updateBet();
 };
 document.querySelectorAll('[data-preset]').forEach(
   (button) =>
     (button.onclick = () => {
       const legal = legalActions(game, 0);
-      if (!legal.canRaise) return;
-      const value = button.dataset.preset;
-      bet =
-        value === 'all'
-          ? legal.maxRaiseTo
-          : value === 'min'
-            ? legal.minRaiseTo
-            : game.currentBet +
-              Math.max(
-                game.minRaise,
-                Math.round((potSize(game) * (value === 'half' ? 0.5 : 1)) / 25) * 25,
-              );
-      bet = Math.min(legal.maxRaiseTo, Math.max(legal.minRaiseTo, bet));
+      const target = presetRaiseTo(
+        { currentBet: game.currentBet, pot: potSize(game), legal },
+        button.dataset.preset,
+      );
+      if (target === null) return;
+      bet = target;
       $('#bet-slider').value = bet;
       updateBet();
     }),
@@ -753,8 +784,8 @@ function updateSound() {
   b.setAttribute('aria-pressed', String(sound));
   b.title = sound ? '音效已开启' : '音效已关闭';
   b.innerHTML = sound
-    ? '<svg viewBox="0 0 24 24"><path d="M11 5 6 9H3v6h3l5 4V5Z"/><path d="M15 8q6 4 0 8m3-11q9 7 0 14"/></svg>'
-    : '<svg viewBox="0 0 24 24"><path d="M11 5 6 9H3v6h3l5 4V5Z"/><path d="m16 9 5 6m0-6-5 6"/></svg>';
+    ? '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4V5Z"/><path d="M15 8q6 4 0 8m3-11q9 7 0 14"/></svg>'
+    : '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4V5Z"/><path d="m16 9 5 6m0-6-5 6"/></svg>';
 }
 $('#sound-button').onclick = () => {
   sound = !sound;
@@ -762,7 +793,7 @@ $('#sound-button').onclick = () => {
     localStorage.setItem('noir-sound', String(sound));
   } catch {}
   updateSound();
-  if (sound) soundEffect('deal');
+  if (sound) void unlockAudio().then(() => soundEffect('deal'));
 };
 $('#hint-toggle').onclick = () => {
   hints = !hints;

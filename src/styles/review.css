@@ -139,6 +139,77 @@
   grid-template-columns: 235px minmax(0, 1fr);
   gap: 24px;
 }
+.review-overview {
+  display: grid;
+  gap: 16px;
+  margin-top: 18px;
+}
+.review-overview:empty {
+  display: none;
+}
+.review-overview h4 {
+  font-size: 13px;
+  color: #acb9c9;
+  margin: 0 0 6px;
+}
+.review-overview article + article {
+  margin-top: 12px;
+}
+.review-overview article button {
+  margin: 0 0 4px;
+  text-align: left;
+  line-height: 1.7;
+  font-size: 14px;
+  font-weight: 600;
+}
+.review-overview article p {
+  color: #bdcbd4;
+  min-height: 0;
+  font-size: 13px;
+}
+.review-summary .review-overview-scope {
+  border-top: 1px solid #485260;
+  padding-top: 12px;
+  font-size: 12px;
+  color: #9db1bd;
+  min-height: 0;
+}
+.review-coaching {
+  margin: 20px 0;
+  font-size: 14px;
+  line-height: 1.8;
+  color: #c4d2dd;
+}
+.review-coaching > p {
+  margin: 0 0 12px;
+}
+.review-coaching > div {
+  padding: 14px 16px;
+  border-left: 2px solid #68c1aa;
+  background: #173d352e;
+}
+.review-coaching strong {
+  font-size: 13px;
+  font-weight: 500;
+  color: #9fcabd;
+}
+.review-coaching div p {
+  margin: 5px 0 0;
+}
+.review-advanced {
+  border-top: 1px solid #364653;
+  margin-top: 18px;
+  padding-top: 16px;
+}
+.review-advanced > summary {
+  cursor: pointer;
+  color: #bdb0d4;
+  font-size: 13px;
+  line-height: 1.8;
+}
+.review-advanced[open] > summary {
+  margin-bottom: 18px;
+}
 .review-timeline-title {
   display: flex;
   justify-content: space-between;
@@ -759,17 +830,11 @@
   min-width: 125px;
 }
 .review-opponent-heading select {
-  appearance: none;
-  -webkit-appearance: none;
   width: 100%;
   padding: 9px 36px 9px 12px;
   border: 1px solid #49606d;
   border-radius: 7px;
-  background: #192c37;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none'%3E%3Cpath d='m4 6 4 4 4-4' stroke='%23b8cbd6' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-size: 14px 14px;
-  background-position: right 12px center;
+  background-color: #192c37;
   color: #e5ecf0;
 }
 .opponent-reason {

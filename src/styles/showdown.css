@@ -122,17 +122,25 @@
   min-height: 21px;
 }
 .settled-actions {
-  flex-wrap: wrap;
-  justify-content: center;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  align-items: stretch;
   gap: 12px;
   min-height: 80px;
 }
-.settled-actions .next-button {
+.settled-actions .next-button,
+.settled-actions .review-button,
+.settled-actions .continue-deal-button {
+  width: 100%;
+  min-width: 0;
   margin: 0;
-  min-width: 160px;
 }
-.settled-actions .review-button {
-  margin: 0;
+@media (max-width: 1150px) and (min-width: 901px), (max-width: 700px) {
+  .settled-actions {
+    grid-auto-flow: row;
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 .showdown-stage {
   border-top: 1px solid #445344;
@@ -585,18 +593,14 @@
     height: 64px;
   }
   .settled-actions {
-    flex-direction: row;
     padding-top: 3px;
     min-height: 75px;
     gap: 10px;
   }
   .settled-actions .next-button {
-    width: 100%;
-    margin: 0;
     padding: 13px;
   }
   .settled-actions .review-button {
-    flex: 1;
     white-space: nowrap;
     padding: 11px 8px;
     font-size: 12px;
@@ -751,17 +755,5 @@
   .replay-note {
     font-size: 11px;
     padding: 0 14px 14px;
-  }
-  .settled-actions #next-button,
-  .settled-actions #restart-hand-button {
-    flex: 1 1 calc(50% - 5px);
-    min-width: 0;
-    width: auto;
-    font-size: 13px;
-    padding: 13px 8px;
-  }
-  .settled-actions #show-hands-button,
-  .settled-actions #review-hand-button {
-    flex: 1 1 calc(50% - 5px);
   }
 }

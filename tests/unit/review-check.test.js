@@ -194,7 +194,7 @@ check('strong all-in losing to a later runout is not automatically a mistake', (
   };
   const r = analyzeReview(input, options);
   assert.equal(r.attention, 0);
-  assert.equal(r.title, '未发现明显决策失误');
+  assert.equal(r.title, '这次输了，操作仍有合理依据');
 });
 check('decision verdicts do not change with showdown winner or future board', () => {
   const s = snapshot({ street: 1, board: '2s 6h 9c' });

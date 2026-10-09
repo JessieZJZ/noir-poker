@@ -12,6 +12,99 @@ test.afterEach(async ({ page }) => {
   expect(page.errors).toEqual([]);
 });
 
+test('review separates a lucky bad-price win from a reasonable loss and keeps evidence optional', async ({
+  page,
+}) => {
+  for (const win of [true, false]) {
+    await page.evaluate((win) => window.qa.reviewClosingCall(win), win);
+    await page.locator('#review-hand-button').click();
+    await expect(page.locator('#review-priority')).toBeVisible({ timeout: 20000 });
+    await expect(page.locator('#review-summary-title')).toContainText(
+      win ? '不值得长期重复' : '输了',
+    );
+    await expect(page.locator('#review-overview')).toContainText(win ? '优先调整' : '争取更多价值');
+    await expect(page.locator('#review-advanced')).not.toHaveAttribute('open');
+    await expect(page.locator('#review-evidence')).not.toBeVisible();
+    if (win) {
+      await expect(page.locator('#review-suggestion')).toHaveText('弃牌');
+      await expect(page.locator('#review-coach-ev')).toContainText('长期会亏');
+    } else {
+      await page.locator('#review-timeline [data-review-index="3"]').click();
+      await expect(page.locator('#review-selected-status')).toContainText('值得保留');
+      await expect(page.locator('#review-coach-ev')).toContainText('正收益');
+    }
+    await page.locator('#review-advanced > summary').click();
+    await expect(page.locator('#review-evidence')).toBeVisible();
+    await expect(page.locator('#review-simulation')).toContainText('抽样获池');
+    await expect(page.locator('#review-simulation')).toContainText('不等于净盈利');
+    await page.locator('#review-dialog .close-dialog').first().click();
+  }
+});
+
+test('settled controls share a row or each fill the content width, including runout and refill', async ({
+  page,
+}) => {
+  for (const mode of ['runout', 'normal', 'refill']) {
+    const refill = mode === 'refill';
+    await page.evaluate((refill) => {
+      if (refill)
+        window.qa.scene('2c 3d', 'As Kd Qh 9s 8c', {
+          totals: [5000, 0, 5000, 0, 0, 0],
+          folded: [1, 3, 4, 5],
+          otherHoles: { 2: 'Ks Kc' },
+        });
+      else window.qa.foldWin(6, 2);
+    }, refill);
+    if (mode !== 'runout' && (await page.locator('#continue-deal-button').isVisible())) {
+      await page.locator('#continue-deal-button').click();
+      await expect(page.locator('#continue-deal-button')).toBeHidden();
+    }
+    await expect(page.locator('#next-button')).toHaveText(refill ? '补充筹码，继续练习' : '下一手');
+    await expect(page.locator('#review-hand-button')).toBeVisible();
+    for (const width of [320, 390, 600, 601, 700, 701, 900, 901, 1150, 1151, 1280, 1600]) {
+      await page.setViewportSize({ width, height: 900 });
+      const layout = await page.locator('#action-panel').evaluate((el) => {
+        const panel = el.getBoundingClientRect(),
+          style = getComputedStyle(el),
+          left = panel.left + parseFloat(style.paddingLeft),
+          right = panel.right - parseFloat(style.paddingRight);
+        return {
+          left,
+          width: right - left,
+          buttons: [...el.querySelectorAll('button')]
+            .filter((b) => b.getBoundingClientRect().height > 0)
+            .map((b) => {
+              const rect = b.getBoundingClientRect();
+              return {
+                left: rect.left,
+                right: rect.right,
+                top: rect.top,
+                bottom: rect.bottom,
+                width: rect.width,
+                textFits: b.scrollWidth <= b.clientWidth,
+              };
+            }),
+        };
+      });
+      expect(layout.buttons).toHaveLength(mode === 'runout' ? 4 : 3);
+      const rows = new Set(layout.buttons.map((b) => Math.round(b.top)));
+      expect([1, layout.buttons.length]).toContain(rows.size);
+      for (const [i, button] of layout.buttons.entries()) {
+        expect(button.textFits).toBe(true);
+        expect(button.left).toBeGreaterThanOrEqual(layout.left - 1);
+        expect(button.right).toBeLessThanOrEqual(layout.left + layout.width + 1);
+        expect(Math.abs(button.width - layout.buttons[0].width)).toBeLessThan(1);
+        if (rows.size > 1) {
+          expect(Math.abs(button.left - layout.left)).toBeLessThan(1);
+          expect(Math.abs(button.width - layout.width)).toBeLessThan(1);
+          if (i) expect(button.top).toBeGreaterThan(layout.buttons[i - 1].bottom);
+        } else if (i) expect(button.left).toBeGreaterThan(layout.buttons[i - 1].right);
+      }
+      if (width >= 1151 || (width >= 701 && width <= 900)) expect(rows.size).toBe(1);
+    }
+  }
+});
+
 async function assertBestHands(page, count) {
   await expect(page.locator('.showdown-player')).toHaveCount(count);
   const comparisons = await page.evaluate(async () => {
@@ -64,6 +157,48 @@ async function assertWinnerIndicators(page) {
   }
 }
 
+async function assertSettledLayout(page) {
+  await expect
+    .poll(async () =>
+      page.evaluate(() => {
+        const arena = document.querySelector('#arena').getBoundingClientRect(),
+          hero = document.querySelector('.hero-area').getBoundingClientRect(),
+          caption = document.querySelector('#board-caption').getBoundingClientRect(),
+          pot = document.querySelector('#pot-details-button').getBoundingClientRect();
+        const overlaps = (a, b) =>
+          a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top;
+        const seatParts = [
+          ...document.querySelectorAll(
+            '.seat .playing-card, .seat .card-back, .seat-profile, .seat .hand-rank, .seat .seat-action',
+          ),
+        ].map((el) => el.getBoundingClientRect());
+        return {
+          captionSpaced:
+            Math.min(
+              ...[...document.querySelectorAll('#hero-cards .playing-card')].map(
+                (el) => el.getBoundingClientRect().top - caption.bottom,
+              ),
+            ) >= 16,
+          heroInside:
+            hero.top >= arena.top &&
+            hero.bottom <= arena.bottom - 12 &&
+            hero.left >= 0 &&
+            hero.right <= innerWidth,
+          captionClear: !seatParts.some((a) => overlaps(a, caption)),
+          potClear: !seatParts.some((a) => overlaps(a, pot)),
+          overflowing: document.documentElement.scrollWidth > innerWidth,
+        };
+      }),
+    )
+    .toEqual({
+      captionSpaced: true,
+      heroInside: true,
+      captionClear: true,
+      potClear: true,
+      overflowing: false,
+    });
+}
+
 test('fold winners keep a visible crown without revealing cards, including practice runout and hero wins', async ({
   page,
 }) => {
@@ -77,9 +212,11 @@ test('fold winners keep a visible crown without revealing cards, including pract
       await page.locator('#continue-deal-button').click();
       await expect(page.locator('#board .playing-card')).toHaveCount(5);
       await assertWinnerIndicators(page);
+      await assertSettledLayout(page);
       for (let i = 0; i < 2; i++) {
         await page.locator('[data-peek-player="2"]').click();
         await assertWinnerIndicators(page);
+        await assertSettledLayout(page);
         await expect(page.locator('.seat-2 .winner-indicator')).toHaveText('获胜');
       }
       const fits = await page.locator('.seat-2 .winner-indicator').evaluate((el) => {
@@ -95,6 +232,7 @@ test('fold winners keep a visible crown without revealing cards, including pract
       await page.evaluate((n) => window.qa.foldWin(n, 0), count);
       await assertWinnerIndicators(page);
       await expect(page.locator('#hero-hand-rank')).toHaveText('获胜');
+      await assertSettledLayout(page);
     }
   }
   await page.locator('#restart-hand-button').click();
@@ -302,7 +440,7 @@ test('showdown participant names include the current named style and stay readab
   await page.locator('#save-opponents').click();
   const names = [
     '你',
-    'Mia（谈老板）',
+    'Mia（谭老板）',
     'Alex（ST 王）',
     'River（臧书奴）',
     'Kai（Peter）',
@@ -460,6 +598,45 @@ test('hero recent actions appear immediately below the role and persist through 
   await assertFits();
 });
 
+test('settled public caption and hero remain separated for winners, losers, folded heroes and long personas', async ({
+  page,
+}, testInfo) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.evaluate(() => window.qa.stop());
+  await page.locator('#opponents-button').click();
+  await page.locator('#mix-opponents').click();
+  await page.locator('#save-opponents').click();
+  for (const width of [320, 390, 768, 1280]) {
+    await page.setViewportSize({ width, height: 900 });
+    for (const count of [5, 6, 7, 8, 9]) {
+      for (const mode of ['win', 'lose', 'fold']) {
+        const state = await page.evaluate(
+          ({ count, mode }) =>
+            window.qa.scene(mode === 'lose' ? '2c 3d' : '2c Qs', 'Qh 6d 9s 7c Qc', {
+              count,
+              totals: Array(count).fill(4800),
+              folded: Array.from({ length: count }, (_, id) => id).filter((id) =>
+                id === 0 ? mode === 'fold' : id !== 1 && id !== 4,
+              ),
+              otherHoles: { 1: '9c Ad', 4: 'Td Ts' },
+            }),
+          { count, mode },
+        );
+        expect(state.phase).toBe('done');
+        await assertSettledLayout(page);
+        await assertWinnerIndicators(page);
+        if (mode === 'win') await expect(page.locator('#hero-hand-rank')).toHaveText('三条');
+        if (width === 390 && count === 9)
+          await expect(page.locator('#arena')).toHaveClass(/has-full-player-names/);
+        if (mode === 'win' && count === 6 && (width === 390 || width === 1280))
+          await page.locator('#arena').screenshot({
+            path: `/Users/zjz/Documents/Codex/2026-10-06/create-a-new-site-with-sites/work/settled-spacing-${width}-${testInfo.project.name}.png`,
+          });
+      }
+    }
+  }
+});
+
 test('settled seats retain all-in sizes, board and hero action across viewing and all screen sizes', async ({
   page,
 }) => {
@@ -513,6 +690,7 @@ test('settled seats retain all-in sizes, board and hero action across viewing an
         cardOverlaps: false,
         stageOverlaps: false,
       });
+      await assertSettledLayout(page);
       await page.locator('.seat-peek').first().click();
       expect(
         (await page.evaluate(() => window.noir.getState())).players.map((p) => p.lastAction),
@@ -1044,13 +1222,14 @@ test('reset cancels queued continuation and table size applies on next deal', as
   await expect(page.getByLabel('进阶', { exact: true })).toBeChecked();
 });
 
-test('first visit presents balanced opponents and safe defaults', async ({ page }) => {
+test('first visit presents balanced opponents with sound enabled', async ({ page }) => {
   await expect(page.locator('#player-count')).toHaveValue('6');
   await expect(page.getByLabel('标准', { exact: true })).toBeChecked();
   await expect(page.locator('#opponents-summary')).toHaveText('均衡');
   await expect(page.locator('.seat-style-label')).toHaveText(Array(5).fill('均衡'));
   await expect(page.locator('#hint-toggle')).toHaveAttribute('aria-pressed', 'true');
-  await expect(page.locator('#sound-button')).toHaveAttribute('aria-pressed', 'false');
+  await expect(page.locator('#sound-button')).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator('#sound-button')).toHaveAttribute('aria-label', '关闭音效');
   await page.locator('#opponents-button').click();
   await expect(page.locator('[data-profile-preview="balanced"]')).toHaveAttribute(
     'aria-pressed',
@@ -1095,7 +1274,7 @@ test('returning restores all saved options before the first fresh hand, includin
   await expect(page.locator('#player-count')).toHaveValue('9');
   await expect(page.getByLabel('进阶', { exact: true })).toBeChecked();
   await expect(page.locator('#hint-toggle')).toHaveAttribute('aria-pressed', 'false');
-  await expect(page.locator('#sound-button')).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator('#sound-button')).toHaveAttribute('aria-pressed', 'false');
   await expect(page.locator('#opponents-summary')).toHaveText('8 位风格对手');
   await expect(page.locator('#opponents-change-note')).toBeHidden();
   await expect(page.locator('#table-change-note')).toBeHidden();
@@ -1186,7 +1365,7 @@ test('nine-seat style assignment shows every persona at all sizes and executes t
     8: 'dwan',
   };
   const labels = [
-    '谈老板',
+    '谭老板',
     'ST 王',
     '臧书奴',
     'Peter',
@@ -1269,6 +1448,180 @@ test('nine-seat style assignment shows every persona at all sizes and executes t
       expect(crowded).toBe(false);
     }
   }
+});
+
+test('all named portraits preview immediately, follow saved styles next hand and stay frozen on retry', async ({
+  page,
+}) => {
+  const profiles = ['tan', 'st', 'zang', 'peter', 'abao', 'viktor', 'jungleman', 'dwan'];
+  await page.locator('#player-count').selectOption('9');
+  await page.evaluate(() => window.qa.foldWin(9));
+  await page.locator('#opponents-button').click();
+  await expect(page.locator('#profile-cards img')).toHaveCount(8);
+  await expect
+    .poll(() =>
+      page
+        .locator('#profile-cards img')
+        .evaluateAll((images) =>
+          images.every((image) => image.complete && image.naturalWidth > 0 && !image.hidden),
+        ),
+    )
+    .toBe(true);
+  await expect(page.locator('#profile-cards')).toContainText('谭老板');
+  await expect(page.locator('#profile-cards')).not.toContainText('谈老板');
+  await page.locator('#mix-opponents').click();
+  const firstDraft = page.locator('[data-opponent-row="1"] .opponent-portrait');
+  await expect(firstDraft.locator('img')).toHaveAttribute('data-portrait-profile', 'tan');
+  await page.locator('[data-bot-seat="1"]').focus();
+  await page.locator('[data-bot-seat="1"]').selectOption('dwan');
+  await expect(firstDraft.locator('img')).toHaveAttribute('data-portrait-profile', 'dwan');
+  await expect(page.locator('[data-bot-seat="1"]')).toBeFocused();
+  await expect(page.locator('#profile-detail img')).toHaveAttribute(
+    'data-portrait-profile',
+    'dwan',
+  );
+  await expect(page.locator('#profile-detail .profile-photo-credit')).toContainText(
+    'World Poker Tour',
+  );
+  await page.locator('[data-bot-seat="1"]').selectOption('tan');
+  await page.locator('#save-opponents').click();
+  await expect(page.locator('#seats .persona-portrait')).toHaveCount(0);
+  await page.locator('#next-button').click();
+  await page.evaluate(() => window.qa.stop());
+  await expect(page.locator('#seats .persona-portrait')).toHaveCount(8);
+  await expect
+    .poll(() =>
+      page
+        .locator('#seats .persona-portrait')
+        .evaluateAll((images) =>
+          images.every((image) => image.complete && image.naturalWidth > 0 && !image.hidden),
+        ),
+    )
+    .toBe(true);
+  for (const width of [320, 390, 768, 1280]) {
+    await page.setViewportSize({ width, height: 900 });
+    for (let id = 1; id <= 8; id++) {
+      await expect(page.locator(`.seat-${id} .persona-portrait`)).toHaveAttribute(
+        'data-portrait-profile',
+        profiles[id - 1],
+      );
+      await expect(page.locator(`.seat-${id} .persona-portrait`)).toBeVisible();
+      const fits = await page.locator(`.seat-${id} .avatar`).evaluate((avatar) => {
+        const a = avatar.getBoundingClientRect(),
+          p = avatar.closest('.seat-profile').getBoundingClientRect();
+        return (
+          a.width >= 18 &&
+          a.height >= 18 &&
+          a.left >= p.left &&
+          a.right <= p.right &&
+          a.top >= p.top &&
+          a.bottom <= p.bottom &&
+          p.left >= 0 &&
+          p.right <= innerWidth
+        );
+      });
+      expect(fits).toBe(true);
+    }
+  }
+  await page.locator('#opponents-button').click();
+  for (let id = 2; id <= 8; id++)
+    await page.locator(`[data-bot-seat="${id}"]`).selectOption('jungleman');
+  await page.locator('#save-opponents').click();
+  for (const width of [320, 390, 700, 768, 901, 1000, 1150, 1280]) {
+    await page.setViewportSize({ width, height: 900 });
+    for (const count of [5, 6, 7, 8, 9]) {
+      await page.evaluate(
+        (count) =>
+          window.qa.scene('2h 3h', 'Ks Kh 9s 7c 6d', {
+            count,
+            totals: Array(count).fill(5000),
+            otherHoles: { 1: 'Kc Kd' },
+          }),
+        count,
+      );
+      await expect(page.locator('.seat-1 .seat-stack')).toHaveText(
+        (count * 5000).toLocaleString('en-US'),
+      );
+      await expect(page.locator('#seats .persona-portrait')).toHaveCount(count - 1);
+      const readable = await page.locator('.seat-profile').evaluateAll((profiles) => {
+        const overlaps = (a, b) =>
+          a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top;
+        return profiles.every((profile) => {
+          const avatar = profile.querySelector('.avatar').getBoundingClientRect(),
+            eye = profile.querySelector('.seat-peek').getBoundingClientRect(),
+            bounds = profile.getBoundingClientRect(),
+            range = document.createRange();
+          range.selectNodeContents(profile.querySelector('.seat-stack'));
+          const text = range.getBoundingClientRect();
+          range.selectNodeContents(profile.querySelector('.seat-style-label'));
+          const label = range.getBoundingClientRect();
+          return (
+            avatar.width >= 18 &&
+            avatar.height >= 18 &&
+            text.left >= bounds.left &&
+            text.right <= bounds.right &&
+            bounds.left >= 0 &&
+            bounds.right <= innerWidth &&
+            label.left >= bounds.left &&
+            label.right <= bounds.right &&
+            !overlaps(text, avatar) &&
+            !overlaps(text, eye)
+          );
+        });
+      });
+      expect(readable).toBe(true);
+    }
+  }
+  await page.locator('#opponents-button').click();
+  await page.locator('[data-bot-seat="1"]').selectOption('balanced');
+  await expect(firstDraft.locator('img')).toHaveCount(0);
+  await page.locator('#save-opponents').click();
+  await expect(page.locator('.seat-1 .persona-portrait')).toHaveAttribute(
+    'data-portrait-profile',
+    'tan',
+  );
+  await page.evaluate(() => window.qa.foldRest());
+  await page.locator('#restart-hand-button').click();
+  await page.evaluate(() => window.qa.stop());
+  await expect(page.locator('.seat-1 .persona-portrait')).toHaveAttribute(
+    'data-portrait-profile',
+    'tan',
+  );
+  await page.evaluate(() => window.qa.foldRest());
+  await page.locator('#next-button').click();
+  await page.evaluate(() => window.qa.stop());
+  await expect(page.locator('.seat-1 .persona-portrait')).toHaveCount(0);
+  await page.reload();
+  await page.waitForFunction(() => !!window.qa);
+  await page.evaluate(() => window.qa.stop());
+  await expect(page.locator('#seats .persona-portrait')).toHaveCount(7);
+  await expect(page.locator('.seat-1 .persona-portrait')).toHaveCount(0);
+});
+
+test('a failed portrait keeps its initial and selection controls intact, and another style still loads', async ({
+  page,
+}) => {
+  await page.route('**/portraits/tan.jpeg', (route) => route.abort());
+  await page.locator('#opponents-button').click();
+  const card = page.locator('[data-profile-preview="tan"]');
+  await expect(card.locator('img')).toBeHidden();
+  await expect(card.locator('.portrait-fallback')).toBeVisible();
+  await expect(card.locator('.portrait-fallback')).toHaveText('谭');
+  await page.locator('[data-bot-seat="1"]').focus();
+  await page.locator('[data-bot-seat="1"]').selectOption('tan');
+  const avatar = page.locator('[data-opponent-row="1"] .opponent-portrait');
+  await expect(avatar.locator('img')).toBeHidden();
+  await expect(avatar.locator('.portrait-fallback')).toHaveText('M');
+  const before = await avatar.boundingBox();
+  await page.locator('[data-bot-seat="1"]').selectOption('st');
+  await expect
+    .poll(() => avatar.locator('img').evaluate((image) => image.complete && image.naturalWidth > 0))
+    .toBe(true);
+  await expect(avatar.locator('img')).toBeVisible();
+  const after = await avatar.boundingBox();
+  expect(after.width).toBe(before.width);
+  expect(after.height).toBe(before.height);
+  await expect(page.locator('[data-bot-seat="1"]')).toBeFocused();
 });
 
 test('configured bots use the fast-deal path and observed samples roll back on retry', async ({
@@ -1496,6 +1849,7 @@ test('foreign style assignments persist and candidate simulation is available in
   await page.locator('#review-timeline [data-review-index="0"]').click();
   await expect(page.locator('#review-simulation')).toContainText('模拟 40 手');
   expect(await page.locator('#review-simulation tbody tr').count()).toBeGreaterThanOrEqual(4);
+  await page.locator('#review-advanced > summary').click();
   await page.locator('#review-simulation summary').click();
   await expect(page.locator('#review-simulation')).toContainText('不是 GTO');
 });

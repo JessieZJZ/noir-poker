@@ -1,3 +1,5 @@
+import { fractionRaiseTo } from './bet-sizing.js';
+
 // These are training controls inferred from a few public examples, not measured
 // statistics of the named players. Emotions are a separate synthetic layer.
 export const BOT_PROFILES = [
@@ -14,8 +16,8 @@ export const BOT_PROFILES = [
   },
   {
     id: 'tan',
-    name: '谈老板 · Tan Xuan',
-    short: '谈老板',
+    name: '谭老板 · Tan Xuan',
+    short: '谭老板',
     tag: '宽范围 · 多街施压',
     description: '更宽地争夺底池，弱牌与强牌共用进攻路线，偏好持续施压。',
     axes: [85, 90, 82, 70, 25],
@@ -587,9 +589,10 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
     if (profile.id === 'abao' && view.street === 2 && semiBluff) fraction = 0.9;
     if (mode !== 'off' && ['frustrated', 'confident', 'reactive'].includes(mood.kind))
       fraction *= mode === 'lively' ? 1.2 : 1.1;
-    let desired =
-      view.currentBet +
-      Math.round(Math.max(50, (view.pot + legal.callAmount) * fraction) / 25) * 25;
+    let desired = fractionRaiseTo(
+      { currentBet: view.currentBet, pot: view.pot, callAmount: legal.callAmount },
+      fraction,
+    );
     if (view.street === 0 && !raises.length)
       desired =
         125 +

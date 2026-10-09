@@ -71,6 +71,38 @@ window.qa = {
     render();
     return publicState();
   },
+  potSizing({ opening = 350, wager = 800, stack = 5025 } = {}) {
+    fixtureGame(6);
+    game.dealer = 5;
+    game.players[0].stack = stack;
+    startHand(game);
+    act(game, 3, 'raise', opening);
+    for (const id of [4, 5, 0]) act(game, id, 'call');
+    for (const id of [1, 2]) act(game, id, 'fold');
+    advanceStreet(game);
+    while (game.phase === 'playing') act(game, game.actor, 'check');
+    advanceStreet(game);
+    act(game, 3, 'raise', wager);
+    act(game, 4, 'call');
+    act(game, 5, 'fold');
+    render();
+    return publicState();
+  },
+  botFoldTurn() {
+    fixtureGame(6, true);
+    startHand(game);
+    act(game, 0, 'raise', 4000);
+    const id = game.actor;
+    game.players[id].hole = ['7s', '2h'].map((v) =>
+      deckOfCards().find((c) => c.rank === Number(v[0]) && c.suit === 'shcd'.indexOf(v[1])),
+    );
+    const plan = planBotTurn(game, () => 0.99, { timingRandom: () => 0 });
+    const startedAt = performance.now();
+    botWait = { plan, startedAt, deadline: startedAt + plan.delayMs };
+    render();
+    schedule();
+    return { actor: id, delayMs: plan.delayMs };
+  },
   foldFinished(street = 0) {
     fixtureGame(6, true);
     startHand(game);
@@ -199,6 +231,40 @@ window.qa = {
     game.revealed = true;
     settle(game, true);
     lastBoard = 5;
+    render();
+    return publicState();
+  },
+  reviewClosingCall(win = true) {
+    fixtureGame(6);
+    game.dealer = 5;
+    startHand(game);
+    const parse = (s) =>
+      s
+        .split(' ')
+        .map((v) =>
+          deckOfCards().find(
+            (c) => c.rank === '23456789TJQKA'.indexOf(v[0]) + 2 && c.suit === 'shcd'.indexOf(v[1]),
+          ),
+        );
+    const board = parse('Qs Jd 9c 8h 2s');
+    game.players[0].hole = parse(win ? '2h 4h' : 'As Ah');
+    game.players[2].hole = parse(win ? 'Ac Kd' : '2c 2d');
+    const reserved = [...board, ...game.players[0].hole, ...game.players[2].hole];
+    const rest = deckOfCards().filter((c) => !reserved.some((r) => r.key === c.key));
+    for (const p of game.players.filter((p) => ![0, 2].includes(p.id))) p.hole = rest.splice(0, 2);
+    game.deck = rest;
+    while (game.actor !== 0) act(game, game.actor, 'fold');
+    act(game, 0, 'call');
+    act(game, 1, 'fold');
+    act(game, 2, 'check');
+    while (game.street < 3) {
+      if (game.phase === 'between') advanceStreet(game);
+      else act(game, game.actor, 'check');
+    }
+    game.board = board;
+    act(game, 2, 'raise', win ? game.players[2].stack : 50);
+    act(game, 0, 'call');
+    if (game.phase === 'between') advanceStreet(game);
     render();
     return publicState();
   },

@@ -882,7 +882,7 @@ select,
   }
   select {
     font-size: 12px;
-    padding: 4px 16px 4px 7px;
+    padding: 4px 32px 4px 7px;
   }
   .game-surface {
     border-radius: 14px;

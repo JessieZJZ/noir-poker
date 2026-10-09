@@ -51,6 +51,10 @@ test('counterfactual simulation is deterministic, public-only, and does not muta
       r.scenarios.every((v) => Number.isFinite(v.ev) && Number.isFinite(v.margin)),
     ),
   );
+  assert.equal(a.comparisonReady, false);
+  const actual = a.rows.find((r) => r.action.action === s.action);
+  assert.ok(actual.scenarios.every((v) => v.vsActual.delta === 0 && !v.vsActual.informative));
+  assert.ok(a.rows.every((r) => r.scenarios.every((v) => v.winRate >= 0 && v.winRate <= 1)));
 });
 test('candidate generation respects closed raising and capped short-stack calls', () => {
   const s = snap();
@@ -100,8 +104,13 @@ test('river all-in counterfactual uses pot eligibility and a board royal flush s
   while (g.actor !== 0) act(g, g.actor, 'check');
   act(g, 0, 'check');
   const s = g.decisions.at(-1);
-  const result = compareCandidateActions(s, [], { trials: 6 });
+  const result = compareCandidateActions(s, [], { trials: 30 });
   const row = result.rows.find((r) => r.action.action === 'check');
   // All players using the same royal board share the pot without invented hole-card advantage.
   assert.ok(row.scenarios.every((v) => v.ev === 50));
+  assert.ok(row.scenarios.every((v) => v.winRate === 1));
+  assert.equal(result.comparisonReady, true);
+  assert.ok(
+    result.rows[0].scenarios.every((v) => v.vsActual.delta === -50 && !v.vsActual.informative),
+  );
 });

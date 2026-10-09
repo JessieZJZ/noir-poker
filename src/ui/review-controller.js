@@ -18,6 +18,7 @@ export function createReviewController({ card }) {
     worker = null,
     job = 0,
     selected = 0,
+    selectionTouched = false,
     timelineKey = '';
   const dialog = $('#review-dialog');
   const opponents = createOpponentReview({ card });
@@ -40,6 +41,25 @@ export function createReviewController({ card }) {
   });
   const esc = (v) =>
     String(v).replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
+  const coachingStatus = (r) =>
+    r?.coaching
+      ? { improve: 'attention', value: 'consider', keep: 'sound', compare: 'consider' }[
+          r.coaching.kind
+        ]
+      : r?.status;
+  function overviewMarkup(overview) {
+    if (!overview) return '';
+    const group = (title, points) =>
+      points.length
+        ? `<section><h4>${title}</h4>${points.map((p) => `<article><button data-review-index="${p.index}">第 ${p.index + 1} 步 · ${esc(p.situation)} · ${esc(p.suggestedAction)}${p.kind === 'compare' ? '（看对手调整）' : ''}</button></article>`).join('')}</section>`
+        : '';
+    return (
+      group('优先调整', overview.improvements) +
+      group('值得保留', overview.good) +
+      group('争取更多价值', overview.value) +
+      `<p class="review-overview-scope">${esc(overview.scope)}</p>`
+    );
+  }
   function renderDialog() {
     if (!last) return;
     const input = last.input,
@@ -54,13 +74,15 @@ export function createReviewController({ card }) {
         : input.outcome.profit > 0
           ? '+' + format(input.outcome.profit) + ' 筹码'
           : '0 筹码';
-    $('#review-result-context').textContent = input.outcome.folded
-      ? '本手已弃牌'
-      : input.outcome.wonPot
-        ? input.outcome.profit < 0
-          ? '获得部分底池，整手净亏损'
-          : '本手获得底池'
-        : '本手未获得底池';
+    $('#review-result-context').textContent =
+      analysis?.overview.settlement ||
+      (input.outcome.folded
+        ? '本手已弃牌'
+        : input.outcome.wonPot
+          ? input.outcome.profit < 0
+            ? '获得部分底池，整手净亏损'
+            : '本手获得底池'
+          : '本手未获得底池');
     $('#review-analysis-state').textContent =
       last.status === 'error'
         ? '分析未完成，可以重试。'
@@ -70,6 +92,7 @@ export function createReviewController({ card }) {
             ? '正在分析决策 ' + last.progress + ' / ' + steps.length + '…'
             : '正在准备这手的决策快照…';
     $('#review-summary-title').textContent = analysis ? analysis.title : '回到当时的决策';
+    $('#review-overview').innerHTML = overviewMarkup(analysis?.overview);
     $('#review-retry').hidden = last.status !== 'error';
     $('#review-priority').hidden = !analysis || !steps.length;
     if (analysis) {
@@ -86,8 +109,9 @@ export function createReviewController({ card }) {
         : null;
     timeline.innerHTML = steps
       .map((s, i) => {
-        const status = analysis?.steps[i]?.status;
-        return `<button class="review-step ${selected === i ? 'selected' : ''}" data-review-index="${i}" aria-current="${selected === i ? 'step' : 'false'}"><span class="review-step-number">${i + 1}</span><span><small>${STREET_NAMES[s.street]} · ${s.position}</small><strong>${actionLabel(s)}</strong></span><span class="review-status ${status || 'pending'}">${status ? statusNames[status] : '待分析'}</span></button>`;
+        const r = analysis?.steps[i],
+          status = coachingStatus(r);
+        return `<button class="review-step ${selected === i ? 'selected' : ''}" data-review-index="${i}" aria-current="${selected === i ? 'step' : 'false'}"><span class="review-step-number">${i + 1}</span><span><small>${STREET_NAMES[s.street]} · ${s.position}</small><strong>${actionLabel(s)}</strong></span><span class="review-status ${status || 'pending'}">${r?.coaching.label || (status ? statusNames[status] : '待分析')}</span></button>`;
       })
       .join('');
     timelineKey = last.key;
@@ -102,8 +126,10 @@ export function createReviewController({ card }) {
     if (!decision) return;
     $('#review-detail-title').textContent =
       '第 ' + (selected + 1) + ' 步 · ' + STREET_NAMES[decision.street];
-    $('#review-selected-status').textContent = result ? statusNames[result.status] : '分析中';
-    $('#review-selected-status').className = 'review-status ' + (result?.status || 'pending');
+    $('#review-selected-status').textContent =
+      result?.coaching.label || (result ? statusNames[result.status] : '分析中');
+    $('#review-selected-status').className =
+      'review-status ' + (coachingStatus(result) || 'pending');
     $('#review-hole').innerHTML = decision.hole.map((c) => card(c, { small: true })).join('');
     $('#review-board').innerHTML = decision.board.length
       ? decision.board.map((c) => card(c, { small: true })).join('')
@@ -112,20 +138,26 @@ export function createReviewController({ card }) {
     $('#review-pot').textContent = format(decision.pot);
     $('#review-stack').textContent = format(decision.stack);
     $('#review-your-action').textContent = actionLabel(decision);
-    $('#review-suggestion').textContent = result?.recommendation || '正在比较可选行动…';
+    $('#review-suggestion').textContent =
+      result?.coaching.suggestion || result?.recommendation || '正在比较可选行动…';
+    $('#review-coach-explanation').textContent =
+      result?.coaching.explanation || '正在比较当时的合法选择…';
+    $('#review-coach-ev').textContent = result?.coaching.evText || '';
+    $('#review-coach-ev').hidden = !result || result.coaching.evKind === 'uncertain';
+    $('#review-coach-followup').textContent = result?.coaching.followUp || '分析完成后展示。';
     $('#review-routes').innerHTML = result
       ? [result.routes.primary, result.routes.secondary]
           .filter(Boolean)
           .map(
             (route, i) =>
-              `<article class="review-route"><span>${i ? '有条件的备选' : '主线成立的条件'}</span><h4>${esc(route.label)}</h4><p>${esc(route.condition)}</p><small>${esc(route.tradeoff)}</small></article>`,
+              `<article class="review-route"><span>${i ? '条件不同的备选' : '按价格与位置的对照路线'}</span><h4>${esc(route.label)}</h4><p>${esc(route.condition)}</p><small>${esc(route.tradeoff)}</small></article>`,
           )
           .join('')
       : '';
     const sim = result?.simulation;
     const signed = (v) => (v > 0 ? '+' : '') + format(v);
     $('#review-simulation').innerHTML = sim
-      ? `<h3>候选行动模拟</h3><p>${sim.stable ? '本轮抽样中，一条路线在两种范围下都明显领先；仍依赖后续策略假设。' : '范围或抽样误差可能改变排序，暂未证明有唯一最佳行动。'}</p><table><caption>每个行动、每种范围模拟 ${sim.trials} 手 · 从当前决策起的筹码净变化</caption><thead><tr><th scope="col">行动</th><th scope="col">随机范围</th><th scope="col">行动加权</th></tr></thead><tbody>${sim.rows.map((row) => `<tr><th scope="row">${actionLabel(decision, row.action.action, row.action.amount)}</th>${row.scenarios.map((v) => `<td>${signed(v.ev)}<small>约 ±${format(v.margin)}</small></td>`).join('')}</tr>`).join('')}</tbody></table><details><summary>模拟如何处理后续行动</summary><p>${esc(sim.note)}</p><p>收益包含立即弃牌、被跟注、后续加注和摊牌；真实的隐藏底牌、后续牌序与最终赢家均未使用。两种范围结果不是最优收益区间。</p></details>`
+      ? `<h3>候选行动模拟</h3><p>${result.coaching.modelImprovement ? '配对比较支持一个比实际操作更好的候选；仍依赖模拟范围和后续策略。' : '范围或抽样误差可能改变排序，暂未确认另一动作更好。'}</p><table><caption>每个行动、每种范围模拟 ${sim.trials} 手 · 从当前决策起的筹码净变化</caption><thead><tr><th scope="col">行动</th><th scope="col">随机范围</th><th scope="col">行动加权</th></tr></thead><tbody>${sim.rows.map((row) => `<tr><th scope="row">${actionLabel(decision, row.action.action, row.action.amount)}</th>${row.scenarios.map((v) => `<td>${signed(v.ev)}<small>约 ±${format(v.margin)}</small><small>抽样获池 ${pct(v.winRate)}</small></td>`).join('')}</tr>`).join('')}</tbody></table><p class="review-price-note">获池包括平分或拿到部分底池，不等于净盈利；这里只显示抽样比例，不能当作真实胜率。</p><details><summary>模拟如何处理后续行动</summary><p>${esc(sim.note)}</p><p>候选使用相同抽样牌局，与实际动作逐一比较；小样本和缺少不同结果时仅供讨论，不据此确认长期收益。真实隐藏底牌、后续牌序与最终赢家均未使用。</p></details>`
       : result
         ? '<p class="review-price-note">这个旧快照缺少完整行动状态，无法进行后续行动模拟；保留公开信息的范围与价格分析。</p>'
         : '<p class="review-price-note">正在模拟各个合法行动与后续牌局…</p>';
@@ -187,7 +219,7 @@ export function createReviewController({ card }) {
     if (message.type === 'complete') {
       last.analysis = message.analysis;
       last.status = 'done';
-      selected = message.analysis.priorityIndex;
+      if (!selectionTouched) selected = message.analysis.priorityIndex;
       worker?.terminate();
       worker = null;
     } else {
@@ -254,18 +286,25 @@ export function createReviewController({ card }) {
     if (!button || !last) return;
     const index = Number(button.dataset.reviewIndex);
     if (!Number.isInteger(index) || index < 0 || index >= last.input.decisions.length) return;
+    const fromTimeline = $('#review-timeline').contains(button);
     selected = index;
+    selectionTouched = true;
+    perspective(false);
     renderDialog();
+    if (!fromTimeline)
+      $('#review-detail-title').scrollIntoView({ block: 'nearest', behavior: 'smooth' });
   });
   $('#review-step-prev').onclick = () => {
     if (selected > 0) {
       selected--;
+      selectionTouched = true;
       renderDialog();
     }
   };
   $('#review-step-next').onclick = () => {
     if (last && selected < last.input.decisions.length - 1) {
       selected++;
+      selectionTouched = true;
       renderDialog();
     }
   };
@@ -281,6 +320,8 @@ export function createReviewController({ card }) {
           job++;
           last = { key, input, status: 'idle', progress: 0, analysis: null };
           selected = 0;
+          selectionTouched = false;
+          $('#review-advanced').open = false;
           perspective(false);
           opponents.update(input);
           if (dialog.open) {
@@ -299,6 +340,7 @@ export function createReviewController({ card }) {
         job++;
         last = null;
         selected = 0;
+        selectionTouched = false;
       }
       if (seen === key) seen = '';
       dialog.close();
@@ -311,6 +353,7 @@ export function createReviewController({ card }) {
       last = null;
       seen = '';
       selected = 0;
+      selectionTouched = false;
       perspective(false);
       dialog.close();
       $('#review-hand-button').hidden = true;
