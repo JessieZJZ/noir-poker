@@ -13,7 +13,9 @@ async function assertPublicArea(page) {
         const problems = [];
         const amount = box('#pot-value'),
           details = box('#pot-details-button'),
-          arena = box('#arena');
+          arena = innerWidth <= 900 ? box('.table-viewport') : box('#arena'),
+          scale = box('#arena').width / document.querySelector('#arena').offsetWidth,
+          gap = 12 * scale;
         const group = box('.table-center'),
           table = box('.table-inner'),
           hero = box('.hero-area');
@@ -24,14 +26,18 @@ async function assertPublicArea(page) {
           Math.abs((details.top + details.bottom - amount.top - amount.bottom) / 2) > 1
         )
           problems.push('details not aligned to right of amount');
-        for (const selector of ['.pot', '#board', '#board-caption']) {
+        const visible = (el) => !el.hidden && getComputedStyle(el).display !== 'none';
+        const publicSelectors = ['.pot', '#board', '#board-caption'].filter((selector) =>
+          visible(document.querySelector(selector)),
+        );
+        for (const selector of publicSelectors) {
           const rect = box(selector);
           if (rect.left < arena.left || rect.right > arena.right)
             problems.push(selector + ' overflow');
           for (const player of document.querySelectorAll(
             '.seat .mini-cards, .seat-profile, .seat .hand-rank, .seat .seat-action, .hero-cards',
           ))
-            if (overlaps(rect, player.getBoundingClientRect()))
+            if (visible(player) && overlaps(rect, player.getBoundingClientRect()))
               problems.push(
                 selector +
                   ' overlaps ' +
@@ -42,39 +48,30 @@ async function assertPublicArea(page) {
         }
         // Independently scan legal positions by pixel; a fixed low anchor
         // must fail even when it happens not to overlap any player.
-        const parts = ['.pot', '#board', '#board-caption'].map(box);
+        const parts = publicSelectors.map(box);
         const occupied = [
           ...document.querySelectorAll(
             '.seat .mini-cards, .seat-profile, .seat .hand-rank, .seat .seat-action',
           ),
         ]
-          .filter((el) => !el.hidden)
+          .filter(visible)
           .map((el) => el.getBoundingClientRect());
-        let min = table.top + 12;
-        const max = Math.min(table.bottom - group.height - 12, hero.top - group.height - 24);
+        const min = table.top + gap;
+        const max = Math.min(
+          table.bottom - group.height - gap,
+          hero.top - group.height - 24 * scale,
+        );
         const ideal = (table.top + table.bottom - group.height) / 2;
         const clearAt = (top) =>
           parts.every((part) =>
             occupied.every(
               (r) =>
-                r.left >= part.right + 12 ||
-                r.right <= part.left - 12 ||
-                top + part.bottom - group.top <= r.top - 11.5 ||
-                top + part.top - group.top >= r.bottom + 11.5,
+                r.left >= part.right + gap ||
+                r.right <= part.left - gap ||
+                top + part.bottom - group.top <= r.top - gap + 0.5 ||
+                top + part.top - group.top >= r.bottom + gap - 0.5,
             ),
           );
-        if (!document.querySelector('#arena').classList.contains('is-done') && innerWidth <= 900) {
-          const focusMin = Math.max(
-            min,
-            arena.bottom - document.querySelector('.table-viewport').clientHeight + 12,
-          );
-          for (let top = focusMin; top <= max; top += 0.5) {
-            if (clearAt(top)) {
-              min = focusMin;
-              break;
-            }
-          }
-        }
         if (group.top < min - 0.5 || group.top > max + 0.5 || !clearAt(group.top))
           problems.push('public group is outside a clear position');
         let best = Infinity;

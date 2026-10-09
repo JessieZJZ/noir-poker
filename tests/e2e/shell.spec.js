@@ -9,13 +9,19 @@ test.beforeEach(async ({ page }) => {
   });
 });
 
-test('compact table controls keep blinds aligned and the adjacent reset button follows all page content', async ({
+test('one header settings control replaces table options and the footer follows all page content', async ({
   page,
 }) => {
-  await expect(page.locator('.table-heading, #table-tag')).toHaveCount(0);
-  await expect(page.locator('.surface-top #difficulty')).toHaveCount(0);
-  await expect(page.getByRole('button', { name: '对手设置', exact: true })).toBeVisible();
+  await expect(page.locator('.table-heading, #table-tag, .table-settings')).toHaveCount(0);
+  await expect(
+    page.locator(
+      '.surface-top #difficulty, .surface-top #player-count, .surface-top #opponents-button',
+    ),
+  ).toHaveCount(0);
+  await expect(page.getByRole('button', { name: '设置', exact: true })).toBeVisible();
+  await expect(page.locator('.header-actions button')).toHaveCount(2);
   await expect(page.locator('#opponents-dialog #difficulty')).toHaveCount(1);
+  await expect(page.locator('#opponents-dialog #player-count')).toHaveCount(1);
   // The native platform appends this same button to the footer.
   await page.evaluate(() => {
     const button = document.createElement('button');
@@ -37,8 +43,7 @@ test('compact table controls keep blinds aligned and the adjacent reset button f
           const hand = box('.hand-label'),
             blinds = box('.blind-info'),
             settings = box('#opponents-button'),
-            count = box('#player-count'),
-            countControl = box('.surface-top .difficulty-label'),
+            rules = box('#rules-button'),
             footer = box('.site-footer'),
             status = box('.practice-info > span'),
             reset = box('#reset-button'),
@@ -47,10 +52,9 @@ test('compact table controls keep blinds aligned and the adjacent reset button f
           return {
             blindsOnRight: blinds.left > hand.right,
             blindsAligned: Math.abs(middle(hand) - middle(blinds)) < 1,
-            settingsBelowHand: settings.top >= hand.bottom,
-            countOnRight: count.left > settings.right,
-            settingsAligned: Math.abs(middle(settings) - middle(count)) < 1,
-            settingsAdjacent: Math.abs(countControl.left - settings.right - 16) < 1,
+            settingsBeforeRules: settings.right <= rules.left,
+            settingsAligned: Math.abs(middle(settings) - middle(rules)) < 1,
+            settingsFit: settings.left >= 0 && settings.height >= 44 && rules.right <= innerWidth,
             footerAtEnd: document.querySelector('.main').lastElementChild.matches('.site-footer'),
             footerAfterContent:
               footer.top >= Math.max(box('.game-column').bottom, box('.sidebar').bottom),
@@ -76,11 +80,50 @@ test('compact table controls keep blinds aligned and the adjacent reset button f
   await expect(page.locator('#stat-hands')).toHaveText('0');
 });
 
+test('mobile settings fill the screen, use accessible switches and return focus when dismissed', async ({
+  page,
+}) => {
+  for (const size of [
+    { width: 320, height: 667 },
+    { width: 390, height: 844 },
+    { width: 844, height: 390 },
+  ]) {
+    await page.setViewportSize(size);
+    await page.locator('#opponents-button').click();
+    await expect(page.locator('#opponents-title')).toHaveText('设置');
+    await expect(page.getByRole('switch', { name: '音效', exact: true })).toBeChecked();
+    await expect(page.getByRole('switch', { name: '牌桌提示', exact: true })).toBeChecked();
+    const layout = await page.locator('#opponents-dialog').evaluate((el) => {
+      const r = el.getBoundingClientRect(),
+        body = el.querySelector('.opponents-body');
+      return {
+        top: r.top,
+        left: r.left,
+        width: r.width,
+        height: r.height,
+        viewportWidth: innerWidth,
+        viewportHeight: innerHeight,
+        bodyScrollable:
+          body.scrollHeight > body.clientHeight &&
+          ['auto', 'scroll'].includes(getComputedStyle(body).overflowY),
+      };
+    });
+    expect(layout.top).toBeCloseTo(0, 0);
+    expect(layout.left).toBeCloseTo(0, 0);
+    expect(layout.width).toBeCloseTo(layout.viewportWidth, 0);
+    expect(layout.height).toBeCloseTo(layout.viewportHeight, 0);
+    expect(layout.bodyScrollable).toBe(true);
+    await page.keyboard.press('Escape');
+    await expect(page.locator('#opponents-dialog')).toBeHidden();
+    await expect(page.locator('#opponents-button')).toBeFocused();
+  }
+});
+
 test('combined opponent settings preserve immediate difficulty and discard unsaved style drafts', async ({
   page,
 }) => {
   await page.locator('#opponents-button').click();
-  await expect(page.locator('#opponents-title')).toHaveText('对手设置');
+  await expect(page.locator('#opponents-title')).toHaveText('设置');
   await page
     .locator('.difficulty-option')
     .filter({ has: page.locator('input[value="hard"]') })

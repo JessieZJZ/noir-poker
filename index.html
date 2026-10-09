@@ -21,45 +21,26 @@
       </div>
       <div class="header-actions">
         <button
-          class="icon-button hint-button"
-          id="hint-toggle"
-          aria-label="关闭牌桌提示"
-          aria-pressed="true"
-          aria-controls="coach-content"
-          title="牌桌提示已开启"
+          class="icon-button settings-button"
+          id="opponents-button"
+          aria-label="设置"
+          aria-haspopup="dialog"
+          aria-controls="opponents-dialog"
+          aria-describedby="opponents-summary"
+          title="设置"
         >
           <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="m12 3 2.5 6.5L21 12l-6.5 2.5L12 21l-2.5-6.5L3 12l6.5-2.5L12 3Z" />
+            <path
+              d="m9.5 3-.6 2.3-2 .9L4.8 5.5 2.5 9.4l1.7 1.6v2l-1.7 1.6 2.3 3.9 2.1-.7 2 .9.6 2.3h5l.6-2.3 2-.9 2.1.7 2.3-3.9-1.7-1.6v-2l1.7-1.6-2.3-3.9-2.1.7-2-.9L14.5 3Z"
+            />
+            <circle cx="12" cy="12" r="3" />
           </svg>
         </button>
-        <button
-          class="icon-button"
-          id="sound-button"
-          aria-label="关闭音效"
-          aria-pressed="true"
-          title="音效已开启"
-        >
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M11 5 6 9H3v6h3l5 4V5Z" />
-            <path d="M15 8q6 4 0 8m3-11q9 7 0 14" />
-          </svg></button
-        ><button class="quiet-button" id="rules-button">玩法指南 <span>?</span></button>
+        <span id="opponents-summary" class="sr-only">均衡</span>
+        <button class="quiet-button" id="rules-button">玩法指南 <span>?</span></button>
       </div>
     </header>
     <main class="main">
-      <section
-        class="hint-banner"
-        id="coach-content"
-        aria-label="牌桌提示"
-        role="status"
-        aria-live="polite"
-        aria-atomic="true"
-      >
-        <div class="hint-heading">
-          <strong>牌桌提示</strong><span class="hint-stage" id="coach-stage">翻牌前策略</span>
-        </div>
-        <p id="coach-tip">前位谨慎选牌，后位利用更多信息；结合价格决定是否入池。</p>
-      </section>
       <section class="game-column" aria-label="德州扑克牌桌">
         <div class="game-surface">
           <div class="surface-top">
@@ -68,34 +49,23 @@
               ><span id="replay-label" class="replay-label" hidden></span>
             </div>
             <div class="blind-info">盲注 <b>25 / 50</b></div>
-            <div class="table-settings">
-              <button
-                id="opponents-button"
-                class="opponents-button"
-                aria-haspopup="dialog"
-                aria-controls="opponents-dialog"
-                aria-describedby="opponents-summary"
-              >
-                对手设置
-              </button>
-              <span id="opponents-summary" class="sr-only">均衡</span>
-              <label class="difficulty-label"
-                >人数<select id="player-count" aria-label="牌桌人数">
-                  <option value="5">5 人</option>
-                  <option value="6" selected>6 人</option>
-                  <option value="7">7 人</option>
-                  <option value="8">8 人</option>
-                  <option value="9">9 人</option>
-                </select></label
-              >
-            </div>
+            <section
+              class="hint-banner"
+              id="coach-content"
+              aria-label="牌桌提示"
+              role="status"
+              aria-live="polite"
+              aria-atomic="true"
+              hidden
+            >
+              <span class="sr-only" id="coach-stage">翻牌前策略</span>
+              <p id="coach-tip"></p>
+            </section>
           </div>
-          <p id="table-change-note" class="table-change-note" role="status" hidden></p>
-          <p id="opponents-change-note" class="table-change-note" role="status" hidden></p>
           <p id="replay-note" class="replay-note" role="status" hidden>
             重打本手 · 底牌与发牌顺序不变，原结算已撤回。
           </p>
-          <div class="table-viewport" tabindex="0" aria-label="牌桌，可上下滑动查看玩家">
+          <div class="table-viewport" aria-label="牌桌">
             <div class="arena" id="arena">
               <div class="poker-table">
                 <div class="table-inner">
@@ -166,15 +136,6 @@
               </div>
             </div>
           </div>
-          <section id="showdown-stage" class="showdown-stage" aria-label="摊牌牌型对比" hidden>
-            <div class="showdown-heading">
-              <div>
-                <span class="eyebrow">SHOWDOWN</span>
-                <p id="showdown-context"></p>
-              </div>
-            </div>
-            <div id="showdown-scene" class="showdown-scene" aria-live="polite"></div>
-          </section>
           <div class="action-dock">
             <div class="decision-strip">
               <span class="decision-indicator"></span
@@ -217,21 +178,34 @@
                 id="restart-hand-button"
                 class="review-button restart-hand-button"
                 title="恢复本手起始筹码、底牌和发牌顺序，撤回原结算"
+                aria-label="重打这手牌"
                 hidden
               >
-                ↺ 重打这手牌</button
+                <span class="button-label-desktop">↺ 重打这手牌</span
+                ><span class="button-label-mobile" aria-hidden="true">重打本手</span></button
               ><button
                 id="review-hand-button"
                 class="review-button review-end-button"
                 aria-haspopup="dialog"
                 aria-controls="review-dialog"
+                aria-label="复盘这一手"
                 hidden
               >
-                复盘这一手
+                <span class="button-label-desktop">复盘这一手</span
+                ><span class="button-label-mobile" aria-hidden="true">复盘</span>
               </button>
             </div>
           </div>
         </div>
+        <section id="showdown-stage" class="showdown-stage" aria-label="摊牌牌型对比" hidden>
+          <div class="showdown-heading">
+            <div>
+              <span class="eyebrow">SHOWDOWN</span>
+              <p id="showdown-context"></p>
+            </div>
+          </div>
+          <div id="showdown-scene" class="showdown-scene" aria-live="polite"></div>
+        </section>
       </section>
       <aside class="sidebar">
         <section class="session-card">
@@ -276,19 +250,65 @@
         <span>仅使用虚拟筹码</span>
       </footer>
     </main>
-    <dialog id="opponents-dialog" class="opponents-dialog" aria-labelledby="opponents-title">
+    <dialog
+      id="opponents-dialog"
+      class="opponents-dialog settings-dialog"
+      aria-labelledby="opponents-title"
+    >
       <div class="dialog-header">
-        <span class="eyebrow">OPPONENT LAB</span
-        ><button class="icon-button close-dialog" aria-label="关闭对手设置">
+        <span class="eyebrow">SETTINGS</span
+        ><button class="icon-button close-dialog" aria-label="关闭设置">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" /></svg>
         </button>
       </div>
-      <h2 id="opponents-title">对手设置</h2>
-      <p class="opponents-intro">
-        根据公开牌局提炼的训练原型，非本人复刻。0–100 是策略倾向指数，不是真人的 VPIP 或
-        PFR；精彩牌局无法代表长期频率。
-      </p>
+      <h2 id="opponents-title">设置</h2>
       <div class="opponents-body">
+        <section class="general-settings" aria-label="牌桌与声音设置">
+          <div class="settings-row">
+            <label for="player-count">牌桌人数</label>
+            <select id="player-count" aria-label="牌桌人数">
+              <option value="5">5 人</option>
+              <option value="6" selected>6 人</option>
+              <option value="7">7 人</option>
+              <option value="8">8 人</option>
+              <option value="9">9 人</option>
+            </select>
+          </div>
+          <p id="table-change-note" class="table-change-note" role="status" hidden></p>
+          <div class="settings-row">
+            <span id="sound-label">音效</span>
+            <button
+              id="sound-button"
+              class="settings-switch"
+              role="switch"
+              aria-labelledby="sound-label"
+              aria-checked="true"
+              aria-pressed="true"
+              title="音效已开启"
+            >
+              <span class="switch-thumb" aria-hidden="true"></span>
+            </button>
+          </div>
+          <div class="settings-row">
+            <div>
+              <span id="hint-label">牌桌提示</span>
+              <p class="setting-description">必要时显示，数秒后自动收起</p>
+            </div>
+            <button
+              id="hint-toggle"
+              class="settings-switch"
+              role="switch"
+              aria-labelledby="hint-label"
+              aria-checked="true"
+              aria-pressed="true"
+              aria-controls="coach-content"
+              title="牌桌提示已开启"
+            >
+              <span class="switch-thumb" aria-hidden="true"></span>
+            </button>
+          </div>
+        </section>
+        <h3 class="settings-section-title">对手设置</h3>
         <div class="difficulty-control">
           <span id="difficulty-label">对手难度</span>
           <div
@@ -309,6 +329,8 @@
           </div>
         </div>
         <p class="difficulty-note">难度立即生效；风格与情绪保存后下一手生效。</p>
+        <p id="opponents-change-note" class="table-change-note" role="status" hidden></p>
+        <p class="opponents-intro">根据公开牌局提炼的训练原型，非本人复刻；指数表示策略倾向。</p>
         <div class="opponents-layout">
           <section aria-label="牌手原型研究">
             <div id="profile-cards" class="profile-cards"></div>

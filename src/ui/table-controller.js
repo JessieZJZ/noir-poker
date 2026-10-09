@@ -32,6 +32,7 @@ import { presetRaiseTo } from './bet-sizing.js';
 import { CHIP_UNIT, legalRaiseTo } from '../engine/bet-sizing.js';
 import { createSettlementLayout } from './settlement-layout.js';
 import { createPlayViewport } from './play-viewport.js';
+import { createHintNotification } from './hint-notification.js';
 import { preferenceStorage } from '../platform/storage.js';
 import { createActivityClock } from '../platform/activity-clock.js';
 import { isAppActive } from '../platform/native.js';
@@ -39,8 +40,20 @@ const activityClock = createActivityClock();
 activityClock.setActive(isAppActive());
 let dealWait = null;
 const $ = (s) => document.querySelector(s);
-const settlementLayout = createSettlementLayout($('#arena'));
-const playViewport = createPlayViewport($('.game-surface'));
+const settlementLayout = createSettlementLayout($('#arena'), { observe: false });
+const playViewport = createPlayViewport($('.game-surface'), { layout: settlementLayout.update });
+const hintNotification = createHintNotification({
+  publish({ visible, text, stage }) {
+    $('#coach-content').hidden = !visible;
+    if (text !== undefined && $('#coach-tip').textContent !== text) {
+      $('#coach-tip').textContent = text;
+      $('#coach-content').scrollLeft = 0;
+    }
+    if (stage !== undefined && $('#coach-stage').textContent !== stage)
+      $('#coach-stage').textContent = stage;
+  },
+});
+hintNotification.setActive(isAppActive() && !document.hidden);
 const handReview = createReviewController({ card });
 const showdown = createShowdownController({ card });
 // Display preferences belong to this hand's UI, never to settlement or review.
@@ -466,6 +479,9 @@ function render() {
   $('#restart-hand-button').hidden = !canRestartHand(game);
   $('#action-panel').classList.toggle('settled-actions', done);
   $('#next-button').textContent = hero.stack === 0 ? '补充筹码，继续练习' : '下一手';
+  $('#next-button').classList.toggle('has-mobile-label', hero.stack === 0);
+  $('#next-button').dataset.mobileLabel = '补充筹码';
+  $('#next-button').setAttribute('aria-label', hero.stack === 0 ? '补充筹码，继续练习' : '下一手');
   for (const b of [$('#fold-button'), $('#call-button')]) b.disabled = !legal.enabled;
   $('#raise-button').disabled = !legal.enabled || !legal.canRaise;
   $('#bet-slider').disabled = !legal.enabled || !legal.canRaise;
@@ -483,7 +499,7 @@ function render() {
     slider.value = bet;
     $('#call-button').innerHTML = legal.canCheck
       ? '<span>过牌</span>'
-      : `<span>${legal.callAmount < legal.toCall ? '全下跟注' : '跟注'}</span><strong>${format(legal.callAmount)}</strong>`;
+      : `<span class="button-label-desktop">${legal.callAmount < legal.toCall ? '全下跟注' : '跟注'}</span><span class="button-label-mobile" aria-hidden="true">${legal.callAmount < legal.toCall ? '全下' : '跟注'}</span><strong>${format(legal.callAmount)}</strong>`;
     $('#call-button').setAttribute(
       'aria-label',
       legal.canCheck
@@ -511,7 +527,6 @@ function render() {
   lastHand = game.hand;
   lastBoard = displayBoard.length;
   playViewport.update(game, done);
-  settlementLayout.update();
 }
 function updateBet() {
   const legal = legalActions(game, 0);
@@ -520,15 +535,15 @@ function updateBet() {
     { street: game.street, history: game.history, currentBet: game.currentBet, legal },
     bet,
   );
-  $('#raise-button').innerHTML = `<span>${action}</span><strong>${format(bet)}</strong>`;
+  $('#raise-button').innerHTML =
+    `<span class="button-label-desktop">${action}</span><span class="button-label-mobile" aria-hidden="true">${bet === legal.maxRaiseTo ? '全下' : '加注'}</span><strong>${format(bet)}</strong>`;
   $('#raise-button').setAttribute('aria-label', action + ' ' + format(bet));
 }
 
-function updateCoach() {
-  $('#coach-content').hidden = !hints;
+function updateCoach(force = false) {
   const toggle = $('#hint-toggle');
   toggle.setAttribute('aria-pressed', String(hints));
-  toggle.setAttribute('aria-label', hints ? '关闭牌桌提示' : '开启牌桌提示');
+  toggle.setAttribute('aria-checked', String(hints));
   toggle.title = hints ? '牌桌提示已开启' : '牌桌提示已关闭';
   const p = game.players[0],
     e = evaluate([...p.hole, ...game.board]);
@@ -553,8 +568,17 @@ function updateCoach() {
   if (legal.enabled && legal.toCall > 0)
     tip += ` 跟注占可争夺底池约 ${Math.round((legal.callAmount / contestableAfterCall(game, 0, legal.callAmount)) * 100)}%。`;
   const stage = game.phase === 'done' ? '本手复盘' : streets[game.street] + '策略';
-  if ($('#coach-stage').textContent !== stage) $('#coach-stage').textContent = stage;
-  if ($('#coach-tip').textContent !== tip) $('#coach-tip').textContent = tip;
+  hintNotification.update({
+    enabled: hints,
+    key: `${epoch}:${game.hand}:${game.street}:${game.phase === 'done' ? 'done' : legal.enabled ? `turn:${game.currentBet}:${p.bet}` : 'waiting'}`,
+    text: tip,
+    stage,
+    force,
+    notify:
+      force ||
+      game.phase === 'done' ||
+      (!p.folded && (legal.enabled || game.hand !== lastHand || game.board.length !== lastBoard)),
+  });
 }
 function schedule() {
   clearTimeout(timer);
@@ -855,12 +879,9 @@ $('#difficulty').onchange = (e) => {
 };
 function updateSound() {
   const b = $('#sound-button');
-  b.setAttribute('aria-label', sound ? '关闭音效' : '开启音效');
   b.setAttribute('aria-pressed', String(sound));
+  b.setAttribute('aria-checked', String(sound));
   b.title = sound ? '音效已开启' : '音效已关闭';
-  b.innerHTML = sound
-    ? '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4V5Z"/><path d="M15 8q6 4 0 8m3-11q9 7 0 14"/></svg>'
-    : '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4V5Z"/><path d="m16 9 5 6m0-6-5 6"/></svg>';
 }
 $('#sound-button').onclick = () => {
   sound = !sound;
@@ -875,7 +896,7 @@ $('#hint-toggle').onclick = () => {
   try {
     preferenceStorage.setItem('noir-hints', String(hints));
   } catch {}
-  updateCoach();
+  updateCoach(true);
 };
 $('#rules-button').onclick = () => $('#rules-dialog').showModal();
 $('#reset-button').onclick = () => $('#reset-dialog').showModal();
@@ -1047,11 +1068,16 @@ function registerTools() {
 updateSound();
 document.addEventListener('noir:app-state', ({ detail }) => {
   if (typeof detail?.active !== 'boolean') return;
+  hintNotification.setActive(detail.active && !document.hidden);
   if (!activityClock.setActive(detail.active)) return;
   if (!detail.active) {
     clearTimeout(timer);
     if (audio?.state === 'running') void audio.suspend().catch(() => {});
   } else schedule();
 });
+document.addEventListener('visibilitychange', () =>
+  hintNotification.setActive(activityClock.active && !document.hidden),
+);
+window.addEventListener('pagehide', () => hintNotification.destroy(), { once: true });
 nextHand();
 registerTools();
