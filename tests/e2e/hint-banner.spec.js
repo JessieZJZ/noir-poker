@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { openSettings, closeSettings } from './settings-helpers.js';
 
 test.beforeEach(async ({ page }) => {
   await page.goto('/');
@@ -9,38 +10,80 @@ test.beforeEach(async ({ page }) => {
   });
 });
 
-test('the top hint banner updates with the hand and remembers its switch across visits', async ({
+test('necessary hints appear below blinds, expire without reappearing on ordinary renders and renew on a new street', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.clock.install({ time: new Date('2026-01-01T00:00:00Z') });
+  // The notification captures its timer at module initialization. Install the
+  // clock before this navigation so the real UI timer uses the fake clock.
+  await page.reload();
+  await page.waitForFunction(() => !!window.qa);
+  await page.evaluate(() => window.qa.stop());
+  await page.clock.pauseAt(new Date('2026-01-01T00:00:01Z'));
+  const banner = page.locator('#coach-content');
+  await page.evaluate(() => window.qa.heroTurn(9));
+  await expect(banner).toBeVisible();
+  await expect(page.locator('#coach-stage')).toHaveText('翻牌前策略');
+  await expect(page.locator('#coach-tip')).toContainText('跟注占可争夺底池约');
+  await expect(page.locator('.sidebar #coach-content')).toHaveCount(0);
+  await page.clock.runFor(32);
+  const before = await page.locator('.table-viewport').boundingBox();
+  await page.clock.runFor(6967);
+  await expect(banner).toBeVisible();
+  await page.clock.runFor(2);
+  await expect(banner).toBeHidden();
+  const after = await page.locator('.table-viewport').boundingBox();
+  expect(after).toEqual(before);
+  // Slider changes are ordinary renders within the same decision. They must
+  // not turn the notification into a persistent repeated announcement.
+  await page.locator('[data-preset="half"]').click();
+  await expect(banner).toBeHidden();
+  await page.evaluate(() => {
+    window.qa.publicBoard(9);
+    window.qa.stop();
+  });
+  await expect(banner).toBeVisible();
+  await expect(page.locator('#coach-stage')).toHaveText('翻牌策略');
+  await page.clock.runFor(7001);
+  await expect(banner).toBeHidden();
+  await page.evaluate(() => window.qa.foldWin(9));
+  await expect(banner).toBeVisible();
+  await expect(page.locator('#coach-stage')).toHaveText('本手复盘');
+});
+
+test('the settings switch controls hints immediately and restores its choice on a fresh visit', async ({
   page,
 }) => {
   const banner = page.locator('#coach-content'),
     toggle = page.locator('#hint-toggle');
-  await expect(page.locator('.sidebar .coach-card, .sidebar #coach-content')).toHaveCount(0);
-  await expect(banner).toBeVisible();
-  await expect(toggle).toHaveAccessibleName('关闭牌桌提示');
+  await openSettings(page);
+  await expect(toggle).toHaveAccessibleName('牌桌提示');
+  await expect(toggle).toHaveAttribute('role', 'switch');
   await expect(toggle).toHaveAttribute('aria-controls', 'coach-content');
+  await expect(toggle).toBeChecked();
+  await toggle.click();
+  await expect(toggle).not.toBeChecked();
+  await expect(banner).toBeHidden();
+  await closeSettings(page);
+  await page.reload();
+  await page.waitForFunction(() => !!window.qa);
   await page.evaluate(() => window.qa.heroTurn(9));
-  await expect(page.locator('#coach-stage')).toHaveText('翻牌前策略');
-  await expect(page.locator('#coach-tip')).toContainText('跟注占可争夺底池约');
-  await page.evaluate(() => window.qa.publicBoard(9));
-  await expect(page.locator('#coach-stage')).toHaveText('翻牌策略');
-  await page.evaluate(() => window.qa.foldWin(9));
-  await expect(page.locator('#coach-stage')).toHaveText('本手复盘');
-
-  await toggle.click();
   await expect(banner).toBeHidden();
-  await expect(toggle).toHaveAccessibleName('开启牌桌提示');
-  await page.reload();
-  await page.waitForFunction(() => !!window.qa);
-  await expect(banner).toBeHidden();
-  await expect(toggle).toHaveAttribute('aria-pressed', 'false');
+  await openSettings(page);
+  await expect(toggle).not.toBeChecked();
   await toggle.click();
-  await page.reload();
-  await page.waitForFunction(() => !!window.qa);
+  await expect(toggle).toBeChecked();
+  await closeSettings(page);
   await expect(banner).toBeVisible();
-  await expect(toggle).toHaveAttribute('aria-pressed', 'true');
+  await page.reload();
+  await page.waitForFunction(() => !!window.qa);
+  await page.evaluate(() => window.qa.heroTurn(9));
+  await expect(banner).toBeVisible();
+  await expect(toggle).toHaveAttribute('aria-checked', 'true');
 });
 
-test('banner and switch fit above the table without displacing mobile actions or table inspection', async ({
+test('single-line hints scroll horizontally below blinds without moving the table or the action dock', async ({
   page,
 }) => {
   for (const size of [
@@ -51,60 +94,54 @@ test('banner and switch fit above the table without displacing mobile actions or
   ]) {
     await page.setViewportSize(size);
     await page.evaluate(() => window.qa.heroTurn(9));
-    for (const enabled of [true, false, true]) {
-      if ((await page.locator('#hint-toggle').getAttribute('aria-pressed')) !== String(enabled))
-        await page.locator('#hint-toggle').click();
+    await expect(page.locator('#coach-content')).toBeVisible();
+    const layout = await page.evaluate(() => {
+      const banner = document.querySelector('#coach-content'),
+        text = document.querySelector('#coach-tip');
+      const r = banner.getBoundingClientRect(),
+        blinds = document.querySelector('.blind-info').getBoundingClientRect();
+      const table = document.querySelector('.table-viewport').getBoundingClientRect(),
+        dock = document.querySelector('.action-dock').getBoundingClientRect();
+      return {
+        belowBlinds: r.top >= blinds.bottom && r.top - blinds.bottom <= 8,
+        aboveTable: r.bottom <= table.top,
+        insideWidth: r.left >= 0 && r.right <= innerWidth,
+        nowrap: getComputedStyle(text).whiteSpace,
+        overflowX: getComputedStyle(banner).overflowX,
+        singleLine: text.clientHeight <= parseFloat(getComputedStyle(text).lineHeight) + 1,
+        canScroll: banner.scrollWidth > banner.clientWidth,
+        scrollWidth: document.documentElement.scrollWidth,
+        width: innerWidth,
+        tableTop: table.top,
+        tableBottom: table.bottom,
+        dockTop: dock.top,
+      };
+    });
+    expect(layout.belowBlinds).toBe(true);
+    expect(layout.aboveTable).toBe(true);
+    expect(layout.insideWidth).toBe(true);
+    expect(layout.nowrap).toBe('nowrap');
+    expect(layout.overflowX).toBe('auto');
+    expect(layout.singleLine).toBe(true);
+    expect(layout.scrollWidth).toBeLessThanOrEqual(layout.width);
+    if (size.width <= 390) {
+      expect(layout.canScroll).toBe(true);
+      await page.locator('#coach-content').evaluate((el) => el.scrollTo(el.scrollWidth, 0));
       await expect
-        .poll(() =>
-          page.evaluate((enabled) => {
-            const box = (selector) => document.querySelector(selector).getBoundingClientRect(),
-              header = box('.header'),
-              banner = box('#coach-content'),
-              surface = box('.game-surface'),
-              viewport = box('.table-viewport'),
-              session = box('.session-card'),
-              sidebar = box('.sidebar'),
-              controls = [...document.querySelectorAll('.header-actions button')].map((el) =>
-                el.getBoundingClientRect(),
-              );
-            const actions = ['#raise-button', '#fold-button', '#call-button'].map(box);
-            return (
-              document.documentElement.scrollWidth <= innerWidth &&
-              controls.every((r) => r.left >= 0 && r.right <= innerWidth) &&
-              (!enabled ||
-                (banner.top >= header.bottom &&
-                  banner.bottom <= surface.top &&
-                  document.querySelector('#coach-tip').clientHeight >=
-                    document.querySelector('#coach-tip').scrollHeight)) &&
-              (innerWidth > 900 ||
-                (scrollY === 0 &&
-                  viewport.height > 70 &&
-                  Math.abs(session.width - sidebar.width) < 1 &&
-                  actions.every((r) => r.height >= 44 && r.bottom <= innerHeight)))
-            );
-          }, enabled),
-        )
-        .toBe(true);
-    }
-    if (size.width <= 900) {
-      await expect
-        .poll(() =>
-          page
-            .locator('.table-viewport')
-            .evaluate((el) => Math.abs(el.scrollHeight - el.clientHeight - el.scrollTop)),
-        )
-        .toBeLessThan(2);
-      const viewport = await page.locator('.table-viewport').boundingBox();
-      await page.mouse.move(viewport.x + viewport.width / 2, viewport.y + 25);
-      await page.mouse.wheel(0, -2000);
-      await expect
-        .poll(() => page.locator('.table-viewport').evaluate((el) => el.scrollTop))
-        .toBeLessThan(5);
-      await page.locator('#hint-toggle').click();
-      await page.locator('#hint-toggle').click();
-      await expect
-        .poll(() => page.locator('.table-viewport').evaluate((el) => el.scrollTop))
-        .toBeLessThan(5);
+        .poll(() => page.locator('#coach-content').evaluate((el) => el.scrollLeft))
+        .toBeGreaterThan(0);
+      const after = await page.evaluate(() => ({
+        tableTop: document.querySelector('.table-viewport').getBoundingClientRect().top,
+        tableBottom: document.querySelector('.table-viewport').getBoundingClientRect().bottom,
+        dockTop: document.querySelector('.action-dock').getBoundingClientRect().top,
+        tableScroll: document.querySelector('.table-viewport').scrollTop,
+      }));
+      expect(after).toEqual({
+        tableTop: layout.tableTop,
+        tableBottom: layout.tableBottom,
+        dockTop: layout.dockTop,
+        tableScroll: 0,
+      });
     }
   }
 });

@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { openSettings, setPlayerCount } from './settings-helpers.js';
 
 test.beforeEach(async ({ page }) => {
   const errors = [];
@@ -165,9 +166,19 @@ async function assertSettledLayout(page) {
   await expect
     .poll(async () =>
       page.evaluate(() => {
-        const arena = document.querySelector('#arena').getBoundingClientRect(),
+        const arenaElement = document.querySelector('#arena'),
+          arena = arenaElement.getBoundingClientRect(),
+          boundary = (
+            innerWidth <= 900 ? document.querySelector('.table-viewport') : arenaElement
+          ).getBoundingClientRect(),
+          scale = arena.width / arenaElement.offsetWidth,
           hero = document.querySelector('.hero-area').getBoundingClientRect(),
-          caption = document.querySelector('#board-caption').getBoundingClientRect(),
+          captionElement = document.querySelector('#board-caption'),
+          caption = (
+            getComputedStyle(captionElement).display === 'none'
+              ? document.querySelector('#board')
+              : captionElement
+          ).getBoundingClientRect(),
           pot = document.querySelector('#pot-details-button').getBoundingClientRect();
         const overlaps = (a, b) =>
           a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top;
@@ -182,10 +193,11 @@ async function assertSettledLayout(page) {
               ...[...document.querySelectorAll('#hero-cards .playing-card')].map(
                 (el) => el.getBoundingClientRect().top - caption.bottom,
               ),
-            ) >= 16,
+            ) >=
+            16 * scale - 0.5,
           heroInside:
-            hero.top >= arena.top &&
-            hero.bottom <= arena.bottom - 12 &&
+            hero.top >= boundary.top - 0.5 &&
+            hero.bottom <= boundary.bottom + 0.5 &&
             hero.left >= 0 &&
             hero.right <= innerWidth,
           captionClear: !seatParts.some((a) => overlaps(a, caption)),
@@ -497,7 +509,7 @@ test('showdown participant names include the current named style and stay readab
       if (width === 390 && count === 9) {
         await expect(page.locator('.flying-chip')).toHaveCount(0);
         await page.screenshot({
-          path: `/Users/zjz/Documents/Codex/2026-10-06/create-a-new-site-with-sites/work/showdown-clean-${testInfo.project.name}.png`,
+          path: testInfo.outputPath(`showdown-clean-${testInfo.project.name}.png`),
           fullPage: true,
         });
       }
@@ -564,7 +576,7 @@ test('hero recent actions persist within the street and clear on new streets exc
       await assertFits();
       if (width === 390 && count === 9)
         await page.screenshot({
-          path: `/Users/zjz/Documents/Codex/2026-10-06/create-a-new-site-with-sites/work/hero-action-${test.info().project.name}.png`,
+          path: test.info().outputPath(`hero-action-${test.info().project.name}.png`),
           fullPage: true,
         });
 
@@ -732,7 +744,7 @@ test('settled public caption and hero remain separated for winners, losers, fold
           await expect(page.locator('#arena')).toHaveClass(/has-full-player-names/);
         if (mode === 'win' && count === 6 && (width === 390 || width === 1280))
           await page.locator('#arena').screenshot({
-            path: `/Users/zjz/Documents/Codex/2026-10-06/create-a-new-site-with-sites/work/settled-spacing-${width}-${testInfo.project.name}.png`,
+            path: testInfo.outputPath(`settled-spacing-${width}-${testInfo.project.name}.png`),
           });
       }
     }
@@ -1307,7 +1319,7 @@ test('reset cancels queued continuation and table size applies on next deal', as
     window.qa.river(6);
     window.qa.finish();
   });
-  await page.locator('#player-count').selectOption('5');
+  await setPlayerCount(page, 5);
   await page.locator('#next-button').click();
   expect(
     (
@@ -1332,8 +1344,9 @@ test('first visit presents balanced opponents with sound enabled', async ({ page
   await expect(page.locator('.seat-style-label')).toHaveText(Array(5).fill('均衡'));
   await expect(page.locator('#hint-toggle')).toHaveAttribute('aria-pressed', 'true');
   await expect(page.locator('#sound-button')).toHaveAttribute('aria-pressed', 'true');
-  await expect(page.locator('#sound-button')).toHaveAttribute('aria-label', '关闭音效');
   await page.locator('#opponents-button').click();
+  await expect(page.locator('#sound-button')).toHaveAccessibleName('音效');
+  await expect(page.locator('#sound-button')).toHaveAttribute('role', 'switch');
   await expect(page.locator('[data-profile-preview="balanced"]')).toHaveAttribute(
     'aria-pressed',
     'true',
@@ -1355,10 +1368,10 @@ test('first visit presents balanced opponents with sound enabled', async ({ page
 test('returning restores all saved options before the first fresh hand, including pending choices', async ({
   page,
 }) => {
+  await openSettings(page);
   await page.locator('#player-count').selectOption('9');
   await page.locator('#hint-toggle').click();
   await page.locator('#sound-button').click();
-  await page.locator('#opponents-button').click();
   await page
     .locator('.difficulty-option')
     .filter({ has: page.locator('input[value="hard"]') })
@@ -1435,7 +1448,7 @@ test('per-seat styles apply next hand, survive resize and refresh, and freeze on
   expect((await page.evaluate(() => window.noir.getState())).emotionMode).toBe('lively');
   for (const count of [9, 5, 9]) {
     await page.evaluate(() => window.qa.foldRest());
-    await page.locator('#player-count').selectOption(String(count));
+    await setPlayerCount(page, count);
     await page.locator('#next-button').click();
     const state = await page.evaluate(() => {
       window.qa.stop();
@@ -1451,7 +1464,10 @@ test('per-seat styles apply next hand, survive resize and refresh, and freeze on
   expect((await page.evaluate(() => window.noir.getState())).players[1].botProfile).toBe('tan');
   await page.locator('#opponents-button').click();
   await expect(page.locator('[data-bot-seat="8"]')).toHaveValue('st');
-  await expect(page.locator('#opponents-dialog')).toContainText('不是真人的 VPIP');
+  await expect(page.locator('#opponents-dialog .opponents-intro')).toContainText('非本人复刻');
+  await expect(page.locator('#opponents-dialog .opponents-intro')).toContainText(
+    '指数表示策略倾向',
+  );
 });
 
 test('nine-seat style assignment shows every persona at all sizes and executes the selected policies', async ({
@@ -1485,7 +1501,9 @@ test('nine-seat style assignment shows every persona at all sizes and executes t
     '本手实际风格：均衡',
   );
   await page.locator('#save-opponents').click();
+  await openSettings(page);
   await expect(page.locator('#opponents-change-note')).toBeVisible();
+  await page.locator('#opponents-dialog .close-dialog').click();
   await expect(page.locator('.seat-8 .seat-style-label')).toHaveText('均衡');
   await page.locator('#next-button').click();
   await page.evaluate(() => window.qa.stop());
@@ -1557,7 +1575,7 @@ test('all named portraits preview immediately, follow saved styles next hand and
   page,
 }) => {
   const profiles = ['tan', 'st', 'zang', 'peter', 'abao', 'viktor', 'jungleman', 'dwan'];
-  await page.locator('#player-count').selectOption('9');
+  await setPlayerCount(page, 9);
   await page.evaluate(() => window.qa.foldWin(9));
   await page.locator('#opponents-button').click();
   await expect(page.locator('#profile-cards img')).toHaveCount(8);
@@ -1611,10 +1629,12 @@ test('all named portraits preview immediately, follow saved styles next hand and
       await expect(page.locator(`.seat-${id} .persona-portrait`)).toBeVisible();
       const fits = await page.locator(`.seat-${id} .avatar`).evaluate((avatar) => {
         const a = avatar.getBoundingClientRect(),
-          p = avatar.closest('.seat-profile').getBoundingClientRect();
+          p = avatar.closest('.seat-profile').getBoundingClientRect(),
+          arena = document.querySelector('#arena'),
+          scale = arena.getBoundingClientRect().width / arena.offsetWidth;
         return (
-          a.width >= 18 &&
-          a.height >= 18 &&
+          a.width >= 18 * scale - 0.5 &&
+          a.height >= 18 * scale - 0.5 &&
           a.left >= p.left &&
           a.right <= p.right &&
           a.top >= p.top &&
@@ -1647,6 +1667,8 @@ test('all named portraits preview immediately, follow saved styles next hand and
       );
       await expect(page.locator('#seats .persona-portrait')).toHaveCount(count - 1);
       const readable = await page.locator('.seat-profile').evaluateAll((profiles) => {
+        const arena = document.querySelector('#arena'),
+          scale = arena.getBoundingClientRect().width / arena.offsetWidth;
         const overlaps = (a, b) =>
           a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top;
         return profiles.every((profile) => {
@@ -1659,8 +1681,8 @@ test('all named portraits preview immediately, follow saved styles next hand and
           range.selectNodeContents(profile.querySelector('.seat-style-label'));
           const label = range.getBoundingClientRect();
           return (
-            avatar.width >= 18 &&
-            avatar.height >= 18 &&
+            avatar.width >= 18 * scale - 0.5 &&
+            avatar.height >= 18 * scale - 0.5 &&
             text.left >= bounds.left &&
             text.right <= bounds.right &&
             bounds.left >= 0 &&

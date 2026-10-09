@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { toggleSound } from './settings-helpers.js';
 
 test('hero and bot checks play two short table taps and respect mute', async ({ page }) => {
   const errors = [];
@@ -88,7 +89,7 @@ test('hero and bot checks play two short table taps and respect mute', async ({ 
     (await page.evaluate(() => window.noir.getState())).players[waiting.actor].lastAction.text,
   ).toBe('过牌');
   expect(await page.evaluate(() => window.taps.attacks.length)).toBe(4);
-  await page.locator('#sound-button').click();
+  await toggleSound(page);
   await page.evaluate(() => window.qa.bettingTurn(1, 1));
   await page.locator('#call-button').click();
   await page.evaluate(() => window.qa.stop());
@@ -166,7 +167,7 @@ test('hero and bot folds have a distinct falling sound and obey the sound toggle
     { type: 'sine', frequencies: [310] },
     fold,
   ]);
-  await page.locator('#sound-button').click();
+  await toggleSound(page);
   await page.evaluate(() => window.qa.heroTurn(6));
   await page.locator('#fold-button').click();
   await page.evaluate(() => window.qa.stop());
@@ -245,7 +246,7 @@ test('saved sound choices restore, while missing or unavailable storage defaults
   await page.waitForFunction(() => !!window.qa);
   for (const enabled of [false, true]) {
     await expect(page.locator('#sound-button')).toHaveAttribute('aria-pressed', String(!enabled));
-    await page.locator('#sound-button').click();
+    await toggleSound(page);
     expect(await page.evaluate(() => localStorage.getItem('noir-sound'))).toBe(String(enabled));
     await page.reload();
     await expect(page.locator('#sound-button')).toHaveAttribute('aria-pressed', String(enabled));
@@ -262,7 +263,7 @@ test('saved sound choices restore, while missing or unavailable storage defaults
   });
   await page.reload();
   await expect(page.locator('#sound-button')).toHaveAttribute('aria-pressed', 'true');
-  await page.locator('#sound-button').click();
+  await toggleSound(page);
   await expect(page.locator('#sound-button')).toHaveAttribute('aria-pressed', 'false');
 });
 
@@ -315,12 +316,12 @@ test('sound waits for a real gesture without queuing old effects and handles fai
   await page.locator('#next-button').click();
   await page.evaluate(() => window.qa.stop());
   expect(await page.evaluate(() => window.audioProbe.notes)).toBe(2);
-  await page.locator('#sound-button').click();
+  await toggleSound(page);
   await page.evaluate(() => window.qa.foldWin(6));
   await page.locator('#next-button').click();
   await page.evaluate(() => window.qa.stop());
   expect(await page.evaluate(() => window.audioProbe.notes)).toBe(2);
-  await page.locator('#sound-button').click();
+  await toggleSound(page);
   await expect.poll(() => page.evaluate(() => window.audioProbe.notes)).toBe(4);
   await page.reload();
   await page.waitForFunction(() => !!window.qa);
@@ -329,8 +330,8 @@ test('sound waits for a real gesture without queuing old effects and handles fai
     window.audioProbe.reject = true;
   });
   await page.keyboard.press('Tab');
-  await page.locator('#sound-button').click();
-  await page.locator('#sound-button').click();
+  await toggleSound(page);
+  await toggleSound(page);
   await page.evaluate(() => window.qa.foldWin(6));
   await page.locator('#next-button').click();
   await page.evaluate(() => window.qa.stop());

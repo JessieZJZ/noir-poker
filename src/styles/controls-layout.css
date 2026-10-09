@@ -1,0 +1,113 @@
+/* Controls keep their labels and amounts on the same baseline at every size. */
+button:not(.profile-card):not(.review-step) {
+  white-space: nowrap;
+}
+.action-panel .action {
+  flex-direction: row;
+  gap: 6px;
+  white-space: nowrap;
+}
+.action-buttons .button-label-desktop {
+  display: none;
+}
+.action-buttons .button-label-mobile {
+  display: inline;
+}
+.action-panel .action span,
+.action-panel .action strong {
+  line-height: 1.3;
+}
+.action-panel.settled-actions {
+  display: grid;
+  grid-auto-flow: column;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-auto-columns: minmax(0, 1fr);
+  align-items: stretch;
+}
+.action-panel.settled-actions > button {
+  width: 100%;
+  min-width: 0;
+  margin: 0;
+  white-space: nowrap;
+}
+.game-surface .surface-top {
+  row-gap: 4px;
+}
+.surface-top .replay-note {
+  grid-area: 2 / 1;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  line-height: 22px;
+  font-size: 12px;
+}
+.surface-top:has(.replay-note:not([hidden])) .hint-banner {
+  grid-area: 2 / 2;
+  max-width: clamp(88px, 24vw, 160px);
+  justify-self: end;
+}
+@media (min-width: 901px) {
+  .main {
+    align-items: stretch;
+    row-gap: 18px;
+  }
+  .game-column,
+  .game-surface,
+  .table-viewport {
+    display: flex;
+    flex-direction: column;
+  }
+  .game-surface,
+  .table-viewport,
+  .table-viewport > .arena {
+    flex: 1 0 auto;
+  }
+  .main > .sidebar {
+    align-self: stretch;
+    padding-top: 0;
+    gap: 14px;
+  }
+  .main > .sidebar > .session-card {
+    flex: none;
+  }
+  .main > .sidebar > .activity-card {
+    flex: 1 0 auto;
+  }
+  .main .decision-strip {
+    padding: 12px 20px 10px;
+  }
+  .main .action-panel {
+    min-height: 0;
+    padding: 0 20px 16px;
+    gap: 12px;
+  }
+  .main .action-panel .action {
+    min-width: 0;
+    min-height: 52px;
+    padding: 8px 5px;
+  }
+  .main .action-panel .action span {
+    font-size: 14px;
+  }
+  .main .action-panel .action strong {
+    font-size: 17px;
+  }
+  .main .action-panel.settled-actions {
+    gap: 10px;
+    padding-top: 10px;
+  }
+  .main .action-panel.settled-actions > button {
+    min-height: 48px;
+    padding: 10px 8px;
+    font-size: 14px;
+    line-height: 1.4;
+  }
+}
+@media (max-width: 900px) {
+  .surface-top .replay-note {
+    font-size: 10px;
+  }
+}
