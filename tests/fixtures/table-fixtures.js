@@ -112,6 +112,21 @@ window.qa = {
     schedule();
     return { actor: id, delayMs: plan.delayMs };
   },
+  botCheckTurn() {
+    fixtureGame(6, true);
+    startHand(game);
+    while (!legalActions(game).canCheck) act(game, game.actor, 'call');
+    const id = game.actor;
+    game.players[id].hole = ['7s', '2h'].map((v) =>
+      deckOfCards().find((c) => c.rank === Number(v[0]) && c.suit === 'shcd'.indexOf(v[1])),
+    );
+    const plan = planBotTurn(game, () => 0.99, { timingRandom: () => 0 });
+    const startedAt = activityClock.now();
+    botWait = { plan, startedAt, deadline: startedAt + plan.delayMs };
+    render();
+    schedule();
+    return { actor: id, delayMs: plan.delayMs };
+  },
   foldFinished(street = 0) {
     fixtureGame(6, true);
     startHand(game);
