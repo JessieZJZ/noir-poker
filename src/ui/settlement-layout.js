@@ -82,6 +82,13 @@ export function createSettlementLayout(arena, { observe = true } = {}) {
       const table = arena.querySelector('.table-inner').getBoundingClientRect(),
         group = center.getBoundingClientRect(),
         hero = arena.querySelector('.hero-area').getBoundingClientRect(),
+        heroTop = Math.min(
+          hero.top,
+          ...[...arena.querySelectorAll('#hero-cards .playing-card')]
+            .map((el) => el.getBoundingClientRect())
+            .filter((r) => r.width > 0 && r.height > 0)
+            .map((r) => r.top),
+        ),
         parts = [...center.querySelectorAll('.pot, #board, #board-caption')]
           .map((el) => el.getBoundingClientRect())
           .filter((r) => r.width > 0 && r.height > 0),
@@ -107,11 +114,11 @@ export function createSettlementLayout(arena, { observe = true } = {}) {
         ),
         max = Math.min(
           table.bottom - group.height - gap,
-          heroBlocks ? hero.top - group.height - heroGap : Infinity,
+          heroBlocks ? heroTop - group.height - heroGap : Infinity,
         ),
         ideal = (table.top + table.bottom - group.height) / 2,
         top = nearestClearTop(ideal, min, max, blocked);
-      return { top, table, group, hero };
+      return { top, table, group, heroTop };
     };
     let space = measure();
     if (space.top === null) {
@@ -124,12 +131,12 @@ export function createSettlementLayout(arena, { observe = true } = {}) {
         .sort((a, b) => b[1] - b[0] - (a[1] - a[0]))[0];
       const y = (band[0] + band[1]) / 2,
         current = arena.getBoundingClientRect(),
-        { table, group, hero } = space;
+        { table, group, heroTop } = space;
       let height = Math.max(
         current.height,
         (table.top - current.top + gap) / y,
         (current.bottom - table.bottom + group.height + gap) / (1 - y),
-        (current.bottom - hero.top + group.height + heroGap) / (1 - y),
+        (current.bottom - heroTop + group.height + heroGap) / (1 - y),
       );
       for (const seat of seats)
         height = Math.max(

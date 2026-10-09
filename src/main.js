@@ -7,6 +7,7 @@ import './styles/opponents.css';
 import './styles/native.css';
 import './styles/hint-banner.css';
 import './styles/play-viewport.css';
+import './styles/controls-layout.css';
 import { preparePlatform } from './platform/native.js';
 
 await preparePlatform();

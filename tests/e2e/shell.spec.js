@@ -153,3 +153,106 @@ test('combined opponent settings preserve immediate difficulty and discard unsav
   await expect(page.locator('[data-bot-seat="1"]')).toHaveValue('balanced');
   await expect(page.locator('#save-opponents')).toBeVisible();
 });
+
+test('desktop actions keep one-line labels and aligned button rows before and after settlement', async ({
+  page,
+}) => {
+  for (const width of [1000, 1280, 1700]) {
+    await page.setViewportSize({ width, height: 1000 });
+    for (const settled of [false, true]) {
+      await page.evaluate(
+        (settled) => (settled ? window.qa.foldWin(9) : window.qa.heroTurn(9)),
+        settled,
+      );
+      if (!settled) await page.locator('[data-preset="all"]').click();
+      await expect
+        .poll(() =>
+          page.evaluate((settled) => {
+            const ids = settled
+              ? ['#next-button', '#restart-hand-button', '#review-hand-button']
+              : ['#raise-button', '#fold-button', '#call-button'];
+            const issues = [],
+              buttons = ids.map((id) => document.querySelector(id));
+            const bounds = buttons.map((el) => el.getBoundingClientRect());
+            if (Math.max(...bounds.map((r) => r.top)) - Math.min(...bounds.map((r) => r.top)) > 1)
+              issues.push('buttons do not share a row');
+            for (const [index, button] of buttons.entries()) {
+              const walker = document.createTreeWalker(button, NodeFilter.SHOW_TEXT);
+              const lines = [];
+              while (walker.nextNode()) {
+                const node = walker.currentNode;
+                if (
+                  !node.textContent.trim() ||
+                  getComputedStyle(node.parentElement).display === 'none'
+                )
+                  continue;
+                const range = document.createRange();
+                range.selectNodeContents(node);
+                lines.push(
+                  ...[...range.getClientRects()].filter((r) => r.width > 0 && r.height > 0),
+                );
+              }
+              if (
+                !lines.length ||
+                Math.max(...lines.map((r) => r.top)) - Math.min(...lines.map((r) => r.top)) > 10
+              )
+                issues.push(`${ids[index]} text wraps`);
+              const box = bounds[index];
+              if (lines.some((r) => r.left < box.left || r.right > box.right))
+                issues.push(`${ids[index]} text overflows button`);
+            }
+            return issues;
+          }, settled),
+        )
+        .toEqual([]);
+    }
+  }
+});
+
+test('retry explanation stays aligned directly under the hand header and the desktop columns end together', async ({
+  page,
+}) => {
+  for (const width of [1000, 1280, 1700]) {
+    await page.setViewportSize({ width, height: 1000 });
+    await page.evaluate(() => window.qa.foldWin(9));
+    await page.locator('#restart-hand-button').click();
+    await page.evaluate(() => window.qa.stop());
+    await expect(page.locator('#replay-note')).toBeVisible();
+    await expect
+      .poll(() =>
+        page.evaluate(() => {
+          const box = (selector) => document.querySelector(selector).getBoundingClientRect();
+          const hand = box('.hand-label'),
+            note = box('#replay-note'),
+            table = box('.table-viewport');
+          const header = document.querySelector('.surface-top'),
+            sidebar = box('.sidebar'),
+            footer = box('.site-footer');
+          const surface = box('.game-surface');
+          const activity = document.querySelector('#activity-list');
+          const issues = [];
+          if (!header.contains(document.querySelector('#replay-note')))
+            issues.push('retry note is outside header');
+          if (note.top < hand.bottom || note.top - hand.bottom > 34)
+            issues.push('retry note is far below the hand');
+          if (Math.abs(note.left - hand.left) > 1)
+            issues.push('retry note is not aligned with the hand');
+          if (note.bottom > table.top) issues.push('retry note covers the table');
+          if (Math.abs(surface.bottom - sidebar.bottom) > 2)
+            issues.push('desktop columns end at different heights');
+          if (
+            footer.top < Math.max(surface.bottom, sidebar.bottom) ||
+            footer.top - Math.max(surface.bottom, sidebar.bottom) > 32
+          )
+            issues.push('extra blank strip before footer');
+          if (
+            activity.scrollHeight > activity.clientHeight + 1 &&
+            ['auto', 'scroll', 'hidden'].includes(getComputedStyle(activity).overflowY)
+          )
+            issues.push('activity timeline is clipped or internally scrolls');
+          return issues;
+        }),
+      )
+      .toEqual([]);
+  }
+});

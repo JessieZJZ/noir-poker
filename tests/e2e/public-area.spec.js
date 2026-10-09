@@ -22,7 +22,7 @@ async function assertPublicArea(page) {
         if (Math.abs((group.left + group.right - table.left - table.right) / 2) > 1)
           problems.push('public group not horizontally centered');
         if (
-          details.left < amount.right + 4 ||
+          details.left < amount.right + 4 * scale ||
           Math.abs((details.top + details.bottom - amount.top - amount.bottom) / 2) > 1
         )
           problems.push('details not aligned to right of amount');
