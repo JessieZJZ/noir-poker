@@ -80,6 +80,7 @@ test('settled controls share a row or each fill the content width, including run
                 right: rect.right,
                 top: rect.top,
                 bottom: rect.bottom,
+                layoutTop: b.offsetTop,
                 width: rect.width,
                 textFits: b.scrollWidth <= b.clientWidth,
               };
@@ -87,8 +88,11 @@ test('settled controls share a row or each fill the content width, including run
         };
       });
       expect(layout.buttons).toHaveLength(mode === 'runout' ? 4 : 3);
-      const rows = new Set(layout.buttons.map((b) => Math.round(b.top)));
-      expect([1, layout.buttons.length]).toContain(rows.size);
+      // Hover lifts review buttons by 1px without changing their grid row.
+      const rows = new Set(layout.buttons.map((b) => b.layoutTop));
+      expect([1, layout.buttons.length], JSON.stringify({ mode, width, layout })).toContain(
+        rows.size,
+      );
       for (const [i, button] of layout.buttons.entries()) {
         expect(button.textFits).toBe(true);
         expect(button.left).toBeGreaterThanOrEqual(layout.left - 1);
@@ -1313,6 +1317,7 @@ test('reset cancels queued continuation and table size applies on next deal', as
       })
     ).playerCount,
   ).toBe(5);
+  await page.locator('#opponents-button').click();
   await page
     .locator('.difficulty-option')
     .filter({ has: page.locator('input[value="hard"]') })
@@ -1351,13 +1356,13 @@ test('returning restores all saved options before the first fresh hand, includin
   page,
 }) => {
   await page.locator('#player-count').selectOption('9');
+  await page.locator('#hint-toggle').click();
+  await page.locator('#sound-button').click();
+  await page.locator('#opponents-button').click();
   await page
     .locator('.difficulty-option')
     .filter({ has: page.locator('input[value="hard"]') })
     .click();
-  await page.locator('#hint-toggle').click();
-  await page.locator('#sound-button').click();
-  await page.locator('#opponents-button').click();
   await page.locator('#mix-opponents').click();
   await page.locator('#emotion-mode').selectOption('lively');
   await page.locator('#save-opponents').click();
