@@ -50,8 +50,8 @@ async function assertPublicArea(page) {
         ]
           .filter((el) => !el.hidden)
           .map((el) => el.getBoundingClientRect());
-        const min = table.top + 12,
-          max = Math.min(table.bottom - group.height - 12, hero.top - group.height - 24);
+        let min = table.top + 12;
+        const max = Math.min(table.bottom - group.height - 12, hero.top - group.height - 24);
         const ideal = (table.top + table.bottom - group.height) / 2;
         const clearAt = (top) =>
           parts.every((part) =>
@@ -63,6 +63,18 @@ async function assertPublicArea(page) {
                 top + part.top - group.top >= r.bottom + 11.5,
             ),
           );
+        if (!document.querySelector('#arena').classList.contains('is-done') && innerWidth <= 900) {
+          const focusMin = Math.max(
+            min,
+            arena.bottom - document.querySelector('.table-viewport').clientHeight + 12,
+          );
+          for (let top = focusMin; top <= max; top += 0.5) {
+            if (clearAt(top)) {
+              min = focusMin;
+              break;
+            }
+          }
+        }
         if (group.top < min - 0.5 || group.top > max + 0.5 || !clearAt(group.top))
           problems.push('public group is outside a clear position');
         let best = Infinity;
@@ -77,7 +89,7 @@ async function assertPublicArea(page) {
     .toEqual([]);
 }
 
-test('live and settled public areas stay closest to the felt center without covering players in every mode', async ({
+test('public areas stay closest to the felt center within the available play viewport without covering players', async ({
   page,
 }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });

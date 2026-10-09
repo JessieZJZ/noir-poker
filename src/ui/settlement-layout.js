@@ -14,7 +14,9 @@ function nearestClearTop(ideal, min, max, blocked) {
 // player footprints, then center the public group without moving the hero.
 export function createSettlementLayout(arena) {
   const center = arena.querySelector('.table-center');
+  const viewport = arena.closest('.table-viewport');
   let width = 0,
+    viewportHeight = 0,
     frame = null;
   function update() {
     arena.style.removeProperty('min-height');
@@ -22,12 +24,31 @@ export function createSettlementLayout(arena) {
     center.style.removeProperty('top');
     center.style.removeProperty('transform');
     width = arena.clientWidth;
+    viewportHeight = viewport?.clientHeight ?? 0;
     const settled = arena.classList.contains('is-done'),
       box = arena.getBoundingClientRect(),
       gap = 12,
       // The hero's tilted cards extend beyond their untransformed wrapper.
       heroGap = 24,
       bottomPadding = 20;
+    // Open the portrait table's middle corridor without clipping a player's
+    // actual footprint (long names and actions can be wider than profiles).
+    const spread =
+      !settled &&
+      Number(arena.dataset.playerCount) >= 7 &&
+      matchMedia('(min-width: 361px) and (max-width: 600px)').matches;
+    for (const seat of arena.querySelectorAll('.seat')) seat.style.removeProperty('margin-left');
+    if (spread) {
+      for (const seat of arena.querySelectorAll('.seat-left, .seat-right')) {
+        const parts = [...seat.querySelectorAll('.mini-cards, .seat-profile, .seat-action')]
+          .filter((el) => !el.hidden)
+          .map((el) => el.getBoundingClientRect());
+        const shift = seat.classList.contains('seat-left')
+          ? -Math.min(14, Math.min(...parts.map((r) => r.left)) - box.left - 1)
+          : Math.min(14, box.right - Math.max(...parts.map((r) => r.right)) - 1);
+        seat.style.marginLeft = `${shift}px`;
+      }
+    }
     const seats = [...arena.querySelectorAll('.seat')].map((seat) => {
       const y = parseFloat(seat.style.top) / 100;
       // Wrappers measure final layout, unaffected by a card's deal animation.
@@ -79,12 +100,19 @@ export function createSettlementLayout(arena) {
               r.bottom + gap - (part.top - group.top),
             ]),
         ),
-        top = nearestClearTop(
-          (table.top + table.bottom - group.height) / 2,
-          table.top + gap,
-          Math.min(table.bottom - group.height - gap, hero.top - group.height - heroGap),
-          blocked,
-        );
+        min = table.top + gap,
+        max = Math.min(table.bottom - group.height - gap, hero.top - group.height - heroGap),
+        ideal = (table.top + table.bottom - group.height) / 2,
+        // Keep public cards with the hero in the default mobile visible band
+        // whenever a clear position exists. Tiny viewports retain the full
+        // table's clear positions instead of forcing an overlap.
+        focusMin =
+          !settled && matchMedia('(max-width: 900px)').matches && viewport
+            ? Math.max(min, arena.getBoundingClientRect().bottom - viewportHeight + gap)
+            : min,
+        top =
+          nearestClearTop(ideal, focusMin, max, blocked) ??
+          nearestClearTop(ideal, min, max, blocked);
       return { top, table, group, hero };
     };
     let space = measure();
@@ -122,13 +150,17 @@ export function createSettlementLayout(arena) {
   }
   const observer = new ResizeObserver(() => {
     // Write outside the observer's delivery phase to avoid resize feedback.
-    if (arena.clientWidth !== width && frame === null)
+    if (
+      (arena.clientWidth !== width || (viewport?.clientHeight ?? 0) !== viewportHeight) &&
+      frame === null
+    )
       frame = requestAnimationFrame(() => {
         frame = null;
         update();
       });
   });
   observer.observe(arena);
+  if (viewport) observer.observe(viewport);
   document.fonts.ready.then(update);
   return { update };
 }
