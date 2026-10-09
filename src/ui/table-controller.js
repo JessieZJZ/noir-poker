@@ -393,8 +393,14 @@ function render() {
             ? 'TURN · 第四张公共牌'
             : 'RIVER · 最后的决定';
   const details = potDetails();
-  $('#pot-details-button').textContent =
-    details.pots.length > 1 ? '总底池 · ' + (details.pots.length - 1) + ' 个边池' : '底池 · 明细';
+  const potButton = $('#pot-details-button');
+  potButton.textContent = '明细';
+  potButton.setAttribute(
+    'aria-label',
+    details.pots.length > 1
+      ? '查看底池明细：主池及 ' + (details.pots.length - 1) + ' 个边池'
+      : '查看底池明细',
+  );
   if (details.pots.length > 1)
     $('#board-caption').textContent =
       (done ? '已分别结算' : '当前投入') +
