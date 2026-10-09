@@ -8,6 +8,8 @@ import './styles/native.css';
 import './styles/hint-banner.css';
 import './styles/play-viewport.css';
 import './styles/controls-layout.css';
+import './styles/persona-browser.css';
+import './styles/settings-layout.css';
 import { preparePlatform } from './platform/native.js';
 
 await preparePlatform();

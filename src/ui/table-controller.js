@@ -40,6 +40,16 @@ const activityClock = createActivityClock();
 activityClock.setActive(isAppActive());
 let dealWait = null;
 const $ = (s) => document.querySelector(s);
+const compactCoach = window.matchMedia('(max-width: 900px)');
+const coachContent = $('#coach-content');
+function positionCoach() {
+  const compact = compactCoach.matches;
+  (compact ? $('.surface-top') : $('#coach-desktop-body')).append(coachContent);
+  (compact ? $('#hint-setting-row') : $('#coach-toggle-slot')).append($('#hint-toggle'));
+  $('#hint-setting-row').hidden = !compact;
+  $('#coach-desktop-card').hidden = compact;
+  $('#hint-toggle').setAttribute('aria-labelledby', compact ? 'hint-label' : 'coach-card-title');
+}
 const settlementLayout = createSettlementLayout($('#arena'), { observe: false });
 const playViewport = createPlayViewport($('.game-surface'), { layout: settlementLayout.update });
 const hintNotification = createHintNotification({
@@ -545,6 +555,7 @@ function updateCoach(force = false) {
   toggle.setAttribute('aria-pressed', String(hints));
   toggle.setAttribute('aria-checked', String(hints));
   toggle.title = hints ? '牌桌提示已开启' : '牌桌提示已关闭';
+  $('#coach-disabled').hidden = hints || compactCoach.matches;
   const p = game.players[0],
     e = evaluate([...p.hole, ...game.board]);
   let tip = '';
@@ -570,16 +581,23 @@ function updateCoach(force = false) {
   const stage = game.phase === 'done' ? '本手复盘' : streets[game.street] + '策略';
   hintNotification.update({
     enabled: hints,
-    key: `${epoch}:${game.hand}:${game.street}:${game.phase === 'done' ? 'done' : legal.enabled ? `turn:${game.currentBet}:${p.bet}` : 'waiting'}`,
+    key: `${compactCoach.matches ? 'banner' : 'card'}:${epoch}:${game.hand}:${game.street}:${game.phase === 'done' ? 'done' : legal.enabled ? `turn:${game.currentBet}:${p.bet}` : 'waiting'}`,
     text: tip,
     stage,
     force,
+    persistent: !compactCoach.matches,
     notify:
+      !compactCoach.matches ||
       force ||
       game.phase === 'done' ||
       (!p.folded && (legal.enabled || game.hand !== lastHand || game.board.length !== lastBoard)),
   });
 }
+function changeCoachLayout() {
+  positionCoach();
+  updateCoach(true);
+}
+compactCoach.addEventListener('change', changeCoachLayout);
 function schedule() {
   clearTimeout(timer);
   if (!activityClock.active) return;
@@ -1066,18 +1084,28 @@ function registerTools() {
   });
 }
 updateSound();
+positionCoach();
 document.addEventListener('noir:app-state', ({ detail }) => {
   if (typeof detail?.active !== 'boolean') return;
   hintNotification.setActive(detail.active && !document.hidden);
+  if (detail.active && !document.hidden && !compactCoach.matches) updateCoach(true);
   if (!activityClock.setActive(detail.active)) return;
   if (!detail.active) {
     clearTimeout(timer);
     if (audio?.state === 'running') void audio.suspend().catch(() => {});
   } else schedule();
 });
-document.addEventListener('visibilitychange', () =>
-  hintNotification.setActive(activityClock.active && !document.hidden),
+document.addEventListener('visibilitychange', () => {
+  hintNotification.setActive(activityClock.active && !document.hidden);
+  if (activityClock.active && !document.hidden && !compactCoach.matches) updateCoach(true);
+});
+window.addEventListener(
+  'pagehide',
+  () => {
+    compactCoach.removeEventListener('change', changeCoachLayout);
+    hintNotification.destroy();
+  },
+  { once: true },
 );
-window.addEventListener('pagehide', () => hintNotification.destroy(), { once: true });
 nextHand();
 registerTools();

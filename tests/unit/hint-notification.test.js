@@ -67,3 +67,33 @@ test('disabling or backgrounding cancels tips without replaying stale notificati
   assert.deepEqual(updates.at(-1), { visible: false });
   assert.equal(callbacks.size, 0);
 });
+
+test('desktop tips remain visible without a timer and can still be switched off', () => {
+  const { hint, show, callbacks, updates } = harness();
+  show('desktop-turn', { persistent: true });
+  assert.equal(callbacks.size, 0);
+  assert.equal(updates.at(-1).visible, true);
+  show('desktop-waiting', { persistent: true });
+  assert.equal(callbacks.size, 0);
+  assert.equal(updates.at(-1).text, '提示 desktop-waiting');
+  hint.update({ enabled: false });
+  assert.deepEqual(updates.at(-1), { visible: false });
+});
+
+test('switching between banner and card cancels stale expiry and restores timed mode', () => {
+  const { hint, show, callbacks, updates } = harness();
+  show('mobile-turn');
+  const oldExpiry = [...callbacks.values()][0];
+  show('desktop-turn', { persistent: true });
+  oldExpiry();
+  assert.equal(callbacks.size, 0);
+  assert.equal(updates.at(-1).text, '提示 desktop-turn');
+  show('mobile-return');
+  assert.equal(callbacks.size, 1);
+  [...callbacks.values()][0]();
+  assert.deepEqual(updates.at(-1), { visible: false });
+  show('desktop-return', { persistent: true });
+  hint.setActive(false);
+  assert.deepEqual(updates.at(-1), { visible: false });
+  assert.equal(callbacks.size, 0);
+});

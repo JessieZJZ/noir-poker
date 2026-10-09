@@ -55,6 +55,7 @@ test('necessary hints appear below blinds, expire without reappearing on ordinar
 test('the settings switch controls hints immediately and restores its choice on a fresh visit', async ({
   page,
 }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
   const banner = page.locator('#coach-content'),
     toggle = page.locator('#hint-toggle');
   await openSettings(page);
@@ -90,7 +91,6 @@ test('single-line hints scroll horizontally below blinds without moving the tabl
     { width: 320, height: 667 },
     { width: 390, height: 844 },
     { width: 844, height: 390 },
-    { width: 1280, height: 900 },
   ]) {
     await page.setViewportSize(size);
     await page.evaluate(() => window.qa.heroTurn(9));
@@ -144,4 +144,88 @@ test('single-line hints scroll horizontally below blinds without moving the tabl
       });
     }
   }
+});
+
+test('desktop coaching stays in the sidebar, wraps naturally and exposes its only toggle on the card', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await page.clock.install({ time: new Date('2026-01-01T00:00:00Z') });
+  await page.reload();
+  await page.waitForFunction(() => !!window.qa);
+  await page.evaluate(() => window.qa.stop());
+  await page.clock.pauseAt(new Date('2026-01-01T00:00:01Z'));
+  await page.evaluate(() => window.qa.heroTurn(9));
+  const card = page.locator('#coach-desktop-card');
+  await expect(card).toBeVisible();
+  await expect(card.locator('#coach-content')).toBeVisible();
+  await expect(card.locator('#hint-toggle')).toBeChecked();
+  await expect(page.locator('#coach-stage')).toBeVisible();
+  await expect(page.locator('.surface-top #coach-content')).toHaveCount(0);
+  await expect(page.locator('#hint-toggle, #coach-content')).toHaveCount(2);
+  expect(await page.locator('#coach-tip').evaluate((el) => getComputedStyle(el).whiteSpace)).toBe(
+    'normal',
+  );
+  await page.clock.runFor(30000);
+  await expect(card.locator('#coach-content')).toBeVisible();
+  await card.screenshot({ path: test.info().outputPath('desktop-persistent-coach.png') });
+  await openSettings(page);
+  await expect(page.locator('#hint-setting-row')).toBeHidden();
+  await expect(page.locator('#opponents-dialog #hint-toggle')).toHaveCount(0);
+  await closeSettings(page);
+  await card.locator('#hint-toggle').click();
+  await expect(card.locator('#hint-toggle')).not.toBeChecked();
+  await expect(card.locator('#coach-content')).toBeHidden();
+  expect(await page.evaluate(() => localStorage.getItem('noir-hints'))).toBe('false');
+  await card.locator('#hint-toggle').click();
+  await expect(card.locator('#coach-content')).toBeVisible();
+  await page.clock.runFor(7001);
+  await expect(card.locator('#coach-content')).toBeVisible();
+});
+
+test('breakpoint changes reuse the same hint preference and cancel stale mobile expiry', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.clock.install({ time: new Date('2026-01-01T00:00:00Z') });
+  await page.reload();
+  await page.waitForFunction(() => !!window.qa);
+  await page.evaluate(() => window.qa.stop());
+  await page.clock.pauseAt(new Date('2026-01-01T00:00:01Z'));
+  await page.evaluate(() => {
+    window.qa.heroTurn(9);
+    window.hintNode = document.querySelector('#coach-content');
+    window.hintToggleNode = document.querySelector('#hint-toggle');
+  });
+  await page.clock.runFor(5000);
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await expect(page.locator('#coach-desktop-card #coach-content')).toBeVisible();
+  await page.clock.runFor(10000);
+  await expect(page.locator('#coach-content')).toBeVisible();
+  await page.setViewportSize({ width: 900, height: 900 });
+  await expect(page.locator('#coach-desktop-card')).toBeHidden();
+  await expect(page.locator('.surface-top #coach-content')).toBeVisible();
+  await page.clock.runFor(7001);
+  await expect(page.locator('#coach-content')).toBeHidden();
+  await page.setViewportSize({ width: 901, height: 900 });
+  await expect(page.locator('#coach-desktop-card #coach-content')).toBeVisible();
+  await expect(page.locator('#hint-toggle')).toHaveCount(1);
+  await expect(page.locator('#coach-content')).toHaveCount(1);
+  expect(
+    await page.evaluate(
+      () =>
+        window.hintNode === document.querySelector('#coach-content') &&
+        window.hintToggleNode === document.querySelector('#hint-toggle'),
+    ),
+  ).toBe(true);
+  await page.locator('#hint-toggle').click();
+  await page.setViewportSize({ width: 390, height: 844 });
+  await openSettings(page);
+  await expect(page.locator('#hint-setting-row #hint-toggle')).not.toBeChecked();
+  await closeSettings(page);
+  await expect(page.locator('#coach-content')).toBeHidden();
+  await page.reload();
+  await page.waitForFunction(() => !!window.qa);
+  await page.evaluate(() => window.qa.heroTurn(9));
+  await expect(page.locator('#coach-content')).toBeHidden();
 });

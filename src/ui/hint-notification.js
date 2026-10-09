@@ -19,7 +19,7 @@ export function createHintNotification({
     visible = false;
   }
   return {
-    update({ enabled, key, text, stage, notify = true, force = false }) {
+    update({ enabled, key, text, stage, notify = true, force = false, persistent = false }) {
       if (!enabled) {
         context = null;
         hide();
@@ -31,6 +31,7 @@ export function createHintNotification({
       if (!active || !notify || !text) return;
       visible = true;
       publish({ visible: true, text, stage });
+      if (persistent) return;
       const current = ticket;
       timer = setTimer(() => {
         if (current === ticket) hide();
