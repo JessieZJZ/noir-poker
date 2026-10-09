@@ -48,6 +48,13 @@
   }
 }
 @media (max-width: 900px) {
+  .settings-dialog .personas-module:has(.profile-stage[data-detail-open='true']) {
+    position: relative;
+    z-index: 1;
+  }
+  .profile-stage[data-detail-open='true'] {
+    z-index: 1;
+  }
   .profile-stage[data-detail-open='true'] .profile-cards {
     visibility: hidden;
   }

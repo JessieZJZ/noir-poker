@@ -126,6 +126,78 @@ test('mobile persona details cover the selector in place and closing restores it
         path: test.info().outputPath('mobile-persona-detail.png'),
         animations: 'disabled',
       });
+    const checkDetailLayer = () =>
+      page.evaluate(() => {
+        const detail = document.querySelector('#profile-detail'),
+          body = document.querySelector('.opponents-body').getBoundingClientRect(),
+          bounds = detail.getBoundingClientRect(),
+          close = detail.querySelector('[data-close-profile-detail]'),
+          closeBounds = close.getBoundingClientRect(),
+          footer = document.querySelector('.opponents-save-row').getBoundingClientRect();
+        const covered = [...document.querySelectorAll('.opponent-portrait')]
+          .map((portrait) => {
+            const r = portrait.getBoundingClientRect();
+            return {
+              name: portrait.closest('.opponent-row').querySelector('strong').textContent,
+              x: r.left + r.width / 2,
+              y: r.top + r.height / 2,
+            };
+          })
+          .filter(
+            ({ x, y }) =>
+              x > Math.max(bounds.left, body.left) &&
+              x < Math.min(bounds.right, body.right) &&
+              y > Math.max(bounds.top, body.top) &&
+              y < Math.min(bounds.bottom, body.bottom),
+          );
+        return {
+          coveredCount: covered.length,
+          blocked: covered
+            .filter(({ x, y }) => !detail.contains(document.elementFromPoint(x, y)))
+            .map(({ name }) => name),
+          closeVisible: closeBounds.top >= body.top && closeBounds.bottom <= body.bottom,
+          closeAboveFooter: closeBounds.bottom <= footer.top,
+          closeOnTop: close.contains(
+            document.elementFromPoint(
+              closeBounds.left + closeBounds.width / 2,
+              closeBounds.top + closeBounds.height / 2,
+            ),
+          ),
+        };
+      });
+    // Geometry alone missed avatars from the following seat-assignment module
+    // painting above the overlay. Check the actual hit layer at those avatars.
+    await expect.poll(checkDetailLayer).toMatchObject({
+      blocked: [],
+      closeVisible: true,
+      closeAboveFooter: true,
+      closeOnTop: true,
+    });
+    if (width === 390) expect((await checkDetailLayer()).coveredCount).toBeGreaterThan(0);
+    // Long introductions scroll inside the overlay; its sticky close control
+    // must remain available above the save footer after reaching the end.
+    await page.locator('#profile-detail').evaluate((el) => {
+      el.scrollTop = el.scrollHeight;
+    });
+    await expect.poll(checkDetailLayer).toMatchObject({
+      blocked: [],
+      closeVisible: true,
+      closeAboveFooter: true,
+      closeOnTop: true,
+    });
+    if (width === 390)
+      expect(await page.locator('#profile-detail').evaluate((el) => el.scrollTop)).toBeGreaterThan(
+        0,
+      );
+    expect(await page.locator('.opponents-body').evaluate((el) => el.scrollTop)).toBeCloseTo(
+      before,
+      0,
+    );
+    if (width === 390)
+      await page.locator('#opponents-dialog').screenshot({
+        path: test.info().outputPath('mobile-persona-detail-scrolled.png'),
+        animations: 'disabled',
+      });
     // The detail can be read without navigating to a separate below-grid card.
     await page.locator('[data-close-profile-detail]').click();
     await expect(stage).toHaveAttribute('data-detail-open', 'false');
