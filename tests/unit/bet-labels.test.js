@@ -41,7 +41,7 @@ test('preflop 2/3/4-bets survive intervening calls and before-action review snap
   assert.equal(wealth(g), 30000);
 
   advanceStreet(g);
-  assert.equal(nextLabel(g, 100), '1-bet 下注至 100');
+  assert.equal(nextLabel(g, 100), '加注至 100');
   act(g, 1, 'check');
   act(g, 2, 'raise', 100);
   act(g, 0, 'call');
@@ -50,8 +50,27 @@ test('preflop 2/3/4-bets survive intervening calls and before-action review snap
   act(g, 2, 'call');
   act(g, 0, 'call');
   advanceStreet(g);
-  assert.equal(nextLabel(g, 100), '1-bet 下注至 100');
+  assert.equal(nextLabel(g, 100), '加注至 100');
   assert.equal(wealth(g), 30000);
+});
+
+test('first postflop wager omits its ordinal while full and short all-ins keep their meaning', () => {
+  const step = {
+    street: 1,
+    history: [],
+    currentBet: 0,
+    legal: { maxRaiseTo: 100, fullRaiseTo: 50 },
+  };
+  assert.equal(actionLabel(step, 'raise', 50), '加注至 50');
+  assert.equal(actionLabel(step, 'raise', 100), '全下至 100');
+  assert.equal(
+    actionLabel({ ...step, legal: { maxRaiseTo: 25, fullRaiseTo: 50 } }, 'raise', 25),
+    '短全下至 25',
+  );
+  const history = [{ street: 1, action: 'raise', amount: 50 }];
+  assert.equal(historyActionLabel(history, 0), '加注至 50');
+  assert.equal(nextBetLevel({ street: 1, history }), 2);
+  assert.equal(actionLabel({ ...step, history, currentBet: 50 }, 'raise', 75), '2-bet 加注至 75');
 });
 
 test('short all-in has an ordinal without reopening a prior bettor; all-in calls add no level', () => {

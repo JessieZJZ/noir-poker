@@ -1,5 +1,17 @@
-// Absolute seat anchors preserve the oval table. Grow its height from the
-// actual card/profile/action footprints, including folded cards and long names.
+// Select the closest collision-free position to the felt's center. Using each
+// public part separately leaves usable space beside a narrow pot or caption.
+function nearestClearTop(ideal, min, max, blocked) {
+  if (min > max) return null;
+  const candidates = [Math.max(min, Math.min(max, ideal)), min, max, ...blocked.flat()];
+  return (
+    candidates
+      .filter((top) => top >= min && top <= max && blocked.every(([a, b]) => top <= a || top >= b))
+      .sort((a, b) => Math.abs(a - ideal) - Math.abs(b - ideal) || a - b)[0] ?? null
+  );
+}
+
+// Absolute seat anchors preserve the oval table. Grow settlement height from
+// player footprints, then center the public group without moving the hero.
 export function createSettlementLayout(arena) {
   const center = arena.querySelector('.table-center');
   let width = 0,
@@ -7,10 +19,14 @@ export function createSettlementLayout(arena) {
   function update() {
     arena.style.removeProperty('min-height');
     center.style.removeProperty('margin-bottom');
+    center.style.removeProperty('top');
+    center.style.removeProperty('transform');
     width = arena.clientWidth;
-    if (!arena.classList.contains('is-done')) return;
-    const box = arena.getBoundingClientRect(),
+    const settled = arena.classList.contains('is-done'),
+      box = arena.getBoundingClientRect(),
       gap = 12,
+      // The hero's tilted cards extend beyond their untransformed wrapper.
+      heroGap = 24,
       bottomPadding = 20;
     const seats = [...arena.querySelectorAll('.seat')].map((seat) => {
       const y = parseFloat(seat.style.top) / 100;
@@ -28,38 +44,81 @@ export function createSettlementLayout(arena) {
         bottomOffset: Math.max(...parts.map((r) => r.bottom)) - box.top - y * box.height,
       };
     });
-    let height = box.height;
-    for (const a of seats) {
-      height = Math.max(height, (a.bottomOffset + bottomPadding) / (1 - a.y));
-      for (const b of seats) {
-        if (b.y <= a.y || a.right <= b.left || a.left >= b.right) continue;
-        height = Math.max(height, (a.bottomOffset - b.topOffset + gap) / (b.y - a.y));
+    if (settled) {
+      let height = box.height;
+      for (const a of seats) {
+        height = Math.max(height, (a.bottomOffset + bottomPadding) / (1 - a.y));
+        for (const b of seats) {
+          if (b.y <= a.y || a.right <= b.left || a.left >= b.right) continue;
+          height = Math.max(height, (a.bottomOffset - b.topOffset + gap) / (b.y - a.y));
+        }
       }
+      arena.style.minHeight = `${Math.ceil(height)}px`;
     }
-    arena.style.minHeight = `${Math.ceil(height)}px`;
-    // The center uses normal flow. Reserve more room beneath it when its wide
-    // board would touch a lower seat; keep the hero below the public caption.
-    let margin = 0;
-    for (let pass = 0; pass < 3; pass++) {
-      const board = arena.querySelector('#board').getBoundingClientRect();
-      const occupied = [
-        ...arena.querySelectorAll(
-          '.seat .mini-cards, .seat .seat-profile, .seat .hand-rank, .seat .seat-action',
+
+    const measure = () => {
+      const table = arena.querySelector('.table-inner').getBoundingClientRect(),
+        group = center.getBoundingClientRect(),
+        hero = arena.querySelector('.hero-area').getBoundingClientRect(),
+        parts = [...center.querySelectorAll('.pot, #board, #board-caption')].map((el) =>
+          el.getBoundingClientRect(),
         ),
-      ]
-        .filter((el) => !el.hidden)
-        .map((el) => el.getBoundingClientRect())
-        .filter((r) => r.left < board.right && r.right > board.left)
-        .sort((a, b) => b.top - a.top);
-      let top = board.top;
-      for (const r of occupied)
-        if (top < r.bottom + gap && top + board.height > r.top - gap)
-          top = r.top - gap - board.height;
-      const shift = board.top - top;
-      if (shift < 0.5) break;
-      margin += Math.ceil(shift);
-      center.style.marginBottom = `${margin}px`;
+        occupied = [
+          ...arena.querySelectorAll(
+            '.seat .mini-cards, .seat .seat-profile, .seat .hand-rank, .seat .seat-action',
+          ),
+        ]
+          .filter((el) => !el.hidden)
+          .map((el) => el.getBoundingClientRect())
+          .filter((r) => r.width > 0 && r.height > 0),
+        blocked = parts.flatMap((part) =>
+          occupied
+            .filter((r) => r.left < part.right + gap && r.right > part.left - gap)
+            .map((r) => [
+              r.top - gap - (part.bottom - group.top),
+              r.bottom + gap - (part.top - group.top),
+            ]),
+        ),
+        top = nearestClearTop(
+          (table.top + table.bottom - group.height) / 2,
+          table.top + gap,
+          Math.min(table.bottom - group.height - gap, hero.top - group.height - heroGap),
+          blocked,
+        );
+      return { top, table, group, hero };
+    };
+    let space = measure();
+    if (space.top === null) {
+      // Guarantee a free band between two seat anchors rather than giving up
+      // after an arbitrary number of incremental height adjustments.
+      const anchors = [...new Set([0, ...seats.map((s) => s.y), 1])].sort((a, b) => a - b);
+      const band = anchors
+        .slice(1)
+        .map((end, i) => [anchors[i], end])
+        .sort((a, b) => b[1] - b[0] - (a[1] - a[0]))[0];
+      const y = (band[0] + band[1]) / 2,
+        current = arena.getBoundingClientRect(),
+        { table, group, hero } = space;
+      let height = Math.max(
+        current.height,
+        (table.top - current.top + gap) / y,
+        (current.bottom - table.bottom + group.height + gap) / (1 - y),
+        (current.bottom - hero.top + group.height + heroGap) / (1 - y),
+      );
+      for (const seat of seats)
+        height = Math.max(
+          height,
+          seat.y < y
+            ? (seat.bottomOffset + gap) / (y - seat.y)
+            : (group.height - seat.topOffset + gap) / (seat.y - y),
+        );
+      arena.style.minHeight = `${Math.ceil(height + 24)}px`;
+      space = measure();
+      // The reserved band is safe even at a fractional-pixel boundary.
+      space.top ??= arena.getBoundingClientRect().top + y * arena.getBoundingClientRect().height;
     }
+    if (settled) center.style.transform = `translateY(${space.top - space.group.top}px)`;
+    else center.style.top = `${space.top - arena.getBoundingClientRect().top}px`;
   }
   const observer = new ResizeObserver(() => {
     // Write outside the observer's delivery phase to avoid resize feedback.

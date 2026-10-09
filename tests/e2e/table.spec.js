@@ -384,12 +384,22 @@ test('raise controls, seats, activity and review share street-specific bet ordin
   }
   for (const street of [1, 2, 3]) {
     await page.evaluate((s) => window.qa.bettingTurn(1, s), street);
-    await expect(page.locator('#raise-button')).toContainText('1-bet 下注至');
+    await expect(page.locator('#raise-button')).toContainText('加注至');
+    await expect(page.locator('#raise-button')).not.toContainText('1-bet');
     await page.evaluate((s) => window.qa.bettingTurn(3, s), street);
     await expect(page.locator('#raise-button')).toContainText('3-bet 加注至');
-    await expect(page.locator('.seat-1 .seat-action')).toContainText('1-bet');
+    await expect(page.locator('.seat-1 .seat-action-label')).toHaveText('加注');
     await expect(page.locator('.seat-2 .seat-action')).toContainText('2-bet');
+    await expect(page.locator('#activity-list')).not.toContainText('1-bet');
   }
+  await page.evaluate(() => window.qa.bettingTurn(1, 1));
+  await page.locator('[data-preset="all"]').click();
+  await expect(page.locator('#raise-button')).toContainText('全下至');
+  await expect(page.locator('#raise-button')).not.toContainText('1-bet');
+  await page.locator('#raise-button').click();
+  await page.evaluate(() => window.qa.stop());
+  await expect(page.locator('#hero-last-action .seat-action-label')).toHaveText('全下');
+  await expect(page.locator('#activity-list')).not.toContainText('1-bet');
   await page.evaluate(() => window.qa.bettingTurn(3, 0, true));
   await expect(page.locator('#raise-button')).toContainText('3-bet 短全下至');
   const buttonFits = await page
