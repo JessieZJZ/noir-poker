@@ -1,0 +1,81 @@
+apply plugin: 'com.android.application'
+def webPackage = new groovy.json.JsonSlurper().parse(file('../../package.json'))
+def mobileRelease = new groovy.json.JsonSlurper().parse(file('../../mobile/release.json'))
+def mobileVersionCode = (System.getenv('NOIR_BUILD_NUMBER') ?: mobileRelease.buildNumber).toString().toInteger()
+if (mobileVersionCode < 1) throw new GradleException('NOIR_BUILD_NUMBER must be positive')
+def signingKeys = ['NOIR_ANDROID_KEYSTORE', 'NOIR_ANDROID_KEY_ALIAS', 'NOIR_ANDROID_STORE_PASSWORD', 'NOIR_ANDROID_KEY_PASSWORD']
+def hasReleaseSigning = signingKeys.every { System.getenv(it) }
+if (!hasReleaseSigning && signingKeys.any { System.getenv(it) })
+    throw new GradleException('All four NOIR_ANDROID signing variables must be configured together')
+
+android {
+    namespace = "io.github.jessiezjz.noirpoker"
+    compileSdk = rootProject.ext.compileSdkVersion
+    defaultConfig {
+        applicationId "io.github.jessiezjz.noirpoker"
+        minSdkVersion rootProject.ext.minSdkVersion
+        targetSdkVersion rootProject.ext.targetSdkVersion
+        versionCode mobileVersionCode
+        versionName webPackage.version
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        aaptOptions {
+             // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
+             // Default: https://android.googlesource.com/platform/frameworks/base/+/282e181b58cf72b6ca770dc7ca5f91f135444502/tools/aapt/AaptAssets.cpp#61
+            ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
+        }
+    }
+    signingConfigs {
+        if (hasReleaseSigning) {
+            release {
+                storeFile file(System.getenv('NOIR_ANDROID_KEYSTORE'))
+                storePassword System.getenv('NOIR_ANDROID_STORE_PASSWORD')
+                keyAlias System.getenv('NOIR_ANDROID_KEY_ALIAS')
+                keyPassword System.getenv('NOIR_ANDROID_KEY_PASSWORD')
+            }
+        }
+    }
+    buildTypes {
+        release {
+            if (hasReleaseSigning) signingConfig signingConfigs.release
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+}
+
+repositories {
+    flatDir{
+        dirs '../capacitor-cordova-android-plugins/src/main/libs', 'libs'
+    }
+}
+
+dependencies {
+    implementation fileTree(include: ['*.jar'], dir: 'libs')
+    implementation "androidx.appcompat:appcompat:$androidxAppCompatVersion"
+    implementation "androidx.coordinatorlayout:coordinatorlayout:$androidxCoordinatorLayoutVersion"
+    implementation "androidx.core:core-splashscreen:$coreSplashScreenVersion"
+    implementation project(':capacitor-android')
+    testImplementation "junit:junit:$junitVersion"
+    androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"
+    androidTestImplementation "androidx.test.espresso:espresso-core:$androidxEspressoCoreVersion"
+    implementation project(':capacitor-cordova-android-plugins')
+}
+
+apply from: 'capacitor.build.gradle'
+
+// Direct Android Studio/Gradle builds also pick up the current Web source.
+tasks.register('prepareLatestWeb', Exec) {
+    onlyIf { System.getenv('NOIR_SKIP_WEB_PREPARE') != '1' }
+    workingDir rootProject.projectDir.parentFile
+    commandLine(System.getenv('NODE_BINARY') ?: 'node', 'scripts/mobile.mjs', 'copy', 'android')
+}
+tasks.named('preBuild').configure { dependsOn 'prepareLatestWeb' }
+
+try {
+    def servicesJSON = file('google-services.json')
+    if (servicesJSON.text) {
+        apply plugin: 'com.google.gms.google-services'
+    }
+} catch(Exception e) {
+    logger.info("google-services.json not found, google-services plugin not applied. Push Notifications won't work")
+}

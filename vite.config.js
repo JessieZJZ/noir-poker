@@ -8,8 +8,20 @@ export default defineConfig(({ mode }) => ({
   build: { target: 'es2022' },
   // Controlled scenarios exist only in the test development server. The
   // production build contains neither fixtures nor access to hidden cards.
-  plugins:
-    mode === 'test'
+  plugins: [
+    ...(mode === 'native'
+      ? [
+          {
+            name: 'native-offline-fonts',
+            enforce: 'pre',
+            transform(source, id) {
+              if (!id.endsWith('/src/styles/base.css')) return;
+              return source.replace(/^@import url\('https:\/\/fonts\.googleapis\.com[^\n]+\n/, '');
+            },
+          },
+        ]
+      : []),
+    ...(mode === 'test'
       ? [
           {
             name: 'poker-test-fixtures',
@@ -24,5 +36,6 @@ export default defineConfig(({ mode }) => ({
             },
           },
         ]
-      : [],
+      : []),
+  ],
 }));
