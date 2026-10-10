@@ -511,9 +511,38 @@ for (const target of cases) {
       await expect.poll(() => page.evaluate(() => window.noir.getState().phase)).toBe('done');
       await expect(page.locator('.game-surface')).toHaveAttribute('data-action-state', 'settled');
       await expectActionRow(page, ['#next-button', '#restart-hand-button', '#review-hand-button']);
+      const continued = await expectGeometry(page, target);
+      await expectStableTableFrames(page, initial);
+      await savePassingScreenshot(
+        page,
+        info,
+        `${target.width}x${target.height}-${count}-continued`,
+        continued,
+      );
+      // The real continuation above can finish when all bots fold, which has
+      // no exposed cards. Independently exercise the same settled renderer
+      // with two deterministic opponents at showdown in every player mode.
+      const showdownInitial = await startTableCapture(page);
+      await page.evaluate((count) => {
+        window.qa.scene('3s 8h', 'Ks 7s Jd 5c 9s', {
+          count,
+          totals: Array(count).fill(4500),
+          folded: Array.from({ length: count }, (_, id) => id).filter(
+            (id) => ![0, 1, 3].includes(id),
+          ),
+          otherHoles: { 1: 'As 8s', 3: 'Qs Kh' },
+        });
+        window.qa.stop();
+      }, count);
+      await expect.poll(() => page.evaluate(() => window.noir.getState().phase)).toBe('done');
+      await expect(page.locator('.game-surface')).toHaveAttribute('data-action-state', 'settled');
+      await expect(page.locator('.seat .revealed-cards')).toHaveCount(2);
+      for (const id of [1, 3])
+        await expect(page.locator(`.seat-${id} .revealed-cards .playing-card`)).toHaveCount(2);
+      await expectActionRow(page, ['#next-button', '#restart-hand-button', '#review-hand-button']);
       const settled = await expectGeometry(page, target);
       settled.revealedSeatNames = await expectRevealedCardsLeaveNamesVisible(page);
-      await expectStableTableFrames(page, initial);
+      await expectStableTableFrames(page, showdownInitial);
       await savePassingScreenshot(
         page,
         info,

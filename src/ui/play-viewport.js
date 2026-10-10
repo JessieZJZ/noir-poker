@@ -5,6 +5,11 @@ export function portraitMetrics(width, height, count = 6) {
   // Revealing an opponent must not change density or shrink the whole felt.
   const dense = height < 390 || Math.ceil((count - 1) / 2) * 140 > height;
   const seatWidth = width < 330 ? 64 : 76;
+  const rows = Math.ceil((count - 1) / 2);
+  const seatHeight = dense ? 104 : 140;
+  // Fit only the opponent rails when safe areas leave a very short table.
+  // The felt, public cards and hero keep their physical size throughout.
+  const seatScale = Math.min(1, (height - 5 - (rows - 1) * 6) / (rows * seatHeight));
   const heroWidth = dense ? (height < 330 ? 48 : 52) : Math.min(76, Math.floor(width * 0.18));
   const heroHeight = Math.ceil(heroWidth * 1.44) + (dense ? 54 : 62);
   const corridor = width - seatWidth * 2 - 32;
@@ -17,7 +22,7 @@ export function portraitMetrics(width, height, count = 6) {
       Math.floor((height - heroHeight - 78) / 2.88),
     ),
   );
-  return { dense, seatWidth, heroWidth, cardWidth, rails: height < 520 };
+  return { dense, seatWidth, seatHeight, seatScale, heroWidth, cardWidth, rails: height < 600 };
 }
 
 export function createPlayViewport(surface, { layout = () => {} } = {}) {
@@ -67,6 +72,7 @@ export function createPlayViewport(surface, { layout = () => {} } = {}) {
   function fit() {
     arena.style.removeProperty('transform');
     arena.style.removeProperty('min-height');
+    arena.style.removeProperty('--seat-scale');
     arena.classList.remove('compact-landscape', 'dense-table');
     const seats = [...arena.querySelectorAll('.seat')];
     for (const seat of seats) {
@@ -112,6 +118,7 @@ export function createPlayViewport(surface, { layout = () => {} } = {}) {
     );
     arena.classList.toggle('dense-table', metrics.dense);
     arena.style.setProperty('--seat-width', `${metrics.seatWidth}px`);
+    arena.style.setProperty('--seat-scale', metrics.rails ? metrics.seatScale : 1);
     arena.style.setProperty('--public-card-width', `${metrics.cardWidth}px`);
     arena.style.setProperty('--hero-card-width', `${metrics.heroWidth}px`);
     if (seats.some((seat) => seat.offsetHeight > 150)) {
@@ -124,9 +131,9 @@ export function createPlayViewport(surface, { layout = () => {} } = {}) {
       const split = Math.ceil(seats.length / 2),
         left = seats.slice(0, split).reverse(),
         right = seats.slice(split),
-        rowHeight = Math.max(...seats.map((seat) => seat.offsetHeight)),
+        rowHeight = metrics.seatHeight * metrics.seatScale,
         span = Math.max(0, height - rowHeight - 5),
-        x = metrics.seatWidth / 2 + 4;
+        x = (metrics.seatWidth * metrics.seatScale) / 2 + 4;
       for (const [side, group] of [left, right].entries())
         group.forEach((seat, index) => {
           seat.style.left = `${side === 0 ? x : viewport.clientWidth - x}px`;

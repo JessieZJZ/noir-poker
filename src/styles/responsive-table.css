@@ -186,7 +186,8 @@
   }
   .game-surface .arena[data-player-count] .seat {
     min-width: var(--seat-width, 76px);
-    transform: translateX(-50%);
+    transform: translateX(-50%) scale(var(--seat-scale, 1));
+    transform-origin: center top;
   }
   .game-surface .arena[data-player-count] .seat .seat-profile {
     width: var(--seat-width, 76px);

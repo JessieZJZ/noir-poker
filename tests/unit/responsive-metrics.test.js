@@ -116,3 +116,21 @@ test('short native table budgets fit both card rows and the complete dense hero 
     }
   }
 });
+
+test('short native rails reserve revealed faces without scaling public or hero cards', () => {
+  for (const height of [310, 333, 382, 426, 533]) {
+    for (const count of [5, 6, 7, 8, 9]) {
+      const metrics = portraitMetrics(302, height, count);
+      const rows = Math.ceil((count - 1) / 2);
+      assert.equal(metrics.rails, true);
+      assert.ok(metrics.seatScale > 0 && metrics.seatScale <= 1);
+      assert.ok(
+        rows * metrics.seatHeight * metrics.seatScale + (rows - 1) * 6 + 5 <= height + 0.01,
+      );
+      assert.ok(metrics.cardWidth >= 38);
+      assert.ok(metrics.heroWidth >= 48);
+    }
+  }
+  assert.equal(portraitMetrics(376, 533, 6).rails, true);
+  assert.equal(portraitMetrics(376, 533, 6).seatScale, 1);
+});
