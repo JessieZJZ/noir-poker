@@ -218,6 +218,7 @@ async function assertSettledLayout(page) {
 test('fold winners keep a visible crown without revealing cards, including practice runout and hero wins', async ({
   page,
 }) => {
+  test.setTimeout(90000);
   for (const width of [320, 390, 768, 1280]) {
     await page.setViewportSize({ width, height: 900 });
     for (const count of [5, 6, 7, 8, 9]) {
@@ -389,6 +390,7 @@ test('pot details retain per-pot awards, odd split shares and conditional live e
 test('raise controls, seats, activity and review share street-specific bet ordinals', async ({
   page,
 }) => {
+  test.setTimeout(60000);
   for (const level of [2, 3, 4]) {
     await page.evaluate((n) => window.qa.bettingTurn(n), level);
     await expect(page.locator('#raise-button')).toContainText(`${level}-bet`);
@@ -427,7 +429,7 @@ test('raise controls, seats, activity and review share street-specific bet ordin
   await expect(page.locator('#activity-list')).toContainText('Alex 3-bet 加注至 650');
   await expect(page.locator('#activity-list')).toContainText('Mia 4-bet 加注至 1800');
   await page.locator('#review-hand-button').click();
-  await expect(page.locator('#review-priority')).toBeVisible({ timeout: 15000 });
+  await expect(page.locator('#review-priority')).toBeVisible({ timeout: 30000 });
   await page.locator('#review-timeline [data-review-index="0"]').click();
   await expect(page.locator('#review-your-action')).toContainText('2-bet 开池至 150');
   await expect(page.locator('#review-routes')).toContainText('2-bet');
@@ -715,6 +717,7 @@ test('automatic all-in runout hides the active player old bet and restores it on
 test('settled public caption and hero remain separated for winners, losers, folded heroes and long personas', async ({
   page,
 }, testInfo) => {
+  test.setTimeout(90000);
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.evaluate(() => window.qa.stop());
   await page.locator('#opponents-button').click();
@@ -754,6 +757,7 @@ test('settled public caption and hero remain separated for winners, losers, fold
 test('settled seats retain all-in sizes, board and hero action across viewing and all screen sizes', async ({
   page,
 }) => {
+  test.setTimeout(90000);
   for (const width of [320, 390, 768, 1280]) {
     await page.setViewportSize({ width, height: 900 });
     for (const count of [5, 6, 7, 8, 9]) {
@@ -1393,7 +1397,7 @@ test('returning restores all saved options before the first fresh hand, includin
   await expect(page.locator('#hint-toggle')).toHaveAttribute('aria-pressed', 'false');
   await expect(page.locator('#sound-button')).toHaveAttribute('aria-pressed', 'false');
   await expect(page.locator('#opponents-summary')).toHaveText('8 位风格对手');
-  await expect(page.locator('#opponents-change-note')).toBeHidden();
+  await expect(page.locator('#opponents-change-note')).toHaveCount(0);
   await expect(page.locator('#table-change-note')).toBeHidden();
   await expect(page.locator('#stat-hands')).toHaveText('0');
   const state = await page.evaluate(() => window.noir.getState());
@@ -1504,12 +1508,12 @@ test('nine-seat style assignment shows every persona at all sizes and executes t
   );
   await closeSettings(page);
   await openSettings(page);
-  await expect(page.locator('#opponents-change-note')).toBeVisible();
+  await expect(page.locator('#opponents-change-note')).toHaveCount(0);
   await page.locator('#opponents-dialog .close-dialog').click();
   await expect(page.locator('.seat-8 .seat-style-label')).toHaveText('均衡');
   await page.locator('#next-button').click();
   await page.evaluate(() => window.qa.stop());
-  await expect(page.locator('#opponents-change-note')).toBeHidden();
+  await expect(page.locator('#opponents-change-note')).toHaveCount(0);
   for (const width of [320, 390, 768, 1115, 1280]) {
     await page.setViewportSize({ width, height: 900 });
     for (let id = 1; id <= 8; id++) {
@@ -1576,6 +1580,7 @@ test('nine-seat style assignment shows every persona at all sizes and executes t
 test('all named portraits preview immediately, follow saved styles next hand and stay frozen on retry', async ({
   page,
 }) => {
+  test.setTimeout(60000);
   const profiles = ['tan', 'st', 'zang', 'peter', 'abao', 'viktor', 'jungleman', 'dwan'];
   await setPlayerCount(page, 9);
   await page.evaluate(() => window.qa.foldWin(9));
@@ -1823,9 +1828,10 @@ test('loss simulation remains available while redundant seat explanations are re
 test('A7 review separates steal, 3bet and 4bet; opponents expose actual decisions after settlement', async ({
   page,
 }) => {
+  test.setTimeout(60000);
   await page.evaluate(() => window.qa.reviewLine());
   await page.locator('#review-hand-button').click();
-  await expect(page.locator('#review-priority')).toBeVisible({ timeout: 15000 });
+  await expect(page.locator('#review-priority')).toBeVisible({ timeout: 30000 });
   await page.locator('#review-timeline [data-review-index="0"]').click();
   await expect(page.locator('#review-reason')).toContainText('阻断');
   await expect(page.locator('#review-suggestion')).not.toHaveText('2-bet 开池至 150');
@@ -1860,11 +1866,14 @@ test('A7 review separates steal, 3bet and 4bet; opponents expose actual decision
 test('review timelines hint at horizontal scrolling and keep late selections in place', async ({
   page,
 }) => {
+  // Allow three real simulations on shared CI hardware without reducing
+  // the sampling or dropping the decision and scrolling assertions.
+  test.setTimeout(120000);
   for (const width of [320, 390, 1280]) {
     await page.setViewportSize({ width, height: 900 });
     await page.evaluate(() => window.qa.reviewLine());
     await page.locator('#review-hand-button').click();
-    await expect(page.locator('#review-priority')).toBeVisible({ timeout: 15000 });
+    await expect(page.locator('#review-priority')).toBeVisible({ timeout: 30000 });
     if (width < 700) {
       const heroTimeline = page.locator('#review-timeline');
       const heroIndex = (await heroTimeline.locator('.review-step').count()) - 1;

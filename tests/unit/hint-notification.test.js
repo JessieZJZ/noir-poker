@@ -9,7 +9,7 @@ function harness() {
   const hint = createHintNotification({
     publish: (value) => updates.push(value),
     setTimer: (callback, delay) => {
-      assert.equal(delay, 7000);
+      assert.equal(delay, 18000);
       callbacks.set(++next, callback);
       return next;
     },
@@ -96,4 +96,52 @@ test('switching between banner and card cancels stale expiry and restores timed 
   hint.setActive(false);
   assert.deepEqual(updates.at(-1), { visible: false });
   assert.equal(callbacks.size, 0);
+});
+
+test('measured looping lifetime extends long hints without restarting the same context', () => {
+  const updates = [],
+    timers = new Map();
+  let next = 0;
+  const hint = createHintNotification({
+    publish(value) {
+      updates.push(value);
+      return value.visible ? 42000 : undefined;
+    },
+    setTimer(callback, delay) {
+      timers.set(++next, { callback, delay });
+      return next;
+    },
+    clearTimer: (id) => timers.delete(id),
+  });
+  const show = (key) => hint.update({ enabled: true, key, text: '一段需要完整循环阅读的长提示' });
+  show('turn1');
+  const original = timers.values().next().value;
+  assert.equal(original.delay, 42000);
+  show('turn1');
+  assert.equal(timers.size, 1);
+  assert.equal(updates.length, 1);
+  show('turn2');
+  original.callback();
+  assert.equal(updates.at(-1).visible, true);
+  assert.equal(timers.size, 1);
+  hint.setActive(false);
+  assert.equal(timers.size, 0);
+  assert.deepEqual(updates.at(-1), { visible: false });
+});
+
+test('invalid or shorter measured lifetimes retain the readable minimum', () => {
+  for (const value of [undefined, NaN, Infinity, -1, 1, 7000]) {
+    let scheduled = 0;
+    const hint = createHintNotification({
+      publish: () => value,
+      setTimer(callback, delay) {
+        scheduled = delay;
+        return 1;
+      },
+      clearTimer: () => {},
+    });
+    hint.update({ enabled: true, key: 'turn', text: '提示' });
+    assert.equal(scheduled, 18000);
+    hint.destroy();
+  }
 });

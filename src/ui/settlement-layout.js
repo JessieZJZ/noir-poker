@@ -10,6 +10,23 @@ function nearestClearTop(ideal, min, max, blocked) {
   );
 }
 
+// Keep the complete seat inside the arena while allowing the corridor's
+// half-pixel clearance to survive the final fit transform. Reserving a full
+// pixel at the arena edge can clamp a seat at exactly 12px from the pot;
+// rounded visual rectangles then lose that clearance by a few millionths.
+export function minimalSeatShift(leftSide, footprint, corridor, bounds) {
+  const edgeInset = 0.5;
+  return leftSide
+    ? -Math.min(
+        Math.max(0, footprint.right - corridor.left),
+        Math.max(0, footprint.left - bounds.left - edgeInset),
+      )
+    : Math.min(
+        Math.max(0, corridor.right - footprint.left),
+        Math.max(0, bounds.right - footprint.right - edgeInset),
+      );
+}
+
 // Absolute seat anchors preserve the oval table. Grow settlement height from
 // player footprints, then center the public group without moving the hero.
 export function createSettlementLayout(arena, { observe = true } = {}) {
@@ -32,20 +49,38 @@ export function createSettlementLayout(arena, { observe = true } = {}) {
       // The hero's tilted cards extend beyond their untransformed wrapper.
       heroGap = 24,
       bottomPadding = 20;
-    // Open the portrait table's middle corridor without clipping a player's
-    // actual footprint (long names and actions can be wider than profiles).
+    // Open the public row's actual horizontal corridor before reserving a
+    // vertical band. Move side seats only by the missing clearance, bounded
+    // by their full footprint; a fixed shift can leave a small collision and
+    // unnecessarily grow/shrink the whole mobile table.
     const spread =
-      Number(arena.dataset.playerCount) >= 7 && matchMedia('(max-width: 600px)').matches;
+      Number(arena.dataset.playerCount) >= 7 &&
+      compact &&
+      !arena.classList.contains('compact-landscape');
     for (const seat of arena.querySelectorAll('.seat')) seat.style.removeProperty('margin-left');
     if (spread) {
+      const publicParts = [...center.querySelectorAll('.pot, #board, #board-caption')]
+        .map((el) => el.getBoundingClientRect())
+        .filter((r) => r.width > 0 && r.height > 0);
+      // CSS layout rounds offsets to fractional pixels. Leave half a pixel
+      // beyond exact clearance so the final fit transform keeps it clear.
+      const clearLeft = Math.min(...publicParts.map((r) => r.left)) - gap - 0.5,
+        clearRight = Math.max(...publicParts.map((r) => r.right)) + gap + 0.5;
       for (const seat of arena.querySelectorAll('.seat-left, .seat-right')) {
-        const parts = [...seat.querySelectorAll('.mini-cards, .seat-profile, .seat-action')]
+        const parts = [
+          ...seat.querySelectorAll('.mini-cards, .seat-profile, .seat-action, .hand-rank'),
+        ]
           .filter((el) => !el.hidden)
           .map((el) => el.getBoundingClientRect())
           .filter((r) => r.width > 0 && r.height > 0);
-        const shift = seat.classList.contains('seat-left')
-          ? -Math.min(14, Math.min(...parts.map((r) => r.left)) - box.left - 1)
-          : Math.min(14, box.right - Math.max(...parts.map((r) => r.right)) - 1);
+        const left = Math.min(...parts.map((r) => r.left)),
+          right = Math.max(...parts.map((r) => r.right));
+        const shift = minimalSeatShift(
+          seat.classList.contains('seat-left'),
+          { left, right },
+          { left: clearLeft, right: clearRight },
+          box,
+        );
         seat.style.marginLeft = `${shift}px`;
       }
     }

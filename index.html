@@ -62,6 +62,7 @@
               class="hint-banner"
               id="coach-content"
               aria-label="牌桌提示"
+              tabindex="0"
               role="status"
               aria-live="polite"
               aria-atomic="true"
@@ -309,7 +310,7 @@
           <div class="settings-row" id="hint-setting-row">
             <div>
               <span id="hint-label">牌桌提示</span>
-              <p class="setting-description">必要时显示，数秒后自动收起</p>
+              <p class="setting-description">必要时显示；长文自动循环滚动，阅读后收起</p>
             </div>
             <button
               id="hint-toggle"
@@ -325,7 +326,6 @@
             </button>
           </div>
         </section>
-        <p id="opponents-change-note" class="table-change-note" role="status" hidden></p>
         <section class="settings-module difficulty-module" aria-labelledby="difficulty-label">
           <h3 id="difficulty-label">对手难度</h3>
           <div class="difficulty-control">

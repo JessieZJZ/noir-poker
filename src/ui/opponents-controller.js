@@ -244,9 +244,6 @@ export function createOpponentsController({ getGame, getCount, getSettings, onSa
         : named
           ? `${named} 位风格对手`
           : '均衡';
-      const note = document.querySelector('#opponents-change-note');
-      note.hidden = !changed;
-      note.textContent = '风格与情绪已自动保存，下一手生效；本手和重打保持原设置。';
     },
   };
 }

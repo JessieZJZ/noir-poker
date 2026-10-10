@@ -2,7 +2,7 @@
 // extend its lifetime, and a backgrounded app must not replay an old tip.
 export function createHintNotification({
   publish,
-  duration = 7000,
+  duration = 18000,
   setTimer = setTimeout,
   clearTimer = clearTimeout,
 }) {
@@ -30,12 +30,15 @@ export function createHintNotification({
       hide();
       if (!active || !notify || !text) return;
       visible = true;
-      publish({ visible: true, text, stage });
+      const measuredDuration = publish({ visible: true, text, stage });
       if (persistent) return;
       const current = ticket;
-      timer = setTimer(() => {
-        if (current === ticket) hide();
-      }, duration);
+      timer = setTimer(
+        () => {
+          if (current === ticket) hide();
+        },
+        Math.max(duration, Number.isFinite(measuredDuration) ? measuredDuration : duration),
+      );
     },
     setActive(nextActive) {
       active = !!nextActive;

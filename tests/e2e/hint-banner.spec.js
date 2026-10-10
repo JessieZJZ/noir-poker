@@ -29,9 +29,11 @@ test('necessary hints appear below blinds, expire without reappearing on ordinar
   await expect(page.locator('.sidebar #coach-content')).toHaveCount(0);
   await page.clock.runFor(32);
   const before = await page.locator('.table-viewport').boundingBox();
-  await page.clock.runFor(6967);
+  const duration = Number(await banner.getAttribute('data-hint-duration'));
+  expect(duration).toBeGreaterThanOrEqual(18000);
+  await page.clock.runFor(6969);
   await expect(banner).toBeVisible();
-  await page.clock.runFor(2);
+  await page.clock.runFor(duration - 7001 + 1);
   await expect(banner).toBeHidden();
   const after = await page.locator('.table-viewport').boundingBox();
   expect(after).toEqual(before);
@@ -45,7 +47,7 @@ test('necessary hints appear below blinds, expire without reappearing on ordinar
   });
   await expect(banner).toBeVisible();
   await expect(page.locator('#coach-stage')).toHaveText('翻牌策略');
-  await page.clock.runFor(7001);
+  await page.clock.runFor(Number(await banner.getAttribute('data-hint-duration')) + 1);
   await expect(banner).toBeHidden();
   await page.evaluate(() => window.qa.foldWin(9));
   await expect(banner).toBeVisible();
@@ -179,7 +181,9 @@ test('desktop coaching stays in the sidebar, wraps naturally and exposes its onl
   expect(await page.evaluate(() => localStorage.getItem('noir-hints'))).toBe('false');
   await card.locator('#hint-toggle').click();
   await expect(card.locator('#coach-content')).toBeVisible();
-  await page.clock.runFor(7001);
+  await page.clock.runFor(
+    Number(await page.locator('#coach-content').getAttribute('data-hint-duration')) + 1,
+  );
   await expect(card.locator('#coach-content')).toBeVisible();
 });
 
@@ -205,7 +209,9 @@ test('breakpoint changes reuse the same hint preference and cancel stale mobile 
   await page.setViewportSize({ width: 900, height: 900 });
   await expect(page.locator('#coach-desktop-card')).toBeHidden();
   await expect(page.locator('.surface-top #coach-content')).toBeVisible();
-  await page.clock.runFor(7001);
+  await page.clock.runFor(
+    Number(await page.locator('#coach-content').getAttribute('data-hint-duration')) + 1,
+  );
   await expect(page.locator('#coach-content')).toBeHidden();
   await page.setViewportSize({ width: 901, height: 900 });
   await expect(page.locator('#coach-desktop-card #coach-content')).toBeVisible();

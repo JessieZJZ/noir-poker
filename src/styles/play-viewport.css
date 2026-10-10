@@ -1,3 +1,14 @@
+/* Rotated card backs extend above their wrapper unless it reserves a small
+   top inset. Keep both backs inside the arena at its upper seat anchors. */
+.game-surface .seat .mini-cards {
+  padding-top: 3px;
+}
+@media (min-width: 901px) and (max-width: 1150px) {
+  .game-surface .board > .playing-card,
+  .game-surface .board-slot {
+    width: 50px;
+  }
+}
 @media (max-width: 900px) {
   .main {
     padding-top: 8px;
@@ -111,7 +122,15 @@
     padding: 2px;
   }
   .game-surface .seat .mini-cards:not(.revealed-cards) {
-    display: none;
+    display: flex;
+    gap: 3px;
+    margin-bottom: -14px;
+  }
+  .game-surface .seat .card-back {
+    width: 22px;
+    height: 30px;
+    flex: none;
+    border-width: 1.5px;
   }
   .game-surface .seat .mini-cards.revealed-cards {
     margin-bottom: 4px;
@@ -161,9 +180,18 @@
   }
   .game-surface .arena[data-player-count] .board > .playing-card,
   .game-surface .arena[data-player-count] .board-slot {
-    width: 30px;
-    height: 44px;
-    border-radius: 4px;
+    width: clamp(38px, 8vw, 58px);
+    height: clamp(55px, 11.6vw, 84px);
+    border-radius: 5px;
+  }
+  /* SVG ranks otherwise inherit the desktop ratio and become hard to read
+     in a fitted table. Keep the rank prominent even on compact card faces. */
+  .game-surface .board .card-art > text,
+  .game-surface .board .card-art > g > text,
+  .game-surface .hero-cards .card-art > text,
+  .game-surface .hero-cards .card-art > g > text {
+    font-size: 20px;
+    transform: translate(3px, 2px);
   }
   .game-surface .board .card-corner {
     top: 3px;
@@ -181,12 +209,12 @@
     display: none;
   }
   .game-surface .hero-cards {
-    min-height: 60px;
-    gap: 5px;
+    min-height: clamp(75px, 17.4vw, 104px);
+    gap: 7px;
   }
   .game-surface .hero-cards .playing-card {
-    width: 42px;
-    height: 60px;
+    width: clamp(52px, 12vw, 72px);
+    height: clamp(75px, 17.4vw, 104px);
   }
   .game-surface .hero-cards .card-corner {
     font-size: 15px;
@@ -283,6 +311,44 @@
   }
   .game-surface .action-panel:has(.continue-deal-button:not([hidden])) {
     min-height: 0;
+  }
+}
+@media (max-width: 420px) {
+  .game-surface .arena[data-player-count] .seat .seat-profile {
+    width: 72px;
+    min-width: 72px;
+    max-width: 72px;
+  }
+  .game-surface .arena[data-player-count] .seat-action {
+    max-width: 72px;
+  }
+  /* A slight edge overlap keeps the upper rank and central suit exposed
+     while the row fits between side seats. Preserve face size instead of
+     shrinking the entire table to make room for a five-card row. */
+  .game-surface .arena[data-player-count] .board {
+    gap: 0;
+  }
+  .game-surface .arena[data-player-count] .board > :not(:first-child) {
+    margin-left: -8px;
+  }
+  .game-surface .board .card-art > g {
+    display: none;
+  }
+}
+@media (max-width: 340px) {
+  /* Five full faces cannot share the phone's center corridor at this width.
+     A centered 3+2 layout preserves the same readable face and suit sizes. */
+  .game-surface .arena[data-player-count] .board {
+    flex-wrap: wrap;
+    justify-content: center;
+    width: 122px;
+    gap: 4px;
+  }
+  .game-surface .arena[data-player-count] .board > :not(:first-child) {
+    margin-left: 0;
+  }
+  .game-surface .board .card-art > g {
+    display: block;
   }
 }
 @media (max-width: 900px) and (max-height: 600px) {
