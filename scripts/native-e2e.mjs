@@ -260,8 +260,14 @@ async function relaunch() {
 async function background() {
   await command('POST', '/context', { name: 'NATIVE_APP' });
   await command('POST', '/appium/app/background', { seconds: -1 });
-  const nativeState = await queryAppState();
-  assert.ok([2, 3].includes(nativeState), 'Native driver must confirm the app is backgrounded');
+  const nativeState = await waitFor(
+    async () => {
+      const value = await queryAppState();
+      return [2, 3].includes(value) ? value : null;
+    },
+    10000,
+    'Native driver must confirm the app is backgrounded',
+  );
   return { startedAt: performance.now(), nativeState };
 }
 const queryAppState = () => command('POST', '/appium/device/app_state', { appId });
