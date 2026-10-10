@@ -294,3 +294,101 @@ test('WeChat profile parameters keep stable unique keys when values repeat', (t)
   page.closeProfile();
   assert.equal(page.data.detailProfile, null);
 });
+
+function cssNumber(selector, property) {
+  const escaped = selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const rule = stylesheet.match(new RegExp(`${escaped}\\s*\\{([^}]+)\\}`));
+  assert.ok(rule, `missing geometry rule ${selector}`);
+  const declaration = rule[1].match(new RegExp(`(?:^|[;\\n])\\s*${property}:\\s*([\\d.]+)`));
+  assert.ok(declaration, `missing ${selector} ${property}`);
+  return Number(declaration[1]);
+}
+
+function intersects(a, b) {
+  return a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top;
+}
+
+for (const playerCount of [5, 6, 7, 8, 9]) {
+  for (const info of [
+    { windowWidth: 320, windowHeight: 568, statusBarHeight: 20, safeArea: { bottom: 568 } },
+    { windowWidth: 390, windowHeight: 667, statusBarHeight: 20, safeArea: { bottom: 667 } },
+  ]) {
+    test(`WeChat ${playerCount}-seat ${info.windowWidth}x${info.windowHeight} showdown keeps all cards and captions clear of the hero`, (t) => {
+      const { page } = setup(t, { playerCount, info });
+      const game = page._controller.getGame();
+      finish(game);
+      page._controller.show();
+      assert.equal(page.data.done, true);
+      assert.ok(page.data.seats.every((seat) => seat.cards.length === 2 && seat.rank));
+      const height = page.data.tableHeight;
+      assert.ok(height < 430);
+      assert.match(template, /tableHeight < 430 \? 'table-short'/);
+      // Read actual template expressions and actual CSS dimensions. This catches
+      // a return to percentage seats even when the overall page height stays fixed.
+      const style = template.match(/style="(left: \{\{item.x\}\}%; top: [^"]+)"/)[1];
+      const width = info.windowWidth - 18; // 8px page gutters and the 1px shell border.
+      const seatWidth = cssNumber('.table-short .seat', 'width');
+      const seatHeight =
+        cssNumber('.table-short .seat-hole.revealed-hole', 'height') +
+        cssNumber('.table-short .seat-body', 'height') +
+        cssNumber('.table-short .seat-caption', 'height');
+      const heroFooterHeight = cssNumber('.hero-identity', 'line-height') * 2;
+      const heroBottom = height - cssNumber('.hero', 'bottom');
+      const identityTop = heroBottom - heroFooterHeight;
+      const cardWidth = cssNumber('.table-short .hero-card', 'width');
+      const cardHeight = cssNumber('.table-short .hero-card', 'height');
+      const angle = (5 * Math.PI) / 180;
+      const rotatedWidth = cardWidth * Math.cos(angle) + cardHeight * Math.sin(angle);
+      const rotatedHeight = cardHeight * Math.cos(angle) + cardWidth * Math.sin(angle);
+      const heroWidth = cardWidth + cssNumber('.hero-cards', 'gap') + rotatedWidth;
+      const heroTop =
+        identityTop -
+        cssNumber('.table-short .hero-rank', 'height') -
+        cardHeight -
+        (rotatedHeight - cardHeight) / 2;
+      const hero = {
+        left: (width - heroWidth) / 2,
+        right: (width + heroWidth) / 2,
+        top: heroTop,
+        bottom: heroBottom,
+      };
+      const communityWidth = width * (cssNumber('.community', 'width') / 100);
+      const communityHeight =
+        cssNumber('.table-short .pot-row', 'height') +
+        cssNumber('.table-short .pot-row', 'margin-bottom') +
+        2 *
+          (cssNumber('.table-short .card-placeholder', 'height') +
+            cssNumber('.table-short .board-row', 'margin-bottom'));
+      const community = {
+        left: (width - communityWidth) / 2,
+        right: (width + communityWidth) / 2,
+        top: height / 2 - 62,
+        bottom: height / 2 - 62 + communityHeight,
+      };
+      assert.ok(community.bottom <= hero.top, 'the two board rows clear the rotated hero cards');
+      const bounds = page.data.seats.map((item) => {
+        const rendered = style.replace(/\{\{([\s\S]+?)\}\}/g, (_, expression) =>
+          vm.runInNewContext(expression, { item, tableHeight: height }),
+        );
+        const top = Number(rendered.match(/top: ([\d.]+)px/)[1]);
+        const left = (item.x * width) / 100 - seatWidth / 2;
+        return { id: item.id, left, right: left + seatWidth, top, bottom: top + seatHeight };
+      });
+      for (const seat of bounds) {
+        assert.ok(seat.top >= 0 && seat.left >= 0 && seat.right <= width);
+        assert.ok(seat.bottom <= identityTop - 6, `seat ${seat.id} caption clears the hero footer`);
+        assert.equal(intersects(seat, hero), false, `seat ${seat.id} clears the hero cards`);
+        assert.equal(intersects(seat, community), false, `seat ${seat.id} clears the full board`);
+      }
+      for (let i = 0; i < bounds.length; i++) {
+        for (let j = i + 1; j < bounds.length; j++) {
+          assert.equal(
+            intersects(bounds[i], bounds[j]),
+            false,
+            'revealed seat cards and captions do not collide',
+          );
+        }
+      }
+    });
+  }
+}

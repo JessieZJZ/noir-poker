@@ -968,3 +968,127 @@
     margin-bottom: 3px;
   }
 }
+
+/* Three bounded side rows leave the hero identity a separate 45px footer.
+   All four top seats fit beside each other at the 320px screen boundary. */
+.table-short .seat {
+  width: 54px;
+  transform: translateX(-50%);
+}
+.table-short .seat-hole {
+  height: 20px;
+}
+.table-short .seat-hole.revealed-hole {
+  height: 20px;
+}
+.table-short .card-back {
+  width: 14px;
+  height: 18px;
+}
+.table-short .mini-card {
+  width: 14px;
+  height: 20px;
+  padding: 1px;
+  font-size: 7px;
+  line-height: 7px;
+  border-radius: 3px;
+}
+.table-short .mini-card text + text {
+  font-size: 9px;
+  line-height: 9px;
+}
+.table-short .seat-body {
+  min-height: 32px;
+  height: 32px;
+  padding: 1px 2px;
+}
+.table-short .seat-name {
+  font-size: 7px;
+  line-height: 9px;
+  height: 9px;
+  gap: 2px;
+}
+.table-short .seat-name .position {
+  font-size: 6px;
+  padding: 0 2px;
+}
+.table-short .seat-persona {
+  min-height: 10px;
+  height: 10px;
+  margin: 0;
+  gap: 2px;
+}
+.table-short .avatar {
+  width: 9px;
+  height: 9px;
+}
+.table-short .persona {
+  min-width: 0;
+  font-size: 7px;
+  line-height: 8px;
+  padding: 0 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.table-short .seat-body .stack {
+  font-size: 8px;
+  line-height: 9px;
+}
+.table-short .seat-caption {
+  min-height: 22px;
+  height: 22px;
+  font-size: 7px;
+  line-height: 9px;
+}
+.table-short .seat-caption .rank {
+  margin-top: 1px;
+  font-size: 7px;
+  line-height: 8px;
+  padding: 1px 3px;
+}
+.table-short .seat-action {
+  font-size: 7px;
+  line-height: 9px;
+}
+.table-short .community {
+  top: 50%;
+  transform: translate(-50%, -62px);
+}
+.table-short .pot-row {
+  height: 25px;
+  margin-bottom: 3px;
+}
+.table-short .community-card,
+.table-short .card-placeholder {
+  width: 25px;
+  height: 32px;
+}
+.table-short .community-card .card-rank {
+  font-size: 9px;
+}
+.table-short .community-card .card-suit {
+  font-size: 17px;
+}
+.table-short .board-row {
+  margin-bottom: 3px;
+}
+.table-short .hero-card {
+  width: 42px;
+  height: 56px;
+}
+.table-short .hero-card .card-rank {
+  font-size: 13px;
+}
+.table-short .hero-card .card-suit {
+  font-size: 27px;
+}
+.table-short .hero-rank {
+  height: 12px;
+}
+.table-short .hero-rank .rank {
+  margin-top: 0;
+  font-size: 8px;
+  line-height: 8px;
+  padding: 1px 3px;
+}

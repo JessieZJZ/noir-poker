@@ -56,7 +56,50 @@ export async function nativeScenarios(app) {
   });
   await check('settings-autosave-and-local-portraits', async () => {
     await app.click('#opponents-button');
-    await app.select('#language-select', 'zh-CN');
+    const languageReloads = [];
+    const changeLanguage = async (target) => {
+      const before = await app.evaluate(() => ({
+        language: document.querySelector('#language-select').value,
+        timeOrigin: performance.timeOrigin,
+      }));
+      if (before.language === target) return;
+      await app.select('#language-select', target);
+      // Selecting a language flushes native preferences and reloads the page.
+      // The old select value changes before navigation, so value alone cannot
+      // authorize another interaction with the old settings document.
+      const after = await app.waitFor(
+        async () => {
+          const loaded = await app.evaluate(() => ({
+            language: document.documentElement.lang,
+            timeOrigin: performance.timeOrigin,
+            ready: document.documentElement.dataset.appReady === 'true',
+            initialized: Boolean(window.noir?.getState()),
+            settingsOpen: document.querySelector('#opponents-dialog')?.open,
+          }));
+          return loaded.timeOrigin !== before.timeOrigin &&
+            loaded.language === target &&
+            loaded.ready &&
+            loaded.initialized
+            ? loaded
+            : null;
+        },
+        30000,
+        `Language ${target} must finish a real document reload`,
+      );
+      assert.equal(after.settingsOpen, false, 'Navigation must replace the old settings dialog');
+      languageReloads.push({
+        from: before.language,
+        to: after.language,
+        beforeTimeOrigin: before.timeOrigin,
+        afterTimeOrigin: after.timeOrigin,
+      });
+      await app.click('#opponents-button');
+    };
+    const initialLanguage = await app.evaluate(() => document.documentElement.lang);
+    // Force a real change even on a simulator that already starts in Chinese;
+    // this covers the same navigation boundary as an English CI simulator.
+    await changeLanguage(initialLanguage === 'en' ? 'zh-CN' : 'en');
+    await changeLanguage('zh-CN');
     await app.select('#player-count', '5');
     await app.select('#emotion-mode', 'lively');
     await app.select('[data-bot-seat="1"]', 'tan');
@@ -92,14 +135,21 @@ export async function nativeScenarios(app) {
     await app.relaunch();
     await app.click('#opponents-button');
     const saved = await app.evaluate(() => ({
+      language: document.querySelector('#language-select').value,
       players: document.querySelector('#player-count').value,
       emotion: document.querySelector('#emotion-mode').value,
       profile: document.querySelector('[data-bot-seat="1"]').value,
       sound: document.querySelector('#sound-button').getAttribute('aria-checked'),
     }));
-    assert.deepEqual(saved, { players: '5', emotion: 'lively', profile: 'tan', sound: 'false' });
+    assert.deepEqual(saved, {
+      language: 'zh-CN',
+      players: '5',
+      emotion: 'lively',
+      profile: 'tan',
+      sound: 'false',
+    });
     await app.click('#opponents-dialog .close-dialog');
-    return { saved, portraits: images };
+    return { saved, languageReloads, portraits: images };
   });
   await check('raise-call-fold-and-settlement', async () => {
     const coverage = { raise: null, call: null, fold: null };

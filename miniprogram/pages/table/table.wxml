@@ -26,13 +26,16 @@
         ></view
       ></view
     >
-    <view class="table-area" style="height: {{tableHeight}}px;">
+    <view
+      class="table-area {{tableHeight < 430 ? 'table-short' : ''}}"
+      style="height: {{tableHeight}}px;"
+    >
       <view class="felt"><text class="felt-brand">N O I R</text></view>
       <view
         wx:for="{{seats}}"
         wx:key="id"
         class="seat {{item.thinking ? 'thinking' : ''}} {{item.folded ? 'folded' : ''}} {{item.winner ? 'winner' : ''}}"
-        style="left: {{item.x}}%; top: {{item.y}}%;"
+        style="left: {{item.x}}%; top: {{tableHeight < 430 ? (item.y < 40 ? 8 : item.y < 70 ? (tableHeight - 111) / 2 : tableHeight - 119) : item.y}}{{tableHeight < 430 ? 'px' : '%'}};"
       >
         <view class="seat-hole {{item.cards.length ? 'revealed-hole' : ''}}">
           <block wx:if="{{item.cards.length}}"
