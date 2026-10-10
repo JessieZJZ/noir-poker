@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { openSettings, setPlayerCount } from './settings-helpers.js';
+import { openSettings, setPlayerCount, toggleHints } from './settings-helpers.js';
 
 test.beforeEach(async ({ page }) => {
   const errors = [];
@@ -1370,7 +1370,7 @@ test('returning restores all saved options before the first fresh hand, includin
 }) => {
   await openSettings(page);
   await page.locator('#player-count').selectOption('9');
-  await page.locator('#hint-toggle').click();
+  await toggleHints(page);
   await page.locator('#sound-button').click();
   await page
     .locator('.difficulty-option')
@@ -1464,10 +1464,8 @@ test('per-seat styles apply next hand, survive resize and refresh, and freeze on
   expect((await page.evaluate(() => window.noir.getState())).players[1].botProfile).toBe('tan');
   await page.locator('#opponents-button').click();
   await expect(page.locator('[data-bot-seat="8"]')).toHaveValue('st');
-  await expect(page.locator('#opponents-dialog .opponents-intro')).toContainText('非本人复刻');
-  await expect(page.locator('#opponents-dialog .opponents-intro')).toContainText(
-    '指数表示策略倾向',
-  );
+  await expect(page.locator('#opponents-dialog .settings-info')).toContainText('训练原型');
+  await expect(page.locator('#opponents-dialog .settings-info')).toContainText('策略倾向');
 });
 
 test('nine-seat style assignment shows every persona at all sizes and executes the selected policies', async ({
@@ -1497,8 +1495,11 @@ test('nine-seat style assignment shows every persona at all sizes and executes t
   await page.locator('#opponents-button').click();
   await page.locator('#mix-opponents').click();
   await page.locator('#emotion-mode').selectOption('off');
-  await expect(page.locator('[data-opponent-row="8"] .opponent-current-style')).toHaveText(
-    '本手实际风格：均衡',
+  await expect(
+    page.locator('.opponent-current-style, .opponent-observed, .opponent-mood-reason'),
+  ).toHaveCount(0);
+  expect((await page.evaluate(() => window.noir.getState())).players[8].botProfile).toBe(
+    'balanced',
   );
   await page.locator('#save-opponents').click();
   await openSettings(page);
@@ -1597,6 +1598,8 @@ test('all named portraits preview immediately, follow saved styles next hand and
   await page.locator('[data-bot-seat="1"]').selectOption('dwan');
   await expect(firstDraft.locator('img')).toHaveAttribute('data-portrait-profile', 'dwan');
   await expect(page.locator('[data-bot-seat="1"]')).toBeFocused();
+  await page.locator('[data-profile-preview="dwan"]').click();
+  await expect(page.locator('#profile-detail')).toBeVisible();
   await expect(page.locator('#profile-detail img')).toHaveAttribute(
     'data-portrait-profile',
     'dwan',
@@ -1604,6 +1607,8 @@ test('all named portraits preview immediately, follow saved styles next hand and
   await expect(page.locator('#profile-detail .profile-photo-credit')).toContainText(
     'World Poker Tour',
   );
+  if (await page.locator('[data-close-profile-detail]').isVisible())
+    await page.locator('[data-close-profile-detail]').click();
   await page.locator('[data-bot-seat="1"]').selectOption('tan');
   await page.locator('#save-opponents').click();
   await expect(page.locator('#seats .persona-portrait')).toHaveCount(0);
@@ -1779,7 +1784,7 @@ test('configured bots use the fast-deal path and observed samples roll back on r
   }
 });
 
-test('loss state is visible and can be disabled; configuration fits narrow screens', async ({
+test('loss simulation remains available while redundant seat explanations are removed', async ({
   page,
 }) => {
   await page.evaluate(() =>
@@ -1791,7 +1796,11 @@ test('loss state is visible and can be disabled; configuration fits narrow scree
   );
   await expect(page.locator('.seat-1')).toHaveAttribute('data-mood', 'frustrated');
   await page.locator('#opponents-button').click();
-  await expect(page.locator('[data-opponent-row="1"]')).toContainText('急于追回');
+  expect((await page.evaluate(() => window.noir.getState())).players[1].mood).toBe('frustrated');
+  await expect(page.locator('#opponent-roster')).not.toContainText('急于追回');
+  await expect(
+    page.locator('.opponent-current-style, .opponent-observed, .opponent-mood-reason'),
+  ).toHaveCount(0);
   for (const width of [320, 390, 768, 1280]) {
     await page.setViewportSize({ width, height: 900 });
     const overflow = await page
@@ -1960,6 +1969,8 @@ test('foreign style assignments persist and candidate simulation is available in
     await expect(choice.locator('strong')).toHaveText(name);
     await choice.click();
     await expect(page.locator('.profile-detail-heading h3')).toHaveText(name);
+    if (await page.locator('[data-close-profile-detail]').isVisible())
+      await page.locator('[data-close-profile-detail]').click();
   }
   await page.locator('#save-opponents').click();
   await page.locator('#next-button').click();

@@ -1,0 +1,141 @@
+.settings-module {
+  min-width: 0;
+  padding: 16px;
+  border: 1px solid #33464b;
+  border-radius: 12px;
+  background: #101c24;
+}
+.settings-module > h3,
+.settings-module .settings-row > h3 {
+  margin: 0 0 14px;
+  color: #dce7e9;
+  font-size: 16px;
+}
+.settings-dialog .general-settings {
+  margin-bottom: 16px;
+}
+.settings-module .settings-row {
+  gap: 12px;
+}
+.settings-info {
+  margin: 0 0 16px;
+  padding: 14px 16px;
+  border-left: 3px solid #608d80;
+  border-radius: 4px 10px 10px 4px;
+  background: #1c323044;
+  color: #9fb7b1;
+}
+.settings-info h3 {
+  margin: 0 0 6px;
+  font-size: 14px;
+  color: #c5ddd4;
+}
+.settings-info p,
+.settings-info a,
+.settings-info summary {
+  margin: 6px 0 0;
+  font-size: 12px;
+  line-height: 1.8;
+}
+.settings-info a {
+  color: #9ce0c7;
+  text-underline-offset: 3px;
+}
+.persona-notice {
+  margin-top: 8px;
+}
+.persona-notice summary {
+  cursor: pointer;
+  width: fit-content;
+  color: #c5ddd4;
+}
+.difficulty-module,
+.emotion-module {
+  margin-bottom: 16px;
+}
+.settings-module .difficulty-control {
+  justify-content: flex-start;
+}
+.settings-dialog .emotion-module .settings-row {
+  min-height: 44px;
+}
+.settings-dialog .emotion-module h3 {
+  margin: 0;
+}
+.settings-dialog .emotion-module .setting-description {
+  margin: 8px 0 0;
+  line-height: 1.8;
+}
+.settings-dialog .opponents-layout {
+  grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+.settings-dialog .opponents-save-row p {
+  color: #9fb7b1;
+  line-height: 1.6;
+}
+.coach-card {
+  flex: none;
+  padding: 22px;
+  border: 1px solid #345b50;
+  border-radius: 16px;
+  background: linear-gradient(130deg, #112c2544, #101c2355);
+}
+.coach-card .section-title {
+  align-items: center;
+  margin-bottom: 14px;
+}
+#coach-toggle-slot {
+  display: flex;
+  align-items: center;
+}
+.coach-card .hint-banner {
+  grid-area: auto;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  overflow: visible;
+  color: #abc5ba;
+}
+.coach-card #coach-stage {
+  position: static;
+  width: auto;
+  height: auto;
+  padding: 0;
+  overflow: visible;
+  clip-path: none;
+  white-space: normal;
+  display: block;
+  color: #86c2ae;
+  font-size: 13px;
+  margin: 0 0 10px;
+}
+.coach-card .hint-banner p,
+.coach-card #coach-disabled {
+  width: auto;
+  margin: 0;
+  white-space: normal;
+  font-size: 14px;
+  line-height: 1.9;
+}
+.coach-card #coach-disabled {
+  color: #889ea5;
+}
+@media (min-width: 901px) {
+  .game-surface > .surface-top {
+    grid-template-rows: auto;
+  }
+}
+@media (max-width: 900px) {
+  .settings-dialog .opponents-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .settings-module {
+    padding: 14px;
+  }
+  .settings-dialog .profile-comparison {
+    margin-top: 16px;
+  }
+}

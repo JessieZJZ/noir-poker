@@ -23,3 +23,16 @@ export async function setPlayerCount(page, count) {
   await page.locator('#player-count').selectOption(String(count));
   await closeSettings(page);
 }
+
+// There is one shared preference control: on wide screens it lives on the
+// persistent coach card, and on compact screens it lives inside settings.
+export async function toggleHints(page) {
+  const dialog = page.locator('#opponents-dialog');
+  const wasOpen = await dialog.isVisible();
+  const inSettings = await page.locator('#hint-toggle').evaluate((el) => !!el.closest('dialog'));
+  if (inSettings) await openSettings(page);
+  else await closeSettings(page);
+  await page.locator('#hint-toggle').click();
+  if (wasOpen) await openSettings(page);
+  else await closeSettings(page);
+}
