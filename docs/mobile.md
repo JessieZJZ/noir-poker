@@ -82,6 +82,6 @@ npm run mobile:verify
 
 `.github/workflows/mobile-build.yml` 在 GitHub PR、main 更新及手动运行时构建 Android debug APK、未签名 AAB 和 iOS 模拟器 `.app`，产物在 Actions 的 Artifacts 下载。CI 的未签名 AAB 用于验证发行编译，模拟器 `.app` 用于开发验证；两者都不能直接上架。CI 不保存商店签名凭据。
 
-浏览器 CI 先运行公共区定位、固定操作区、牌面可读性、首屏与结算布局测试，再运行其余交互测试。两组覆盖完整的 `npm run test:e2e`；失败轨迹与验收截图分别保存在 `table-geometry-results` 和 `browser-ui-results`，用于检查不同人数、屏幕尺寸和安全区域下的表现。
+浏览器 CI 先运行公共区定位、固定操作区、牌面可读性、首屏、结算布局与提示横幅测试，再分别并行运行桌面和移动端的其余交互测试。两组覆盖完整的 `npm run test:e2e`；失败轨迹与验收截图保存在 `table-geometry-results`、`browser-ui-results-desktop` 和 `browser-ui-results-mobile`，用于检查不同人数、屏幕尺寸和安全区域下的表现。
 
 浏览器测试能验证共用页面、离线资源与应用状态逻辑，不能替代真实 WKWebView、Android WebView、系统声音、返回键和真机安全区域测试。发行前按 [发行准备](mobile-release.md) 完成真机及签名验证。
