@@ -128,14 +128,7 @@ export function createPlayViewport(surface, { layout = () => {} } = {}) {
           seat.style.top = `${group.length > 1 ? (index * span) / (group.length - 1) : span / 2}px`;
         });
     }
-    const center = arena.querySelector('.table-center'),
-      hero = arena.querySelector('.hero-area'),
-      groupHeight = center.offsetHeight,
-      heroTop = hero.offsetTop - 24,
-      preferred = (height - groupHeight) / 2,
-      clearHero = heroTop - groupHeight - 10;
-    center.style.transform = 'translateX(-50%)';
-    center.style.top = `${Math.max(3, Math.min(preferred, clearHero))}px`;
+    layout();
     viewport.scrollTop = 0;
   }
   function schedule() {

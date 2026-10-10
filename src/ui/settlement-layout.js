@@ -159,7 +159,7 @@ export function createSettlementLayout(arena, { observe = true } = {}) {
     let space = measure();
     if (space.top === null && bounded) {
       space.top = Math.max(
-        space.table.top + gap,
+        arena.getBoundingClientRect().top + 3,
         Math.min(
           (space.table.top + space.table.bottom - space.group.height) / 2,
           space.heroTop - space.group.height - heroGap,
