@@ -12,7 +12,7 @@ function nearestClearTop(ideal, min, max, blocked) {
 
 // Absolute seat anchors preserve the oval table. Grow settlement height from
 // player footprints, then center the public group without moving the hero.
-export function createSettlementLayout(arena) {
+export function createSettlementLayout(arena, { observe = true } = {}) {
   const center = arena.querySelector('.table-center');
   const viewport = arena.closest('.table-viewport');
   let width = 0,
@@ -26,6 +26,7 @@ export function createSettlementLayout(arena) {
     width = arena.clientWidth;
     viewportHeight = viewport?.clientHeight ?? 0;
     const settled = arena.classList.contains('is-done'),
+      compact = matchMedia('(max-width: 900px)').matches,
       box = arena.getBoundingClientRect(),
       gap = 12,
       // The hero's tilted cards extend beyond their untransformed wrapper.
@@ -34,15 +35,14 @@ export function createSettlementLayout(arena) {
     // Open the portrait table's middle corridor without clipping a player's
     // actual footprint (long names and actions can be wider than profiles).
     const spread =
-      !settled &&
-      Number(arena.dataset.playerCount) >= 7 &&
-      matchMedia('(min-width: 361px) and (max-width: 600px)').matches;
+      Number(arena.dataset.playerCount) >= 7 && matchMedia('(max-width: 600px)').matches;
     for (const seat of arena.querySelectorAll('.seat')) seat.style.removeProperty('margin-left');
     if (spread) {
       for (const seat of arena.querySelectorAll('.seat-left, .seat-right')) {
         const parts = [...seat.querySelectorAll('.mini-cards, .seat-profile, .seat-action')]
           .filter((el) => !el.hidden)
-          .map((el) => el.getBoundingClientRect());
+          .map((el) => el.getBoundingClientRect())
+          .filter((r) => r.width > 0 && r.height > 0);
         const shift = seat.classList.contains('seat-left')
           ? -Math.min(14, Math.min(...parts.map((r) => r.left)) - box.left - 1)
           : Math.min(14, box.right - Math.max(...parts.map((r) => r.right)) - 1);
@@ -56,7 +56,8 @@ export function createSettlementLayout(arena) {
         ...seat.querySelectorAll('.mini-cards, .seat-profile, .hand-rank, .seat-action'),
       ]
         .filter((el) => !el.hidden)
-        .map((el) => el.getBoundingClientRect());
+        .map((el) => el.getBoundingClientRect())
+        .filter((r) => r.width > 0 && r.height > 0);
       return {
         y,
         left: Math.min(...parts.map((r) => r.left)),
@@ -81,9 +82,16 @@ export function createSettlementLayout(arena) {
       const table = arena.querySelector('.table-inner').getBoundingClientRect(),
         group = center.getBoundingClientRect(),
         hero = arena.querySelector('.hero-area').getBoundingClientRect(),
-        parts = [...center.querySelectorAll('.pot, #board, #board-caption')].map((el) =>
-          el.getBoundingClientRect(),
+        heroTop = Math.min(
+          hero.top,
+          ...[...arena.querySelectorAll('#hero-cards .playing-card')]
+            .map((el) => el.getBoundingClientRect())
+            .filter((r) => r.width > 0 && r.height > 0)
+            .map((r) => r.top),
         ),
+        parts = [...center.querySelectorAll('.pot, #board, #board-caption')]
+          .map((el) => el.getBoundingClientRect())
+          .filter((r) => r.width > 0 && r.height > 0),
         occupied = [
           ...arena.querySelectorAll(
             '.seat .mini-cards, .seat .seat-profile, .seat .hand-rank, .seat .seat-action',
@@ -101,19 +109,16 @@ export function createSettlementLayout(arena) {
             ]),
         ),
         min = table.top + gap,
-        max = Math.min(table.bottom - group.height - gap, hero.top - group.height - heroGap),
+        heroBlocks = parts.some(
+          (part) => part.left < hero.right + gap && part.right > hero.left - gap,
+        ),
+        max = Math.min(
+          table.bottom - group.height - gap,
+          heroBlocks ? heroTop - group.height - heroGap : Infinity,
+        ),
         ideal = (table.top + table.bottom - group.height) / 2,
-        // Keep public cards with the hero in the default mobile visible band
-        // whenever a clear position exists. Tiny viewports retain the full
-        // table's clear positions instead of forcing an overlap.
-        focusMin =
-          !settled && matchMedia('(max-width: 900px)').matches && viewport
-            ? Math.max(min, arena.getBoundingClientRect().bottom - viewportHeight + gap)
-            : min,
-        top =
-          nearestClearTop(ideal, focusMin, max, blocked) ??
-          nearestClearTop(ideal, min, max, blocked);
-      return { top, table, group, hero };
+        top = nearestClearTop(ideal, min, max, blocked);
+      return { top, table, group, heroTop };
     };
     let space = measure();
     if (space.top === null) {
@@ -126,12 +131,12 @@ export function createSettlementLayout(arena) {
         .sort((a, b) => b[1] - b[0] - (a[1] - a[0]))[0];
       const y = (band[0] + band[1]) / 2,
         current = arena.getBoundingClientRect(),
-        { table, group, hero } = space;
+        { table, group, heroTop } = space;
       let height = Math.max(
         current.height,
         (table.top - current.top + gap) / y,
         (current.bottom - table.bottom + group.height + gap) / (1 - y),
-        (current.bottom - hero.top + group.height + heroGap) / (1 - y),
+        (current.bottom - heroTop + group.height + heroGap) / (1 - y),
       );
       for (const seat of seats)
         height = Math.max(
@@ -145,9 +150,11 @@ export function createSettlementLayout(arena) {
       // The reserved band is safe even at a fractional-pixel boundary.
       space.top ??= arena.getBoundingClientRect().top + y * arena.getBoundingClientRect().height;
     }
-    if (settled) center.style.transform = `translateY(${space.top - space.group.top}px)`;
+    if (settled && !compact)
+      center.style.transform = `translateY(${space.top - space.group.top}px)`;
     else center.style.top = `${space.top - arena.getBoundingClientRect().top}px`;
   }
+  if (!observe) return { update };
   const observer = new ResizeObserver(() => {
     // Write outside the observer's delivery phase to avoid resize feedback.
     if (

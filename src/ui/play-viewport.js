@@ -1,81 +1,94 @@
-// Keep mobile actions in their own layout space. Only the table scrolls;
-// its existing collision layout and readable card sizes remain intact.
-export function createPlayViewport(surface) {
+// Keep the whole mobile table in the first screen. Measurements are made at
+// scale 1 before fitting, so collision coordinates never mix CSS/visual pixels.
+export function createPlayViewport(surface, { layout = () => {} } = {}) {
   const viewport = surface.querySelector('.table-viewport'),
+    arena = surface.querySelector('#arena'),
     mobile = matchMedia('(max-width: 900px)');
-  let hand = null,
-    table = null,
-    settled = true,
-    followBottom = true,
-    frame = null,
-    pointerDown = false,
-    userScrollUntil = 0;
+  let frame = null;
 
   function fit() {
-    if (!mobile.matches || settled) return;
+    arena.style.removeProperty('transform');
+    arena.style.removeProperty('width');
+    arena.style.removeProperty('--arena-height');
+    arena.classList.remove('compact-landscape');
+    const seats = [...arena.querySelectorAll('.seat')];
+    for (const seat of seats) {
+      seat.dataset.originalLeft ??= seat.style.left;
+      seat.dataset.originalTop ??= seat.style.top;
+      seat.style.left = seat.dataset.originalLeft;
+      seat.style.top = seat.dataset.originalTop;
+    }
+    if (!mobile.matches) {
+      surface.style.removeProperty('--play-height');
+      layout();
+      return;
+    }
     const screen = window.visualViewport,
-      top = surface.getBoundingClientRect().top + window.scrollY,
-      // Pinch zoom pans the existing page; it must not squeeze its controls
-      // into the magnified visual viewport and crop the action buttons.
+      // Pinch zoom magnifies/pans the page without shrinking its layout.
       screenHeight = screen && screen.scale <= 1.01 ? screen.height : window.innerHeight,
-      height = Math.max(0, screenHeight - top - 8);
-    const value = `${height}px`;
-    if (surface.style.getPropertyValue('--play-height') !== value)
-      surface.style.setProperty('--play-height', value);
+      top = surface.getBoundingClientRect().top + window.scrollY,
+      height = Math.max(160, screenHeight - top - 8);
+    surface.style.setProperty('--play-height', `${height}px`);
+    arena.style.width = `${viewport.clientWidth}px`;
+    const landscape = viewport.clientWidth > 600 && screenHeight < 600;
+    arena.classList.toggle('compact-landscape', landscape);
+    if (landscape) {
+      seats.forEach((seat, index) => {
+        seat.style.left = `${((index + 0.5) / seats.length) * 100}%`;
+        seat.style.top = '0%';
+      });
+    }
+    const availableHeight = viewport.clientHeight,
+      baseHeight = Math.max(
+        availableHeight,
+        landscape ? 220 : Number(arena.dataset.playerCount) >= 7 ? 450 : 360,
+      );
+    arena.style.setProperty('--arena-height', `${baseHeight}px`);
+    layout();
+
+    const box = arena.getBoundingClientRect(),
+      parts = [
+        ...arena.querySelectorAll(
+          '.seat-profile, .mini-cards, .seat-action, .hand-rank, .hero-area, .table-center',
+        ),
+      ]
+        .filter((el) => !el.hidden)
+        .map((el) => el.getBoundingClientRect())
+        .filter((r) => r.width > 0 && r.height > 0),
+      left = Math.min(0, ...parts.map((r) => r.left - box.left)),
+      right = Math.max(box.width, ...parts.map((r) => r.right - box.left)),
+      topEdge = Math.min(0, ...parts.map((r) => r.top - box.top)),
+      bottom = Math.max(box.height, ...parts.map((r) => r.bottom - box.top)),
+      scale = Math.min(
+        1,
+        viewport.clientWidth / (right - left),
+        availableHeight / (bottom - topEdge),
+      ),
+      x = (viewport.clientWidth - (right - left) * scale) / 2 - left * scale,
+      y = (availableHeight - (bottom - topEdge) * scale) / 2 - topEdge * scale;
+    arena.style.transform = `translate(${x}px, ${y}px) scale(${scale})`;
+    viewport.scrollTop = 0;
   }
   function schedule() {
     if (frame !== null) return;
     frame = requestAnimationFrame(() => {
       frame = null;
       fit();
-      if (mobile.matches && !settled && followBottom)
-        viewport.scrollTop = viewport.scrollHeight - viewport.clientHeight;
     });
   }
-  viewport.addEventListener('scroll', () => {
-    // Resizing the viewport also emits scroll events as its range is clamped.
-    // Only a user's table gesture can turn off following the hero.
-    if (mobile.matches && !settled && (pointerDown || performance.now() < userScrollUntil)) {
-      userScrollUntil = performance.now() + 180;
-      followBottom = viewport.scrollHeight - viewport.clientHeight - viewport.scrollTop < 24;
-    }
-  });
-  viewport.addEventListener('pointerdown', () => {
-    pointerDown = true;
-  });
-  const endGesture = () => {
-    if (pointerDown) userScrollUntil = performance.now() + 180;
-    pointerDown = false;
-  };
-  window.addEventListener('pointerup', endGesture);
-  window.addEventListener('pointercancel', endGesture);
-  viewport.addEventListener(
-    'wheel',
-    () => {
-      userScrollUntil = performance.now() + 180;
-    },
-    { passive: true },
-  );
-  viewport.addEventListener('keydown', (event) => {
-    if (['ArrowUp', 'ArrowDown', 'PageUp', 'PageDown', 'Home', 'End', ' '].includes(event.key))
-      userScrollUntil = performance.now() + 180;
-  });
   const observer = new ResizeObserver(schedule);
-  for (const el of [surface, viewport, surface.querySelector('#arena'), document.body])
+  for (const el of [
+    surface,
+    viewport,
+    surface.querySelector('.surface-top'),
+    surface.querySelector('.action-dock'),
+  ])
     observer.observe(el);
   window.addEventListener('resize', schedule);
   window.visualViewport?.addEventListener('resize', schedule);
   document.fonts.ready.then(schedule);
   return {
     update(nextTable, done) {
-      if (nextTable !== table || nextTable.hand !== hand || (settled && !done)) {
-        followBottom = true;
-        userScrollUntil = 0;
-        pointerDown = false;
-      }
-      table = nextTable;
-      hand = nextTable.hand;
-      settled = done;
       surface.classList.toggle('has-live-hand', !done);
       fit();
       schedule();

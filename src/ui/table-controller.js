@@ -32,6 +32,7 @@ import { presetRaiseTo } from './bet-sizing.js';
 import { CHIP_UNIT, legalRaiseTo } from '../engine/bet-sizing.js';
 import { createSettlementLayout } from './settlement-layout.js';
 import { createPlayViewport } from './play-viewport.js';
+import { createHintNotification } from './hint-notification.js';
 import { preferenceStorage } from '../platform/storage.js';
 import { createActivityClock } from '../platform/activity-clock.js';
 import { isAppActive } from '../platform/native.js';
@@ -39,8 +40,20 @@ const activityClock = createActivityClock();
 activityClock.setActive(isAppActive());
 let dealWait = null;
 const $ = (s) => document.querySelector(s);
-const settlementLayout = createSettlementLayout($('#arena'));
-const playViewport = createPlayViewport($('.game-surface'));
+const settlementLayout = createSettlementLayout($('#arena'), { observe: false });
+const playViewport = createPlayViewport($('.game-surface'), { layout: settlementLayout.update });
+const hintNotification = createHintNotification({
+  publish({ visible, text, stage }) {
+    $('#coach-content').hidden = !visible;
+    if (text !== undefined && $('#coach-tip').textContent !== text) {
+      $('#coach-tip').textContent = text;
+      $('#coach-content').scrollLeft = 0;
+    }
+    if (stage !== undefined && $('#coach-stage').textContent !== stage)
+      $('#coach-stage').textContent = stage;
+  },
+});
+hintNotification.setActive(isAppActive() && !document.hidden);
 const handReview = createReviewController({ card });
 const showdown = createShowdownController({ card });
 // Display preferences belong to this hand's UI, never to settlement or review.
@@ -466,6 +479,9 @@ function render() {
   $('#restart-hand-button').hidden = !canRestartHand(game);
   $('#action-panel').classList.toggle('settled-actions', done);
   $('#next-button').textContent = hero.stack === 0 ? '补充筹码，继续练习' : '下一手';
+  $('#next-button').classList.toggle('has-mobile-label', hero.stack === 0);
+  $('#next-button').dataset.mobileLabel = '补充筹码';
+  $('#next-button').setAttribute('aria-label', hero.stack === 0 ? '补充筹码，继续练习' : '下一手');
   for (const b of [$('#fold-button'), $('#call-button')]) b.disabled = !legal.enabled;
   $('#raise-button').disabled = !legal.enabled || !legal.canRaise;
   $('#bet-slider').disabled = !legal.enabled || !legal.canRaise;
@@ -483,7 +499,7 @@ function render() {
     slider.value = bet;
     $('#call-button').innerHTML = legal.canCheck
       ? '<span>过牌</span>'
-      : `<span>${legal.callAmount < legal.toCall ? '全下跟注' : '跟注'}</span><strong>${format(legal.callAmount)}</strong>`;
+      : `<span class="button-label-desktop">${legal.callAmount < legal.toCall ? '全下跟注' : '跟注'}</span><span class="button-label-mobile" aria-hidden="true">${legal.callAmount < legal.toCall ? '全下' : '跟注'}</span><strong>${format(legal.callAmount)}</strong>`;
     $('#call-button').setAttribute(
       'aria-label',
       legal.canCheck
@@ -511,7 +527,6 @@ function render() {
   lastHand = game.hand;
   lastBoard = displayBoard.length;
   playViewport.update(game, done);
-  settlementLayout.update();
 }
 function updateBet() {
   const legal = legalActions(game, 0);
@@ -520,43 +535,50 @@ function updateBet() {
     { street: game.street, history: game.history, currentBet: game.currentBet, legal },
     bet,
   );
-  $('#raise-button').innerHTML = `<span>${action}</span><strong>${format(bet)}</strong>`;
+  $('#raise-button').innerHTML =
+    `<span class="button-label-desktop">${action}</span><span class="button-label-mobile" aria-hidden="true">${bet === legal.maxRaiseTo ? '全下' : '加注'}</span><strong>${format(bet)}</strong>`;
   $('#raise-button').setAttribute('aria-label', action + ' ' + format(bet));
 }
 
-function updateCoach() {
-  $('#coach-content').hidden = !hints;
-  $('#hint-toggle').textContent = hints ? '已开启' : '已关闭';
-  $('#hint-toggle').setAttribute('aria-pressed', String(hints));
+function updateCoach(force = false) {
+  const toggle = $('#hint-toggle');
+  toggle.setAttribute('aria-pressed', String(hints));
+  toggle.setAttribute('aria-checked', String(hints));
+  toggle.title = hints ? '牌桌提示已开启' : '牌桌提示已关闭';
   const p = game.players[0],
     e = evaluate([...p.hole, ...game.board]);
   let tip = '';
   if (game.phase === 'done')
     tip = p.folded
-      ? '弃牌也是好决策的一部分。观察对手最后亮出的牌，回想本手的下注节奏。'
+      ? '回看弃牌时的价格与对手范围，判断是否值得继续。'
       : game.showdown
-        ? `你的最佳牌型是${e.label}。复盘时注意：对手在哪一轮开始加注？公共牌是否改变了牌面强度？`
-        : '让对手弃牌也能赢得底池。下一手，继续关注位置和下注尺度。';
+        ? `你以${e.label}摊牌。复盘关键下注，区分决策质量与发牌运气。`
+        : '复盘本手加注，判断对手弃牌能否让这条路线长期盈利。';
   else if (game.street === 0) {
     const [a, b] = p.hole;
-    if (a?.rank === b?.rank)
-      tip = '口袋对子有机会在翻牌形成三条。小对子面对大额加注时，也要考虑跟注成本。';
+    if (a?.rank === b?.rank) tip = '口袋对子有成三条的潜力；面对大额加注，先考虑跟注成本。';
     else if (a?.rank >= 11 && b?.rank >= 11)
-      tip = '两张高牌拥有不错的起手潜力。主动加注能缩小对手范围，也要留意前面的大额加注。';
-    else if (a?.suit === b?.suit)
-      tip = '同花底牌增加了成牌潜力，但不代表可以跟注任何价格。留意牌张距离和你的行动位置。';
-    else tip = '起手牌不必手手参与。越早行动，选牌越要谨慎；后位则能利用更多信息。';
-  } else if (e.score[0] >= 3)
-    tip = `你已形成${e.label}。考虑通过下注获得价值，同时注意公共牌上可能出现的更强牌型。`;
-  else if (e.score[0] >= 1)
-    tip = `目前是${e.label}。多位对手参与时，谨慎面对持续的大额加注；一对不总能赢到最后。`;
-  else tip = '目前尚未成对。别只看能否追到牌，也要考虑跟注价格，以及对手的下注强度。';
+      tip = '两张高牌可主动争夺底池；面对大额加注，仍要判断对手范围。';
+    else if (a?.suit === b?.suit) tip = '同花底牌有成牌潜力，仍需结合位置和跟注价格。';
+    else tip = '前位谨慎选牌，后位利用更多信息；结合价格决定是否入池。';
+  } else if (e.score[0] >= 3) tip = `你已形成${e.label}，可考虑价值下注，并留意牌面上更强的组合。`;
+  else if (e.score[0] >= 1) tip = `目前是${e.label}；多人底池或持续大额加注时，谨慎判断。`;
+  else tip = '尚未成对，结合成牌机会、跟注价格与对手范围决定。';
   const legal = legalActions(game, 0);
   if (legal.enabled && legal.toCall > 0)
-    tip += ` 这次跟注占你可争夺底池约 ${Math.round((legal.callAmount / contestableAfterCall(game, 0, legal.callAmount)) * 100)}%。`;
-  $('#coach-stage').textContent =
-    game.phase === 'done' ? '本手复盘' : streets[game.street] + '策略';
-  $('#coach-tip').textContent = tip;
+    tip += ` 跟注占可争夺底池约 ${Math.round((legal.callAmount / contestableAfterCall(game, 0, legal.callAmount)) * 100)}%。`;
+  const stage = game.phase === 'done' ? '本手复盘' : streets[game.street] + '策略';
+  hintNotification.update({
+    enabled: hints,
+    key: `${epoch}:${game.hand}:${game.street}:${game.phase === 'done' ? 'done' : legal.enabled ? `turn:${game.currentBet}:${p.bet}` : 'waiting'}`,
+    text: tip,
+    stage,
+    force,
+    notify:
+      force ||
+      game.phase === 'done' ||
+      (!p.folded && (legal.enabled || game.hand !== lastHand || game.board.length !== lastBoard)),
+  });
 }
 function schedule() {
   clearTimeout(timer);
@@ -857,12 +879,9 @@ $('#difficulty').onchange = (e) => {
 };
 function updateSound() {
   const b = $('#sound-button');
-  b.setAttribute('aria-label', sound ? '关闭音效' : '开启音效');
   b.setAttribute('aria-pressed', String(sound));
+  b.setAttribute('aria-checked', String(sound));
   b.title = sound ? '音效已开启' : '音效已关闭';
-  b.innerHTML = sound
-    ? '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4V5Z"/><path d="M15 8q6 4 0 8m3-11q9 7 0 14"/></svg>'
-    : '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4V5Z"/><path d="m16 9 5 6m0-6-5 6"/></svg>';
 }
 $('#sound-button').onclick = () => {
   sound = !sound;
@@ -877,7 +896,7 @@ $('#hint-toggle').onclick = () => {
   try {
     preferenceStorage.setItem('noir-hints', String(hints));
   } catch {}
-  updateCoach();
+  updateCoach(true);
 };
 $('#rules-button').onclick = () => $('#rules-dialog').showModal();
 $('#reset-button').onclick = () => $('#reset-dialog').showModal();
@@ -1049,11 +1068,16 @@ function registerTools() {
 updateSound();
 document.addEventListener('noir:app-state', ({ detail }) => {
   if (typeof detail?.active !== 'boolean') return;
+  hintNotification.setActive(detail.active && !document.hidden);
   if (!activityClock.setActive(detail.active)) return;
   if (!detail.active) {
     clearTimeout(timer);
     if (audio?.state === 'running') void audio.suspend().catch(() => {});
   } else schedule();
 });
+document.addEventListener('visibilitychange', () =>
+  hintNotification.setActive(activityClock.active && !document.hidden),
+);
+window.addEventListener('pagehide', () => hintNotification.destroy(), { once: true });
 nextHand();
 registerTools();
