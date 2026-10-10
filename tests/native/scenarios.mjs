@@ -230,9 +230,16 @@ export async function nativeScenarios(app) {
         await app.click('#continue-deal-button');
       if (action !== 'fold') continue;
       await app.waitFor(
-        async () => (await app.state()).phase === 'done',
+        () =>
+          app.evaluate(
+            () =>
+              window.noir.getState().phase === 'done' &&
+              document.querySelector('#arena').classList.contains('is-done') &&
+              !document.querySelector('#next-button').hidden &&
+              document.querySelector('#continue-deal-button').hidden,
+          ),
         60000,
-        'Hand must settle after fold',
+        'Hand must complete its visible settlement after fold',
       );
       settled = await app.state();
     }
@@ -267,7 +274,7 @@ export async function nativeScenarios(app) {
       for (const key of ['top', 'left', 'height', 'right'])
         assert.ok(
           Math.abs(layout[anchor][key] - beforeFold[anchor][key]) <= 1,
-          `${anchor} ${key} must not jump during settlement`,
+          `${anchor} ${key} must not jump during settlement: ${beforeFold[anchor][key]} -> ${layout[anchor][key]}`,
         );
     const buttons = layout.settledButtons;
     assert.ok(
