@@ -1,3 +1,5 @@
+import { copyLocalizedText } from '../i18n/index.js';
+
 // Keep one accessible copy of each hint. A second visual copy lets an
 // overflowing compact banner loop continuously without jumping back to its start.
 export function createHintMarquee(element, textElement, compact) {
@@ -87,6 +89,8 @@ export function createHintMarquee(element, textElement, compact) {
     onBlur = () => (focused = false),
     onDown = () => (touching = true),
     onUp = () => (touching = false);
+  const onLocale = () => refresh();
+  document.addEventListener('noir:locale-changed', onLocale);
   motion.addEventListener('change', onMotion);
   element.addEventListener('pointerenter', onEnter);
   element.addEventListener('pointerleave', onLeave);
@@ -101,13 +105,14 @@ export function createHintMarquee(element, textElement, compact) {
   return {
     update(visible) {
       active = visible;
-      copy.textContent = textElement.textContent;
+      copyLocalizedText(copy, textElement);
       return refresh(true);
     },
     destroy() {
       active = false;
       stop();
       observer.disconnect();
+      document.removeEventListener('noir:locale-changed', onLocale);
       motion.removeEventListener('change', onMotion);
       element.removeEventListener('pointerenter', onEnter);
       element.removeEventListener('pointerleave', onLeave);

@@ -108,7 +108,6 @@
     "复盘使用行动发生前可见的信息和假设对手范围进行估算，不用对手隐藏底牌、后续发牌或最终赢家评价你的决策；不保证最优打法或收益。": "Reviews estimate decisions from information available before the action and assumed opponent ranges. They do not grade your decisions using opponents’ hidden cards, future cards or final winners, and do not guarantee optimal play or profit.",
     "政策变更": "Policy changes",
     "改变数据处理方式时，发行者会更新本政策及相应商店申报。你可通过本页面所列邮箱联系发行者。": "The publisher will update this policy and store disclosures if data handling changes. Contact the publisher at the email address on this page.",
-    "切换语言将重新开始练习；牌桌设置保留。": "Changing language restarts practice. Your table settings are kept.",
     "6 人无限注": "6-player no-limit",
     "{0} 人无限注": "{0}-player no-limit",
     "人无限注": "-player no-limit",
@@ -278,7 +277,8 @@
     "你持 {0}，{1} 位对手仍在局中。": "You hold {0}. {1} opponents remain in the hand.",
     "{0} / {1} 同花": "{0} / {1} suited",
     "{0} / {1} 不同花": "{0} / {1} offsuit",
-    "{0} / {1} 非同花": "{0} / {1} offsuit"
+    "{0} / {1} 非同花": "{0} / {1} offsuit",
+    "切换语言立即生效，保留当前设置页面与正在进行的对局。": "Language changes apply immediately, keeping settings open and the current hand intact."
   },
   "zh-TW": {
     "设置": "設定",

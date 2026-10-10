@@ -52,3 +52,21 @@ test('locale preference hydrates and preserves ordered writes through native sto
   await store.flush();
   assert.equal(native.get('noir-locale'), 'en');
 });
+
+test('Japanese and Korean catalogs contain no damaged repetition or replacement markers', async () => {
+  for (const locale of ['ja', 'ko']) {
+    const catalog = (
+      await import(`../../src/i18n/locales/${locale}.json`, {
+        with: { type: 'json' },
+      })
+    ).default;
+    for (const [source, translation] of Object.entries(catalog)) {
+      assert.doesNotMatch(translation, /[⁇�]|\?{2}|(.{1,12})\1{5}/u, `${locale}: ${source}`);
+    }
+    await loadLocale(locale);
+    assert.equal(localizeText('60–100% 池'), locale === 'ja' ? 'ポットの 60–100%' : '팟의 60–100%');
+    assert.equal(localizeText('谭老板'), locale === 'ja' ? 'タン・シュアン' : '탄 쉬안');
+    assert.equal(localizeText('臧书奴'), locale === 'ja' ? 'アーロン・ザン' : '아론 장');
+  }
+  await loadLocale('zh-CN');
+});

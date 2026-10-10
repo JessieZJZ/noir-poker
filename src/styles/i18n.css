@@ -52,3 +52,25 @@ html[lang='en'] .profile-detail-heading {
 html:not([lang='zh-CN']):not([lang='zh-TW']) .hand-suffix {
   display: none;
 }
+
+/* Let translated names wrap without enlarging the whole card grid. */
+.settings-dialog .profile-card {
+  min-width: 0;
+  align-content: start;
+}
+.settings-dialog .profile-card strong,
+.settings-dialog .profile-identity h3,
+.settings-dialog .profile-axes > div > span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.settings-dialog .profile-sizing strong {
+  display: inline-block;
+  white-space: nowrap;
+}
+html[lang='ja'] {
+  font-family: Manrope, 'Hiragino Sans', 'Yu Gothic', 'Noto Sans JP', sans-serif;
+}
+html[lang='ko'] {
+  font-family: Manrope, 'Apple SD Gothic Neo', 'Malgun Gothic', 'Noto Sans KR', sans-serif;
+}

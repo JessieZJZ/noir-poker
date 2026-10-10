@@ -1,4 +1,4 @@
-import { localizeText, localizeHTML, formatChips } from '../i18n/index.js';
+import { formatChips, setLocalizedHTML, setLocalizedText } from '../i18n/index.js';
 import { evaluate, rankText } from '../engine/poker.js';
 import { createActivityFormatter } from './activity.js';
 export const HAND_MOTIONS = [
@@ -92,7 +92,7 @@ export function createShowdownController({ card }) {
   function reset() {
     key = null;
     $('#showdown-stage').hidden = true;
-    $('#showdown-scene').innerHTML = localizeHTML('');
+    setLocalizedHTML($('#showdown-scene'), '');
   }
   return {
     update(g, epoch) {
@@ -106,10 +106,12 @@ export function createShowdownController({ card }) {
       const scenes = showdownScenes(g);
       const playerName = createActivityFormatter(g.players);
       $('#showdown-stage').hidden = !scenes.length;
-      $('#showdown-context').textContent = localizeText(
+      setLocalizedText(
+        $('#showdown-context'),
         `${scenes.length} 人参与摊牌${g.pots.length > 1 ? ' · 主池与边池分别结算' : ''}`,
       );
-      $('#showdown-scene').innerHTML = localizeHTML(
+      setLocalizedHTML(
+        $('#showdown-scene'),
         scenes
           .map(
             (s) =>
