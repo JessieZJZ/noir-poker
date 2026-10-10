@@ -421,6 +421,22 @@ for (const target of cases) {
         `${target.width}x${target.height}-${count}-settled`,
         settled,
       );
+      await page.evaluate((count) => window.qa.foldWin(count, count - 1), count);
+      await expect(page.locator('.game-surface')).toHaveAttribute('data-action-state', 'settled');
+      await expect(page.locator('#continue-deal-button')).toBeVisible();
+      await expectActionRow(page, [
+        '#continue-deal-button',
+        '#next-button',
+        '#restart-hand-button',
+        '#review-hand-button',
+      ]);
+      const extraActions = await expectGeometry(page, target);
+      await savePassingScreenshot(
+        page,
+        info,
+        `${target.width}x${target.height}-${count}-extra-actions`,
+        extraActions,
+      );
     }
   });
 }

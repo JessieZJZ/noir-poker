@@ -528,6 +528,50 @@ test('WeChat action states keep one dock height and terminal buttons fill one ro
   assert.match(template, /wx:elif="\{\{heroFolded \|\| heroStatus === '已全下'\}\}"/);
 });
 
+for (const playerCount of [5, 9]) {
+  test(`WeChat ${playerCount}-seat preflop fold settlement keeps exactly three equal buttons at 320px`, (t) => {
+    const { page } = setup(t, {
+      playerCount,
+      info: { windowWidth: 320, windowHeight: 568, statusBarHeight: 20, safeArea: { bottom: 568 } },
+    });
+    const layout = copy(page.data.layout);
+    const game = page._controller.getGame();
+    while (game.phase === 'playing' && game.actor !== 0) act(game, game.actor, 'fold');
+    page._controller.show();
+    page.act({ currentTarget: { dataset: { action: 'fold' } } });
+    for (let count = 0; game.phase !== 'done'; count++) {
+      assert.ok(count < playerCount);
+      assert.equal(game.phase, 'playing');
+      act(game, game.actor, 'fold');
+    }
+    page._controller.show();
+    assert.equal(page.data.heroFolded, true);
+    assert.equal(page.data.done, true);
+    assert.equal(page.data.board.length, 0, 'fold settlement leaves public cards undealt');
+    assert.deepEqual(page.data.layout, layout);
+    const settled = template.match(/<block wx:if="\{\{done\}\}"[\s\S]*?<\/block\s*>/)[0];
+    const buttons = [
+      ...settled.matchAll(/<button[^>]*bindtap="([^"]+)"[^>]*>([\s\S]*?)<\/button\s*>/g),
+    ];
+    assert.deepEqual(
+      buttons.map(([, method]) => method),
+      ['nextHand', 'retryHand', 'openReview'],
+    );
+    assert.match(template, /<\/block\s*>\s*<block wx:elif="\{\{heroFolded/);
+    const labelSize = cssNumber('.settled-buttons button', 'font-size');
+    const rowWidth = layout.width - 2 * 10;
+    const buttonWidth = (rowWidth - 2 * cssNumber('.settled-buttons', 'gap')) / buttons.length;
+    for (const [, , label] of buttons) {
+      assert.ok(label.trim().length * labelSize < buttonWidth, 'each Chinese label fits one row');
+    }
+    assert.match(stylesheet, /\.settled-buttons\s*\{[^}]*display:\s*flex/s);
+    assert.match(
+      stylesheet,
+      /\.settled-buttons button\s*\{[^}]*flex:\s*1[^}]*min-width:\s*0[^}]*white-space:\s*nowrap/s,
+    );
+  });
+}
+
 test('WeChat resizing recalculates the current seats while preserving the running hand', (t) => {
   const { page, info } = setup(t, { playerCount: 9 });
   const game = page._controller.getGame();

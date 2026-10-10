@@ -85,9 +85,9 @@ export function createPlayViewport(surface, { layout = () => {} } = {}) {
       // Tall tablets use their blank lower area. Short desktop monitors keep
       // normal document scrolling rather than hiding table content.
       height = mobile.matches
-        ? Math.max(180, screenHeight - top - header - dockBudget - 8)
+        ? Math.max(landscape ? 80 : 180, screenHeight - top - header - dockBudget - 8)
         : Math.max(
-            Number(arena.dataset.playerCount) >= 7 ? 780 : 620,
+            Number(arena.dataset.playerCount) >= 7 ? 860 : 620,
             screenHeight - top - header - dockBudget - 70,
           );
     surface.style.removeProperty('--play-height');
