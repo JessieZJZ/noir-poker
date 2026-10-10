@@ -36,6 +36,22 @@
   min-height: 0;
   padding: 3px;
 }
+.opponents-body > .difficulty-control {
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.opponents-body > .difficulty-control > span,
+.opponents-dialog .difficulty-option > span {
+  font-size: 14px;
+}
+.opponents-dialog .difficulty-option > span {
+  padding: 6px 14px;
+}
+.difficulty-note {
+  margin: 8px 0 20px;
+  font-size: 13px;
+}
 .opponents-roster-toolbar {
   display: flex;
   align-items: center;

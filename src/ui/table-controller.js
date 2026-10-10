@@ -304,7 +304,6 @@ function render() {
     'has-full-player-names',
     game.players.slice(1).some((p) => ['viktor', 'jungleman', 'dwan'].includes(p.botProfile)),
   );
-  $('#table-tag').textContent = count + '-MAX';
   $('#table-size-label').textContent = count + ' 人无限注';
   const displayBoard = game.practiceBoard || game.board;
   const hero = game.players[0],

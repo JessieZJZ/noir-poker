@@ -36,30 +36,24 @@
     </header>
     <main class="main">
       <section class="game-column" aria-label="德州扑克牌桌">
-        <div class="table-heading">
-          <div>
-            <span class="eyebrow">THE PRACTICE ROOM</span>
-            <h1>每一手，都是新的机会<span class="title-dot">.</span></h1>
-          </div>
-          <div class="table-meta">
-            <span class="table-tag" id="table-tag">6-MAX</span><span>盲注 <b>25 / 50</b></span>
-          </div>
-        </div>
         <div class="game-surface">
           <div class="surface-top">
             <div class="hand-label">
               第 <b id="hand-number">01</b> 手 <span>·</span> <span id="street-label">准备发牌</span
               ><span id="replay-label" class="replay-label" hidden></span>
             </div>
+            <div class="blind-info">盲注 <b>25 / 50</b></div>
             <div class="table-settings">
               <button
                 id="opponents-button"
                 class="opponents-button"
                 aria-haspopup="dialog"
                 aria-controls="opponents-dialog"
+                aria-describedby="opponents-summary"
               >
-                对手风格 <span id="opponents-summary">均衡</span>
+                对手设置
               </button>
+              <span id="opponents-summary" class="sr-only">均衡</span>
               <label class="difficulty-label"
                 >人数<select id="player-count" aria-label="牌桌人数">
                   <option value="5">5 人</option>
@@ -69,25 +63,6 @@
                   <option value="9">9 人</option>
                 </select></label
               >
-              <div class="difficulty-control">
-                <span id="difficulty-label">对手难度</span>
-                <div
-                  id="difficulty"
-                  class="difficulty-options"
-                  role="radiogroup"
-                  aria-labelledby="difficulty-label"
-                >
-                  <label class="difficulty-option"
-                    ><input type="radio" name="difficulty" value="easy" /><span>轻松</span></label
-                  ><label class="difficulty-option"
-                    ><input type="radio" name="difficulty" value="normal" checked /><span
-                      >标准</span
-                    ></label
-                  ><label class="difficulty-option"
-                    ><input type="radio" name="difficulty" value="hard" /><span>进阶</span></label
-                  >
-                </div>
-              </div>
             </div>
           </div>
           <p id="table-change-note" class="table-change-note" role="status" hidden></p>
@@ -228,10 +203,6 @@
             </button>
           </div>
         </div>
-        <div class="table-footer">
-          <span><span class="live-dot"></span>本地电脑对手 · 无需登录</span
-          ><span>仅使用虚拟筹码</span><button id="reset-button">重新练习</button>
-        </div>
       </section>
       <aside class="sidebar">
         <section class="session-card">
@@ -281,6 +252,13 @@
           <p>保持耐心。<br />好牌会来，好决策由你。</p>
         </div>
       </aside>
+      <footer class="table-footer site-footer">
+        <div class="practice-info">
+          <span><span class="live-dot"></span>本地电脑对手 · 无需登录</span>
+          <button id="reset-button">重新练习</button>
+        </div>
+        <span>仅使用虚拟筹码</span>
+      </footer>
     </main>
     <dialog id="opponents-dialog" class="opponents-dialog" aria-labelledby="opponents-title">
       <div class="dialog-header">
@@ -289,12 +267,32 @@
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" /></svg>
         </button>
       </div>
-      <h2 id="opponents-title">让每个对手都有自己的打法</h2>
+      <h2 id="opponents-title">对手设置</h2>
       <p class="opponents-intro">
         根据公开牌局提炼的训练原型，非本人复刻。0–100 是策略倾向指数，不是真人的 VPIP 或
         PFR；精彩牌局无法代表长期频率。
       </p>
       <div class="opponents-body">
+        <div class="difficulty-control">
+          <span id="difficulty-label">对手难度</span>
+          <div
+            id="difficulty"
+            class="difficulty-options"
+            role="radiogroup"
+            aria-labelledby="difficulty-label"
+          >
+            <label class="difficulty-option"
+              ><input type="radio" name="difficulty" value="easy" /><span>轻松</span></label
+            ><label class="difficulty-option"
+              ><input type="radio" name="difficulty" value="normal" checked /><span
+                >标准</span
+              ></label
+            ><label class="difficulty-option"
+              ><input type="radio" name="difficulty" value="hard" /><span>进阶</span></label
+            >
+          </div>
+        </div>
+        <p class="difficulty-note">难度立即生效；风格与情绪保存后下一手生效。</p>
         <div class="opponents-layout">
           <section aria-label="牌手原型研究">
             <div id="profile-cards" class="profile-cards"></div>
@@ -335,7 +333,7 @@
       </div>
       <div class="opponents-save-row">
         <p id="opponents-save-note" role="status"></p>
-        <button id="save-opponents" class="primary-button">保存，下一手生效</button>
+        <button id="save-opponents" class="primary-button">保存风格与情绪</button>
       </div>
     </dialog>
     <dialog id="rules-dialog">

@@ -55,7 +55,7 @@ export function createOpponentsController({ getGame, getCount, getSettings, onSa
     draft = sanitizeBotSettings(getSettings());
     document.querySelector('#emotion-mode').value = draft.emotionMode;
     document.querySelector('#opponents-save-note').textContent =
-      '保存在此设备，下次打开自动恢复；设置下一手生效，重打保留原来的对手。';
+      '保存在此设备，下次打开自动恢复；重打保留原来的对手风格与情绪。';
     detail();
     roster();
     dialog.showModal();
