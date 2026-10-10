@@ -14,6 +14,24 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  wechat:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-node@v7.1.0
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npm run wechat:build
+      - run: npm run wechat:verify
+      - run: npm run wechat:check
+      - run: node --test tests/unit/wechat*.test.js
+      - uses: actions/upload-artifact@v7.0.2
+        with:
+          name: wechat-import-project
+          path: .artifacts/wechat/
+
   table-geometry:
     runs-on: ubuntu-24.04
     steps:
@@ -62,6 +80,13 @@ jobs:
     env:
       NOIR_BUILD_NUMBER: ${{ github.run_number }}
     steps:
+      - name: Reserve space for the Android 36 system image
+        run: |
+          df -h "$HOME"
+          sudo rm -rf /usr/share/dotnet /usr/local/.ghcup /opt/ghc /usr/share/swift
+          df -h "$HOME"
+          task_available_kib="$(df -Pk "$HOME" | awk 'NR == 2 { print $4 }')"
+          test "$task_available_kib" -ge 10485760
       - uses: actions/checkout@v7.0.1
       - uses: actions/setup-node@v7.1.0
         with:
@@ -83,6 +108,39 @@ jobs:
         env:
           NOIR_SKIP_WEB_PREPARE: '1'
         run: ./gradlew bundleRelease --no-daemon
+      - run: npm run mobile:verify:artifact -- android/app/build/outputs/bundle/release/app-release.aab
+      - run: npm run mobile:test:setup -- android
+      - name: Enable KVM for the Android test emulator
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+          sudo udevadm settle --timeout=10
+          sudo chmod 666 /dev/kvm
+          ls -l /dev/kvm
+          test -r /dev/kvm
+          test -w /dev/kvm
+          df -h "$HOME"
+      - name: Installed Android App end-to-end tests
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 36
+          target: google_apis
+          arch: x86_64
+          profile: pixel_6
+          disk-size: 2048M
+          disable-linux-hw-accel: false
+          emulator-boot-timeout: 300
+          disable-animations: true
+          pre-emulator-launch-script: |
+            df -h "$HOME"
+            test "$(df -Pk "$HOME" | awk 'NR == 2 { print $4 }')" -ge 10485760
+          script: npm run mobile:test:android
+      - uses: actions/upload-artifact@v7.0.2
+        if: always()
+        with:
+          name: android-native-e2e-results
+          path: .artifacts/native-e2e/android/
       - uses: actions/upload-artifact@v7.0.2
         with:
           name: android-debug-apk
@@ -104,6 +162,13 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run mobile:ios
+      - run: npm run mobile:test:setup -- ios
+      - run: npm run mobile:test:ios
+      - uses: actions/upload-artifact@v7.0.2
+        if: always()
+        with:
+          name: ios-native-e2e-results
+          path: .artifacts/native-e2e/ios/
       - name: Package simulator app without a distribution signature
         run: ditto -c -k --sequesterRsrc --keepParent .artifacts/mobile/ios/Build/Products/Debug-iphonesimulator/App.app .artifacts/mobile/noir-poker-ios-simulator.zip
       - uses: actions/upload-artifact@v7.0.2

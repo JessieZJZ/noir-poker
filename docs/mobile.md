@@ -47,7 +47,7 @@ npm run mobile:sync
 - 切到后台时暂停机器人和发牌等待，回到前台后从剩余思考时间继续。重打、换手或重新练习仍会取消旧任务。当前牌局不保存到磁盘，进程被系统杀死后开启新练习。
 - Android 返回键先关闭当前对话框；没有对话框时回到后台。
 - 处理刘海、状态栏和底部手势区域；增加包内“关于与隐私”入口，显示实际原生版本和构建号。
-- 原生包使用系统字体和原创字母头像，移除远程字体请求及全部人物照片文件。Web 的现有字体、照片与署名保留。商业头像和人物名称问题见 [发行准备](mobile-release.md)。
+- 原生包使用系统字体，人物名称、头像、来源署名和已有说明与 Web 保持一致。全部本地图片随包提供，移除远程字体请求。构建生成图片 SHA-256 清单，同步副本以及实际 `.app`、APK、AAB 均检查图片内容，缺失或过期会阻止交付。
 
 ## 版本与包名
 
@@ -78,16 +78,20 @@ npm run check
 npm run test:e2e
 npm run mobile:sync
 npm run mobile:verify
+npm run mobile:test:setup -- ios
+npm run mobile:test:ios
+npm run mobile:test:setup -- android
+npm run mobile:test:android
 ```
 
 `.github/workflows/mobile-build.yml` 在 GitHub PR、main 更新及手动运行时构建 Android debug APK、未签名 AAB 和 iOS 模拟器 `.app`，产物在 Actions 的 Artifacts 下载。CI 的未签名 AAB 用于验证发行编译，模拟器 `.app` 用于开发验证；两者都不能直接上架。CI 不保存商店签名凭据。
 
 浏览器 CI 先运行公共区定位、固定操作区、牌面可读性、首屏、结算布局与提示横幅测试，再分别并行运行桌面和移动端的其余交互测试。两组覆盖完整的 `npm run test:e2e`；失败轨迹与验收截图保存在 `table-geometry-results`、`browser-ui-results-desktop` 和 `browser-ui-results-mobile`，用于检查不同人数、屏幕尺寸和安全区域下的表现。
 
-浏览器测试能验证共用页面、离线资源与应用状态逻辑，不能替代真实 WKWebView、Android WebView、系统声音、返回键和真机安全区域测试。发行前按 [发行准备](mobile-release.md) 完成真机及签名验证。
+CI 在完成编译后，安装并启动真正的模拟器/仿真器 App，用 Appium 驱动 WKWebView、Android WebView 和系统前后台。验证无登录本地启动、头像加载、设置重启持久保存、下注/跟注/弃牌、结算、重打撤奖统计、下一手和后台暂停恢复；报告与完整设备截图分别放入 `ios-native-e2e-results`、`android-native-e2e-results`。安装及运行步骤见 [原生端到端验证](native-e2e.md)。真机声音听感、实际设备安全区域与商店签名仍单独验收。
 
 ## 原生国际化与发行展示
 
 原生构建支持 11 种语言，iOS 在 `Info.plist` 声明语言，Android 使用 `res/xml/locales_config.xml`。应用内语言设置在本机持久保存；实际系统单 App 语言选择与 WebView 字体需真机验收。
 
-`native` 构建会将具名研究展示替换成原创训练原型，并移除对应研究链接及真人指南入口；数值策略、保存的原型 ID 与规则不变。普通 Web 构建仍保留原研究展示。新增原型时同步 `src/engine/store-profiles.js`，新增文案后按 README 的国际化命令更新资源；`scripts/native-store.mjs` 的边界检查会拒绝缺少发行展示的原型。原生包仍排除人物照片、使用本地图标和字体、不配置远程 `server.url`。
+`native` 构建保留当前 Web 的人物展示、头像及已有说明，仅移除远程字体请求；策略、保存的风格 ID 与规则一致。新增 Web/原生文案后按 README 的国际化命令更新资源。历史可选展示转换保留在 `scripts/native-store.mjs`，当前构建不再自动应用它。原生包使用本地图标、字体与图片，不配置远程 `server.url`。

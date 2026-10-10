@@ -1,6 +1,5 @@
 import { readFileSync } from 'node:fs';
 import { defineConfig } from 'vite';
-import { storeProfileSource, storeIndexSource } from './scripts/native-store.mjs';
 
 export default defineConfig(({ mode }) => ({
   base: './',
@@ -18,11 +17,9 @@ export default defineConfig(({ mode }) => ({
     ...(mode === 'native'
       ? [
           {
-            name: 'native-offline-store-presentation',
+            name: 'native-offline-fonts',
             enforce: 'pre',
-            transformIndexHtml: { order: 'pre', handler: storeIndexSource },
             transform(source, id) {
-              if (id.endsWith('/src/engine/bot-profiles.js')) return storeProfileSource(source);
               if (!id.endsWith('/src/styles/base.css')) return;
               return source.replace(/^@import url\('https:\/\/fonts\.googleapis\.com[^\n]+\n/, '');
             },

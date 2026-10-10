@@ -1,0 +1,10 @@
+{
+  "pages": ["pages/table/table"],
+  "window": {
+    "navigationStyle": "custom",
+    "backgroundColor": "#0b1218",
+    "backgroundTextStyle": "light"
+  },
+  "style": "v2",
+  "lazyCodeLoading": "requiredComponents"
+}
