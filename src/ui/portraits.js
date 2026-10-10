@@ -61,9 +61,9 @@ const escape = (value) =>
     (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c],
   );
 
-export function portraitContent(profileId, fallback) {
+export function portraitContent(profileId, fallback, initialSource = null) {
   const photo = PROFILE_PORTRAITS[profileId];
-  return `<span class="portrait-fallback" aria-hidden="true">${escape(fallback)}</span>${photo ? `<img class="persona-portrait" data-portrait-profile="${profileId}" src="${photo.src}" alt="" decoding="async" style="object-position:${photo.position || 'center'};--portrait-zoom:${photo.zoom || 1};--portrait-origin:${photo.origin || 'center'}" />` : ''}`;
+  return `<span class="portrait-fallback" aria-hidden="true"${initialSource ? ` data-i18n-initial="${escape(initialSource)}"` : ''}>${escape(fallback)}</span>${photo ? `<img class="persona-portrait" data-portrait-profile="${profileId}" src="${photo.src}" alt="" decoding="async" style="object-position:${photo.position || 'center'};--portrait-zoom:${photo.zoom || 1};--portrait-origin:${photo.origin || 'center'}" />` : ''}`;
 }
 
 export function portraitCredit(profileId) {

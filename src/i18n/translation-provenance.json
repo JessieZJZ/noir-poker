@@ -868,5 +868,9 @@
       "面对 {0}",
       "面对 {0} 位跛入者"
     ]
+  },
+  "presentationRepairs": {
+    "date": "2026-10-10",
+    "method": "Source-based manual corrections of Japanese and Korean damaged repetitions, replacement markers, profile names, parameter labels and language-switch guidance. Full native-speaker poker review remains pending."
   }
 }
