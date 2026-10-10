@@ -208,8 +208,8 @@ test('fold, expedited settlement, retry and next hand keep the mobile table and 
 
 async function heroAnchorBounds(page) {
   await flushLayout(page);
-  return page.evaluate(() =>
-    Object.fromEntries(
+  const { anchors, identityCenterOffset } = await page.evaluate(() => {
+    const anchors = Object.fromEntries(
       ['#hero-cards', '.hero-name', '.hero-identity'].map((selector) => {
         const box = document.querySelector(selector).getBoundingClientRect();
         return [
@@ -222,8 +222,23 @@ async function heroAnchorBounds(page) {
           },
         ];
       }),
-    ),
-  );
+    );
+    const cards = [...document.querySelectorAll('#hero-cards > .playing-card')].map((card) =>
+      card.getBoundingClientRect(),
+    );
+    const cardCenter =
+      (Math.min(...cards.map((box) => box.left)) + Math.max(...cards.map((box) => box.right))) / 2;
+    const identity = document.querySelector('.hero-identity').getBoundingClientRect();
+    return {
+      anchors,
+      identityCenterOffset: (identity.left + identity.right) / 2 - cardCenter,
+    };
+  });
+  expect(
+    Math.abs(identityCenterOffset),
+    'hero identity and stack must remain centered below the two hole cards',
+  ).toBeLessThanOrEqual(1);
+  return anchors;
 }
 
 async function expectHeroAnchor(page, baseline) {

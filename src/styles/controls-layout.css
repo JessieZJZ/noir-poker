@@ -64,6 +64,10 @@ button:not(.profile-card):not(.review-step) {
 .game-surface .surface-top {
   row-gap: 4px;
 }
+/* The retry badge must fit in the same header row as an ordinary hand label. */
+.main .game-surface > .surface-top {
+  grid-template-rows: 28px 22px;
+}
 .surface-top .replay-note {
   grid-area: 2 / 1;
   min-width: 0;
@@ -81,6 +85,9 @@ button:not(.profile-card):not(.review-step) {
   justify-self: end;
 }
 @media (min-width: 901px) {
+  .main .game-surface > .surface-top {
+    grid-template-rows: 28px auto;
+  }
   .main {
     align-items: stretch;
     row-gap: 18px;

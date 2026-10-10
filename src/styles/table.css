@@ -884,6 +884,9 @@
 }
 .arena.is-done[data-player-count] .hero-area {
   position: relative;
+  /* A relative containing block keeps the fixed status row anchored to this
+     flow item. It must not inherit the live absolute seat's left/bottom. */
+  inset: auto;
 }
 .hero-rank-slot {
   display: grid;
@@ -905,7 +908,7 @@
   bottom: 0;
   transform: translateX(-50%);
   grid-template-columns:
-    var(--hero-status-width) var(--hero-identity-width)
+    var(--hero-action-width) var(--hero-identity-width)
     var(--hero-action-width);
   height: 43px;
   gap: 8px;
@@ -915,13 +918,15 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 100%;
+  width: var(--hero-status-width);
+  justify-self: end;
   min-height: 30px;
   margin: 0;
   white-space: nowrap;
 }
 .hero-identity {
   min-width: 0;
+  text-align: center;
 }
 .hero-action-slot {
   display: flex;
@@ -946,6 +951,15 @@
 }
 .hero-name.is-active .hero-turn {
   border-color: var(--mint);
+}
+@media (min-width: 901px) {
+  /* The rank slot is reserved during play as well as settlement. Give the
+     smaller tables the same base budget instead of growing them only after
+     the public group can no longer clear the hero's cards. */
+  .arena:not(.is-done)[data-player-count='5'],
+  .arena:not(.is-done)[data-player-count='6'] {
+    min-height: 620px;
+  }
 }
 @media (max-width: 900px) {
   .hero-area {

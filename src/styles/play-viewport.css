@@ -228,7 +228,7 @@
     gap: 6px;
     --hero-status-width: 64px;
     --hero-identity-width: 68px;
-    --hero-action-width: 128px;
+    --hero-action-width: 104px;
   }
   .game-surface .hero-name .hero-last-action {
     font-size: 11px;
