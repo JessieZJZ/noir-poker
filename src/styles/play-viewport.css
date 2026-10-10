@@ -322,6 +322,10 @@
 @media (max-width: 900px), (min-width: 901px) and (max-width: 1100px) and (orientation: portrait) {
   .game-surface .arena[data-player-count] .seat .mini-cards {
     height: 39px;
+    /* Reserve both face cards from the deal. Narrower backs must not open
+       a corridor that disappears when a hand is revealed. */
+    width: 56px;
+    justify-content: center;
     margin-bottom: 4px;
     align-items: flex-end;
   }
@@ -403,6 +407,7 @@
   }
   .game-surface .arena[data-player-count] .seat .mini-cards {
     height: 58px;
+    width: 80px;
   }
   .game-surface .mini-cards .playing-card.small {
     width: 38px;
@@ -594,11 +599,11 @@
    when the single row would force the entire table to shrink further. */
 @media (max-width: 600px) {
   .game-surface .hero-cards {
-    min-height: clamp(81px, 17.4vw, 104px);
+    min-height: clamp(82px, 17.4vw, 104px);
   }
   .game-surface .hero-cards .playing-card {
-    width: clamp(56px, 12vw, 72px);
-    height: clamp(81px, 17.4vw, 104px);
+    width: clamp(57px, 12vw, 72px);
+    height: clamp(82px, 17.4vw, 104px);
   }
   .game-surface .arena[data-player-count] .board {
     --public-card-width: clamp(40px, 12vw, 54px);
@@ -665,6 +670,9 @@
 
 /* Fewer players have room for larger personal areas around the same felt. */
 @media (max-width: 600px) and (min-height: 740px) {
+  .game-surface .arena:is([data-player-count='5'], [data-player-count='6']) .seat .mini-cards {
+    width: 64px;
+  }
   .game-surface .arena:is([data-player-count='5'], [data-player-count='6']) .seat .seat-profile {
     width: clamp(108px, 27.7vw, 122px);
     min-width: clamp(108px, 27.7vw, 122px);

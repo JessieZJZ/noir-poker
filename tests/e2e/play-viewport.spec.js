@@ -463,6 +463,39 @@ for (const locale of ['zh-CN', 'en']) {
   });
 }
 
+test('native-sized phone reserves the revealed hand width before an all-in settlement', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 402, height: 874 });
+  await nativeInsets(page, true, { top: 62, bottom: 34 });
+  await page.evaluate(() => window.qa.heroTurn(5));
+  await assertFixedTable(page, { bottomInset: 34 });
+  const before = await page.evaluate(readTableLayout);
+  const slots = () =>
+    [...document.querySelectorAll('.seat .mini-cards')].map((el) => ({
+      width: el.getBoundingClientRect().width,
+      height: el.getBoundingClientRect().height,
+    }));
+  const beforeSlots = await page.evaluate(slots);
+  await page.evaluate(() =>
+    window.qa.scene('Kh 7d', 'Ts 9d 9h 3c 5c', {
+      count: 5,
+      totals: [525, 25, 3500, 50, 3600],
+      folded: [0, 1, 3],
+      otherHoles: { 2: 'Th 8h', 4: 'Qc Td' },
+    }),
+  );
+  await assertFixedTable(page, { bottomInset: 34, settled: true });
+  const after = await page.evaluate(readTableLayout);
+  const afterSlots = await page.evaluate(slots);
+  for (const anchor of ['arena', 'publicArea'])
+    for (const edge of ['top', 'left', 'right', 'height'])
+      expect(Math.abs(after[anchor][edge] - before[anchor][edge])).toBeLessThanOrEqual(1);
+  for (let i = 0; i < beforeSlots.length; i++)
+    for (const edge of ['width', 'height'])
+      expect(Math.abs(afterSlots[i][edge] - beforeSlots[i][edge])).toBeLessThanOrEqual(1);
+});
+
 test('a temporarily hidden viewport can render and recover without invalid fitting geometry', async ({
   page,
 }) => {
