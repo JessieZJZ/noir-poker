@@ -316,7 +316,24 @@ export async function nativeScenarios(app) {
             Math.abs(peekLayout[anchor][key] - layout[anchor][key]) <= 1,
             `${anchor} must stay fixed when inspecting the crown hand`,
           );
-      if (expected === 'true') await app.screenshot('crown-hand-inspection');
+      if (expected === 'true') {
+        // Layout reads can precede WebKit's compositor frame. Keep the hand
+        // open until two frame callbacks have run before the native screenshot.
+        await app.evaluate(() => {
+          window.__nativeInspectionPainted = false;
+          requestAnimationFrame(() =>
+            requestAnimationFrame(() => {
+              window.__nativeInspectionPainted = true;
+            }),
+          );
+        });
+        await app.waitFor(
+          () => app.evaluate(() => window.__nativeInspectionPainted),
+          5000,
+          'Inspected crown cards must paint before the native screenshot',
+        );
+        await app.screenshot('crown-hand-inspection');
+      }
       crownInspection.push(inspection);
     }
     return { coverage, pot: settled.pot, settlementBudget, layout, crownInspection };
