@@ -618,21 +618,6 @@
   top: auto;
   bottom: 20px;
 }
-.hero-last-action {
-  min-height: 24px;
-  padding-top: 6px;
-  max-width: 200px;
-  flex-wrap: wrap;
-  white-space: normal;
-  row-gap: 0;
-}
-.hero-last-action .seat-action-label,
-.hero-last-action .seat-action-amount {
-  white-space: nowrap;
-}
-.arena.is-done .hero-last-action {
-  max-width: 200px;
-}
 /* Settlement stacks measured content, so a crown or action cannot lift cards over the caption. */
 .arena.is-done[data-player-count] {
   display: flex;
@@ -888,4 +873,78 @@
 .arena.is-done .seat.folded .mini-cards.revealed-cards {
   opacity: 1;
   transform: none;
+}
+/* Fixed hero slots keep cards, identity and recent actions still while a
+   street changes or a settlement reveals the hand rank. */
+.hero-rank-slot {
+  display: grid;
+  place-items: center;
+  height: 32px;
+  flex: none;
+  margin-top: 9px;
+}
+.hero-rank-slot .hero-hand-rank {
+  margin-top: 0;
+}
+.hero-name {
+  --hero-status-width: 76px;
+  --hero-identity-width: 78px;
+  --hero-action-width: 146px;
+  display: grid;
+  grid-template-columns:
+    var(--hero-status-width) var(--hero-identity-width)
+    var(--hero-action-width);
+  height: 43px;
+  gap: 8px;
+  align-items: center;
+}
+.hero-name .hero-turn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 30px;
+  margin: 0;
+  white-space: nowrap;
+}
+.hero-identity {
+  min-width: 0;
+}
+.hero-action-slot {
+  display: flex;
+  align-items: center;
+  height: 100%;
+  min-width: 0;
+}
+.hero-name .hero-last-action,
+.arena.is-done .hero-name .hero-last-action {
+  padding: 0;
+  min-height: 0;
+  max-width: none;
+  flex-wrap: nowrap;
+  white-space: nowrap;
+  line-height: 1.2;
+  font-size: 12px;
+}
+.hero-name .hero-last-action .seat-action-label,
+.hero-name .hero-last-action .seat-action-amount {
+  font-size: inherit;
+  white-space: nowrap;
+}
+.hero-name.is-active .hero-turn {
+  border-color: var(--mint);
+}
+@media (max-width: 900px) {
+  .hero-rank-slot {
+    height: 28px;
+    margin-top: 6px;
+  }
+  .hero-name {
+    height: 35px;
+  }
+  .hero-name .hero-turn {
+    min-height: 26px;
+    font-size: 10px;
+    padding: 4px 5px;
+  }
 }

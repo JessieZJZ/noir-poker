@@ -42,7 +42,7 @@ test('review separates a lucky bad-price win from a reasonable loss and keeps ev
   }
 });
 
-test('settled controls share a row or each fill the content width, including runout and refill', async ({
+test('settled controls fill complete one- or two-button rows, including runout and refill', async ({
   page,
 }) => {
   for (const mode of ['runout', 'normal', 'refill']) {
@@ -90,22 +90,28 @@ test('settled controls share a row or each fill the content width, including run
       });
       expect(layout.buttons).toHaveLength(mode === 'runout' ? 4 : 3);
       // Hover lifts review buttons by 1px without changing their grid row.
-      const rows = new Set(layout.buttons.map((b) => b.layoutTop));
-      expect([1, layout.buttons.length], JSON.stringify({ mode, width, layout })).toContain(
-        rows.size,
+      const rows = [...new Set(layout.buttons.map((b) => b.layoutTop))].map((top) =>
+        layout.buttons.filter((b) => b.layoutTop === top),
       );
-      for (const [i, button] of layout.buttons.entries()) {
+      expect(rows).toHaveLength(width <= 900 ? 2 : 1);
+      for (const button of layout.buttons) {
         expect(button.textFits).toBe(true);
         expect(button.left).toBeGreaterThanOrEqual(layout.left - 1);
         expect(button.right).toBeLessThanOrEqual(layout.left + layout.width + 1);
-        expect(Math.abs(button.width - layout.buttons[0].width)).toBeLessThan(1);
-        if (rows.size > 1) {
-          expect(Math.abs(button.left - layout.left)).toBeLessThan(1);
-          expect(Math.abs(button.width - layout.width)).toBeLessThan(1);
-          if (i) expect(button.top).toBeGreaterThan(layout.buttons[i - 1].bottom);
-        } else if (i) expect(button.left).toBeGreaterThan(layout.buttons[i - 1].right);
       }
-      if (width >= 1151 || (width >= 701 && width <= 900)) expect(rows.size).toBe(1);
+      for (const [rowIndex, row] of rows.entries()) {
+        if (width <= 900) expect([1, 2]).toContain(row.length);
+        expect(Math.abs(row[0].left - layout.left)).toBeLessThan(1);
+        expect(Math.abs(row.at(-1).right - layout.left - layout.width)).toBeLessThan(1);
+        for (const [i, button] of row.entries()) {
+          expect(Math.abs(button.width - row[0].width)).toBeLessThan(1);
+          if (i) expect(button.left).toBeGreaterThan(row[i - 1].right);
+        }
+        if (rowIndex)
+          expect(Math.min(...row.map((b) => b.top))).toBeGreaterThan(
+            Math.max(...rows[rowIndex - 1].map((b) => b.bottom)),
+          );
+      }
     }
   }
 });
@@ -545,14 +551,15 @@ test('hero recent actions persist within the street and clear on new streets exc
       await row.evaluate((el) => {
         const a = el.getBoundingClientRect(),
           name = document.querySelector('.hero-name').getBoundingClientRect(),
+          identity = document.querySelector('.hero-identity').getBoundingClientRect(),
           arena = document.querySelector('#arena').getBoundingClientRect();
         return {
-          below: a.top >= name.bottom,
+          beside: a.left >= identity.right && a.top >= name.top && a.bottom <= name.bottom,
           inside: a.left >= 0 && a.right <= innerWidth && a.bottom <= arena.bottom,
           unclipped: el.scrollWidth <= el.clientWidth + 1,
         };
       }),
-    ).toEqual({ below: true, inside: true, unclipped: true });
+    ).toEqual({ beside: true, inside: true, unclipped: true });
   };
   for (const width of [320, 390, 1280]) {
     await page.setViewportSize({ width, height: 900 });

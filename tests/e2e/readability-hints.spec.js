@@ -21,6 +21,7 @@ async function expectReadableTable(page, { publicWidth, heroWidth }) {
             bounds = box(document.querySelector(compact ? '.table-viewport' : '#arena')),
             arena = document.querySelector('#arena'),
             scale = box(arena).width / arena.offsetWidth,
+            publicPositions = [...document.querySelector('#board').children],
             publicCards = [...document.querySelectorAll('#board > .playing-card')],
             heroCards = [...document.querySelectorAll('#hero-cards > .playing-card')],
             profiles = [...document.querySelectorAll('.seat-profile')],
@@ -30,6 +31,23 @@ async function expectReadableTable(page, { publicWidth, heroWidth }) {
               a.top < b.bottom - 0.5 &&
               a.bottom > b.top + 0.5,
             issues = [];
+          if (publicPositions.length !== 5) issues.push('public positions changed during the hand');
+          for (const [index, position] of publicPositions.entries()) {
+            if (publicPositions.slice(index + 1).some((next) => overlap(box(position), box(next))))
+              issues.push('public card faces or empty positions overlap');
+          }
+          const publicRows = publicPositions.reduce((rows, position) => {
+            const top = box(position).top;
+            const row = rows.find((row) => Math.abs(row.top - top) < 1);
+            if (row) row.count++;
+            else rows.push({ top, count: 1 });
+            return rows;
+          }, []);
+          const expectedRows = innerWidth <= 420 ? [3, 2] : [5];
+          if (JSON.stringify(publicRows.map((row) => row.count)) !== JSON.stringify(expectedRows))
+            issues.push(
+              `public rows ${publicRows.map((row) => row.count)} instead of ${expectedRows}`,
+            );
           for (const [cards, minimum, label] of [
             [publicCards, publicWidth, 'public'],
             [heroCards, heroWidth, 'hero'],
@@ -53,9 +71,11 @@ async function expectReadableTable(page, { publicWidth, heroWidth }) {
                   [...card.parentElement.children].indexOf(card) + 1,
                 );
                 for (const feature of card.querySelectorAll(
-                  '.card-art > text, .card-art > .card-suit-icon',
+                  '.card-art > text, .card-art > g > text, .card-art > .card-suit-icon',
                 )) {
                   const mark = box(feature);
+                  if (mark.width === 0 || mark.height === 0)
+                    issues.push('public rank or suit hidden');
                   if (
                     mark.left < r.left - 1 ||
                     mark.right > r.right + 1 ||
@@ -145,6 +165,47 @@ test('5–9 player live hands keep visible card backs and readable cards at narr
   await page.locator('.game-surface').screenshot({
     path: test.info().outputPath('nine-seat-readable-mobile.png'),
   });
+});
+
+test('all five public positions retain the same rows and face sizes while dealing each street', async ({
+  page,
+}) => {
+  test.setTimeout(90000);
+  const positions = () =>
+    page.locator('#board').evaluate((board) =>
+      [...board.children].map((card) => ({
+        x: card.offsetLeft - board.offsetLeft,
+        y: card.offsetTop - board.offsetTop,
+        width: card.offsetWidth,
+        height: card.offsetHeight,
+      })),
+    );
+  for (const width of [320, 390, 420, 421]) {
+    await page.setViewportSize({ width, height: 1000 });
+    for (const count of [5, 9]) {
+      await page.evaluate((count) => window.qa.heroTurn(count), count);
+      await expect(page.locator('#board > .board-slot')).toHaveCount(5);
+      const initial = await positions();
+      expect(initial.map((card) => card.width)).toEqual([38, 38, 38, 38, 38]);
+      const rows = initial.reduce((rows, card) => {
+        const row = rows.find((row) => row.y === card.y);
+        if (row) row.count++;
+        else rows.push({ y: card.y, count: 1 });
+        return rows;
+      }, []);
+      expect(rows.map((row) => row.count)).toEqual(width <= 420 ? [3, 2] : [5]);
+      await page.evaluate((count) => window.qa.publicBoard(count), count);
+      for (const dealt of [3, 4, 5]) {
+        await expect(page.locator('#board > .playing-card')).toHaveCount(dealt);
+        await expect.poll(positions).toEqual(initial);
+        if (dealt < 5)
+          await page.evaluate(() => {
+            window.qa.checkRest();
+            window.qa.finish();
+          });
+      }
+    }
+  }
 });
 
 test('shrinking and expanding a settled table preserves folded card backs and peeked hands', async ({

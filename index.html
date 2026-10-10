@@ -125,21 +125,24 @@
               </div>
               <div class="hero-area">
                 <div class="hero-cards" id="hero-cards"></div>
-                <div id="hero-hand-rank" class="hand-rank hero-hand-rank" hidden></div>
+                <div class="hero-rank-slot">
+                  <div id="hero-hand-rank" class="hand-rank hero-hand-rank" hidden></div>
+                </div>
                 <div class="hero-name">
-                  <span class="hero-avatar">YOU</span>
-                  <div>
+                  <span class="hero-turn" id="hero-turn">准备就绪</span>
+                  <div class="hero-identity">
                     <strong>你 <span id="hero-position" class="position-badge">BTN</span></strong
                     ><span class="hero-stack" id="hero-stack">5,000</span>
                   </div>
-                  <span class="hero-turn" id="hero-turn">准备就绪</span>
+                  <div class="hero-action-slot">
+                    <div
+                      id="hero-last-action"
+                      class="seat-action hero-last-action"
+                      aria-label="你的最近行动"
+                      hidden
+                    ></div>
+                  </div>
                 </div>
-                <div
-                  id="hero-last-action"
-                  class="seat-action hero-last-action"
-                  aria-label="你的最近行动"
-                  hidden
-                ></div>
               </div>
             </div>
           </div>
