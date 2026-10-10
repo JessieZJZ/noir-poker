@@ -82,10 +82,29 @@ async function assertPublicArea(page) {
                 top + part.top - group.top >= r.bottom + gap - 0.5,
             ),
           );
-        if (group.top < min - 0.5 || group.top > max + 0.5 || !clearAt(group.top))
+        if (group.top < min - 0.5 || group.top > max + 0.5 || !clearAt(group.top)) {
           problems.push(
             `public group is outside a clear position: ${innerWidth}x${innerHeight}, ${document.querySelector('#arena').dataset.playerCount} players, ${document.querySelector('#arena').className}, top ${group.top}, min ${min}, max ${max}, scale ${scale}`,
           );
+          for (const selector of publicSelectors) {
+            const part = box(selector);
+            for (const el of document.querySelectorAll(
+              '.seat .mini-cards, .seat-profile, .seat .hand-rank, .seat .seat-action',
+            )) {
+              if (!visible(el)) continue;
+              const r = el.getBoundingClientRect();
+              if (
+                r.left < part.right + gap &&
+                r.right > part.left - gap &&
+                part.bottom > r.top - gap + 0.5 &&
+                part.top < r.bottom + gap - 0.5
+              )
+                problems.push(
+                  `${selector} clearance vs ${el.className} player ${el.closest('.seat')?.dataset.player}: part ${JSON.stringify(part.toJSON())}, seat ${JSON.stringify(r.toJSON())}, gap ${gap}`,
+                );
+            }
+          }
+        }
         let best = Infinity;
         for (let top = Math.ceil(min); top <= max; top++)
           if (clearAt(top)) best = Math.min(best, Math.abs(top - ideal));
@@ -103,6 +122,9 @@ async function assertPublicArea(page) {
 test('public areas stay closest to the felt center within the available play viewport without covering players', async ({
   page,
 }) => {
+  // Each test traverses many complete table layouts; each assertion keeps
+  // its own short retry limit so a geometry regression still fails promptly.
+  test.setTimeout(90000);
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.goto('/');
   await page.waitForFunction(() => !!window.qa);
@@ -146,6 +168,9 @@ test('public areas stay closest to the felt center within the available play vie
 test('public area re-centers on resize without a new render and reserves space for unusually tall player content', async ({
   page,
 }) => {
+  // Each test traverses many complete table layouts; each assertion keeps
+  // its own short retry limit so a geometry regression still fails promptly.
+  test.setTimeout(90000);
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.goto('/');
   await page.waitForFunction(() => !!window.qa);
