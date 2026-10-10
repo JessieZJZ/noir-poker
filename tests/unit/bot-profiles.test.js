@@ -29,6 +29,7 @@ function seeded(seed) {
   return () => (n = (Math.imul(n, 1664525) + 1013904223) >>> 0) / 4294967296;
 }
 function finish(g, random = seeded(42)) {
+  const wealth = g.players.reduce((sum, p) => sum + p.stack, 0) + potSize(g);
   let actions = 0;
   while (g.phase !== 'done') {
     assert.ok(++actions < 1000, 'A hand must finish');
@@ -38,12 +39,23 @@ function finish(g, random = seeded(42)) {
         legal = legalActions(g);
       if (d.action === 'raise') {
         assert.ok(legal.canRaise);
-        assert.ok(Number.isInteger(d.amount));
+        assert.equal(d.amount % 25, 0);
         assert.ok(d.amount >= legal.minRaiseTo && d.amount <= legal.maxRaiseTo);
       }
       if (d.action === 'check') assert.ok(legal.canCheck);
       act(g, g.actor, d.action, d.amount);
     }
+    for (const amount of [
+      g.currentBet,
+      g.minRaise,
+      ...g.players.flatMap((p) => [p.stack, p.bet, p.total]),
+      ...g.payouts,
+    ])
+      assert.equal(amount % 25, 0);
+    assert.equal(
+      g.players.reduce((sum, p) => sum + p.stack, 0) + (g.phase === 'done' ? 0 : potSize(g)),
+      wealth,
+    );
   }
 }
 test('saved settings reject unknown profiles and malformed modes', () => {
@@ -253,7 +265,7 @@ test('uncalled shove refunds are not losses; blind-only hands are not VPIP', () 
   );
   for (const p of g.players.slice(2)) assert.equal(p.botStats.vpip, 0);
 });
-test('post-flop bot fractions use the after-call pot with integer chip precision', () => {
+test('post-flop bot fractions use the after-call pot with whole 25 chips', () => {
   const view = {
     id: 1,
     hole: [
@@ -266,9 +278,9 @@ test('post-flop bot fractions use the after-call pot with integer chip precision
     count: 6,
     stack: 5000,
     bet: 0,
-    pot: 401,
+    pot: 400,
     currentBet: 225,
-    contestable: 626,
+    contestable: 625,
     rivals: 1,
     equity: 0.9,
     difficulty: 'hard',
@@ -294,8 +306,8 @@ test('post-flop bot fractions use the after-call pot with integer chip precision
   );
   assert.equal(decision.action, 'raise');
   assert.equal(decision.trace.sizing.fraction, 0.625);
-  assert.equal(decision.trace.sizing.desired, 616); // 225 + round(626 × .625)
-  assert.equal(decision.amount, 616);
+  assert.equal(decision.trace.sizing.desired, 625); // 225 + round-to-25(625 × .625)
+  assert.equal(decision.amount, 625);
 });
 test('retry restores frozen profile, emotion and simulation statistics exactly once', () => {
   const g = newGame();

@@ -21,12 +21,14 @@ export function raiseCaption(step, amount) {
       ? '短全下至'
       : allin
         ? '全下至'
-        : step.currentBet === 0
-          ? '下注至'
-          : step.street === 0 && level === 2
-            ? '开池至'
-            : '加注至';
-  return `${level}-bet ${verb}`;
+        : level === 1
+          ? '加注至'
+          : step.currentBet === 0
+            ? '下注至'
+            : step.street === 0 && level === 2
+              ? '开池至'
+              : '加注至';
+  return level === 1 ? verb : `${level}-bet ${verb}`;
 }
 
 export function actionLabel(step, action = step.action, amount = step.amount) {

@@ -1,6 +1,7 @@
 // Candidate routes are conditional practice plans, not solved EV rankings.
 import { actionLabel } from '../engine/action-labels.js';
 import { callPrice } from './equity.js';
+import { legalRaiseTo } from '../engine/bet-sizing.js';
 
 export function comparisonRoutes(s, ctx, { code, status, alternative, pre }) {
   const label = (a) => actionLabel(s, a.action, a.amount);
@@ -22,10 +23,7 @@ export function comparisonRoutes(s, ctx, { code, status, alternative, pre }) {
     s.legal.canRaise
       ? {
           action: 'raise',
-          amount: Math.min(
-            s.legal.maxRaiseTo,
-            Math.max(s.legal.minRaiseTo, Math.round(amount / 25) * 25),
-          ),
+          amount: legalRaiseTo(amount, s.legal),
         }
       : null;
   if (code === 'late-open' || code === 'late-isolation') {

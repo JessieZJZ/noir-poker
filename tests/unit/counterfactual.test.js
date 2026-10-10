@@ -65,6 +65,21 @@ test('candidate generation respects closed raising and capped short-stack calls'
   assert.ok(actions.every((a) => a.action !== 'raise'));
   assert.equal(actions.find((a) => a.action === 'call').amount, 25);
 });
+
+test('review candidates quantize fractional raise proposals and exclude off-grid actuals', () => {
+  const s = snap();
+  s.street = 2;
+  s.currentBet = 125;
+  s.legal.minRaiseTo = 250;
+  s.legal.maxRaiseTo = 5000;
+  const actions = candidateActions(s, [
+    { action: 'raise', amount: 313 },
+    { action: 'raise', amount: 656 },
+  ]);
+  assert.ok(actions.some((a) => a.action === 'raise' && a.amount === 325));
+  assert.ok(actions.every((a) => a.amount % 25 === 0));
+  assert.ok(!actions.some((a) => a.amount === 313 || a.amount === 656));
+});
 test('a previous flat caller is not treated as defending a later unanswered 3bet', () => {
   const s = snap(),
     p = s.players[1];

@@ -1,4 +1,4 @@
-import { fractionRaiseTo } from './bet-sizing.js';
+import { fractionRaiseTo, legalRaiseTo } from './bet-sizing.js';
 
 // These are training controls inferred from a few public examples, not measured
 // statistics of the named players. Emotions are a separate synthetic layer.
@@ -608,7 +608,7 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
       roll('rare-pocket-shove', 0.04) < 0.04
     )
       desired = legal.maxRaiseTo;
-    const amount = Math.max(legal.minRaiseTo, Math.min(legal.maxRaiseTo, desired));
+    const amount = legalRaiseTo(desired, legal);
     sizing = {
       fraction,
       desired,

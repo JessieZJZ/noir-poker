@@ -1,0 +1,370 @@
+/* Rotated card backs extend above their wrapper unless it reserves a small
+   top inset. Keep both backs inside the arena at its upper seat anchors. */
+.game-surface .seat .mini-cards {
+  padding-top: 3px;
+}
+@media (min-width: 901px) and (max-width: 1150px) {
+  .game-surface .board > .playing-card,
+  .game-surface .board-slot {
+    width: 50px;
+  }
+}
+@media (max-width: 900px) {
+  .main {
+    padding-top: 8px;
+  }
+  .header {
+    height: 60px;
+  }
+  .game-surface {
+    display: flex;
+    flex-direction: column;
+    height: var(--play-height);
+  }
+  .game-surface > .surface-top,
+  .game-surface > .action-dock {
+    flex: none;
+  }
+  .game-surface > .surface-top {
+    padding: 8px 12px;
+  }
+  .game-surface > .table-viewport {
+    flex: 1 1 0;
+    min-height: 0;
+    overflow: clip;
+    position: relative;
+    touch-action: pan-y;
+  }
+  .game-surface .arena[data-player-count],
+  .game-surface .arena.is-done[data-player-count] {
+    height: var(--arena-height, 450px);
+    min-height: 0;
+    padding: 0;
+    display: block;
+    transform-origin: top left;
+  }
+  .game-surface .arena[data-player-count] .poker-table {
+    inset: 28px 2% 32px;
+  }
+  .game-surface .arena[data-player-count] .table-center {
+    position: absolute;
+    left: 50%;
+    top: 34%;
+    transform: translateX(-50%);
+    max-width: none;
+  }
+  .game-surface .arena[data-player-count] .hero-area {
+    position: absolute;
+    left: 50%;
+    top: auto;
+    bottom: 8px;
+    transform: translateX(-50%);
+  }
+  .game-surface .arena[data-player-count] .seat {
+    min-width: 76px;
+    transform: translateX(-50%);
+  }
+  .game-surface .arena[data-player-count] .seat .seat-profile {
+    display: grid;
+    grid-template-columns: 18px minmax(0, 1fr) 20px;
+    width: 80px;
+    min-width: 80px;
+    max-width: 80px;
+    padding: 4px 3px;
+    gap: 2px;
+  }
+  .game-surface .seat-profile > div,
+  .game-surface .seat-profile .seat-bankroll {
+    display: contents;
+  }
+  .game-surface .arena[data-player-count] .seat-profile > .avatar {
+    display: grid;
+    grid-column: 1;
+    grid-row: 2;
+    width: 18px;
+    height: 18px;
+    font-size: 10px;
+  }
+  .game-surface .arena[data-player-count] .seat-profile strong {
+    grid-column: 1 / -1;
+    grid-row: 1;
+    justify-self: center;
+    font-size: 11px;
+    white-space: nowrap;
+  }
+  .game-surface .arena[data-player-count] .seat-profile .seat-style-label {
+    display: block;
+    grid-column: 2 / -1;
+    grid-row: 2;
+    justify-self: start;
+    margin: 0;
+    max-width: 100%;
+    padding: 1px 2px;
+    font-size: 10px;
+    white-space: normal;
+    line-height: 1.2;
+  }
+  .game-surface .arena[data-player-count] .seat-profile .seat-stack {
+    grid-column: 1 / 3;
+    grid-row: 3;
+    margin: 0;
+    font-size: 11px;
+    text-align: center;
+  }
+  .game-surface .arena:not(.is-done) .seat-profile .seat-stack {
+    grid-column: 1 / -1;
+  }
+  .game-surface .arena[data-player-count] .seat-peek {
+    grid-column: 3;
+    grid-row: 3;
+    width: 20px;
+    height: 20px;
+    min-height: 20px;
+    padding: 2px;
+  }
+  .game-surface .seat .mini-cards:not(.revealed-cards) {
+    display: flex;
+    gap: 3px;
+    margin-bottom: -14px;
+  }
+  .game-surface .seat .card-back {
+    width: 22px;
+    height: 30px;
+    flex: none;
+    border-width: 1.5px;
+  }
+  .game-surface .seat .mini-cards.revealed-cards {
+    margin-bottom: 4px;
+    gap: 4px;
+  }
+  .game-surface .mini-cards .playing-card.small {
+    width: 26px;
+    height: 36px;
+  }
+  .game-surface .mini-cards .playing-card.small .card-corner {
+    font-size: 11px;
+  }
+  .game-surface .mini-cards .playing-card.small .card-pip {
+    font-size: 15px;
+  }
+  .game-surface .arena[data-player-count] .seat .seat-action {
+    padding-top: 3px;
+    min-height: 17px;
+    max-width: 88px;
+    font-size: 10px;
+    white-space: normal;
+    line-height: 1.2;
+  }
+  .game-surface .arena[data-player-count] .hand-rank {
+    margin-top: 4px;
+    padding: 2px 5px;
+    font-size: 10px;
+    line-height: 1.3;
+  }
+  .game-surface .arena[data-player-count] .pot {
+    margin-bottom: 9px;
+    gap: 6px;
+  }
+  .game-surface .arena[data-player-count] .pot strong {
+    font-size: 23px;
+    letter-spacing: 0;
+  }
+  .game-surface .pot .chip-symbol {
+    width: 20px;
+    height: 20px;
+  }
+  .game-surface .pot-details-trigger {
+    font-size: 11px;
+  }
+  .game-surface .arena[data-player-count] .board {
+    gap: 4px;
+  }
+  .game-surface .arena[data-player-count] .board > .playing-card,
+  .game-surface .arena[data-player-count] .board-slot {
+    width: clamp(38px, 8vw, 58px);
+    height: clamp(55px, 11.6vw, 84px);
+    border-radius: 5px;
+  }
+  /* SVG ranks otherwise inherit the desktop ratio and become hard to read
+     in a fitted table. Keep the rank prominent even on compact card faces. */
+  .game-surface .board .card-art > text,
+  .game-surface .board .card-art > g > text,
+  .game-surface .hero-cards .card-art > text,
+  .game-surface .hero-cards .card-art > g > text {
+    font-size: 20px;
+    transform: translate(3px, 2px);
+  }
+  .game-surface .board .card-corner {
+    top: 3px;
+    left: 3px;
+    font-size: 12px;
+  }
+  .game-surface .board .card-corner.bottom {
+    right: 3px;
+    bottom: 3px;
+  }
+  .game-surface .board .card-pip {
+    font-size: 19px;
+  }
+  .game-surface #board-caption {
+    display: none;
+  }
+  .game-surface .hero-cards {
+    min-height: clamp(75px, 17.4vw, 104px);
+    gap: 7px;
+  }
+  .game-surface .hero-cards .playing-card {
+    width: clamp(52px, 12vw, 72px);
+    height: clamp(75px, 17.4vw, 104px);
+  }
+  .game-surface .hero-cards .card-corner {
+    font-size: 15px;
+  }
+  .game-surface .hero-cards .card-pip {
+    font-size: 25px;
+  }
+  .game-surface .hero-name {
+    margin-top: 6px;
+    gap: 6px;
+    --hero-status-width: 64px;
+    --hero-identity-width: 68px;
+    --hero-action-width: 104px;
+  }
+  .game-surface .hero-name .hero-last-action {
+    font-size: 11px;
+  }
+  .game-surface > .action-dock {
+    background: #101b22;
+    padding-bottom: var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px));
+  }
+  .game-surface .decision-strip {
+    padding: 6px 12px;
+    font-size: 11px;
+  }
+  .game-surface .action-panel {
+    min-height: 0;
+    flex-direction: column;
+    padding: 0 12px 8px;
+    gap: 8px;
+  }
+  .game-surface .bet-controls {
+    width: 100%;
+    grid-template-columns: 1fr;
+  }
+  .game-surface .bet-controls > label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+  .game-surface .bet-controls input,
+  .game-surface .bet-presets {
+    grid-column: 1;
+  }
+  .game-surface .bet-controls input {
+    margin: 9px 0 12px;
+  }
+  .game-surface .bet-presets button {
+    min-height: 28px;
+    padding: 3px;
+    white-space: nowrap;
+  }
+  .game-surface .action-buttons {
+    width: 100%;
+    gap: 6px;
+  }
+  .game-surface .action,
+  .game-surface .next-button,
+  .game-surface .restart-hand-button,
+  .game-surface .review-end-button,
+  .game-surface .continue-deal-button {
+    height: 44px;
+    min-height: 44px;
+    min-width: 0;
+    padding: 4px 6px;
+    white-space: nowrap;
+    font-size: 13px;
+    width: auto;
+    max-width: none;
+  }
+  .game-surface .next-button.has-mobile-label {
+    font-size: 0;
+  }
+  .game-surface > .replay-note {
+    flex: none;
+    margin: 0;
+    padding: 2px 12px;
+    font-size: 10px;
+    line-height: 1.3;
+  }
+  .game-surface .action-panel:has(.continue-deal-button:not([hidden])) {
+    min-height: 0;
+  }
+}
+@media (max-width: 420px) {
+  .game-surface .arena[data-player-count] .seat .seat-profile {
+    width: 72px;
+    min-width: 72px;
+    max-width: 72px;
+  }
+  .game-surface .arena[data-player-count] .seat .seat-action {
+    max-width: 72px;
+  }
+  /* Reserve all five positions from the start of the hand. A centered 3+2
+     layout fits the phone's seat corridor without overlapping or shrinking
+     any face, and dealing another street does not change the group's size. */
+  .game-surface .arena[data-player-count] .board {
+    flex-wrap: wrap;
+    justify-content: center;
+    width: 122px;
+    gap: 4px;
+  }
+}
+@media (max-width: 900px) and (max-height: 600px) {
+  .header {
+    height: 44px;
+  }
+  .game-surface > .surface-top {
+    padding-top: 4px;
+    padding-bottom: 4px;
+  }
+  .game-surface .decision-strip {
+    padding-top: 3px;
+    padding-bottom: 3px;
+  }
+  .game-surface .action-panel {
+    gap: 5px;
+  }
+}
+
+@media (min-width: 601px) and (max-width: 900px) and (max-height: 600px) {
+  .game-surface .action-panel:not(.settled-actions) {
+    flex-direction: row;
+    align-items: center;
+    gap: 12px;
+  }
+  .game-surface .bet-controls {
+    width: 42%;
+    flex: none;
+  }
+  .game-surface .action-buttons {
+    width: auto;
+    flex: 1;
+  }
+  .game-surface .arena.compact-landscape .poker-table {
+    inset: 14px 2% 16px;
+  }
+  .game-surface .arena.compact-landscape .hero-area {
+    left: 84%;
+  }
+  .game-surface .arena.compact-landscape .table-center {
+    left: 40%;
+  }
+  .game-surface .arena.compact-landscape .seat .seat-profile {
+    width: 72px;
+    min-width: 72px;
+    max-width: 72px;
+  }
+}

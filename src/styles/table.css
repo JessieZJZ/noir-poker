@@ -273,9 +273,127 @@
 .difficulty-option input:focus-visible {
   outline: 0;
 }
+/* Keep the table controls in two concise rows at every size. */
+.game-surface .surface-top {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px 12px;
+}
+.surface-top .hand-label {
+  min-width: 0;
+}
+.blind-info {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  white-space: nowrap;
+  color: #98aeb9;
+}
+.blind-info b {
+  color: #d2dbe3;
+  font-weight: 600;
+}
+.surface-top .table-settings {
+  grid-column: 1 / -1;
+  width: 100%;
+  margin: 0;
+  justify-content: flex-end;
+  gap: 16px;
+}
+.main > .site-footer {
+  grid-column: 1 / -1;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  gap: 12px 16px;
+  padding: 4px 0 12px;
+  font-size: 13px;
+}
+.practice-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.practice-info > span {
+  white-space: nowrap;
+}
+.main > .site-footer button {
+  font-size: 14px;
+  line-height: 1.5;
+}
+.site-footer #reset-button {
+  padding: 5px 10px;
+  border: 1px solid #354750;
+  border-radius: 6px;
+  background: #18252d;
+  color: #bfd3d9;
+  white-space: nowrap;
+}
+.site-footer #reset-button:hover {
+  border-color: #6ba18f;
+  color: #c0f4df;
+}
+.site-footer #native-about-button {
+  margin-left: auto;
+}
 /* Keep the total pot visible alongside seat-level winner indicators. */
+.pot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+.pot > div {
+  margin-top: 0;
+}
+.pot-details-trigger {
+  flex: none;
+}
+/* One position rule covers every live table size, including 8/9-seat overrides. */
+.arena:not(.is-done)[data-player-count] .table-center {
+  top: 27%;
+}
+@media (max-width: 600px) {
+  .pot {
+    gap: 8px;
+  }
+  .pot > div {
+    gap: 5px;
+  }
+  .pot strong {
+    font-size: 20px;
+    letter-spacing: 0;
+  }
+  .pot .chip-symbol {
+    width: 20px;
+    height: 20px;
+  }
+  /* The shorter pot row lifts the board while clearing the upper seat labels. */
+  .arena:not(.is-done)[data-player-count='5'] .table-center,
+  .arena:not(.is-done)[data-player-count='6'] .table-center {
+    top: 33%;
+  }
+  .arena:not(.is-done)[data-player-count='9'] .table-center {
+    top: 32%;
+  }
+}
+@media (max-width: 360px) {
+  .arena:not(.is-done)[data-player-count='7'] .board > .playing-card,
+  .arena:not(.is-done)[data-player-count='7'] .board-slot {
+    width: 26px;
+    height: 40px;
+  }
+}
 .arena.is-done .pot {
   visibility: visible;
+  /* Keep room below the upper players' revealed hands and result labels. */
+  min-height: 66px;
+}
+@media (max-width: 600px) {
+  .arena.is-done .pot {
+    min-height: 61px;
+  }
 }
 @media (max-width: 1150px) and (min-width: 901px) {
   .surface-top {
@@ -499,21 +617,6 @@
 .arena[data-player-count] .hero-area {
   top: auto;
   bottom: 20px;
-}
-.hero-last-action {
-  min-height: 24px;
-  padding-top: 6px;
-  max-width: 200px;
-  flex-wrap: wrap;
-  white-space: normal;
-  row-gap: 0;
-}
-.hero-last-action .seat-action-label,
-.hero-last-action .seat-action-amount {
-  white-space: nowrap;
-}
-.arena.is-done .hero-last-action {
-  max-width: 200px;
 }
 /* Settlement stacks measured content, so a crown or action cannot lift cards over the caption. */
 .arena.is-done[data-player-count] {
@@ -770,4 +873,108 @@
 .arena.is-done .seat.folded .mini-cards.revealed-cards {
   opacity: 1;
   transform: none;
+}
+/* Fixed hero slots keep cards, identity and recent actions still while a
+   street changes or a settlement reveals the hand rank. */
+.hero-area {
+  /* The wide status row belongs only at the bottom. Letting it define the
+     card area's width creates a transparent hit box over the side seats. */
+  width: max-content;
+  padding-bottom: 52px;
+}
+.arena.is-done[data-player-count] .hero-area {
+  position: relative;
+  /* A relative containing block keeps the fixed status row anchored to this
+     flow item. It must not inherit the live absolute seat's left/bottom. */
+  inset: auto;
+}
+.hero-rank-slot {
+  display: grid;
+  place-items: center;
+  height: 32px;
+  flex: none;
+  margin-top: 9px;
+}
+.hero-rank-slot .hero-hand-rank {
+  margin-top: 0;
+}
+.hero-name {
+  --hero-status-width: 76px;
+  --hero-identity-width: 78px;
+  --hero-action-width: 146px;
+  display: grid;
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  transform: translateX(-50%);
+  grid-template-columns:
+    var(--hero-action-width) var(--hero-identity-width)
+    var(--hero-action-width);
+  height: 43px;
+  gap: 8px;
+  align-items: center;
+}
+.hero-name .hero-turn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--hero-status-width);
+  justify-self: end;
+  min-height: 30px;
+  margin: 0;
+  white-space: nowrap;
+}
+.hero-identity {
+  min-width: 0;
+  text-align: center;
+}
+.hero-action-slot {
+  display: flex;
+  align-items: center;
+  height: 100%;
+  min-width: 0;
+}
+.hero-name .hero-last-action,
+.arena.is-done .hero-name .hero-last-action {
+  padding: 0;
+  min-height: 0;
+  max-width: none;
+  flex-wrap: nowrap;
+  white-space: nowrap;
+  line-height: 1.2;
+  font-size: 12px;
+}
+.hero-name .hero-last-action .seat-action-label,
+.hero-name .hero-last-action .seat-action-amount {
+  font-size: inherit;
+  white-space: nowrap;
+}
+.hero-name.is-active .hero-turn {
+  border-color: var(--mint);
+}
+@media (min-width: 901px) {
+  /* The rank slot is reserved during play as well as settlement. Give the
+     smaller tables the same base budget instead of growing them only after
+     the public group can no longer clear the hero's cards. */
+  .arena:not(.is-done)[data-player-count='5'],
+  .arena:not(.is-done)[data-player-count='6'] {
+    min-height: 620px;
+  }
+}
+@media (max-width: 900px) {
+  .hero-area {
+    padding-bottom: 41px;
+  }
+  .hero-rank-slot {
+    height: 28px;
+    margin-top: 6px;
+  }
+  .hero-name {
+    height: 35px;
+  }
+  .hero-name .hero-turn {
+    min-height: 26px;
+    font-size: 10px;
+    padding: 4px 5px;
+  }
 }

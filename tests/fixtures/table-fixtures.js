@@ -50,6 +50,18 @@ window.qa = {
     render();
     return publicState();
   },
+  raiseActions(steps = 1) {
+    clearTimeout(timer);
+    botWait = null;
+    // A long, legal re-raising round supplies real chronological action logs
+    // without synthetic DOM entries or bypassing the engine's chip rules.
+    for (let step = 0; step < steps && game.phase === 'playing'; step++) {
+      const legal = legalActions(game);
+      act(game, game.actor, legal.canRaise ? 'raise' : 'call', legal.minRaiseTo);
+    }
+    render();
+    return publicState();
+  },
   bettingTurn(level = 2, street = 0, short = false) {
     fixtureGame(6);
     game.dealer = 5;
@@ -88,10 +100,54 @@ window.qa = {
     render();
     return publicState();
   },
+  publicBoard(count = 6) {
+    fixtureGame(count);
+    startHand(game);
+    act(game, game.actor, 'raise', 1000);
+    while (game.phase === 'playing') act(game, game.actor, 'call');
+    advanceStreet(game);
+    render();
+    return publicState();
+  },
+  roundActions(count = 6, runout = false, blindAllin = false) {
+    fixtureGame(count, true);
+    for (const p of game.players) if (p.id === 2 || (runout && p.id)) p.stack = 150;
+    if (blindAllin) {
+      game.players[count - 2].stack = 25;
+      game.players[count - 1].stack = 50;
+    }
+    startHand(game);
+    act(game, 0, 'raise', 150);
+    while (game.phase === 'playing')
+      act(game, game.actor, !runout && game.actor === 3 ? 'fold' : 'call');
+    render();
+    return publicState();
+  },
+  checkRest() {
+    clearTimeout(timer);
+    while (game.phase === 'playing') act(game, game.actor, 'check');
+    render();
+    return publicState();
+  },
   botFoldTurn() {
     fixtureGame(6, true);
     startHand(game);
     act(game, 0, 'raise', 4000);
+    const id = game.actor;
+    game.players[id].hole = ['7s', '2h'].map((v) =>
+      deckOfCards().find((c) => c.rank === Number(v[0]) && c.suit === 'shcd'.indexOf(v[1])),
+    );
+    const plan = planBotTurn(game, () => 0.99, { timingRandom: () => 0 });
+    const startedAt = activityClock.now();
+    botWait = { plan, startedAt, deadline: startedAt + plan.delayMs };
+    render();
+    schedule();
+    return { actor: id, delayMs: plan.delayMs };
+  },
+  botCheckTurn() {
+    fixtureGame(6, true);
+    startHand(game);
+    while (!legalActions(game).canCheck) act(game, game.actor, 'call');
     const id = game.actor;
     game.players[id].hole = ['7s', '2h'].map((v) =>
       deckOfCards().find((c) => c.rank === Number(v[0]) && c.suit === 'shcd'.indexOf(v[1])),

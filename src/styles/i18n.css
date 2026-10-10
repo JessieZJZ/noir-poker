@@ -1,0 +1,54 @@
+html:not([lang^='zh']) .settings-row label,
+html:not([lang^='zh']) .profile-card-tag,
+html:not([lang^='zh']) .decision-strip,
+html:not([lang^='zh']) .review-choice {
+  overflow-wrap: anywhere;
+}
+html:not([lang^='zh']) .main > .game-column,
+html:not([lang^='zh']) .game-surface {
+  min-width: 0;
+}
+html:not([lang^='zh']) .surface-top .hand-label {
+  overflow: hidden;
+}
+html:not([lang^='zh']) .site-footer,
+html:not([lang^='zh']) .practice-info {
+  flex-wrap: wrap;
+}
+html:not([lang^='zh']) .practice-info > span {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+html:not([lang^='zh']) .game-surface .arena[data-player-count] .seat-profile .seat-style-label {
+  font-size: 10px;
+  white-space: nowrap;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+html[lang='en'] .action-button {
+  min-width: 0;
+}
+html[lang='en'] .review-detail-header,
+html[lang='en'] .profile-detail-heading {
+  flex-wrap: wrap;
+}
+.hand-prefix,
+.hand-suffix {
+  font-style: normal;
+}
+@media (max-width: 900px) {
+  html:not([lang^='zh']) .main {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  html:not([lang^='zh']) .main > .sidebar {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+  .game-surface > .surface-top {
+    row-gap: 3px;
+  }
+}
+html:not([lang='zh-CN']):not([lang='zh-TW']) .hand-suffix {
+  display: none;
+}

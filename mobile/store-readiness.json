@@ -1,0 +1,13 @@
+{
+  "publisher": "郑建宙",
+  "supportEmail": "958182284@qq.com",
+  "appleDeveloperMembership": true,
+  "locales": ["zh-CN", "en", "zh-TW", "ja", "ko", "es", "it", "pt", "de", "fr", "ru"],
+  "businessModel": "paid-upfront",
+  "privacyPolicyUrl": null,
+  "supportUrl": "https://github.com/JessieZJZ/noir-poker/issues",
+  "linguisticReviewApproved": false,
+  "rightsReviewApproved": false,
+  "regionalDistributionApproved": false,
+  "signedDeviceTestingApproved": false
+}

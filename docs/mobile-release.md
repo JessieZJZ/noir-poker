@@ -45,9 +45,9 @@ NOIR_APPLE_TEAM_ID=你的10位TeamID npm run mobile:ios:archive
 
 ## 审核前要处理的内容
 
-**人物权利。** 原生包已排除全部人物照片，使用原创字母头像。现有 Web 的部分照片没有明确商业复用授权；外国照片的开放许可也不自动解决肖像、姓名或背书问题。当前原生风格名称仍沿用研究对象，商业发行前应获得所需授权，或改为原创、没有人物指向的策略原型。核对 `public/portraits/CREDITS.md` 和 `src/engine/bot-profiles.js`，不能因为网站能显示照片就直接用于售卖。
+**人物权利。** 原生包已排除全部人物照片，使用原创字母头像。现有 Web 的部分照片没有明确商业复用授权；外国照片的开放许可也不自动解决肖像、姓名或背书问题。原生发行构建现在使用原创策略原型名称，移除具名研究来源和原生指南的真人推广入口；Web 研究展示仍保留具名资料，不能直接用于商店截图。恢复真人展示前应获得所需授权。核对 `public/portraits/CREDITS.md` 和 `src/engine/bot-profiles.js`，不能因为网站能显示照片就直接用于售卖。
 
-**隐私。** 当前包无账号、广告、追踪、分析和联网复盘，设置留在设备，牌局留在进程内存。包内有“关于与隐私”，`public/app-privacy.html` 提供公开政策页面模板。首次提交前填写正式发行者身份和长期有效的支持联系方式，确认政策与最终包及所有 SDK 的实际行为一致，再填写 [Apple App Privacy](https://developer.apple.com/app-store/app-privacy-details/) 与 [Google Data safety](https://support.google.com/googleplay/android-developer/answer/10144311?hl=en)。iOS `PrivacyInfo.xcprivacy` 已声明 Preferences 使用的 UserDefaults 原因 `CA92.1`；增加新 SDK 后需重新核对清单。
+**隐私。** 当前包无账号、广告、追踪、分析和联网复盘，设置留在设备，牌局留在进程内存。包内有“关于与隐私”，`public/app-privacy.html` 提供公开政策页面模板。正式发行者郑建宙与支持邮箱 958182284@qq.com 已填入政策；首次提交前部署长期有效的公开政策 URL，确认政策与最终包及所有 SDK 的实际行为一致，再填写 [Apple App Privacy](https://developer.apple.com/app-store/app-privacy-details/) 与 [Google Data safety](https://support.google.com/googleplay/android-developer/answer/10144311?hl=en)。iOS `PrivacyInfo.xcprivacy` 已声明 Preferences 使用的 UserDefaults 原因 `CA92.1`；增加新 SDK 后需重新核对清单。
 
 **模拟赌博与年龄。** 当前筹码无现金价值、无提现、无奖金、无人类对赌，但内容仍是模拟扑克赌博；不要按普通休闲工具隐瞒此内容。按 [Apple 年龄评级定义](https://developer.apple.com/help/app-store-connect/reference/app-information/age-ratings-values-and-definitions/) 如实填写，频繁模拟赌博当前对应 18+。Google 按 [内容评级问卷](https://support.google.com/googleplay/android-developer/answer/9859655?hl=en) 及地区要求申报，部分市场还需要本地评级。若未来加入真钱、可兑换奖励或赌博推广，现有产品边界与发行准备不再适用，需重新核对 [Play 赌博政策](https://support.google.com/googleplay/android-developer/answer/18258653?hl=en&rd=4)。
 
@@ -66,3 +66,9 @@ NOIR_APPLE_TEAM_ID=你的10位TeamID npm run mobile:ios:archive
 5. 所有许可、隐私、年龄评级、支持链接和商店描述与发行包一致。
 
 源码更新后重新构建发行包，递增构建号、上传测试、验证，再提交商店新版本。商店规则会变化，发布时再次检查上述官方链接；本指南和工程不代表已经完成商业授权或通过商店审核。
+
+## 多语言与全球发行
+
+全球发行请先完成 [全球上架指导报告](global-store-report.md) 的语言、隐私、人物权利、地区评级和签名真机验收。运行 `npm run i18n:check` 与 `npm run store:check`；后者会明确报告尚未完成的发行条件。会员注册、资源同步或调试编译成功都不等于可以立即向全部地区提交。
+
+公开发行者与邮箱、拟支持语言及验收状态保存在 `mobile/store-readiness.json`。不要在没有实际证据时把审批字段改成 `true`。包内离线政策包含 11 种语言；仍需把相同政策发布到长期有效的公开 HTTPS 页面，再填入商店和清单的政策 URL。

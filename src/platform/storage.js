@@ -1,4 +1,4 @@
-const KEYS = ['noir-table-v1', 'noir-opponents-v1', 'noir-sound', 'noir-hints'];
+const KEYS = ['noir-table-v1', 'noir-opponents-v1', 'noir-sound', 'noir-hints', 'noir-locale'];
 
 // The UI stays synchronous; hydrate native preferences before importing it.
 // Writes keep their order, including two quick changes to the same setting.

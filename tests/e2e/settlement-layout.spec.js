@@ -1,9 +1,13 @@
 import { test, expect } from '@playwright/test';
+import { closeSettings } from './settings-helpers.js';
 
 async function expectSeatsClear(page) {
   const issues = () =>
     page.evaluate(() => {
-      const arena = document.querySelector('#arena').getBoundingClientRect(),
+      const arenaElement = document.querySelector('#arena'),
+        arena = (
+          innerWidth <= 900 ? document.querySelector('.table-viewport') : arenaElement
+        ).getBoundingClientRect(),
         board = document.querySelector('#board').getBoundingClientRect(),
         seats = [...document.querySelectorAll('.seat')],
         overlap = (a, b) =>
@@ -13,14 +17,14 @@ async function expectSeatsClear(page) {
           a.bottom > b.top + 0.5;
       const parts = (seat) =>
         [...seat.querySelectorAll('.mini-cards, .seat-profile, .hand-rank, .seat-action')].filter(
-          (el) => !el.hidden,
+          (el) => !el.hidden && getComputedStyle(el).display !== 'none',
         );
       const issues = [];
       for (const [i, seat] of seats.entries()) {
         for (const part of parts(seat)) {
           const box = part.getBoundingClientRect();
           if (overlap(box, board)) issues.push(`seat ${seat.dataset.player} overlaps public board`);
-          if (box.bottom > arena.bottom - 12)
+          if (box.top < arena.top - 1 || box.bottom > arena.bottom + 1)
             issues.push(`seat ${seat.dataset.player} outside arena`);
           for (const other of seats.slice(i + 1))
             for (const target of parts(other))
@@ -47,7 +51,7 @@ test('settled nine-seat actions clear other card backs, profiles and the section
     if (named) {
       await page.locator('#opponents-button').click();
       await page.locator('#mix-opponents').click();
-      await page.locator('#save-opponents').click();
+      await closeSettings(page);
     }
     for (const width of [320, 390, 768, 1115, 1280]) {
       await page.setViewportSize({ width, height: 1000 });

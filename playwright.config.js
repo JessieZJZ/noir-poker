@@ -7,7 +7,7 @@ export default defineConfig({
   retries: 0,
   workers: 2,
   reporter: 'list',
-  use: { baseURL: 'http://127.0.0.1:4175', trace: 'retain-on-failure' },
+  use: { locale: 'zh-CN', baseURL: 'http://127.0.0.1:4175', trace: 'retain-on-failure' },
   projects: [
     {
       name: 'desktop',

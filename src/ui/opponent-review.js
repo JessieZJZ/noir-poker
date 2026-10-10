@@ -1,3 +1,4 @@
+import { localizeText, localizeHTML, formatChips } from '../i18n/index.js';
 import { explainOpponent, BOT_CHECK_NAMES } from '../review/opponents.js';
 import { actionLabel, STREET_NAMES } from '../review/analysis.js';
 const esc = (v) =>
@@ -6,7 +7,7 @@ const esc = (v) =>
     .replaceAll('<', '&lt;')
     .replaceAll('>', '&gt;')
     .replaceAll('"', '&quot;');
-const n = (v) => Math.round(v).toLocaleString('en-US');
+const n = (v) => formatChips(Math.round(v));
 const pct = (v) => (v * 100).toFixed(1) + '%';
 export function createOpponentReview({ card }) {
   const panel = document.querySelector('#review-opponents');
@@ -23,15 +24,19 @@ export function createOpponentReview({ card }) {
       button.setAttribute('aria-current', i === selected ? 'step' : 'false');
     });
     const record = visible[selected];
-    panel.querySelector('#review-opponent-detail').innerHTML = record
-      ? detail(record)
-      : '<p class="review-empty">本手没有机器人决策记录。无法还原的行为不会编造理由；下一手会记录实际判断。</p>';
+    panel.querySelector('#review-opponent-detail').innerHTML = localizeHTML(
+      record
+        ? detail(record)
+        : '<p class="review-empty">本手没有机器人决策记录。无法还原的行为不会编造理由；下一手会记录实际判断。</p>',
+    );
   }
   function render() {
     const visible = visibleRecords();
     selected = Math.min(selected, Math.max(0, visible.length - 1));
     const players = [...new Map(records.map((r) => [r.id, r.name])).entries()];
-    panel.innerHTML = `<div class="review-opponent-heading"><p>逐步查看它当时如何判断。底牌在本手结束后才进入这个面板；你的决策评级仍只使用当时公开信息。</p><label>查看对手<select id="review-opponent-filter"><option value="all">全部对手</option>${players.map(([id, name]) => `<option value="${id}">${esc(name)}</option>`).join('')}</select></label></div><div class="review-layout"><nav aria-label="对手决策时间线"><div class="review-timeline-title"><strong>对手的实际行动</strong><span>${visible.length} 次</span></div><div class="review-timeline">${visible.map((r, i) => `<button class="review-step ${i === selected ? 'selected' : ''}" data-opponent-index="${i}" aria-current="${i === selected ? 'step' : 'false'}"><span class="review-step-number">${r.sequence}</span><span><small>${esc(r.name)} · ${STREET_NAMES[r.trace.view.street]}</small><strong>${actionLabel(step(r))}</strong></span><span class="review-status pending">${esc(r.trace.profileName)}</span></button>`).join('')}</div></nav><div id="review-opponent-detail"></div></div>`;
+    panel.innerHTML = localizeHTML(
+      `<div class="review-opponent-heading"><p>逐步查看它当时如何判断。底牌在本手结束后才进入这个面板；你的决策评级仍只使用当时公开信息。</p><label>查看对手<select id="review-opponent-filter"><option value="all">全部对手</option>${players.map(([id, name]) => `<option value="${id}">${esc(name)}</option>`).join('')}</select></label></div><div class="review-layout"><nav aria-label="对手决策时间线"><div class="review-timeline-title"><strong>对手的实际行动</strong><span>${visible.length} 次</span></div><div class="review-timeline">${visible.map((r, i) => `<button class="review-step ${i === selected ? 'selected' : ''}" data-opponent-index="${i}" aria-current="${i === selected ? 'step' : 'false'}"><span class="review-step-number">${r.sequence}</span><span><small>${esc(r.name)} · ${STREET_NAMES[r.trace.view.street]}</small><strong>${actionLabel(step(r))}</strong></span><span class="review-status pending">${esc(r.trace.profileName)}</span></button>`).join('')}</div></nav><div id="review-opponent-detail"></div></div>`,
+    );
     renderSelection();
     const select = panel.querySelector('select');
     select.value = filter;

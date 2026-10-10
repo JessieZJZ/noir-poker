@@ -174,13 +174,13 @@ check('two survivors in a six-handed deal do not move the blinds to heads-up pos
 });
 check('short blinds post actual stacks and keep full big blind bring-in', () => {
   const g = newGame();
-  g.players[1].stack = 10;
-  g.players[2].stack = 20;
+  g.players[1].stack = 25;
+  g.players[2].stack = 25;
   startHand(g);
-  assert.equal(g.players[1].bet, 10);
-  assert.equal(g.players[1].action, '小盲 10');
+  assert.equal(g.players[1].bet, 25);
+  assert.equal(g.players[1].action, '小盲 25');
   assert.equal(g.players[1].allin, true);
-  assert.equal(g.players[2].bet, 20);
+  assert.equal(g.players[2].bet, 25);
   assert.equal(g.players[2].allin, true);
   assert.equal(legalActions(g).callAmount, 50);
   assert.equal(legalActions(g).minRaiseTo, 100);
@@ -207,26 +207,26 @@ check('ordinary check-raise remains legal after a full opening bet', () => {
   assert.equal(legalActions(g).minRaiseTo, 200);
 });
 check('checking then facing only a sub-minimum all-in does not reopen a raise', () => {
-  const g = postflop([1000, 20, 1000, 1000, 1000, 1000]);
+  const g = postflop([1000, 25, 1000, 1000, 1000, 1000]);
   act(g, 0, 'check');
-  act(g, 1, 'raise', 20);
-  assert.equal(legalActions(g).fullRaiseTo, 70);
+  act(g, 1, 'raise', 25);
+  assert.equal(legalActions(g).fullRaiseTo, 75);
   for (const id of [2, 3, 4, 5]) act(g, id, 'call');
   assert.equal(g.actor, 0);
   assert.equal(legalActions(g).canRaise, false);
-  assert.equal(legalActions(g).callAmount, 20);
+  assert.equal(legalActions(g).callAmount, 25);
   const before = JSON.stringify(g);
-  assert.throws(() => act(g, 0, 'raise', 70));
+  assert.throws(() => act(g, 0, 'raise', 75));
   assert.equal(JSON.stringify(g), before);
   act(g, 0, 'call');
   assert.equal(g.phase, 'between');
 });
 check('cumulative sub-minimum opening all-ins reopen the checker at one full blind', () => {
-  const g = postflop([1000, 20, 40, 50, 1000, 1000]);
+  const g = postflop([1000, 25, 50, 1000, 1000, 1000]);
   act(g, 0, 'check');
-  act(g, 1, 'raise', 20);
-  act(g, 2, 'raise', 40);
-  act(g, 3, 'raise', 50);
+  act(g, 1, 'raise', 25);
+  act(g, 2, 'raise', 50);
+  act(g, 3, 'call');
   act(g, 4, 'call');
   act(g, 5, 'call');
   assert.equal(g.actor, 0);

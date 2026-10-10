@@ -1,0 +1,68 @@
+{
+  "zh-CN": {
+    "name": "NOIR Poker",
+    "subtitle": "离线德州扑克与决策复盘",
+    "shortDescription": "使用虚拟筹码练习德州扑克，与电脑对手对战并复盘决策。",
+    "description": "无需登录，离线练习无限注德州扑克。选择 5–9 人桌、难度与合成对手风格，查看牌局结束后的决策复盘，或重打原始发牌来比较不同选择。复盘只使用行动前可见的信息与假设对手范围，提供启发式和模拟估算，不保证最优打法或收益。所有筹码为虚拟筹码，无现金价值，不能购买或兑换；没有奖金或真人赌注。无账号、广告、订阅或应用内购买。商店一次购买即可使用完整应用。"
+  },
+  "en": {
+    "name": "NOIR Poker",
+    "subtitle": "Offline Hold'em Practice",
+    "shortDescription": "Offline Texas Hold'em with virtual chips and decision reviews.",
+    "description": "Practice no-limit Texas Hold'em offline without an account. Choose 5–9 player tables, difficulty and synthetic opponent styles. Review your decisions after a hand or replay the original deal to compare choices. Reviews use information available before each action and assumed opponent ranges, with heuristic and simulation estimates. They do not guarantee optimal play or profit. All chips are virtual, have no cash value and cannot be purchased or redeemed. There are no prizes or real-money wagers. No accounts, ads, subscriptions or in-app purchases. One upfront store purchase provides the complete app."
+  },
+  "zh-TW": {
+    "name": "NOIR Poker",
+    "subtitle": "離線德州撲克與決策複盤",
+    "shortDescription": "使用虛擬籌碼練習德州撲克，與電腦對手對戰並複盤決策。",
+    "description": "無須登入，離線練習無限注德州撲克。選擇 5–9 人桌、難度與合成對手風格，在牌局結束後檢視決策複盤，或重打原始發牌來比較不同選擇。複盤只使用行動前可見的資訊與假設對手範圍，提供啟發式和模擬估算，不保證最優打法或收益。所有籌碼均為虛擬籌碼，無現金價值，不能購買或兌換；沒有獎金或真人賭注。無帳號、廣告、訂閱或 App 內購買。在商店一次購買即可使用完整 App。"
+  },
+  "ja": {
+    "name": "NOIR Poker",
+    "subtitle": "オフラインでホールデム練習",
+    "shortDescription": "仮想チップでテキサスホールデムをオフライン練習。ハンド終了後に判断を振り返れます。",
+    "description": "アカウント不要でノーリミット・テキサスホールデムをオフライン練習できます。5〜9人のテーブル、難易度、合成された対戦スタイルを選択。ハンド終了後に自分の判断を振り返ったり、元の配牌を再プレイして選択肢を比較したりできます。振り返りは各アクション前に見えていた情報と仮定した相手のレンジに基づくヒューリスティックおよびシミュレーションによる推定です。最適なプレイや利益を保証しません。チップはすべて仮想で、金銭的価値はなく、購入や換金はできません。賞金や実際のお金を使う賭けはありません。アカウント、広告、サブスクリプション、アプリ内購入はありません。ストアで一度購入すると、アプリの全機能を利用できます。"
+  },
+  "ko": {
+    "name": "NOIR Poker",
+    "subtitle": "오프라인 홀덤 연습",
+    "shortDescription": "가상 칩으로 오프라인 텍사스 홀덤을 연습하고 핸드가 끝난 뒤 결정을 복기하세요.",
+    "description": "계정 없이 노리밋 텍사스 홀덤을 오프라인으로 연습하세요. 5~9인 테이블, 난이도 및 합성된 상대 스타일을 선택할 수 있습니다. 핸드가 끝난 뒤 결정을 복기하거나 원래 배분된 카드로 다시 플레이하며 선택을 비교하세요. 복기는 각 행동 전에 볼 수 있었던 정보와 가정한 상대 레인지를 바탕으로 한 휴리스틱 및 시뮬레이션 추정입니다. 최적의 플레이나 수익을 보장하지 않습니다. 모든 칩은 가상이며 현금 가치가 없고 구매하거나 교환할 수 없습니다. 상금이나 실제 돈을 건 베팅은 없습니다. 계정, 광고, 구독 및 앱 내 구매가 없습니다. 스토어에서 한 번 구매하면 앱의 모든 기능을 이용할 수 있습니다."
+  },
+  "es": {
+    "name": "NOIR Poker",
+    "subtitle": "Practica Hold'em sin conexión",
+    "shortDescription": "Practica Hold'em sin conexión con fichas virtuales y revisa tus decisiones.",
+    "description": "Practica Texas Hold'em sin límite y sin conexión, sin necesidad de una cuenta. Elige mesas de 5 a 9 jugadores, dificultad y estilos de rivales simulados. Revisa tus decisiones tras cada mano o repite el reparto original para comparar opciones. Las revisiones usan la información disponible antes de cada acción y rangos supuestos de los rivales, con estimaciones heurísticas y simulaciones. No garantizan una estrategia óptima ni beneficios. Todas las fichas son virtuales, no tienen valor en efectivo y no se pueden comprar ni canjear. No hay premios ni apuestas con dinero real. Sin cuentas, anuncios, suscripciones ni compras dentro de la aplicación. Una compra inicial en la tienda da acceso a la aplicación completa."
+  },
+  "it": {
+    "name": "NOIR Poker",
+    "subtitle": "Allenamento Hold'em offline",
+    "shortDescription": "Allena il Texas Hold'em offline con chip virtuali e analizza le tue decisioni.",
+    "description": "Allenati al Texas Hold'em no-limit offline, senza un account. Scegli tavoli da 5 a 9 giocatori, difficoltà e stili di avversari simulati. Analizza le decisioni dopo ogni mano o ripeti la distribuzione originale per confrontare le scelte. Le analisi usano le informazioni disponibili prima di ogni azione e range ipotizzati degli avversari, con stime euristiche e simulazioni. Non garantiscono il gioco ottimale né un profitto. Tutte le chip sono virtuali, non hanno valore monetario e non possono essere acquistate o convertite. Non ci sono premi né puntate con denaro reale. Nessun account, pubblicità, abbonamento o acquisto in-app. Un unico acquisto iniziale nello store offre l'app completa."
+  },
+  "pt": {
+    "name": "NOIR Poker",
+    "subtitle": "Treino de Hold'em offline",
+    "shortDescription": "Pratica Texas Hold'em offline com fichas virtuais e revê as tuas decisões.",
+    "description": "Pratica Texas Hold'em sem limite e offline, sem precisares de uma conta. Escolhe mesas de 5 a 9 jogadores, dificuldade e estilos de adversários simulados. Revê as decisões após cada mão ou repete a distribuição original para comparar escolhas. As revisões usam a informação disponível antes de cada ação e intervalos de mãos presumidos dos adversários, com estimativas heurísticas e simulações. Não garantem uma estratégia ótima nem lucro. Todas as fichas são virtuais, não têm valor monetário e não podem ser compradas ou trocadas. Não há prémios nem apostas com dinheiro real. Sem contas, anúncios, subscrições ou compras na aplicação. Uma única compra inicial na loja dá acesso à aplicação completa."
+  },
+  "de": {
+    "name": "NOIR Poker",
+    "subtitle": "Hold'em offline trainieren",
+    "shortDescription": "Texas Hold'em offline mit virtuellen Chips und Entscheidungsanalysen.",
+    "description": "Trainiere No-Limit Texas Hold'em offline und ohne Konto. Wähle Tische mit 5–9 Spielern, die Schwierigkeit und simulierte Gegnerstile. Analysiere deine Entscheidungen nach einer Hand oder wiederhole dieselbe Kartenverteilung, um Alternativen zu vergleichen. Die Analysen verwenden Informationen, die vor der jeweiligen Aktion sichtbar waren, und angenommene gegnerische Ranges sowie heuristische Schätzungen und Simulationen. Sie garantieren weder optimales Spiel noch Gewinn. Alle Chips sind virtuell, haben keinen Geldwert und können weder gekauft noch eingelöst werden. Es gibt keine Preise oder Einsätze mit echtem Geld. Keine Konten, Werbung, Abonnements oder In-App-Käufe. Ein einmaliger Kauf im Store bietet die vollständige App."
+  },
+  "fr": {
+    "name": "NOIR Poker",
+    "subtitle": "Hold'em hors ligne",
+    "shortDescription": "Pratiquez le Texas Hold'em hors ligne avec des jetons virtuels et des analyses.",
+    "description": "Entraînez-vous au Texas Hold'em no-limit hors ligne, sans compte. Choisissez des tables de 5 à 9 joueurs, la difficulté et des styles d'adversaires simulés. Analysez vos décisions après une main ou rejouez la distribution initiale pour comparer vos choix. Les analyses utilisent les informations disponibles avant chaque action et des ranges adverses supposées, avec des estimations heuristiques et des simulations. Elles ne garantissent ni jeu optimal ni profit. Tous les jetons sont virtuels, sans valeur monétaire, et ne peuvent être achetés ni échangés. Aucun prix ni mise en argent réel. Aucun compte, publicité, abonnement ou achat intégré. Un achat unique dans la boutique donne accès à l'application complète."
+  },
+  "ru": {
+    "name": "NOIR Poker",
+    "subtitle": "Техасский холдем офлайн",
+    "shortDescription": "Тренируйте техасский холдем офлайн с виртуальными фишками и разбором решений.",
+    "description": "Тренируйте безлимитный техасский холдем офлайн без регистрации. Выбирайте столы на 5–9 игроков, сложность и стили компьютерных соперников. Разбирайте решения после раздачи или повторяйте исходную раздачу, чтобы сравнить варианты. Разбор использует информацию, доступную до каждого действия, и предполагаемые диапазоны соперников, а также эвристические оценки и симуляции. Он не гарантирует оптимальную игру или прибыль. Все фишки виртуальные, не имеют денежной стоимости, их нельзя купить или обменять. Нет призов и ставок на реальные деньги. Нет аккаунтов, рекламы, подписок и покупок внутри приложения. Одна покупка в магазине открывает полную версию приложения."
+  }
+}
