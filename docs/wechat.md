@@ -24,7 +24,7 @@ NOIR_WECHAT_APP_ID=wx你的AppID npm run wechat:open
 
 ## 每次 Web 迭代如何同步
 
-`npm run dev` 同时运行 Vite 和小程序监听器。保存 `src/`、`public/`、`miniprogram/` 或构建配置后，小程序重新生成到同一个导入目录；开发者工具读取更新后的文件。单独监听可运行 `npm run wechat:watch`。`npm run build` 的 `postbuild` 也自动生成小程序，`npm run platforms:sync` 一次同步小程序与 iOS/Android 最新资源。
+`npm run dev` 同时运行 Vite 和小程序监听器。保存 `src/`、`public/`、`miniprogram/`、`scripts/`、`mobile/` 或构建配置后，小程序重新生成到同一个导入目录；开发者工具读取更新后的文件。单独监听可运行 `npm run wechat:watch`。`npm run build` 的 `postbuild` 也自动生成小程序，`npm run platforms:sync` 一次同步小程序与 iOS/Android 最新资源。
 
 每次生成都从当前共享源码转译 CommonJS/ES2019，压缩并裁切全部本地头像，生成本地声音，写入文件清单和源码 SHA-256。`wechat:verify` 拒绝过期源码、损坏文件、缺失头像或不一致的 AppID。主包采用 2 MiB 的保守预算，超出就阻止构建，不把图片改为在线地址。
 
@@ -39,7 +39,7 @@ NOIR_WECHAT_APP_ID=wx你的AppID npm run wechat:open
 进入后台或退出页面会取消旧电脑行动与复盘任务，并释放声音上下文。返回前台重新调度当前牌局，不执行离开前的过期回调。
 
 ```sh
-node --test tests/unit/wechat-controller.test.js tests/unit/wechat-build.test.js
+node --test tests/unit/wechat*.test.js
 npm run wechat:check
 ```
 

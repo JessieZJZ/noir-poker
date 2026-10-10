@@ -11,6 +11,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 0 8px;
+  gap: 6px;
 }
 .brand,
 .nav-actions {
@@ -22,6 +23,18 @@
   font-weight: 700;
   font-size: 21px;
   letter-spacing: 2px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.nav-actions {
+  flex-shrink: 0;
+}
+.nav-compact .brand {
+  font-size: 18px;
+  gap: 6px;
+}
+.nav-compact .spade {
+  font-size: 28px;
 }
 .spade {
   color: #67e3c4;

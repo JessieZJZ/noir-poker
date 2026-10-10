@@ -2,9 +2,10 @@
   class="screen"
   style="height: {{windowHeight}}px; padding-top: {{topInset}}px; padding-bottom: {{bottomInset}}px;"
 >
-  <view class="nav">
+  <view class="nav {{compactNav ? 'nav-compact' : ''}}" style="padding-right: {{navRightInset}}px;">
     <view class="brand"
-      ><text class="spade">♠</text><text>NOIR</text><text class="brand-sub">POKER</text></view
+      ><text class="spade">♠</text><text>NOIR</text
+      ><text wx:if="{{!compactNav}}" class="brand-sub">POKER</text></view
     >
     <view class="nav-actions"
       ><button class="icon-button" aria-label="设置" bindtap="openSettings">⚙</button
@@ -165,7 +166,7 @@
   class="modal"
   style="padding-top: {{topInset}}px; padding-bottom: {{bottomInset}}px;"
 >
-  <view class="modal-header"
+  <view class="modal-header" style="padding-right: {{navRightInset}}px;"
     ><text>设置</text
     ><button class="close" bindtap="closeSettings" aria-label="关闭设置">×</button></view
   >
@@ -291,12 +292,10 @@
           class="detail-avatar"
           mode="aspectFill"
         /><text class="detail-description">{{detailProfile.description}}</text
-        ><view class="axis" wx:for="{{detailProfile.axes}}" wx:key="*this"
-          ><text
-            >{{index === 0 ? '入池宽度' : index === 1 ? '进攻倾向' : index === 2 ? '诈唬倾向' :
-            index === 3 ? '跟到底倾向' : '强牌诱导'}}</text
-          ><view class="axis-track"><view style="width: {{item}}%;" /></view
-          ><text>{{item}}</text></view
+        ><view class="axis" wx:for="{{detailProfile.axisRows}}" wx:key="id"
+          ><text>{{item.label}}</text
+          ><view class="axis-track"><view style="width: {{item.value}}%;" /></view
+          ><text>{{item.value}}</text></view
         ><text class="detail-evidence">{{detailProfile.evidence}}</text
         ><text class="muted">以上是游戏内训练参数，不是真实牌手的统计。</text
         ><button class="primary detail-apply" bindtap="useProfile">所有座位使用此风格</button></view
@@ -309,7 +308,7 @@
   wx:if="{{guideOpen}}"
   class="modal"
   style="padding-top: {{topInset}}px; padding-bottom: {{bottomInset}}px;"
-  ><view class="modal-header"
+  ><view class="modal-header" style="padding-right: {{navRightInset}}px;"
     ><text>玩法指南</text
     ><button class="close" bindtap="closeGuide" aria-label="关闭玩法指南">×</button></view
   ><scroll-view scroll-y class="modal-scroll"
@@ -349,7 +348,7 @@
   wx:if="{{reviewOpen}}"
   class="modal"
   style="padding-top: {{topInset}}px; padding-bottom: {{bottomInset}}px;"
-  ><view class="modal-header"
+  ><view class="modal-header" style="padding-right: {{navRightInset}}px;"
     ><text>第 {{reviewData.hand}} 手 · 复盘</text
     ><button class="close" bindtap="closeReview" aria-label="关闭复盘">×</button></view
   ><scroll-view scroll-y class="modal-scroll"
@@ -381,7 +380,7 @@
   wx:if="{{activityOpen}}"
   class="modal"
   style="padding-top: {{topInset}}px; padding-bottom: {{bottomInset}}px;"
-  ><view class="modal-header"
+  ><view class="modal-header" style="padding-right: {{navRightInset}}px;"
     ><text>本局动态</text><button class="close" bindtap="closeActivity">×</button></view
   ><scroll-view scroll-y class="modal-scroll"
     ><view class="modal-body"
@@ -396,7 +395,7 @@
   wx:if="{{potOpen}}"
   class="modal"
   style="padding-top: {{topInset}}px; padding-bottom: {{bottomInset}}px;"
-  ><view class="modal-header"
+  ><view class="modal-header" style="padding-right: {{navRightInset}}px;"
     ><text>底池明细</text><button class="close" bindtap="closePots">×</button></view
   ><view class="modal-body"
     ><view wx:for="{{pots}}" wx:key="label" class="setting-row"

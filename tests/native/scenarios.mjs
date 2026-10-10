@@ -21,6 +21,11 @@ export async function nativeScenarios(app) {
       fixtures: typeof window.qa,
       footer: document.querySelector('.practice-info')?.textContent,
       state: window.noir?.getState(),
+      viewport: { width: innerWidth, height: innerHeight },
+      controls: ['raise', 'fold', 'call'].map((action) => {
+        const rect = document.querySelector(`#${action}-button`).getBoundingClientRect();
+        return { action, top: rect.top, bottom: rect.bottom, left: rect.left, right: rect.right };
+      }),
     }));
     assert.ok(info.native, 'The installed app must use the native platform adapter');
     assert.equal(info.fixtures, 'undefined', 'Production app must not contain QA fixtures');
@@ -30,7 +35,24 @@ export async function nativeScenarios(app) {
     );
     assert.ok(info.footer && !documentLoginMarker(info.footer));
     assert.ok(info.state && info.state.playerCount >= 5);
-    return { origin: info.href, playerCount: info.state.playerCount };
+    assert.ok(
+      info.controls.every(
+        (rect) =>
+          rect.top >= 0 &&
+          rect.bottom <= info.viewport.height &&
+          rect.left >= 0 &&
+          rect.right <= info.viewport.width &&
+          rect.bottom > rect.top &&
+          rect.right > rect.left,
+      ),
+      'The first viewport must contain every action button before any test scroll',
+    );
+    return {
+      origin: info.href,
+      playerCount: info.state.playerCount,
+      viewport: info.viewport,
+      controls: info.controls,
+    };
   });
   await check('settings-autosave-and-local-portraits', async () => {
     await app.click('#opponents-button');
@@ -82,9 +104,26 @@ export async function nativeScenarios(app) {
   await check('raise-call-fold-and-settlement', async () => {
     const coverage = { raise: null, call: null, fold: null };
     let settled;
-    // Real random hands may end immediately after a raise. Continue with fresh
-    // deals instead of assuming the opponent must call or of injecting cards.
-    for (let deal = 0; deal < 10 && !coverage.fold; deal++) {
+    let settlementBudget;
+    // Capture public state immediately after the actual click handler, before
+    // bot timers or an uncalled-bet refund can obscure the chip transfer.
+    const actAndObserve = async (action) => {
+      await app.evaluate((action) => {
+        window.__nativeActionObservation = null;
+        document.querySelector(`#${action}-button`).addEventListener(
+          'click',
+          () => {
+            window.__nativeActionObservation = window.noir.getState();
+          },
+          { once: true },
+        );
+      }, action);
+      await app.click(`#${action}-button`);
+      return app.evaluate(() => window.__nativeActionObservation);
+    };
+    // A zero-priced call button is a check, not paid-call coverage. Real random
+    // hands may also end immediately after a raise, so use bounded new deals.
+    for (let decision = 0; decision < 45 && !Object.values(coverage).every(Boolean); decision++) {
       if ((await app.state()).phase === 'done') await app.click('#next-button');
       const turn = await app.waitFor(
         async () => {
@@ -95,60 +134,42 @@ export async function nativeScenarios(app) {
         'A real hand must reach a hero decision or settlement',
       );
       if (turn.phase === 'done') continue;
+      // Public pot includes all committed chips from earlier streets. A bot
+      // may rebuy between real hands, so infer this hand's budget rather than
+      // treating the initial five stacks as a permanent table balance.
+      settlementBudget = turn.players.reduce((sum, player) => sum + player.stack, 0) + turn.pot;
       const action =
-        !coverage.raise && turn.legal.canRaise ? 'raise' : !coverage.call ? 'call' : 'fold';
+        !coverage.call && turn.legal.toCall > 0
+          ? 'call'
+          : !coverage.raise && turn.legal.canRaise
+            ? 'raise'
+            : coverage.call && coverage.raise
+              ? 'fold'
+              : 'call';
       if (action === 'raise') await app.click('[data-preset="min"]');
-      await app.click(`#${action}-button`);
-      const acted = await app.state();
+      const acted = await actAndObserve(action);
+      assert.ok(acted, 'A real enabled click must reach the game handler');
+      const paid = turn.stack - acted.stack;
       if (action === 'fold') assert.ok(acted.players[0].folded);
-      else if (action === 'raise') assert.ok(acted.players[0].lastAction);
+      else if (action === 'raise') {
+        assert.equal(paid, turn.legal.minRaiseTo - turn.players[0].bet);
+        assert.equal(acted.players[0].lastAction?.bet, turn.legal.minRaiseTo);
+        assert.ok(paid > turn.legal.callAmount, 'Raise must pay beyond the call');
+      } else {
+        assert.equal(paid, Math.min(turn.legal.toCall, turn.stack));
+      }
       assert.equal(acted.stack % 25, 0);
-      coverage[action] = {
-        hand: acted.hand,
-        street: acted.street,
-        action: acted.players[0].lastAction,
-        paid: turn.stack - acted.stack,
-        callRequired: action === 'call' ? turn.legal.toCall : undefined,
-      };
+      if (action !== 'call' || paid > 0)
+        coverage[action] = {
+          hand: acted.hand,
+          street: turn.street,
+          action: acted.players[0].lastAction,
+          paid,
+          callRequired: action === 'call' ? turn.legal.toCall : undefined,
+        };
       if (action === 'fold' && (await app.visible('#continue-deal-button')))
         await app.click('#continue-deal-button');
-      if (action !== 'fold' && acted.phase !== 'done') {
-        const remaining = await app.waitFor(
-          async () => {
-            const game = await app.state();
-            return game.phase === 'done' || game.legal.enabled ? game : null;
-          },
-          90000,
-          'Game must progress to the next legal decision',
-        );
-        if (remaining.phase !== 'done') {
-          if (!coverage.call) {
-            await app.click('#call-button');
-            const called = await app.state();
-            coverage.call = {
-              hand: called.hand,
-              street: called.street,
-              action: called.players[0].lastAction,
-              paid: remaining.stack - called.stack,
-              callRequired: remaining.legal.toCall,
-            };
-            const next = await app.waitFor(
-              async () => {
-                const game = await app.state();
-                return game.phase === 'done' || game.legal.enabled ? game : null;
-              },
-              90000,
-              'Game must continue after call',
-            );
-            if (next.phase === 'done') continue;
-          }
-          await app.click('#fold-button');
-          const folded = await app.state();
-          assert.ok(folded.players[0].folded);
-          coverage.fold = { hand: folded.hand, street: folded.street };
-          if (await app.visible('#continue-deal-button')) await app.click('#continue-deal-button');
-        }
-      }
+      if (action !== 'fold') continue;
       await app.waitFor(
         async () => (await app.state()).phase === 'done',
         60000,
@@ -158,17 +179,40 @@ export async function nativeScenarios(app) {
     }
     assert.ok(
       Object.values(coverage).every(Boolean),
-      'Ten real hands must exercise raise, call and fold',
+      'Bounded real decisions must exercise a paid call, raise and fold',
     );
     settled ??= await app.state();
     assert.equal(settled.pot % 25, 0);
     assert.ok(settled.players.every((player) => player.stack % 25 === 0));
     assert.equal(
       settled.players.reduce((sum, player) => sum + player.stack, 0),
-      25000,
+      settlementBudget,
       'Settlement must conserve chips',
     );
-    return { coverage, pot: settled.pot };
+    return { coverage, pot: settled.pot, settlementBudget };
+  });
+  await check('settlement-decision-review', async () => {
+    await app.click('#review-hand-button');
+    const review = await app.waitFor(
+      async () =>
+        app.evaluate(() => {
+          const dialog = document.querySelector('#review-dialog');
+          const overview = document.querySelector('#review-overview')?.textContent.trim();
+          const suggestion = document.querySelector('#review-suggestion')?.textContent.trim();
+          return dialog.open &&
+            overview &&
+            suggestion &&
+            !/分析中|undefined/.test(overview + suggestion)
+            ? { overview, suggestion }
+            : null;
+        }),
+      30000,
+      'Installed local review worker must produce an overview and suggestion',
+    );
+    await app.screenshot('settlement-decision-review-open');
+    await app.click('#review-dialog .close-dialog');
+    assert.equal(await app.evaluate(() => document.querySelector('#review-dialog').open), false);
+    return review;
   });
   await check('retry-original-deal-and-next-hand', async () => {
     const original = await app.state();
@@ -206,30 +250,58 @@ export async function nativeScenarios(app) {
   });
   await check('real-background-cancels-pending-action', async () => {
     await app.waitHero();
+    // Observers only record public snapshots. No timers, cards, legal actions
+    // or production behavior are replaced. Android hides WebView debugging in
+    // the background, so capture both real native lifecycle boundaries.
+    await app.evaluate(() => {
+      window.__nativeLifecycleObservations = [];
+      document.addEventListener('noir:app-state', ({ detail }) => {
+        window.__nativeLifecycleObservations.push({
+          active: detail.active,
+          at: Date.now(),
+          state: window.noir.getState(),
+        });
+      });
+    });
     await app.click('#call-button');
+    await app.waitFor(
+      async () => {
+        const game = await app.state();
+        return game.phase === 'playing' && game.actor && game.actor !== '你' ? game : null;
+      },
+      15000,
+      'Background test needs a pending opponent action',
+    );
     await app.background();
-    const paused = await app.state();
     await app.sleep(6000);
-    const stillPaused = await app.state();
+    await app.activate();
+    const boundaries = await app.evaluate(() => window.__nativeLifecycleObservations);
+    const hiddenIndex = boundaries.findIndex((entry) => !entry.active);
+    const paused = boundaries[hiddenIndex];
+    const resumed = boundaries.slice(hiddenIndex + 1).find((entry) => entry.active);
+    assert.ok(paused && resumed, 'Native inactive and active events must both arrive');
+    assert.equal(paused.state.phase, 'playing');
+    assert.ok(paused.state.actor && paused.state.actor !== '你');
+    assert.ok(resumed.at - paused.at >= 6000, 'App must remain in the background for six seconds');
     assert.deepEqual(
-      stillPaused,
-      paused,
+      resumed.state,
+      paused.state,
       'Game must not advance while the native app is in the background',
     );
-    await app.activate();
     await app.waitFor(
       async () => {
         const current = await app.state();
-        return (
-          current.actor === '你' ||
-          current.phase === 'done' ||
-          JSON.stringify(current) !== JSON.stringify(paused)
-        );
+        return JSON.stringify(current) !== JSON.stringify(paused.state);
       },
       45000,
       'Game should resume after native foreground event',
     );
-    return { backgroundMs: 6000, pausedActor: paused.actor, pausedHand: paused.hand };
+    return {
+      backgroundMs: resumed.at - paused.at,
+      pausedActor: paused.state.actor,
+      pausedHand: paused.state.hand,
+      pausedPhase: paused.state.phase,
+    };
   });
   return result;
 }

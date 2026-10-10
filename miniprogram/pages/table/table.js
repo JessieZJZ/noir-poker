@@ -1,6 +1,13 @@
 const { createWechatController } = require('../../shared/platform/wechat-controller.js');
 // Nav 48 + table header 30 + hint slot 20 + dock 136 + footer 22 + shell border 2.
 const VIEWPORT_CHROME_HEIGHT = 258;
+const PROFILE_AXES = [
+  ['vpip', '入池宽度'],
+  ['aggression', '进攻倾向'],
+  ['bluff', '诈唬倾向'],
+  ['calling', '跟到底倾向'],
+  ['trapping', '强牌诱导'],
+];
 
 Page({
   data: {
@@ -8,6 +15,8 @@ Page({
     bottomInset: 0,
     windowHeight: 800,
     tableHeight: 460,
+    navRightInset: 104,
+    compactNav: false,
     settingsOpen: false,
     guideOpen: false,
     reviewOpen: false,
@@ -66,11 +75,38 @@ Page({
       0,
       info.windowHeight - (info.safeArea?.bottom || info.windowHeight),
     );
+    // Custom navigation still keeps WeChat's native top-right menu capsule.
+    // Leave a conservative capsule-sized space if an older runtime cannot measure it.
+    let navRightInset = 104;
+    try {
+      const rect = wx.getMenuButtonBoundingClientRect?.();
+      if (
+        rect &&
+        [rect.left, rect.right, rect.top, rect.bottom, rect.width, rect.height].every(
+          Number.isFinite,
+        ) &&
+        rect.width > 0 &&
+        rect.height > 0 &&
+        rect.left >= 0 &&
+        rect.right <= info.windowWidth &&
+        rect.right > rect.left &&
+        rect.bottom > rect.top &&
+        Math.abs(rect.right - rect.left - rect.width) <= 1 &&
+        rect.top >= 0 &&
+        rect.bottom <= topInset + 52
+      ) {
+        navRightInset = rect.width + (info.windowWidth - rect.right) + 8;
+      }
+    } catch {
+      /* Menu measurement can be unavailable while an older client initializes. */
+    }
     // The action dock keeps one height in every game phase; no page scrolling.
     this.setData({
       topInset,
       bottomInset,
       windowHeight: info.windowHeight,
+      navRightInset,
+      compactNav: info.windowWidth - 24 - navRightInset < 250,
       tableHeight: Math.max(0, info.windowHeight - topInset - bottomInset - VIEWPORT_CHROME_HEIGHT),
     });
   },
@@ -160,8 +196,18 @@ Page({
     );
   },
   viewProfile(event) {
+    const profile = this.data.profiles.find((p) => p.id === event.currentTarget.dataset.id);
     this.setData({
-      detailProfile: this.data.profiles.find((p) => p.id === event.currentTarget.dataset.id),
+      detailProfile: profile
+        ? {
+            ...profile,
+            axisRows: PROFILE_AXES.map(([id, label], index) => ({
+              id,
+              label,
+              value: profile.axes[index],
+            })),
+          }
+        : null,
     });
   },
   closeProfile() {

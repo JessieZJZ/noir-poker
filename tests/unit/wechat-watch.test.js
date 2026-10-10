@@ -69,7 +69,14 @@ function processHarness(directory) {
     },
     async stop() {
       signal('SIGTERM');
-      const stopped = await Promise.race([closed.then(() => true), delay(2000).then(() => false)]);
+      let deadline;
+      const stopped = await Promise.race([
+        closed.then(() => true),
+        new Promise((resolve) => {
+          deadline = setTimeout(() => resolve(false), 2000);
+        }),
+      ]);
+      clearTimeout(deadline);
       if (!stopped) {
         signal('SIGKILL');
         await closed;

@@ -13,12 +13,17 @@ const stylesheet = readFileSync(
   new URL('../../miniprogram/pages/table/table.wxss', import.meta.url),
   'utf8',
 );
+const template = readFileSync(
+  new URL('../../miniprogram/pages/table/table.wxml', import.meta.url),
+  'utf8',
+);
 const copy = (value) => JSON.parse(JSON.stringify(value));
 function setup(
   t,
   {
     playerCount = 6,
     info = { windowWidth: 390, windowHeight: 844, statusBarHeight: 47, safeArea: { bottom: 810 } },
+    menuRect,
   } = {},
 ) {
   let definition;
@@ -52,6 +57,12 @@ function setup(
     },
     wx: {
       getWindowInfo: () => info,
+      ...(menuRect === undefined
+        ? {}
+        : {
+            getMenuButtonBoundingClientRect:
+              typeof menuRect === 'function' ? menuRect : () => menuRect,
+          }),
       getStorageSync: (key) => preferences.get(key),
       setStorageSync: (key, value) => preferences.set(key, value),
       showToast: (value) => toasts.push(value),
@@ -217,4 +228,69 @@ test('WeChat Page stops and destroys native audio plus pending work when backgro
   assert.ok(audios.every((audio) => audio.stopped && audio.destroyed));
   page.onShow();
   assert.ok(jobs.size > 0, 'foreground resumes a fresh bot schedule');
+});
+
+test('WeChat custom navigation and modal close buttons reserve the measured native capsule', (t) => {
+  const info = {
+    windowWidth: 320,
+    windowHeight: 568,
+    statusBarHeight: 20,
+    safeArea: { bottom: 568 },
+  };
+  const rect = { left: 226, right: 313, top: 24, bottom: 56, width: 87, height: 32 };
+  const { page } = setup(t, { info, menuRect: rect });
+  assert.equal(page.data.navRightInset, rect.width + info.windowWidth - rect.right + 8);
+  assert.equal(page.data.compactNav, true, 'narrow navigation hides the POKER subtitle');
+  assert.ok(info.windowWidth - 8 - page.data.navRightInset <= rect.left - 8);
+  assert.match(template, /class="nav[^\n]*padding-right: \{\{navRightInset\}\}px/);
+  assert.match(template, /wx:if="\{\{!compactNav\}\}" class="brand-sub"/);
+  assert.equal(
+    [...template.matchAll(/class="modal-header" style="padding-right: \{\{navRightInset\}\}px;"/g)]
+      .length,
+    5,
+    'all fullscreen modal close buttons avoid the capsule',
+  );
+  info.windowWidth = 390;
+  rect.left = 296;
+  rect.right = 383;
+  page.onResize();
+  assert.equal(page.data.compactNav, false, 'larger navigation keeps the subtitle');
+});
+
+test('WeChat capsule measurement falls back safely when absent, invalid or throwing', (t) => {
+  for (const menuRect of [
+    undefined,
+    { left: 0, right: 0, top: 0, bottom: 0, width: 0, height: 0 },
+    { left: 20, right: 900, top: 24, bottom: 56, width: 87, height: 32 },
+    () => {
+      throw new Error('not ready');
+    },
+  ]) {
+    const { page } = setup(t, { menuRect });
+    assert.equal(page.data.navRightInset, 104);
+    assert.equal(page.data.tableHeight + page.data.topInset + page.data.bottomInset + 258, 844);
+  }
+});
+
+test('WeChat profile parameters keep stable unique keys when values repeat', (t) => {
+  const { page } = setup(t);
+  page.viewProfile({ currentTarget: { dataset: { id: 'balanced' } } });
+  const rows = page.data.detailProfile.axisRows;
+  assert.deepEqual(
+    rows.map((row) => row.value),
+    [50, 50, 40, 50, 20],
+  );
+  assert.equal(new Set(rows.map((row) => row.id)).size, 5);
+  assert.deepEqual(
+    rows.map((row) => row.label),
+    ['入池宽度', '进攻倾向', '诈唬倾向', '跟到底倾向', '强牌诱导'],
+  );
+  assert.match(template, /wx:for="\{\{detailProfile.axisRows\}\}" wx:key="id"/);
+  page.viewProfile({ currentTarget: { dataset: { id: 'tan' } } });
+  assert.deepEqual(
+    page.data.detailProfile.axisRows.map((row) => row.id),
+    rows.map((row) => row.id),
+  );
+  page.closeProfile();
+  assert.equal(page.data.detailProfile, null);
 });

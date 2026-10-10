@@ -4,6 +4,8 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { nativeScenarios } from '../tests/native/scenarios.mjs';
+import { sourceDigest } from './mobile-lib.mjs';
+import { verifyBundledArtifact } from './bundled-assets.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const args = process.argv.slice(2);
@@ -31,7 +33,7 @@ const output = path.resolve(root, options.output ?? `.artifacts/native-e2e/${pla
 mkdirSync(output, { recursive: true });
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 const run = (binary, argv) => {
-  const value = spawnSync(binary, argv, { encoding: 'utf8', cwd: root });
+  const value = spawnSync(binary, argv, { encoding: 'utf8', cwd: root, timeout: 120000 });
   if (value.status !== 0)
     throw Error(
       `${binary} ${argv.join(' ')} failed: ${value.stderr || value.error || value.stdout}`,
@@ -213,6 +215,13 @@ async function select(selector, value) {
     )
   )
     return;
+  await evaluate(
+    (selector) =>
+      document
+        .querySelector(selector)
+        .scrollIntoView({ block: 'center', inline: 'center', behavior: 'instant' }),
+    selector,
+  );
   const element = await command('POST', '/element', {
     using: 'css selector',
     value: `${selector} option[value="${value}"]`,
@@ -251,7 +260,6 @@ async function relaunch() {
 async function background() {
   await command('POST', '/context', { name: 'NATIVE_APP' });
   await command('POST', '/appium/app/background', { seconds: -1 });
-  await command('POST', '/context', { name: webContext });
 }
 try {
   if (!options.server) {
@@ -307,6 +315,17 @@ try {
     spawnSync('xcrun', ['simctl', 'uninstall', udid, appId], { encoding: 'utf8' });
   }
   log(`Installing and launching ${appPath} on ${udid}`);
+  report.bundledAssets = verifyBundledArtifact(appPath);
+  const embeddedBuild = JSON.parse(
+    platform === 'ios'
+      ? readFileSync(path.join(appPath, 'public/build-info.json'), 'utf8')
+      : run('unzip', ['-p', appPath, 'assets/public/build-info.json']),
+  );
+  assert.equal(
+    embeddedBuild.sourceDigest,
+    sourceDigest(),
+    'Build the latest source before native E2E; the selected app has stale bundled code',
+  );
   const caps = {
     platformName: platform === 'ios' ? 'iOS' : 'Android',
     'appium:automationName': platform === 'ios' ? 'XCUITest' : 'UiAutomator2',
@@ -344,7 +363,22 @@ try {
     run('xcrun', ['simctl', 'launch', udid, appId]);
   }
   await attachWebview();
-  report.build = await evaluate(async () => (await fetch('./build-info.json')).json());
+  await command('POST', '/timeouts', { script: 30000 });
+  // XCUITest does not resolve Promise results from execute/sync. The standard
+  // async callback reads the metadata from the installed app on both drivers.
+  report.build = await command('POST', '/execute/async', {
+    script: `const done = arguments[arguments.length - 1];
+      fetch('./build-info.json').then(response => {
+        if (!response.ok) throw Error('build-info HTTP ' + response.status);
+        return response.json();
+      }).then(done, error => done({ error: error.message }));`,
+    args: [],
+  });
+  assert.ok(
+    report.build.sourceDigest && !report.build.error,
+    'Installed build metadata is required',
+  );
+  assert.equal(report.build.sourceDigest, embeddedBuild.sourceDigest);
   report.scenarios = await nativeScenarios({
     record: (entry) => report.scenarios.push(entry),
     evaluate,
