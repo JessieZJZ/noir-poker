@@ -1860,6 +1860,9 @@ test('A7 review separates steal, 3bet and 4bet; opponents expose actual decision
 test('review timelines hint at horizontal scrolling and keep late selections in place', async ({
   page,
 }) => {
+  // Each width performs a full decision simulation, which can take 15 s on
+  // the shared CI runner. Keep the three simulations within one bounded test.
+  test.setTimeout(60000);
   for (const width of [320, 390, 1280]) {
     await page.setViewportSize({ width, height: 900 });
     await page.evaluate(() => window.qa.reviewLine());
