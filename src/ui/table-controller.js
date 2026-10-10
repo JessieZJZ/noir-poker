@@ -1,4 +1,10 @@
-import { localizeText, localizeHTML, formatChips } from '../i18n/index.js';
+import {
+  localizeText,
+  formatChips,
+  setLocalizedText,
+  setLocalizedHTML,
+  setLocalizedAttribute,
+} from '../i18n/index.js';
 import {
   newGame,
   startHand,
@@ -59,11 +65,11 @@ const hintNotification = createHintNotification({
   publish({ visible, text, stage }) {
     $('#coach-content').hidden = !visible;
     if (text !== undefined && $('#coach-tip').textContent !== localizeText(text)) {
-      $('#coach-tip').textContent = localizeText(text);
+      setLocalizedText($('#coach-tip'), text);
       $('#coach-content').scrollLeft = 0;
     }
     if (stage !== undefined && $('#coach-stage').textContent !== localizeText(stage))
-      $('#coach-stage').textContent = localizeText(stage);
+      setLocalizedText($('#coach-stage'), stage);
     const duration = hintMarquee.update(visible);
     if (visible) coachContent.dataset.hintDuration = String(duration);
     return duration;
@@ -340,7 +346,7 @@ function render() {
     'has-full-player-names',
     game.players.slice(1).some((p) => ['viktor', 'jungleman', 'dwan'].includes(p.botProfile)),
   );
-  $('#table-size-label').textContent = localizeText(count + ' 人无限注');
+  setLocalizedText($('#table-size-label'), count + ' 人无限注');
   const displayBoard = game.practiceBoard || game.board;
   const hero = game.players[0],
     newHand = game.hand !== lastHand,
@@ -349,18 +355,21 @@ function render() {
     game.showdown && !hero.folded
       ? new Set(evaluate([...hero.hole, ...game.board]).cards.map((c) => c.key))
       : new Set();
-  $('#hand-number').textContent = localizeText(String(game.hand).padStart(2, '0'));
+  setLocalizedText($('#hand-number'), String(game.hand).padStart(2, '0'));
   $('#replay-label').hidden = !game.replayAttempt;
-  $('#replay-label').textContent = localizeText('重打 ' + game.replayAttempt);
+  setLocalizedText($('#replay-label'), '重打 ' + game.replayAttempt);
   $('#replay-note').hidden = !game.replayAttempt;
-  $('#street-label').textContent = localizeText(
+  setLocalizedText(
+    $('#street-label'),
     game.phase === 'done' ? '本手结束' : streets[game.street] || '准备发牌',
   );
-  $('#pot-value').textContent = localizeText(
+  setLocalizedText(
+    $('#pot-value'),
     format(game.phase === 'done' ? game.potAtShowdown : potSize(game)),
   );
   $('.pot').classList.toggle('pot-changed', boardChanged);
-  $('#board').innerHTML = localizeHTML(
+  setLocalizedHTML(
+    $('#board'),
     Array.from({ length: 5 }, (_, i) =>
       displayBoard[i]
         ? card(displayBoard[i], {
@@ -371,7 +380,8 @@ function render() {
         : `<div class="board-slot" aria-label="未发出的公共牌">${['♠', '♣', '♥', '♦', '♠'][i]}</div>`,
     ).join(''),
   );
-  $('#seats').innerHTML = localizeHTML(
+  setLocalizedHTML(
+    $('#seats'),
     game.players
       .slice(1)
       .map((p) => {
@@ -395,7 +405,8 @@ function render() {
       .join(''),
   );
   preparePortraits($('#seats'));
-  $('#hero-cards').innerHTML = localizeHTML(
+  setLocalizedHTML(
+    $('#hero-cards'),
     hero.hole
       .map((c, i) => card(c, { animate: newHand, delay: 420 + i * 130, best: heroBest.has(c.key) }))
       .join(''),
@@ -404,7 +415,8 @@ function render() {
     heroWinner = game.winners.find((w) => w.id === 0),
     showHeroRank = game.board.length === 5 && (game.revealed || game.showdown);
   heroRank.hidden = !showHeroRank && !heroWinner;
-  heroRank.innerHTML = localizeHTML(
+  setLocalizedHTML(
+    heroRank,
     (heroWinner ? winnerIcon : '') +
       (showHeroRank
         ? (hero.folded ? '已弃牌 · ' : '') + evaluate([...hero.hole, ...game.board]).label
@@ -413,42 +425,47 @@ function render() {
   heroRank.classList.toggle('rank-winner', !!heroWinner);
   heroRank.classList.toggle('winner-indicator', !!heroWinner);
   if (heroWinner) {
-    heroRank.setAttribute(
-      'aria-label',
-      localizeText(`你 获得底池 ${format(heroWinner.amount)} 筹码`),
+    setLocalizedAttribute(heroRank, 'aria-label', `你 获得底池 ${format(heroWinner.amount)} 筹码`);
+    setLocalizedAttribute(
+      heroRank,
+      'title',
+      `${heroWinner.label} · 获得 ${format(heroWinner.amount)} 筹码`,
     );
-    heroRank.title = localizeText(`${heroWinner.label} · 获得 ${format(heroWinner.amount)} 筹码`);
   } else {
     heroRank.removeAttribute('aria-label');
     heroRank.removeAttribute('title');
   }
   $('.hero-area').classList.toggle('hero-folded', hero.folded);
   $('.hero-name').classList.toggle('is-active', game.actor === 0);
-  $('#hero-stack').textContent = localizeText(format(hero.stack));
+  setLocalizedText($('#hero-stack'), format(hero.stack));
   const heroPosition = seatPosition(game, 0);
-  $('#hero-position').textContent = localizeText(heroPosition);
+  setLocalizedText($('#hero-position'), heroPosition);
   $('#hero-position').dataset.position = heroPosition;
-  $('#hero-position').title = localizeText(positionNames[heroPosition]);
+  setLocalizedAttribute($('#hero-position'), 'title', positionNames[heroPosition]);
   const heroRecentAction = visibleRecentAction(hero);
   $('#hero-last-action').hidden = !heroRecentAction;
-  $('#hero-last-action').innerHTML = localizeHTML(
+  setLocalizedHTML(
+    $('#hero-last-action'),
     heroRecentAction ? seatAction(hero, { recent: true }) : '',
   );
-  $('#session-stack').innerHTML = localizeHTML(`${format(hero.stack)}<span>CHIPS</span>`);
+  setLocalizedHTML($('#session-stack'), `${format(hero.stack)}<span>CHIPS</span>`);
   const diff = hero.stack - game.stats.buyin;
-  $('#session-change').textContent = localizeText(
+  setLocalizedText(
+    $('#session-change'),
     game.stats.hands
       ? `${diff >= 0 ? '+' : ''}${format(diff)} 筹码 · 本次练习净变化`
       : '从这一手开始积累经验',
   );
   $('#session-change').classList.toggle('negative', diff < 0);
-  $('#stat-hands').textContent = localizeText(game.stats.hands);
-  $('#stat-wins').textContent = localizeText(game.stats.wins);
-  $('#stat-winrate').textContent = localizeText(
+  setLocalizedText($('#stat-hands'), game.stats.hands);
+  setLocalizedText($('#stat-wins'), game.stats.wins);
+  setLocalizedText(
+    $('#stat-winrate'),
     game.stats.hands ? Math.round((game.stats.wins / game.stats.hands) * 100) + '%' : '—',
   );
   const activityText = createActivityFormatter(game.players);
-  activityList.innerHTML = localizeHTML(
+  setLocalizedHTML(
+    activityList,
     game.logs
       .slice()
       .reverse()
@@ -458,7 +475,7 @@ function render() {
       )
       .join(''),
   );
-  $('#activity-count').textContent = localizeText(game.phase === 'done' ? 'FINISHED' : 'LIVE');
+  setLocalizedText($('#activity-count'), game.phase === 'done' ? 'FINISHED' : 'LIVE');
   const done = game.phase === 'done';
   $('#arena').classList.toggle('is-done', done);
   $('.decision-strip').hidden = done;
@@ -466,7 +483,8 @@ function render() {
     .querySelectorAll('input[name="difficulty"]')
     .forEach((input) => (input.checked = input.value === game.difficulty));
   opponents.refresh();
-  $('#board-caption').textContent = localizeText(
+  setLocalizedText(
+    $('#board-caption'),
     game.practiceBoard
       ? '练习补牌 · 五张公共牌，不影响结算'
       : done && game.showdown
@@ -483,17 +501,17 @@ function render() {
   );
   const details = potDetails();
   const potButton = $('#pot-details-button');
-  potButton.textContent = localizeText('明细');
-  potButton.setAttribute(
+  setLocalizedText(potButton, '明细');
+  setLocalizedAttribute(
+    potButton,
     'aria-label',
-    localizeText(
-      details.pots.length > 1
-        ? '查看底池明细：主池及 ' + (details.pots.length - 1) + ' 个边池'
-        : '查看底池明细',
-    ),
+    details.pots.length > 1
+      ? '查看底池明细：主池及 ' + (details.pots.length - 1) + ' 个边池'
+      : '查看底池明细',
   );
   if (details.pots.length > 1)
-    $('#board-caption').textContent = localizeText(
+    setLocalizedText(
+      $('#board-caption'),
       (done ? '已分别结算' : '当前投入') +
         ' · 主池 ' +
         format(details.pots[0].amount) +
@@ -515,16 +533,17 @@ function render() {
   $('#next-button').hidden = !done;
   $('#continue-deal-button').hidden = !canFastFinish() && !finishing;
   $('#continue-deal-button').disabled = finishing;
-  $('#continue-deal-button').textContent = localizeText(finishing ? '正在发牌…' : '立刻发完');
+  setLocalizedText($('#continue-deal-button'), finishing ? '正在发牌…' : '立刻发完');
   $('#action-panel').classList.toggle('folded-actions', hero.folded && !done);
   $('#restart-hand-button').hidden = !canRestartHand(game);
   $('#action-panel').classList.toggle('settled-actions', done);
-  $('#next-button').textContent = localizeText(hero.stack === 0 ? '补充筹码，继续练习' : '下一手');
+  setLocalizedText($('#next-button'), hero.stack === 0 ? '补充筹码，继续练习' : '下一手');
   $('#next-button').classList.toggle('has-mobile-label', hero.stack === 0);
-  $('#next-button').dataset.mobileLabel = localizeText('补充筹码');
-  $('#next-button').setAttribute(
+  setLocalizedAttribute($('#next-button'), 'data-mobile-label', '补充筹码');
+  setLocalizedAttribute(
+    $('#next-button'),
     'aria-label',
-    localizeText(hero.stack === 0 ? '补充筹码，继续练习' : '下一手'),
+    hero.stack === 0 ? '补充筹码，继续练习' : '下一手',
   );
   for (const b of [$('#fold-button'), $('#call-button')]) b.disabled = !legal.enabled;
   $('#raise-button').disabled = !legal.enabled || !legal.canRaise;
@@ -541,27 +560,29 @@ function render() {
     slider.max = max;
     slider.step = CHIP_UNIT;
     slider.value = bet;
-    $('#call-button').innerHTML = localizeHTML(
+    setLocalizedHTML(
+      $('#call-button'),
       legal.canCheck
         ? '<span>过牌</span>'
         : `<span class="button-label-desktop">${legal.callAmount < legal.toCall ? '全下跟注' : '跟注'}</span><span class="button-label-mobile" aria-hidden="true">${legal.callAmount < legal.toCall ? '全下' : '跟注'}</span><strong>${format(legal.callAmount)}</strong>`,
     );
-    $('#call-button').setAttribute(
+    setLocalizedAttribute(
+      $('#call-button'),
       'aria-label',
-      localizeText(
-        legal.canCheck
-          ? '过牌'
-          : `${legal.callAmount < legal.toCall ? '全下跟注' : '跟注'} ${format(legal.callAmount)}`,
-      ),
+      legal.canCheck
+        ? '过牌'
+        : `${legal.callAmount < legal.toCall ? '全下跟注' : '跟注'} ${format(legal.callAmount)}`,
     );
-    $('#decision-text').textContent = localizeText(
+    setLocalizedText(
+      $('#decision-text'),
       legal.canCheck
         ? '轮到你了，可以过牌或主动下注。'
         : `轮到你了，跟注需要 ${format(legal.callAmount)} 筹码。${legal.raiseReopened ? '' : '本轮加注权未重开，仅可跟注或弃牌。'}`,
     );
-  } else if (done) $('#decision-text').textContent = localizeText('');
+  } else if (done) setLocalizedText($('#decision-text'), '');
   else if (game.phase === 'between')
-    $('#decision-text').textContent = localizeText(
+    setLocalizedText(
+      $('#decision-text'),
       game.revealed
         ? game.board.length === 5
           ? '摊牌 · 底牌已亮出，正在结算各底池…'
@@ -569,7 +590,8 @@ function render() {
         : '本轮下注结束，正在翻开公共牌…',
     );
   else
-    $('#decision-text').textContent = localizeText(
+    setLocalizedText(
+      $('#decision-text'),
       hero.folded
         ? `${game.players[game.actor]?.name || '对手'} 正在行动，你可以观察这一手。`
         : `${game.players[game.actor]?.name || '对手'} 正在思考，请稍候。`,
@@ -588,22 +610,23 @@ function render() {
 }
 function updateBet() {
   const legal = legalActions(game, 0);
-  $('#bet-value').textContent = localizeText(format(bet));
+  setLocalizedText($('#bet-value'), format(bet));
   const action = raiseCaption(
     { street: game.street, history: game.history, currentBet: game.currentBet, legal },
     bet,
   );
-  $('#raise-button').innerHTML = localizeHTML(
+  setLocalizedHTML(
+    $('#raise-button'),
     `<span class="button-label-desktop">${action}</span><span class="button-label-mobile" aria-hidden="true">${bet === legal.maxRaiseTo ? '全下' : '加注'}</span><strong>${format(bet)}</strong>`,
   );
-  $('#raise-button').setAttribute('aria-label', localizeText(action + ' ' + format(bet)));
+  setLocalizedAttribute($('#raise-button'), 'aria-label', action + ' ' + format(bet));
 }
 
 function updateCoach(force = false) {
   const toggle = $('#hint-toggle');
   toggle.setAttribute('aria-pressed', String(hints));
   toggle.setAttribute('aria-checked', String(hints));
-  toggle.title = localizeText(hints ? '牌桌提示已开启' : '牌桌提示已关闭');
+  setLocalizedAttribute(toggle, 'title', hints ? '牌桌提示已开启' : '牌桌提示已关闭');
   $('#coach-disabled').hidden = hints || compactCoach.matches;
   const p = game.players[0],
     e = evaluate([...p.hole, ...game.board]);
@@ -851,14 +874,16 @@ function renderPotDetails(details) {
         .join(''),
     crown = winnerIcon.replace('winner-icon', 'pot-winner-icon');
   dialog.classList.toggle('is-settled', done);
-  $('#pot-dialog-title').textContent = localizeText(done ? '本手结算' : '主池与边池');
+  setLocalizedText($('#pot-dialog-title'), done ? '本手结算' : '主池与边池');
   $('#pot-dialog-note').hidden = done;
-  $('#pot-dialog-note').textContent = localizeText(
+  setLocalizedText(
+    $('#pot-dialog-note'),
     done
       ? ''
       : '金额按当前投入显示；尚未行动的玩家需跟注才能保留相应资格。仅全下额度形成边池，未被跟注的部分待跟注或退还。',
   );
-  $('#pot-dialog-content').innerHTML = localizeHTML(
+  setLocalizedHTML(
+    $('#pot-dialog-content'),
     details.pots
       .map((pot) => {
         const participants = pot.eligible.map((id) => game.players[id].name).join('、');
@@ -915,9 +940,7 @@ $('#player-count').onchange = (e) => {
   saveTablePreferences({ playerCount: requestedCount, difficulty: game.difficulty });
   const note = $('#table-change-note');
   note.hidden = requestedCount === game.players.length;
-  note.textContent = localizeText(
-    `下一手切换为 ${requestedCount} 人桌 · 筹码恢复 5,000，统计重新开始`,
-  );
+  setLocalizedText(note, `下一手切换为 ${requestedCount} 人桌 · 筹码恢复 5,000，统计重新开始`);
 };
 function toggleOpponentHand(id) {
   const p = game.players[id];
@@ -953,7 +976,7 @@ function updateSound() {
   const b = $('#sound-button');
   b.setAttribute('aria-pressed', String(sound));
   b.setAttribute('aria-checked', String(sound));
-  b.title = localizeText(sound ? '音效已开启' : '音效已关闭');
+  setLocalizedAttribute(b, 'title', sound ? '音效已开启' : '音效已关闭');
 }
 $('#sound-button').onclick = () => {
   sound = !sound;

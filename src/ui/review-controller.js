@@ -1,4 +1,4 @@
-import { localizeText, localizeHTML, formatChips } from '../i18n/index.js';
+import { formatChips, setLocalizedText, setLocalizedHTML } from '../i18n/index.js';
 import {
   createReviewInput,
   actionLabel,
@@ -68,15 +68,17 @@ export function createReviewController({ card }) {
       analysis = last.analysis,
       decision = steps[selected],
       result = analysis?.steps[selected];
-    $('#review-dialog-title').textContent = localizeText('第 ' + input.hand + ' 手 · 决策复盘');
-    $('#review-result-change').textContent = localizeText(
+    setLocalizedText($('#review-dialog-title'), '第 ' + input.hand + ' 手 · 决策复盘');
+    setLocalizedText(
+      $('#review-result-change'),
       input.outcome.profit < 0
         ? format(input.outcome.profit) + ' 筹码'
         : input.outcome.profit > 0
           ? '+' + format(input.outcome.profit) + ' 筹码'
           : '0 筹码',
     );
-    $('#review-result-context').textContent = localizeText(
+    setLocalizedText(
+      $('#review-result-context'),
       analysis?.overview.settlement ||
         (input.outcome.folded
           ? '本手已弃牌'
@@ -86,7 +88,8 @@ export function createReviewController({ card }) {
               : '本手获得底池'
             : '本手未获得底池'),
     );
-    $('#review-analysis-state').textContent = localizeText(
+    setLocalizedText(
+      $('#review-analysis-state'),
       last.status === 'error'
         ? '分析未完成，可以重试。'
         : analysis
@@ -95,15 +98,14 @@ export function createReviewController({ card }) {
             ? '正在分析决策 ' + last.progress + ' / ' + steps.length + '…'
             : '正在准备这手的决策快照…',
     );
-    $('#review-summary-title').textContent = localizeText(
-      analysis ? analysis.title : '回到当时的决策',
-    );
-    $('#review-overview').innerHTML = localizeHTML(overviewMarkup(analysis?.overview));
+    setLocalizedText($('#review-summary-title'), analysis ? analysis.title : '回到当时的决策');
+    setLocalizedHTML($('#review-overview'), overviewMarkup(analysis?.overview));
     $('#review-retry').hidden = last.status !== 'error';
     $('#review-priority').hidden = !analysis || !steps.length;
     if (analysis) {
       $('#review-priority').dataset.reviewIndex = analysis.priorityIndex;
-      $('#review-priority').textContent = localizeText(
+      setLocalizedText(
+        $('#review-priority'),
         analysis.attention || analysis.consider ? '查看优先复盘的决策' : '从第一步回看',
       );
     }
@@ -114,7 +116,8 @@ export function createReviewController({ card }) {
       focusedIndex = timeline.contains(document.activeElement)
         ? document.activeElement.dataset.reviewIndex
         : null;
-    timeline.innerHTML = localizeHTML(
+    setLocalizedHTML(
+      timeline,
       steps
         .map((s, i) => {
           const r = analysis?.steps[i],
@@ -129,42 +132,47 @@ export function createReviewController({ card }) {
       timeline
         .querySelector(`[data-review-index="${focusedIndex}"]`)
         ?.focus({ preventScroll: true });
-    $('#review-step-count').textContent = localizeText(steps.length + ' 次行动');
+    setLocalizedText($('#review-step-count'), steps.length + ' 次行动');
     $('#review-empty').hidden = !!decision;
     $('#review-detail').hidden = !decision;
     if (!decision) return;
-    $('#review-detail-title').textContent = localizeText(
+    setLocalizedText(
+      $('#review-detail-title'),
       '第 ' + (selected + 1) + ' 步 · ' + STREET_NAMES[decision.street],
     );
-    $('#review-selected-status').textContent = localizeText(
+    setLocalizedText(
+      $('#review-selected-status'),
       result?.coaching.label || (result ? statusNames[result.status] : '分析中'),
     );
     $('#review-selected-status').className =
       'review-status ' + (coachingStatus(result) || 'pending');
-    $('#review-hole').innerHTML = localizeHTML(
+    setLocalizedHTML(
+      $('#review-hole'),
       decision.hole.map((c) => card(c, { small: true })).join(''),
     );
-    $('#review-board').innerHTML = localizeHTML(
+    setLocalizedHTML(
+      $('#review-board'),
       decision.board.length
         ? decision.board.map((c) => card(c, { small: true })).join('')
         : '<span class="review-no-board">公共牌尚未发出</span>',
     );
-    $('#review-position').textContent = localizeText(decision.position);
-    $('#review-pot').textContent = localizeText(format(decision.pot));
-    $('#review-stack').textContent = localizeText(format(decision.stack));
-    $('#review-your-action').textContent = localizeText(actionLabel(decision));
-    $('#review-suggestion').textContent = localizeText(
+    setLocalizedText($('#review-position'), decision.position);
+    setLocalizedText($('#review-pot'), format(decision.pot));
+    setLocalizedText($('#review-stack'), format(decision.stack));
+    setLocalizedText($('#review-your-action'), actionLabel(decision));
+    setLocalizedText(
+      $('#review-suggestion'),
       result?.coaching.suggestion || result?.recommendation || '正在比较可选行动…',
     );
-    $('#review-coach-explanation').textContent = localizeText(
+    setLocalizedText(
+      $('#review-coach-explanation'),
       result?.coaching.explanation || '正在比较当时的合法选择…',
     );
-    $('#review-coach-ev').textContent = localizeText(result?.coaching.evText || '');
+    setLocalizedText($('#review-coach-ev'), result?.coaching.evText || '');
     $('#review-coach-ev').hidden = !result || result.coaching.evKind === 'uncertain';
-    $('#review-coach-followup').textContent = localizeText(
-      result?.coaching.followUp || '分析完成后展示。',
-    );
-    $('#review-routes').innerHTML = localizeHTML(
+    setLocalizedText($('#review-coach-followup'), result?.coaching.followUp || '分析完成后展示。');
+    setLocalizedHTML(
+      $('#review-routes'),
       result
         ? [result.routes.primary, result.routes.secondary]
             .filter(Boolean)
@@ -177,24 +185,28 @@ export function createReviewController({ card }) {
     );
     const sim = result?.simulation;
     const signed = (v) => (v > 0 ? '+' : '') + format(v);
-    $('#review-simulation').innerHTML = localizeHTML(
+    setLocalizedHTML(
+      $('#review-simulation'),
       sim
         ? `<h3>候选行动模拟</h3><p>${result.coaching.modelImprovement ? '配对比较支持一个比实际操作更好的候选；仍依赖模拟范围和后续策略。' : '范围或抽样误差可能改变排序，暂未确认另一动作更好。'}</p><table><caption>每个行动、每种范围模拟 ${sim.trials} 手 · 从当前决策起的筹码净变化</caption><thead><tr><th scope="col">行动</th><th scope="col">随机范围</th><th scope="col">行动加权</th></tr></thead><tbody>${sim.rows.map((row) => `<tr><th scope="row">${actionLabel(decision, row.action.action, row.action.amount)}</th>${row.scenarios.map((v) => `<td>${signed(v.ev)}<small>约 ±${format(v.margin)}</small><small>抽样获池 ${pct(v.winRate)}</small></td>`).join('')}</tr>`).join('')}</tbody></table><p class="review-price-note">获池包括平分或拿到部分底池，不等于净盈利；这里只显示抽样比例，不能当作真实胜率。</p><details><summary>模拟如何处理后续行动</summary><p>${esc(sim.note)}</p><p>候选使用相同抽样牌局，与实际动作逐一比较；小样本和缺少不同结果时仅供讨论，不据此确认长期收益。真实隐藏底牌、后续牌序与最终赢家均未使用。</p></details>`
         : result
           ? '<p class="review-price-note">这个旧快照缺少完整行动状态，无法进行后续行动模拟；保留公开信息的范围与价格分析。</p>'
           : '<p class="review-price-note">正在模拟各个合法行动与后续牌局…</p>',
     );
-    $('#review-decision-title').textContent = localizeText(result?.title || '依据当时的信息分析');
-    $('#review-reason').textContent = localizeText(
+    setLocalizedText($('#review-decision-title'), result?.title || '依据当时的信息分析');
+    setLocalizedText(
+      $('#review-reason'),
       result?.reason ||
         '使用当时的底牌、公共牌、公开行动和筹码情况，不读取对手隐藏底牌或后面发出的牌。',
     );
-    $('#review-evidence').innerHTML = localizeHTML(
+    setLocalizedHTML(
+      $('#review-evidence'),
       result ? result.evidence.map((fact) => `<li>${fact}</li>`).join('') : '',
     );
-    $('#review-confidence').textContent = localizeText(result?.confidence || '等待分析');
-    $('#review-plan').textContent = localizeText(result?.plan || '分析完成后展示后续处理路线。');
-    $('#review-model-note').textContent = localizeText(
+    setLocalizedText($('#review-confidence'), result?.confidence || '等待分析');
+    setLocalizedText($('#review-plan'), result?.plan || '分析完成后展示后续处理路线。');
+    setLocalizedText(
+      $('#review-model-note'),
       result
         ? (result.metrics.method === 'enumeration'
             ? `河牌单挑：完整枚举 ${result.metrics.trials} 种合法对手底牌组合；组合层面没有抽样误差，真实范围仍未知。`
@@ -202,23 +214,25 @@ export function createReviewController({ card }) {
             ` 随机 / 行动加权权益：${pct(result.metrics.randomEquity)} / ${pct(result.metrics.weightedEquity)}。两种范围的结果差异不是置信区间。`
         : '',
     );
-    $('#review-lesson').textContent = localizeText(
+    setLocalizedText(
+      $('#review-lesson'),
       result?.lesson || '结果与决策分开看，复盘完成后会给出具体的练习重点。',
     );
-    $('#review-price').textContent = localizeText(
+    setLocalizedText(
+      $('#review-price'),
       decision.legal.callAmount ? (result ? pct(result.metrics.required) : '…') : '无需跟注',
     );
-    $('#review-equity').textContent = localizeText(
+    setLocalizedText(
+      $('#review-equity'),
       result && result.metrics.contestable
         ? pct(result.metrics.equityLow) === pct(result.metrics.equityHigh)
           ? '约 ' + pct(result.metrics.equityLow)
           : pct(result.metrics.equityLow) + '–' + pct(result.metrics.equityHigh)
         : '—',
     );
-    $('#review-contestable').textContent = localizeText(
-      result ? format(result.metrics.contestable) : '…',
-    );
-    $('#review-price-note').textContent = localizeText(
+    setLocalizedText($('#review-contestable'), result ? format(result.metrics.contestable) : '…');
+    setLocalizedText(
+      $('#review-price-note'),
       result?.metrics.sidePots
         ? '按你有资格争夺的各池分别估计；超出全下额度的边池不计入。'
         : result?.metrics.closing
@@ -229,7 +243,8 @@ export function createReviewController({ card }) {
       .map((a, index) => ({ ...a, label: historyActionLabel(decision.history, index) }))
       .filter((a) => a.street === decision.street)
       .slice(-6);
-    $('#review-public-actions').innerHTML = localizeHTML(
+    setLocalizedHTML(
+      $('#review-public-actions'),
       publicActions.length
         ? publicActions
             .map(
@@ -240,13 +255,14 @@ export function createReviewController({ card }) {
     );
     $('#review-step-prev').disabled = selected === 0;
     $('#review-step-next').disabled = selected >= steps.length - 1;
-    $('#review-step-current').textContent = localizeText(selected + 1 + ' / ' + steps.length);
+    setLocalizedText($('#review-step-current'), selected + 1 + ' / ' + steps.length);
   }
   function receive(message, id) {
     if (id !== job || !last) return;
     if (message.type === 'progress') {
       last.progress = message.done;
-      $('#review-analysis-state').textContent = localizeText(
+      setLocalizedText(
+        $('#review-analysis-state'),
         '正在分析决策 ' + message.done + ' / ' + message.total + '…',
       );
       return;

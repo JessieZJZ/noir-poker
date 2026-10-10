@@ -127,18 +127,60 @@ export function formatChips(value) {
   }).format(value);
 }
 const attributes = ['aria-label', 'title', 'data-mobile-label', 'placeholder'];
+// Remember source text on the actual DOM nodes. Language changes only replace
+// presentation values; controls, listeners, focus and game objects stay alive.
+const textSources = new WeakMap();
+const attributeSources = new WeakMap();
+function translatedValue(records, target, key, current) {
+  let record = records.get(target);
+  if (!record) records.set(target, (record = new Map()));
+  const previous = record.get(key);
+  const source = previous?.output === current ? previous.source : current;
+  const output = localizeText(source);
+  record.set(key, { source, output });
+  return output;
+}
 export function localizeDocument(root) {
   const document = root.ownerDocument ?? root;
   const walker = document.createTreeWalker(root, 4);
   for (let node = walker.nextNode(); node; node = walker.nextNode()) {
     if (node.parentElement?.closest('script, style, [translate="no"]')) continue;
-    node.nodeValue = localizeText(node.nodeValue);
+    const initial = node.parentElement?.getAttribute('data-i18n-initial');
+    const output = initial
+      ? localizeText(initial).slice(0, 1)
+      : translatedValue(textSources, node, 'text', node.nodeValue);
+    if (node.nodeValue !== output) node.nodeValue = output;
   }
-  for (const el of root.querySelectorAll('*')) {
+  const elements = [...(root.nodeType === 1 ? [root] : []), ...root.querySelectorAll('*')];
+  for (const el of elements) {
     if (el.closest('[translate="no"]')) continue;
-    for (const name of attributes)
-      if (el.hasAttribute(name)) el.setAttribute(name, localizeText(el.getAttribute(name)));
+    const names = el.matches('meta[name="description"]') ? [...attributes, 'content'] : attributes;
+    for (const name of names) {
+      if (!el.hasAttribute(name)) continue;
+      const current = el.getAttribute(name);
+      const output = translatedValue(attributeSources, el, name, current);
+      if (current !== output) el.setAttribute(name, output);
+    }
   }
+}
+export function setLocalizedText(element, source) {
+  element.textContent = String(source ?? '');
+  localizeDocument(element);
+}
+export function copyLocalizedText(element, sourceElement) {
+  const source = [...sourceElement.childNodes]
+    .map((node) => textSources.get(node)?.get('text')?.source ?? node.textContent)
+    .join('');
+  setLocalizedText(element, source);
+}
+export function setLocalizedHTML(element, source) {
+  element.innerHTML = String(source ?? '');
+  localizeDocument(element);
+}
+export function setLocalizedAttribute(element, name, source) {
+  attributeSources.get(element)?.delete(name);
+  const output = translatedValue(attributeSources, element, name, String(source ?? ''));
+  element.setAttribute(name, output);
 }
 export function localizeHTML(value) {
   const text = String(value ?? '');
@@ -159,15 +201,20 @@ export async function prepareLocale() {
   document.documentElement.lang = locale;
   document.documentElement.dir = 'ltr';
   localizeDocument(document);
-  document.title = localizeText(document.title);
-  const meta = document.querySelector('meta[name="description"]');
-  if (meta) meta.content = localizeText(meta.content);
   const select = document.querySelector('#language-select');
   select.value = locale;
+  // Serialize catalog loading so rapid selections cannot finish out of order.
+  // Do not touch game timers, Workers, settings drafts or hand lifecycle here.
+  let pending = Promise.resolve();
   select.addEventListener('change', () => {
-    setLocale(select.value);
-    // Reload terminates old timers and Workers together, hydrates native
-    // preferences and starts a fresh hand with the saved table configuration.
-    void preferenceStorage.flush().finally(() => location.reload());
+    const requested = select.value;
+    setLocale(requested);
+    pending = pending.then(async () => {
+      await loadLocale(requested);
+      document.documentElement.lang = requested;
+      localizeDocument(document);
+      document.dispatchEvent(new CustomEvent('noir:locale-changed'));
+    });
+    void preferenceStorage.flush();
   });
 }
