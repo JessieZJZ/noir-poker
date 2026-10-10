@@ -42,7 +42,7 @@ test('review separates a lucky bad-price win from a reasonable loss and keeps ev
   }
 });
 
-test('settled controls fill complete one- or two-button rows, including runout and refill', async ({
+test('settled controls fill one complete equal-width row, including runout and refill', async ({
   page,
 }) => {
   for (const mode of ['runout', 'normal', 'refill']) {
@@ -89,18 +89,16 @@ test('settled controls fill complete one- or two-button rows, including runout a
         };
       });
       expect(layout.buttons).toHaveLength(mode === 'runout' ? 4 : 3);
-      // Hover lifts review buttons by 1px without changing their grid row.
       const rows = [...new Set(layout.buttons.map((b) => b.layoutTop))].map((top) =>
         layout.buttons.filter((b) => b.layoutTop === top),
       );
-      expect(rows).toHaveLength(width <= 900 ? 2 : 1);
+      expect(rows).toHaveLength(1);
       for (const button of layout.buttons) {
         expect(button.textFits).toBe(true);
         expect(button.left).toBeGreaterThanOrEqual(layout.left - 1);
         expect(button.right).toBeLessThanOrEqual(layout.left + layout.width + 1);
       }
       for (const [rowIndex, row] of rows.entries()) {
-        if (width <= 900) expect([1, 2]).toContain(row.length);
         expect(Math.abs(row[0].left - layout.left)).toBeLessThan(1);
         expect(Math.abs(row.at(-1).right - layout.left - layout.width)).toBeLessThan(1);
         for (const [i, button] of row.entries()) {
@@ -570,11 +568,14 @@ test('hero recent actions persist within the street and clear on new streets exc
       await page.evaluate(() => window.qa.stop());
       await expect(row.locator('.seat-action-label')).toHaveText('跟注');
       await expect(row.locator('.seat-action-amount')).toHaveText('50');
-      await expect(page.locator('#hero-turn')).toHaveText('等待行动');
+      await expect(page.locator('#hero-turn')).toHaveCount(0);
+      await expect(page.locator('#call-button')).toBeDisabled();
+      expect(await page.evaluate(() => window.noir.getState().actor)).not.toBe('你');
       await assertFits();
 
       await page.evaluate(() => window.qa.respondToHero(150));
-      await expect(page.locator('#hero-turn')).toHaveText('你的回合');
+      await expect(page.locator('#call-button')).toBeEnabled();
+      expect(await page.evaluate(() => window.noir.getState().actor)).toBe('你');
       await expect(row.locator('.seat-action-label')).toHaveText('跟注');
       await page.locator('[data-preset="min"]').click();
       await page.locator('#raise-button').click();
@@ -605,7 +606,8 @@ test('hero recent actions persist within the street and clear on new streets exc
       await page.locator('#fold-button').click();
       await page.evaluate(() => window.qa.stop());
       await expect(row).toHaveText('弃牌');
-      await expect(page.locator('#hero-turn')).toHaveText('已弃牌');
+      expect(await page.evaluate(() => window.noir.getState().players[0].folded)).toBe(true);
+      await expect(page.locator('.game-surface')).toHaveAttribute('data-action-state', 'folded');
       await assertFits();
       await page.evaluate(() => {
         while (window.noir.getState().phase !== 'done') {
@@ -625,7 +627,8 @@ test('hero recent actions persist within the street and clear on new streets exc
       await page.evaluate(() => window.qa.stop());
       await expect(row.locator('.seat-action-label')).toHaveText('2-bet 全下');
       await expect(row.locator('.seat-action-amount')).toHaveText('5,000');
-      await expect(page.locator('#hero-turn')).toHaveText('已全下');
+      expect(await page.evaluate(() => window.noir.getState().players[0].allin)).toBe(true);
+      await expect(page.locator('#call-button')).toBeDisabled();
       await assertFits();
     }
   }

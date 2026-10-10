@@ -20,3 +20,4 @@ document.body.inert = false;
 document.documentElement.dataset.appReady = 'true';
 
 import './styles/i18n.css';
+import './styles/responsive-table.css';

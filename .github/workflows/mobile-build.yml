@@ -42,13 +42,23 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npx playwright install --with-deps chromium
-      - run: npm run test:e2e -- --grep '(public-area|stable-actions|readability-hints|play-viewport|settlement-layout|hint-banner)\.spec\.js'
+      - run: npm run test:e2e -- --grep '(public-area|stable-actions|readability-hints|play-viewport|settlement-layout|hint-banner|responsive-polish)\.spec\.js'
       - uses: actions/upload-artifact@v7.0.2
         if: always()
         with:
           name: table-geometry-results
           path: test-results/
           retention-days: 7
+      - name: Upload screenshots from passing responsive table cases
+        uses: actions/upload-artifact@v7.0.2
+        if: always()
+        with:
+          name: responsive-table-screenshots
+          path: |
+            test-results/**/responsive-*.png
+            test-results/**/responsive-*.json
+          if-no-files-found: warn
+          retention-days: 21
 
   browser-ui:
     needs: table-geometry
@@ -67,7 +77,7 @@ jobs:
       - run: npx playwright install --with-deps chromium
       - run: npm run format:check
       - run: npm run i18n:check
-      - run: npm run test:e2e -- --project=${{ matrix.project }} --grep-invert '(public-area|stable-actions|readability-hints|play-viewport|settlement-layout|hint-banner)\.spec\.js'
+      - run: npm run test:e2e -- --project=${{ matrix.project }} --grep-invert '(public-area|stable-actions|readability-hints|play-viewport|settlement-layout|hint-banner|responsive-polish)\.spec\.js'
       - uses: actions/upload-artifact@v7.0.2
         if: always()
         with:

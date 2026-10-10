@@ -1,0 +1,352 @@
+/* The viewport owns a stable table budget; compact result controls never
+   enlarge the felt. Keep these rules after the older density breakpoints. */
+.main .game-surface {
+  height: auto;
+  flex: none;
+}
+.game-surface > .table-viewport {
+  flex: none;
+  height: var(--table-height, 620px);
+  overflow: clip;
+}
+.game-surface .arena[data-player-count],
+.game-surface .arena.is-done[data-player-count] {
+  display: block;
+  height: var(--arena-height, 620px);
+  min-height: 0;
+  padding: 0;
+}
+.game-surface .arena[data-player-count] .poker-table {
+  inset: 24px 2% 42px;
+}
+.game-surface .arena[data-player-count] .table-center {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: none;
+}
+.game-surface .arena[data-player-count] .hero-area {
+  position: absolute;
+  left: 50%;
+  top: auto;
+  bottom: 8px;
+  transform: translateX(-50%);
+  padding: 0 0 18px;
+}
+.game-surface .hero-rank-slot {
+  position: absolute;
+  top: -24px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: max-content;
+  height: 20px;
+  margin: 0;
+}
+.game-surface .hero-name {
+  position: relative;
+  inset: auto;
+  transform: none;
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  height: 36px;
+  margin: 8px 0 0;
+  gap: 0;
+}
+.game-surface .hero-identity {
+  width: 100%;
+  text-align: center;
+}
+.game-surface .hero-action-slot {
+  position: absolute;
+  top: calc(100% + 2px);
+  left: 50%;
+  transform: translateX(-50%);
+  justify-content: center;
+  height: 16px;
+  width: 180px;
+}
+.game-surface .hero-name .hero-last-action {
+  justify-content: center;
+}
+.game-surface .seat-rank-slot {
+  display: grid;
+  place-items: center;
+  height: 24px;
+}
+.game-surface .seat-rank-slot .hand-rank {
+  margin: 0;
+}
+.game-surface .arena.is-done .pot {
+  min-height: 0;
+}
+.game-surface .action,
+.game-surface .action:hover:not(:disabled),
+.game-surface .action:active:not(:disabled) {
+  transform: none;
+  transition:
+    background 0.18s,
+    color 0.18s,
+    border-color 0.18s,
+    box-shadow 0.18s;
+}
+.game-surface[data-action-state='ready'] .action-dock {
+  background: #11231f;
+  border-top-color: #457568;
+}
+.game-surface[data-action-state='ready'] .action:enabled {
+  opacity: 1;
+}
+.game-surface .action:disabled,
+.game-surface .bet-presets button:disabled {
+  opacity: 1;
+  color: #63717b;
+  background: #151e24;
+  border-color: #28343c;
+  box-shadow: none;
+}
+.game-surface[data-action-state='waiting'] .action-dock {
+  background: #10181f;
+  border-top-color: #253039;
+}
+.game-surface .action:enabled:hover {
+  border-color: #9bddc7;
+  box-shadow: inset 0 0 0 1px #9bddc740;
+}
+.game-surface .action:enabled:active {
+  filter: brightness(0.9);
+}
+.game-surface:has(.folded-actions) > .action-dock,
+.game-surface:has(.settled-actions) > .action-dock {
+  height: calc(68px + var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)));
+}
+.game-surface:has(.folded-actions) .decision-strip {
+  display: none;
+}
+.game-surface .action-panel.folded-actions,
+.game-surface .action-panel.settled-actions {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+}
+.game-surface .action-panel.folded-actions > button,
+.game-surface .action-panel.settled-actions > button {
+  flex: 1 1 0;
+  width: 0;
+  min-width: 0;
+  height: 46px;
+  min-height: 46px;
+  max-width: none;
+  margin: 0;
+  padding: 6px;
+  font-size: 14px;
+  white-space: nowrap;
+}
+@media (min-width: 901px) {
+  .game-surface .board > .playing-card,
+  .game-surface .board-slot {
+    width: clamp(60px, 6vw, 76px);
+    height: clamp(86px, 8.6vw, 109px);
+  }
+  .main .action-panel .action {
+    height: 52px;
+    min-height: 52px;
+  }
+  .main > .site-footer {
+    align-self: start;
+  }
+}
+@media (max-width: 900px) {
+  .game-surface .arena[data-player-count] .poker-table {
+    inset: 16px 1% 38px;
+    padding: 7px;
+  }
+  .game-surface .arena[data-player-count] .seat {
+    min-width: var(--seat-width, 76px);
+    transform: translateX(-50%);
+  }
+  .game-surface .arena[data-player-count] .seat .seat-profile {
+    width: var(--seat-width, 76px);
+    min-width: var(--seat-width, 76px);
+    max-width: var(--seat-width, 76px);
+    grid-template-rows: 14px 24px 20px;
+    padding: 3px;
+    gap: 0 2px;
+  }
+  .game-surface .seat .mini-cards,
+  .game-surface .seat .mini-cards.revealed-cards {
+    align-items: flex-start;
+    height: 40px;
+    padding-top: 3px;
+    margin-bottom: -12px;
+    gap: 4px;
+  }
+  .game-surface .seat-rank-slot {
+    height: 0;
+  }
+  .game-surface .seat-rank-slot .hand-rank {
+    position: absolute;
+    top: 46px;
+    right: 4px;
+    max-width: calc(var(--seat-width, 76px) - 26px);
+    padding: 1px 2px;
+    font-size: 9px;
+    white-space: nowrap;
+  }
+  .game-surface .seat:has(.seat-rank-slot .hand-rank) .seat-style-label {
+    visibility: hidden;
+  }
+  .game-surface .arena[data-player-count] .seat .seat-action {
+    height: 16px;
+    min-height: 16px;
+    max-width: var(--seat-width, 76px);
+    padding: 0;
+    gap: 4px;
+    flex-wrap: nowrap;
+    white-space: nowrap;
+    font-size: 10px;
+    line-height: 16px;
+  }
+  .game-surface .seat-action-amount {
+    font-size: inherit;
+  }
+  .game-surface .arena[data-player-count] .board {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    width: calc(var(--public-card-width, 48px) * 3 + 12px);
+    gap: 6px;
+  }
+  .game-surface .arena[data-player-count] .board > .playing-card,
+  .game-surface .arena[data-player-count] .board-slot {
+    width: var(--public-card-width, 48px);
+    height: calc(var(--public-card-width, 48px) * 1.44);
+  }
+  .game-surface .hero-cards {
+    min-height: calc(var(--hero-card-width, 62px) * 1.44);
+    gap: 8px;
+  }
+  .game-surface .hero-cards .playing-card {
+    width: var(--hero-card-width, 62px);
+    height: calc(var(--hero-card-width, 62px) * 1.44);
+  }
+  .game-surface .hero-name {
+    margin-top: 8px;
+  }
+  .game-surface .pot strong {
+    line-height: 1.2;
+  }
+  .game-surface > .action-dock {
+    height: calc(116px + var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)));
+  }
+  .game-surface .decision-strip {
+    height: 24px;
+    padding: 3px 12px;
+  }
+  .game-surface .action-panel {
+    padding: 0 12px 10px;
+    gap: 8px;
+  }
+  .game-surface .bet-controls {
+    display: grid;
+    grid-template-columns: minmax(64px, 0.8fr) minmax(0, 2fr);
+    align-items: center;
+    gap: 8px;
+  }
+  .game-surface .bet-controls input {
+    grid-column: 1;
+    min-width: 0;
+    height: 28px;
+    margin: 0;
+  }
+  .game-surface .bet-presets {
+    grid-column: 2;
+    gap: 4px;
+  }
+  .game-surface .bet-presets button {
+    min-height: 28px;
+    padding: 3px 1px;
+    font-size: 10px;
+  }
+  .game-surface .arena.dense-table .seat .seat-profile {
+    grid-template-rows: 12px 18px 16px;
+    padding: 2px 3px;
+  }
+  .game-surface .arena.dense-table .hero-area {
+    padding-bottom: 16px;
+  }
+  .game-surface .arena.dense-table .hero-name {
+    height: 32px;
+    margin-top: 6px;
+  }
+  .game-surface .arena.dense-table .hero-rank-slot {
+    top: -20px;
+    height: 18px;
+  }
+  .game-surface .arena.dense-table .seat-profile strong {
+    font-size: 10px;
+  }
+  .game-surface .arena.dense-table .seat-profile .seat-style-label {
+    font-size: 8px;
+    line-height: 1.05;
+  }
+  .game-surface .arena.dense-table .seat-profile > .avatar {
+    width: 16px;
+    height: 16px;
+  }
+  .game-surface .arena.dense-table .seat-peek {
+    width: 18px;
+    height: 16px;
+    min-height: 16px;
+  }
+  .game-surface .arena.dense-table .seat .mini-cards {
+    height: 28px;
+    margin-bottom: -12px;
+  }
+  .game-surface .arena.dense-table .seat .card-back {
+    width: 18px;
+    height: 25px;
+  }
+  .game-surface .arena.dense-table .mini-cards .playing-card.small {
+    width: 19px;
+    height: 27px;
+  }
+  .game-surface .arena.dense-table .seat-rank-slot {
+    height: 0;
+  }
+  .game-surface .arena.dense-table .seat-rank-slot .hand-rank {
+    top: 30px;
+    font-size: 9px;
+    padding: 1px 3px;
+  }
+  .game-surface .arena.dense-table .seat .seat-action {
+    height: 14px;
+    min-height: 14px;
+    line-height: 14px;
+    font-size: 9px;
+  }
+}
+@media (max-width: 900px) and (max-height: 700px) {
+  .header {
+    height: 52px;
+  }
+  .main .game-surface > .surface-top {
+    grid-template-rows: 24px 18px;
+    padding-top: 6px;
+    padding-bottom: 6px;
+  }
+}
+@media (min-width: 601px) and (max-width: 900px) and (max-height: 600px) {
+  .game-surface > .action-dock {
+    height: calc(112px + var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)));
+  }
+  .game-surface .arena.compact-landscape .hero-area {
+    left: 84%;
+  }
+  .game-surface .arena.compact-landscape .table-center {
+    left: 40%;
+  }
+}
