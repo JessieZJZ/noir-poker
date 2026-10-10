@@ -30,6 +30,23 @@
 .hint-banner::-webkit-scrollbar {
   display: none;
 }
+.hint-marquee-track {
+  display: flex;
+  align-items: center;
+  width: max-content;
+  gap: 36px;
+}
+.hint-marquee-track > p {
+  flex: none;
+}
+.coach-card .hint-marquee-track {
+  display: block;
+  width: auto;
+}
+.hint-banner:focus-visible {
+  outline: 1px solid var(--mint);
+  outline-offset: 2px;
+}
 .hint-banner p {
   width: max-content;
   margin: 0;

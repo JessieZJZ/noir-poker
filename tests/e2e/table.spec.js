@@ -1393,7 +1393,7 @@ test('returning restores all saved options before the first fresh hand, includin
   await expect(page.locator('#hint-toggle')).toHaveAttribute('aria-pressed', 'false');
   await expect(page.locator('#sound-button')).toHaveAttribute('aria-pressed', 'false');
   await expect(page.locator('#opponents-summary')).toHaveText('8 位风格对手');
-  await expect(page.locator('#opponents-change-note')).toBeHidden();
+  await expect(page.locator('#opponents-change-note')).toHaveCount(0);
   await expect(page.locator('#table-change-note')).toBeHidden();
   await expect(page.locator('#stat-hands')).toHaveText('0');
   const state = await page.evaluate(() => window.noir.getState());
@@ -1504,12 +1504,12 @@ test('nine-seat style assignment shows every persona at all sizes and executes t
   );
   await closeSettings(page);
   await openSettings(page);
-  await expect(page.locator('#opponents-change-note')).toBeVisible();
+  await expect(page.locator('#opponents-change-note')).toHaveCount(0);
   await page.locator('#opponents-dialog .close-dialog').click();
   await expect(page.locator('.seat-8 .seat-style-label')).toHaveText('均衡');
   await page.locator('#next-button').click();
   await page.evaluate(() => window.qa.stop());
-  await expect(page.locator('#opponents-change-note')).toBeHidden();
+  await expect(page.locator('#opponents-change-note')).toHaveCount(0);
   for (const width of [320, 390, 768, 1115, 1280]) {
     await page.setViewportSize({ width, height: 900 });
     for (let id = 1; id <= 8; id++) {

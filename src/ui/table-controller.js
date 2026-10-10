@@ -33,6 +33,7 @@ import { CHIP_UNIT, legalRaiseTo } from '../engine/bet-sizing.js';
 import { createSettlementLayout } from './settlement-layout.js';
 import { createPlayViewport } from './play-viewport.js';
 import { createHintNotification } from './hint-notification.js';
+import { createHintMarquee } from './hint-marquee.js';
 import { preferenceStorage } from '../platform/storage.js';
 import { createActivityClock } from '../platform/activity-clock.js';
 import { isAppActive } from '../platform/native.js';
@@ -52,6 +53,7 @@ function positionCoach() {
 }
 const settlementLayout = createSettlementLayout($('#arena'), { observe: false });
 const playViewport = createPlayViewport($('.game-surface'), { layout: settlementLayout.update });
+const hintMarquee = createHintMarquee(coachContent, $('#coach-tip'), () => compactCoach.matches);
 const hintNotification = createHintNotification({
   publish({ visible, text, stage }) {
     $('#coach-content').hidden = !visible;
@@ -61,6 +63,9 @@ const hintNotification = createHintNotification({
     }
     if (stage !== undefined && $('#coach-stage').textContent !== stage)
       $('#coach-stage').textContent = stage;
+    const duration = hintMarquee.update(visible);
+    if (visible) coachContent.dataset.hintDuration = String(duration);
+    return duration;
   },
 });
 hintNotification.setActive(isAppActive() && !document.hidden);
@@ -1113,6 +1118,7 @@ window.addEventListener(
   () => {
     compactCoach.removeEventListener('change', changeCoachLayout);
     hintNotification.destroy();
+    hintMarquee.destroy();
   },
   { once: true },
 );

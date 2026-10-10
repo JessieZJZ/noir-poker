@@ -111,7 +111,15 @@
     padding: 2px;
   }
   .game-surface .seat .mini-cards:not(.revealed-cards) {
-    display: none;
+    display: flex;
+    gap: 3px;
+    margin-bottom: -14px;
+  }
+  .game-surface .seat .card-back {
+    width: 22px;
+    height: 30px;
+    flex: none;
+    border-width: 1.5px;
   }
   .game-surface .seat .mini-cards.revealed-cards {
     margin-bottom: 4px;
@@ -161,9 +169,18 @@
   }
   .game-surface .arena[data-player-count] .board > .playing-card,
   .game-surface .arena[data-player-count] .board-slot {
-    width: 30px;
-    height: 44px;
-    border-radius: 4px;
+    width: clamp(38px, 8vw, 58px);
+    height: clamp(55px, 11.6vw, 84px);
+    border-radius: 5px;
+  }
+  /* SVG ranks otherwise inherit the desktop ratio and become hard to read
+     in a fitted table. Keep the rank prominent even on compact card faces. */
+  .game-surface .board .card-art > text,
+  .game-surface .board .card-art > g > text,
+  .game-surface .hero-cards .card-art > text,
+  .game-surface .hero-cards .card-art > g > text {
+    font-size: 20px;
+    transform: translate(3px, 2px);
   }
   .game-surface .board .card-corner {
     top: 3px;
@@ -181,12 +198,12 @@
     display: none;
   }
   .game-surface .hero-cards {
-    min-height: 60px;
-    gap: 5px;
+    min-height: clamp(75px, 17.4vw, 104px);
+    gap: 7px;
   }
   .game-surface .hero-cards .playing-card {
-    width: 42px;
-    height: 60px;
+    width: clamp(52px, 12vw, 72px);
+    height: clamp(75px, 17.4vw, 104px);
   }
   .game-surface .hero-cards .card-corner {
     font-size: 15px;
