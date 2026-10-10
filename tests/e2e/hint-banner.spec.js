@@ -17,10 +17,11 @@ test('necessary hints appear below blinds, expire without reappearing on ordinar
   await page.clock.install({ time: new Date('2026-01-01T00:00:00Z') });
   // The notification captures its timer at module initialization. Install the
   // clock before this navigation so the real UI timer uses the fake clock.
+  // Freeze before reloading: navigation can take longer than the pause target.
+  await page.clock.pauseAt(new Date('2026-01-01T00:00:01Z'));
   await page.reload();
   await page.waitForFunction(() => !!window.qa);
   await page.evaluate(() => window.qa.stop());
-  await page.clock.pauseAt(new Date('2026-01-01T00:00:01Z'));
   const banner = page.locator('#coach-content');
   await page.evaluate(() => window.qa.heroTurn(9));
   await expect(banner).toBeVisible();

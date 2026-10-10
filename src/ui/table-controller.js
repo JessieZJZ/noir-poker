@@ -427,7 +427,7 @@ function render() {
             : '等待行动';
   const heroRecentAction = visibleRecentAction(hero);
   $('#hero-last-action').hidden = !heroRecentAction;
-  $('#hero-turn').hidden = game.phase === 'done';
+  $('#hero-turn').hidden = false;
   $('#hero-last-action').innerHTML = heroRecentAction ? seatAction(hero, { recent: true }) : '';
   $('#session-stack').innerHTML = `${format(hero.stack)}<span>CHIPS</span>`;
   const diff = hero.stack - game.stats.buyin;

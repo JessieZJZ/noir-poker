@@ -14,6 +14,7 @@
 }
 .surface-top .blind-info {
   grid-area: 1 / 2;
+  align-self: stretch;
   justify-self: end;
 }
 .hint-banner {

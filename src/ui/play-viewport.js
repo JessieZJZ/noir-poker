@@ -49,7 +49,7 @@ export function createPlayViewport(surface, { layout = () => {} } = {}) {
     const box = arena.getBoundingClientRect(),
       parts = [
         ...arena.querySelectorAll(
-          '.seat-profile, .mini-cards, .seat-action, .hand-rank, .hero-area, .table-center',
+          '.seat-profile, .mini-cards, .seat-action, .hand-rank, .hero-area, .hero-name, .table-center',
         ),
       ]
         .filter((el) => !el.hidden)
