@@ -56,48 +56,58 @@ export async function nativeScenarios(app) {
   });
   await check('settings-autosave-and-local-portraits', async () => {
     await app.click('#opponents-button');
-    const languageReloads = [];
+    const languageChanges = [];
     const changeLanguage = async (target) => {
-      const before = await app.evaluate(() => ({
-        language: document.querySelector('#language-select').value,
-        timeOrigin: performance.timeOrigin,
-      }));
+      const before = await app.evaluate(() => {
+        const state = window.noir.getState();
+        return {
+          language: document.querySelector('#language-select').value,
+          timeOrigin: performance.timeOrigin,
+          hand: state.hand,
+          replayAttempt: state.replayAttempt,
+          hole: state.hole,
+          playerCount: state.playerCount,
+        };
+      });
       if (before.language === target) return;
       await app.select('#language-select', target);
-      // Selecting a language flushes native preferences and reloads the page.
-      // The old select value changes before navigation, so value alone cannot
-      // authorize another interaction with the old settings document.
+      // Wait for the loaded locale, rather than the select's immediate value.
+      // Live translation must preserve the document, dialog and current deal.
       const after = await app.waitFor(
         async () => {
-          const loaded = await app.evaluate(() => ({
-            language: document.documentElement.lang,
-            timeOrigin: performance.timeOrigin,
-            ready: document.documentElement.dataset.appReady === 'true',
-            initialized: Boolean(window.noir?.getState()),
-            settingsOpen: document.querySelector('#opponents-dialog')?.open,
-          }));
-          return loaded.timeOrigin !== before.timeOrigin &&
-            loaded.language === target &&
-            loaded.ready &&
-            loaded.initialized
-            ? loaded
-            : null;
+          const loaded = await app.evaluate(() => {
+            const state = window.noir?.getState();
+            return {
+              language: document.documentElement.lang,
+              timeOrigin: performance.timeOrigin,
+              ready: document.documentElement.dataset.appReady === 'true',
+              initialized: Boolean(state),
+              settingsOpen: document.querySelector('#opponents-dialog')?.open,
+              hand: state?.hand,
+              replayAttempt: state?.replayAttempt,
+              hole: state?.hole,
+              playerCount: state?.playerCount,
+            };
+          });
+          return loaded.language === target && loaded.ready && loaded.initialized ? loaded : null;
         },
         30000,
-        `Language ${target} must finish a real document reload`,
+        `Language ${target} must finish live translation`,
       );
-      assert.equal(after.settingsOpen, false, 'Navigation must replace the old settings dialog');
-      languageReloads.push({
+      assert.equal(after.timeOrigin, before.timeOrigin, 'Language switching must not reload');
+      assert.equal(after.settingsOpen, true, 'Live switching must keep settings open');
+      for (const key of ['hand', 'replayAttempt', 'hole', 'playerCount'])
+        assert.deepEqual(after[key], before[key], `Language switching must preserve ${key}`);
+      languageChanges.push({
         from: before.language,
         to: after.language,
         beforeTimeOrigin: before.timeOrigin,
         afterTimeOrigin: after.timeOrigin,
+        hand: after.hand,
       });
-      await app.click('#opponents-button');
     };
     const initialLanguage = await app.evaluate(() => document.documentElement.lang);
-    // Force a real change even on a simulator that already starts in Chinese;
-    // this covers the same navigation boundary as an English CI simulator.
+    // Exercise live switching even when a simulator already starts in Chinese.
     await changeLanguage(initialLanguage === 'en' ? 'zh-CN' : 'en');
     await changeLanguage('zh-CN');
     await app.select('#player-count', '5');
@@ -149,7 +159,7 @@ export async function nativeScenarios(app) {
       sound: 'false',
     });
     await app.click('#opponents-dialog .close-dialog');
-    return { saved, languageReloads, portraits: images };
+    return { saved, languageChanges, portraits: images };
   });
   await check('raise-call-fold-and-settlement', async () => {
     const coverage = { raise: null, call: null, fold: null };
