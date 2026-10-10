@@ -83,3 +83,34 @@ test('public-card clearance survives both sides of the narrow-seat width breakpo
     assert.ok(metrics.cardWidth >= 38, `${width}px: minimum readable face`);
   }
 });
+
+test('short native table budgets fit both card rows and the complete dense hero without clipping', () => {
+  for (const height of [310, 314, 329, 330, 350]) {
+    for (const width of [302, 320, 343]) {
+      const metrics = portraitMetrics(width, height, 9);
+      assert.equal(metrics.dense, true);
+      assert.equal(metrics.rails, true);
+      assert.ok(metrics.cardWidth >= 38 && metrics.cardWidth <= 48);
+      assert.ok(metrics.heroWidth >= 48 && metrics.heroWidth <= 52);
+      assertCardCorridor(width, metrics, `${width}×${height}`);
+      // Dense CSS uses a 32px identity, 6px identity gap and 16px action
+      // reserve. Include the pot, both public rows, rank clearance and
+      // the arena's edge space; card widths must not overrun that budget.
+      const occupiedHeight =
+        metrics.cardWidth * 1.44 * 2 +
+        6 +
+        28 +
+        9 +
+        metrics.heroWidth * 1.44 +
+        32 +
+        6 +
+        16 +
+        20 +
+        11;
+      assert.ok(
+        occupiedHeight <= height,
+        `${width}×${height}: ${occupiedHeight}px content must fit the arena`,
+      );
+    }
+  }
+});

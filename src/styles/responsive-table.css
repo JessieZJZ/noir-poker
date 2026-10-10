@@ -57,6 +57,17 @@
   width: 100%;
   text-align: center;
 }
+.game-surface .hero-identity strong {
+  line-height: 18px;
+}
+.game-surface .hero-identity .position-badge {
+  padding: 1px 4px;
+  line-height: 14px;
+}
+.game-surface .hero-identity .hero-stack {
+  line-height: 16px;
+  margin-top: 2px;
+}
 .game-surface .hero-action-slot {
   position: absolute;
   top: calc(100% + 2px);
@@ -281,6 +292,11 @@
   .game-surface .arena.dense-table .hero-name {
     height: 32px;
     margin-top: 6px;
+  }
+  .game-surface .arena.dense-table .hero-identity strong,
+  .game-surface .arena.dense-table .hero-stack {
+    line-height: 14px;
+    font-size: 12px;
   }
   .game-surface .arena.dense-table .hero-rank-slot {
     top: -20px;

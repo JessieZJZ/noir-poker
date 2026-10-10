@@ -32,8 +32,13 @@ async function geometry(page) {
     };
     const arena = document.querySelector('#arena');
     const scale = arena.getBoundingClientRect().width / arena.offsetWidth;
+    const visible = (element) =>
+      !element.hidden &&
+      getComputedStyle(element).display !== 'none' &&
+      element.getBoundingClientRect().height > 0;
     const cards = [...document.querySelectorAll('#hero-cards > .playing-card')].map(rect);
     const heroCards = {
+      top: Math.min(...cards.map((card) => card.top)),
       left: Math.min(...cards.map((card) => card.left)),
       right: Math.max(...cards.map((card) => card.right)),
       bottom: Math.max(...cards.map((card) => card.bottom)),
@@ -53,6 +58,19 @@ async function geometry(page) {
         ...rect(card),
         faceWidth: card.offsetWidth * scale,
       })),
+      publicParts: [...document.querySelectorAll('.pot, #board, #board-caption')]
+        .filter(visible)
+        .map((element) => ({ ...rect(element), label: element.id || element.className })),
+      seatParts: [
+        ...document.querySelectorAll(
+          '.seat .mini-cards, .seat-profile, .seat .seat-action, .seat .hand-rank',
+        ),
+      ]
+        .filter(visible)
+        .map((element) => ({
+          ...rect(element),
+          label: `${element.closest('.seat').dataset.player} ${element.className}`,
+        })),
       actionState: document.querySelector('.game-surface').dataset.actionState,
       tableScroll: document.querySelector('.table-viewport').scrollTop,
       horizontalOverflow: document.documentElement.scrollWidth > innerWidth,
@@ -87,6 +105,21 @@ async function expectGeometry(page, target) {
         if (g.public.slice(index + 1).some((other) => overlap(card, other)))
           issues.push('public card faces overlap');
       }
+      for (const part of g.seatParts) {
+        if (
+          part.left < g.table.left - 1 ||
+          part.right > g.table.right + 1 ||
+          part.top < g.table.top - 1 ||
+          part.bottom > g.table.bottom + 1
+        )
+          issues.push(`seat ${part.label} leaves the visible table`);
+        for (const publicPart of g.publicParts)
+          if (overlap(part, publicPart))
+            issues.push(`seat ${part.label} covers ${publicPart.label}`);
+      }
+      for (const publicPart of g.publicParts)
+        if (overlap(publicPart, g.heroCards))
+          issues.push(`${publicPart.label} reaches the hero card row`);
       const rows = g.public.reduce((rows, card) => {
         const row = rows.find((row) => Math.abs(row.top - card.top) < 1);
         if (row) row.cards.push(card);

@@ -48,7 +48,7 @@ export function createSettlementLayout(arena, { observe = true } = {}) {
       box = arena.getBoundingClientRect(),
       gap = 12,
       // The hero's tilted cards extend beyond their untransformed wrapper.
-      heroGap = 24,
+      heroGap = arena.classList.contains('dense-table') ? 20 : 24,
       bottomPadding = 20;
     // Open the public row's actual horizontal corridor before reserving a
     // vertical band. Move side seats only by the missing clearance, bounded

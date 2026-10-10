@@ -357,7 +357,10 @@ for (const playerCount of [5, 6, 7, 8, 9]) {
         'rotated face-down cards fit the same reserved hole slot',
       );
       assert.match(stylesheet, /\.seat-hole\s*\{[^}]*align-items:\s*center/s);
-      const heroFooterHeight = cssNumber('.hero-identity', 'line-height') * 2;
+      const identityHeight = layout.heroInlineIdentity
+        ? cssNumber('.hero-identity-inline', 'height')
+        : cssNumber('.hero-identity', 'line-height') * 2;
+      const heroFooterHeight = identityHeight + cssNumber('.hero-action', 'height');
       const heroBottom = height - cssNumber('.hero', 'bottom');
       const identityTop = heroBottom - heroFooterHeight;
       const cardWidth = layout.heroCardWidth;
@@ -368,13 +371,21 @@ for (const playerCount of [5, 6, 7, 8, 9]) {
       const heroWidth = cardWidth + cssNumber('.hero-cards', 'gap') + rotatedWidth;
       const heroTop =
         identityTop -
-        cssNumber('.hero-rank', 'height') -
+        cssNumber('.hero-cards', 'margin-bottom') -
+        layout.heroRankHeight -
         cardHeight -
         (rotatedHeight - cardHeight) / 2;
       const hero = {
         left: (width - heroWidth) / 2,
         right: (width + heroWidth) / 2,
         top: heroTop,
+        bottom: heroBottom,
+      };
+      const heroFooterWidth = cssNumber('.hero-action', 'width');
+      const heroFooter = {
+        left: (width - heroFooterWidth) / 2,
+        right: (width + heroFooterWidth) / 2,
+        top: identityTop,
         bottom: heroBottom,
       };
       const communityWidth = Math.min(218, width * (cssNumber('.community', 'width') / 100));
@@ -401,6 +412,11 @@ for (const playerCount of [5, 6, 7, 8, 9]) {
         assert.ok(seat.top >= 0 && seat.left >= 0 && seat.right <= width);
         assert.ok(seat.bottom <= identityTop - 6, `seat ${seat.id} caption clears the hero footer`);
         assert.equal(intersects(seat, hero), false, `seat ${seat.id} clears the hero cards`);
+        assert.equal(
+          intersects(seat, heroFooter),
+          false,
+          `seat ${seat.id} clears the centered action slot`,
+        );
         assert.equal(intersects(seat, community), false, `seat ${seat.id} clears the full board`);
       }
       for (let i = 0; i < bounds.length; i++) {
@@ -413,6 +429,11 @@ for (const playerCount of [5, 6, 7, 8, 9]) {
         }
       }
       assert.equal(layout.heroFooterHeight, heroFooterHeight);
+      assert.equal(layout.heroIdentityHeight, identityHeight);
+      if (layout.heroInlineIdentity) {
+        assert.equal(layout.heroRankHeight, cssNumber('.hero-inline .hero-rank .rank', 'height'));
+        assert.equal(heroFooterHeight, 30);
+      }
       assert.equal(layout.communityHeight, communityHeight);
       assert.ok(3 * layout.cardWidth + 2 * cssNumber('.board-row', 'gap') <= communityWidth);
       assert.ok(
@@ -420,7 +441,8 @@ for (const playerCount of [5, 6, 7, 8, 9]) {
         'even the shortest 320px screen enlarges the community cards',
       );
       if (info.windowWidth >= 375) assert.ok(layout.cardWidth >= 48);
-      if (info.windowWidth >= 700) assert.ok(layout.cardWidth >= 60 && layout.heroCardWidth >= 70);
+      if (info.windowWidth >= 700)
+        assert.ok(layout.cardWidth >= (layout.compact ? 50 : 60) && layout.heroCardWidth >= 70);
     });
   }
 }
@@ -436,9 +458,19 @@ test('WeChat hero cards and identity stay centered independently of the action t
   assert.match(stylesheet, /\.hero-cards\s*\{[^}]*justify-content:\s*center/s);
   assert.match(stylesheet, /\.hero-identity\s*\{[^}]*margin:\s*0 auto/s);
   assert.match(stylesheet, /\.hero-action\s*\{[^}]*position:\s*absolute/s);
+  assert.match(
+    stylesheet,
+    /\.hero-action\s*\{[^}]*left:\s*50%[^}]*transform:\s*translateX\(-50%\)[^}]*text-align:\s*center/s,
+  );
+  assert.match(stylesheet, /\.hero-rank\s*\{[^}]*position:\s*absolute/s);
+  assert.match(template, /top: \{\{layout.heroIdentityHeight\}\}px/);
+  assert.match(template, /top: -\{\{layout.heroRankOffset\}\}px/);
   assert.equal(template.includes('class="hero-status"'), false);
   assert.equal(cssNumber('.hero-rank', 'height'), 12);
-  assert.equal(cssNumber('.hero-info', 'height'), 30);
+  assert.equal(cssNumber('.hero-info', 'height'), 46);
+  assert.equal(cssNumber('.hero-action', 'height'), 16);
+  assert.equal(cssNumber('.hero-action', 'line-height'), 16);
+  assert.equal(cssNumber('.hero-cards', 'margin-bottom'), 8);
   assert.equal(cssNumber('.hero-cards', 'gap'), 3);
   const layout = copy(page.data.layout);
   for (const heroAction of ['', '过牌', '加注 4,875', '全下 15,075']) {

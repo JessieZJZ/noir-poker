@@ -11,10 +11,15 @@ function tableLayout(windowWidth, height) {
   const seatBodyHeight = wide ? (compact ? 66 : 74) : compact ? (narrow ? 32 : 38) : 60;
   const seatCaptionHeight = wide ? (compact ? 28 : 32) : compact ? (narrow ? 22 : 26) : 30;
   const seatHeight = seatHoleHeight + seatBodyHeight + seatCaptionHeight;
-  const heroCardWidth = wide ? (compact ? 70 : 76) : compact ? (narrow ? 42 : 53) : 58;
-  const heroCardHeight = wide ? (compact ? 94 : 102) : compact ? (narrow ? 56 : 72) : 78;
-  const heroFooterHeight = 30;
-  const heroRankHeight = 12;
+  const heroCardWidth = wide ? (compact ? 70 : 76) : compact ? (narrow ? 40 : 53) : 58;
+  const heroCardHeight = wide ? (compact ? 94 : 102) : compact ? (narrow ? 52 : 72) : 78;
+  // The shortest screens keep name, position and stack together on one line,
+  // leaving the same fixed 16px action slot without shrinking the public board.
+  const heroInlineIdentity = compact && narrow;
+  const heroIdentityHeight = heroInlineIdentity ? 14 : 30;
+  const heroFooterHeight = heroIdentityHeight + 16;
+  const heroRankHeight = heroInlineIdentity ? 8 : 12;
+  const heroCardGap = 8;
   const heroBottom = 5;
   const radians = (5 * Math.PI) / 180;
   const rotatedHeight = heroCardHeight * Math.cos(radians) + heroCardWidth * Math.sin(radians);
@@ -22,6 +27,7 @@ function tableLayout(windowWidth, height) {
     height -
     heroBottom -
     heroFooterHeight -
+    heroCardGap -
     heroRankHeight -
     heroCardHeight -
     (rotatedHeight - heroCardHeight) / 2;
@@ -50,7 +56,11 @@ function tableLayout(windowWidth, height) {
     heroCardWidth,
     heroCardHeight,
     heroFooterHeight,
+    heroIdentityHeight,
+    heroInlineIdentity,
+    heroCardGap,
     heroRankHeight,
+    heroRankOffset: heroRankHeight + (rotatedHeight - heroCardHeight) / 2,
     heroBottom,
     heroTop,
     cardWidth,
@@ -189,7 +199,9 @@ Page({
             ? (8 + layout.lastSeatTop) / 2
             : layout.lastSeatTop
         : Math.min(
-            layout.lastSeatTop,
+            seat.y >= 40 && seat.y < 70
+              ? layout.lastSeatTop - layout.seatHeight - 6
+              : layout.lastSeatTop,
             Math.max(8, (layout.height * seat.y) / 100 - layout.seatHeight * 0.2),
           ),
     }));

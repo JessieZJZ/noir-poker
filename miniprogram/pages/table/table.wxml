@@ -124,7 +124,14 @@
           ></view
         >
       </view>
-      <view class="hero {{heroFolded ? 'hero-folded' : ''}}"
+      <view
+        class="hero {{heroFolded ? 'hero-folded' : ''}} {{layout.heroInlineIdentity ? 'hero-inline' : ''}}"
+        ><view
+          class="hero-rank"
+          style="height: {{layout.heroRankHeight}}px; top: -{{layout.heroRankOffset}}px;"
+          ><text wx:if="{{heroRank}}" class="rank {{heroWinner ? 'won' : ''}}"
+            >{{heroRank}}</text
+          ></view
         ><view class="hero-cards"
           ><view
             wx:for="{{heroCards}}"
@@ -134,15 +141,13 @@
             ><text class="card-rank">{{item.rank}}</text
             ><text class="card-suit">{{item.suit}}</text></view
           ></view
-        ><view class="hero-rank"
-          ><text wx:if="{{heroRank}}" class="rank {{heroWinner ? 'won' : ''}}"
-            >{{heroRank}}</text
-          ></view
-        ><view class="hero-info"
-          ><view class="hero-identity"
+        ><view class="hero-info" style="height: {{layout.heroFooterHeight}}px;"
+          ><view class="hero-identity {{layout.heroInlineIdentity ? 'hero-identity-inline' : ''}}"
             ><text>你 <text class="position">{{heroPosition}}</text></text
             ><text class="stack">{{heroStack}}</text></view
-          ><view class="hero-action">{{heroAction}}</view></view
+          ><view class="hero-action" style="top: {{layout.heroIdentityHeight}}px;"
+            >{{heroAction}}</view
+          ></view
         ></view
       >
     </view>
