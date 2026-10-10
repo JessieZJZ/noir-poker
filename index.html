@@ -70,73 +70,75 @@
           <p id="replay-note" class="replay-note" role="status" hidden>
             重打本手 · 底牌与发牌顺序不变，原结算已撤回。
           </p>
-          <div class="arena" id="arena">
-            <div class="poker-table">
-              <div class="table-inner">
-                <div class="table-watermark">N O I R <span>POKER CLUB</span></div>
+          <div class="table-viewport" tabindex="0" aria-label="牌桌，可上下滑动查看玩家">
+            <div class="arena" id="arena">
+              <div class="poker-table">
+                <div class="table-inner">
+                  <div class="table-watermark">N O I R <span>POKER CLUB</span></div>
+                </div>
               </div>
-            </div>
-            <div class="seats" id="seats"></div>
-            <div class="table-center">
-              <div class="pot">
-                <div>
-                  <!-- Phosphor Icons poker-chip-duotone (MIT); /licenses/phosphor-icons.txt -->
-                  <svg
-                    class="chip-symbol"
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 256 256"
-                    fill="currentColor"
-                    width="28"
-                    height="28"
-                    aria-hidden="true"
-                    focusable="false"
+              <div class="seats" id="seats"></div>
+              <div class="table-center">
+                <div class="pot">
+                  <div>
+                    <!-- Phosphor Icons poker-chip-duotone (MIT); /licenses/phosphor-icons.txt -->
+                    <svg
+                      class="chip-symbol"
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 256 256"
+                      fill="currentColor"
+                      width="28"
+                      height="28"
+                      aria-hidden="true"
+                      focusable="false"
+                    >
+                      <path
+                        d="M128,32a96,96,0,1,0,96,96A96,96,0,0,0,128,32Zm0,152a56,56,0,1,1,56-56A56,56,0,0,1,128,184Z"
+                        opacity="0.2"
+                      />
+                      <path
+                        d="M128,24A104,104,0,1,0,232,128,104.11,104.11,0,0,0,128,24Zm0,152a48,48,0,1,1,48-48A48.05,48.05,0,0,1,128,176Zm39.21-98.53a63.66,63.66,0,0,0-31.21-13V40.37a87.6,87.6,0,0,1,48.28,20ZM120,64.52a63.66,63.66,0,0,0-31.21,13L71.72,60.4a87.6,87.6,0,0,1,48.28-20ZM77.47,88.79a63.66,63.66,0,0,0-13,31.21H40.37a87.6,87.6,0,0,1,20-48.28ZM64.52,136a63.66,63.66,0,0,0,13,31.21L60.4,184.28a87.6,87.6,0,0,1-20-48.28Zm24.27,42.53A63.66,63.66,0,0,0,120,191.48v24.15a87.6,87.6,0,0,1-48.28-20ZM136,191.48a63.66,63.66,0,0,0,31.21-12.95l17.07,17.07a87.6,87.6,0,0,1-48.28,20Zm42.53-24.27A63.66,63.66,0,0,0,191.48,136h24.15a87.6,87.6,0,0,1-20,48.28ZM191.48,120a63.66,63.66,0,0,0-12.95-31.21L195.6,71.72a87.6,87.6,0,0,1,20,48.28Z"
+                      />
+                    </svg>
+                    <strong id="pot-value">0</strong>
+                  </div>
+                  <button
+                    id="pot-details-button"
+                    class="pot-details-trigger"
+                    aria-label="查看底池明细"
+                    aria-haspopup="dialog"
+                    aria-controls="pot-dialog"
                   >
-                    <path
-                      d="M128,32a96,96,0,1,0,96,96A96,96,0,0,0,128,32Zm0,152a56,56,0,1,1,56-56A56,56,0,0,1,128,184Z"
-                      opacity="0.2"
-                    />
-                    <path
-                      d="M128,24A104,104,0,1,0,232,128,104.11,104.11,0,0,0,128,24Zm0,152a48,48,0,1,1,48-48A48.05,48.05,0,0,1,128,176Zm39.21-98.53a63.66,63.66,0,0,0-31.21-13V40.37a87.6,87.6,0,0,1,48.28,20ZM120,64.52a63.66,63.66,0,0,0-31.21,13L71.72,60.4a87.6,87.6,0,0,1,48.28-20ZM77.47,88.79a63.66,63.66,0,0,0-13,31.21H40.37a87.6,87.6,0,0,1,20-48.28ZM64.52,136a63.66,63.66,0,0,0,13,31.21L60.4,184.28a87.6,87.6,0,0,1-20-48.28Zm24.27,42.53A63.66,63.66,0,0,0,120,191.48v24.15a87.6,87.6,0,0,1-48.28-20ZM136,191.48a63.66,63.66,0,0,0,31.21-12.95l17.07,17.07a87.6,87.6,0,0,1-48.28,20Zm42.53-24.27A63.66,63.66,0,0,0,191.48,136h24.15a87.6,87.6,0,0,1-20,48.28ZM191.48,120a63.66,63.66,0,0,0-12.95-31.21L195.6,71.72a87.6,87.6,0,0,1,20,48.28Z"
-                    />
-                  </svg>
-                  <strong id="pot-value">0</strong>
+                    明细
+                  </button>
                 </div>
-                <button
-                  id="pot-details-button"
-                  class="pot-details-trigger"
-                  aria-label="查看底池明细"
-                  aria-haspopup="dialog"
-                  aria-controls="pot-dialog"
-                >
-                  明细
-                </button>
-              </div>
-              <div class="board" id="board">
-                <div class="board-slot">♠</div>
-                <div class="board-slot">♣</div>
-                <div class="board-slot">♥</div>
-                <div class="board-slot">♦</div>
-                <div class="board-slot">♠</div>
-              </div>
-              <div class="board-caption" id="board-caption">五张公共牌 · 一场好决策</div>
-            </div>
-            <div class="hero-area">
-              <div class="hero-cards" id="hero-cards"></div>
-              <div id="hero-hand-rank" class="hand-rank hero-hand-rank" hidden></div>
-              <div class="hero-name">
-                <span class="hero-avatar">YOU</span>
-                <div>
-                  <strong>你 <span id="hero-position" class="position-badge">BTN</span></strong
-                  ><span class="hero-stack" id="hero-stack">5,000</span>
+                <div class="board" id="board">
+                  <div class="board-slot">♠</div>
+                  <div class="board-slot">♣</div>
+                  <div class="board-slot">♥</div>
+                  <div class="board-slot">♦</div>
+                  <div class="board-slot">♠</div>
                 </div>
-                <span class="hero-turn" id="hero-turn">准备就绪</span>
+                <div class="board-caption" id="board-caption">五张公共牌 · 一场好决策</div>
               </div>
-              <div
-                id="hero-last-action"
-                class="seat-action hero-last-action"
-                aria-label="你的最近行动"
-                hidden
-              ></div>
+              <div class="hero-area">
+                <div class="hero-cards" id="hero-cards"></div>
+                <div id="hero-hand-rank" class="hand-rank hero-hand-rank" hidden></div>
+                <div class="hero-name">
+                  <span class="hero-avatar">YOU</span>
+                  <div>
+                    <strong>你 <span id="hero-position" class="position-badge">BTN</span></strong
+                    ><span class="hero-stack" id="hero-stack">5,000</span>
+                  </div>
+                  <span class="hero-turn" id="hero-turn">准备就绪</span>
+                </div>
+                <div
+                  id="hero-last-action"
+                  class="seat-action hero-last-action"
+                  aria-label="你的最近行动"
+                  hidden
+                ></div>
+              </div>
             </div>
           </div>
           <section id="showdown-stage" class="showdown-stage" aria-label="摊牌牌型对比" hidden>
@@ -148,59 +150,61 @@
             </div>
             <div id="showdown-scene" class="showdown-scene" aria-live="polite"></div>
           </section>
-          <div class="decision-strip">
-            <span class="decision-indicator"></span
-            ><span id="decision-text" role="status" aria-live="polite"
-              >牌桌已就绪，开始你的第一手。</span
-            >
-          </div>
-          <div class="action-panel" id="action-panel">
-            <div class="bet-controls">
-              <label for="bet-slider">加注至 <strong id="bet-value">150</strong></label
-              ><input
-                id="bet-slider"
-                type="range"
-                min="100"
-                max="5000"
-                value="150"
-                step="25"
-                aria-label="加注总额"
-              />
-              <div class="bet-presets">
-                <button data-preset="min">最小</button><button data-preset="half">½ 底池</button
-                ><button data-preset="pot">底池</button><button data-preset="all">全下</button>
+          <div class="action-dock">
+            <div class="decision-strip">
+              <span class="decision-indicator"></span
+              ><span id="decision-text" role="status" aria-live="polite"
+                >牌桌已就绪，开始你的第一手。</span
+              >
+            </div>
+            <div class="action-panel" id="action-panel">
+              <div class="bet-controls">
+                <label for="bet-slider">加注至 <strong id="bet-value">150</strong></label
+                ><input
+                  id="bet-slider"
+                  type="range"
+                  min="100"
+                  max="5000"
+                  value="150"
+                  step="25"
+                  aria-label="加注总额"
+                />
+                <div class="bet-presets">
+                  <button data-preset="min">最小</button><button data-preset="half">½ 底池</button
+                  ><button data-preset="pot">底池</button><button data-preset="all">全下</button>
+                </div>
               </div>
+              <div class="action-buttons">
+                <button id="raise-button" class="action raise">
+                  <span>加注至</span><strong id="raise-number">150</strong></button
+                ><button id="fold-button" class="action fold"><span>弃牌</span></button
+                ><button id="call-button" class="action call"><span>过牌</span></button>
+              </div>
+              <button
+                id="continue-deal-button"
+                class="continue-deal-button"
+                title="加速完成对手剩余行动和本手结算"
+                hidden
+              >
+                立刻发完</button
+              ><button id="next-button" class="next-button" hidden>开始第一手</button
+              ><button
+                id="restart-hand-button"
+                class="review-button restart-hand-button"
+                title="恢复本手起始筹码、底牌和发牌顺序，撤回原结算"
+                hidden
+              >
+                ↺ 重打这手牌</button
+              ><button
+                id="review-hand-button"
+                class="review-button review-end-button"
+                aria-haspopup="dialog"
+                aria-controls="review-dialog"
+                hidden
+              >
+                复盘这一手
+              </button>
             </div>
-            <div class="action-buttons">
-              <button id="raise-button" class="action raise">
-                <span>加注至</span><strong id="raise-number">150</strong></button
-              ><button id="fold-button" class="action fold"><span>弃牌</span></button
-              ><button id="call-button" class="action call"><span>过牌</span></button>
-            </div>
-            <button
-              id="continue-deal-button"
-              class="continue-deal-button"
-              title="加速完成对手剩余行动和本手结算"
-              hidden
-            >
-              立刻发完</button
-            ><button id="next-button" class="next-button" hidden>开始第一手</button
-            ><button
-              id="restart-hand-button"
-              class="review-button restart-hand-button"
-              title="恢复本手起始筹码、底牌和发牌顺序，撤回原结算"
-              hidden
-            >
-              ↺ 重打这手牌</button
-            ><button
-              id="review-hand-button"
-              class="review-button review-end-button"
-              aria-haspopup="dialog"
-              aria-controls="review-dialog"
-              hidden
-            >
-              复盘这一手
-            </button>
           </div>
         </div>
       </section>

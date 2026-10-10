@@ -5,6 +5,7 @@ import './styles/showdown.css';
 import './styles/table.css';
 import './styles/opponents.css';
 import './styles/native.css';
+import './styles/play-viewport.css';
 import { preparePlatform } from './platform/native.js';
 
 await preparePlatform();
