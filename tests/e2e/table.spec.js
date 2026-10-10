@@ -329,7 +329,11 @@ test('pot details retain per-pot awards, odd split shares and conditional live e
   );
   await page.locator('#pot-details-button').click();
   const state = await page.evaluate(() => window.noir.getState());
-  await expect(page.locator('#pot-details-button')).toHaveText('总底池 · 2 个边池');
+  await expect(page.locator('#pot-details-button')).toHaveText('明细');
+  await expect(page.locator('#pot-details-button')).toHaveAttribute(
+    'aria-label',
+    '查看底池明细：主池及 2 个边池',
+  );
   await expect(page.locator('.settled-pot h3')).toHaveText(['主池', '边池 1', '边池 2']);
   for (let i = 0; i < state.pots.length; i++) {
     const card = page.locator(`.settled-pot[data-pot-index="${i}"]`);

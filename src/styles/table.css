@@ -274,8 +274,62 @@
   outline: 0;
 }
 /* Keep the total pot visible alongside seat-level winner indicators. */
+.pot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+.pot > div {
+  margin-top: 0;
+}
+.pot-details-trigger {
+  flex: none;
+}
+/* One position rule covers every live table size, including 8/9-seat overrides. */
+.arena:not(.is-done)[data-player-count] .table-center {
+  top: 27%;
+}
+@media (max-width: 600px) {
+  .pot {
+    gap: 8px;
+  }
+  .pot > div {
+    gap: 5px;
+  }
+  .pot strong {
+    font-size: 20px;
+    letter-spacing: 0;
+  }
+  .pot .chip-symbol {
+    width: 20px;
+    height: 20px;
+  }
+  /* The shorter pot row lifts the board while clearing the upper seat labels. */
+  .arena:not(.is-done)[data-player-count='5'] .table-center,
+  .arena:not(.is-done)[data-player-count='6'] .table-center {
+    top: 33%;
+  }
+  .arena:not(.is-done)[data-player-count='9'] .table-center {
+    top: 32%;
+  }
+}
+@media (max-width: 360px) {
+  .arena:not(.is-done)[data-player-count='7'] .board > .playing-card,
+  .arena:not(.is-done)[data-player-count='7'] .board-slot {
+    width: 26px;
+    height: 40px;
+  }
+}
 .arena.is-done .pot {
   visibility: visible;
+  /* Keep room below the upper players' revealed hands and result labels. */
+  min-height: 66px;
+}
+@media (max-width: 600px) {
+  .arena.is-done .pot {
+    min-height: 61px;
+  }
 }
 @media (max-width: 1150px) and (min-width: 901px) {
   .surface-top {

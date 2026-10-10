@@ -88,6 +88,15 @@ window.qa = {
     render();
     return publicState();
   },
+  publicBoard(count = 6) {
+    fixtureGame(count);
+    startHand(game);
+    act(game, game.actor, 'raise', 1000);
+    while (game.phase === 'playing') act(game, game.actor, 'call');
+    advanceStreet(game);
+    render();
+    return publicState();
+  },
   botFoldTurn() {
     fixtureGame(6, true);
     startHand(game);
