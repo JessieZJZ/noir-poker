@@ -218,10 +218,15 @@ function flyChips(id) {
     anim.onfinish = () => chip.remove();
   }
 }
+function visibleRecentAction(p) {
+  return game.phase === 'done' || p.folded || p.allin || p.lastAction?.street === game.street
+    ? p.lastAction
+    : null;
+}
 function seatAction(p, { recent = false } = {}) {
   if (!recent && game.actor === p.id)
     return '<span class="seat-action-label thinking-dots">思考中</span>';
-  const retained = recent || game.phase === 'done' ? p.lastAction : null;
+  const retained = visibleRecentAction(p);
   const action = retained?.text ?? p.action;
   const match =
     /^(?:(\d+-bet) )?(小盲|大盲|跟注|开池至|加注至|下注至|下注|短全下至|全下至|全下) (\d+)$/.exec(
@@ -229,21 +234,24 @@ function seatAction(p, { recent = false } = {}) {
     );
   if (!match)
     return `<span class="seat-action-label">${action || (game.phase === 'done' ? '未行动' : '等待行动')}</span>`;
-  const label = match[1]
-      ? match[1] +
-        (match[2] === '短全下至'
-          ? ' 短全下'
-          : match[2] === '全下至'
-            ? ' 全下'
-            : recent
-              ? ' ' + match[2].replace(/至$/, '')
-              : '')
-      : match[2] === '加注至'
-        ? '加注'
-        : match[2],
+  const label =
+      p.allin && (match[2] === '小盲' || match[2] === '大盲')
+        ? '全下'
+        : match[1]
+          ? match[1] +
+            (match[2] === '短全下至'
+              ? ' 短全下'
+              : match[2] === '全下至'
+                ? ' 全下'
+                : recent
+                  ? ' ' + match[2].replace(/至$/, '')
+                  : '')
+          : match[2] === '加注至'
+            ? '加注'
+            : match[2],
     amount = Number(match[3]);
   const meaning =
-    (recent && retained ? `${streets[retained.street]} · ` : '') +
+    (retained ? `${streets[retained.street]} · ` : '') +
     (match[2] === '跟注'
       ? `本次补入 ${format(amount)}，本轮累计投入 ${format(retained?.bet ?? p.bet)}`
       : `${action} · 本轮累计投入 ${format(amount)}`);
@@ -385,9 +393,10 @@ function render() {
           : game.phase === 'done'
             ? '本手结束'
             : '等待行动';
-  $('#hero-last-action').hidden = !hero.lastAction;
+  const heroRecentAction = visibleRecentAction(hero);
+  $('#hero-last-action').hidden = !heroRecentAction;
   $('#hero-turn').hidden = game.phase === 'done';
-  $('#hero-last-action').innerHTML = hero.lastAction ? seatAction(hero, { recent: true }) : '';
+  $('#hero-last-action').innerHTML = heroRecentAction ? seatAction(hero, { recent: true }) : '';
   $('#session-stack').innerHTML = `${format(hero.stack)}<span>CHIPS</span>`;
   const diff = hero.stack - game.stats.buyin;
   $('#session-change').textContent = game.stats.hands
