@@ -10,6 +10,23 @@ function nearestClearTop(ideal, min, max, blocked) {
   );
 }
 
+// Keep the complete seat inside the arena while allowing the corridor's
+// half-pixel clearance to survive the final fit transform. Reserving a full
+// pixel at the arena edge can clamp a seat at exactly 12px from the pot;
+// rounded visual rectangles then lose that clearance by a few millionths.
+export function minimalSeatShift(leftSide, footprint, corridor, bounds) {
+  const edgeInset = 0.5;
+  return leftSide
+    ? -Math.min(
+        Math.max(0, footprint.right - corridor.left),
+        Math.max(0, footprint.left - bounds.left - edgeInset),
+      )
+    : Math.min(
+        Math.max(0, corridor.right - footprint.left),
+        Math.max(0, bounds.right - footprint.right - edgeInset),
+      );
+}
+
 // Absolute seat anchors preserve the oval table. Grow settlement height from
 // player footprints, then center the public group without moving the hero.
 export function createSettlementLayout(arena, { observe = true } = {}) {
@@ -58,9 +75,12 @@ export function createSettlementLayout(arena, { observe = true } = {}) {
           .filter((r) => r.width > 0 && r.height > 0);
         const left = Math.min(...parts.map((r) => r.left)),
           right = Math.max(...parts.map((r) => r.right));
-        const shift = seat.classList.contains('seat-left')
-          ? -Math.min(Math.max(0, right - clearLeft), Math.max(0, left - box.left - 1))
-          : Math.min(Math.max(0, clearRight - left), Math.max(0, box.right - right - 1));
+        const shift = minimalSeatShift(
+          seat.classList.contains('seat-left'),
+          { left, right },
+          { left: clearLeft, right: clearRight },
+          box,
+        );
         seat.style.marginLeft = `${shift}px`;
       }
     }
