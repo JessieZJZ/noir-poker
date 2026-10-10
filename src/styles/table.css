@@ -876,6 +876,15 @@
 }
 /* Fixed hero slots keep cards, identity and recent actions still while a
    street changes or a settlement reveals the hand rank. */
+.hero-area {
+  /* The wide status row belongs only at the bottom. Letting it define the
+     card area's width creates a transparent hit box over the side seats. */
+  width: max-content;
+  padding-bottom: 52px;
+}
+.arena.is-done[data-player-count] .hero-area {
+  position: relative;
+}
 .hero-rank-slot {
   display: grid;
   place-items: center;
@@ -891,6 +900,10 @@
   --hero-identity-width: 78px;
   --hero-action-width: 146px;
   display: grid;
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  transform: translateX(-50%);
   grid-template-columns:
     var(--hero-status-width) var(--hero-identity-width)
     var(--hero-action-width);
@@ -935,6 +948,9 @@
   border-color: var(--mint);
 }
 @media (max-width: 900px) {
+  .hero-area {
+    padding-bottom: 41px;
+  }
   .hero-rank-slot {
     height: 28px;
     margin-top: 6px;
