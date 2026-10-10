@@ -136,17 +136,24 @@
 }
 .game-surface .action-panel.folded-actions,
 .game-surface .action-panel.settled-actions {
-  display: flex;
-  flex-direction: row;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-rows: 46px;
   justify-content: center;
   align-items: center;
   gap: 8px;
   padding: 10px 12px;
 }
+.game-surface .action-panel.folded-actions {
+  grid-template-columns: minmax(0, 1fr);
+}
+.game-surface .action-panel.settled-actions > #next-button {
+  grid-column: auto;
+}
 .game-surface .action-panel.folded-actions > button,
 .game-surface .action-panel.settled-actions > button {
   flex: 1 1 0;
-  width: 0;
+  width: 100%;
   min-width: 0;
   height: 46px;
   min-height: 46px;
@@ -261,20 +268,32 @@
     padding: 0 12px 10px;
     gap: 8px;
   }
+  .game-surface .action-buttons {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .game-surface .action-panel .action {
+    min-width: 0;
+    height: 44px;
+    min-height: 44px;
+  }
   .game-surface .bet-controls {
     display: grid;
     grid-template-columns: minmax(64px, 0.8fr) minmax(0, 2fr);
+    grid-template-rows: 28px;
     align-items: center;
     gap: 8px;
   }
   .game-surface .bet-controls input {
     grid-column: 1;
+    grid-row: 1;
     min-width: 0;
     height: 28px;
     margin: 0;
   }
   .game-surface .bet-presets {
     grid-column: 2;
+    grid-row: 1;
     gap: 4px;
   }
   .game-surface .bet-presets button {

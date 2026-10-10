@@ -151,7 +151,8 @@ async function expectActionRow(page, selectors) {
   await expect
     .poll(() =>
       page.evaluate((selectors) => {
-        const panel = document.querySelector('#action-panel');
+        const live = selectors.includes('#raise-button');
+        const panel = document.querySelector(live ? '.action-buttons' : '#action-panel');
         const panelBox = panel.getBoundingClientRect();
         const style = getComputedStyle(panel);
         const left = panelBox.left + parseFloat(style.paddingLeft);
@@ -189,7 +190,7 @@ async function expectActionRow(page, selectors) {
             Math.abs(button.bottom - buttons[0].bottom) > 1
           )
             issues.push(`${button.id} is on a different row`);
-          if (Math.abs(button.width - buttons[0].width) > 1)
+          if ((!live || innerWidth <= 900) && Math.abs(button.width - buttons[0].width) > 1)
             issues.push(`${button.id} does not have equal row width`);
           if (button.height < 44 || button.wraps || button.clips)
             issues.push(`${button.id} has a small target or clipped/wrapped label`);

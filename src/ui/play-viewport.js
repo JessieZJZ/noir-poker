@@ -86,7 +86,10 @@ export function createPlayViewport(surface, { layout = () => {} } = {}) {
       // normal document scrolling rather than hiding table content.
       height = mobile.matches
         ? Math.max(180, screenHeight - top - header - dockBudget - 8)
-        : Math.max(620, screenHeight - top - header - dockBudget - 70);
+        : Math.max(
+            Number(arena.dataset.playerCount) >= 7 ? 780 : 620,
+            screenHeight - top - header - dockBudget - 70,
+          );
     surface.style.removeProperty('--play-height');
     viewport.style.setProperty('--table-height', `${height}px`);
     arena.style.width = '100%';
