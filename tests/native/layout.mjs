@@ -13,7 +13,9 @@ export function readTableLayout() {
     };
   };
   const identity = rect('.hero-identity'),
-    cards = rect('#hero-cards');
+    cards = rect('#hero-cards'),
+    arena = document.querySelector('#arena'),
+    scale = arena.getBoundingClientRect().width / arena.offsetWidth;
   return {
     table: rect('.table-viewport'),
     arena: rect('#arena'),
@@ -50,6 +52,24 @@ export function readTableLayout() {
           e.bottom <= profile.bottom,
       };
     }),
+    profiles: [...document.querySelectorAll('.seat-profile')].map((profile) => {
+      const style = getComputedStyle(profile),
+        tag = getComputedStyle(profile.querySelector('.seat-style-label')),
+        font = (selector) =>
+          parseFloat(getComputedStyle(profile.querySelector(selector)).fontSize) * scale;
+      return {
+        id: profile.closest('.seat').dataset.player,
+        padding: [style.paddingTop, style.paddingRight, style.paddingBottom, style.paddingLeft].map(
+          parseFloat,
+        ),
+        tagPadding: [tag.paddingTop, tag.paddingRight, tag.paddingBottom, tag.paddingLeft].map(
+          parseFloat,
+        ),
+        nameSize: font('strong'),
+        styleSize: parseFloat(tag.fontSize) * scale,
+        stackSize: font('.seat-stack'),
+      };
+    }),
     bottomInset:
       parseFloat(getComputedStyle(document.querySelector('.action-dock')).paddingBottom) || 0,
     settledButtons: ['#next-button', '#restart-hand-button', '#review-hand-button'].map(rect),
@@ -76,6 +96,24 @@ export function assertTableLayout(info) {
       `Seat ${eye.id} inspection must follow the position badge in the identity row`,
     );
     assert.ok(eye.contained, `Seat ${eye.id} inspection must stay inside its profile`);
+  }
+  const largeTablet =
+    info.width >= 901 && info.width <= 1100 && info.height >= 1100 && info.height > info.width;
+  for (const profile of info.profiles) {
+    assert.ok(
+      profile.padding.every((value) => value >= 3),
+      `Seat ${profile.id} profile needs padding on all sides`,
+    );
+    assert.ok(
+      profile.tagPadding.every((value, index) => value >= (index % 2 ? 3 : 1)),
+      `Seat ${profile.id} style tag needs padding on all sides`,
+    );
+    if (largeTablet) {
+      assert.ok(
+        profile.nameSize >= 17 && profile.stackSize >= 17 && profile.styleSize >= 14,
+        `Seat ${profile.id} tablet text must remain readable after fitting`,
+      );
+    }
   }
   assert.equal(info.publicCards.length, 5);
   if (Math.abs(info.publicCards[3].top - info.publicCards[0].top) > 1) {

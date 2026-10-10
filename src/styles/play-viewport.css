@@ -111,7 +111,7 @@
     justify-self: start;
     margin: 0;
     max-width: 100%;
-    padding: 1px 2px;
+    padding: 1px 3px;
     font-size: 10px;
     white-space: normal;
     line-height: 1.2;
@@ -377,6 +377,7 @@
 @media (min-width: 601px) and (max-width: 900px) and (min-height: 601px),
   (min-width: 901px) and (max-width: 1100px) and (orientation: portrait) {
   .game-surface .arena[data-player-count] .seat .seat-profile {
+    --seat-style-font-size: 13px;
     width: 132px;
     min-width: 132px;
     max-width: 132px;
@@ -456,6 +457,78 @@
     font-size: 15px;
     --hero-identity-width: 92px;
     --hero-action-width: 140px;
+  }
+}
+/* Large portrait tablets can enlarge seat type without scaling down the felt. */
+@media (min-width: 901px) and (max-width: 1100px) and (orientation: portrait) and (min-height: 1100px) {
+  .game-surface .arena[data-player-count] .seat .seat-profile {
+    --seat-style-font-size: 15px;
+    width: 176px;
+    min-width: 176px;
+    max-width: 176px;
+    padding: 8px 10px;
+    grid-template-columns: 30px minmax(0, 1fr) 30px;
+    grid-template-rows: 26px 30px 26px;
+    gap: 6px;
+  }
+  .game-surface .arena[data-player-count] .seat-profile strong {
+    --seat-eye-size: 22px;
+    font-size: 20px;
+  }
+  .game-surface .arena[data-player-count] .seat-profile .seat-style-label {
+    font-size: var(--seat-style-font-size);
+    padding: 2px 5px;
+    line-height: 20px;
+  }
+  .game-surface .arena[data-player-count] .seat-profile .seat-stack {
+    font-size: 20px;
+  }
+  .game-surface .arena[data-player-count] .seat-profile > .avatar {
+    width: 30px;
+    height: 30px;
+    font-size: 16px;
+  }
+  .game-surface .arena[data-player-count] .seat-rank-slot {
+    height: 30px;
+    width: 180px;
+  }
+  .game-surface .arena[data-player-count] .hand-rank {
+    font-size: 16px;
+  }
+  .game-surface .arena[data-player-count] .seat .seat-action {
+    width: 180px;
+    max-width: 180px;
+    height: 27px;
+    font-size: 18px;
+  }
+  .game-surface .arena[data-player-count] .pot strong {
+    font-size: 44px;
+    line-height: 1.1;
+  }
+  .game-surface .arena[data-player-count] .pot {
+    height: 50px;
+    min-height: 50px;
+  }
+  .game-surface .pot-details-trigger {
+    font-size: 18px;
+  }
+  .game-surface .hero-name {
+    font-size: 22px;
+    height: 52px;
+    grid-template-rows: 26px 24px;
+  }
+  .game-surface .hero-area {
+    padding-bottom: 58px;
+  }
+  .game-surface .hero-rank-slot {
+    height: 30px;
+  }
+  .game-surface .hero-name .hero-last-action {
+    font-size: 18px;
+  }
+  .game-surface .position-badge,
+  .game-surface .dealer-marker {
+    font-size: 14px;
   }
 }
 @media (max-width: 420px) {
@@ -552,9 +625,10 @@
     width: 92px;
     min-width: 92px;
     max-width: 92px;
-    padding: 3px;
+    padding: 4px 5px;
     grid-template-columns: 18px minmax(0, 1fr) 36px;
     grid-template-rows: 14px 18px;
+    gap: 2px;
   }
   .game-surface .arena[data-player-count] .seat-profile > .avatar {
     width: 18px;
@@ -563,9 +637,9 @@
   .game-surface .arena[data-player-count] .seat-profile .seat-style-label {
     grid-column: 2;
     grid-row: 2;
-    padding: 0;
+    padding: 1px 3px;
     font-size: 9px;
-    line-height: 9px;
+    line-height: 12px;
     white-space: normal;
     overflow-wrap: anywhere;
   }
@@ -576,7 +650,7 @@
   }
   .game-surface .arena[data-player-count] .seat-style-label[data-style-profile='balanced'] {
     min-width: 26px;
-    padding: 1px 2px;
+    padding: 1px 3px;
     font-size: 10px;
     line-height: 12px;
     text-align: center;
@@ -592,11 +666,12 @@
 /* Fewer players have room for larger personal areas around the same felt. */
 @media (max-width: 600px) and (min-height: 740px) {
   .game-surface .arena:is([data-player-count='5'], [data-player-count='6']) .seat .seat-profile {
-    width: 108px;
-    min-width: 108px;
-    max-width: 108px;
+    width: clamp(108px, 27.7vw, 122px);
+    min-width: clamp(108px, 27.7vw, 122px);
+    max-width: clamp(108px, 27.7vw, 122px);
+    padding: 6px;
     grid-template-columns: 20px minmax(0, 1fr) 38px;
-    grid-template-rows: 16px 20px;
+    grid-template-rows: 16px 22px;
   }
   .game-surface .arena:is([data-player-count='5'], [data-player-count='6']) .seat-profile strong {
     --seat-eye-size: 16px;

@@ -271,3 +271,48 @@ button:not(.profile-card):not(.review-step) {
     --live-dock-height: 188px;
   }
 }
+/* Portrait tablets keep the same live/settled table budget with larger type. */
+@media (min-width: 901px) and (max-width: 1100px) and (orientation: portrait) and (min-height: 1100px) {
+  .game-surface {
+    --live-dock-height: 174px;
+  }
+  .main .game-surface > .surface-top {
+    grid-template-rows: 32px 26px;
+    padding: 12px 18px;
+  }
+  .game-surface .hand-label,
+  .game-surface .blind-info {
+    font-size: 18px;
+  }
+  .game-surface .hint-banner p,
+  .surface-top .replay-note {
+    font-size: 16px;
+    line-height: 26px;
+  }
+  .game-surface .decision-strip {
+    height: 36px;
+    font-size: 17px;
+    line-height: 22px;
+  }
+  .game-surface .bet-presets button {
+    min-height: 30px;
+    font-size: 16px;
+  }
+  .game-surface .action-panel .action,
+  .game-surface .action-panel.settled-actions > button,
+  .game-surface .action-panel.folded-actions > button {
+    font-size: 18px;
+  }
+  .game-surface .action-panel .action span {
+    font-size: 18px;
+  }
+  .game-surface .action-panel .action strong {
+    font-size: 22px;
+  }
+  .game-surface .next-button.has-mobile-label::after {
+    font-size: 18px;
+  }
+  .game-surface .action-panel.settled-actions > .next-button.has-mobile-label {
+    font-size: 0;
+  }
+}

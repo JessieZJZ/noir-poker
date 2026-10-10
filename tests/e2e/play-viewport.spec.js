@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
-import { closeSettings } from './settings-helpers.js';
+import { openSettings, closeSettings } from './settings-helpers.js';
+import { readTableLayout, assertTableLayout } from '../native/layout.mjs';
 
 // Use visual bounds after the fit transform. Engine scenarios remain the same
 // across devices; only their presentation may change with the viewport.
@@ -329,6 +330,10 @@ test('SE initial rendering and repeated resizes retain a readable proportional t
       window.qa.stop();
       return document.fonts.ready;
     });
+    await page.evaluate(() => {
+      window.qa.stop();
+      return document.fonts.ready;
+    });
     await assertFixedTable(page);
     await expect
       .poll(() =>
@@ -373,6 +378,8 @@ test('portrait tablets use the open table width for larger readable contents', a
     { width: 768, height: 1024 },
     { width: 820, height: 1180 },
     { width: 1024, height: 1366 },
+    { width: 960, height: 1440 },
+    { width: 1032, height: 1376 },
   ]) {
     await page.setViewportSize(size);
     await page.evaluate(() => window.qa.publicBoard(9));
@@ -398,6 +405,63 @@ test('portrait tablets use the open table width for larger readable contents', a
     await page.screenshot({ path: test.info().outputPath(`tablet-${size.width}.png`) });
   }
 });
+
+for (const locale of ['zh-CN', 'en']) {
+  test(`padded named seats and larger tablet text stay stable through settlement in ${locale}`, async ({
+    page,
+  }) => {
+    await page.evaluate((locale) => localStorage.setItem('noir-locale', locale), locale);
+    await page.reload();
+    await page.waitForFunction(() => !!window.qa);
+    await openSettings(page);
+    await page.locator('#mix-opponents').click();
+    await closeSettings(page);
+    for (const size of [
+      { width: 440, height: 956 },
+      { width: 960, height: 1440 },
+      { width: 1032, height: 1376 },
+    ]) {
+      await page.setViewportSize(size);
+      for (const count of [5, 9]) {
+        await page.evaluate((count) => window.qa.heroTurn(count), count);
+        await assertFixedTable(page);
+        const before = await page.evaluate(readTableLayout);
+        assertTableLayout(before);
+        if (size.width > 900) {
+          await expect(page.locator('.hint-banner p').first()).toHaveCSS('font-size', '16px');
+          await expect(page.locator('#raise-button span').first()).toHaveCSS('font-size', '18px');
+        }
+        await page.evaluate(
+          (count) => window.qa.scene('Qs Qd', '5h 7c Ts As 8h', { count, folded: [0, 1] }),
+          count,
+        );
+        await assertFixedTable(page, { settled: true });
+        const after = await page.evaluate(readTableLayout);
+        assertTableLayout(after);
+        const rankBottom = await page
+          .locator('#hero-hand-rank')
+          .evaluate((el) => el.getBoundingClientRect().bottom);
+        // A phone's existing 1 CSS-pixel gap becomes subpixel after fitting.
+        // Large tablets reserve additional space for the enlarged rank tag.
+        expect(rankBottom).toBeLessThanOrEqual(after.identity.top - (size.width > 900 ? 5 : 0));
+        for (const anchor of ['table', 'arena', 'publicArea']) {
+          for (const edge of ['top', 'bottom', 'left', 'right'])
+            expect(Math.abs(after[anchor][edge] - before[anchor][edge])).toBeLessThanOrEqual(1);
+        }
+        if (size.width > 900) {
+          await expect(page.locator('#review-hand-button')).toHaveCSS('font-size', '18px');
+          const nextSize = await page
+            .locator('#next-button')
+            .evaluate((el) => getComputedStyle(el, '::after').fontSize);
+          expect(nextSize).toBe('18px');
+        }
+        await page.screenshot({
+          path: test.info().outputPath(`padded-${locale}-${size.width}-${count}.png`),
+        });
+      }
+    }
+  });
+}
 
 test('a temporarily hidden viewport can render and recover without invalid fitting geometry', async ({
   page,

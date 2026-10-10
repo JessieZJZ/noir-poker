@@ -342,6 +342,41 @@ function intersects(a, b) {
   return a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top;
 }
 
+test('large portrait tablets reserve five larger public positions through settlement and resizing', (t) => {
+  const info = { windowWidth: 1032, windowHeight: 1376, statusBarHeight: 24 };
+  const { page } = setup(t, { playerCount: 9, info });
+  assert.equal(page.data.boardTwoRows, false);
+  assert.equal(page.data.boardWidth, 5 * 82 + 16);
+  assert.equal(page.data.boardSlots.length, 5);
+  const tableHeight = page.data.tableHeight;
+  for (const board of [
+    [],
+    [{ key: 'a' }],
+    Array.from({ length: 5 }, (_, i) => ({ key: `c${i}` })),
+  ]) {
+    assert.equal(page.publicLayout(board).boardWidth, 5 * 82 + 16);
+    assert.equal(page.publicLayout(board).boardSlots.length, 5);
+  }
+  const game = reachHero(page);
+  page.act({ currentTarget: { dataset: { action: 'fold' } } });
+  finish(game);
+  page._controller.show();
+  assert.equal(page.data.done, true);
+  assert.equal(page.data.tableHeight, tableHeight);
+  Object.assign(info, { windowWidth: 960, windowHeight: 1440 });
+  page.onResize();
+  assert.equal(page.data.boardWidth, 5 * 82 + 16);
+  Object.assign(info, { windowWidth: 820, windowHeight: 1180 });
+  page.onResize();
+  assert.equal(page.data.boardWidth, 5 * 48 + 16);
+  Object.assign(info, { windowWidth: 1032, windowHeight: 1099 });
+  page.onResize();
+  assert.equal(page.data.boardWidth, 5 * 48 + 16);
+  Object.assign(info, { windowWidth: 1101, windowHeight: 1440 });
+  page.onResize();
+  assert.equal(page.data.boardWidth, 5 * 48 + 16);
+});
+
 for (const playerCount of [5, 6, 7, 8, 9]) {
   for (const info of [
     { windowWidth: 320, windowHeight: 568, statusBarHeight: 20, safeArea: { bottom: 568 } },
