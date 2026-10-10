@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { closeSettings } from './settings-helpers.js';
 
 async function assertPublicArea(page) {
   await expect
@@ -108,7 +109,7 @@ test('public areas stay closest to the felt center within the available play vie
     if (named) {
       await page.locator('#opponents-button').click();
       await page.locator('#mix-opponents').click();
-      await page.locator('#save-opponents').click();
+      await closeSettings(page);
     }
     for (const width of [320, 390, 768, 1115, 1280, 1700]) {
       await page.setViewportSize({ width, height: 1000 });

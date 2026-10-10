@@ -139,12 +139,21 @@ export function createOpponentsController({ getGame, getCount, getSettings, onSa
       .join('');
     preparePortraits(document.querySelector('#opponent-roster'));
   }
+  function saveSettings() {
+    // Persist only assigned styles and emotion changes; profile previews are informational.
+    const settings = sanitizeBotSettings(draft);
+    try {
+      preferenceStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
+    } catch {}
+    onSave(settings);
+    document.querySelector('#opponents-save-note').textContent =
+      '已自动保存；风格与情绪下一手生效。';
+  }
   function open() {
     closeDetail({ focus: false, restoreScroll: false });
     draft = sanitizeBotSettings(getSettings());
     document.querySelector('#emotion-mode').value = draft.emotionMode;
-    document.querySelector('#opponents-save-note').textContent =
-      '保存在此设备，下次打开自动恢复；重打保留原来的对手风格与情绪。';
+    document.querySelector('#opponents-save-note').textContent = '设置自动保存在此设备。';
     choices();
     detail();
     roster();
@@ -198,9 +207,11 @@ export function createOpponentsController({ getGame, getCount, getSettings, onSa
     selected = event.target.value;
     markSelection();
     detail();
+    saveSettings();
   };
   document.querySelector('#emotion-mode').onchange = (event) => {
     draft.emotionMode = event.target.value;
+    saveSettings();
   };
   document.querySelector('#mix-opponents').onclick = () => {
     closeDetail({ focus: false, restoreScroll: false });
@@ -218,15 +229,7 @@ export function createOpponentsController({ getGame, getCount, getSettings, onSa
     markSelection();
     detail();
     roster();
-  };
-  document.querySelector('#save-opponents').onclick = () => {
-    const settings = sanitizeBotSettings(draft);
-    try {
-      preferenceStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
-    } catch {}
-    onSave(settings);
-    dialog.close();
-    document.querySelector('#opponents-button').focus({ preventScroll: true });
+    saveSettings();
   };
   return {
     refresh() {
@@ -243,7 +246,7 @@ export function createOpponentsController({ getGame, getCount, getSettings, onSa
           : '均衡';
       const note = document.querySelector('#opponents-change-note');
       note.hidden = !changed;
-      note.textContent = '对手风格已保存，下一手生效。本手和重打使用座位上标出的当前风格。';
+      note.textContent = '风格与情绪已自动保存，下一手生效；本手和重打保持原设置。';
     },
   };
 }

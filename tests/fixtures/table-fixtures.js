@@ -50,6 +50,18 @@ window.qa = {
     render();
     return publicState();
   },
+  raiseActions(steps = 1) {
+    clearTimeout(timer);
+    botWait = null;
+    // A long, legal re-raising round supplies real chronological action logs
+    // without synthetic DOM entries or bypassing the engine's chip rules.
+    for (let step = 0; step < steps && game.phase === 'playing'; step++) {
+      const legal = legalActions(game);
+      act(game, game.actor, legal.canRaise ? 'raise' : 'call', legal.minRaiseTo);
+    }
+    render();
+    return publicState();
+  },
   bettingTurn(level = 2, street = 0, short = false) {
     fixtureGame(6);
     game.dealer = 5;

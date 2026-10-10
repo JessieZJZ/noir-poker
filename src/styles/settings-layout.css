@@ -18,7 +18,7 @@
   gap: 12px;
 }
 .settings-info {
-  margin: 0 0 16px;
+  margin: 16px 0 0;
   padding: 14px 16px;
   border-left: 3px solid #608d80;
   border-radius: 4px 10px 10px 4px;
@@ -32,7 +32,7 @@
 }
 .settings-info p,
 .settings-info a,
-.settings-info summary {
+.settings-info h4 {
   margin: 6px 0 0;
   font-size: 12px;
   line-height: 1.8;
@@ -44,10 +44,9 @@
 .persona-notice {
   margin-top: 8px;
 }
-.persona-notice summary {
-  cursor: pointer;
-  width: fit-content;
+.persona-notice h4 {
   color: #c5ddd4;
+  font-weight: 600;
 }
 .difficulty-module,
 .emotion-module {
@@ -70,6 +69,9 @@
   grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
   gap: 16px;
   align-items: start;
+}
+.settings-dialog .opponents-save-row {
+  display: block;
 }
 .settings-dialog .opponents-save-row p {
   color: #9fb7b1;
