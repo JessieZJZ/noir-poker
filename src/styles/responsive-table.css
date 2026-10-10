@@ -193,7 +193,7 @@
     min-width: var(--seat-width, 76px);
     max-width: var(--seat-width, 76px);
     grid-template-rows: 14px 24px 20px;
-    padding: 3px;
+    padding: 3px 2px;
     gap: 0 2px;
   }
   .game-surface .seat .mini-cards,
@@ -312,7 +312,7 @@
   }
   .game-surface .arena.dense-table .seat .seat-profile {
     grid-template-rows: 12px 18px 16px;
-    padding: 2px 3px;
+    padding: 2px;
   }
   .game-surface .arena.dense-table .hero-area {
     padding-bottom: 16px;
