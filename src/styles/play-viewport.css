@@ -147,7 +147,7 @@
   .game-surface .mini-cards .playing-card.small .card-pip {
     font-size: 15px;
   }
-  .game-surface .arena[data-player-count] .seat-action {
+  .game-surface .arena[data-player-count] .seat .seat-action {
     padding-top: 3px;
     min-height: 17px;
     max-width: 88px;
@@ -317,7 +317,7 @@
     min-width: 72px;
     max-width: 72px;
   }
-  .game-surface .arena[data-player-count] .seat-action {
+  .game-surface .arena[data-player-count] .seat .seat-action {
     max-width: 72px;
   }
   /* Reserve all five positions from the start of the hand. A centered 3+2
