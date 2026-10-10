@@ -19,6 +19,8 @@ async function expectReadableTable(page, { publicWidth, heroWidth }) {
           const box = (el) => el.getBoundingClientRect(),
             compact = innerWidth <= 900,
             bounds = box(document.querySelector(compact ? '.table-viewport' : '#arena')),
+            arena = document.querySelector('#arena'),
+            scale = box(arena).width / arena.offsetWidth,
             publicCards = [...document.querySelectorAll('#board > .playing-card')],
             heroCards = [...document.querySelectorAll('#hero-cards > .playing-card')],
             profiles = [...document.querySelectorAll('.seat-profile')],
@@ -34,9 +36,12 @@ async function expectReadableTable(page, { publicWidth, heroWidth }) {
           ]) {
             if (!cards.length) issues.push(`${label} cards missing`);
             for (const card of cards) {
-              const r = box(card);
-              if (r.width < minimum - 0.5)
-                issues.push(`${label} width ${r.width.toFixed(1)} below ${minimum}`);
+              const r = box(card),
+                faceWidth = card.offsetWidth * scale;
+              // A tilted card's bounding box grows horizontally. Measure its
+              // actual face instead, so tilting cannot hide a readability loss.
+              if (faceWidth < minimum - 0.5)
+                issues.push(`${label} face width ${faceWidth.toFixed(1)} below ${minimum}`);
               if (r.left < bounds.left - 1 || r.right > bounds.right + 1)
                 issues.push(`${label} outside table width`);
               if (r.top < bounds.top - 1 || r.bottom > bounds.bottom + 1)
@@ -48,8 +53,17 @@ async function expectReadableTable(page, { publicWidth, heroWidth }) {
           for (const seat of document.querySelectorAll('.seat')) {
             const profile = box(seat.querySelector('.seat-profile'));
             for (const back of seat.querySelectorAll('.card-back')) {
-              const r = box(back);
-              if (getComputedStyle(back.parentElement).display === 'none' || r.width < 15)
+              const r = box(back),
+                style = getComputedStyle(back),
+                parentStyle = getComputedStyle(back.parentElement);
+              if (
+                parentStyle.display === 'none' ||
+                style.visibility !== 'visible' ||
+                parentStyle.visibility !== 'visible' ||
+                Number(style.opacity) === 0 ||
+                Number(parentStyle.opacity) === 0 ||
+                r.width < 15
+              )
                 issues.push(`seat ${seat.dataset.player} card back hidden`);
               // Card backs intentionally tuck behind their own profile. The
               // visible strip above it must remain large enough to identify.
@@ -71,7 +85,6 @@ async function expectReadableTable(page, { publicWidth, heroWidth }) {
           if (document.documentElement.scrollWidth > innerWidth)
             issues.push('page overflows horizontally');
           if (issues.length) {
-            const arena = document.querySelector('#arena');
             issues.push(
               `layout ${innerWidth}x${innerHeight}, ${arena.dataset.playerCount} players, arena ${arena.offsetWidth}x${arena.offsetHeight}, fit ${getComputedStyle(arena).transform}`,
             );

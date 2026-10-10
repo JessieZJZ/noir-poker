@@ -32,20 +32,30 @@ export function createSettlementLayout(arena, { observe = true } = {}) {
       // The hero's tilted cards extend beyond their untransformed wrapper.
       heroGap = 24,
       bottomPadding = 20;
-    // Open the portrait table's middle corridor without clipping a player's
-    // actual footprint (long names and actions can be wider than profiles).
-    const spread =
-      Number(arena.dataset.playerCount) >= 7 && matchMedia('(max-width: 600px)').matches;
+    // Open the public row's actual horizontal corridor before reserving a
+    // vertical band. Move side seats only by the missing clearance, bounded
+    // by their full footprint; a fixed shift can leave a small collision and
+    // unnecessarily grow/shrink the whole mobile table.
+    const spread = Number(arena.dataset.playerCount) >= 7 && compact;
     for (const seat of arena.querySelectorAll('.seat')) seat.style.removeProperty('margin-left');
     if (spread) {
+      const publicParts = [...center.querySelectorAll('.pot, #board, #board-caption')]
+        .map((el) => el.getBoundingClientRect())
+        .filter((r) => r.width > 0 && r.height > 0);
+      const clearLeft = Math.min(...publicParts.map((r) => r.left)) - gap,
+        clearRight = Math.max(...publicParts.map((r) => r.right)) + gap;
       for (const seat of arena.querySelectorAll('.seat-left, .seat-right')) {
-        const parts = [...seat.querySelectorAll('.mini-cards, .seat-profile, .seat-action')]
+        const parts = [
+          ...seat.querySelectorAll('.mini-cards, .seat-profile, .seat-action, .hand-rank'),
+        ]
           .filter((el) => !el.hidden)
           .map((el) => el.getBoundingClientRect())
           .filter((r) => r.width > 0 && r.height > 0);
+        const left = Math.min(...parts.map((r) => r.left)),
+          right = Math.max(...parts.map((r) => r.right));
         const shift = seat.classList.contains('seat-left')
-          ? -Math.min(14, Math.min(...parts.map((r) => r.left)) - box.left - 1)
-          : Math.min(14, box.right - Math.max(...parts.map((r) => r.right)) - 1);
+          ? -Math.min(Math.max(0, right - clearLeft), Math.max(0, left - box.left - 1))
+          : Math.min(Math.max(0, clearRight - left), Math.max(0, box.right - right - 1));
         seat.style.marginLeft = `${shift}px`;
       }
     }
