@@ -117,10 +117,214 @@ test('system language fallback and manual language switch retain table preferenc
     await page.locator('#language-select').selectOption('zh-CN');
     await expect(page.locator('html')).toHaveAttribute('lang', 'zh-CN');
     await expect(page.locator('html')).toHaveAttribute('data-app-ready', 'true');
-    await page.locator('#opponents-button').click();
+    await expect(page.locator('#opponents-dialog')).toBeVisible();
     await expect(page.locator('#player-count')).toHaveValue('5');
     await expect(page.locator('#language-select')).toHaveValue('zh-CN');
   } finally {
     await context.close();
   }
+});
+
+test('live switching keeps settings, controls and the entire current hand across repeated languages', async ({
+  page,
+}) => {
+  await page.goto('/');
+  await expect(page.locator('html')).toHaveAttribute('data-app-ready', 'true');
+  await page.evaluate(() => {
+    window.qa.heroTurn(6);
+    window.languageSession = {};
+  });
+  const state = await page.evaluate(() => window.qa.state());
+  const fullState = await page.evaluate(() => window.qa.snapshot());
+  const stats = await page.locator('#stat-hands').textContent();
+  await page.locator('#opponents-button').click();
+  const dialog = page.locator('#opponents-dialog');
+  const select = page.locator('#language-select');
+  await select.focus();
+  for (const [locale, title] of [
+    ['ja', '設定'],
+    ['ko', '설정'],
+    ['en', 'Settings'],
+    ['zh-CN', '设置'],
+    ['ko', '설정'],
+    ['ja', '設定'],
+  ]) {
+    await select.selectOption(locale);
+    await expect(page.locator('html')).toHaveAttribute('lang', locale);
+    await expect(dialog).toBeVisible();
+    await expect(dialog.locator('h2')).toHaveText(title);
+    await expect(select).toBeFocused();
+    expect(await page.evaluate(() => window.qa.state())).toEqual(state);
+    expect(await page.evaluate(() => window.qa.snapshot())).toEqual(fullState);
+    expect(await page.locator('#stat-hands').textContent()).toBe(stats);
+    expect(await page.evaluate(() => !!window.languageSession)).toBe(true);
+    expect(await page.locator('.hint-marquee-copy').textContent()).toBe(
+      await page.locator('#coach-tip').textContent(),
+    );
+    expect(
+      await page.locator('[data-profile-preview="balanced"] .portrait-fallback').textContent(),
+    ).toBe(
+      (await page.locator('[data-profile-preview="balanced"] strong').textContent()).slice(0, 1),
+    );
+  }
+  await dialog.locator('.close-dialog').click();
+  await expect(page.locator('#call-button')).toBeEnabled();
+  await page.locator('#call-button').click();
+  await page.evaluate(() => window.qa.stop());
+  expect(await page.evaluate(() => window.qa.state().totalLogs)).toBeGreaterThan(state.totalLogs);
+  await page.reload();
+  await expect(page.locator('html')).toHaveAttribute('lang', 'ja');
+});
+
+test('language switching preserves paid settlement and retry retracts it exactly once', async ({
+  page,
+}) => {
+  await page.goto('/');
+  await expect(page.locator('html')).toHaveAttribute('data-app-ready', 'true');
+  const state = await page.evaluate(() => window.qa.foldWin(6, 0));
+  const before = await page.evaluate(() => window.qa.state());
+  const hands = await page.locator('#stat-hands').textContent();
+  await page.locator('#opponents-button').click();
+  for (const locale of ['ja', 'ko', 'zh-CN']) {
+    await page.locator('#language-select').selectOption(locale);
+    await expect(page.locator('html')).toHaveAttribute('lang', locale);
+    expect(await page.evaluate(() => window.qa.state())).toEqual(before);
+    expect(await page.locator('#stat-hands').textContent()).toBe(hands);
+  }
+  await page.locator('#opponents-dialog .close-dialog').click();
+  await page.locator('#restart-hand-button').click();
+  await page.evaluate(() => window.qa.stop());
+  const retry = await page.evaluate(() => window.qa.state());
+  expect(retry.hand).toBe(state.hand);
+  expect(retry.hole).toEqual(state.hole);
+  expect(retry.replayAttempt).toBe(state.replayAttempt + 1);
+  expect(retry.wealth).toBe(30000);
+  expect(await page.locator('#stat-hands').textContent()).toBe('0');
+});
+
+test('Japanese and Korean profile cards and ranges fit a narrow settings page', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 320, height: 740 });
+  await page.goto('/');
+  await expect(page.locator('html')).toHaveAttribute('data-app-ready', 'true');
+  await page.evaluate(() => window.qa.heroTurn());
+  await page.locator('#opponents-button').click();
+  for (const locale of ['ja', 'ko']) {
+    await page.locator('#language-select').selectOption(locale);
+    await expect(page.locator('html')).toHaveAttribute('lang', locale);
+    const cards = page.locator('.profile-card');
+    await expect(cards).toHaveCount(9);
+    const bounds = await cards.evaluateAll((items) =>
+      items.map((el) => ({
+        height: el.getBoundingClientRect().height,
+        fits: el.scrollWidth <= el.clientWidth + 1,
+        text: el.textContent,
+      })),
+    );
+    expect(
+      bounds.every((b) => b.height < 250 && b.fits && !/[⁇�]|\?{2}|(.{1,12})\1{5}/u.test(b.text)),
+    ).toBe(true);
+    await page.locator('[data-profile-preview="zang"]').click();
+    await expect(page.locator('#profile-detail')).toBeVisible();
+    await expect(page.locator('.profile-sizing strong')).toHaveText(
+      locale === 'ja' ? 'ポットの 60–100%' : '팟의 60–100%',
+    );
+    expect(
+      await page
+        .locator('.profile-sizing strong')
+        .evaluate((el) => el.getBoundingClientRect().height),
+    ).toBeLessThan(35);
+    expect(
+      await page.locator('#profile-detail').evaluate((el) => el.scrollWidth <= el.clientWidth + 1),
+    ).toBe(true);
+    await page.locator('[data-close-profile-detail]').click();
+  }
+});
+
+test('DOM sources survive rerenders, duplicate translated labels and rapid language changes', async ({
+  page,
+}) => {
+  await page.goto('/');
+  await expect(page.locator('html')).toHaveAttribute('data-app-ready', 'true');
+  const result = await page.evaluate(async () => {
+    const {
+      loadLocale,
+      localizeDocument,
+      setLocalizedText,
+      setLocalizedHTML,
+      setLocalizedAttribute,
+    } = await import('/src/i18n/index.js');
+    const holder = document.createElement('div');
+    await loadLocale('en');
+    setLocalizedHTML(
+      holder,
+      '<button title="弃牌">弃牌</button><span>已弃牌</span><b translate="no">谭老板</b>',
+    );
+    const button = holder.querySelector('button');
+    button.dataset.rule = '弃牌';
+    button.onclick = () => {
+      holder.dataset.clicked = 'true';
+    };
+    await loadLocale('ja');
+    localizeDocument(holder);
+    setLocalizedText(button, '跟注');
+    setLocalizedAttribute(button, 'title', '跟注');
+    await loadLocale('ko');
+    localizeDocument(holder);
+    await loadLocale('zh-CN');
+    localizeDocument(holder);
+    button.click();
+    return {
+      text: button.textContent,
+      title: button.title,
+      span: holder.querySelector('span').textContent,
+      legalName: holder.querySelector('b').textContent,
+      rule: button.dataset.rule,
+      clicked: holder.dataset.clicked,
+    };
+  });
+  expect(result).toEqual({
+    text: '跟注',
+    title: '跟注',
+    span: '已弃牌',
+    legalName: '谭老板',
+    rule: '弃牌',
+    clicked: 'true',
+  });
+  await page.locator('#opponents-button').click();
+  await page.locator('#language-select').evaluate((select) => {
+    window.localeChanges = 0;
+    document.addEventListener('noir:locale-changed', () => window.localeChanges++);
+    for (const locale of ['ja', 'ko', 'en', 'zh-CN']) {
+      select.value = locale;
+      select.dispatchEvent(new Event('change'));
+    }
+  });
+  await expect.poll(() => page.evaluate(() => window.localeChanges)).toBe(4);
+  await expect(page.locator('#opponents-dialog h2')).toHaveText('设置');
+  await expect(page.locator('html')).toHaveAttribute('lang', 'zh-CN');
+  expect(await page.evaluate(() => localStorage.getItem('noir-locale'))).toBe('zh-CN');
+});
+
+test('switching language keeps a pending bot action and its deadline alive', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.locator('html')).toHaveAttribute('data-app-ready', 'true');
+  await page.clock.install({ time: 0 });
+  await page.clock.pauseAt(1000);
+  await page.evaluate(() => window.qa.heroTurn());
+  await page.locator('#call-button').click();
+  const thinking = await page.evaluate(() => window.qa.thinking());
+  expect(thinking).not.toBeNull();
+  const state = await page.evaluate(() => window.qa.snapshot());
+  await page.locator('#opponents-button').click();
+  for (const locale of ['ja', 'ko']) {
+    await page.locator('#language-select').selectOption(locale);
+    await expect(page.locator('html')).toHaveAttribute('lang', locale);
+    expect(await page.evaluate(() => window.qa.snapshot())).toEqual(state);
+    expect(await page.evaluate(() => window.qa.thinking())).toEqual(thinking);
+  }
+  await page.clock.runFor(thinking.delayMs + 1);
+  expect(await page.evaluate(() => window.qa.state().totalLogs)).toBeGreaterThan(state.logs.length);
+  expect(await page.evaluate(() => window.qa.state().wealth)).toBe(30000);
 });

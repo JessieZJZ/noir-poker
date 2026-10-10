@@ -20,6 +20,9 @@ function fixtureGame(count = 6, heroFirst = false) {
 }
 
 window.qa = {
+  snapshot() {
+    return JSON.parse(JSON.stringify(game));
+  },
   hole(id) {
     return game.players[id].hole.map((c) => rankText(c.rank) + c.symbol);
   },

@@ -308,7 +308,6 @@
   "分析未完成，可以重试。": "A análise não está concluída e pode ser re-testada.",
   "分池结算 ·": "O equilíbrio do equilíbrio;",
   "分配座位": "Assessoria de assento",
-  "切换语言将重新开始练习；牌桌设置保留。": "Mudar a linguagem retorna a prática. as configurações da sua mesa são mantidas.",
   "列得出会付费的较弱牌，并能承担被加注后重新判断。": "Lista o cartão mais fraco pago e pode ser tomado após ser levantado re-judiciado.",
   "创造性施压 · 多街诈唬": "Apresentação de Multi-Street Bluff",
   "利用最后行动观察，控制边缘成牌或保留免费听牌。": "Use a ação final para observar, controlar o limiar para ser um cartão ou salvar o desenho gratuito.",
@@ -1040,5 +1039,6 @@
   "，这次之后不必再为下注付费": "Desta vez, você não precisa pagar pela aposta.",
   "；不同花弱 A 需要更严格的防守条件": "Não há flush fraco A requer condições de defesa mais rigorosas",
   "；成牌仍可能输给更强牌。": "O cartão pode perder para um cartão mais forte.",
-  "；过牌不额外支付这个机会。": "O check não paga por essa oportunidade."
+  "；过牌不额外支付这个机会。": "O check não paga por essa oportunidade.",
+  "切换语言立即生效，保留当前设置页面与正在进行的对局。": "O idioma muda imediatamente, mantendo as configurações abertas e a mão em andamento."
 }
