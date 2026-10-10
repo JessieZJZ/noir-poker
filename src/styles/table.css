@@ -395,7 +395,8 @@
     min-height: 61px;
   }
 }
-@media (max-width: 1150px) and (min-width: 901px) {
+@media (max-width: 1150px) and (min-width: 1101px),
+  (max-width: 1150px) and (min-width: 901px) and (orientation: landscape) {
   .surface-top {
     align-items: flex-start;
     flex-wrap: wrap;
@@ -706,7 +707,8 @@
   opacity: 0.6;
   cursor: wait;
 }
-@media (max-width: 1150px) and (min-width: 901px) {
+@media (max-width: 1150px) and (min-width: 1101px),
+  (max-width: 1150px) and (min-width: 901px) and (orientation: landscape) {
   .showdown-scene {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -860,7 +862,8 @@
 .activity-list .activity-empty:before {
   content: none;
 }
-@media (max-width: 900px) and (min-width: 361px) {
+@media (max-width: 900px) and (min-width: 361px),
+  (min-width: 901px) and (max-width: 1100px) and (orientation: portrait) and (min-width: 361px) {
   .activity-card .activity-list {
     column-count: 2;
   }
@@ -891,48 +894,48 @@
 .hero-rank-slot {
   display: grid;
   place-items: center;
-  height: 32px;
+  height: 20px;
   flex: none;
-  margin-top: 9px;
+  margin-top: 4px;
 }
 .hero-rank-slot .hero-hand-rank {
   margin-top: 0;
 }
 .hero-name {
-  --hero-status-width: 76px;
-  --hero-identity-width: 78px;
-  --hero-action-width: 146px;
   display: grid;
   position: absolute;
   left: 50%;
   bottom: 0;
   transform: translateX(-50%);
-  grid-template-columns:
-    var(--hero-action-width) var(--hero-identity-width)
-    var(--hero-action-width);
+  grid-template-columns: 1fr;
+  grid-template-rows: 21px 18px;
+  width: max-content;
+  min-width: 140px;
   height: 43px;
-  gap: 8px;
+  gap: 2px;
   align-items: center;
-}
-.hero-name .hero-turn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: var(--hero-status-width);
-  justify-self: end;
-  min-height: 30px;
-  margin: 0;
-  white-space: nowrap;
 }
 .hero-identity {
+  grid-column: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
   min-width: 0;
   text-align: center;
 }
 .hero-action-slot {
+  grid-column: 1;
   display: flex;
   align-items: center;
+  justify-content: center;
   height: 100%;
   min-width: 0;
+}
+.hero-identity .hero-stack {
+  margin: 0;
+  font-size: inherit;
+  line-height: 1;
 }
 .hero-name .hero-last-action,
 .arena.is-done .hero-name .hero-last-action {
@@ -949,10 +952,7 @@
   font-size: inherit;
   white-space: nowrap;
 }
-.hero-name.is-active .hero-turn {
-  border-color: var(--mint);
-}
-@media (min-width: 901px) {
+@media (min-width: 1101px), (min-width: 901px) and (orientation: landscape) {
   /* The rank slot is reserved during play as well as settlement. Give the
      smaller tables the same base budget instead of growing them only after
      the public group can no longer clear the hero's cards. */
@@ -961,20 +961,16 @@
     min-height: 620px;
   }
 }
-@media (max-width: 900px) {
+@media (max-width: 900px), (min-width: 901px) and (max-width: 1100px) and (orientation: portrait) {
   .hero-area {
     padding-bottom: 41px;
   }
   .hero-rank-slot {
-    height: 28px;
-    margin-top: 6px;
+    height: 18px;
+    margin-top: 4px;
   }
   .hero-name {
     height: 35px;
-  }
-  .hero-name .hero-turn {
-    min-height: 26px;
-    font-size: 10px;
-    padding: 4px 5px;
+    grid-template-rows: 18px 15px;
   }
 }

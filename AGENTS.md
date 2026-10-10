@@ -7,6 +7,7 @@
 - BTN's next clockwise seat is SB, then BB. Short all-ins, raise reopening, eligibility and uncalled refunds must retain existing semantics.
 - Review uses before-action public snapshots. Never use hidden opponent cards, future deck or final winners to grade a decision. Distinguish estimates, heuristics and proven rule errors.
 - Timer/Worker changes must preserve cancellation on next hand, retry and reset. Retry restores original deal and retracts payouts/statistics exactly once.
+- For UI changes, resolve and verify Web first, then validate the native apps and WeChat mini-program. Update the corresponding E2E and unit regressions in the same change.
 - Validate material changes with `npm run check`; UI changes with `npm run test:e2e`. Use `npm run format:check` before delivering. E2E fixtures run only in Vite test mode and must never enter production.
 - If changing paths or commands, update README and docs in the same change. Do not store publishing credentials in this repository.
 - Web and native apps share `src/` and `index.html`. Native releases must bundle local assets; do not add a production `server.url` or remote code-update mechanism. Keep Xcode/Gradle hooks that rebuild the latest Web source, the source/copy verification, and background cancellation semantics.

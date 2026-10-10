@@ -1,9 +1,10 @@
+import { COMPACT_PLAY_QUERY, preferSinglePublicRow, smallestClearHeight } from './play-geometry.js';
 // Keep the whole mobile table in the first screen. Measurements are made at
 // scale 1 before fitting, so collision coordinates never mix CSS/visual pixels.
 export function createPlayViewport(surface, { layout = () => {} } = {}) {
   const viewport = surface.querySelector('.table-viewport'),
     arena = surface.querySelector('#arena'),
-    mobile = matchMedia('(max-width: 900px)');
+    mobile = matchMedia(COMPACT_PLAY_QUERY);
   let frame = null;
 
   function fit() {
@@ -11,6 +12,7 @@ export function createPlayViewport(surface, { layout = () => {} } = {}) {
     arena.style.removeProperty('width');
     arena.style.removeProperty('--arena-height');
     arena.classList.remove('compact-landscape');
+    arena.classList.remove('public-two-rows');
     const seats = [...arena.querySelectorAll('.seat')];
     for (const seat of seats) {
       seat.dataset.originalLeft ??= seat.style.left;
@@ -29,6 +31,9 @@ export function createPlayViewport(surface, { layout = () => {} } = {}) {
       top = surface.getBoundingClientRect().top + window.scrollY,
       height = Math.max(160, screenHeight - top - 8);
     surface.style.setProperty('--play-height', `${height}px`);
+    // Hidden or rotating WebViews can briefly report a zero-sized viewport.
+    // Wait for its resize notification instead of dividing by zero below.
+    if (viewport.clientWidth === 0 || viewport.clientHeight === 0) return;
     arena.style.width = `${viewport.clientWidth}px`;
     const landscape = viewport.clientWidth > 600 && screenHeight < 600;
     arena.classList.toggle('compact-landscape', landscape);
@@ -39,12 +44,38 @@ export function createPlayViewport(surface, { layout = () => {} } = {}) {
       });
     }
     const availableHeight = viewport.clientHeight,
-      baseHeight = Math.max(
-        availableHeight,
-        landscape ? 220 : Number(arena.dataset.playerCount) >= 7 ? 450 : 360,
+      // A two-row board and the hero need the same vertical budget at every
+      // player count. A shorter six-seat base can make the corridor solver
+      // grow an unnecessary seat band, shrinking the whole table on SE.
+      baseHeight = Math.max(availableHeight, landscape ? 220 : 450);
+    // Fit height without narrowing the felt. A short phone uses a wider
+    // logical arena so its scaled table still spans the available viewport.
+    const sizeArena = (height) => {
+      arena.style.width = `${viewport.clientWidth * Math.max(1, height / availableHeight)}px`;
+      arena.style.setProperty('--arena-height', `${height}px`);
+      layout();
+      return arena.getBoundingClientRect().height;
+    };
+    const fittingHeight = () => {
+      const required = sizeArena(baseHeight);
+      if (required <= baseHeight + 0.5) return baseHeight;
+      // Widening removes some horizontal collisions. Find the smallest
+      // proportional arena instead of keeping the narrow first pass's bound.
+      return smallestClearHeight(
+        baseHeight,
+        required,
+        (candidate) => sizeArena(candidate) <= candidate + 0.5,
       );
-    arena.style.setProperty('--arena-height', `${baseHeight}px`);
-    layout();
+    };
+    let fittedHeight = fittingHeight();
+    if (!landscape && viewport.clientWidth <= 600 && fittedHeight > baseHeight + 0.5) {
+      arena.classList.add('public-two-rows');
+      const twoRowsHeight = fittingHeight();
+      if (preferSinglePublicRow(fittedHeight, twoRowsHeight))
+        arena.classList.remove('public-two-rows');
+      else fittedHeight = twoRowsHeight;
+    }
+    sizeArena(fittedHeight);
 
     const box = arena.getBoundingClientRect(),
       parts = [

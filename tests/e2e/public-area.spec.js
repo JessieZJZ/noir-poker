@@ -14,8 +14,12 @@ async function assertPublicArea(page) {
         const problems = [];
         const amount = box('#pot-value'),
           details = box('#pot-details-button'),
-          arena = innerWidth <= 900 ? box('.table-viewport') : box('#arena'),
-          scale = box('#arena').width / document.querySelector('#arena').offsetWidth,
+          compact = matchMedia(
+            '(max-width: 900px), (max-width: 1100px) and (orientation: portrait)',
+          ).matches,
+          arena = compact ? box('.table-viewport') : box('#arena'),
+          transform = getComputedStyle(document.querySelector('#arena')).transform,
+          scale = transform === 'none' ? 1 : new DOMMatrix(transform).a,
           gap = 12 * scale;
         const group = box('.table-center'),
           table = box('.table-inner'),
@@ -52,7 +56,7 @@ async function assertPublicArea(page) {
         const parts = publicSelectors.map(box);
         const occupied = [
           ...document.querySelectorAll(
-            '.seat .mini-cards, .seat-profile, .seat .hand-rank, .seat .seat-action',
+            '.seat .mini-cards, .seat-profile, .seat .seat-rank-slot, .seat .seat-action',
           ),
         ]
           .filter(visible)
@@ -60,18 +64,20 @@ async function assertPublicArea(page) {
         const min = table.top + gap;
         // The reserved gap starts at the visible tilted card edge, not its
         // unrotated flex wrapper. Scan independently inside that safe band.
-        const heroTop = Math.min(
-          hero.top,
-          ...[...document.querySelectorAll('#hero-cards .playing-card')]
-            .map((el) => el.getBoundingClientRect())
-            .filter((r) => r.width > 0 && r.height > 0)
-            .map((r) => r.top),
-        );
+        const heroTop = compact
+          ? hero.top - 8 * scale
+          : Math.min(
+              hero.top,
+              ...[...document.querySelectorAll('#hero-cards .playing-card')]
+                .map((el) => el.getBoundingClientRect())
+                .filter((r) => r.width > 0 && r.height > 0)
+                .map((r) => r.top),
+            );
         const max = Math.min(
           table.bottom - group.height - gap,
           heroTop - group.height - 24 * scale,
         );
-        const ideal = (table.top + table.bottom - group.height) / 2;
+        const ideal = table.top + table.height * 0.44 - group.height / 2;
         const clearAt = (top) =>
           parts.every((part) =>
             occupied.every(
@@ -111,7 +117,7 @@ async function assertPublicArea(page) {
         if (ideal >= min && ideal <= max && clearAt(ideal)) best = 0;
         if (!Number.isFinite(best) || Math.abs(group.top - ideal) > best + 1.5)
           problems.push(
-            `public group is farther from felt center than necessary: actual ${Math.abs(group.top - ideal).toFixed(2)}, best ${best.toFixed(2)}`,
+            `public group is farther from the upper felt anchor than necessary: actual ${Math.abs(group.top - ideal).toFixed(2)}, best ${best.toFixed(2)}`,
           );
         return problems;
       }),
@@ -119,7 +125,7 @@ async function assertPublicArea(page) {
     .toEqual([]);
 }
 
-test('public areas stay closest to the felt center within the available play viewport without covering players', async ({
+test('public areas stay closest to the upper felt anchor within the play viewport without covering players', async ({
   page,
 }) => {
   // Each test traverses many complete table layouts; each assertion keeps

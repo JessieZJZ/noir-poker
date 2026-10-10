@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { readTableLayout, assertTableLayout } from './layout.mjs';
 const documentLoginMarker = (text) => /sign in|log in|登录账号/i.test(text);
 
 // These scenarios drive the installed production bundle. They read only the
@@ -15,6 +16,8 @@ export async function nativeScenarios(app) {
     app.log(`PASS ${name}`);
   };
   await check('local-launch-and-no-login', async () => {
+    const layout = await app.evaluate(readTableLayout);
+    assertTableLayout(layout);
     const info = await app.evaluate(() => ({
       href: location.href,
       native: document.documentElement.classList.contains('native-app'),
@@ -52,21 +55,22 @@ export async function nativeScenarios(app) {
       playerCount: info.state.playerCount,
       viewport: info.viewport,
       controls: info.controls,
+      layout,
     };
   });
   await check('settings-autosave-and-local-portraits', async () => {
     await app.click('#opponents-button');
-    const languageReloads = [];
+    const languageChanges = [];
     const changeLanguage = async (target) => {
       const before = await app.evaluate(() => ({
         language: document.querySelector('#language-select').value,
         timeOrigin: performance.timeOrigin,
+        hand: window.noir.getState().hand,
       }));
       if (before.language === target) return;
       await app.select('#language-select', target);
-      // Selecting a language flushes native preferences and reloads the page.
-      // The old select value changes before navigation, so value alone cannot
-      // authorize another interaction with the old settings document.
+      // Catalog loading updates the current document. Check translated text,
+      // the open dialog and the hand as well as the locale attribute.
       const after = await app.waitFor(
         async () => {
           const loaded = await app.evaluate(() => ({
@@ -75,29 +79,32 @@ export async function nativeScenarios(app) {
             ready: document.documentElement.dataset.appReady === 'true',
             initialized: Boolean(window.noir?.getState()),
             settingsOpen: document.querySelector('#opponents-dialog')?.open,
+            title: document.querySelector('#opponents-dialog h2')?.textContent.trim(),
+            hand: window.noir?.getState().hand,
           }));
-          return loaded.timeOrigin !== before.timeOrigin &&
-            loaded.language === target &&
+          return loaded.language === target &&
+            loaded.title === (target === 'en' ? 'Settings' : '设置') &&
             loaded.ready &&
             loaded.initialized
             ? loaded
             : null;
         },
         30000,
-        `Language ${target} must finish a real document reload`,
+        `Language ${target} must finish localizing the installed document`,
       );
-      assert.equal(after.settingsOpen, false, 'Navigation must replace the old settings dialog');
-      languageReloads.push({
+      assert.equal(after.timeOrigin, before.timeOrigin, 'Changing language must not reload');
+      assert.equal(after.settingsOpen, true, 'Changing language must keep settings open');
+      assert.equal(after.hand, before.hand, 'Changing language must not start another hand');
+      languageChanges.push({
         from: before.language,
         to: after.language,
         beforeTimeOrigin: before.timeOrigin,
         afterTimeOrigin: after.timeOrigin,
       });
-      await app.click('#opponents-button');
     };
     const initialLanguage = await app.evaluate(() => document.documentElement.lang);
     // Force a real change even on a simulator that already starts in Chinese;
-    // this covers the same navigation boundary as an English CI simulator.
+    // this exercises the same live catalog path as an English CI simulator.
     await changeLanguage(initialLanguage === 'en' ? 'zh-CN' : 'en');
     await changeLanguage('zh-CN');
     await app.select('#player-count', '5');
@@ -149,12 +156,13 @@ export async function nativeScenarios(app) {
       sound: 'false',
     });
     await app.click('#opponents-dialog .close-dialog');
-    return { saved, languageReloads, portraits: images };
+    return { saved, languageChanges, portraits: images };
   });
   await check('raise-call-fold-and-settlement', async () => {
     const coverage = { raise: null, call: null, fold: null };
     let settled;
     let settlementBudget;
+    let beforeFold;
     // Capture public state immediately after the actual click handler, before
     // bot timers or an uncalled-bet refund can obscure the chip transfer.
     const actAndObserve = async (action) => {
@@ -197,6 +205,7 @@ export async function nativeScenarios(app) {
               ? 'fold'
               : 'call';
       if (action === 'raise') await app.click('[data-preset="min"]');
+      if (action === 'fold') beforeFold = await app.evaluate(readTableLayout);
       const acted = await actAndObserve(action);
       assert.ok(acted, 'A real enabled click must reach the game handler');
       const paid = turn.stack - acted.stack;
@@ -239,7 +248,33 @@ export async function nativeScenarios(app) {
       settlementBudget,
       'Settlement must conserve chips',
     );
-    return { coverage, pot: settled.pot, settlementBudget };
+    await app.waitFor(
+      () =>
+        app.evaluate(() =>
+          document
+            .querySelector('#board')
+            .getAnimations({ subtree: true })
+            .every((animation) => animation.playState !== 'running'),
+        ),
+      5000,
+      'Visible public-card deal and highlight animations must finish before reading face rows',
+    );
+    const layout = await app.evaluate(readTableLayout);
+    assertTableLayout(layout);
+    assert.ok(Math.abs(layout.table.height - beforeFold.table.height) <= 1);
+    assert.ok(Math.abs(layout.table.top - beforeFold.table.top) <= 1);
+    for (const anchor of ['arena', 'publicArea'])
+      for (const key of ['top', 'left', 'height', 'right'])
+        assert.ok(
+          Math.abs(layout[anchor][key] - beforeFold[anchor][key]) <= 1,
+          `${anchor} ${key} must not jump during settlement`,
+        );
+    const buttons = layout.settledButtons;
+    assert.ok(
+      buttons.every((button) => Math.abs(button.top - buttons[0].top) <= 1 && button.height >= 44),
+    );
+    assert.ok(layout.dock.height <= 65 + layout.bottomInset, 'Settlement must use the compact row');
+    return { coverage, pot: settled.pot, settlementBudget, layout };
   });
   await check('settlement-decision-review', async () => {
     await app.click('#review-hand-button');
