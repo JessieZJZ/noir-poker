@@ -70,7 +70,7 @@ docs/                       架构、规则、复盘依据与发布说明
 .openai/hosting.json          原 Sites 项目关联与部署入口
 ```
 
-采用浏览器原生 ES Modules + Vite，保留现有 JavaScript 实现。引擎和分析模块不依赖 DOM，可直接在 Node 中测试。Vite 负责开发服务、生产压缩、Worker 打包和资源版本标识。
+采用浏览器原生 ES Modules + Vite，保留现有 JavaScript 实现。引擎和分析模块不依赖 DOM，可直接在 Node 中测试。Vite 负责开发服务、生产压缩、Worker 打包和资源版本标识。`npm run dev` 同时监听微信小程序共享源码，`npm run build` 在 Web 构建后自动生成最新小程序工程。
 
 ## 已有功能
 
@@ -129,3 +129,20 @@ npm run mobile:ios           # 模拟器 App，需要 macOS / Xcode 26
 运行 `npm run i18n:check` 核对资源与动态金额占位符；新增界面文案时先运行 `npm run i18n:extract`，补齐各语言资源和 `src/i18n/overrides.json`，再运行 `npm run i18n:privacy` 更新政策页面。新语言需要同步原生语言声明、发布清单及验收矩阵。工程译文仍需母语扑克审校，自动检查不证明翻译质量。
 
 完整步骤、地区评级、签名测试、隐私申报及商店说明见 [全球上架指导报告](docs/global-store-report.md)。`npm run store:check` 检查 `mobile/store-readiness.json`；目前缺少公开 URL 与实际验收证据时预检会失败，不能视为已经完成全球上架。原生资源验证与实际发行编译按 [移动端操作](docs/mobile.md) 和 [发行准备](docs/mobile-release.md) 分别执行。
+
+## 微信小程序与原生端到端验证
+
+```sh
+npm run wechat:build         # 可导入 .artifacts/wechat，AppID 后续配置
+npm run wechat:verify        # 当前源码、全部头像、文件指纹与包大小
+npm run wechat:check         # 官方开源 WXML/WXSS 编译器检查
+npm run platforms:sync      # 同步微信、iOS、Android 最新源码资源
+npm run mobile:test:setup -- ios  # 隔离安装 Appium 与平台驱动
+npm run mobile:test:ios      # 安装实际模拟器 App 并交互验证
+npm run mobile:test:setup -- android
+npm run mobile:test:android  # 启动 Android 仿真器后安装 APK 并交互验证
+```
+
+微信端共用规则、策略、复盘和头像，在同仓库维护 WXML/WXSS 界面与生命周期适配。共享业务的每次改动自动进入小程序构建；新增 Web 界面功能时同步更新小程序适配。导入、AppID 和自动监听见 [微信工程](docs/wechat.md)。小程序界面文案目前为中文，不进入手机 App 的十一语言资源清单。
+
+原生 App 保留当前人物头像与已有说明，图片 SHA-256 校验覆盖同步副本以及真实 `.app`/APK/AAB。CI 增加安装运行级别的两端测试，验证启动、设置保存、头像、下注/弃牌、结算/重打/下一手与系统前后台，保留设备截图和报告；环境与覆盖边界见 [原生 E2E](docs/native-e2e.md)。编译、浏览器、模拟器与真机结果分别记录，不能相互替代。

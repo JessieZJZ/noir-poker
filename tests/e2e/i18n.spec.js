@@ -32,6 +32,9 @@ for (const locale of locales) {
   test(`offline ${locale} table, settings, guide, review and retry keep chip rules`, async ({
     page,
   }) => {
+    // This full journey includes reloads, settings, review and a second page.
+    // Keep a bounded budget for slower CI runners without relaxing assertions.
+    test.setTimeout(60000);
     await page.route('**/*', async (route) => {
       const url = new URL(route.request().url());
       if (url.hostname !== '127.0.0.1' && url.hostname !== 'localhost') {
