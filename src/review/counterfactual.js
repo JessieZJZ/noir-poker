@@ -1,4 +1,11 @@
-import { newGame, deckOfCards, act, advanceStreet, botDecision } from '../engine/poker.js';
+import {
+  newGame,
+  deckOfCards,
+  act,
+  advanceStreet,
+  botDecision,
+  partitionPots,
+} from '../engine/poker.js';
 import { getBotProfile, freshBotMood } from '../engine/bot-profiles.js';
 import { rangeWeight, seedRandom, snapshotSeed } from './equity.js';
 import { isChipAmount, legalRaiseTo } from '../engine/bet-sizing.js';
@@ -120,6 +127,12 @@ function resume(s, deal) {
   }
   return g;
 }
+// A folded hero cannot win a pot. With no unmatched contribution to refund,
+// their final stack is fixed even if the other players keep betting. Ask the
+// rule engine for refunds; a folded hero with an unmatched bet must continue.
+function hasFinalFold(g) {
+  return g.players[0].folded && !partitionPots(g).refunds.some((refund) => refund.id === 0);
+}
 // Sampled private information only: original opponent holes, recorded traces,
 // future deck and outcome never enter these counterfactual hands.
 export function compareCandidateActions(s, alternatives = [], { trials = 40 } = {}) {
@@ -147,6 +160,7 @@ export function compareCandidateActions(s, alternatives = [], { trials = 40 } = 
         act(g, 0, candidates[c].action, candidates[c].amount);
         let actions = 0;
         while (g.phase !== 'done') {
+          if (hasFinalFold(g)) break;
           if (++actions > 400) throw Error('候选行动模拟未能结束。');
           if (g.phase === 'between') advanceStreet(g);
           else {
