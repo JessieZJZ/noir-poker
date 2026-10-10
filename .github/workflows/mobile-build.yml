@@ -131,8 +131,7 @@ jobs:
           disable-animations: true
           pre-emulator-launch-script: |
             df -h "$HOME"
-            task_available_kib="$(df -Pk "$HOME" | awk 'NR == 2 { print $4 }')"
-            test "$task_available_kib" -ge 8388608
+            test "$(df -Pk "$HOME" | awk 'NR == 2 { print $4 }')" -ge 10485760
           script: npm run mobile:test:android
       - uses: actions/upload-artifact@v7.0.2
         if: always()
