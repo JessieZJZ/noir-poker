@@ -272,8 +272,12 @@ export async function nativeScenarios(app) {
       15000,
       'Background test needs a pending opponent action',
     );
-    await app.background();
+    const nativeBackground = await app.background();
     await app.sleep(6000);
+    const stillBackgrounded = await app.nativeState();
+    const backgroundMs = performance.now() - nativeBackground.startedAt;
+    assert.ok([2, 3].includes(stillBackgrounded), 'App must still be natively backgrounded');
+    assert.ok(backgroundMs >= 6000, 'Native app must remain in the background for six seconds');
     await app.activate();
     const boundaries = await app.evaluate(() => window.__nativeLifecycleObservations);
     const hiddenIndex = boundaries.findIndex((entry) => !entry.active);
@@ -282,7 +286,6 @@ export async function nativeScenarios(app) {
     assert.ok(paused && resumed, 'Native inactive and active events must both arrive');
     assert.equal(paused.state.phase, 'playing');
     assert.ok(paused.state.actor && paused.state.actor !== '你');
-    assert.ok(resumed.at - paused.at >= 6000, 'App must remain in the background for six seconds');
     assert.deepEqual(
       resumed.state,
       paused.state,
@@ -297,7 +300,10 @@ export async function nativeScenarios(app) {
       'Game should resume after native foreground event',
     );
     return {
-      backgroundMs: resumed.at - paused.at,
+      backgroundMs: Math.round(backgroundMs),
+      nativeStateBefore: nativeBackground.nativeState,
+      nativeStateAfter: stillBackgrounded,
+      jsLifecycleIntervalMs: resumed.at - paused.at,
       pausedActor: paused.state.actor,
       pausedHand: paused.state.hand,
       pausedPhase: paused.state.phase,
