@@ -10,6 +10,11 @@ import {
 } from 'node:fs';
 import path from 'node:path';
 import { root, readJson, mobileMetadata, directoryDigest, sourceDigest } from './mobile-lib.mjs';
+import {
+  writeBundledAssetManifest,
+  verifyBundledAssetDirectory,
+  verifyBundledArtifact,
+} from './bundled-assets.mjs';
 
 process.chdir(root);
 const command = process.argv[2] ?? 'sync';
@@ -68,8 +73,8 @@ function buildWeb() {
   ]);
   if (sourceDigest() !== fingerprint)
     throw Error('Web source changed during the build. Retry after saving your edits');
-  // Native distribution uses original letter avatars, not unlicensed photos.
-  rmSync(path.join(webDir, 'portraits'), { recursive: true, force: true });
+  // Native builds retain the same local portraits and images as the shared Web app.
+  writeBundledAssetManifest(webDir);
   const git = spawnSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' });
   const dirty = spawnSync('git', ['status', '--porcelain'], { cwd: root, encoding: 'utf8' });
   writeFileSync(
@@ -106,12 +111,14 @@ function verifyCopies(selected) {
   if (info.sourceDigest !== sourceDigest())
     throw Error('Web source changed since the last native build. Run npm run mobile:sync');
   const digest = directoryDigest(webDir);
+  const images = verifyBundledAssetDirectory(webDir);
   for (const target of selected) {
     if (
       !existsSync(path.join(destinations[target], 'index.html')) ||
       directoryDigest(destinations[target]) !== digest
     )
       throw Error(`${target} assets are stale. Run npm run mobile:sync`);
+    verifyBundledAssetDirectory(destinations[target]);
   }
   mkdirSync(output, { recursive: true });
   writeFileSync(
@@ -120,6 +127,7 @@ function verifyCopies(selected) {
       {
         ...metadata,
         assetDigest: digest,
+        ...images,
         platforms: selected,
         verifiedAt: new Date().toISOString(),
       },
@@ -255,6 +263,13 @@ if (command === 'doctor') {
         'build',
       );
     run('xcodebuild', args, { env });
+    const artifact = path.join(
+      root,
+      command === 'ios-archive'
+        ? '.artifacts/mobile/NOIR-Poker.xcarchive'
+        : '.artifacts/mobile/ios/Build/Products/Debug-iphonesimulator/App.app',
+    );
+    console.log(JSON.stringify(verifyBundledArtifact(artifact)));
   } else {
     run(
       process.platform === 'win32' ? 'gradlew.bat' : './gradlew',
@@ -269,6 +284,7 @@ if (command === 'doctor') {
     );
     mkdirSync(output, { recursive: true });
     cpSync(path.join(root, 'android/app/build/outputs', kind), destination);
+    console.log(JSON.stringify(verifyBundledArtifact(destination)));
     console.log(`Built ${destination}`);
   }
 } else throw Error(`Unknown mobile command: ${command}`);

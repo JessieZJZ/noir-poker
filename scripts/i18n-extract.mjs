@@ -33,8 +33,8 @@ function walk(node) {
   }
 }
 for (const directory of ['ui', 'review', 'engine', 'platform'])
-  for (const file of readdirSync(new URL(`src/${directory}/`, root)).filter((p) =>
-    p.endsWith('.js'),
+  for (const file of readdirSync(new URL(`src/${directory}/`, root)).filter(
+    (p) => p.endsWith('.js') && !p.startsWith('wechat-'),
   ))
     walk(
       babel.parsers.babel.parse(readFileSync(new URL(`src/${directory}/${file}`, root), 'utf8')),

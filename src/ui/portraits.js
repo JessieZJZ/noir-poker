@@ -62,12 +62,12 @@ const escape = (value) =>
   );
 
 export function portraitContent(profileId, fallback) {
-  const photo = import.meta.env?.MODE === 'native' ? null : PROFILE_PORTRAITS[profileId];
+  const photo = PROFILE_PORTRAITS[profileId];
   return `<span class="portrait-fallback" aria-hidden="true">${escape(fallback)}</span>${photo ? `<img class="persona-portrait" data-portrait-profile="${profileId}" src="${photo.src}" alt="" decoding="async" style="object-position:${photo.position || 'center'};--portrait-zoom:${photo.zoom || 1};--portrait-origin:${photo.origin || 'center'}" />` : ''}`;
 }
 
 export function portraitCredit(profileId) {
-  const photo = import.meta.env?.MODE === 'native' ? null : PROFILE_PORTRAITS[profileId];
+  const photo = PROFILE_PORTRAITS[profileId];
   return photo
     ? `<a class="profile-photo-credit" href="${photo.source}" target="_blank" rel="noopener noreferrer">头像：${photo.credit}</a>`
     : '';
