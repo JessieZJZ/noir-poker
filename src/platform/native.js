@@ -1,3 +1,4 @@
+import { localizeText, localizeHTML } from '../i18n/index.js';
 import { Capacitor } from '@capacitor/core';
 import { preferenceStorage } from './storage.js';
 let appActive = true;
@@ -42,17 +43,17 @@ export async function preparePlatform() {
 
 function installNativeAbout(info) {
   const button = document.createElement('button');
-  button.textContent = '关于与隐私';
+  button.textContent = localizeText('关于与隐私');
   button.id = 'native-about-button';
   const dialog = document.createElement('dialog');
   dialog.id = 'native-about-dialog';
   const close = document.createElement('button');
   close.className = 'close-dialog';
-  close.setAttribute('aria-label', '关闭关于与隐私');
-  close.textContent = '×';
+  close.setAttribute('aria-label', localizeText('关闭关于与隐私'));
+  close.textContent = localizeText('×');
   close.onclick = () => dialog.close();
   const heading = document.createElement('h2');
-  heading.textContent = `NOIR Poker ${info.version} (${info.build})`;
+  heading.textContent = localizeText(`NOIR Poker ${info.version} (${info.build})`);
   dialog.append(close, heading);
   for (const text of [
     '本地德州扑克练习。所有筹码均为虚拟筹码，无现金兑换、奖金或真人赌注。',
@@ -61,15 +62,20 @@ function installNativeAbout(info) {
     '仅当你主动打开资料来源或帮助链接时，系统浏览器会访问对应网站，第三方按其自身隐私政策处理该次访问。',
   ]) {
     const paragraph = document.createElement('p');
-    paragraph.textContent = text;
+    paragraph.textContent = localizeText(text);
     dialog.append(paragraph);
   }
   const link = document.createElement('a');
-  link.href = 'https://github.com/JessieZJZ/noir-poker/issues';
+  link.href = 'mailto:958182284@qq.com';
   link.target = '_blank';
   link.rel = 'noopener noreferrer';
-  link.textContent = '开发者联系与帮助';
-  dialog.append(link);
+  link.textContent = localizeText('联系与支持');
+  const publisher = document.createElement('p');
+  publisher.textContent = localizeText('发行者：郑建宙 · 958182284@qq.com');
+  const policy = document.createElement('a');
+  policy.href = './app-privacy.html';
+  policy.textContent = localizeText('隐私政策');
+  dialog.append(publisher, policy, document.createElement('br'), link);
   document.body.append(dialog);
   document.querySelector('.table-footer').append(button);
   button.onclick = () => dialog.showModal();

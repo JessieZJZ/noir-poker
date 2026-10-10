@@ -229,7 +229,7 @@ test('icon controls and every dropdown remain centered on narrow and wide screen
         };
       }),
     );
-    expect(dropdowns).toHaveLength(11);
+    expect(dropdowns).toHaveLength(12);
     for (const dropdown of dropdowns) {
       expect(dropdown.appearance).toBe('none');
       expect(dropdown.image).toBe(dropdowns[0].image);

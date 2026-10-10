@@ -229,8 +229,10 @@ test('resizing, safe-area changes and settled card reveals keep the whole table 
 
 test('pinch zoom preserves the layout height so controls can be panned normally', async ({
   browser,
+  baseURL,
 }) => {
   const context = await browser.newContext({
+    baseURL,
     viewport: { width: 390, height: 844 },
     isMobile: true,
     hasTouch: true,
@@ -238,7 +240,7 @@ test('pinch zoom preserves the layout height so controls can be panned normally'
   });
   try {
     const page = await context.newPage();
-    await page.goto('http://127.0.0.1:4175');
+    await page.goto('/');
     await page.waitForFunction(() => !!window.qa);
     await nativeInsets(page, true);
     await page.evaluate(() => {

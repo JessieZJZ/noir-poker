@@ -10,7 +10,7 @@
     />
     <link rel="icon" type="image/svg+xml" href="favicon.svg" />
   </head>
-  <body>
+  <body inert>
     <header class="header">
       <a class="brand" href="./" aria-label="NOIR Poker 首页"
         ><span class="brand-mark">♠</span><span>NOIR<span class="brand-light">POKER</span></span></a
@@ -45,7 +45,8 @@
         <div class="game-surface">
           <div class="surface-top">
             <div class="hand-label">
-              第 <b id="hand-number">01</b> 手 <span>·</span> <span id="street-label">准备发牌</span
+              <i class="hand-prefix">第</i> <b id="hand-number">01</b> <i class="hand-suffix">手</i>
+              <span>·</span> <span id="street-label">准备发牌</span
               ><span id="replay-label" class="replay-label" hidden></span>
             </div>
             <div class="blind-info">盲注 <b>25 / 50</b></div>
@@ -286,6 +287,25 @@
         <section class="general-settings settings-module" aria-label="牌桌与声音设置">
           <h3>牌桌与声音</h3>
           <div class="settings-row">
+            <label for="language-select">语言 / Language</label>
+            <select id="language-select" aria-describedby="language-note">
+              <option value="zh-CN" translate="no">简体中文</option>
+              <option value="en" translate="no">English</option>
+              <option value="zh-TW" translate="no">繁體中文</option>
+              <option value="ja" translate="no">日本語</option>
+              <option value="ko" translate="no">한국어</option>
+              <option value="es" translate="no">Español</option>
+              <option value="it" translate="no">Italiano</option>
+              <option value="pt" translate="no">Português</option>
+              <option value="de" translate="no">Deutsch</option>
+              <option value="fr" translate="no">Français</option>
+              <option value="ru" translate="no">Русский</option>
+            </select>
+          </div>
+          <p id="language-note" class="setting-description">
+            切换语言将重新开始练习；牌桌设置保留。
+          </p>
+          <div class="settings-row">
             <label for="player-count">牌桌人数</label>
             <select id="player-count" aria-label="牌桌人数">
               <option value="5">5 人</option>
@@ -394,7 +414,7 @@
         <aside class="settings-info" aria-label="设置与牌手模拟说明">
           <h3>使用说明</h3>
           <p>设置自动保存。难度立即生效；风格与情绪下一手生效，当前手与重打保持原设置。</p>
-          <p>
+          <p data-persona-reference>
             根据公开牌局与资料提炼的娱乐训练原型，非本人复刻。0–100 是游戏内策略倾向， 不是真人的
             VPIP 或 PFR；精彩牌局无法代表长期表现。
           </p>
@@ -428,7 +448,7 @@
     <dialog id="rules-dialog" aria-labelledby="rules-dialog-title">
       <div class="dialog-header">
         <span class="eyebrow">QUICK GUIDE</span
-        ><button class="icon-button close-dialog" aria-label="关闭">
+        ><button class="icon-button close-dialog" aria-label="关闭对话框">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" /></svg>
         </button>
       </div>
@@ -517,7 +537,7 @@
       <p>
         牌桌提示提供当前阶段的简短练习提醒。宽屏在右侧提示卡上开关；窄屏在设置中开关，提醒出现在盲注下方，可左右滑动阅读，几秒后收起。声音也可在设置中开关。所有设置保存在此设备，重打保留原来的对手风格与情绪。
       </p>
-      <details>
+      <details data-persona-reference>
         <summary>关于具名牌手与训练原型</summary>
         <p>
           具名对手参考网上公开赛事、牌局记录与资料制作，仅供娱乐和策略练习。模拟行动、参数及情绪不代表本人真实或完整的打法、实际操作或心理状态；姓名和资料来源仅用于说明参考对象，不表示本人或赛事方参与、合作、推荐或背书。本应用无意贬损、攻击任何个人。
@@ -547,7 +567,7 @@
     <dialog id="reset-dialog">
       <div class="dialog-header">
         <span class="eyebrow">FRESH START</span
-        ><button class="icon-button close-dialog" aria-label="关闭">
+        ><button class="icon-button close-dialog" aria-label="关闭对话框">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" /></svg>
         </button>
       </div>
@@ -561,7 +581,7 @@
     <dialog id="pot-dialog" aria-labelledby="pot-dialog-title">
       <div class="dialog-header">
         <span class="eyebrow">POT BREAKDOWN</span
-        ><button class="icon-button close-dialog" aria-label="关闭">
+        ><button class="icon-button close-dialog" aria-label="关闭对话框">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" /></svg>
         </button>
       </div>

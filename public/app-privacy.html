@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>NOIR Poker App 隐私与使用说明</title>
+    <title>NOIR Poker Privacy Policy</title>
     <style>
       body {
         margin: 0;
@@ -14,71 +14,650 @@
           sans-serif;
       }
       main {
-        max-width: 720px;
+        max-width: 760px;
         margin: auto;
-        padding: 40px 24px;
+        padding: 32px 24px;
       }
       h1 {
         font-size: 28px;
       }
       h2 {
         font-size: 20px;
-        margin-top: 32px;
+        margin-top: 28px;
       }
       a {
         color: #6ee7c5;
+      }
+      select {
+        max-width: 100%;
+        padding: 8px;
+        font: inherit;
+      }
+      [hidden] {
+        display: none !important;
       }
     </style>
   </head>
   <body>
     <main>
-      <h1>NOIR Poker App 隐私与使用说明</h1>
-      <p>适用于本项目的 iOS / Android 离线版。更新日期：2026-10-10。</p>
-      <h2>设备上的练习与设置</h2>
-      <p>
-        牌局、机器人决策和复盘在设备上计算。人数、难度、对手风格、声音和提示选项保存在设备的本地存储中，不发送到开发者服务器。当前牌局只在运行内存中保留。卸载或清除应用数据可移除本地设置，系统备份恢复可能恢复这些设置。
-      </p>
-      <h2>数据与外部网站</h2>
-      <p>
-        当前版本没有账号、广告、追踪、分析 SDK
-        或向开发者上传个人数据的服务。核心练习无需联网。应用内资料来源和帮助链接由用户主动打开，系统浏览器随后访问第三方网站；对应网站适用其自身隐私政策。
-      </p>
-      <h2>购买与虚拟筹码</h2>
-      <p>
-        买断 App 的购买由 Apple App Store 或 Google Play
-        处理，本应用不接收银行卡资料。所有游戏筹码都是虚拟筹码，没有现金兑换、奖金或真人赌注。
-      </p>
-      <h2 id="persona-notice">具名牌手与训练原型说明</h2>
-      <p>
-        本应用独立制作。具名对手的游戏策略参考网上公开赛事、牌局记录、公开访谈及文档资料进行归纳与模拟，仅用于虚拟筹码娱乐和策略练习。公开资料只反映特定牌局与场景，无法还原一个人的完整策略或长期表现。
-      </p>
-      <p>
-        电脑产生的下注、跟注、弃牌、思考时间及情绪变化均为程序模拟，不代表参考人物的真实打法、实际操作、心理状态、个性或职业水平，也不表示该人物会在相同情境下采取相同行动。0–100
-        数值是本应用设定的策略倾向指数，不是本人实际的 VPIP、PFR 或其他长期频率。
-      </p>
-      <p>
-        提及人物姓名、公开资料及赛事仅用于说明参考来源，不表示本人或赛事方参与本应用制作、与本应用合作、推荐、授权代言或提供背书。本应用尊重相关人物，不以贬损、侮辱、诽谤或攻击任何个人为目的；游戏内输赢和合成情绪不能用于评价真人。
-      </p>
-      <p>
-        希望了解真实牌手的表现，请前往
-        <a href="https://www.kpclive.com/" target="_blank" rel="noopener noreferrer"
-          >KPC LIVE 官方网站</a
-        >
-        和
-        <a href="https://tritonpokerseries.com/en-US/home" target="_blank" rel="noopener noreferrer"
-          >Triton 官方赛事网站</a
-        >， 观看完整赛事、现金桌内容与公开访谈，并结合当时的对手、筹码和比赛环境理解其选择。
-      </p>
-      <p>
-        本说明用于解释模拟内容及来源，不是相关姓名、肖像、照片、商标或其他材料的使用授权。相关权利仍归各权利人所有。权利人如对内容或展示有疑问，可通过下方渠道联系维护者，我们将核实并处理。
-      </p>
-      <h2>联系</h2>
-      <p>
-        本项目维护者可通过
-        <a href="https://github.com/JessieZJZ/noir-poker/issues" rel="noopener noreferrer"
-          >GitHub 项目问题反馈</a
-        >联系。商业发行前，发行者应更新为其正式主体及支持渠道；改变数据处理方式时应同步更新本政策与商店申报。
-      </p>
+      <label for="policy-language">Language</label>
+      <select id="policy-language" aria-label="Language">
+        <option value="zh-CN">简体中文</option>
+        <option value="en">English</option>
+        <option value="zh-TW">繁體中文</option>
+        <option value="ja">日本語</option>
+        <option value="ko">한국어</option>
+        <option value="es">Español</option>
+        <option value="it">Italiano</option>
+        <option value="pt">Português</option>
+        <option value="de">Deutsch</option>
+        <option value="fr">Français</option>
+        <option value="ru">Русский</option>
+      </select>
+      <article lang="zh-CN" data-locale="zh-CN" hidden>
+        <a href="./">返回牌桌</a>
+        <h1>NOIR Poker 隐私政策</h1>
+        <p>生效日期：2026-10-10</p>
+        <h2>发行者与联系方式</h2>
+        <p>发行者：郑建宙 · 958182284@qq.com</p>
+        <a href="mailto:958182284@qq.com">958182284@qq.com</a>
+        <h2>设备上的练习与设置</h2>
+        <p>
+          牌局、电脑对手和决策复盘在设备上计算。人数、难度、语言、对手风格、声音与提示保存在设备本地，不上传到发行者服务器。当前牌局仅留在运行内存中。卸载或清除应用数据可移除本地设置；系统备份恢复可能恢复设置。
+        </p>
+        <h2>数据与外部服务</h2>
+        <p>
+          应用无账号、广告、追踪或分析服务，也不向发行者上传个人数据。核心练习无需联网。用户主动打开资料来源或帮助链接时，系统浏览器会访问第三方网站；该次访问适用对应网站的隐私政策。
+        </p>
+        <h2>购买与虚拟筹码</h2>
+        <p>
+          买断购买由 Apple App Store 或 Google Play
+          处理，本应用不接收银行卡资料。所有筹码均为虚拟筹码，无现金价值，不能购买或兑换；没有奖金或真人赌注。
+        </p>
+        <h2>支持邮件与删除请求</h2>
+        <p>
+          当你主动通过邮件联系发行者时，发行者会收到你的邮箱地址和你提供的内容，仅用于回复、调查和解决问题。请不要发送密码、付款资料或其他不必要的敏感信息。问题处理完成后，不再保留不必要的支持资料；你可通过上述邮箱提出查询或删除请求。邮件服务商按其自身政策处理邮件。
+        </p>
+        <h2 id="persona-notice-zh-CN">训练原型与使用说明</h2>
+        <p>
+          电脑策略、参数、行动、思考时间和情绪均为合成训练机制，不代表任何真人的完整打法、心理状态或职业水平。公开资料来源不表示相关人物或赛事方参与、合作、推荐或背书。资料引用及免责声明不是姓名、照片或商标的使用授权。
+        </p>
+        <p>
+          复盘使用行动发生前可见的信息和假设对手范围进行估算，不用对手隐藏底牌、后续发牌或最终赢家评价你的决策；不保证最优打法或收益。
+        </p>
+        <h2>政策变更</h2>
+        <p>
+          改变数据处理方式时，发行者会更新本政策及相应商店申报。你可通过本页面所列邮箱联系发行者。
+        </p>
+      </article>
+      <article lang="en" data-locale="en">
+        <a href="./">返回牌桌</a>
+        <h1>NOIR Poker Privacy Policy</h1>
+        <p>Effective date: October 10, 2026</p>
+        <h2>Publisher and contact</h2>
+        <p>郑建宙 · 958182284@qq.com</p>
+        <a href="mailto:958182284@qq.com">958182284@qq.com</a>
+        <h2>On-device practice and preferences</h2>
+        <p>
+          Hands, computer opponents and decision reviews run on your device. Table size, difficulty,
+          language, opponent styles, sound and hints are stored locally and are not uploaded to the
+          publisher. The current hand is kept only in running memory. Uninstalling the app or
+          clearing its data removes local settings; restoring a system backup may restore them.
+        </p>
+        <h2>Data and external services</h2>
+        <p>
+          The app has no accounts, ads, tracking or analytics services, and does not upload personal
+          data to the publisher. Core practice works offline. Opening a source or help link visits a
+          third-party website in the system browser; that website’s privacy policy applies to the
+          visit.
+        </p>
+        <h2>Purchases and virtual chips</h2>
+        <p>
+          Apple App Store or Google Play handles the upfront purchase. This app does not receive
+          payment card information. All chips are virtual, have no cash value and cannot be
+          purchased or redeemed. There are no prizes or real-money wagers.
+        </p>
+        <h2>Support email and deletion requests</h2>
+        <p>
+          If you contact the publisher by email, the publisher receives your email address and the
+          information you send, solely to reply, investigate and resolve the issue. Do not send
+          passwords, payment details or unnecessary sensitive information. Unnecessary support
+          information is not retained after the issue is resolved. You may request access or
+          deletion at the email address above. Email providers process messages under their own
+          policies.
+        </p>
+        <h2 id="persona-notice-en">Training profiles and usage</h2>
+        <p>
+          Computer strategies, parameters, actions, thinking times and moods are synthetic training
+          mechanisms. They do not represent a real person’s complete strategy, mental state or
+          professional skill. Public sources do not imply participation, cooperation, recommendation
+          or endorsement by a person or event organizer. Citations and disclaimers do not grant
+          permission to use names, photos or trademarks.
+        </p>
+        <p>
+          Reviews estimate decisions from information available before the action and assumed
+          opponent ranges. They do not grade your decisions using opponents’ hidden cards, future
+          cards or final winners, and do not guarantee optimal play or profit.
+        </p>
+        <h2>Policy changes</h2>
+        <p>
+          The publisher will update this policy and store disclosures if data handling changes.
+          Contact the publisher at the email address on this page.
+        </p>
+      </article>
+      <article lang="zh-TW" data-locale="zh-TW" hidden>
+        <a href="./">返回牌桌</a>
+        <h1>NOIR Poker 隱私政策</h1>
+        <p>生效日期：2026-10-10</p>
+        <h2>發行者與聯絡方式</h2>
+        <p>郑建宙 · 958182284@qq.com</p>
+        <a href="mailto:958182284@qq.com">958182284@qq.com</a>
+        <h2>裝置上的練習與設定</h2>
+        <p>
+          牌局、電腦對手和決策覆盤在裝置上計算。人數、難度、語言、對手風格、聲音與提示儲存在裝置本地，不上傳到發行者伺服器。當前牌局僅留在執行記憶體中。解除安裝或清除應用資料可移除本地設定；系統備份恢復可能恢復設定。
+        </p>
+        <h2>資料與外部服務</h2>
+        <p>
+          應用無賬號、廣告、追蹤或分析服務，也不向發行者上傳個人資料。核心練習無需聯網。使用者主動開啟資料來源或幫助連結時，系統瀏覽器會訪問第三方網站；該次訪問適用對應網站的隱私政策。
+        </p>
+        <h2>購買與虛擬籌碼</h2>
+        <p>
+          買斷購買由 Apple App Store 或 Google Play
+          處理，本應用不接收銀行卡資料。所有籌碼均為虛擬籌碼，無現金價值，不能購買或兌換；沒有獎金或真人賭注。
+        </p>
+        <h2>支援郵件與刪除請求</h2>
+        <p>
+          當你主動透過郵件聯絡發行者時，發行者會收到你的郵箱地址和你提供的內容，僅用於回覆、調查和解決問題。請不要傳送密碼、付款資料或其他不必要的敏感資訊。問題處理完成後，不再保留不必要的支援資料；你可透過上述郵箱提出查詢或刪除請求。郵件服務商按其自身政策處理郵件。
+        </p>
+        <h2 id="persona-notice-zh-TW">訓練原型與使用說明</h2>
+        <p>
+          電腦策略、引數、行動、思考時間和情緒均為合成訓練機制，不代表任何真人的完整打法、心理狀態或職業水平。公開資料來源不表示相關人物或賽事方參與、合作、推薦或背書。資料引用及免責宣告不是姓名、照片或商標的使用授權。
+        </p>
+        <p>
+          覆盤使用行動發生前可見的資訊和假設對手範圍進行估算，不用對手隱藏底牌、後續發牌或最終贏家評價你的決策；不保證最優打法或收益。
+        </p>
+        <h2>政策變更</h2>
+        <p>
+          改變資料處理方式時，發行者會更新本政策及相應商店申報。你可透過本頁面所列郵箱聯絡發行者。
+        </p>
+      </article>
+      <article lang="ja" data-locale="ja" hidden>
+        <a href="./">返回牌桌</a>
+        <h1>ポーカーのプライバシーポリシー</h1>
+        <p>施行日: 2026-10-10</p>
+        <h2>出版社との連絡</h2>
+        <p>郑建宙 · 958182284@qq.com</p>
+        <a href="mailto:958182284@qq.com">958182284@qq.com</a>
+        <h2>練習と装備の設定</h2>
+        <p>
+          カードボード、コンピュータの対戦相手、および意思決定再生はデバイスで計算されます.
+          番号、困難、言語、対戦スタイル、音声および提案はデバイスにローカルに保存され、出版サーバーにアップロードされません.
+          現在のカードボードは実行メモリにのみ残ります.
+          削除または削除アプリケーションデータは、ローカル設定から削除することができます;
+          システムのバックアップ回復は、設定に復元することができます。
+        </p>
+        <h2>データと外部サービス</h2>
+        <p>
+          アプリケーションはアカウント、広告、トラッキング、分析サービスなしで、個人データを出版社にアップロードしない。基本的な実践はネットワークを必要としません.ユーザーがデータ源を積極的に開く場合、またはリンクを助ける場合、システムブラウザは第三者のウェブサイトにアクセスします.このアクセスはサイトのプライバシーポリシーに適用されます。
+        </p>
+        <h2>仮想チップで購入する</h2>
+        <p>
+          購入がApple App StoreまたはGoogle
+          Playで処理されている場合、アプリは銀行カードデータを受け取らない。すべてのチップは仮想チップ、現金価値、購入または交換はありません。
+        </p>
+        <h2>メールと削除の要請をサポート</h2>
+        <p>
+          最初にメール代理人に連絡すると、メール代理人はメールボックスのアドレスとあなたが提供するコンテンツを返信、調査、問題解決のみを受け取ります.
+          パスワード、支払いファイル、またはその他の不必要な敏感な情報を送信しないでください.
+          問題処理が完了した後、もはや不必要なサポート情報を保持しないでください.
+          上記のメールボックスを通じてご要望を提出またはご要望を削除することができます.
+          メールサービスプロバイダーは、そのポリシーに従ってメールを処理します。
+        </p>
+        <h2 id="persona-notice-ja">トレーニングプロトタイプと使用指示</h2>
+        <p>
+          コンピュータ戦略、パラメーター、行動、思考時間、感情は、実際の人の完全な行動、精神状態、または職業レベルを表すことのない、合成されたトレーニングメカニズムです。情報のオープンソースは、参加、協力、推奨、またはコンテストの参加者または参加者のバックアップを示さない。
+        </p>
+        <p>
+          リサイクルは、相手が隠す穴カード、フォローアップ取引、または最終勝者があなたの決定を評価することなく、見た目の情報と対戦相手の範囲の推定を推定し、最善の方法を保証し、または勝利を保証しません。
+        </p>
+        <h2>政策変更</h2>
+        <p>
+          データ処理方法が変更された場合、出版社はこのポリシーと関連するストアの声明を更新します。
+        </p>
+      </article>
+      <article lang="ko" data-locale="ko" hidden>
+        <a href="./">返回牌桌</a>
+        <h1>노어 포커 개인 정보 보호 정책</h1>
+        <p>유효일 : 2026년 10월 10일</p>
+        <h2>출판사 및 연락처</h2>
+        <p>郑建宙 · 958182284@qq.com</p>
+        <a href="mailto:958182284@qq.com">958182284@qq.com</a>
+        <h2>장비에 대한 실습 및 선호도</h2>
+        <p>
+          손, 컴퓨터 상대 및 결정 리뷰는 장치에서 실행됩니다. 테이블 크기, 어려움, 언어, 상대
+          스타일, 사운드 및 힌트는 현지적으로 저장되고 출판사에 업로드되지 않습니다. 현재 손은 실행
+          메모리에서만 유지됩니다. 앱을 제거하거나 데이터를 삭제하면 현지 설정이 제거됩니다. 시스템
+          백업을 복원하면 복구 할 수 있습니다.
+        </p>
+        <h2>데이터 및 외부 서비스</h2>
+        <p>
+          앱에는 계정, 광고, 추적 또는 분석 서비스가 없으며, 출판사에게 개인 데이터를 업로드하지
+          않습니다. 핵심 실천은 비공개 작동합니다. 출처를 열거나 도움말 링크가 시스템 브라우저에서
+          제 3 자 웹 사이트를 방문합니다.이 웹 사이트의 개인 정보 보호 정책은 방문에 적용됩니다.
+        </p>
+        <h2>구매 및 가상 칩</h2>
+        <p>
+          Apple App Store 또는 Google Play은 상기 구매를 처리합니다.이 앱은 지불 카드 정보를 받지
+          않습니다.모든 칩은 가상이며 현금 가치가 없으며 구입하거나 구제 할 수 없습니다.상이나 실제
+          현금 베팅이 없습니다.
+        </p>
+        <h2>이메일 및 삭제 요청 지원</h2>
+        <p>
+          이메일을 통해 출판사와 연락하는 경우, 출판사는 귀하의 이메일 주소와 귀하가 보내는 정보를
+          받게 됩니다.이 문제에 대한 응답, 조사 및 해결을 위해서만.주문, 지불 정보 또는 불필요한
+          민감한 정보를 보내지 마십시오.이 문제가 해결된 후에 불필요한 지원 정보가 보존되지
+          않습니다.이 문제에 대한 액세스 또는 삭제를 요청할 수 있습니다.이 문제에 대한 이메일
+          제공자는 자신의 정책에 따라 메시지를 처리합니다.
+        </p>
+        <h2 id="persona-notice-ko">훈련 프로파일 및 사용</h2>
+        <p>
+          컴퓨터 전략, 매개 변수, 행동, 생각 시간 및 분위기는 합성 교육 메커니즘입니다. 그들은 실제
+          사람의 전체 전략, 정신 상태 또는 전문 기술을 나타내지 않습니다. 공공 출처는 개인 또는
+          이벤트 주최자의 참여, 협력, 권장 또는 승인을 의미하지 않습니다. 인용 및 거부자는 이름,
+          사진 또는 상표를 사용 할 수있는 허가를 부여하지 않습니다.
+        </p>
+        <p>
+          리뷰는 행동 전에 제공되는 정보와 상대의 추정 범위에서 결정을 추정합니다.그들은 상대의
+          숨겨진 카드, 미래 카드 또는 최종 우승자를 사용하여 결정을 평가하지 않으며 최적의 게임이나
+          이익을 보장하지 않습니다.
+        </p>
+        <h2>정책 변화</h2>
+        <p>
+          출판사는 이 정책을 업데이트하고 데이터 처리 변경 사항에 대한 공개 사항을 저장합니다.이
+          페이지의 이메일 주소에서 출판사에게 연락하십시오.
+        </p>
+      </article>
+      <article lang="es" data-locale="es" hidden>
+        <a href="./">返回牌桌</a>
+        <h1>Política de privacidad de los Poker</h1>
+        <p>Fecha de efecto: 10 de octubre de 2026</p>
+        <h2>Publicaciones y Contacto</h2>
+        <p>郑建宙 · 958182284@qq.com</p>
+        <a href="mailto:958182284@qq.com">958182284@qq.com</a>
+        <h2>Prácticas y preferencias en el dispositivo</h2>
+        <p>
+          Las manos, los oponentes del ordenador y las revisiones de decisiones se ejecutan en su
+          dispositivo. tamaño de la mesa, dificultad, lenguaje, estilos oponentes, sonido y pistas
+          se almacenan localmente y no se cargan al editor. La mano actual se mantiene sólo en la
+          memoria corriente. Desinstalar la aplicación o limpiar sus datos remove las
+          configuraciones locales; restaurar una copia de seguridad del sistema puede restaurarlas.
+        </p>
+        <h2>Datos y servicios externos</h2>
+        <p>
+          La aplicación no tiene cuentas, anuncios, servicios de seguimiento o análisis, y no carga
+          datos personales al editor. la práctica básica funciona offline. abrir una fuente o ayudar
+          enlaces visita un sitio web de terceros en el navegador del sistema; esa política de
+          privacidad del sitio web se aplica a la visita.
+        </p>
+        <h2>Compras y chips virtuales</h2>
+        <p>
+          Apple App Store o Google Play gestiona la compra de avance. Esta aplicación no recibe
+          información de tarjeta de pago. Todos los chips son virtuales, no tienen valor en efectivo
+          y no pueden ser comprados o rescatados. No hay premios o apuestas de dinero real.
+        </p>
+        <h2>Apoyo a solicitudes de correo electrónico y de supresión</h2>
+        <p>
+          Si usted se conecta con el editor por correo electrónico, el editor recibe su dirección de
+          correo electrónico y la información que usted envía, únicamente para responder, investigar
+          y resolver el problema. No envíe contraseñas, detalles de pago o información sensible
+          innecesaria. No se conserva información de apoyo innecesaria después de que el problema se
+          resuelva. Usted puede solicitar acceso o eliminación al correo electrónico anteriormente.
+        </p>
+        <h2 id="persona-notice-es">Profiles de entrenamiento y uso</h2>
+        <p>
+          Las estrategias informáticas, los parámetros, las acciones, los tiempos de pensamiento y
+          los estilos son mecanismos de formación sintéticos. No representan la estrategia completa,
+          el estado mental o las habilidades profesionales de una persona real. Las fuentes públicas
+          no implican participación, cooperación, recomendación o respaldo por parte de una persona
+          o organizador de eventos. Las citas y los disclaimers no conceden permiso para usar
+          nombres, fotos o marcas.
+        </p>
+        <p>
+          Las revistas estiman las decisiones a partir de la información disponible antes de la
+          acción y las rango de oponentes asumidos. no clasifican sus decisiones utilizando tarjetas
+          ocultas de los oponentes, tarjetas futuras o ganadores finales, y no garantizan el juego o
+          el beneficio óptimo.
+        </p>
+        <h2>Cambios en política</h2>
+        <p>
+          El editor actualizará esta política y almacenará las informaciones si el tratamiento de
+          datos cambia.
+        </p>
+      </article>
+      <article lang="it" data-locale="it" hidden>
+        <a href="./">返回牌桌</a>
+        <h1>Politica sulla privacy di poker</h1>
+        <p>Data di efficacia: 10 ottobre 2026</p>
+        <h2>Pubblicazione e contatto</h2>
+        <p>郑建宙 · 958182284@qq.com</p>
+        <a href="mailto:958182284@qq.com">958182284@qq.com</a>
+        <h2>Pratiche e preferenze su apparecchiature</h2>
+        <p>
+          Le mani, gli oppositori del computer e le recensioni decisionali eseguono sul vostro
+          dispositivo. dimensioni di tavolo, difficoltà, lingua, stili di oppositori, suono e
+          suggerimenti sono memorizzati localmente e non vengono caricati all&#39;editore. La mano
+          corrente è tenuta solo nella memoria eseguente. Rimuovere l&#39;app o rimuovere i suoi
+          dati rimuove le impostazioni locali; ripristinare una backup del sistema può ripristinare.
+        </p>
+        <h2>Dati e servizi esterni</h2>
+        <p>
+          L&#39;app non ha account, annunci, servizi di tracciamento o analisi, e non carica dati
+          personali all&#39;editore. pratica core funziona offline. aprire una fonte o aiutare link
+          visita un sito web di terze parti nel browser del sistema; questa politica sulla privacy
+          del sito si applica alla visita.
+        </p>
+        <h2>Acquisti e chips virtuali</h2>
+        <p>
+          Apple App Store o Google Play gestisce l&#39;acquisto in anticipo.Questa app non riceve
+          informazioni sulla carta di pagamento.Tutti i chip sono virtuali, non hanno valore in
+          contanti e non possono essere acquistati o riscatti.Non ci sono premi o scommesse in
+          denaro reale.
+        </p>
+        <h2>Supporto per e-mail e richieste di cancellazione</h2>
+        <p>
+          Se contatti l&#39;editore per e-mail, l&#39;editore riceve il tuo indirizzo e-mail e le
+          informazioni che ti invii, solo per rispondere, indagare e risolvere il problema. Non
+          inviare password, dettagli di pagamento o informazioni sensibili inutili. Informazioni di
+          supporto inutili non vengono conservate dopo che il problema è stato risolto. Puoi
+          richiedere l&#39;accesso o la cancellazione all&#39;indirizzo e-mail sopra. I fornitori di
+          e-mail elaborano messaggi in base alle proprie politiche.
+        </p>
+        <h2 id="persona-notice-it">Profili di formazione e utilizzo</h2>
+        <p>
+          Le strategie, i parametri, le azioni, i tempi di pensiero e gli stili di umore sono
+          meccanismi di formazione sintetici. Non rappresentano la strategia completa, lo stato
+          mentale o le competenze professionali di una persona reale. Le fonti pubbliche non
+          implicano la partecipazione, la cooperazione, la raccomandazione o l&#39;approvazione da
+          parte di una persona o organizzatore di eventi. Le citazioni e i disclaimanti non
+          consentono l&#39;uso di nomi, foto o marchi.
+        </p>
+        <p>
+          I recensioni stimano le decisioni dalle informazioni disponibili prima dell&#39;azione e
+          dalle ranghe dell&#39;avversario assunte. non classificano le tue decisioni utilizzando le
+          carte nascoste degli avversari, le carte future o i vincitori finali, e non garantiscono
+          il gioco ottimale o il profitto.
+        </p>
+        <h2>Cambiamenti di politica</h2>
+        <p>
+          L’editore aggiornerà questa politica e memorizzerà le informazioni in caso di cambiamenti
+          nel trattamento dei dati. contatta l’editore all’indirizzo e-mail di questa pagina.
+        </p>
+      </article>
+      <article lang="pt" data-locale="pt" hidden>
+        <a href="./">返回牌桌</a>
+        <h1>Política de Privacidade do Poker</h1>
+        <p>Data de vigência: 10 de outubro de 2026</p>
+        <h2>Publicação e contato</h2>
+        <p>郑建宙 · 958182284@qq.com</p>
+        <a href="mailto:958182284@qq.com">958182284@qq.com</a>
+        <h2>Prática e preferências em dispositivos</h2>
+        <p>
+          Mãos, oponentes de computador e avaliações de decisão estão em seu dispositivo. tamanho de
+          mesa, dificuldade, linguagem, estilos oponentes, som e dicas são armazenados localmente e
+          não são carregados para o editor. A mão corrente é mantida apenas na memória corrente.
+          Desinstalar a aplicação ou limpar seus dados remove configurações locais; restaurar uma
+          backup do sistema pode restaurá-los.
+        </p>
+        <h2>Dados e serviços externos</h2>
+        <p>
+          O aplicativo não tem contas, anúncios, serviços de rastreamento ou análise, e não carrega
+          dados pessoais ao editor. práticas básicas funcionam offline. abertura de uma fonte ou
+          ajuda link visita um site de terceiros no navegador do sistema; essa política de
+          privacidade do site se aplica à visita.
+        </p>
+        <h2>Compras e chips virtuais</h2>
+        <p>
+          A Apple App Store ou o Google Play gerencia a compra de antecedência. esta aplicação não
+          recebe informações de cartão de pagamento. todos os chips são virtuais, não têm valor em
+          dinheiro e não podem ser comprados ou redundados. não há prêmios ou apostas em dinheiro
+          real.
+        </p>
+        <h2>Apoio ao e-mail e solicitações de remoção</h2>
+        <p>
+          Se você entrar em contato com o editor por e-mail, o editor recebe o seu endereço de
+          e-mail e as informações que você envia, apenas para responder, investigar e resolver o
+          problema. Não envie senhas, detalhes de pagamento ou informações sensíveis desnecessárias.
+          Informações de suporte desnecessárias não são mantidas depois que o problema é resolvido.
+          Você pode solicitar acesso ou remoção no endereço de e-mail acima. Os provedores de e-mail
+          processam mensagens sob suas próprias políticas.
+        </p>
+        <h2 id="persona-notice-pt">Profiles de treinamento e uso</h2>
+        <p>
+          Estratégias de computador, parâmetros, ações, tempos de pensamento e humor são mecanismos
+          de treinamento sintéticos. Eles não representam a estratégia completa, estado mental ou
+          habilidades profissionais de uma pessoa real. Fontes públicas não implicam participação,
+          cooperação, recomendação ou aprovação por uma pessoa ou organizador de eventos. Citadas e
+          disclaimantes não concedem permissão para usar nomes, fotos ou marcas.
+        </p>
+        <p>
+          Os comentários estimam decisões a partir de informações disponíveis antes da ação e as
+          rangos assumidos do adversário. eles não classificam suas decisões usando cartas
+          escondidas, cartas futuras ou vencedores finais dos adversários, e não garantem o jogo ou
+          lucro óptimo.
+        </p>
+        <h2>Mudanças políticas</h2>
+        <p>
+          O editor atualizará esta política e armazenará informações se o tratamento de dados mudar.
+        </p>
+      </article>
+      <article lang="de" data-locale="de" hidden>
+        <a href="./">返回牌桌</a>
+        <h1>Noir Poker Datenschutzrichtlinie</h1>
+        <p>Wirkungsdatum: 10. Oktober 2026</p>
+        <h2>Verlag und Kontakt</h2>
+        <p>郑建宙 · 958182284@qq.com</p>
+        <a href="mailto:958182284@qq.com">958182284@qq.com</a>
+        <h2>On-Device-Praktik und Präferenzen</h2>
+        <p>
+          Hand, Computer-Gegner und Entscheidungsbewertungen auf Ihrem Gerät ausgeführt. Tischgröße,
+          Schwierigkeit, Sprache, Gegner-Stilen, Sound und Hinweise werden lokalerweise gespeichert
+          und nicht an den Verlag hochgeladen. Die aktuelle Hand wird nur in der laufenden Speicher
+          gehalten. Die Entfernung der App oder das Entfernen seiner Daten entfernt lokale
+          Einstellungen; die Wiederherstellung einer System-Backup kann sie wiederherstellen.
+        </p>
+        <h2>Daten und externe Dienstleistungen</h2>
+        <p>
+          Die App verfügt nicht über Konten, Werbung, Tracking oder Analyse-Dienstleistungen und
+          hochgeladen keine personenbezogenen Daten an den Verlag. Core Practice funktioniert
+          offline. Öffnen einer Quelle oder helfen Link besuchen eine Drittanbieter-Website im
+          System-Browser; diese Website Datenschutzrichtlinie gilt für die Besuch.
+        </p>
+        <h2>Einkauf und virtuelle Chips</h2>
+        <p>
+          Apple App Store oder Google Play verwalt den vorangegangenen Kauf. Diese App erhält keine
+          Zahlungskartendaten. Alle Chips sind virtuell, haben keine Geldwert und können nicht
+          gekauft oder ausgezahlt werden. Es gibt keine Preise oder echtes Geld-Wetten.
+        </p>
+        <h2>Unterstützung für E-Mail und Löschungsanfragen</h2>
+        <p>
+          Wenn Sie den Verlag per E-Mail kontaktieren, erhält der Verlag Ihre E-Mail-Adresse und die
+          von Ihnen gesendeten Informationen, nur um zu beantworten, zu untersuchen und das Problem
+          zu lösen. Senden Sie keine Passwörter, Zahlungsdaten oder unnötige sensible Informationen.
+          Unnötige Support-Informationen werden nicht gespeichert, nachdem das Problem gelöst ist.
+          Sie können Zugriff oder Löschung auf die oben genannte E-Mail-Adresse beantragen.
+          E-Mail-Anbieter verarbeiten Nachrichten unter ihren eigenen Richtlinien.
+        </p>
+        <h2 id="persona-notice-de">Trainingsprofile und Nutzung</h2>
+        <p>
+          Computerstrategien, Parameter, Aktionen, Denkzeiten und Stimmungen sind synthetische
+          Trainingsmekanismen. Sie repräsentieren keine vollständige Strategie, mentale Zustand oder
+          berufliche Fähigkeiten einer echten Person. öffentliche Quellen implizieren keine
+          Teilnahme, Zusammenarbeit, Empfehlung oder Unterstützung von einer Person oder
+          Veranstaltung-Organisator. Zitate und Disklaimer geben keine Erlaubnis, Namen, Fotos oder
+          Marken zu verwenden.
+        </p>
+        <p>
+          Die Bewertungen schätzen Entscheidungen aus Informationen, die vor der Aktion und den
+          vorgeschlagenen Gegner-Rangen verfügbar sind. Sie bewerten Ihre Entscheidungen nicht mit
+          den verborgenen Karten, künftigen Karten oder endgültigen Gewinner der Gegner und
+          garantieren nicht optimales Spiel oder Gewinn.
+        </p>
+        <h2>Politikänderungen</h2>
+        <p>
+          Der Verlag aktualisiert diese Richtlinie und speichert Informationen, wenn die
+          Datenverarbeitung ändert.
+        </p>
+      </article>
+      <article lang="fr" data-locale="fr" hidden>
+        <a href="./">返回牌桌</a>
+        <h1>Politique de confidentialité de poker</h1>
+        <p>Date d’efficacité : 10 octobre 2026</p>
+        <h2>Publisher et contact</h2>
+        <p>郑建宙 · 958182284@qq.com</p>
+        <a href="mailto:958182284@qq.com">958182284@qq.com</a>
+        <h2>Pratique et préférences sur appareil</h2>
+        <p>
+          Les mains, les opponents informatiques et les avis de décision fonctionnent sur votre
+          appareil. La taille de table, la difficulté, le langage, les styles de l&#39;opponent, le
+          son et les indices sont stockés localement et ne sont pas téléchargés à l&#39;éditeur. La
+          main actuelle est conservée uniquement dans la mémoire en cours. La désinstallation de
+          l&#39;application ou le nettoyage de ses données supprime les paramètres locaux; la
+          restauration d&#39;une sauvegarde système peut les restaurer.
+        </p>
+        <h2>Données et services externes</h2>
+        <p>
+          L&#39;application n&#39;a pas de comptes, de publicités, de services de suivi ou
+          d&#39;analyse, et ne télécharge pas les données personnelles à l&#39;éditeur. la pratique
+          de base fonctionne hors ligne. ouvrir une source ou aider le lien visite un site Web tiers
+          dans le navigateur système; cette politique de confidentialité du site s&#39;applique à la
+          visite.
+        </p>
+        <h2>Achats et chips virtuels</h2>
+        <p>
+          Apple App Store ou Google Play gère l&#39;achat à l&#39;avance. Cette application ne
+          reçoit pas les informations de carte de paiement. Tous les chips sont virtuels, n&#39;ont
+          pas de valeur en espèces et ne peuvent pas être achetés ou récupérés. Il n&#39;y a pas de
+          prix ou de paris en argent réel.
+        </p>
+        <h2>Support de la demande de courrier électronique et de suppression</h2>
+        <p>
+          Si vous contactez l&#39;éditeur par courrier électronique, l&#39;éditeur reçoit votre
+          adresse e-mail et les informations que vous envoyez, uniquement pour répondre, enquêter et
+          résoudre le problème. Ne pas envoyer de mots de passe, des détails de paiement ou des
+          informations sensibles inutiles. Informations de support inutiles ne sont pas conservées
+          après que le problème est résolu. Vous pouvez demander l&#39;accès ou la suppression à
+          l&#39;adresse e-mail ci-dessus.
+        </p>
+        <h2 id="persona-notice-fr">Profils de formation et utilisation</h2>
+        <p>
+          Les stratégies informatiques, les paramètres, les actions, les temps de pensée et les
+          humeurs sont des mécanismes de formation synthétiques. Ils ne représentent pas la
+          stratégie complète, l&#39;état mental ou les compétences professionnelles d&#39;une
+          personne réelle. Les sources publiques ne impliquent pas la participation, la coopération,
+          la recommandation ou l&#39;approbation d&#39;une personne ou de l&#39;organisateur
+          d&#39;événement. Les citations et les disclaimants ne permettent pas d&#39;utiliser des
+          noms, des photos ou des marques.
+        </p>
+        <p>
+          Les révisions estiment les décisions à partir des informations disponibles avant
+          l&#39;action et les rangs supposés de l&#39;opposant. Ils ne classent pas vos décisions en
+          utilisant les cartes cachées des opponents, les cartes futures ou les gagnants finaux, et
+          ne garantissent pas un jeu optimal ou un profit.
+        </p>
+        <h2>Changements politiques</h2>
+        <p>
+          L’éditeur mettra à jour cette politique et stocker les informations si le traitement des
+          données change.
+        </p>
+      </article>
+      <article lang="ru" data-locale="ru" hidden>
+        <a href="./">返回牌桌</a>
+        <h1>Политика конфиденциальности покера</h1>
+        <p>Действительный срок: 10 октября 2026 года</p>
+        <h2>Издатель и контакт</h2>
+        <p>郑建宙 · 958182284@qq.com</p>
+        <a href="mailto:958182284@qq.com">958182284@qq.com</a>
+        <h2>На устройстве практика и предпочтения</h2>
+        <p>
+          Руки, компьютерные противники и отзывы о решении выполняются на вашем устройстве. Размер
+          таблицы, сложности, язык, стили противника, звук и шрифты хранятся локально и не
+          загружаются в издатель. Текущая рука хранится только в текущей памяти. Отключение
+          приложения или очищение его данных удаляет локальные настройки; восстановление системной
+          резервной копии может восстановить их.
+        </p>
+        <h2>Данные и внешние услуги</h2>
+        <p>
+          Приложение не имеет учетных записей, рекламы, услуги отслеживания или аналитики, и не
+          загружает личные данные издателю.Основная практика работает офлайн.Открытие источника или
+          помощь ссылки посещает веб-сайт третьей стороны в системном браузере; эта политика
+          конфиденциальности сайта распространяется на посещение.
+        </p>
+        <h2>Купить и виртуальные чипы</h2>
+        <p>
+          Apple App Store или Google Play управляет предварительным покупкой.Эта программа не
+          получает информацию о платежной карте.Все чипы виртуальные, не имеют денежной стоимости и
+          не могут быть куплены или расплачены.Нет премий или реальных денег.
+        </p>
+        <h2>Поддержка запросов по электронной почте и удалению</h2>
+        <p>
+          Если вы связались с издателем по электронной почте, издатель получает ваш адрес
+          электронной почты и информацию, которую вы отправляете, исключительно для ответа,
+          расследования и решения проблемы. Не отправляйте пароли, платных деталей или ненужную
+          чувствительную информацию. Ненужную информацию о поддержке не сохраняется после решения
+          проблемы. Вы можете запросить доступ или удаление по адресу электронной почты выше.
+        </p>
+        <h2 id="persona-notice-ru">Тренировочные профили и использование</h2>
+        <p>
+          Компьютерные стратегии, параметры, действия, времена мышления и настроения являются
+          синтетическими учебными механизмами. Они не представляют полной стратегии, психического
+          состояния или профессиональных навыков реального человека. Общественные источники не
+          предполагают участия, сотрудничества, рекомендации или одобрения лицом или организатором
+          событий. Цитаты и отклонения не дают разрешения на использование имен, фотографий или
+          торговых знаков.
+        </p>
+        <p>
+          Рецензии оценивают решения по информации, доступной до действия и предполагаемой ренты
+          противника. они не оценивают ваши решения с помощью скрытых карт противника, будущих карт
+          или финальных победителей, и не гарантируют оптимальную игру или прибыль.
+        </p>
+        <h2>Политические изменения</h2>
+        <p>
+          Издатель будет обновлять эту политику и хранить сведения, если обработка данных
+          изменится.Свяжитесь с издателем по электронной почте на этой странице.
+        </p>
+      </article>
     </main>
+    <script>
+      const select = document.querySelector('#policy-language');
+      const supported = ['zh-CN', 'en', 'zh-TW', 'ja', 'ko', 'es', 'it', 'pt', 'de', 'fr', 'ru'];
+      let saved;
+      try {
+        saved = localStorage.getItem('noir-locale');
+      } catch {}
+      const query = new URLSearchParams(location.search).get('lang');
+      const detected = (navigator.languages || [])
+        .map((l) =>
+          /^zh(?:-|$)/i.test(l)
+            ? !/Hans/i.test(l) && /(?:TW|HK|MO|Hant)/i.test(l)
+              ? 'zh-TW'
+              : 'zh-CN'
+            : l.toLowerCase().split('-')[0],
+        )
+        .find((l) => supported.includes(l));
+      select.value = [query, saved, detected, 'en'].find((l) => supported.includes(l));
+      function show() {
+        document.documentElement.lang = select.value;
+        document
+          .querySelectorAll('[data-locale]')
+          .forEach((el) => (el.hidden = el.dataset.locale !== select.value));
+        document.title = document.querySelector(
+          '[data-locale="' + select.value + '"] h1',
+        ).textContent;
+      }
+      select.addEventListener('change', show);
+      show();
+      if (location.hash === '#persona-notice')
+        document.querySelector('article:not([hidden]) h2[id]')?.scrollIntoView();
+    </script>
   </body>
 </html>

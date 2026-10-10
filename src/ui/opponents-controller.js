@@ -1,3 +1,4 @@
+import { localizeText, localizeHTML } from '../i18n/index.js';
 import {
   BOT_PROFILES,
   PROFILE_AXES,
@@ -40,20 +41,26 @@ export function createOpponentsController({ getGame, getCount, getSettings, onSa
     });
   }
   function choices() {
-    cards.innerHTML = BOT_PROFILES.map(
-      (p) =>
-        `<button type="button" class="profile-card ${p.id === selected ? 'selected' : ''}" data-profile-preview="${p.id}" data-profile-choice="${p.id}" aria-pressed="${p.id === selected}" aria-controls="profile-detail" aria-expanded="false"><span class="profile-portrait" aria-hidden="true">${portraitContent(p.id, p.short.slice(0, 1))}</span><strong>${p.short}</strong><span class="profile-card-tag">${p.tag}</span></button>`,
-    ).join('');
+    cards.innerHTML = localizeHTML(
+      BOT_PROFILES.map(
+        (p) =>
+          `<button type="button" class="profile-card ${p.id === selected ? 'selected' : ''}" data-profile-preview="${p.id}" data-profile-choice="${p.id}" aria-pressed="${p.id === selected}" aria-controls="profile-detail" aria-expanded="false"><span class="profile-portrait" aria-hidden="true">${portraitContent(p.id, localizeText(p.short).slice(0, 1))}</span><strong>${p.short}</strong><span class="profile-card-tag">${p.tag}</span></button>`,
+      ).join(''),
+    );
     markSelection();
     preparePortraits(cards);
   }
   function detail() {
     const profile = getBotProfile(selected);
     panel.dataset.profileId = profile.id;
-    panel.innerHTML = `<div class="profile-detail-heading"><div class="profile-identity"><span class="profile-portrait" aria-hidden="true">${portraitContent(profile.id, profile.short.slice(0, 1))}</span><h3>${profile.name}</h3></div><span class="profile-detail-kind">训练原型</span><button type="button" class="profile-detail-close icon-button" data-close-profile-detail aria-label="关闭牌手详细介绍"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" /></svg></button></div><div class="profile-detail-content"><p>${profile.description}</p><div class="profile-axes">${PROFILE_AXES.map((label, i) => `<div><span>${label}</span><meter min="0" max="100" value="${profile.axes[i]}" aria-label="${label}"></meter><strong>${profile.axes[i]}</strong></div>`).join('')}</div><p class="profile-sizing">常用翻后下注：<strong>${Math.round(profile.sizing[0] * 100)}–${Math.round(profile.sizing[1] * 100)}% 池</strong></p><p class="profile-evidence">${profile.evidence}</p><div class="profile-sources">${profile.sources.map((s) => `<a href="${s.url}" target="_blank" rel="noopener noreferrer">${s.label}</a>`).join('')}${portraitCredit(profile.id)}</div></div>`;
+    panel.innerHTML = localizeHTML(
+      `<div class="profile-detail-heading"><div class="profile-identity"><span class="profile-portrait" aria-hidden="true">${portraitContent(profile.id, localizeText(profile.short).slice(0, 1))}</span><h3>${profile.name}</h3></div><span class="profile-detail-kind">训练原型</span><button type="button" class="profile-detail-close icon-button" data-close-profile-detail aria-label="关闭牌手详细介绍"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" /></svg></button></div><div class="profile-detail-content"><p>${profile.description}</p><div class="profile-axes">${PROFILE_AXES.map((label, i) => `<div><span>${label}</span><meter min="0" max="100" value="${profile.axes[i]}" aria-label="${label}"></meter><strong>${profile.axes[i]}</strong></div>`).join('')}</div><p class="profile-sizing">常用翻后下注：<strong>${Math.round(profile.sizing[0] * 100)}–${Math.round(profile.sizing[1] * 100)}% 池</strong></p><p class="profile-evidence">${profile.evidence}</p><div class="profile-sources">${profile.sources.map((s) => `<a href="${s.url}" target="_blank" rel="noopener noreferrer">${s.label}</a>`).join('')}${portraitCredit(profile.id)}</div></div>`,
+    );
     const comparison = document.querySelector('#profile-comparison');
     if (comparison)
-      comparison.innerHTML = `<table><caption>所有原型的训练参数（0–100）</caption><thead><tr><th scope="col">原型</th>${PROFILE_AXES.map((l) => `<th scope="col">${l}</th>`).join('')}<th scope="col">下注 / 池</th></tr></thead><tbody>${BOT_PROFILES.map((p) => `<tr><th scope="row">${p.short}</th>${p.axes.map((v) => `<td>${v}</td>`).join('')}<td>${Math.round(p.sizing[0] * 100)}–${Math.round(p.sizing[1] * 100)}%</td></tr>`).join('')}</tbody></table>`;
+      comparison.innerHTML = localizeHTML(
+        `<table><caption>所有原型的训练参数（0–100）</caption><thead><tr><th scope="col">原型</th>${PROFILE_AXES.map((l) => `<th scope="col">${l}</th>`).join('')}<th scope="col">下注 / 池</th></tr></thead><tbody>${BOT_PROFILES.map((p) => `<tr><th scope="row">${p.short}</th>${p.axes.map((v) => `<td>${v}</td>`).join('')}<td>${Math.round(p.sizing[0] * 100)}–${Math.round(p.sizing[1] * 100)}%</td></tr>`).join('')}</tbody></table>`,
+      );
     preparePortraits(panel);
   }
   function positionDetail() {
@@ -131,12 +138,14 @@ export function createOpponentsController({ getGame, getCount, getSettings, onSa
   function roster() {
     const count = getCount();
     const names = ['Mia', 'Alex', 'River', 'Kai', 'Luna', 'Theo', 'Jade', 'Leo'];
-    document.querySelector('#opponent-roster').innerHTML = names
-      .map((name, i) => {
-        const id = i + 1;
-        return `<div class="opponent-row ${id >= count ? 'off-table' : ''}" data-opponent-row="${id}"><div class="opponent-row-title"><div class="opponent-row-person"><span class="profile-portrait opponent-portrait" aria-hidden="true">${portraitContent(draft.assignments[id], name.slice(0, 1))}</span><strong>${name}</strong></div><span class="opponent-seat-label">${id >= count ? '暂不在桌' : `座位 ${id}`}</span></div><label class="opponent-assignment-label"><span class="sr-only">${name} 的训练风格</span><select data-bot-seat="${id}">${BOT_PROFILES.map((p) => `<option value="${p.id}" ${draft.assignments[id] === p.id ? 'selected' : ''}>${p.short}</option>`).join('')}</select></label></div>`;
-      })
-      .join('');
+    document.querySelector('#opponent-roster').innerHTML = localizeHTML(
+      names
+        .map((name, i) => {
+          const id = i + 1;
+          return `<div class="opponent-row ${id >= count ? 'off-table' : ''}" data-opponent-row="${id}"><div class="opponent-row-title"><div class="opponent-row-person"><span class="profile-portrait opponent-portrait" aria-hidden="true">${portraitContent(draft.assignments[id], name.slice(0, 1))}</span><strong>${name}</strong></div><span class="opponent-seat-label">${id >= count ? '暂不在桌' : `座位 ${id}`}</span></div><label class="opponent-assignment-label"><span class="sr-only">${name} 的训练风格</span><select data-bot-seat="${id}">${BOT_PROFILES.map((p) => `<option value="${p.id}" ${draft.assignments[id] === p.id ? 'selected' : ''}>${p.short}</option>`).join('')}</select></label></div>`;
+        })
+        .join(''),
+    );
     preparePortraits(document.querySelector('#opponent-roster'));
   }
   function saveSettings() {
@@ -147,13 +156,14 @@ export function createOpponentsController({ getGame, getCount, getSettings, onSa
     } catch {}
     onSave(settings);
     document.querySelector('#opponents-save-note').textContent =
-      '已自动保存；风格与情绪下一手生效。';
+      localizeText('已自动保存；风格与情绪下一手生效。');
   }
   function open() {
     closeDetail({ focus: false, restoreScroll: false });
     draft = sanitizeBotSettings(getSettings());
     document.querySelector('#emotion-mode').value = draft.emotionMode;
-    document.querySelector('#opponents-save-note').textContent = '设置自动保存在此设备。';
+    document.querySelector('#opponents-save-note').textContent =
+      localizeText('设置自动保存在此设备。');
     choices();
     detail();
     roster();
@@ -198,9 +208,8 @@ export function createOpponentsController({ getGame, getCount, getSettings, onSa
     if (!event.target.matches('[data-bot-seat]')) return;
     draft.assignments[event.target.dataset.botSeat] = event.target.value;
     const avatar = event.target.closest('.opponent-row').querySelector('.opponent-portrait');
-    avatar.innerHTML = portraitContent(
-      event.target.value,
-      avatar.parentElement.textContent.trim().slice(0, 1),
+    avatar.innerHTML = localizeHTML(
+      portraitContent(event.target.value, avatar.parentElement.textContent.trim().slice(0, 1)),
     );
     preparePortraits(avatar);
     closeDetail({ focus: false, restoreScroll: false });
@@ -239,11 +248,9 @@ export function createOpponentsController({ getGame, getCount, getSettings, onSa
       const changed =
         game.emotionMode !== pending.emotionMode ||
         game.players.slice(1).some((p) => p.botProfile !== pending.assignments[p.id]);
-      document.querySelector('#opponents-summary').textContent = changed
-        ? '下手生效'
-        : named
-          ? `${named} 位风格对手`
-          : '均衡';
+      document.querySelector('#opponents-summary').textContent = localizeText(
+        changed ? '下手生效' : named ? `${named} 位风格对手` : '均衡',
+      );
     },
   };
 }

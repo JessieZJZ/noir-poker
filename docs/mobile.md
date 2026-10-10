@@ -85,3 +85,9 @@ npm run mobile:verify
 浏览器 CI 先运行公共区定位、固定操作区、牌面可读性、首屏、结算布局与提示横幅测试，再分别并行运行桌面和移动端的其余交互测试。两组覆盖完整的 `npm run test:e2e`；失败轨迹与验收截图保存在 `table-geometry-results`、`browser-ui-results-desktop` 和 `browser-ui-results-mobile`，用于检查不同人数、屏幕尺寸和安全区域下的表现。
 
 浏览器测试能验证共用页面、离线资源与应用状态逻辑，不能替代真实 WKWebView、Android WebView、系统声音、返回键和真机安全区域测试。发行前按 [发行准备](mobile-release.md) 完成真机及签名验证。
+
+## 原生国际化与发行展示
+
+原生构建支持 11 种语言，iOS 在 `Info.plist` 声明语言，Android 使用 `res/xml/locales_config.xml`。应用内语言设置在本机持久保存；实际系统单 App 语言选择与 WebView 字体需真机验收。
+
+`native` 构建会将具名研究展示替换成原创训练原型，并移除对应研究链接及真人指南入口；数值策略、保存的原型 ID 与规则不变。普通 Web 构建仍保留原研究展示。新增原型时同步 `src/engine/store-profiles.js`，新增文案后按 README 的国际化命令更新资源；`scripts/native-store.mjs` 的边界检查会拒绝缺少发行展示的原型。原生包仍排除人物照片、使用本地图标和字体、不配置远程 `server.url`。

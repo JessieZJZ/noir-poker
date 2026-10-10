@@ -13,4 +13,10 @@ import './styles/settings-layout.css';
 import { preparePlatform } from './platform/native.js';
 
 await preparePlatform();
+const { prepareLocale } = await import('./i18n/index.js');
+await prepareLocale();
 await import('./ui/table-controller.js');
+document.body.inert = false;
+document.documentElement.dataset.appReady = 'true';
+
+import './styles/i18n.css';
