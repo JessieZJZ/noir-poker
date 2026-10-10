@@ -283,6 +283,9 @@
     padding-inline: 3px;
     font-size: 12px;
   }
+  .game-surface .action-panel.settled-actions > #next-button.has-mobile-label {
+    font-size: 0;
+  }
   .game-surface .bet-controls {
     display: grid;
     grid-template-columns: minmax(64px, 0.8fr) minmax(0, 2fr);
@@ -335,8 +338,8 @@
     line-height: 1.05;
   }
   .game-surface .arena.dense-table .seat-profile > .avatar {
-    width: 16px;
-    height: 16px;
+    width: 18px;
+    height: 18px;
   }
   .game-surface .arena.dense-table .seat-peek {
     width: 18px;

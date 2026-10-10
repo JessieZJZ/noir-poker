@@ -506,6 +506,10 @@ try {
         }
       : {
           'appium:appPackage': appId,
+          // Cold CI emulators can take longer than the driver's 20s defaults
+          // to install its automation server or execute an ADB command.
+          'appium:uiautomator2ServerInstallTimeout': 120000,
+          'appium:adbExecTimeout': 120000,
           'appium:ensureWebviewsHavePages': true,
           'appium:chromedriverAutodownload': true,
         }),

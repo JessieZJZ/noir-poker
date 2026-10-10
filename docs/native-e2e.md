@@ -44,6 +44,8 @@ node scripts/native-e2e.mjs android --app /absolute/path/app-debug.apk --udid em
 
 `--server http://127.0.0.1:4723` 可复用已启动的 Appium；没有这个参数时，脚本自行启动本地 Appium 并在结束后关闭。iOS 使用 4725 端口，Android 使用 4727。只使用 Debug 原生外壳的调试能力，Web 内容仍是正常 native production build；上架 Release 不需要打开 WebView 调试。
 
+Android 冷启动的 Linux CI 模拟器可能在系统刚完成引导时安装较慢。脚本将 `uiautomator2ServerInstallTimeout` 和 `adbExecTimeout` 显式设为 120 秒，允许安装 Appium 的设备端服务和执行 ADB 命令；牌局等待、布局断言和后台时长等实际测试边界保持不变。配置含义见 [UiAutomator2 capabilities](https://github.com/appium/appium-uiautomator2-driver#driver-server)。
+
 ## 覆盖的实际流程
 
 - 从打包的 localhost origin 首启，确认原生适配器生效、没有登录要求、没有 QA fixtures。

@@ -548,16 +548,16 @@ test('hero recent actions persist within the street and clear on new streets exc
     expect(
       await row.evaluate((el) => {
         const a = el.getBoundingClientRect(),
-          name = document.querySelector('.hero-name').getBoundingClientRect(),
           identity = document.querySelector('.hero-identity').getBoundingClientRect(),
           arena = document.querySelector('#arena').getBoundingClientRect();
         return {
-          beside: a.left >= identity.right && a.top >= name.top && a.bottom <= name.bottom,
+          below: a.top >= identity.bottom - 1,
+          centered: Math.abs((a.left + a.right - identity.left - identity.right) / 2) < 1,
           inside: a.left >= 0 && a.right <= innerWidth && a.bottom <= arena.bottom,
           unclipped: el.scrollWidth <= el.clientWidth + 1,
         };
       }),
-    ).toEqual({ beside: true, inside: true, unclipped: true });
+    ).toEqual({ below: true, centered: true, inside: true, unclipped: true });
   };
   for (const width of [320, 390, 1280]) {
     await page.setViewportSize({ width, height: 900 });
@@ -1692,30 +1692,70 @@ test('all named portraits preview immediately, follow saved styles next hand and
           scale = arena.getBoundingClientRect().width / arena.offsetWidth;
         const overlaps = (a, b) =>
           a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top;
-        return profiles.every((profile) => {
-          const avatar = profile.querySelector('.avatar').getBoundingClientRect(),
-            eye = profile.querySelector('.seat-peek').getBoundingClientRect(),
-            bounds = profile.getBoundingClientRect(),
-            range = document.createRange();
-          range.selectNodeContents(profile.querySelector('.seat-stack'));
-          const text = range.getBoundingClientRect();
-          range.selectNodeContents(profile.querySelector('.seat-style-label'));
-          const label = range.getBoundingClientRect();
+        const visible = (element) => {
+          if (!element || element.hidden) return false;
+          const style = getComputedStyle(element),
+            rect = element.getBoundingClientRect();
           return (
-            avatar.width >= 18 * scale - 0.5 &&
-            avatar.height >= 18 * scale - 0.5 &&
-            text.left >= bounds.left &&
-            text.right <= bounds.right &&
-            bounds.left >= 0 &&
-            bounds.right <= innerWidth &&
-            label.left >= bounds.left &&
-            label.right <= bounds.right &&
-            !overlaps(text, avatar) &&
-            !overlaps(text, eye)
+            style.display !== 'none' &&
+            style.visibility === 'visible' &&
+            rect.width > 0 &&
+            rect.height > 0
           );
+        };
+        const violations = [];
+        profiles.forEach((profile) => {
+          const seat = profile.closest('.seat'),
+            bounds = profile.getBoundingClientRect(),
+            avatar = profile.querySelector('.avatar').getBoundingClientRect(),
+            eye = profile.querySelector('.seat-peek').getBoundingClientRect(),
+            style = profile.querySelector('.seat-style-label'),
+            rank = seat.querySelector('.seat-rank-slot .hand-rank'),
+            range = document.createRange();
+          const report = (field, reason, rect) =>
+            violations.push({
+              seat: seat.dataset.player,
+              field,
+              reason,
+              rect: rect?.toJSON(),
+              profile: bounds.toJSON(),
+              scale,
+            });
+          const fits = (rect, outer) =>
+            rect.left >= outer.left &&
+            rect.right <= outer.right &&
+            rect.top >= outer.top &&
+            rect.bottom <= outer.bottom;
+          if (avatar.width < 18 * scale - 0.5 || avatar.height < 18 * scale - 0.5)
+            report('portrait', 'smaller than 18px', avatar);
+          if (!fits(avatar, bounds)) report('portrait', 'outside profile', avatar);
+          if (bounds.left < 0 || bounds.right > innerWidth)
+            report('profile', 'outside viewport', bounds);
+          const labels = [
+            ['name', profile.querySelector('strong')],
+            ['stack', profile.querySelector('.seat-stack')],
+          ];
+          if (visible(style)) labels.push(['style', style]);
+          else if (innerWidth <= 900 && visible(rank)) labels.push(['rank', rank]);
+          else report('style', 'hidden without a visible rank replacement');
+          const textRects = labels.map(([field, element]) => {
+            range.selectNodeContents(element);
+            const rect = range.getBoundingClientRect();
+            if (!visible(element)) report(field, 'not visible', rect);
+            const outer = field === 'rank' ? seat.getBoundingClientRect() : bounds;
+            if (!fits(rect, outer)) report(field, 'clipped text', rect);
+            if (overlaps(rect, avatar)) report(field, 'overlaps portrait', rect);
+            if (overlaps(rect, eye)) report(field, 'overlaps peek button', rect);
+            return { field, rect };
+          });
+          for (let i = 0; i < textRects.length; i++)
+            for (let j = i + 1; j < textRects.length; j++)
+              if (overlaps(textRects[i].rect, textRects[j].rect))
+                report(textRects[i].field, `overlaps ${textRects[j].field}`, textRects[i].rect);
         });
+        return violations;
       });
-      expect(readable).toBe(true);
+      expect(readable, `named profile readability at ${width}px with ${count} players`).toEqual([]);
     }
   }
   await page.locator('#opponents-button').click();
