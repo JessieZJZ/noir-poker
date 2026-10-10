@@ -83,7 +83,9 @@ async function assertPublicArea(page) {
             ),
           );
         if (group.top < min - 0.5 || group.top > max + 0.5 || !clearAt(group.top))
-          problems.push('public group is outside a clear position');
+          problems.push(
+            `public group is outside a clear position: ${innerWidth}x${innerHeight}, ${document.querySelector('#arena').dataset.playerCount} players, ${document.querySelector('#arena').className}, top ${group.top}, min ${min}, max ${max}, scale ${scale}`,
+          );
         let best = Infinity;
         for (let top = Math.ceil(min); top <= max; top++)
           if (clearAt(top)) best = Math.min(best, Math.abs(top - ideal));

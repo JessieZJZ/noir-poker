@@ -48,6 +48,25 @@ async function expectReadableTable(page, { publicWidth, heroWidth }) {
                 issues.push(`${label} outside table height`);
               if (profiles.some((profile) => overlap(r, box(profile))))
                 issues.push(`${label} overlaps a seat profile`);
+              if (label === 'public') {
+                const laterCards = [...card.parentElement.children].slice(
+                  [...card.parentElement.children].indexOf(card) + 1,
+                );
+                for (const feature of card.querySelectorAll(
+                  '.card-art > text, .card-art > .card-suit-icon',
+                )) {
+                  const mark = box(feature);
+                  if (
+                    mark.left < r.left - 1 ||
+                    mark.right > r.right + 1 ||
+                    mark.top < r.top - 1 ||
+                    mark.bottom > r.bottom + 1
+                  )
+                    issues.push('public rank or suit clipped by its card');
+                  if (laterCards.some((next) => overlap(mark, box(next))))
+                    issues.push('public rank or suit covered by the next card');
+                }
+              }
             }
           }
           for (const seat of document.querySelectorAll('.seat')) {
@@ -105,6 +124,7 @@ test('5–9 player live hands keep visible card backs and readable cards at narr
   await page.locator('#mix-opponents').click();
   await closeSettings(page);
   for (const size of [
+    { width: 320, height: 900, publicWidth: 31, heroWidth: 44 },
     { width: 360, height: 900, publicWidth: 31, heroWidth: 44 },
     { width: 390, height: 844, publicWidth: 31, heroWidth: 44 },
     { width: 700, height: 1000, publicWidth: 49, heroWidth: 61 },
@@ -142,7 +162,7 @@ test('shrinking and expanding a settled table preserves folded card backs and pe
         }),
       count,
     );
-    for (const width of [900, 700, 390, 360, 901, 1124]) {
+    for (const width of [900, 700, 390, 360, 320, 901, 1124]) {
       await page.setViewportSize({ width, height: width <= 390 ? 900 : 1446 });
       await expect(page.locator('.seat .card-back')).toHaveCount((count - 2) * 2);
       await expectReadableTable(page, {

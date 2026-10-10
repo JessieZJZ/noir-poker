@@ -36,14 +36,19 @@ export function createSettlementLayout(arena, { observe = true } = {}) {
     // vertical band. Move side seats only by the missing clearance, bounded
     // by their full footprint; a fixed shift can leave a small collision and
     // unnecessarily grow/shrink the whole mobile table.
-    const spread = Number(arena.dataset.playerCount) >= 7 && compact;
+    const spread =
+      Number(arena.dataset.playerCount) >= 7 &&
+      compact &&
+      !arena.classList.contains('compact-landscape');
     for (const seat of arena.querySelectorAll('.seat')) seat.style.removeProperty('margin-left');
     if (spread) {
       const publicParts = [...center.querySelectorAll('.pot, #board, #board-caption')]
         .map((el) => el.getBoundingClientRect())
         .filter((r) => r.width > 0 && r.height > 0);
-      const clearLeft = Math.min(...publicParts.map((r) => r.left)) - gap,
-        clearRight = Math.max(...publicParts.map((r) => r.right)) + gap;
+      // CSS layout rounds offsets to fractional pixels. Leave half a pixel
+      // beyond exact clearance so the final fit transform keeps it clear.
+      const clearLeft = Math.min(...publicParts.map((r) => r.left)) - gap - 0.5,
+        clearRight = Math.max(...publicParts.map((r) => r.right)) + gap + 0.5;
       for (const seat of arena.querySelectorAll('.seat-left, .seat-right')) {
         const parts = [
           ...seat.querySelectorAll('.mini-cards, .seat-profile, .seat-action, .hand-rank'),
