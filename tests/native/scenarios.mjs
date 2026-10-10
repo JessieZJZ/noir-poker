@@ -274,7 +274,45 @@ export async function nativeScenarios(app) {
       buttons.every((button) => Math.abs(button.top - buttons[0].top) <= 1 && button.height >= 44),
     );
     assert.ok(layout.dock.height <= 65 + layout.bottomInset, 'Settlement must use the compact row');
-    return { coverage, pot: settled.pot, settlementBudget, layout };
+    const crownInspection = [];
+    const initialPressed = await app.evaluate(() =>
+      document.querySelector('.seat-crown .seat-peek').getAttribute('aria-pressed'),
+    );
+    for (let toggle = 0; toggle < 2; toggle++) {
+      await app.click('.seat-crown .seat-peek');
+      const inspection = await app.evaluate(() => {
+        const seat = document.querySelector('.seat-crown'),
+          view = document.querySelector('.table-viewport').getBoundingClientRect(),
+          profile = seat.querySelector('.seat-profile').getBoundingClientRect(),
+          scale = new DOMMatrix(getComputedStyle(document.querySelector('#arena')).transform).a;
+        return {
+          pressed: seat.querySelector('.seat-peek').getAttribute('aria-pressed'),
+          cards: [...seat.querySelectorAll('.playing-card')].map((card) => {
+            const r = card.getBoundingClientRect();
+            return {
+              clearOfHint: r.top >= view.top + 10 * scale - 0.5,
+              fullyVisible: r.bottom <= profile.top + 0.5,
+            };
+          }),
+        };
+      });
+      const expected =
+        toggle === 0 ? (initialPressed === 'true' ? 'false' : 'true') : initialPressed;
+      assert.equal(inspection.pressed, expected);
+      assert.equal(inspection.cards.length, expected === 'true' ? 2 : 0);
+      assert.ok(inspection.cards.every((card) => card.clearOfHint && card.fullyVisible));
+      const peekLayout = await app.evaluate(readTableLayout);
+      assertTableLayout(peekLayout);
+      for (const anchor of ['arena', 'publicArea'])
+        for (const key of ['top', 'left', 'height', 'right'])
+          assert.ok(
+            Math.abs(peekLayout[anchor][key] - layout[anchor][key]) <= 1,
+            `${anchor} must stay fixed when inspecting the crown hand`,
+          );
+      if (expected === 'true') await app.screenshot('crown-hand-inspection');
+      crownInspection.push(inspection);
+    }
+    return { coverage, pot: settled.pot, settlementBudget, layout, crownInspection };
   });
   await check('settlement-decision-review', async () => {
     await app.click('#review-hand-button');
