@@ -147,6 +147,99 @@ async function expectGeometry(page, target) {
   return geometry(page);
 }
 
+async function expectRevealedCardsLeaveNamesVisible(page) {
+  const measure = () =>
+    page.evaluate(() => {
+      const bounds = (r) => ({
+        top: r.top,
+        left: r.left,
+        right: r.right,
+        bottom: r.bottom,
+        width: r.width,
+        height: r.height,
+      });
+      const rect = (element) => bounds(element.getBoundingClientRect());
+      const visible = (element) => {
+        if (!element || element.hidden) return false;
+        const style = getComputedStyle(element);
+        const r = element.getBoundingClientRect();
+        return (
+          style.display !== 'none' &&
+          style.visibility === 'visible' &&
+          Number(style.opacity) > 0 &&
+          r.width > 0 &&
+          r.height > 0
+        );
+      };
+      const overlaps = (a, b) =>
+        a.left < b.right - 0.5 &&
+        a.right > b.left + 0.5 &&
+        a.top < b.bottom - 0.5 &&
+        a.bottom > b.top + 0.5;
+      const issues = [];
+      const seats = [...document.querySelectorAll('.seat:has(.revealed-cards)')].map((seat) => {
+        const header = seat.querySelector('.seat-profile strong');
+        const position = header?.querySelector('.position-badge');
+        const nameRects = [...(header?.childNodes ?? [])]
+          .filter((node) => node.nodeType === Node.TEXT_NODE && node.textContent.trim())
+          .flatMap((node) => {
+            const range = document.createRange();
+            range.selectNodeContents(node);
+            return [...range.getClientRects()].map(bounds);
+          });
+        const labels = [
+          { label: 'name/position header', bounds: header && rect(header) },
+          { label: 'position badge', bounds: position && rect(position) },
+          ...nameRects.map((bounds) => ({ label: 'name text', bounds })),
+        ];
+        const cards = [...seat.querySelectorAll('.revealed-cards .playing-card')];
+        const cardBounds = cards.map((card) => {
+          const face = rect(card);
+          const style = getComputedStyle(card);
+          const outlineWidth = parseFloat(style.outlineWidth) || 0;
+          const outlineOffset = parseFloat(style.outlineOffset) || 0;
+          const outset =
+            style.outlineStyle === 'none' || style.outlineStyle === 'hidden'
+              ? 0
+              : Math.max(0, outlineWidth + outlineOffset);
+          const x = outset * (face.width / Math.max(1, card.offsetWidth));
+          const y = outset * (face.height / Math.max(1, card.offsetHeight));
+          return {
+            top: face.top - y,
+            left: face.left - x,
+            right: face.right + x,
+            bottom: face.bottom + y,
+            width: face.width + 2 * x,
+            height: face.height + 2 * y,
+            faceBounds: face,
+            outline: { width: outlineWidth, offset: outlineOffset, x, y },
+          };
+        });
+        const id = seat.dataset.player;
+        if (!visible(header) || !visible(position) || !nameRects.length)
+          issues.push({ seat: id, reason: 'revealed seat name or position is not visible' });
+        if (cards.length !== 2 || cards.some((card) => !visible(card)))
+          issues.push({ seat: id, reason: 'both revealed card faces must remain visible' });
+        // Include transformed faces and outlines, not their potentially shorter wrapper.
+        for (const [index, card] of cardBounds.entries())
+          for (const { label, bounds } of labels)
+            if (bounds && overlaps(card, bounds))
+              issues.push({
+                seat: id,
+                card: index,
+                reason: `revealed card covers ${label}`,
+                cardBounds: card,
+                labelBounds: bounds,
+              });
+        return { seat: id, cards: cardBounds, labels };
+      });
+      if (!seats.length) issues.push({ reason: 'settlement must expose opponent cards to check' });
+      return { seats, issues };
+    });
+  await expect.poll(async () => (await measure()).issues).toEqual([]);
+  return measure();
+}
+
 async function expectActionRow(page, selectors) {
   await expect
     .poll(() =>
@@ -419,6 +512,7 @@ for (const target of cases) {
       await expect(page.locator('.game-surface')).toHaveAttribute('data-action-state', 'settled');
       await expectActionRow(page, ['#next-button', '#restart-hand-button', '#review-hand-button']);
       const settled = await expectGeometry(page, target);
+      settled.revealedSeatNames = await expectRevealedCardsLeaveNamesVisible(page);
       await expectStableTableFrames(page, initial);
       await savePassingScreenshot(
         page,

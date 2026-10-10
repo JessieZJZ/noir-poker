@@ -204,6 +204,17 @@
     margin-bottom: -12px;
     gap: 4px;
   }
+  /* Bright faces and their best-hand outlines must finish above the name.
+     Only covered backs may tuck behind the profile with a negative margin. */
+  .game-surface .seat .mini-cards.revealed-cards {
+    height: 54px;
+    padding-top: 4px;
+    margin-bottom: 2px;
+  }
+  .game-surface .seat .mini-cards.revealed-cards .playing-card.small {
+    width: 32px;
+    height: 46px;
+  }
   .game-surface .seat-rank-slot {
     height: 0;
   }
@@ -218,6 +229,9 @@
   }
   .game-surface .seat:has(.seat-rank-slot .hand-rank) .seat-style-label {
     visibility: hidden;
+  }
+  .game-surface .seat:has(.mini-cards.revealed-cards) .seat-rank-slot .hand-rank {
+    top: 74px;
   }
   .game-surface .arena[data-player-count] .seat .seat-action {
     height: 16px;
@@ -350,11 +364,20 @@
     height: 28px;
     margin-bottom: -12px;
   }
+  .game-surface .arena.dense-table .seat .mini-cards.revealed-cards {
+    height: 35px;
+    padding-top: 4px;
+    margin-bottom: 2px;
+  }
   .game-surface .arena.dense-table .seat .card-back {
     width: 18px;
     height: 25px;
   }
   .game-surface .arena.dense-table .mini-cards .playing-card.small {
+    width: 19px;
+    height: 27px;
+  }
+  .game-surface .arena.dense-table .mini-cards.revealed-cards .playing-card.small {
     width: 19px;
     height: 27px;
   }
@@ -365,6 +388,13 @@
     top: 30px;
     font-size: 9px;
     padding: 1px 3px;
+  }
+  .game-surface
+    .arena.dense-table
+    .seat:has(.mini-cards.revealed-cards)
+    .seat-rank-slot
+    .hand-rank {
+    top: 51px;
   }
   .game-surface .arena.dense-table .seat .seat-action {
     height: 14px;

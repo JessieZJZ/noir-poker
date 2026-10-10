@@ -1,7 +1,9 @@
 // Size from the screen, never from the current action or result text. Portrait
 // keeps physical pixels, so result labels cannot shrink every card on the felt.
 export function portraitMetrics(width, height, count = 6) {
-  const dense = height < 390 || Math.ceil((count - 1) / 2) * 110 > height;
+  // Budget for bright cards, outlines and the profile before the hand starts.
+  // Revealing an opponent must not change density or shrink the whole felt.
+  const dense = height < 390 || Math.ceil((count - 1) / 2) * 140 > height;
   const seatWidth = width < 330 ? 64 : 76;
   const heroWidth = dense ? (height < 330 ? 48 : 52) : Math.min(76, Math.floor(width * 0.18));
   const heroHeight = Math.ceil(heroWidth * 1.44) + (dense ? 54 : 62);

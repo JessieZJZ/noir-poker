@@ -70,6 +70,8 @@ test('nine-seat density activates when six seats still fit, and releases on a ta
   assert.equal(nine.dense, true);
   assert.equal(nine.rails, true);
   assert.ok(nine.heroWidth <= six.heroWidth);
+  assert.equal(portraitMetrics(376, 517, 9).dense, true);
+  assert.equal(portraitMetrics(376, 517, 6).dense, false);
   const tallNine = portraitMetrics(343, 650, 9);
   assert.equal(tallNine.dense, false);
   assert.equal(tallNine.rails, false);
