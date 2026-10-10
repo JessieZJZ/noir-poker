@@ -123,6 +123,43 @@ function soundEffect(kind = 'chip') {
   if (!activityClock.active || !sound || audio?.state !== 'running') return;
   try {
     const now = audio.currentTime;
+    if (kind === 'check') {
+      // Two knuckle taps: a short wooden attack and a low, quickly damped body.
+      const attack = audio.createBuffer(1, Math.ceil(audio.sampleRate * 0.025), audio.sampleRate);
+      const samples = attack.getChannelData(0);
+      for (let i = 0; i < samples.length; i++)
+        samples[i] = (Math.random() * 2 - 1) * Math.exp((-6 * i) / samples.length);
+      [0, 0.14].forEach((offset, i) => {
+        const at = now + offset,
+          strength = i === 0 ? 1 : 0.8,
+          noise = audio.createBufferSource(),
+          filter = audio.createBiquadFilter(),
+          attackGain = audio.createGain(),
+          body = audio.createOscillator(),
+          bodyGain = audio.createGain();
+        noise.buffer = attack;
+        filter.type = 'bandpass';
+        filter.frequency.setValueAtTime(850, at);
+        filter.Q.setValueAtTime(0.7, at);
+        attackGain.gain.setValueAtTime(0.08 * strength, at);
+        noise.connect(filter);
+        filter.connect(attackGain);
+        attackGain.connect(audio.destination);
+        body.type = 'triangle';
+        body.frequency.setValueAtTime(165, at);
+        body.frequency.exponentialRampToValueAtTime(80, at + 0.045);
+        bodyGain.gain.setValueAtTime(0.0001, at);
+        bodyGain.gain.exponentialRampToValueAtTime(0.035 * strength, at + 0.002);
+        bodyGain.gain.exponentialRampToValueAtTime(0.0001, at + 0.065);
+        body.connect(bodyGain);
+        bodyGain.connect(audio.destination);
+        noise.start(at);
+        noise.stop(at + 0.025);
+        body.start(at);
+        body.stop(at + 0.08);
+      });
+      return;
+    }
     if (kind === 'fold') {
       // A quiet falling swish, distinct from chip, deal and winning notes.
       const o = audio.createOscillator(),
@@ -559,13 +596,16 @@ function schedule() {
         }
         botWait = null;
         const id = game.actor,
+          canCheck = legalActions(game, id).canCheck,
           d = executeBotTurn(game, waiting.plan, {
             waitedMs: activityClock.now() - waiting.startedAt,
           });
-        if (d.action !== 'fold' && d.action !== 'check') {
+        const checked = d.action === 'check' || (d.action === 'call' && canCheck);
+        if (d.action !== 'fold' && !checked) {
           flyChips(id);
           soundEffect();
         }
+        if (checked) soundEffect('check');
         if (d.action === 'fold') soundEffect('fold');
         if (game.phase === 'done') soundEffect('win');
         render();
@@ -584,6 +624,7 @@ function heroAction(action, amount) {
     flyChips(0);
     soundEffect();
   }
+  if (action === 'check' || (action === 'call' && legal.canCheck)) soundEffect('check');
   if (action === 'fold') soundEffect('fold');
   if (game.phase === 'done') soundEffect('win');
   render();
