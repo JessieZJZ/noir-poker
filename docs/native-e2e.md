@@ -46,6 +46,8 @@ node scripts/native-e2e.mjs android --app /absolute/path/app-debug.apk --udid em
 
 Android 冷启动的 Linux CI 模拟器可能在系统刚完成引导时安装较慢。脚本将 `uiautomator2ServerInstallTimeout` 和 `adbExecTimeout` 显式设为 120 秒，允许安装 Appium 的设备端服务和执行 ADB 命令；牌局等待、布局断言和后台时长等实际测试边界保持不变。配置含义见 [UiAutomator2 capabilities](https://github.com/appium/appium-uiautomator2-driver#driver-server)。
 
+正常流程截图在 WebView 内等待有限的发牌动画结束，并确认对应的结算、复盘开关或下一手底牌节点后，再等待两次 animation frame 提交，最后由原生驱动捕获全设备画面。等待上限为 5 秒，超时或异常帧数据仍判定失败；报告的 `screenshotPaints` 记录当时的公开界面状态和帧时间，避免 DOM 已更新而截图仍是上一帧。失败诊断截图直接保留原生屏幕，不要求出错的 WebView 能正常绘制。
+
 原生截图先写入磁盘，再重新发现应用当前的 WebView 并有界恢复连接。Android 的临时 CDP 查询超时或 iOS 页面上下文更换会触发重新发现，恢复过程记录在报告的 `contextRestores` 中；持续无法恢复仍判定失败，保留截图和原始错误。
 
 ## 覆盖的实际流程

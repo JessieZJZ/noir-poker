@@ -7,6 +7,7 @@ import { nativeScenarios } from '../tests/native/scenarios.mjs';
 import { sourceDigest } from './mobile-lib.mjs';
 import { verifyBundledArtifact } from './bundled-assets.mjs';
 import { restoreWebviewContext } from './native-context.mjs';
+import { captureNativeScreenshot } from './native-screenshot.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const args = process.argv.slice(2);
@@ -392,13 +393,22 @@ async function select(selector, value) {
   );
 }
 async function screenshot(name) {
-  // Ask the native driver rather than Chromium for the entire device screen.
-  await command('POST', '/context', { name: 'NATIVE_APP' });
-  const png = await command('GET', '/screenshot');
-  writeFileSync(path.join(output, `${name}.png`), Buffer.from(png, 'base64'));
-  // Save the native evidence before reconnecting. A temporary CDP discovery
-  // failure must not discard the screenshot or blindly reuse a cached context.
-  if (webContext) await restoreWebview(`screenshot:${name}`);
+  // Diagnostic failure screenshots retain the raw native screen even when
+  // the WebView itself cannot paint. Successful scenario evidence must paint.
+  await captureNativeScreenshot(command, {
+    waitForPaint: Boolean(webContext) && name !== 'failure',
+    expected:
+      name === 'raise-call-fold-and-settlement'
+        ? { phase: 'done', actionState: 'settled' }
+        : name === 'retry-original-deal-and-next-hand'
+          ? { heroCards: 2 }
+          : name.startsWith('settlement-decision-review')
+            ? { reviewOpen: name.endsWith('-open') }
+            : {},
+    onPaint: (paint) => (report.screenshotPaints ??= []).push({ name, ...paint }),
+    save: (png) => writeFileSync(path.join(output, `${name}.png`), Buffer.from(png, 'base64')),
+    restore: webContext ? () => restoreWebview(`screenshot:${name}`) : undefined,
+  });
 }
 async function activate() {
   await command('POST', '/context', { name: 'NATIVE_APP' });
