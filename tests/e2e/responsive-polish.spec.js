@@ -403,12 +403,17 @@ for (const target of cases) {
       await expect(page.locator('.game-surface')).toHaveAttribute('data-action-state', 'folded');
       await expectActionRow(page, ['#continue-deal-button']);
       const folded = await expectGeometry(page, target);
+      await expectStableTableFrames(page, initial);
+      // Full-page screenshots can temporarily resize Chromium's viewport.
+      // Sample the real fold and settlement transitions separately so that
+      // screenshot instrumentation cannot masquerade as an application flash.
       await savePassingScreenshot(
         page,
         info,
         `${target.width}x${target.height}-${count}-folded`,
         folded,
       );
+      await startTableCapture(page);
       await page.locator('#continue-deal-button').click();
       await expect.poll(() => page.evaluate(() => window.noir.getState().phase)).toBe('done');
       await expect(page.locator('.game-surface')).toHaveAttribute('data-action-state', 'settled');
