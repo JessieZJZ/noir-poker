@@ -246,9 +246,7 @@ function seatAction(p, { recent = false } = {}) {
                 : recent
                   ? ' ' + match[2].replace(/至$/, '')
                   : '')
-          : match[2] === '加注至'
-            ? '加注'
-            : match[2],
+          : match[2].replace(/至$/, ''),
     amount = Number(match[3]);
   const meaning =
     (retained ? `${streets[retained.street]} · ` : '') +
