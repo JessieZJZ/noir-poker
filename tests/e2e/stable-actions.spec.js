@@ -36,9 +36,9 @@ async function startFrameCapture(page) {
   return page.evaluate(() => {
     const read = () =>
       Object.fromEntries(
-        ['.game-surface', '.table-viewport', '.action-dock'].map((selector) => {
+        ['.table-viewport', '#arena', '.poker-table'].map((selector) => {
           const r = document.querySelector(selector).getBoundingClientRect();
-          return [selector, { top: r.top, height: r.height, bottom: r.bottom }];
+          return [selector, { top: r.top, left: r.left, width: r.width, height: r.height }];
         }),
       );
     const capture = { frames: [read()], frame: null };
@@ -102,25 +102,23 @@ async function expectDockLayout(page, kind, bottomInset = 0) {
               issues.push('single button does not fill the available width');
             if (!fits((button.top + button.bottom) / 2, (inner.top + inner.bottom) / 2))
               issues.push('single button is not vertically centered');
-            if (button.height < 44 || button.height > 45.5)
-              issues.push('single button does not retain its 44px tap target');
+            if (button.height < 44 || button.height > 52)
+              issues.push('single button is not a compact, accessible tap target');
           } else if (kind === 'settled') {
-            const next = rect(document.querySelector('#next-button'));
-            const retry = rect(document.querySelector('#restart-hand-button'));
-            const review = rect(document.querySelector('#review-hand-button'));
-            if (!fits(next.left, inner.left) || !fits(next.right, inner.right))
-              issues.push('next hand does not occupy the complete first row');
-            if (
-              !fits(retry.left, inner.left) ||
-              !fits(review.right, inner.right) ||
-              !fits(retry.top, review.top) ||
-              !fits(retry.bottom, review.bottom) ||
-              !fits(retry.width, review.width) ||
-              retry.top < next.bottom
-            )
-              issues.push('retry and review do not form the equal-width second row');
-            if (!fits(next.top, inner.top) || !fits(review.bottom, inner.bottom))
-              issues.push('settled buttons leave unused vertical space');
+            const row = ['#next-button', '#restart-hand-button', '#review-hand-button'].map(
+              (selector) => rect(document.querySelector(selector)),
+            );
+            if (!fits(row[0].left, inner.left) || !fits(row.at(-1).right, inner.right))
+              issues.push('settled row does not fill the complete available width');
+            for (const [index, button] of row.entries()) {
+              if (
+                !fits(button.top, row[0].top) ||
+                !fits(button.bottom, row[0].bottom) ||
+                !fits(button.width, row[0].width) ||
+                (index && button.left < row[index - 1].right)
+              )
+                issues.push('settled buttons do not form one equal-width row');
+            }
           }
           const buttons = [...panel.querySelectorAll('button')].filter(
             (el) => !el.hidden && getComputedStyle(el).display !== 'none' && rect(el).height > 0,
@@ -157,7 +155,7 @@ async function expectDockLayout(page, kind, bottomInset = 0) {
     .toEqual([]);
 }
 
-test('fold, expedited settlement, retry and next hand keep the mobile table and dock height stable', async ({
+test('fold, expedited settlement, retry and next hand keep the mobile arena and felt stable', async ({
   page,
 }) => {
   test.setTimeout(90000);
@@ -185,7 +183,7 @@ test('fold, expedited settlement, retry and next hand keep the mobile table and 
       await expectDockLayout(page, 'settled', insets.bottom);
       if (size.width === 390 && count === 9)
         await page.screenshot({
-          path: test.info().outputPath('settled-fixed-two-row-buttons.png'),
+          path: test.info().outputPath('settled-fixed-one-row-buttons.png'),
         });
       await page.locator('#restart-hand-button').click();
       await page.evaluate(() => window.qa.stop());
@@ -259,7 +257,7 @@ async function expectHeroAnchor(page, baseline) {
     .toEqual([]);
 }
 
-test('hero status and recent action share fixed left and right slots without lifting cards', async ({
+test('hero identity stays centered and recent action has an independent slot without lifting cards', async ({
   page,
 }) => {
   test.setTimeout(90000);
@@ -272,34 +270,33 @@ test('hero status and recent action share fixed left and right slots without lif
     for (const count of [5, 9]) {
       await page.evaluate((count) => window.qa.heroTurn(count), count);
       await expect(page.locator('.hero-avatar')).toHaveCount(0);
-      await expect(page.locator('#hero-turn')).toHaveText('你的回合');
+      await expect(page.locator('#hero-turn')).toHaveCount(0);
+      await expect(page.locator('#call-button')).toBeEnabled();
       await expect(page.locator('#hero-last-action')).toBeHidden();
       const baseline = await heroAnchorBounds(page);
       await page.locator('#call-button').click();
       await page.evaluate(() => window.qa.stop());
       await expect(page.locator('#hero-last-action')).toContainText('跟注');
-      await expect(page.locator('#hero-turn')).toHaveText('等待行动');
+      await expect(page.locator('#call-button')).toBeDisabled();
+      expect(await page.evaluate(() => window.noir.getState().actor)).not.toBe('你');
       await expectHeroAnchor(page, baseline);
       if (size.width === 390 && count === 9)
         await page.screenshot({ path: test.info().outputPath('hero-status-and-action-slots.png') });
       expect(
         await page.evaluate(() => {
-          const status = document.querySelector('#hero-turn').getBoundingClientRect();
           const identity = document.querySelector('.hero-identity').getBoundingClientRect();
           const action = document.querySelector('#hero-last-action').getBoundingClientRect();
           return {
-            statusBeforeIdentity: status.right <= identity.left + 1,
-            actionAfterIdentity: action.left >= identity.right - 1,
-            sameRow: status.top < action.bottom && status.bottom > action.top,
+            actionCenteredBelowIdentity:
+              Math.abs((action.left + action.right - identity.left - identity.right) / 2) <= 1 &&
+              action.top >= identity.bottom - 1,
             actionUnclipped:
               document.querySelector('#hero-last-action').scrollWidth <=
               document.querySelector('#hero-last-action').clientWidth + 1,
           };
         }),
       ).toEqual({
-        statusBeforeIdentity: true,
-        actionAfterIdentity: true,
-        sameRow: true,
+        actionCenteredBelowIdentity: true,
         actionUnclipped: true,
       });
       const flop = await page.evaluate(() => window.qa.respondToHero(0, true));

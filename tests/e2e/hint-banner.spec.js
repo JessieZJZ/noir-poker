@@ -1,6 +1,21 @@
 import { test, expect } from '@playwright/test';
 import { openSettings, closeSettings } from './settings-helpers.js';
 
+async function reloadWithPausedHintClock(page) {
+  const pausedAt = new Date('2026-01-01T00:00:00Z');
+  // Install ahead of the pause point, then freeze before navigation. The UI
+  // captures its timers during module initialization; a slow reload must not
+  // advance the fake clock beyond a fixed pause target.
+  await page.clock.install({ time: new Date(pausedAt.getTime() - 60000) });
+  await page.clock.pauseAt(pausedAt);
+  await page.reload();
+  await page.waitForFunction(() => !!window.qa);
+  await page.evaluate(() => {
+    window.qa.stop();
+    return document.fonts.ready;
+  });
+}
+
 test.beforeEach(async ({ page }) => {
   await page.goto('/');
   await page.waitForFunction(() => !!window.qa);
@@ -14,14 +29,7 @@ test('necessary hints appear below blinds, expire without reappearing on ordinar
   page,
 }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.clock.install({ time: new Date('2026-01-01T00:00:00Z') });
-  // The notification captures its timer at module initialization. Install the
-  // clock before this navigation so the real UI timer uses the fake clock.
-  // Freeze before reloading: navigation can take longer than the pause target.
-  await page.clock.pauseAt(new Date('2026-01-01T00:00:01Z'));
-  await page.reload();
-  await page.waitForFunction(() => !!window.qa);
-  await page.evaluate(() => window.qa.stop());
+  await reloadWithPausedHintClock(page);
   const banner = page.locator('#coach-content');
   await page.evaluate(() => window.qa.heroTurn(9));
   await expect(banner).toBeVisible();
@@ -153,11 +161,7 @@ test('desktop coaching stays in the sidebar, wraps naturally and exposes its onl
   page,
 }) => {
   await page.setViewportSize({ width: 1280, height: 900 });
-  await page.clock.install({ time: new Date('2026-01-01T00:00:00Z') });
-  await page.reload();
-  await page.waitForFunction(() => !!window.qa);
-  await page.evaluate(() => window.qa.stop());
-  await page.clock.pauseAt(new Date('2026-01-01T00:00:01Z'));
+  await reloadWithPausedHintClock(page);
   await page.evaluate(() => window.qa.heroTurn(9));
   const card = page.locator('#coach-desktop-card');
   await expect(card).toBeVisible();
@@ -192,11 +196,7 @@ test('breakpoint changes reuse the same hint preference and cancel stale mobile 
   page,
 }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.clock.install({ time: new Date('2026-01-01T00:00:00Z') });
-  await page.reload();
-  await page.waitForFunction(() => !!window.qa);
-  await page.evaluate(() => window.qa.stop());
-  await page.clock.pauseAt(new Date('2026-01-01T00:00:01Z'));
+  await reloadWithPausedHintClock(page);
   await page.evaluate(() => {
     window.qa.heroTurn(9);
     window.hintNode = document.querySelector('#coach-content');

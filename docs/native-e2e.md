@@ -44,6 +44,14 @@ node scripts/native-e2e.mjs android --app /absolute/path/app-debug.apk --udid em
 
 `--server http://127.0.0.1:4723` 可复用已启动的 Appium；没有这个参数时，脚本自行启动本地 Appium 并在结束后关闭。iOS 使用 4725 端口，Android 使用 4727。只使用 Debug 原生外壳的调试能力，Web 内容仍是正常 native production build；上架 Release 不需要打开 WebView 调试。
 
+Android 冷启动的 Linux CI 模拟器可能在系统刚完成引导时安装较慢。脚本将 `uiautomator2ServerInstallTimeout` 和 `adbExecTimeout` 显式设为 120 秒，允许安装 Appium 的设备端服务和执行 ADB 命令；牌局等待、布局断言和后台时长等实际测试边界保持不变。配置含义见 [UiAutomator2 capabilities](https://github.com/appium/appium-uiautomator2-driver#driver-server)。
+
+正常流程截图在 WebView 内等待有限的发牌动画结束，并确认对应的结算、复盘开关或下一手底牌节点后，再等待两次 animation frame 提交，最后由原生驱动捕获全设备画面。等待上限为 5 秒，超时或异常帧数据仍判定失败；报告的 `screenshotPaints` 记录当时的公开界面状态和帧时间，避免 DOM 已更新而截图仍是上一帧。失败诊断截图直接保留原生屏幕，不要求出错的 WebView 能正常绘制。
+
+原生截图先写入磁盘，再重新发现应用当前的 WebView 并有界恢复连接。Android 的临时 CDP 查询超时或 iOS 页面上下文更换会触发重新发现，恢复过程记录在报告的 `contextRestores` 中；持续无法恢复仍判定失败，保留截图和原始错误。
+
+复盘仍须在原有 30 秒等待内生成完整总览和行动建议。成功与失败的复盘场景都会在 `evidence.diagnostics` 中记录公开分析状态、决策数、每次进度递增的耗时，以及 WebView 读取错误；已完成部分决策不算通过，也不会延长等待时间。失败报告保留最后观察状态，用于区分实际计算耗时、分析停滞和连接错误。
+
 ## 覆盖的实际流程
 
 - 从打包的 localhost origin 首启，确认原生适配器生效、没有登录要求、没有 QA fixtures。
@@ -51,6 +59,7 @@ node scripts/native-e2e.mjs android --app /absolute/path/app-debug.apk --udid em
 - 打开设置，更改人数、情绪、对手风格和声音；原生终止并重启后检查自动保存。
 - 检查八个牌手头像解码成功且地址为本地 origin，避免用字母回退掩盖资源缺失。
 - 在真实随机牌局中累计加注、正额跟注、弃牌和结算；核对实际支付金额为 25 的倍数，结算后筹码守恒。零筹码过牌不计作跟注。
+- 弃牌前后、快速发牌和结算时检查全部可见操作按钮，包含出现第四个按钮的情况：同排等宽、填满可用宽度、文案不换行或裁切、保持 44px 点击高度并位于原生安全区域之上。同时比较牌桌在文档中的位置和尺寸，避免测试自身滚动被误认为牌桌位移；各阶段实际按钮数和几何记录在报告的 `actionLayouts` 中。随机牌局不保证每次都会出现四按钮状态，报告按实际出现的按钮核验。
 - 从结算打开复盘，确认本地分析生成总览和行动建议，并能关闭弹窗。
 - 重打恢复原底牌，完成手数撤回一次；下一手增加手数并清理重打状态。
 - 在对手待行动时将真实原生应用切到后台至少 6 秒；被动记录原生 inactive/active 事件对应的公开状态，确认期间不前进，恢复后确实发生新行动。

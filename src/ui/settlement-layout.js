@@ -43,11 +43,12 @@ export function createSettlementLayout(arena, { observe = true } = {}) {
     width = arena.clientWidth;
     viewportHeight = viewport?.clientHeight ?? 0;
     const settled = arena.classList.contains('is-done'),
+      bounded = arena.dataset.bounded === 'true',
       compact = matchMedia('(max-width: 900px)').matches,
       box = arena.getBoundingClientRect(),
       gap = 12,
       // The hero's tilted cards extend beyond their untransformed wrapper.
-      heroGap = 24,
+      heroGap = arena.classList.contains('dense-table') ? 20 : 24,
       bottomPadding = 20;
     // Open the public row's actual horizontal corridor before reserving a
     // vertical band. Move side seats only by the missing clearance, bounded
@@ -101,7 +102,7 @@ export function createSettlementLayout(arena, { observe = true } = {}) {
         bottomOffset: Math.max(...parts.map((r) => r.bottom)) - box.top - y * box.height,
       };
     });
-    if (settled) {
+    if (settled && !bounded) {
       let height = box.height;
       for (const a of seats) {
         height = Math.max(height, (a.bottomOffset + bottomPadding) / (1 - a.y));
@@ -156,6 +157,15 @@ export function createSettlementLayout(arena, { observe = true } = {}) {
       return { top, table, group, heroTop };
     };
     let space = measure();
+    if (space.top === null && bounded) {
+      space.top = Math.max(
+        arena.getBoundingClientRect().top + 3,
+        Math.min(
+          (space.table.top + space.table.bottom - space.group.height) / 2,
+          space.heroTop - space.group.height - heroGap,
+        ),
+      );
+    }
     if (space.top === null) {
       // Guarantee a free band between two seat anchors rather than giving up
       // after an arbitrary number of incremental height adjustments.
@@ -185,7 +195,7 @@ export function createSettlementLayout(arena, { observe = true } = {}) {
       // The reserved band is safe even at a fractional-pixel boundary.
       space.top ??= arena.getBoundingClientRect().top + y * arena.getBoundingClientRect().height;
     }
-    if (settled && !compact)
+    if (settled && !compact && !bounded)
       center.style.transform = `translateY(${space.top - space.group.top}px)`;
     else center.style.top = `${space.top - arena.getBoundingClientRect().top}px`;
   }

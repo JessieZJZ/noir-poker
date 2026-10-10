@@ -27,7 +27,7 @@
       ></view
     >
     <view
-      class="table-area {{tableHeight < 430 ? 'table-short' : ''}}"
+      class="table-area {{layout.compact ? 'table-short' : ''}} {{layout.compact && !layout.narrow ? 'table-roomy' : ''}} {{layout.wide ? 'table-wide' : ''}}"
       style="height: {{tableHeight}}px;"
     >
       <view class="felt"><text class="felt-brand">N O I R</text></view>
@@ -35,9 +35,12 @@
         wx:for="{{seats}}"
         wx:key="id"
         class="seat {{item.thinking ? 'thinking' : ''}} {{item.folded ? 'folded' : ''}} {{item.winner ? 'winner' : ''}}"
-        style="left: {{item.x}}%; top: {{tableHeight < 430 ? (item.y < 40 ? 8 : item.y < 70 ? (tableHeight - 111) / 2 : tableHeight - 119) : item.y}}{{tableHeight < 430 ? 'px' : '%'}};"
+        style="left: {{item.left}}px; top: {{item.top}}px; width: {{layout.seatWidth}}px;"
       >
-        <view class="seat-hole {{item.cards.length ? 'revealed-hole' : ''}}">
+        <view
+          class="seat-hole {{item.cards.length ? 'revealed-hole' : ''}}"
+          style="height: {{layout.seatHoleHeight}}px;"
+        >
           <block wx:if="{{item.cards.length}}"
             ><view
               wx:for="{{item.cards}}"
@@ -49,7 +52,7 @@
           >
           <block wx:else><view class="card-back"></view><view class="card-back"></view></block>
         </view>
-        <view class="seat-body"
+        <view class="seat-body" style="height: {{layout.seatBodyHeight}}px;"
           ><view class="seat-name"
             ><text>{{item.name}}</text><text class="position">{{item.position}}</text></view
           ><view class="seat-persona"
@@ -61,68 +64,108 @@
             /><text class="persona">{{item.profileName}}</text></view
           ><text class="stack">{{item.stack}}</text></view
         >
-        <view class="seat-caption"
+        <view class="seat-caption" style="height: {{layout.seatCaptionHeight}}px;"
           ><text wx:if="{{item.rank}}" class="rank">{{item.rank}}</text
           ><text class="seat-action">{{item.action}}</text></view
         >
       </view>
-      <view class="community"
+      <view class="community" style="top: {{layout.communityTop}}px;"
         ><view class="pot-row"
           ><text class="chip">◎</text><text class="pot-number">{{pot}}</text
           ><button class="pot-detail" bindtap="openPots">明细</button></view
         >
         <view class="board-row"
           ><block wx:for="{{boardTop}}" wx:key="key"
-            ><view class="card community-card {{item.red ? 'red' : ''}}"
+            ><view
+              class="card community-card {{item.red ? 'red' : ''}}"
+              style="width: {{layout.cardWidth}}px; height: {{layout.cardHeight}}px;"
               ><text class="card-rank">{{item.rank}}</text
               ><text class="card-suit">{{item.suit}}</text></view
             ></block
           ><block wx:if="{{!board.length}}"
-            ><view class="card-placeholder">♠</view><view class="card-placeholder">♣</view
-            ><view class="card-placeholder">♥</view></block
+            ><view
+              class="card-placeholder"
+              style="width: {{layout.cardWidth}}px; height: {{layout.cardHeight}}px;"
+              >♠</view
+            ><view
+              class="card-placeholder"
+              style="width: {{layout.cardWidth}}px; height: {{layout.cardHeight}}px;"
+              >♣</view
+            ><view
+              class="card-placeholder"
+              style="width: {{layout.cardWidth}}px; height: {{layout.cardHeight}}px;"
+              >♥</view
+            ></block
           ></view
         >
         <view class="board-row"
           ><block wx:for="{{boardBottom}}" wx:key="key"
-            ><view class="card community-card {{item.red ? 'red' : ''}}"
+            ><view
+              class="card community-card {{item.red ? 'red' : ''}}"
+              style="width: {{layout.cardWidth}}px; height: {{layout.cardHeight}}px;"
               ><text class="card-rank">{{item.rank}}</text
               ><text class="card-suit">{{item.suit}}</text></view
             ></block
           ><block wx:if="{{board.length < 4}}"
-            ><view class="card-placeholder">♦</view><view class="card-placeholder">♠</view></block
-          ><view wx:if="{{board.length === 4}}" class="card-placeholder">♠</view></view
+            ><view
+              class="card-placeholder"
+              style="width: {{layout.cardWidth}}px; height: {{layout.cardHeight}}px;"
+              >♦</view
+            ><view
+              class="card-placeholder"
+              style="width: {{layout.cardWidth}}px; height: {{layout.cardHeight}}px;"
+              >♠</view
+            ></block
+          ><view
+            wx:if="{{board.length === 4}}"
+            class="card-placeholder"
+            style="width: {{layout.cardWidth}}px; height: {{layout.cardHeight}}px;"
+            >♠</view
+          ></view
         >
       </view>
-      <view class="hero {{heroFolded ? 'hero-folded' : ''}}"
+      <view
+        class="hero {{heroFolded ? 'hero-folded' : ''}} {{layout.heroInlineIdentity ? 'hero-inline' : ''}}"
+        ><view
+          class="hero-rank"
+          style="height: {{layout.heroRankHeight}}px; top: -{{layout.heroRankOffset}}px;"
+          ><text wx:if="{{heroRank}}" class="rank {{heroWinner ? 'won' : ''}}"
+            >{{heroRank}}</text
+          ></view
         ><view class="hero-cards"
           ><view
             wx:for="{{heroCards}}"
             wx:key="key"
             class="card hero-card {{item.red ? 'red' : ''}}"
+            style="width: {{layout.heroCardWidth}}px; height: {{layout.heroCardHeight}}px;"
             ><text class="card-rank">{{item.rank}}</text
             ><text class="card-suit">{{item.suit}}</text></view
           ></view
-        ><view class="hero-rank"
-          ><text wx:if="{{heroRank}}" class="rank {{heroWinner ? 'won' : ''}}"
-            >{{heroRank}}</text
-          ></view
-        ><view class="hero-info"
-          ><view class="hero-side"
-            ><text wx:if="{{heroStatus}}" class="hero-status">{{heroStatus}}</text></view
-          ><view class="hero-identity"
+        ><view class="hero-info" style="height: {{layout.heroFooterHeight}}px;"
+          ><view class="hero-identity {{layout.heroInlineIdentity ? 'hero-identity-inline' : ''}}"
             ><text>你 <text class="position">{{heroPosition}}</text></text
             ><text class="stack">{{heroStack}}</text></view
-          ><view class="hero-side hero-action">{{heroAction}}</view></view
+          ><view class="hero-action" style="top: {{layout.heroIdentityHeight}}px;"
+            >{{heroAction}}</view
+          ></view
         ></view
       >
     </view>
-    <view class="action-dock">
+    <view
+      class="action-dock {{done || heroFolded || heroStatus === '已全下' ? 'action-dock-terminal' : ''}} {{canAct ? 'action-dock-ready' : 'action-dock-waiting'}}"
+    >
       <block wx:if="{{done}}"
         ><view class="settled-buttons"
           ><button class="primary" bindtap="nextHand">下一手</button
           ><button class="retry-button" disabled="{{!canRetry}}" bindtap="retryHand">
             重打本手</button
           ><button class="review-button" bindtap="openReview">复盘</button></view
+        ></block
+      >
+      <block wx:elif="{{heroFolded || heroStatus === '已全下'}}"
+        ><text class="action-notice">{{actionNotice}}</text
+        ><view class="continue-buttons"
+          ><button class="call-button" bindtap="finishHand">加速到结算</button></view
         ></block
       >
       <block wx:else
@@ -136,7 +179,7 @@
             disabled="{{!canRaise}}"
             activeColor="#67e3c4"
             backgroundColor="#30434b"
-            block-size="20"
+            block-size="16"
             bindchanging="changeRaise"
             bindchange="changeRaise"
           /><view class="presets"
@@ -145,7 +188,7 @@
             ><button data-preset="pot" bindtap="preset" disabled="{{!canRaise}}">底池</button
             ><button data-preset="all" bindtap="preset" disabled="{{!canRaise}}">全下</button></view
           ></view
-        ><view class="action-buttons" wx:if="{{!heroFolded && heroStatus !== '已全下'}}"
+        ><view class="action-buttons"
           ><button class="primary" data-action="raise" bindtap="act" disabled="{{!canRaise}}">
             加注 {{raiseText}}</button
           ><button class="fold-button" data-action="fold" bindtap="act" disabled="{{!canAct}}">
@@ -153,8 +196,6 @@
           ><button class="call-button" data-action="call" bindtap="act" disabled="{{!canAct}}">
             {{callLabel}} {{callText}}
           </button></view
-        ><view wx:else class="continue-buttons"
-          ><button class="call-button" bindtap="finishHand">加速到结算</button></view
         ></block
       >
     </view>

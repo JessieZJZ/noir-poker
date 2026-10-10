@@ -6,6 +6,8 @@ import { fileURLToPath } from 'node:url';
 import { nativeScenarios } from '../tests/native/scenarios.mjs';
 import { sourceDigest } from './mobile-lib.mjs';
 import { verifyBundledArtifact } from './bundled-assets.mjs';
+import { restoreWebviewContext } from './native-context.mjs';
+import { captureNativeScreenshot } from './native-screenshot.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const args = process.argv.slice(2);
@@ -129,6 +131,7 @@ async function waitFor(test, timeout = 30000, message = 'Condition did not becom
       const result = await test();
       if (result) return result;
     } catch (error) {
+      if (error.nativeLayoutFailure) throw error;
       lastError = error;
     }
     await sleep(300);
@@ -137,6 +140,14 @@ async function waitFor(test, timeout = 30000, message = 'Condition did not becom
 }
 const command = (method, endpoint, body) => request(method, `/session/${session}${endpoint}`, body);
 let webContext;
+async function restoreWebview(reason) {
+  webContext = await restoreWebviewContext(command, {
+    appId,
+    platform,
+    preferred: webContext,
+    onAttempt: (attempt) => (report.contextRestores ??= []).push({ reason, ...attempt }),
+  });
+}
 async function attachWebview() {
   // Wait for the real document before attaching WebKit. Attaching during the
   // initial blank-page navigation can pause WebKit before the game loads.
@@ -148,16 +159,7 @@ async function attachWebview() {
     45000,
     'Native app must render an actionable screen before WebView attachment',
   );
-  const contexts = await waitFor(
-    async () => {
-      const available = await command('GET', '/contexts');
-      return available.find((name) => name.startsWith('WEBVIEW')) ? available : null;
-    },
-    90000,
-    'Installed app WebView must be inspectable in its Debug native shell',
-  );
-  webContext = contexts.find((name) => name.startsWith('WEBVIEW'));
-  await command('POST', '/context', { name: webContext });
+  await restoreWebview('attach');
   await waitFor(
     () => evaluate(() => Boolean(window.noir?.getState())),
     30000,
@@ -170,7 +172,144 @@ async function evaluate(fn, ...argv) {
     args: argv,
   });
 }
-const state = () => evaluate(() => window.noir.getState());
+let foldedLayout;
+const state = async () => {
+  const game = await evaluate(() => window.noir.getState());
+  if (
+    foldedLayout &&
+    (game.hand !== foldedLayout.hand || game.replayAttempt !== foldedLayout.replayAttempt)
+  )
+    foldedLayout = undefined;
+  if (foldedLayout && game.phase === 'done' && !foldedLayout.settlementChecked) {
+    await assertActionLayout('settled', foldedLayout.geometry);
+    foldedLayout.settlementChecked = true;
+  }
+  return game;
+};
+
+async function assertActionLayout(stage, reference) {
+  let geometry;
+  try {
+    geometry = await waitFor(
+      async () => {
+        const value = await evaluate(() => {
+          const rect = (element) => {
+            const box = element.getBoundingClientRect();
+            return {
+              left: box.left,
+              right: box.right,
+              top: box.top,
+              bottom: box.bottom,
+              width: box.width,
+              height: box.height,
+            };
+          };
+          const isVisible = (element) =>
+            !element.hidden &&
+            getComputedStyle(element).visibility !== 'hidden' &&
+            element.getClientRects().length &&
+            element.getBoundingClientRect().height > 0;
+          const surface = document.querySelector('.game-surface');
+          const live = ['ready', 'waiting'].includes(surface.dataset.actionState);
+          const panel = surface.querySelector(live ? '.action-buttons' : '#action-panel');
+          const panelStyle = getComputedStyle(panel);
+          const panelBox = rect(panel);
+          const buttons = [...panel.querySelectorAll(live ? 'button' : ':scope > button')]
+            .filter(isVisible)
+            .map((button) => {
+              const lineCenters = [];
+              const walker = document.createTreeWalker(button, NodeFilter.SHOW_TEXT);
+              while (walker.nextNode()) {
+                if (!walker.currentNode.textContent.trim()) continue;
+                const range = document.createRange();
+                range.selectNodeContents(walker.currentNode);
+                for (const line of range.getClientRects())
+                  if (line.width > 1 && line.height > 1)
+                    lineCenters.push((line.top + line.bottom) / 2);
+              }
+              return {
+                id: button.id,
+                ...rect(button),
+                text: button.textContent.trim(),
+                wrapped:
+                  lineCenters.length > 0 && Math.max(...lineCenters) - Math.min(...lineCenters) > 8,
+                clipped: button.scrollWidth > button.clientWidth + 1,
+              };
+            });
+          const table = rect(surface.querySelector('.table-viewport'));
+          const game = window.noir.getState();
+          return {
+            hand: game.hand,
+            replayAttempt: game.replayAttempt,
+            phase: game.phase,
+            actionState: surface.dataset.actionState,
+            screen: { width: innerWidth, height: innerHeight },
+            safeBottom:
+              parseFloat(
+                getComputedStyle(document.documentElement).getPropertyValue(
+                  '--safe-area-inset-bottom',
+                ),
+              ) || 0,
+            table: { ...table, left: table.left + scrollX, top: table.top + scrollY },
+            row: {
+              ...panelBox,
+              left: panelBox.left + parseFloat(panelStyle.paddingLeft),
+              right: panelBox.right - parseFloat(panelStyle.paddingRight),
+            },
+            buttons,
+          };
+        });
+        assert.ok(value.buttons.length > 0, `${stage}: the action row must contain buttons`);
+        const first = value.buttons[0];
+        for (const [index, button] of value.buttons.entries()) {
+          assert.ok(
+            Math.abs(button.top - first.top) <= 1 && Math.abs(button.bottom - first.bottom) <= 1,
+            `${stage}: ${button.id} must stay on the same action row`,
+          );
+          assert.ok(
+            Math.abs(button.width - first.width) <= 1,
+            `${stage}: ${button.id} must have equal row width`,
+          );
+          assert.ok(
+            button.height >= 44 && !button.wrapped && !button.clipped,
+            `${stage}: ${button.id} must retain an unclipped single-line label and 44px target`,
+          );
+          assert.ok(
+            button.left >= value.row.left - 1 &&
+              button.right <= value.row.right + 1 &&
+              button.top >= 0 &&
+              button.bottom <= value.screen.height - value.safeBottom + 1,
+            `${stage}: ${button.id} must fit its panel and the visible native screen`,
+          );
+          if (index)
+            assert.ok(
+              button.left >= value.buttons[index - 1].right,
+              `${stage}: action buttons must not overlap`,
+            );
+        }
+        assert.ok(
+          Math.abs(first.left - value.row.left) <= 1 &&
+            Math.abs(value.buttons.at(-1).right - value.row.right) <= 1,
+          `${stage}: all visible buttons must fill the available action row`,
+        );
+        if (reference)
+          for (const dimension of ['left', 'top', 'width', 'height'])
+            assert.ok(
+              Math.abs(value.table[dimension] - reference.table[dimension]) <= 1,
+              `${stage}: table ${dimension} must remain stable across fold and settlement`,
+            );
+        return value;
+      },
+      5000,
+      `Installed native action layout failed at ${stage}`,
+    );
+  } catch (error) {
+    error.nativeLayoutFailure = true;
+    throw error;
+  }
+  (report.actionLayouts ??= []).push({ stage, ...geometry });
+  return geometry;
+}
 const visible = (selector) =>
   evaluate((value) => {
     const element = document.querySelector(value);
@@ -202,7 +341,21 @@ async function click(selector) {
   );
   const element = await command('POST', '/element', { using: 'css selector', value: selector });
   const id = element['element-6066-11e4-a52e-4f735466cecf'] ?? element.ELEMENT;
+  if (selector === '#fold-button') {
+    const geometry = await assertActionLayout('before-fold');
+    foldedLayout = {
+      hand: geometry.hand,
+      replayAttempt: geometry.replayAttempt,
+      geometry,
+      settlementChecked: false,
+    };
+  }
   await command('POST', `/element/${id}/click`, {});
+  if (foldedLayout && ['#fold-button', '#continue-deal-button'].includes(selector))
+    await assertActionLayout(
+      selector === '#fold-button' ? 'after-fold' : 'after-continue-deal',
+      foldedLayout.geometry,
+    );
 }
 async function select(selector, value) {
   // HTML select options are operated via the standard WebDriver option click;
@@ -240,11 +393,22 @@ async function select(selector, value) {
   );
 }
 async function screenshot(name) {
-  // Ask the native driver rather than Chromium for the entire device screen.
-  await command('POST', '/context', { name: 'NATIVE_APP' });
-  const png = await command('GET', '/screenshot');
-  writeFileSync(path.join(output, `${name}.png`), Buffer.from(png, 'base64'));
-  await command('POST', '/context', { name: webContext });
+  // Diagnostic failure screenshots retain the raw native screen even when
+  // the WebView itself cannot paint. Successful scenario evidence must paint.
+  await captureNativeScreenshot(command, {
+    waitForPaint: Boolean(webContext) && name !== 'failure',
+    expected:
+      name === 'raise-call-fold-and-settlement'
+        ? { phase: 'done', actionState: 'settled' }
+        : name === 'retry-original-deal-and-next-hand'
+          ? { heroCards: 2 }
+          : name.startsWith('settlement-decision-review')
+            ? { reviewOpen: name.endsWith('-open') }
+            : {},
+    onPaint: (paint) => (report.screenshotPaints ??= []).push({ name, ...paint }),
+    save: (png) => writeFileSync(path.join(output, `${name}.png`), Buffer.from(png, 'base64')),
+    restore: webContext ? () => restoreWebview(`screenshot:${name}`) : undefined,
+  });
 }
 async function activate() {
   await command('POST', '/context', { name: 'NATIVE_APP' });
@@ -354,6 +518,10 @@ try {
         }
       : {
           'appium:appPackage': appId,
+          // Cold CI emulators can take longer than the driver's 20s defaults
+          // to install its automation server or execute an ADB command.
+          'appium:uiautomator2ServerInstallTimeout': 120000,
+          'appium:adbExecTimeout': 120000,
           'appium:ensureWebviewsHavePages': true,
           'appium:chromedriverAutodownload': true,
         }),

@@ -43,7 +43,7 @@ async function expectReadableTable(page, { publicWidth, heroWidth }) {
             else rows.push({ top, count: 1 });
             return rows;
           }, []);
-          const expectedRows = innerWidth <= 420 ? [3, 2] : [5];
+          const expectedRows = innerWidth <= 900 ? [3, 2] : [5];
           if (JSON.stringify(publicRows.map((row) => row.count)) !== JSON.stringify(expectedRows))
             issues.push(
               `public rows ${publicRows.map((row) => row.count)} instead of ${expectedRows}`,
@@ -186,14 +186,15 @@ test('all five public positions retain the same rows and face sizes while dealin
       await page.evaluate((count) => window.qa.heroTurn(count), count);
       await expect(page.locator('#board > .board-slot')).toHaveCount(5);
       const initial = await positions();
-      expect(initial.map((card) => card.width)).toEqual([38, 38, 38, 38, 38]);
+      expect(initial.every((card) => card.width >= 40)).toBe(true);
+      expect(new Set(initial.map((card) => card.width)).size).toBe(1);
       const rows = initial.reduce((rows, card) => {
         const row = rows.find((row) => row.y === card.y);
         if (row) row.count++;
         else rows.push({ y: card.y, count: 1 });
         return rows;
       }, []);
-      expect(rows.map((row) => row.count)).toEqual(width <= 420 ? [3, 2] : [5]);
+      expect(rows.map((row) => row.count)).toEqual([3, 2]);
       await page.evaluate((count) => window.qa.publicBoard(count), count);
       for (const dealt of [3, 4, 5]) {
         await expect(page.locator('#board > .playing-card')).toHaveCount(dealt);

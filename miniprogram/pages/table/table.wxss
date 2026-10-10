@@ -129,10 +129,10 @@
 }
 .felt {
   position: absolute;
-  inset: 36px 7px 38px;
+  inset: 12px 4px 16px;
   border-radius: 48%;
   background: radial-gradient(ellipse, #155145, #0e352e);
-  border: 8px solid #273e44;
+  border: 6px solid #273e44;
   box-shadow: inset 0 0 0 2px #2b6658;
 }
 .felt-brand {
@@ -148,12 +148,12 @@
 .seat {
   position: absolute;
   width: 78px;
-  transform: translate(-50%, -20%);
+  transform: translateX(-50%);
   z-index: 2;
 }
 .seat-hole {
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   justify-content: center;
   height: 18px;
   gap: 3px;
@@ -175,7 +175,7 @@
   border: 1px solid #354c57;
   border-radius: 8px;
   padding: 3px 4px;
-  min-height: 54px;
+  min-height: 0;
   text-align: center;
 }
 .seat-name {
@@ -226,7 +226,7 @@
 }
 .seat-caption {
   text-align: center;
-  min-height: 17px;
+  min-height: 0;
   font-size: 9px;
   line-height: 14px;
 }
@@ -269,7 +269,7 @@
   position: absolute;
   left: 50%;
   top: 40%;
-  transform: translate(-50%, -20%);
+  transform: translateX(-50%);
   width: 48%;
   max-width: 218px;
   z-index: 1;
@@ -279,8 +279,8 @@
   justify-content: center;
   align-items: center;
   gap: 5px;
-  height: 32px;
-  margin-bottom: 6px;
+  height: 25px;
+  margin-bottom: 3px;
   white-space: nowrap;
 }
 .chip {
@@ -304,7 +304,7 @@
   align-items: center;
   justify-content: center;
   gap: 4px;
-  margin-bottom: 5px;
+  margin-bottom: 2px;
 }
 .card {
   background: #f7f9f3;
@@ -374,7 +374,8 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 5px;
+  gap: 3px;
+  margin-bottom: 8px;
 }
 .hero-card {
   width: 53px;
@@ -391,64 +392,82 @@
   font-size: 33px;
 }
 .hero-rank {
-  height: 18px;
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: 12px;
+}
+.hero-rank .rank {
+  margin-top: 0;
+  font-size: 9px;
+  line-height: 8px;
+  padding: 1px 3px;
 }
 .hero-folded .hero-cards {
   opacity: 0.58;
 }
 .hero-info {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 5px;
+  position: relative;
+  height: 46px;
   width: 100%;
   padding: 0 17px;
 }
 .hero-identity {
-  flex: 0 0 76px;
+  width: 76px;
+  margin: 0 auto;
   font-size: 12px;
   font-weight: 600;
-  line-height: 17px;
+  line-height: 15px;
 }
 .hero-identity .stack {
   font-size: 12px;
   font-weight: 400;
 }
-.hero-side {
-  flex: 1;
-  min-width: 0;
-  text-align: right;
+.hero-identity-inline {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 4px;
+  width: 150px;
+  height: 14px;
+  line-height: 14px;
+}
+.hero-identity-inline .stack {
   font-size: 10px;
 }
 .hero-action {
-  text-align: left;
+  position: absolute;
+  left: 50%;
+  top: 30px;
+  transform: translateX(-50%);
+  width: 160px;
+  max-width: 100%;
+  height: 16px;
+  line-height: 16px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: center;
   color: #b7d2cd;
   white-space: nowrap;
   font-size: 10px;
 }
-.hero-status {
-  display: inline-block;
-  padding: 4px;
-  border: 1px solid #315e53;
-  border-radius: 4px;
-  color: #67e3c4;
-  white-space: nowrap;
-  font-size: 9px;
-}
 .action-dock {
-  flex: 0 0 136px;
-  height: 136px;
+  flex: 0 0 108px;
+  height: 108px;
   border-top: 1px solid #293f47;
-  padding: 7px 8px;
+  padding: 5px 8px;
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: 4px;
+  gap: 2px;
+}
+.action-dock-terminal {
+  padding: 12px 10px;
 }
 .action-notice {
   color: #a8c1ca;
   font-size: 10px;
-  line-height: 16px;
+  line-height: 14px;
   display: block;
   white-space: nowrap;
   overflow: hidden;
@@ -456,12 +475,12 @@
 }
 .raise-controls slider {
   margin: 0 2px;
-  height: 19px;
+  height: 16px;
 }
 .presets {
   display: flex;
   gap: 4px;
-  height: 25px;
+  height: 22px;
 }
 .presets button {
   flex: 1;
@@ -478,8 +497,7 @@
 .action-buttons {
   display: flex;
   gap: 5px;
-  height: 39px;
-  margin-top: 3px;
+  height: 40px;
 }
 .action-buttons button {
   flex: 1;
@@ -490,6 +508,17 @@
   font-size: 12px;
   font-weight: 600;
   white-space: nowrap;
+  border: 1px solid #43606c;
+}
+.action-dock-ready .action-buttons .primary:not([disabled]) {
+  box-shadow: 0 0 10px #46c6a538;
+}
+.action-dock button[disabled] {
+  opacity: 1;
+  color: #617985;
+  background: #14212a;
+  border-color: #243640;
+  box-shadow: none;
 }
 .primary {
   background: #67e3c4;
@@ -506,36 +535,37 @@
   border: 1px solid #467170;
 }
 .continue-buttons {
-  height: 39px;
-  margin-top: 3px;
+  flex: 1;
+  min-height: 0;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 .continue-buttons button {
   width: 100%;
-  height: 39px;
+  height: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 12px;
+  white-space: nowrap;
 }
 .settled-buttons {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+  display: flex;
+  flex: 1;
+  min-height: 0;
   gap: 6px;
 }
 .settled-buttons button {
+  flex: 1;
+  min-width: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 41px;
+  height: 100%;
   font-size: 13px;
   font-weight: 600;
   white-space: nowrap;
-}
-.settled-buttons .primary {
-  grid-column: 1 / -1;
 }
 .retry-button {
   background: #302b20;
@@ -969,8 +999,8 @@
   }
 }
 
-/* Three bounded side rows leave the hero identity a separate 45px footer.
-   All four top seats fit beside each other at the 320px screen boundary. */
+/* Compact seats keep readable images and card backs within bounded rows.
+   Page layout reserves the centered hero footer before sizing the board. */
 .table-short .seat {
   width: 54px;
   transform: translateX(-50%);
@@ -1052,8 +1082,7 @@
   line-height: 9px;
 }
 .table-short .community {
-  top: 50%;
-  transform: translate(-50%, -62px);
+  transform: translateX(-50%);
 }
 .table-short .pot-row {
   height: 25px;
@@ -1065,13 +1094,13 @@
   height: 32px;
 }
 .table-short .community-card .card-rank {
-  font-size: 9px;
+  font-size: 11px;
 }
 .table-short .community-card .card-suit {
-  font-size: 17px;
+  font-size: 21px;
 }
 .table-short .board-row {
-  margin-bottom: 3px;
+  margin-bottom: 2px;
 }
 .table-short .hero-card {
   width: 42px;
@@ -1091,4 +1120,161 @@
   font-size: 8px;
   line-height: 8px;
   padding: 1px 3px;
+}
+.table-roomy .seat-body {
+  min-height: 38px;
+  padding: 2px 3px;
+}
+.table-roomy .seat-name {
+  height: 10px;
+  font-size: 8px;
+  line-height: 10px;
+}
+.table-roomy .seat-name .position {
+  font-size: 7px;
+}
+.table-roomy .seat-persona {
+  height: 12px;
+  min-height: 12px;
+}
+.table-roomy .avatar {
+  width: 12px;
+  height: 12px;
+}
+.table-roomy .persona {
+  font-size: 8px;
+  line-height: 10px;
+}
+.table-roomy .seat-body .stack {
+  font-size: 9px;
+  line-height: 10px;
+}
+.table-roomy .seat-caption .rank {
+  margin-top: 0;
+  font-size: 8px;
+  line-height: 10px;
+}
+.table-roomy .seat-action {
+  font-size: 8px;
+  line-height: 11px;
+}
+.table-roomy .mini-card {
+  width: 18px;
+  height: 24px;
+  font-size: 8px;
+  line-height: 8px;
+}
+.table-roomy .mini-card text + text {
+  font-size: 12px;
+  line-height: 12px;
+}
+.table-roomy .card-back {
+  width: 18px;
+  height: 21px;
+}
+.table-roomy .community-card .card-rank {
+  font-size: 13px;
+}
+.table-roomy .community-card .card-suit {
+  font-size: 30px;
+}
+.table-roomy .hero-card .card-rank {
+  font-size: 16px;
+}
+.table-roomy .hero-card .card-suit {
+  font-size: 33px;
+}
+.table-wide .seat-body {
+  padding: 5px 6px;
+}
+.table-wide .seat-name {
+  height: 18px;
+  font-size: 14px;
+  line-height: 18px;
+}
+.table-wide .position {
+  font-size: 10px;
+}
+.table-wide .seat-persona {
+  min-height: 24px;
+  height: 24px;
+}
+.table-wide .avatar {
+  width: 22px;
+  height: 22px;
+}
+.table-wide .persona {
+  min-width: 0;
+  max-width: 70px;
+  font-size: 12px;
+  line-height: 16px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.table-wide .seat-body .stack {
+  font-size: 14px;
+  line-height: 18px;
+}
+.table-wide .seat-caption .rank {
+  font-size: 11px;
+  line-height: 14px;
+  margin-top: 0;
+}
+.table-wide .seat-action {
+  font-size: 11px;
+  line-height: 14px;
+}
+.table-wide .mini-card {
+  width: 32px;
+  height: 44px;
+  font-size: 12px;
+}
+.table-wide .mini-card text + text {
+  font-size: 20px;
+}
+.table-wide .card-back {
+  width: 26px;
+  height: 36px;
+}
+.table-wide .community-card .card-rank {
+  font-size: 16px;
+}
+.table-wide .community-card .card-suit {
+  font-size: 35px;
+}
+.table-wide .hero-card .card-rank {
+  font-size: 20px;
+}
+.table-wide .hero-card .card-suit {
+  font-size: 43px;
+}
+.table-wide.table-short .seat-body {
+  min-height: 66px;
+  padding: 4px 6px;
+}
+.table-wide.table-short .seat-persona {
+  min-height: 20px;
+  height: 20px;
+}
+.table-wide.table-short .avatar {
+  width: 20px;
+  height: 20px;
+}
+.table-wide.table-short .seat-caption .rank {
+  font-size: 10px;
+  line-height: 10px;
+}
+.table-wide.table-short .seat-action {
+  line-height: 12px;
+}
+.hero-inline .hero-rank .rank {
+  display: inline-block;
+  height: 8px;
+  line-height: 6px;
+  font-size: 7px;
+  padding: 1px 3px;
+}
+.table-wide.table-short .mini-card {
+  height: 40px;
 }

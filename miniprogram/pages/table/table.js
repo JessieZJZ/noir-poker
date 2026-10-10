@@ -1,6 +1,75 @@
 const { createWechatController } = require('../../shared/platform/wechat-controller.js');
-// Nav 48 + table header 30 + hint slot 20 + dock 136 + footer 22 + shell border 2.
-const VIEWPORT_CHROME_HEIGHT = 258;
+// The dock keeps one 108px height through action, fold, all-in and settlement.
+const VIEWPORT_CHROME_HEIGHT = 230;
+function tableLayout(windowWidth, height) {
+  const width = Math.max(0, windowWidth - 18);
+  const compact = height < 600;
+  const narrow = windowWidth < 360;
+  const wide = windowWidth >= 700 && height >= 480;
+  const seatWidth = Math.min(wide ? 110 : 78, Math.max(40, Math.floor(width * 0.18) - 2));
+  const seatHoleHeight = wide ? (compact ? 40 : 44) : compact ? (narrow ? 20 : 24) : 35;
+  const seatBodyHeight = wide ? (compact ? 66 : 74) : compact ? (narrow ? 32 : 38) : 60;
+  const seatCaptionHeight = wide ? (compact ? 28 : 32) : compact ? (narrow ? 22 : 26) : 30;
+  const seatHeight = seatHoleHeight + seatBodyHeight + seatCaptionHeight;
+  const heroCardWidth = wide ? (compact ? 70 : 76) : compact ? (narrow ? 40 : 53) : 58;
+  const heroCardHeight = wide ? (compact ? 94 : 102) : compact ? (narrow ? 52 : 72) : 78;
+  // The shortest screens keep name, position and stack together on one line,
+  // leaving the same fixed 16px action slot without shrinking the public board.
+  const heroInlineIdentity = compact && narrow;
+  const heroIdentityHeight = heroInlineIdentity ? 14 : 30;
+  const heroFooterHeight = heroIdentityHeight + 16;
+  const heroRankHeight = heroInlineIdentity ? 8 : 12;
+  const heroCardGap = 8;
+  const heroBottom = 5;
+  const radians = (5 * Math.PI) / 180;
+  const rotatedHeight = heroCardHeight * Math.cos(radians) + heroCardWidth * Math.sin(radians);
+  const heroTop =
+    height -
+    heroBottom -
+    heroFooterHeight -
+    heroCardGap -
+    heroRankHeight -
+    heroCardHeight -
+    (rotatedHeight - heroCardHeight) / 2;
+  const upperEnd = compact ? 8 + seatHeight : height * 0.1 + seatHeight * 0.8;
+  const communityMinTop = upperEnd + 6;
+  const communityMaxBottom = heroTop - 6;
+  const maxCardHeight = Math.floor((communityMaxBottom - communityMinTop - 32) / 2);
+  const centerWidth = width * 0.7 - seatWidth;
+  const cardWidth = Math.max(
+    20,
+    Math.min(wide ? 64 : 48, Math.floor((centerWidth - 20) / 3), Math.floor(maxCardHeight / 1.35)),
+  );
+  const cardHeight = Math.round(cardWidth * 1.35);
+  const communityHeight = 32 + 2 * cardHeight;
+  return {
+    width,
+    height,
+    compact,
+    narrow,
+    wide,
+    seatWidth,
+    seatHoleHeight,
+    seatBodyHeight,
+    seatCaptionHeight,
+    seatHeight,
+    heroCardWidth,
+    heroCardHeight,
+    heroFooterHeight,
+    heroIdentityHeight,
+    heroInlineIdentity,
+    heroCardGap,
+    heroRankHeight,
+    heroRankOffset: heroRankHeight + (rotatedHeight - heroCardHeight) / 2,
+    heroBottom,
+    heroTop,
+    cardWidth,
+    cardHeight,
+    communityHeight,
+    communityTop: (communityMinTop + communityMaxBottom - communityHeight) / 2,
+    lastSeatTop: height - heroBottom - heroFooterHeight - 6 - seatHeight,
+  };
+}
 const PROFILE_AXES = [
   ['vpip', '入池宽度'],
   ['aggression', '进攻倾向'],
@@ -15,6 +84,7 @@ Page({
     bottomInset: 0,
     windowHeight: 800,
     tableHeight: 460,
+    layout: {},
     navRightInset: 104,
     compactNav: false,
     settingsOpen: false,
@@ -41,6 +111,7 @@ Page({
       publish: (view) =>
         this.setData({
           ...view,
+          seats: this.layoutSeats(view.seats),
           countIndex: view.settings.playerCount - 5,
           emotionIndex: ['off', 'subtle', 'lively'].indexOf(view.settings.emotionMode),
         }),
@@ -100,15 +171,40 @@ Page({
     } catch {
       /* Menu measurement can be unavailable while an older client initializes. */
     }
-    // The action dock keeps one height in every game phase; no page scrolling.
+    const tableHeight = Math.max(
+      0,
+      info.windowHeight - topInset - bottomInset - VIEWPORT_CHROME_HEIGHT,
+    );
+    const layout = tableLayout(info.windowWidth, tableHeight);
+    // Only a window resize changes these dimensions, never a poker action.
     this.setData({
       topInset,
       bottomInset,
       windowHeight: info.windowHeight,
       navRightInset,
       compactNav: info.windowWidth - 24 - navRightInset < 250,
-      tableHeight: Math.max(0, info.windowHeight - topInset - bottomInset - VIEWPORT_CHROME_HEIGHT),
+      tableHeight,
+      layout,
+      seats: this.layoutSeats(this.data.seats, layout),
     });
+  },
+  layoutSeats(seats, layout = this.data.layout) {
+    return seats.map((seat) => ({
+      ...seat,
+      left: (layout.width * seat.x) / 100,
+      top: layout.compact
+        ? seat.y < 40
+          ? 8
+          : seat.y < 70
+            ? (8 + layout.lastSeatTop) / 2
+            : layout.lastSeatTop
+        : Math.min(
+            seat.y >= 40 && seat.y < 70
+              ? layout.lastSeatTop - layout.seatHeight - 6
+              : layout.lastSeatTop,
+            Math.max(8, (layout.height * seat.y) / 100 - layout.seatHeight * 0.2),
+          ),
+    }));
   },
   call(method, ...args) {
     try {

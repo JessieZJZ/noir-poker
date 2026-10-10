@@ -1,6 +1,76 @@
 import assert from 'node:assert/strict';
 const documentLoginMarker = (text) => /sign in|log in|登录账号/i.test(text);
 
+// Keep the installed-app completion assertion and its existing deadline. The
+// observations distinguish a working but slow review from a failed WebView or
+// an analysis that stopped progressing; they do not authorize a partial pass.
+export async function waitForNativeReview(app, { now = Date.now } = {}) {
+  const started = now();
+  const diagnostics = { timeoutMs: 30000, observations: [], progress: [] };
+  let lastSnapshot;
+  let lastDone = -1;
+  let lastProgressAt = started;
+  try {
+    const review = await app.waitFor(
+      async () => {
+        let snapshot;
+        try {
+          snapshot = await app.evaluate(() => {
+            const analysisState = document
+              .querySelector('#review-analysis-state')
+              ?.textContent.trim();
+            const ratio = /正在分析决策\s+(\d+)\s*\/\s*(\d+)/.exec(analysisState || '');
+            const retry = document.querySelector('#review-retry');
+            return {
+              dialogOpen: Boolean(document.querySelector('#review-dialog')?.open),
+              analysisState,
+              done: ratio ? Number(ratio[1]) : null,
+              total: ratio ? Number(ratio[2]) : null,
+              decisionCount: document.querySelectorAll('#review-timeline .review-step').length,
+              retryVisible: Boolean(retry && !retry.hidden),
+              overview: document.querySelector('#review-overview')?.textContent.trim(),
+              suggestion: document.querySelector('#review-suggestion')?.textContent.trim(),
+            };
+          });
+        } catch (error) {
+          diagnostics.observations.push({ elapsedMs: now() - started, readError: error.message });
+          throw error;
+        }
+        const elapsedMs = now() - started;
+        const key = JSON.stringify(snapshot);
+        if (key !== lastSnapshot) {
+          diagnostics.observations.push({ elapsedMs, ...snapshot });
+          lastSnapshot = key;
+        }
+        if (Number.isInteger(snapshot.done) && snapshot.done > lastDone) {
+          diagnostics.progress.push({
+            done: snapshot.done,
+            total: snapshot.total,
+            elapsedMs,
+            sincePreviousProgressMs: now() - lastProgressAt,
+          });
+          lastDone = snapshot.done;
+          lastProgressAt = now();
+        }
+        return snapshot.dialogOpen &&
+          snapshot.overview &&
+          snapshot.suggestion &&
+          !/分析中|undefined/.test(snapshot.overview + snapshot.suggestion)
+          ? { overview: snapshot.overview, suggestion: snapshot.suggestion }
+          : null;
+      },
+      diagnostics.timeoutMs,
+      'Installed local review worker must produce an overview and suggestion',
+    );
+    diagnostics.elapsedMs = now() - started;
+    return { ...review, diagnostics };
+  } catch (error) {
+    diagnostics.elapsedMs = now() - started;
+    error.reviewDiagnostics = diagnostics;
+    throw error;
+  }
+}
+
 // These scenarios drive the installed production bundle. They read only the
 // public state already exposed by the app and never install browser fixtures.
 export async function nativeScenarios(app) {
@@ -242,23 +312,21 @@ export async function nativeScenarios(app) {
     return { coverage, pot: settled.pot, settlementBudget };
   });
   await check('settlement-decision-review', async () => {
+    const started = Date.now();
     await app.click('#review-hand-button');
-    const review = await app.waitFor(
-      async () =>
-        app.evaluate(() => {
-          const dialog = document.querySelector('#review-dialog');
-          const overview = document.querySelector('#review-overview')?.textContent.trim();
-          const suggestion = document.querySelector('#review-suggestion')?.textContent.trim();
-          return dialog.open &&
-            overview &&
-            suggestion &&
-            !/分析中|undefined/.test(overview + suggestion)
-            ? { overview, suggestion }
-            : null;
-        }),
-      30000,
-      'Installed local review worker must produce an overview and suggestion',
-    );
+    let review;
+    try {
+      review = await waitForNativeReview(app);
+    } catch (error) {
+      app.record({
+        name: 'settlement-decision-review',
+        status: 'failed',
+        elapsedMs: Date.now() - started,
+        evidence: { diagnostics: error.reviewDiagnostics },
+        error: error.message,
+      });
+      throw error;
+    }
     await app.screenshot('settlement-decision-review-open');
     await app.click('#review-dialog .close-dialog');
     assert.equal(await app.evaluate(() => document.querySelector('#review-dialog').open), false);

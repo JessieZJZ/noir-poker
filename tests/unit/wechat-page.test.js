@@ -143,7 +143,7 @@ for (const playerCount of [5, 9]) {
       assert.equal(page.data.seats.length, playerCount - 1);
       assert.equal(page.data.windowHeight, info.windowHeight);
       assert.equal(
-        page.data.tableHeight + page.data.topInset + page.data.bottomInset + 258,
+        page.data.tableHeight + page.data.topInset + page.data.bottomInset + 230,
         info.windowHeight,
       );
       const height = page.data.tableHeight;
@@ -156,7 +156,7 @@ for (const playerCount of [5, 9]) {
       page.retryHand();
       assert.equal(page.data.done, false);
       assert.equal(page.data.tableHeight, height, 'retry cannot resize the table');
-      assert.match(stylesheet, /\.action-dock\s*\{[^}]*flex:\s*0 0 136px/s);
+      assert.match(stylesheet, /\.action-dock\s*\{[^}]*flex:\s*0 0 108px/s);
     });
   }
 }
@@ -268,7 +268,7 @@ test('WeChat capsule measurement falls back safely when absent, invalid or throw
   ]) {
     const { page } = setup(t, { menuRect });
     assert.equal(page.data.navRightInset, 104);
-    assert.equal(page.data.tableHeight + page.data.topInset + page.data.bottomInset + 258, 844);
+    assert.equal(page.data.tableHeight + page.data.topInset + page.data.bottomInset + 230, 844);
   }
 });
 
@@ -311,39 +311,68 @@ function intersects(a, b) {
 for (const playerCount of [5, 6, 7, 8, 9]) {
   for (const info of [
     { windowWidth: 320, windowHeight: 568, statusBarHeight: 20, safeArea: { bottom: 568 } },
+    { windowWidth: 375, windowHeight: 667, statusBarHeight: 20, safeArea: { bottom: 667 } },
     { windowWidth: 390, windowHeight: 667, statusBarHeight: 20, safeArea: { bottom: 667 } },
+    { windowWidth: 390, windowHeight: 844, statusBarHeight: 47, safeArea: { bottom: 810 } },
+    { windowWidth: 768, windowHeight: 1024, statusBarHeight: 24, safeArea: { bottom: 1004 } },
+    { windowWidth: 1024, windowHeight: 768, statusBarHeight: 24, safeArea: { bottom: 748 } },
   ]) {
     test(`WeChat ${playerCount}-seat ${info.windowWidth}x${info.windowHeight} showdown keeps all cards and captions clear of the hero`, (t) => {
       const { page } = setup(t, { playerCount, info });
+      const originalLayout = copy(page.data.layout);
+      const originalSeats = page.data.seats.map(({ left, top }) => ({ left, top }));
+      assert.ok(page.data.seats.every((seat) => seat.cards.length === 0));
       const game = page._controller.getGame();
       finish(game);
       page._controller.show();
       assert.equal(page.data.done, true);
       assert.ok(page.data.seats.every((seat) => seat.cards.length === 2 && seat.rank));
+      assert.deepEqual(
+        page.data.layout,
+        originalLayout,
+        'dealing and settling never resize the desk',
+      );
+      assert.deepEqual(
+        page.data.seats.map(({ left, top }) => ({ left, top })),
+        originalSeats,
+        'revealing cards never moves a seat',
+      );
       const height = page.data.tableHeight;
-      assert.ok(height < 430);
-      assert.match(template, /tableHeight < 430 \? 'table-short'/);
-      // Read actual template expressions and actual CSS dimensions. This catches
-      // a return to percentage seats even when the overall page height stays fixed.
-      const style = template.match(/style="(left: \{\{item.x\}\}%; top: [^"]+)"/)[1];
-      const width = info.windowWidth - 18; // 8px page gutters and the 1px shell border.
-      const seatWidth = cssNumber('.table-short .seat', 'width');
-      const seatHeight =
-        cssNumber('.table-short .seat-hole.revealed-hole', 'height') +
-        cssNumber('.table-short .seat-body', 'height') +
-        cssNumber('.table-short .seat-caption', 'height');
-      const heroFooterHeight = cssNumber('.hero-identity', 'line-height') * 2;
+      const layout = page.data.layout;
+      assert.match(template, /layout.compact \? 'table-short'/);
+      const style = template.match(/style="(left: \{\{item.left\}\}px; top: [^"]+)"/)[1];
+      const width = layout.width;
+      const seatWidth = layout.seatWidth;
+      const seatHeight = layout.seatHoleHeight + layout.seatBodyHeight + layout.seatCaptionHeight;
+      const backSelector = layout.wide
+        ? '.table-wide .card-back'
+        : layout.narrow
+          ? '.table-short .card-back'
+          : '.table-roomy .card-back';
+      const backWidth = cssNumber(backSelector, 'width');
+      const backHeight = cssNumber(backSelector, 'height');
+      const backAngle = (7 * Math.PI) / 180;
+      assert.ok(
+        backWidth * Math.sin(backAngle) + backHeight * Math.cos(backAngle) <= layout.seatHoleHeight,
+        'rotated face-down cards fit the same reserved hole slot',
+      );
+      assert.match(stylesheet, /\.seat-hole\s*\{[^}]*align-items:\s*center/s);
+      const identityHeight = layout.heroInlineIdentity
+        ? cssNumber('.hero-identity-inline', 'height')
+        : cssNumber('.hero-identity', 'line-height') * 2;
+      const heroFooterHeight = identityHeight + cssNumber('.hero-action', 'height');
       const heroBottom = height - cssNumber('.hero', 'bottom');
       const identityTop = heroBottom - heroFooterHeight;
-      const cardWidth = cssNumber('.table-short .hero-card', 'width');
-      const cardHeight = cssNumber('.table-short .hero-card', 'height');
+      const cardWidth = layout.heroCardWidth;
+      const cardHeight = layout.heroCardHeight;
       const angle = (5 * Math.PI) / 180;
       const rotatedWidth = cardWidth * Math.cos(angle) + cardHeight * Math.sin(angle);
       const rotatedHeight = cardHeight * Math.cos(angle) + cardWidth * Math.sin(angle);
       const heroWidth = cardWidth + cssNumber('.hero-cards', 'gap') + rotatedWidth;
       const heroTop =
         identityTop -
-        cssNumber('.table-short .hero-rank', 'height') -
+        cssNumber('.hero-cards', 'margin-bottom') -
+        layout.heroRankHeight -
         cardHeight -
         (rotatedHeight - cardHeight) / 2;
       const hero = {
@@ -352,32 +381,42 @@ for (const playerCount of [5, 6, 7, 8, 9]) {
         top: heroTop,
         bottom: heroBottom,
       };
-      const communityWidth = width * (cssNumber('.community', 'width') / 100);
+      const heroFooterWidth = cssNumber('.hero-action', 'width');
+      const heroFooter = {
+        left: (width - heroFooterWidth) / 2,
+        right: (width + heroFooterWidth) / 2,
+        top: identityTop,
+        bottom: heroBottom,
+      };
+      const communityWidth = Math.min(218, width * (cssNumber('.community', 'width') / 100));
       const communityHeight =
-        cssNumber('.table-short .pot-row', 'height') +
-        cssNumber('.table-short .pot-row', 'margin-bottom') +
-        2 *
-          (cssNumber('.table-short .card-placeholder', 'height') +
-            cssNumber('.table-short .board-row', 'margin-bottom'));
+        cssNumber('.pot-row', 'height') +
+        cssNumber('.pot-row', 'margin-bottom') +
+        2 * (layout.cardHeight + cssNumber('.board-row', 'margin-bottom'));
       const community = {
         left: (width - communityWidth) / 2,
         right: (width + communityWidth) / 2,
-        top: height / 2 - 62,
-        bottom: height / 2 - 62 + communityHeight,
+        top: layout.communityTop,
+        bottom: layout.communityTop + communityHeight,
       };
       assert.ok(community.bottom <= hero.top, 'the two board rows clear the rotated hero cards');
       const bounds = page.data.seats.map((item) => {
         const rendered = style.replace(/\{\{([\s\S]+?)\}\}/g, (_, expression) =>
-          vm.runInNewContext(expression, { item, tableHeight: height }),
+          vm.runInNewContext(expression, { item, layout }),
         );
         const top = Number(rendered.match(/top: ([\d.]+)px/)[1]);
-        const left = (item.x * width) / 100 - seatWidth / 2;
+        const left = Number(rendered.match(/left: ([\d.]+)px/)[1]) - seatWidth / 2;
         return { id: item.id, left, right: left + seatWidth, top, bottom: top + seatHeight };
       });
       for (const seat of bounds) {
         assert.ok(seat.top >= 0 && seat.left >= 0 && seat.right <= width);
         assert.ok(seat.bottom <= identityTop - 6, `seat ${seat.id} caption clears the hero footer`);
         assert.equal(intersects(seat, hero), false, `seat ${seat.id} clears the hero cards`);
+        assert.equal(
+          intersects(seat, heroFooter),
+          false,
+          `seat ${seat.id} clears the centered action slot`,
+        );
         assert.equal(intersects(seat, community), false, `seat ${seat.id} clears the full board`);
       }
       for (let i = 0; i < bounds.length; i++) {
@@ -389,6 +428,164 @@ for (const playerCount of [5, 6, 7, 8, 9]) {
           );
         }
       }
+      assert.equal(layout.heroFooterHeight, heroFooterHeight);
+      assert.equal(layout.heroIdentityHeight, identityHeight);
+      if (layout.heroInlineIdentity) {
+        assert.equal(layout.heroRankHeight, cssNumber('.hero-inline .hero-rank .rank', 'height'));
+        assert.equal(heroFooterHeight, 30);
+      }
+      assert.equal(layout.communityHeight, communityHeight);
+      assert.ok(3 * layout.cardWidth + 2 * cssNumber('.board-row', 'gap') <= communityWidth);
+      assert.ok(
+        layout.cardWidth >= 31,
+        'even the shortest 320px screen enlarges the community cards',
+      );
+      if (info.windowWidth >= 375) assert.ok(layout.cardWidth >= 48);
+      if (info.windowWidth >= 700)
+        assert.ok(layout.cardWidth >= (layout.compact ? 50 : 60) && layout.heroCardWidth >= 70);
     });
   }
 }
+
+test('WeChat hero cards and identity stay centered independently of the action text', (t) => {
+  const { page } = setup(t, {
+    info: { windowWidth: 375, windowHeight: 667, statusBarHeight: 20, safeArea: { bottom: 667 } },
+  });
+  assert.equal(page.data.layout.cardWidth, 48);
+  assert.equal(page.data.layout.cardHeight, 65);
+  assert.equal(page.data.tableHeight, 417, 'the shorter dock returns 28px to the SE table');
+  assert.match(stylesheet, /\.felt\s*\{[^}]*inset:\s*12px 4px 16px/s);
+  assert.match(stylesheet, /\.hero-cards\s*\{[^}]*justify-content:\s*center/s);
+  assert.match(stylesheet, /\.hero-identity\s*\{[^}]*margin:\s*0 auto/s);
+  assert.match(stylesheet, /\.hero-action\s*\{[^}]*position:\s*absolute/s);
+  assert.match(
+    stylesheet,
+    /\.hero-action\s*\{[^}]*left:\s*50%[^}]*transform:\s*translateX\(-50%\)[^}]*text-align:\s*center/s,
+  );
+  assert.match(stylesheet, /\.hero-rank\s*\{[^}]*position:\s*absolute/s);
+  assert.match(template, /top: \{\{layout.heroIdentityHeight\}\}px/);
+  assert.match(template, /top: -\{\{layout.heroRankOffset\}\}px/);
+  assert.equal(template.includes('class="hero-status"'), false);
+  assert.equal(cssNumber('.hero-rank', 'height'), 12);
+  assert.equal(cssNumber('.hero-info', 'height'), 46);
+  assert.equal(cssNumber('.hero-action', 'height'), 16);
+  assert.equal(cssNumber('.hero-action', 'line-height'), 16);
+  assert.equal(cssNumber('.hero-cards', 'margin-bottom'), 8);
+  assert.equal(cssNumber('.hero-cards', 'gap'), 3);
+  const layout = copy(page.data.layout);
+  for (const heroAction of ['', '过牌', '加注 4,875', '全下 15,075']) {
+    page.setData({ heroAction });
+    assert.deepEqual(page.data.layout, layout);
+  }
+  assert.match(template, /height: \{\{layout.seatHoleHeight\}\}px/);
+  assert.match(template, /height: \{\{layout.seatBodyHeight\}\}px/);
+  assert.match(template, /height: \{\{layout.seatCaptionHeight\}\}px/);
+});
+
+test('WeChat action states keep one dock height and terminal buttons fill one row', (t) => {
+  const { page } = setup(t, { playerCount: 9 });
+  const layout = copy(page.data.layout);
+  assert.equal(page.data.canAct, false);
+  const game = page._controller.getGame();
+  const stacks = game.players.map((player) => player.stack);
+  page.act({ currentTarget: { dataset: { action: 'raise' } } });
+  assert.deepEqual(
+    game.players.map((player) => player.stack),
+    stacks,
+    'disabled actions cannot commit chips',
+  );
+  reachHero(page);
+  assert.equal(page.data.canAct, true);
+  page.preset({ currentTarget: { dataset: { preset: 'all' } } });
+  page.act({ currentTarget: { dataset: { action: 'raise' } } });
+  assert.equal(page.data.heroStatus, '已全下');
+  assert.deepEqual(page.data.layout, layout);
+  finish(game);
+  page._controller.show();
+  assert.equal(page.data.done, true);
+  assert.deepEqual(page.data.layout, layout);
+  page.retryHand();
+  reachHero(page);
+  page.act({ currentTarget: { dataset: { action: 'fold' } } });
+  assert.equal(page.data.heroFolded, true);
+  assert.deepEqual(page.data.layout, layout);
+  assert.equal(cssNumber('.action-dock', 'height'), 108);
+  assert.equal(cssNumber('.action-dock-terminal', 'padding'), 12);
+  assert.match(stylesheet, /\.settled-buttons\s*\{[^}]*display:\s*flex/s);
+  assert.match(
+    stylesheet,
+    /\.settled-buttons button\s*\{[^}]*flex:\s*1[^}]*white-space:\s*nowrap/s,
+  );
+  assert.match(
+    stylesheet,
+    /\.continue-buttons button\s*\{[^}]*width:\s*100%[^}]*white-space:\s*nowrap/s,
+  );
+  assert.match(
+    stylesheet,
+    /\.action-dock button\[disabled\]\s*\{[^}]*opacity:\s*1[^}]*box-shadow:\s*none/s,
+  );
+  assert.match(stylesheet, /\.primary:not\(\[disabled\]\)/);
+  assert.match(template, /wx:elif="\{\{heroFolded \|\| heroStatus === '已全下'\}\}"/);
+});
+
+for (const playerCount of [5, 9]) {
+  test(`WeChat ${playerCount}-seat preflop fold settlement keeps exactly three equal buttons at 320px`, (t) => {
+    const { page } = setup(t, {
+      playerCount,
+      info: { windowWidth: 320, windowHeight: 568, statusBarHeight: 20, safeArea: { bottom: 568 } },
+    });
+    const layout = copy(page.data.layout);
+    const game = page._controller.getGame();
+    while (game.phase === 'playing' && game.actor !== 0) act(game, game.actor, 'fold');
+    page._controller.show();
+    page.act({ currentTarget: { dataset: { action: 'fold' } } });
+    for (let count = 0; game.phase !== 'done'; count++) {
+      assert.ok(count < playerCount);
+      assert.equal(game.phase, 'playing');
+      act(game, game.actor, 'fold');
+    }
+    page._controller.show();
+    assert.equal(page.data.heroFolded, true);
+    assert.equal(page.data.done, true);
+    assert.equal(page.data.board.length, 0, 'fold settlement leaves public cards undealt');
+    assert.deepEqual(page.data.layout, layout);
+    const settled = template.match(/<block wx:if="\{\{done\}\}"[\s\S]*?<\/block\s*>/)[0];
+    const buttons = [
+      ...settled.matchAll(/<button[^>]*bindtap="([^"]+)"[^>]*>([\s\S]*?)<\/button\s*>/g),
+    ];
+    assert.deepEqual(
+      buttons.map(([, method]) => method),
+      ['nextHand', 'retryHand', 'openReview'],
+    );
+    assert.match(template, /<\/block\s*>\s*<block wx:elif="\{\{heroFolded/);
+    const labelSize = cssNumber('.settled-buttons button', 'font-size');
+    const rowWidth = layout.width - 2 * 10;
+    const buttonWidth = (rowWidth - 2 * cssNumber('.settled-buttons', 'gap')) / buttons.length;
+    for (const [, , label] of buttons) {
+      assert.ok(label.trim().length * labelSize < buttonWidth, 'each Chinese label fits one row');
+    }
+    assert.match(stylesheet, /\.settled-buttons\s*\{[^}]*display:\s*flex/s);
+    assert.match(
+      stylesheet,
+      /\.settled-buttons button\s*\{[^}]*flex:\s*1[^}]*min-width:\s*0[^}]*white-space:\s*nowrap/s,
+    );
+  });
+}
+
+test('WeChat resizing recalculates the current seats while preserving the running hand', (t) => {
+  const { page, info } = setup(t, { playerCount: 9 });
+  const game = page._controller.getGame();
+  const oldWidth = page.data.layout.width;
+  info.windowWidth = 768;
+  info.windowHeight = 1024;
+  info.statusBarHeight = 24;
+  info.safeArea.bottom = 1004;
+  page.onResize();
+  assert.equal(page._controller.getGame(), game);
+  assert.equal(page.data.layout.wide, true);
+  assert.ok(page.data.layout.width > oldWidth);
+  assert.equal(page.data.layout.cardWidth, 64);
+  assert.equal(page.data.tableHeight + page.data.topInset + page.data.bottomInset + 230, 1024);
+  for (const seat of page.data.seats)
+    assert.equal(seat.left, (seat.x * page.data.layout.width) / 100);
+});
