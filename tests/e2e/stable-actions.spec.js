@@ -393,7 +393,7 @@ async function expectAdaptiveBoard(page) {
         // keeps larger player areas by using the two-row fallback.
         if ((innerWidth >= 600 || (count === 5 && innerWidth >= 375)) && twoRows)
           issues.push('cards wrapped despite ample room in the middle');
-        if (innerWidth === 320 && innerHeight === 1000 && count === 9 && !twoRows)
+        if (innerWidth === 320 && innerHeight === 1020 && count === 9 && !twoRows)
           issues.push('a crowded narrow table needs the two-row fallback');
         const topCenter = (cards[0].left + cards[2].right) / 2;
         const bottomCenter = (cards[3].left + cards[4].right) / 2;
@@ -430,7 +430,7 @@ test('public cards prefer five in one row and fall back to centered three-plus-t
 }) => {
   test.setTimeout(90000);
   for (const width of [320, 375, 390, 440, 600]) {
-    await configureViewport(page, { width, height: width === 320 ? 1000 : 900 });
+    await configureViewport(page, { width, height: width === 320 ? 1020 : 900 });
     for (const count of [5, 9]) {
       await page.evaluate((count) => window.qa.heroTurn(count), count);
       await expect(page.locator('#board > .board-slot')).toHaveCount(5);

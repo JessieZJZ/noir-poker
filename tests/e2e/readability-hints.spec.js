@@ -233,6 +233,90 @@ test('five-player side seats surround the waist with half card backs and a reada
   }
 });
 
+test('inspection follows the position badge and crown JJ keep clear of the hint edge without a refit', async ({
+  page,
+}) => {
+  test.setTimeout(60000);
+  for (const size of [
+    { width: 320, height: 667 },
+    { width: 375, height: 667 },
+    { width: 440, height: 956 },
+    { width: 820, height: 1180 },
+    { width: 1280, height: 900 },
+  ]) {
+    await page.setViewportSize(size);
+    for (const count of [5, 9]) {
+      await page.evaluate((count) => window.qa.heroTurn(count), count);
+      const before = await page
+        .locator('.seat-inspect-slot')
+        .evaluateAll((rows) =>
+          rows.map((row) => ({ width: row.offsetWidth, height: row.offsetHeight })),
+        );
+      await page.evaluate(
+        (count) =>
+          window.qa.scene('2h 3h', 'Ks Kh 9s 7c 6d', {
+            count,
+            otherHoles: { [count === 5 ? 2 : 4]: 'Jh Jd' },
+          }),
+        count,
+      );
+      await expect
+        .poll(() =>
+          page.evaluate(() => {
+            const bounds = document.querySelector('.table-viewport').getBoundingClientRect(),
+              scale = new DOMMatrix(getComputedStyle(document.querySelector('#arena')).transform).a,
+              issues = [];
+            for (const seat of document.querySelectorAll('.seat')) {
+              const eye = seat.querySelector('.seat-peek'),
+                e = eye.getBoundingClientRect(),
+                badge = seat.querySelector('.position-badge').getBoundingClientRect(),
+                profile = seat.querySelector('.seat-profile').getBoundingClientRect();
+              if (eye.parentElement.previousElementSibling?.className !== 'position-badge')
+                issues.push('eye does not immediately follow the position badge');
+              if (
+                e.left < badge.right - 0.5 ||
+                Math.abs(e.top + e.bottom - badge.top - badge.bottom) > 1
+              )
+                issues.push('eye is outside the identity row');
+              if (
+                e.left < profile.left ||
+                e.right > profile.right ||
+                e.top < profile.top ||
+                e.bottom > profile.bottom
+              )
+                issues.push('eye escapes the profile');
+              if (
+                document
+                  .elementFromPoint((e.left + e.right) / 2, (e.top + e.bottom) / 2)
+                  ?.closest('.seat-peek') !== eye
+              )
+                issues.push('eye is covered by another player part');
+              if (seat.classList.contains('seat-crown'))
+                for (const card of seat.querySelectorAll('.playing-card'))
+                  if (card.getBoundingClientRect().top < bounds.top + 10 * scale - 0.5)
+                    issues.push('crown hand touches the hint edge');
+            }
+            return issues;
+          }),
+        )
+        .toEqual([]);
+      const after = await page
+        .locator('.seat-inspect-slot')
+        .evaluateAll((rows) =>
+          rows.map((row) => ({ width: row.offsetWidth, height: row.offsetHeight })),
+        );
+      expect(after).toEqual(before);
+      const frame = await page.locator('#arena').boundingBox();
+      await page.locator('.seat-crown .seat-peek').first().click();
+      await page.locator('.seat-crown .seat-peek').first().click();
+      expect(await page.locator('#arena').boundingBox()).toEqual(frame);
+    }
+  }
+  await page
+    .locator('.game-surface')
+    .screenshot({ path: test.info().outputPath('inspection-in-position-row.png') });
+});
+
 test('all five public positions retain the same rows and face sizes while dealing each street', async ({
   page,
 }) => {

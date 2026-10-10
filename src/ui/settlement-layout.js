@@ -57,21 +57,6 @@ export function createSettlementLayout(arena, { observe = true } = {}) {
         .filter((el) => !el.hidden)
         .map((el) => el.getBoundingClientRect())
         .filter((r) => r.width > 0 && r.height > 0);
-      // The phone eye sits beside the cards. Reserve its exact small footprint
-      // before it exists; widening the entire card row shrinks a nine-seat SE
-      // unnecessarily and can put an invisible wrapper over the click target.
-      if (compact && matchMedia('(max-width: 600px)').matches) {
-        const r = seat.getBoundingClientRect();
-        const left = seat.classList.contains('seat-left') ? r.left : r.right - 20;
-        parts.push({
-          left,
-          right: left + 20,
-          top: r.top + 16,
-          bottom: r.top + 36,
-          width: 20,
-          height: 20,
-        });
-      }
       return parts;
     };
     // Open the public row's actual horizontal corridor before reserving a

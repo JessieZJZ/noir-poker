@@ -6,6 +6,11 @@
 .game-surface .seat .card-back {
   translate: 0 12px;
 }
+/* Keep the full crown hand clear of the hint edge, including when peeked.
+   The inset is reserved from the deal, so settlement cannot move the seats. */
+.game-surface .arena:not(.compact-landscape) .seat-crown {
+  margin-top: 12px;
+}
 @media (min-width: 1101px) and (max-width: 1150px),
   (min-width: 901px) and (max-width: 1150px) and (orientation: landscape) {
   .game-surface .board > .playing-card,
@@ -92,6 +97,7 @@
     font-size: 10px;
   }
   .game-surface .arena[data-player-count] .seat-profile strong {
+    --seat-eye-size: 14px;
     grid-column: 1 / -1;
     grid-row: 1;
     justify-self: center;
@@ -121,12 +127,10 @@
     grid-column: 1 / -1;
   }
   .game-surface .arena[data-player-count] .seat-peek {
-    grid-column: 3;
-    grid-row: 3;
-    width: 20px;
-    height: 20px;
-    min-height: 20px;
-    padding: 2px;
+    width: var(--seat-eye-size);
+    height: var(--seat-eye-size);
+    min-height: 0;
+    padding: 1px;
   }
   .game-surface .seat .mini-cards:not(.revealed-cards) {
     display: flex;
@@ -382,6 +386,7 @@
     gap: 4px;
   }
   .game-surface .arena[data-player-count] .seat-profile strong {
+    --seat-eye-size: 20px;
     font-size: 16px;
   }
   .game-surface .arena[data-player-count] .seat-profile .seat-style-label {
@@ -394,10 +399,6 @@
     width: 26px;
     height: 26px;
     font-size: 14px;
-  }
-  .game-surface .arena[data-player-count] .seat-peek {
-    width: 24px;
-    height: 24px;
   }
   .game-surface .arena[data-player-count] .seat .mini-cards {
     height: 58px;
@@ -544,8 +545,8 @@
   }
 }
 
-/* A two-row profile leaves room for nine seats on a short phone. The eye
-   lives beside the hole-card slot, so revealing it adds no profile row. */
+/* A two-row profile leaves room for nine seats on a short phone. Inspection
+   has a reserved spot after the position badge in the name row. */
 @media (max-width: 600px) {
   .game-surface .arena[data-player-count] .seat .seat-profile {
     width: 92px;
@@ -586,15 +587,6 @@
     grid-row: 2;
     font-size: 10px;
   }
-  .game-surface .arena[data-player-count] .seat-peek {
-    position: absolute;
-    top: 16px;
-    right: 0;
-  }
-  .game-surface .arena[data-player-count] .seat-left .seat-peek {
-    left: 0;
-    right: auto;
-  }
 }
 
 /* Fewer players have room for larger personal areas around the same felt. */
@@ -607,6 +599,7 @@
     grid-template-rows: 16px 20px;
   }
   .game-surface .arena:is([data-player-count='5'], [data-player-count='6']) .seat-profile strong {
+    --seat-eye-size: 16px;
     font-size: 12px;
   }
   .game-surface

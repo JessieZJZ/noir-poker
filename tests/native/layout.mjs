@@ -33,6 +33,23 @@ export function readTableLayout() {
       const box = el.getBoundingClientRect();
       return { left: box.left, right: box.right, top: box.top, bottom: box.bottom };
     }),
+    inspection: [...document.querySelectorAll('.seat-peek')].map((eye) => {
+      const seat = eye.closest('.seat'),
+        e = eye.getBoundingClientRect(),
+        badge = seat.querySelector('.position-badge').getBoundingClientRect(),
+        profile = seat.querySelector('.seat-profile').getBoundingClientRect();
+      return {
+        id: seat.dataset.player,
+        followsPosition: eye.parentElement.previousElementSibling?.className === 'position-badge',
+        gap: e.left - badge.right,
+        centerOffset: (e.top + e.bottom - badge.top - badge.bottom) / 2,
+        contained:
+          e.left >= profile.left &&
+          e.right <= profile.right &&
+          e.top >= profile.top &&
+          e.bottom <= profile.bottom,
+      };
+    }),
     bottomInset:
       parseFloat(getComputedStyle(document.querySelector('.action-dock')).paddingBottom) || 0,
     settledButtons: ['#next-button', '#restart-hand-button', '#review-hand-button'].map(rect),
@@ -53,6 +70,13 @@ export function assertTableLayout(info) {
       info.heroAction.top >= info.identity.bottom - 1,
       'Hero action belongs below the identity',
     );
+  for (const eye of info.inspection) {
+    assert.ok(
+      eye.followsPosition && eye.gap >= -0.5 && Math.abs(eye.centerOffset) <= 0.5,
+      `Seat ${eye.id} inspection must follow the position badge in the identity row`,
+    );
+    assert.ok(eye.contained, `Seat ${eye.id} inspection must stay inside its profile`);
+  }
   assert.equal(info.publicCards.length, 5);
   if (Math.abs(info.publicCards[3].top - info.publicCards[0].top) > 1) {
     const cards = info.publicCards;

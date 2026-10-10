@@ -13,6 +13,11 @@ test('five-card rows survive a small scale cost and crowded short tables keep th
   assert.equal(preferSinglePublicRow(500, 460), true);
   assert.equal(preferSinglePublicRow(501, 460), false);
   assert.equal(preferSinglePublicRow(450, 450), true);
+  // A 440x900 five-seat table retains the row after crown-hand clearance.
+  assert.equal(preferSinglePublicRow(665, 607, 5), true);
+  assert.equal(preferSinglePublicRow(665, 607, 9), false);
+  assert.equal(preferSinglePublicRow(500, 450, 5), true);
+  assert.equal(preferSinglePublicRow(501, 450, 5), false);
 });
 
 test('public cards move above the felt midpoint without depending on deal state', () => {

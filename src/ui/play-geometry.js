@@ -8,10 +8,11 @@ export function publicGroupTop(tableTop, tableHeight, groupHeight) {
   return tableTop + tableHeight * 0.44 - groupHeight / 2;
 }
 
-// Prefer the five-card row when it costs at most 8% of the overall scale.
-// A crowded short phone still chooses two rows instead of tiny player areas.
-export function preferSinglePublicRow(singleHeight, twoRowsHeight) {
-  return twoRowsHeight / singleHeight >= 0.92;
+// Five-seat waist opponents share the public corridor. Allow a 10% scale
+// cost there to retain five cards in one row; denser tables keep the 8% limit.
+// Crowded phones still choose two rows instead of tiny player areas.
+export function preferSinglePublicRow(singleHeight, twoRowsHeight, playerCount = 9) {
+  return twoRowsHeight / singleHeight >= (playerCount === 5 ? 0.9 : 0.92);
 }
 
 // Seat anchors remain in the same order as height grows, so each free band

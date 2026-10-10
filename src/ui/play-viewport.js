@@ -71,7 +71,7 @@ export function createPlayViewport(surface, { layout = () => {} } = {}) {
     if (!landscape && viewport.clientWidth <= 600 && fittedHeight > baseHeight + 0.5) {
       arena.classList.add('public-two-rows');
       const twoRowsHeight = fittingHeight();
-      if (preferSinglePublicRow(fittedHeight, twoRowsHeight))
+      if (preferSinglePublicRow(fittedHeight, twoRowsHeight, Number(arena.dataset.playerCount)))
         arena.classList.remove('public-two-rows');
       else fittedHeight = twoRowsHeight;
     }
