@@ -77,6 +77,105 @@ test('settings group useful information and keep difficulty, emotion, personas a
   }
 });
 
+test('settings usage information follows the parameter comparison and remains readable without expanding anything', async ({
+  page,
+}) => {
+  for (const width of [320, 390, 1280]) {
+    await page.setViewportSize({ width, height: 844 });
+    await openSettings(page);
+    const info = page.locator('.settings-info');
+    const comparison = page.locator('.profile-comparison');
+    await expect(comparison).not.toHaveAttribute('open');
+    expect(await comparison.evaluate((el) => el.nextElementSibling.matches('.settings-info'))).toBe(
+      true,
+    );
+    await expect(info.locator('summary, details')).toHaveCount(0);
+    await expect(info).toContainText('设置自动保存');
+    await expect(info).toContainText('当前手与重打保持原设置');
+    await info.locator('.persona-notice h4').scrollIntoViewIfNeeded();
+    await expect(info.locator('.persona-notice h4')).toHaveText('关于具名牌手的模拟');
+    await expect(info.locator('.persona-notice p')).toBeVisible();
+    await expect(info.locator('a[href="https://www.kpclive.com/"]')).toBeVisible();
+    await expect(info.locator('a[href="https://tritonpokerseries.com/en-US/home"]')).toBeVisible();
+    await expect(page.locator('#save-opponents')).toHaveCount(0);
+    await closeSettings(page);
+  }
+});
+
+test('style assignments, mixed lineups and emotions automatically persist while previews and retries preserve the hand', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  const original = await page.evaluate(() => window.qa.foldWin(6));
+  const saved = () => page.evaluate(() => JSON.parse(localStorage.getItem('noir-opponents-v1')));
+  await openSettings(page);
+  await page.locator('[data-bot-seat="1"]').selectOption('dwan');
+  expect((await saved()).assignments['1']).toBe('dwan');
+  await expect(page.locator('#opponents-dialog')).toBeVisible();
+  await page.locator('#emotion-mode').selectOption('lively');
+  expect((await saved()).emotionMode).toBe('lively');
+  await expect(page.locator('#opponents-save-note')).toContainText('已自动保存');
+  await page.locator('#mix-opponents').click();
+  expect((await saved()).assignments).toEqual({
+    1: 'tan',
+    2: 'st',
+    3: 'zang',
+    4: 'peter',
+    5: 'abao',
+    6: 'viktor',
+    7: 'jungleman',
+    8: 'dwan',
+  });
+  // The settings cover all future seats, including those currently off table.
+  await page.locator('[data-bot-seat="8"]').selectOption('balanced');
+  const persisted = await saved();
+  await page.locator('[data-profile-preview="st"]').click();
+  await expect(page.locator('#profile-detail h3')).toHaveText('ST Wang');
+  expect(await saved()).toEqual(persisted);
+  await page.locator('[data-close-profile-detail]').click();
+  await closeSettings(page);
+  await openSettings(page);
+  await expect(page.locator('[data-bot-seat="1"]')).toHaveValue('tan');
+  await expect(page.locator('[data-bot-seat="8"]')).toHaveValue('balanced');
+  await expect(page.locator('#emotion-mode')).toHaveValue('lively');
+  await closeSettings(page);
+  const current = await page.evaluate(() => window.noir.getState());
+  expect(current.players.map((p) => p.botProfile)).toEqual(
+    original.players.map((p) => p.botProfile),
+  );
+  expect(current.emotionMode).toBe(original.emotionMode);
+  await page.locator('#restart-hand-button').click();
+  const retry = await page.evaluate(() => {
+    window.qa.stop();
+    return window.noir.getState();
+  });
+  expect(retry.hole).toEqual(original.hole);
+  expect(retry.players.map((p) => p.botProfile)).toEqual(original.players.map((p) => p.botProfile));
+  expect(retry.emotionMode).toBe(original.emotionMode);
+  await page.evaluate(() => window.qa.foldRest());
+  await page.locator('#next-button').click();
+  const next = await page.evaluate(() => {
+    window.qa.stop();
+    return window.noir.getState();
+  });
+  expect(next.players.slice(1).map((p) => p.botProfile)).toEqual([
+    'tan',
+    'st',
+    'zang',
+    'peter',
+    'abao',
+  ]);
+  expect(next.emotionMode).toBe('lively');
+  await page.reload();
+  await page.waitForFunction(() => !!window.qa);
+  await page.evaluate(() => window.qa.stop());
+  await openSettings(page);
+  await expect(page.locator('[data-bot-seat="1"]')).toHaveValue('tan');
+  await expect(page.locator('[data-bot-seat="8"]')).toHaveValue('balanced');
+  await expect(page.locator('#emotion-mode')).toHaveValue('lively');
+  expect(await saved()).toEqual(persisted);
+});
+
 test('mobile persona details cover the selector in place and closing restores its focused card and scroll position', async ({
   page,
 }) => {

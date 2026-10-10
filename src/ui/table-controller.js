@@ -323,6 +323,11 @@ const layouts = {
   ],
 };
 function render() {
+  const activityList = $('#activity-list'),
+    activityScrollTop = activityList.scrollTop,
+    followActivity =
+      game.hand !== lastHand ||
+      activityList.scrollHeight - activityList.clientHeight - activityScrollTop <= 24;
   const count = game.players.length;
   $('#arena').dataset.playerCount = count;
   $('#arena').classList.toggle(
@@ -431,7 +436,7 @@ function render() {
     ? Math.round((game.stats.wins / game.stats.hands) * 100) + '%'
     : '—';
   const activityText = createActivityFormatter(game.players);
-  $('#activity-list').innerHTML = game.logs
+  activityList.innerHTML = game.logs
     .slice()
     .reverse()
     .map(
@@ -537,6 +542,10 @@ function render() {
   lastHand = game.hand;
   lastBoard = displayBoard.length;
   playViewport.update(game, done);
+  // Desktop history is bounded by the table. Keep following new actions only
+  // while the reader is at the bottom; reviewing earlier actions keeps its place.
+  if (!compactCoach.matches)
+    activityList.scrollTop = followActivity ? activityList.scrollHeight : activityScrollTop;
 }
 function updateBet() {
   const legal = legalActions(game, 0);

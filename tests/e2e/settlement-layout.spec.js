@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { closeSettings } from './settings-helpers.js';
 
 async function expectSeatsClear(page) {
   const issues = () =>
@@ -50,7 +51,7 @@ test('settled nine-seat actions clear other card backs, profiles and the section
     if (named) {
       await page.locator('#opponents-button').click();
       await page.locator('#mix-opponents').click();
-      await page.locator('#save-opponents').click();
+      await closeSettings(page);
     }
     for (const width of [320, 390, 768, 1115, 1280]) {
       await page.setViewportSize({ width, height: 1000 });

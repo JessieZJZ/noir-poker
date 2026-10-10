@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { openSettings, setPlayerCount, toggleHints } from './settings-helpers.js';
+import { closeSettings, openSettings, setPlayerCount, toggleHints } from './settings-helpers.js';
 
 test.beforeEach(async ({ page }) => {
   const errors = [];
@@ -467,7 +467,7 @@ test('showdown participant names include the current named style and stay readab
   await page.evaluate(() => window.qa.stop());
   await page.locator('#opponents-button').click();
   await page.locator('#mix-opponents').click();
-  await page.locator('#save-opponents').click();
+  await closeSettings(page);
   const names = [
     '你',
     'Mia（谭老板）',
@@ -517,7 +517,7 @@ test('showdown participant names include the current named style and stay readab
   }
   await page.locator('#opponents-button').click();
   await page.locator('[data-bot-seat="7"]').selectOption('peter');
-  await page.locator('#save-opponents').click();
+  await closeSettings(page);
   await expect(
     page.locator('.showdown-player[data-player="7"] .showdown-player-heading > strong'),
   ).toHaveText('Jade（Daniel Cates）');
@@ -719,7 +719,7 @@ test('settled public caption and hero remain separated for winners, losers, fold
   await page.evaluate(() => window.qa.stop());
   await page.locator('#opponents-button').click();
   await page.locator('#mix-opponents').click();
-  await page.locator('#save-opponents').click();
+  await closeSettings(page);
   for (const width of [320, 390, 768, 1280]) {
     await page.setViewportSize({ width, height: 900 });
     for (const count of [5, 6, 7, 8, 9]) {
@@ -1062,7 +1062,7 @@ test('review completes through real worker with facts and a conditional follow-u
   await expect(page.locator('#review-reason')).not.toBeEmpty();
 });
 
-test('activity follows chronological column order at every breakpoint and naturally expands', async ({
+test('activity preserves chronological column order with bounded desktop scrolling and mobile expansion', async ({
   page,
 }) => {
   for (const width of [320, 360, 390, 600, 768, 900, 901, 1280]) {
@@ -1123,8 +1123,9 @@ test('activity follows chronological column order at every breakpoint and natura
       for (let i = 1; i < layout.milestones.length; i++)
         expect(layout.milestones[i]).toBeGreaterThan(layout.milestones[i - 1]);
       expect(layout.readingOrder).toEqual(Array.from({ length: layout.logCount }, (_, i) => i));
-      expect(layout.overflow).toBe('visible');
-      expect(layout.scrollHeight - layout.clientHeight).toBeLessThanOrEqual(1);
+      expect(layout.overflow).toBe(width > 900 ? 'auto' : 'visible');
+      if (width <= 900) expect(layout.scrollHeight - layout.clientHeight).toBeLessThanOrEqual(1);
+      else expect(layout.clientHeight).toBeGreaterThan(0);
       expect(layout.peekOverlaps).toBe(false);
       await page.locator('.seat-peek').first().click();
       await expect(page.locator('#activity-list li')).toHaveText(layout.texts);
@@ -1144,7 +1145,7 @@ test('activity shows actual assigned personas across actions and results without
     4: 'dwan',
   }))
     await page.locator(`[data-bot-seat="${id}"]`).selectOption(profile);
-  await page.locator('#save-opponents').click();
+  await closeSettings(page);
 
   for (const count of [6, 9]) {
     await page.evaluate((n) => {
@@ -1196,7 +1197,7 @@ test('activity shows actual assigned personas across actions and results without
   await assertWinnerIndicators(page);
   await page.locator('#opponents-button').click();
   await page.locator('[data-bot-seat="2"]').selectOption('abao');
-  await page.locator('#save-opponents').click();
+  await closeSettings(page);
   await page.locator('.seat-2 .seat-peek').click();
   await expect(page.locator('#activity-list')).toContainText('Alex（ST 王） 获胜');
   await expect(page.locator('#activity-list')).not.toContainText('Alex（阿宝）');
@@ -1378,7 +1379,7 @@ test('returning restores all saved options before the first fresh hand, includin
     .click();
   await page.locator('#mix-opponents').click();
   await page.locator('#emotion-mode').selectOption('lively');
-  await page.locator('#save-opponents').click();
+  await closeSettings(page);
   const previous = await page.evaluate(() => window.noir.getState());
   expect(previous.playerCount).toBe(6);
   expect(previous.players[1].botProfile).toBe('balanced');
@@ -1430,7 +1431,7 @@ test('per-seat styles apply next hand, survive resize and refresh, and freeze on
   for (const [id, style] of Object.entries(assignments))
     await page.locator(`[data-bot-seat="${id}"]`).selectOption(style);
   await page.locator('#emotion-mode').selectOption('lively');
-  await page.locator('#save-opponents').click();
+  await closeSettings(page);
   await expect(page.locator('#opponents-summary')).toHaveText('下手生效');
   expect((await page.evaluate(() => window.noir.getState())).players[1].botProfile).toBe(
     'balanced',
@@ -1501,7 +1502,7 @@ test('nine-seat style assignment shows every persona at all sizes and executes t
   expect((await page.evaluate(() => window.noir.getState())).players[8].botProfile).toBe(
     'balanced',
   );
-  await page.locator('#save-opponents').click();
+  await closeSettings(page);
   await openSettings(page);
   await expect(page.locator('#opponents-change-note')).toBeVisible();
   await page.locator('#opponents-dialog .close-dialog').click();
@@ -1610,7 +1611,7 @@ test('all named portraits preview immediately, follow saved styles next hand and
   if (await page.locator('[data-close-profile-detail]').isVisible())
     await page.locator('[data-close-profile-detail]').click();
   await page.locator('[data-bot-seat="1"]').selectOption('tan');
-  await page.locator('#save-opponents').click();
+  await closeSettings(page);
   await expect(page.locator('#seats .persona-portrait')).toHaveCount(0);
   await page.locator('#next-button').click();
   await page.evaluate(() => window.qa.stop());
@@ -1654,7 +1655,7 @@ test('all named portraits preview immediately, follow saved styles next hand and
   await page.locator('#opponents-button').click();
   for (let id = 2; id <= 8; id++)
     await page.locator(`[data-bot-seat="${id}"]`).selectOption('jungleman');
-  await page.locator('#save-opponents').click();
+  await closeSettings(page);
   for (const width of [320, 390, 700, 768, 901, 1000, 1150, 1280]) {
     await page.setViewportSize({ width, height: 900 });
     for (const count of [5, 6, 7, 8, 9]) {
@@ -1705,7 +1706,7 @@ test('all named portraits preview immediately, follow saved styles next hand and
   await page.locator('#opponents-button').click();
   await page.locator('[data-bot-seat="1"]').selectOption('balanced');
   await expect(firstDraft.locator('img')).toHaveCount(0);
-  await page.locator('#save-opponents').click();
+  await closeSettings(page);
   await expect(page.locator('.seat-1 .persona-portrait')).toHaveAttribute(
     'data-portrait-profile',
     'tan',
@@ -1760,7 +1761,7 @@ test('configured bots use the fast-deal path and observed samples roll back on r
   await page.evaluate(() => window.qa.foldWin(6));
   await page.locator('#opponents-button').click();
   for (let id = 1; id < 6; id++) await page.locator(`[data-bot-seat="${id}"]`).selectOption('abao');
-  await page.locator('#save-opponents').click();
+  await closeSettings(page);
   await page.evaluate(() => window.qa.heroTurn(6));
   await page.locator('#fold-button').click();
   await page.evaluate(() => window.qa.stop());
@@ -1809,7 +1810,7 @@ test('loss simulation remains available while redundant seat explanations are re
     expect(overflow).toBeLessThanOrEqual(1);
   }
   await page.locator('#emotion-mode').selectOption('off');
-  await page.locator('#save-opponents').click();
+  await closeSettings(page);
   await page.locator('#next-button').click();
   const state = await page.evaluate(() => {
     window.qa.stop();
@@ -1972,7 +1973,7 @@ test('foreign style assignments persist and candidate simulation is available in
     if (await page.locator('[data-close-profile-detail]').isVisible())
       await page.locator('[data-close-profile-detail]').click();
   }
-  await page.locator('#save-opponents').click();
+  await closeSettings(page);
   await page.locator('#next-button').click();
   await page.evaluate(() => window.qa.stop());
   const state = await page.evaluate(() => window.noir.getState());

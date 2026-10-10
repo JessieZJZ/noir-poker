@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { closeSettings } from './settings-helpers.js';
 
 // Use visual bounds after the fit transform. Engine scenarios remain the same
 // across devices; only their presentation may change with the viewport.
@@ -153,7 +154,7 @@ test('the entire table and one-line controls fit the initial mobile screen in ev
     if (named) {
       await page.locator('#opponents-button').click();
       await page.locator('#mix-opponents').click();
-      await page.locator('#save-opponents').click();
+      await closeSettings(page);
     }
     for (const size of [
       { width: 390, height: 844 },

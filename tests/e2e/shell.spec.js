@@ -119,7 +119,7 @@ test('mobile settings fill the screen, use accessible switches and return focus 
   }
 });
 
-test('combined opponent settings preserve immediate difficulty and discard unsaved style drafts', async ({
+test('combined settings immediately save preferences without changing the current hand', async ({
   page,
 }) => {
   await page.locator('#opponents-button').click();
@@ -137,8 +137,8 @@ test('combined opponent settings preserve immediate difficulty and discard unsav
   await page.locator('#opponents-dialog .close-dialog').click();
   await page.locator('#opponents-button').click();
   await expect(page.getByLabel('进阶', { exact: true })).toBeChecked();
-  await expect(page.locator('[data-bot-seat="1"]')).toHaveValue('balanced');
-  await expect(page.locator('#emotion-mode')).toHaveValue('subtle');
+  await expect(page.locator('[data-bot-seat="1"]')).toHaveValue('viktor');
+  await expect(page.locator('#emotion-mode')).toHaveValue('lively');
   await page.getByLabel('进阶', { exact: true }).focus();
   await page.keyboard.press('ArrowLeft');
   await expect(page.getByLabel('标准', { exact: true })).toBeChecked();
@@ -150,8 +150,8 @@ test('combined opponent settings preserve immediate difficulty and discard unsav
   await page.waitForFunction(() => !!window.qa);
   await page.locator('#opponents-button').click();
   await expect(page.getByLabel('标准', { exact: true })).toBeChecked();
-  await expect(page.locator('[data-bot-seat="1"]')).toHaveValue('balanced');
-  await expect(page.locator('#save-opponents')).toBeVisible();
+  await expect(page.locator('[data-bot-seat="1"]')).toHaveValue('viktor');
+  await expect(page.locator('#save-opponents')).toHaveCount(0);
 });
 
 test('desktop actions keep one-line labels and aligned button rows before and after settlement', async ({
@@ -246,10 +246,10 @@ test('retry explanation stays aligned directly under the hand header and the des
           )
             issues.push('extra blank strip before footer');
           if (
-            activity.scrollHeight > activity.clientHeight + 1 &&
-            ['auto', 'scroll', 'hidden'].includes(getComputedStyle(activity).overflowY)
+            !['auto', 'scroll'].includes(getComputedStyle(activity).overflowY) ||
+            activity.clientHeight <= 0
           )
-            issues.push('activity timeline is clipped or internally scrolls');
+            issues.push('activity timeline has no usable independent scroll area');
           return issues;
         }),
       )

@@ -251,6 +251,7 @@
             id="activity-list"
             class="activity-list"
             role="list"
+            tabindex="0"
             aria-label="本手动态，按时间顺序排列"
           >
             <li class="activity-empty">发牌后，这里会记录每一步行动。</li>
@@ -324,35 +325,6 @@
             </button>
           </div>
         </section>
-        <aside class="settings-info" aria-label="设置与牌手模拟说明">
-          <h3>使用说明</h3>
-          <p>难度立即生效；风格与情绪保存后下一手生效。</p>
-          <p>
-            根据公开牌局与资料提炼的娱乐训练原型，非本人复刻。0–100 是游戏内策略倾向， 不是真人的
-            VPIP 或 PFR；精彩牌局无法代表长期表现。
-          </p>
-          <details class="persona-notice">
-            <summary>关于具名牌手的模拟</summary>
-            <p>
-              模拟行动与情绪不代表本人实际打法或操作；本应用与牌手及赛事方无合作、授权或背书关系，
-              不对本人作评价或贬损。请通过
-              <a href="https://www.kpclive.com/" target="_blank" rel="noopener noreferrer"
-                >KPC Live</a
-              >
-              和
-              <a
-                href="https://tritonpokerseries.com/en-US/home"
-                target="_blank"
-                rel="noopener noreferrer"
-                >Triton</a
-              >
-              等官方赛事内容了解真实牌手。
-            </p>
-            <a href="./app-privacy.html#persona-notice" target="_blank" rel="noopener noreferrer"
-              >查看完整说明</a
-            >
-          </details>
-        </aside>
         <p id="opponents-change-note" class="table-change-note" role="status" hidden></p>
         <section class="settings-module difficulty-module" aria-labelledby="difficulty-label">
           <h3 id="difficulty-label">对手难度</h3>
@@ -416,10 +388,38 @@
             入池宽度影响起手牌范围；进攻与诈唬影响适合场景的加注概率；跟到底影响边缘跟注；强牌诱导只在安全牌面提高慢打倾向。位置、人数、牌力与合法动作优先于风格。
           </p>
         </details>
+        <aside class="settings-info" aria-label="设置与牌手模拟说明">
+          <h3>使用说明</h3>
+          <p>设置自动保存。难度立即生效；风格与情绪下一手生效，当前手与重打保持原设置。</p>
+          <p>
+            根据公开牌局与资料提炼的娱乐训练原型，非本人复刻。0–100 是游戏内策略倾向， 不是真人的
+            VPIP 或 PFR；精彩牌局无法代表长期表现。
+          </p>
+          <div class="persona-notice">
+            <h4>关于具名牌手的模拟</h4>
+            <p>
+              模拟行动与情绪不代表本人实际打法或操作；本应用与牌手及赛事方无合作、授权或背书关系，
+              不对本人作评价或贬损。请通过
+              <a href="https://www.kpclive.com/" target="_blank" rel="noopener noreferrer"
+                >KPC Live</a
+              >
+              和
+              <a
+                href="https://tritonpokerseries.com/en-US/home"
+                target="_blank"
+                rel="noopener noreferrer"
+                >Triton</a
+              >
+              等官方赛事内容了解真实牌手。
+            </p>
+            <a href="./app-privacy.html#persona-notice" target="_blank" rel="noopener noreferrer"
+              >查看完整说明</a
+            >
+          </div>
+        </aside>
       </div>
       <div class="opponents-save-row">
         <p id="opponents-save-note" role="status"></p>
-        <button id="save-opponents" class="primary-button">保存风格与情绪</button>
       </div>
     </dialog>
     <dialog id="rules-dialog" aria-labelledby="rules-dialog-title">
@@ -504,11 +504,11 @@
         <p><b>对手难度</b>从轻松、标准到进阶逐步练习，修改后立即生效。</p>
         <p>
           <b>对手风格与座位</b
-          >点选牌手了解训练风格，再给各座位分配风格，或使用混合阵容。保存后下一手生效。
+          >点选牌手了解训练风格，再给各座位分配风格，或使用混合阵容。修改自动保存，下一手生效。
         </p>
         <p>
           <b>情绪模拟</b
-          >控制电脑在游戏输赢后是否改变策略倾向。它是合成游戏机制，不代表任何真人的情绪；保存后下一手生效。
+          >控制电脑在游戏输赢后是否改变策略倾向。它是合成游戏机制，不代表任何真人的情绪；修改自动保存，下一手生效。
         </p>
       </div>
       <p>
