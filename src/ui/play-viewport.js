@@ -125,6 +125,8 @@ export function createPlayViewport(surface, { layout = () => {} } = {}) {
       fitOversizedContent();
       return;
     }
+    const corners = new Set([seats[0], seats.at(-1)]);
+    const cornerInset = Math.min(24, Math.max(0, (viewport.clientWidth - 280) / 4));
     if (metrics.rails) {
       // Clockwise from the lower-left around the upper seats to the right.
       // Two bounded rails leave a clear corridor, even on a nine-seat SE.
@@ -136,9 +138,64 @@ export function createPlayViewport(surface, { layout = () => {} } = {}) {
         x = (metrics.seatWidth * metrics.seatScale) / 2 + 4;
       for (const [side, group] of [left, right].entries())
         group.forEach((seat, index) => {
-          seat.style.left = `${side === 0 ? x : viewport.clientWidth - x}px`;
+          const corner = index === 0 || index === group.length - 1,
+            anchor = x + (corner ? cornerInset : 0);
+          if (corner) corners.add(seat);
+          seat.style.left = `${side === 0 ? anchor : viewport.clientWidth - anchor}px`;
           seat.style.top = `${group.length > 1 ? (index * span) / (group.length - 1) : span / 2}px`;
         });
+    } else {
+      // The upper seats already follow the oval. Pull the lower pair in
+      // toward the hero while retaining room for both tilted hole cards.
+      const upperPair = seats.filter((seat) => parseFloat(seat.dataset.originalTop) === 0);
+      if (upperPair.length === 2) {
+        const separation =
+          ((parseFloat(upperPair[1].dataset.originalLeft) -
+            parseFloat(upperPair[0].dataset.originalLeft)) /
+            100) *
+          viewport.clientWidth;
+        const upperInset = Math.min(
+          cornerInset,
+          Math.max(0, (separation - metrics.seatWidth - 12) / 2),
+        );
+        upperPair.forEach((seat, index) => {
+          corners.add(seat);
+          const x = (parseFloat(seat.dataset.originalLeft) / 100) * viewport.clientWidth;
+          seat.style.left = `${x + (index === 0 ? upperInset : -upperInset)}px`;
+        });
+      }
+      for (const seat of [seats[0], seats.at(-1)]) {
+        const x = (parseFloat(seat.dataset.originalLeft) / 100) * viewport.clientWidth;
+        const heroWidth = arena.querySelector('.hero-area').offsetWidth;
+        const clearance = Math.max(
+          0,
+          Math.abs(viewport.clientWidth / 2 - x) - heroWidth / 2 - metrics.seatWidth / 2 - 4,
+        );
+        const inset = Math.min(cornerInset, clearance);
+        seat.style.left = `${x + (x < viewport.clientWidth / 2 ? inset : -inset)}px`;
+      }
+    }
+    layout();
+    // Keep the inward pose where the current board and hero leave room.
+    // A short native viewport can put a corner beside the public card row.
+    const bounds = arena.getBoundingClientRect();
+    const blockers = [...arena.querySelectorAll('.pot, #board, #board-caption, .hero-area')]
+      .filter((el) => !el.hidden)
+      .map((el) => el.getBoundingClientRect())
+      .filter((r) => r.width && r.height);
+    for (const seat of corners) {
+      const r = seat.getBoundingClientRect();
+      const leftSide = r.left + r.width / 2 < bounds.left + bounds.width / 2;
+      const overlapping = blockers.filter(
+        (b) => r.top < b.bottom && r.bottom > b.top && r.left < b.right && r.right > b.left,
+      );
+      const missing = Math.max(
+        0,
+        ...overlapping.map((b) => (leftSide ? r.right - b.left + 4 : b.right - r.left + 4)),
+      );
+      const shift = Math.min(missing, leftSide ? r.left - bounds.left : bounds.right - r.right);
+      if (shift > 0)
+        seat.style.left = `${parseFloat(seat.style.left) + (leftSide ? -shift : shift)}px`;
     }
     layout();
     viewport.scrollTop = 0;

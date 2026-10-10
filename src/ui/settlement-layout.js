@@ -67,7 +67,12 @@ export function createSettlementLayout(arena, { observe = true } = {}) {
       // beyond exact clearance so the final fit transform keeps it clear.
       const clearLeft = Math.min(...publicParts.map((r) => r.left)) - gap - 0.5,
         clearRight = Math.max(...publicParts.map((r) => r.right)) + gap + 0.5;
+      const sideSeats = [...arena.querySelectorAll('.seat')];
       for (const seat of arena.querySelectorAll('.seat-left, .seat-right')) {
+        // The lower corners flank the hero, below the public card corridor.
+        // Preserve their inward anchors instead of flattening the whole oval.
+        if (seat === sideSeats[0] || seat === sideSeats.at(-1) || parseFloat(seat.style.top) === 0)
+          continue;
         const parts = [
           ...seat.querySelectorAll('.mini-cards, .seat-profile, .seat-action, .hand-rank'),
         ]
