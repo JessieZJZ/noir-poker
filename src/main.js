@@ -16,6 +16,10 @@ await preparePlatform();
 const { prepareLocale } = await import('./i18n/index.js');
 await prepareLocale();
 await import('./ui/table-controller.js');
+// The controller's first render sizes the viewport synchronously. Reveal the
+// complete hand and its controls in the same task; no empty table frame escapes.
+document.querySelector('.main').setAttribute('aria-busy', 'false');
+document.querySelector('#app-loading').hidden = true;
 document.body.inert = false;
 document.documentElement.dataset.appReady = 'true';
 

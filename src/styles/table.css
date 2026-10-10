@@ -318,6 +318,15 @@
 .practice-info > span {
   white-space: nowrap;
 }
+.practice-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+.main > .site-footer .practice-status > .live-dot {
+  flex: 0 0 4px;
+  margin: 0;
+}
 .main > .site-footer button {
   font-size: 14px;
   line-height: 1.5;

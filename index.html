@@ -9,6 +9,52 @@
       content="无需登录的德州扑克练习桌。可选 5–9 人无限注德州扑克对战，享受流畅发牌与筹码动画。"
     />
     <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+    <style>
+      /* The document paints before platform preferences and locale modules finish.
+         Publish the initialized table once instead of exposing an empty action row. */
+      html:not([data-app-ready='true']) {
+        overflow: hidden;
+        background: #0b1017;
+      }
+      html:not([data-app-ready='true']) .main {
+        visibility: hidden;
+      }
+      .app-loading {
+        position: fixed;
+        inset: 88px 0 0;
+        display: grid;
+        place-content: center;
+        gap: 14px;
+        text-align: center;
+        color: #98aeb9;
+        font:
+          14px / 1.4 system-ui,
+          sans-serif;
+      }
+      .app-loading::before {
+        content: '';
+        width: 28px;
+        height: 28px;
+        margin: auto;
+        border: 3px solid #25313d;
+        border-top-color: #6ee7c5;
+        border-radius: 50%;
+        animation: prepare-table 0.9s linear infinite;
+      }
+      html[data-app-ready='true'] .app-loading {
+        display: none;
+      }
+      @keyframes prepare-table {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .app-loading::before {
+          animation: none;
+        }
+      }
+    </style>
   </head>
   <body inert>
     <header class="header">
@@ -40,7 +86,8 @@
         <button class="quiet-button" id="rules-button">玩法指南 <span>?</span></button>
       </div>
     </header>
-    <main class="main">
+    <div class="app-loading" id="app-loading" role="status" aria-live="polite">准备发牌</div>
+    <main class="main" aria-busy="true">
       <section class="game-column" aria-label="德州扑克牌桌">
         <div class="game-surface">
           <div class="surface-top">
@@ -264,7 +311,10 @@
       </aside>
       <footer class="table-footer site-footer">
         <div class="practice-info">
-          <span><span class="live-dot"></span>本地电脑对手 · 无需登录</span>
+          <span class="practice-status"
+            ><span class="live-dot" aria-hidden="true"></span
+            ><span>本地电脑对手 · 无需登录</span></span
+          >
           <button id="reset-button">重新练习</button>
         </div>
         <span>仅使用虚拟筹码</span>
