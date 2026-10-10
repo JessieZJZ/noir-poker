@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { nativeScenarios } from '../tests/native/scenarios.mjs';
 import { sourceDigest } from './mobile-lib.mjs';
 import { verifyBundledArtifact } from './bundled-assets.mjs';
+import { restoreWebviewContext } from './native-context.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const args = process.argv.slice(2);
@@ -138,6 +139,14 @@ async function waitFor(test, timeout = 30000, message = 'Condition did not becom
 }
 const command = (method, endpoint, body) => request(method, `/session/${session}${endpoint}`, body);
 let webContext;
+async function restoreWebview(reason) {
+  webContext = await restoreWebviewContext(command, {
+    appId,
+    platform,
+    preferred: webContext,
+    onAttempt: (attempt) => (report.contextRestores ??= []).push({ reason, ...attempt }),
+  });
+}
 async function attachWebview() {
   // Wait for the real document before attaching WebKit. Attaching during the
   // initial blank-page navigation can pause WebKit before the game loads.
@@ -149,16 +158,7 @@ async function attachWebview() {
     45000,
     'Native app must render an actionable screen before WebView attachment',
   );
-  const contexts = await waitFor(
-    async () => {
-      const available = await command('GET', '/contexts');
-      return available.find((name) => name.startsWith('WEBVIEW')) ? available : null;
-    },
-    90000,
-    'Installed app WebView must be inspectable in its Debug native shell',
-  );
-  webContext = contexts.find((name) => name.startsWith('WEBVIEW'));
-  await command('POST', '/context', { name: webContext });
+  await restoreWebview('attach');
   await waitFor(
     () => evaluate(() => Boolean(window.noir?.getState())),
     30000,
@@ -396,7 +396,9 @@ async function screenshot(name) {
   await command('POST', '/context', { name: 'NATIVE_APP' });
   const png = await command('GET', '/screenshot');
   writeFileSync(path.join(output, `${name}.png`), Buffer.from(png, 'base64'));
-  await command('POST', '/context', { name: webContext });
+  // Save the native evidence before reconnecting. A temporary CDP discovery
+  // failure must not discard the screenshot or blindly reuse a cached context.
+  if (webContext) await restoreWebview(`screenshot:${name}`);
 }
 async function activate() {
   await command('POST', '/context', { name: 'NATIVE_APP' });
