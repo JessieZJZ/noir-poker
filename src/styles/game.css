@@ -230,6 +230,21 @@
   animation: deal-card 0.6s cubic-bezier(0.15, 0.65, 0.25, 1) both;
   animation-delay: var(--delay, 0ms);
 }
+/* Backs stay tucked behind the profile, including the delayed and filled
+   animation frames. The face-card flight must not override their inset. */
+.card-back.card-deal {
+  animation-name: deal-back;
+}
+@keyframes deal-back {
+  from {
+    opacity: 0;
+    scale: 0.88;
+  }
+  to {
+    opacity: 1;
+    scale: 1;
+  }
+}
 @keyframes deal-card {
   from {
     opacity: 0;

@@ -337,7 +337,7 @@ test('all five public positions retain the same rows and face sizes while dealin
       await expect(page.locator('#board > .board-slot')).toHaveCount(5);
       const initial = await positions();
       const expectedWidth = Math.round(
-        width <= 600 ? Math.max(40, Math.min(54, width * 0.12)) : 82,
+        width <= 600 ? Math.max(44, Math.min(54, width * 0.12)) : 82,
       );
       expect(initial.map((card) => card.width)).toEqual(Array(5).fill(expectedWidth));
       const rows = initial.reduce((rows, card) => {

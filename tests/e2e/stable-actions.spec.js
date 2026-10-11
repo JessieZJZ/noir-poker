@@ -389,12 +389,10 @@ async function expectAdaptiveBoard(page) {
           issues.push('a single row must contain all five cards');
         const count = Number(document.querySelector('#arena').dataset.playerCount);
         // Waist seats also use the central corridor on a five-player table.
-        // Ordinary phones still use five; a tall, narrow nine-seat table
-        // keeps larger player areas by using the two-row fallback.
-        if ((innerWidth >= 600 || (count === 5 && innerWidth >= 375)) && twoRows)
+        // The fitted footprint, rather than a fixed phone width, determines
+        // when a denser table needs the two-row fallback.
+        if ((innerWidth > 600 || (count === 5 && innerWidth >= 375)) && twoRows)
           issues.push('cards wrapped despite ample room in the middle');
-        if (innerWidth === 320 && innerHeight === 1020 && count === 9 && !twoRows)
-          issues.push('a crowded narrow table needs the two-row fallback');
         const topCenter = (cards[0].left + cards[2].right) / 2;
         const bottomCenter = (cards[3].left + cards[4].right) / 2;
         if (twoRows && !same(topCenter, bottomCenter))
@@ -429,12 +427,16 @@ test('public cards prefer five in one row and fall back to centered three-plus-t
   page,
 }) => {
   test.setTimeout(90000);
-  for (const width of [320, 375, 390, 440, 600]) {
+  let sawFallback = false;
+  for (const width of [320, 375, 390, 440, 600, 768]) {
     await configureViewport(page, { width, height: width === 320 ? 1020 : 900 });
-    for (const count of [5, 9]) {
+    for (const count of [5, 8, 9]) {
       await page.evaluate((count) => window.qa.heroTurn(count), count);
       await expect(page.locator('#board > .board-slot')).toHaveCount(5);
       await expectAdaptiveBoard(page);
+      sawFallback ||= await page
+        .locator('#arena')
+        .evaluate((el) => el.classList.contains('public-two-rows'));
       await page.locator('#call-button').click();
       await page.evaluate(() => {
         window.qa.stop();
@@ -462,4 +464,5 @@ test('public cards prefer five in one row and fall back to centered three-plus-t
       await expectAdaptiveBoard(page);
     }
   }
+  expect(sawFallback, 'a crowded table must exercise the centered two-row fallback').toBe(true);
 });

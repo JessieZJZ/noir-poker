@@ -4,16 +4,17 @@
   align-items: center;
   justify-content: center;
   gap: 6px;
-  min-height: 25px;
+  min-height: 27px;
   padding-top: 6px;
+  margin-top: 2px;
   white-space: nowrap;
-  font-size: 12px;
+  font-size: 13px;
   line-height: 1.4;
   color: #91abae;
 }
 .seat-action-amount {
   font-family: Manrope, Arial, sans-serif;
-  font-size: 12px;
+  font-size: inherit;
   line-height: 1.4;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
@@ -617,7 +618,7 @@
 }
 .arena[data-player-count] .hero-area {
   top: auto;
-  bottom: 20px;
+  bottom: 28px;
 }
 /* Settlement stacks measured content, so a crown or action cannot lift cards over the caption. */
 .arena.is-done[data-player-count] {
@@ -904,7 +905,7 @@
   /* The wide status row belongs only at the bottom. Letting it define the
      card area's width creates a transparent hit box over the side seats. */
   width: max-content;
-  padding-bottom: 52px;
+  padding-bottom: 47px;
 }
 .arena.is-done[data-player-count] .hero-area {
   position: relative;
@@ -917,7 +918,7 @@
   place-items: center;
   height: 20px;
   flex: none;
-  margin-top: 4px;
+  margin-top: 2px;
 }
 .hero-rank-slot .hero-hand-rank {
   margin-top: 0;
@@ -929,10 +930,11 @@
   bottom: 0;
   transform: translateX(-50%);
   grid-template-columns: 1fr;
-  grid-template-rows: 21px 18px;
+  grid-template-rows: 24px 20px;
   width: max-content;
   min-width: 140px;
-  height: 43px;
+  height: 46px;
+  font-size: 15px;
   gap: 2px;
   align-items: center;
 }
@@ -944,6 +946,10 @@
   gap: 8px;
   min-width: 0;
   text-align: center;
+  line-height: 1.2;
+}
+.hero-identity strong {
+  font-size: inherit;
 }
 .hero-action-slot {
   grid-column: 1;
@@ -961,12 +967,13 @@
 .hero-name .hero-last-action,
 .arena.is-done .hero-name .hero-last-action {
   padding: 0;
+  margin: 0;
   min-height: 0;
   max-width: none;
   flex-wrap: nowrap;
   white-space: nowrap;
   line-height: 1.2;
-  font-size: 12px;
+  font-size: 13px;
 }
 .hero-name .hero-last-action .seat-action-label,
 .hero-name .hero-last-action .seat-action-amount {
@@ -984,14 +991,14 @@
 }
 @media (max-width: 900px), (min-width: 901px) and (max-width: 1100px) and (orientation: portrait) {
   .hero-area {
-    padding-bottom: 41px;
+    padding-bottom: 46px;
   }
   .hero-rank-slot {
     height: 18px;
-    margin-top: 4px;
+    margin-top: 2px;
   }
   .hero-name {
-    height: 35px;
-    grid-template-rows: 18px 15px;
+    height: 40px;
+    grid-template-rows: 21px 17px;
   }
 }

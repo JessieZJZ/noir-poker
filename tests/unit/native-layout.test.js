@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { assertTableLayout } from '../native/layout.mjs';
+import { assertTableLayout, assertSeatPresentation } from '../native/layout.mjs';
 
 test('installed layout checks reject inspection outside the position row, including subpixel boundaries', () => {
   const layout = {
@@ -30,6 +30,42 @@ test('installed layout checks reject inspection outside the position row, includ
   }
 });
 
+test('seat presentation rejects full backs, distant hero identity and cramped action type', () => {
+  const viewport = { width: 390, height: 844 };
+  const presentation = {
+    backs: [0.35, 0.7],
+    heroGap: 28,
+    heroInset: 40,
+    heroFont: 15,
+    heroNameFont: 15,
+    actions: [{ font: 11, margin: 4 }],
+  };
+  assert.doesNotThrow(() => assertSeatPresentation(presentation, viewport));
+  for (const invalid of [
+    { backs: [0.349] },
+    { backs: [0.701] },
+    { backs: [1] },
+    { heroGap: 28.01 },
+    { heroGap: 17.99 },
+    { heroInset: 39.99 },
+    { heroFont: 14.99, heroNameFont: 14.99 },
+    { heroNameFont: 14 },
+    { actions: [{ font: 10.99, margin: 4 }] },
+    { actions: [{ font: 11, margin: 3.99 }] },
+  ])
+    assert.throws(() => assertSeatPresentation({ ...presentation, ...invalid }, viewport));
+  assert.doesNotThrow(() =>
+    assertSeatPresentation({ ...presentation, heroGap: 39 }, { width: 1032, height: 1376 }, true),
+  );
+  assert.throws(() =>
+    assertSeatPresentation(
+      { ...presentation, heroGap: 39.01 },
+      { width: 1032, height: 1376 },
+      true,
+    ),
+  );
+});
+
 test('installed layout checks reject cramped profiles and tablet type reduced by fitting', () => {
   const layout = {
     width: 1032,
@@ -51,6 +87,7 @@ test('installed layout checks reject cramped profiles and tablet type reduced by
         nameSize: 17,
         styleSize: 14,
         stackSize: 17,
+        stackBelowStyle: true,
       },
     ],
   };
@@ -62,6 +99,7 @@ test('installed layout checks reject cramped profiles and tablet type reduced by
     { nameSize: 16.99 },
     { styleSize: 13.99 },
     { stackSize: 16.99 },
+    { stackBelowStyle: false },
   ])
     assert.throws(
       () => assertTableLayout({ ...layout, profiles: [{ ...layout.profiles[0], ...invalid }] }),
