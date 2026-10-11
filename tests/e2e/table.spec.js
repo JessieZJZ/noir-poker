@@ -768,8 +768,11 @@ test('settled seats retain all-in sizes, board and hero action across viewing an
     for (const count of [5, 6, 7, 8, 9]) {
       await page.evaluate((n) => window.qa.heroTurn(n), count);
       await page.locator('[data-preset="all"]').click();
-      await page.locator('#raise-button').click();
+      await expect(page.locator('#raise-button')).toBeEnabled();
       const retained = await page.evaluate(() => {
+        // Keep the real button handler and fixture continuation in one task,
+        // so a slow test runner cannot let a scheduled bot fold first.
+        document.querySelector('#raise-button').click();
         window.qa.stop();
         window.qa.allinRest();
         return window.noir.getState().players.map((p) => p.lastAction);
