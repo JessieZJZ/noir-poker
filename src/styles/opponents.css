@@ -169,7 +169,9 @@
   color: #93aba3;
 }
 /* Keep portraits visible without widening seats on compact tables. */
-@media (max-width: 700px), (min-width: 901px) and (max-width: 1150px) {
+@media (max-width: 700px),
+  (min-width: 1101px) and (max-width: 1150px),
+  (min-width: 901px) and (max-width: 1150px) and (orientation: landscape) {
   .arena[data-player-count] .seat .seat-profile:has(.persona-portrait) {
     display: grid;
     grid-template-columns: 18px minmax(0, 1fr) 21px;

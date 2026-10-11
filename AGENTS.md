@@ -7,6 +7,7 @@
 - BTN's next clockwise seat is SB, then BB. Short all-ins, raise reopening, eligibility and uncalled refunds must retain existing semantics.
 - Review uses before-action public snapshots. Never use hidden opponent cards, future deck or final winners to grade a decision. Distinguish estimates, heuristics and proven rule errors.
 - Timer/Worker changes must preserve cancellation on next hand, retry and reset. Retry restores original deal and retracts payouts/statistics exactly once.
+- For UI changes, resolve and verify Web first, then validate the native apps and WeChat mini-program. Update the corresponding E2E and unit regressions in the same change.
 - Validate material changes with `npm run check`; UI changes with `npm run test:e2e`. Use `npm run format:check` before delivering. E2E fixtures run only in Vite test mode and must never enter production.
 - Fully localize all new user-facing player research in every supported Web/App locale, including identities, formats, facts, observations, adaptations, limitations, source labels and source context. Preserve dates, amounts, cards, attribution and evidence limits accurately. Include structured research in extraction and validation; do not bypass translations with `translate="no"` or Chinese-only research blocks. Original URLs, stable IDs and official proper names remain intact.
 - If changing paths or commands, update README and docs in the same change. Do not store publishing credentials in this repository.

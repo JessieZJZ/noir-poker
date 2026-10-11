@@ -47,7 +47,7 @@
     margin-left: 39px;
   }
 }
-@media (max-width: 900px) {
+@media (max-width: 900px), (min-width: 901px) and (max-width: 1100px) and (orientation: portrait) {
   .settings-dialog .personas-module:has(.profile-stage[data-detail-open='true']) {
     position: relative;
     z-index: 1;

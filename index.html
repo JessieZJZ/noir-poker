@@ -3,6 +3,20 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <style>
+      /* Apply before Vite's CSS modules load. Keep the initial DOM measurable
+         while platform, locale and the first hand are being prepared. */
+      html {
+        background: #0b1017;
+        color-scheme: dark;
+      }
+      body {
+        margin: 0;
+      }
+      html:not([data-app-ready='true']) body {
+        visibility: hidden !important;
+      }
+    </style>
     <title>NOIR Poker · 德州扑克单机练习</title>
     <meta
       name="description"
@@ -130,7 +144,6 @@
                   <div id="hero-hand-rank" class="hand-rank hero-hand-rank" hidden></div>
                 </div>
                 <div class="hero-name">
-                  <span class="hero-turn" id="hero-turn">准备就绪</span>
                   <div class="hero-identity">
                     <strong>你 <span id="hero-position" class="position-badge">BTN</span></strong
                     ><span class="hero-stack" id="hero-stack">5,000</span>
@@ -147,64 +160,66 @@
               </div>
             </div>
           </div>
-          <div class="action-dock">
-            <div class="decision-strip">
-              <span class="decision-indicator"></span
-              ><span id="decision-text" role="status" aria-live="polite"
-                >牌桌已就绪，开始你的第一手。</span
-              >
-            </div>
-            <div class="action-panel" id="action-panel">
-              <div class="bet-controls">
-                <label for="bet-slider">加注至 <strong id="bet-value">150</strong></label
-                ><input
-                  id="bet-slider"
-                  type="range"
-                  min="100"
-                  max="5000"
-                  value="150"
-                  step="25"
-                  aria-label="加注总额"
-                />
-                <div class="bet-presets">
-                  <button data-preset="min">最小</button><button data-preset="half">½ 底池</button
-                  ><button data-preset="pot">底池</button><button data-preset="all">全下</button>
+          <div class="action-dock-slot">
+            <div class="action-dock">
+              <div class="decision-strip">
+                <span class="decision-indicator"></span
+                ><span id="decision-text" role="status" aria-live="polite"
+                  >牌桌已就绪，开始你的第一手。</span
+                >
+              </div>
+              <div class="action-panel" id="action-panel">
+                <div class="bet-controls">
+                  <label for="bet-slider">加注至 <strong id="bet-value">150</strong></label
+                  ><input
+                    id="bet-slider"
+                    type="range"
+                    min="100"
+                    max="5000"
+                    value="150"
+                    step="25"
+                    aria-label="加注总额"
+                  />
+                  <div class="bet-presets">
+                    <button data-preset="min">最小</button><button data-preset="half">½ 底池</button
+                    ><button data-preset="pot">底池</button><button data-preset="all">全下</button>
+                  </div>
                 </div>
+                <div class="action-buttons">
+                  <button id="raise-button" class="action raise">
+                    <span>加注至</span><strong id="raise-number">150</strong></button
+                  ><button id="fold-button" class="action fold"><span>弃牌</span></button
+                  ><button id="call-button" class="action call"><span>过牌</span></button>
+                </div>
+                <button
+                  id="continue-deal-button"
+                  class="continue-deal-button"
+                  title="加速完成对手剩余行动和本手结算"
+                  hidden
+                >
+                  立刻发完</button
+                ><button id="next-button" class="next-button" hidden>开始第一手</button
+                ><button
+                  id="restart-hand-button"
+                  class="review-button restart-hand-button"
+                  title="恢复本手起始筹码、底牌和发牌顺序，撤回原结算"
+                  aria-label="重打这手牌"
+                  hidden
+                >
+                  <span class="button-label-desktop">↺ 重打这手牌</span
+                  ><span class="button-label-mobile" aria-hidden="true">重打本手</span></button
+                ><button
+                  id="review-hand-button"
+                  class="review-button review-end-button"
+                  aria-haspopup="dialog"
+                  aria-controls="review-dialog"
+                  aria-label="复盘这一手"
+                  hidden
+                >
+                  <span class="button-label-desktop">复盘这一手</span
+                  ><span class="button-label-mobile" aria-hidden="true">复盘</span>
+                </button>
               </div>
-              <div class="action-buttons">
-                <button id="raise-button" class="action raise">
-                  <span>加注至</span><strong id="raise-number">150</strong></button
-                ><button id="fold-button" class="action fold"><span>弃牌</span></button
-                ><button id="call-button" class="action call"><span>过牌</span></button>
-              </div>
-              <button
-                id="continue-deal-button"
-                class="continue-deal-button"
-                title="加速完成对手剩余行动和本手结算"
-                hidden
-              >
-                立刻发完</button
-              ><button id="next-button" class="next-button" hidden>开始第一手</button
-              ><button
-                id="restart-hand-button"
-                class="review-button restart-hand-button"
-                title="恢复本手起始筹码、底牌和发牌顺序，撤回原结算"
-                aria-label="重打这手牌"
-                hidden
-              >
-                <span class="button-label-desktop">↺ 重打这手牌</span
-                ><span class="button-label-mobile" aria-hidden="true">重打本手</span></button
-              ><button
-                id="review-hand-button"
-                class="review-button review-end-button"
-                aria-haspopup="dialog"
-                aria-controls="review-dialog"
-                aria-label="复盘这一手"
-                hidden
-              >
-                <span class="button-label-desktop">复盘这一手</span
-                ><span class="button-label-mobile" aria-hidden="true">复盘</span>
-              </button>
             </div>
           </div>
         </div>

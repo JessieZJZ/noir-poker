@@ -12,7 +12,7 @@
       ><button class="guide-button" bindtap="openGuide">玩法指南</button></view
     >
   </view>
-  <view class="game-shell">
+  <view class="game-shell" style="height: {{tableHeight + 52 + (compactActions ? 64 : 136)}}px;">
     <view class="game-header"
       ><text
         >第 {{hand}} 手 · {{street}}
@@ -58,39 +58,29 @@
               class="avatar"
               src="{{item.portrait}}"
               mode="aspectFill"
-            /><text class="persona">{{item.profileName}}</text></view
+            /><text class="persona {{item.profileId === 'balanced' ? 'persona-balanced' : ''}}"
+              >{{item.profileName}}</text
+            ></view
           ><text class="stack">{{item.stack}}</text></view
         >
         <view class="seat-caption"
-          ><text wx:if="{{item.rank}}" class="rank">{{item.rank}}</text
-          ><text class="seat-action">{{item.action}}</text></view
+          ><text class="seat-action">{{item.action}}</text
+          ><text wx:if="{{item.rank}}" class="rank">{{item.rank}}</text></view
         >
       </view>
-      <view class="community"
+      <view class="community" style="width: {{boardWidth}}px;"
         ><view class="pot-row"
           ><text class="chip">◎</text><text class="pot-number">{{pot}}</text
           ><button class="pot-detail" bindtap="openPots">明细</button></view
         >
-        <view class="board-row"
-          ><block wx:for="{{boardTop}}" wx:key="key"
-            ><view class="card community-card {{item.red ? 'red' : ''}}"
-              ><text class="card-rank">{{item.rank}}</text
-              ><text class="card-suit">{{item.suit}}</text></view
-            ></block
-          ><block wx:if="{{!board.length}}"
-            ><view class="card-placeholder">♠</view><view class="card-placeholder">♣</view
-            ><view class="card-placeholder">♥</view></block
+        <view class="board-row {{boardTwoRows ? 'board-two-rows' : ''}}"
+          ><view
+            wx:for="{{boardSlots}}"
+            wx:key="key"
+            class="{{item.empty ? 'card-placeholder' : 'card community-card'}} {{item.red ? 'red' : ''}}"
+            ><text wx:if="{{!item.empty}}" class="card-rank">{{item.rank}}</text
+            ><text class="{{item.empty ? '' : 'card-suit'}}">{{item.suit}}</text></view
           ></view
-        >
-        <view class="board-row"
-          ><block wx:for="{{boardBottom}}" wx:key="key"
-            ><view class="card community-card {{item.red ? 'red' : ''}}"
-              ><text class="card-rank">{{item.rank}}</text
-              ><text class="card-suit">{{item.suit}}</text></view
-            ></block
-          ><block wx:if="{{board.length < 4}}"
-            ><view class="card-placeholder">♦</view><view class="card-placeholder">♠</view></block
-          ><view wx:if="{{board.length === 4}}" class="card-placeholder">♠</view></view
         >
       </view>
       <view class="hero {{heroFolded ? 'hero-folded' : ''}}"
@@ -107,16 +97,16 @@
             >{{heroRank}}</text
           ></view
         ><view class="hero-info"
-          ><view class="hero-side"
-            ><text wx:if="{{heroStatus}}" class="hero-status">{{heroStatus}}</text></view
           ><view class="hero-identity"
             ><text>你 <text class="position">{{heroPosition}}</text></text
             ><text class="stack">{{heroStack}}</text></view
-          ><view class="hero-side hero-action">{{heroAction}}</view></view
+          ><view class="hero-action">{{heroAction}}</view></view
         ></view
       >
     </view>
-    <view class="action-dock">
+    <view
+      class="action-dock {{compactActions ? 'compact-actions' : ''}} {{canAct ? 'is-enabled' : ''}}"
+    >
       <block wx:if="{{done}}"
         ><view class="settled-buttons"
           ><button class="primary" bindtap="nextHand">下一手</button
@@ -126,8 +116,8 @@
         ></block
       >
       <block wx:else
-        ><text class="action-notice">{{actionNotice}}</text
-        ><view class="raise-controls"
+        ><text class="action-notice" wx:if="{{!compactActions}}">{{actionNotice}}</text
+        ><view class="raise-controls" wx:if="{{!compactActions}}"
           ><slider
             min="{{minRaise}}"
             max="{{maxRaise}}"
@@ -145,7 +135,7 @@
             ><button data-preset="pot" bindtap="preset" disabled="{{!canRaise}}">底池</button
             ><button data-preset="all" bindtap="preset" disabled="{{!canRaise}}">全下</button></view
           ></view
-        ><view class="action-buttons" wx:if="{{!heroFolded && heroStatus !== '已全下'}}"
+        ><view class="action-buttons" wx:if="{{!heroFolded && !heroAllin}}"
           ><button class="primary" data-action="raise" bindtap="act" disabled="{{!canRaise}}">
             加注 {{raiseText}}</button
           ><button class="fold-button" data-action="fold" bindtap="act" disabled="{{!canAct}}">

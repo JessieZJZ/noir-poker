@@ -157,7 +157,7 @@ test('combined settings immediately save preferences without changing the curren
 test('desktop actions keep one-line labels and aligned button rows before and after settlement', async ({
   page,
 }) => {
-  for (const width of [1000, 1280, 1700]) {
+  for (const width of [1101, 1280, 1700]) {
     await page.setViewportSize({ width, height: 1000 });
     for (const settled of [false, true]) {
       await page.evaluate(
@@ -212,7 +212,7 @@ test('desktop actions keep one-line labels and aligned button rows before and af
 test('retry explanation stays aligned directly under the hand header and the desktop columns end together', async ({
   page,
 }) => {
-  for (const width of [1000, 1280, 1700]) {
+  for (const width of [1101, 1280, 1700]) {
     await page.setViewportSize({ width, height: 1000 });
     await page.evaluate(() => window.qa.foldWin(9));
     await page.locator('#restart-hand-button').click();

@@ -37,7 +37,7 @@ html[lang='en'] .profile-detail-heading {
 .hand-suffix {
   font-style: normal;
 }
-@media (max-width: 900px) {
+@media (max-width: 900px), (min-width: 901px) and (max-width: 1100px) and (orientation: portrait) {
   html:not([lang^='zh']) .main {
     grid-template-columns: minmax(0, 1fr);
   }

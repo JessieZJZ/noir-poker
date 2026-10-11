@@ -135,6 +135,40 @@ function text(value) {
   assert.ok(!value.includes('undefined'));
 }
 
+test('WeChat turn, fold, settlement and retry keep the table budget while compacting the controls', (t) => {
+  assert.match(template, /class="action-notice" wx:if="\{\{!compactActions\}\}"/);
+  assert.match(template, /class="raise-controls" wx:if="\{\{!compactActions\}\}"/);
+  const { page } = setup(t, { playerCount: 9 });
+  const game = reachHero(page);
+  const height = page.data.tableHeight;
+  assert.equal(page.data.canAct, true);
+  assert.equal(page.data.compactActions, false);
+  assert.equal(page.data.heroStatus, undefined);
+  page.act({ currentTarget: { dataset: { action: 'fold' } } });
+  assert.equal(page.data.canAct, false);
+  assert.equal(page.data.heroFolded, true);
+  assert.equal(page.data.compactActions, true);
+  assert.equal(page.data.tableHeight, height);
+  finish(game);
+  page._controller.show();
+  assert.equal(page.data.done, true);
+  assert.equal(page.data.compactActions, true);
+  assert.equal(page.data.tableHeight, height);
+  page.retryHand();
+  assert.equal(page.data.compactActions, false);
+  assert.equal(page.data.tableHeight, height);
+});
+
+test('WeChat all-in waits use a compact dock independently of status text', (t) => {
+  const { page } = setup(t);
+  reachHero(page);
+  page.preset({ currentTarget: { dataset: { preset: 'all' } } });
+  page.act({ currentTarget: { dataset: { action: 'raise' } } });
+  assert.equal(page.data.heroAllin, true);
+  assert.equal(page.data.canAct, false);
+  assert.equal(page.data.compactActions, true);
+});
+
 for (const playerCount of [5, 9]) {
   for (const info of [
     { windowWidth: 320, windowHeight: 568, statusBarHeight: 20, safeArea: { bottom: 568 } },
@@ -354,18 +388,18 @@ for (const playerCount of [5, 6, 7, 8, 9]) {
         top: heroTop,
         bottom: heroBottom,
       };
-      const communityWidth = width * (cssNumber('.community', 'width') / 100);
+      const communityWidth = page.data.boardWidth;
       const communityHeight =
         cssNumber('.table-short .pot-row', 'height') +
         cssNumber('.table-short .pot-row', 'margin-bottom') +
-        2 *
+        (page.data.boardTwoRows ? 2 : 1) *
           (cssNumber('.table-short .card-placeholder', 'height') +
             cssNumber('.table-short .board-row', 'margin-bottom'));
       const community = {
         left: (width - communityWidth) / 2,
         right: (width + communityWidth) / 2,
-        top: height / 2 - 62,
-        bottom: height / 2 - 62 + communityHeight,
+        top: (height * cssNumber('.table-short .community', 'top')) / 100 - 62,
+        bottom: (height * cssNumber('.table-short .community', 'top')) / 100 - 62 + communityHeight,
       };
       assert.ok(community.bottom <= hero.top, 'the two board rows clear the rotated hero cards');
       const bounds = page.data.seats.map((item) => {
@@ -416,4 +450,45 @@ test('WeChat exposes all researched players, linked claims and only copies a sel
   }
   assert.match(template, /公开资料/);
   assert.match(template, /copyResearchSource/);
+});
+
+test('WeChat public card rows use the measured corridor and stay fixed from deal to settlement and resize', (t) => {
+  const { page, info } = setup(t, {
+    playerCount: 9,
+    info: { windowWidth: 320, windowHeight: 667, statusBarHeight: 20, safeArea: { bottom: 667 } },
+  });
+  assert.equal(page.data.boardTwoRows, false);
+  assert.equal(page.data.boardWidth, 5 * 25 + 16);
+  assert.equal(page.data.boardSlots.length, 5);
+  assert.ok(page.data.boardSlots.every((card) => card.empty));
+  const budget = page.data.tableHeight;
+  finish(page._controller.getGame());
+  page._controller.show();
+  assert.equal(page.data.boardSlots.length, 5);
+  assert.ok(page.data.boardSlots.every((card) => !card.empty));
+  assert.equal(page.data.tableHeight, budget);
+  assert.equal(page.data.boardTwoRows, false);
+  Object.assign(info, { windowWidth: 390, windowHeight: 900, safeArea: { bottom: 900 } });
+  page.onResize();
+  assert.equal(page.data.boardTwoRows, true);
+  assert.equal(page.data.boardWidth, 3 * 48 + 8);
+  Object.assign(info, { windowWidth: 820, windowHeight: 1180, safeArea: { bottom: 1180 } });
+  page.onResize();
+  assert.equal(page.data.boardTwoRows, false);
+  assert.equal(page.data.boardWidth, 5 * 48 + 16);
+});
+
+test('WeChat five-player layout keeps two players near the crown and two around the waist', (t) => {
+  const { page } = setup(t, { playerCount: 5 });
+  const seats = page.data.seats;
+  assert.ok(seats[0].x < 20 && seats[3].x > 80);
+  assert.ok(seats[0].y >= 40 && seats[0].y <= 55);
+  assert.equal(seats[0].y, seats[3].y);
+  assert.ok(seats[1].x >= 25 && seats[2].x <= 75);
+  assert.ok(seats[1].y <= 20 && seats[2].y <= 20);
+  assert.equal(cssNumber('.seat-hole', 'height'), cssNumber('.seat-hole.revealed-hole', 'height'));
+  assert.equal(
+    cssNumber('.table-short .seat-hole', 'height'),
+    cssNumber('.table-short .seat-hole.revealed-hole', 'height'),
+  );
 });

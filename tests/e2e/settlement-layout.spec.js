@@ -6,7 +6,9 @@ async function expectSeatsClear(page) {
     page.evaluate(() => {
       const arenaElement = document.querySelector('#arena'),
         arena = (
-          innerWidth <= 900 ? document.querySelector('.table-viewport') : arenaElement
+          matchMedia('(max-width: 900px), (max-width: 1100px) and (orientation: portrait)').matches
+            ? document.querySelector('.table-viewport')
+            : arenaElement
         ).getBoundingClientRect(),
         board = document.querySelector('#board').getBoundingClientRect(),
         seats = [...document.querySelectorAll('.seat')],

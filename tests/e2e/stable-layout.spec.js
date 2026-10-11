@@ -28,7 +28,7 @@ async function gameBounds(page) {
 test('desktop action logs scroll independently without progressively stretching the game area', async ({
   page,
 }) => {
-  for (const width of [901, 1280, 1700]) {
+  for (const width of [1101, 1280, 1700]) {
     await page.setViewportSize({ width, height: 1000 });
     await page.evaluate(() => {
       window.qa.heroTurn(9);

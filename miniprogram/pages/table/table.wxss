@@ -63,7 +63,7 @@
   white-space: nowrap;
 }
 .game-shell {
-  flex: 1;
+  flex: none;
   min-height: 0;
   display: flex;
   flex-direction: column;
@@ -123,7 +123,7 @@
 }
 .table-area {
   position: relative;
-  flex: 1;
+  flex: none;
   min-height: 0;
   overflow: hidden;
 }
@@ -152,10 +152,11 @@
   z-index: 2;
 }
 .seat-hole {
+  position: relative;
   display: flex;
   align-items: flex-end;
   justify-content: center;
-  height: 18px;
+  height: 35px;
   gap: 3px;
 }
 .card-back {
@@ -164,13 +165,14 @@
   border: 1px solid #668c91;
   border-radius: 4px;
   background: repeating-linear-gradient(45deg, #24484f, #24484f 3px, #315b62 3px, #315b62 4px);
-  transform: rotate(-7deg);
+  transform: translateY(16px) rotate(-7deg);
 }
 .card-back + .card-back {
-  transform: rotate(7deg);
+  transform: translateY(16px) rotate(7deg);
 }
 .seat-body {
   position: relative;
+  z-index: 1;
   background: #14212a;
   border: 1px solid #354c57;
   border-radius: 8px;
@@ -217,6 +219,12 @@
   font-size: 9px;
   max-width: 62px;
   line-height: 12px;
+}
+.persona-balanced {
+  min-width: 30px;
+  font-size: 11px;
+  line-height: 14px;
+  text-align: center;
 }
 .stack {
   font-size: 11px;
@@ -268,10 +276,10 @@
 .community {
   position: absolute;
   left: 50%;
-  top: 40%;
+  top: 37%;
   transform: translate(-50%, -20%);
   width: 48%;
-  max-width: 218px;
+  max-width: none;
   z-index: 1;
 }
 .pot-row {
@@ -305,6 +313,8 @@
   justify-content: center;
   gap: 4px;
   margin-bottom: 5px;
+  flex-wrap: wrap;
+  row-gap: 5px;
 }
 .card {
   background: #f7f9f3;
@@ -377,8 +387,8 @@
   gap: 5px;
 }
 .hero-card {
-  width: 53px;
-  height: 72px;
+  width: 50px;
+  height: 68px;
   transform: rotate(-5deg);
 }
 .hero-card + .hero-card {
@@ -398,14 +408,19 @@
 }
 .hero-info {
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 5px;
+  gap: 0;
   width: 100%;
   padding: 0 17px;
 }
 .hero-identity {
-  flex: 0 0 76px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  height: 17px;
   font-size: 12px;
   font-weight: 600;
   line-height: 17px;
@@ -413,6 +428,8 @@
 .hero-identity .stack {
   font-size: 12px;
   font-weight: 400;
+  display: inline;
+  margin: 0;
 }
 .hero-side {
   flex: 1;
@@ -421,7 +438,9 @@
   font-size: 10px;
 }
 .hero-action {
-  text-align: left;
+  height: 17px;
+  line-height: 17px;
+  text-align: center;
   color: #b7d2cd;
   white-space: nowrap;
   font-size: 10px;
@@ -522,7 +541,7 @@
 }
 .settled-buttons {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 6px;
 }
 .settled-buttons button {
@@ -533,9 +552,6 @@
   font-size: 13px;
   font-weight: 600;
   white-space: nowrap;
-}
-.settled-buttons .primary {
-  grid-column: 1 / -1;
 }
 .retry-button {
   background: #302b20;
@@ -951,11 +967,10 @@
     height: 14px;
   }
   .hero-info {
-    gap: 3px;
+    gap: 0;
     padding: 0 5px;
   }
   .hero-identity {
-    flex-basis: 58px;
     font-size: 10px;
   }
   .hero-status,
@@ -1000,6 +1015,10 @@
 .table-short .card-back {
   width: 14px;
   height: 18px;
+  transform: translateY(10px) rotate(-7deg);
+}
+.table-short .card-back + .card-back {
+  transform: translateY(10px) rotate(7deg);
 }
 .table-short .mini-card {
   width: 14px;
@@ -1047,6 +1066,11 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
+.table-short .persona-balanced {
+  min-width: 24px;
+  font-size: 8px;
+  line-height: 9px;
+}
 .table-short .seat-body .stack {
   font-size: 8px;
   line-height: 9px;
@@ -1068,6 +1092,7 @@
   line-height: 9px;
 }
 .table-short .community {
+  /* The shortest screen's crown captions leave no room to lift this band. */
   top: 50%;
   transform: translate(-50%, -62px);
 }
@@ -1088,6 +1113,7 @@
 }
 .table-short .board-row {
   margin-bottom: 3px;
+  row-gap: 3px;
 }
 .table-short .hero-card {
   width: 42px;
@@ -1107,4 +1133,38 @@
   font-size: 8px;
   line-height: 8px;
   padding: 1px 3px;
+}
+
+/* Compact phases shrink the shell while retaining tableHeight from the live
+   viewport budget. The four sides keep padding around a single button row. */
+.action-dock.compact-actions {
+  flex: 0 0 64px;
+  height: 64px;
+  padding: 10px 8px;
+}
+.compact-actions .settled-buttons,
+.compact-actions .continue-buttons {
+  width: 100%;
+  height: 44px;
+  margin: 0;
+}
+.compact-actions .settled-buttons button,
+.compact-actions .continue-buttons button {
+  min-width: 0;
+  height: 44px;
+  font-size: 12px;
+}
+.action-dock button[disabled] {
+  opacity: 1;
+  background: #16212a;
+  border: 1px solid #26333e;
+  color: #596b77;
+}
+.is-enabled .action-notice {
+  color: #d6f5e9;
+}
+.table-area:not(.table-short) .community-card,
+.table-area:not(.table-short) .card-placeholder {
+  width: 48px;
+  height: 69px;
 }

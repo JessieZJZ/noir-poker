@@ -16,6 +16,8 @@ await preparePlatform();
 const { prepareLocale } = await import('./i18n/index.js');
 await prepareLocale();
 await import('./ui/table-controller.js');
+// The inline boot style hides the unfinished DOM without preventing the
+// controller from measuring and fitting the first hand before it is shown.
 document.body.inert = false;
 document.documentElement.dataset.appReady = 'true';
 

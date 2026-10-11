@@ -1,3 +1,4 @@
+import { COMPACT_PLAY_QUERY } from './play-geometry.js';
 import { setLocalizedHTML, setLocalizedText } from '../i18n/index.js';
 import {
   BOT_PROFILES,
@@ -23,7 +24,7 @@ export function createOpponentsController({ getGame, getCount, getSettings, onSa
   const cards = document.querySelector('#profile-cards');
   const panel = document.querySelector('#profile-detail');
   const body = dialog.querySelector('.opponents-body');
-  const compact = window.matchMedia('(max-width: 900px)');
+  const compact = window.matchMedia(COMPACT_PLAY_QUERY);
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
   let draft = null,
     selected = 'balanced';
