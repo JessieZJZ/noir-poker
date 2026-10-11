@@ -411,7 +411,9 @@ test('overflowing compact hints loop automatically and stay long enough to read 
     window.qa.stop();
     return document.fonts.ready;
   });
-  await page.clock.pauseAt(new Date('2026-01-01T00:00:01Z'));
+  // Font loading can outlast the fixed clock origin. Freeze in the future
+  // before creating the hint whose lifetime is measured below.
+  await page.clock.pauseAt(await page.evaluate(() => Date.now() + 60_000));
   await page.evaluate(() => window.qa.heroTurn(9));
   const banner = page.locator('#coach-content');
   await expect(banner).toBeVisible();
