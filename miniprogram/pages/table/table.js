@@ -119,7 +119,12 @@ Page({
     this.setData(this.publicLayout(this.data.board));
   },
   publicLayout(board = []) {
-    const cardWidth = this.data.tableHeight < 430 ? 25 : 48;
+    const largeTablet =
+      this.data.windowWidth >= 901 &&
+      this.data.windowWidth <= 1100 &&
+      this.data.windowHeight >= 1100 &&
+      this.data.windowHeight > this.data.windowWidth;
+    const cardWidth = this.data.tableHeight < 430 ? 25 : largeTablet ? 82 : 48;
     const singleWidth = 5 * cardWidth + 16;
     // Use the safe middle corridor, independent of deal/reveal state.
     const boardTwoRows = singleWidth > (this.data.windowWidth - 18) * 0.48;

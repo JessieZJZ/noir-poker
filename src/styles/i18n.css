@@ -20,7 +20,7 @@ html:not([lang^='zh']) .practice-info > span {
   overflow-wrap: anywhere;
 }
 html:not([lang^='zh']) .game-surface .arena[data-player-count] .seat-profile .seat-style-label {
-  font-size: 10px;
+  font-size: var(--seat-style-font-size, 10px);
   white-space: nowrap;
   min-width: 0;
   overflow: hidden;
