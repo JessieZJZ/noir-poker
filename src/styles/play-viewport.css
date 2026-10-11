@@ -757,6 +757,21 @@
   }
 }
 
+/* Two caption lines need extra room on the narrowest nine-seat table. Keep
+   faces readable after fitting instead of spending that room on smaller cards. */
+@media (max-width: 360px) {
+  .game-surface .arena[data-player-count] .board {
+    --public-card-width: 50px;
+  }
+  .game-surface .hero-cards {
+    min-height: 104px;
+  }
+  .game-surface .hero-cards .playing-card {
+    width: 72px;
+    height: 104px;
+  }
+}
+
 /* Fewer players have room for larger personal areas around the same felt. */
 @media (max-width: 600px) and (min-height: 740px) {
   .game-surface .arena:is([data-player-count='5'], [data-player-count='6']) .seat .mini-cards {
@@ -819,5 +834,35 @@
     .playing-card {
     width: 68px;
     height: 98px;
+  }
+}
+
+@media (min-width: 601px) and (max-width: 900px) and (min-height: 601px) {
+  .game-surface .arena[data-player-count] .seat .seat-profile {
+    width: 160px;
+    min-width: 160px;
+    max-width: 160px;
+    --seat-style-font-size: 14px;
+  }
+  .game-surface .arena[data-player-count] .seat-profile strong {
+    font-size: 19px;
+  }
+  .game-surface .arena[data-player-count] .seat-profile .seat-stack {
+    font-size: 18px;
+  }
+  .game-surface .arena[data-player-count] .seat-profile .seat-style-label {
+    font-size: 14px;
+  }
+  .game-surface .arena[data-player-count] .board > .playing-card,
+  .game-surface .arena[data-player-count] .board-slot {
+    width: 98px;
+    height: 141px;
+  }
+  .game-surface .hero-cards {
+    min-height: 161px;
+  }
+  .game-surface .hero-cards .playing-card {
+    width: 112px;
+    height: 161px;
   }
 }
