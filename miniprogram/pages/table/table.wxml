@@ -292,12 +292,15 @@
           ><text>{{item.label}}</text
           ><view class="axis-track"><view style="width: {{item.value}}%;" /></view
           ><text>{{item.value}}</text></view
-        ><text class="detail-evidence">{{detailProfile.evidence}}</text
+        ><text wx:if="{{!detailProfile.research}}" class="detail-evidence"
+          >{{detailProfile.evidence}}</text
         ><view wx:if="{{detailProfile.research}}" class="research-copy"
-          ><text class="module-title">公开资料</text
-          ><text>资料核对日期 · {{detailProfile.research.reviewedAt}}</text
-          ><text>{{detailProfile.research.identity}}</text
-          ><text>{{detailProfile.research.formatsText}}</text
+          ><view class="profile-overview"
+            ><text class="module-title">公开资料</text><text>{{detailProfile.evidence}}</text
+            ><text>{{detailProfile.research.identity}}</text
+            ><text>{{detailProfile.research.formatsText}}</text
+            ><text>{{detailProfile.research.limits}}</text
+            ><text class="muted">资料核对日期 · {{detailProfile.research.reviewedAt}}</text></view
           ><text wx:if="{{detailProfile.research.career.length}}" class="module-title"
             >履历摘录</text
           ><text wx:for="{{detailProfile.research.career}}" wx:key="text"
@@ -307,7 +310,6 @@
             >• {{item.text}} {{item.references}}</text
           ><text class="module-title">本地策略改编</text
           ><text wx:for="{{detailProfile.research.adaptation}}" wx:key="*this">• {{item}}</text
-          ><text class="module-title">资料边界</text><text>{{detailProfile.research.limits}}</text
           ><view wx:for="{{detailProfile.sources}}" wx:key="id" class="research-source"
             ><text>[{{index + 1}}] {{item.label}}</text
             ><text class="muted">{{item.kind}} · {{item.publishedAt || item.reviewedAt}}</text

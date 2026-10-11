@@ -7,7 +7,7 @@ function tablePreferences(value) {
     playerCount:
       Number.isInteger(value?.playerCount) && value.playerCount >= 5 && value.playerCount <= 9
         ? value.playerCount
-        : 6,
+        : 5,
     difficulty: ['easy', 'normal', 'hard'].includes(value?.difficulty)
       ? value.difficulty
       : 'normal',

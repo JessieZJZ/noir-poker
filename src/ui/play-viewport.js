@@ -7,8 +7,28 @@ export function createPlayViewport(surface, { layout = () => {} } = {}) {
     mobile = matchMedia(COMPACT_PLAY_QUERY);
   let frame = null;
 
+  function tightenSeatRanks() {
+    for (const seat of arena.querySelectorAll('.seat')) {
+      const rank = seat.querySelector('.hand-rank');
+      if (!rank) continue;
+      const action = seat.querySelector('.seat-action');
+      const badge = rank.getBoundingClientRect();
+      // Compact layouts place the rank below the last action. Move artwork
+      // into unused caption space, preserving the two-line slot and table fit.
+      if (action.getBoundingClientRect().top >= badge.top) continue;
+      const range = document.createRange();
+      range.selectNodeContents(action);
+      const lines = [...range.getClientRects()].filter((r) => r.width && r.height);
+      if (!lines.length) continue;
+      const bottom = Math.max(...lines.map((r) => r.bottom));
+      rank.style.translate = `0 ${Math.min(0, bottom + 6 - badge.top)}px`;
+    }
+  }
+
   function fit() {
     arena.style.removeProperty('transform');
+    for (const rank of arena.querySelectorAll('.seat .hand-rank'))
+      rank.style.removeProperty('translate');
     arena.style.removeProperty('width');
     arena.style.removeProperty('--arena-height');
     arena.classList.remove('compact-landscape');
@@ -23,6 +43,7 @@ export function createPlayViewport(surface, { layout = () => {} } = {}) {
     if (!mobile.matches) {
       surface.style.removeProperty('--play-height');
       layout();
+      tightenSeatRanks();
       return;
     }
     const screen = window.visualViewport,
@@ -76,6 +97,7 @@ export function createPlayViewport(surface, { layout = () => {} } = {}) {
       else fittedHeight = twoRowsHeight;
     }
     sizeArena(fittedHeight);
+    tightenSeatRanks();
 
     const box = arena.getBoundingClientRect(),
       parts = [

@@ -128,7 +128,7 @@ export async function nativeScenarios(app) {
       'App must load bundled local code',
     );
     assert.ok(info.footer && !documentLoginMarker(info.footer));
-    assert.ok(info.state && info.state.playerCount >= 5);
+    assert.equal(info.state.playerCount, 5, 'A clean install starts with five players');
     assert.deepEqual(info.startup, {
       ready: true,
       inert: false,

@@ -532,3 +532,20 @@
     transform: translateX(-4px);
   }
 }
+
+.profile-overview {
+  border-top: 1px solid #31504a;
+  padding-top: 12px;
+  color: #a3b8b3;
+}
+.profile-overview .profile-evidence {
+  border: 0;
+  padding: 0;
+}
+.profile-overview .profile-research-date {
+  font-size: 12px;
+}
+
+.profile-research .profile-overview h4 {
+  margin-top: 0;
+}

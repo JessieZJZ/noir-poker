@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { loadTablePreferences, saveTablePreferences } from '../../src/ui/preferences.js';
 
-const defaults = { playerCount: 6, difficulty: 'normal' };
+const defaults = { playerCount: 5, difficulty: 'normal' };
 
 test('missing, corrupted and out-of-range preferences recover valid fields independently', () => {
   for (const raw of [null, '{', 'null', '[]', 'true', '"9"']) {
@@ -13,7 +13,7 @@ test('missing, corrupted and out-of-range preferences recover valid fields indep
       loadTablePreferences({
         getItem: () => JSON.stringify({ playerCount: count, difficulty: 'hard' }),
       }),
-      { playerCount: 6, difficulty: 'hard' },
+      { playerCount: 5, difficulty: 'hard' },
     );
   }
   assert.deepEqual(

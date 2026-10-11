@@ -35,6 +35,11 @@ test('cold navigation and reload show only the initialized table, even when modu
           seats: document.querySelectorAll('#seats .seat').length,
           cards: document.querySelectorAll('#hero-cards .playing-card').length,
           inert: body.inert,
+          actionsDisabled: [
+            ...document.querySelectorAll(
+              '.bet-controls input, .bet-presets button, .action-buttons button',
+            ),
+          ].every((el) => el.disabled),
         });
         if (visible) return;
       }
@@ -60,6 +65,10 @@ test('cold navigation and reload show only the initialized table, even when modu
         .toBe('flex');
       await expect(page.locator('.header')).toBeHidden();
       await expect(page.locator('#seats .seat')).toHaveCount(0);
+      for (const control of await page
+        .locator('.bet-controls input, .bet-presets button, .action-buttons button')
+        .all())
+        await expect(control).toBeDisabled();
       await page.screenshot({ path: testInfo.outputPath(`${navigation}-before-hand.png`) });
 
       controller.release();
@@ -73,9 +82,10 @@ test('cold navigation and reload show only the initialized table, even when modu
           visible: true,
           ready: true,
           background: 'rgb(11, 16, 23)',
-          seats: 5,
+          seats: 4,
           cards: 2,
           inert: false,
+          actionsDisabled: true,
         },
       ]);
       await page.evaluate(() => window.qa.stop());

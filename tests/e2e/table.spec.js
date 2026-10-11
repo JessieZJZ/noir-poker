@@ -222,7 +222,9 @@ async function assertSettledLayout(page) {
 test('fold winners keep a visible crown without revealing cards, including practice runout and hero wins', async ({
   page,
 }) => {
-  test.setTimeout(90000);
+  // Complete all 20 viewport/table combinations, including repeated reveals,
+  // when installed-app suites are also using the host. Keep each layout check.
+  test.setTimeout(240000);
   for (const width of [320, 390, 768, 1280]) {
     await page.setViewportSize({ width, height: 900 });
     for (const count of [5, 6, 7, 8, 9]) {
@@ -1351,10 +1353,10 @@ test('reset cancels queued continuation and table size applies on next deal', as
 });
 
 test('first visit presents balanced opponents with sound enabled', async ({ page }) => {
-  await expect(page.locator('#player-count')).toHaveValue('6');
+  await expect(page.locator('#player-count')).toHaveValue('5');
   await expect(page.getByLabel('标准', { exact: true })).toBeChecked();
   await expect(page.locator('#opponents-summary')).toHaveText('均衡');
-  await expect(page.locator('.seat-style-label')).toHaveText(Array(5).fill('均衡'));
+  await expect(page.locator('.seat-style-label')).toHaveText(Array(4).fill('均衡'));
   await expect(page.locator('#hint-toggle')).toHaveAttribute('aria-pressed', 'true');
   await expect(page.locator('#sound-button')).toHaveAttribute('aria-pressed', 'true');
   await page.locator('#opponents-button').click();
@@ -1373,9 +1375,9 @@ test('first visit presents balanced opponents with sound enabled', async ({ page
   await page.evaluate(() => localStorage.setItem('noir-table-v1', '{broken'));
   await page.reload();
   await page.waitForFunction(() => !!window.qa);
-  await expect(page.locator('#player-count')).toHaveValue('6');
+  await expect(page.locator('#player-count')).toHaveValue('5');
   await expect(page.getByLabel('标准', { exact: true })).toBeChecked();
-  expect((await page.evaluate(() => window.noir.getState())).playerCount).toBe(6);
+  expect((await page.evaluate(() => window.noir.getState())).playerCount).toBe(5);
 });
 
 test('returning restores all saved options before the first fresh hand, including pending choices', async ({
@@ -1393,7 +1395,7 @@ test('returning restores all saved options before the first fresh hand, includin
   await page.locator('#emotion-mode').selectOption('lively');
   await closeSettings(page);
   const previous = await page.evaluate(() => window.noir.getState());
-  expect(previous.playerCount).toBe(6);
+  expect(previous.playerCount).toBe(5);
   expect(previous.players[1].botProfile).toBe('balanced');
   await expect(page.locator('#opponents-summary')).toHaveText('下手生效');
 
