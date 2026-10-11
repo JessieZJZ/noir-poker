@@ -3,7 +3,13 @@ import assert from 'node:assert/strict';
 import vm from 'node:vm';
 import { readFileSync } from 'node:fs';
 import { createWechatController } from '../../src/platform/wechat-controller.js';
-import { act, advanceStreet } from '../../src/engine/poker.js';
+import {
+  act,
+  advanceStreet,
+  completeBoardForPractice,
+  rankText,
+  evaluate,
+} from '../../src/engine/poker.js';
 
 const pageSource = readFileSync(
   new URL('../../miniprogram/pages/table/table.js', import.meta.url),
@@ -18,6 +24,16 @@ const template = readFileSync(
   'utf8',
 );
 const copy = (value) => JSON.parse(JSON.stringify(value));
+const presentationModule = { exports: {} };
+vm.runInNewContext(
+  readFileSync(new URL('../../miniprogram/pages/table/presentation.js', import.meta.url), 'utf8'),
+  { module: presentationModule, require: () => ({ evaluate, rankText }) },
+);
+const layoutModule = { exports: {} };
+vm.runInNewContext(
+  readFileSync(new URL('../../miniprogram/pages/table/phone-layout.js', import.meta.url), 'utf8'),
+  { module: layoutModule },
+);
 function setup(
   t,
   {
@@ -53,6 +69,10 @@ function setup(
       definition = value;
     },
     require(name) {
+      if (name === './presentation.js') return presentationModule.exports;
+      if (name === './phone-layout.js') return layoutModule.exports;
+      if (name === '../../shared/engine/poker.js')
+        return { completeBoardForPractice, rankText, evaluate };
       assert.equal(name, '../../shared/platform/wechat-controller.js');
       return { createWechatController: controllerFactory };
     },
@@ -117,6 +137,24 @@ function setup(
   return { page, preferences, audios, toasts, clipboard, flush, jobs, info };
 }
 
+test('WeChat activity retains full hand history, bet ordinals and Web persona labels', (t) => {
+  const { page } = setup(t);
+  const game = page._controller.getGame();
+  const player = game.players[1];
+  player.botProfile = 'haxton';
+  game.logs = Array.from({ length: 41 }, (_, index) => ({
+    text: `${player.name} 3-bet 加注至 ${200 + index * 25}`,
+    player: player.id,
+    type: index === 0 ? 'result' : 'action',
+  }));
+  page._controller.show();
+  assert.equal(page.data.logs.length, 41, 'Long hands must not drop records after 30 actions');
+  assert.match(page.data.logs[0].text, /3-bet 加注至 1,?200/);
+  assert.match(page.data.logs[0].text, /（.*）/);
+  assert.equal(page.data.logs.at(-1).type, 'result');
+  assert.equal(page.data.logs.at(-1).hero, false);
+});
+
 test('WeChat tablet rotation preserves the deal, settings dialog and pending actions', (t) => {
   const { page, info, jobs } = setup(t, {
     info: { windowWidth: 820, windowHeight: 1180, statusBarHeight: 24 },
@@ -153,6 +191,63 @@ function finish(game) {
     else act(game, game.actor, 'call');
   }
 }
+test('WeChat practice runout uses the shared engine without changing settlement or review cards', (t) => {
+  const { page } = setup(t, { playerCount: 5 });
+  const game = reachHero(page);
+  page.act({ currentTarget: { dataset: { action: 'fold' } } });
+  for (let step = 0; game.phase !== 'done'; step++) {
+    assert.ok(step < 20);
+    if (game.phase === 'between') advanceStreet(game);
+    else act(game, game.actor, 'fold');
+  }
+  page._controller.show();
+  assert.equal(page.data.canPracticeRunout, true);
+  assert.equal(page.data.canRetry, true);
+  assert.match(template, /wx:if="{{canRetry}}"\s+class="retry-button"/);
+  assert.doesNotMatch(template, /wx:if="{{!canPracticeRunout}}"\s+class="retry-button"/);
+  const before = copy({
+    board: game.board,
+    deck: game.deck,
+    stats: game.stats,
+    winners: game.winners,
+    stacks: game.players.map((p) => p.stack),
+  });
+  page.finishHand();
+  assert.equal(page.data.board.length, 5);
+  assert.equal(page.data.canPracticeRunout, false);
+  assert.deepEqual(
+    copy({
+      board: game.board,
+      deck: game.deck,
+      stats: game.stats,
+      winners: game.winners,
+      stacks: game.players.map((p) => p.stack),
+    }),
+    before,
+  );
+  assert.deepEqual(
+    copy(page.data.board.map((c) => c.red)),
+    game.practiceBoard.map((c) => c.suit === 1 || c.suit === 3),
+  );
+});
+test('WeChat opponent review picker filters recorded actions and restores the full timeline', (t) => {
+  const { page } = setup(t);
+  page.setData({ reviewPerspective: 'opponent' });
+  const report = {
+    steps: [],
+    opponents: [
+      { name: 'Alex', actual: '跟注' },
+      { name: 'River', actual: '加注' },
+      { name: 'Alex', actual: '弃牌' },
+    ],
+  };
+  page.updateReview(report);
+  page.changeOpponentFilter({ detail: { value: '1' } });
+  assert.equal(page.data.reviewSteps.length, 2);
+  assert.ok(page.data.reviewSteps.every((step) => step.name === 'Alex'));
+  page.changeOpponentFilter({ detail: { value: '0' } });
+  assert.equal(page.data.reviewSteps.length, 3);
+});
 function text(value) {
   assert.equal(typeof value, 'string');
   assert.ok(value.trim());
@@ -162,6 +257,12 @@ function text(value) {
 test('WeChat turn, fold, settlement and retry keep the table budget while compacting the controls', (t) => {
   assert.match(template, /class="action-notice" wx:if="\{\{!compactActions\}\}"/);
   assert.match(template, /class="raise-controls" wx:if="\{\{!compactActions\}\}"/);
+  assert.equal(
+    cssNumber('.settled-buttons button', 'width'),
+    100,
+    'WeChat native button width must follow its grid cell instead of the platform default',
+  );
+  assert.equal(cssNumber('.settled-buttons button', 'min-width'), 0);
   const { page } = setup(t, { playerCount: 9 });
   const game = reachHero(page);
   const height = page.data.tableHeight;
@@ -203,7 +304,7 @@ for (const playerCount of [5, 9]) {
       assert.equal(page.data.seats.length, playerCount - 1);
       assert.equal(page.data.windowHeight, info.windowHeight);
       assert.equal(
-        page.data.tableHeight + page.data.topInset + page.data.bottomInset + 258,
+        page.data.tableHeight + page.data.topInset + page.data.bottomInset + 329,
         info.windowHeight,
       );
       const height = page.data.tableHeight;
@@ -234,7 +335,9 @@ test('WeChat Page presents completed shared review copy and per-decision advice'
   const report = page.data.reviewData;
   assert.equal(report.loading, false);
   assert.equal(report.hand, game.hand);
-  for (const field of ['title', 'summary', 'scope', 'profit']) text(report[field]);
+  for (const field of ['scope', 'profit']) text(report[field]);
+  assert.equal('summary' in report, false);
+  assert.doesNotMatch(template, /review-summary|reviewData\.summary|reviewData\.title/);
   assert.equal(report.steps.length, 1);
   for (const field of ['street', 'actual', 'label', 'suggestion', 'reason', 'followUp', 'ev'])
     text(report.steps[0][field]);
@@ -255,6 +358,8 @@ test('WeChat Page automatically saves settings and changes the requested next ha
   const saved = JSON.parse(preferences.get('noir-wechat-settings-v1'));
   assert.equal(saved.sound, false);
   assert.equal(saved.playerCount, 9);
+  assert.equal(page.data.activePlayerCount, 6);
+  assert.notEqual(page.data.settings.playerCount, page.data.activePlayerCount);
   assert.equal(saved.difficulty, 'hard');
   assert.equal(saved.emotionMode, 'lively');
   assert.equal(saved.assignments[1], 'tan');
@@ -271,6 +376,7 @@ test('WeChat Page automatically saves settings and changes the requested next ha
   page._controller.show();
   page.nextHand();
   assert.equal(page.data.seats.length, 8);
+  assert.equal(page.data.activePlayerCount, page.data.settings.playerCount);
   assert.equal(page.data.seats[0].profileId, 'tan');
   assert.equal(page.data.seats[0].portrait, '/assets/portraits/tan.jpg');
 });
@@ -290,31 +396,12 @@ test('WeChat Page stops and destroys native audio plus pending work when backgro
   assert.ok(jobs.size > 0, 'foreground resumes a fresh bot schedule');
 });
 
-test('WeChat custom navigation and modal close buttons reserve the measured native capsule', (t) => {
-  const info = {
-    windowWidth: 320,
-    windowHeight: 568,
-    statusBarHeight: 20,
-    safeArea: { bottom: 568 },
-  };
-  const rect = { left: 226, right: 313, top: 24, bottom: 56, width: 87, height: 32 };
-  const { page } = setup(t, { info, menuRect: rect });
-  assert.equal(page.data.navRightInset, rect.width + info.windowWidth - rect.right + 8);
-  assert.equal(page.data.compactNav, true, 'narrow navigation hides the POKER subtitle');
-  assert.ok(info.windowWidth - 8 - page.data.navRightInset <= rect.left - 8);
-  assert.match(template, /class="nav[^\n]*padding-right: \{\{navRightInset\}\}px/);
-  assert.match(template, /wx:if="\{\{!compactNav\}\}" class="brand-sub"/);
-  assert.equal(
-    [...template.matchAll(/class="modal-header" style="padding-right: \{\{navRightInset\}\}px;"/g)]
-      .length,
-    5,
-    'all fullscreen modal close buttons avoid the capsule',
-  );
-  info.windowWidth = 390;
-  rect.left = 296;
-  rect.right = 383;
-  page.onResize();
-  assert.equal(page.data.compactNav, false, 'larger navigation keeps the subtitle');
+test('WeChat reserves a capsule row above the Web navigation and settings', (t) => {
+  const { page } = setup(t);
+  assert.equal(page.data.compactNav, false);
+  assert.match(template, /padding-top: \{\{topInset \+ 36\}\}px/);
+  assert.match(template, /class="modal settings-modal"/);
+  assert.match(template, /top: \{\{topInset \+ 36\}\}px/);
 });
 
 test('WeChat capsule measurement falls back safely when absent, invalid or throwing', (t) => {
@@ -328,7 +415,7 @@ test('WeChat capsule measurement falls back safely when absent, invalid or throw
   ]) {
     const { page } = setup(t, { menuRect });
     assert.equal(page.data.navRightInset, 104);
-    assert.equal(page.data.tableHeight + page.data.topInset + page.data.bottomInset + 258, 844);
+    assert.equal(page.data.tableHeight + page.data.topInset + page.data.bottomInset + 329, 844);
   }
 });
 
@@ -415,70 +502,35 @@ for (const playerCount of [5, 6, 7, 8, 9]) {
       page._controller.show();
       assert.equal(page.data.done, true);
       assert.ok(page.data.seats.every((seat) => seat.cards.length === 2 && seat.rank));
-      const height = page.data.tableHeight;
-      assert.ok(height < 430);
-      assert.match(template, /tableHeight < 430 \? 'table-short'/);
-      // Read actual template expressions and actual CSS dimensions. This catches
-      // a return to percentage seats even when the overall page height stays fixed.
-      const style = template.match(/style="(left: \{\{item.x\}\}%; top: [^"]+)"/)[1];
-      const width = info.windowWidth - 18; // 8px page gutters and the 1px shell border.
-      const seatWidth = cssNumber('.table-short .seat', 'width');
-      const seatHeight =
-        cssNumber('.table-short .seat-hole.revealed-hole', 'height') +
-        cssNumber('.table-short .seat-body', 'height') +
-        cssNumber('.table-short .seat-caption', 'height') +
-        cssNumber('.table-short .seat-caption', 'margin-top');
-      const heroFooterHeight = cssNumber('.hero-identity', 'line-height') * 2;
-      const heroBottom = height - cssNumber('.table-short .hero', 'bottom');
-      const identityTop = heroBottom - heroFooterHeight;
-      const cardWidth = cssNumber('.table-short .hero-card', 'width');
-      const cardHeight = cssNumber('.table-short .hero-card', 'height');
-      const angle = (5 * Math.PI) / 180;
-      const rotatedWidth = cardWidth * Math.cos(angle) + cardHeight * Math.sin(angle);
-      const rotatedHeight = cardHeight * Math.cos(angle) + cardWidth * Math.sin(angle);
-      const heroWidth = cardWidth + cssNumber('.hero-cards', 'gap') + rotatedWidth;
-      const heroTop =
-        identityTop -
-        cssNumber('.table-short .hero-rank', 'height') -
-        cardHeight -
-        (rotatedHeight - cardHeight) / 2;
+      const height = page.data.arenaHeight;
+      const width = page.data.arenaWidth;
+      assert.equal(page.data.phoneLayout, true);
+      assert.ok(height * page.data.arenaScale <= page.data.tableHeight + 0.01);
+      assert.match(template, /phoneLayout \? phoneSeats : seats/);
+      const heroWidth = 2 * page.data.heroWidth + 7;
       const hero = {
         left: (width - heroWidth) / 2,
         right: (width + heroWidth) / 2,
-        top: heroTop,
-        bottom: heroBottom,
+        top: height - 24 - page.data.heroHeight - 66 - 8,
+        bottom: height - 24,
       };
-      const communityWidth = page.data.boardWidth;
-      const communityOffset = Number(
-        stylesheet.match(/\.table-short \.community\s*\{[^}]*translate\(-50%,\s*(-[\d.]+)px\)/)[1],
-      );
-      const communityHeight =
-        cssNumber('.table-short .pot-row', 'height') +
-        cssNumber('.table-short .pot-row', 'margin-bottom') +
-        (page.data.boardTwoRows ? 2 : 1) * cssNumber('.table-short .card-placeholder', 'height') +
-        cssNumber('.table-short .board-row', 'margin-bottom') +
-        (page.data.boardTwoRows ? cssNumber('.table-short .board-row', 'row-gap') : 0);
       const community = {
-        left: (width - communityWidth) / 2,
-        right: (width + communityWidth) / 2,
-        top: (height * cssNumber('.table-short .community', 'top')) / 100 + communityOffset,
-        bottom:
-          (height * cssNumber('.table-short .community', 'top')) / 100 +
-          communityOffset +
-          communityHeight,
+        left: (width - page.data.boardWidth) / 2,
+        right: (width + page.data.boardWidth) / 2,
+        top: page.data.publicTop,
+        bottom: page.data.publicTop + page.data.publicHeight,
       };
-      assert.ok(community.bottom <= hero.top, 'the two board rows clear the rotated hero cards');
-      const bounds = page.data.seats.map((item) => {
-        const rendered = style.replace(/\{\{([\s\S]+?)\}\}/g, (_, expression) =>
-          vm.runInNewContext(expression, { item, tableHeight: height }),
-        );
-        const top = Number(rendered.match(/top: ([\d.]+)px/)[1]);
-        const left = (item.x * width) / 100 - seatWidth / 2;
-        return { id: item.id, left, right: left + seatWidth, top, bottom: top + seatHeight };
-      });
+      assert.ok(community.bottom + 24 <= hero.top);
+      const bounds = page.data.phoneSeats.map((seat) => ({
+        id: seat.id,
+        left: seat.left,
+        right: seat.left + 92,
+        top: seat.top,
+        bottom: seat.top + 157,
+      }));
       for (const seat of bounds) {
         assert.ok(seat.top >= 0 && seat.left >= 0 && seat.right <= width);
-        assert.ok(seat.bottom <= identityTop - 6, `seat ${seat.id} caption clears the hero footer`);
+        assert.ok(seat.bottom <= height);
         assert.equal(intersects(seat, hero), false, `seat ${seat.id} clears the hero cards`);
         assert.equal(intersects(seat, community), false, `seat ${seat.id} clears the full board`);
       }
@@ -529,7 +581,8 @@ test('WeChat public card rows use the measured corridor and stay fixed from deal
     info: { windowWidth: 320, windowHeight: 667, statusBarHeight: 20, safeArea: { bottom: 667 } },
   });
   assert.equal(page.data.boardTwoRows, false);
-  assert.equal(page.data.boardWidth, 5 * 25 + 16);
+  assert.equal(page.data.cardWidth, 50);
+  assert.ok(page.data.boardWidth >= 3 * 50 + 8);
   assert.equal(page.data.boardSlots.length, 5);
   assert.ok(page.data.boardSlots.every((card) => card.empty));
   const budget = page.data.tableHeight;
@@ -541,8 +594,8 @@ test('WeChat public card rows use the measured corridor and stay fixed from deal
   assert.equal(page.data.boardTwoRows, false);
   Object.assign(info, { windowWidth: 390, windowHeight: 900, safeArea: { bottom: 900 } });
   page.onResize();
-  assert.equal(page.data.boardTwoRows, true);
-  assert.equal(page.data.boardWidth, 3 * 48 + 8);
+  assert.equal(page.data.boardTwoRows, false);
+  assert.equal(page.data.boardWidth, 5 * 46.8 + 16);
   Object.assign(info, { windowWidth: 820, windowHeight: 1180, safeArea: { bottom: 1180 } });
   page.onResize();
   assert.equal(page.data.boardTwoRows, false);
@@ -584,3 +637,17 @@ for (const playerCount of [6, 8]) {
     );
   });
 }
+
+test('WeChat temporarily unavailable table space recovers without invalid card geometry', (t) => {
+  const { page, info } = setup(t);
+  const cards = copy(page.data.heroCards);
+  info.windowHeight = 200;
+  page.onResize();
+  assert.equal(page.data.tableHeight, 0);
+  assert.ok(Number.isFinite(page.data.arenaWidth));
+  assert.ok(Number.isFinite(page.data.boardWidth));
+  info.windowHeight = 844;
+  page.onResize();
+  assert.ok(page.data.arenaScale > 0 && page.data.arenaScale <= 1);
+  assert.deepEqual(copy(page.data.heroCards), cards);
+});

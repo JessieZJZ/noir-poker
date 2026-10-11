@@ -1,10 +1,7 @@
-<view
-  class="screen"
-  style="height: {{windowHeight}}px; padding-top: {{topInset}}px; padding-bottom: {{bottomInset}}px;"
->
-  <view class="nav {{compactNav ? 'nav-compact' : ''}}" style="padding-right: {{navRightInset}}px;">
+<view class="screen" style="padding-top: {{topInset + 36}}px; padding-bottom: {{bottomInset}}px;">
+  <view class="nav {{compactNav ? 'nav-compact' : ''}}">
     <view class="brand"
-      ><text class="spade">♠</text><text>NOIR</text
+      ><view class="spade" aria-hidden="true" /><text>NOIR</text
       ><text wx:if="{{!compactNav}}" class="brand-sub">POKER</text></view
     >
     <view class="nav-actions"
@@ -12,10 +9,13 @@
       ><button class="guide-button" bindtap="openGuide">玩法指南</button></view
     >
   </view>
-  <view class="game-shell" style="height: {{tableHeight + 52 + (compactActions ? 64 : 136)}}px;">
+  <view
+    class="game-shell {{showdown.length ? 'has-showdown' : ''}}"
+    style="height: {{tableHeight + 71 + (compactActions ? 64 : 146)}}px;"
+  >
     <view class="game-header"
       ><text
-        >第 {{hand}} 手 · {{street}}
+        >第 <text class="hand-number">{{hand < 10 ? '0' : ''}}{{hand}}</text> 手 · {{street}}
         <text wx:if="{{replay}}" class="replay">重打 {{replay}}</text></text
       ><text>盲注 <text class="bright">25 / 50</text></text></view
     >
@@ -27,93 +27,139 @@
       ></view
     >
     <view
-      class="table-area {{tableHeight < 430 ? 'table-short' : ''}}"
+      class="table-area {{done ? 'is-done' : ''}} {{phoneLayout ? 'web-phone-layout' : tableHeight < 430 ? 'table-short' : ''}}"
       style="height: {{tableHeight}}px;"
     >
       <view
-        class="felt {{settings.playerCount === 6 || settings.playerCount === 8 ? 'felt-crowned' : ''}}"
-        ><text class="felt-brand">N O I R</text></view
+        class="table-arena"
+        style="height: {{arenaHeight}}px; width: {{arenaWidth}}px; transform: scale({{arenaScale}});"
       >
-      <view
-        wx:for="{{seats}}"
-        wx:key="id"
-        class="seat {{item.x === 50 ? 'seat-crown' : ''}} {{item.thinking ? 'thinking' : ''}} {{item.folded ? 'folded' : ''}} {{item.winner ? 'winner' : ''}}"
-        style="left: {{item.x}}%; top: {{tableHeight < 430 ? (item.y < 40 ? 8 : item.y < 70 ? (tableHeight - 120) / 2 : tableHeight - 128) : item.y}}{{tableHeight < 430 ? 'px' : '%'}};"
-      >
-        <view class="seat-hole {{item.cards.length ? 'revealed-hole' : ''}}">
-          <block wx:if="{{item.cards.length}}"
-            ><view
-              wx:for="{{item.cards}}"
-              wx:for-item="card"
-              wx:key="key"
-              class="card mini-card {{card.red ? 'red' : ''}}"
-              ><text>{{card.rank}}</text><text>{{card.suit}}</text></view
-            ></block
+        <view
+          class="felt {{activePlayerCount === 6 || activePlayerCount === 8 ? 'felt-crowned' : ''}}"
+          ><view class="felt-inner"
+            ><view class="felt-brand">N O I R<text>POKER CLUB</text></view></view
+          ></view
+        >
+        <view
+          wx:for="{{phoneLayout ? phoneSeats : seats}}"
+          wx:key="id"
+          class="seat {{item.y === 0 ? 'seat-crown' : ''}} {{item.thinking ? 'thinking' : ''}} {{item.folded ? 'folded' : ''}} {{item.winner ? 'winner' : ''}}"
+          style="left: {{phoneLayout ? item.left : item.x}}{{phoneLayout ? 'px' : '%'}}; top: {{phoneLayout ? item.top : tableHeight < 430 ? (item.y < 25 ? 8 : item.y < 60 ? (arenaHeight - 120) / 2 : arenaHeight - 128) : item.y}}{{phoneLayout || tableHeight < 430 ? 'px' : '%'}};"
+        >
+          <view class="seat-hole {{item.cards.length ? 'revealed-hole' : ''}}">
+            <block wx:if="{{item.cards.length}}"
+              ><view
+                wx:for="{{item.cards}}"
+                wx:for-item="card"
+                wx:key="key"
+                class="card mini-card {{card.red ? 'red' : ''}}"
+                ><text class="mini-card-rank">{{card.rank}}</text
+                ><view class="mini-card-suit" style="{{card.suitStyle}}" /></view
+            ></block>
+            <block wx:else><view class="card-back"></view><view class="card-back"></view></block>
+          </view>
+          <view class="seat-body"
+            ><view class="seat-name"
+              ><text>{{item.name}}</text><text class="position">{{item.position}}</text></view
+            ><button
+              class="seat-eye"
+              data-id="{{item.profileId}}"
+              bindtap="viewProfile"
+              aria-label="牌手资料"
+            /><view class="seat-persona"
+              ><image
+                wx:if="{{item.portrait}}"
+                class="avatar"
+                src="{{item.portrait}}"
+                mode="aspectFill"
+              /><view wx:else class="avatar initials">{{item.initial}}</view
+              ><text class="persona {{item.profileId === 'balanced' ? 'persona-balanced' : ''}}"
+                >{{item.profileName}}</text
+              ></view
+            ><text class="stack">{{item.stack}}</text></view
           >
-          <block wx:else><view class="card-back"></view><view class="card-back"></view></block>
-        </view>
-        <view class="seat-body"
-          ><view class="seat-name"
-            ><text>{{item.name}}</text><text class="position">{{item.position}}</text></view
-          ><view class="seat-persona"
-            ><image
-              wx:if="{{item.portrait}}"
-              class="avatar"
-              src="{{item.portrait}}"
-              mode="aspectFill"
-            /><text class="persona {{item.profileId === 'balanced' ? 'persona-balanced' : ''}}"
-              >{{item.profileName}}</text
+          <view class="seat-caption"
+            ><text class="seat-action">{{item.action}}</text
+            ><text wx:if="{{item.rank}}" class="rank {{item.winner ? 'won' : ''}}"
+              >{{item.rank}}</text
             ></view
-          ><text class="stack">{{item.stack}}</text></view
-        >
-        <view class="seat-caption"
-          ><text class="seat-action">{{item.action}}</text
-          ><text wx:if="{{item.rank}}" class="rank">{{item.rank}}</text></view
-        >
-      </view>
-      <view class="community" style="width: {{boardWidth}}px;"
-        ><view class="pot-row"
-          ><text class="chip">◎</text><text class="pot-number">{{pot}}</text
-          ><button class="pot-detail" bindtap="openPots">明细</button></view
-        >
-        <view class="board-row {{boardTwoRows ? 'board-two-rows' : ''}}"
-          ><view
-            wx:for="{{boardSlots}}"
-            wx:key="key"
-            class="{{item.empty ? 'card-placeholder' : 'card community-card'}} {{item.red ? 'red' : ''}}"
-            ><text wx:if="{{!item.empty}}" class="card-rank">{{item.rank}}</text
-            ><text class="{{item.empty ? '' : 'card-suit'}}">{{item.suit}}</text></view
+          >
+        </view>
+        <view
+          class="community"
+          style="width: {{boardWidth}}px; {{phoneLayout ? 'top:' + publicTop + 'px;' : ''}}"
+          ><view class="pot-row"
+            ><view class="chip" aria-hidden="true" /><text class="pot-number">{{pot}}</text
+            ><button class="pot-detail" bindtap="openPots">明细</button></view
+          >
+          <view class="board-row {{boardTwoRows ? 'board-two-rows' : ''}}"
+            ><view
+              wx:for="{{boardSlots}}"
+              wx:key="key"
+              class="{{item.empty ? 'card-placeholder' : 'card community-card'}} {{item.red ? 'red' : ''}}"
+              style="{{phoneLayout ? 'width:' + cardWidth + 'px;height:' + cardHeight + 'px;' : ''}}"
+              ><text
+                wx:if="{{!item.empty}}"
+                class="card-rank"
+                style="font-size:{{cardWidth * 15 / 64}}px;"
+                >{{item.rank}}</text
+              ><text class="{{item.empty ? '' : 'card-suit'}}">{{item.suit}}</text
+              ><text
+                wx:if="{{!item.empty}}"
+                class="card-corner"
+                style="font-size:{{cardWidth * 15 / 64}}px;"
+                >{{item.rank}}</text
+              ></view
+            ></view
+          >
+        </view>
+        <view
+          class="hero {{heroFolded ? 'hero-folded' : ''}}"
+          style="{{phoneLayout ? 'height:' + (heroHeight + 66) + 'px;width:' + (heroWidth * 2 + 7) + 'px;' : ''}}"
+          ><view class="hero-cards"
+            ><view
+              wx:for="{{heroCards}}"
+              wx:key="key"
+              class="card hero-card {{item.red ? 'red' : ''}}"
+              style="{{phoneLayout ? 'width:' + heroWidth + 'px;height:' + heroHeight + 'px;' : ''}}"
+              ><text class="card-rank" style="font-size:{{heroWidth * 15 / 64}}px;"
+                >{{item.rank}}</text
+              ><text class="card-suit">{{item.suit}}</text
+              ><text class="card-corner" style="font-size:{{heroWidth * 15 / 64}}px;"
+                >{{item.rank}}</text
+              ></view
+            ></view
+          ><view class="hero-rank"
+            ><text wx:if="{{heroRank}}" class="rank {{heroWinner ? 'won' : ''}}"
+              >{{heroFolded ? '已弃牌 · ' : ''}}{{heroRank}}</text
+            ></view
+          ><view class="hero-info"
+            ><view class="hero-identity"
+              ><text>你 <text class="position">{{heroPosition}}</text></text
+              ><text class="stack">{{heroStack}}</text></view
+            ><view class="hero-action">{{heroAction}}</view></view
           ></view
         >
       </view>
-      <view class="hero {{heroFolded ? 'hero-folded' : ''}}"
-        ><view class="hero-cards"
-          ><view
-            wx:for="{{heroCards}}"
-            wx:key="key"
-            class="card hero-card {{item.red ? 'red' : ''}}"
-            ><text class="card-rank">{{item.rank}}</text
-            ><text class="card-suit">{{item.suit}}</text></view
-          ></view
-        ><view class="hero-rank"
-          ><text wx:if="{{heroRank}}" class="rank {{heroWinner ? 'won' : ''}}"
-            >{{heroRank}}</text
-          ></view
-        ><view class="hero-info"
-          ><view class="hero-identity"
-            ><text>你 <text class="position">{{heroPosition}}</text></text
-            ><text class="stack">{{heroStack}}</text></view
-          ><view class="hero-action">{{heroAction}}</view></view
-        ></view
-      >
     </view>
     <view
       class="action-dock {{compactActions ? 'compact-actions' : ''}} {{canAct ? 'is-enabled' : ''}}"
     >
       <block wx:if="{{done}}"
         ><view class="settled-buttons"
+          ><button
+            wx:if="{{canPracticeRunout}}"
+            class="primary practice-runout-button"
+            bindtap="finishHand"
+          >
+            立刻发完</button
           ><button class="primary" bindtap="nextHand">下一手</button
-          ><button class="retry-button" disabled="{{!canRetry}}" bindtap="retryHand">
+          ><button
+            wx:if="{{canRetry}}"
+            class="retry-button"
+            disabled="{{!canRetry}}"
+            bindtap="retryHand"
+          >
             重打本手</button
           ><button class="review-button" bindtap="openReview">复盘</button></view
         ></block
@@ -127,9 +173,10 @@
             step="{{chipUnit}}"
             value="{{raiseTo}}"
             disabled="{{!canRaise}}"
-            activeColor="#67e3c4"
-            backgroundColor="#30434b"
-            block-size="20"
+            activeColor="#6ee7c5"
+            backgroundColor="#354650"
+            block-color="#6ee7c5"
+            block-size="15"
             bindchanging="changeRaise"
             bindchange="changeRaise"
           /><view class="presets"
@@ -152,44 +199,127 @@
       >
     </view>
   </view>
+  <view wx:if="{{showdown.length}}" class="showdown-stage">
+    <view class="showdown-heading"
+      ><text class="eyebrow">SHOWDOWN</text
+      ><text class="showdown-context">{{showdownContext}}</text></view
+    >
+    <view class="showdown-scene">
+      <view
+        wx:for="{{showdown}}"
+        wx:key="id"
+        class="showdown-player {{item.winner ? 'showdown-winner' : ''}}"
+      >
+        <view class="showdown-player-heading"
+          ><text>{{item.name}}</text><text>{{item.result}}</text></view
+        >
+        <view class="winning-title"
+          ><text>{{item.label}}</text><text>{{item.explanation}}</text></view
+        >
+        <view class="winning-cards">
+          <view
+            wx:for="{{item.cards}}"
+            wx:for-item="card"
+            wx:key="key"
+            class="winning-card {{card.highlight ? 'rank-match' : 'kicker'}}"
+          >
+            <view class="card showdown-card {{card.red ? 'red' : ''}}"
+              ><text class="card-rank">{{card.rank}}</text
+              ><view class="card-suit" style="{{card.suitStyle}}" /><text class="card-corner"
+                >{{card.rank}}</text
+              ></view
+            >
+          </view>
+        </view>
+        <text class="showdown-awards">{{item.awards}}</text>
+      </view>
+    </view>
+  </view>
+  <view class="practice-panel"
+    ><view class="session-title"><text>你的练习</text><text>本次牌桌</text></view
+    ><view class="session-balance"
+      ><text class="session-caption">当前筹码</text
+      ><text class="session-stack">{{heroStack}}<text class="session-unit">CHIPS</text></text
+      ><text class="session-change"
+        >{{stats.profit === '0' ? '+0' : stats.profit}} 筹码 · 本次练习净变化</text
+      ></view
+    ><view class="session-stats"
+      ><view><text>{{stats.hands}}</text><text>已完成</text></view
+      ><view><text>{{stats.wins}}</text><text>获胜手数</text></view
+      ><view><text>{{winrate}}%</text><text>胜率</text></view></view
+    ></view
+  >
+  <view class="activity-panel"
+    ><view class="session-title"
+      ><text>本局动态</text><text>{{done ? 'FINISHED' : 'LIVE'}}</text></view
+    ><view class="activity-list"
+      ><view wx:for="{{logs}}" wx:key="key" class="activity-item"
+        ><text class="log-number">{{index + 1}}.</text
+        ><text class="log-{{item.type}} {{item.hero ? 'log-hero' : ''}}">{{item.text}}</text></view
+      ></view
+    ></view
+  >
   <view class="bottom-links"
-    ><text>本地电脑对手 · 无需登录</text><button bindtap="openActivity">本局动态</button></view
+    ><view class="practice-info"
+      ><view><view class="live-dot" /><text>本地电脑对手 · 无需登录</text></view
+      ><button bindtap="resetPractice">重新练习</button></view
+    >
+    ><text>仅使用虚拟筹码</text></view
   >
 </view>
 
 <view
   wx:if="{{settingsOpen}}"
-  class="modal"
-  style="padding-top: {{topInset}}px; padding-bottom: {{bottomInset}}px;"
+  class="modal settings-modal"
+  style="top: {{topInset + 36}}px; bottom: {{bottomInset}}px;"
 >
-  <view class="modal-header" style="padding-right: {{navRightInset}}px;"
-    ><text>设置</text
+  <view class="modal-header"
+    ><text class="eyebrow">SETTINGS</text
     ><button class="close" bindtap="closeSettings" aria-label="关闭设置">×</button></view
   >
+  <view class="settings-title">设置</view>
   <scroll-view scroll-y class="modal-scroll"
     ><view class="modal-body">
-      <view class="settings-module"
-        ><view class="setting-row"
-          ><text>声音</text
-          ><switch
-            checked="{{settings.sound}}"
-            color="#67e3c4"
-            data-key="sound"
-            bindchange="changeSwitch" /></view
-        ><view class="setting-row"
-          ><text>牌桌提示</text
-          ><switch
-            checked="{{settings.hints}}"
-            color="#67e3c4"
-            data-key="hints"
-            bindchange="changeSwitch" /></view
-        ><view class="setting-row"
-          ><text>对战人数</text
+      <view class="settings-module general-settings">
+        <text class="module-title">牌桌与声音</text>
+        <view class="setting-row"
+          ><text>语言 / Language</text><view class="picker-value">简体中文</view></view
+        >
+        <text class="setting-description"
+          >微信小程序使用简体中文，设置保留当前正在进行的对局。</text
+        >
+        <view class="setting-row"
+          ><text>牌桌人数</text
           ><picker range="{{countOptions}}" value="{{countIndex}}" bindchange="changeCount"
             ><view class="picker-value">{{settings.playerCount}} 人⌄</view></picker
           ></view
-        ></view
-      >
+        >
+        <text wx:if="{{settings.playerCount !== activePlayerCount}}" class="table-change-note"
+          >下一手将切为 {{settings.playerCount}} 人桌 · 筹码恢复 5,000，统计重新开始</text
+        >
+        <view class="setting-row"
+          ><text>音效</text
+          ><button
+            class="settings-switch {{settings.sound ? 'on' : ''}}"
+            data-key="sound"
+            bindtap="togglePreference"
+            aria-label="音效"
+          >
+            <view class="switch-track" /><view class="switch-thumb" /></button
+        ></view>
+        <view class="setting-row"
+          ><view
+            ><text>牌桌提示</text
+            ><text class="setting-description">必要时显示；长文自动循环滚动，阅读后收起</text></view
+          ><button
+            class="settings-switch {{settings.hints ? 'on' : ''}}"
+            data-key="hints"
+            bindtap="togglePreference"
+            aria-label="牌桌提示"
+          >
+            <view class="switch-track" /><view class="switch-thumb" /></button
+        ></view>
+      </view>
       <view class="settings-module"
         ><text class="module-title">对手难度</text
         ><view class="difficulty"
@@ -212,12 +342,15 @@
           >
             进阶
           </button></view
+        ></view
+      >
+      <view class="settings-module emotion-module"
         ><view class="setting-row mood"
           ><text>情绪模拟</text
           ><picker range="{{emotionOptions}}" value="{{emotionIndex}}" bindchange="changeEmotion"
             ><view class="picker-value">{{emotionOptions[emotionIndex]}}⌄</view></picker
           ></view
-        ></view
+        ><text class="setting-description">合成游戏机制，不代表真人情绪；下一手生效。</text></view
       >
       <view class="settings-module"
         ><text class="module-title">牌手介绍</text
@@ -272,26 +405,34 @@
         ><button class="small-button" bindtap="resetPractice">重新练习</button></view
       >
     </view></scroll-view
-  >
+  ><view class="settings-save-row"><text>设置自动保存在此设备。</text></view>
   <view
     wx:if="{{detailProfile}}"
     class="profile-detail"
-    style="top: {{topInset + 52}}px; bottom: {{bottomInset}}px;"
+    style="top: 119.5px; bottom: 60.5px; left: 34px; right: 34px"
     ><view class="modal-header"
-      ><text>{{detailProfile.short}}</text
-      ><button class="close" bindtap="closeProfile" aria-label="关闭牌手介绍">×</button></view
-    ><scroll-view scroll-y class="modal-scroll"
-      ><view class="modal-body"
+      ><view class="detail-identity"
         ><image
           wx:if="{{detailProfile.portrait}}"
           src="{{detailProfile.portrait}}"
           class="detail-avatar"
           mode="aspectFill"
-        /><text class="detail-description">{{detailProfile.description}}</text
-        ><view class="axis" wx:for="{{detailProfile.axisRows}}" wx:key="id"
-          ><text>{{item.label}}</text
-          ><view class="axis-track"><view style="width: {{item.value}}%;" /></view
-          ><text>{{item.value}}</text></view
+        /><text>{{detailProfile.short}}</text></view
+      >
+      <button class="close" bindtap="closeProfile" aria-label="关闭牌手介绍">×</button></view
+    ><scroll-view scroll-y class="modal-scroll"
+      ><view class="modal-body"
+        ><text class="detail-description">{{detailProfile.description}}</text
+        ><view class="profile-axes"
+          ><view class="axis" wx:for="{{detailProfile.axisRows}}" wx:key="id"
+            ><text>{{item.label}}</text
+            ><view class="axis-track"><view style="width: {{item.value}}%;" /></view
+            ><text>{{item.value}}</text></view
+          ></view
+        ><text class="profile-sizing"
+          >常用翻后下注：<text class="profile-sizing-value"
+            >{{detailProfile.sizingLow}}–{{detailProfile.sizingHigh}}% 池</text
+          ></text
         ><text wx:if="{{!detailProfile.research}}" class="detail-evidence"
           >{{detailProfile.evidence}}</text
         ><view wx:if="{{detailProfile.research}}" class="research-copy"
@@ -325,102 +466,234 @@
   >
 </view>
 
+<view wx:if="{{guideOpen || reviewOpen || potOpen || resetOpen}}" class="modal-backdrop" />
 <view
   wx:if="{{guideOpen}}"
-  class="modal"
-  style="padding-top: {{topInset}}px; padding-bottom: {{bottomInset}}px;"
-  ><view class="modal-header" style="padding-right: {{navRightInset}}px;"
-    ><text>玩法指南</text
-    ><button class="close" bindtap="closeGuide" aria-label="关闭玩法指南">×</button></view
-  ><scroll-view scroll-y class="modal-scroll"
-    ><view class="modal-body guide-copy"
-      ><text class="module-title">1. 先了解规则</text
-      ><text
-        >每人两张底牌，全桌共用五张公共牌。选出七张牌中最强的五张，或让其他对手全部弃牌，就能赢得底池。</text
-      ><text
-        >每手顺时针轮换庄家 BTN，之后依次是小盲 SB（25）和大盲 BB（50）。所有筹码以 25
-        为最小单位。</text
-      ><text class="module-title">2. 四轮行动</text
-      ><text
-        >翻牌前 → 翻牌（三张）→ 转牌（一张）→
-        河牌（一张）。轮到你时，选择弃牌、过牌、跟注或加注。无人下注可免费过牌；有下注时需要跟到当前金额。</text
-      ><text
-        >普通加注至少增加上一笔完整加注的幅度。全下不足完整加注时，不一定重开其他人的加注权。主池、边池和未被跟注的退还都由统一规则引擎处理。</text
-      ><text class="module-title">3. 选择下注尺度</text
-      ><text
-        >“½
-        底池”和“底池”先计入需要补齐的跟注，再按更新后的底池计算加注增量。“加注”按钮显示本轮总投入，已下过的筹码包含在内。金额会调整到合法的
-        25 筹码档位。</text
-      ><text class="module-title">4. 调整对手</text
-      ><text
-        >设置里可选择 5–9
-        人、对手难度、各座位风格、情绪与声音。难度立即生效；人数、风格和情绪会自动保存并在下一手使用。</text
-      ><text class="module-title">5. 重打和复盘</text
-      ><text
-        >“重打本手”还原原来的底牌和发牌顺序，同时撤回上次结算和统计。“复盘”只依据你行动前可见的信息，解释值得保留的决定、需要改进的操作以及更多取值空间。</text
-      ><text
-        >单次赢牌不证明操作正确，单次输牌也不证明操作失误。复盘里的收益与范围属于估计，不会保证下一次一定获胜。</text
-      ></view
-    ></scroll-view
-  ></view
+  class="sheet guide-sheet"
+  style="top: {{topInset + (windowHeight - topInset - bottomInset) * 0.075}}px; height: {{(windowHeight - topInset - bottomInset) * 0.85}}px;"
 >
-
+  <scroll-view scroll-y class="sheet-scroll"
+    ><view class="sheet-body">
+      <view class="dialog-heading"
+        ><text class="eyebrow">QUICK GUIDE</text
+        ><button class="close" bindtap="closeGuide" aria-label="关闭玩法指南">×</button></view
+      >
+      <include src="guide.wxml" /> </view
+  ></scroll-view>
+</view>
 <view
   wx:if="{{reviewOpen}}"
-  class="modal"
-  style="padding-top: {{topInset}}px; padding-bottom: {{bottomInset}}px;"
-  ><view class="modal-header" style="padding-right: {{navRightInset}}px;"
-    ><text>第 {{reviewData.hand}} 手 · 复盘</text
-    ><button class="close" bindtap="closeReview" aria-label="关闭复盘">×</button></view
-  ><scroll-view scroll-y class="modal-scroll"
-    ><view class="modal-body"
-      ><view class="info-module review-summary"
-        ><text class="module-title">{{reviewData.title}}</text
-        ><text>{{reviewData.summary}}</text></view
-      ><view wx:for="{{reviewData.steps}}" wx:key="index" class="settings-module review-step"
-        ><view class="module-heading"
-          ><text class="module-title">第 {{item.index + 1}} 步 · {{item.street}}</text
-          ><text class="review-label">{{item.label}}</text></view
-        ><view class="review-cards"
-          ><view
-            wx:for="{{item.cards}}"
-            wx:for-item="card"
-            wx:key="key"
-            class="card mini-card {{card.red ? 'red' : ''}}"
-            ><text>{{card.rank}}</text><text>{{card.suit}}</text></view
+  class="sheet review-sheet"
+  style="top: {{topInset + (windowHeight - topInset - bottomInset) * 0.04}}px; height: {{(windowHeight - topInset - bottomInset) * 0.92}}px;"
+>
+  <scroll-view scroll-y class="sheet-scroll"
+    ><view class="sheet-body">
+      <view class="dialog-heading"
+        ><text class="eyebrow">HAND REVIEW</text
+        ><button class="close" bindtap="closeReview" aria-label="关闭复盘">×</button></view
+      >
+      <view class="review-title-row"
+        ><view
+          ><text class="dialog-title">第 {{reviewData.hand}} 手 · 决策复盘</text
+          ><text class="review-context">{{reviewData.resultContext}}</text></view
+        ><text class="review-profit">{{reviewData.profit}} 筹码</text></view
+      >
+      <text wx:if="{{reviewData.loading}}" class="review-progress">正在分析当时的决策…</text>
+      <view class="review-tabs"
+        ><button
+          class="{{reviewPerspective === 'hero' ? 'selected' : ''}}"
+          data-value="hero"
+          bindtap="changeReviewPerspective"
+        >
+          我的决策</button
+        ><button
+          class="{{reviewPerspective === 'opponent' ? 'selected' : ''}}"
+          data-value="opponent"
+          bindtap="changeReviewPerspective"
+        >
+          对手为什么这样打
+        </button></view
+      >
+      <text wx:if="{{reviewPerspective === 'opponent'}}" class="review-context"
+        >逐步查看它当时如何判断。底牌在本手结束后才进入这个面板；你的决策评级仍只使用当时公开信息。</text
+      >
+      <view wx:if="{{reviewPerspective === 'opponent'}}" class="opponent-filter"
+        ><text>查看对手</text
+        ><picker
+          range="{{opponentOptions}}"
+          value="{{opponentFilter}}"
+          bindchange="changeOpponentFilter"
+          ><view class="picker-value">{{opponentOptions[opponentFilter]}}⌄</view></picker
+        ></view
+      >
+      <view class="review-timeline-title"
+        ><text>{{reviewPerspective === 'hero' ? '你的决策' : '对手的实际行动'}}</text
+        ><text>{{reviewSteps.length}} 次行动</text></view
+      >
+      <scroll-view
+        scroll-x
+        class="review-timeline {{reviewPerspective === 'opponent' ? 'opponent' : ''}}"
+        ><view class="review-timeline-inner"
+          ><button
+            wx:for="{{reviewSteps}}"
+            wx:key="index"
+            class="review-step {{reviewIndex === index ? 'selected' : ''}}"
+            data-index="{{index}}"
+            bindtap="selectReviewStep"
+          >
+            <text class="review-step-number">{{index + 1}}</text
+            ><view
+              ><text wx:if="{{reviewPerspective === 'hero'}}" class="review-step-meta"
+                >{{item.street}} · {{item.position}}</text
+              ><text wx:else class="review-step-meta">{{item.name}} · {{item.street}}</text
+              ><text class="review-step-action">{{item.actual}}</text></view
+            ><text class="review-label">{{item.label}}</text>
+          </button></view
+        ></scroll-view
+      >
+      <view wx:if="{{selectedReviewStep}}" class="review-detail">
+        <view class="review-detail-header"
+          ><text
+            >{{reviewPerspective === 'hero' ? '第 ' + (reviewIndex + 1) + ' 步' :
+            selectedReviewStep.name}} · {{selectedReviewStep.street}}</text
+          ><text class="review-label"
+            >{{reviewPerspective === 'hero' ? selectedReviewStep.label : '实际执行记录'}}</text
           ></view
-        ><text>你的操作：{{item.actual}}</text
-        ><text class="suggestion">建议：{{item.suggestion}}</text><text>{{item.reason}}</text
-        ><text>{{item.ev}}</text><text class="muted">{{item.followUp}}</text></view
-      ><text class="muted">{{reviewData.scope}}</text></view
-    ></scroll-view
-  ></view
->
-
-<view
-  wx:if="{{activityOpen}}"
-  class="modal"
-  style="padding-top: {{topInset}}px; padding-bottom: {{bottomInset}}px;"
-  ><view class="modal-header" style="padding-right: {{navRightInset}}px;"
-    ><text>本局动态</text><button class="close" bindtap="closeActivity">×</button></view
-  ><scroll-view scroll-y class="modal-scroll"
-    ><view class="modal-body"
-      ><view class="stats-row"
-        ><text>{{heroStack}} 筹码</text><text>完成 {{stats.hands}} 手</text
-        ><text>获胜 {{stats.wins}} 手</text></view
-      ><text wx:for="{{logs}}" wx:key="key" class="activity-item">{{item.text}}</text></view
-    ></scroll-view
-  ></view
->
+        >
+        <view class="review-scene">
+          <view class="review-card-rows"
+            ><view
+              ><text wx:if="{{reviewPerspective === 'hero'}}" class="review-card-label"
+                >你的底牌</text
+              ><text wx:else class="review-card-label">{{selectedReviewStep.name}} 当时的底牌</text
+              ><view class="review-cards"
+                ><view
+                  wx:for="{{selectedReviewStep.cards}}"
+                  wx:key="key"
+                  class="card review-card-face {{item.red ? 'red' : ''}}"
+                  ><text class="card-rank">{{item.rank}}</text
+                  ><text class="card-suit">{{item.suit}}</text
+                  ><text class="card-corner">{{item.rank}}</text></view
+                ></view
+              ></view
+            ><view
+              ><text class="review-card-label">当时的公共牌</text
+              ><view class="review-cards"
+                ><view
+                  wx:for="{{selectedReviewStep.board}}"
+                  wx:key="key"
+                  class="card review-card-face {{item.red ? 'red' : ''}}"
+                  ><text class="card-rank">{{item.rank}}</text
+                  ><text class="card-suit">{{item.suit}}</text
+                  ><text class="card-corner">{{item.rank}}</text></view
+                ><text wx:if="{{!selectedReviewStep.board.length}}" class="review-no-board"
+                  >公共牌尚未发出</text
+                ></view
+              ></view
+            ></view
+          >
+          <view class="review-scene-meta"
+            ><view><text>位置</text><text>{{selectedReviewStep.position}}</text></view
+            ><view><text>当时底池</text><text>{{selectedReviewStep.pot}}</text></view
+            ><view><text>剩余筹码</text><text>{{selectedReviewStep.stack}}</text></view></view
+          >
+        </view>
+        <view class="review-comparison"
+          ><view class="review-choice"
+            ><text>{{reviewPerspective === 'hero' ? '你当时选择' : '它当时选择'}}</text
+            ><text>{{selectedReviewStep.actual}}</text></view
+          ><view wx:if="{{reviewPerspective === 'hero'}}" class="review-choice suggested"
+            ><text>下次怎么调整</text><text>{{selectedReviewStep.suggestion}}</text></view
+          ></view
+        >
+        <view class="review-coaching"
+          ><text>{{selectedReviewStep.reason}}</text
+          ><text wx:if="{{selectedReviewStep.ev}}">{{selectedReviewStep.ev}}</text
+          ><view wx:if="{{selectedReviewStep.followUp}}"
+            ><text class="module-title">下次练习重点</text
+            ><text>{{selectedReviewStep.followUp}}</text></view
+          ><text wx:for="{{selectedReviewStep.reasons}}" wx:key="*this">• {{item}}</text
+          ><text class="muted">{{selectedReviewStep.warning}}</text></view
+        >
+      </view>
+      <text wx:elif="{{!reviewData.loading}}" class="muted"
+        >本手没有主动决策，无法评价选择。盲注是强制投入，不会被归为操作失误。</text
+      >
+    </view></scroll-view
+  >
+</view>
 <view
   wx:if="{{potOpen}}"
-  class="modal"
-  style="padding-top: {{topInset}}px; padding-bottom: {{bottomInset}}px;"
-  ><view class="modal-header" style="padding-right: {{navRightInset}}px;"
-    ><text>底池明细</text><button class="close" bindtap="closePots">×</button></view
-  ><view class="modal-body"
-    ><view wx:for="{{pots}}" wx:key="label" class="setting-row"
-      ><text>{{item.label}}</text><text>{{item.amount}}</text></view
-    ></view
-  ></view
+  class="sheet pot-sheet"
+  style="top: {{topInset + (windowHeight - topInset - bottomInset - potHeight) / 2}}px; height: {{potHeight}}px;"
 >
+  <scroll-view scroll-y class="sheet-scroll"
+    ><view class="sheet-body">
+      <view class="dialog-heading"
+        ><text class="eyebrow">POT BREAKDOWN</text
+        ><button class="close" bindtap="closePots" aria-label="关闭底池明细">×</button></view
+      >
+      <text class="dialog-title">{{done ? '本手结算' : '主池与边池'}}</text>
+      <text wx:if="{{!done}}" class="pot-note"
+        >金额按当前投入显示；尚未行动的玩家需跟注才能保留相应资格。仅全下额度形成边池，未被跟注的部分待跟注或退还。</text
+      >
+      <view wx:for="{{pots}}" wx:key="index" class="pot-detail-card">
+        <view class="pot-detail-heading"
+          ><text>{{item.label}}</text
+          ><text wx:if="{{!done}}">{{item.amount}}<text class="unit">筹码</text></text></view
+        >
+        <block wx:if="{{done}}"
+          ><view wx:for="{{item.awards}}" wx:key="name" wx:for-item="award" class="pot-award"
+            ><view
+              ><text class="winner-crown">♛</text
+              ><view
+                ><text>{{award.name}} 获胜</text><text class="muted">{{award.label}}</text></view
+              ></view
+            ><text>+{{award.amount}}<text class="unit">筹码</text></text></view
+          ></block
+        >
+        <block wx:else
+          ><text class="pot-eligibility {{item.heroEligible ? 'hero-eligible' : ''}}"
+            >{{item.eligibility}} · {{item.count}} 人</text
+          ><text class="pot-player-list">可争夺：{{item.eligible}}</text></block
+        >
+        <button class="pot-distribution" data-index="{{index}}" bindtap="togglePot">
+          {{done ? '查看分配详情' : '查看本池投入'}} {{potExpanded[index] ? '⌃' : '⌄'}}
+        </button>
+        <view wx:if="{{potExpanded[index]}}"
+          ><view
+            wx:for="{{item.contributions}}"
+            wx:key="name"
+            wx:for-item="contribution"
+            class="pot-contribution"
+            ><text>{{contribution.name}}</text><text>{{contribution.amount}}</text></view
+          ></view
+        >
+      </view>
+      <view wx:for="{{refunds}}" wx:key="name" class="pot-refund {{done ? 'compact-refund' : ''}}"
+        ><view
+          ><text>{{done ? '未跟注退还' : '待跟注或退还'}}</text
+          ><text class="refund-name">{{item.name}}</text></view
+        ><text class="refund-amount">{{item.amount}}</text></view
+      >
+      <button class="primary return-button" bindtap="closePots">回到牌桌</button>
+    </view></scroll-view
+  >
+</view>
+<view
+  wx:if="{{resetOpen}}"
+  class="sheet reset-sheet"
+  style="top: {{topInset + (windowHeight - topInset - bottomInset) / 2}}px;"
+>
+  <view class="sheet-body"
+    ><view class="dialog-heading"
+      ><text class="eyebrow">FRESH START</text
+      ><button class="close" bindtap="closeReset" aria-label="关闭重新练习">×</button></view
+    ><text class="dialog-title">重新开始练习？</text
+    ><text class="dialog-copy">本局将结束，所有玩家恢复到 5,000 筹码，练习统计归零。</text
+    ><view class="dialog-actions"
+      ><button bindtap="closeReset">继续练习</button
+      ><button class="primary" bindtap="confirmReset">重新开始</button></view
+    ></view
+  >
+</view>

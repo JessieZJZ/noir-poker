@@ -20,6 +20,14 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import { PROFILE_PORTRAITS } from '../../src/ui/portraits.js';
 
 const root = fileURLToPath(new URL('../..', import.meta.url));
+test('WXML bindings keep quoted literals on one line for the DevTools compiler', () => {
+  const source = readFileSync(path.join(root, 'miniprogram/pages/table/table.wxml'), 'utf8');
+  // The glass-easel compiler accepts a quoted newline that DevTools rejects.
+  // Check the saved/formatted template, not only an unformatted input string.
+  for (const binding of source.matchAll(/{{([\s\S]*?)}}/g))
+    for (const literal of binding[1].matchAll(/'(?:\\.|[^'\\])*'|"(?:\\.|[^"\\])*"/g))
+      assert.doesNotMatch(literal[0], /[\r\n]/, `Invalid WXML literal: ${literal[0]}`);
+});
 function fixture(t) {
   const directory = mkdtempSync(path.join(tmpdir(), 'noir-wechat-builder-'));
   t.after(() => rmSync(directory, { recursive: true, force: true }));
@@ -138,6 +146,12 @@ test('concurrent WeChat builders serialize and preserve DevTools private prefere
   const second = build(workspace);
   const results = await Promise.all([first.result, second.result]);
   for (const result of results) assertSuccess(result);
+  const fonts = readFileSync(path.join(workspace.output, 'fonts.wxss'), 'utf8');
+  for (const name of ['manrope', 'noto-sans-sc', 'barlow-condensed']) {
+    const bytes = readFileSync(path.join(workspace.directory, `public/fonts/${name}.woff2`));
+    assert.ok(fonts.includes(bytes.toString('base64')), `${name} must use the Web/native bytes`);
+  }
+  assert.doesNotMatch(fonts, /url\(['"]?https?:/);
   assert.equal(
     readFileSync(path.join(workspace.output, 'project.private.config.json'), 'utf8'),
     preferences,

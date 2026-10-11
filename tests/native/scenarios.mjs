@@ -29,7 +29,9 @@ export async function waitForNativeReview(app, { now = Date.now } = {}) {
               total: ratio ? Number(ratio[2]) : null,
               decisionCount: document.querySelectorAll('#review-timeline .review-step').length,
               retryVisible: Boolean(retry && !retry.hidden),
-              overview: document.querySelector('#review-overview')?.textContent.trim(),
+              analysisStatus: document.querySelector('#review-dialog')?.dataset.analysisStatus,
+              decisionTitle: document.querySelector('#review-decision-title')?.textContent.trim(),
+              summaryCount: document.querySelectorAll('.review-summary, #review-overview').length,
               suggestion: document.querySelector('#review-suggestion')?.textContent.trim(),
             };
           });
@@ -54,14 +56,15 @@ export async function waitForNativeReview(app, { now = Date.now } = {}) {
           lastProgressAt = now();
         }
         return snapshot.dialogOpen &&
-          snapshot.overview &&
+          snapshot.analysisStatus === 'done' &&
+          snapshot.decisionTitle &&
           snapshot.suggestion &&
-          !/分析中|undefined/.test(snapshot.overview + snapshot.suggestion)
-          ? { overview: snapshot.overview, suggestion: snapshot.suggestion }
+          !/分析中|undefined/.test(snapshot.decisionTitle + snapshot.suggestion)
+          ? { decisionTitle: snapshot.decisionTitle, suggestion: snapshot.suggestion }
           : null;
       },
       diagnostics.timeoutMs,
-      'Installed local review worker must produce an overview and suggestion',
+      'Installed local review worker must produce a decision explanation and suggestion',
     );
     diagnostics.elapsedMs = now() - started;
     return { ...review, diagnostics };
@@ -76,7 +79,9 @@ export async function waitForNativeReview(app, { now = Date.now } = {}) {
 // public state already exposed by the app and never install browser fixtures.
 export async function nativeScenarios(app) {
   const result = [];
+  const selectedScenarios = process.env.NOIR_NATIVE_SCENARIOS?.split(',');
   const check = async (name, run) => {
+    if (selectedScenarios && !selectedScenarios.includes(name)) return;
     const started = Date.now();
     try {
       const evidence = await run();
@@ -97,6 +102,26 @@ export async function nativeScenarios(app) {
     }
   };
   await check('local-launch-and-no-login', async () => {
+    const fonts = await app.waitFor(
+      () =>
+        app.evaluate(() =>
+          ['Manrope', 'Noto Sans SC'].every((name) =>
+            [...document.fonts].some(
+              (face) => face.family.replaceAll('"', '') === name && face.status === 'loaded',
+            ),
+          ),
+        ),
+      5000,
+      'Installed WebView must load the shared local UI fonts',
+    );
+    if (app.comparePage)
+      await app.comparePage('table', [
+        '.header',
+        '.surface-top',
+        '.table-viewport',
+        '#bet-slider',
+        '.action-buttons',
+      ]);
     const layout = await app.evaluate(readTableLayout);
     assertTableLayout(layout);
     const info = await app.evaluate(() => ({
@@ -316,6 +341,13 @@ export async function nativeScenarios(app) {
         width: image.naturalWidth,
       })),
     );
+    if (app.comparePage)
+      await app.comparePage('settings', [
+        '#opponents-dialog',
+        '.settings-dialog .dialog-header',
+        '.general-settings',
+        '.difficulty-module',
+      ]);
     await app.click('#opponents-dialog .close-dialog');
     // Closing and relaunching exercises Capacitor Preferences, not just in-memory controls.
     await app.relaunch();
@@ -355,7 +387,15 @@ export async function nativeScenarios(app) {
       assert.ok(detail.text.includes('2026-10-11'));
       assert.ok(detail.claims > 0 && detail.sources >= 2);
       assert.equal(detail.overflow, false);
-      if (id === 'haxton') await app.screenshot('researched-haxton-detail');
+      if (id === 'haxton') {
+        await app.screenshot('researched-haxton-detail');
+        if (app.comparePage)
+          await app.comparePage('player', [
+            '#profile-detail',
+            '.profile-detail-heading',
+            '.profile-detail-content',
+          ]);
+      }
       details.push({ id, ...detail });
       if (await app.visible('[data-close-profile-detail]'))
         await app.click('[data-close-profile-detail]');
@@ -554,12 +594,43 @@ export async function nativeScenarios(app) {
       }
       crownInspection.push(inspection);
     }
+    if (app.comparePage)
+      await app.comparePage('settlement', [
+        '.surface-top',
+        '.table-viewport',
+        '#board',
+        '.hero-area',
+        '.action-panel.settled-actions',
+        '#showdown-stage',
+      ]);
     return { coverage, pot: settled.pot, settlementBudget, layout, crownInspection };
   });
   await check('settlement-decision-review', async () => {
     await app.click('#review-hand-button');
     const review = await waitForNativeReview(app);
+    assert.equal(
+      await app.evaluate(
+        () =>
+          document.querySelectorAll('.review-summary, #review-overview, #review-priority').length,
+      ),
+      0,
+    );
     await app.screenshot('settlement-decision-review-open');
+    if (app.comparePage) {
+      await app.comparePage('review', [
+        '#review-dialog',
+        '.review-title-row',
+        '.review-tabs',
+        '#review-timeline',
+        '.review-scene',
+      ]);
+      await app.click('#review-opponents-tab');
+      await app.comparePage('opponent-review', [
+        '#review-dialog',
+        '.review-tabs',
+        '.review-opponent-heading',
+      ]);
+    }
     await app.click('#review-dialog .close-dialog');
     assert.equal(await app.evaluate(() => document.querySelector('#review-dialog').open), false);
     return review;
@@ -659,5 +730,127 @@ export async function nativeScenarios(app) {
       pausedPhase: paused.state.phase,
     };
   });
+  if (app.comparePage)
+    await check('every-player-count-matches-web', async () => {
+      const comparisons = [];
+      for (const count of [5, 6, 7, 8, 9]) {
+        await app.click('#opponents-button');
+        await app.select('#player-count', String(count));
+        comparisons.push(
+          await app.comparePage(`settings-${count}`, [
+            '#opponents-dialog',
+            '.general-settings',
+            '#player-count',
+            '.seats-module',
+          ]),
+        );
+        await app.click('#opponents-dialog .close-dialog');
+        await app.click('#reset-button');
+        await app.click('#confirm-reset');
+        await app.waitFor(async () => (await app.state()).playerCount === count, 15000);
+        await app.waitHero();
+        await app.evaluate(() => window.scrollTo(0, 0));
+        assertTableLayout(await app.evaluate(readTableLayout));
+        comparisons.push(
+          await app.comparePage(`table-${count}`, [
+            '.table-viewport',
+            '#board',
+            '.hero-area',
+            '.action-panel',
+            ...Array.from({ length: count - 1 }, (_, index) => `.seat-${index + 1}`),
+          ]),
+        );
+        await app.click('#fold-button');
+        if (await app.visible('#continue-deal-button')) await app.click('#continue-deal-button');
+        await app.waitFor(async () => (await app.state()).phase === 'done', 90000);
+        comparisons.push(
+          await app.comparePage(`settlement-${count}`, [
+            '.table-viewport',
+            '#board',
+            '.hero-area',
+            '.action-panel.settled-actions',
+            '#showdown-stage',
+          ]),
+        );
+        await app.click('#review-hand-button');
+        await waitForNativeReview(app);
+        comparisons.push(
+          await app.comparePage(`review-${count}`, [
+            '#review-dialog',
+            '.review-tabs',
+            '#review-timeline',
+            '.review-scene',
+          ]),
+        );
+        await app.click('#review-dialog .close-dialog');
+      }
+      return comparisons;
+    });
+  if (app.comparePage)
+    await check('all-secondary-pages-match-web', async () => {
+      const comparisons = [];
+      await app.click('#rules-button');
+      comparisons.push(
+        await app.comparePage('guide', [
+          '#rules-dialog',
+          '#rules-dialog .dialog-header',
+          '#rules-dialog h2',
+          '.rules-flow',
+        ]),
+      );
+      await app.click('#rules-dialog .close-dialog');
+      await app.click('.pot-details-trigger');
+      comparisons.push(
+        await app.comparePage('pots', [
+          '#pot-dialog',
+          '#pot-dialog .dialog-header',
+          '#pot-dialog-title',
+          '.pot-detail-card',
+        ]),
+      );
+      await app.click('#pot-dialog .close-dialog');
+      await app.click('#reset-button');
+      comparisons.push(
+        await app.comparePage('reset', [
+          '#reset-dialog',
+          '#reset-dialog .dialog-header',
+          '#reset-dialog h2',
+          '.dialog-actions',
+        ]),
+      );
+      await app.click('#reset-dialog .close-dialog');
+      await app.evaluate(() => document.querySelector('.session-card').scrollIntoView());
+      comparisons.push(
+        await app.comparePage('session-activity', [
+          '.session-card',
+          '.activity-card',
+          '.site-footer',
+        ]),
+      );
+      await app.evaluate(() => window.scrollTo(0, 0));
+      await app.click('#native-about-button');
+      comparisons.push(
+        await app.comparePage('about', [
+          '#native-about-dialog',
+          '#native-about-dialog h2',
+          '#native-about-dialog p',
+        ]),
+      );
+      await app.click('#native-about-dialog a[href="./app-privacy.html"]');
+      await app.waitFor(
+        async () => app.evaluate(() => !!document.querySelector('#policy-language')),
+        15000,
+        'Local privacy policy must load',
+      );
+      comparisons.push(
+        await app.comparePage('privacy', [
+          'main',
+          '#policy-language',
+          'article:not([hidden]) h1',
+          'article:not([hidden]) p',
+        ]),
+      );
+      return comparisons;
+    });
   return result;
 }

@@ -1,3 +1,5 @@
+import { SEAT_ANCHORS } from '../ui/seat-geometry.js';
+import { explainOpponent } from '../review/opponents.js';
 import {
   newGame,
   startHand,
@@ -54,48 +56,6 @@ const sanitize = (value) => ({
   hints: value?.hints !== false,
   ...sanitizeBotSettings(value),
 });
-const positions = {
-  5: [
-    [16, 50],
-    [30, 15],
-    [70, 15],
-    [84, 50],
-  ],
-  6: [
-    [15, 79],
-    [15, 29],
-    [50, 0],
-    [85, 29],
-    [85, 79],
-  ],
-  7: [
-    [15, 80],
-    [15, 48],
-    [30, 9],
-    [70, 9],
-    [85, 48],
-    [85, 80],
-  ],
-  8: [
-    [15, 81],
-    [15, 52],
-    [15, 24],
-    [50, 0],
-    [85, 24],
-    [85, 52],
-    [85, 81],
-  ],
-  9: [
-    [15, 82],
-    [15, 57],
-    [15, 31],
-    [33, 8],
-    [67, 8],
-    [85, 31],
-    [85, 57],
-    [85, 82],
-  ],
-};
 
 // All game mutations go through the same rule engine as Web/iOS/Android.
 // Only this platform adapter owns timers, preferences, and display data.
@@ -205,8 +165,8 @@ export function createWechatController({
         winner: done && game.winners.some((w) => w.id === player.id),
         cards: revealed ? player.hole.map(cardView) : [],
         rank: revealed ? evaluate([...player.hole, ...game.board]).label : '',
-        x: positions[game.players.length][index][0],
-        y: positions[game.players.length][index][1],
+        x: SEAT_ANCHORS[game.players.length][index][0],
+        y: SEAT_ANCHORS[game.players.length][index][1],
       };
     });
     const profiles = BOT_PROFILES.map((p) => ({
@@ -214,6 +174,7 @@ export function createWechatController({
       portrait: p.id === 'balanced' ? '' : `/assets/portraits/${p.id}.jpg`,
     }));
     const pot = done ? game.potAtShowdown || potSize(game) : potSize(game);
+    const breakdown = currentPots(game);
     publish({
       hand: game.hand,
       phase: game.phase,
@@ -237,7 +198,28 @@ export function createWechatController({
       heroAllin: hero.allin,
       compactActions: done || hero.folded || hero.allin,
       pot: format(pot),
-      pots: currentPots(game).pots.map((p) => ({ label: p.label, amount: format(p.amount) })),
+      pots: breakdown.pots.map((p) => ({
+        label: p.label,
+        amount: format(p.amount),
+        index: p.index,
+        eligible: p.eligible.map((id) => game.players[id].name).join('、'),
+        eligibility: p.eligible.includes(0) ? '你可争夺' : '你无法争夺',
+        heroEligible: p.eligible.includes(0),
+        count: p.eligible.length,
+        contributions: p.contributions.map((c) => ({
+          name: game.players[c.id].name,
+          amount: format(c.amount),
+        })),
+        awards: p.awards.map((a) => ({
+          name: game.players[a.id].name,
+          amount: format(a.amount),
+          label: a.label,
+        })),
+      })),
+      refunds: breakdown.refunds.map((r) => ({
+        name: game.players[r.id].name,
+        amount: format(r.amount),
+      })),
       done,
       canRetry: canRestartHand(game),
       waiting: !done && !legal.enabled,
@@ -497,8 +479,6 @@ export function createWechatController({
         loading: true,
         hand: input.hand,
         steps: [],
-        title: '正在分析当时的决策…',
-        summary: '',
         profit: format(input.outcome.profit),
       });
       function step() {
@@ -515,13 +495,39 @@ export function createWechatController({
         onProgress({
           loading: false,
           hand: input.hand,
-          title: report.title,
-          summary: report.summary,
           scope: report.overview.scope,
           profit: format(input.outcome.profit),
+          resultContext: input.outcome.folded
+            ? '你已弃牌，按弃牌前的信息评价。'
+            : '只按行动前可见的信息评价决策。',
+          opponents: input.opponents.map((record, index) => {
+            const view = record.trace.view;
+            const explanation = explainOpponent(record);
+            return {
+              index,
+              name: record.name,
+              street: STREET_NAMES[view.street],
+              actual: cleanAction(
+                actionLabel({ ...view, action: record.action, amount: record.amount }),
+              ),
+              label: record.trace.profileName,
+              position: view.position,
+              pot: format(view.pot),
+              stack: format(view.stack),
+              cards: view.hole.map(cardView),
+              board: view.board.map(cardView),
+              title: explanation.title,
+              reason: explanation.detail,
+              reasons: explanation.reasons,
+              warning: explanation.warning,
+            };
+          }),
           steps: results.map((r, index) => ({
             index,
             street: STREET_NAMES[input.decisions[index].street],
+            position: input.decisions[index].position,
+            pot: format(input.decisions[index].pot),
+            stack: format(input.decisions[index].stack),
             actual: cleanAction(actionLabel(input.decisions[index])),
             label: r.coaching.label,
             suggestion: cleanAction(r.coaching.suggestion),

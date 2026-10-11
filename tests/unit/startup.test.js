@@ -22,24 +22,25 @@ test('every local stylesheet is render-blocking in the head before the inert app
   );
 });
 
-test('optional Web fonts cannot block startup and native builds remove their entire request', () => {
-  const link = html.match(/<link\s+data-web-fonts\b[^>]*>/)?.[0];
-  assert.ok(link);
-  assert.match(link, /media="print"/);
-  assert.match(link, /onload="this.media = 'all'"/);
+test('Web and native use identical local fonts without a remote font request', () => {
+  assert.doesNotMatch(html, /data-web-fonts|fonts\.(googleapis|gstatic)\.com/);
   for (const name of readdirSync(new URL('../../src/styles', import.meta.url))) {
     assert.doesNotMatch(
       readFileSync(new URL(`../../src/styles/${name}`, import.meta.url), 'utf8'),
       /@import\s+url\(['"]https?:/,
     );
   }
-  const plugin = config({ mode: 'native' }).plugins.find(
-    (item) => item.name === 'native-offline-fonts',
-  );
-  const bundled = plugin.transformIndexHtml(html);
-  assert.doesNotMatch(bundled, /data-web-fonts|fonts\.googleapis\.com/);
-  assert.equal((bundled.match(/<link rel="stylesheet" href="\/src\/styles\//g) ?? []).length, 13);
-  assert.ok(config({ mode: 'production' }).plugins.every((item) => item.name !== plugin.name));
+  assert.deepEqual(config({ mode: 'native' }).plugins, config({ mode: 'production' }).plugins);
+  const fonts = readFileSync(new URL('../../src/styles/fonts.css', import.meta.url), 'utf8');
+  const paths = [...fonts.matchAll(/url\('\/fonts\/([^']+)'\)/g)];
+  assert.equal(paths.length, 4);
+  for (const [, name] of paths)
+    assert.equal(
+      readFileSync(new URL(`../../public/fonts/${name}`, import.meta.url))
+        .subarray(0, 4)
+        .toString(),
+      'wOF2',
+    );
 });
 
 test('the HTML action controls are disabled before platform, locale and game preparation', () => {

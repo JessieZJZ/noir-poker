@@ -11,6 +11,8 @@ import { stopOwnedServer } from './native-process.mjs';
 import { captureNativeScreen } from './native-screen.mjs';
 import { restartNativeApplication } from './native-lifecycle.mjs';
 import { requestNativeOrientation } from './native-orientation.mjs';
+import { compareNativePage } from '../tests/native/page-parity.mjs';
+import { createNativeCommand } from './native-transport.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const args = process.argv.slice(2);
@@ -105,7 +107,27 @@ async function waitFor(test, timeout = 30000, message = 'Condition did not becom
   }
   throw Error(`${message}${lastError ? `: ${lastError.message}` : ''}`);
 }
-const command = (method, endpoint, body) => request(method, `/session/${session}${endpoint}`, body);
+const command = createNativeCommand({
+  request: (method, endpoint, body) => request(method, `/session/${session}${endpoint}`, body),
+  platform,
+  reconnect: () => run(adb, ['-s', udid, 'reconnect']),
+  waitReady: () =>
+    waitFor(
+      () => {
+        const result = spawnSync(adb, ['-s', udid, 'shell', 'getprop', 'sys.boot_completed'], {
+          encoding: 'utf8',
+          timeout: 3000,
+        });
+        return result.status === 0 && result.stdout.trim() === '1';
+      },
+      10000,
+      'Selected Android ADB transport must reconnect',
+    ),
+  onRecovery: () => {
+    report.transportRecoveries = (report.transportRecoveries || 0) + 1;
+    log('Reconnected the selected Android ADB transport before retrying WebView attachment');
+  },
+});
 let webContext;
 async function attachWebview() {
   // Wait for the real document before attaching WebKit. Attaching during the
@@ -404,6 +426,10 @@ try {
           'appium:additionalWebviewBundleIds': ['process-App'],
         }
       : {
+          // Fresh emulator services can still initialize after boot_completed.
+          // Keep driver setup deadlines separate from all gameplay assertions.
+          'appium:adbExecTimeout': 60000,
+          'appium:uiautomator2ServerLaunchTimeout': 120000,
           ...(options['driver-port']
             ? { 'appium:systemPort': Number(options['driver-port']) }
             : {}),
@@ -448,6 +474,8 @@ try {
     visible,
     waitFor,
     screenshot,
+    comparePage: (name, selectors) =>
+      compareNativePage({ root, output, evaluate, screenshot }, name, selectors),
     relaunch,
     activate,
     background,

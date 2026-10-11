@@ -26,6 +26,7 @@
       content="无需登录的德州扑克练习桌。可选 5–9 人无限注德州扑克对战，享受流畅发牌与筹码动画。"
     />
     <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+    <link rel="stylesheet" href="/src/styles/fonts.css" />
     <link rel="stylesheet" href="/src/styles/base.css" />
     <link rel="stylesheet" href="/src/styles/game.css" />
     <link rel="stylesheet" href="/src/styles/review.css" />
@@ -39,14 +40,6 @@
     <link rel="stylesheet" href="/src/styles/persona-browser.css" />
     <link rel="stylesheet" href="/src/styles/settings-layout.css" />
     <link rel="stylesheet" href="/src/styles/i18n.css" />
-    <!-- Optional Web fonts must not delay the first usable frame. Native builds remove this link. -->
-    <link
-      data-web-fonts
-      rel="stylesheet"
-      href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&amp;family=Manrope:wght@400;500;600;700;800&amp;family=Noto+Sans+SC:wght@400;500;600;700&amp;display=swap"
-      media="print"
-      onload="this.media = 'all'"
-    />
   </head>
   <body inert>
     <dialog
@@ -60,7 +53,13 @@
     </dialog>
     <header class="header">
       <a class="brand" href="./" aria-label="NOIR Poker 首页"
-        ><span class="brand-mark">♠</span><span>NOIR<span class="brand-light">POKER</span></span></a
+        ><span class="brand-mark" aria-hidden="true"
+          ><svg viewBox="0 0 38 44">
+            <path
+              d="M19 0C12 10 0 15 0 25c0 11 12 15 19 7 7 8 19 4 19-7C38 15 26 10 19 0Zm-4 33-5 11h18l-5-11Z"
+              fill="currentColor"
+            /></svg></span
+        ><span>NOIR<span class="brand-light">POKER</span></span></a
       >
       <div class="header-center">
         <span class="live-dot"></span>单机练习场<span class="header-line"></span
@@ -655,13 +654,10 @@
         </div>
         <strong id="review-result-change"></strong>
       </div>
-      <section class="review-summary">
-        <h3 id="review-summary-title">输牌以后，先看决策</h3>
+      <div class="review-analysis-status">
         <p id="review-analysis-state" role="status" aria-live="polite"></p>
-        <div id="review-overview" class="review-overview"></div>
-        <button id="review-priority" data-review-index="0" hidden>查看优先复盘的决策</button
-        ><button id="review-retry" hidden>重新分析</button>
-      </section>
+        <button id="review-retry" hidden>重新分析</button>
+      </div>
       <div class="review-tabs" role="tablist" aria-label="复盘视角">
         <button
           id="review-hero-tab"

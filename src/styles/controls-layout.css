@@ -1,4 +1,32 @@
 /* Controls keep their labels and amounts on the same baseline at every size. */
+.bet-controls input[type='range'] {
+  -webkit-appearance: none;
+  appearance: none;
+  background: #354650;
+  border: 0;
+  border-radius: 3px;
+}
+.bet-controls input[type='range']::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 15px;
+  height: 15px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--mint);
+}
+.bet-controls input[type='range']::-moz-range-thumb {
+  width: 15px;
+  height: 15px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--mint);
+}
+.bet-controls input[type='range']::-moz-range-track {
+  height: 5px;
+  border-radius: 3px;
+  background: #354650;
+}
 button:not(.profile-card):not(.review-step) {
   white-space: nowrap;
 }
@@ -198,10 +226,13 @@ button:not(.profile-card):not(.review-step) {
 /* Shrink the whole surface by exactly the collapsed dock space. The table
    keeps its live dimensions without leaving an empty strip above the row. */
 .game-surface:has(.compact-actions) {
-  height: calc(var(--play-height) - var(--live-dock-height) + 64px);
+  height: calc(
+    var(--play-height) - var(--live-dock-height) + 64px -
+      var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px))
+  );
 }
 .game-surface > .action-dock-slot:has(.compact-actions) {
-  height: calc(64px + var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)));
+  height: 64px;
 }
 .game-surface .action-dock {
   display: flex;
@@ -213,7 +244,10 @@ button:not(.profile-card):not(.review-step) {
   padding-bottom: var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px));
 }
 .game-surface .action-dock.compact-actions {
-  height: calc(64px + var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)));
+  height: 64px;
+  /* The collapsed row is above scrolling settlement content. The body's
+     bottom inset protects the end of the page; keep it out of this seam. */
+  padding-bottom: 0;
 }
 .game-surface .compact-actions .decision-strip {
   display: none;

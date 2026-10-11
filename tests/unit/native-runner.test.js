@@ -149,6 +149,7 @@ test('a native scenario failure is recorded without turning it into a partial pa
   const error = Error('WebView layout read failed');
   await assert.rejects(
     nativeScenarios({
+      waitFor: async (read) => read(),
       evaluate: async () => {
         throw error;
       },

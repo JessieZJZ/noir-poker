@@ -1,6 +1,9 @@
 const { createWechatController } = require('../../shared/platform/wechat-controller.js');
-// Nav 48 + table header 30 + hint slot 20 + dock 136 + footer 22 + shell border 2.
-const VIEWPORT_CHROME_HEIGHT = 258;
+const { phoneLayout } = require('./phone-layout.js');
+const { presentCard, showdownPresentation } = require('./presentation.js');
+const { completeBoardForPractice, rankText } = require('../../shared/engine/poker.js');
+// Capsule 36 + Web nav 60 + top gap 8 + header 69 + live dock 146 + end gap 8 + border 2.
+const VIEWPORT_CHROME_HEIGHT = 329;
 const PROFILE_AXES = [
   ['vpip', '入池宽度'],
   ['aggression', '进攻倾向'],
@@ -15,6 +18,9 @@ Page({
     bottomInset: 0,
     windowHeight: 800,
     tableHeight: 460,
+    arenaHeight: 460,
+    arenaWidth: 364,
+    arenaScale: 1,
     windowWidth: 390,
     navRightInset: 104,
     compactNav: false,
@@ -23,6 +29,15 @@ Page({
     reviewOpen: false,
     activityOpen: false,
     potOpen: false,
+    resetOpen: false,
+    guideExpanded: [false, false],
+    potExpanded: {},
+    potHeight: 580,
+    reviewPerspective: 'hero',
+    reviewIndex: 0,
+    opponentFilter: 0,
+    opponentOptions: ['全部对手'],
+    selectedReviewStep: null,
     countOptions: [5, 6, 7, 8, 9],
     emotionOptions: ['关闭', '轻微波动', '明显波动'],
     profiles: [],
@@ -42,13 +57,56 @@ Page({
     this.updateWindow();
     this._audio = [];
     this._controller = createWechatController({
-      publish: (view) =>
+      publish: (view) => {
+        const game = this._controller?.getGame();
+        const board = game?.practiceBoard
+          ? game.practiceBoard.map((card) => ({
+              key: card.key,
+              rank: rankText(card.rank),
+              suit: card.symbol,
+              red: card.suit === 1 || card.suit === 3,
+            }))
+          : view.board;
+        const showdown = game ? showdownPresentation(game, view.profiles) : [];
+        const presentedBoard = board.map(presentCard);
         this.setData({
           ...view,
-          ...this.publicLayout(view.board),
+          seats: view.seats.map((seat) => ({ ...seat, cards: seat.cards.map(presentCard) })),
+          heroCards: view.heroCards.map(presentCard),
+          showdown,
+          showdownContext: `${showdown.length} 人参与摊牌${game?.pots.length > 1 ? ' · 主池与边池分别结算' : ''}`,
+          activePlayerCount: view.seats.length + 1,
+          logs: game
+            ? game.logs
+                .slice()
+                .reverse()
+                .map((entry, index) => {
+                  let text = typeof entry === 'string' ? entry : entry.text;
+                  for (const player of game.players.filter(
+                    (p) => p.id && p.botProfile !== 'balanced',
+                  )) {
+                    const profile = view.profiles.find((p) => p.id === player.botProfile);
+                    const name = player.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                    if (profile)
+                      text = text.replace(
+                        new RegExp(`\\b${name}\\b(?![（(])`, 'g'),
+                        `${player.name}（${profile.short}）`,
+                      );
+                  }
+                  return { key: index, text, type: entry.type, hero: entry.player === 0 };
+                })
+            : view.logs,
+          board: presentedBoard,
+          canPracticeRunout: view.done && view.heroFolded && board.length < 5,
+          ...this.publicLayout(presentedBoard, {
+            ...view,
+            seats: view.seats.map((seat) => ({ ...seat, cards: seat.cards.map(presentCard) })),
+          }),
+          winrate: view.stats.hands ? Math.round((view.stats.wins / view.stats.hands) * 100) : 0,
           countIndex: view.settings.playerCount - 5,
           emotionIndex: ['off', 'subtle', 'lively'].indexOf(view.settings.emotionMode),
-        }),
+        });
+      },
       storage: {
         getItem: (key) => wx.getStorageSync(key) || null,
         setItem: (key, value) => wx.setStorageSync(key, value),
@@ -60,7 +118,7 @@ Page({
   onShow() {
     this._controller?.show();
     if (this.data.reviewOpen && this._controller)
-      this.call('review', (reviewData) => this.setData({ reviewData }));
+      this.call('review', (reviewData) => this.updateReview(reviewData));
   },
   onHide() {
     this._controller?.hide();
@@ -112,23 +170,49 @@ Page({
       bottomInset,
       windowHeight: info.windowHeight,
       navRightInset,
-      compactNav: info.windowWidth - 24 - navRightInset < 250,
+      compactNav: false,
       windowWidth: info.windowWidth,
       tableHeight: Math.max(0, info.windowHeight - topInset - bottomInset - VIEWPORT_CHROME_HEIGHT),
     });
+    const arenaHeight = Math.max(300, this.data.tableHeight);
+    const arenaScale = Math.min(1, this.data.tableHeight / arenaHeight);
+    this.setData({
+      arenaHeight,
+      arenaScale,
+      arenaWidth: (info.windowWidth - 26) / (arenaScale || 1),
+    });
     this.setData(this.publicLayout(this.data.board));
   },
-  publicLayout(board = []) {
+  publicLayout(board = [], view = this.data) {
+    if (this.data.windowWidth <= 600 && view.seats?.length) {
+      const fitted = phoneLayout({
+        width: this.data.windowWidth,
+        height: this.data.tableHeight,
+        seats: view.seats,
+      });
+      return {
+        ...fitted,
+        phoneLayout: true,
+        phoneSeats: fitted.positioned,
+        boardSlots: Array.from(
+          { length: 5 },
+          (_, i) =>
+            board[i] || { key: `empty-${i}`, empty: true, suit: ['♠', '♣', '♥', '♦', '♠'][i] },
+        ),
+      };
+    }
     const largeTablet =
       this.data.windowWidth >= 901 &&
       this.data.windowWidth <= 1100 &&
       this.data.windowHeight >= 1100 &&
       this.data.windowHeight > this.data.windowWidth;
-    const cardWidth = this.data.tableHeight < 430 ? 25 : largeTablet ? 82 : 48;
+    const cardWidth =
+      this.data.tableHeight < 430 ? 25 : largeTablet ? 82 : this.data.windowWidth > 600 ? 48 : 38;
     const singleWidth = 5 * cardWidth + 16;
     // Use the safe middle corridor, independent of deal/reveal state.
-    const boardTwoRows = singleWidth > (this.data.windowWidth - 18) * 0.48;
+    const boardTwoRows = singleWidth > this.data.arenaWidth * 0.6;
     return {
+      phoneLayout: false,
       boardTwoRows,
       boardWidth: boardTwoRows ? 3 * cardWidth + 8 : singleWidth,
       boardSlots: Array.from(
@@ -192,6 +276,11 @@ Page({
     this.call('retry');
   },
   finishHand() {
+    if (this.data.canPracticeRunout) {
+      completeBoardForPractice(this._controller.getGame());
+      this._controller.show();
+      return;
+    }
     this.call('finishHand');
   },
   openSettings() {
@@ -202,6 +291,10 @@ Page({
   },
   changeSwitch(event) {
     this.call('setPreference', event.currentTarget.dataset.key, event.detail.value);
+  },
+  togglePreference(event) {
+    const key = event.currentTarget.dataset.key;
+    this.call('setPreference', key, !this.data.settings[key]);
   },
   changeCount(event) {
     this.call('setPreference', 'playerCount', this.data.countOptions[Number(event.detail.value)]);
@@ -229,6 +322,8 @@ Page({
       detailProfile: profile
         ? {
             ...profile,
+            sizingLow: Math.round(profile.sizing[0] * 100),
+            sizingHigh: Math.round(profile.sizing[1] * 100),
             research: profile.research
               ? {
                   ...profile.research,
@@ -280,9 +375,75 @@ Page({
   closeGuide() {
     this.setData({ guideOpen: false });
   },
+  copyGuideSource(event) {
+    const url = event.currentTarget.dataset.url;
+    if (typeof url === 'string' && url.startsWith('https://www.pokerstars.com/'))
+      wx.setClipboardData({ data: url });
+  },
+  toggleGuide(event) {
+    const values = [...this.data.guideExpanded];
+    const index = Number(event.currentTarget.dataset.index);
+    values[index] = !values[index];
+    this.setData({ guideExpanded: values });
+  },
+  togglePot(event) {
+    const index = event.currentTarget.dataset.index;
+    this.setData({
+      potExpanded: { ...this.data.potExpanded, [index]: !this.data.potExpanded[index] },
+    });
+    this.measurePot();
+  },
+  updateReview(reviewData) {
+    reviewData = {
+      ...reviewData,
+      steps: (reviewData.steps || []).map((step) => ({
+        ...step,
+        cards: (step.cards || []).map(presentCard),
+        board: (step.board || []).map(presentCard),
+      })),
+      opponents: (reviewData.opponents || []).map((step) => ({
+        ...step,
+        cards: (step.cards || []).map(presentCard),
+        board: (step.board || []).map(presentCard),
+      })),
+    };
+    const opponents = reviewData.opponents || [];
+    const names = [...new Set(opponents.map((step) => step.name))];
+    const filter = Math.min(this.data.opponentFilter, names.length);
+    const steps =
+      this.data.reviewPerspective === 'hero'
+        ? reviewData.steps
+        : opponents.filter((step) => !filter || step.name === names[filter - 1]);
+    const reviewIndex = Math.min(this.data.reviewIndex, Math.max(0, steps.length - 1));
+    this.setData({
+      reviewData,
+      opponentOptions: ['全部对手', ...names],
+      opponentFilter: filter,
+      reviewIndex,
+      reviewSteps: steps,
+      selectedReviewStep: steps[reviewIndex] || null,
+    });
+  },
+  changeReviewPerspective(event) {
+    this.setData({ reviewPerspective: event.currentTarget.dataset.value, reviewIndex: 0 });
+    this.updateReview(this.data.reviewData);
+  },
+  changeOpponentFilter(event) {
+    this.setData({ opponentFilter: Number(event.detail.value), reviewIndex: 0 });
+    this.updateReview(this.data.reviewData);
+  },
+  selectReviewStep(event) {
+    this.setData({ reviewIndex: Number(event.currentTarget.dataset.index) });
+    this.updateReview(this.data.reviewData);
+  },
   openReview() {
-    this.setData({ reviewOpen: true });
-    this.call('review', (reviewData) => this.setData({ reviewData }));
+    this.setData({
+      reviewOpen: true,
+      reviewPerspective: 'hero',
+      reviewIndex: 0,
+      opponentFilter: 0,
+    });
+    this.call('review', (reviewData) => this.updateReview(reviewData));
   },
   closeReview() {
     this.call('cancelReview');
@@ -296,20 +457,35 @@ Page({
   },
   openPots() {
     this.setData({ potOpen: true });
+    this.measurePot();
+  },
+  measurePot() {
+    if (!wx.createSelectorQuery) return;
+    wx.createSelectorQuery()
+      .select('.pot-sheet .sheet-body')
+      .boundingClientRect((rect) => {
+        if (rect && this.data.potOpen)
+          this.setData({
+            potHeight: Math.min(
+              rect.height + 2,
+              (this.data.windowHeight - this.data.topInset - this.data.bottomInset) * 0.85,
+            ),
+          });
+      })
+      .exec();
   },
   closePots() {
     this.setData({ potOpen: false });
   },
   resetPractice() {
-    wx.showModal({
-      title: '重新练习',
-      content: '重新开始本地练习并重置筹码和统计？',
-      success: (result) => {
-        if (result.confirm) {
-          this.call('reset');
-          this.closeSettings();
-        }
-      },
-    });
+    this.setData({ resetOpen: true });
+  },
+  closeReset() {
+    this.setData({ resetOpen: false });
+  },
+  confirmReset() {
+    this.call('reset');
+    this.closeReset();
+    this.closeSettings();
   },
 });

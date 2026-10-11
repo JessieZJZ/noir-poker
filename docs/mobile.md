@@ -49,7 +49,7 @@ npm run mobile:sync
 - 切到后台时暂停机器人和发牌等待，回到前台后从剩余思考时间继续。重打、换手或重新练习仍会取消旧任务。当前牌局不保存到磁盘，进程被系统杀死后开启新练习。
 - Android 返回键先关闭当前对话框；没有对话框时回到后台。
 - 处理刘海、状态栏和底部手势区域；增加包内“关于与隐私”入口，显示实际原生版本和构建号。
-- 原生包使用系统字体，人物名称、头像、来源署名和已有说明与 Web 保持一致。全部本地图片随包提供，移除远程字体请求。构建生成图片 SHA-256 清单，同步副本以及实际 `.app`、APK、AAB 均检查图片内容，缺失或过期会阻止交付。
+- Web 与原生包使用同一组本地字体，人物名称、头像、来源署名和已有说明与 Web 保持一致。全部本地图片随包提供，无需远程字体请求。构建生成图片 SHA-256 清单，同步副本以及实际 `.app`、APK、AAB 均检查图片内容，缺失或过期会阻止交付。
 
 ## 版本与包名
 
@@ -86,6 +86,8 @@ npm run mobile:test:setup -- android
 npm run mobile:test:android
 ```
 
+安装测试保存每个页面的设备截图及同内容 Web 对照图，并检查主要组件的尺寸、字号与颜色。Android 截图后若 ADB 明确报告 `device offline`，测试仅重连指定设备、确认系统就绪后重试 WebView 切换一次，并在报告中记录次数；持续断连或系统 ANR/崩溃仍会失败，游戏与复盘断言的时限不变。
+
 `.github/workflows/mobile-build.yml` 在 GitHub PR、main 更新及手动运行时构建 Android debug APK、未签名 AAB 和 iOS 模拟器 `.app`，产物在 Actions 的 Artifacts 下载。CI 的未签名 AAB 用于验证发行编译，模拟器 `.app` 用于开发验证；两者都不能直接上架。CI 不保存商店签名凭据。
 
 独立 `quality` job 检查格式、语言资源、全部单元测试及生产构建，不依赖 Android SDK 或浏览器布局。公共区定位、固定操作区、牌面可读性、首屏、结算布局与提示横幅测试，以及桌面和移动端的其余交互测试，分别并行执行；布局失败不会跳过其余交互测试。两组覆盖完整的 `npm run test:e2e`；失败轨迹与验收截图保存在 `table-geometry-results`、`browser-ui-results-desktop` 和 `browser-ui-results-mobile`。
@@ -98,4 +100,4 @@ CI 在完成编译后，安装并启动真正的模拟器/仿真器 App，用 Ap
 
 原生构建支持 11 种语言，iOS 在 `Info.plist` 声明语言，Android 使用 `res/xml/locales_config.xml`。应用内语言设置在本机持久保存；实际系统单 App 语言选择与 WebView 字体需真机验收。
 
-`native` 构建保留当前 Web 的人物展示、头像及已有说明，仅移除远程字体请求；策略、保存的风格 ID 与规则一致。新增 Web/原生文案后按 README 的国际化命令更新资源。历史可选展示转换保留在 `scripts/native-store.mjs`，当前构建不再自动应用它。原生包使用本地图标、字体与图片，不配置远程 `server.url`。
+`native` 构建保留当前 Web 的人物展示、头像及已有说明，仅无需远程字体请求；策略、保存的风格 ID 与规则一致。新增 Web/原生文案后按 README 的国际化命令更新资源。历史可选展示转换保留在 `scripts/native-store.mjs`，当前构建不再自动应用它。原生包使用本地图标、字体与图片，不配置远程 `server.url`。

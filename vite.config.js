@@ -14,17 +14,6 @@ export default defineConfig(({ mode }) => ({
   // Controlled scenarios exist only in the test development server. The
   // production build contains neither fixtures nor access to hidden cards.
   plugins: [
-    ...(mode === 'native'
-      ? [
-          {
-            name: 'native-offline-fonts',
-            enforce: 'pre',
-            transformIndexHtml(source) {
-              return source.replace(/\s*<link\s+data-web-fonts\b[^>]*>/, '');
-            },
-          },
-        ]
-      : []),
     ...(mode === 'test'
       ? [
           {

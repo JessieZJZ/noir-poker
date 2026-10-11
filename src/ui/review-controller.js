@@ -48,21 +48,9 @@ export function createReviewController({ card }) {
           r.coaching.kind
         ]
       : r?.status;
-  function overviewMarkup(overview) {
-    if (!overview) return '';
-    const group = (title, points) =>
-      points.length
-        ? `<section><h4>${title}</h4>${points.map((p) => `<article><button data-review-index="${p.index}">第 ${p.index + 1} 步 · ${esc(p.situation)} · ${esc(p.suggestedAction)}${p.kind === 'compare' ? '（看对手调整）' : ''}</button></article>`).join('')}</section>`
-        : '';
-    return (
-      group('优先调整', overview.improvements) +
-      group('值得保留', overview.good) +
-      group('争取更多价值', overview.value) +
-      `<p class="review-overview-scope">${esc(overview.scope)}</p>`
-    );
-  }
   function renderDialog() {
     if (!last) return;
+    dialog.dataset.analysisStatus = last.status;
     const input = last.input,
       steps = input.decisions,
       analysis = last.analysis,
@@ -93,22 +81,13 @@ export function createReviewController({ card }) {
       last.status === 'error'
         ? '分析未完成，可以重试。'
         : analysis
-          ? analysis.summary
+          ? ''
           : last.status === 'running'
             ? '正在分析决策 ' + last.progress + ' / ' + steps.length + '…'
             : '正在准备这手的决策快照…',
     );
-    setLocalizedText($('#review-summary-title'), analysis ? analysis.title : '回到当时的决策');
-    setLocalizedHTML($('#review-overview'), overviewMarkup(analysis?.overview));
+    dialog.querySelector('.review-analysis-status').hidden = !!analysis;
     $('#review-retry').hidden = last.status !== 'error';
-    $('#review-priority').hidden = !analysis || !steps.length;
-    if (analysis) {
-      $('#review-priority').dataset.reviewIndex = analysis.priorityIndex;
-      setLocalizedText(
-        $('#review-priority'),
-        analysis.attention || analysis.consider ? '查看优先复盘的决策' : '从第一步回看',
-      );
-    }
     const timeline = $('#review-timeline'),
       sameHand = timelineKey === last.key,
       scrollLeft = sameHand ? timeline.scrollLeft : 0,
