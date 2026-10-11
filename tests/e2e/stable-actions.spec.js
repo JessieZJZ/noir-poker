@@ -308,6 +308,16 @@ test('hero identity keeps chips beside the position and its recent action in a c
   page,
 }) => {
   test.setTimeout(90000);
+  const callAndPauseBots = async () => {
+    // Cancel in the click task, before a slow driver round trip can allow
+    // a real bot timer to change this deterministic layout fixture.
+    await page.evaluate(() => {
+      document.querySelector('#call-button').addEventListener('click', () => window.qa.stop(), {
+        once: true,
+      });
+    });
+    await page.locator('#call-button').click();
+  };
   for (const size of [
     { width: 320, height: 900 },
     { width: 390, height: 844 },
@@ -320,8 +330,7 @@ test('hero identity keeps chips beside the position and its recent action in a c
       await expect(page.locator('#hero-turn')).toHaveCount(0);
       await expect(page.locator('#hero-last-action')).toBeHidden();
       const baseline = await heroAnchorBounds(page);
-      await page.locator('#call-button').click();
-      await page.evaluate(() => window.qa.stop());
+      await callAndPauseBots();
       await expect(page.locator('#hero-last-action')).toContainText('跟注');
       await expect(page.locator('#fold-button')).toBeDisabled();
       await expectHeroAnchor(page, baseline);
@@ -360,8 +369,7 @@ test('hero identity keeps chips beside the position and its recent action in a c
       expect(flop.board).toHaveLength(3);
       await expect(page.locator('#hero-last-action')).toBeHidden();
       await expectHeroAnchor(page, baseline);
-      await page.locator('#call-button').click();
-      await page.evaluate(() => window.qa.stop());
+      await callAndPauseBots();
       await expect(page.locator('#hero-last-action')).toHaveText('过牌');
       await expectHeroAnchor(page, baseline);
       await page.evaluate(() => window.qa.respondToHero(0, true));
