@@ -2,6 +2,7 @@
 
 - Canonical checkout: `/Users/zjz/code/noir-poker`. Edit `src/` and `index.html`; never hand-edit generated `dist/`.
 - Make each new change on a dedicated branch and open a GitHub pull request. Do not push changes directly to GitHub `main` or merge a pull request without the user's instruction. Keep any earlier unpublished changes in the same proposed branch when requested.
+- Target `main` by default. Include required unpublished dependencies in the proposed branch instead of targeting another feature branch, unless the user explicitly requests stacked PRs. For stacked PRs, provide and maintain a final integration PR into `main`; a merged child PR is not delivery to `main`. Before reporting complete integration, fetch the remote and verify every delivered source commit is reachable from `origin/main` (or document verified equivalent changes), and check local commits and worktree edits for unpublished work.
 - Preserve no-login local practice, virtual chips and Chinese UI. Keep the existing Sites project ID in `.openai/hosting.json`.
 - Rules live in `src/engine/poker.js`. Do not duplicate settlement or legal-action logic in UI. Every wager, call, stack, pot, refund and award must use whole 25-denomination chips, including odd-chip splits. Any rule change needs a boundary regression test and chip-conservation verification.
 - BTN's next clockwise seat is SB, then BB. Short all-ins, raise reopening, eligibility and uncalled refunds must retain existing semantics.

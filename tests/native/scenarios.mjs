@@ -2,18 +2,99 @@ import assert from 'node:assert/strict';
 import { readTableLayout, assertTableLayout } from './layout.mjs';
 const documentLoginMarker = (text) => /sign in|log in|登录账号/i.test(text);
 
+// Keep the installed-app completion assertion and its existing deadline. The
+// observations distinguish a working but slow review from a failed WebView or
+// an analysis that stopped progressing; they do not authorize a partial pass.
+export async function waitForNativeReview(app, { now = Date.now } = {}) {
+  const started = now();
+  const diagnostics = { timeoutMs: 30000, observations: [], progress: [] };
+  let lastSnapshot;
+  let lastDone = -1;
+  let lastProgressAt = started;
+  try {
+    const review = await app.waitFor(
+      async () => {
+        let snapshot;
+        try {
+          snapshot = await app.evaluate(() => {
+            const analysisState = document
+              .querySelector('#review-analysis-state')
+              ?.textContent.trim();
+            const ratio = /正在分析决策\s+(\d+)\s*\/\s*(\d+)/.exec(analysisState || '');
+            const retry = document.querySelector('#review-retry');
+            return {
+              dialogOpen: Boolean(document.querySelector('#review-dialog')?.open),
+              analysisState,
+              done: ratio ? Number(ratio[1]) : null,
+              total: ratio ? Number(ratio[2]) : null,
+              decisionCount: document.querySelectorAll('#review-timeline .review-step').length,
+              retryVisible: Boolean(retry && !retry.hidden),
+              overview: document.querySelector('#review-overview')?.textContent.trim(),
+              suggestion: document.querySelector('#review-suggestion')?.textContent.trim(),
+            };
+          });
+        } catch (error) {
+          diagnostics.observations.push({ elapsedMs: now() - started, readError: error.message });
+          throw error;
+        }
+        const elapsedMs = now() - started;
+        const key = JSON.stringify(snapshot);
+        if (key !== lastSnapshot) {
+          diagnostics.observations.push({ elapsedMs, ...snapshot });
+          lastSnapshot = key;
+        }
+        if (Number.isInteger(snapshot.done) && snapshot.done > lastDone) {
+          diagnostics.progress.push({
+            done: snapshot.done,
+            total: snapshot.total,
+            elapsedMs,
+            sincePreviousProgressMs: now() - lastProgressAt,
+          });
+          lastDone = snapshot.done;
+          lastProgressAt = now();
+        }
+        return snapshot.dialogOpen &&
+          snapshot.overview &&
+          snapshot.suggestion &&
+          !/分析中|undefined/.test(snapshot.overview + snapshot.suggestion)
+          ? { overview: snapshot.overview, suggestion: snapshot.suggestion }
+          : null;
+      },
+      diagnostics.timeoutMs,
+      'Installed local review worker must produce an overview and suggestion',
+    );
+    diagnostics.elapsedMs = now() - started;
+    return { ...review, diagnostics };
+  } catch (error) {
+    diagnostics.elapsedMs = now() - started;
+    error.reviewDiagnostics = diagnostics;
+    throw error;
+  }
+}
+
 // These scenarios drive the installed production bundle. They read only the
 // public state already exposed by the app and never install browser fixtures.
 export async function nativeScenarios(app) {
   const result = [];
   const check = async (name, run) => {
     const started = Date.now();
-    const evidence = await run();
-    await app.screenshot(name);
-    const entry = { name, status: 'passed', elapsedMs: Date.now() - started, evidence };
-    result.push(entry);
-    app.record(entry);
-    app.log(`PASS ${name}`);
+    try {
+      const evidence = await run();
+      await app.screenshot(name);
+      const entry = { name, status: 'passed', elapsedMs: Date.now() - started, evidence };
+      result.push(entry);
+      app.record(entry);
+      app.log(`PASS ${name}`);
+    } catch (error) {
+      app.record({
+        name,
+        status: 'failed',
+        elapsedMs: Date.now() - started,
+        error: error.stack || String(error),
+        ...(error.reviewDiagnostics ? { reviewDiagnostics: error.reviewDiagnostics } : {}),
+      });
+      throw error;
+    }
   };
   await check('local-launch-and-no-login', async () => {
     const layout = await app.evaluate(readTableLayout);
@@ -24,6 +105,16 @@ export async function nativeScenarios(app) {
       fixtures: typeof window.qa,
       footer: document.querySelector('.practice-info')?.textContent,
       state: window.noir?.getState(),
+      startup: {
+        ready: document.documentElement.dataset.appReady === 'true',
+        inert: document.body.inert,
+        visibility: getComputedStyle(document.body).visibility,
+        background: getComputedStyle(document.body).backgroundColor,
+        fontRequests: performance
+          .getEntriesByType('resource')
+          .filter((entry) => /fonts\.(googleapis|gstatic)\.com/.test(entry.name)).length,
+        remoteFontLink: Boolean(document.querySelector('[data-web-fonts]')),
+      },
       viewport: { width: innerWidth, height: innerHeight },
       controls: ['raise', 'fold', 'call'].map((action) => {
         const rect = document.querySelector(`#${action}-button`).getBoundingClientRect();
@@ -38,6 +129,14 @@ export async function nativeScenarios(app) {
     );
     assert.ok(info.footer && !documentLoginMarker(info.footer));
     assert.ok(info.state && info.state.playerCount >= 5);
+    assert.deepEqual(info.startup, {
+      ready: true,
+      inert: false,
+      visibility: 'visible',
+      background: 'rgb(11, 16, 23)',
+      fontRequests: 0,
+      remoteFontLink: false,
+    });
     assert.ok(
       info.controls.every(
         (rect) =>
@@ -56,7 +155,50 @@ export async function nativeScenarios(app) {
       viewport: info.viewport,
       controls: info.controls,
       layout,
+      startup: info.startup,
     };
+  });
+  await check('crown-seat-and-style-row', async () => {
+    const tables = [];
+    for (const count of [6, 8]) {
+      await app.click('#opponents-button');
+      await app.select('#player-count', String(count));
+      await app.click('#mix-opponents');
+      await app.click('#opponents-dialog .close-dialog');
+      await app.click('#reset-button');
+      await app.click('#confirm-reset');
+      await app.waitFor(
+        async () => (await app.state()).playerCount === count,
+        15000,
+        'The selected table size must apply through the normal reset controls',
+      );
+      await app.evaluate(() => window.scrollTo(0, 0));
+      const layout = await app.evaluate(readTableLayout);
+      assertTableLayout(layout);
+      const presentation = await app.evaluate(() => {
+        const crown = document.querySelector('.seat-crown .seat-profile').getBoundingClientRect(),
+          rail = document.querySelector('.poker-table').getBoundingClientRect();
+        const names = [...document.querySelectorAll('.seat-style-label')].map((tag) => ({
+          full: tag.scrollWidth <= tag.clientWidth + 1,
+          below:
+            tag.closest('.seat-profile').querySelector('.seat-stack').getBoundingClientRect().top >=
+            tag.getBoundingClientRect().bottom - 0.5,
+        }));
+        return { straddles: crown.top < rail.top && crown.bottom > rail.top, names };
+      });
+      assert.ok(presentation.straddles, 'The crown profile must straddle the rail');
+      assert.ok(
+        presentation.names.every((tag) => tag.below),
+        'Chips must sit below the style row',
+      );
+      assert.ok(
+        presentation.names.filter((tag) => tag.full).length >= Math.ceil((count - 1) / 2),
+        'Most named styles must fit in one line in the installed app',
+      );
+      await app.screenshot(`crown-${count}-style-row`);
+      tables.push({ count, presentation, layout });
+    }
+    return { tables };
   });
   await check('settings-autosave-and-local-portraits', async () => {
     await app.click('#opponents-button');
@@ -332,7 +474,7 @@ export async function nativeScenarios(app) {
             const r = card.getBoundingClientRect();
             return {
               clearOfHint: r.top >= view.top + 10 * scale - 0.5,
-              fullyVisible: r.bottom <= profile.top + 0.5,
+              visibleFraction: (profile.top - r.top) / r.height,
             };
           }),
         };
@@ -341,7 +483,12 @@ export async function nativeScenarios(app) {
         toggle === 0 ? (initialPressed === 'true' ? 'false' : 'true') : initialPressed;
       assert.equal(inspection.pressed, expected);
       assert.equal(inspection.cards.length, expected === 'true' ? 2 : 0);
-      assert.ok(inspection.cards.every((card) => card.clearOfHint && card.fullyVisible));
+      assert.ok(
+        inspection.cards.every(
+          (card) =>
+            card.clearOfHint && card.visibleFraction >= 0.65 && card.visibleFraction <= 0.98,
+        ),
+      );
       const peekLayout = await app.evaluate(readTableLayout);
       assertTableLayout(peekLayout);
       for (const anchor of ['arena', 'publicArea'])
@@ -374,22 +521,7 @@ export async function nativeScenarios(app) {
   });
   await check('settlement-decision-review', async () => {
     await app.click('#review-hand-button');
-    const review = await app.waitFor(
-      async () =>
-        app.evaluate(() => {
-          const dialog = document.querySelector('#review-dialog');
-          const overview = document.querySelector('#review-overview')?.textContent.trim();
-          const suggestion = document.querySelector('#review-suggestion')?.textContent.trim();
-          return dialog.open &&
-            overview &&
-            suggestion &&
-            !/分析中|undefined/.test(overview + suggestion)
-            ? { overview, suggestion }
-            : null;
-        }),
-      30000,
-      'Installed local review worker must produce an overview and suggestion',
-    );
+    const review = await waitForNativeReview(app);
     await app.screenshot('settlement-decision-review-open');
     await app.click('#review-dialog .close-dialog');
     assert.equal(await app.evaluate(() => document.querySelector('#review-dialog').open), false);

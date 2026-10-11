@@ -145,9 +145,18 @@
   }
 }
 .showdown-stage {
-  border-top: 1px solid #445344;
-  background: radial-gradient(ellipse at 50% 100%, #7b61351f, transparent 70%), #101b22;
+  border: 1px solid #28353f;
+  border-top: 0;
+  border-radius: 0 0 18px 18px;
+  background: #101b22;
   padding: 22px 25px 20px;
+}
+.game-column:has(> .showdown-stage:not([hidden])) .game-surface {
+  border-bottom-color: #101b22;
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+  box-shadow: none;
+  background-color: #101b22;
 }
 .showdown-heading {
   display: flex;

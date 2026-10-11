@@ -221,13 +221,20 @@ test('five-player side seats surround the waist with half card backs and a reada
         }),
       )
       .toEqual([]);
-    // Full revealed faces use the same slot and stay wholly above the profile.
+    // Larger reveals tuck their bottom into the profile, leaving rank and suit visible.
     await page.evaluate(() => window.qa.scene('3s 8h', 'Ks 7s Jd 5c 9s', { count: 5 }));
     for (const seat of await page.locator('.seat:has(.revealed-cards)').all()) {
       const profile = await seat.locator('.seat-profile').boundingBox();
       for (const card of await seat.locator('.playing-card').all()) {
         const r = await card.boundingBox();
-        expect(r.y + r.height).toBeLessThanOrEqual(profile.y + 0.5);
+        const exposed = (profile.y - r.y) / r.height;
+        expect(exposed).toBeGreaterThanOrEqual(0.65);
+        expect(exposed).toBeLessThanOrEqual(0.98);
+        const marks = await card.locator('.card-art > text, .card-suit-icon').all();
+        for (const mark of marks) {
+          const box = await mark.boundingBox();
+          expect(box.y + box.height).toBeLessThanOrEqual(profile.y + 0.5);
+        }
       }
     }
   }
@@ -337,7 +344,7 @@ test('all five public positions retain the same rows and face sizes while dealin
       await expect(page.locator('#board > .board-slot')).toHaveCount(5);
       const initial = await positions();
       const expectedWidth = Math.round(
-        width <= 600 ? Math.max(40, Math.min(54, width * 0.12)) : 82,
+        width <= 360 ? 50 : width <= 600 ? Math.max(44, Math.min(54, width * 0.12)) : 98,
       );
       expect(initial.map((card) => card.width)).toEqual(Array(5).fill(expectedWidth));
       const rows = initial.reduce((rows, card) => {
@@ -413,6 +420,9 @@ test('overflowing compact hints loop automatically and stay long enough to read 
     window.qa.stop();
     return document.fonts.ready;
   });
+  // Font loading can outlast the fixed clock origin. Freeze in the future
+  // before creating the hint whose lifetime is measured below.
+  await page.clock.pauseAt(await page.evaluate(() => Date.now() + 60_000));
   await page.evaluate(() => window.qa.heroTurn(9));
   const banner = page.locator('#coach-content');
   await expect(banner).toBeVisible();

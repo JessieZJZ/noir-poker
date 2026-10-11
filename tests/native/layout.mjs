@@ -13,7 +13,9 @@ export function readTableLayout() {
     };
   };
   const identity = rect('.hero-identity'),
-    cards = rect('#hero-cards');
+    cards = rect('#hero-cards'),
+    arena = document.querySelector('#arena'),
+    scale = arena.getBoundingClientRect().width / arena.offsetWidth;
   return {
     table: rect('.table-viewport'),
     arena: rect('#arena'),
@@ -50,6 +52,64 @@ export function readTableLayout() {
           e.bottom <= profile.bottom,
       };
     }),
+    profiles: [...document.querySelectorAll('.seat-profile')].map((profile) => {
+      const style = getComputedStyle(profile),
+        tag = getComputedStyle(profile.querySelector('.seat-style-label')),
+        tagBox = profile.querySelector('.seat-style-label').getBoundingClientRect(),
+        stackBox = profile.querySelector('.seat-stack').getBoundingClientRect(),
+        font = (selector) =>
+          parseFloat(getComputedStyle(profile.querySelector(selector)).fontSize) * scale;
+      return {
+        id: profile.closest('.seat').dataset.player,
+        padding: [style.paddingTop, style.paddingRight, style.paddingBottom, style.paddingLeft].map(
+          parseFloat,
+        ),
+        tagPadding: [tag.paddingTop, tag.paddingRight, tag.paddingBottom, tag.paddingLeft].map(
+          parseFloat,
+        ),
+        nameSize: font('strong'),
+        styleSize: parseFloat(tag.fontSize) * scale,
+        stackSize: font('.seat-stack'),
+        stackBelowStyle: stackBox.top >= tagBox.bottom - 0.5,
+      };
+    }),
+    presentation: {
+      heroGap: (identity.top - cards.bottom) / scale,
+      heroInset: (rect('#arena').bottom - identity.bottom) / scale,
+      heroFont: parseFloat(getComputedStyle(document.querySelector('.hero-identity')).fontSize),
+      heroNameFont: parseFloat(
+        getComputedStyle(document.querySelector('.hero-identity strong')).fontSize,
+      ),
+      actions: [...document.querySelectorAll('.seat .seat-action')].map((el) => ({
+        font: parseFloat(getComputedStyle(el).fontSize),
+        margin: parseFloat(getComputedStyle(el).marginTop),
+      })),
+      backs: [...document.querySelectorAll('.seat .card-back')].map((el) => {
+        const back = el.getBoundingClientRect(),
+          profile = el.closest('.seat').querySelector('.seat-profile').getBoundingClientRect();
+        return (profile.top - back.top) / back.height;
+      }),
+    },
+    captions: [...document.querySelectorAll('.seat .seat-action')].map((el) => {
+      const range = document.createRange();
+      range.selectNodeContents(el);
+      const bounds = (box) => ({
+        left: box.left,
+        right: box.right,
+        top: box.top,
+        bottom: box.bottom,
+      });
+      return {
+        id: el.closest('.seat').dataset.player,
+        box: bounds(el.getBoundingClientRect()),
+        lines: [...range.getClientRects()].map(bounds),
+      };
+    }),
+    revealed: [...document.querySelectorAll('.seat .revealed-cards .playing-card')].map((el) => {
+      const card = el.getBoundingClientRect(),
+        profile = el.closest('.seat').querySelector('.seat-profile').getBoundingClientRect();
+      return { width: el.offsetWidth, exposed: (profile.top - card.top) / card.height };
+    }),
     bottomInset:
       parseFloat(getComputedStyle(document.querySelector('.action-dock')).paddingBottom) || 0,
     settledButtons: ['#next-button', '#restart-hand-button', '#review-hand-button'].map(rect),
@@ -77,6 +137,35 @@ export function assertTableLayout(info) {
     );
     assert.ok(eye.contained, `Seat ${eye.id} inspection must stay inside its profile`);
   }
+  const largeTablet =
+    info.width >= 901 && info.width <= 1100 && info.height >= 1100 && info.height > info.width;
+  if (info.presentation) assertSeatPresentation(info.presentation, info, largeTablet);
+  if (info.captions) assertReadableCaptions(info.captions, info.table);
+  for (const card of info.revealed ?? []) {
+    assert.ok(card.width >= 32, 'Revealed opponent cards need a readable face');
+    assert.ok(
+      card.exposed >= 0.65 && card.exposed <= 0.98,
+      'Revealed cards tuck slightly into the profile',
+    );
+  }
+  for (const profile of info.profiles) {
+    if (profile.stackBelowStyle !== undefined)
+      assert.ok(profile.stackBelowStyle, `Seat ${profile.id} chips must sit below its style tag`);
+    assert.ok(
+      profile.padding.every((value) => value >= 3),
+      `Seat ${profile.id} profile needs padding on all sides`,
+    );
+    assert.ok(
+      profile.tagPadding.every((value, index) => value >= (index % 2 ? 3 : 1)),
+      `Seat ${profile.id} style tag needs padding on all sides`,
+    );
+    if (largeTablet) {
+      assert.ok(
+        profile.nameSize >= 17 && profile.stackSize >= 17 && profile.styleSize >= 14,
+        `Seat ${profile.id} tablet text must remain readable after fitting`,
+      );
+    }
+  }
   assert.equal(info.publicCards.length, 5);
   if (Math.abs(info.publicCards[3].top - info.publicCards[0].top) > 1) {
     const cards = info.publicCards;
@@ -86,4 +175,41 @@ export function assertTableLayout(info) {
   } else {
     assert.ok(info.publicCards.every((card) => Math.abs(card.top - info.publicCards[0].top) <= 1));
   }
+}
+
+export function assertReadableCaptions(captions, viewport) {
+  const contained = (part, box) =>
+    part.left >= box.left - 0.75 &&
+    part.right <= box.right + 0.75 &&
+    part.top >= box.top - 0.75 &&
+    part.bottom <= box.bottom + 0.75;
+  for (const caption of captions)
+    assert.ok(
+      caption.lines.every((line) => contained(line, caption.box) && contained(line, viewport)),
+      `Seat ${caption.id} action words and chip digits must be fully visible`,
+    );
+}
+
+export function assertSeatPresentation(presentation, viewport, largeTablet = false) {
+  for (const visible of presentation.backs)
+    assert.ok(
+      visible >= 0.35 && visible <= 0.7,
+      'Opponent backs must remain half tucked during the deal and subsequent renders',
+    );
+  if (viewport.width > 1100 || viewport.height <= viewport.width) return;
+  assert.ok(
+    presentation.heroGap >= 18 && presentation.heroGap <= (largeTablet ? 39 : 28),
+    'Hero identity must stay close to the cards with space reserved for the hand rank',
+  );
+  assert.ok(presentation.heroInset >= 40, 'Hero identity must sit inside the lower table edge');
+  assert.ok(
+    presentation.heroFont >= 15 &&
+      Math.abs(presentation.heroNameFont - presentation.heroFont) <= 0.1,
+    'Hero name and chips must use the same readable type size',
+  );
+  for (const action of presentation.actions)
+    assert.ok(
+      action.font >= 11 && action.margin >= 4,
+      'Seat action text needs readable type and a small top margin',
+    );
 }

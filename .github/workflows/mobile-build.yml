@@ -14,8 +14,25 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  quality:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-node@v7.1.0
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npm run format:check
+      # i18n:check extracts rendered messages through Chromium.
+      - run: npx playwright install --with-deps chromium
+      - run: npm run i18n:check
+      - run: npm run check
+
   wechat:
     runs-on: ubuntu-24.04
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v7.0.1
       - uses: actions/setup-node@v7.1.0
@@ -34,6 +51,7 @@ jobs:
 
   table-geometry:
     runs-on: ubuntu-24.04
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v7.0.1
       - uses: actions/setup-node@v7.1.0
@@ -51,8 +69,8 @@ jobs:
           retention-days: 7
 
   browser-ui:
-    needs: table-geometry
     runs-on: ubuntu-24.04
+    timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
@@ -65,8 +83,6 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npx playwright install --with-deps chromium
-      - run: npm run format:check
-      - run: npm run i18n:check
       - run: npm run test:e2e -- --project=${{ matrix.project }} --grep-invert '(public-area|stable-actions|readability-hints|play-viewport|settlement-layout|hint-banner)\.spec\.js'
       - uses: actions/upload-artifact@v7.0.2
         if: always()
@@ -77,6 +93,7 @@ jobs:
 
   android:
     runs-on: ubuntu-24.04
+    timeout-minutes: 60
     env:
       NOIR_BUILD_NUMBER: ${{ github.run_number }}
     steps:
@@ -101,14 +118,25 @@ jobs:
           test -f "$ANDROID_HOME/platforms/android-36/android.jar"
           test -x "$ANDROID_HOME/build-tools/36.0.0/aapt2"
       - run: npm ci
-      - run: npm run check
       - run: npm run mobile:android
+      - uses: actions/upload-artifact@v7.0.2
+        with:
+          name: android-debug-apk
+          path: .artifacts/mobile/noir-poker-debug.apk
+          if-no-files-found: error
+          retention-days: 7
       - name: Unsigned store-bundle compilation check
         working-directory: android
         env:
           NOIR_SKIP_WEB_PREPARE: '1'
         run: ./gradlew bundleRelease --no-daemon
       - run: npm run mobile:verify:artifact -- android/app/build/outputs/bundle/release/app-release.aab
+      - uses: actions/upload-artifact@v7.0.2
+        with:
+          name: android-unsigned-aab
+          path: android/app/build/outputs/bundle/release/app-release.aab
+          if-no-files-found: error
+          retention-days: 7
       - run: npm run mobile:test:setup -- android
       - name: Enable KVM for the Android test emulator
         run: |
@@ -122,6 +150,7 @@ jobs:
           test -w /dev/kvm
           df -h "$HOME"
       - name: Installed Android App end-to-end tests
+        timeout-minutes: 25
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 36
@@ -143,17 +172,11 @@ jobs:
         with:
           name: android-native-e2e-results
           path: .artifacts/native-e2e/android/
-      - uses: actions/upload-artifact@v7.0.2
-        with:
-          name: android-debug-apk
-          path: .artifacts/mobile/noir-poker-debug.apk
-      - uses: actions/upload-artifact@v7.0.2
-        with:
-          name: android-unsigned-aab
-          path: android/app/build/outputs/bundle/release/app-release.aab
+          retention-days: 7
 
   ios:
     runs-on: macos-26
+    timeout-minutes: 45
     env:
       NOIR_BUILD_NUMBER: ${{ github.run_number }}
     steps:
@@ -164,16 +187,20 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run mobile:ios
-      - run: npm run mobile:test:setup -- ios
-      - run: npm run mobile:test:ios
-      - uses: actions/upload-artifact@v7.0.2
-        if: always()
-        with:
-          name: ios-native-e2e-results
-          path: .artifacts/native-e2e/ios/
       - name: Package simulator app without a distribution signature
         run: ditto -c -k --sequesterRsrc --keepParent .artifacts/mobile/ios/Build/Products/Debug-iphonesimulator/App.app .artifacts/mobile/noir-poker-ios-simulator.zip
       - uses: actions/upload-artifact@v7.0.2
         with:
           name: ios-simulator-app
           path: .artifacts/mobile/noir-poker-ios-simulator.zip
+          if-no-files-found: error
+          retention-days: 7
+      - run: npm run mobile:test:setup -- ios
+      - run: npm run mobile:test:ios
+        timeout-minutes: 20
+      - uses: actions/upload-artifact@v7.0.2
+        if: always()
+        with:
+          name: ios-native-e2e-results
+          path: .artifacts/native-e2e/ios/
+          retention-days: 7
