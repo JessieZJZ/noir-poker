@@ -3,6 +3,20 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <style>
+      /* Apply before Vite's CSS modules load. Keep the initial DOM measurable
+         while platform, locale and the first hand are being prepared. */
+      html {
+        background: #0b1017;
+        color-scheme: dark;
+      }
+      body {
+        margin: 0;
+      }
+      html:not([data-app-ready='true']) body {
+        visibility: hidden !important;
+      }
+    </style>
     <title>NOIR Poker · 德州扑克单机练习</title>
     <meta
       name="description"
