@@ -405,13 +405,14 @@ test('overflowing compact hints loop automatically and stay long enough to read 
   await page.setViewportSize({ width: 390, height: 844 });
   await page.emulateMedia({ reducedMotion: 'no-preference' });
   await page.clock.install({ time: new Date('2026-01-01T00:00:00Z') });
+  // Freeze before loading; the initialization may take more than a real second.
+  await page.clock.pauseAt(new Date('2026-01-01T00:00:01Z'));
   await page.reload();
   await page.waitForFunction(() => !!window.qa);
   await page.evaluate(() => {
     window.qa.stop();
     return document.fonts.ready;
   });
-  await page.clock.pauseAt(new Date('2026-01-01T00:00:01Z'));
   await page.evaluate(() => window.qa.heroTurn(9));
   const banner = page.locator('#coach-content');
   await expect(banner).toBeVisible();

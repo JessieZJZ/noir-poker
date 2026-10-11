@@ -190,15 +190,15 @@ test('mobile persona details cover the selector in place and closing restores it
   for (const width of [320, 390, 700]) {
     await page.setViewportSize({ width, height: 844 });
     await openSettings(page);
-    const card = page.locator('[data-profile-preview="dwan"]');
+    const card = page.locator('[data-profile-preview="haxton"]');
     await card.scrollIntoViewIfNeeded();
     const before = await page.locator('.opponents-body').evaluate((el) => el.scrollTop);
     await card.click();
     const stage = page.locator('#profile-stage');
     await expect(stage).toHaveAttribute('data-detail-open', 'true');
-    await expect(page.locator('#profile-detail')).toHaveAttribute('data-profile-id', 'dwan');
+    await expect(page.locator('#profile-detail')).toHaveAttribute('data-profile-id', 'haxton');
     await expect(page.locator('#profile-detail')).toBeVisible();
-    await expect(page.locator('#profile-detail h3')).toHaveText('Tom Dwan');
+    await expect(page.locator('#profile-detail h3')).toHaveText('Isaac Haxton');
     await expect(page.locator('[data-close-profile-detail]')).toBeFocused();
     const reveal = await page.evaluate(() => window.profileReveals.at(-1));
     expect(reveal.keyframes[0].clipPath).toMatch(/^circle\(0px at /);
@@ -402,4 +402,60 @@ test('the guide teaches winning, streets, actions and position before introducin
     el.scrollTop = 0;
   });
   await guide.screenshot({ path: test.info().outputPath('guide-basics.png') });
+});
+
+test('all sixteen researched players show linked facts and new assignments survive next hand, retry and reload', async ({
+  page,
+}) => {
+  test.setTimeout(90000);
+  await page.evaluate(() => window.qa.foldWin(9));
+  await openSettings(page);
+  await page.locator('#player-count').selectOption('9');
+  await expect(page.locator('.profile-card')).toHaveCount(17);
+  await expect(page.locator('#profile-cards img')).toHaveCount(16);
+  const profiles = await page.evaluate(async () =>
+    (await import('/src/engine/bot-profiles.js')).BOT_PROFILES.filter((p) => p.research),
+  );
+  for (const profile of profiles) {
+    await page.locator(`[data-profile-preview="${profile.id}"]`).click();
+    const detail = page.locator('#profile-detail');
+    await expect(detail.locator('.profile-research')).toContainText('2026-10-11');
+    await expect(detail.locator('.profile-research')).toContainText(profile.research.identity);
+    await expect(detail.locator('.profile-source-records a')).toHaveCount(profile.sources.length);
+    expect(await detail.evaluate((el) => el.scrollWidth <= el.clientWidth + 1)).toBe(true);
+    await expect
+      .poll(() =>
+        detail.locator('img').evaluate((el) => el.complete && el.naturalWidth > 0 && !el.hidden),
+      )
+      .toBe(true);
+    if (await page.locator('[data-close-profile-detail]').isVisible())
+      await page.locator('[data-close-profile-detail]').click();
+  }
+  const ids = ['ivey', 'negreanu', 'hellmuth', 'antonius', 'koon', 'chidwick', 'holz', 'haxton'];
+  for (const [i, id] of ids.entries())
+    await page.locator(`[data-bot-seat="${i + 1}"]`).selectOption(id);
+  await page.locator('[data-profile-preview="haxton"]').click();
+  await page
+    .locator('#profile-detail')
+    .screenshot({ path: test.info().outputPath('researched-haxton.png') });
+  if (await page.locator('[data-close-profile-detail]').isVisible())
+    await page.locator('[data-close-profile-detail]').click();
+  await closeSettings(page);
+  await page.locator('#next-button').click();
+  await page.evaluate(() => window.qa.stop());
+  expect(
+    (await page.evaluate(() => window.noir.getState())).players.slice(1).map((p) => p.botProfile),
+  ).toEqual(ids);
+  await page.evaluate(() => window.qa.foldRest());
+  await page.locator('#restart-hand-button').click();
+  await page.evaluate(() => window.qa.stop());
+  expect(
+    (await page.evaluate(() => window.noir.getState())).players.slice(1).map((p) => p.botProfile),
+  ).toEqual(ids);
+  await page.reload();
+  await page.waitForFunction(() => !!window.qa);
+  await page.evaluate(() => window.qa.stop());
+  expect(
+    (await page.evaluate(() => window.noir.getState())).players.slice(1).map((p) => p.botProfile),
+  ).toEqual(ids);
 });

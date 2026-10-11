@@ -42,7 +42,10 @@ test('every collected portrait renders a local image and retains its attribution
 
 test('source manifest includes every image, even unselected portraits, with byte and hash checks', () => {
   const manifest = createBundledAssetManifest();
-  assert.equal(manifest.assets.filter((asset) => asset.profileId).length, 8);
+  assert.equal(
+    manifest.assets.filter((asset) => asset.profileId).length,
+    Object.keys(PROFILE_PORTRAITS).length,
+  );
   assert.ok(manifest.assets.some((asset) => asset.path === 'favicon.svg'));
   for (const asset of manifest.assets) {
     assert.ok(asset.bytes > 0);

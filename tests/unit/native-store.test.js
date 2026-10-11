@@ -23,6 +23,8 @@ test('native original profiles preserve every numeric strategy control and stabl
     assert.equal(profile.id, original.id);
     assert.deepEqual(profile.axes, original.axes);
     assert.deepEqual(profile.sizing, original.sizing);
+    assert.deepEqual(profile.policy, original.policy);
+    if (original.research) assert.equal(profile.research, null);
     assert.equal(profile.name, STORE_PROFILE_NAMES[profile.id]);
     assert.equal(profile.short, STORE_PROFILE_NAMES[profile.id]);
     assert.deepEqual(profile.sources, []);

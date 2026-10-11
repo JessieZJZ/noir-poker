@@ -152,3 +152,45 @@
     display: none;
   }
 }
+
+.profile-research h4 {
+  margin: 18px 0 7px;
+  font-size: 14px;
+  color: #a8dacb;
+}
+.profile-research p,
+.profile-research li {
+  font-size: 13px;
+  line-height: 1.75;
+  overflow-wrap: anywhere;
+}
+.profile-research ul {
+  padding-left: 20px;
+}
+.profile-research li + li {
+  margin-top: 7px;
+}
+.profile-research a {
+  color: #9ddcc7;
+}
+.profile-research-date {
+  color: #99ada9;
+}
+.profile-source-records {
+  min-width: 0;
+}
+.profile-source-records > div {
+  margin: 12px 0;
+}
+.profile-source-records a,
+.profile-source-records small {
+  display: block;
+  overflow-wrap: anywhere;
+}
+.profile-source-records small,
+.profile-source-records p {
+  color: #99ada9;
+  font-size: 12px;
+  line-height: 1.65;
+  margin: 4px 0;
+}

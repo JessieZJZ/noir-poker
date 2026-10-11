@@ -1590,7 +1590,7 @@ test('all named portraits preview immediately, follow saved styles next hand and
   await setPlayerCount(page, 9);
   await page.evaluate(() => window.qa.foldWin(9));
   await page.locator('#opponents-button').click();
-  await expect(page.locator('#profile-cards img')).toHaveCount(8);
+  await expect(page.locator('#profile-cards img')).toHaveCount(16);
   await expect
     .poll(() =>
       page
@@ -1974,7 +1974,7 @@ test('foreign style assignments persist and candidate simulation is available in
     [3, 'dwan'],
   ])
     await page.locator(`[data-bot-seat="${seat}"]`).selectOption(profile);
-  await expect(page.locator('#profile-cards .profile-card')).toHaveCount(9);
+  await expect(page.locator('#profile-cards .profile-card')).toHaveCount(17);
   for (const [profile, name] of [
     ['viktor', 'Viktor Blom'],
     ['jungleman', 'Daniel Cates'],

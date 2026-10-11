@@ -32,6 +32,14 @@ function walk(node) {
     else if (value && typeof value === 'object') walk(value);
   }
 }
+// Structured research is displayed by the UI, so it must be checked along with
+// literal strings. Traverse every Chinese string to cover future data fields.
+function researchStrings(value) {
+  if (typeof value === 'string') {
+    if (han.test(value)) candidates.add(value);
+  } else if (value && typeof value === 'object') Object.values(value).forEach(researchStrings);
+}
+researchStrings(JSON.parse(readFileSync(new URL('src/data/player-research.json', root), 'utf8')));
 for (const directory of ['ui', 'review', 'engine', 'platform'])
   for (const file of readdirSync(new URL(`src/${directory}/`, root)).filter(
     (p) => p.endsWith('.js') && !p.startsWith('wechat-'),

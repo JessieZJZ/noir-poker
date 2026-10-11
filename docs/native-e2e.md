@@ -29,11 +29,14 @@ node scripts/native-e2e.mjs ios
 
 npm run mobile:android
 node scripts/native-e2e.mjs android
+node tests/native/system-bars.mjs .artifacts/native-e2e/android/local-launch-and-no-login.png
 ```
 
-默认 iOS 新建或复用专用 `Noir Poker E2E` 模拟器，避免修改正在使用的其他模拟器。Android 要先启动专用 AVD；只有一个已连接设备时自动选中，否则通过 `--udid emulator-5554` 指定。也支持 `NOIR_IOS_UDID` 和 `NOIR_ANDROID_UDID`。
+iOS 先对指定测试设备干净安装，用 Simulator 服务独立启动应用，再以 `autoLaunch: false` 接入 XCUITest。启动时不让 WDA 重启应用，也不在会话建立后替换正在跟踪的进程，避免首次 WebKit 导航被测试启动暂停。指定 `--udid` 的关闭状态设备也会先启动；仅关闭脚本本次启动的设备。
 
-**测试执行干净安装，会清除所选测试设备上的应用数据。请只指定测试设备，不要选择存有个人练习数据的设备。** iOS 只卸载这个测试应用，保留模拟器和测试驱动。默认专用模拟器在脚本自行启动时，会在完成后关闭。
+默认 iOS 新建或复用专用 `Noir Poker E2E` 模拟器，避免修改正在使用的其他模拟器。Android 要先启动专用 AVD；脚本等待系统启动完成和包管理服务就绪后才安装、连接驱动。只有一个已连接设备时自动选中，否则通过 `--udid emulator-5554` 指定。也支持 `NOIR_IOS_UDID` 和 `NOIR_ANDROID_UDID`。
+
+**测试执行干净安装，会清除所选测试设备上的应用数据。请只指定测试设备，不要选择存有个人练习数据的设备。** iOS 只卸载这个测试应用，保留模拟器和测试驱动。所选模拟器在脚本自行启动时，会在完成后关闭；已经启动的设备保持运行。
 
 可指定已编译的产物和结果目录：
 
@@ -42,17 +45,19 @@ node scripts/native-e2e.mjs ios --app /absolute/path/App.app --output .artifacts
 node scripts/native-e2e.mjs android --app /absolute/path/app-debug.apk --udid emulator-5554
 ```
 
-`--server http://127.0.0.1:4723` 可复用已启动的 Appium；没有这个参数时，脚本自行启动本地 Appium 并在结束后关闭。iOS 使用 4725 端口，Android 使用 4727。只使用 Debug 原生外壳的调试能力，Web 内容仍是正常 native production build；上架 Release 不需要打开 WebView 调试。
+`--server http://127.0.0.1:4723` 可复用已启动的 Appium；没有这个参数时，脚本自行启动本地 Appium 并在结束后关闭。iOS 使用 4725 端口，Android 使用 4727。可用 `--port` 修改脚本自建服务器端口，用 `--driver-port` 指定 iOS WDA 或 Android UiAutomator2 的设备连接端口；并行任务应各用独立测试设备和端口。`--port` 与 `--server` 不同时使用。只使用 Debug 原生外壳的调试能力，Web 内容仍是正常 native production build；上架 Release 不需要打开 WebView 调试。
 
 ## 覆盖的实际流程
 
 - 从打包的 localhost origin 首启，确认原生适配器生效、没有登录要求、没有 QA fixtures。
+- Android 首屏全设备截图额外检查系统栏背景与浅色图标的对比度，防止旧 WebView 的原生 inset 留下白底白字；单元回归覆盖对比度边界和上下栏独立失败，CI 在安装流程后执行图片检查。
 - 测试滚动之前检查操作按钮全部位于首屏；开始前核对包内源码指纹和所有图片，旧包会被拒绝。
 - 在安装后的 WebView 检查公共牌优先单排和空间不足时的 3+2 排列、玩家信息居中、筹码在位置标签右侧、行动提示在最下行及重复回合标签移除；弃牌到结算时牌桌位置和高度不变，结算操作缩为不侵入底部安全区域的一排。
 - 仅在控件超出可见区域时滚动；结算牌面排列在正常发牌动画结束后测量，避免把测试强制滚动或动画中途的牌面旋转误判为布局位移。
 - 打开设置，更改人数、情绪、对手风格和声音；原生终止并重启后检查自动保存。
 - 在已安装 App 内切换英文与中文，检查文案更新、文档不重载、设置保持打开且手数不变；重启后检查语言持久保存。
-- 检查八个牌手头像解码成功且地址为本地 origin，避免用字母回退掩盖资源缺失。
+- 检查十六个牌手头像解码成功且地址为本地 origin，避免用字母回退掩盖资源缺失。
+- 检查新增八位牌手详情的核对日期、逐条出处与来源数量，新风格在原生重启后实际应用。
 - 在真实随机牌局中累计加注、正额跟注、弃牌和结算；核对实际支付金额为 25 的倍数，结算后筹码守恒。零筹码过牌不计作跟注。
 - 从结算打开复盘，确认本地分析生成总览和行动建议，并能关闭弹窗。
 - 重打恢复原底牌，完成手数撤回一次；下一手增加手数并清理重打状态。
