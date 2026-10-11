@@ -414,6 +414,6 @@ test('WeChat exposes all researched players, linked claims and only copies a sel
     assert.equal(clipboard.length, length);
     page.closeProfile();
   }
-  assert.match(template, /公开资料（中文整理）/);
+  assert.match(template, /公开资料/);
   assert.match(template, /copyResearchSource/);
 });

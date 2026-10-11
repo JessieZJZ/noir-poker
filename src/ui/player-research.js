@@ -18,10 +18,10 @@ export function playerResearchMarkup(profile) {
       })
       .join(' ');
   const claims = (items) =>
-    `<ul translate="no" lang="zh-CN">${items.map((item) => `<li>${escape(item.text)} ${references(item.sourceIds)}</li>`).join('')}</ul>`;
-  return `<section class="profile-research"><h4>公开资料（中文整理）</h4><p class="profile-research-date"><span>资料核对日期</span> · ${escape(data.reviewedAt)}</p><p translate="no" lang="zh-CN">${escape(data.identity)}<br>${data.formats.map(escape).join(' · ')}</p>${data.career.length ? `<h4>履历摘录</h4>${claims(data.career)}` : ''}<h4>公开打法样本</h4>${claims(data.observations)}<h4>本地策略改编</h4><ul translate="no" lang="zh-CN">${data.adaptation.map((text) => `<li>${escape(text)}</li>`).join('')}</ul><h4>资料边界</h4><p translate="no" lang="zh-CN">${escape(data.limits)}</p></section>`;
+    `<ul>${items.map((item) => `<li>${escape(item.text)} ${references(item.sourceIds)}</li>`).join('')}</ul>`;
+  return `<section class="profile-research"><h4>公开资料</h4><p class="profile-research-date"><span>资料核对日期</span> · ${escape(data.reviewedAt)}</p><p>${escape(data.identity)}<br>${data.formats.map((format) => `<span>${escape(format)}</span>`).join(' · ')}</p>${data.career.length ? `<h4>履历摘录</h4>${claims(data.career)}` : ''}<h4>公开打法样本</h4>${claims(data.observations)}<h4>本地策略改编</h4><ul>${data.adaptation.map((text) => `<li>${escape(text)}</li>`).join('')}</ul><h4>资料边界</h4><p>${escape(data.limits)}</p></section>`;
 }
 
 export function playerSourcesMarkup(profile) {
-  return `<div class="profile-source-records" translate="no" lang="zh-CN">${profile.sources.map((source, i) => `<div><a href="${escape(source.url)}" target="_blank" rel="noopener noreferrer">[${i + 1}] ${escape(source.label)}</a><small>${escape(source.kind || '')}${source.publishedAt ? ` · ${escape(source.publishedAt)}` : ''}</small>${source.context ? `<p>${escape(source.context)}</p>` : ''}</div>`).join('')}</div>`;
+  return `<div class="profile-source-records">${profile.sources.map((source, i) => `<div><a href="${escape(source.url)}" target="_blank" rel="noopener noreferrer">[${i + 1}] <span>${escape(source.label)}</span></a><small><span>${escape(source.kind || '')}</span>${source.publishedAt ? ` · ${escape(source.publishedAt)}` : ''}</small>${source.context ? `<p>${escape(source.context)}</p>` : ''}</div>`).join('')}</div>`;
 }

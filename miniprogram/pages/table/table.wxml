@@ -301,7 +301,7 @@
           ><text>{{item.value}}</text></view
         ><text class="detail-evidence">{{detailProfile.evidence}}</text
         ><view wx:if="{{detailProfile.research}}" class="research-copy"
-          ><text class="module-title">公开资料（中文整理）</text
+          ><text class="module-title">公开资料</text
           ><text>资料核对日期 · {{detailProfile.research.reviewedAt}}</text
           ><text>{{detailProfile.research.identity}}</text
           ><text>{{detailProfile.research.formatsText}}</text

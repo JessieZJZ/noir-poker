@@ -83,7 +83,8 @@ test('research rendering escapes claims and provides citations without presentin
   const html = playerResearchMarkup(p);
   assert.ok(html.includes('&lt;script&gt;'));
   assert.ok(html.includes(p.sources[0].url));
-  assert.ok(html.includes('translate="no" lang="zh-CN"'));
+  assert.ok(!html.includes('translate="no"'));
+  assert.ok(!html.includes('lang="zh-CN"'));
   assert.equal(playerResearchMarkup(get('balanced')), '');
 });
 test('Holz dry high-card cbet is small, turn draw sizing is different, and Negreanu controls middling pots more often', () => {
