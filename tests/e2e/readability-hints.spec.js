@@ -73,7 +73,7 @@ async function expectReadableTable(page, { publicWidth, heroWidth }) {
                   [...card.parentElement.children].indexOf(card) + 1,
                 );
                 for (const feature of card.querySelectorAll(
-                  '.card-art > text, .card-art > g > text, .card-art > .card-suit-icon',
+                  '.card-art .card-rank, .card-art > .card-suit-icon',
                 )) {
                   const mark = box(feature);
                   if (mark.width === 0 || mark.height === 0)
@@ -230,7 +230,7 @@ test('five-player side seats surround the waist with half card backs and a reada
         const exposed = (profile.y - r.y) / r.height;
         expect(exposed).toBeGreaterThanOrEqual(0.65);
         expect(exposed).toBeLessThanOrEqual(0.98);
-        const marks = await card.locator('.card-art > text, .card-suit-icon').all();
+        const marks = await card.locator('.card-art .card-rank, .card-suit-icon').all();
         for (const mark of marks) {
           const box = await mark.boundingBox();
           expect(box.y + box.height).toBeLessThanOrEqual(profile.y + 0.5);

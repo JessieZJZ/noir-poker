@@ -210,14 +210,17 @@ async function select(selector, value) {
   );
 }
 async function screenshot(name) {
+  const imagePath = path.join(output, `${name}.png`);
+  const sourcePath = path.join(output, `${name}.native.xml`);
   // Ask the native driver rather than Chromium for the entire device screen.
   await captureNativeScreen({
     command,
     webContext,
     checkSystemErrors: platform === 'android',
-    saveImage: (png) => writeFileSync(path.join(output, `${name}.png`), Buffer.from(png, 'base64')),
-    saveSource: (source) => writeFileSync(path.join(output, `${name}.native.xml`), source),
+    saveImage: (png) => writeFileSync(imagePath, Buffer.from(png, 'base64')),
+    saveSource: (source) => writeFileSync(sourcePath, source),
   });
+  return { imagePath, sourcePath };
 }
 async function activate() {
   await command('POST', '/context', { name: 'NATIVE_APP' });

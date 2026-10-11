@@ -246,14 +246,15 @@
     height: clamp(55px, 11.6vw, 84px);
     border-radius: 5px;
   }
-  /* SVG ranks otherwise inherit the desktop ratio and become hard to read
-     in a fitted table. Keep the rank prominent even on compact card faces. */
-  .game-surface .board .card-art > text,
-  .game-surface .board .card-art > g > text,
-  .game-surface .hero-cards .card-art > text,
-  .game-surface .hero-cards .card-art > g > text {
-    font-size: 20px;
-    transform: translate(3px, 2px);
+  /* Keep fixed vector ranks prominent on compact card faces. SVG text can
+     repaint at a different glyph scale despite unchanged computed styles. */
+  .game-surface .board .card-rank,
+  .game-surface .hero-cards .card-rank {
+    transform: translate(13px, 21px);
+  }
+  .game-surface .board .card-rank > path,
+  .game-surface .hero-cards .card-rank > path {
+    transform: scale(0.02);
   }
   .game-surface .board .card-corner {
     top: 3px;

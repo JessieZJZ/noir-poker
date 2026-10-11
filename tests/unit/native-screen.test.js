@@ -68,3 +68,21 @@ test('pre-attachment failure capture keeps native evidence without selecting an 
     ['GET', '/source', undefined],
   ]);
 });
+
+test('iOS capture saves native coordinates for pixel analysis without Android error checks', async () => {
+  const evidence = {};
+  const contexts = [];
+  const source = '<XCUIElementTypeWebView x="0" y="59" width="393" height="759"/>';
+  await captureNativeScreen({
+    checkSystemErrors: false,
+    webContext: 'WEBVIEW_noir',
+    command: async (_method, endpoint, body) => {
+      if (endpoint === '/context') contexts.push(body.name);
+      return endpoint === '/screenshot' ? 'device-png' : source;
+    },
+    saveImage: (value) => (evidence.image = value),
+    saveSource: (value) => (evidence.source = value),
+  });
+  assert.deepEqual(evidence, { image: 'device-png', source });
+  assert.deepEqual(contexts, ['NATIVE_APP', 'WEBVIEW_noir']);
+});

@@ -55,6 +55,7 @@ node scripts/native-e2e.mjs android --app /absolute/path/app-debug.apk --udid em
   手机锁定竖屏时，UiAutomator2 可能明确报告程序锁定，iOS WDA 也可能报告 `Unable To Rotate Device`；测试记录该拒绝，再检查实际窗口保持正向竖屏、旋转提示未打开且牌局不变。平板拒绝旋转、恢复竖屏失败和其他驱动错误均直接失败。
 
 - 从打包的 localhost origin 首启，确认原生适配器生效、没有登录要求、没有 QA fixtures。
+- 在同一手底牌上保存数字重绘前后两张全设备截图。真实后台恢复后触发六次牌桌尺寸重算，按原生 WebView 边界将 CSS 坐标映射到截图像素，比较数字的着色宽高与像素数；宽高最多相差 1 像素，着色数量最多相差 7%。这样可识别 CSS 和 DOM 不变但数字实际变大、变粗的绘制问题。牌点使用固定 Manrope 700 矢量轮廓，字体许可保存在 `public/licenses/card-ranks-OFL.txt`。
 - Android 首屏全设备截图额外检查系统栏背景与浅色图标的对比度，防止旧 WebView 的原生 inset 留下白底白字；单元回归覆盖对比度边界和上下栏独立失败，CI 在安装流程后执行图片检查。
 - 测试滚动之前检查操作按钮全部位于首屏；开始前核对包内源码指纹和所有图片，旧包会被拒绝。
 - 在安装后的 WebView 检查公共牌优先单排和空间不足时的 3+2 排列、玩家信息居中、筹码在位置标签右侧、行动提示在最下行及重复回合标签移除；弃牌到结算时牌桌位置和高度不变，结算操作缩为不侵入底部安全区域的一排。
@@ -108,3 +109,19 @@ iOS 设置持久化场景通过同一驱动终止并激活应用，再等待真�
 本次 `npm run check` 的 377 个单元测试及 Web/小程序构建通过；方向、首次访问、重载、11 种语言、牌桌视口、操作区和结算布局共 98 项 Web E2E 全部通过。格式、翻译完整性、iOS/Android 资源同步与核验，以及小程序资源和官方编译器检查通过。日志为 `.artifacts/validation/conflict31-*.log`。
 
 本次冲突复验未重新编译原生安装包或执行安装 E2E；上方四组原生运行通过记录对应合入 main 前的安装包。资源核验不能代替更新后安装包的实际运行验证。
+
+## 2026-10-12 牌点重绘修复验证
+
+Web/iOS/Android 的 13 种牌点改用固定 Manrope 700 矢量轮廓，保留数字颜色、上下角、原有大小和读屏标签。牌框、花色及发牌动画沿用原实现。微信使用独立 WXML 文字牌点，此次未修改其牌面。
+
+- `npm run check` 最终通过 382 个单元测试及 Web/小程序构建。中间一轮已有进程清理测试因 `ps` 超过 5 秒而失败；同一断言的冷却后单独复测及完整检查均通过，未修改该测试或时限。日志为 `.artifacts/card-check-delivery.log`、`card-native-process-unit-cooled.log`、`card-check-complete.log`。
+- Web 全量 304 项首轮 301 通过、3 项超时；声音设置、桌面结算间距、手机弃牌获胜三项在单线程复测中全部通过，未修改断言或时限。日志为 `.artifacts/card-web-full.log`、`card-web-sound-retry.log`、`card-web-layout-retry.log`、`card-web-crown-retry.log`。牌点专项 4 项和既有可读性/操作稳定性专项 22 项均通过。
+- Gradle Android Debug APK 与 Xcode iOS Simulator 实际编译成功；两个最终安装包的源码指纹均为 `7e11c0d68628f84f4e19a31a9ef4f48f0eef2154737990db9eee0a6b937ecf2a`，并核验 17 张本地图片（含 16 张头像）。最终编译日志为 `.artifacts/card-android-build-final.log`、`card-ios-build-final.log`，同步与核验为 `card-mobile-sync-final.log`、`card-mobile-verify-final.log`。
+- Android 15 专用模拟器（API 35，720×1600、280 dpi、host GPU、4 核/4 GiB）实际安装测试 10/10 通过。后台恢复并重绘六次后，底牌 A 的墨色区域保持 16×20 像素/138 个着色像素，8 保持 13×20/145，前后完全一致。系统栏对比度检查也通过。报告和全设备截图保存在 `.artifacts/card-native/android-verified/`。
+- Android 16 补测使用预热后的 `Noir_Orientation_Phone`（API 36，1080×2424、420 dpi、host GPU、2 核/3 GiB），同一最终 APK 实际安装测试 10/10 通过。底牌 8 的墨色区域保持 22×33 像素/425 个着色像素，2 保持 23×33/384，重绘前后完全一致；系统栏对比度也通过。报告和截图为 `.artifacts/card-native/android-api36-verified/`，启动日志为 `.artifacts/card-android-api36-retry-emulator.log`。早期 API 36 故障仍保留，不将这次不同测试 AVD 的成功当作对所有模拟器冷启动的保证。
+- iOS 27 专用 iPhone 模拟器实际安装测试 10/10 通过。后台恢复并重绘六次后，J 保持 19×35 像素，着色数量 277→272；9 为 24×36→24×35，483→478；差异在 1 像素及 2% 以内，符合抗锯齿容差。报告和截图保存在 `.artifacts/card-native/ios-warm-verified/`。
+- `format:check`、11 种语言完整性检查、`wechat:verify` 和 `wechat:check` 通过。微信证据覆盖共享适配器回归、源码/本地资源和官方 WXML/WXSS 编译器，不代表微信客户端或真机验收。
+
+早期环境问题均保留原始证据：Android 16 测试 AVD 首次冷启动超过 120 秒，之后出现 System UI ANR；软件 GPU 重试仍未在 240 秒内就绪且系统进程重启。干净 Android 15 软件 GPU 的首次驱动安装也超过 20 秒，预装驱动并使用预热后的 host GPU 测试设备后恢复。Appium 首次载入驱动超过 30 秒，改用独立预热服务。iOS 一轮在驱动连接后停留于系统桌面，首屏附着失败；保留失败截图，前台状态探针与预热后完整重跑通过。新增像素测试还发现 iOS 截图未保存原生坐标 XML，已修正采集器并增加单元回归、重新编译两端。
+
+失败报告位于 `.artifacts/card-native/android/`、`android-final/`、`android-api35/`、`android-api35-final/`、`ios/`、`ios-final/`、`ios-verified/`；启动和驱动日志为 `.artifacts/card-android-*.log`、`card-native-*.log`。整个验证使用独立测试设备，未清除用户正在使用的 Android 模拟器牌局或其他任务设备的数据。

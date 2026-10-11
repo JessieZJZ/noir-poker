@@ -154,3 +154,5 @@ npm run mobile:test:ios -- --udid TEST_SIMULATOR_ID --port 4735 --driver-port 81
 原生 App 保留当前人物头像与已有说明，图片 SHA-256 校验覆盖同步副本以及真实 `.app`/APK/AAB。CI 增加安装运行级别的两端测试，验证启动、设置保存、头像、下注/弃牌、结算/重打/下一手与系统前后台，保留设备截图和报告；环境与覆盖边界见 [原生 E2E](docs/native-e2e.md)，本次两端安装后结果见 [2026-10-11 验收记录](docs/native-validation-2026-10-11.md)。编译、浏览器、模拟器与真机结果分别记录，不能相互替代。
 
 CI 的独立质量检查、浏览器分组、失败证据与账户启动阻塞排查见 [CI 排错](docs/ci.md)。
+
+Web/iOS/Android 的牌点使用固定 Manrope 700 矢量字形，避免 SVG 文字在牌桌缩放与重绘时改变大小。字体版权和许可保留在 `public/licenses/card-ranks-OFL.txt`。浏览器回归检查反复缩放与牌面重建后的像素稳定性；原生 E2E 另比较后台恢复、六次重绘前后的设备截图数字尺寸与墨色像素数。微信使用自己的 WXML 文字牌点，本次没有改动小程序牌面。

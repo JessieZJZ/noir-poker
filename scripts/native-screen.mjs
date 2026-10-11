@@ -20,10 +20,10 @@ export async function captureNativeScreen({
   await command('POST', '/context', { name: 'NATIVE_APP' });
   try {
     saveImage(await command('GET', '/screenshot'));
-    if (checkSystemErrors) {
+    if (checkSystemErrors || saveSource) {
       const source = await command('GET', '/source');
       saveSource(source);
-      assertNoSystemError(source);
+      if (checkSystemErrors) assertNoSystemError(source);
     }
   } finally {
     if (webContext) await command('POST', '/context', { name: webContext });

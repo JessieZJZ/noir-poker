@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { readTableLayout, assertTableLayout } from './layout.mjs';
+import { readCardRankState, readNativeRankInk, assertStableRankInk } from './card-ranks.mjs';
 const documentLoginMarker = (text) => /sign in|log in|登录账号/i.test(text);
 
 // Keep the installed-app completion assertion and its existing deadline. The
@@ -157,6 +158,31 @@ export async function nativeScenarios(app) {
       layout,
       startup: info.startup,
     };
+  });
+  await check('card-ranks-stay-stable-after-native-repaint', async () => {
+    await app.waitHero();
+    const before = await app.evaluate(readCardRankState);
+    assert.equal(before.textCount, 0);
+    assert.equal(before.ranks.length, 2);
+    const first = await readNativeRankInk(await app.screenshot('card-ranks-before'), before);
+    await app.background();
+    await app.sleep(1200);
+    await app.activate();
+    await app.evaluate(async () => {
+      for (let i = 0; i < 6; i++) {
+        window.dispatchEvent(new Event('resize'));
+        await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+      }
+    });
+    const after = await app.evaluate(readCardRankState);
+    assert.equal(after.textCount, 0);
+    assert.deepEqual(
+      after.ranks.map(({ rank, path }) => ({ rank, path })),
+      before.ranks.map(({ rank, path }) => ({ rank, path })),
+    );
+    const second = await readNativeRankInk(await app.screenshot('card-ranks-after'), after);
+    assertStableRankInk(first, second);
+    return { before: first, after: second, resizePasses: 6, backgroundMs: 1200 };
   });
   await check('phone-portrait-or-tablet-rotation', async () => {
     await app.waitHero();
