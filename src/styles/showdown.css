@@ -152,7 +152,7 @@
   padding: 22px 25px 20px;
 }
 .game-column:has(> .showdown-stage:not([hidden])) .game-surface {
-  border-bottom-color: transparent;
+  border-bottom-color: #101b22;
   border-bottom-left-radius: 0;
   border-bottom-right-radius: 0;
   box-shadow: none;

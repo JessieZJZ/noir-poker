@@ -51,7 +51,7 @@ for (const locale of ['zh-CN', 'en']) {
             dotOffset: (dot.top + dot.bottom - status.top - status.bottom) / 2,
           };
         });
-        expect(details.bottom).toBe('rgba(0, 0, 0, 0)');
+        expect(details.bottom).toBe(details.dockBackground);
         expect(details.radius).toBe('0px');
         expect(details.top).toBe('0px');
         expect(details.background).toBe(details.dockBackground);
