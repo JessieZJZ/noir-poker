@@ -10,6 +10,14 @@ export const STORE_PROFILE_NAMES = {
   viktor: '强攻型',
   jungleman: '计算型',
   dwan: '多街型',
+  ivey: '观察型',
+  negreanu: '控池型',
+  hellmuth: '耐心型',
+  antonius: '稳健型',
+  koon: '纪律型',
+  chidwick: '理论型',
+  holz: '小注型',
+  haxton: '延迟型',
 };
 export const STORE_PROFILE_NOTICE =
   '原创训练原型；参数为合成游戏机制，不代表任何真人的打法、情绪或长期统计。';

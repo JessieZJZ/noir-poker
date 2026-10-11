@@ -1,5 +1,53 @@
 // Presentation-only assets: profile IDs stay stable in saved settings and hands.
 export const PROFILE_PORTRAITS = {
+  negreanu: {
+    src: '/portraits/negreanu.jpg',
+    source: 'https://commons.wikimedia.org/wiki/File:DNegs_at_2022_WSOP.jpg',
+    credit: 'Captain Q Farf \u00b7 CC BY-SA 4.0',
+    position: '50% top',
+  },
+  holz: {
+    src: '/portraits/holz.jpg',
+    source: 'https://commons.wikimedia.org/wiki/File:Fedor_Holz_2018.jpg',
+    credit: '888poker Spain \u00b7 CC BY 3.0',
+    position: '50% top',
+  },
+  haxton: {
+    src: '/portraits/haxton.jpg',
+    source: 'https://commons.wikimedia.org/wiki/File:Isaac_Haxton_2018.jpg',
+    credit: '888poker Spain \u00b7 CC BY 3.0',
+    position: '50% top',
+  },
+  koon: {
+    src: '/portraits/koon.jpg',
+    source: 'https://commons.wikimedia.org/wiki/File:Jason_Koon_partypoker_Millions_2018.jpg',
+    credit: 'World Poker Tour \u00b7 CC BY 3.0',
+    position: '50% top',
+  },
+  antonius: {
+    src: '/portraits/antonius.jpg',
+    source: 'https://commons.wikimedia.org/wiki/File:Patrik_Antonius_2008.jpg',
+    credit: 'Equipo Unibet \u00b7 CC BY 2.0',
+    position: '50% top',
+  },
+  hellmuth: {
+    src: '/portraits/hellmuth.jpg',
+    source: 'https://commons.wikimedia.org/wiki/File:Phil_Hellmuth_2021.jpg',
+    credit: 'World Poker Tour \u00b7 CC BY 3.0',
+    position: '50% top',
+  },
+  ivey: {
+    src: '/portraits/ivey.jpg',
+    source: 'https://commons.wikimedia.org/wiki/File:Phil_Ivey_(2009_WSOP).jpg',
+    credit: 'www.LasVegasVegas.com \u00b7 CC BY-SA 3.0',
+    position: '50% top',
+  },
+  chidwick: {
+    src: '/portraits/chidwick.jpg',
+    source: 'https://commons.wikimedia.org/wiki/File:Stephen_Chidwick_2018.jpg',
+    credit: 'World Poker Tour \u00b7 CC BY 3.0',
+    position: '50% top',
+  },
   tan: {
     src: '/portraits/tan.jpeg',
     source: 'https://cash-game-invitational-1.triton-series.com/',

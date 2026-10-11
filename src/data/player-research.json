@@ -1,0 +1,874 @@
+{
+  "version": 1,
+  "reviewedAt": "2026-10-11",
+  "language": "zh-CN",
+  "players": {
+    "tan": {
+      "reviewedAt": "2026-10-11",
+      "identity": "Tan Xuan；沿用谭老板称呼。",
+      "formats": ["高额 NLHE 现金桌", "短牌锦标赛"],
+      "career": [
+        {
+          "text": "2024 济州 $50K 短牌主赛冠军，奖金 $922,000。",
+          "sourceIds": ["tan-short"]
+        }
+      ],
+      "observations": [
+        {
+          "text": "本人在短牌冠军采访中自述喜欢宽松与诈唬；普通现金桌报道另有弱牌 4-bet 和多街进攻。",
+          "sourceIds": ["tan-short", "cash-day3"]
+        },
+        {
+          "text": "2024 黑山现金桌有持续进攻被强牌抓住的样本，不能只采纳成功诈唬。",
+          "sourceIds": ["cash-day4"]
+        }
+      ],
+      "adaptation": [
+        "后位范围较宽；在有阻断牌或延续进攻叙事时保留再加注。",
+        "转牌增加有权益的半诈唬；河牌大注需要强价值或可解释的阻断牌。"
+      ],
+      "limits": "短牌规则、straddle 和深筹码会改变策略；当前仅为普通 NLHE 的定性改编。",
+      "sources": [
+        {
+          "id": "tan-short",
+          "label": "Triton · 谭老板短牌冠军与原访谈",
+          "url": "https://tritonpokerseries.com/en-US/news/headlines/tan-xuan-completes-short-deck-double-with-jeju-main-event-success",
+          "kind": "赛事官方与本人访谈",
+          "publishedAt": "2024-03-20",
+          "context": "短牌比赛，仅用于履历与定性自述，不移植起手牌范围或胜率。",
+          "reviewedAt": "2026-10-11",
+          "verification": "page-read"
+        },
+        {
+          "id": "cash-day3",
+          "label": "Triton · 黑山现金桌第 3 日",
+          "url": "https://tritonpokerseries.com/en-US/news/headlines/st-wang-shows-million-dollar-class-as-cash-game-invitational-raises-stakes",
+          "kind": "赛事官方牌局",
+          "publishedAt": "2024-08-09",
+          "context": "深筹码、ante、straddle 的现金桌；不可把整场频率直接移植到普通桌。",
+          "reviewedAt": "2026-10-11",
+          "verification": "page-read"
+        },
+        {
+          "id": "cash-day4",
+          "label": "Triton · Ivey、Cates 与 Wang 现金桌牌局",
+          "url": "https://tritonpokerseries.com/en-US/news/headlines/ferdinand-takes-most-as-phil-ivey-and-dan-cates-land-big-cash-game-profits",
+          "kind": "赛事官方牌局",
+          "publishedAt": "2024-08-10",
+          "context": "包含多种进攻、诱导和弃牌样本；报道只选取部分牌局。",
+          "reviewedAt": "2026-10-11",
+          "verification": "page-read"
+        }
+      ]
+    },
+    "st": {
+      "reviewedAt": "2026-10-11",
+      "identity": "ST Wang；不推断未确认本名。",
+      "formats": ["Triton 高额 NLHE 现金桌"],
+      "career": [
+        {
+          "text": "2024-08-09 官方记录单场净赢 $1,389,000，仅该场结果。",
+          "sourceIds": ["cash-day3"]
+        }
+      ],
+      "observations": [
+        {
+          "text": "AA 在翻牌、转牌与河牌组合使用诱导和价值加注。",
+          "sourceIds": ["cash-day2"]
+        },
+        {
+          "text": "官方报道还记录大池失利后的河牌弃牌，不能等同于永远跟到底。",
+          "sourceIds": ["cash-day4"]
+        }
+      ],
+      "adaptation": [
+        "收紧高成本再加注防守；干燥牌面强牌允许过牌诱导。",
+        "河牌面对已有下注时，强价值牌可采用较大加注。"
+      ],
+      "limits": "缺少可代表长期表现的完整样本；身份、收益总额与实际 VPIP 未确认。",
+      "sources": [
+        {
+          "id": "cash-day2",
+          "label": "Triton · Wang 的 AA 诱导",
+          "url": "https://tritonpokerseries.com/en-US/news/headlines/more-brilliance-from-elton-tsang-as-cash-game-invitational-gets-serious",
+          "kind": "赛事官方牌局",
+          "publishedAt": "2024-08-08",
+          "context": "带 straddle 的深筹码现金桌；慢打不是所有强牌的默认行动。",
+          "reviewedAt": "2026-10-11",
+          "verification": "page-read"
+        },
+        {
+          "id": "cash-day3",
+          "label": "Triton · 黑山现金桌第 3 日",
+          "url": "https://tritonpokerseries.com/en-US/news/headlines/st-wang-shows-million-dollar-class-as-cash-game-invitational-raises-stakes",
+          "kind": "赛事官方牌局",
+          "publishedAt": "2024-08-09",
+          "context": "深筹码、ante、straddle 的现金桌；不可把整场频率直接移植到普通桌。",
+          "reviewedAt": "2026-10-11",
+          "verification": "page-read"
+        },
+        {
+          "id": "cash-day4",
+          "label": "Triton · Ivey、Cates 与 Wang 现金桌牌局",
+          "url": "https://tritonpokerseries.com/en-US/news/headlines/ferdinand-takes-most-as-phil-ivey-and-dan-cates-land-big-cash-game-profits",
+          "kind": "赛事官方牌局",
+          "publishedAt": "2024-08-10",
+          "context": "包含多种进攻、诱导和弃牌样本；报道只选取部分牌局。",
+          "reviewedAt": "2026-10-11",
+          "verification": "page-read"
+        }
+      ]
+    },
+    "zang": {
+      "reviewedAt": "2026-10-11",
+      "identity": "Aaron Zang；中文沿用臧书奴。",
+      "formats": ["高额锦标赛", "Triton NLHE 现金桌"],
+      "career": [
+        {
+          "text": "2019 伦敦 Triton Million 冠军，对手为 Bryn Kenney。",
+          "sourceIds": ["triton-history"]
+        }
+      ],
+      "observations": [
+        {
+          "text": "2024 济州一手牌，44 在河牌把 23k 加到 105k，被 AQ 跟住。",
+          "sourceIds": ["zang-river"]
+        }
+      ],
+      "adaptation": [
+        "后位争夺较积极；河牌面对小注保留有边界的诈唬加注。",
+        "强牌与诈唬共用较大河牌尺度，但多人、重压力底池压低空气进攻。"
+      ],
+      "limits": "冠军成绩不证明现金桌频率；河牌单手样本也不证明长期盈利。",
+      "sources": [
+        {
+          "id": "triton-history",
+          "label": "Triton · 2019 Million 官方历史",
+          "url": "https://tritonpokerseries.com/en-US/about/our-story",
+          "kind": "赛事官方履历",
+          "publishedAt": null,
+          "context": "记录 Aaron Zang 的冠军；不把冠军头衔视为现金桌打法证据。",
+          "reviewedAt": "2026-10-11",
+          "verification": "page-read"
+        },
+        {
+          "id": "zang-river",
+          "label": "Triton · 臧书奴河牌加注样本",
+          "url": "https://tritonpokerseries.com/en-US/news/headlines/brilliant-rui-cao-and-steady-andy-ni-win-big-on-day-2-in-jeju",
+          "kind": "赛事官方牌局",
+          "publishedAt": "2024-10-03",
+          "context": "河牌用 44 把 23k 小注加到 105k；这是被跟住的一次诈唬。",
+          "reviewedAt": "2026-10-11",
+          "verification": "page-read"
+        }
+      ]
+    },
+    "peter": {
+      "reviewedAt": "2026-10-11",
+      "identity": "Peter，指 Hustler Casino Live 常客；不推断本名或职业资格。",
+      "formats": ["HCL 高额 NLHE 现金桌"],
+      "career": [
+        {
+          "text": "HCL 2024 Million Dollar Game 回顾记录该周约 $5M 盈利，仅该节目样本。",
+          "sourceIds": ["peter-rematch"]
+        }
+      ],
+      "observations": [
+        {
+          "text": "暗三条在河牌采用满池再加注，获得大尺度价值。",
+          "sourceIds": ["peter-rematch"]
+        },
+        {
+          "text": "小口袋对子推入报道含 Stand-Up 附加激励。",
+          "sourceIds": ["peter-shove"]
+        }
+      ],
+      "adaptation": [
+        "保留宽松的低成本跟入，强价值牌偏向大尺度。",
+        "普通桌移除来源含附加规则的小对子特殊全下，不靠精彩片段强行增加搏杀。"
+      ],
+      "limits": "公开身份和统计有限；节目盈利不能当作生涯收益，附加规则不移植。",
+      "sources": [
+        {
+          "id": "peter-rematch",
+          "label": "HCL · Peter 与 Dwan 再战",
+          "url": "https://hustlercasinolive.com/2024/06/12/the-rematch-we-didnt-know-we-needed/",
+          "kind": "赛事官方牌局",
+          "publishedAt": "2024-06-12",
+          "context": "暗三条河牌大尺度价值加注；本页后续场次含 Stand-Up 附加规则。",
+          "reviewedAt": "2026-10-11",
+          "verification": "page-read"
+        },
+        {
+          "id": "peter-shove",
+          "label": "PokerNews · 小对子反击样本",
+          "url": "https://www.pokernews.com/news/2025/01/poker-player-goes-all-in-for-thousands-47684.htm",
+          "kind": "专业媒体报道",
+          "publishedAt": "2025-01",
+          "context": "包含 Stand-Up 规则，普通桌不默认复制该全下。",
+          "reviewedAt": "2026-10-11",
+          "verification": "page-read"
+        }
+      ]
+    },
+    "abao": {
+      "reviewedAt": "2026-10-11",
+      "identity": "KPC 直播标签 A Bao；本名、国籍和职业身份未可靠确认。",
+      "formats": ["KPC 高额 NLHE 现金桌"],
+      "career": [],
+      "observations": [
+        {
+          "text": "AJ 同花听牌使用约 31% 池翻牌下注，再在转牌以约 90% 池推入施压。",
+          "sourceIds": ["abao-aj"]
+        },
+        {
+          "text": "另有同花听牌反击的媒体复述样本。",
+          "sourceIds": ["abao-draw"]
+        }
+      ],
+      "adaptation": [
+        "翻前进攻后的翻牌持续下注使用小尺度。",
+        "转牌半诈唬采用较大尺度；无听牌且多人时降低空气诈唬。"
+      ],
+      "limits": "两篇媒体复述不是完整官方统计，未独立逐帧重建整场，不编造履历或真实频率。",
+      "sources": [
+        {
+          "id": "abao-aj",
+          "label": "Pokerati · A Bao 的 AJ 同花半诈唬",
+          "url": "https://pokerati.com/2026/08/top-streamed-hands-of-the-week-winston-sets-the-perfect-trap-a-bao-bluffs-big/",
+          "kind": "专业媒体牌局复述",
+          "publishedAt": "2026-08-24",
+          "context": "KPC 现金桌：约 31% 池翻牌下注、90% 池转牌推入；未逐帧独立重建整场。",
+          "reviewedAt": "2026-10-11",
+          "verification": "page-read"
+        },
+        {
+          "id": "abao-draw",
+          "label": "Pokerati · A Bao 的同花听牌反击",
+          "url": "https://pokerati.com/2026/08/top-streamed-hands-of-the-week-malinowski-and-dwan-take-on-the-kpc-high-rollers/",
+          "kind": "专业媒体牌局复述",
+          "publishedAt": "2026-08",
+          "context": "仅有限听牌进攻样本；不能确认本名、职业身份或长期频率。",
+          "reviewedAt": "2026-10-11",
+          "verification": "page-read"
+        }
+      ]
+    },
+    "viktor": {
+      "reviewedAt": "2026-10-11",
+      "identity": "Viktor Blom，线上别名 Isildur1。",
+      "formats": ["线上高额 NLHE/PLO", "单挑现金桌", "线上锦标赛"],
+      "career": [
+        {
+          "text": "2013 SCOOP $10,300 NLHE 主赛冠军，580 人，奖金 $1,096,200。",
+          "sourceIds": ["blom-scoop"]
+        }
+      ],
+      "observations": [
+        {
+          "text": "PokerStars 原访谈与历史回顾记录其高额单挑背景和主动施压案例。",
+          "sourceIds": ["blom-interview", "bluffs"]
+        }
+      ],
+      "adaptation": [
+        "较宽的后位范围，更积极的听牌半诈唬和转河牌延续。",
+        "大尺度进攻仍受阻断牌、多人底池及有效筹码限制。"
+      ],
+      "limits": "单挑和 PLO 不直接提供多人 NLHE 频率；没有最新真人统计。",
+      "sources": [
+        {
+          "id": "blom-interview",
+          "label": "PokerStars · Isildur1 原访谈",
+          "url": "https://www.pokerstars.com/poker/learn/news/finding-isildur1-viktor-blom-cops-to-his-077269/",
+          "kind": "赛事官方与本人访谈",
+          "publishedAt": "2011-01",
+          "context": "历史线上高额、单挑背景；多人桌采用有边界的定性改编。",
+          "reviewedAt": "2026-10-11",
+          "verification": "page-read"
+        },
+        {
+          "id": "blom-scoop",
+          "label": "PokerStars · 2013 SCOOP 主赛冠军",
+          "url": "https://www.pokerstars.com/poker/learn/news/scoop-2013-viktor-isildur1-blom-bests-bo-137930/",
+          "kind": "赛事官方成绩",
+          "publishedAt": "2013-05-28",
+          "context": "43-H：580 人、冠军奖金 $1,096,200；并非最新累计奖金。",
+          "reviewedAt": "2026-10-11",
+          "verification": "page-read"
+        },
+        {
+          "id": "bluffs",
+          "label": "PokerStars · 历史诈唬案例",
+          "url": "https://www.pokerstars.com/poker/learn/news/the-best-and-worst-poker-bluffs-ever/",
+          "kind": "赛事官方回顾",
+          "publishedAt": null,
+          "context": "精选牌局有选择偏差，不用于估算 VPIP、PFR 或总体诈唬率。",
+          "reviewedAt": "2026-10-11",
+          "verification": "page-read"
+        }
+      ]
+    },
+    "jungleman": {
+      "reviewedAt": "2026-10-11",
+      "identity": "Daniel Cates，线上别名 Jungleman12。",
+      "formats": ["高额单挑 NLHE", "混合游戏", "Triton 现金桌"],
+      "career": [
+        {
+          "text": "早期参加与 Tom Dwan 的线上 $200/$400 NLHE 挑战。",
+          "sourceIds": ["cates-interview"]
+        }
+      ],
+      "observations": [
+        {
+          "text": "本人访谈强调计算与观察行为，针对对手作调整。",
+          "sourceIds": ["cates-interview", "cates-adjust"]
+        },
+        {
+          "text": "2024 黑山用坚果牌让 Tan Xuan 多街继续进攻。",
+          "sourceIds": ["cash-day4"]
+        }
+      ],
+      "adaptation": [
+        "保留合理价格的防守和强牌诱导。",
+        "当前手有足够公开行动后，对进攻或被动倾向做小幅调整。"
+      ],
+      "limits": "不模拟现场读人；当前手少量动作不等于稳定读牌，也不运行职业级求解器。",
+      "sources": [
+        {
+          "id": "cates-interview",
+          "label": "Card Player · Cates 计算与进攻访谈",
+          "url": "https://www.cardplayer.com/cardplayer-poker-magazines/65799-poker-hall-of-fame-23-20/articles/19757-capture-the-flag-daniel-jungleman12-cates",
+          "kind": "本人原访谈",
+          "publishedAt": "2011-10-13",
+          "context": "早期线上单挑经历；与当前多人现金桌的策略环境不同。",
+          "reviewedAt": "2026-10-11",
+          "verification": "page-read"
+        },
+        {
+          "id": "cates-adjust",
+          "label": "Card Player · 单挑对手调整访谈",
+          "url": "https://www.cardplayer.com/cardplayer-poker-magazines/66315-jason-mercier-28-23/articles/22601-head-games-heads-up-cash-game-advice-from-the-best-in-the-world",
+          "kind": "本人原访谈",
+          "publishedAt": null,
+          "context": "讨论观察和调整；本地模型不能读现场 tells。",
+          "reviewedAt": "2026-10-11",
+          "verification": "page-read"
+        },
+        {
+          "id": "cash-day4",
+          "label": "Triton · Ivey、Cates 与 Wang 现金桌牌局",
+          "url": "https://tritonpokerseries.com/en-US/news/headlines/ferdinand-takes-most-as-phil-ivey-and-dan-cates-land-big-cash-game-profits",
+          "kind": "赛事官方牌局",
+          "publishedAt": "2024-08-10",
+          "context": "包含多种进攻、诱导和弃牌样本；报道只选取部分牌局。",
+          "reviewedAt": "2026-10-11",
+          "verification": "page-read"
+        }
+      ]
+    },
+    "dwan": {
+      "reviewedAt": "2026-10-11",
+      "identity": "Tom Dwan，线上别名 durrrr。",
+      "formats": ["深筹码 NLHE/PLO 现金桌", "直播高额现金桌"],
+      "career": [
+        {
+          "text": "HCL 官方保留 2023 大底池原片入口，另有 2024 与 Peter 对战报道。",
+          "sourceIds": ["hcl-record", "peter-rematch"]
+        }
+      ],
+      "observations": [
+        {
+          "text": "原采访中的同行描述强调非常规路线和选择性的主动/被动切换。",
+          "sourceIds": ["dwan-interview"]
+        },
+        {
+          "text": "官方历史回顾有多街诈唬案例，不能据此量化所有牌的诈唬频率。",
+          "sourceIds": ["bluffs"]
+        }
+      ],
+      "adaptation": [
+        "后位主动争夺，转河牌保留多街施压和较大尺度。",
+        "干燥牌面也允许强牌控池，避免把其策略简化成无条件加注。"
+      ],
+      "limits": "原片本次仅核对入口；历史同行评价和精选牌局不是完整、实时策略。",
+      "sources": [
+        {
+          "id": "dwan-interview",
+          "label": "Card Player · Dwan 原采访与同行评价",
+          "url": "https://www.cardplayer.com/cardplayer-poker-magazines/65739-tom-dwan-6-4/articles/18288-the-won-39-durrrr-39-ful-life-of-tom-dwan",
+          "kind": "本人原访谈与同行评价",
+          "publishedAt": "2009",
+          "context": "历史现金桌风格定性资料；不代表今天的固定策略。",
+          "reviewedAt": "2026-10-11",
+          "verification": "page-read"
+        },
+        {
+          "id": "bluffs",
+          "label": "PokerStars · 历史诈唬案例",
+          "url": "https://www.pokerstars.com/poker/learn/news/the-best-and-worst-poker-bluffs-ever/",
+          "kind": "赛事官方回顾",
+          "publishedAt": null,
+          "context": "精选牌局有选择偏差，不用于估算 VPIP、PFR 或总体诈唬率。",
+          "reviewedAt": "2026-10-11",
+          "verification": "page-read"
+        },
+        {
+          "id": "hcl-record",
+          "label": "HCL · Dwan 2023 大底池原片",
+          "url": "https://www.youtube.com/watch?v=2UhdlMvQSvg",
+          "kind": "赛事官方视频",
+          "publishedAt": "2023-05",
+          "context": "官方原片入口；本次未完整观看，不用于新增策略频率。",
+          "reviewedAt": "2026-10-11",
+          "verification": "linked-video-only"
+        },
+        {
+          "id": "peter-rematch",
+          "label": "HCL · Peter 与 Dwan 再战",
+          "url": "https://hustlercasinolive.com/2024/06/12/the-rematch-we-didnt-know-we-needed/",
+          "kind": "赛事官方牌局",
+          "publishedAt": "2024-06-12",
+          "context": "暗三条河牌大尺度价值加注；本页后续场次含 Stand-Up 附加规则。",
+          "reviewedAt": "2026-10-11",
+          "verification": "page-read"
+        }
+      ]
+    },
+    "ivey": {
+      "reviewedAt": "2026-10-11",
+      "identity": "Phil Ivey；美国职业牌手。",
+      "formats": ["高额 NLHE 现金桌", "混合游戏", "高额锦标赛"],
+      "career": [
+        {
+          "text": "2017 入选 Poker Hall of Fame。",
+          "sourceIds": ["hof"]
+        }
+      ],
+      "observations": [
+        {
+          "text": "2024 黑山强牌连续过牌后在河牌价值加注；另场有多种价值、抓诈路线。",
+          "sourceIds": ["ivey-sample", "cash-day4"]
+        }
+      ],
+      "adaptation": [
+        "中宽范围兼顾诱导与价值，危险牌面减少慢打。",
+        "公开行动足够时小幅调节防守，较强河牌价值可扩大尺度。"
+      ],
+      "limits": "依据是特定现金桌样本；模型无法还原其现场观察、经验或完整混合游戏策略。",
+      "sources": [
+        {
+          "id": "hof",
+          "label": "WSOP · 2024 名人堂官方公告",
+          "url": "https://www.wsop.com/news/patrik-antonius-announced-as-2024-poker-hall-of-fame-inductee/",
+          "kind": "赛事官方履历",
+          "publishedAt": "2024-07-14",
+          "context": "包含 Antonius 2024、Ivey 2017、Negreanu 2014、Hellmuth 2007 入选记录。",
+          "reviewedAt": "2026-10-11",
+          "verification": "page-read"
+        },
+        {
+          "id": "ivey-sample",
+          "label": "Triton · Ivey 慢打与河牌价值加注",
+          "url": "https://tritonpokerseries.com/en-US/news/headlines/st-wang-shows-million-dollar-class-as-cash-game-invitational-raises-stakes",
+          "kind": "赛事官方牌局",
+          "publishedAt": "2024-08-09",
+          "context": "单手强牌过牌和河牌加注，只支持存在该路线。",
+          "reviewedAt": "2026-10-11",
+          "verification": "page-read"
+        },
+        {
+          "id": "cash-day4",
+          "label": "Triton · Ivey、Cates 与 Wang 现金桌牌局",
+          "url": "https://tritonpokerseries.com/en-US/news/headlines/ferdinand-takes-most-as-phil-ivey-and-dan-cates-land-big-cash-game-profits",
+          "kind": "赛事官方牌局",
+          "publishedAt": "2024-08-10",
+          "context": "包含多种进攻、诱导和弃牌样本；报道只选取部分牌局。",
+          "reviewedAt": "2026-10-11",
+          "verification": "page-read"
+        }
+      ]
+    },
+    "negreanu": {
+      "reviewedAt": "2026-10-11",
+      "identity": "Daniel Negreanu，常用别名 Kid Poker。",
+      "formats": ["NLHE 锦标赛", "混合游戏"],
+      "career": [
+        {
+          "text": "1998 获首条 WSOP 手链；2004、2013 获 WSOP 年度牌手。",
+          "sourceIds": ["negreanu-wsop"]
+        },
+        {
+          "text": "2024 $50,000 Poker Players Championship 冠军。",
+          "sourceIds": ["negreanu-wsop"]
+        }
+      ],
+      "observations": [
+        {
+          "text": "PokerStars 教学将历史 small-ball 与 Negreanu 联系，强调低成本进攻和控池。",
+          "sourceIds": ["negreanu-small"]
+        }
+      ],
+      "adaptation": [
+        "未开池时采用较小开池；干燥牌面中等权益手牌更多控池。",
+        "较小翻后尺度搭配薄价值路线；高成本再加注收紧。"
+      ],
+      "limits": "明确选择历史 small-ball 训练版本，不声称复刻今天的 Negreanu；混合赛事成绩不作为现金桌频率。",
+      "sources": [
+        {
+          "id": "negreanu-wsop",
+          "label": "WSOP · Daniel Negreanu 官方档案",
+          "url": "https://www.wsop.com/players/653419452/daniel-negreanu/?awardType=Bracelet",
+          "kind": "赛事官方履历",
+          "publishedAt": null,
+          "context": "可核对 1998 首条手链、2004/2013 年度牌手、2024 PPC 冠军。",
+          "reviewedAt": "2026-10-11",
+          "verification": "page-read"
+        },
+        {
+          "id": "negreanu-small",
+          "label": "PokerStars · Small-ball 教学",
+          "url": "https://www.pokerstars.com/pt-BR/poker/learn/strategies/como-jogar-small-ball/",
+          "kind": "赛事官方教学",
+          "publishedAt": "2020-02-12",
+          "context": "归纳 Negreanu 历史 small-ball；不是其现代全策略或实时统计。",
+          "reviewedAt": "2026-10-11",
+          "verification": "page-read"
+        },
+        {
+          "id": "hof",
+          "label": "WSOP · 2024 名人堂官方公告",
+          "url": "https://www.wsop.com/news/patrik-antonius-announced-as-2024-poker-hall-of-fame-inductee/",
+          "kind": "赛事官方履历",
+          "publishedAt": "2024-07-14",
+          "context": "包含 Antonius 2024、Ivey 2017、Negreanu 2014、Hellmuth 2007 入选记录。",
+          "reviewedAt": "2026-10-11",
+          "verification": "page-read"
+        }
+      ]
+    },
+    "hellmuth": {
+      "reviewedAt": "2026-10-11",
+      "identity": "Phil Hellmuth，常用别名 Poker Brat。",
+      "formats": ["大型 NLHE 锦标赛", "混合游戏"],
+      "career": [
+        {
+          "text": "1989 WSOP 主赛冠军；2007 入选 Poker Hall of Fame。",
+          "sourceIds": ["hellmuth-wsop", "hof"]
+        },
+        {
+          "text": "2023 WSOP $10,000 Super Turbo Bounty 冠军。",
+          "sourceIds": ["hellmuth-wsop"]
+        }
+      ],
+      "observations": [
+        {
+          "text": "原访谈讨论历史低风险、寻找机会与诱导，也反思过度冒险的牌局。",
+          "sourceIds": ["hellmuth-scoop"]
+        }
+      ],
+      "adaptation": [
+        "收紧再加注范围和高成本继续；强牌在安全牌面保留诱导。",
+        "更少阻断牌诈唬与大尺度空气施压。"
+      ],
+      "limits": "沿用历史锦标赛风格的定性启发，现金桌没有 ICM；不把公开情绪形象写入真人策略。",
+      "sources": [
+        {
+          "id": "hellmuth-wsop",
+          "label": "WSOP · Phil Hellmuth 官方档案",
+          "url": "https://www.wsop.com/players/690290266/phil-hellmuth/?awardType=Bracelet",
+          "kind": "赛事官方履历",
+          "publishedAt": null,
+          "context": "核对 1989 主赛与 2023 Super Turbo Bounty 冠军，避免硬编码最新手链总数。",
+          "reviewedAt": "2026-10-11",
+          "verification": "page-read"
+        },
+        {
+          "id": "hellmuth-scoop",
+          "label": "Card Player · Hellmuth 低风险打法原访谈",
+          "url": "https://www.cardplayer.com/cardplayer-poker-magazines/65767-joseph-cada-22-24/articles/18902-the-scoop-phil-hellmuth",
+          "kind": "本人原访谈",
+          "publishedAt": "2009",
+          "context": "讨论历史低风险、找机会与诱导，也讨论过度冒险的失误。",
+          "reviewedAt": "2026-10-11",
+          "verification": "page-read"
+        },
+        {
+          "id": "hof",
+          "label": "WSOP · 2024 名人堂官方公告",
+          "url": "https://www.wsop.com/news/patrik-antonius-announced-as-2024-poker-hall-of-fame-inductee/",
+          "kind": "赛事官方履历",
+          "publishedAt": "2024-07-14",
+          "context": "包含 Antonius 2024、Ivey 2017、Negreanu 2014、Hellmuth 2007 入选记录。",
+          "reviewedAt": "2026-10-11",
+          "verification": "page-read"
+        }
+      ]
+    },
+    "antonius": {
+      "reviewedAt": "2026-10-11",
+      "identity": "Patrik Antonius；芬兰职业牌手。",
+      "formats": ["高额短桌现金局", "NLHE/PLO", "混合游戏"],
+      "career": [
+        {
+          "text": "2024 入选 Poker Hall of Fame。",
+          "sourceIds": ["hof"]
+        }
+      ],
+      "observations": [
+        {
+          "text": "本人高额现金桌采访自述较稳健，并偏好短桌。",
+          "sourceIds": ["antonius-interview"]
+        },
+        {
+          "text": "策略访谈讨论顺子、同花或配对牌落下后，如何重新考虑价值、跟注与诈唬。",
+          "sourceIds": ["antonius-strategy"]
+        }
+      ],
+      "adaptation": [
+        "短桌比满桌稍宽；听牌有权益时更积极。",
+        "转河牌改变后重新检查危险度，大尺度空气进攻需要阻断牌。"
+      ],
+      "limits": "早期混合游戏采访不是最新 NLHE 统计；本桌最少五人，不直接模拟单挑。",
+      "sources": [
+        {
+          "id": "hof",
+          "label": "WSOP · 2024 名人堂官方公告",
+          "url": "https://www.wsop.com/news/patrik-antonius-announced-as-2024-poker-hall-of-fame-inductee/",
+          "kind": "赛事官方履历",
+          "publishedAt": "2024-07-14",
+          "context": "包含 Antonius 2024、Ivey 2017、Negreanu 2014、Hellmuth 2007 入选记录。",
+          "reviewedAt": "2026-10-11",
+          "verification": "page-read"
+        },
+        {
+          "id": "antonius-interview",
+          "label": "Card Player · Antonius 高额现金桌原访谈",
+          "url": "https://www.cardplayer.com/cardplayer-poker-magazines/65699-patrik-antonius-21-5/articles/17380-big-game-hunter-patrik-antonius",
+          "kind": "本人原访谈",
+          "publishedAt": "2008",
+          "context": "本人谈稳健与偏好短桌；混合游戏内容不移植成 NLHE 频率。",
+          "reviewedAt": "2026-10-11",
+          "verification": "page-read"
+        },
+        {
+          "id": "antonius-strategy",
+          "label": "Card Player · Antonius 牌面变化与多街策略",
+          "url": "https://www.cardplayer.com/cardplayer-poker-magazines/65708-david-chiu-21-11/articles/17580-capture-the-flag-where-top-cash-game-pros-talk-strategy",
+          "kind": "本人原访谈",
+          "publishedAt": "2008",
+          "context": "对危险转河牌的价值、诈唬和跟注分支作定性讨论。",
+          "reviewedAt": "2026-10-11",
+          "verification": "page-read"
+        }
+      ]
+    },
+    "koon": {
+      "reviewedAt": "2026-10-11",
+      "identity": "Jason Koon；美国职业牌手。",
+      "formats": ["高额 NLHE 锦标赛", "短牌", "高额现金桌"],
+      "career": [
+        {
+          "text": "2025 黑山站收官赛取得当时第 12 个 Triton 冠军。",
+          "sourceIds": ["koon-12"]
+        }
+      ],
+      "observations": [
+        {
+          "text": "本人采访强调理解范围、尺度与价值/诈唬组成，再按有依据的对手偏差调整。",
+          "sourceIds": ["koon-interview"]
+        }
+      ],
+      "adaptation": [
+        "再加注优先强价值和同花 A 阻断候选；多人空气进攻更谨慎。",
+        "翻牌小尺度和转河牌较大尺度分开；公开动作足够后仅小幅调整。"
+      ],
+      "limits": "这些是人为设定的训练控制，没有求解器策略库；第 12 冠是当时记录。",
+      "sources": [
+        {
+          "id": "koon-12",
+          "label": "Triton · Koon 在黑山取得第 12 冠",
+          "url": "https://tritonpokerseries.com/en-US/news/headlines/make-that-12-red-hot-jason-koon-hits-the-triton-dozen-in-montenegro-closer",
+          "kind": "赛事官方成绩",
+          "publishedAt": "2025-05",
+          "context": "当时第 12 个 Triton 冠军；不是截至今天的冠军总数。",
+          "reviewedAt": "2026-10-11",
+          "verification": "page-read"
+        },
+        {
+          "id": "koon-interview",
+          "label": "Card Player · Koon 范围与尺度原访谈",
+          "url": "https://www.cardplayer.com/cardplayer-poker-magazines/66342-jason-koon-29-24/articles/22925-jason-koon-hard-work-pays-off",
+          "kind": "本人原访谈",
+          "publishedAt": "2016",
+          "context": "本人强调理解范围、尺度与价值/诈唬组成；不等于本地运行求解器。",
+          "reviewedAt": "2026-10-11",
+          "verification": "page-read"
+        }
+      ]
+    },
+    "chidwick": {
+      "reviewedAt": "2026-10-11",
+      "identity": "Stephen Chidwick，线上别名 Stevie444。",
+      "formats": ["高额 NLHE 锦标赛", "混合游戏"],
+      "career": [
+        {
+          "text": "2018 成为首位登顶 GPI 的英国牌手。",
+          "sourceIds": ["chidwick-2018"]
+        },
+        {
+          "text": "2018 首届 U.S. Poker Open 系列总冠军，该系列两场夺冠。",
+          "sourceIds": ["chidwick-uspo"]
+        }
+      ],
+      "observations": [
+        {
+          "text": "本人采访强调理论帮助识别对手失衡，研究的是策略逻辑而非只背图表。",
+          "sourceIds": ["chidwick-interview"]
+        }
+      ],
+      "adaptation": [
+        "范围与再加注更有纪律，阻断牌辅助选择少量诈唬。",
+        "不同街次分开尺度；足够公开行动后小幅调整，危险牌面更少慢打。"
+      ],
+      "limits": "本地仍是启发式与权益抽样；锦标赛 ICM、职业读人与完整 GTO 未建模。",
+      "sources": [
+        {
+          "id": "chidwick-interview",
+          "label": "Card Player · Chidwick 理论与剥削原访谈",
+          "url": "https://www.cardplayer.com/cardplayer-poker-magazines/66412-stephen-chidwick-the-player-s-choice-of-champion-30-year-old-high-roller-tops-british-money-list-with-23-million-in-winnings-32-13/articles/23709-stephen-chidwick-the-player-s-choice-of-champion",
+          "kind": "本人原访谈",
+          "publishedAt": "2019",
+          "context": "本人强调理解理论后识别对手失衡，不是背固定图表。",
+          "reviewedAt": "2026-10-11",
+          "verification": "page-read"
+        },
+        {
+          "id": "chidwick-2018",
+          "label": "PokerStars · Chidwick 登顶 GPI 访谈",
+          "url": "https://www.pokerstars.com/poker/learn/news/how-stephen-chidwick-top-poker-world-172552/",
+          "kind": "赛事官方与本人访谈",
+          "publishedAt": "2018-05-02",
+          "context": "2018 年成为首位 GPI 第一的英国牌手，是历史成绩。",
+          "reviewedAt": "2026-10-11",
+          "verification": "page-read"
+        },
+        {
+          "id": "chidwick-uspo",
+          "label": "PGT · 首届 U.S. Poker Open 成绩回顾",
+          "url": "https://www.pgt.com/news/u-s-poker-open-dates-added-cash-prize-revealed-for-next-leg-of-the-high-roller-triple-crown-in-2019",
+          "kind": "赛事官方成绩",
+          "publishedAt": "2018-10-09",
+          "context": "回顾 2018 Chidwick 系列总冠军与两场夺冠。",
+          "reviewedAt": "2026-10-11",
+          "verification": "page-read"
+        }
+      ]
+    },
+    "holz": {
+      "reviewedAt": "2026-10-11",
+      "identity": "Fedor Holz，线上别名 CrownUpGuy。",
+      "formats": ["高额 NLHE 锦标赛", "线上现金桌"],
+      "career": [
+        {
+          "text": "2014 WCOOP 主赛以 CrownUpGuy 账号夺冠。",
+          "sourceIds": ["holz-wcoop"]
+        },
+        {
+          "text": "Pokercode 官方教学介绍其为共同创始人。",
+          "sourceIds": ["holz-review"]
+        }
+      ],
+      "observations": [
+        {
+          "text": "本人团队现金桌复盘中，干燥 Q-3-7 牌面采用 40% 池下注，转牌过牌，河牌对少诈唬范围弃牌。",
+          "sourceIds": ["holz-review"]
+        }
+      ],
+      "adaptation": [
+        "干燥高牌翻牌，翻前进攻者可用小尺度持续下注。",
+        "中等牌力保留控池；河牌大注更强调强价值或阻断牌。"
+      ],
+      "limits": "复盘来自单挑、只是一手；本地范围优势是牌面代理指标，不是求解结果。",
+      "sources": [
+        {
+          "id": "holz-review",
+          "label": "Pokercode · Fedor 现金桌策略复盘",
+          "url": "https://www.pokercode.com/blog/steffen-gives-fedor-a-poker-cash-game-strategy-review",
+          "kind": "本人团队教学与牌局",
+          "publishedAt": "2022-02-17",
+          "context": "Q-3-7 干燥牌面小注、66 控池、河牌对少诈唬范围弃牌；单挑样本。",
+          "reviewedAt": "2026-10-11",
+          "verification": "page-read"
+        },
+        {
+          "id": "holz-wcoop",
+          "label": "PokerStars · CrownUpGuy 2014 WCOOP 主赛",
+          "url": "https://www.pokerstars.com/poker/learn/news/wcoop-2014-crownupguy-conquers-main-even-151217/",
+          "kind": "赛事官方成绩",
+          "publishedAt": "2014",
+          "context": "CrownUpGuy 的冠军记录；与 NLHE 普通现金桌有不同目标。",
+          "reviewedAt": "2026-10-11",
+          "verification": "page-read"
+        }
+      ]
+    },
+    "haxton": {
+      "reviewedAt": "2026-10-11",
+      "identity": "Isaac Haxton，常用别名 Ike。",
+      "formats": ["高额单挑 NLHE", "高额锦标赛"],
+      "career": [
+        {
+          "text": "2023 SHRB VIII 冠军，20 人，奖金 $2,760,000。",
+          "sourceIds": ["haxton-shrb"]
+        }
+      ],
+      "observations": [
+        {
+          "text": "本人 Float 教学讨论干燥牌面先跟注，再在后续街寻找诈唬机会。",
+          "sourceIds": ["haxton-float"]
+        },
+        {
+          "text": "逐手访谈讨论对手下注倾向和自身形象。",
+          "sourceIds": ["haxton-tendencies"]
+        }
+      ],
+      "adaptation": [
+        "有位置、干燥翻牌、低价格时，少量有后门潜力手牌可 Float。",
+        "对手下一街过牌后保留争夺；不在多人、全下或高压力场景复制。"
+      ],
+      "limits": "Float 条件是本地保守近似；旧教学与赛事 ICM 不代表今天的多人现金桌策略。",
+      "sources": [
+        {
+          "id": "haxton-shrb",
+          "label": "PGT · Haxton 2023 SHRB VIII 冠军",
+          "url": "https://www.pgt.com/news/isaac-haxton-wins-super-high-roller-bowl-viii-for-2760000",
+          "kind": "赛事官方成绩",
+          "publishedAt": "2023-09-30",
+          "context": "20 人赛事，冠军奖金 $2,760,000；奖金不是净利润。",
+          "reviewedAt": "2026-10-11",
+          "verification": "page-read"
+        },
+        {
+          "id": "haxton-float",
+          "label": "Card Player TV · Haxton 讲解 Float",
+          "url": "https://www.cardplayer.com/poker-news/24874-poker-video-spotlight-isaac-haxton-on-floating",
+          "kind": "本人教学",
+          "publishedAt": "2020-04-23",
+          "context": "回顾 2010 教学：干燥牌面先跟，再在后续街争夺底池。",
+          "reviewedAt": "2026-10-11",
+          "verification": "page-read"
+        },
+        {
+          "id": "haxton-tendencies",
+          "label": "Card Player · Haxton 逐手分析",
+          "url": "https://www.cardplayer.com/cardplayer-poker-magazines/65753-sammy-george-6-8/articles/18579-final-table-takedown-isaac-haxton",
+          "kind": "本人原访谈与牌局",
+          "publishedAt": "2009-07-29",
+          "context": "讨论下注倾向与自身形象；赛事 ICM 不移植到现金桌。",
+          "reviewedAt": "2026-10-11",
+          "verification": "page-read"
+        }
+      ]
+    }
+  }
+}

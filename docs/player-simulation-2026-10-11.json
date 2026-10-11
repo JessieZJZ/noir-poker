@@ -1,0 +1,658 @@
+{
+  "measuredAt": "2026-10-11",
+  "kind": "local-simulation-not-real-player-statistics",
+  "results": [
+    {
+      "profile": "balanced",
+      "players": 6,
+      "hands": 100,
+      "policySeed": 781,
+      "deckSeed": 711,
+      "samples": 500,
+      "vpip": 278,
+      "pfr": 75,
+      "vpipPercent": 55.6,
+      "pfrPercent": 15,
+      "flopHands": 83,
+      "averageFlopPlayers": 3.2289156626506026,
+      "threePlusFlopHands": 55,
+      "threePlusFlopPercent": 55,
+      "flopPlayerDistribution": {
+        "2": 28,
+        "3": 20,
+        "4": 25,
+        "5": 8,
+        "6": 2
+      },
+      "preflopReraisedHands": 16,
+      "scenario": "100 BB each new hand, same seeded deck, emotions off, hero uses baseline policy",
+      "name": "均衡练习",
+      "controls": {},
+      "axes": [50, 50, 40, 50, 20]
+    },
+    {
+      "profile": "tan",
+      "players": 6,
+      "hands": 100,
+      "policySeed": 781,
+      "deckSeed": 711,
+      "samples": 500,
+      "vpip": 369,
+      "pfr": 120,
+      "vpipPercent": 73.8,
+      "pfrPercent": 24,
+      "flopHands": 86,
+      "averageFlopPlayers": 3.5697674418604652,
+      "threePlusFlopHands": 55,
+      "threePlusFlopPercent": 55,
+      "flopPlayerDistribution": {
+        "2": 31,
+        "3": 12,
+        "4": 14,
+        "5": 21,
+        "6": 8
+      },
+      "preflopReraisedHands": 30,
+      "scenario": "100 BB each new hand, same seeded deck, emotions off, hero uses baseline policy",
+      "name": "谭老板 · Tan Xuan",
+      "controls": {
+        "entry": 1.08,
+        "reraise": 1.05,
+        "blockerBluffs": true,
+        "barrel": 1.3,
+        "riverBluff": 1.2,
+        "streetSizing": [
+          [0.5, 0.8],
+          [0.85, 1.2],
+          [0.9, 1.3]
+        ]
+      },
+      "axes": [85, 90, 82, 70, 25]
+    },
+    {
+      "profile": "st",
+      "players": 6,
+      "hands": 100,
+      "policySeed": 781,
+      "deckSeed": 711,
+      "samples": 500,
+      "vpip": 215,
+      "pfr": 73,
+      "vpipPercent": 43,
+      "pfrPercent": 14.6,
+      "flopHands": 88,
+      "averageFlopPlayers": 2.8068181818181817,
+      "threePlusFlopHands": 43,
+      "threePlusFlopPercent": 43,
+      "flopPlayerDistribution": {
+        "2": 45,
+        "3": 21,
+        "4": 16,
+        "5": 6
+      },
+      "preflopReraisedHands": 14,
+      "scenario": "100 BB each new hand, same seeded deck, emotions off, hero uses baseline policy",
+      "name": "ST Wang",
+      "controls": {
+        "entry": 0.85,
+        "reraise": 0.85,
+        "blockerBluffs": true,
+        "barrel": 0.8,
+        "riverBluff": 0.65,
+        "riverValue": 1.15
+      },
+      "axes": [40, 65, 43, 42, 78]
+    },
+    {
+      "profile": "zang",
+      "players": 6,
+      "hands": 100,
+      "policySeed": 781,
+      "deckSeed": 711,
+      "samples": 500,
+      "vpip": 316,
+      "pfr": 107,
+      "vpipPercent": 63.2,
+      "pfrPercent": 21.4,
+      "flopHands": 82,
+      "averageFlopPlayers": 3.3536585365853657,
+      "threePlusFlopHands": 55,
+      "threePlusFlopPercent": 55,
+      "flopPlayerDistribution": {
+        "2": 27,
+        "3": 17,
+        "4": 21,
+        "5": 16,
+        "6": 1
+      },
+      "preflopReraisedHands": 24,
+      "scenario": "100 BB each new hand, same seeded deck, emotions off, hero uses baseline policy",
+      "name": "臧书奴 · Aaron Zang",
+      "controls": {
+        "entry": 1,
+        "reraise": 0.95,
+        "blockerBluffs": true,
+        "riverBluff": 1.25,
+        "riverProbe": 1.35,
+        "streetSizing": [
+          [0.5, 0.8],
+          [0.6, 1],
+          [0.9, 1.3]
+        ]
+      },
+      "axes": [63, 75, 62, 63, 50]
+    },
+    {
+      "profile": "peter",
+      "players": 6,
+      "hands": 100,
+      "policySeed": 781,
+      "deckSeed": 711,
+      "samples": 500,
+      "vpip": 391,
+      "pfr": 119,
+      "vpipPercent": 78.2,
+      "pfrPercent": 23.8,
+      "flopHands": 85,
+      "averageFlopPlayers": 3.788235294117647,
+      "threePlusFlopHands": 57,
+      "threePlusFlopPercent": 57,
+      "flopPlayerDistribution": {
+        "2": 28,
+        "3": 11,
+        "4": 7,
+        "5": 29,
+        "6": 10
+      },
+      "preflopReraisedHands": 26,
+      "scenario": "100 BB each new hand, same seeded deck, emotions off, hero uses baseline policy",
+      "name": "Peter · HCL",
+      "controls": {
+        "entry": 1.12,
+        "reraise": 0.8,
+        "blockerBluffs": true,
+        "barrel": 1,
+        "riverBluff": 0.8,
+        "riverValue": 1.25
+      },
+      "axes": [92, 88, 72, 84, 18]
+    },
+    {
+      "profile": "abao",
+      "players": 6,
+      "hands": 100,
+      "policySeed": 781,
+      "deckSeed": 711,
+      "samples": 500,
+      "vpip": 275,
+      "pfr": 100,
+      "vpipPercent": 55,
+      "pfrPercent": 20,
+      "flopHands": 83,
+      "averageFlopPlayers": 3.036144578313253,
+      "threePlusFlopHands": 48,
+      "threePlusFlopPercent": 48,
+      "flopPlayerDistribution": {
+        "2": 35,
+        "3": 23,
+        "4": 13,
+        "5": 11,
+        "6": 1
+      },
+      "preflopReraisedHands": 22,
+      "scenario": "100 BB each new hand, same seeded deck, emotions off, hero uses baseline policy",
+      "name": "阿宝 · KPC A Bao",
+      "controls": {
+        "entry": 0.95,
+        "reraise": 0.95,
+        "blockerBluffs": true,
+        "barrel": 1.2,
+        "flopCbet": 0.33,
+        "turnSemiBluff": 0.9
+      },
+      "axes": [55, 82, 72, 50, 34]
+    },
+    {
+      "profile": "viktor",
+      "players": 6,
+      "hands": 100,
+      "policySeed": 781,
+      "deckSeed": 711,
+      "samples": 500,
+      "vpip": 381,
+      "pfr": 124,
+      "vpipPercent": 76.2,
+      "pfrPercent": 24.8,
+      "flopHands": 85,
+      "averageFlopPlayers": 3.776470588235294,
+      "threePlusFlopHands": 58,
+      "threePlusFlopPercent": 58,
+      "flopPlayerDistribution": {
+        "2": 27,
+        "3": 8,
+        "4": 15,
+        "5": 27,
+        "6": 8
+      },
+      "preflopReraisedHands": 30,
+      "scenario": "100 BB each new hand, same seeded deck, emotions off, hero uses baseline policy",
+      "name": "Viktor Blom",
+      "controls": {
+        "entry": 1.08,
+        "reraise": 1.1,
+        "blockerBluffs": true,
+        "barrel": 1.35,
+        "riverBluff": 1.2,
+        "streetSizing": [
+          [0.6, 1],
+          [0.85, 1.3],
+          [0.95, 1.4]
+        ]
+      },
+      "axes": [90, 94, 88, 70, 18]
+    },
+    {
+      "profile": "jungleman",
+      "players": 6,
+      "hands": 100,
+      "policySeed": 781,
+      "deckSeed": 711,
+      "samples": 500,
+      "vpip": 298,
+      "pfr": 105,
+      "vpipPercent": 59.6,
+      "pfrPercent": 21,
+      "flopHands": 83,
+      "averageFlopPlayers": 3.253012048192771,
+      "threePlusFlopHands": 57,
+      "threePlusFlopPercent": 57,
+      "flopPlayerDistribution": {
+        "2": 26,
+        "3": 23,
+        "4": 22,
+        "5": 11,
+        "6": 1
+      },
+      "preflopReraisedHands": 24,
+      "scenario": "100 BB each new hand, same seeded deck, emotions off, hero uses baseline policy",
+      "name": "Daniel Cates",
+      "controls": {
+        "entry": 0.98,
+        "reraise": 1,
+        "blockerBluffs": true,
+        "adapt": 0.7,
+        "barrel": 1.1,
+        "potControl": 0.1,
+        "streetSizing": [
+          [0.4, 0.65],
+          [0.65, 1],
+          [0.7, 1.1]
+        ]
+      },
+      "axes": [65, 82, 66, 64, 72]
+    },
+    {
+      "profile": "dwan",
+      "players": 6,
+      "hands": 100,
+      "policySeed": 781,
+      "deckSeed": 711,
+      "samples": 500,
+      "vpip": 372,
+      "pfr": 113,
+      "vpipPercent": 74.4,
+      "pfrPercent": 22.6,
+      "flopHands": 85,
+      "averageFlopPlayers": 3.9176470588235293,
+      "threePlusFlopHands": 67,
+      "threePlusFlopPercent": 67,
+      "flopPlayerDistribution": {
+        "2": 18,
+        "3": 14,
+        "4": 19,
+        "5": 25,
+        "6": 9
+      },
+      "preflopReraisedHands": 22,
+      "scenario": "100 BB each new hand, same seeded deck, emotions off, hero uses baseline policy",
+      "name": "Tom Dwan",
+      "controls": {
+        "entry": 1.06,
+        "reraise": 1.05,
+        "blockerBluffs": true,
+        "barrel": 1.3,
+        "riverBluff": 1.25,
+        "potControl": 0.15,
+        "streetSizing": [
+          [0.5, 0.85],
+          [0.8, 1.25],
+          [0.9, 1.4]
+        ]
+      },
+      "axes": [85, 90, 85, 75, 55]
+    },
+    {
+      "profile": "ivey",
+      "players": 6,
+      "hands": 100,
+      "policySeed": 781,
+      "deckSeed": 711,
+      "samples": 500,
+      "vpip": 298,
+      "pfr": 97,
+      "vpipPercent": 59.6,
+      "pfrPercent": 19.4,
+      "flopHands": 85,
+      "averageFlopPlayers": 3.223529411764706,
+      "threePlusFlopHands": 54,
+      "threePlusFlopPercent": 54,
+      "flopPlayerDistribution": {
+        "2": 31,
+        "3": 19,
+        "4": 22,
+        "5": 11,
+        "6": 2
+      },
+      "preflopReraisedHands": 22,
+      "scenario": "100 BB each new hand, same seeded deck, emotions off, hero uses baseline policy",
+      "name": "Phil Ivey",
+      "controls": {
+        "entry": 0.98,
+        "reraise": 1,
+        "blockerBluffs": true,
+        "adapt": 0.8,
+        "potControl": 0.1,
+        "riverValue": 1.2,
+        "streetSizing": [
+          [0.4, 0.7],
+          [0.65, 1],
+          [0.75, 1.2]
+        ]
+      },
+      "axes": [62, 82, 63, 65, 75]
+    },
+    {
+      "profile": "negreanu",
+      "players": 6,
+      "hands": 100,
+      "policySeed": 781,
+      "deckSeed": 711,
+      "samples": 500,
+      "vpip": 308,
+      "pfr": 90,
+      "vpipPercent": 61.6,
+      "pfrPercent": 18,
+      "flopHands": 93,
+      "averageFlopPlayers": 3.3548387096774195,
+      "threePlusFlopHands": 66,
+      "threePlusFlopPercent": 66,
+      "flopPlayerDistribution": {
+        "2": 27,
+        "3": 24,
+        "4": 27,
+        "5": 12,
+        "6": 3
+      },
+      "preflopReraisedHands": 16,
+      "scenario": "100 BB each new hand, same seeded deck, emotions off, hero uses baseline policy",
+      "name": "Daniel Negreanu",
+      "controls": {
+        "entry": 0.95,
+        "reraise": 0.7,
+        "blockerBluffs": true,
+        "opening": 100,
+        "potControl": 0.4,
+        "thinValue": 0.5,
+        "barrel": 0.8,
+        "riverBluff": 0.7,
+        "streetSizing": [
+          [0.3, 0.5],
+          [0.4, 0.65],
+          [0.45, 0.75]
+        ]
+      },
+      "axes": [60, 62, 42, 62, 55]
+    },
+    {
+      "profile": "hellmuth",
+      "players": 6,
+      "hands": 100,
+      "policySeed": 781,
+      "deckSeed": 711,
+      "samples": 500,
+      "vpip": 199,
+      "pfr": 62,
+      "vpipPercent": 39.8,
+      "pfrPercent": 12.4,
+      "flopHands": 87,
+      "averageFlopPlayers": 2.7701149425287355,
+      "threePlusFlopHands": 44,
+      "threePlusFlopPercent": 44,
+      "flopPlayerDistribution": {
+        "2": 43,
+        "3": 25,
+        "4": 15,
+        "5": 4
+      },
+      "preflopReraisedHands": 13,
+      "scenario": "100 BB each new hand, same seeded deck, emotions off, hero uses baseline policy",
+      "name": "Phil Hellmuth",
+      "controls": {
+        "entry": 0.8,
+        "reraise": 0.65,
+        "blockerBluffs": true,
+        "potControl": 0.25,
+        "barrel": 0.7,
+        "riverBluff": 0.55,
+        "streetSizing": [
+          [0.4, 0.65],
+          [0.5, 0.85],
+          [0.65, 1]
+        ]
+      },
+      "axes": [35, 55, 30, 42, 82]
+    },
+    {
+      "profile": "antonius",
+      "players": 6,
+      "hands": 100,
+      "policySeed": 781,
+      "deckSeed": 711,
+      "samples": 500,
+      "vpip": 301,
+      "pfr": 99,
+      "vpipPercent": 60.2,
+      "pfrPercent": 19.8,
+      "flopHands": 86,
+      "averageFlopPlayers": 3.313953488372093,
+      "threePlusFlopHands": 60,
+      "threePlusFlopPercent": 60,
+      "flopPlayerDistribution": {
+        "2": 26,
+        "3": 25,
+        "4": 20,
+        "5": 12,
+        "6": 3
+      },
+      "preflopReraisedHands": 22,
+      "scenario": "100 BB each new hand, same seeded deck, emotions off, hero uses baseline policy",
+      "name": "Patrik Antonius",
+      "controls": {
+        "entry": 0.94,
+        "reraise": 0.95,
+        "shortTable": 1.12,
+        "blockerBluffs": true,
+        "barrel": 1.1,
+        "riverValue": 1.15,
+        "streetSizing": [
+          [0.5, 0.8],
+          [0.7, 1.1],
+          [0.8, 1.25]
+        ]
+      },
+      "axes": [58, 80, 58, 65, 48]
+    },
+    {
+      "profile": "koon",
+      "players": 6,
+      "hands": 100,
+      "policySeed": 781,
+      "deckSeed": 711,
+      "samples": 500,
+      "vpip": 261,
+      "pfr": 91,
+      "vpipPercent": 52.2,
+      "pfrPercent": 18.2,
+      "flopHands": 84,
+      "averageFlopPlayers": 3.0476190476190474,
+      "threePlusFlopHands": 53,
+      "threePlusFlopPercent": 53,
+      "flopPlayerDistribution": {
+        "2": 31,
+        "3": 29,
+        "4": 14,
+        "5": 9,
+        "6": 1
+      },
+      "preflopReraisedHands": 18,
+      "scenario": "100 BB each new hand, same seeded deck, emotions off, hero uses baseline policy",
+      "name": "Jason Koon",
+      "controls": {
+        "entry": 0.9,
+        "reraise": 1.1,
+        "blockerBluffs": true,
+        "adapt": 0.45,
+        "smallCbet": 0.3,
+        "barrel": 1.1,
+        "streetSizing": [
+          [0.33, 0.55],
+          [0.7, 1],
+          [0.8, 1.2]
+        ]
+      },
+      "axes": [53, 83, 60, 56, 42]
+    },
+    {
+      "profile": "chidwick",
+      "players": 6,
+      "hands": 100,
+      "policySeed": 781,
+      "deckSeed": 711,
+      "samples": 500,
+      "vpip": 262,
+      "pfr": 92,
+      "vpipPercent": 52.4,
+      "pfrPercent": 18.4,
+      "flopHands": 84,
+      "averageFlopPlayers": 3.0238095238095237,
+      "threePlusFlopHands": 51,
+      "threePlusFlopPercent": 51,
+      "flopPlayerDistribution": {
+        "2": 33,
+        "3": 27,
+        "4": 14,
+        "5": 9,
+        "6": 1
+      },
+      "preflopReraisedHands": 21,
+      "scenario": "100 BB each new hand, same seeded deck, emotions off, hero uses baseline policy",
+      "name": "Stephen Chidwick",
+      "controls": {
+        "entry": 0.9,
+        "reraise": 1.05,
+        "blockerBluffs": true,
+        "adapt": 0.55,
+        "smallCbet": 0.25,
+        "barrel": 1.05,
+        "streetSizing": [
+          [0.35, 0.6],
+          [0.65, 1],
+          [0.8, 1.25]
+        ]
+      },
+      "axes": [52, 80, 58, 58, 48]
+    },
+    {
+      "profile": "holz",
+      "players": 6,
+      "hands": 100,
+      "policySeed": 781,
+      "deckSeed": 711,
+      "samples": 500,
+      "vpip": 274,
+      "pfr": 101,
+      "vpipPercent": 54.8,
+      "pfrPercent": 20.2,
+      "flopHands": 84,
+      "averageFlopPlayers": 3.0833333333333335,
+      "threePlusFlopHands": 53,
+      "threePlusFlopPercent": 53,
+      "flopPlayerDistribution": {
+        "2": 31,
+        "3": 25,
+        "4": 19,
+        "5": 8,
+        "6": 1
+      },
+      "preflopReraisedHands": 21,
+      "scenario": "100 BB each new hand, same seeded deck, emotions off, hero uses baseline policy",
+      "name": "Fedor Holz",
+      "controls": {
+        "entry": 0.93,
+        "reraise": 1,
+        "blockerBluffs": true,
+        "smallCbet": 0.55,
+        "potControl": 0.25,
+        "flopCbet": 0.4,
+        "barrel": 1.1,
+        "streetSizing": [
+          [0.35, 0.55],
+          [0.65, 1],
+          [0.8, 1.2]
+        ]
+      },
+      "axes": [57, 85, 65, 51, 40]
+    },
+    {
+      "profile": "haxton",
+      "players": 6,
+      "hands": 100,
+      "policySeed": 781,
+      "deckSeed": 711,
+      "samples": 500,
+      "vpip": 299,
+      "pfr": 104,
+      "vpipPercent": 59.8,
+      "pfrPercent": 20.8,
+      "flopHands": 87,
+      "averageFlopPlayers": 3.1839080459770117,
+      "threePlusFlopHands": 58,
+      "threePlusFlopPercent": 58,
+      "flopPlayerDistribution": {
+        "2": 29,
+        "3": 23,
+        "4": 27,
+        "5": 6,
+        "6": 2
+      },
+      "preflopReraisedHands": 22,
+      "scenario": "100 BB each new hand, same seeded deck, emotions off, hero uses baseline policy",
+      "name": "Isaac Haxton",
+      "controls": {
+        "entry": 1,
+        "reraise": 1.05,
+        "blockerBluffs": true,
+        "adapt": 0.6,
+        "float": 0.3,
+        "delayed": 1.4,
+        "barrel": 1.1,
+        "streetSizing": [
+          [0.4, 0.7],
+          [0.75, 1.1],
+          [0.85, 1.3]
+        ]
+      },
+      "axes": [62, 84, 70, 65, 50]
+    }
+  ]
+}

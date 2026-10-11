@@ -116,12 +116,12 @@ export async function nativeScenarios(app) {
             }),
           ),
         );
-        return images.length >= 8 && images.every((image) => image.loaded && image.local)
+        return images.length === 16 && images.every((image) => image.loaded && image.local)
           ? images
           : null;
       },
       15000,
-      'All eight portraits must load from the installed bundle',
+      'All sixteen portraits must load from the installed bundle',
     );
     const images = await app.evaluate(() =>
       [...document.querySelectorAll('#profile-cards img')].map((image) => ({
@@ -150,6 +150,40 @@ export async function nativeScenarios(app) {
     });
     await app.click('#opponents-dialog .close-dialog');
     return { saved, languageReloads, portraits: images };
+  });
+  await check('researched-players-and-new-style-persistence', async () => {
+    const ids = ['ivey', 'negreanu', 'hellmuth', 'antonius', 'koon', 'chidwick', 'holz', 'haxton'];
+    await app.click('#opponents-button');
+    const details = [];
+    for (const id of ids) {
+      await app.click(`[data-profile-preview="${id}"]`);
+      const detail = await app.evaluate(() => {
+        const section = document.querySelector('#profile-detail .profile-research');
+        return {
+          text: section.textContent,
+          claims: section.querySelectorAll('a').length,
+          sources: document.querySelectorAll('#profile-detail .profile-source-records a').length,
+          overflow: section.scrollWidth > section.clientWidth + 1,
+        };
+      });
+      assert.ok(detail.text.includes('2026-10-11'));
+      assert.ok(detail.claims > 0 && detail.sources >= 2);
+      assert.equal(detail.overflow, false);
+      if (id === 'haxton') await app.screenshot('researched-haxton-detail');
+      details.push({ id, ...detail });
+      if (await app.visible('[data-close-profile-detail]'))
+        await app.click('[data-close-profile-detail]');
+    }
+    await app.select('[data-bot-seat="1"]', 'haxton');
+    await app.click('#opponents-dialog .close-dialog');
+    await app.relaunch();
+    const applied = await app.state();
+    assert.equal(applied.players[1].botProfile, 'haxton');
+    await app.click('#opponents-button');
+    const saved = await app.evaluate(() => document.querySelector('[data-bot-seat="1"]').value);
+    assert.equal(saved, 'haxton');
+    await app.click('#opponents-dialog .close-dialog');
+    return { details, saved, applied: applied.players[1].botProfile };
   });
   await check('raise-call-fold-and-settlement', async () => {
     const coverage = { raise: null, call: null, fold: null };

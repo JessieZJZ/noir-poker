@@ -16,6 +16,7 @@ import {
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { PROFILE_PORTRAITS } from '../../src/ui/portraits.js';
 
 const root = fileURLToPath(new URL('../..', import.meta.url));
 function fixture(t) {
@@ -103,7 +104,7 @@ test('concurrent WeChat builders serialize and preserve DevTools private prefere
   const manifest = JSON.parse(readFileSync(path.join(workspace.output, 'build-info.json'), 'utf8'));
   assert.equal(
     manifest.files.filter((file) => /^assets\/portraits\/.*\.jpg$/.test(file.path)).length,
-    8,
+    Object.keys(PROFILE_PORTRAITS).length,
   );
   assert.ok(manifest.totalBytes < 2 * 1024 * 1024);
   assert.equal(

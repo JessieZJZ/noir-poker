@@ -193,10 +193,11 @@ test('breakpoint changes reuse the same hint preference and cancel stale mobile 
 }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.clock.install({ time: new Date('2026-01-01T00:00:00Z') });
+  // Freeze before navigation so slow loading cannot pass the fixed pause target.
+  await page.clock.pauseAt(new Date('2026-01-01T00:00:01Z'));
   await page.reload();
   await page.waitForFunction(() => !!window.qa);
   await page.evaluate(() => window.qa.stop());
-  await page.clock.pauseAt(new Date('2026-01-01T00:00:01Z'));
   await page.evaluate(() => {
     window.qa.heroTurn(9);
     window.hintNode = document.querySelector('#coach-content');

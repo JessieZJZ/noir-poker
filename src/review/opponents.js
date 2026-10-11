@@ -18,6 +18,10 @@ export const BOT_REASON_NAMES = {
   'pure-bluff': '诈唬抽样触发主动施压',
   trap: '干燥牌面强牌触发诱导过牌',
   'free-check': '选择免费观察／控制底池',
+  'float-continue': '有位置低成本跟注，保留后街进攻',
+  'pot-control': '中等权益手牌控制底池',
+  'thin-value': '有位置河牌小尺度薄价值',
+  'small-cbet': '干燥高牌翻牌小尺度持续下注',
 };
 export const BOT_CHECK_NAMES = {
   ...BOT_REASON_NAMES,
@@ -27,6 +31,10 @@ export const BOT_CHECK_NAMES = {
   attack: '进攻频率抽样',
   trap: '诱导过牌抽样',
   'rare-pocket-shove': '小对子特殊全下抽样',
+  float: '低成本 Float 抽样',
+  'pot-control': '控制底池抽样',
+  'thin-value': '河牌薄价值抽样',
+  'small-cbet': '小尺度持续下注抽样',
 };
 export function explainOpponent(record) {
   const t = record.trace,
@@ -37,6 +45,18 @@ export function explainOpponent(record) {
   const raises = v.history.filter((a) => a.street === v.street && a.action === 'raise');
   const comparison = t.equity + t.callTolerance;
   const reasons = [];
+  if (t.style) {
+    const { context, floatContinue, thinValue, smallCbet } = t.style;
+    reasons.push(
+      `策略改编使用当时的公开牌面与行动；公开动作样本 ${context.publicSamples}，跟注门槛偏移 ${pct(context.publicAdjustment)}。阻断牌只作启发式筛选，不证明诈唬盈利。`,
+    );
+    if (floatContinue)
+      reasons.push(
+        '低价格、有位置且干燥翻牌触发 Float；它保留后街进攻机会，未按普通权益弃牌分支处理。',
+      );
+    if (thinValue || smallCbet)
+      reasons.push('本次触发分街策略候选，数字是本地模拟控制，不是牌手真实频率。');
+  }
   if (v.street === 0)
     reasons.push(
       `起手牌强度排序约前 ${pct(t.percentile)}；本次风格、位置与公开加注线允许前 ${pct(t.range)}。${t.admitted ? '进入' : '未进入'}该范围${t.premium ? '，同时触发前 7% 强牌分支' : ''}。排序是起手牌启发式，不是胜率。`,

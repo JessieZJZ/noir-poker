@@ -1,3 +1,5 @@
+import research from '../data/player-research.json' with { type: 'json' };
+import { botStyleContext, resolveBotStyle } from './bot-style.js';
 import { fractionRaiseTo, legalRaiseTo } from './bet-sizing.js';
 
 // These are training controls inferred from a few public examples, not measured
@@ -24,16 +26,20 @@ export const BOT_PROFILES = [
     sizing: [0.65, 1.15],
     evidence:
       'Triton 现金桌报道记录了弱牌四下注和多街诈唬；本人短牌采访也自述喜欢宽松与诈唬。短牌频率不移植到本桌。',
-    sources: [
-      {
-        label: 'Triton · 现金桌进攻样本',
-        url: 'https://tritonpokerseries.com/en-US/news/headlines/st-wang-shows-million-dollar-class-as-cash-game-invitational-raises-stakes',
-      },
-      {
-        label: 'Triton · 本人采访（短牌）',
-        url: 'https://tritonpokerseries.com/en-US/news/headlines/tan-xuan-completes-short-deck-double-with-jeju-main-event-success',
-      },
-    ],
+    sources: research.players.tan.sources,
+    research: research.players.tan,
+    policy: {
+      entry: 1.08,
+      reraise: 1.05,
+      blockerBluffs: true,
+      barrel: 1.3,
+      riverBluff: 1.2,
+      streetSizing: [
+        [0.5, 0.8],
+        [0.85, 1.2],
+        [0.9, 1.3],
+      ],
+    },
   },
   {
     id: 'st',
@@ -44,16 +50,16 @@ export const BOT_PROFILES = [
     axes: [40, 65, 43, 42, 78],
     sizing: [0.45, 0.9],
     evidence: '官方报道中，大池失利后的 AQ 仍能在河牌弃牌；另一手 AA 使用河牌过牌全下的价值陷阱。',
-    sources: [
-      {
-        label: 'Triton · 大输后保持纪律',
-        url: 'https://tritonpokerseries.com/en-US/news/headlines/ferdinand-takes-most-as-phil-ivey-and-dan-cates-land-big-cash-game-profits',
-      },
-      {
-        label: 'Triton · 强牌诱导',
-        url: 'https://tritonpokerseries.com/en-US/news/headlines/more-brilliance-from-elton-tsang-as-cash-game-invitational-gets-serious',
-      },
-    ],
+    sources: research.players.st.sources,
+    research: research.players.st,
+    policy: {
+      entry: 0.85,
+      reraise: 0.85,
+      blockerBluffs: true,
+      barrel: 0.8,
+      riverBluff: 0.65,
+      riverValue: 1.15,
+    },
   },
   {
     id: 'zang',
@@ -64,33 +70,41 @@ export const BOT_PROFILES = [
     axes: [63, 75, 62, 63, 50],
     sizing: [0.6, 1.0],
     evidence: 'Triton 记录了河牌把 23k 小注加到 105k 的诈唬样本。单手不能说明其长期频率。',
-    sources: [
-      {
-        label: 'Triton · 河牌进攻样本',
-        url: 'https://tritonpokerseries.com/en-US/news/headlines/brilliant-rui-cao-and-steady-andy-ni-win-big-on-day-2-in-jeju',
-      },
-    ],
+    sources: research.players.zang.sources,
+    research: research.players.zang,
+    policy: {
+      entry: 1,
+      reraise: 0.95,
+      blockerBluffs: true,
+      riverBluff: 1.25,
+      riverProbe: 1.35,
+      streetSizing: [
+        [0.5, 0.8],
+        [0.6, 1],
+        [0.9, 1.3],
+      ],
+    },
   },
   {
     id: 'peter',
     name: 'Peter · HCL',
     short: 'Peter',
     tag: '宽范围 · 大尺度搏杀',
-    description: '更愿意跟入，强牌榨取大尺度价值，少量小口袋对子也会强力反击。',
+    description: '更愿意低成本跟入，强牌榨取大尺度价值；普通桌不使用附加规则的特殊推入。',
     axes: [92, 88, 72, 84, 18],
     sizing: [0.75, 1.25],
     evidence:
       'HCL 记录了暗三条的河牌满池再加注；另一场有小口袋对子大推入。后者带 Stand-Up 附加规则，不能照搬整场频率。此处指 HCL 常客。',
-    sources: [
-      {
-        label: 'HCL · 河牌价值加注',
-        url: 'https://hustlercasinolive.com/2024/06/12/the-rematch-we-didnt-know-we-needed/',
-      },
-      {
-        label: 'PokerNews · 小对子反击（附加规则）',
-        url: 'https://www.pokernews.com/news/2025/01/poker-player-goes-all-in-for-thousands-47684.htm',
-      },
-    ],
+    sources: research.players.peter.sources,
+    research: research.players.peter,
+    policy: {
+      entry: 1.12,
+      reraise: 0.8,
+      blockerBluffs: true,
+      barrel: 1,
+      riverBluff: 0.8,
+      riverValue: 1.25,
+    },
   },
   {
     id: 'abao',
@@ -102,16 +116,16 @@ export const BOT_PROFILES = [
     sizing: [0.5, 1.0],
     evidence:
       'KPC 详细牌局报道中，AJ 同花使用约 31% 池翻牌下注、90% 池转牌半诈唬；另有 98 同花听牌推入样本。本名未可靠确认。',
-    sources: [
-      {
-        label: 'Pokerati · AJ 半诈唬牌局',
-        url: 'https://pokerati.com/2026/08/top-streamed-hands-of-the-week-winston-sets-the-perfect-trap-a-bao-bluffs-big/',
-      },
-      {
-        label: 'Pokerati · 同花听牌反击',
-        url: 'https://pokerati.com/2026/08/top-streamed-hands-of-the-week-malinowski-and-dwan-take-on-the-kpc-high-rollers/',
-      },
-    ],
+    sources: research.players.abao.sources,
+    research: research.players.abao,
+    policy: {
+      entry: 0.95,
+      reraise: 0.95,
+      blockerBluffs: true,
+      barrel: 1.2,
+      flopCbet: 0.33,
+      turnSemiBluff: 0.9,
+    },
   },
   {
     id: 'viktor',
@@ -123,16 +137,20 @@ export const BOT_PROFILES = [
     sizing: [0.7, 1.25],
     evidence:
       'PokerStars 原访谈与官方回顾支持其历史松凶风格。这里归纳的是训练原型，不是实时打法或真人频率；单挑经验不直接移植成多人精确参数。',
-    sources: [
-      {
-        label: 'PokerStars · Viktor 原访谈',
-        url: 'https://www.pokerstars.com/poker/learn/news/finding-isildur1-viktor-blom-cops-to-his-077269/',
-      },
-      {
-        label: 'PokerStars · 历史诈唬回顾',
-        url: 'https://www.pokerstars.com/poker/learn/news/the-best-and-worst-poker-bluffs-ever/',
-      },
-    ],
+    sources: research.players.viktor.sources,
+    research: research.players.viktor,
+    policy: {
+      entry: 1.08,
+      reraise: 1.1,
+      blockerBluffs: true,
+      barrel: 1.35,
+      riverBluff: 1.2,
+      streetSizing: [
+        [0.6, 1],
+        [0.85, 1.3],
+        [0.95, 1.4],
+      ],
+    },
   },
   {
     id: 'jungleman',
@@ -144,16 +162,21 @@ export const BOT_PROFILES = [
     sizing: [0.45, 0.95],
     evidence:
       '本人原访谈强调计算、观察实际行为并调整，避免机械平衡。当前机器人用范围和价格近似这些思路，未复刻职业级读人或动态学习。',
-    sources: [
-      {
-        label: 'Card Player · Daniel Cates 原访谈',
-        url: 'https://www.cardplayer.com/cardplayer-poker-magazines/65799-poker-hall-of-fame-23-20/articles/19757-capture-the-flag-daniel-jungleman12-cates',
-      },
-      {
-        label: 'Card Player · 对手调整访谈',
-        url: 'https://www.cardplayer.com/cardplayer-poker-magazines/66315-jason-mercier-28-23/articles/22601-head-games-heads-up-cash-game-advice-from-the-best-in-the-world',
-      },
-    ],
+    sources: research.players.jungleman.sources,
+    research: research.players.jungleman,
+    policy: {
+      entry: 0.98,
+      reraise: 1,
+      blockerBluffs: true,
+      adapt: 0.7,
+      barrel: 1.1,
+      potControl: 0.1,
+      streetSizing: [
+        [0.4, 0.65],
+        [0.65, 1],
+        [0.7, 1.1],
+      ],
+    },
   },
   {
     id: 'dwan',
@@ -166,16 +189,226 @@ export const BOT_PROFILES = [
     sizing: [0.65, 1.2],
     evidence:
       '原采访、同行评价和 PokerStars 回顾支持其历史创造性与多街诈唬风格。参数仅为可调的模拟倾向，不推断真人真实 VPIP 或心理状态。',
-    sources: [
-      {
-        label: 'Card Player · Dwan 原采访',
-        url: 'https://www.cardplayer.com/cardplayer-poker-magazines/65739-tom-dwan-6-4/articles/18288-the-won-39-durrrr-39-ful-life-of-tom-dwan',
-      },
-      {
-        label: 'PokerStars · 历史诈唬回顾',
-        url: 'https://www.pokerstars.com/poker/learn/news/the-best-and-worst-poker-bluffs-ever/',
-      },
-    ],
+    sources: research.players.dwan.sources,
+    research: research.players.dwan,
+    policy: {
+      entry: 1.06,
+      reraise: 1.05,
+      blockerBluffs: true,
+      barrel: 1.3,
+      riverBluff: 1.25,
+      potControl: 0.15,
+      streetSizing: [
+        [0.5, 0.85],
+        [0.8, 1.25],
+        [0.9, 1.4],
+      ],
+    },
+  },
+
+  {
+    id: 'ivey',
+    name: 'Phil Ivey',
+    short: 'Phil Ivey',
+    tag: '选择性进攻 · 价值诱导',
+    description: '中宽范围，兼顾强牌诱导与河牌价值，按公开行动小幅调整。',
+    axes: [62, 82, 63, 65, 75],
+    sizing: [0.4, 1.2],
+    evidence: '公开资料与模拟改编见下方；数字为训练参数。',
+    sources: research.players.ivey.sources,
+    research: research.players.ivey,
+    policy: {
+      entry: 0.98,
+      reraise: 1,
+      blockerBluffs: true,
+      adapt: 0.8,
+      potControl: 0.1,
+      riverValue: 1.2,
+      streetSizing: [
+        [0.4, 0.7],
+        [0.65, 1],
+        [0.75, 1.2],
+      ],
+    },
+  },
+  {
+    id: 'negreanu',
+    name: 'Daniel Negreanu',
+    short: 'Daniel Negreanu',
+    tag: '历史 small-ball · 控池',
+    description: '较小尺度争夺底池，中等牌力保留过牌与薄价值。',
+    axes: [60, 62, 42, 62, 55],
+    sizing: [0.3, 0.75],
+    evidence: '公开资料与模拟改编见下方；数字为训练参数。',
+    sources: research.players.negreanu.sources,
+    research: research.players.negreanu,
+    policy: {
+      entry: 0.95,
+      reraise: 0.7,
+      blockerBluffs: true,
+      opening: 100,
+      potControl: 0.4,
+      thinValue: 0.5,
+      barrel: 0.8,
+      riverBluff: 0.7,
+      streetSizing: [
+        [0.3, 0.5],
+        [0.4, 0.65],
+        [0.45, 0.75],
+      ],
+    },
+  },
+  {
+    id: 'hellmuth',
+    name: 'Phil Hellmuth',
+    short: 'Phil Hellmuth',
+    tag: '耐心防守 · 强牌诱导',
+    description: '谨慎面对再加注与大额投入，安全牌面保留强牌诱导。',
+    axes: [35, 55, 30, 42, 82],
+    sizing: [0.4, 1],
+    evidence: '公开资料与模拟改编见下方；数字为训练参数。',
+    sources: research.players.hellmuth.sources,
+    research: research.players.hellmuth,
+    policy: {
+      entry: 0.8,
+      reraise: 0.65,
+      blockerBluffs: true,
+      potControl: 0.25,
+      barrel: 0.7,
+      riverBluff: 0.55,
+      streetSizing: [
+        [0.4, 0.65],
+        [0.5, 0.85],
+        [0.65, 1],
+      ],
+    },
+  },
+  {
+    id: 'antonius',
+    name: 'Patrik Antonius',
+    short: 'Patrik Antonius',
+    tag: '稳健短桌 · 权益进攻',
+    description: '短桌稍宽，听牌积极，转河牌变化后重新检查风险。',
+    axes: [58, 80, 58, 65, 48],
+    sizing: [0.5, 1.25],
+    evidence: '公开资料与模拟改编见下方；数字为训练参数。',
+    sources: research.players.antonius.sources,
+    research: research.players.antonius,
+    policy: {
+      entry: 0.94,
+      reraise: 0.95,
+      shortTable: 1.12,
+      blockerBluffs: true,
+      barrel: 1.1,
+      riverValue: 1.15,
+      streetSizing: [
+        [0.5, 0.8],
+        [0.7, 1.1],
+        [0.8, 1.25],
+      ],
+    },
+  },
+  {
+    id: 'koon',
+    name: 'Jason Koon',
+    short: 'Jason Koon',
+    tag: '范围纪律 · 分街尺度',
+    description: '有纪律的范围与阻断牌选择，小翻牌下注配合较大后街尺度。',
+    axes: [53, 83, 60, 56, 42],
+    sizing: [0.33, 1.2],
+    evidence: '公开资料与模拟改编见下方；数字为训练参数。',
+    sources: research.players.koon.sources,
+    research: research.players.koon,
+    policy: {
+      entry: 0.9,
+      reraise: 1.1,
+      blockerBluffs: true,
+      adapt: 0.45,
+      smallCbet: 0.3,
+      barrel: 1.1,
+      streetSizing: [
+        [0.33, 0.55],
+        [0.7, 1],
+        [0.8, 1.2],
+      ],
+    },
+  },
+  {
+    id: 'chidwick',
+    name: 'Stephen Chidwick',
+    short: 'Stephen Chidwick',
+    tag: '理论启发 · 公开调整',
+    description: '按范围和街次选择行动，公开样本足够后做小幅调整。',
+    axes: [52, 80, 58, 58, 48],
+    sizing: [0.35, 1.25],
+    evidence: '公开资料与模拟改编见下方；数字为训练参数。',
+    sources: research.players.chidwick.sources,
+    research: research.players.chidwick,
+    policy: {
+      entry: 0.9,
+      reraise: 1.05,
+      blockerBluffs: true,
+      adapt: 0.55,
+      smallCbet: 0.25,
+      barrel: 1.05,
+      streetSizing: [
+        [0.35, 0.6],
+        [0.65, 1],
+        [0.8, 1.25],
+      ],
+    },
+  },
+  {
+    id: 'holz',
+    name: 'Fedor Holz',
+    short: 'Fedor Holz',
+    tag: '小注持续 · 选择性施压',
+    description: '干燥高牌翻牌偏小注，中等牌力控池，后街选择性施压。',
+    axes: [57, 85, 65, 51, 40],
+    sizing: [0.35, 1.2],
+    evidence: '公开资料与模拟改编见下方；数字为训练参数。',
+    sources: research.players.holz.sources,
+    research: research.players.holz,
+    policy: {
+      entry: 0.93,
+      reraise: 1,
+      blockerBluffs: true,
+      smallCbet: 0.55,
+      potControl: 0.25,
+      flopCbet: 0.4,
+      barrel: 1.1,
+      streetSizing: [
+        [0.35, 0.55],
+        [0.65, 1],
+        [0.8, 1.2],
+      ],
+    },
+  },
+  {
+    id: 'haxton',
+    name: 'Isaac Haxton',
+    short: 'Isaac Haxton',
+    tag: '有位置 Float · 延迟进攻',
+    description: '低价格干燥翻牌可少量先跟，下一街对手过牌后争夺底池。',
+    axes: [62, 84, 70, 65, 50],
+    sizing: [0.4, 1.3],
+    evidence: '公开资料与模拟改编见下方；数字为训练参数。',
+    sources: research.players.haxton.sources,
+    research: research.players.haxton,
+    policy: {
+      entry: 1,
+      reraise: 1.05,
+      blockerBluffs: true,
+      adapt: 0.6,
+      float: 0.3,
+      delayed: 1.4,
+      barrel: 1.1,
+      streetSizing: [
+        [0.4, 0.7],
+        [0.75, 1.1],
+        [0.85, 1.3],
+      ],
+    },
   },
 ];
 export const PROFILE_AXES = ['入池宽度', '进攻倾向', '诈唬倾向', '跟到底倾向', '强牌诱导'];
@@ -346,6 +579,8 @@ export function effectiveBotAxes(profile, mood, mode) {
 export function chooseBotAction(view, profile, mood, mode, random = Math.random) {
   const legal = view.legal;
   if (!legal.enabled) throw Error('机器人当前不能行动。');
+  const style = resolveBotStyle(profile);
+  const context = botStyleContext(view, style);
   const axes = effectiveBotAxes(profile, mood, mode);
   const [width, attack, bluff, callDown, trap] = axes.map((n) => n / 100);
   const checks = [],
@@ -380,7 +615,12 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
             ? 0.95
             : 0.75;
   const raises = view.history.filter((a) => a.street === view.street && a.action === 'raise');
-  const baseRange = (0.16 + width * 0.42) * positionScale * (view.count >= 8 ? 0.9 : 1);
+  const baseRange =
+    (0.16 + width * 0.42) *
+    positionScale *
+    (view.count >= 8 ? 0.9 : 1) *
+    style.entry *
+    (view.count <= 6 ? style.shortTable : 1);
   let range = baseRange;
   if (raises.length) range *= raises.length === 1 ? 0.68 : 0.42;
   if (view.position === 'BB' && legal.toCall <= 50) range += 0.1;
@@ -436,7 +676,9 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
     !allInPressure &&
     effectiveBehind >= Math.max(1000, legal.callAmount * 15);
   if (cheapEntry)
-    range += 0.14 + width * 0.2 + (speculative || suitedHigh ? Math.min(2, limpers) * 0.04 : 0);
+    range +=
+      (0.14 + width * 0.2 + (speculative || suitedHigh ? Math.min(2, limpers) * 0.04 : 0)) *
+      style.entry;
   if (affordableOpen) {
     const priceScale = Math.max(0.65, 1.1 - (view.currentBet / 50) * 0.08);
     const playability = speculative ? 0.09 : suitedHigh ? 0.07 : 0;
@@ -445,8 +687,7 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
     const dominatedAce = !suited && high === 14 && low <= 8 ? 0.08 : 0;
     range =
       baseRange * priceScale +
-      0.12 +
-      width * 0.18 +
+      (0.12 + width * 0.18) * style.entry +
       playability +
       callerBonus +
       blindDiscount -
@@ -459,6 +700,7 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
     ? Math.min(
         openingRange,
         (0.035 + width * 0.085) *
+          style.reraise *
           (raises.length === 1 ? 1 : 0.58) *
           (['BTN', 'CO'].includes(view.position) ? 1.15 : 1),
       )
@@ -467,11 +709,14 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
     admitted = percentile <= range,
     openingAdmitted = percentile <= openingRange,
     affordableRangePassed = (cheapEntry || affordableOpen) && admitted,
-    callTolerance = (callDown - 0.5) * 0.1;
+    callTolerance = (callDown - 0.5) * 0.1 + context.publicAdjustment;
   let sizing = null,
     value = false,
     semiBluff = false,
-    pureBluff = false;
+    pureBluff = false,
+    smallCbet = false,
+    thinValue = false;
+  const floatContinue = context.floatCandidate && roll('float', style.float) < style.float;
   const finish = (action, reason, amount) => ({
     action,
     ...(amount === undefined ? {} : { amount }),
@@ -505,6 +750,7 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
       checks,
       exceptions,
       sizing,
+      style: { controls: style, context, floatContinue, smallCbet, thinValue },
       value,
       semiBluff,
       pureBluff,
@@ -518,7 +764,7 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
         return finish('fold', 'outside-range');
       exceptions.push('outside-range');
     }
-    if ((!premium || view.street > 0) && !affordableRangePassed) {
+    if ((!premium || view.street > 0) && !affordableRangePassed && !floatContinue) {
       if (equity + callTolerance < odds + 0.02) {
         if (roll('insufficient-equity', 0.03 + callDown * 0.1) > 0.03 + callDown * 0.1)
           return finish('fold', 'insufficient-equity');
@@ -536,41 +782,97 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
       legal.canCheck ? 'check' : 'call',
       legal.canCheck
         ? 'free-check'
-        : exceptions.length
-          ? 'loose-exception'
-          : cheapEntry && admitted
-            ? 'affordable-entry'
-            : affordableOpen && admitted
-              ? 'affordable-open'
-              : premium && view.street === 0
-                ? 'premium-continue'
-                : 'price-continue',
+        : floatContinue
+          ? 'float-continue'
+          : exceptions.length
+            ? 'loose-exception'
+            : cheapEntry && admitted
+              ? 'affordable-entry'
+              : affordableOpen && admitted
+                ? 'affordable-open'
+                : premium && view.street === 0
+                  ? 'premium-continue'
+                  : 'price-continue',
     );
   const headsUp = view.rivals === 1,
     features = view.features;
   const ownLastRaise =
     [...view.history].reverse().find((a) => a.action === 'raise')?.id === view.id;
+  const barrelScale = view.street === 2 && ownLastRaise ? style.barrel : 1;
+  const semiThreshold = Math.min(0.7, (0.12 + bluff * 0.42) * (headsUp ? 1 : 0.45) * barrelScale);
   semiBluff =
     view.street > 0 &&
     features.draw &&
     view.rivals <= 2 &&
-    roll('semi-bluff', (0.12 + bluff * 0.42) * (headsUp ? 1 : 0.45)) <
-      (0.12 + bluff * 0.42) * (headsUp ? 1 : 0.45);
+    roll('semi-bluff', semiThreshold) < semiThreshold;
   const story =
-    view.street === 0 ? ['BTN', 'CO'].includes(view.position) : ownLastRaise || !features.wet;
+    view.street === 0
+      ? ['BTN', 'CO'].includes(view.position)
+      : ownLastRaise || !features.wet || context.delayed;
+  const blockerAllowed =
+    !style.blockerBluffs ||
+    (view.street === 0 && raises.length
+      ? raises.length === 1 && context.preflopBlocker
+      : view.street === 3
+        ? context.riverBlocker
+        : true);
+  const bluffThreshold = Math.min(
+    0.4,
+    (0.015 + bluff * 0.17) *
+      (headsUp ? 1 : 0.2) *
+      barrelScale *
+      (view.street === 3
+        ? style.riverBluff * (legal.toCall > 0 && odds <= 0.2 ? style.riverProbe : 1)
+        : 1) *
+      (context.delayed ? style.delayed : 1),
+  );
   pureBluff =
     !view.playsBoard &&
     view.rivals <= 2 &&
     story &&
+    blockerAllowed &&
+    !floatContinue &&
     pressure < 0.25 &&
-    roll('pure-bluff', (0.015 + bluff * 0.17) * (headsUp ? 1 : 0.2)) <
-      (0.015 + bluff * 0.17) * (headsUp ? 1 : 0.2);
+    roll('pure-bluff', bluffThreshold) < bluffThreshold;
   value =
     view.street === 0
       ? premium || percentile <= raiseRange
       : !view.playsBoard &&
         (equity > (headsUp ? 0.53 : 1 / (view.rivals + 1) + 0.23) ||
           (features.overpair && equity > 0.4));
+  thinValue =
+    style.thinValue > 0 &&
+    view.street === 3 &&
+    headsUp &&
+    view.inPosition &&
+    legal.canCheck &&
+    !view.playsBoard &&
+    !features.wet &&
+    equity >= 0.5 &&
+    equity <= 0.6 &&
+    roll('thin-value', style.thinValue) < style.thinValue;
+  smallCbet =
+    style.smallCbet > 0 &&
+    headsUp &&
+    legal.canCheck &&
+    context.initiative &&
+    context.highDryFlop &&
+    equity >= 0.28 &&
+    !view.playsBoard &&
+    roll('small-cbet', style.smallCbet) < style.smallCbet;
+  if (
+    style.potControl > 0 &&
+    view.street > 0 &&
+    view.street < 3 &&
+    headsUp &&
+    legal.canCheck &&
+    !features.wet &&
+    !features.draw &&
+    equity >= 0.4 &&
+    equity <= 0.65 &&
+    roll('pot-control', style.potControl) < style.potControl
+  )
+    return finish('check', 'pot-control');
   if (
     value &&
     view.street > 0 &&
@@ -581,12 +883,17 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
   )
     return finish('check', 'trap');
   if (
-    (value || semiBluff || pureBluff) &&
+    (value || semiBluff || pureBluff || smallCbet || thinValue) &&
     roll('attack', 0.2 + attack * 0.72) < 0.2 + attack * 0.72
   ) {
-    let fraction = profile.sizing[0] + random() * (profile.sizing[1] - profile.sizing[0]);
-    if (profile.id === 'abao' && view.street === 1 && ownLastRaise) fraction = 0.33;
-    if (profile.id === 'abao' && view.street === 2 && semiBluff) fraction = 0.9;
+    const interval = style.streetSizing?.[view.street - 1] || profile.sizing;
+    let fraction = interval[0] + random() * (interval[1] - interval[0]);
+    if (view.street === 1 && ownLastRaise && style.flopCbet != null) fraction = style.flopCbet;
+    if (view.street === 2 && semiBluff && style.turnSemiBluff != null)
+      fraction = style.turnSemiBluff;
+    if (smallCbet) fraction = style.flopCbet ?? interval[0];
+    if (thinValue) fraction = Math.min(fraction, 0.5);
+    if (view.street === 3 && value && equity > 0.7) fraction *= style.riverValue;
     if (mode !== 'off' && ['frustrated', 'confident', 'reactive'].includes(mood.kind))
       fraction *= mode === 'lively' ? 1.2 : 1.1;
     let desired = fractionRaiseTo(
@@ -595,19 +902,8 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
     );
     if (view.street === 0 && !raises.length)
       desired =
-        125 +
-        (attack > 0.8 ? 25 : 0) +
+        (style.opening ?? 125 + (attack > 0.8 ? 25 : 0)) +
         view.history.filter((a) => a.street === 0 && a.action === 'call').length * 50;
-    if (
-      view.street === 0 &&
-      profile.id === 'peter' &&
-      view.hole[0].rank === view.hole[1].rank &&
-      view.hole[0].rank <= 6 &&
-      admitted &&
-      headsUp &&
-      roll('rare-pocket-shove', 0.04) < 0.04
-    )
-      desired = legal.maxRaiseTo;
     const amount = legalRaiseTo(desired, legal);
     sizing = {
       fraction,
@@ -618,11 +914,19 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
       opening: view.street === 0 && !raises.length,
       executed: false,
     };
-    if (amount !== legal.maxRaiseTo || value || semiBluff || view.stack <= 500) {
+    if (amount !== legal.maxRaiseTo || value || thinValue || semiBluff || view.stack <= 500) {
       sizing.executed = true;
       return finish(
         'raise',
-        value ? 'value-raise' : semiBluff ? 'semi-bluff' : 'pure-bluff',
+        thinValue
+          ? 'thin-value'
+          : value
+            ? 'value-raise'
+            : semiBluff
+              ? 'semi-bluff'
+              : smallCbet
+                ? 'small-cbet'
+                : 'pure-bluff',
         amount,
       );
     }
@@ -631,14 +935,16 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
     legal.canCheck ? 'check' : 'call',
     legal.canCheck
       ? 'free-check'
-      : exceptions.length
-        ? 'loose-exception'
-        : cheapEntry && admitted
-          ? 'affordable-entry'
-          : affordableOpen && admitted
-            ? 'affordable-open'
-            : premium && view.street === 0
-              ? 'premium-continue'
-              : 'price-continue',
+      : floatContinue
+        ? 'float-continue'
+        : exceptions.length
+          ? 'loose-exception'
+          : cheapEntry && admitted
+            ? 'affordable-entry'
+            : affordableOpen && admitted
+              ? 'affordable-open'
+              : premium && view.street === 0
+                ? 'premium-continue'
+                : 'price-continue',
   );
 }
