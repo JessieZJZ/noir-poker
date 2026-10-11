@@ -65,6 +65,22 @@ window.qa = {
     render();
     return publicState();
   },
+  shortAllinSettlement(count = 5) {
+    fixtureGame(count, true);
+    game.players[4].stack = 4850;
+    startHand(game);
+    act(game, 0, 'raise', 2000);
+    act(game, 1, 'raise', 4800);
+    while (game.actor !== 4) act(game, game.actor, 'fold');
+    act(game, 4, 'raise', 4850);
+    while (game.phase === 'playing') act(game, game.actor, game.actor === 1 ? 'call' : 'fold');
+    while (game.phase !== 'done') {
+      if (game.phase === 'between') advanceStreet(game);
+      else act(game, game.actor, 'call');
+    }
+    render();
+    return publicState();
+  },
   bettingTurn(level = 2, street = 0, short = false) {
     fixtureGame(6);
     game.dealer = 5;

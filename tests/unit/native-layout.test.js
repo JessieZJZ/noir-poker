@@ -113,3 +113,31 @@ test('installed layout checks reject cramped profiles and tablet type reduced by
     }),
   );
 });
+
+test('caption checks reject clipped words and chip digits at all four edges', async () => {
+  const { assertReadableCaptions } = await import('../native/layout.mjs');
+  const viewport = { left: 0, right: 360, top: 100, bottom: 700 };
+  const caption = {
+    id: '4',
+    box: { left: 250, right: 350, top: 450, bottom: 480 },
+    lines: [
+      { left: 250, right: 350, top: 450, bottom: 463 },
+      { left: 270, right: 330, top: 465, bottom: 480 },
+    ],
+  };
+  assert.doesNotThrow(() => assertReadableCaptions([caption], viewport));
+  for (const edge of ['left', 'right', 'top', 'bottom']) {
+    const invalid = {
+      ...caption.lines[0],
+      [edge]: caption.box[edge] + (edge === 'left' || edge === 'top' ? -0.76 : 0.76),
+    };
+    assert.throws(
+      () => assertReadableCaptions([{ ...caption, lines: [invalid] }], viewport),
+      /fully visible/,
+    );
+  }
+  assert.throws(
+    () => assertReadableCaptions([caption], { ...viewport, right: 349 }),
+    /fully visible/,
+  );
+});

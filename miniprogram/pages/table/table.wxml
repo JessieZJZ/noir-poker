@@ -38,7 +38,7 @@
         wx:for="{{seats}}"
         wx:key="id"
         class="seat {{item.x === 50 ? 'seat-crown' : ''}} {{item.thinking ? 'thinking' : ''}} {{item.folded ? 'folded' : ''}} {{item.winner ? 'winner' : ''}}"
-        style="left: {{item.x}}%; top: {{tableHeight < 430 ? (item.y < 40 ? 8 : item.y < 70 ? (tableHeight - 124) / 2 : tableHeight - 132) : item.y}}{{tableHeight < 430 ? 'px' : '%'}};"
+        style="left: {{item.x}}%; top: {{tableHeight < 430 ? (item.y < 40 ? 8 : item.y < 70 ? (tableHeight - 120) / 2 : tableHeight - 128) : item.y}}{{tableHeight < 430 ? 'px' : '%'}};"
       >
         <view class="seat-hole {{item.cards.length ? 'revealed-hole' : ''}}">
           <block wx:if="{{item.cards.length}}"

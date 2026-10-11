@@ -8,11 +8,11 @@ export function publicGroupTop(tableTop, tableHeight, groupHeight) {
   return tableTop + tableHeight * 0.44 - groupHeight / 2;
 }
 
-// Five-seat waist opponents share the public corridor. Allow a 12% scale
+// Five-seat waist opponents share the public corridor. Allow a 16% scale
 // cost there to retain five cards in one row; denser tables keep the 8% limit.
 // Crowded phones still choose two rows instead of tiny player areas.
 export function preferSinglePublicRow(singleHeight, twoRowsHeight, playerCount = 9) {
-  return twoRowsHeight / singleHeight >= (playerCount === 5 ? 0.88 : 0.92);
+  return twoRowsHeight / singleHeight >= (playerCount === 5 ? 0.84 : 0.92);
 }
 
 // Seat anchors remain in the same order as height grows, so each free band

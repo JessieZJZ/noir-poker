@@ -403,7 +403,7 @@ for (const playerCount of [5, 6, 7, 8, 9]) {
         cssNumber('.table-short .seat-caption', 'height') +
         cssNumber('.table-short .seat-caption', 'margin-top');
       const heroFooterHeight = cssNumber('.hero-identity', 'line-height') * 2;
-      const heroBottom = height - cssNumber('.hero', 'bottom');
+      const heroBottom = height - cssNumber('.table-short .hero', 'bottom');
       const identityTop = heroBottom - heroFooterHeight;
       const cardWidth = cssNumber('.table-short .hero-card', 'width');
       const cardHeight = cssNumber('.table-short .hero-card', 'height');

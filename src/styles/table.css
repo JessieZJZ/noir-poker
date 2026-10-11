@@ -317,7 +317,14 @@
   gap: 10px;
 }
 .practice-info > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   white-space: nowrap;
+}
+.practice-info .live-dot {
+  flex: none;
+  margin: 0;
 }
 .main > .site-footer button {
   font-size: 14px;
@@ -916,12 +923,18 @@
 .hero-rank-slot {
   display: grid;
   place-items: center;
-  height: 20px;
+  height: 28px;
   flex: none;
   margin-top: 2px;
 }
 .hero-rank-slot .hero-hand-rank {
   margin-top: 0;
+  translate: 0 2px;
+}
+@media (min-width: 601px) and (max-width: 900px) and (min-height: 601px) {
+  .hero-rank-slot .hero-hand-rank {
+    translate: 0 0.5px;
+  }
 }
 .hero-name {
   display: grid;
