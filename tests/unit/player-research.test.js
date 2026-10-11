@@ -82,6 +82,11 @@ test('research rendering escapes claims and provides citations without presentin
   p.research.identity = '<script>untrusted</script>';
   const html = playerResearchMarkup(p);
   assert.ok(html.includes('&lt;script&gt;'));
+  const overview = html.match(/<div class="profile-overview">([\s\S]*?)<\/div>/)[1];
+  assert.ok(overview.includes(p.evidence));
+  assert.ok(overview.includes(p.research.limits));
+  assert.ok(overview.includes(p.research.reviewedAt));
+  assert.ok(!html.includes('<h4>资料边界</h4>'));
   assert.ok(html.includes(p.sources[0].url));
   assert.ok(!html.includes('translate="no"'));
   assert.ok(!html.includes('lang="zh-CN"'));

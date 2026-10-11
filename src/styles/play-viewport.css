@@ -704,6 +704,7 @@
   }
   .game-surface .arena.public-two-rows[data-player-count] .board {
     width: calc(3 * var(--public-card-width) + 8px);
+    row-gap: 10px;
   }
   .game-surface .arena[data-player-count] .board > .playing-card,
   .game-surface .arena[data-player-count] .board-slot {

@@ -12,7 +12,7 @@ export default defineConfig({
   retries: 0,
   workers: 2,
   reporter: 'list',
-  use: { locale: 'zh-CN', baseURL, trace: 'retain-on-failure' },
+  use: { locale: 'zh-CN', timezoneId: 'Asia/Shanghai', baseURL, trace: 'retain-on-failure' },
   projects: [
     {
       name: 'desktop',

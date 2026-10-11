@@ -55,7 +55,7 @@
       >
       <div class="header-center">
         <span class="live-dot"></span>单机练习场<span class="header-line"></span
-        ><span id="table-size-label">6 人无限注</span>
+        ><span id="table-size-label">5 人无限注</span>
       </div>
       <div class="header-actions">
         <button
@@ -197,6 +197,7 @@
                   <label for="bet-slider">加注至 <strong id="bet-value">150</strong></label
                   ><input
                     id="bet-slider"
+                    disabled
                     type="range"
                     min="100"
                     max="5000"
@@ -205,15 +206,17 @@
                     aria-label="加注总额"
                   />
                   <div class="bet-presets">
-                    <button data-preset="min">最小</button><button data-preset="half">½ 底池</button
-                    ><button data-preset="pot">底池</button><button data-preset="all">全下</button>
+                    <button disabled data-preset="min">最小</button
+                    ><button disabled data-preset="half">½ 底池</button
+                    ><button disabled data-preset="pot">底池</button
+                    ><button disabled data-preset="all">全下</button>
                   </div>
                 </div>
                 <div class="action-buttons">
-                  <button id="raise-button" class="action raise">
+                  <button id="raise-button" disabled class="action raise">
                     <span>加注至</span><strong id="raise-number">150</strong></button
-                  ><button id="fold-button" class="action fold"><span>弃牌</span></button
-                  ><button id="call-button" class="action call"><span>过牌</span></button>
+                  ><button id="fold-button" disabled class="action fold"><span>弃牌</span></button
+                  ><button id="call-button" disabled class="action call"><span>过牌</span></button>
                 </div>
                 <button
                   id="continue-deal-button"
@@ -347,8 +350,8 @@
           <div class="settings-row">
             <label for="player-count">牌桌人数</label>
             <select id="player-count" aria-label="牌桌人数">
-              <option value="5">5 人</option>
-              <option value="6" selected>6 人</option>
+              <option value="5" selected>5 人</option>
+              <option value="6">6 人</option>
               <option value="7">7 人</option>
               <option value="8">8 人</option>
               <option value="9">9 人</option>
