@@ -37,7 +37,7 @@ const cardView = (card) => ({
 });
 const format = (value) => Number(value).toLocaleString('en-US');
 const defaults = () => ({
-  playerCount: 6,
+  playerCount: 5,
   difficulty: 'normal',
   sound: true,
   hints: true,
@@ -48,7 +48,7 @@ const sanitize = (value) => ({
   playerCount:
     Number.isInteger(value?.playerCount) && value.playerCount >= 5 && value.playerCount <= 9
       ? value.playerCount
-      : 6,
+      : 5,
   difficulty: ['easy', 'normal', 'hard'].includes(value?.difficulty) ? value.difficulty : 'normal',
   sound: value?.sound !== false,
   hints: value?.hints !== false,

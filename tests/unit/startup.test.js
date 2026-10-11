@@ -41,3 +41,14 @@ test('optional Web fonts cannot block startup and native builds remove their ent
   assert.equal((bundled.match(/<link rel="stylesheet" href="\/src\/styles\//g) ?? []).length, 13);
   assert.ok(config({ mode: 'production' }).plugins.every((item) => item.name !== plugin.name));
 });
+
+test('the HTML action controls are disabled before platform, locale and game preparation', () => {
+  for (const id of ['bet-slider', 'raise-button', 'fold-button', 'call-button']) {
+    const tag = html.match(new RegExp('<(?:button|input)\\b[^>]*id="' + id + '"[^>]*>'))?.[0];
+    assert.ok(tag, id);
+    assert.match(tag, /\bdisabled\b/, id);
+  }
+  const presets = [...html.matchAll(/<button\b[^>]*data-preset="[^"]+"[^>]*>/g)];
+  assert.equal(presets.length, 4);
+  for (const [tag] of presets) assert.match(tag, /\bdisabled\b/);
+});

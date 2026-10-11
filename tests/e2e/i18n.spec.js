@@ -106,7 +106,7 @@ for (const locale of locales) {
 test('system language fallback and manual language switch retain table preferences', async ({
   browser,
 }) => {
-  const context = await browser.newContext({ locale: 'ar-SA' });
+  const context = await browser.newContext({ locale: 'ar-SA', timezoneId: 'UTC' });
   const page = await context.newPage();
   try {
     await page.goto('/');

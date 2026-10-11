@@ -323,3 +323,18 @@ test('WeChat review grades only the public before-action snapshot and keeps it d
   assert.ok(report.title);
   assert.ok(report.summary);
 });
+
+test('fresh WeChat settings use five players and publish disabled controls before the hero turn', (t) => {
+  const snapshots = [];
+  const controller = createWechatController({
+    publish: (data) => snapshots.push(copy(data)),
+    storage: { getItem: () => null, setItem() {} },
+    schedule: () => 1,
+    unschedule() {},
+  });
+  t.after(() => controller.destroy());
+  controller.start();
+  assert.equal(controller.getGame().players.length, 5);
+  assert.equal(snapshots.at(-1).settings.playerCount, 5);
+  assert.equal(snapshots.at(-1).canAct, false);
+});

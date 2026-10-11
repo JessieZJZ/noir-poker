@@ -455,9 +455,9 @@ for (const playerCount of [5, 6, 7, 8, 9]) {
       const communityHeight =
         cssNumber('.table-short .pot-row', 'height') +
         cssNumber('.table-short .pot-row', 'margin-bottom') +
-        (page.data.boardTwoRows ? 2 : 1) *
-          (cssNumber('.table-short .card-placeholder', 'height') +
-            cssNumber('.table-short .board-row', 'margin-bottom'));
+        (page.data.boardTwoRows ? 2 : 1) * cssNumber('.table-short .card-placeholder', 'height') +
+        cssNumber('.table-short .board-row', 'margin-bottom') +
+        (page.data.boardTwoRows ? cssNumber('.table-short .board-row', 'row-gap') : 0);
       const community = {
         left: (width - communityWidth) / 2,
         right: (width + communityWidth) / 2,
@@ -514,6 +514,11 @@ test('WeChat exposes all researched players, linked claims and only copies a sel
     assert.equal(clipboard.length, length);
     page.closeProfile();
   }
+  assert.match(
+    template,
+    /class="profile-overview"[\s\S]*?detailProfile.evidence[\s\S]*?detailProfile.research.limits[\s\S]*?资料核对日期/,
+  );
+  assert.doesNotMatch(template, />资料边界</);
   assert.match(template, /公开资料/);
   assert.match(template, /copyResearchSource/);
 });

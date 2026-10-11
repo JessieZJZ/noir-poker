@@ -1,4 +1,5 @@
 import overrides from './overrides.json' with { type: 'json' };
+import timezoneLocales from './timezone-locales.json' with { type: 'json' };
 import { preferenceStorage } from '../platform/storage.js';
 export const SUPPORTED_LOCALES = [
   'zh-CN',
@@ -14,8 +15,18 @@ export const SUPPORTED_LOCALES = [
   'ru',
 ];
 export const LOCALE_KEY = 'noir-locale';
-export function resolveLocale(saved, languages = []) {
+export function resolveLocale(saved, languages = [], timeZone) {
   if (SUPPORTED_LOCALES.includes(saved)) return saved;
+  // Time zones identify a region, not a person's language. Use the regional
+  // default only for a first visit; an explicit saved selection always wins.
+  let regional = Object.hasOwn(timezoneLocales, timeZone) ? timezoneLocales[timeZone] : null;
+  if (!regional && timeZone) {
+    try {
+      regional =
+        timezoneLocales[new Intl.DateTimeFormat('en', { timeZone }).resolvedOptions().timeZone];
+    } catch {}
+  }
+  if (regional) return regional;
   for (const language of languages) {
     if (/^zh(?:-|$)/i.test(language))
       return !/Hans/i.test(language) && /(?:TW|HK|MO|Hant)/i.test(language) ? 'zh-TW' : 'zh-CN';
@@ -197,7 +208,11 @@ export async function prepareLocale() {
   try {
     saved = preferenceStorage.getItem(LOCALE_KEY);
   } catch {}
-  await loadLocale(resolveLocale(saved, globalThis.navigator?.languages ?? []));
+  let timeZone;
+  try {
+    timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  } catch {}
+  await loadLocale(resolveLocale(saved, globalThis.navigator?.languages ?? [], timeZone));
   document.documentElement.lang = locale;
   document.documentElement.dir = 'ltr';
   localizeDocument(document);

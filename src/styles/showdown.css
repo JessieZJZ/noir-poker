@@ -53,6 +53,9 @@
   margin-top: 6px;
   box-shadow: 0 3px 10px #0003;
 }
+.seat-rank-slot .hand-rank {
+  margin-top: 3px;
+}
 .hand-rank.rank-winner {
   background: #483e26;
   color: #ffe0a0;

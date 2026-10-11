@@ -70,3 +70,31 @@ test('Japanese and Korean catalogs contain no damaged repetition or replacement 
   }
   await loadLocale('zh-CN');
 });
+
+test('first-visit language follows the named timezone, while saved choices and unknown-zone fallbacks remain reliable', () => {
+  for (const [zone, expected] of Object.entries({
+    'Asia/Shanghai': 'zh-CN',
+    'Asia/Urumqi': 'zh-CN',
+    'Asia/Taipei': 'zh-TW',
+    'Asia/Hong_Kong': 'zh-TW',
+    'Asia/Tokyo': 'ja',
+    Japan: 'ja',
+    'Asia/Seoul': 'ko',
+    'Europe/Madrid': 'es',
+    'America/Mexico_City': 'es',
+    'Europe/Rome': 'it',
+    'America/Sao_Paulo': 'pt',
+    'Europe/Berlin': 'de',
+    'Europe/Paris': 'fr',
+    'Europe/Moscow': 'ru',
+    'Asia/Vladivostok': 'ru',
+    'America/New_York': 'en',
+  })) {
+    assert.equal(resolveLocale(null, ['en-US'], zone), expected, zone);
+    assert.equal(resolveLocale('fr', ['ja-JP'], zone), 'fr', zone);
+  }
+  for (const zone of [undefined, 'UTC', 'Etc/GMT-8', 'unknown', '__proto__', 'toString']) {
+    assert.equal(resolveLocale(null, ['ko-KR'], zone), 'ko');
+    assert.equal(resolveLocale(null, ['xx'], zone), 'en');
+  }
+});

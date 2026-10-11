@@ -19,7 +19,7 @@ export function playerResearchMarkup(profile) {
       .join(' ');
   const claims = (items) =>
     `<ul>${items.map((item) => `<li>${escape(item.text)} ${references(item.sourceIds)}</li>`).join('')}</ul>`;
-  return `<section class="profile-research"><h4>公开资料</h4><p class="profile-research-date"><span>资料核对日期</span> · ${escape(data.reviewedAt)}</p><p>${escape(data.identity)}<br>${data.formats.map((format) => `<span>${escape(format)}</span>`).join(' · ')}</p>${data.career.length ? `<h4>履历摘录</h4>${claims(data.career)}` : ''}<h4>公开打法样本</h4>${claims(data.observations)}<h4>本地策略改编</h4><ul>${data.adaptation.map((text) => `<li>${escape(text)}</li>`).join('')}</ul><h4>资料边界</h4><p>${escape(data.limits)}</p></section>`;
+  return `<section class="profile-research"><div class="profile-overview"><h4>公开资料</h4><p class="profile-evidence">${escape(profile.evidence)}</p><p>${escape(data.identity)}<br>${data.formats.map((format) => `<span>${escape(format)}</span>`).join(' · ')}</p><p class="profile-limits">${escape(data.limits)}</p><p class="profile-research-date"><span>资料核对日期</span> · ${escape(data.reviewedAt)}</p></div>${data.career.length ? `<h4>履历摘录</h4>${claims(data.career)}` : ''}<h4>公开打法样本</h4>${claims(data.observations)}<h4>本地策略改编</h4><ul>${data.adaptation.map((text) => `<li>${escape(text)}</li>`).join('')}</ul></section>`;
 }
 
 export function playerSourcesMarkup(profile) {

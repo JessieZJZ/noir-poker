@@ -29,6 +29,12 @@ for (const locale of ['zh-CN', 'en']) {
         );
         const before = await page.evaluate(readTableLayout);
         assertTableLayout(before);
+        if (width < 1100) expect(before.rankSpacing.length).toBeGreaterThan(0);
+        const rowGap = await page
+          .locator('#board')
+          .evaluate((el) => parseFloat(getComputedStyle(el).rowGap));
+        if (await page.locator('#arena').evaluate((el) => el.classList.contains('public-two-rows')))
+          expect(rowGap).toBe(10);
         await page.locator('.seat-2 .seat-peek').click();
         const after = await page.evaluate(readTableLayout);
         assertTableLayout(after);

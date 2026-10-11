@@ -323,7 +323,7 @@
   gap: 4px;
   margin-bottom: 5px;
   flex-wrap: wrap;
-  row-gap: 5px;
+  row-gap: 10px;
 }
 .card {
   background: #f7f9f3;
@@ -1132,7 +1132,7 @@
 }
 .table-short .board-row {
   margin-bottom: 3px;
-  row-gap: 3px;
+  row-gap: 7px;
 }
 .table-short .hero-card {
   width: 42px;
@@ -1313,4 +1313,19 @@
   .compact-actions .continue-buttons button {
     font-size: 18px;
   }
+}
+
+.profile-overview {
+  border-top: 1px solid #354b49;
+  margin-top: 16px;
+  padding-top: 10px;
+}
+.profile-overview > text {
+  display: block;
+  margin: 9px 0;
+  font-size: 13px;
+  line-height: 1.7;
+}
+.profile-overview .module-title {
+  margin-top: 0;
 }

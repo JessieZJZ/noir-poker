@@ -90,6 +90,23 @@ export function readTableLayout() {
         return (profile.top - back.top) / back.height;
       }),
     },
+    rankSpacing: [...document.querySelectorAll('.seat .hand-rank')].flatMap((rank) => {
+      const seat = rank.closest('.seat'),
+        action = seat.querySelector('.seat-action'),
+        badge = rank.getBoundingClientRect();
+      if (action.getBoundingClientRect().top >= badge.top) return [];
+      const range = document.createRange();
+      range.selectNodeContents(action);
+      const lines = [...range.getClientRects()].filter((r) => r.width && r.height);
+      return lines.length
+        ? [
+            {
+              id: seat.dataset.player,
+              gap: (badge.top - Math.max(...lines.map((r) => r.bottom))) / scale,
+            },
+          ]
+        : [];
+    }),
     captions: [...document.querySelectorAll('.seat .seat-action')].map((el) => {
       const range = document.createRange();
       range.selectNodeContents(el);
@@ -140,6 +157,11 @@ export function assertTableLayout(info) {
   const largeTablet =
     info.width >= 901 && info.width <= 1100 && info.height >= 1100 && info.height > info.width;
   if (info.presentation) assertSeatPresentation(info.presentation, info, largeTablet);
+  for (const rank of info.rankSpacing ?? [])
+    assert.ok(
+      rank.gap >= 3 && rank.gap <= 6.5,
+      `Seat ${rank.id} rank must sit close to the complete action caption`,
+    );
   if (info.captions) assertReadableCaptions(info.captions, info.table);
   for (const card of info.revealed ?? []) {
     assert.ok(card.width >= 32, 'Revealed opponent cards need a readable face');

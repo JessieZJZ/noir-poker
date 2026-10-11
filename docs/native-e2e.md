@@ -100,3 +100,11 @@ iOS 设置持久化场景通过同一驱动终止并激活应用，再等待真�
 - [PR #31 首次 GitHub CI](https://github.com/JessieZJZ/noir-poker/actions/runs/38132794529) 的七个任务均未分配 runner，执行步骤为空。GitHub 检查注释明确说明近期账户付款失败或 Actions 支出额度需要提高；`quality` 注释保存在 `github-ci-31-failure.json`。因此远端 CI 尚未执行验证，需要账户所有者处理 Billing & plans 后重跑，不能将本地通过报告为远端通过。
 
 所有验证日志位于忽略的 `.artifacts/validation/`。编译、资源核验和浏览器回归与实际原生运行分开记录；早期失败报告和截图保留，不覆盖成通过结果。结束时已关闭本任务的两个 Android 仿真器、iPhone/iPad 模拟器及独立 Appium 子进程；清理记录为 `appium-final-cleanup.json`。
+
+### PR #31 合并 main 后的复验
+
+同日合入 `origin/main` 的 `eb183ba`，解决 10 个语言文件末尾追加文案的冲突，同时保留 main 的“5 人无限注”与本 PR 的两条竖屏提示。main 的首次地区语言选择、5 人桌默认值和结算布局也完整保留。
+
+本次 `npm run check` 的 377 个单元测试及 Web/小程序构建通过；方向、首次访问、重载、11 种语言、牌桌视口、操作区和结算布局共 98 项 Web E2E 全部通过。格式、翻译完整性、iOS/Android 资源同步与核验，以及小程序资源和官方编译器检查通过。日志为 `.artifacts/validation/conflict31-*.log`。
+
+本次冲突复验未重新编译原生安装包或执行安装 E2E；上方四组原生运行通过记录对应合入 main 前的安装包。资源核验不能代替更新后安装包的实际运行验证。

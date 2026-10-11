@@ -12,6 +12,7 @@ async function inspectDetail(page, id) {
     const detail = document.querySelector('#profile-detail');
     const card = document.querySelector(`[data-profile-preview="${id}"]`);
     const section = document.querySelector('#profile-detail .profile-research');
+    const overview = section.querySelector('.profile-overview');
     const sources = document.querySelector('#profile-detail .profile-source-records');
     const fields = [
       profile.research.identity,
@@ -32,6 +33,13 @@ async function inspectDetail(page, id) {
       return a.getAttribute('aria-label') !== localizeText(source.label);
     });
     return {
+      missingOverview: [
+        profile.evidence,
+        profile.research.identity,
+        ...profile.research.formats,
+        profile.research.limits,
+        profile.research.reviewedAt,
+      ].filter((s) => !contains(overview, s)),
       missingProfileFields: [
         profile.name,
         profile.description,
@@ -80,6 +88,7 @@ for (const locale of SUPPORTED_LOCALES) {
       await expect(page.locator('#profile-detail')).toHaveAttribute('data-profile-id', id);
       await expect(page.locator('#profile-detail')).toBeVisible();
       const result = await inspectDetail(page, id);
+      expect(result.missingOverview).toEqual([]);
       expect(result.missingProfileFields, `${locale} ${id} summary`).toEqual([]);
       expect(result.missingCardFields, `${locale} ${id} card`).toEqual([]);
       expect(result.missingFields, `${locale} ${id} body`).toEqual([]);
