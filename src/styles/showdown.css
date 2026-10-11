@@ -136,7 +136,9 @@
   min-width: 0;
   margin: 0;
 }
-@media (max-width: 1150px) and (min-width: 901px), (max-width: 700px) {
+@media (max-width: 1150px) and (min-width: 1101px),
+  (max-width: 1150px) and (min-width: 901px) and (orientation: landscape),
+  (max-width: 700px) {
   .settled-actions {
     grid-auto-flow: row;
     grid-template-columns: minmax(0, 1fr);
@@ -447,7 +449,8 @@
     transform: rotate(calc((var(--i) - 2) * 2deg));
   }
 }
-@media (max-width: 1150px) and (min-width: 901px) {
+@media (max-width: 1150px) and (min-width: 1101px),
+  (max-width: 1150px) and (min-width: 901px) and (orientation: landscape) {
   .arena[data-player-count='7'] .avatar,
   .arena[data-player-count='8'] .avatar,
   .arena[data-player-count='9'] .avatar {

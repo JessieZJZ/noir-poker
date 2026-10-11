@@ -159,6 +159,10 @@ test('the entire table and one-line controls fit the initial mobile screen in ev
     for (const size of [
       { width: 390, height: 844 },
       { width: 402, height: 874 },
+      { width: 440, height: 956 },
+      { width: 768, height: 1024 },
+      { width: 820, height: 1180 },
+      { width: 1024, height: 1366 },
     ]) {
       await page.setViewportSize(size);
       for (const native of [false, true]) {
@@ -308,4 +312,112 @@ test('detailed settlement stays below the fitted table and desktop keeps natural
   expect(desktop.maxHeight).toBe('none');
   expect(desktop.transform).toBe('');
   expect(desktop.overflow).toBe(false);
+});
+
+test('SE initial rendering and repeated resizes retain a readable proportional table', async ({
+  page,
+}) => {
+  for (const size of [
+    { width: 375, height: 667 },
+    { width: 440, height: 956 },
+    { width: 375, height: 667 },
+  ]) {
+    await page.setViewportSize(size);
+    await page.reload();
+    await page.waitForFunction(() => !!window.qa);
+    await page.evaluate(() => {
+      window.qa.stop();
+      return document.fonts.ready;
+    });
+    await assertFixedTable(page);
+    await expect
+      .poll(() =>
+        page.locator('#arena').evaluate((el) => {
+          const r = el.getBoundingClientRect();
+          return r.width / document.querySelector('.table-viewport').clientWidth;
+        }),
+      )
+      .toBeGreaterThan(0.7);
+  }
+  await page.screenshot({ path: test.info().outputPath('iphone-se-initial.png') });
+});
+
+test('enabled controls have distinct colors and hover never moves the buttons', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 440, height: 956 });
+  await page.evaluate(() => window.qa.heroTurn(9));
+  const button = page.locator('#raise-button');
+  const before = await button.boundingBox();
+  const active = await button.evaluate((el) => ({
+    color: getComputedStyle(el).color,
+    background: getComputedStyle(el).backgroundColor,
+  }));
+  await button.hover();
+  await expect.poll(async () => (await button.boundingBox()).y).toBe(before.y);
+  await page.locator('#call-button').click();
+  await page.evaluate(() => window.qa.stop());
+  await expect(button).toBeDisabled();
+  const disabled = await button.evaluate((el) => ({
+    color: getComputedStyle(el).color,
+    background: getComputedStyle(el).backgroundColor,
+  }));
+  expect(disabled.color).not.toBe(active.color);
+  expect(disabled.background).not.toBe(active.background);
+  await expect(button).toHaveCSS('transform', 'none');
+  await page.screenshot({ path: test.info().outputPath('inactive-action-buttons.png') });
+});
+
+test('portrait tablets use the open table width for larger readable contents', async ({ page }) => {
+  for (const size of [
+    { width: 768, height: 1024 },
+    { width: 820, height: 1180 },
+    { width: 1024, height: 1366 },
+  ]) {
+    await page.setViewportSize(size);
+    await page.evaluate(() => window.qa.publicBoard(9));
+    await expect
+      .poll(() =>
+        page.evaluate(() => {
+          const arena = document.querySelector('#arena');
+          const scale = new DOMMatrix(getComputedStyle(arena).transform).a;
+          const board = document.querySelector('#board > .playing-card');
+          const hero = document.querySelector('#hero-cards > .playing-card');
+          const profile = document.querySelector('.seat-profile');
+          return (
+            board.offsetWidth * scale >= 72 &&
+            hero.offsetWidth * scale >= 84 &&
+            profile.offsetWidth * scale >= 118 &&
+            parseFloat(getComputedStyle(profile.querySelector('strong')).fontSize) * scale >= 14 &&
+            arena.getBoundingClientRect().width >=
+              document.querySelector('.table-viewport').clientWidth * 0.99
+          );
+        }),
+      )
+      .toBe(true);
+    await page.screenshot({ path: test.info().outputPath(`tablet-${size.width}.png`) });
+  }
+});
+
+test('a temporarily hidden viewport can render and recover without invalid fitting geometry', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 375, height: 667 });
+  await page.evaluate(() => {
+    const surface = document.querySelector('.game-surface');
+    surface.hidden = true;
+    window.qa.heroTurn(9);
+    surface.hidden = false;
+    dispatchEvent(new Event('resize'));
+  });
+  await assertFixedTable(page);
+  await expect
+    .poll(() =>
+      page
+        .locator('#arena')
+        .evaluate(
+          (el) => !/NaN|Infinity/.test(el.style.cssText) && el.getBoundingClientRect().width > 340,
+        ),
+    )
+    .toBe(true);
 });

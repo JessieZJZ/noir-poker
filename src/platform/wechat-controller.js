@@ -56,10 +56,10 @@ const sanitize = (value) => ({
 });
 const positions = {
   5: [
-    [16, 78],
-    [16, 24],
-    [84, 24],
-    [84, 78],
+    [16, 50],
+    [30, 15],
+    [70, 15],
+    [84, 50],
   ],
   6: [
     [15, 79],
@@ -226,15 +226,6 @@ export function createWechatController({
       heroCards: hero.hole.map(cardView),
       heroStack: format(hero.stack),
       heroPosition: seatPosition(game, 0),
-      heroStatus: done
-        ? ''
-        : hero.folded
-          ? '已弃牌'
-          : hero.allin
-            ? '已全下'
-            : legal.enabled
-              ? '你的回合'
-              : '等待行动',
       heroAction: cleanAction(
         hero.folded || hero.allin || hero.lastAction?.street === game.street
           ? hero.lastAction?.text || ''
@@ -243,6 +234,8 @@ export function createWechatController({
       heroRank: done && game.showdown ? evaluate([...hero.hole, ...game.board]).label : '',
       heroWinner: done && game.winners.some((w) => w.id === 0),
       heroFolded: hero.folded,
+      heroAllin: hero.allin,
+      compactActions: done || hero.folded || hero.allin,
       pot: format(pot),
       pots: currentPots(game).pots.map((p) => ({ label: p.label, amount: format(p.amount) })),
       done,

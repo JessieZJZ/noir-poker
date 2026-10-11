@@ -3,15 +3,25 @@
 .game-surface .seat .mini-cards {
   padding-top: 3px;
 }
-@media (min-width: 901px) and (max-width: 1150px) {
+.game-surface .seat .card-back {
+  translate: 0 12px;
+}
+/* Keep the full crown hand clear of the hint edge, including when peeked.
+   The inset is reserved from the deal, so settlement cannot move the seats. */
+.game-surface .arena:not(.compact-landscape) .seat-crown {
+  margin-top: 12px;
+}
+@media (min-width: 1101px) and (max-width: 1150px),
+  (min-width: 901px) and (max-width: 1150px) and (orientation: landscape) {
   .game-surface .board > .playing-card,
   .game-surface .board-slot {
     width: 50px;
   }
 }
-@media (max-width: 900px) {
+@media (max-width: 900px), (min-width: 901px) and (max-width: 1100px) and (orientation: portrait) {
   .main {
     padding-top: 8px;
+    max-width: none;
   }
   .header {
     height: 60px;
@@ -22,7 +32,7 @@
     height: var(--play-height);
   }
   .game-surface > .surface-top,
-  .game-surface > .action-dock {
+  .game-surface > .action-dock-slot {
     flex: none;
   }
   .game-surface > .surface-top {
@@ -52,12 +62,13 @@
     top: 34%;
     transform: translateX(-50%);
     max-width: none;
+    min-width: 160px;
   }
   .game-surface .arena[data-player-count] .hero-area {
     position: absolute;
     left: 50%;
     top: auto;
-    bottom: 8px;
+    bottom: 16px;
     transform: translateX(-50%);
   }
   .game-surface .arena[data-player-count] .seat {
@@ -86,6 +97,7 @@
     font-size: 10px;
   }
   .game-surface .arena[data-player-count] .seat-profile strong {
+    --seat-eye-size: 14px;
     grid-column: 1 / -1;
     grid-row: 1;
     justify-self: center;
@@ -115,12 +127,10 @@
     grid-column: 1 / -1;
   }
   .game-surface .arena[data-player-count] .seat-peek {
-    grid-column: 3;
-    grid-row: 3;
-    width: 20px;
-    height: 20px;
-    min-height: 20px;
-    padding: 2px;
+    width: var(--seat-eye-size);
+    height: var(--seat-eye-size);
+    min-height: 0;
+    padding: 1px;
   }
   .game-surface .seat .mini-cards:not(.revealed-cards) {
     display: flex;
@@ -162,7 +172,7 @@
     line-height: 1.3;
   }
   .game-surface .arena[data-player-count] .pot {
-    margin-bottom: 9px;
+    margin-bottom: 6px;
     gap: 6px;
   }
   .game-surface .arena[data-player-count] .pot strong {
@@ -225,7 +235,7 @@
   }
   .game-surface .hero-name {
     margin-top: 6px;
-    gap: 6px;
+    gap: 2px;
     --hero-status-width: 64px;
     --hero-identity-width: 68px;
     --hero-action-width: 104px;
@@ -233,9 +243,8 @@
   .game-surface .hero-name .hero-last-action {
     font-size: 11px;
   }
-  .game-surface > .action-dock {
+  .game-surface > .action-dock-slot {
     background: #101b22;
-    padding-bottom: var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px));
   }
   .game-surface .decision-strip {
     padding: 6px 12px;
@@ -303,6 +312,152 @@
     min-height: 0;
   }
 }
+
+.seat-rank-slot:empty {
+  height: 0;
+}
+
+/* Public and player slots have the same footprint before and after reveal.
+   Rank badges and the eye control must not refit the whole table. */
+@media (max-width: 900px), (min-width: 901px) and (max-width: 1100px) and (orientation: portrait) {
+  .game-surface .arena[data-player-count] .seat .mini-cards {
+    height: 39px;
+    margin-bottom: 4px;
+    align-items: flex-end;
+  }
+  .game-surface .seat .card-back {
+    /* Move only the artwork behind the profile; the reveal slot stays fixed. */
+    translate: 0 18px;
+  }
+  .game-surface .arena[data-player-count] .seat .seat-profile {
+    grid-template-rows: 14px 18px 20px;
+  }
+  .game-surface .arena[data-player-count] .seat-profile strong,
+  .game-surface .arena[data-player-count] .seat-profile .seat-stack {
+    line-height: 1;
+  }
+  .game-surface .arena[data-player-count] .seat-rank-slot {
+    display: grid;
+    place-items: center;
+    height: 20px;
+    width: 88px;
+    flex: none;
+    order: 1;
+  }
+  .game-surface .seat-rank-slot .hand-rank {
+    margin: 0;
+    max-width: 100%;
+    white-space: nowrap;
+  }
+  .game-surface .arena[data-player-count] .seat .seat-action {
+    height: 18px;
+    min-height: 18px;
+    width: 88px;
+    flex-wrap: nowrap;
+    white-space: nowrap;
+    padding-top: 2px;
+    font-size: 10px;
+    gap: 4px;
+    margin-top: 2px;
+  }
+  .game-surface .seat-action-label,
+  .game-surface .seat-action-amount {
+    font-size: inherit;
+    line-height: 1.2;
+  }
+  .game-surface .arena[data-player-count] .pot {
+    width: 100%;
+    height: 32px;
+    min-height: 32px;
+    justify-content: center;
+  }
+}
+
+/* Portrait tablets have room for readable, larger table contents. */
+@media (min-width: 601px) and (max-width: 900px) and (min-height: 601px),
+  (min-width: 901px) and (max-width: 1100px) and (orientation: portrait) {
+  .game-surface .arena[data-player-count] .seat .seat-profile {
+    width: 132px;
+    min-width: 132px;
+    max-width: 132px;
+    padding: 6px;
+    grid-template-columns: 26px minmax(0, 1fr) 24px;
+    grid-template-rows: 20px 26px 24px;
+    gap: 4px;
+  }
+  .game-surface .arena[data-player-count] .seat-profile strong {
+    --seat-eye-size: 20px;
+    font-size: 16px;
+  }
+  .game-surface .arena[data-player-count] .seat-profile .seat-style-label {
+    font-size: 13px;
+  }
+  .game-surface .arena[data-player-count] .seat-profile .seat-stack {
+    font-size: 16px;
+  }
+  .game-surface .arena[data-player-count] .seat-profile > .avatar {
+    width: 26px;
+    height: 26px;
+    font-size: 14px;
+  }
+  .game-surface .arena[data-player-count] .seat .mini-cards {
+    height: 58px;
+  }
+  .game-surface .mini-cards .playing-card.small {
+    width: 38px;
+    height: 55px;
+  }
+  .game-surface .seat .card-back {
+    width: 33px;
+    height: 46px;
+    translate: 0 28px;
+  }
+  .game-surface .arena[data-player-count] .seat-rank-slot {
+    height: 25px;
+    width: 136px;
+  }
+  .game-surface .arena[data-player-count] .hand-rank {
+    font-size: 13px;
+  }
+  .game-surface .arena[data-player-count] .seat .seat-action {
+    width: 136px;
+    max-width: 136px;
+    height: 23px;
+    font-size: 14px;
+  }
+  .game-surface .arena[data-player-count] .pot strong {
+    font-size: 36px;
+    line-height: 1.1;
+  }
+  .game-surface .arena[data-player-count] .pot {
+    height: 40px;
+    min-height: 40px;
+  }
+  .game-surface .pot .chip-symbol {
+    width: 28px;
+    height: 28px;
+  }
+  .game-surface .pot-details-trigger {
+    font-size: 14px;
+  }
+  .game-surface .arena[data-player-count] .board > .playing-card,
+  .game-surface .arena[data-player-count] .board-slot {
+    width: 82px;
+    height: 118px;
+  }
+  .game-surface .hero-cards {
+    min-height: 136px;
+  }
+  .game-surface .hero-cards .playing-card {
+    width: 94px;
+    height: 136px;
+  }
+  .game-surface .hero-name {
+    font-size: 15px;
+    --hero-identity-width: 92px;
+    --hero-action-width: 140px;
+  }
+}
 @media (max-width: 420px) {
   .game-surface .arena[data-player-count] .seat .seat-profile {
     width: 72px;
@@ -312,17 +467,9 @@
   .game-surface .arena[data-player-count] .seat .seat-action {
     max-width: 72px;
   }
-  /* Reserve all five positions from the start of the hand. A centered 3+2
-     layout fits the phone's seat corridor without overlapping or shrinking
-     any face, and dealing another street does not change the group's size. */
-  .game-surface .arena[data-player-count] .board {
-    flex-wrap: wrap;
-    justify-content: center;
-    width: 122px;
-    gap: 4px;
-  }
 }
-@media (max-width: 900px) and (max-height: 600px) {
+@media (max-width: 900px) and (max-height: 600px),
+  (min-width: 901px) and (max-width: 1100px) and (orientation: portrait) and (max-height: 600px) {
   .header {
     height: 44px;
   }
@@ -339,7 +486,8 @@
   }
 }
 
-@media (min-width: 601px) and (max-width: 900px) and (max-height: 600px) {
+@media (min-width: 601px) and (max-width: 900px) and (max-height: 600px),
+  (min-width: 601px) and (min-width: 901px) and (max-width: 1100px) and (orientation: portrait) and (max-height: 600px) {
   .game-surface .action-panel:not(.settled-actions) {
     flex-direction: row;
     align-items: center;
@@ -366,5 +514,133 @@
     width: 72px;
     min-width: 72px;
     max-width: 72px;
+  }
+}
+
+/* Prefer five complete card faces. The viewport solver uses 3 + 2 only
+   when the single row would force the entire table to shrink further. */
+@media (max-width: 600px) {
+  .game-surface .hero-cards {
+    min-height: clamp(81px, 17.4vw, 104px);
+  }
+  .game-surface .hero-cards .playing-card {
+    width: clamp(56px, 12vw, 72px);
+    height: clamp(81px, 17.4vw, 104px);
+  }
+  .game-surface .arena[data-player-count] .board {
+    --public-card-width: clamp(40px, 12vw, 54px);
+    flex-wrap: wrap;
+    justify-content: center;
+    width: calc(5 * var(--public-card-width) + 16px);
+    gap: 4px;
+  }
+  .game-surface .arena.public-two-rows[data-player-count] .board {
+    width: calc(3 * var(--public-card-width) + 8px);
+  }
+  .game-surface .arena[data-player-count] .board > .playing-card,
+  .game-surface .arena[data-player-count] .board-slot {
+    width: var(--public-card-width);
+    height: calc(var(--public-card-width) * 1.44);
+    flex: none;
+  }
+}
+
+/* A two-row profile leaves room for nine seats on a short phone. Inspection
+   has a reserved spot after the position badge in the name row. */
+@media (max-width: 600px) {
+  .game-surface .arena[data-player-count] .seat .seat-profile {
+    width: 92px;
+    min-width: 92px;
+    max-width: 92px;
+    padding: 3px;
+    grid-template-columns: 18px minmax(0, 1fr) 36px;
+    grid-template-rows: 14px 18px;
+  }
+  .game-surface .arena[data-player-count] .seat-profile > .avatar {
+    width: 18px;
+    height: 18px;
+  }
+  .game-surface .arena[data-player-count] .seat-profile .seat-style-label {
+    grid-column: 2;
+    grid-row: 2;
+    padding: 0;
+    font-size: 9px;
+    line-height: 9px;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+  .game-surface .arena[data-player-count] .seat-style-label[data-style-profile='viktor'],
+  .game-surface .arena[data-player-count] .seat-style-label[data-style-profile='jungleman'],
+  .game-surface .arena[data-player-count] .seat-style-label[data-style-profile='dwan'] {
+    font-size: 8.5px;
+  }
+  .game-surface .arena[data-player-count] .seat-style-label[data-style-profile='balanced'] {
+    min-width: 26px;
+    padding: 1px 2px;
+    font-size: 10px;
+    line-height: 12px;
+    text-align: center;
+    white-space: nowrap;
+  }
+  .game-surface .arena[data-player-count] .seat-profile .seat-stack {
+    grid-column: 3;
+    grid-row: 2;
+    font-size: 10px;
+  }
+}
+
+/* Fewer players have room for larger personal areas around the same felt. */
+@media (max-width: 600px) and (min-height: 740px) {
+  .game-surface .arena:is([data-player-count='5'], [data-player-count='6']) .seat .seat-profile {
+    width: 108px;
+    min-width: 108px;
+    max-width: 108px;
+    grid-template-columns: 20px minmax(0, 1fr) 38px;
+    grid-template-rows: 16px 20px;
+  }
+  .game-surface .arena:is([data-player-count='5'], [data-player-count='6']) .seat-profile strong {
+    --seat-eye-size: 16px;
+    font-size: 12px;
+  }
+  .game-surface
+    .arena:is([data-player-count='5'], [data-player-count='6'])
+    .seat-profile
+    > .avatar {
+    width: 20px;
+    height: 20px;
+  }
+  .game-surface
+    .arena:is([data-player-count='5'], [data-player-count='6'])
+    .seat-profile
+    .seat-stack {
+    font-size: 11px;
+  }
+  .game-surface
+    .arena:is([data-player-count='5'], [data-player-count='6'])
+    .seat-style-label[data-style-profile='balanced'] {
+    min-width: 30px;
+    font-size: 11px;
+  }
+  .game-surface
+    .arena:is([data-player-count='5'], [data-player-count='6'])
+    .mini-cards
+    .playing-card.small {
+    width: 30px;
+    height: 39px;
+  }
+  .game-surface .arena:is([data-player-count='5'], [data-player-count='6']) .seat .card-back {
+    width: 28px;
+    height: 36px;
+    translate: 0 22px;
+  }
+  .game-surface .arena:is([data-player-count='5'], [data-player-count='6']) .hero-cards {
+    min-height: 98px;
+  }
+  .game-surface
+    .arena:is([data-player-count='5'], [data-player-count='6'])
+    .hero-cards
+    .playing-card {
+    width: 68px;
+    height: 98px;
   }
 }

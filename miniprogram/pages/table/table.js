@@ -15,6 +15,7 @@ Page({
     bottomInset: 0,
     windowHeight: 800,
     tableHeight: 460,
+    windowWidth: 390,
     navRightInset: 104,
     compactNav: false,
     settingsOpen: false,
@@ -30,6 +31,9 @@ Page({
     board: [],
     boardTop: [],
     boardBottom: [],
+    boardSlots: [],
+    boardWidth: 152,
+    boardTwoRows: true,
     heroCards: [],
     reviewData: { steps: [] },
     detailProfile: null,
@@ -41,6 +45,7 @@ Page({
       publish: (view) =>
         this.setData({
           ...view,
+          ...this.publicLayout(view.board),
           countIndex: view.settings.playerCount - 5,
           emotionIndex: ['off', 'subtle', 'lively'].indexOf(view.settings.emotionMode),
         }),
@@ -100,15 +105,33 @@ Page({
     } catch {
       /* Menu measurement can be unavailable while an older client initializes. */
     }
-    // The action dock keeps one height in every game phase; no page scrolling.
+    // Reserve the live dock budget when computing the table. A compact dock
+    // shrinks the shell, never stretches the felt.
     this.setData({
       topInset,
       bottomInset,
       windowHeight: info.windowHeight,
       navRightInset,
       compactNav: info.windowWidth - 24 - navRightInset < 250,
+      windowWidth: info.windowWidth,
       tableHeight: Math.max(0, info.windowHeight - topInset - bottomInset - VIEWPORT_CHROME_HEIGHT),
     });
+    this.setData(this.publicLayout(this.data.board));
+  },
+  publicLayout(board = []) {
+    const cardWidth = this.data.tableHeight < 430 ? 25 : 48;
+    const singleWidth = 5 * cardWidth + 16;
+    // Use the safe middle corridor, independent of deal/reveal state.
+    const boardTwoRows = singleWidth > (this.data.windowWidth - 18) * 0.48;
+    return {
+      boardTwoRows,
+      boardWidth: boardTwoRows ? 3 * cardWidth + 8 : singleWidth,
+      boardSlots: Array.from(
+        { length: 5 },
+        (_, i) =>
+          board[i] || { key: `empty-${i}`, empty: true, suit: ['♠', '♣', '♥', '♦', '♠'][i] },
+      ),
+    };
   },
   call(method, ...args) {
     try {

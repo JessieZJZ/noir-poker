@@ -197,7 +197,7 @@ async function click(selector) {
     (value) =>
       document
         .querySelector(value)
-        .scrollIntoView({ block: 'center', inline: 'center', behavior: 'instant' }),
+        .scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'instant' }),
     selector,
   );
   const element = await command('POST', '/element', { using: 'css selector', value: selector });
@@ -219,7 +219,7 @@ async function select(selector, value) {
     (selector) =>
       document
         .querySelector(selector)
-        .scrollIntoView({ block: 'center', inline: 'center', behavior: 'instant' }),
+        .scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'instant' }),
     selector,
   );
   const element = await command('POST', '/element', {

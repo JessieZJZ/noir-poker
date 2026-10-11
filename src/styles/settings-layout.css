@@ -125,12 +125,12 @@
 .coach-card #coach-disabled {
   color: #889ea5;
 }
-@media (min-width: 901px) {
+@media (min-width: 1101px), (min-width: 901px) and (orientation: landscape) {
   .game-surface > .surface-top {
     grid-template-rows: auto;
   }
 }
-@media (max-width: 900px) {
+@media (max-width: 900px), (min-width: 901px) and (max-width: 1100px) and (orientation: portrait) {
   .settings-dialog .opponents-layout {
     grid-template-columns: minmax(0, 1fr);
   }

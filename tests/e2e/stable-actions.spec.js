@@ -36,9 +36,23 @@ async function startFrameCapture(page) {
   return page.evaluate(() => {
     const read = () =>
       Object.fromEntries(
-        ['.game-surface', '.table-viewport', '.action-dock'].map((selector) => {
+        [
+          '.table-viewport',
+          '#arena',
+          '.poker-table',
+          '.table-center',
+          '#board',
+          '#hero-cards',
+          '.hero-identity',
+          ...[...document.querySelectorAll('.seat')].map(
+            (seat) => `.seat-${seat.dataset.player} .seat-profile`,
+          ),
+        ].map((selector) => {
           const r = document.querySelector(selector).getBoundingClientRect();
-          return [selector, { top: r.top, height: r.height, bottom: r.bottom }];
+          return [
+            selector,
+            { top: r.top, height: r.height, bottom: r.bottom, left: r.left, width: r.width },
+          ];
         }),
       );
     const capture = { frames: [read()], frame: null };
@@ -108,19 +122,20 @@ async function expectDockLayout(page, kind, bottomInset = 0) {
             const next = rect(document.querySelector('#next-button'));
             const retry = rect(document.querySelector('#restart-hand-button'));
             const review = rect(document.querySelector('#review-hand-button'));
-            if (!fits(next.left, inner.left) || !fits(next.right, inner.right))
-              issues.push('next hand does not occupy the complete first row');
+            if (!fits(next.left, inner.left) || !fits(review.right, inner.right))
+              issues.push('settled row does not fill the padded panel');
             if (
-              !fits(retry.left, inner.left) ||
-              !fits(review.right, inner.right) ||
-              !fits(retry.top, review.top) ||
-              !fits(retry.bottom, review.bottom) ||
-              !fits(retry.width, review.width) ||
-              retry.top < next.bottom
+              ![retry, review].every(
+                (button) =>
+                  fits(button.top, next.top) &&
+                  fits(button.bottom, next.bottom) &&
+                  fits(button.width, next.width),
+              )
             )
-              issues.push('retry and review do not form the equal-width second row');
+              issues.push('settled buttons do not share one equal-width row');
             if (!fits(next.top, inner.top) || !fits(review.bottom, inner.bottom))
-              issues.push('settled buttons leave unused vertical space');
+              issues.push('settled row has unexpected vertical padding');
+            if (dock.height > 65 + bottomInset) issues.push('settled controls did not shrink');
           }
           const buttons = [...panel.querySelectorAll('button')].filter(
             (el) => !el.hidden && getComputedStyle(el).display !== 'none' && rect(el).height > 0,
@@ -157,7 +172,7 @@ async function expectDockLayout(page, kind, bottomInset = 0) {
     .toEqual([]);
 }
 
-test('fold, expedited settlement, retry and next hand keep the mobile table and dock height stable', async ({
+test('fold, expedited settlement, retry and next hand keep the table stable while the dock collapses to one row', async ({
   page,
 }) => {
   test.setTimeout(90000);
@@ -168,7 +183,7 @@ test('fold, expedited settlement, retry and next hand keep the mobile table and 
     { size: { width: 844, height: 390 }, insets: { top: 0, bottom: 21 } },
   ]) {
     await configureViewport(page, size, insets);
-    for (const count of [5, 9]) {
+    for (const count of [5, 6, 9]) {
       await page.evaluate((count) => window.qa.heroTurn(count), count);
       await expect(page.locator('#fold-button')).toBeEnabled();
       await expectDockLayout(page, 'live', insets.bottom);
@@ -185,7 +200,7 @@ test('fold, expedited settlement, retry and next hand keep the mobile table and 
       await expectDockLayout(page, 'settled', insets.bottom);
       if (size.width === 390 && count === 9)
         await page.screenshot({
-          path: test.info().outputPath('settled-fixed-two-row-buttons.png'),
+          path: test.info().outputPath('settled-single-row-buttons.png'),
         });
       await page.locator('#restart-hand-button').click();
       await page.evaluate(() => window.qa.stop());
@@ -203,6 +218,36 @@ test('fold, expedited settlement, retry and next hand keep the mobile table and 
       await expectStableCapturedFrames(page, baseline);
       await expect(page.locator('.table-viewport')).toHaveJSProperty('scrollTop', 0);
     }
+  }
+});
+
+test('SE streets, real expedited bots and card peeks preserve the fitted arena and public anchors', async ({
+  page,
+}) => {
+  test.setTimeout(60000);
+  await configureViewport(page, { width: 375, height: 667 });
+  for (const count of [6, 9]) {
+    await page.evaluate((count) => window.qa.heroTurn(count), count);
+    const initial = await startFrameCapture(page);
+    await page.locator('#fold-button').click();
+    await page.evaluate(() => window.qa.stop());
+    await page.locator('#continue-deal-button').click();
+    await expect.poll(() => page.evaluate(() => window.qa.state().phase)).toBe('done');
+    for (const button of await page.locator('.seat-peek').all()) {
+      await button.click();
+      await button.click();
+    }
+    await expectStableCapturedFrames(page, initial);
+    await page.screenshot({ path: test.info().outputPath(`se-expedited-${count}.png`) });
+
+    await page.evaluate((count) => window.qa.publicBoard(count), count);
+    const flop = await startFrameCapture(page);
+    for (let street = 0; street < 3; street++)
+      await page.evaluate(() => {
+        window.qa.checkRest();
+        window.qa.finish();
+      });
+    await expectStableCapturedFrames(page, flop);
   }
 });
 
@@ -259,7 +304,7 @@ async function expectHeroAnchor(page, baseline) {
     .toEqual([]);
 }
 
-test('hero status and recent action share fixed left and right slots without lifting cards', async ({
+test('hero identity keeps chips beside the position and its recent action in a centered bottom row', async ({
   page,
 }) => {
   test.setTimeout(90000);
@@ -272,34 +317,43 @@ test('hero status and recent action share fixed left and right slots without lif
     for (const count of [5, 9]) {
       await page.evaluate((count) => window.qa.heroTurn(count), count);
       await expect(page.locator('.hero-avatar')).toHaveCount(0);
-      await expect(page.locator('#hero-turn')).toHaveText('你的回合');
+      await expect(page.locator('#hero-turn')).toHaveCount(0);
       await expect(page.locator('#hero-last-action')).toBeHidden();
       const baseline = await heroAnchorBounds(page);
       await page.locator('#call-button').click();
       await page.evaluate(() => window.qa.stop());
       await expect(page.locator('#hero-last-action')).toContainText('跟注');
-      await expect(page.locator('#hero-turn')).toHaveText('等待行动');
+      await expect(page.locator('#fold-button')).toBeDisabled();
       await expectHeroAnchor(page, baseline);
       if (size.width === 390 && count === 9)
         await page.screenshot({ path: test.info().outputPath('hero-status-and-action-slots.png') });
       expect(
         await page.evaluate(() => {
-          const status = document.querySelector('#hero-turn').getBoundingClientRect();
           const identity = document.querySelector('.hero-identity').getBoundingClientRect();
           const action = document.querySelector('#hero-last-action').getBoundingClientRect();
           return {
-            statusBeforeIdentity: status.right <= identity.left + 1,
-            actionAfterIdentity: action.left >= identity.right - 1,
-            sameRow: status.top < action.bottom && status.bottom > action.top,
+            actionBelowIdentity: action.top >= identity.bottom - 1,
+            centered: Math.abs(action.left + action.right - identity.left - identity.right) <= 2,
+            nearby: action.top - identity.bottom <= 7,
+            chipsBesidePosition: (() => {
+              const stack = document.querySelector('#hero-stack').getBoundingClientRect();
+              const position = document.querySelector('#hero-position').getBoundingClientRect();
+              return (
+                stack.left >= position.right &&
+                stack.top < position.bottom &&
+                stack.bottom > position.top
+              );
+            })(),
             actionUnclipped:
               document.querySelector('#hero-last-action').scrollWidth <=
               document.querySelector('#hero-last-action').clientWidth + 1,
           };
         }),
       ).toEqual({
-        statusBeforeIdentity: true,
-        actionAfterIdentity: true,
-        sameRow: true,
+        actionBelowIdentity: true,
+        centered: true,
+        nearby: true,
+        chipsBesidePosition: true,
         actionUnclipped: true,
       });
       const flop = await page.evaluate(() => window.qa.respondToHero(0, true));
@@ -317,7 +371,7 @@ test('hero status and recent action share fixed left and right slots without lif
   }
 });
 
-async function expectThreePlusTwoBoard(page) {
+async function expectAdaptiveBoard(page) {
   await expect
     .poll(() =>
       page.evaluate(() => {
@@ -328,11 +382,23 @@ async function expectThreePlusTwoBoard(page) {
         const same = (a, b) => Math.abs(a - b) < 1;
         if (!cards.slice(0, 3).every((card) => same(card.top, cards[0].top)))
           issues.push('the first three public positions are not in the first row');
-        if (!same(cards[3].top, cards[4].top) || cards[3].top < cards[0].bottom)
+        const twoRows = !same(cards[3].top, cards[0].top);
+        if (twoRows && (!same(cards[3].top, cards[4].top) || cards[3].top < cards[0].bottom))
           issues.push('the fourth and fifth positions are not in the second row');
+        if (!twoRows && !cards.every((card) => same(card.top, cards[0].top)))
+          issues.push('a single row must contain all five cards');
+        const count = Number(document.querySelector('#arena').dataset.playerCount);
+        // Waist seats also use the central corridor on a five-player table.
+        // Ordinary phones still use five; a tall, narrow nine-seat table
+        // keeps larger player areas by using the two-row fallback.
+        if ((innerWidth >= 600 || (count === 5 && innerWidth >= 375)) && twoRows)
+          issues.push('cards wrapped despite ample room in the middle');
+        if (innerWidth === 320 && innerHeight === 1020 && count === 9 && !twoRows)
+          issues.push('a crowded narrow table needs the two-row fallback');
         const topCenter = (cards[0].left + cards[2].right) / 2;
         const bottomCenter = (cards[3].left + cards[4].right) / 2;
-        if (!same(topCenter, bottomCenter)) issues.push('the second public row is not centered');
+        if (twoRows && !same(topCenter, bottomCenter))
+          issues.push('the second public row is not centered');
         for (let i = 0; i < cards.length; i++)
           for (const other of cards.slice(i + 1))
             if (
@@ -359,41 +425,41 @@ async function expectThreePlusTwoBoard(page) {
     .toEqual([]);
 }
 
-test('narrow public cards and undealt slots keep an unobscured centered three-plus-two arrangement', async ({
+test('public cards prefer five in one row and fall back to centered three-plus-two when crowded', async ({
   page,
 }) => {
   test.setTimeout(90000);
-  for (const width of [320, 390]) {
-    await configureViewport(page, { width, height: 900 });
+  for (const width of [320, 375, 390, 440, 600]) {
+    await configureViewport(page, { width, height: width === 320 ? 1020 : 900 });
     for (const count of [5, 9]) {
       await page.evaluate((count) => window.qa.heroTurn(count), count);
       await expect(page.locator('#board > .board-slot')).toHaveCount(5);
-      await expectThreePlusTwoBoard(page);
+      await expectAdaptiveBoard(page);
       await page.locator('#call-button').click();
       await page.evaluate(() => {
         window.qa.stop();
         window.qa.respondToHero(0, true);
       });
       await expect(page.locator('#board > .playing-card')).toHaveCount(3);
-      await expectThreePlusTwoBoard(page);
+      await expectAdaptiveBoard(page);
       await page.locator('#call-button').click();
       await page.evaluate(() => window.qa.respondToHero(0, true));
       await expect(page.locator('#board > .playing-card')).toHaveCount(4);
-      await expectThreePlusTwoBoard(page);
+      await expectAdaptiveBoard(page);
       await page.locator('#call-button').click();
       await page.evaluate(() => window.qa.respondToHero(0, true));
       await expect(page.locator('#board > .playing-card')).toHaveCount(5);
-      await expectThreePlusTwoBoard(page);
+      await expectAdaptiveBoard(page);
       if (width === 390 && count === 9)
         await page.screenshot({ path: test.info().outputPath('public-cards-three-plus-two.png') });
       await page.locator('#call-button').click();
       await page.evaluate(() => window.qa.respondToHero(0, true));
       await expect(page.locator('#next-button')).toBeVisible();
-      await expectThreePlusTwoBoard(page);
+      await expectAdaptiveBoard(page);
       await page.locator('#next-button').click();
       await page.evaluate(() => window.qa.stop());
       await expect(page.locator('#board > .board-slot')).toHaveCount(5);
-      await expectThreePlusTwoBoard(page);
+      await expectAdaptiveBoard(page);
     }
   }
 });

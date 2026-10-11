@@ -1,3 +1,4 @@
+import { COMPACT_PLAY_QUERY } from './play-geometry.js';
 import {
   localizeText,
   formatChips,
@@ -48,7 +49,7 @@ const activityClock = createActivityClock();
 activityClock.setActive(isAppActive());
 let dealWait = null;
 const $ = (s) => document.querySelector(s);
-const compactCoach = window.matchMedia('(max-width: 900px)');
+const compactCoach = window.matchMedia(COMPACT_PLAY_QUERY);
 const coachContent = $('#coach-content');
 function positionCoach() {
   const compact = compactCoach.matches;
@@ -294,10 +295,10 @@ function seatAction(p, { recent = false } = {}) {
 }
 const layouts = {
   5: [
-    [15, 59],
-    [23, 0],
-    [77, 0],
-    [85, 59],
+    [15, 42],
+    [30, 0],
+    [70, 0],
+    [85, 42],
   ],
   6: [
     [14, 60],
@@ -400,7 +401,7 @@ function render() {
         const profile = getBotProfile(p.botProfile),
           mood = game.emotionMode === 'off' ? 'steady' : p.botMood.kind,
           title = `${p.name} · ${profile.short}（训练原型） · 模拟状态：${MOOD_LABELS[mood]}`;
-        return `<div class="seat seat-${p.id} ${x < 25 ? 'seat-left' : x > 75 ? 'seat-right' : ''} ${p.folded ? 'folded' : ''} ${game.actor === p.id ? 'thinking' : ''} ${isWinner ? 'winner' : ''}" data-player="${p.id}" data-profile="${p.botProfile}" data-mood="${mood}" style="left:${x}%;top:${y}%"><div id="seat-hand-${p.id}" class="mini-cards ${reveal ? 'revealed-cards' : ''}">${reveal ? p.hole.map((c) => card(c, { small: true, best: !!rank && rank.cards.some((best) => best.key === c.key) })).join('') : p.hole.map((c, i) => `<span class="card-back ${newHand ? 'card-deal' : ''}" style="--delay:${p.id * 65 + i * 140}ms" aria-label="对手底牌"></span>`).join('')}</div><div class="seat-profile"><span class="avatar avatar-${p.id - 1}" title="${title}" aria-label="${title}">${portraitContent(profile.id, profiles[p.id])}</span><div><strong>${p.name}${positionBadge(p.id)}</strong><span class="seat-style-label" data-style-profile="${profile.id}" title="${profile.name} · ${profile.tag}" aria-label="${p.name} 本手风格：${profile.name}">${profile.short}</span><span class="seat-bankroll"><span class="seat-stack">${format(p.stack)}</span>${game.phase === 'done' ? `<button class="seat-peek" data-peek-player="${p.id}" title="${reveal ? '收起底牌' : '查看底牌'}" aria-label="${reveal ? '收起' : '查看'} ${p.name} 的底牌" aria-pressed="${!!reveal}" aria-controls="seat-hand-${p.id}"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M2 10C4 6 7 5 10 5C13 5 16 6 18 10C16 14 13 15 10 15C7 15 4 14 2 10Z"/><circle cx="10" cy="10" r="2.5"/></svg></button>` : ''}</span></div></div>${rankMarkup}<div class="seat-action" aria-label="${p.name} 的最近行动">${seatAction(p)}</div></div>`;
+        return `<div class="seat seat-${p.id} ${y === 0 ? 'seat-crown' : ''} ${x < 25 ? 'seat-left' : x > 75 ? 'seat-right' : ''} ${p.folded ? 'folded' : ''} ${game.actor === p.id ? 'thinking' : ''} ${isWinner ? 'winner' : ''}" data-player="${p.id}" data-profile="${p.botProfile}" data-mood="${mood}" style="left:${x}%;top:${y}%"><div id="seat-hand-${p.id}" class="mini-cards ${reveal ? 'revealed-cards' : ''}">${reveal ? p.hole.map((c) => card(c, { small: true, best: !!rank && rank.cards.some((best) => best.key === c.key) })).join('') : p.hole.map((c, i) => `<span class="card-back ${newHand ? 'card-deal' : ''}" style="--delay:${p.id * 65 + i * 140}ms" aria-label="对手底牌"></span>`).join('')}</div><div class="seat-profile"><span class="avatar avatar-${p.id - 1}" title="${title}" aria-label="${title}">${portraitContent(profile.id, profiles[p.id])}</span><div><strong><span class="seat-name-label">${p.name}</span>${positionBadge(p.id)}<span class="seat-inspect-slot">${game.phase === 'done' ? `<button class="seat-peek" data-peek-player="${p.id}" title="${reveal ? '收起底牌' : '查看底牌'}" aria-label="${reveal ? '收起' : '查看'} ${p.name} 的底牌" aria-pressed="${!!reveal}" aria-controls="seat-hand-${p.id}"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M2 10C4 6 7 5 10 5C13 5 16 6 18 10C16 14 13 15 10 15C7 15 4 14 2 10Z"/><circle cx="10" cy="10" r="2.5"/></svg></button>` : ''}</span></strong><span class="seat-style-label" data-style-profile="${profile.id}" title="${profile.name} · ${profile.tag}" aria-label="${p.name} 本手风格：${profile.name}">${profile.short}</span><span class="seat-bankroll"><span class="seat-stack">${format(p.stack)}</span></span></div></div><div class="seat-rank-slot">${rankMarkup}</div><div class="seat-action" aria-label="${p.name} 的最近行动">${seatAction(p)}</div></div>`;
       })
       .join(''),
   );
@@ -442,21 +443,8 @@ function render() {
   setLocalizedText($('#hero-position'), heroPosition);
   $('#hero-position').dataset.position = heroPosition;
   setLocalizedAttribute($('#hero-position'), 'title', positionNames[heroPosition]);
-  setLocalizedText(
-    $('#hero-turn'),
-    game.actor === 0
-      ? '你的回合'
-      : hero.folded
-        ? '已弃牌'
-        : hero.allin
-          ? '已全下'
-          : game.phase === 'done'
-            ? '本手结束'
-            : '等待行动',
-  );
   const heroRecentAction = visibleRecentAction(hero);
   $('#hero-last-action').hidden = !heroRecentAction;
-  $('#hero-turn').hidden = false;
   setLocalizedHTML(
     $('#hero-last-action'),
     heroRecentAction ? seatAction(hero, { recent: true }) : '',
@@ -543,6 +531,8 @@ function render() {
   $('#action-panel').classList.toggle('folded-actions', hero.folded && !done);
   $('#restart-hand-button').hidden = !canRestartHand(game);
   $('#action-panel').classList.toggle('settled-actions', done);
+  $('.action-dock').classList.toggle('compact-actions', done || hero.folded);
+  $('.action-dock').classList.toggle('is-enabled', legal.enabled);
   setLocalizedText($('#next-button'), hero.stack === 0 ? '补充筹码，继续练习' : '下一手');
   $('#next-button').classList.toggle('has-mobile-label', hero.stack === 0);
   setLocalizedAttribute($('#next-button'), 'data-mobile-label', '补充筹码');
