@@ -47,6 +47,8 @@
 
 Android 截图复核又发现系统 UI 的 ANR 弹窗：WebView 内断言仍能继续，旧安装报告显示 7/7，但设备截图中应用已被系统弹窗覆盖，因此该批结果不作为运行通过。现每张 Android 设备截图同时保留原生层级并检查系统 ANR/崩溃控件；发现弹窗就失败，既不自动关闭弹窗，也不以 WebView 通过替代。`sys.boot_completed=1` 只能证明启动标记，不能单独证明系统 UI 可用。旧截图和报告仍保留在 `integrated-native-android/`。
 
+iOS 最终复测在首屏连接前报应用未运行，但专用设备日志显示 App 从旧 PID 重启到新 PID，并在失败期间持续响应 XCTest 主循环请求，没有对应崩溃报告。WDA 的 `testedApplication.state` 仍可保留旧进程状态；脚本当时绕过 WDA 使用 `simctl terminate/launch`。现初始重启与设置持久化重启统一使用 WDA 的 terminate/activate 接口，让驱动同步新应用状态，保留原有首屏、WebView 和复盘期限。失败报告、Appium 与系统日志均保留。
+
 提示时钟测试在重载前暂停，另用延迟加载入口覆盖导航超过旧固定暂停目标的情况。Playwright 可用 `NOIR_E2E_PORT` 隔离 worktree，拒绝复用已有端口服务，避免验证其他检出的代码。
 
 ## 第一轮本地验证及边界

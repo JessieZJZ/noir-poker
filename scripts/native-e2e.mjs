@@ -9,6 +9,7 @@ import { verifyBundledArtifact } from './bundled-assets.mjs';
 import { selectIOSSimulator } from './native-device.mjs';
 import { stopOwnedServer } from './native-process.mjs';
 import { captureNativeScreen } from './native-screen.mjs';
+import { restartNativeApplication } from './native-lifecycle.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const args = process.argv.slice(2);
@@ -211,9 +212,7 @@ async function activate() {
   await attachWebview();
 }
 async function relaunch() {
-  await command('POST', '/context', { name: 'NATIVE_APP' });
-  await command('POST', '/appium/device/terminate_app', { appId });
-  await command('POST', '/appium/device/activate_app', { appId });
+  await restartNativeApplication(command, appId);
   await attachWebview();
 }
 async function background() {
@@ -374,10 +373,10 @@ try {
   session = created.sessionId;
   report.capabilities = created.capabilities;
   if (platform === 'ios') {
-    // Launch through Simulator's application service after WDA session setup.
-    // This avoids Xcode test-launch suspension of the initial WebKit navigation.
-    spawnSync('xcrun', ['simctl', 'terminate', udid, appId], { encoding: 'utf8' });
-    run('xcrun', ['simctl', 'launch', udid, appId]);
+    // Relaunch after WDA setup to avoid initial WebKit test-launch suspension.
+    // Keep the driver informed; a simctl-only restart can leave XCTest holding
+    // the terminated process and reporting a running app as crashed.
+    await restartNativeApplication(command, appId);
   }
   report.phase = 'webview-attach';
   await attachWebview();

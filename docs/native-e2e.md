@@ -74,4 +74,6 @@ Android 测试期间打开飞行模式，结束后恢复原设置。iOS Simulato
 
 Android 每次保存设备截图时还读取原生 UI 层级，遇到系统 ANR/崩溃对话框就失败并保留 `.native.xml` 和截图。WebView 内断言通过不能覆盖系统弹窗；测试不会自动关闭弹窗继续当作通过。
 
+iOS 在 WDA 会话建立后，通过同一驱动终止并激活应用，再等待真实首屏和 WebView。重启不能绕过驱动仅用 `simctl`，否则 XCTest 可能仍跟踪旧进程，把实际运行的新进程报成已崩溃。设置持久化场景使用同一生命周期路径，等待要求保持不变。
+
 参考官方文档：[Appium drivers](https://appium.io/docs/en/latest/intro/drivers/)、[XCUITest capabilities](https://appium.github.io/appium-xcuitest-driver/latest/reference/capabilities/)、[UiAutomator2 hybrid WebView](https://github.com/appium/appium-uiautomator2-driver#hybrid-mode)。
