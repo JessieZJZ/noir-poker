@@ -366,8 +366,8 @@ try {
   }
   log(`Installing and launching ${appPath} on ${udid}`);
   if (platform === 'ios') {
-    // Start cleanly before WDA attaches, so test-launch cannot suspend WebKit.
-    // Once WDA connects, refresh its application handle through the driver.
+    // Launch the clean installed app independently before XCUITest attaches.
+    // Later application restarts stay within WDA so it tracks the current PID.
     run('xcrun', ['simctl', 'install', udid, appPath]);
     run('xcrun', ['simctl', 'launch', udid, appId]);
   }
@@ -414,11 +414,6 @@ try {
   );
   session = created.sessionId;
   report.capabilities = created.capabilities;
-  if (platform === 'ios') {
-    // A fresh WDA test session can suspend the initial WebKit navigation even
-    // with autoLaunch disabled. Restart through WDA so it tracks the new PID.
-    await restartNativeApplication(command, appId);
-  }
   report.phase = 'webview-attach';
   await attachWebview();
   await command('POST', '/timeouts', { script: 30000 });

@@ -32,7 +32,7 @@ node scripts/native-e2e.mjs android
 node tests/native/system-bars.mjs .artifacts/native-e2e/android/local-launch-and-no-login.png
 ```
 
-iOS 先对指定测试设备干净安装，用 Simulator 服务独立启动应用，再以 `autoLaunch: false` 接入 XCUITest。WDA 会话建立后，使用 WDA 的终止和激活接口刷新应用进程及驱动句柄，再连接 WebView；新建模拟器的测试启动仍可能暂停首次 WebKit 导航，不能只靠独立启动规避。后续重启也通过 WDA 执行，不用外部 simctl 替换正在跟踪的进程。指定 `--udid` 的关闭状态设备也会先启动；仅关闭脚本本次启动的设备。
+iOS 先对指定测试设备干净安装，用 Simulator 服务独立启动应用，再以 `autoLaunch: false` 接入 XCUITest。首启不在 WDA 附着后额外替换应用进程。后续设置持久化场景的重启通过 WDA 执行，不用外部 simctl 替换正在跟踪的进程。指定 `--udid` 的关闭状态设备也会先启动；仅关闭脚本本次启动的设备。
 
 iOS 自动选择最新可用 runtime 中兼容的标准尺寸 iPhone，仅复用同一 runtime、同一设备类型的专用模拟器。可用 `NOIR_IOS_RUNTIME` 和 `NOIR_IOS_DEVICE_TYPE` 指定 `simctl list runtimes -j` / `simctl list devicetypes -j` 返回的完整 identifier；选择不可用或不兼容时直接失败，不自动换设备。指定 UDID 时使用该设备。报告记录自动选择的 runtime 和设备类型。
 
@@ -80,6 +80,6 @@ Android 测试期间打开飞行模式，结束后恢复原设置。iOS Simulato
 
 Android 每次保存设备截图时还读取原生 UI 层级，遇到系统 ANR/崩溃对话框就失败并保留 `.native.xml` 和截图。WebView 内断言通过不能覆盖系统弹窗；测试不会自动关闭弹窗继续当作通过。
 
-iOS 在 WDA 会话建立后，通过同一驱动终止并激活应用，再等待真实首屏和 WebView。重启不能绕过驱动仅用 `simctl`，否则 XCTest 可能仍跟踪旧进程，把实际运行的新进程报成已崩溃。设置持久化场景使用同一生命周期路径，等待要求保持不变。
+iOS 设置持久化场景通过同一驱动终止并激活应用，再等待真实首屏和 WebView。重启不能绕过驱动仅用 `simctl`，否则 XCTest 可能仍跟踪旧进程。首屏附着失败截图只保持原生上下文，不尝试切换到尚未知的 WebView。等待要求保持不变。
 
 参考官方文档：[Appium drivers](https://appium.io/docs/en/latest/intro/drivers/)、[XCUITest capabilities](https://appium.github.io/appium-xcuitest-driver/latest/reference/capabilities/)、[UiAutomator2 hybrid WebView](https://github.com/appium/appium-uiautomator2-driver#hybrid-mode)。
