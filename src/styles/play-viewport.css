@@ -30,9 +30,12 @@
   overflow-wrap: anywhere;
   text-align: center;
 }
-.game-surface .seat-action-label {
+.game-surface .seat .seat-action-label {
   white-space: normal;
   line-height: 1.2;
+}
+.game-surface .mini-cards.revealed-cards .card-suit-icon {
+  transform: translateY(-3px);
 }
 .game-surface .seat-action-amount {
   display: inline-block;
