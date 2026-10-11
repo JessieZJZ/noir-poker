@@ -8,6 +8,7 @@ import { sourceDigest } from './mobile-lib.mjs';
 import { verifyBundledArtifact } from './bundled-assets.mjs';
 import { selectIOSSimulator } from './native-device.mjs';
 import { stopOwnedServer } from './native-process.mjs';
+import { captureNativeScreen } from './native-screen.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const args = process.argv.slice(2);
@@ -196,10 +197,13 @@ async function select(selector, value) {
 }
 async function screenshot(name) {
   // Ask the native driver rather than Chromium for the entire device screen.
-  await command('POST', '/context', { name: 'NATIVE_APP' });
-  const png = await command('GET', '/screenshot');
-  writeFileSync(path.join(output, `${name}.png`), Buffer.from(png, 'base64'));
-  await command('POST', '/context', { name: webContext });
+  await captureNativeScreen({
+    command,
+    webContext,
+    checkSystemErrors: platform === 'android',
+    saveImage: (png) => writeFileSync(path.join(output, `${name}.png`), Buffer.from(png, 'base64')),
+    saveSource: (source) => writeFileSync(path.join(output, `${name}.native.xml`), source),
+  });
 }
 async function activate() {
   await command('POST', '/context', { name: 'NATIVE_APP' });
