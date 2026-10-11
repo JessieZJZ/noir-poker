@@ -16,14 +16,25 @@ const args = process.argv.slice(2);
 const platform = args.shift();
 if (!['ios', 'android'].includes(platform))
   throw Error(
-    'Usage: node scripts/native-e2e.mjs ios|android [--app PATH] [--udid ID] [--output PATH] [--server URL]',
+    'Usage: node scripts/native-e2e.mjs ios|android [--app PATH] [--udid ID] [--output PATH] [--server URL] [--port PORT] [--driver-port PORT]',
   );
 const options = {};
 for (let i = 0; i < args.length; i += 2) {
-  if (!['--app', '--udid', '--output', '--server'].includes(args[i]) || !args[i + 1])
+  if (
+    !['--app', '--udid', '--output', '--server', '--port', '--driver-port'].includes(args[i]) ||
+    !args[i + 1]
+  )
     throw Error(`Unknown or incomplete option: ${args[i]}`);
   options[args[i].slice(2)] = args[i + 1];
 }
+for (const key of ['port', 'driver-port']) {
+  if (
+    options[key] &&
+    (!/^\d+$/.test(options[key]) || Number(options[key]) < 1024 || Number(options[key]) > 65535)
+  )
+    throw Error(`Invalid ${key}: use a port between 1024 and 65535`);
+}
+if (options.server && options.port) throw Error('Use --server or --port, not both');
 const appId = JSON.parse(readFileSync(path.join(root, 'capacitor.config.json'), 'utf8')).appId;
 const appPath = path.resolve(
   root,
@@ -65,7 +76,8 @@ let session;
 let airplaneMode;
 const sdk = process.env.ANDROID_HOME ?? process.env.ANDROID_SDK_ROOT;
 const adb = sdk ? path.join(sdk, 'platform-tools/adb') : 'adb';
-const serverUrl = options.server ?? `http://127.0.0.1:${platform === 'ios' ? 4725 : 4727}`;
+const serverUrl =
+  options.server ?? `http://127.0.0.1:${options.port ?? (platform === 'ios' ? 4725 : 4727)}`;
 async function request(method, endpoint, body, timeout = 120000) {
   const response = await fetch(`${serverUrl}${endpoint}`, {
     method,
@@ -261,6 +273,8 @@ try {
       existing?.udid ??
       run('xcrun', ['simctl', 'create', 'Noir Poker E2E', phone.identifier, runtime.identifier]);
     report.udid = udid;
+  }
+  if (platform === 'ios') {
     const state = JSON.parse(run('xcrun', ['simctl', 'list', 'devices', '-j']));
     if (
       !Object.values(state.devices)
@@ -324,6 +338,15 @@ try {
   }
   report.phase = 'install-launch';
   if (platform === 'android') {
+    // adb can list a device before Android has finished booting and before
+    // PackageManager can install the application or UiAutomator2 server.
+    await waitFor(
+      () =>
+        run(adb, ['-s', udid, 'shell', 'getprop', 'sys.boot_completed']) === '1' &&
+        run(adb, ['-s', udid, 'shell', 'pm', 'path', 'android']).startsWith('package:'),
+      120000,
+      'Android must finish booting with PackageManager ready before installation',
+    );
     airplaneMode = run(adb, ['-s', udid, 'shell', 'settings', 'get', 'global', 'airplane_mode_on']);
     run(adb, ['-s', udid, 'shell', 'cmd', 'connectivity', 'airplane-mode', 'enable']);
     report.offline = {
@@ -342,6 +365,12 @@ try {
     spawnSync('xcrun', ['simctl', 'uninstall', udid, appId], { encoding: 'utf8' });
   }
   log(`Installing and launching ${appPath} on ${udid}`);
+  if (platform === 'ios') {
+    // Start cleanly before WDA attaches, so test-launch cannot suspend WebKit.
+    // Keep the initial process; later relaunches use the driver's lifecycle API.
+    run('xcrun', ['simctl', 'install', udid, appPath]);
+    run('xcrun', ['simctl', 'launch', udid, appId]);
+  }
   const caps = {
     platformName: platform === 'ios' ? 'iOS' : 'Android',
     'appium:automationName': platform === 'ios' ? 'XCUITest' : 'UiAutomator2',
@@ -351,6 +380,16 @@ try {
     'appium:fullReset': platform === 'android',
     ...(platform === 'ios'
       ? {
+          // The clean install above already removed preferences. Preserve this
+          // running process rather than letting WDA terminate and relaunch it.
+          'appium:autoLaunch': false,
+          'appium:noReset': true,
+          ...(options['driver-port']
+            ? {
+                'appium:wdaLocalPort': Number(options['driver-port']),
+                'appium:wdaRemotePort': Number(options['driver-port']),
+              }
+            : {}),
           'appium:wdaLaunchTimeout': 240000,
           'appium:waitForQuiescence': false,
           'appium:waitForIdleTimeout': 0,
@@ -359,6 +398,9 @@ try {
           'appium:additionalWebviewBundleIds': ['process-App'],
         }
       : {
+          ...(options['driver-port']
+            ? { 'appium:systemPort': Number(options['driver-port']) }
+            : {}),
           'appium:appPackage': appId,
           'appium:ensureWebviewsHavePages': true,
           'appium:chromedriverAutodownload': true,
@@ -372,12 +414,6 @@ try {
   );
   session = created.sessionId;
   report.capabilities = created.capabilities;
-  if (platform === 'ios') {
-    // Relaunch after WDA setup to avoid initial WebKit test-launch suspension.
-    // Keep the driver informed; a simctl-only restart can leave XCTest holding
-    // the terminated process and reporting a running app as crashed.
-    await restartNativeApplication(command, appId);
-  }
   report.phase = 'webview-attach';
   await attachWebview();
   await command('POST', '/timeouts', { script: 30000 });
