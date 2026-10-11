@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import { createRequire } from 'node:module';
 import { spawn, spawnSync } from 'node:child_process';
-import { transform } from 'esbuild';
+import { build, transform } from 'esbuild';
 import sharp from 'sharp';
 import { PROFILE_PORTRAITS } from '../src/ui/portraits.js';
 import { sourceDigest, directoryDigest, root } from './mobile-lib.mjs';
@@ -36,15 +36,19 @@ export function wechatSourceDigest() {
 async function compileJs(sourceDirectory, destination) {
   for (const file of await fileList(sourceDirectory)) {
     if (!file.endsWith('.js') || file === 'worker.js') continue;
-    const result = await transform(await readFile(path.join(sourceDirectory, file), 'utf8'), {
-      loader: 'js',
+    // WeChat only loads JavaScript modules. Inline JSON dependencies while
+    // retaining shared JavaScript imports, so rules still have one runtime copy.
+    const result = await build({
+      entryPoints: [path.join(sourceDirectory, file)],
+      bundle: true,
+      external: ['*.js'],
       format: 'cjs',
       target: 'es2019',
-      sourcefile: file,
+      write: false,
     });
     const target = path.join(destination, file);
     await mkdir(path.dirname(target), { recursive: true });
-    await writeFile(target, result.code);
+    await writeFile(target, result.outputFiles[0].text);
   }
 }
 

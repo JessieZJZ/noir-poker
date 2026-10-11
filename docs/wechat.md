@@ -13,7 +13,7 @@ npm run wechat:verify
 npm run wechat:check
 ```
 
-在微信开发者工具中导入 `/Users/zjz/code/noir-poker/.artifacts/wechat`，选择小程序工程。当前使用 `touristappid`，供暂未申请 AppID 时检查本地工程；可用调试能力以当前开发者工具的游客模式为准。没有创建账号、申请 AppID、上传或发布小程序。
+在微信开发者工具中导入 `/Users/zjz/code/noir-poker/.artifacts/wechat`，选择小程序工程。默认使用 `touristappid`，可用调试能力以当前开发者工具的游客模式为准。登录状态下若提示 AppID 不存在，可在导入窗口选择“测试号”，再把工具提供的测试 AppID 配置到本机环境变量；本地调试不需要上传或发布小程序。
 
 已有 AppID 时通过本机环境变量配置，勿修改生成目录：
 
@@ -22,13 +22,13 @@ NOIR_WECHAT_APP_ID=wx你的AppID npm run wechat:build
 NOIR_WECHAT_APP_ID=wx你的AppID npm run wechat:open
 ```
 
-`wechat:open` 默认调用 macOS 微信开发者工具的 CLI。其他安装位置设置 `NOIR_WECHAT_CLI`。工程不包含发布私钥，AppID 与上传权限分开配置。
+`wechat:open` 默认调用 macOS 微信开发者工具的 CLI。首次调用前需在工具的“设置 → 安全设置”开启“服务端口”。其他安装位置设置 `NOIR_WECHAT_CLI`。工程不包含发布私钥，AppID 与上传权限分开配置。
 
 ## 每次 Web 迭代如何同步
 
 `npm run dev` 同时运行 Vite 和小程序监听器。保存 `src/`、`public/`、`miniprogram/`、`scripts/`、`mobile/` 或构建配置后，小程序重新生成到同一个导入目录；开发者工具读取更新后的文件。单独监听可运行 `npm run wechat:watch`。`npm run build` 的 `postbuild` 也自动生成小程序，`npm run platforms:sync` 一次同步小程序与 iOS/Android 最新资源。
 
-每次生成都从当前共享源码转译 CommonJS/ES2019，压缩并裁切全部本地头像，生成本地声音，写入文件清单和源码 SHA-256。`wechat:verify` 拒绝过期源码、损坏文件、缺失头像或不一致的 AppID。主包采用 2 MiB 的保守预算，超出就阻止构建，不把图片改为在线地址。
+每次生成都从当前共享源码转译 CommonJS/ES2019，把引用的 JSON 数据内嵌到 JavaScript 模块，保留共享 JavaScript 模块之间的引用，压缩并裁切全部本地头像，生成本地声音，写入文件清单和源码 SHA-256。小程序运行时无需 Node 的 JSON 模块加载器。`wechat:verify` 拒绝过期源码、损坏文件、缺失头像或不一致的 AppID。主包采用 2 MiB 的保守预算，超出就阻止构建，不把图片改为在线地址。
 
 共享规则、策略、复盘、筹码尺度和头像的修改自动进入小程序产物。Web 的 DOM/CSS 与小程序的 WXML/WXSS 使用不同控件；新增界面特性时需要同步维护小程序适配，不能直接把任意网页 CSS 转成微信控件。项目 AGENTS.md 已加入同步维护与验证要求。
 

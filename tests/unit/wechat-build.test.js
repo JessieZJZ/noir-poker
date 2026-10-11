@@ -1,5 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import vm from 'node:vm';
 import { spawn } from 'node:child_process';
 import {
   appendFileSync,
@@ -79,6 +80,51 @@ async function waitForStaging(fixture, processId) {
     await new Promise((resolve) => setTimeout(resolve, 10));
   }
 }
+
+test('generated WeChat JavaScript loads the controller and complete player research without Node JSON modules', async (t) => {
+  const workspace = fixture(t);
+  assertSuccess(await build(workspace).result);
+  const context = vm.createContext({ console });
+  const modules = new Map();
+  function load(request, parent = path.join(workspace.output, 'entry.js')) {
+    assert.ok(request.startsWith('.'), `Only local modules are available: ${request}`);
+    const file = path.resolve(
+      path.dirname(parent),
+      request.endsWith('.js') ? request : `${request}.js`,
+    );
+    assert.ok(file.startsWith(workspace.output + path.sep));
+    if (modules.has(file)) return modules.get(file).exports;
+    const module = { exports: {} };
+    modules.set(file, module);
+    const execute = new vm.Script(
+      `(function(require, module, exports) {\n${readFileSync(file, 'utf8')}\n})`,
+      { filename: file },
+    ).runInContext(context);
+    execute((name) => load(name, file), module, module.exports);
+    return module.exports;
+  }
+  const { BOT_PROFILES } = load('./shared/engine/bot-profiles.js');
+  const research = JSON.parse(
+    readFileSync(path.join(workspace.directory, 'src/data/player-research.json'), 'utf8'),
+  );
+  for (const [id, player] of Object.entries(research.players))
+    assert.deepEqual(
+      JSON.parse(JSON.stringify(BOT_PROFILES.find((profile) => profile.id === id).research)),
+      player,
+    );
+  const { createWechatController } = load('./shared/platform/wechat-controller.js');
+  let snapshot;
+  const controller = createWechatController({
+    publish: (value) => (snapshot = value),
+    schedule: () => 1,
+    unschedule() {},
+  });
+  t.after(() => controller.destroy());
+  controller.start();
+  assert.equal(controller.getGame().players.length, 5);
+  assert.equal(snapshot.seats.length, 4);
+  assert.equal(snapshot.heroPosition, 'BTN');
+});
 
 test('concurrent WeChat builders serialize and preserve DevTools private preferences', async (t) => {
   const workspace = fixture(t);
