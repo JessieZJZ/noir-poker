@@ -26,6 +26,6 @@ export async function captureNativeScreen({
       assertNoSystemError(source);
     }
   } finally {
-    await command('POST', '/context', { name: webContext });
+    if (webContext) await command('POST', '/context', { name: webContext });
   }
 }

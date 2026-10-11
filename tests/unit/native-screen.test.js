@@ -33,3 +33,18 @@ test('native capture retains ANR evidence and restores the WebView instead of al
   assert.deepEqual(evidence, { image: 'device-png', source });
   assert.deepEqual(calls.at(-1), ['POST', '/context', { name: 'WEBVIEW_noir' }]);
 });
+
+test('a failure before WebView attachment retains its screenshot without switching to an undefined context', async () => {
+  const contexts = [];
+  let image;
+  await captureNativeScreen({
+    checkSystemErrors: false,
+    command: async (_method, endpoint, body) => {
+      if (endpoint === '/context') contexts.push(body.name);
+      return 'failed-launch-png';
+    },
+    saveImage: (value) => (image = value),
+  });
+  assert.equal(image, 'failed-launch-png');
+  assert.deepEqual(contexts, ['NATIVE_APP']);
+});

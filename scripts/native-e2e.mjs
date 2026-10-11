@@ -367,7 +367,7 @@ try {
   log(`Installing and launching ${appPath} on ${udid}`);
   if (platform === 'ios') {
     // Start cleanly before WDA attaches, so test-launch cannot suspend WebKit.
-    // Keep the initial process; later relaunches use the driver's lifecycle API.
+    // Once WDA connects, refresh its application handle through the driver.
     run('xcrun', ['simctl', 'install', udid, appPath]);
     run('xcrun', ['simctl', 'launch', udid, appId]);
   }
@@ -381,7 +381,7 @@ try {
     ...(platform === 'ios'
       ? {
           // The clean install above already removed preferences. Preserve this
-          // running process rather than letting WDA terminate and relaunch it.
+          // independently launched process while WDA establishes its session.
           'appium:autoLaunch': false,
           'appium:noReset': true,
           ...(options['driver-port']
@@ -414,6 +414,11 @@ try {
   );
   session = created.sessionId;
   report.capabilities = created.capabilities;
+  if (platform === 'ios') {
+    // A fresh WDA test session can suspend the initial WebKit navigation even
+    // with autoLaunch disabled. Restart through WDA so it tracks the new PID.
+    await restartNativeApplication(command, appId);
+  }
   report.phase = 'webview-attach';
   await attachWebview();
   await command('POST', '/timeouts', { script: 30000 });

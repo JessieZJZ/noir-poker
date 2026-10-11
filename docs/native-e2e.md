@@ -32,7 +32,7 @@ node scripts/native-e2e.mjs android
 node tests/native/system-bars.mjs .artifacts/native-e2e/android/local-launch-and-no-login.png
 ```
 
-iOS 先对指定测试设备干净安装，用 Simulator 服务独立启动应用，再以 `autoLaunch: false` 接入 XCUITest。启动时不让 WDA 重启应用，也不在会话建立后替换正在跟踪的进程，避免首次 WebKit 导航被测试启动暂停。指定 `--udid` 的关闭状态设备也会先启动；仅关闭脚本本次启动的设备。
+iOS 先对指定测试设备干净安装，用 Simulator 服务独立启动应用，再以 `autoLaunch: false` 接入 XCUITest。WDA 会话建立后，使用 WDA 的终止和激活接口刷新应用进程及驱动句柄，再连接 WebView；新建模拟器的测试启动仍可能暂停首次 WebKit 导航，不能只靠独立启动规避。后续重启也通过 WDA 执行，不用外部 simctl 替换正在跟踪的进程。指定 `--udid` 的关闭状态设备也会先启动；仅关闭脚本本次启动的设备。
 
 iOS 自动选择最新可用 runtime 中兼容的标准尺寸 iPhone，仅复用同一 runtime、同一设备类型的专用模拟器。可用 `NOIR_IOS_RUNTIME` 和 `NOIR_IOS_DEVICE_TYPE` 指定 `simctl list runtimes -j` / `simctl list devicetypes -j` 返回的完整 identifier；选择不可用或不兼容时直接失败，不自动换设备。指定 UDID 时使用该设备。报告记录自动选择的 runtime 和设备类型。
 
