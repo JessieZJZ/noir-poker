@@ -7,6 +7,7 @@ import { nativeScenarios } from '../tests/native/scenarios.mjs';
 import { sourceDigest } from './mobile-lib.mjs';
 import { verifyBundledArtifact } from './bundled-assets.mjs';
 import { selectIOSSimulator } from './native-device.mjs';
+import { stopOwnedServer } from './native-process.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const args = process.argv.slice(2);
@@ -475,7 +476,7 @@ try {
     } catch {}
   }
   if (server) {
-    server.kill('SIGTERM');
+    report.serverCleanup = stopOwnedServer(server);
     await sleep(300);
   }
   serverStream?.end();
