@@ -24,6 +24,16 @@ export async function nativeScenarios(app) {
       fixtures: typeof window.qa,
       footer: document.querySelector('.practice-info')?.textContent,
       state: window.noir?.getState(),
+      startup: {
+        ready: document.documentElement.dataset.appReady === 'true',
+        inert: document.body.inert,
+        visibility: getComputedStyle(document.body).visibility,
+        background: getComputedStyle(document.body).backgroundColor,
+        fontRequests: performance
+          .getEntriesByType('resource')
+          .filter((entry) => /fonts\.(googleapis|gstatic)\.com/.test(entry.name)).length,
+        remoteFontLink: Boolean(document.querySelector('[data-web-fonts]')),
+      },
       viewport: { width: innerWidth, height: innerHeight },
       controls: ['raise', 'fold', 'call'].map((action) => {
         const rect = document.querySelector(`#${action}-button`).getBoundingClientRect();
@@ -38,6 +48,14 @@ export async function nativeScenarios(app) {
     );
     assert.ok(info.footer && !documentLoginMarker(info.footer));
     assert.ok(info.state && info.state.playerCount >= 5);
+    assert.deepEqual(info.startup, {
+      ready: true,
+      inert: false,
+      visibility: 'visible',
+      background: 'rgb(11, 16, 23)',
+      fontRequests: 0,
+      remoteFontLink: false,
+    });
     assert.ok(
       info.controls.every(
         (rect) =>
@@ -56,6 +74,7 @@ export async function nativeScenarios(app) {
       viewport: info.viewport,
       controls: info.controls,
       layout,
+      startup: info.startup,
     };
   });
   await check('settings-autosave-and-local-portraits', async () => {
