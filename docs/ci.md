@@ -24,7 +24,7 @@
 - [#19 布局 job](https://github.com/JessieZJZ/noir-poker/actions/runs/38063869604/job/114247455561) 报告 seat 3 遮挡公共牌或底池、座位相互重叠和结算亮牌等待失败。当前已有 `src/ui/settlement-layout.js` 的实际足迹碰撞避让、`src/ui/table-controller.js` 的亮牌空间预留，以及确定性布局 fixtures；本次保留这些实现，执行现有布局与全量浏览器回归，不继续叠加未经复现的布局修补。
 - [#18 旧 iOS job](https://github.com/JessieZJZ/noir-poker/actions/runs/38065501945/job/114252192301) 实际编译和前三场景成功，第四场景在 30 秒内未生成复盘总览和建议。`85b85e96` 曾加入弃牌后安全提前结束模拟及公开进度诊断，但它们均不在当前 `966397b3` 的相关文件中。本次恢复这两项及其边界回归，继续要求完整复盘在原期限内生成。
 - #25 的本地记录包含 iPad 首次 WebView 连接超时、重启后同包通过。这是首启稳定性风险；不能用重跑成功证明首启已稳定。本次补齐预检失败报告、失败阶段、模拟器选择与清理，保留现有连接要求和运行覆盖。
-- #26 `ef757601` 是从 `be852e8` 分出的首屏修复线，未包含 #22–#25。CI 修复继续基于当前完整布局栈，保留其已有首屏回归，不把 #26 的整份旧页面或代码快照覆盖进来；#26 与布局栈的整合需单独审查。
+- #26 `ef757601` 是从 `be852e8` 分出的首屏修复线，未包含 #22–#25。收尾时原工作区已由另一条工作线推进到 `main` 的 `c4f1ed7`，合并了 #22 和 #26；它与本次验证基线并不等价。CI 分支保留 `43b3814` 的完整布局栈及已有首屏回归，没有把 #26 的整份旧页面覆盖进来，也没有合并新的 main。本报告不能作为 `c4f1ed7` 的验收结果。
 
 第一轮全量浏览器诊断确认了 `966397b3` 基线中的以下问题；这些失败不能当作后续整合版本的结果：
 
@@ -67,6 +67,30 @@ iOS 最终复测在首屏连接前报应用未运行，但专用设备日志显�
 `43b3814` 与 CI 修复的组合执行完整桌面、移动 Web 回归：248/248 通过，桌面和移动各 124 个，零重试。证据为 `.artifacts/ci-validation/integrated-web.log` 和 `integrated-web-results/`；第一轮失败证据仍单独保留。
 
 原生恢复使用本次专用 iOS 模拟器和 Android AVD。清理第一轮 WDA 残留后，iOS 启动检查成功；WDA 在本 worktree 的独立 DerivedData 目录编译成功。Android 改用已安装 Hypervisor.Framework 与主机图形，启动标记 `sys.boot_completed=1`。这些是测试环境准备结果，应用安装运行的验收另行记录。
+
+## 最终组合的验收与收尾
+
+最终代码提交为 `4c9f977f48c6b7efb3c2bafce46819b04ce5318f`，分支 `codex/ci-reliability`，基础 UI 为 `43b3814`。随后只补充本文档。全量 Web 执行于组合提交 `5be0d72`；从该提交到最终代码提交，`src/`、`public/`、`index.html`、Vite/Playwright 配置、Web E2E 和依赖文件均没有变化，后续变更集中在原生测试脚本、单元回归和文档。
+
+| 验证                     | 最终结果                                                           | `.artifacts/ci-validation/` 中的证据                                     |
+| ------------------------ | ------------------------------------------------------------------ | ------------------------------------------------------------------------ |
+| 单元与生产构建           | `npm run check` 355/355；Web 与共享微信构建成功                    | `final-check.log`                                                        |
+| 完整 Web E2E             | 桌面 124/124、移动 124/124，共 248/248；零重试                     | `integrated-web.log`、`integrated-web-results/`                          |
+| 格式与语言资源           | 通过；1049 条消息、11 个语言                                       | `final-format-check.log`、`final-i18n-check.log`                         |
+| 原生源码复制校验         | `mobile:sync`、`mobile:verify` 通过                                | `final-mobile-sync.log`、`final-mobile-verify.log`                       |
+| 微信资源和官方编译器检查 | `wechat:verify`、`wechat:check` 通过；adapter 回归包含于单元套件   | `final-wechat-verify.log`、`final-wechat-check.log`                      |
+| 实际 iOS 编译            | Xcode 27 的 Simulator 编译成功                                     | `final-ios-build.log`                                                    |
+| 实际 Android 编译        | Gradle debug APK 和未签名 AAB 成功；各验证 9 张本地图片、8 张头像  | `final-android-build.log`、`final-aab-build.log`、`final-aab-verify.log` |
+| iOS 安装后运行           | iPhone 17 / iOS 27.0，完整 7/7 场景；复盘分析 2491ms               | `final-native-ios/report.json`、日志及 11 张 PNG                         |
+| Android 安装后运行       | 专用 Android 16 / API 36 ARM64 AVD，完整 7/7 场景；复盘分析 2520ms | `final-native-android/report.json`、日志、11 张 PNG 和 11 份原生 XML     |
+
+两端最终安装报告都记录 `sourceCommit=4c9f977…`、`sourceDirty=false`，源码摘要相同，且本地图片完整。Android 的每张最终截图都通过系统 ANR/崩溃控件检查。先前 `integrated-native-android/` 的 7/7 原始报告因截图存在系统 UI ANR 而无效，保留但不计入通过；`guarded-native-ios/` 的首屏失败也单独保留。没有修改旧报告来掩盖失败。
+
+本机使用 Node 26、Xcode 27、Android ARM64；CI 配置的 Node 22、macOS 26 和 Android x86_64 runner 尚未验证。最终 iOS 运行使用本 worktree 已实际编译的官方 WDA，设置独立端口和 `usePrebuiltWDA=true`；不能据此宣布 GitHub 冷启动 WDA 已通过。微信结果限于构建、官方编译器和 adapter，没有微信 DevTools、微信设备或手机真机验收。没有商店签名或发行。
+
+收尾仅核对本任务拥有的资源：`Noir CI Reliability` 模拟器（`2F6E1FE2-E1D4-41ED-A36F-39D383065C0A`）已为 `Shutdown`；专用 Android `emulator-5570` 已不存在，专用 AVD、Appium 和 WDA 测试进程已退出。其他任务的模拟器保持原状。工具断开后没有为清理重启设备，因此没有新的 Android 最后 ANR/飞行模式读数；最终报告、11 份原生 XML 与清理日志均保留。没有重新执行已经完成的测试。
+
+汇总见 `.artifacts/ci-validation/summary.json`，第一轮汇总另存 `summary-first-round.json`。生成报告、截图、构建产物与测试工具只保留在此 worktree，没有加入 Git。本次只有本地提交，没有推送、创建 PR、合并或重跑远程 CI。
 
 ## 邮件、恢复与可选费用控制
 
