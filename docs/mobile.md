@@ -86,7 +86,9 @@ npm run mobile:test:android
 
 `.github/workflows/mobile-build.yml` 在 GitHub PR、main 更新及手动运行时构建 Android debug APK、未签名 AAB 和 iOS 模拟器 `.app`，产物在 Actions 的 Artifacts 下载。CI 的未签名 AAB 用于验证发行编译，模拟器 `.app` 用于开发验证；两者都不能直接上架。CI 不保存商店签名凭据。
 
-浏览器 CI 先运行公共区定位、固定操作区、牌面可读性、首屏、结算布局与提示横幅测试，再分别并行运行桌面和移动端的其余交互测试。两组覆盖完整的 `npm run test:e2e`；失败轨迹与验收截图保存在 `table-geometry-results`、`browser-ui-results-desktop` 和 `browser-ui-results-mobile`，用于检查不同人数、屏幕尺寸和安全区域下的表现。
+独立 `quality` job 检查格式、语言资源、全部单元测试及生产构建，不依赖 Android SDK 或浏览器布局。公共区定位、固定操作区、牌面可读性、首屏、结算布局与提示横幅测试，以及桌面和移动端的其余交互测试，分别并行执行；布局失败不会跳过其余交互测试。两组覆盖完整的 `npm run test:e2e`；失败轨迹与验收截图保存在 `table-geometry-results`、`browser-ui-results-desktop` 和 `browser-ui-results-mobile`。
+
+原生包编译并通过资源检查后立即上传，随后仍执行完整的安装后 E2E。即使安装运行失败，已上传包也能用于复现；下载到包不代表 E2E 通过。所有 job 都有显式时限，原生运行步骤另设较短时限，为失败证据上传留出时间。原生包与原生报告保留 7 天。账户启动阻塞与近期历史失败见 [CI 排错](ci.md)。
 
 CI 在完成编译后，安装并启动真正的模拟器/仿真器 App，用 Appium 驱动 WKWebView、Android WebView 和系统前后台。验证无登录本地启动、头像加载、设置重启持久保存、下注/跟注/弃牌、结算、重打撤奖统计、下一手和后台暂停恢复；报告与完整设备截图分别放入 `ios-native-e2e-results`、`android-native-e2e-results`。安装及运行步骤见 [原生端到端验证](native-e2e.md)。真机声音听感、实际设备安全区域与商店签名仍单独验收。
 
