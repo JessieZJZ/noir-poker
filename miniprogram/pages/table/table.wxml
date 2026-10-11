@@ -293,6 +293,29 @@
           ><view class="axis-track"><view style="width: {{item.value}}%;" /></view
           ><text>{{item.value}}</text></view
         ><text class="detail-evidence">{{detailProfile.evidence}}</text
+        ><view wx:if="{{detailProfile.research}}" class="research-copy"
+          ><text class="module-title">公开资料</text
+          ><text>资料核对日期 · {{detailProfile.research.reviewedAt}}</text
+          ><text>{{detailProfile.research.identity}}</text
+          ><text>{{detailProfile.research.formatsText}}</text
+          ><text wx:if="{{detailProfile.research.career.length}}" class="module-title"
+            >履历摘录</text
+          ><text wx:for="{{detailProfile.research.career}}" wx:key="text"
+            >• {{item.text}} {{item.references}}</text
+          ><text class="module-title">公开打法样本</text
+          ><text wx:for="{{detailProfile.research.observations}}" wx:key="text"
+            >• {{item.text}} {{item.references}}</text
+          ><text class="module-title">本地策略改编</text
+          ><text wx:for="{{detailProfile.research.adaptation}}" wx:key="*this">• {{item}}</text
+          ><text class="module-title">资料边界</text><text>{{detailProfile.research.limits}}</text
+          ><view wx:for="{{detailProfile.sources}}" wx:key="id" class="research-source"
+            ><text>[{{index + 1}}] {{item.label}}</text
+            ><text class="muted">{{item.kind}} · {{item.publishedAt || item.reviewedAt}}</text
+            ><text>{{item.context}}</text
+            ><button class="small-button" data-url="{{item.url}}" bindtap="copyResearchSource">
+              复制资料链接
+            </button></view
+          ></view
         ><text class="muted">以上是游戏内训练参数，不是真实牌手的统计。</text
         ><button class="primary detail-apply" bindtap="useProfile">所有座位使用此风格</button></view
       ></scroll-view

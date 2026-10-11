@@ -35,6 +35,7 @@ function setup(
   ]);
   const audios = [];
   const toasts = [];
+  const clipboard = [];
   const controllerFactory = (options) =>
     createWechatController({
       ...options,
@@ -66,6 +67,7 @@ function setup(
       getStorageSync: (key) => preferences.get(key),
       setStorageSync: (key, value) => preferences.set(key, value),
       showToast: (value) => toasts.push(value),
+      setClipboardData: (value) => clipboard.push(value.data),
       createInnerAudioContext() {
         const audio = {
           src: '',
@@ -112,7 +114,7 @@ function setup(
       job.fn();
     }
   }
-  return { page, preferences, audios, toasts, flush, jobs, info };
+  return { page, preferences, audios, toasts, clipboard, flush, jobs, info };
 }
 function reachHero(page) {
   const game = page._controller.getGame();
@@ -468,6 +470,29 @@ for (const playerCount of [5, 6, 7, 8, 9]) {
     });
   }
 }
+
+test('WeChat exposes all researched players, linked claims and only copies a selected known source', (t) => {
+  const { page, clipboard } = setup(t, { playerCount: 9 });
+  const profiles = page.data.profiles.filter((p) => p.research);
+  assert.equal(profiles.length, 16);
+  for (const profile of profiles) {
+    page.viewProfile({ currentTarget: { dataset: { id: profile.id } } });
+    const detail = page.data.detailProfile;
+    assert.equal(detail.research.reviewedAt, '2026-10-11');
+    for (const claim of [...detail.research.career, ...detail.research.observations])
+      assert.match(claim.references, /\[\d+\]/);
+    page.copyResearchSource({ currentTarget: { dataset: { url: profile.sources[0].url } } });
+    assert.equal(clipboard.at(-1), profile.sources[0].url);
+    const length = clipboard.length;
+    page.copyResearchSource({
+      currentTarget: { dataset: { url: 'https://example.com/unlisted' } },
+    });
+    assert.equal(clipboard.length, length);
+    page.closeProfile();
+  }
+  assert.match(template, /公开资料/);
+  assert.match(template, /copyResearchSource/);
+});
 
 test('WeChat public card rows use the measured corridor and stay fixed from deal to settlement and resize', (t) => {
   const { page, info } = setup(t, {

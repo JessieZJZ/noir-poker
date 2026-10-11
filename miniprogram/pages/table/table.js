@@ -229,6 +229,24 @@ Page({
       detailProfile: profile
         ? {
             ...profile,
+            research: profile.research
+              ? {
+                  ...profile.research,
+                  formatsText: profile.research.formats.join(' · '),
+                  career: profile.research.career.map((item) => ({
+                    ...item,
+                    references: item.sourceIds
+                      .map((id) => `[${profile.sources.findIndex((s) => s.id === id) + 1}]`)
+                      .join(' '),
+                  })),
+                  observations: profile.research.observations.map((item) => ({
+                    ...item,
+                    references: item.sourceIds
+                      .map((id) => `[${profile.sources.findIndex((s) => s.id === id) + 1}]`)
+                      .join(' '),
+                  })),
+                }
+              : null,
             axisRows: PROFILE_AXES.map(([id, label], index) => ({
               id,
               label,
@@ -240,6 +258,11 @@ Page({
   },
   closeProfile() {
     this.setData({ detailProfile: null });
+  },
+  copyResearchSource(event) {
+    const url = event.currentTarget.dataset.url;
+    if (this.data.detailProfile?.sources.some((source) => source.url === url))
+      wx.setClipboardData({ data: url });
   },
   useProfile() {
     this.call('setAllProfiles', this.data.detailProfile.id);

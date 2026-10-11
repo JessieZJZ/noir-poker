@@ -23,8 +23,15 @@ export function storeProfileSource(source) {
     if (!name) throw new Error('Store presentation missing profile: ' + id);
     for (const property of profile.properties) {
       const key = property.key.name;
-      if (['name', 'short', 'evidence', 'sources'].includes(key)) {
-        const value = key === 'sources' ? [] : key === 'evidence' ? STORE_PROFILE_NOTICE : name;
+      if (['name', 'short', 'evidence', 'sources', 'research'].includes(key)) {
+        const value =
+          key === 'research'
+            ? null
+            : key === 'sources'
+              ? []
+              : key === 'evidence'
+                ? STORE_PROFILE_NOTICE
+                : name;
         edits.push({
           start: property.value.start,
           end: property.value.end,
