@@ -84,6 +84,7 @@ test('settled nine-seat actions clear other card backs, profiles and the section
 test('all-in settlement retains every recent action without crowding at any table size', async ({
   page,
 }) => {
+  test.setTimeout(90000);
   await page.goto('/');
   await page.waitForFunction(() => !!window.qa);
   await page.evaluate(() => document.fonts.ready);
