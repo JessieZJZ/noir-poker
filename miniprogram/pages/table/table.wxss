@@ -145,6 +145,12 @@
   letter-spacing: 4px;
   font-size: 18px;
 }
+.table-area:not(.table-short) .felt-crowned {
+  top: 50px;
+}
+.table-area:not(.table-short) .seat-crown {
+  transform: translateX(-50%);
+}
 .seat {
   position: absolute;
   width: 78px;
@@ -176,7 +182,7 @@
   background: #14212a;
   border: 1px solid #354c57;
   border-radius: 8px;
-  padding: 3px 4px;
+  padding: 4px 5px;
   min-height: 54px;
   text-align: center;
 }
@@ -215,7 +221,7 @@
   color: #c3e7db;
   border: 1px solid #589481;
   border-radius: 3px;
-  padding: 1px 3px;
+  padding: 2px 4px;
   font-size: 9px;
   max-width: 62px;
   line-height: 12px;
@@ -234,14 +240,17 @@
 }
 .seat-caption {
   text-align: center;
-  min-height: 17px;
-  font-size: 9px;
-  line-height: 14px;
+  min-height: 20px;
+  margin-top: 3px;
+  font-size: 10px;
+  line-height: 15px;
 }
 .seat-action {
   color: #aac6c4;
   display: block;
-  white-space: nowrap;
+  min-height: 30px;
+  white-space: normal;
+  word-break: break-all;
 }
 .folded .seat-body,
 .folded .seat-hole {
@@ -358,8 +367,9 @@
   padding-bottom: 3px;
 }
 .mini-card {
-  width: 26px;
-  height: 35px;
+  width: 30px;
+  height: 42px;
+  transform: translateY(7px);
   padding: 1px 2px;
   font-size: 9px;
   border-radius: 4px;
@@ -374,7 +384,7 @@
 .hero {
   position: absolute;
   left: 50%;
-  bottom: 5px;
+  bottom: 11px;
   width: 100%;
   transform: translateX(-50%);
   z-index: 3;
@@ -401,7 +411,10 @@
   font-size: 33px;
 }
 .hero-rank {
-  height: 18px;
+  height: 16px;
+}
+.hero-rank .rank {
+  transform: translateY(2px);
 }
 .hero-folded .hero-cards {
   opacity: 0.58;
@@ -420,13 +433,13 @@
   align-items: center;
   justify-content: center;
   gap: 5px;
-  height: 17px;
-  font-size: 12px;
+  height: 19px;
+  font-size: 13px;
   font-weight: 600;
-  line-height: 17px;
+  line-height: 19px;
 }
 .hero-identity .stack {
-  font-size: 12px;
+  font-size: inherit;
   font-weight: 400;
   display: inline;
   margin: 0;
@@ -438,12 +451,12 @@
   font-size: 10px;
 }
 .hero-action {
-  height: 17px;
-  line-height: 17px;
+  height: 19px;
+  line-height: 19px;
   text-align: center;
   color: #b7d2cd;
   white-space: nowrap;
-  font-size: 10px;
+  font-size: 11px;
 }
 .hero-status {
   display: inline-block;
@@ -984,7 +997,7 @@
   }
 }
 
-/* Three bounded side rows leave the hero identity a separate 45px footer.
+/* Three bounded side rows leave the hero identity a separate footer.
    All four top seats fit beside each other at the 320px screen boundary. */
 .table-short .seat {
   width: 54px;
@@ -1005,8 +1018,9 @@
   transform: translateY(10px) rotate(7deg);
 }
 .table-short .mini-card {
-  width: 14px;
-  height: 20px;
+  width: 17px;
+  height: 24px;
+  transform: translateY(4px);
   padding: 1px;
   font-size: 7px;
   line-height: 7px;
@@ -1060,25 +1074,30 @@
   line-height: 9px;
 }
 .table-short .seat-caption {
-  min-height: 22px;
-  height: 22px;
+  min-height: 24px;
+  height: 24px;
+  margin-top: 1px;
   font-size: 7px;
   line-height: 9px;
 }
 .table-short .seat-caption .rank {
   margin-top: 1px;
   font-size: 7px;
-  line-height: 8px;
-  padding: 1px 3px;
+  line-height: 7px;
+  padding: 0 3px;
 }
 .table-short .seat-action {
+  min-height: 14px;
   font-size: 7px;
-  line-height: 9px;
+  line-height: 7px;
 }
 .table-short .community {
   /* The shortest screen's crown captions leave no room to lift this band. */
   top: 50%;
-  transform: translate(-50%, -62px);
+  transform: translate(-50%, -59px);
+}
+.table-short .hero {
+  bottom: 7px;
 }
 .table-short .pot-row {
   height: 25px;
@@ -1151,4 +1170,131 @@
 .table-area:not(.table-short) .card-placeholder {
   width: 48px;
   height: 69px;
+}
+
+/* Match the Web tablet's readable type without changing the live dock budget. */
+@media (min-width: 901px) and (max-width: 1100px) and (min-height: 1100px) and (orientation: portrait) {
+  .game-header {
+    font-size: 18px;
+  }
+  .hint-mask {
+    font-size: 16px;
+    line-height: 18px;
+  }
+  .seat {
+    width: 176px;
+  }
+  .table-area:not(.table-short) .felt-crowned {
+    top: 82px;
+  }
+  .seat-body {
+    padding: 8px 10px;
+    min-height: 96px;
+  }
+  .seat-name {
+    font-size: 20px;
+    gap: 6px;
+  }
+  .seat-name .position,
+  .hero-identity .position {
+    font-size: 14px;
+  }
+  .seat-persona {
+    min-height: 34px;
+    gap: 6px;
+  }
+  .avatar {
+    width: 30px;
+    height: 30px;
+  }
+  .persona {
+    font-size: 15px;
+    line-height: 20px;
+    max-width: 114px;
+    padding: 2px 5px;
+  }
+  .seat-body .stack {
+    font-size: 20px;
+  }
+  .seat-caption {
+    font-size: 19px;
+    line-height: 26px;
+  }
+  .seat-caption .rank {
+    font-size: 16px;
+  }
+  .seat-hole,
+  .seat-hole.revealed-hole {
+    height: 58px;
+  }
+  .card-back {
+    width: 33px;
+    height: 46px;
+    transform: translateY(28px) rotate(-7deg);
+  }
+  .card-back + .card-back {
+    transform: translateY(28px) rotate(7deg);
+  }
+  .mini-card {
+    width: 44px;
+    height: 64px;
+    transform: translateY(9px);
+    font-size: 16px;
+  }
+  .pot-row {
+    height: 50px;
+  }
+  .pot-number {
+    font-size: 44px;
+  }
+  .pot-detail {
+    font-size: 18px;
+  }
+  .table-area:not(.table-short) .community-card,
+  .table-area:not(.table-short) .card-placeholder {
+    width: 82px;
+    height: 118px;
+  }
+  .community-card .card-rank {
+    font-size: 22px;
+  }
+  .community-card .card-suit {
+    font-size: 48px;
+  }
+  .hero-card {
+    width: 94px;
+    height: 136px;
+  }
+  .hero-card .card-rank {
+    font-size: 26px;
+  }
+  .hero-card .card-suit {
+    font-size: 58px;
+  }
+  .hero-identity,
+  .hero-identity .stack {
+    font-size: 23px;
+    line-height: 28px;
+    height: 28px;
+  }
+  .hero-action {
+    font-size: 19px;
+    line-height: 26px;
+    height: 26px;
+  }
+  .hero-rank {
+    height: 28px;
+  }
+  .hero-rank .rank {
+    font-size: 16px;
+  }
+  .action-notice {
+    font-size: 17px;
+    line-height: 20px;
+  }
+  .action-dock button,
+  .compact-actions .settled-buttons button,
+  .compact-actions .continue-buttons button {
+    font-size: 18px;
+  }
 }

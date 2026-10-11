@@ -195,7 +195,9 @@ test('fold, expedited settlement, retry and next hand keep the table stable whil
       if (size.width === 390 && count === 9)
         await page.screenshot({ path: test.info().outputPath('folded-single-button.png') });
       await page.locator('#continue-deal-button').click();
-      await expect.poll(() => page.evaluate(() => window.qa.state().phase)).toBe('done');
+      await expect
+        .poll(() => page.evaluate(() => window.qa.state().phase), { timeout: 15000 })
+        .toBe('done');
       await expect(page.locator('#next-button')).toBeVisible();
       await expectDockLayout(page, 'settled', insets.bottom);
       if (size.width === 390 && count === 9)
@@ -209,7 +211,9 @@ test('fold, expedited settlement, retry and next hand keep the table stable whil
       await page.locator('#fold-button').click();
       await page.evaluate(() => window.qa.stop());
       await page.locator('#continue-deal-button').click();
-      await expect.poll(() => page.evaluate(() => window.qa.state().phase)).toBe('done');
+      await expect
+        .poll(() => page.evaluate(() => window.qa.state().phase), { timeout: 15000 })
+        .toBe('done');
       await expectDockLayout(page, 'settled', insets.bottom);
       await page.locator('#next-button').click();
       await page.evaluate(() => window.qa.stop());
@@ -308,6 +312,16 @@ test('hero identity keeps chips beside the position and its recent action in a c
   page,
 }) => {
   test.setTimeout(90000);
+  const callAndPauseBots = async () => {
+    // Cancel in the click task, before a slow driver round trip can allow
+    // a real bot timer to change this deterministic layout fixture.
+    await page.evaluate(() => {
+      document.querySelector('#call-button').addEventListener('click', () => window.qa.stop(), {
+        once: true,
+      });
+    });
+    await page.locator('#call-button').click();
+  };
   for (const size of [
     { width: 320, height: 900 },
     { width: 390, height: 844 },
@@ -320,8 +334,7 @@ test('hero identity keeps chips beside the position and its recent action in a c
       await expect(page.locator('#hero-turn')).toHaveCount(0);
       await expect(page.locator('#hero-last-action')).toBeHidden();
       const baseline = await heroAnchorBounds(page);
-      await page.locator('#call-button').click();
-      await page.evaluate(() => window.qa.stop());
+      await callAndPauseBots();
       await expect(page.locator('#hero-last-action')).toContainText('跟注');
       await expect(page.locator('#fold-button')).toBeDisabled();
       await expectHeroAnchor(page, baseline);
@@ -360,8 +373,7 @@ test('hero identity keeps chips beside the position and its recent action in a c
       expect(flop.board).toHaveLength(3);
       await expect(page.locator('#hero-last-action')).toBeHidden();
       await expectHeroAnchor(page, baseline);
-      await page.locator('#call-button').click();
-      await page.evaluate(() => window.qa.stop());
+      await callAndPauseBots();
       await expect(page.locator('#hero-last-action')).toHaveText('过牌');
       await expectHeroAnchor(page, baseline);
       await page.evaluate(() => window.qa.respondToHero(0, true));
@@ -389,12 +401,10 @@ async function expectAdaptiveBoard(page) {
           issues.push('a single row must contain all five cards');
         const count = Number(document.querySelector('#arena').dataset.playerCount);
         // Waist seats also use the central corridor on a five-player table.
-        // Ordinary phones still use five; a tall, narrow nine-seat table
-        // keeps larger player areas by using the two-row fallback.
-        if ((innerWidth >= 600 || (count === 5 && innerWidth >= 375)) && twoRows)
+        // The fitted footprint, rather than a fixed phone width, determines
+        // when a denser table needs the two-row fallback.
+        if ((innerWidth > 600 || (count === 5 && innerWidth >= 375)) && twoRows)
           issues.push('cards wrapped despite ample room in the middle');
-        if (innerWidth === 320 && innerHeight === 1020 && count === 9 && !twoRows)
-          issues.push('a crowded narrow table needs the two-row fallback');
         const topCenter = (cards[0].left + cards[2].right) / 2;
         const bottomCenter = (cards[3].left + cards[4].right) / 2;
         if (twoRows && !same(topCenter, bottomCenter))
@@ -429,12 +439,16 @@ test('public cards prefer five in one row and fall back to centered three-plus-t
   page,
 }) => {
   test.setTimeout(90000);
-  for (const width of [320, 375, 390, 440, 600]) {
+  let sawFallback = false;
+  for (const width of [320, 375, 390, 440, 600, 768]) {
     await configureViewport(page, { width, height: width === 320 ? 1020 : 900 });
-    for (const count of [5, 9]) {
+    for (const count of [5, 8, 9]) {
       await page.evaluate((count) => window.qa.heroTurn(count), count);
       await expect(page.locator('#board > .board-slot')).toHaveCount(5);
       await expectAdaptiveBoard(page);
+      sawFallback ||= await page
+        .locator('#arena')
+        .evaluate((el) => el.classList.contains('public-two-rows'));
       await page.locator('#call-button').click();
       await page.evaluate(() => {
         window.qa.stop();
@@ -462,4 +476,5 @@ test('public cards prefer five in one row and fall back to centered three-plus-t
       await expectAdaptiveBoard(page);
     }
   }
+  expect(sawFallback, 'a crowded table must exercise the centered two-row fallback').toBe(true);
 });

@@ -19,9 +19,8 @@ export default defineConfig(({ mode }) => ({
           {
             name: 'native-offline-fonts',
             enforce: 'pre',
-            transform(source, id) {
-              if (!id.endsWith('/src/styles/base.css')) return;
-              return source.replace(/^@import url\('https:\/\/fonts\.googleapis\.com[^\n]+\n/, '');
+            transformIndexHtml(source) {
+              return source.replace(/\s*<link\s+data-web-fonts\b[^>]*>/, '');
             },
           },
         ]

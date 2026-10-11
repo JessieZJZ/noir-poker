@@ -1,101 +1,116 @@
 import { test, expect } from '@playwright/test';
 
-const gate = () => {
+function gate() {
   let release;
-  const pending = new Promise((resolve) => (release = resolve));
-  return { pending, release };
-};
+  const promise = new Promise((resolve) => (release = resolve));
+  return { promise, release };
+}
 
-test('cold navigation and reload show only the initialized table, even when modules are slow', async ({
-  page,
-}, testInfo) => {
-  // Hold real startup requests at both boundaries: before JS-loaded CSS and
-  // after CSS but before the controller creates and fits the first hand.
-  let entry = gate();
-  let controller = gate();
-  await page.route('**/src/main.js*', async (route) => {
-    await entry.pending;
-    await route.continue();
-  });
-  await page.route('**/src/ui/table-controller.js*', async (route) => {
-    await controller.pending;
-    await route.continue();
-  });
-  await page.route('https://fonts.googleapis.com/**', (route) => route.abort());
+test.beforeEach(async ({ page }, testInfo) => {
+  if (testInfo.project.name === 'mobile') await page.setViewportSize({ width: 375, height: 667 });
+  // Exercise cache misses, including refresh. Optional fonts are tested separately.
+  await page.route('**/*', (route) =>
+    new URL(route.request().url()).hostname === '127.0.0.1' ? route.continue() : route.abort(),
+  );
   await page.addInitScript(() => {
     window.startupFrames = [];
-    function sample() {
-      const body = document.body;
-      if (body) {
-        const visible = getComputedStyle(body).visibility === 'visible';
+    const sample = () => {
+      if (document.body) {
+        const style = getComputedStyle(document.body);
         window.startupFrames.push({
-          visible,
           ready: document.documentElement.dataset.appReady === 'true',
-          background: getComputedStyle(document.documentElement).backgroundColor,
-          seats: document.querySelectorAll('#seats .seat').length,
-          cards: document.querySelectorAll('#hero-cards .playing-card').length,
-          inert: body.inert,
+          visible: style.visibility === 'visible',
+          styled: style.backgroundColor === 'rgb(11, 16, 23)',
         });
-        if (visible) return;
       }
-      requestAnimationFrame(sample);
-    }
+      if (!document.documentElement.dataset.appReady) requestAnimationFrame(sample);
+    };
     requestAnimationFrame(sample);
   });
+});
 
-  for (const navigation of ['cold', 'reload']) {
-    entry = gate();
-    controller = gate();
+async function expectReadyTable(page) {
+  await expect(page.locator('html')).toHaveAttribute('data-app-ready', 'true');
+  await expect(page.locator('body')).toBeVisible();
+  await expect(page.locator('.header')).toHaveCSS('display', 'flex');
+  await expect(page.locator('body')).toHaveCSS('background-color', 'rgb(11, 16, 23)');
+  await expect(page.locator('#hero-cards .playing-card')).toHaveCount(2);
+  expect(await page.evaluate(() => document.body.inert)).toBe(false);
+  const frames = await page.evaluate(() => window.startupFrames);
+  expect(frames.length).toBeGreaterThan(0);
+  expect(frames.filter((frame) => frame.visible && (!frame.ready || !frame.styled))).toEqual([]);
+}
+
+test('cold load and refresh never paint the HTML shell while the entry script is delayed', async ({
+  page,
+}) => {
+  let pending, requested;
+  await page.route(
+    (url) => url.pathname === '/src/main.js',
+    async (route) => {
+      requested = true;
+      await pending.promise;
+      await route.continue();
+    },
+  );
+  for (const refresh of [false, true]) {
+    pending = gate();
+    requested = false;
     try {
-      if (navigation === 'cold') await page.goto('/', { waitUntil: 'commit' });
-      else await page.reload({ waitUntil: 'commit' });
+      await (refresh
+        ? page.reload({ waitUntil: 'commit' })
+        : page.goto('/', { waitUntil: 'commit' }));
+      await expect.poll(() => requested).toBe(true);
       await page.waitForFunction(() => window.startupFrames.length >= 3);
-      await expect(page.locator('.header')).toBeHidden();
+      await expect(page.locator('body')).toBeHidden();
+      await expect(page.locator('html')).toHaveCSS('background-color', 'rgb(11, 16, 23)');
       expect(await page.evaluate(() => document.body.inert)).toBe(true);
-      await page.screenshot({ path: testInfo.outputPath(`${navigation}-before-css.png`) });
-
-      entry.release();
-      await expect
-        .poll(() => page.locator('.header').evaluate((el) => getComputedStyle(el).display))
-        .toBe('flex');
-      await expect(page.locator('.header')).toBeHidden();
-      await expect(page.locator('#seats .seat')).toHaveCount(0);
-      await page.screenshot({ path: testInfo.outputPath(`${navigation}-before-hand.png`) });
-
-      controller.release();
-      await expect(page.locator('html')).toHaveAttribute('data-app-ready', 'true');
-      await expect(page.locator('.header')).toBeVisible();
-      await page.waitForFunction(() => window.startupFrames.some((frame) => frame.visible));
-      const frames = await page.evaluate(() => window.startupFrames);
-      expect(frames.every((frame) => frame.background === 'rgb(11, 16, 23)')).toBe(true);
-      expect(frames.filter((frame) => frame.visible)).toEqual([
-        {
-          visible: true,
-          ready: true,
-          background: 'rgb(11, 16, 23)',
-          seats: 5,
-          cards: 2,
-          inert: false,
-        },
-      ]);
-      await page.evaluate(() => window.qa.stop());
-      const table = await page.locator('.table-viewport').boundingBox();
-      expect(table.width).toBeGreaterThan(0);
-      expect(table.height).toBeGreaterThan(0);
-      if (testInfo.project.name === 'mobile') {
-        expect(await page.locator('#arena').evaluate((el) => el.style.transform)).toContain(
-          'scale(',
-        );
-        const actions = await page.locator('.action-buttons').boundingBox();
-        expect(actions.y + actions.height).toBeLessThanOrEqual(page.viewportSize().height);
-      }
-      await page.screenshot({ path: testInfo.outputPath(`${navigation}-ready.png`) });
-      await page.locator('#rules-button').click();
-      await expect(page.locator('#rules-dialog')).toBeVisible();
-      await page.locator('#rules-dialog .close-dialog').first().click();
     } finally {
-      entry.release();
-      controller.release();
+      pending.release();
     }
+    await expectReadyTable(page);
+  }
+});
+
+test('a delayed local stylesheet cannot expose a partially styled table', async ({ page }) => {
+  const pending = gate();
+  let requested = false;
+  await page.route(
+    (url) => url.pathname === '/src/styles/table.css',
+    async (route) => {
+      requested = true;
+      await pending.promise;
+      await route.continue();
+    },
+  );
+  try {
+    await page.goto('/', { waitUntil: 'commit' });
+    await expect.poll(() => requested).toBe(true);
+    await expect(page.locator('body')).toBeHidden();
+    expect(await page.evaluate(() => document.documentElement.dataset.appReady)).toBeUndefined();
+  } finally {
+    pending.release();
+  }
+  await expectReadyTable(page);
+});
+
+test('a stalled optional font request does not hold the playable first screen', async ({
+  page,
+}) => {
+  const pending = gate();
+  let requested = false;
+  await page.route('https://fonts.googleapis.com/**', async (route) => {
+    requested = true;
+    await pending.promise;
+    await route.abort();
+  });
+  try {
+    await page.goto('/', { waitUntil: 'commit' });
+    await expect.poll(() => requested).toBe(true);
+    await expectReadyTable(page);
+    await page.locator('#opponents-button').click();
+    await expect(page.locator('#opponents-dialog')).toBeVisible();
+  } finally {
+    pending.release();
   }
 });

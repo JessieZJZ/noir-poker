@@ -16,6 +16,9 @@
       html:not([data-app-ready='true']) body {
         visibility: hidden !important;
       }
+      body[inert] {
+        visibility: hidden;
+      }
     </style>
     <title>NOIR Poker · 德州扑克单机练习</title>
     <meta
@@ -23,6 +26,27 @@
       content="无需登录的德州扑克练习桌。可选 5–9 人无限注德州扑克对战，享受流畅发牌与筹码动画。"
     />
     <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+    <link rel="stylesheet" href="/src/styles/base.css" />
+    <link rel="stylesheet" href="/src/styles/game.css" />
+    <link rel="stylesheet" href="/src/styles/review.css" />
+    <link rel="stylesheet" href="/src/styles/showdown.css" />
+    <link rel="stylesheet" href="/src/styles/table.css" />
+    <link rel="stylesheet" href="/src/styles/opponents.css" />
+    <link rel="stylesheet" href="/src/styles/native.css" />
+    <link rel="stylesheet" href="/src/styles/hint-banner.css" />
+    <link rel="stylesheet" href="/src/styles/play-viewport.css" />
+    <link rel="stylesheet" href="/src/styles/controls-layout.css" />
+    <link rel="stylesheet" href="/src/styles/persona-browser.css" />
+    <link rel="stylesheet" href="/src/styles/settings-layout.css" />
+    <link rel="stylesheet" href="/src/styles/i18n.css" />
+    <!-- Optional Web fonts must not delay the first usable frame. Native builds remove this link. -->
+    <link
+      data-web-fonts
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&amp;family=Manrope:wght@400;500;600;700;800&amp;family=Noto+Sans+SC:wght@400;500;600;700&amp;display=swap"
+      media="print"
+      onload="this.media = 'all'"
+    />
   </head>
   <body inert>
     <header class="header">

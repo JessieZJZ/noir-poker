@@ -6,6 +6,10 @@ import { fileURLToPath } from 'node:url';
 import { nativeScenarios } from '../tests/native/scenarios.mjs';
 import { sourceDigest } from './mobile-lib.mjs';
 import { verifyBundledArtifact } from './bundled-assets.mjs';
+import { selectIOSSimulator } from './native-device.mjs';
+import { stopOwnedServer } from './native-process.mjs';
+import { captureNativeScreen } from './native-screen.mjs';
+import { restartNativeApplication } from './native-lifecycle.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const args = process.argv.slice(2);
@@ -28,7 +32,6 @@ const appPath = path.resolve(
       ? '.artifacts/mobile/ios/Build/Products/Debug-iphonesimulator/App.app'
       : '.artifacts/mobile/noir-poker-debug.apk'),
 );
-if (!existsSync(appPath)) throw Error(`Build the actual ${platform} app first; missing ${appPath}`);
 const output = path.resolve(root, options.output ?? `.artifacts/native-e2e/${platform}`);
 mkdirSync(output, { recursive: true });
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -42,53 +45,6 @@ const run = (binary, argv) => {
 };
 let ownedSimulator = false;
 let udid = options.udid ?? process.env[`NOIR_${platform.toUpperCase()}_UDID`];
-if (platform === 'ios' && !udid) {
-  const inventory = JSON.parse(run('xcrun', ['simctl', 'list', 'devices', 'available', '-j']));
-  const existing = Object.entries(inventory.devices)
-    .flatMap(([runtime, devices]) => devices.map((device) => ({ ...device, runtime })))
-    .find((device) => device.name === 'Noir Poker E2E');
-  if (existing) udid = existing.udid;
-  else {
-    const runtimes = JSON.parse(run('xcrun', ['simctl', 'list', 'runtimes', '-j']))
-      .runtimes.filter((runtime) => runtime.isAvailable && runtime.identifier.includes('iOS'))
-      .sort((a, b) => b.version.localeCompare(a.version, undefined, { numeric: true }));
-    const phones = JSON.parse(
-      run('xcrun', ['simctl', 'list', 'devicetypes', '-j']),
-    ).devicetypes.filter((device) => device.name.startsWith('iPhone'));
-    assert.ok(runtimes.length && phones.length, 'Install an iOS Simulator runtime in Xcode');
-    udid = run('xcrun', [
-      'simctl',
-      'create',
-      'Noir Poker E2E',
-      phones[0].identifier,
-      runtimes[0].identifier,
-    ]);
-  }
-  const state = JSON.parse(run('xcrun', ['simctl', 'list', 'devices', '-j']));
-  if (
-    !Object.values(state.devices)
-      .flat()
-      .find((device) => device.udid === udid && device.state === 'Booted')
-  ) {
-    run('xcrun', ['simctl', 'boot', udid]);
-    run('xcrun', ['simctl', 'bootstatus', udid, '-b']);
-    ownedSimulator = true;
-  }
-}
-if (platform === 'android' && !udid) {
-  const sdk = process.env.ANDROID_HOME ?? process.env.ANDROID_SDK_ROOT;
-  const adb = sdk ? path.join(sdk, 'platform-tools/adb') : 'adb';
-  const devices = run(adb, ['devices'])
-    .split('\n')
-    .slice(1)
-    .filter((line) => /\tdevice$/.test(line))
-    .map((line) => line.split('\t')[0]);
-  if (devices.length !== 1)
-    throw Error(
-      'Start a dedicated Android emulator and provide --udid when more than one device is connected',
-    );
-  udid = devices[0];
-}
 // A clean install removes app preferences on the selected test device. By
 // default iOS uses a dedicated simulator rather than the user's open simulator.
 const report = {
@@ -99,6 +55,7 @@ const report = {
   startedAt: new Date().toISOString(),
   scenarios: [],
   status: 'running',
+  phase: 'preflight',
   automation: 'Appium installed native app with WebView and native lifecycle contexts',
 };
 const log = (message) => console.log(`[native-e2e:${platform}] ${message}`);
@@ -241,10 +198,13 @@ async function select(selector, value) {
 }
 async function screenshot(name) {
   // Ask the native driver rather than Chromium for the entire device screen.
-  await command('POST', '/context', { name: 'NATIVE_APP' });
-  const png = await command('GET', '/screenshot');
-  writeFileSync(path.join(output, `${name}.png`), Buffer.from(png, 'base64'));
-  await command('POST', '/context', { name: webContext });
+  await captureNativeScreen({
+    command,
+    webContext,
+    checkSystemErrors: platform === 'android',
+    saveImage: (png) => writeFileSync(path.join(output, `${name}.png`), Buffer.from(png, 'base64')),
+    saveSource: (source) => writeFileSync(path.join(output, `${name}.native.xml`), source),
+  });
 }
 async function activate() {
   await command('POST', '/context', { name: 'NATIVE_APP' });
@@ -252,9 +212,7 @@ async function activate() {
   await attachWebview();
 }
 async function relaunch() {
-  await command('POST', '/context', { name: 'NATIVE_APP' });
-  await command('POST', '/appium/device/terminate_app', { appId });
-  await command('POST', '/appium/device/activate_app', { appId });
+  await restartNativeApplication(command, appId);
   await attachWebview();
 }
 async function background() {
@@ -272,6 +230,64 @@ async function background() {
 }
 const queryAppState = () => command('POST', '/appium/device/app_state', { appId });
 try {
+  if (!existsSync(appPath))
+    throw Error(`Build the actual ${platform} app first; missing ${appPath}`);
+  report.bundledAssets = verifyBundledArtifact(appPath);
+  const embeddedBuild = JSON.parse(
+    platform === 'ios'
+      ? readFileSync(path.join(appPath, 'public/build-info.json'), 'utf8')
+      : run('unzip', ['-p', appPath, 'assets/public/build-info.json']),
+  );
+  assert.equal(
+    embeddedBuild.sourceDigest,
+    sourceDigest(),
+    'Build the latest source before native E2E; the selected app has stale bundled code',
+  );
+  report.phase = 'device';
+  if (platform === 'ios' && !udid) {
+    const { runtime, phone, existing } = selectIOSSimulator(
+      {
+        devices: JSON.parse(run('xcrun', ['simctl', 'list', 'devices', 'available', '-j'])).devices,
+        runtimes: JSON.parse(run('xcrun', ['simctl', 'list', 'runtimes', '-j'])).runtimes,
+        devicetypes: JSON.parse(run('xcrun', ['simctl', 'list', 'devicetypes', '-j'])).devicetypes,
+      },
+      {
+        runtimeIdentifier: process.env.NOIR_IOS_RUNTIME,
+        deviceTypeIdentifier: process.env.NOIR_IOS_DEVICE_TYPE,
+      },
+    );
+    report.simulator = { runtime: runtime.identifier, deviceType: phone.identifier };
+    udid =
+      existing?.udid ??
+      run('xcrun', ['simctl', 'create', 'Noir Poker E2E', phone.identifier, runtime.identifier]);
+    report.udid = udid;
+    const state = JSON.parse(run('xcrun', ['simctl', 'list', 'devices', '-j']));
+    if (
+      !Object.values(state.devices)
+        .flat()
+        .find((device) => device.udid === udid && device.state === 'Booted')
+    ) {
+      run('xcrun', ['simctl', 'boot', udid]);
+      ownedSimulator = true;
+      run('xcrun', ['simctl', 'bootstatus', udid, '-b']);
+    }
+  }
+  if (platform === 'android' && !udid) {
+    const sdk = process.env.ANDROID_HOME ?? process.env.ANDROID_SDK_ROOT;
+    const adb = sdk ? path.join(sdk, 'platform-tools/adb') : 'adb';
+    const devices = run(adb, ['devices'])
+      .split('\n')
+      .slice(1)
+      .filter((line) => /\tdevice$/.test(line))
+      .map((line) => line.split('\t')[0]);
+    if (devices.length !== 1)
+      throw Error(
+        'Start a dedicated Android emulator and provide --udid when more than one device is connected',
+      );
+    udid = devices[0];
+  }
+  report.udid = udid;
+  report.phase = 'appium-start';
   if (!options.server) {
     const binary = path.join(root, '.artifacts/native-tools/node_modules/appium/build/lib/main.js');
     if (!existsSync(binary))
@@ -306,6 +322,7 @@ try {
       'Appium server did not start',
     );
   }
+  report.phase = 'install-launch';
   if (platform === 'android') {
     airplaneMode = run(adb, ['-s', udid, 'shell', 'settings', 'get', 'global', 'airplane_mode_on']);
     run(adb, ['-s', udid, 'shell', 'cmd', 'connectivity', 'airplane-mode', 'enable']);
@@ -325,17 +342,6 @@ try {
     spawnSync('xcrun', ['simctl', 'uninstall', udid, appId], { encoding: 'utf8' });
   }
   log(`Installing and launching ${appPath} on ${udid}`);
-  report.bundledAssets = verifyBundledArtifact(appPath);
-  const embeddedBuild = JSON.parse(
-    platform === 'ios'
-      ? readFileSync(path.join(appPath, 'public/build-info.json'), 'utf8')
-      : run('unzip', ['-p', appPath, 'assets/public/build-info.json']),
-  );
-  assert.equal(
-    embeddedBuild.sourceDigest,
-    sourceDigest(),
-    'Build the latest source before native E2E; the selected app has stale bundled code',
-  );
   const caps = {
     platformName: platform === 'ios' ? 'iOS' : 'Android',
     'appium:automationName': platform === 'ios' ? 'XCUITest' : 'UiAutomator2',
@@ -367,11 +373,12 @@ try {
   session = created.sessionId;
   report.capabilities = created.capabilities;
   if (platform === 'ios') {
-    // Launch through Simulator's application service after WDA session setup.
-    // This avoids Xcode test-launch suspension of the initial WebKit navigation.
-    spawnSync('xcrun', ['simctl', 'terminate', udid, appId], { encoding: 'utf8' });
-    run('xcrun', ['simctl', 'launch', udid, appId]);
+    // Relaunch after WDA setup to avoid initial WebKit test-launch suspension.
+    // Keep the driver informed; a simctl-only restart can leave XCTest holding
+    // the terminated process and reporting a running app as crashed.
+    await restartNativeApplication(command, appId);
   }
+  report.phase = 'webview-attach';
   await attachWebview();
   await command('POST', '/timeouts', { script: 30000 });
   // XCUITest does not resolve Promise results from execute/sync. The standard
@@ -389,6 +396,7 @@ try {
     'Installed build metadata is required',
   );
   assert.equal(report.build.sourceDigest, embeddedBuild.sourceDigest);
+  report.phase = 'scenarios';
   report.scenarios = await nativeScenarios({
     record: (entry) => report.scenarios.push(entry),
     evaluate,
@@ -415,9 +423,11 @@ try {
       ),
   });
   report.status = 'passed';
+  report.phase = 'complete';
 } catch (error) {
   report.status = 'failed';
   report.error = error.stack || String(error);
+  if (error.reviewDiagnostics) report.reviewDiagnostics = error.reviewDiagnostics;
   console.error(report.error);
   if (session) {
     try {
@@ -432,7 +442,7 @@ try {
     } catch {}
   }
   if (server) {
-    server.kill('SIGTERM');
+    report.serverCleanup = stopOwnedServer(server);
     await sleep(300);
   }
   serverStream?.end();
