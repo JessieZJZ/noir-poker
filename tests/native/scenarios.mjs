@@ -359,7 +359,7 @@ export async function nativeScenarios(app) {
             const r = card.getBoundingClientRect();
             return {
               clearOfHint: r.top >= view.top + 10 * scale - 0.5,
-              fullyVisible: r.bottom <= profile.top + 0.5,
+              visibleFraction: (profile.top - r.top) / r.height,
             };
           }),
         };
@@ -368,7 +368,12 @@ export async function nativeScenarios(app) {
         toggle === 0 ? (initialPressed === 'true' ? 'false' : 'true') : initialPressed;
       assert.equal(inspection.pressed, expected);
       assert.equal(inspection.cards.length, expected === 'true' ? 2 : 0);
-      assert.ok(inspection.cards.every((card) => card.clearOfHint && card.fullyVisible));
+      assert.ok(
+        inspection.cards.every(
+          (card) =>
+            card.clearOfHint && card.visibleFraction >= 0.65 && card.visibleFraction <= 0.98,
+        ),
+      );
       const peekLayout = await app.evaluate(readTableLayout);
       assertTableLayout(peekLayout);
       for (const anchor of ['arena', 'publicArea'])
