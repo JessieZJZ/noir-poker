@@ -6,6 +6,7 @@ export const isAppActive = () => appActive;
 
 export function handleAndroidBack(document, app) {
   const dialogs = [...document.querySelectorAll('dialog[open]')];
+  if (dialogs.some((dialog) => dialog.id === 'orientation-dialog')) return;
   if (dialogs.length) dialogs.at(-1).close();
   else return app.minimizeApp();
 }

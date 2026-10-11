@@ -158,6 +158,43 @@ export async function nativeScenarios(app) {
       startup: info.startup,
     };
   });
+  await check('phone-portrait-or-tablet-rotation', async () => {
+    await app.waitHero();
+    const readOrientation = () =>
+      app.evaluate(() => ({
+        width: innerWidth,
+        height: innerHeight,
+        tablet: document.documentElement.dataset.tablet === 'true',
+        blocked: document.querySelector('#orientation-dialog').open,
+        hand: window.noir.getState().hand,
+      }));
+    const before = await readOrientation();
+    let landscape;
+    let request;
+    try {
+      request = await app.rotate('LANDSCAPE', { allowPortraitLock: !before.tablet });
+      await app.sleep(1000);
+      landscape = await readOrientation();
+      if (before.tablet)
+        assert.ok(landscape.width > landscape.height, 'Tablet must allow landscape');
+      else assert.ok(landscape.height > landscape.width, 'Phone must keep normal portrait');
+      assert.equal(
+        landscape.blocked,
+        false,
+        'The native orientation policy must keep the table usable',
+      );
+      assert.equal(landscape.hand, before.hand, 'Rotation must not redeal');
+      await app.screenshot('orientation-landscape-request');
+    } finally {
+      await app.rotate('PORTRAIT');
+    }
+    await app.sleep(1000);
+    const portrait = await readOrientation();
+    assert.ok(portrait.height > portrait.width, 'Normal upright portrait must remain available');
+    assert.equal(portrait.blocked, false);
+    assert.equal(portrait.hand, before.hand);
+    return { before, request, landscape, portrait };
+  });
   await check('crown-seat-and-style-row', async () => {
     const tables = [];
     for (const count of [6, 8]) {

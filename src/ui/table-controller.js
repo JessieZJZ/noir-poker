@@ -45,8 +45,10 @@ import { createHintMarquee } from './hint-marquee.js';
 import { preferenceStorage } from '../platform/storage.js';
 import { createActivityClock } from '../platform/activity-clock.js';
 import { isAppActive } from '../platform/native.js';
+import { isOrientationBlocked } from '../platform/orientation.js';
 const activityClock = createActivityClock();
-activityClock.setActive(isAppActive());
+let appActive = isAppActive();
+activityClock.setActive(appActive && !isOrientationBlocked());
 let dealWait = null;
 const $ = (s) => document.querySelector(s);
 const compactCoach = window.matchMedia(COMPACT_PLAY_QUERY);
@@ -1158,16 +1160,22 @@ function registerTools() {
 }
 updateSound();
 positionCoach();
-document.addEventListener('noir:app-state', ({ detail }) => {
-  if (typeof detail?.active !== 'boolean') return;
-  hintNotification.setActive(detail.active && !document.hidden);
-  if (detail.active && !document.hidden && !compactCoach.matches) updateCoach(true);
-  if (!activityClock.setActive(detail.active)) return;
-  if (!detail.active) {
+function syncActivity() {
+  const active = appActive && !isOrientationBlocked();
+  hintNotification.setActive(active && !document.hidden);
+  if (active && !document.hidden && !compactCoach.matches) updateCoach(true);
+  if (!activityClock.setActive(active)) return;
+  if (!active) {
     clearTimeout(timer);
     if (audio?.state === 'running') void audio.suspend().catch(() => {});
   } else schedule();
+}
+document.addEventListener('noir:app-state', ({ detail }) => {
+  if (typeof detail?.active !== 'boolean') return;
+  appActive = detail.active;
+  syncActivity();
 });
+document.addEventListener('noir:orientation-state', syncActivity);
 document.addEventListener('visibilitychange', () => {
   hintNotification.setActive(activityClock.active && !document.hidden);
   if (activityClock.active && !document.hidden && !compactCoach.matches) updateCoach(true);
