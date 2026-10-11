@@ -1,5 +1,9 @@
 # CI 排错与近期运行记录
 
+当前提交 PR 的分支为 `codex/ci-reliability-main`，从远端 `main@c4f1ed7` 重放本次 CI 修复；没有携带旧分支上尚未进入 main 的布局或牌手研究改动。下面的 `43b3814` / `4c9f977` 验收是原隔离分支的历史记录，不能作为这次 main 基础组合的通过结论。新组合的检查与报告单独保存在 `.artifacts/ci-pr-validation/`。
+
+整理后 `i18n:check` 实际发现 main 的两个动态属性模板已使用 `{24} 本手风格：{25}` 和 `{29} 的最近行动`，清单及十种译文仍使用旧占位编号。本次只同步这两个键和译文中的编号，保留原有文案含义、其他条目和产品布局；不跳过检查。第一次失败日志为 `i18n.log`，修复后检查为 `i18n-fixed.log`；资源修复前进行中的 Web 测试主动中止并保留 `web-before-i18n-fix.log`，不会计入最终通过。
+
 第一轮调查基于本地 `codex/settlement-caption-polish` 的 `966397b3ab63bfc4598c316217449c19b2a951ef`，包含 #22–#25 布局栈及已提交的结算文案改进。原目录中牌手研究等未提交修改未带入 CI worktree。后续 CI 分支已整合到原分支最新的 `43b3814d69b528ddabeed52c22ff245552e0cbb2`；第一轮 CI 提交 `5e2c54c` 保存在 `codex/ci-reliability-before-integration` 快照分支，整合仅发生在 `/tmp/noir-poker-ci-reliability`。
 
 ## 账户阻塞与执行失败
