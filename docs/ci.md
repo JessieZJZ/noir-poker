@@ -1,5 +1,9 @@
 # CI 排错与近期运行记录
 
+当前 PR 分支 `codex/ci-reliability-main` 基于远端 `main@ba2e658`，保留已合并 #27 的牌手资料、译文、Android 系统栏检查、独立 iOS 首启、端口隔离和设备就绪逻辑；本次差异仅包含 CI、复盘优化及相关回归与文档。下面的 `43b3814` / `4c9f977` 验收属于原隔离分支的历史记录，不能作为新 main 组合的通过结论。
+
+准备 PR 期间 main 从 `c4f1ed7` 推进到 `ba2e658`，旧 main 组合 `8cfca31` 的结果单独保存在 `.artifacts/ci-pr-validation/`：单元 347/347、全量 Web 223/224，移动牌手详情交互在 30 秒全局期限内超时，失败轨迹显示标题读取约 23 秒且尚未进入候选模拟；同一代码独立桌面/移动复测 2/2，不能据此宣布全量通过。该旧组合实际 Xcode/Gradle APK/AAB 编译通过，iOS 安装后 6/6；未继续进行已过期基线的 Android 安装验收。首次语言检查的两个占位编号已由最新 main 的完整译文同步解决，CI 分支不再重复修改这些语言文件。新组合报告使用独立目录，设置重启使用 WDA，首启保留 main 的预先安装启动方式。
+
 第一轮调查基于本地 `codex/settlement-caption-polish` 的 `966397b3ab63bfc4598c316217449c19b2a951ef`，包含 #22–#25 布局栈及已提交的结算文案改进。原目录中牌手研究等未提交修改未带入 CI worktree。后续 CI 分支已整合到原分支最新的 `43b3814d69b528ddabeed52c22ff245552e0cbb2`；第一轮 CI 提交 `5e2c54c` 保存在 `codex/ci-reliability-before-integration` 快照分支，整合仅发生在 `/tmp/noir-poker-ci-reliability`。
 
 ## 账户阻塞与执行失败
