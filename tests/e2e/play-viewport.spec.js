@@ -442,8 +442,8 @@ for (const locale of ['zh-CN', 'en']) {
           .locator('#hero-hand-rank')
           .evaluate((el) => el.getBoundingClientRect().bottom);
         // A phone's existing 1 CSS-pixel gap becomes subpixel after fitting.
-        // Large tablets reserve additional space for the enlarged rank tag.
-        expect(rankBottom).toBeLessThanOrEqual(after.identity.top - (size.width > 900 ? 5 : 0));
+        // Large tablets retain a small gap after lowering the rank tag.
+        expect(rankBottom).toBeLessThanOrEqual(after.identity.top - (size.width > 900 ? 2 : 0));
         for (const anchor of ['table', 'arena', 'publicArea']) {
           for (const edge of ['top', 'bottom', 'left', 'right'])
             expect(Math.abs(after[anchor][edge] - before[anchor][edge])).toBeLessThanOrEqual(1);

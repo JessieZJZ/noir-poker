@@ -2,9 +2,49 @@
    top inset. Keep both backs inside the arena at its upper seat anchors. */
 .game-surface .seat .mini-cards {
   padding-top: 3px;
+  height: 57px;
+  width: 94px;
+  align-items: flex-end;
+  justify-content: center;
+  margin-bottom: 4px;
+}
+.game-surface .seat .mini-cards.revealed-cards {
+  z-index: -1;
+}
+.game-surface .mini-cards .playing-card.small {
+  width: 44px;
+  height: 62px;
+  translate: 0 8px;
+}
+/* Reserve two text lines even for short actions. Inline words can wrap inside
+   the seat while chip digits remain together, without changing its footprint. */
+.game-surface .arena[data-player-count] .seat .seat-action {
+  display: block;
+  width: 120px;
+  max-width: 120px;
+  height: 40px;
+  min-height: 40px;
+  padding-top: 2px;
+  margin-top: 4px;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  text-align: center;
+}
+.game-surface .seat .seat-action-label {
+  white-space: normal;
+  line-height: 1.2;
+}
+.game-surface .mini-cards.revealed-cards .card-suit-icon {
+  transform: translateY(-3px);
+}
+.game-surface .seat-action-amount {
+  display: inline-block;
+  margin-left: 4px;
+  white-space: nowrap;
+  line-height: 1.2;
 }
 .game-surface .seat .card-back {
-  translate: 0 12px;
+  translate: 0 22px;
 }
 /* Keep the full crown hand clear of the hint edge, including when peeked.
    The inset is reserved from the deal, so settlement cannot move the seats. */
@@ -158,8 +198,9 @@
     gap: 4px;
   }
   .game-surface .mini-cards .playing-card.small {
-    width: 26px;
-    height: 36px;
+    width: 32px;
+    height: 46px;
+    translate: 0 10px;
   }
   .game-surface .mini-cards .playing-card.small .card-corner {
     font-size: 11px;
@@ -337,7 +378,7 @@
     height: 39px;
     /* Reserve both face cards from the deal. Narrower backs must not open
        a corridor that disappears when a hand is revealed. */
-    width: 56px;
+    width: 68px;
     justify-content: center;
     margin-bottom: 4px;
     align-items: flex-end;
@@ -367,11 +408,14 @@
     white-space: nowrap;
   }
   .game-surface .arena[data-player-count] .seat .seat-action {
-    height: 20px;
-    min-height: 20px;
+    display: block;
+    height: 30px;
+    min-height: 30px;
     width: 88px;
     flex-wrap: nowrap;
-    white-space: nowrap;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    text-align: center;
     padding-top: 2px;
     font-size: 11px;
     gap: 4px;
@@ -381,6 +425,14 @@
   .game-surface .seat-action-amount {
     font-size: inherit;
     line-height: 1.2;
+  }
+  .game-surface .seat-action-label {
+    white-space: normal;
+  }
+  .game-surface .seat-action-amount {
+    display: inline-block;
+    margin-left: 4px;
+    white-space: nowrap;
   }
   .game-surface .arena[data-player-count] .pot {
     width: 100%;
@@ -425,11 +477,12 @@
   }
   .game-surface .arena[data-player-count] .seat .mini-cards {
     height: 58px;
-    width: 80px;
+    width: 92px;
   }
   .game-surface .mini-cards .playing-card.small {
-    width: 38px;
-    height: 55px;
+    width: 44px;
+    height: 64px;
+    translate: 0 12px;
   }
   .game-surface .seat .card-back {
     width: 33px;
@@ -446,7 +499,8 @@
   .game-surface .arena[data-player-count] .seat .seat-action {
     width: 136px;
     max-width: 136px;
-    height: 25px;
+    height: 40px;
+    min-height: 40px;
     font-size: 15px;
   }
   .game-surface .arena[data-player-count] .pot strong {
@@ -535,7 +589,8 @@
   .game-surface .arena[data-player-count] .seat .seat-action {
     width: 180px;
     max-width: 180px;
-    height: 29px;
+    height: 50px;
+    min-height: 50px;
     font-size: 19px;
   }
   .game-surface .arena[data-player-count] .pot strong {
@@ -578,7 +633,7 @@
     max-width: 72px;
   }
   .game-surface .arena[data-player-count] .seat .seat-action {
-    max-width: 72px;
+    max-width: 88px;
   }
 }
 @media (max-width: 900px) and (max-height: 600px),
@@ -702,10 +757,25 @@
   }
 }
 
+/* Two caption lines need extra room on the narrowest nine-seat table. Keep
+   faces readable after fitting instead of spending that room on smaller cards. */
+@media (max-width: 360px) {
+  .game-surface .arena[data-player-count] .board {
+    --public-card-width: 50px;
+  }
+  .game-surface .hero-cards {
+    min-height: 104px;
+  }
+  .game-surface .hero-cards .playing-card {
+    width: 72px;
+    height: 104px;
+  }
+}
+
 /* Fewer players have room for larger personal areas around the same felt. */
 @media (max-width: 600px) and (min-height: 740px) {
   .game-surface .arena:is([data-player-count='5'], [data-player-count='6']) .seat .mini-cards {
-    width: 64px;
+    width: 76px;
   }
   .game-surface .arena:is([data-player-count='5'], [data-player-count='6']) .seat .seat-profile {
     width: clamp(108px, 27.7vw, 122px);
@@ -742,8 +812,13 @@
     .arena:is([data-player-count='5'], [data-player-count='6'])
     .mini-cards
     .playing-card.small {
-    width: 30px;
-    height: 39px;
+    width: 36px;
+    height: 50px;
+    translate: 0 14px;
+  }
+  .game-surface .arena:is([data-player-count='5'], [data-player-count='6']) .seat .seat-action {
+    width: clamp(108px, 27.7vw, 122px);
+    max-width: clamp(108px, 27.7vw, 122px);
   }
   .game-surface .arena:is([data-player-count='5'], [data-player-count='6']) .seat .card-back {
     width: 28px;
@@ -759,5 +834,35 @@
     .playing-card {
     width: 68px;
     height: 98px;
+  }
+}
+
+@media (min-width: 601px) and (max-width: 900px) and (min-height: 601px) {
+  .game-surface .arena[data-player-count] .seat .seat-profile {
+    width: 160px;
+    min-width: 160px;
+    max-width: 160px;
+    --seat-style-font-size: 14px;
+  }
+  .game-surface .arena[data-player-count] .seat-profile strong {
+    font-size: 19px;
+  }
+  .game-surface .arena[data-player-count] .seat-profile .seat-stack {
+    font-size: 18px;
+  }
+  .game-surface .arena[data-player-count] .seat-profile .seat-style-label {
+    font-size: 14px;
+  }
+  .game-surface .arena[data-player-count] .board > .playing-card,
+  .game-surface .arena[data-player-count] .board-slot {
+    width: 98px;
+    height: 141px;
+  }
+  .game-surface .hero-cards {
+    min-height: 161px;
+  }
+  .game-surface .hero-cards .playing-card {
+    width: 112px;
+    height: 161px;
   }
 }

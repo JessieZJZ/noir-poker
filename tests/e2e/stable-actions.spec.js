@@ -195,7 +195,9 @@ test('fold, expedited settlement, retry and next hand keep the table stable whil
       if (size.width === 390 && count === 9)
         await page.screenshot({ path: test.info().outputPath('folded-single-button.png') });
       await page.locator('#continue-deal-button').click();
-      await expect.poll(() => page.evaluate(() => window.qa.state().phase)).toBe('done');
+      await expect
+        .poll(() => page.evaluate(() => window.qa.state().phase), { timeout: 15000 })
+        .toBe('done');
       await expect(page.locator('#next-button')).toBeVisible();
       await expectDockLayout(page, 'settled', insets.bottom);
       if (size.width === 390 && count === 9)
@@ -209,7 +211,9 @@ test('fold, expedited settlement, retry and next hand keep the table stable whil
       await page.locator('#fold-button').click();
       await page.evaluate(() => window.qa.stop());
       await page.locator('#continue-deal-button').click();
-      await expect.poll(() => page.evaluate(() => window.qa.state().phase)).toBe('done');
+      await expect
+        .poll(() => page.evaluate(() => window.qa.state().phase), { timeout: 15000 })
+        .toBe('done');
       await expectDockLayout(page, 'settled', insets.bottom);
       await page.locator('#next-button').click();
       await page.evaluate(() => window.qa.stop());

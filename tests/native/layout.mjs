@@ -90,6 +90,26 @@ export function readTableLayout() {
         return (profile.top - back.top) / back.height;
       }),
     },
+    captions: [...document.querySelectorAll('.seat .seat-action')].map((el) => {
+      const range = document.createRange();
+      range.selectNodeContents(el);
+      const bounds = (box) => ({
+        left: box.left,
+        right: box.right,
+        top: box.top,
+        bottom: box.bottom,
+      });
+      return {
+        id: el.closest('.seat').dataset.player,
+        box: bounds(el.getBoundingClientRect()),
+        lines: [...range.getClientRects()].map(bounds),
+      };
+    }),
+    revealed: [...document.querySelectorAll('.seat .revealed-cards .playing-card')].map((el) => {
+      const card = el.getBoundingClientRect(),
+        profile = el.closest('.seat').querySelector('.seat-profile').getBoundingClientRect();
+      return { width: el.offsetWidth, exposed: (profile.top - card.top) / card.height };
+    }),
     bottomInset:
       parseFloat(getComputedStyle(document.querySelector('.action-dock')).paddingBottom) || 0,
     settledButtons: ['#next-button', '#restart-hand-button', '#review-hand-button'].map(rect),
@@ -120,6 +140,14 @@ export function assertTableLayout(info) {
   const largeTablet =
     info.width >= 901 && info.width <= 1100 && info.height >= 1100 && info.height > info.width;
   if (info.presentation) assertSeatPresentation(info.presentation, info, largeTablet);
+  if (info.captions) assertReadableCaptions(info.captions, info.table);
+  for (const card of info.revealed ?? []) {
+    assert.ok(card.width >= 32, 'Revealed opponent cards need a readable face');
+    assert.ok(
+      card.exposed >= 0.65 && card.exposed <= 0.98,
+      'Revealed cards tuck slightly into the profile',
+    );
+  }
   for (const profile of info.profiles) {
     if (profile.stackBelowStyle !== undefined)
       assert.ok(profile.stackBelowStyle, `Seat ${profile.id} chips must sit below its style tag`);
@@ -147,6 +175,19 @@ export function assertTableLayout(info) {
   } else {
     assert.ok(info.publicCards.every((card) => Math.abs(card.top - info.publicCards[0].top) <= 1));
   }
+}
+
+export function assertReadableCaptions(captions, viewport) {
+  const contained = (part, box) =>
+    part.left >= box.left - 0.75 &&
+    part.right <= box.right + 0.75 &&
+    part.top >= box.top - 0.75 &&
+    part.bottom <= box.bottom + 0.75;
+  for (const caption of captions)
+    assert.ok(
+      caption.lines.every((line) => contained(line, caption.box) && contained(line, viewport)),
+      `Seat ${caption.id} action words and chip digits must be fully visible`,
+    );
 }
 
 export function assertSeatPresentation(presentation, viewport, largeTablet = false) {
