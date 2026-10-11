@@ -222,7 +222,9 @@ async function assertSettledLayout(page) {
 test('fold winners keep a visible crown without revealing cards, including practice runout and hero wins', async ({
   page,
 }) => {
-  test.setTimeout(90000);
+  // Complete all 20 viewport/table combinations, including repeated reveals,
+  // when installed-app suites are also using the host. Keep each layout check.
+  test.setTimeout(240000);
   for (const width of [320, 390, 768, 1280]) {
     await page.setViewportSize({ width, height: 900 });
     for (const count of [5, 6, 7, 8, 9]) {
