@@ -10,6 +10,7 @@ import { selectIOSSimulator } from './native-device.mjs';
 import { stopOwnedServer } from './native-process.mjs';
 import { captureNativeScreen } from './native-screen.mjs';
 import { restartNativeApplication } from './native-lifecycle.mjs';
+import { requestNativeOrientation } from './native-orientation.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const args = process.argv.slice(2);
@@ -241,6 +242,11 @@ async function background() {
   return { startedAt: performance.now(), nativeState };
 }
 const queryAppState = () => command('POST', '/appium/device/app_state', { appId });
+async function rotate(orientation, { allowPortraitLock = false } = {}) {
+  const result = await requestNativeOrientation(command, platform, orientation, allowPortraitLock);
+  await attachWebview();
+  return result;
+}
 try {
   if (!existsSync(appPath))
     throw Error(`Build the actual ${platform} app first; missing ${appPath}`);
@@ -446,6 +452,7 @@ try {
     activate,
     background,
     nativeState: queryAppState,
+    rotate,
     sleep,
     log,
     waitHero: () =>

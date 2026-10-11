@@ -116,6 +116,30 @@ function setup(
   }
   return { page, preferences, audios, toasts, clipboard, flush, jobs, info };
 }
+
+test('WeChat tablet rotation preserves the deal, settings dialog and pending actions', (t) => {
+  const { page, info, jobs } = setup(t, {
+    info: { windowWidth: 820, windowHeight: 1180, statusBarHeight: 24 },
+  });
+  page.openSettings();
+  const hand = page.data.hand;
+  const cards = copy(page.data.heroCards);
+  const pending = [...jobs.keys()];
+  for (const size of [
+    { windowWidth: 1180, windowHeight: 820 },
+    { windowWidth: 820, windowHeight: 1180 },
+  ]) {
+    Object.assign(info, size);
+    page.onResize();
+    assert.equal(page.data.windowWidth, size.windowWidth);
+    assert.equal(page.data.windowHeight, size.windowHeight);
+    assert.equal(page.data.hand, hand);
+    assert.deepEqual(copy(page.data.heroCards), cards);
+    assert.equal(page.data.settingsOpen, true);
+    assert.deepEqual([...jobs.keys()], pending);
+    assert.ok(page.data.tableHeight > 0);
+  }
+});
 function reachHero(page) {
   const game = page._controller.getGame();
   while (game.phase === 'playing' && game.actor !== 0) act(game, game.actor, 'call');

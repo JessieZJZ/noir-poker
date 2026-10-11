@@ -25,6 +25,7 @@ async function configureViewport(page, size, insets = { top: 0, bottom: 0 }) {
   await page.evaluate(({ top, bottom }) => {
     const root = document.documentElement;
     root.classList.toggle('native-app', top > 0 || bottom > 0);
+    window.dispatchEvent(new Event('resize'));
     root.style.setProperty('--safe-area-inset-top', `${top}px`);
     root.style.setProperty('--safe-area-inset-bottom', `${bottom}px`);
     window.scrollTo(0, 0);
@@ -183,6 +184,10 @@ test('fold, expedited settlement, retry and next hand keep the table stable whil
     { size: { width: 844, height: 390 }, insets: { top: 0, bottom: 21 } },
   ]) {
     await configureViewport(page, size, insets);
+    if (size.width > size.height) {
+      await expect(page.locator('#orientation-dialog')).toBeVisible();
+      continue;
+    }
     for (const count of [5, 6, 9]) {
       await page.evaluate((count) => window.qa.heroTurn(count), count);
       await expect(page.locator('#fold-button')).toBeEnabled();

@@ -1,5 +1,7 @@
 # 微信小程序工程
 
+手机在 `app.json` 和牌桌页面声明 `pageOrientation: portrait`，保持正常手持竖屏；同时启用 `resizable: true`，允许 iPad 与支持大屏模式的平板、桌面客户端旋转或调整窗口。方向变化只重算布局，不重新发牌或关闭当前弹窗。相关声明及 `onResize` 状态保留有单元回归；编译器和适配器检查不能代替微信开发者工具或实际平板验收。配置依据：[微信大屏适配指南](https://developers.weixin.qq.com/miniprogram/dev/framework/view/resizable.html)。
+
 小程序使用本地 WXML/WXSS 界面，直接复用 `src/engine/`、`src/review/` 和人物头像源文件。它不加载在线网站，也没有账号或网络牌局。规则、筹码、电脑风格与复盘计算只有一份实现；界面与生命周期由 `src/platform/wechat-controller.js` 和 `miniprogram/` 适配。
 
 ## 导入与开发

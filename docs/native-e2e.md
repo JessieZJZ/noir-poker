@@ -51,6 +51,9 @@ node scripts/native-e2e.mjs android --app /absolute/path/app-debug.apk --udid em
 
 ## 覆盖的实际流程
 
+- 通过原生驱动请求横屏再恢复正常竖屏：手机 App 的 WebView 保持竖屏，平板允许横屏；两次旋转均不重新发牌。保存横屏请求时的设备截图及窗口尺寸。平板必须使用平板模拟器/仿真器执行，手机通过不能算平板通过。
+  手机锁定竖屏时，UiAutomator2 可能明确报告程序锁定，iOS WDA 也可能报告 `Unable To Rotate Device`；测试记录该拒绝，再检查实际窗口保持正向竖屏、旋转提示未打开且牌局不变。平板拒绝旋转、恢复竖屏失败和其他驱动错误均直接失败。
+
 - 从打包的 localhost origin 首启，确认原生适配器生效、没有登录要求、没有 QA fixtures。
 - Android 首屏全设备截图额外检查系统栏背景与浅色图标的对比度，防止旧 WebView 的原生 inset 留下白底白字；单元回归覆盖对比度边界和上下栏独立失败，CI 在安装流程后执行图片检查。
 - 测试滚动之前检查操作按钮全部位于首屏；开始前核对包内源码指纹和所有图片，旧包会被拒绝。
@@ -83,3 +86,16 @@ Android 每次保存设备截图时还读取原生 UI 层级，遇到系统 ANR/
 iOS 设置持久化场景通过同一驱动终止并激活应用，再等待真实首屏和 WebView。重启不能绕过驱动仅用 `simctl`，否则 XCTest 可能仍跟踪旧进程。首屏附着失败截图只保持原生上下文，不尝试切换到尚未知的 WebView。等待要求保持不变。
 
 参考官方文档：[Appium drivers](https://appium.io/docs/en/latest/intro/drivers/)、[XCUITest capabilities](https://appium.github.io/appium-xcuitest-driver/latest/reference/capabilities/)、[UiAutomator2 hybrid WebView](https://github.com/appium/appium-uiautomator2-driver#hybrid-mode)。
+
+## 2026-10-11 方向策略验证记录
+
+本次手机保持正常手持的正向竖屏，iPad、Android 平板保留横竖屏切换。新增原生旋转场景在实际安装包中执行；Web 的横屏提示使用完整模态层，并暂停当前行动，恢复竖屏后继续原手。
+
+- Web 全量 286 项：首轮 279 通过、7 失败；修正两处仍期待手机横屏可操作的旧测试后，单线程复测 7 项全部通过。其余五项首轮超时，复测未修改断言或时限。方向、布局和操作区专项 42 项也全部通过。首轮证据保存在 `.artifacts/validation/web-first-result/`，日志为 `web-e2e.log`、`web-retry.log`、`web-corrected.log`。
+- `npm run check`：374 个单元测试及 Web/小程序构建通过。`format:check`、`i18n:check`、`wechat:verify`、`wechat:check` 和 `mobile:sync`/`mobile:verify` 通过；微信检查覆盖源码、资源、适配器和官方编译器，尚未在微信客户端运行方向验收。
+- Xcode iOS Simulator 编译和 Gradle Android Debug APK 编译分别成功；两个安装包均核验 17 张本地图片、其中 16 张人物头像。Android 手机完整测试包的源码指纹为 `d6b3b7a364735c3f721a8956e7dffe92eb95b93bc1244b9703fc6ad507d0d4e9`；之后仅扩展测试脚本对 iOS 竖屏锁定拒绝的识别，未再改动应用源码，最终指纹为 `1ba5351800769569fb1437b3a0667b02e4c7a37fb1e980fe9539c4873135276f`。最终编译日志为 `ios-build-ios-rotation.log` 与 `android-build-ios-rotation.log`；各次实际安装报告另存对应源码指纹。
+- Android 36 手机先出现模拟器系统服务 ANR 和 Appium Settings 启动失败；改用 host GPU、2 核、720×1600 的测试屏幕并预热独立 Appium 后仍失败。仅在本任务设备上停止并卸载 Appium Settings，驱动重新安装后恢复。实际锁定竖屏使 UiAutomator2 拒绝横屏请求，新增测试明确记录该拒绝并继续核对窗口、遮挡和牌局状态，其他异常仍失败。手机 9 个原生场景全部通过，系统栏截图检查通过；完整报告和截图位于 `.artifacts/native-e2e/android-phone-final/`。Android 平板也通过全部 9 个场景，实际 600dp 边界的窗口从 `600×904` 旋转到 `960×544` 后再恢复 `600×904`，手数不变；证据位于 `.artifacts/native-e2e/android-tablet/`，该测试包源码指纹为 `1ba5351800769569fb1437b3a0667b02e4c7a37fb1e980fe9539c4873135276f`。
+- iOS 27 的 iPhone 和 iPad 首次运行停在黑屏，未达到 45 秒内出现可操作首屏的要求。预热 Appium、重新启动以及应用日志检查确认原生 Preferences 和 App 接口有响应；Web Inspector 诊断未取得可用页面，不能据此认定业务代码故障。清理本任务遗留的 WDA/模拟器诊断进程并单独重跑后，iPhone 首屏恢复，最终全部 9 个原生场景通过，证据位于 `.artifacts/native-e2e/ios-phone-verified/`。iPad 随后也通过全部 9 个场景，实际窗口从 `834×1210` 旋转到 `1210×834` 再恢复，手数不变，证据位于 `.artifacts/native-e2e/ios-tablet-verified/`。iOS WDA 会因应用界面保持竖屏而拒绝横屏请求；核对驱动源码后按实际窗口、可操作性和牌局不变验证这条手机分支，平板仍要求旋转成功。首次失败证据分别位于 `.artifacts/validation/first-attempt/ios/`、`.artifacts/native-e2e/ios-phone-retry/` 和 `.artifacts/native-e2e/ios-tablet/`。
+- 用户提供的系统弹窗记录显示：2026-10-11 18:03:09，系统日历 `MobileCal` 在本任务 iPhone 模拟器 `4444EE8A-7F76-4F0C-84E6-4E4A60D3F09A` 中因启动超过 30 秒被 `FRONTBOARD / 0x8BADF00D` 终止，堆栈位于 dyld 动态库加载。它证明同期系统应用也启动异常，不能单独证明 NOIR 黑屏的原因。报告中的大型虚拟地址空间预留不能当作实际内存占用。
+
+所有验证日志位于忽略的 `.artifacts/validation/`。编译、资源核验和浏览器回归与实际原生运行分开记录；早期失败报告和截图保留，不覆盖成通过结果。结束时已关闭本任务的两个 Android 仿真器、iPhone/iPad 模拟器及独立 Appium 子进程；清理记录为 `appium-final-cleanup.json`。

@@ -21,6 +21,7 @@ async function nativeInsets(page, enabled, insets = { top: 59, bottom: 34 }) {
       root.classList.toggle('native-app', enabled);
       root.style.setProperty('--safe-area-inset-top', `${enabled ? insets.top : 0}px`);
       root.style.setProperty('--safe-area-inset-bottom', `${enabled ? insets.bottom : 0}px`);
+      window.dispatchEvent(new Event('resize'));
     },
     { enabled, insets },
   );
@@ -192,6 +193,10 @@ test('short portrait and landscape fit all players without an independent table 
     for (const native of [false, true]) {
       const insets = size.width > size.height ? { top: 0, bottom: 21 } : { top: 59, bottom: 34 };
       await nativeInsets(page, native, insets);
+      if (native && size.width > size.height) {
+        await expect(page.locator('#orientation-dialog')).toBeVisible();
+        continue;
+      }
       for (const count of [5, 9]) {
         await page.evaluate((count) => window.qa.heroTurn(count), count);
         await assertFixedTable(page, { bottomInset: native ? insets.bottom : 0 });

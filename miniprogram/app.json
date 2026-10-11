@@ -1,6 +1,8 @@
 {
   "pages": ["pages/table/table"],
+  "resizable": true,
   "window": {
+    "pageOrientation": "portrait",
     "navigationStyle": "custom",
     "backgroundColor": "#0b1218",
     "backgroundTextStyle": "light"

@@ -94,6 +94,17 @@ test('Android back closes the top dialog first and minimizes only at the table',
   assert.equal(minimized, 0);
   await handleAndroidBack({ querySelectorAll: () => [] }, app);
   assert.equal(minimized, 1);
+  await handleAndroidBack(
+    {
+      querySelectorAll: () => [
+        ...dialogs,
+        { id: 'orientation-dialog', close: () => closed.push('orientation') },
+      ],
+    },
+    app,
+  );
+  assert.deepEqual(closed, [2]);
+  assert.equal(minimized, 1);
 });
 
 test('native release versions accept a single build number and reject invalid store versions', () => {
