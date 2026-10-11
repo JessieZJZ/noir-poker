@@ -153,11 +153,16 @@ test('desktop coaching stays in the sidebar, wraps naturally and exposes its onl
   page,
 }) => {
   await page.setViewportSize({ width: 1280, height: 900 });
+  // Exercise a navigation slower than the old fixed pause target.
+  await page.route('**/src/main.js', async (route) => {
+    await new Promise((resolve) => setTimeout(resolve, 1200));
+    await route.continue();
+  });
   await page.clock.install({ time: new Date('2026-01-01T00:00:00Z') });
+  await page.clock.pauseAt(new Date('2026-01-01T00:00:01Z'));
   await page.reload();
   await page.waitForFunction(() => !!window.qa);
   await page.evaluate(() => window.qa.stop());
-  await page.clock.pauseAt(new Date('2026-01-01T00:00:01Z'));
   await page.evaluate(() => window.qa.heroTurn(9));
   const card = page.locator('#coach-desktop-card');
   await expect(card).toBeVisible();
@@ -193,10 +198,10 @@ test('breakpoint changes reuse the same hint preference and cancel stale mobile 
 }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.clock.install({ time: new Date('2026-01-01T00:00:00Z') });
+  await page.clock.pauseAt(new Date('2026-01-01T00:00:01Z'));
   await page.reload();
   await page.waitForFunction(() => !!window.qa);
   await page.evaluate(() => window.qa.stop());
-  await page.clock.pauseAt(new Date('2026-01-01T00:00:01Z'));
   await page.evaluate(() => {
     window.qa.heroTurn(9);
     window.hintNode = document.querySelector('#coach-content');

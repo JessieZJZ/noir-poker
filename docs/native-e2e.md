@@ -33,6 +33,8 @@ node scripts/native-e2e.mjs android
 
 默认 iOS 新建或复用专用 `Noir Poker E2E` 模拟器，避免修改正在使用的其他模拟器。Android 要先启动专用 AVD；只有一个已连接设备时自动选中，否则通过 `--udid emulator-5554` 指定。也支持 `NOIR_IOS_UDID` 和 `NOIR_ANDROID_UDID`。
 
+iOS 自动选择最新可用 runtime 中兼容的标准尺寸 iPhone，仅复用同一 runtime、同一设备类型的专用模拟器。可用 `NOIR_IOS_RUNTIME` 和 `NOIR_IOS_DEVICE_TYPE` 指定 `simctl list runtimes -j` / `simctl list devicetypes -j` 返回的完整 identifier；选择不可用或不兼容时直接失败，不自动换设备。指定 UDID 时使用该设备。报告记录自动选择的 runtime 和设备类型。
+
 **测试执行干净安装，会清除所选测试设备上的应用数据。请只指定测试设备，不要选择存有个人练习数据的设备。** iOS 只卸载这个测试应用，保留模拟器和测试驱动。默认专用模拟器在脚本自行启动时，会在完成后关闭。
 
 可指定已编译的产物和结果目录：
@@ -66,5 +68,7 @@ Android 测试期间打开飞行模式，结束后恢复原设置。iOS Simulato
 结算用例还会点击顶部座位的查看按钮，验证眼睛位于位置标签右侧、亮牌的数字和花色完整可见且不贴提示栏；牌底少量藏在玩家卡片后。测试同时检查两行行动文案没有截断，并记录查看前后的牌桌与公共区位置。
 
 结果保存在 `.artifacts/native-e2e/<platform>/report.json`、每个流程的全设备截图以及 `appium.log` 中。报告包含设备、产物、打包源码指纹、各项实际耗时和失败原因；失败不能视为已验证。CI 需先编译产物，再执行脚本，上传这些证据；只验证 `mobile:sync` 或成功编译不能替代此流程。
+
+缺少包、资源过期、设备选择或启动失败也会写入失败报告，`phase` 区分预检、设备准备、Appium 启动、安装、WebView 连接与场景运行。脚本自行启动的模拟器即使在 `bootstatus` 失败后也会尝试关闭。已通过场景和当前失败场景同时保留；复盘保留 30 秒完成要求，并记录公开分析进度、每步耗时及 WebView 读取错误，便于区分计算耗时与驱动故障。
 
 参考官方文档：[Appium drivers](https://appium.io/docs/en/latest/intro/drivers/)、[XCUITest capabilities](https://appium.github.io/appium-xcuitest-driver/latest/reference/capabilities/)、[UiAutomator2 hybrid WebView](https://github.com/appium/appium-uiautomator2-driver#hybrid-mode)。
