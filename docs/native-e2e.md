@@ -77,4 +77,6 @@ Android 测试期间打开飞行模式，结束后恢复原设置。iOS Simulato
 
 脚本自行启动的 Appium 退出前，会终止它当前仍存活的子进程，包括分离启动的 WDA `xcodebuild`；仅按该 Appium PID 的父子关系清理，不扫描或终止其他测试服务。外部 `--server` 由调用方管理生命周期。报告的 `serverCleanup` 保留清理进程和错误。
 
+Android 每次保存设备截图时还读取原生 UI 层级，遇到系统 ANR/崩溃对话框就失败并保留 `.native.xml` 和截图。WebView 内断言通过不能覆盖系统弹窗；测试不会自动关闭弹窗继续当作通过。
+
 参考官方文档：[Appium drivers](https://appium.io/docs/en/latest/intro/drivers/)、[XCUITest capabilities](https://appium.github.io/appium-xcuitest-driver/latest/reference/capabilities/)、[UiAutomator2 hybrid WebView](https://github.com/appium/appium-uiautomator2-driver#hybrid-mode)。
