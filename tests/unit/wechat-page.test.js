@@ -400,7 +400,8 @@ for (const playerCount of [5, 6, 7, 8, 9]) {
       const seatHeight =
         cssNumber('.table-short .seat-hole.revealed-hole', 'height') +
         cssNumber('.table-short .seat-body', 'height') +
-        cssNumber('.table-short .seat-caption', 'height');
+        cssNumber('.table-short .seat-caption', 'height') +
+        cssNumber('.table-short .seat-caption', 'margin-top');
       const heroFooterHeight = cssNumber('.hero-identity', 'line-height') * 2;
       const heroBottom = height - cssNumber('.hero', 'bottom');
       const identityTop = heroBottom - heroFooterHeight;
@@ -422,6 +423,9 @@ for (const playerCount of [5, 6, 7, 8, 9]) {
         bottom: heroBottom,
       };
       const communityWidth = page.data.boardWidth;
+      const communityOffset = Number(
+        stylesheet.match(/\.table-short \.community\s*\{[^}]*translate\(-50%,\s*(-[\d.]+)px\)/)[1],
+      );
       const communityHeight =
         cssNumber('.table-short .pot-row', 'height') +
         cssNumber('.table-short .pot-row', 'margin-bottom') +
@@ -431,8 +435,11 @@ for (const playerCount of [5, 6, 7, 8, 9]) {
       const community = {
         left: (width - communityWidth) / 2,
         right: (width + communityWidth) / 2,
-        top: (height * cssNumber('.table-short .community', 'top')) / 100 - 62,
-        bottom: (height * cssNumber('.table-short .community', 'top')) / 100 - 62 + communityHeight,
+        top: (height * cssNumber('.table-short .community', 'top')) / 100 + communityOffset,
+        bottom:
+          (height * cssNumber('.table-short .community', 'top')) / 100 +
+          communityOffset +
+          communityHeight,
       };
       assert.ok(community.bottom <= hero.top, 'the two board rows clear the rotated hero cards');
       const bounds = page.data.seats.map((item) => {
@@ -502,3 +509,24 @@ test('WeChat five-player layout keeps two players near the crown and two around 
     cssNumber('.table-short .seat-hole.revealed-hole', 'height'),
   );
 });
+
+for (const playerCount of [6, 8]) {
+  test(`WeChat ${playerCount}-seat crown stays on the rail before and after reveal`, (t) => {
+    const { page } = setup(t, { playerCount });
+    const crown = page.data.seats.find((seat) => seat.x === 50);
+    assert.ok(crown);
+    assert.equal(crown.y, 0);
+    const profileTop = cssNumber('.seat-hole', 'height');
+    const railTop = cssNumber('.table-area:not(.table-short) .felt-crowned', 'top');
+    assert.ok(profileTop < railTop);
+    assert.ok(profileTop + cssNumber('.seat-body', 'min-height') > railTop);
+    assert.equal(profileTop, cssNumber('.seat-hole.revealed-hole', 'height'));
+    const before = page.data.seats.map(({ id, x, y }) => ({ id, x, y }));
+    finish(page._controller.getGame());
+    page._controller.show();
+    assert.deepEqual(
+      page.data.seats.map(({ id, x, y }) => ({ id, x, y })),
+      before,
+    );
+  });
+}

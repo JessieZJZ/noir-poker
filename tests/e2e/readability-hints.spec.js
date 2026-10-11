@@ -337,7 +337,7 @@ test('all five public positions retain the same rows and face sizes while dealin
       await expect(page.locator('#board > .board-slot')).toHaveCount(5);
       const initial = await positions();
       const expectedWidth = Math.round(
-        width <= 600 ? Math.max(40, Math.min(54, width * 0.12)) : 82,
+        width <= 600 ? Math.max(44, Math.min(54, width * 0.12)) : 82,
       );
       expect(initial.map((card) => card.width)).toEqual(Array(5).fill(expectedWidth));
       const rows = initial.reduce((rows, card) => {
@@ -411,7 +411,9 @@ test('overflowing compact hints loop automatically and stay long enough to read 
     window.qa.stop();
     return document.fonts.ready;
   });
-  await page.clock.pauseAt(new Date('2026-01-01T00:00:01Z'));
+  // Font loading can outlast the fixed clock origin. Freeze in the future
+  // before creating the hint whose lifetime is measured below.
+  await page.clock.pauseAt(await page.evaluate(() => Date.now() + 60_000));
   await page.evaluate(() => window.qa.heroTurn(9));
   const banner = page.locator('#coach-content');
   await expect(banner).toBeVisible();

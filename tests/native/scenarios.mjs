@@ -77,6 +77,48 @@ export async function nativeScenarios(app) {
       startup: info.startup,
     };
   });
+  await check('crown-seat-and-style-row', async () => {
+    const tables = [];
+    for (const count of [6, 8]) {
+      await app.click('#opponents-button');
+      await app.select('#player-count', String(count));
+      await app.click('#mix-opponents');
+      await app.click('#opponents-dialog .close-dialog');
+      await app.click('#reset-button');
+      await app.click('#confirm-reset');
+      await app.waitFor(
+        async () => (await app.state()).playerCount === count,
+        15000,
+        'The selected table size must apply through the normal reset controls',
+      );
+      await app.evaluate(() => window.scrollTo(0, 0));
+      const layout = await app.evaluate(readTableLayout);
+      assertTableLayout(layout);
+      const presentation = await app.evaluate(() => {
+        const crown = document.querySelector('.seat-crown .seat-profile').getBoundingClientRect(),
+          rail = document.querySelector('.poker-table').getBoundingClientRect();
+        const names = [...document.querySelectorAll('.seat-style-label')].map((tag) => ({
+          full: tag.scrollWidth <= tag.clientWidth + 1,
+          below:
+            tag.closest('.seat-profile').querySelector('.seat-stack').getBoundingClientRect().top >=
+            tag.getBoundingClientRect().bottom - 0.5,
+        }));
+        return { straddles: crown.top < rail.top && crown.bottom > rail.top, names };
+      });
+      assert.ok(presentation.straddles, 'The crown profile must straddle the rail');
+      assert.ok(
+        presentation.names.every((tag) => tag.below),
+        'Chips must sit below the style row',
+      );
+      assert.ok(
+        presentation.names.filter((tag) => tag.full).length >= Math.ceil((count - 1) / 2),
+        'Most named styles must fit in one line in the installed app',
+      );
+      await app.screenshot(`crown-${count}-style-row`);
+      tables.push({ count, presentation, layout });
+    }
+    return { tables };
+  });
   await check('settings-autosave-and-local-portraits', async () => {
     await app.click('#opponents-button');
     const languageChanges = [];

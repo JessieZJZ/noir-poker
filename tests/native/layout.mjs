@@ -55,6 +55,8 @@ export function readTableLayout() {
     profiles: [...document.querySelectorAll('.seat-profile')].map((profile) => {
       const style = getComputedStyle(profile),
         tag = getComputedStyle(profile.querySelector('.seat-style-label')),
+        tagBox = profile.querySelector('.seat-style-label').getBoundingClientRect(),
+        stackBox = profile.querySelector('.seat-stack').getBoundingClientRect(),
         font = (selector) =>
           parseFloat(getComputedStyle(profile.querySelector(selector)).fontSize) * scale;
       return {
@@ -68,8 +70,26 @@ export function readTableLayout() {
         nameSize: font('strong'),
         styleSize: parseFloat(tag.fontSize) * scale,
         stackSize: font('.seat-stack'),
+        stackBelowStyle: stackBox.top >= tagBox.bottom - 0.5,
       };
     }),
+    presentation: {
+      heroGap: (identity.top - cards.bottom) / scale,
+      heroInset: (rect('#arena').bottom - identity.bottom) / scale,
+      heroFont: parseFloat(getComputedStyle(document.querySelector('.hero-identity')).fontSize),
+      heroNameFont: parseFloat(
+        getComputedStyle(document.querySelector('.hero-identity strong')).fontSize,
+      ),
+      actions: [...document.querySelectorAll('.seat .seat-action')].map((el) => ({
+        font: parseFloat(getComputedStyle(el).fontSize),
+        margin: parseFloat(getComputedStyle(el).marginTop),
+      })),
+      backs: [...document.querySelectorAll('.seat .card-back')].map((el) => {
+        const back = el.getBoundingClientRect(),
+          profile = el.closest('.seat').querySelector('.seat-profile').getBoundingClientRect();
+        return (profile.top - back.top) / back.height;
+      }),
+    },
     bottomInset:
       parseFloat(getComputedStyle(document.querySelector('.action-dock')).paddingBottom) || 0,
     settledButtons: ['#next-button', '#restart-hand-button', '#review-hand-button'].map(rect),
@@ -99,7 +119,10 @@ export function assertTableLayout(info) {
   }
   const largeTablet =
     info.width >= 901 && info.width <= 1100 && info.height >= 1100 && info.height > info.width;
+  if (info.presentation) assertSeatPresentation(info.presentation, info, largeTablet);
   for (const profile of info.profiles) {
+    if (profile.stackBelowStyle !== undefined)
+      assert.ok(profile.stackBelowStyle, `Seat ${profile.id} chips must sit below its style tag`);
     assert.ok(
       profile.padding.every((value) => value >= 3),
       `Seat ${profile.id} profile needs padding on all sides`,
@@ -124,4 +147,28 @@ export function assertTableLayout(info) {
   } else {
     assert.ok(info.publicCards.every((card) => Math.abs(card.top - info.publicCards[0].top) <= 1));
   }
+}
+
+export function assertSeatPresentation(presentation, viewport, largeTablet = false) {
+  for (const visible of presentation.backs)
+    assert.ok(
+      visible >= 0.35 && visible <= 0.7,
+      'Opponent backs must remain half tucked during the deal and subsequent renders',
+    );
+  if (viewport.width > 1100 || viewport.height <= viewport.width) return;
+  assert.ok(
+    presentation.heroGap >= 18 && presentation.heroGap <= (largeTablet ? 39 : 28),
+    'Hero identity must stay close to the cards with space reserved for the hand rank',
+  );
+  assert.ok(presentation.heroInset >= 40, 'Hero identity must sit inside the lower table edge');
+  assert.ok(
+    presentation.heroFont >= 15 &&
+      Math.abs(presentation.heroNameFont - presentation.heroFont) <= 0.1,
+    'Hero name and chips must use the same readable type size',
+  );
+  for (const action of presentation.actions)
+    assert.ok(
+      action.font >= 11 && action.margin >= 4,
+      'Seat action text needs readable type and a small top margin',
+    );
 }
