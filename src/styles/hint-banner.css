@@ -73,7 +73,7 @@
   font-size: 15px;
   color: #dce7e9;
 }
-.settings-row > select {
+.settings-row select {
   min-height: 44px;
   min-width: 110px;
 }

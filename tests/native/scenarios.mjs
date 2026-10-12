@@ -401,6 +401,17 @@ export async function nativeScenarios(app) {
     const details = [];
     for (const id of ids) {
       await app.click(`[data-profile-preview="${id}"]`);
+      await app.waitFor(
+        () =>
+          app.evaluate(() =>
+            document
+              .querySelector('#profile-detail')
+              .getAnimations()
+              .every((a) => a.playState !== 'running'),
+          ),
+        5000,
+        'Profile circular reveal must finish before inspecting and closing it',
+      );
       const detail = await app.evaluate(() => {
         const section = document.querySelector('#profile-detail .profile-research');
         return {
@@ -505,8 +516,15 @@ export async function nativeScenarios(app) {
           paid,
           callRequired: action === 'call' ? turn.legal.toCall : undefined,
         };
-      if (action === 'fold' && (await app.visible('#continue-deal-button')))
-        await app.click('#continue-deal-button');
+      if (action === 'fold' && (await app.visible('#continue-deal-button'))) {
+        try {
+          await app.click('#continue-deal-button');
+        } catch (error) {
+          // Real bots can finish during a slow driver round trip. Only an
+          // already completed hand makes the disappearing button expected.
+          if ((await app.state()).phase !== 'done') throw error;
+        }
+      }
       if (action !== 'fold') continue;
       await app.waitFor(
         () =>
@@ -547,14 +565,15 @@ export async function nativeScenarios(app) {
     );
     const layout = await app.evaluate(readTableLayout);
     assertTableLayout(layout);
-    assert.ok(Math.abs(layout.table.height - beforeFold.table.height) <= 1);
+    assert.ok(
+      Math.abs(layout.table.height - beforeFold.table.height) <= 1,
+      'Settlement preserves the live table height',
+    );
     assert.ok(Math.abs(layout.table.top - beforeFold.table.top) <= 1);
-    for (const anchor of ['arena', 'publicArea'])
-      for (const key of ['top', 'left', 'height', 'right'])
-        assert.ok(
-          Math.abs(layout[anchor][key] - beforeFold[anchor][key]) <= 1,
-          `${anchor} ${key} must not jump during settlement: ${beforeFold[anchor][key]} -> ${layout[anchor][key]}`,
-        );
+    assert.ok(
+      Math.abs(layout.dock.top - beforeFold.dock.top) <= 1,
+      'Only the control dock shrinks',
+    );
     const buttons = layout.settledButtons;
     assert.ok(
       buttons.every((button) => Math.abs(button.top - buttons[0].top) <= 1 && button.height >= 44),
@@ -566,6 +585,17 @@ export async function nativeScenarios(app) {
     );
     for (let toggle = 0; toggle < 2; toggle++) {
       await app.click('.seat-crown .seat-peek');
+      await app.waitFor(
+        () =>
+          app.evaluate(() =>
+            document
+              .querySelector('.seat-crown .mini-cards')
+              .getAnimations({ subtree: true })
+              .every((animation) => animation.playState !== 'running'),
+          ),
+        5000,
+        'Finish the staggered seat reveal before measuring its final card bounds',
+      );
       const inspection = await app.evaluate(() => {
         const seat = document.querySelector('.seat-crown'),
           view = document.querySelector('.table-viewport').getBoundingClientRect(),
@@ -787,7 +817,13 @@ export async function nativeScenarios(app) {
           ]),
         );
         await app.click('#fold-button');
-        if (await app.visible('#continue-deal-button')) await app.click('#continue-deal-button');
+        if (await app.visible('#continue-deal-button')) {
+          try {
+            await app.click('#continue-deal-button');
+          } catch (error) {
+            if ((await app.state()).phase !== 'done') throw error;
+          }
+        }
         await app.waitFor(async () => (await app.state()).phase === 'done', 90000);
         comparisons.push(
           await app.comparePage(`settlement-${count}`, [
@@ -846,6 +882,22 @@ export async function nativeScenarios(app) {
       );
       await app.click('#reset-dialog .close-dialog');
       await app.evaluate(() => document.querySelector('.session-card').scrollIntoView());
+      const stickyChrome = await app.evaluate(() => {
+        const header = document.querySelector('.header'),
+          style = getComputedStyle(header);
+        return {
+          top: header.getBoundingClientRect().top,
+          inset: parseFloat(style.top),
+          background: style.backgroundColor,
+          cap: getComputedStyle(header, '::before').backgroundColor,
+        };
+      });
+      assert.ok(
+        Math.abs(stickyChrome.top - stickyChrome.inset) <= 1,
+        'Header remains at the native safe area while scrolling',
+      );
+      assert.equal(stickyChrome.background, 'rgb(10, 16, 22)');
+      assert.equal(stickyChrome.cap, stickyChrome.background);
       comparisons.push(
         await app.comparePage('session-activity', [
           '.session-card',

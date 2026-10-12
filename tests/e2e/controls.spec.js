@@ -267,13 +267,13 @@ test('saved sound choices restore, while missing or unavailable storage defaults
   await expect(page.locator('#sound-button')).toHaveAttribute('aria-pressed', 'false');
 });
 
-test('sound waits for a real gesture without queuing old effects and handles failed audio resume', async ({
+test('sound preloads the amplified graph, waits for a real gesture and handles failed audio resume', async ({
   page,
 }) => {
   const errors = [];
   page.on('pageerror', (error) => errors.push(error.message));
   await page.addInitScript(() => {
-    window.audioProbe = { created: 0, resumes: 0, notes: 0, reject: false };
+    window.audioProbe = { created: 0, resumes: 0, notes: 0, reject: false, gains: [] };
     const parameter = () => ({ setValueAtTime() {}, exponentialRampToValueAtTime() {} });
     window.AudioContext = class {
       state = 'suspended';
@@ -293,7 +293,16 @@ test('sound waits for a real gesture without queuing old effects and handles fai
         return { frequency: parameter(), connect() {}, start() {}, stop() {} };
       }
       createGain() {
-        return { gain: parameter(), connect() {} };
+        const gain = parameter();
+        window.audioProbe.gains.push(gain);
+        return { gain, connect() {} };
+      }
+      createDynamicsCompressor() {
+        return Object.fromEntries(
+          ['threshold', 'knee', 'ratio', 'attack', 'release']
+            .map((key) => [key, parameter()])
+            .concat([['connect', () => {}]]),
+        );
       }
     };
   });
@@ -305,7 +314,12 @@ test('sound waits for a real gesture without queuing old effects and handles fai
       .querySelector('#rules-button')
       .dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
   });
-  expect(await page.evaluate(() => window.audioProbe)).toMatchObject({ created: 0, notes: 0 });
+  expect(await page.evaluate(() => window.audioProbe)).toMatchObject({
+    created: 1,
+    resumes: 0,
+    notes: 0,
+  });
+  expect(await page.evaluate(() => window.audioProbe.gains[0].value)).toBe(8);
   await page.keyboard.press('Tab');
   expect(await page.evaluate(() => window.audioProbe)).toMatchObject({
     created: 1,

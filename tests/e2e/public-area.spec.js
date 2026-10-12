@@ -32,9 +32,12 @@ async function assertPublicArea(page) {
         )
           problems.push('details not aligned to right of amount');
         const visible = (el) => !el.hidden && getComputedStyle(el).display !== 'none';
-        const publicSelectors = ['.pot', '#board', '#board-caption'].filter((selector) =>
-          visible(document.querySelector(selector)),
-        );
+        const publicSelectors = [
+          '.pot > div',
+          '.pot-details-trigger',
+          '#board',
+          '#board-caption',
+        ].filter((selector) => visible(document.querySelector(selector)));
         for (const selector of publicSelectors) {
           const rect = box(selector);
           if (rect.left < arena.left || rect.right > arena.right)
@@ -77,7 +80,8 @@ async function assertPublicArea(page) {
           table.bottom - group.height - gap,
           heroTop - group.height - 24 * scale,
         );
-        const ideal = table.top + table.height * 0.44 - group.height / 2;
+        const board = box('#board');
+        const ideal = table.top + table.height * 0.5 - board.height / 2;
         const clearAt = (top) =>
           parts.every((part) =>
             occupied.every(
@@ -111,13 +115,9 @@ async function assertPublicArea(page) {
             }
           }
         }
-        let best = Infinity;
-        for (let top = Math.ceil(min); top <= max; top++)
-          if (clearAt(top)) best = Math.min(best, Math.abs(top - ideal));
-        if (ideal >= min && ideal <= max && clearAt(ideal)) best = 0;
-        if (!Number.isFinite(best) || Math.abs(group.top - ideal) > best + 1.5)
+        if (Math.abs(board.top - ideal) > 1)
           problems.push(
-            `public group is farther from the upper felt anchor than necessary: actual ${Math.abs(group.top - ideal).toFixed(2)}, best ${best.toFixed(2)}`,
+            `public cards moved from the felt center by ${Math.abs(board.top - ideal)}px`,
           );
         return problems;
       }),
@@ -125,7 +125,7 @@ async function assertPublicArea(page) {
     .toEqual([]);
 }
 
-test('public areas stay closest to the upper felt anchor within the play viewport without covering players', async ({
+test('public areas stay closest to the felt center within the play viewport without covering players', async ({
   page,
 }) => {
   // Each test traverses many complete table layouts; each assertion keeps

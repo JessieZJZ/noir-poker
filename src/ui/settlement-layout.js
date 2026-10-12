@@ -1,4 +1,6 @@
-import { COMPACT_PLAY_QUERY, publicGroupTop, smallestClearHeight } from './play-geometry.js';
+import { compactTableLayout } from './compact-table-layout.js';
+import { COMPACT_PLAY_QUERY } from './play-geometry.js';
+import { railLayout } from './rail-layout.js';
 // Select the closest collision-free position to the upper felt center. Using each
 // public part separately leaves usable space beside a narrow pot or caption.
 export function nearestClearTop(ideal, min, max, blocked) {
@@ -28,207 +30,198 @@ export function minimalSeatShift(leftSide, footprint, corridor, bounds) {
       );
 }
 
-// Absolute seat anchors preserve the oval table. Grow settlement height from
-// player footprints, then center the public group without moving the hero.
+// Measure stable wrappers, then share the same rail solver with WeChat.
 export function createSettlementLayout(arena, { observe = true } = {}) {
   const center = arena.querySelector('.table-center');
-  const viewport = arena.closest('.table-viewport');
-  let width = 0,
-    viewportHeight = 0,
-    frame = null;
+  let frame = null;
   function update() {
     arena.style.removeProperty('min-height');
-    center.style.removeProperty('margin-bottom');
-    center.style.removeProperty('top');
-    center.style.removeProperty('transform');
-    width = arena.clientWidth;
-    viewportHeight = viewport?.clientHeight ?? 0;
-    const settled = arena.classList.contains('is-done'),
-      compact = matchMedia(COMPACT_PLAY_QUERY).matches,
-      box = arena.getBoundingClientRect(),
-      gap = 12,
-      // The hero's tilted cards extend beyond their untransformed wrapper.
-      heroGap = 24,
-      bottomPadding = 20;
-    const playerParts = (seat) => {
-      const parts = [
-        ...seat.querySelectorAll('.mini-cards, .seat-profile, .seat-action, .seat-rank-slot'),
-      ]
-        .filter((el) => !el.hidden)
-        .map((el) => el.getBoundingClientRect())
-        .filter((r) => r.width > 0 && r.height > 0);
-      return parts;
-    };
-    // Open the public row's actual horizontal corridor before reserving a
-    // vertical band. Move side seats only by the missing clearance, bounded
-    // by their full footprint; a fixed shift can leave a small collision and
-    // unnecessarily grow/shrink the whole mobile table.
-    const spread = compact && !arena.classList.contains('compact-landscape');
-    for (const seat of arena.querySelectorAll('.seat')) seat.style.removeProperty('margin-left');
-    if (spread) {
-      const publicParts = [...center.querySelectorAll('.pot, #board, #board-caption')]
-        .map((el) => el.getBoundingClientRect())
-        .filter((r) => r.width > 0 && r.height > 0);
-      // CSS layout rounds offsets to fractional pixels. Leave half a pixel
-      // beyond exact clearance so the final fit transform keeps it clear.
-      const clearLeft = Math.min(...publicParts.map((r) => r.left)) - gap - 0.5,
-        clearRight = Math.max(...publicParts.map((r) => r.right)) + gap + 0.5;
-      for (const seat of arena.querySelectorAll('.seat-left, .seat-right')) {
-        // Upper seats belong around the oval's crown, away from the public
-        // group. Moving them to the outside edges makes a short-handed table
-        // look empty even though the middle corridor does not need their room.
-        if (parseFloat(seat.style.top) === 0) continue;
-        const parts = playerParts(seat);
-        const left = Math.min(...parts.map((r) => r.left)),
-          right = Math.max(...parts.map((r) => r.right));
-        const shift = minimalSeatShift(
-          seat.classList.contains('seat-left'),
-          { left, right },
-          { left: clearLeft, right: clearRight },
-          box,
-        );
-        seat.style.marginLeft = `${shift}px`;
-      }
-      // Two upper seats can share an anchor row. Height cannot separate
-      // them; use the open horizontal space symmetrically instead.
-      const rowSeats = [...arena.querySelectorAll('.seat')];
-      for (const [index, a] of rowSeats.entries())
-        for (const b of rowSeats.slice(index + 1)) {
-          if (a.style.top !== b.style.top) continue;
-          const ar = a.getBoundingClientRect(),
-            br = b.getBoundingClientRect();
-          const [left, right, lr, rr] = ar.left < br.left ? [a, b, ar, br] : [b, a, br, ar];
-          const shift = Math.max(0, (lr.right + gap - rr.left) / 2);
-          left.style.marginLeft = `${(parseFloat(left.style.marginLeft) || 0) - shift}px`;
-          right.style.marginLeft = `${(parseFloat(right.style.marginLeft) || 0) + shift}px`;
-        }
+    arena.classList.remove('public-two-rows');
+    for (const el of [
+      center,
+      arena.querySelector('#board'),
+      arena.querySelector('.hero-area'),
+      ...arena.querySelectorAll('.seat, .seat-profile'),
+    ]) {
+      el.style.removeProperty('width');
+      el.style.removeProperty('height');
     }
-    const seats = [...arena.querySelectorAll('.seat')].map((seat) => {
-      const y = parseFloat(seat.style.top) / 100;
-      // Wrappers measure final layout, unaffected by a card's deal animation.
-      const parts = playerParts(seat);
+    center.style.removeProperty('min-width');
+    const compact = matchMedia(COMPACT_PLAY_QUERY).matches;
+    if (!compact) {
+      for (const key of [...arena.style].filter((key) =>
+        /^--(player-|pot-detail|hero-action|hero-rank|action-height|rank-height|profile-width)/.test(
+          key,
+        ),
+      ))
+        arena.style.removeProperty(key);
+    }
+    const seatElements = [...arena.querySelectorAll('.seat')];
+    if (!seatElements.length) return;
+    for (const seat of seatElements) {
+      seat.style.margin = '0';
+      seat.style.transform = 'none';
+    }
+    const size = (el, selectors) => {
+      const box = el.getBoundingClientRect();
       return {
-        y,
-        left: Math.min(...parts.map((r) => r.left)),
-        right: Math.max(...parts.map((r) => r.right)),
-        topOffset: Math.min(...parts.map((r) => r.top)) - box.top - y * box.height,
-        bottomOffset: Math.max(...parts.map((r) => r.bottom)) - box.top - y * box.height,
+        width: el.offsetWidth,
+        height: el.offsetHeight,
+        ...(selectors
+          ? {
+              parts: [...el.querySelectorAll(selectors)]
+                .filter((p) => !p.hidden && p.offsetHeight && p.offsetWidth)
+                .map((p) => {
+                  const r = p.getBoundingClientRect();
+                  return {
+                    left: r.left - box.left,
+                    top: r.top - box.top,
+                    width: p.offsetWidth,
+                    height: p.offsetHeight,
+                  };
+                }),
+            }
+          : {}),
       };
-    });
-    if (settled || compact) {
-      let height = box.height;
-      const hero = arena.querySelector('.hero-area').getBoundingClientRect();
-      for (const a of seats) {
-        if (compact && a.left < hero.right + 8 && a.right > hero.left - 8)
-          height = Math.max(height, (a.bottomOffset + box.bottom - hero.top + 8 + gap) / (1 - a.y));
-        if (settled || compact) {
-          height = Math.max(height, (a.bottomOffset + (compact ? 0 : bottomPadding)) / (1 - a.y));
-          for (const b of seats) {
-            if (b.y <= a.y || a.right <= b.left || a.left >= b.right) continue;
-            height = Math.max(height, (a.bottomOffset - b.topOffset + gap) / (b.y - a.y));
-          }
-        }
-      }
-      arena.style.minHeight = `${Math.ceil(height)}px`;
-    }
-
-    const measure = () => {
-      const table = arena.querySelector('.table-inner').getBoundingClientRect(),
-        group = center.getBoundingClientRect(),
-        hero = arena.querySelector('.hero-area').getBoundingClientRect(),
-        // Reserve the fixed card tilt instead of sampling deal/highlight
-        // animations, which otherwise move the public group frame by frame.
-        heroTop = compact
-          ? hero.top - 8
-          : Math.min(
-              hero.top,
-              ...[...arena.querySelectorAll('#hero-cards .playing-card')]
-                .map((el) => el.getBoundingClientRect())
-                .filter((r) => r.width > 0 && r.height > 0)
-                .map((r) => r.top),
-            ),
-        parts = [...center.querySelectorAll('.pot, #board, #board-caption')]
-          .map((el) => el.getBoundingClientRect())
-          .filter((r) => r.width > 0 && r.height > 0),
-        occupied = [...arena.querySelectorAll('.seat')].flatMap(playerParts),
-        blocked = parts.flatMap((part) =>
-          occupied
-            .filter((r) => r.left < part.right + gap && r.right > part.left - gap)
-            .map((r) => [
-              r.top - gap - (part.bottom - group.top),
-              r.bottom + gap - (part.top - group.top),
-            ]),
-        ),
-        min = table.top + gap,
-        heroBlocks = parts.some(
-          (part) => part.left < hero.right + gap && part.right > hero.left - gap,
-        ),
-        max = Math.min(
-          table.bottom - group.height - gap,
-          heroBlocks ? heroTop - group.height - heroGap : Infinity,
-        ),
-        ideal = publicGroupTop(table.top, table.height, group.height),
-        top = nearestClearTop(ideal, min, max, blocked);
-      return { top, table, group, heroTop };
     };
-    let space = measure();
-    if (space.top === null) {
-      // Guarantee a free band between two seat anchors rather than giving up
-      // after an arbitrary number of incremental height adjustments.
-      const anchors = [...new Set([0, ...seats.map((s) => s.y), 1])].sort((a, b) => a - b);
-      const band = anchors
-        .slice(1)
-        .map((end, i) => [anchors[i], end])
-        .sort((a, b) => b[1] - b[0] - (a[1] - a[0]))[0];
-      const y = (band[0] + band[1]) / 2,
-        current = arena.getBoundingClientRect(),
-        { table, group, heroTop } = space;
-      let height = Math.max(
-        current.height,
-        (table.top - current.top + gap) / y,
-        (current.bottom - table.bottom + group.height + gap) / (1 - y),
-        (current.bottom - heroTop + group.height + heroGap) / (1 - y),
-      );
-      for (const seat of seats)
-        height = Math.max(
-          height,
-          seat.y < y
-            ? (seat.bottomOffset + gap) / (y - seat.y)
-            : (group.height - seat.topOffset + gap) / (seat.y - y),
-        );
-      const ceiling = Math.ceil(height + 24);
-      // The guaranteed band is an upper bound, not the height to display.
-      // In a short six-seat phone layout it can be nearly twice the height
-      // actually needed and force the entire felt into a narrow strip.
-      const required = compact
-        ? smallestClearHeight(current.height, ceiling, (candidate) => {
-            arena.style.minHeight = `${candidate}px`;
-            return measure().top !== null;
-          })
-        : ceiling;
-      arena.style.minHeight = `${required}px`;
-      space = measure();
-      // The reserved band is safe even at a fractional-pixel boundary.
-      space.top ??= arena.getBoundingClientRect().top + y * arena.getBoundingClientRect().height;
+    const publicSize = () => {
+      const group = center.getBoundingClientRect();
+      const board = arena.querySelector('#board').getBoundingClientRect();
+      return {
+        ...size(center, '.pot > div, .pot-details-trigger, #board, #board-caption'),
+        centerY: board.top - group.top + board.height / 2,
+      };
+    };
+    const single = { ...publicSize(), twoRows: false };
+    arena.classList.add('public-two-rows');
+    const double = { ...publicSize(), twoRows: true };
+    arena.classList.remove('public-two-rows');
+    for (const el of [
+      center,
+      arena.querySelector('#board'),
+      arena.querySelector('.hero-area'),
+      ...arena.querySelectorAll('.seat, .seat-profile'),
+    ]) {
+      el.style.removeProperty('width');
+      el.style.removeProperty('height');
     }
-    if (settled && !compact)
-      center.style.transform = `translateY(${space.top - space.group.top}px)`;
-    else center.style.top = `${space.top - arena.getBoundingClientRect().top}px`;
-  }
-  if (!observe) return { update };
-  const observer = new ResizeObserver(() => {
-    // Write outside the observer's delivery phase to avoid resize feedback.
+    center.style.removeProperty('min-width');
+    const rootStyle = getComputedStyle(document.documentElement);
+    const insets = ['--safe-area-inset-top', '--safe-area-inset-bottom'].reduce(
+      (sum, key) => sum + (parseFloat(rootStyle.getPropertyValue(key)) || 0),
+      0,
+    );
+    let result = compact
+      ? compactTableLayout({
+          width: innerWidth,
+          height: arena.clientHeight,
+          availableWidth: arena.clientWidth,
+          displayHeight: innerHeight - insets,
+          seats: seatElements.map((seat, i) => ({ id: i + 1 })),
+        })
+      : railLayout({
+          width: arena.clientWidth,
+          height: arena.clientHeight,
+          proportional: false,
+          angles:
+            seatElements.length === 4
+              ? [180, 240, 300, 360]
+              : seatElements.length === 8
+                ? [140, 170, 210, 250, 290, 330, 370, 400]
+                : undefined,
+          alternatives: seatElements.length === 8 ? [undefined] : undefined,
+          seats: seatElements.map((seat) =>
+            size(seat, '.mini-cards, .seat-profile, .seat-action, .seat-rank-slot'),
+          ),
+          hero: size(arena.querySelector('.hero-area')),
+          publicRows: [single, double],
+        });
     if (
-      (arena.clientWidth !== width || (viewport?.clientHeight ?? 0) !== viewportHeight) &&
-      frame === null
-    )
+      compact &&
+      result &&
+      seatElements.some(
+        (seat) => seat.querySelector('.seat-profile').offsetHeight > result.profileHeight + 1,
+      )
+    ) {
+      result = compactTableLayout({
+        width: innerWidth,
+        height: arena.clientHeight,
+        availableWidth: arena.clientWidth,
+        displayHeight: innerHeight - insets,
+        seats: seatElements.map((seat) =>
+          size(seat, '.mini-cards, .seat-profile, .seat-action, .seat-rank-slot'),
+        ),
+      });
+    }
+    if (!result) return;
+    if (compact) {
+      for (const [key, value] of Object.entries(result.textMetrics))
+        arena.style.setProperty(`--${key}`, `${value}px`);
+      center.style.minWidth = '0';
+      center.style.width = `${result.public.width}px`;
+      center.style.height = `${result.public.height}px`;
+      arena.querySelector('#board').style.width = `${result.public.width}px`;
+      arena.querySelector('.hero-area').style.width = `${result.hero.width}px`;
+      arena.querySelector('.hero-area').style.height = `${result.hero.height}px`;
+      seatElements.forEach((seat) => {
+        seat.querySelector('.seat-profile').style.height = `${result.profileHeight}px`;
+        seat.querySelector('.seat-profile').style.width = `${result.profileWidth}px`;
+      });
+    } else {
+      center.style.removeProperty('width');
+      center.style.removeProperty('height');
+      center.style.removeProperty('min-width');
+      arena.querySelector('#board').style.removeProperty('width');
+      arena.querySelector('.hero-area').style.removeProperty('width');
+      arena.querySelector('.hero-area').style.removeProperty('height');
+      seatElements.forEach((seat) =>
+        seat.querySelector('.seat-profile').style.removeProperty('height'),
+      );
+    }
+    arena.classList.toggle('public-two-rows', result.twoRows);
+    arena.style.width = `${result.arenaWidth}px`;
+    arena.style.height = `${result.arenaHeight}px`;
+    arena.style.minHeight = '0';
+    const felt = arena.querySelector('.poker-table');
+    Object.assign(felt.style, {
+      inset: 'auto',
+      left: `${result.table.left}px`,
+      top: `${result.table.top}px`,
+      width: `${result.table.width}px`,
+      height: `${result.table.height}px`,
+    });
+    seatElements.forEach((seat, i) =>
+      Object.assign(seat.style, {
+        width: `${result.positioned[i].width}px`,
+        height: `${result.positioned[i].height}px`,
+        left: `${result.positioned[i].left}px`,
+        top: `${result.positioned[i].top}px`,
+      }),
+    );
+    Object.assign(center.style, {
+      position: 'absolute',
+      left: `${result.public.left}px`,
+      top: `${result.public.top}px`,
+      transform: 'none',
+    });
+    Object.assign(arena.querySelector('.hero-area').style, {
+      position: 'absolute',
+      left: `${result.hero.left}px`,
+      top: `${result.hero.top}px`,
+      bottom: 'auto',
+      transform: 'none',
+    });
+  }
+  if (observe) {
+    const observer = new ResizeObserver(() => {
+      if (frame !== null) return;
       frame = requestAnimationFrame(() => {
         frame = null;
         update();
       });
-  });
-  observer.observe(arena);
-  if (viewport) observer.observe(viewport);
-  document.fonts.ready.then(update);
+    });
+    observer.observe(arena.closest('.table-viewport') || arena);
+    document.fonts.ready.then(update);
+  }
   return { update };
 }

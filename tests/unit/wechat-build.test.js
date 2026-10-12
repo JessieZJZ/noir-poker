@@ -167,6 +167,23 @@ test('concurrent WeChat builders serialize and preserve DevTools private prefere
     Object.keys(PROFILE_PORTRAITS).length,
   );
   assert.ok(manifest.totalBytes < 2 * 1024 * 1024);
+  for (const name of ['fold', 'check', 'raise', 'call', 'deal']) {
+    const wave = readFileSync(path.join(workspace.output, `assets/sounds/${name}.wav`));
+    let peak = 0,
+      saturated = 0;
+    for (let i = 44; i < wave.length; i += 2) {
+      const value = Math.abs(wave.readInt16LE(i));
+      peak = Math.max(peak, value);
+      if (value === 32767 || value === 32768) saturated++;
+    }
+    assert.ok(peak > 22000 && peak < 32767, `${name} has audible amplitude and headroom`);
+    assert.equal(saturated, 0, `${name} has no clipped samples`);
+  }
+
+  assert.ok(
+    manifest.files.every((file) => !/i18n|locales|translator|localization/.test(file.path)),
+    'Chinese-only mini-program must not bundle internationalization',
+  );
   assert.equal(
     manifest.files.some((file) => file.path === 'project.private.config.json'),
     false,

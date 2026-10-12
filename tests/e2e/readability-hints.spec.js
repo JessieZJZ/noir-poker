@@ -293,6 +293,8 @@ test('inspection follows the position badge and crown JJ keep clear of the hint 
               )
                 issues.push('eye escapes the profile');
               if (
+                e.top >= 0 &&
+                e.bottom <= innerHeight &&
                 document
                   .elementFromPoint((e.left + e.right) / 2, (e.top + e.bottom) / 2)
                   ?.closest('.seat-peek') !== eye
@@ -344,7 +346,7 @@ test('all five public positions retain the same rows and face sizes while dealin
       await expect(page.locator('#board > .board-slot')).toHaveCount(5);
       const initial = await positions();
       const expectedWidth = Math.round(
-        width <= 360 ? 50 : width <= 600 ? Math.max(44, Math.min(54, width * 0.12)) : 98,
+        width <= 360 ? 54 : width <= 600 ? Math.max(44, Math.min(54, width * 0.12)) : 98,
       );
       expect(initial.map((card) => card.width)).toEqual(Array(5).fill(expectedWidth));
       const rows = initial.reduce((rows, card) => {

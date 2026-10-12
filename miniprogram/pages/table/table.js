@@ -1,9 +1,10 @@
 const { createWechatController } = require('../../shared/platform/wechat-controller.js');
 const { phoneLayout } = require('./phone-layout.js');
 const { presentCard, showdownPresentation } = require('./presentation.js');
+const PORTRAIT_CREDITS = require('../../assets/portraits/credits.js');
 const { completeBoardForPractice, rankText } = require('../../shared/engine/poker.js');
-// Capsule 36 + Web nav 60 + top gap 8 + header 69 + live dock 146 + end gap 8 + border 2.
-const VIEWPORT_CHROME_HEIGHT = 329;
+// Capsule 36 + Web nav 60 + top gap 8 + header 61 + live dock 146 + end gap 8 + border 2.
+const VIEWPORT_CHROME_HEIGHT = 321;
 const PROFILE_AXES = [
   ['vpip', '入池宽度'],
   ['aggression', '进攻倾向'],
@@ -32,7 +33,7 @@ Page({
     resetOpen: false,
     guideExpanded: [false, false],
     potExpanded: {},
-    potHeight: 580,
+    potSheetHeight: 580,
     reviewPerspective: 'hero',
     reviewIndex: 0,
     opponentFilter: 0,
@@ -52,27 +53,52 @@ Page({
     heroCards: [],
     reviewData: { steps: [] },
     detailProfile: null,
+    selectedProfile: 'balanced',
+    settingsScrollTop: 0,
+    comparisonOpen: false,
+    homeLocked: false,
+    homeOffset: 0,
+    finishing: false,
   },
   onLoad() {
     this.updateWindow();
     this._audio = [];
+    this.preloadSounds();
     this._controller = createWechatController({
       publish: (view) => {
+        if (view.done || view.hand !== this.data.hand || view.replay !== this.data.replay)
+          this._finishRequested = false;
         const game = this._controller?.getGame();
-        const board = game?.practiceBoard
-          ? game.practiceBoard.map((card) => ({
-              key: card.key,
-              rank: rankText(card.rank),
-              suit: card.symbol,
-              red: card.suit === 1 || card.suit === 3,
-            }))
-          : view.board;
+        const board = view.board;
         const showdown = game ? showdownPresentation(game, view.profiles) : [];
-        const presentedBoard = board.map(presentCard);
-        this.setData({
+        const dealKey = `${view.hand}:${view.replay}`;
+        const previousCards = dealKey === this._dealKey ? this._boardCount || 0 : 0;
+        this._dealKey = dealKey;
+        const presentedBoard = board.map((card, index) => ({
+          ...presentCard(card),
+          arriving: index >= previousCards,
+          dealDelay: Math.max(0, index - previousCards) * 140,
+        }));
+        this._boardCount = board.length;
+        const presentedSeats = view.seats.map((seat) => ({
+          ...seat,
+          cards: seat.cards.map(presentCard),
+          backCards: [0, 1].map((index) => ({
+            key: `${dealKey}:${index}`,
+            delay: seat.id * 65 + index * 140,
+          })),
+        }));
+        const update = {
           ...view,
-          seats: view.seats.map((seat) => ({ ...seat, cards: seat.cards.map(presentCard) })),
-          heroCards: view.heroCards.map(presentCard),
+          finishing:
+            view.done || view.hand !== this.data.hand || view.replay !== this.data.replay
+              ? false
+              : this.data.finishing,
+          seats: presentedSeats,
+          heroCards: view.heroCards.map((card) => ({
+            ...presentCard(card),
+            dealKey: `${dealKey}:${card.key}`,
+          })),
           showdown,
           showdownContext: `${showdown.length} 人参与摊牌${game?.pots.length > 1 ? ' · 主池与边池分别结算' : ''}`,
           activePlayerCount: view.seats.length + 1,
@@ -100,12 +126,20 @@ Page({
           canPracticeRunout: view.done && view.heroFolded && board.length < 5,
           ...this.publicLayout(presentedBoard, {
             ...view,
-            seats: view.seats.map((seat) => ({ ...seat, cards: seat.cards.map(presentCard) })),
+            seats: presentedSeats,
           }),
           winrate: view.stats.hands ? Math.round((view.stats.wins / view.stats.hands) * 100) : 0,
           countIndex: view.settings.playerCount - 5,
           emotionIndex: ['off', 'subtle', 'lively'].indexOf(view.settings.emotionMode),
-        });
+        };
+        // Large research catalogs and card artwork need not cross the service/
+        // view bridge on every bot turn. Preserve existing card nodes and motion.
+        const patch = Object.fromEntries(
+          Object.entries(update).filter(
+            ([key, value]) => JSON.stringify(this.data[key]) !== JSON.stringify(value),
+          ),
+        );
+        this.setData(patch, () => this.tightenSeatRanks());
       },
       storage: {
         getItem: (key) => wx.getStorageSync(key) || null,
@@ -116,20 +150,45 @@ Page({
     this._controller.start();
   },
   onShow() {
+    this._hidden = false;
+    if (!this._audio?.length) this.preloadSounds();
     this._controller?.show();
+    if (this._finishRequested && !this.data.done) this.finishHand();
     if (this.data.reviewOpen && this._controller)
       this.call('review', (reviewData) => this.updateReview(reviewData));
   },
   onHide() {
+    this._hidden = true;
+    this.setData({ finishing: false });
+    this._rankEpoch = (this._rankEpoch || 0) + 1;
     this._controller?.hide();
     this.stopSounds();
   },
   onUnload() {
+    this._destroyed = true;
     this._controller?.destroy();
     this.stopSounds();
   },
   onResize() {
     this.updateWindow();
+  },
+  onPageScroll(event) {
+    if (!this.data.homeLocked) this._homeScroll = event.scrollTop;
+  },
+  setOverlay(patch) {
+    const next = { ...this.data, ...patch };
+    const homeLocked = [
+      'settingsOpen',
+      'guideOpen',
+      'reviewOpen',
+      'activityOpen',
+      'potOpen',
+      'resetOpen',
+    ].some((key) => next[key]);
+    const unlocking = this.data.homeLocked && !homeLocked;
+    this.setData({ ...patch, homeLocked, homeOffset: -(this._homeScroll || 0) }, () => {
+      if (unlocking) wx.pageScrollTo?.({ scrollTop: this._homeScroll || 0, duration: 0 });
+    });
   },
   updateWindow() {
     const info = wx.getWindowInfo ? wx.getWindowInfo() : wx.getSystemInfoSync();
@@ -163,8 +222,7 @@ Page({
     } catch {
       /* Menu measurement can be unavailable while an older client initializes. */
     }
-    // Reserve the live dock budget when computing the table. A compact dock
-    // shrinks the shell, never stretches the felt.
+    // The table budget stays identical through fold, settlement and retry.
     this.setData({
       topInset,
       bottomInset,
@@ -179,19 +237,29 @@ Page({
     this.setData({
       arenaHeight,
       arenaScale,
-      arenaWidth: (info.windowWidth - 26) / (arenaScale || 1),
+      arenaWidth: (info.windowWidth - 18) / (arenaScale || 1),
     });
     this.setData(this.publicLayout(this.data.board));
   },
   publicLayout(board = [], view = this.data) {
-    if (this.data.windowWidth <= 600 && view.seats?.length) {
+    if (view.seats?.length) {
+      const tableHeight = Math.max(
+        0,
+        this.data.windowHeight -
+          this.data.topInset -
+          this.data.bottomInset -
+          VIEWPORT_CHROME_HEIGHT,
+      );
       const fitted = phoneLayout({
         width: this.data.windowWidth,
-        height: this.data.tableHeight,
+        availableWidth: this.data.windowWidth - 18,
+        height: tableHeight,
         seats: view.seats,
+        displayHeight: this.data.windowHeight - this.data.topInset - this.data.bottomInset - 36,
       });
       return {
         ...fitted,
+        tableHeight,
         phoneLayout: true,
         phoneSeats: fitted.positioned,
         boardSlots: Array.from(
@@ -201,26 +269,34 @@ Page({
         ),
       };
     }
-    const largeTablet =
-      this.data.windowWidth >= 901 &&
-      this.data.windowWidth <= 1100 &&
-      this.data.windowHeight >= 1100 &&
-      this.data.windowHeight > this.data.windowWidth;
-    const cardWidth =
-      this.data.tableHeight < 430 ? 25 : largeTablet ? 82 : this.data.windowWidth > 600 ? 48 : 38;
-    const singleWidth = 5 * cardWidth + 16;
-    // Use the safe middle corridor, independent of deal/reveal state.
-    const boardTwoRows = singleWidth > this.data.arenaWidth * 0.6;
-    return {
-      phoneLayout: false,
-      boardTwoRows,
-      boardWidth: boardTwoRows ? 3 * cardWidth + 8 : singleWidth,
-      boardSlots: Array.from(
-        { length: 5 },
-        (_, i) =>
-          board[i] || { key: `empty-${i}`, empty: true, suit: ['♠', '♣', '♥', '♦', '♠'][i] },
-      ),
-    };
+    return {};
+  },
+  tightenSeatRanks() {
+    if (!wx.createSelectorQuery || this._hidden || this._destroyed) return;
+    const ticket = (this._rankEpoch = (this._rankEpoch || 0) + 1);
+    const query = wx.createSelectorQuery();
+    query.selectAll('.seat-action-word').fields({ rect: true, size: true, dataset: true });
+    query.selectAll('.seat-rank-slot .rank').fields({ rect: true, size: true, dataset: true });
+    query.exec(([words, ranks]) => {
+      if (ticket !== this._rankEpoch || this._hidden || this._destroyed) return;
+      const bottoms = new Map();
+      for (const word of words || [])
+        bottoms.set(
+          Number(word.dataset.id),
+          Math.max(bottoms.get(Number(word.dataset.id)) || 0, word.top + word.height),
+        );
+      const scale = this.data.arenaScale || 1;
+      const patch = {};
+      for (const rank of ranks || []) {
+        const id = Number(rank.dataset.id),
+          index = this.data.phoneSeats.findIndex((seat) => seat.id === id);
+        if (index < 0 || !bottoms.has(id)) continue;
+        const current = this.data.phoneSeats[index].rankLift || 0;
+        const lift = Math.min(0, current + (bottoms.get(id) + 3 * scale - rank.top) / scale);
+        if (Math.abs(lift - current) > 0.1) patch[`phoneSeats[${index}].rankLift`] = lift;
+      }
+      if (Object.keys(patch).length) this.setData(patch);
+    });
   },
   call(method, ...args) {
     try {
@@ -234,31 +310,35 @@ Page({
     const names = { fold: 'fold', check: 'check', raise: 'raise', call: 'call', deal: 'deal' };
     if (!names[name]) return;
     try {
-      const audio = wx.createInnerAudioContext();
-      audio.src = `/assets/sounds/${names[name]}.wav`;
-      audio.volume = 0.35;
-      audio.obeyMuteSwitch = false;
-      const release = () => {
-        const index = this._audio.indexOf(audio);
-        if (index < 0) return;
-        this._audio.splice(index, 1);
-        audio.destroy();
-      };
-      audio.onEnded(release);
-      audio.onError(release);
-      this._audio.push(audio);
+      const audio = this._soundPool?.[names[name]];
+      if (!audio) return;
+      audio.stop();
+      audio.seek?.(0);
       audio.play();
     } catch {
       /* A device can block audio until the first user gesture. */
     }
   },
+  preloadSounds() {
+    this._soundPool = {};
+    if (!wx.createInnerAudioContext) return;
+    for (const name of ['fold', 'check', 'raise', 'call', 'deal']) {
+      const audio = wx.createInnerAudioContext();
+      audio.src = `/assets/sounds/${name}.wav`;
+      audio.volume = 1;
+      audio.obeyMuteSwitch = false;
+      audio.onError(() => {});
+      this._audio.push(audio);
+      this._soundPool[name] = audio;
+    }
+  },
   stopSounds() {
-    const playing = this._audio || [];
-    this._audio = [];
-    playing.forEach((audio) => {
+    (this._audio || []).forEach((audio) => {
       audio.stop();
       audio.destroy();
     });
+    this._audio = [];
+    this._soundPool = {};
   },
   act(event) {
     this.call('action', event.currentTarget.dataset.action);
@@ -270,9 +350,13 @@ Page({
     this.call('setRaise', event.detail.value);
   },
   nextHand() {
+    this._finishRequested = false;
+    this.setData({ finishing: false });
     this.call('nextHand');
   },
   retryHand() {
+    this._finishRequested = false;
+    this.setData({ finishing: false });
     this.call('retry');
   },
   finishHand() {
@@ -281,13 +365,18 @@ Page({
       this._controller.show();
       return;
     }
-    this.call('finishHand');
+    if (this.data.finishing) return;
+    this._finishRequested = true;
+    this.setData({ finishing: true });
+    if (!this.call('finishHand')) this.setData({ finishing: false });
   },
   openSettings() {
-    this.setData({ settingsOpen: true });
+    this._settingsScroll = 0;
+    this.setOverlay({ settingsOpen: true, settingsScrollTop: 0 });
   },
   closeSettings() {
-    this.setData({ settingsOpen: false, detailProfile: null });
+    this.closeSelect();
+    this.setOverlay({ settingsOpen: false, detailProfile: null, selection: null });
   },
   changeSwitch(event) {
     this.call('setPreference', event.currentTarget.dataset.key, event.detail.value);
@@ -295,6 +384,81 @@ Page({
   togglePreference(event) {
     const key = event.currentTarget.dataset.key;
     this.call('setPreference', key, !this.data.settings[key]);
+  },
+  noop() {},
+  openSelect(event) {
+    const field = event.currentTarget.dataset.field;
+    const id = event.currentTarget.dataset.id;
+    const options =
+      field === 'count'
+        ? this.data.countOptions.map((n) => n + ' 人')
+        : field === 'emotion'
+          ? this.data.emotionOptions
+          : field === 'seat'
+            ? this.data.profiles.map((p) => p.short)
+            : this.data.opponentOptions;
+    const index =
+      field === 'count'
+        ? this.data.countIndex
+        : field === 'emotion'
+          ? this.data.emotionIndex
+          : field === 'seat'
+            ? this.data.seatSettings.find((s) => s.id === Number(id)).profileIndex
+            : this.data.opponentFilter;
+    const ticket = (this._selectEpoch = (this._selectEpoch || 0) + 1);
+    const open = (rect) => {
+      if (!rect || ticket !== this._selectEpoch || this._hidden || this._destroyed) return;
+      const rowHeight = 36;
+      const width = Math.min(220, Math.max(rect.width, field === 'seat' ? 180 : 110));
+      const height = Math.min(options.length * rowHeight + 8, 260);
+      const bottomLimit = this.data.windowHeight - this.data.bottomInset - 8;
+      const below = Math.max(0, bottomLimit - rect.bottom - 4);
+      const above = Math.max(0, rect.top - this.data.topInset - 36 - 8);
+      const upwards = below < Math.min(height, 120) && above > below;
+      const actualHeight = Math.max(rowHeight + 8, Math.min(height, upwards ? above : below));
+      this.setData({
+        selection: {
+          field,
+          id: id || 0,
+          options,
+          index,
+          width,
+          height: actualHeight,
+          left: Math.min(this.data.windowWidth - width - 8, Math.max(8, rect.right - width)),
+          top: upwards ? rect.top - actualHeight - 4 : rect.bottom + 4,
+        },
+      });
+    };
+    if (wx.createSelectorQuery) {
+      const selector = field === 'seat' ? `#select-seat-${id}` : `#select-${field}`;
+      wx.createSelectorQuery().select(selector).boundingClientRect(open).exec();
+    } else
+      open({
+        left: this.data.windowWidth - 126,
+        right: this.data.windowWidth - 16,
+        top: 260,
+        bottom: 304,
+        width: 110,
+      });
+  },
+  closeSelect() {
+    this._selectEpoch = (this._selectEpoch || 0) + 1;
+    this.setData({ selection: null });
+  },
+  chooseSelect(event) {
+    const { field, id } = this.data.selection;
+    const value = event.currentTarget.dataset.index;
+    this.closeSelect();
+    const next = { detail: { value }, currentTarget: { dataset: { id } } };
+    return this[
+      field === 'count'
+        ? 'changeCount'
+        : field === 'emotion'
+          ? 'changeEmotion'
+          : field === 'seat'
+            ? 'changeSeat'
+            : 'changeOpponentFilter'
+    ](next);
   },
   changeCount(event) {
     this.call('setPreference', 'playerCount', this.data.countOptions[Number(event.detail.value)]);
@@ -316,48 +480,114 @@ Page({
       this.data.profiles[Number(event.detail.value)].id,
     );
   },
+  peekSeat(event) {
+    this.call('peek', Number(event.currentTarget.dataset.id));
+  },
   viewProfile(event) {
+    this.setData({ selectedProfile: event.currentTarget.dataset.id });
     const profile = this.data.profiles.find((p) => p.id === event.currentTarget.dataset.id);
-    this.setData({
-      detailProfile: profile
-        ? {
-            ...profile,
-            sizingLow: Math.round(profile.sizing[0] * 100),
-            sizingHigh: Math.round(profile.sizing[1] * 100),
-            research: profile.research
-              ? {
-                  ...profile.research,
-                  formatsText: profile.research.formats.join(' · '),
-                  career: profile.research.career.map((item) => ({
-                    ...item,
-                    references: item.sourceIds
-                      .map((id) => `[${profile.sources.findIndex((s) => s.id === id) + 1}]`)
-                      .join(' '),
+    const detailProfile = profile
+      ? {
+          ...profile,
+          portraitCredit: PORTRAIT_CREDITS[profile.id] || null,
+          sizingLow: Math.round(profile.sizing[0] * 100),
+          sizingHigh: Math.round(profile.sizing[1] * 100),
+          research: profile.research
+            ? {
+                ...profile.research,
+                formatsText: profile.research.formats.join(' · '),
+                career: profile.research.career.map((item) => ({
+                  ...item,
+                  references: item.sourceIds.map((id) => ({
+                    label: `[${profile.sources.findIndex((s) => s.id === id) + 1}]`,
+                    url: profile.sources.find((s) => s.id === id)?.url,
                   })),
-                  observations: profile.research.observations.map((item) => ({
-                    ...item,
-                    references: item.sourceIds
-                      .map((id) => `[${profile.sources.findIndex((s) => s.id === id) + 1}]`)
-                      .join(' '),
+                })),
+                observations: profile.research.observations.map((item) => ({
+                  ...item,
+                  references: item.sourceIds.map((id) => ({
+                    label: `[${profile.sources.findIndex((s) => s.id === id) + 1}]`,
+                    url: profile.sources.find((s) => s.id === id)?.url,
                   })),
-                }
-              : null,
-            axisRows: PROFILE_AXES.map(([id, label], index) => ({
-              id,
-              label,
-              value: profile.axes[index],
-            })),
-          }
-        : null,
+                })),
+              }
+            : null,
+          axisRows: PROFILE_AXES.map(([id, label], index) => ({
+            id,
+            label,
+            value: profile.axes[index],
+          })),
+        }
+      : null;
+    this.positionProfile(event.currentTarget.dataset.id, detailProfile);
+  },
+  positionProfile(id, detailProfile) {
+    const ticket = (this._profileEpoch = (this._profileEpoch || 0) + 1);
+    if (!wx.createSelectorQuery) {
+      this.setData({ detailProfile });
+      return;
+    }
+    const query = wx.createSelectorQuery();
+    query.select('.profile-grid').boundingClientRect();
+    query.select('.settings-modal .modal-scroll').boundingClientRect();
+    query.select(`#profile-${id}`).boundingClientRect();
+    query.exec(([grid, scroll, origin]) => {
+      if (
+        !grid ||
+        !scroll ||
+        !origin ||
+        ticket !== this._profileEpoch ||
+        !this.data.settingsOpen ||
+        this._hidden ||
+        this._destroyed
+      )
+        return;
+      const height = Math.min(grid.height, scroll.height);
+      const top = Math.max(scroll.top, Math.min(grid.top, scroll.bottom - height));
+      const x = Math.max(0, Math.min(grid.width, origin.left + origin.width / 2 - grid.left));
+      const y = Math.max(0, Math.min(height, origin.top + origin.height / 2 - top));
+      this.setData({
+        detailProfile,
+        detailBounds: {
+          left: grid.left,
+          top,
+          width: grid.width,
+          height,
+          x,
+          y,
+          radius: Math.hypot(Math.max(x, grid.width - x), Math.max(y, height - y)),
+        },
+      });
     });
   },
+  settingsScrolled(event) {
+    this._settingsScroll = event.detail.scrollTop;
+    this.closeSelect();
+  },
+  togglePersonaNotice() {
+    this.setData({ noticeExpanded: !this.data.noticeExpanded });
+  },
+  toggleComparison() {
+    this.setData({ comparisonOpen: !this.data.comparisonOpen });
+  },
   closeProfile() {
+    this._profileEpoch = (this._profileEpoch || 0) + 1;
     this.setData({ detailProfile: null });
   },
   copyResearchSource(event) {
     const url = event.currentTarget.dataset.url;
     if (this.data.detailProfile?.sources.some((source) => source.url === url))
       wx.setClipboardData({ data: url });
+  },
+  openResearchSource(event) {
+    const url = event.currentTarget.dataset.url;
+    if (
+      (!this.data.detailProfile?.sources.some((source) => source.url === url) &&
+        this.data.detailProfile?.portraitCredit?.url !== url) ||
+      !/^https:\/\//.test(url)
+    )
+      return;
+    wx.navigateTo({ url: `/pages/source/source?url=${encodeURIComponent(url)}` });
   },
   useProfile() {
     this.call('setAllProfiles', this.data.detailProfile.id);
@@ -370,10 +600,10 @@ Page({
     );
   },
   openGuide() {
-    this.setData({ guideOpen: true });
+    this.setOverlay({ guideOpen: true });
   },
   closeGuide() {
-    this.setData({ guideOpen: false });
+    this.setOverlay({ guideOpen: false });
   },
   copyGuideSource(event) {
     const url = event.currentTarget.dataset.url;
@@ -437,7 +667,7 @@ Page({
     this.updateReview(this.data.reviewData);
   },
   openReview() {
-    this.setData({
+    this.setOverlay({
       reviewOpen: true,
       reviewPerspective: 'hero',
       reviewIndex: 0,
@@ -447,16 +677,16 @@ Page({
   },
   closeReview() {
     this.call('cancelReview');
-    this.setData({ reviewOpen: false });
+    this.setOverlay({ reviewOpen: false });
   },
   openActivity() {
-    this.setData({ activityOpen: true });
+    this.setOverlay({ activityOpen: true });
   },
   closeActivity() {
-    this.setData({ activityOpen: false });
+    this.setOverlay({ activityOpen: false });
   },
   openPots() {
-    this.setData({ potOpen: true });
+    this.setOverlay({ potOpen: true });
     this.measurePot();
   },
   measurePot() {
@@ -466,7 +696,7 @@ Page({
       .boundingClientRect((rect) => {
         if (rect && this.data.potOpen)
           this.setData({
-            potHeight: Math.min(
+            potSheetHeight: Math.min(
               rect.height + 2,
               (this.data.windowHeight - this.data.topInset - this.data.bottomInset) * 0.85,
             ),
@@ -475,15 +705,17 @@ Page({
       .exec();
   },
   closePots() {
-    this.setData({ potOpen: false });
+    this.setOverlay({ potOpen: false });
   },
   resetPractice() {
-    this.setData({ resetOpen: true });
+    this.setOverlay({ resetOpen: true });
   },
   closeReset() {
-    this.setData({ resetOpen: false });
+    this.setOverlay({ resetOpen: false });
   },
   confirmReset() {
+    this._finishRequested = false;
+    this.setData({ finishing: false });
     this.call('reset');
     this.closeReset();
     this.closeSettings();

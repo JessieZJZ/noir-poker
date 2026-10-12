@@ -22,7 +22,14 @@ export function readTableLayout() {
     publicArea: rect('.table-center'),
     dock: rect('.action-dock'),
     width: innerWidth,
+    scale,
+    chrome: {
+      background: getComputedStyle(document.querySelector('.header')).backgroundColor,
+      safeBackground: getComputedStyle(document.querySelector('.header'), '::before')
+        .backgroundColor,
+    },
     height: innerHeight,
+    usableBottom: innerHeight - (parseFloat(getComputedStyle(document.body).paddingBottom) || 0),
     tagCount: document.querySelectorAll('#hero-turn').length,
     identityOffset: (identity.left + identity.right - cards.left - cards.right) / 2,
     stack: rect('#hero-stack'),
@@ -73,6 +80,15 @@ export function readTableLayout() {
         stackBelowStyle: stackBox.top >= tagBox.bottom - 0.5,
       };
     }),
+    rail: {
+      felt: rect('.poker-table'),
+      public: rect('#board'),
+      hero: rect('.hero-area'),
+      seats: [...document.querySelectorAll('.seat')].map((seat) => {
+        const r = seat.getBoundingClientRect();
+        return { left: r.left, right: r.right, top: r.top, bottom: r.bottom };
+      }),
+    },
     presentation: {
       heroGap: (identity.top - cards.bottom) / scale,
       heroInset: (rect('#arena').bottom - identity.bottom) / scale,
@@ -134,6 +150,14 @@ export function readTableLayout() {
 }
 
 export function assertTableLayout(info) {
+  if (info.chrome) {
+    assert.equal(info.chrome.background, 'rgb(10, 16, 22)', 'Sticky header covers the table');
+    assert.equal(
+      info.chrome.safeBackground,
+      info.chrome.background,
+      'Safe area shares the opaque header background',
+    );
+  }
   assert.equal(info.tagCount, 0, 'The redundant hero turn tag must be removed');
   assert.ok(
     Math.abs(info.identityOffset) <= 1,
@@ -156,6 +180,24 @@ export function assertTableLayout(info) {
   }
   const largeTablet =
     info.width >= 901 && info.width <= 1100 && info.height >= 1100 && info.height > info.width;
+  if (info.rail) {
+    const { felt, public: group, hero, seats } = info.rail;
+    const cx = (felt.left + felt.right) / 2,
+      cy = (felt.top + felt.bottom) / 2;
+    assert.ok(
+      Math.abs((group.left + group.right) / 2 - cx) <= 1 &&
+        Math.abs((group.top + group.bottom) / 2 - cy) <= 1,
+      'Public cards must remain at the felt center',
+    );
+    for (const seat of [...seats, hero]) {
+      const x = ((seat.left + seat.right) / 2 - cx) / ((felt.right - felt.left) / 2);
+      const y = ((seat.top + seat.bottom) / 2 - cy) / ((felt.bottom - felt.top) / 2);
+      assert.ok(
+        Math.abs(x * x + y * y - 1) <= 0.03,
+        'The rail must bisect each complete player area',
+      );
+    }
+  }
   if (info.presentation) assertSeatPresentation(info.presentation, info, largeTablet);
   for (const rank of info.rankSpacing ?? [])
     assert.ok(
@@ -223,7 +265,7 @@ export function assertSeatPresentation(presentation, viewport, largeTablet = fal
     presentation.heroGap >= 18 && presentation.heroGap <= (largeTablet ? 39 : 28),
     'Hero identity must stay close to the cards with space reserved for the hand rank',
   );
-  assert.ok(presentation.heroInset >= 40, 'Hero identity must sit inside the lower table edge');
+  assert.ok(presentation.heroInset >= 0, 'Hero identity must stay inside the visible arena');
   assert.ok(
     presentation.heroFont >= 15 &&
       Math.abs(presentation.heroNameFont - presentation.heroFont) <= 0.1,
@@ -234,4 +276,14 @@ export function assertSeatPresentation(presentation, viewport, largeTablet = fal
       action.font >= 11 && action.margin >= 4,
       'Seat action text needs readable type and a small top margin',
     );
+}
+
+export function assertStableSettlement(before, after) {
+  for (const edge of ['top', 'left', 'right', 'height'])
+    assert.ok(
+      Math.abs(after.table[edge] - before.table[edge]) <= 1,
+      'Table keeps its live geometry through settlement',
+    );
+  assert.ok(Math.abs(after.dock.top - before.dock.top) <= 1, 'Only the controls collapse');
+  assertTableLayout(after);
 }

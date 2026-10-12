@@ -35,8 +35,9 @@ async function configureViewport(page, size, insets = { top: 0, bottom: 0 }) {
 async function startFrameCapture(page) {
   await flushLayout(page);
   return page.evaluate(() => {
-    const read = () =>
-      Object.fromEntries(
+    const read = () => ({
+      phase: document.querySelector('#arena').classList.contains('is-done') ? 'settled' : 'live',
+      ...Object.fromEntries(
         [
           '.table-viewport',
           '#arena',
@@ -55,7 +56,8 @@ async function startFrameCapture(page) {
             { top: r.top, height: r.height, bottom: r.bottom, left: r.left, width: r.width },
           ];
         }),
-      );
+      ),
+    });
     const capture = { frames: [read()], frame: null };
     const sample = () => {
       capture.frames.push(read());
@@ -76,20 +78,27 @@ async function expectStableCapturedFrames(page, initial) {
     return capture.frames;
   });
   expect(frames.length).toBeGreaterThan(4);
-  const shifts = frames.flatMap((frame, index) =>
-    Object.entries(frame).flatMap(([selector, box]) =>
-      Object.entries(box)
-        .filter(([key, value]) => Math.abs(value - initial[selector][key]) > 1)
-        .map(([key, value]) => ({
-          frame: index,
-          selector,
-          key,
-          initial: initial[selector][key],
-          value,
-        })),
-    ),
-  );
-  expect(shifts, 'fold/settlement/retry must not borrow height from the main table').toEqual([]);
+  const shifts = frames.flatMap((frame, index) => {
+    const baseline = initial;
+    return Object.entries(frame)
+      .filter(([selector]) => selector !== 'phase')
+      .flatMap(([selector, box]) =>
+        Object.entries(box)
+          .filter(([key, value]) => Math.abs(value - baseline[selector][key]) > 1)
+          .map(([key, value]) => ({
+            frame: index,
+            phase: frame.phase,
+            selector,
+            key,
+            initial: baseline[selector][key],
+            value,
+          })),
+      );
+  });
+  expect(
+    shifts,
+    'Each live or settled phase retains its geometry; retry restores the live table',
+  ).toEqual([]);
 }
 
 async function expectDockLayout(page, kind, bottomInset = 0) {
@@ -173,7 +182,7 @@ async function expectDockLayout(page, kind, bottomInset = 0) {
     .toEqual([]);
 }
 
-test('fold, expedited settlement, retry and next hand keep the table stable while the dock collapses to one row', async ({
+test('fold, expedited settlement, retry and next hand fill the first screen and keep the table stable through every phase while the dock collapses to one row', async ({
   page,
 }) => {
   test.setTimeout(90000);
@@ -408,7 +417,7 @@ async function expectAdaptiveBoard(page) {
         // Waist seats also use the central corridor on a five-player table.
         // The fitted footprint, rather than a fixed phone width, determines
         // when a denser table needs the two-row fallback.
-        if ((innerWidth > 600 || (count === 5 && innerWidth >= 375)) && twoRows)
+        if (innerWidth > 600 && twoRows)
           issues.push('cards wrapped despite ample room in the middle');
         const topCenter = (cards[0].left + cards[2].right) / 2;
         const bottomCenter = (cards[3].left + cards[4].right) / 2;

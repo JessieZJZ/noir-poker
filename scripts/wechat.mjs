@@ -56,6 +56,10 @@ async function compileJs(sourceDirectory, destination) {
 async function portraitAssets(output) {
   const directory = path.join(output, 'assets/portraits');
   await mkdir(directory, { recursive: true });
+  await writeFile(
+    path.join(directory, 'credits.js'),
+    `module.exports = ${JSON.stringify(Object.fromEntries(Object.entries(PROFILE_PORTRAITS).map(([id, image]) => [id, { label: image.credit, url: image.source }])))};\n`,
+  );
   for (const [id, photo] of Object.entries(PROFILE_PORTRAITS)) {
     const source = path.join(root, 'public', photo.src.slice(1));
     // Resolve the same object-fit/zoom window as the Web avatar into a small,
@@ -124,7 +128,7 @@ function soundWave(kind) {
       if (kind === 'check')
         value += Math.sin(elapsed * 2 * Math.PI * 870) * Math.exp(-elapsed * 110) * 0.25;
     }
-    wave.writeInt16LE(Math.max(-32768, Math.min(32767, Math.round(value * 10000))), 44 + index * 2);
+    wave.writeInt16LE(Math.max(-32768, Math.min(32767, Math.round(value * 26000))), 44 + index * 2);
   }
   return wave;
 }
@@ -177,7 +181,14 @@ export async function buildWechat(output = wechatOutput) {
     for (const file of await fileList(path.join(staging, 'shared/platform')))
       if (!file.startsWith('wechat-')) await rm(path.join(staging, 'shared/platform', file));
     await mkdir(path.join(staging, 'shared/ui'), { recursive: true });
-    for (const name of ['bet-sizing.js', 'seat-geometry.js']) {
+    for (const name of [
+      'bet-sizing.js',
+      'seat-geometry.js',
+      'rail-layout.js',
+      'compact-table-layout.js',
+      'cards.js',
+      'card-rank-glyphs.js',
+    ]) {
       const compiled = await transform(await readFile(path.join(root, 'src/ui', name), 'utf8'), {
         format: 'cjs',
         target: 'es2019',

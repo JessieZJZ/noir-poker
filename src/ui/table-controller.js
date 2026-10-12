@@ -84,6 +84,7 @@ const handReview = createReviewController({ card });
 const showdown = createShowdownController({ card });
 // Display preferences belong to this hand's UI, never to settlement or review.
 const seatHandVisibility = new Map();
+const seatFaceSignatures = new Map();
 function isSeatHandVisible(player) {
   if (game.phase === 'done' && seatHandVisibility.has(player.id)) {
     return seatHandVisibility.get(player.id);
@@ -102,7 +103,8 @@ let game = newGame(requestedCount),
   finishing = false,
   hints = true,
   sound = true,
-  audio = null;
+  audio = null,
+  audioOutput = null;
 game.difficulty = tablePreferences.difficulty;
 $('#player-count').value = String(requestedCount);
 try {
@@ -146,10 +148,30 @@ function positionBadge(id) {
 async function unlockAudio() {
   if (!sound) return;
   try {
-    audio ||= new (window.AudioContext || window.webkitAudioContext)();
+    prepareAudio();
     if (audio.state !== 'running' && audio.state !== 'closed') await audio.resume();
   } catch {}
 }
+function prepareAudio() {
+  if (audio || !sound) return;
+  try {
+    audio = new (window.AudioContext || window.webkitAudioContext)();
+    const gain = audio.createGain();
+    gain.gain.value = 8;
+    const limiter = audio.createDynamicsCompressor();
+    limiter.threshold.value = -3;
+    limiter.knee.value = 0;
+    limiter.ratio.value = 20;
+    limiter.attack.value = 0.003;
+    limiter.release.value = 0.1;
+    gain.connect(limiter);
+    limiter.connect(audio.destination);
+    audioOutput = gain;
+  } catch {}
+}
+// Allocate the graph on entry. Resume on the first trusted gesture when the
+// browser requires one; never replay effects from earlier turns.
+prepareAudio();
 for (const event of ['pointerdown', 'pointerup', 'keydown']) {
   document.addEventListener(
     event,
@@ -185,7 +207,7 @@ function soundEffect(kind = 'chip') {
         attackGain.gain.setValueAtTime(0.08 * strength, at);
         noise.connect(filter);
         filter.connect(attackGain);
-        attackGain.connect(audio.destination);
+        attackGain.connect(audioOutput);
         body.type = 'triangle';
         body.frequency.setValueAtTime(165, at);
         body.frequency.exponentialRampToValueAtTime(80, at + 0.045);
@@ -193,7 +215,7 @@ function soundEffect(kind = 'chip') {
         bodyGain.gain.exponentialRampToValueAtTime(0.035 * strength, at + 0.002);
         bodyGain.gain.exponentialRampToValueAtTime(0.0001, at + 0.065);
         body.connect(bodyGain);
-        bodyGain.connect(audio.destination);
+        bodyGain.connect(audioOutput);
         noise.start(at);
         noise.stop(at + 0.025);
         body.start(at);
@@ -212,7 +234,7 @@ function soundEffect(kind = 'chip') {
       v.gain.exponentialRampToValueAtTime(0.02, now + 0.012);
       v.gain.exponentialRampToValueAtTime(0.0001, now + 0.16);
       o.connect(v);
-      v.connect(audio.destination);
+      v.connect(audioOutput);
       o.start(now);
       o.stop(now + 0.18);
       return;
@@ -227,7 +249,7 @@ function soundEffect(kind = 'chip') {
       v.gain.exponentialRampToValueAtTime(0.025, now + i * 0.08 + 0.015);
       v.gain.exponentialRampToValueAtTime(0.0001, now + i * 0.08 + 0.16);
       o.connect(v);
-      v.connect(audio.destination);
+      v.connect(audioOutput);
       o.start(now + i * 0.08);
       o.stop(now + i * 0.08 + 0.2);
     });
@@ -362,7 +384,10 @@ function render() {
         const profile = getBotProfile(p.botProfile),
           mood = game.emotionMode === 'off' ? 'steady' : p.botMood.kind,
           title = `${p.name} · ${profile.short}（训练原型） · 模拟状态：${MOOD_LABELS[mood]}`;
-        return `<div class="seat seat-${p.id} ${y === 0 ? 'seat-crown' : ''} ${x < 25 ? 'seat-left' : x > 75 ? 'seat-right' : ''} ${p.folded ? 'folded' : ''} ${game.actor === p.id ? 'thinking' : ''} ${isWinner ? 'winner' : ''}" data-player="${p.id}" data-profile="${p.botProfile}" data-mood="${mood}" style="left:${x}%;top:${y}%"><div id="seat-hand-${p.id}" class="mini-cards ${reveal ? 'revealed-cards' : ''}">${reveal ? p.hole.map((c) => card(c, { small: true, best: !!rank && rank.cards.some((best) => best.key === c.key) })).join('') : p.hole.map((c, i) => `<span class="card-back ${newHand ? 'card-deal' : ''}" style="--delay:${p.id * 65 + i * 140}ms" aria-label="对手底牌"></span>`).join('')}</div><div class="seat-profile"><span class="avatar avatar-${p.id - 1}" title="${title}" aria-label="${title}">${portraitContent(profile.id, profiles[p.id])}</span><div><strong><span class="seat-name-label">${p.name}</span>${positionBadge(p.id)}<span class="seat-inspect-slot">${game.phase === 'done' ? `<button class="seat-peek" data-peek-player="${p.id}" title="${reveal ? '收起底牌' : '查看底牌'}" aria-label="${reveal ? '收起' : '查看'} ${p.name} 的底牌" aria-pressed="${!!reveal}" aria-controls="seat-hand-${p.id}"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M2 10C4 6 7 5 10 5C13 5 16 6 18 10C16 14 13 15 10 15C7 15 4 14 2 10Z"/><circle cx="10" cy="10" r="2.5"/></svg></button>` : ''}</span></strong><span class="seat-style-label" data-style-profile="${profile.id}" title="${profile.name} · ${profile.tag}" aria-label="${p.name} 本手风格：${profile.name}">${profile.short}</span><span class="seat-bankroll"><span class="seat-stack">${format(p.stack)}</span></span></div></div><div class="seat-rank-slot">${rankMarkup}</div><div class="seat-action" aria-label="${p.name} 的最近行动">${seatAction(p)}</div></div>`;
+        const faceSignature = `${game.hand}:${game.replayAttempt || 0}:${reveal ? p.hole.map((c) => c.key).join(',') : 'hidden'}`;
+        const arriving = reveal && seatFaceSignatures.get(p.id) !== faceSignature;
+        seatFaceSignatures.set(p.id, faceSignature);
+        return `<div class="seat seat-${p.id} ${y === 0 ? 'seat-crown' : ''} ${x < 25 ? 'seat-left' : x > 75 ? 'seat-right' : ''} ${p.folded ? 'folded' : ''} ${game.actor === p.id ? 'thinking' : ''} ${isWinner ? 'winner' : ''}" data-player="${p.id}" data-profile="${p.botProfile}" data-mood="${mood}" style="left:${x}%;top:${y}%"><div id="seat-hand-${p.id}" class="mini-cards ${reveal ? 'revealed-cards' : ''}">${reveal ? p.hole.map((c, i) => card(c, { small: true, animate: arriving, delay: i * 140, best: !!rank && rank.cards.some((best) => best.key === c.key) })).join('') : p.hole.map((c, i) => `<span class="card-back ${newHand ? 'card-deal' : ''}" style="--delay:${p.id * 65 + i * 140}ms" aria-label="对手底牌"></span>`).join('')}</div><div class="seat-profile"><span class="avatar avatar-${p.id - 1}" title="${title}" aria-label="${title}">${portraitContent(profile.id, profiles[p.id])}</span><div><strong><span class="seat-name-label">${p.name}</span>${positionBadge(p.id)}<span class="seat-inspect-slot">${game.phase === 'done' ? `<button class="seat-peek" data-peek-player="${p.id}" title="${reveal ? '收起底牌' : '查看底牌'}" aria-label="${reveal ? '收起' : '查看'} ${p.name} 的底牌" aria-pressed="${!!reveal}" aria-controls="seat-hand-${p.id}"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M2 10C4 6 7 5 10 5C13 5 16 6 18 10C16 14 13 15 10 15C7 15 4 14 2 10Z"/><circle cx="10" cy="10" r="2.5"/></svg></button>` : ''}</span></strong><span class="seat-style-label" data-style-profile="${profile.id}" title="${profile.name} · ${profile.tag}" aria-label="${p.name} 本手风格：${profile.name}">${profile.short}</span><span class="seat-bankroll"><span class="seat-stack">${format(p.stack)}</span></span></div></div><div class="seat-rank-slot">${rankMarkup}</div><div class="seat-action" aria-label="${p.name} 的最近行动">${seatAction(p)}</div></div>`;
       })
       .join(''),
   );

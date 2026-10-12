@@ -545,22 +545,38 @@ export function botBoardFeatures(hole, board, score) {
     [0, 1, 2, 3].some(
       (s) => known.filter((c) => c.suit === s).length === 4 && hole.some((c) => c.suit === s),
     );
+  const straightCompletions = new Set();
   const straightDraw =
     board.length >= 3 &&
     board.length < 5 &&
     score[0] < 4 &&
-    Array.from({ length: 10 }, (_, i) => Array.from({ length: 5 }, (_, j) => i + j + 1)).some(
-      (run) =>
-        run.filter((r) => ranks.has(r)).length === 4 &&
-        hole.some(
-          (c) =>
-            (run.includes(c.rank) || (c.rank === 14 && run.includes(1))) &&
-            !board.some((b) => b.rank === c.rank),
-        ),
+    Array.from({ length: 10 }, (_, i) => Array.from({ length: 5 }, (_, j) => i + j + 1)).reduce(
+      (found, run) => {
+        const draw =
+          run.filter((r) => ranks.has(r)).length === 4 &&
+          hole.some(
+            (c) =>
+              (run.includes(c.rank) || (c.rank === 14 && run.includes(1))) &&
+              !board.some((b) => b.rank === c.rank),
+          );
+        if (draw)
+          for (const rank of run.filter((r) => !ranks.has(r)))
+            straightCompletions.add(rank === 1 ? 14 : rank);
+        return found || draw;
+      },
+      false,
     );
   const highBoard = Math.max(0, ...board.map((c) => c.rank));
   const overpair = hole[0].rank === hole[1].rank && hole[0].rank > highBoard;
-  return { wet, draw: flushDraw || straightDraw, overpair };
+  return {
+    wet,
+    draw: flushDraw || straightDraw,
+    overpair,
+    flushDraw,
+    straightOuts: straightCompletions.size * 4,
+    ownPair: score[0] === 1 && hole.some((c) => board.some((b) => b.rank === c.rank)),
+    pairedBoard: new Set(board.map((c) => c.rank)).size < board.length,
+  };
 }
 export function effectiveBotAxes(profile, mood, mode) {
   const axes = [...profile.axes],
@@ -645,7 +661,7 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
   const [high, low] = view.hole.map((c) => c.rank).sort((a, b) => b - a);
   const suited = view.hole[0].suit === view.hole[1].suit;
   const pair = high === low;
-  const speculative = pair || (suited && (high === 14 || (high - low <= 2 && low >= 5)));
+  const speculative = pair || (suited && (high === 14 || (high - low <= 2 && low >= 4)));
   const suitedHigh = suited && high >= 11 && low >= 7;
   const lastRaiser = view.opponents?.find((p) => p.id === raises.at(-1)?.id);
   const effectiveBehind = Math.max(
@@ -679,9 +695,11 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
     range +=
       (0.14 + width * 0.2 + (speculative || suitedHigh ? Math.min(2, limpers) * 0.04 : 0)) *
       style.entry;
+  if (cheapEntry && speculative && ['BTN', 'CO', 'HJ'].includes(view.position))
+    range += (0.06 + width * 0.12) * style.entry;
   if (affordableOpen) {
     const priceScale = Math.max(0.65, 1.1 - (view.currentBet / 50) * 0.08);
-    const playability = speculative ? 0.09 : suitedHigh ? 0.07 : 0;
+    const playability = speculative ? 0.14 : suitedHigh ? 0.07 : 0;
     const callerBonus = speculative || suitedHigh ? Math.min(2, openCallers) * 0.04 : 0;
     const blindDiscount = view.position === 'BB' ? 0.08 : 0;
     const dominatedAce = !suited && high === 14 && low <= 8 ? 0.08 : 0;
@@ -717,6 +735,88 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
     smallCbet = false,
     thinValue = false;
   const floatContinue = context.floatCandidate && roll('float', style.float) < style.float;
+  const headsUp = view.rivals === 1,
+    features = view.features;
+  const ownLastRaise =
+    [...view.history].reverse().find((a) => a.action === 'raise')?.id === view.id;
+  const barrelScale = view.street === 2 && ownLastRaise ? style.barrel : 1;
+  // Candidate completion cards are not clean winning outs. Discount them on
+  // paired/multiway boards, and only preserve calls at a small current price.
+  const drawChance =
+    (Math.max(features.flushDraw ? 9 : 0, features.straightOuts || 0) /
+      Math.max(1, 52 - view.hole.length - view.board.length)) *
+    (features.pairedBoard ? 0.7 : 0.9) *
+    (view.rivals > 2 ? 0.75 : 1);
+  const drawContinue =
+    view.street > 0 &&
+    view.street < 3 &&
+    features.draw &&
+    !allInPressure &&
+    lowCommitment &&
+    odds <= drawChance &&
+    legal.callAmount < view.stack;
+  const pairContinue =
+    view.street > 0 &&
+    features.ownPair &&
+    view.rivals <= 2 &&
+    !allInPressure &&
+    lowCommitment &&
+    odds <= 0.18 &&
+    equity + callTolerance >= odds - 0.06 &&
+    roll('price-continue', 0.12 + callDown * 0.36) < 0.12 + callDown * 0.36;
+  const semiThreshold = Math.min(0.7, (0.16 + bluff * 0.42) * (headsUp ? 1 : 0.55) * barrelScale);
+  semiBluff =
+    legal.canRaise &&
+    view.street > 0 &&
+    view.street < 3 &&
+    features.draw &&
+    view.rivals <= 2 &&
+    !allInPressure &&
+    pressure <= 0.12 &&
+    (legal.canCheck || drawContinue || equity + callTolerance >= odds + 0.02) &&
+    roll('semi-bluff', semiThreshold) < semiThreshold;
+  const lateSteal =
+    cheapEntry &&
+    !limpers &&
+    ['BTN', 'CO'].includes(view.position) &&
+    admitted &&
+    (speculative || suitedHigh || (suited && low >= 5) || (high - low === 1 && low >= 6)) &&
+    roll('pure-bluff', (0.12 + bluff * 0.2 + attack * 0.1) * style.entry) <
+      (0.12 + bluff * 0.2 + attack * 0.1) * style.entry;
+  const story = view.street > 0 && (ownLastRaise || !features.wet || context.delayed);
+  const lateReraise =
+    affordableOpen &&
+    !openCallers &&
+    ['BTN', 'CO'].includes(view.position) &&
+    context.preflopBlocker &&
+    admitted &&
+    roll('pure-bluff', 0.03 + bluff * 0.1) < 0.03 + bluff * 0.1;
+  const blockerAllowed = !style.blockerBluffs || view.street !== 3 || context.riverBlocker;
+  const bluffThreshold = Math.min(
+    0.28,
+    (0.025 + bluff * 0.2) *
+      (headsUp ? 1 : 0.35) *
+      barrelScale *
+      (view.street === 3
+        ? style.riverBluff * (legal.toCall > 0 && odds <= 0.2 ? style.riverProbe : 1)
+        : 1) *
+      (context.delayed ? style.delayed : 1),
+  );
+  pureBluff =
+    legal.canRaise &&
+    (lateSteal ||
+      lateReraise ||
+      (view.street > 0 &&
+        !view.playsBoard &&
+        view.rivals <= 2 &&
+        story &&
+        blockerAllowed &&
+        !floatContinue &&
+        !allInPressure &&
+        pressure <= 0.08 &&
+        (legal.canCheck || odds <= 0.2) &&
+        raises.length <= 1 &&
+        roll('pure-bluff', bluffThreshold) < bluffThreshold));
   const finish = (action, reason, amount) => ({
     action,
     ...(amount === undefined ? {} : { amount }),
@@ -755,6 +855,11 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
       semiBluff,
       pureBluff,
       draw: view.features.draw,
+      drawChance,
+      drawContinue,
+      pairContinue,
+      lateSteal,
+      lateReraise,
       playsBoard: view.playsBoard,
     },
   });
@@ -764,7 +869,15 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
         return finish('fold', 'outside-range');
       exceptions.push('outside-range');
     }
-    if ((!premium || view.street > 0) && !affordableRangePassed && !floatContinue) {
+    if (
+      (!premium || view.street > 0) &&
+      !affordableRangePassed &&
+      !floatContinue &&
+      !drawContinue &&
+      !pairContinue &&
+      !semiBluff &&
+      !pureBluff
+    ) {
       if (equity + callTolerance < odds + 0.02) {
         if (roll('insufficient-equity', 0.03 + callDown * 0.1) > 0.03 + callDown * 0.1)
           return finish('fold', 'insufficient-equity');
@@ -794,46 +907,6 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
                   ? 'premium-continue'
                   : 'price-continue',
     );
-  const headsUp = view.rivals === 1,
-    features = view.features;
-  const ownLastRaise =
-    [...view.history].reverse().find((a) => a.action === 'raise')?.id === view.id;
-  const barrelScale = view.street === 2 && ownLastRaise ? style.barrel : 1;
-  const semiThreshold = Math.min(0.7, (0.12 + bluff * 0.42) * (headsUp ? 1 : 0.45) * barrelScale);
-  semiBluff =
-    view.street > 0 &&
-    features.draw &&
-    view.rivals <= 2 &&
-    roll('semi-bluff', semiThreshold) < semiThreshold;
-  const story =
-    view.street === 0
-      ? ['BTN', 'CO'].includes(view.position)
-      : ownLastRaise || !features.wet || context.delayed;
-  const blockerAllowed =
-    !style.blockerBluffs ||
-    (view.street === 0 && raises.length
-      ? raises.length === 1 && context.preflopBlocker
-      : view.street === 3
-        ? context.riverBlocker
-        : true);
-  const bluffThreshold = Math.min(
-    0.4,
-    (0.015 + bluff * 0.17) *
-      (headsUp ? 1 : 0.2) *
-      barrelScale *
-      (view.street === 3
-        ? style.riverBluff * (legal.toCall > 0 && odds <= 0.2 ? style.riverProbe : 1)
-        : 1) *
-      (context.delayed ? style.delayed : 1),
-  );
-  pureBluff =
-    !view.playsBoard &&
-    view.rivals <= 2 &&
-    story &&
-    blockerAllowed &&
-    !floatContinue &&
-    pressure < 0.25 &&
-    roll('pure-bluff', bluffThreshold) < bluffThreshold;
   value =
     view.street === 0
       ? premium || percentile <= raiseRange
@@ -914,7 +987,7 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
       opening: view.street === 0 && !raises.length,
       executed: false,
     };
-    if (amount !== legal.maxRaiseTo || value || thinValue || semiBluff || view.stack <= 500) {
+    if (amount !== legal.maxRaiseTo || value || thinValue || semiBluff) {
       sizing.executed = true;
       return finish(
         'raise',
@@ -931,6 +1004,18 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
       );
     }
   }
+  // If a bluff was the only reason to pass the price gate, a missed attack
+  // must not become an accidental low-equity call.
+  if (
+    legal.toCall > 0 &&
+    !affordableRangePassed &&
+    !floatContinue &&
+    !drawContinue &&
+    !pairContinue &&
+    (pureBluff || semiBluff) &&
+    equity + callTolerance < odds + 0.02
+  )
+    return finish('fold', 'insufficient-equity');
   return finish(
     legal.canCheck ? 'check' : 'call',
     legal.canCheck

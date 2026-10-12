@@ -27,7 +27,7 @@ let mini;
 try {
   mini = await automator.connect({ wsEndpoint: process.argv[2] || 'ws://127.0.0.1:9432' });
   mini.on('exception', (exception) => report.exceptions.push(exception));
-  const page = await mini.currentPage();
+  let page = await mini.currentPage();
   const invoke = (name, argument) =>
     mini.evaluate(
       (name, argument) => {
@@ -46,39 +46,42 @@ try {
     }
     throw Error('Mini-program page did not reach the expected state');
   };
+  const scrollHomeTop = async () => {
+    // Native page scrolling and the Page's onPageScroll event are asynchronous.
+    // Finish any overlay restoration before opening the next modal at the top.
+    await page.waitFor(250);
+    await mini.pageScrollTo(0);
+    await wait(
+      async (data) =>
+        !data.homeLocked &&
+        Math.abs((await (await page.$('.screen')).offset()).top) <= 1 &&
+        (await mini.evaluate(() => getCurrentPages().at(-1)._homeScroll || 0)) === 0,
+      5000,
+    );
+  };
   const settle = async (screen) => {
+    const before = await page.data();
+    const started = Date.now();
     await invoke('finishHand');
-    let signature,
-      lastUpdate = Date.now();
-    await wait(async (data) => {
-      if (data.done) return true;
-      const current = JSON.stringify([data.street, data.pot, data.seats]);
-      if (current !== signature) {
-        signature = current;
-        lastUpdate = Date.now();
-      }
-      // This is a rendering suite. If the simulator stops publishing updates,
-      // press its real accelerate button again rather than mutating the engine
-      // or injecting a completed deal. Timer cancellation has separate tests.
-      if (Date.now() - lastUpdate > 1500) {
-        const button = await page.$('.call-button');
-        assert.ok(button, 'The real accelerate-to-settlement control must exist');
-        await button.tap();
-        report.repeatedAccelerateControls.push({
-          screen,
-          hand: data.hand,
-          at: new Date().toISOString(),
-        });
-        lastUpdate = Date.now();
-      }
-      return false;
-    }, 90000);
+    await wait((data) => data.done && data.boardSlots.every((card) => !card.empty), 30000);
+    const after = await page.data();
+    assert.equal(after.tableHeight, before.tableHeight);
+    report.fastFinishes ??= [];
+    report.fastFinishes.push({ screen, elapsedMs: Date.now() - started, repeatedClicks: 0 });
   };
   const capture = async (name, selectors) => {
     // Wait for finite sheet/card entrance animations before comparing geometry.
-    await page.waitFor(750);
+    // Nine-seat backs and five-card runouts finish after stagger + 650ms.
+    // Capturing at 750ms preserved half-flipped/transparent cards in the report.
+    await page.waitFor(1450);
     if (name === 'settlement' || name === 'practice-runout' || /^settlement-[5-9]$/.test(name)) {
       const data = await page.data();
+      const shell = await page.$('.game-shell');
+      const shellBottom = (await shell.offset()).top + (await shell.size()).height;
+      assert.ok(
+        Math.abs(shellBottom - (data.windowHeight - data.bottomInset - 8 - 82)) <= 1,
+        'Table preserves its live height while only the dock collapses',
+      );
       const buttons = await page.$$('.settled-buttons button');
       assert.equal(buttons.length, 2 + Number(data.canRetry) + Number(data.canPracticeRunout));
       assert.ok(await page.$('.retry-button'), 'Replay remains visible alongside practice runout');
@@ -91,6 +94,101 @@ try {
         );
       }
       selectors = [...selectors, '.retry-button'];
+      const textSizes = {};
+      for (const selector of [
+        '.seat-name',
+        '.seat-body > .stack',
+        '.persona',
+        '.seat-action',
+        '.rank',
+        '.pot-detail',
+      ]) {
+        const el = await page.$(selector);
+        if (el) textSizes[selector] = parseFloat(await el.style('font-size'));
+      }
+      assert.ok(textSizes['.seat-name'] >= 13 && textSizes['.seat-body > .stack'] >= 13);
+      assert.ok(textSizes['.persona'] >= 12 && textSizes['.seat-action'] >= 13);
+      assert.ok(textSizes['.rank'] >= 12 && textSizes['.pot-detail'] >= 13);
+      report.readability ??= {};
+      report.readability[name] = textSizes;
+      const gaps = [];
+      const words = await Promise.all(
+        (await page.$$('.seat-action-word')).map(async (word) => ({
+          id: Number(await word.attribute('data-id')),
+          bottom: (await word.offset()).top + (await word.size()).height,
+        })),
+      );
+      for (const rank of await page.$$('.rank')) {
+        const id = Number(await rank.attribute('data-id'));
+        if (!(id >= 1)) continue;
+        const bottoms = words.filter((word) => word.id === id).map((word) => word.bottom);
+        assert.ok(bottoms.length > 0, 'Every seat rank must measure its actual action text');
+        gaps.push({
+          id,
+          gap: ((await rank.offset()).top - Math.max(...bottoms)) / (await page.data()).arenaScale,
+        });
+      }
+      assert.equal(gaps.length, (await page.data()).phoneSeats.filter((seat) => seat.rank).length);
+      assert.ok(gaps.length > 0, 'Settlement must measure at least its winner rank');
+      for (const rank of gaps)
+        assert.ok(
+          rank.gap >= 2.5 && rank.gap <= 3.5,
+          `Seat ${rank.id} rank stays close to its complete action`,
+        );
+      report.readability[name].rankGaps = gaps;
+      const winner = await page.$('.seat.winner .seat-body');
+      if (winner) {
+        const action = await page.$('.seat.winner .seat-action');
+        const style = {
+          borders: await Promise.all(
+            ['top', 'right', 'bottom', 'left'].map((edge) => winner.style(`border-${edge}-color`)),
+          ),
+          action: await action.style('color'),
+        };
+        for (const border of style.borders)
+          assert.equal(border, 'rgb(227, 191, 114)', 'Winner rail matches Web gold');
+        assert.equal(style.action, 'rgb(230, 211, 162)', 'Winner action matches Web gold');
+        report.winnerStyles ??= {};
+        report.winnerStyles[name] = style;
+      }
+    }
+    if (name === 'table' || /^table-[5-9]$/.test(name)) {
+      const data = await page.data();
+      const areas = {};
+      for (const selector of [
+        '.seat',
+        '.seat-body',
+        '.avatar',
+        '.persona',
+        '.community',
+        '.board-row',
+        '.felt',
+        '.hero',
+      ]) {
+        const elements = await page.$$(selector);
+        areas[selector] = await Promise.all(
+          elements.map(async (element) => ({
+            ...(await element.offset()),
+            ...(await element.size()),
+          })),
+        );
+      }
+      const group = areas['.board-row'][0],
+        felt = areas['.felt'][0];
+      assert.ok(
+        Math.abs(group.top + group.height / 2 - felt.top - felt.height / 2) <= 1,
+        'Public cards stay centered on the table',
+      );
+      for (let i = 0; i < areas['.avatar'].length; i++) {
+        const avatar = areas['.avatar'][i],
+          tag = areas['.persona'][i];
+        assert.ok(
+          Math.abs((tag.left - avatar.left - avatar.width) / data.arenaScale - 4) <= 1,
+          'Persona tag stays at a fixed distance after the avatar',
+        );
+      }
+      report.tableAreas ??= {};
+      report.tableAreas[name] = areas;
     }
     if (name === 'review' || /^review-[5-9]$/.test(name))
       selectors = [...selectors, '.review-step'];
@@ -110,10 +208,27 @@ try {
     }
     await mini.screenshot({ path: path.join(output, name + '.png') });
     const data = await page.data();
+    const png = await readFile(path.join(output, name + '.png'));
+    report.screenshotDensity ??= {};
+    report.screenshotDensity[name] = {
+      width: png.readUInt32BE(16),
+      height: png.readUInt32BE(20),
+      logicalWidth: data.windowWidth,
+      effectivePixelRatio: png.readUInt32BE(16) / data.windowWidth,
+      settledAnimationWaitMs: 1450,
+    };
     const game = await mini.evaluate(() => getCurrentPages().at(-1)._controller.getGame());
     await writeFile(
       path.join(output, name + '-state.json'),
-      JSON.stringify({ game, data }, null, 2),
+      JSON.stringify(
+        {
+          game,
+          data,
+          settingsScroll: await mini.evaluate(() => getCurrentPages().at(-1)._settingsScroll || 0),
+        },
+        null,
+        2,
+      ),
     );
     report.pages.push({
       name,
@@ -130,6 +245,16 @@ try {
     console.log('PASS', name);
   };
   const capturePracticeRunout = async () => {
+    if (
+      !report.pages.some((entry) => entry.name === 'practice-runout') &&
+      (await page.data()).done &&
+      (await mini.evaluate(() =>
+        Boolean(getCurrentPages().at(-1)._controller.getGame().practiceBoard),
+      ))
+    ) {
+      await capture('practice-runout', ['.settled-buttons', '.hero', '.board-row']);
+      return;
+    }
     if (
       !report.pages.some((entry) => entry.name === 'practice-runout') &&
       (await page.data()).canPracticeRunout
@@ -167,7 +292,7 @@ try {
               .players.filter((player) => !player.folded).length,
         ),
       );
-      await mini.pageScrollTo(0);
+      await scrollHomeTop();
     }
   };
   assert.equal(
@@ -175,6 +300,17 @@ try {
     'function',
     'DevTools must load the current Page source, not cached compiled code',
   );
+  for (const close of [
+    'closeProfile',
+    'closeSettings',
+    'closeGuide',
+    'closePots',
+    'closeReview',
+    'closeActivity',
+    'closeReset',
+  ])
+    await invoke(close);
+  await scrollHomeTop();
   // Fix the baseline count instead of inheriting the previous run's last setting.
   await invoke('changeCount', { detail: { value: '3' } });
   await invoke('resetPractice');
@@ -190,6 +326,7 @@ try {
     boardOffset.top + boardSize.height <= heroOffset.top,
     'Public cards must stay above the hero cards',
   );
+  const homeTop = (await (await page.$('.game-shell')).offset()).top;
   await (await page.$('.icon-button')).tap();
   await capture('settings', [
     '.settings-modal',
@@ -197,6 +334,39 @@ try {
     '.difficulty',
     '.settings-switch',
   ]);
+  const settingsSize = await (await page.$('.settings-modal')).size();
+  const settingsOffset = await (await page.$('.settings-modal')).offset();
+  const currentWindow = await page.data();
+  assert.ok(
+    settingsOffset.top + settingsSize.height >= currentWindow.windowHeight - 1,
+    'Settings background covers the bottom safe area',
+  );
+  assert.equal(await page.$('[data-field="language"]'), null);
+  await (await page.$('[data-field="count"]')).tap();
+  await wait(
+    async (data) => !!data.selection && (await page.$$('.selection-option')).length === 5,
+    5000,
+  );
+  assert.equal(
+    (await page.$$('.selection-option')).length,
+    5,
+    'All five player counts must be visible options',
+  );
+  const trigger = await page.$('[data-field="count"]');
+  const menu = await page.$('.selection-sheet');
+  const t = await trigger.offset(),
+    ts = await trigger.size(),
+    m = await menu.offset();
+  assert.ok(
+    Math.abs(m.top - t.top - ts.height - 4) <= 1,
+    'Count dropdown opens immediately below its trigger',
+  );
+  assert.equal(
+    await (await page.$('.selection-backdrop')).style('background-color'),
+    'rgba(0, 0, 0, 0)',
+  );
+  await mini.screenshot({ path: path.join(output, 'count-options.png') });
+  await invoke('closeSelect');
   const difficulty = await page.$('.difficulty');
   const difficultySize = await difficulty.size();
   const difficultyOffset = await difficulty.offset();
@@ -210,7 +380,93 @@ try {
   assert.equal((await page.data()).settings.sound, !sound);
   await (await page.$('[data-key="sound"]')).tap();
   await wait((data) => data.settings.sound === sound, 5000);
-  await invoke('viewProfile', { currentTarget: { dataset: { id: 'haxton' } } });
+  const settingsScroll = await page.$('.settings-modal .modal-scroll');
+  const scrollToSetting = async (selector, margin = 0) => {
+    const current = await mini.evaluate(() => getCurrentPages().at(-1)._settingsScroll || 0);
+    const element = await page.$(selector);
+    const offset = await element.offset(),
+      body = await settingsScroll.offset();
+    await settingsScroll.scrollTo(0, Math.max(0, current + offset.top - body.top - margin));
+    await page.waitFor(250);
+  };
+  await scrollToSetting('.profile-grid', 30);
+  assert.equal((await page.data()).homeLocked, true);
+  assert.ok(
+    Math.abs((await (await page.$('.game-shell')).offset()).top - homeTop) <= 1,
+    'Settings scrolling cannot move the home table',
+  );
+
+  const profileCards = await page.$$('.profile-card');
+  const boxes = await Promise.all(
+    profileCards.map(async (card) => ({ ...(await card.offset()), ...(await card.size()) })),
+  );
+  for (let i = 0; i < boxes.length; i++) {
+    const a = boxes[i];
+    for (const b of boxes.slice(i + 1))
+      assert.ok(
+        !(
+          a.left < b.left + b.width - 0.5 &&
+          a.left + a.width > b.left + 0.5 &&
+          a.top < b.top + b.height - 0.5 &&
+          a.top + a.height > b.top + 0.5
+        ),
+        'Profile cards must not overlap',
+      );
+    for (const selector of ['.profile-name', '.profile-tag']) {
+      const child = await profileCards[i].$(selector),
+        c = await child.offset(),
+        cs = await child.size();
+      assert.ok(
+        c.left >= a.left && c.left + cs.width <= a.left + a.width + 0.5,
+        'Profile text stays inside its own column',
+      );
+      if (
+        selector === '.profile-name' &&
+        ['Daniel Negreanu', 'Patrik Antonius', 'Stephen Chidwick'].includes(
+          (await page.data()).profiles[i].short,
+        )
+      )
+        assert.ok(cs.height >= 40, 'Long proper names wrap into multiple lines');
+    }
+  }
+  await capture('settings-profiles', [
+    '.settings-modal',
+    '.profile-grid',
+    '.profile-card',
+    '.profile-name',
+    '.profile-tag',
+  ]);
+  await scrollToSetting('.seat-roster', 36);
+  assert.equal((await page.$$('.seat-setting')).length, 8);
+  await capture('settings-roster', [
+    '.settings-modal',
+    '.seat-roster',
+    '.seat-setting',
+    '.roster-person',
+    '.roster-label',
+  ]);
+  await settingsScroll.scrollTo(0, 10000);
+  await page.waitFor(250);
+  assert.equal(await page.$('.settings-footer'), null);
+  const modal = await page.$('.settings-modal');
+  assert.equal(
+    (await modal.offset()).top,
+    0,
+    'Settings background covers system/capsule areas as well',
+  );
+  await capture('settings-bottom', ['.settings-modal', '.info-module', '.settings-save-row']);
+  await scrollToSetting('.profile-card[data-id="haxton"]', 80);
+  await (await page.$('.profile-card[data-id="haxton"]')).tap();
+  await wait((data) => !!data.detailProfile);
+  const detail = await page.$('.profile-detail');
+  report.motion = {
+    profileReveal: await detail.style('animation-name'),
+    profileDuration: await detail.style('animation-duration'),
+  };
+  assert.equal(report.motion.profileReveal, 'profile-reveal');
+  assert.equal(report.motion.profileDuration, '0.42s');
+  await mini.screenshot({ path: path.join(output, 'profile-reveal.png') });
+
   await capture('player', [
     '.profile-detail',
     '.detail-identity',
@@ -219,14 +475,73 @@ try {
     '.profile-sizing',
   ]);
   assert.match((await page.data()).detailProfile.research.identity, /\S/);
+  const sourceUrl = (await page.data()).detailProfile.sources[0].url;
+  const sourceLink = await page.$('.research-source .research-link');
+  const sourceScroll = await page.$('.profile-detail .modal-scroll');
+  const linkOffset = await sourceLink.offset(),
+    scrollOffset = await sourceScroll.offset();
+  await sourceScroll.scrollTo(
+    0,
+    Math.max(
+      0,
+      (await sourceScroll.property('scrollTop')) + linkOffset.top - scrollOffset.top - 20,
+    ),
+  );
+  await page.waitFor(250);
+  // web-view pages are outside miniprogram-automator's inspectable WXML view.
+  // Verify the real link tap and URL handoff separately from the live page suite.
+  await mini.evaluate(() => {
+    getApp().__noirSourceNavigation = null;
+  });
+  await mini.mockWxMethod('navigateTo', function (options) {
+    getApp().__noirSourceNavigation = options.url;
+    return { errMsg: 'navigateTo:ok' };
+  });
+  try {
+    await sourceLink.tap();
+    await wait(async () => !!(await mini.evaluate(() => getApp().__noirSourceNavigation)), 5000);
+    const requested = await mini.evaluate(() => getApp().__noirSourceNavigation);
+    assert.equal(requested, `/pages/source/source?url=${encodeURIComponent(sourceUrl)}`);
+    report.sourceNavigation = {
+      url: sourceUrl,
+      requested,
+      mode: 'Real link tap; platform navigation mocked. External web-view requires separate GUI/device validation.',
+    };
+  } finally {
+    await mini.restoreWxMethod('navigateTo');
+    await mini.evaluate(() => {
+      delete getApp().__noirSourceNavigation;
+    });
+  }
+
   await invoke('closeProfile');
   await invoke('closeSettings');
   await (await page.$('.guide-button')).tap();
+  for (const [index, expanded] of (await page.data()).guideExpanded.entries())
+    if (expanded) await invoke('toggleGuide', { currentTarget: { dataset: { index } } });
   await capture('guide', ['.guide-sheet', '.guide-h2', '.rules-flow', '.guide-p']);
   await invoke('toggleGuide', { currentTarget: { dataset: { index: 0 } } });
   assert.equal((await page.data()).guideExpanded[0], true);
   await invoke('closeGuide');
+  const cardsBefore = (await page.data()).boardSlots.map((card) => card.key);
+  const rowsBefore = await (await page.$('.board-row')).offset();
   await (await page.$('.pot-detail')).tap();
+  for (let frame = 0; frame < 4; frame++) {
+    assert.deepEqual(
+      (await page.data()).boardSlots.map((card) => card.key),
+      cardsBefore,
+      'Opening details keeps all five public-card slots',
+    );
+    const rowsAfter = await (await page.$('.board-row')).offset();
+    assert.ok(
+      Math.abs(rowsAfter.top - rowsBefore.top) <= 1,
+      'Details cannot reposition the public cards',
+    );
+    await page.waitFor(50);
+  }
+
+  for (const [index, expanded] of Object.entries((await page.data()).potExpanded))
+    if (expanded) await invoke('togglePot', { currentTarget: { dataset: { index } } });
   await capture('pots', ['.pot-sheet', '.pot-detail-card', '.pot-detail-heading']);
   await invoke('togglePot', { currentTarget: { dataset: { index: 0 } } });
   assert.equal((await page.data()).potExpanded[0], true);
@@ -273,12 +588,41 @@ try {
     '.bottom-links',
     '.bottom-links button',
   ]);
+  for (let attempt = 0; attempt < 3; attempt++) {
+    await mini.pageScrollTo(100000);
+    await page.waitFor(250);
+    const data = await page.data();
+    const top = await page.$('.top-chrome'),
+      bottom = await page.$('.bottom-chrome'),
+      nav = await page.$('.nav');
+    assert.equal(
+      (await page.$$('.practice-panel')).length,
+      1,
+      'The home page has exactly one practice panel',
+    );
+    for (const el of [top, bottom, nav])
+      assert.equal(await el.style('background-color'), 'rgb(10, 16, 22)');
+    assert.equal((await top.offset()).top, 0);
+    assert.equal((await top.size()).height, data.topInset + 36);
+    assert.equal((await nav.offset()).left, 0);
+    assert.equal((await nav.size()).width, data.windowWidth);
+    assert.ok(Math.abs((await nav.offset()).top - data.topInset - 36) <= 1);
+    assert.equal((await bottom.size()).height, data.bottomInset);
+    assert.ok(Math.abs((await bottom.offset()).top + data.bottomInset - data.windowHeight) <= 1);
+  }
+  await mini.screenshot({ path: path.join(output, 'home-bottom-chrome.png') });
+  report.scrollChrome = { opaque: true, practicePanels: 1, bottomScrolls: 3 };
+  assert.match(
+    (await page.data()).logs[0].text,
+    /^第 \d+ 手开始/,
+    'Display the real hand start before later activity',
+  );
   const resetSize = await (await page.$('.bottom-links button')).size();
   assert.ok(
     resetSize.width >= 74 && resetSize.width <= 82,
     'The footer reset control keeps the Web text-button width, not WeChat’s 184px default',
   );
-  await mini.pageScrollTo(0);
+  await scrollHomeTop();
   for (const count of [5, 6, 7, 8, 9]) {
     await invoke('openSettings');
     await invoke('changeCount', { detail: { value: String(count - 5) } });
@@ -316,6 +660,41 @@ try {
     report.pages.some((entry) => entry.name === 'showdown'),
     'At least one real showdown must be captured',
   );
+  report.dealTransitions = [];
+  await scrollHomeTop();
+  for (const method of ['retryHand', 'nextHand']) {
+    const before = await page.data();
+    await invoke(method);
+    const after = await page.data();
+    assert.notDeepEqual(
+      after.heroCards.map((card) => card.dealKey),
+      before.heroCards.map((card) => card.dealKey),
+    );
+    if (method === 'retryHand')
+      assert.deepEqual(
+        after.heroCards.map((card) => card.key),
+        before.heroCards.map((card) => card.key),
+      );
+    const face = await page.$('.hero-card .card-art'),
+      back = await page.$('.card-back');
+    assert.equal(await face.style('animation-name'), 'face-arrive');
+    assert.equal(await face.style('animation-delay'), '0.42s');
+    assert.equal(await back.style('animation-name'), 'deal-back');
+    await mini.screenshot({ path: path.join(output, `motion-${method}-early.png`) });
+    await page.waitFor(1450);
+    assert.equal(await face.style('opacity'), '1');
+    await mini.screenshot({ path: path.join(output, `motion-${method}-complete.png`) });
+    report.dealTransitions.push({
+      method,
+      heroDelayMs: 420,
+      staggerMs: 130,
+      backsStaggerMs: 65,
+      finiteFrames: [`motion-${method}-early.png`, `motion-${method}-complete.png`],
+    });
+    await wait((data) => data.canAct);
+    await (await page.$('[data-action="fold"]')).tap();
+    await settle(`motion-${method}`);
+  }
   assert.equal(report.exceptions.length, 0, 'DevTools must report no runtime exceptions');
   assert.equal(
     JSON.parse(await readFile(path.join(root, '.artifacts/wechat/build-info.json'))).sourceDigest,

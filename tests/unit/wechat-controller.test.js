@@ -214,6 +214,34 @@ test('WeChat finish-hand fast-forward handles all-in streets and keeps one settl
   assert.deepEqual(game, settled);
 });
 
+test('WeChat freezes slider bounds while bots think and one fast finish publishes the complete board', (t) => {
+  const { controller, timers, latest, snapshots } = setup(t);
+  const game = reachHero(controller);
+  controller.preset('half');
+  const before = latest();
+  controller.action('raise');
+  const waiting = latest();
+  assert.equal(waiting.canAct, false);
+  for (const key of ['minRaise', 'maxRaise', 'raiseTo', 'callLabel', 'callText'])
+    assert.equal(waiting[key], before[key]);
+  while (game.phase !== 'done' && !(game.phase === 'playing' && game.actor === 0)) {
+    if (game.phase === 'between') advanceStreet(game);
+    else act(game, game.actor, 'call');
+  }
+  controller.show();
+  controller.action('fold');
+  const index = snapshots.length;
+  assert.equal(controller.finishHand(), true);
+  while (!latest().done) {
+    assert.ok([...timers.pending.values()].some((job) => job.delay === 0));
+    assert.ok(timers.runNext());
+  }
+  assert.equal(snapshots.length, index + 1, 'No intermediate streets repaint during fast finish');
+  assert.equal((game.practiceBoard || game.board).length, 5);
+  assert.equal(game.stats.hands, 1);
+  verifyChips(game, 30000);
+});
+
 test('WeChat retry restores original private deal and retracts awards/statistics exactly once', (t) => {
   const { controller } = setup(t);
   const game = controller.getGame();
@@ -338,4 +366,33 @@ test('fresh WeChat settings use five players and publish disabled controls befor
   assert.equal(controller.getGame().players.length, 5);
   assert.equal(snapshots.at(-1).settings.playerCount, 5);
   assert.equal(snapshots.at(-1).canAct, false);
+});
+
+test('Chinese table hints match Web prices and stale timers cannot clear a new decision hint', (t) => {
+  const { controller, timers, latest } = setup(t, { hints: true });
+  const game = reachHero(controller);
+  game.players[0].hole = [
+    { rank: 14, suit: 0, symbol: '♠', key: '0-14' },
+    { rank: 14, suit: 1, symbol: '♥', key: '1-14' },
+  ];
+  controller.setPreference('hints', false);
+  controller.setPreference('hints', true);
+  assert.equal(
+    latest().hintText,
+    '口袋对子有成三条的潜力；面对大额加注，先考虑跟注成本。 跟注占可争夺底池约 18%。',
+  );
+  const old = Array.from(timers.pending.values()).find((job) => job.delay === 24000).fn;
+  controller.hide();
+  assert.equal(latest().hintText, '');
+  controller.retry();
+  reachHero(controller);
+  controller.setPreference('hints', false);
+  controller.setPreference('hints', true);
+  const current = latest().hintText;
+  assert.ok(current);
+  old();
+  assert.equal(latest().hintText, current);
+  finish(controller.getGame(), 'fold');
+  controller.show();
+  assert.ok(latest().hintText.startsWith('复盘本手') || latest().hintText.startsWith('回看弃牌'));
 });

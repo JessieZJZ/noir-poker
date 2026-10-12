@@ -1,10 +1,10 @@
 {
-  "pages": ["pages/table/table"],
+  "pages": ["pages/table/table", "pages/source/source"],
   "resizable": true,
   "window": {
     "pageOrientation": "portrait",
     "navigationStyle": "custom",
-    "backgroundColor": "#0b1218",
+    "backgroundColor": "#0a1016",
     "backgroundTextStyle": "light"
   },
   "style": "v2",

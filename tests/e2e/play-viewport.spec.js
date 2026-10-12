@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { openSettings, closeSettings } from './settings-helpers.js';
-import { readTableLayout, assertTableLayout } from '../native/layout.mjs';
+import { readTableLayout, assertTableLayout, assertStableSettlement } from '../native/layout.mjs';
 
 // Use visual bounds after the fit transform. Engine scenarios remain the same
 // across devices; only their presentation may change with the viewport.
@@ -68,9 +68,9 @@ async function assertFixedTable(page, { bottomInset = 0, settled = false } = {})
             a.right > b.left + 0.5 &&
             a.top < b.bottom - 0.5 &&
             a.bottom > b.top + 0.5;
-          const publicParts = [...document.querySelectorAll('.pot, #board')].map((el) =>
-            el.getBoundingClientRect(),
-          );
+          const publicParts = [
+            ...document.querySelectorAll('.pot > div, .pot-details-trigger, #board'),
+          ].map((el) => el.getBoundingClientRect());
           for (const seat of document.querySelectorAll('.seat'))
             for (const part of parts.filter((el) => seat.contains(el)))
               if (publicParts.some((r) => overlaps(r, part.getBoundingClientRect())))
@@ -449,10 +449,7 @@ for (const locale of ['zh-CN', 'en']) {
         // A phone's existing 1 CSS-pixel gap becomes subpixel after fitting.
         // Large tablets retain a small gap after lowering the rank tag.
         expect(rankBottom).toBeLessThanOrEqual(after.identity.top - (size.width > 900 ? 2 : 0));
-        for (const anchor of ['table', 'arena', 'publicArea']) {
-          for (const edge of ['top', 'bottom', 'left', 'right'])
-            expect(Math.abs(after[anchor][edge] - before[anchor][edge])).toBeLessThanOrEqual(1);
-        }
+        assertStableSettlement(before, after);
         if (size.width > 900) {
           await expect(page.locator('#review-hand-button')).toHaveCSS('font-size', '18px');
           const nextSize = await page
@@ -478,8 +475,8 @@ test('native-sized phone reserves the revealed hand width before an all-in settl
   const before = await page.evaluate(readTableLayout);
   const slots = () =>
     [...document.querySelectorAll('.seat .mini-cards')].map((el) => ({
-      width: el.getBoundingClientRect().width,
-      height: el.getBoundingClientRect().height,
+      width: el.offsetWidth,
+      height: el.offsetHeight,
     }));
   const beforeSlots = await page.evaluate(slots);
   await page.evaluate(() =>
@@ -493,9 +490,7 @@ test('native-sized phone reserves the revealed hand width before an all-in settl
   await assertFixedTable(page, { bottomInset: 34, settled: true });
   const after = await page.evaluate(readTableLayout);
   const afterSlots = await page.evaluate(slots);
-  for (const anchor of ['arena', 'publicArea'])
-    for (const edge of ['top', 'left', 'right', 'height'])
-      expect(Math.abs(after[anchor][edge] - before[anchor][edge])).toBeLessThanOrEqual(1);
+  assertStableSettlement(before, after);
   for (let i = 0; i < beforeSlots.length; i++)
     for (const edge of ['width', 'height'])
       expect(Math.abs(afterSlots[i][edge] - beforeSlots[i][edge])).toBeLessThanOrEqual(1);

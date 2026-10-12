@@ -1,0 +1,15 @@
+page {
+  background: #13282a;
+  color: #dce7e9;
+}
+.source-unavailable {
+  padding: 32px 24px;
+  font-size: 15px;
+  line-height: 1.8;
+}
+button {
+  margin-top: 24px;
+  color: #b7f1dc;
+  background: #265647;
+  border: 1px solid #52796c;
+}

@@ -21,11 +21,13 @@ test('five-card rows survive a small scale cost and crowded short tables keep th
   assert.equal(preferSinglePublicRow(501, 420, 5), false);
 });
 
-test('public cards move above the felt midpoint without depending on deal state', () => {
-  assert.equal(publicGroupTop(28, 600, 100), 242);
-  assert.equal(publicGroupTop(28, 600, 160), 212);
-  assert.equal(publicGroupTop(28, 600, 160) + 80, 292);
-  assert.equal(publicGroupTop(28, 600, 100) + 50, 292);
+test('public cards remain at the felt midpoint without depending on deal state', () => {
+  assert.equal(publicGroupTop(28, 600, 100), 278);
+  assert.equal(publicGroupTop(28, 600, 160), 248);
+  assert.equal(publicGroupTop(28, 600, 160) + 80, 328);
+  assert.equal(publicGroupTop(28, 600, 100) + 50, 328);
+  assert.equal(publicGroupTop(28, 600, 100, 38), 240);
+  assert.equal(publicGroupTop(28, 600, 160, 56) + 56 + 80, 328);
 });
 
 test('SE corridor growth uses the first fitting pixel rather than the guaranteed 823px band', () => {
