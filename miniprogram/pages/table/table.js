@@ -311,7 +311,9 @@ Page({
           index = this.data.phoneSeats.findIndex((seat) => seat.id === id);
         if (index < 0 || !bottoms.has(id)) continue;
         const current = this.data.phoneSeats[index].rankLift || 0;
-        const lift = Math.min(0, current + (bottoms.get(id) + 3 * scale - rank.top) / scale);
+        // A wrapped amount can extend below the nominal two-line footprint.
+        // Move either direction so its last painted line always keeps 3px.
+        const lift = current + (bottoms.get(id) + 3 * scale - rank.top) / scale;
         if (Math.abs(lift - current) > 0.1) patch[`phoneSeats[${index}].rankLift`] = lift;
       }
       if (Object.keys(patch).length) this.setData(patch);

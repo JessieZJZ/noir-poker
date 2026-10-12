@@ -301,17 +301,33 @@ export async function nativeScenarios(app) {
     return { tables };
   });
   await check('native-turn-haptics-bridge', async () => {
-    const bridge = await app.evaluate(async () => {
+    await app.evaluate(() => {
       const available = window.Capacitor.isPluginAvailable('Haptics');
       if (!available) throw Error('Native Haptics plugin is missing');
-      await window.Capacitor.nativePromise('Haptics', 'impact', { style: 'LIGHT' });
-      return {
+      window.__noirHapticProbe = {
         available,
         style: 'LIGHT',
+        status: 'pending',
         scope: 'Installed native bridge call; physical feel requires a device with a vibrator',
       };
+      // execute/sync does not await a returned Promise in WKWebView. Observe
+      // the actual native result in a later command instead of serializing it.
+      window.Capacitor.nativePromise('Haptics', 'impact', { style: 'LIGHT' }).then(
+        () => (window.__noirHapticProbe.status = 'resolved'),
+        (error) => {
+          window.__noirHapticProbe.status = 'rejected';
+          window.__noirHapticProbe.error = String(error);
+        },
+      );
     });
+    await app.waitFor(
+      () => app.evaluate(() => window.__noirHapticProbe.status !== 'pending'),
+      10000,
+      'Native Haptics bridge must complete',
+    );
+    const bridge = await app.evaluate(() => window.__noirHapticProbe);
     assert.equal(bridge.available, true);
+    assert.equal(bridge.status, 'resolved', bridge.error);
     return bridge;
   });
   await check('mixed-toggle-and-visual-guide', async () => {

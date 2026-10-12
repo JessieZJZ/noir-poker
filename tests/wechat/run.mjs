@@ -27,6 +27,13 @@ let mini;
 try {
   mini = await automator.connect({ wsEndpoint: process.argv[2] || 'ws://127.0.0.1:9432' });
   mini.on('exception', (exception) => report.exceptions.push(exception));
+  await mini.evaluate(() => {
+    getApp().__noirTurnVibrations = [];
+  });
+  await mini.mockWxMethod('vibrateShort', function (options) {
+    getApp().__noirTurnVibrations.push(options.type);
+    return { errMsg: 'vibrateShort:ok' };
+  });
   let page = await mini.currentPage();
   const invoke = (name, argument) =>
     mini.evaluate(
@@ -587,17 +594,28 @@ try {
   await invoke('closeReset');
   assert.equal((await page.data()).hand, hand, 'Cancelling reset preserves the deal');
   await wait((data) => data.canAct && data.canRaise);
+  const vibrationsBefore = await mini.evaluate(() => getApp().__noirTurnVibrations.length);
+  assert.ok(vibrationsBefore > 0, 'Real controller turns must dispatch short vibrations');
   const sliderBefore = await page.data();
   await invoke('previewRaise', { detail: { value: sliderBefore.minRaise + 100 } });
   const sliderPreview = await page.data();
   assert.equal(sliderPreview.raiseTo, sliderBefore.raiseTo);
   assert.deepEqual(sliderPreview.boardSlots, sliderBefore.boardSlots);
   await invoke('changeRaise', { detail: { value: sliderBefore.minRaise } });
+  assert.equal(
+    await mini.evaluate(() => getApp().__noirTurnVibrations.length),
+    vibrationsBefore,
+    'Slider changes must not repeat a turn vibration',
+  );
   await (await page.$('[data-action="raise"]')).tap();
   await wait((data) => data.flyingChips.length >= 3, 5000);
-  const flying = await page.$('.flying-chip');
-  assert.equal(await flying.style('animation-name'), 'fly-chips');
-  assert.equal(await flying.style('animation-duration'), '0.52s');
+  const flying = (await page.$$('.flying-chip')).at(-1);
+  const [animationName, animationDuration] = await Promise.all([
+    flying.style('animation-name'),
+    flying.style('animation-duration'),
+  ]);
+  assert.equal(animationName, 'fly-chips');
+  assert.equal(animationDuration, '0.52s');
   await mini.screenshot({ path: path.join(output, 'raise-chip-motion.png') });
   report.wagerMotion = { chips: 3, durationMs: 520, staggerMs: 60 };
   await wait((data) => data.canAct || data.done);
@@ -605,6 +623,15 @@ try {
     await invoke('nextHand');
     await wait((data) => data.canAct);
   }
+  const vibrationsAfter = await mini.evaluate(() => getApp().__noirTurnVibrations);
+  assert.ok(vibrationsAfter.length > vibrationsBefore, 'A new hero decision vibrates again');
+  assert.ok(vibrationsAfter.every((type) => type === 'light'));
+  report.turnVibration = {
+    before: vibrationsBefore,
+    after: vibrationsAfter.length,
+    type: 'light',
+    scope: 'Actual controller dispatch with wx.vibrateShort mocked; physical feel needs a phone',
+  };
   await (await page.$('[data-action="fold"]')).tap();
   await settle('settlement');
   await capture('settlement', ['.settled-buttons', '.hero', '.board-row']);
@@ -761,6 +788,7 @@ try {
   report.error = error.stack;
   throw error;
 } finally {
+  if (mini) await mini.restoreWxMethod('vibrateShort').catch(() => {});
   report.completedAt = new Date().toISOString();
   await writeFile(path.join(output, 'report.json'), JSON.stringify(report, null, 2));
   mini?.disconnect();

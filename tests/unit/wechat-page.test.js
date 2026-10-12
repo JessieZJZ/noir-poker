@@ -294,6 +294,10 @@ test('WeChat ranks sit 3px below the final painted action line, including wrappe
   page.tightenSeatRanks();
   assert.equal(page.data['phoneSeats[0].rankLift'], -25);
   assert.equal(page.data['phoneSeats[1].rankLift'], -31);
+  // Large all-in captions can need a small downward adjustment as well.
+  ranks[0].top = 136;
+  page.tightenSeatRanks();
+  assert.equal(page.data['phoneSeats[0].rankLift'], 3);
 });
 
 test('retry and next hand remount every deal while ordinary turns preserve the hero card nodes', (t) => {
