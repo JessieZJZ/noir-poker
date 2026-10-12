@@ -1,3 +1,4 @@
+import { assignNamedLineup } from './settings-helpers.js';
 import { test, expect } from '@playwright/test';
 import { openSettings, closeSettings } from './settings-helpers.js';
 
@@ -143,7 +144,7 @@ test('5–9 player live hands keep visible card backs and readable cards at narr
 }) => {
   test.setTimeout(90000);
   await openSettings(page);
-  await page.locator('#mix-opponents').click();
+  await assignNamedLineup(page);
   await closeSettings(page);
   for (const size of [
     { width: 320, height: 900, publicWidth: 31, heroWidth: 44 },
@@ -346,7 +347,7 @@ test('all five public positions retain the same rows and face sizes while dealin
       await expect(page.locator('#board > .board-slot')).toHaveCount(5);
       const initial = await positions();
       const expectedWidth = Math.round(
-        width <= 360 ? 54 : width <= 600 ? Math.max(44, Math.min(54, width * 0.12)) : 98,
+        width <= 360 ? 66 : width <= 600 ? Math.max(62, Math.min(70, width * 0.16)) : 106,
       );
       expect(initial.map((card) => card.width)).toEqual(Array(5).fill(expectedWidth));
       const rows = initial.reduce((rows, card) => {

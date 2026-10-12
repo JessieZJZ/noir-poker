@@ -1,20 +1,27 @@
 import { railLayout } from './rail-layout.js';
 // Match the responsive Web wrapper sizes, not platform text measurements.
-export function compactTableLayout({ width, height, seats, displayHeight = 759, availableWidth }) {
+export function compactTableLayout({
+  width,
+  height,
+  seats,
+  displayHeight = 759,
+  availableWidth,
+  minimumProfileHeight = 0,
+}) {
   const count = seats.length + 1;
   const tablet = width > 600 && width <= 1100;
   const large = width > 900 && displayHeight >= 1100 && displayHeight > width;
   const roomy = width <= 600 && displayHeight >= 740 && count <= 6;
   const cardWidth = tablet
     ? large
-      ? 82
+      ? 94
       : width <= 900
-        ? 98
-        : 82
+        ? 106
+        : 94
     : width <= 360
-      ? 54
-      : Math.max(44, Math.min(54, width * 0.12));
-  const cardHeight = tablet ? (large ? 118 : width <= 900 ? 141 : 118) : cardWidth * 1.44;
+      ? 66
+      : Math.max(62, Math.min(70, width * 0.16));
+  const cardHeight = cardWidth * 1.44;
   const heroWidth = tablet
     ? large
       ? 94
@@ -22,7 +29,9 @@ export function compactTableLayout({ width, height, seats, displayHeight = 759, 
         ? 112
         : 94
     : roomy
-      ? 68
+      ? width <= 360
+        ? 76
+        : 68
       : width <= 360
         ? 76
         : Math.max(61, Math.min(72, width * 0.12));
@@ -33,7 +42,9 @@ export function compactTableLayout({ width, height, seats, displayHeight = 759, 
         ? 161
         : 136
     : roomy
-      ? 98
+      ? width <= 360
+        ? 110
+        : 98
       : width <= 360
         ? 110
         : Math.max(88, Math.min(104, width * 0.174));
@@ -48,7 +59,10 @@ export function compactTableLayout({ width, height, seats, displayHeight = 759, 
       : width <= 360
         ? 96
         : 100;
-  const profileHeight = tablet ? (large ? 112 : 92) : roomy ? 72 : 60;
+  const profileHeight = Math.max(
+    minimumProfileHeight,
+    tablet ? (large ? 112 : 92) : roomy ? 72 : 60,
+  );
   const textMetrics = {
     'player-name': large ? 24 : tablet ? 21 : roomy ? 14 : 13,
     'player-stack': large ? 24 : tablet ? 20 : 13,
@@ -62,6 +76,10 @@ export function compactTableLayout({ width, height, seats, displayHeight = 759, 
     'action-height': large ? 56 : tablet ? 46 : 34,
     'rank-height': large ? 30 : tablet ? 26 : 22,
     'profile-width': profileWidth,
+    'player-avatar': large ? 60 : tablet ? 48 : roomy ? 36 : 32,
+    'public-card-width': cardWidth,
+    'hero-card-width': heroWidth,
+    'hero-card-height': heroHeight,
   };
   const textStyle = Object.entries(textMetrics)
     .map(([key, value]) => `--${key}:${value}px;`)

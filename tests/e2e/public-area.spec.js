@@ -1,3 +1,4 @@
+import { assignNamedLineup } from './settings-helpers.js';
 import { test, expect } from '@playwright/test';
 import { closeSettings } from './settings-helpers.js';
 
@@ -138,7 +139,7 @@ test('public areas stay closest to the felt center within the play viewport with
   for (const named of [false, true]) {
     if (named) {
       await page.locator('#opponents-button').click();
-      await page.locator('#mix-opponents').click();
+      await assignNamedLineup(page);
       await closeSettings(page);
     }
     for (const width of [320, 390, 768, 1115, 1280, 1700]) {

@@ -251,7 +251,12 @@ export async function nativeScenarios(app) {
     for (const count of [6, 8]) {
       await app.click('#opponents-button');
       await app.select('#player-count', String(count));
-      await app.click('#mix-opponents');
+      if (
+        await app.evaluate(
+          () => document.querySelector('#mix-opponents').getAttribute('aria-pressed') !== 'true',
+        )
+      )
+        await app.click('#mix-opponents');
       await app.click('#opponents-dialog .close-dialog');
       await app.click('#reset-button');
       await app.click('#confirm-reset');
@@ -280,13 +285,71 @@ export async function nativeScenarios(app) {
         'Chips must sit below the style row',
       );
       assert.ok(
-        presentation.names.filter((tag) => tag.full).length >= Math.ceil((count - 1) / 2),
-        'Most named styles must fit in one line in the installed app',
+        await app.evaluate(() =>
+          [...document.querySelectorAll('.seat-style-label')].every(
+            (tag) =>
+              tag.textContent.trim() &&
+              tag.title &&
+              getComputedStyle(tag).textOverflow === 'ellipsis',
+          ),
+        ),
+        'Named style labels preserve their complete accessible identity',
       );
       await app.screenshot(`crown-${count}-style-row`);
       tables.push({ count, presentation, layout });
     }
     return { tables };
+  });
+  await check('native-turn-haptics-bridge', async () => {
+    const bridge = await app.evaluate(async () => {
+      const available = window.Capacitor.isPluginAvailable('Haptics');
+      if (!available) throw Error('Native Haptics plugin is missing');
+      await window.Capacitor.nativePromise('Haptics', 'impact', { style: 'LIGHT' });
+      return {
+        available,
+        style: 'LIGHT',
+        scope: 'Installed native bridge call; physical feel requires a device with a vibrator',
+      };
+    });
+    assert.equal(bridge.available, true);
+    return bridge;
+  });
+  await check('mixed-toggle-and-visual-guide', async () => {
+    await app.click('#opponents-button');
+    if (
+      await app.evaluate(
+        () => document.querySelector('#mix-opponents').getAttribute('aria-pressed') === 'true',
+      )
+    )
+      await app.click('#mix-opponents');
+    await app.select('[data-bot-seat="1"]', 'tan');
+    await app.select('[data-bot-seat="2"]', 'balanced');
+    await app.click('#mix-opponents');
+    assert.equal(
+      await app.evaluate(() =>
+        document.querySelector('#mix-opponents').getAttribute('aria-pressed'),
+      ),
+      'true',
+    );
+    await app.select('[data-bot-seat="3"]', 'ivey');
+    await app.click('#mix-opponents');
+    const assignments = await app.evaluate(() =>
+      [1, 2, 3].map((id) => document.querySelector(`[data-bot-seat="${id}"]`).value),
+    );
+    assert.deepEqual(assignments, ['tan', 'balanced', 'ivey']);
+    await app.click('#opponents-dialog .close-dialog');
+    await app.click('#rules-button');
+    const guide = await app.evaluate(() => ({
+      hands: document.querySelectorAll('.hand-example').length,
+      cards: document.querySelectorAll('.guide-card').length,
+      positions: document.querySelector('.position-glossary').textContent,
+    }));
+    assert.equal(guide.hands, 9);
+    assert.equal(guide.cards, 45);
+    assert.ok(guide.positions.includes('HJ · Hijack') && guide.positions.includes('CO · Cutoff'));
+    await app.screenshot('visual-beginner-guide');
+    await app.click('#rules-dialog .icon-button.close-dialog');
+    return { assignments, guide };
   });
   await check('settings-autosave-and-local-portraits', async () => {
     await app.click('#opponents-button');

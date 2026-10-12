@@ -59,6 +59,7 @@ Page({
     homeLocked: false,
     homeOffset: 0,
     finishing: false,
+    flyingChips: [],
   },
   onLoad() {
     this.updateWindow();
@@ -72,17 +73,27 @@ Page({
         const board = view.board;
         const showdown = game ? showdownPresentation(game, view.profiles) : [];
         const dealKey = `${view.hand}:${view.replay}`;
+        const changedDeal = dealKey !== this._dealKey;
+        if (changedDeal) this._motionEpoch = (this._motionEpoch || 0) + 1;
+        if (changedDeal || !view.settings.sound)
+          for (const audio of this._audio || []) audio.stop();
         const previousCards = dealKey === this._dealKey ? this._boardCount || 0 : 0;
         this._dealKey = dealKey;
         const presentedBoard = board.map((card, index) => ({
           ...presentCard(card),
-          arriving: index >= previousCards,
-          dealDelay: Math.max(0, index - previousCards) * 140,
+          arriving: index >= previousCards || (!changedDeal && this.data.board[index]?.arriving),
+          dealDelay:
+            index >= previousCards
+              ? (index - previousCards) * 140
+              : this.data.board[index]?.dealDelay || 0,
         }));
         this._boardCount = board.length;
         const presentedSeats = view.seats.map((seat) => ({
           ...seat,
-          cards: seat.cards.map(presentCard),
+          cards: seat.cards.map((card, index) => ({
+            ...presentCard(card),
+            dealDelay: index * 140,
+          })),
           backCards: [0, 1].map((index) => ({
             key: `${dealKey}:${index}`,
             delay: seat.id * 65 + index * 140,
@@ -95,6 +106,7 @@ Page({
               ? false
               : this.data.finishing,
           seats: presentedSeats,
+          ...(changedDeal ? { flyingChips: [] } : {}),
           heroCards: view.heroCards.map((card) => ({
             ...presentCard(card),
             dealKey: `${dealKey}:${card.key}`,
@@ -146,6 +158,10 @@ Page({
         setItem: (key, value) => wx.setStorageSync(key, value),
       },
       sound: (name) => this.playSound(name),
+      wager: (id) => this.flyChips(id),
+      notifyTurn: () => {
+        if (!this._hidden && !this._destroyed) wx.vibrateShort?.({ type: 'light', fail: () => {} });
+      },
     });
     this._controller.start();
   },
@@ -159,13 +175,15 @@ Page({
   },
   onHide() {
     this._hidden = true;
-    this.setData({ finishing: false });
+    this._motionEpoch = (this._motionEpoch || 0) + 1;
+    this.setData({ finishing: false, flyingChips: [] });
     this._rankEpoch = (this._rankEpoch || 0) + 1;
     this._controller?.hide();
     this.stopSounds();
   },
   onUnload() {
     this._destroyed = true;
+    this._motionEpoch = (this._motionEpoch || 0) + 1;
     this._controller?.destroy();
     this.stopSounds();
   },
@@ -176,6 +194,7 @@ Page({
     if (!this.data.homeLocked) this._homeScroll = event.scrollTop;
   },
   setOverlay(patch) {
+    this._audioUnlocked = true;
     const next = { ...this.data, ...patch };
     const homeLocked = [
       'settingsOpen',
@@ -299,6 +318,7 @@ Page({
     });
   },
   call(method, ...args) {
+    this._audioUnlocked = true;
     try {
       return this._controller[method](...args);
     } catch (error) {
@@ -306,8 +326,15 @@ Page({
     }
   },
   playSound(name) {
-    if (!wx.createInnerAudioContext) return;
-    const names = { fold: 'fold', check: 'check', raise: 'raise', call: 'call', deal: 'deal' };
+    if (!wx.createInnerAudioContext || !this._audioUnlocked) return;
+    const names = {
+      fold: 'fold',
+      check: 'check',
+      raise: 'raise',
+      call: 'call',
+      deal: 'deal',
+      win: 'win',
+    };
     if (!names[name]) return;
     try {
       const audio = this._soundPool?.[names[name]];
@@ -322,7 +349,7 @@ Page({
   preloadSounds() {
     this._soundPool = {};
     if (!wx.createInnerAudioContext) return;
-    for (const name of ['fold', 'check', 'raise', 'call', 'deal']) {
+    for (const name of ['fold', 'check', 'raise', 'call', 'deal', 'win']) {
       const audio = wx.createInnerAudioContext();
       audio.src = `/assets/sounds/${name}.wav`;
       audio.volume = 1;
@@ -349,6 +376,48 @@ Page({
   changeRaise(event) {
     this.call('setRaise', event.detail.value);
   },
+  previewRaise(event) {
+    // Do not write the native slider's controlled value back during dragging.
+    // Only its caption changes; the final change commits once to the engine.
+    const value = Math.max(
+      this.data.minRaise,
+      Math.min(
+        this.data.maxRaise,
+        Math.round(Number(event.detail.value) / this.data.chipUnit) * this.data.chipUnit,
+      ),
+    );
+    const text = value.toLocaleString('en-US');
+    if (text !== this.data.raiseText) this.setData({ raiseText: text });
+  },
+  flyChips(id) {
+    if (!wx.createSelectorQuery || this._hidden || this._destroyed) return;
+    const ticket = this._motionEpoch || 0;
+    const query = wx.createSelectorQuery();
+    query.select(id === 0 ? '.hero-info' : `#seat-body-${id}`).boundingClientRect();
+    query.select('.pot-row').boundingClientRect();
+    query.exec(([source, target]) => {
+      if (
+        !source ||
+        !target ||
+        ticket !== (this._motionEpoch || 0) ||
+        this._hidden ||
+        this._destroyed
+      )
+        return;
+      const x = source.left + source.width / 2;
+      const y = source.top + source.height / 2;
+      const key = (this._chipSerial = (this._chipSerial || 0) + 1);
+      this.setData({
+        flyingChips: [
+          ...this.data.flyingChips.slice(-6),
+          ...[0, 1, 2].map((index) => ({
+            key: `${key}:${index}`,
+            style: `left:${x + index * 3}px;top:${y - index * 3}px;--chip-x:${target.left + target.width / 2 - x}px;--chip-y:${target.top + target.height / 2 - y}px;--chip-delay:${index * 60}ms;`,
+          })),
+        ],
+      });
+    });
+  },
   nextHand() {
     this._finishRequested = false;
     this.setData({ finishing: false });
@@ -361,8 +430,7 @@ Page({
   },
   finishHand() {
     if (this.data.canPracticeRunout) {
-      completeBoardForPractice(this._controller.getGame());
-      this._controller.show();
+      this.call('finishHand');
       return;
     }
     if (this.data.finishing) return;
@@ -594,10 +662,7 @@ Page({
     this.closeProfile();
   },
   mixProfiles() {
-    const ids = this.data.profiles.filter((p) => p.id !== 'balanced').map((p) => p.id);
-    this.data.seatSettings.forEach((seat, index) =>
-      this.call('setSeatProfile', seat.id, ids[index % ids.length]),
-    );
+    this.call('toggleMixedProfiles');
   },
   openGuide() {
     this.setOverlay({ guideOpen: true });

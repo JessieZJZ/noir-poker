@@ -412,6 +412,16 @@ try {
         ),
         'Profile cards must not overlap',
       );
+    const avatar = await profileCards[i].$('.profile-avatar');
+    assert.ok(
+      Math.abs(
+        (await avatar.offset()).top -
+          a.top -
+          parseFloat(await profileCards[i].style('padding-top')) -
+          1,
+      ) <= 1,
+      'Persona portraits start at the top of each grid cell',
+    );
     for (const selector of ['.profile-name', '.profile-tag']) {
       const child = await profileCards[i].$(selector),
         c = await child.offset(),
@@ -438,6 +448,27 @@ try {
   ]);
   await scrollToSetting('.seat-roster', 36);
   assert.equal((await page.$$('.seat-setting')).length, 8);
+  const chooseSeat = async (id, style) => {
+    const data = await page.data();
+    await invoke('changeSeat', {
+      currentTarget: { dataset: { id } },
+      detail: { value: data.profiles.findIndex((profile) => profile.id === style) },
+    });
+  };
+  if ((await page.data()).settings.mixed) await invoke('mixProfiles');
+  await chooseSeat(1, 'tan');
+  await chooseSeat(2, 'balanced');
+  await invoke('mixProfiles');
+  assert.equal((await page.data()).settings.mixed, true);
+  assert.equal((await page.data()).settings.assignments[1], 'tan');
+  await chooseSeat(3, 'ivey');
+  await invoke('mixProfiles');
+  const mixedSettings = (await page.data()).settings;
+  assert.equal(mixedSettings.mixed, false);
+  assert.equal(mixedSettings.assignments[1], 'tan');
+  assert.equal(mixedSettings.assignments[2], 'balanced');
+  assert.equal(mixedSettings.assignments[3], 'ivey');
+  report.mixedToggle = mixedSettings;
   await capture('settings-roster', [
     '.settings-modal',
     '.seat-roster',
@@ -520,6 +551,10 @@ try {
   for (const [index, expanded] of (await page.data()).guideExpanded.entries())
     if (expanded) await invoke('toggleGuide', { currentTarget: { dataset: { index } } });
   await capture('guide', ['.guide-sheet', '.guide-h2', '.rules-flow', '.guide-p']);
+  assert.equal((await page.$$('.hand-example')).length, 9);
+  assert.equal((await page.$$('.guide-card')).length, 45);
+  assert.ok((await (await page.$('.position-glossary')).text()).includes('HJ'));
+  report.visualGuide = { hands: 9, cards: 45 };
   await invoke('toggleGuide', { currentTarget: { dataset: { index: 0 } } });
   assert.equal((await page.data()).guideExpanded[0], true);
   await invoke('closeGuide');
@@ -551,6 +586,25 @@ try {
   const hand = (await page.data()).hand;
   await invoke('closeReset');
   assert.equal((await page.data()).hand, hand, 'Cancelling reset preserves the deal');
+  await wait((data) => data.canAct && data.canRaise);
+  const sliderBefore = await page.data();
+  await invoke('previewRaise', { detail: { value: sliderBefore.minRaise + 100 } });
+  const sliderPreview = await page.data();
+  assert.equal(sliderPreview.raiseTo, sliderBefore.raiseTo);
+  assert.deepEqual(sliderPreview.boardSlots, sliderBefore.boardSlots);
+  await invoke('changeRaise', { detail: { value: sliderBefore.minRaise } });
+  await (await page.$('[data-action="raise"]')).tap();
+  await wait((data) => data.flyingChips.length >= 3, 5000);
+  const flying = await page.$('.flying-chip');
+  assert.equal(await flying.style('animation-name'), 'fly-chips');
+  assert.equal(await flying.style('animation-duration'), '0.52s');
+  await mini.screenshot({ path: path.join(output, 'raise-chip-motion.png') });
+  report.wagerMotion = { chips: 3, durationMs: 520, staggerMs: 60 };
+  await wait((data) => data.canAct || data.done);
+  if ((await page.data()).done) {
+    await invoke('nextHand');
+    await wait((data) => data.canAct);
+  }
   await (await page.$('[data-action="fold"]')).tap();
   await settle('settlement');
   await capture('settlement', ['.settled-buttons', '.hero', '.board-row']);

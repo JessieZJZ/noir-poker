@@ -236,7 +236,10 @@ test('WeChat freezes slider bounds while bots think and one fast finish publishe
     assert.ok([...timers.pending.values()].some((job) => job.delay === 0));
     assert.ok(timers.runNext());
   }
-  assert.equal(snapshots.length, index + 1, 'No intermediate streets repaint during fast finish');
+  assert.ok(snapshots.length > index, 'Fast finish publishes street boundaries like Web');
+  const frames = snapshots.slice(index);
+  assert.ok(frames.every((frame) => frame.done || frame.phase === 'between'));
+  assert.ok(frames.every((frame) => frame.raiseTo === before.raiseTo));
   assert.equal((game.practiceBoard || game.board).length, 5);
   assert.equal(game.stats.hands, 1);
   verifyChips(game, 30000);
@@ -395,4 +398,34 @@ test('Chinese table hints match Web prices and stale timers cannot clear a new d
   finish(controller.getGame(), 'fold');
   controller.show();
   assert.ok(latest().hintText.startsWith('复盘本手') || latest().hintText.startsWith('回看弃牌'));
+});
+
+test('WeChat mixed lineup persists ownership and manual selections survive cancellation', (t) => {
+  const { controller, latest, preferences } = setup(t);
+  controller.setSeatProfile(1, 'tan');
+  controller.toggleMixedProfiles();
+  assert.equal(latest().settings.mixed, true);
+  assert.equal(latest().settings.assignments[1], 'tan');
+  const auto = latest().settings.assignments[2];
+  controller.setSeatProfile(2, auto);
+  controller.toggleMixedProfiles();
+  assert.equal(latest().settings.assignments[1], 'tan');
+  assert.equal(latest().settings.assignments[2], auto);
+  for (const id of [3, 4, 5]) assert.equal(latest().settings.assignments[id], 'balanced');
+  assert.equal(JSON.parse(preferences.get('noir-wechat-settings-v1')).mixed, false);
+});
+
+test('WeChat retry, fast finish and sound re-enable use the Web cue sequence', (t) => {
+  const { controller, timers, sounds } = setup(t);
+  controller.setPreference('sound', false);
+  controller.setPreference('sound', true);
+  assert.equal(sounds.at(-1), 'deal');
+  const game = reachHero(controller);
+  controller.action('fold');
+  const start = sounds.length;
+  controller.finishHand();
+  while (game.phase !== 'done') assert.ok(timers.runNext());
+  assert.deepEqual(sounds.slice(start), ['win']);
+  controller.retry();
+  assert.equal(sounds.at(-1), 'deal');
 });

@@ -1,3 +1,6 @@
+import { createHeroTurnCue } from './hero-turn.js';
+import { notifyHeroTurn } from '../platform/haptics.js';
+import { soundSamples, SOUND_SAMPLE_RATE } from './sound-cues.js';
 import { SEAT_ANCHORS } from './seat-geometry.js';
 import { COMPACT_PLAY_QUERY } from './play-geometry.js';
 import {
@@ -156,17 +159,7 @@ function prepareAudio() {
   if (audio || !sound) return;
   try {
     audio = new (window.AudioContext || window.webkitAudioContext)();
-    const gain = audio.createGain();
-    gain.gain.value = 8;
-    const limiter = audio.createDynamicsCompressor();
-    limiter.threshold.value = -3;
-    limiter.knee.value = 0;
-    limiter.ratio.value = 20;
-    limiter.attack.value = 0.003;
-    limiter.release.value = 0.1;
-    gain.connect(limiter);
-    limiter.connect(audio.destination);
-    audioOutput = gain;
+    audioOutput = audio.destination;
   } catch {}
 }
 // Allocate the graph on entry. Resume on the first trusted gesture when the
@@ -181,80 +174,35 @@ for (const event of ['pointerdown', 'pointerup', 'keydown']) {
     { capture: true },
   );
 }
+const soundBuffers = new Map();
+const soundSources = new Set();
+function cancelSoundEffects() {
+  for (const source of soundSources) {
+    try {
+      source.stop?.();
+    } catch {}
+  }
+  soundSources.clear();
+}
 function soundEffect(kind = 'chip') {
-  // Skip sounds until a user gesture unlocks audio; never queue stale table sounds.
   if (!activityClock.active || !sound || audio?.state !== 'running') return;
   try {
-    const now = audio.currentTime;
-    if (kind === 'check') {
-      // Two knuckle taps: a short wooden attack and a low, quickly damped body.
-      const attack = audio.createBuffer(1, Math.ceil(audio.sampleRate * 0.025), audio.sampleRate);
-      const samples = attack.getChannelData(0);
-      for (let i = 0; i < samples.length; i++)
-        samples[i] = (Math.random() * 2 - 1) * Math.exp((-6 * i) / samples.length);
-      [0, 0.14].forEach((offset, i) => {
-        const at = now + offset,
-          strength = i === 0 ? 1 : 0.8,
-          noise = audio.createBufferSource(),
-          filter = audio.createBiquadFilter(),
-          attackGain = audio.createGain(),
-          body = audio.createOscillator(),
-          bodyGain = audio.createGain();
-        noise.buffer = attack;
-        filter.type = 'bandpass';
-        filter.frequency.setValueAtTime(850, at);
-        filter.Q.setValueAtTime(0.7, at);
-        attackGain.gain.setValueAtTime(0.08 * strength, at);
-        noise.connect(filter);
-        filter.connect(attackGain);
-        attackGain.connect(audioOutput);
-        body.type = 'triangle';
-        body.frequency.setValueAtTime(165, at);
-        body.frequency.exponentialRampToValueAtTime(80, at + 0.045);
-        bodyGain.gain.setValueAtTime(0.0001, at);
-        bodyGain.gain.exponentialRampToValueAtTime(0.035 * strength, at + 0.002);
-        bodyGain.gain.exponentialRampToValueAtTime(0.0001, at + 0.065);
-        body.connect(bodyGain);
-        bodyGain.connect(audioOutput);
-        noise.start(at);
-        noise.stop(at + 0.025);
-        body.start(at);
-        body.stop(at + 0.08);
-      });
-      return;
+    let buffer = soundBuffers.get(kind);
+    if (!buffer) {
+      const samples = soundSamples(kind);
+      buffer = audio.createBuffer(1, samples.length, SOUND_SAMPLE_RATE);
+      buffer.getChannelData(0).set(samples);
+      soundBuffers.set(kind, buffer);
     }
-    if (kind === 'fold') {
-      // A quiet falling swish, distinct from chip, deal and winning notes.
-      const o = audio.createOscillator(),
-        v = audio.createGain();
-      o.type = 'triangle';
-      o.frequency.setValueAtTime(260, now);
-      o.frequency.exponentialRampToValueAtTime(75, now + 0.14);
-      v.gain.setValueAtTime(0.0001, now);
-      v.gain.exponentialRampToValueAtTime(0.02, now + 0.012);
-      v.gain.exponentialRampToValueAtTime(0.0001, now + 0.16);
-      o.connect(v);
-      v.connect(audioOutput);
-      o.start(now);
-      o.stop(now + 0.18);
-      return;
-    }
-    const notes = kind === 'win' ? [440, 554, 659] : kind === 'deal' ? [820, 570] : [310];
-    notes.forEach((hz, i) => {
-      const o = audio.createOscillator(),
-        v = audio.createGain();
-      o.type = kind === 'deal' ? 'triangle' : 'sine';
-      o.frequency.setValueAtTime(hz, now + i * 0.08);
-      v.gain.setValueAtTime(0.0001, now + i * 0.08);
-      v.gain.exponentialRampToValueAtTime(0.025, now + i * 0.08 + 0.015);
-      v.gain.exponentialRampToValueAtTime(0.0001, now + i * 0.08 + 0.16);
-      o.connect(v);
-      v.connect(audioOutput);
-      o.start(now + i * 0.08);
-      o.stop(now + i * 0.08 + 0.2);
-    });
+    const source = audio.createBufferSource();
+    source.buffer = buffer;
+    source.connect(audioOutput);
+    soundSources.add(source);
+    source.onended = () => soundSources.delete(source);
+    source.start(audio.currentTime);
   } catch {}
 }
+
 function flyChips(id) {
   if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
   const source = id === 0 ? $('.hero-name') : $(`.seat-${id} .seat-profile`),
@@ -318,6 +266,7 @@ function seatAction(p, { recent = false } = {}) {
       : `${action} · 本轮累计投入 ${format(amount)}`);
   return `<span class="seat-action-label">${label}</span><strong class="seat-action-amount" title="${meaning}">${format(amount)}</strong>`;
 }
+const heroTurnCue = createHeroTurnCue(notifyHeroTurn);
 function render() {
   const activityList = $('#activity-list'),
     activityScrollTop = activityList.scrollTop,
@@ -527,6 +476,11 @@ function render() {
     'aria-label',
     hero.stack === 0 ? '补充筹码，继续练习' : '下一手',
   );
+  heroTurnCue.update({
+    key: `${game.hand}:${game.replayAttempt || 0}:${game.street}:${game.history.length}`,
+    enabled: legal.enabled,
+    active: activityClock.active,
+  });
   for (const b of [$('#fold-button'), $('#call-button')]) b.disabled = !legal.enabled;
   $('#raise-button').disabled = !legal.enabled || !legal.canRaise;
   $('#bet-slider').disabled = !legal.enabled || !legal.canRaise;
@@ -778,6 +732,9 @@ async function continueDeal() {
   }
 }
 function nextHand() {
+  cancelSoundEffects();
+  heroTurnCue.reset();
+  cancelSoundEffects();
   botWait = null;
   seatHandVisibility.clear();
   finishing = false;
@@ -804,6 +761,8 @@ function nextHand() {
 }
 function retryHand() {
   if (!canRestartHand(game)) return false;
+  heroTurnCue.reset();
+  cancelSoundEffects();
   botWait = null;
   seatHandVisibility.clear();
   finishing = false;
@@ -962,6 +921,7 @@ function updateSound() {
 }
 $('#sound-button').onclick = () => {
   sound = !sound;
+  if (!sound) cancelSoundEffects();
   try {
     preferenceStorage.setItem('noir-sound', String(sound));
   } catch {}
@@ -1151,6 +1111,7 @@ function syncActivity() {
   if (!activityClock.setActive(active)) return;
   if (!active) {
     clearTimeout(timer);
+    cancelSoundEffects();
     if (audio?.state === 'running') void audio.suspend().catch(() => {});
   } else schedule();
 }

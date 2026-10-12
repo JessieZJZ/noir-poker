@@ -1,3 +1,4 @@
+import { assignNamedLineup } from './settings-helpers.js';
 import { test, expect } from '@playwright/test';
 import { openSettings, closeSettings } from './settings-helpers.js';
 
@@ -10,7 +11,7 @@ test.beforeEach(async ({ page }) => {
     return document.fonts.ready;
   });
   await openSettings(page);
-  await page.locator('#mix-opponents').click();
+  await assignNamedLineup(page);
   await closeSettings(page);
 });
 

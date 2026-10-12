@@ -1,3 +1,4 @@
+import { assignNamedLineup } from './settings-helpers.js';
 import { test, expect } from '@playwright/test';
 import { openSettings, closeSettings } from './settings-helpers.js';
 import { readTableLayout, assertTableLayout, assertStableSettlement } from '../native/layout.mjs';
@@ -155,7 +156,7 @@ test('the entire table and one-line controls fit the initial mobile screen in ev
   for (const named of [false, true]) {
     if (named) {
       await page.locator('#opponents-button').click();
-      await page.locator('#mix-opponents').click();
+      await assignNamedLineup(page);
       await closeSettings(page);
     }
     for (const size of [
@@ -419,7 +420,7 @@ for (const locale of ['zh-CN', 'en']) {
     await page.reload();
     await page.waitForFunction(() => !!window.qa);
     await openSettings(page);
-    await page.locator('#mix-opponents').click();
+    await assignNamedLineup(page);
     await closeSettings(page);
     for (const size of [
       { width: 440, height: 956 },

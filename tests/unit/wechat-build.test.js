@@ -1,3 +1,4 @@
+import { soundSamples, SOUND_SAMPLE_RATE } from '../../src/ui/sound-cues.js';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import vm from 'node:vm';
@@ -167,7 +168,7 @@ test('concurrent WeChat builders serialize and preserve DevTools private prefere
     Object.keys(PROFILE_PORTRAITS).length,
   );
   assert.ok(manifest.totalBytes < 2 * 1024 * 1024);
-  for (const name of ['fold', 'check', 'raise', 'call', 'deal']) {
+  for (const name of ['fold', 'check', 'raise', 'call', 'deal', 'win']) {
     const wave = readFileSync(path.join(workspace.output, `assets/sounds/${name}.wav`));
     let peak = 0,
       saturated = 0;
@@ -176,7 +177,16 @@ test('concurrent WeChat builders serialize and preserve DevTools private prefere
       peak = Math.max(peak, value);
       if (value === 32767 || value === 32768) saturated++;
     }
-    assert.ok(peak > 22000 && peak < 32767, `${name} has audible amplitude and headroom`);
+    assert.ok(peak > 3000 && peak < 32767, `${name} has audible amplitude and headroom`);
+    const expected = soundSamples(name);
+    assert.equal(wave.readUInt32LE(24), SOUND_SAMPLE_RATE);
+    assert.equal((wave.length - 44) / 2, expected.length);
+    for (let i = 0; i < expected.length; i++)
+      assert.equal(
+        wave.readInt16LE(44 + i * 2) / 32768,
+        expected[i],
+        `${name}: PCM sample ${i} differs from Web`,
+      );
     assert.equal(saturated, 0, `${name} has no clipped samples`);
   }
 

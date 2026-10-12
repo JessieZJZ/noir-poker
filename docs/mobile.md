@@ -101,3 +101,7 @@ CI 在完成编译后，安装并启动真正的模拟器/仿真器 App，用 Ap
 原生构建支持 11 种语言，iOS 在 `Info.plist` 声明语言，Android 使用 `res/xml/locales_config.xml`。应用内语言设置在本机持久保存；实际系统单 App 语言选择与 WebView 字体需真机验收。
 
 `native` 构建保留当前 Web 的人物展示、头像及已有说明，仅无需远程字体请求；策略、保存的风格 ID 与规则一致。新增 Web/原生文案后按 README 的国际化命令更新资源。历史可选展示转换保留在 `scripts/native-store.mjs`，当前构建不再自动应用它。原生包使用本地图标、字体与图片，不配置远程 `server.url`。
+
+轮到你行动时，iOS/Android 通过 `@capacitor/haptics` 的 Light impact 提示一次，后台不触发；同一回合的重复渲染不会重复调用。共享去重逻辑与浏览器、小程序相同。安装测试确认原生 Haptics 插件存在并调用实际桥接；模拟器／仿真器没有可供人感受的震动马达，真机震感需独立验收。接口依据：[Capacitor Haptics](https://capacitorjs.com/docs/apis/haptics)。
+
+Web 手机调用支持的 `navigator.vibrate(50)`，并受浏览器用户手势限制；Safari/iOS Safari 未提供该 API，iOS App 使用原生接口，不受这一网页限制。兼容性依据：[MDN Navigator.vibrate](https://developer.mozilla.org/en-US/docs/Web/API/Navigator/vibrate)。

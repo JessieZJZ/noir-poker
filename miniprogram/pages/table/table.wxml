@@ -63,7 +63,7 @@
                 wx:for-item="card"
                 wx:key="key"
                 class="card mini-card {{card.red ? 'red' : ''}} {{card.best ? 'best-card' : ''}}"
-                style="--card-delay: {{index * 140}}ms;"
+                style="--card-delay: {{card.dealDelay}}ms;"
                 ><view class="card-art" style="{{card.smallArtStyle}}"
               /></view>
             </block>
@@ -76,7 +76,10 @@
                 style="--card-delay: {{back.delay}}ms;"
             /></block>
           </view>
-          <view class="seat-body" style="width: {{profileWidth}}px; height: {{profileHeight}}px;"
+          <view
+            id="seat-body-{{item.id}}"
+            class="seat-body"
+            style="width: {{profileWidth}}px; height: {{profileHeight}}px;"
             ><view class="seat-name"
               ><text>{{item.name}}</text
               ><text
@@ -90,16 +93,14 @@
                   bindtap="peekSeat"
                   aria-label="查看底牌" /></view
             ></view>
-            <view class="seat-persona"
-              ><image
-                wx:if="{{item.portrait}}"
-                class="avatar"
-                src="{{item.portrait}}"
-                mode="aspectFill"
-              /><view wx:else class="avatar initials avatar-{{item.id}}">{{item.initial}}</view
-              ><text class="persona {{item.profileId === 'balanced' ? 'persona-balanced' : ''}}"
-                >{{item.profileName}}</text
-              ></view
+            <image
+              wx:if="{{item.portrait}}"
+              class="avatar"
+              src="{{item.portrait}}"
+              mode="aspectFill"
+            /><view wx:else class="avatar initials avatar-{{item.id}}">{{item.initial}}</view
+            ><text class="persona {{item.profileId === 'balanced' ? 'persona-balanced' : ''}}"
+              >{{item.profileName}}</text
             ><text class="stack">{{item.stack}}</text></view
           >
           <view class="seat-caption">
@@ -202,7 +203,7 @@
             backgroundColor="#354650"
             block-color="#6ee7c5"
             block-size="15"
-            bindchanging="changeRaise"
+            bindchanging="previewRaise"
             bindchange="changeRaise"
           /><view class="presets"
             ><button data-preset="min" bindtap="preset" disabled="{{!canRaise}}">最小</button
@@ -409,7 +410,13 @@
       <view class="settings-module"
         ><view class="module-heading"
           ><text class="module-title">分配座位</text
-          ><button class="small-button" bindtap="mixProfiles">混合阵容</button></view
+          ><button
+            class="small-button {{settings.mixed ? 'selected' : ''}}"
+            aria-pressed="{{settings.mixed}}"
+            bindtap="mixProfiles"
+          >
+            混合阵容
+          </button></view
         ><view class="seat-roster"
           ><view
             class="seat-setting {{item.offTable ? 'off-table' : ''}}"
@@ -515,8 +522,8 @@
             ><text class="muted">资料核对日期 · {{detailProfile.research.reviewedAt}}</text></view
           ><text wx:if="{{detailProfile.research.career.length}}" class="module-title"
             >履历摘录</text
-          ><text wx:for="{{detailProfile.research.career}}" wx:key="text"
-            >• {{item.text}}
+          ><view class="research-paragraph" wx:for="{{detailProfile.research.career}}" wx:key="text"
+            ><text>• {{item.text}}</text>
             <text
               wx:for="{{item.references}}"
               wx:for-item="reference"
@@ -525,10 +532,13 @@
               data-url="{{reference.url}}"
               bindtap="openResearchSource"
               >{{reference.label}}
-            </text></text
+            </text></view
           ><text class="module-title">公开打法样本</text
-          ><text wx:for="{{detailProfile.research.observations}}" wx:key="text"
-            >• {{item.text}}
+          ><view
+            class="research-paragraph"
+            wx:for="{{detailProfile.research.observations}}"
+            wx:key="text"
+            ><text>• {{item.text}}</text>
             <text
               wx:for="{{item.references}}"
               wx:for-item="reference"
@@ -537,7 +547,7 @@
               data-url="{{reference.url}}"
               bindtap="openResearchSource"
               >{{reference.label}}
-            </text></text
+            </text></view
           ><text class="module-title">本地策略改编</text
           ><text wx:for="{{detailProfile.research.adaptation}}" wx:key="*this">• {{item}}</text
           ><view wx:for="{{detailProfile.sources}}" wx:key="id" class="research-source"
@@ -558,6 +568,13 @@
   >
 </view>
 
+<view
+  wx:for="{{flyingChips}}"
+  wx:key="key"
+  class="flying-chip"
+  style="{{item.style}}"
+  aria-hidden="true"
+/>
 <view wx:if="{{guideOpen || reviewOpen || potOpen || resetOpen}}" class="modal-backdrop" />
 <view
   wx:if="{{guideOpen}}"
