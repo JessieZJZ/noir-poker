@@ -2,7 +2,7 @@
 page {
   font-family: Manrope, 'Noto Sans SC', sans-serif;
   -webkit-text-size-adjust: 100%;
-  background: #0b1017;
+  background: #0a1016;
   color: #edf3f6;
 }
 view,

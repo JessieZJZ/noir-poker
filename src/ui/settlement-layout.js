@@ -48,6 +48,14 @@ export function createSettlementLayout(arena, { observe = true } = {}) {
     }
     center.style.removeProperty('min-width');
     const compact = matchMedia(COMPACT_PLAY_QUERY).matches;
+    if (!compact) {
+      for (const key of [...arena.style].filter((key) =>
+        /^--(player-|pot-detail|hero-action|hero-rank|action-height|rank-height|profile-width)/.test(
+          key,
+        ),
+      ))
+        arena.style.removeProperty(key);
+    }
     const seatElements = [...arena.querySelectorAll('.seat')];
     if (!seatElements.length) return;
     for (const seat of seatElements) {
@@ -147,15 +155,18 @@ export function createSettlementLayout(arena, { observe = true } = {}) {
     }
     if (!result) return;
     if (compact) {
+      for (const [key, value] of Object.entries(result.textMetrics))
+        arena.style.setProperty(`--${key}`, `${value}px`);
       center.style.minWidth = '0';
       center.style.width = `${result.public.width}px`;
       center.style.height = `${result.public.height}px`;
       arena.querySelector('#board').style.width = `${result.public.width}px`;
       arena.querySelector('.hero-area').style.width = `${result.hero.width}px`;
       arena.querySelector('.hero-area').style.height = `${result.hero.height}px`;
-      seatElements.forEach(
-        (seat) => (seat.querySelector('.seat-profile').style.height = `${result.profileHeight}px`),
-      );
+      seatElements.forEach((seat) => {
+        seat.querySelector('.seat-profile').style.height = `${result.profileHeight}px`;
+        seat.querySelector('.seat-profile').style.width = `${result.profileWidth}px`;
+      });
     } else {
       center.style.removeProperty('width');
       center.style.removeProperty('height');

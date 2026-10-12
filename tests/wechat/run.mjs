@@ -94,6 +94,48 @@ try {
         );
       }
       selectors = [...selectors, '.retry-button'];
+      const textSizes = {};
+      for (const selector of [
+        '.seat-name',
+        '.seat-body > .stack',
+        '.persona',
+        '.seat-action',
+        '.rank',
+        '.pot-detail',
+      ]) {
+        const el = await page.$(selector);
+        if (el) textSizes[selector] = parseFloat(await el.style('font-size'));
+      }
+      assert.ok(textSizes['.seat-name'] >= 13 && textSizes['.seat-body > .stack'] >= 13);
+      assert.ok(textSizes['.persona'] >= 12 && textSizes['.seat-action'] >= 13);
+      assert.ok(textSizes['.rank'] >= 12 && textSizes['.pot-detail'] >= 13);
+      report.readability ??= {};
+      report.readability[name] = textSizes;
+      const gaps = [];
+      const words = await Promise.all(
+        (await page.$$('.seat-action-word')).map(async (word) => ({
+          id: Number(await word.attribute('data-id')),
+          bottom: (await word.offset()).top + (await word.size()).height,
+        })),
+      );
+      for (const rank of await page.$$('.rank')) {
+        const id = Number(await rank.attribute('data-id'));
+        if (!(id >= 1)) continue;
+        const bottoms = words.filter((word) => word.id === id).map((word) => word.bottom);
+        assert.ok(bottoms.length > 0, 'Every seat rank must measure its actual action text');
+        gaps.push({
+          id,
+          gap: ((await rank.offset()).top - Math.max(...bottoms)) / (await page.data()).arenaScale,
+        });
+      }
+      assert.equal(gaps.length, (await page.data()).phoneSeats.filter((seat) => seat.rank).length);
+      assert.ok(gaps.length > 0, 'Settlement must measure at least its winner rank');
+      for (const rank of gaps)
+        assert.ok(
+          rank.gap >= 2.5 && rank.gap <= 3.5,
+          `Seat ${rank.id} rank stays close to its complete action`,
+        );
+      report.readability[name].rankGaps = gaps;
       const winner = await page.$('.seat.winner .seat-body');
       if (winner) {
         const action = await page.$('.seat.winner .seat-action');
@@ -546,6 +588,30 @@ try {
     '.bottom-links',
     '.bottom-links button',
   ]);
+  for (let attempt = 0; attempt < 3; attempt++) {
+    await mini.pageScrollTo(100000);
+    await page.waitFor(250);
+    const data = await page.data();
+    const top = await page.$('.top-chrome'),
+      bottom = await page.$('.bottom-chrome'),
+      nav = await page.$('.nav');
+    assert.equal(
+      (await page.$$('.practice-panel')).length,
+      1,
+      'The home page has exactly one practice panel',
+    );
+    for (const el of [top, bottom, nav])
+      assert.equal(await el.style('background-color'), 'rgb(10, 16, 22)');
+    assert.equal((await top.offset()).top, 0);
+    assert.equal((await top.size()).height, data.topInset + 36);
+    assert.equal((await nav.offset()).left, 0);
+    assert.equal((await nav.size()).width, data.windowWidth);
+    assert.ok(Math.abs((await nav.offset()).top - data.topInset - 36) <= 1);
+    assert.equal((await bottom.size()).height, data.bottomInset);
+    assert.ok(Math.abs((await bottom.offset()).top + data.bottomInset - data.windowHeight) <= 1);
+  }
+  await mini.screenshot({ path: path.join(output, 'home-bottom-chrome.png') });
+  report.scrollChrome = { opaque: true, practicePanels: 1, bottomScrolls: 3 };
   assert.match(
     (await page.data()).logs[0].text,
     /^第 \d+ 手开始/,

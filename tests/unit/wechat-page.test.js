@@ -221,13 +221,74 @@ test('WeChat activity retains full hand history, bet ordinals and Web persona la
 });
 
 test('real engine logs read from hand start to settlement in the displayed activity', (t) => {
+  let seed = 0x12345678;
+  t.mock.method(Math, 'random', () => {
+    seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;
+    return seed / 2 ** 32;
+  });
   const { page, flush } = setup(t);
   flush();
   page.act({ currentTarget: { dataset: { action: 'fold' } } });
   flush();
   assert.match(page.data.logs[0].text, /^第 1 手开始/);
-  assert.ok(page.data.logs.at(-1).text.includes('获胜') || page.data.logs.at(-1).type === 'result');
+  assert.ok(page.data.done);
+  assert.deepEqual(
+    page.data.logs.map((entry) => entry.text),
+    page._controller
+      .getGame()
+      .logs.slice()
+      .reverse()
+      .map((entry) => entry.text),
+  );
+  const resultIndex = page.data.logs.findIndex((entry) => entry.type === 'result');
+  assert.ok(resultIndex > page.data.logs.findLastIndex((entry) => entry.type === 'action'));
+  // A losing bot may publish its synthetic mood after the awards. Those
+  // post-settlement records also retain their actual chronological position.
+  assert.ok(
+    page.data.logs.slice(resultIndex).every((entry) => ['result', 'info'].includes(entry.type)),
+  );
   assert.equal(page.data.logs[0].key, 0);
+});
+
+test('WeChat ranks sit 3px below the final painted action line, including wrapped chip amounts', (t) => {
+  const { page, wx } = setup(t);
+  page.data.arenaScale = 0.5;
+  const words = [
+    { dataset: { id: 1 }, top: 100, height: 15 },
+    { dataset: { id: 1 }, top: 120, height: 16 },
+    { dataset: { id: 2 }, top: 140, height: 13 },
+  ];
+  const ranks = [
+    { dataset: { id: 1 }, top: 150 },
+    { dataset: { id: 2 }, top: 170 },
+  ];
+  wx.createSelectorQuery = () => {
+    const selectors = [];
+    const query = {
+      selectAll(selector) {
+        selectors.push(selector);
+        return query;
+      },
+      fields() {
+        return query;
+      },
+      exec(callback) {
+        callback(
+          selectors.map((selector) =>
+            selector === '.seat-action-word'
+              ? words
+              : selector === '.seat-rank-slot .rank'
+                ? ranks
+                : [],
+          ),
+        );
+      },
+    };
+    return query;
+  };
+  page.tightenSeatRanks();
+  assert.equal(page.data['phoneSeats[0].rankLift'], -25);
+  assert.equal(page.data['phoneSeats[1].rankLift'], -31);
 });
 
 test('retry and next hand remount every deal while ordinary turns preserve the hero card nodes', (t) => {
@@ -795,7 +856,7 @@ test('WeChat public card rows use the measured corridor and stay fixed from deal
     info: { windowWidth: 320, windowHeight: 667, statusBarHeight: 20, safeArea: { bottom: 667 } },
   });
   assert.equal(page.data.boardTwoRows, false);
-  assert.equal(page.data.cardWidth, 50);
+  assert.equal(page.data.cardWidth, 54);
   assert.ok(page.data.boardWidth >= 3 * 50 + 8);
   assert.equal(page.data.boardSlots.length, 5);
   assert.ok(page.data.boardSlots.every((card) => card.empty));

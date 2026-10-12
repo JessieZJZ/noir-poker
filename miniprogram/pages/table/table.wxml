@@ -1,3 +1,5 @@
+<view class="safe-chrome top-chrome" style="height: {{topInset + 36}}px;" aria-hidden="true" />
+<view class="safe-chrome bottom-chrome" style="height: {{bottomInset}}px;" aria-hidden="true" />
 <view
   class="screen {{homeLocked ? 'home-locked' : ''}}"
   style="padding-top: {{topInset + 36}}px; padding-bottom: {{bottomInset}}px; {{homeLocked ? 'top: ' + homeOffset + 'px;' : ''}}"
@@ -41,7 +43,7 @@
     >
       <view
         class="table-arena"
-        style="height: {{arenaHeight}}px; width: {{arenaWidth}}px; transform: scale({{arenaScale}});"
+        style="height: {{arenaHeight}}px; width: {{arenaWidth}}px; transform: scale({{arenaScale}}); {{textStyle}}"
       >
         <view class="felt" style="{{feltStyle}}"
           ><view class="felt-inner"
@@ -102,8 +104,11 @@
           >
           <view class="seat-caption">
             <view class="seat-action {{item.thinking ? 'thinking-dots' : ''}}"
-              ><text data-id="{{item.id}}">{{item.actionLabel}}</text
-              ><text wx:if="{{item.actionAmount}}" class="seat-action-amount" data-id="{{item.id}}"
+              ><text class="seat-action-word" data-id="{{item.id}}">{{item.actionLabel}}</text
+              ><text
+                wx:if="{{item.actionAmount}}"
+                class="seat-action-word seat-action-amount"
+                data-id="{{item.id}}"
                 >{{item.actionAmount}}</text
               ></view
             >

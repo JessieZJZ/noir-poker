@@ -275,8 +275,8 @@ Page({
     if (!wx.createSelectorQuery || this._hidden || this._destroyed) return;
     const ticket = (this._rankEpoch = (this._rankEpoch || 0) + 1);
     const query = wx.createSelectorQuery();
-    query.selectAll('.seat-action > text').fields({ rect: true, size: true, dataset: true });
-    query.selectAll('.seat-rank-slot > .rank').fields({ rect: true, size: true, dataset: true });
+    query.selectAll('.seat-action-word').fields({ rect: true, size: true, dataset: true });
+    query.selectAll('.seat-rank-slot .rank').fields({ rect: true, size: true, dataset: true });
     query.exec(([words, ranks]) => {
       if (ticket !== this._rankEpoch || this._hidden || this._destroyed) return;
       const bottoms = new Map();
@@ -292,7 +292,7 @@ Page({
           index = this.data.phoneSeats.findIndex((seat) => seat.id === id);
         if (index < 0 || !bottoms.has(id)) continue;
         const current = this.data.phoneSeats[index].rankLift || 0;
-        const lift = Math.min(0, current + (bottoms.get(id) + 6 * scale - rank.top) / scale);
+        const lift = Math.min(0, current + (bottoms.get(id) + 3 * scale - rank.top) / scale);
         if (Math.abs(lift - current) > 0.1) patch[`phoneSeats[${index}].rankLift`] = lift;
       }
       if (Object.keys(patch).length) this.setData(patch);

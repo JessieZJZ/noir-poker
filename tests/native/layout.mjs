@@ -23,6 +23,11 @@ export function readTableLayout() {
     dock: rect('.action-dock'),
     width: innerWidth,
     scale,
+    chrome: {
+      background: getComputedStyle(document.querySelector('.header')).backgroundColor,
+      safeBackground: getComputedStyle(document.querySelector('.header'), '::before')
+        .backgroundColor,
+    },
     height: innerHeight,
     usableBottom: innerHeight - (parseFloat(getComputedStyle(document.body).paddingBottom) || 0),
     tagCount: document.querySelectorAll('#hero-turn').length,
@@ -145,6 +150,14 @@ export function readTableLayout() {
 }
 
 export function assertTableLayout(info) {
+  if (info.chrome) {
+    assert.equal(info.chrome.background, 'rgb(10, 16, 22)', 'Sticky header covers the table');
+    assert.equal(
+      info.chrome.safeBackground,
+      info.chrome.background,
+      'Safe area shares the opaque header background',
+    );
+  }
   assert.equal(info.tagCount, 0, 'The redundant hero turn tag must be removed');
   assert.ok(
     Math.abs(info.identityOffset) <= 1,

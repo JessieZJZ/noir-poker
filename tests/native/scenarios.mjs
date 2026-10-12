@@ -882,6 +882,22 @@ export async function nativeScenarios(app) {
       );
       await app.click('#reset-dialog .close-dialog');
       await app.evaluate(() => document.querySelector('.session-card').scrollIntoView());
+      const stickyChrome = await app.evaluate(() => {
+        const header = document.querySelector('.header'),
+          style = getComputedStyle(header);
+        return {
+          top: header.getBoundingClientRect().top,
+          inset: parseFloat(style.top),
+          background: style.backgroundColor,
+          cap: getComputedStyle(header, '::before').backgroundColor,
+        };
+      });
+      assert.ok(
+        Math.abs(stickyChrome.top - stickyChrome.inset) <= 1,
+        'Header remains at the native safe area while scrolling',
+      );
+      assert.equal(stickyChrome.background, 'rgb(10, 16, 22)');
+      assert.equal(stickyChrome.cap, stickyChrome.background);
       comparisons.push(
         await app.comparePage('session-activity', [
           '.session-card',

@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { readTableLayout, assertTableLayout } from '../native/layout.mjs';
 
-for (const width of [390, 820, 1032]) {
+for (const width of [320, 390, 820, 1032]) {
   test(`centered public cards, rail seats and single-line persona labels at ${width}px`, async ({
     page,
   }) => {
@@ -13,6 +13,21 @@ for (const width of [390, 820, 1032]) {
     for (const count of [5, 6, 7, 8, 9]) {
       await page.evaluate((count) => window.qa.heroTurn(count), count);
       assertTableLayout(await page.evaluate(readTableLayout));
+      const text = await page
+        .locator('.seat-profile')
+        .first()
+        .evaluate((el) => {
+          const font = (selector) =>
+            parseFloat(getComputedStyle(el.querySelector(selector)).fontSize);
+          return {
+            name: font('strong'),
+            stack: font('.seat-stack'),
+            persona: font('.seat-style-label'),
+          };
+        });
+      expect(text.name).toBeGreaterThanOrEqual(width > 600 ? 21 : 13);
+      expect(text.stack).toBeGreaterThanOrEqual(width > 600 ? 20 : 13);
+      expect(text.persona).toBeGreaterThanOrEqual(width > 600 ? 16 : 12);
       const labels = await page.locator('.seat-style-label').evaluateAll((elements) =>
         elements.map((el) => {
           const a = el.closest('.seat').querySelector('.avatar').getBoundingClientRect();
@@ -56,3 +71,28 @@ for (const width of [390, 820, 1032]) {
     }
   });
 }
+
+test('sticky header covers the table and native safe area with an opaque background', async ({
+  page,
+}) => {
+  await page.goto('/');
+  await page.waitForFunction(() => !!window.qa);
+  await page.evaluate(() => {
+    document.documentElement.style.setProperty('--safe-area-inset-top', '47px');
+    window.scrollTo(0, 240);
+  });
+  const header = await page.locator('.header').evaluate((el) => {
+    const style = getComputedStyle(el),
+      cap = getComputedStyle(el, '::before');
+    return {
+      background: style.backgroundColor,
+      capBackground: cap.backgroundColor,
+      capHeight: parseFloat(cap.height),
+      top: el.getBoundingClientRect().top,
+    };
+  });
+  expect(header.background).toBe('rgb(10, 16, 22)');
+  expect(header.capBackground).toBe(header.background);
+  expect(header.capHeight).toBe(47);
+  expect(header.top).toBe(47);
+});

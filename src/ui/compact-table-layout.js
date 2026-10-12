@@ -12,7 +12,7 @@ export function compactTableLayout({ width, height, seats, displayHeight = 759, 
         ? 98
         : 82
     : width <= 360
-      ? 50
+      ? 54
       : Math.max(44, Math.min(54, width * 0.12));
   const cardHeight = tablet ? (large ? 118 : width <= 900 ? 141 : 118) : cardWidth * 1.44;
   const heroWidth = tablet
@@ -24,7 +24,7 @@ export function compactTableLayout({ width, height, seats, displayHeight = 759, 
     : roomy
       ? 68
       : width <= 360
-        ? 72
+        ? 76
         : Math.max(61, Math.min(72, width * 0.12));
   const heroHeight = tablet
     ? large
@@ -35,7 +35,7 @@ export function compactTableLayout({ width, height, seats, displayHeight = 759, 
     : roomy
       ? 98
       : width <= 360
-        ? 104
+        ? 110
         : Math.max(88, Math.min(104, width * 0.174));
   const profileWidth = tablet
     ? large
@@ -44,12 +44,32 @@ export function compactTableLayout({ width, height, seats, displayHeight = 759, 
         ? 160
         : 132
     : roomy
-      ? Math.max(108, Math.min(122, width * 0.277))
-      : 92;
+      ? Math.max(116, Math.min(130, width * 0.297))
+      : width <= 360
+        ? 96
+        : 100;
   const profileHeight = tablet ? (large ? 112 : 92) : roomy ? 72 : 60;
+  const textMetrics = {
+    'player-name': large ? 24 : tablet ? 21 : roomy ? 14 : 13,
+    'player-stack': large ? 24 : tablet ? 20 : 13,
+    'player-persona': large ? 19 : tablet ? 16 : roomy ? 13 : 12,
+    'player-position': large ? 16 : tablet ? 13 : 11,
+    'player-action': large ? 21 : tablet ? 18 : 13,
+    'player-rank': large ? 18 : tablet ? 15 : 12,
+    'pot-detail': large ? 20 : tablet ? 16 : 13,
+    'hero-action': large ? 21 : tablet ? 17 : 14,
+    'hero-rank': large ? 18 : tablet ? 15 : 12,
+    'action-height': large ? 56 : tablet ? 46 : 34,
+    'rank-height': large ? 30 : tablet ? 26 : 22,
+    'profile-width': profileWidth,
+  };
+  const textStyle = Object.entries(textMetrics)
+    .map(([key, value]) => `--${key}:${value}px;`)
+    .join('');
+  const captionHeight = textMetrics['action-height'] + textMetrics['rank-height'];
   const seatWidth = Math.round(Math.max(profileWidth, tablet ? (large ? 180 : 136) : 88));
-  const seatHeight = tablet ? (large ? 258 : 223) : roomy ? 169 : 157;
-  const heroFoot = Math.round(heroHeight + (tablet ? (large ? 92 : 71) : 66));
+  const seatHeight = (tablet ? 58 : 39) + 8 + profileHeight + captionHeight;
+  const heroFoot = Math.round(heroHeight + (tablet ? (large ? 94 : 72) : 66));
   const potHeight = tablet ? (large ? 50 : 40) : 32;
   const rowGap = 4;
   const fitted = railLayout({
@@ -84,7 +104,7 @@ export function compactTableLayout({ width, height, seats, displayHeight = 759, 
           left: (seatWidth - (tablet ? (large ? 180 : 136) : roomy ? profileWidth : 88)) / 2,
           top: (tablet ? 58 : 39) + 8 + profileHeight,
           width: tablet ? (large ? 180 : 136) : roomy ? profileWidth : 88,
-          height: tablet ? (large ? 80 : 65) : 50,
+          height: captionHeight,
         },
       ],
     })),
@@ -126,6 +146,8 @@ export function compactTableLayout({ width, height, seats, displayHeight = 759, 
     seatHeight,
     profileWidth,
     profileHeight,
+    textMetrics,
+    textStyle,
     potHeight,
     rowGap,
     roomy,
