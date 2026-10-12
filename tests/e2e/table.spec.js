@@ -1083,7 +1083,7 @@ test('review completes through real worker with facts and a conditional follow-u
   await expect(page.locator('#review-reason')).not.toBeEmpty();
 });
 
-test('activity preserves chronological column order with bounded desktop scrolling and mobile expansion', async ({
+test('activity preserves chronological top-to-bottom order with bounded desktop scrolling and mobile expansion', async ({
   page,
 }) => {
   for (const width of [320, 360, 390, 600, 768, 900, 901, 1280]) {
@@ -1102,7 +1102,7 @@ test('activity preserves chronological column order with bounded desktop scrolli
           return { index, top: rect.top, left: rect.left };
         });
         const readingOrder = rects
-          .sort((a, b) => (Math.abs(a.left - b.left) > 1 ? a.left - b.left : a.top - b.top))
+          .sort((a, b) => (Math.abs(a.top - b.top) > 1 ? a.top - b.top : a.left - b.left))
           .map((rect) => rect.index);
         const milestones = [
           texts.findIndex((text) => /^第 \d+ 手开始/.test(text)),
@@ -1196,7 +1196,7 @@ test('activity shows actual assigned personas across actions and results without
       });
       return {
         readingOrder: rects
-          .sort((a, b) => (Math.abs(a.left - b.left) > 1 ? a.left - b.left : a.top - b.top))
+          .sort((a, b) => (Math.abs(a.top - b.top) > 1 ? a.top - b.top : a.left - b.left))
           .map((item) => item.index),
         fragments: rects.map((item) => item.fragments),
         width: innerWidth,

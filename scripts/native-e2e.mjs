@@ -185,20 +185,22 @@ async function click(selector) {
     30000,
     `Control unavailable: ${selector}`,
   );
-  await evaluate(
-    (value) =>
-      document
-        .querySelector(value)
-        .scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'instant' }),
-    selector,
-  );
+  await evaluate((value) => {
+    const element = document.querySelector(value);
+    const menu = element.closest('.dropdown-menu');
+    if (menu) {
+      const row = element.getBoundingClientRect(),
+        box = menu.getBoundingClientRect();
+      if (row.top < box.top) menu.scrollTop -= box.top - row.top;
+      if (row.bottom > box.bottom) menu.scrollTop += row.bottom - box.bottom;
+    } else element.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'instant' });
+  }, selector);
   const element = await command('POST', '/element', { using: 'css selector', value: selector });
   const id = element['element-6066-11e4-a52e-4f735466cecf'] ?? element.ELEMENT;
   await command('POST', `/element/${id}/click`, {});
 }
 async function select(selector, value) {
-  // HTML select options are operated via the standard WebDriver option click;
-  // the test does not mutate game state or use the test development server.
+  // Exercise the visible anchored list, not an OS picker or injected value.
   if (
     await evaluate(
       (selector, value) => document.querySelector(selector).value === value,
@@ -207,19 +209,22 @@ async function select(selector, value) {
     )
   )
     return;
-  await evaluate(
-    (selector) =>
-      document
-        .querySelector(selector)
-        .scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'instant' }),
-    selector,
-  );
-  const element = await command('POST', '/element', {
-    using: 'css selector',
-    value: `${selector} option[value="${value}"]`,
-  });
-  const id = element['element-6066-11e4-a52e-4f735466cecf'] ?? element.ELEMENT;
-  await command('POST', `/element/${id}/click`, {});
+  await click(`${selector} + .dropdown-trigger`);
+  try {
+    await click(`.dropdown-option[data-value="${value}"]`);
+  } catch (error) {
+    // Selecting an option removes the popup. WebKit can return a stale element
+    // after dispatching that successful click; accept only the applied value.
+    if (
+      !/no longer attached|stale element|could not be located/i.test(error.message) ||
+      !(await evaluate(
+        (selector, value) => document.querySelector(selector).value === value,
+        selector,
+        value,
+      ))
+    )
+      throw error;
+  }
   await waitFor(
     () =>
       evaluate(
@@ -450,6 +455,9 @@ try {
   session = created.sessionId;
   report.capabilities = created.capabilities;
   report.phase = 'webview-attach';
+  // WDA startup can foreground its runner after the initial simctl launch.
+  // Restore the tested app before looking for an actionable native screen.
+  if (platform === 'ios') await command('POST', '/appium/device/activate_app', { appId });
   await attachWebview();
   await command('POST', '/timeouts', { script: 30000 });
   // XCUITest does not resolve Promise results from execute/sync. The standard

@@ -45,9 +45,9 @@ export function railLayout({
   const seatHeight = Math.max(...seats.map((s) => s.height));
   const measure = (arenaHeight, row) => {
     const arenaWidth = proportional ? width * Math.max(1, arenaHeight / height) : width;
-    const insetX = seatWidth / 2 + 8;
-    const insetTop = seatHeight / 2 + 8;
-    const insetBottom = Math.max(hero.height, seatHeight) / 2 + 8;
+    const insetX = seatWidth / 2 + 4;
+    const insetTop = seatHeight / 2 + 4;
+    const insetBottom = Math.max(hero.height, seatHeight) / 2 + 4;
     const table = {
       left: insetX,
       top: insetTop,

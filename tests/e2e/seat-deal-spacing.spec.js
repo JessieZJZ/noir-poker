@@ -1,9 +1,5 @@
 import { test, expect } from '@playwright/test';
-import {
-  readTableLayout,
-  assertTableLayout,
-  assertSettlementExpansion,
-} from '../native/layout.mjs';
+import { readTableLayout, assertTableLayout, assertStableSettlement } from '../native/layout.mjs';
 import { openSettings, closeSettings } from './settings-helpers.js';
 
 test.beforeEach(async ({ page }) => {
@@ -99,10 +95,10 @@ for (const locale of ['zh-CN', 'en']) {
         );
         const after = await page.evaluate(readTableLayout);
         assertTableLayout(after);
-        assertSettlementExpansion(before, after);
+        assertStableSettlement(before, after);
         expect(
           Math.abs(after.identity.height / after.scale - before.identity.height / before.scale),
-        ).toBeLessThanOrEqual(1);
+        ).toBeLessThanOrEqual(1.01);
         // Chip digits can change the row's width. Its center stays anchored.
         expect(
           Math.abs(

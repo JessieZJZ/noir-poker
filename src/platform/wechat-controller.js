@@ -7,6 +7,7 @@ import {
   canRestartHand,
   applyBotSettings,
   advanceStreet,
+  completeBoardForPractice,
   legalActions,
   act,
   planBotTurn,
@@ -77,6 +78,7 @@ export function createWechatController({
   let game = newGame(settings.playerCount),
     raiseTo = 150,
     timer = null,
+    pendingBot = null,
     reviewTimer = null,
     hintTimer = null,
     epoch = 0,
@@ -85,6 +87,10 @@ export function createWechatController({
     hintKey = '',
     hintText = '',
     reviewEpoch = 0;
+  let sliderMin = 150,
+    sliderMax = 5000,
+    callCaption = '跟注',
+    callAmountText = '50';
   game.difficulty = settings.difficulty;
 
   function save() {
@@ -101,6 +107,7 @@ export function createWechatController({
     epoch++;
     if (timer !== null) unschedule(timer);
     timer = null;
+    pendingBot = null;
   }
   function cancelReview() {
     reviewEpoch++;
@@ -164,8 +171,26 @@ export function createWechatController({
     const hero = game.players[0],
       legal = legalActions(game, 0),
       done = game.phase === 'done';
-    if (legal.enabled && legal.canRaise) raiseTo = legalRaiseTo(raiseTo, legal);
-    const board = game.board.map(cardView);
+    if (legal.enabled && legal.canRaise) {
+      raiseTo = legalRaiseTo(raiseTo, legal);
+      sliderMin = legal.minRaiseTo;
+      sliderMax = legal.maxRaiseTo;
+    }
+    if (legal.enabled) {
+      callCaption = legal.canCheck ? '过牌' : legal.callAmount < legal.toCall ? '全下' : '跟注';
+      callAmountText = legal.canCheck ? '' : format(legal.callAmount || 0);
+    }
+    const displayBoard = game.practiceBoard || game.board;
+    const heroBest =
+      done && game.board.length === 5 ? evaluate([...hero.hole, ...game.board]) : null;
+    const board = displayBoard.map((card) => ({
+      ...cardView(card),
+      best:
+        game.showdown &&
+        !hero.folded &&
+        !!heroBest &&
+        heroBest.cards.some((c) => c.key === card.key),
+    }));
     const seats = game.players.slice(1).map((player, index) => {
       const profile = BOT_PROFILES.find((p) => p.id === player.botProfile) || BOT_PROFILES[0];
       const revealed = done && (peeked.get(player.id) ?? (game.revealed && !player.folded));
@@ -238,7 +263,14 @@ export function createWechatController({
       board,
       boardTop: board.slice(0, 3),
       boardBottom: board.slice(3),
-      heroCards: hero.hole.map(cardView),
+      heroCards: hero.hole.map((card) => ({
+        ...cardView(card),
+        best:
+          game.showdown &&
+          !hero.folded &&
+          !!heroBest &&
+          heroBest.cards.some((c) => c.key === card.key),
+      })),
       heroStack: format(hero.stack),
       heroPosition: seatPosition(game, 0),
       heroAction: cleanAction(
@@ -246,11 +278,11 @@ export function createWechatController({
           ? hero.lastAction?.text || ''
           : '',
       ),
-      heroRank: done && game.showdown ? evaluate([...hero.hole, ...game.board]).label : '',
+      heroRank: heroBest && (game.revealed || game.showdown) ? heroBest.label : '',
       heroWinner: done && game.winners.some((w) => w.id === 0),
       heroFolded: hero.folded,
       heroAllin: hero.allin,
-      compactActions: done || hero.folded || hero.allin,
+      compactActions: done || hero.folded,
       pot: format(pot),
       pots: breakdown.pots.map((p) => ({
         label: p.label,
@@ -279,13 +311,13 @@ export function createWechatController({
       waiting: !done && !legal.enabled,
       canRaise: !!(legal.enabled && legal.canRaise),
       canAct: !!legal.enabled,
-      minRaise: legal.minRaiseTo || CHIP_UNIT,
-      maxRaise: legal.maxRaiseTo || CHIP_UNIT,
+      minRaise: sliderMin,
+      maxRaise: sliderMax,
       raiseTo,
       raiseText: format(raiseTo),
       chipUnit: CHIP_UNIT,
-      callLabel: legal.canCheck ? '过牌' : '跟注',
-      callText: legal.canCheck ? '' : format(legal.callAmount || 0),
+      callLabel: callCaption,
+      callText: callAmountText,
       actionNotice: done
         ? ''
         : hero.folded
@@ -320,7 +352,7 @@ export function createWechatController({
       ),
       hintText,
       logs: game.logs
-        .slice(0, 30)
+        .slice()
         .reverse()
         .map((entry, index) => ({
           key: index,
@@ -355,11 +387,13 @@ export function createWechatController({
         return;
       const plan = planBotTurn(game),
         started = Date.now();
+      pendingBot = { plan, started };
       timer = schedule(() => {
         timer = null;
         if (disposed || !active || ticket !== epoch || !isBotTurnCurrent(game, plan)) return;
         const previousBoard = game.board.length;
         const result = executeBotTurn(game, plan, { waitedMs: Date.now() - started });
+        pendingBot = null;
         effect(result.action);
         if (game.board.length > previousBoard) effect('deal');
         render();
@@ -510,34 +544,37 @@ export function createWechatController({
       render();
     },
     finishHand() {
-      if (!game.players[0].folded && !game.players[0].allin) return;
+      if (disposed || !active || (!game.players[0].folded && !game.players[0].allin)) return false;
+      let waiting = pendingBot;
       cancelBots();
       const ticket = epoch;
       function step() {
-        if (disposed || !active || ticket !== epoch || game.phase === 'done') return;
-        if (game.phase === 'between') {
-          advanceStreet(game);
-          effect('deal');
+        if (disposed || !active || ticket !== epoch) return;
+        if (game.phase === 'done') {
+          completeBoardForPractice(game);
           render();
-          if (game.phase !== 'done')
-            timer = schedule(() => {
-              timer = null;
-              step();
-            }, 150);
+          effect('deal');
           return;
         }
-        if (game.phase !== 'playing' || game.actor <= 0) return;
-        const plan = planBotTurn(game);
-        const result = executeBotTurn(game, plan, { expedited: true });
-        effect(result.action);
-        render();
-        if (game.phase !== 'done')
-          timer = schedule(() => {
-            timer = null;
-            step();
-          }, 150);
+        if (game.phase === 'between') advanceStreet(game);
+        else if (game.phase === 'playing' && game.actor > 0) {
+          const current = waiting && isBotTurnCurrent(game, waiting.plan);
+          executeBotTurn(game, current ? waiting.plan : planBotTurn(game), {
+            expedited: true,
+            waitedMs: current ? Date.now() - waiting.started : 0,
+          });
+          waiting = null;
+        } else return;
+        if (game.phase === 'done') return step();
+        // Yield to lifecycle/reset handlers, without painting every intermediate
+        // turn or adding simulated thinking delays to an explicit fast finish.
+        timer = schedule(() => {
+          timer = null;
+          step();
+        }, 0);
       }
       step();
+      return true;
     },
     review(onProgress) {
       if (game.phase !== 'done') return;

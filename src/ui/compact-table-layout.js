@@ -54,7 +54,7 @@ export function compactTableLayout({ width, height, seats, displayHeight = 759, 
   const rowGap = 4;
   const fitted = railLayout({
     width:
-      availableWidth ?? Math.round(Math.max(1, width - (width <= 600 ? 26 : width * 0.06 + 2))),
+      availableWidth ?? Math.round(Math.max(1, width - (width <= 600 ? 18 : width * 0.06 + 2))),
     height: Math.max(1, height),
     alternatives: count === 9 ? [undefined] : undefined,
     angles:

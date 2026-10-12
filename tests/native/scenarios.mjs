@@ -565,15 +565,14 @@ export async function nativeScenarios(app) {
     );
     const layout = await app.evaluate(readTableLayout);
     assertTableLayout(layout);
-    const reclaimed = beforeFold.dock.height - layout.dock.height - beforeFold.bottomInset;
     assert.ok(
-      Math.abs(layout.table.height - beforeFold.table.height - reclaimed) <= 1,
-      'Settlement table reuses the space released by compact controls',
+      Math.abs(layout.table.height - beforeFold.table.height) <= 1,
+      'Settlement preserves the live table height',
     );
     assert.ok(Math.abs(layout.table.top - beforeFold.table.top) <= 1);
     assert.ok(
-      layout.dock.bottom >= layout.usableBottom - 10,
-      'Settlement fills the first usable screen',
+      Math.abs(layout.dock.top - beforeFold.dock.top) <= 1,
+      'Only the control dock shrinks',
     );
     const buttons = layout.settledButtons;
     assert.ok(
@@ -586,6 +585,17 @@ export async function nativeScenarios(app) {
     );
     for (let toggle = 0; toggle < 2; toggle++) {
       await app.click('.seat-crown .seat-peek');
+      await app.waitFor(
+        () =>
+          app.evaluate(() =>
+            document
+              .querySelector('.seat-crown .mini-cards')
+              .getAnimations({ subtree: true })
+              .every((animation) => animation.playState !== 'running'),
+          ),
+        5000,
+        'Finish the staggered seat reveal before measuring its final card bounds',
+      );
       const inspection = await app.evaluate(() => {
         const seat = document.querySelector('.seat-crown'),
           view = document.querySelector('.table-viewport').getBoundingClientRect(),

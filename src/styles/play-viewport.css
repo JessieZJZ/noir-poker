@@ -64,6 +64,8 @@
 @media (max-width: 900px), (min-width: 901px) and (max-width: 1100px) and (orientation: portrait) {
   .main {
     padding-top: 8px;
+    padding-left: 8px;
+    padding-right: 8px;
     max-width: none;
   }
   .header {
@@ -79,7 +81,7 @@
     flex: none;
   }
   .game-surface > .surface-top {
-    padding: 8px 12px;
+    padding: 4px 12px;
   }
   .game-surface > .table-viewport {
     flex: 1 1 0;
@@ -992,10 +994,43 @@
   max-width: 100%;
   grid-column: 2 / -1;
 }
-@media (max-width: 900px), (max-width: 1100px) and (orientation: portrait) {
-  .game-surface:not(.has-live-hand):has(.compact-actions) {
-    height: calc(
-      var(--play-height) - var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px))
-    );
+/* Explicit tracks avoid fractional flex widths producing a third row on
+   Android WebViews. Slots 4/5 share the second row, centered as a pair. */
+.game-surface .arena[data-player-count] .board {
+  display: grid;
+  grid-template-columns: repeat(5, var(--public-card-width, 55px));
+  grid-template-rows: auto;
+  width: max-content;
+  gap: 4px;
+}
+.game-surface .arena.public-two-rows[data-player-count] .board {
+  grid-template-columns: repeat(6, calc((var(--public-card-width, 55px) - 4px) / 2));
+  grid-template-rows: repeat(2, auto);
+  width: max-content;
+  row-gap: 10px;
+}
+.game-surface .arena.public-two-rows[data-player-count] .board > * {
+  grid-column: span 2;
+}
+.game-surface .arena.public-two-rows[data-player-count] .board > :nth-child(4) {
+  grid-row: 2;
+  grid-column: 2 / span 2;
+}
+.game-surface .arena.public-two-rows[data-player-count] .board > :nth-child(5) {
+  grid-row: 2;
+  grid-column: 4 / span 2;
+}
+.header {
+  position: sticky;
+  top: var(--safe-area-inset-top, env(safe-area-inset-top, 0px));
+  z-index: 20;
+}
+.game-surface .mini-cards .playing-card.card-deal {
+  animation: flip-card 0.65s cubic-bezier(0.2, 0.6, 0.2, 1) both;
+  animation-delay: var(--delay, 0ms);
+}
+@media (prefers-reduced-motion: reduce) {
+  .game-surface .mini-cards .playing-card.card-deal {
+    animation: none;
   }
 }

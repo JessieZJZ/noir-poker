@@ -1,5 +1,8 @@
-<view class="screen" style="padding-top: {{topInset + 36}}px; padding-bottom: {{bottomInset}}px;">
-  <view class="nav {{compactNav ? 'nav-compact' : ''}}">
+<view
+  class="screen {{homeLocked ? 'home-locked' : ''}}"
+  style="padding-top: {{topInset + 36}}px; padding-bottom: {{bottomInset}}px; {{homeLocked ? 'top: ' + homeOffset + 'px;' : ''}}"
+>
+  <view class="nav {{compactNav ? 'nav-compact' : ''}}" style="top: {{topInset + 36}}px;">
     <view class="brand"
       ><view class="spade" aria-hidden="true" /><text>NOIR</text
       ><text wx:if="{{!compactNav}}" class="brand-sub">POKER</text></view
@@ -12,21 +15,26 @@
   </view>
   <view
     class="game-shell {{showdown.length ? 'has-showdown' : ''}}"
-    style="height: {{tableHeight + 71 + (compactActions ? 64 : 146)}}px;"
+    style="height: {{tableHeight + 63 + (compactActions ? 64 : 146)}}px;"
   >
-    <view class="game-header"
-      ><text
-        >第 <text class="hand-number">{{hand < 10 ? '0' : ''}}{{hand}}</text> 手 · {{street}}
-        <text wx:if="{{replay}}" class="replay">重打 {{replay}}</text></text
-      ><text>盲注 <text class="bright">25 / 50</text></text></view
-    >
-    <view class="hint-slot"
-      ><view wx:if="{{hintText}}" class="hint-mask"
+    <view class="game-header">
+      <view class="hand-label"
+        ><text>第 <text class="hand-number">{{hand < 10 ? '0' : ''}}{{hand}}</text> 手</text
+        ><text class="hand-divider">·</text><text>{{street}}</text
+        ><text wx:if="{{replay}}" class="replay">重打 {{replay}}</text></view
+      >
+      <view class="blind-info"><text>盲注</text><text class="bright">25 / 50</text></view>
+    </view>
+    <view class="hint-slot {{replay ? 'with-replay' : ''}}">
+      <text wx:if="{{replay}}" class="replay-note"
+        >重打本手 · 底牌与发牌顺序不变，原结算已撤回。</text
+      >
+      <view wx:if="{{hintText}}" class="hint-mask"
         ><view class="hint-track"
           ><text>{{hintText}}　　</text><text aria-hidden="true">{{hintText}}　　</text></view
         ></view
-      ></view
-    >
+      >
+    </view>
     <view
       class="table-area {{done ? 'is-done' : ''}} web-phone-layout {{roomy ? 'roomy-layout' : ''}} {{tablet ? 'tablet-layout' : ''}} {{large ? 'large-layout' : ''}}"
       style="height: {{tableHeight}}px;"
@@ -53,10 +61,18 @@
                 wx:for-item="card"
                 wx:key="key"
                 class="card mini-card {{card.red ? 'red' : ''}} {{card.best ? 'best-card' : ''}}"
+                style="--card-delay: {{index * 140}}ms;"
                 ><view class="card-art" style="{{card.smallArtStyle}}"
               /></view>
             </block>
-            <block wx:else><view class="card-back"></view><view class="card-back"></view></block>
+            <block wx:else
+              ><view
+                wx:for="{{item.backCards}}"
+                wx:for-item="back"
+                wx:key="key"
+                class="card-back back-deal"
+                style="--card-delay: {{back.delay}}ms;"
+            /></block>
           </view>
           <view class="seat-body" style="width: {{profileWidth}}px; height: {{profileHeight}}px;"
             ><view class="seat-name"
@@ -86,7 +102,7 @@
           >
           <view class="seat-caption">
             <view class="seat-action {{item.thinking ? 'thinking-dots' : ''}}"
-              ><text>{{item.actionLabel}}</text
+              ><text data-id="{{item.id}}">{{item.actionLabel}}</text
               ><text wx:if="{{item.actionAmount}}" class="seat-action-amount" data-id="{{item.id}}"
                 >{{item.actionAmount}}</text
               ></view
@@ -115,8 +131,8 @@
             ><view
               wx:for="{{boardSlots}}"
               wx:key="key"
-              class="{{item.empty ? 'card-placeholder' : 'card community-card'}} {{item.red ? 'red' : ''}}"
-              style="width: {{cardWidth}}px;height: {{cardHeight}}px;"
+              class="{{item.empty ? 'card-placeholder' : 'card community-card'}} {{item.red ? 'red' : ''}} {{item.best ? 'best-card' : ''}} {{item.arriving ? 'flip-new' : ''}}"
+              style="width: {{cardWidth}}px;height: {{cardHeight}}px; --card-delay: {{item.dealDelay || 0}}ms;"
               ><text wx:if="{{item.empty}}">{{item.suit}}</text
               ><view wx:else class="card-art" style="{{item.artStyle}}"
             /></view>
@@ -126,14 +142,16 @@
           ><view class="hero-cards"
             ><view
               wx:for="{{heroCards}}"
-              wx:key="key"
-              class="card hero-card {{item.red ? 'red' : ''}}"
-              style="width: {{heroWidth}}px;height: {{heroHeight}}px;"
+              wx:key="dealKey"
+              class="card hero-card {{item.red ? 'red' : ''}} {{item.best ? 'best-card' : ''}}"
+              style="width: {{heroWidth}}px;height: {{heroHeight}}px; --card-delay: {{420 + index * 130}}ms;"
               ><view class="card-art" style="{{item.artStyle}}"
             /></view> </view
           ><view class="hero-rank"
-            ><text wx:if="{{heroRank}}" class="rank {{heroWinner ? 'won' : ''}}"
-              >{{heroFolded ? '已弃牌 · ' : ''}}{{heroRank}}</text
+            ><view wx:if="{{heroRank || heroWinner}}" class="rank {{heroWinner ? 'won' : ''}}"
+              ><view wx:if="{{heroWinner}}" class="winner-icon" /><text
+                >{{heroRank ? (heroFolded ? '已弃牌 · ' : '') + heroRank : '获胜'}}</text
+              ></view
             ></view
           ><view class="hero-info"
             ><view class="hero-identity"
@@ -187,7 +205,7 @@
             ><button data-preset="pot" bindtap="preset" disabled="{{!canRaise}}">底池</button
             ><button data-preset="all" bindtap="preset" disabled="{{!canRaise}}">全下</button></view
           ></view
-        ><view class="action-buttons" wx:if="{{!heroFolded && !heroAllin}}"
+        ><view class="action-buttons" wx:if="{{!heroFolded}}"
           ><button class="primary" data-action="raise" bindtap="act" disabled="{{!canRaise}}">
             加注 {{raiseText}}</button
           ><button class="fold-button" data-action="fold" bindtap="act" disabled="{{!canAct}}">
@@ -196,7 +214,9 @@
             {{callLabel}} {{callText}}
           </button></view
         ><view wx:else class="continue-buttons"
-          ><button class="call-button" bindtap="finishHand">加速到结算</button></view
+          ><button class="call-button" bindtap="finishHand" disabled="{{finishing}}">
+            立刻发完
+          </button></view
         ></block
       >
     </view>
@@ -462,7 +482,7 @@
           src="{{detailProfile.portrait}}"
           class="detail-avatar"
           mode="aspectFill"
-        /><text>{{detailProfile.short}}</text></view
+        /><text>{{detailProfile.name}}</text></view
       >
       <button class="close" bindtap="closeProfile" aria-label="关闭牌手介绍">
         <view class="close-icon" /></button></view
@@ -491,21 +511,43 @@
           ><text wx:if="{{detailProfile.research.career.length}}" class="module-title"
             >履历摘录</text
           ><text wx:for="{{detailProfile.research.career}}" wx:key="text"
-            >• {{item.text}} {{item.references}}</text
+            >• {{item.text}}
+            <text
+              wx:for="{{item.references}}"
+              wx:for-item="reference"
+              wx:key="url"
+              class="research-link"
+              data-url="{{reference.url}}"
+              bindtap="openResearchSource"
+              >{{reference.label}}
+            </text></text
           ><text class="module-title">公开打法样本</text
           ><text wx:for="{{detailProfile.research.observations}}" wx:key="text"
-            >• {{item.text}} {{item.references}}</text
+            >• {{item.text}}
+            <text
+              wx:for="{{item.references}}"
+              wx:for-item="reference"
+              wx:key="url"
+              class="research-link"
+              data-url="{{reference.url}}"
+              bindtap="openResearchSource"
+              >{{reference.label}}
+            </text></text
           ><text class="module-title">本地策略改编</text
           ><text wx:for="{{detailProfile.research.adaptation}}" wx:key="*this">• {{item}}</text
           ><view wx:for="{{detailProfile.sources}}" wx:key="id" class="research-source"
-            ><text>[{{index + 1}}] {{item.label}}</text
+            ><text class="research-link" data-url="{{item.url}}" bindtap="openResearchSource"
+              >[{{index + 1}}] {{item.label}}</text
             ><text class="muted">{{item.kind}} · {{item.publishedAt || item.reviewedAt}}</text
-            ><text>{{item.context}}</text
-            ><button class="small-button" data-url="{{item.url}}" bindtap="copyResearchSource">
-              复制资料链接
-            </button></view
+            ><text>{{item.context}}</text></view
           ></view
-        ><text class="muted">以上是游戏内训练参数，不是真实牌手的统计。</text></view
+        ><text
+          wx:if="{{detailProfile.portraitCredit}}"
+          class="portrait-credit research-link"
+          data-url="{{detailProfile.portraitCredit.url}}"
+          bindtap="openResearchSource"
+          >头像：{{detailProfile.portraitCredit.label}}</text
+        ></view
       ></scroll-view
     ></view
   >
@@ -673,7 +715,7 @@
 <view
   wx:if="{{potOpen}}"
   class="sheet pot-sheet"
-  style="top: {{topInset + (windowHeight - topInset - bottomInset - potHeight) / 2}}px; height: {{potHeight}}px;"
+  style="top: {{topInset + (windowHeight - topInset - bottomInset - potSheetHeight) / 2}}px; height: {{potSheetHeight}}px;"
 >
   <scroll-view scroll-y class="sheet-scroll"
     ><view class="sheet-body">
@@ -707,8 +749,8 @@
           ><text class="pot-player-list">可争夺：{{item.eligible}}</text></block
         >
         <button class="pot-distribution" data-index="{{index}}" bindtap="togglePot">
-          {{done ? '查看分配详情' : '查看本池投入'}}
-          <view class="select-chevron {{potExpanded[index] ? 'expanded-chevron' : ''}}" />
+          <text class="disclosure-marker">{{potExpanded[index] ? '▾' : '▸'}}</text
+          ><text>{{done ? '查看分配详情' : '查看本池投入'}}</text>
         </button>
         <view wx:if="{{potExpanded[index]}}"
           ><view
@@ -763,7 +805,7 @@
         class="selection-option {{index === selection.index ? 'selected' : ''}}"
         bindtap="chooseSelect"
       >
-        <text>{{item}}</text><view wx:if="{{index === selection.index}}" class="selected-check" />
+        <text>{{item}}</text>
       </button>
     </scroll-view>
   </view>

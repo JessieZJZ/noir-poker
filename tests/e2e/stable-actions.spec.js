@@ -78,17 +78,8 @@ async function expectStableCapturedFrames(page, initial) {
     return capture.frames;
   });
   expect(frames.length).toBeGreaterThan(4);
-  const settled = frames.find((frame) => frame.phase === 'settled');
-  if (settled && initial.phase !== 'settled') {
-    expect(
-      Math.abs(settled['.table-viewport'].top - initial['.table-viewport'].top),
-    ).toBeLessThanOrEqual(1);
-    expect(settled['.table-viewport'].height).toBeGreaterThan(
-      initial['.table-viewport'].height + 40,
-    );
-  }
   const shifts = frames.flatMap((frame, index) => {
-    const baseline = frame.phase === initial.phase ? initial : settled;
+    const baseline = initial;
     return Object.entries(frame)
       .filter(([selector]) => selector !== 'phase')
       .flatMap(([selector, box]) =>
@@ -191,7 +182,7 @@ async function expectDockLayout(page, kind, bottomInset = 0) {
     .toEqual([]);
 }
 
-test('fold, expedited settlement, retry and next hand fill the first screen and keep each phase stable while the dock collapses to one row', async ({
+test('fold, expedited settlement, retry and next hand fill the first screen and keep the table stable through every phase while the dock collapses to one row', async ({
   page,
 }) => {
   test.setTimeout(90000);

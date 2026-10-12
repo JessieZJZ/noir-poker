@@ -1,10 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { openSettings, closeSettings } from './settings-helpers.js';
-import {
-  readTableLayout,
-  assertTableLayout,
-  assertSettlementExpansion,
-} from '../native/layout.mjs';
+import { readTableLayout, assertTableLayout, assertStableSettlement } from '../native/layout.mjs';
 
 // Use visual bounds after the fit transform. Engine scenarios remain the same
 // across devices; only their presentation may change with the viewport.
@@ -453,7 +449,7 @@ for (const locale of ['zh-CN', 'en']) {
         // A phone's existing 1 CSS-pixel gap becomes subpixel after fitting.
         // Large tablets retain a small gap after lowering the rank tag.
         expect(rankBottom).toBeLessThanOrEqual(after.identity.top - (size.width > 900 ? 2 : 0));
-        assertSettlementExpansion(before, after);
+        assertStableSettlement(before, after);
         if (size.width > 900) {
           await expect(page.locator('#review-hand-button')).toHaveCSS('font-size', '18px');
           const nextSize = await page
@@ -494,7 +490,7 @@ test('native-sized phone reserves the revealed hand width before an all-in settl
   await assertFixedTable(page, { bottomInset: 34, settled: true });
   const after = await page.evaluate(readTableLayout);
   const afterSlots = await page.evaluate(slots);
-  assertSettlementExpansion(before, after);
+  assertStableSettlement(before, after);
   for (let i = 0; i < beforeSlots.length; i++)
     for (const edge of ['width', 'height'])
       expect(Math.abs(afterSlots[i][edge] - beforeSlots[i][edge])).toBeLessThanOrEqual(1);

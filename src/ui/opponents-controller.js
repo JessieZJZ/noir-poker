@@ -1,4 +1,5 @@
 import { COMPACT_PLAY_QUERY } from './play-geometry.js';
+import { profileDetailBounds } from './profile-layout.js';
 import { setLocalizedHTML, setLocalizedText } from '../i18n/index.js';
 import {
   BOT_PROFILES,
@@ -72,11 +73,14 @@ export function createOpponentsController({ getGame, getCount, getSettings, onSa
     if (!compact.matches || !detailOpen || !dialog.open) return;
     const region = stage.getBoundingClientRect();
     const viewport = body.getBoundingClientRect();
-    const height = Math.max(0, Math.min(region.height, body.clientHeight - 4));
+    const { top, height } = profileDetailBounds({
+      region,
+      viewport,
+      clientHeight: body.clientHeight,
+    });
     // Keep the introduction in the currently visible choices area, even when a lower row
     // was clicked. The choices keep their dimensions and the settings body does not move.
-    const top = Math.max(viewport.top + 2, Math.min(region.top, viewport.bottom - height - 2));
-    panel.style.setProperty('--profile-detail-top', `${top - region.top}px`);
+    panel.style.setProperty('--profile-detail-top', `${top}px`);
     panel.style.setProperty('--profile-detail-height', `${height}px`);
   }
   function cancelReveal() {

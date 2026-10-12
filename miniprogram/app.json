@@ -1,5 +1,5 @@
 {
-  "pages": ["pages/table/table"],
+  "pages": ["pages/table/table", "pages/source/source"],
   "resizable": true,
   "window": {
     "pageOrientation": "portrait",

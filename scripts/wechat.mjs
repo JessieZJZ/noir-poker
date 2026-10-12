@@ -56,6 +56,10 @@ async function compileJs(sourceDirectory, destination) {
 async function portraitAssets(output) {
   const directory = path.join(output, 'assets/portraits');
   await mkdir(directory, { recursive: true });
+  await writeFile(
+    path.join(directory, 'credits.js'),
+    `module.exports = ${JSON.stringify(Object.fromEntries(Object.entries(PROFILE_PORTRAITS).map(([id, image]) => [id, { label: image.credit, url: image.source }])))};\n`,
+  );
   for (const [id, photo] of Object.entries(PROFILE_PORTRAITS)) {
     const source = path.join(root, 'public', photo.src.slice(1));
     // Resolve the same object-fit/zoom window as the Web avatar into a small,
@@ -124,7 +128,7 @@ function soundWave(kind) {
       if (kind === 'check')
         value += Math.sin(elapsed * 2 * Math.PI * 870) * Math.exp(-elapsed * 110) * 0.25;
     }
-    wave.writeInt16LE(Math.max(-32768, Math.min(32767, Math.round(value * 10000))), 44 + index * 2);
+    wave.writeInt16LE(Math.max(-32768, Math.min(32767, Math.round(value * 26000))), 44 + index * 2);
   }
   return wave;
 }

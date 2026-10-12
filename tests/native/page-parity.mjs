@@ -3,6 +3,7 @@ import { createServer } from 'node:http';
 import { readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { chromium } from '@playwright/test';
+import { profileDetailBounds } from '../../src/ui/profile-layout.js';
 
 // Replay only the installed app's rendered DOM in Chromium. This compares the
 // same cards, text and selections, without putting test fixtures in an app.
@@ -28,6 +29,13 @@ export async function compareNativePage({ root, output, evaluate, screenshot }, 
       parseFloat(getComputedStyle(document.body).getPropertyValue('padding-' + edge)) || 0;
     const top = inset('top'),
       bottom = inset('bottom');
+    const probe = document.createElement('span');
+    probe.style.cssText =
+      'position:fixed;visibility:hidden;width:0;height:0;border-left:1px solid;pointer-events:none';
+    document.body.append(probe);
+    const layoutScale =
+      Math.round(10000 / parseFloat(getComputedStyle(probe).borderLeftWidth)) / 10000;
+    probe.remove();
     const clone = document.body.cloneNode(true);
     document.querySelectorAll('select').forEach((select, index) => {
       const copy = clone.querySelectorAll('select')[index];
@@ -71,6 +79,8 @@ export async function compareNativePage({ root, output, evaluate, screenshot }, 
       head: document.head.innerHTML.replace(/<script\b[^>]*>[\s\S]*?<\/script>/g, ''),
       body: clone.outerHTML,
       lang: root.lang,
+      pixelRatio: devicePixelRatio,
+      layoutScale,
       viewport: { width: innerWidth, height: innerHeight - top - bottom },
       insets: { top, bottom },
       scroll: scrollY
@@ -114,11 +124,17 @@ export async function compareNativePage({ root, output, evaluate, screenshot }, 
     }
   });
   await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
-  const browser = await chromium.launch();
+  // WebView applies Android's display scale during CSS layout, including
+  // fractional border widths. DPR emulation alone only changes raster density.
+  const browser = await chromium.launch({
+    args: [`--force-device-scale-factor=${snapshot.layoutScale}`],
+  });
   try {
     const page = await browser.newPage({
       viewport: snapshot.viewport,
-      deviceScaleFactor: 3,
+      // Android commonly uses fractional densities (for example 2.625).
+      // Matching them avoids accumulating different 1px border rounding.
+      deviceScaleFactor: snapshot.pixelRatio,
       locale: snapshot.lang,
     });
     await writeFile(path.join(output, 'parity-' + name + '-head.html'), snapshot.head);
@@ -152,6 +168,28 @@ export async function compareNativePage({ root, output, evaluate, screenshot }, 
       document.activeElement?.blur();
       await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
     }, snapshot);
+    // Native's inline offset is relative to its scrolled profile grid. Replay
+    // the actual Web positioning rule against this renderer's grid and viewport
+    // rather than preserving accumulated border rounding in that old offset.
+    const profileGeometry = await page.evaluate(() => {
+      const panel = document.querySelector('#profile-detail'),
+        stage = document.querySelector('#profile-stage'),
+        body = document.querySelector('.opponents-body');
+      if (!panel || panel.hidden || getComputedStyle(panel).position !== 'absolute') return null;
+      const region = stage.getBoundingClientRect(),
+        viewport = body.getBoundingClientRect();
+      return {
+        region: { top: region.top, height: region.height },
+        viewport: { top: viewport.top, bottom: viewport.bottom },
+        clientHeight: body.clientHeight,
+      };
+    });
+    if (profileGeometry)
+      await page.evaluate((bounds) => {
+        const panel = document.querySelector('#profile-detail');
+        panel.style.setProperty('--profile-detail-top', `${bounds.top}px`);
+        panel.style.setProperty('--profile-detail-height', `${bounds.height}px`);
+      }, profileDetailBounds(profileGeometry));
     const boxes = await page.evaluate(
       (selectors) =>
         Object.fromEntries(

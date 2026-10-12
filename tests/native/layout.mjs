@@ -265,20 +265,12 @@ export function assertSeatPresentation(presentation, viewport, largeTablet = fal
     );
 }
 
-export function assertSettlementExpansion(before, after) {
-  const reclaimed = before.dock.height - after.dock.height - before.bottomInset;
-  assert.ok(
-    Math.abs(after.table.height - before.table.height - reclaimed) <= 1,
-    'Settled table reuses the height released by compact controls',
-  );
-  for (const edge of ['top', 'left', 'right'])
+export function assertStableSettlement(before, after) {
+  for (const edge of ['top', 'left', 'right', 'height'])
     assert.ok(
       Math.abs(after.table[edge] - before.table[edge]) <= 1,
-      'Table keeps its top and horizontal edges',
+      'Table keeps its live geometry through settlement',
     );
-  assert.ok(
-    after.dock.bottom >= after.usableBottom - 10 && after.dock.bottom <= after.usableBottom + 1,
-    'Settled controls end at the usable first-screen boundary',
-  );
+  assert.ok(Math.abs(after.dock.top - before.dock.top) <= 1, 'Only the controls collapse');
   assertTableLayout(after);
 }

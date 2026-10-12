@@ -214,6 +214,34 @@ test('WeChat finish-hand fast-forward handles all-in streets and keeps one settl
   assert.deepEqual(game, settled);
 });
 
+test('WeChat freezes slider bounds while bots think and one fast finish publishes the complete board', (t) => {
+  const { controller, timers, latest, snapshots } = setup(t);
+  const game = reachHero(controller);
+  controller.preset('half');
+  const before = latest();
+  controller.action('raise');
+  const waiting = latest();
+  assert.equal(waiting.canAct, false);
+  for (const key of ['minRaise', 'maxRaise', 'raiseTo', 'callLabel', 'callText'])
+    assert.equal(waiting[key], before[key]);
+  while (game.phase !== 'done' && !(game.phase === 'playing' && game.actor === 0)) {
+    if (game.phase === 'between') advanceStreet(game);
+    else act(game, game.actor, 'call');
+  }
+  controller.show();
+  controller.action('fold');
+  const index = snapshots.length;
+  assert.equal(controller.finishHand(), true);
+  while (!latest().done) {
+    assert.ok([...timers.pending.values()].some((job) => job.delay === 0));
+    assert.ok(timers.runNext());
+  }
+  assert.equal(snapshots.length, index + 1, 'No intermediate streets repaint during fast finish');
+  assert.equal((game.practiceBoard || game.board).length, 5);
+  assert.equal(game.stats.hands, 1);
+  verifyChips(game, 30000);
+});
+
 test('WeChat retry restores original private deal and retracts awards/statistics exactly once', (t) => {
   const { controller } = setup(t);
   const game = controller.getGame();
