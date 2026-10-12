@@ -1,7 +1,9 @@
+@import 'fonts.wxss';
 page {
-  background: #0b1218;
-  color: #eaf1f3;
-  font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', sans-serif;
+  font-family: Manrope, 'Noto Sans SC', sans-serif;
+  -webkit-text-size-adjust: 100%;
+  background: #0b1017;
+  color: #edf3f6;
 }
 view,
 text,
@@ -13,6 +15,7 @@ button {
   margin: 0;
   padding: 0;
   color: inherit;
+  font-family: inherit;
   font-size: inherit;
   line-height: normal;
   border-radius: 9px;

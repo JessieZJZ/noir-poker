@@ -9,6 +9,7 @@ import { build, transform } from 'esbuild';
 import sharp from 'sharp';
 import { PROFILE_PORTRAITS } from '../src/ui/portraits.js';
 import { sourceDigest, directoryDigest, root } from './mobile-lib.mjs';
+import { guideTemplate } from './wechat-presentation.mjs';
 
 export const wechatOutput = path.join(root, '.artifacts/wechat');
 const template = path.join(root, 'miniprogram');
@@ -176,11 +177,30 @@ export async function buildWechat(output = wechatOutput) {
     for (const file of await fileList(path.join(staging, 'shared/platform')))
       if (!file.startsWith('wechat-')) await rm(path.join(staging, 'shared/platform', file));
     await mkdir(path.join(staging, 'shared/ui'), { recursive: true });
-    const sizing = await transform(
-      await readFile(path.join(root, 'src/ui/bet-sizing.js'), 'utf8'),
-      { format: 'cjs', target: 'es2019' },
+    for (const name of ['bet-sizing.js', 'seat-geometry.js']) {
+      const compiled = await transform(await readFile(path.join(root, 'src/ui', name), 'utf8'), {
+        format: 'cjs',
+        target: 'es2019',
+      });
+      await writeFile(path.join(staging, 'shared/ui', name), compiled.code);
+    }
+    // WXSS cannot load package-relative font files. Embed the same WOFF2 bytes
+    // used by Web/native; no network request or separate font source is needed.
+    const fontCSS = await readFile(path.join(root, 'src/styles/fonts.css'), 'utf8');
+    const chineseFaces = fontCSS.replace(
+      /@font-face\s*\{[^}]*font-family: 'Noto Sans KR';[^}]*\}/s,
+      '',
     );
-    await writeFile(path.join(staging, 'shared/ui/bet-sizing.js'), sizing.code);
+    let fonts = chineseFaces;
+    for (const match of chineseFaces.matchAll(/url\('\/fonts\/([^']+)'\)/g)) {
+      const bytes = await readFile(path.join(root, 'public/fonts', match[1]));
+      fonts = fonts.replace(match[0], `url('data:font/woff2;base64,${bytes.toString('base64')}')`);
+    }
+    await writeFile(path.join(staging, 'fonts.wxss'), fonts);
+    await writeFile(
+      path.join(staging, 'pages/table/guide.wxml'),
+      guideTemplate(await readFile(path.join(root, 'index.html'), 'utf8')),
+    );
     for (const file of (await fileList(staging)).filter(
       (name) => name.endsWith('.js') && !name.startsWith('shared/'),
     )) {

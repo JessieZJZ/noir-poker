@@ -69,8 +69,8 @@ html:not([lang='zh-CN']):not([lang='zh-TW']) .hand-suffix {
   white-space: nowrap;
 }
 html[lang='ja'] {
-  font-family: Manrope, 'Hiragino Sans', 'Yu Gothic', 'Noto Sans JP', sans-serif;
+  font-family: Manrope, 'Noto Sans SC', sans-serif;
 }
 html[lang='ko'] {
-  font-family: Manrope, 'Apple SD Gothic Neo', 'Malgun Gothic', 'Noto Sans KR', sans-serif;
+  font-family: Manrope, 'Noto Sans KR', sans-serif;
 }

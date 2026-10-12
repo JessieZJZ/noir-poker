@@ -265,6 +265,9 @@
   font-size: 14px;
   line-height: 1.8;
 }
+.profile-detail {
+  line-height: 1.5;
+}
 .profile-axes {
   display: grid;
   gap: 12px;
@@ -282,22 +285,24 @@
   color: #d2eee4;
   font-variant-numeric: tabular-nums;
 }
-.profile-axes meter {
+.profile-axes > div {
+  line-height: 20px;
+}
+.profile-axis-meter {
+  display: block;
   width: 100%;
-  height: 12px;
-  accent-color: #69c7a9;
-}
-.profile-axes meter::-webkit-meter-bar {
+  height: 6px;
+  border-radius: 8px;
   background: #223c3b;
-  border: 0;
-  border-radius: 8px;
+  overflow: hidden;
 }
-.profile-axes meter::-webkit-meter-optimum-value {
+.profile-axis-meter::before {
+  content: '';
+  display: block;
+  width: var(--axis-value);
+  height: 100%;
   background: #69c7a9;
-  border-radius: 8px;
-}
-.profile-axes meter::-moz-meter-bar {
-  background: #69c7a9;
+  border-radius: inherit;
 }
 .profile-sizing strong {
   color: #dfc98f;

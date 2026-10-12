@@ -94,12 +94,12 @@ test('a delayed local stylesheet cannot expose a partially styled table', async 
   await expectReadyTable(page);
 });
 
-test('a stalled optional font request does not hold the playable first screen', async ({
+test('stalled local fonts keep the first screen usable without any remote font request', async ({
   page,
 }) => {
   const pending = gate();
   let requested = false;
-  await page.route('https://fonts.googleapis.com/**', async (route) => {
+  await page.route('**/fonts/*.woff2', async (route) => {
     requested = true;
     await pending.promise;
     await route.abort();
@@ -108,6 +108,14 @@ test('a stalled optional font request does not hold the playable first screen', 
     await page.goto('/', { waitUntil: 'commit' });
     await expect.poll(() => requested).toBe(true);
     await expectReadyTable(page);
+    expect(
+      await page.evaluate(
+        () =>
+          performance
+            .getEntriesByType('resource')
+            .filter((entry) => /fonts\.(googleapis|gstatic)\.com/.test(entry.name)).length,
+      ),
+    ).toBe(0);
     await page.locator('#opponents-button').click();
     await expect(page.locator('#opponents-dialog')).toBeVisible();
   } finally {

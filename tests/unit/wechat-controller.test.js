@@ -320,8 +320,9 @@ test('WeChat review grades only the public before-action snapshot and keeps it d
     report.steps[0].cards.map((card) => card.key),
     before.hole.map((card) => card.key),
   );
-  assert.ok(report.title);
-  assert.ok(report.summary);
+  assert.equal('title' in report, false);
+  assert.equal('summary' in report, false);
+  assert.ok(report.steps[0].suggestion);
 });
 
 test('fresh WeChat settings use five players and publish disabled controls before the hero turn', (t) => {

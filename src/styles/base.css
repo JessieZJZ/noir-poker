@@ -11,6 +11,8 @@
   --red: #e56f80;
   font-family: Manrope, 'Noto Sans SC', sans-serif;
   font-size: 16px;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 * {
   box-sizing: border-box;
@@ -80,6 +82,11 @@ button[hidden],
   font-size: 32px;
   color: var(--mint);
   line-height: 1;
+}
+.brand-mark svg {
+  display: block;
+  width: 28px;
+  height: 32px;
 }
 .brand-light {
   font-weight: 400;
@@ -598,6 +605,11 @@ select {
   color: #6a8191;
   letter-spacing: 1px;
 }
+.session-card,
+.activity-card,
+.site-footer {
+  line-height: 1.5;
+}
 .session-balance {
   margin-top: 22px;
 }
@@ -745,6 +757,7 @@ select {
   margin: 0;
 }
 dialog {
+  line-height: 1.5;
   width: min(540px, calc(100% - 32px));
   border: 1px solid #3b504f;
   background: #14202a;

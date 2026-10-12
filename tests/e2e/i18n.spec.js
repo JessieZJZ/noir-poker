@@ -68,7 +68,9 @@ for (const locale of locales) {
     await page.locator('#rules-dialog .close-dialog').first().click();
     const initial = await page.evaluate(() => window.qa.foldWin(9, 0));
     await page.locator('#review-hand-button').click();
-    await expect(page.locator('#review-priority')).toBeVisible({ timeout: 30000 });
+    await expect(page.locator('#review-dialog[data-analysis-status="done"]')).toBeVisible({
+      timeout: 30000,
+    });
     await expect(page.locator('#review-your-action')).not.toBeEmpty();
     await page.locator('#review-dialog .close-dialog').first().click();
     await page.locator('#restart-hand-button').click();

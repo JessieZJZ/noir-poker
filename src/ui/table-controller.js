@@ -1,3 +1,4 @@
+import { SEAT_ANCHORS } from './seat-geometry.js';
 import { COMPACT_PLAY_QUERY } from './play-geometry.js';
 import {
   localizeText,
@@ -295,48 +296,6 @@ function seatAction(p, { recent = false } = {}) {
       : `${action} · 本轮累计投入 ${format(amount)}`);
   return `<span class="seat-action-label">${label}</span><strong class="seat-action-amount" title="${meaning}">${format(amount)}</strong>`;
 }
-const layouts = {
-  5: [
-    [15, 42],
-    [30, 0],
-    [70, 0],
-    [85, 42],
-  ],
-  6: [
-    [14, 60],
-    [17, 14],
-    [50, 0],
-    [83, 14],
-    [86, 60],
-  ],
-  7: [
-    [14, 63],
-    [11.5, 27],
-    [35, 0],
-    [65, 0],
-    [88.5, 27],
-    [86, 63],
-  ],
-  8: [
-    [14, 68],
-    [11.5, 36],
-    [23, 6],
-    [50, 0],
-    [77, 6],
-    [88.5, 36],
-    [86, 68],
-  ],
-  9: [
-    [14, 72],
-    [13, 45],
-    [16, 18],
-    [36, 0],
-    [64, 0],
-    [84, 18],
-    [87, 45],
-    [86, 72],
-  ],
-};
 function render() {
   const activityList = $('#activity-list'),
     activityScrollTop = activityList.scrollTop,
@@ -395,7 +354,7 @@ function render() {
             reveal && !p.folded && game.board.length === 5
               ? evaluate([...p.hole, ...game.board])
               : null,
-          [x, y] = layouts[count][p.id - 1];
+          [x, y] = SEAT_ANCHORS[count][p.id - 1];
         const rankMarkup =
           rank || winner
             ? `<div class="hand-rank ${winner ? 'rank-winner winner-indicator' : ''}"${winner ? ` aria-label="${p.name} 获得底池 ${format(winner.amount)} 筹码" title="${winner.label} · 获得 ${format(winner.amount)} 筹码"` : ''}>${winner ? winnerIcon : ''}${rank?.label ?? '获胜'}</div>`

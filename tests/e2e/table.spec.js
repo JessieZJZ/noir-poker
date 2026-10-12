@@ -19,13 +19,12 @@ test('review separates a lucky bad-price win from a reasonable loss and keeps ev
   for (const win of [true, false]) {
     await page.evaluate((win) => window.qa.reviewClosingCall(win), win);
     await page.locator('#review-hand-button').click();
-    await expect(page.locator('#review-priority')).toBeVisible({ timeout: 20000 });
-    await expect(page.locator('#review-summary-title')).toContainText(
-      win ? '不值得长期重复' : '输了',
+    await expect(page.locator('#review-dialog[data-analysis-status="done"]')).toBeVisible({
+      timeout: 20000,
+    });
+    await expect(page.locator('.review-summary, #review-overview, #review-priority')).toHaveCount(
+      0,
     );
-    await expect(page.locator('#review-overview')).toContainText(win ? '优先调整' : '争取更多价值');
-    await expect(page.locator('#review-advanced')).not.toHaveAttribute('open');
-    await expect(page.locator('#review-evidence')).not.toBeVisible();
     if (win) {
       await expect(page.locator('#review-suggestion')).toHaveText('弃牌');
       await expect(page.locator('#review-coach-ev')).toContainText('长期会亏');
@@ -435,7 +434,9 @@ test('raise controls, seats, activity and review share street-specific bet ordin
   await expect(page.locator('#activity-list')).toContainText('Alex 3-bet 加注至 650');
   await expect(page.locator('#activity-list')).toContainText('Mia 4-bet 加注至 1800');
   await page.locator('#review-hand-button').click();
-  await expect(page.locator('#review-priority')).toBeVisible({ timeout: 30000 });
+  await expect(page.locator('#review-dialog[data-analysis-status="done"]')).toBeVisible({
+    timeout: 30000,
+  });
   await page.locator('#review-timeline [data-review-index="0"]').click();
   await expect(page.locator('#review-your-action')).toContainText('2-bet 开池至 150');
   await expect(page.locator('#review-routes')).toContainText('2-bet');
@@ -780,7 +781,11 @@ test('settled seats retain all-in sizes, board and hero action across viewing an
         return window.noir.getState().players.map((p) => p.lastAction);
       });
       await page.evaluate(() => {
-        while (window.noir.getState().phase !== 'done') window.qa.finish();
+        for (let street = 0; street < 5 && window.noir.getState().phase !== 'done'; street++)
+          window.qa.finish();
+        const state = window.noir.getState();
+        if (state.phase !== 'done')
+          throw Error(`All-in runout did not settle: ${JSON.stringify(state)}`);
       });
       const done = await page.evaluate(() => window.noir.getState());
       expect(done.board).toHaveLength(5);
@@ -1069,7 +1074,9 @@ test('review completes through real worker with facts and a conditional follow-u
   await expect(page.locator('.decision-strip')).toBeHidden();
   await page.locator('#review-hand-button').click();
   await expect(page.locator('#review-dialog')).toBeVisible();
-  await expect(page.locator('#review-priority')).toBeVisible({ timeout: 15000 });
+  await expect(page.locator('#review-dialog[data-analysis-status="done"]')).toBeVisible({
+    timeout: 15000,
+  });
   expect(await page.locator('#review-evidence li').count()).toBeGreaterThanOrEqual(4);
   await expect(page.locator('#review-plan')).not.toHaveText('分析完成后展示后续处理路线。');
   await expect(page.locator('#review-model-note')).toContainText('范围');
@@ -1841,7 +1848,9 @@ test('A7 review separates steal, 3bet and 4bet; opponents expose actual decision
   test.setTimeout(60000);
   await page.evaluate(() => window.qa.reviewLine());
   await page.locator('#review-hand-button').click();
-  await expect(page.locator('#review-priority')).toBeVisible({ timeout: 30000 });
+  await expect(page.locator('#review-dialog[data-analysis-status="done"]')).toBeVisible({
+    timeout: 30000,
+  });
   await page.locator('#review-timeline [data-review-index="0"]').click();
   await expect(page.locator('#review-reason')).toContainText('阻断');
   await expect(page.locator('#review-suggestion')).not.toHaveText('2-bet 开池至 150');
@@ -1883,7 +1892,9 @@ test('review timelines hint at horizontal scrolling and keep late selections in 
     await page.setViewportSize({ width, height: 900 });
     await page.evaluate(() => window.qa.reviewLine());
     await page.locator('#review-hand-button').click();
-    await expect(page.locator('#review-priority')).toBeVisible({ timeout: 30000 });
+    await expect(page.locator('#review-dialog[data-analysis-status="done"]')).toBeVisible({
+      timeout: 30000,
+    });
     if (width < 700) {
       const heroTimeline = page.locator('#review-timeline');
       const heroIndex = (await heroTimeline.locator('.review-step').count()) - 1;
@@ -2001,7 +2012,9 @@ test('foreign style assignments persist and candidate simulation is available in
   expect(state.players[3].botProfile).toBe('dwan');
   await page.evaluate(() => window.qa.reviewLine());
   await page.locator('#review-hand-button').click();
-  await expect(page.locator('#review-priority')).toBeVisible({ timeout: 20000 });
+  await expect(page.locator('#review-dialog[data-analysis-status="done"]')).toBeVisible({
+    timeout: 20000,
+  });
   await page.locator('#review-timeline [data-review-index="0"]').click();
   await expect(page.locator('#review-simulation')).toContainText('模拟 40 手');
   expect(await page.locator('#review-simulation tbody tr').count()).toBeGreaterThanOrEqual(4);

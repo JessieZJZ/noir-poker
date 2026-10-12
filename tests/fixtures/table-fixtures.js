@@ -20,6 +20,26 @@ function fixtureGame(count = 6, heroFirst = false) {
 }
 
 window.qa = {
+  loadRecordedGame(snapshot, settings) {
+    // DevTools comparison only: replay the same recorded deal through Web's
+    // real renderer. This entire fixture is absent from production bundles.
+    fixtureGame(snapshot.players.length);
+    // Register a real hand so the engine's WeakMap-backed retry availability
+    // survives replay. This browser reference renders only; it never retries.
+    startHand(game);
+    Object.assign(game, structuredClone(snapshot));
+    if (settings) {
+      requestedCount = settings.playerCount;
+      $('#player-count').value = requestedCount;
+      $('#player-count').dispatchEvent(new Event('change'));
+      if ($('#sound-button').getAttribute('aria-pressed') !== String(settings.sound))
+        $('#sound-button').click();
+      if ($('#hint-toggle').getAttribute('aria-pressed') !== String(settings.hints))
+        $('#hint-toggle').click();
+    }
+    render();
+    return publicState();
+  },
   snapshot() {
     return JSON.parse(JSON.stringify(game));
   },

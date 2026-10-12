@@ -9,7 +9,8 @@ const pending = (done, total = 3) => ({
   total,
   decisionCount: total,
   retryVisible: false,
-  overview: '',
+  analysisStatus: 'running',
+  decisionTitle: '',
   suggestion: '分析中',
 });
 function protocol(read) {
@@ -62,7 +63,8 @@ test('native review timeout retains the last public progress and per-step elapse
 test('productive progress does not extend the native review deadline or pass incomplete content', async () => {
   const fake = protocol((elapsed) => ({
     ...pending(Math.floor(elapsed / 1000), 40),
-    overview: '分析中',
+    analysisStatus: 'done',
+    decisionTitle: '分析中',
   }));
   await assert.rejects(waitForNativeReview(fake.app, { now: fake.now }), (error) => {
     assert.equal(error.reviewDiagnostics.elapsedMs, 30000);
@@ -75,13 +77,29 @@ test('only complete review content in the open installed dialog succeeds', async
   const fake = protocol((elapsed) => {
     if (elapsed < 2000) return pending(2);
     if (elapsed < 4000)
-      return { ...pending(3), overview: '已有摘要', suggestion: '建议 undefined' };
+      return {
+        ...pending(3),
+        analysisStatus: 'done',
+        decisionTitle: '已有摘要',
+        suggestion: '建议 undefined',
+      };
     if (elapsed < 6000)
-      return { ...pending(3), dialogOpen: false, overview: '已有摘要', suggestion: '完整建议' };
-    return { ...pending(3), overview: '已有摘要', suggestion: '完整建议' };
+      return {
+        ...pending(3),
+        dialogOpen: false,
+        analysisStatus: 'done',
+        decisionTitle: '已有摘要',
+        suggestion: '完整建议',
+      };
+    return {
+      ...pending(3),
+      analysisStatus: 'done',
+      decisionTitle: '已有摘要',
+      suggestion: '完整建议',
+    };
   });
   const result = await waitForNativeReview(fake.app, { now: fake.now });
-  assert.equal(result.overview, '已有摘要');
+  assert.equal(result.decisionTitle, '已有摘要');
   assert.equal(result.suggestion, '完整建议');
   assert.equal(result.diagnostics.elapsedMs, 6000);
   assert.equal(result.diagnostics.observations.at(-1).dialogOpen, true);
