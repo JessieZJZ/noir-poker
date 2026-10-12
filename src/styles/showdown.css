@@ -663,10 +663,6 @@
     opacity: 1 !important;
   }
 }
-.card-art text {
-  fill: currentColor;
-  font-family: Manrope, Arial, sans-serif;
-}
 .hero-area {
   top: 65%;
 }

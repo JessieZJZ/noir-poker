@@ -423,7 +423,9 @@ async function expectAdaptiveBoard(page) {
               cards[i].bottom > other.top + 0.5
             )
               issues.push('public card faces overlap');
-        for (const el of board.querySelectorAll('.card-art > text, .card-art > .card-suit-icon')) {
+        for (const el of board.querySelectorAll(
+          '.card-art .card-rank, .card-art > .card-suit-icon',
+        )) {
           const mark = el.getBoundingClientRect();
           const face = el.closest('.playing-card').getBoundingClientRect();
           if (
