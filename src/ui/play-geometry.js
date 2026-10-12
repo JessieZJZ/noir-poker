@@ -1,11 +1,9 @@
 export const COMPACT_PLAY_QUERY =
   '(max-width: 900px), (max-width: 1100px) and (orientation: portrait)';
 
-// Keep the pot and board slightly above the middle of the felt, leaving a
-// comfortable gap above the hero's cards. Collision checks can move it only
-// as far as needed from this preferred position.
-export function publicGroupTop(tableTop, tableHeight, groupHeight) {
-  return tableTop + tableHeight * 0.44 - groupHeight / 2;
+// Center the cards; the pot and details above them do not define the anchor.
+export function publicGroupTop(tableTop, tableHeight, boardHeight, boardTop = 0) {
+  return tableTop + tableHeight * 0.5 - boardHeight / 2 - boardTop;
 }
 
 // Five-seat waist opponents share the public corridor. Allow a 16% scale

@@ -401,6 +401,17 @@ export async function nativeScenarios(app) {
     const details = [];
     for (const id of ids) {
       await app.click(`[data-profile-preview="${id}"]`);
+      await app.waitFor(
+        () =>
+          app.evaluate(() =>
+            document
+              .querySelector('#profile-detail')
+              .getAnimations()
+              .every((a) => a.playState !== 'running'),
+          ),
+        5000,
+        'Profile circular reveal must finish before inspecting and closing it',
+      );
       const detail = await app.evaluate(() => {
         const section = document.querySelector('#profile-detail .profile-research');
         return {
@@ -505,8 +516,15 @@ export async function nativeScenarios(app) {
           paid,
           callRequired: action === 'call' ? turn.legal.toCall : undefined,
         };
-      if (action === 'fold' && (await app.visible('#continue-deal-button')))
-        await app.click('#continue-deal-button');
+      if (action === 'fold' && (await app.visible('#continue-deal-button'))) {
+        try {
+          await app.click('#continue-deal-button');
+        } catch (error) {
+          // Real bots can finish during a slow driver round trip. Only an
+          // already completed hand makes the disappearing button expected.
+          if ((await app.state()).phase !== 'done') throw error;
+        }
+      }
       if (action !== 'fold') continue;
       await app.waitFor(
         () =>
@@ -547,14 +565,16 @@ export async function nativeScenarios(app) {
     );
     const layout = await app.evaluate(readTableLayout);
     assertTableLayout(layout);
-    assert.ok(Math.abs(layout.table.height - beforeFold.table.height) <= 1);
+    const reclaimed = beforeFold.dock.height - layout.dock.height - beforeFold.bottomInset;
+    assert.ok(
+      Math.abs(layout.table.height - beforeFold.table.height - reclaimed) <= 1,
+      'Settlement table reuses the space released by compact controls',
+    );
     assert.ok(Math.abs(layout.table.top - beforeFold.table.top) <= 1);
-    for (const anchor of ['arena', 'publicArea'])
-      for (const key of ['top', 'left', 'height', 'right'])
-        assert.ok(
-          Math.abs(layout[anchor][key] - beforeFold[anchor][key]) <= 1,
-          `${anchor} ${key} must not jump during settlement: ${beforeFold[anchor][key]} -> ${layout[anchor][key]}`,
-        );
+    assert.ok(
+      layout.dock.bottom >= layout.usableBottom - 10,
+      'Settlement fills the first usable screen',
+    );
     const buttons = layout.settledButtons;
     assert.ok(
       buttons.every((button) => Math.abs(button.top - buttons[0].top) <= 1 && button.height >= 44),
@@ -787,7 +807,13 @@ export async function nativeScenarios(app) {
           ]),
         );
         await app.click('#fold-button');
-        if (await app.visible('#continue-deal-button')) await app.click('#continue-deal-button');
+        if (await app.visible('#continue-deal-button')) {
+          try {
+            await app.click('#continue-deal-button');
+          } catch (error) {
+            if ((await app.state()).phase !== 'done') throw error;
+          }
+        }
         await app.waitFor(async () => (await app.state()).phase === 'done', 90000);
         comparisons.push(
           await app.comparePage(`settlement-${count}`, [

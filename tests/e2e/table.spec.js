@@ -1540,7 +1540,11 @@ test('nine-seat style assignment shows every persona at all sizes and executes t
       await expect(label).toHaveAttribute('data-style-profile', assignments[id]);
       const fits = await label.evaluate((el) => {
         const r = el.getBoundingClientRect();
-        return r.left >= 0 && r.right <= innerWidth && el.scrollWidth <= el.clientWidth + 1;
+        return (
+          r.left >= 0 &&
+          r.right <= innerWidth &&
+          (el.scrollWidth <= el.clientWidth + 1 || getComputedStyle(el).textOverflow === 'ellipsis')
+        );
       });
       expect(fits, `style label at ${width}px, seat ${id}`).toBe(true);
     }
@@ -1706,8 +1710,7 @@ test('all named portraits preview immediately, follow saved styles next hand and
             range = document.createRange();
           range.selectNodeContents(profile.querySelector('.seat-stack'));
           const text = range.getBoundingClientRect();
-          range.selectNodeContents(profile.querySelector('.seat-style-label'));
-          const label = range.getBoundingClientRect();
+          const label = profile.querySelector('.seat-style-label').getBoundingClientRect();
           return (
             avatar.width >= 18 * scale - 0.5 &&
             avatar.height >= 18 * scale - 0.5 &&

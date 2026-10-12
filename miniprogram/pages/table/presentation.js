@@ -1,3 +1,4 @@
+const { renderCardArtwork } = require('../../shared/ui/cards.js');
 const { evaluate, rankText } = require('../../shared/engine/poker.js');
 
 // Match src/ui/cards.js. These vectors are presentation, never card/rule state.
@@ -15,6 +16,36 @@ function presentCard(card) {
     rank: typeof card.rank === 'number' ? rankText(card.rank) : card.rank,
     suit: typeof card.suit === 'number' ? card.symbol : card.suit,
     red,
+    artStyle: `background-image:url("data:image/svg+xml,${encodeURIComponent(
+      renderCardArtwork(
+        {
+          ...card,
+          rank:
+            typeof card.rank === 'number'
+              ? card.rank
+              : '23456789TJQKA'.indexOf(card.rank === '10' ? 'T' : card.rank) + 2,
+          suit,
+        },
+        { compact: true },
+      )
+        .replace('<svg ', '<svg xmlns="http://www.w3.org/2000/svg" ')
+        .replaceAll('currentColor', red ? '#c74760' : '#223447'),
+    )}");`,
+    smallArtStyle: `background-image:url("data:image/svg+xml,${encodeURIComponent(
+      renderCardArtwork(
+        {
+          ...card,
+          rank:
+            typeof card.rank === 'number'
+              ? card.rank
+              : '23456789TJQKA'.indexOf(card.rank === '10' ? 'T' : card.rank) + 2,
+          suit,
+        },
+        { small: true },
+      )
+        .replace('<svg ', '<svg xmlns="http://www.w3.org/2000/svg" ')
+        .replaceAll('currentColor', red ? '#c74760' : '#223447'),
+    )}");`,
     suitStyle: `background-image:url("data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 22"><path d="${suitShapes[suit]}" fill="${red ? '#c74760' : '#223447'}"/></svg>`)}");`,
   };
 }

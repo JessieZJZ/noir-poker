@@ -14,6 +14,7 @@ import {
   executeBotTurn,
   seatPosition,
   potSize,
+  contestableAfterCall,
   currentPots,
   rankText,
   evaluate,
@@ -72,6 +73,7 @@ export function createWechatController({
   } catch {
     settings = defaults();
   }
+  const peeked = new Map();
   let game = newGame(settings.playerCount),
     raiseTo = 150,
     timer = null,
@@ -112,21 +114,45 @@ export function createWechatController({
   }
   function updateHint() {
     const legal = legalActions(game, 0);
-    if (!settings.hints || !active || !legal.enabled) {
+    if (!settings.hints || !active || (!legal.enabled && game.phase !== 'done')) {
       cancelHint();
       return;
     }
-    const key = `${game.hand}:${game.replayAttempt || 0}:${game.street}:${game.currentBet}:${game.players[0].bet}`;
+    const key = `${game.hand}:${game.replayAttempt || 0}:${game.street}:${game.phase}:${game.currentBet}:${game.players[0].bet}`;
     if (key === hintKey) return;
     hintKey = key;
     cancelHint();
-    hintText =
-      game.street === 0
-        ? '先看位置与跟注价格，后位可以更宽；面对再次加注时，重新评估对手范围。'
-        : game.street === 3
-          ? '河牌先判断有多少更弱的牌会跟注，再决定取值；面对大注，比较价格和对手范围。'
-          : '每张公共牌都会改变牌力。先看牌面和仍在局中的人数，再决定下注尺度。';
+    // Keep the Chinese presentation copy and public price calculation used by Web.
+    const hero = game.players[0],
+      rank = evaluate([...hero.hole, ...game.board]);
+    if (game.phase === 'done')
+      hintText = hero.folded
+        ? '回看弃牌时的价格与对手范围，判断是否值得继续。'
+        : game.showdown
+          ? `你以${rank.label}摊牌。复盘关键下注，区分决策质量与发牌运气。`
+          : '复盘本手加注，判断对手弃牌能否让这条路线长期盈利。';
+    else if (game.street === 0) {
+      const [a, b] = hero.hole;
+      hintText =
+        a?.rank === b?.rank
+          ? '口袋对子有成三条的潜力；面对大额加注，先考虑跟注成本。'
+          : a?.rank >= 11 && b?.rank >= 11
+            ? '两张高牌可主动争夺底池；面对大额加注，仍要判断对手范围。'
+            : a?.suit === b?.suit
+              ? '同花底牌有成牌潜力，仍需结合位置和跟注价格。'
+              : '前位谨慎选牌，后位利用更多信息；结合价格决定是否入池。';
+    } else
+      hintText =
+        rank.score[0] >= 3
+          ? `你已形成${rank.label}，可考虑价值下注，并留意牌面上更强的组合。`
+          : rank.score[0] >= 1
+            ? `目前是${rank.label}；多人底池或持续大额加注时，谨慎判断。`
+            : '尚未成对，结合成牌机会、跟注价格与对手范围决定。';
+    if (legal.enabled && legal.toCall > 0)
+      hintText += ` 跟注占可争夺底池约 ${Math.round((legal.callAmount / contestableAfterCall(game, 0, legal.callAmount)) * 100)}%。`;
+    const ticket = epoch;
     hintTimer = schedule(() => {
+      if (ticket !== epoch || !active || disposed || key !== hintKey) return;
       hintTimer = null;
       hintText = '';
       render();
@@ -142,7 +168,29 @@ export function createWechatController({
     const board = game.board.map(cardView);
     const seats = game.players.slice(1).map((player, index) => {
       const profile = BOT_PROFILES.find((p) => p.id === player.botProfile) || BOT_PROFILES[0];
-      const revealed = game.revealed && !player.folded;
+      const revealed = done && (peeked.get(player.id) ?? (game.revealed && !player.folded));
+      const best =
+        revealed && game.board.length === 5 ? evaluate([...player.hole, ...game.board]) : null;
+      const retained =
+        done || player.folded || player.allin || player.lastAction?.street === game.street
+          ? player.lastAction
+          : null;
+      const rawAction =
+        game.actor === player.id && !done
+          ? '思考中'
+          : retained?.text || player.action || (done ? '未行动' : '等待行动');
+      const match =
+        /^(?:(\d+-bet) )?(小盲|大盲|跟注|开池至|加注至|下注至|下注|短全下至|全下至|全下) (\d+)$/.exec(
+          rawAction,
+        );
+      const actionLabel = match
+        ? player.allin && ['小盲', '大盲'].includes(match[2])
+          ? '全下'
+          : match[1]
+            ? match[1] +
+              (match[2] === '短全下至' ? ' 短全下' : match[2] === '全下至' ? ' 全下' : '')
+            : match[2].replace(/至$/, '')
+        : rawAction;
       return {
         id: player.id,
         name: player.name,
@@ -152,19 +200,25 @@ export function createWechatController({
         portrait: profile.id === 'balanced' ? '' : `/assets/portraits/${profile.id}.jpg`,
         initial: player.name.slice(0, 1),
         stack: format(player.stack),
-        action: player.folded
-          ? '弃牌'
-          : player.allin
-            ? cleanAction(player.lastAction?.text || player.action || '全下')
-            : cleanAction(
-                (player.lastAction?.street === game.street ? player.lastAction.text : '') ||
-                  (game.actor === player.id && !done ? '思考中' : '等待行动'),
-              ),
+        action: actionLabel + (match ? ' ' + format(Number(match[3])) : ''),
+        actionLabel,
+        actionAmount: match ? format(Number(match[3])) : '',
         thinking: !done && game.actor === player.id,
         folded: player.folded,
         winner: done && game.winners.some((w) => w.id === player.id),
-        cards: revealed ? player.hole.map(cardView) : [],
-        rank: revealed ? evaluate([...player.hole, ...game.board]).label : '',
+        cards: revealed
+          ? player.hole.map((card) => ({
+              ...cardView(card),
+              best: !!best && !player.folded && best.cards.some((c) => c.key === card.key),
+            }))
+          : [],
+        revealed,
+        rank:
+          best && !player.folded
+            ? best.label
+            : done && game.winners.some((w) => w.id === player.id)
+              ? '获胜'
+              : '',
         x: SEAT_ANCHORS[game.players.length][index][0],
         y: SEAT_ANCHORS[game.players.length][index][1],
       };
@@ -240,22 +294,30 @@ export function createWechatController({
             ? '已全下，等待摊牌。'
             : legal.enabled
               ? legal.canCheck
-                ? '轮到你了，可以过牌。'
-                : `轮到你了，跟注 ${format(legal.callAmount)}。`
-              : `${game.players[game.actor]?.name || '对手'} 正在思考…`,
+                ? '轮到你了，可以过牌或主动下注。'
+                : `轮到你了，跟注需要 ${format(legal.callAmount)} 筹码。${legal.raiseReopened ? '' : '本轮加注权未重开，仅可跟注或弃牌。'}`
+              : `${game.players[game.actor]?.name || '对手'} 正在思考，请稍候。`,
       profiles,
       settings: { ...settings, assignments: { ...settings.assignments } },
-      seatSettings: game.players.slice(1).map((p) => ({
-        id: p.id,
-        name: p.name,
-        profileIndex: Math.max(
-          0,
-          BOT_PROFILES.findIndex((profile) => profile.id === settings.assignments[p.id]),
-        ),
-        profileName:
-          BOT_PROFILES.find((profile) => profile.id === settings.assignments[p.id])?.short ||
-          '均衡',
-      })),
+      seatSettings: ['Mia', 'Alex', 'River', 'Kai', 'Luna', 'Theo', 'Jade', 'Leo'].map(
+        (name, i) => {
+          const id = i + 1;
+          const profileIndex = Math.max(
+            0,
+            BOT_PROFILES.findIndex((profile) => profile.id === settings.assignments[id]),
+          );
+          const profile = BOT_PROFILES[profileIndex];
+          return {
+            id,
+            name,
+            initial: name.slice(0, 1),
+            offTable: id >= settings.playerCount,
+            profileIndex,
+            profileName: profile.short,
+            portrait: profile.id === 'balanced' ? '' : `/assets/portraits/${profile.id}.jpg`,
+          };
+        },
+      ),
       hintText,
       logs: game.logs
         .slice(0, 30)
@@ -306,6 +368,7 @@ export function createWechatController({
     }, 0);
   }
   function freshHand() {
+    peeked.clear();
     cancelBots();
     cancelReview();
     cancelHint();
@@ -396,7 +459,14 @@ export function createWechatController({
     nextHand() {
       if (game.phase === 'done') freshHand();
     },
+    peek(id) {
+      if (game.phase !== 'done' || !game.players[id] || id === 0) return false;
+      peeked.set(id, !(peeked.get(id) ?? (game.revealed && !game.players[id].folded)));
+      render();
+      return true;
+    },
     retry() {
+      peeked.clear();
       if (!canRestartHand(game)) return false;
       cancelBots();
       cancelReview();

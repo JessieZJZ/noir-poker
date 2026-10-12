@@ -293,6 +293,8 @@ test('inspection follows the position badge and crown JJ keep clear of the hint 
               )
                 issues.push('eye escapes the profile');
               if (
+                e.top >= 0 &&
+                e.bottom <= innerHeight &&
                 document
                   .elementFromPoint((e.left + e.right) / 2, (e.top + e.bottom) / 2)
                   ?.closest('.seat-peek') !== eye

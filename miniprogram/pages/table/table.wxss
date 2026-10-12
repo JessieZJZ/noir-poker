@@ -1346,3 +1346,4 @@
 }
 
 @import 'parity.wxss';
+@import 'rail.wxss';

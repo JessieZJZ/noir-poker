@@ -167,6 +167,10 @@ test('concurrent WeChat builders serialize and preserve DevTools private prefere
     Object.keys(PROFILE_PORTRAITS).length,
   );
   assert.ok(manifest.totalBytes < 2 * 1024 * 1024);
+  assert.ok(
+    manifest.files.every((file) => !/i18n|locales|translator|localization/.test(file.path)),
+    'Chinese-only mini-program must not bundle internationalization',
+  );
   assert.equal(
     manifest.files.some((file) => file.path === 'project.private.config.json'),
     false,

@@ -1,4 +1,4 @@
-import { COMPACT_PLAY_QUERY, preferSinglePublicRow, smallestClearHeight } from './play-geometry.js';
+import { COMPACT_PLAY_QUERY } from './play-geometry.js';
 // Keep the whole mobile table in the first screen. Measurements are made at
 // scale 1 before fitting, so collision coordinates never mix CSS/visual pixels.
 export function createPlayViewport(surface, { layout = () => {} } = {}) {
@@ -30,6 +30,7 @@ export function createPlayViewport(surface, { layout = () => {} } = {}) {
     for (const rank of arena.querySelectorAll('.seat .hand-rank'))
       rank.style.removeProperty('translate');
     arena.style.removeProperty('width');
+    arena.style.removeProperty('height');
     arena.style.removeProperty('--arena-height');
     arena.classList.remove('compact-landscape');
     arena.classList.remove('public-two-rows');
@@ -64,39 +65,9 @@ export function createPlayViewport(surface, { layout = () => {} } = {}) {
         seat.style.top = '0%';
       });
     }
-    const availableHeight = viewport.clientHeight,
-      // A two-row board and the hero need the same vertical budget at every
-      // player count. A shorter six-seat base can make the corridor solver
-      // grow an unnecessary seat band, shrinking the whole table on SE.
-      baseHeight = Math.max(availableHeight, landscape ? 220 : 450);
-    // Fit height without narrowing the felt. A short phone uses a wider
-    // logical arena so its scaled table still spans the available viewport.
-    const sizeArena = (height) => {
-      arena.style.width = `${viewport.clientWidth * Math.max(1, height / availableHeight)}px`;
-      arena.style.setProperty('--arena-height', `${height}px`);
-      layout();
-      return arena.getBoundingClientRect().height;
-    };
-    const fittingHeight = () => {
-      const required = sizeArena(baseHeight);
-      if (required <= baseHeight + 0.5) return baseHeight;
-      // Widening removes some horizontal collisions. Find the smallest
-      // proportional arena instead of keeping the narrow first pass's bound.
-      return smallestClearHeight(
-        baseHeight,
-        required,
-        (candidate) => sizeArena(candidate) <= candidate + 0.5,
-      );
-    };
-    let fittedHeight = fittingHeight();
-    if (!landscape && viewport.clientWidth <= 600 && fittedHeight > baseHeight + 0.5) {
-      arena.classList.add('public-two-rows');
-      const twoRowsHeight = fittingHeight();
-      if (preferSinglePublicRow(fittedHeight, twoRowsHeight, Number(arena.dataset.playerCount)))
-        arena.classList.remove('public-two-rows');
-      else fittedHeight = twoRowsHeight;
-    }
-    sizeArena(fittedHeight);
+    const availableHeight = viewport.clientHeight;
+    arena.style.height = `${availableHeight}px`;
+    layout();
     tightenSeatRanks();
 
     const box = arena.getBoundingClientRect(),

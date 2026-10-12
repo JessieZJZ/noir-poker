@@ -868,3 +868,134 @@
     height: 161px;
   }
 }
+
+/* Persona labels always follow their avatar by the same grid gap. */
+.game-surface .arena[data-player-count] .seat-profile {
+  display: grid;
+  grid-template-columns: var(--rail-avatar, 30px) minmax(0, 1fr);
+  grid-template-rows: auto auto auto;
+  column-gap: 4px;
+}
+.game-surface .arena[data-player-count] .seat-profile > div,
+.game-surface .arena[data-player-count] .seat-profile .seat-bankroll {
+  display: contents;
+}
+.game-surface .arena[data-player-count] .seat-profile strong {
+  grid-column: 1 / -1;
+  grid-row: 1;
+}
+.game-surface .arena[data-player-count] .seat-profile > .avatar {
+  grid-column: 1;
+  grid-row: 2;
+}
+.game-surface .arena[data-player-count] .seat-profile .seat-style-label {
+  display: block;
+  grid-column: 2;
+  grid-row: 2;
+  justify-self: start;
+  min-width: 0;
+  max-width: 100%;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.game-surface .arena[data-player-count] .seat-profile .seat-stack {
+  grid-column: 1 / -1;
+  grid-row: 3;
+  text-align: center;
+}
+.game-surface .arena.public-two-rows[data-player-count] .board {
+  flex-wrap: wrap;
+  justify-content: center;
+  width: calc(3 * var(--public-card-width, 55px) + 2 * var(--rail-board-gap, 8px));
+  row-gap: 10px;
+}
+@media (min-width: 1101px), (min-width: 901px) and (orientation: landscape) {
+  .game-surface .arena[data-player-count] .seat-profile {
+    width: 128px;
+    min-width: 128px;
+    padding: 8px;
+  }
+  .game-surface .arena.is-done[data-player-count] {
+    display: block;
+    padding: 0;
+    height: 620px;
+  }
+}
+@media (max-width: 600px) {
+  .game-surface .arena[data-player-count] .seat-profile {
+    --rail-avatar: 18px;
+  }
+  .game-surface .arena.public-two-rows[data-player-count] .board {
+    --rail-board-gap: 4px;
+  }
+}
+@media (max-width: 600px) and (min-height: 740px) {
+  .game-surface .arena:is([data-player-count='5'], [data-player-count='6']) .seat-profile {
+    --rail-avatar: 20px;
+  }
+}
+@media (min-width: 601px) and (max-width: 1100px) {
+  .game-surface .arena[data-player-count] .seat-profile {
+    --rail-avatar: 26px;
+  }
+}
+@media (min-width: 901px) and (max-width: 1100px) and (orientation: portrait) and (min-height: 1100px) {
+  .game-surface .arena[data-player-count] .seat-profile {
+    --rail-avatar: 30px;
+  }
+}
+@media (min-width: 601px) and (max-width: 900px) and (min-height: 601px) {
+  .game-surface .arena[data-player-count] {
+    --public-card-width: 98px;
+    --rail-board-gap: 4px;
+  }
+}
+@media (min-width: 901px) and (max-width: 1100px) and (orientation: portrait) {
+  .game-surface .arena[data-player-count] {
+    --public-card-width: 82px;
+    --rail-board-gap: 4px;
+  }
+}
+.game-surface .arena[data-player-count] .seat .seat-profile {
+  column-gap: 4px;
+}
+@media (min-width: 901px) and (max-width: 1100px) and (orientation: portrait) and (min-height: 1100px) {
+  .game-surface .arena[data-player-count] .seat .seat-profile {
+    --seat-style-font-size: 17px;
+  }
+  .game-surface .arena[data-player-count] .seat-profile strong,
+  .game-surface .arena[data-player-count] .seat-profile .seat-stack {
+    font-size: 22px;
+  }
+}
+/* Only painted, interactive player parts receive hits. Transparent caption
+   slots may share corner space without covering another seat's inspection. */
+.game-surface .seat {
+  pointer-events: none;
+}
+.game-surface .seat-profile {
+  pointer-events: auto;
+}
+@media (min-width: 1101px), (min-width: 901px) and (orientation: landscape) {
+  .game-surface .arena[data-player-count] .seat .seat-profile {
+    row-gap: 3px;
+  }
+  .game-surface .arena[data-player-count] .seat-profile .seat-stack {
+    margin-top: 0;
+  }
+}
+
+.game-surface .arena[data-player-count] .seat .seat-profile .seat-style-label {
+  width: max-content;
+  max-width: 100%;
+  grid-column: 2 / -1;
+}
+@media (max-width: 900px), (max-width: 1100px) and (orientation: portrait) {
+  .game-surface:not(.has-live-hand):has(.compact-actions) {
+    height: calc(
+      var(--play-height) - var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px))
+    );
+  }
+}

@@ -52,6 +52,9 @@ Page({
     heroCards: [],
     reviewData: { steps: [] },
     detailProfile: null,
+    selectedProfile: 'balanced',
+    settingsScrollTop: 0,
+    comparisonOpen: false,
   },
   onLoad() {
     this.updateWindow();
@@ -69,43 +72,46 @@ Page({
           : view.board;
         const showdown = game ? showdownPresentation(game, view.profiles) : [];
         const presentedBoard = board.map(presentCard);
-        this.setData({
-          ...view,
-          seats: view.seats.map((seat) => ({ ...seat, cards: seat.cards.map(presentCard) })),
-          heroCards: view.heroCards.map(presentCard),
-          showdown,
-          showdownContext: `${showdown.length} 人参与摊牌${game?.pots.length > 1 ? ' · 主池与边池分别结算' : ''}`,
-          activePlayerCount: view.seats.length + 1,
-          logs: game
-            ? game.logs
-                .slice()
-                .reverse()
-                .map((entry, index) => {
-                  let text = typeof entry === 'string' ? entry : entry.text;
-                  for (const player of game.players.filter(
-                    (p) => p.id && p.botProfile !== 'balanced',
-                  )) {
-                    const profile = view.profiles.find((p) => p.id === player.botProfile);
-                    const name = player.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-                    if (profile)
-                      text = text.replace(
-                        new RegExp(`\\b${name}\\b(?![（(])`, 'g'),
-                        `${player.name}（${profile.short}）`,
-                      );
-                  }
-                  return { key: index, text, type: entry.type, hero: entry.player === 0 };
-                })
-            : view.logs,
-          board: presentedBoard,
-          canPracticeRunout: view.done && view.heroFolded && board.length < 5,
-          ...this.publicLayout(presentedBoard, {
+        this.setData(
+          {
             ...view,
             seats: view.seats.map((seat) => ({ ...seat, cards: seat.cards.map(presentCard) })),
-          }),
-          winrate: view.stats.hands ? Math.round((view.stats.wins / view.stats.hands) * 100) : 0,
-          countIndex: view.settings.playerCount - 5,
-          emotionIndex: ['off', 'subtle', 'lively'].indexOf(view.settings.emotionMode),
-        });
+            heroCards: view.heroCards.map(presentCard),
+            showdown,
+            showdownContext: `${showdown.length} 人参与摊牌${game?.pots.length > 1 ? ' · 主池与边池分别结算' : ''}`,
+            activePlayerCount: view.seats.length + 1,
+            logs: game
+              ? game.logs
+                  .slice()
+                  .reverse()
+                  .map((entry, index) => {
+                    let text = typeof entry === 'string' ? entry : entry.text;
+                    for (const player of game.players.filter(
+                      (p) => p.id && p.botProfile !== 'balanced',
+                    )) {
+                      const profile = view.profiles.find((p) => p.id === player.botProfile);
+                      const name = player.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                      if (profile)
+                        text = text.replace(
+                          new RegExp(`\\b${name}\\b(?![（(])`, 'g'),
+                          `${player.name}（${profile.short}）`,
+                        );
+                    }
+                    return { key: index, text, type: entry.type, hero: entry.player === 0 };
+                  })
+              : view.logs,
+            board: presentedBoard,
+            canPracticeRunout: view.done && view.heroFolded && board.length < 5,
+            ...this.publicLayout(presentedBoard, {
+              ...view,
+              seats: view.seats.map((seat) => ({ ...seat, cards: seat.cards.map(presentCard) })),
+            }),
+            winrate: view.stats.hands ? Math.round((view.stats.wins / view.stats.hands) * 100) : 0,
+            countIndex: view.settings.playerCount - 5,
+            emotionIndex: ['off', 'subtle', 'lively'].indexOf(view.settings.emotionMode),
+          },
+          () => this.tightenSeatRanks(),
+        );
       },
       storage: {
         getItem: (key) => wx.getStorageSync(key) || null,
@@ -116,15 +122,19 @@ Page({
     this._controller.start();
   },
   onShow() {
+    this._hidden = false;
     this._controller?.show();
     if (this.data.reviewOpen && this._controller)
       this.call('review', (reviewData) => this.updateReview(reviewData));
   },
   onHide() {
+    this._hidden = true;
+    this._rankEpoch = (this._rankEpoch || 0) + 1;
     this._controller?.hide();
     this.stopSounds();
   },
   onUnload() {
+    this._destroyed = true;
     this._controller?.destroy();
     this.stopSounds();
   },
@@ -163,8 +173,7 @@ Page({
     } catch {
       /* Menu measurement can be unavailable while an older client initializes. */
     }
-    // Reserve the live dock budget when computing the table. A compact dock
-    // shrinks the shell, never stretches the felt.
+    // Live hands keep their budget; settlement can reuse the collapsed dock space.
     this.setData({
       topInset,
       bottomInset,
@@ -184,14 +193,24 @@ Page({
     this.setData(this.publicLayout(this.data.board));
   },
   publicLayout(board = [], view = this.data) {
-    if (this.data.windowWidth <= 600 && view.seats?.length) {
+    if (view.seats?.length) {
+      const tableHeight = Math.max(
+        0,
+        this.data.windowHeight -
+          this.data.topInset -
+          this.data.bottomInset -
+          VIEWPORT_CHROME_HEIGHT +
+          (view.done ? 82 : 0),
+      );
       const fitted = phoneLayout({
         width: this.data.windowWidth,
-        height: this.data.tableHeight,
+        height: tableHeight,
         seats: view.seats,
+        displayHeight: this.data.windowHeight - this.data.topInset - this.data.bottomInset - 36,
       });
       return {
         ...fitted,
+        tableHeight,
         phoneLayout: true,
         phoneSeats: fitted.positioned,
         boardSlots: Array.from(
@@ -201,26 +220,34 @@ Page({
         ),
       };
     }
-    const largeTablet =
-      this.data.windowWidth >= 901 &&
-      this.data.windowWidth <= 1100 &&
-      this.data.windowHeight >= 1100 &&
-      this.data.windowHeight > this.data.windowWidth;
-    const cardWidth =
-      this.data.tableHeight < 430 ? 25 : largeTablet ? 82 : this.data.windowWidth > 600 ? 48 : 38;
-    const singleWidth = 5 * cardWidth + 16;
-    // Use the safe middle corridor, independent of deal/reveal state.
-    const boardTwoRows = singleWidth > this.data.arenaWidth * 0.6;
-    return {
-      phoneLayout: false,
-      boardTwoRows,
-      boardWidth: boardTwoRows ? 3 * cardWidth + 8 : singleWidth,
-      boardSlots: Array.from(
-        { length: 5 },
-        (_, i) =>
-          board[i] || { key: `empty-${i}`, empty: true, suit: ['♠', '♣', '♥', '♦', '♠'][i] },
-      ),
-    };
+    return {};
+  },
+  tightenSeatRanks() {
+    if (!wx.createSelectorQuery || this._hidden || this._destroyed) return;
+    const ticket = (this._rankEpoch = (this._rankEpoch || 0) + 1);
+    const query = wx.createSelectorQuery();
+    query.selectAll('.seat-action > text').fields({ rect: true, size: true, dataset: true });
+    query.selectAll('.seat-rank-slot > .rank').fields({ rect: true, size: true, dataset: true });
+    query.exec(([words, ranks]) => {
+      if (ticket !== this._rankEpoch || this._hidden || this._destroyed) return;
+      const bottoms = new Map();
+      for (const word of words || [])
+        bottoms.set(
+          Number(word.dataset.id),
+          Math.max(bottoms.get(Number(word.dataset.id)) || 0, word.top + word.height),
+        );
+      const scale = this.data.arenaScale || 1;
+      const patch = {};
+      for (const rank of ranks || []) {
+        const id = Number(rank.dataset.id),
+          index = this.data.phoneSeats.findIndex((seat) => seat.id === id);
+        if (index < 0 || !bottoms.has(id)) continue;
+        const current = this.data.phoneSeats[index].rankLift || 0;
+        const lift = Math.min(0, current + (bottoms.get(id) + 6 * scale - rank.top) / scale);
+        if (Math.abs(lift - current) > 0.1) patch[`phoneSeats[${index}].rankLift`] = lift;
+      }
+      if (Object.keys(patch).length) this.setData(patch);
+    });
   },
   call(method, ...args) {
     try {
@@ -284,10 +311,12 @@ Page({
     this.call('finishHand');
   },
   openSettings() {
-    this.setData({ settingsOpen: true });
+    this._settingsScroll = 0;
+    this.setData({ settingsOpen: true, settingsScrollTop: 0 });
   },
   closeSettings() {
-    this.setData({ settingsOpen: false, detailProfile: null });
+    this.closeSelect();
+    this.setData({ settingsOpen: false, detailProfile: null, selection: null });
   },
   changeSwitch(event) {
     this.call('setPreference', event.currentTarget.dataset.key, event.detail.value);
@@ -295,6 +324,81 @@ Page({
   togglePreference(event) {
     const key = event.currentTarget.dataset.key;
     this.call('setPreference', key, !this.data.settings[key]);
+  },
+  noop() {},
+  openSelect(event) {
+    const field = event.currentTarget.dataset.field;
+    const id = event.currentTarget.dataset.id;
+    const options =
+      field === 'count'
+        ? this.data.countOptions.map((n) => n + ' 人')
+        : field === 'emotion'
+          ? this.data.emotionOptions
+          : field === 'seat'
+            ? this.data.profiles.map((p) => p.short)
+            : this.data.opponentOptions;
+    const index =
+      field === 'count'
+        ? this.data.countIndex
+        : field === 'emotion'
+          ? this.data.emotionIndex
+          : field === 'seat'
+            ? this.data.seatSettings.find((s) => s.id === Number(id)).profileIndex
+            : this.data.opponentFilter;
+    const ticket = (this._selectEpoch = (this._selectEpoch || 0) + 1);
+    const open = (rect) => {
+      if (!rect || ticket !== this._selectEpoch || this._hidden || this._destroyed) return;
+      const rowHeight = 36;
+      const width = Math.min(220, Math.max(rect.width, field === 'seat' ? 180 : 110));
+      const height = Math.min(options.length * rowHeight + 8, 260);
+      const bottomLimit = this.data.windowHeight - this.data.bottomInset - 8;
+      const below = Math.max(0, bottomLimit - rect.bottom - 4);
+      const above = Math.max(0, rect.top - this.data.topInset - 36 - 8);
+      const upwards = below < Math.min(height, 120) && above > below;
+      const actualHeight = Math.max(rowHeight + 8, Math.min(height, upwards ? above : below));
+      this.setData({
+        selection: {
+          field,
+          id: id || 0,
+          options,
+          index,
+          width,
+          height: actualHeight,
+          left: Math.min(this.data.windowWidth - width - 8, Math.max(8, rect.right - width)),
+          top: upwards ? rect.top - actualHeight - 4 : rect.bottom + 4,
+        },
+      });
+    };
+    if (wx.createSelectorQuery) {
+      const selector = field === 'seat' ? `#select-seat-${id}` : `#select-${field}`;
+      wx.createSelectorQuery().select(selector).boundingClientRect(open).exec();
+    } else
+      open({
+        left: this.data.windowWidth - 126,
+        right: this.data.windowWidth - 16,
+        top: 260,
+        bottom: 304,
+        width: 110,
+      });
+  },
+  closeSelect() {
+    this._selectEpoch = (this._selectEpoch || 0) + 1;
+    this.setData({ selection: null });
+  },
+  chooseSelect(event) {
+    const { field, id } = this.data.selection;
+    const value = event.currentTarget.dataset.index;
+    this.closeSelect();
+    const next = { detail: { value }, currentTarget: { dataset: { id } } };
+    return this[
+      field === 'count'
+        ? 'changeCount'
+        : field === 'emotion'
+          ? 'changeEmotion'
+          : field === 'seat'
+            ? 'changeSeat'
+            : 'changeOpponentFilter'
+    ](next);
   },
   changeCount(event) {
     this.call('setPreference', 'playerCount', this.data.countOptions[Number(event.detail.value)]);
@@ -316,7 +420,11 @@ Page({
       this.data.profiles[Number(event.detail.value)].id,
     );
   },
+  peekSeat(event) {
+    this.call('peek', Number(event.currentTarget.dataset.id));
+  },
   viewProfile(event) {
+    this.setData({ selectedProfile: event.currentTarget.dataset.id });
     const profile = this.data.profiles.find((p) => p.id === event.currentTarget.dataset.id);
     this.setData({
       detailProfile: profile
@@ -350,6 +458,42 @@ Page({
           }
         : null,
     });
+    this.positionProfile(event.currentTarget.dataset.id);
+  },
+  positionProfile(id) {
+    if (!wx.createSelectorQuery) return;
+    const query = wx.createSelectorQuery();
+    query.select('.profile-grid').boundingClientRect();
+    query.select('.settings-modal .modal-scroll').boundingClientRect();
+    query.select(`#profile-${id}`).boundingClientRect();
+    query.exec(([grid, scroll, origin]) => {
+      if (!grid || !scroll || !origin || !this.data.detailProfile) return;
+      const height = Math.min(grid.height, scroll.height - 4);
+      const top = Math.max(scroll.top + 2, Math.min(grid.top, scroll.bottom - height - 2));
+      const x = Math.max(0, Math.min(grid.width, origin.left + origin.width / 2 - grid.left));
+      const y = Math.max(0, Math.min(height, origin.top + origin.height / 2 - top));
+      this.setData({
+        detailBounds: {
+          left: grid.left,
+          top,
+          width: grid.width,
+          height,
+          x,
+          y,
+          radius: Math.hypot(Math.max(x, grid.width - x), Math.max(y, height - y)),
+        },
+      });
+    });
+  },
+  settingsScrolled(event) {
+    this._settingsScroll = event.detail.scrollTop;
+    this.closeSelect();
+  },
+  togglePersonaNotice() {
+    this.setData({ noticeExpanded: !this.data.noticeExpanded });
+  },
+  toggleComparison() {
+    this.setData({ comparisonOpen: !this.data.comparisonOpen });
   },
   closeProfile() {
     this.setData({ detailProfile: null });

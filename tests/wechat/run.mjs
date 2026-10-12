@@ -79,6 +79,12 @@ try {
     await page.waitFor(750);
     if (name === 'settlement' || name === 'practice-runout' || /^settlement-[5-9]$/.test(name)) {
       const data = await page.data();
+      const shell = await page.$('.game-shell');
+      const shellBottom = (await shell.offset()).top + (await shell.size()).height;
+      assert.ok(
+        Math.abs(shellBottom - (data.windowHeight - data.bottomInset - 8)) <= 1,
+        'Settled table fills the first usable screen',
+      );
       const buttons = await page.$$('.settled-buttons button');
       assert.equal(buttons.length, 2 + Number(data.canRetry) + Number(data.canPracticeRunout));
       assert.ok(await page.$('.retry-button'), 'Replay remains visible alongside practice runout');
@@ -91,6 +97,44 @@ try {
         );
       }
       selectors = [...selectors, '.retry-button'];
+    }
+    if (name === 'table' || /^table-[5-9]$/.test(name)) {
+      const data = await page.data();
+      const areas = {};
+      for (const selector of [
+        '.seat',
+        '.seat-body',
+        '.avatar',
+        '.persona',
+        '.community',
+        '.board-row',
+        '.felt',
+        '.hero',
+      ]) {
+        const elements = await page.$$(selector);
+        areas[selector] = await Promise.all(
+          elements.map(async (element) => ({
+            ...(await element.offset()),
+            ...(await element.size()),
+          })),
+        );
+      }
+      const group = areas['.board-row'][0],
+        felt = areas['.felt'][0];
+      assert.ok(
+        Math.abs(group.top + group.height / 2 - felt.top - felt.height / 2) <= 1,
+        'Public cards stay centered on the table',
+      );
+      for (let i = 0; i < areas['.avatar'].length; i++) {
+        const avatar = areas['.avatar'][i],
+          tag = areas['.persona'][i];
+        assert.ok(
+          Math.abs((tag.left - avatar.left - avatar.width) / data.arenaScale - 4) <= 1,
+          'Persona tag stays at a fixed distance after the avatar',
+        );
+      }
+      report.tableAreas ??= {};
+      report.tableAreas[name] = areas;
     }
     if (name === 'review' || /^review-[5-9]$/.test(name))
       selectors = [...selectors, '.review-step'];
@@ -113,7 +157,15 @@ try {
     const game = await mini.evaluate(() => getCurrentPages().at(-1)._controller.getGame());
     await writeFile(
       path.join(output, name + '-state.json'),
-      JSON.stringify({ game, data }, null, 2),
+      JSON.stringify(
+        {
+          game,
+          data,
+          settingsScroll: await mini.evaluate(() => getCurrentPages().at(-1)._settingsScroll || 0),
+        },
+        null,
+        2,
+      ),
     );
     report.pages.push({
       name,
@@ -197,6 +249,39 @@ try {
     '.difficulty',
     '.settings-switch',
   ]);
+  const settingsSize = await (await page.$('.settings-modal')).size();
+  const settingsOffset = await (await page.$('.settings-modal')).offset();
+  const currentWindow = await page.data();
+  assert.ok(
+    settingsOffset.top + settingsSize.height >= currentWindow.windowHeight - 1,
+    'Settings background covers the bottom safe area',
+  );
+  assert.equal(await page.$('[data-field="language"]'), null);
+  await (await page.$('[data-field="count"]')).tap();
+  await wait(
+    async (data) => !!data.selection && (await page.$$('.selection-option')).length === 5,
+    5000,
+  );
+  assert.equal(
+    (await page.$$('.selection-option')).length,
+    5,
+    'All five player counts must be visible options',
+  );
+  const trigger = await page.$('[data-field="count"]');
+  const menu = await page.$('.selection-sheet');
+  const t = await trigger.offset(),
+    ts = await trigger.size(),
+    m = await menu.offset();
+  assert.ok(
+    Math.abs(m.top - t.top - ts.height - 4) <= 1,
+    'Count dropdown opens immediately below its trigger',
+  );
+  assert.equal(
+    await (await page.$('.selection-backdrop')).style('background-color'),
+    'rgba(0, 0, 0, 0)',
+  );
+  await mini.screenshot({ path: path.join(output, 'count-options.png') });
+  await invoke('closeSelect');
   const difficulty = await page.$('.difficulty');
   const difficultySize = await difficulty.size();
   const difficultyOffset = await difficulty.offset();
@@ -210,7 +295,87 @@ try {
   assert.equal((await page.data()).settings.sound, !sound);
   await (await page.$('[data-key="sound"]')).tap();
   await wait((data) => data.settings.sound === sound, 5000);
-  await invoke('viewProfile', { currentTarget: { dataset: { id: 'haxton' } } });
+  const settingsScroll = await page.$('.settings-modal .modal-scroll');
+  const scrollToSetting = async (selector, margin = 0) => {
+    const current = await mini.evaluate(() => getCurrentPages().at(-1)._settingsScroll || 0);
+    const element = await page.$(selector);
+    const offset = await element.offset(),
+      body = await settingsScroll.offset();
+    await settingsScroll.scrollTo(0, Math.max(0, current + offset.top - body.top - margin));
+    await page.waitFor(250);
+  };
+  await scrollToSetting('.profile-grid', 30);
+  const profileCards = await page.$$('.profile-card');
+  const boxes = await Promise.all(
+    profileCards.map(async (card) => ({ ...(await card.offset()), ...(await card.size()) })),
+  );
+  for (let i = 0; i < boxes.length; i++) {
+    const a = boxes[i];
+    for (const b of boxes.slice(i + 1))
+      assert.ok(
+        !(
+          a.left < b.left + b.width - 0.5 &&
+          a.left + a.width > b.left + 0.5 &&
+          a.top < b.top + b.height - 0.5 &&
+          a.top + a.height > b.top + 0.5
+        ),
+        'Profile cards must not overlap',
+      );
+    for (const selector of ['.profile-name', '.profile-tag']) {
+      const child = await profileCards[i].$(selector),
+        c = await child.offset(),
+        cs = await child.size();
+      assert.ok(
+        c.left >= a.left && c.left + cs.width <= a.left + a.width + 0.5,
+        'Profile text stays inside its own column',
+      );
+      if (
+        selector === '.profile-name' &&
+        ['Daniel Negreanu', 'Patrik Antonius', 'Stephen Chidwick'].includes(
+          (await page.data()).profiles[i].short,
+        )
+      )
+        assert.ok(cs.height >= 40, 'Long proper names wrap into multiple lines');
+    }
+  }
+  await capture('settings-profiles', [
+    '.settings-modal',
+    '.profile-grid',
+    '.profile-card',
+    '.profile-name',
+    '.profile-tag',
+  ]);
+  await scrollToSetting('.seat-roster', 36);
+  assert.equal((await page.$$('.seat-setting')).length, 8);
+  await capture('settings-roster', [
+    '.settings-modal',
+    '.seat-roster',
+    '.seat-setting',
+    '.roster-person',
+    '.roster-label',
+  ]);
+  await settingsScroll.scrollTo(0, 10000);
+  await page.waitFor(250);
+  assert.equal(await page.$('.settings-footer'), null);
+  const modal = await page.$('.settings-modal');
+  assert.equal(
+    (await modal.offset()).top,
+    0,
+    'Settings background covers system/capsule areas as well',
+  );
+  await capture('settings-bottom', ['.settings-modal', '.info-module', '.settings-save-row']);
+  await scrollToSetting('.profile-card[data-id="haxton"]', 80);
+  await (await page.$('.profile-card[data-id="haxton"]')).tap();
+  await wait((data) => !!data.detailProfile);
+  const detail = await page.$('.profile-detail');
+  report.motion = {
+    profileReveal: await detail.style('animation-name'),
+    profileDuration: await detail.style('animation-duration'),
+  };
+  assert.equal(report.motion.profileReveal, 'profile-reveal');
+  assert.equal(report.motion.profileDuration, '0.42s');
+  await mini.screenshot({ path: path.join(output, 'profile-reveal.png') });
+
   await capture('player', [
     '.profile-detail',
     '.detail-identity',

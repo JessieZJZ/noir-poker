@@ -339,3 +339,32 @@ test('fresh WeChat settings use five players and publish disabled controls befor
   assert.equal(snapshots.at(-1).settings.playerCount, 5);
   assert.equal(snapshots.at(-1).canAct, false);
 });
+
+test('Chinese table hints match Web prices and stale timers cannot clear a new decision hint', (t) => {
+  const { controller, timers, latest } = setup(t, { hints: true });
+  const game = reachHero(controller);
+  game.players[0].hole = [
+    { rank: 14, suit: 0, symbol: '♠', key: '0-14' },
+    { rank: 14, suit: 1, symbol: '♥', key: '1-14' },
+  ];
+  controller.setPreference('hints', false);
+  controller.setPreference('hints', true);
+  assert.equal(
+    latest().hintText,
+    '口袋对子有成三条的潜力；面对大额加注，先考虑跟注成本。 跟注占可争夺底池约 18%。',
+  );
+  const old = Array.from(timers.pending.values()).find((job) => job.delay === 24000).fn;
+  controller.hide();
+  assert.equal(latest().hintText, '');
+  controller.retry();
+  reachHero(controller);
+  controller.setPreference('hints', false);
+  controller.setPreference('hints', true);
+  const current = latest().hintText;
+  assert.ok(current);
+  old();
+  assert.equal(latest().hintText, current);
+  finish(controller.getGame(), 'fold');
+  controller.show();
+  assert.ok(latest().hintText.startsWith('复盘本手') || latest().hintText.startsWith('回看弃牌'));
+});

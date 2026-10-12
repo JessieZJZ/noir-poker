@@ -177,7 +177,14 @@ export async function buildWechat(output = wechatOutput) {
     for (const file of await fileList(path.join(staging, 'shared/platform')))
       if (!file.startsWith('wechat-')) await rm(path.join(staging, 'shared/platform', file));
     await mkdir(path.join(staging, 'shared/ui'), { recursive: true });
-    for (const name of ['bet-sizing.js', 'seat-geometry.js']) {
+    for (const name of [
+      'bet-sizing.js',
+      'seat-geometry.js',
+      'rail-layout.js',
+      'compact-table-layout.js',
+      'cards.js',
+      'card-rank-glyphs.js',
+    ]) {
       const compiled = await transform(await readFile(path.join(root, 'src/ui', name), 'utf8'), {
         format: 'cjs',
         target: 'es2019',

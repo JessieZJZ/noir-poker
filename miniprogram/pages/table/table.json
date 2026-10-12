@@ -1,5 +1,5 @@
 {
   "pageOrientation": "portrait",
-  "disableScroll": true,
+  "disableScroll": false,
   "usingComponents": {}
 }

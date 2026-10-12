@@ -1,3 +1,4 @@
+import { renderCardArtwork } from '../../src/ui/cards.js';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import vm from 'node:vm';
@@ -11,7 +12,8 @@ vm.runInNewContext(
   readFileSync(new URL('../../miniprogram/pages/table/presentation.js', import.meta.url), 'utf8'),
   {
     module,
-    require: () => ({ evaluate, rankText }),
+    require: (name) =>
+      name.endsWith('/cards.js') ? { renderCardArtwork } : { evaluate, rankText },
   },
 );
 const { presentCard, showdownPresentation } = module.exports;
@@ -31,7 +33,7 @@ test('WeChat uses the Web suit vectors instead of platform-dependent suit glyphs
   for (const card of deck.filter((card) => card.rank === 14)) {
     const shown = presentCard(card);
     const vector = decodeURIComponent(shown.suitStyle);
-    const shape = renderCard(card).match(/<path d="([^"]+)"/)[1];
+    const shape = [...renderCard(card).matchAll(/<path d="([^"]+)"/g)][1][1];
     assert.ok(vector.includes(shape));
     assert.equal(shown.rank, 'A');
     assert.equal(shown.suit, card.symbol);

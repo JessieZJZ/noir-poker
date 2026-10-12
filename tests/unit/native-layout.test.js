@@ -47,7 +47,7 @@ test('seat presentation rejects full backs, distant hero identity and cramped ac
     { backs: [1] },
     { heroGap: 28.01 },
     { heroGap: 17.99 },
-    { heroInset: 39.99 },
+    { heroInset: -0.01 },
     { heroFont: 14.99, heroNameFont: 14.99 },
     { heroNameFont: 14 },
     { actions: [{ font: 10.99, margin: 4 }] },

@@ -14,11 +14,20 @@ const rankIcon = (rank, small) => {
   const x = small ? 5 + glyph.advance * 0.008 : 10;
   return `<g class="card-rank" data-rank="${rank}" transform="translate(${x} ${small ? 18 : 19})"><path d="${glyph.path}" transform="scale(${small ? 0.016 : 0.015})" fill="currentColor"/></g>`;
 };
-export function renderCard(c, { small = false, delay = 0, animate = false, best = false } = {}) {
+export function renderCardArtwork(c, { small = false, compact = false } = {}) {
   const rank = rankText(c.rank);
-  const corner = rankIcon(rank, false);
+  const corner = compact
+    ? rankIcon(rank, false)
+        .replace(/translate\(10 19\)/, 'translate(13 21)')
+        .replace('scale(0.015)', 'scale(0.02)')
+    : rankIcon(rank, false);
   const art = small
     ? `<svg class="card-art" viewBox="0 0 36 50" aria-hidden="true">${rankIcon(rank, true)}${suitIcon(c.suit, 20, 33, 17)}</svg>`
-    : `<svg class="card-art" viewBox="0 0 64 92" aria-hidden="true"><rect x="2" y="2" width="60" height="88" rx="6" fill="none" stroke="#344d60" stroke-opacity=".10"/>${corner}${suitIcon(c.suit, 32, 46, 29)}<g transform="rotate(180 32 46)">${corner}</g></svg>`;
+    : `<svg class="card-art" viewBox="0 0 64 92" aria-hidden="true">${corner}${suitIcon(c.suit, 32, 46, 29)}<g transform="rotate(180 32 46)">${corner}</g></svg>`;
+  return art;
+}
+export function renderCard(c, { small = false, delay = 0, animate = false, best = false } = {}) {
+  const rank = rankText(c.rank);
+  const art = renderCardArtwork(c, { small });
   return `<div class="playing-card ${c.suit === 1 || c.suit === 3 ? 'red' : 'black'} ${small ? 'small' : ''} ${animate ? 'card-deal' : ''} ${best ? 'best-card' : ''}" style="--delay:${delay}ms" aria-label="${rank}${c.symbol}">${art}</div>`;
 }
