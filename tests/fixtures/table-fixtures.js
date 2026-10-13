@@ -1,6 +1,7 @@
 // Vite injects this file into the table controller ONLY in test mode.
 // It deliberately uses the controller's real rendering, actions and engine.
 import { deckOfCards, settle } from '../engine/poker.js';
+import { deceptiveRecords } from '../../tests/fixtures/deceptive-decisions.js';
 
 function fixtureGame(count = 6, heroFirst = false) {
   seatHandVisibility.clear();
@@ -441,6 +442,13 @@ window.qa = {
     }
     render();
     return publicState();
+  },
+  reviewDeception() {
+    this.reviewLine();
+    game.botDecisions = deceptiveRecords();
+    handReview.reset();
+    render();
+    return game.botDecisions.map((r) => ({ fixture: r.fixture, reason: r.trace.reason }));
   },
   state() {
     return {

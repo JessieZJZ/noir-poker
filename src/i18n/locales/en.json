@@ -1373,5 +1373,21 @@
   "直接补顺子／同花约 {0}，当前跟注价格需要约 {1}；单靠补牌不足以覆盖价格，还要有其他获胜或后续取值依据，尚未发生的诈唬收益不能保证。": "Direct straight/flush completion is about {0}, while the call price requires about {1}. Drawing alone does not cover the price; other ways to win or later value need support. Future bluff profits are not guaranteed.",
   "第 {0} 次公开行动": "Public action {0}",
   "次公开行动": "Public action",
-  "跟注 {0} 的支点是{1}，而非单靠{2}摊牌。当前底池 {3}、后手 {4}。": "The rationale for calling {0} is {1}, rather than showdown with {2} alone. Current pot {3}, chips behind {4}."
+  "跟注 {0} 的支点是{1}，而非单靠{2}摊牌。当前底池 {3}、后手 {4}。": "The rationale for calling {0} is {1}, rather than showdown with {2} alone. Current pot {3}, chips behind {4}.",
+  "2–7 低频诈唬": "Low-frequency 2–7 bluff",
+  "本桌没有 2–7 奖励；这条路线靠弃牌率，不会因为拿到 2–7 就自动有利。": "There is no 2–7 bounty at this table. This line relies on folds; holding 2–7 does not automatically make it profitable.",
+  "高牌阻断的脏牌再加注": "Trash-hand re-raise with a high-card blocker",
+  "后位脏牌开池偷盲": "Late-position trash-hand steal",
+  "强牌埋牌／诱导": "Slow-playing a strong hand / inducing action",
+  "它拿 2–7 在无人入池的后位小额开池，这是低频偷盲诈唬，主要靠后面的对手弃牌；底牌本身没有支撑强成牌的质量。": "It makes a small late-position open with 2–7 in an unopened pot. This is a rare blind-steal bluff relying on folds from players behind; the cards offer poor strong-hand potential.",
+  "它拿 2–7，在单挑、有位置且对手本轮已过牌的较干燥牌面试探下注，想让更好的弱牌退出；这次没有成牌或大听牌托底，也没有可靠阻断牌，遇到继续需要谨慎。": "It probes with 2–7 heads-up, in position, after the opponent checks on a relatively dry board, hoping better weak hands fold. There is no made hand, big draw or reliable blocker behind this bluff, so continuation warrants caution.",
+  "它拿{0}在较干燥牌面过牌埋牌，想隐藏强度、诱导对手下注；后手足够继续争夺底池，但对手也过牌时会少收价值。": "It checks {0} on a relatively dry board to hide strength and induce a bet. There are enough chips behind to keep playing, but a check back loses value.",
+  "它拿{0}只跟注埋牌，想让对手的弱牌和诈唬继续投入；当前价格较低、后手较深才支持这次诱导，危险牌面变化后仍要重新判断。": "It only calls with {0} to keep weaker hands and bluffs betting. A low price and deep stacks support the trap; dangerous board changes still need reassessment.",
+  "它用{0}平跟埋牌：面对单次小开池，后手较深，先隐藏强起手牌，让对手的弱牌继续留在底池；少一次再加注也会给后面的人便宜入池的机会。": "It flat-calls with {0} to conceal strength: against one small open with deep stacks, it keeps weaker hands in the pot. Skipping a re-raise also lets players behind enter cheaply.",
+  "它用{0}作脏牌开池：前面无人加注或跟入，后位的小尺度进攻主要想让后面的对手弃牌、直接拿走盲注；被跟住后，这手牌的成牌质量和踢脚都偏弱。": "It opens a trash hand, {0}: nobody has raised or limped, so a small late-position raise aims to win the blinds through folds. If called, this hand has weak made-hand potential and kickers.",
+  "它用{0}作脏牌再加注：面对一次小开池、没有跟入者，后位用 A 或 K 阻断部分强牌组合，尝试直接拿池；这种阻断不证明对手会弃牌，被继续后容易受更好踢脚压制。": "It re-raises a trash hand, {0}, against one small open with no callers. In late position, an A or K blocks some strong combinations as it tries to win the pot immediately. A blocker does not guarantee folds, and better kickers can dominate it when opponents continue.",
+  "它用{0}做 donk，在前一街进攻者行动前先下注施压；这次没有强成牌托底，主要依赖对手弃牌，不能把提前领打当成范围优势已被证明。": "It makes a donk lead with {0}, applying pressure before the previous-street aggressor acts. Without a strong made hand, it mainly relies on folds; leading first does not prove a range advantage.",
+  "它用{0}做 donk：在前一街进攻者行动前先领打，既争取弃牌，也保留被跟后改善的机会；听牌较多才支持主动施压，成牌候选仍不全是干净 outs。": "It makes a donk lead with {0}, betting before the previous-street aggressor acts. It seeks folds while retaining chances to improve if called. A substantial draw supports pressure, but not every completion is a clean out.",
+  "它用{0}做 donk：在前一街进攻者行动前主动领打，想让较弱成牌和听牌付费，避免对手随后过牌、免费拿下一张；主动领打也会暴露强度，面对再加注仍需判断。": "It makes a donk lead with {0}, betting before the previous-street aggressor acts to charge weaker hands and draws, and prevent a check back that gives a free card. Leading also reveals strength; a re-raise requires reassessment.",
+  "向前一街进攻者主动领打（donk）": "Leading into the previous-street aggressor (donk)"
 }

@@ -23,6 +23,11 @@ export const BOT_REASON_NAMES = {
   'pot-control': '中等权益手牌控制底池',
   'thin-value': '有位置河牌小尺度薄价值',
   'small-cbet': '干燥高牌翻牌小尺度持续下注',
+  'strong-trap': '强牌埋牌／诱导',
+  'dirty-open': '后位脏牌开池偷盲',
+  'dirty-reraise': '高牌阻断的脏牌再加注',
+  'donk-lead': '向前一街进攻者主动领打（donk）',
+  'seven-two-bluff': '2–7 低频诈唬',
 };
 export const BOT_CHECK_NAMES = {
   ...BOT_REASON_NAMES,
@@ -89,7 +94,27 @@ export function explainOpponent(record) {
     'thin-value': `它在河牌用${hand}小额取值，希望更弱的一对等成牌付费；更强牌加注时不能沿用原来的轻松跟注。`,
     'small-cbet':
       '它延续翻前主动性，在干燥高牌翻牌小额下注；这种牌面给开池范围提供施压候选，但不证明它一定有高牌成对或真实范围优势。',
+    'strong-trap':
+      v.street === 0
+        ? `它用${hand}平跟埋牌：面对单次小开池，后手较深，先隐藏强起手牌，让对手的弱牌继续留在底池；少一次再加注也会给后面的人便宜入池的机会。`
+        : record.action === 'check'
+          ? `它拿${hand}在较干燥牌面过牌埋牌，想隐藏强度、诱导对手下注；后手足够继续争夺底池，但对手也过牌时会少收价值。`
+          : `它拿${hand}只跟注埋牌，想让对手的弱牌和诈唬继续投入；当前价格较低、后手较深才支持这次诱导，危险牌面变化后仍要重新判断。`,
+    'dirty-open': `它用${hand}作脏牌开池：前面无人加注或跟入，后位的小尺度进攻主要想让后面的对手弃牌、直接拿走盲注；被跟住后，这手牌的成牌质量和踢脚都偏弱。`,
+    'dirty-reraise': `它用${hand}作脏牌再加注：面对一次小开池、没有跟入者，后位用 A 或 K 阻断部分强牌组合，尝试直接拿池；这种阻断不证明对手会弃牌，被继续后容易受更好踢脚压制。`,
+    'seven-two-bluff':
+      t.deception?.stage === 'opening'
+        ? '它拿 2–7 在无人入池的后位小额开池，这是低频偷盲诈唬，主要靠后面的对手弃牌；底牌本身没有支撑强成牌的质量。'
+        : '它拿 2–7，在单挑、有位置且对手本轮已过牌的较干燥牌面试探下注，想让更好的弱牌退出；这次没有成牌或大听牌托底，也没有可靠阻断牌，遇到继续需要谨慎。',
+    'donk-lead':
+      t.deception?.kind === 'semi-bluff'
+        ? `它用${drawLabel(draw)}做 donk：在前一街进攻者行动前先领打，既争取弃牌，也保留被跟后改善的机会；听牌较多才支持主动施压，成牌候选仍不全是干净 outs。`
+        : t.deception?.kind === 'value' && (c.made.score[0] >= 2 || c.handClass === 'overpair')
+          ? `它用${hand}做 donk：在前一街进攻者行动前主动领打，想让较弱成牌和听牌付费，避免对手随后过牌、免费拿下一张；主动领打也会暴露强度，面对再加注仍需判断。`
+          : `它用${hand}做 donk，在前一街进攻者行动前先下注施压；这次没有强成牌托底，主要依赖对手弃牌，不能把提前领打当成范围优势已被证明。`,
   };
+  if (t.reason === 'seven-two-bluff')
+    reasons.push('本桌没有 2–7 奖励；这条路线靠弃牌率，不会因为拿到 2–7 就自动有利。');
   if (t.exceptions.length && t.reason !== 'loose-exception')
     reasons.push(
       '它曾未通过检查，靠随机容错继续后才进入当前分支；最终的取值或诈唬标签不能消除之前的风险。',

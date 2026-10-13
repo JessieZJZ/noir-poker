@@ -449,6 +449,15 @@ export async function nativeScenarios(app) {
     return { details, saved, applied: applied.players[1].botProfile };
   });
   await check('raise-call-fold-and-settlement', async () => {
+    await app.click('#opponents-button');
+    await app.evaluate(() =>
+      document.querySelector('input[name="difficulty"][value="hard"]').click(),
+    );
+    await app.click('#opponents-dialog .close-dialog');
+    assert.equal(
+      await app.evaluate(() => document.querySelector('input[name="difficulty"]:checked').value),
+      'hard',
+    );
     const coverage = { raise: null, call: null, fold: null };
     let settled;
     let settlementBudget;
@@ -683,6 +692,7 @@ export async function nativeScenarios(app) {
     assert.equal(presentation.removed, 0);
     assert.ok(presentation.evidence >= 4);
     assert.equal(presentation.focusHidden, presentation.keep);
+    const observedDeceptiveMotives = [];
     if (app.comparePage) {
       await app.comparePage('review', [
         '#review-dialog',
@@ -709,10 +719,28 @@ export async function nativeScenarios(app) {
         '.review-tabs',
         '.review-opponent-heading',
       ]);
+      const count = await app.evaluate(
+        () => document.querySelectorAll('[data-opponent-index]').length,
+      );
+      for (let index = 0; index < Math.min(count, 24); index++) {
+        await app.click(`[data-opponent-index="${index}"]`);
+        const text = await app.evaluate(
+          () => document.querySelector('#review-opponent-detail .review-explanation p').textContent,
+        );
+        if (/埋牌|脏牌|donk|2–7/.test(text)) {
+          if (text.includes('donk')) assert.match(text, /前一街进攻者/);
+          if (text.includes('脏牌再加注')) assert.match(text, /阻断/);
+          if (text.includes('2–7')) assert.match(text, /诈唬|试探下注/);
+          observedDeceptiveMotives.push({ index, text });
+        }
+      }
+      // Real deals only. A low-frequency branch is recorded if observed;
+      // deterministic coverage belongs to external Web/DevTools fixtures.
+      if (observedDeceptiveMotives.length) await app.screenshot('observed-deceptive-motive');
     }
     await app.click('#review-dialog .close-dialog');
     assert.equal(await app.evaluate(() => document.querySelector('#review-dialog').open), false);
-    return { ...review, presentation };
+    return { ...review, presentation, observedDeceptiveMotives };
   });
   await check('retry-original-deal-and-next-hand', async () => {
     const original = await app.state();

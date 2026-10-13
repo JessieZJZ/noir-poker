@@ -1,6 +1,7 @@
 import research from '../data/player-research.json' with { type: 'json' };
 import { botStyleContext, resolveBotStyle } from './bot-style.js';
 import { fractionRaiseTo, legalRaiseTo } from './bet-sizing.js';
+import { deceptiveAction, isDonkLead } from './bot-deception.js';
 
 // These are training controls inferred from a few public examples, not measured
 // statistics of the named players. Emotions are a separate synthetic layer.
@@ -570,6 +571,14 @@ export function botBoardFeatures(hole, board, score) {
   const overpair = hole[0].rank === hole[1].rank && hole[0].rank > highBoard;
   return {
     wet,
+    madeCategory: score[0],
+    strongMade:
+      board.length >= 3 &&
+      ((score[0] >= 4 && ![6, 7].includes(score[0])) ||
+        ([2, 3, 6, 7].includes(score[0]) &&
+          hole.some(
+            (c) => c.rank === score[1] || ([2, 6].includes(score[0]) && c.rank === score[2]),
+          ))),
     draw: flushDraw || straightDraw,
     overpair,
     flushDraw,
@@ -729,6 +738,7 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
     affordableRangePassed = (cheapEntry || affordableOpen) && admitted,
     callTolerance = (callDown - 0.5) * 0.1 + context.publicAdjustment;
   let sizing = null,
+    deception = null,
     value = false,
     semiBluff = false,
     pureBluff = false,
@@ -807,6 +817,7 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
     (lateSteal ||
       lateReraise ||
       (view.street > 0 &&
+        !(view.difficulty !== 'easy' && high === 7 && low === 2) &&
         !view.playsBoard &&
         view.rivals <= 2 &&
         story &&
@@ -850,6 +861,7 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
       checks,
       exceptions,
       sizing,
+      deception,
       style: { controls: style, context, floatContinue, smallCbet, thinValue },
       value,
       semiBluff,
@@ -863,6 +875,15 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
       playsBoard: view.playsBoard,
     },
   });
+  const special = deceptiveAction(view, profile, roll);
+  if (special) {
+    sizing = special.sizing;
+    deception = special.deception;
+    value = special.kind === 'value';
+    semiBluff = special.kind === 'semi-bluff';
+    pureBluff = special.kind === 'bluff';
+    return finish(special.action, special.reason, special.amount);
+  }
   if (legal.toCall > 0) {
     if (view.street === 0 && !admitted && !premium && odds > 0.09) {
       if (roll('outside-range', 0.06 * width) > 0.06 * width)
@@ -947,6 +968,7 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
   )
     return finish('check', 'pot-control');
   if (
+    view.difficulty === 'easy' &&
     value &&
     view.street > 0 &&
     legal.canCheck &&
@@ -989,6 +1011,14 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
     };
     if (amount !== legal.maxRaiseTo || value || thinValue || semiBluff) {
       sizing.executed = true;
+      if (isDonkLead(view)) {
+        deception = {
+          strategy: 'donk-lead',
+          source: 'base-policy',
+          kind: value ? 'value' : semiBluff ? 'semi-bluff' : 'bluff',
+        };
+        return finish('raise', 'donk-lead', amount);
+      }
       return finish(
         'raise',
         thinValue

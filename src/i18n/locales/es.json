@@ -1373,5 +1373,21 @@
   "直接补顺子／同花约 {0}，当前跟注价格需要约 {1}；单靠补牌不足以覆盖价格，还要有其他获胜或后续取值依据，尚未发生的诈唬收益不能保证。": "Completar directamente escalera/color es aprox. {0}; el call requiere aprox. {1}. El proyecto solo no cubre el precio: hacen falta otras vías de victoria o valor posterior respaldadas. El beneficio de un farol futuro no está garantizado.",
   "第 {0} 次公开行动": "Acción pública {0}",
   "次公开行动": "Acción pública",
-  "跟注 {0} 的支点是{1}，而非单靠{2}摊牌。当前底池 {3}、后手 {4}。": "El call de {0} se apoya en {1}, no solo en showdown con {2}. Bote {3}, fichas restantes {4}."
+  "跟注 {0} 的支点是{1}，而非单靠{2}摊牌。当前底池 {3}、后手 {4}。": "El call de {0} se apoya en {1}, no solo en showdown con {2}. Bote {3}, fichas restantes {4}.",
+  "2–7 低频诈唬": "Farol poco frecuente con 2–7",
+  "本桌没有 2–7 奖励；这条路线靠弃牌率，不会因为拿到 2–7 就自动有利。": "Esta mesa no tiene premio por 2–7. La línea depende de los folds; llevar 2–7 no la hace rentable automáticamente.",
+  "高牌阻断的脏牌再加注": "Resubida con mano basura y bloqueador alto",
+  "后位脏牌开池偷盲": "Robo con mano basura en posición tardía",
+  "强牌埋牌／诱导": "Slowplay de una mano fuerte / inducir acción",
+  "它拿 2–7 在无人入池的后位小额开池，这是低频偷盲诈唬，主要靠后面的对手弃牌；底牌本身没有支撑强成牌的质量。": "Abre pequeño con 2–7 desde posición tardía en un bote sin abrir. Es un farol de robo de ciegas poco frecuente que depende de los folds de quienes faltan por actuar; las cartas tienen poco potencial para formar una mano fuerte.",
+  "它拿 2–7，在单挑、有位置且对手本轮已过牌的较干燥牌面试探下注，想让更好的弱牌退出；这次没有成牌或大听牌托底，也没有可靠阻断牌，遇到继续需要谨慎。": "Apuesta de prueba con 2–7 en heads-up, con posición, después del check rival en un board relativamente seco. Busca hacer foldear manos débiles mejores, pero no tiene mano hecha, proyecto grande ni bloqueador fiable; debe ser prudente si recibe acción.",
+  "它拿{0}在较干燥牌面过牌埋牌，想隐藏强度、诱导对手下注；后手足够继续争夺底池，但对手也过牌时会少收价值。": "Pasa con {0} en un board relativamente seco para ocultar fuerza e inducir una apuesta. Quedan fichas para seguir, pero pierde valor si el rival también pasa.",
+  "它拿{0}只跟注埋牌，想让对手的弱牌和诈唬继续投入；当前价格较低、后手较深才支持这次诱导，危险牌面变化后仍要重新判断。": "Solo paga con {0} para que las manos peores y los faroles del rival sigan apostando. El precio bajo y los stacks profundos permiten esta trampa; un cambio peligroso del board exige reevaluar.",
+  "它用{0}平跟埋牌：面对单次小开池，后手较深，先隐藏强起手牌，让对手的弱牌继续留在底池；少一次再加注也会给后面的人便宜入池的机会。": "Paga con {0} para ocultar fuerza: ante una sola apertura pequeña y con stacks profundos, busca mantener manos peores en el bote. Evitar la resubida también permite entrar barato a quienes quedan por actuar.",
+  "它用{0}作脏牌开池：前面无人加注或跟入，后位的小尺度进攻主要想让后面的对手弃牌、直接拿走盲注；被跟住后，这手牌的成牌质量和踢脚都偏弱。": "Abre una mano basura, {0}: nadie ha subido ni limpeado, así que una subida pequeña desde posición tardía busca ganar las ciegas provocando folds. Si recibe un call, la calidad de las manos que puede formar y sus kickers son débiles.",
+  "它用{0}作脏牌再加注：面对一次小开池、没有跟入者，后位用 A 或 K 阻断部分强牌组合，尝试直接拿池；这种阻断不证明对手会弃牌，被继续后容易受更好踢脚压制。": "Resube una mano basura, {0}, ante una sola apertura pequeña sin callers. Desde posición tardía, un A o K bloquea algunas combinaciones fuertes para intentar ganar el bote ya. El bloqueador no garantiza folds; si el rival continúa, puede dominarle con un kicker mejor.",
+  "它用{0}做 donk，在前一街进攻者行动前先下注施压；这次没有强成牌托底，主要依赖对手弃牌，不能把提前领打当成范围优势已被证明。": "Hace una apuesta donk con {0}, presionando antes de que actúe el agresor de la calle anterior. Sin una mano hecha fuerte, depende sobre todo de los folds; apostar primero no demuestra una ventaja de rango.",
+  "它用{0}做 donk：在前一街进攻者行动前先领打，既争取弃牌，也保留被跟后改善的机会；听牌较多才支持主动施压，成牌候选仍不全是干净 outs。": "Hace una apuesta donk con {0}, antes de que actúe el agresor de la calle anterior. Busca folds y conserva opciones de mejorar si le pagan. Un proyecto importante respalda la presión, pero no todas las cartas que lo completan son outs limpios.",
+  "它用{0}做 donk：在前一街进攻者行动前主动领打，想让较弱成牌和听牌付费，避免对手随后过牌、免费拿下一张；主动领打也会暴露强度，面对再加注仍需判断。": "Hace una apuesta donk con {0}, antes del agresor de la calle anterior, para cobrar a manos hechas peores y proyectos, y evitar un check detrás que regale otra carta. Apostar primero también revela fuerza; una resubida exige reevaluar.",
+  "向前一街进攻者主动领打（donk）": "Apuesta de cara al agresor de la calle anterior (donk)"
 }

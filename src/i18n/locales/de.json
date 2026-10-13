@@ -1373,5 +1373,21 @@
   "直接补顺子／同花约 {0}，当前跟注价格需要约 {1}；单靠补牌不足以覆盖价格，还要有其他获胜或后续取值依据，尚未发生的诈唬收益不能保证。": "Direkte Straßen-/Flush-Vervollständigung etwa {0}, erforderlicher Anteil für den Call etwa {1}. Der Draw allein deckt den Preis nicht; andere Gewinnwege oder spätere Value benötigen Gründe. Künftige Bluff-Gewinne sind nicht garantiert.",
   "第 {0} 次公开行动": "Öffentliche Aktion {0}",
   "次公开行动": "Öffentliche Aktion",
-  "跟注 {0} 的支点是{1}，而非单靠{2}摊牌。当前底池 {3}、后手 {4}。": "Der Call von {0} stützt sich auf {1}, nicht allein auf Showdown mit {2}. Pot {3}, Restchips {4}."
+  "跟注 {0} 的支点是{1}，而非单靠{2}摊牌。当前底池 {3}、后手 {4}。": "Der Call von {0} stützt sich auf {1}, nicht allein auf Showdown mit {2}. Pot {3}, Restchips {4}.",
+  "2–7 低频诈唬": "Seltener Bluff mit 2–7",
+  "本桌没有 2–7 奖励；这条路线靠弃牌率，不会因为拿到 2–7 就自动有利。": "An diesem Tisch gibt es keine Prämie für 2–7. Diese Linie lebt von Folds; 2–7 macht sie nicht automatisch profitabel.",
+  "高牌阻断的脏牌再加注": "Re-Raise mit schwacher Hand und hohem Blocker",
+  "后位脏牌开池偷盲": "Steal mit schwacher Hand in später Position",
+  "强牌埋牌／诱导": "Slowplay mit starker Hand / Aktioninduzieren",
+  "它拿 2–7 在无人入池的后位小额开池，这是低频偷盲诈唬，主要靠后面的对手弃牌；底牌本身没有支撑强成牌的质量。": "Der Gegner eröffnet klein mit 2–7 in später Position in einem ungeöffneten Pot. Dieser seltene Steal-Bluff setzt auf Folds der Spieler dahinter; die Karten bieten wenig Potenzial für starke Hände.",
+  "它拿 2–7，在单挑、有位置且对手本轮已过牌的较干燥牌面试探下注，想让更好的弱牌退出；这次没有成牌或大听牌托底，也没有可靠阻断牌，遇到继续需要谨慎。": "Der Gegner probt mit 2–7 heads-up in Position, nachdem der Gegner auf einem relativ trockenen Board gecheckt hat. Bessere schwache Hände sollen folden. Es gibt weder eine gemachte Hand noch einen großen Draw oder verlässlichen Blocker; bei weiterer Aktion ist Vorsicht nötig.",
+  "它拿{0}在较干燥牌面过牌埋牌，想隐藏强度、诱导对手下注；后手足够继续争夺底池，但对手也过牌时会少收价值。": "Mit {0} checkt der Gegner auf einem relativ trockenen Board, um Stärke zu verbergen und eine Bet zuinduzieren. Es bleiben genug Chips zum Weiterspielen; ein Check behind kostet jedoch Value.",
+  "它拿{0}只跟注埋牌，想让对手的弱牌和诈唬继续投入；当前价格较低、后手较深才支持这次诱导，危险牌面变化后仍要重新判断。": "Mit {0} callt der Gegner nur, damit schwächere Hände und Bluffs weiter setzen. Der günstige Preis und tiefe Stacks ermöglichen die Falle; gefährliche Boardänderungen erfordern eine neue Bewertung.",
+  "它用{0}平跟埋牌：面对单次小开池，后手较深，先隐藏强起手牌，让对手的弱牌继续留在底池；少一次再加注也会给后面的人便宜入池的机会。": "Mit {0} callt der Gegner nur, um Stärke zu verbergen: Gegen einen einzelnen kleinen Open-Raise bei tiefen Stacks sollen schwächere Hände im Pot bleiben. Ohne Re-Raise können Spieler dahinter ebenfalls günstig einsteigen.",
+  "它用{0}作脏牌开池：前面无人加注或跟入，后位的小尺度进攻主要想让后面的对手弃牌、直接拿走盲注；被跟住后，这手牌的成牌质量和踢脚都偏弱。": "Der Gegner eröffnet mit der schwachen Hand {0}: Niemand hat erhöht oder gelimpt, daher soll ein kleiner Raise aus später Position durch Folds die Blinds gewinnen. Nach einem Call sind die Chancen auf starke Hände und die Kicker schwach.",
+  "它用{0}作脏牌再加注：面对一次小开池、没有跟入者，后位用 A 或 K 阻断部分强牌组合，尝试直接拿池；这种阻断不证明对手会弃牌，被继续后容易受更好踢脚压制。": "Der Gegner re-raist die schwache Hand {0} gegen einen einzelnen kleinen Open-Raise ohne Caller. In später Position blockiert ein A oder K einige starke Kombinationen, um den Pot sofort zu gewinnen. Ein Blocker garantiert keine Folds; bei weiterer Aktion droht Dominanz durch bessere Kicker.",
+  "它用{0}做 donk，在前一街进攻者行动前先下注施压；这次没有强成牌托底，主要依赖对手弃牌，不能把提前领打当成范围优势已被证明。": "Der Gegner spielt mit {0} einen donk Lead und setzt vor dem Aggressor der vorigen Street Druck aus. Ohne starke gemachte Hand baut er vor allem auf Folds; ein Lead beweist keinen Rangevorteil.",
+  "它用{0}做 donk：在前一街进攻者行动前先领打，既争取弃牌，也保留被跟后改善的机会；听牌较多才支持主动施压，成牌候选仍不全是干净 outs。": "Der Gegner spielt mit {0} einen donk Lead vor dem Aggressor der vorigen Street. Er will Folds erzielen und nach einem Call noch verbessern können. Ein großer Draw stützt den Druck, doch nicht jede Verbesserungskarte ist ein sauberes Out.",
+  "它用{0}做 donk：在前一街进攻者行动前主动领打，想让较弱成牌和听牌付费，避免对手随后过牌、免费拿下一张；主动领打也会暴露强度，面对再加注仍需判断。": "Der Gegner spielt mit {0} einen donk Lead vor dem Aggressor der vorigen Street, um schwächere gemachte Hände und Draws zahlen zu lassen und einen Check behind mit Gratis-Karte zu verhindern. Der Lead zeigt auch Stärke; ein Re-Raise erfordert eine neue Bewertung.",
+  "向前一街进攻者主动领打（donk）": "Lead gegen den Aggressor der vorigen Street (donk)"
 }

@@ -878,5 +878,11 @@
     "method": "Manually authored contextual review translations in all nine non-Chinese locales; Traditional Chinese via OpenCC. Draft machine output replaced before delivery.",
     "linguisticReview": "pending",
     "messageCount": 72
+  },
+  "deceptiveReview": {
+    "date": "2026-10-13",
+    "messageCount": 16,
+    "method": "Manually authored translations; Traditional Chinese converted with OpenCC. Placeholder and runtime localization tests cover all supported locales.",
+    "linguisticReview": "Independent native-language review pending."
   }
 }

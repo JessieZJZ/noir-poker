@@ -95,6 +95,7 @@ docs/                       架构、规则、复盘依据与发布说明
 
 - 改规则或筹码结算：先读 [规则与测试](docs/rules.md)，修改 `src/engine/poker.js`，增加能复现边界的测试。
 - 改复盘：读 [复盘计算与限制](docs/review.md)，分别修改上下文、权益模型或决策分支，避免通过最终输赢反推决策。
+- 标准与进阶的强牌埋牌、脏牌开池／再加注、donk 和 2–7 训练特性，见 [对手混合打法与回归](docs/opponent-deception.md)。
 - 改体验：改 `src/ui/` 和 `src/styles/`，验证 320/390/768/1280 宽度及 6/9 人桌。
 - 改机器人策略、情绪或研究依据：读 [机器人风格与情绪模拟](docs/bots.md)，调整 `src/engine/bot-profiles.js` / `src/engine/bot-style.js` 与 `src/data/player-research.json`，保持公开信息边界与重打回滚，逐条来源与测量见 [牌手研究记录](docs/player-research.md)。
 - 理解行动到渲染的路径：读 [架构说明](docs/architecture.md)。
@@ -141,6 +142,8 @@ npm run wechat:verify        # 当前源码、全部头像、文件指纹与包�
 npm run wechat:check         # 官方开源 WXML/WXSS 编译器检查
 # 已开启 DevTools 官方自动化时，单独检查复盘、黄色建议与牌手姓名筛选：
 node tests/wechat/review-coaching.mjs ws://127.0.0.1:9461 .artifacts/wechat-review
+# 单独检查新增混合打法的九种实际记录；自动化端口按本机实际值替换：
+node tests/wechat/deception-review.mjs ws://127.0.0.1:9471 .artifacts/wechat-deception
 npm run platforms:sync      # 同步微信、iOS、Android 最新源码资源
 npm run mobile:test:setup -- ios  # 隔离安装 Appium 与平台驱动
 npm run mobile:test:ios      # 安装实际模拟器 App 并交互验证

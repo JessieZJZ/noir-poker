@@ -1373,5 +1373,21 @@
   "直接补顺子／同花约 {0}，当前跟注价格需要约 {1}；单靠补牌不足以覆盖价格，还要有其他获胜或后续取值依据，尚未发生的诈唬收益不能保证。": "Compléter directement quinte/couleur est d’environ {0} ; le prix du call exige environ {1}. Le tirage seul ne couvre pas le prix : autres victoires ou value future doivent être justifiées. Le profit d’un bluff futur n’est pas garanti.",
   "第 {0} 次公开行动": "Action publique {0}",
   "次公开行动": "Action publique",
-  "跟注 {0} 的支点是{1}，而非单靠{2}摊牌。当前底池 {3}、后手 {4}。": "Le call de {0} repose sur {1}, pas uniquement sur le showdown avec {2}. Pot {3}, jetons restants {4}."
+  "跟注 {0} 的支点是{1}，而非单靠{2}摊牌。当前底池 {3}、后手 {4}。": "Le call de {0} repose sur {1}, pas uniquement sur le showdown avec {2}. Pot {3}, jetons restants {4}.",
+  "2–7 低频诈唬": "Bluff rare avec 2–7",
+  "本桌没有 2–7 奖励；这条路线靠弃牌率，不会因为拿到 2–7 就自动有利。": "Cette table n’offre aucune prime pour 2–7. Cette ligne dépend des folds ; avoir 2–7 ne la rend pas automatiquement profitable.",
+  "高牌阻断的脏牌再加注": "Surrelance avec main poubelle et bloqueur haut",
+  "后位脏牌开池偷盲": "Vol avec une main poubelle en position tardive",
+  "强牌埋牌／诱导": "Slowplay d’une main forte / incitation",
+  "它拿 2–7 在无人入池的后位小额开池，这是低频偷盲诈唬，主要靠后面的对手弃牌；底牌本身没有支撑强成牌的质量。": "Il ouvre petit avec 2–7 en position tardive dans un pot non ouvert. Ce rare bluff de vol de blindes dépend des folds des joueurs derrière ; les cartes ont peu de potentiel pour former une main forte.",
+  "它拿 2–7，在单挑、有位置且对手本轮已过牌的较干燥牌面试探下注，想让更好的弱牌退出；这次没有成牌或大听牌托底，也没有可靠阻断牌，遇到继续需要谨慎。": "Il mise en probe avec 2–7 en tête-à-tête, en position, après le check adverse sur un board assez sec. Il vise les mains faibles meilleures, mais n’a ni main faite, ni gros tirage, ni bloqueur fiable ; il doit rester prudent face à une continuation.",
+  "它拿{0}在较干燥牌面过牌埋牌，想隐藏强度、诱导对手下注；后手足够继续争夺底池，但对手也过牌时会少收价值。": "Il checke {0} sur un board assez sec pour cacher sa force et provoquer une mise. Il reste assez de jetons pour continuer, mais un check adverse fait perdre de la valeur.",
+  "它拿{0}只跟注埋牌，想让对手的弱牌和诈唬继续投入；当前价格较低、后手较深才支持这次诱导，危险牌面变化后仍要重新判断。": "Il se contente de payer avec {0} pour laisser les mains faibles et les bluffs adverses miser encore. Le prix bas et les tapis profonds permettent ce piège ; un changement dangereux du board impose une réévaluation.",
+  "它用{0}平跟埋牌：面对单次小开池，后手较深，先隐藏强起手牌，让对手的弱牌继续留在底池；少一次再加注也会给后面的人便宜入池的机会。": "Il paie avec {0} pour cacher sa force : face à une seule petite ouverture et avec des tapis profonds, il garde les mains faibles dans le pot. Renoncer à surrelancer laisse aussi entrer les joueurs derrière à moindre coût.",
+  "它用{0}作脏牌开池：前面无人加注或跟入，后位的小尺度进攻主要想让后面的对手弃牌、直接拿走盲注；被跟住后，这手牌的成牌质量和踢脚都偏弱。": "Il ouvre une main poubelle, {0} : personne n’a relancé ou limpé, donc une petite relance en position tardive vise à voler les blindes en faisant coucher les joueurs derrière. S’il est payé, le potentiel de main forte et les kickers sont faibles.",
+  "它用{0}作脏牌再加注：面对一次小开池、没有跟入者，后位用 A 或 K 阻断部分强牌组合，尝试直接拿池；这种阻断不证明对手会弃牌，被继续后容易受更好踢脚压制。": "Il surrelance une main poubelle, {0}, face à une seule petite ouverture sans payeur. En position tardive, un A ou K bloque certaines combinaisons fortes pour tenter de prendre le pot immédiatement. Le bloqueur ne garantit aucun fold ; s’il reçoit de l’action, un meilleur kicker peut le dominer.",
+  "它用{0}做 donk，在前一街进攻者行动前先下注施压；这次没有强成牌托底，主要依赖对手弃牌，不能把提前领打当成范围优势已被证明。": "Il fait une mise donk avec {0}, mettant la pression avant l’agresseur de la rue précédente. Sans main faite forte, il dépend surtout des folds ; miser en premier ne prouve pas un avantage de range.",
+  "它用{0}做 donk：在前一街进攻者行动前先领打，既争取弃牌，也保留被跟后改善的机会；听牌较多才支持主动施压，成牌候选仍不全是干净 outs。": "Il fait une mise donk avec {0}, avant l’action de l’agresseur de la rue précédente. Il cherche des folds tout en gardant des possibilités d’amélioration s’il est payé. Un gros tirage justifie la pression, mais toutes les cartes de complétion ne sont pas des outs propres.",
+  "它用{0}做 donk：在前一街进攻者行动前主动领打，想让较弱成牌和听牌付费，避免对手随后过牌、免费拿下一张；主动领打也会暴露强度，面对再加注仍需判断。": "Il fait une mise donk avec {0}, avant l’agresseur de la rue précédente, pour faire payer les mains faites plus faibles et les tirages, et éviter un check derrière qui donne une carte gratuite. Cette mise révèle aussi sa force ; une surrelance exige une réévaluation.",
+  "向前一街进攻者主动领打（donk）": "Mise avant l’agresseur de la rue précédente (donk)"
 }
