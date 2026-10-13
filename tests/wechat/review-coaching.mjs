@@ -38,6 +38,17 @@ let savedBotDecisions;
 try {
   report.build = JSON.parse(fs.readFileSync(path.join(root, '.artifacts/wechat/build-info.json')));
   await invoke('closeReview');
+  // Settings apply to the next hand; never try to replace an active deal.
+  while (!(await page.data()).done) {
+    const phase = await mini.evaluate(() => {
+      const g = getCurrentPages().at(-1)._controller.getGame();
+      return { phase: g.phase, actor: g.actor };
+    });
+    if (phase.phase === 'playing' && phase.actor === 0)
+      await invoke('act', { currentTarget: { dataset: { action: 'fold' } } });
+    await invoke('finishHand');
+    await wait((data) => data.done || data.actor === 0);
+  }
   const profiles = (await page.data()).profiles;
   await invoke('changeSeat', {
     currentTarget: { dataset: { id: 1 } },

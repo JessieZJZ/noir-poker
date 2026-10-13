@@ -73,7 +73,8 @@ try {
     await wait((data) => data.reviewIndex === i);
     const step = (await page.data()).selectedReviewStep;
     assert.match(step.reason, expected[i]);
-    assert.match(await (await page.$('.review-coaching text')).text(), expected[i]);
+    const paragraphs = await page.$$('.review-coaching text');
+    assert.match((await Promise.all(paragraphs.map((p) => p.text()))).join(''), expected[i]);
     assert.ok(step.metrics.length <= 2);
     assert.doesNotMatch(step.metrics.join(''), /随机范围估计|抽样\s*\d+\s*次|价格门槛/);
     assert.equal(await page.$('.review-choice'), null);
