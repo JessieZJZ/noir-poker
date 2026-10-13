@@ -3,6 +3,22 @@ import { readTableLayout, assertTableLayout } from './layout.mjs';
 import { readCardRankState, readNativeRankInk, assertStableRankInk } from './card-ranks.mjs';
 const documentLoginMarker = (text) => /sign in|log in|登录账号/i.test(text);
 
+export async function waitForPendingOpponent(app) {
+  // A real opponent can answer before Android's next HTTP state read. Follow
+  // the normal UI to the next decision instead of waiting on a hero turn.
+  return app.waitFor(
+    async () => {
+      const game = await app.state();
+      if (game.phase === 'playing' && game.actor && game.actor !== '你') return game;
+      if (game.phase === 'playing' && game.legal.enabled) await app.click('#call-button');
+      else if (game.phase === 'done') await app.click('#next-button');
+      return null;
+    },
+    15000,
+    'Background test needs a pending opponent action',
+  );
+}
+
 // Keep the installed-app completion assertion and its existing deadline. The
 // observations distinguish a working but slow review from a failed WebView or
 // an analysis that stopped progressing; they do not authorize a partial pass.
@@ -251,7 +267,12 @@ export async function nativeScenarios(app) {
     for (const count of [6, 8]) {
       await app.click('#opponents-button');
       await app.select('#player-count', String(count));
-      await app.click('#mix-opponents');
+      if (
+        await app.evaluate(
+          () => document.querySelector('#mix-opponents').getAttribute('aria-pressed') !== 'true',
+        )
+      )
+        await app.click('#mix-opponents');
       await app.click('#opponents-dialog .close-dialog');
       await app.click('#reset-button');
       await app.click('#confirm-reset');
@@ -280,13 +301,155 @@ export async function nativeScenarios(app) {
         'Chips must sit below the style row',
       );
       assert.ok(
-        presentation.names.filter((tag) => tag.full).length >= Math.ceil((count - 1) / 2),
-        'Most named styles must fit in one line in the installed app',
+        await app.evaluate(() =>
+          [...document.querySelectorAll('.seat-style-label')].every(
+            (tag) =>
+              tag.textContent.trim() &&
+              tag.title &&
+              getComputedStyle(tag).textOverflow === 'ellipsis',
+          ),
+        ),
+        'Named style labels preserve their complete accessible identity',
       );
       await app.screenshot(`crown-${count}-style-row`);
       tables.push({ count, presentation, layout });
     }
     return { tables };
+  });
+  await check('native-turn-haptics-bridge', async () => {
+    await app.evaluate(() => {
+      const available = window.Capacitor.isPluginAvailable('Haptics');
+      if (!available) throw Error('Native Haptics plugin is missing');
+      window.__noirHapticProbe = {
+        available,
+        style: 'LIGHT',
+        status: 'pending',
+        scope: 'Installed native bridge call; physical feel requires a device with a vibrator',
+      };
+      // execute/sync does not await a returned Promise in WKWebView. Observe
+      // the actual native result in a later command instead of serializing it.
+      window.Capacitor.nativePromise('Haptics', 'impact', { style: 'LIGHT' }).then(
+        () => (window.__noirHapticProbe.status = 'resolved'),
+        (error) => {
+          window.__noirHapticProbe.status = 'rejected';
+          window.__noirHapticProbe.error = String(error);
+        },
+      );
+    });
+    await app.waitFor(
+      () => app.evaluate(() => window.__noirHapticProbe.status !== 'pending'),
+      10000,
+      'Native Haptics bridge must complete',
+    );
+    const bridge = await app.evaluate(() => window.__noirHapticProbe);
+    assert.equal(bridge.available, true);
+    assert.equal(bridge.status, 'resolved', bridge.error);
+    return bridge;
+  });
+  await check('combined-feedback-preference', async () => {
+    await app.evaluate(() => {
+      const nativePromise = window.Capacitor.nativePromise;
+      const start = AudioBufferSourceNode.prototype.start;
+      window.__feedbackProbe = { haptics: 0, audio: 0 };
+      window.__restoreFeedbackProbe = () => {
+        window.Capacitor.nativePromise = nativePromise;
+        AudioBufferSourceNode.prototype.start = start;
+      };
+      window.Capacitor.nativePromise = function (plugin, method, ...args) {
+        if (plugin === 'Haptics' && method === 'impact') window.__feedbackProbe.haptics++;
+        return nativePromise.call(this, plugin, method, ...args);
+      };
+      AudioBufferSourceNode.prototype.start = function (...args) {
+        window.__feedbackProbe.audio++;
+        return start.apply(this, args);
+      };
+    });
+    const resetToHero = async () => {
+      await app.click('#reset-button');
+      await app.click('#confirm-reset');
+      await app.waitFor(
+        () => app.evaluate(() => !document.querySelector('#call-button').disabled),
+        20000,
+        'The reset hand must reach the real hero turn',
+      );
+    };
+    try {
+      await app.click('#opponents-button');
+      assert.equal(
+        await app.evaluate(() => document.querySelector('#sound-label').textContent.trim()),
+        '音效与振动',
+      );
+      assert.equal(
+        await app.evaluate(() =>
+          document.querySelector('#sound-button').getAttribute('aria-checked'),
+        ),
+        'true',
+      );
+      await app.click('#sound-button');
+      await app.click('#opponents-dialog .close-dialog');
+      await app.evaluate(() => {
+        window.__feedbackProbe = { haptics: 0, audio: 0 };
+      });
+      await resetToHero();
+      const muted = await app.evaluate(() => window.__feedbackProbe);
+      assert.deepEqual(muted, { haptics: 0, audio: 0 });
+      await app.click('#opponents-button');
+      await app.click('#sound-button');
+      await app.click('#opponents-dialog .close-dialog');
+      await app.evaluate(() => {
+        window.__feedbackProbe = { haptics: 0, audio: 0 };
+      });
+      await resetToHero();
+      const enabled = await app.evaluate(() => window.__feedbackProbe);
+      assert.ok(
+        enabled.haptics > 0 && enabled.audio > 0,
+        'Unmuting must restore native turn feedback and WebView sound dispatch',
+      );
+      return {
+        muted,
+        enabled,
+        scope: 'Actual installed-app dispatch; physical hearing and vibration feel are separate',
+      };
+    } finally {
+      await app.evaluate(() => window.__restoreFeedbackProbe?.()).catch(() => {});
+    }
+  });
+  await check('mixed-toggle-and-visual-guide', async () => {
+    await app.click('#opponents-button');
+    if (
+      await app.evaluate(
+        () => document.querySelector('#mix-opponents').getAttribute('aria-pressed') === 'true',
+      )
+    )
+      await app.click('#mix-opponents');
+    await app.select('[data-bot-seat="1"]', 'tan');
+    await app.select('[data-bot-seat="2"]', 'balanced');
+    await app.click('#mix-opponents');
+    assert.equal(
+      await app.evaluate(() =>
+        document.querySelector('#mix-opponents').getAttribute('aria-pressed'),
+      ),
+      'true',
+    );
+    await app.select('[data-bot-seat="3"]', 'ivey');
+    await app.click('#mix-opponents');
+    const assignments = await app.evaluate(() =>
+      [1, 2, 3].map((id) => document.querySelector(`[data-bot-seat="${id}"]`).value),
+    );
+    assert.deepEqual(assignments, ['tan', 'balanced', 'ivey']);
+    await app.click('#opponents-dialog .close-dialog');
+    await app.click('#rules-button');
+    const guide = await app.evaluate(() => ({
+      hands: document.querySelectorAll('.hand-example').length,
+      cards: document.querySelectorAll('.guide-card').length,
+      positions: document.querySelector('.position-glossary').textContent,
+    }));
+    assert.equal(guide.hands, 9);
+    assert.equal(guide.cards, 45);
+    assert.ok(guide.positions.includes('HJ · Hijack') && guide.positions.includes('CO · Cutoff'));
+    await app.screenshot('visual-beginner-guide');
+    await app.click('#rules-dialog .icon-button.close-dialog');
+    return { assignments, guide };
   });
   await check('settings-autosave-and-local-portraits', async () => {
     await app.click('#opponents-button');
@@ -585,7 +748,7 @@ export async function nativeScenarios(app) {
     );
     const buttons = layout.settledButtons;
     assert.ok(
-      buttons.every((button) => Math.abs(button.top - buttons[0].top) <= 1 && button.height >= 44),
+      buttons.every((button) => Math.abs(button.top - buttons[0].top) <= 1 && button.height >= 38),
     );
     assert.ok(layout.dock.height <= 65 + layout.bottomInset, 'Settlement must use the compact row');
     const crownInspection = [];
@@ -793,15 +956,7 @@ export async function nativeScenarios(app) {
         });
       });
     });
-    await app.click('#call-button');
-    await app.waitFor(
-      async () => {
-        const game = await app.state();
-        return game.phase === 'playing' && game.actor && game.actor !== '你' ? game : null;
-      },
-      15000,
-      'Background test needs a pending opponent action',
-    );
+    await waitForPendingOpponent(app);
     const nativeBackground = await app.background();
     await app.sleep(6000);
     const stillBackgrounded = await app.nativeState();
@@ -860,6 +1015,14 @@ export async function nativeScenarios(app) {
         await app.waitHero();
         await app.evaluate(() => window.scrollTo(0, 0));
         assertTableLayout(await app.evaluate(readTableLayout));
+        const liveGeometry = await app.evaluate(() => ({
+          tableHeight: document.querySelector('.table-viewport').getBoundingClientRect().height,
+          buttons: [...document.querySelectorAll('.action-panel .action')].map(
+            (el) => el.getBoundingClientRect().height,
+          ),
+        }));
+        assert.equal(liveGeometry.buttons.length, 3);
+        for (const height of liveGeometry.buttons) assert.equal(height, 38);
         comparisons.push(
           await app.comparePage(`table-${count}`, [
             '.table-viewport',
@@ -878,6 +1041,15 @@ export async function nativeScenarios(app) {
           }
         }
         await app.waitFor(async () => (await app.state()).phase === 'done', 90000);
+        const settledGeometry = await app.evaluate(() => ({
+          tableHeight: document.querySelector('.table-viewport').getBoundingClientRect().height,
+          buttons: [...document.querySelectorAll('.settled-actions > button:not([hidden])')].map(
+            (el) => el.getBoundingClientRect().height,
+          ),
+        }));
+        assert.equal(settledGeometry.tableHeight, liveGeometry.tableHeight);
+        assert.ok(settledGeometry.buttons.length >= 3);
+        for (const height of settledGeometry.buttons) assert.equal(height, 38);
         comparisons.push(
           await app.comparePage(`settlement-${count}`, [
             '.table-viewport',

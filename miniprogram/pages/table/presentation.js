@@ -121,4 +121,37 @@ function showdownPresentation(game, profiles) {
       };
     });
 }
-module.exports = { presentCard, showdownPresentation };
+// Patch stable list items at their leaves so unrelated WXML nodes retain motion
+// and measured caption offsets. Structural changes replace only that list.
+function presentationPatch(previous, next) {
+  const patch = {};
+  function visit(before, after, key) {
+    if (JSON.stringify(before) === JSON.stringify(after)) return;
+    if (
+      Array.isArray(before) &&
+      Array.isArray(after) &&
+      before.length === after.length &&
+      before.every(
+        (item, i) =>
+          (item?.dealKey ?? item?.id ?? item?.key) ===
+          (after[i]?.dealKey ?? after[i]?.id ?? after[i]?.key),
+      )
+    ) {
+      after.forEach((item, i) => visit(before[i], item, `${key}[${i}]`));
+    } else if (
+      before &&
+      after &&
+      !Array.isArray(before) &&
+      !Array.isArray(after) &&
+      typeof before === 'object' &&
+      typeof after === 'object' &&
+      Object.keys(before).every((k) => Object.hasOwn(after, k))
+    ) {
+      for (const [field, value] of Object.entries(after))
+        visit(before[field], value, `${key}.${field}`);
+    } else patch[key] = after;
+  }
+  for (const [key, value] of Object.entries(next)) visit(previous[key], value, key);
+  return patch;
+}
+module.exports = { presentCard, showdownPresentation, presentationPatch };

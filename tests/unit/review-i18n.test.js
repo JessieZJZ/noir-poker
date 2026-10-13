@@ -79,6 +79,23 @@ test('contextual draw rationale and bot motivation localize without losing cards
       ...explanation.metrics,
     );
   }
+
+  const defense = explainOpponent({
+    action: 'call',
+    amount: 75,
+    trace: {
+      ...botSnapshot(),
+      reason: 'small-reraise-continue',
+      affordableRangePassed: true,
+      affordableThreeBet: true,
+    },
+  });
+  texts.push(
+    defense.title,
+    ...(defense.paragraphs || [defense.detail]),
+    ...defense.reasons,
+    ...defense.metrics,
+  );
   for (const locale of SUPPORTED_LOCALES) {
     await loadLocale(locale);
     for (const text of texts) {
@@ -86,8 +103,51 @@ test('contextual draw rationale and bot motivation localize without losing cards
       assert.doesNotMatch(result, /\{\d+\}/, `${locale}: unresolved placeholder`);
       if (!['zh-CN', 'zh-TW', 'ja'].includes(locale))
         assert.doesNotMatch(result, /\p{Script=Han}/u, `${locale}: ${result}`);
-      for (const amount of ['1,250', '2,650', '4,600', '5,000', '4,650', '48.1%', '8', '6 / J'])
+      for (const amount of [
+        '1,250',
+        '2,650',
+        '4,600',
+        '5,000',
+        '4,650',
+        '48.1%',
+        '75',
+        '525',
+        '14.3%',
+        '8',
+        '6 / J',
+      ])
         if (text.includes(amount)) assert.ok(result.includes(amount), `${locale}: lost ${amount}`);
     }
   }
 });
+
+function botSnapshot() {
+  return {
+    view: {
+      hole: deckOfCards().filter(
+        (card) => (card.rank === 13 && card.suit === 0) || (card.rank === 12 && card.suit === 1),
+      ),
+      board: [],
+      street: 0,
+      position: 'UTG+1',
+      stack: 4875,
+      pot: 450,
+      bet: 125,
+      currentBet: 200,
+      contestable: 525,
+      rivals: 1,
+      history: [
+        { id: 1, street: 0, action: 'raise', amount: 125 },
+        { id: 0, street: 0, action: 'raise', amount: 200 },
+      ],
+      legal: { callAmount: 75, toCall: 75 },
+    },
+    exceptions: [],
+    equity: 0.05,
+    odds: 75 / 525,
+    trials: 28,
+    mode: 'off',
+    mood: { kind: 'steady' },
+    callTolerance: 0,
+  };
+}

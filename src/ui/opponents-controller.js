@@ -7,6 +7,8 @@ import {
   getBotProfile,
   sanitizeBotSettings,
   defaultBotSettings,
+  assignBotSeat,
+  toggleMixedLineup,
 } from '../engine/bot-profiles.js';
 import { portraitContent, portraitCredit, preparePortraits } from './portraits.js';
 import { playerResearchMarkup, playerSourcesMarkup } from './player-research.js';
@@ -145,6 +147,9 @@ export function createOpponentsController({ getGame, getCount, getSettings, onSa
     }
   }
   function roster() {
+    const mix = document.querySelector('#mix-opponents');
+    mix.classList.toggle('selected', draft.mixed);
+    mix.setAttribute('aria-pressed', String(draft.mixed));
     const count = getCount();
     const names = ['Mia', 'Alex', 'River', 'Kai', 'Luna', 'Theo', 'Jade', 'Leo'];
     setLocalizedHTML(
@@ -218,7 +223,7 @@ export function createOpponentsController({ getGame, getCount, getSettings, onSa
   resizeObserver.observe(stage);
   document.querySelector('#opponent-roster').onchange = (event) => {
     if (!event.target.matches('[data-bot-seat]')) return;
-    draft.assignments[event.target.dataset.botSeat] = event.target.value;
+    draft = assignBotSeat(draft, Number(event.target.dataset.botSeat), event.target.value);
     const avatar = event.target.closest('.opponent-row').querySelector('.opponent-portrait');
     setLocalizedHTML(
       avatar,
@@ -237,17 +242,7 @@ export function createOpponentsController({ getGame, getCount, getSettings, onSa
   };
   document.querySelector('#mix-opponents').onclick = () => {
     closeDetail({ focus: false, restoreScroll: false });
-    draft.assignments = {
-      1: 'tan',
-      2: 'st',
-      3: 'zang',
-      4: 'peter',
-      5: 'abao',
-      6: 'viktor',
-      7: 'jungleman',
-      8: 'dwan',
-    };
-    selected = 'tan';
+    draft = toggleMixedLineup(draft, getCount());
     markSelection();
     detail();
     roster();

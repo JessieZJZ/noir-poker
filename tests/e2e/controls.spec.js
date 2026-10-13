@@ -1,109 +1,15 @@
+import { soundSamples, SOUND_SAMPLE_RATE } from '../../src/ui/sound-cues.js';
 import { test, expect } from '@playwright/test';
 import { toggleSound } from './settings-helpers.js';
 
-test('hero and bot checks play two short table taps and respect mute', async ({ page }) => {
-  const errors = [];
-  page.on('pageerror', (error) => errors.push(error.message));
-  await page.addInitScript(() => {
-    window.taps = { bodies: [], attacks: [], gains: [] };
-    const parameter = (values = []) => ({
-      setValueAtTime(value) {
-        values.push(value);
-      },
-      exponentialRampToValueAtTime(value) {
-        values.push(value);
-      },
-    });
-    const source = (events, extra = {}) => {
-      const event = { frequencies: [], ...extra };
-      return {
-        frequency: parameter(event.frequencies),
-        connect() {},
-        start(at) {
-          event.at = at;
-          event.type = this.type;
-          if (this.buffer) event.samples = this.buffer.getChannelData(0).length;
-          events.push(event);
-        },
-        stop(at) {
-          event.end = at;
-        },
-      };
-    };
-    window.AudioContext = class {
-      state = 'suspended';
-      currentTime = 10;
-      sampleRate = 48000;
-      destination = {};
-      resume() {
-        this.state = 'running';
-        return Promise.resolve();
-      }
-      createBuffer(channels, length) {
-        const samples = new Float32Array(length);
-        return { getChannelData: () => samples };
-      }
-      createBufferSource() {
-        return source(window.taps.attacks);
-      }
-      createBiquadFilter() {
-        return { frequency: parameter(), Q: parameter(), connect() {} };
-      }
-      createOscillator() {
-        return source(window.taps.bodies);
-      }
-      createGain() {
-        const values = [];
-        window.taps.gains.push(values);
-        return { gain: parameter(values), connect() {} };
-      }
-    };
-  });
-  await page.goto('/');
-  await page.waitForFunction(() => !!window.qa);
-  await page.clock.install({ time: new Date('2026-01-01T00:00:00Z') });
-  await page.clock.pauseAt(new Date('2026-01-01T00:00:01Z'));
-  await page.keyboard.press('Tab');
-  await page.evaluate(() => window.qa.bettingTurn(1, 1));
-  await expect(page.locator('#call-button')).toHaveText('过牌');
-  await page.locator('#call-button').click();
-  await page.evaluate(() => window.qa.stop());
-  const taps = await page.evaluate(() => window.taps);
-  expect(taps.attacks).toHaveLength(2);
-  expect(taps.attacks.map((tap) => tap.at)).toEqual([10, 10.14]);
-  expect(taps.attacks.map((tap) => tap.samples)).toEqual([1200, 1200]);
-  expect(taps.bodies.map((tap) => tap.type)).toEqual(['triangle', 'triangle']);
-  expect(taps.bodies.map((tap) => tap.frequencies)).toEqual([
-    [165, 80],
-    [165, 80],
-  ]);
-  expect(taps.bodies.map((tap) => tap.end - tap.at)).toEqual([
-    expect.closeTo(0.08),
-    expect.closeTo(0.08),
-  ]);
-  expect(Math.max(...taps.gains[3])).toBeLessThan(Math.max(...taps.gains[1]));
-  const waiting = await page.evaluate(() => window.qa.botCheckTurn());
-  await page.clock.runFor(waiting.delayMs + 1);
-  await page.evaluate(() => window.qa.stop());
-  expect(
-    (await page.evaluate(() => window.noir.getState())).players[waiting.actor].lastAction.text,
-  ).toBe('过牌');
-  expect(await page.evaluate(() => window.taps.attacks.length)).toBe(4);
-  await toggleSound(page);
-  await page.evaluate(() => window.qa.bettingTurn(1, 1));
-  await page.locator('#call-button').click();
-  await page.evaluate(() => window.qa.stop());
-  const muted = await page.evaluate(() => window.qa.botCheckTurn());
-  await page.clock.runFor(muted.delayMs + 1);
-  await page.evaluate(() => window.qa.stop());
-  expect(await page.evaluate(() => window.taps.attacks.length)).toBe(4);
-  expect(await page.evaluate(() => window.taps.bodies.length)).toBe(4);
-  expect(errors).toEqual([]);
-});
-
-test('hero and bot folds have a distinct falling sound and obey the sound toggle', async ({
-  page,
-}) => {
+function pcmEvent(kind) {
+  const samples = soundSamples(kind);
+  let fingerprint = 2166136261;
+  for (const value of samples)
+    fingerprint = Math.imul(fingerprint ^ Math.round(value * 32768), 16777619) >>> 0;
+  return { length: samples.length, sampleRate: SOUND_SAMPLE_RATE, fingerprint };
+}
+async function installPCMProbe(page) {
   await page.addInitScript(() => {
     window.audioEvents = [];
     window.AudioContext = class {
@@ -114,28 +20,25 @@ test('hero and bot folds have a distinct falling sound and obey the sound toggle
         this.state = 'running';
         return Promise.resolve();
       }
-      createOscillator() {
-        const event = { type: '', frequencies: [] };
+      createBuffer(channels, length, sampleRate) {
+        const samples = new Float32Array(length);
+        return { sampleRate, getChannelData: () => samples };
+      }
+      createBufferSource() {
         return {
-          type: 'sine',
-          frequency: {
-            setValueAtTime(value) {
-              event.frequencies.push(value);
-            },
-            exponentialRampToValueAtTime(value) {
-              event.frequencies.push(value);
-            },
-          },
           connect() {},
-          stop() {},
           start() {
-            event.type = this.type;
-            window.audioEvents.push(event);
+            const samples = this.buffer.getChannelData(0);
+            let fingerprint = 2166136261;
+            for (const value of samples)
+              fingerprint = Math.imul(fingerprint ^ Math.round(value * 32768), 16777619) >>> 0;
+            window.audioEvents.push({
+              length: samples.length,
+              sampleRate: this.buffer.sampleRate,
+              fingerprint,
+            });
           },
         };
-      }
-      createGain() {
-        return { gain: { setValueAtTime() {}, exponentialRampToValueAtTime() {} }, connect() {} };
       }
     };
   });
@@ -144,28 +47,47 @@ test('hero and bot folds have a distinct falling sound and obey the sound toggle
   await page.clock.install({ time: new Date('2026-01-01T00:00:00Z') });
   await page.clock.pauseAt(new Date('2026-01-01T00:00:01Z'));
   await page.keyboard.press('Tab');
+}
+test('hero and bot checks use the shared two-tap PCM and respect mute', async ({ page }) => {
+  await installPCMProbe(page);
+  await page.evaluate(() => window.qa.bettingTurn(1, 1));
+  await page.locator('#call-button').click();
+  await page.evaluate(() => window.qa.stop());
+  expect(await page.evaluate(() => window.audioEvents)).toEqual([pcmEvent('check')]);
+  const waiting = await page.evaluate(() => window.qa.botCheckTurn());
+  await page.clock.runFor(waiting.delayMs + 1);
+  await page.evaluate(() => window.qa.stop());
+  expect(await page.evaluate(() => window.audioEvents)).toEqual([
+    pcmEvent('check'),
+    pcmEvent('check'),
+  ]);
+  await toggleSound(page);
+  await page.evaluate(() => window.qa.bettingTurn(1, 1));
+  await page.locator('#call-button').click();
+  await page.evaluate(() => window.qa.stop());
+  const muted = await page.evaluate(() => window.qa.botCheckTurn());
+  await page.clock.runFor(muted.delayMs + 1);
+  await page.evaluate(() => window.qa.stop());
+  expect(await page.evaluate(() => window.audioEvents.length)).toBe(2);
+});
+test('hero and bot folds and paid calls use identical shared PCM and obey sound toggles', async ({
+  page,
+}) => {
+  await installPCMProbe(page);
   await page.evaluate(() => window.qa.heroTurn(6));
   await page.locator('#fold-button').click();
   await page.evaluate(() => window.qa.stop());
-  const fold = { type: 'triangle', frequencies: [260, 75] };
-  expect(await page.evaluate(() => window.audioEvents)).toEqual([fold]);
+  expect(await page.evaluate(() => window.audioEvents)).toEqual([pcmEvent('fold')]);
   await page.evaluate(() => window.qa.heroTurn(6));
   await page.locator('#call-button').click();
   await page.evaluate(() => window.qa.stop());
-  expect(await page.evaluate(() => window.audioEvents.at(-1))).toEqual({
-    type: 'sine',
-    frequencies: [310],
-  });
   const waiting = await page.evaluate(() => window.qa.botFoldTurn());
   await page.clock.runFor(waiting.delayMs + 1);
   await page.evaluate(() => window.qa.stop());
-  expect((await page.evaluate(() => window.noir.getState())).players[waiting.actor].folded).toBe(
-    true,
-  );
   expect(await page.evaluate(() => window.audioEvents)).toEqual([
-    fold,
-    { type: 'sine', frequencies: [310] },
-    fold,
+    pcmEvent('fold'),
+    pcmEvent('call'),
+    pcmEvent('fold'),
   ]);
   await toggleSound(page);
   await page.evaluate(() => window.qa.heroTurn(6));
@@ -267,7 +189,7 @@ test('saved sound choices restore, while missing or unavailable storage defaults
   await expect(page.locator('#sound-button')).toHaveAttribute('aria-pressed', 'false');
 });
 
-test('sound preloads the amplified graph, waits for a real gesture and handles failed audio resume', async ({
+test('sound prepares the shared PCM player, waits for a real gesture and handles failed audio resume', async ({
   page,
 }) => {
   const errors = [];
@@ -288,9 +210,17 @@ test('sound preloads the amplified graph, waits for a real gesture and handles f
         this.state = 'running';
         return Promise.resolve();
       }
-      createOscillator() {
-        window.audioProbe.notes++;
-        return { frequency: parameter(), connect() {}, start() {}, stop() {} };
+      createBuffer(channels, length) {
+        const samples = new Float32Array(length);
+        return { getChannelData: () => samples };
+      }
+      createBufferSource() {
+        return {
+          connect() {},
+          start() {
+            window.audioProbe.notes++;
+          },
+        };
       }
       createGain() {
         const gain = parameter();
@@ -319,7 +249,7 @@ test('sound preloads the amplified graph, waits for a real gesture and handles f
     resumes: 0,
     notes: 0,
   });
-  expect(await page.evaluate(() => window.audioProbe.gains[0].value)).toBe(8);
+  expect(await page.evaluate(() => window.audioProbe.gains.length)).toBe(0);
   await page.keyboard.press('Tab');
   expect(await page.evaluate(() => window.audioProbe)).toMatchObject({
     created: 1,
@@ -329,14 +259,14 @@ test('sound preloads the amplified graph, waits for a real gesture and handles f
   await page.evaluate(() => window.qa.foldWin(6));
   await page.locator('#next-button').click();
   await page.evaluate(() => window.qa.stop());
-  expect(await page.evaluate(() => window.audioProbe.notes)).toBe(2);
+  expect(await page.evaluate(() => window.audioProbe.notes)).toBe(1);
   await toggleSound(page);
   await page.evaluate(() => window.qa.foldWin(6));
   await page.locator('#next-button').click();
   await page.evaluate(() => window.qa.stop());
-  expect(await page.evaluate(() => window.audioProbe.notes)).toBe(2);
+  expect(await page.evaluate(() => window.audioProbe.notes)).toBe(1);
   await toggleSound(page);
-  await expect.poll(() => page.evaluate(() => window.audioProbe.notes)).toBe(4);
+  await expect.poll(() => page.evaluate(() => window.audioProbe.notes)).toBe(2);
   await page.reload();
   await page.waitForFunction(() => !!window.qa);
   await page.evaluate(() => {

@@ -411,6 +411,30 @@ window.qa = {
     render();
     return publicState();
   },
+  reviewSmallReraise() {
+    fixtureGame(9);
+    game.dealer = 6;
+    game.difficulty = 'normal';
+    startHand(game);
+    const deck = deckOfCards();
+    game.players[1].hole = deck.filter(
+      (card) => (card.rank === 13 && card.suit === 0) || (card.rank === 12 && card.suit === 1),
+    );
+    const rest = deck.filter((card) => !game.players[1].hole.some((hole) => hole.key === card.key));
+    for (const player of game.players.filter((player) => player.id !== 1))
+      player.hole = rest.splice(0, 2);
+    game.deck = rest;
+    act(game, 1, 'raise', 125);
+    while (game.actor !== 0) act(game, game.actor, 'fold');
+    act(game, 0, 'raise', 200);
+    while (game.phase !== 'done') {
+      if (game.phase === 'between') advanceStreet(game);
+      else if (game.actor === 0) act(game, 0, legalActions(game).canCheck ? 'check' : 'call');
+      else playBotTurn(game, () => 0.9);
+    }
+    render();
+    return publicState();
+  },
   reviewLine() {
     fixtureGame(6);
     game.dealer = 5;

@@ -226,7 +226,8 @@
 .web-phone-layout .mini-card {
   width: 32px;
   height: 46px;
-  transform: translateY(10px);
+  --hole-inset: 10px;
+  transform: translateY(var(--hole-inset));
 }
 .web-phone-layout .seat-body {
   box-sizing: border-box;

@@ -200,3 +200,30 @@ test('deceptive motives survive live switching of all locales without changing t
   }
   expect(await page.evaluate(() => window.qa.snapshot())).toEqual(before);
 });
+
+test('small three-bet defense keeps its bounded explanation in the simplified opponent panel', async ({
+  page,
+}) => {
+  await page.goto('/');
+  await page.waitForFunction(() => window.qa);
+  await page.evaluate(() => window.qa.reviewSmallReraise());
+  await page.locator('#review-hand-button').click();
+  await page.locator('#review-opponents-tab').click();
+  await expect(page.locator('#review-opponent-detail .review-explanation')).toContainText(
+    '小尺度 3-bet 防守',
+  );
+  await expect(page.locator('#review-opponent-detail .review-explanation')).toContainText(
+    '不证明跟注盈利',
+  );
+  const metrics = await page.locator('.opponent-metrics li').count();
+  expect(metrics).toBeGreaterThanOrEqual(1);
+  expect(metrics).toBeLessThanOrEqual(2);
+  await expect(page.locator('#review-opponent-detail .review-explanation')).toContainText('75');
+  await expect(page.locator('.opponent-metrics')).toContainText('赔率');
+  await expect(page.locator('.opponent-metrics')).toContainText('75');
+  await expect(page.locator('.opponent-metrics')).toContainText('425');
+  await expect(page.locator('.opponent-metrics')).toContainText('17.6%');
+  await expect(page.locator('.opponent-metrics')).not.toContainText(
+    /随机范围估计|抽样\s*\d+\s*次|价格门槛/,
+  );
+});

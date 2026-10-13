@@ -21,13 +21,14 @@ export function mobileMetadata(env = process.env) {
   return { appId: config.appId, appName: config.appName, version, buildNumber };
 }
 
-export function directoryDigest(directory) {
+export function directoryDigest(directory, excluded = []) {
   const hash = createHash('sha256');
   function visit(current, prefix = '') {
     for (const entry of readdirSync(current, { withFileTypes: true }).sort((a, b) =>
       a.name.localeCompare(b.name),
     )) {
       const relative = prefix + entry.name;
+      if (excluded.includes(relative)) continue;
       if (entry.isDirectory()) visit(path.join(current, entry.name), relative + '/');
       else if (
         entry.isFile() &&

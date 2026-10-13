@@ -1,3 +1,4 @@
+import { assignNamedLineup } from './settings-helpers.js';
 import { test, expect } from '@playwright/test';
 import { openSettings, closeSettings } from './settings-helpers.js';
 
@@ -10,7 +11,7 @@ test.beforeEach(async ({ page }) => {
     return document.fonts.ready;
   });
   await openSettings(page);
-  await page.locator('#mix-opponents').click();
+  await assignNamedLineup(page);
   await closeSettings(page);
 });
 
@@ -171,7 +172,7 @@ test('mobile 5–9 player tables retain their first-screen space as the hand pro
             controlsVisible: ['#raise-button', '#fold-button', '#call-button'].every((selector) => {
               const button = document.querySelector(selector).getBoundingClientRect();
               return (
-                button.top >= 0 && button.bottom <= innerHeight - 34 + 1 && button.height >= 44
+                button.top >= 0 && button.bottom <= innerHeight - 34 + 1 && button.height >= 38
               );
             }),
             pageNotMoved: scrollY === 0,

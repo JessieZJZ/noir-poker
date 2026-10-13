@@ -1,10 +1,10 @@
 const { createWechatController } = require('../../shared/platform/wechat-controller.js');
 const { phoneLayout } = require('./phone-layout.js');
-const { presentCard, showdownPresentation } = require('./presentation.js');
+const { presentCard, showdownPresentation, presentationPatch } = require('./presentation.js');
 const PORTRAIT_CREDITS = require('../../assets/portraits/credits.js');
 const { completeBoardForPractice, rankText } = require('../../shared/engine/poker.js');
-// Capsule 36 + Web nav 60 + top gap 8 + header 61 + live dock 146 + end gap 8 + border 2.
-const VIEWPORT_CHROME_HEIGHT = 321;
+// Capsule 36 + nav 48 + gap 8 + header 48 + live dock 134 + end gap 8 + border 2.
+const VIEWPORT_CHROME_HEIGHT = 284;
 const PROFILE_AXES = [
   ['vpip', '入池宽度'],
   ['aggression', '进攻倾向'],
@@ -59,6 +59,7 @@ Page({
     homeLocked: false,
     homeOffset: 0,
     finishing: false,
+    flyingChips: [],
   },
   onLoad() {
     this.updateWindow();
@@ -72,22 +73,51 @@ Page({
         const board = view.board;
         const showdown = game ? showdownPresentation(game, view.profiles) : [];
         const dealKey = `${view.hand}:${view.replay}`;
+        const changedDeal = dealKey !== this._dealKey;
+        if (changedDeal) {
+          this._motionEpoch = (this._motionEpoch || 0) + 1;
+          this.cancelCardMotion();
+          this._seatFaces = new Map();
+        }
+        if (changedDeal || !view.settings.sound)
+          for (const audio of this._audio || []) audio.stop();
         const previousCards = dealKey === this._dealKey ? this._boardCount || 0 : 0;
         this._dealKey = dealKey;
         const presentedBoard = board.map((card, index) => ({
           ...presentCard(card),
-          arriving: index >= previousCards,
-          dealDelay: Math.max(0, index - previousCards) * 140,
+          arriving: index >= previousCards || (!changedDeal && this.data.board[index]?.arriving),
+          dealDelay:
+            index >= previousCards
+              ? (index - previousCards) * 140
+              : this.data.board[index]?.dealDelay || 0,
         }));
         this._boardCount = board.length;
-        const presentedSeats = view.seats.map((seat) => ({
-          ...seat,
-          cards: seat.cards.map(presentCard),
-          backCards: [0, 1].map((index) => ({
-            key: `${dealKey}:${index}`,
-            delay: seat.id * 65 + index * 140,
-          })),
-        }));
+        const faceArrivals = [];
+        const presentedSeats = view.seats.map((seat) => {
+          const before = this.data.seats.find((s) => s.id === seat.id);
+          const signature = seat.cards.map((card) => card.key).join(',') || 'hidden';
+          const arriving = signature !== this._seatFaces?.get(seat.id) && seat.cards.length > 0;
+          this._seatFaces?.set(seat.id, signature);
+          if (arriving) faceArrivals.push(seat.id);
+          return {
+            ...seat,
+            peekArriving:
+              Boolean(arriving && this._peekId === seat.id) ||
+              (!changedDeal && Boolean(before?.peekArriving)),
+            cards: seat.cards.map((card, index) => ({
+              ...presentCard(card),
+              dealDelay: index * 140,
+              arriving: arriving || (!changedDeal && Boolean(before?.cards[index]?.arriving)),
+            })),
+            backCards: [0, 1].map((index) => ({
+              key: `${dealKey}:${index}`,
+              delay: seat.id * 65 + index * 140,
+              arriving:
+                changedDeal ||
+                (!before?.cards.length && Boolean(before?.backCards[index]?.arriving)),
+            })),
+          };
+        });
         const update = {
           ...view,
           finishing:
@@ -95,9 +125,11 @@ Page({
               ? false
               : this.data.finishing,
           seats: presentedSeats,
-          heroCards: view.heroCards.map((card) => ({
+          ...(changedDeal ? { flyingChips: [] } : {}),
+          heroCards: view.heroCards.map((card, index) => ({
             ...presentCard(card),
             dealKey: `${dealKey}:${card.key}`,
+            arriving: changedDeal || Boolean(this.data.heroCards[index]?.arriving),
           })),
           showdown,
           showdownContext: `${showdown.length} 人参与摊牌${game?.pots.length > 1 ? ' · 主池与边池分别结算' : ''}`,
@@ -134,18 +166,48 @@ Page({
         };
         // Large research catalogs and card artwork need not cross the service/
         // view bridge on every bot turn. Preserve existing card nodes and motion.
-        const patch = Object.fromEntries(
-          Object.entries(update).filter(
-            ([key, value]) => JSON.stringify(this.data[key]) !== JSON.stringify(value),
-          ),
-        );
+        const patch = presentationPatch(this.data, update);
         this.setData(patch, () => this.tightenSeatRanks());
+        if (changedDeal)
+          this.scheduleCardMotion('deal', 1300, () => {
+            const patch = {};
+            this.data.heroCards.forEach((_, i) => (patch[`heroCards[${i}].arriving`] = false));
+            for (const list of ['seats', 'phoneSeats'])
+              this.data[list].forEach((seat, i) =>
+                seat.backCards.forEach(
+                  (_, j) => (patch[`${list}[${i}].backCards[${j}].arriving`] = false),
+                ),
+              );
+            return patch;
+          });
+        if (board.length > previousCards)
+          this.scheduleCardMotion('board', 650 + (board.length - previousCards - 1) * 140, () => {
+            const patch = {};
+            this.data.board.forEach((_, i) => {
+              patch[`board[${i}].arriving`] = false;
+              if (this.data.boardSlots[i] && !this.data.boardSlots[i].empty)
+                patch[`boardSlots[${i}].arriving`] = false;
+            });
+            return patch;
+          });
+        for (const id of faceArrivals)
+          this.scheduleCardMotion(`face-${id}`, 790, () => this.cardMotionPatch(id, 'arriving'));
+        const peekId = this._peekId;
+        if (faceArrivals.includes(peekId))
+          this.scheduleCardMotion(`peek-${peekId}`, 180, () =>
+            this.cardMotionPatch(peekId, 'peekArriving'),
+          );
       },
       storage: {
         getItem: (key) => wx.getStorageSync(key) || null,
         setItem: (key, value) => wx.setStorageSync(key, value),
       },
       sound: (name) => this.playSound(name),
+      wager: (id) => this.flyChips(id),
+      notifyTurn: () => {
+        if (!this._hidden && !this._destroyed && this.data.settings.sound)
+          wx.vibrateShort?.({ type: 'light', fail: () => {} });
+      },
     });
     this._controller.start();
   },
@@ -159,23 +221,71 @@ Page({
   },
   onHide() {
     this._hidden = true;
-    this.setData({ finishing: false });
+    this._motionEpoch = (this._motionEpoch || 0) + 1;
+    this.cancelCardMotion();
+    const stopped = {};
+    for (const list of ['heroCards', 'board', 'boardSlots'])
+      this.data[list]?.forEach((card, i) => {
+        if (card.arriving) stopped[`${list}[${i}].arriving`] = false;
+      });
+    for (const list of ['seats', 'phoneSeats'])
+      this.data[list]?.forEach((seat, i) => {
+        stopped[`${list}[${i}].peekArriving`] = false;
+        for (const cards of ['cards', 'backCards'])
+          seat[cards]?.forEach((card, j) => {
+            if (card.arriving) stopped[`${list}[${i}].${cards}[${j}].arriving`] = false;
+          });
+      });
+    this.setData(stopped);
+    this.setData({ finishing: false, flyingChips: [] });
     this._rankEpoch = (this._rankEpoch || 0) + 1;
     this._controller?.hide();
     this.stopSounds();
   },
   onUnload() {
     this._destroyed = true;
+    this._motionEpoch = (this._motionEpoch || 0) + 1;
+    this.cancelCardMotion();
     this._controller?.destroy();
     this.stopSounds();
   },
   onResize() {
     this.updateWindow();
   },
+  scheduleCardMotion(key, delay, readPatch) {
+    this._cardTimers ||= new Map();
+    clearTimeout(this._cardTimers.get(key));
+    const deal = this._dealKey;
+    const timer = setTimeout(() => {
+      if (this._cardTimers.get(key) !== timer) return;
+      this._cardTimers.delete(key);
+      if (this._hidden || this._destroyed || deal !== this._dealKey) return;
+      this.setData(readPatch());
+    }, delay);
+    this._cardTimers.set(key, timer);
+  },
+  cancelCardMotion() {
+    for (const timer of this._cardTimers?.values() || []) clearTimeout(timer);
+    this._cardTimers?.clear();
+  },
+  cardMotionPatch(id, flag) {
+    const patch = {};
+    for (const list of ['seats', 'phoneSeats']) {
+      const index = this.data[list].findIndex((seat) => seat.id === id);
+      if (index < 0) continue;
+      if (flag === 'peekArriving') patch[`${list}[${index}].peekArriving`] = false;
+      else
+        this.data[list][index].cards.forEach(
+          (_, j) => (patch[`${list}[${index}].cards[${j}].arriving`] = false),
+        );
+    }
+    return patch;
+  },
   onPageScroll(event) {
     if (!this.data.homeLocked) this._homeScroll = event.scrollTop;
   },
   setOverlay(patch) {
+    this._audioUnlocked = true;
     const next = { ...this.data, ...patch };
     const homeLocked = [
       'settingsOpen',
@@ -261,7 +371,13 @@ Page({
         ...fitted,
         tableHeight,
         phoneLayout: true,
-        phoneSeats: fitted.positioned,
+        phoneSeats: fitted.positioned.map((seat) => ({
+          ...seat,
+          rankLift:
+            view.hand === this.data.hand
+              ? this.data.phoneSeats?.find((before) => before.id === seat.id)?.rankLift || 0
+              : 0,
+        })),
         boardSlots: Array.from(
           { length: 5 },
           (_, i) =>
@@ -292,13 +408,16 @@ Page({
           index = this.data.phoneSeats.findIndex((seat) => seat.id === id);
         if (index < 0 || !bottoms.has(id)) continue;
         const current = this.data.phoneSeats[index].rankLift || 0;
-        const lift = Math.min(0, current + (bottoms.get(id) + 3 * scale - rank.top) / scale);
+        // A wrapped amount can extend below the nominal two-line footprint.
+        // Move either direction so its last painted line always keeps 3px.
+        const lift = current + (bottoms.get(id) + 3 * scale - rank.top) / scale;
         if (Math.abs(lift - current) > 0.1) patch[`phoneSeats[${index}].rankLift`] = lift;
       }
       if (Object.keys(patch).length) this.setData(patch);
     });
   },
   call(method, ...args) {
+    this._audioUnlocked = true;
     try {
       return this._controller[method](...args);
     } catch (error) {
@@ -306,8 +425,15 @@ Page({
     }
   },
   playSound(name) {
-    if (!wx.createInnerAudioContext) return;
-    const names = { fold: 'fold', check: 'check', raise: 'raise', call: 'call', deal: 'deal' };
+    if (!wx.createInnerAudioContext || !this._audioUnlocked) return;
+    const names = {
+      fold: 'fold',
+      check: 'check',
+      raise: 'raise',
+      call: 'call',
+      deal: 'deal',
+      win: 'win',
+    };
     if (!names[name]) return;
     try {
       const audio = this._soundPool?.[names[name]];
@@ -322,7 +448,7 @@ Page({
   preloadSounds() {
     this._soundPool = {};
     if (!wx.createInnerAudioContext) return;
-    for (const name of ['fold', 'check', 'raise', 'call', 'deal']) {
+    for (const name of ['fold', 'check', 'raise', 'call', 'deal', 'win']) {
       const audio = wx.createInnerAudioContext();
       audio.src = `/assets/sounds/${name}.wav`;
       audio.volume = 1;
@@ -349,6 +475,48 @@ Page({
   changeRaise(event) {
     this.call('setRaise', event.detail.value);
   },
+  previewRaise(event) {
+    // Do not write the native slider's controlled value back during dragging.
+    // Only its caption changes; the final change commits once to the engine.
+    const value = Math.max(
+      this.data.minRaise,
+      Math.min(
+        this.data.maxRaise,
+        Math.round(Number(event.detail.value) / this.data.chipUnit) * this.data.chipUnit,
+      ),
+    );
+    const text = value.toLocaleString('en-US');
+    if (text !== this.data.raiseText) this.setData({ raiseText: text });
+  },
+  flyChips(id) {
+    if (!wx.createSelectorQuery || this._hidden || this._destroyed) return;
+    const ticket = this._motionEpoch || 0;
+    const query = wx.createSelectorQuery();
+    query.select(id === 0 ? '.hero-info' : `#seat-body-${id}`).boundingClientRect();
+    query.select('.pot-row').boundingClientRect();
+    query.exec(([source, target]) => {
+      if (
+        !source ||
+        !target ||
+        ticket !== (this._motionEpoch || 0) ||
+        this._hidden ||
+        this._destroyed
+      )
+        return;
+      const x = source.left + source.width / 2;
+      const y = source.top + source.height / 2;
+      const key = (this._chipSerial = (this._chipSerial || 0) + 1);
+      this.setData({
+        flyingChips: [
+          ...this.data.flyingChips.slice(-6),
+          ...[0, 1, 2].map((index) => ({
+            key: `${key}:${index}`,
+            style: `left:${x + index * 3}px;top:${y - index * 3}px;--chip-x:${target.left + target.width / 2 - x}px;--chip-y:${target.top + target.height / 2 - y}px;--chip-delay:${index * 60}ms;`,
+          })),
+        ],
+      });
+    });
+  },
   nextHand() {
     this._finishRequested = false;
     this.setData({ finishing: false });
@@ -361,8 +529,7 @@ Page({
   },
   finishHand() {
     if (this.data.canPracticeRunout) {
-      completeBoardForPractice(this._controller.getGame());
-      this._controller.show();
+      this.call('finishHand');
       return;
     }
     if (this.data.finishing) return;
@@ -481,7 +648,9 @@ Page({
     );
   },
   peekSeat(event) {
-    this.call('peek', Number(event.currentTarget.dataset.id));
+    this._peekId = Number(event.currentTarget.dataset.id);
+    this.call('peek', this._peekId);
+    this._peekId = null;
   },
   viewProfile(event) {
     this.setData({ selectedProfile: event.currentTarget.dataset.id });
@@ -594,10 +763,7 @@ Page({
     this.closeProfile();
   },
   mixProfiles() {
-    const ids = this.data.profiles.filter((p) => p.id !== 'balanced').map((p) => p.id);
-    this.data.seatSettings.forEach((seat, index) =>
-      this.call('setSeatProfile', seat.id, ids[index % ids.length]),
-    );
+    this.call('toggleMixedProfiles');
   },
   openGuide() {
     this.setOverlay({ guideOpen: true });

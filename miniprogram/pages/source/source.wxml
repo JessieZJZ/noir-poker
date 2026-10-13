@@ -1,5 +1,5 @@
 <web-view wx:if="{{url && !failed}}" src="{{url}}" binderror="failed" />
 <view wx:else class="source-unavailable">
   <text>网页暂时无法打开，可复制链接到浏览器查看。</text>
-  <button bindtap="copyLink">复制链接</button>
+  <button hover-class="none" bindtap="copyLink">复制链接</button>
 </view>

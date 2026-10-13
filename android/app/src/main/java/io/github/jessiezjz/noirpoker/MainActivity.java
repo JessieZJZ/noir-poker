@@ -2,13 +2,20 @@ package io.github.jessiezjz.noirpoker;
 
 import android.content.pm.ActivityInfo;
 import android.content.res.Configuration;
+import android.os.Build;
 import android.os.Bundle;
+import android.view.View;
 import com.getcapacitor.BridgeActivity;
 
 public class MainActivity extends BridgeActivity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        // The emulator compositor can repeat WebView raster tiles. Use a
+        // software layer on virtual hardware; phones keep hardware acceleration.
+        if (getBridge() != null && ("ranchu".equals(Build.HARDWARE) || "goldfish".equals(Build.HARDWARE))) {
+            getBridge().getWebView().setLayerType(View.LAYER_TYPE_SOFTWARE, null);
+        }
         updateOrientation(getResources().getConfiguration());
     }
 

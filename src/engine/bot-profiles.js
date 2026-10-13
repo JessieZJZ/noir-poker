@@ -425,6 +425,8 @@ export const getBotProfile = (id) => BOT_PROFILES.find((p) => p.id === id) || BO
 export const defaultBotSettings = () => ({
   emotionMode: 'subtle',
   assignments: Object.fromEntries(Array.from({ length: 8 }, (_, i) => [i + 1, 'balanced'])),
+  mixed: false,
+  mixedSeats: [],
 });
 export function sanitizeBotSettings(value) {
   const settings = defaultBotSettings();
@@ -433,6 +435,44 @@ export function sanitizeBotSettings(value) {
   for (let id = 1; id <= 8; id++) {
     const profile = value?.assignments?.[id];
     if (BOT_PROFILES.some((p) => p.id === profile)) settings.assignments[id] = profile;
+  }
+  settings.mixed = value?.mixed === true;
+  settings.mixedSeats = settings.mixed
+    ? [...new Set(Array.isArray(value?.mixedSeats) ? value.mixedSeats : [])].filter(
+        (id) =>
+          Number.isInteger(id) && id >= 1 && id <= 8 && settings.assignments[id] !== 'balanced',
+      )
+    : [];
+  return settings;
+}
+
+// Manual selections take ownership, including reselecting the same style.
+export function assignBotSeat(value, id, profileId) {
+  const settings = sanitizeBotSettings(value);
+  if (id < 1 || id > 8 || !Number.isInteger(id) || !BOT_PROFILES.some((p) => p.id === profileId))
+    return settings;
+  settings.assignments[id] = profileId;
+  settings.mixedSeats = settings.mixedSeats.filter((seat) => seat !== id);
+  return settings;
+}
+export function toggleMixedLineup(value, count = 9, random = Math.random) {
+  const settings = sanitizeBotSettings(value);
+  if (settings.mixed) {
+    for (const id of settings.mixedSeats) settings.assignments[id] = 'balanced';
+    settings.mixed = false;
+    settings.mixedSeats = [];
+    return settings;
+  }
+  settings.mixed = true;
+  const available = BOT_PROFILES.filter((p) => p.id !== 'balanced').map((p) => p.id);
+  for (let id = 1; id < Math.min(9, count); id++) {
+    if (settings.assignments[id] !== 'balanced') continue;
+    const index = Math.min(
+      available.length - 1,
+      Math.max(0, Math.floor(random() * available.length)),
+    );
+    settings.assignments[id] = available.splice(index, 1)[0];
+    settings.mixedSeats.push(id);
   }
   return settings;
 }
@@ -700,6 +740,24 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
     lowCommitment &&
     !allInPressure &&
     effectiveBehind >= Math.max(1000, legal.callAmount * 15);
+  // Normal/hard opponents distinguish a cheap 3-bet from a large re-raise.
+  // A random showdown against every unfurled seat undervalues a priced call:
+  // players still to act have not all committed to this pot. This range gate
+  // uses public sizing/position and our hand only, never the raiser's cards.
+  const affordableThreeBet =
+    view.difficulty !== 'easy' &&
+    view.street === 0 &&
+    raises.length === 2 &&
+    Boolean(lastRaiser) &&
+    raises[1].id !== view.id &&
+    view.currentBet <= 500 &&
+    view.currentBet <= raises[0].amount * 3 &&
+    legal.callAmount <= 350 &&
+    pressure <= 0.1 &&
+    odds <= 0.28 &&
+    !allInPressure &&
+    legal.callAmount < view.stack &&
+    effectiveBehind >= Math.max(1000, legal.callAmount * 8);
   if (cheapEntry)
     range +=
       (0.14 + width * 0.2 + (speculative || suitedHigh ? Math.min(2, limpers) * 0.04 : 0)) *
@@ -720,6 +778,18 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
       blindDiscount -
       dominatedAce;
   }
+  if (affordableThreeBet) {
+    const priceScale = Math.max(0.55, 1.15 - view.currentBet / 1000);
+    const committed = view.bet >= raises[0].amount;
+    const broadway = high >= 13 && low >= 11;
+    const playable = broadway || (pair && high >= 7) || (suited && high >= 11 && low >= 9);
+    range = Math.max(
+      range,
+      (0.09 + width * 0.2) * style.entry * positionScale * priceScale +
+        (committed ? 0.05 : 0) +
+        (playable ? 0.055 : 0),
+    );
+  }
   range = Math.min(0.95, range);
   // Entering a pot is not automatically a reason to raise again. Separate the
   // value re-raising candidates so ordinary calls do not start a raise cascade.
@@ -735,7 +805,7 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
   const premium = percentile < 0.07,
     admitted = percentile <= range,
     openingAdmitted = percentile <= openingRange,
-    affordableRangePassed = (cheapEntry || affordableOpen) && admitted,
+    affordableRangePassed = (cheapEntry || affordableOpen || affordableThreeBet) && admitted,
     callTolerance = (callDown - 0.5) * 0.1 + context.publicAdjustment;
   let sizing = null,
     deception = null,
@@ -773,7 +843,8 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
     lowCommitment &&
     odds <= 0.18 &&
     equity + callTolerance >= odds - 0.06 &&
-    roll('price-continue', 0.12 + callDown * 0.36) < 0.12 + callDown * 0.36;
+    roll('price-continue', (view.difficulty === 'easy' ? 0.12 : 0.38) + callDown * 0.36) <
+      (view.difficulty === 'easy' ? 0.12 : 0.38) + callDown * 0.36;
   const semiThreshold = Math.min(0.7, (0.16 + bluff * 0.42) * (headsUp ? 1 : 0.55) * barrelScale);
   semiBluff =
     legal.canRaise &&
@@ -853,6 +924,7 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
       cheapEntry,
       cheapRangePassed: cheapEntry && admitted,
       affordableOpen,
+      affordableThreeBet,
       affordableRangePassed,
       entryContext: { limpers, openCallers, effectiveBehind, speculative, suitedHigh },
       premium,
@@ -924,9 +996,11 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
               ? 'affordable-entry'
               : affordableOpen && admitted
                 ? 'affordable-open'
-                : premium && view.street === 0
-                  ? 'premium-continue'
-                  : 'price-continue',
+                : affordableThreeBet && admitted
+                  ? 'small-reraise-continue'
+                  : premium && view.street === 0
+                    ? 'premium-continue'
+                    : 'price-continue',
     );
   value =
     view.street === 0
@@ -1058,8 +1132,10 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
             ? 'affordable-entry'
             : affordableOpen && admitted
               ? 'affordable-open'
-              : premium && view.street === 0
-                ? 'premium-continue'
-                : 'price-continue',
+              : affordableThreeBet && admitted
+                ? 'small-reraise-continue'
+                : premium && view.street === 0
+                  ? 'premium-continue'
+                  : 'price-continue',
   );
 }

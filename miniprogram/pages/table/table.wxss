@@ -376,7 +376,8 @@
 .mini-card {
   width: 30px;
   height: 42px;
-  transform: translateY(7px);
+  --hole-inset: 7px;
+  transform: translateY(var(--hole-inset));
   padding: 1px 2px;
   font-size: 9px;
   border-radius: 4px;
@@ -475,8 +476,8 @@
   font-size: 9px;
 }
 .action-dock {
-  flex: 0 0 136px;
-  height: 136px;
+  flex: 0 0 134px;
+  height: 134px;
   border-top: 1px solid #293f47;
   padding: 7px 8px;
   display: flex;
@@ -1051,7 +1052,8 @@
 .table-short .mini-card {
   width: 17px;
   height: 24px;
-  transform: translateY(4px);
+  --hole-inset: 4px;
+  transform: translateY(var(--hole-inset));
   padding: 1px;
   font-size: 7px;
   line-height: 7px;
@@ -1172,20 +1174,20 @@
 /* Compact phases shrink the shell while retaining tableHeight from the live
    viewport budget. The four sides keep padding around a single button row. */
 .action-dock.compact-actions {
-  flex: 0 0 64px;
-  height: 64px;
+  flex: 0 0 58px;
+  height: 58px;
   padding: 10px 8px;
 }
 .compact-actions .settled-buttons,
 .compact-actions .continue-buttons {
   width: 100%;
-  height: 44px;
+  height: 38px;
   margin: 0;
 }
 .compact-actions .settled-buttons button,
 .compact-actions .continue-buttons button {
   min-width: 0;
-  height: 44px;
+  height: 38px;
   font-size: 12px;
 }
 .action-dock button[disabled] {
@@ -1269,7 +1271,8 @@
   .mini-card {
     width: 44px;
     height: 64px;
-    transform: translateY(9px);
+    --hole-inset: 9px;
+    transform: translateY(var(--hole-inset));
     font-size: 16px;
   }
   .pot-row {

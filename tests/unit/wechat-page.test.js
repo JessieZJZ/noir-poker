@@ -53,6 +53,7 @@ function setup(
     ['noir-wechat-settings-v1', JSON.stringify({ playerCount, hints: false })],
   ]);
   const audios = [];
+  const vibrations = [];
   const toasts = [];
   const clipboard = [];
   const navigations = [],
@@ -70,6 +71,14 @@ function setup(
       },
     });
   const context = vm.createContext({
+    setTimeout(fn, delay = 0) {
+      const id = ++serial;
+      jobs.set(id, { fn, due: now + delay });
+      return id;
+    },
+    clearTimeout(id) {
+      jobs.delete(id);
+    },
     Page(value) {
       definition = value;
     },
@@ -102,6 +111,9 @@ function setup(
       setClipboardData: (value) => clipboard.push(value.data),
       navigateTo: (value) => navigations.push(value.url),
       pageScrollTo: (value) => scrolls.push(value.scrollTop),
+      vibrateShort(options) {
+        vibrations.push(options.type);
+      },
       createInnerAudioContext() {
         const audio = {
           src: '',
@@ -134,7 +146,12 @@ function setup(
     ...definition,
     data: copy(definition.data),
     setData(value, callback) {
-      Object.assign(this.data, copy(value));
+      for (const [path, entry] of Object.entries(value)) {
+        const parts = path.replace(/\[(\d+)\]/g, '.$1').split('.');
+        let target = this.data;
+        for (const part of parts.slice(0, -1)) target = target[part];
+        target[parts.at(-1)] = copy(entry);
+      }
       callback?.();
     },
   };
@@ -153,6 +170,7 @@ function setup(
     page,
     preferences,
     audios,
+    vibrations,
     toasts,
     clipboard,
     navigations,
@@ -287,8 +305,12 @@ test('WeChat ranks sit 3px below the final painted action line, including wrappe
     return query;
   };
   page.tightenSeatRanks();
-  assert.equal(page.data['phoneSeats[0].rankLift'], -25);
-  assert.equal(page.data['phoneSeats[1].rankLift'], -31);
+  assert.equal(page.data.phoneSeats[0].rankLift, -25);
+  assert.equal(page.data.phoneSeats[1].rankLift, -31);
+  // Large all-in captions can need a small downward adjustment as well.
+  ranks[0].top = 136;
+  page.tightenSeatRanks();
+  assert.equal(page.data.phoneSeats[0].rankLift, -22);
 });
 
 test('retry and next hand remount every deal while ordinary turns preserve the hero card nodes', (t) => {
@@ -315,7 +337,7 @@ test('retry and next hand remount every deal while ordinary turns preserve the h
   );
   assert.match(template, /wx:key="dealKey"/);
   assert.match(template, /420 \+ index \* 130/);
-  assert.match(template, /class="card-back back-deal"/);
+  assert.match(template, /class="card-back \{\{back.arriving/);
   const retryKeys = copy(page.data.heroCards).map((card) => card.dealKey);
   finish(page._controller.getGame());
   page._controller.show();
@@ -360,7 +382,7 @@ test('practice runout preserves Web rank visibility without modifying the engine
 
 test('secondary pages lock the home scroll and source titles navigate to a separate web page', (t) => {
   const { page, scrolls, navigations, audios } = setup(t);
-  assert.equal(audios.length, 5, 'All local effects are preloaded on entry');
+  assert.equal(audios.length, 6, 'All local effects are preloaded on entry');
   assert.ok(audios.every((audio) => audio.volume === 1));
   page.onPageScroll({ scrollTop: 240 });
   for (const [open, close] of [
@@ -410,7 +432,7 @@ test('public flips stagger only newly dealt cards and details preserve their slo
   page._controller.show();
   assert.deepEqual(
     copy(page.data.board).map((card) => card.arriving),
-    [false, false, false, true],
+    [true, true, true, true],
   );
   assert.equal(page.data.board[3].dealDelay, 0);
   assert.equal(page.data.publicTop, top);
@@ -566,7 +588,7 @@ for (const playerCount of [5, 9]) {
       assert.equal(page.data.seats.length, playerCount - 1);
       assert.equal(page.data.windowHeight, info.windowHeight);
       assert.equal(
-        page.data.tableHeight + page.data.topInset + page.data.bottomInset + 321,
+        page.data.tableHeight + page.data.topInset + page.data.bottomInset + 284,
         info.windowHeight,
       );
       const height = page.data.tableHeight;
@@ -579,7 +601,7 @@ for (const playerCount of [5, 9]) {
       page.retryHand();
       assert.equal(page.data.done, false);
       assert.equal(page.data.tableHeight, height, 'retry cannot resize the table');
-      assert.match(stylesheet, /\.action-dock\s*\{[^}]*flex:\s*0 0 136px/s);
+      assert.match(stylesheet, /\.action-dock\s*\{[^}]*flex:\s*0 0 134px/s);
     });
   }
 }
@@ -653,6 +675,12 @@ test('WeChat Page automatically saves settings and changes the requested next ha
 
 test('WeChat Page stops and destroys native audio plus pending work when backgrounded', (t) => {
   const { page, audios, jobs } = setup(t);
+  assert.ok(
+    audios.every((audio) => !audio.played),
+    'Never replay startup audio before a gesture',
+  );
+  page.call('setPreference', 'sound', false);
+  page.call('setPreference', 'sound', true);
   assert.ok(audios.some((audio) => audio.src === '/assets/sounds/deal.wav' && audio.played));
   page.playSound('check');
   page.playSound('fold');
@@ -685,7 +713,7 @@ test('WeChat capsule measurement falls back safely when absent, invalid or throw
   ]) {
     const { page } = setup(t, { menuRect });
     assert.equal(page.data.navRightInset, 104);
-    assert.equal(page.data.tableHeight + page.data.topInset + page.data.bottomInset + 321, 844);
+    assert.equal(page.data.tableHeight + page.data.topInset + page.data.bottomInset + 284, 844);
   }
 });
 
@@ -729,7 +757,7 @@ test('large portrait tablets reserve five larger public positions through settle
   const info = { windowWidth: 1032, windowHeight: 1376, statusBarHeight: 24 };
   const { page } = setup(t, { playerCount: 9, info });
   assert.equal(page.data.boardTwoRows, false);
-  assert.equal(page.data.boardWidth, 5 * 82 + 16);
+  assert.equal(page.data.boardWidth, 5 * 94 + 16);
   assert.equal(page.data.boardSlots.length, 5);
   const tableHeight = page.data.tableHeight;
   for (const board of [
@@ -737,7 +765,7 @@ test('large portrait tablets reserve five larger public positions through settle
     [{ key: 'a' }],
     Array.from({ length: 5 }, (_, i) => ({ key: `c${i}` })),
   ]) {
-    assert.equal(page.publicLayout(board).boardWidth, 5 * 82 + 16);
+    assert.equal(page.publicLayout(board).boardWidth, 5 * 94 + 16);
     assert.equal(page.publicLayout(board).boardSlots.length, 5);
   }
   const game = reachHero(page);
@@ -748,16 +776,16 @@ test('large portrait tablets reserve five larger public positions through settle
   assert.equal(page.data.tableHeight, tableHeight);
   Object.assign(info, { windowWidth: 960, windowHeight: 1440 });
   page.onResize();
-  assert.equal(page.data.boardWidth, 5 * 82 + 16);
+  assert.equal(page.data.boardWidth, 5 * 94 + 16);
   Object.assign(info, { windowWidth: 820, windowHeight: 1180 });
   page.onResize();
-  assert.equal(page.data.boardWidth, 5 * 98 + 16);
+  assert.equal(page.data.boardWidth, page.data.boardTwoRows ? 3 * 106 + 8 : 5 * 106 + 16);
   Object.assign(info, { windowWidth: 1032, windowHeight: 1099 });
   page.onResize();
-  assert.equal(page.data.boardWidth, 5 * 82 + 16);
+  assert.equal(page.data.boardWidth, 5 * 94 + 16);
   Object.assign(info, { windowWidth: 1101, windowHeight: 1440 });
   page.onResize();
-  assert.equal(page.data.boardWidth, 5 * 54 + 16);
+  assert.equal(page.data.boardWidth, 5 * 70 + 16);
 });
 
 for (const playerCount of [5, 6, 7, 8, 9]) {
@@ -865,7 +893,7 @@ test('WeChat public card rows use the measured corridor and stay fixed from deal
     info: { windowWidth: 320, windowHeight: 667, statusBarHeight: 20, safeArea: { bottom: 667 } },
   });
   assert.equal(page.data.boardTwoRows, false);
-  assert.equal(page.data.cardWidth, 54);
+  assert.equal(page.data.cardWidth, 66);
   assert.ok(page.data.boardWidth >= 3 * 50 + 8);
   assert.equal(page.data.boardSlots.length, 5);
   assert.ok(page.data.boardSlots.every((card) => card.empty));
@@ -878,12 +906,15 @@ test('WeChat public card rows use the measured corridor and stay fixed from deal
   assert.equal(page.data.boardTwoRows, false);
   Object.assign(info, { windowWidth: 390, windowHeight: 900, safeArea: { bottom: 900 } });
   page.onResize();
-  assert.equal(page.data.boardTwoRows, false);
-  assert.equal(page.data.boardWidth, Math.round(5 * 46.8 + 16));
+  assert.equal(page.data.boardSlots.length, 5);
+  assert.equal(
+    page.data.boardWidth,
+    Math.ceil(page.data.boardTwoRows ? 3 * 62.4 + 8 : 5 * 62.4 + 16),
+  );
   Object.assign(info, { windowWidth: 820, windowHeight: 1180, safeArea: { bottom: 1180 } });
   page.onResize();
-  assert.equal(page.data.boardTwoRows, false);
-  assert.equal(page.data.boardWidth, 5 * 98 + 16);
+  assert.equal(page.data.boardSlots.length, 5);
+  assert.equal(page.data.boardWidth, page.data.boardTwoRows ? 3 * 106 + 8 : 5 * 106 + 16);
 });
 
 test('WeChat five-player layout keeps two players near the crown and two around the waist', (t) => {
@@ -996,4 +1027,132 @@ test('dropdown data anchors the options below the original control and settings 
   assert.ok(page.data.selection.left + page.data.selection.width <= page.data.windowWidth - 8);
   assert.doesNotMatch(template, /selection-close|settings-footer/);
   assert.match(template, /top: 0; bottom: 0;/);
+});
+
+test('WeChat slider preview changes only the caption, final change commits the legal amount', (t) => {
+  const { page } = setup(t);
+  reachHero(page);
+  page._controller.show();
+  const before = copy(page.data),
+    hand = copy(page._controller.getGame());
+  page.previewRaise({ detail: { value: 875 } });
+  assert.equal(page.data.raiseText, '875');
+  assert.equal(page.data.raiseTo, before.raiseTo);
+  for (const key of ['phoneSeats', 'boardSlots', 'heroCards', 'arenaHeight', 'publicTop'])
+    assert.deepEqual(copy(page.data[key]), before[key]);
+  assert.deepEqual(copy(page._controller.getGame()), hand);
+  page.changeRaise({ detail: { value: 875 } });
+  assert.equal(page.data.raiseTo, 875);
+  assert.equal(page.data.raiseTo % 25, 0);
+});
+
+test('delayed chip measurements cannot draw into a hidden page or a replayed deal', (t) => {
+  const { page, wx } = setup(t);
+  const callbacks = [];
+  wx.createSelectorQuery = () => {
+    const query = {
+      select() {
+        return query;
+      },
+      boundingClientRect() {
+        return query;
+      },
+      exec(fn) {
+        callbacks.push(fn);
+      },
+    };
+    return query;
+  };
+  const boxes = [
+    { left: 10, top: 20, width: 40, height: 50 },
+    { left: 120, top: 180, width: 60, height: 30 },
+  ];
+  page.flyChips(1);
+  callbacks.shift()(boxes);
+  assert.equal(page.data.flyingChips.length, 3);
+  page.flyChips(1);
+  page.onHide();
+  callbacks.shift()(boxes);
+  assert.equal(page.data.flyingChips.length, 0);
+  delete wx.createSelectorQuery;
+  page.onShow();
+  finish(page._controller.getGame());
+  page._controller.show();
+  wx.createSelectorQuery = () => {
+    const query = {
+      select() {
+        return query;
+      },
+      boundingClientRect() {
+        return query;
+      },
+      exec(fn) {
+        callbacks.push(fn);
+      },
+    };
+    return query;
+  };
+  page.flyChips(1);
+  delete wx.createSelectorQuery;
+  page.retryHand();
+  callbacks.shift()(boxes);
+  assert.equal(page.data.flyingChips.length, 0);
+});
+
+test('WeChat hero turn vibrates once, rerenders/settings/background do not repeat it', (t) => {
+  const { page, vibrations } = setup(t);
+  reachHero(page);
+  page._controller.show();
+  assert.deepEqual(vibrations, ['light']);
+  page._controller.show();
+  page.openSettings();
+  page.mixProfiles();
+  page.closeSettings();
+  assert.deepEqual(vibrations, ['light']);
+  page.onHide();
+  page.onShow();
+  assert.deepEqual(vibrations, ['light']);
+});
+
+test('muting the combined feedback preference suppresses later hero turns and clears audio', (t) => {
+  const { page, vibrations, audios } = setup(t);
+  page.togglePreference({ currentTarget: { dataset: { key: 'sound' } } });
+  const count = vibrations.length;
+  reachHero(page);
+  assert.equal(page.data.settings.sound, false);
+  assert.equal(vibrations.length, count);
+  assert.ok(audios.every((audio) => audio.stopped));
+  assert.match(template, /aria-label="音效与振动"/);
+});
+test('peek preserves peer caption lifts and ordinary updates never re-deal the hero', (t) => {
+  const { page } = setup(t);
+  finish(page._controller.getGame());
+  page._controller.show();
+  page.data.phoneSeats.forEach((seat, i) => (seat.rankLift = -i - 3));
+  const before = copy(page.data.phoneSeats).map((seat) => seat.rankLift);
+  page.peekSeat({ currentTarget: { dataset: { id: 1 } } });
+  assert.deepEqual(
+    copy(page.data.phoneSeats).map((seat) => seat.rankLift),
+    before,
+  );
+  const heroKeys = copy(page.data.heroCards).map((card) => card.dealKey);
+  page._controller.show();
+  assert.deepEqual(
+    copy(page.data.heroCards).map((card) => card.dealKey),
+    heroKeys,
+  );
+});
+test('old deal motion callbacks cannot clear a replay and hiding cancels pending motion', (t) => {
+  const { page, jobs } = setup(t);
+  const stale = jobs.get(page._cardTimers.get('deal')).fn;
+  finish(page._controller.getGame());
+  page._controller.show();
+  page.retryHand();
+  const timer = page._cardTimers.get('deal');
+  stale();
+  assert.equal(page._cardTimers.get('deal'), timer);
+  assert.ok(page.data.heroCards.every((card) => card.arriving));
+  page.onHide();
+  assert.equal(page._cardTimers.size, 0);
+  assert.ok(page.data.heroCards.every((card) => !card.arriving));
 });

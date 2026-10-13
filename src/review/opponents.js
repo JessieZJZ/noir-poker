@@ -15,6 +15,7 @@ export const BOT_REASON_NAMES = {
   'premium-continue': '强起手牌分支保留继续',
   'affordable-entry': '低成本入池范围保留了继续',
   'affordable-open': '小开池的价格与有效后手支持跟入',
+  'small-reraise-continue': '小尺度再加注的价格支持防守',
   'price-continue': '通过了价格与压力检查',
   'value-raise': '主动加注范围触发进攻',
   'semi-bluff': '听牌半诈唬触发进攻',
@@ -104,6 +105,9 @@ export function explainOpponent(record) {
     case 'affordable-entry':
     case 'affordable-open':
       logic = `它只补 ${n(cost)}，还留 ${n(v.stack - cost)}；${v.hole[0].rank === v.hole[1].rank ? '这手对子可以等翻牌中暗三条。' : v.hole[0].suit === v.hole[1].suit ? '两张同花底牌保留了翻后买同花的机会。' : '它愿意用这笔小投入看翻牌是否击中底牌。'}这次是便宜跟入，当前没有付出大额再加注的成本。`;
+      break;
+    case 'small-reraise-continue':
+      logic = `这是小尺度 3-bet 防守：它补 ${n(cost)}，还留 ${n(v.stack - cost)}，用${hand}保留翻后成牌或摊牌机会。这次防守不证明跟注盈利（正 EV），还要看对手用哪些牌再加注。`;
       break;
     case 'price-continue':
       logic = draw.outs
