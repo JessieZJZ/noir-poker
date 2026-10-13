@@ -1,3 +1,4 @@
+import { compactChips } from '../../src/engine/chip-format.js';
 import { assignNamedLineup } from './settings-helpers.js';
 import { test, expect } from '@playwright/test';
 import { closeSettings, openSettings, setPlayerCount, toggleHints } from './settings-helpers.js';
@@ -163,7 +164,7 @@ async function assertWinnerIndicators(page) {
     await expect(badge).toBeVisible();
     await expect(badge).toHaveAttribute(
       'aria-label',
-      `${p.name} 获得底池 ${awards.get(p.name).toLocaleString('en-US')} 筹码`,
+      `${p.name} 获得底池 ${compactChips(awards.get(p.name))} 筹码`,
     );
     await expect(badge.locator('svg')).toBeVisible();
   }
@@ -364,7 +365,7 @@ test('pot details retain per-pot awards, odd split shares and conditional live e
   for (let i = 0; i < state.pots.length; i++) {
     const card = page.locator(`.settled-pot[data-pot-index="${i}"]`);
     await expect(card.locator('.pot-award > strong')).toHaveText(
-      state.pots[i].awards.map((a) => `+${a.amount.toLocaleString('en-US')}筹码`),
+      state.pots[i].awards.map((a) => `+${compactChips(a.amount)}筹码`),
     );
     await expect(card.locator('.pot-distribution')).not.toHaveAttribute('open');
   }
@@ -436,7 +437,7 @@ test('raise controls, seats, activity and review share street-specific bet ordin
 
   await page.evaluate(() => window.qa.reviewLine());
   await expect(page.locator('#activity-list')).toContainText('Alex 3-bet 加注至 650');
-  await expect(page.locator('#activity-list')).toContainText('Mia 4-bet 加注至 1800');
+  await expect(page.locator('#activity-list')).toContainText('Mia 4-bet 加注至 1.8K');
   await page.locator('#review-hand-button').click();
   await expect(page.locator('#review-dialog[data-analysis-status="done"]')).toBeVisible({
     timeout: 30000,
@@ -850,6 +851,7 @@ test('settled raises, calls and folds retain their actual amounts until the next
   page,
 }) => {
   await page.evaluate(() => {
+    window.noir.setStakes({ smallBlind: 25, bigBlind: 50 });
     window.qa.retainedRiver(9);
     window.qa.finish();
   });
@@ -1440,10 +1442,11 @@ test('returning restores all saved options before the first fresh hand, includin
   expect(state.hand).toBe(1);
   expect(state.board).toEqual([]);
   expect(state.result).toBeNull();
-  for (const player of state.players) expect(player.stack + player.bet).toBe(5000);
+  for (const player of state.players) expect(player.stack + player.bet).toBe(20000);
   expect(await page.evaluate(() => JSON.parse(localStorage.getItem('noir-table-v1')))).toEqual({
     playerCount: 9,
     difficulty: 'hard',
+    stakes: { smallBlind: 100, bigBlind: 200, startingStack: 20000, chipUnit: 100 },
   });
   await page.locator('#opponents-button').click();
   await expect(page.locator('#emotion-mode')).toHaveValue('lively');
@@ -1701,9 +1704,7 @@ test('all named portraits preview immediately, follow saved styles next hand and
           }),
         count,
       );
-      await expect(page.locator('.seat-1 .seat-stack')).toHaveText(
-        (count * 5000).toLocaleString('en-US'),
-      );
+      await expect(page.locator('.seat-1 .seat-stack')).toHaveText(compactChips(count * 5000));
       await expect(page.locator('#seats .persona-portrait')).toHaveCount(count - 1);
       const readable = await page.locator('.seat-profile').evaluateAll((profiles) => {
         const arena = document.querySelector('#arena'),

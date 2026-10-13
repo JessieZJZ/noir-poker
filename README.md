@@ -169,3 +169,5 @@ Web/iOS/Android 的牌点使用固定 Manrope 700 矢量字形，避免 SVG 文�
 Web/App 和小程序的音效使用同一份 PCM 声音定义，弃牌与下注增大音量。轮到你行动时触发一次短震动：App 和小程序走原生接口，Web 依赖浏览器震动 API；Safari 网页不支持。
 
 新牌局配置接口与后续涨盲扩展边界见 [筹码与盲注配置](docs/stakes.md)。应用图标由 `public/app-icon.png` 统一生成；更换原图后运行 `npm run mobile:assets`，再同步各端资源。
+
+本次尺度与图标变更的编译、安装运行和微信验收边界见 [2026-10-14 验证记录](docs/stakes-validation-2026-10-14.md)。

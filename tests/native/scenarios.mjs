@@ -217,7 +217,7 @@ export async function nativeScenarios(app) {
         step: document.querySelector('#bet-slider').step,
       };
     });
-    assert.equal(artwork.src, '/app-icon.png');
+    assert.match(artwork.src, /^(?:\.\/|\/)app-icon\.png$/);
     assert.equal(artwork.loaded, true);
     assert.equal(artwork.blinds, '100 / 200');
     if (state.legal.enabled) assert.equal(artwork.step, '100');
