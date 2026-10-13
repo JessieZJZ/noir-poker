@@ -3,6 +3,22 @@ import { readTableLayout, assertTableLayout } from './layout.mjs';
 import { readCardRankState, readNativeRankInk, assertStableRankInk } from './card-ranks.mjs';
 const documentLoginMarker = (text) => /sign in|log in|登录账号/i.test(text);
 
+export async function waitForPendingOpponent(app) {
+  // A real opponent can answer before Android's next HTTP state read. Follow
+  // the normal UI to the next decision instead of waiting on a hero turn.
+  return app.waitFor(
+    async () => {
+      const game = await app.state();
+      if (game.phase === 'playing' && game.actor && game.actor !== '你') return game;
+      if (game.phase === 'playing' && game.legal.enabled) await app.click('#call-button');
+      else if (game.phase === 'done') await app.click('#next-button');
+      return null;
+    },
+    15000,
+    'Background test needs a pending opponent action',
+  );
+}
+
 // Keep the installed-app completion assertion and its existing deadline. The
 // observations distinguish a working but slow review from a failed WebView or
 // an analysis that stopped progressing; they do not authorize a partial pass.
@@ -887,15 +903,7 @@ export async function nativeScenarios(app) {
         });
       });
     });
-    await app.click('#call-button');
-    await app.waitFor(
-      async () => {
-        const game = await app.state();
-        return game.phase === 'playing' && game.actor && game.actor !== '你' ? game : null;
-      },
-      15000,
-      'Background test needs a pending opponent action',
-    );
+    await waitForPendingOpponent(app);
     const nativeBackground = await app.background();
     await app.sleep(6000);
     const stillBackgrounded = await app.nativeState();
