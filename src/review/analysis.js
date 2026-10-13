@@ -6,6 +6,7 @@ import { preflopContext } from './preflop.js';
 import { comparisonRoutes } from './routes.js';
 import { compareCandidateActions } from './counterfactual.js';
 import { coachDecision, buildOverview } from './coaching.js';
+import { drawLabel } from './narrative.js';
 import { actionLabel } from '../engine/action-labels.js';
 import { legalRaiseTo } from '../engine/bet-sizing.js';
 export { actionLabel } from '../engine/action-labels.js';
@@ -370,11 +371,11 @@ export function analyzeDecision(
     alternative = { action: 'check', amount: 0 };
   const evidence = [
     `位置 ${s.position} · ${ctx.opponents} 位未弃牌对手${s.street ? ' · ' + (ctx.inPosition ? '有位置' : '无最后行动优势') : ''}`,
-    `当时牌力：${handLabel}`,
+    `当时牌力：${handLabel}${draw.outs ? ' · ' + drawLabel(draw) : ''}`,
     s.street
       ? `公共牌：${texture.label}`
       : `翻牌前加注 ${ctx.preflopRaises} 次 · 尚可行动 ${ctx.pendingOthers} 人`,
-    `有效剩余约 ${number(ctx.effective)} · 当前 SPR ${ctx.spr.toFixed(1)}`,
+    `有效剩余约 ${number(ctx.effective)} · 新增投入 ${number(ctx.extra)}`,
   ];
   if (draw.outs)
     evidence.push(

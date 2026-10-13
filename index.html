@@ -857,64 +857,20 @@
                 <div><span>剩余筹码</span><strong id="review-stack"></strong></div>
               </div>
             </div>
-            <div class="review-comparison">
-              <div class="review-choice">
-                <span>你当时选择</span><strong id="review-your-action"></strong>
-              </div>
-              <div class="review-choice suggested">
-                <span>下次怎么调整</span><strong id="review-suggestion"></strong>
-              </div>
-            </div>
             <section class="review-coaching" aria-label="这一步的结论">
-              <p id="review-coach-explanation"></p>
-              <p id="review-coach-ev"></p>
-              <div>
+              <div id="review-coach-explanation"></div>
+              <div id="review-practice-focus" hidden>
                 <strong>下次练习重点</strong>
                 <p id="review-coach-followup"></p>
               </div>
             </section>
-            <details id="review-advanced" class="review-advanced">
-              <summary>查看判断依据、其他打法和模拟数字</summary>
-              <section
-                id="review-routes"
-                class="review-routes"
-                aria-label="两条路线的条件与取舍"
-              ></section>
-              <section
-                id="review-simulation"
-                class="review-simulation"
-                aria-label="候选行动模拟比较"
-              ></section>
-              <div class="review-explanation">
-                <h3 id="review-decision-title"></h3>
-                <p id="review-reason"></p>
-              </div>
-              <section class="review-evidence">
-                <div class="review-evidence-heading">
-                  <h3>当时的关键条件</h3>
-                  <span id="review-confidence"></span>
-                </div>
-                <ul id="review-evidence"></ul>
-              </section>
-              <div class="review-lesson">
-                <span>下一次练习的重点</span>
-                <div id="review-lesson"></div>
-              </div>
-              <section class="review-plan">
-                <h3>后续处理路线</h3>
-                <p id="review-plan"></p>
-              </section>
-              <div class="review-metrics">
-                <div><span>跟注需要权益</span><strong id="review-price"></strong></div>
-                <div><span>两种范围估计</span><strong id="review-equity"></strong></div>
-                <div><span>跟注后可争夺</span><strong id="review-contestable"></strong></div>
-              </div>
-              <p id="review-model-note" class="review-price-note"></p>
-              <p id="review-price-note" class="review-price-note"></p>
-              <details class="review-public-actions">
-                <summary>此前的公开行动</summary>
-                <ul id="review-public-actions"></ul>
-              </details>
+            <section class="review-evidence">
+              <div class="review-evidence-heading"><h3>当时的关键信息</h3></div>
+              <ul id="review-evidence"></ul>
+            </section>
+            <details class="review-public-actions">
+              <summary>此前的公开行动</summary>
+              <ul id="review-public-actions"></ul>
             </details>
             <div class="review-step-nav">
               <button id="review-step-prev">上一步</button><span id="review-step-current"></span

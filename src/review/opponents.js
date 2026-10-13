@@ -1,8 +1,8 @@
 import { compactChips } from '../engine/chip-format.js';
-import { bigBlindOf } from '../engine/stakes.js';
 import { evaluate } from '../engine/poker.js';
 import { MOOD_LABELS } from '../engine/bot-profiles.js';
-import { drawInfo } from './context.js';
+import { decisionContext } from './context.js';
+import { drawLabel, situationNotes, publicHistory } from './narrative.js';
 
 const pct = (v) => (v * 100).toFixed(1) + '%';
 const n = compactChips;
@@ -42,111 +42,103 @@ export const BOT_CHECK_NAMES = {
 export function explainOpponent(record) {
   const t = record.trace,
     v = t.view;
-  const made = evaluate([...v.hole, ...v.board]);
-  const draw = drawInfo(v.hole, v.board);
-  const call = record.action === 'call';
-  const raises = v.history.filter((a) => a.street === v.street && a.action === 'raise');
-  const comparison = t.equity + t.callTolerance;
-  const reasons = [];
-  if (t.style) {
-    const { context, floatContinue, thinValue, smallCbet } = t.style;
-    reasons.push(
-      `策略改编使用当时的公开牌面与行动；公开动作样本 ${context.publicSamples}，跟注门槛偏移 ${pct(context.publicAdjustment)}。阻断牌只作启发式筛选，不证明诈唬盈利。`,
-    );
-    if (floatContinue)
-      reasons.push(
-        '低价格、有位置且干燥翻牌触发 Float；它保留后街进攻机会，未按普通权益弃牌分支处理。',
-      );
-    if (thinValue || smallCbet)
-      reasons.push('本次触发分街策略候选，数字是本地模拟控制，不是牌手真实频率。');
-  }
-  if (v.street === 0)
-    reasons.push(
-      `起手牌强度排序约前 ${pct(t.percentile)}；本次风格、位置与公开加注线允许前 ${pct(t.range)}。${t.admitted ? '进入' : '未进入'}该范围${t.premium ? '，同时触发前 7% 强牌分支' : ''}。排序是起手牌启发式，不是胜率。`,
-    );
-  reasons.push(
-    `它面对 ${v.rivals} 位未弃牌对手，需跟 ${n(v.legal.callAmount)}，模型可争夺 ${n(v.contestable)}，跟注门槛 ${pct(t.odds)}。`,
-  );
+  const actorId = v.id ?? record.id ?? 1;
+  // Reuse the hand classifier with an actor-relative, public-only snapshot.
+  const opponents =
+    v.opponents || Array.from({ length: v.rivals }, (_, i) => ({ id: i + 100, stack: v.stack }));
+  const snapshot = {
+    ...v,
+    action: record.action,
+    amount: record.amount,
+    players: [{ id: 0, stack: v.stack }, ...opponents.map((p, i) => ({ ...p, id: i + 1 }))],
+    pending: [],
+    history: v.history.map((a) => ({ ...a, id: a.id === actorId ? 0 : a.id + 100 })),
+  };
+  const c = decisionContext(snapshot);
+  c.inPosition = !!v.inPosition;
+  const draw = c.draw,
+    hand = c.handLabel;
+  const reasons = situationNotes(v, c, actorId);
+  const copies = {
+    'outside-range': `它拿${hand}面对当前加注线选择退出，避免用容易被压制的牌继续付费。`,
+    'insufficient-equity': `它拿${hand}，认为改善或摊牌机会抵不上这笔跟注价格，因而弃牌。`,
+    'stack-pressure': '这笔投入会占掉太多后手，继续后很难再应对加注，因此它先退出。',
+    'loose-exception':
+      '它本来未通过范围、价格或筹码压力检查，却被随机容错保留了继续。这是模拟失误，不能把它包装成合理的赔率跟注。',
+    'premium-continue': `它把${hand}当作强起手牌继续，跳过了普通价格检查；面对多人或大额全下，这种简化仍可能高估牌力。`,
+    'affordable-entry': `它用${hand}低成本入池，想保留翻后成牌机会；这不是接大额再加注的理由。`,
+    'affordable-open': `面对一次小开池，它用${hand}跟入，后手较深，愿意用较小投入保留翻后潜力；同花、连张或对子改善后才有机会争取更大底池。`,
+    'small-reraise-continue':
+      '这是标准或进阶难度的小尺度 3-bet 防守：总额、补入价格、底池赔率与有效后手通过边界检查，再按自己的起手牌、位置和风格选择跟注。普通的全桌随机摊牌权益弃牌检查没有执行；它是有边界的策略近似，不证明跟注盈利，也不适用于大额再加注或全下。',
+    'price-continue': draw.outs
+      ? `它跟注是在追${drawLabel(draw)}，并通过了模型价格检查；成牌候选不全是干净的获胜牌。`
+      : `它用${hand}跟注，通过了模型价格检查，想保留摊牌机会；这不证明能打赢按下注线收紧后的范围。`,
+    'value-raise':
+      v.street === 0
+        ? `它用${hand}主动建池；已有开池时，这是独立的价值再加注范围，平跟范围不会自动变成加注范围。`
+        : c.made.score[0] >= 1 && c.handClass !== 'board' && c.handClass !== 'board-pair'
+          ? `它用${hand}主动取值，想让更弱成牌${draw.outs ? '和听牌' : ''}付费，同时减少对手便宜改善的机会；牌面越湿，越要警惕被强牌继续。`
+          : `它只有${hand}，却被宽随机范围估计归入取值分支。这次进攻可能过于乐观，不能把程序标签当成已成强牌。`,
+    'semi-bluff': `它在用${drawLabel(draw)}半诈唬：先争取直接拿池，被跟注后仍可改善；多人或非坚果听牌会削弱这条路线。`,
+    'pure-bluff': c.missedDraw
+      ? '它的听牌在河牌落空，转而靠下注让更好牌退出；这次是诈唬，不能再靠下一张牌改善。'
+      : `它拿${hand}施压，主要靠对手弃牌；位置、此前进攻和牌面提供了模型的施压条件，但没有证明对手一定会退出。`,
+    trap: `它拿${hand}在较干燥牌面过牌诱导，想让对手主动投入；对手也过牌时会少收一笔价值。`,
+    'free-check': draw.outs
+      ? `它免费过牌保留${drawLabel(draw)}，没有主动抬高追牌成本。`
+      : `它拿${hand}免费过牌，保留摊牌或观察机会；过牌不等于一定弱。`,
+    'float-continue':
+      '它有位置、价格较低，在干燥翻牌先跟住；希望观察后街是否能在对手示弱时进攻，并非已经成强牌。',
+    'pot-control': `它用${hand}控制底池，避免把中等牌力打成大底池；后面有人下注仍需重新判断。`,
+    'thin-value': `它在河牌用${hand}小额取值，希望更弱的一对等成牌付费；更强牌加注时不能沿用原来的轻松跟注。`,
+    'small-cbet':
+      '它延续翻前主动性，在干燥高牌翻牌小额下注；这种牌面给开池范围提供施压候选，但不证明它一定有高牌成对或真实范围优势。',
+  };
   if (t.exceptions.length && t.reason !== 'loose-exception')
     reasons.push(
-      `它曾触发 ${t.exceptions.map((code) => BOT_REASON_NAMES[code]).join('、')}，但容错抽样保留了继续，随后才进入当前行动分支；不能只凭最后的价值／诈唬标签忽略这部分风险。`,
+      '它曾未通过检查，靠随机容错继续后才进入当前分支；最终的取值或诈唬标签不能消除之前的风险。',
     );
-  if (t.cheapRangePassed)
-    reasons.push(
-      '本次通过低成本入池分支，普通权益弃牌检查没有执行；下方权益和门槛仅展示当时算出的数值，不是这一行动的触发依据。',
-    );
-  if (t.affordableOpen && t.affordableRangePassed)
-    reasons.push(
-      `本街只有一次小开池，跟完后的有效后手约 ${n(t.entryContext.effectiveBehind / bigBlindOf(t.view))} BB，已有 ${t.entryContext.openCallers} 位跟入者。${t.entryContext.speculative || t.entryContext.suitedHigh ? '对子或合适同花牌的翻后潜力' : '起手牌排序与当前价格'}进入了独立跟入范围；普通的全桌随机摊牌权益弃牌检查没有执行。该近似没有证明这次跟注有正收益。`,
-    );
-  reasons.push(
-    `当时只用自己的牌与公共牌，对随机对手范围抽样 ${t.trials} 次：原估计 ${pct(t.rawEquity)}，判断扰动 ${(t.noise >= 0 ? '+' : '') + pct(t.noise)}，决策使用 ${pct(t.equity)}。跟注倾向偏移 ${(t.callTolerance >= 0 ? '+' : '') + pct(t.callTolerance)}，比较值 ${pct(comparison)}，常规门槛含 2 个百分点保护为 ${pct(t.odds + 0.02)}。`,
-  );
-  let detail;
-  if (t.reason === 'loose-exception')
-    detail = `它本来触发了 ${t.exceptions.map((code) => BOT_REASON_NAMES[code]).join('、')}，但实际随机容错抽样保留了继续。因此这次${call ? '跟注' : '行动'}是模型刻意保留的宽松失误，不能解释为赔率已证明值得继续。`;
-  else if (t.reason === 'premium-continue')
-    detail =
-      '它把这组牌归入强起手牌，翻前跳过了普通权益与高压力弃牌检查；这是模型近似，不意味着任何人数、价格下都应该接全下。';
-  else if (t.reason === 'affordable-entry')
-    detail =
-      '这是未加注底池、最多补一个 BB 的低成本入池。牌进入按位置和风格扩展的入池范围，所以不再把多人对随机牌的摊牌权益与眼前盲注赔率直接比较后机械弃牌；这不是接大额加注或全下的理由。';
-  else if (t.reason === 'affordable-open')
-    detail =
-      '这是面对一次小开池的条件跟入：开池不超过 4 BB，新增投入较小，开池者没有全下，跟完后的有效后手还足够深。位置、风格、起手牌适玩性与已有跟入者决定候选范围。允许跟入与允许再加注分别计算；3-bet、大额下注和短后手不使用这一豁免。';
-  else if (t.reason === 'small-reraise-continue')
-    detail =
-      '这是标准或进阶难度的小尺度 3-bet 防守：总额、补入价格、底池赔率与有效后手通过边界检查，再按自己的起手牌、位置和风格选择跟注。普通的全桌随机摊牌权益弃牌检查没有执行；它是有边界的策略近似，不证明跟注盈利，也不适用于大额再加注或全下。';
-  else if (t.reason === 'price-continue')
-    detail =
-      '本次没有触发弃牌分支。若未加注，是进攻抽样未命中、没有合适进攻目标，或合法加注权已关闭。通过程序检查并不等于对真实继续范围有正收益。';
-  else if (t.reason === 'value-raise')
-    detail =
-      v.street === 0
-        ? `这组牌进入${raises.length ? '独立的价值再加注' : '开池／隔离加注'}候选范围（约前 ${pct(t.raiseRange ?? t.openingRange)}），或触发强牌分支，并命中进攻抽样；它因此主动建立底池。允许平跟的边缘牌不会仅因入池范围扩大就自动再加注，标签不代表坚果牌。`
-        : `随机范围权益超过 ${pct(v.rivals === 1 ? 0.53 : 1 / (v.rivals + 1) + 0.23)}，或符合“超对且权益超过 40%”，并命中进攻抽样。这不要求一定已有成牌，A high 也可能被宽范围估计归入此分支。若对手继续范围偏强，这个估计可能过于乐观。`;
-  else if (t.reason === 'semi-bluff')
-    detail =
-      '它识别到自己有听牌，参与人数不超过三人，并命中半诈唬及进攻抽样。收益包含弃牌权益；成牌候选仍可能不是干净获胜 outs。';
-  else if (t.reason === 'pure-bluff')
-    detail =
-      '它识别到后位／延续进攻／较干燥牌面的施压条件，筹码压力低于 25%，且命中诈唬和进攻抽样。没有读取你的底牌，也没有证明你一定会弃牌。';
-  else if (t.reason === 'trap')
-    detail =
-      '它在免费过牌、干燥牌面且估计权益超过 65% 的条件下命中诱导分支，保留让对手主动下注的机会。';
-  else if (t.reason === 'free-check')
-    detail =
-      '它无需补筹码，未执行主动加注，选择免费观察。过牌并不表示它一定弱，也可能是进攻抽样未命中。';
-  else detail = `实际执行 ${BOT_REASON_NAMES[t.reason]}，没有使用后来发出的牌来决定这一步。`;
-  if (draw.outs)
-    reasons.push(
-      `当时识别到 ${draw.outs} 张直接顺子／同花成牌候选，下一张成牌比例 ${pct(draw.nextChance)}；不是保证赢牌的概率。`,
-    );
-  const moodActive = t.mode !== 'off' && t.mood.kind !== 'steady';
-  reasons.push(
-    moodActive
-      ? `模拟情绪：${MOOD_LABELS[t.mood.kind]}，来源：${t.mood.reason || '之前牌局的触发事件'}。基础／实际宽度 ${t.baseAxes[0]} / ${t.axes[0]}，进攻 ${t.baseAxes[1]} / ${t.axes[1]}，跟注 ${t.baseAxes[3]} / ${t.axes[3]}；这次状态是否改变动作仍取决于上述分支。`
-      : '本次没有情绪偏移，使用风格基础参数。',
-  );
   if (t.sizing && !t.sizing.executed)
+    reasons.push('模型曾尝试加注，但全下保护阻止了执行；这一步实际没有加注。');
+  if (t.mode !== 'off' && t.mood.kind !== 'steady')
     reasons.push(
-      `曾尝试加注总额 ${n(t.sizing.actual)}，但触及最大值的纯诈唬全下保护条件，最终没有执行该加注；实际动作仍是上方记录的${call ? '跟注' : '过牌'}。`,
+      `本次模拟情绪是${MOOD_LABELS[t.mood.kind]}，可能使范围或进攻更激进；不代表真人心理。`,
     );
-  if (t.sizing?.executed)
-    reasons.push(
-      `尺度先产生总额 ${n(t.sizing.desired)}，再按合法区间 ${n(t.sizing.minimum)}–${n(t.sizing.maximum)} 调整到 ${n(t.sizing.actual)}。${t.sizing.opening ? '未加注底池按开池／跛入人数公式计算。' : '尺度系数约 ' + pct(t.sizing.fraction) + ' ×（当时底池 + 跟注额），再加当前下注总额。'}`,
+  const comparison = t.equity + t.callTolerance;
+  const metrics = [
+    v.legal.callAmount
+      ? `跟注 ${n(v.legal.callAmount)}，可争夺 ${n(v.contestable)}；当前价格门槛约 ${pct(t.odds)}。`
+      : `无需补筹码；当前底池 ${n(v.pot)}。`,
+  ];
+  if (t.affordableRangePassed)
+    metrics.push(
+      t.affordableThreeBet
+        ? BOT_REASON_NAMES['small-reraise-continue']
+        : '使用低成本跟入范围，普通的全桌随机摊牌权益弃牌检查没有执行。',
+    );
+  else
+    metrics.push(
+      `随机范围估计约 ${pct(t.equity)}，抽样 ${t.trials} 次；只是模型估计，不是对真实继续范围的胜率。`,
     );
   return {
-    title: BOT_REASON_NAMES[t.reason],
-    detail,
+    title:
+      record.action === 'fold'
+        ? '价格与继续风险'
+        : draw.outs
+          ? drawLabel(draw)
+          : BOT_REASON_NAMES[t.reason],
+    detail: copies[t.reason] || `它用${hand}按当前公开局面行动。`,
     reasons,
-    made: v.street ? made.label : '翻牌前起手牌',
+    metrics,
+    history: publicHistory(v),
+    made: hand,
     warning:
-      call &&
+      record.action === 'call' &&
       (t.exceptions.length ||
         (!t.affordableRangePassed && comparison < t.odds + 0.02) ||
-        (raises.length > 1 && !t.affordableThreeBet))
-        ? '这次继续尤其需要警惕：机器人估计的是随机范围，未完整按你的加注线收紧范围；小样本、强牌豁免或随机容错都可能产生不合理跟注。实际记录解释了原因，没有证明打法正确。'
-        : '这是模拟器当时实际使用的判断记录。权益是小样本随机范围估计，未完整建模对手继续范围、权益实现或未来策略，不是职业牌手的真实心理，也不是最优打法证明。',
+        (v.history.filter((a) => a.street === v.street && a.action === 'raise').length > 1 &&
+          !t.affordableThreeBet))
+        ? '随机范围和容错可能高估这次继续的价值，实际行动不等于合理打法。'
+        : '',
   };
 }

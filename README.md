@@ -144,6 +144,8 @@ Web、iOS 和 Android 准备简体中文、英文、繁体中文、日文、韩�
 npm run wechat:build         # 可导入 .artifacts/wechat，AppID 后续配置
 npm run wechat:verify        # 当前源码、全部头像、文件指纹与包大小
 npm run wechat:check         # 官方开源 WXML/WXSS 编译器检查
+# 已开启 DevTools 官方自动化时，单独检查复盘、黄色建议与牌手姓名筛选：
+node tests/wechat/review-coaching.mjs ws://127.0.0.1:9461 .artifacts/wechat-review
 npm run platforms:sync      # 同步微信、iOS、Android 最新源码资源
 npm run mobile:test:setup -- ios  # 隔离安装 Appium 与平台驱动
 npm run mobile:test:ios      # 安装实际模拟器 App 并交互验证

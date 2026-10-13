@@ -1,6 +1,7 @@
 import { bigBlindOf } from '../engine/stakes.js';
 import { compactChips } from '../engine/chip-format.js';
 import { actionLabel } from '../engine/action-labels.js';
+import { actionReason, situationNotes, continuationNote } from './narrative.js';
 
 const streets = ['翻牌前', '翻牌', '转牌', '河牌'];
 const fmt = compactChips;
@@ -147,12 +148,47 @@ export function coachDecision(s, r) {
     conciseReason = explanation(s, { ...r, code: 'expensive-call' });
   else if (evKind === 'positive' && r.code === 'expensive-call')
     conciseReason = `当前价格分析提示风险，但完整候选模拟认为这条继续路线比弃牌更有收益。差别来自模拟中的后续弃牌和取值，不能把当前价格单独当成整条路线的收益。`;
+  let paragraphs = [conciseReason];
+  if (s.hole && s.board && r.context.texture) {
+    const specific = actionReason(s, r);
+    const continuation = continuationNote(s, r.context, r.metrics.closing);
+    paragraphs = [
+      specific,
+      !specific || kind !== 'keep' ? conciseReason : '',
+      ...situationNotes(s, r.context),
+      continuation,
+    ].filter(Boolean);
+    if (specific && s.action === 'call')
+      paragraphs.splice(
+        1,
+        0,
+        r.metrics.closing
+          ? '这次跟注封口，可以看完剩余牌，但改善不等于获胜。'
+          : '这笔价格只买下一张牌的机会，不能把后续两次发牌当作一次付费。',
+      );
+    if (
+      r.context.draw.outs &&
+      r.metrics.required > r.context.draw.nextChance &&
+      r.context.handClass === 'high'
+    )
+      paragraphs.push(
+        `直接补顺子／同花约 ${pct(r.context.draw.nextChance)}，当前跟注价格需要约 ${pct(r.metrics.required)}；单靠补牌不足以覆盖价格，还要有其他获胜或后续取值依据，尚未发生的诈唬收益不能保证。`,
+      );
+    if (kind !== 'keep')
+      paragraphs.push(
+        `建议比较${actionLabel(s, action.action, action.amount)}，依据仍受对手继续范围限制。`,
+      );
+    conciseReason = paragraphs.join('');
+    followUp =
+      specific && kind !== 'keep'
+        ? `先辨认${r.context.draw.outs}张改善候选是否会成非坚果牌，再把这次价格与后续可能付费分开；对手持续加大下注时重新选择。`
+        : r.lesson || followUp;
+  }
   return {
     kind,
-    label: { improve: '优先改进', value: '争取更多价值', keep: '值得保留', compare: '看对手调整' }[
-      kind
-    ],
+    label: kind === 'keep' ? '值得保留' : actionLabel(s, action.action, action.amount),
     explanation: conciseReason,
+    paragraphs,
     suggestedAction: actionLabel(s, action.action, action.amount),
     suggestion: unchanged
       ? s.street === 3 || noFurtherDecision

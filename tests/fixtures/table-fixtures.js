@@ -371,6 +371,76 @@ window.qa = {
     render();
     return publicState();
   },
+  reviewDrawLine() {
+    this.reviewClosingCall(false);
+    const snapshot = structuredClone(game.decisions[2]);
+    const parse = (text) =>
+      text
+        .split(' ')
+        .map((v) =>
+          deckOfCards().find(
+            (c) => c.rank === '23456789TJQKA'.indexOf(v[0]) + 2 && c.suit === 'shcd'.indexOf(v[1]),
+          ),
+        );
+    snapshot.hole = parse('Qd 8h');
+    snapshot.board = parse('9h 7d 3d Ts');
+    snapshot.street = 2;
+    snapshot.action = 'call';
+    snapshot.amount = 125;
+    snapshot.position = 'BTN';
+    snapshot.pot = 1000;
+    snapshot.currentBet = 125;
+    snapshot.bet = 0;
+    snapshot.legal = {
+      ...snapshot.legal,
+      canCheck: false,
+      callAmount: 125,
+      toCall: 125,
+      minRaiseTo: 250,
+    };
+    snapshot.players.forEach((p) => {
+      p.bet = p.id === 2 ? 125 : 0;
+      p.position = p.id === 0 ? 'BTN' : 'BB';
+      p.total = p.id === 0 ? 400 : p.id === 2 ? 525 : p.id === 1 ? 75 : 0;
+      p.stack = 5000 - p.total;
+    });
+    snapshot.stack = 4600;
+    snapshot.total = 400;
+    snapshot.history = [
+      { id: 2, street: 1, action: 'check', amount: 0 },
+      { id: 0, street: 1, action: 'check', amount: 0 },
+      { id: 2, street: 2, action: 'raise', amount: 125 },
+    ];
+    delete snapshot.dealer; // Narrative fixture does not invent complete rollout state.
+    game.decisions = [snapshot];
+    handReview.reset();
+    render();
+    return publicState();
+  },
+  reviewSmallReraise() {
+    fixtureGame(9);
+    game.dealer = 6;
+    game.difficulty = 'normal';
+    startHand(game);
+    const deck = deckOfCards();
+    game.players[1].hole = deck.filter(
+      (card) => (card.rank === 13 && card.suit === 0) || (card.rank === 12 && card.suit === 1),
+    );
+    const rest = deck.filter((card) => !game.players[1].hole.some((hole) => hole.key === card.key));
+    for (const player of game.players.filter((player) => player.id !== 1))
+      player.hole = rest.splice(0, 2);
+    game.deck = rest;
+    act(game, 1, 'raise', 125);
+    while (game.actor !== 0) act(game, game.actor, 'fold');
+    act(game, 0, 'raise', 200);
+    while (game.phase !== 'done') {
+      if (game.phase === 'between') advanceStreet(game);
+      else if (game.actor === 0) act(game, 0, legalActions(game).canCheck ? 'check' : 'call');
+      else playBotTurn(game, () => 0.9);
+    }
+    render();
+    return publicState();
+  },
   reviewLine() {
     fixtureGame(6);
     game.dealer = 5;

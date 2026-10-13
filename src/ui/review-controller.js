@@ -7,10 +7,9 @@ import {
   summarizeReview,
 } from '../review/analysis.js';
 import { createOpponentReview } from './opponent-review.js';
-import { historyActionLabel } from '../engine/action-labels.js';
+import { publicHistory } from '../review/narrative.js';
 const $ = (selector) => document.querySelector(selector),
-  format = (n) => formatChips(Math.round(n)),
-  pct = (n) => Math.round(n * 100) + '%';
+  format = (n) => formatChips(Math.round(n));
 const statusNames = { attention: '重点改进', consider: '值得讨论', sound: '有合理依据' };
 
 export function createReviewController({ card }) {
@@ -28,6 +27,12 @@ export function createReviewController({ card }) {
     $('#review-opponents-tab').setAttribute('aria-selected', String(opponent));
     $('#review-hero-panel').hidden = opponent;
     $('#review-opponents').hidden = !opponent;
+    setLocalizedText(
+      dialog.querySelector('.review-scope'),
+      opponent
+        ? '按当时信息判断，单手输赢不直接决定操作好坏。未完整建模对手继续范围、权益实现或未来策略，不是职业牌手的真实心理，也不是最优打法证明。'
+        : '按当时信息判断，单手输赢不直接决定操作好坏。',
+    );
   }
   $('#review-hero-tab').onclick = () => perspective(false);
   $('#review-opponents-tab').onclick = () => perspective(true);
@@ -44,7 +49,7 @@ export function createReviewController({ card }) {
     String(v).replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
   const coachingStatus = (r) =>
     r?.coaching
-      ? { improve: 'attention', value: 'consider', keep: 'sound', compare: 'consider' }[
+      ? { improve: 'consider', value: 'consider', keep: 'sound', compare: 'consider' }[
           r.coaching.kind
         ]
       : r?.status;
@@ -101,7 +106,7 @@ export function createReviewController({ card }) {
         .map((s, i) => {
           const r = analysis?.steps[i],
             status = coachingStatus(r);
-          return `<button class="review-step ${selected === i ? 'selected' : ''}" data-review-index="${i}" aria-current="${selected === i ? 'step' : 'false'}"><span class="review-step-number">${i + 1}</span><span><small>${STREET_NAMES[s.street]} · ${s.position}</small><strong>${actionLabel(s)}</strong></span><span class="review-status ${status || 'pending'}">${r?.coaching.label || (status ? statusNames[status] : '待分析')}</span></button>`;
+          return `<button class="review-step ${selected === i ? 'selected' : ''}" data-review-index="${i}" aria-current="${selected === i ? 'step' : 'false'}"><span class="review-step-number">${i + 1}</span><span><small>${STREET_NAMES[s.street]} · ${s.position}</small><strong>${actionLabel(s)}</strong></span>${r?.coaching.kind === 'keep' ? '' : `<span class="review-status ${status || 'pending'}">${r?.coaching.label || (status ? statusNames[status] : '待分析')}</span>`}</button>`;
         })
         .join(''),
     );
@@ -138,96 +143,26 @@ export function createReviewController({ card }) {
     setLocalizedText($('#review-position'), decision.position);
     setLocalizedText($('#review-pot'), format(decision.pot));
     setLocalizedText($('#review-stack'), format(decision.stack));
-    setLocalizedText($('#review-your-action'), actionLabel(decision));
-    setLocalizedText(
-      $('#review-suggestion'),
-      result?.coaching.suggestion || result?.recommendation || '正在比较可选行动…',
-    );
-    setLocalizedText(
+    setLocalizedHTML(
       $('#review-coach-explanation'),
-      result?.coaching.explanation || '正在比较当时的合法选择…',
+      (result?.coaching.paragraphs || ['正在比较当时的合法选择…'])
+        .map((text) => `<p>${esc(text)}</p>`)
+        .join(''),
     );
-    setLocalizedText($('#review-coach-ev'), result?.coaching.evText || '');
-    $('#review-coach-ev').hidden = !result || result.coaching.evKind === 'uncertain';
-    setLocalizedText($('#review-coach-followup'), result?.coaching.followUp || '分析完成后展示。');
-    setLocalizedHTML(
-      $('#review-routes'),
-      result
-        ? [result.routes.primary, result.routes.secondary]
-            .filter(Boolean)
-            .map(
-              (route, i) =>
-                `<article class="review-route"><span>${i ? '条件不同的备选' : '按价格与位置的对照路线'}</span><h4>${esc(route.label)}</h4><p>${esc(route.condition)}</p><small>${esc(route.tradeoff)}</small></article>`,
-            )
-            .join('')
-        : '',
-    );
-    const sim = result?.simulation;
-    const signed = (v) => (v > 0 ? '+' : '') + format(v);
-    setLocalizedHTML(
-      $('#review-simulation'),
-      sim
-        ? `<h3>候选行动模拟</h3><p>${result.coaching.modelImprovement ? '配对比较支持一个比实际操作更好的候选；仍依赖模拟范围和后续策略。' : '范围或抽样误差可能改变排序，暂未确认另一动作更好。'}</p><table><caption>每个行动、每种范围模拟 ${sim.trials} 手 · 从当前决策起的筹码净变化</caption><thead><tr><th scope="col">行动</th><th scope="col">随机范围</th><th scope="col">行动加权</th></tr></thead><tbody>${sim.rows.map((row) => `<tr><th scope="row">${actionLabel(decision, row.action.action, row.action.amount)}</th>${row.scenarios.map((v) => `<td>${signed(v.ev)}<small>约 ±${format(v.margin)}</small><small>抽样获池 ${pct(v.winRate)}</small></td>`).join('')}</tr>`).join('')}</tbody></table><p class="review-price-note">获池包括平分或拿到部分底池，不等于净盈利；这里只显示抽样比例，不能当作真实胜率。</p><details><summary>模拟如何处理后续行动</summary><p>${esc(sim.note)}</p><p>候选使用相同抽样牌局，与实际动作逐一比较；小样本和缺少不同结果时仅供讨论，不据此确认长期收益。真实隐藏底牌、后续牌序与最终赢家均未使用。</p></details>`
-        : result
-          ? '<p class="review-price-note">这个旧快照缺少完整行动状态，无法进行后续行动模拟；保留公开信息的范围与价格分析。</p>'
-          : '<p class="review-price-note">正在模拟各个合法行动与后续牌局…</p>',
-    );
-    setLocalizedText($('#review-decision-title'), result?.title || '依据当时的信息分析');
-    setLocalizedText(
-      $('#review-reason'),
-      result?.reason ||
-        '使用当时的底牌、公共牌、公开行动和筹码情况，不读取对手隐藏底牌或后面发出的牌。',
-    );
+    $('#review-practice-focus').hidden = !result || result.coaching.kind === 'keep';
+    setLocalizedText($('#review-coach-followup'), result?.coaching.followUp || '');
     setLocalizedHTML(
       $('#review-evidence'),
-      result ? result.evidence.map((fact) => `<li>${fact}</li>`).join('') : '',
+      result ? result.evidence.map((fact) => `<li>${esc(fact)}</li>`).join('') : '',
     );
-    setLocalizedText($('#review-confidence'), result?.confidence || '等待分析');
-    setLocalizedText($('#review-plan'), result?.plan || '分析完成后展示后续处理路线。');
-    setLocalizedText(
-      $('#review-model-note'),
-      result
-        ? (result.metrics.method === 'enumeration'
-            ? `河牌单挑：完整枚举 ${result.metrics.trials} 种合法对手底牌组合；组合层面没有抽样误差，真实范围仍未知。`
-            : `每种范围抽样 ${result.metrics.trials} 次，保守抽样误差保护带约 ±${Math.ceil(result.metrics.uncertainty * 100)} 个百分点；不等同于真实对手范围误差。`) +
-            ` 随机 / 行动加权权益：${pct(result.metrics.randomEquity)} / ${pct(result.metrics.weightedEquity)}。两种范围的结果差异不是置信区间。`
-        : '',
-    );
-    setLocalizedText(
-      $('#review-lesson'),
-      result?.lesson || '结果与决策分开看，复盘完成后会给出具体的练习重点。',
-    );
-    setLocalizedText(
-      $('#review-price'),
-      decision.legal.callAmount ? (result ? pct(result.metrics.required) : '…') : '无需跟注',
-    );
-    setLocalizedText(
-      $('#review-equity'),
-      result && result.metrics.contestable
-        ? pct(result.metrics.equityLow) === pct(result.metrics.equityHigh)
-          ? '约 ' + pct(result.metrics.equityLow)
-          : pct(result.metrics.equityLow) + '–' + pct(result.metrics.equityHigh)
-        : '—',
-    );
-    setLocalizedText($('#review-contestable'), result ? format(result.metrics.contestable) : '…');
-    setLocalizedText(
-      $('#review-price-note'),
-      result?.metrics.sidePots
-        ? '按你有资格争夺的各池分别估计；超出全下额度的边池不计入。'
-        : result?.metrics.closing
-          ? '跟注价格按当前可争夺金额计算，已扣除未被跟注的退还。'
-          : '价格只作参考，后续下注、其他玩家继续行动和潜在收益尚未计入。',
-    );
-    const publicActions = decision.history
-      .map((a, index) => ({ ...a, label: historyActionLabel(decision.history, index) }))
-      .filter((a) => a.street === decision.street)
-      .slice(-6);
+    const publicActions = publicHistory(decision);
     setLocalizedHTML(
       $('#review-public-actions'),
       publicActions.length
         ? publicActions
             .map(
-              (a) => `<li><span>${decision.players[a.id].name}</span><span>${a.label}</span></li>`,
+              (a) =>
+                `<li><span>${esc(a.street)} · ${esc(a.name)}</span><span>${esc(a.action)}</span></li>`,
             )
             .join('')
         : '<li>本轮尚无其他主动行动。</li>',
@@ -351,7 +286,6 @@ export function createReviewController({ card }) {
           last = { key, input, status: 'idle', progress: 0, analysis: null };
           selected = 0;
           selectionTouched = false;
-          $('#review-advanced').open = false;
           perspective(false);
           opponents.update(input);
           if (dialog.open) {

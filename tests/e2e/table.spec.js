@@ -14,7 +14,7 @@ test.afterEach(async ({ page }) => {
   expect(page.errors).toEqual([]);
 });
 
-test('review separates a lucky bad-price win from a reasonable loss and keeps evidence optional', async ({
+test('review separates lucky bad-price wins from reasonable losses with concise visible evidence', async ({
   page,
 }) => {
   for (const win of [true, false]) {
@@ -27,17 +27,20 @@ test('review separates a lucky bad-price win from a reasonable loss and keeps ev
       0,
     );
     if (win) {
-      await expect(page.locator('#review-suggestion')).toHaveText('弃牌');
-      await expect(page.locator('#review-coach-ev')).toContainText('长期会亏');
+      await expect(page.locator('#review-selected-status')).toHaveText('弃牌');
+      await expect(page.locator('#review-practice-focus')).toBeVisible();
+      await expect(page.locator('#review-selected-status')).toHaveClass(/consider/);
     } else {
       await page.locator('#review-timeline [data-review-index="3"]').click();
       await expect(page.locator('#review-selected-status')).toContainText('值得保留');
-      await expect(page.locator('#review-coach-ev')).toContainText('正收益');
+      await expect(page.locator('#review-practice-focus')).toBeHidden();
     }
-    await page.locator('#review-advanced > summary').click();
     await expect(page.locator('#review-evidence')).toBeVisible();
-    await expect(page.locator('#review-simulation')).toContainText('抽样获池');
-    await expect(page.locator('#review-simulation')).toContainText('不等于净盈利');
+    await expect(
+      page.locator(
+        '#review-advanced, #review-simulation, #review-your-action, #review-suggestion, #review-coach-ev',
+      ),
+    ).toHaveCount(0);
     await page.locator('#review-dialog .close-dialog').first().click();
   }
 });
@@ -439,8 +442,9 @@ test('raise controls, seats, activity and review share street-specific bet ordin
     timeout: 30000,
   });
   await page.locator('#review-timeline [data-review-index="0"]').click();
-  await expect(page.locator('#review-your-action')).toContainText('2-bet 开池至 150');
-  await expect(page.locator('#review-routes')).toContainText('2-bet');
+  await expect(page.locator('#review-timeline [data-review-index="0"]')).toContainText(
+    '2-bet 开池至 150',
+  );
   await page.locator('#review-timeline [data-review-index="2"]').click();
   await expect(page.locator('#review-public-actions')).toContainText('3-bet 加注至 650');
   await expect(page.locator('#review-public-actions')).toContainText('4-bet 加注至 1.8K');
@@ -1079,9 +1083,11 @@ test('review completes through real worker with facts and a conditional follow-u
     timeout: 15000,
   });
   expect(await page.locator('#review-evidence li').count()).toBeGreaterThanOrEqual(4);
-  await expect(page.locator('#review-plan')).not.toHaveText('分析完成后展示后续处理路线。');
-  await expect(page.locator('#review-model-note')).toContainText('范围');
-  await expect(page.locator('#review-reason')).not.toBeEmpty();
+  if ((await page.locator('#review-selected-status').textContent()) !== '值得保留') {
+    await expect(page.locator('#review-practice-focus')).toBeVisible();
+    await expect(page.locator('#review-coach-followup')).not.toBeEmpty();
+  }
+  await expect(page.locator('#review-coach-explanation')).not.toBeEmpty();
 });
 
 test('activity preserves chronological top-to-bottom order with bounded desktop scrolling and mobile expansion', async ({
@@ -1856,21 +1862,24 @@ test('A7 review separates steal, 3bet and 4bet; opponents expose actual decision
     timeout: 30000,
   });
   await page.locator('#review-timeline [data-review-index="0"]').click();
-  await expect(page.locator('#review-reason')).toContainText('阻断');
-  await expect(page.locator('#review-suggestion')).not.toHaveText('2-bet 开池至 150');
-  await expect(page.locator('#review-routes .review-route')).toHaveCount(2);
+  await expect(page.locator('#review-coach-explanation')).toContainText('主动开池');
+  await expect(page.locator('#review-selected-status')).not.toHaveText('2-bet 开池至 150');
+  await expect(page.locator('#review-routes, #review-advanced')).toHaveCount(0);
   await page.locator('#review-timeline [data-review-index="1"]').click();
-  await expect(page.locator('#review-decision-title')).toContainText('3-bet');
+  await expect(page.locator('#review-coach-explanation')).toContainText('3-bet');
   await page.locator('#review-timeline [data-review-index="2"]').click();
-  await expect(page.locator('#review-decision-title')).toContainText('多次再加注');
+  await expect(page.locator('#review-coach-explanation')).toContainText('多次再加注');
   await page.locator('#review-opponents-tab').click();
   await expect(page.locator('#review-hero-panel')).toBeHidden();
   await expect(page.locator('#review-opponent-detail .review-cards .playing-card')).toHaveCount(5);
   await expect(page.locator('#review-opponent-detail .review-explanation')).not.toBeEmpty();
-  await expect(page.locator('#review-opponent-detail .review-evidence')).toContainText(
-    '随机对手范围',
-  );
-  await expect(page.locator('#review-opponent-detail')).toContainText('本次没有情绪偏移');
+  await expect(page.locator('#review-opponent-detail .review-evidence')).toContainText('随机范围');
+  expect(
+    await page.locator('#review-opponent-detail .opponent-metrics li').count(),
+  ).toBeLessThanOrEqual(2);
+  await expect(
+    page.locator('#review-opponent-detail .review-choice, .opponent-warning'),
+  ).toHaveCount(0);
   await page.locator('#review-opponent-filter').selectOption('1');
   expect(
     await page.locator('#review-opponents .review-timeline .review-step').count(),
@@ -1878,7 +1887,7 @@ test('A7 review separates steal, 3bet and 4bet; opponents expose actual decision
   await expect(page.locator('#review-opponents .review-timeline')).toContainText('Mia');
   await expect(page.locator('#review-opponents .review-timeline')).not.toContainText('Alex');
   await page.locator('#review-hero-tab').click();
-  await expect(page.locator('#review-decision-title')).toContainText('多次再加注');
+  await expect(page.locator('#review-coach-explanation')).toContainText('多次再加注');
   const layout = await page.evaluate(() => {
     const d = document.querySelector('#review-dialog');
     return { width: d.clientWidth, scroll: d.scrollWidth };
@@ -1977,13 +1986,13 @@ test('fast finish records opponents while live public state never exposes privat
   await page.locator('#review-hand-button').click();
   await page.locator('#review-opponents-tab').click();
   await expect(page.locator('#review-opponents .review-step').first()).toBeVisible();
-  await expect(page.locator('#review-opponent-detail .review-evidence')).toContainText('实际');
+  await expect(page.locator('#review-opponent-detail .review-explanation')).not.toBeEmpty();
   await expect(
     page.locator('#review-opponent-detail .review-cards').first().locator('.playing-card'),
   ).toHaveCount(2);
 });
 
-test('foreign style assignments persist and candidate simulation is available in review', async ({
+test('foreign style assignments persist and opponent review filters include assigned player names', async ({
   page,
 }) => {
   await page.evaluate(() => window.qa.foldWin(9));
@@ -2020,9 +2029,8 @@ test('foreign style assignments persist and candidate simulation is available in
     timeout: 20000,
   });
   await page.locator('#review-timeline [data-review-index="0"]').click();
-  await expect(page.locator('#review-simulation')).toContainText('模拟 40 手');
-  expect(await page.locator('#review-simulation tbody tr').count()).toBeGreaterThanOrEqual(4);
-  await page.locator('#review-advanced > summary').click();
-  await page.locator('#review-simulation summary').click();
-  await expect(page.locator('#review-simulation')).toContainText('不是 GTO');
+  await expect(page.locator('#review-advanced, #review-simulation')).toHaveCount(0);
+  await page.locator('#review-opponents-tab').click();
+  const options = await page.locator('#review-opponent-filter option').allTextContents();
+  expect(options.some((name) => /Mia.*(Viktor|Isildur)/.test(name))).toBe(true);
 });

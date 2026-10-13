@@ -1633,3 +1633,35 @@
   font-weight: 600;
   vertical-align: top;
 }
+
+.review-label.consider {
+  background: #65573266;
+  color: #e4cea0;
+}
+.review-label.sound {
+  background: #284e4266;
+  color: #a7d6bd;
+}
+.review-practice-focus {
+  padding: 14px 16px;
+  border-left: 2px solid #e4cea0;
+  background: #65573233;
+}
+.review-practice-focus .module-title {
+  color: #e4cea0;
+}
+.review-evidence,
+.review-public-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 18px 0;
+  font-size: 14px;
+  line-height: 1.8;
+}
+.review-scope {
+  display: block;
+  margin-top: 18px;
+  font-size: 12px;
+  line-height: 1.8;
+}
