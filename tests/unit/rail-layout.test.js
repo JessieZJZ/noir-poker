@@ -12,10 +12,14 @@ for (const width of [320, 390, 440, 768, 820, 1032]) {
         seats: Array.from({ length: count - 1 }, (_, i) => ({ id: i + 1 })),
       });
       assert.ok(fit.clear);
+      assert.ok(
+        Math.abs(Math.min(...fit.positioned.map((player) => player.top)) - 8) < 1e-9,
+        'The highest complete player uses the arena instead of leaving an empty strip',
+      );
       const cx = fit.table.left + fit.table.width / 2,
         cy = fit.table.top + fit.table.height / 2;
       assert.equal(fit.public.left + fit.public.width / 2, cx);
-      assert.equal(fit.public.top + fit.public.centerY, cy);
+      assert.ok(Math.abs(fit.public.top + fit.public.centerY - cy) < 1e-9);
       for (const player of [...fit.positioned, fit.hero]) {
         const x = (player.left + player.width / 2 - cx) / (fit.table.width / 2);
         const y = (player.top + player.height / 2 - cy) / (fit.table.height / 2);

@@ -46,8 +46,23 @@ export function railLayout({
   const measure = (arenaHeight, row) => {
     const arenaWidth = proportional ? width * Math.max(1, arenaHeight / height) : width;
     const insetX = seatWidth / 2 + 4;
-    const insetTop = seatHeight / 2 + 4;
     const insetBottom = Math.max(hero.height, seatHeight) / 2 + 4;
+    // The top players rarely sit exactly at -90 degrees. Remove the empty
+    // strip their angles would otherwise leave above the reserved hole cards.
+    const topSine = Math.min(
+      ...seats.map((_, i) =>
+        Math.sin(
+          angles
+            ? (angles[i] * Math.PI) / 180
+            : Math.PI / 2 + ((i + 1) * 2 * Math.PI) / (seats.length + 1),
+        ),
+      ),
+    );
+    const topFactor = (1 + topSine) / 2;
+    const insetTop = Math.max(
+      8,
+      (seatHeight / 2 + 8 - topFactor * (arenaHeight - insetBottom)) / (1 - topFactor),
+    );
     const table = {
       left: insetX,
       top: insetTop,

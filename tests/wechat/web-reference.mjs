@@ -71,7 +71,7 @@ try {
     await page.goto(process.argv[3] || 'http://127.0.0.1:4192');
     await page.waitForFunction(() => !!window.qa);
     // The requested mini-program chrome is deliberately smaller than Web's.
-    // Replay that explicit 48px nav / 136px dock budget; table geometry still
+    // Replay that explicit 48px nav / 134px dock budget; table geometry still
     // uses the shared Web solver and the existing 3px renderer tolerance.
     await page.addStyleTag({
       content: `
@@ -81,10 +81,10 @@ try {
       .brand-light { font-size: 10px; }
       .settings-button { width: 36px; height: 36px; }
       #rules-button { font-size: 11px; }
-      .game-surface { --live-dock-height: 136px; }
+      .game-surface { --live-dock-height: 134px; }
       .game-surface .action-buttons > button,
       .game-surface .action-panel.folded-actions > .continue-deal-button {
-        height: 40px; min-height: 40px;
+        height: 38px; min-height: 38px;
       }
     `,
     });
@@ -327,7 +327,7 @@ try {
       viewport,
       sameDeal: true,
       capsuleReserved: capsule,
-      miniChrome: { navHeight: 48, liveDockHeight: 136, primaryButtonHeight: 40 },
+      miniChrome: { navHeight: 48, liveDockHeight: 134, primaryButtonHeight: 38 },
     });
     await page.close();
     console.log('WEB', name);

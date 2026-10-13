@@ -86,7 +86,7 @@ try {
       const shell = await page.$('.game-shell');
       const shellBottom = (await shell.offset()).top + (await shell.size()).height;
       assert.ok(
-        Math.abs(shellBottom - (data.windowHeight - data.bottomInset - 8 - 72)) <= 1,
+        Math.abs(shellBottom - (data.windowHeight - data.bottomInset - 8 - 76)) <= 1,
         'Table preserves its live height while only the dock collapses',
       );
       const buttons = await page.$$('.settled-buttons button');
@@ -94,7 +94,7 @@ try {
       assert.ok(await page.$('.retry-button'), 'Replay remains visible alongside practice runout');
       const sizes = await Promise.all(buttons.map((button) => button.size()));
       for (const size of sizes) {
-        assert.equal(size.height, 44);
+        assert.equal(size.height, 38);
         assert.ok(
           Math.abs(size.width - sizes[0].width) <= 1,
           'Settlement actions have equal widths',
@@ -326,14 +326,14 @@ try {
   await capture('table', ['.nav', '.game-shell', '.board-row', '.hero-cards', '.action-buttons']);
   assert.equal((await (await page.$('.nav')).size()).height, 48);
   for (const button of await page.$$('.action-buttons button'))
-    assert.equal((await button.size()).height, 40);
+    assert.equal((await button.size()).height, 38);
   for (const button of await page.$$('button'))
     assert.equal(await button.attribute('hover-class'), 'none');
   report.compactChrome = {
     navHeight: 48,
-    liveDockHeight: 136,
-    primaryButtonHeight: 40,
-    tableHeaderHeight: 33,
+    liveDockHeight: 134,
+    primaryButtonHeight: 38,
+    tableHeaderHeight: 26,
     buttonHoverClass: 'none',
   };
   const board = await page.$('.board-row'),
@@ -659,9 +659,22 @@ try {
   const beforePeek = await page.data();
   const target = beforePeek.phoneSeats.find((seat) => seat.cards.length === 0);
   assert.ok(target, 'A folded opponent must be available for the peek regression');
+  const targetCardIndex = beforePeek.phoneSeats
+    .slice(0, beforePeek.phoneSeats.indexOf(target))
+    .reduce((sum, seat) => sum + seat.cards.length, 0);
   const peekStarted = await mini.evaluate((id) => {
     const current = getCurrentPages().at(-1);
+    current.__peekGeometry = [];
     current.peekSeat({ currentTarget: { dataset: { id } } });
+    // Sample the first card after its 650ms flip, while the staggered pair
+    // still carries the animation class, then after the class is removed.
+    for (const delay of [720, 950])
+      setTimeout(() => {
+        wx.createSelectorQuery()
+          .selectAll('.mini-card')
+          .boundingClientRect((cards) => current.__peekGeometry.push({ delay, cards }))
+          .exec();
+      }, delay);
     const seat = current.data.phoneSeats.find((entry) => entry.id === id);
     return {
       peekArriving: seat.peekArriving,
@@ -677,18 +690,29 @@ try {
     assert.equal(next.rank, seat.rank);
   }
   const revealed = await page.$('.face-arrive');
-  assert.equal(await revealed.style('animation-name'), 'flip-card');
+  assert.equal(await revealed.style('animation-name'), 'hole-flip');
   assert.equal(await revealed.style('animation-duration'), '0.65s');
   await mini.screenshot({ path: path.join(output, 'motion-peek-early.png') });
   await page.waitFor(850);
   assert.equal(await page.$('.seat-hole.peek-arrive'), null);
   assert.equal(await page.$('.face-arrive'), null);
   await mini.screenshot({ path: path.join(output, 'motion-peek-complete.png') });
+  const peekGeometry = await mini.evaluate(() => getCurrentPages().at(-1).__peekGeometry);
+  assert.equal(peekGeometry.length, 2);
+  const firstCard = peekGeometry.map((sample) => sample.cards[targetCardIndex]);
+  assert.ok(firstCard.every(Boolean));
+  const peekShift = {
+    x: Math.abs(firstCard[1].left - firstCard[0].left),
+    y: Math.abs(firstCard[1].top - firstCard[0].top),
+  };
+  assert.ok(peekShift.x <= 1 && peekShift.y <= 1, 'Peek cleanup must keep the card in place');
   report.peekTransition = {
     wholeCard: true,
     durationMs: 650,
     containerFadeMs: 180,
     peerCaptionsPreserved: true,
+    endpointGeometry: peekGeometry,
+    cleanupShiftPx: peekShift,
   };
   await invoke('peekSeat', { currentTarget: { dataset: { id: target.id } } });
   await captureShowdown();

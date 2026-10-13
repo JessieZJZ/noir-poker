@@ -3,6 +3,22 @@ import { readTableLayout, assertTableLayout } from './layout.mjs';
 import { readCardRankState, readNativeRankInk, assertStableRankInk } from './card-ranks.mjs';
 const documentLoginMarker = (text) => /sign in|log in|登录账号/i.test(text);
 
+export async function waitForPendingOpponent(app) {
+  // A real opponent can answer before Android's next HTTP state read. Follow
+  // the normal UI to the next decision instead of waiting on a hero turn.
+  return app.waitFor(
+    async () => {
+      const game = await app.state();
+      if (game.phase === 'playing' && game.actor && game.actor !== '你') return game;
+      if (game.phase === 'playing' && game.legal.enabled) await app.click('#call-button');
+      else if (game.phase === 'done') await app.click('#next-button');
+      return null;
+    },
+    15000,
+    'Background test needs a pending opponent action',
+  );
+}
+
 // Keep the installed-app completion assertion and its existing deadline. The
 // observations distinguish a working but slow review from a failed WebView or
 // an analysis that stopped progressing; they do not authorize a partial pass.
@@ -723,7 +739,7 @@ export async function nativeScenarios(app) {
     );
     const buttons = layout.settledButtons;
     assert.ok(
-      buttons.every((button) => Math.abs(button.top - buttons[0].top) <= 1 && button.height >= 44),
+      buttons.every((button) => Math.abs(button.top - buttons[0].top) <= 1 && button.height >= 38),
     );
     assert.ok(layout.dock.height <= 65 + layout.bottomInset, 'Settlement must use the compact row');
     const crownInspection = [];
@@ -887,15 +903,7 @@ export async function nativeScenarios(app) {
         });
       });
     });
-    await app.click('#call-button');
-    await app.waitFor(
-      async () => {
-        const game = await app.state();
-        return game.phase === 'playing' && game.actor && game.actor !== '你' ? game : null;
-      },
-      15000,
-      'Background test needs a pending opponent action',
-    );
+    await waitForPendingOpponent(app);
     const nativeBackground = await app.background();
     await app.sleep(6000);
     const stillBackgrounded = await app.nativeState();
@@ -954,6 +962,14 @@ export async function nativeScenarios(app) {
         await app.waitHero();
         await app.evaluate(() => window.scrollTo(0, 0));
         assertTableLayout(await app.evaluate(readTableLayout));
+        const liveGeometry = await app.evaluate(() => ({
+          tableHeight: document.querySelector('.table-viewport').getBoundingClientRect().height,
+          buttons: [...document.querySelectorAll('.action-panel .action')].map(
+            (el) => el.getBoundingClientRect().height,
+          ),
+        }));
+        assert.equal(liveGeometry.buttons.length, 3);
+        for (const height of liveGeometry.buttons) assert.equal(height, 38);
         comparisons.push(
           await app.comparePage(`table-${count}`, [
             '.table-viewport',
@@ -972,6 +988,15 @@ export async function nativeScenarios(app) {
           }
         }
         await app.waitFor(async () => (await app.state()).phase === 'done', 90000);
+        const settledGeometry = await app.evaluate(() => ({
+          tableHeight: document.querySelector('.table-viewport').getBoundingClientRect().height,
+          buttons: [...document.querySelectorAll('.settled-actions > button:not([hidden])')].map(
+            (el) => el.getBoundingClientRect().height,
+          ),
+        }));
+        assert.equal(settledGeometry.tableHeight, liveGeometry.tableHeight);
+        assert.ok(settledGeometry.buttons.length >= 3);
+        for (const height of settledGeometry.buttons) assert.equal(height, 38);
         comparisons.push(
           await app.comparePage(`settlement-${count}`, [
             '.table-viewport',

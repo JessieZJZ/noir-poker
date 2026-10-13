@@ -121,10 +121,10 @@ export function createSettlementLayout(arena, { observe = true } = {}) {
           seats: seatElements.map((seat, i) => ({ id: i + 1 })),
         })
       : railLayout({
-          width: arena.clientWidth,
+          width: Math.min(arena.clientWidth, arena.clientHeight * 1.45),
           height: arena.clientHeight,
-          // The outer viewport fits the complete arena back to the first
-          // screen. Grow both dimensions here to retain the wide table shape.
+          // Bound the oval by available height, so wide windows retain a
+          // rounded table and readable cards instead of an empty wide ellipse.
           proportional: true,
           angles:
             seatElements.length === 4
