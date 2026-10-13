@@ -71,7 +71,7 @@ for (const locale of locales) {
     await expect(page.locator('#review-dialog[data-analysis-status="done"]')).toBeVisible({
       timeout: 30000,
     });
-    await expect(page.locator('#review-your-action')).not.toBeEmpty();
+    await expect(page.locator('#review-coach-explanation')).not.toBeEmpty();
     await page.locator('#review-dialog .close-dialog').first().click();
     await page.locator('#restart-hand-button').click();
     await page.evaluate(() => window.qa.stop());

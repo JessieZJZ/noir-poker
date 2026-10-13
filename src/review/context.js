@@ -42,6 +42,17 @@ export function drawInfo(hole, board) {
     if (made.score[0] < 4 && [4, 8].includes(next.score[0])) straight.add(c.key);
   }
   const outs = new Set([...flush, ...straight]).size;
+  const straightRanks = [
+    ...new Set([...straight].map((key) => deckOfCards().find((c) => c.key === key).rank)),
+  ].sort((a, b) => a - b);
+  const ranks = new Set(known.map((c) => c.rank));
+  if (ranks.has(14)) ranks.add(1);
+  const openEnded = Array.from({ length: 9 }, (_, i) => i + 2).some(
+    (low) =>
+      [0, 1, 2, 3].every((offset) => ranks.has(low + offset)) &&
+      straightRanks.includes(low - 1) &&
+      straightRanks.includes(low + 4),
+  );
   return {
     flush: flush.size > 0,
     straight: straight.size > 0,
@@ -49,6 +60,14 @@ export function drawInfo(hole, board) {
     straightOuts: straight.size,
     outs,
     nextChance: outs / (52 - keys.size),
+    straightRanks,
+    straightType: !straight.size
+      ? null
+      : openEnded
+        ? 'open-ended'
+        : straightRanks.length >= 2
+          ? 'double-gutshot'
+          : 'gutshot',
   };
 }
 export function boardTexture(board) {
@@ -72,6 +91,7 @@ export function boardTexture(board) {
   if (maxSuit >= 4) tags.push('四张同花色');
   else if (maxSuit === 3) tags.push('三张同花色');
   else if (board.length === 3 && maxSuit === 2) tags.push('两张同花色');
+  else if (board.length === 3 && maxSuit === 1) tags.push('彩虹面');
   if (connected >= 4) tags.push('四张连通');
   else if (connected === 3) tags.push('顺子连接明显');
   return {
@@ -132,7 +152,7 @@ export function decisionContext(s) {
   }
   const actionOrder = ['SB', 'BB', 'UTG', 'UTG+1', 'MP', 'LJ', 'HJ', 'CO', 'BTN'],
     heroOrder = actionOrder.indexOf(s.position);
-  const inPosition = opponents.every((p) => actionOrder.indexOf(p.position) < heroOrder),
+  const inPosition = opponents.every((p) => p.allin || actionOrder.indexOf(p.position) < heroOrder),
     pendingOthers = s.pending.filter(
       (id) => id !== 0 && !s.players[id]?.folded && !s.players[id]?.allin,
     ).length;

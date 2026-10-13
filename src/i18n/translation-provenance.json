@@ -872,5 +872,11 @@
   "presentationRepairs": {
     "date": "2026-10-10",
     "method": "Source-based manual corrections of Japanese and Korean damaged repetitions, replacement markers, profile names, parameter labels and language-switch guidance. Full native-speaker poker review remains pending."
+  },
+  "contextualReview": {
+    "source": "Chinese contextual review, with manually written English translations",
+    "method": "Manually authored contextual review translations in all nine non-Chinese locales; Traditional Chinese via OpenCC. Draft machine output replaced before delivery.",
+    "linguisticReview": "pending",
+    "messageCount": 72
   }
 }

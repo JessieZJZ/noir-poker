@@ -813,7 +813,13 @@ Page({
     const reviewIndex = Math.min(this.data.reviewIndex, Math.max(0, steps.length - 1));
     this.setData({
       reviewData,
-      opponentOptions: ['全部对手', ...names],
+      opponentOptions: [
+        '全部对手',
+        ...names.map((name) => {
+          const step = opponents.find((step) => step.name === name);
+          return step.named && step.profileName ? `${name} · ${step.profileName}` : name;
+        }),
+      ],
       opponentFilter: filter,
       reviewIndex,
       reviewSteps: steps,

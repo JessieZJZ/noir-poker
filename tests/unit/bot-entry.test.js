@@ -181,7 +181,7 @@ test('opponent review explains the exact small-open call and separate re-raising
   const d = decision(v);
   const explanation = explainOpponent({ action: d.action, trace: { ...d.trace, view: v } });
   assert.match(explanation.detail, /一次小开池/);
-  assert.match(explanation.reasons.join(' '), /普通的全桌随机摊牌权益弃牌检查没有执行/);
+  assert.match(explanation.metrics.join(' '), /普通的全桌随机摊牌权益弃牌检查没有执行/);
   assert.doesNotMatch(explanation.detail, /这是未加注底池/);
   assert.doesNotMatch(explanation.warning, /这次继续尤其/);
   const premium = decision(smallOpen('As Ah'), 'balanced', () => 0.1);

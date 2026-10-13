@@ -138,18 +138,21 @@
 .review-coaching > p {
   margin: 0 0 12px;
 }
-.review-coaching > div {
+.review-coaching > #review-practice-focus {
   padding: 14px 16px;
-  border-left: 2px solid #68c1aa;
-  background: #173d352e;
+  border-left: 2px solid #e4cea0;
+  background: #65573233;
 }
 .review-coaching strong {
   font-size: 13px;
   font-weight: 500;
-  color: #9fcabd;
+  color: #e4cea0;
 }
 .review-coaching div p {
   margin: 5px 0 0;
+}
+.review-coaching #review-coach-explanation p {
+  margin: 0 0 12px;
 }
 .review-advanced {
   border-top: 1px solid #364653;

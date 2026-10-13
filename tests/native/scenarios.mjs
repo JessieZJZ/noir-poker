@@ -47,9 +47,9 @@ export async function waitForNativeReview(app, { now = Date.now } = {}) {
               decisionCount: document.querySelectorAll('#review-timeline .review-step').length,
               retryVisible: Boolean(retry && !retry.hidden),
               analysisStatus: document.querySelector('#review-dialog')?.dataset.analysisStatus,
-              decisionTitle: document.querySelector('#review-decision-title')?.textContent.trim(),
+              decisionTitle: document.querySelector('#review-detail-title')?.textContent.trim(),
               summaryCount: document.querySelectorAll('.review-summary, #review-overview').length,
-              suggestion: document.querySelector('#review-suggestion')?.textContent.trim(),
+              suggestion: document.querySelector('#review-coach-explanation')?.textContent.trim(),
             };
           });
         } catch (error) {
@@ -835,6 +835,17 @@ export async function nativeScenarios(app) {
       0,
     );
     await app.screenshot('settlement-decision-review-open');
+    const presentation = await app.evaluate(() => ({
+      removed: document.querySelectorAll(
+        '#review-advanced, #review-your-action, #review-suggestion, #review-simulation',
+      ).length,
+      evidence: document.querySelectorAll('#review-evidence li').length,
+      keep: document.querySelector('#review-selected-status').textContent === '值得保留',
+      focusHidden: document.querySelector('#review-practice-focus').hidden,
+    }));
+    assert.equal(presentation.removed, 0);
+    assert.ok(presentation.evidence >= 4);
+    assert.equal(presentation.focusHidden, presentation.keep);
     if (app.comparePage) {
       await app.comparePage('review', [
         '#review-dialog',
@@ -844,6 +855,18 @@ export async function nativeScenarios(app) {
         '.review-scene',
       ]);
       await app.click('#review-opponents-tab');
+      const opponent = await app.evaluate(() => ({
+        metrics: document.querySelectorAll('.opponent-metrics li').length,
+        removed: document.querySelectorAll(
+          '#review-opponent-detail .review-choice, #review-opponent-detail .review-status, #review-opponent-detail details',
+        ).length,
+        reason: document.querySelector('#review-opponent-detail .review-explanation')?.textContent,
+        scope: document.querySelector('.review-scope').textContent,
+      }));
+      assert.ok(opponent.reason);
+      assert.ok(opponent.metrics > 0 && opponent.metrics <= 2);
+      assert.equal(opponent.removed, 0);
+      assert.match(opponent.scope, /未完整建模对手继续范围/);
       await app.comparePage('opponent-review', [
         '#review-dialog',
         '.review-tabs',
@@ -852,7 +875,7 @@ export async function nativeScenarios(app) {
     }
     await app.click('#review-dialog .close-dialog');
     assert.equal(await app.evaluate(() => document.querySelector('#review-dialog').open), false);
-    return review;
+    return { ...review, presentation };
   });
   await check('retry-original-deal-and-next-hand', async () => {
     const original = await app.state();
