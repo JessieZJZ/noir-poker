@@ -485,18 +485,22 @@
     opacity: 0.3;
   }
 }
-.hero-card .card-art {
+.hero-card.hero-arrive {
   animation: face-arrive 0.6s cubic-bezier(0.15, 0.65, 0.25, 1) both;
   animation-delay: var(--card-delay, 0ms);
 }
 @keyframes face-arrive {
   from {
     opacity: 0;
-    transform: translateY(-36px) rotate(-12deg) scale(0.75);
+    translate: 0 -36px;
+    rotate: -12deg;
+    scale: 0.75;
   }
   to {
     opacity: 1;
-    transform: translateY(0) scale(1);
+    translate: 0 0;
+    rotate: 0deg;
+    scale: 1;
   }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -960,11 +964,11 @@
     opacity: 0;
   }
 }
-.community-card.flip-new .card-art {
+.community-card.flip-new {
   animation: flip-card 0.65s cubic-bezier(0.2, 0.6, 0.2, 1) both;
   animation-delay: var(--card-delay, 0ms);
 }
-.mini-card .card-art {
+.mini-card.face-arrive {
   animation: flip-card 0.65s cubic-bezier(0.2, 0.6, 0.2, 1) both;
   animation-delay: var(--card-delay, 0ms);
 }
@@ -980,14 +984,25 @@
 }
 @media (prefers-reduced-motion: reduce) {
   .profile-detail.is-revealing,
-  .hero-card .card-art,
+  .hero-card.hero-arrive,
   .card-back.back-deal,
-  .community-card.flip-new .card-art,
-  .mini-card .card-art {
+  .community-card.flip-new,
+  .mini-card.face-arrive {
     animation: none;
   }
   .profile-detail.is-revealing::after {
     display: none;
+  }
+}
+.seat-hole.peek-arrive {
+  animation: seat-peek 180ms ease-out both;
+}
+@keyframes seat-peek {
+  from {
+    opacity: 0.2;
+  }
+  to {
+    opacity: 1;
   }
 }
 
@@ -1173,4 +1188,228 @@
   .web-phone-layout .seat .card-back {
     width: 24px;
   }
+}
+
+/* Portrait spans the style and stack rows, shared with Web/App. */
+.web-phone-layout .seat .seat-body {
+  display: grid;
+  grid-template-columns: var(--player-avatar) minmax(0, 1fr);
+  grid-template-rows: auto auto auto;
+  align-content: center;
+  column-gap: 4px;
+  row-gap: 2px;
+}
+.web-phone-layout .seat .seat-name {
+  grid-column: 1 / -1;
+  grid-row: 1;
+  justify-content: center;
+  align-items: center;
+  height: auto;
+  line-height: 1.15;
+}
+.web-phone-layout .seat .seat-body > .avatar {
+  grid-column: 1;
+  grid-row: 2 / 4;
+  align-self: center;
+  width: var(--player-avatar);
+  height: var(--player-avatar);
+}
+.web-phone-layout .seat .seat-body > .persona {
+  grid-column: 2;
+  grid-row: 2;
+  align-self: end;
+  justify-self: start;
+  margin: 0;
+  width: max-content;
+  max-width: 100%;
+}
+.web-phone-layout .seat .seat-body > .stack {
+  grid-column: 2;
+  grid-row: 3;
+  align-self: start;
+  justify-self: start;
+  height: auto;
+  margin: 0;
+  line-height: 1.2;
+  text-align: left;
+}
+.settings-modal .profile-card {
+  justify-content: flex-start;
+  align-content: start;
+}
+.settings-modal .module-heading .small-button.selected {
+  background: #285e50;
+  border-color: #73c9ad;
+  color: #b3edd8;
+  box-shadow: inset 0 0 0 1px #73c9ad;
+}
+.profile-detail {
+  overflow: hidden;
+  border-top: 0;
+}
+.profile-detail .modal-scroll {
+  background: #13282a;
+  border: 0;
+}
+/* Block text descendants otherwise inherit display:block on WeChat. */
+.research-copy .research-paragraph {
+  display: block;
+  margin: 9px 0;
+  font-size: 13px;
+  line-height: 1.7;
+}
+.research-copy .research-paragraph > text,
+.research-copy .research-paragraph .research-link {
+  display: inline;
+  margin: 0;
+}
+.flying-chip {
+  position: fixed;
+  z-index: 19;
+  pointer-events: none;
+  width: 17px;
+  height: 17px;
+  border: 2px dashed #aef5d3;
+  border-radius: 50%;
+  background: #276452;
+  box-shadow: 0 2px 2px #0005;
+  animation: fly-chips 520ms cubic-bezier(0.2, 0.7, 0.3, 1) both;
+  animation-delay: var(--chip-delay);
+}
+@keyframes fly-chips {
+  from {
+    transform: translate(0, 0) scale(1);
+    opacity: 1;
+  }
+  to {
+    transform: translate(var(--chip-x), var(--chip-y)) scale(0.7);
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .flying-chip {
+    display: none;
+    animation: none;
+  }
+}
+
+.hand-examples {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+  margin: 18px 0;
+}
+.hand-example {
+  padding: 12px;
+  border: 1px solid #33464b;
+  border-radius: 10px;
+  background: #101c24;
+}
+.hand-example > .guide-strong {
+  font-weight: 600;
+  color: #b9e6d7;
+}
+.hand-example > .guide-p {
+  margin: 8px 0 0;
+  font-size: 13px;
+  line-height: 1.6;
+}
+.example-cards {
+  display: flex;
+  gap: 5px;
+  margin-top: 9px;
+}
+.guide-card {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 34px;
+  height: 48px;
+  border: 1px solid #d6e0de;
+  border-radius: 4px;
+  background: #f8faf5;
+  color: #223447;
+  font-family: Manrope, sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.15;
+}
+.guide-card.red {
+  color: #c74760;
+}
+.guide-card.pattern-card {
+  box-shadow: 0 0 0 2px #6ee7c5;
+}
+.guide-card > text:last-child {
+  font-size: 19px;
+}
+.position-glossary {
+  display: grid;
+  gap: 8px;
+  margin: 16px 0;
+}
+.position-glossary > view {
+  display: grid;
+  gap: 2px;
+  font-size: 13px;
+  line-height: 1.6;
+}
+.position-glossary .guide-b {
+  color: #b9e6d7;
+  font-weight: 600;
+}
+
+/* Compact mini-program chrome leaves more room for the table. */
+.nav {
+  height: 48px;
+  flex-basis: 48px;
+}
+.brand {
+  font-size: 17px;
+  gap: 6px;
+}
+.brand-sub {
+  font-size: 10px;
+}
+.icon-button {
+  width: 36px;
+  min-width: 36px;
+  max-width: 36px;
+  height: 36px;
+}
+.guide-button {
+  font-size: 11px;
+}
+.action-dock {
+  height: 136px;
+  flex-basis: 136px;
+}
+.action-buttons,
+.continue-buttons {
+  height: 40px;
+}
+.action-buttons button,
+.continue-buttons button {
+  height: 40px;
+}
+.settings-modal .module-heading .small-button:not(.selected) {
+  background: transparent;
+  box-shadow: none;
+}
+.hero-card {
+  transform: rotate(-4deg);
+}
+.hero-card + .hero-card {
+  transform: rotate(4deg);
+}
+@media (prefers-reduced-motion: reduce) {
+  .seat-hole.peek-arrive {
+    animation: none;
+  }
+}
+.game-header {
+  height: 33px;
+  flex-basis: 33px;
 }

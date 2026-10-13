@@ -42,6 +42,7 @@
     <link rel="stylesheet" href="/src/styles/i18n.css" />
     <link rel="stylesheet" href="/src/styles/dropdowns.css" />
     <link rel="stylesheet" href="/src/styles/table-readability.css" />
+    <link rel="stylesheet" href="/src/styles/desktop-play.css" />
   </head>
   <body inert>
     <dialog
@@ -519,6 +520,138 @@
         同一牌型先比组成牌型的点数，再比剩余牌的点数（踢脚）。最佳五张完全相同就平分，花色不分大小。A
         可以作最大牌，也可以组成 A2345 的最小顺子。
       </p>
+      <div class="hand-examples" aria-label="牌型示例">
+        <div class="hand-example" data-guide-hand="9h Th Jh Qh Kh">
+          <strong>同花顺</strong>
+          <div class="example-cards">
+            <span class="guide-card red pattern-card" aria-label="9h"
+              ><span>9</span><span>♥</span></span
+            ><span class="guide-card red pattern-card" aria-label="Th"
+              ><span>10</span><span>♥</span></span
+            ><span class="guide-card red pattern-card" aria-label="Jh"
+              ><span>J</span><span>♥</span></span
+            ><span class="guide-card red pattern-card" aria-label="Qh"
+              ><span>Q</span><span>♥</span></span
+            ><span class="guide-card red pattern-card" aria-label="Kh"
+              ><span>K</span><span>♥</span></span
+            >
+          </div>
+          <p>同一花色，五张连续。</p>
+        </div>
+        <div class="hand-example" data-guide-hand="As Ah Ac Ad Kh">
+          <strong>四条</strong>
+          <div class="example-cards">
+            <span class="guide-card pattern-card" aria-label="As"><span>A</span><span>♠</span></span
+            ><span class="guide-card red pattern-card" aria-label="Ah"
+              ><span>A</span><span>♥</span></span
+            ><span class="guide-card pattern-card" aria-label="Ac"
+              ><span>A</span><span>♣</span></span
+            ><span class="guide-card red pattern-card" aria-label="Ad"
+              ><span>A</span><span>♦</span></span
+            ><span class="guide-card red" aria-label="Kh"><span>K</span><span>♥</span></span>
+          </div>
+          <p>四张相同点数，另加一张。</p>
+        </div>
+        <div class="hand-example" data-guide-hand="Ks Kh Kc Qs Qh">
+          <strong>葫芦</strong>
+          <div class="example-cards">
+            <span class="guide-card pattern-card" aria-label="Ks"><span>K</span><span>♠</span></span
+            ><span class="guide-card red pattern-card" aria-label="Kh"
+              ><span>K</span><span>♥</span></span
+            ><span class="guide-card pattern-card" aria-label="Kc"
+              ><span>K</span><span>♣</span></span
+            ><span class="guide-card pattern-card" aria-label="Qs"
+              ><span>Q</span><span>♠</span></span
+            ><span class="guide-card red pattern-card" aria-label="Qh"
+              ><span>Q</span><span>♥</span></span
+            >
+          </div>
+          <p>三张相同点数，加一对。</p>
+        </div>
+        <div class="hand-example" data-guide-hand="As Js 9s 6s 2s">
+          <strong>同花</strong>
+          <div class="example-cards">
+            <span class="guide-card pattern-card" aria-label="As"><span>A</span><span>♠</span></span
+            ><span class="guide-card pattern-card" aria-label="Js"
+              ><span>J</span><span>♠</span></span
+            ><span class="guide-card pattern-card" aria-label="9s"
+              ><span>9</span><span>♠</span></span
+            ><span class="guide-card pattern-card" aria-label="6s"
+              ><span>6</span><span>♠</span></span
+            ><span class="guide-card pattern-card" aria-label="2s"
+              ><span>2</span><span>♠</span></span
+            >
+          </div>
+          <p>五张同一花色，不要求连续。</p>
+        </div>
+        <div class="hand-example" data-guide-hand="5s 6h 7c 8d 9s">
+          <strong>顺子</strong>
+          <div class="example-cards">
+            <span class="guide-card pattern-card" aria-label="5s"><span>5</span><span>♠</span></span
+            ><span class="guide-card red pattern-card" aria-label="6h"
+              ><span>6</span><span>♥</span></span
+            ><span class="guide-card pattern-card" aria-label="7c"
+              ><span>7</span><span>♣</span></span
+            ><span class="guide-card red pattern-card" aria-label="8d"
+              ><span>8</span><span>♦</span></span
+            ><span class="guide-card pattern-card" aria-label="9s"
+              ><span>9</span><span>♠</span></span
+            >
+          </div>
+          <p>五张连续点数，花色可以不同。</p>
+        </div>
+        <div class="hand-example" data-guide-hand="Qs Qh Qc 8d 2s">
+          <strong>三条</strong>
+          <div class="example-cards">
+            <span class="guide-card pattern-card" aria-label="Qs"><span>Q</span><span>♠</span></span
+            ><span class="guide-card red pattern-card" aria-label="Qh"
+              ><span>Q</span><span>♥</span></span
+            ><span class="guide-card pattern-card" aria-label="Qc"
+              ><span>Q</span><span>♣</span></span
+            ><span class="guide-card red" aria-label="8d"><span>8</span><span>♦</span></span
+            ><span class="guide-card" aria-label="2s"><span>2</span><span>♠</span></span>
+          </div>
+          <p>三张相同点数，另加两张。</p>
+        </div>
+        <div class="hand-example" data-guide-hand="Js Jh 7c 7d As">
+          <strong>两对</strong>
+          <div class="example-cards">
+            <span class="guide-card pattern-card" aria-label="Js"><span>J</span><span>♠</span></span
+            ><span class="guide-card red pattern-card" aria-label="Jh"
+              ><span>J</span><span>♥</span></span
+            ><span class="guide-card pattern-card" aria-label="7c"
+              ><span>7</span><span>♣</span></span
+            ><span class="guide-card red pattern-card" aria-label="7d"
+              ><span>7</span><span>♦</span></span
+            ><span class="guide-card" aria-label="As"><span>A</span><span>♠</span></span>
+          </div>
+          <p>两组对子，另加一张。</p>
+        </div>
+        <div class="hand-example" data-guide-hand="Ts Th Ac 8d 3s">
+          <strong>一对</strong>
+          <div class="example-cards">
+            <span class="guide-card pattern-card" aria-label="Ts"
+              ><span>10</span><span>♠</span></span
+            ><span class="guide-card red pattern-card" aria-label="Th"
+              ><span>10</span><span>♥</span></span
+            ><span class="guide-card" aria-label="Ac"><span>A</span><span>♣</span></span
+            ><span class="guide-card red" aria-label="8d"><span>8</span><span>♦</span></span
+            ><span class="guide-card" aria-label="3s"><span>3</span><span>♠</span></span>
+          </div>
+          <p>一组对子，另加三张。</p>
+        </div>
+        <div class="hand-example" data-guide-hand="As Kh 9c 6d 2s">
+          <strong>高牌</strong>
+          <div class="example-cards">
+            <span class="guide-card pattern-card" aria-label="As"><span>A</span><span>♠</span></span
+            ><span class="guide-card red" aria-label="Kh"><span>K</span><span>♥</span></span
+            ><span class="guide-card" aria-label="9c"><span>9</span><span>♣</span></span
+            ><span class="guide-card red" aria-label="6d"><span>6</span><span>♦</span></span
+            ><span class="guide-card" aria-label="2s"><span>2</span><span>♠</span></span>
+          </div>
+          <p>没有以上组合，先比最大单牌。</p>
+        </div>
+      </div>
       <h3>2. 一手牌怎样进行</h3>
       <div class="rules-flow">
         <span>底牌 2 张</span><i>·</i><span>翻牌 3 张</span><i>·</i><span>转牌 1 张</span><i>·</i
@@ -544,6 +677,18 @@
         BTN 是庄位，顺时针下一家是 SB（小盲），再下一家是
         BB（大盲）。翻牌前从大盲后面开始行动；翻牌后从庄位左侧仍能行动的人开始。越晚行动，越能先看到对手的选择。每手结束后庄位移动一席。
       </p>
+      <div class="position-glossary">
+        <div><b>BTN · Button</b><span>庄位：翻牌后最后行动的位置。</span></div>
+        <div><b>SB · Small Blind</b><span>小盲：庄位顺时针下一席，先投小盲注。</span></div>
+        <div><b>BB · Big Blind</b><span>大盲：小盲顺时针下一席，先投大盲注。</span></div>
+        <div><b>UTG · Under the Gun</b><span>枪口位：大盲后第一席，翻牌前最先行动。</span></div>
+        <div><b>UTG+1</b><span>枪口位后一席。</span></div>
+        <div><b>MP · Middle Position</b><span>中位：前位与后位之间的位置。</span></div>
+        <div><b>LJ · Lojack</b><span>低劫位：劫位前一席。</span></div>
+        <div><b>HJ · Hijack</b><span>劫位：关煞位前一席。</span></div>
+        <div><b>CO · Cutoff</b><span>关煞位：庄位前一席。</span></div>
+      </div>
+      <p>人数减少时会省略部分前位和中位名称；BTN、SB、BB 的相对顺序保持不变。</p>
       <details>
         <summary>进一步了解：最小加注、半池 / 底池和边池</summary>
         <p>

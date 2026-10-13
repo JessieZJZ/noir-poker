@@ -84,6 +84,10 @@ Android 测试期间打开飞行模式，结束后恢复原设置。iOS Simulato
 
 Android 每次保存设备截图时还读取原生 UI 层级，遇到系统 ANR/崩溃对话框就失败并保留 `.native.xml` 和截图。WebView 内断言通过不能覆盖系统弹窗；测试不会自动关闭弹窗继续当作通过。
 
+牌桌和结算的同内容 Web 重放也检查实际画面：按原生 WebView 坐标和 CSS 安全区裁掉系统栏，再把两张图缩为 24×48 RGB 网格。归一化通道平均绝对差必须不超过 0.02，测量值写入 `parity-*.json`；重复或缺失的绘制块会失败。该检查容许文字抗锯齿和短暂光效差异，与元素坐标、卡牌可见性检查共同使用，不能替代逐页查看原图。
+
+Android 模拟器的 `ranchu` / `goldfish` 虚拟硬件使用独立 WebView 软件绘制层。本轮模拟器的默认和独立硬件层都出现重复绘制块，独立软件层消除了该问题；实体手机保持默认硬件加速。[Android 绘制层文档](https://developer.android.com/develop/ui/views/graphics/hardware-accel)说明软件层由 CPU 绘制，因此模拟器结果不能用来保证真机动画性能。
+
 iOS 设置持久化场景通过同一驱动终止并激活应用，再等待真实首屏和 WebView。重启不能绕过驱动仅用 `simctl`，否则 XCTest 可能仍跟踪旧进程。首屏附着失败截图只保持原生上下文，不尝试切换到尚未知的 WebView。等待要求保持不变。
 
 参考官方文档：[Appium drivers](https://appium.io/docs/en/latest/intro/drivers/)、[XCUITest capabilities](https://appium.github.io/appium-xcuitest-driver/latest/reference/capabilities/)、[UiAutomator2 hybrid WebView](https://github.com/appium/appium-uiautomator2-driver#hybrid-mode)。

@@ -1,3 +1,4 @@
+import { assignNamedLineup } from './settings-helpers.js';
 import { test, expect } from '@playwright/test';
 import { readTableLayout, assertTableLayout, assertStableSettlement } from '../native/layout.mjs';
 import { openSettings, closeSettings } from './settings-helpers.js';
@@ -126,7 +127,7 @@ for (const locale of ['zh-CN', 'en']) {
     await page.reload();
     await page.waitForFunction(() => !!window.qa);
     await openSettings(page);
-    await page.locator('#mix-opponents').click();
+    await assignNamedLineup(page);
     await closeSettings(page);
     for (const size of [
       { width: 375, height: 667 },

@@ -1,0 +1,73 @@
+/* The fitted surface reserves the first screen on wide windows as on phones. */
+.game-surface {
+  overflow-anchor: none;
+}
+.opponents-mix-button:not(.selected) {
+  background: transparent;
+  box-shadow: none;
+}
+#pot-dialog {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  touch-action: pan-y;
+}
+@media (max-width: 900px), (max-width: 1100px) and (orientation: portrait) {
+  .main .game-surface > .surface-top {
+    padding-top: 1px;
+    padding-bottom: 1px;
+  }
+}
+@media (min-width: 1101px), (min-width: 901px) and (orientation: landscape) {
+  .main {
+    padding-top: 8px;
+    align-items: start;
+  }
+  .game-surface {
+    display: flex;
+    flex-direction: column;
+    height: var(--play-height);
+  }
+  .game-surface > .surface-top {
+    flex: none;
+  }
+  .main .game-surface > .surface-top {
+    grid-template-rows: 28px 22px;
+  }
+  .game-surface > .table-viewport {
+    flex: 1 1 0;
+    min-height: 0;
+    overflow: clip;
+    position: relative;
+  }
+  .game-surface .arena[data-player-count] {
+    min-height: 0;
+    padding: 0;
+    display: block;
+    transform-origin: top left;
+  }
+  .game-surface .arena[data-player-count] .seat-rank-slot {
+    display: grid;
+    place-items: center;
+    height: 28px;
+    width: 128px;
+    flex: none;
+    order: 1;
+  }
+  .game-surface .seat-rank-slot .hand-rank {
+    margin: 0;
+    max-width: 100%;
+  }
+  .game-surface .hero-area {
+    padding-bottom: 46px;
+  }
+  .game-surface .hero-name {
+    height: 44px;
+    grid-template-rows: 22px 20px;
+  }
+}
+@media (min-width: 901px) and (max-width: 1100px) and (orientation: portrait) and (min-height: 1100px) {
+  .main .game-surface > .surface-top {
+    padding-top: 9px;
+    padding-bottom: 9px;
+  }
+}

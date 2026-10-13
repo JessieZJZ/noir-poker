@@ -50,7 +50,7 @@ export function createSettlementLayout(arena, { observe = true } = {}) {
     const compact = matchMedia(COMPACT_PLAY_QUERY).matches;
     if (!compact) {
       for (const key of [...arena.style].filter((key) =>
-        /^--(player-|pot-detail|hero-action|hero-rank|action-height|rank-height|profile-width)/.test(
+        /^--(player-|pot-detail|hero-action|hero-rank|hero-card-|action-height|rank-height|profile-width|public-card-width)/.test(
           key,
         ),
       ))
@@ -92,6 +92,7 @@ export function createSettlementLayout(arena, { observe = true } = {}) {
         centerY: board.top - group.top + board.height / 2,
       };
     };
+    arena.querySelector('#board').style.removeProperty('--public-card-width');
     const single = { ...publicSize(), twoRows: false };
     arena.classList.add('public-two-rows');
     const double = { ...publicSize(), twoRows: true };
@@ -122,7 +123,9 @@ export function createSettlementLayout(arena, { observe = true } = {}) {
       : railLayout({
           width: arena.clientWidth,
           height: arena.clientHeight,
-          proportional: false,
+          // The outer viewport fits the complete arena back to the first
+          // screen. Grow both dimensions here to retain the wide table shape.
+          proportional: true,
           angles:
             seatElements.length === 4
               ? [180, 240, 300, 360]
@@ -136,22 +139,24 @@ export function createSettlementLayout(arena, { observe = true } = {}) {
           hero: size(arena.querySelector('.hero-area')),
           publicRows: [single, double],
         });
-    if (
-      compact &&
-      result &&
-      seatElements.some(
-        (seat) => seat.querySelector('.seat-profile').offsetHeight > result.profileHeight + 1,
-      )
-    ) {
-      result = compactTableLayout({
-        width: innerWidth,
-        height: arena.clientHeight,
-        availableWidth: arena.clientWidth,
-        displayHeight: innerHeight - insets,
-        seats: seatElements.map((seat) =>
-          size(seat, '.mini-cards, .seat-profile, .seat-action, .seat-rank-slot'),
-        ),
-      });
+    // Apply current typography before considering exceptional content. Small
+    // natural text differences must not replace the stable shared footprints.
+    if (compact && result) {
+      for (const [key, value] of Object.entries(result.textMetrics))
+        arena.style.setProperty(`--${key}`, `${value}px`);
+      const required = Math.max(
+        ...seatElements.map((seat) => seat.querySelector('.seat-profile').offsetHeight),
+      );
+      if (required > result.profileHeight + 8) {
+        result = compactTableLayout({
+          width: innerWidth,
+          height: arena.clientHeight,
+          availableWidth: arena.clientWidth,
+          displayHeight: innerHeight - insets,
+          seats: seatElements.map((seat, i) => ({ id: i + 1 })),
+          minimumProfileHeight: required,
+        });
+      }
     }
     if (!result) return;
     if (compact) {
@@ -161,6 +166,9 @@ export function createSettlementLayout(arena, { observe = true } = {}) {
       center.style.width = `${result.public.width}px`;
       center.style.height = `${result.public.height}px`;
       arena.querySelector('#board').style.width = `${result.public.width}px`;
+      arena
+        .querySelector('#board')
+        .style.setProperty('--public-card-width', `${result.cardWidth}px`);
       arena.querySelector('.hero-area').style.width = `${result.hero.width}px`;
       arena.querySelector('.hero-area').style.height = `${result.hero.height}px`;
       seatElements.forEach((seat) => {

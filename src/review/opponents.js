@@ -12,6 +12,7 @@ export const BOT_REASON_NAMES = {
   'premium-continue': '强起手牌分支保留继续',
   'affordable-entry': '低成本入池范围保留了继续',
   'affordable-open': '小开池的价格与有效后手支持跟入',
+  'small-reraise-continue': '小尺度再加注的价格支持防守',
   'price-continue': '通过了价格与压力检查',
   'value-raise': '主动加注范围触发进攻',
   'semi-bluff': '听牌半诈唬触发进攻',
@@ -91,6 +92,9 @@ export function explainOpponent(record) {
   else if (t.reason === 'affordable-open')
     detail =
       '这是面对一次小开池的条件跟入：开池不超过 4 BB，新增投入较小，开池者没有全下，跟完后的有效后手还足够深。位置、风格、起手牌适玩性与已有跟入者决定候选范围。允许跟入与允许再加注分别计算；3-bet、大额下注和短后手不使用这一豁免。';
+  else if (t.reason === 'small-reraise-continue')
+    detail =
+      '这是标准或进阶难度的小尺度 3-bet 防守：总额、补入价格、底池赔率与有效后手通过边界检查，再按自己的起手牌、位置和风格选择跟注。普通的全桌随机摊牌权益弃牌检查没有执行；它是有边界的策略近似，不证明跟注盈利，也不适用于大额再加注或全下。';
   else if (t.reason === 'price-continue')
     detail =
       '本次没有触发弃牌分支。若未加注，是进攻抽样未命中、没有合适进攻目标，或合法加注权已关闭。通过程序检查并不等于对真实继续范围有正收益。';
@@ -139,7 +143,7 @@ export function explainOpponent(record) {
       call &&
       (t.exceptions.length ||
         (!t.affordableRangePassed && comparison < t.odds + 0.02) ||
-        raises.length > 1)
+        (raises.length > 1 && !t.affordableThreeBet))
         ? '这次继续尤其需要警惕：机器人估计的是随机范围，未完整按你的加注线收紧范围；小样本、强牌豁免或随机容错都可能产生不合理跟注。实际记录解释了原因，没有证明打法正确。'
         : '这是模拟器当时实际使用的判断记录。权益是小样本随机范围估计，未完整建模对手继续范围、权益实现或未来策略，不是职业牌手的真实心理，也不是最优打法证明。',
   };

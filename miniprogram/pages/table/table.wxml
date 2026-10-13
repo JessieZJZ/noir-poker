@@ -1,3 +1,4 @@
+<page-meta page-style="{{homeLocked ? 'overflow: hidden;' : ''}}" />
 <view class="safe-chrome top-chrome" style="height: {{topInset + 36}}px;" aria-hidden="true" />
 <view class="safe-chrome bottom-chrome" style="height: {{bottomInset}}px;" aria-hidden="true" />
 <view
@@ -10,14 +11,14 @@
       ><text wx:if="{{!compactNav}}" class="brand-sub">POKER</text></view
     >
     <view class="nav-actions"
-      ><button class="icon-button" aria-label="设置" bindtap="openSettings">
+      ><button hover-class="none" class="icon-button" aria-label="设置" bindtap="openSettings">
         <view class="gear-icon" /></button
-      ><button class="guide-button" bindtap="openGuide">玩法指南</button></view
+      ><button hover-class="none" class="guide-button" bindtap="openGuide">玩法指南</button></view
     >
   </view>
   <view
     class="game-shell {{showdown.length ? 'has-showdown' : ''}}"
-    style="height: {{tableHeight + 63 + (compactActions ? 64 : 146)}}px;"
+    style="height: {{tableHeight + 57 + (compactActions ? 64 : 136)}}px;"
   >
     <view class="game-header">
       <view class="hand-label"
@@ -56,14 +57,16 @@
           class="seat {{item.y === 0 ? 'seat-crown' : ''}} {{item.thinking ? 'thinking' : ''}} {{item.folded ? 'folded' : ''}} {{item.winner ? 'winner' : ''}}"
           style="left: {{item.left}}px; top: {{item.top}}px; width: {{seatWidth}}px; height: {{seatHeight}}px; transform: none;"
         >
-          <view class="seat-hole {{item.cards.length ? 'revealed-hole' : ''}}">
+          <view
+            class="seat-hole {{item.cards.length ? 'revealed-hole' : ''}} {{item.peekArriving ? 'peek-arrive' : ''}}"
+          >
             <block wx:if="{{item.cards.length}}"
               ><view
                 wx:for="{{item.cards}}"
                 wx:for-item="card"
                 wx:key="key"
-                class="card mini-card {{card.red ? 'red' : ''}} {{card.best ? 'best-card' : ''}}"
-                style="--card-delay: {{index * 140}}ms;"
+                class="card mini-card {{card.red ? 'red' : ''}} {{card.best ? 'best-card' : ''}} {{card.arriving ? 'face-arrive' : ''}}"
+                style="--card-delay: {{card.dealDelay}}ms;"
                 ><view class="card-art" style="{{card.smallArtStyle}}"
               /></view>
             </block>
@@ -72,11 +75,14 @@
                 wx:for="{{item.backCards}}"
                 wx:for-item="back"
                 wx:key="key"
-                class="card-back back-deal"
+                class="card-back {{back.arriving ? 'back-deal' : ''}}"
                 style="--card-delay: {{back.delay}}ms;"
             /></block>
           </view>
-          <view class="seat-body" style="width: {{profileWidth}}px; height: {{profileHeight}}px;"
+          <view
+            id="seat-body-{{item.id}}"
+            class="seat-body"
+            style="width: {{profileWidth}}px; height: {{profileHeight}}px;"
             ><view class="seat-name"
               ><text>{{item.name}}</text
               ><text
@@ -84,22 +90,21 @@
                 >{{item.position}}</text
               ><view class="seat-eye-slot"
                 ><button
+                  hover-class="none"
                   wx:if="{{done}}"
                   class="seat-eye"
                   data-id="{{item.id}}"
                   bindtap="peekSeat"
                   aria-label="查看底牌" /></view
             ></view>
-            <view class="seat-persona"
-              ><image
-                wx:if="{{item.portrait}}"
-                class="avatar"
-                src="{{item.portrait}}"
-                mode="aspectFill"
-              /><view wx:else class="avatar initials avatar-{{item.id}}">{{item.initial}}</view
-              ><text class="persona {{item.profileId === 'balanced' ? 'persona-balanced' : ''}}"
-                >{{item.profileName}}</text
-              ></view
+            <image
+              wx:if="{{item.portrait}}"
+              class="avatar"
+              src="{{item.portrait}}"
+              mode="aspectFill"
+            /><view wx:else class="avatar initials avatar-{{item.id}}">{{item.initial}}</view
+            ><text class="persona {{item.profileId === 'balanced' ? 'persona-balanced' : ''}}"
+              >{{item.profileName}}</text
             ><text class="stack">{{item.stack}}</text></view
           >
           <view class="seat-caption">
@@ -130,7 +135,7 @@
           style="width: {{boardWidth}}px; top: {{publicTop}}px; left: {{publicLeft}}px;"
           ><view class="pot-row" style="height: {{potHeight}}px;"
             ><view class="chip" aria-hidden="true" /><text class="pot-number">{{pot}}</text
-            ><button class="pot-detail" bindtap="openPots">明细</button></view
+            ><button hover-class="none" class="pot-detail" bindtap="openPots">明细</button></view
           >
           <view class="board-row {{boardTwoRows ? 'board-two-rows' : ''}}"
             ><view
@@ -148,7 +153,7 @@
             ><view
               wx:for="{{heroCards}}"
               wx:key="dealKey"
-              class="card hero-card {{item.red ? 'red' : ''}} {{item.best ? 'best-card' : ''}}"
+              class="card hero-card {{item.red ? 'red' : ''}} {{item.best ? 'best-card' : ''}} {{item.arriving ? 'hero-arrive' : ''}}"
               style="width: {{heroWidth}}px;height: {{heroHeight}}px; --card-delay: {{420 + index * 130}}ms;"
               ><view class="card-art" style="{{item.artStyle}}"
             /></view> </view
@@ -173,20 +178,22 @@
       <block wx:if="{{done}}"
         ><view class="settled-buttons"
           ><button
+            hover-class="none"
             wx:if="{{canPracticeRunout}}"
             class="primary practice-runout-button"
             bindtap="finishHand"
           >
             立刻发完</button
-          ><button class="primary" bindtap="nextHand">下一手</button
+          ><button hover-class="none" class="primary" bindtap="nextHand">下一手</button
           ><button
+            hover-class="none"
             wx:if="{{canRetry}}"
             class="retry-button"
             disabled="{{!canRetry}}"
             bindtap="retryHand"
           >
             重打本手</button
-          ><button class="review-button" bindtap="openReview">复盘</button></view
+          ><button hover-class="none" class="review-button" bindtap="openReview">复盘</button></view
         ></block
       >
       <block wx:else
@@ -202,24 +209,57 @@
             backgroundColor="#354650"
             block-color="#6ee7c5"
             block-size="15"
-            bindchanging="changeRaise"
+            bindchanging="previewRaise"
             bindchange="changeRaise"
           /><view class="presets"
-            ><button data-preset="min" bindtap="preset" disabled="{{!canRaise}}">最小</button
-            ><button data-preset="half" bindtap="preset" disabled="{{!canRaise}}">½ 底池</button
-            ><button data-preset="pot" bindtap="preset" disabled="{{!canRaise}}">底池</button
-            ><button data-preset="all" bindtap="preset" disabled="{{!canRaise}}">全下</button></view
+            ><button hover-class="none" data-preset="min" bindtap="preset" disabled="{{!canRaise}}">
+              最小</button
+            ><button
+              hover-class="none"
+              data-preset="half"
+              bindtap="preset"
+              disabled="{{!canRaise}}"
+            >
+              ½ 底池</button
+            ><button hover-class="none" data-preset="pot" bindtap="preset" disabled="{{!canRaise}}">
+              底池</button
+            ><button hover-class="none" data-preset="all" bindtap="preset" disabled="{{!canRaise}}">
+              全下
+            </button></view
           ></view
         ><view class="action-buttons" wx:if="{{!heroFolded}}"
-          ><button class="primary" data-action="raise" bindtap="act" disabled="{{!canRaise}}">
+          ><button
+            hover-class="none"
+            class="primary"
+            data-action="raise"
+            bindtap="act"
+            disabled="{{!canRaise}}"
+          >
             加注 {{raiseText}}</button
-          ><button class="fold-button" data-action="fold" bindtap="act" disabled="{{!canAct}}">
+          ><button
+            hover-class="none"
+            class="fold-button"
+            data-action="fold"
+            bindtap="act"
+            disabled="{{!canAct}}"
+          >
             弃牌</button
-          ><button class="call-button" data-action="call" bindtap="act" disabled="{{!canAct}}">
+          ><button
+            hover-class="none"
+            class="call-button"
+            data-action="call"
+            bindtap="act"
+            disabled="{{!canAct}}"
+          >
             {{callLabel}} {{callText}}
           </button></view
         ><view wx:else class="continue-buttons"
-          ><button class="call-button" bindtap="finishHand" disabled="{{finishing}}">
+          ><button
+            hover-class="none"
+            class="call-button"
+            bindtap="finishHand"
+            disabled="{{finishing}}"
+          >
             立刻发完
           </button></view
         ></block
@@ -289,7 +329,7 @@
   <view class="bottom-links"
     ><view class="practice-info"
       ><view><view class="live-dot" /><text>本地电脑对手 · 无需登录</text></view
-      ><button bindtap="resetPractice">重新练习</button></view
+      ><button hover-class="none" bindtap="resetPractice">重新练习</button></view
     >
     <text>仅使用虚拟筹码</text></view
   >
@@ -302,7 +342,7 @@
 >
   <view class="modal-header"
     ><text class="eyebrow">SETTINGS</text
-    ><button class="close" bindtap="closeSettings" aria-label="关闭设置">
+    ><button hover-class="none" class="close" bindtap="closeSettings" aria-label="关闭设置">
       <view class="close-icon" /></button
   ></view>
   <view class="settings-title">设置</view>
@@ -316,19 +356,26 @@
         <text class="module-title">牌桌与声音</text>
         <view class="setting-row"
           ><text>牌桌人数</text
-          ><button class="picker-value" id="select-count" data-field="count" bindtap="openSelect">
+          ><button
+            hover-class="none"
+            class="picker-value"
+            id="select-count"
+            data-field="count"
+            bindtap="openSelect"
+          >
             <text>{{settings.playerCount}} 人</text><view class="select-chevron" /></button
         ></view>
         <text wx:if="{{settings.playerCount !== activePlayerCount}}" class="table-change-note"
           >下一手将切为 {{settings.playerCount}} 人桌 · 筹码恢复 5,000，统计重新开始</text
         >
         <view class="setting-row"
-          ><text>音效</text
+          ><text>音效与振动</text
           ><button
+            hover-class="none"
             class="settings-switch {{settings.sound ? 'on' : ''}}"
             data-key="sound"
             bindtap="togglePreference"
-            aria-label="音效"
+            aria-label="音效与振动"
           >
             <view class="switch-track" /><view class="switch-thumb" /></button
         ></view>
@@ -337,6 +384,7 @@
             ><text>牌桌提示</text
             ><text class="setting-description">必要时显示；长文自动循环滚动，阅读后收起</text></view
           ><button
+            hover-class="none"
             class="settings-switch {{settings.hints ? 'on' : ''}}"
             data-key="hints"
             bindtap="togglePreference"
@@ -349,18 +397,21 @@
         ><text class="module-title">对手难度</text
         ><view class="difficulty"
           ><button
+            hover-class="none"
             class="{{settings.difficulty === 'easy' ? 'selected' : ''}}"
             data-value="easy"
             bindtap="changeDifficulty"
           >
             轻松</button
           ><button
+            hover-class="none"
             class="{{settings.difficulty === 'normal' ? 'selected' : ''}}"
             data-value="normal"
             bindtap="changeDifficulty"
           >
             标准</button
           ><button
+            hover-class="none"
             class="{{settings.difficulty === 'hard' ? 'selected' : ''}}"
             data-value="hard"
             bindtap="changeDifficulty"
@@ -373,6 +424,7 @@
         ><view class="setting-row mood"
           ><text>情绪模拟</text
           ><button
+            hover-class="none"
             class="picker-value"
             id="select-emotion"
             data-field="emotion"
@@ -388,6 +440,7 @@
         ><text class="module-title">牌手介绍</text
         ><view class="profile-grid"
           ><button
+            hover-class="none"
             wx:for="{{profiles}}"
             wx:key="id"
             id="profile-{{item.id}}"
@@ -409,7 +462,14 @@
       <view class="settings-module"
         ><view class="module-heading"
           ><text class="module-title">分配座位</text
-          ><button class="small-button" bindtap="mixProfiles">混合阵容</button></view
+          ><button
+            hover-class="none"
+            class="small-button {{settings.mixed ? 'selected' : ''}}"
+            aria-pressed="{{settings.mixed}}"
+            bindtap="mixProfiles"
+          >
+            混合阵容
+          </button></view
         ><view class="seat-roster"
           ><view
             class="seat-setting {{item.offTable ? 'off-table' : ''}}"
@@ -427,6 +487,7 @@
             >
             <text class="roster-label">{{item.offTable ? '暂不在桌' : '座位 ' + item.id}}</text>
             <button
+              hover-class="none"
               class="picker-value"
               id="select-seat-{{item.id}}"
               data-field="seat"
@@ -437,7 +498,7 @@
             </button> </view></view
       ></view>
       <view class="profile-comparison"
-        ><button class="comparison-toggle" bindtap="toggleComparison">
+        ><button hover-class="none" class="comparison-toggle" bindtap="toggleComparison">
           {{comparisonOpen ? '▾' : '▸'}} 查看训练参数对比
         </button>
         <scroll-view wx:if="{{comparisonOpen}}" scroll-x class="comparison-scroll"
@@ -489,7 +550,7 @@
           mode="aspectFill"
         /><text>{{detailProfile.name}}</text></view
       >
-      <button class="close" bindtap="closeProfile" aria-label="关闭牌手介绍">
+      <button hover-class="none" class="close" bindtap="closeProfile" aria-label="关闭牌手介绍">
         <view class="close-icon" /></button></view
     ><scroll-view scroll-y class="modal-scroll"
       ><view class="modal-body"
@@ -515,8 +576,8 @@
             ><text class="muted">资料核对日期 · {{detailProfile.research.reviewedAt}}</text></view
           ><text wx:if="{{detailProfile.research.career.length}}" class="module-title"
             >履历摘录</text
-          ><text wx:for="{{detailProfile.research.career}}" wx:key="text"
-            >• {{item.text}}
+          ><view class="research-paragraph" wx:for="{{detailProfile.research.career}}" wx:key="text"
+            ><text>• {{item.text}}</text>
             <text
               wx:for="{{item.references}}"
               wx:for-item="reference"
@@ -525,10 +586,13 @@
               data-url="{{reference.url}}"
               bindtap="openResearchSource"
               >{{reference.label}}
-            </text></text
+            </text></view
           ><text class="module-title">公开打法样本</text
-          ><text wx:for="{{detailProfile.research.observations}}" wx:key="text"
-            >• {{item.text}}
+          ><view
+            class="research-paragraph"
+            wx:for="{{detailProfile.research.observations}}"
+            wx:key="text"
+            ><text>• {{item.text}}</text>
             <text
               wx:for="{{item.references}}"
               wx:for-item="reference"
@@ -537,7 +601,7 @@
               data-url="{{reference.url}}"
               bindtap="openResearchSource"
               >{{reference.label}}
-            </text></text
+            </text></view
           ><text class="module-title">本地策略改编</text
           ><text wx:for="{{detailProfile.research.adaptation}}" wx:key="*this">• {{item}}</text
           ><view wx:for="{{detailProfile.sources}}" wx:key="id" class="research-source"
@@ -558,6 +622,13 @@
   >
 </view>
 
+<view
+  wx:for="{{flyingChips}}"
+  wx:key="key"
+  class="flying-chip"
+  style="{{item.style}}"
+  aria-hidden="true"
+/>
 <view wx:if="{{guideOpen || reviewOpen || potOpen || resetOpen}}" class="modal-backdrop" />
 <view
   wx:if="{{guideOpen}}"
@@ -568,7 +639,7 @@
     ><view class="sheet-body">
       <view class="dialog-heading"
         ><text class="eyebrow">QUICK GUIDE</text
-        ><button class="close" bindtap="closeGuide" aria-label="关闭玩法指南">
+        ><button hover-class="none" class="close" bindtap="closeGuide" aria-label="关闭玩法指南">
           <view class="close-icon" /></button
       ></view>
       <include src="guide.wxml" /> </view
@@ -583,7 +654,7 @@
     ><view class="sheet-body">
       <view class="dialog-heading"
         ><text class="eyebrow">HAND REVIEW</text
-        ><button class="close" bindtap="closeReview" aria-label="关闭复盘">
+        ><button hover-class="none" class="close" bindtap="closeReview" aria-label="关闭复盘">
           <view class="close-icon" /></button
       ></view>
       <view class="review-title-row"
@@ -595,12 +666,14 @@
       <text wx:if="{{reviewData.loading}}" class="review-progress">正在分析当时的决策…</text>
       <view class="review-tabs"
         ><button
+          hover-class="none"
           class="{{reviewPerspective === 'hero' ? 'selected' : ''}}"
           data-value="hero"
           bindtap="changeReviewPerspective"
         >
           我的决策</button
         ><button
+          hover-class="none"
           class="{{reviewPerspective === 'opponent' ? 'selected' : ''}}"
           data-value="opponent"
           bindtap="changeReviewPerspective"
@@ -614,6 +687,7 @@
       <view wx:if="{{reviewPerspective === 'opponent'}}" class="opponent-filter"
         ><text>查看对手</text
         ><button
+          hover-class="none"
           class="picker-value"
           id="select-opponent"
           data-field="opponent"
@@ -630,6 +704,7 @@
         class="review-timeline {{reviewPerspective === 'opponent' ? 'opponent' : ''}}"
         ><view class="review-timeline-inner"
           ><button
+            hover-class="none"
             wx:for="{{reviewSteps}}"
             wx:key="index"
             class="review-step {{reviewIndex === index ? 'selected' : ''}}"
@@ -726,7 +801,7 @@
     ><view class="sheet-body">
       <view class="dialog-heading"
         ><text class="eyebrow">POT BREAKDOWN</text
-        ><button class="close" bindtap="closePots" aria-label="关闭底池明细">
+        ><button hover-class="none" class="close" bindtap="closePots" aria-label="关闭底池明细">
           <view class="close-icon" /></button
       ></view>
       <text class="dialog-title">{{done ? '本手结算' : '主池与边池'}}</text>
@@ -753,7 +828,12 @@
             >{{item.eligibility}} · {{item.count}} 人</text
           ><text class="pot-player-list">可争夺：{{item.eligible}}</text></block
         >
-        <button class="pot-distribution" data-index="{{index}}" bindtap="togglePot">
+        <button
+          hover-class="none"
+          class="pot-distribution"
+          data-index="{{index}}"
+          bindtap="togglePot"
+        >
           <text class="disclosure-marker">{{potExpanded[index] ? '▾' : '▸'}}</text
           ><text>{{done ? '查看分配详情' : '查看本池投入'}}</text>
         </button>
@@ -773,7 +853,7 @@
           ><text class="refund-name">{{item.name}}</text></view
         ><text class="refund-amount">{{item.amount}}</text></view
       >
-      <button class="primary return-button" bindtap="closePots">回到牌桌</button>
+      <button hover-class="none" class="primary return-button" bindtap="closePots">回到牌桌</button>
     </view></scroll-view
   >
 </view>
@@ -785,13 +865,13 @@
   <view class="sheet-body"
     ><view class="dialog-heading"
       ><text class="eyebrow">FRESH START</text
-      ><button class="close" bindtap="closeReset" aria-label="关闭重新练习">
+      ><button hover-class="none" class="close" bindtap="closeReset" aria-label="关闭重新练习">
         <view class="close-icon" /></button></view
     ><text class="dialog-title">重新开始练习？</text
     ><text class="dialog-copy">本局将结束，所有玩家恢复到 5,000 筹码，练习统计归零。</text
     ><view class="dialog-actions"
-      ><button bindtap="closeReset">继续练习</button
-      ><button class="primary" bindtap="confirmReset">重新开始</button></view
+      ><button hover-class="none" bindtap="closeReset">继续练习</button
+      ><button hover-class="none" class="primary" bindtap="confirmReset">重新开始</button></view
     ></view
   >
 </view>
@@ -804,6 +884,7 @@
   >
     <scroll-view scroll-y class="selection-options" style="height: {{selection.height}}px;">
       <button
+        hover-class="none"
         wx:for="{{selection.options}}"
         wx:key="index"
         data-index="{{index}}"
