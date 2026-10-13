@@ -189,7 +189,8 @@ test('actual weak all-in call identifies randomized exceptions rather than ratio
   assert.ok(d.trace.exceptions.includes('insufficient-equity'));
   const e = explainOpponent({ id: 1, name: 'Mia', ...d, trace: { ...d.trace, view: v } });
   assert.match(e.detail, /失误/);
-  assert.match(e.warning, /随机范围/);
+  assert.match([e.detail, ...e.reasons, e.warning].join(''), /(?:失误|容错|风险|亏|不足|高估)/);
+  assert.doesNotMatch(e.metrics.join(''), /随机范围估计|抽样\s*\d+\s*次|价格门槛/);
   assert.ok(d.trace.checks.every((c) => c.selected));
 });
 test('settled bot traces are separate from hero grading, retry clears and regenerates one attempt', () => {

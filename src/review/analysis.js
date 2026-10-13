@@ -4,7 +4,8 @@ import { preflopContext } from './preflop.js';
 import { comparisonRoutes } from './routes.js';
 import { compareCandidateActions } from './counterfactual.js';
 import { coachDecision, buildOverview } from './coaching.js';
-import { drawLabel } from './narrative.js';
+import { drawLabel, callOddsText } from './narrative.js';
+import { cardText } from './spot-facts.js';
 import { actionLabel } from '../engine/action-labels.js';
 import { legalRaiseTo } from '../engine/bet-sizing.js';
 export { actionLabel } from '../engine/action-labels.js';
@@ -63,7 +64,11 @@ export function analyzeDecision(
   const { draw, texture, handClass, handLabel, tier } = ctx,
     early = ['UTG', 'UTG+1', 'MP', 'LJ'].includes(s.position),
     deep = ctx.effective >= 2500;
-  const priced = `本次有效跟注成本 ${number(price.cost)}，跟注后可争夺 ${number(price.contestable)}，盈亏平衡权益约 ${percent(price.required)}。`;
+  const priced = callOddsText({
+    callCost: price.cost,
+    contestable: price.contestable,
+    required: price.required,
+  });
   const estimated = `随机范围与行动加权范围下，底池权益分别约 ${percent(wide.equity)} / ${percent(strong.equity)}。`;
   const strongMade =
     s.street > 0 &&
@@ -363,9 +368,9 @@ export function analyzeDecision(
     alternative = { action: 'check', amount: 0 };
   const evidence = [
     `位置 ${s.position} · ${ctx.opponents} 位未弃牌对手${s.street ? ' · ' + (ctx.inPosition ? '有位置' : '无最后行动优势') : ''}`,
-    `当时牌力：${handLabel}${draw.outs ? ' · ' + drawLabel(draw) : ''}`,
+    `底牌 ${cardText(s.hole)} · 当时牌力：${handLabel}${draw.outs ? ' · ' + drawLabel(draw) : ''}`,
     s.street
-      ? `公共牌：${texture.label}`
+      ? `公共牌 ${cardText(s.board)} · ${texture.label}`
       : `翻牌前加注 ${ctx.preflopRaises} 次 · 尚可行动 ${ctx.pendingOthers} 人`,
     `有效剩余约 ${number(ctx.effective)} · 新增投入 ${number(ctx.extra)}`,
   ];
@@ -373,7 +378,15 @@ export function analyzeDecision(
     evidence.push(
       `直接成牌候选 ${draw.outs} 张（已去重）· 下一张约 ${percent(draw.nextChance)}，不等于获胜率`,
     );
-  if (price.cost) evidence.push(priced);
+  if (price.cost && s.action !== 'raise') evidence.push(priced);
+  if (s.action === 'raise')
+    evidence.push(
+      `实际${actionLabel(s)} · 新增投入是底池的 ${ctx.betRatio.toFixed(1)} 倍；跟注赔率不等于加注 EV。`,
+    );
+  if (s.street > 0 && !price.closing && ctx.effective > price.cost)
+    evidence.push(
+      `SPR 约 ${ctx.spr.toFixed(1)}（有效后手 ${number(ctx.effective)} ÷ 底池 ${number(s.pot)}），表示后手相当于多少个底池。`,
+    );
   if (pre)
     evidence.push(
       `入池情境：${pre.label} · 跛入 ${pre.limpers} 人${pre.ace ? ' · A 阻断不等于被跟注后优势' : ''}`,

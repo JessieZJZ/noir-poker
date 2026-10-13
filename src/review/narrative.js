@@ -1,8 +1,10 @@
 import { rankText } from '../engine/poker.js';
-import { historyActionLabel } from '../engine/action-labels.js';
+import { actionLabel, historyActionLabel } from '../engine/action-labels.js';
 import { boardTexture } from './context.js';
+import { spotFacts } from './spot-facts.js';
 
 const n = (value) => Math.round(value).toLocaleString('en-US');
+const pct = (value) => (value * 100).toFixed(1) + '%';
 const streets = ['翻牌前', '翻牌', '转牌', '河牌'];
 export function drawLabel(draw) {
   const straight =
@@ -16,88 +18,97 @@ export function drawLabel(draw) {
 // The opponent panel supplies that bot's own view after settlement.
 export function situationNotes(s, c, actorId = 0) {
   const notes = [],
-    draw = c.draw;
-  if (draw.outs) {
-    if (draw.straightRanks?.length)
-      notes.push(`${draw.straightRanks.map(rankText).join(' / ')} 可补顺子。`);
-    notes.push(
-      `${drawLabel(draw)}共有 ${draw.outs} 张顺子／同花改善候选，重叠只算一次，成牌仍可能输。`,
-    );
+    f = spotFacts(s, c, actorId),
+    who = actorId === 0 ? '你' : '它',
+    aggression = f.lastAggression;
+  if (aggression) {
+    if (aggression.priorChecks.length)
+      notes.push(
+        `${aggression.name}此前在${aggression.priorChecks.map((street) => streets[street]).join('、')}过牌，这次在${streets[aggression.street]}的行动是${aggression.label}；这条下注线由过牌转为主动进攻。`,
+      );
+    else if (new Set(aggression.line.map((a) => a.street)).size >= 2)
+      notes.push(
+        `${aggression.name}的下注线是${aggression.line.map((a) => streets[a.street] + ' ' + a.label).join(' → ')}，这次仍在持续下注。`,
+      );
+    else
+      notes.push(
+        aggression.position
+          ? `${aggression.name}（${aggression.position}）已${aggression.label}，当前仍有 ${c.opponents} 位对手未弃牌，${c.pendingOthers} 人尚可行动。`
+          : `${aggression.name}已${aggression.label}，当前仍有 ${c.opponents} 位对手未弃牌，${c.pendingOthers} 人尚可行动。`,
+      );
   }
-  if (s.board.length)
-    notes.push(
-      `牌面是${c.texture.label}；当前${c.handLabel}${draw.outs ? '，同时保留听牌潜力' : ''}。`,
-    );
   if (s.board.length >= 4) {
     const before = boardTexture(s.board.slice(0, -1)),
       last = s.board.at(-1);
-    notes.push(
-      c.texture.maxSuit > before.maxSuit && c.texture.maxSuit >= 3
-        ? '新牌增加了同花威胁，之前的一对不能沿用原来的安全感。'
-        : c.texture.connected > before.connected && c.texture.connected >= 3
-          ? '新牌加强了顺子连接，先区分自己改善和对手也可能改善。'
-          : s.board.slice(0, -1).some((card) => card.rank === last.rank)
-            ? '新牌让公共牌配对，三条或葫芦风险需要重新考虑。'
-            : s.hole.some((card) => card.rank === last.rank)
-              ? '新牌击中底牌，但仍要核对踢脚和对手的更强成牌。'
-              : '新牌没有直接配对底牌，也没有增加主要顺子或同花连接。',
-    );
-  }
-  const history = s.history || [],
-    aggression = history.filter((a) => a.id !== actorId && a.action === 'raise').at(-1);
-  if (aggression) {
-    const name = s.players?.find((p) => p.id === aggression.id)?.name || '对手';
-    const prior = history
-      .slice(0, history.indexOf(aggression))
-      .filter((a) => a.id === aggression.id);
-    const checks = [
-      ...new Set(
-        prior
-          .filter((a) => a.action === 'check' && a.street < aggression.street)
-          .map((a) => streets[a.street]),
-      ),
-    ];
-    const streetRaises = history.filter((a) => a.id === aggression.id && a.action === 'raise');
-    if (checks.length)
+    if (c.texture.maxSuit > before.maxSuit && c.texture.maxSuit >= 3)
       notes.push(
-        `${name}此前在${checks.join('、')}过牌，这次在${streets[aggression.street]}转为下注；可能是新牌改善、延迟取值或诈唬，过牌本身不能排除强牌。`,
+        `${streets[s.street]}的 ${f.lastCardText} 让牌面出现 ${c.texture.maxSuit} 张同花色；${who}当前是${c.handLabel}${c.draw.flush ? '，也有同花听牌' : ''}。`,
       );
-    else if (new Set(streetRaises.map((a) => a.street)).size >= 2)
-      notes.push(`${name}已跨轮持续施压；继续时要考虑下一笔下注，不能只看眼前价格。`);
-    else
+    else if (c.texture.connected > before.connected && c.texture.connected >= 3)
       notes.push(
-        `${name}的公开进攻是${historyActionLabel(history, history.indexOf(aggression))}；先前跟注不能替这次新增风险买单。`,
+        c.draw.straight
+          ? `${streets[s.street]}的 ${f.lastCardText} 加强了顺子连接，牌面现在是 ${f.boardText}；${who}当前是${c.handLabel}，另有${drawLabel(c.draw)}。`
+          : `${streets[s.street]}的 ${f.lastCardText} 加强了顺子连接，牌面现在是 ${f.boardText}；${who}当前是${c.handLabel}。`,
+      );
+    else if (s.board.slice(0, -1).some((card) => card.rank === last.rank))
+      notes.push(
+        `${streets[s.street]}的 ${f.lastCardText} 让公共牌配对；${who}当前是${c.handLabel}，牌面上的对子也给对手留下三条或葫芦组合。`,
+      );
+    else if (s.hole.some((card) => card.rank === last.rank))
+      notes.push(
+        `${streets[s.street]}的 ${f.lastCardText} 击中了${who}的底牌，现在是${c.handLabel}。`,
       );
   }
-  if (s.street > 0)
+  if (f.allOpponentsAllIn)
     notes.push(
-      c.inPosition
-        ? '有最后行动优势，可以先观察对手再决定取值或施压；位置不会让对手必然弃牌。'
-        : '没有最后行动优势，过牌或跟注后仍可能被后位施压。',
+      `剩下的 ${f.activeOpponents.length} 位对手都已全下，没有后手可再弃牌，也没有对他们继续诈唬的空间。`,
     );
-  if (c.opponents > 1)
-    notes.push(`还有 ${c.opponents} 位对手，下注更难让所有人退出，一对和非坚果听牌要更谨慎。`);
-  const contestableOpponents =
-    s.players?.filter((p) => p.id !== actorId && !p.folded) || s.opponents || [];
-  if (contestableOpponents.length && contestableOpponents.every((p) => p.allin))
-    notes.push('其余对手都已全下，之后没有向他们诈唬或继续取值的空间。');
-  else if (c.effective <= (s.legal.callAmount || 0) && s.legal.callAmount)
-    notes.push('有效后手接近这次跟注金额，后续隐含收益和诈唬空间都很有限。');
+  else if (s.street > 0 && c.pendingOthers > 0)
+    notes.push(
+      `${who}在 ${s.position} 行动后，本轮还有 ${c.pendingOthers} 人可以下注或加注；当前 ${n(s.legal.callAmount)} 的跟注金额不是本轮投入上限。`,
+    );
   return notes;
+}
+
+export function callOddsText(metrics) {
+  return `跟注有效成本 ${n(metrics.callCost)}，跟注后可争夺 ${n(metrics.contestable)}；按底池赔率，至少需要约 ${pct(metrics.required)} 的权益才能打平。`;
 }
 
 export function actionReason(s, r) {
   const c = r.context,
-    cost = n(r.metrics.callCost),
-    draw = c.draw;
-  if (s.action === 'call' && draw.outs) {
-    return `跟注 ${cost} 的支点是${drawLabel(draw)}，而非单靠${c.handLabel}摊牌。当前底池 ${n(s.pot)}、后手 ${n(s.stack)}。`;
+    f = spotFacts(s, c),
+    actual = actionLabel(s),
+    draw = c.draw,
+    hand = f.holeText;
+  if (s.action === 'raise') {
+    if (f.shove && f.potRatio > 4)
+      return `你拿 ${hand} 在 ${s.position} ${actual}，把 ${n(f.investment)}（${(f.investment / 50).toFixed(0)} BB）投入当时 ${n(s.pot)} 的底池，是底池的 ${f.potRatio.toFixed(1)} 倍。${s.street === 0 && c.tier < 2 ? '这笔大额进攻主要靠对手弃牌获利；被强牌跟住后，这手起手牌的胜算会明显下降。' : '如此大的尺度会让对手的继续范围更集中于强牌，需要比较较小加注能留下哪些跟注牌。'}`;
+    if (s.street === 0)
+      return `你拿 ${hand} 在 ${s.position} ${actual}，新增投入 ${n(f.investment)} 去争取底池 ${n(s.pot)}。${c.tier >= 2 ? '这手牌有价值加注的牌力，可以让较弱起手牌付费。' : f.lastAggression ? '已有开池时，这次是再加注诈唬候选；收益需要对手愿意放弃部分开池牌。' : '前面没有开池，这次进攻可以直接争夺盲注；被跟住后再看这手牌的翻后潜力。'}`;
+    if (!draw.outs && ['pressure-bet', 'large-unbacked-bet'].includes(r.code))
+      return `你拿 ${hand}，在 ${f.boardText} 上${actual}；当前${c.handLabel}，牌面${c.texture.label}${c.texture.maxSuit >= 4 && c.made.score[0] < 5 ? '，你没有同花' : ''}。新增投入 ${n(f.investment)} 主要依赖对手弃牌，不能只按成牌标签解释为价值下注。`;
+    return draw.outs
+      ? `你拿 ${hand}，在 ${f.boardText} 上${actual}，新增投入 ${n(f.investment)}；目前是${c.handLabel}加${drawLabel(draw)}，共有 ${draw.outs} 张顺子／同花改善候选。${['high', 'underpair', 'middle-pair', 'board-pair'].includes(c.handClass) ? '这次属于半诈唬，对手弃牌可直接拿池，被跟住后仍能补牌。' : '已有成牌可以向弱牌取值，同时保留听牌改善。'}`
+      : `你拿 ${hand}，在 ${f.boardText} 上${actual}，新增投入 ${n(f.investment)}。${['high', 'underpair', 'middle-pair', 'board-pair'].includes(c.handClass) ? '目前牌力偏弱，这次下注主要需要更好的牌弃掉。' : c.handClass === 'board' ? '主要牌力来自公共牌，你的底牌没有增加优势，这笔下注很难单靠价值跟注获利。' : '目前已有成牌，下注的价值来自对手用更弱成牌跟住。'}`;
   }
-  if (s.action === 'raise' && draw.outs)
-    return `这次进攻同时争取对手弃牌和${drawLabel(draw)}改善；被跟注后有退路，但非坚果成牌仍可能被反超。`;
-  if (s.action === 'check' && draw.outs)
-    return `过牌保留${drawLabel(draw)}的改善机会，避免主动做大底池；后面还有人能行动时，并不保证免费见下一张。`;
-  return '';
+  if (
+    s.action === 'call' &&
+    draw.outs &&
+    c.made.score[0] >= 1 &&
+    !['board', 'board-pair'].includes(c.handClass)
+  )
+    return `你拿 ${hand}，在 ${f.boardText} 上跟注 ${n(r.metrics.callCost)}；已有${c.handLabel}，同时还有${drawLabel(draw)}的 ${draw.outs} 张改善候选。跟注既保留当前成牌的摊牌价值，也争取补成更强牌。`;
+  if (s.action === 'call')
+    return draw.outs
+      ? `你拿 ${hand}，在 ${f.boardText} 上跟注 ${n(r.metrics.callCost)} 的依据是${drawLabel(draw)}，不是只靠${c.handLabel}摊牌。${draw.straightRanks?.length ? draw.straightRanks.map(rankText).join(' / ') + ' 可补顺子；' : ''}共有 ${draw.outs} 张顺子／同花改善候选，其中有些成牌仍可能输。`
+      : `你拿 ${hand}${s.street ? '，在 ' + f.boardText + ' 上是' + c.handLabel : '在 ' + s.position}，选择跟注。有效成本 ${n(r.metrics.callCost)}，跟注后可争夺 ${n(r.metrics.contestable)}；底池赔率要求至少约 ${pct(r.metrics.required)} 权益。权益是长期能分到的底池份额，不能直接当成赢下整池的概率。`;
+  if (s.action === 'fold')
+    return s.legal.canCheck
+      ? `你拿 ${hand} 直接弃牌，但当时无需补筹码；过牌成本同样是 0，还能保留${s.street ? c.handLabel : '这手起手牌'}的获池机会。`
+      : `你拿 ${hand}${s.street ? '，在 ' + f.boardText + ' 上是' + c.handLabel : '在 ' + s.position}弃牌，避免再投入 ${n(r.metrics.callCost)}。${draw.outs ? '当前有' + drawLabel(draw) + '，' + draw.outs + '张改善候选，下一张约' + pct(draw.nextChance) + '。' : ''}`;
+  return draw.outs
+    ? `你拿 ${hand} 在 ${f.boardText} 上过牌，保留${drawLabel(draw)}的 ${draw.outs} 张改善候选，本次投入 0。${c.pendingOthers ? '本轮还有 ' + c.pendingOthers + ' 人能行动，因此不保证免费见下一张。' : '本轮没有待行动的对手，可以免费见下一张牌。'}`
+    : `你拿 ${hand} 在 ${f.boardText} 上是${c.handLabel}，这次过牌没有增加投入。${s.street === 3 && r.metrics.closing ? '你是河牌最后行动者，过牌后直接摊牌。' : c.pendingOthers ? '本轮还有 ' + c.pendingOthers + ' 人能行动，过牌保留了面对他们下注再决定的机会。' : '对手本轮已行动，你选择保留当前底池大小。'}`;
 }
 
 export function continuationNote(s, c, closing) {
@@ -112,7 +123,7 @@ export function continuationNote(s, c, closing) {
     c.effective <= s.legal.callAmount
   )
     return '';
-  return '河牌未中时，只有对手示弱、剩余筹码能形成压力且这张牌能支持你的强牌故事，才比较转诈唬；不能把尚未发生的弃牌算成跟注的保证收益。';
+  return `你在 ${s.position} 有位置，本次投入后还留 ${n(s.stack - c.extra)}；河牌没补成${drawLabel(c.draw)}时，只有对手过牌且河牌支持你代表强牌，才有转诈唬的机会。这个弃牌率尚未发生，不能先算成当前投入的收益。`;
 }
 
 export function publicHistory(s) {

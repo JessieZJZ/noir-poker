@@ -4,6 +4,7 @@ import { deckOfCards } from '../../src/engine/poker.js';
 import { analyzeDecision } from '../../src/review/analysis.js';
 import { explainOpponent } from '../../src/review/opponents.js';
 import { SUPPORTED_LOCALES, loadLocale, localizeText } from '../../src/i18n/index.js';
+import { weakSuitedShove, pocketTensRecords } from '../fixtures/review-spots.js';
 
 test('contextual draw rationale and bot motivation localize without losing cards, prices or evidence limits', async () => {
   const cards = (text) =>
@@ -64,10 +65,20 @@ test('contextual draw rationale and bot motivation localize without losing cards
     ...r.coaching.paragraphs,
     r.coaching.followUp,
     ...r.evidence,
-    bot.detail,
+    ...(bot.paragraphs || [bot.detail]),
     ...bot.reasons,
     ...bot.metrics,
   ];
+  const reported = analyzeDecision(weakSuitedShove(), { trials: 120 });
+  texts.push(...reported.coaching.paragraphs, reported.coaching.followUp, ...reported.evidence);
+  for (const record of pocketTensRecords()) {
+    const explanation = explainOpponent(record);
+    texts.push(
+      ...(explanation.paragraphs || [explanation.detail]),
+      ...explanation.reasons,
+      ...explanation.metrics,
+    );
+  }
   for (const locale of SUPPORTED_LOCALES) {
     await loadLocale(locale);
     for (const text of texts) {
@@ -75,7 +86,7 @@ test('contextual draw rationale and bot motivation localize without losing cards
       assert.doesNotMatch(result, /\{\d+\}/, `${locale}: unresolved placeholder`);
       if (!['zh-CN', 'zh-TW', 'ja'].includes(locale))
         assert.doesNotMatch(result, /\p{Script=Han}/u, `${locale}: ${result}`);
-      for (const amount of ['1,250', '2,650', '4,600', '8', '6 / J'])
+      for (const amount of ['1,250', '2,650', '4,600', '5,000', '4,650', '48.1%', '8', '6 / J'])
         if (text.includes(amount)) assert.ok(result.includes(amount), `${locale}: lost ${amount}`);
     }
   }

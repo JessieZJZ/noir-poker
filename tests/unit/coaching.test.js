@@ -222,3 +222,18 @@ test('a supported opening keeps the actual size instead of presenting an unprove
   assert.match(c.suggestedAction, /150/);
   assert.doesNotMatch(c.suggestedAction, /125/);
 });
+
+test('closing-call wording follows the protected EV verdict on both sides of the uncertainty boundary', () => {
+  const s = decision(),
+    r = result();
+  r.metrics = { ...r.metrics, randomEV: -1, weightedEV: -2 };
+  const withinError = coachDecision(s, r);
+  assert.equal(withinError.evKind, 'uncertain');
+  assert.equal(withinError.kind, 'keep');
+  assert.doesNotMatch(withinError.explanation, /EV 都为负|建议减少这笔投入/);
+  r.metrics = { ...r.metrics, randomEV: -23, weightedEV: -23 };
+  const outsideError = coachDecision(s, r);
+  assert.equal(outsideError.evKind, 'negative');
+  assert.equal(outsideError.label, '弃牌');
+  assert.match(outsideError.explanation, /EV 都为负/);
+});

@@ -708,10 +708,12 @@ export async function nativeScenarios(app) {
           '#review-opponent-detail .review-choice, #review-opponent-detail .review-status, #review-opponent-detail details',
         ).length,
         reason: document.querySelector('#review-opponent-detail .review-explanation')?.textContent,
+        references: document.querySelector('.opponent-metrics')?.textContent || '',
         scope: document.querySelector('.review-scope').textContent,
       }));
       assert.ok(opponent.reason);
-      assert.ok(opponent.metrics > 0 && opponent.metrics <= 2);
+      assert.ok(opponent.metrics <= 2);
+      assert.doesNotMatch(opponent.references, /随机范围估计|抽样\s*\d+\s*次|价格门槛/);
       assert.equal(opponent.removed, 0);
       assert.match(opponent.scope, /未完整建模对手继续范围/);
       await app.comparePage('opponent-review', [
@@ -725,7 +727,7 @@ export async function nativeScenarios(app) {
       for (let index = 0; index < Math.min(count, 24); index++) {
         await app.click(`[data-opponent-index="${index}"]`);
         const text = await app.evaluate(
-          () => document.querySelector('#review-opponent-detail .review-explanation p').textContent,
+          () => document.querySelector('#review-opponent-detail .review-explanation').textContent,
         );
         if (/埋牌|脏牌|donk|2–7/.test(text)) {
           if (text.includes('donk')) assert.match(text, /前一街进攻者/);

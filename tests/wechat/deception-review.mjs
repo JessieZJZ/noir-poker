@@ -58,15 +58,15 @@ try {
     (data) => data.reviewPerspective === 'opponent' && data.reviewSteps.length === records.length,
   );
   const expected = [
-    /平跟埋牌/,
-    /过牌埋牌/,
-    /只跟注埋牌/,
+    /(?=.*埋牌)(?=.*(?:平跟|只补))/,
+    /(?=.*埋牌)(?=.*过牌)/,
+    /(?=.*埋牌)(?=.*只跟)/,
     /脏牌开池/,
     /脏牌再加注/,
     /donk.*先领打/,
     /donk.*付费/,
-    /2–7.*开池/,
-    /2–7.*试探下注/,
+    /2–7.*(?:开池|偷盲)/,
+    /(?=.*2–7)(?=.*本轮已经过牌)(?=.*诈唬)/,
   ];
   for (let i = 0; i < records.length; i++) {
     await (await page.$(`.review-step[data-index="${i}"]`)).tap();
@@ -75,6 +75,7 @@ try {
     assert.match(step.reason, expected[i]);
     assert.match(await (await page.$('.review-coaching text')).text(), expected[i]);
     assert.ok(step.metrics.length <= 2);
+    assert.doesNotMatch(step.metrics.join(''), /随机范围估计|抽样\s*\d+\s*次|价格门槛/);
     assert.equal(await page.$('.review-choice'), null);
     assert.equal(await page.$('.review-comparison'), null);
     report.checks.push({

@@ -118,7 +118,7 @@ export function decisionContext(s) {
     handClass = pocket ? 'pocket' : 'unpaired';
     handLabel = pocket
       ? `口袋 ${rankText(holeRank)}`
-      : `${s.hole.map((c) => rankText(c.rank)).join(' / ')} ${s.hole[0]?.suit === s.hole[1]?.suit ? '同花' : '不同花'}`;
+      : `${s.hole.map((c) => rankText(c.rank)).join(' / ')} ${s.hole[0]?.suit === s.hole[1]?.suit ? '同花底牌' : '不同花底牌'}`;
   } else if (playsBoard) {
     handClass = 'board';
     handLabel = '公共牌成牌，底牌未提高牌力';

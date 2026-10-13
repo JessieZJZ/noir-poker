@@ -33,15 +33,15 @@ test('WeChat review transports the executed deceptive logic from the shared engi
     assert.equal(result.loading, false);
     assert.equal(result.opponents.length, 9);
     const expected = [
-      /平跟埋牌/,
-      /过牌埋牌/,
-      /只跟注埋牌/,
+      /(?=.*埋牌)(?=.*(?:平跟|只补))/,
+      /(?=.*埋牌)(?=.*过牌)/,
+      /(?=.*埋牌)(?=.*只跟)/,
       /脏牌开池/,
       /脏牌再加注/,
       /donk.*先领打/,
       /donk.*付费/,
-      /2–7.*开池/,
-      /2–7.*试探下注/,
+      /2–7.*(?:开池|偷盲)/,
+      /(?=.*2–7)(?=.*本轮已经过牌)(?=.*诈唬)/,
     ];
     result.opponents.forEach((r, index) => {
       assert.match(r.reason, expected[index]);

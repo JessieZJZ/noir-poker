@@ -697,7 +697,10 @@
           >
         </view>
         <view class="review-coaching">
-          <text>{{selectedReviewStep.reason}}</text>
+          <text wx:if="{{!selectedReviewStep.paragraphs.length}}"
+            >{{selectedReviewStep.reason}}</text
+          >
+          <text wx:for="{{selectedReviewStep.paragraphs}}" wx:key="index">{{item}}</text>
           <text wx:for="{{selectedReviewStep.reasons}}" wx:key="*this">{{item}}</text>
           <text wx:if="{{selectedReviewStep.warning}}" class="muted"
             >{{selectedReviewStep.warning}}</text
@@ -721,7 +724,10 @@
             >本轮尚无其他主动行动。</text
           >
         </view>
-        <view wx:if="{{reviewPerspective === 'opponent'}}" class="review-evidence opponent-metrics">
+        <view
+          wx:if="{{reviewPerspective === 'opponent' && selectedReviewStep.metrics.length}}"
+          class="review-evidence opponent-metrics"
+        >
           <text class="module-title">参考数字</text>
           <text wx:for="{{selectedReviewStep.metrics}}" wx:key="*this">• {{item}}</text>
         </view>

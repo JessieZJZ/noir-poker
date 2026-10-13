@@ -5,6 +5,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import assert from 'node:assert/strict';
 import { deckOfCards } from '../../src/engine/poker.js';
+import { weakSuitedShove, pocketTensRecords } from '../fixtures/review-spots.js';
 const root = new URL('../../', import.meta.url).pathname;
 const require = createRequire(path.join(root, '.artifacts/wechat-tools/package.json'));
 const automator = require('miniprogram-automator');
@@ -33,6 +34,7 @@ const capture = async (name) => {
   await mini.screenshot({ path: path.join(output, name + '.png') });
 };
 let savedDecisions;
+let savedBotDecisions;
 try {
   report.build = JSON.parse(fs.readFileSync(path.join(root, '.artifacts/wechat/build-info.json')));
   await invoke('closeReview');
@@ -64,8 +66,11 @@ try {
     await wait((data) => data.reviewIndex === index);
     data = await page.data();
     assert.ok(data.selectedReviewStep.reason);
-    assert.ok(
-      data.selectedReviewStep.metrics.length > 0 && data.selectedReviewStep.metrics.length <= 2,
+    assert.ok(Array.isArray(data.selectedReviewStep.metrics));
+    assert.ok(data.selectedReviewStep.metrics.length <= 2);
+    assert.doesNotMatch(
+      data.selectedReviewStep.metrics.join(''),
+      /随机范围估计|抽样\s*\d+\s*次|价格门槛/,
     );
     assert.equal(await page.$('.review-choice'), null);
     assert.equal(await page.$('.review-detail-header .review-label'), null);
@@ -84,6 +89,9 @@ try {
   await invoke('closeReview');
   savedDecisions = await mini.evaluate(
     () => getCurrentPages().at(-1)._controller.getGame().decisions,
+  );
+  savedBotDecisions = await mini.evaluate(
+    () => getCurrentPages().at(-1)._controller.getGame().botDecisions,
   );
   const cards = (text) =>
     text
@@ -157,12 +165,13 @@ try {
   };
   await fixture('draw-context', snapshot, (step) => {
     assert.equal(step.keep, true);
-    assert.match(step.reason, /跟注 125 的支点是两头顺听牌/);
-    assert.match(step.reason, /此前在翻牌过牌/);
-    assert.match(step.reason, /才比较转诈唬/);
+    assert.match(step.reason, /两头顺听牌/);
+    assert.match(step.reason, /125/);
+    assert.match(step.reason, /翻牌.*过牌/);
+    assert.match(step.reason, /河牌.*诈唬/);
   });
   await fixture('fold-no-future-bluff', { ...snapshot, action: 'fold', amount: 0 }, (step) => {
-    assert.doesNotMatch(step.reason, /才比较转诈唬/);
+    assert.doesNotMatch(step.reason, /(?:可以|考虑|比较|再|才).{0,12}(?:转诈唬|河牌诈唬)/);
   });
   const weak = structuredClone(snapshot);
   Object.assign(weak, {
@@ -194,6 +203,37 @@ try {
     background: await focus.style('background-color'),
     border: await focus.style('border-left-color'),
   };
+  await fixture('reported-52s-shove', weakSuitedShove(), (step) => {
+    assert.equal(step.keep, false);
+    assert.equal(step.label, '弃牌');
+    assert.match(step.reason, /100\s*BB/);
+    assert.match(step.reason, /5,000/);
+    assert.match(step.reason, /225/);
+    assert.match(step.reason, /UTG/);
+    assert.doesNotMatch(step.reason, /一对|非坚果听牌|先前跟注|单看一张高牌/);
+    assert.doesNotMatch(step.evidence.join(''), /40(?:\.0)?%/);
+  });
+  await invoke('closeReview');
+  await mini.evaluate((records) => {
+    const game = getCurrentPages().at(-1)._controller.getGame();
+    game.botDecisions = records;
+  }, pocketTensRecords());
+  await invoke('openReview');
+  await wait((data) => !data.reviewData.loading && data.selectedReviewStep);
+  await (await page.$('[data-value="opponent"]')).tap();
+  await wait((data) => data.reviewPerspective === 'opponent' && data.reviewSteps.length === 2);
+  await (await page.$('.review-step[data-index="1"]')).tap();
+  await wait((data) => data.reviewIndex === 1);
+  const tens = (await page.data()).selectedReviewStep;
+  const tensText = [tens.reason, ...tens.metrics].join('');
+  assert.match(tensText, /4,650/);
+  assert.match(tensText, /48\.1%/);
+  assert.match(tensText, /赔率/);
+  assert.match(tens.reason, /大对|JJ|QQ|KK|AA/);
+  assert.match(tens.reason, /两高张|AK|AQ/);
+  assert.doesNotMatch(tensText, /随机范围估计|抽样\s*\d+\s*次|价格门槛|71\.7%/);
+  report.checks.push({ name: 'reported-TT-call', selected: tens });
+  await capture('reported-TT-call');
   assert.equal(report.exceptions.length, 0);
   report.status = 'passed';
 } catch (error) {
@@ -206,6 +246,9 @@ try {
     await mini.evaluate((decisions) => {
       getCurrentPages().at(-1)._controller.getGame().decisions = decisions;
     }, savedDecisions);
+    await mini.evaluate((records) => {
+      getCurrentPages().at(-1)._controller.getGame().botDecisions = records;
+    }, savedBotDecisions);
   }
   report.completedAt = new Date().toISOString();
   fs.writeFileSync(path.join(output, 'report.json'), JSON.stringify(report, null, 2));

@@ -2,6 +2,7 @@
 // It deliberately uses the controller's real rendering, actions and engine.
 import { deckOfCards, settle } from '../engine/poker.js';
 import { deceptiveRecords } from '../../tests/fixtures/deceptive-decisions.js';
+import { weakSuitedShove, pocketTensRecords } from '../../tests/fixtures/review-spots.js';
 
 function fixtureGame(count = 6, heroFirst = false) {
   seatHandVisibility.clear();
@@ -449,6 +450,16 @@ window.qa = {
     handReview.reset();
     render();
     return game.botDecisions.map((r) => ({ fixture: r.fixture, reason: r.trace.reason }));
+  },
+  reviewReportedShove() {
+    // Finish an actual test hand to expose the normal review entry point, then
+    // replace only its review records with the reported before-action scenes.
+    this.reviewLine();
+    game.decisions = [weakSuitedShove()];
+    game.botDecisions = pocketTensRecords();
+    handReview.reset();
+    render();
+    return publicState();
   },
   state() {
     return {
