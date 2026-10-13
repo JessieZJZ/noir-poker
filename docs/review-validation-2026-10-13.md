@@ -39,3 +39,21 @@ Android 的 host GPU 曾导致 QEMU 主线程挂起／模拟器退出，继而�
 微信整页矩阵曾停在进入复盘前的结算牌型与行动文字间距断言。本次没有把该矩阵算作完整通过；上述复盘专项独立完成。旧失败记录位于 `wechat/report.json`。
 
 相关截图均保存在 `.artifacts/review-coaching/` 的上述平台子目录，包括 `parity-review-native.png`、`parity-opponent-review-native.png`、微信两头顺、弃牌建议和牌手选择器原图。
+
+## 2026-10-14 合并 main 的冲突复验
+
+本轮将 `origin/main` 的 `3ac3368a8bae8772e920cef131976bfc44647caa` 合入 PR #38 原分支 `codex/contextual-review-coaching`。语言资源保留双方新增译文；本地字体根据合并后的源码重新生成。微信控制器同时保留复盘所需的牌手资料查询、手动分配与混合阵容切换。对手复盘保留简化界面，并接入 main 的小尺度 3-bet 防守解释与有边界的策略近似提示；没有修改下注或结算规则。
+
+新增回归验证小尺度再加注防守的具体解释、最多两条参考信息、不误用随机范围权益作为触发依据，以及十一语言中的证据限制。Web 测试通过实际规则引擎生成这条下注线，fixtures 仍只进入 Vite 测试模式。
+
+本轮证据均位于 `.artifacts/pr38-conflict/`，与上方合并前的记录分开：
+
+- `npm run check`：466 个单元测试及 Web／微信构建通过，日志 `check.log`。`format:check` 和 `i18n:check` 通过，当前提取清单为 1,284 条文案。
+- 复盘 Web 专项桌面／窄屏 8 项通过，日志 `web-review-fixed.log`。新增 fixture 首次运行的行动席位错误已修正，失败轨迹保留在 `web-review-first-failure/`。
+- 完整 Web 首轮 353/358 通过，五项失败均为等待超时；保持源码、断言与时限不变，以单线程复跑五项全部通过。日志为 `web-full.log`、`web-retry.log`，首轮轨迹保留在 `web-full-first-results/`。
+- Xcode iOS Simulator 与 Gradle Android Debug 实际编译通过，日志 `ios-build.log`、`android-build.log`。`mobile:sync`／`mobile:verify` 通过；两个产物均核验 17 张本地图片、其中 16 张头像。共享源码指纹为 `05d44eca5ae9e69d948f6f08477e19a179e5641a2a3f59ad10392d443fd6d02a`；Android 原生源码与 APK 的独立 SHA-256 保存在 `android-build-sha256.txt`。
+- `wechat:verify`／`wechat:check` 通过；官方 WXML/WXSS 编译器核验 9 个文件。官方 DevTools 复盘专项 7 项通过、0 运行异常，报告 `wechat-review/report.json`，微信源码指纹为 `4ada8cc1677f66b17ef8198a9d1812de331f0a92b16124f80e07da011d99cf30`。公开快照与实际牌局场景在报告中分别标记。
+
+本轮安装 E2E **未通过**。两端首次都停在 Appium 冷启动；服务预热后，iOS 的两次运行均未在首屏等待期限内出现可操作页面，截图为空白首屏，阶段为 `webview-attach`。Android 的两次运行均在首屏设备截图发现 `System UI isn't responding` 弹窗，阶段为 `scenarios`；重启专用 AVD、将显示降至 720×1600／280 dpi 后仍出现同一系统弹窗。最终报告为 `ios-review-final/report.json`、`android-review-final/report.json`，之前的服务启动、首次运行与截图也保留在各自目录中。没有把编译、资源核验或 Web 通过写成原生运行通过，也没有完成实体设备或商店验收。
+
+已清理本轮两个独立 Appium 服务及其子进程，关闭本轮专用 Android AVD，恢复其临时密度设置；iOS runner 关闭自己启动的测试设备。清理记录为 `final-server-cleanup.json`。其他任务的模拟器、仿真器和服务未被关闭。

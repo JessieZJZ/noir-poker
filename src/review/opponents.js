@@ -13,6 +13,7 @@ export const BOT_REASON_NAMES = {
   'premium-continue': '强起手牌分支保留继续',
   'affordable-entry': '低成本入池范围保留了继续',
   'affordable-open': '小开池的价格与有效后手支持跟入',
+  'small-reraise-continue': '小尺度再加注的价格支持防守',
   'price-continue': '通过了价格与压力检查',
   'value-raise': '主动加注范围触发进攻',
   'semi-bluff': '听牌半诈唬触发进攻',
@@ -66,6 +67,8 @@ export function explainOpponent(record) {
     'premium-continue': `它把${hand}当作强起手牌继续，跳过了普通价格检查；面对多人或大额全下，这种简化仍可能高估牌力。`,
     'affordable-entry': `它用${hand}低成本入池，想保留翻后成牌机会；这不是接大额再加注的理由。`,
     'affordable-open': `面对一次小开池，它用${hand}跟入，后手较深，愿意用较小投入保留翻后潜力；同花、连张或对子改善后才有机会争取更大底池。`,
+    'small-reraise-continue':
+      '这是标准或进阶难度的小尺度 3-bet 防守：总额、补入价格、底池赔率与有效后手通过边界检查，再按自己的起手牌、位置和风格选择跟注。普通的全桌随机摊牌权益弃牌检查没有执行；它是有边界的策略近似，不证明跟注盈利，也不适用于大额再加注或全下。',
     'price-continue': draw.outs
       ? `它跟注是在追${drawLabel(draw)}，并通过了模型价格检查；成牌候选不全是干净的获胜牌。`
       : `它用${hand}跟注，通过了模型价格检查，想保留摊牌机会；这不证明能打赢按下注线收紧后的范围。`,
@@ -107,7 +110,11 @@ export function explainOpponent(record) {
       : `无需补筹码；当前底池 ${n(v.pot)}。`,
   ];
   if (t.affordableRangePassed)
-    metrics.push('使用低成本跟入范围，普通的全桌随机摊牌权益弃牌检查没有执行。');
+    metrics.push(
+      t.affordableThreeBet
+        ? BOT_REASON_NAMES['small-reraise-continue']
+        : '使用低成本跟入范围，普通的全桌随机摊牌权益弃牌检查没有执行。',
+    );
   else
     metrics.push(
       `随机范围估计约 ${pct(t.equity)}，抽样 ${t.trials} 次；只是模型估计，不是对真实继续范围的胜率。`,
@@ -126,7 +133,10 @@ export function explainOpponent(record) {
     made: hand,
     warning:
       record.action === 'call' &&
-      (t.exceptions.length || (!t.affordableRangePassed && comparison < t.odds + 0.02))
+      (t.exceptions.length ||
+        (!t.affordableRangePassed && comparison < t.odds + 0.02) ||
+        (v.history.filter((a) => a.street === v.street && a.action === 'raise').length > 1 &&
+          !t.affordableThreeBet))
         ? '随机范围和容错可能高估这次继续的价值，实际行动不等于合理打法。'
         : '',
   };

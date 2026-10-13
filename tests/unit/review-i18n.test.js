@@ -68,6 +68,17 @@ test('contextual draw rationale and bot motivation localize without losing cards
     ...bot.reasons,
     ...bot.metrics,
   ];
+  const defense = explainOpponent({
+    action: 'call',
+    amount: 75,
+    trace: {
+      ...botSnapshot(),
+      reason: 'small-reraise-continue',
+      affordableRangePassed: true,
+      affordableThreeBet: true,
+    },
+  });
+  texts.push(defense.title, defense.detail, ...defense.metrics);
   for (const locale of SUPPORTED_LOCALES) {
     await loadLocale(locale);
     for (const text of texts) {
@@ -80,3 +91,34 @@ test('contextual draw rationale and bot motivation localize without losing cards
     }
   }
 });
+
+function botSnapshot() {
+  return {
+    view: {
+      hole: deckOfCards().filter(
+        (card) => (card.rank === 13 && card.suit === 0) || (card.rank === 12 && card.suit === 1),
+      ),
+      board: [],
+      street: 0,
+      position: 'UTG+1',
+      stack: 4875,
+      pot: 450,
+      bet: 125,
+      currentBet: 200,
+      contestable: 525,
+      rivals: 1,
+      history: [
+        { id: 1, street: 0, action: 'raise', amount: 125 },
+        { id: 0, street: 0, action: 'raise', amount: 200 },
+      ],
+      legal: { callAmount: 75, toCall: 75 },
+    },
+    exceptions: [],
+    equity: 0.05,
+    odds: 75 / 525,
+    trials: 28,
+    mode: 'off',
+    mood: { kind: 'steady' },
+    callTolerance: 0,
+  };
+}

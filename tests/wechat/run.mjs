@@ -27,6 +27,13 @@ let mini;
 try {
   mini = await automator.connect({ wsEndpoint: process.argv[2] || 'ws://127.0.0.1:9432' });
   mini.on('exception', (exception) => report.exceptions.push(exception));
+  await mini.evaluate(() => {
+    getApp().__noirTurnVibrations = [];
+  });
+  await mini.mockWxMethod('vibrateShort', function (options) {
+    getApp().__noirTurnVibrations.push(options.type);
+    return { errMsg: 'vibrateShort:ok' };
+  });
   let page = await mini.currentPage();
   const invoke = (name, argument) =>
     mini.evaluate(
@@ -79,7 +86,7 @@ try {
       const shell = await page.$('.game-shell');
       const shellBottom = (await shell.offset()).top + (await shell.size()).height;
       assert.ok(
-        Math.abs(shellBottom - (data.windowHeight - data.bottomInset - 8 - 82)) <= 1,
+        Math.abs(shellBottom - (data.windowHeight - data.bottomInset - 8 - 76)) <= 1,
         'Table preserves its live height while only the dock collapses',
       );
       const buttons = await page.$$('.settled-buttons button');
@@ -87,7 +94,7 @@ try {
       assert.ok(await page.$('.retry-button'), 'Replay remains visible alongside practice runout');
       const sizes = await Promise.all(buttons.map((button) => button.size()));
       for (const size of sizes) {
-        assert.equal(size.height, 44);
+        assert.equal(size.height, 38);
         assert.ok(
           Math.abs(size.width - sizes[0].width) <= 1,
           'Settlement actions have equal widths',
@@ -317,6 +324,18 @@ try {
   await invoke('confirmReset');
   await wait((data) => data.canAct);
   await capture('table', ['.nav', '.game-shell', '.board-row', '.hero-cards', '.action-buttons']);
+  assert.equal((await (await page.$('.nav')).size()).height, 48);
+  for (const button of await page.$$('.action-buttons button'))
+    assert.equal((await button.size()).height, 38);
+  for (const button of await page.$$('button'))
+    assert.equal(await button.attribute('hover-class'), 'none');
+  report.compactChrome = {
+    navHeight: 48,
+    liveDockHeight: 134,
+    primaryButtonHeight: 38,
+    tableHeaderHeight: 26,
+    buttonHoverClass: 'none',
+  };
   const board = await page.$('.board-row'),
     hero = await page.$('.hero-cards');
   const boardOffset = await board.offset(),
@@ -412,6 +431,16 @@ try {
         ),
         'Profile cards must not overlap',
       );
+    const avatar = await profileCards[i].$('.profile-avatar');
+    assert.ok(
+      Math.abs(
+        (await avatar.offset()).top -
+          a.top -
+          parseFloat(await profileCards[i].style('padding-top')) -
+          1,
+      ) <= 1,
+      'Persona portraits start at the top of each grid cell',
+    );
     for (const selector of ['.profile-name', '.profile-tag']) {
       const child = await profileCards[i].$(selector),
         c = await child.offset(),
@@ -438,6 +467,28 @@ try {
   ]);
   await scrollToSetting('.seat-roster', 36);
   assert.equal((await page.$$('.seat-setting')).length, 8);
+  const chooseSeat = async (id, style) => {
+    const data = await page.data();
+    await invoke('changeSeat', {
+      currentTarget: { dataset: { id } },
+      detail: { value: data.profiles.findIndex((profile) => profile.id === style) },
+    });
+  };
+  if ((await page.data()).settings.mixed) await invoke('mixProfiles');
+  assert.equal(await (await page.$('.small-button')).style('background-color'), 'rgba(0, 0, 0, 0)');
+  await chooseSeat(1, 'tan');
+  await chooseSeat(2, 'balanced');
+  await invoke('mixProfiles');
+  assert.equal((await page.data()).settings.mixed, true);
+  assert.equal((await page.data()).settings.assignments[1], 'tan');
+  await chooseSeat(3, 'ivey');
+  await invoke('mixProfiles');
+  const mixedSettings = (await page.data()).settings;
+  assert.equal(mixedSettings.mixed, false);
+  assert.equal(mixedSettings.assignments[1], 'tan');
+  assert.equal(mixedSettings.assignments[2], 'balanced');
+  assert.equal(mixedSettings.assignments[3], 'ivey');
+  report.mixedToggle = mixedSettings;
   await capture('settings-roster', [
     '.settings-modal',
     '.seat-roster',
@@ -520,12 +571,24 @@ try {
   for (const [index, expanded] of (await page.data()).guideExpanded.entries())
     if (expanded) await invoke('toggleGuide', { currentTarget: { dataset: { index } } });
   await capture('guide', ['.guide-sheet', '.guide-h2', '.rules-flow', '.guide-p']);
+  assert.equal((await page.$$('.hand-example')).length, 9);
+  assert.equal((await page.$$('.guide-card')).length, 45);
+  assert.ok((await (await page.$('.position-glossary')).text()).includes('HJ'));
+  report.visualGuide = { hands: 9, cards: 45 };
   await invoke('toggleGuide', { currentTarget: { dataset: { index: 0 } } });
   assert.equal((await page.data()).guideExpanded[0], true);
   await invoke('closeGuide');
   const cardsBefore = (await page.data()).boardSlots.map((card) => card.key);
   const rowsBefore = await (await page.$('.board-row')).offset();
   await (await page.$('.pot-detail')).tap();
+  await wait((data) => data.potOpen && data.homeLocked, 5000);
+  assert.equal((await page.data()).homeLocked, true);
+  assert.equal(await (await page.$('.screen')).style('position'), 'fixed');
+  const lockedTableTop = (await (await page.$('.game-shell')).offset()).top;
+  await mini.pageScrollTo(200);
+  assert.equal((await (await page.$('.game-shell')).offset()).top, lockedTableTop);
+  assert.equal(await (await page.$('.sheet-scroll')).attribute('scroll-y'), 'true');
+  report.potScrollLock = { fixedHome: true, innerScroll: true };
   for (let frame = 0; frame < 4; frame++) {
     assert.deepEqual(
       (await page.data()).boardSlots.map((card) => card.key),
@@ -551,9 +614,107 @@ try {
   const hand = (await page.data()).hand;
   await invoke('closeReset');
   assert.equal((await page.data()).hand, hand, 'Cancelling reset preserves the deal');
+  await wait((data) => data.canAct && data.canRaise);
+  const vibrationsBefore = await mini.evaluate(() => getApp().__noirTurnVibrations.length);
+  assert.ok(vibrationsBefore > 0, 'Real controller turns must dispatch short vibrations');
+  const sliderBefore = await page.data();
+  await invoke('previewRaise', { detail: { value: sliderBefore.minRaise + 100 } });
+  const sliderPreview = await page.data();
+  assert.equal(sliderPreview.raiseTo, sliderBefore.raiseTo);
+  assert.deepEqual(sliderPreview.boardSlots, sliderBefore.boardSlots);
+  await invoke('changeRaise', { detail: { value: sliderBefore.minRaise } });
+  assert.equal(
+    await mini.evaluate(() => getApp().__noirTurnVibrations.length),
+    vibrationsBefore,
+    'Slider changes must not repeat a turn vibration',
+  );
+  await (await page.$('[data-action="raise"]')).tap();
+  await wait((data) => data.flyingChips.length >= 3, 5000);
+  const flying = (await page.$$('.flying-chip')).at(-1);
+  const [animationName, animationDuration] = await Promise.all([
+    flying.style('animation-name'),
+    flying.style('animation-duration'),
+  ]);
+  assert.equal(animationName, 'fly-chips');
+  assert.equal(animationDuration, '0.52s');
+  await mini.screenshot({ path: path.join(output, 'raise-chip-motion.png') });
+  report.wagerMotion = { chips: 3, durationMs: 520, staggerMs: 60 };
+  await wait((data) => data.canAct || data.done);
+  if ((await page.data()).done) {
+    await invoke('nextHand');
+    await wait((data) => data.canAct);
+  }
+  const vibrationsAfter = await mini.evaluate(() => getApp().__noirTurnVibrations);
+  assert.ok(vibrationsAfter.length > vibrationsBefore, 'A new hero decision vibrates again');
+  assert.ok(vibrationsAfter.every((type) => type === 'light'));
+  report.turnVibration = {
+    before: vibrationsBefore,
+    after: vibrationsAfter.length,
+    type: 'light',
+    scope: 'Actual controller dispatch with wx.vibrateShort mocked; physical feel needs a phone',
+  };
   await (await page.$('[data-action="fold"]')).tap();
   await settle('settlement');
   await capture('settlement', ['.settled-buttons', '.hero', '.board-row']);
+  const beforePeek = await page.data();
+  const target = beforePeek.phoneSeats.find((seat) => seat.cards.length === 0);
+  assert.ok(target, 'A folded opponent must be available for the peek regression');
+  const targetCardIndex = beforePeek.phoneSeats
+    .slice(0, beforePeek.phoneSeats.indexOf(target))
+    .reduce((sum, seat) => sum + seat.cards.length, 0);
+  const peekStarted = await mini.evaluate((id) => {
+    const current = getCurrentPages().at(-1);
+    current.__peekGeometry = [];
+    current.peekSeat({ currentTarget: { dataset: { id } } });
+    // Sample the first card after its 650ms flip, while the staggered pair
+    // still carries the animation class, then after the class is removed.
+    for (const delay of [720, 950])
+      setTimeout(() => {
+        wx.createSelectorQuery()
+          .selectAll('.mini-card')
+          .boundingClientRect((cards) => current.__peekGeometry.push({ delay, cards }))
+          .exec();
+      }, delay);
+    const seat = current.data.phoneSeats.find((entry) => entry.id === id);
+    return {
+      peekArriving: seat.peekArriving,
+      wholeCardsArriving: seat.cards.every((card) => card.arriving),
+    };
+  }, target.id);
+  assert.deepEqual(peekStarted, { peekArriving: true, wholeCardsArriving: true });
+  const afterPeek = await page.data();
+  for (const seat of beforePeek.phoneSeats) {
+    const next = afterPeek.phoneSeats.find((entry) => entry.id === seat.id);
+    assert.equal(next.rankLift, seat.rankLift);
+    assert.equal(next.actionLabel, seat.actionLabel);
+    assert.equal(next.rank, seat.rank);
+  }
+  const revealed = await page.$('.face-arrive');
+  assert.equal(await revealed.style('animation-name'), 'hole-flip');
+  assert.equal(await revealed.style('animation-duration'), '0.65s');
+  await mini.screenshot({ path: path.join(output, 'motion-peek-early.png') });
+  await page.waitFor(850);
+  assert.equal(await page.$('.seat-hole.peek-arrive'), null);
+  assert.equal(await page.$('.face-arrive'), null);
+  await mini.screenshot({ path: path.join(output, 'motion-peek-complete.png') });
+  const peekGeometry = await mini.evaluate(() => getCurrentPages().at(-1).__peekGeometry);
+  assert.equal(peekGeometry.length, 2);
+  const firstCard = peekGeometry.map((sample) => sample.cards[targetCardIndex]);
+  assert.ok(firstCard.every(Boolean));
+  const peekShift = {
+    x: Math.abs(firstCard[1].left - firstCard[0].left),
+    y: Math.abs(firstCard[1].top - firstCard[0].top),
+  };
+  assert.ok(peekShift.x <= 1 && peekShift.y <= 1, 'Peek cleanup must keep the card in place');
+  report.peekTransition = {
+    wholeCard: true,
+    durationMs: 650,
+    containerFadeMs: 180,
+    peerCaptionsPreserved: true,
+    endpointGeometry: peekGeometry,
+    cleanupShiftPx: peekShift,
+  };
+  await invoke('peekSeat', { currentTarget: { dataset: { id: target.id } } });
   await captureShowdown();
   await capturePracticeRunout();
   await (await page.$('.review-button')).tap();
@@ -675,7 +836,7 @@ try {
         after.heroCards.map((card) => card.key),
         before.heroCards.map((card) => card.key),
       );
-    const face = await page.$('.hero-card .card-art'),
+    const face = await page.$('.hero-card'),
       back = await page.$('.card-back');
     assert.equal(await face.style('animation-name'), 'face-arrive');
     assert.equal(await face.style('animation-delay'), '0.42s');
@@ -683,6 +844,7 @@ try {
     await mini.screenshot({ path: path.join(output, `motion-${method}-early.png`) });
     await page.waitFor(1450);
     assert.equal(await face.style('opacity'), '1');
+    assert.equal(await face.style('animation-name'), 'none');
     await mini.screenshot({ path: path.join(output, `motion-${method}-complete.png`) });
     report.dealTransitions.push({
       method,
@@ -695,6 +857,47 @@ try {
     await (await page.$('[data-action="fold"]')).tap();
     await settle(`motion-${method}`);
   }
+  // Count actual Page audio.play requests, while retaining the real contexts.
+  await mini.evaluate(() => {
+    const current = getCurrentPages().at(-1);
+    current.__audioPlays = 0;
+    for (const audio of current._audio) {
+      const play = audio.play.bind(audio);
+      audio.play = () => {
+        current.__audioPlays++;
+        return play();
+      };
+    }
+  });
+  if (!(await page.data()).settings.sound)
+    await invoke('togglePreference', { currentTarget: { dataset: { key: 'sound' } } });
+  await invoke('togglePreference', { currentTarget: { dataset: { key: 'sound' } } });
+  const mutedBefore = await mini.evaluate(() => ({
+    audio: getCurrentPages().at(-1).__audioPlays,
+    vibrations: getApp().__noirTurnVibrations.length,
+  }));
+  await invoke('nextHand');
+  await wait((data) => data.canAct);
+  const mutedAfter = await mini.evaluate(() => ({
+    audio: getCurrentPages().at(-1).__audioPlays,
+    vibrations: getApp().__noirTurnVibrations.length,
+  }));
+  assert.deepEqual(mutedAfter, mutedBefore, 'Disabled feedback suppresses both channels');
+  await invoke('togglePreference', { currentTarget: { dataset: { key: 'sound' } } });
+  await invoke('resetPractice');
+  await invoke('confirmReset');
+  await wait((data) => data.canAct);
+  const enabled = await mini.evaluate(() => ({
+    audio: getCurrentPages().at(-1).__audioPlays,
+    vibrations: getApp().__noirTurnVibrations.length,
+  }));
+  assert.ok(enabled.audio > mutedAfter.audio && enabled.vibrations > mutedAfter.vibrations);
+  report.combinedFeedback = {
+    mutedBefore,
+    mutedAfter,
+    enabled,
+    scope: 'Real Page audio dispatch and mocked wx vibration; phone hearing/feel not tested',
+  };
   assert.equal(report.exceptions.length, 0, 'DevTools must report no runtime exceptions');
   assert.equal(
     JSON.parse(await readFile(path.join(root, '.artifacts/wechat/build-info.json'))).sourceDigest,
@@ -707,6 +910,7 @@ try {
   report.error = error.stack;
   throw error;
 } finally {
+  if (mini) await mini.restoreWxMethod('vibrateShort').catch(() => {});
   report.completedAt = new Date().toISOString();
   await writeFile(path.join(output, 'report.json'), JSON.stringify(report, null, 2));
   mini?.disconnect();

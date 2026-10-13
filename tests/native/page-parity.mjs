@@ -4,6 +4,7 @@ import { readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { chromium } from '@playwright/test';
 import { profileDetailBounds } from '../../src/ui/profile-layout.js';
+import { compareNativePaint } from './paint-parity.mjs';
 
 // Replay only the installed app's rendered DOM in Chromium. This compares the
 // same cards, text and selections, without putting test fixtures in an app.
@@ -96,7 +97,7 @@ export async function compareNativePage({ root, output, evaluate, screenshot }, 
       boxes,
     };
   }, selectors);
-  await screenshot('parity-' + name + '-native');
+  const nativeCapture = await screenshot('parity-' + name + '-native');
   const directory = path.join(root, '.artifacts/mobile/web');
   const server = createServer(async (request, response) => {
     try {
@@ -216,7 +217,11 @@ export async function compareNativePage({ root, output, evaluate, screenshot }, 
         ),
       selectors,
     );
-    await page.screenshot({ path: path.join(output, 'parity-' + name + '-web.png') });
+    const webImage = path.join(output, 'parity-' + name + '-web.png');
+    await page.screenshot({ path: webImage });
+    const paint = /^(?:table|settlement)(?:-[5-9])?$/.test(name)
+      ? await compareNativePaint(nativeCapture, webImage, snapshot)
+      : undefined;
     const comparison = {
       name,
       mode: 'Installed app DOM replay in Chromium; same content, usable viewport and local CSS',
@@ -224,11 +229,17 @@ export async function compareNativePage({ root, output, evaluate, screenshot }, 
       head: undefined,
       body: undefined,
       web: boxes,
+      paint,
     };
     await writeFile(
       path.join(output, 'parity-' + name + '.json'),
       JSON.stringify(comparison, null, 2),
     );
+    if (paint)
+      assert.ok(
+        paint.meanChannelError <= paint.limit,
+        `${name}: native paint differs from Web (${paint.meanChannelError.toFixed(4)} > ${paint.limit}); inspect the retained screenshots`,
+      );
     for (const selector of selectors) {
       for (const key of ['left', 'top', 'width', 'height'])
         assert.ok(
@@ -258,6 +269,7 @@ export async function compareNativePage({ root, output, evaluate, screenshot }, 
       insets: snapshot.insets,
       components: selectors.length,
       tolerancePx: 2,
+      paint,
     };
   } finally {
     await browser.close();

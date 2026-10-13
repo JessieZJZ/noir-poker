@@ -1,3 +1,4 @@
+import { assignNamedLineup } from './settings-helpers.js';
 import { test, expect } from '@playwright/test';
 import { closeSettings, openSettings, setPlayerCount, toggleHints } from './settings-helpers.js';
 
@@ -479,7 +480,7 @@ test('showdown participant names include the current named style and stay readab
 }, testInfo) => {
   await page.evaluate(() => window.qa.stop());
   await page.locator('#opponents-button').click();
-  await page.locator('#mix-opponents').click();
+  await assignNamedLineup(page);
   await closeSettings(page);
   const names = [
     '你',
@@ -733,7 +734,7 @@ test('settled public caption and hero remain separated for winners, losers, fold
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.evaluate(() => window.qa.stop());
   await page.locator('#opponents-button').click();
-  await page.locator('#mix-opponents').click();
+  await assignNamedLineup(page);
   await closeSettings(page);
   for (const width of [320, 390, 768, 1280]) {
     await page.setViewportSize({ width, height: 900 });
@@ -1404,7 +1405,7 @@ test('returning restores all saved options before the first fresh hand, includin
     .locator('.difficulty-option')
     .filter({ has: page.locator('input[value="hard"]') })
     .click();
-  await page.locator('#mix-opponents').click();
+  await assignNamedLineup(page);
   await page.locator('#emotion-mode').selectOption('lively');
   await closeSettings(page);
   const previous = await page.evaluate(() => window.noir.getState());
@@ -1521,7 +1522,7 @@ test('nine-seat style assignment shows every persona at all sizes and executes t
   ];
   await page.evaluate(() => window.qa.foldWin(9));
   await page.locator('#opponents-button').click();
-  await page.locator('#mix-opponents').click();
+  await assignNamedLineup(page);
   await page.locator('#emotion-mode').selectOption('off');
   await expect(
     page.locator('.opponent-current-style, .opponent-observed, .opponent-mood-reason'),
@@ -1624,7 +1625,7 @@ test('all named portraits preview immediately, follow saved styles next hand and
     .toBe(true);
   await expect(page.locator('#profile-cards')).toContainText('谭老板');
   await expect(page.locator('#profile-cards')).not.toContainText('谈老板');
-  await page.locator('#mix-opponents').click();
+  await assignNamedLineup(page);
   const firstDraft = page.locator('[data-opponent-row="1"] .opponent-portrait');
   await expect(firstDraft.locator('img')).toHaveAttribute('data-portrait-profile', 'tan');
   await page.locator('[data-bot-seat="1"]').focus();

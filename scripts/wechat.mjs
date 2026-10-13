@@ -1,3 +1,4 @@
+import { soundSamples, SOUND_SAMPLE_RATE } from '../src/ui/sound-cues.js';
 import { watch } from 'node:fs';
 import { cp, mkdir, open, readFile, readdir, rename, rm, stat, writeFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
@@ -31,7 +32,10 @@ export async function fileList(directory, prefix = '') {
 }
 
 export function wechatSourceDigest() {
-  return checksum(sourceDigest() + directoryDigest(template));
+  return checksum(
+    sourceDigest() +
+      directoryDigest(template, ['project.config.json', 'project.private.config.json']),
+  );
 }
 
 async function compileJs(sourceDirectory, destination) {
@@ -99,8 +103,9 @@ async function portraitAssets(output) {
 }
 
 function soundWave(kind) {
-  const sampleRate = 22050,
-    length = Math.round(sampleRate * 0.35);
+  const sampleRate = SOUND_SAMPLE_RATE,
+    samples = soundSamples(kind),
+    length = samples.length;
   const wave = Buffer.alloc(44 + length * 2);
   wave.write('RIFF', 0);
   wave.writeUInt32LE(wave.length - 8, 4);
@@ -114,22 +119,8 @@ function soundWave(kind) {
   wave.writeUInt16LE(16, 34);
   wave.write('data', 36);
   wave.writeUInt32LE(length * 2, 40);
-  const pitches = { fold: 175, check: 115, raise: 720, call: 510, deal: 320 };
-  for (let index = 0; index < length; index++) {
-    const time = index / sampleRate;
-    let value = 0;
-    const taps = kind === 'check' ? [0, 0.14] : [0];
-    for (const tap of taps) {
-      const elapsed = time - tap;
-      if (elapsed < 0) continue;
-      const pitch = pitches[kind] * (kind === 'fold' ? Math.exp(-elapsed * 4) : 1);
-      value +=
-        Math.sin(elapsed * 2 * Math.PI * pitch) * Math.exp(-elapsed * (kind === 'check' ? 65 : 20));
-      if (kind === 'check')
-        value += Math.sin(elapsed * 2 * Math.PI * 870) * Math.exp(-elapsed * 110) * 0.25;
-    }
-    wave.writeInt16LE(Math.max(-32768, Math.min(32767, Math.round(value * 26000))), 44 + index * 2);
-  }
+  for (let index = 0; index < length; index++)
+    wave.writeInt16LE(Math.round(samples[index] * 32768), 44 + index * 2);
   return wave;
 }
 
@@ -187,6 +178,7 @@ export async function buildWechat(output = wechatOutput) {
       'rail-layout.js',
       'compact-table-layout.js',
       'cards.js',
+      'hero-turn.js',
       'card-rank-glyphs.js',
     ]) {
       const compiled = await transform(await readFile(path.join(root, 'src/ui', name), 'utf8'), {
@@ -223,7 +215,7 @@ export async function buildWechat(output = wechatOutput) {
     }
     await portraitAssets(staging);
     await mkdir(path.join(staging, 'assets/sounds'), { recursive: true });
-    for (const sound of ['fold', 'check', 'raise', 'call', 'deal'])
+    for (const sound of ['fold', 'check', 'raise', 'call', 'deal', 'win'])
       await writeFile(path.join(staging, `assets/sounds/${sound}.wav`), soundWave(sound));
     const project = {
       appid: appId(),
@@ -242,6 +234,8 @@ export async function buildWechat(output = wechatOutput) {
     await writeFile(path.join(staging, 'project.config.json'), JSON.stringify(project, null, 2));
     await writeFile(path.join(staging, 'package.json'), '{"type":"commonjs","private":true}\n');
     const files = [];
+    // Local IDE preferences are preserved below, outside the runtime manifest.
+    await rm(path.join(staging, 'project.private.config.json'), { force: true });
     for (const name of await fileList(staging)) {
       const bytes = await readFile(path.join(staging, name));
       files.push({ path: name, bytes: bytes.length, sha256: checksum(bytes) });

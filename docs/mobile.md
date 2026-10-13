@@ -46,6 +46,7 @@ npm run mobile:sync
 - iPhone 仅支持正常手持的正向竖屏；iPad 保留系统支持的横竖屏方向。Android 启动默认竖屏，最小屏幕宽度达到 600dp 的平板改用系统用户方向，设备配置变化时重新判断；手机保持正向竖屏。系统在多窗口或兼容模式下调整手机窗口时，共享 Web 层仍以旋转提示阻止横屏操作；平板允许两种方向。Android 返回键不能关闭旋转提示。
 
 - 人数、难度、风格、提示和声音设置通过 Capacitor Preferences 保存；启动时先读设置，再初始化牌桌。Web 仍使用浏览器存储，两端数据彼此独立。
+- App 的声音选项显示为“音效与振动”，默认开启，关闭后同时禁止声音与 Haptics 回合提示。安装运行回归通过真实桥接请求及 AudioBufferSourceNode 播放请求检查两者关闭／恢复；模拟器请求通过不等于实体手机震感或听感验收。
 - 切到后台时暂停机器人和发牌等待，回到前台后从剩余思考时间继续。重打、换手或重新练习仍会取消旧任务。当前牌局不保存到磁盘，进程被系统杀死后开启新练习。
 - Android 返回键先关闭当前对话框；没有对话框时回到后台。
 - 处理刘海、状态栏和底部手势区域；增加包内“关于与隐私”入口，显示实际原生版本和构建号。
@@ -101,3 +102,7 @@ CI 在完成编译后，安装并启动真正的模拟器/仿真器 App，用 Ap
 原生构建支持 11 种语言，iOS 在 `Info.plist` 声明语言，Android 使用 `res/xml/locales_config.xml`。应用内语言设置在本机持久保存；实际系统单 App 语言选择与 WebView 字体需真机验收。
 
 `native` 构建保留当前 Web 的人物展示、头像及已有说明，仅无需远程字体请求；策略、保存的风格 ID 与规则一致。新增 Web/原生文案后按 README 的国际化命令更新资源。历史可选展示转换保留在 `scripts/native-store.mjs`，当前构建不再自动应用它。原生包使用本地图标、字体与图片，不配置远程 `server.url`。
+
+轮到你行动时，iOS/Android 通过 `@capacitor/haptics` 的 Light impact 提示一次，后台不触发；同一回合的重复渲染不会重复调用。共享去重逻辑与浏览器、小程序相同。安装测试确认原生 Haptics 插件存在并调用实际桥接；模拟器／仿真器没有可供人感受的震动马达，真机震感需独立验收。接口依据：[Capacitor Haptics](https://capacitorjs.com/docs/apis/haptics)。
+
+Web 手机调用支持的 `navigator.vibrate(50)`，并受浏览器用户手势限制；Safari/iOS Safari 未提供该 API，iOS App 使用原生接口，不受这一网页限制。兼容性依据：[MDN Navigator.vibrate](https://developer.mozilla.org/en-US/docs/Web/API/Navigator/vibrate)。

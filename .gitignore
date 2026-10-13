@@ -12,3 +12,6 @@ test-results/
 *.p12
 *.mobileprovision
 mobile/xcode.env
+# Local WeChat IDE configuration is generated, not application source.
+miniprogram/project.config.json
+miniprogram/project.private.config.json

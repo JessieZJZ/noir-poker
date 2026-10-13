@@ -116,16 +116,12 @@ test('style assignments, mixed lineups and emotions automatically persist while 
   expect((await saved()).emotionMode).toBe('lively');
   await expect(page.locator('#opponents-save-note')).toContainText('已自动保存');
   await page.locator('#mix-opponents').click();
-  expect((await saved()).assignments).toEqual({
-    1: 'tan',
-    2: 'st',
-    3: 'zang',
-    4: 'peter',
-    5: 'abao',
-    6: 'viktor',
-    7: 'jungleman',
-    8: 'dwan',
-  });
+  const mixed = await saved();
+  expect(mixed.mixed).toBe(true);
+  expect(mixed.mixedSeats).toEqual([2, 3, 4, 5]);
+  expect(mixed.assignments['1']).toBe('dwan');
+  expect(mixed.mixedSeats.every((id) => mixed.assignments[id] !== 'balanced')).toBe(true);
+  await expect(page.locator('#mix-opponents')).toHaveAttribute('aria-pressed', 'true');
   // The settings cover all future seats, including those currently off table.
   await page.locator('[data-bot-seat="8"]').selectOption('balanced');
   const persisted = await saved();
@@ -135,7 +131,7 @@ test('style assignments, mixed lineups and emotions automatically persist while 
   await page.locator('[data-close-profile-detail]').click();
   await closeSettings(page);
   await openSettings(page);
-  await expect(page.locator('[data-bot-seat="1"]')).toHaveValue('tan');
+  await expect(page.locator('[data-bot-seat="1"]')).toHaveValue('dwan');
   await expect(page.locator('[data-bot-seat="8"]')).toHaveValue('balanced');
   await expect(page.locator('#emotion-mode')).toHaveValue('lively');
   await closeSettings(page);
@@ -158,19 +154,15 @@ test('style assignments, mixed lineups and emotions automatically persist while 
     window.qa.stop();
     return window.noir.getState();
   });
-  expect(next.players.slice(1).map((p) => p.botProfile)).toEqual([
-    'tan',
-    'st',
-    'zang',
-    'peter',
-    'abao',
-  ]);
+  expect(next.players.slice(1).map((p) => p.botProfile)).toEqual(
+    Array.from({ length: 5 }, (_, i) => persisted.assignments[i + 1]),
+  );
   expect(next.emotionMode).toBe('lively');
   await page.reload();
   await page.waitForFunction(() => !!window.qa);
   await page.evaluate(() => window.qa.stop());
   await openSettings(page);
-  await expect(page.locator('[data-bot-seat="1"]')).toHaveValue('tan');
+  await expect(page.locator('[data-bot-seat="1"]')).toHaveValue('dwan');
   await expect(page.locator('[data-bot-seat="8"]')).toHaveValue('balanced');
   await expect(page.locator('#emotion-mode')).toHaveValue('lively');
   expect(await saved()).toEqual(persisted);

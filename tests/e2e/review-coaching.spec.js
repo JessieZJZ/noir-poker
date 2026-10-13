@@ -84,3 +84,22 @@ test('all review locales switch immediately and preserve the recorded hand', asy
   }
   expect(await page.evaluate(() => window.qa.snapshot())).toEqual(before);
 });
+
+test('small three-bet defense keeps its bounded explanation in the simplified opponent panel', async ({
+  page,
+}) => {
+  await page.goto('/');
+  await page.waitForFunction(() => window.qa);
+  await page.evaluate(() => window.qa.reviewSmallReraise());
+  await page.locator('#review-hand-button').click();
+  await page.locator('#review-opponents-tab').click();
+  await expect(page.locator('#review-opponent-detail .review-explanation')).toContainText(
+    '小尺度 3-bet 防守',
+  );
+  await expect(page.locator('#review-opponent-detail .review-explanation')).toContainText(
+    '不证明跟注盈利',
+  );
+  await expect(page.locator('.opponent-metrics li')).toHaveCount(2);
+  await expect(page.locator('.opponent-metrics')).toContainText('小尺度再加注的价格支持防守');
+  await expect(page.locator('.opponent-metrics')).not.toContainText('随机范围估计');
+});

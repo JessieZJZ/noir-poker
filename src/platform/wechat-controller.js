@@ -1,3 +1,4 @@
+import { createHeroTurnCue } from '../ui/hero-turn.js';
 import { SEAT_ANCHORS } from '../ui/seat-geometry.js';
 import { explainOpponent } from '../review/opponents.js';
 import { publicHistory } from '../review/narrative.js';
@@ -26,6 +27,8 @@ import {
   EMOTION_MODES,
   sanitizeBotSettings,
   getBotProfile,
+  assignBotSeat,
+  toggleMixedLineup,
 } from '../engine/bot-profiles.js';
 import { CHIP_UNIT, fractionRaiseTo, legalRaiseTo } from '../engine/bet-sizing.js';
 import {
@@ -71,6 +74,8 @@ export function createWechatController({
   publish,
   storage,
   sound = () => {},
+  wager = () => {},
+  notifyTurn = () => {},
   schedule = setTimeout,
   unschedule = clearTimeout,
 }) {
@@ -81,6 +86,7 @@ export function createWechatController({
     settings = defaults();
   }
   const peeked = new Map();
+  const turnCue = createHeroTurnCue(notifyTurn);
   let game = newGame(settings.playerCount),
     raiseTo = 150,
     timer = null,
@@ -260,6 +266,11 @@ export function createWechatController({
     }));
     const pot = done ? game.potAtShowdown || potSize(game) : potSize(game);
     const breakdown = currentPots(game);
+    turnCue.update({
+      key: `${game.hand}:${game.replayAttempt || 0}:${game.street}:${game.history.length}`,
+      enabled: legal.enabled,
+      active: active && !disposed && settings.sound,
+    });
     publish({
       hand: game.hand,
       phase: game.phase,
@@ -379,7 +390,7 @@ export function createWechatController({
         timer = null;
         if (disposed || !active || ticket !== epoch || game.phase !== 'between') return;
         advanceStreet(game);
-        effect('deal');
+        effect(game.phase === 'done' ? 'win' : 'deal');
         render();
         driveBots();
       }, 850);
@@ -397,17 +408,20 @@ export function createWechatController({
       timer = schedule(() => {
         timer = null;
         if (disposed || !active || ticket !== epoch || !isBotTurnCurrent(game, plan)) return;
-        const previousBoard = game.board.length;
+        const id = game.actor;
+        const contribution = game.players[id].total;
         const result = executeBotTurn(game, plan, { waitedMs: Date.now() - started });
         pendingBot = null;
         effect(result.action);
-        if (game.board.length > previousBoard) effect('deal');
+        if (game.phase === 'done') effect('win');
         render();
+        if (game.players[id].total > contribution) wager(id);
         driveBots();
       }, plan.delayMs);
     }, 0);
   }
   function freshHand() {
+    turnCue.reset();
     peeked.clear();
     cancelBots();
     cancelReview();
@@ -418,13 +432,15 @@ export function createWechatController({
     applyBotSettings(game, settings);
     startHand(game);
     raiseTo = 150;
-    effect('deal');
     render();
+    effect('deal');
     driveBots();
   }
   function setPreference(key, value) {
+    const enablingSound = key === 'sound' && !settings.sound && value === true;
     const next = sanitize({ ...settings, [key]: value });
     settings = next;
+    if (enablingSound) effect('deal');
     save();
     if (key === 'difficulty') {
       cancelBots();
@@ -463,11 +479,12 @@ export function createWechatController({
       const legal = legalActions(game, 0);
       if (!active || !legal.enabled) return false;
       cancelBots();
-      const before = game.board.length;
+      const contribution = game.players[0].total;
       act(game, 0, action, action === 'raise' ? raiseTo : undefined);
       effect(action === 'call' && legal.canCheck ? 'check' : action);
-      if (game.board.length > before) effect('deal');
+      if (game.phase === 'done') effect('win');
       render();
+      if (game.players[0].total > contribution) wager(0);
       driveBots();
       return true;
     },
@@ -508,6 +525,7 @@ export function createWechatController({
     retry() {
       peeked.clear();
       if (!canRestartHand(game)) return false;
+      turnCue.reset();
       cancelBots();
       cancelReview();
       cancelHint();
@@ -515,6 +533,7 @@ export function createWechatController({
       restartHand(game);
       raiseTo = 150;
       render();
+      effect('deal');
       driveBots();
       return true;
     },
@@ -533,10 +552,7 @@ export function createWechatController({
         !BOT_PROFILES.some((p) => p.id === profileId)
       )
         return;
-      settings = sanitize({
-        ...settings,
-        assignments: { ...settings.assignments, [id]: profileId },
-      });
+      settings = sanitize({ ...settings, ...assignBotSeat(settings, id, profileId) });
       save();
       render();
     },
@@ -545,7 +561,14 @@ export function createWechatController({
       settings = sanitize({
         ...settings,
         assignments: Object.fromEntries(Array.from({ length: 8 }, (_, i) => [i + 1, profileId])),
+        mixed: false,
+        mixedSeats: [],
       });
+      save();
+      render();
+    },
+    toggleMixedProfiles() {
+      settings = sanitize({ ...settings, ...toggleMixedLineup(settings, settings.playerCount) });
       save();
       render();
     },
@@ -559,7 +582,7 @@ export function createWechatController({
         if (game.phase === 'done') {
           completeBoardForPractice(game);
           render();
-          effect('deal');
+          effect('win');
           return;
         }
         if (game.phase === 'between') advanceStreet(game);
@@ -572,6 +595,7 @@ export function createWechatController({
           waiting = null;
         } else return;
         if (game.phase === 'done') return step();
+        if (game.phase === 'between') render();
         // Yield to lifecycle/reset handlers, without painting every intermediate
         // turn or adding simulated thinking delays to an explicit fast finish.
         timer = schedule(() => {
