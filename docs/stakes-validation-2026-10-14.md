@@ -25,7 +25,7 @@ PC 的三个操作按钮底部与快捷下注区对齐，立刻发完、下一�
 | iOS 安装运行       | 专用 iPhone 17 / iOS 27 Simulator 上 16 个场景全部通过     | `.artifacts/stakes/native-ios-retry/report.json`                                          |
 | Android 安装运行   | 专用 Pixel 9 / Android 36 模拟器上 16 个场景全部通过       | `.artifacts/stakes/native-android-retry/report.json`                                      |
 | 微信构建与编译     | 源码及资源校验通过；官方 WXML/WXSS 编译器检查 9 个文件通过 | `.artifacts/stakes-merged-wechat-verify.log`、`.artifacts/stakes-merged-wechat-check.log` |
-| 微信 DevTools 运行 | 尚未完成；电脑控制工具两次确认 Mac 锁屏，等待用户解锁      | 不将编译或适配器测试记为运行通过                                                          |
+| 微信 DevTools 运行 | 尚未完成；电脑控制工具多次确认 Mac 锁屏，等待用户解锁      | 不将编译或适配器测试记为运行通过                                                          |
 
 Web 首轮的 10 个失败来自旧的数字展示／默认筹码预期；更新 K/M、20K 与历史尺度配置断言后，10 个场景串行复跑全部通过。其余 353 个场景首轮已通过。规则边界用例显式使用旧尺度，新增默认尺度、25/75 与 500/1000 用例验证合法金额、短全下、退款、奇数分池、守恒和整场重置。
 
