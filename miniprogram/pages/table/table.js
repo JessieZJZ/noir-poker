@@ -3,8 +3,8 @@ const { phoneLayout } = require('./phone-layout.js');
 const { presentCard, showdownPresentation, presentationPatch } = require('./presentation.js');
 const PORTRAIT_CREDITS = require('../../assets/portraits/credits.js');
 const { completeBoardForPractice, rankText } = require('../../shared/engine/poker.js');
-// Capsule 36 + compact nav 48 + top gap 8 + header 55 + live dock 136 + end gap 8 + border 2.
-const VIEWPORT_CHROME_HEIGHT = 293;
+// Capsule 36 + nav 48 + gap 8 + header 48 + live dock 134 + end gap 8 + border 2.
+const VIEWPORT_CHROME_HEIGHT = 284;
 const PROFILE_AXES = [
   ['vpip', '入池宽度'],
   ['aggression', '进攻倾向'],

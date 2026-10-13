@@ -587,7 +587,7 @@ for (const playerCount of [5, 9]) {
       assert.equal(page.data.seats.length, playerCount - 1);
       assert.equal(page.data.windowHeight, info.windowHeight);
       assert.equal(
-        page.data.tableHeight + page.data.topInset + page.data.bottomInset + 293,
+        page.data.tableHeight + page.data.topInset + page.data.bottomInset + 284,
         info.windowHeight,
       );
       const height = page.data.tableHeight;
@@ -600,7 +600,7 @@ for (const playerCount of [5, 9]) {
       page.retryHand();
       assert.equal(page.data.done, false);
       assert.equal(page.data.tableHeight, height, 'retry cannot resize the table');
-      assert.match(stylesheet, /\.action-dock\s*\{[^}]*flex:\s*0 0 136px/s);
+      assert.match(stylesheet, /\.action-dock\s*\{[^}]*flex:\s*0 0 134px/s);
     });
   }
 }
@@ -704,7 +704,7 @@ test('WeChat capsule measurement falls back safely when absent, invalid or throw
   ]) {
     const { page } = setup(t, { menuRect });
     assert.equal(page.data.navRightInset, 104);
-    assert.equal(page.data.tableHeight + page.data.topInset + page.data.bottomInset + 293, 844);
+    assert.equal(page.data.tableHeight + page.data.topInset + page.data.bottomInset + 284, 844);
   }
 });
 

@@ -540,7 +540,8 @@
 .roomy-layout .mini-card {
   width: 36px;
   height: 50px;
-  transform: translateY(14px);
+  --hole-inset: 14px;
+  transform: translateY(var(--hole-inset));
 }
 .roomy-layout .card-back {
   width: 28px;
@@ -588,7 +589,8 @@
 .tablet-layout .mini-card {
   width: 44px;
   height: 64px;
-  transform: translateY(12px);
+  --hole-inset: 12px;
+  transform: translateY(var(--hole-inset));
 }
 .tablet-layout .card-back {
   width: 33px;
@@ -969,8 +971,18 @@
   animation-delay: var(--card-delay, 0ms);
 }
 .mini-card.face-arrive {
-  animation: flip-card 0.65s cubic-bezier(0.2, 0.6, 0.2, 1) both;
+  animation: hole-flip 0.65s cubic-bezier(0.2, 0.6, 0.2, 1) both;
   animation-delay: var(--card-delay, 0ms);
+}
+@keyframes hole-flip {
+  from {
+    opacity: 0;
+    transform: translateY(var(--hole-inset, 7px)) perspective(500px) rotateY(90deg);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(var(--hole-inset, 7px)) perspective(500px) rotateY(0deg);
+  }
 }
 @keyframes flip-card {
   from {
@@ -1383,16 +1395,17 @@
   font-size: 11px;
 }
 .action-dock {
-  height: 136px;
-  flex-basis: 136px;
+  height: 134px;
+  flex-basis: 134px;
 }
 .action-buttons,
 .continue-buttons {
-  height: 40px;
+  height: 38px;
 }
 .action-buttons button,
-.continue-buttons button {
-  height: 40px;
+.continue-buttons button,
+.settled-buttons button {
+  height: 38px;
 }
 .settings-modal .module-heading .small-button:not(.selected) {
   background: transparent;
@@ -1410,6 +1423,6 @@
   }
 }
 .game-header {
-  height: 33px;
-  flex-basis: 33px;
+  height: 26px;
+  flex-basis: 26px;
 }

@@ -18,7 +18,7 @@
   </view>
   <view
     class="game-shell {{showdown.length ? 'has-showdown' : ''}}"
-    style="height: {{tableHeight + 57 + (compactActions ? 64 : 136)}}px;"
+    style="height: {{tableHeight + 50 + (compactActions ? 58 : 134)}}px;"
   >
     <view class="game-header">
       <view class="hand-label"

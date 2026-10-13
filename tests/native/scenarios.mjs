@@ -723,7 +723,7 @@ export async function nativeScenarios(app) {
     );
     const buttons = layout.settledButtons;
     assert.ok(
-      buttons.every((button) => Math.abs(button.top - buttons[0].top) <= 1 && button.height >= 44),
+      buttons.every((button) => Math.abs(button.top - buttons[0].top) <= 1 && button.height >= 38),
     );
     assert.ok(layout.dock.height <= 65 + layout.bottomInset, 'Settlement must use the compact row');
     const crownInspection = [];
@@ -954,6 +954,14 @@ export async function nativeScenarios(app) {
         await app.waitHero();
         await app.evaluate(() => window.scrollTo(0, 0));
         assertTableLayout(await app.evaluate(readTableLayout));
+        const liveGeometry = await app.evaluate(() => ({
+          tableHeight: document.querySelector('.table-viewport').getBoundingClientRect().height,
+          buttons: [...document.querySelectorAll('.action-panel .action')].map(
+            (el) => el.getBoundingClientRect().height,
+          ),
+        }));
+        assert.equal(liveGeometry.buttons.length, 3);
+        for (const height of liveGeometry.buttons) assert.equal(height, 38);
         comparisons.push(
           await app.comparePage(`table-${count}`, [
             '.table-viewport',
@@ -972,6 +980,15 @@ export async function nativeScenarios(app) {
           }
         }
         await app.waitFor(async () => (await app.state()).phase === 'done', 90000);
+        const settledGeometry = await app.evaluate(() => ({
+          tableHeight: document.querySelector('.table-viewport').getBoundingClientRect().height,
+          buttons: [...document.querySelectorAll('.settled-actions > button:not([hidden])')].map(
+            (el) => el.getBoundingClientRect().height,
+          ),
+        }));
+        assert.equal(settledGeometry.tableHeight, liveGeometry.tableHeight);
+        assert.ok(settledGeometry.buttons.length >= 3);
+        for (const height of settledGeometry.buttons) assert.equal(height, 38);
         comparisons.push(
           await app.comparePage(`settlement-${count}`, [
             '.table-viewport',

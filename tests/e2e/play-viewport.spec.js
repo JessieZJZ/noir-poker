@@ -96,7 +96,7 @@ async function assertFixedTable(page, { bottomInset = 0, settled = false } = {})
               r = el.getBoundingClientRect();
             if (
               !visible(el) ||
-              r.height < 44 ||
+              r.height < 38 ||
               r.top < 0 ||
               r.bottom > innerHeight - bottomInset + 1 ||
               r.left < 0 ||

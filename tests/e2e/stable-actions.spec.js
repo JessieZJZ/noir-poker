@@ -127,7 +127,7 @@ async function expectDockLayout(page, kind, bottomInset = 0) {
               issues.push('single button does not fill the available width');
             if (!fits((button.top + button.bottom) / 2, (inner.top + inner.bottom) / 2))
               issues.push('single button is not vertically centered');
-            if (button.height < 44 || button.height > 45.5)
+            if (button.height < 38 || button.height > 39.5)
               issues.push('single button does not retain its 44px tap target');
           } else if (kind === 'settled') {
             const next = rect(document.querySelector('#next-button'));

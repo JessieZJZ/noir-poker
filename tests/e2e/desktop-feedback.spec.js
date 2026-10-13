@@ -28,12 +28,17 @@ test('wide live tables and controls fit the first screen at every player count',
         )
         .toBeGreaterThan(890);
       assertTableLayout(await page.evaluate(readTableLayout));
-      const widthRatio = await page.evaluate(
-        () =>
-          document.querySelector('.poker-table').getBoundingClientRect().width /
-          document.querySelector('.table-viewport').getBoundingClientRect().width,
-      );
-      expect(widthRatio).toBeGreaterThan(0.78);
+      const density = await page.evaluate(() => {
+        const felt = document.querySelector('.poker-table').getBoundingClientRect();
+        return {
+          aspect: felt.width / felt.height,
+          card: document.querySelector('#board > *').getBoundingClientRect().width,
+          profile: document.querySelector('.seat-profile').getBoundingClientRect().width,
+        };
+      });
+      expect(density.aspect).toBeLessThan(1.9);
+      expect(density.card).toBeGreaterThan(48);
+      expect(density.profile).toBeGreaterThan(90);
     }
   }
 });
@@ -50,6 +55,38 @@ test('wide hero and opponent actions preserve the page scroll position', async (
     window.qa.respondToHero();
   });
   await expect.poll(() => page.evaluate(() => scrollY)).toBe(before);
+});
+test('live and settlement buttons share the compact height without resizing the table', async ({
+  page,
+}) => {
+  for (const width of [390, 1280]) {
+    await page.setViewportSize({ width, height: 900 });
+    for (const count of [5, 6, 7, 8, 9]) {
+      await page.evaluate((count) => window.qa.heroTurn(count), count);
+      const read = () => ({
+        table: document.querySelector('.table-viewport').getBoundingClientRect().height,
+        buttons: [
+          ...document.querySelectorAll(
+            '.action-panel .action, .action-panel > button:not([hidden])',
+          ),
+        ]
+          .filter((el) => el.offsetHeight > 0)
+          .map((el) => el.getBoundingClientRect().height),
+      });
+      const before = await page.evaluate(read);
+      expect(before.buttons).toEqual([38, 38, 38]);
+      await page.evaluate(() => {
+        while (window.noir.getState().phase !== 'done') {
+          window.qa.allinRest();
+          window.qa.finish();
+        }
+      });
+      const after = await page.evaluate(read);
+      expect(after.table).toBe(before.table);
+      expect(after.buttons.length).toBeGreaterThanOrEqual(3);
+      expect(after.buttons.every((height) => height === 38)).toBe(true);
+    }
+  }
 });
 test('wide settlement captions put actions above ranks as on phones', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 900 });
