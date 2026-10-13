@@ -57,3 +57,5 @@ Android 首次专用旧 AVD 在安装前发生模拟器进程崩溃；一次无 
 本地忽略目录 `.artifacts/review-commentary-2026-10-14/` 保存构建日志、首次失败和重跑日志、Web trace、已安装 App 报告、微信报告及截图。主要报告是 `ios-runtime/report.json`、`android-runtime-clean/report.json`、`wechat-review/report.json` 和 `wechat-deception/report.json`；最终 Web 示例为 `final-{desktop,mobile}-{52s,TT}.png`。
 
 分支以 `main` 为 PR 目标，包含仍需的 PR #40 进阶混合打法依赖，不要求先合入另一个功能分支。PR #38 的前一版复盘和主干新改动已合入本分支。草稿 PR 提交审阅，尚未合并到 `main`。
+
+草稿 [PR #42](https://github.com/JessieZJZ/noir-poker/pull/42) 创建后的 [GitHub Actions 运行 #105](https://github.com/JessieZJZ/noir-poker/actions/runs/38443269816) 显示 7 个作业全部在测试执行前被阻止启动。运行页面的每项 annotation 均提示近期账户付款失败或需要提高支出限额；quality 作业 steps 为空，没有测试日志。不能把本地通过称为远端 CI 通过，也未更改账户付款或支出设置。PR 保持草稿。
