@@ -18,6 +18,8 @@ function seeded(seed) {
 }
 function sample() {
   return {
+    bigBlind: 50,
+    chipUnit: 25,
     action: 'call',
     trace: {
       equity: 0.6,
@@ -138,7 +140,7 @@ test('pacing is bounded and varied, with overlapping value, bluff, trap and fold
   );
 });
 test('planning does not mutate the game and execution reuses its selected action without sampling again', () => {
-  const g = newGame();
+  const g = newGame(undefined, { smallBlind: 25, bigBlind: 50, startingStack: 5000, chipUnit: 25 });
   startHand(g);
   const before = copy(g),
     expected = botDecision(g, seeded(42));
@@ -156,7 +158,12 @@ test('planning does not mutate the game and execution reuses its selected action
   assert.throws(() => executeBotTurn(g, plan), /过期/);
 });
 test('different time randomness leaves the strategy action unchanged and live plans expose no private factors', () => {
-  const first = newGame();
+  const first = newGame(undefined, {
+    smallBlind: 25,
+    bigBlind: 50,
+    startingStack: 5000,
+    chipUnit: 25,
+  });
   startHand(first);
   const second = copy(first);
   const p1 = planBotTurn(first, seeded(44), { timingRandom: () => 0.1 });
@@ -167,7 +174,7 @@ test('different time randomness leaves the strategy action unchanged and live pl
   assert.deepEqual(a, b);
 });
 test('planning cannot read rival holes, the future deck or final winners', () => {
-  const g = newGame(9);
+  const g = newGame(9, { smallBlind: 25, bigBlind: 50, startingStack: 5000, chipUnit: 25 });
   startHand(g);
   const expected = planBotTurn(g, seeded(76), { timingRandom: seeded(77) });
   for (const p of g.players)
@@ -187,7 +194,7 @@ test('planning cannot read rival holes, the future deck or final winners', () =>
   assert.equal(actual.delayMs, expected.delayMs);
 });
 test('plans are rejected after another action, different game, difficulty change or same-hand retry', () => {
-  const g = newGame();
+  const g = newGame(undefined, { smallBlind: 25, bigBlind: 50, startingStack: 5000, chipUnit: 25 });
   startHand(g);
   const plan = planBotTurn(g, seeded(90));
   assert.equal(isBotTurnCurrent(copy(g), plan), false);
@@ -203,7 +210,7 @@ test('plans are rejected after another action, different game, difficulty change
   assert.equal(g.botDecisions.length, 0);
 });
 test('instant bot execution records expedited thinking without a timer or duplicated action', () => {
-  const g = newGame();
+  const g = newGame(undefined, { smallBlind: 25, bigBlind: 50, startingStack: 5000, chipUnit: 25 });
   startHand(g);
   playBotTurn(g, seeded(88));
   assert.equal(g.botDecisions.length, 1);

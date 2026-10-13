@@ -1,3 +1,4 @@
+import { compactChips } from '../engine/chip-format.js';
 import overrides from './overrides.json' with { type: 'json' };
 import timezoneLocales from './timezone-locales.json' with { type: 'json' };
 import { preferenceStorage } from '../platform/storage.js';
@@ -133,9 +134,7 @@ export function localizeText(value) {
   return output;
 }
 export function formatChips(value) {
-  return new Intl.NumberFormat(locale === 'en' ? 'en-US' : locale, {
-    maximumFractionDigits: 0,
-  }).format(value);
+  return compactChips(value, locale === 'en' ? 'en-US' : locale);
 }
 const attributes = ['aria-label', 'title', 'data-mobile-label', 'placeholder'];
 // Remember source text on the actual DOM nodes. Language changes only replace

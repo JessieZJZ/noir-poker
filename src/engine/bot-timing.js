@@ -1,3 +1,4 @@
+import { bigBlindOf } from './stakes.js';
 // Synthetic table pacing, not measured timings or tells of named players.
 // Accept only the actor's decision view; no full game, hidden rival cards or deck.
 const clamp = (n, lo = 0, hi = 1) => Math.max(lo, Math.min(hi, n));
@@ -58,16 +59,16 @@ export function botThinkingTime(decision, random = Math.random) {
     (p) => p.id === lastRaiser && !p.allin && p.stack > 0,
   )?.stack;
   const effective = Math.min(remaining, facingStack ?? Math.max(0, ...liveStacks)),
-    spr = effective / Math.max(50, v.contestable);
+    spr = effective / Math.max(bigBlindOf(v), v.contestable);
   const commitment = clamp(
     Math.max(callRisk, raiseRisk) * 0.7 +
       (legal.toCall > 0 && spr < 2 ? 0.25 : 0) +
       (v.street > 0 && spr > 6 ? 0.2 : 0) +
-      (v.stack <= 500 && legal.toCall > 0 ? 0.15 : 0),
+      (v.stack <= 10 * bigBlindOf(v) && legal.toCall > 0 ? 0.15 : 0),
   );
   const sizing =
     decision.action === 'raise'
-      ? clamp((decision.amount - v.currentBet) / Math.max(50, v.pot + legal.callAmount))
+      ? clamp((decision.amount - v.currentBet) / Math.max(bigBlindOf(v), v.pot + legal.callAmount))
       : 0;
   const routine =
     (decision.action === 'fold' && t.reason === 'outside-range' && rangeCloseness < 0.15) ||

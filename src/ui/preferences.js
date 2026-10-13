@@ -1,9 +1,11 @@
+import { sanitizeStakes } from '../engine/stakes.js';
 import { preferenceStorage } from '../platform/storage.js';
 
 const STORAGE_KEY = 'noir-table-v1';
 
 function tablePreferences(value) {
   return {
+    stakes: sanitizeStakes(value?.stakes),
     playerCount:
       Number.isInteger(value?.playerCount) && value.playerCount >= 5 && value.playerCount <= 9
         ? value.playerCount

@@ -80,7 +80,7 @@ test('all eight mixed 9-max assignments reach the executed policy with the corre
     8: 'dwan',
   };
   for (let id = 1; id <= 8; id++) {
-    const g = newGame(9);
+    const g = newGame(9, { smallBlind: 25, bigBlind: 50, startingStack: 5000, chipUnit: 25 });
     applyBotSettings(g, { assignments, emotionMode: 'off' });
     startHand(g);
     while (g.actor !== id) act(g, g.actor, 'call');
@@ -97,7 +97,7 @@ test('all eight mixed 9-max assignments reach the executed policy with the corre
 });
 test('each profile decision ignores opponent holes, future deck and eventual results', () => {
   for (const profile of BOT_PROFILES) {
-    const g = newGame(9);
+    const g = newGame(9, { smallBlind: 25, bigBlind: 50, startingStack: 5000, chipUnit: 25 });
     startHand(g);
     g.players[g.actor].botProfile = profile.id;
     const expected = botDecision(g, seeded(50));
@@ -119,7 +119,7 @@ test('each profile decision ignores opponent holes, future deck and eventual res
 test('all profiles and emotion strengths play legal 5–9 person hands and conserve chips', () => {
   for (let count = 5; count <= 9; count++)
     for (const emotionMode of ['off', 'subtle', 'lively']) {
-      const g = newGame(count),
+      const g = newGame(count, { smallBlind: 25, bigBlind: 50, startingStack: 5000, chipUnit: 25 }),
         assignments = {};
       for (let id = 1; id < count; id++)
         assignments[id] = BOT_PROFILES[id % BOT_PROFILES.length].id;
@@ -140,7 +140,7 @@ test('all profiles and emotion strengths play legal 5–9 person hands and conse
     }
 });
 test('no profile raises when a short all-in has not reopened action', () => {
-  const g = newGame();
+  const g = newGame(undefined, { smallBlind: 25, bigBlind: 50, startingStack: 5000, chipUnit: 25 });
   startHand(g);
   const first = g.actor;
   act(g, first, 'raise', 100);
@@ -157,17 +157,17 @@ test('no profile raises when a short all-in has not reopened action', () => {
 });
 test('loss, win and pressure triggers are bounded, cooled down and can be disabled', () => {
   const p = { id: 1, botMood: freshBotMood() };
-  assert.equal(finishBotHand(p, -1249, 'subtle'), null);
-  assert.equal(finishBotHand(p, -1250, 'subtle').kind, 'frustrated');
-  assert.equal(finishBotHand(p, -5000, 'subtle'), null, 'Cooldown prevents repeated triggers');
+  assert.equal(finishBotHand(p, -1249, 'subtle', 50), null);
+  assert.equal(finishBotHand(p, -1250, 'subtle', 50).kind, 'frustrated');
+  assert.equal(finishBotHand(p, -5000, 'subtle', 50), null, 'Cooldown prevents repeated triggers');
   const q = { id: 2, botMood: freshBotMood() };
-  assert.equal(finishBotHand(q, -1250, 'lively').kind, 'cautious');
+  assert.equal(finishBotHand(q, -1250, 'lively', 50).kind, 'cautious');
   const off = { id: 1, botMood: freshBotMood() };
-  assert.equal(finishBotHand(off, -5000, 'off'), null);
+  assert.equal(finishBotHand(off, -5000, 'off', 50), null);
   assert.equal(off.botMood.kind, 'steady');
   const winner = { id: 1, botMood: freshBotMood() };
-  assert.equal(finishBotHand(winner, 500, 'subtle'), null);
-  assert.equal(finishBotHand(winner, 500, 'subtle').kind, 'confident');
+  assert.equal(finishBotHand(winner, 500, 'subtle', 50), null);
+  assert.equal(finishBotHand(winner, 500, 'subtle', 50).kind, 'confident');
   const mood = freshBotMood();
   recordPressureFold(mood, 2, 'subtle');
   recordPressureFold(mood, 3, 'subtle');
@@ -186,7 +186,7 @@ test('emotions adjust actual policy controls with a smaller subtle effect', () =
   assert.ok(strong[4] < mild[4]);
 });
 test('an intervening hand without pressure breaks the consecutive-fold trigger', () => {
-  const g = newGame();
+  const g = newGame(undefined, { smallBlind: 25, bigBlind: 50, startingStack: 5000, chipUnit: 25 });
   for (let hand = 0; hand < 5; hand++) {
     g.dealer = 2;
     startHand(g);
@@ -198,6 +198,8 @@ test('an intervening hand without pressure breaks the consecutive-fold trigger',
 });
 test('style differences change entry and value-trap behavior over common decision samples', () => {
   const view = {
+    bigBlind: 50,
+    chipUnit: 25,
     id: 1,
     hole: [
       { rank: 9, suit: 0 },
@@ -219,6 +221,7 @@ test('style differences change entry and value-trap behavior over common decisio
     features: { wet: false, draw: false, overpair: false },
     playsBoard: false,
     legal: {
+      chipUnit: 25,
       enabled: true,
       toCall: 50,
       callAmount: 50,
@@ -251,7 +254,7 @@ test('style differences change entry and value-trap behavior over common decisio
   );
 });
 test('uncalled shove refunds are not losses; blind-only hands are not VPIP', () => {
-  const g = newGame();
+  const g = newGame(undefined, { smallBlind: 25, bigBlind: 50, startingStack: 5000, chipUnit: 25 });
   g.dealer = 3;
   startHand(g);
   assert.equal(g.actor, 1);
@@ -267,6 +270,8 @@ test('uncalled shove refunds are not losses; blind-only hands are not VPIP', () 
 });
 test('post-flop bot fractions use the after-call pot with whole 25 chips', () => {
   const view = {
+    bigBlind: 50,
+    chipUnit: 25,
     id: 1,
     hole: [
       { rank: 14, suit: 0 },
@@ -288,6 +293,7 @@ test('post-flop bot fractions use the after-call pot with whole 25 chips', () =>
     features: { wet: false, draw: false, overpair: false },
     playsBoard: false,
     legal: {
+      chipUnit: 25,
       enabled: true,
       toCall: 225,
       callAmount: 225,
@@ -310,7 +316,7 @@ test('post-flop bot fractions use the after-call pot with whole 25 chips', () =>
   assert.equal(decision.amount, 625);
 });
 test('retry restores frozen profile, emotion and simulation statistics exactly once', () => {
-  const g = newGame();
+  const g = newGame(undefined, { smallBlind: 25, bigBlind: 50, startingStack: 5000, chipUnit: 25 });
   applyBotSettings(g, { assignments: { 1: 'tan', 2: 'st' }, emotionMode: 'lively' });
   g.players[1].botMood = {
     ...freshBotMood(),
@@ -337,7 +343,7 @@ test('retry restores frozen profile, emotion and simulation statistics exactly o
   assert.throws(() => applyBotSettings(g, {}), /下一手/);
 });
 test('a reassigned profile starts a separate observed sample', () => {
-  const g = newGame();
+  const g = newGame(undefined, { smallBlind: 25, bigBlind: 50, startingStack: 5000, chipUnit: 25 });
   g.players[1].botStats = { ...freshBotStats(), hands: 20, vpip: 10 };
   applyBotSettings(g, { assignments: { 1: 'peter' } });
   assert.equal(g.players[1].botStats.hands, 0);

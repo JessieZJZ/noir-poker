@@ -1,3 +1,4 @@
+import { sameStakes, validateStakes } from '../engine/stakes.js';
 import { createHeroTurnCue } from './hero-turn.js';
 import { notifyHeroTurn } from '../platform/haptics.js';
 import { createDialogScrollLock } from './dialog-scroll-lock.js';
@@ -13,6 +14,7 @@ import {
 } from '../i18n/index.js';
 import {
   newGame,
+  configureStakes,
   startHand,
   act,
   advanceStreet,
@@ -42,7 +44,7 @@ import { createShowdownController } from './showdown.js';
 import { createActivityFormatter } from './activity.js';
 import { portraitContent, preparePortraits } from './portraits.js';
 import { presetRaiseTo } from './bet-sizing.js';
-import { CHIP_UNIT, legalRaiseTo } from '../engine/bet-sizing.js';
+import { chipUnitOf, legalRaiseTo } from '../engine/bet-sizing.js';
 import { createSettlementLayout } from './settlement-layout.js';
 import { createPlayViewport } from './play-viewport.js';
 import { createHintNotification } from './hint-notification.js';
@@ -97,13 +99,14 @@ function isSeatHandVisible(player) {
 }
 const tablePreferences = loadTablePreferences();
 let requestedCount = tablePreferences.playerCount;
-let game = newGame(requestedCount),
+let requestedStakes = tablePreferences.stakes;
+let game = newGame(requestedCount, requestedStakes),
   timer = null,
   botWait = null,
   epoch = 0,
   lastBoard = 0,
   lastHand = 0,
-  bet = 150,
+  bet = game.bigBlind * 3,
   finishing = false,
   hints = true,
   sound = true,
@@ -281,6 +284,7 @@ function render() {
     game.players.slice(1).some((p) => ['viktor', 'jungleman', 'dwan'].includes(p.botProfile)),
   );
   setLocalizedText($('#table-size-label'), count + ' 人无限注');
+  setLocalizedText($('#blind-values'), `${format(game.smallBlind)} / ${format(game.bigBlind)}`);
   const displayBoard = game.practiceBoard || game.board;
   const hero = game.players[0],
     newHand = game.hand !== lastHand,
@@ -496,7 +500,7 @@ function render() {
     const slider = $('#bet-slider');
     slider.min = min;
     slider.max = max;
-    slider.step = CHIP_UNIT;
+    slider.step = chipUnitOf(game);
     slider.value = bet;
     setLocalizedHTML(
       $('#call-button'),
@@ -745,9 +749,9 @@ function nextHand() {
   epoch++;
   lastBoard = 0;
   $('#pot-dialog').close();
-  if (requestedCount !== game.players.length) {
+  if (requestedCount !== game.players.length || !sameStakes(requestedStakes, game.stakes)) {
     const difficulty = game.difficulty;
-    game = newGame(requestedCount);
+    game = newGame(requestedCount, requestedStakes);
     game.difficulty = difficulty;
     handReview.reset();
     lastHand = 0;
@@ -756,7 +760,7 @@ function nextHand() {
   applyBotSettings(game, pendingBotSettings);
   startHand(game);
   const legal = legalActions(game, 0);
-  bet = legal.enabled ? legalRaiseTo(150, legal) : 150;
+  bet = legal.enabled ? legalRaiseTo(game.bigBlind * 3, legal) : game.bigBlind * 3;
   render();
   soundEffect('deal');
   schedule();
@@ -780,7 +784,7 @@ function retryHand() {
   restartHand(game);
   lastHand = 0;
   lastBoard = 0;
-  bet = 150;
+  bet = game.bigBlind * 3;
   render();
   soundEffect('deal');
   schedule();
@@ -880,10 +884,17 @@ $('#player-count').onchange = (e) => {
   const count = Number(e.target.value);
   if (!Number.isInteger(count) || count < 5 || count > 9) return;
   requestedCount = count;
-  saveTablePreferences({ playerCount: requestedCount, difficulty: game.difficulty });
+  saveTablePreferences({
+    playerCount: requestedCount,
+    difficulty: game.difficulty,
+    stakes: requestedStakes,
+  });
   const note = $('#table-change-note');
   note.hidden = requestedCount === game.players.length;
-  setLocalizedText(note, `下一手切换为 ${requestedCount} 人桌 · 筹码恢复 5,000，统计重新开始`);
+  setLocalizedText(
+    note,
+    `下一手切换为 ${requestedCount} 人桌 · 筹码恢复 ${format(requestedStakes.startingStack)}，统计重新开始`,
+  );
 };
 function toggleOpponentHand(id) {
   const p = game.players[id];
@@ -911,7 +922,11 @@ $('#difficulty').onchange = (e) => {
     ['easy', 'normal', 'hard'].includes(e.target.value)
   ) {
     game.difficulty = e.target.value;
-    saveTablePreferences({ playerCount: requestedCount, difficulty: game.difficulty });
+    saveTablePreferences({
+      playerCount: requestedCount,
+      difficulty: game.difficulty,
+      stakes: requestedStakes,
+    });
     if (game.phase === 'playing' && game.actor !== 0 && !finishing) schedule();
   }
 };
@@ -969,7 +984,7 @@ $('#confirm-reset').onclick = () => {
   handReview.reset();
   const difficulty = game.difficulty;
   clearTimeout(timer);
-  game = newGame(requestedCount);
+  game = newGame(requestedCount, requestedStakes);
   game.difficulty = difficulty;
   lastHand = 0;
   $('#reset-dialog').close();
@@ -979,6 +994,10 @@ function publicState() {
   const details = potDetails();
   return {
     playerCount: game.players.length,
+    stakes: { ...game.stakes },
+    smallBlind: game.smallBlind,
+    bigBlind: game.bigBlind,
+    chipUnit: chipUnitOf(game),
     emotionMode: game.emotionMode,
     canContinue: canFastFinish(),
     replayAttempt: game.replayAttempt || 0,
@@ -1033,7 +1052,17 @@ function publicState() {
     result: game.result || null,
   };
 }
-window.noir = { getState: publicState };
+function setStakes(value) {
+  const stakes = validateStakes(value);
+  if (!configureStakes(game, stakes)) return false;
+  requestedStakes = stakes;
+  saveTablePreferences({ playerCount: requestedCount, difficulty: game.difficulty, stakes });
+  handReview.reset();
+  lastHand = 0;
+  nextHand();
+  return true;
+}
+window.noir = { getState: publicState, setStakes };
 function registerTools() {
   const context = document.modelContext;
   if (!context?.registerTool) return;

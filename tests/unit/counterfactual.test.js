@@ -21,7 +21,7 @@ const cards = (s) =>
       ),
     );
 function snap() {
-  const g = newGame();
+  const g = newGame(undefined, { smallBlind: 25, bigBlind: 50, startingStack: 5000, chipUnit: 25 });
   g.dealer = 2;
   startHand(g);
   act(g, 0, 'call');
@@ -109,7 +109,7 @@ test('an opener who actually calls a 3bet receives the later defense range', () 
   assert.ok(rangeWeight(h, s, p) < before);
 });
 test('river all-in counterfactual uses pot eligibility and a board royal flush splits exactly', () => {
-  const g = newGame();
+  const g = newGame(undefined, { smallBlind: 25, bigBlind: 50, startingStack: 5000, chipUnit: 25 });
   g.dealer = 2;
   startHand(g);
   while (g.street < 3) {
@@ -185,7 +185,7 @@ function assertReferenceChips() {
   fullRollout.referenceSettlements.length = 0;
 }
 function publicMultiwayDecisions() {
-  const g = newGame(5);
+  const g = newGame(5, { smallBlind: 25, bigBlind: 50, startingStack: 5000, chipUnit: 25 });
   g.emotionMode = 'lively';
   g.players[1].botProfile = 'tan';
   startHand(g);
@@ -226,7 +226,7 @@ test('folded continuations preserve all complete-rollout estimates and paired co
 test('folded unmatched chips still settle, including a 25-chip odd award', () => {
   // An imported public snapshot can contain an unmatched contribution. Do not
   // confuse a fold's lost pot eligibility with losing the right to a refund.
-  const g = newGame(5);
+  const g = newGame(5, { smallBlind: 25, bigBlind: 50, startingStack: 5000, chipUnit: 25 });
   Object.assign(g, {
     dealer: 0,
     hand: 1,

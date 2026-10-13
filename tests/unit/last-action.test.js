@@ -14,7 +14,7 @@ const wealth = (g) =>
   g.players.reduce((sum, p) => sum + p.stack, 0) + (g.phase === 'done' ? 0 : potSize(g));
 
 test('preflop all-in sizes and bet level survive every runout street and payout', () => {
-  const g = newGame();
+  const g = newGame(undefined, { smallBlind: 25, bigBlind: 50, startingStack: 5000, chipUnit: 25 });
   startHand(g);
   const raiser = g.actor;
   act(g, raiser, 'raise', 5000);
@@ -39,7 +39,7 @@ test('preflop all-in sizes and bet level survive every runout street and payout'
 });
 
 test('a later action replaces the retained action, while street resets preserve call and fold context', () => {
-  const g = newGame();
+  const g = newGame(undefined, { smallBlind: 25, bigBlind: 50, startingStack: 5000, chipUnit: 25 });
   startHand(g);
   act(g, 3, 'raise', 150);
   act(g, 4, 'call');
@@ -63,7 +63,7 @@ test('a later action replaces the retained action, while street resets preserve 
 });
 
 test('uncalled refunds and practice cards retain the original shove; retry and next hand restore fresh actions', () => {
-  const g = newGame();
+  const g = newGame(undefined, { smallBlind: 25, bigBlind: 50, startingStack: 5000, chipUnit: 25 });
   startHand(g);
   const raiser = g.actor;
   act(g, raiser, 'raise', 5000);

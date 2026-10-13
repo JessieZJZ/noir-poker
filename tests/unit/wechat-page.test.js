@@ -1,3 +1,4 @@
+import { compactChips } from '../../src/engine/chip-format.js';
 import { compactTableLayout } from '../../src/ui/compact-table-layout.js';
 import { renderCardArtwork } from '../../src/ui/cards.js';
 import { railLayout } from '../../src/ui/rail-layout.js';
@@ -34,7 +35,11 @@ vm.runInNewContext(
   {
     module: presentationModule,
     require: (name) =>
-      name.endsWith('/cards.js') ? { renderCardArtwork } : { evaluate, rankText },
+      name.endsWith('/chip-format.js')
+        ? { compactChips }
+        : name.endsWith('/cards.js')
+          ? { renderCardArtwork }
+          : { evaluate, rankText },
   },
 );
 function setup(
@@ -90,6 +95,7 @@ function setup(
             { label: image.credit, url: image.source },
           ]),
         );
+      if (name.endsWith('/chip-format.js')) return { compactChips };
       if (name === './presentation.js') return presentationModule.exports;
       if (name === './phone-layout.js') return { phoneLayout: compactTableLayout };
       if (name === '../../shared/engine/poker.js')
@@ -1027,14 +1033,14 @@ test('WeChat slider preview changes only the caption, final change commits the l
   const before = copy(page.data),
     hand = copy(page._controller.getGame());
   page.previewRaise({ detail: { value: 875 } });
-  assert.equal(page.data.raiseText, '875');
+  assert.equal(page.data.raiseText, '900');
   assert.equal(page.data.raiseTo, before.raiseTo);
   for (const key of ['phoneSeats', 'boardSlots', 'heroCards', 'arenaHeight', 'publicTop'])
     assert.deepEqual(copy(page.data[key]), before[key]);
   assert.deepEqual(copy(page._controller.getGame()), hand);
   page.changeRaise({ detail: { value: 875 } });
-  assert.equal(page.data.raiseTo, 875);
-  assert.equal(page.data.raiseTo % 25, 0);
+  assert.equal(page.data.raiseTo, 900);
+  assert.equal(page.data.raiseTo % 100, 0);
 });
 
 test('delayed chip measurements cannot draw into a hidden page or a replayed deal', (t) => {

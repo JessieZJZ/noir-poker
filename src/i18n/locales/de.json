@@ -1322,5 +1322,19 @@
   "这是标准或进阶难度的小尺度 3-bet 防守：总额、补入价格、底池赔率与有效后手通过边界检查，再按自己的起手牌、位置和风格选择跟注。普通的全桌随机摊牌权益弃牌检查没有执行；它是有边界的策略近似，不证明跟注盈利，也不适用于大额再加注或全下。": "Dies ist eine Verteidigung gegen eine kleine 3-bet auf Standard- oder Fortgeschrittenen-Niveau: Gesamtbetrag, zusätzliche Kosten, Pot Odds und effektiver Reststack erfüllen begrenzte Bedingungen. Danach wählt der Bot Calls anhand seiner eigenen Starthand, Position und seines Stils. Die übliche Fold-Prüfung mit zufälliger Showdown-Equity gegen den gesamten Tisch entfällt. Dies ist eine begrenzte strategische Näherung, kein Beweis für einen profitablen Call, und gilt nicht für große erneute Erhöhungen oder All-ins.",
   "音效与振动": "Ton und Vibration",
   "音效与振动已开启": "Ton und Vibration eingeschaltet",
-  "音效与振动已关闭": "Ton und Vibration ausgeschaltet"
+  "音效与振动已关闭": "Ton und Vibration ausgeschaltet",
+  "玩家筹码必须是筹码面额的倍数。": "Die Spielerchips müssen die aktuelle Chip-Stückelung mal sein.",
+  "跟注旁的数字是这次要补的筹码；加注旁的数字是这一轮累计投入的总额。例如你已投 200，对手加到 600：跟注要补 400，选择加注 1200 则补 1000。所有筹码金额都是当前筹码面额的倍数。": "Call zeigt die zusätzlichen Chip zu bezahlen; Aufstieg zeigt Ihre Gesamtbetonung für diese Runde. Wenn Sie 200 eingestellt haben und ein Gegner auf 600 erhöht, rufen Sie 400 hinzufügen. Aufstieg auf 1200 hinzufügt 1000. Alle Chip-Menge sind mehr als die aktuelle Chip-Stückelung.",
+  "请输入正整数筹码面额；盲注和起始筹码须为面额的倍数，小盲小于大盲，起始筹码不少于大盲。": "Gib eine positive ganzzahlige Chip-Stückelung ein. Blinds und Startstack müssen Vielfache davon sein; der Small Blind muss kleiner als der Big Blind sein und der Startstack den Big Blind decken.",
+  "牌桌筹码必须是筹码面额的倍数。": "Die Tischchips müssen die aktuelle Chip-Stückelung mal sein.",
+  "投入筹码必须是筹码面额的倍数。": "Die Eintrittschiffe müssen die aktuelle Chip-Stückelung mal sein.",
+  "最小下注为当前大盲。完整加注的增量不能小于本轮上一次完整下注或加注的增量。例如上一位从 200 加到 600，增量是 400，你至少要加到 1000。筹码不足时可以全下，但不够一次完整加注的短全下，不一定让已经行动的人重新获得加注权。": "Ein volles Aufstieg muss das Wette mit mindestens dem letzten volles Wetten oder Aufstieg-Anstieg erhöhen. Wenn ein Spieler von der aktuelle Big Blind bis 600 aufsteht, ist der Aufstieg 400 und der nächste Minimum-Anstieg 1000. Mit weniger Zipps können Sie all-in gehen, aber ein kurzer all-in kann nicht wieder aufstehen für Spieler, die bereits handeln.",
+  "请选择合法的加注总额，金额必须是筹码面额的倍数。": "Bitte wählen Sie die gesetzliche Erhöhung insgesamt, die Menge muss die aktuelle Chip-Stückelung Mal sein.",
+  "“最小、½ 底池、底池、全下”是尺度快捷项。无人下注时，半池 / 底池按当前底池计算；面对下注时，先补齐跟注，再按跟注后的底池计算加注增量。金额会取到当前面额的整枚筹码，并满足最小加注与剩余筹码限制；无限注允许超过底池下注。": "\"Minimum, 1⁄2 Pot, Pot, all-in\" ist die Schnittstelle.Wenn keine Wette, halb Pool / Pot wird nach dem aktuellen Pot berechnet; wenn Sie den Wette konfrontiert, erst füllen Sie den Call, dann klicken Sie auf den Call nach dem Pot berechnen Sie die Erhöhung der Aufnahme.Die Menge wird die gesamte die aktuelle Chip-Stückelung Chips nehmen, und erfüllen die Mindest-Aufnahme mit dem Rest der Chips Grenze; Unlimited Note ermöglicht mehr als die Pot-Wette.",
+  "小盲和大盲按当前牌桌设置先投入筹码，其他人依次决定是否参与。翻牌前、翻牌、转牌、河牌各有一轮下注；仍可行动的人跟齐当前下注后，才进入下一轮。任何一轮只剩一人，都可以提前结束。": "Small Blind und Big Blind setzen die für diesen Tisch festgelegten Beträge. Die Spieler handeln dann in Ordnung. Es gibt einen Wettenrund Preflop, auf dem Flop, Turn und River. Bewegen Sie sich nach dem nächsten Runde, nachdem alle Spieler handeln können, haben die Wette matched oder folded. Die Hand endet früh, wenn nur ein Spieler bleibt.",
+  "{0} 补充 {1} 虚拟筹码": "{0} füllt {1} virtuelle Chips nach",
+  "小盲须为 25 的正整数倍，大盲须为小盲的倍数且大于小盲。面额等于小盲，起始筹码为 100 BB。": "Der Small Blind muss ein positives Vielfaches von 25 sein. Der Big Blind muss ein größeres Vielfaches des Small Blinds sein. Die Chip-Stückelung entspricht dem Small Blind; der Startstack beträgt 100 BB.",
+  "下一手切换为 {0} 人桌 · 筹码恢复 {1}，统计重新开始": "Nächste Hand: {0} Spieler · Stacks auf {1}, Statistik zurückgesetzt",
+  "在顶部设置中选择 5–9 人。下一手换桌，筹码恢复为 100 BB，练习统计重新开始。": "Wähle oben in den Einstellungen 5–9 Spieler. In der nächsten Hand werden die Stacks auf 100 BB und die Übungsstatistik zurückgesetzt.",
+  "本局将结束，所有玩家恢复到当前牌桌的起始筹码（100 BB），练习统计归零。": "Diese Partie endet. Alle Stacks werden auf den Startstack dieses Tisches (100 BB) und die Übungsstatistik auf null zurückgesetzt."
 }

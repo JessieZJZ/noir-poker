@@ -16,7 +16,7 @@ export function resolveBotStyle(profile) {
     thinValue: 0,
     float: 0,
     delayed: 1,
-    opening: null,
+    openingBB: null,
     streetSizing: null,
     flopCbet: null,
     turnSemiBluff: null,

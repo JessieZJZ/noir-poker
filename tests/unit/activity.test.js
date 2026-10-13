@@ -43,7 +43,7 @@ test('activity uses a captured hand identity and safely escapes text', () => {
 });
 
 test('a long legal hand retains every activity entry in chronological order and clears on the next deal', () => {
-  const g = newGame(9);
+  const g = newGame(9, { smallBlind: 25, bigBlind: 50, startingStack: 5000, chipUnit: 25 });
   startHand(g);
   let actions = 0;
   while (g.phase !== 'done') {

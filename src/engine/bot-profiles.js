@@ -1,3 +1,4 @@
+import { bigBlindOf, DEFAULT_STAKES } from './stakes.js';
 import research from '../data/player-research.json' with { type: 'json' };
 import { botStyleContext, resolveBotStyle } from './bot-style.js';
 import { fractionRaiseTo, legalRaiseTo } from './bet-sizing.js';
@@ -246,7 +247,7 @@ export const BOT_PROFILES = [
       entry: 0.95,
       reraise: 0.7,
       blockerBluffs: true,
-      opening: 100,
+      openingBB: 2,
       potControl: 0.4,
       thinValue: 0.5,
       barrel: 0.8,
@@ -518,19 +519,19 @@ export function recordPressureFold(mood, raiser, mode) {
   }
   return null;
 }
-export function finishBotHand(player, profit, mode) {
+export function finishBotHand(player, profit, mode, bigBlind = DEFAULT_STAKES.bigBlind) {
   const mood = player.botMood;
-  mood.losses = profit <= -250 ? mood.losses + 1 : 0;
-  mood.wins = profit >= 250 ? mood.wins + 1 : 0;
+  mood.losses = profit <= -5 * bigBlind ? mood.losses + 1 : 0;
+  mood.wins = profit >= 5 * bigBlind ? mood.wins + 1 : 0;
   if (mode === 'off' || mood.cooldown) return null;
   // Both reactions are synthetic; no emotional trait is assigned to a person.
-  if (profit <= -1250 || mood.losses >= 3)
+  if (profit <= -25 * bigBlind || mood.losses >= 3)
     return setMood(
       mood,
       player.id % 2 ? 'frustrated' : 'cautious',
-      profit <= -1250 ? '单手净损失至少 25 BB' : '连续三手各净损失至少 5 BB',
+      profit <= -25 * bigBlind ? '单手净损失至少 25 BB' : '连续三手各净损失至少 5 BB',
     );
-  if (mood.wins >= 2 && profit >= 500)
+  if (mood.wins >= 2 && profit >= 10 * bigBlind)
     return setMood(mood, 'confident', '连续两手盈利，本手净赢至少 10 BB');
   return null;
 }
@@ -633,6 +634,7 @@ export function effectiveBotAxes(profile, mood, mode) {
 
 // No complete game object is accepted: the caller supplies a white-listed view.
 export function chooseBotAction(view, profile, mood, mode, random = Math.random) {
+  const bigBlind = bigBlindOf(view);
   const legal = view.legal;
   if (!legal.enabled) throw Error('机器人当前不能行动。');
   const style = resolveBotStyle(profile);
@@ -679,7 +681,7 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
     (view.count <= 6 ? style.shortTable : 1);
   let range = baseRange;
   if (raises.length) range *= raises.length === 1 ? 0.68 : 0.42;
-  if (view.position === 'BB' && legal.toCall <= 50) range += 0.1;
+  if (view.position === 'BB' && legal.toCall <= bigBlind) range += 0.1;
   const openingRange = range;
   const preflopHistory = view.history.filter((a) => a.street === 0);
   const firstOpen = preflopHistory.findIndex((a) => a.action === 'raise');
@@ -713,8 +715,8 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
   const cheapEntry =
     view.street === 0 &&
     !raises.length &&
-    view.currentBet <= 50 &&
-    legal.toCall <= 50 &&
+    view.currentBet <= bigBlind &&
+    legal.toCall <= bigBlind &&
     lowCommitment &&
     !allInPressure;
   // Small single opens are a different price from 3-bets and shoves. This
@@ -726,11 +728,11 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
     raises.length === 1 &&
     raises[0].id !== view.id &&
     legal.toCall > 0 &&
-    view.currentBet <= 200 &&
-    legal.callAmount <= 200 &&
+    view.currentBet <= 4 * bigBlind &&
+    legal.callAmount <= 4 * bigBlind &&
     lowCommitment &&
     !allInPressure &&
-    effectiveBehind >= Math.max(1000, legal.callAmount * 15);
+    effectiveBehind >= Math.max(20 * bigBlind, legal.callAmount * 15);
   // Normal/hard opponents distinguish a cheap 3-bet from a large re-raise.
   // A random showdown against every unfurled seat undervalues a priced call:
   // players still to act have not all committed to this pot. This range gate
@@ -741,14 +743,14 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
     raises.length === 2 &&
     Boolean(lastRaiser) &&
     raises[1].id !== view.id &&
-    view.currentBet <= 500 &&
+    view.currentBet <= 10 * bigBlind &&
     view.currentBet <= raises[0].amount * 3 &&
-    legal.callAmount <= 350 &&
+    legal.callAmount <= 7 * bigBlind &&
     pressure <= 0.1 &&
     odds <= 0.28 &&
     !allInPressure &&
     legal.callAmount < view.stack &&
-    effectiveBehind >= Math.max(1000, legal.callAmount * 8);
+    effectiveBehind >= Math.max(20 * bigBlind, legal.callAmount * 8);
   if (cheapEntry)
     range +=
       (0.14 + width * 0.2 + (speculative || suitedHigh ? Math.min(2, limpers) * 0.04 : 0)) *
@@ -756,7 +758,7 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
   if (cheapEntry && speculative && ['BTN', 'CO', 'HJ'].includes(view.position))
     range += (0.06 + width * 0.12) * style.entry;
   if (affordableOpen) {
-    const priceScale = Math.max(0.65, 1.1 - (view.currentBet / 50) * 0.08);
+    const priceScale = Math.max(0.65, 1.1 - (view.currentBet / bigBlind) * 0.08);
     const playability = speculative ? 0.14 : suitedHigh ? 0.07 : 0;
     const callerBonus = speculative || suitedHigh ? Math.min(2, openCallers) * 0.04 : 0;
     const blindDiscount = view.position === 'BB' ? 0.08 : 0;
@@ -770,7 +772,7 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
       dominatedAce;
   }
   if (affordableThreeBet) {
-    const priceScale = Math.max(0.55, 1.15 - view.currentBet / 1000);
+    const priceScale = Math.max(0.55, 1.15 - view.currentBet / (20 * bigBlind));
     const committed = view.bet >= raises[0].amount;
     const broadway = high >= 13 && low >= 11;
     const playable = broadway || (pair && high >= 7) || (suited && high >= 11 && low >= 9);
@@ -1044,13 +1046,18 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
     if (mode !== 'off' && ['frustrated', 'confident', 'reactive'].includes(mood.kind))
       fraction *= mode === 'lively' ? 1.2 : 1.1;
     let desired = fractionRaiseTo(
-      { currentBet: view.currentBet, pot: view.pot, callAmount: legal.callAmount },
+      {
+        currentBet: view.currentBet,
+        pot: view.pot,
+        callAmount: legal.callAmount,
+        chipUnit: legal.chipUnit,
+      },
       fraction,
     );
     if (view.street === 0 && !raises.length)
       desired =
-        (style.opening ?? 125 + (attack > 0.8 ? 25 : 0)) +
-        view.history.filter((a) => a.street === 0 && a.action === 'call').length * 50;
+        (style.openingBB == null ? 2.5 + (attack > 0.8 ? 0.5 : 0) : style.openingBB) * bigBlind +
+        view.history.filter((a) => a.street === 0 && a.action === 'call').length * bigBlind;
     const amount = legalRaiseTo(desired, legal);
     sizing = {
       fraction,

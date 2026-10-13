@@ -47,6 +47,8 @@ function decision({
     },
   ];
   return {
+    bigBlind: 50,
+    chipUnit: 25,
     index: 0,
     hand: 1,
     hole: cards(hole),
@@ -65,6 +67,7 @@ function decision({
     players,
     history: [],
     legal: {
+      chipUnit: 25,
       enabled: true,
       canCheck: currentBet === 0,
       canRaise: true,

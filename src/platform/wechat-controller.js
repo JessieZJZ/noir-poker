@@ -1,8 +1,11 @@
+import { compactChips, compactActionAmounts } from '../engine/chip-format.js';
+import { sanitizeStakes, validateStakes, sameStakes } from '../engine/stakes.js';
 import { createHeroTurnCue } from '../ui/hero-turn.js';
 import { SEAT_ANCHORS } from '../ui/seat-geometry.js';
 import { explainOpponent } from '../review/opponents.js';
 import {
   newGame,
+  configureStakes,
   startHand,
   restartHand,
   canRestartHand,
@@ -28,7 +31,7 @@ import {
   assignBotSeat,
   toggleMixedLineup,
 } from '../engine/bot-profiles.js';
-import { CHIP_UNIT, fractionRaiseTo, legalRaiseTo } from '../engine/bet-sizing.js';
+import { chipUnitOf, fractionRaiseTo, legalRaiseTo } from '../engine/bet-sizing.js';
 import {
   createReviewInput,
   analyzeDecision,
@@ -46,9 +49,10 @@ const cardView = (card) => ({
   suit: card.symbol,
   red: card.suit === 1 || card.suit === 3,
 });
-const format = (value) => Number(value).toLocaleString('en-US');
+const format = compactChips;
 const defaults = () => ({
   playerCount: 5,
+  stakes: sanitizeStakes(),
   difficulty: 'normal',
   sound: true,
   hints: true,
@@ -56,6 +60,7 @@ const defaults = () => ({
 });
 const sanitize = (value) => ({
   ...defaults(),
+  stakes: sanitizeStakes(value?.stakes),
   playerCount:
     Number.isInteger(value?.playerCount) && value.playerCount >= 5 && value.playerCount <= 9
       ? value.playerCount
@@ -78,6 +83,7 @@ export function createWechatController({
   unschedule = clearTimeout,
 }) {
   let settings;
+  let stakesError = '';
   try {
     settings = sanitize(JSON.parse(storage?.getItem(STORAGE_KEY)));
   } catch {
@@ -85,8 +91,8 @@ export function createWechatController({
   }
   const peeked = new Map();
   const turnCue = createHeroTurnCue(notifyTurn);
-  let game = newGame(settings.playerCount),
-    raiseTo = 150,
+  let game = newGame(settings.playerCount, settings.stakes),
+    raiseTo = game.bigBlind * 3,
     timer = null,
     pendingBot = null,
     reviewTimer = null,
@@ -97,10 +103,10 @@ export function createWechatController({
     hintKey = '',
     hintText = '',
     reviewEpoch = 0;
-  let sliderMin = 150,
-    sliderMax = 5000,
+  let sliderMin = game.bigBlind * 2,
+    sliderMax = game.stakes.startingStack,
     callCaption = '跟注',
-    callAmountText = '50';
+    callAmountText = format(game.bigBlind);
   game.difficulty = settings.difficulty;
 
   function save() {
@@ -287,6 +293,9 @@ export function createWechatController({
           heroBest.cards.some((c) => c.key === card.key),
       })),
       heroStack: format(hero.stack),
+      startingStackText: format(settings.stakes.startingStack),
+      blindText: `${format(game.smallBlind)} / ${format(game.bigBlind)}`,
+      stakesError,
       heroPosition: seatPosition(game, 0),
       heroAction: cleanAction(
         hero.folded || hero.allin || hero.lastAction?.street === game.street
@@ -330,7 +339,7 @@ export function createWechatController({
       maxRaise: sliderMax,
       raiseTo,
       raiseText: format(raiseTo),
-      chipUnit: CHIP_UNIT,
+      chipUnit: chipUnitOf(game),
       callLabel: callCaption,
       callText: callAmountText,
       actionNotice: done
@@ -371,7 +380,7 @@ export function createWechatController({
         .reverse()
         .map((entry, index) => ({
           key: index,
-          text: cleanAction(typeof entry === 'string' ? entry : entry.text),
+          text: compactActionAmounts(cleanAction(typeof entry === 'string' ? entry : entry.text)),
         })),
       stats: {
         hands: game.stats.hands,
@@ -425,16 +434,33 @@ export function createWechatController({
     cancelReview();
     cancelHint();
     hintKey = '';
-    if (game.players.length !== settings.playerCount) game = newGame(settings.playerCount);
+    if (game.players.length !== settings.playerCount || !sameStakes(settings.stakes, game.stakes))
+      game = newGame(settings.playerCount, settings.stakes);
     game.difficulty = settings.difficulty;
     applyBotSettings(game, settings);
     startHand(game);
-    raiseTo = 150;
+    raiseTo = game.bigBlind * 3;
     render();
     effect('deal');
     driveBots();
   }
+  function setStakes(value) {
+    try {
+      const stakes = validateStakes(value);
+      if (!configureStakes(game, stakes)) return false;
+      settings.stakes = stakes;
+      stakesError = '';
+      save();
+      freshHand();
+      return true;
+    } catch (error) {
+      stakesError = error.message;
+      render();
+      return false;
+    }
+  }
   function setPreference(key, value) {
+    if (key === 'stakes') return setStakes(value);
     const enablingSound = key === 'sound' && !settings.sound && value === true;
     const next = sanitize({ ...settings, [key]: value });
     settings = next;
@@ -496,7 +522,12 @@ export function createWechatController({
             ? legal.maxRaiseTo
             : ['half', 'pot'].includes(name)
               ? fractionRaiseTo(
-                  { currentBet: game.currentBet, pot: potSize(game), callAmount: legal.callAmount },
+                  {
+                    currentBet: game.currentBet,
+                    pot: potSize(game),
+                    callAmount: legal.callAmount,
+                    chipUnit: legal.chipUnit,
+                  },
                   name === 'half' ? 0.5 : 1,
                 )
               : null;
@@ -529,7 +560,7 @@ export function createWechatController({
       cancelHint();
       hintKey = '';
       restartHand(game);
-      raiseTo = 150;
+      raiseTo = game.bigBlind * 3;
       render();
       effect('deal');
       driveBots();
@@ -538,9 +569,10 @@ export function createWechatController({
     reset() {
       cancelBots();
       cancelReview();
-      game = newGame(settings.playerCount);
+      game = newGame(settings.playerCount, settings.stakes);
       freshHand();
     },
+    setStakes,
     setPreference,
     setSeatProfile(id, profileId) {
       if (

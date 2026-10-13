@@ -10,7 +10,7 @@ function fixtureGame(count = 6, heroFirst = false) {
   showdown.reset();
   handReview.reset();
   epoch++;
-  game = newGame(count);
+  game = newGame(count, { smallBlind: 25, bigBlind: 50, startingStack: 5000, chipUnit: 25 });
   if (heroFirst) game.dealer = count - 4;
   applyBotSettings(game, pendingBotSettings);
   requestedCount = count;
@@ -65,6 +65,14 @@ window.qa = {
       action: r.action,
       thinking: r.trace.thinking,
     }));
+  },
+  configuredTurn(stakes, count = 5) {
+    fixtureGame(count, true);
+    game = newGame(count, stakes);
+    game.dealer = count - 4;
+    startHand(game);
+    render();
+    return publicState();
   },
   heroTurn(count = 6, unequal = false) {
     fixtureGame(count, true);

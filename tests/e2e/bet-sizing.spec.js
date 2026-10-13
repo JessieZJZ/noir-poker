@@ -8,15 +8,15 @@ test('pot presets use the pot after calling and apply the exact screenshot amoun
   const before = await page.evaluate(() => window.qa.potSizing());
   expect(before.pot).toBe(3075);
   expect(before.legal.callAmount).toBe(800);
-  await expect(page.locator('#pot-value')).toHaveText('3,075');
+  await expect(page.locator('#pot-value')).toHaveText('3.075K');
   await expect(page.locator('#bet-sizing-note')).toHaveCount(0);
   await page.locator('[data-preset="half"]').click();
   await expect(page.locator('#bet-slider')).toHaveAttribute('step', '25');
-  await expect(page.locator('#bet-value')).toHaveText('2,750');
-  await expect(page.locator('#raise-button')).toHaveAttribute('aria-label', '2-bet 加注至 2,750');
+  await expect(page.locator('#bet-value')).toHaveText('2.75K');
+  await expect(page.locator('#raise-button')).toHaveAttribute('aria-label', '2-bet 加注至 2.75K');
   await page.locator('[data-preset="pot"]').click();
-  await expect(page.locator('#bet-value')).toHaveText('4,675');
-  await expect(page.locator('#raise-button')).toHaveAttribute('aria-label', '2-bet 全下至 4,675');
+  await expect(page.locator('#bet-value')).toHaveText('4.675K');
+  await expect(page.locator('#raise-button')).toHaveAttribute('aria-label', '2-bet 全下至 4.675K');
   // Choosing a shortcut sizes the action; it does not call or mutate the pot.
   expect((await page.evaluate(() => window.noir.getState())).pot).toBe(3075);
   await page.locator('#raise-button').click();
@@ -27,7 +27,7 @@ test('pot presets use the pot after calling and apply the exact screenshot amoun
   expect(after.players[0].bet).toBe(4675);
   expect(after.players[0].stack).toBe(0);
   expect(after.pot).toBe(7750);
-  await expect(page.locator('#hero-last-action')).toContainText('4,675');
+  await expect(page.locator('#hero-last-action')).toContainText('4.675K');
   await expect(page.locator('#bet-sizing-note')).toHaveCount(0);
 });
 
@@ -82,7 +82,7 @@ test('checkable streets and existing contributions size correctly without overfl
   }
   // Custom raises, slider steps and shortcut targets all use whole 25 chips.
   await page.locator('#bet-slider').fill('1625');
-  await expect(page.locator('#bet-value')).toHaveText('1,625');
+  await expect(page.locator('#bet-value')).toHaveText('1.625K');
   await page.locator('#raise-button').click();
   const custom = await page.evaluate(() => {
     window.qa.stop();

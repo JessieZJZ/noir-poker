@@ -1,3 +1,4 @@
+import { bigBlindOf } from '../engine/stakes.js';
 import {
   newGame,
   deckOfCards,
@@ -8,7 +9,7 @@ import {
 } from '../engine/poker.js';
 import { getBotProfile, freshBotMood } from '../engine/bot-profiles.js';
 import { rangeWeight, seedRandom, snapshotSeed } from './equity.js';
-import { isChipAmount, legalRaiseTo } from '../engine/bet-sizing.js';
+import { isChipAmount, legalRaiseTo, chipUnitOf } from '../engine/bet-sizing.js';
 const copy = (v) => JSON.parse(JSON.stringify(v));
 export function candidateActions(s, alternatives = []) {
   const candidates = [
@@ -17,8 +18,8 @@ export function candidateActions(s, alternatives = []) {
   ];
   if (s.legal.canRaise) {
     const targets =
-      s.street === 0 && s.currentBet <= 50
-        ? [100, 150]
+      s.street === 0 && s.currentBet <= bigBlindOf(s)
+        ? [2 * bigBlindOf(s), 3 * bigBlindOf(s)]
         : s.currentBet > 0
           ? [s.currentBet * 2.5, s.currentBet * 3.5]
           : [s.pot * 0.33, s.pot * 0.65];
@@ -37,7 +38,7 @@ export function candidateActions(s, alternatives = []) {
             ['fold', 'check', 'call', 'raise'].includes(a.action) &&
             (a.action !== 'raise' ||
               (s.legal.canRaise &&
-                isChipAmount(a.amount) &&
+                isChipAmount(a.amount, chipUnitOf(s)) &&
                 a.amount >= s.legal.minRaiseTo &&
                 a.amount <= s.legal.maxRaiseTo)) &&
             (a.action !== 'check' || s.legal.canCheck),
@@ -90,7 +91,12 @@ function sampledDeal(s, rng, weighted) {
   return { holes, deck: pool };
 }
 function resume(s, deal) {
-  const g = newGame(s.players.length);
+  const g = newGame(s.players.length, {
+    smallBlind: s.smallBlind ?? bigBlindOf(s) / 2,
+    bigBlind: bigBlindOf(s),
+    startingStack: bigBlindOf(s) * 100,
+    chipUnit: chipUnitOf(s),
+  });
   const button = s.players.find((p) => p.position === 'BTN')?.id;
   Object.assign(g, {
     phase: 'playing',
@@ -188,7 +194,7 @@ export function compareCandidateActions(s, alternatives = [], { trials = 40 } = 
         deltaMargin = comparisonCritical * Math.sqrt(deltaVariance / trials);
       // Diversity is only a conservative gate: it does not guarantee coverage
       // of rare losses that these samples have not observed.
-      const resolution = Math.max(10, Math.round(s.stack * 0.01));
+      const resolution = Math.max(0.2 * bigBlindOf(s), Math.round(s.stack * 0.01));
       const buckets = new Map();
       for (const value of differences) {
         const bucket = Math.round(value / resolution);

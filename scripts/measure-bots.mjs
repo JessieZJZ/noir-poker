@@ -33,7 +33,7 @@ applyBotSettings(g, {
 try {
   Math.random = deckRandom;
   for (let h = 0; h < hands; h++) {
-    g.players.forEach((p) => (p.stack = 5000));
+    g.players.forEach((p) => (p.stack = g.bigBlind * 100));
     startHand(g);
     let actions = 0;
     while (g.phase !== 'done') {

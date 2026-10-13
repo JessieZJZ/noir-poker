@@ -1,3 +1,4 @@
+import { bigBlindOf } from '../engine/stakes.js';
 // Candidate routes are conditional practice plans, not solved EV rankings.
 import { actionLabel } from '../engine/action-labels.js';
 import { callPrice } from './equity.js';
@@ -35,7 +36,9 @@ export function comparisonRoutes(s, ctx, { code, status, alternative, pre }) {
       : '无人开池，盲位有可利用的弃牌率；翻后位置有利。';
     primary.tradeoff = '争夺盲注与控制成本；被跟注后不再按随机对手牌力判断。';
     secondary = raise(
-      alternative.amount > 100 + 50 * pre.limpers ? 100 + 50 * pre.limpers : 150 + 50 * pre.limpers,
+      alternative.amount > (2 + pre.limpers) * bigBlindOf(s)
+        ? (2 + pre.limpers) * bigBlindOf(s)
+        : (3 + pre.limpers) * bigBlindOf(s),
     );
     if (secondary)
       Object.assign(secondary, {
@@ -47,7 +50,7 @@ export function comparisonRoutes(s, ctx, { code, status, alternative, pre }) {
     primary.summary = '保守基线收紧；比较有条件的小开池';
     primary.condition = '早位、多家待行动且缺少对手过度弃牌证据时，避免边缘同花牌扩大底池。';
     primary.tradeoff = '放弃潜在同花与偷盲收益，换取更少的无位置和踢脚风险。';
-    secondary = raise(125);
+    secondary = raise(2.5 * bigBlindOf(s));
     if (secondary)
       Object.assign(secondary, {
         condition: '后面防守过紧、较少 3-bet，且能在被继续后及时控池或退出时。',
@@ -135,7 +138,7 @@ export function comparisonRoutes(s, ctx, { code, status, alternative, pre }) {
         ? '过牌后直接摊牌；可能错过价值，但不会给听牌新的改善机会。'
         : '节省投入；不是保证免费看牌，仍需为后续下注设定条件。';
     if (ctx.handClass !== 'board' && s.legal.canRaise) {
-      secondary = raise(Math.max(50, s.pot * (ctx.texture.wet ? 0.6 : 0.33)));
+      secondary = raise(Math.max(bigBlindOf(s), s.pot * (ctx.texture.wet ? 0.6 : 0.33)));
       if (secondary)
         Object.assign(secondary, {
           condition: ctx.draw.outs

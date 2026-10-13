@@ -1322,5 +1322,19 @@
   "这是标准或进阶难度的小尺度 3-bet 防守：总额、补入价格、底池赔率与有效后手通过边界检查，再按自己的起手牌、位置和风格选择跟注。普通的全桌随机摊牌权益弃牌检查没有执行；它是有边界的策略近似，不证明跟注盈利，也不适用于大额再加注或全下。": "Esta é uma defesa contra um pequeno 3-bet nas dificuldades Padrão ou Avançada: o valor total, o custo adicional, as pot odds e o stack efetivo restante passam por limites definidos; depois o bot escolhe pagar segundo sua própria mão inicial, posição e estilo. A verificação habitual de fold por equidade de showdown aleatório contra toda a mesa é ignorada. É uma aproximação estratégica com limites, não prova de lucro, e não se aplica a grandes reraises ou all-ins.",
   "音效与振动": "Som e vibração",
   "音效与振动已开启": "Som e vibração ativados",
-  "音效与振动已关闭": "Som e vibração desativados"
+  "音效与振动已关闭": "Som e vibração desativados",
+  "玩家筹码必须是筹码面额的倍数。": "O chip do jogador deve ser a denominação atual das fichas vezes.",
+  "跟注旁的数字是这次要补的筹码；加注旁的数字是这一轮累计投入的总额。例如你已投 200，对手加到 600：跟注要补 400，选择加注 1200 则补 1000。所有筹码金额都是当前筹码面额的倍数。": "Call mostra os chips adicionais a pagar; elevar mostra a sua aposta total para esta rodada. se você postou 200 e um oponente aumenta para 600, o chamado adiciona 400. elevar para 1200 adiciona 1000. Todas as quantidades de chips são múltiplas de a denominação atual das fichas.",
+  "请输入正整数筹码面额；盲注和起始筹码须为面额的倍数，小盲小于大盲，起始筹码不少于大盲。": "Insira uma denominação inteira positiva. Blinds e stack inicial devem ser múltiplos dela; o small blind deve ser menor que o big blind e o stack inicial deve cobrir o big blind.",
+  "牌桌筹码必须是筹码面额的倍数。": "Os chips de mesa devem ser a denominação atual das fichas vezes.",
+  "投入筹码必须是筹码面额的倍数。": "Os chips de entrada devem ser a denominação atual das fichas vezes.",
+  "最小下注为当前大盲。完整加注的增量不能小于本轮上一次完整下注或加注的增量。例如上一位从 200 加到 600，增量是 400，你至少要加到 1000。筹码不足时可以全下，但不够一次完整加注的短全下，不一定让已经行动的人重新获得加注权。": "A aposta mínima é o big blind atual. Uma aposta completa deve aumentar a aposta pelo menos pela última aposta completa ou aumento. Se um jogador sobe de 200 a 600, o aumento é 400 e a próxima aposta mínima é 1000. Com menos chips, você pode ir tudo-em, mas um pequeno tudo-em não pode reabrir aumento para jogadores que já agiram.",
+  "请选择合法的加注总额，金额必须是筹码面额的倍数。": "Por favor, selecione o montante total de levantamento legal, o montante deve ser a denominação atual das fichas vezes.",
+  "“最小、½ 底池、底池、全下”是尺度快捷项。无人下注时，半池 / 底池按当前底池计算；面对下注时，先补齐跟注，再按跟注后的底池计算加注增量。金额会取到当前面额的整枚筹码，并满足最小加注与剩余筹码限制；无限注允许超过底池下注。": "“Minimum, 1⁄2 pot, pot, all-in” é a escala item curto.Quando ninguém aposta, meio pool / pot é calculado de acordo com o pot atual; quando se enfrenta a aposta, primeiro preencher a chamada, depois clique na chamada depois que o pot calcula o aumento da subida.O montante vai levar o todo a denominação atual das fichas chips, e atender a subida mínima com o restante de chips limite; nota ilimitada permite mais do que a aposta pot.",
+  "小盲和大盲按当前牌桌设置先投入筹码，其他人依次决定是否参与。翻牌前、翻牌、转牌、河牌各有一轮下注；仍可行动的人跟齐当前下注后，才进入下一轮。任何一轮只剩一人，都可以提前结束。": "Os blinds pequeno e grande colocam os valores configurados para esta mesa. Os jogadores então agem em ordem. Há um preflop de apostas, no flop, turn e river. Move para o próximo turno depois que todos os jogadores capazes de agir tenham matado a aposta ou foldado. A mão termina cedo se apenas um jogador permanece.",
+  "{0} 补充 {1} 虚拟筹码": "{0} repõe {1} fichas virtuais",
+  "小盲须为 25 的正整数倍，大盲须为小盲的倍数且大于小盲。面额等于小盲，起始筹码为 100 BB。": "O small blind deve ser um múltiplo positivo de 25. O big blind deve ser um múltiplo maior do small blind. A denominação equivale ao small blind; o stack inicial é de 100 BB.",
+  "下一手切换为 {0} 人桌 · 筹码恢复 {1}，统计重新开始": "Próxima mão: {0} jogadores · stacks em {1}, estatísticas reiniciadas",
+  "在顶部设置中选择 5–9 人。下一手换桌，筹码恢复为 100 BB，练习统计重新开始。": "Escolha 5–9 jogadores nas definições acima. Na próxima mão, os stacks voltam a 100 BB e as estatísticas de treino reiniciam.",
+  "本局将结束，所有玩家恢复到当前牌桌的起始筹码（100 BB），练习统计归零。": "Esta partida terminará. Todos voltam ao stack inicial desta mesa (100 BB) e as estatísticas de treino são zeradas."
 }

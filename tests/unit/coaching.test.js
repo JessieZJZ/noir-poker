@@ -5,6 +5,7 @@ import { coachDecision, buildOverview } from '../../src/review/coaching.js';
 // Numeric model fixtures exercise interpretation, not solver-quality claims.
 function decision(action = 'call', street = 3) {
   return {
+    bigBlind: 50,
     action,
     amount: 200,
     street,
@@ -19,6 +20,7 @@ function decision(action = 'call', street = 3) {
 }
 function result(overrides = {}) {
   return {
+    bigBlind: 50,
     code: 'priced-call',
     status: 'sound',
     title: '核对跟注价格',

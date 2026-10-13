@@ -1,4 +1,6 @@
-const number = (n) => Math.round(n).toLocaleString('en-US');
+import { bigBlindOf } from './stakes.js';
+import { compactChips } from './chip-format.js';
+const number = compactChips;
 
 // This is an action ordinal, not a test of whether betting has reopened.
 // The big blind is the first bet preflop; every later street starts at zero.
@@ -15,7 +17,9 @@ export function raiseCaption(step, amount) {
   const allin = amount === step.legal?.maxRaiseTo;
   const fullRaiseTo =
     step.legal?.fullRaiseTo ??
-    (step.currentBet === 0 ? 50 : step.currentBet + (step.minRaise ?? 50));
+    (step.currentBet === 0
+      ? bigBlindOf(step)
+      : step.currentBet + (step.minRaise ?? bigBlindOf(step)));
   const verb =
     allin && amount < fullRaiseTo
       ? '短全下至'
@@ -52,6 +56,6 @@ export function historyActionLabel(history, index) {
   return actionLabel({
     ...a,
     history: before,
-    currentBet: previous?.amount ?? (a.street === 0 ? 50 : 0),
+    currentBet: previous?.amount ?? (a.street === 0 ? bigBlindOf(a) : 0),
   });
 }

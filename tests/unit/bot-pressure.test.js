@@ -40,6 +40,7 @@ const input = (hole = 'Ks Qh') => ({
   })),
   features: { draw: false, wet: false, overpair: false },
   legal: {
+    chipUnit: 25,
     enabled: true,
     canCheck: false,
     canRaise: true,

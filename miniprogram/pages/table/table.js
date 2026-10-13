@@ -1,3 +1,4 @@
+const { compactChips } = require('../../shared/engine/chip-format.js');
 const { createWechatController } = require('../../shared/platform/wechat-controller.js');
 const { phoneLayout } = require('./phone-layout.js');
 const { presentCard, showdownPresentation, presentationPatch } = require('./presentation.js');
@@ -485,7 +486,7 @@ Page({
         Math.round(Number(event.detail.value) / this.data.chipUnit) * this.data.chipUnit,
       ),
     );
-    const text = value.toLocaleString('en-US');
+    const text = compactChips(value);
     if (text !== this.data.raiseText) this.setData({ raiseText: text });
   },
   flyChips(id) {

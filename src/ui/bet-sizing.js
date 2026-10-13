@@ -8,7 +8,10 @@ export function presetRaiseTo({ currentBet, pot, legal }, preset) {
   else if (preset === 'all') desired = legal.maxRaiseTo;
   else if (preset === 'half' || preset === 'pot') {
     const fraction = preset === 'half' ? 0.5 : 1;
-    desired = fractionRaiseTo({ currentBet, pot, callAmount: legal.callAmount }, fraction);
+    desired = fractionRaiseTo(
+      { currentBet, pot, callAmount: legal.callAmount, chipUnit: legal.chipUnit },
+      fraction,
+    );
   } else return null;
   return legalRaiseTo(desired, legal);
 }

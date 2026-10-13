@@ -123,13 +123,13 @@ test('WeChat compiled controller completes a real nine-seat hand without modern 
     assert.equal(game.stats.hands, 1);
     assert.equal(
       game.players.reduce((sum, player) => sum + player.stack, 0),
-      45000,
+      180000,
     );
     assert.equal(latest.seats.length, 8);
     assert.equal(latest.done, true);
     assert.equal(controller.retry(), true);
     assert.equal(game.stats.hands, 0);
-    assert.equal(api.potSize(game), 75);
+    assert.equal(api.potSize(game), 300);
     assert.equal(
       vm.runInContext('typeof document + ":" + typeof window', context),
       'undefined:undefined',

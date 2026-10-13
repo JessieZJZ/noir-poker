@@ -16,7 +16,7 @@ test('saved choice wins; system variants map to available catalogs; unsupported 
 });
 
 test('English templates preserve and reorder dynamic values, while rule state remains unchanged', async () => {
-  const game = newGame(6);
+  const game = newGame(6, { smallBlind: 25, bigBlind: 50, startingStack: 5000, chipUnit: 25 });
   startHand(game, () => 0.42);
   const before = JSON.stringify(game);
   await loadLocale('en');
@@ -34,7 +34,7 @@ test('English templates preserve and reorder dynamic values, while rule state re
     'Calling costs about 40% of the eligible pot.Pot equity against random and action-weighted ranges is approximately 50% / 47%, respectively.',
   );
   assert.equal(JSON.stringify(game), before);
-  assert.equal(formatChips(5000), '5,000');
+  assert.equal(formatChips(5000), '5K');
   await loadLocale('zh-CN');
   assert.equal(localizeText('第 12 手 · 决策复盘'), '第 12 手 · 决策复盘');
 });

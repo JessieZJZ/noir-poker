@@ -200,6 +200,30 @@ export async function nativeScenarios(app) {
       startup: info.startup,
     };
   });
+  await check('configured-stakes-and-shared-icon', async () => {
+    const state = await app.state();
+    assert.deepEqual(state.stakes, {
+      smallBlind: 100,
+      bigBlind: 200,
+      startingStack: 20000,
+      chipUnit: 100,
+    });
+    const artwork = await app.evaluate(() => {
+      const image = document.querySelector('.brand-mark img');
+      return {
+        src: image.getAttribute('src'),
+        loaded: image.complete && image.naturalWidth > 0,
+        blinds: document.querySelector('#blind-values').textContent,
+        step: document.querySelector('#bet-slider').step,
+      };
+    });
+    assert.equal(artwork.src, '/app-icon.png');
+    assert.equal(artwork.loaded, true);
+    assert.equal(artwork.blinds, '100 / 200');
+    if (state.legal.enabled) assert.equal(artwork.step, '100');
+    for (const p of state.players) assert.equal(p.stack % state.chipUnit, 0);
+    return { stakes: state.stakes, artwork };
+  });
   await check('card-ranks-stay-stable-after-native-repaint', async () => {
     await app.waitHero();
     const before = await app.evaluate(readCardRankState);

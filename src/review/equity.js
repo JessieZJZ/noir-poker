@@ -1,3 +1,4 @@
+import { bigBlindOf } from '../engine/stakes.js';
 import { deckOfCards, evaluate, compare, partitionPots } from '../engine/poker.js';
 import { startingTier } from './context.js';
 export function seedRandom(seed) {
@@ -106,7 +107,7 @@ export function rangeWeight(pair, s, opponent) {
   if (informative) {
     const level = prefix
       .slice(0, informative.i + 1)
-      .filter((a) => a.action === 'raise' && a.amount > 50).length;
+      .filter((a) => a.action === 'raise' && a.amount > bigBlindOf(s)).length;
     const tables =
       informative.a.action === 'raise'
         ? level >= 3
@@ -137,7 +138,7 @@ export function rangeWeight(pair, s, opponent) {
   let madeWeight = 1;
   if (current.action === 'raise')
     madeWeight = score >= 4 ? 6 : score >= 2 ? 5 : score === 1 ? 3 : suitedDraw ? 2 : 1;
-  else if (current.amount >= Math.max(100, s.pot * 0.2))
+  else if (current.amount >= Math.max(2 * bigBlindOf(s), s.pot * 0.2))
     madeWeight = score >= 2 ? 5 : score === 1 ? 3 : suitedDraw ? 2 : 1;
   else return preWeight;
   // Prior preflop information remains relevant; max stays at six for rejection sampling.

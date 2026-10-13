@@ -1,9 +1,11 @@
+import { compactChips } from '../engine/chip-format.js';
+import { bigBlindOf } from '../engine/stakes.js';
 import { evaluate } from '../engine/poker.js';
 import { MOOD_LABELS } from '../engine/bot-profiles.js';
 import { drawInfo } from './context.js';
 
 const pct = (v) => (v * 100).toFixed(1) + '%';
-const n = (v) => Math.round(v).toLocaleString('en-US');
+const n = compactChips;
 export const BOT_REASON_NAMES = {
   'outside-range': '起手牌未进入本次防守范围',
   'insufficient-equity': '估计权益未达到跟注门槛',
@@ -75,7 +77,7 @@ export function explainOpponent(record) {
     );
   if (t.affordableOpen && t.affordableRangePassed)
     reasons.push(
-      `本街只有一次小开池，跟完后的有效后手约 ${n(t.entryContext.effectiveBehind / 50)} BB，已有 ${t.entryContext.openCallers} 位跟入者。${t.entryContext.speculative || t.entryContext.suitedHigh ? '对子或合适同花牌的翻后潜力' : '起手牌排序与当前价格'}进入了独立跟入范围；普通的全桌随机摊牌权益弃牌检查没有执行。该近似没有证明这次跟注有正收益。`,
+      `本街只有一次小开池，跟完后的有效后手约 ${n(t.entryContext.effectiveBehind / bigBlindOf(t.view))} BB，已有 ${t.entryContext.openCallers} 位跟入者。${t.entryContext.speculative || t.entryContext.suitedHigh ? '对子或合适同花牌的翻后潜力' : '起手牌排序与当前价格'}进入了独立跟入范围；普通的全桌随机摊牌权益弃牌检查没有执行。该近似没有证明这次跟注有正收益。`,
     );
   reasons.push(
     `当时只用自己的牌与公共牌，对随机对手范围抽样 ${t.trials} 次：原估计 ${pct(t.rawEquity)}，判断扰动 ${(t.noise >= 0 ? '+' : '') + pct(t.noise)}，决策使用 ${pct(t.equity)}。跟注倾向偏移 ${(t.callTolerance >= 0 ? '+' : '') + pct(t.callTolerance)}，比较值 ${pct(comparison)}，常规门槛含 2 个百分点保护为 ${pct(t.odds + 0.02)}。`,

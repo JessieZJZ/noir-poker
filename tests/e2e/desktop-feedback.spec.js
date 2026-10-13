@@ -74,7 +74,8 @@ test('live and settlement buttons share the compact height without resizing the 
           .map((el) => el.getBoundingClientRect().height),
       });
       const before = await page.evaluate(read);
-      expect(before.buttons).toEqual([38, 38, 38]);
+      const height = width >= 901 ? 52 : 38;
+      expect(before.buttons).toEqual([height, height, height]);
       await page.evaluate(() => {
         while (window.noir.getState().phase !== 'done') {
           window.qa.allinRest();
@@ -84,7 +85,7 @@ test('live and settlement buttons share the compact height without resizing the 
       const after = await page.evaluate(read);
       expect(after.table).toBe(before.table);
       expect(after.buttons.length).toBeGreaterThanOrEqual(3);
-      expect(after.buttons.every((height) => height === 38)).toBe(true);
+      expect(after.buttons.every((value) => value === height)).toBe(true);
     }
   }
 });

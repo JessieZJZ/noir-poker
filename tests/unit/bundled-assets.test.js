@@ -46,7 +46,7 @@ test('source manifest includes every image, even unselected portraits, with byte
     manifest.assets.filter((asset) => asset.profileId).length,
     Object.keys(PROFILE_PORTRAITS).length,
   );
-  assert.ok(manifest.assets.some((asset) => asset.path === 'favicon.svg'));
+  assert.ok(manifest.assets.some((asset) => asset.path === 'favicon.png'));
   for (const asset of manifest.assets) {
     assert.ok(asset.bytes > 0);
     assert.match(asset.sha256, /^[a-f0-9]{64}$/);

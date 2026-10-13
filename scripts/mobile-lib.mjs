@@ -56,7 +56,6 @@ export function sourceDigest() {
     'package-lock.json',
     'capacitor.config.json',
     'mobile/release.json',
-    'mobile/icon.svg',
   ]) {
     hash.update(name + '\0');
     hash.update(readFileSync(path.join(root, name)));

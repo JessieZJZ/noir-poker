@@ -25,7 +25,8 @@
       name="description"
       content="无需登录的德州扑克练习桌。可选 5–9 人无限注德州扑克对战，享受流畅发牌与筹码动画。"
     />
-    <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+    <link rel="icon" type="image/png" href="favicon.png" />
+    <link rel="apple-touch-icon" href="apple-touch-icon.png" />
     <link rel="stylesheet" href="/src/styles/fonts.css" />
     <link rel="stylesheet" href="/src/styles/base.css" />
     <link rel="stylesheet" href="/src/styles/game.css" />
@@ -58,11 +59,7 @@
     <header class="header">
       <a class="brand" href="./" aria-label="NOIR Poker 首页"
         ><span class="brand-mark" aria-hidden="true"
-          ><svg viewBox="0 0 38 44">
-            <path
-              d="M19 0C12 10 0 15 0 25c0 11 12 15 19 7 7 8 19 4 19-7C38 15 26 10 19 0Zm-4 33-5 11h18l-5-11Z"
-              fill="currentColor"
-            /></svg></span
+          ><img src="/app-icon.png" width="32" height="32" alt="" /></span
         ><span>NOIR<span class="brand-light">POKER</span></span></a
       >
       <div class="header-center">
@@ -99,7 +96,7 @@
               <span>·</span> <span id="street-label">准备发牌</span
               ><span id="replay-label" class="replay-label" hidden></span>
             </div>
-            <div class="blind-info">盲注 <b>25 / 50</b></div>
+            <div class="blind-info">盲注 <b id="blind-values">100 / 200</b></div>
             <p
               id="replay-note"
               class="replay-note"
@@ -182,7 +179,7 @@
                 <div class="hero-name">
                   <div class="hero-identity">
                     <strong>你 <span id="hero-position" class="position-badge">BTN</span></strong
-                    ><span class="hero-stack" id="hero-stack">5,000</span>
+                    ><span class="hero-stack" id="hero-stack">20K</span>
                   </div>
                   <div class="hero-action-slot">
                     <div
@@ -206,15 +203,15 @@
               </div>
               <div class="action-panel" id="action-panel">
                 <div class="bet-controls">
-                  <label for="bet-slider">加注至 <strong id="bet-value">150</strong></label
+                  <label for="bet-slider">加注至 <strong id="bet-value">600</strong></label
                   ><input
                     id="bet-slider"
                     disabled
                     type="range"
-                    min="100"
-                    max="5000"
-                    value="150"
-                    step="25"
+                    min="400"
+                    max="20000"
+                    value="600"
+                    step="100"
                     aria-label="加注总额"
                   />
                   <div class="bet-presets">
@@ -226,7 +223,7 @@
                 </div>
                 <div class="action-buttons">
                   <button id="raise-button" disabled class="action raise">
-                    <span>加注至</span><strong id="raise-number">150</strong></button
+                    <span>加注至</span><strong id="raise-number">600</strong></button
                   ><button id="fold-button" disabled class="action fold"><span>弃牌</span></button
                   ><button id="call-button" disabled class="action call"><span>过牌</span></button>
                 </div>
@@ -279,7 +276,7 @@
             <span class="subtle-label">本次牌桌</span>
           </div>
           <div class="session-balance">
-            <span>当前筹码</span><strong id="session-stack">5,000<span>CHIPS</span></strong
+            <span>当前筹码</span><strong id="session-stack">20K<span>CHIPS</span></strong
             ><span class="session-change" id="session-change">从这一手开始积累经验</span>
           </div>
           <div class="session-stats">
@@ -659,8 +656,7 @@
         ><span>河牌 1 张</span>
       </div>
       <p>
-        小盲先投入 25，大盲先投入
-        50，其他人依次决定是否参与。翻牌前、翻牌、转牌、河牌各有一轮下注；仍可行动的人跟齐当前下注后，才进入下一轮。任何一轮只剩一人，都可以提前结束。
+        小盲和大盲按当前牌桌设置先投入筹码，其他人依次决定是否参与。翻牌前、翻牌、转牌、河牌各有一轮下注；仍可行动的人跟齐当前下注后，才进入下一轮。任何一轮只剩一人，都可以提前结束。
       </p>
       <h3>3. 轮到你时怎么选</h3>
       <div class="rules-grid">
@@ -670,8 +666,8 @@
         <p><b>全下</b>投入全部剩余筹码，之后不再下注。</p>
       </div>
       <p>
-        跟注旁的数字是这次要补的筹码；加注旁的数字是这一轮累计投入的总额。例如你已投 50，对手加到
-        150：跟注要补 100，选择加注 300 则补 250。所有筹码金额都是 25 的倍数。
+        跟注旁的数字是这次要补的筹码；加注旁的数字是这一轮累计投入的总额。例如你已投 200，对手加到
+        600：跟注要补 400，选择加注 1200 则补 1000。所有筹码金额都是当前筹码面额的倍数。
       </p>
       <h3>4. 位置为什么重要</h3>
       <p>
@@ -693,14 +689,13 @@
       <details>
         <summary>进一步了解：最小加注、半池 / 底池和边池</summary>
         <p>
-          最小下注为 50。完整加注的增量不能小于本轮上一次完整下注或加注的增量。例如上一位从 50 加到
-          150，增量是 100，你至少要加到
-          250。筹码不足时可以全下，但不够一次完整加注的短全下，不一定让已经行动的人重新获得加注权。
+          最小下注为当前大盲。完整加注的增量不能小于本轮上一次完整下注或加注的增量。例如上一位从 200
+          加到 600，增量是 400，你至少要加到
+          1000。筹码不足时可以全下，但不够一次完整加注的短全下，不一定让已经行动的人重新获得加注权。
         </p>
         <p>
           “最小、½ 底池、底池、全下”是尺度快捷项。无人下注时，半池 /
-          底池按当前底池计算；面对下注时，先补齐跟注，再按跟注后的底池计算加注增量。金额会取到整枚
-          25 筹码，并满足最小加注与剩余筹码限制；无限注允许超过底池下注。
+          底池按当前底池计算；面对下注时，先补齐跟注，再按跟注后的底池计算加注增量。金额会取到当前面额的整枚筹码，并满足最小加注与剩余筹码限制；无限注允许超过底池下注。
         </p>
         <p>
           全下后只能争夺自己有投入的部分。筹码多的人继续下注会形成边池，各池分别比较；弃牌者已投入的筹码仍留在池里，无法争夺。没有人跟上的超额投入会退还，不能把退款当作额外赢得的筹码。
@@ -720,7 +715,7 @@
       <h3>6. 设置适合自己的练习桌</h3>
       <div class="rules-grid">
         <p>
-          <b>牌桌人数</b>在顶部设置中选择 5–9 人。下一手换桌，筹码恢复 5,000，练习统计重新开始。
+          <b>牌桌人数</b>在顶部设置中选择 5–9 人。下一手换桌，筹码恢复为 100 BB，练习统计重新开始。
         </p>
         <p><b>对手难度</b>从轻松、标准到进阶逐步练习，修改后立即生效。</p>
         <p>
@@ -770,7 +765,7 @@
         </button>
       </div>
       <h2>重新开始练习？</h2>
-      <p>本局将结束，所有玩家恢复到 5,000 筹码，练习统计归零。</p>
+      <p>本局将结束，所有玩家恢复到当前牌桌的起始筹码（100 BB），练习统计归零。</p>
       <div class="dialog-actions">
         <button class="quiet-button close-dialog">继续练习</button
         ><button class="primary-button" id="confirm-reset">重新开始</button>

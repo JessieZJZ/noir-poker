@@ -83,10 +83,11 @@ button[hidden],
   color: var(--mint);
   line-height: 1;
 }
-.brand-mark svg {
+.brand-mark img {
   display: block;
   width: 28px;
-  height: 32px;
+  height: 28px;
+  border-radius: 7px;
 }
 .brand-light {
   font-weight: 400;

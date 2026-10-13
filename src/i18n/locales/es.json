@@ -1322,5 +1322,19 @@
   "这是标准或进阶难度的小尺度 3-bet 防守：总额、补入价格、底池赔率与有效后手通过边界检查，再按自己的起手牌、位置和风格选择跟注。普通的全桌随机摊牌权益弃牌检查没有执行；它是有边界的策略近似，不证明跟注盈利，也不适用于大额再加注或全下。": "Esta es una defensa ante un 3-bet pequeño en dificultad Estándar o Avanzada: el tamaño total, el coste adicional, las pot odds y las fichas efectivas restantes cumplen límites, y el bot elige igualar según su propia mano inicial, posición y estilo. Se omite el filtro habitual de abandono por equity de showdown aleatorio contra toda la mesa. Es una aproximación de estrategia con límites, no una prueba de rentabilidad, y no se aplica a grandes resubidas ni a all-ins.",
   "音效与振动": "Sonido y vibración",
   "音效与振动已开启": "Sonido y vibración activados",
-  "音效与振动已关闭": "Sonido y vibración desactivados"
+  "音效与振动已关闭": "Sonido y vibración desactivados",
+  "玩家筹码必须是筹码面额的倍数。": "Los chips de jugador deben ser la denominación actual de fichas veces.",
+  "跟注旁的数字是这次要补的筹码；加注旁的数字是这一轮累计投入的总额。例如你已投 200，对手加到 600：跟注要补 400，选择加注 1200 则补 1000。所有筹码金额都是当前筹码面额的倍数。": "La llamada muestra los chips adicionales a pagar; el aumento muestra su apuesta total para esta ronda. Si usted ha publicado 200 y un oponente aumenta a 600, la llamada añade 400.",
+  "请输入正整数筹码面额；盲注和起始筹码须为面额的倍数，小盲小于大盲，起始筹码不少于大盲。": "Introduce una denominación entera positiva. Las ciegas y la pila inicial deben ser múltiplos de ella; la ciega pequeña debe ser menor que la grande y la pila inicial debe cubrir la grande.",
+  "牌桌筹码必须是筹码面额的倍数。": "Las chips de mesa deben ser la denominación actual de fichas veces.",
+  "投入筹码必须是筹码面额的倍数。": "Los chips de entrada deben ser la denominación actual de fichas veces.",
+  "最小下注为当前大盲。完整加注的增量不能小于本轮上一次完整下注或加注的增量。例如上一位从 200 加到 600，增量是 400，你至少要加到 1000。筹码不足时可以全下，但不够一次完整加注的短全下，不一定让已经行动的人重新获得加注权。": "La apuesta mínima es la ciega grande actual. Una apuesta completa debe aumentar la apuesta por al menos la última apuesta completa o incrementar. Si un jugador aumenta de 200 a 600, el incrementar es 400 y la siguiente apuesta mínima es 1000. Con menos chips, puede ir todo-en, pero un corto todo-en no puede reabrir el aumento para los jugadores que ya han actuado.",
+  "请选择合法的加注总额，金额必须是筹码面额的倍数。": "Por favor, seleccione el total de la subida legal, el importe debe ser la denominación actual de fichas veces.",
+  "“最小、½ 底池、底池、全下”是尺度快捷项。无人下注时，半池 / 底池按当前底池计算；面对下注时，先补齐跟注，再按跟注后的底池计算加注增量。金额会取到当前面额的整枚筹码，并满足最小加注与剩余筹码限制；无限注允许超过底池下注。": "“Minimo, 1⁄2 pot, pot, all-in” es el elemento corto de escala.Cuando no hay apuesta, la mitad de la piscina / pot se calcula de acuerdo con el pot actual; cuando se enfrenta a la apuesta, primero rellenar la llamada, luego haga clic en la llamada después de que la pot calcula el aumento de la subida.El importe tomará el total de la denominación actual de fichas chips, y se cumpre con el mínimo de subida con el resto de chips límite; la nota ilimitada permite más que la apuesta de pot.",
+  "小盲和大盲按当前牌桌设置先投入筹码，其他人依次决定是否参与。翻牌前、翻牌、转牌、河牌各有一轮下注；仍可行动的人跟齐当前下注后，才进入下一轮。任何一轮只剩一人，都可以提前结束。": "Las ciegas pequeña y grande ponen las cantidades configuradas para esta mesa. Los jugadores actúan en orden. Hay un preflop de la ronda de apuestas, en el flop, girar y river. Moviéndose a la ronda siguiente después de que todos los jugadores que pueden actuar han ajustado la apuesta o se foldan. La mano termina temprano si solo queda un jugador.",
+  "{0} 补充 {1} 虚拟筹码": "{0} repone {1} fichas virtuales",
+  "小盲须为 25 的正整数倍，大盲须为小盲的倍数且大于小盲。面额等于小盲，起始筹码为 100 BB。": "La ciega pequeña debe ser un múltiplo positivo de 25. La ciega grande debe ser un múltiplo mayor de la pequeña. La denominación equivale a la ciega pequeña y la pila inicial es de 100 BB.",
+  "下一手切换为 {0} 人桌 · 筹码恢复 {1}，统计重新开始": "Próxima mano: {0} jugadores · pilas a {1}, estadísticas reiniciadas",
+  "在顶部设置中选择 5–9 人。下一手换桌，筹码恢复为 100 BB，练习统计重新开始。": "Elige 5–9 jugadores en los ajustes superiores. En la próxima mano, las pilas vuelven a 100 BB y las estadísticas de práctica se reinician.",
+  "本局将结束，所有玩家恢复到当前牌桌的起始筹码（100 BB），练习统计归零。": "Esta partida terminará. Todos recuperan la pila inicial de esta mesa (100 BB) y las estadísticas de práctica vuelven a cero."
 }

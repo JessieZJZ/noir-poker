@@ -45,6 +45,25 @@ try {
       argument,
     );
   report.device = await mini.systemInfo();
+  report.stakes = await mini.evaluate(() => {
+    const current = getCurrentPages().at(-1);
+    return {
+      stakes: current._controller.getGame().stakes,
+      blinds: current.data.blindText,
+      unit: current.data.chipUnit,
+    };
+  });
+  assert.deepEqual(report.stakes.stakes, {
+    smallBlind: 100,
+    bigBlind: 200,
+    startingStack: 20000,
+    chipUnit: 100,
+  });
+  assert.equal(report.stakes.blinds, '100 / 200');
+  assert.equal(report.stakes.unit, 100);
+  const icon = await page.$('.app-icon');
+  assert.equal(await icon.attribute('src'), '/assets/app-icon.png');
+
   const wait = async (predicate, timeout = 60000) => {
     const start = Date.now();
     while (Date.now() - start < timeout) {

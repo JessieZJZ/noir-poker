@@ -103,3 +103,28 @@
     padding-bottom: 6px;
   }
 }
+
+/* Desktop actions share a fixed height and align with the shortcut row. */
+@media (min-width: 1101px), (min-width: 901px) and (orientation: landscape) {
+  .game-surface {
+    --compact-dock-height: 72px;
+  }
+  .main .game-surface .action-panel {
+    align-items: flex-end;
+  }
+  .main .action-buttons {
+    align-self: flex-end;
+  }
+  .main .game-surface .action-panel .action,
+  .main .game-surface .action-panel > .continue-deal-button,
+  .main .game-surface .action-panel > .next-button,
+  .main .game-surface .action-panel > .review-button {
+    height: 52px;
+    min-height: 52px;
+    max-height: 52px;
+    padding-block: 8px;
+  }
+  .main .game-surface .action-panel.settled-actions {
+    align-items: end;
+  }
+}

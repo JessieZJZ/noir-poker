@@ -443,7 +443,7 @@ test('raise controls, seats, activity and review share street-specific bet ordin
   await expect(page.locator('#review-routes')).toContainText('2-bet');
   await page.locator('#review-timeline [data-review-index="2"]').click();
   await expect(page.locator('#review-public-actions')).toContainText('3-bet 加注至 650');
-  await expect(page.locator('#review-public-actions')).toContainText('4-bet 加注至 1,800');
+  await expect(page.locator('#review-public-actions')).toContainText('4-bet 加注至 1.8K');
 });
 
 test('5–9 player showdown reveals all holes immediately and displays each best five', async ({
@@ -626,7 +626,7 @@ test('hero recent actions persist within the street and clear on new streets exc
       await page.locator('#raise-button').click();
       await page.evaluate(() => window.qa.stop());
       await expect(row.locator('.seat-action-label')).toHaveText('2-bet 全下');
-      await expect(row.locator('.seat-action-amount')).toHaveText('5,000');
+      await expect(row.locator('.seat-action-amount')).toHaveText('5K');
       await expect(page.locator('#fold-button')).toBeDisabled();
       await assertFits();
     }
@@ -793,11 +793,11 @@ test('settled seats retain all-in sizes, board and hero action across viewing an
       expect(done.players.map((p) => p.lastAction)).toEqual(retained);
       await expect(page.locator('#hero-last-action')).toBeVisible();
       await expect(page.locator('#hero-last-action')).toContainText('2-bet 全下');
-      await expect(page.locator('#hero-last-action .seat-action-amount')).toHaveText('5,000');
+      await expect(page.locator('#hero-last-action .seat-action-amount')).toHaveText('5K');
       await expect(page.locator('.seat .seat-action')).toHaveCount(count - 1);
       for (let id = 1; id < count; id++) {
         await expect(page.locator(`.seat-${id} .seat-action-label`)).toHaveText('全下');
-        await expect(page.locator(`.seat-${id} .seat-action-amount`)).toHaveText('5,000');
+        await expect(page.locator(`.seat-${id} .seat-action-amount`)).toHaveText('5K');
       }
       const geometry = await page.evaluate(() => {
         const board = document.querySelector('#board').getBoundingClientRect();

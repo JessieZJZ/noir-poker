@@ -17,6 +17,8 @@ const decision = (v, profile = 'balanced', random = () => 0.9) =>
   chooseBotAction(v, getBotProfile(profile), freshBotMood(), 'off', random);
 function smallOpen(hole = '7s 6s', overrides = {}) {
   return {
+    bigBlind: 50,
+    chipUnit: 25,
     id: 1,
     hole: cards(hole),
     board: [],
@@ -41,6 +43,7 @@ function smallOpen(hole = '7s 6s', overrides = {}) {
     })),
     features: { draw: false, wet: false, overpair: false },
     legal: {
+      chipUnit: 25,
       enabled: true,
       canCheck: false,
       canRaise: true,

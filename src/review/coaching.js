@@ -1,7 +1,9 @@
+import { bigBlindOf } from '../engine/stakes.js';
+import { compactChips } from '../engine/chip-format.js';
 import { actionLabel } from '../engine/action-labels.js';
 
 const streets = ['翻牌前', '翻牌', '转牌', '河牌'];
-const fmt = (n) => Math.round(n).toLocaleString('en-US');
+const fmt = compactChips;
 const pct = (n) => Math.round(n * 100) + '%';
 const same = (a, b) => a.action === b.action && (a.action !== 'raise' || a.amount === b.amount);
 const valueCodes = new Set(['premium-flat', 'value-check', 'deep-value-shove']);
@@ -52,7 +54,7 @@ export function coachDecision(s, r) {
   const actual = { action: s.action, amount: s.amount },
     sim = r.simulation;
   const actualRow = sim?.rows.find((row) => same(row.action, actual));
-  const threshold = Math.max(10, s.pot * 0.01);
+  const threshold = Math.max(0.2 * bigBlindOf(s), s.pot * 0.01);
   const candidates = sim?.comparisonReady
     ? sim.rows.filter(
         (row) =>

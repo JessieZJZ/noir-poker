@@ -55,6 +55,8 @@ function snapshot({
     action: id === 1 ? '下注 ' + currentBet : '',
   }));
   return {
+    bigBlind: 50,
+    chipUnit: 25,
     index: 0,
     hand: 1,
     street,
@@ -68,6 +70,7 @@ function snapshot({
     currentBet,
     minRaise: 50,
     legal: {
+      chipUnit: 25,
       enabled: true,
       canCheck,
       canRaise,
@@ -85,7 +88,7 @@ function snapshot({
   };
 }
 check('every valid hero action records a before-action snapshot without hidden data', () => {
-  const g = newGame();
+  const g = newGame(undefined, { smallBlind: 25, bigBlind: 50, startingStack: 5000, chipUnit: 25 });
   g.dealer = 2;
   startHand(g);
   assert.equal(g.actor, 0);
@@ -110,7 +113,7 @@ check('every valid hero action records a before-action snapshot without hidden d
   assert.equal(JSON.stringify(s), saved);
 });
 check('illegal and out-of-turn actions do not create history entries', () => {
-  const g = newGame();
+  const g = newGame(undefined, { smallBlind: 25, bigBlind: 50, startingStack: 5000, chipUnit: 25 });
   startHand(g);
   assert.throws(() => act(g, 0, 'call'));
   assert.equal(g.decisions.length, 0);
@@ -122,7 +125,7 @@ check('illegal and out-of-turn actions do not create history entries', () => {
   assert.equal(g.decisions.length, 0);
 });
 check('all four streets are recorded and an empty call normalizes to check', () => {
-  const g = newGame();
+  const g = newGame(undefined, { smallBlind: 25, bigBlind: 50, startingStack: 5000, chipUnit: 25 });
   g.dealer = 2;
   startHand(g);
   while (g.phase !== 'done') {
@@ -148,7 +151,7 @@ check('all four streets are recorded and an empty call normalizes to check', () 
   assert.equal(input.outcome.board.length, 5);
 });
 check('review cannot start before settlement', () => {
-  const g = newGame();
+  const g = newGame(undefined, { smallBlind: 25, bigBlind: 50, startingStack: 5000, chipUnit: 25 });
   startHand(g);
   assert.throws(() => createReviewInput(g));
 });

@@ -7,8 +7,12 @@
 >
   <view class="nav {{compactNav ? 'nav-compact' : ''}}" style="top: {{topInset + 36}}px;">
     <view class="brand"
-      ><view class="spade" aria-hidden="true" /><text>NOIR</text
-      ><text wx:if="{{!compactNav}}" class="brand-sub">POKER</text></view
+      ><image
+        class="app-icon"
+        src="/assets/app-icon.png"
+        mode="aspectFit"
+        aria-hidden="true"
+      /><text>NOIR</text><text wx:if="{{!compactNav}}" class="brand-sub">POKER</text></view
     >
     <view class="nav-actions"
       ><button hover-class="none" class="icon-button" aria-label="设置" bindtap="openSettings">
@@ -26,7 +30,7 @@
         ><text class="hand-divider">·</text><text>{{street}}</text
         ><text wx:if="{{replay}}" class="replay">重打 {{replay}}</text></view
       >
-      <view class="blind-info"><text>盲注</text><text class="bright">25 / 50</text></view>
+      <view class="blind-info"><text>盲注</text><text class="bright">{{blindText}}</text></view>
     </view>
     <view class="hint-slot {{replay ? 'with-replay' : ''}}">
       <text wx:if="{{replay}}" class="replay-note"
@@ -366,7 +370,8 @@
             <text>{{settings.playerCount}} 人</text><view class="select-chevron" /></button
         ></view>
         <text wx:if="{{settings.playerCount !== activePlayerCount}}" class="table-change-note"
-          >下一手将切为 {{settings.playerCount}} 人桌 · 筹码恢复 5,000，统计重新开始</text
+          >下一手将切为 {{settings.playerCount}} 人桌 · 筹码恢复
+          {{startingStackText}}，统计重新开始</text
         >
         <view class="setting-row"
           ><text>音效与振动</text
@@ -868,7 +873,8 @@
       ><button hover-class="none" class="close" bindtap="closeReset" aria-label="关闭重新练习">
         <view class="close-icon" /></button></view
     ><text class="dialog-title">重新开始练习？</text
-    ><text class="dialog-copy">本局将结束，所有玩家恢复到 5,000 筹码，练习统计归零。</text
+    ><text class="dialog-copy"
+      >本局将结束，所有玩家恢复到当前牌桌的起始筹码（100 BB），练习统计归零。</text
     ><view class="dialog-actions"
       ><button hover-class="none" bindtap="closeReset">继续练习</button
       ><button hover-class="none" class="primary" bindtap="confirmReset">重新开始</button></view

@@ -34,7 +34,15 @@ function scheduler() {
 function setup(t, initial = {}) {
   const timers = scheduler();
   const preferences = new Map([
-    ['noir-wechat-settings-v1', JSON.stringify({ playerCount: 6, hints: false, ...initial })],
+    [
+      'noir-wechat-settings-v1',
+      JSON.stringify({
+        playerCount: 6,
+        hints: false,
+        stakes: { smallBlind: 25, bigBlind: 50, startingStack: 5000, chipUnit: 25 },
+        ...initial,
+      }),
+    ],
   ]);
   const snapshots = [];
   const sounds = [];
