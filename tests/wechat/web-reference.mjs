@@ -154,6 +154,13 @@ try {
         })) {
           const actual =
             recorded[miniSelector][field] - (field === 'top' ? data.topInset + capsule : 0);
+          if (field === 'width' && ['.profile-name', '.profile-tag'].includes(miniSelector)) {
+            // Web's left-aligned flex text shrinks to its content; WeChat's
+            // text wrapper occupies the available column. Compare wrapping,
+            // origin and height below, and keep both inside the same column.
+            expect(box.width).toBeLessThanOrEqual(actual + 3);
+            continue;
+          }
           expect(
             Math.abs(actual - box[webField]),
             `${name} ${miniSelector} ${field}: WeChat ${actual}, Web ${box[webField]}`,
