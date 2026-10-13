@@ -138,6 +138,15 @@ test('generated WeChat JavaScript loads the controller and complete player resea
 test('concurrent WeChat builders serialize and preserve DevTools private preferences', async (t) => {
   const workspace = fixture(t);
   assertSuccess(await build(workspace).result);
+  const sourceDigest = JSON.parse(
+    readFileSync(path.join(workspace.output, 'build-info.json')),
+  ).sourceDigest;
+  // IDE preferences in the source tree are local state, never runtime inputs.
+  for (const name of ['project.config.json', 'project.private.config.json'])
+    writeFileSync(
+      path.join(workspace.directory, 'miniprogram', name),
+      '{"projectname":"local-only"}',
+    );
   const preferences = JSON.stringify({
     projectname: 'My local simulator',
     setting: { hotReload: true },
@@ -163,6 +172,7 @@ test('concurrent WeChat builders serialize and preserve DevTools private prefere
   );
   assertSuccess(await verification.result);
   const manifest = JSON.parse(readFileSync(path.join(workspace.output, 'build-info.json'), 'utf8'));
+  assert.equal(manifest.sourceDigest, sourceDigest);
   assert.equal(
     manifest.files.filter((file) => /^assets\/portraits\/.*\.jpg$/.test(file.path)).length,
     Object.keys(PROFILE_PORTRAITS).length,

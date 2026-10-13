@@ -32,7 +32,10 @@ export async function fileList(directory, prefix = '') {
 }
 
 export function wechatSourceDigest() {
-  return checksum(sourceDigest() + directoryDigest(template));
+  return checksum(
+    sourceDigest() +
+      directoryDigest(template, ['project.config.json', 'project.private.config.json']),
+  );
 }
 
 async function compileJs(sourceDirectory, destination) {
@@ -231,6 +234,8 @@ export async function buildWechat(output = wechatOutput) {
     await writeFile(path.join(staging, 'project.config.json'), JSON.stringify(project, null, 2));
     await writeFile(path.join(staging, 'package.json'), '{"type":"commonjs","private":true}\n');
     const files = [];
+    // Local IDE preferences are preserved below, outside the runtime manifest.
+    await rm(path.join(staging, 'project.private.config.json'), { force: true });
     for (const name of await fileList(staging)) {
       const bytes = await readFile(path.join(staging, name));
       files.push({ path: name, bytes: bytes.length, sha256: checksum(bytes) });

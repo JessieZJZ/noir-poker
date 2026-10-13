@@ -123,7 +123,9 @@ export function createSettlementLayout(arena, { observe = true } = {}) {
       : railLayout({
           width: arena.clientWidth,
           height: arena.clientHeight,
-          proportional: false,
+          // The outer viewport fits the complete arena back to the first
+          // screen. Grow both dimensions here to retain the wide table shape.
+          proportional: true,
           angles:
             seatElements.length === 4
               ? [180, 240, 300, 360]

@@ -287,7 +287,7 @@ test('pinch zoom preserves the layout height so controls can be panned normally'
   }
 });
 
-test('detailed settlement stays below the fitted table and desktop keeps natural document flow', async ({
+test('detailed settlement stays below the fitted table on phones and wide screens', async ({
   page,
 }) => {
   await page.setViewportSize({ width: 390, height: 844 });
@@ -317,7 +317,7 @@ test('detailed settlement stays below the fitted table and desktop keeps natural
   expect(desktop.tableHeight).toBeCloseTo(desktop.arenaHeight, 0);
   expect(desktop.scroll).toBe(0);
   expect(desktop.maxHeight).toBe('none');
-  expect(desktop.transform).toBe('');
+  expect(desktop.transform).toContain('scale(');
   expect(desktop.overflow).toBe(false);
 });
 

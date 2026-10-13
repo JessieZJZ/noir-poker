@@ -1319,5 +1319,8 @@
   "人数减少时会省略部分前位和中位名称；BTN、SB、BB 的相对顺序保持不变。": "Com menos jogadores, alguns nomes de posições iniciais e médias são omitidos; BTN, SB e BB mantêm a ordem relativa.",
   "牌型示例": "Exemplos de mãos",
   "小尺度再加注的价格支持防守": "O preço de um pequeno reraise permite defender",
-  "这是标准或进阶难度的小尺度 3-bet 防守：总额、补入价格、底池赔率与有效后手通过边界检查，再按自己的起手牌、位置和风格选择跟注。普通的全桌随机摊牌权益弃牌检查没有执行；它是有边界的策略近似，不证明跟注盈利，也不适用于大额再加注或全下。": "Esta é uma defesa contra um pequeno 3-bet nas dificuldades Padrão ou Avançada: o valor total, o custo adicional, as pot odds e o stack efetivo restante passam por limites definidos; depois o bot escolhe pagar segundo sua própria mão inicial, posição e estilo. A verificação habitual de fold por equidade de showdown aleatório contra toda a mesa é ignorada. É uma aproximação estratégica com limites, não prova de lucro, e não se aplica a grandes reraises ou all-ins."
+  "这是标准或进阶难度的小尺度 3-bet 防守：总额、补入价格、底池赔率与有效后手通过边界检查，再按自己的起手牌、位置和风格选择跟注。普通的全桌随机摊牌权益弃牌检查没有执行；它是有边界的策略近似，不证明跟注盈利，也不适用于大额再加注或全下。": "Esta é uma defesa contra um pequeno 3-bet nas dificuldades Padrão ou Avançada: o valor total, o custo adicional, as pot odds e o stack efetivo restante passam por limites definidos; depois o bot escolhe pagar segundo sua própria mão inicial, posição e estilo. A verificação habitual de fold por equidade de showdown aleatório contra toda a mesa é ignorada. É uma aproximação estratégica com limites, não prova de lucro, e não se aplica a grandes reraises ou all-ins.",
+  "音效与振动": "Som e vibração",
+  "音效与振动已开启": "Som e vibração ativados",
+  "音效与振动已关闭": "Som e vibração desativados"
 }

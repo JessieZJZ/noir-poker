@@ -330,6 +330,74 @@ export async function nativeScenarios(app) {
     assert.equal(bridge.status, 'resolved', bridge.error);
     return bridge;
   });
+  await check('combined-feedback-preference', async () => {
+    await app.evaluate(() => {
+      const nativePromise = window.Capacitor.nativePromise;
+      const start = AudioBufferSourceNode.prototype.start;
+      window.__feedbackProbe = { haptics: 0, audio: 0 };
+      window.__restoreFeedbackProbe = () => {
+        window.Capacitor.nativePromise = nativePromise;
+        AudioBufferSourceNode.prototype.start = start;
+      };
+      window.Capacitor.nativePromise = function (plugin, method, ...args) {
+        if (plugin === 'Haptics' && method === 'impact') window.__feedbackProbe.haptics++;
+        return nativePromise.call(this, plugin, method, ...args);
+      };
+      AudioBufferSourceNode.prototype.start = function (...args) {
+        window.__feedbackProbe.audio++;
+        return start.apply(this, args);
+      };
+    });
+    const resetToHero = async () => {
+      await app.click('#reset-button');
+      await app.click('#confirm-reset');
+      await app.waitFor(
+        () => app.evaluate(() => !document.querySelector('#call-button').disabled),
+        20000,
+        'The reset hand must reach the real hero turn',
+      );
+    };
+    try {
+      await app.click('#opponents-button');
+      assert.equal(
+        await app.evaluate(() => document.querySelector('#sound-label').textContent.trim()),
+        '音效与振动',
+      );
+      assert.equal(
+        await app.evaluate(() =>
+          document.querySelector('#sound-button').getAttribute('aria-checked'),
+        ),
+        'true',
+      );
+      await app.click('#sound-button');
+      await app.click('#opponents-dialog .close-dialog');
+      await app.evaluate(() => {
+        window.__feedbackProbe = { haptics: 0, audio: 0 };
+      });
+      await resetToHero();
+      const muted = await app.evaluate(() => window.__feedbackProbe);
+      assert.deepEqual(muted, { haptics: 0, audio: 0 });
+      await app.click('#opponents-button');
+      await app.click('#sound-button');
+      await app.click('#opponents-dialog .close-dialog');
+      await app.evaluate(() => {
+        window.__feedbackProbe = { haptics: 0, audio: 0 };
+      });
+      await resetToHero();
+      const enabled = await app.evaluate(() => window.__feedbackProbe);
+      assert.ok(
+        enabled.haptics > 0 && enabled.audio > 0,
+        'Unmuting must restore native turn feedback and WebView sound dispatch',
+      );
+      return {
+        muted,
+        enabled,
+        scope: 'Actual installed-app dispatch; physical hearing and vibration feel are separate',
+      };
+    } finally {
+      await app.evaluate(() => window.__restoreFeedbackProbe?.()).catch(() => {});
+    }
+  });
   await check('mixed-toggle-and-visual-guide', async () => {
     await app.click('#opponents-button');
     if (

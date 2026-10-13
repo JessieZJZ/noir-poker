@@ -70,6 +70,28 @@ try {
     const page = await browser.newPage({ viewport, locale: 'zh-CN', deviceScaleFactor: 3 });
     await page.goto(process.argv[3] || 'http://127.0.0.1:4192');
     await page.waitForFunction(() => !!window.qa);
+    // The requested mini-program chrome is deliberately smaller than Web's.
+    // Replay that explicit 48px nav / 136px dock budget; table geometry still
+    // uses the shared Web solver and the existing 3px renderer tolerance.
+    await page.addStyleTag({
+      content: `
+      .header { height: 48px; }
+      .brand { gap: 6px; font-size: 17px; }
+      .brand-mark { width: 25px; height: 30px; }
+      .brand-light { font-size: 10px; }
+      .settings-button { width: 36px; height: 36px; }
+      #rules-button { font-size: 11px; }
+      .game-surface { --live-dock-height: 136px; }
+      .game-surface .action-buttons > button,
+      .game-surface .action-panel.folded-actions > .continue-deal-button {
+        height: 40px; min-height: 40px;
+      }
+    `,
+    });
+    await page.evaluate(() => {
+      document.querySelector('#sound-label').textContent = '音效与振动';
+      window.dispatchEvent(new Event('resize'));
+    });
     await page.evaluate(
       async ({ game, settings }) => {
         await document.fonts.ready;
@@ -300,7 +322,13 @@ try {
       }
     }
     await page.screenshot({ path: path.join(directory, name + '-web.png') });
-    results.push({ name, viewport, sameDeal: true, capsuleReserved: capsule });
+    results.push({
+      name,
+      viewport,
+      sameDeal: true,
+      capsuleReserved: capsule,
+      miniChrome: { navHeight: 48, liveDockHeight: 136, primaryButtonHeight: 40 },
+    });
     await page.close();
     console.log('WEB', name);
   }

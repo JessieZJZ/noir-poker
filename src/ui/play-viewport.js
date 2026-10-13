@@ -1,5 +1,5 @@
 import { COMPACT_PLAY_QUERY } from './play-geometry.js';
-// Keep the whole mobile table in the first screen. Measurements are made at
+// Keep the whole table in the first screen. Measurements are made at
 // scale 1 before fitting, so collision coordinates never mix CSS/visual pixels.
 export function createPlayViewport(surface, { layout = () => {} } = {}) {
   const viewport = surface.querySelector('.table-viewport'),
@@ -21,11 +21,12 @@ export function createPlayViewport(surface, { layout = () => {} } = {}) {
       const lines = [...range.getClientRects()].filter((r) => r.width && r.height);
       if (!lines.length) continue;
       const bottom = Math.max(...lines.map((r) => r.bottom));
-      rank.style.translate = `0 ${Math.min(0, bottom + 6 - badge.top)}px`;
+      rank.style.translate = `0 ${bottom + 6 - badge.top}px`;
     }
   }
 
   function fit() {
+    if (document.documentElement.dataset.homeScrollLocked === 'true') return;
     arena.style.removeProperty('transform');
     for (const rank of arena.querySelectorAll('.seat .hand-rank'))
       rank.style.removeProperty('translate');
@@ -41,12 +42,6 @@ export function createPlayViewport(surface, { layout = () => {} } = {}) {
       seat.style.left = seat.dataset.originalLeft;
       seat.style.top = seat.dataset.originalTop;
     }
-    if (!mobile.matches) {
-      surface.style.removeProperty('--play-height');
-      layout();
-      tightenSeatRanks();
-      return;
-    }
     const screen = window.visualViewport,
       // Pinch zoom magnifies/pans the page without shrinking its layout.
       screenHeight = screen && screen.scale <= 1.01 ? screen.height : window.innerHeight,
@@ -57,7 +52,7 @@ export function createPlayViewport(surface, { layout = () => {} } = {}) {
     // Wait for its resize notification instead of dividing by zero below.
     if (viewport.clientWidth === 0 || viewport.clientHeight === 0) return;
     arena.style.width = `${viewport.clientWidth}px`;
-    const landscape = viewport.clientWidth > 600 && screenHeight < 600;
+    const landscape = mobile.matches && viewport.clientWidth > 600 && screenHeight < 600;
     arena.classList.toggle('compact-landscape', landscape);
     if (landscape) {
       seats.forEach((seat, index) => {

@@ -71,6 +71,14 @@ function setup(
       },
     });
   const context = vm.createContext({
+    setTimeout(fn, delay = 0) {
+      const id = ++serial;
+      jobs.set(id, { fn, due: now + delay });
+      return id;
+    },
+    clearTimeout(id) {
+      jobs.delete(id);
+    },
     Page(value) {
       definition = value;
     },
@@ -138,7 +146,12 @@ function setup(
     ...definition,
     data: copy(definition.data),
     setData(value, callback) {
-      Object.assign(this.data, copy(value));
+      for (const [path, entry] of Object.entries(value)) {
+        const parts = path.replace(/\[(\d+)\]/g, '.$1').split('.');
+        let target = this.data;
+        for (const part of parts.slice(0, -1)) target = target[part];
+        target[parts.at(-1)] = copy(entry);
+      }
       callback?.();
     },
   };
@@ -292,12 +305,12 @@ test('WeChat ranks sit 3px below the final painted action line, including wrappe
     return query;
   };
   page.tightenSeatRanks();
-  assert.equal(page.data['phoneSeats[0].rankLift'], -25);
-  assert.equal(page.data['phoneSeats[1].rankLift'], -31);
+  assert.equal(page.data.phoneSeats[0].rankLift, -25);
+  assert.equal(page.data.phoneSeats[1].rankLift, -31);
   // Large all-in captions can need a small downward adjustment as well.
   ranks[0].top = 136;
   page.tightenSeatRanks();
-  assert.equal(page.data['phoneSeats[0].rankLift'], 3);
+  assert.equal(page.data.phoneSeats[0].rankLift, -22);
 });
 
 test('retry and next hand remount every deal while ordinary turns preserve the hero card nodes', (t) => {
@@ -324,7 +337,7 @@ test('retry and next hand remount every deal while ordinary turns preserve the h
   );
   assert.match(template, /wx:key="dealKey"/);
   assert.match(template, /420 \+ index \* 130/);
-  assert.match(template, /class="card-back back-deal"/);
+  assert.match(template, /class="card-back \{\{back.arriving/);
   const retryKeys = copy(page.data.heroCards).map((card) => card.dealKey);
   finish(page._controller.getGame());
   page._controller.show();
@@ -574,7 +587,7 @@ for (const playerCount of [5, 9]) {
       assert.equal(page.data.seats.length, playerCount - 1);
       assert.equal(page.data.windowHeight, info.windowHeight);
       assert.equal(
-        page.data.tableHeight + page.data.topInset + page.data.bottomInset + 321,
+        page.data.tableHeight + page.data.topInset + page.data.bottomInset + 293,
         info.windowHeight,
       );
       const height = page.data.tableHeight;
@@ -691,7 +704,7 @@ test('WeChat capsule measurement falls back safely when absent, invalid or throw
   ]) {
     const { page } = setup(t, { menuRect });
     assert.equal(page.data.navRightInset, 104);
-    assert.equal(page.data.tableHeight + page.data.topInset + page.data.bottomInset + 321, 844);
+    assert.equal(page.data.tableHeight + page.data.topInset + page.data.bottomInset + 293, 844);
   }
 });
 
@@ -1090,4 +1103,47 @@ test('WeChat hero turn vibrates once, rerenders/settings/background do not repea
   page.onHide();
   page.onShow();
   assert.deepEqual(vibrations, ['light']);
+});
+
+test('muting the combined feedback preference suppresses later hero turns and clears audio', (t) => {
+  const { page, vibrations, audios } = setup(t);
+  page.togglePreference({ currentTarget: { dataset: { key: 'sound' } } });
+  const count = vibrations.length;
+  reachHero(page);
+  assert.equal(page.data.settings.sound, false);
+  assert.equal(vibrations.length, count);
+  assert.ok(audios.every((audio) => audio.stopped));
+  assert.match(template, /aria-label="音效与振动"/);
+});
+test('peek preserves peer caption lifts and ordinary updates never re-deal the hero', (t) => {
+  const { page } = setup(t);
+  finish(page._controller.getGame());
+  page._controller.show();
+  page.data.phoneSeats.forEach((seat, i) => (seat.rankLift = -i - 3));
+  const before = copy(page.data.phoneSeats).map((seat) => seat.rankLift);
+  page.peekSeat({ currentTarget: { dataset: { id: 1 } } });
+  assert.deepEqual(
+    copy(page.data.phoneSeats).map((seat) => seat.rankLift),
+    before,
+  );
+  const heroKeys = copy(page.data.heroCards).map((card) => card.dealKey);
+  page._controller.show();
+  assert.deepEqual(
+    copy(page.data.heroCards).map((card) => card.dealKey),
+    heroKeys,
+  );
+});
+test('old deal motion callbacks cannot clear a replay and hiding cancels pending motion', (t) => {
+  const { page, jobs } = setup(t);
+  const stale = jobs.get(page._cardTimers.get('deal')).fn;
+  finish(page._controller.getGame());
+  page._controller.show();
+  page.retryHand();
+  const timer = page._cardTimers.get('deal');
+  stale();
+  assert.equal(page._cardTimers.get('deal'), timer);
+  assert.ok(page.data.heroCards.every((card) => card.arriving));
+  page.onHide();
+  assert.equal(page._cardTimers.size, 0);
+  assert.ok(page.data.heroCards.every((card) => !card.arriving));
 });

@@ -1,5 +1,6 @@
 import { createHeroTurnCue } from './hero-turn.js';
 import { notifyHeroTurn } from '../platform/haptics.js';
+import { createDialogScrollLock } from './dialog-scroll-lock.js';
 import { soundSamples, SOUND_SAMPLE_RATE } from './sound-cues.js';
 import { SEAT_ANCHORS } from './seat-geometry.js';
 import { COMPACT_PLAY_QUERY } from './play-geometry.js';
@@ -479,7 +480,8 @@ function render() {
   heroTurnCue.update({
     key: `${game.hand}:${game.replayAttempt || 0}:${game.street}:${game.history.length}`,
     enabled: legal.enabled,
-    active: activityClock.active,
+    active:
+      activityClock.active && (!document.documentElement.classList.contains('native-app') || sound),
   });
   for (const b of [$('#fold-button'), $('#call-button')]) b.disabled = !legal.enabled;
   $('#raise-button').disabled = !legal.enabled || !legal.canRaise;
@@ -915,9 +917,21 @@ $('#difficulty').onchange = (e) => {
 };
 function updateSound() {
   const b = $('#sound-button');
+  const native = document.documentElement.classList.contains('native-app');
+  setLocalizedText($('#sound-label'), native ? '音效与振动' : '音效');
   b.setAttribute('aria-pressed', String(sound));
   b.setAttribute('aria-checked', String(sound));
-  setLocalizedAttribute(b, 'title', sound ? '音效已开启' : '音效已关闭');
+  setLocalizedAttribute(
+    b,
+    'title',
+    native
+      ? sound
+        ? '音效与振动已开启'
+        : '音效与振动已关闭'
+      : sound
+        ? '音效已开启'
+        : '音效已关闭',
+  );
 }
 $('#sound-button').onclick = () => {
   sound = !sound;
@@ -937,7 +951,8 @@ $('#hint-toggle').onclick = () => {
 };
 $('#rules-button').onclick = () => $('#rules-dialog').showModal();
 $('#reset-button').onclick = () => $('#reset-dialog').showModal();
-$('#pot-details-button').onclick = () => $('#pot-dialog').showModal();
+const potScrollLock = createDialogScrollLock($('#pot-dialog'));
+$('#pot-details-button').onclick = () => potScrollLock.open();
 document
   .querySelectorAll('.close-dialog')
   .forEach((b) => (b.onclick = () => b.closest('dialog').close()));

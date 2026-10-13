@@ -267,7 +267,7 @@ export function createWechatController({
     turnCue.update({
       key: `${game.hand}:${game.replayAttempt || 0}:${game.street}:${game.history.length}`,
       enabled: legal.enabled,
-      active: active && !disposed,
+      active: active && !disposed && settings.sound,
     });
     publish({
       hand: game.hand,

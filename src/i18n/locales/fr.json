@@ -1319,5 +1319,8 @@
   "人数减少时会省略部分前位和中位名称；BTN、SB、BB 的相对顺序保持不变。": "Avec moins de joueurs, certains noms de positions précoces et intermédiaires disparaissent ; BTN, SB et BB gardent leur ordre relatif.",
   "牌型示例": "Exemples de mains",
   "小尺度再加注的价格支持防守": "Le prix d’une petite surrelance permet de défendre",
-  "这是标准或进阶难度的小尺度 3-bet 防守：总额、补入价格、底池赔率与有效后手通过边界检查，再按自己的起手牌、位置和风格选择跟注。普通的全桌随机摊牌权益弃牌检查没有执行；它是有边界的策略近似，不证明跟注盈利，也不适用于大额再加注或全下。": "Il s’agit d’une défense face à un petit 3-bet en difficulté Standard ou Avancée : montant total, coût supplémentaire, cotes du pot et tapis effectif restant respectent des limites ; le bot choisit ensuite de payer selon sa propre main de départ, sa position et son style. Le contrôle habituel de fold par équité de showdown aléatoire contre toute la table est ignoré. Cette approximation stratégique encadrée ne prouve pas la rentabilité du call et ne s’applique ni aux grosses surrelances ni aux tapis."
+  "这是标准或进阶难度的小尺度 3-bet 防守：总额、补入价格、底池赔率与有效后手通过边界检查，再按自己的起手牌、位置和风格选择跟注。普通的全桌随机摊牌权益弃牌检查没有执行；它是有边界的策略近似，不证明跟注盈利，也不适用于大额再加注或全下。": "Il s’agit d’une défense face à un petit 3-bet en difficulté Standard ou Avancée : montant total, coût supplémentaire, cotes du pot et tapis effectif restant respectent des limites ; le bot choisit ensuite de payer selon sa propre main de départ, sa position et son style. Le contrôle habituel de fold par équité de showdown aléatoire contre toute la table est ignoré. Cette approximation stratégique encadrée ne prouve pas la rentabilité du call et ne s’applique ni aux grosses surrelances ni aux tapis.",
+  "音效与振动": "Son et vibration",
+  "音效与振动已开启": "Son et vibration activés",
+  "音效与振动已关闭": "Son et vibration désactivés"
 }
