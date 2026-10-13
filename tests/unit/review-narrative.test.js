@@ -82,6 +82,21 @@ test('draw geometry distinguishes gutshot, double gutshot, ace edge and made str
 });
 test('all-in opponents remove invented river bluff space and expensive call labels recommend fold', () => {
   const s = drawDecision();
+  const folded = structuredClone(s);
+  folded.action = 'fold';
+  folded.legal.canCheck = true;
+  folded.legal.callAmount = 0;
+  assert.doesNotMatch(
+    analyzeDecision(folded, { trials: 120 }).coaching.explanation,
+    /才比较转诈唬/,
+  );
+  const shoved = structuredClone(s);
+  shoved.action = 'raise';
+  shoved.amount = shoved.legal.maxRaiseTo;
+  assert.doesNotMatch(
+    analyzeDecision(shoved, { trials: 120 }).coaching.explanation,
+    /才比较转诈唬/,
+  );
   s.players[1].allin = true;
   s.players[1].stack = 0;
   const r = analyzeDecision(s, { trials: 120 });

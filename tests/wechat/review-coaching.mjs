@@ -161,6 +161,9 @@ try {
     assert.match(step.reason, /此前在翻牌过牌/);
     assert.match(step.reason, /才比较转诈唬/);
   });
+  await fixture('fold-no-future-bluff', { ...snapshot, action: 'fold', amount: 0 }, (step) => {
+    assert.doesNotMatch(step.reason, /才比较转诈唬/);
+  });
   const weak = structuredClone(snapshot);
   Object.assign(weak, {
     street: 0,

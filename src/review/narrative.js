@@ -102,6 +102,8 @@ export function actionReason(s, r) {
 
 export function continuationNote(s, c, closing) {
   if (
+    s.action === 'fold' ||
+    (s.action === 'raise' && s.amount === s.legal.maxRaiseTo) ||
     s.street !== 2 ||
     closing ||
     !c.draw.outs ||
