@@ -1,5 +1,6 @@
 import { SEAT_ANCHORS } from '../ui/seat-geometry.js';
 import { explainOpponent } from '../review/opponents.js';
+import { publicHistory } from '../review/narrative.js';
 import {
   newGame,
   startHand,
@@ -20,7 +21,12 @@ import {
   rankText,
   evaluate,
 } from '../engine/poker.js';
-import { BOT_PROFILES, EMOTION_MODES, sanitizeBotSettings } from '../engine/bot-profiles.js';
+import {
+  BOT_PROFILES,
+  EMOTION_MODES,
+  sanitizeBotSettings,
+  getBotProfile,
+} from '../engine/bot-profiles.js';
 import { CHIP_UNIT, fractionRaiseTo, legalRaiseTo } from '../engine/bet-sizing.js';
 import {
   createReviewInput,
@@ -613,6 +619,9 @@ export function createWechatController({
             return {
               index,
               name: record.name,
+              id: record.id,
+              profileName: record.trace.profileName,
+              named: !!getBotProfile(record.trace.profile).research,
               street: STREET_NAMES[view.street],
               actual: cleanAction(
                 actionLabel({ ...view, action: record.action, amount: record.amount }),
@@ -626,6 +635,7 @@ export function createWechatController({
               title: explanation.title,
               reason: explanation.detail,
               reasons: explanation.reasons,
+              metrics: explanation.metrics,
               warning: explanation.warning,
             };
           }),
@@ -637,10 +647,15 @@ export function createWechatController({
             stack: format(input.decisions[index].stack),
             actual: cleanAction(actionLabel(input.decisions[index])),
             label: r.coaching.label,
+            keep: r.coaching.kind === 'keep',
             suggestion: cleanAction(r.coaching.suggestion),
             reason: r.coaching.explanation,
             followUp: r.coaching.followUp,
             ev: r.coaching.evText,
+            evidence: r.evidence,
+            history: publicHistory(input.decisions[index]).map(
+              (a) => `${a.street} · ${a.name} · ${a.action}`,
+            ),
             cards: input.decisions[index].hole.map(cardView),
             board: input.decisions[index].board.map(cardView),
           })),

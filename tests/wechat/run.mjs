@@ -573,7 +573,7 @@ try {
   const options = (await page.data()).opponentOptions;
   if (options.length > 1) {
     await invoke('changeOpponentFilter', { detail: { value: '1' } });
-    assert.ok((await page.data()).reviewSteps.every((step) => step.name === options[1]));
+    assert.ok((await page.data()).reviewSteps.every((step) => options[1].startsWith(step.name)));
     await invoke('changeOpponentFilter', { detail: { value: '0' } });
   }
   await invoke('closeReview');

@@ -497,12 +497,13 @@ test('WeChat opponent review picker filters recorded actions and restores the fu
   const report = {
     steps: [],
     opponents: [
-      { name: 'Alex', actual: '跟注' },
+      { name: 'Alex', actual: '跟注', named: true, profileName: '谭老板 · Tan Xuan' },
       { name: 'River', actual: '加注' },
       { name: 'Alex', actual: '弃牌' },
     ],
   };
   page.updateReview(report);
+  assert.equal(page.data.opponentOptions[1], 'Alex · 谭老板 · Tan Xuan');
   page.changeOpponentFilter({ detail: { value: '1' } });
   assert.equal(page.data.reviewSteps.length, 2);
   assert.ok(page.data.reviewSteps.every((step) => step.name === 'Alex'));
@@ -603,6 +604,14 @@ test('WeChat Page presents completed shared review copy and per-decision advice'
   for (const field of ['street', 'actual', 'label', 'suggestion', 'reason', 'followUp', 'ev'])
     text(report.steps[0][field]);
   assert.equal(report.steps[0].cards.length, 2);
+  assert.ok(report.steps[0].evidence.length >= 4);
+  assert.ok(report.steps[0].history.length > 0);
+  assert.doesNotMatch(
+    template,
+    /你当时选择|它当时选择|下次怎么调整|实际执行记录|逐步查看它当时如何判断/,
+  );
+  assert.match(template, /当时的关键信息/);
+  assert.match(template, /!selectedReviewStep.keep/);
   assert.equal(toasts.length, 0);
   page.closeReview();
   assert.equal(page.data.reviewOpen, false);

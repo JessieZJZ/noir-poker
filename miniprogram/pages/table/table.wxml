@@ -608,9 +608,6 @@
           对手为什么这样打
         </button></view
       >
-      <text wx:if="{{reviewPerspective === 'opponent'}}" class="review-context"
-        >逐步查看它当时如何判断。底牌在本手结束后才进入这个面板；你的决策评级仍只使用当时公开信息。</text
-      >
       <view wx:if="{{reviewPerspective === 'opponent'}}" class="opponent-filter"
         ><text>查看对手</text
         ><button
@@ -642,7 +639,11 @@
                 >{{item.street}} · {{item.position}}</text
               ><text wx:else class="review-step-meta">{{item.name}} · {{item.street}}</text
               ><text class="review-step-action">{{item.actual}}</text></view
-            ><text class="review-label">{{item.label}}</text>
+            ><text
+              wx:if="{{reviewPerspective === 'opponent' || !item.keep}}"
+              class="review-label {{reviewPerspective === 'hero' ? 'consider' : ''}}"
+              >{{item.label}}</text
+            >
           </button></view
         ></scroll-view
       >
@@ -651,8 +652,10 @@
           ><text
             >{{reviewPerspective === 'hero' ? '第 ' + (reviewIndex + 1) + ' 步' :
             selectedReviewStep.name}} · {{selectedReviewStep.street}}</text
-          ><text class="review-label"
-            >{{reviewPerspective === 'hero' ? selectedReviewStep.label : '实际执行记录'}}</text
+          ><text
+            wx:if="{{reviewPerspective === 'hero'}}"
+            class="review-label {{selectedReviewStep.keep ? 'sound' : 'consider'}}"
+            >{{selectedReviewStep.label}}</text
           ></view
         >
         <view class="review-scene">
@@ -693,26 +696,42 @@
             ><view><text>剩余筹码</text><text>{{selectedReviewStep.stack}}</text></view></view
           >
         </view>
-        <view class="review-comparison"
-          ><view class="review-choice"
-            ><text>{{reviewPerspective === 'hero' ? '你当时选择' : '它当时选择'}}</text
-            ><text>{{selectedReviewStep.actual}}</text></view
-          ><view wx:if="{{reviewPerspective === 'hero'}}" class="review-choice suggested"
-            ><text>下次怎么调整</text><text>{{selectedReviewStep.suggestion}}</text></view
-          ></view
-        >
-        <view class="review-coaching"
-          ><text>{{selectedReviewStep.reason}}</text
-          ><text wx:if="{{selectedReviewStep.ev}}">{{selectedReviewStep.ev}}</text
-          ><view wx:if="{{selectedReviewStep.followUp}}"
-            ><text class="module-title">下次练习重点</text
-            ><text>{{selectedReviewStep.followUp}}</text></view
-          ><text wx:for="{{selectedReviewStep.reasons}}" wx:key="*this">• {{item}}</text
-          ><text class="muted">{{selectedReviewStep.warning}}</text></view
-        >
+        <view class="review-coaching">
+          <text>{{selectedReviewStep.reason}}</text>
+          <text wx:for="{{selectedReviewStep.reasons}}" wx:key="*this">{{item}}</text>
+          <text wx:if="{{selectedReviewStep.warning}}" class="muted"
+            >{{selectedReviewStep.warning}}</text
+          >
+          <view
+            wx:if="{{reviewPerspective === 'hero' && !selectedReviewStep.keep}}"
+            class="review-practice-focus"
+          >
+            <text class="module-title">下次练习重点</text
+            ><text>{{selectedReviewStep.followUp}}</text>
+          </view>
+        </view>
+        <view wx:if="{{reviewPerspective === 'hero'}}" class="review-evidence">
+          <text class="module-title">当时的关键信息</text>
+          <text wx:for="{{selectedReviewStep.evidence}}" wx:key="*this">• {{item}}</text>
+        </view>
+        <view wx:if="{{reviewPerspective === 'hero'}}" class="review-public-actions">
+          <text class="module-title">此前的公开行动</text>
+          <text wx:for="{{selectedReviewStep.history}}" wx:key="index">{{item}}</text>
+          <text wx:if="{{!selectedReviewStep.history.length}}" class="muted"
+            >本轮尚无其他主动行动。</text
+          >
+        </view>
+        <view wx:if="{{reviewPerspective === 'opponent'}}" class="review-evidence opponent-metrics">
+          <text class="module-title">参考数字</text>
+          <text wx:for="{{selectedReviewStep.metrics}}" wx:key="*this">• {{item}}</text>
+        </view>
       </view>
       <text wx:elif="{{!reviewData.loading}}" class="muted"
         >本手没有主动决策，无法评价选择。盲注是强制投入，不会被归为操作失误。</text
+      >
+      <text class="review-scope muted">按当时信息判断，单手输赢不直接决定操作好坏。</text>
+      <text wx:if="{{reviewPerspective === 'opponent'}}" class="review-scope muted"
+        >未完整建模对手继续范围、权益实现或未来策略，不是职业牌手的真实心理，也不是最优打法证明。</text
       >
     </view></scroll-view
   >

@@ -1,0 +1,211 @@
+// Official DevTools UI checks. Decision fixtures stay in this external test,
+// never in the mini-program or an installed native app.
+import { createRequire } from 'node:module';
+import fs from 'node:fs';
+import path from 'node:path';
+import assert from 'node:assert/strict';
+import { deckOfCards } from '../../src/engine/poker.js';
+const root = new URL('../../', import.meta.url).pathname;
+const require = createRequire(path.join(root, '.artifacts/wechat-tools/package.json'));
+const automator = require('miniprogram-automator');
+const output = path.resolve(process.argv[3] || path.join(root, '.artifacts/wechat-review'));
+fs.mkdirSync(output, { recursive: true });
+const report = {
+  status: 'running',
+  platform: 'WeChat DevTools simulator',
+  checks: [],
+  exceptions: [],
+};
+const mini = await automator.connect({ wsEndpoint: process.argv[2] || 'ws://127.0.0.1:9461' });
+mini.on('exception', (error) => report.exceptions.push(error));
+const page = await mini.currentPage();
+const invoke = (name, arg) =>
+  mini.evaluate((name, arg) => getCurrentPages().at(-1)[name](arg), name, arg);
+const wait = async (predicate) => {
+  const start = Date.now();
+  while (!predicate(await page.data())) {
+    if (Date.now() - start > 45000) throw Error('Review UI did not reach expected state');
+    await page.waitFor(100);
+  }
+};
+const capture = async (name) => {
+  await page.waitFor(1450);
+  await mini.screenshot({ path: path.join(output, name + '.png') });
+};
+let savedDecisions;
+try {
+  report.build = JSON.parse(fs.readFileSync(path.join(root, '.artifacts/wechat/build-info.json')));
+  await invoke('closeReview');
+  const profiles = (await page.data()).profiles;
+  await invoke('changeSeat', {
+    currentTarget: { dataset: { id: 1 } },
+    detail: { value: profiles.findIndex((p) => p.id === 'tan') },
+  });
+  await invoke('nextHand');
+  const start = Date.now();
+  while (!(await mini.evaluate(() => getCurrentPages().at(-1)._controller.getGame().actor === 0))) {
+    if (Date.now() - start > 45000) throw Error('Real hand did not reach hero');
+    await page.waitFor(100);
+  }
+  await invoke('act', { currentTarget: { dataset: { action: 'fold' } } });
+  await invoke('finishHand');
+  await wait((data) => data.done);
+  await (await page.$('.review-button')).tap();
+  await wait((data) => !data.reviewData.loading && data.selectedReviewStep);
+  await (await page.$('[data-value="opponent"]')).tap();
+  await wait((data) => data.reviewPerspective === 'opponent' && data.selectedReviewStep?.metrics);
+  let data = await page.data();
+  assert.ok(data.opponentOptions.some((name) => /Mia.*Tan Xuan/.test(name)));
+  report.checks.push({ name: 'real-assigned-player-name', options: data.opponentOptions });
+  for (const index of [
+    ...new Set([0, Math.floor(data.reviewSteps.length / 2), data.reviewSteps.length - 1]),
+  ]) {
+    await (await page.$(`.review-step[data-index="${index}"]`)).tap();
+    await wait((data) => data.reviewIndex === index);
+    data = await page.data();
+    assert.ok(data.selectedReviewStep.reason);
+    assert.ok(
+      data.selectedReviewStep.metrics.length > 0 && data.selectedReviewStep.metrics.length <= 2,
+    );
+    assert.equal(await page.$('.review-choice'), null);
+    assert.equal(await page.$('.review-detail-header .review-label'), null);
+    report.checks.push({ name: 'real-opponent-step-' + index, selected: data.selectedReviewStep });
+  }
+  await (await page.$('#select-opponent')).tap();
+  await wait((data) => data.selection?.field === 'opponent');
+  assert.ok((await page.data()).selection.options.some((name) => /Mia.*Tan Xuan/.test(name)));
+  await capture('assigned-player-options');
+  await invoke('closeSelect');
+  await invoke('changeOpponentFilter', { detail: { value: '1' } });
+  await wait((data) => data.opponentFilter === 1);
+  data = await page.data();
+  assert.ok(data.reviewSteps.every((step) => data.opponentOptions[1].startsWith(step.name)));
+  await capture('opponent');
+  await invoke('closeReview');
+  savedDecisions = await mini.evaluate(
+    () => getCurrentPages().at(-1)._controller.getGame().decisions,
+  );
+  const cards = (text) =>
+    text
+      .split(' ')
+      .map((v) =>
+        deckOfCards().find(
+          (c) => c.rank === '23456789TJQKA'.indexOf(v[0]) + 2 && c.suit === 'shcd'.indexOf(v[1]),
+        ),
+      );
+  const players = (
+    await mini.evaluate(() => getCurrentPages().at(-1)._controller.getGame().players)
+  ).map((p) => ({
+    id: p.id,
+    name: p.name,
+    position: p.id === 0 ? 'BTN' : 'BB',
+    stack: p.id === 0 ? 4600 : 4475,
+    folded: p.id > 1,
+    allin: false,
+    bet: p.id === 1 ? 125 : 0,
+    total: p.id === 0 ? 400 : p.id === 1 ? 525 : p.id === 2 ? 75 : 0,
+  }));
+  const snapshot = {
+    index: 0,
+    hand: 1,
+    hole: cards('Qd 8h'),
+    board: cards('9h 7d 3d Ts'),
+    street: 2,
+    position: 'BTN',
+    stack: 4600,
+    total: 400,
+    bet: 0,
+    pot: 1000,
+    currentBet: 125,
+    action: 'call',
+    amount: 125,
+    pending: [0],
+    players,
+    history: [
+      { id: 1, street: 1, action: 'check', amount: 0 },
+      { id: 0, street: 1, action: 'check', amount: 0 },
+      { id: 1, street: 2, action: 'raise', amount: 125 },
+    ],
+    legal: {
+      enabled: true,
+      canCheck: false,
+      canRaise: true,
+      callAmount: 125,
+      toCall: 125,
+      minRaiseTo: 250,
+      maxRaiseTo: 4600,
+    },
+  };
+  const fixture = async (name, decision, verify) => {
+    await invoke('closeReview');
+    await mini.evaluate((decision) => {
+      getCurrentPages().at(-1)._controller.getGame().decisions = [decision];
+    }, decision);
+    await invoke('openReview');
+    await wait((data) => !data.reviewData.loading && data.selectedReviewStep);
+    const step = (await page.data()).selectedReviewStep;
+    verify(step);
+    assert.equal(await page.$('.review-comparison'), null);
+    assert.ok(step.evidence.length >= 4 && step.history.length > 0);
+    assert.equal(Boolean(await page.$('.review-practice-focus')), !step.keep);
+    report.checks.push({
+      name,
+      fixture: 'before-action public snapshot; not an actual deal',
+      selected: step,
+    });
+    await capture(name);
+  };
+  await fixture('draw-context', snapshot, (step) => {
+    assert.equal(step.keep, true);
+    assert.match(step.reason, /跟注 125 的支点是两头顺听牌/);
+    assert.match(step.reason, /此前在翻牌过牌/);
+    assert.match(step.reason, /才比较转诈唬/);
+  });
+  const weak = structuredClone(snapshot);
+  Object.assign(weak, {
+    street: 0,
+    hole: cards('4h Td'),
+    board: [],
+    bet: 300,
+    total: 300,
+    currentBet: 1325,
+    amount: 1025,
+    pot: 2125,
+    stack: 4700,
+  });
+  Object.assign(weak.legal, { callAmount: 1025, toCall: 1025, minRaiseTo: 2350, maxRaiseTo: 5000 });
+  weak.players.forEach((p) => {
+    p.total = p.id === 0 ? 300 : p.id === 1 ? 1325 : p.id === 2 ? 500 : 0;
+    p.bet = p.id === 0 ? 300 : p.id === 1 ? 1325 : 0;
+  });
+  weak.history = [
+    { id: 0, street: 0, action: 'raise', amount: 300 },
+    { id: 1, street: 0, action: 'raise', amount: 1325 },
+  ];
+  await fixture('yellow-fold-advice', weak, (step) => {
+    assert.equal(step.keep, false);
+    assert.equal(step.label, '弃牌');
+  });
+  const focus = await page.$('.review-practice-focus');
+  report.yellowStyle = {
+    background: await focus.style('background-color'),
+    border: await focus.style('border-left-color'),
+  };
+  assert.equal(report.exceptions.length, 0);
+  report.status = 'passed';
+} catch (error) {
+  report.status = 'failed';
+  report.error = error.stack;
+  throw error;
+} finally {
+  if (savedDecisions) {
+    await invoke('closeReview');
+    await mini.evaluate((decisions) => {
+      getCurrentPages().at(-1)._controller.getGame().decisions = decisions;
+    }, savedDecisions);
+  }
+  report.completedAt = new Date().toISOString();
+  fs.writeFileSync(path.join(output, 'report.json'), JSON.stringify(report, null, 2));
+  mini.disconnect();
+}
+console.log('WeChat contextual review passed:', report.checks.length, 'checks');
