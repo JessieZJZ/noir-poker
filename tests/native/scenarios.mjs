@@ -1546,11 +1546,15 @@ export async function nativeScenarios(app) {
       title: document.querySelector('#records-title').textContent,
       table: document.querySelector('#history-table').textContent,
       heroCards: document.querySelectorAll('#history-table .hero-cards .playing-card').length,
+      tags: [...document.querySelectorAll('.records-history-heading .record-tag')].map(
+        (tag) => tag.textContent,
+      ),
       live: window.noir.getState(),
     }));
     assert.equal(archiveBefore.heroCards, 2);
     assert.ok(archiveBefore.title.includes(`第 ${first.hand} 手`));
     assert.doesNotMatch(archiveBefore.title, /首次|[·\s]$/);
+    assert.deepEqual(archiveBefore.tags, []);
     await app.sleep(1000);
     await app.screenshot('game-records-historical-settlement');
     const historyGeometry = await app.evaluate(readRecordTableGeometry, '#history-arena');
@@ -1567,6 +1571,19 @@ export async function nativeScenarios(app) {
       archiveBefore.table,
     );
     await app.click('#history-back-button');
+    await app.click(`[data-record-hand="${attempts[1].id}"]`);
+    const retryArchive = await app.evaluate(() => ({
+      title: document.querySelector('#records-title').textContent,
+      tags: [...document.querySelectorAll('.records-history-heading .record-tag')].map((tag) => ({
+        text: tag.textContent,
+        colored: tag.classList.contains('record-retry'),
+      })),
+    }));
+    assert.doesNotMatch(retryArchive.title, /重打/);
+    assert.deepEqual(retryArchive.tags, [{ text: '重打1', colored: true }]);
+    await app.sleep(1000);
+    await app.screenshot('game-records-retry-history');
+    await app.click('#history-back-button');
     await app.sleep(1000);
     await app.screenshot('game-records-list');
     const list = await app.evaluate(() => ({
@@ -1576,6 +1593,7 @@ export async function nativeScenarios(app) {
         (row) => [row.dataset.hand, row.dataset.attempt],
       ),
       heading: document.querySelector('.record-session-heading').textContent,
+      text: document.querySelector('#records-page').textContent,
       firstCopy: [...document.querySelectorAll('.record-hand[data-attempt="0"]')].map(
         (row) => row.textContent,
       ),
@@ -1593,6 +1611,7 @@ export async function nativeScenarios(app) {
       [String(first.hand), '1'],
     ]);
     assert.doesNotMatch(list.heading, /已完成|手数/);
+    assert.doesNotMatch(list.text, /已被重打替代/);
     list.firstCopy.forEach((text) => assert.doesNotMatch(text, /首次/));
     assert.equal(list.retry, '重打1');
     list.deltas.filter((value) => value !== '—').forEach((value) => assert.match(value, /^[+-]\d/));

@@ -108,7 +108,9 @@ test('records group sessions newest first and show graphic hands in chronologica
     ['1', '1'],
     ['2', '0'],
   ]);
-  await expect(session.locator('.record-hand').first()).toContainText('已被重打替代');
+  await expect(session.locator('.record-hand').first()).toHaveAttribute('data-superseded', 'true');
+  await expect(session.locator('.record-hand').first()).toHaveClass(/record-superseded/);
+  await expect(session).not.toContainText('已被重打替代');
   await page.locator('#records-back-button').click();
   await page.locator('#reset-button').click();
   await page.locator('#confirm-reset').click();
@@ -176,6 +178,52 @@ test('record rows omit first-attempt and neutral copy, color retry tags and sign
   ).toHaveText(`${session.profit < 0 ? '-' : '+'}${Math.abs(session.profit)}`);
   await rows.nth(0).click();
   await expect(page.locator('#records-title')).not.toContainText(/首次|[·\s]$/);
+});
+
+test('historical navigation shows a single colored retry tag only for retried attempts', async ({
+  page,
+}) => {
+  await page.evaluate(() => {
+    window.qa.recordsFinish();
+    window.qa.recordsRetry();
+    window.qa.recordsFinish();
+    window.qa.recordsRetry();
+    window.qa.recordsFinish();
+  });
+  const session = (await records(page))[0];
+  expect(session.attempts.map((attempt) => attempt.superseded)).toEqual([true, true, false]);
+  expect(session.completed).toBe(1);
+  expect(session.profit).toBe(session.attempts[2].profit);
+  await openRecords(page);
+  await expect(page.locator('#records-page')).not.toContainText('已被重打替代');
+  for (const attempt of session.attempts) {
+    await page.locator(`[data-record-hand="${attempt.id}"]`).click();
+    const heading = page.locator('.records-history-heading');
+    await expect(heading).not.toContainText('历史记录');
+    await expect(page.locator('#records-title')).toHaveText(`第 ${session.number} 局 · 第 1 手`);
+    await expect(page.locator('#records-title .record-tag')).toHaveCount(0);
+    await expect(heading.locator('.record-tag')).toHaveCount(attempt.attempt ? 1 : 0);
+    if (attempt.attempt) {
+      const retry = heading.locator('.record-retry');
+      await expect(retry).toHaveText(`重打${attempt.attempt}`);
+      const colors = await retry.evaluate((element) => {
+        const style = getComputedStyle(element);
+        return {
+          background: style.backgroundColor,
+          border: parseFloat(style.borderWidth),
+          text: style.color,
+        };
+      });
+      expect(colors.background).not.toBe('rgba(0, 0, 0, 0)');
+      expect(colors.border).toBeGreaterThan(0);
+      const channels = colors.text
+        .match(/[\d.]+/g)
+        .slice(0, 3)
+        .map(Number);
+      expect(Math.max(...channels) - Math.min(...channels)).toBeGreaterThan(10);
+    }
+    await page.locator('#history-back-button').click();
+  }
 });
 
 for (const count of [5, 9]) {

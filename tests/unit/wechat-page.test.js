@@ -1340,7 +1340,7 @@ test('WeChat records hide initial and break-even copy, use colored replay tags, 
     wins: 2,
     completed: 5,
     attempts: [
-      { ...base, id: 'initial-win', hand: 1, attempt: 0, profit: 25 },
+      { ...base, id: 'initial-win', hand: 1, attempt: 0, profit: 25, superseded: true },
       { ...base, id: 'initial-split', hand: 2, attempt: 0, profit: 0 },
       { ...base, id: 'zero-without-pot', hand: 3, attempt: 0, profit: 0, wonPot: false },
       { ...base, id: 'replay-one', hand: 4, attempt: 1, profit: -1025 },
@@ -1377,6 +1377,7 @@ test('WeChat records hide initial and break-even copy, use colored replay tags, 
   );
   assert.equal(view.attempts[2].resultText, '');
   assert.equal(view.attempts[5].resultText, '未完成');
+  assert.equal(view.attempts[0].superseded, true, 'The internal replacement state stays available');
   assert.equal(view.attempts[4].cards.length, 2);
   assert.equal(view.attempts[4].refill, true);
   session.profit = -25;
@@ -1391,6 +1392,9 @@ test('WeChat records hide initial and break-even copy, use colored replay tags, 
   );
   assert.match(markup, /wx:if="{{item.attemptText}}" class="hand-tag hand-replay"/);
   assert.match(markup, /wx:if="{{item.resultText}}"/);
+  assert.doesNotMatch(markup, /已被重打替代/);
+  assert.match(markup, /wx:if="{{item.refill \|\| item.resultText}}"/);
+  assert.match(markup, /item.superseded \? 'superseded'/, 'Existing muted styling is retained');
   const css = readFileSync(
     new URL('../../miniprogram/pages/records/records.wxss', import.meta.url),
     'utf8',
@@ -1468,6 +1472,11 @@ for (const playerCount of [5, 9]) {
         copy(fixture.page.data.heroCards.map((card) => card.key)),
       );
       assert.equal(history.data.historyReadOnly, true);
+      assert.equal(
+        history.data.historyAttemptLabel,
+        '',
+        'The first attempt has no generic history or initial label',
+      );
       const archivedBefore = copy(history._controller.getGame());
       history.retryHand();
       assert.deepEqual(copy(history._controller.getGame()), archivedBefore);
@@ -1485,3 +1494,30 @@ for (const playerCount of [5, 9]) {
     });
   }
 }
+
+test('WeChat history displays only a colored short replay tag while preserving superseded attempts and statistics', (t) => {
+  const fixture = setup(t);
+  const game = reachHero(fixture.page);
+  finish(game);
+  fixture.page._controller.show();
+  fixture.page._controller.retry();
+  finish(game);
+  fixture.page._controller.show();
+  const session = fixture.page._controller.getRecords()[0];
+  assert.deepEqual(copy(session.attempts.map((attempt) => attempt.superseded)), [true, false]);
+  assert.equal(session.completed, 1);
+  const archived = session.attempts[1];
+  const history = secondaryPage(t, 'history/history.js', fixture);
+  history.onLoad({ id: archived.id });
+  history.onShow();
+  assert.equal(history.data.historyAttemptLabel, '重打1');
+  assert.equal(history.data.replay, 1);
+  assert.equal(fixture.app.noirController, fixture.page._controller);
+  assert.equal(fixture.page._controller.getRecords()[0].completed, 1);
+  assert.match(template, /wx:if="{{historyAttemptLabel}}" class="history-replay-tag"/);
+  assert.doesNotMatch(template, /历史结算|历史记录/);
+  assert.match(
+    stylesheet,
+    /\.history-replay-tag\s*\{[^}]*border: 1px solid #[0-9a-f]+;[^}]*color: #[0-9a-f]+;[^}]*background:/s,
+  );
+});

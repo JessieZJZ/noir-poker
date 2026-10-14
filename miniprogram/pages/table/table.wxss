@@ -1470,6 +1470,17 @@
   color: #9cb2bd;
   text-align: right;
 }
+.history-replay-tag {
+  display: inline-block;
+  padding: 2px 6px;
+  border: 1px solid #796534;
+  border-radius: 4px;
+  color: #ecd397;
+  background: rgba(121, 101, 52, 0.18);
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
 .session-label {
   white-space: nowrap;
 }

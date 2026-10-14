@@ -65,9 +65,8 @@
             ><text wx:if="{{item.attemptText}}" class="hand-tag hand-replay"
               >{{item.attemptText}}</text
             ></view
-          ><view wx:if="{{item.refill || item.superseded || item.resultText}}" class="hand-tags"
+          ><view wx:if="{{item.refill || item.resultText}}" class="hand-tags"
             ><text wx:if="{{item.refill}}" class="hand-tag">补码</text
-            ><text wx:if="{{item.superseded}}" class="hand-tag">已被重打替代</text
             ><text wx:if="{{item.resultText}}">{{item.resultText}}</text></view
           ></view
         >

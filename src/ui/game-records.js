@@ -55,7 +55,7 @@ function handItem(attempt) {
     element = complete ? 'button' : 'div';
   return `<${element} class="record-hand record-attempt ${attempt.superseded ? 'record-superseded' : ''}" ${complete ? `data-record-hand="${escape(attempt.id)}"` : ''} data-record-id="${escape(attempt.id)}" data-status="${attempt.status}" data-hand="${attempt.hand}" data-attempt="${attempt.attempt}" data-superseded="${attempt.superseded}">
     <span class="record-hand-cards record-cards" aria-label="你的底牌">${attempt.hole.map((c) => renderCard(c, { small: true })).join('')}</span>
-    <span class="record-hand-info"><strong>第 ${attempt.hand} 手</strong><span class="record-hand-tags">${attempt.attempt ? `<span class="record-tag record-retry">${attemptLabel(attempt.attempt)}</span>` : ''}${attempt.refill ? '<span class="record-tag record-refill">补码</span>' : ''}${attempt.superseded ? '<span class="record-tag">已被重打替代</span>' : ''}</span></span>
+    <span class="record-hand-info"><strong>第 ${attempt.hand} 手</strong><span class="record-hand-tags">${attempt.attempt ? `<span class="record-tag record-retry">${attemptLabel(attempt.attempt)}</span>` : ''}${attempt.refill ? '<span class="record-tag record-refill">补码</span>' : ''}</span></span>
     <span class="record-hand-result ${complete && attempt.profit < 0 ? 'negative' : complete && attempt.profit > 0 ? 'positive' : ''}"><strong>${complete ? change(attempt.profit) : '—'}</strong>${recordOutcome(attempt) ? `<span>${recordOutcome(attempt)}</span>` : ''}</span>
     ${complete ? '<span class="record-hand-arrow" aria-hidden="true">›</span>' : ''}
   </${element}>`;
@@ -169,7 +169,7 @@ export function createGameRecordsView({ records, openReview, onReturnGame }) {
       formatter = createActivityFormatter(snapshot.players);
     setLocalizedHTML(
       content,
-      `<div id="history-page"><div class="records-history-heading"><button id="history-back-button" class="records-back" data-records-back>‹ 返回对局记录</button><span class="record-tag">历史记录</span><span class="records-history-result">${recordOutcome(archive) ? recordOutcome(archive) + ' · ' : ''}${change(archive.profit)}</span></div><div class="main records-history-grid"><section class="game-column"><div class="records-surface-slot"></div>${historicalPots(snapshot)}</section><aside class="sidebar"><section class="activity-card records-activity"><div class="section-title"><h2>本局动态</h2><span class="subtle-label">FINISHED</span></div><ol class="activity-list" aria-label="本手动态，按时间顺序排列">${snapshot.logs
+      `<div id="history-page"><div class="records-history-heading"><button id="history-back-button" class="records-back" data-records-back>‹ 返回对局记录</button>${archive.attempt ? `<span class="record-tag record-retry">${attemptLabel(archive.attempt)}</span>` : ''}<span class="records-history-result">${recordOutcome(archive) ? recordOutcome(archive) + ' · ' : ''}${change(archive.profit)}</span></div><div class="main records-history-grid"><section class="game-column"><div class="records-surface-slot"></div>${historicalPots(snapshot)}</section><aside class="sidebar"><section class="activity-card records-activity"><div class="section-title"><h2>本局动态</h2><span class="subtle-label">FINISHED</span></div><ol class="activity-list" aria-label="本手动态，按时间顺序排列">${snapshot.logs
         .slice()
         .reverse()
         .map(
@@ -228,10 +228,7 @@ export function createGameRecordsView({ records, openReview, onReturnGame }) {
       const session = records
         .sessions()
         .find((session) => session.attempts.some((attempt) => attempt.id === archive.id));
-      setLocalizedHTML(
-        title,
-        `第 ${session.number} 局 · 第 ${archive.hand} 手${archive.attempt ? ` · <span class="record-tag record-retry">${attemptLabel(archive.attempt)}</span>` : ''}`,
-      );
+      setLocalizedText(title, `第 ${session.number} 局 · 第 ${archive.hand} 手`);
       visible.clear();
       archive.snapshot.players
         .slice(1)

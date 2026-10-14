@@ -1959,5 +1959,6 @@
   "进行中": "Läuft",
   "首次": "Erster Versuch",
   "重打{0}": "Wiederholung {0}",
-  "第 {0} 局 · 第 {1} 手{2}": "Sitzung {0} · Hand {1}{2}"
+  "第 {0} 局 · 第 {1} 手{2}": "Sitzung {0} · Hand {1}{2}",
+  "第 {0} 局 · 第 {1} 手": "Sitzung {0} · Hand {1}"
 }

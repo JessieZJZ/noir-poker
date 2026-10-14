@@ -16,7 +16,7 @@ Page({
     this._readOnlyAttempt = attempt;
     this._readOnlySessionNumber = session?.number || 1;
     this.setData({
-      historyAttemptLabel: attempt.attempt ? `第 ${attempt.attempt} 次重打` : '首次',
+      historyAttemptLabel: attempt.attempt ? `重打${attempt.attempt}` : '',
     });
     tablePage.onLoad.call(this);
   },

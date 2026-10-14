@@ -23,7 +23,9 @@
       /><text>NOIR</text><text wx:if="{{!compactNav}}" class="brand-sub">POKER</text></view
     >
     <view wx:if="{{historyReadOnly}}" class="history-nav-title"
-      >历史结算 · {{historyAttemptLabel}}</view
+      ><text wx:if="{{historyAttemptLabel}}" class="history-replay-tag"
+        >{{historyAttemptLabel}}</text
+      ></view
     >
     <view wx:else class="nav-actions"
       ><button hover-class="none" class="icon-button" aria-label="设置" bindtap="openSettings">

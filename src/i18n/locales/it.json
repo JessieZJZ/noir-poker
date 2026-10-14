@@ -1956,5 +1956,6 @@
   "进行中": "In corso",
   "首次": "Primo tentativo",
   "重打{0}": "Tentativo {0}",
-  "第 {0} 局 · 第 {1} 手{2}": "Sessione {0} · Mano {1}{2}"
+  "第 {0} 局 · 第 {1} 手{2}": "Sessione {0} · Mano {1}{2}",
+  "第 {0} 局 · 第 {1} 手": "Sessione {0} · Mano {1}"
 }
