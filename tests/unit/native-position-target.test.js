@@ -32,8 +32,12 @@ async function driverClick(selector) {
 function app(click = driverClick) {
   return {
     evaluate: (fn, value) => page.evaluate(fn, value),
-    async waitFor(predicate) {
-      if (await predicate()) return true;
+    async waitFor(predicate, timeout) {
+      const deadline = Date.now() + Math.min(timeout, 500);
+      while (Date.now() < deadline) {
+        if (await predicate()) return true;
+        await new Promise((resolve) => setTimeout(resolve, 20));
+      }
       throw new Error('Target did not become ready');
     },
     click,
@@ -111,4 +115,86 @@ test('unready targets and native driver errors stop the scenario without synthet
     ).click('#ready'),
     (received) => received === error,
   );
+});
+
+test('a background-page target cannot be tapped through an open modal even when it has a rectangle', async () => {
+  await page.setContent(`
+    <button id="background">Background</button>
+    <dialog><button id="inside">Inside</button></dialog>
+    <script>document.querySelector('dialog').showModal();</script>`);
+  let delegated = 0;
+  const positioned = withCenteredNativeClicks(app(async () => delegated++));
+  await assert.rejects(positioned.click('#background'), /did not become ready/);
+  assert.equal(delegated, 0);
+  await positioned.click('#inside');
+  assert.equal(delegated, 1, 'Visible modal controls retain their real-driver path');
+});
+
+test('closing a modal waits for unlock and late scroll restoration before the single real page tap', async () => {
+  await page.setContent(`
+    <style>
+      body { margin: 0; } .before { height: 1800px; } .after { height: 800px; }
+      #reset { width: 160px; height: 40px; margin-left: 100px; }
+    </style>
+    <div class="before"></div><button id="reset">Reset</button><div class="after"></div>
+    <dialog><button id="close">Close</button></dialog>
+    <script>
+      window.taps = []; window.restored = false;
+      const dialog = document.querySelector('dialog');
+      document.documentElement.dataset.homeScrollLocked = 'true';
+      dialog.showModal();
+      document.querySelector('#close').addEventListener('click', () => {
+        dialog.close();
+        setTimeout(() => {
+          delete document.documentElement.dataset.homeScrollLocked;
+          window.unlocked = true;
+          setTimeout(() => {
+            window.scrollTo(0, 600);
+            window.dispatchEvent(new Event('resize'));
+            window.restored = true;
+          }, 30);
+        }, 80);
+      });
+      document.querySelector('#reset').addEventListener('click', event =>
+        window.taps.push({ trusted: event.isTrusted, restored: window.restored }));
+    </script>`);
+  const delegations = [],
+    positioned = withCenteredNativeClicks(
+      app(async (selector) => {
+        delegations.push(selector);
+        if (selector === '#reset')
+          assert.equal(
+            await page.evaluate(() => window.restored),
+            true,
+            'Late native scroll restoration must finish before the real click',
+          );
+        return driverClick(selector);
+      }),
+    );
+  await positioned.click('#close');
+  const point = await positioned.click('#reset');
+  assert.deepEqual(delegations, ['#close', '#reset']);
+  assert.ok(Math.abs(point.y - 437) <= 1, 'Late scroll drift is re-centered before delegation');
+  assert.deepEqual(await page.evaluate(() => window.taps), [{ trusted: true, restored: true }]);
+});
+
+test('a continually moving target exhausts the finite geometry wait without delegating a tap', async () => {
+  await page.setContent(`
+    <style>
+      @keyframes move { from { transform: translateX(0); } to { transform: translateX(100px); } }
+      button { animation: move 3s linear infinite; }
+    </style><button id="moving">Moving</button>`);
+  let delegated = 0;
+  const base = app(async () => delegated++),
+    deadlines = [],
+    positioned = withCenteredNativeClicks({
+      ...base,
+      waitFor(predicate, timeout) {
+        deadlines.push(timeout);
+        return base.waitFor(predicate, timeout);
+      },
+    });
+  await assert.rejects(positioned.click('#moving'), /did not become ready/);
+  assert.deepEqual(deadlines, [30000, 5000]);
+  assert.equal(delegated, 0);
 });
