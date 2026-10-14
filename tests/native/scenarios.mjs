@@ -585,13 +585,42 @@ export async function nativeScenarios(app) {
   await check('pending-blinds-validation-retry-and-next-hand', async () => {
     const defaults = { smallBlind: 100, bigBlind: 200, startingStack: 20000, chipUnit: 100 };
     const configured = { smallBlind: 300, bigBlind: 600, startingStack: 60000, chipUnit: 300 };
-    const readPreferences = () =>
-      app.evaluate(async () => ({
-        web: localStorage.getItem('noir-table-v1'),
-        native: (
-          await window.Capacitor.nativePromise('Preferences', 'get', { key: 'noir-table-v1' })
-        ).value,
-      }));
+    const readPreferences = async () => {
+      await app.evaluate(() => {
+        const probe = {
+          status: 'pending',
+          web: localStorage.getItem('noir-table-v1'),
+        };
+        window.__nativeStakesPrefsProbe = probe;
+        // WKWebView execute/sync does not resolve a returned Promise. Observe
+        // the real Preferences bridge result in a later serializable command.
+        window.Capacitor.nativePromise('Preferences', 'get', { key: 'noir-table-v1' }).then(
+          (result) => {
+            probe.native = result.value;
+            probe.status = 'resolved';
+          },
+          (error) => {
+            probe.status = 'rejected';
+            probe.error = String(error);
+          },
+        );
+      });
+      const probe = await app.waitFor(
+        () =>
+          app.evaluate(() => {
+            const probe = window.__nativeStakesPrefsProbe;
+            return probe?.status !== 'pending' ? probe : null;
+          }),
+        5000,
+        'Read the installed native Preferences bridge result',
+      );
+      assert.equal(probe.status, 'resolved', probe.error);
+      assert.ok(
+        probe.native === null || typeof probe.native === 'string',
+        'Native Preferences must return a saved string or an explicit missing value',
+      );
+      return { web: probe.web, native: probe.native };
+    };
     const observeClick = async (selector) => {
       await app.evaluate((selector) => {
         window.__nativeStakesObservation = null;
@@ -631,10 +660,15 @@ export async function nativeScenarios(app) {
             try {
               await app.click('#continue-deal-button');
             } catch (error) {
-              if ((await app.state()).phase !== 'done') throw error;
+              const settled = await app.state();
+              if (settled.phase === 'done') return settled;
+              throw error;
             }
           }
-          return null;
+          // A slow native click can outlast the polling deadline while the
+          // hand successfully settles. Return that observed result now.
+          const settled = await app.state();
+          return settled.phase === 'done' ? settled : null;
         },
         60000,
         'The real hand must settle before retry or applying queued blinds',
@@ -661,7 +695,11 @@ export async function nativeScenarios(app) {
     const preferencesBefore = await app.waitFor(
       async () => {
         const preferences = await readPreferences();
-        return preferences.native === preferences.web ? preferences : null;
+        return typeof preferences.native === 'string' &&
+          typeof preferences.web === 'string' &&
+          preferences.native === preferences.web
+          ? preferences
+          : null;
       },
       5000,
       'Native and Web preference copies must agree before editing blinds',
