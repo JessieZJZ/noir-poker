@@ -64,8 +64,22 @@ for (const locale of locales) {
     await expect(page.locator('#table-size-label')).toContainText('9');
     await page.evaluate(() => window.qa.stop());
     await page.locator('#rules-button').click();
-    await expect(page.locator('#rules-dialog')).toBeVisible();
-    await page.locator('#rules-dialog .close-dialog').first().click();
+    const guide = page.locator('#rules-dialog');
+    await expect(guide).toBeVisible();
+    const raiseExample = ['es', 'it', 'pt', 'de', 'fr', 'ru'].includes(locale) ? '1,2K' : '1.2K';
+    const callExample = guide.locator(':scope > p').filter({ hasText: raiseExample });
+    await expect(callExample).toBeVisible();
+    for (const amount of ['200', '600', '400', raiseExample, '1K'])
+      await expect(callExample).toContainText(amount);
+    const minimumRules = guide.locator(':scope > details').filter({ hasText: '1K' });
+    await expect(minimumRules).toHaveCount(1);
+    await minimumRules.locator(':scope > summary').click();
+    const minimumRaise = minimumRules.locator(':scope > p').first();
+    await expect(minimumRaise).toBeVisible();
+    for (const amount of ['200', '600', '400', '1K'])
+      await expect(minimumRaise).toContainText(amount);
+    await expect(guide).not.toContainText(/\b(?:1200|1000)\b/);
+    await guide.locator('.close-dialog').first().click();
     const initial = await page.evaluate(() => window.qa.foldWin(9, 0));
     await page.locator('#review-hand-button').click();
     await expect(page.locator('#review-dialog[data-analysis-status="done"]')).toBeVisible({

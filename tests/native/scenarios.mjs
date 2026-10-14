@@ -12,7 +12,11 @@ export async function waitForPendingOpponent(app) {
       if (game.phase === 'playing' && game.actor && game.actor !== '你') return game;
       if (game.phase === 'playing' && game.legal.enabled) await app.click('#call-button');
       else if (game.phase === 'done') await app.click('#next-button');
-      return null;
+      else return null;
+      // A real native click can finish near the polling deadline. Check the
+      // resulting public state now rather than discarding the opponent turn.
+      const next = await app.state();
+      return next.phase === 'playing' && next.actor && next.actor !== '你' ? next : null;
     },
     15000,
     'Background test needs a pending opponent action',
@@ -96,9 +100,25 @@ export async function waitForNativeReview(app, { now = Date.now } = {}) {
 // public state already exposed by the app and never install browser fixtures.
 export async function nativeScenarios(app) {
   const result = [];
-  const selectedScenarios = process.env.NOIR_NATIVE_SCENARIOS?.split(',');
+  const selection = process.env.NOIR_NATIVE_SCENARIOS;
+  const selectedScenarios = selection?.split(',').map((name) => name.trim());
+  if (selectedScenarios?.some((name) => !name))
+    throw Error('NOIR_NATIVE_SCENARIOS must contain nonempty scenario names');
+  const seenScenarios = new Set();
   const check = async (name, run) => {
-    if (selectedScenarios && !selectedScenarios.includes(name)) return;
+    seenScenarios.add(name);
+    if (selectedScenarios && !selectedScenarios.includes(name)) {
+      const entry = {
+        name,
+        status: 'skipped',
+        elapsedMs: 0,
+        reason: 'Not selected by the test-only NOIR_NATIVE_SCENARIOS filter',
+      };
+      result.push(entry);
+      app.record(entry);
+      app.log(`SKIP ${name}: ${entry.reason}`);
+      return;
+    }
     const started = Date.now();
     try {
       const evidence = await run();
@@ -467,10 +487,14 @@ export async function nativeScenarios(app) {
       hands: document.querySelectorAll('.hand-example').length,
       cards: document.querySelectorAll('.guide-card').length,
       positions: document.querySelector('.position-glossary').textContent,
+      text: document.querySelector('#rules-dialog').textContent.replace(/\s+/g, ' '),
     }));
     assert.equal(guide.hands, 9);
     assert.equal(guide.cards, 45);
     assert.ok(guide.positions.includes('HJ · Hijack') && guide.positions.includes('CO · Cutoff'));
+    assert.ok(guide.text.includes('选择加注 1.2K 则补 1K'));
+    assert.ok(guide.text.includes('至少要加到 1K'));
+    assert.ok(!/\b(?:1200|1000)\b/.test(guide.text), 'Guide chip examples must use K');
     await app.screenshot('visual-beginner-guide');
     await app.click('#rules-dialog .icon-button.close-dialog');
     return { assignments, guide };
@@ -1396,5 +1420,8 @@ export async function nativeScenarios(app) {
       );
       return comparisons;
     });
+  const unknown = selectedScenarios?.filter((name) => !seenScenarios.has(name));
+  if (unknown?.length)
+    throw Error(`Unknown NOIR_NATIVE_SCENARIOS selection: ${unknown.join(', ')}`);
   return result;
 }
