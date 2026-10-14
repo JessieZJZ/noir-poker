@@ -6,6 +6,7 @@ import {
   recordGeometryDifferences,
 } from '../fixtures/records-geometry.js';
 import { nativePageReady } from '../../scripts/native-back.mjs';
+import { withCenteredNativeClicks } from './position-target.mjs';
 const documentLoginMarker = (text) => /sign in|log in|登录账号/i.test(text);
 
 export async function waitForPendingOpponent(app) {
@@ -166,6 +167,7 @@ export async function readNativePersonaTags(app) {
 // These scenarios drive the installed production bundle. They read only the
 // public state already exposed by the app and never install browser fixtures.
 export async function nativeScenarios(app) {
+  app = withCenteredNativeClicks(app);
   const result = [];
   const selection = process.env.NOIR_NATIVE_SCENARIOS;
   const selectedScenarios = selection?.split(',').map((name) => name.trim());
