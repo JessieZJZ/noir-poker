@@ -16,7 +16,7 @@
 
 ## 固定生产输入
 
-完整 Web 运行时的共享源摘要为 `93bc8de17f9335005b95306e5a03b211b75ad830ca4ca2f50a86068b1156c4b5`。随后仅持久修正原生测试的真实触摸设置，最终共享摘要为 `2d2a530e8d293979bf836f154f627692da313364d405de3ed2fcaed0ee2c271c`（摘要包含 scripts）。前后已逐项比较 src、public、index、依赖／Vite／Playwright 配置、Web E2E 与夹具的完整 SHA256，全部相同，完整 Web 结果仍覆盖最终 Web 产品输入；证据为 `product-before-native-touch.json` 与 `product-after-native-touch.json`。微信源摘要 `6a8125be87b1fb51d78730bf8e1481e7f1ef4c3363606da9e881d03bbff94004`。后续测试与文档提交不改变这些产品输入。该共享摘要不包含 iOS Swift／Storyboard 或 Android Java，原生文件必须另外留 SHA256、编译与安装证据。
+完整 Web 运行时的共享源摘要为 `93bc8de17f9335005b95306e5a03b211b75ad830ca4ca2f50a86068b1156c4b5`。随后仅持久修正原生测试的真实触摸设置，共享摘要为 `2d2a530e8d293979bf836f154f627692da313364d405de3ed2fcaed0ee2c271c`（摘要包含 scripts）。前后已逐项比较 src、public、index、依赖／Vite／Playwright 配置、Web E2E 与夹具的完整 SHA256，全部相同，完整 Web 结果仍覆盖最终 Web 产品输入；证据为 `product-before-native-touch.json` 与 `product-after-native-touch.json`。之后仅将 iOS 原生点击改为 AX 优先，共享摘要为 `7f238d71e0230a429fa1df39c235df8327323bc60a51cf15acd7db89063f58bf`；`product-after-native-ax.json` 再次严格验证全部 Web 产品与 E2E 输入相同。微信源摘要 `6a8125be87b1fb51d78730bf8e1481e7f1ef4c3363606da9e881d03bbff94004`。这些测试与文档提交不改变产品输入。共享摘要不包含 iOS Swift／Storyboard 或 Android Java，原生文件必须另外留 SHA256、编译与安装证据。
 
 最终 APK 来自干净提交 `764881310b3e50aef82d8a205f76a599b870b8e2`，共享摘要 `2d2a530e…`。SHA256 为 `71fa40e7d04ab74c221b1361022ec26da6870598411efe31e29e2e1df097fc77`，16,341,071 字节，apksigner v2 验证通过；19 张本地图片含 16 张头像，资源摘要 `c4650a6e2f0f0b56deba68496b3d4bac5dced1cfa026ef9b92c1f594cb55e28a`。已保存到 Downloads 的独立文件名 `NOIR-Poker-game-records-20261015-7648813-debug.apk`；旧 `7dfd77c`／摘要 `93bc8de…`／APK `ec5a4df…` 是保留的旧候选，不作为最终包。
 
@@ -63,4 +63,6 @@ Android API 35 的最终隔离专项 **2 通过、16 按场景选择跳过、0 �
 
 Sites **第 58 版发布 succeeded**，地址 https://noir-poker-practice.daring-oak-8798.chatgpt.site ，保留现有 project ID 和 public 访问。Site 源提交 `0020bf8e319df60195aa3044a046ea83ddd57c95`，已逐字核对树等于 GitHub 功能提交 `764881310b3e50aef82d8a205f76a599b870b8e2`（树 `90b10fdbacf5229eb21aa817978b980af59c5ab6`）；后续 Git 提交只补原生测试与验证文档。保存版本 `appgprj_6ac4f672d2948191b73acbd3bf952f2a~appgver_fe04abcdf78881918c1560aec455989f`，发布 `appgdep_6acffe92fbb88191a2d7e86c2660f773`，源 helper 推送及归档均成功，失败的未完成 merge 已正常提交整理后再保存，未覆写旧 Site 历史。
 
-最终标准真实触摸 iOS 全部 18 场景仍在独立运行，暂不计完整通过。微信 Mac 锁屏再次只读确认仍未解除，手势与完整套件待解锁。PR #45 保持草稿，不能以本地资源、编译或 Web／Android 专项通过声称全端运行验收完成；实体手机、商店与室内实际听感也不在本轮模拟器证据范围内。
+iOS 标准真实触摸记录专项在 `2d2a530e…` 安装包上 **2 通过、16 按选择跳过**，核心记录场景 116865ms；实际历史与实时几何、重打／统计、复盘 4682ms、同局手 3 恢复后总筹码 100000、复盘原生返回列表深度 1、返回游戏后真实边缘手势回到原有英文隐私父页均通过。完整运行加入位置稳定检查后仍为 6 通过、第 7 项反馈设置的页尾重置失败；不能称全量通过。经本机 SDK 代码确认，`nativeWebTapStrict=true` 会跳过原生 AX 元素查找，强制执行校准与坐标换算；点击前稳定检查不足以消除此路径。现仅修正原生测试设置为 `nativeWebTap=true`、`nativeWebTapStrict=false`，优先原生 AX，AX 不可用时仍可回退原生 WDA 坐标触摸，均不进入 JS 点击；4 项设置单元及相关 16 项通过。最终完整 18 场景待新输入干净编译后复验。
+
+微信 Mac 锁屏再次只读确认仍未解除，手势与完整套件待解锁。PR #45 保持草稿，不能以本地资源、编译或 Web／Android 专项通过声称全端运行验收完成；实体手机、商店与室内实际听感也不在本轮模拟器证据范围内。
