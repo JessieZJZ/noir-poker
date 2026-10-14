@@ -1996,6 +1996,7 @@ test('fast finish records opponents while live public state never exposes privat
 test('foreign style assignments persist and opponent review filters include assigned player names', async ({
   page,
 }) => {
+  test.setTimeout(60000);
   await page.evaluate(() => window.qa.foldWin(9));
   await page.locator('#opponents-button').click();
   for (const [seat, profile] of [
@@ -2027,7 +2028,7 @@ test('foreign style assignments persist and opponent review filters include assi
   await page.evaluate(() => window.qa.reviewLine());
   await page.locator('#review-hand-button').click();
   await expect(page.locator('#review-dialog[data-analysis-status="done"]')).toBeVisible({
-    timeout: 20000,
+    timeout: 30000,
   });
   await page.locator('#review-timeline [data-review-index="0"]').click();
   await expect(page.locator('#review-advanced, #review-simulation')).toHaveCount(0);

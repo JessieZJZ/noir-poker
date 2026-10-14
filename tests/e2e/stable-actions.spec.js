@@ -38,6 +38,13 @@ async function startFrameCapture(page) {
   return page.evaluate(() => {
     const read = () => ({
       phase: document.querySelector('#arena').classList.contains('is-done') ? 'settled' : 'live',
+      hasHeroRank: document.querySelector('.hero-area').classList.contains('has-hero-rank'),
+      rankEmptyLift:
+        (parseFloat(
+          getComputedStyle(document.querySelector('#arena')).getPropertyValue(
+            '--hero-rank-empty-lift',
+          ),
+        ) || 28) * new DOMMatrix(getComputedStyle(document.querySelector('#arena')).transform).a,
       ...Object.fromEntries(
         [
           '.table-viewport',
@@ -79,26 +86,56 @@ async function expectStableCapturedFrames(page, initial) {
     return capture.frames;
   });
   expect(frames.length).toBeGreaterThan(4);
+  const identityBaselines = new Map([[initial.hasHeroRank, initial['.hero-identity']]]);
   const shifts = frames.flatMap((frame, index) => {
-    const baseline = initial;
+    if (!identityBaselines.has(frame.hasHeroRank))
+      identityBaselines.set(frame.hasHeroRank, frame['.hero-identity']);
     return Object.entries(frame)
-      .filter(([selector]) => selector !== 'phase')
+      .filter(([selector]) => !['phase', 'hasHeroRank', 'rankEmptyLift'].includes(selector))
       .flatMap(([selector, box]) =>
         Object.entries(box)
-          .filter(([key, value]) => Math.abs(value - baseline[selector][key]) > 1)
+          .filter(([key, value]) => {
+            const baseline =
+              selector === '.hero-identity' && ['top', 'bottom'].includes(key)
+                ? identityBaselines.get(frame.hasHeroRank)
+                : initial[selector];
+            return Math.abs(value - baseline[key]) > 1;
+          })
           .map(([key, value]) => ({
             frame: index,
             phase: frame.phase,
+            hasHeroRank: frame.hasHeroRank,
             selector,
             key,
-            initial: baseline[selector][key],
+            initial:
+              selector === '.hero-identity' && ['top', 'bottom'].includes(key)
+                ? identityBaselines.get(frame.hasHeroRank)[key]
+                : initial[selector][key],
             value,
           })),
       );
   });
+  if (identityBaselines.size === 2)
+    expect(
+      Math.abs(
+        identityBaselines.get(true).top - identityBaselines.get(false).top - initial.rankEmptyLift,
+      ),
+      'Only the specified empty-rank lift separates the two stable identity positions',
+    ).toBeLessThanOrEqual(1);
+  expect(
+    frames.every((frame) => Math.abs(frame.rankEmptyLift - initial.rankEmptyLift) <= 0.01),
+  ).toBe(true);
+  await test.info().attach(`rank-state-geometry-${test.info().attachments.length}`, {
+    body: JSON.stringify({
+      frames: frames.length,
+      identityBaselines: [...identityBaselines],
+      shifts,
+    }),
+    contentType: 'application/json',
+  });
   expect(
     shifts,
-    'Each live or settled phase retains its geometry; retry restores the live table',
+    'Table artwork stays fixed; hero identity retains its position within each rank-tag state',
   ).toEqual([]);
 }
 

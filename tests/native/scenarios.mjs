@@ -101,6 +101,68 @@ export async function waitForNativeReview(app, { now = Date.now } = {}) {
   }
 }
 
+export async function readNativePersonaTags(app) {
+  const token = `persona-tags-${Date.now()}-${Math.random()}`;
+  // XCUITest execute/sync serializes a returned Promise as {}. Start the real
+  // asynchronous paint read in-page, then transport only a completed string.
+  await app.evaluate((token) => {
+    const observation = { token, result: null };
+    window.__nativePersonaTagsObservation = observation;
+    void (async () => {
+      try {
+        await document.fonts.ready;
+        await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+        const state = window.noir.getState();
+        observation.result = JSON.stringify({
+          snapshot: {
+            hand: state.hand,
+            stack: state.stack,
+            hole: state.hole,
+            completedHands: document.querySelector('#stat-hands').textContent,
+            tags: [...document.querySelectorAll('#seats .seat-style-label')].map((tag) => ({
+              text: tag.textContent,
+              height: tag.getBoundingClientRect().height,
+              fontSize: getComputedStyle(tag).fontSize,
+            })),
+          },
+        });
+      } catch (error) {
+        observation.result = JSON.stringify({ error: error.message || String(error) });
+      }
+    })();
+    return token;
+  }, token);
+  try {
+    const serialized = await app.waitFor(
+      () =>
+        app.evaluate((token) => {
+          const observation = window.__nativePersonaTagsObservation;
+          return observation?.token === token ? observation.result : null;
+        }, token),
+      10000,
+      'Installed persona tags must finish fonts.ready and two animation frames',
+    );
+    assert.equal(
+      typeof serialized,
+      'string',
+      'Persona measurement must cross the native bridge as JSON',
+    );
+    const result = JSON.parse(serialized);
+    if (result.error) throw new Error(`Installed persona tag measurement failed: ${result.error}`);
+    return result.snapshot;
+  } finally {
+    try {
+      await app.evaluate((token) => {
+        if (window.__nativePersonaTagsObservation?.token === token)
+          delete window.__nativePersonaTagsObservation;
+        return true;
+      }, token);
+    } catch {
+      // Cleanup must not replace the original read/timeout failure.
+    }
+  }
+}
+
 // These scenarios drive the installed production bundle. They read only the
 // public state already exposed by the app and never install browser fixtures.
 export async function nativeScenarios(app) {
@@ -574,26 +636,9 @@ export async function nativeScenarios(app) {
     // this exercises the same live catalog path as an English CI simulator.
     await changeLanguage(initialLanguage === 'en' ? 'zh-CN' : 'en');
     await changeLanguage('zh-CN');
-    const readPersonaTags = () =>
-      app.evaluate(async () => {
-        await document.fonts.ready;
-        await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
-        const state = window.noir.getState();
-        return {
-          hand: state.hand,
-          stack: state.stack,
-          hole: state.hole,
-          completedHands: document.querySelector('#stat-hands').textContent,
-          tags: [...document.querySelectorAll('#seats .seat-style-label')].map((tag) => ({
-            text: tag.textContent,
-            height: tag.getBoundingClientRect().height,
-            fontSize: getComputedStyle(tag).fontSize,
-          })),
-        };
-      });
-    const chineseTags = await readPersonaTags();
+    const chineseTags = await readNativePersonaTags(app);
     await changeLanguage('ko');
-    const koreanTags = await readPersonaTags();
+    const koreanTags = await readNativePersonaTags(app);
     assert.ok(chineseTags.tags.length > 0);
     assert.equal(koreanTags.tags.length, chineseTags.tags.length);
     for (let index = 0; index < chineseTags.tags.length; index++) {

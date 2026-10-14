@@ -130,27 +130,45 @@ const tableGeometry = async (players) => {
   }
   return { size, elements };
 };
-const visibleSeatText = async (playerCount) => {
-  await mini.evaluate(() => {
+const nativeRects = async (selectors) => {
+  await mini.evaluate((selectors) => {
     const current = getCurrentPages().at(-1);
-    current._recordTextBounds = null;
+    current._recordRectJSON = null;
+    const measured = selectors.map(() => null);
     const query = wx.createSelectorQuery();
-    for (const selector of [
-      '.seat-body',
-      '.seat-body .seat-name-label',
-      '.seat-body > .persona',
-      '.seat-body > .stack',
-    ])
-      query.selectAll(selector).fields({ rect: true, size: true, id: true });
-    query.exec((bounds) => {
-      current._recordTextBounds = bounds;
+    selectors.forEach((selector, index) => {
+      query.selectAll(selector).boundingClientRect((boxes) => {
+        measured[index] = boxes.map((box) => ({
+          id: String(box.id || ''),
+          left: Number(box.left),
+          top: Number(box.top),
+          width: Number(box.width),
+          height: Number(box.height),
+          right: Number(box.right),
+          bottom: Number(box.bottom),
+        }));
+        if (measured.every(Array.isArray)) current._recordRectJSON = JSON.stringify(measured);
+      });
     });
-  });
-  const measured = await wait(
-    'All rendered seat text bounds',
-    () => mini.evaluate(() => getCurrentPages().at(-1)._recordTextBounds),
-    (bounds) => Array.isArray(bounds),
+    query.exec();
+    return true;
+  }, selectors);
+  return JSON.parse(
+    await wait(
+      'Serialized rendered bounds',
+      () => mini.evaluate(() => getCurrentPages().at(-1)._recordRectJSON),
+      (value) => typeof value === 'string',
+    ),
   );
+};
+const visibleSeatText = async (playerCount) => {
+  const measured = await nativeRects([
+    '.seat-body',
+    '.seat-body .seat-name-label',
+    '.seat-body > .persona',
+    '.seat-body > .stack',
+  ]);
+  report.visibleSeatText = measured;
   for (const samples of measured) assert.equal(samples.length, playerCount - 1);
   const view = await page.data();
   const inset = view.textMetrics['profile-padding'] * view.arenaScale;
@@ -171,21 +189,12 @@ const visibleSeatText = async (playerCount) => {
   return measured;
 };
 const heroInformationGap = async () => {
-  await mini.evaluate(() => {
-    const current = getCurrentPages().at(-1);
-    current._recordHeroBounds = null;
-    const query = wx.createSelectorQuery();
-    for (const selector of ['.hero-card', '.hero-info', '.hero-cards', '.table-area'])
-      query.selectAll(selector).fields({ rect: true, size: true });
-    query.exec((bounds) => {
-      current._recordHeroBounds = bounds;
-    });
-  });
-  const [cards, information, slots, tables] = await wait(
-    'Rendered hero cards and information',
-    () => mini.evaluate(() => getCurrentPages().at(-1)._recordHeroBounds),
-    (bounds) => Array.isArray(bounds),
-  );
+  const [cards, information, slots, tables] = await nativeRects([
+    '.hero-card',
+    '.hero-info',
+    '.hero-cards',
+    '.table-area',
+  ]);
   assert.equal(cards.length, 2);
   assert.equal(information.length, 1);
   assert.equal(slots.length, 1);
@@ -196,11 +205,19 @@ const heroInformationGap = async () => {
   const tagged = !!(view.heroRank || view.heroWinner);
   const gap = information[0].top - Math.max(...cards.map((card) => card.bottom));
   const expected = (7 + (tagged ? view.textMetrics['hero-rank-empty-lift'] : 0)) * view.arenaScale;
+  const sample = {
+    tagged,
+    gap,
+    expected,
+    tableHeight: tables[0].height,
+    slotHeight: slots[0].height,
+  };
+  (report.heroInformationSamples ??= []).push(sample);
   assert.ok(
     Math.abs(gap - expected) <= 1,
     'Actual information gap follows the conditional tag slot',
   );
-  return { tagged, gap, expected, tableHeight: tables[0].height, slotHeight: slots[0].height };
+  return sample;
 };
 const assertTableParity = (actual, expected) => {
   for (const field of ['width', 'height'])
@@ -229,6 +246,38 @@ const finishByFolding = async () => {
     (view) => view.done,
   );
   return settled;
+};
+const finishWithoutFolding = async () => {
+  for (let actions = 0; actions < 100; actions++) {
+    const game = await wait(
+      'Hero action or settlement',
+      readLive,
+      (game) => game.phase === 'done' || (game.phase === 'playing' && game.actor === 0),
+    );
+    if (game.phase === 'done') {
+      await wait(
+        'Settlement paint',
+        () => page.data(),
+        (view) => view.done,
+      );
+      return game;
+    }
+    await wait(
+      'Enabled hero controls',
+      () => page.data(),
+      (view) => view.canAct,
+    );
+    const decisions = game.decisions.length;
+    await tap('.call-button');
+    const after = await wait(
+      'Call or check processed',
+      readLive,
+      (current) => current.decisions.length > decisions || current.phase === 'done',
+    );
+    if (after.players[0].allin && after.phase !== 'done')
+      await mini.evaluate(() => getApp().noirController.finishHand());
+  }
+  throw Error('A real check/call hand exceeded 100 hero actions');
 };
 try {
   const manifest = JSON.parse(
@@ -264,10 +313,14 @@ try {
     getApp().noirController.reset();
   });
   await waitHero();
+  report.stage = 'live-hero-without-tag';
   await capture('00-live-hero-without-tag');
   const untaggedHero = await heroInformationGap();
   assert.equal(untaggedHero.tagged, false);
-  const firstSettled = await finishByFolding();
+  // A fold-win can legally show only a practice board and have no rank tag.
+  // Keep the hero in this real hand so settlement has a winner or showdown tag.
+  report.stage = 'real-check-call-settlement-with-tag';
+  const firstSettled = await finishWithoutFolding();
   const initialSession = (await readRecords())[0];
   const archived = initialSession.attempts[0];
   assert.equal(archived.status, 'completed');
@@ -284,6 +337,7 @@ try {
     name: 'hero-information-closes-the-empty-tag-gap-with-fixed-table-and-card-slot',
   });
   const liveSettlementGeometry = await tableGeometry(firstSettled.players);
+  report.stage = 'all-visible-seat-font-and-padding-bounds';
   const liveFontMetrics = {};
   for (const [selector, key] of [
     ['.seat-name', 'player-name'],
@@ -441,8 +495,10 @@ try {
   await scrollTo(0);
   report.geometry = { live: liveSettlementGeometry, historical: historySettlementGeometry };
   report.checks.push({ name: 'historical-settlement-uses-the-same-rendered-table-geometry' });
+  report.stage = 'historical-readonly-review-request';
   const liveBeforeReview = await readLive();
   await tap('.review-button');
+  report.stage = 'historical-readonly-review-progress';
   await wait(
     'Archived review',
     () => page.data(),
