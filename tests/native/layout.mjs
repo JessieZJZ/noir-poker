@@ -42,7 +42,7 @@ export function readTableLayout() {
       const box = el.getBoundingClientRect();
       return { left: box.left, right: box.right, top: box.top, bottom: box.bottom };
     }),
-    inspection: [...document.querySelectorAll('.seat-peek')].map((eye) => {
+    inspection: [...arena.querySelectorAll('.seat-peek')].map((eye) => {
       const seat = eye.closest('.seat'),
         e = eye.getBoundingClientRect(),
         badge = seat.querySelector('.position-badge').getBoundingClientRect(),
@@ -59,7 +59,7 @@ export function readTableLayout() {
           e.bottom <= profile.bottom,
       };
     }),
-    profiles: [...document.querySelectorAll('.seat-profile')].map((profile) => {
+    profiles: [...arena.querySelectorAll('.seat-profile')].map((profile) => {
       const style = getComputedStyle(profile),
         tag = getComputedStyle(profile.querySelector('.seat-style-label')),
         tagBox = profile.querySelector('.seat-style-label').getBoundingClientRect(),
@@ -117,7 +117,7 @@ export function readTableLayout() {
       felt: rect('.poker-table'),
       public: rect('#board'),
       hero: rect('.hero-area'),
-      seats: [...document.querySelectorAll('.seat')].map((seat) => {
+      seats: [...arena.querySelectorAll('.seat')].map((seat) => {
         const r = seat.getBoundingClientRect();
         return { left: r.left, right: r.right, top: r.top, bottom: r.bottom };
       }),
@@ -146,17 +146,17 @@ export function readTableLayout() {
       heroNameFont: parseFloat(
         getComputedStyle(document.querySelector('.hero-identity strong')).fontSize,
       ),
-      actions: [...document.querySelectorAll('.seat .seat-action')].map((el) => ({
+      actions: [...arena.querySelectorAll('.seat .seat-action')].map((el) => ({
         font: parseFloat(getComputedStyle(el).fontSize),
         margin: parseFloat(getComputedStyle(el).marginTop),
       })),
-      backs: [...document.querySelectorAll('.seat .card-back')].map((el) => {
+      backs: [...arena.querySelectorAll('.seat .card-back')].map((el) => {
         const back = el.getBoundingClientRect(),
           profile = el.closest('.seat').querySelector('.seat-profile').getBoundingClientRect();
         return (profile.top - back.top) / back.height;
       }),
     },
-    rankSpacing: [...document.querySelectorAll('.seat .hand-rank')].flatMap((rank) => {
+    rankSpacing: [...arena.querySelectorAll('.seat .hand-rank')].flatMap((rank) => {
       const seat = rank.closest('.seat'),
         action = seat.querySelector('.seat-action'),
         badge = rank.getBoundingClientRect();
@@ -173,7 +173,7 @@ export function readTableLayout() {
           ]
         : [];
     }),
-    captions: [...document.querySelectorAll('.seat .seat-action')].map((el) => {
+    captions: [...arena.querySelectorAll('.seat .seat-action')].map((el) => {
       const range = document.createRange();
       range.selectNodeContents(el);
       const bounds = (box) => ({
@@ -188,7 +188,7 @@ export function readTableLayout() {
         lines: [...range.getClientRects()].map(bounds),
       };
     }),
-    revealed: [...document.querySelectorAll('.seat .revealed-cards .playing-card')].map((el) => {
+    revealed: [...arena.querySelectorAll('.seat .revealed-cards .playing-card')].map((el) => {
       const card = el.getBoundingClientRect(),
         profile = el.closest('.seat').querySelector('.seat-profile').getBoundingClientRect();
       return { width: el.offsetWidth, exposed: (profile.top - card.top) / card.height };

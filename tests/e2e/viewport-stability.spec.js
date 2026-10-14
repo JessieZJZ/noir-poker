@@ -414,6 +414,8 @@ test('an empty hero rank moves the identity close to the cards without changing 
     for (const count of [5, 9]) {
       await page.evaluate((count) => window.qa.heroTurn(count), count);
       const empty = await page.evaluate(readTableLayout);
+      expect(empty.profiles).toHaveLength(count - 1);
+      expect(empty.rail.seats).toHaveLength(count - 1);
       assertTableLayout(empty);
       const read = (selector = '#arena') =>
         page.locator(selector).evaluate((arena) => {
@@ -437,6 +439,10 @@ test('an empty hero rank moves the identity close to the cards without changing 
       const before = await read();
       expect(before.paintedGap).toBeGreaterThanOrEqual(0);
       expect(before.paintedGap).toBeLessThanOrEqual(9);
+      if (size.width === 821 || (size.width === 390 && count === 9))
+        await page.screenshot({
+          path: test.info().outputPath(`close-live-identity-${size.width}-${count}.png`),
+        });
       await page.evaluate((count) => window.qa.scene('Kh 6s', 'Kc 7d Tc 3s 2h', { count }), count);
       await expect(page.locator('#hero-hand-rank')).toBeVisible();
       const after = await read();
@@ -446,6 +452,10 @@ test('an empty hero rank moves the identity close to the cards without changing 
         for (const key of ['top', 'bottom', 'width', 'height'])
           expect(Math.abs(after[part][key] - before[part][key])).toBeLessThanOrEqual(1);
       expect(after.identity.top).toBeGreaterThan(before.identity.top + 10);
+      if (size.width === 821)
+        await page.screenshot({
+          path: test.info().outputPath(`tagged-live-identity-${size.width}-${count}.png`),
+        });
       measurements.push({ ...size, count, empty: before, tagged: after });
       // A folded hero has neither a winner nor a revealed hand rank. Its saved
       // settlement must retain the same close identity and fixed frame.
