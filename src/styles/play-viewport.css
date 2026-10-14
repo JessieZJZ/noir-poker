@@ -270,7 +270,7 @@
   .game-surface .board .card-pip {
     font-size: 19px;
   }
-  .game-surface #board-caption {
+  .game-surface :is(#board-caption, .board-caption) {
     display: none;
   }
   .game-surface .hero-cards {

@@ -175,6 +175,7 @@ function setup(
   }
   return {
     page,
+    definition,
     app,
     preferences,
     audios,
@@ -1298,3 +1299,189 @@ test('WeChat combined resources menu keeps both choices and rotates only while c
   assert.match(template, /id="resource-guide"/);
   assert.match(template, /id="resource-records"/);
 });
+
+function secondaryPage(t, file, fixture) {
+  let definition;
+  vm.runInNewContext(
+    readFileSync(new URL(`../../miniprogram/pages/${file}`, import.meta.url), 'utf8'),
+    {
+      Page(value) {
+        definition = value;
+      },
+      getApp: () => fixture.app,
+      wx: fixture.wx,
+      setTimeout: () => 1,
+      clearTimeout() {},
+      require(name) {
+        if (name === '../table/page-definition.js') return fixture.definition;
+        if (name === '../table/presentation.js') return presentationModule.exports;
+        assert.equal(name, '../../shared/engine/chip-format.js');
+        return { compactChips };
+      },
+    },
+  );
+  const page = { ...definition, data: copy(definition.data), setData: fixture.page.setData };
+  t.after(() => page.onUnload());
+  return page;
+}
+
+test('WeChat records hide initial and break-even copy, use colored replay tags, and sign every completed change', (t) => {
+  const fixture = setup(t);
+  const hole = copy(fixture.page._controller.getGame().players[0].hole);
+  const base = { status: 'completed', superseded: false, refill: false, hole, wonPot: true };
+  const session = {
+    id: 'records-ui',
+    number: 1,
+    startedAt: 1,
+    endedAt: null,
+    stakes: { smallBlind: 25, bigBlind: 50 },
+    playerCount: 5,
+    profit: 0,
+    wins: 2,
+    completed: 5,
+    attempts: [
+      { ...base, id: 'initial-win', hand: 1, attempt: 0, profit: 25 },
+      { ...base, id: 'initial-split', hand: 2, attempt: 0, profit: 0 },
+      { ...base, id: 'zero-without-pot', hand: 3, attempt: 0, profit: 0, wonPot: false },
+      { ...base, id: 'replay-one', hand: 4, attempt: 1, profit: -1025 },
+      { ...base, id: 'replay-two', hand: 4, attempt: 2, profit: 1025, refill: true },
+      { ...base, id: 'unfinished', hand: 5, attempt: 0, profit: null, status: 'unfinished' },
+    ],
+  };
+  fixture.app.noirController = { getRecords: () => [copy(session)], getRecordsError: () => '' };
+  const records = secondaryPage(t, 'records/records.js', fixture);
+  records.onLoad();
+  records.onShow();
+  const view = records.data.sessions[0];
+  assert.equal(view.profitText, '+0');
+  assert.deepEqual(copy(view.attempts.map((attempt) => attempt.profitText)), [
+    '+25',
+    '+0',
+    '+0',
+    '-1.025K',
+    '+1.025K',
+    '—',
+  ]);
+  assert.deepEqual(copy(view.attempts.map((attempt) => attempt.attemptText)), [
+    '',
+    '',
+    '',
+    '重打1',
+    '重打2',
+    '',
+  ]);
+  assert.equal(
+    view.attempts[1].resultText,
+    '',
+    'A split award with zero net change has no result label',
+  );
+  assert.equal(view.attempts[2].resultText, '');
+  assert.equal(view.attempts[5].resultText, '未完成');
+  assert.equal(view.attempts[4].cards.length, 2);
+  assert.equal(view.attempts[4].refill, true);
+  session.profit = -25;
+  records.refreshRecords();
+  assert.equal(records.data.sessions[0].profitText, '-25');
+  session.profit = 25;
+  records.refreshRecords();
+  assert.equal(records.data.sessions[0].profitText, '+25');
+  const markup = readFileSync(
+    new URL('../../miniprogram/pages/records/records.wxml', import.meta.url),
+    'utf8',
+  );
+  assert.match(markup, /wx:if="{{item.attemptText}}" class="hand-tag hand-replay"/);
+  assert.match(markup, /wx:if="{{item.resultText}}"/);
+  const css = readFileSync(
+    new URL('../../miniprogram/pages/records/records.wxss', import.meta.url),
+    'utf8',
+  );
+  assert.match(
+    css,
+    /\.hand-tag\.hand-replay\s*\{[^}]*color: #[0-9a-f]+;[^}]*border-color: #[0-9a-f]+;[^}]*background:/s,
+  );
+});
+
+for (const playerCount of [5, 9]) {
+  for (const [windowWidth, windowHeight] of [
+    [320, 568],
+    [390, 844],
+    [768, 1024],
+  ]) {
+    test(`WeChat archived ${playerCount}-seat settlement shares live geometry at ${windowWidth}x${windowHeight}`, (t) => {
+      const fixture = setup(t, {
+        playerCount,
+        info: {
+          windowWidth,
+          windowHeight,
+          statusBarHeight: 24,
+          safeArea: { bottom: windowHeight },
+        },
+      });
+      const game = reachHero(fixture.page);
+      finish(game);
+      fixture.page._controller.show();
+      const attempt = fixture.page._controller.getRecords()[0].attempts[0];
+      const history = secondaryPage(t, 'history/history.js', fixture);
+      history.onLoad({ id: attempt.id });
+      history.onShow();
+      const fields = [
+        'tableHeight',
+        'arenaWidth',
+        'arenaHeight',
+        'arenaScale',
+        'publicLeft',
+        'publicTop',
+        'potHeight',
+        'boardWidth',
+        'boardTwoRows',
+        'cardWidth',
+        'cardHeight',
+        'heroWidth',
+        'heroHeight',
+        'feltStyle',
+        'heroStyle',
+        'seatWidth',
+        'seatHeight',
+        'profileWidth',
+        'profileHeight',
+      ];
+      const geometry = (page) =>
+        copy(Object.fromEntries(fields.map((field) => [field, page.data[field]])));
+      assert.deepEqual(geometry(history), geometry(fixture.page));
+      const seats = (page) =>
+        copy(
+          page.data.phoneSeats.map((seat) => ({
+            id: seat.id,
+            left: seat.left,
+            top: seat.top,
+            rankLift: seat.rankLift,
+            cards: seat.cards.map((card) => card.key),
+          })),
+        );
+      assert.deepEqual(seats(history), seats(fixture.page));
+      assert.deepEqual(
+        copy(history.data.boardSlots.map((card) => card.key)),
+        copy(fixture.page.data.boardSlots.map((card) => card.key)),
+      );
+      assert.deepEqual(
+        copy(history.data.heroCards.map((card) => card.key)),
+        copy(fixture.page.data.heroCards.map((card) => card.key)),
+      );
+      assert.equal(history.data.historyReadOnly, true);
+      const archivedBefore = copy(history._controller.getGame());
+      history.retryHand();
+      assert.deepEqual(copy(history._controller.getGame()), archivedBefore);
+      assert.equal(fixture.app.noirController, fixture.page._controller);
+      const markup = readFileSync(
+        new URL('../../miniprogram/pages/history/history.wxml', import.meta.url),
+        'utf8',
+      );
+      assert.equal(markup.trim(), '<include src="../table/table.wxml" />');
+      const css = readFileSync(
+        new URL('../../miniprogram/pages/history/history.wxss', import.meta.url),
+        'utf8',
+      );
+      assert.match(css, /^@import ['"]\.\.\/table\/table\.wxss['"];\s*$/);
+    });
+  }
+}

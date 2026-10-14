@@ -210,7 +210,7 @@
   }
 }
 
-.game-surface .arena[data-player-count] #board > * {
+.game-surface .arena[data-player-count] :is(#board, .board) > * {
   width: var(--public-card-width, 64px);
   height: calc(var(--public-card-width, 64px) * 1.44);
 }

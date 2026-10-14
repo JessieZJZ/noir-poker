@@ -1954,5 +1954,7 @@
   "还没有对局记录": "Aucune partie enregistrée",
   "这一局还没有对局记录。": "Cette session n’a pas encore de mains enregistrées.",
   "进行中": "En cours",
-  "首次": "Premier essai"
+  "首次": "Premier essai",
+  "重打{0}": "Nouvel essai {0}",
+  "第 {0} 局 · 第 {1} 手{2}": "Session {0} · Main {1}{2}"
 }

@@ -4,12 +4,15 @@ import {
   stakesFromSmallBlind,
   SMALL_BLIND_INPUT_ERROR,
 } from '../engine/stakes.js';
-import { compactActionAmounts } from '../engine/chip-format.js';
 import { createHeroTurnCue } from './hero-turn.js';
 import { notifyHeroTurn } from '../platform/haptics.js';
 import { createDialogScrollLock } from './dialog-scroll-lock.js';
 import { soundSamples, SOUND_SAMPLE_RATE } from './sound-cues.js';
-import { SEAT_ANCHORS } from './seat-geometry.js';
+import {
+  renderOpponentSeats,
+  renderSeatAction,
+  visibleRecentAction as sceneRecentAction,
+} from './table-scene.js';
 import { COMPACT_PLAY_QUERY } from './play-geometry.js';
 import {
   localizeText,
@@ -41,14 +44,13 @@ import {
   applyBotSettings,
 } from '../engine/poker.js';
 import { raiseCaption } from '../engine/action-labels.js';
-import { getBotProfile, MOOD_LABELS } from '../engine/bot-profiles.js';
 import { loadBotSettings, createOpponentsController } from './opponents-controller.js';
 import { loadTablePreferences, saveTablePreferences } from './preferences.js';
 import { createReviewController } from './review-controller.js';
 import { renderCard } from './cards.js';
 import { createShowdownController } from './showdown.js';
 import { createActivityFormatter } from './activity.js';
-import { portraitContent, preparePortraits } from './portraits.js';
+import { preparePortraits } from './portraits.js';
 import { presetRaiseTo } from './bet-sizing.js';
 import { chipUnitOf, legalRaiseTo } from '../engine/bet-sizing.js';
 import { createSettlementLayout } from './settlement-layout.js';
@@ -146,8 +148,7 @@ const recordsView = createGameRecordsView({
   onReturnGame: () => playViewport.update(game, game.phase === 'done'),
 });
 const format = (n) => formatChips(n),
-  streets = ['翻牌前', '翻牌', '转牌', '河牌'],
-  profiles = ['YOU', 'M', 'A', 'R', 'K', 'L', 'T', 'J', 'L'];
+  streets = ['翻牌前', '翻牌', '转牌', '河牌'];
 const winnerIcon =
   '<svg class="winner-icon" viewBox="0 0 20 16" aria-hidden="true"><path d="M2 4 6 7 10 2 14 7 18 4 16 12H4Z"/><path d="M4 15H16"/></svg>';
 function card(c, options) {
@@ -164,11 +165,6 @@ const positionNames = {
   HJ: '劫位',
   CO: '关煞位',
 };
-function positionBadge(id) {
-  const role = seatPosition(game, id);
-  return `<span class="position-badge" data-position="${role}" title="${positionNames[role]}">${role}</span>`;
-}
-
 async function unlockAudio() {
   if (!sound) return;
   try {
@@ -251,41 +247,10 @@ function flyChips(id) {
   }
 }
 function visibleRecentAction(p) {
-  return game.phase === 'done' || p.folded || p.allin || p.lastAction?.street === game.street
-    ? p.lastAction
-    : null;
+  return sceneRecentAction(game, p);
 }
-function seatAction(p, { recent = false } = {}) {
-  if (!recent && game.actor === p.id)
-    return '<span class="seat-action-label thinking-dots">思考中</span>';
-  const retained = visibleRecentAction(p);
-  const action = retained?.text ?? p.action;
-  const match =
-    /^(?:(\d+-bet) )?(小盲|大盲|跟注|开池至|加注至|下注至|下注|短全下至|全下至|全下)\s*(\d+)$/.exec(
-      action,
-    );
-  if (!match)
-    return `<span class="seat-action-label">${compactActionAmounts(action) || (game.phase === 'done' ? '未行动' : '等待行动')}</span>`;
-  const label =
-      p.allin && (match[2] === '小盲' || match[2] === '大盲')
-        ? '全下'
-        : match[1]
-          ? match[1] +
-            (match[2] === '短全下至'
-              ? ' 短全下'
-              : match[2] === '全下至'
-                ? ' 全下'
-                : recent
-                  ? ' ' + match[2].replace(/至$/, '')
-                  : '')
-          : match[2].replace(/至$/, ''),
-    amount = Number(match[3]);
-  const meaning =
-    (retained ? `${streets[retained.street]} · ` : '') +
-    (match[2] === '跟注'
-      ? `本次补入 ${format(amount)}，本轮累计投入 ${format(retained?.bet ?? p.bet)}`
-      : `${compactActionAmounts(action)} · 本轮累计投入 ${format(amount)}`);
-  return `<span class="seat-action-label">${label}</span><strong class="seat-action-amount" title="${meaning}">${format(amount)}</strong>`;
+function seatAction(p, options) {
+  return renderSeatAction(game, p, options);
 }
 const heroTurnCue = createHeroTurnCue(notifyHeroTurn);
 function render() {
@@ -341,30 +306,7 @@ function render() {
   );
   setLocalizedHTML(
     $('#seats'),
-    game.players
-      .slice(1)
-      .map((p) => {
-        const winner = game.winners.find((w) => w.id === p.id),
-          isWinner = !!winner,
-          reveal = isSeatHandVisible(p),
-          rank =
-            reveal && !p.folded && game.board.length === 5
-              ? evaluate([...p.hole, ...game.board])
-              : null,
-          [x, y] = SEAT_ANCHORS[count][p.id - 1];
-        const rankMarkup =
-          rank || winner
-            ? `<div class="hand-rank ${winner ? 'rank-winner winner-indicator' : ''}"${winner ? ` aria-label="${p.name} 获得底池 ${format(winner.amount)} 筹码" title="${winner.label} · 获得 ${format(winner.amount)} 筹码"` : ''}>${winner ? winnerIcon : ''}${rank?.label ?? '获胜'}</div>`
-            : '';
-        const profile = getBotProfile(p.botProfile),
-          mood = game.emotionMode === 'off' ? 'steady' : p.botMood.kind,
-          title = `${p.name} · ${profile.short}（训练原型） · 模拟状态：${MOOD_LABELS[mood]}`;
-        const faceSignature = `${game.hand}:${game.replayAttempt || 0}:${reveal ? p.hole.map((c) => c.key).join(',') : 'hidden'}`;
-        const arriving = reveal && seatFaceSignatures.get(p.id) !== faceSignature;
-        seatFaceSignatures.set(p.id, faceSignature);
-        return `<div class="seat seat-${p.id} ${y === 0 ? 'seat-crown' : ''} ${x < 25 ? 'seat-left' : x > 75 ? 'seat-right' : ''} ${p.folded ? 'folded' : ''} ${game.actor === p.id ? 'thinking' : ''} ${isWinner ? 'winner' : ''}" data-player="${p.id}" data-profile="${p.botProfile}" data-mood="${mood}" style="left:${x}%;top:${y}%"><div id="seat-hand-${p.id}" class="mini-cards ${reveal ? 'revealed-cards' : ''}">${reveal ? p.hole.map((c, i) => card(c, { small: true, animate: arriving, delay: i * 140, best: !!rank && rank.cards.some((best) => best.key === c.key) })).join('') : p.hole.map((c, i) => `<span class="card-back ${newHand ? 'card-deal' : ''}" style="--delay:${p.id * 65 + i * 140}ms" aria-label="对手底牌"></span>`).join('')}</div><div class="seat-profile"><span class="avatar avatar-${p.id - 1}" title="${title}" aria-label="${title}">${portraitContent(profile.id, profiles[p.id])}</span><div><strong><span class="seat-name-label">${p.name}</span>${positionBadge(p.id)}<span class="seat-inspect-slot">${game.phase === 'done' ? `<button class="seat-peek" data-peek-player="${p.id}" title="${reveal ? '收起底牌' : '查看底牌'}" aria-label="${reveal ? '收起' : '查看'} ${p.name} 的底牌" aria-pressed="${!!reveal}" aria-controls="seat-hand-${p.id}"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M2 10C4 6 7 5 10 5C13 5 16 6 18 10C16 14 13 15 10 15C7 15 4 14 2 10Z"/><circle cx="10" cy="10" r="2.5"/></svg></button>` : ''}</span></strong><span class="seat-style-label" data-style-profile="${profile.id}" title="${profile.name} · ${profile.tag}" aria-label="${p.name} 本手风格：${profile.name}">${profile.short}</span><span class="seat-bankroll"><span class="seat-stack">${format(p.stack)}</span></span></div></div><div class="seat-rank-slot">${rankMarkup}</div><div class="seat-action" aria-label="${p.name} 的最近行动">${seatAction(p)}</div></div>`;
-      })
-      .join(''),
+    renderOpponentSeats(game, { card, newHand, isSeatHandVisible, seatFaceSignatures }),
   );
   preparePortraits($('#seats'));
   setLocalizedHTML(

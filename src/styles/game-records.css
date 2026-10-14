@@ -291,192 +291,34 @@ button.record-hand:hover {
 .records-history-heading {
   margin: 0 0 18px;
 }
+body[data-records-page='hand'] .records-page {
+  max-width: none;
+  padding: 0 0 36px;
+}
+body[data-records-page='hand'] .records-page-heading,
+body[data-records-page='hand'] .records-live-note,
+.records-history-heading {
+  max-width: 1560px;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 4%;
+  padding-right: 4%;
+}
+body[data-records-page='hand'] .records-page-heading {
+  padding-top: 20px;
+}
 .records-history-grid {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 280px;
-  gap: 20px;
   align-items: start;
 }
-.records-page .records-game-surface {
-  height: auto;
-  min-height: 0;
-  display: block;
-  padding: 0;
-  overflow: hidden;
+.records-history-result {
+  margin-left: auto;
+  color: #bdd6cf;
+  font-variant-numeric: tabular-nums;
 }
-.records-history-caption {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 8px;
-  padding: 18px;
-  font-size: 14px;
-  border-bottom: 1px solid #2e4148;
-}
-.records-history-caption > span {
-  font-size: 12px;
-  color: #9ab1b8;
-}
-.records-table-viewport {
-  position: relative;
-  overflow: hidden;
-}
-.records-page .records-game-surface .records-arena.is-done[data-player-count] {
-  position: relative;
-  display: block;
-  min-height: 0;
-  padding: 0;
-  transform-origin: top left;
-  margin-top: 0;
-}
-.records-page .records-game-surface .records-arena.is-done[data-player-count] .seat {
-  min-width: 0;
-  width: 112px;
-}
-.records-page .records-game-surface .records-arena.is-done[data-player-count] .seat-profile {
-  min-width: 0;
-  width: 112px;
-  display: flex;
-  align-items: center;
-  order: 0;
-  gap: 6px;
-  padding: 6px;
-}
-.records-page .records-game-surface .records-arena.is-done[data-player-count] .seat-profile > div {
-  min-width: 0;
-  display: block;
-}
-.records-page .records-game-surface .records-arena.is-done[data-player-count] .seat-name-label {
-  max-width: 46px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.records-page .records-game-surface .records-arena.is-done[data-player-count] .seat-profile strong {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  font-size: 11px;
-}
-.records-page .records-game-surface .records-arena.is-done[data-player-count] .seat-stack,
-.records-page .records-game-surface .records-arena.is-done[data-player-count] .seat-style-label {
-  font-size: 11px;
-}
-.records-page .records-game-surface .records-arena.is-done[data-player-count] .avatar {
-  width: 26px;
-  height: 26px;
-  flex: none;
-}
-.records-page .records-game-surface .records-arena.is-done[data-player-count] .mini-cards {
-  width: auto;
-  height: 51px;
-  order: 0;
-  padding: 0;
-  margin-bottom: 2px;
-}
-.records-page
-  .records-game-surface
-  .records-arena.is-done[data-player-count]
-  .mini-cards
-  .playing-card.small,
-.records-page
-  .records-game-surface
-  .records-arena.is-done[data-player-count]
-  .mini-cards
-  .card-back {
-  width: 33px;
-  height: 47px;
-  translate: none;
-}
-.records-page .records-game-surface .records-arena.is-done[data-player-count] .seat-rank-slot {
-  position: relative;
-  display: grid;
-  place-items: center;
-  order: 0;
-  height: 26px;
-  min-height: 26px;
-  width: 112px;
-}
-.records-page .records-game-surface .records-arena.is-done[data-player-count] .hand-rank {
-  font-size: 11px;
-  line-height: 1.3;
-  margin: 0;
-  max-width: 112px;
-}
-.records-page .records-game-surface .records-arena.is-done[data-player-count] .seat-action {
-  width: 112px;
-  max-width: 112px;
-  height: auto;
-  min-height: 20px;
-  order: 0;
-  margin: 0;
-  font-size: 11px;
-  text-wrap: wrap;
-}
-.records-page .records-game-surface .records-arena.is-done[data-player-count] .table-center {
-  position: absolute;
-  left: 50%;
-  top: 36%;
-  transform: translateX(-50%);
-}
-.records-page .records-game-surface .records-arena.is-done[data-player-count] .pot {
-  visibility: visible;
-}
-.records-page .records-game-surface .records-arena.is-done[data-player-count] .board {
-  gap: 5px;
-  padding: 0;
-  display: flex;
-}
-.records-page .records-game-surface .records-arena.is-done[data-player-count] .board > * {
-  width: 43px;
-  height: 63px;
-  flex: 0 0 43px;
-}
-.records-page .records-game-surface .records-arena.is-done[data-player-count] .hero-area {
-  position: absolute;
-  left: 50%;
-  top: 77%;
-  bottom: auto;
-  padding: 0;
-  transform: translateX(-50%);
-}
-.records-page .records-game-surface .records-arena.is-done[data-player-count] .hero-cards {
-  gap: 7px;
-  height: 78px;
-  min-height: 78px;
-}
-.records-page
-  .records-game-surface
-  .records-arena.is-done[data-player-count]
-  .hero-cards
-  .playing-card {
-  width: 54px;
-  height: 78px;
-}
-.records-page .records-game-surface .records-arena.is-done[data-player-count] .hero-rank-slot {
-  height: 24px;
-  min-height: 24px;
-  margin: 0;
-}
-.records-page .records-game-surface .records-arena.is-done[data-player-count] .hero-name {
-  position: static;
-  display: flex;
-  width: max-content;
-  min-width: 0;
-  height: 22px;
-  inset: auto;
-  transform: none;
-  gap: 6px;
-  font-size: 12px;
-  margin-top: 6px;
-}
-.records-review-action {
-  padding: 16px;
-  border-top: 1px solid #2e4148;
-}
-.records-review-action .review-button {
-  width: 100%;
-  min-height: 44px;
+.record-retry {
+  border-color: #7f659c;
+  color: #d8bef4;
+  background: #332640;
 }
 .records-settlement {
   margin-top: 18px;
@@ -581,14 +423,6 @@ button.record-hand:hover {
     font-size: 10px;
     padding: 1px 4px;
   }
-  .records-history-grid {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 18px;
-  }
-  .records-history-caption {
-    padding: 12px;
-    font-size: 13px;
-  }
   .records-live-note {
     margin-bottom: 18px;
   }
@@ -600,4 +434,8 @@ button.record-hand:hover {
   .guide-chevron {
     transition: none;
   }
+}
+
+.record-hand-tags:empty {
+  display: none;
 }

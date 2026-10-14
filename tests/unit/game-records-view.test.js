@@ -1,6 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { recordOutcome, recordsRoute } from '../../src/ui/game-records.js';
+import {
+  recordOutcome,
+  recordsRoute,
+  recordRetryLabel,
+  formatRecordChange,
+} from '../../src/ui/game-records.js';
 
 test('a pot award can display a win and a net loss together', () => {
   assert.equal(
@@ -8,8 +13,26 @@ test('a pot award can display a win and a net loss together', () => {
     '获得部分底池 · 净亏损',
   );
   assert.equal(recordOutcome({ status: 'completed', wonPot: true, profit: 200 }), '赢');
-  assert.equal(recordOutcome({ status: 'completed', wonPot: false, profit: 0 }), '持平');
+  assert.equal(recordOutcome({ status: 'completed', wonPot: false, profit: 0 }), '');
+  assert.equal(recordOutcome({ status: 'completed', wonPot: true, profit: 0 }), '');
   assert.equal(recordOutcome({ status: 'completed', wonPot: false, profit: -100 }), '输');
+});
+
+test('first attempts have no label and retries use a compact label', () => {
+  assert.equal(recordRetryLabel(0), '');
+  assert.equal(recordRetryLabel(1), '重打1');
+  assert.equal(recordRetryLabel(2), '重打2');
+});
+
+test('record changes always retain a sign and all whole-chip digits', () => {
+  assert.deepEqual([-1025, -25, -0, 0, 25, 1025].map(formatRecordChange), [
+    '-1.025K',
+    '-25',
+    '+0',
+    '+0',
+    '+25',
+    '+1.025K',
+  ]);
 });
 
 test('unfinished and active attempts do not present an outcome from a prior attempt', () => {

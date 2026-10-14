@@ -1957,5 +1957,7 @@
   "还没有对局记录": "Noch kein Spielverlauf",
   "这一局还没有对局记录。": "Für diese Sitzung sind noch keine Hände erfasst.",
   "进行中": "Läuft",
-  "首次": "Erster Versuch"
+  "首次": "Erster Versuch",
+  "重打{0}": "Wiederholung {0}",
+  "第 {0} 局 · 第 {1} 手{2}": "Sitzung {0} · Hand {1}{2}"
 }

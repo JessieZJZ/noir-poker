@@ -1954,5 +1954,7 @@
   "还没有对局记录": "Ainda não há registros de jogos",
   "这一局还没有对局记录。": "Esta sessão ainda não tem mãos registradas.",
   "进行中": "Em andamento",
-  "首次": "Primeira tentativa"
+  "首次": "Primeira tentativa",
+  "重打{0}": "Repetição {0}",
+  "第 {0} 局 · 第 {1} 手{2}": "Sessão {0} · Mão {1}{2}"
 }

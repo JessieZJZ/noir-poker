@@ -1,6 +1,10 @@
 import assert from 'node:assert/strict';
 import { readTableLayout, assertTableLayout } from './layout.mjs';
 import { readCardRankState, readNativeRankInk, assertStableRankInk } from './card-ranks.mjs';
+import {
+  readRecordTableGeometry,
+  recordGeometryDifferences,
+} from '../fixtures/records-geometry.js';
 const documentLoginMarker = (text) => /sign in|log in|登录账号/i.test(text);
 
 export async function waitForPendingOpponent(app) {
@@ -1473,12 +1477,24 @@ export async function nativeScenarios(app) {
       const afterFold = await app.state();
       if (afterFold.phase !== 'done' && afterFold.canContinue) {
         try {
+          // On a short viewport, nearest scrolling can leave the fast-finish
+          // control underneath the fixed native header. Center the actual
+          // control before the normal WebDriver click.
+          await app.evaluate(() =>
+            document.querySelector('#continue-deal-button').scrollIntoView({
+              block: 'center',
+              inline: 'nearest',
+              behavior: 'instant',
+            }),
+          );
           await app.click('#continue-deal-button');
         } catch (error) {
           // Opponents may settle during the native click's scroll/locate
           // round trips. Accept that race only after proving real settlement.
           if (
-            !/zero size|stale element|not interactable/.test(error.message) ||
+            !/zero size|stale element|not interactable|element click intercepted/.test(
+              error.message,
+            ) ||
             (await app.state()).phase !== 'done'
           )
             throw error;
@@ -1508,6 +1524,9 @@ export async function nativeScenarios(app) {
     assert.equal(first.status, 'completed');
     assert.equal(first.snapshot.deck, undefined);
     assert.equal(first.hand, settled.hand);
+    await app.sleep(1000);
+    await app.screenshot('game-records-live-settlement');
+    const liveGeometry = await app.evaluate(readRecordTableGeometry, '#arena');
     await app.click('#restart-hand-button');
     const retried = await app.state();
     assert.equal(retried.replayAttempt, 1);
@@ -1531,7 +1550,15 @@ export async function nativeScenarios(app) {
     }));
     assert.equal(archiveBefore.heroCards, 2);
     assert.ok(archiveBefore.title.includes(`第 ${first.hand} 手`));
+    assert.doesNotMatch(archiveBefore.title, /首次|[·\s]$/);
+    await app.sleep(1000);
     await app.screenshot('game-records-historical-settlement');
+    const historyGeometry = await app.evaluate(readRecordTableGeometry, '#history-arena');
+    assert.deepEqual(
+      recordGeometryDifferences(historyGeometry, liveGeometry),
+      [],
+      'The historical settlement must keep the live table cards, seats and captions in the same layout',
+    );
     await app.click('#history-review-button');
     const review = await waitForNativeReview(app);
     await app.click('#review-dialog .close-dialog');
@@ -1540,6 +1567,7 @@ export async function nativeScenarios(app) {
       archiveBefore.table,
     );
     await app.click('#history-back-button');
+    await app.sleep(1000);
     await app.screenshot('game-records-list');
     const list = await app.evaluate(() => ({
       cards: document.querySelectorAll('.record-session:first-child .record-cards .playing-card')
@@ -1548,6 +1576,16 @@ export async function nativeScenarios(app) {
         (row) => [row.dataset.hand, row.dataset.attempt],
       ),
       heading: document.querySelector('.record-session-heading').textContent,
+      firstCopy: [...document.querySelectorAll('.record-hand[data-attempt="0"]')].map(
+        (row) => row.textContent,
+      ),
+      retry: document.querySelector('.record-retry')?.textContent,
+      deltas: [...document.querySelectorAll('.record-hand-result strong')].map(
+        (element) => element.textContent,
+      ),
+      neutralResults: [...document.querySelectorAll('.record-hand-result')]
+        .filter((result) => result.querySelector('strong').textContent === '+0')
+        .map((result) => result.textContent.trim()),
     }));
     assert.ok(list.cards >= 4);
     assert.deepEqual(list.rows.slice(0, 2), [
@@ -1555,6 +1593,10 @@ export async function nativeScenarios(app) {
       [String(first.hand), '1'],
     ]);
     assert.doesNotMatch(list.heading, /已完成|手数/);
+    list.firstCopy.forEach((text) => assert.doesNotMatch(text, /首次/));
+    assert.equal(list.retry, '重打1');
+    list.deltas.filter((value) => value !== '—').forEach((value) => assert.match(value, /^[+-]\d/));
+    list.neutralResults.forEach((text) => assert.equal(text, '+0'));
     await app.click('#records-back-button');
     if ((await app.state()).phase === 'done') await app.click('#next-button');
     const leaving = await app.state();
@@ -1584,6 +1626,8 @@ export async function nativeScenarios(app) {
     );
     return {
       first: { hand: first.hand, profit: first.profit },
+      liveGeometry,
+      historyGeometry,
       attempts: attempts.map(({ hand, attempt, status, superseded }) => ({
         hand,
         attempt,

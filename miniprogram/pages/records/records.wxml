@@ -62,11 +62,13 @@
         <view class="hand-details"
           ><view class="hand-item-title"
             ><text>第 {{item.hand}} 手</text
-            ><text class="hand-attempt">{{item.attemptText}}</text></view
-          ><view class="hand-tags"
+            ><text wx:if="{{item.attemptText}}" class="hand-tag hand-replay"
+              >{{item.attemptText}}</text
+            ></view
+          ><view wx:if="{{item.refill || item.superseded || item.resultText}}" class="hand-tags"
             ><text wx:if="{{item.refill}}" class="hand-tag">补码</text
             ><text wx:if="{{item.superseded}}" class="hand-tag">已被重打替代</text
-            ><text>{{item.resultText}}</text></view
+            ><text wx:if="{{item.resultText}}">{{item.resultText}}</text></view
           ></view
         >
         <text

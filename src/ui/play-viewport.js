@@ -1,11 +1,12 @@
 import { COMPACT_PLAY_QUERY } from './play-geometry.js';
 // Keep the whole table in the first screen. Measurements are made at
 // scale 1 before fitting, so collision coordinates never mix CSS/visual pixels.
-export function createPlayViewport(surface, { layout = () => {} } = {}) {
+export function createPlayViewport(surface, { layout = () => {}, getSurfaceTop } = {}) {
   const viewport = surface.querySelector('.table-viewport'),
-    arena = surface.querySelector('#arena'),
+    arena = surface.querySelector('.arena'),
     mobile = matchMedia(COMPACT_PLAY_QUERY);
-  let frame = null;
+  let frame = null,
+    destroyed = false;
 
   function tightenSeatRanks() {
     for (const seat of arena.querySelectorAll('.seat')) {
@@ -26,6 +27,7 @@ export function createPlayViewport(surface, { layout = () => {} } = {}) {
   }
 
   function fit() {
+    if (destroyed) return;
     if (document.documentElement.dataset.homeScrollLocked === 'true') return;
     arena.style.removeProperty('transform');
     for (const rank of arena.querySelectorAll('.seat .hand-rank'))
@@ -45,7 +47,7 @@ export function createPlayViewport(surface, { layout = () => {} } = {}) {
     const screen = window.visualViewport,
       // Pinch zoom magnifies/pans the page without shrinking its layout.
       screenHeight = screen && screen.scale <= 1.01 ? screen.height : window.innerHeight,
-      top = surface.getBoundingClientRect().top + window.scrollY,
+      top = getSurfaceTop ? getSurfaceTop() : surface.getBoundingClientRect().top + window.scrollY,
       height = Math.max(160, screenHeight - top - 8);
     surface.style.setProperty('--play-height', `${height}px`);
     // Hidden or rotating WebViews can briefly report a zero-sized viewport.
@@ -89,6 +91,7 @@ export function createPlayViewport(surface, { layout = () => {} } = {}) {
     viewport.scrollTop = 0;
   }
   function schedule() {
+    if (destroyed) return;
     if (frame !== null) return;
     frame = requestAnimationFrame(() => {
       frame = null;
@@ -102,11 +105,18 @@ export function createPlayViewport(surface, { layout = () => {} } = {}) {
     surface.querySelector('.surface-top'),
     surface.querySelector('.action-dock'),
   ])
-    observer.observe(el);
+    if (el) observer.observe(el);
   window.addEventListener('resize', schedule);
   window.visualViewport?.addEventListener('resize', schedule);
   document.fonts.ready.then(schedule);
   return {
+    destroy() {
+      destroyed = true;
+      observer.disconnect();
+      if (frame !== null) cancelAnimationFrame(frame);
+      window.removeEventListener('resize', schedule);
+      window.visualViewport?.removeEventListener('resize', schedule);
+    },
     update(nextTable, done) {
       surface.classList.toggle('has-live-hand', !done);
       fit();

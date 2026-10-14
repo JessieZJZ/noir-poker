@@ -51,6 +51,47 @@ const capture = async (name) => {
   await page.waitFor(1450);
   await mini.screenshot({ path: path.join(output, `${name}.png`) });
 };
+const tableGeometry = async (players) => {
+  const table = await waitElement('.table-area');
+  const origin = await table.offset();
+  const size = await table.size();
+  const elements = {};
+  for (const selector of [
+    '.table-arena',
+    '.felt',
+    '.community',
+    '.board-row',
+    '.hero',
+    '.hero-cards',
+    ...players.slice(1).map((player) => `#seat-body-${player.id}`),
+  ]) {
+    const element = await waitElement(selector);
+    const offset = await element.offset();
+    const measured = await element.size();
+    elements[selector] = {
+      left: offset.left - origin.left,
+      top: offset.top - origin.top,
+      width: measured.width,
+      height: measured.height,
+    };
+  }
+  return { size, elements };
+};
+const assertTableParity = (actual, expected) => {
+  for (const field of ['width', 'height'])
+    assert.ok(
+      Math.abs(actual.size[field] - expected.size[field]) <= 1,
+      `Table ${field} matches the live settlement`,
+    );
+  for (const [selector, bounds] of Object.entries(expected.elements)) {
+    assert.ok(actual.elements[selector]);
+    for (const [field, value] of Object.entries(bounds))
+      assert.ok(
+        Math.abs(actual.elements[selector][field] - value) <= 1,
+        `${selector} ${field} matches the same live settlement`,
+      );
+  }
+};
 const finishByFolding = async () => {
   await waitHero();
   await tap('.fold-button');
@@ -104,6 +145,7 @@ try {
   assert.deepEqual(archived.hole, firstSettled.players[0].hole);
   assert.equal(archived.profit, firstSettled.payouts[0] - firstSettled.players[0].total);
   await capture('01-first-settlement');
+  const liveSettlementGeometry = await tableGeometry(firstSettled.players);
   await tap('.retry-button');
   await wait(
     'Retry processed',
@@ -166,6 +208,27 @@ try {
       [2, 0],
     ],
   );
+  assert.deepEqual(
+    recordsView.sessions[0].attempts.map((row) => row.attemptText),
+    ['', '重打1', ''],
+  );
+  for (const session of recordsView.sessions) {
+    assert.match(session.profitText, /^[+-]\d/);
+    if (session.profit === 0) assert.equal(session.profitText, '+0');
+    for (const attempt of session.attempts) {
+      if (attempt.status !== 'completed') continue;
+      assert.match(attempt.profitText, /^[+-]\d/);
+      if (attempt.profit === 0) {
+        assert.equal(attempt.profitText, '+0');
+        assert.equal(attempt.resultText, '');
+      }
+    }
+  }
+  const replayTag = await waitElement('.hand-replay');
+  assert.equal(await replayTag.text(), '重打1');
+  const replayColor = await replayTag.style('color');
+  assert.ok(replayColor && replayColor !== (await replayTag.style('background-color')));
+  assert.equal((await page.$$('.hand-attempt')).length, 0);
   assert.equal(recordsView.sessions[0].attempts[0].cards.length, 2);
   assert.match(recordsView.sessions[0].attempts[0].cards[0].artStyle, /data:image\/svg\+xml/);
   const cards = await page.$$('.record-card');
@@ -191,6 +254,10 @@ try {
   assert.equal((await page.$$('.settled-buttons .primary')).length, 0);
   assert.ok(await page.$('.activity-panel'));
   await capture('04-historical-settlement');
+  const historySettlementGeometry = await tableGeometry(archived.snapshot.players);
+  assertTableParity(historySettlementGeometry, liveSettlementGeometry);
+  report.geometry = { live: liveSettlementGeometry, historical: historySettlementGeometry };
+  report.checks.push({ name: 'historical-settlement-uses-the-same-rendered-table-geometry' });
   const liveBeforeReview = await readLive();
   await tap('.review-button');
   await wait(

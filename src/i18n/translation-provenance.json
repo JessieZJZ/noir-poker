@@ -946,6 +946,12 @@
       "{0} · 未跟注退回 {1}",
       "{15} {16} 的底牌"
     ],
-    "partialPotCopyClarification": "The label describes a partial pot award with an overall net chip loss without naming the awarded pool; statistics and settlement rules are unchanged."
+    "partialPotCopyClarification": "The label describes a partial pot award with an overall net chip loss without naming the awarded pool; statistics and settlement rules are unchanged.",
+    "itemPresentationRevision": {
+      "date": "2026-10-14",
+      "keys": ["重打{0}", "第 {0} 局 · 第 {1} 手{2}"],
+      "method": "Manually authored compact retry tags and conditional historical titles in all ten translated locales. First attempts and zero-net outcomes omit text; signed figures retain existing localized K/M precision.",
+      "linguisticReview": "pending"
+    }
   }
 }

@@ -39,7 +39,7 @@ export function createSettlementLayout(arena, { observe = true } = {}) {
     arena.classList.remove('public-two-rows');
     for (const el of [
       center,
-      arena.querySelector('#board'),
+      arena.querySelector('.board'),
       arena.querySelector('.hero-area'),
       ...arena.querySelectorAll('.seat, .seat-profile'),
     ]) {
@@ -86,20 +86,20 @@ export function createSettlementLayout(arena, { observe = true } = {}) {
     };
     const publicSize = () => {
       const group = center.getBoundingClientRect();
-      const board = arena.querySelector('#board').getBoundingClientRect();
+      const board = arena.querySelector('.board').getBoundingClientRect();
       return {
-        ...size(center, '.pot > div, .pot-details-trigger, #board, #board-caption'),
+        ...size(center, '.pot > div, .pot-details-trigger, .board, .board-caption'),
         centerY: board.top - group.top + board.height / 2,
       };
     };
-    arena.querySelector('#board').style.removeProperty('--public-card-width');
+    arena.querySelector('.board').style.removeProperty('--public-card-width');
     const single = { ...publicSize(), twoRows: false };
     arena.classList.add('public-two-rows');
     const double = { ...publicSize(), twoRows: true };
     arena.classList.remove('public-two-rows');
     for (const el of [
       center,
-      arena.querySelector('#board'),
+      arena.querySelector('.board'),
       arena.querySelector('.hero-area'),
       ...arena.querySelectorAll('.seat, .seat-profile'),
     ]) {
@@ -165,9 +165,9 @@ export function createSettlementLayout(arena, { observe = true } = {}) {
       center.style.minWidth = '0';
       center.style.width = `${result.public.width}px`;
       center.style.height = `${result.public.height}px`;
-      arena.querySelector('#board').style.width = `${result.public.width}px`;
+      arena.querySelector('.board').style.width = `${result.public.width}px`;
       arena
-        .querySelector('#board')
+        .querySelector('.board')
         .style.setProperty('--public-card-width', `${result.cardWidth}px`);
       arena.querySelector('.hero-area').style.width = `${result.hero.width}px`;
       arena.querySelector('.hero-area').style.height = `${result.hero.height}px`;
@@ -179,7 +179,7 @@ export function createSettlementLayout(arena, { observe = true } = {}) {
       center.style.removeProperty('width');
       center.style.removeProperty('height');
       center.style.removeProperty('min-width');
-      arena.querySelector('#board').style.removeProperty('width');
+      arena.querySelector('.board').style.removeProperty('width');
       arena.querySelector('.hero-area').style.removeProperty('width');
       arena.querySelector('.hero-area').style.removeProperty('height');
       seatElements.forEach((seat) =>

@@ -1,12 +1,13 @@
-import { currentPots, evaluate, seatPosition } from '../engine/poker.js';
+import { currentPots } from '../engine/poker.js';
 import { compactActionAmounts } from '../engine/chip-format.js';
-import { getBotProfile } from '../engine/bot-profiles.js';
 import { createReviewInput } from '../review/analysis.js';
 import { formatChips, getLocale, setLocalizedHTML, setLocalizedText } from '../i18n/index.js';
 import { renderCard } from './cards.js';
 import { createActivityFormatter } from './activity.js';
-import { portraitContent, preparePortraits } from './portraits.js';
-import { SEAT_ANCHORS } from './seat-geometry.js';
+import { preparePortraits } from './portraits.js';
+import { createSnapshotSurface } from './table-scene.js';
+import { createSettlementLayout } from './settlement-layout.js';
+import { createPlayViewport } from './play-viewport.js';
 
 const escape = (value) =>
   String(value)
@@ -15,7 +16,11 @@ const escape = (value) =>
     .replaceAll('>', '&gt;')
     .replaceAll('"', '&quot;')
     .replaceAll("'", '&#39;');
-const change = (value) => `${value > 0 ? '+' : ''}${formatChips(value)}`;
+export function formatRecordChange(value) {
+  const amount = Math.round(Number(value));
+  return `${amount < 0 ? '-' : '+'}${formatChips(Math.abs(amount))}`;
+}
+const change = formatRecordChange;
 const date = (value) =>
   new Intl.DateTimeFormat(getLocale(), {
     month: 'short',
@@ -23,14 +28,16 @@ const date = (value) =>
     hour: '2-digit',
     minute: '2-digit',
   }).format(value);
-const attemptLabel = (attempt) => (attempt ? `第 ${attempt} 次重打` : '首次');
+export const recordRetryLabel = (attempt) => (attempt ? `重打${attempt}` : '');
+const attemptLabel = recordRetryLabel;
 
 export function recordOutcome(attempt) {
   if (attempt.status === 'unfinished') return '未完成';
   if (attempt.status !== 'completed') return '进行中';
+  if (attempt.profit === 0) return '';
   if (attempt.wonPot && attempt.profit < 0) return '获得部分底池 · 净亏损';
   if (attempt.wonPot) return '赢';
-  return attempt.profit < 0 ? '输' : '持平';
+  return attempt.profit < 0 ? '输' : '';
 }
 
 export function recordsRoute(hash) {
@@ -48,8 +55,8 @@ function handItem(attempt) {
     element = complete ? 'button' : 'div';
   return `<${element} class="record-hand record-attempt ${attempt.superseded ? 'record-superseded' : ''}" ${complete ? `data-record-hand="${escape(attempt.id)}"` : ''} data-record-id="${escape(attempt.id)}" data-status="${attempt.status}" data-hand="${attempt.hand}" data-attempt="${attempt.attempt}" data-superseded="${attempt.superseded}">
     <span class="record-hand-cards record-cards" aria-label="你的底牌">${attempt.hole.map((c) => renderCard(c, { small: true })).join('')}</span>
-    <span class="record-hand-info"><strong>第 ${attempt.hand} 手</strong><span class="record-hand-tags"><span>${attemptLabel(attempt.attempt)}</span>${attempt.refill ? '<span class="record-tag record-refill">补码</span>' : ''}${attempt.superseded ? '<span class="record-tag">已被重打替代</span>' : ''}</span></span>
-    <span class="record-hand-result ${complete && attempt.profit < 0 ? 'negative' : complete && attempt.profit > 0 ? 'positive' : ''}"><strong>${complete ? change(attempt.profit) : '—'}</strong><span>${recordOutcome(attempt)}</span></span>
+    <span class="record-hand-info"><strong>第 ${attempt.hand} 手</strong><span class="record-hand-tags">${attempt.attempt ? `<span class="record-tag record-retry">${attemptLabel(attempt.attempt)}</span>` : ''}${attempt.refill ? '<span class="record-tag record-refill">补码</span>' : ''}${attempt.superseded ? '<span class="record-tag">已被重打替代</span>' : ''}</span></span>
+    <span class="record-hand-result ${complete && attempt.profit < 0 ? 'negative' : complete && attempt.profit > 0 ? 'positive' : ''}"><strong>${complete ? change(attempt.profit) : '—'}</strong>${recordOutcome(attempt) ? `<span>${recordOutcome(attempt)}</span>` : ''}</span>
     ${complete ? '<span class="record-hand-arrow" aria-hidden="true">›</span>' : ''}
   </${element}>`;
 }
@@ -65,38 +72,9 @@ function sessionItem(session, expanded) {
   </article>`;
 }
 
-function historicalTable(snapshot, visible) {
-  const hero = snapshot.players[0],
-    board = snapshot.practiceBoard || snapshot.board,
-    best =
-      snapshot.showdown && !hero.folded
-        ? new Set(evaluate([...hero.hole, ...snapshot.board]).cards.map((c) => c.key))
-        : new Set();
-  const positions = SEAT_ANCHORS[snapshot.players.length];
-  return `<div class="records-table-viewport" id="history-table"><div class="arena is-done records-arena" data-player-count="${snapshot.players.length}">
-    <div class="poker-table"><div class="table-inner"><div class="table-watermark">N O I R <span>POKER CLUB</span></div></div></div>
-    <div class="seats">${snapshot.players
-      .slice(1)
-      .map((p) => {
-        const [x, y] = positions[p.id - 1],
-          reveal = visible.has(p.id),
-          won = snapshot.winners.find((w) => w.id === p.id),
-          profile = getBotProfile(p.botProfile),
-          rank =
-            reveal && !p.folded && snapshot.board.length === 5
-              ? evaluate([...p.hole, ...snapshot.board])
-              : null;
-        return `<div class="seat seat-${p.id} ${p.folded ? 'folded' : ''} ${won ? 'winner' : ''}" style="left:${x}%;top:${y}%" data-player="${p.id}"><div class="mini-cards ${reveal ? 'revealed-cards' : ''}" id="history-seat-hand-${p.id}">${reveal ? p.hole.map((c) => renderCard(c, { small: true, best: rank?.cards.some((card) => card.key === c.key) })).join('') : p.hole.map(() => '<span class="card-back" aria-label="对手底牌"></span>').join('')}</div><div class="seat-profile"><span class="avatar avatar-${p.id - 1}">${portraitContent(profile.id, p.name[0])}</span><div><strong><span class="seat-name-label">${escape(p.name)}</span><span class="position-badge" data-position="${seatPosition(snapshot, p.id)}">${seatPosition(snapshot, p.id)}</span><button class="seat-peek" data-history-peek="${p.id}" aria-label="${reveal ? '收起' : '查看'} ${escape(p.name)} 的底牌" aria-pressed="${reveal}" aria-controls="history-seat-hand-${p.id}"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M2 10C4 6 7 5 10 5C13 5 16 6 18 10C16 14 13 15 10 15C7 15 4 14 2 10Z"/><circle cx="10" cy="10" r="2.5"/></svg></button></strong><span class="seat-style-label">${profile.short}</span><span class="seat-stack">${formatChips(p.stack)}</span></div></div><div class="seat-rank-slot">${rank || won ? `<span class="hand-rank ${won ? 'rank-winner' : ''}">${rank?.label || '获胜'}</span>` : ''}</div><div class="seat-action">${escape(compactActionAmounts(p.lastAction?.text || p.action || ''))}</div></div>`;
-      })
-      .join('')}</div>
-    <div class="table-center"><div class="pot"><strong>${formatChips(snapshot.potAtShowdown)}</strong></div><div class="board">${Array.from({ length: 5 }, (_, i) => (board[i] ? renderCard(board[i], { best: best.has(board[i].key) }) : `<div class="board-slot" aria-label="未发出的公共牌">${['♠', '♣', '♥', '♦', '♠'][i]}</div>`)).join('')}</div><div class="board-caption">${snapshot.practiceBoard ? '练习补牌 · 五张公共牌，不影响结算' : '本手结束'}</div></div>
-    <div class="hero-area ${hero.folded ? 'hero-folded' : ''}"><div class="hero-cards">${hero.hole.map((c) => renderCard(c, { best: best.has(c.key) })).join('')}</div><div class="hero-rank-slot">${snapshot.board.length === 5 && (snapshot.revealed || snapshot.showdown) ? `<div class="hand-rank">${hero.folded ? '已弃牌 · ' : ''}${evaluate([...hero.hole, ...snapshot.board]).label}</div>` : ''}</div><div class="hero-name"><strong>你</strong><span class="position-badge" data-position="${seatPosition(snapshot, 0)}">${seatPosition(snapshot, 0)}</span><span>${formatChips(hero.stack)}</span></div></div>
-  </div></div>`;
-}
-
 function historicalPots(snapshot) {
   const details = currentPots(snapshot);
-  return `<section class="records-settlement" aria-label="底池结算"><h2>底池结算</h2>${details.pots.map((pot) => `<div class="record-pot"><div><strong>${escape(pot.label)}</strong><span>${formatChips(pot.amount)}</span></div><ul>${pot.awards.map((award) => `<li><span>${escape(snapshot.players[award.id].name)}<small>${escape(award.label)}</small></span><strong>+${formatChips(award.amount)}</strong></li>`).join('')}</ul></div>`).join('')}${details.refunds.map((refund) => `<p class="record-refund">${escape(snapshot.players[refund.id].name)} · 未跟注退回 ${formatChips(refund.amount)}</p>`).join('')}</section>`;
+  return `<section id="history-pot-settlement" class="records-settlement" aria-label="底池结算"><h2>底池结算</h2>${details.pots.map((pot) => `<div class="record-pot"><div><strong>${escape(pot.label)}</strong><span>${formatChips(pot.amount)}</span></div><ul>${pot.awards.map((award) => `<li><span>${escape(snapshot.players[award.id].name)}<small>${escape(award.label)}</small></span><strong>+${formatChips(award.amount)}</strong></li>`).join('')}</ul></div>`).join('')}${details.refunds.map((refund) => `<p class="record-refund">${escape(snapshot.players[refund.id].name)} · 未跟注退回 ${formatChips(refund.amount)}</p>`).join('')}</section>`;
 }
 
 export function createGameRecordsView({ records, openReview, onReturnGame }) {
@@ -118,7 +96,7 @@ export function createGameRecordsView({ records, openReview, onReturnGame }) {
     rotation = 0,
     hover = false,
     focus = false,
-    tableObserver = null,
+    historyViewport = null,
     defaultCurrent = null;
 
   function closeMenu() {
@@ -185,38 +163,40 @@ export function createGameRecordsView({ records, openReview, onReturnGame }) {
     );
     window.scrollTo(0, scroll);
   }
-  function fitTable() {
-    const viewport = content.querySelector('.records-table-viewport'),
-      arena = content.querySelector('.records-arena');
-    if (!arena || !viewport.clientWidth) return;
-    const width = Math.max(440, viewport.clientWidth),
-      height = 650;
-    const scale = Math.min(1, viewport.clientWidth / width);
-    arena.style.width = `${width}px`;
-    arena.style.height = `${height}px`;
-    arena.style.transform = `scale(${scale})`;
-    viewport.style.height = `${height * scale}px`;
-  }
   function renderArchive() {
     if (!archive) return;
     const snapshot = archive.snapshot,
       formatter = createActivityFormatter(snapshot.players);
     setLocalizedHTML(
       content,
-      `<div id="history-page"><div class="records-history-heading"><button id="history-back-button" class="records-back" data-records-back>‹ 返回对局记录</button><span class="record-tag">历史记录</span></div><div class="records-history-grid"><div><section class="game-surface records-game-surface"><div class="records-history-caption"><strong>${recordOutcome(archive)} · ${change(archive.profit)}</strong><span>盲注 ${formatChips(snapshot.smallBlind)} / ${formatChips(snapshot.bigBlind)}</span></div><div class="records-history-table">${historicalTable(snapshot, visible)}</div><div class="records-review-action"><button id="history-review-button" class="review-button">复盘这一手</button></div></section>${historicalPots(snapshot)}</div><section class="activity-card records-activity"><div class="section-title"><h2>本局动态</h2><span class="subtle-label">FINISHED</span></div><ol class="activity-list" aria-label="本手动态，按时间顺序排列">${snapshot.logs
+      `<div id="history-page"><div class="records-history-heading"><button id="history-back-button" class="records-back" data-records-back>‹ 返回对局记录</button><span class="record-tag">历史记录</span><span class="records-history-result">${recordOutcome(archive) ? recordOutcome(archive) + ' · ' : ''}${change(archive.profit)}</span></div><div class="main records-history-grid"><section class="game-column"><div class="records-surface-slot"></div>${historicalPots(snapshot)}</section><aside class="sidebar"><section class="activity-card records-activity"><div class="section-title"><h2>本局动态</h2><span class="subtle-label">FINISHED</span></div><ol class="activity-list" aria-label="本手动态，按时间顺序排列">${snapshot.logs
         .slice()
         .reverse()
         .map(
           (log, i) =>
             `<li value="${i + 1}" class="log-${escape(log.type)} ${log.player === 0 ? 'log-hero' : ''}">${formatter(log.text)}</li>`,
         )
-        .join('')}</ol></section></div></div>`,
+        .join('')}</ol></section></aside></div></div>`,
     );
+    historyViewport?.destroy();
+    const session = records
+      .sessions()
+      .find((entry) => entry.attempts.some((attempt) => attempt.id === archive.id));
+    const surface = createSnapshotSurface(liveMain.querySelector('.game-surface'), snapshot, {
+      sessionNumber: session.number,
+      visible,
+    });
+    content.querySelector('.records-surface-slot').replaceWith(surface);
+    const layout = createSettlementLayout(surface.querySelector('.arena'), { observe: false });
+    historyViewport = createPlayViewport(surface, {
+      layout: layout.update,
+      getSurfaceTop: () =>
+        document.querySelector('.header').getBoundingClientRect().bottom +
+        window.scrollY +
+        parseFloat(getComputedStyle(liveMain).paddingTop),
+    });
+    historyViewport.update(snapshot, true);
     preparePortraits(content);
-    tableObserver?.disconnect();
-    tableObserver = new ResizeObserver(fitTable);
-    tableObserver.observe(content.querySelector('.records-history-table'));
-    fitTable();
   }
   function showRoute(next) {
     if (route.page === 'list' && next.page !== 'list') listScroll = window.scrollY;
@@ -225,7 +205,8 @@ export function createGameRecordsView({ records, openReview, onReturnGame }) {
     liveMain.hidden = route.page !== 'game';
     page.hidden = route.page === 'game';
     document.body.dataset.recordsPage = route.page;
-    tableObserver?.disconnect();
+    historyViewport?.destroy();
+    historyViewport = null;
     if (route.page === 'game') {
       archive = null;
       window.scrollTo(0, 0);
@@ -247,9 +228,9 @@ export function createGameRecordsView({ records, openReview, onReturnGame }) {
       const session = records
         .sessions()
         .find((session) => session.attempts.some((attempt) => attempt.id === archive.id));
-      setLocalizedText(
+      setLocalizedHTML(
         title,
-        `第 ${session.number} 局 · 第 ${archive.hand} 手 · ${attemptLabel(archive.attempt)}`,
+        `第 ${session.number} 局 · 第 ${archive.hand} 手${archive.attempt ? ` · <span class="record-tag record-retry">${attemptLabel(archive.attempt)}</span>` : ''}`,
       );
       visible.clear();
       archive.snapshot.players
@@ -353,6 +334,10 @@ export function createGameRecordsView({ records, openReview, onReturnGame }) {
     else if (button.hasAttribute('data-records-back')) navigate({ page: 'list' });
     else if (button.id === 'history-review-button')
       openReview(createReviewInput(archive.snapshot), 'history:' + archive.id);
+    else if (button.hasAttribute('data-history-pots'))
+      content
+        .querySelector('.records-settlement')
+        .scrollIntoView({ block: 'start', behavior: 'smooth' });
     else if (button.dataset.historyPeek) {
       const id = Number(button.dataset.historyPeek);
       if (visible.has(id)) visible.delete(id);
@@ -374,7 +359,8 @@ export function createGameRecordsView({ records, openReview, onReturnGame }) {
   motion.addEventListener('change', updateRotation);
   window.addEventListener('pagehide', () => {
     clearInterval(rotating);
-    tableObserver?.disconnect();
+    historyViewport?.destroy();
+    historyViewport = null;
   });
   updateRotation();
   return {

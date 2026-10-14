@@ -181,4 +181,4 @@ Web/App 和小程序的音效使用同一份 PCM 声音定义，弃牌与下注�
 
 PR44 的策略修正与具体行动复盘随本次盲注改动一并提交；兼容动态尺度、K/M、重打与下一手重置的 Web 回归见 [整合验证记录](docs/pr44-integration-validation-2026-10-14.md)。此次整合只重验 Web，原生及微信运行证据仍属于合入前快照。
 
-本机对局记录的 Web 回归、安装运行与微信验收边界见 [对局记录验证](docs/game-records-validation-2026-10-14.md)。
+本机对局记录的 Web 回归、安装运行与微信验收边界见 [初版验证](docs/game-records-validation-2026-10-14.md)；历史牌桌与游戏布局一致、重打短标签及有符号净变化的结果见 [布局修订验证](docs/game-records-layout-validation-2026-10-14.md)。

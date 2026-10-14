@@ -1,6 +1,9 @@
 const { compactChips } = require('../../shared/engine/chip-format.js');
 const { presentCard } = require('../table/presentation.js');
-const signed = (value) => (value > 0 ? '+' : '') + compactChips(value);
+const signed = (value) => {
+  const amount = Math.round(Number(value));
+  return (amount < 0 ? '-' : '+') + compactChips(Math.abs(amount));
+};
 const timeText = (timestamp) => {
   const date = new Date(timestamp);
   const two = (number) => String(number).padStart(2, '0');
@@ -34,19 +37,19 @@ Page({
       attempts: session.attempts.map((attempt) => ({
         ...attempt,
         cards: attempt.hole.map(presentCard),
-        attemptText: attempt.attempt ? `第 ${attempt.attempt} 次重打` : '首次',
+        attemptText: attempt.attempt ? `重打${attempt.attempt}` : '',
         profitText: attempt.profit === null ? '—' : signed(attempt.profit),
         resultText:
           attempt.status === 'unfinished'
             ? '未完成'
             : attempt.status === 'playing'
               ? '进行中'
-              : attempt.wonPot
-                ? attempt.profit < 0
-                  ? '获得部分底池 · 净亏损'
-                  : '赢'
-                : attempt.profit === 0
-                  ? '平'
+              : attempt.profit === 0
+                ? ''
+                : attempt.wonPot
+                  ? attempt.profit < 0
+                    ? '获得部分底池 · 净亏损'
+                    : '赢'
                   : '输',
       })),
     }));

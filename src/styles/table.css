@@ -642,7 +642,7 @@
 .arena.is-done[data-player-count='9'] {
   min-height: 690px;
 }
-.arena.is-done #seats {
+.arena.is-done :is(#seats, .seats) {
   display: contents;
 }
 .arena.is-done[data-player-count] .table-center,

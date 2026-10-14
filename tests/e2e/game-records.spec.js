@@ -1,5 +1,9 @@
 import { test, expect } from '@playwright/test';
 import { BOT_THINK_LIMITS } from '../../src/engine/bot-timing.js';
+import {
+  readRecordTableGeometry,
+  recordGeometryDifferences,
+} from '../fixtures/records-geometry.js';
 
 const records = (page) => page.evaluate(() => window.noir.getRecords());
 const state = (page) => page.evaluate(() => window.noir.getState());
@@ -49,6 +53,10 @@ test('stored historical labels remain text and cannot execute markup', async ({ 
         .find((a) => a.id === id);
       attempt.snapshot.pots[0].label = source;
       attempt.snapshot.pots[0].awards[0].label = source;
+      attempt.snapshot.players[1].name = source;
+      attempt.snapshot.players[1].action = source;
+      attempt.snapshot.players[1].lastAction.text = source;
+      attempt.snapshot.winners[0].label = 'award " data-archive-injected="true';
       localStorage.setItem('noir-game-records-v1', JSON.stringify(saved));
     },
     { source, id: record.id },
@@ -60,6 +68,10 @@ test('stored historical labels remain text and cannot execute markup', async ({ 
   await expect(page.locator('.records-settlement')).toContainText(source);
   expect(await page.evaluate(() => window.historyMarkupExecuted)).toBeUndefined();
   await expect(page.locator('.records-settlement img')).toHaveCount(0);
+  await expect(page.locator('#history-arena .seat-name-label').first()).toHaveText(source);
+  await expect(page.locator('#history-arena .seat-action').first()).toHaveText(source);
+  await expect(page.locator('#history-arena img:not(.persona-portrait)')).toHaveCount(0);
+  await expect(page.locator('#history-arena [data-archive-injected]')).toHaveCount(0);
 });
 
 test('records group sessions newest first and show graphic hands in chronological attempt order', async ({
@@ -109,6 +121,143 @@ test('records group sessions newest first and show graphic hands in chronologica
   ).toEqual((await records(page)).map((s) => s.number));
   expect((await state(page)).sessionNumber).toBe(initial.sessionNumber + 1);
 });
+
+test('record rows omit first-attempt and neutral copy, color retry tags and sign every chip delta', async ({
+  page,
+}) => {
+  await page.evaluate(() => window.qa.recordsFinish());
+  await page.evaluate(() => window.qa.recordsRetry());
+  await page.evaluate(() => window.qa.recordsFinish(1));
+  await page.evaluate(() => window.qa.recordsNext());
+  await page.evaluate(() => window.qa.recordsFinish(1));
+  const session = (await records(page))[0];
+  expect(session.attempts[0].profit).toBeGreaterThan(0);
+  expect(session.attempts[1].profit).toBe(0);
+  expect(session.attempts[2].profit).toBeLessThan(0);
+  await openRecords(page);
+  const rows = page.locator('.record-session').first().locator('.record-hand');
+  await expect(rows).toHaveCount(3);
+  await expect(page.locator('#records-page')).not.toContainText('首次');
+  await expect(page.locator('#records-page')).not.toContainText('持平');
+  await expect(rows.nth(0).locator('.record-retry')).toHaveCount(0);
+  await expect(rows.nth(2).locator('.record-retry')).toHaveCount(0);
+  const retry = rows.nth(1).locator('.record-retry');
+  await expect(retry).toHaveText('重打1');
+  const tag = await retry.evaluate((element) => {
+    const style = getComputedStyle(element);
+    return {
+      background: style.backgroundColor,
+      borderWidth: parseFloat(style.borderWidth),
+      color: style.color,
+    };
+  });
+  expect(tag.background).not.toBe('rgba(0, 0, 0, 0)');
+  expect(tag.borderWidth).toBeGreaterThan(0);
+  const channels = tag.color
+    .match(/[\d.]+/g)
+    .slice(0, 3)
+    .map(Number);
+  expect(Math.max(...channels) - Math.min(...channels)).toBeGreaterThan(10);
+  for (let index = 0; index < session.attempts.length; index++) {
+    const profit = session.attempts[index].profit;
+    expect(Math.abs(profit)).toBeLessThan(1000);
+    await expect(rows.nth(index).locator('.record-hand-result strong')).toHaveText(
+      `${profit < 0 ? '-' : '+'}${Math.abs(profit)}`,
+    );
+  }
+  await expect(rows.nth(1).locator('.record-hand-result span')).toHaveCount(0);
+  await expect(
+    page
+      .locator('.record-session')
+      .first()
+      .locator('.record-session-stats > span')
+      .nth(1)
+      .locator('strong'),
+  ).toHaveText(`${session.profit < 0 ? '-' : '+'}${Math.abs(session.profit)}`);
+  await rows.nth(0).click();
+  await expect(page.locator('#records-title')).not.toContainText(/首次|[·\s]$/);
+});
+
+for (const count of [5, 9]) {
+  test(`historical ${count}-seat settlement uses the live table geometry for folded and revealed hands`, async ({
+    page,
+  }) => {
+    test.setTimeout(90000);
+    for (const mode of ['fold', 'showdown']) {
+      await page.evaluate(
+        ({ count, mode }) => {
+          window.qa.recordsStart({ count });
+          if (mode === 'fold') window.qa.recordsFinish(1);
+          else {
+            window.qa.allinRest();
+            while (window.noir.getState().phase === 'between') window.qa.finish();
+            window.qa.stop();
+          }
+        },
+        { count, mode },
+      );
+      const attempt = (await records(page))[0].attempts[0];
+      for (const width of [320, 390, 700, 1280]) {
+        await page.setViewportSize({ width, height: 900 });
+        await page.waitForFunction(() =>
+          document
+            .querySelector('#arena')
+            .getAnimations({ subtree: true })
+            .every(
+              (animation) =>
+                animation.effect.getTiming().iterations === Infinity ||
+                animation.playState !== 'running',
+            ),
+        );
+        await expect
+          .poll(async () => {
+            const geometry = await page.evaluate(readRecordTableGeometry, '#arena');
+            return geometry.arena.width > 0 && geometry.seats.length === count - 1;
+          })
+          .toBe(true);
+        const live = await page.evaluate(readRecordTableGeometry, '#arena');
+        await openRecords(page);
+        await page.locator(`[data-record-hand="${attempt.id}"]`).click();
+        await expect(page.locator('#history-arena')).toBeVisible();
+        await expect
+          .poll(async () => {
+            const archived = await page.evaluate(readRecordTableGeometry, '#history-arena');
+            return recordGeometryDifferences(archived, live);
+          })
+          .toEqual([]);
+        const archived = await page.evaluate(readRecordTableGeometry, '#history-arena');
+        expect(archived.seats).toHaveLength(count - 1);
+        const overlaps = (a, b) =>
+          a &&
+          b &&
+          a.x < b.x + b.width &&
+          a.x + a.width > b.x &&
+          a.y < b.y + b.height &&
+          a.y + a.height > b.y;
+        for (const seat of archived.seats) {
+          for (const card of archived.boardCards) {
+            expect(
+              overlaps(seat.cards, card),
+              `seat ${seat.id} cards overlap public cards`,
+            ).toBeFalsy();
+            expect(
+              overlaps(seat.profile, card),
+              `seat ${seat.id} profile overlaps public cards`,
+            ).toBeFalsy();
+          }
+        }
+        expect(
+          await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1),
+        ).toBe(true);
+        if (width === 390 || width === 1280)
+          await page.locator('#history-page').screenshot({
+            path: test.info().outputPath(`history-${count}-${mode}-${width}.png`),
+          });
+        await page.locator('#records-back-button').click();
+      }
+    }
+  });
+}
 
 test('historical settlement and review stay fixed while the live game advances', async ({
   page,
