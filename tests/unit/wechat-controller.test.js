@@ -437,3 +437,139 @@ test('WeChat retry, fast finish and sound re-enable use the Web cue sequence', (
   controller.retry();
   assert.equal(sounds.at(-1), 'deal');
 });
+
+test('WeChat queues requested blinds until next hand, retaining the original deal and scale on retry', (t) => {
+  const { controller, timers, preferences, latest } = setup(t, {
+    stakes: { smallBlind: 100, bigBlind: 200, startingStack: 20000, chipUnit: 100 },
+  });
+  const game = reachHero(controller);
+  controller.hide();
+  const before = copy(game);
+  const originalCards = game.players.map((player) => player.hole.map((card) => card.key));
+  const requested = { smallBlind: 500, bigBlind: 1000, startingStack: 100000, chipUnit: 500 };
+  assert.equal(controller.requestSmallBlind('500'), true);
+  assert.deepEqual(game, before, 'A valid edit cannot change the current hand');
+  assert.deepEqual(JSON.parse(preferences.get('noir-wechat-settings-v1')).stakes, requested);
+  assert.equal(latest().pendingStakes, true);
+  assert.equal(latest().blindText, '100 / 200');
+  assert.equal(latest().configuredSmallBlindText, '500');
+  assert.equal(latest().configuredBigBlindText, '1K');
+  assert.equal(latest().stakesNotice, '下一手起始盲注500/1K·筹码恢复为100K，统计重新开始');
+
+  const persisted = preferences.get('noir-wechat-settings-v1');
+  for (const invalid of ['', '0', '-25', '25.5', '100.0', '2.5K', '50025', '1e3', 'abc']) {
+    assert.equal(controller.requestSmallBlind(invalid), false, invalid);
+    assert.equal(latest().stakesError, '小盲只能输入25的正整数倍，且不超过50K。');
+    assert.equal(preferences.get('noir-wechat-settings-v1'), persisted);
+    assert.deepEqual(game, before);
+  }
+  assert.equal(controller.requestSmallBlind('500'), false, 'Repeated valid input is a no-op');
+  assert.equal(latest().stakesError, '');
+  assert.equal(preferences.get('noir-wechat-settings-v1'), persisted);
+  controller.nextHand();
+  assert.deepEqual(game, before, 'Next hand cannot run before settlement');
+
+  finish(game);
+  assert.equal(game.stats.hands, 1);
+  controller.show();
+  assert.equal(controller.retry(), true);
+  const stale = timers.callbacks();
+  assert.ok(stale.length > 0);
+  controller.hide();
+  assert.equal(game.smallBlind, 100);
+  assert.equal(game.bigBlind, 200);
+  assert.equal(game.chipUnit, 100);
+  assert.equal(game.stats.hands, 0);
+  assert.deepEqual(
+    game.players.map((player) => player.hole.map((card) => card.key)),
+    originalCards,
+  );
+  assert.deepEqual(controller.getSettings().stakes, requested);
+  assert.equal(latest().pendingStakes, true);
+  finish(game);
+  controller.nextHand();
+  const changed = controller.getGame();
+  assert.notEqual(changed, game);
+  assert.equal(changed.hand, 1);
+  assert.deepEqual(changed.stakes, requested);
+  assert.deepEqual(changed.stats, { hands: 0, wins: 0, buyin: 100000 });
+  assert.ok(changed.players.every((player) => player.stack + player.total === 100000));
+  assert.equal(
+    changed.players.reduce((sum, player) => sum + player.stack, 0) + potSize(changed),
+    600000,
+  );
+  assert.ok(
+    changed.players.every((player) =>
+      [player.stack, player.bet, player.total].every((amount) => amount % 500 === 0),
+    ),
+  );
+  assert.equal(latest().pendingStakes, false);
+  assert.equal(latest().stakesNotice, '');
+  const state = JSON.stringify(changed);
+  for (const callback of stale) callback();
+  assert.equal(JSON.stringify(changed), state, 'Old work cannot mutate the restarted session');
+});
+
+test('WeChat accepts inclusive small-blind boundaries, restores queued preferences on a fresh session and can cancel a pending edit', (t) => {
+  const { controller, preferences, latest } = setup(t);
+  controller.hide();
+  assert.equal(controller.requestSmallBlind('25'), false);
+  assert.equal(controller.requestSmallBlind('50000'), true);
+  assert.deepEqual(controller.getSettings().stakes, {
+    smallBlind: 50000,
+    bigBlind: 100000,
+    startingStack: 10000000,
+    chipUnit: 50000,
+  });
+  assert.equal(latest().stakesNotice, '下一手起始盲注50K/100K·筹码恢复为10M，统计重新开始');
+  const resumed = createWechatController({
+    publish() {},
+    storage: { getItem: (key) => preferences.get(key) },
+    schedule: () => 1,
+    unschedule() {},
+  });
+  t.after(() => resumed.destroy());
+  resumed.start();
+  assert.equal(resumed.getGame().smallBlind, 50000);
+  assert.equal(resumed.getGame().players[0].stack, 10000000);
+  assert.equal(controller.requestSmallBlind('25'), true);
+  assert.equal(latest().pendingStakes, false);
+  assert.equal(latest().stakesNotice, '');
+  assert.equal(controller.setPreference('stakes', { smallBlind: 50, bigBlind: 100 }), true);
+  assert.equal(controller.getGame().smallBlind, 25, 'Generic UI preference edits must also queue');
+});
+
+test('WeChat immediate stakes API retracts pending settings without resetting an already matching active game', (t) => {
+  const { controller, preferences, latest } = setup(t, {
+    stakes: { smallBlind: 100, bigBlind: 200, startingStack: 20000, chipUnit: 100 },
+  });
+  const game = reachHero(controller);
+  controller.hide();
+  assert.equal(controller.requestSmallBlind('500'), true);
+  const before = copy(game);
+  const queuedSettings = preferences.get('noir-wechat-settings-v1');
+  for (const invalid of [
+    { smallBlind: 0, bigBlind: 200 },
+    { smallBlind: 100, bigBlind: 250 },
+    { smallBlind: 50025, bigBlind: 100050 },
+    { smallBlind: 100, bigBlind: 200, startingStack: 15000 },
+  ]) {
+    assert.equal(controller.setStakes(invalid), false);
+    assert.equal(preferences.get('noir-wechat-settings-v1'), queuedSettings);
+    assert.deepEqual(game, before);
+  }
+  assert.equal(controller.setStakes({ smallBlind: 100, bigBlind: 200 }), true);
+  assert.equal(controller.getGame(), game);
+  assert.deepEqual(
+    game,
+    before,
+    'Retracting a queued change must preserve the current deal and statistics',
+  );
+  assert.equal(latest().pendingStakes, false);
+  assert.equal(latest().stakesError, '');
+  assert.deepEqual(JSON.parse(preferences.get('noir-wechat-settings-v1')).stakes, game.stakes);
+  const saved = preferences.get('noir-wechat-settings-v1');
+  assert.equal(controller.setStakes({ smallBlind: 100, bigBlind: 200 }), false);
+  assert.equal(preferences.get('noir-wechat-settings-v1'), saved);
+  assert.deepEqual(game, before);
+});

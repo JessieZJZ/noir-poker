@@ -373,6 +373,46 @@
           >下一手将切为 {{settings.playerCount}} 人桌 · 筹码恢复
           {{startingStackText}}，统计重新开始</text
         >
+        <view class="setting-row stakes-setting-row">
+          <view>
+            <text>起始盲注</text>
+            <text class="setting-description">点击小盲修改，大盲为小盲的两倍。</text>
+          </view>
+          <view class="stakes-values">
+            <input
+              wx:if="{{smallBlindEditing}}"
+              id="small-blind-input"
+              class="small-blind-input {{stakesError ? 'invalid' : ''}}"
+              type="text"
+              value="{{smallBlindDraft}}"
+              focus="{{smallBlindEditing}}"
+              confirm-type="done"
+              bindinput="changeSmallBlind"
+              bindblur="finishSmallBlindEdit"
+              bindconfirm="finishSmallBlindEdit"
+              aria-label="起始小盲"
+            />
+            <button
+              wx:else
+              id="small-blind-button"
+              class="small-blind-value"
+              hover-class="none"
+              bindtap="editSmallBlind"
+              aria-label="修改起始小盲"
+            >
+              {{configuredSmallBlindText}}
+            </button>
+            <text>/</text>
+            <text id="big-blind-value">{{configuredBigBlindText}}</text>
+          </view>
+        </view>
+        <text wx:if="{{stakesError}}" id="stakes-error" class="stakes-error">{{stakesError}}</text>
+        <text
+          wx:if="{{pendingStakes}}"
+          id="stakes-change-note"
+          class="table-change-note stakes-change-note"
+          >{{stakesNotice}}</text
+        >
         <view class="setting-row"
           ><text>音效与振动</text
           ><button

@@ -1412,5 +1412,13 @@
   "小盲须为 25 的正整数倍，大盲须为小盲的倍数且大于小盲。面额等于小盲，起始筹码为 100 BB。": "The small blind must be a positive multiple of 25. The big blind must be a greater multiple of the small blind. The chip denomination equals the small blind; starting stacks are 100 BB.",
   "下一手切换为 {0} 人桌 · 筹码恢复 {1}，统计重新开始": "Next hand: {0} players · stacks reset to {1}, statistics restart",
   "在顶部设置中选择 5–9 人。下一手换桌，筹码恢复为 100 BB，练习统计重新开始。": "Choose 5–9 players in the settings above. On the next hand, stacks reset to 100 BB and practice statistics restart.",
-  "本局将结束，所有玩家恢复到当前牌桌的起始筹码（100 BB），练习统计归零。": "This game will end. All players reset to the starting stack for this table (100 BB), and practice statistics return to zero."
+  "本局将结束，所有玩家恢复到当前牌桌的起始筹码（100 BB），练习统计归零。": "This game will end. All players reset to the starting stack for this table (100 BB), and practice statistics return to zero.",
+  "起始盲注": "Starting blinds",
+  "点击小盲修改，大盲为小盲的两倍。": "Click the small blind to edit. The big blind is twice the small blind.",
+  "小盲只能输入25的正整数倍，且不超过50K。": "Enter a positive multiple of 25, up to 50K, for the small blind.",
+  "下一手起始盲注{0}/{1}·筹码恢复为{2}，统计重新开始": "Next hand: starting blinds {0}/{1} · stacks reset to {2}, statistics restart",
+  "修改起始小盲": "Edit starting small blind",
+  "起始小盲": "Starting small blind",
+  "起始大盲": "Starting big blind",
+  "小盲须为 25 的正整数倍且不超过 50K，大盲须为小盲的倍数且大于小盲。面额等于小盲，起始筹码为 100 BB。": "The small blind must be a positive multiple of 25, up to 50K. The big blind must be a greater multiple of the small blind. The chip denomination equals the small blind; starting stacks are 100 BB."
 }

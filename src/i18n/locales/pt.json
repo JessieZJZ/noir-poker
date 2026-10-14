@@ -1412,5 +1412,13 @@
   "小盲须为 25 的正整数倍，大盲须为小盲的倍数且大于小盲。面额等于小盲，起始筹码为 100 BB。": "O small blind deve ser um múltiplo positivo de 25. O big blind deve ser um múltiplo maior do small blind. A denominação equivale ao small blind; o stack inicial é de 100 BB.",
   "下一手切换为 {0} 人桌 · 筹码恢复 {1}，统计重新开始": "Próxima mão: {0} jogadores · stacks em {1}, estatísticas reiniciadas",
   "在顶部设置中选择 5–9 人。下一手换桌，筹码恢复为 100 BB，练习统计重新开始。": "Escolha 5–9 jogadores nas definições acima. Na próxima mão, os stacks voltam a 100 BB e as estatísticas de treino reiniciam.",
-  "本局将结束，所有玩家恢复到当前牌桌的起始筹码（100 BB），练习统计归零。": "Esta partida terminará. Todos voltam ao stack inicial desta mesa (100 BB) e as estatísticas de treino são zeradas."
+  "本局将结束，所有玩家恢复到当前牌桌的起始筹码（100 BB），练习统计归零。": "Esta partida terminará. Todos voltam ao stack inicial desta mesa (100 BB) e as estatísticas de treino são zeradas.",
+  "起始盲注": "Blinds iniciais",
+  "点击小盲修改，大盲为小盲的两倍。": "Clique no small blind para editar. O big blind é o dobro.",
+  "小盲只能输入25的正整数倍，且不超过50K。": "Insira um múltiplo positivo de 25 para o small blind, até 50K.",
+  "下一手起始盲注{0}/{1}·筹码恢复为{2}，统计重新开始": "Próxima mão: blinds iniciais {0}/{1} · stacks restaurados para {2}, estatísticas reiniciadas",
+  "修改起始小盲": "Editar small blind inicial",
+  "起始小盲": "Small blind inicial",
+  "起始大盲": "Big blind inicial",
+  "小盲须为 25 的正整数倍且不超过 50K，大盲须为小盲的倍数且大于小盲。面额等于小盲，起始筹码为 100 BB。": "O small blind deve ser um múltiplo positivo de 25, até 50K. O big blind deve ser um múltiplo do small blind e maior do que ele. A denominação das fichas equivale ao small blind; os stacks iniciais são de 100 BB."
 }

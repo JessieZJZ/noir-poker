@@ -582,6 +582,215 @@ export async function nativeScenarios(app) {
     await app.click('#opponents-dialog .close-dialog');
     return { saved, languageChanges, portraits: images };
   });
+  await check('pending-blinds-validation-retry-and-next-hand', async () => {
+    const defaults = { smallBlind: 100, bigBlind: 200, startingStack: 20000, chipUnit: 100 };
+    const configured = { smallBlind: 300, bigBlind: 600, startingStack: 60000, chipUnit: 300 };
+    const readPreferences = () =>
+      app.evaluate(async () => ({
+        web: localStorage.getItem('noir-table-v1'),
+        native: (
+          await window.Capacitor.nativePromise('Preferences', 'get', { key: 'noir-table-v1' })
+        ).value,
+      }));
+    const observeClick = async (selector) => {
+      await app.evaluate((selector) => {
+        window.__nativeStakesObservation = null;
+        document.querySelector(selector).addEventListener(
+          'click',
+          () => {
+            window.__nativeStakesObservation = {
+              state: window.noir.getState(),
+              hands: document.querySelector('#stat-hands').textContent,
+              wins: document.querySelector('#stat-wins').textContent,
+            };
+          },
+          { once: true },
+        );
+      }, selector);
+      await app.click(selector);
+      return app.evaluate(() => window.__nativeStakesObservation);
+    };
+    // The installed driver exposes clicks and evaluation, without a text-entry
+    // helper. Dispatch a real input event on the visible editor; the production
+    // input handler performs validation and saving. No game API sets this value.
+    const inputSmallBlind = (value) =>
+      app.evaluate((value) => {
+        const input = document.querySelector('#small-blind-input');
+        if (input.hidden || !input.getClientRects().length)
+          throw Error('The installed small-blind editor must be visible');
+        Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set.call(input, value);
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+      }, value);
+    const finishHand = () =>
+      app.waitFor(
+        async () => {
+          const game = await app.state();
+          if (game.phase === 'done') return game;
+          if (game.legal.enabled && !game.players[0].folded) await app.click('#fold-button');
+          if (await app.visible('#continue-deal-button')) {
+            try {
+              await app.click('#continue-deal-button');
+            } catch (error) {
+              if ((await app.state()).phase !== 'done') throw error;
+            }
+          }
+          return null;
+        },
+        60000,
+        'The real hand must settle before retry or applying queued blinds',
+      );
+    await app.waitHero();
+    const original = await app.state();
+    assert.deepEqual(original.stakes, defaults);
+    assert.equal(original.pendingStakes, false);
+    await app.click('#opponents-button');
+    if ((await app.evaluate(() => document.documentElement.lang)) !== 'zh-CN') {
+      await app.select('#language-select', 'zh-CN');
+      await app.waitFor(
+        () => app.evaluate(() => document.documentElement.lang === 'zh-CN'),
+        30000,
+        'Localize the installed blind editor before checking its Chinese notice',
+      );
+    }
+    const initial = await app.evaluate(() => ({
+      small: document.querySelector('#small-blind-button').textContent,
+      big: document.querySelector('#big-blind-value').textContent,
+      pendingHidden: document.querySelector('#stakes-change-note').hidden,
+    }));
+    assert.deepEqual(initial, { small: '100', big: '200', pendingHidden: true });
+    const preferencesBefore = await app.waitFor(
+      async () => {
+        const preferences = await readPreferences();
+        return preferences.native === preferences.web ? preferences : null;
+      },
+      5000,
+      'Native and Web preference copies must agree before editing blinds',
+    );
+    await app.click('#small-blind-button');
+    const invalid = [];
+    for (const value of ['125.5', '50025']) {
+      await inputSmallBlind(value);
+      const error = await app.evaluate(() => {
+        const element = document.querySelector('#stakes-error');
+        return {
+          visible: !element.hidden && Boolean(element.getClientRects().length),
+          text: element.textContent,
+          color: getComputedStyle(element).color,
+          invalid: document.querySelector('#small-blind-input').getAttribute('aria-invalid'),
+          big: document.querySelector('#big-blind-value').textContent,
+        };
+      });
+      await app.screenshot(`pending-blinds-invalid-${value.replace('.', '-')}`);
+      assert.equal(error.visible, true);
+      assert.equal(error.invalid, 'true');
+      assert.match(error.text, /25/);
+      assert.match(error.text, /50K/);
+      const [red, green, blue] = error.color.match(/[\d.]+/g).map(Number);
+      assert.ok(red > green + 20 && red > blue + 20, 'Invalid input needs a red error message');
+      assert.equal(error.big, '200');
+      assert.deepEqual(await app.state(), original, 'Invalid input must preserve the live hand');
+      assert.deepEqual(await readPreferences(), preferencesBefore, 'Invalid input must not save');
+      invalid.push({ value, ...error });
+    }
+    await inputSmallBlind('300');
+    const queued = await app.state();
+    assert.deepEqual(queued, { ...original, requestedStakes: configured, pendingStakes: true });
+    const note = await app.evaluate(() => ({
+      big: document.querySelector('#big-blind-value').textContent,
+      errorHidden: document.querySelector('#stakes-error').hidden,
+      noteVisible: !document.querySelector('#stakes-change-note').hidden,
+      note: document.querySelector('#stakes-change-note').textContent,
+    }));
+    assert.deepEqual(note, {
+      big: '600',
+      errorHidden: true,
+      noteVisible: true,
+      note: '下一手起始盲注300/600·筹码恢复为60K，统计重新开始',
+    });
+    const saved = await app.waitFor(
+      async () => {
+        const preferences = await readPreferences();
+        return preferences.native === preferences.web &&
+          JSON.parse(preferences.native)?.stakes?.smallBlind === 300
+          ? preferences
+          : null;
+      },
+      5000,
+      'Valid pending blinds must save through the native Preferences bridge',
+    );
+    assert.deepEqual(JSON.parse(saved.native).stakes, configured);
+    await app.screenshot('pending-blinds-valid-next-hand-note');
+    await app.click('#opponents-dialog .close-dialog');
+    const settled = await finishHand();
+    const settledHands = Number(
+      await app.evaluate(() => document.querySelector('#stat-hands').textContent),
+    );
+    assert.ok(settledHands > 0, 'The real original hand must record a completed-hand statistic');
+    const budget = original.players.reduce((sum, player) => sum + player.stack, 0) + original.pot;
+    assert.equal(
+      settled.players.reduce((sum, player) => sum + player.stack, 0),
+      budget,
+    );
+    const retried = await observeClick('#restart-hand-button');
+    assert.deepEqual(retried.state.stakes, defaults);
+    assert.deepEqual(retried.state.requestedStakes, configured);
+    assert.equal(retried.state.pendingStakes, true);
+    assert.equal(retried.state.hand, original.hand);
+    assert.deepEqual(retried.state.hole, original.hole);
+    assert.equal(retried.state.replayAttempt, original.replayAttempt + 1);
+    assert.equal(
+      Number(retried.hands),
+      settledHands - 1,
+      'Retry must retract the original completed hand exactly once',
+    );
+    assert.ok(retried.state.players.every((player) => (player.stack + player.bet) % 100 === 0));
+    await app.screenshot('pending-blinds-retry-original-scale');
+    await finishHand();
+    assert.equal(
+      Number(await app.evaluate(() => document.querySelector('#stat-hands').textContent)),
+      settledHands,
+      'The retried hand must restore the completed-hand statistic before the new-scale reset',
+    );
+    const applied = await observeClick('#next-button');
+    assert.deepEqual(applied.state.stakes, configured);
+    assert.deepEqual(applied.state.requestedStakes, configured);
+    assert.equal(applied.state.pendingStakes, false);
+    assert.equal(applied.state.hand, 1);
+    assert.equal(applied.state.replayAttempt, 0);
+    assert.equal(applied.hands, '0');
+    assert.equal(applied.wins, '0');
+    assert.ok(
+      applied.state.players.every(
+        (player) => player.stack + player.bet === configured.startingStack,
+      ),
+      'Every seat starts with 100 BB before the new hand posts its blinds',
+    );
+    assert.equal(
+      applied.state.players.reduce((sum, player) => sum + player.stack, 0) + applied.state.pot,
+      configured.startingStack * applied.state.playerCount,
+      'The new denomination must conserve the reset table budget',
+    );
+    await app.screenshot('pending-blinds-applied-300-600-60K');
+    await app.evaluate((stakes) => window.noir.setStakes(stakes), defaults);
+    const restored = await app.state();
+    assert.deepEqual(restored.stakes, defaults);
+    assert.deepEqual(restored.requestedStakes, defaults);
+    assert.equal(restored.pendingStakes, false);
+    await app.waitFor(
+      async () => JSON.parse((await readPreferences()).native)?.stakes?.smallBlind === 100,
+      5000,
+      'Restore default stakes for the remaining installed-app scenarios',
+    );
+    return {
+      inputMethod: 'Visible input value plus bubbling input event through the native driver',
+      invalid,
+      note,
+      saved: JSON.parse(saved.native),
+      retry: retried,
+      applied,
+      restoredStakes: restored.stakes,
+    };
+  });
   await check('researched-players-and-new-style-persistence', async () => {
     const ids = ['ivey', 'negreanu', 'hellmuth', 'antonius', 'koon', 'chidwick', 'holz', 'haxton'];
     await app.click('#opponents-button');

@@ -1,5 +1,10 @@
 import { compactChips, compactActionAmounts } from '../engine/chip-format.js';
-import { sanitizeStakes, validateStakes, sameStakes } from '../engine/stakes.js';
+import {
+  sanitizeStakes,
+  validateStakes,
+  stakesFromSmallBlind,
+  sameStakes,
+} from '../engine/stakes.js';
 import { createHeroTurnCue } from '../ui/hero-turn.js';
 import { SEAT_ANCHORS } from '../ui/seat-geometry.js';
 import { explainOpponent } from '../review/opponents.js';
@@ -223,7 +228,7 @@ export function createWechatController({
           ? '思考中'
           : retained?.text || player.action || (done ? '未行动' : '等待行动');
       const match =
-        /^(?:(\d+-bet) )?(小盲|大盲|跟注|开池至|加注至|下注至|下注|短全下至|全下至|全下) (\d+)$/.exec(
+        /^(?:(\d+-bet)\s+)?(小盲|大盲|跟注|开池至|加注至|下注至|下注|短全下至|全下至|全下)\s*(\d+)$/.exec(
           rawAction,
         );
       const actionLabel = match
@@ -233,7 +238,7 @@ export function createWechatController({
             ? match[1] +
               (match[2] === '短全下至' ? ' 短全下' : match[2] === '全下至' ? ' 全下' : '')
             : match[2].replace(/至$/, '')
-        : rawAction;
+        : compactActionAmounts(rawAction);
       return {
         id: player.id,
         name: player.name,
@@ -297,12 +302,21 @@ export function createWechatController({
       heroStack: format(hero.stack),
       startingStackText: format(settings.stakes.startingStack),
       blindText: `${format(game.smallBlind)} / ${format(game.bigBlind)}`,
+      configuredSmallBlindText: format(settings.stakes.smallBlind),
+      configuredBigBlindText: format(settings.stakes.bigBlind),
+      requestedStakes: { ...settings.stakes },
+      pendingStakes: !sameStakes(settings.stakes, game.stakes),
+      stakesNotice: !sameStakes(settings.stakes, game.stakes)
+        ? `下一手起始盲注${format(settings.stakes.smallBlind)}/${format(settings.stakes.bigBlind)}·筹码恢复为${format(settings.stakes.startingStack)}，统计重新开始`
+        : '',
       stakesError,
       heroPosition: seatPosition(game, 0),
-      heroAction: cleanAction(
-        hero.folded || hero.allin || hero.lastAction?.street === game.street
-          ? hero.lastAction?.text || ''
-          : '',
+      heroAction: compactActionAmounts(
+        cleanAction(
+          hero.folded || hero.allin || hero.lastAction?.street === game.street
+            ? hero.lastAction?.text || ''
+            : '',
+        ),
       ),
       heroRank: heroBest && (game.revealed || game.showdown) ? heroBest.label : '',
       heroWinner: done && game.winners.some((w) => w.id === 0),
@@ -449,7 +463,16 @@ export function createWechatController({
   function setStakes(value) {
     try {
       const stakes = validateStakes(value);
-      if (!configureStakes(game, stakes)) return false;
+      if (!configureStakes(game, stakes)) {
+        const changed = !sameStakes(settings.stakes, stakes);
+        if (changed) {
+          settings.stakes = stakes;
+          save();
+        }
+        stakesError = '';
+        render();
+        return changed;
+      }
       settings.stakes = stakes;
       stakesError = '';
       save();
@@ -461,8 +484,39 @@ export function createWechatController({
       return false;
     }
   }
+  function requestStakes(value) {
+    try {
+      const stakes = stakesFromSmallBlind(value?.smallBlind);
+      if (value?.bigBlind !== stakes.bigBlind)
+        throw Error('大盲必须为小盲的两倍，起始筹码为100个大盲。');
+      // Check any derived fields supplied by API callers before saving.
+      validateStakes(value);
+      stakesError = '';
+      if (sameStakes(settings.stakes, stakes)) {
+        render();
+        return false;
+      }
+      settings.stakes = stakes;
+      save();
+      render();
+      return true;
+    } catch (error) {
+      stakesError = error.message;
+      render();
+      return false;
+    }
+  }
+  function requestSmallBlind(value) {
+    try {
+      return requestStakes(stakesFromSmallBlind(value));
+    } catch (error) {
+      stakesError = error.message;
+      render();
+      return false;
+    }
+  }
   function setPreference(key, value) {
-    if (key === 'stakes') return setStakes(value);
+    if (key === 'stakes') return requestStakes(value);
     const enablingSound = key === 'sound' && !settings.sound && value === true;
     const next = sanitize({ ...settings, [key]: value });
     settings = next;
@@ -575,6 +629,12 @@ export function createWechatController({
       freshHand();
     },
     setStakes,
+    requestStakes,
+    requestSmallBlind,
+    clearStakesError() {
+      stakesError = '';
+      render();
+    },
     setPreference,
     setSeatProfile(id, profileId) {
       if (

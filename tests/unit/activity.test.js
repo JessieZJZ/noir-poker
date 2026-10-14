@@ -42,6 +42,18 @@ test('activity uses a captured hand identity and safely escapes text', () => {
   assert.equal(format('<img src=x> & "chips"'), '&lt;img src=x&gt; &amp; &quot;chips&quot;');
 });
 
+test('activity formats raw chip amounts while retaining ordinals, names and metadata', () => {
+  const format = createActivityFormatter(players);
+  assert.equal(format('你 3-bet 加注至1200'), '你 3-bet 加注至1.2K');
+  assert.equal(format('你 全下至18800'), '你 全下至18.8K');
+  assert.equal(
+    format('Alex 全下至10000000'),
+    'Alex<span class="activity-persona">（ST 王）</span> 全下至10M',
+  );
+  assert.equal(format('第 1200 手 · 2026 年 · 1000%'), '第 1200 手 · 2026 年 · 1000%');
+  assert.equal(format('Mia 跟注 1.2K'), 'Mia 跟注 1.2K');
+});
+
 test('a long legal hand retains every activity entry in chronological order and clears on the next deal', () => {
   const g = newGame(9, { smallBlind: 25, bigBlind: 50, startingStack: 5000, chipUnit: 25 });
   startHand(g);

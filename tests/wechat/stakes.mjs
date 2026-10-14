@@ -273,6 +273,136 @@ try {
     interrupted,
     restored: { stakes: restored.stakes, stats: restored.stats, hand: restored.hand },
   });
+
+  // Exercise the actual settings controls, while keeping the current deal
+  // stationary for the edit/no-op/invalid mutation comparisons.
+  const queuedBefore = await mini.evaluate(() => {
+    const current = getCurrentPages().at(-1);
+    current._controller.hide();
+    current.openSettings();
+    return {
+      game: current._controller.getGame(),
+      settings: current._controller.getSettings(),
+      cards: current._controller
+        .getGame()
+        .players.map((player) => player.hole.map((card) => card.key)),
+    };
+  });
+  await (await page.$('#small-blind-button')).tap();
+  const input = await page.$('#small-blind-input');
+  assert.equal(await input.value(), '100');
+  for (const value of ['0', '-25', '25.5', '1K', '50025']) {
+    await input.input(value);
+    await page.waitFor(80);
+    assert.equal((await page.data()).stakesError, '小盲只能输入25的正整数倍，且不超过50K。');
+    assert.equal(await (await page.$('#stakes-error')).style('color'), 'rgb(255, 142, 149)');
+    assert.deepEqual(await game(), queuedBefore.game);
+    assert.deepEqual(
+      await mini.evaluate(() => getCurrentPages().at(-1)._controller.getSettings()),
+      queuedBefore.settings,
+    );
+  }
+  await capture('queued-blinds-invalid-input');
+  await input.input('50000');
+  await input.trigger('confirm', { value: '50000' });
+  await page.waitFor(100);
+  const queuedStakes = {
+    smallBlind: 50000,
+    bigBlind: 100000,
+    startingStack: 10000000,
+    chipUnit: 50000,
+  };
+  const queuedView = await page.data();
+  assert.equal(queuedView.configuredSmallBlindText, '50K');
+  assert.equal(queuedView.configuredBigBlindText, '100K');
+  assert.equal(queuedView.stakesNotice, '下一手起始盲注50K/100K·筹码恢复为10M，统计重新开始');
+  assert.equal(queuedView.pendingStakes, true);
+  assert.equal(queuedView.stakesError, '');
+  assert.deepEqual(await game(), queuedBefore.game);
+  assert.deepEqual(queuedView.settings.stakes, queuedStakes);
+  assert.deepEqual(
+    await mini.evaluate(() => JSON.parse(wx.getStorageSync('noir-wechat-settings-v1')).stakes),
+    queuedStakes,
+  );
+  await capture('queued-blinds-50k-100k-10m');
+  report.checks.push({
+    name: 'settings-editor-validates-and-persists-without-current-hand-mutation',
+    requested: queuedStakes,
+  });
+
+  await mini.evaluate(() => {
+    const current = getCurrentPages().at(-1);
+    current.closeSettings();
+    current._controller.show();
+    current._controller.action('fold');
+    current._controller.finishHand();
+  });
+  const beforeRetry = await wait(
+    'Queued-blinds old-scale settlement',
+    (current) => current.phase === 'done',
+  );
+  verifyChips(beforeRetry, beforeRetry.players.length * DEFAULT_STAKES.startingStack);
+  assert.equal(beforeRetry.stats.hands, 1);
+  const retried = await mini.evaluate(() => {
+    const current = getCurrentPages().at(-1);
+    const result = current._controller.retry();
+    current._controller.hide();
+    return { result, game: current._controller.getGame(), view: current.data };
+  });
+  assert.equal(retried.result, true);
+  assert.deepEqual(retried.game.stakes, DEFAULT_STAKES);
+  assert.deepEqual(
+    retried.game.players.map((player) => player.hole.map((card) => card.key)),
+    queuedBefore.cards,
+  );
+  assert.equal(retried.game.stats.hands, 0);
+  assert.equal(retried.view.pendingStakes, true);
+  assert.deepEqual(retried.view.settings.stakes, queuedStakes);
+  report.checks.push({ name: 'retry-retains-old-blinds-original-deal-and-queued-setting' });
+
+  await mini.evaluate(() => getCurrentPages().at(-1)._controller.show());
+  await waitHero();
+  await mini.evaluate(() => {
+    const controller = getCurrentPages().at(-1)._controller;
+    controller.action('fold');
+    controller.finishHand();
+  });
+  const queuedSettled = await wait(
+    'Replayed old-scale settlement',
+    (current) => current.phase === 'done',
+  );
+  assert.equal(queuedSettled.stats.hands, 1);
+  const appliedQueued = await mini.evaluate(() => {
+    const controller = getCurrentPages().at(-1)._controller;
+    getApp().__noirQueuedReviewUpdates = [];
+    controller.review((update) =>
+      getApp().__noirQueuedReviewUpdates.push({ loading: update.loading, hand: update.hand }),
+    );
+    controller.nextHand();
+    controller.hide();
+    return {
+      game: controller.getGame(),
+      view: getCurrentPages().at(-1).data,
+      review: getApp().__noirQueuedReviewUpdates,
+    };
+  });
+  verifyFresh(appliedQueued.game, queuedStakes);
+  assert.equal(potSize(appliedQueued.game), 150000);
+  assert.equal(appliedQueued.view.pendingStakes, false);
+  assert.equal(appliedQueued.view.stakesNotice, '');
+  assert.equal(appliedQueued.view.blindText, '50K / 100K');
+  assert.deepEqual(appliedQueued.review, [{ loading: true, hand: 1 }]);
+  await page.waitFor(300);
+  assert.deepEqual(
+    await mini.evaluate(() => getApp().__noirQueuedReviewUpdates),
+    appliedQueued.review,
+    'Next hand cancels the old hand review before applying queued blinds',
+  );
+  await capture('next-hand-applied-50k-100k-10m');
+  report.checks.push({
+    name: 'next-hand-applies-pending-config-resets-session-and-cancels-old-review',
+    stakes: appliedQueued.game.stakes,
+  });
   assert.equal(report.exceptions.length, 0);
   assert.equal(
     JSON.parse(await readFile(buildPath, 'utf8')).sourceDigest,
@@ -293,9 +423,11 @@ try {
         controller.setStakes(defaults);
         controller.show();
         delete getApp().__noirStakesReviewUpdates;
+        delete getApp().__noirQueuedReviewUpdates;
         return { stakes: controller.getGame().stakes, settings: controller.getSettings() };
       }, DEFAULT_STAKES);
       assert.deepEqual(report.cleanup.stakes, DEFAULT_STAKES);
+      assert.deepEqual(report.cleanup.settings.stakes, DEFAULT_STAKES);
       if (savedSettings)
         assert.deepEqual(
           settingsWithoutStakes(report.cleanup.settings),

@@ -14,6 +14,6 @@ export function compactChips(value, locale = 'en-US') {
 // Action records retain raw integer amounts; log presentation abbreviates them.
 export const compactActionAmounts = (text) =>
   String(text).replace(
-    /((?:小盲|大盲|跟注|全下|下注至|开池至|加注至|短全下至|全下至)\s+)(\d+)(?![\d.KM])/g,
+    /((?:小盲|大盲|全下跟注|跟注|短全下至|全下至|全下|下注至|下注|开池至|加注至)\s*)(\d+)(?![\dKMkm]|[.,]\d)/g,
     (_, label, amount) => label + compactChips(Number(amount)),
   );

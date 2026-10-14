@@ -17,6 +17,58 @@
 .settings-module .settings-row {
   gap: 12px;
 }
+.stakes-setting-row > div:first-child {
+  flex: 1;
+  min-width: 0;
+}
+.stakes-setting-row .setting-description {
+  margin: 6px 0 0;
+}
+.blind-setting-values {
+  display: flex;
+  align-items: center;
+  flex: none;
+  gap: 8px;
+  color: #d9e9e5;
+  font-variant-numeric: tabular-nums;
+}
+.small-blind-button,
+.small-blind-input {
+  width: 82px;
+  min-height: 40px;
+  padding: 7px 8px;
+  border: 1px solid #45635a;
+  border-radius: 8px;
+  background: #1b302a;
+  color: #b5efdb;
+  font: inherit;
+  font-size: 16px;
+  text-align: center;
+}
+.small-blind-button:hover,
+.small-blind-input:focus-visible {
+  border-color: #6de4c6;
+}
+.small-blind-input[aria-invalid='true'] {
+  border-color: #ff8e95;
+}
+.blind-setting-separator {
+  color: #91aba4;
+}
+.stakes-error {
+  margin: 8px 0 0;
+  color: #ff8e95;
+  font-size: 13px;
+  line-height: 1.6;
+}
+@media (max-width: 480px) {
+  .stakes-setting-row {
+    flex-wrap: wrap;
+  }
+  .stakes-setting-row > div:first-child {
+    flex-basis: 150px;
+  }
+}
 .settings-info {
   margin: 16px 0 0;
   padding: 14px 16px;

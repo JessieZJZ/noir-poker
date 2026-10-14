@@ -367,6 +367,40 @@
             </select>
           </div>
           <p id="table-change-note" class="table-change-note" role="status" hidden></p>
+          <div class="settings-row stakes-setting-row">
+            <div>
+              <span id="stakes-label">起始盲注</span>
+              <p id="stakes-description" class="setting-description">
+                点击小盲修改，大盲为小盲的两倍。
+              </p>
+            </div>
+            <div class="blind-setting-values" aria-labelledby="stakes-label">
+              <button
+                id="small-blind-button"
+                class="small-blind-button"
+                aria-label="修改起始小盲"
+                aria-describedby="stakes-description"
+              >
+                100
+              </button>
+              <input
+                id="small-blind-input"
+                class="small-blind-input"
+                type="text"
+                inputmode="numeric"
+                autocomplete="off"
+                spellcheck="false"
+                aria-label="起始小盲"
+                aria-describedby="stakes-description stakes-error"
+                aria-invalid="false"
+                hidden
+              />
+              <span class="blind-setting-separator" aria-hidden="true">/</span>
+              <span id="big-blind-value" aria-label="起始大盲">200</span>
+            </div>
+          </div>
+          <p id="stakes-error" class="stakes-error" role="alert" hidden></p>
+          <p id="stakes-change-note" class="table-change-note" role="status" hidden></p>
           <div class="settings-row">
             <span id="sound-label">音效</span>
             <button

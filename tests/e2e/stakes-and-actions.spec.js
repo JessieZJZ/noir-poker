@@ -34,14 +34,14 @@ test('default stakes, local icon and custom new games use the per-hand denominat
   }
   await page.evaluate(() =>
     window.qa.configuredTurn({
-      smallBlind: 500000,
-      bigBlind: 1000000,
-      startingStack: 100000000,
-      chipUnit: 500000,
+      smallBlind: 50000,
+      bigBlind: 100000,
+      startingStack: 10000000,
+      chipUnit: 50000,
     }),
   );
-  await expect(page.locator('#hero-stack')).toHaveText('100M');
-  await expect(page.locator('#blind-values')).toHaveText('500K / 1M');
+  await expect(page.locator('#hero-stack')).toHaveText('10M');
+  await expect(page.locator('#blind-values')).toHaveText('50K / 100K');
 });
 test('desktop actions align at the bottom and finish, review and retry share their height', async ({
   page,

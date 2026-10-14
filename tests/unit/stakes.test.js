@@ -13,7 +13,12 @@ import {
   botDecision,
   deckOfCards,
 } from '../../src/engine/poker.js';
-import { DEFAULT_STAKES, validateStakes } from '../../src/engine/stakes.js';
+import {
+  DEFAULT_STAKES,
+  validateStakes,
+  stakesFromSmallBlind,
+  MAX_SMALL_BLIND,
+} from '../../src/engine/stakes.js';
 import { compactChips, compactActionAmounts } from '../../src/engine/chip-format.js';
 import { fractionRaiseTo } from '../../src/engine/bet-sizing.js';
 import { preflopContext } from '../../src/review/preflop.js';
@@ -24,6 +29,12 @@ const configurations = [
   { smallBlind: 25, bigBlind: 50, startingStack: 5000, chipUnit: 25 },
   { smallBlind: 25, bigBlind: 75, startingStack: 7500, chipUnit: 25 },
   { smallBlind: 500, bigBlind: 1000, startingStack: 100000, chipUnit: 500 },
+  {
+    smallBlind: MAX_SMALL_BLIND,
+    bigBlind: MAX_SMALL_BLIND * 2,
+    startingStack: MAX_SMALL_BLIND * 200,
+    chipUnit: MAX_SMALL_BLIND,
+  },
 ];
 const wealth = (g) =>
   g.players.reduce((sum, p) => sum + p.stack, 0) + (g.phase === 'done' ? 0 : potSize(g));
@@ -35,6 +46,41 @@ const finish = (g) => {
     else act(g, g.actor, legalActions(g).canCheck ? 'check' : 'call');
   }
 };
+test('small-blind editor accepts only plain positive multiples of 25 through 50000', () => {
+  for (const [input, smallBlind] of [
+    ['25', 25],
+    ['100', 100],
+    ['125', 125],
+    ['50000', 50000],
+  ]) {
+    assert.deepEqual(stakesFromSmallBlind(input), {
+      smallBlind,
+      bigBlind: smallBlind * 2,
+      startingStack: smallBlind * 200,
+      chipUnit: smallBlind,
+    });
+  }
+  for (const input of [
+    '',
+    '0',
+    '-25',
+    '+25',
+    '12.5',
+    '100.0',
+    '1e3',
+    '1K',
+    '0.1M',
+    '50,000',
+    ' 100 ',
+    '24',
+    '50025',
+    'Infinity',
+    'NaN',
+  ]) {
+    assert.throws(() => stakesFromSmallBlind(input), /25.*50K/);
+  }
+  assert.throws(() => validateStakes({ smallBlind: 50025, bigBlind: 100050 }), /50K/);
+});
 for (const stakes of configurations) {
   test(`blinds ${stakes.smallBlind}/${stakes.bigBlind}, unit ${stakes.chipUnit}: legal floors, snapshots, bots, settlement and retry conserve chips`, () => {
     const g = newGame(5, stakes);

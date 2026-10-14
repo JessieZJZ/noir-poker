@@ -814,6 +814,57 @@
   display: block;
   margin-bottom: 15px;
 }
+.stakes-values {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  flex: none;
+  color: #d9e9e5;
+}
+.stakes-setting-row > view:first-child {
+  min-width: 0;
+}
+.stakes-setting-row .setting-description {
+  margin: 6px 0 0;
+}
+.small-blind-value,
+.small-blind-input {
+  box-sizing: border-box;
+  min-width: 64px;
+  width: 82px;
+  height: 40px;
+  border: 1px solid #45635a;
+  border-radius: 8px;
+  background: #1b302a;
+  color: #b5efdb;
+  font-size: 16px;
+  line-height: 38px;
+  text-align: center;
+  padding: 0 8px;
+  margin: 0;
+}
+.small-blind-input.invalid {
+  border-color: #ff8e95;
+}
+.stakes-error {
+  display: block;
+  color: #ff8e95;
+  font-size: 13px;
+  line-height: 21px;
+  margin-top: 8px;
+}
+.stakes-change-note {
+  line-height: 20px;
+}
+@media (max-width: 480px) {
+  .stakes-setting-row {
+    flex-wrap: wrap;
+  }
+  .stakes-setting-row > view:first-child {
+    flex-basis: 150px;
+  }
+}
 .detail-description {
   display: block;
   font-size: 15px;

@@ -53,6 +53,32 @@ test('locale preference hydrates and preserves ordered writes through native sto
   assert.equal(native.get('noir-locale'), 'en');
 });
 
+test('starting-blind settings preserve compact amounts and validation limits in every locale', async () => {
+  const sources = [
+    '起始盲注',
+    '点击小盲修改，大盲为小盲的两倍。',
+    '小盲只能输入25的正整数倍，且不超过50K。',
+    '修改起始小盲',
+    '起始小盲',
+    '起始大盲',
+  ];
+  for (const locale of ['en', 'zh-TW', 'ja', 'ko', 'es', 'it', 'pt', 'de', 'fr', 'ru']) {
+    await loadLocale(locale);
+    for (const source of sources) {
+      const translated = localizeText(source);
+      if (locale !== 'zh-TW') assert.notEqual(translated, source, `${locale}: ${source}`);
+      assert.ok(translated.trim());
+    }
+    const note = localizeText('下一手起始盲注50K/100K·筹码恢复为10M，统计重新开始');
+    assert.notEqual(note, '下一手起始盲注50K/100K·筹码恢复为10M，统计重新开始');
+    for (const amount of ['50K', '100K', '10M']) assert.ok(note.includes(amount), locale);
+    const error = localizeText('小盲只能输入25的正整数倍，且不超过50K。');
+    assert.ok(error.includes('25'), locale);
+    assert.ok(error.includes('50K'), locale);
+  }
+  await loadLocale('zh-CN');
+});
+
 test('Japanese and Korean catalogs contain no damaged repetition or replacement markers', async () => {
   for (const locale of ['ja', 'ko']) {
     const catalog = (
