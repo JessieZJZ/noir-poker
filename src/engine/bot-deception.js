@@ -71,6 +71,10 @@ export function deceptiveAction(view, profile, roll) {
       )
     : 0;
   const headsUp = view.rivals === 1;
+  const behindCount = view.actionContext?.unactedBehindCount,
+    responseCount = view.actionContext?.pendingResponseCount,
+    lateRiskAcceptable = behindCount == null ? view.rivals <= 3 : behindCount <= 3,
+    trapRiskAcceptable = responseCount == null ? view.rivals <= 2 : responseCount <= 2;
   const conditions = { effective, priorAggressor: priorRaise?.id ?? null };
   const select = (reason, threshold, action, kind, sizing = null, extra = {}) => {
     if (!threshold || roll(reason, threshold) >= threshold) return null;
@@ -94,7 +98,7 @@ export function deceptiveAction(view, profile, roll) {
     raises.length === 1 &&
     lastRaise.id !== view.id &&
     liveIds.has(lastRaise.id) &&
-    view.rivals <= 2 &&
+    trapRiskAcceptable &&
     view.currentBet <= 4 * bigBlind &&
     safeCall &&
     facingEffective >= legal.callAmount * 15;
@@ -156,7 +160,7 @@ export function deceptiveAction(view, profile, roll) {
     view.currentBet <= bigBlind &&
     legal.toCall <= bigBlind &&
     ['BTN', 'CO'].includes(view.position) &&
-    view.rivals <= 3 &&
+    lateRiskAcceptable &&
     !view.history.some((a) => a.street === 0 && a.action === 'call' && a.amount > 0);
   const checkedTo =
     headsUp &&
@@ -196,7 +200,7 @@ export function deceptiveAction(view, profile, roll) {
     lastRaise.id !== view.id &&
     liveIds.has(lastRaise.id) &&
     ['BTN', 'CO'].includes(view.position) &&
-    view.rivals <= 3 &&
+    lateRiskAcceptable &&
     view.currentBet <= 3 * bigBlind &&
     safeCall &&
     ranks[0] >= 13 &&

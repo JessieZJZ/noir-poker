@@ -5,6 +5,7 @@ import {
   readRecordTableGeometry,
   recordGeometryDifferences,
 } from '../fixtures/records-geometry.js';
+import { nativePageReady } from '../../scripts/native-back.mjs';
 const documentLoginMarker = (text) => /sign in|log in|登录账号/i.test(text);
 
 export async function waitForPendingOpponent(app) {
@@ -1742,6 +1743,138 @@ export async function nativeScenarios(app) {
         .length,
       countedBefore,
     );
+    // Exercise the remaining native navigation boundaries after the hand and
+    // chip assertions: privacy navigation starts a fresh document/next hand.
+    const waitGamePage = () =>
+      app.waitFor(
+        async () =>
+          (await app.evaluate(nativePageReady, 'game')) &&
+          (await app.evaluate(
+            () =>
+              document.documentElement.dataset.appReady === 'true' &&
+              document.body.dataset.recordsPage === 'game' &&
+              location.hash === '',
+          )) &&
+          (await app.visible('main.main')),
+        15000,
+        'Native navigation must return to a ready game without an old records route',
+      );
+    const openSavedHand = async () => {
+      await app.click('#rules-button');
+      await app.click('#records-menu-item');
+      await app.click(`[data-record-hand="${first.id}"]`);
+      assert.equal(await app.visible('#history-page'), true);
+    };
+    await openSavedHand();
+    await app.click('#history-review-button');
+    await app.waitFor(
+      () => app.visible('#review-dialog'),
+      10000,
+      'The historical review must still be open when native Back begins',
+    );
+    const reviewBeforeBack = await app.evaluate(() => ({
+      title: document.querySelector('#review-dialog-title').textContent,
+      open: document.querySelector('#review-dialog').open,
+      page: document.body.dataset.recordsPage,
+    }));
+    assert.equal(reviewBeforeBack.open, true);
+    assert.equal(reviewBeforeBack.page, 'hand');
+    assert.ok(reviewBeforeBack.title.includes(`第 ${first.hand} 手`));
+    await app.back();
+    if (app.platform === 'android') {
+      await app.waitFor(
+        () =>
+          app.evaluate(
+            () =>
+              document.body.dataset.recordsPage === 'hand' &&
+              !document.querySelector('#review-dialog').open,
+          ),
+        10000,
+        'Android Back must close the modal before popping its historical page',
+      );
+      await app.back();
+    }
+    const reviewBack = await app.waitFor(
+      async () => {
+        const result = await app.evaluate(() => ({
+          page: document.body.dataset.recordsPage,
+          hash: location.hash,
+          reviewOpen: document.querySelector('#review-dialog').open,
+          depth: history.state?.noirRecordsNavigation?.depth,
+        }));
+        return result.page === 'list' && !result.reviewOpen && result.hash === '#records'
+          ? result
+          : null;
+      },
+      10000,
+      'Real native Back must leave the saved hand for its list and close historical review',
+    );
+    assert.equal(reviewBack.depth, 1);
+    assert.equal(await app.visible('#records-page'), true);
+    assert.equal(await app.visible('#history-page'), false);
+    await app.sleep(1000);
+    await app.screenshot('game-records-review-native-back');
+    await app.click('#records-back-button');
+    await waitGamePage();
+    let returnGameBack;
+    if (app.platform === 'android') {
+      const beforeMinimize = await app.state();
+      await app.back();
+      const nativeState = await app.waitFor(
+        async () => {
+          const value = await app.nativeState();
+          return [2, 3].includes(value) ? value : null;
+        },
+        10000,
+        'Back after Return Game must actually minimize Android instead of reopening records',
+      );
+      await app.activate();
+      await waitGamePage();
+      const afterActivate = await app.state();
+      assert.equal(afterActivate.sessionNumber, beforeMinimize.sessionNumber);
+      assert.equal(afterActivate.hand, beforeMinimize.hand);
+      assert.equal(await app.visible('#records-page'), false);
+      returnGameBack = {
+        nativeState,
+        session: afterActivate.sessionNumber,
+        hand: afterActivate.hand,
+      };
+    } else {
+      // Establish an observable parent through real links. Never fabricate
+      // History API entries to make the edge gesture appear successful.
+      await app.click('#native-about-button');
+      await app.click('#native-about-dialog a[href="./app-privacy.html"]');
+      await app.waitFor(
+        () => app.evaluate(nativePageReady, 'privacy'),
+        15000,
+        'The visible privacy link must establish a ready predecessor page',
+      );
+      await app.click('article:not([hidden]) a[href="./"]');
+      await waitGamePage();
+      await openSavedHand();
+      await app.click('#records-back-button');
+      await waitGamePage();
+      await app.back({ expectedPage: 'privacy' });
+      const privacy = await app.evaluate(() => ({
+        pathname: location.pathname,
+        title: document.querySelector('article:not([hidden]) h1').textContent.trim(),
+        returnLink: document
+          .querySelector('article:not([hidden]) a[href="./"]')
+          .getAttribute('href'),
+        hasRecords: Boolean(document.querySelector('#records-page')),
+      }));
+      assert.ok(privacy.pathname.endsWith('/app-privacy.html'));
+      assert.equal(privacy.title, 'NOIR Poker 隐私政策');
+      assert.equal(privacy.returnLink, './');
+      assert.equal(privacy.hasRecords, false);
+      await app.sleep(1000);
+      await app.screenshot('game-records-return-game-edge-privacy');
+      await app.click('article:not([hidden]) a[href="./"]');
+      await waitGamePage();
+      returnGameBack = privacy;
+    }
+    await app.sleep(1000);
+    await app.screenshot('game-records-return-game-native-back');
     return {
       first: { hand: first.hand, profit: first.profit },
       liveGeometry,
@@ -1755,6 +1888,7 @@ export async function nativeScenarios(app) {
       list,
       review,
       resumed: { session: resumed.sessionNumber, hand: resumed.hand, wealth },
+      nativeBack: { reviewBeforeBack, reviewBack, returnGameBack },
     };
   });
   const unknown = selectedScenarios?.filter((name) => !seenScenarios.has(name));

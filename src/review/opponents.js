@@ -59,7 +59,13 @@ export function explainOpponent(record, identities = []) {
     v = {
       ...t.view,
       opponents: t.view.opponents?.map((p) => ({
-        ...p,
+        id: p.id,
+        stack: p.stack,
+        bet: p.bet,
+        total: p.total,
+        folded: p.folded,
+        allin: p.allin,
+        position: p.position,
         name: p.name || identities.find((identity) => identity.id === p.id)?.name,
       })),
     },
@@ -68,13 +74,28 @@ export function explainOpponent(record, identities = []) {
   // Reuse the classifier with an actor-relative snapshot. Other hole cards stay unread.
   const opponents =
     v.opponents || Array.from({ length: v.rivals }, (_, i) => ({ id: i + 100, stack: v.stack }));
+  const relativeIds = new Map([[actorId, 0], ...opponents.map((p, i) => [p.id, i + 1])]);
   const snapshot = {
     ...v,
+    id: 0,
     action: record.action,
     amount: record.amount,
-    players: [{ id: 0, stack: v.stack }, ...opponents.map((p, i) => ({ ...p, id: i + 1 }))],
+    players: [
+      { id: 0, name, position: v.position, stack: v.stack },
+      ...opponents.map((p, i) => ({ ...p, id: i + 1 })),
+    ],
+    opponents: undefined,
+    allIn: v.allIn
+      ? {
+          ...v.allIn,
+          aggressorId: relativeIds.get(v.allIn.aggressorId) ?? v.allIn.aggressorId,
+          committedIds: v.allIn.committedIds?.map((id) => relativeIds.get(id) ?? id + 100),
+          waitingIds: v.allIn.waitingIds?.map((id) => relativeIds.get(id) ?? id + 100),
+          ranges: v.allIn.ranges.map((r) => ({ ...r, id: relativeIds.get(r.id) ?? r.id + 100 })),
+        }
+      : undefined,
     pending: [],
-    history: v.history.map((a) => ({ ...a, id: a.id === actorId ? 0 : a.id + 100 })),
+    history: v.history.map((a) => ({ ...a, id: relativeIds.get(a.id) ?? a.id + 100 })),
   };
   const c = decisionContext(snapshot);
   c.inPosition = !!v.inPosition;
@@ -255,6 +276,7 @@ export function explainOpponent(record, identities = []) {
         : BOT_REASON_NAMES[t.reason],
     detail: paragraphs.join(''),
     paragraphs,
+    matchups,
     reasons,
     metrics: [],
     history: publicHistory(v),

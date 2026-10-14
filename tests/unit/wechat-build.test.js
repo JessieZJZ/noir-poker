@@ -1,4 +1,5 @@
 import { soundSamples, SOUND_SAMPLE_RATE } from '../../src/ui/sound-cues.js';
+import { verifyLocalWechatModules } from '../../scripts/wechat.mjs';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import vm from 'node:vm';
@@ -133,6 +134,34 @@ test('generated WeChat JavaScript loads the controller and complete player resea
   assert.equal(controller.getGame().players.length, 5);
   assert.equal(snapshot.seats.length, 4);
   assert.equal(snapshot.heroPosition, 'BTN');
+  context.wx = {};
+  context.getCurrentPages = () => [];
+  const table = load('./pages/table/page-definition.js');
+  assert.equal(
+    typeof table.onLoad,
+    'function',
+    'The actual generated page loads all local dependencies',
+  );
+  assert.equal(typeof load('./shared/ui/public-card-space.js').growPublicCards, 'function');
+  assert.equal(typeof load('./shared/ui/hero-card-space.js').growHeroCards, 'function');
+  assert.equal(typeof load('./shared/ui/numeric-width.js').numericWidthScale, 'function');
+  assert.equal(typeof load('./record-navigation.js').openRecords, 'function');
+});
+
+test('WeChat packaging rejects a missing static relative module before publication', async (t) => {
+  const directory = mkdtempSync(path.join(tmpdir(), 'noir-wechat-modules-'));
+  t.after(() => rmSync(directory, { recursive: true, force: true }));
+  writeFileSync(path.join(directory, 'entry.js'), "require('./record-navigation.js');\n");
+  await assert.rejects(
+    verifyLocalWechatModules(directory),
+    /entry\.js -> \.\/record-navigation\.js/,
+  );
+  writeFileSync(path.join(directory, 'record-navigation.js'), 'module.exports = {};\n');
+  await verifyLocalWechatModules(directory);
+  writeFileSync(path.join(directory, 'entry.js'), "require('./shared-space');\n");
+  await assert.rejects(verifyLocalWechatModules(directory), /entry\.js -> \.\/shared-space/);
+  writeFileSync(path.join(directory, 'shared-space.js'), 'module.exports = {};\n');
+  await verifyLocalWechatModules(directory);
 });
 
 test('concurrent WeChat builders serialize and preserve DevTools private preferences', async (t) => {

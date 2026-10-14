@@ -20,10 +20,11 @@
     class="records-session"
     data-id="{{session.id}}"
   >
-    <button
+    <view
       class="session-item"
       bindtap="toggleSession"
       data-id="{{session.id}}"
+      aria-role="button"
       aria-expanded="{{expanded[session.id] ? 'true' : 'false'}}"
     >
       <view class="session-item-heading"
@@ -48,15 +49,16 @@
       <view class="session-config"
         ><text>起始盲注 {{session.blindText}}</text><text>{{session.playerCount}} 人桌</text></view
       >
-    </button>
+    </view>
     <view wx:if="{{expanded[session.id]}}" class="hand-list">
-      <button
+      <view
         wx:for="{{session.attempts}}"
         wx:key="id"
-        class="hand-item {{item.superseded ? 'superseded' : ''}}"
+        class="hand-item {{item.superseded ? 'superseded' : ''}} {{item.status !== 'completed' ? 'is-disabled' : ''}}"
         data-id="{{item.id}}"
         bindtap="openHand"
-        disabled="{{item.status !== 'completed'}}"
+        aria-role="button"
+        aria-disabled="{{item.status !== 'completed' ? 'true' : 'false'}}"
       >
         <view class="hand-cards"
           ><view
@@ -82,7 +84,7 @@
           class="hand-profit {{item.profit > 0 ? 'positive' : item.profit < 0 ? 'negative' : ''}}"
           >{{item.profitText}}</text
         >
-      </button>
+      </view>
     </view>
   </view>
   <text class="records-note"

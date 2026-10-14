@@ -218,8 +218,18 @@ test('five-player side seats surround the waist with half card backs and a reada
               problems.push(`seat ${seat.dataset.player} balanced tag is too small or clipped`);
           }
           const hero = document.querySelector('#hero-cards > .playing-card');
-          if (innerWidth === 440 && (hero.offsetWidth > 72 || hero.offsetHeight > 104))
-            problems.push('hero cards are larger than the requested compact size');
+          if (
+            innerWidth === 440 &&
+            hero.offsetWidth !==
+              Math.round(
+                parseFloat(
+                  getComputedStyle(document.querySelector('#arena')).getPropertyValue(
+                    '--hero-card-width',
+                  ),
+                ),
+              )
+          )
+            problems.push('hero artwork disagrees with its shared safe-space budget');
           return problems;
         }),
       )

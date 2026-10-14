@@ -66,6 +66,31 @@ export function readTableLayout() {
         stackBox = profile.querySelector('.seat-stack').getBoundingClientRect(),
         font = (selector) =>
           parseFloat(getComputedStyle(profile.querySelector(selector)).fontSize) * scale;
+      const profileBox = profile.getBoundingClientRect();
+      const content = [
+        ...profile.querySelectorAll(
+          '.avatar, .seat-name-label, .position-badge, .seat-peek, .seat-style-label, .seat-stack',
+        ),
+      ].flatMap((el) => {
+        const box = el.getBoundingClientRect();
+        if (!box.width || !box.height) return [];
+        if (el.matches('.avatar, .position-badge, .seat-peek')) return [box];
+        const range = document.createRange();
+        range.selectNodeContents(el);
+        const glyph = range.getBoundingClientRect();
+        // Ellipsized text still exposes its full hidden range horizontally.
+        // Only that axis is clipped; retain the real font's ascender/descender
+        // extent so a short line box cannot hide a vertical padding failure.
+        const clipped = getComputedStyle(el).overflowX === 'hidden';
+        return [
+          {
+            left: clipped ? Math.max(glyph.left, box.left) : glyph.left,
+            right: clipped ? Math.min(glyph.right, box.right) : glyph.right,
+            top: Math.min(glyph.top, box.top),
+            bottom: Math.max(glyph.bottom, box.bottom),
+          },
+        ];
+      });
       return {
         id: profile.closest('.seat').dataset.player,
         padding: [style.paddingTop, style.paddingRight, style.paddingBottom, style.paddingLeft].map(
@@ -78,6 +103,14 @@ export function readTableLayout() {
         styleSize: parseFloat(tag.fontSize) * scale,
         stackSize: font('.seat-stack'),
         stackBelowStyle: stackBox.top >= tagBox.bottom - 0.5,
+        contentInsets: content.length
+          ? {
+              top: Math.min(...content.map((box) => (box.top - profileBox.top) / scale)),
+              right: Math.min(...content.map((box) => (profileBox.right - box.right) / scale)),
+              bottom: Math.min(...content.map((box) => (profileBox.bottom - box.bottom) / scale)),
+              left: Math.min(...content.map((box) => (box.left - profileBox.left) / scale)),
+            }
+          : null,
       };
     }),
     rail: {
@@ -230,6 +263,14 @@ export function assertTableLayout(info) {
     );
   }
   for (const profile of info.profiles) {
+    if ('contentInsets' in profile)
+      assert.ok(
+        profile.contentInsets &&
+          Object.values(profile.contentInsets).every(
+            (inset) => Number.isFinite(inset) && inset >= 3.75,
+          ),
+        `Seat ${profile.id} visible text and controls need a border plus 3px of real padding`,
+      );
     if (profile.stackBelowStyle !== undefined)
       assert.ok(profile.stackBelowStyle, `Seat ${profile.id} chips must sit below its style tag`);
     assert.ok(
@@ -285,8 +326,10 @@ export function assertSeatPresentation(presentation, viewport, largeTablet = fal
       'Hero rank slot must reserve a bounded readable line',
     );
     assert.ok(
-      presentation.heroGap >= height && presentation.heroGap <= height + 8,
-      'Hero identity must follow its measured rank slot without a distant empty strip',
+      tag
+        ? presentation.heroGap >= height && presentation.heroGap <= height + 8
+        : presentation.heroGap >= 3 && presentation.heroGap <= 10,
+      'Hero identity must follow a visible rank or move close to the cards when the reserved slot is empty',
     );
     if (tag)
       assert.ok(

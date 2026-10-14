@@ -53,6 +53,26 @@ test('locale preference hydrates and preserves ordered writes through native sto
   assert.equal(native.get('noir-locale'), 'en');
 });
 
+test('the practice heading describes the current session in every supported locale', async () => {
+  for (const [locale, expected] of Object.entries({
+    'zh-CN': '本局练习',
+    en: 'Session practice',
+    'zh-TW': '本局練習',
+    ja: 'このセッションの練習',
+    ko: '이번 세션 연습',
+    es: 'Práctica de esta sesión',
+    it: 'Pratica della sessione',
+    pt: 'Prática desta sessão',
+    de: 'Übung dieser Sitzung',
+    fr: 'Pratique de cette session',
+    ru: 'Практика в этой сессии',
+  })) {
+    await loadLocale(locale);
+    assert.equal(localizeText('本局练习'), expected, locale);
+  }
+  await loadLocale('zh-CN');
+});
+
 test('starting-blind settings preserve compact amounts and validation limits in every locale', async () => {
   const sources = [
     '起始盲注',

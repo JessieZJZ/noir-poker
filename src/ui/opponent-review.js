@@ -3,6 +3,7 @@ import { explainOpponent } from '../review/opponents.js';
 import { getBotProfile } from '../engine/bot-profiles.js';
 import { actionLabel, STREET_NAMES } from '../review/analysis.js';
 import { reviewPlayerLabel } from './review-label.js';
+import { renderReviewParagraphs } from './review-matchups.js';
 const esc = (v) =>
   String(v)
     .replaceAll('&', '&amp;')
@@ -67,7 +68,7 @@ export function createOpponentReview({ card }) {
         records.map(({ id, name }) => ({ id, name })),
       ),
       navigationLabel = '第 ' + r.sequence + ' 次公开行动';
-    return `<div class="review-detail-header"><h3>${esc(r.name)}，${STREET_NAMES[v.street]}</h3></div><div class="review-scene"><div class="review-card-rows"><div class="review-card-group"><span>${esc(r.name)} 当时的底牌</span><div class="review-cards">${v.hole.map((c) => card(c, { small: true })).join('')}</div></div><div class="review-card-group"><span>当时的公共牌</span><div class="review-cards">${v.board.length ? v.board.map((c) => card(c, { small: true })).join('') : '<span class="review-no-board">公共牌尚未发出</span>'}</div></div></div><div class="review-scene-meta"><div><span>位置</span><strong>${v.position}</strong></div><div><span>当时底池</span><strong>${n(v.pot)}</strong></div><div><span>剩余筹码</span><strong>${n(v.stack)}</strong></div></div></div><div class="review-explanation opponent-reason">${(e.paragraphs || [e.detail]).map((s) => `<p>${esc(s)}</p>`).join('')}${e.reasons.map((s) => `<p>${esc(s)}</p>`).join('')}</div><div class="review-step-nav"><button data-opponent-nav="-1" ${selected === 0 ? 'disabled' : ''}>上一步</button><span>${navigationLabel}</span><button data-opponent-nav="1" ${selected >= records.filter((x) => filter === 'all' || x.id === Number(filter)).length - 1 ? 'disabled' : ''}>下一步</button></div>`;
+    return `<div class="review-detail-header"><h3>${esc(r.name)}，${STREET_NAMES[v.street]}</h3></div><div class="review-scene"><div class="review-card-rows"><div class="review-card-group"><span>${esc(r.name)} 当时的底牌</span><div class="review-cards">${v.hole.map((c) => card(c, { small: true })).join('')}</div></div><div class="review-card-group"><span>当时的公共牌</span><div class="review-cards">${v.board.length ? v.board.map((c) => card(c, { small: true })).join('') : '<span class="review-no-board">公共牌尚未发出</span>'}</div></div></div><div class="review-scene-meta"><div><span>位置</span><strong>${v.position}</strong></div><div><span>当时底池</span><strong>${n(v.pot)}</strong></div><div><span>剩余筹码</span><strong>${n(v.stack)}</strong></div></div></div><div class="review-explanation opponent-reason">${renderReviewParagraphs(e.paragraphs || [e.detail], e.matchups, v.street)}${e.reasons.map((s) => `<p>${esc(s)}</p>`).join('')}</div><div class="review-step-nav"><button data-opponent-nav="-1" ${selected === 0 ? 'disabled' : ''}>上一步</button><span>${navigationLabel}</span><button data-opponent-nav="1" ${selected >= records.filter((x) => filter === 'all' || x.id === Number(filter)).length - 1 ? 'disabled' : ''}>下一步</button></div>`;
   }
   panel.addEventListener('click', (e) => {
     const b = e.target.closest('[data-opponent-index], [data-opponent-nav]');

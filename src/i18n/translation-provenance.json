@@ -954,5 +954,36 @@
       "linguisticReview": "pending",
       "historyNavigationRevision": "The historical heading uses the existing translated session and hand wording without a retry suffix. Retry tags appear only beside the back-to-records button; generic historical and superseded tags are omitted. The two-slot title retains the existing translations in all ten translated locales."
     }
+  },
+  "positionAwareMatchupCopy": {
+    "date": "2026-10-14",
+    "messageCount": 13,
+    "sourceInventoryCount": 1478,
+    "sourceKeys": [
+      "仅比较起手牌结构，不代表获胜概率；之后仍需看公共牌。",
+      "公开未知牌不足以抽取底牌。",
+      "公开范围没有可用底牌组合。",
+      "当前可能平分的牌组",
+      "当前可能落后的牌组",
+      "当前可能领先的牌组",
+      "当前成牌对比",
+      "当前没有可能更强的牌组；后续公共牌仍可能改变强弱。",
+      "按位置与此前公开行动估计排序，仅是可能牌组，不代表对手实际底牌。",
+      "河牌已发完，当前没有可能更强的牌组。",
+      "结构上较弱的可能牌组",
+      "结构上较强的可能牌组",
+      "起手牌结构对比"
+    ],
+    "method": "Agent-authored translations in all ten translated locales. Existing catalog entries and fragments are retained.",
+    "scope": "Eleven review titles, direction labels and limitations, plus two public-range diagnostics. The copy distinguishes preflop starting-hand structure from current made-hand comparisons. Candidate ordering is estimated from position and prior public actions; candidates do not identify the opponent’s actual hole cards. No numeric probabilities or ranking weights are introduced by these labels.",
+    "validation": "i18n extraction and check pass for 1478 source messages and all eleven supported locales, including 213 structured research messages and 60 profile messages. 130 direct localizeText checks cover the new keys across the ten translated locales, with exact translations and no numeric probability text. Pending-blind settings, the 50K maximum and the 200/600/400/1.2K/1K guide facts remain unchanged.",
+    "linguisticReview": "Independent native-language poker review pending; source coverage and placeholder checks do not certify complete linguistic quality."
+  },
+  "sessionPracticeTitleRevision": {
+    "date": "2026-10-15",
+    "sourceKeys": ["本局练习"],
+    "method": "Agent-authored session-specific practice title in all ten translated locales. Simplified Chinese and the WeChat template use the source title directly.",
+    "scope": "Rename the practice statistics card heading and remove its table-session subtitle. Chip statistics, net-change wording and all other practice copy remain unchanged.",
+    "linguisticReview": "Independent native-language review pending."
   }
 }

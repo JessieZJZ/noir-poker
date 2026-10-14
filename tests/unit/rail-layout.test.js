@@ -32,6 +32,21 @@ for (const width of [320, 390, 440, 768, 820, 1032]) {
         );
       }
       assert.ok(fit.hero.top - fit.public.top - fit.public.height >= 24);
+      const absoluteParts = (box) =>
+        (box.parts ?? [{ left: 0, top: 0, width: box.width, height: box.height }]).map((part) => ({
+          ...part,
+          left: box.left + part.left,
+          top: box.top + part.top,
+        }));
+      for (const cardPart of absoluteParts(fit.public))
+        for (const playerPart of [...fit.positioned, fit.hero].flatMap(absoluteParts))
+          assert.ok(
+            cardPart.left + cardPart.width + 12.5 <= playerPart.left + 1e-9 ||
+              playerPart.left + playerPart.width + 12.5 <= cardPart.left + 1e-9 ||
+              cardPart.top + cardPart.height + 12.5 <= playerPart.top + 1e-9 ||
+              playerPart.top + playerPart.height + 12.5 <= cardPart.top + 1e-9,
+            'Enlarged community artwork retains the full gap from every reserved player part',
+          );
     });
   }
 }
@@ -51,10 +66,10 @@ test('larger captions and hero identity reserve their full text footprints befor
     });
     const text = fit.textMetrics;
     assert.ok(text['action-height'] >= text['player-action'] * 1.2 * 2 + 2);
-    assert.ok(text['caption-width'] >= fit.profileWidth || width > 600);
+    assert.ok(text['caption-width'] >= 112 || width > 600);
     assert.ok(
       fit.heroFoot >=
-        fit.heroHeight +
+        fit.heroSlotHeight +
           text['rank-height'] +
           text['hero-identity'] * 1.2 +
           text['hero-action'] * 1.2 +
@@ -80,4 +95,20 @@ test('narrow phone card backs fit the reserved pair slot while leaving a visible
   // Keep the smallest tall-phone face/back readable after the solver's fit.
   assert.ok(fit.cardWidth * fit.arenaScale >= 31);
   assert.ok(text['player-back-width'] * fit.arenaScale >= 15);
+});
+
+test('tablet-sized PC windows cap hero artwork independently of pointer type', () => {
+  for (const width of [601, 768, 821, 1032]) {
+    for (const count of [5, 9]) {
+      const fit = compactTableLayout({
+        width,
+        displayHeight: width === 1032 ? 1376 : 813,
+        height: 550,
+        seats: Array.from({ length: count - 1 }, (_, i) => ({ id: i + 1 })),
+      });
+      assert.equal(fit.heroWidth, 94);
+      assert.equal(fit.heroHeight, 136);
+      assert.equal(fit.heroSlotHeight, 136);
+    }
+  }
 });

@@ -2,6 +2,7 @@ import { compactTableLayout } from './compact-table-layout.js';
 import { COMPACT_PLAY_QUERY } from './play-geometry.js';
 import { railLayout } from './rail-layout.js';
 import { readPlayViewport } from './stable-viewport.js';
+import { numericWidthScale } from './numeric-width.js';
 // Select the closest collision-free position to the upper felt center. Using each
 // public part separately leaves usable space beside a narrow pot or caption.
 export function nearestClearTop(ideal, min, max, blocked) {
@@ -33,9 +34,48 @@ export function minimalSeatShift(leftSide, footprint, corridor, bounds) {
 
 // Measure stable wrappers, then share the same rail solver with WeChat.
 export function createSettlementLayout(arena, { observe = true } = {}) {
+  const numberWidths = new Map();
+  const fitNumbers = () => {
+    const entries = [...arena.querySelectorAll('.seat-profile')].map((profile) => {
+      const stack = profile.querySelector('.seat-stack');
+      const style = getComputedStyle(stack);
+      const key = `${stack.textContent}|${style.font}|${document.fonts.status}`;
+      return { profile, stack, key };
+    });
+    // Clear unknown widths together, then measure in one layout phase.
+    for (const { stack, key } of entries)
+      if (!numberWidths.has(key)) stack.style.removeProperty('--stack-width-scale');
+    const measured = [];
+    const arenaScale = arena.getBoundingClientRect().width / arena.offsetWidth || 1;
+    for (const { profile, stack, key } of entries) {
+      let width = numberWidths.get(key);
+      if (width === undefined) {
+        const range = document.createRange();
+        range.selectNodeContents(stack);
+        width = Math.max(stack.offsetWidth, range.getBoundingClientRect().width / arenaScale);
+        if (numberWidths.size > 256) numberWidths.clear();
+        numberWidths.set(key, width);
+      }
+      const profileStyle = getComputedStyle(profile);
+      const available =
+        profile.clientWidth -
+        parseFloat(profileStyle.paddingLeft) -
+        parseFloat(profileStyle.paddingRight) -
+        profile.querySelector('.avatar').offsetWidth -
+        parseFloat(profileStyle.columnGap) -
+        0.25;
+      measured.push({ stack, scale: numericWidthScale(width, available) });
+    }
+    // Reads precede writes; unchanged amounts reuse their measured font width.
+    for (const { stack, scale } of measured) stack.style.setProperty('--stack-width-scale', scale);
+  };
   const center = arena.querySelector('.table-center');
   let frame = null;
   function update() {
+    const heroRank = arena.querySelector('.hero-hand-rank');
+    arena
+      .querySelector('.hero-area')
+      .classList.toggle('has-hero-rank', !!heroRank && !heroRank.hidden);
     arena.style.removeProperty('min-height');
     arena.classList.remove('public-two-rows');
     for (const el of [
@@ -220,6 +260,7 @@ export function createSettlementLayout(arena, { observe = true } = {}) {
       bottom: 'auto',
       transform: 'none',
     });
+    fitNumbers();
   }
   if (observe) {
     const observer = new ResizeObserver(() => {

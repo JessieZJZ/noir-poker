@@ -37,7 +37,11 @@
 }
 .game-surface .arena[data-player-count] .seat .seat-profile .seat-stack {
   font-size: var(--player-stack, 16px);
+  font-family: 'Barlow Condensed', Manrope, sans-serif;
+  font-weight: 600;
   line-height: 1;
+  transform: scaleX(var(--stack-width-scale, 1));
+  transform-origin: left center;
 }
 .game-surface .arena[data-player-count] .seat .card-back {
   width: var(--player-back-width, 27px);
@@ -115,6 +119,9 @@ html .game-surface .arena[data-player-count] .seat .seat-profile .seat-style-lab
 }
 .game-surface .arena[data-player-count] .hero-area {
   padding-bottom: var(--hero-info-height, 52px);
+}
+.game-surface .arena[data-player-count] .hero-area:not(.has-hero-rank) .hero-name {
+  translate: 0 calc(-1 * var(--hero-rank-empty-lift, 28px));
 }
 .game-surface .hand-label,
 .game-surface .blind-info {
@@ -283,11 +290,21 @@ html .game-surface .arena[data-player-count] .seat .seat-profile .seat-style-lab
 @media (max-width: 900px), (min-width: 901px) and (max-width: 1100px) and (orientation: portrait) {
   .game-surface .arena[data-player-count] .hero-cards {
     flex: none;
-    height: var(--hero-card-height, 104px);
-    min-height: var(--hero-card-height, 104px);
+    align-items: flex-start;
+    height: var(--hero-card-slot-height, 104px);
+    min-height: var(--hero-card-slot-height, 104px);
+    gap: var(--hero-card-gap, 7px);
   }
   .game-surface .arena[data-player-count] .hero-cards .playing-card {
     width: var(--hero-card-width, 72px);
     height: var(--hero-card-height, 104px);
+    position: relative;
+    top: calc(-1 * var(--hero-card-shift, 0px));
+  }
+  .game-surface .arena[data-player-count] .hero-cards .playing-card:first-child {
+    transform: rotate(var(--hero-card-left-angle, -4deg));
+  }
+  .game-surface .arena[data-player-count] .hero-cards .playing-card:last-child {
+    transform: rotate(var(--hero-card-right-angle, 4deg));
   }
 }

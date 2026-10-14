@@ -208,7 +208,7 @@ test('earlier short all-in keeps its original public range and only competes for
   const normalSideBet = decide(oldShortAllInSideBet());
   assert.equal(allInContext(normalSideBet.trace.view), null);
   assert.equal(normalSideBet.trace.allIn, null);
-  assert.equal(normalSideBet.trace.equityModel, 'random-opponents');
+  assert.equal(normalSideBet.trace.equityModel, 'public-action-ranges');
 });
 
 test('shared royal and private river nuts defend guaranteed nonlosing calls and settle in whole chips', () => {

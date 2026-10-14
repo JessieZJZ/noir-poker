@@ -31,6 +31,19 @@ export async function fileList(directory, prefix = '') {
   return files;
 }
 
+export async function verifyLocalWechatModules(directory) {
+  const files = await fileList(directory);
+  const available = new Set(files);
+  for (const file of files.filter((name) => name.endsWith('.js'))) {
+    const source = await readFile(path.join(directory, file), 'utf8');
+    for (const match of source.matchAll(/\brequire\(\s*(['"])(\.{1,2}\/[^'"]+)\1\s*\)/g)) {
+      const target = path.posix.normalize(path.posix.join(path.posix.dirname(file), match[2]));
+      if (!available.has(target) && !available.has(`${target}.js`))
+        throw Error(`Missing local WeChat module: ${file} -> ${match[2]}`);
+    }
+  }
+}
+
 export function wechatSourceDigest() {
   return checksum(
     sourceDigest() +
@@ -177,6 +190,9 @@ export async function buildWechat(output = wechatOutput) {
       'seat-geometry.js',
       'rail-layout.js',
       'compact-table-layout.js',
+      'public-card-space.js',
+      'hero-card-space.js',
+      'numeric-width.js',
       'cards.js',
       'hero-turn.js',
       'card-rank-glyphs.js',
@@ -237,6 +253,7 @@ export async function buildWechat(output = wechatOutput) {
     };
     await writeFile(path.join(staging, 'project.config.json'), JSON.stringify(project, null, 2));
     await writeFile(path.join(staging, 'package.json'), '{"type":"commonjs","private":true}\n');
+    await verifyLocalWechatModules(staging);
     const files = [];
     // Local IDE preferences are preserved below, outside the runtime manifest.
     await rm(path.join(staging, 'project.private.config.json'), { force: true });

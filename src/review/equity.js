@@ -1,6 +1,11 @@
-import { bigBlindOf } from '../engine/stakes.js';
 import { deckOfCards, evaluate, compare, partitionPots } from '../engine/poker.js';
-import { startingTier } from './context.js';
+import { botBoardFeatures } from '../engine/bot-profiles.js';
+import { preparePublicRanges, publicComboWeight } from '../engine/public-ranges.js';
+import {
+  createPublicPairSampler,
+  publicHandData,
+  samplePublicPair,
+} from '../engine/public-equity.js';
 export function seedRandom(seed) {
   let value = seed >>> 0;
   return () => {
@@ -97,59 +102,28 @@ function drawPair(pool, rng) {
   if (b >= a) b++;
   return [a, b];
 }
-export function rangeWeight(pair, s, opponent) {
-  const prefix = s.history.filter((a) => a.street === 0);
-  const informative = prefix
-    .map((a, i) => ({ a, i }))
-    .filter(({ a }) => a.id === opponent.id && ['call', 'raise'].includes(a.action))
-    .at(-1);
-  let preWeight = 1;
-  if (informative) {
-    const level = prefix
-      .slice(0, informative.i + 1)
-      .filter((a) => a.action === 'raise' && a.amount > bigBlindOf(s)).length;
-    const tables =
-      informative.a.action === 'raise'
-        ? level >= 3
-          ? [0.04, 0.2, 1.5, 6]
-          : level === 2
-            ? [0.15, 0.7, 3, 6]
-            : [1, 2, 4, 6]
-        : level >= 3
-          ? [0.08, 0.3, 2, 6]
-          : level === 2
-            ? [0.2, 0.8, 3, 6]
-            : [1, 2, 3, 4];
-    preWeight = tables[startingTier(pair)];
-  }
-  if (s.street === 0) return preWeight;
-  const current = s.history
-    .filter(
-      (a) => a.street === s.street && a.id === opponent.id && ['call', 'raise'].includes(a.action),
-    )
-    .at(-1);
-  if (!current) return preWeight;
-  const score = evaluate([...pair, ...s.board]).score[0];
-  const suitedDraw = [0, 1, 2, 3].some(
-    (suit) =>
-      [...pair, ...s.board].filter((c) => c.suit === suit).length === 4 &&
-      pair.some((c) => c.suit === suit),
-  );
-  let madeWeight = 1;
-  if (current.action === 'raise')
-    madeWeight = score >= 4 ? 6 : score >= 2 ? 5 : score === 1 ? 3 : suitedDraw ? 2 : 1;
-  else if (current.amount >= Math.max(2 * bigBlindOf(s), s.pot * 0.2))
-    madeWeight = score >= 2 ? 5 : score === 1 ? 3 : suitedDraw ? 2 : 1;
-  else return preWeight;
-  // Prior preflop information remains relevant; max stays at six for rejection sampling.
-  return informative ? (preWeight * madeWeight) / 6 : madeWeight;
+// Keep the historical 0..6 contract for callers while the shared engine
+// kernel supplies the position/action likelihood used by bots and examples.
+export function rangeWeight(pair, s, opponent, ranges = preparePublicRanges(s), cache = new Map()) {
+  const descriptor = ranges.find((range) => range.id === opponent.id);
+  if (!descriptor) return 6;
+  const board = descriptor.board || [],
+    data =
+      board.length >= 3
+        ? publicHandData(pair, board, { evaluate, features: botBoardFeatures, cache })
+        : {},
+    boardScore = board.length === 5 ? publicHandData([], board, { evaluate, cache }).score : null;
+  return 6 * publicComboWeight(pair, descriptor, { board, ...data, boardScore, compare });
 }
 export function sampleValue(s, price, trials, weighted) {
   if (!price.contestable) return { equity: 0, margin: 0, ev: 0 };
   const rng = seedRandom(snapshotSeed(s) + (weighted ? 7919 : 0)),
     known = new Set([...s.hole, ...s.board].map((c) => c.key)),
     available = deckOfCards().filter((c) => !known.has(c.key));
-  const opponents = s.players.filter((p) => p.id !== 0 && !p.folded);
+  const opponents = s.players.filter((p) => p.id !== 0 && !p.folded),
+    ranges = preparePublicRanges(s),
+    descriptors = new Map(ranges.map((range) => [range.id, range])),
+    cache = new Map();
   let sum = 0;
   if (s.board.length === 5 && opponents.length === 1) {
     const hero = evaluate([...s.hole, ...s.board]).score,
@@ -170,7 +144,7 @@ export function sampleValue(s, price, trials, weighted) {
                   (!pot.eligible.includes(opponent.id) ? 1 : c > 0 ? 1 : c === 0 ? 0.5 : 0),
               0,
             ) / price.contestable,
-          weight = weighted ? rangeWeight(pair, s, opponent) : 1;
+          weight = weighted ? rangeWeight(pair, s, opponent, ranges, cache) : 1;
         weightSum += weight;
         valueSum += fraction * weight;
         combinations++;
@@ -184,28 +158,38 @@ export function sampleValue(s, price, trials, weighted) {
       samples: combinations,
     };
   }
+  // The first opponent sees the same unblocked pool every trial. Later seats
+  // must rebuild their prior after earlier sampled hands remove their cards.
+  const firstPairSampler =
+    weighted && opponents.length
+      ? createPublicPairSampler(available, descriptors.get(opponents[0].id), {
+          evaluate,
+          features: botBoardFeatures,
+          compare,
+          cache,
+        })
+      : null;
   for (let t = 0; t < trials; t++) {
     const pool = [...available],
       holes = new Map();
-    for (const opponent of opponents) {
-      let indices = drawPair(pool, rng);
-      if (weighted) {
-        while (
-          rng() >=
-          rangeWeight(
-            indices.map((i) => pool[i]),
-            s,
-            opponent,
-          ) /
-            6
-        )
-          indices = drawPair(pool, rng);
-      }
-      holes.set(
-        opponent.id,
-        indices.map((i) => pool[i]),
-      );
-      for (const i of indices.sort((a, b) => b - a)) pool.splice(i, 1);
+    for (const [index, opponent] of opponents.entries()) {
+      const pair = weighted
+        ? index === 0
+          ? firstPairSampler({ random: rng })
+          : samplePublicPair(pool, descriptors.get(opponent.id), {
+              random: rng,
+              evaluate,
+              features: botBoardFeatures,
+              compare,
+              cache,
+            })
+        : drawPair(pool, rng).map((index) => pool[index]);
+      holes.set(opponent.id, pair);
+      for (const card of pair)
+        pool.splice(
+          pool.findIndex((candidate) => candidate.key === card.key),
+          1,
+        );
     }
     const board = [...s.board];
     while (board.length < 5) board.push(pool.splice(Math.floor(rng() * pool.length), 1)[0]);

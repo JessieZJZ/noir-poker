@@ -5,7 +5,10 @@
   class="screen {{homeLocked ? 'home-locked' : ''}}"
   style="padding-top: {{topInset + 36}}px; padding-bottom: {{bottomInset}}px; {{homeLocked ? 'top: ' + homeOffset + 'px;' : ''}}"
 >
-  <view class="nav {{compactNav ? 'nav-compact' : ''}}" style="top: {{topInset + 36}}px;">
+  <view
+    class="nav {{compactNav ? 'nav-compact' : ''}} {{resourceMenuOpen ? 'resource-menu-active' : ''}}"
+    style="top: {{topInset + 36}}px;"
+  >
     <view class="brand"
       ><image
         class="app-icon"
@@ -135,7 +138,14 @@
             /><view wx:else class="avatar initials avatar-{{item.id}}">{{item.initial}}</view
             ><text class="persona {{item.profileId === 'balanced' ? 'persona-balanced' : ''}}"
               >{{item.profileName}}</text
-            ><text class="stack">{{item.stack}}</text></view
+            ><text
+              class="stack"
+              data-id="{{item.id}}"
+              data-number="{{item.stack}}"
+              data-width-scale="{{item.stackWidthScale || 1}}"
+              style="--stack-width-scale: {{item.stackWidthScale || 1}};"
+              >{{item.stack}}</text
+            ></view
           >
           <view class="seat-caption">
             <view class="seat-action {{item.thinking ? 'thinking-dots' : ''}}"
@@ -178,7 +188,9 @@
             /></view>
           </view>
         </view>
-        <view class="hero {{heroFolded ? 'hero-folded' : ''}}" style="{{heroStyle}}"
+        <view
+          class="hero {{heroFolded ? 'hero-folded' : ''}} {{heroRank || heroWinner ? 'has-hero-rank' : ''}}"
+          style="{{heroStyle}}"
           ><view class="hero-cards"
             ><view
               wx:for="{{heroCards}}"
@@ -339,7 +351,7 @@
     </view>
   </view>
   <view wx:if="{{!historyReadOnly}}" class="practice-panel"
-    ><view class="session-title"><text>你的练习</text><text>本次牌桌</text></view
+    ><view class="session-title"><text>本局练习</text></view
     ><view class="session-balance"
       ><text class="session-caption">当前筹码</text
       ><text class="session-stack">{{heroStack}}<text class="session-unit">CHIPS</text></text
@@ -854,7 +866,38 @@
           <text wx:if="{{!selectedReviewStep.paragraphs.length}}"
             >{{selectedReviewStep.reason}}</text
           >
-          <text wx:for="{{selectedReviewStep.paragraphs}}" wx:key="index">{{item}}</text>
+          <block wx:if="{{selectedReviewStep.commentary.length}}">
+            <block wx:for="{{selectedReviewStep.commentary}}" wx:key="index">
+              <text wx:if="{{item.text}}">{{item.text}}</text>
+              <view wx:else class="review-matchups">
+                <text class="module-title">{{item.matchups.title}}</text>
+                <text class="review-matchup-hand">{{item.matchups.handLabel}}</text>
+                <text class="review-matchup-note">{{item.matchups.note}}</text>
+                <view
+                  wx:for="{{item.matchups.groups}}"
+                  wx:for-item="group"
+                  wx:key="direction"
+                  data-matchup-direction="{{group.direction}}"
+                >
+                  <text class="module-title">{{group.label}}</text>
+                  <view
+                    wx:for="{{group.examples}}"
+                    wx:for-item="example"
+                    wx:key="group"
+                    class="review-matchup-example"
+                  >
+                    <text>{{example.text}} {{example.label}}</text>
+                  </view>
+                </view>
+                <text wx:if="{{item.matchups.nutsNote}}" class="review-matchup-nuts"
+                  >{{item.matchups.nutsNote}}</text
+                >
+              </view>
+            </block>
+          </block>
+          <block wx:else>
+            <text wx:for="{{selectedReviewStep.paragraphs}}" wx:key="index">{{item}}</text>
+          </block>
           <text wx:for="{{selectedReviewStep.reasons}}" wx:key="*this">{{item}}</text>
           <text wx:if="{{selectedReviewStep.warning}}" class="muted"
             >{{selectedReviewStep.warning}}</text

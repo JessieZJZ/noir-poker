@@ -1,4 +1,6 @@
 import { railLayout } from './rail-layout.js';
+import { growPublicCards } from './public-card-space.js';
+import { growHeroCards } from './hero-card-space.js';
 // Match the responsive Web wrapper sizes, not platform text measurements.
 export function compactTableLayout({
   width,
@@ -13,7 +15,7 @@ export function compactTableLayout({
   const large = width > 900 && displayHeight >= 1100 && displayHeight > width;
   const roomy = width <= 600 && displayHeight >= 740 && count <= 6;
   const short = width <= 600 && displayHeight < 740;
-  const cardWidth = tablet
+  let cardWidth = tablet
     ? large
       ? 94
       : width <= 900
@@ -22,16 +24,28 @@ export function compactTableLayout({
     : count <= 6
       ? 58
       : width <= 360
-        ? 65
-        : 60;
-  const cardHeight = cardWidth * 1.44;
+        ? 66
+        : 61;
+  let cardHeight = cardWidth * 1.44;
   const tallNarrow = width <= 360 && !short && count >= 7;
-  const heroWidth = tablet ? (large ? 94 : width <= 900 ? 114 : 94) : tallNarrow ? 90 : 72;
-  const heroHeight = tablet ? (large ? 136 : width <= 900 ? 161 : 136) : tallNarrow ? 130 : 104;
-  const profileWidth = tablet ? (large ? 176 : width <= 900 ? 160 : 132) : count <= 6 ? 116 : 112;
+  let heroWidth = tablet ? 94 : tallNarrow ? 94 : 72;
+  let heroHeight = tablet ? 136 : tallNarrow ? 136 : 104;
+  const heroSlotHeight = heroHeight;
+  const captionWidth = tablet ? (large ? 180 : 160) : count <= 6 ? 116 : 112;
+  const profileWidth = tablet
+    ? large
+      ? 176
+      : width <= 900
+        ? 160
+        : 132
+    : count <= 6
+      ? roomy
+        ? 116
+        : 120
+      : 116;
   const profileHeight = Math.max(
     minimumProfileHeight,
-    tablet ? (large ? 120 : 100) : short || roomy ? 80 : 76,
+    tablet ? (large ? 120 : 100) : short ? 87 : 82,
   );
   const textMetrics = {
     'player-name': large ? 28 : tablet ? 24 : short ? 21 : 19,
@@ -49,9 +63,10 @@ export function compactTableLayout({
     'action-height': large ? 68 : tablet ? 56 : short ? 52 : 48,
     'caption-padding': large ? 4 : 2,
     'rank-height': large ? 36 : tablet ? 32 : 30,
-    'caption-width': tablet ? (large ? 180 : 160) : profileWidth,
+    'hero-rank-empty-lift': large ? 34 : tablet ? 30 : 28,
+    'caption-width': captionWidth,
     'profile-width': profileWidth,
-    'profile-padding': large ? 8 : tablet ? 6 : roomy ? 6 : 3,
+    'profile-padding': large ? 8 : tablet || roomy ? 6 : 5,
     'player-avatar': large ? 60 : tablet ? 48 : roomy ? 36 : 32,
     'player-back-width': tablet ? 33 : 32,
     'player-back-height': tablet ? 46 : 42,
@@ -68,9 +83,6 @@ export function compactTableLayout({
   textMetrics['hero-info-height'] =
     textMetrics['hero-identity-height'] + textMetrics['hero-action-height'] + 2;
   textMetrics['pot-height'] = Math.ceil(textMetrics['pot-number'] * 1.2);
-  const textStyle = Object.entries(textMetrics)
-    .map(([key, value]) => `--${key}:${value}px;`)
-    .join('');
   const captionHeight = textMetrics['action-height'] + textMetrics['rank-height'];
   const seatWidth = Math.round(Math.max(profileWidth, tablet ? (large ? 180 : 136) : 88));
   const seatHeight = (tablet ? 58 : 39) + 8 + profileHeight + captionHeight;
@@ -79,7 +91,27 @@ export function compactTableLayout({
   );
   const potHeight = textMetrics['pot-height'];
   const rowGap = 4;
-  const fitted = railLayout({
+  const publicRow = (width, twoRows) => {
+    const cardHeight = width * 1.44;
+    const boardWidth = Math.ceil((twoRows ? 3 : 5) * width + (twoRows ? 8 : 16));
+    const potWidth = Math.min(boardWidth, tablet ? (large ? 260 : 220) : 160);
+    return {
+      twoRows,
+      centerY: potHeight + 6 + (cardHeight * (twoRows ? 2 : 1) + (twoRows ? 10 : 0)) / 2,
+      width: boardWidth,
+      height: Math.round(potHeight + 6 + cardHeight * (twoRows ? 2 : 1) + (twoRows ? 10 : 0)),
+      parts: [
+        { left: (boardWidth - potWidth) / 2, top: 0, width: potWidth, height: potHeight },
+        {
+          left: 0,
+          top: potHeight + 6,
+          width: boardWidth,
+          height: Math.round(cardHeight * (twoRows ? 2 : 1) + (twoRows ? 10 : 0)),
+        },
+      ],
+    };
+  };
+  let fitted = railLayout({
     width:
       availableWidth ?? Math.round(Math.max(1, width - (width <= 600 ? 18 : width * 0.06 + 2))),
     height: Math.max(1, height),
@@ -118,26 +150,30 @@ export function compactTableLayout({
       ],
     })),
     hero: { width: Math.round(heroWidth * 2 + 7), height: heroFoot },
-    publicRows: [false, true].map((twoRows) => {
-      const boardWidth = Math.ceil((twoRows ? 3 : 5) * cardWidth + (twoRows ? 8 : 16));
-      const potWidth = Math.min(boardWidth, tablet ? (large ? 260 : 220) : 160);
-      return {
-        twoRows,
-        centerY: potHeight + 6 + (cardHeight * (twoRows ? 2 : 1) + (twoRows ? 10 : 0)) / 2,
-        width: Math.ceil((twoRows ? 3 : 5) * cardWidth + (twoRows ? 8 : 16)),
-        height: Math.round(potHeight + 6 + cardHeight * (twoRows ? 2 : 1) + (twoRows ? 10 : 0)),
-        parts: [
-          { left: (boardWidth - potWidth) / 2, top: 0, width: potWidth, height: potHeight },
-          {
-            left: 0,
-            top: potHeight + 6,
-            width: boardWidth,
-            height: Math.round(cardHeight * (twoRows ? 2 : 1) + (twoRows ? 10 : 0)),
-          },
-        ],
-      };
-    }),
+    publicRows: [false, true].map((twoRows) => publicRow(cardWidth, twoRows)),
   });
+  const grown = growPublicCards(fitted, { cardWidth, createRow: publicRow });
+  fitted = grown.layout;
+  cardWidth = grown.cardWidth;
+  cardHeight = cardWidth * 1.44;
+  const heroCards = growHeroCards(fitted, {
+    width: heroWidth,
+    height: heroHeight,
+    maxGrowth: tablet ? 1 : 1.4,
+  });
+  heroWidth = heroCards.width;
+  heroHeight = heroCards.height;
+  textMetrics['public-card-width'] = cardWidth;
+  textMetrics['hero-card-width'] = heroWidth;
+  textMetrics['hero-card-height'] = heroHeight;
+  textMetrics['hero-card-slot-height'] = heroSlotHeight;
+  textMetrics['hero-card-shift'] = heroCards.shift;
+  textMetrics['hero-card-gap'] = heroCards.gap;
+  const textStyle =
+    Object.entries(textMetrics)
+      .map(([key, value]) => `--${key}:${value}px;`)
+      .join('') +
+    `--hero-card-left-angle:-${heroCards.angle}deg;--hero-card-right-angle:${heroCards.angle}deg;`;
   return {
     ...fitted,
     arenaScale: Math.min(1, height / fitted.arenaHeight),
@@ -150,6 +186,8 @@ export function compactTableLayout({
     cardHeight,
     heroWidth,
     heroHeight,
+    heroSlotHeight,
+    heroCardGeometry: heroCards,
     heroFoot,
     seatWidth,
     seatHeight,

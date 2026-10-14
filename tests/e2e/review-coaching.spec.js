@@ -237,7 +237,14 @@ test('69o three-bet shows real later public responses separately and Mia AQ four
   await expect(hero).toContainText(/Luna.*800/);
   await expect(hero.locator('p').filter({ hasText: /Mia.*1K/ })).toHaveCount(1);
   await expect(hero.locator('p').last()).toContainText(/Luna.*800/);
-  await expect(hero).not.toContainText(/A[♦♥♣♠]|Q[♦♥♣♠]|赢家|获胜/);
+  // Estimated candidate holdings can contain A/Q; they must remain separate
+  // from the actual-action explanation, which cannot reveal Mia's private AQ.
+  const actualExplanation = hero.locator(':scope > p');
+  expect(await actualExplanation.count()).toBeGreaterThan(0);
+  expect((await actualExplanation.allTextContents()).join('\n')).not.toMatch(
+    /A[♦♥♣♠]|Q[♦♥♣♠]|赢家|获胜/,
+  );
+  await expect(hero.locator('.review-matchups')).toContainText('不代表获胜概率');
   await expect(hero).not.toContainText(/EV|模型|模拟器|它|新增投入|有效剩余/);
   await expect(page.locator('#review-evidence')).toContainText('5K');
   await expect(page.locator('#review-evidence')).toContainText('350');
@@ -291,7 +298,10 @@ test('common strong-hand all-ins and preflop flats explain actual value and cond
     } else {
       await expect(explanation).toContainText(/埋牌|藏在平跟|隐藏.*强|藏.*强/);
       await expect(explanation).toContainText('150');
-      await expect(explanation).toContainText(/领先|能赢|压过/);
+      await expect(explanation.locator('[data-matchup-direction="ahead"]')).toContainText(
+        '结构上较弱的可能牌组',
+      );
+      await expect(explanation.locator('.review-matchups')).toContainText('不代表获胜概率');
     }
     await expect(explanation).not.toContainText(/EV|模型|模拟器|抽样|最终赢家|已摊牌|看到对手底牌/);
     await expect(page.locator('.review-method,.opponent-metrics')).toHaveCount(0);

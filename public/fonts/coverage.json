@@ -1,9 +1,9 @@
 {
   "files": {
-    "manrope.woff2": "85feb0b5fab00a0f410fd74b8c6236be899088f1404728fe70b7184f25b85790",
-    "noto-sans-sc.woff2": "f0533565e25140a2fdbe21f5ef65cda64e3d8d4133e1dc6a66739059c4ff16d7",
-    "noto-sans-kr.woff2": "c81368513788324611baf5fa68463b79bd5ac126c7402f248abf3e6ffe47cb4a",
-    "barlow-condensed.woff2": "e3628066e4f6774618a80d8fb119340aad1cb384328dae963f76a28e1c855aeb"
+    "manrope.woff2": "c68b44af11ef5c416f2c2a81e5d1902edc34632e2b535e8eae738a22ab6c6a56",
+    "noto-sans-sc.woff2": "640a69685bd02dd78d7377e8d6b455ec28f6d893f1ec36a52ae73a54f9cbf96f",
+    "noto-sans-kr.woff2": "e5ae1cee215aea71b1c78464019bf348f22b38b83e84aa89b1d21cc9469b529f",
+    "barlow-condensed.woff2": "89e6f1574c8e93eb775fc55fe577b65551c7b32bd7f8ea4c2932d605bd14a85b"
   },
   "codepoints": [
     0,
@@ -2423,6 +2423,7 @@
     44845,
     45001,
     45068,
+    45076,
     45124,
     45130,
     45132,
@@ -2551,6 +2552,7 @@
     47140,
     47141,
     47144,
+    47148,
     47156,
     47157,
     47159,

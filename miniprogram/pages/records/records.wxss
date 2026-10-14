@@ -157,7 +157,7 @@ page {
 .hand-item:last-child {
   border-bottom: 0;
 }
-.hand-item[disabled] {
+.hand-item.is-disabled {
   color: #9aafb8;
   background: transparent;
 }

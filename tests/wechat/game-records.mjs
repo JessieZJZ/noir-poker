@@ -1,5 +1,6 @@
 // Real DevTools page navigation and engine play; no test fixture enters the app bundle.
 import { createRequire } from 'node:module';
+import { createHash } from 'node:crypto';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import assert from 'node:assert/strict';
@@ -16,6 +17,7 @@ const report = {
   startedAt: new Date().toISOString(),
   checks: [],
   exceptions: [],
+  screenshots: [],
 };
 let mini;
 let page;
@@ -44,17 +46,63 @@ const waitElement = (selector) =>
     () => page.$(selector),
     (element) => !!element,
   );
+const scrollTo = async (top) => {
+  await mini.pageScrollTo(top);
+  return wait(
+    `Actual page scroll ${top}`,
+    () => mini.evaluate(() => getCurrentPages().at(-1)._homeScroll || 0),
+    (actual) => (top ? actual > 0 : actual <= 1),
+    10000,
+  );
+};
 const tap = async (selector) => (await waitElement(selector)).tap();
 const assertStack = async (...routes) =>
   assert.deepEqual(
     (await mini.pageStack()).map((item) => item.path),
     routes,
   );
+const recordLayout = async (disabled = false) => {
+  const session = await waitElement('.records-session');
+  const heading = await waitElement('.session-item');
+  const list = await waitElement('.hand-list');
+  const hand = await waitElement(disabled ? '.hand-item.is-disabled' : '.hand-item');
+  const containerWidth = (await session.size()).width;
+  const headingWidth = (await heading.size()).width;
+  const handWidth = (await hand.size()).width;
+  const listWidth = (await list.size()).width;
+  const horizontalPadding =
+    parseFloat(await list.style('padding-left')) + parseFloat(await list.style('padding-right'));
+  assert.equal(heading.tagName, 'view');
+  assert.equal(hand.tagName, 'view');
+  assert.equal(await heading.attribute('aria-role'), 'button');
+  assert.equal(await heading.attribute('aria-expanded'), 'true');
+  assert.equal(await hand.attribute('aria-role'), 'button');
+  assert.equal(await hand.attribute('aria-disabled'), disabled ? 'true' : 'false');
+  assert.ok(Math.abs(headingWidth - (containerWidth - 2)) <= 1, 'Session fills its card');
+  assert.ok(Math.abs(handWidth - (listWidth - horizontalPadding)) <= 1, 'Hand fills its list');
+  assert.equal(parseFloat(await heading.style('margin-left')), 0);
+  assert.equal(parseFloat(await hand.style('margin-left')), 0);
+  const background = await hand.style('background-color');
+  assert.match(background, /^(?:transparent|rgba\([^)]*,\s*0\))$/);
+  return { containerWidth, headingWidth, listWidth, handWidth, background, disabled };
+};
 const waitHero = () =>
   wait('Hero turn', readLive, (game) => game.phase === 'playing' && game.actor === 0);
 const capture = async (name) => {
   await page.waitFor(1450);
-  await mini.screenshot({ path: path.join(output, `${name}.png`) });
+  const filename = path.join(output, `${name}.png`);
+  await mini.screenshot({ path: filename });
+  const png = await readFile(filename);
+  assert.equal(png.toString('ascii', 1, 4), 'PNG');
+  const width = png.readUInt32BE(16);
+  const height = png.readUInt32BE(20);
+  report.screenshots.push({
+    path: filename,
+    width,
+    height,
+    screenshotScale: width / report.device.windowWidth,
+    sha256: createHash('sha256').update(png).digest('hex'),
+  });
 };
 const tableGeometry = async (players) => {
   const table = await waitElement('.table-area');
@@ -81,6 +129,78 @@ const tableGeometry = async (players) => {
     };
   }
   return { size, elements };
+};
+const visibleSeatText = async (playerCount) => {
+  await mini.evaluate(() => {
+    const current = getCurrentPages().at(-1);
+    current._recordTextBounds = null;
+    const query = wx.createSelectorQuery();
+    for (const selector of [
+      '.seat-body',
+      '.seat-body .seat-name-label',
+      '.seat-body > .persona',
+      '.seat-body > .stack',
+    ])
+      query.selectAll(selector).fields({ rect: true, size: true, id: true });
+    query.exec((bounds) => {
+      current._recordTextBounds = bounds;
+    });
+  });
+  const measured = await wait(
+    'All rendered seat text bounds',
+    () => mini.evaluate(() => getCurrentPages().at(-1)._recordTextBounds),
+    (bounds) => Array.isArray(bounds),
+  );
+  for (const samples of measured) assert.equal(samples.length, playerCount - 1);
+  const view = await page.data();
+  const inset = view.textMetrics['profile-padding'] * view.arenaScale;
+  for (let index = 0; index < measured[0].length; index++) {
+    const body = measured[0][index];
+    for (const samples of measured.slice(1)) {
+      const text = samples[index];
+      assert.ok(text.width > 0 && text.height > 0, 'Every displayed text sample is nonempty');
+      assert.ok(text.left >= body.left + inset - 0.5);
+      assert.ok(text.right <= body.right - inset + 0.5, 'Text keeps the authored right padding');
+      assert.ok(text.top >= body.top && text.bottom <= body.bottom + 0.5);
+    }
+    const id = Number(body.id.split('-').at(-1));
+    const seat = view.phoneSeats.find((item) => item.id === id);
+    assert.ok(seat);
+    assert.equal(await (await waitElement(`#seat-body-${id} > .stack`)).text(), seat.stack);
+  }
+  return measured;
+};
+const heroInformationGap = async () => {
+  await mini.evaluate(() => {
+    const current = getCurrentPages().at(-1);
+    current._recordHeroBounds = null;
+    const query = wx.createSelectorQuery();
+    for (const selector of ['.hero-card', '.hero-info', '.hero-cards', '.table-area'])
+      query.selectAll(selector).fields({ rect: true, size: true });
+    query.exec((bounds) => {
+      current._recordHeroBounds = bounds;
+    });
+  });
+  const [cards, information, slots, tables] = await wait(
+    'Rendered hero cards and information',
+    () => mini.evaluate(() => getCurrentPages().at(-1)._recordHeroBounds),
+    (bounds) => Array.isArray(bounds),
+  );
+  assert.equal(cards.length, 2);
+  assert.equal(information.length, 1);
+  assert.equal(slots.length, 1);
+  assert.equal(tables.length, 1);
+  for (const box of [...cards, ...information, ...slots, ...tables])
+    assert.ok(box.width > 0 && box.height > 0);
+  const view = await page.data();
+  const tagged = !!(view.heroRank || view.heroWinner);
+  const gap = information[0].top - Math.max(...cards.map((card) => card.bottom));
+  const expected = (7 + (tagged ? view.textMetrics['hero-rank-empty-lift'] : 0)) * view.arenaScale;
+  assert.ok(
+    Math.abs(gap - expected) <= 1,
+    'Actual information gap follows the conditional tag slot',
+  );
+  return { tagged, gap, expected, tableHeight: tables[0].height, slotHeight: slots[0].height };
 };
 const assertTableParity = (actual, expected) => {
   for (const field of ['width', 'height'])
@@ -143,6 +263,10 @@ try {
       table[method]();
     getApp().noirController.reset();
   });
+  await waitHero();
+  await capture('00-live-hero-without-tag');
+  const untaggedHero = await heroInformationGap();
+  assert.equal(untaggedHero.tagged, false);
   const firstSettled = await finishByFolding();
   const initialSession = (await readRecords())[0];
   const archived = initialSession.attempts[0];
@@ -150,6 +274,15 @@ try {
   assert.deepEqual(archived.hole, firstSettled.players[0].hole);
   assert.equal(archived.profit, firstSettled.payouts[0] - firstSettled.players[0].total);
   await capture('01-first-settlement');
+  const taggedHero = await heroInformationGap();
+  assert.equal(taggedHero.tagged, true);
+  assert.ok(untaggedHero.gap < taggedHero.gap);
+  assert.equal(untaggedHero.tableHeight, taggedHero.tableHeight);
+  assert.equal(untaggedHero.slotHeight, taggedHero.slotHeight);
+  report.heroInformation = { untagged: untaggedHero, tagged: taggedHero };
+  report.checks.push({
+    name: 'hero-information-closes-the-empty-tag-gap-with-fixed-table-and-card-slot',
+  });
   const liveSettlementGeometry = await tableGeometry(firstSettled.players);
   const liveFontMetrics = {};
   for (const [selector, key] of [
@@ -166,12 +299,13 @@ try {
     liveFontMetrics[selector] = { font, effectiveFont: font * view.arenaScale };
   }
   report.fonts = liveFontMetrics;
+  report.visibleSeatText = await visibleSeatText(firstSettled.players.length);
   report.checks.push({ name: 'native-rendered-fonts-use-shared-text-and-footprint-metrics' });
   const liveShellHeight = (await (await waitElement('.game-shell')).size()).height;
-  await mini.pageScrollTo(300);
+  await scrollTo(300);
   assertTableParity(await tableGeometry(firstSettled.players), liveSettlementGeometry);
   assert.equal((await (await waitElement('.game-shell')).size()).height, liveShellHeight);
-  await mini.pageScrollTo(0);
+  await scrollTo(0);
   await tap('.retry-button');
   await wait(
     'Retry processed',
@@ -210,6 +344,14 @@ try {
   await page.waitFor(150);
   assert.ok(await page.$('#resource-guide'));
   assert.ok(await page.$('#resource-records'));
+  report.menuLayers = {
+    nav: Number(await (await waitElement('.nav')).style('z-index')),
+    dismiss: Number(await (await waitElement('.resource-dismiss')).style('z-index')),
+  };
+  assert.ok(
+    report.menuLayers.nav > report.menuLayers.dismiss,
+    'The whole menu stacking context clears the dismiss mask',
+  );
   await capture('02-resources-menu');
   await tap('#resource-records');
   await waitRoute('pages/records/records');
@@ -264,6 +406,7 @@ try {
   assert.match(recordsView.sessions[0].attempts[0].cards[0].artStyle, /data:image\/svg\+xml/);
   const cards = await page.$$('.record-card');
   assert.equal(cards.length, 6);
+  report.recordLayout = { completed: await recordLayout() };
   await capture('03-records-list');
   report.checks.push({
     name: 'real-records-page-ascending-attempts-graphic-cards-live-progress',
@@ -293,9 +436,9 @@ try {
   const historySettlementGeometry = await tableGeometry(archived.snapshot.players);
   assertTableParity(historySettlementGeometry, liveSettlementGeometry);
   assert.equal((await (await waitElement('.game-shell')).size()).height, liveShellHeight);
-  await mini.pageScrollTo(300);
+  await scrollTo(300);
   assertTableParity(await tableGeometry(archived.snapshot.players), historySettlementGeometry);
-  await mini.pageScrollTo(0);
+  await scrollTo(0);
   report.geometry = { live: liveSettlementGeometry, historical: historySettlementGeometry };
   report.checks.push({ name: 'historical-settlement-uses-the-same-rendered-table-geometry' });
   const liveBeforeReview = await readLive();
@@ -365,6 +508,22 @@ try {
     hand: resumed.hand,
     bankrolls,
   });
+  await waitHero();
+  await tap('#resource-menu-button');
+  await tap('#resource-records');
+  await waitRoute('pages/records/records');
+  report.recordLayout.disabled = await recordLayout(true);
+  await tap('.hand-item.is-disabled');
+  await page.waitFor(1450);
+  assert.equal((await mini.currentPage()).path, 'pages/records/records');
+  await assertStack('pages/table/table', 'pages/records/records');
+  await capture('07-full-width-unfinished-records');
+  await tap('#records-back');
+  await waitRoute('pages/table/table');
+  await assertStack('pages/table/table');
+  report.checks.push({
+    name: 'full-width-native-record-views-preserve-accessibility-and-disabled-gate',
+  });
   assert.equal(report.exceptions.length, 0);
   const currentBuild = JSON.parse(
     await readFile(path.join(root, '.artifacts/wechat/build-info.json'), 'utf8'),
@@ -372,7 +531,7 @@ try {
   assert.equal(
     currentBuild.sourceDigest,
     report.build.sourceDigest,
-    'Installed mini-program bundle stayed unchanged',
+    'Local mini-program bundle files stayed unchanged',
   );
   report.stage = 'complete';
   report.status = 'passed';

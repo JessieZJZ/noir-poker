@@ -13,6 +13,7 @@ import { restartNativeApplication } from './native-lifecycle.mjs';
 import { requestNativeOrientation } from './native-orientation.mjs';
 import { compareNativePage } from '../tests/native/page-parity.mjs';
 import { createNativeCommand } from './native-transport.mjs';
+import { nativeBackPage, nativePageReady } from './native-back.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const args = process.argv.slice(2);
@@ -133,13 +134,16 @@ const command = createNativeCommand({
   },
 });
 let webContext;
-async function attachWebview() {
+async function attachWebview({ expectedPage = 'game' } = {}) {
+  nativeBackPage(expectedPage);
   // Wait for the real document before attaching WebKit. Attaching during the
   // initial blank-page navigation can pause WebKit before the game loads.
   await waitFor(
     async () => {
       const source = await command('GET', '/source');
-      return /XCUIElementTypeButton|android\.widget\.Button/.test(source);
+      return expectedPage === 'privacy'
+        ? /XCUIElementTypeButton|XCUIElementTypeLink|android\.widget\.Button/.test(source)
+        : /XCUIElementTypeButton|android\.widget\.Button/.test(source);
     },
     45000,
     'Native app must render an actionable screen before WebView attachment',
@@ -155,9 +159,11 @@ async function attachWebview() {
   webContext = contexts.find((name) => name.startsWith('WEBVIEW'));
   await command('POST', '/context', { name: webContext });
   await waitFor(
-    () => evaluate(() => Boolean(window.noir?.getState())),
+    () => evaluate(nativePageReady, expectedPage),
     30000,
-    'Bundled game did not initialize',
+    expectedPage === 'privacy'
+      ? 'Native Back did not reach a ready local privacy page with its title and return link'
+      : 'Bundled game did not initialize',
   );
 }
 async function evaluate(fn, ...argv) {
@@ -253,7 +259,8 @@ async function screenshot(name) {
   });
   return { imagePath, sourcePath };
 }
-async function back() {
+async function back({ expectedPage = 'game' } = {}) {
+  nativeBackPage(expectedPage);
   if (platform === 'android') {
     // Dispatch the real Activity back event while keeping the active CDP
     // connection; the Capacitor backButton listener owns the page stack.
@@ -285,7 +292,7 @@ async function back() {
       },
     ],
   });
-  await attachWebview();
+  await attachWebview({ expectedPage });
 }
 async function activate() {
   await command('POST', '/context', { name: 'NATIVE_APP' });

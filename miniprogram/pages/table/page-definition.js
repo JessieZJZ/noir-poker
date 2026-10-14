@@ -1,6 +1,7 @@
 const { compactChips, compactActionAmounts } = require('../../shared/engine/chip-format.js');
 const { createWechatController } = require('../../shared/platform/wechat-controller.js');
 const { phoneLayout } = require('./phone-layout.js');
+const { numericWidthScale, numericColumnWidth } = require('../../shared/ui/numeric-width.js');
 const { presentCard, showdownPresentation, presentationPatch } = require('./presentation.js');
 const PORTRAIT_CREDITS = require('../../assets/portraits/credits.js');
 const { completeBoardForPractice, rankText } = require('../../shared/engine/poker.js');
@@ -82,7 +83,7 @@ module.exports = {
         const game = this._controller?.getGame();
         const board = view.board;
         const showdown = game ? showdownPresentation(game, view.profiles) : [];
-        const dealKey = `${view.hand}:${view.replay}`;
+        const dealKey = `${view.sessionNumber}:${view.hand}:${view.replay}`;
         const changedDeal = dealKey !== this._dealKey;
         if (changedDeal) {
           this._motionEpoch = (this._motionEpoch || 0) + 1;
@@ -234,11 +235,18 @@ module.exports = {
   onShow() {
     this._hidden = false;
     this._browsingRecords = false;
+    this._numberWidths?.clear();
     this.updateWindow();
     this.readResourceMotionPreference();
     this.startResourceRotation();
     if (!this._audio?.length) this.preloadSounds();
     this._controller?.show();
+    // Embedded fonts may settle just after the first native text measurement.
+    this.scheduleCardMotion('number-font', 1000, () => {
+      this._numberWidths?.clear();
+      this.tightenSeatRanks();
+      return {};
+    });
     if (this._finishRequested && !this.data.done) this.finishHand();
     if (this.data.reviewOpen && this._controller)
       this.call('review', (reviewData) => this.updateReview(reviewData));
@@ -413,13 +421,14 @@ module.exports = {
         ...fitted,
         tableHeight,
         phoneLayout: true,
-        phoneSeats: fitted.positioned.map((seat) => ({
-          ...seat,
-          rankLift:
-            view.hand === this.data.hand
-              ? this.data.phoneSeats?.find((before) => before.id === seat.id)?.rankLift || 0
-              : 0,
-        })),
+        phoneSeats: fitted.positioned.map((seat) => {
+          const before = this.data.phoneSeats?.find((previous) => previous.id === seat.id);
+          return {
+            ...seat,
+            rankLift: view.hand === this.data.hand ? before?.rankLift || 0 : 0,
+            stackWidthScale: before?.stack === seat.stack ? before.stackWidthScale || 1 : 1,
+          };
+        }),
         boardSlots: Array.from(
           { length: 5 },
           (_, i) =>
@@ -435,7 +444,13 @@ module.exports = {
     const query = wx.createSelectorQuery();
     query.selectAll('.seat-action-word').fields({ rect: true, size: true, dataset: true });
     query.selectAll('.seat-rank-slot .rank').fields({ rect: true, size: true, dataset: true });
-    query.exec(([words, ranks]) => {
+    query.selectAll('.seat-body > .stack').fields({
+      rect: true,
+      size: true,
+      dataset: true,
+      computedStyle: ['font-size', 'font-family', 'font-weight'],
+    });
+    query.exec(([words, ranks, numbers]) => {
       if (ticket !== this._rankEpoch || this._hidden || this._destroyed) return;
       const bottoms = new Map();
       for (const word of words || [])
@@ -454,6 +469,31 @@ module.exports = {
         // Move either direction so its last painted line always keeps 3px.
         const lift = current + (bottoms.get(id) + 3 * scale - rank.top) / scale;
         if (Math.abs(lift - current) > 0.1) patch[`phoneSeats[${index}].rankLift`] = lift;
+      }
+      const metrics = this.data.textMetrics;
+      const available = numericColumnWidth({
+        profileWidth: this.data.profileWidth,
+        padding: metrics['profile-padding'],
+        avatar: metrics['player-avatar'],
+      });
+      this._numberWidths ||= new Map();
+      for (const number of numbers || []) {
+        const index = this.data.phoneSeats.findIndex(
+          (seat) => seat.id === Number(number.dataset.id),
+        );
+        if (index < 0 || !(number.width > 0)) continue;
+        const seat = this.data.phoneSeats[index];
+        if (String(number.dataset.number) !== seat.stack) continue;
+        const key = `${seat.stack}|${number['font-size'] || metrics['player-stack']}|${number['font-family'] || 'Barlow Condensed'}|${number['font-weight'] || 600}`;
+        let width = this._numberWidths.get(key);
+        if (width === undefined) {
+          width = number.width / scale / (Number(number.dataset.widthScale) || 1);
+          if (this._numberWidths.size >= 256) this._numberWidths.clear();
+          this._numberWidths.set(key, width);
+        }
+        const fitted = numericWidthScale(width, available);
+        if (Math.abs(fitted - (seat.stackWidthScale || 1)) > 0.0001)
+          patch[`phoneSeats[${index}].stackWidthScale`] = fitted;
       }
       if (Object.keys(patch).length) this.setData(patch);
     });
