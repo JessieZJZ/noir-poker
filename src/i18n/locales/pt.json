@@ -1915,5 +1915,18 @@
   "修改起始小盲": "Editar small blind inicial",
   "起始小盲": "Small blind inicial",
   "起始大盲": "Big blind inicial",
-  "小盲须为 25 的正整数倍且不超过 50K，大盲须为小盲的倍数且大于小盲。面额等于小盲，起始筹码为 100 BB。": "O small blind deve ser um múltiplo positivo de 25, até 50K. O big blind deve ser um múltiplo do small blind e maior do que ele. A denominação das fichas equivale ao small blind; os stacks iniciais são de 100 BB."
+  "小盲须为 25 的正整数倍且不超过 50K，大盲须为小盲的倍数且大于小盲。面额等于小盲，起始筹码为 100 BB。": "O small blind deve ser um múltiplo positivo de 25, até 50K. O big blind deve ser um múltiplo do small blind e maior do que ele. A denominação das fichas equivale ao small blind; os stacks iniciais são de 100 BB.",
+  "当前成牌对比": "Comparação das mãos formadas atuais",
+  "起手牌结构对比": "Comparação da estrutura das mãos iniciais",
+  "当前可能领先的牌组": "Possíveis mãos atrás da mão atual",
+  "当前可能落后的牌组": "Possíveis mãos à frente da mão atual",
+  "当前可能平分的牌组": "Possíveis mãos empatadas com a mão atual",
+  "结构上较弱的可能牌组": "Possíveis mãos iniciais de estrutura mais fraca",
+  "结构上较强的可能牌组": "Possíveis mãos iniciais de estrutura mais forte",
+  "按位置与此前公开行动估计排序，仅是可能牌组，不代表对手实际底牌。": "Ordenadas por estimativas baseadas na posição e nas ações públicas anteriores. São apenas mãos possíveis, não as cartas fechadas reais do adversário.",
+  "仅比较起手牌结构，不代表获胜概率；之后仍需看公共牌。": "Compara apenas a estrutura das mãos iniciais, não a probabilidade de vitória; as cartas comunitárias posteriores ainda precisam ser consideradas.",
+  "当前没有可能更强的牌组；后续公共牌仍可能改变强弱。": "No board atual, não há uma mão possível mais forte; as cartas comunitárias seguintes ainda podem alterar a força relativa.",
+  "河牌已发完，当前没有可能更强的牌组。": "O river já foi distribuído; não há uma mão possível mais forte neste board.",
+  "公开未知牌不足以抽取底牌。": "Não há cartas desconhecidas suficientes no modelo de informações públicas para amostrar as cartas fechadas.",
+  "公开范围没有可用底牌组合。": "O range baseado nas informações públicas não contém combinações utilizáveis de cartas fechadas."
 }

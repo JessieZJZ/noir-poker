@@ -6,9 +6,13 @@ import {
   advanceStreet,
   botDecision,
   partitionPots,
+  evaluate,
+  compare,
 } from '../engine/poker.js';
-import { getBotProfile, freshBotMood } from '../engine/bot-profiles.js';
-import { rangeWeight, seedRandom, snapshotSeed } from './equity.js';
+import { getBotProfile, freshBotMood, botBoardFeatures } from '../engine/bot-profiles.js';
+import { seedRandom, snapshotSeed } from './equity.js';
+import { preparePublicRanges } from '../engine/public-ranges.js';
+import { createPublicPairSampler, samplePublicPair } from '../engine/public-equity.js';
 import { isChipAmount, legalRaiseTo, chipUnitOf } from '../engine/bet-sizing.js';
 const copy = (v) => JSON.parse(JSON.stringify(v));
 export function candidateActions(s, alternatives = []) {
@@ -53,7 +57,7 @@ export function candidateActions(s, alternatives = []) {
     ).values(),
   ].slice(0, 7);
 }
-function sampledDeal(s, rng, weighted) {
+function sampledDeal(s, rng, weighted, ranges, cache, firstPairSampler) {
   const known = new Set([...s.hole, ...s.board].map((c) => c.key));
   const pool = deckOfCards().filter((c) => !known.has(c.key));
   const holes = new Map([[0, copy(s.hole)]]);
@@ -61,28 +65,30 @@ function sampledDeal(s, rng, weighted) {
     ...s.players.filter((p) => p.id && !p.folded),
     ...s.players.filter((p) => p.id && p.folded),
   ]) {
-    let indices;
-    do {
+    let pair;
+    if (weighted && !p.folded) {
+      pair =
+        firstPairSampler && holes.size === 1
+          ? firstPairSampler({ random: rng })
+          : samplePublicPair(pool, ranges.get(p.id), {
+              random: rng,
+              evaluate,
+              features: botBoardFeatures,
+              compare,
+              cache,
+            });
+    } else {
       const a = Math.floor(rng() * pool.length);
       let b = Math.floor(rng() * (pool.length - 1));
       if (b >= a) b++;
-      indices = [a, b];
-    } while (
-      weighted &&
-      !p.folded &&
-      rng() >=
-        rangeWeight(
-          indices.map((i) => pool[i]),
-          s,
-          p,
-        ) /
-          6
-    );
-    holes.set(
-      p.id,
-      indices.map((i) => pool[i]),
-    );
-    for (const i of indices.sort((a, b) => b - a)) pool.splice(i, 1);
+      pair = [pool[a], pool[b]];
+    }
+    holes.set(p.id, pair);
+    for (const card of pair)
+      pool.splice(
+        pool.findIndex((candidate) => candidate.key === card.key),
+        1,
+      );
   }
   for (let i = pool.length - 1; i > 0; i--) {
     const j = Math.floor(rng() * (i + 1));
@@ -154,11 +160,27 @@ export function compareCandidateActions(s, alternatives = [], { trials = 40 } = 
   const comparisonCritical = trials >= 30 ? 3.5 : trials >= 12 ? 5 : 20;
   for (const weighted of [false, true]) {
     const rng = seedRandom(snapshotSeed(s) + (weighted ? 11071 : 2003));
+    const ranges = new Map(preparePublicRanges(s).map((range) => [range.id, range]));
+    // Initial range sampling uses the same visible board on every trial.
+    // Reuse its pure candidate scores, while every deal remains newly sampled.
+    const samplingCache = new Map();
+    // Only the first live opponent has the same available pool across trials.
+    // Keep this range proposal local to this snapshot, outside the score cache.
+    const firstOpponent = s.players.find((p) => p.id && !p.folded),
+      known = new Set([...s.hole, ...s.board].map((card) => card.key)),
+      firstPairSampler =
+        weighted && firstOpponent
+          ? createPublicPairSampler(
+              deckOfCards().filter((card) => !known.has(card.key)),
+              ranges.get(firstOpponent.id),
+              { evaluate, features: botBoardFeatures, compare, cache: samplingCache },
+            )
+          : null;
     const values = rows.map(() => []),
       immediate = rows.map(() => 0),
       won = rows.map(() => 0);
     for (let i = 0; i < trials; i++) {
-      const deal = sampledDeal(s, rng, weighted),
+      const deal = sampledDeal(s, rng, weighted, ranges, samplingCache, firstPairSampler),
         policySeed = Math.floor(rng() * 4294967295);
       // Candidates share a hypothetical deal. Reuse only pure board/pair
       // evaluation; never ranges, decisions or random state. Drop it before

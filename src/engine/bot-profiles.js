@@ -3,6 +3,7 @@ import research from '../data/player-research.json' with { type: 'json' };
 import { botStyleContext, resolveBotStyle } from './bot-style.js';
 import { chipUnitOf, fractionRaiseTo, legalRaiseTo } from './bet-sizing.js';
 import { deceptiveAction, isDonkLead } from './bot-deception.js';
+import { publicResponseRisk } from './public-action-context.js';
 
 // These are training controls inferred from a few public examples, not measured
 // statistics of the named players. Emotions are a separate synthetic layer.
@@ -732,12 +733,16 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
     return value;
   };
   const percentile = startingPercentile(view.hole),
-    odds = view.allIn?.odds ?? legal.callAmount / Math.max(1, view.contestable),
+    odds =
+      view.allIn?.odds ?? view.callPrice?.odds ?? legal.callAmount / Math.max(1, view.contestable),
     pressure = legal.toCall / Math.max(1, view.stack + view.bet);
   const noise =
     (random() - 0.5) *
     (view.difficulty === 'easy' ? 0.16 : view.difficulty === 'hard' ? 0.04 : 0.08);
   const equity = Math.max(0, Math.min(1, view.equity + noise));
+  const behind = view.actionContext?.unactedBehindCount,
+    responseRisk = publicResponseRisk(view),
+    assumedOpponents = view.publicEquity?.assumedOpponentIds.length ?? view.rivals;
   const positionScale =
     view.position === 'BTN'
       ? 1.35
@@ -753,6 +758,7 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
     (0.16 + width * 0.42) *
     positionScale *
     (view.count >= 8 ? 0.9 : 1) *
+    (behind == null ? 1 : Math.max(0.75, 1 - behind * 0.04)) *
     style.entry *
     (view.count <= 6 ? style.shortTable : 1);
   let range = baseRange;
@@ -880,8 +886,12 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
   const premium = percentile < 0.07,
     admitted = percentile <= range,
     openingAdmitted = percentile <= openingRange,
-    affordableRangePassed = (cheapEntry || affordableOpen || affordableThreeBet) && admitted,
-    callTolerance = (callDown - 0.5) * 0.1 + context.publicAdjustment;
+    callTolerance = (callDown - 0.5) * 0.1 + context.publicAdjustment,
+    requiredEquity = odds + responseRisk + 0.02,
+    affordableRangePassed =
+      (cheapEntry || affordableOpen || affordableThreeBet) &&
+      admitted &&
+      (!view.publicEquity || equity + callTolerance >= requiredEquity);
   let sizing = null,
     deception = null,
     value = false,
@@ -890,8 +900,14 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
     smallCbet = false,
     thinValue = false;
   const floatContinue = context.floatCandidate && roll('float', style.float) < style.float;
-  const headsUp = view.rivals === 1,
+  const headsUp = assumedOpponents === 1,
     features = view.features;
+  const structuredPriceContinue =
+    !!view.publicEquity &&
+    view.street > 0 &&
+    !allInPressure &&
+    (features.ownMade || features.draw) &&
+    equity + callTolerance >= requiredEquity;
   const ownLastRaise =
     [...view.history].reverse().find((a) => a.action === 'raise')?.id === view.id;
   const barrelScale = view.street === 2 && ownLastRaise ? style.barrel : 1;
@@ -998,12 +1014,17 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
         ? view.allIn.isAllIn === false
           ? 'public-commitment-ranges'
           : 'public-all-in-ranges'
-        : 'random-opponents',
+        : (view.publicEquity?.model ?? 'random-opponents'),
       trials: view.equityTrials || (view.difficulty === 'hard' ? 52 : 28),
       rawEquity: view.equity,
       noise,
       equity,
       odds,
+      requiredEquity,
+      responseRisk,
+      assumedOpponents,
+      actionContext: view.actionContext || null,
+      structuredPriceContinue,
       allIn: view.allIn || null,
       pressure,
       percentile,
@@ -1071,15 +1092,16 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
       exceptions.push('outside-range');
     }
     if (
-      (!premium || view.street > 0) &&
+      (!premium || view.street > 0 || view.publicEquity) &&
       !affordableRangePassed &&
       !floatContinue &&
       !drawContinue &&
       !pairContinue &&
+      !structuredPriceContinue &&
       !semiBluff &&
       !pureBluff
     ) {
-      if (equity + callTolerance < odds + 0.02) {
+      if (equity + callTolerance < (view.publicEquity ? requiredEquity : odds + 0.02)) {
         if (roll('insufficient-equity', 0.03 + callDown * 0.1) > 0.03 + callDown * 0.1)
           return finish('fold', 'insufficient-equity');
         exceptions.push('insufficient-equity');
@@ -1240,7 +1262,7 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
     !drawContinue &&
     !pairContinue &&
     (pureBluff || semiBluff) &&
-    equity + callTolerance < odds + 0.02
+    equity + callTolerance < (view.publicEquity ? requiredEquity : odds + 0.02)
   )
     return finish('fold', 'insufficient-equity');
   return finish(

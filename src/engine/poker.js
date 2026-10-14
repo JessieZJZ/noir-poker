@@ -17,6 +17,9 @@ import { raiseCaption } from './action-labels.js';
 import { botThinkingTime } from './bot-timing.js';
 import { chipUnitOf, isChipAmount } from './bet-sizing.js';
 import { allInContext, estimateAllInEquity } from './bot-allin.js';
+import { publicActionContext } from './public-action-context.js';
+import { preparePublicRanges } from './public-ranges.js';
+import { estimatePublicEquity } from './public-equity.js';
 export const SUITS = ['♠', '♥', '♣', '♦'];
 export const RANK_NAMES = [
   '高牌',
@@ -478,6 +481,7 @@ export function act(g, id, action, amount) {
       emotionMode: g.emotionMode,
       legal: { ...legal },
       pending: [...g.pending],
+      actionContext: publicActionContext(g, id),
       action: normalized,
       amount: normalized === 'raise' ? amount : normalized === 'call' ? legal.callAmount : 0,
       players: g.players.map((o) => ({
@@ -790,6 +794,7 @@ export function botDecision(g, random = Math.random, { trials, allInCache } = {}
     board: g.board.map((c) => ({ ...c })),
     street: g.street,
     position: seatPosition(g, p.id),
+    actionContext: publicActionContext(g, p.id),
     count: g.players.length,
     chipUnit: chipUnitOf(g),
     bigBlind: bigBlindOf(g),
@@ -810,7 +815,15 @@ export function botDecision(g, random = Math.random, { trials, allInCache } = {}
     rivals,
     opponents: live(g)
       .filter((o) => o.id !== p.id)
-      .map((o) => ({ id: o.id, stack: o.stack, bet: o.bet, total: o.total, allin: o.allin })),
+      .map((o) => ({
+        id: o.id,
+        position: seatPosition(g, o.id),
+        stack: o.stack,
+        bet: o.bet,
+        total: o.total,
+        allin: o.allin,
+        actedTo: o.actedTo,
+      })),
     equityTrials,
     contestable: contestableAfterCall(g, p.id, legal.callAmount),
     history: (g.history || []).map(({ id, street, action, amount, betLabel }) => ({
@@ -824,33 +837,31 @@ export function botDecision(g, random = Math.random, { trials, allInCache } = {}
     playsBoard: g.board.length === 5 && compare(score, evaluate(g.board).score) === 0,
   };
   const allIn = allInContext(view);
+  // Only public ledgers enter the existing pot partitioner. Pending seats
+  // contribute their chips already paid, not imaginary future calls.
+  const before = {
+    players: g.players.map(({ id, total, folded }) => ({ id, total, folded })),
+  };
+  const after = {
+    players: before.players.map((o) => ({
+      ...o,
+      total: o.total + (o.id === p.id ? legal.callAmount : 0),
+    })),
+  };
+  const beforeRefund = partitionPots(before).refunds.find((r) => r.id === p.id)?.amount || 0;
+  const partition = partitionPots(after);
+  const afterRefund = partition.refunds.find((r) => r.id === p.id)?.amount || 0;
+  const refundDelta = afterRefund - beforeRefund;
+  view.callPots = partition.pots
+    .filter((pot) => pot.eligible.includes(p.id))
+    .map(({ amount, eligible }) => ({ amount, eligible: [...eligible] }));
+  const contestable = view.callPots.reduce((sum, pot) => sum + pot.amount, 0);
+  const cost = Math.max(0, legal.callAmount - refundDelta);
+  view.callPrice = { cost, contestable, odds: cost / Math.max(1, contestable), refundDelta };
   if (allIn) {
-    // Only public ledgers enter the existing pot partitioner. Pending seats
-    // contribute their chips already paid, not imaginary future calls.
-    const before = {
-      players: g.players.map(({ id, total, folded }) => ({ id, total, folded })),
-    };
-    const after = {
-      players: before.players.map((o) => ({
-        ...o,
-        total: o.total + (o.id === p.id ? legal.callAmount : 0),
-      })),
-    };
-    const beforeRefund = partitionPots(before).refunds.find((r) => r.id === p.id)?.amount || 0;
-    const partition = partitionPots(after);
-    const afterRefund = partition.refunds.find((r) => r.id === p.id)?.amount || 0;
-    const refundDelta = afterRefund - beforeRefund;
-    view.callPots = partition.pots
-      .filter((pot) => pot.eligible.includes(p.id))
-      .map(({ amount, eligible }) => ({ amount, eligible: [...eligible] }));
-    const contestable = view.callPots.reduce((sum, pot) => sum + pot.amount, 0);
-    const cost = Math.max(0, legal.callAmount - refundDelta);
     view.allIn = {
       ...allIn,
-      cost,
-      contestable,
-      odds: cost / Math.max(1, contestable),
-      refundDelta,
+      ...view.callPrice,
     };
     const allInTrials = trials ?? (g.difficulty === 'hard' ? 96 : 72);
     view.equityTrials = allInTrials;
@@ -864,7 +875,41 @@ export function botDecision(g, random = Math.random, { trials, allInCache } = {}
     });
     view.equity = assessment.equity;
     Object.assign(view.allIn, assessment);
-  } else view.equity = estimateEquity(p.hole, g.board, rivals, equityTrials, random);
+    view.publicEquity = {
+      ...assessment,
+      potEquity: assessment.equity,
+      samples: allInTrials,
+      model: allIn.isAllIn ? 'public-all-in-ranges' : 'public-commitment-ranges',
+      assumedOpponentIds: [...allIn.committedIds],
+    };
+  } else {
+    // Estimate sharing the money exposed by this call. Other live seats may
+    // still cover those layers; an actual all-in retains its paid cap. Cap the
+    // actor's model exposure at the call instead of inventing later actor bets.
+    const equityLedger = {
+      phase: 'playing',
+      players: g.players.map(({ id, total, stack, folded, allin }) => ({
+        id,
+        total: total + (id === p.id ? legal.callAmount : 0),
+        stack: stack - (id === p.id ? legal.callAmount : 0),
+        folded,
+        allin: id === p.id || allin,
+      })),
+    };
+    view.equityPots = currentPots(equityLedger)
+      .pots.filter((pot) => pot.eligible.includes(p.id))
+      .map(({ amount, eligible }) => ({ amount, eligible: [...eligible] }));
+    view.publicEquity = estimatePublicEquity(view, preparePublicRanges(view), {
+      deck: deckOfCards(),
+      evaluate,
+      compare,
+      features: botBoardFeatures,
+      trials: equityTrials,
+      random,
+      cache: allInCache,
+    });
+    view.equity = view.publicEquity.equity;
+  }
   const decision = chooseBotAction(
     view,
     getBotProfile(p.botProfile),

@@ -157,6 +157,26 @@ test('one sampled-deal cache preserves every range, candidate and paired statist
   }
 });
 
+const firstSamplerGuard = 'firstPairSampler && holes.size === 1';
+assert.ok(referenceSource.includes(firstSamplerGuard));
+const rebuiltPriorSource = referenceSource
+  .replace(firstSamplerGuard, 'false')
+  .replace(/from '([^']+)'/g, (_, relative) => `from '${new URL(relative, referenceSourceURL)}'`);
+const rebuiltPriorRollout = await import(
+  'data:text/javascript;base64,' + Buffer.from(rebuiltPriorSource).toString('base64')
+);
+
+test('fixed first-opponent proposals preserve every candidate and paired result', () => {
+  for (const s of [causalReraiseGame().decisions[0], heroValueGame('set-shove').decisions.at(-1)]) {
+    const before = JSON.stringify(s);
+    assert.deepEqual(
+      compareCandidateActions(s, [], { trials: 12 }),
+      rebuiltPriorRollout.compareCandidateActions(s, [], { trials: 12 }),
+    );
+    assert.equal(JSON.stringify(s), before);
+  }
+});
+
 const stopGuard = 'if (hasFinalFold(g)) break;';
 assert.ok(referenceSource.includes(stopGuard), 'The reference must disable the fold shortcut');
 const fullRolloutSource = referenceSource

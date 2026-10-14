@@ -8,6 +8,7 @@ import {
 } from '../review/analysis.js';
 import { createOpponentReview } from './opponent-review.js';
 import { publicHistory } from '../review/narrative.js';
+import { renderReviewParagraphs } from './review-matchups.js';
 const $ = (selector) => document.querySelector(selector),
   format = (n) => formatChips(Math.round(n));
 const statusNames = { attention: '重点改进', consider: '值得讨论', sound: '有合理依据' };
@@ -143,12 +144,14 @@ export function createReviewController({ card }) {
     setLocalizedText($('#review-stack'), format(decision.stack));
     setLocalizedHTML(
       $('#review-coach-explanation'),
-      [
-        ...(result?.coaching.paragraphs || ['正在比较当时的合法选择…']),
-        ...(input.publicResponses?.[selected] || []),
-      ]
-        .map((text) => `<p>${esc(text)}</p>`)
-        .join(''),
+      renderReviewParagraphs(
+        [
+          ...(result?.coaching.paragraphs || ['正在比较当时的合法选择…']),
+          ...(input.publicResponses?.[selected] || []),
+        ],
+        result?.context.matchups,
+        decision.street,
+      ),
     );
     $('#review-practice-focus').hidden = !result || result.coaching.kind === 'keep';
     setLocalizedText($('#review-coach-followup'), result?.coaching.followUp || '');

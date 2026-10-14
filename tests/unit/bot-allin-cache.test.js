@@ -41,7 +41,20 @@ for (const { name, view, context } of allInCacheCases()) {
   test(`all-in memoization preserves the pre-change ${name} result and samples while bounding evaluations`, () => {
     const measured = measuredEstimate(view, context);
     const [equity, unbeatableRiver, guaranteedReturn, randomCalls] = baseline[name];
-    assert.deepEqual(measured.assessment, { equity, unbeatableRiver, guaranteedReturn });
+    assert.deepEqual(
+      {
+        equity: measured.assessment.equity,
+        unbeatableRiver: measured.assessment.unbeatableRiver,
+        guaranteedReturn: measured.assessment.guaranteedReturn,
+      },
+      { equity, unbeatableRiver, guaranteedReturn },
+    );
+    assert.equal(
+      measured.assessment.winProbability +
+        measured.assessment.tieProbability +
+        measured.assessment.lossProbability,
+      1,
+    );
     assert.equal(measured.randomCalls, randomCalls);
     const unseen = 52 - view.hole.length - view.board.length;
     const pairs = (unseen * (unseen - 1)) / 2;

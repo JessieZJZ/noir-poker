@@ -9,6 +9,7 @@ import { createHeroTurnCue } from '../ui/hero-turn.js';
 import { SEAT_ANCHORS } from '../ui/seat-geometry.js';
 import { explainOpponent } from '../review/opponents.js';
 import { publicHistory } from '../review/narrative.js';
+import { reviewCommentary } from '../review/matchups.js';
 import {
   newGame,
   configureStakes,
@@ -754,6 +755,11 @@ export function createWechatController({
               title: explanation.title,
               reason: explanation.detail,
               paragraphs: explanation.paragraphs,
+              commentary: reviewCommentary(
+                explanation.paragraphs,
+                explanation.matchups,
+                view.street,
+              ),
               reasons: explanation.reasons,
               warning: explanation.warning,
             };
@@ -770,6 +776,11 @@ export function createWechatController({
             suggestion: cleanAction(r.coaching.suggestion),
             reason: r.coaching.explanation,
             paragraphs: [...r.coaching.paragraphs, ...(input.publicResponses?.[index] || [])],
+            commentary: reviewCommentary(
+              [...r.coaching.paragraphs, ...(input.publicResponses?.[index] || [])],
+              r.context.matchups,
+              input.decisions[index].street,
+            ),
             publicResponses: input.publicResponses?.[index] || [],
             followUp: r.coaching.followUp,
             evidence: r.evidence,

@@ -1,14 +1,15 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { evaluate, compare } from '../../src/engine/poker.js';
+import { deckOfCards, evaluate, compare } from '../../src/engine/poker.js';
 import { decisionContext } from '../../src/review/context.js';
-import { handMatchups } from '../../src/review/matchups.js';
+import { handMatchups, matchupPresentation, reviewCommentary } from '../../src/review/matchups.js';
 import { valuePlan } from '../../src/review/routes.js';
 import { analyzeDecision } from '../../src/review/analysis.js';
 import { cards } from '../fixtures/deceptive-decisions.js';
 import { heroValueGame } from '../fixtures/review-spots.js';
 import { actionReason } from '../../src/review/narrative.js';
 import { weakSuitedShove } from '../fixtures/review-spots.js';
+import { renderReviewParagraphs } from '../../src/ui/review-matchups.js';
 
 // Public snapshots exercise explanation and route boundaries. Opponent hands
 // below are examples generated from unseen cards, never actual private cards.
@@ -99,7 +100,11 @@ test('across streets, every shown matchup is a legal current-board comparison ra
       ['behind', -1],
       ['tied', 0],
     ]) {
-      assert.ok(Array.isArray(m[direction]) && m[direction].length <= 1, name + '/' + direction);
+      assert.ok(
+        Array.isArray(m[direction]) && m[direction].length <= (direction === 'tied' ? 1 : 3),
+        name + '/' + direction,
+      );
+      assert.equal(new Set(m[direction].map((example) => example.group)).size, m[direction].length);
       for (const example of m[direction]) {
         assert.equal(example.cards.length, 2, name);
         assert.equal(new Set(example.cards.map((card) => card.key)).size, 2, name);
@@ -153,6 +158,134 @@ test('made-hand examples change when the same flush board becomes paired and rem
   hidden.winners = [{ id: 1 }];
   hidden.result = 'River获胜';
   assert.deepEqual(handMatchups(hidden, decisionContext(hidden)), after);
+});
+
+function rankedSpot(position = 'UTG', action = 'raise', multiway = false) {
+  return spot('As Kd', 'Ks 7h 2c', {
+    action: 'check',
+    amount: 0,
+    currentBet: 0,
+    pot: multiway ? 450 : 300,
+    legal: { canCheck: true, callAmount: 0, toCall: 0, minRaiseTo: 50 },
+    players: [
+      { id: 0, name: '你', position: 'BTN', stack: 4850, total: 150, bet: 0 },
+      { id: 1, name: 'River', position, stack: 4850, total: 150, bet: 0 },
+      ...(multiway
+        ? [{ id: 2, name: 'Mia', position: 'CO', stack: 4850, total: 150, bet: 0 }]
+        : []),
+    ],
+    history: [
+      { id: 1, street: 0, action, amount: 150 },
+      ...(multiway ? [{ id: 2, street: 0, action: 'raise', amount: 500 }] : []),
+      { id: 1, street: 1, action: 'check', amount: 0 },
+      ...(multiway ? [{ id: 2, street: 1, action: 'raise', amount: 100 }] : []),
+    ],
+  });
+}
+
+test('ranked examples follow public position, earlier action and multiple ranges with stable distinct top-three groups', () => {
+  const early = rankedSpot(),
+    late = rankedSpot('BB'),
+    called = rankedSpot('UTG', 'call'),
+    multi = rankedSpot('UTG', 'call', true);
+  const match = (s) => handMatchups(s, decisionContext(s)),
+    groups = (s, direction = 'ahead') => match(s)[direction].map((example) => example.group);
+  assert.equal(groups(early).length, 3);
+  assert.equal(groups(early, 'behind').length, 3);
+  assert.notDeepEqual(groups(early), groups(late));
+  assert.notDeepEqual(groups(early), groups(called));
+  assert.notDeepEqual(groups(called), groups(multi));
+  const reordered = structuredClone(multi);
+  reordered.players = [reordered.players[0], reordered.players[2], reordered.players[1]];
+  assert.deepEqual(match(reordered), match(multi));
+  assert.deepEqual(match(early), match(early));
+  for (const s of [early, late, called, multi]) {
+    const m = match(s);
+    assert.equal(m.nut, false);
+    assert.equal(m.strength, 'medium');
+    for (const direction of ['ahead', 'behind', 'tied'])
+      assert.equal(new Set(m[direction].map((example) => example.group)).size, m[direction].length);
+  }
+});
+
+test('presentation replaces one causal comparison paragraph with ordered rows and preserves structural and nuts limits', () => {
+  for (const s of [
+    rankedSpot(),
+    spot('5s 5d', '5h Ks 9c'),
+    spot('As Kd'),
+    spot('2c 3d', 'As Ks Qs Js Ts'),
+  ]) {
+    const c = decisionContext(s),
+      m = handMatchups(s, c),
+      presentation = matchupPresentation(m, s.street),
+      paragraphs = ['before', m.text, 'after'],
+      commentary = reviewCommentary(paragraphs, m, s.street),
+      html = renderReviewParagraphs(paragraphs, m, s.street);
+    assert.equal(commentary.length, 3);
+    assert.equal(commentary.filter((part) => part.matchups).length, 1);
+    assert.deepEqual(commentary[1].matchups, presentation);
+    assert.equal(m.handLabel, c.handLabel);
+    assert.equal(presentation.handLabel, c.handLabel);
+    assert.ok(html.includes(`<span class="review-matchup-hand">${c.handLabel}</span>`));
+    if (s.hole.every((card) => card.rank === 5)) {
+      assert.equal(c.handLabel, '暗三条 5');
+      assert.match(html, /暗三条 5/);
+    }
+    for (const group of presentation.groups) {
+      assert.ok(group.examples.length <= (group.direction === 'tied' ? 1 : 3));
+      for (const example of group.examples) assert.ok(html.includes(example.text));
+    }
+    assert.ok(html.indexOf('before') < html.indexOf('review-matchups'));
+    assert.ok(html.indexOf('review-matchups') < html.indexOf('after'));
+    assert.doesNotMatch(html, /\d(?:\.\d+)?%|likelihood|weight|mass|概率[:：]?\s*\d/);
+    if (!s.street) {
+      assert.match(html, /结构上较弱|结构上较强/);
+      assert.match(html, /不代表获胜概率/);
+      assert.doesNotMatch(html, /当前可能领先|当前可能落后|坚果/);
+    } else {
+      assert.match(html, /按位置与此前公开行动估计排序/);
+      assert.match(html, /不代表对手实际底牌/);
+    }
+    if (m.nut) assert.match(html, /当前没有可能更强的牌组/);
+  }
+});
+
+test('ranked display cannot use hidden cards, a future board or final winners to prove nuts or choose value routes', () => {
+  const s = rankedSpot(),
+    c = decisionContext(s),
+    m = handMatchups(s, c),
+    before = valuePlan(s, c, m);
+  const altered = structuredClone(s);
+  Object.defineProperty(altered.players[1], 'hole', {
+    get() {
+      throw Error('Hidden cards read');
+    },
+  });
+  Object.defineProperty(altered, 'futureDeck', {
+    get() {
+      throw Error('Future deck read');
+    },
+  });
+  Object.defineProperty(altered, 'winners', {
+    get() {
+      throw Error('Final winners read');
+    },
+  });
+  const alteredMatchups = handMatchups(altered, decisionContext(altered));
+  assert.deepEqual(alteredMatchups, m);
+  assert.deepEqual(
+    matchupPresentation(alteredMatchups, altered.street),
+    matchupPresentation(m, s.street),
+  );
+  assert.deepEqual(valuePlan(s, c, { ...m, ahead: [], behind: [], tied: [] }), before);
+  const known = new Set([...s.hole, ...s.board].map((card) => card.key)),
+    pool = deckOfCards().filter((card) => !known.has(card.key));
+  let possibleBehind = false;
+  for (let i = 0; i < pool.length - 1; i++)
+    for (let j = i + 1; j < pool.length; j++)
+      if (compare(c.made.score, evaluate([pool[i], pool[j], ...s.board]).score) < 0)
+        possibleBehind = true;
+  assert.equal(m.nut, !possibleBehind);
 });
 
 function plan(s) {

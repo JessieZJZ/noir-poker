@@ -2,7 +2,7 @@
   "files": {
     "manrope.woff2": "2c4d062dab9ed4d14bf112624dadf3c2379ac5969872a9004fe73df0f6b5e61c",
     "noto-sans-sc.woff2": "a02be62ead90f26659fdd7d2ed23a7d1cb918d1aee0894bda7fdef13d16f9630",
-    "noto-sans-kr.woff2": "29b78bd30e858bec5d18b07c711a3730f84d7600aefecd1daa76495d71b23f08",
+    "noto-sans-kr.woff2": "719529e2e857cc10d1c3fb67c7d76e6c254a8153e25175c72facb099d03a8a2d",
     "barlow-condensed.woff2": "84a47f23ef0c0f13d1e7d24ef402ef3c9f4759524221dae05a8bb2e809bd9892"
   },
   "codepoints": [
@@ -2418,6 +2418,7 @@
     44845,
     45001,
     45068,
+    45076,
     45124,
     45130,
     45132,
@@ -2546,6 +2547,7 @@
     47140,
     47141,
     47144,
+    47148,
     47156,
     47157,
     47159,

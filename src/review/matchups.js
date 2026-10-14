@@ -1,127 +1,187 @@
-import { deckOfCards, evaluate, compare } from '../engine/poker.js';
+import { deckOfCards, evaluate, compare, RANK_NAMES } from '../engine/poker.js';
 import { legalRaiseTo } from '../engine/bet-sizing.js';
 import { bigBlindOf } from '../engine/stakes.js';
 import { compactChips } from '../engine/chip-format.js';
+import { botBoardFeatures } from '../engine/bot-profiles.js';
+import { preparePublicRanges, publicComboWeight } from '../engine/public-ranges.js';
+import { publicHandData } from '../engine/public-equity.js';
 import { cardText, spotFacts } from './spot-facts.js';
 
 const identify = (card) => `${card.rank}-${card.suit}`;
 const number = compactChips;
+const ordered = (a, b) => (a < b ? -1 : a > b ? 1 : 0);
+const pairKey = (cards) => cards.map(identify).sort().join('|');
+const groupKey = (candidate) => {
+  const [high, low] = candidate.cards.map((card) => card.rank).sort((a, b) => b - a),
+    shape = high === low ? 'p' : candidate.cards[0].suit === candidate.cards[1].suit ? 's' : 'o';
+  return `${high}-${low}-${shape}-${candidate.score[0]}`;
+};
 
-// These are possible current hands, never a prediction of the opponent's cards
-// or a range-equity estimate. Only the actor's hole cards and current board count.
+// Ranking describes possible opponent holdings from the same public range
+// kernel as the bots. It never changes the exhaustive current-nuts proof.
 export function handMatchups(s, c) {
   if (!s.hole?.length || !s.board || !c.made) return null;
   const known = new Set([...s.hole, ...s.board].map(identify)),
     pool = deckOfCards().filter((card) => !known.has(identify(card))),
     own = c.made.score,
-    example = (cards) => {
-      if (!cards || cards.some((card) => !card)) return null;
-      const made = evaluate([...cards, ...s.board]);
-      return { cards, text: cardText(cards), label: made.label, score: made.score };
-    },
-    pair = (a, b) => {
-      const first = pool.find((card) => card.rank === a),
-        second = pool.find((card) => card.rank === b && card !== first);
-      return first && second ? example([first, second]) : null;
-    };
-  let ahead = null,
-    behind = null,
-    tied = null;
-  if (!s.street) {
-    const ranks = s.hole.map((card) => card.rank).sort((a, b) => b - a),
-      pocket = ranks[0] === ranks[1];
-    if (pocket) {
-      ahead = ranks[0] > 2 ? pair(ranks[0] - 1, ranks[0] - 1) : null;
-      behind = ranks[0] < 14 ? pair(ranks[0] + 1, ranks[0] + 1) : null;
-    } else {
-      ahead =
-        c.tier === 0 && c.preflopRaises
-          ? null
-          : ranks[1] > 2
-            ? pair(ranks[0], ranks[1] - 1)
-            : pair(Math.max(2, ranks[0] - 1), 2);
-      behind =
-        c.tier === 0 && c.preflopRaises
-          ? pair(Math.max(8, Math.min(14, ranks[0] + 1)), Math.max(8, Math.min(14, ranks[0] + 1)))
-          : ranks[1] < ranks[0] - 1
-            ? pair(ranks[0], ranks[1] + 1)
-            : pair(Math.min(14, ranks[0]), Math.min(14, ranks[0]));
-    }
-    const strength = c.tier >= 2 ? 'strong' : c.tier === 1 ? 'medium' : 'weak',
-      text =
-        ahead && behind
-          ? `翻前牌组对比：${c.handLabel}比 ${ahead.text} 的点数或踢脚更好，但面对 ${behind.text} 会处于下风；之后仍要看公共牌。`
-          : ahead
-            ? `翻前牌组对比：${c.handLabel}领先例如 ${ahead.text}；这手强起手牌可以向较弱对子或高牌取值。`
-            : behind
-              ? `翻前牌组对比：${c.handLabel}面对例如 ${behind.text} 会落后，不能只靠弱牌本身支撑大额投入。`
-              : '';
-    return {
-      ahead: ahead ? [ahead] : [],
-      behind: behind ? [behind] : [],
-      tied: [],
-      nut: false,
-      strength,
-      relation: strength,
-      text,
-    };
-  }
-  const threatCategory =
-      c.texture.paired && own[0] >= 4 && own[0] < 6
-        ? 6
-        : c.texture.maxSuit >= 3 && own[0] < 5
-          ? 5
-          : c.texture.connected >= 3 && own[0] < 4
-            ? 4
-            : null,
-    threatPriority = (candidate) => (candidate.score[0] === threatCategory ? 0 : 1);
+    comparison = s.street ? 'made' : 'structure',
+    cache = new Map(),
+    candidates = [];
+  let hasBehind = false;
   for (let i = 0; i < pool.length - 1; i++)
     for (let j = i + 1; j < pool.length; j++) {
-      const candidate = example([pool[i], pool[j]]),
-        comparison = compare(own, candidate.score);
-      if (comparison > 0 && (!ahead || compare(candidate.score, ahead.score) > 0))
-        ahead = candidate;
-      else if (
-        comparison < 0 &&
-        (!behind ||
-          threatPriority(candidate) < threatPriority(behind) ||
-          (threatPriority(candidate) === threatPriority(behind) &&
-            compare(candidate.score, behind.score) < 0))
-      )
-        behind = candidate;
-      else if (!comparison && !tied) tied = candidate;
+      const cards = [pool[i], pool[j]],
+        made = publicHandData(cards, s.board, { evaluate, cache }),
+        direction = Math.sign(compare(own, made.score));
+      if (direction < 0) hasBehind = true;
+      candidates.push({
+        cards,
+        text: cardText(cards),
+        label: !s.street
+          ? made.score[0] === 1
+            ? '口袋对子'
+            : '高牌'
+          : made.score[0] === 8 && made.score[1] === 14
+            ? '皇家同花顺'
+            : RANK_NAMES[made.score[0]],
+        score: made.score,
+        direction: direction > 0 ? 'ahead' : direction < 0 ? 'behind' : 'tied',
+        key: pairKey(cards),
+        likelihood: 0,
+      });
     }
-  const board = c.handClass === 'board',
+  const ranges = preparePublicRanges(s).sort((a, b) => a.id - b.id);
+  // Each live seat contributes a normalized distribution over the legal pool.
+  // Summing their group masses ranks which holdings merit consideration across
+  // multiple opponents; these masses are not displayed as win probabilities.
+  for (const range of ranges) {
+    const board = range.board || [],
+      boardScore = board.length === 5 ? publicHandData([], board, { evaluate, cache }).score : null,
+      weights = candidates.map((candidate) => {
+        const data =
+          board.length >= 3
+            ? publicHandData(candidate.cards, board, {
+                evaluate,
+                features: botBoardFeatures,
+                cache,
+              })
+            : {};
+        return publicComboWeight(candidate.cards, range, { board, ...data, boardScore, compare });
+      }),
+      total = weights.reduce((sum, weight) => sum + weight, 0);
+    for (let i = 0; i < candidates.length; i++)
+      candidates[i].likelihood += total ? weights[i] / total : 1 / candidates.length;
+  }
+  if (!ranges.length)
+    for (const candidate of candidates) candidate.likelihood = 1 / candidates.length;
+  const groups = { ahead: new Map(), behind: new Map(), tied: new Map() };
+  for (const candidate of candidates) {
+    const group = groupKey(candidate),
+      entries = groups[candidate.direction],
+      previous = entries.get(group);
+    if (!previous) entries.set(group, { ...candidate, group, mass: candidate.likelihood });
+    else {
+      const mass = previous.mass + candidate.likelihood,
+        preferred =
+          candidate.likelihood > previous.likelihood + 1e-12 ||
+          (Math.abs(candidate.likelihood - previous.likelihood) <= 1e-12 &&
+            ordered(candidate.key, previous.key) < 0);
+      entries.set(group, { ...(preferred ? candidate : previous), group, mass });
+    }
+  }
+  const select = (direction, limit) =>
+    [...groups[direction].values()]
+      .sort((a, b) =>
+        Math.abs(a.mass - b.mass) > 1e-12 ? b.mass - a.mass : ordered(a.group, b.group),
+      )
+      .slice(0, limit)
+      .map(({ cards, text, label, score, group }) => ({ cards, text, label, score, group }));
+  const ahead = select('ahead', 3),
+    behind = select('behind', 3),
+    tied = select('tied', 1),
+    lead = ahead[0],
+    lose = behind[0],
+    tie = tied[0],
+    board = c.handClass === 'board',
     danger = (c.texture.maxSuit >= 3 && own[0] < 5) || (c.texture.connected >= 4 && own[0] < 4),
-    strength = board
-      ? 'board'
-      : own[0] >= 3 && !danger
+    strength = !s.street
+      ? c.tier >= 2
         ? 'strong'
-        : own[0] >= 1
+        : c.tier === 1
           ? 'medium'
-          : 'weak',
-    text = board
-      ? behind
-        ? `主要牌力来自公共牌；遇到 ${behind.text}（${behind.label}）仍会落后，不能把公共牌成牌当成独占底池。`
-        : `主要牌力来自公共牌，${tied?.text || ''} 也能组成同样的牌；当前争取的是平分底池。`
-      : ahead && behind
-        ? `当前成牌对比：${c.handLabel}能赢例如 ${ahead.text}（${ahead.label}），但会输给 ${behind.text}（${behind.label}）。`
-        : ahead
+          : 'weak'
+      : board
+        ? 'board'
+        : own[0] >= 3 && !danger
+          ? 'strong'
+          : own[0] >= 1
+            ? 'medium'
+            : 'weak';
+  const text = !s.street
+    ? lead && lose
+      ? `翻前牌组对比：${c.handLabel}比 ${lead.text} 的点数或踢脚更好，但面对 ${lose.text} 会处于下风；之后仍要看公共牌。`
+      : lead
+        ? `翻前牌组对比：${c.handLabel}领先例如 ${lead.text}；这手强起手牌可以向较弱对子或高牌取值。`
+        : lose
+          ? `翻前牌组对比：${c.handLabel}面对例如 ${lose.text} 会落后，不能只靠弱牌本身支撑大额投入。`
+          : ''
+    : board
+      ? lose
+        ? `主要牌力来自公共牌；遇到 ${lose.text}（${lose.label}）仍会落后，不能把公共牌成牌当成独占底池。`
+        : `主要牌力来自公共牌，${tie?.text || ''} 也能组成同样的牌；当前争取的是平分底池。`
+      : lead && lose
+        ? `当前成牌对比：${c.handLabel}能赢例如 ${lead.text}（${lead.label}），但会输给 ${lose.text}（${lose.label}）。`
+        : lead
           ? s.street === 3
-            ? `当前成牌对比：${c.handLabel}能赢例如 ${ahead.text}（${ahead.label}），河牌已发完，是当前最大成牌。`
-            : `当前成牌对比：${c.handLabel}能赢例如 ${ahead.text}（${ahead.label}），当前是最大成牌（坚果牌）；后面新发的牌仍可能改变强弱。`
-          : behind
-            ? `当前成牌对比：${c.handLabel}会输给例如 ${behind.text}（${behind.label}）；继续更需要补牌或对手弃牌。`
-            : `当前成牌与 ${tied?.text || ''} 相同，主要争取平分底池。`;
+            ? `当前成牌对比：${c.handLabel}能赢例如 ${lead.text}（${lead.label}），河牌已发完，是当前最大成牌。`
+            : `当前成牌对比：${c.handLabel}能赢例如 ${lead.text}（${lead.label}），当前是最大成牌（坚果牌）；后面新发的牌仍可能改变强弱。`
+          : lose
+            ? `当前成牌对比：${c.handLabel}会输给例如 ${lose.text}（${lose.label}）；继续更需要补牌或对手弃牌。`
+            : `当前成牌与 ${tie?.text || ''} 相同，主要争取平分底池。`;
   return {
-    ahead: ahead ? [ahead] : [],
-    behind: behind ? [behind] : [],
-    tied: tied ? [tied] : [],
-    nut: !behind,
+    ahead,
+    behind,
+    tied,
+    handLabel: c.handLabel,
+    comparison,
+    nut: Boolean(s.street) && !hasBehind,
     strength,
-    relation: board ? 'board' : !behind ? 'current-nuts' : strength,
+    relation: !s.street ? strength : board ? 'board' : !hasBehind ? 'current-nuts' : strength,
     text,
   };
+}
+
+export function matchupPresentation(matchups, street) {
+  if (!matchups) return null;
+  const structure = matchups.comparison === 'structure',
+    directions = [
+      ['ahead', structure ? '结构上较弱的可能牌组' : '当前可能领先的牌组'],
+      ['behind', structure ? '结构上较强的可能牌组' : '当前可能落后的牌组'],
+      ['tied', '当前可能平分的牌组'],
+    ];
+  return {
+    title: structure ? '起手牌结构对比' : '当前成牌对比',
+    handLabel: matchups.handLabel,
+    note: structure
+      ? '仅比较起手牌结构，不代表获胜概率；之后仍需看公共牌。'
+      : '按位置与此前公开行动估计排序，仅是可能牌组，不代表对手实际底牌。',
+    groups: directions
+      .filter(([direction]) => matchups[direction].length && (!structure || direction !== 'tied'))
+      .map(([direction, label]) => ({ direction, label, examples: matchups[direction] })),
+    nutsNote:
+      !structure && matchups.nut
+        ? street === 3
+          ? '河牌已发完，当前没有可能更强的牌组。'
+          : '当前没有可能更强的牌组；后续公共牌仍可能改变强弱。'
+        : '',
+  };
+}
+
+export function reviewCommentary(paragraphs, matchups, street) {
+  const presentation = matchupPresentation(matchups, street);
+  return paragraphs.map((text) =>
+    presentation && text === matchups.text ? { matchups: presentation } : { text },
+  );
 }
 
 // Conditional value candidates only. Existing analysis and paired-rollout guards

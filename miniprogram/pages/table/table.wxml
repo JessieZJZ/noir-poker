@@ -820,7 +820,38 @@
           <text wx:if="{{!selectedReviewStep.paragraphs.length}}"
             >{{selectedReviewStep.reason}}</text
           >
-          <text wx:for="{{selectedReviewStep.paragraphs}}" wx:key="index">{{item}}</text>
+          <block wx:if="{{selectedReviewStep.commentary.length}}">
+            <block wx:for="{{selectedReviewStep.commentary}}" wx:key="index">
+              <text wx:if="{{item.text}}">{{item.text}}</text>
+              <view wx:else class="review-matchups">
+                <text class="module-title">{{item.matchups.title}}</text>
+                <text class="review-matchup-hand">{{item.matchups.handLabel}}</text>
+                <text class="review-matchup-note">{{item.matchups.note}}</text>
+                <view
+                  wx:for="{{item.matchups.groups}}"
+                  wx:for-item="group"
+                  wx:key="direction"
+                  data-matchup-direction="{{group.direction}}"
+                >
+                  <text class="module-title">{{group.label}}</text>
+                  <view
+                    wx:for="{{group.examples}}"
+                    wx:for-item="example"
+                    wx:key="group"
+                    class="review-matchup-example"
+                  >
+                    <text>{{example.text}} {{example.label}}</text>
+                  </view>
+                </view>
+                <text wx:if="{{item.matchups.nutsNote}}" class="review-matchup-nuts"
+                  >{{item.matchups.nutsNote}}</text
+                >
+              </view>
+            </block>
+          </block>
+          <block wx:else>
+            <text wx:for="{{selectedReviewStep.paragraphs}}" wx:key="index">{{item}}</text>
+          </block>
           <text wx:for="{{selectedReviewStep.reasons}}" wx:key="*this">{{item}}</text>
           <text wx:if="{{selectedReviewStep.warning}}" class="muted"
             >{{selectedReviewStep.warning}}</text

@@ -39,6 +39,11 @@ function finish(g, random = seeded(42)) {
     else {
       const d = botDecision(g, random),
         legal = legalActions(g);
+      if (d.trace.view.equityPots)
+        assert.equal(
+          d.trace.view.equityPots.reduce((sum, pot) => sum + pot.amount, 0),
+          d.trace.view.callPrice.contestable,
+        );
       if (d.action === 'raise') {
         assert.ok(legal.canRaise);
         assert.equal(d.amount % 25, 0);

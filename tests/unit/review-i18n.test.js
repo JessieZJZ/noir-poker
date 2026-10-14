@@ -127,7 +127,12 @@ test('hand-specific rationale and actual public responses localize without losin
     const input = createReviewInput(heroValueGame(kind));
     for (const decision of input.decisions) {
       const result = analyzeDecision(decision, { trials: 120, rolloutTrials: 12 });
-      texts.push(...result.coaching.paragraphs, result.coaching.followUp, ...result.evidence);
+      texts.push(
+        ...result.coaching.paragraphs,
+        result.context.matchups.handLabel,
+        result.coaching.followUp,
+        ...result.evidence,
+      );
     }
     texts.push(...input.publicResponses.flat());
   }
