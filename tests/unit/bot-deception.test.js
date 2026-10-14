@@ -77,7 +77,7 @@ test('actual slow-plays, trash raises, donks and 7-2 bluffs have distinct execut
     );
     const e = explainOpponent(r);
     assert.match(e.detail, /埋牌|脏牌|donk|2–7/);
-    assert.ok(e.metrics.length <= 2);
+    assert.deepEqual(e.metrics, []);
     if (r.action === 'raise') {
       assert.equal(r.amount % 25, 0);
       assert.ok(
@@ -89,7 +89,7 @@ test('actual slow-plays, trash raises, donks and 7-2 bluffs have distinct execut
   }
   assert.match(explainOpponent(records[5]).detail, /两头顺听牌|同花听牌/);
   assert.match(explainOpponent(records[6]).detail, /付费/);
-  assert.match(explainOpponent(records[8]).reasons.join(' '), /没有 2–7 奖励/);
+  assert.doesNotMatch(explainOpponent(records[8]).detail, /奖励|EV|抽样|模拟器/);
 });
 
 test('conditional executed mix rises with difficulty at fixed inputs and deterministic random samples', () => {

@@ -1873,12 +1873,10 @@ test('A7 review separates steal, 3bet and 4bet; opponents expose actual decision
   await expect(page.locator('#review-hero-panel')).toBeHidden();
   await expect(page.locator('#review-opponent-detail .review-cards .playing-card')).toHaveCount(5);
   await expect(page.locator('#review-opponent-detail .review-explanation')).not.toBeEmpty();
-  await expect(page.locator('#review-opponent-detail .review-evidence')).not.toContainText(
-    /随机范围估计|抽样\s*\d+\s*次|价格门槛/,
+  await expect(page.locator('#review-opponent-detail .opponent-metrics')).toHaveCount(0);
+  await expect(page.locator('#review-opponent-detail .review-explanation')).not.toContainText(
+    /它|EV|模型|模拟器|抽样/,
   );
-  expect(
-    await page.locator('#review-opponent-detail .opponent-metrics li').count(),
-  ).toBeLessThanOrEqual(2);
   await expect(
     page.locator('#review-opponent-detail .review-choice, .opponent-warning'),
   ).toHaveCount(0);

@@ -183,8 +183,9 @@ test('opponent review explains the exact small-open call and separate re-raising
   assert.match(explanation.detail, /跟注 150/);
   assert.match(explanation.detail, /还留 4,850/);
   assert.match(explanation.detail, /同花/);
-  assert.match(explanation.reasons.join(''), /开池至 150/);
-  assert.doesNotMatch(explanation.metrics.join(' '), /随机范围估计|抽样\s*\d+\s*次/);
+  assert.match(explanation.detail, /开池至 150/);
+  assert.deepEqual(explanation.metrics, []);
+  assert.doesNotMatch(explanation.detail, /EV|模型|模拟器|抽样|它/);
   assert.doesNotMatch(explanation.detail, /这是未加注底池/);
   assert.doesNotMatch(explanation.warning, /这次继续尤其/);
   const premium = decision(smallOpen('As Ah'), 'balanced', () => 0.1);
@@ -193,6 +194,6 @@ test('opponent review explains the exact small-open call and separate re-raising
       ...premium,
       trace: { ...premium.trace, view: smallOpen('As Ah') },
     }).detail,
-    /价值再加注/,
+    /加注至|再加注/,
   );
 });

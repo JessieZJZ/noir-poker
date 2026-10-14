@@ -45,7 +45,8 @@ test('WeChat review transports the executed deceptive logic from the shared engi
     ];
     result.opponents.forEach((r, index) => {
       assert.match(r.reason, expected[index]);
-      assert.ok(r.metrics.length <= 2);
+      assert.equal(r.metrics, undefined);
+      assert.doesNotMatch(r.reason, /它|EV|模型|模拟器|抽样|奖励/);
       assert.ok(!('checks' in r) && !('axes' in r));
     });
   } finally {

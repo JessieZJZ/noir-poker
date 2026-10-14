@@ -851,10 +851,16 @@ export async function nativeScenarios(app) {
       evidence: document.querySelectorAll('#review-evidence li').length,
       keep: document.querySelector('#review-selected-status').textContent === '值得保留',
       focusHidden: document.querySelector('#review-practice-focus').hidden,
+      reason: document.querySelector('#review-coach-explanation').textContent,
+      keyInfo: document.querySelector('#review-evidence').textContent,
+      method: document.querySelectorAll('.review-method, #review-method').length,
     }));
     assert.equal(presentation.removed, 0);
     assert.ok(presentation.evidence >= 4);
     assert.equal(presentation.focusHidden, presentation.keep);
+    assert.equal(presentation.method, 0);
+    assert.doesNotMatch(presentation.reason, /EV|模型|模拟器|抽样|新增投入/);
+    assert.doesNotMatch(presentation.keyInfo, /有效剩余|新增投入/);
     const observedDeceptiveMotives = [];
     if (app.comparePage) {
       await app.comparePage('review', [
@@ -866,19 +872,18 @@ export async function nativeScenarios(app) {
       ]);
       await app.click('#review-opponents-tab');
       const opponent = await app.evaluate(() => ({
-        metrics: document.querySelectorAll('.opponent-metrics li').length,
+        metrics: document.querySelectorAll('.opponent-metrics').length,
         removed: document.querySelectorAll(
           '#review-opponent-detail .review-choice, #review-opponent-detail .review-status, #review-opponent-detail details',
         ).length,
         reason: document.querySelector('#review-opponent-detail .review-explanation')?.textContent,
-        references: document.querySelector('.opponent-metrics')?.textContent || '',
         scope: document.querySelector('.review-scope').textContent,
       }));
       assert.ok(opponent.reason);
-      assert.ok(opponent.metrics <= 2);
-      assert.doesNotMatch(opponent.references, /随机范围估计|抽样\s*\d+\s*次|价格门槛/);
+      assert.equal(opponent.metrics, 0);
+      assert.doesNotMatch(opponent.reason, /它|EV|模型|模拟器|抽样/);
       assert.equal(opponent.removed, 0);
-      assert.match(opponent.scope, /未完整建模对手继续范围/);
+      assert.match(opponent.scope, /按当时信息判断/);
       await app.comparePage('opponent-review', [
         '#review-dialog',
         '.review-tabs',

@@ -639,18 +639,21 @@ export function createWechatController({
             : '只按行动前可见的信息评价决策。',
           opponents: input.opponents.map((record, index) => {
             const view = record.trace.view;
-            const explanation = explainOpponent(record);
+            const explanation = explainOpponent(
+              record,
+              input.opponents.map(({ id, name }) => ({ id, name })),
+            );
             return {
               index,
               name: record.name,
               id: record.id,
-              profileName: record.trace.profileName,
+              profileName: record.trace.profileName?.replace(/\s*·\s*/g, '，'),
               named: !!getBotProfile(record.trace.profile).research,
               street: STREET_NAMES[view.street],
               actual: cleanAction(
                 actionLabel({ ...view, action: record.action, amount: record.amount }),
               ),
-              label: record.trace.profileName,
+              label: record.trace.profileName?.replace(/\s*·\s*/g, '，'),
               position: view.position,
               pot: format(view.pot),
               stack: format(view.stack),
@@ -660,7 +663,6 @@ export function createWechatController({
               reason: explanation.detail,
               paragraphs: explanation.paragraphs,
               reasons: explanation.reasons,
-              metrics: explanation.metrics,
               warning: explanation.warning,
             };
           }),
@@ -675,12 +677,12 @@ export function createWechatController({
             keep: r.coaching.kind === 'keep',
             suggestion: cleanAction(r.coaching.suggestion),
             reason: r.coaching.explanation,
-            paragraphs: r.coaching.paragraphs,
+            paragraphs: [...r.coaching.paragraphs, ...(input.publicResponses?.[index] || [])],
+            publicResponses: input.publicResponses?.[index] || [],
             followUp: r.coaching.followUp,
-            ev: r.coaching.evText,
             evidence: r.evidence,
             history: publicHistory(input.decisions[index]).map(
-              (a) => `${a.street} · ${a.name} · ${a.action}`,
+              (a) => `${a.street}，${a.name}，${a.action}`,
             ),
             cards: input.decisions[index].hole.map(cardView),
             board: input.decisions[index].board.map(cardView),

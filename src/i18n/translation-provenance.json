@@ -884,5 +884,13 @@
     "messageCount": 16,
     "method": "Manually authored translations; Traditional Chinese converted with OpenCC. Placeholder and runtime localization tests cover all supported locales.",
     "linguisticReview": "Independent native-language review pending."
+  },
+  "causalReviewCopy": {
+    "date": "2026-10-14",
+    "messageCount": 219,
+    "sourceInventoryCount": 1449,
+    "method": "Agent-authored translations in the nine non-Chinese locales, reviewed against the current Chinese source and concrete poker terminology. Traditional Chinese was converted with OpenCC and corrected for poker usage. Existing key order and earlier catalog entries are preserved.",
+    "validation": "Current-source coverage and exact placeholder inventories checked in all ten translated locales. The review-i18n regression exercises all eleven supported locales with actual public responses, callers, pot odds, general hand examples and value/slowplay fixtures. English, Japanese, Korean and Traditional Chinese received a read-through of 118 generated paragraphs each; the other locale owners reviewed their own generated outputs.",
+    "linguisticReview": "Independent native-speaker poker review pending; coverage and placeholder checks are not evidence of complete linguistic quality."
   }
 }

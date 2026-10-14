@@ -6,6 +6,8 @@ import { compareCandidateActions } from './counterfactual.js';
 import { coachDecision, buildOverview } from './coaching.js';
 import { drawLabel, callOddsText } from './narrative.js';
 import { cardText } from './spot-facts.js';
+import { collectPublicResponses } from './responses.js';
+import { handMatchups, valuePlan } from './matchups.js';
 import { actionLabel } from '../engine/action-labels.js';
 import { legalRaiseTo } from '../engine/bet-sizing.js';
 export { actionLabel } from '../engine/action-labels.js';
@@ -24,6 +26,7 @@ export function createReviewInput(g) {
       hand: g.hand,
       hole: g.players[0].hole,
       decisions: g.decisions || [],
+      publicResponses: collectPublicResponses(g.decisions, g.history, g.players, g.hand),
       opponents: g.botDecisions || [],
       outcome: {
         profit: (g.payouts[0] || 0) - g.players[0].total,
@@ -57,6 +60,8 @@ export function analyzeDecision(
     wide = sampleValue(s, price, trials, false),
     strong = sampleValue(s, price, trials, true),
     ctx = decisionContext(s);
+  ctx.matchups = handMatchups(s, ctx);
+  ctx.valuePlan = valuePlan(s, ctx, ctx.matchups);
   const pre = s.street === 0 ? preflopContext(s) : null;
   const low = Math.min(wide.equity, strong.equity),
     high = Math.max(wide.equity, strong.equity),
@@ -66,6 +71,7 @@ export function analyzeDecision(
     deep = ctx.effective >= 2500;
   const priced = callOddsText({
     callCost: price.cost,
+    callAmount: s.legal.callAmount,
     contestable: price.contestable,
     required: price.required,
   });
@@ -244,6 +250,21 @@ export function analyzeDecision(
       ctx.preflopRaises >= 2
         ? '重点辨别这是宽范围争夺还是少诈唬的强范围；证据不足时将结论保留为讨论项。'
         : '可以重打本手，比较主动加注和跟注两条路线。';
+  } else if (
+    s.action === 'call' &&
+    !s.legal.canCheck &&
+    s.legal.callAmount > 0 &&
+    s.legal.callAmount <= s.stack &&
+    s.amount === s.legal.callAmount &&
+    ctx.valuePlan.kind === 'trap'
+  ) {
+    code = 'strong-flat-trap';
+    status = 'sound';
+    title = '强牌平跟保留弱牌与诈唬';
+    reason = ctx.valuePlan.reason;
+    alternative = { action: 'call', amount: s.legal.callAmount };
+    lesson = ctx.valuePlan.reason;
+    plan = ctx.valuePlan.reason;
   } else if (s.street === 0 && tier === 3 && s.action === 'call' && s.legal.canRaise) {
     code = 'premium-flat';
     status = 'consider';
@@ -367,34 +388,26 @@ export function analyzeDecision(
   if (alternative.action === 'call' && s.legal.canCheck)
     alternative = { action: 'check', amount: 0 };
   const evidence = [
-    `位置 ${s.position} · ${ctx.opponents} 位未弃牌对手${s.street ? ' · ' + (ctx.inPosition ? '有位置' : '无最后行动优势') : ''}`,
-    `底牌 ${cardText(s.hole)} · 当时牌力：${handLabel}${draw.outs ? ' · ' + drawLabel(draw) : ''}`,
+    `位置 ${s.position}，${ctx.opponents} 位未弃牌对手${s.street ? '，' + (ctx.inPosition ? '有位置' : '无最后行动优势') : ''}`,
+    `底牌 ${cardText(s.hole)}，当时牌力：${handLabel}${draw.outs ? '，' + drawLabel(draw) : ''}`,
     s.street
-      ? `公共牌 ${cardText(s.board)} · ${texture.label}`
-      : `翻牌前加注 ${ctx.preflopRaises} 次 · 尚可行动 ${ctx.pendingOthers} 人`,
-    `有效剩余约 ${number(ctx.effective)} · 新增投入 ${number(ctx.extra)}`,
+      ? `公共牌 ${cardText(s.board)}，${texture.label}`
+      : `翻牌前加注 ${ctx.preflopRaises} 次，尚可行动 ${ctx.pendingOthers} 人`,
+    `行动前你手里有 ${number(s.stack)}，这次拿出 ${number(ctx.extra)}`,
   ];
   if (draw.outs)
     evidence.push(
-      `直接成牌候选 ${draw.outs} 张（已去重）· 下一张约 ${percent(draw.nextChance)}，不等于获胜率`,
+      `顺子／同花改善候选 ${draw.outs} 张，下一张约 ${percent(draw.nextChance)}；部分补牌也可能让对手成更大的牌。`,
     );
-  if (price.cost && s.action !== 'raise') evidence.push(priced);
+  if ((price.cost || s.legal.callAmount) && ['call', 'fold'].includes(s.action))
+    evidence.push(priced);
   if (s.action === 'raise')
-    evidence.push(
-      `实际${actionLabel(s)} · 新增投入是底池的 ${ctx.betRatio.toFixed(1)} 倍；跟注赔率不等于加注 EV。`,
-    );
-  if (s.street > 0 && !price.closing && ctx.effective > price.cost)
-    evidence.push(
-      `SPR 约 ${ctx.spr.toFixed(1)}（有效后手 ${number(ctx.effective)} ÷ 底池 ${number(s.pot)}），表示后手相当于多少个底池。`,
-    );
-  if (pre)
-    evidence.push(
-      `入池情境：${pre.label} · 跛入 ${pre.limpers} 人${pre.ace ? ' · A 阻断不等于被跟注后优势' : ''}`,
-    );
+    evidence.push(`实际${actionLabel(s)}，额外投入是当时底池的 ${ctx.betRatio.toFixed(1)} 倍。`);
+  if (pre) evidence.push(`入池情境：${pre.label}，跛入 ${pre.limpers} 人`);
   let routes = comparisonRoutes(s, ctx, { code, status, alternative, pre });
   let simulation = null;
   if (Number.isInteger(s.dealer) && s.players.every((p) => 'actedTo' in p)) {
-    simulation = compareCandidateActions(s, [alternative, routes.secondary], {
+    simulation = compareCandidateActions(s, [routes.primary, alternative, routes.secondary], {
       trials: rolloutTrials,
     });
     if (!simulation.stable && status !== 'attention')

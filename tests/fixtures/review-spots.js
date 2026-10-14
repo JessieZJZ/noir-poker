@@ -1,6 +1,104 @@
 // Before-action public snapshots for the user's two reported review scenes.
 // Only tests import this file; no fixture belongs in a production bundle.
 import { cards } from './deceptive-decisions.js';
+import {
+  newGame,
+  startHand,
+  act,
+  advanceStreet,
+  botDecision,
+  seatPosition,
+  deckOfCards,
+} from '../../src/engine/poker.js';
+
+export function causalReraiseGame() {
+  // A scripted hand uses real legal actions and before-action engine snapshots.
+  // The fixed bot record is an explanation fixture, not a measured bot sample.
+  const game = newGame(6);
+  game.dealer = 5;
+  game.difficulty = 'hard';
+  game.emotionMode = 'off';
+  startHand(game);
+  game.players[0].hole = cards('6h 9c');
+  game.players[1].hole = cards('Ad Qc');
+  const used = [...game.players[0].hole, ...game.players[1].hole];
+  const remaining = deckOfCards().filter((card) => !used.some((own) => own.key === card.key));
+  for (const player of game.players.slice(2)) player.hole = remaining.splice(0, 2);
+  game.deck = remaining;
+  act(game, 3, 'call');
+  act(game, 4, 'fold');
+  act(game, 5, 'raise', 200);
+  act(game, 0, 'raise', 350);
+  const inspected = botDecision(game, () => 0.9, { trials: 1 });
+  const view = {
+    ...inspected.trace.view,
+    pending: [...game.pending],
+    opponents: inspected.trace.view.opponents.map((opponent) => ({
+      ...opponent,
+      name: game.players[opponent.id].name,
+      position: seatPosition(game, opponent.id),
+    })),
+  };
+  const record = {
+    id: 1,
+    name: game.players[1].name,
+    sequence: game.history.length + 1,
+    action: 'raise',
+    amount: 1000,
+    trace: {
+      ...inspected.trace,
+      view,
+      reason: 'value-raise',
+      exceptions: [],
+      profile: 'balanced',
+      sizing: { executed: true },
+    },
+  };
+  act(game, 1, 'raise', 1000);
+  game.botDecisions = [record];
+  act(game, 2, 'fold');
+  act(game, 3, 'call');
+  act(game, 5, 'call');
+  act(game, 0, 'fold');
+  while (game.phase !== 'done') {
+    if (game.phase === 'between') advanceStreet(game);
+    else act(game, game.actor, 'check');
+  }
+  return game;
+}
+
+export function heroValueGame(kind = 'set-shove') {
+  const game = newGame(6);
+  game.dealer = 5;
+  if (kind === 'set-shove') game.players[0].stack = game.players[5].stack = 1500;
+  startHand(game);
+  game.players[0].hole = cards(kind === 'set-shove' ? '5s 5d' : 'As Ah');
+  game.players[5].hole = cards('Kd Qc');
+  const flop = cards(kind === 'set-shove' ? '5h Ks 9c' : '7d 4h 2c');
+  const used = [...game.players[0].hole, ...game.players[5].hole, ...flop];
+  const remaining = deckOfCards().filter((card) => !used.some((own) => own.key === card.key));
+  for (const player of game.players.filter((player) => ![0, 5].includes(player.id)))
+    player.hole = remaining.splice(0, 2);
+  const burn = remaining.pop();
+  game.deck = [...remaining, ...flop.slice().reverse(), burn];
+  act(game, 3, 'fold');
+  act(game, 4, 'fold');
+  act(game, 5, 'raise', kind === 'set-shove' ? 500 : 150);
+  act(game, 0, 'call');
+  act(game, 1, 'fold');
+  act(game, 2, 'fold');
+  advanceStreet(game);
+  if (kind === 'set-shove') {
+    act(game, 5, 'raise', 100);
+    act(game, 0, 'raise', 1000);
+    act(game, 5, 'call');
+  }
+  while (game.phase !== 'done') {
+    if (game.phase === 'between') advanceStreet(game);
+    else act(game, game.actor, 'check');
+  }
+  return game;
+}
 
 export function weakSuitedShove() {
   return {

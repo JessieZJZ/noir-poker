@@ -5,7 +5,7 @@ import { drawInfo, decisionContext } from '../../src/review/context.js';
 import { analyzeDecision } from '../../src/review/analysis.js';
 import { explainOpponent } from '../../src/review/opponents.js';
 import { publicHistory } from '../../src/review/narrative.js';
-import { weakSuitedShove, pocketTensRecords } from '../fixtures/review-spots.js';
+import { weakSuitedShove, pocketTensRecords, causalReraiseGame } from '../fixtures/review-spots.js';
 const cards = (text) =>
   text
     .split(' ')
@@ -151,7 +151,7 @@ test('all-in opponents remove invented river bluff space and expensive call labe
   assert.equal(costly.coaching.label, '弃牌');
   assert.equal(costly.coaching.suggestedAction, '弃牌');
 });
-test('bot explanations separate real made hand/draw from optimistic value label and cap reference data', () => {
+test('bot explanations separate made hand and draw without a numeric reference module', () => {
   const s = drawDecision(),
     context = decisionContext(s);
   const v = {
@@ -175,9 +175,12 @@ test('bot explanations separate real made hand/draw from optimistic value label 
   };
   const explanation = explainOpponent({ id: 1, action: 'raise', amount: 250, trace });
   assert.match(explanation.detail, /两头顺听牌半诈唬/);
-  assert.ok(explanation.metrics.length <= 2);
+  assert.deepEqual(explanation.metrics, []);
   trace.reason = 'value-raise';
-  assert.match(explainOpponent({ id: 1, action: 'raise', amount: 250, trace }).detail, /过于乐观/);
+  assert.match(
+    explainOpponent({ id: 1, action: 'raise', amount: 250, trace }).detail,
+    /高牌|听牌|尚未成牌/,
+  );
   assert.equal(context.texture.connected, 3);
 });
 
@@ -236,25 +239,22 @@ test('hero rationale changes with chosen amount, opener position and effective s
   assert.match(short.explanation, /50\s*BB/);
 });
 
-test('reported TT call distinguishes a normal open from a 100BB shove and gives the reachable-pot odds', () => {
+test('reported TT call distinguishes a normal open from a 100BB shove without numeric references', () => {
   const [opening, calling] = pocketTensRecords();
   const open = explainOpponent(opening);
   const call = explainOpponent(calling);
-  const text = [call.detail, ...call.reasons, ...call.metrics].join('');
+  const text = [call.detail, ...call.reasons].join('');
   assert.notEqual(open.detail, call.detail);
   assert.match([open.detail, ...open.reasons].join(''), /150/);
   assert.doesNotMatch(open.detail, /已有开池时|这次(?:是|作).{0,4}(?:再加注|3-bet)/);
   assert.match(text, /5,000/);
   assert.match(text, /4,650/);
-  assert.match(text, /9,675/);
-  assert.match(text, /1\.08\s*:\s*1/);
-  assert.match(text, /48\.1%/);
-  assert.match(text, /赔率/);
   assert.match(text, /(?:大对|JJ|QQ|KK|AA)/);
   assert.match(text, /(?:两高张|AK|AQ)/);
   assert.doesNotMatch(text, oldGenericCopy);
   assert.doesNotMatch(text, /71\.7%|52\s*次|5\s*\/\s*2|5c|2c/);
-  assert.ok(call.metrics.length <= 2);
+  assert.deepEqual(call.metrics, []);
+  assert.doesNotMatch(text, /EV|它|模型|模拟器|参考数字|赔率.*%/);
 
   const altered = structuredClone(calling);
   altered.trace.view.opponents[0].hole = cards('As Ah');
@@ -266,7 +266,7 @@ test('reported TT call distinguishes a normal open from a 100BB shove and gives 
   assert.deepEqual(explainOpponent(altered).metrics, call.metrics);
 });
 
-test('opponent call odds and reasoning respond to cost rather than reusing the same numerical threshold', () => {
+test('opponent reasoning responds to its actual call cost without odds or simulated equity references', () => {
   const calling = pocketTensRecords()[1];
   const baseline = explainOpponent(calling);
   const cheap = structuredClone(calling);
@@ -281,6 +281,49 @@ test('opponent call odds and reasoning respond to cost rather than reusing the s
     changed.detail + changed.reasons.join(''),
     baseline.detail + baseline.reasons.join(''),
   );
-  assert.match(changed.metrics.join(''), /22\.2%/);
-  assert.doesNotMatch(changed.metrics.join(''), /48\.1%/);
+  assert.match(changed.detail, /150/);
+  assert.deepEqual(changed.metrics, []);
+  assert.doesNotMatch(changed.detail, /48\.1%|22\.2%|EV|它|抽样/);
+});
+
+test('69o BTN three-bet and Mia AQo four-bet explain the actual limper, opener and chips paid', () => {
+  const game = causalReraiseGame();
+  const snapshot = game.decisions[0];
+  const result = analyzeDecision(snapshot, { trials: 120, rolloutTrials: 12 });
+  const hero = result.coaching.explanation + result.coaching.followUp;
+  assert.match(hero, /6/);
+  assert.match(hero, /9/);
+  assert.match(hero, /BTN/);
+  assert.match(hero, /350/);
+  assert.match(hero, /Luna|CO/);
+  assert.match(hero, /200/);
+  assert.match(hero, /River|跛入|跟注 50/);
+  assert.doesNotMatch(hero, /EV|模型|模拟器|随机范围|有效剩余|新增投入|尚(?:可)?行动 0|0 人尚/);
+  assert.doesNotMatch(result.evidence.join(''), /权益.*%|跟注.*赔率|盈亏平衡/);
+  assert.match(result.evidence.join(''), /5,000/);
+  assert.match(result.evidence.join(''), /350/);
+  const fold = analyzeDecision(game.decisions[1], { trials: 120, rolloutTrials: 12 });
+  const callPrice = fold.evidence.find((line) => line.includes('底池赔率'));
+  assert.match(callPrice, /650/);
+  assert.match(callPrice, /4,050/);
+  assert.match(callPrice, /5\.23\s*:\s*1/);
+  assert.match(callPrice, /16\.0%/);
+  assert.doesNotMatch(fold.coaching.explanation + fold.coaching.followUp, /EV|模型|模拟器|抽样/);
+
+  const opponent = explainOpponent(game.botDecisions[0]);
+  const text = [opponent.detail, ...opponent.reasons].join('');
+  assert.match(text, /Mia/);
+  assert.match(text, /A/);
+  assert.match(text, /Q/);
+  assert.match(text, /4-bet/);
+  assert.match(text, /1,000/);
+  assert.match(text, /350/);
+  assert.match(text, /975/);
+  assert.doesNotMatch(text, /它|EV|模拟器|抽样|尚(?:可)?行动 0|0 人尚/);
+  assert.deepEqual(opponent.metrics, []);
+  const hidden = structuredClone(game.botDecisions[0]);
+  hidden.trace.view.opponents[0].hole = cards('As Ah');
+  hidden.trace.view.futureDeck = cards('2s 3h 4d');
+  hidden.trace.view.winner = 0;
+  assert.deepEqual(explainOpponent(hidden), opponent);
 });

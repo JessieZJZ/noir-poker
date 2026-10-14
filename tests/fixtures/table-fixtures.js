@@ -2,7 +2,12 @@
 // It deliberately uses the controller's real rendering, actions and engine.
 import { deckOfCards, settle } from '../engine/poker.js';
 import { deceptiveRecords } from '../../tests/fixtures/deceptive-decisions.js';
-import { weakSuitedShove, pocketTensRecords } from '../../tests/fixtures/review-spots.js';
+import {
+  weakSuitedShove,
+  pocketTensRecords,
+  causalReraiseGame,
+  heroValueGame,
+} from '../../tests/fixtures/review-spots.js';
 
 function fixtureGame(count = 6, heroFirst = false) {
   seatHandVisibility.clear();
@@ -22,6 +27,13 @@ function fixtureGame(count = 6, heroFirst = false) {
 }
 
 window.qa = {
+  reviewHeroValue(kind = 'set-shove') {
+    fixtureGame(6);
+    game = heroValueGame(kind);
+    handReview.reset();
+    render();
+    return publicState();
+  },
   loadRecordedGame(snapshot, settings) {
     // DevTools comparison only: replay the same recorded deal through Web's
     // real renderer. This entire fixture is absent from production bundles.
@@ -481,6 +493,15 @@ window.qa = {
     this.reviewLine();
     game.decisions = [weakSuitedShove()];
     game.botDecisions = pocketTensRecords();
+    handReview.reset();
+    render();
+    return publicState();
+  },
+  reviewCausalReraise() {
+    fixtureGame(6);
+    // A settled real-engine hand; before-action records and later public
+    // responses remain separate inputs to the normal review controller.
+    game = causalReraiseGame();
     handReview.reset();
     render();
     return publicState();

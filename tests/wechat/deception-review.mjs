@@ -75,8 +75,9 @@ try {
     assert.match(step.reason, expected[i]);
     const paragraphs = await page.$$('.review-coaching text');
     assert.match((await Promise.all(paragraphs.map((p) => p.text()))).join(''), expected[i]);
-    assert.ok(step.metrics.length <= 2);
-    assert.doesNotMatch(step.metrics.join(''), /随机范围估计|抽样\s*\d+\s*次|价格门槛/);
+    assert.equal(step.metrics, undefined);
+    assert.equal(await page.$('.opponent-metrics'), null);
+    assert.doesNotMatch(step.reason, /它|EV|模型|模拟器|抽样|价格门槛|奖励/);
     assert.equal(await page.$('.review-choice'), null);
     assert.equal(await page.$('.review-comparison'), null);
     report.checks.push({

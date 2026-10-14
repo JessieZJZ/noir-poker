@@ -67,11 +67,11 @@ test('normal/hard KQ defends a tiny 3-bet across every style and subtle moods', 
     d = decide(v);
   const explanation = explainOpponent({ action: d.action, trace: { ...d.trace, view: v } });
   assert.match(explanation.detail, /小尺度 3-bet 防守/);
-  assert.match(explanation.detail, /不证明跟注盈利/);
+  assert.match(explanation.detail, /75/);
+  assert.match(explanation.detail, /4,800/);
   assert.equal(explanation.warning, '');
-  assert.ok(explanation.metrics.length >= 1 && explanation.metrics.length <= 2);
-  assert.match(explanation.metrics.join(' '), /底池赔率.*75.*525.*14\.3%/);
-  assert.doesNotMatch(explanation.metrics.join(' '), /随机范围估计|低成本跟入范围/);
+  assert.deepEqual(explanation.metrics, []);
+  assert.doesNotMatch(explanation.detail, /EV|模型|模拟器|抽样|它/);
 });
 
 test('priced 3-bet defense stops at large sizes, short stacks, all-ins and 4-bets', () => {

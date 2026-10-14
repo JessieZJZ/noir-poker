@@ -1,11 +1,14 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { coachDecision, buildOverview } from '../../src/review/coaching.js';
+import { cards } from '../fixtures/deceptive-decisions.js';
 
 // Numeric model fixtures exercise interpretation, not solver-quality claims.
 function decision(action = 'call', street = 3) {
   return {
     action,
+    hole: cards('7s 7h'),
+    board: cards('As Kd 9c 4h 2s').slice(0, street === 0 ? 0 : street + 2),
     amount: 200,
     street,
     position: 'BTN',
@@ -22,7 +25,14 @@ function result(overrides = {}) {
     code: 'priced-call',
     status: 'sound',
     title: '核对跟注价格',
-    context: { handLabel: '一对 7', handClass: 'underpair', extra: 200, opponents: 1 },
+    context: {
+      handLabel: '一对 7',
+      handClass: 'underpair',
+      extra: 200,
+      opponents: 1,
+      tier: 1,
+      draw: { outs: 0 },
+    },
     metrics: {
       closing: true,
       randomEV: -120,
@@ -192,7 +202,8 @@ test('river checks and closing all-in calls have no invented future betting or d
   const closed = coachDecision(pre, positive);
   assert.doesNotMatch(closed.suggestion, /调整后续/);
   assert.doesNotMatch(closed.followUp, /下一轮/);
-  assert.match(closed.followUp, /已没有后续下注/);
+  assert.match(closed.explanation, /已没有后续下注/);
+  assert.match(closed.followUp, /只能等摊牌|已没有后续下注/);
   r.context = { ...r.context, handClass: 'board' };
   r.code = 'board-check';
   assert.match(coachDecision(river, r).followUp, /平分/);
@@ -230,10 +241,11 @@ test('closing-call wording follows the protected EV verdict on both sides of the
   const withinError = coachDecision(s, r);
   assert.equal(withinError.evKind, 'uncertain');
   assert.equal(withinError.kind, 'keep');
-  assert.doesNotMatch(withinError.explanation, /EV 都为负|建议减少这笔投入/);
+  assert.doesNotMatch(withinError.explanation, /EV|建议保住剩余筹码/);
   r.metrics = { ...r.metrics, randomEV: -23, weightedEV: -23 };
   const outsideError = coachDecision(s, r);
   assert.equal(outsideError.evKind, 'negative');
   assert.equal(outsideError.label, '弃牌');
-  assert.match(outsideError.explanation, /EV 都为负/);
+  assert.match(outsideError.explanation, /不适合接下这笔投入|建议保住剩余筹码/);
+  assert.doesNotMatch(outsideError.explanation, /EV|模型|模拟器|抽样/);
 });
