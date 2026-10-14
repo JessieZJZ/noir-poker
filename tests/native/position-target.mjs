@@ -40,6 +40,43 @@ export function centerNativeTarget(selector) {
   return true;
 }
 
+export function suspendNativeTargetLabelledBy({ selector, token }) {
+  const element = document.querySelector(selector);
+  if (!element) throw new Error(`Native target disappeared: ${selector}`);
+  if (!element.hasAttribute('aria-labelledby')) return false;
+  let pending = window.__noirNativeTargetLabels;
+  if (!pending) {
+    const entries = new Map();
+    pending = {
+      entries,
+      restore(token) {
+        for (const [key, entry] of entries)
+          if (token === undefined || key === token) {
+            entry.element.setAttribute('aria-labelledby', entry.value);
+            entries.delete(key);
+          }
+        if (!entries.size) {
+          window.removeEventListener('pagehide', pending.onPagehide);
+          delete window.__noirNativeTargetLabels;
+        }
+      },
+      onPagehide: () => pending.restore(),
+    };
+    window.__noirNativeTargetLabels = pending;
+    window.addEventListener('pagehide', pending.onPagehide);
+  }
+  pending.entries.set(token, { element, value: element.getAttribute('aria-labelledby') });
+  element.removeAttribute('aria-labelledby');
+  return true;
+}
+
+export function restoreNativeTargetLabelledBy(token) {
+  window.__noirNativeTargetLabels?.restore(token);
+  return true;
+}
+
+let labelToken = 0;
+
 // Position before the standard driver's nearest alignment. The actual click
 // still goes through its configured native touch path, with no JS event.
 export function withCenteredNativeClicks(app) {
@@ -76,7 +113,25 @@ export function withCenteredNativeClicks(app) {
           `Native target geometry did not stabilize: ${selector}`,
         );
       }
-      return app.click(selector);
+      const token = app.platform === 'ios' ? `native-label-${++labelToken}` : null;
+      let failed = false;
+      try {
+        // Appium marks aria-label with a UUID for native AX lookup. A
+        // referenced label takes precedence over that marker. Suspend only
+        // this competing attribute; Appium owns its aria-label restoration.
+        if (token) await app.evaluate(suspendNativeTargetLabelledBy, { selector, token });
+        return await app.click(selector);
+      } catch (error) {
+        failed = true;
+        throw error;
+      } finally {
+        if (token)
+          try {
+            await app.evaluate(restoreNativeTargetLabelledBy, token);
+          } catch (error) {
+            if (!failed) throw error;
+          }
+      }
     },
   };
 }

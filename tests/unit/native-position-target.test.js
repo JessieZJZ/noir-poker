@@ -1,7 +1,10 @@
 import { after, before, test } from 'node:test';
 import assert from 'node:assert/strict';
 import { chromium } from '@playwright/test';
-import { withCenteredNativeClicks } from '../native/position-target.mjs';
+import {
+  restoreNativeTargetLabelledBy,
+  withCenteredNativeClicks,
+} from '../native/position-target.mjs';
 
 let browser, page;
 before(async () => {
@@ -197,4 +200,173 @@ test('a continually moving target exhausts the finite geometry wait without dele
   await assert.rejects(positioned.click('#moving'), /did not become ready/);
   assert.deepEqual(deadlines, [30000, 5000]);
   assert.equal(delegated, 0);
+});
+
+async function labelledFixture() {
+  await page.setContent(`
+    <span id="sound-label">Sound and vibration</span><span id="extra-label">Preference</span>
+    <button id="sound" role="switch" aria-checked="false"
+      aria-labelledby=" sound-label  extra-label " aria-label="Original label">Toggle</button>
+    <script>window.taps = []; document.querySelector('button').addEventListener('click',
+      event => window.taps.push({ trusted: event.isTrusted }));</script>`);
+}
+
+test('iOS AX marker becomes the real accessible name during one trusted tap, then labels and geometry return exactly', async () => {
+  await labelledFixture();
+  const name = 'Sound and vibration Preference',
+    marker = 'native-driver-uuid';
+  assert.equal(await page.getByRole('switch', { name, exact: true }).count(), 1);
+  await page.evaluate(
+    (marker) => document.querySelector('button').setAttribute('aria-label', marker),
+    marker,
+  );
+  assert.equal(
+    await page.getByRole('switch', { name: marker, exact: true }).count(),
+    0,
+    'The actual accessibility tree gives aria-labelledby priority over the driver UUID',
+  );
+  assert.equal(await page.getByRole('switch', { name, exact: true }).count(), 1);
+  await page.evaluate(() =>
+    document.querySelector('button').setAttribute('aria-label', 'Original label'),
+  );
+  const before = await page.locator('button').boundingBox();
+  let clicks = 0;
+  const positioned = withCenteredNativeClicks({
+    ...app(async (selector) => {
+      clicks++;
+      assert.equal(await page.locator(selector).getAttribute('aria-labelledby'), null);
+      await page.evaluate(
+        (marker) => document.querySelector('button').setAttribute('aria-label', marker),
+        marker,
+      );
+      try {
+        assert.equal(await page.getByRole('switch', { name: marker, exact: true }).count(), 1);
+        return await driverClick(selector);
+      } finally {
+        // The real Appium driver similarly owns its marker's restoration.
+        await page.evaluate(() =>
+          document.querySelector('button').setAttribute('aria-label', 'Original label'),
+        );
+      }
+    }),
+    platform: 'ios',
+  });
+  await positioned.click('#sound');
+  assert.equal(clicks, 1);
+  assert.equal(
+    await page.locator('button').getAttribute('aria-labelledby'),
+    ' sound-label  extra-label ',
+  );
+  assert.equal(await page.locator('button').getAttribute('aria-label'), 'Original label');
+  assert.equal(await page.getByRole('switch', { name, exact: true }).count(), 1);
+  assert.deepEqual(await page.locator('button').boundingBox(), before);
+  assert.deepEqual(await page.evaluate(() => window.taps), [{ trusted: true }]);
+  assert.equal(await page.evaluate(() => window.__noirNativeTargetLabels), undefined);
+});
+
+test('a failed driver tap restores the exact original referenced label without masking its error', async () => {
+  await labelledFixture();
+  const error = new Error('Actual native AX tap failed');
+  await assert.rejects(
+    withCenteredNativeClicks({
+      ...app(async () => {
+        assert.equal(await page.locator('button').getAttribute('aria-labelledby'), null);
+        throw error;
+      }),
+      platform: 'ios',
+    }).click('#sound'),
+    (received) => received === error,
+  );
+  assert.equal(
+    await page.locator('button').getAttribute('aria-labelledby'),
+    ' sound-label  extra-label ',
+  );
+  assert.equal(await page.locator('button').getAttribute('aria-label'), 'Original label');
+  assert.equal(await page.evaluate(() => window.__noirNativeTargetLabels), undefined);
+});
+
+test('removed targets and cleanup transport errors preserve the original driver failure', async () => {
+  await labelledFixture();
+  const original = new Error('Native tap target went away');
+  await assert.rejects(
+    withCenteredNativeClicks({
+      ...app(async () => {
+        await page.evaluate(() => {
+          window.removedTarget = document.querySelector('button');
+          window.removedTarget.remove();
+        });
+        throw original;
+      }),
+      platform: 'ios',
+    }).click('#sound'),
+    (received) => received === original,
+  );
+  assert.equal(
+    await page.evaluate(() => window.removedTarget.getAttribute('aria-labelledby')),
+    ' sound-label  extra-label ',
+  );
+  assert.equal(await page.evaluate(() => window.__noirNativeTargetLabels), undefined);
+  for (const failClick of [true, false]) {
+    await labelledFixture();
+    const cleanup = new Error('Restoration transport failed'),
+      base = app(async () => {
+        if (failClick) throw original;
+      });
+    let token;
+    await assert.rejects(
+      withCenteredNativeClicks({
+        ...base,
+        platform: 'ios',
+        evaluate(fn, value) {
+          if (fn === restoreNativeTargetLabelledBy) {
+            token = value;
+            throw cleanup;
+          }
+          return base.evaluate(fn, value);
+        },
+      }).click('#sound'),
+      (received) => received === (failClick ? original : cleanup),
+    );
+    await page.evaluate(restoreNativeTargetLabelledBy, token);
+    assert.equal(
+      await page.locator('button').getAttribute('aria-labelledby'),
+      ' sound-label  extra-label ',
+    );
+  }
+});
+
+test('Android keeps its referenced accessibility label throughout the original native click', async () => {
+  await labelledFixture();
+  let delegated = 0;
+  await withCenteredNativeClicks({
+    ...app(async () => {
+      delegated++;
+      assert.equal(
+        await page.locator('button').getAttribute('aria-labelledby'),
+        ' sound-label  extra-label ',
+      );
+      assert.equal(await page.evaluate(() => window.__noirNativeTargetLabels), undefined);
+    }),
+    platform: 'android',
+  }).click('#sound');
+  assert.equal(delegated, 1);
+});
+
+test('iOS preserves the difference between absent and explicitly empty labelledby attributes', async () => {
+  for (const value of [null, '']) {
+    await page.setContent('<button id="target" aria-label="Original label">Target</button>');
+    if (value === '')
+      await page
+        .locator('button')
+        .evaluate((element) => element.setAttribute('aria-labelledby', ''));
+    await withCenteredNativeClicks({
+      ...app(async () => {
+        assert.equal(await page.locator('button').getAttribute('aria-labelledby'), null);
+        assert.equal(await page.locator('button').getAttribute('aria-label'), 'Original label');
+      }),
+      platform: 'ios',
+    }).click('#target');
+    assert.equal(await page.locator('button').getAttribute('aria-labelledby'), value);
+    assert.equal(await page.evaluate(() => window.__noirNativeTargetLabels), undefined);
+  }
 });
