@@ -45,6 +45,11 @@ const waitElement = (selector) =>
     (element) => !!element,
   );
 const tap = async (selector) => (await waitElement(selector)).tap();
+const assertStack = async (...routes) =>
+  assert.deepEqual(
+    (await mini.pageStack()).map((item) => item.path),
+    routes,
+  );
 const waitHero = () =>
   wait('Hero turn', readLive, (game) => game.phase === 'playing' && game.actor === 0);
 const capture = async (name) => {
@@ -146,6 +151,27 @@ try {
   assert.equal(archived.profit, firstSettled.payouts[0] - firstSettled.players[0].total);
   await capture('01-first-settlement');
   const liveSettlementGeometry = await tableGeometry(firstSettled.players);
+  const liveFontMetrics = {};
+  for (const [selector, key] of [
+    ['.seat-name', 'player-name'],
+    ['.persona', 'player-persona'],
+    ['.seat-body > .stack', 'player-stack'],
+    ['.pot-number', 'pot-number'],
+    ['.hero-identity', 'hero-identity'],
+  ]) {
+    const element = await waitElement(selector);
+    const font = parseFloat(await element.style('font-size'));
+    const view = await page.data();
+    assert.equal(font, view.textMetrics[key], `${selector} uses the shared readable font`);
+    liveFontMetrics[selector] = { font, effectiveFont: font * view.arenaScale };
+  }
+  report.fonts = liveFontMetrics;
+  report.checks.push({ name: 'native-rendered-fonts-use-shared-text-and-footprint-metrics' });
+  const liveShellHeight = (await (await waitElement('.game-shell')).size()).height;
+  await mini.pageScrollTo(300);
+  assertTableParity(await tableGeometry(firstSettled.players), liveSettlementGeometry);
+  assert.equal((await (await waitElement('.game-shell')).size()).height, liveShellHeight);
+  await mini.pageScrollTo(0);
   await tap('.retry-button');
   await wait(
     'Retry processed',
@@ -173,6 +199,7 @@ try {
   await waitHero();
   await tap('.fold-button');
   await wait('Hero fold before browsing', readLive, (game) => game.players[0].folded);
+  assert.equal((await (await waitElement('.game-shell')).size()).height, liveShellHeight);
   const beforeBrowse = await readLive();
   await tap('#resource-menu-button');
   await wait(
@@ -186,6 +213,7 @@ try {
   await capture('02-resources-menu');
   await tap('#resource-records');
   await waitRoute('pages/records/records');
+  await assertStack('pages/table/table', 'pages/records/records');
   const liveCompleted = await wait(
     'Live game while records are open',
     readLive,
@@ -218,9 +246,12 @@ try {
     for (const attempt of session.attempts) {
       if (attempt.status !== 'completed') continue;
       assert.match(attempt.profitText, /^[+-]\d/);
+      assert.equal(
+        attempt.resultText,
+        attempt.wonPot ? (attempt.profit < 0 ? '获得部分底池 · 净亏损' : '赢') : '输',
+      );
       if (attempt.profit === 0) {
         assert.equal(attempt.profitText, '+0');
-        assert.equal(attempt.resultText, '');
       }
     }
   }
@@ -241,6 +272,7 @@ try {
   });
   await tap(`.hand-item[data-id="${archived.id}"]`);
   await waitRoute('pages/history/history');
+  await assertStack('pages/table/table', 'pages/records/records', 'pages/history/history');
   await wait(
     'Historical settlement view',
     () => page.data(),
@@ -252,10 +284,18 @@ try {
   assert.equal(historyView.replay, 0);
   assert.equal((await page.$$('.retry-button')).length, 0);
   assert.equal((await page.$$('.settled-buttons .primary')).length, 0);
+  assert.equal((await page.$$('.history-nav-title')).length, 0);
+  assert.equal((await page.$$('.history-replay-tag')).length, 0);
+  assert.equal((await page.$$('#history-back')).length, 0);
+  assert.ok(await page.$('#history-return-game'));
   assert.ok(await page.$('.activity-panel'));
   await capture('04-historical-settlement');
   const historySettlementGeometry = await tableGeometry(archived.snapshot.players);
   assertTableParity(historySettlementGeometry, liveSettlementGeometry);
+  assert.equal((await (await waitElement('.game-shell')).size()).height, liveShellHeight);
+  await mini.pageScrollTo(300);
+  assertTableParity(await tableGeometry(archived.snapshot.players), historySettlementGeometry);
+  await mini.pageScrollTo(0);
   report.geometry = { live: liveSettlementGeometry, historical: historySettlementGeometry };
   report.checks.push({ name: 'historical-settlement-uses-the-same-rendered-table-geometry' });
   const liveBeforeReview = await readLive();
@@ -273,11 +313,29 @@ try {
     name: 'separate-historical-page-readonly-review-does-not-mutate-live-or-archive',
   });
   await mini.evaluate(() => getCurrentPages().at(-1).closeReview());
-  await tap('#history-back');
+  await mini.navigateBack();
   await waitRoute('pages/records/records');
+  await assertStack('pages/table/table', 'pages/records/records');
   assert.equal((await page.data()).expanded[initialSession.id], true);
+  for (let i = 0; i < 2; i++) {
+    await tap(`.hand-item[data-id="${archived.id}"]`);
+    await waitRoute('pages/history/history');
+    await assertStack('pages/table/table', 'pages/records/records', 'pages/history/history');
+    await mini.navigateBack();
+    await waitRoute('pages/records/records');
+  }
   await tap('#records-back');
   await waitRoute('pages/table/table');
+  await assertStack('pages/table/table');
+  await tap('#resource-menu-button');
+  await tap('#resource-records');
+  await waitRoute('pages/records/records');
+  await tap(`.hand-item[data-id="${archived.id}"]`);
+  await waitRoute('pages/history/history');
+  await tap('#history-return-game');
+  await waitRoute('pages/table/table');
+  await assertStack('pages/table/table');
+  report.checks.push({ name: 'native-back-and-return-game-preserve-a-bounded-page-stack' });
   await mini.evaluate(() => getApp().noirController.nextHand());
   const beforeLeave = await readLive();
   assert.equal(beforeLeave.hand, 3);

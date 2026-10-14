@@ -7,7 +7,7 @@ import {
 import { createHeroTurnCue } from './hero-turn.js';
 import { notifyHeroTurn } from '../platform/haptics.js';
 import { createDialogScrollLock } from './dialog-scroll-lock.js';
-import { soundSamples, SOUND_SAMPLE_RATE } from './sound-cues.js';
+import { soundSamples, SOUND_SAMPLE_RATE, createSoundOutput } from './sound-cues.js';
 import {
   renderOpponentSeats,
   renderSeatAction,
@@ -176,7 +176,7 @@ function prepareAudio() {
   if (audio || !sound) return;
   try {
     audio = new (window.AudioContext || window.webkitAudioContext)();
-    audioOutput = audio.destination;
+    audioOutput = createSoundOutput(audio);
   } catch {}
 }
 // Allocate the graph on entry. Resume on the first trusted gesture when the
@@ -1133,7 +1133,9 @@ function registerTools() {
   const context = document.modelContext;
   if (!context?.registerTool) return;
   const lifecycle = new AbortController();
-  window.addEventListener('pagehide', () => lifecycle.abort(), { once: true });
+  window.addEventListener('pagehide', (event) => {
+    if (!event.persisted) lifecycle.abort();
+  });
   const register = (tool) => {
     try {
       Promise.resolve(context.registerTool(tool, { signal: lifecycle.signal })).catch(() => {});
@@ -1235,15 +1237,15 @@ document.addEventListener('visibilitychange', () => {
   hintNotification.setActive(activityClock.active && !document.hidden);
   if (activityClock.active && !document.hidden && !compactCoach.matches) updateCoach(true);
 });
-window.addEventListener(
-  'pagehide',
-  () => {
-    compactCoach.removeEventListener('change', changeCoachLayout);
-    hintNotification.destroy();
-    hintMarquee.destroy();
-  },
-  { once: true },
-);
+window.addEventListener('pagehide', (event) => {
+  if (event.persisted) return;
+  compactCoach.removeEventListener('change', changeCoachLayout);
+  hintNotification.destroy();
+  hintMarquee.destroy();
+});
+window.addEventListener('pageshow', (event) => {
+  if (event.persisted) updateCoach(true);
+});
 nextHand();
 recordsView.initialize();
 registerTools();

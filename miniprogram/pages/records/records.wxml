@@ -20,13 +20,21 @@
     class="records-session"
     data-id="{{session.id}}"
   >
-    <button class="session-item" bindtap="toggleSession" data-id="{{session.id}}">
+    <button
+      class="session-item"
+      bindtap="toggleSession"
+      data-id="{{session.id}}"
+      aria-expanded="{{expanded[session.id] ? 'true' : 'false'}}"
+    >
       <view class="session-item-heading"
         ><text>第 {{session.number}} 局</text
-        ><text class="session-status"
-          >{{session.endedAt ? '已结束' : '进行中'}} {{expanded[session.id] ? '▴' : '▾'}}</text
-        ></view
-      >
+        ><view class="session-heading-end"
+          ><text class="session-status">{{session.endedAt ? '已结束' : '进行中'}}</text
+          ><view
+            class="session-toggle {{expanded[session.id] ? 'is-expanded' : ''}}"
+            aria-hidden="true"
+            ><view class="session-chevron" /></view></view
+      ></view>
       <text class="session-time">{{session.timeText}}</text>
       <view class="session-metrics"
         ><view><text>胜率</text><text>{{session.winrate}}%</text></view

@@ -2,19 +2,21 @@
 // Unit gain is already mastered; platform adapters must not boost it again.
 export const SOUND_SAMPLE_RATE = 44100;
 export const SOUND_CUES = ['fold', 'check', 'chip', 'deal', 'win'];
+export const SOUND_TARGET_RMS = 0.16;
+export const SOUND_PEAK_CEILING = 0.7;
 const triangle = (phase) => (2 / Math.PI) * Math.asin(Math.sin(phase));
 const envelope = (t, peak, attack, end) =>
   t < 0 || t >= end
     ? 0
     : t < attack
       ? 0.0001 * Math.pow(peak / 0.0001, t / attack)
-      : peak * Math.pow(0.0001 / peak, (t - attack) / (end - attack));
+      : peak * Math.pow(1 - (t - attack) / (end - attack), 2.3);
 const fallingPhase = (t, from, to, end) => {
   const k = Math.log(to / from) / end;
   return 2 * Math.PI * ((from * Math.expm1(k * Math.min(t, end))) / k + Math.max(0, t - end) * to);
 };
 export function soundSamples(name) {
-  const kind = ['raise', 'call'].includes(name) ? 'chip' : name;
+  const kind = ['bet', 'raise', 'call'].includes(name) ? 'chip' : name;
   if (!SOUND_CUES.includes(kind)) throw new RangeError('Unknown sound cue');
   const duration = { fold: 0.18, check: 0.22, chip: 0.2, deal: 0.28, win: 0.36 }[kind];
   const data = new Float32Array(Math.round(duration * SOUND_SAMPLE_RATE));
@@ -50,11 +52,10 @@ export function soundSamples(name) {
         const strength = index ? 0.8 : 1;
         value +=
           strength *
-          ((noise[Math.floor(dt * SOUND_SAMPLE_RATE)] || 0) * 0.64 +
+          ((noise[Math.floor(dt * SOUND_SAMPLE_RATE)] || 0) * 0.64 * Math.min(1, dt / 0.002) +
             triangle(fallingPhase(dt, 165, 80, 0.045)) * envelope(dt, 0.28, 0.002, 0.065));
       }
     } else if (kind === 'fold') {
-      // +5.1 dB over the former 0.02 x 8 falling swish.
       value = triangle(fallingPhase(t, 260, 75, 0.14)) * envelope(t, 0.288, 0.012, 0.16);
     } else {
       const notes = kind === 'win' ? [440, 554, 659] : kind === 'deal' ? [820, 570] : [310];
@@ -63,15 +64,47 @@ export function soundSamples(name) {
         if (dt < 0 || dt >= 0.2) continue;
         const oscillator =
           kind === 'deal' ? triangle(2 * Math.PI * hz * dt) : Math.sin(2 * Math.PI * hz * dt);
-        // Chip/raise/call +4.1 dB; deal/win keep the previous Web pitches/gain.
         value += oscillator * envelope(dt, kind === 'chip' ? 0.32 : 0.2, 0.015, 0.16);
       }
     }
-    // Same peak ceiling as Web's previous -3 dB limiter, before 16-bit PCM.
-    const ceiling = Math.pow(10, -3 / 20),
-      abs = Math.abs(value);
-    if (abs > ceiling) value = Math.sign(value) * (ceiling + (abs - ceiling) / 20);
-    data[i] = Math.round(Math.max(-1, Math.min(1, value)) * 32767) / 32768 || 0;
+    data[i] = value;
+  }
+  // Master complete cues rather than their brief attack peaks. The longer
+  // decay keeps quiet actions audible without changing pitch or tap timing.
+  const rms = Math.sqrt(data.reduce((sum, value) => sum + value * value, 0) / data.length),
+    gain = SOUND_TARGET_RMS / rms;
+  for (let i = 0; i < data.length; i++) {
+    const sample = data[i] * gain,
+      absolute = Math.abs(sample),
+      knee = 0.6,
+      headroom = SOUND_PEAK_CEILING - knee,
+      limited =
+        absolute <= knee
+          ? sample
+          : Math.sign(sample) * (knee + headroom * Math.tanh((absolute - knee) / headroom));
+    // The shared quantization makes Web Audio and generated WAVs identical.
+    data[i] = Math.round(limited * 32767) / 32768 || 0;
   }
   return data;
+}
+
+export function limitSoundMix(sample) {
+  const knee = SOUND_PEAK_CEILING,
+    headroom = 0.92 - knee,
+    absolute = Math.abs(sample);
+  return absolute <= knee
+    ? sample
+    : Math.sign(sample) * (knee + headroom * Math.tanh((absolute - knee) / headroom));
+}
+
+// Single mastered cues remain at unity. Only overlapping effects reach this
+// soft knee; the bounded curve prevents their mix from reaching digital clip.
+export function createSoundOutput(context) {
+  const output = context.createWaveShaper(),
+    curve = new Float32Array(32769);
+  for (let i = 0; i < curve.length; i++) curve[i] = limitSoundMix((i * 2) / (curve.length - 1) - 1);
+  output.curve = curve;
+  output.oversample = 'none';
+  output.connect(context.destination);
+  return output;
 }

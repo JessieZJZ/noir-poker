@@ -398,7 +398,7 @@ export async function nativeScenarios(app) {
     await app.evaluate(() => {
       const nativePromise = window.Capacitor.nativePromise;
       const start = AudioBufferSourceNode.prototype.start;
-      window.__feedbackProbe = { haptics: 0, audio: 0 };
+      window.__feedbackProbe = { haptics: 0, audio: 0, levels: [] };
       window.__restoreFeedbackProbe = () => {
         window.Capacitor.nativePromise = nativePromise;
         AudioBufferSourceNode.prototype.start = start;
@@ -409,6 +409,20 @@ export async function nativeScenarios(app) {
       };
       AudioBufferSourceNode.prototype.start = function (...args) {
         window.__feedbackProbe.audio++;
+        const samples = this.buffer?.getChannelData(0);
+        if (samples?.length) {
+          let energy = 0,
+            peak = 0;
+          for (const sample of samples) {
+            energy += sample * sample;
+            peak = Math.max(peak, Math.abs(sample));
+          }
+          window.__feedbackProbe.levels.push({
+            samples: samples.length,
+            rms: Math.sqrt(energy / samples.length),
+            peak,
+          });
+        }
         return start.apply(this, args);
       };
     });
@@ -436,22 +450,27 @@ export async function nativeScenarios(app) {
       await app.click('#sound-button');
       await app.click('#opponents-dialog .close-dialog');
       await app.evaluate(() => {
-        window.__feedbackProbe = { haptics: 0, audio: 0 };
+        window.__feedbackProbe = { haptics: 0, audio: 0, levels: [] };
       });
       await resetToHero();
       const muted = await app.evaluate(() => window.__feedbackProbe);
-      assert.deepEqual(muted, { haptics: 0, audio: 0 });
+      assert.deepEqual(muted, { haptics: 0, audio: 0, levels: [] });
       await app.click('#opponents-button');
       await app.click('#sound-button');
       await app.click('#opponents-dialog .close-dialog');
       await app.evaluate(() => {
-        window.__feedbackProbe = { haptics: 0, audio: 0 };
+        window.__feedbackProbe = { haptics: 0, audio: 0, levels: [] };
       });
       await resetToHero();
       const enabled = await app.evaluate(() => window.__feedbackProbe);
       assert.ok(
         enabled.haptics > 0 && enabled.audio > 0,
         'Unmuting must restore native turn feedback and WebView sound dispatch',
+      );
+      assert.equal(enabled.levels.length, enabled.audio);
+      assert.ok(
+        enabled.levels.every(({ rms, peak }) => rms >= 0.145 && rms <= 0.165 && peak <= 0.7),
+        'Actual installed-app PCM uses the louder mastered cues with per-cue headroom',
       );
       return {
         muted,
@@ -505,6 +524,7 @@ export async function nativeScenarios(app) {
     return { assignments, guide };
   });
   await check('settings-autosave-and-local-portraits', async () => {
+    await app.waitHero();
     await app.click('#opponents-button');
     const languageChanges = [];
     const changeLanguage = async (target) => {
@@ -529,7 +549,7 @@ export async function nativeScenarios(app) {
             hand: window.noir?.getState().hand,
           }));
           return loaded.language === target &&
-            loaded.title === (target === 'en' ? 'Settings' : '设置') &&
+            loaded.title === { en: 'Settings', ko: '설정', 'zh-CN': '设置' }[target] &&
             loaded.ready &&
             loaded.initialized
             ? loaded
@@ -552,6 +572,41 @@ export async function nativeScenarios(app) {
     // Force a real change even on a simulator that already starts in Chinese;
     // this exercises the same live catalog path as an English CI simulator.
     await changeLanguage(initialLanguage === 'en' ? 'zh-CN' : 'en');
+    await changeLanguage('zh-CN');
+    const readPersonaTags = () =>
+      app.evaluate(async () => {
+        await document.fonts.ready;
+        await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+        const state = window.noir.getState();
+        return {
+          hand: state.hand,
+          stack: state.stack,
+          hole: state.hole,
+          completedHands: document.querySelector('#stat-hands').textContent,
+          tags: [...document.querySelectorAll('#seats .seat-style-label')].map((tag) => ({
+            text: tag.textContent,
+            height: tag.getBoundingClientRect().height,
+            fontSize: getComputedStyle(tag).fontSize,
+          })),
+        };
+      });
+    const chineseTags = await readPersonaTags();
+    await changeLanguage('ko');
+    const koreanTags = await readPersonaTags();
+    assert.ok(chineseTags.tags.length > 0);
+    assert.equal(koreanTags.tags.length, chineseTags.tags.length);
+    for (let index = 0; index < chineseTags.tags.length; index++) {
+      assert.ok(
+        Math.abs(koreanTags.tags[index].height - chineseTags.tags[index].height) <= 0.6,
+        'Korean persona tags retain their installed table height',
+      );
+      assert.equal(koreanTags.tags[index].fontSize, chineseTags.tags[index].fontSize);
+    }
+    assert.deepEqual(
+      [koreanTags.hand, koreanTags.stack, koreanTags.hole, koreanTags.completedHands],
+      [chineseTags.hand, chineseTags.stack, chineseTags.hole, chineseTags.completedHands],
+    );
+    await app.screenshot('korean-persona-tag-height');
     await changeLanguage('zh-CN');
     await app.select('#player-count', '5');
     await app.select('#emotion-mode', 'lively');
@@ -609,7 +664,7 @@ export async function nativeScenarios(app) {
       sound: 'false',
     });
     await app.click('#opponents-dialog .close-dialog');
-    return { saved, languageChanges, portraits: images };
+    return { saved, languageChanges, personaTags: { chineseTags, koreanTags }, portraits: images };
   });
   await check('pending-blinds-validation-retry-and-next-hand', async () => {
     const defaults = { smallBlind: 100, bigBlind: 200, startingStack: 20000, chipUnit: 100 };
@@ -1459,6 +1514,18 @@ export async function nativeScenarios(app) {
           'article:not([hidden]) p',
         ]),
       );
+      await app.click('article:not([hidden]) a[href="./"]');
+      await app.waitFor(
+        async () =>
+          (await app.evaluate(
+            () =>
+              document.documentElement.dataset.appReady === 'true' &&
+              typeof window.noir?.getState === 'function' &&
+              !!window.noir.getState(),
+          )) && (await app.visible('#reset-button')),
+        15000,
+        'The privacy return link must load a ready game before the next scenario',
+      );
       return comparisons;
     });
   await check('game-records-pages-retry-and-resume', async () => {
@@ -1546,15 +1613,13 @@ export async function nativeScenarios(app) {
       title: document.querySelector('#records-title').textContent,
       table: document.querySelector('#history-table').textContent,
       heroCards: document.querySelectorAll('#history-table .hero-cards .playing-card').length,
-      tags: [...document.querySelectorAll('.records-history-heading .record-tag')].map(
-        (tag) => tag.textContent,
-      ),
+      redundantHeading: Boolean(document.querySelector('.records-history-heading')),
       live: window.noir.getState(),
     }));
     assert.equal(archiveBefore.heroCards, 2);
     assert.ok(archiveBefore.title.includes(`第 ${first.hand} 手`));
     assert.doesNotMatch(archiveBefore.title, /首次|[·\s]$/);
-    assert.deepEqual(archiveBefore.tags, []);
+    assert.equal(archiveBefore.redundantHeading, false);
     await app.sleep(1000);
     await app.screenshot('game-records-historical-settlement');
     const historyGeometry = await app.evaluate(readRecordTableGeometry, '#history-arena');
@@ -1563,6 +1628,18 @@ export async function nativeScenarios(app) {
       [],
       'The historical settlement must keep the live table cards, seats and captions in the same layout',
     );
+    for (const top of [180, 420, 0]) {
+      await app.evaluate((top) => window.scrollTo(0, top), top);
+      await app.sleep(250);
+      assert.deepEqual(
+        recordGeometryDifferences(
+          await app.evaluate(readRecordTableGeometry, '#history-arena'),
+          historyGeometry,
+        ),
+        [],
+        'Scrolling a native history page must preserve its table height and all seat geometry',
+      );
+    }
     await app.click('#history-review-button');
     const review = await waitForNativeReview(app);
     await app.click('#review-dialog .close-dialog');
@@ -1570,20 +1647,27 @@ export async function nativeScenarios(app) {
       await app.evaluate(() => document.querySelector('#history-table').textContent),
       archiveBefore.table,
     );
-    await app.click('#history-back-button');
+    await app.back();
+    await app.waitFor(
+      () => app.visible('#history-page').then((visible) => !visible),
+      10000,
+      'Native Back must pop the detail to its records parent',
+    );
     await app.click(`[data-record-hand="${attempts[1].id}"]`);
     const retryArchive = await app.evaluate(() => ({
       title: document.querySelector('#records-title').textContent,
-      tags: [...document.querySelectorAll('.records-history-heading .record-tag')].map((tag) => ({
-        text: tag.textContent,
-        colored: tag.classList.contains('record-retry'),
-      })),
+      redundantHeading: Boolean(document.querySelector('.records-history-heading')),
     }));
     assert.doesNotMatch(retryArchive.title, /重打/);
-    assert.deepEqual(retryArchive.tags, [{ text: '重打1', colored: true }]);
+    assert.equal(retryArchive.redundantHeading, false);
     await app.sleep(1000);
     await app.screenshot('game-records-retry-history');
-    await app.click('#history-back-button');
+    await app.back();
+    await app.waitFor(
+      () => app.visible('#history-page').then((visible) => !visible),
+      10000,
+      'A retry detail must use the same native parent-page Back',
+    );
     await app.sleep(1000);
     await app.screenshot('game-records-list');
     const list = await app.evaluate(() => ({
@@ -1615,8 +1699,23 @@ export async function nativeScenarios(app) {
     list.firstCopy.forEach((text) => assert.doesNotMatch(text, /首次/));
     assert.equal(list.retry, '重打1');
     list.deltas.filter((value) => value !== '—').forEach((value) => assert.match(value, /^[+-]\d/));
-    list.neutralResults.forEach((text) => assert.equal(text, '+0'));
+    list.neutralResults.forEach((text) => assert.match(text, /^\+0\s*(?:输|赢)$/));
     await app.click('#records-back-button');
+    await app.waitFor(
+      () => app.visible('#records-page').then((visible) => !visible),
+      10000,
+      'Return Game must pop the entire records visit',
+    );
+    const gameHash = await app.evaluate(() => location.hash);
+    assert.equal(gameHash, '');
+    await app.click('#rules-button');
+    await app.click('#records-menu-item');
+    await app.back();
+    await app.waitFor(
+      () => app.visible('#records-page').then((visible) => !visible),
+      10000,
+      'A fresh records visit must pop directly to game without an old detail underneath',
+    );
     if ((await app.state()).phase === 'done') await app.click('#next-button');
     const leaving = await app.state();
     const countedBefore = await app.evaluate(

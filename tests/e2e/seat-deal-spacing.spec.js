@@ -147,16 +147,22 @@ for (const locale of ['zh-CN', 'en']) {
               const tag = profile.querySelector('.seat-style-label'),
                 t = tag.getBoundingClientRect(),
                 stack = profile.querySelector('.seat-stack').getBoundingClientRect();
-              return { below: stack.top >= t.bottom, full: tag.scrollWidth <= tag.clientWidth + 1 };
+              const p = profile.getBoundingClientRect();
+              return {
+                below: stack.top >= t.bottom,
+                contained:
+                  t.left >= p.left && t.right <= p.right && t.top >= p.top && t.bottom <= p.bottom,
+                ellipsis: getComputedStyle(tag).textOverflow === 'ellipsis',
+              };
             });
             return { straddles: crown.top < felt.top && crown.bottom > felt.top, seats };
           });
         const before = await measure();
         expect(before.straddles).toBe(true);
         expect(before.seats.every((seat) => seat.below)).toBe(true);
-        expect(before.seats.filter((seat) => seat.full).length).toBeGreaterThanOrEqual(
-          Math.ceil(before.seats.length / 2),
-        );
+        // Long researched names intentionally truncate with an ellipsis as
+        // type grows; keep every tag inside its stable profile footprint.
+        expect(before.seats.every((seat) => seat.contained && seat.ellipsis)).toBe(true);
         await page.evaluate(
           (count) => window.qa.scene('Kh Ts', '9s 7d 6h 3c 2s', { count, folded: [0, 1] }),
           count,

@@ -1,7 +1,8 @@
 import { COMPACT_PLAY_QUERY } from './play-geometry.js';
+import { playSurfaceTop, readPlayViewport } from './stable-viewport.js';
 // Keep the whole table in the first screen. Measurements are made at
 // scale 1 before fitting, so collision coordinates never mix CSS/visual pixels.
-export function createPlayViewport(surface, { layout = () => {}, getSurfaceTop } = {}) {
+export function createPlayViewport(surface, { layout = () => {} } = {}) {
   const viewport = surface.querySelector('.table-viewport'),
     arena = surface.querySelector('.arena'),
     mobile = matchMedia(COMPACT_PLAY_QUERY);
@@ -44,11 +45,18 @@ export function createPlayViewport(surface, { layout = () => {}, getSurfaceTop }
       seat.style.left = seat.dataset.originalLeft;
       seat.style.top = seat.dataset.originalTop;
     }
-    const screen = window.visualViewport,
-      // Pinch zoom magnifies/pans the page without shrinking its layout.
-      screenHeight = screen && screen.scale <= 1.01 ? screen.height : window.innerHeight,
-      top = getSurfaceTop ? getSurfaceTop() : surface.getBoundingClientRect().top + window.scrollY,
-      height = Math.max(160, screenHeight - top - 8);
+    const screen = readPlayViewport(),
+      screenHeight = screen.height,
+      height = Math.max(160, screenHeight - playSurfaceTop(surface) - 8);
+    const large = screen.width > 900 && screen.width <= 1100 && screenHeight >= 1100;
+    surface.style.setProperty(
+      '--table-header-font',
+      `${large ? 20 : screen.width > 600 && mobile.matches ? 17 : 14}px`,
+    );
+    surface.style.setProperty(
+      '--table-hint-font',
+      `${large ? 18 : screen.width > 600 ? 14 : 13}px`,
+    );
     surface.style.setProperty('--play-height', `${height}px`);
     // Hidden or rotating WebViews can briefly report a zero-sized viewport.
     // Wait for its resize notification instead of dividing by zero below.
@@ -107,6 +115,7 @@ export function createPlayViewport(surface, { layout = () => {}, getSurfaceTop }
   ])
     if (el) observer.observe(el);
   window.addEventListener('resize', schedule);
+  window.addEventListener('pageshow', schedule);
   window.visualViewport?.addEventListener('resize', schedule);
   document.fonts.ready.then(schedule);
   return {
@@ -115,6 +124,7 @@ export function createPlayViewport(surface, { layout = () => {}, getSurfaceTop }
       observer.disconnect();
       if (frame !== null) cancelAnimationFrame(frame);
       window.removeEventListener('resize', schedule);
+      window.removeEventListener('pageshow', schedule);
       window.visualViewport?.removeEventListener('resize', schedule);
     },
     update(nextTable, done) {

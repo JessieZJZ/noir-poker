@@ -79,6 +79,10 @@ let session;
 let airplaneMode;
 const sdk = process.env.ANDROID_HOME ?? process.env.ANDROID_SDK_ROOT;
 const adb = sdk ? path.join(sdk, 'platform-tools/adb') : 'adb';
+// Keep the CDP discovery range and Chromedriver listener separate from other
+// emulator sessions as well as the UiAutomator system port. The driver still
+// verifies real WebView pages; no discovery or functional checks are disabled.
+const androidDevtoolsPort = Math.min(64000, Number(options['driver-port'] ?? 9200) + 10000);
 const serverUrl =
   options.server ?? `http://127.0.0.1:${options.port ?? (platform === 'ios' ? 4725 : 4727)}`;
 async function request(method, endpoint, body, timeout = 120000) {
@@ -248,6 +252,40 @@ async function screenshot(name) {
     saveSource: (source) => writeFileSync(sourcePath, source),
   });
   return { imagePath, sourcePath };
+}
+async function back() {
+  if (platform === 'android') {
+    // Dispatch the real Activity back event while keeping the active CDP
+    // connection; the Capacitor backButton listener owns the page stack.
+    run(adb, ['-s', udid, 'shell', 'input', 'keyevent', 'KEYCODE_BACK']);
+    return;
+  }
+  await command('POST', '/context', { name: 'NATIVE_APP' });
+  const rect = await command('GET', '/window/rect');
+  const y = Math.round(rect.height * 0.45);
+  await command('POST', '/actions', {
+    actions: [
+      {
+        type: 'pointer',
+        id: 'records-edge-back',
+        parameters: { pointerType: 'touch' },
+        actions: [
+          { type: 'pointerMove', duration: 0, origin: 'viewport', x: 2, y },
+          { type: 'pointerDown', button: 0 },
+          { type: 'pause', duration: 100 },
+          {
+            type: 'pointerMove',
+            duration: 450,
+            origin: 'viewport',
+            x: Math.round(rect.width * 0.85),
+            y,
+          },
+          { type: 'pointerUp', button: 0 },
+        ],
+      },
+    ],
+  });
+  await attachWebview();
 }
 async function activate() {
   await command('POST', '/context', { name: 'NATIVE_APP' });
@@ -443,6 +481,9 @@ try {
             : {}),
           'appium:appPackage': appId,
           'appium:ensureWebviewsHavePages': true,
+          'appium:enableWebviewDetailsCollection': true,
+          'appium:webviewDevtoolsPort': androidDevtoolsPort,
+          'appium:chromedriverPort': androidDevtoolsPort + 101,
           'appium:chromedriverAutodownload': true,
         }),
   };
@@ -477,6 +518,7 @@ try {
   assert.equal(report.build.sourceDigest, embeddedBuild.sourceDigest);
   report.phase = 'scenarios';
   report.scenarios = await nativeScenarios({
+    platform,
     record: (entry) => report.scenarios.push(entry),
     evaluate,
     state,
@@ -485,6 +527,7 @@ try {
     visible,
     waitFor,
     screenshot,
+    back,
     comparePage: (name, selectors) =>
       compareNativePage({ root, output, evaluate, screenshot }, name, selectors),
     relaunch,

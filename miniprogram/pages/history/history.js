@@ -15,9 +15,6 @@ Page({
       .find((item) => item.attempts.some((row) => row.id === attempt.id));
     this._readOnlyAttempt = attempt;
     this._readOnlySessionNumber = session?.number || 1;
-    this.setData({
-      historyAttemptLabel: attempt.attempt ? `重打${attempt.attempt}` : '',
-    });
     tablePage.onLoad.call(this);
   },
 });

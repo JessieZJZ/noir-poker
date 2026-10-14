@@ -1,6 +1,7 @@
 import { compactTableLayout } from './compact-table-layout.js';
 import { COMPACT_PLAY_QUERY } from './play-geometry.js';
 import { railLayout } from './rail-layout.js';
+import { readPlayViewport } from './stable-viewport.js';
 // Select the closest collision-free position to the upper felt center. Using each
 // public part separately leaves usable space beside a narrow pot or caption.
 export function nearestClearTop(ideal, min, max, blocked) {
@@ -50,7 +51,7 @@ export function createSettlementLayout(arena, { observe = true } = {}) {
     const compact = matchMedia(COMPACT_PLAY_QUERY).matches;
     if (!compact) {
       for (const key of [...arena.style].filter((key) =>
-        /^--(player-|pot-detail|hero-action|hero-rank|hero-card-|action-height|rank-height|profile-width|public-card-width)/.test(
+        /^--(player-|pot-|hero-|action-height|rank-height|caption-|profile-|public-card-width)/.test(
           key,
         ),
       ))
@@ -117,7 +118,7 @@ export function createSettlementLayout(arena, { observe = true } = {}) {
           width: innerWidth,
           height: arena.clientHeight,
           availableWidth: arena.clientWidth,
-          displayHeight: innerHeight - insets,
+          displayHeight: readPlayViewport().height - insets,
           seats: seatElements.map((seat, i) => ({ id: i + 1 })),
         })
       : railLayout({
@@ -152,7 +153,7 @@ export function createSettlementLayout(arena, { observe = true } = {}) {
           width: innerWidth,
           height: arena.clientHeight,
           availableWidth: arena.clientWidth,
-          displayHeight: innerHeight - insets,
+          displayHeight: readPlayViewport().height - insets,
           seats: seatElements.map((seat, i) => ({ id: i + 1 })),
           minimumProfileHeight: required,
         });

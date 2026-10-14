@@ -47,7 +47,7 @@ node scripts/native-e2e.mjs ios --app /absolute/path/App.app --output .artifacts
 node scripts/native-e2e.mjs android --app /absolute/path/app-debug.apk --udid emulator-5554
 ```
 
-`--server http://127.0.0.1:4723` 可复用已启动的 Appium；没有这个参数时，脚本自行启动本地 Appium 并在结束后关闭。iOS 使用 4725 端口，Android 使用 4727。可用 `--port` 修改脚本自建服务器端口，用 `--driver-port` 指定 iOS WDA 或 Android UiAutomator2 的设备连接端口；并行任务应各用独立测试设备和端口。`--port` 与 `--server` 不同时使用。只使用 Debug 原生外壳的调试能力，Web 内容仍是正常 native production build；上架 Release 不需要打开 WebView 调试。
+`--server http://127.0.0.1:4723` 可复用已启动的 Appium；没有这个参数时，脚本自行启动本地 Appium 并在结束后关闭。iOS 使用 4725 端口，Android 使用 4727。可用 `--port` 修改脚本自建服务器端口，用 `--driver-port` 指定 iOS WDA 或 Android UiAutomator2 的设备连接端口；并行任务应各用独立测试设备和端口。Android WebView 探测另分配 `min(64000, driverPort + 10000)` 起的 100 个端口及起点加 101 的 ChromeDriver 端口（未指定 driverPort 时用 9200 计算），运行前也须确认这些端口可用。`--port` 与 `--server` 不同时使用。只使用 Debug 原生外壳的调试能力，Web 内容仍是正常 native production build；上架 Release 不需要打开 WebView 调试。
 
 ## 覆盖的实际流程
 
@@ -68,6 +68,7 @@ node scripts/native-e2e.mjs android --app /absolute/path/app-debug.apk --udid em
 - 在真实随机牌局中累计加注、正额跟注、弃牌和结算；核对实际支付金额为 25 的倍数，结算后筹码守恒。零筹码过牌不计作跟注。
 - 从结算打开复盘，确认本地分析生成总览和行动建议，并能关闭弹窗。
 - 重打恢复原底牌，完成手数撤回一次；下一手增加手数并清理重打状态。
+- 对局记录场景使用实际 Android Activity 返回键或 iOS 边缘滑动，检查详情→列表→游戏与“返回游戏”后的再次浏览；滚动历史结算页时桌高与所有座位几何保持不变。隐私页画面对照之后通过页面自带“返回牌桌”链接恢复游戏，再执行记录场景。
 - 在对手待行动时将真实原生应用切到后台至少 6 秒；被动记录原生 inactive/active 事件对应的公开状态，确认期间不前进，恢复后确实发生新行动。
 
 后台时长由 Node 单调时钟计时，并在等待前后使用原生驱动确认应用状态为后台或暂停。Android 可能暂停 WebView 的 JavaScript，再于恢复时投递生命周期回调，因此报告将实际原生后台时长与 JS 回调间隔分别记录。

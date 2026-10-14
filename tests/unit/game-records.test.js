@@ -11,7 +11,11 @@ import {
   completeBoardForPractice,
   playBotTurn,
 } from '../../src/engine/poker.js';
-import { createGameRecords, GAME_RECORDS_KEY } from '../../src/engine/game-records.js';
+import {
+  createGameRecords,
+  GAME_RECORDS_KEY,
+  recordResult,
+} from '../../src/engine/game-records.js';
 import { createReviewInput } from '../../src/review/analysis.js';
 import { createPreferenceStorage } from '../../src/platform/storage.js';
 
@@ -38,6 +42,28 @@ function finish(game, action = 'call') {
   }
 }
 const stakes = { smallBlind: 125, bigBlind: 250 };
+
+test('zero-investment folds are settled losses while zero-net pot winners remain wins', () => {
+  const store = records(),
+    game = newGame(5, stakes);
+  game.dealer = 1;
+  startHand(game);
+  assert.equal(game.actor, 0);
+  store.begin(game);
+  assert.equal(recordResult(store.sessions()[0].attempts[0]), 'playing');
+  finish(game, 'fold');
+  const saved = store.capture(game);
+  assert.equal(saved.snapshot.players[0].folded, true);
+  assert.equal(saved.snapshot.players[0].total, 0);
+  assert.equal(saved.profit, 0);
+  assert.equal(saved.wonPot, false);
+  assert.equal(recordResult(saved), 'loss');
+  assert.equal(store.sessions()[0].wins, 0);
+  assert.equal(store.sessions()[0].completed, 1);
+  assert.equal(store.sessions()[0].profit, 0);
+  assert.equal(recordResult({ status: 'completed', wonPot: true, profit: 0 }), 'win');
+  assert.equal(recordResult({ status: 'unfinished', wonPot: true, profit: 100 }), 'unfinished');
+});
 
 test('settled records retain immutable cards, public decisions and pots without a future deck', () => {
   const storage = memory(),

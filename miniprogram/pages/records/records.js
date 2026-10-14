@@ -1,5 +1,7 @@
 const { compactChips } = require('../../shared/engine/chip-format.js');
 const { presentCard } = require('../table/presentation.js');
+const { recordResult } = require('../../shared/engine/game-records.js');
+const navigation = require('../../record-navigation.js');
 const signed = (value) => {
   const amount = Math.round(Number(value));
   return (amount < 0 ? '-' : '+') + compactChips(Math.abs(amount));
@@ -40,17 +42,15 @@ Page({
         attemptText: attempt.attempt ? `重打${attempt.attempt}` : '',
         profitText: attempt.profit === null ? '—' : signed(attempt.profit),
         resultText:
-          attempt.status === 'unfinished'
+          recordResult(attempt) === 'unfinished'
             ? '未完成'
-            : attempt.status === 'playing'
+            : recordResult(attempt) === 'playing'
               ? '进行中'
-              : attempt.profit === 0
-                ? ''
-                : attempt.wonPot
-                  ? attempt.profit < 0
-                    ? '获得部分底池 · 净亏损'
-                    : '赢'
-                  : '输',
+              : recordResult(attempt) === 'win'
+                ? attempt.profit < 0
+                  ? '获得部分底池 · 净亏损'
+                  : '赢'
+                : '输',
       })),
     }));
     this.setData({ sessions, recordsError: controller?.getRecordsError() || '' });
@@ -72,9 +72,9 @@ Page({
     const id = event.currentTarget.dataset.id;
     const attempt = getApp().noirController?.getRecord(id);
     if (!attempt || attempt.status !== 'completed') return;
-    wx.navigateTo({ url: `/pages/history/history?id=${encodeURIComponent(id)}` });
+    navigation.openHand(id);
   },
   returnToGame() {
-    wx.navigateBack({ delta: 1 });
+    navigation.returnToGame();
   },
 });

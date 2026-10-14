@@ -8,12 +8,10 @@ export function handleAndroidBack(document, app) {
   const dialogs = [...document.querySelectorAll('dialog[open]')];
   if (dialogs.some((dialog) => dialog.id === 'orientation-dialog')) return;
   if (dialogs.length) dialogs.at(-1).close();
-  else if (document.body?.dataset.recordsPage === 'hand')
-    document.querySelector('#history-back-button')?.click();
-  else if (document.body?.dataset.recordsPage === 'list')
-    document.querySelector('#records-back-button')?.click();
   else if (document.querySelector?.('#guide-menu:not([hidden])'))
     document.querySelector('#rules-button')?.click();
+  else if (['hand', 'list'].includes(document.body?.dataset.recordsPage))
+    document.defaultView.dispatchEvent(new Event('noir:records-back'));
   else return app.minimizeApp();
 }
 

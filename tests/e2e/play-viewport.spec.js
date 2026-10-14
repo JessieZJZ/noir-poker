@@ -434,7 +434,7 @@ for (const locale of ['zh-CN', 'en']) {
         const before = await page.evaluate(readTableLayout);
         assertTableLayout(before);
         if (size.width > 900) {
-          await expect(page.locator('.hint-banner p').first()).toHaveCSS('font-size', '16px');
+          await expect(page.locator('.hint-banner p').first()).toHaveCSS('font-size', '18px');
           await expect(page.locator('#raise-button span').first()).toHaveCSS('font-size', '18px');
         }
         await page.evaluate(

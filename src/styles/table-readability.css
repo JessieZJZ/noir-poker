@@ -15,16 +15,45 @@
 .game-surface .arena[data-player-count] .seat .seat-profile {
   min-width: var(--profile-width, 128px);
   max-width: var(--profile-width, 128px);
+  padding: var(--profile-padding, 7px);
 }
 .game-surface .arena[data-player-count] .seat .seat-profile strong {
   font-size: var(--player-name, 16px);
+  line-height: 1;
+  justify-self: stretch;
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
+}
+.game-surface .arena[data-player-count] .seat .seat-name-label {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.game-surface .arena[data-player-count] .seat .position-badge {
+  flex: none;
 }
 .game-surface .arena[data-player-count] .seat .seat-profile .seat-stack {
   font-size: var(--player-stack, 16px);
+  line-height: 1;
 }
-.game-surface .arena[data-player-count] .seat .seat-profile .seat-style-label {
+.game-surface .arena[data-player-count] .seat .card-back {
+  width: var(--player-back-width, 27px);
+  height: var(--player-back-height, 38px);
+  translate: 0 var(--player-back-shift, 18px);
+}
+html .game-surface .arena[data-player-count] .seat .seat-profile .seat-style-label {
   font-size: var(--player-persona, 14px);
-  line-height: 1.15;
+  line-height: calc(var(--player-persona, 14px) * 1.15);
+  height: calc(var(--player-persona, 14px) * 1.15 + 4px);
+  min-height: calc(var(--player-persona, 14px) * 1.15 + 4px);
+  max-height: calc(var(--player-persona, 14px) * 1.15 + 4px);
+  padding-block: 1px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .game-surface .arena[data-player-count] .seat .position-badge {
   font-size: var(--player-position, 12px);
@@ -34,6 +63,9 @@
   line-height: 1.2;
   height: var(--action-height, 40px);
   min-height: var(--action-height, 40px);
+  width: var(--caption-width, 164px);
+  max-width: var(--caption-width, 164px);
+  padding-top: var(--caption-padding, 2px);
 }
 .game-surface .arena[data-player-count] .seat-rank-slot {
   height: var(--rank-height, 28px);
@@ -57,6 +89,43 @@
 .game-surface .arena[data-player-count] .pot-details-trigger {
   font-size: var(--pot-detail, 14px);
 }
+.game-surface .arena[data-player-count] .pot strong {
+  font-size: var(--pot-number, 34px);
+  line-height: 1.1;
+}
+.game-surface .arena[data-player-count] .pot {
+  height: var(--pot-height, 40px);
+  min-height: var(--pot-height, 40px);
+}
+.game-surface .arena[data-player-count] .hero-identity,
+.game-surface .arena[data-player-count] .hero-identity strong,
+.game-surface .arena[data-player-count] .hero-identity .hero-stack {
+  font-size: var(--hero-identity, 20px);
+}
+.game-surface .arena[data-player-count] .hero-name strong .position-badge {
+  font-size: var(--hero-position, 16px);
+}
+.game-surface .arena[data-player-count] .seat .seat-profile {
+  grid-template-rows: var(--player-name, 20px) auto var(--player-stack, 20px);
+}
+.game-surface .arena[data-player-count] .hero-name {
+  font-size: var(--hero-identity, 20px);
+  height: var(--hero-info-height, 52px);
+  grid-template-rows: var(--hero-identity-height, 24px) var(--hero-action-height, 24px);
+}
+.game-surface .arena[data-player-count] .hero-area {
+  padding-bottom: var(--hero-info-height, 52px);
+}
+.game-surface .hand-label,
+.game-surface .blind-info {
+  font-size: var(--table-header-font, 14px);
+}
+.game-surface .hint-banner p {
+  font-size: var(--table-hint-font, 13px);
+}
+.game-surface .decision-strip {
+  font-size: 13px;
+}
 @media (max-width: 360px) {
   .game-surface .arena[data-player-count] .board {
     --public-card-width: 66px;
@@ -67,9 +136,6 @@
   .game-surface .hero-cards .playing-card {
     width: 76px;
     height: 110px;
-  }
-  .game-surface .arena[data-player-count] .seat .card-back {
-    width: 24px;
   }
 }
 /* The avatar spans the style and stack rows, matching the larger portrait
@@ -84,7 +150,7 @@
 .game-surface .arena[data-player-count] .seat .seat-profile > .avatar {
   grid-column: 1;
   grid-row: 2 / 4;
-  align-self: center;
+  align-self: end;
   width: var(--player-avatar, 48px);
   height: var(--player-avatar, 48px);
 }

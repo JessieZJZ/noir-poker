@@ -2,6 +2,13 @@ import { newGame } from './poker.js';
 import { sameStakes, validateStakes } from './stakes.js';
 
 export const GAME_RECORDS_KEY = 'noir-game-records-v1';
+// A settled hand has a result even when no chips were invested or net chips
+// balance to zero. Pot ownership and net change remain separate facts.
+export function recordResult(attempt) {
+  if (attempt.status === 'unfinished') return 'unfinished';
+  if (attempt.status !== 'completed') return 'playing';
+  return attempt.wonPot ? 'win' : 'loss';
+}
 const VERSION = 1;
 const copy = (value) => JSON.parse(JSON.stringify(value));
 const integer = (value, minimum = 0) => Number.isSafeInteger(value) && value >= minimum;

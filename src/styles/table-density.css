@@ -40,16 +40,30 @@
   }
   .game-surface .arena[data-player-count] {
     --player-avatar: 48px;
-    --profile-width: 144px;
-    --player-name: 17px;
-    --player-stack: 16px;
-    --player-persona: 14px;
-    --action-height: 40px;
-    --rank-height: 24px;
-    --hero-rank: 15px;
+    --profile-width: 164px;
+    --profile-padding: 7px;
+    --player-name: 22px;
+    --player-stack: 20px;
+    --player-persona: 18px;
+    --player-position: 17px;
+    --player-action: 20px;
+    --player-rank: 18px;
+    --pot-detail: 18px;
+    --pot-number: 36px;
+    --pot-height: 44px;
+    --hero-identity: 20px;
+    --hero-position: 16px;
+    --hero-action: 20px;
+    --hero-identity-height: 24px;
+    --hero-action-height: 24px;
+    --hero-info-height: 50px;
+    --caption-width: 164px;
+    --action-height: 52px;
+    --rank-height: 30px;
+    --hero-rank: 18px;
   }
   .game-surface .arena[data-player-count] .seat .seat-profile {
-    height: 84px;
+    height: 94px;
     padding: 5px 7px;
   }
   .game-surface .seat .mini-cards {
@@ -72,15 +86,16 @@
     min-height: 126px;
   }
   .game-surface .arena[data-player-count] .hero-rank-slot {
-    height: 28px;
+    /* The 18px badge has a 32px border box with desktop padding. */
+    height: 34px;
   }
   .game-surface .hero-cards .playing-card {
     width: 88px;
     height: 126px;
   }
   .game-surface .arena[data-player-count] .seat-rank-slot {
-    height: 24px;
-    width: 144px;
+    height: 30px;
+    width: 164px;
   }
 }
 @media (min-width: 601px) and (max-width: 900px) and (max-height: 600px) {

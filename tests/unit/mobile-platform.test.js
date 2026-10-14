@@ -95,22 +95,37 @@ test('Android back closes the top dialog first and minimizes only at the table',
   await handleAndroidBack({ querySelectorAll: () => [] }, app);
   assert.equal(minimized, 1);
   const navigated = [];
-  for (const [route, selector] of [
-    ['hand', '#history-back-button'],
-    ['list', '#records-back-button'],
-  ]) {
+  for (const route of ['hand', 'list']) {
     await handleAndroidBack(
       {
         querySelectorAll: () => [],
         body: { dataset: { recordsPage: route } },
-        querySelector: (value) =>
-          value === selector ? { click: () => navigated.push(value) } : null,
+        querySelector: () => null,
+        defaultView: { dispatchEvent: (event) => navigated.push([route, event.type]) },
       },
       app,
     );
   }
-  assert.deepEqual(navigated, ['#history-back-button', '#records-back-button']);
+  assert.deepEqual(navigated, [
+    ['hand', 'noir:records-back'],
+    ['list', 'noir:records-back'],
+  ]);
   assert.equal(minimized, 1);
+  await handleAndroidBack(
+    {
+      querySelectorAll: () => [],
+      body: { dataset: { recordsPage: 'hand' } },
+      querySelector: (selector) =>
+        selector === '#guide-menu:not([hidden])'
+          ? {}
+          : { click: () => navigated.push('close-menu') },
+      defaultView: {
+        dispatchEvent: () => assert.fail('Open menus must close before leaving the page'),
+      },
+    },
+    app,
+  );
+  assert.equal(navigated.at(-1), 'close-menu');
   await handleAndroidBack(
     {
       querySelectorAll: () => [

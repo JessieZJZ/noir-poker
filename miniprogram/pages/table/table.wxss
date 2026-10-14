@@ -1236,11 +1236,10 @@
   padding: 1px 3px;
 }
 
-/* Compact phases shrink the shell while retaining tableHeight from the live
-   viewport budget. The four sides keep padding around a single button row. */
+/* One dock footprint keeps live, fold and saved settlement heights identical. */
 .action-dock.compact-actions {
-  flex: 0 0 58px;
-  height: 58px;
+  flex: 0 0 134px;
+  height: 134px;
   padding: 10px 8px;
 }
 .compact-actions .settled-buttons,
@@ -1454,9 +1453,70 @@
 }
 .guide-button {
   width: 104px;
+  max-width: 104px;
+  font-size: 13px;
   white-space: nowrap;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  animation-duration: 0.4s;
 }
-.history-back {
+.resource-label-window {
+  position: relative;
+  height: 20px;
+  width: 64px;
+  line-height: 20px;
+  overflow: hidden;
+}
+.resource-label-current,
+.resource-label-previous,
+.resource-label-static {
+  position: absolute;
+  inset: 0;
+  display: block;
+}
+.resource-label-previous,
+.resource-label-static {
+  display: none;
+}
+.resource-label-window.is-rolling .resource-label-current {
+  animation: resource-label-in 0.4s ease-out both;
+}
+.resource-label-window.is-rolling .resource-label-previous {
+  display: block;
+  animation: resource-label-out 0.4s ease-out both;
+}
+@keyframes resource-label-in {
+  from {
+    transform: translateY(-100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+@keyframes resource-label-out {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(100%);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .guide-button {
+    animation-duration: 0s;
+  }
+  .resource-label-window .resource-label-current,
+  .resource-label-window .resource-label-previous {
+    display: none;
+    animation: none;
+  }
+  .resource-label-window .resource-label-static {
+    display: block;
+  }
+}
+.history-return-game {
   margin: 0;
   padding: 8px 12px;
   color: #d8e7ec;
@@ -1465,27 +1525,83 @@
   border-radius: 10px;
   font-size: 14px;
 }
-.history-nav-title {
-  font-size: 13px;
-  color: #9cb2bd;
-  text-align: right;
-}
-.history-replay-tag {
-  display: inline-block;
-  padding: 2px 6px;
-  border: 1px solid #796534;
-  border-radius: 4px;
-  color: #ecd397;
-  background: rgba(121, 101, 52, 0.18);
-  font-size: 12px;
-  font-weight: 600;
-  white-space: nowrap;
-}
 .session-label {
   white-space: nowrap;
 }
 .hand-label {
   gap: 4px;
-  font-size: 11px;
+  font-size: 13px;
   flex-wrap: wrap;
+}
+.blind-info {
+  font-size: 13px;
+}
+.hint-mask {
+  font-size: 12px;
+}
+.web-phone-layout .pot-number {
+  font-size: var(--pot-number);
+  line-height: 1.1;
+}
+.web-phone-layout .pot-row {
+  height: var(--pot-height);
+  min-height: var(--pot-height);
+}
+.web-phone-layout .hero-info {
+  height: var(--hero-info-height);
+}
+.web-phone-layout .hero-identity {
+  height: var(--hero-identity-height);
+  font-size: var(--hero-identity);
+  line-height: 1.2;
+}
+.web-phone-layout .hero-identity .position {
+  font-size: var(--hero-position);
+}
+.web-phone-layout .hero-action {
+  height: var(--hero-action-height);
+  line-height: 1.2;
+}
+.web-phone-layout .seat .seat-caption {
+  position: relative;
+  width: var(--caption-width);
+  left: 50%;
+  transform: translateX(-50%);
+}
+.web-phone-layout .seat .seat-name,
+.web-phone-layout .seat .seat-body > .stack {
+  line-height: 1;
+}
+.web-phone-layout .seat .seat-body {
+  grid-template-rows: var(--player-name) auto var(--player-stack);
+  padding: var(--profile-padding);
+}
+.web-phone-layout .seat .persona {
+  height: calc(var(--player-persona) * 1.15 + 4px);
+  min-height: calc(var(--player-persona) * 1.15 + 4px);
+  max-height: calc(var(--player-persona) * 1.15 + 4px);
+}
+.web-phone-layout .seat .card-back {
+  flex: none;
+  width: var(--player-back-width);
+  height: var(--player-back-height);
+  transform: translateY(var(--player-back-shift)) rotate(-7deg);
+}
+.web-phone-layout .seat .card-back + .card-back {
+  transform: translateY(var(--player-back-shift)) rotate(7deg);
+}
+.action-notice {
+  font-size: 13px;
+  line-height: 18px;
+}
+.presets button {
+  font-size: 12px;
+}
+.action-buttons button,
+.compact-actions .settled-buttons button,
+.compact-actions .continue-buttons button {
+  font-size: 14px;
+}
+.history-shell .settled-buttons {
+  grid-template-columns: minmax(0, 1fr);
 }

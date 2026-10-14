@@ -35,3 +35,49 @@ for (const width of [320, 390, 440, 768, 820, 1032]) {
     });
   }
 }
+
+test('larger captions and hero identity reserve their full text footprints before settlement', () => {
+  for (const [width, displayHeight] of [
+    [320, 568],
+    [390, 844],
+    [768, 1024],
+    [1032, 1376],
+  ]) {
+    const fit = compactTableLayout({
+      width,
+      displayHeight,
+      height: displayHeight - 260,
+      seats: Array.from({ length: 8 }, (_, i) => ({ id: i + 1 })),
+    });
+    const text = fit.textMetrics;
+    assert.ok(text['action-height'] >= text['player-action'] * 1.2 * 2 + 2);
+    assert.ok(text['caption-width'] >= fit.profileWidth || width > 600);
+    assert.ok(
+      fit.heroFoot >=
+        fit.heroHeight +
+          text['rank-height'] +
+          text['hero-identity'] * 1.2 +
+          text['hero-action'] * 1.2 +
+          4,
+    );
+    assert.ok(fit.potHeight >= text['pot-number'] * 1.1);
+  }
+});
+
+test('narrow phone card backs fit the reserved pair slot while leaving a visible strip', () => {
+  const fit = compactTableLayout({
+    width: 320,
+    displayHeight: 900,
+    height: 634,
+    seats: Array.from({ length: 8 }, (_, i) => ({ id: i + 1 })),
+  });
+  const text = fit.textMetrics;
+  // Both backs fit the 68px deal/reveal slot, without moving the profile.
+  assert.ok(text['player-back-width'] * 2 + 3 <= 68);
+  const top = 39 - text['player-back-height'] + text['player-back-shift'];
+  assert.ok(top >= 0);
+  assert.ok(43 - top >= 20);
+  // Keep the smallest tall-phone face/back readable after the solver's fit.
+  assert.ok(fit.cardWidth * fit.arenaScale >= 31);
+  assert.ok(text['player-back-width'] * fit.arenaScale >= 15);
+});

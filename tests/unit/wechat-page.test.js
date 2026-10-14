@@ -8,6 +8,7 @@ import assert from 'node:assert/strict';
 import vm from 'node:vm';
 import { readFileSync } from 'node:fs';
 import { createWechatController } from '../../src/platform/wechat-controller.js';
+import { recordResult } from '../../src/engine/game-records.js';
 import {
   act,
   advanceStreet,
@@ -22,6 +23,10 @@ const pageSource = readFileSync(
 );
 const stylesheet = readFileSync(
   new URL('../../miniprogram/pages/table/table.wxss', import.meta.url),
+  'utf8',
+);
+const railStylesheet = readFileSync(
+  new URL('../../miniprogram/pages/table/rail.wxss', import.meta.url),
   'utf8',
 );
 const template = readFileSync(
@@ -76,6 +81,8 @@ function setup(
       },
     });
   const app = {};
+  const stack = [];
+  const navigationModule = { exports: {} };
   const context = vm.createContext({
     setTimeout(fn, delay = 0) {
       const id = ++serial;
@@ -87,7 +94,9 @@ function setup(
     },
     module: { exports: {} },
     getApp: () => app,
+    getCurrentPages: () => stack,
     require(name) {
+      if (name === '../../record-navigation.js') return navigationModule.exports;
       if (name === '../../assets/portraits/credits.js')
         return Object.fromEntries(
           Object.entries(PROFILE_PORTRAITS).map(([id, image]) => [
@@ -115,7 +124,24 @@ function setup(
       setStorageSync: (key, value) => preferences.set(key, value),
       showToast: (value) => toasts.push(value),
       setClipboardData: (value) => clipboard.push(value.data),
-      navigateTo: (value) => navigations.push(value.url),
+      navigateTo(value) {
+        navigations.push(value.url);
+        stack.push({ route: value.url.split('?')[0].replace(/^\//, '') });
+        value.complete?.();
+      },
+      redirectTo(value) {
+        navigations.push(value.url);
+        stack[stack.length - 1] = { route: value.url.split('?')[0].replace(/^\//, '') };
+        value.complete?.();
+      },
+      navigateBack(value) {
+        stack.splice(Math.max(1, stack.length - value.delta));
+        value.complete?.();
+      },
+      reLaunch(value) {
+        stack.splice(0, stack.length, { route: value.url.replace(/^\//, '') });
+        value.complete?.();
+      },
       pageScrollTo: (value) => scrolls.push(value.scrollTop),
       vibrateShort(options) {
         vibrations.push(options.type);
@@ -134,9 +160,16 @@ function setup(
           },
           play() {
             this.played = true;
+            this.playing = true;
+            this.playCount = (this.playCount || 0) + 1;
           },
           stop() {
             this.stopped = true;
+            this.playing = false;
+            this.stopCount = (this.stopCount || 0) + 1;
+          },
+          seek(value) {
+            this.seekPosition = value;
           },
           destroy() {
             this.destroyed = true;
@@ -147,9 +180,14 @@ function setup(
       },
     },
   });
+  vm.runInNewContext(
+    readFileSync(new URL('../../miniprogram/record-navigation.js', import.meta.url), 'utf8'),
+    { module: navigationModule, wx: context.wx, getCurrentPages: () => stack },
+  );
   vm.runInContext(pageSource, context);
   definition = context.module.exports;
   const page = {
+    route: 'pages/table/table',
     ...definition,
     data: copy(definition.data),
     setData(value, callback) {
@@ -162,6 +200,7 @@ function setup(
       callback?.();
     },
   };
+  stack.push(page);
   page.onLoad();
   t.after(() => page.onUnload());
   function flush() {
@@ -187,6 +226,8 @@ function setup(
     flush,
     jobs,
     info,
+    stack,
+    navigation: navigationModule.exports,
     wx: context.wx,
   };
 }
@@ -566,9 +607,11 @@ function text(value) {
   assert.ok(!value.includes('undefined'));
 }
 
-test('WeChat turn, fold, settlement and retry keep live geometry and preserve the table while compact controls collapse', (t) => {
+test('WeChat turn, fold, settlement and retry keep identical table and dock footprints', (t) => {
   assert.match(template, /class="action-notice" wx:if="\{\{!compactActions\}\}"/);
   assert.match(template, /class="raise-controls" wx:if="\{\{!compactActions\}\}"/);
+  assert.match(template, /height: {{tableHeight \+ 50 \+ 134}}px/);
+  assert.equal(cssNumber('.action-dock.compact-actions', 'height'), 134);
   assert.equal(
     cssNumber('.settled-buttons button', 'width'),
     100,
@@ -783,6 +826,65 @@ test('WeChat Page stops and destroys native audio plus pending work when backgro
   assert.ok(jobs.size > 0, 'foreground resumes a fresh bot schedule');
 });
 
+test('WeChat boosted sound cues keep only the latest context active and respect all playback gates', (t) => {
+  const { page, audios } = setup(t);
+  const fold = page._soundPool.fold;
+  const call = page._soundPool.call;
+  const snapshots = () => audios.map((audio) => [audio.playCount || 0, audio.stopCount || 0]);
+  let before = snapshots();
+  page.playSound('fold');
+  assert.deepEqual(snapshots(), before, 'No gesture must neither stop nor play a cue');
+  page._audioUnlocked = true;
+  page.playSound('fold');
+  assert.equal(fold.playCount, 1);
+  assert.equal(fold.seekPosition, 0);
+  assert.deepEqual(
+    audios.filter((audio) => audio.playing),
+    [fold],
+  );
+  const stopped = fold.stopCount;
+  page.playSound('call');
+  assert.equal(fold.stopCount, stopped + 1);
+  assert.equal(call.playCount, 1);
+  assert.equal(call.seekPosition, 0);
+  assert.deepEqual(
+    audios.filter((audio) => audio.playing),
+    [call],
+  );
+  page.call('setPreference', 'sound', false);
+  const mutedPlays = audios.map((audio) => audio.playCount || 0);
+  const emitted = [];
+  const playSound = page.playSound;
+  page.playSound = (name) => {
+    emitted.push(name);
+    playSound.call(page, name);
+  };
+  reachHero(page);
+  page.act({ currentTarget: { dataset: { action: 'fold' } } });
+  assert.deepEqual(emitted, [], 'Muted controller actions never dispatch sound cues');
+  assert.deepEqual(
+    audios.map((audio) => audio.playCount || 0),
+    mutedPlays,
+  );
+  page.call('setPreference', 'sound', true);
+  assert.equal(emitted.at(-1), 'deal', 'The authoritative unmute cue can precede the updated view');
+  page.onHide();
+  assert.ok(audios.every((audio) => !audio.playing && audio.destroyed));
+  before = snapshots();
+  page.playSound('fold');
+  assert.deepEqual(snapshots(), before, 'Hidden callbacks cannot recreate or replay audio');
+  page.onShow();
+  const restored = page._soundPool.fold;
+  assert.notEqual(restored, fold);
+  page.playSound('fold');
+  assert.equal(restored.playCount, 1);
+  assert.deepEqual(
+    audios.filter((audio) => audio.playing),
+    [restored],
+  );
+  assert.equal(restored.volume, 1);
+});
+
 test('WeChat reserves a capsule row above the Web navigation and settings', (t) => {
   const { page } = setup(t);
   assert.equal(page.data.compactNav, false);
@@ -874,7 +976,8 @@ test('large portrait tablets reserve five larger public positions through settle
   assert.equal(page.data.boardWidth, 5 * 94 + 16);
   Object.assign(info, { windowWidth: 1101, windowHeight: 1440 });
   page.onResize();
-  assert.equal(page.data.boardWidth, 5 * 70 + 16);
+  assert.equal(page.data.cardWidth, 60);
+  assert.equal(page.data.boardWidth, page.data.boardTwoRows ? 3 * 60 + 8 : 5 * 60 + 16);
 });
 
 for (const playerCount of [5, 6, 7, 8, 9]) {
@@ -982,7 +1085,7 @@ test('WeChat public card rows use the measured corridor and stay fixed from deal
     info: { windowWidth: 320, windowHeight: 667, statusBarHeight: 20, safeArea: { bottom: 667 } },
   });
   assert.equal(page.data.boardTwoRows, false);
-  assert.equal(page.data.cardWidth, 66);
+  assert.equal(page.data.cardWidth, 65);
   assert.ok(page.data.boardWidth >= 3 * 50 + 8);
   assert.equal(page.data.boardSlots.length, 5);
   assert.ok(page.data.boardSlots.every((card) => card.empty));
@@ -996,10 +1099,7 @@ test('WeChat public card rows use the measured corridor and stay fixed from deal
   Object.assign(info, { windowWidth: 390, windowHeight: 900, safeArea: { bottom: 900 } });
   page.onResize();
   assert.equal(page.data.boardSlots.length, 5);
-  assert.equal(
-    page.data.boardWidth,
-    Math.ceil(page.data.boardTwoRows ? 3 * 62.4 + 8 : 5 * 62.4 + 16),
-  );
+  assert.equal(page.data.boardWidth, page.data.boardTwoRows ? 3 * 60 + 8 : 5 * 60 + 16);
   Object.assign(info, { windowWidth: 820, windowHeight: 1180, safeArea: { bottom: 1180 } });
   page.onResize();
   assert.equal(page.data.boardSlots.length, 5);
@@ -1042,12 +1142,13 @@ for (const playerCount of [6, 8]) {
   });
 }
 
-test('WeChat temporarily unavailable table space recovers without invalid card geometry', (t) => {
+test('WeChat transient same-width window changes preserve the shared live and history budget', (t) => {
   const { page, info } = setup(t);
   const cards = copy(page.data.heroCards);
+  const height = page.data.tableHeight;
   info.windowHeight = 200;
   page.onResize();
-  assert.equal(page.data.tableHeight, 0);
+  assert.equal(page.data.tableHeight, height);
   assert.ok(Number.isFinite(page.data.arenaWidth));
   assert.ok(Number.isFinite(page.data.boardWidth));
   info.windowHeight = 844;
@@ -1290,7 +1391,12 @@ test('WeChat combined resources menu keeps both choices and rotates only while c
   };
   tick();
   assert.equal(page.data.resourceLabel, '对局记录');
+  assert.equal(page.data.resourcePreviousLabel, '玩法指南');
+  assert.equal(page.data.resourceRolling, true);
+  jobs.get(page._resourceMotionTimer).fn();
+  assert.equal(page.data.resourceRolling, false);
   page.toggleResourceMenu();
+  assert.equal(page.data.resourceRolling, false);
   tick();
   assert.equal(page.data.resourceLabel, '对局记录');
   page.openGuide();
@@ -1298,6 +1404,73 @@ test('WeChat combined resources menu keeps both choices and rotates only while c
   assert.equal(page.data.guideOpen, true);
   assert.match(template, /id="resource-guide"/);
   assert.match(template, /id="resource-records"/);
+  assert.match(
+    stylesheet,
+    /@keyframes resource-label-in\s*\{\s*from\s*\{\s*transform: translateY\(-100%\)/,
+  );
+  assert.match(
+    stylesheet,
+    /@keyframes resource-label-out\s*\{\s*from\s*\{\s*transform: translateY\(0\)/,
+  );
+});
+
+test('WeChat reduced motion keeps resource labels static and schedules no auto rotation', (t) => {
+  const { page, wx, jobs } = setup(t);
+  page.startResourceRotation();
+  let callback;
+  wx.createSelectorQuery = () => ({
+    select(selector) {
+      assert.equal(selector, '#resource-menu-button');
+      return {
+        fields(options, fn) {
+          assert.deepEqual(copy(options), { computedStyle: ['animation-duration'] });
+          callback = fn;
+        },
+      };
+    },
+    exec() {
+      callback({ 'animation-duration': '0s' });
+    },
+  });
+  page.readResourceMotionPreference();
+  assert.equal(page.data.resourceReducedMotion, true);
+  assert.equal(page.data.resourceLabel, '玩法指南');
+  assert.equal(page.data.resourceRolling, false);
+  assert.equal(jobs.has(page._resourceTimer), false);
+  assert.match(stylesheet, /prefers-reduced-motion: reduce/);
+  assert.match(
+    stylesheet,
+    /\.resource-label-window \.resource-label-static\s*\{\s*display: block;\s*\}/,
+  );
+});
+
+test('WeChat shared viewport remains stable across scrolling and historical page entry', (t) => {
+  const fixture = setup(t);
+  const { page, info } = fixture;
+  finish(page._controller.getGame());
+  page._controller.show();
+  const fields = ['tableHeight', 'arenaWidth', 'arenaHeight', 'arenaScale', 'textStyle'];
+  const geometry = (item) => copy(Object.fromEntries(fields.map((key) => [key, item.data[key]])));
+  const before = geometry(page);
+  page.onPageScroll({ scrollTop: 380 });
+  assert.deepEqual(geometry(page), before);
+  info.windowHeight -= 110;
+  info.safeArea.bottom -= 110;
+  page.onResize();
+  assert.deepEqual(geometry(page), before);
+  const history = secondaryPage(t, 'history/history.js', fixture);
+  history.onLoad({ id: page._controller.getRecords()[0].attempts[0].id });
+  history.onShow();
+  assert.deepEqual(geometry(history), before);
+  page.onShow();
+  assert.deepEqual(geometry(page), before);
+  info.windowWidth = 820;
+  info.windowHeight = 1180;
+  info.safeArea.bottom = 1180;
+  history.onResize();
+  page.onShow();
+  assert.deepEqual(geometry(history), geometry(page));
+  assert.notEqual(page.data.tableHeight, before.tableHeight);
 });
 
 function secondaryPage(t, file, fixture) {
@@ -1313,6 +1486,8 @@ function secondaryPage(t, file, fixture) {
       setTimeout: () => 1,
       clearTimeout() {},
       require(name) {
+        if (name === '../../record-navigation.js') return fixture.navigation;
+        if (name === '../../shared/engine/game-records.js') return { recordResult };
         if (name === '../table/page-definition.js') return fixture.definition;
         if (name === '../table/presentation.js') return presentationModule.exports;
         assert.equal(name, '../../shared/engine/chip-format.js');
@@ -1325,7 +1500,7 @@ function secondaryPage(t, file, fixture) {
   return page;
 }
 
-test('WeChat records hide initial and break-even copy, use colored replay tags, and sign every completed change', (t) => {
+test('WeChat records classify every completed hand including zero folds and zero awards, with signed changes', (t) => {
   const fixture = setup(t);
   const hole = copy(fixture.page._controller.getGame().players[0].hole);
   const base = { status: 'completed', superseded: false, refill: false, hole, wonPot: true };
@@ -1346,6 +1521,7 @@ test('WeChat records hide initial and break-even copy, use colored replay tags, 
       { ...base, id: 'replay-one', hand: 4, attempt: 1, profit: -1025 },
       { ...base, id: 'replay-two', hand: 4, attempt: 2, profit: 1025, refill: true },
       { ...base, id: 'unfinished', hand: 5, attempt: 0, profit: null, status: 'unfinished' },
+      { ...base, id: 'playing', hand: 6, attempt: 0, profit: null, status: 'playing' },
     ],
   };
   fixture.app.noirController = { getRecords: () => [copy(session)], getRecordsError: () => '' };
@@ -1361,6 +1537,7 @@ test('WeChat records hide initial and break-even copy, use colored replay tags, 
     '-1.025K',
     '+1.025K',
     '—',
+    '—',
   ]);
   assert.deepEqual(copy(view.attempts.map((attempt) => attempt.attemptText)), [
     '',
@@ -1369,14 +1546,16 @@ test('WeChat records hide initial and break-even copy, use colored replay tags, 
     '重打1',
     '重打2',
     '',
+    '',
   ]);
   assert.equal(
     view.attempts[1].resultText,
-    '',
-    'A split award with zero net change has no result label',
+    '赢',
+    'A split award with zero net change still wins a pot',
   );
-  assert.equal(view.attempts[2].resultText, '');
+  assert.equal(view.attempts[2].resultText, '输');
   assert.equal(view.attempts[5].resultText, '未完成');
+  assert.equal(view.attempts[6].resultText, '进行中');
   assert.equal(view.attempts[0].superseded, true, 'The internal replacement state stays available');
   assert.equal(view.attempts[4].cards.length, 2);
   assert.equal(view.attempts[4].refill, true);
@@ -1474,11 +1653,13 @@ for (const playerCount of [5, 9]) {
       assert.equal(history.data.historyReadOnly, true);
       assert.equal(
         history.data.historyAttemptLabel,
-        '',
-        'The first attempt has no generic history or initial label',
+        undefined,
+        'The extra historical navigation line is absent',
       );
       const archivedBefore = copy(history._controller.getGame());
       history.retryHand();
+      assert.deepEqual(copy(history._controller.getGame()), archivedBefore);
+      history.nextHand();
       assert.deepEqual(copy(history._controller.getGame()), archivedBefore);
       assert.equal(fixture.app.noirController, fixture.page._controller);
       const markup = readFileSync(
@@ -1495,7 +1676,7 @@ for (const playerCount of [5, 9]) {
   }
 }
 
-test('WeChat history displays only a colored short replay tag while preserving superseded attempts and statistics', (t) => {
+test('WeChat history removes the extra navigation heading while preserving replay and statistics', (t) => {
   const fixture = setup(t);
   const game = reachHero(fixture.page);
   finish(game);
@@ -1510,14 +1691,186 @@ test('WeChat history displays only a colored short replay tag while preserving s
   const history = secondaryPage(t, 'history/history.js', fixture);
   history.onLoad({ id: archived.id });
   history.onShow();
-  assert.equal(history.data.historyAttemptLabel, '重打1');
+  assert.equal(history.data.historyAttemptLabel, undefined);
   assert.equal(history.data.replay, 1);
   assert.equal(fixture.app.noirController, fixture.page._controller);
   assert.equal(fixture.page._controller.getRecords()[0].completed, 1);
-  assert.match(template, /wx:if="{{historyAttemptLabel}}" class="history-replay-tag"/);
+  assert.doesNotMatch(template, /history-back|history-nav-title|history-replay-tag/);
+  assert.match(template, /id="history-return-game"[^>]*bindtap="returnToGame"/);
   assert.doesNotMatch(template, /历史结算|历史记录/);
+  assert.match(template, /wx:if="{{replay}}" class="replay"/);
+  assert.match(template, /wx:if="{{!historyReadOnly}}"[^>]*bindtap="nextHand"/);
+});
+
+test('WeChat larger table text uses shared profile and hero footprints without overflowing their slots', (t) => {
+  const actionRule = railStylesheet.match(
+    /\.web-phone-layout \.seat \.seat-action\s*\{([^}]+)\}/,
+  )[1];
+  for (const [windowWidth, windowHeight, playerCount] of [
+    [320, 568, 9],
+    [390, 844, 9],
+    [390, 844, 5],
+    [768, 1024, 9],
+    [1032, 1376, 9],
+  ]) {
+    const { page } = setup(t, {
+      playerCount,
+      info: { windowWidth, windowHeight, statusBarHeight: 24 },
+    });
+    const m = page.data.textMetrics;
+    assert.equal(
+      m['player-avatar'],
+      Math.ceil(m['player-persona'] * 1.15 + 4 + m['player-stack'] + 2),
+    );
+    // Resolve the native rule against the actual serialized Page variables.
+    // This is an adapter projection, not a DevTools glyph measurement.
+    const variables = Object.fromEntries(
+      [...page.data.textStyle.matchAll(/--([\w-]+):([\d.]+)px;/g)].map((match) => [
+        match[1],
+        Number(match[2]),
+      ]),
+    );
+    const resolved = (property) =>
+      variables[actionRule.match(new RegExp(`${property}:\\s*var\\(--([\\w-]+)\\)`))[1]];
+    const action = {
+      font: resolved('font-size'),
+      height: resolved('height'),
+      padding: resolved('padding-top'),
+    };
+    assert.ok(
+      action.padding + 2 * action.font * 1.2 <= action.height,
+      `${windowWidth}px has room for both action and amount lines including top padding`,
+    );
+    if (page.data.large) assert.deepEqual(action, { font: 25, height: 68, padding: 4 });
+    else assert.equal(action.padding, 2);
+    const padding = m['profile-padding'];
+    const profileContent =
+      m['player-name'] + m['player-stack'] + m['player-persona'] * 1.15 + 4 + 4 + padding * 2 + 2;
+    assert.ok(
+      profileContent <= page.data.profileHeight + 0.01,
+      `${windowWidth}px profile keeps all text rows inside its footprint`,
+    );
+    assert.equal(
+      page.data.heroFoot,
+      page.data.heroHeight + m['rank-height'] + m['hero-info-height'] + 4,
+    );
+    assert.ok(m['hero-identity-height'] >= m['hero-identity'] * 1.2);
+    assert.ok(m['hero-action-height'] >= m['hero-action'] * 1.2);
+    assert.equal(m['hero-info-height'], m['hero-identity-height'] + m['hero-action-height'] + 2);
+    assert.ok(
+      page.data.tableHeight + page.data.topInset + page.data.bottomInset + 284 <= windowHeight,
+    );
+  }
+  for (const key of [
+    'pot-number',
+    'pot-height',
+    'profile-padding',
+    'hero-identity',
+    'hero-position',
+    'hero-info-height',
+    'hero-identity-height',
+    'hero-action-height',
+    'caption-width',
+    'player-back-width',
+    'player-back-height',
+    'player-back-shift',
+  ])
+    assert.ok(stylesheet.includes(`var(--${key})`), `${key} is consumed by the native layout`);
+  assert.match(stylesheet, /height: calc\(var\(--player-persona\) \* 1\.15 \+ 4px\)/);
+});
+
+test('WeChat long seat names shrink visually while position and inspection slots keep their space', (t) => {
+  const { page } = setup(t, { playerCount: 9 });
+  const game = page._controller.getGame();
+  const name = 'Alexander · Long seat identity';
+  game.players[1].name = name;
+  page._controller.show();
+  assert.equal(
+    page.data.phoneSeats.find((seat) => seat.id === 1).name,
+    name,
+    'Ellipsis preserves the recorded identity and changes presentation alone',
+  );
+  assert.match(template, /<text class="seat-name-label">{{item.name}}<\/text\s*>/);
+  const nameRow = railStylesheet.match(
+    /\.web-phone-layout \.seat \.seat-name\s*\{[^}]*grid-column:[^}]+\}/,
+  )[0];
+  assert.match(nameRow, /min-width: 0/);
+  assert.match(nameRow, /width: 100%/);
+  assert.match(nameRow, /max-width: 100%/);
+  const label = railStylesheet.match(
+    /\.web-phone-layout \.seat \.seat-name-label\s*\{([^}]+)\}/,
+  )[1];
+  assert.match(label, /flex: 0 1 auto/);
+  assert.match(label, /min-width: 0/);
+  assert.match(label, /overflow: hidden/);
+  assert.match(label, /text-overflow: ellipsis/);
+  assert.match(railStylesheet, /\.seat-name \.position\s*\{\s*flex: none/);
+  assert.match(railStylesheet, /\.seat-eye-slot\s*\{[^}]*width: 14px;[^}]*flex: none;/s);
+  assert.match(
+    railStylesheet,
+    /\.web-phone-layout\.large-layout \.seat-eye\s*\{[^}]*width: 22px !important;[^}]*min-width: 22px;/s,
+  );
+  assert.match(
+    railStylesheet,
+    /\.seat-body > \.avatar\s*\{[^}]*align-self: end;[^}]*width: var\(--player-avatar\);[^}]*height: var\(--player-avatar\)/s,
+  );
+  assert.match(template, /class="position[^>]*>{{item.position}}<\/text\s*>/s);
+  assert.match(template, /class="seat-eye"[^>]*bindtap="peekSeat"/s);
+});
+
+test('WeChat final cards retain readable phone dimensions within the unchanged first-screen budget', (t) => {
+  for (const [windowWidth, windowHeight, playerCount, statusBarHeight, bottomInset] of [
+    [320, 844, 9, 47, 34],
+    [360, 800, 9, 24, 0],
+    [360, 800, 9, 47, 34],
+    [390, 844, 7, 47, 34],
+    [390, 844, 8, 47, 34],
+    [390, 844, 9, 47, 34],
+    [390, 844, 5, 47, 34],
+    [768, 1024, 9, 24, 0],
+  ]) {
+    const { page } = setup(t, {
+      playerCount,
+      info: {
+        windowWidth,
+        windowHeight,
+        statusBarHeight,
+        safeArea: { bottom: windowHeight - bottomInset },
+      },
+    });
+    const metrics = page.data.textMetrics;
+    assert.deepEqual(
+      [metrics['player-back-width'], metrics['player-back-height'], metrics['player-back-shift']],
+      page.data.tablet ? [33, 46, 28] : [32, 42, 22],
+    );
+    const scale = page.data.arenaScale;
+    assert.ok(
+      metrics['player-back-width'] * scale >= 15,
+      `${windowWidth}px card backs retain 15px width`,
+    );
+    // The profile begins 4px below the fixed mini-card slot. This is the
+    // unrotated minimum exposed strip, before the +/-7deg corners extend it.
+    assert.ok(
+      (metrics['player-back-height'] - metrics['player-back-shift'] + 4) * scale >= 8,
+      `${windowWidth}px exposes at least 8px of each back above the profile`,
+    );
+    assert.ok(
+      page.data.cardWidth * scale >= 30.5,
+      `${windowWidth}px public cards retain the shared 31px target with 0.5px layout tolerance`,
+    );
+    const slotWidth = page.data.tablet ? 92 : page.data.roomy ? 76 : 68;
+    assert.ok(
+      metrics['player-back-width'] * 2 + 3 <= slotWidth,
+      'The pair fits its original fixed slot',
+    );
+    assert.equal(page.data.tableHeight + statusBarHeight + bottomInset + 284, windowHeight);
+  }
   assert.match(
     stylesheet,
-    /\.history-replay-tag\s*\{[^}]*border: 1px solid #[0-9a-f]+;[^}]*color: #[0-9a-f]+;[^}]*background:/s,
+    /\.web-phone-layout \.seat \.card-back\s*\{[^}]*width: var\(--player-back-width\);[^}]*height: var\(--player-back-height\);[^}]*transform: translateY\(var\(--player-back-shift\)\) rotate\(-7deg\)/s,
+  );
+  assert.match(
+    stylesheet,
+    /\.web-phone-layout \.seat \.card-back \+ \.card-back\s*\{[^}]*transform: translateY\(var\(--player-back-shift\)\) rotate\(7deg\)/s,
   );
 });

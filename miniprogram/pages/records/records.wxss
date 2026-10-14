@@ -80,6 +80,32 @@ page {
   font-size: 11px;
   font-weight: 500;
 }
+.session-heading-end {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.session-toggle {
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #38525d;
+  border-radius: 50%;
+  color: #80dcc9;
+  background: #152a32;
+}
+.session-chevron {
+  width: 7px;
+  height: 7px;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: translateY(-2px) rotate(45deg);
+}
+.session-toggle.is-expanded .session-chevron {
+  transform: translateY(2px) rotate(225deg);
+}
 .session-time {
   display: block;
   margin-top: 4px;

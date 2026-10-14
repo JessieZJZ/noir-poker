@@ -13,8 +13,8 @@ test('a pot award can display a win and a net loss together', () => {
     '获得部分底池 · 净亏损',
   );
   assert.equal(recordOutcome({ status: 'completed', wonPot: true, profit: 200 }), '赢');
-  assert.equal(recordOutcome({ status: 'completed', wonPot: false, profit: 0 }), '');
-  assert.equal(recordOutcome({ status: 'completed', wonPot: true, profit: 0 }), '');
+  assert.equal(recordOutcome({ status: 'completed', wonPot: false, profit: 0 }), '输');
+  assert.equal(recordOutcome({ status: 'completed', wonPot: true, profit: 0 }), '赢');
   assert.equal(recordOutcome({ status: 'completed', wonPot: false, profit: -100 }), '输');
 });
 

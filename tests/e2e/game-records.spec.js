@@ -124,7 +124,7 @@ test('records group sessions newest first and show graphic hands in chronologica
   expect((await state(page)).sessionNumber).toBe(initial.sessionNumber + 1);
 });
 
-test('record rows omit first-attempt and neutral copy, color retry tags and sign every chip delta', async ({
+test('record rows omit first-attempt copy, retain settled outcomes, color retries and sign chip deltas', async ({
   page,
 }) => {
   await page.evaluate(() => window.qa.recordsFinish());
@@ -167,7 +167,7 @@ test('record rows omit first-attempt and neutral copy, color retry tags and sign
       `${profit < 0 ? '-' : '+'}${Math.abs(profit)}`,
     );
   }
-  await expect(rows.nth(1).locator('.record-hand-result span')).toHaveCount(0);
+  await expect(rows.nth(1).locator('.record-hand-result span')).toHaveText('输');
   await expect(
     page
       .locator('.record-session')
@@ -180,13 +180,14 @@ test('record rows omit first-attempt and neutral copy, color retry tags and sign
   await expect(page.locator('#records-title')).not.toContainText(/首次|[·\s]$/);
 });
 
-test('historical navigation shows a single colored retry tag only for retried attempts', async ({
+test('historical details omit the extra heading and use system Back to the list', async ({
   page,
 }) => {
   await page.evaluate(() => {
     window.qa.recordsFinish();
     window.qa.recordsRetry();
     window.qa.recordsFinish();
+    window.qa.recordsRetry();
     window.qa.recordsRetry();
     window.qa.recordsFinish();
   });
@@ -195,35 +196,129 @@ test('historical navigation shows a single colored retry tag only for retried at
   expect(session.completed).toBe(1);
   expect(session.profit).toBe(session.attempts[2].profit);
   await openRecords(page);
-  await expect(page.locator('#records-page')).not.toContainText('已被重打替代');
   for (const attempt of session.attempts) {
     await page.locator(`[data-record-hand="${attempt.id}"]`).click();
-    const heading = page.locator('.records-history-heading');
-    await expect(heading).not.toContainText('历史记录');
     await expect(page.locator('#records-title')).toHaveText(`第 ${session.number} 局 · 第 1 手`);
-    await expect(page.locator('#records-title .record-tag')).toHaveCount(0);
-    await expect(heading.locator('.record-tag')).toHaveCount(attempt.attempt ? 1 : 0);
-    if (attempt.attempt) {
-      const retry = heading.locator('.record-retry');
-      await expect(retry).toHaveText(`重打${attempt.attempt}`);
-      const colors = await retry.evaluate((element) => {
-        const style = getComputedStyle(element);
-        return {
-          background: style.backgroundColor,
-          border: parseFloat(style.borderWidth),
-          text: style.color,
-        };
-      });
-      expect(colors.background).not.toBe('rgba(0, 0, 0, 0)');
-      expect(colors.border).toBeGreaterThan(0);
-      const channels = colors.text
-        .match(/[\d.]+/g)
-        .slice(0, 3)
-        .map(Number);
-      expect(Math.max(...channels) - Math.min(...channels)).toBeGreaterThan(10);
-    }
-    await page.locator('#history-back-button').click();
+    await expect(
+      page.locator('.records-history-heading, #history-back-button, .records-history-result'),
+    ).toHaveCount(0);
+    await expect(
+      page.locator('#records-title .record-tag, #history-page .record-retry'),
+    ).toHaveCount(0);
+    await expect(page.getByRole('button', { name: '返回游戏', exact: true })).toBeVisible();
+    await page.goBack();
+    await expect(page).toHaveURL(/#records$/);
+    await expect(page.locator(`[data-session-id="${session.id}"]`)).toBeVisible();
   }
+});
+
+// The predecessor is another same-origin page so Back after Return Game is
+// observable without leaving the test host or relying on browser startup tabs.
+test('returning to the game closes the records visit without nested Back routes', async ({
+  page,
+}) => {
+  await page.goto('/app-privacy.html');
+  await page.goto('/');
+  await page.waitForFunction(() => !!window.qa);
+  await page.evaluate(() => {
+    window.qa.recordsStart();
+    window.qa.recordsFinish(1);
+  });
+  const attempt = (await records(page))[0].attempts[0];
+  const before = await state(page);
+  await page.evaluate(() => (window.recordsDocument = { same: true }));
+  for (let visit = 0; visit < 3; visit++) {
+    await openRecords(page);
+    await page.locator(`[data-record-hand="${attempt.id}"]`).click();
+    await page.locator('#records-back-button').click();
+    await expect(page).not.toHaveURL(/#records/);
+    await expect(page.locator('main.main')).toBeVisible();
+    expect(await page.evaluate(() => window.recordsDocument.same)).toBe(true);
+    expect(await state(page)).toMatchObject({
+      hand: before.hand,
+      sessionNumber: before.sessionNumber,
+    });
+    if (visit === 0) {
+      await page.evaluate(() => history.forward());
+      await expect
+        .poll(() => page.evaluate(() => history.state.noirRecordsNavigation.depth))
+        .toBe(0);
+      await expect(page).not.toHaveURL(/#records/);
+      expect(await page.evaluate(() => window.recordsDocument.same)).toBe(true);
+    }
+  }
+  await page.goBack();
+  await expect(page).toHaveURL(/app-privacy\.html$/);
+});
+
+test('native Back events pop independent records pages while the live document stays running', async ({
+  page,
+}) => {
+  await page.evaluate(() => window.qa.recordsFinish(1));
+  const attempt = (await records(page))[0].attempts[0];
+  expect(attempt.profit).toBe(0);
+  expect(attempt.snapshot.players[0].folded).toBe(true);
+  await openRecords(page);
+  await expect(page.locator(`[data-record-hand="${attempt.id}"] .record-hand-result`)).toHaveText(
+    '+0输',
+  );
+  await page.locator(`[data-record-hand="${attempt.id}"]`).click();
+  const live = await state(page);
+  await page.evaluate(() => window.dispatchEvent(new CustomEvent('noir:records-back')));
+  await expect(page).toHaveURL(/#records$/);
+  await page.evaluate(() => window.dispatchEvent(new CustomEvent('noir:records-back')));
+  await expect(page).not.toHaveURL(/#records/);
+  expect(await state(page)).toMatchObject({ hand: live.hand, sessionNumber: live.sessionNumber });
+});
+
+test('reloading a historical URL retains its list parent and does not reload practice on Back', async ({
+  page,
+}) => {
+  await page.evaluate(() => window.qa.recordsFinish(1));
+  const attempt = (await records(page))[0].attempts[0],
+    before = await state(page);
+  await openRecords(page);
+  await page.locator(`[data-record-hand="${attempt.id}"]`).click();
+  await page.reload();
+  await page.waitForFunction(() => !!window.qa);
+  await page.evaluate(() => window.qa.stop());
+  const resumed = await state(page);
+  expect(resumed.hand).toBe(before.hand + 1);
+  expect(resumed.sessionNumber).toBe(before.sessionNumber);
+  await expect(page.locator('#history-page')).toBeVisible();
+  await page.evaluate(() => (window.recordsReloadDocument = true));
+  await page.goBack();
+  await expect(page).toHaveURL(/#records$/);
+  expect(await page.evaluate(() => window.recordsReloadDocument)).toBe(true);
+  expect((await state(page)).hand).toBe(resumed.hand);
+  await page.locator('#records-back-button').click();
+  await expect(page).not.toHaveURL(/#records/);
+  expect(await page.evaluate(() => window.recordsReloadDocument)).toBe(true);
+  expect((await state(page)).hand).toBe(resumed.hand);
+});
+
+test('same-page locale refresh preserves historical review while Back closes it with the page', async ({
+  page,
+}) => {
+  await page.evaluate(() => window.qa.recordsFinish());
+  const attempt = (await records(page))[0].attempts[0],
+    saved = await records(page);
+  await openRecords(page);
+  await page.locator(`[data-record-hand="${attempt.id}"]`).click();
+  await page.locator('#history-review-button').click();
+  await expect(page.locator('#review-dialog')).toBeVisible();
+  await page.evaluate(async () => {
+    const { loadLocale, localizeDocument } = await import('/src/i18n/index.js');
+    await loadLocale('en');
+    localizeDocument(document);
+    document.dispatchEvent(new CustomEvent('noir:locale-changed'));
+  });
+  await expect(page.locator('#review-dialog')).toBeVisible();
+  expect((await state(page)).recordsRoute).toEqual({ page: 'hand', id: attempt.id });
+  await page.goBack();
+  await expect(page).toHaveURL(/#records$/);
+  await expect(page.locator('#review-dialog')).toBeHidden();
+  expect(await records(page)).toEqual(saved);
 });
 
 for (const count of [5, 9]) {
@@ -260,7 +355,17 @@ for (const count of [5, 9]) {
         await expect
           .poll(async () => {
             const geometry = await page.evaluate(readRecordTableGeometry, '#arena');
-            return geometry.arena.width > 0 && geometry.seats.length === count - 1;
+            const fitted = await page.locator('#arena').evaluate((arena) => {
+              const viewport = arena.closest('.table-viewport');
+              const compact = matchMedia(
+                '(max-width: 900px), (max-width: 1100px) and (orientation: portrait)',
+              ).matches;
+              return (
+                !compact ||
+                Math.abs(arena.getBoundingClientRect().width - viewport.clientWidth) <= 1.5
+              );
+            });
+            return geometry.arena.width > 0 && geometry.seats.length === count - 1 && fitted;
           })
           .toBe(true);
         const live = await page.evaluate(readRecordTableGeometry, '#arena');
@@ -342,10 +447,8 @@ test('historical settlement and review stay fixed while the live game advances',
     timeout: 30000,
   });
   await page.locator('#review-dialog .close-dialog').first().click();
-  await page.locator('#history-back-button').click();
-  await expect(page).toHaveURL(/#records$/);
   await page.goBack();
-  await expect(page.locator('#history-page')).toBeVisible();
+  await expect(page).toHaveURL(/#records$/);
   await page.locator('#records-back-button').click();
   await expect(page.locator('main.main')).toBeVisible();
   expect((await state(page)).phase).toBe('done');
@@ -426,7 +529,7 @@ test('records and historic cards fit narrow screens and localize without changin
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(
       true,
     );
-    await page.locator('#history-back-button').click();
+    await page.goBack();
   }
   const saved = await records(page);
   for (const locale of ['en', 'zh-TW', 'ja', 'ko', 'es', 'it', 'pt', 'de', 'fr', 'ru', 'zh-CN']) {
@@ -441,7 +544,7 @@ test('records and historic cards fit narrow screens and localize without changin
     await page.locator(`[data-record-hand="${original.id}"]`).click();
     if (!['zh-CN', 'zh-TW', 'ja'].includes(locale))
       expect(await page.locator('#history-page').innerText()).not.toMatch(/\p{Script=Han}/u);
-    await page.locator('#history-back-button').click();
+    await page.goBack();
     expect(await records(page)).toEqual(saved);
   }
   await page.locator('#records-page').screenshot({ path: test.info().outputPath('records.png') });

@@ -4,6 +4,7 @@ const { phoneLayout } = require('./phone-layout.js');
 const { presentCard, showdownPresentation, presentationPatch } = require('./presentation.js');
 const PORTRAIT_CREDITS = require('../../assets/portraits/credits.js');
 const { completeBoardForPractice, rankText } = require('../../shared/engine/poker.js');
+const navigation = require('../../record-navigation.js');
 // Capsule 36 + nav 48 + gap 8 + header 48 + live dock 134 + end gap 8 + border 2.
 const VIEWPORT_CHROME_HEIGHT = 284;
 const PROFILE_AXES = [
@@ -28,8 +29,10 @@ module.exports = {
     compactNav: false,
     resourceMenuOpen: false,
     resourceLabel: '玩法指南',
+    resourcePreviousLabel: '对局记录',
+    resourceRolling: false,
+    resourceReducedMotion: false,
     historyReadOnly: false,
-    historyAttemptLabel: '',
     settingsOpen: false,
     guideOpen: false,
     reviewOpen: false,
@@ -231,6 +234,8 @@ module.exports = {
   onShow() {
     this._hidden = false;
     this._browsingRecords = false;
+    this.updateWindow();
+    this.readResourceMotionPreference();
     this.startResourceRotation();
     if (!this._audio?.length) this.preloadSounds();
     this._controller?.show();
@@ -241,6 +246,8 @@ module.exports = {
   onHide() {
     this._hidden = true;
     clearTimeout(this._resourceTimer);
+    clearTimeout(this._resourceMotionTimer);
+    this.setData({ resourceRolling: false });
     this._motionEpoch = (this._motionEpoch || 0) + 1;
     this.cancelCardMotion();
     const stopped = {};
@@ -265,6 +272,7 @@ module.exports = {
   onUnload() {
     this._destroyed = true;
     clearTimeout(this._resourceTimer);
+    clearTimeout(this._resourceMotionTimer);
     if (typeof getApp === 'function' && getApp().noirController === this._controller)
       delete getApp().noirController;
     this._motionEpoch = (this._motionEpoch || 0) + 1;
@@ -325,7 +333,17 @@ module.exports = {
     });
   },
   updateWindow() {
-    const info = wx.getWindowInfo ? wx.getWindowInfo() : wx.getSystemInfoSync();
+    const measured = wx.getWindowInfo ? wx.getWindowInfo() : wx.getSystemInfoSync();
+    const app = getApp();
+    // Scrolling/keyboard chrome must not refit the table. Live and archive pages
+    // reuse one window budget until an actual width/orientation change.
+    const valid = measured.windowWidth > 0 && measured.windowHeight > VIEWPORT_CHROME_HEIGHT;
+    if (valid && (!app.noirViewport || app.noirViewport.windowWidth !== measured.windowWidth))
+      app.noirViewport = {
+        ...measured,
+        safeArea: measured.safeArea ? { ...measured.safeArea } : undefined,
+      };
+    const info = app.noirViewport || measured;
     const topInset = info.statusBarHeight || 24;
     const bottomInset = Math.max(
       0,
@@ -462,6 +480,9 @@ module.exports = {
     try {
       const audio = this._soundPool?.[names[name]];
       if (!audio) return;
+      // Mini-program audio has no shared mix limiter. Keep the latest UI cue
+      // alone so boosted PCM never sums several independent context peaks.
+      for (const other of this._audio || []) if (other !== audio) other.stop();
       audio.stop();
       audio.seek?.(0);
       audio.play();
@@ -808,18 +829,47 @@ module.exports = {
   },
   startResourceRotation() {
     clearTimeout(this._resourceTimer);
-    if (this._hidden || this._destroyed || this._readOnlyAttempt) return;
+    if (this._hidden || this._destroyed || this._readOnlyAttempt || this.data.resourceReducedMotion)
+      return;
     this._resourceTimer = setTimeout(() => {
-      if (!this.data.resourceMenuOpen && !this.data.homeLocked)
-        this.setData({
-          resourceLabel: this.data.resourceLabel === '玩法指南' ? '对局记录' : '玩法指南',
-        });
+      if (!this.data.resourceMenuOpen && !this.data.homeLocked) this.rollResourceLabel();
       this.startResourceRotation();
     }, 4200);
   },
+  rollResourceLabel() {
+    clearTimeout(this._resourceMotionTimer);
+    this.setData({
+      resourcePreviousLabel: this.data.resourceLabel,
+      resourceLabel: this.data.resourceLabel === '玩法指南' ? '对局记录' : '玩法指南',
+      resourceRolling: true,
+    });
+    this._resourceMotionTimer = setTimeout(() => {
+      this.setData({ resourceRolling: false });
+    }, 400);
+  },
+  readResourceMotionPreference() {
+    if (this._readOnlyAttempt || !wx.createSelectorQuery) return;
+    const query = wx.createSelectorQuery();
+    const node = query.select?.('#resource-menu-button');
+    if (!node?.fields) return;
+    node.fields({ computedStyle: ['animation-duration'] }, (style) => {
+      if (this._hidden || this._destroyed || !style) return;
+      const reduced = parseFloat(style['animation-duration']) === 0;
+      if (reduced === this.data.resourceReducedMotion) return;
+      this.setData({
+        resourceReducedMotion: reduced,
+        resourceRolling: false,
+        resourceLabel: '玩法指南',
+      });
+      clearTimeout(this._resourceMotionTimer);
+      this.startResourceRotation();
+    });
+    query.exec();
+  },
   toggleResourceMenu() {
     this._audioUnlocked = true;
-    this.setData({ resourceMenuOpen: !this.data.resourceMenuOpen });
+    clearTimeout(this._resourceMotionTimer);
+    this.setData({ resourceMenuOpen: !this.data.resourceMenuOpen, resourceRolling: false });
   },
   closeResourceMenu() {
     this.setData({ resourceMenuOpen: false });
@@ -827,15 +877,14 @@ module.exports = {
   openRecords() {
     this.closeResourceMenu();
     this._browsingRecords = true;
-    wx.navigateTo({
-      url: '/pages/records/records',
+    navigation.openRecords({
       fail: () => {
         this._browsingRecords = false;
       },
     });
   },
-  returnFromHistory() {
-    wx.navigateBack({ delta: 1 });
+  returnToGame() {
+    navigation.returnToGame();
   },
   openGuide() {
     this.closeResourceMenu();

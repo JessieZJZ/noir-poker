@@ -1,5 +1,8 @@
 import { currentPots } from '../engine/poker.js';
-import { compactActionAmounts } from '../engine/chip-format.js';
+import { recordResult } from '../engine/game-records.js';
+import { createRecordsNavigation } from './records-navigation.js';
+import { createGuideMenu } from './guide-menu.js';
+export { recordsRoute } from './records-navigation.js';
 import { createReviewInput } from '../review/analysis.js';
 import { formatChips, getLocale, setLocalizedHTML, setLocalizedText } from '../i18n/index.js';
 import { renderCard } from './cards.js';
@@ -32,22 +35,11 @@ export const recordRetryLabel = (attempt) => (attempt ? `重打${attempt}` : '')
 const attemptLabel = recordRetryLabel;
 
 export function recordOutcome(attempt) {
-  if (attempt.status === 'unfinished') return '未完成';
-  if (attempt.status !== 'completed') return '进行中';
-  if (attempt.profit === 0) return '';
-  if (attempt.wonPot && attempt.profit < 0) return '获得部分底池 · 净亏损';
-  if (attempt.wonPot) return '赢';
-  return attempt.profit < 0 ? '输' : '';
-}
-
-export function recordsRoute(hash) {
-  if (hash === '#records') return { page: 'list' };
-  if (!hash.startsWith('#records/')) return { page: 'game' };
-  try {
-    return { page: 'hand', id: decodeURIComponent(hash.slice('#records/'.length)) };
-  } catch {
-    return { page: 'list' };
-  }
+  const result = recordResult(attempt);
+  if (result === 'unfinished') return '未完成';
+  if (result === 'playing') return '进行中';
+  if (result === 'win' && attempt.profit < 0) return '获得部分底池 · 净亏损';
+  return result === 'win' ? '赢' : '输';
 }
 
 function handItem(attempt) {
@@ -82,52 +74,20 @@ export function createGameRecordsView({ records, openReview, onReturnGame }) {
     page = document.querySelector('#records-page'),
     content = document.querySelector('#records-content'),
     title = document.querySelector('#records-title'),
-    menu = document.querySelector('#guide-menu'),
-    trigger = document.querySelector('#rules-button'),
-    error = document.querySelector('#records-storage-error'),
-    motion = matchMedia('(prefers-reduced-motion: reduce)');
+    error = document.querySelector('#records-storage-error');
   const expanded = new Set(),
     visible = new Set();
   let route = { page: 'game' },
     listScroll = 0,
     fingerprint = '',
     archive = null,
-    rotating = null,
-    rotation = 0,
-    hover = false,
-    focus = false,
     historyViewport = null,
     defaultCurrent = null;
 
-  function closeMenu() {
-    menu.hidden = true;
-    trigger.setAttribute('aria-expanded', 'false');
-    updateRotation();
-  }
-  function updateRotation() {
-    clearInterval(rotating);
-    rotating = null;
-    if (hover || focus || !menu.hidden || motion.matches || document.hidden) return;
-    rotating = setInterval(() => {
-      rotation = 1 - rotation;
-      trigger.dataset.label = rotation ? 'records' : 'guide';
-      for (const label of trigger.querySelectorAll('[data-guide-label]'))
-        label.setAttribute(
-          'aria-hidden',
-          String(label.dataset.guideLabel !== (rotation ? 'records' : 'guide')),
-        );
-    }, 5000);
-  }
+  const navigation = createRecordsNavigation({ window, show: showRoute }),
+    guideMenu = createGuideMenu({ onRecords: () => navigate({ page: 'list' }) });
   function navigate(next) {
-    const hash =
-      next.page === 'game'
-        ? ''
-        : next.page === 'list'
-          ? '#records'
-          : '#records/' + encodeURIComponent(next.id);
-    if (location.hash === hash) return;
-    history.pushState({ noirRecords: next }, '', location.pathname + location.search + hash);
-    showRoute(next);
+    navigation.navigate(next);
   }
   function renderList(force = false) {
     const sessions = records.sessions();
@@ -169,7 +129,7 @@ export function createGameRecordsView({ records, openReview, onReturnGame }) {
       formatter = createActivityFormatter(snapshot.players);
     setLocalizedHTML(
       content,
-      `<div id="history-page"><div class="records-history-heading"><button id="history-back-button" class="records-back" data-records-back>‹ 返回对局记录</button>${archive.attempt ? `<span class="record-tag record-retry">${attemptLabel(archive.attempt)}</span>` : ''}<span class="records-history-result">${recordOutcome(archive) ? recordOutcome(archive) + ' · ' : ''}${change(archive.profit)}</span></div><div class="main records-history-grid"><section class="game-column"><div class="records-surface-slot"></div>${historicalPots(snapshot)}</section><aside class="sidebar"><section class="activity-card records-activity"><div class="section-title"><h2>本局动态</h2><span class="subtle-label">FINISHED</span></div><ol class="activity-list" aria-label="本手动态，按时间顺序排列">${snapshot.logs
+      `<div id="history-page"><div class="main records-history-grid"><section class="game-column"><div class="records-surface-slot"></div>${historicalPots(snapshot)}</section><aside class="sidebar"><section class="activity-card records-activity"><div class="section-title"><h2>本局动态</h2><span class="subtle-label">FINISHED</span></div><ol class="activity-list" aria-label="本手动态，按时间顺序排列">${snapshot.logs
         .slice()
         .reverse()
         .map(
@@ -190,18 +150,17 @@ export function createGameRecordsView({ records, openReview, onReturnGame }) {
     const layout = createSettlementLayout(surface.querySelector('.arena'), { observe: false });
     historyViewport = createPlayViewport(surface, {
       layout: layout.update,
-      getSurfaceTop: () =>
-        document.querySelector('.header').getBoundingClientRect().bottom +
-        window.scrollY +
-        parseFloat(getComputedStyle(liveMain).paddingTop),
     });
     historyViewport.update(snapshot, true);
     preparePortraits(content);
   }
   function showRoute(next) {
     if (route.page === 'list' && next.page !== 'list') listScroll = window.scrollY;
+    if (route.page !== next.page || route.id !== next.id)
+      for (const dialog of document.querySelectorAll('dialog[open]'))
+        if (dialog.id !== 'orientation-dialog') dialog.close();
     route = next;
-    closeMenu();
+    guideMenu.close();
     liveMain.hidden = route.page !== 'game';
     page.hidden = route.page === 'game';
     document.body.dataset.recordsPage = route.page;
@@ -216,12 +175,8 @@ export function createGameRecordsView({ records, openReview, onReturnGame }) {
     if (route.page === 'hand') {
       archive = records.getAttempt(route.id);
       if (!archive || archive.status !== 'completed' || !archive.snapshot) {
-        route = { page: 'list' };
-        history.replaceState(
-          { noirRecords: route },
-          '',
-          location.pathname + location.search + '#records',
-        );
+        navigate({ page: 'list' });
+        return;
       }
     }
     if (route.page === 'hand') {
@@ -254,67 +209,6 @@ export function createGameRecordsView({ records, openReview, onReturnGame }) {
     if (route.page === 'list') renderList();
   }
 
-  trigger.addEventListener('click', () => {
-    menu.hidden = !menu.hidden;
-    trigger.setAttribute('aria-expanded', String(!menu.hidden));
-    updateRotation();
-  });
-  trigger.addEventListener('keydown', (event) => {
-    if (event.key !== 'ArrowDown') return;
-    event.preventDefault();
-    menu.hidden = false;
-    trigger.setAttribute('aria-expanded', 'true');
-    menu.querySelector('button').focus();
-    updateRotation();
-  });
-  const wrapper = trigger.closest('.guide-menu');
-  wrapper.addEventListener('pointerenter', () => {
-    hover = true;
-    updateRotation();
-  });
-  wrapper.addEventListener('pointerleave', () => {
-    hover = false;
-    updateRotation();
-  });
-  wrapper.addEventListener('focusin', () => {
-    focus = true;
-    updateRotation();
-  });
-  wrapper.addEventListener('focusout', () =>
-    queueMicrotask(() => {
-      focus = wrapper.contains(document.activeElement);
-      updateRotation();
-    }),
-  );
-  document.addEventListener('click', (event) => {
-    if (!wrapper.contains(event.target)) closeMenu();
-  });
-  menu.addEventListener('keydown', (event) => {
-    const buttons = [...menu.querySelectorAll('button')],
-      index = buttons.indexOf(document.activeElement);
-    if (event.key === 'Escape') {
-      event.preventDefault();
-      closeMenu();
-      trigger.focus();
-    }
-    if (['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) {
-      event.preventDefault();
-      buttons[
-        event.key === 'Home'
-          ? 0
-          : event.key === 'End'
-            ? buttons.length - 1
-            : (index + (event.key === 'ArrowDown' ? 1 : -1) + buttons.length) % buttons.length
-      ].focus();
-    }
-  });
-  document.querySelector('#guide-menu-item').addEventListener('click', () => {
-    closeMenu();
-    document.querySelector('#rules-dialog').showModal();
-  });
-  document
-    .querySelector('#records-menu-item')
-    .addEventListener('click', () => navigate({ page: 'list' }));
   document
     .querySelector('#records-back-button')
     .addEventListener('click', () => navigate({ page: 'game' }));
@@ -328,7 +222,6 @@ export function createGameRecordsView({ records, openReview, onReturnGame }) {
       button.setAttribute('aria-expanded', String(expanded.has(id)));
       document.getElementById('record-session-' + id).hidden = !expanded.has(id);
     } else if (button.dataset.recordHand) navigate({ page: 'hand', id: button.dataset.recordHand });
-    else if (button.hasAttribute('data-records-back')) navigate({ page: 'list' });
     else if (button.id === 'history-review-button')
       openReview(createReviewInput(archive.snapshot), 'history:' + archive.id);
     else if (button.hasAttribute('data-history-pots'))
@@ -343,27 +236,22 @@ export function createGameRecordsView({ records, openReview, onReturnGame }) {
       content.querySelector(`[data-history-peek="${id}"]`).focus({ preventScroll: true });
     }
   });
-  window.addEventListener('popstate', () => showRoute(recordsRoute(location.hash)));
-  window.addEventListener('hashchange', () => {
-    const next = recordsRoute(location.hash);
-    if (JSON.stringify(next) !== JSON.stringify(route)) showRoute(next);
-  });
   document.addEventListener('noir:locale-changed', () => {
     fingerprint = '';
     if (route.page !== 'game') showRoute(route);
   });
-  document.addEventListener('visibilitychange', updateRotation);
-  motion.addEventListener('change', updateRotation);
   window.addEventListener('pagehide', () => {
-    clearInterval(rotating);
+    guideMenu.suspend();
     historyViewport?.destroy();
     historyViewport = null;
   });
-  updateRotation();
+  window.addEventListener('pageshow', (event) => {
+    if (event.persisted && route.page === 'hand') showRoute(route);
+  });
   return {
     refresh,
     route: () => ({ ...route }),
-    initialize: () => showRoute(recordsRoute(location.hash)),
+    initialize: () => navigation.initialize(),
     show: () => navigate({ page: 'list' }),
   };
 }

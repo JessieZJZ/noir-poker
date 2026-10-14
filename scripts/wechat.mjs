@@ -102,7 +102,7 @@ async function portraitAssets(output) {
   await cp(path.join(root, 'public/portraits/CREDITS.md'), path.join(directory, 'CREDITS.md'));
 }
 
-function soundWave(kind) {
+export function soundWave(kind) {
   const sampleRate = SOUND_SAMPLE_RATE,
     samples = soundSamples(kind),
     length = samples.length;

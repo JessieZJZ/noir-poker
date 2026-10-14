@@ -114,6 +114,34 @@ test('installed layout checks reject cramped profiles and tablet type reduced by
   );
 });
 
+test('larger hero rank spacing follows the measured slot and rejects oversized or overlapping badges', () => {
+  const viewport = { width: 390, height: 844 };
+  const presentation = {
+    backs: [0.5],
+    heroGap: 34,
+    heroInset: 8,
+    heroFont: 22,
+    heroNameFont: 22,
+    actions: [{ font: 19, margin: 4 }],
+    heroRankSpace: { height: 30, tag: { height: 28, bottom: 29, identityGap: 3 } },
+  };
+  assert.doesNotThrow(() => assertSeatPresentation(presentation, viewport));
+  for (const invalid of [
+    { heroGap: 38.01 },
+    { heroGap: 29.99 },
+    { heroRankSpace: { height: 0, tag: null } },
+    { heroRankSpace: { height: 37, tag: null }, heroGap: 41 },
+    { heroRankSpace: { height: 80, tag: null }, heroGap: 84 },
+    { heroRankSpace: { height: 30, tag: { height: 31, bottom: 30, identityGap: 1 } } },
+    { heroRankSpace: { height: 30, tag: { height: 28, bottom: 31, identityGap: 1 } } },
+    { heroRankSpace: { height: 30, tag: { height: 28, bottom: 29, identityGap: -0.01 } } },
+  ])
+    assert.throws(() => assertSeatPresentation({ ...presentation, ...invalid }, viewport));
+  assert.doesNotThrow(() =>
+    assertSeatPresentation({ ...presentation, heroRankSpace: { height: 30, tag: null } }, viewport),
+  );
+});
+
 test('caption checks reject clipped words and chip digits at all four edges', async () => {
   const { assertReadableCaptions } = await import('../native/layout.mjs');
   const viewport = { left: 0, right: 360, top: 100, bottom: 700 };

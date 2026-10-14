@@ -90,6 +90,23 @@ export function readTableLayout() {
       }),
     },
     presentation: {
+      heroRankSpace: (() => {
+        const slot = document.querySelector('.hero-rank-slot');
+        const tag = document.querySelector('#hero-hand-rank');
+        const slotBox = slot.getBoundingClientRect();
+        const tagBox = tag.getBoundingClientRect();
+        return {
+          height: slot.offsetHeight,
+          tag:
+            tag.hidden || !tagBox.height
+              ? null
+              : {
+                  height: tagBox.height / scale,
+                  identityGap: (identity.top - tagBox.bottom) / scale,
+                  bottom: (tagBox.bottom - slotBox.top) / scale,
+                },
+        };
+      })(),
       heroGap: (identity.top - cards.bottom) / scale,
       heroInset: (rect('#arena').bottom - identity.bottom) / scale,
       heroFont: parseFloat(getComputedStyle(document.querySelector('.hero-identity')).fontSize),
@@ -261,10 +278,30 @@ export function assertSeatPresentation(presentation, viewport, largeTablet = fal
       'Opponent backs must remain half tucked during the deal and subsequent renders',
     );
   if (viewport.width > 1100 || viewport.height <= viewport.width) return;
-  assert.ok(
-    presentation.heroGap >= 18 && presentation.heroGap <= (largeTablet ? 39 : 28),
-    'Hero identity must stay close to the cards with space reserved for the hand rank',
-  );
+  if (presentation.heroRankSpace) {
+    const { height, tag } = presentation.heroRankSpace;
+    assert.ok(
+      Number.isFinite(height) && height >= 18 && height <= (viewport.width > 600 ? 42 : 36),
+      'Hero rank slot must reserve a bounded readable line',
+    );
+    assert.ok(
+      presentation.heroGap >= height && presentation.heroGap <= height + 8,
+      'Hero identity must follow its measured rank slot without a distant empty strip',
+    );
+    if (tag)
+      assert.ok(
+        tag.height > 0 &&
+          tag.height <= height + 0.5 &&
+          tag.bottom <= height + 0.5 &&
+          tag.identityGap >= 0,
+        'Hero rank must stay inside its reserved slot and clear the identity',
+      );
+  } else {
+    assert.ok(
+      presentation.heroGap >= 18 && presentation.heroGap <= (largeTablet ? 39 : 28),
+      'Hero identity must stay close to the cards with space reserved for the hand rank',
+    );
+  }
   assert.ok(presentation.heroInset >= 0, 'Hero identity must stay inside the visible arena');
   assert.ok(
     presentation.heroFont >= 15 &&

@@ -6,15 +6,7 @@
   style="padding-top: {{topInset + 36}}px; padding-bottom: {{bottomInset}}px; {{homeLocked ? 'top: ' + homeOffset + 'px;' : ''}}"
 >
   <view class="nav {{compactNav ? 'nav-compact' : ''}}" style="top: {{topInset + 36}}px;">
-    <button
-      wx:if="{{historyReadOnly}}"
-      id="history-back"
-      class="history-back"
-      bindtap="returnFromHistory"
-    >
-      ‹ 返回
-    </button>
-    <view wx:else class="brand"
+    <view class="brand"
       ><image
         class="app-icon"
         src="/assets/app-icon.png"
@@ -22,11 +14,14 @@
         aria-hidden="true"
       /><text>NOIR</text><text wx:if="{{!compactNav}}" class="brand-sub">POKER</text></view
     >
-    <view wx:if="{{historyReadOnly}}" class="history-nav-title"
-      ><text wx:if="{{historyAttemptLabel}}" class="history-replay-tag"
-        >{{historyAttemptLabel}}</text
-      ></view
+    <button
+      wx:if="{{historyReadOnly}}"
+      id="history-return-game"
+      class="history-return-game"
+      bindtap="returnToGame"
     >
+      返回游戏
+    </button>
     <view wx:else class="nav-actions"
       ><button hover-class="none" class="icon-button" aria-label="设置" bindtap="openSettings">
         <view class="gear-icon" /></button
@@ -35,8 +30,13 @@
         class="guide-button"
         id="resource-menu-button"
         bindtap="toggleResourceMenu"
+        aria-label="玩法指南和对局记录"
       >
-        {{resourceLabel}} ▾
+        <view class="resource-label-window {{resourceRolling ? 'is-rolling' : ''}}">
+          <text class="resource-label-previous">{{resourcePreviousLabel}}</text>
+          <text class="resource-label-current">{{resourceLabel}}</text>
+          <text class="resource-label-static">玩法指南</text> </view
+        ><text class="resource-chevron">▾</text>
       </button>
       <view wx:if="{{resourceMenuOpen}}" class="resource-menu">
         <button id="resource-guide" bindtap="openGuide">玩法指南</button>
@@ -45,8 +45,8 @@
     >
   </view>
   <view
-    class="game-shell {{showdown.length ? 'has-showdown' : ''}}"
-    style="height: {{tableHeight + 50 + (compactActions ? 58 : 134)}}px;"
+    class="game-shell {{showdown.length ? 'has-showdown' : ''}} {{historyReadOnly ? 'history-shell' : ''}}"
+    style="height: {{tableHeight + 50 + 134}}px;"
   >
     <view class="game-header">
       <view class="hand-label"
@@ -114,7 +114,7 @@
             class="seat-body"
             style="width: {{profileWidth}}px; height: {{profileHeight}}px;"
             ><view class="seat-name"
-              ><text>{{item.name}}</text
+              ><text class="seat-name-label">{{item.name}}</text
               ><text
                 class="position {{item.position === 'SB' ? 'position-sb' : item.position === 'BB' ? 'position-bb' : ''}}"
                 >{{item.position}}</text
@@ -214,7 +214,13 @@
             bindtap="finishHand"
           >
             立刻发完</button
-          ><button hover-class="none" class="primary" bindtap="nextHand">下一手</button
+          ><button
+            wx:if="{{!historyReadOnly}}"
+            hover-class="none"
+            class="primary"
+            bindtap="nextHand"
+          >
+            下一手</button
           ><button
             hover-class="none"
             wx:if="{{canRetry && !historyReadOnly}}"
