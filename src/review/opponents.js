@@ -102,13 +102,23 @@ export function explainOpponent(record, identities = []) {
   switch (t.reason) {
     case 'outside-range':
     case 'insufficient-equity':
-      logic = draw.outs
-        ? `继续要补 ${n(cost)}；${drawText}。${c.opponents > 1 ? '还有多位对手留在底池，补中也可能遇到更大的成牌。' : '若没补中，当前牌力难以接住后续下注。'}因此${name}放弃这次追牌，保住剩下的 ${n(v.stack)}。`
-        : !v.street
-          ? c.tier >= 2
-            ? `继续要补 ${n(cost)}，${name}这次防守较紧，放弃用${hand}接下这条加注线，保住剩下的 ${n(v.stack)}。`
-            : `${name}拿${hand}继续要补 ${n(cost)}；${v.hole[0].rank === v.hole[1].rank ? '小对子没中暗三条时，遇到高张牌面和持续下注不容易继续' : '击中一对后仍可能被更大的对子或更好踢脚压住'}，因此选择退出底池。`
-          : `继续要补 ${n(cost)}，${name}没有用${hand}接住这笔下注。${c.handClass === 'high' ? '当前没有对子，也没有直接顺子或同花听牌托底，因此放弃继续投入。' : '当前成牌仍可能遇到更大牌，这次选择收紧防守，保住剩余筹码。'}`;
+      if (
+        draw.outs &&
+        (cost >= v.stack || (c.opponents === 1 && v.opponents?.every((p) => p.allin)))
+      ) {
+        const risk =
+          cost >= v.stack
+            ? '这笔跟注会把剩余筹码全部投入，当前牌力和补牌机会不足以承担这次风险。'
+            : '对手已经全下，不能再施压；这次退出是因为当前牌力和追牌机会不足以支持这笔跟注。';
+        logic = `${name}放弃用${drawLabel(draw)}追这笔下注，避免再投入 ${n(cost)}，保住剩下的 ${n(v.stack)}。${risk}`;
+      } else
+        logic = draw.outs
+          ? `继续要补 ${n(cost)}；${drawText}。${c.opponents > 1 ? '还有多位对手留在底池，补中也可能遇到更大的成牌。' : '若没补中，当前牌力难以接住后续下注。'}因此${name}放弃这次追牌，保住剩下的 ${n(v.stack)}。`
+          : !v.street
+            ? c.tier >= 2
+              ? `继续要补 ${n(cost)}，${name}这次防守较紧，放弃用${hand}接下这条加注线，保住剩下的 ${n(v.stack)}。`
+              : `${name}拿${hand}继续要补 ${n(cost)}；${v.hole[0].rank === v.hole[1].rank ? '小对子没中暗三条时，遇到高张牌面和持续下注不容易继续' : '击中一对后仍可能被更大的对子或更好踢脚压住'}，因此选择退出底池。`
+            : `继续要补 ${n(cost)}，${name}没有用${hand}接住这笔下注。${c.handClass === 'high' ? '当前没有对子，也没有直接顺子或同花听牌托底，因此放弃继续投入。' : '当前成牌仍可能遇到更大牌，这次选择收紧防守，保住剩余筹码。'}`;
       break;
     case 'stack-pressure':
       logic = `补 ${n(cost)} 会用掉${name}剩余 ${n(v.stack)} 的 ${pct(cost / Math.max(1, v.stack))}，${name}选择保住后手，没有接这笔大额投入。`;
@@ -127,9 +137,26 @@ export function explainOpponent(record, identities = []) {
       logic = `这是小尺度 3-bet 防守：只需再补 ${n(cost)}，跟完还留 ${n(v.stack - cost)}，因此${name}用${hand}继续看翻牌，争取击中对子或更强的牌。加注更大时，这手牌需要付出更多筹码，继续的理由就会变弱。`;
       break;
     case 'price-continue':
-      logic = draw.outs
-        ? `${name}跟注 ${n(cost)} 的目的不是只靠${hand}摊牌。${drawText}。${allinCall ? '跟完就全下，只能等发牌，不能再靠后街诈唬拿池。' : '跟完手里还留 ' + n(v.stack - cost) + '，下一街是否继续要看补牌和新的下注。'}`
-        : `${v.street === 0 && v.hole[0].rank === v.hole[1].rank ? pocketComparison(v, name) : name + '认为当前的' + hand + '仍有摊牌机会'}，所以选择补 ${n(cost)}，继续争夺 ${n(v.contestable)} 的底池。`;
+      if (
+        t.allIn &&
+        (allinCall || v.opponents?.some((p) => p.id === t.allIn.aggressorId && p.allin))
+      ) {
+        const continuation = [
+          draw.outs && v.features?.ownMade ? `当前牌力是${hand}，另外还有${drawLabel(draw)}。` : '',
+          allinCall
+            ? '跟完就已全下，之后只能等发牌或摊牌，不能再靠下注赶走对手。'
+            : '全下者已不能继续下注；只有其他尚有筹码的玩家也跟入时，后面才可能再争取边池。',
+        ]
+          .filter(Boolean)
+          .join('');
+        logic =
+          draw.outs && !v.features?.ownMade
+            ? `${name}接下这笔下注，需要再补 ${n(cost)}，可以争夺 ${n(t.allIn.contestable)} 的底池；这次底池赔率支持继续追${drawLabel(draw)}。${continuation}`
+            : `${name}接下这笔下注，需要再补 ${n(cost)}，可以争夺 ${n(t.allIn.contestable)} 的底池；这次底池赔率支持用${hand}的摊牌价值继续。${continuation}`;
+      } else
+        logic = draw.outs
+          ? `${name}跟注 ${n(cost)} 的目的不是只靠${hand}摊牌。${drawText}。${allinCall ? '跟完就全下，只能等发牌，不能再靠后街诈唬拿池。' : '跟完手里还留 ' + n(v.stack - cost) + '，下一街是否继续要看补牌和新的下注。'}`
+          : `${v.street === 0 && v.hole[0].rank === v.hole[1].rank ? pocketComparison(v, name) : name + '认为当前的' + hand + '仍有摊牌机会'}，所以选择补 ${n(cost)}，继续争夺 ${n(v.contestable)} 的底池。`;
       break;
     case 'value-raise':
       if (!v.street) {
@@ -172,7 +199,7 @@ export function explainOpponent(record, identities = []) {
       logic = `这是 float：${name}在 ${v.position} 有位置，先补 ${n(cost)}，等下一街观察对手是否停止下注；牌面 ${f.boardText} 较干燥，${name}保留在对手过牌后下注拿池的机会。`;
       break;
     case 'pot-control':
-      logic = `这是${hand}控池：底池已经有 ${n(v.pot)}，${name}过牌不再加大投入，保留用中等成牌摊牌的机会。`;
+      logic = `这是${hand}控池：底池已经有 ${n(v.pot)}，${name}过牌不再加大投入，保留当前牌力的摊牌机会。`;
       break;
     case 'thin-value':
       logic = `这是河牌薄价值下注：${name}用${hand}投入 ${n(f.investment)}，想从更弱的一对收取跟注；河牌 ${f.lastCardText} 已发出，没有再买牌的价值。`;
@@ -196,7 +223,9 @@ export function explainOpponent(record, identities = []) {
       logic =
         t.deception?.kind === 'semi-bluff'
           ? `这是 donk 半诈唬：前一街进攻者还没行动，${name}先领打 ${n(f.investment)}。${drawText}。既想直接拿池，也保留被跟住后的补牌机会。`
-          : t.deception?.kind === 'value' && (c.made.score[0] >= 2 || c.handClass === 'overpair')
+          : t.deception?.kind === 'value' &&
+              c.made.score[0] >= 1 &&
+              !['board', 'board-pair'].includes(c.handClass)
             ? `这是 donk 价值下注：前一街进攻者还没行动，${name}用${hand}先领打 ${n(f.investment)}，让弱成牌和听牌付费，避免对手过牌后免费见下一张。`
             : `这是 donk：前一街进攻者还没行动，${name}就用${hand}领打 ${n(f.investment)}；当前没有强成牌托底，主要靠对手弃牌拿池。`;
       break;

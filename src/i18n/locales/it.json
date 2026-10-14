@@ -1883,5 +1883,15 @@
   "你拿 {0}，{1}。{2}": "Hai {0}; {1}. {2}",
   "这时，{0}选择{1}，是在回应已经被其他玩家接住的再加注。": "In quel momento, risposta ({0}): {1}, a un controrilancio già chiamato da altri giocatori.",
   "这笔再加注已经被接住；你若再补 {0}，会用这组牌进入多人加注底池。": "Questo controrilancio ha già ricevuto call; se paghi altre {0} chip, entrerai con queste carte in un piatto controrilanciato multiway.",
-  "随后，{0}又补 {1} 跟注。": "Poi {0} aggiunge {1} e chiama. "
+  "随后，{0}又补 {1} 跟注。": "Poi {0} aggiunge {1} e chiama. ",
+  "{0}的下注线是{1}；{2}这次面对的是连续施压，如果选择跟注，需要再补 {3}。": "La linea di puntate del giocatore ({0}) è {1}. Il giocatore ({2}) resta sotto pressione; scegliere il call richiede di aggiungere {3}.",
+  "{0}接下这笔下注，需要再补 {1}，可以争夺 {2} 的底池；这次底池赔率支持用{3}的摊牌价值继续。{4}": "Per il giocatore ({0}), chiamare questa puntata richiede altri {1} e permette di contendersi un piatto di {2}. Le pot odds sostengono la scelta di continuare con il valore di {3} allo showdown. {4}",
+  "{0}接下这笔下注，需要再补 {1}，可以争夺 {2} 的底池；这次底池赔率支持继续追{3}。{4}": "Per il giocatore ({0}), chiamare questa puntata richiede altri {1} e permette di contendersi un piatto di {2}. Le pot odds sostengono la scelta di continuare a cercare {3}. {4}",
+  "全下者已不能继续下注；只有其他尚有筹码的玩家也跟入时，后面才可能再争取边池。": "Il giocatore all-in non può più puntare. Un side pot potrà essere conteso in seguito solo se chiamano anche altri giocatori a cui restano chip. ",
+  "跟完就已全下，之后只能等发牌或摊牌，不能再靠下注赶走对手。": "Questo call mette nel piatto tutte le chip rimaste. Poi resta solo da aspettare le carte o lo showdown; non è più possibile far passare gli avversari con altre puntate. ",
+  "{0}放弃用{1}追这笔下注，避免再投入 {2}，保住剩下的 {3}。{4}": "Il giocatore ({0}) ha rinunciato a inseguire ({1}) contro questa puntata, evitando di investire altri {2} e conservando le {3} chip rimaste. {4}",
+  "对手已经全下，不能再施压；这次退出是因为当前牌力和追牌机会不足以支持这笔跟注。": "L’avversario è già all-in e non può fare pressione con altre puntate. Il fold dipende dal fatto che la mano attuale e le possibilità di completare il progetto non giustificano questo call. ",
+  "这笔跟注会把剩余筹码全部投入，当前牌力和补牌机会不足以承担这次风险。": "Questo call metterebbe nel piatto tutte le chip rimaste. La mano attuale e le possibilità di migliorarla non giustificano questo rischio. ",
+  "这是{0}控池：底池已经有 {1}，{2}过牌不再加大投入，保留当前牌力的摊牌机会。": "È controllo del piatto con ({0}): nel piatto ci sono già {1}. Il giocatore ({2}) ha fatto check senza investire di più, conservando la possibilità di arrivare allo showdown con la mano attuale.",
+  "当前牌力是{0}，另外还有{1}。": "La mano attuale è ({0}), con anche ({1}). "
 }

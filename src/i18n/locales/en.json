@@ -1887,5 +1887,15 @@
   "你拿 {0}，{1}。{2}": "You hold {0}; {1}. {2}",
   "这时，{0}选择{1}，是在回应已经被其他玩家接住的再加注。": "{0} chose {1} in response to a reraise that other players had already called. ",
   "这笔再加注已经被接住；你若再补 {0}，会用这组牌进入多人加注底池。": "This reraise has already been called. Calling another {0} would take this hand into a multiway raised pot. ",
-  "随后，{0}又补 {1} 跟注。": "Then {0} called another {1}. "
+  "随后，{0}又补 {1} 跟注。": "Then {0} called another {1}. ",
+  "{0}的下注线是{1}；{2}这次面对的是连续施压，如果选择跟注，需要再补 {3}。": "{0}’s betting line is {1}. This puts {2} under continued pressure; choosing to call would require another {3}.",
+  "{0}接下这笔下注，需要再补 {1}，可以争夺 {2} 的底池；这次底池赔率支持用{3}的摊牌价值继续。{4}": "Calling this bet costs {0} another {1}, with a pot of {2} to contest. The pot odds support continuing with {3} for showdown value. {4}",
+  "{0}接下这笔下注，需要再补 {1}，可以争夺 {2} 的底池；这次底池赔率支持继续追{3}。{4}": "Calling this bet costs {0} another {1}, with a pot of {2} to contest. The pot odds support continuing to chase {3}. {4}",
+  "全下者已不能继续下注；只有其他尚有筹码的玩家也跟入时，后面才可能再争取边池。": "The all-in player cannot bet again. A side pot can only become an option if other players with chips also call. ",
+  "跟完就已全下，之后只能等发牌或摊牌，不能再靠下注赶走对手。": "This call puts all the remaining chips in. Afterward, only the remaining cards or showdown decide the outcome; further betting cannot make opponents fold. ",
+  "{0}放弃用{1}追这笔下注，避免再投入 {2}，保住剩下的 {3}。{4}": "{0} stopped chasing {1} against this bet, avoiding another investment of {2} and keeping the remaining {3} chips. {4}",
+  "对手已经全下，不能再施压；这次退出是因为当前牌力和追牌机会不足以支持这笔跟注。": "The opponent is already all-in and cannot apply further betting pressure. This fold means the current hand and draw chances do not support paying for this call. ",
+  "这笔跟注会把剩余筹码全部投入，当前牌力和补牌机会不足以承担这次风险。": "This call would put all the remaining chips in. The current hand and improvement chances do not support taking that risk. ",
+  "这是{0}控池：底池已经有 {1}，{2}过牌不再加大投入，保留当前牌力的摊牌机会。": "This is pot control with {0}: the pot already holds {1}. {2} checked to avoid investing more and preserve the current hand’s showdown chance.",
+  "当前牌力是{0}，另外还有{1}。": "The current hand is {0}, with {1} as well. "
 }

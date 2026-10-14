@@ -887,10 +887,17 @@
   },
   "causalReviewCopy": {
     "date": "2026-10-14",
-    "messageCount": 219,
-    "sourceInventoryCount": 1449,
+    "messageCount": 229,
+    "sourceInventoryCount": 1457,
     "method": "Agent-authored translations in the nine non-Chinese locales, reviewed against the current Chinese source and concrete poker terminology. Traditional Chinese was converted with OpenCC and corrected for poker usage. Existing key order and earlier catalog entries are preserved.",
     "validation": "Current-source coverage and exact placeholder inventories checked in all ten translated locales. The review-i18n regression exercises all eleven supported locales with actual public responses, callers, pot odds, general hand examples and value/slowplay fixtures. English, Japanese, Korean and Traditional Chinese received a read-through of 118 generated paragraphs each; the other locale owners reviewed their own generated outputs.",
-    "linguisticReview": "Independent native-speaker poker review pending; coverage and placeholder checks are not evidence of complete linguistic quality."
+    "linguisticReview": "Independent native-speaker poker review pending; coverage and placeholder checks are not evidence of complete linguistic quality.",
+    "messageCountScope": "219 review source messages at the initial freeze, one conditional-call replacement, four all-in continuation messages, three terminal draw-fold messages, one current-hand pot-control replacement, and one made-hand-plus-draw fact. The current source inventory contains 1457 messages.",
+    "conditionalCallClarification": "The replacement is manually translated in all ten non-Simplified-Chinese locales. It states the additional call amount only if the player chooses to call; actor labels avoid second-person conjugation and case errors. Placeholder and actual-text checks preserve both actor identities and the amount.",
+    "allInContinuationClarification": "Four manually translated messages distinguish showdown-value calls from draw calls. They preserve the actual call amount and contestable pot, and distinguish a caller who is also all-in from a caller with chips left and possible later side-pot action. All ten translated locales are checked with generated preflop AA and postflop draw responses.",
+    "terminalDrawFoldClarification": "Three manually translated messages distinguish a call that commits the actor from a heads-up opponent who is already all-in. They explain a fold without inventing future betting pressure. The made-hand-plus-draw call uses the existing made-hand wording, preserving its current showdown value.",
+    "potControlClarification": "The pot-control replacement refers to the current hand and showdown chance without assuming it is a medium-strength made hand. All actor slots use grammar that also works with a second-person identity label.",
+    "madeHandRedrawClarification": "The additional two-slot fact is manually translated in all ten non-Simplified-Chinese locales. It states both the current made hand and the remaining draw instead of describing a made-hand call only as chasing a draw.",
+    "terminalActualTextAudit": "All eleven locales checked against actual executed set-plus-flush-draw all-in calls and flush-draw folds, an actual heads-up all-in fold with chips remaining, and an actual high-card pot-control decision. The redraw fact uses a fragment long enough for the existing localizer; Japanese avoids a Chinese literal collision, and German/Russian actor labels avoid second-person case errors. Current inventory: 1457, translated locale missing keys: 0, placeholder mismatches: 0. This is a focused runtime text audit, not native-speaker certification or a broad regression run."
   }
 }

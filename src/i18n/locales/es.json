@@ -1883,5 +1883,15 @@
   "你拿 {0}，{1}。{2}": "Tienes {0}; {1}. {2}",
   "这时，{0}选择{1}，是在回应已经被其他玩家接住的再加注。": "En ese momento, respuesta ({0}): {1}, ante una resubida que otros jugadores ya han pagado.",
   "这笔再加注已经被接住；你若再补 {0}，会用这组牌进入多人加注底池。": "Esta resubida ya ha recibido calls; si pagas {0} más, entrarás con estas cartas en un bote resubido de varios jugadores.",
-  "随后，{0}又补 {1} 跟注。": "Después, {0} añade {1} y paga. "
+  "随后，{0}又补 {1} 跟注。": "Después, {0} añade {1} y paga. ",
+  "{0}的下注线是{1}；{2}这次面对的是连续施压，如果选择跟注，需要再补 {3}。": "La secuencia de apuestas del jugador ({0}) es {1}. Sigue la presión sobre el jugador ({2}); si elige pagar, debe añadir {3}.",
+  "{0}接下这笔下注，需要再补 {1}，可以争夺 {2} 的底池；这次底池赔率支持用{3}的摊牌价值继续。{4}": "Para el jugador ({0}), pagar esta apuesta exige añadir {1} y permite disputar un bote de {2}. Las pot odds apoyan continuar por el valor de {3} al showdown. {4}",
+  "{0}接下这笔下注，需要再补 {1}，可以争夺 {2} 的底池；这次底池赔率支持继续追{3}。{4}": "Para el jugador ({0}), pagar esta apuesta exige añadir {1} y permite disputar un bote de {2}. Las pot odds apoyan seguir buscando completar {3}. {4}",
+  "全下者已不能继续下注；只有其他尚有筹码的玩家也跟入时，后面才可能再争取边池。": "El jugador que está all-in ya no puede apostar. Solo podrá haber una disputa posterior por un bote lateral si también pagan otros jugadores a los que les quedan fichas. ",
+  "跟完就已全下，之后只能等发牌或摊牌，不能再靠下注赶走对手。": "Este call pone todas las fichas restantes en el bote. Después solo queda esperar las cartas o el showdown; ya no se puede apostar para hacer que los rivales abandonen. ",
+  "{0}放弃用{1}追这笔下注，避免再投入 {2}，保住剩下的 {3}。{4}": "El jugador ({0}) dejó de buscar completar ({1}) frente a esta apuesta, evitó añadir {2} y conservó las {3} fichas restantes. {4}",
+  "对手已经全下，不能再施压；这次退出是因为当前牌力和追牌机会不足以支持这笔跟注。": "El rival ya está all-in y no puede presionar con más apuestas. El fold se debe a que la mano actual y las posibilidades de completar el proyecto no justifican pagar este call. ",
+  "这笔跟注会把剩余筹码全部投入，当前牌力和补牌机会不足以承担这次风险。": "Este call pondría todas las fichas restantes en el bote. La mano actual y sus posibilidades de mejorar no justifican asumir ese riesgo. ",
+  "这是{0}控池：底池已经有 {1}，{2}过牌不再加大投入，保留当前牌力的摊牌机会。": "Es control del bote con ({0}): el bote ya contiene {1}. El jugador ({2}) pasó para no invertir más y conservar la posibilidad de llegar al showdown con la mano actual.",
+  "当前牌力是{0}，另外还有{1}。": "La mano actual es ({0}), y también tiene ({1}). "
 }

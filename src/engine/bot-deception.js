@@ -18,6 +18,9 @@ export function isDonkLead(view) {
   const priorRaise = view.history
     .filter((a) => a.street === view.street - 1 && a.action === 'raise')
     .at(-1);
+  const priorAggressor = (view.opponents || []).find((p) => p.id === priorRaise?.id);
+  // Checks by other seats do not replace the prior aggressor. A folded or
+  // all-in aggressor cannot be induced to act by a lead this street.
   return (
     view.street > 0 &&
     view.street < 3 &&
@@ -25,8 +28,14 @@ export function isDonkLead(view) {
     view.legal.canCheck &&
     !!priorRaise &&
     priorRaise.id !== view.id &&
-    (view.opponents || []).some((p) => p.id === priorRaise.id) &&
-    !view.history.some((a) => a.street === view.street)
+    !!priorAggressor &&
+    !priorAggressor.allin &&
+    priorAggressor.stack > 0 &&
+    !view.history.some(
+      (a) =>
+        a.street === view.street &&
+        (a.id === priorRaise.id || a.id === view.id || a.action === 'raise'),
+    )
   );
 }
 
@@ -52,6 +61,13 @@ export function deceptiveAction(view, profile, roll) {
     !view.playsBoard && (!!f.strongMade || (f.overpair && ranks[0] >= 12 && view.equity >= 0.72));
   const price = legal.callAmount / Math.max(1, view.contestable);
   const safeCall = legal.callAmount < effective * 0.08 && legal.callAmount < view.stack;
+  // Another deep seat does not make the actual opener deep enough to trap.
+  const facingEffective = lastRaise
+    ? Math.min(
+        view.stack - legal.callAmount,
+        opponents.find((p) => p.id === lastRaise.id)?.stack ?? 0,
+      )
+    : 0;
   const headsUp = view.rivals === 1;
   const conditions = { effective, priorAggressor: priorRaise?.id ?? null };
   const select = (reason, threshold, action, kind, sizing = null, extra = {}) => {
@@ -71,6 +87,7 @@ export function deceptiveAction(view, profile, roll) {
     view.street === 0 &&
     pair &&
     ranks[0] >= 13 &&
+    legal.canRaise &&
     legal.toCall > 0 &&
     raises.length === 1 &&
     lastRaise.id !== view.id &&
@@ -78,7 +95,11 @@ export function deceptiveAction(view, profile, roll) {
     view.rivals <= 2 &&
     view.currentBet <= 200 &&
     safeCall &&
-    effective >= legal.callAmount * 15;
+    facingEffective >= legal.callAmount * 15;
+  const riverCanInduce =
+    view.street < 3 ||
+    (!view.inPosition &&
+      opponents.every((p) => !view.history.some((a) => a.street === view.street && a.id === p.id)));
   const postflopTrap =
     view.street > 0 &&
     view.street <= 3 &&
@@ -86,7 +107,10 @@ export function deceptiveAction(view, profile, roll) {
     strongMade &&
     !f.wet &&
     effective >= view.pot * 2 &&
-    (legal.canCheck || (view.street < 3 && raises.length === 1 && safeCall && price <= 0.25));
+    // A last-to-act river check cannot induce a later bet. A forced call is
+    // not a deliberate decision to conceal value instead of raising.
+    ((legal.canCheck && riverCanInduce) ||
+      (legal.canRaise && view.street < 3 && raises.length === 1 && safeCall && price <= 0.25));
   if (preflopTrap || postflopTrap) {
     const selected = select(
       'strong-trap',

@@ -12,12 +12,16 @@ export function botThinkingTime(decision, random = Math.random) {
     streetRaises = raises.filter((a) => a.street === v.street),
     lastRaiser = raises.at(-1)?.id;
   const roll = () => clamp(random());
+  const priceBuffer = 0.02 + (v.allIn?.pendingBuffer || 0);
+  const guaranteedRiver = v.allIn?.unbeatableRiver && v.allIn.guaranteedReturn >= v.allIn.cost;
   const priceCloseness =
     legal.toCall > 0 &&
+    !guaranteedRiver &&
     !(v.street === 0 && (t.affordableRangePassed ?? (t.cheapEntry && t.admitted)))
-      ? clamp(1 - Math.abs(t.equity + t.callTolerance - t.odds - 0.02) / 0.16)
+      ? clamp(1 - Math.abs(t.equity + t.callTolerance - t.odds - priceBuffer) / 0.16)
       : 0;
-  const rangeCloseness = v.street === 0 ? clamp(1 - Math.abs(t.percentile - t.range) / 0.15) : 0;
+  const rangeCloseness =
+    v.street === 0 && !v.allIn ? clamp(1 - Math.abs(t.percentile - t.range) / 0.15) : 0;
   const closeness = Math.max(priceCloseness, rangeCloseness);
   const suits = [0, 1, 2, 3].map((s) => v.board.filter((c) => c.suit === s).length),
     paired = new Set(v.board.map((c) => c.rank)).size < v.board.length;
@@ -46,7 +50,9 @@ export function botThinkingTime(decision, random = Math.random) {
       ? !v.inPosition
       : ['SB', 'BB', 'UTG', 'UTG+1', 'MP', 'LJ'].includes(v.position);
   const position = clamp((outOfPosition ? 0.3 : 0) + Math.max(0, v.rivals - 1) * 0.12);
-  const callRisk = legal.callAmount / Math.max(1, v.stack),
+  // The engine's risk includes changes to uncalled refunds, which can differ
+  // from the chips physically needed to make the call.
+  const callRisk = (v.allIn?.cost ?? legal.callAmount) / Math.max(1, v.stack),
     raiseRisk = decision.action === 'raise' ? (decision.amount - v.bet) / Math.max(1, v.stack) : 0;
   const remaining = Math.max(0, v.stack - legal.callAmount);
   // Exclude all-in rivals from remaining-stack planning, while they still count

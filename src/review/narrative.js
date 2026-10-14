@@ -46,7 +46,7 @@ export function situationNotes(s, c, actorId = 0) {
       );
     else if (new Set(aggression.line.map((a) => a.street)).size >= 2)
       notes.push(
-        `${aggression.name}的下注线是${aggression.line.map((a) => streets[a.street] + ' ' + a.label).join(' → ')}；${who}这次面对的是连续施压，继续需要再付 ${n(s.legal.callAmount)}。`,
+        `${aggression.name}的下注线是${aggression.line.map((a) => streets[a.street] + ' ' + a.label).join(' → ')}；${who}这次面对的是连续施压，如果选择跟注，需要再补 ${n(s.legal.callAmount)}。`,
       );
     else {
       const raises = (s.history || [])

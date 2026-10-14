@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createWechatController } from '../../src/platform/wechat-controller.js';
 import { deceptiveRecords } from '../fixtures/deceptive-decisions.js';
+import { reviewedAllInGame } from '../fixtures/all-in-decisions.js';
 
 test('WeChat review transports the executed deceptive logic from the shared engine without redundant data', () => {
   const queue = new Map();
@@ -51,5 +52,57 @@ test('WeChat review transports the executed deceptive logic from the shared engi
     });
   } finally {
     c.destroy();
+  }
+});
+
+test('WeChat transports real all-in and near-all-in motives without numeric or developer panels', () => {
+  for (const [kind, action, cost] of [
+    ['flop-qq', 'call', '4,950'],
+    ['multi-qq', 'fold', '4,850'],
+    ['shared-royal', 'call', '4,950'],
+    ['deep-nonallin', 'call', '3,850'],
+  ]) {
+    const queue = new Map();
+    let ticket = 0;
+    const controller = createWechatController({
+      publish() {},
+      storage: { getItem: () => null, setItem() {} },
+      schedule(fn) {
+        queue.set(++ticket, fn);
+        return ticket;
+      },
+      unschedule(id) {
+        queue.delete(id);
+      },
+    });
+    try {
+      controller.start();
+      const game = reviewedAllInGame(kind);
+      assert.equal(game.botDecisions[0].action, action);
+      Object.assign(controller.getGame(), game);
+      let report;
+      controller.review((value) => {
+        report = value;
+      });
+      for (let count = 0; report.loading; count++) {
+        assert.ok(count < 20);
+        const [id, callback] = queue.entries().next().value;
+        queue.delete(id);
+        callback();
+      }
+      assert.equal(report.opponents.length, 1);
+      const step = report.opponents[0];
+      assert.match(step.reason, new RegExp(cost));
+      assert.ok(step.reason.includes(game.botDecisions[0].name));
+      assert.equal(step.metrics, undefined);
+      assert.equal(step.ev, undefined);
+      assert.doesNotMatch(step.reason, /它|EV|模型|模拟器|抽样|价格门槛/);
+      assert.ok(!('checks' in step) && !('axes' in step) && !('allIn' in step));
+      if (kind === 'shared-royal') assert.match(step.reason, /平分底池/);
+      if (kind === 'deep-nonallin')
+        assert.doesNotMatch(step.reason, /全下者已|之后只能等|跟完就已全下/);
+    } finally {
+      controller.destroy();
+    }
   }
 });

@@ -1883,5 +1883,15 @@
   "你拿 {0}，{1}。{2}": "Tu as {0} ; {1}. {2}",
   "这时，{0}选择{1}，是在回应已经被其他玩家接住的再加注。": "À ce moment, choix ({0}) : {1}, en réponse à une surrelance déjà suivie par d’autres joueurs.",
   "这笔再加注已经被接住；你若再补 {0}，会用这组牌进入多人加注底池。": "Cette surrelance a déjà reçu des calls ; ajouter {0} te ferait entrer avec ces cartes dans un pot surrelancé à plusieurs.",
-  "随后，{0}又补 {1} 跟注。": "Ensuite, {0} ajoute {1} pour suivre. "
+  "随后，{0}又补 {1} 跟注。": "Ensuite, {0} ajoute {1} pour suivre. ",
+  "{0}的下注线是{1}；{2}这次面对的是连续施压，如果选择跟注，需要再补 {3}。": "La ligne de mises du joueur ({0}) est {1}. La pression continue sur le joueur ({2}) ; choisir de suivre demanderait d’ajouter {3}.",
+  "{0}接下这笔下注，需要再补 {1}，可以争夺 {2} 的底池；这次底池赔率支持用{3}的摊牌价值继续。{4}": "Pour le joueur ({0}), suivre cette mise demande encore {1} et permet de disputer un pot de {2}. Les cotes du pot soutiennent la poursuite du coup avec la valeur à l’abattage de {3}. {4}",
+  "{0}接下这笔下注，需要再补 {1}，可以争夺 {2} 的底池；这次底池赔率支持继续追{3}。{4}": "Pour le joueur ({0}), suivre cette mise demande encore {1} et permet de disputer un pot de {2}. Les cotes du pot soutiennent la continuation avec ({3}). {4}",
+  "全下者已不能继续下注；只有其他尚有筹码的玩家也跟入时，后面才可能再争取边池。": "Le joueur à tapis ne peut plus miser. Un pot annexe ne pourra être disputé ensuite que si d’autres joueurs qui ont encore des jetons suivent également. ",
+  "跟完就已全下，之后只能等发牌或摊牌，不能再靠下注赶走对手。": "Ce call engage tous les jetons restants. Ensuite, il faut attendre les cartes ou l’abattage ; de nouvelles mises ne peuvent plus faire coucher les adversaires. ",
+  "{0}放弃用{1}追这笔下注，避免再投入 {2}，保住剩下的 {3}。{4}": "Le joueur ({0}) a renoncé à poursuivre ({1}) face à cette mise, sans engager encore {2}, et a conservé les {3} jetons restants. {4}",
+  "对手已经全下，不能再施压；这次退出是因为当前牌力和追牌机会不足以支持这笔跟注。": "L’adversaire est déjà à tapis et ne peut plus exercer de pression par de nouvelles mises. Ce fold vient du fait que la main actuelle et ses chances d’amélioration ne justifient pas le coût de ce call. ",
+  "这笔跟注会把剩余筹码全部投入，当前牌力和补牌机会不足以承担这次风险。": "Ce call engagerait tous les jetons restants. La main actuelle et ses chances d’amélioration ne justifient pas ce risque. ",
+  "这是{0}控池：底池已经有 {1}，{2}过牌不再加大投入，保留当前牌力的摊牌机会。": "C’est un contrôle du pot avec ({0}) : le pot contient déjà {1}. Le joueur ({2}) a checké sans investir davantage, en préservant la possibilité d’aller à l’abattage avec sa main actuelle.",
+  "当前牌力是{0}，另外还有{1}。": "La main actuelle est ({0}), avec également ({1}). "
 }

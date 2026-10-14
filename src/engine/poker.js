@@ -14,6 +14,7 @@ import {
 import { raiseCaption } from './action-labels.js';
 import { botThinkingTime } from './bot-timing.js';
 import { CHIP_UNIT, isChipAmount } from './bet-sizing.js';
+import { allInContext, estimateAllInEquity } from './bot-allin.js';
 export const SUITS = ['♠', '♥', '♣', '♦'];
 export const RANK_NAMES = [
   '高牌',
@@ -769,6 +770,7 @@ export function botDecision(g, random = Math.random, { trials } = {}) {
         .at(-1)?.id === p.id,
     stack: p.stack,
     bet: p.bet,
+    total: p.total,
     pot: potSize(g),
     currentBet: g.currentBet,
     difficulty: g.difficulty,
@@ -776,8 +778,7 @@ export function botDecision(g, random = Math.random, { trials } = {}) {
     rivals,
     opponents: live(g)
       .filter((o) => o.id !== p.id)
-      .map((o) => ({ id: o.id, stack: o.stack, bet: o.bet, allin: o.allin })),
-    equity: estimateEquity(p.hole, g.board, rivals, equityTrials, random),
+      .map((o) => ({ id: o.id, stack: o.stack, bet: o.bet, total: o.total, allin: o.allin })),
     equityTrials,
     contestable: contestableAfterCall(g, p.id, legal.callAmount),
     history: (g.history || []).map(({ id, street, action, amount, betLabel }) => ({
@@ -790,6 +791,47 @@ export function botDecision(g, random = Math.random, { trials } = {}) {
     features: botBoardFeatures(p.hole, g.board, score),
     playsBoard: g.board.length === 5 && compare(score, evaluate(g.board).score) === 0,
   };
+  const allIn = allInContext(view);
+  if (allIn) {
+    // Only public ledgers enter the existing pot partitioner. Pending seats
+    // contribute their chips already paid, not imaginary future calls.
+    const before = {
+      players: g.players.map(({ id, total, folded }) => ({ id, total, folded })),
+    };
+    const after = {
+      players: before.players.map((o) => ({
+        ...o,
+        total: o.total + (o.id === p.id ? legal.callAmount : 0),
+      })),
+    };
+    const beforeRefund = partitionPots(before).refunds.find((r) => r.id === p.id)?.amount || 0;
+    const partition = partitionPots(after);
+    const afterRefund = partition.refunds.find((r) => r.id === p.id)?.amount || 0;
+    const refundDelta = afterRefund - beforeRefund;
+    view.callPots = partition.pots
+      .filter((pot) => pot.eligible.includes(p.id))
+      .map(({ amount, eligible }) => ({ amount, eligible: [...eligible] }));
+    const contestable = view.callPots.reduce((sum, pot) => sum + pot.amount, 0);
+    const cost = Math.max(0, legal.callAmount - refundDelta);
+    view.allIn = {
+      ...allIn,
+      cost,
+      contestable,
+      odds: cost / Math.max(1, contestable),
+      refundDelta,
+    };
+    const allInTrials = trials ?? (g.difficulty === 'hard' ? 96 : 72);
+    view.equityTrials = allInTrials;
+    const assessment = estimateAllInEquity(view, allIn, {
+      deck: deckOfCards(),
+      evaluate,
+      compare,
+      trials: allInTrials,
+      random,
+    });
+    view.equity = assessment.equity;
+    Object.assign(view.allIn, assessment);
+  } else view.equity = estimateEquity(p.hole, g.board, rivals, equityTrials, random);
   const decision = chooseBotAction(
     view,
     getBotProfile(p.botProfile),

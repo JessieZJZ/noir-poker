@@ -38,8 +38,20 @@ export function drawInfo(hole, board) {
     const next = evaluate([...known, c]);
     if (compare(next.score, made.score) <= 0 || !next.cards.some((card) => holeKeys.has(card.key)))
       continue;
+    // Equivalent private ranks can be selected by the evaluator even when the
+    // five public cards make the same hand. Such cards do not improve our hand
+    // beyond the board, and must not be presented as private draw outs.
+    const publicNext = board.length === 4 ? evaluate([...board, c]).score : null;
+    if (publicNext && compare(next.score, publicNext) <= 0) continue;
     if (made.score[0] < 5 && [5, 8].includes(next.score[0])) flush.add(c.key);
-    if (made.score[0] < 4 && [4, 8].includes(next.score[0])) straight.add(c.key);
+    // A suited completion can improve a shared straight into our straight
+    // flush. It remains a flush out, rather than a separate ordinary gutshot.
+    if (
+      made.score[0] < 4 &&
+      [4, 8].includes(next.score[0]) &&
+      !(publicNext?.[0] === 4 && next.score[1] <= publicNext[1])
+    )
+      straight.add(c.key);
   }
   const outs = new Set([...flush, ...straight]).size;
   const straightRanks = [

@@ -133,15 +133,74 @@ test('slow-play requires genuine own strength, a safe price, deep stacks and a d
     deceptiveView('As Kh', 'Qd 8c 2h', { equity: 0.99 }),
   ])
     assert.notEqual(special(v)?.reason, 'strong-trap');
-  assert.equal(
-    special({ ...call, legal: { ...call.legal, canRaise: false } }).reason,
+  assert.notEqual(
+    special({ ...call, legal: { ...call.legal, canRaise: false } })?.reason,
     'strong-trap',
+    'A legally forced call is not a deliberate choice to conceal a raise',
   );
   assert.equal(
-    special(deceptiveView('9s 9h', '9d Kc 2h 6c Ad', { equity: 0.9 })).reason,
+    special(deceptiveView('9s 9h', '9d Kc 2h 6c Ad', { equity: 0.9, inPosition: false })).reason,
     'strong-trap',
     'River checking can still induce a bet without inventing another card',
   );
+  assert.notEqual(
+    special(
+      deceptiveView('9s 9h', '9d Kc 2h 6c Ad', {
+        equity: 0.9,
+        inPosition: true,
+        history: [{ id: 0, street: 3, action: 'check', amount: 0 }],
+      }),
+    )?.reason,
+    'strong-trap',
+    'The final river check closes betting instead of inducing a nonexistent later bet',
+  );
+  assert.notEqual(
+    special(
+      deceptiveView('9s 9h', '9d Kc 2h 6c Ad', {
+        equity: 0.9,
+        inPosition: false,
+        history: [{ id: 0, street: 3, action: 'check', amount: 0 }],
+      }),
+    )?.reason,
+    'strong-trap',
+    'A player who has already checked cannot act again after this river check',
+  );
+  assert.notEqual(
+    special({
+      ...pre,
+      rivals: 2,
+      opponents: [
+        { id: 0, stack: 500, bet: 150, allin: false },
+        { id: 2, stack: 5000, bet: 0, allin: false },
+      ],
+    })?.reason,
+    'strong-trap',
+    'An unrelated deep player cannot make the actual shallow opener a deep-stack trap target',
+  );
+});
+
+test('easy river slow-play also requires an opponent who can still respond to the check', () => {
+  const input = (overrides = {}) =>
+    deceptiveView('9s 9h', '9d Kc 2h 6c Ad', {
+      difficulty: 'easy',
+      equity: 0.9,
+      inPosition: false,
+      rivals: 1,
+      ...overrides,
+    });
+  const decide = (view) =>
+    chooseBotAction(view, getBotProfile('balanced'), freshBotMood(), 'off', () => 0);
+  const inducing = input();
+  assert.equal(inducing.features.strongMade, true);
+  assert.equal(decide(inducing).trace.reason, 'trap');
+  for (const closed of [
+    input({ inPosition: true, history: [{ id: 0, street: 3, action: 'check', amount: 0 }] }),
+    input({ history: [{ id: 0, street: 3, action: 'check', amount: 0 }] }),
+  ]) {
+    assert.equal(closed.features.strongMade, true);
+    assert.notEqual(decide(closed).trace.reason, 'trap');
+    assert.notEqual(decide(closed).trace.reason, 'strong-trap');
+  }
 });
 
 test('trash raises require an unopened late pot or a single small open plus blocker and no callers', () => {
@@ -168,9 +227,24 @@ test('donk identification rejects c-bets, probes, check-raises, folded aggressor
     { ...v, history: [...v.history, { id: 0, street: 1, action: 'check', amount: 0 }] },
     { ...v, history: [...v.history, { id: 1, street: 1, action: 'check', amount: 0 }] },
     { ...v, opponents: [{ id: 2, stack: 5000 }] },
+    { ...v, opponents: [{ id: 0, stack: 0, allin: true }] },
+    { ...v, opponents: [{ id: 0, stack: 0, allin: false }] },
     { ...v, legal: { ...v.legal, canCheck: false, toCall: 100, callAmount: 100 } },
   ])
     assert.equal(isDonkLead(changed), false);
+  assert.equal(
+    isDonkLead({
+      ...v,
+      rivals: 2,
+      opponents: [
+        { id: 0, stack: 5000 },
+        { id: 2, stack: 5000 },
+      ],
+      history: [...v.history, { id: 2, street: 1, action: 'check', amount: 0 }],
+    }),
+    true,
+    'A different player checking first does not turn a lead before the aggressor into a probe',
+  );
   assert.equal(special({ ...v, rivals: 2 }), null);
   assert.equal(
     special({ ...v, features: { ...v.features, draw: false, flushDraw: false, straightOuts: 4 } }),
