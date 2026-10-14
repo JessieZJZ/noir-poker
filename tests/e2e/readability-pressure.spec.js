@@ -74,6 +74,7 @@ test('portraits span style and stack, cards grow on nine-seat phones, persona ca
 });
 test('guide shows every hand and position in each supported locale', async ({ page }) => {
   await page.locator('#rules-button').click();
+  await page.locator('#guide-menu-item').click();
   await expect(page.locator('.hand-example')).toHaveCount(9);
   await expect(page.locator('.guide-card')).toHaveCount(45);
   await expect(page.locator('.position-glossary')).toContainText('HJ · Hijack');
@@ -84,6 +85,7 @@ test('guide shows every hand and position in each supported locale', async ({ pa
     await expect(page.locator('html')).toHaveAttribute('lang', locale);
     await closeSettings(page);
     await page.locator('#rules-button').click();
+    await page.locator('#guide-menu-item').click();
     await expect(page.locator('.guide-card')).toHaveCount(45);
     if (!['zh-CN', 'zh-TW', 'ja'].includes(locale))
       expect(await page.locator('.hand-examples').textContent()).not.toMatch(/\p{Script=Han}/u);

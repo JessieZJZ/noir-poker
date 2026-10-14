@@ -1,5 +1,10 @@
 {
-  "pages": ["pages/table/table", "pages/source/source"],
+  "pages": [
+    "pages/table/table",
+    "pages/records/records",
+    "pages/history/history",
+    "pages/source/source"
+  ],
   "resizable": true,
   "window": {
     "pageOrientation": "portrait",

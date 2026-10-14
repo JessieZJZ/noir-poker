@@ -94,6 +94,23 @@ test('Android back closes the top dialog first and minimizes only at the table',
   assert.equal(minimized, 0);
   await handleAndroidBack({ querySelectorAll: () => [] }, app);
   assert.equal(minimized, 1);
+  const navigated = [];
+  for (const [route, selector] of [
+    ['hand', '#history-back-button'],
+    ['list', '#records-back-button'],
+  ]) {
+    await handleAndroidBack(
+      {
+        querySelectorAll: () => [],
+        body: { dataset: { recordsPage: route } },
+        querySelector: (value) =>
+          value === selector ? { click: () => navigated.push(value) } : null,
+      },
+      app,
+    );
+  }
+  assert.deepEqual(navigated, ['#history-back-button', '#records-back-button']);
+  assert.equal(minimized, 1);
   await handleAndroidBack(
     {
       querySelectorAll: () => [

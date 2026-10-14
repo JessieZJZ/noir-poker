@@ -1,0 +1,603 @@
+.guide-menu {
+  position: relative;
+}
+#rules-button {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 42px;
+  padding: 6px 0;
+}
+#rules-button .guide-rotating-label,
+#rules-button .guide-rotating-label > span {
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+  margin: 0;
+  font-size: inherit;
+}
+#rules-button .guide-rotating-label {
+  display: grid;
+}
+.guide-rotating-label > span {
+  display: block;
+  grid-area: 1 / 1;
+  white-space: nowrap;
+  visibility: hidden;
+}
+#rules-button:not([data-label='records']) [data-guide-label='guide'],
+#rules-button[data-label='records'] [data-guide-label='records'] {
+  visibility: visible;
+}
+.guide-chevron {
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  transition: transform 0.2s;
+}
+#rules-button[aria-expanded='true'] .guide-chevron {
+  transform: rotate(180deg);
+}
+.guide-menu-options {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 8px);
+  z-index: 30;
+  display: grid;
+  min-width: 180px;
+  max-width: calc(100vw - 24px);
+  padding: 6px;
+  background: #15212c;
+  border: 1px solid #344b59;
+  border-radius: 12px;
+  box-shadow: 0 16px 44px #0007;
+}
+.guide-menu-options button {
+  text-align: left;
+  padding: 13px 15px;
+  background: transparent;
+  border-radius: 7px;
+  white-space: nowrap;
+  font-size: 14px;
+}
+.guide-menu-options button:hover,
+.guide-menu-options button:focus-visible {
+  background: #203832;
+  color: var(--mint);
+}
+.hand-label .session-label {
+  white-space: nowrap;
+}
+.records-page {
+  max-width: 1200px;
+  padding: 30px 4% 60px;
+  margin: auto;
+}
+.records-page-heading,
+.records-history-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+.records-page-heading h1 {
+  margin: 4px 0 0;
+  font-size: 25px;
+  line-height: 1.4;
+  font-weight: 600;
+}
+.records-eyebrow {
+  margin: 0;
+  color: #83a9a1;
+  font-size: 12px;
+  letter-spacing: 1px;
+}
+.records-back {
+  border: 1px solid #314650;
+  border-radius: 8px;
+  background: #14232b;
+  padding: 10px 13px;
+  color: #b8d8d1;
+  font-size: 13px;
+  flex-shrink: 0;
+}
+.records-back:hover {
+  border-color: #6ee7c580;
+}
+.records-live-note,
+.records-storage-error {
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--muted);
+  margin: 16px 0 24px;
+}
+.records-storage-error {
+  color: #efbc88;
+  padding: 12px;
+  border: 1px solid #8b633a;
+  border-radius: 8px;
+}
+.record-session {
+  border: 1px solid #2d404b;
+  border-radius: 14px;
+  overflow: hidden;
+  margin-bottom: 18px;
+  background: #111d26;
+}
+.record-session-heading {
+  position: relative;
+  display: block;
+  width: 100%;
+  padding: 20px 46px 20px 22px;
+  background: transparent;
+  text-align: left;
+}
+.record-session-title {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.record-session-title > strong {
+  font-size: 17px;
+  font-weight: 600;
+}
+.record-session-title > span:not(.record-tag) {
+  color: #9cafb7;
+  font-size: 12px;
+}
+.record-session-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px 24px;
+  margin-top: 20px;
+}
+.record-session-stats > span {
+  display: grid;
+  align-content: start;
+  gap: 6px;
+}
+.record-session-stats small {
+  color: #8fa7b1;
+  font-size: 12px;
+  font-weight: 400;
+}
+.record-session-stats strong {
+  font-size: 18px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+.record-session-chevron {
+  position: absolute;
+  top: 18px;
+  right: 20px;
+  font-size: 23px;
+  color: #8baca4;
+}
+.record-session-heading[aria-expanded='true'] .record-session-chevron {
+  transform: rotate(180deg);
+}
+.record-session-hands {
+  padding: 4px 16px 12px;
+  border-top: 1px solid #293d47;
+  background: #0e1820;
+}
+.record-hand {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  text-align: left;
+  padding: 16px 6px;
+  background: transparent;
+  border-bottom: 1px solid #25343e;
+}
+.record-hand:last-child {
+  border-bottom: 0;
+}
+button.record-hand:hover {
+  background: #182b2b;
+  border-radius: 8px;
+}
+.record-hand-cards {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+.record-hand-cards .playing-card.small {
+  width: 36px;
+  height: 50px;
+}
+.record-hand-info {
+  flex: 1;
+  min-width: 0;
+}
+.record-hand-info > strong {
+  font-size: 14px;
+  font-weight: 500;
+}
+.record-hand-tags {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 7px;
+  font-size: 11px;
+  color: #91a8b1;
+}
+.record-tag {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid #3b4c53;
+  border-radius: 4px;
+  padding: 2px 6px;
+  line-height: 1.4;
+  color: #a2b6bd;
+  font-size: 11px;
+  font-weight: 400;
+}
+.record-current,
+.record-refill {
+  border-color: #326857;
+  color: #89d9bd;
+  background: #163c31;
+}
+.record-hand-result {
+  display: grid;
+  gap: 4px;
+  text-align: right;
+  max-width: 35%;
+  font-variant-numeric: tabular-nums;
+}
+.record-hand-result strong {
+  font-size: 18px;
+  font-weight: 600;
+}
+.record-hand-result span {
+  font-size: 11px;
+  color: #8ea6ad;
+  line-height: 1.5;
+}
+.record-hand-arrow {
+  font-size: 24px;
+  color: #768e96;
+}
+.records-page .positive {
+  color: var(--mint);
+}
+.records-page .negative {
+  color: #ef8a9a;
+}
+.record-superseded .record-hand-result,
+.record-hand[data-status='unfinished'] .record-hand-result,
+.record-hand[data-status='playing'] .record-hand-result {
+  opacity: 0.65;
+}
+.records-empty {
+  padding: 36px 20px;
+  text-align: center;
+  color: #91a8b1;
+  font-size: 13px;
+  line-height: 1.8;
+}
+.records-empty h2 {
+  color: #d5e6e4;
+  font-size: 18px;
+  font-weight: 500;
+}
+.records-history-heading {
+  margin: 0 0 18px;
+}
+.records-history-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 280px;
+  gap: 20px;
+  align-items: start;
+}
+.records-page .records-game-surface {
+  height: auto;
+  min-height: 0;
+  display: block;
+  padding: 0;
+  overflow: hidden;
+}
+.records-history-caption {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 18px;
+  font-size: 14px;
+  border-bottom: 1px solid #2e4148;
+}
+.records-history-caption > span {
+  font-size: 12px;
+  color: #9ab1b8;
+}
+.records-table-viewport {
+  position: relative;
+  overflow: hidden;
+}
+.records-page .records-game-surface .records-arena.is-done[data-player-count] {
+  position: relative;
+  display: block;
+  min-height: 0;
+  padding: 0;
+  transform-origin: top left;
+  margin-top: 0;
+}
+.records-page .records-game-surface .records-arena.is-done[data-player-count] .seat {
+  min-width: 0;
+  width: 112px;
+}
+.records-page .records-game-surface .records-arena.is-done[data-player-count] .seat-profile {
+  min-width: 0;
+  width: 112px;
+  display: flex;
+  align-items: center;
+  order: 0;
+  gap: 6px;
+  padding: 6px;
+}
+.records-page .records-game-surface .records-arena.is-done[data-player-count] .seat-profile > div {
+  min-width: 0;
+  display: block;
+}
+.records-page .records-game-surface .records-arena.is-done[data-player-count] .seat-name-label {
+  max-width: 46px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.records-page .records-game-surface .records-arena.is-done[data-player-count] .seat-profile strong {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  font-size: 11px;
+}
+.records-page .records-game-surface .records-arena.is-done[data-player-count] .seat-stack,
+.records-page .records-game-surface .records-arena.is-done[data-player-count] .seat-style-label {
+  font-size: 11px;
+}
+.records-page .records-game-surface .records-arena.is-done[data-player-count] .avatar {
+  width: 26px;
+  height: 26px;
+  flex: none;
+}
+.records-page .records-game-surface .records-arena.is-done[data-player-count] .mini-cards {
+  width: auto;
+  height: 51px;
+  order: 0;
+  padding: 0;
+  margin-bottom: 2px;
+}
+.records-page
+  .records-game-surface
+  .records-arena.is-done[data-player-count]
+  .mini-cards
+  .playing-card.small,
+.records-page
+  .records-game-surface
+  .records-arena.is-done[data-player-count]
+  .mini-cards
+  .card-back {
+  width: 33px;
+  height: 47px;
+  translate: none;
+}
+.records-page .records-game-surface .records-arena.is-done[data-player-count] .seat-rank-slot {
+  position: relative;
+  display: grid;
+  place-items: center;
+  order: 0;
+  height: 26px;
+  min-height: 26px;
+  width: 112px;
+}
+.records-page .records-game-surface .records-arena.is-done[data-player-count] .hand-rank {
+  font-size: 11px;
+  line-height: 1.3;
+  margin: 0;
+  max-width: 112px;
+}
+.records-page .records-game-surface .records-arena.is-done[data-player-count] .seat-action {
+  width: 112px;
+  max-width: 112px;
+  height: auto;
+  min-height: 20px;
+  order: 0;
+  margin: 0;
+  font-size: 11px;
+  text-wrap: wrap;
+}
+.records-page .records-game-surface .records-arena.is-done[data-player-count] .table-center {
+  position: absolute;
+  left: 50%;
+  top: 36%;
+  transform: translateX(-50%);
+}
+.records-page .records-game-surface .records-arena.is-done[data-player-count] .pot {
+  visibility: visible;
+}
+.records-page .records-game-surface .records-arena.is-done[data-player-count] .board {
+  gap: 5px;
+  padding: 0;
+  display: flex;
+}
+.records-page .records-game-surface .records-arena.is-done[data-player-count] .board > * {
+  width: 43px;
+  height: 63px;
+  flex: 0 0 43px;
+}
+.records-page .records-game-surface .records-arena.is-done[data-player-count] .hero-area {
+  position: absolute;
+  left: 50%;
+  top: 77%;
+  bottom: auto;
+  padding: 0;
+  transform: translateX(-50%);
+}
+.records-page .records-game-surface .records-arena.is-done[data-player-count] .hero-cards {
+  gap: 7px;
+  height: 78px;
+  min-height: 78px;
+}
+.records-page
+  .records-game-surface
+  .records-arena.is-done[data-player-count]
+  .hero-cards
+  .playing-card {
+  width: 54px;
+  height: 78px;
+}
+.records-page .records-game-surface .records-arena.is-done[data-player-count] .hero-rank-slot {
+  height: 24px;
+  min-height: 24px;
+  margin: 0;
+}
+.records-page .records-game-surface .records-arena.is-done[data-player-count] .hero-name {
+  position: static;
+  display: flex;
+  width: max-content;
+  min-width: 0;
+  height: 22px;
+  inset: auto;
+  transform: none;
+  gap: 6px;
+  font-size: 12px;
+  margin-top: 6px;
+}
+.records-review-action {
+  padding: 16px;
+  border-top: 1px solid #2e4148;
+}
+.records-review-action .review-button {
+  width: 100%;
+  min-height: 44px;
+}
+.records-settlement {
+  margin-top: 18px;
+  border: 1px solid #2d404b;
+  border-radius: 12px;
+  padding: 20px;
+  background: #111d26;
+}
+.records-settlement h2 {
+  font-size: 15px;
+  margin: 0 0 16px;
+  font-weight: 500;
+}
+.record-pot + .record-pot {
+  border-top: 1px solid #2b3d46;
+  margin-top: 14px;
+  padding-top: 14px;
+}
+.record-pot > div,
+.record-pot li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  font-size: 13px;
+}
+.record-pot > div {
+  color: #91aaa7;
+}
+.record-pot strong {
+  font-weight: 500;
+}
+.record-pot ul {
+  padding: 0;
+  margin: 10px 0 0;
+  list-style: none;
+}
+.record-pot li {
+  padding: 6px 0;
+}
+.record-pot li > strong {
+  color: var(--mint);
+  font-size: 16px;
+}
+.record-pot small {
+  display: block;
+  margin-top: 3px;
+  font-size: 11px;
+  color: #8ca5ab;
+}
+.record-refund {
+  color: #a4b8bd;
+  font-size: 12px;
+}
+.records-activity .activity-list {
+  max-height: 650px;
+}
+@media (max-width: 900px) {
+  .records-page {
+    padding: 20px 12px 36px;
+  }
+  .records-page-heading h1 {
+    font-size: 19px;
+  }
+  .records-back {
+    font-size: 12px;
+    padding: 9px;
+  }
+  .record-session-heading {
+    padding: 16px 36px 18px 16px;
+  }
+  .record-session-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px 12px;
+    margin-top: 18px;
+  }
+  .record-session-stats strong {
+    font-size: 17px;
+  }
+  .record-session-hands {
+    padding: 4px 10px 8px;
+  }
+  .record-hand {
+    gap: 10px;
+    padding: 14px 0;
+  }
+  .record-hand-cards .playing-card.small {
+    width: 31px;
+    height: 44px;
+  }
+  .record-hand-result strong {
+    font-size: 16px;
+  }
+  .record-hand-arrow {
+    font-size: 20px;
+  }
+  .record-hand-tags {
+    gap: 4px;
+    font-size: 10px;
+  }
+  .record-hand-tags .record-tag {
+    font-size: 10px;
+    padding: 1px 4px;
+  }
+  .records-history-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 18px;
+  }
+  .records-history-caption {
+    padding: 12px;
+    font-size: 13px;
+  }
+  .records-live-note {
+    margin-bottom: 18px;
+  }
+  .records-activity .activity-list {
+    max-height: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .guide-chevron {
+    transition: none;
+  }
+}

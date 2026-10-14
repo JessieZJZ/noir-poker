@@ -1,4 +1,11 @@
-const KEYS = ['noir-table-v1', 'noir-opponents-v1', 'noir-sound', 'noir-hints', 'noir-locale'];
+const KEYS = [
+  'noir-table-v1',
+  'noir-opponents-v1',
+  'noir-sound',
+  'noir-hints',
+  'noir-locale',
+  'noir-game-records-v1',
+];
 
 // The UI stays synchronous; hydrate native preferences before importing it.
 // Writes keep their order, including two quick changes to the same setting.
@@ -6,6 +13,7 @@ export function createPreferenceStorage(webStorage = () => globalThis.localStora
   let adapter = null;
   let pending = Promise.resolve();
   const cache = new Map();
+  const errors = new Map();
   const storage = {
     async connect(nativePreferences) {
       const values = await Promise.all(
@@ -27,7 +35,8 @@ export function createPreferenceStorage(webStorage = () => globalThis.localStora
       if (adapter && cache.has(key)) return cache.get(key);
       try {
         return webStorage().getItem(key);
-      } catch {
+      } catch (error) {
+        errors.set(key, error);
         return null;
       }
     },
@@ -36,10 +45,20 @@ export function createPreferenceStorage(webStorage = () => globalThis.localStora
       cache.set(key, text);
       try {
         webStorage().setItem(key, text);
-      } catch {}
-      if (adapter) pending = pending.then(() => adapter.set({ key, value: text })).catch(() => {});
+        errors.delete(key);
+      } catch (error) {
+        errors.set(key, error);
+      }
+      if (adapter)
+        pending = pending
+          .then(async () => {
+            await adapter.set({ key, value: text });
+            errors.delete(key);
+          })
+          .catch((error) => errors.set(key, error));
     },
     flush: () => pending,
+    error: (key) => errors.get(key) || null,
   };
   return storage;
 }

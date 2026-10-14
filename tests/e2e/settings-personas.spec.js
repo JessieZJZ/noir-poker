@@ -360,6 +360,7 @@ test('the guide teaches winning, streets, actions and position before introducin
   page,
 }) => {
   await page.locator('#rules-button').click();
+  await page.locator('#guide-menu-item').click();
   const guide = page.locator('#rules-dialog');
   await expect(guide).toHaveAttribute('aria-labelledby', 'rules-dialog-title');
   const headings = await guide.locator('h3').allTextContents();

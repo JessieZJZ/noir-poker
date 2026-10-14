@@ -19,7 +19,7 @@ test('one header settings control replaces table options and the footer follows 
     ),
   ).toHaveCount(0);
   await expect(page.getByRole('button', { name: '设置', exact: true })).toBeVisible();
-  await expect(page.locator('.header-actions button')).toHaveCount(2);
+  await expect(page.locator('.header-actions button:visible')).toHaveCount(2);
   await expect(page.locator('#opponents-dialog #difficulty')).toHaveCount(1);
   await expect(page.locator('#opponents-dialog #player-count')).toHaveCount(1);
   // The native platform appends this same button to the footer.

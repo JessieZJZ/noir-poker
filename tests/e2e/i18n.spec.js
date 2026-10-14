@@ -64,6 +64,7 @@ for (const locale of locales) {
     await expect(page.locator('#table-size-label')).toContainText('9');
     await page.evaluate(() => window.qa.stop());
     await page.locator('#rules-button').click();
+    await page.locator('#guide-menu-item').click();
     const guide = page.locator('#rules-dialog');
     await expect(guide).toBeVisible();
     const raiseExample = ['es', 'it', 'pt', 'de', 'fr', 'ru'].includes(locale) ? '1,2K' : '1.2K';

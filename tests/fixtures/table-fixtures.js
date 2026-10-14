@@ -27,6 +27,43 @@ function fixtureGame(count = 6, heroFirst = false) {
 }
 
 window.qa = {
+  recordsStart({ count = 5, smallBlind = 100, refill = false } = {}) {
+    gameRecords.abandon(game);
+    fixtureGame(count, true);
+    requestedStakes = stakesFromSmallBlind(smallBlind);
+    game = newGame(count, requestedStakes);
+    game.dealer = count - 4;
+    if (refill) game.players[0].stack = 0;
+    saveTablePreferences({
+      playerCount: count,
+      difficulty: game.difficulty,
+      stakes: requestedStakes,
+    });
+    startHand(game);
+    gameRecords.begin(game, { newSession: true });
+    render();
+    this.stop();
+    return publicState();
+  },
+  recordsFinish(winner = 0) {
+    this.stop();
+    while (game.phase !== 'done') {
+      if (game.phase === 'between') advanceStreet(game);
+      else act(game, game.actor, game.actor === winner ? 'call' : 'fold');
+    }
+    render();
+    return publicState();
+  },
+  recordsNext() {
+    nextHand();
+    this.stop();
+    return publicState();
+  },
+  recordsRetry() {
+    retryHand();
+    this.stop();
+    return publicState();
+  },
   reviewHeroValue(kind = 'set-shove') {
     fixtureGame(6);
     game = heroValueGame(kind);

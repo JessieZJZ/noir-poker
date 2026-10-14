@@ -6,7 +6,15 @@
   style="padding-top: {{topInset + 36}}px; padding-bottom: {{bottomInset}}px; {{homeLocked ? 'top: ' + homeOffset + 'px;' : ''}}"
 >
   <view class="nav {{compactNav ? 'nav-compact' : ''}}" style="top: {{topInset + 36}}px;">
-    <view class="brand"
+    <button
+      wx:if="{{historyReadOnly}}"
+      id="history-back"
+      class="history-back"
+      bindtap="returnFromHistory"
+    >
+      ‹ 返回
+    </button>
+    <view wx:else class="brand"
       ><image
         class="app-icon"
         src="/assets/app-icon.png"
@@ -14,10 +22,24 @@
         aria-hidden="true"
       /><text>NOIR</text><text wx:if="{{!compactNav}}" class="brand-sub">POKER</text></view
     >
-    <view class="nav-actions"
+    <view wx:if="{{historyReadOnly}}" class="history-nav-title"
+      >历史结算 · {{historyAttemptLabel}}</view
+    >
+    <view wx:else class="nav-actions"
       ><button hover-class="none" class="icon-button" aria-label="设置" bindtap="openSettings">
         <view class="gear-icon" /></button
-      ><button hover-class="none" class="guide-button" bindtap="openGuide">玩法指南</button></view
+      ><button
+        hover-class="none"
+        class="guide-button"
+        id="resource-menu-button"
+        bindtap="toggleResourceMenu"
+      >
+        {{resourceLabel}} ▾
+      </button>
+      <view wx:if="{{resourceMenuOpen}}" class="resource-menu">
+        <button id="resource-guide" bindtap="openGuide">玩法指南</button>
+        <button id="resource-records" bindtap="openRecords">对局记录</button>
+      </view></view
     >
   </view>
   <view
@@ -26,6 +48,8 @@
   >
     <view class="game-header">
       <view class="hand-label"
+        ><text class="session-label">第 {{sessionNumber}} 局</text
+        ><text class="hand-divider">·</text
         ><text>第 <text class="hand-number">{{hand < 10 ? '0' : ''}}{{hand}}</text> 手</text
         ><text class="hand-divider">·</text><text>{{street}}</text
         ><text wx:if="{{replay}}" class="replay">重打 {{replay}}</text></view
@@ -183,7 +207,7 @@
         ><view class="settled-buttons"
           ><button
             hover-class="none"
-            wx:if="{{canPracticeRunout}}"
+            wx:if="{{canPracticeRunout && !historyReadOnly}}"
             class="primary practice-runout-button"
             bindtap="finishHand"
           >
@@ -191,7 +215,7 @@
           ><button hover-class="none" class="primary" bindtap="nextHand">下一手</button
           ><button
             hover-class="none"
-            wx:if="{{canRetry}}"
+            wx:if="{{canRetry && !historyReadOnly}}"
             class="retry-button"
             disabled="{{!canRetry}}"
             bindtap="retryHand"
@@ -306,7 +330,7 @@
       </view>
     </view>
   </view>
-  <view class="practice-panel"
+  <view wx:if="{{!historyReadOnly}}" class="practice-panel"
     ><view class="session-title"><text>你的练习</text><text>本次牌桌</text></view
     ><view class="session-balance"
       ><text class="session-caption">当前筹码</text
@@ -330,7 +354,7 @@
       ></view
     ></view
   >
-  <view class="bottom-links"
+  <view wx:if="{{!historyReadOnly}}" class="bottom-links"
     ><view class="practice-info"
       ><view><view class="live-dot" /><text>本地电脑对手 · 无需登录</text></view
       ><button hover-class="none" bindtap="resetPractice">重新练习</button></view
@@ -338,6 +362,8 @@
     <text>仅使用虚拟筹码</text></view
   >
 </view>
+
+<view wx:if="{{resourceMenuOpen}}" class="resource-dismiss" bindtap="closeResourceMenu" />
 
 <view
   wx:if="{{settingsOpen}}"

@@ -14,6 +14,8 @@ const statusNames = { attention: '重点改进', consider: '值得讨论', sound
 
 export function createReviewController({ card }) {
   let last = null,
+    live = null,
+    historical = false,
     seen = '',
     worker = null,
     job = 0,
@@ -239,12 +241,54 @@ export function createReviewController({ card }) {
     }
   }
   function open() {
+    if (live && last !== live) selectInput(live, false);
     if (!last) return;
     opponents.update(last.input);
     renderDialog();
     if (!dialog.open) dialog.showModal();
     analyze();
   }
+  function selectInput(entry, archive) {
+    worker?.terminate();
+    worker = null;
+    job++;
+    if (last?.status === 'running') last.status = 'idle';
+    last = entry;
+    historical = archive;
+    selected = 0;
+    selectionTouched = false;
+    perspective(false);
+    opponents.update(entry.input);
+  }
+  // An archived review has its own input. A live hand may finish while this
+  // dialog is open without replacing the historical decision snapshots.
+  function openInput(input, key) {
+    if (!input?.outcome || !Array.isArray(input.decisions)) return false;
+    selectInput(
+      {
+        key: 'archive:' + key,
+        input: structuredClone(input),
+        status: 'idle',
+        progress: 0,
+        analysis: null,
+      },
+      true,
+    );
+    renderDialog();
+    if (!dialog.open) dialog.showModal();
+    analyze();
+    return true;
+  }
+  dialog.addEventListener('close', () => {
+    if (!historical) return;
+    worker?.terminate();
+    worker = null;
+    job++;
+    historical = false;
+    last = live;
+    selected = 0;
+    selectionTouched = false;
+  });
   $('#review-hand-button').onclick = open;
   $('#review-retry').onclick = analyze;
   dialog.addEventListener('click', (e) => {
@@ -275,31 +319,29 @@ export function createReviewController({ card }) {
     }
   };
   return {
+    openInput,
     update(g, token) {
       const key = token + ':' + g.hand;
       if (g.phase === 'done' && key !== seen) {
         seen = key;
         const input = createReviewInput(g);
         {
-          worker?.terminate();
-          worker = null;
-          job++;
-          last = { key, input, status: 'idle', progress: 0, analysis: null };
-          selected = 0;
-          selectionTouched = false;
-          perspective(false);
-          opponents.update(input);
-          if (dialog.open) {
-            renderDialog();
-            analyze();
+          live = { key, input, status: 'idle', progress: 0, analysis: null };
+          if (!historical) {
+            selectInput(live, false);
+            if (dialog.open) {
+              renderDialog();
+              analyze();
+            }
           }
         }
       }
-      $('#review-hand-button').hidden = !(g.phase === 'done' && last?.key === key);
+      $('#review-hand-button').hidden = !(g.phase === 'done' && live?.key === key);
     },
     rollback(g, token) {
       const key = token + ':' + g.hand;
-      if (last?.key === key) {
+      if (live?.key === key) live = null;
+      if (!historical && last?.key === key) {
         worker?.terminate();
         worker = null;
         job++;
@@ -308,10 +350,16 @@ export function createReviewController({ card }) {
         selectionTouched = false;
       }
       if (seen === key) seen = '';
-      dialog.close();
+      if (!historical) dialog.close();
       $('#review-hand-button').hidden = true;
     },
     reset() {
+      live = null;
+      seen = '';
+      if (historical) {
+        $('#review-hand-button').hidden = true;
+        return;
+      }
       worker?.terminate();
       worker = null;
       job++;

@@ -1,0 +1,82 @@
+<view class="records-chrome" style="height: {{topInset + 36}}px;" />
+<view
+  class="records-screen"
+  style="padding-top: {{topInset + 36}}px; padding-bottom: {{bottomInset + 20}}px;"
+>
+  <view class="records-nav"
+    ><button id="records-back" bindtap="returnToGame">‹ 返回游戏</button><text>对局记录</text></view
+  >
+  <view class="records-intro"
+    ><text>每一局的练习足迹</text><text>浏览记录时，当前游戏继续进行。</text></view
+  >
+  <view wx:if="{{!sessions.length}}" class="records-empty"
+    >还没有对局记录，开始练习后自动保存。</view
+  >
+  <view wx:if="{{recordsError}}" class="records-empty">{{recordsError}}</view>
+  <view
+    wx:for="{{sessions}}"
+    wx:key="id"
+    wx:for-item="session"
+    class="records-session"
+    data-id="{{session.id}}"
+  >
+    <button class="session-item" bindtap="toggleSession" data-id="{{session.id}}">
+      <view class="session-item-heading"
+        ><text>第 {{session.number}} 局</text
+        ><text class="session-status"
+          >{{session.endedAt ? '已结束' : '进行中'}} {{expanded[session.id] ? '▴' : '▾'}}</text
+        ></view
+      >
+      <text class="session-time">{{session.timeText}}</text>
+      <view class="session-metrics"
+        ><view><text>胜率</text><text>{{session.winrate}}%</text></view
+        ><view
+          ><text>净筹码变化</text
+          ><text class="{{session.profit > 0 ? 'positive' : session.profit < 0 ? 'negative' : ''}}"
+            >{{session.profitText}}</text
+          ></view
+        ></view
+      >
+      <view class="session-config"
+        ><text>起始盲注 {{session.blindText}}</text><text>{{session.playerCount}} 人桌</text></view
+      >
+    </button>
+    <view wx:if="{{expanded[session.id]}}" class="hand-list">
+      <button
+        wx:for="{{session.attempts}}"
+        wx:key="id"
+        class="hand-item {{item.superseded ? 'superseded' : ''}}"
+        data-id="{{item.id}}"
+        bindtap="openHand"
+        disabled="{{item.status !== 'completed'}}"
+      >
+        <view class="hand-cards"
+          ><view
+            wx:for="{{item.cards}}"
+            wx:for-item="card"
+            wx:key="key"
+            class="record-card {{card.red ? 'red' : ''}}"
+            style="{{card.artStyle}}"
+            aria-label="{{card.rank}}{{card.suit}}"
+        /></view>
+        <view class="hand-details"
+          ><view class="hand-item-title"
+            ><text>第 {{item.hand}} 手</text
+            ><text class="hand-attempt">{{item.attemptText}}</text></view
+          ><view class="hand-tags"
+            ><text wx:if="{{item.refill}}" class="hand-tag">补码</text
+            ><text wx:if="{{item.superseded}}" class="hand-tag">已被重打替代</text
+            ><text>{{item.resultText}}</text></view
+          ></view
+        >
+        <text
+          class="hand-profit {{item.profit > 0 ? 'positive' : item.profit < 0 ? 'negative' : ''}}"
+          >{{item.profitText}}</text
+        >
+      </button>
+    </view>
+  </view>
+  <text class="records-note"
+    >记录保存在本机。胜率按获得底池计算；重打只将最后采用的结果计入本局。</text
+  >
+</view>

@@ -17,7 +17,7 @@ import {
 } from '../../src/engine/poker.js';
 
 const pageSource = readFileSync(
-  new URL('../../miniprogram/pages/table/table.js', import.meta.url),
+  new URL('../../miniprogram/pages/table/page-definition.js', import.meta.url),
   'utf8',
 );
 const stylesheet = readFileSync(
@@ -75,6 +75,7 @@ function setup(
         jobs.delete(id);
       },
     });
+  const app = {};
   const context = vm.createContext({
     setTimeout(fn, delay = 0) {
       const id = ++serial;
@@ -84,9 +85,8 @@ function setup(
     clearTimeout(id) {
       jobs.delete(id);
     },
-    Page(value) {
-      definition = value;
-    },
+    module: { exports: {} },
+    getApp: () => app,
     require(name) {
       if (name === '../../assets/portraits/credits.js')
         return Object.fromEntries(
@@ -148,6 +148,7 @@ function setup(
     },
   });
   vm.runInContext(pageSource, context);
+  definition = context.module.exports;
   const page = {
     ...definition,
     data: copy(definition.data),
@@ -174,6 +175,7 @@ function setup(
   }
   return {
     page,
+    app,
     preferences,
     audios,
     vibrations,
@@ -511,7 +513,7 @@ test('WeChat practice runout uses the shared engine without changing settlement 
   page._controller.show();
   assert.equal(page.data.canPracticeRunout, true);
   assert.equal(page.data.canRetry, true);
-  assert.match(template, /wx:if="{{canRetry}}"\s+class="retry-button"/);
+  assert.match(template, /wx:if="{{canRetry && !historyReadOnly}}"\s+class="retry-button"/);
   assert.doesNotMatch(template, /wx:if="{{!canPracticeRunout}}"\s+class="retry-button"/);
   const before = copy({
     board: game.board,
@@ -1241,4 +1243,58 @@ test('old deal motion callbacks cannot clear a replay and hiding cancels pending
   page.onHide();
   assert.equal(page._cardTimers.size, 0);
   assert.ok(page.data.heroCards.every((card) => !card.arriving));
+});
+
+test('WeChat record navigation keeps live bot progress and actual app background cancels it', (t) => {
+  const { page, jobs, navigations, app } = setup(t);
+  const game = reachHero(page);
+  page.act({ currentTarget: { dataset: { action: 'fold' } } });
+  page.openRecords();
+  assert.equal(navigations.at(-1), '/pages/records/records');
+  page.onHide();
+  assert.equal(app.noirController, page._controller);
+  assert.ok(jobs.size > 0, 'Navigating to records must retain the bot timer');
+  for (let count = 0; game.phase !== 'done'; count++) {
+    assert.ok(count < 200);
+    const [id, job] = [...jobs].sort((a, b) => a[1].due - b[1].due || a[0] - b[0])[0];
+    assert.ok(job, 'The backgrounded table continues the same live hand');
+    jobs.delete(id);
+    job.fn();
+  }
+  assert.equal(page._controller.getRecords()[0].attempts[0].status, 'completed');
+  const source = readFileSync(new URL('../../miniprogram/app.js', import.meta.url), 'utf8');
+  let appDefinition;
+  vm.runInNewContext(source, {
+    require() {},
+    App(value) {
+      appDefinition = value;
+    },
+  });
+  page._controller.nextHand();
+  assert.ok(jobs.size > 0);
+  appDefinition.onHide.call(app);
+  assert.equal(jobs.size, 0, 'True App background retains existing cancellation semantics');
+  appDefinition.onShow.call(app);
+  assert.ok(jobs.size > 0);
+});
+
+test('WeChat combined resources menu keeps both choices and rotates only while closed', (t) => {
+  const { page, jobs } = setup(t);
+  page._controller.hide();
+  page.startResourceRotation();
+  const tick = () => {
+    const timer = jobs.get(page._resourceTimer);
+    jobs.delete(page._resourceTimer);
+    timer.fn();
+  };
+  tick();
+  assert.equal(page.data.resourceLabel, '对局记录');
+  page.toggleResourceMenu();
+  tick();
+  assert.equal(page.data.resourceLabel, '对局记录');
+  page.openGuide();
+  assert.equal(page.data.resourceMenuOpen, false);
+  assert.equal(page.data.guideOpen, true);
+  assert.match(template, /id="resource-guide"/);
+  assert.match(template, /id="resource-records"/);
 });

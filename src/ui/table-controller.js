@@ -56,6 +56,8 @@ import { createPlayViewport } from './play-viewport.js';
 import { createHintNotification } from './hint-notification.js';
 import { createHintMarquee } from './hint-marquee.js';
 import { preferenceStorage } from '../platform/storage.js';
+import { createGameRecords } from '../engine/game-records.js';
+import { createGameRecordsView } from './game-records.js';
 import { createActivityClock } from '../platform/activity-clock.js';
 import { isAppActive } from '../platform/native.js';
 import { isOrientationBlocked } from '../platform/orientation.js';
@@ -104,11 +106,12 @@ function isSeatHandVisible(player) {
   return (game.showdown || game.revealed) && !player.folded;
 }
 const tablePreferences = loadTablePreferences();
+const gameRecords = createGameRecords({ storage: preferenceStorage });
 let requestedCount = tablePreferences.playerCount;
 let requestedStakes = tablePreferences.stakes;
 let stakesError = '',
   editingSmallBlind = false;
-let game = newGame(requestedCount, requestedStakes),
+let game = gameRecords.resume() || newGame(requestedCount, requestedStakes),
   timer = null,
   botWait = null,
   epoch = 0,
@@ -120,6 +123,7 @@ let game = newGame(requestedCount, requestedStakes),
   sound = true,
   audio = null,
   audioOutput = null;
+let newRecordSession = false;
 game.difficulty = tablePreferences.difficulty;
 $('#player-count').value = String(requestedCount);
 try {
@@ -135,6 +139,11 @@ const opponents = createOpponentsController({
     pendingBotSettings = settings;
     opponents.refresh();
   },
+});
+const recordsView = createGameRecordsView({
+  records: gameRecords,
+  openReview: (input, key) => handReview.openInput(input, key),
+  onReturnGame: () => playViewport.update(game, game.phase === 'done'),
 });
 const format = (n) => formatChips(n),
   streets = ['翻牌前', '翻牌', '转牌', '河牌'],
@@ -280,6 +289,8 @@ function seatAction(p, { recent = false } = {}) {
 }
 const heroTurnCue = createHeroTurnCue(notifyHeroTurn);
 function render() {
+  gameRecords.capture(game);
+  recordsView.refresh();
   renderStakesSettings();
   const activityList = $('#activity-list'),
     activityScrollTop = activityList.scrollTop,
@@ -303,6 +314,7 @@ function render() {
       ? new Set(evaluate([...hero.hole, ...game.board]).cards.map((c) => c.key))
       : new Set();
   setLocalizedText($('#hand-number'), String(game.hand).padStart(2, '0'));
+  setLocalizedText($('#session-number-label'), `第 ${gameRecords.sessionNumber()} 局`);
   $('#replay-label').hidden = !game.replayAttempt;
   setLocalizedText($('#replay-label'), '重打 ' + game.replayAttempt);
   $('#replay-note').hidden = !game.replayAttempt;
@@ -761,6 +773,7 @@ function nextHand() {
   editingSmallBlind = false;
   $('#pot-dialog').close();
   if (requestedCount !== game.players.length || !sameStakes(requestedStakes, game.stakes)) {
+    gameRecords.abandon(game);
     const difficulty = game.difficulty;
     game = newGame(requestedCount, requestedStakes);
     game.difficulty = difficulty;
@@ -770,6 +783,8 @@ function nextHand() {
   $('#table-change-note').hidden = true;
   applyBotSettings(game, pendingBotSettings);
   startHand(game);
+  gameRecords.begin(game, { newSession: newRecordSession });
+  newRecordSession = false;
   const legal = legalActions(game, 0);
   bet = legal.enabled ? legalRaiseTo(game.bigBlind * 3, legal) : game.bigBlind * 3;
   render();
@@ -793,6 +808,7 @@ function retryHand() {
     e.remove();
   });
   restartHand(game);
+  gameRecords.begin(game);
   lastHand = 0;
   lastBoard = 0;
   bet = game.bigBlind * 3;
@@ -1052,7 +1068,6 @@ $('#hint-toggle').onclick = () => {
   } catch {}
   updateCoach(true);
 };
-$('#rules-button').onclick = () => $('#rules-dialog').showModal();
 $('#reset-button').onclick = () => $('#reset-dialog').showModal();
 const potScrollLock = createDialogScrollLock($('#pot-dialog'));
 $('#pot-details-button').onclick = () => potScrollLock.open();
@@ -1069,6 +1084,8 @@ document.querySelectorAll('dialog').forEach((d) =>
   }),
 );
 $('#confirm-reset').onclick = () => {
+  gameRecords.abandon(game);
+  newRecordSession = true;
   handReview.reset();
   const difficulty = game.difficulty;
   clearTimeout(timer);
@@ -1093,6 +1110,8 @@ function publicState() {
     replayAttempt: game.replayAttempt || 0,
     canRestart: canRestartHand(game),
     hand: game.hand,
+    sessionNumber: gameRecords.sessionNumber(),
+    recordsRoute: recordsView.route(),
     dealer: game.players[game.dealer].name,
     seatOrder: 'clockwise',
     street: streets[game.street],
@@ -1144,6 +1163,7 @@ function publicState() {
 }
 function setStakes(value) {
   const stakes = validateStakes(value);
+  if (!sameStakes(game.stakes, stakes)) gameRecords.abandon(game);
   const changed = configureStakes(game, stakes);
   const requestedChanged = !sameStakes(requestedStakes, stakes);
   if (!changed && !requestedChanged) return false;
@@ -1159,7 +1179,14 @@ function setStakes(value) {
   nextHand();
   return true;
 }
-window.noir = { getState: publicState, setStakes, requestStakes, requestSmallBlind };
+window.noir = {
+  getState: publicState,
+  getRecords: () => gameRecords.sessions(),
+  getRecordRoute: () => recordsView.route(),
+  setStakes,
+  requestStakes,
+  requestSmallBlind,
+};
 function registerTools() {
   const context = document.modelContext;
   if (!context?.registerTool) return;
@@ -1276,4 +1303,5 @@ window.addEventListener(
   { once: true },
 );
 nextHand();
+recordsView.initialize();
 registerTools();

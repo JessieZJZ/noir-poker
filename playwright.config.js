@@ -24,7 +24,7 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: `npm run dev -- --mode test --port ${port} --strictPort`,
+    command: `node node_modules/vite/bin/vite.js --host 127.0.0.1 --mode test --port ${port} --strictPort`,
     url: baseURL,
     reuseExistingServer: false,
     timeout: 30000,

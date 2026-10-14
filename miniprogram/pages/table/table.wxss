@@ -1421,3 +1421,60 @@
   height: 28px;
   border-radius: 7px;
 }
+
+.resource-menu {
+  position: absolute;
+  top: 46px;
+  right: 0;
+  width: 140px;
+  padding: 5px;
+  z-index: 72;
+  border: 1px solid #31434e;
+  border-radius: 12px;
+  background: #14212a;
+  box-shadow: 0 12px 34px #0008;
+}
+.resource-menu button {
+  display: block;
+  width: 100%;
+  padding: 10px 12px;
+  text-align: left;
+  color: #d8e7ec;
+  background: transparent;
+  font-size: 14px;
+}
+.resource-dismiss {
+  position: fixed;
+  inset: 0;
+  z-index: 68;
+}
+.nav-actions {
+  position: relative;
+  z-index: 70;
+}
+.guide-button {
+  width: 104px;
+  white-space: nowrap;
+}
+.history-back {
+  margin: 0;
+  padding: 8px 12px;
+  color: #d8e7ec;
+  background: #16232c;
+  border: 1px solid #31434e;
+  border-radius: 10px;
+  font-size: 14px;
+}
+.history-nav-title {
+  font-size: 13px;
+  color: #9cb2bd;
+  text-align: right;
+}
+.session-label {
+  white-space: nowrap;
+}
+.hand-label {
+  gap: 4px;
+  font-size: 11px;
+  flex-wrap: wrap;
+}

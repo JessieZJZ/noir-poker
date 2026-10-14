@@ -8,6 +8,12 @@ export function handleAndroidBack(document, app) {
   const dialogs = [...document.querySelectorAll('dialog[open]')];
   if (dialogs.some((dialog) => dialog.id === 'orientation-dialog')) return;
   if (dialogs.length) dialogs.at(-1).close();
+  else if (document.body?.dataset.recordsPage === 'hand')
+    document.querySelector('#history-back-button')?.click();
+  else if (document.body?.dataset.recordsPage === 'list')
+    document.querySelector('#records-back-button')?.click();
+  else if (document.querySelector?.('#guide-menu:not([hidden])'))
+    document.querySelector('#rules-button')?.click();
   else return app.minimizeApp();
 }
 
@@ -59,7 +65,7 @@ function installNativeAbout(info) {
   for (const text of [
     '本地德州扑克练习。所有筹码均为虚拟筹码，无现金兑换、奖金或真人赌注。',
     '牌局和复盘在设备上计算；本应用没有账号、广告、追踪或分析服务。',
-    '人数、难度、对手风格、声音和提示设置仅保存在此设备，不上传到本应用服务器；当前牌局只保留在运行内存中。',
+    '设置与对局记录仅保存在此设备，不上传到本应用服务器；关闭后继续原局的新一手。',
     '仅当你主动打开资料来源或帮助链接时，系统浏览器会访问对应网站，第三方按其自身隐私政策处理该次访问。',
   ]) {
     const paragraph = document.createElement('p');

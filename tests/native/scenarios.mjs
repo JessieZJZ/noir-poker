@@ -483,6 +483,7 @@ export async function nativeScenarios(app) {
     assert.deepEqual(assignments, ['tan', 'balanced', 'ivey']);
     await app.click('#opponents-dialog .close-dialog');
     await app.click('#rules-button');
+    await app.click('#guide-menu-item');
     const guide = await app.evaluate(() => ({
       hands: document.querySelectorAll('.hand-example').length,
       cards: document.querySelectorAll('.guide-card').length,
@@ -1377,6 +1378,7 @@ export async function nativeScenarios(app) {
     await check('all-secondary-pages-match-web', async () => {
       const comparisons = [];
       await app.click('#rules-button');
+      await app.click('#guide-menu-item');
       comparisons.push(
         await app.comparePage('guide', [
           '#rules-dialog',
@@ -1455,6 +1457,144 @@ export async function nativeScenarios(app) {
       );
       return comparisons;
     });
+  await check('game-records-pages-retry-and-resume', async () => {
+    await app.click('#reset-button');
+    await app.click('#confirm-reset');
+    const finish = async () => {
+      const turn = await app.waitFor(
+        async () => {
+          const current = await app.state();
+          return current.phase === 'done' || current.legal.enabled ? current : null;
+        },
+        90000,
+        'Real play must reach a hero decision or settlement',
+      );
+      if (turn.phase !== 'done') await app.click('#fold-button');
+      const afterFold = await app.state();
+      if (afterFold.phase !== 'done' && afterFold.canContinue) {
+        try {
+          await app.click('#continue-deal-button');
+        } catch (error) {
+          // Opponents may settle during the native click's scroll/locate
+          // round trips. Accept that race only after proving real settlement.
+          if (
+            !/zero size|stale element|not interactable/.test(error.message) ||
+            (await app.state()).phase !== 'done'
+          )
+            throw error;
+        }
+      }
+      return app.waitFor(
+        async () => {
+          const current = await app.state();
+          return current.phase === 'done' ? current : null;
+        },
+        90000,
+        'The actual installed game must finish before archiving',
+      );
+    };
+    let settled, first;
+    for (let attempt = 0; attempt < 6; attempt++) {
+      settled = await finish();
+      first = await app.evaluate(() => window.noir.getRecords()[0].attempts.at(-1));
+      if (first.snapshot.decisions.length) break;
+      await app.click('#reset-button');
+      await app.click('#confirm-reset');
+    }
+    assert.ok(
+      first.snapshot.decisions.length,
+      'Historical review needs a real recorded hero decision',
+    );
+    assert.equal(first.status, 'completed');
+    assert.equal(first.snapshot.deck, undefined);
+    assert.equal(first.hand, settled.hand);
+    await app.click('#restart-hand-button');
+    const retried = await app.state();
+    assert.equal(retried.replayAttempt, 1);
+    assert.deepEqual(retried.hole, settled.hole);
+    await finish();
+    const attempts = await app.evaluate(() => window.noir.getRecords()[0].attempts);
+    assert.equal(attempts.length, 2);
+    assert.equal(attempts[0].superseded, true);
+    assert.equal(attempts[1].superseded, false);
+    await app.click('#next-button');
+    await app.click('#rules-button');
+    await app.click('#records-menu-item');
+    assert.equal(await app.visible('#records-page'), true);
+    await app.click(`[data-record-hand="${first.id}"]`);
+    assert.equal(await app.visible('#history-page'), true);
+    const archiveBefore = await app.evaluate(() => ({
+      title: document.querySelector('#records-title').textContent,
+      table: document.querySelector('#history-table').textContent,
+      heroCards: document.querySelectorAll('#history-table .hero-cards .playing-card').length,
+      live: window.noir.getState(),
+    }));
+    assert.equal(archiveBefore.heroCards, 2);
+    assert.ok(archiveBefore.title.includes(`第 ${first.hand} 手`));
+    await app.screenshot('game-records-historical-settlement');
+    await app.click('#history-review-button');
+    const review = await waitForNativeReview(app);
+    await app.click('#review-dialog .close-dialog');
+    assert.equal(
+      await app.evaluate(() => document.querySelector('#history-table').textContent),
+      archiveBefore.table,
+    );
+    await app.click('#history-back-button');
+    await app.screenshot('game-records-list');
+    const list = await app.evaluate(() => ({
+      cards: document.querySelectorAll('.record-session:first-child .record-cards .playing-card')
+        .length,
+      rows: [...document.querySelectorAll('.record-session:first-child .record-attempt')].map(
+        (row) => [row.dataset.hand, row.dataset.attempt],
+      ),
+      heading: document.querySelector('.record-session-heading').textContent,
+    }));
+    assert.ok(list.cards >= 4);
+    assert.deepEqual(list.rows.slice(0, 2), [
+      [String(first.hand), '0'],
+      [String(first.hand), '1'],
+    ]);
+    assert.doesNotMatch(list.heading, /已完成|手数/);
+    await app.click('#records-back-button');
+    if ((await app.state()).phase === 'done') await app.click('#next-button');
+    const leaving = await app.state();
+    const countedBefore = await app.evaluate(
+      () =>
+        window.noir
+          .getRecords()[0]
+          .attempts.filter((attempt) => attempt.status === 'completed' && !attempt.superseded)
+          .length,
+    );
+    const wealth = leaving.players.reduce((sum, p) => sum + p.stack, 0) + leaving.pot;
+    await app.relaunch();
+    const resumed = await app.state();
+    assert.equal(resumed.sessionNumber, leaving.sessionNumber);
+    assert.equal(resumed.hand, leaving.hand + 1);
+    assert.equal(resumed.players.reduce((sum, p) => sum + p.stack, 0) + resumed.pot, wealth);
+    const restored = await app.evaluate(() => window.noir.getRecords()[0]);
+    assert.equal(
+      restored.attempts.find((attempt) => attempt.hand === leaving.hand && !attempt.superseded)
+        .status,
+      'unfinished',
+    );
+    assert.equal(
+      restored.attempts.filter((attempt) => attempt.status === 'completed' && !attempt.superseded)
+        .length,
+      countedBefore,
+    );
+    return {
+      first: { hand: first.hand, profit: first.profit },
+      attempts: attempts.map(({ hand, attempt, status, superseded }) => ({
+        hand,
+        attempt,
+        status,
+        superseded,
+      })),
+      list,
+      review,
+      resumed: { session: resumed.sessionNumber, hand: resumed.hand, wealth },
+    };
+  });
   const unknown = selectedScenarios?.filter((name) => !seenScenarios.has(name));
   if (unknown?.length)
     throw Error(`Unknown NOIR_NATIVE_SCENARIOS selection: ${unknown.join(', ')}`);

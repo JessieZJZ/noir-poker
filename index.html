@@ -45,6 +45,7 @@
     <link rel="stylesheet" href="/src/styles/table-readability.css" />
     <link rel="stylesheet" href="/src/styles/desktop-play.css" />
     <link rel="stylesheet" href="/src/styles/table-density.css" />
+    <link rel="stylesheet" href="/src/styles/game-records.css" />
   </head>
   <body inert>
     <dialog
@@ -84,7 +85,27 @@
           </svg>
         </button>
         <span id="opponents-summary" class="sr-only">均衡</span>
-        <button class="quiet-button" id="rules-button">玩法指南 <span>?</span></button>
+        <div class="guide-menu">
+          <button
+            class="quiet-button"
+            id="rules-button"
+            aria-haspopup="menu"
+            aria-expanded="false"
+            aria-controls="guide-menu"
+          >
+            <span class="guide-rotating-label">
+              <span data-guide-label="guide">玩法指南</span>
+              <span data-guide-label="records" aria-hidden="true">对局记录</span>
+            </span>
+            <svg class="guide-chevron" viewBox="0 0 16 16" aria-hidden="true">
+              <path d="m4 6 4 4 4-4" />
+            </svg>
+          </button>
+          <div id="guide-menu" class="guide-menu-options" role="menu" hidden>
+            <button id="guide-menu-item" role="menuitem">玩法指南</button>
+            <button id="records-menu-item" role="menuitem">对局记录</button>
+          </div>
+        </div>
       </div>
     </header>
     <main class="main">
@@ -92,6 +113,7 @@
         <div class="game-surface">
           <div class="surface-top">
             <div class="hand-label">
+              <span class="session-label" id="session-number-label">第 1 局</span><span>·</span>
               <i class="hand-prefix">第</i> <b id="hand-number">01</b> <i class="hand-suffix">手</i>
               <span>·</span> <span id="street-label">准备发牌</span
               ><span id="replay-label" class="replay-label" hidden></span>
@@ -321,6 +343,18 @@
         </div>
         <span>仅使用虚拟筹码</span>
       </footer>
+    </main>
+    <main id="records-page" class="records-page" aria-labelledby="records-title" hidden>
+      <div class="records-page-heading">
+        <div>
+          <p class="records-eyebrow">本地练习</p>
+          <h1 id="records-title" tabindex="-1">对局记录</h1>
+        </div>
+        <button id="records-back-button" class="records-back">返回游戏</button>
+      </div>
+      <p class="records-live-note">浏览记录时，当前游戏继续进行。</p>
+      <p id="records-storage-error" class="records-storage-error" role="status" hidden></p>
+      <div id="records-content"></div>
     </main>
     <dialog
       id="opponents-dialog"
