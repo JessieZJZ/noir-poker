@@ -43,3 +43,5 @@ Web、原生 App 与微信小程序都使用 `src/engine/game-records.js` 保存
 单元回归 `tests/unit/game-records.test.js` 覆盖重复重打、补码、未完成恢复、动态面额、分池退款与筹码守恒、损坏数据及原生异步存储失败。Web `tests/e2e/game-records.spec.js` 覆盖页面、排序、历史复盘隔离、刷新恢复、待生效设置、窄屏与所有语言。原生场景 `game-records-pages-retry-and-resume` 使用实际安装的本地包和真实游戏操作；微信 `tests/wechat/game-records.mjs` 使用 DevTools 新页面与同一控制器。编译、资源检查、浏览器、安装模拟器和实体设备证据分别报告。
 
 本次标签简化、运行限制与网站发布结果见 [标签与 Sites 验证](game-records-tags-validation-2026-10-14.md)。
+
+本轮间距、牌面、回退与多端运行证据见 [2026-10-15 响应式验证](game-records-responsive-validation-2026-10-15.md)。

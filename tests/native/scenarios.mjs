@@ -1894,22 +1894,29 @@ export async function nativeScenarios(app) {
         15000,
         'The visible privacy link must establish a ready predecessor page',
       );
+      const readPrivacyPage = () => ({
+        pathname: location.pathname,
+        title: document.querySelector('article:not([hidden]) h1').textContent.trim(),
+        locale: document.querySelector('#policy-language').value,
+        returnLink: document
+          .querySelector('article:not([hidden]) a[href="./"]')
+          .getAttribute('href'),
+        hasRecords: Boolean(document.querySelector('#records-page')),
+      });
+      const privacyParent = await app.evaluate(readPrivacyPage);
       await app.click('article:not([hidden]) a[href="./"]');
       await waitGamePage();
       await openSavedHand();
       await app.click('#records-back-button');
       await waitGamePage();
       await app.back({ expectedPage: 'privacy' });
-      const privacy = await app.evaluate(() => ({
-        pathname: location.pathname,
-        title: document.querySelector('article:not([hidden]) h1').textContent.trim(),
-        returnLink: document
-          .querySelector('article:not([hidden]) a[href="./"]')
-          .getAttribute('href'),
-        hasRecords: Boolean(document.querySelector('#records-page')),
-      }));
+      const privacy = await app.evaluate(readPrivacyPage);
       assert.ok(privacy.pathname.endsWith('/app-privacy.html'));
-      assert.equal(privacy.title, 'NOIR Poker 隐私政策');
+      assert.deepEqual(
+        privacy,
+        privacyParent,
+        'Edge Back must return to the actual localized predecessor',
+      );
       assert.equal(privacy.returnLink, './');
       assert.equal(privacy.hasRecords, false);
       await app.sleep(1000);
