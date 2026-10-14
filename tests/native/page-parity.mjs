@@ -6,6 +6,249 @@ import { chromium } from '@playwright/test';
 import { profileDetailBounds } from '../../src/ui/profile-layout.js';
 import { compareNativePaint } from './paint-parity.mjs';
 
+export function collectNativePageSnapshot(selectors) {
+  const root = document.documentElement;
+  const inset = (edge) =>
+    parseFloat(getComputedStyle(document.body).getPropertyValue('padding-' + edge)) || 0;
+  const top = inset('top'),
+    bottom = inset('bottom');
+  const probe = document.createElement('span');
+  probe.style.cssText =
+    'position:fixed;visibility:hidden;width:0;height:0;border-left:1px solid;pointer-events:none';
+  document.body.append(probe);
+  const layoutScale =
+    Math.round(10000 / parseFloat(getComputedStyle(probe).borderLeftWidth)) / 10000;
+  probe.remove();
+  const clone = document.body.cloneNode(true);
+  document.querySelectorAll('select').forEach((select, index) => {
+    const copy = clone.querySelectorAll('select')[index];
+    [...copy.options].forEach((option) =>
+      option.toggleAttribute('selected', option.value === select.value),
+    );
+  });
+  clone.querySelectorAll('script').forEach((script) => script.remove());
+  // Web's content viewport excludes the native gesture area. The fitted
+  // surface stores the full native height; remove that inset in the replay.
+  const surface = clone.querySelector('.game-surface');
+  const playHeight = parseFloat(surface?.style.getPropertyValue('--play-height'));
+  if (Number.isFinite(playHeight))
+    surface.style.setProperty('--play-height', playHeight - bottom + 'px');
+  const boxes = Object.fromEntries(
+    selectors.map((selector) => {
+      const element = document.querySelector(selector),
+        r = element.getBoundingClientRect(),
+        style = getComputedStyle(element),
+        shown = element.getClientRects().length > 0;
+      let intrinsicSelect;
+      if (selector === '#policy-language' && element.tagName === 'SELECT') {
+        const widths = [],
+          widthProperties = ['width', 'inline-size', 'min-width', 'min-inline-size'];
+        const inspectStyle = (declaration, source) => {
+          for (const property of widthProperties)
+            if (declaration.getPropertyValue(property))
+              widths.push({ source, property, value: declaration.getPropertyValue(property) });
+        };
+        inspectStyle(element.style, 'inline');
+        if (element.hasAttribute('width'))
+          widths.push({
+            source: 'attribute',
+            property: 'width',
+            value: element.getAttribute('width'),
+          });
+        let unreadableStylesheet = false;
+        const inspectRules = (rules) => {
+          for (const rule of rules) {
+            if (rule.selectorText && element.matches(rule.selectorText))
+              inspectStyle(rule.style, rule.selectorText);
+            if (rule.cssRules) inspectRules(rule.cssRules);
+          }
+        };
+        for (const sheet of document.styleSheets) {
+          try {
+            inspectRules(sheet.cssRules);
+          } catch {
+            unreadableStylesheet = true;
+          }
+        }
+        const parent = element.parentElement,
+          parentRect = parent.getBoundingClientRect(),
+          parentStyle = getComputedStyle(parent),
+          label = [...element.labels][0],
+          labelRect = label?.getBoundingClientRect(),
+          selected = element.selectedOptions[0],
+          canvas = document.createElement('canvas'),
+          context = canvas.getContext('2d'),
+          number = (property) => parseFloat(style[property]) || 0;
+        context.font = `${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;
+        intrinsicSelect = {
+          appearance: style.appearance,
+          authoredWidths: widths,
+          unreadableStylesheet,
+          multiple: element.multiple,
+          size: element.size,
+          disabled: element.disabled,
+          value: element.value,
+          options: [...element.options].map((option) => ({
+            value: option.value,
+            label: option.label,
+            disabled: option.disabled,
+          })),
+          accessibleLabel: element.getAttribute('aria-label'),
+          label: label && {
+            text: label.textContent.trim(),
+            left: labelRect.left,
+            right: labelRect.right,
+            top: labelRect.top - top,
+            bottom: labelRect.bottom - top,
+          },
+          textWidth: context.measureText(selected?.label || '').width,
+          horizontalInsets:
+            number('paddingLeft') +
+            number('paddingRight') +
+            number('borderLeftWidth') +
+            number('borderRightWidth'),
+          container: {
+            left:
+              parentRect.left +
+              parseFloat(parentStyle.paddingLeft) +
+              parseFloat(parentStyle.borderLeftWidth),
+            right:
+              parentRect.right -
+              parseFloat(parentStyle.paddingRight) -
+              parseFloat(parentStyle.borderRightWidth),
+          },
+          viewportWidth: innerWidth,
+        };
+      }
+      return [
+        selector,
+        {
+          left: r.left,
+          top: shown ? r.top - top : 0,
+          shown,
+          width: r.width,
+          height: r.height,
+          font: style.fontFamily.replaceAll('"', '').replaceAll("'", ''),
+          size: style.fontSize,
+          weight: style.fontWeight,
+          lineHeight: style.lineHeight,
+          // A range has no rendered text; its track/thumb colors are styled
+          // separately. Browsers retain different unused UA text colors.
+          color: element.type === 'range' ? null : style.color,
+          ...(intrinsicSelect && { intrinsicSelect }),
+        },
+      ];
+    }),
+  );
+  return {
+    head: document.head.innerHTML.replace(/<script\b[^>]*>[\s\S]*?<\/script>/g, ''),
+    body: clone.outerHTML,
+    lang: root.lang,
+    pixelRatio: devicePixelRatio,
+    layoutScale,
+    viewport: { width: innerWidth, height: innerHeight - top - bottom },
+    insets: { top, bottom },
+    scroll: scrollY
+      ? { bottomDistance: document.documentElement.scrollHeight - scrollY - innerHeight }
+      : null,
+    open: [...document.querySelectorAll('dialog[open]')].map((dialog) => dialog.id),
+    scrolls: [...document.querySelectorAll('[id], .opponents-body')]
+      .filter((element) => element.scrollTop)
+      .map((element) => ({
+        selector: element.id ? '#' + element.id : '.opponents-body',
+        top: element.scrollTop,
+      })),
+    boxes,
+  };
+}
+
+const privacyOptions = [
+  ['zh-CN', '简体中文'],
+  ['en', 'English'],
+  ['zh-TW', '繁體中文'],
+  ['ja', '日本語'],
+  ['ko', '한국어'],
+  ['es', 'Español'],
+  ['it', 'Italiano'],
+  ['pt', 'Português'],
+  ['de', 'Deutsch'],
+  ['fr', 'Français'],
+  ['ru', 'Русский'],
+].map(([value, label]) => ({ value, label, disabled: false }));
+
+// An unstyled HTML select uses the OS menu chrome to choose its intrinsic
+// width. Keep authored geometry strict, but verify the privacy control's real
+// content and fit instead of requiring Chromium's arrow to match UIKit's.
+export function assertPrivacySelectIntrinsic(nativeBox, webBox) {
+  for (const [renderer, box] of [
+    ['native', nativeBox],
+    ['Web', webBox],
+  ]) {
+    const control = box.intrinsicSelect;
+    assert.ok(control, `${renderer} privacy select metadata is missing`);
+    assert.equal(control.appearance, 'auto', `${renderer} privacy select appearance`);
+    assert.deepEqual(control.authoredWidths, [], `${renderer} privacy select has authored width`);
+    assert.equal(
+      control.unreadableStylesheet,
+      false,
+      `${renderer} privacy select stylesheet unreadable`,
+    );
+    assert.equal(control.multiple, false, `${renderer} privacy select is multiple`);
+    assert.equal(control.size, 0, `${renderer} privacy select has authored size`);
+    assert.equal(control.disabled, false, `${renderer} privacy select is disabled`);
+    assert.deepEqual(control.options, privacyOptions, `${renderer} privacy language options`);
+    assert.ok(
+      privacyOptions.some(({ value }) => value === control.value),
+      `${renderer} privacy language value`,
+    );
+    assert.equal(
+      control.accessibleLabel,
+      'Language',
+      `${renderer} privacy select accessible label`,
+    );
+    assert.equal(control.label?.text, 'Language', `${renderer} privacy select visible label`);
+    assert.ok(
+      box.shown && Number.isFinite(box.width) && box.width > 0 && box.height > 0,
+      `${renderer} privacy select has no rendered size`,
+    );
+    assert.ok(
+      Number.isFinite(control.textWidth) &&
+        control.textWidth > 0 &&
+        Number.isFinite(control.horizontalInsets) &&
+        control.horizontalInsets >= 0 &&
+        control.textWidth + control.horizontalInsets <= box.width,
+      `${renderer} privacy select clips its selected text`,
+    );
+    assert.ok(
+      Number.isFinite(control.container.left) &&
+        Number.isFinite(control.container.right) &&
+        box.left >= control.container.left &&
+        box.left + box.width <= control.container.right &&
+        box.left >= 0 &&
+        box.left + box.width <= control.viewportWidth,
+      `${renderer} privacy select is outside its container or viewport`,
+    );
+    assert.ok(
+      box.left >= control.label.right &&
+        control.label.top < box.top + box.height &&
+        control.label.bottom > box.top,
+      `${renderer} privacy select and label must share a row without overlap`,
+    );
+  }
+  assert.equal(
+    nativeBox.intrinsicSelect.value,
+    webBox.intrinsicSelect.value,
+    'privacy selected language',
+  );
+  return {
+    property: 'width',
+    reason:
+      'OS intrinsic menu chrome; appearance:auto and no authored width; options, selected text fit and container checked',
+    native: nativeBox.width,
+    web: webBox.width,
+  };
+}
+
 // Replay only the installed app's rendered DOM in Chromium. This compares the
 // same cards, text and selections, without putting test fixtures in an app.
 // Native screenshots still come from the installed app's native driver.
@@ -24,79 +267,7 @@ export async function compareNativePage({ root, output, evaluate, screenshot }, 
   // WebKit can resolve frame callbacks before UIKit presents the new layer.
   // Give the device compositor time to present dialog and scrolling changes.
   await new Promise((resolve) => setTimeout(resolve, 750));
-  const snapshot = await evaluate((selectors) => {
-    const root = document.documentElement;
-    const inset = (edge) =>
-      parseFloat(getComputedStyle(document.body).getPropertyValue('padding-' + edge)) || 0;
-    const top = inset('top'),
-      bottom = inset('bottom');
-    const probe = document.createElement('span');
-    probe.style.cssText =
-      'position:fixed;visibility:hidden;width:0;height:0;border-left:1px solid;pointer-events:none';
-    document.body.append(probe);
-    const layoutScale =
-      Math.round(10000 / parseFloat(getComputedStyle(probe).borderLeftWidth)) / 10000;
-    probe.remove();
-    const clone = document.body.cloneNode(true);
-    document.querySelectorAll('select').forEach((select, index) => {
-      const copy = clone.querySelectorAll('select')[index];
-      [...copy.options].forEach((option) =>
-        option.toggleAttribute('selected', option.value === select.value),
-      );
-    });
-    clone.querySelectorAll('script').forEach((script) => script.remove());
-    // Web's content viewport excludes the native gesture area. The fitted
-    // surface stores the full native height; remove that inset in the replay.
-    const surface = clone.querySelector('.game-surface');
-    const playHeight = parseFloat(surface?.style.getPropertyValue('--play-height'));
-    if (Number.isFinite(playHeight))
-      surface.style.setProperty('--play-height', playHeight - bottom + 'px');
-    const boxes = Object.fromEntries(
-      selectors.map((selector) => {
-        const element = document.querySelector(selector),
-          r = element.getBoundingClientRect(),
-          style = getComputedStyle(element),
-          shown = element.getClientRects().length > 0;
-        return [
-          selector,
-          {
-            left: r.left,
-            top: shown ? r.top - top : 0,
-            shown,
-            width: r.width,
-            height: r.height,
-            font: style.fontFamily.replaceAll('"', '').replaceAll("'", ''),
-            size: style.fontSize,
-            weight: style.fontWeight,
-            lineHeight: style.lineHeight,
-            // A range has no rendered text; its track/thumb colors are styled
-            // separately. Browsers retain different unused UA text colors.
-            color: element.type === 'range' ? null : style.color,
-          },
-        ];
-      }),
-    );
-    return {
-      head: document.head.innerHTML.replace(/<script\b[^>]*>[\s\S]*?<\/script>/g, ''),
-      body: clone.outerHTML,
-      lang: root.lang,
-      pixelRatio: devicePixelRatio,
-      layoutScale,
-      viewport: { width: innerWidth, height: innerHeight - top - bottom },
-      insets: { top, bottom },
-      scroll: scrollY
-        ? { bottomDistance: document.documentElement.scrollHeight - scrollY - innerHeight }
-        : null,
-      open: [...document.querySelectorAll('dialog[open]')].map((dialog) => dialog.id),
-      scrolls: [...document.querySelectorAll('[id], .opponents-body')]
-        .filter((element) => element.scrollTop)
-        .map((element) => ({
-          selector: element.id ? '#' + element.id : '.opponents-body',
-          top: element.scrollTop,
-        })),
-      boxes,
-    };
-  }, selectors);
+  const snapshot = await evaluate(collectNativePageSnapshot, selectors);
   const nativeCapture = await screenshot('parity-' + name + '-native');
   const directory = path.join(root, '.artifacts/mobile/web');
   const server = createServer(async (request, response) => {
@@ -191,32 +362,7 @@ export async function compareNativePage({ root, output, evaluate, screenshot }, 
         panel.style.setProperty('--profile-detail-top', `${bounds.top}px`);
         panel.style.setProperty('--profile-detail-height', `${bounds.height}px`);
       }, profileDetailBounds(profileGeometry));
-    const boxes = await page.evaluate(
-      (selectors) =>
-        Object.fromEntries(
-          selectors.map((selector) => {
-            const element = document.querySelector(selector),
-              r = element.getBoundingClientRect(),
-              style = getComputedStyle(element);
-            return [
-              selector,
-              {
-                left: r.left,
-                top: r.top,
-                shown: element.getClientRects().length > 0,
-                width: r.width,
-                height: r.height,
-                font: style.fontFamily.replaceAll('"', '').replaceAll("'", ''),
-                size: style.fontSize,
-                weight: style.fontWeight,
-                lineHeight: style.lineHeight,
-                color: element.type === 'range' ? null : style.color,
-              },
-            ];
-          }),
-        ),
-      selectors,
-    );
+    const { boxes } = await page.evaluate(collectNativePageSnapshot, selectors);
     const webImage = path.join(output, 'parity-' + name + '-web.png');
     await page.screenshot({ path: webImage });
     const paint = /^(?:table|settlement)(?:-[5-9])?$/.test(name)
@@ -229,6 +375,17 @@ export async function compareNativePage({ root, output, evaluate, screenshot }, 
       head: undefined,
       body: undefined,
       web: boxes,
+      intrinsicControlWidths:
+        name === 'privacy' && selectors.includes('#policy-language')
+          ? {
+              '#policy-language': {
+                reason:
+                  'OS intrinsic menu chrome; validate appearance:auto, no authored width, options, text fit and container',
+                native: snapshot.boxes['#policy-language'].width,
+                web: boxes['#policy-language'].width,
+              },
+            }
+          : undefined,
       paint,
     };
     await writeFile(
@@ -240,8 +397,15 @@ export async function compareNativePage({ root, output, evaluate, screenshot }, 
         paint.meanChannelError <= paint.limit,
         `${name}: native paint differs from Web (${paint.meanChannelError.toFixed(4)} > ${paint.limit}); inspect the retained screenshots`,
       );
+    const intrinsicControlWidths = {};
     for (const selector of selectors) {
-      for (const key of ['left', 'top', 'width', 'height'])
+      const intrinsic = name === 'privacy' && selector === '#policy-language';
+      if (intrinsic)
+        intrinsicControlWidths[selector] = assertPrivacySelectIntrinsic(
+          snapshot.boxes[selector],
+          boxes[selector],
+        );
+      for (const key of ['left', 'top', ...(intrinsic ? [] : ['width']), 'height'])
         assert.ok(
           Math.abs(snapshot.boxes[selector][key] - boxes[selector][key]) <= 2,
           `${name} ${selector} ${key}: native ${snapshot.boxes[selector][key]}, Web ${boxes[selector][key]}`,
@@ -269,6 +433,7 @@ export async function compareNativePage({ root, output, evaluate, screenshot }, 
       insets: snapshot.insets,
       components: selectors.length,
       tolerancePx: 2,
+      intrinsicControlWidths,
       paint,
     };
   } finally {
