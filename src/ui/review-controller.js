@@ -29,9 +29,7 @@ export function createReviewController({ card }) {
     $('#review-opponents').hidden = !opponent;
     setLocalizedText(
       dialog.querySelector('.review-scope'),
-      opponent
-        ? '按当时信息判断，单手输赢不直接决定操作好坏。未完整建模对手继续范围、权益实现或未来策略，不是职业牌手的真实心理，也不是最优打法证明。'
-        : '按当时信息判断，单手输赢不直接决定操作好坏。',
+      '按当时信息判断，单手输赢不直接决定操作好坏。',
     );
   }
   $('#review-hero-tab').onclick = () => perspective(false);
@@ -61,7 +59,7 @@ export function createReviewController({ card }) {
       analysis = last.analysis,
       decision = steps[selected],
       result = analysis?.steps[selected];
-    setLocalizedText($('#review-dialog-title'), '第 ' + input.hand + ' 手 · 决策复盘');
+    setLocalizedText($('#review-dialog-title'), '第 ' + input.hand + ' 手，决策复盘');
     setLocalizedText(
       $('#review-result-change'),
       input.outcome.profit < 0
@@ -106,7 +104,7 @@ export function createReviewController({ card }) {
         .map((s, i) => {
           const r = analysis?.steps[i],
             status = coachingStatus(r);
-          return `<button class="review-step ${selected === i ? 'selected' : ''}" data-review-index="${i}" aria-current="${selected === i ? 'step' : 'false'}"><span class="review-step-number">${i + 1}</span><span><small>${STREET_NAMES[s.street]} · ${s.position}</small><strong>${actionLabel(s)}</strong></span>${r?.coaching.kind === 'keep' ? '' : `<span class="review-status ${status || 'pending'}">${r?.coaching.label || (status ? statusNames[status] : '待分析')}</span>`}</button>`;
+          return `<button class="review-step ${selected === i ? 'selected' : ''}" data-review-index="${i}" aria-current="${selected === i ? 'step' : 'false'}"><span class="review-step-number">${i + 1}</span><span><small>${STREET_NAMES[s.street]}，${s.position}</small><strong>${actionLabel(s)}</strong></span>${r?.coaching.kind === 'keep' ? '' : `<span class="review-status ${status || 'pending'}">${r?.coaching.label || (status ? statusNames[status] : '待分析')}</span>`}</button>`;
         })
         .join(''),
     );
@@ -122,7 +120,7 @@ export function createReviewController({ card }) {
     if (!decision) return;
     setLocalizedText(
       $('#review-detail-title'),
-      '第 ' + (selected + 1) + ' 步 · ' + STREET_NAMES[decision.street],
+      '第 ' + (selected + 1) + ' 步，' + STREET_NAMES[decision.street],
     );
     setLocalizedText(
       $('#review-selected-status'),
@@ -145,7 +143,10 @@ export function createReviewController({ card }) {
     setLocalizedText($('#review-stack'), format(decision.stack));
     setLocalizedHTML(
       $('#review-coach-explanation'),
-      (result?.coaching.paragraphs || ['正在比较当时的合法选择…'])
+      [
+        ...(result?.coaching.paragraphs || ['正在比较当时的合法选择…']),
+        ...(input.publicResponses?.[selected] || []),
+      ]
         .map((text) => `<p>${esc(text)}</p>`)
         .join(''),
     );
@@ -162,7 +163,7 @@ export function createReviewController({ card }) {
         ? publicActions
             .map(
               (a) =>
-                `<li><span>${esc(a.street)} · ${esc(a.name)}</span><span>${esc(a.action)}</span></li>`,
+                `<li><span>${esc(a.street)}，${esc(a.name)}</span><span>${esc(a.action)}</span></li>`,
             )
             .join('')
         : '<li>本轮尚无其他主动行动。</li>',

@@ -842,7 +842,9 @@ Page({
         '全部对手',
         ...names.map((name) => {
           const step = opponents.find((step) => step.name === name);
-          return step.named && step.profileName ? `${name} · ${step.profileName}` : name;
+          return step.named && step.profileName
+            ? `${name}，${step.profileName.replace(/\s*·\s*/g, '，')}`
+            : name;
         }),
       ],
       opponentFilter: filter,

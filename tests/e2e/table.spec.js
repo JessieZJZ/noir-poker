@@ -1863,21 +1863,21 @@ test('A7 review separates steal, 3bet and 4bet; opponents expose actual decision
     timeout: 30000,
   });
   await page.locator('#review-timeline [data-review-index="0"]').click();
-  await expect(page.locator('#review-coach-explanation')).toContainText('主动开池');
+  await expect(page.locator('#review-coach-explanation')).toContainText(/开池|偷盲/);
   await expect(page.locator('#review-selected-status')).not.toHaveText('2-bet 开池至 150');
   await expect(page.locator('#review-routes, #review-advanced')).toHaveCount(0);
   await page.locator('#review-timeline [data-review-index="1"]').click();
   await expect(page.locator('#review-coach-explanation')).toContainText('3-bet');
   await page.locator('#review-timeline [data-review-index="2"]').click();
-  await expect(page.locator('#review-coach-explanation')).toContainText('多次再加注');
+  await expect(page.locator('#review-coach-explanation')).toContainText('1.8K');
   await page.locator('#review-opponents-tab').click();
   await expect(page.locator('#review-hero-panel')).toBeHidden();
   await expect(page.locator('#review-opponent-detail .review-cards .playing-card')).toHaveCount(5);
   await expect(page.locator('#review-opponent-detail .review-explanation')).not.toBeEmpty();
-  await expect(page.locator('#review-opponent-detail .review-evidence')).toContainText('随机范围');
-  expect(
-    await page.locator('#review-opponent-detail .opponent-metrics li').count(),
-  ).toBeLessThanOrEqual(2);
+  await expect(page.locator('#review-opponent-detail .opponent-metrics')).toHaveCount(0);
+  await expect(page.locator('#review-opponent-detail .review-explanation')).not.toContainText(
+    /它|EV|模型|模拟器|抽样/,
+  );
   await expect(
     page.locator('#review-opponent-detail .review-choice, .opponent-warning'),
   ).toHaveCount(0);
@@ -1888,7 +1888,7 @@ test('A7 review separates steal, 3bet and 4bet; opponents expose actual decision
   await expect(page.locator('#review-opponents .review-timeline')).toContainText('Mia');
   await expect(page.locator('#review-opponents .review-timeline')).not.toContainText('Alex');
   await page.locator('#review-hero-tab').click();
-  await expect(page.locator('#review-coach-explanation')).toContainText('多次再加注');
+  await expect(page.locator('#review-coach-explanation')).toContainText('1.8K');
   const layout = await page.evaluate(() => {
     const d = document.querySelector('#review-dialog');
     return { width: d.clientWidth, scroll: d.scrollWidth };

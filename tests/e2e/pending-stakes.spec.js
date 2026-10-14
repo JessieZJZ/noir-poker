@@ -163,6 +163,53 @@ test('the 50K small-blind limit saves raw digits, displays K/M, and applies when
   await expect(page.locator('#stakes-change-note')).toBeHidden();
 });
 
+test('causal review keeps the recorded blind scale while a new scale is queued across retry', async ({
+  page,
+}) => {
+  await page.evaluate(() => window.qa.reviewCausalReraise());
+  const original = await page.evaluate(() => window.qa.snapshot());
+  expect(original.stakes).toEqual(stakes(25));
+  await openSettings(page);
+  await saveSmallBlind(page, '50000');
+  await expect(page.locator('#stakes-change-note')).toHaveText(
+    '下一手起始盲注50K/100K·筹码恢复为10M，统计重新开始',
+  );
+  await closeSettings(page);
+  expect(await page.evaluate(() => window.qa.snapshot())).toEqual(original);
+  await page.locator('#review-hand-button').click();
+  await expect(page.locator('#review-dialog')).toHaveAttribute('data-analysis-status', 'done', {
+    timeout: 30000,
+  });
+  await page.locator('[data-review-index="0"]').click();
+  const explanation = page.locator('#review-coach-explanation');
+  await expect(explanation).toContainText('350');
+  await expect(explanation).toContainText(/Mia.*1K/);
+  await expect(explanation).toContainText(/River.*950/);
+  await expect(explanation).not.toContainText(/10M|100K|50K/);
+  await expect(page.locator('#review-evidence')).toContainText('5K');
+  await page.locator('#review-dialog .close-dialog').first().click();
+  await page.locator('#restart-hand-button').click();
+  await page.evaluate(() => window.qa.stop());
+  const retried = await page.evaluate(() => window.qa.snapshot());
+  expect(retried.stakes).toEqual(stakes(25));
+  expect(retried.hand).toBe(original.hand);
+  expect(retried.replayAttempt).toBe(1);
+  expect(retried.stats.hands).toBe(0);
+  await openSettings(page);
+  await expect(page.locator('#small-blind-button')).toHaveText('50K');
+  await expect(page.locator('#stakes-change-note')).toBeVisible();
+  await closeSettings(page);
+  await finishHand(page);
+  await page.locator('#next-button').click();
+  await page.evaluate(() => window.qa.stop());
+  const next = await page.evaluate(() => window.qa.snapshot());
+  expect(next.stakes).toEqual(stakes(50000));
+  expect(next.hand).toBe(1);
+  expect(next.stats).toEqual({ hands: 0, wins: 0, buyin: 10000000 });
+  expect(next.players.every((player) => player.stack + player.total === 10000000)).toBe(true);
+  await expect(page.locator('#blind-values')).toHaveText('50K / 100K');
+});
+
 test('restoring the current blinds removes the pending reset and preserves statistics next hand', async ({
   page,
 }) => {

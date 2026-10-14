@@ -907,6 +907,15 @@ export async function nativeScenarios(app) {
     return { details, saved, applied: applied.players[1].botProfile };
   });
   await check('raise-call-fold-and-settlement', async () => {
+    await app.click('#opponents-button');
+    await app.evaluate(() =>
+      document.querySelector('input[name="difficulty"][value="hard"]').click(),
+    );
+    await app.click('#opponents-dialog .close-dialog');
+    assert.equal(
+      await app.evaluate(() => document.querySelector('input[name="difficulty"]:checked').value),
+      'hard',
+    );
     const coverage = { raise: null, call: null, fold: null };
     let settled;
     let settlementBudget;
@@ -1137,10 +1146,17 @@ export async function nativeScenarios(app) {
       evidence: document.querySelectorAll('#review-evidence li').length,
       keep: document.querySelector('#review-selected-status').textContent === '值得保留',
       focusHidden: document.querySelector('#review-practice-focus').hidden,
+      reason: document.querySelector('#review-coach-explanation').textContent,
+      keyInfo: document.querySelector('#review-evidence').textContent,
+      method: document.querySelectorAll('.review-method, #review-method').length,
     }));
     assert.equal(presentation.removed, 0);
     assert.ok(presentation.evidence >= 4);
     assert.equal(presentation.focusHidden, presentation.keep);
+    assert.equal(presentation.method, 0);
+    assert.doesNotMatch(presentation.reason, /EV|模型|模拟器|抽样|新增投入/);
+    assert.doesNotMatch(presentation.keyInfo, /有效剩余|新增投入/);
+    const observedDeceptiveMotives = [];
     if (app.comparePage) {
       await app.comparePage('review', [
         '#review-dialog',
@@ -1151,7 +1167,7 @@ export async function nativeScenarios(app) {
       ]);
       await app.click('#review-opponents-tab');
       const opponent = await app.evaluate(() => ({
-        metrics: document.querySelectorAll('.opponent-metrics li').length,
+        metrics: document.querySelectorAll('.opponent-metrics').length,
         removed: document.querySelectorAll(
           '#review-opponent-detail .review-choice, #review-opponent-detail .review-status, #review-opponent-detail details',
         ).length,
@@ -1159,18 +1175,37 @@ export async function nativeScenarios(app) {
         scope: document.querySelector('.review-scope').textContent,
       }));
       assert.ok(opponent.reason);
-      assert.ok(opponent.metrics > 0 && opponent.metrics <= 2);
+      assert.equal(opponent.metrics, 0);
+      assert.doesNotMatch(opponent.reason, /它|EV|模型|模拟器|抽样/);
       assert.equal(opponent.removed, 0);
-      assert.match(opponent.scope, /未完整建模对手继续范围/);
+      assert.match(opponent.scope, /按当时信息判断/);
       await app.comparePage('opponent-review', [
         '#review-dialog',
         '.review-tabs',
         '.review-opponent-heading',
       ]);
+      const count = await app.evaluate(
+        () => document.querySelectorAll('[data-opponent-index]').length,
+      );
+      for (let index = 0; index < Math.min(count, 24); index++) {
+        await app.click(`[data-opponent-index="${index}"]`);
+        const text = await app.evaluate(
+          () => document.querySelector('#review-opponent-detail .review-explanation').textContent,
+        );
+        if (/埋牌|脏牌|donk|2–7/.test(text)) {
+          if (text.includes('donk')) assert.match(text, /前一街进攻者/);
+          if (text.includes('脏牌再加注')) assert.match(text, /阻断/);
+          if (text.includes('2–7')) assert.match(text, /诈唬|试探下注/);
+          observedDeceptiveMotives.push({ index, text });
+        }
+      }
+      // Real deals only. A low-frequency branch is recorded if observed;
+      // deterministic coverage belongs to external Web/DevTools fixtures.
+      if (observedDeceptiveMotives.length) await app.screenshot('observed-deceptive-motive');
     }
     await app.click('#review-dialog .close-dialog');
     assert.equal(await app.evaluate(() => document.querySelector('#review-dialog').open), false);
-    return { ...review, presentation };
+    return { ...review, presentation, observedDeceptiveMotives };
   });
   await check('retry-original-deal-and-next-hand', async () => {
     const original = await app.state();

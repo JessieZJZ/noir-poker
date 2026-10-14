@@ -704,7 +704,7 @@
       ></view>
       <view class="review-title-row"
         ><view
-          ><text class="dialog-title">第 {{reviewData.hand}} 手 · 决策复盘</text
+          ><text class="dialog-title">第 {{reviewData.hand}} 手，决策复盘</text
           ><text class="review-context">{{reviewData.resultContext}}</text></view
         ><text class="review-profit">{{reviewData.profit}} 筹码</text></view
       >
@@ -756,8 +756,8 @@
             <text class="review-step-number">{{index + 1}}</text
             ><view
               ><text wx:if="{{reviewPerspective === 'hero'}}" class="review-step-meta"
-                >{{item.street}} · {{item.position}}</text
-              ><text wx:else class="review-step-meta">{{item.name}} · {{item.street}}</text
+                >{{item.street}}，{{item.position}}</text
+              ><text wx:else class="review-step-meta">{{item.name}}，{{item.street}}</text
               ><text class="review-step-action">{{item.actual}}</text></view
             ><text
               wx:if="{{reviewPerspective === 'opponent' || !item.keep}}"
@@ -771,7 +771,7 @@
         <view class="review-detail-header"
           ><text
             >{{reviewPerspective === 'hero' ? '第 ' + (reviewIndex + 1) + ' 步' :
-            selectedReviewStep.name}} · {{selectedReviewStep.street}}</text
+            selectedReviewStep.name}}，{{selectedReviewStep.street}}</text
           ><text
             wx:if="{{reviewPerspective === 'hero'}}"
             class="review-label {{selectedReviewStep.keep ? 'sound' : 'consider'}}"
@@ -817,7 +817,10 @@
           >
         </view>
         <view class="review-coaching">
-          <text>{{selectedReviewStep.reason}}</text>
+          <text wx:if="{{!selectedReviewStep.paragraphs.length}}"
+            >{{selectedReviewStep.reason}}</text
+          >
+          <text wx:for="{{selectedReviewStep.paragraphs}}" wx:key="index">{{item}}</text>
           <text wx:for="{{selectedReviewStep.reasons}}" wx:key="*this">{{item}}</text>
           <text wx:if="{{selectedReviewStep.warning}}" class="muted"
             >{{selectedReviewStep.warning}}</text
@@ -841,18 +844,11 @@
             >本轮尚无其他主动行动。</text
           >
         </view>
-        <view wx:if="{{reviewPerspective === 'opponent'}}" class="review-evidence opponent-metrics">
-          <text class="module-title">参考数字</text>
-          <text wx:for="{{selectedReviewStep.metrics}}" wx:key="*this">• {{item}}</text>
-        </view>
       </view>
       <text wx:elif="{{!reviewData.loading}}" class="muted"
         >本手没有主动决策，无法评价选择。盲注是强制投入，不会被归为操作失误。</text
       >
       <text class="review-scope muted">按当时信息判断，单手输赢不直接决定操作好坏。</text>
-      <text wx:if="{{reviewPerspective === 'opponent'}}" class="review-scope muted"
-        >未完整建模对手继续范围、权益实现或未来策略，不是职业牌手的真实心理，也不是最优打法证明。</text
-      >
     </view></scroll-view
   >
 </view>

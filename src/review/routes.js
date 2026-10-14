@@ -3,6 +3,8 @@ import { bigBlindOf } from '../engine/stakes.js';
 import { actionLabel } from '../engine/action-labels.js';
 import { callPrice } from './equity.js';
 import { legalRaiseTo } from '../engine/bet-sizing.js';
+import { valuePlan } from './matchups.js';
+export { valuePlan } from './matchups.js';
 
 export function comparisonRoutes(s, ctx, { code, status, alternative, pre }) {
   const label = (a) => actionLabel(s, a.action, a.amount);
@@ -27,6 +29,29 @@ export function comparisonRoutes(s, ctx, { code, status, alternative, pre }) {
           amount: legalRaiseTo(amount, s.legal),
         }
       : null;
+  const value = ctx.valuePlan || valuePlan(s, ctx);
+  if (
+    value.primary &&
+    ![
+      'free-fold',
+      'expensive-call',
+      'weak-threebet-defense',
+      'weak-fourbet-defense',
+      'weak-entry',
+      'squeeze-candidate',
+      'early-suited-entry',
+    ].includes(code)
+  ) {
+    Object.assign(primary, value.primary, {
+      label: label(value.primary),
+      summary: label(value.primary),
+      condition: value.reason,
+    });
+    secondary = value.secondary;
+    if (secondary && same(primary, secondary)) secondary = null;
+    if (secondary) secondary = { ...secondary, label: label(secondary) };
+    return { primary, secondary };
+  }
   if (code === 'late-open' || code === 'late-isolation') {
     primary.summary = pre.limpers
       ? '主动隔离，尺度随跛入人数调整'

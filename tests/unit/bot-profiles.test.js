@@ -11,6 +11,7 @@ import {
   restartHand,
   applyBotSettings,
   potSize,
+  evaluate,
 } from '../../src/engine/poker.js';
 import {
   BOT_PROFILES,
@@ -22,6 +23,7 @@ import {
   effectiveBotAxes,
   chooseBotAction,
   getBotProfile,
+  botBoardFeatures,
 } from '../../src/engine/bot-profiles.js';
 const copy = (v) => JSON.parse(JSON.stringify(v));
 function seeded(seed) {
@@ -243,11 +245,32 @@ test('style differences change entry and value-trap behavior over common decisio
   );
   const value = {
     ...view,
+    hole: [
+      { rank: 9, suit: 0 },
+      { rank: 9, suit: 1 },
+    ],
+    board: [
+      { rank: 9, suit: 3 },
+      { rank: 13, suit: 2 },
+      { rank: 2, suit: 1 },
+      { rank: 6, suit: 2 },
+    ],
     street: 2,
     equity: 0.9,
     rivals: 1,
-    legal: { ...view.legal, toCall: 0, callAmount: 0, canCheck: true },
+    pot: 800,
+    currentBet: 0,
+    contestable: 800,
+    inPosition: false,
+    opponents: [{ id: 0, stack: 5000, bet: 0, allin: false }],
+    legal: { ...view.legal, toCall: 0, callAmount: 0, canCheck: true, minRaiseTo: 50 },
   };
+  value.features = botBoardFeatures(
+    value.hole,
+    value.board,
+    evaluate([...value.hole, ...value.board]).score,
+  );
+  assert.equal(value.features.strongMade, true);
   assert.ok(
     decisions(st, value).filter((d) => d.action === 'check').length >
       decisions(peter, value).filter((d) => d.action === 'check').length,
@@ -269,15 +292,22 @@ test('uncalled shove refunds are not losses; blind-only hands are not VPIP', () 
   for (const p of g.players.slice(2)) assert.equal(p.botStats.vpip, 0);
 });
 test('post-flop bot fractions use the after-call pot with whole 25 chips', () => {
+  const hole = [
+      { rank: 14, suit: 0 },
+      { rank: 13, suit: 0 },
+    ],
+    board = [
+      { rank: 14, suit: 1 },
+      { rank: 9, suit: 2 },
+      { rank: 6, suit: 3 },
+      { rank: 2, suit: 1 },
+    ];
   const view = {
     bigBlind: 50,
     chipUnit: 25,
     id: 1,
-    hole: [
-      { rank: 14, suit: 0 },
-      { rank: 13, suit: 0 },
-    ],
-    board: [],
+    hole,
+    board,
     street: 2,
     position: 'BTN',
     count: 6,
@@ -290,7 +320,7 @@ test('post-flop bot fractions use the after-call pot with whole 25 chips', () =>
     equity: 0.9,
     difficulty: 'hard',
     history: [],
-    features: { wet: false, draw: false, overpair: false },
+    features: botBoardFeatures(hole, board, evaluate([...hole, ...board]).score),
     playsBoard: false,
     legal: {
       chipUnit: 25,
@@ -310,6 +340,7 @@ test('post-flop bot fractions use the after-call pot with whole 25 chips', () =>
     'off',
     () => 0.5,
   );
+  assert.equal(view.features.ownMade, true, 'The sizing probe uses an actual made top pair');
   assert.equal(decision.action, 'raise');
   assert.equal(decision.trace.sizing.fraction, 0.625);
   assert.equal(decision.trace.sizing.desired, 625); // 225 + round-to-25(625 × .625)

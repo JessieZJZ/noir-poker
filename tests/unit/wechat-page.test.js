@@ -550,7 +550,7 @@ test('WeChat opponent review picker filters recorded actions and restores the fu
     ],
   };
   page.updateReview(report);
-  assert.equal(page.data.opponentOptions[1], 'Alex · 谭老板 · Tan Xuan');
+  assert.equal(page.data.opponentOptions[1], 'Alex，谭老板，Tan Xuan');
   page.changeOpponentFilter({ detail: { value: '1' } });
   assert.equal(page.data.reviewSteps.length, 2);
   assert.ok(page.data.reviewSteps.every((step) => step.name === 'Alex'));
@@ -648,8 +648,10 @@ test('WeChat Page presents completed shared review copy and per-decision advice'
   assert.equal('summary' in report, false);
   assert.doesNotMatch(template, /review-summary|reviewData\.summary|reviewData\.title/);
   assert.equal(report.steps.length, 1);
-  for (const field of ['street', 'actual', 'label', 'suggestion', 'reason', 'followUp', 'ev'])
+  for (const field of ['street', 'actual', 'label', 'suggestion', 'reason', 'followUp'])
     text(report.steps[0][field]);
+  assert.equal(report.steps[0].ev, undefined);
+  assert.ok(Array.isArray(report.steps[0].publicResponses));
   assert.equal(report.steps[0].cards.length, 2);
   assert.ok(report.steps[0].evidence.length >= 4);
   assert.ok(report.steps[0].history.length > 0);
@@ -659,6 +661,10 @@ test('WeChat Page presents completed shared review copy and per-decision advice'
   );
   assert.match(template, /当时的关键信息/);
   assert.match(template, /!selectedReviewStep.keep/);
+  assert.doesNotMatch(
+    template,
+    /opponent-metrics|selectedReviewStep\.metrics\b|selectedReviewStep\.ev\b/,
+  );
   assert.equal(toasts.length, 0);
   page.closeReview();
   assert.equal(page.data.reviewOpen, false);

@@ -12,6 +12,7 @@ import {
 } from '../../src/engine/poker.js';
 import { compareCandidateActions, candidateActions } from '../../src/review/counterfactual.js';
 import { rangeWeight } from '../../src/review/equity.js';
+import { causalReraiseGame, heroValueGame } from '../fixtures/review-spots.js';
 const cards = (s) =>
   s
     .split(' ')
@@ -137,6 +138,25 @@ test('river all-in counterfactual uses pot eligibility and a board royal flush s
 // early-stop guard is removed, so all rows and paired statistics can be compared.
 const referenceSourceURL = new URL('../../src/review/counterfactual.js', import.meta.url);
 const referenceSource = await readFile(referenceSourceURL, 'utf8');
+const sharedCacheOption = '{ trials: 8, allInCache }';
+assert.ok(referenceSource.includes(sharedCacheOption));
+const uncachedSource = referenceSource
+  .replace(sharedCacheOption, '{ trials: 8 }')
+  .replace(/from '([^']+)'/g, (_, relative) => `from '${new URL(relative, referenceSourceURL)}'`);
+const uncachedRollout = await import(
+  'data:text/javascript;base64,' + Buffer.from(uncachedSource).toString('base64')
+);
+
+test('one sampled-deal cache preserves every range, candidate and paired statistic', () => {
+  for (const s of [causalReraiseGame().decisions[0], heroValueGame('set-shove').decisions.at(-1)]) {
+    const before = JSON.stringify(s);
+    const cached = compareCandidateActions(s, [], { trials: 12 });
+    assert.deepEqual(cached, uncachedRollout.compareCandidateActions(s, [], { trials: 12 }));
+    assert.equal(cached.policyTrials, 8);
+    assert.equal(JSON.stringify(s), before);
+  }
+});
+
 const stopGuard = 'if (hasFinalFold(g)) break;';
 assert.ok(referenceSource.includes(stopGuard), 'The reference must disable the fold shortcut');
 const fullRolloutSource = referenceSource

@@ -182,17 +182,21 @@ test('a cheap blind completion is not a cheap all-in with a tiny remaining stack
 test('opponent review explains the exact small-open call and separate re-raising range', () => {
   const v = smallOpen();
   const d = decision(v);
-  const explanation = explainOpponent({ action: d.action, trace: { ...d.trace, view: v } });
-  assert.match(explanation.detail, /一次小开池/);
-  assert.match(explanation.metrics.join(' '), /普通的全桌随机摊牌权益弃牌检查没有执行/);
+  const explanation = explainOpponent({ ...d, trace: { ...d.trace, view: v } });
+  assert.match(explanation.detail, /跟注 150/);
+  assert.match(explanation.detail, /还留 4\.85K/);
+  assert.match(explanation.detail, /同花/);
+  assert.match(explanation.detail, /开池至 150/);
+  assert.deepEqual(explanation.metrics, []);
+  assert.doesNotMatch(explanation.detail, /EV|模型|模拟器|抽样|它/);
   assert.doesNotMatch(explanation.detail, /这是未加注底池/);
   assert.doesNotMatch(explanation.warning, /这次继续尤其/);
   const premium = decision(smallOpen('As Ah'), 'balanced', () => 0.1);
   assert.match(
     explainOpponent({
-      action: premium.action,
+      ...premium,
       trace: { ...premium.trace, view: smallOpen('As Ah') },
     }).detail,
-    /独立的价值再加注/,
+    /加注至|再加注/,
   );
 });

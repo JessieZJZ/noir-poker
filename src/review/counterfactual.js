@@ -160,6 +160,10 @@ export function compareCandidateActions(s, alternatives = [], { trials = 40 } = 
     for (let i = 0; i < trials; i++) {
       const deal = sampledDeal(s, rng, weighted),
         policySeed = Math.floor(rng() * 4294967295);
+      // Candidates share a hypothetical deal. Reuse only pure board/pair
+      // evaluation; never ranges, decisions or random state. Drop it before
+      // the next sampled deal rather than retaining any live-hand state.
+      const allInCache = new Map();
       for (let c = 0; c < candidates.length; c++) {
         const g = resume(s, deal),
           policy = seedRandom(policySeed);
@@ -170,7 +174,7 @@ export function compareCandidateActions(s, alternatives = [], { trials = 40 } = 
           if (++actions > 400) throw Error('候选行动模拟未能结束。');
           if (g.phase === 'between') advanceStreet(g);
           else {
-            const d = botDecision(g, policy, { trials: 8 });
+            const d = botDecision(g, policy, { trials: 8, allInCache });
             act(g, g.actor, d.action, d.amount);
           }
         }
