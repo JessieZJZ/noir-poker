@@ -14,6 +14,7 @@ import { requestNativeOrientation } from './native-orientation.mjs';
 import { compareNativePage } from '../tests/native/page-parity.mjs';
 import { createNativeCommand } from './native-transport.mjs';
 import { nativeBackPage, nativePageReady } from './native-back.mjs';
+import { prepareNativeTouch } from './native-touch.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const args = process.argv.slice(2);
@@ -502,6 +503,8 @@ try {
   );
   session = created.sessionId;
   report.capabilities = created.capabilities;
+  if (platform === 'ios') report.phase = 'native-touch';
+  report.nativeTouch = await prepareNativeTouch(command, platform);
   report.phase = 'webview-attach';
   // WDA startup can foreground its runner after the initial simctl launch.
   // Restore the tested app before looking for an actionable native screen.
