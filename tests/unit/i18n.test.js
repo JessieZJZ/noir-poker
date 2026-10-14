@@ -16,7 +16,7 @@ test('saved choice wins; system variants map to available catalogs; unsupported 
 });
 
 test('English templates preserve and reorder dynamic values, while rule state remains unchanged', async () => {
-  const game = newGame(6);
+  const game = newGame(6, { smallBlind: 25, bigBlind: 50, startingStack: 5000, chipUnit: 25 });
   startHand(game, () => 0.42);
   const before = JSON.stringify(game);
   await loadLocale('en');
@@ -34,7 +34,7 @@ test('English templates preserve and reorder dynamic values, while rule state re
     'Calling costs about 40% of the eligible pot.Pot equity against random and action-weighted ranges is approximately 50% / 47%, respectively.',
   );
   assert.equal(JSON.stringify(game), before);
-  assert.equal(formatChips(5000), '5,000');
+  assert.equal(formatChips(5000), '5K');
   await loadLocale('zh-CN');
   assert.equal(localizeText('第 12 手 · 决策复盘'), '第 12 手 · 决策复盘');
 });
@@ -51,6 +51,32 @@ test('locale preference hydrates and preserves ordered writes through native sto
   store.setItem('noir-locale', 'en');
   await store.flush();
   assert.equal(native.get('noir-locale'), 'en');
+});
+
+test('starting-blind settings preserve compact amounts and validation limits in every locale', async () => {
+  const sources = [
+    '起始盲注',
+    '点击小盲修改，大盲为小盲的两倍。',
+    '小盲只能输入25的正整数倍，且不超过50K。',
+    '修改起始小盲',
+    '起始小盲',
+    '起始大盲',
+  ];
+  for (const locale of ['en', 'zh-TW', 'ja', 'ko', 'es', 'it', 'pt', 'de', 'fr', 'ru']) {
+    await loadLocale(locale);
+    for (const source of sources) {
+      const translated = localizeText(source);
+      if (locale !== 'zh-TW') assert.notEqual(translated, source, `${locale}: ${source}`);
+      assert.ok(translated.trim());
+    }
+    const note = localizeText('下一手起始盲注50K/100K·筹码恢复为10M，统计重新开始');
+    assert.notEqual(note, '下一手起始盲注50K/100K·筹码恢复为10M，统计重新开始');
+    for (const amount of ['50K', '100K', '10M']) assert.ok(note.includes(amount), locale);
+    const error = localizeText('小盲只能输入25的正整数倍，且不超过50K。');
+    assert.ok(error.includes('25'), locale);
+    assert.ok(error.includes('50K'), locale);
+  }
+  await loadLocale('zh-CN');
 });
 
 test('Japanese and Korean catalogs contain no damaged repetition or replacement markers', async () => {

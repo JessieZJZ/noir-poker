@@ -1,3 +1,4 @@
+import { compactChips } from '../../src/engine/chip-format.js';
 import { assignNamedLineup } from './settings-helpers.js';
 import { test, expect } from '@playwright/test';
 import { closeSettings, openSettings, setPlayerCount, toggleHints } from './settings-helpers.js';
@@ -163,7 +164,7 @@ async function assertWinnerIndicators(page) {
     await expect(badge).toBeVisible();
     await expect(badge).toHaveAttribute(
       'aria-label',
-      `${p.name} 获得底池 ${awards.get(p.name).toLocaleString('en-US')} 筹码`,
+      `${p.name} 获得底池 ${compactChips(awards.get(p.name))} 筹码`,
     );
     await expect(badge.locator('svg')).toBeVisible();
   }
@@ -364,7 +365,7 @@ test('pot details retain per-pot awards, odd split shares and conditional live e
   for (let i = 0; i < state.pots.length; i++) {
     const card = page.locator(`.settled-pot[data-pot-index="${i}"]`);
     await expect(card.locator('.pot-award > strong')).toHaveText(
-      state.pots[i].awards.map((a) => `+${a.amount.toLocaleString('en-US')}筹码`),
+      state.pots[i].awards.map((a) => `+${compactChips(a.amount)}筹码`),
     );
     await expect(card.locator('.pot-distribution')).not.toHaveAttribute('open');
   }
@@ -436,7 +437,7 @@ test('raise controls, seats, activity and review share street-specific bet ordin
 
   await page.evaluate(() => window.qa.reviewLine());
   await expect(page.locator('#activity-list')).toContainText('Alex 3-bet 加注至 650');
-  await expect(page.locator('#activity-list')).toContainText('Mia 4-bet 加注至 1800');
+  await expect(page.locator('#activity-list')).toContainText('Mia 4-bet 加注至 1.8K');
   await page.locator('#review-hand-button').click();
   await expect(page.locator('#review-dialog[data-analysis-status="done"]')).toBeVisible({
     timeout: 30000,
@@ -447,7 +448,7 @@ test('raise controls, seats, activity and review share street-specific bet ordin
   );
   await page.locator('#review-timeline [data-review-index="2"]').click();
   await expect(page.locator('#review-public-actions')).toContainText('3-bet 加注至 650');
-  await expect(page.locator('#review-public-actions')).toContainText('4-bet 加注至 1,800');
+  await expect(page.locator('#review-public-actions')).toContainText('4-bet 加注至 1.8K');
 });
 
 test('5–9 player showdown reveals all holes immediately and displays each best five', async ({
@@ -630,7 +631,7 @@ test('hero recent actions persist within the street and clear on new streets exc
       await page.locator('#raise-button').click();
       await page.evaluate(() => window.qa.stop());
       await expect(row.locator('.seat-action-label')).toHaveText('2-bet 全下');
-      await expect(row.locator('.seat-action-amount')).toHaveText('5,000');
+      await expect(row.locator('.seat-action-amount')).toHaveText('5K');
       await expect(page.locator('#fold-button')).toBeDisabled();
       await assertFits();
     }
@@ -797,11 +798,11 @@ test('settled seats retain all-in sizes, board and hero action across viewing an
       expect(done.players.map((p) => p.lastAction)).toEqual(retained);
       await expect(page.locator('#hero-last-action')).toBeVisible();
       await expect(page.locator('#hero-last-action')).toContainText('2-bet 全下');
-      await expect(page.locator('#hero-last-action .seat-action-amount')).toHaveText('5,000');
+      await expect(page.locator('#hero-last-action .seat-action-amount')).toHaveText('5K');
       await expect(page.locator('.seat .seat-action')).toHaveCount(count - 1);
       for (let id = 1; id < count; id++) {
         await expect(page.locator(`.seat-${id} .seat-action-label`)).toHaveText('全下');
-        await expect(page.locator(`.seat-${id} .seat-action-amount`)).toHaveText('5,000');
+        await expect(page.locator(`.seat-${id} .seat-action-amount`)).toHaveText('5K');
       }
       const geometry = await page.evaluate(() => {
         const board = document.querySelector('#board').getBoundingClientRect();
@@ -850,6 +851,7 @@ test('settled raises, calls and folds retain their actual amounts until the next
   page,
 }) => {
   await page.evaluate(() => {
+    window.noir.setStakes({ smallBlind: 25, bigBlind: 50 });
     window.qa.retainedRiver(9);
     window.qa.finish();
   });
@@ -1440,10 +1442,11 @@ test('returning restores all saved options before the first fresh hand, includin
   expect(state.hand).toBe(1);
   expect(state.board).toEqual([]);
   expect(state.result).toBeNull();
-  for (const player of state.players) expect(player.stack + player.bet).toBe(5000);
+  for (const player of state.players) expect(player.stack + player.bet).toBe(20000);
   expect(await page.evaluate(() => JSON.parse(localStorage.getItem('noir-table-v1')))).toEqual({
     playerCount: 9,
     difficulty: 'hard',
+    stakes: { smallBlind: 100, bigBlind: 200, startingStack: 20000, chipUnit: 100 },
   });
   await page.locator('#opponents-button').click();
   await expect(page.locator('#emotion-mode')).toHaveValue('lively');
@@ -1701,9 +1704,7 @@ test('all named portraits preview immediately, follow saved styles next hand and
           }),
         count,
       );
-      await expect(page.locator('.seat-1 .seat-stack')).toHaveText(
-        (count * 5000).toLocaleString('en-US'),
-      );
+      await expect(page.locator('.seat-1 .seat-stack')).toHaveText(compactChips(count * 5000));
       await expect(page.locator('#seats .persona-portrait')).toHaveCount(count - 1);
       const readable = await page.locator('.seat-profile').evaluateAll((profiles) => {
         const arena = document.querySelector('#arena'),
@@ -1862,21 +1863,21 @@ test('A7 review separates steal, 3bet and 4bet; opponents expose actual decision
     timeout: 30000,
   });
   await page.locator('#review-timeline [data-review-index="0"]').click();
-  await expect(page.locator('#review-coach-explanation')).toContainText('主动开池');
+  await expect(page.locator('#review-coach-explanation')).toContainText(/开池|偷盲/);
   await expect(page.locator('#review-selected-status')).not.toHaveText('2-bet 开池至 150');
   await expect(page.locator('#review-routes, #review-advanced')).toHaveCount(0);
   await page.locator('#review-timeline [data-review-index="1"]').click();
   await expect(page.locator('#review-coach-explanation')).toContainText('3-bet');
   await page.locator('#review-timeline [data-review-index="2"]').click();
-  await expect(page.locator('#review-coach-explanation')).toContainText('多次再加注');
+  await expect(page.locator('#review-coach-explanation')).toContainText('1.8K');
   await page.locator('#review-opponents-tab').click();
   await expect(page.locator('#review-hero-panel')).toBeHidden();
   await expect(page.locator('#review-opponent-detail .review-cards .playing-card')).toHaveCount(5);
   await expect(page.locator('#review-opponent-detail .review-explanation')).not.toBeEmpty();
-  await expect(page.locator('#review-opponent-detail .review-evidence')).toContainText('随机范围');
-  expect(
-    await page.locator('#review-opponent-detail .opponent-metrics li').count(),
-  ).toBeLessThanOrEqual(2);
+  await expect(page.locator('#review-opponent-detail .opponent-metrics')).toHaveCount(0);
+  await expect(page.locator('#review-opponent-detail .review-explanation')).not.toContainText(
+    /它|EV|模型|模拟器|抽样/,
+  );
   await expect(
     page.locator('#review-opponent-detail .review-choice, .opponent-warning'),
   ).toHaveCount(0);
@@ -1887,7 +1888,7 @@ test('A7 review separates steal, 3bet and 4bet; opponents expose actual decision
   await expect(page.locator('#review-opponents .review-timeline')).toContainText('Mia');
   await expect(page.locator('#review-opponents .review-timeline')).not.toContainText('Alex');
   await page.locator('#review-hero-tab').click();
-  await expect(page.locator('#review-coach-explanation')).toContainText('多次再加注');
+  await expect(page.locator('#review-coach-explanation')).toContainText('1.8K');
   const layout = await page.evaluate(() => {
     const d = document.querySelector('#review-dialog');
     return { width: d.clientWidth, scroll: d.scrollWidth };

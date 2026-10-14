@@ -32,7 +32,7 @@ const cards = (s) =>
 const options = { trials: 120 };
 const copy = (v) => JSON.parse(JSON.stringify(v));
 function btn(hole = 'Ac 7h', limp = false) {
-  const g = newGame();
+  const g = newGame(undefined, { smallBlind: 25, bigBlind: 50, startingStack: 5000, chipUnit: 25 });
   g.dealer = 5;
   startHand(g);
   g.players[0].hole = cards(hole);
@@ -136,7 +136,7 @@ test('opponent all-in does not close betting when another live opponent can stil
   assert.equal(callPrice(g.decisions.at(-1)).closing, false);
 });
 test('policy queries never record actions; execution records exactly once and preserves private snapshots', () => {
-  const g = newGame();
+  const g = newGame(undefined, { smallBlind: 25, bigBlind: 50, startingStack: 5000, chipUnit: 25 });
   startHand(g);
   const id = g.actor;
   botDecision(g, seeded(4));
@@ -156,6 +156,8 @@ test('policy queries never record actions; execution records exactly once and pr
 });
 test('actual weak all-in call identifies randomized exceptions rather than rationalizing as good odds', () => {
   const v = {
+    bigBlind: 50,
+    chipUnit: 25,
     id: 1,
     hole: cards('7s 2h'),
     board: [],
@@ -174,6 +176,7 @@ test('actual weak all-in call identifies randomized exceptions rather than ratio
     features: { draw: false, wet: false },
     playsBoard: false,
     legal: {
+      chipUnit: 25,
       enabled: true,
       canCheck: false,
       canRaise: false,
@@ -188,12 +191,15 @@ test('actual weak all-in call identifies randomized exceptions rather than ratio
   assert.equal(d.trace.reason, 'loose-exception');
   assert.ok(d.trace.exceptions.includes('insufficient-equity'));
   const e = explainOpponent({ id: 1, name: 'Mia', ...d, trace: { ...d.trace, view: v } });
-  assert.match(e.detail, /失误/);
-  assert.match(e.warning, /随机范围/);
+  assert.match(e.detail, /较松|牌力支撑有限|弱牌/);
+  assert.match(e.detail, /Mia/);
+  assert.match(e.detail, /5K/);
+  assert.deepEqual(e.metrics, []);
+  assert.doesNotMatch(e.detail, /它|EV|模型|模拟器|随机范围|抽样/);
   assert.ok(d.trace.checks.every((c) => c.selected));
 });
 test('settled bot traces are separate from hero grading, retry clears and regenerates one attempt', () => {
-  const g = newGame();
+  const g = newGame(undefined, { smallBlind: 25, bigBlind: 50, startingStack: 5000, chipUnit: 25 });
   g.dealer = 2;
   startHand(g);
   const rng = seeded(91),
@@ -225,7 +231,7 @@ test('settled bot traces are separate from hero grading, retry clears and regene
 });
 
 test('Q7 suited UTG acknowledges its suit and treats the open as a range-sensitive discussion', () => {
-  const g = newGame();
+  const g = newGame(undefined, { smallBlind: 25, bigBlind: 50, startingStack: 5000, chipUnit: 25 });
   g.dealer = 2;
   startHand(g);
   g.players[0].hole = cards('Qs 7s');
@@ -241,7 +247,12 @@ test('Q7 suited UTG acknowledges its suit and treats the open as a range-sensiti
 });
 test('foreign styles are accepted independently and retain distinct control vectors', () => {
   for (const id of ['viktor', 'jungleman', 'dwan']) {
-    const g = newGame();
+    const g = newGame(undefined, {
+      smallBlind: 25,
+      bigBlind: 50,
+      startingStack: 5000,
+      chipUnit: 25,
+    });
     const profile = BOT_PROFILES.find((p) => p.id === id);
     assert.ok(profile && profile.sources.length);
     assert.equal(profile.axes.length, 5);
@@ -253,6 +264,8 @@ test('foreign styles are accepted independently and retain distinct control vect
 });
 test('cheap unraised suited broadway is not discarded by multiway random equity; large raises retain checks', () => {
   const v = {
+    bigBlind: 50,
+    chipUnit: 25,
     id: 1,
     hole: cards('Qs Js'),
     board: [],
@@ -271,6 +284,7 @@ test('cheap unraised suited broadway is not discarded by multiway random equity;
     features: { draw: false, wet: false },
     playsBoard: false,
     legal: {
+      chipUnit: 25,
       enabled: true,
       canCheck: false,
       canRaise: true,

@@ -1,11 +1,19 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { deckOfCards } from '../../src/engine/poker.js';
-import { analyzeDecision } from '../../src/review/analysis.js';
+import { analyzeDecision, createReviewInput } from '../../src/review/analysis.js';
 import { explainOpponent } from '../../src/review/opponents.js';
+import { decisionContext } from '../../src/review/context.js';
+import { handMatchups } from '../../src/review/matchups.js';
 import { SUPPORTED_LOCALES, loadLocale, localizeText } from '../../src/i18n/index.js';
+import {
+  causalReraiseGame,
+  heroValueGame,
+  weakSuitedShove,
+  pocketTensRecords,
+} from '../fixtures/review-spots.js';
 
-test('contextual draw rationale and bot motivation localize without losing cards, prices or evidence limits', async () => {
+test('hand-specific rationale and actual public responses localize without losing cards, names or chips', async () => {
   const cards = (text) =>
     text
       .split(' ')
@@ -15,6 +23,8 @@ test('contextual draw rationale and bot motivation localize without losing cards
         ),
       );
   const s = {
+    bigBlind: 50,
+    chipUnit: 25,
     hole: cards('Qd 8h'),
     board: cards('9h 7d 3d Ts'),
     street: 2,
@@ -30,7 +40,14 @@ test('contextual draw rationale and bot motivation localize without losing cards
       { id: 1, street: 1, action: 'check', amount: 0 },
       { id: 1, street: 2, action: 'raise', amount: 1250 },
     ],
-    legal: { callAmount: 1250, toCall: 1250, canRaise: true, minRaiseTo: 2500, maxRaiseTo: 4600 },
+    legal: {
+      chipUnit: 25,
+      callAmount: 1250,
+      toCall: 1250,
+      canRaise: true,
+      minRaiseTo: 2500,
+      maxRaiseTo: 4600,
+    },
     players: [
       { id: 0, position: 'BTN', stack: 4600, total: 700, bet: 0 },
       { id: 1, name: 'River', position: 'BB', stack: 3300, total: 1950, bet: 1250 },
@@ -39,6 +56,7 @@ test('contextual draw rationale and bot motivation localize without losing cards
   const r = analyzeDecision(s, { trials: 120 });
   const bot = explainOpponent({
     id: 1,
+    name: 'River',
     action: 'raise',
     amount: 1250,
     trace: {
@@ -64,11 +82,23 @@ test('contextual draw rationale and bot motivation localize without losing cards
     ...r.coaching.paragraphs,
     r.coaching.followUp,
     ...r.evidence,
-    bot.detail,
+    ...(bot.paragraphs || [bot.detail]),
     ...bot.reasons,
     ...bot.metrics,
   ];
+  const reported = analyzeDecision(weakSuitedShove(), { trials: 120 });
+  texts.push(...reported.coaching.paragraphs, reported.coaching.followUp, ...reported.evidence);
+  for (const record of pocketTensRecords()) {
+    const explanation = explainOpponent(record);
+    texts.push(
+      ...(explanation.paragraphs || [explanation.detail]),
+      ...explanation.reasons,
+      ...explanation.metrics,
+    );
+  }
+
   const defense = explainOpponent({
+    name: 'Kai',
     action: 'call',
     amount: 75,
     trace: {
@@ -78,7 +108,53 @@ test('contextual draw rationale and bot motivation localize without losing cards
       affordableThreeBet: true,
     },
   });
-  texts.push(defense.title, defense.detail, ...defense.metrics);
+  texts.push(
+    defense.title,
+    ...(defense.paragraphs || [defense.detail]),
+    ...defense.reasons,
+    ...defense.metrics,
+  );
+  const causal = createReviewInput(causalReraiseGame());
+  for (const decision of causal.decisions) {
+    const result = analyzeDecision(decision, { trials: 120, rolloutTrials: 12 });
+    texts.push(...result.coaching.paragraphs, result.coaching.followUp, ...result.evidence);
+  }
+  const mia = explainOpponent(causal.opponents[0]);
+  texts.push(...mia.paragraphs, ...mia.reasons, ...causal.publicResponses.flat());
+  assert.deepEqual(mia.metrics, []);
+  assert.doesNotMatch(mia.detail, /它|EV|模型|模拟器|抽样/);
+  for (const kind of ['set-shove', 'aa-flat']) {
+    const input = createReviewInput(heroValueGame(kind));
+    for (const decision of input.decisions) {
+      const result = analyzeDecision(decision, { trials: 120, rolloutTrials: 12 });
+      texts.push(
+        ...result.coaching.paragraphs,
+        result.context.matchups.handLabel,
+        result.coaching.followUp,
+        ...result.evidence,
+      );
+    }
+    texts.push(...input.publicResponses.flat());
+  }
+  for (const [hole, board] of [
+    ['8s 9d', '6c 7h Ts'],
+    ['Ah Th', 'Jh 7h 3h 2s 4c'],
+    ['4s 3d', 'Ks Kd Kh 2s 2d'],
+    ['2c 3d', 'As Ks Qs Js Ts'],
+    ['2c 3d', 'As Kd Qh Jc'],
+  ]) {
+    const snapshot = {
+      ...s,
+      hole: cards(hole),
+      board: cards(board),
+      street: board.split(' ').length - 2,
+    };
+    texts.push(handMatchups(snapshot, decisionContext(snapshot)).text);
+  }
+  const compactAmounts = (text) => text.match(/\b\d+(?:\.\d+)?[KM]\b/g) || [];
+  const observedAmounts = new Set(texts.flatMap(compactAmounts));
+  for (const amount of ['1.25K', '5K', '4.65K', '1K', '4.05K'])
+    assert.ok(observedAmounts.has(amount), `Missing source amount coverage: ${amount}`);
   for (const locale of SUPPORTED_LOCALES) {
     await loadLocale(locale);
     for (const text of texts) {
@@ -86,8 +162,30 @@ test('contextual draw rationale and bot motivation localize without losing cards
       assert.doesNotMatch(result, /\{\d+\}/, `${locale}: unresolved placeholder`);
       if (!['zh-CN', 'zh-TW', 'ja'].includes(locale))
         assert.doesNotMatch(result, /\p{Script=Han}/u, `${locale}: ${result}`);
-      for (const amount of ['1,250', '2,650', '4,600', '8', '6 / J'])
+      for (const amount of [
+        ...compactAmounts(text),
+        '1.25K',
+        '2.65K',
+        '4.6K',
+        '5K',
+        '4.65K',
+        '75',
+        '350',
+        '200',
+        '1K',
+        '975',
+        '950',
+        '800',
+        '650',
+        '4.05K',
+        '5.23',
+        '16.0%',
+        '8',
+        '6 / J',
+      ])
         if (text.includes(amount)) assert.ok(result.includes(amount), `${locale}: lost ${amount}`);
+      for (const name of ['Kai', 'Mia', 'River', 'Luna', 'Alex'])
+        if (text.includes(name)) assert.ok(result.includes(name), `${locale}: lost ${name}`);
     }
   }
 });
@@ -95,6 +193,8 @@ test('contextual draw rationale and bot motivation localize without losing cards
 function botSnapshot() {
   return {
     view: {
+      bigBlind: 50,
+      chipUnit: 25,
       hole: deckOfCards().filter(
         (card) => (card.rank === 13 && card.suit === 0) || (card.rank === 12 && card.suit === 1),
       ),
@@ -111,7 +211,7 @@ function botSnapshot() {
         { id: 1, street: 0, action: 'raise', amount: 125 },
         { id: 0, street: 0, action: 'raise', amount: 200 },
       ],
-      legal: { callAmount: 75, toCall: 75 },
+      legal: { chipUnit: 25, callAmount: 75, toCall: 75 },
     },
     exceptions: [],
     equity: 0.05,

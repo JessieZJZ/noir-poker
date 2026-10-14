@@ -25,13 +25,20 @@ const deck = deckOfCards(),
 let passed = 0;
 const check = (name, fn) => test(name, fn);
 check('six seats by default; unsupported counts rejected', () => {
-  assert.equal(newGame().players.length, 6);
-  for (const n of [4, 10, 6.5, '9', NaN]) assert.throws(() => newGame(n));
+  assert.equal(
+    newGame(undefined, { smallBlind: 25, bigBlind: 50, startingStack: 5000, chipUnit: 25 }).players
+      .length,
+    6,
+  );
+  for (const n of [4, 10, 6.5, '9', NaN])
+    assert.throws(() =>
+      newGame(n, { smallBlind: 25, bigBlind: 50, startingStack: 5000, chipUnit: 25 }),
+    );
 });
 for (let n = 5; n <= 9; n++)
   for (let d = 0; d < n; d++)
     check(`${n} players button ${d}: all four rounds and immediate river reveal`, () => {
-      const g = newGame(n);
+      const g = newGame(n, { smallBlind: 25, bigBlind: 50, startingStack: 5000, chipUnit: 25 });
       g.dealer = (d + n - 1) % n;
       startHand(g);
       assert.equal(g.dealer, d);
@@ -70,7 +77,7 @@ for (let n = 5; n <= 9; n++)
 for (let n = 5; n <= 9; n++)
   check(`${n} players actual bots and random legal hands`, () => {
     for (let h = 0; h < 30; h++) {
-      const g = newGame(n);
+      const g = newGame(n, { smallBlind: 25, bigBlind: 50, startingStack: 5000, chipUnit: 25 });
       startHand(g);
       let count = 0;
       while (g.phase !== 'done') {
@@ -106,7 +113,7 @@ for (let n = 5; n <= 9; n++)
 for (let n = 5; n <= 9; n++)
   check(`${n} player royal board tie, all button positions odd chip order`, () => {
     for (let d = 0; d < n; d++) {
-      const g = newGame(n);
+      const g = newGame(n, { smallBlind: 25, bigBlind: 50, startingStack: 5000, chipUnit: 25 });
       g.dealer = d;
       g.phase = 'between';
       g.street = 3;
@@ -132,7 +139,7 @@ for (let n = 5; n <= 9; n++)
 for (let n = 5; n <= 9; n++)
   check(`${n}: independent side-pot odd chip always follows button`, () => {
     for (let d = 0; d < n; d++) {
-      const g = newGame(n);
+      const g = newGame(n, { smallBlind: 25, bigBlind: 50, startingStack: 5000, chipUnit: 25 });
       g.phase = 'between';
       g.street = 3;
       g.dealer = d;
@@ -186,7 +193,12 @@ const cases = [
 ];
 for (const [hole, board, motion] of cases)
   check(`best-five scene ${motion}`, () => {
-    const g = newGame();
+    const g = newGame(undefined, {
+      smallBlind: 25,
+      bigBlind: 50,
+      startingStack: 5000,
+      chipUnit: 25,
+    });
     g.phase = 'done';
     g.showdown = true;
     g.board = cards(board);
@@ -198,7 +210,7 @@ for (const [hole, board, motion] of cases)
     assert.equal(new Set(scenes[0].cards.map((c) => c.key)).size, 5);
   });
 check('each contested side pot and tied award gets its own winner scene', () => {
-  const g = newGame(9);
+  const g = newGame(9, { smallBlind: 25, bigBlind: 50, startingStack: 5000, chipUnit: 25 });
   g.phase = 'done';
   g.showdown = true;
   g.board = cards('2s 3s 4s 5s 6s');

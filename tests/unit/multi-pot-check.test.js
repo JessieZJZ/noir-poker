@@ -24,7 +24,7 @@ const hands = ['As Ah', 'Ks Kh', 'Qs Qh', 'Js Jh', 'Ts Th', '9s 9h'];
 let passed = 0;
 const check = (name, fn) => test(name, fn);
 function fixture(totals, folded = [], custom = hands) {
-  const g = newGame();
+  const g = newGame(undefined, { smallBlind: 25, bigBlind: 50, startingStack: 5000, chipUnit: 25 });
   g.phase = 'between';
   g.street = 3;
   g.board = cards('2c 3d 4h 7s 8c');
@@ -297,6 +297,6 @@ check('settlement rejects an off-grid ledger without changing balances or result
   const g = fixture([100, 100, 25], [2]);
   g.players[2].total = 26;
   const before = JSON.stringify(g);
-  assert.throws(() => settle(g), /25/);
+  assert.throws(() => settle(g), /面额/);
   assert.equal(JSON.stringify(g), before);
 });

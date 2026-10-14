@@ -1,7 +1,8 @@
+import { compactActionAmounts } from '../engine/chip-format.js';
 import { getBotProfile } from '../engine/bot-profiles.js';
 
 const escapeHtml = (value) =>
-  String(value)
+  compactActionAmounts(value)
     .replaceAll('&', '&amp;')
     .replaceAll('<', '&lt;')
     .replaceAll('>', '&gt;')

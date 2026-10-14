@@ -1,9 +1,11 @@
+import { bigBlindOf } from '../engine/stakes.js';
 import { startingTier } from './context.js';
 
 export function preflopContext(s) {
+  const bigBlind = bigBlindOf(s);
   const history = s.history.filter((a) => a.street === 0);
-  const raises = history.filter((a) => a.action === 'raise' && a.amount > 50);
-  const firstRaise = history.findIndex((a) => a.action === 'raise' && a.amount > 50);
+  const raises = history.filter((a) => a.action === 'raise' && a.amount > bigBlind);
+  const firstRaise = history.findIndex((a) => a.action === 'raise' && a.amount > bigBlind);
   const limpers = new Set(
     history
       .slice(0, firstRaise < 0 ? undefined : firstRaise)
@@ -20,7 +22,7 @@ export function preflopContext(s) {
   const ranks = s.hole.map((c) => c.rank).sort((a, b) => b - a);
   const suited = s.hole[0].suit === s.hole[1].suit;
   const late = ['BTN', 'CO'].includes(s.position);
-  const unopened = !raises.length && s.currentBet <= 50;
+  const unopened = !raises.length && s.currentBet <= bigBlind;
   return {
     raises: raises.length,
     limpers,
@@ -33,8 +35,8 @@ export function preflopContext(s) {
     weakAce: ranks[0] === 14 && ranks[1] <= 9 && ranks[0] !== ranks[1],
     ownOpen: open?.id === 0,
     lastRaiser: last?.id,
-    openTo: open?.amount || 50,
-    ratio: last ? last.amount / (raises.at(-2)?.amount || 50) : 1,
+    openTo: open?.amount || bigBlind,
+    ratio: last ? last.amount / (raises.at(-2)?.amount || bigBlind) : 1,
     openingCandidate:
       startingTier(s.hole) >= 1 || (late && (ranks[0] === 14 || (ranks[0] >= 13 && ranks[1] >= 7))),
     label: !raises.length

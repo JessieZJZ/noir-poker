@@ -1,6 +1,13 @@
 // Vite injects this file into the table controller ONLY in test mode.
 // It deliberately uses the controller's real rendering, actions and engine.
 import { deckOfCards, settle } from '../engine/poker.js';
+import { deceptiveRecords } from '../../tests/fixtures/deceptive-decisions.js';
+import {
+  weakSuitedShove,
+  pocketTensRecords,
+  causalReraiseGame,
+  heroValueGame,
+} from '../../tests/fixtures/review-spots.js';
 
 function fixtureGame(count = 6, heroFirst = false) {
   seatHandVisibility.clear();
@@ -10,7 +17,7 @@ function fixtureGame(count = 6, heroFirst = false) {
   showdown.reset();
   handReview.reset();
   epoch++;
-  game = newGame(count);
+  game = newGame(count, { smallBlind: 25, bigBlind: 50, startingStack: 5000, chipUnit: 25 });
   if (heroFirst) game.dealer = count - 4;
   applyBotSettings(game, pendingBotSettings);
   requestedCount = count;
@@ -20,6 +27,13 @@ function fixtureGame(count = 6, heroFirst = false) {
 }
 
 window.qa = {
+  reviewHeroValue(kind = 'set-shove') {
+    fixtureGame(6);
+    game = heroValueGame(kind);
+    handReview.reset();
+    render();
+    return publicState();
+  },
   loadRecordedGame(snapshot, settings) {
     // DevTools comparison only: replay the same recorded deal through Web's
     // real renderer. This entire fixture is absent from production bundles.
@@ -65,6 +79,14 @@ window.qa = {
       action: r.action,
       thinking: r.trace.thinking,
     }));
+  },
+  configuredTurn(stakes, count = 5) {
+    fixtureGame(count, true);
+    game = newGame(count, stakes);
+    game.dealer = count - 4;
+    startHand(game);
+    render();
+    return publicState();
   },
   heroTurn(count = 6, unequal = false) {
     fixtureGame(count, true);
@@ -463,6 +485,32 @@ window.qa = {
       else if (game.actor === 0) act(game, 0, legalActions(game).canCheck ? 'check' : 'call');
       else playBotTurn(game, () => 0.8);
     }
+    render();
+    return publicState();
+  },
+  reviewDeception() {
+    this.reviewLine();
+    game.botDecisions = deceptiveRecords();
+    handReview.reset();
+    render();
+    return game.botDecisions.map((r) => ({ fixture: r.fixture, reason: r.trace.reason }));
+  },
+  reviewReportedShove() {
+    // Finish an actual test hand to expose the normal review entry point, then
+    // replace only its review records with the reported before-action scenes.
+    this.reviewLine();
+    game.decisions = [weakSuitedShove()];
+    game.botDecisions = pocketTensRecords();
+    handReview.reset();
+    render();
+    return publicState();
+  },
+  reviewCausalReraise() {
+    fixtureGame(6);
+    // A settled real-engine hand; before-action records and later public
+    // responses remain separate inputs to the normal review controller.
+    game = causalReraiseGame();
+    handReview.reset();
     render();
     return publicState();
   },

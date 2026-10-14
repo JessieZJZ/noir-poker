@@ -1,3 +1,4 @@
+import { compactChips, compactActionAmounts } from '../../src/engine/chip-format.js';
 import { compactTableLayout } from '../../src/ui/compact-table-layout.js';
 import { renderCardArtwork } from '../../src/ui/cards.js';
 import { railLayout } from '../../src/ui/rail-layout.js';
@@ -34,7 +35,11 @@ vm.runInNewContext(
   {
     module: presentationModule,
     require: (name) =>
-      name.endsWith('/cards.js') ? { renderCardArtwork } : { evaluate, rankText },
+      name.endsWith('/chip-format.js')
+        ? { compactChips }
+        : name.endsWith('/cards.js')
+          ? { renderCardArtwork }
+          : { evaluate, rankText },
   },
 );
 function setup(
@@ -90,6 +95,7 @@ function setup(
             { label: image.credit, url: image.source },
           ]),
         );
+      if (name.endsWith('/chip-format.js')) return { compactChips, compactActionAmounts };
       if (name === './presentation.js') return presentationModule.exports;
       if (name === './phone-layout.js') return { phoneLayout: compactTableLayout };
       if (name === '../../shared/engine/poker.js')
@@ -238,6 +244,25 @@ test('WeChat activity retains full hand history, bet ordinals and Web persona la
   assert.equal(page.data.logs.at(-1).hero, false);
 });
 
+test('WeChat hero actions and persona-expanded activity compact every chip amount, preserving hand counts', (t) => {
+  const { page } = setup(t);
+  const game = page._controller.getGame();
+  game.players[1].botProfile = 'haxton';
+  game.players[0].lastAction = { street: game.street, text: '全下至18800' };
+  game.players[1].lastAction = { street: game.street, text: '3-bet 全下至18800' };
+  game.logs = [
+    { text: '你 全下至18800', player: 0, type: 'action' },
+    { text: 'Mia 3-bet 加注至1200', player: 1, type: 'action' },
+    { text: '第 1001 手开始·庄家 你', type: 'info' },
+  ];
+  page._controller.show();
+  assert.equal(page.data.heroAction, '全下至18.8K');
+  assert.equal(page.data.seats[0].actionAmount, '18.8K');
+  assert.match(page.data.logs[1].text, /Mia（.*） 3-bet 加注至1.2K/);
+  assert.equal(page.data.logs[2].text, '你 全下至18.8K');
+  assert.equal(page.data.logs[0].text, '第 1001 手开始·庄家 你');
+});
+
 test('real engine logs read from hand start to settlement in the displayed activity', (t) => {
   let seed = 0x12345678;
   t.mock.method(Math, 'random', () => {
@@ -256,7 +281,7 @@ test('real engine logs read from hand start to settlement in the displayed activ
       .getGame()
       .logs.slice()
       .reverse()
-      .map((entry) => entry.text),
+      .map((entry) => compactActionAmounts(entry.text)),
   );
   const resultIndex = page.data.logs.findIndex((entry) => entry.type === 'result');
   assert.ok(resultIndex > page.data.logs.findLastIndex((entry) => entry.type === 'action'));
@@ -525,7 +550,7 @@ test('WeChat opponent review picker filters recorded actions and restores the fu
     ],
   };
   page.updateReview(report);
-  assert.equal(page.data.opponentOptions[1], 'Alex · 谭老板 · Tan Xuan');
+  assert.equal(page.data.opponentOptions[1], 'Alex，谭老板，Tan Xuan');
   page.changeOpponentFilter({ detail: { value: '1' } });
   assert.equal(page.data.reviewSteps.length, 2);
   assert.ok(page.data.reviewSteps.every((step) => step.name === 'Alex'));
@@ -623,8 +648,10 @@ test('WeChat Page presents completed shared review copy and per-decision advice'
   assert.equal('summary' in report, false);
   assert.doesNotMatch(template, /review-summary|reviewData\.summary|reviewData\.title/);
   assert.equal(report.steps.length, 1);
-  for (const field of ['street', 'actual', 'label', 'suggestion', 'reason', 'followUp', 'ev'])
+  for (const field of ['street', 'actual', 'label', 'suggestion', 'reason', 'followUp'])
     text(report.steps[0][field]);
+  assert.equal(report.steps[0].ev, undefined);
+  assert.ok(Array.isArray(report.steps[0].publicResponses));
   assert.equal(report.steps[0].cards.length, 2);
   assert.ok(report.steps[0].evidence.length >= 4);
   assert.ok(report.steps[0].history.length > 0);
@@ -634,6 +661,10 @@ test('WeChat Page presents completed shared review copy and per-decision advice'
   );
   assert.match(template, /当时的关键信息/);
   assert.match(template, /!selectedReviewStep.keep/);
+  assert.doesNotMatch(
+    template,
+    /opponent-metrics|selectedReviewStep\.metrics\b|selectedReviewStep\.ev\b/,
+  );
   assert.equal(toasts.length, 0);
   page.closeReview();
   assert.equal(page.data.reviewOpen, false);
@@ -671,6 +702,61 @@ test('WeChat Page automatically saves settings and changes the requested next ha
   assert.equal(page.data.activePlayerCount, page.data.settings.playerCount);
   assert.equal(page.data.seats[0].profileId, 'tan');
   assert.equal(page.data.seats[0].portrait, '/assets/portraits/tan.jpg');
+});
+
+test('WeChat settings expose compact blinds, validate raw edits in red and apply queued amounts after retry', (t) => {
+  const { page, preferences } = setup(t);
+  const game = reachHero(page);
+  page._controller.hide();
+  const before = copy(game);
+  page.openSettings();
+  assert.equal(page.data.configuredSmallBlindText, '100');
+  assert.equal(page.data.configuredBigBlindText, '200');
+  page.editSmallBlind();
+  assert.equal(page.data.smallBlindEditing, true);
+  assert.equal(page.data.smallBlindDraft, '100');
+  for (const value of ['0', '-25', '50.5', '1K', '50025']) {
+    const stored = preferences.get('noir-wechat-settings-v1');
+    page.changeSmallBlind({ detail: { value } });
+    page.finishSmallBlindEdit();
+    assert.equal(page.data.smallBlindEditing, true);
+    assert.equal(page.data.stakesError, '小盲只能输入25的正整数倍，且不超过50K。');
+    assert.equal(preferences.get('noir-wechat-settings-v1'), stored);
+    assert.deepEqual(game, before);
+  }
+  page.changeSmallBlind({ detail: { value: '50000' } });
+  page.finishSmallBlindEdit();
+  assert.equal(page.data.smallBlindEditing, false);
+  assert.equal(page.data.stakesError, '');
+  assert.equal(page.data.configuredSmallBlindText, '50K');
+  assert.equal(page.data.configuredBigBlindText, '100K');
+  assert.equal(page.data.stakesNotice, '下一手起始盲注50K/100K·筹码恢复为10M，统计重新开始');
+  assert.deepEqual(game, before);
+  page.editSmallBlind();
+  assert.equal(
+    page.data.smallBlindDraft,
+    '50000',
+    'An edit uses full digits rather than a K display',
+  );
+  page.closeSettings();
+  finish(game);
+  page._controller.show();
+  page.retryHand();
+  page._controller.hide();
+  assert.equal(page.data.blindText, '100 / 200');
+  assert.equal(page.data.pendingStakes, true);
+  finish(game);
+  page.nextHand();
+  assert.equal(page.data.blindText, '50K / 100K');
+  assert.equal(page.data.pendingStakes, false);
+  assert.equal(page._controller.getGame().stats.hands, 0);
+  assert.ok(
+    page._controller.getGame().players.every((player) => player.stack + player.total === 10000000),
+  );
+  assert.match(template, /id="small-blind-button"/);
+  assert.match(template, /id="small-blind-input"/);
+  assert.match(template, /id="stakes-error" class="stakes-error"/);
+  assert.match(stylesheet, /\.stakes-error\s*\{[^}]*color: #ff8e95/s);
 });
 
 test('WeChat Page stops and destroys native audio plus pending work when backgrounded', (t) => {
@@ -1036,14 +1122,14 @@ test('WeChat slider preview changes only the caption, final change commits the l
   const before = copy(page.data),
     hand = copy(page._controller.getGame());
   page.previewRaise({ detail: { value: 875 } });
-  assert.equal(page.data.raiseText, '875');
+  assert.equal(page.data.raiseText, '900');
   assert.equal(page.data.raiseTo, before.raiseTo);
   for (const key of ['phoneSeats', 'boardSlots', 'heroCards', 'arenaHeight', 'publicTop'])
     assert.deepEqual(copy(page.data[key]), before[key]);
   assert.deepEqual(copy(page._controller.getGame()), hand);
   page.changeRaise({ detail: { value: 875 } });
-  assert.equal(page.data.raiseTo, 875);
-  assert.equal(page.data.raiseTo % 25, 0);
+  assert.equal(page.data.raiseTo, 900);
+  assert.equal(page.data.raiseTo % 100, 0);
 });
 
 test('delayed chip measurements cannot draw into a hidden page or a replayed deal', (t) => {

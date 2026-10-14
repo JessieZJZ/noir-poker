@@ -1,3 +1,4 @@
+const { compactChips, compactActionAmounts } = require('../../shared/engine/chip-format.js');
 const { createWechatController } = require('../../shared/platform/wechat-controller.js');
 const { phoneLayout } = require('./phone-layout.js');
 const { presentCard, showdownPresentation, presentationPatch } = require('./presentation.js');
@@ -55,6 +56,8 @@ Page({
     detailProfile: null,
     selectedProfile: 'balanced',
     settingsScrollTop: 0,
+    smallBlindEditing: false,
+    smallBlindDraft: '',
     comparisonOpen: false,
     homeLocked: false,
     homeOffset: 0,
@@ -151,7 +154,12 @@ Page({
                         `${player.name}（${profile.short}）`,
                       );
                   }
-                  return { key: index, text, type: entry.type, hero: entry.player === 0 };
+                  return {
+                    key: index,
+                    text: compactActionAmounts(text),
+                    type: entry.type,
+                    hero: entry.player === 0,
+                  };
                 })
             : view.logs,
           board: presentedBoard,
@@ -485,7 +493,7 @@ Page({
         Math.round(Number(event.detail.value) / this.data.chipUnit) * this.data.chipUnit,
       ),
     );
-    const text = value.toLocaleString('en-US');
+    const text = compactChips(value);
     if (text !== this.data.raiseText) this.setData({ raiseText: text });
   },
   flyChips(id) {
@@ -539,11 +547,28 @@ Page({
   },
   openSettings() {
     this._settingsScroll = 0;
+    this.call('clearStakesError');
+    this.setData({ smallBlindEditing: false, smallBlindDraft: '' });
     this.setOverlay({ settingsOpen: true, settingsScrollTop: 0 });
   },
   closeSettings() {
     this.closeSelect();
     this.setOverlay({ settingsOpen: false, detailProfile: null, selection: null });
+  },
+  editSmallBlind() {
+    this.call('clearStakesError');
+    this.setData({
+      smallBlindEditing: true,
+      smallBlindDraft: String(this.data.settings.stakes.smallBlind),
+    });
+  },
+  changeSmallBlind(event) {
+    const value = event.detail.value;
+    this.setData({ smallBlindDraft: value });
+    this.call('requestSmallBlind', value);
+  },
+  finishSmallBlindEdit() {
+    if (!this.data.stakesError) this.setData({ smallBlindEditing: false });
   },
   changeSwitch(event) {
     this.call('setPreference', event.currentTarget.dataset.key, event.detail.value);
@@ -817,7 +842,9 @@ Page({
         '全部对手',
         ...names.map((name) => {
           const step = opponents.find((step) => step.name === name);
-          return step.named && step.profileName ? `${name} · ${step.profileName}` : name;
+          return step.named && step.profileName
+            ? `${name}，${step.profileName.replace(/\s*·\s*/g, '，')}`
+            : name;
         }),
       ],
       opponentFilter: filter,

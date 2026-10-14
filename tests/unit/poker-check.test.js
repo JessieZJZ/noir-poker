@@ -51,7 +51,7 @@ check('kicker decides', () =>
   ),
 );
 check('blinds and big blind option', () => {
-  const g = newGame();
+  const g = newGame(undefined, { smallBlind: 25, bigBlind: 50, startingStack: 5000, chipUnit: 25 });
   startHand(g);
   assert.equal(g.actor, 3);
   assert.equal(potSize(g), 75);
@@ -63,7 +63,7 @@ check('blinds and big blind option', () => {
   assert.equal(g.actor, 1);
 });
 check('folds award pot without board', () => {
-  const g = newGame();
+  const g = newGame(undefined, { smallBlind: 25, bigBlind: 50, startingStack: 5000, chipUnit: 25 });
   startHand(g);
   for (let i = 0; i < 5; i++) act(g, g.actor, 'fold');
   assert.equal(g.phase, 'done');
@@ -74,7 +74,7 @@ check('folds award pot without board', () => {
   );
 });
 check('side pots and uncalled return', () => {
-  const g = newGame();
+  const g = newGame(undefined, { smallBlind: 25, bigBlind: 50, startingStack: 5000, chipUnit: 25 });
   g.board = cards('2c 3d 7s 9h Jc');
   const hands = ['As Ah', 'Ks Kh', 'Qs Qh'];
   g.players.forEach((p, i) => {
@@ -91,7 +91,7 @@ check('side pots and uncalled return', () => {
   );
 });
 check('board tie splits main pot', () => {
-  const g = newGame();
+  const g = newGame(undefined, { smallBlind: 25, bigBlind: 50, startingStack: 5000, chipUnit: 25 });
   g.board = cards('As Ks Qs Js Ts');
   g.players.forEach((p, i) => {
     p.folded = i > 1;
@@ -103,7 +103,7 @@ check('board tie splits main pot', () => {
   assert.deepEqual(g.payouts, [100, 100, 0, 0, 0, 0]);
 });
 check('short allin does not reopen completed raise', () => {
-  const g = newGame();
+  const g = newGame(undefined, { smallBlind: 25, bigBlind: 50, startingStack: 5000, chipUnit: 25 });
   g.phase = 'playing';
   g.street = 1;
   g.currentBet = 100;
@@ -126,7 +126,7 @@ check('short allin does not reopen completed raise', () => {
   assert.equal(g.phase, 'between');
 });
 check('invalid action preserves state', () => {
-  const g = newGame();
+  const g = newGame(undefined, { smallBlind: 25, bigBlind: 50, startingStack: 5000, chipUnit: 25 });
   startHand(g);
   const before = JSON.stringify(g);
   assert.throws(() => act(g, 0, 'call'));
@@ -136,7 +136,12 @@ check('invalid action preserves state', () => {
 });
 check('200 randomized hands conserve chips and end', () => {
   for (let trial = 0; trial < 200; trial++) {
-    const g = newGame();
+    const g = newGame(undefined, {
+      smallBlind: 25,
+      bigBlind: 50,
+      startingStack: 5000,
+      chipUnit: 25,
+    });
     startHand(g);
     let turns = 0;
     while (g.phase !== 'done') {
@@ -171,7 +176,12 @@ check('200 randomized hands conserve chips and end', () => {
 });
 check('actual bot decisions are legal for 12 hands', () => {
   for (let trial = 0; trial < 12; trial++) {
-    const g = newGame();
+    const g = newGame(undefined, {
+      smallBlind: 25,
+      bigBlind: 50,
+      startingStack: 5000,
+      chipUnit: 25,
+    });
     startHand(g);
     let guard = 0;
     while (g.phase !== 'done') {

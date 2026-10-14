@@ -27,7 +27,7 @@ function finishByCalls(g) {
 
 for (const street of [0, 1, 2, 3]) {
   test(`fold-win on street ${street}: practice runout matches original river and leaves settlement/review untouched`, () => {
-    const g = newGame(9);
+    const g = newGame(9, { smallBlind: 25, bigBlind: 50, startingStack: 5000, chipUnit: 25 });
     g.dealer = 5;
     startHand(g);
     const original = copy(g),
@@ -71,7 +71,7 @@ for (const street of [0, 1, 2, 3]) {
 }
 
 test('practice runout cannot expose a live deck; a normal showdown stays unchanged', () => {
-  const g = newGame();
+  const g = newGame(undefined, { smallBlind: 25, bigBlind: 50, startingStack: 5000, chipUnit: 25 });
   assert.throws(() => completeBoardForPractice(g));
   startHand(g);
   let before = copy(g);

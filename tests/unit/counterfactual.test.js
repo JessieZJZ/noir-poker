@@ -12,6 +12,7 @@ import {
 } from '../../src/engine/poker.js';
 import { compareCandidateActions, candidateActions } from '../../src/review/counterfactual.js';
 import { rangeWeight } from '../../src/review/equity.js';
+import { causalReraiseGame, heroValueGame } from '../fixtures/review-spots.js';
 const cards = (s) =>
   s
     .split(' ')
@@ -21,7 +22,7 @@ const cards = (s) =>
       ),
     );
 function snap() {
-  const g = newGame();
+  const g = newGame(undefined, { smallBlind: 25, bigBlind: 50, startingStack: 5000, chipUnit: 25 });
   g.dealer = 2;
   startHand(g);
   act(g, 0, 'call');
@@ -109,7 +110,7 @@ test('an opener who actually calls a 3bet receives the later defense range', () 
   assert.ok(rangeWeight(h, s, p) < before);
 });
 test('river all-in counterfactual uses pot eligibility and a board royal flush splits exactly', () => {
-  const g = newGame();
+  const g = newGame(undefined, { smallBlind: 25, bigBlind: 50, startingStack: 5000, chipUnit: 25 });
   g.dealer = 2;
   startHand(g);
   while (g.street < 3) {
@@ -137,6 +138,45 @@ test('river all-in counterfactual uses pot eligibility and a board royal flush s
 // early-stop guard is removed, so all rows and paired statistics can be compared.
 const referenceSourceURL = new URL('../../src/review/counterfactual.js', import.meta.url);
 const referenceSource = await readFile(referenceSourceURL, 'utf8');
+const sharedCacheOption = '{ trials: 8, allInCache }';
+assert.ok(referenceSource.includes(sharedCacheOption));
+const uncachedSource = referenceSource
+  .replace(sharedCacheOption, '{ trials: 8 }')
+  .replace(/from '([^']+)'/g, (_, relative) => `from '${new URL(relative, referenceSourceURL)}'`);
+const uncachedRollout = await import(
+  'data:text/javascript;base64,' + Buffer.from(uncachedSource).toString('base64')
+);
+
+test('one sampled-deal cache preserves every range, candidate and paired statistic', () => {
+  for (const s of [causalReraiseGame().decisions[0], heroValueGame('set-shove').decisions.at(-1)]) {
+    const before = JSON.stringify(s);
+    const cached = compareCandidateActions(s, [], { trials: 12 });
+    assert.deepEqual(cached, uncachedRollout.compareCandidateActions(s, [], { trials: 12 }));
+    assert.equal(cached.policyTrials, 8);
+    assert.equal(JSON.stringify(s), before);
+  }
+});
+
+const firstSamplerGuard = 'firstPairSampler && holes.size === 1';
+assert.ok(referenceSource.includes(firstSamplerGuard));
+const rebuiltPriorSource = referenceSource
+  .replace(firstSamplerGuard, 'false')
+  .replace(/from '([^']+)'/g, (_, relative) => `from '${new URL(relative, referenceSourceURL)}'`);
+const rebuiltPriorRollout = await import(
+  'data:text/javascript;base64,' + Buffer.from(rebuiltPriorSource).toString('base64')
+);
+
+test('fixed first-opponent proposals preserve every candidate and paired result', () => {
+  for (const s of [causalReraiseGame().decisions[0], heroValueGame('set-shove').decisions.at(-1)]) {
+    const before = JSON.stringify(s);
+    assert.deepEqual(
+      compareCandidateActions(s, [], { trials: 12 }),
+      rebuiltPriorRollout.compareCandidateActions(s, [], { trials: 12 }),
+    );
+    assert.equal(JSON.stringify(s), before);
+  }
+});
+
 const stopGuard = 'if (hasFinalFold(g)) break;';
 assert.ok(referenceSource.includes(stopGuard), 'The reference must disable the fold shortcut');
 const fullRolloutSource = referenceSource
@@ -185,7 +225,7 @@ function assertReferenceChips() {
   fullRollout.referenceSettlements.length = 0;
 }
 function publicMultiwayDecisions() {
-  const g = newGame(5);
+  const g = newGame(5, { smallBlind: 25, bigBlind: 50, startingStack: 5000, chipUnit: 25 });
   g.emotionMode = 'lively';
   g.players[1].botProfile = 'tan';
   startHand(g);
@@ -226,7 +266,7 @@ test('folded continuations preserve all complete-rollout estimates and paired co
 test('folded unmatched chips still settle, including a 25-chip odd award', () => {
   // An imported public snapshot can contain an unmatched contribution. Do not
   // confuse a fold's lost pot eligibility with losing the right to a refund.
-  const g = newGame(5);
+  const g = newGame(5, { smallBlind: 25, bigBlind: 50, startingStack: 5000, chipUnit: 25 });
   Object.assign(g, {
     dealer: 0,
     hand: 1,

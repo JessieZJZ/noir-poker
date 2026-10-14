@@ -16,6 +16,7 @@ const view = (overrides = {}, legalOverrides = {}) => ({
   pot: 3075,
   ...overrides,
   legal: {
+    chipUnit: 25,
     enabled: true,
     canRaise: true,
     callAmount: 800,
@@ -55,37 +56,37 @@ test('fraction shortcuts round to whole 25 chips, with half chips rounded up', (
 });
 
 test('chip quantization uses nearest denominations without escaping legal bounds', () => {
-  assert.equal(roundChips(656), 650);
-  assert.equal(roundChips(312.5), 325);
-  const legal = { minRaiseTo: 651, maxRaiseTo: 999 };
+  assert.equal(roundChips(656, 25), 650);
+  assert.equal(roundChips(312.5, 25), 325);
+  const legal = { chipUnit: 25, minRaiseTo: 651, maxRaiseTo: 999 };
   assert.equal(legalRaiseTo(656, legal), 675);
   assert.equal(legalRaiseTo(1000, legal), 975);
-  assert.throws(() => legalRaiseTo(656, { minRaiseTo: 651, maxRaiseTo: 674 }));
+  assert.throws(() => legalRaiseTo(656, { chipUnit: 25, minRaiseTo: 651, maxRaiseTo: 674 }));
   for (const amount of [-25, 1, 24, 26, 656, 312.5, NaN, Infinity, Number.MAX_SAFE_INTEGER])
-    assert.equal(isChipAmount(amount), false);
+    assert.equal(isChipAmount(amount, 25), false);
 });
 
 test('off-grid raises and invalid starting balances are rejected before state writes', () => {
-  const g = newGame(6);
+  const g = newGame(6, { smallBlind: 25, bigBlind: 50, startingStack: 5000, chipUnit: 25 });
   startHand(g);
   for (const amount of [101, 656, 312.5, NaN, Infinity]) {
     const before = JSON.stringify(g);
-    assert.throws(() => act(g, g.actor, 'raise', amount), /25/);
+    assert.throws(() => act(g, g.actor, 'raise', amount), /面额/);
     assert.equal(JSON.stringify(g), before);
   }
   act(g, g.actor, 'raise', 650);
   assert.equal(legalActions(g).callAmount, 650);
   act(g, g.actor, 'call');
   assert.equal(g.players[4].total, 650);
-  const idle = newGame(6);
+  const idle = newGame(6, { smallBlind: 25, bigBlind: 50, startingStack: 5000, chipUnit: 25 });
   idle.players[3].stack = 3894;
   const before = JSON.stringify(idle);
-  assert.throws(() => startHand(idle), /25/);
+  assert.throws(() => startHand(idle), /面额/);
   assert.equal(JSON.stringify(idle), before);
 });
 
 test('ordinary re-raises use the last full increment, and shortcuts obey that minimum', () => {
-  const g = newGame(6);
+  const g = newGame(6, { smallBlind: 25, bigBlind: 50, startingStack: 5000, chipUnit: 25 });
   startHand(g, () => 0.5);
   act(g, g.actor, 'raise', 150); // BB 50 -> 150: a full increment of 100.
   assert.equal(legalActions(g).fullRaiseTo, 250);
@@ -115,7 +116,7 @@ test('presets retain exact engine limits for minimum raises, stack caps and shor
 
 test('a real turn pot of 3075 facing 800 produces legal targets and conserves every chip', () => {
   for (const preset of ['half', 'pot']) {
-    const g = newGame(6);
+    const g = newGame(6, { smallBlind: 25, bigBlind: 50, startingStack: 5000, chipUnit: 25 });
     g.dealer = 5;
     g.players[0].stack = 5025;
     const wealth = g.players.reduce((n, p) => n + p.stack, 0);

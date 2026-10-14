@@ -1,0 +1,295 @@
+import { deckOfCards, evaluate, compare, RANK_NAMES } from '../engine/poker.js';
+import { legalRaiseTo } from '../engine/bet-sizing.js';
+import { bigBlindOf } from '../engine/stakes.js';
+import { compactChips } from '../engine/chip-format.js';
+import { botBoardFeatures } from '../engine/bot-profiles.js';
+import { preparePublicRanges, publicComboWeight } from '../engine/public-ranges.js';
+import { publicHandData } from '../engine/public-equity.js';
+import { cardText, spotFacts } from './spot-facts.js';
+
+const identify = (card) => `${card.rank}-${card.suit}`;
+const number = compactChips;
+const ordered = (a, b) => (a < b ? -1 : a > b ? 1 : 0);
+const pairKey = (cards) => cards.map(identify).sort().join('|');
+const groupKey = (candidate) => {
+  const [high, low] = candidate.cards.map((card) => card.rank).sort((a, b) => b - a),
+    shape = high === low ? 'p' : candidate.cards[0].suit === candidate.cards[1].suit ? 's' : 'o';
+  return `${high}-${low}-${shape}-${candidate.score[0]}`;
+};
+
+// Ranking describes possible opponent holdings from the same public range
+// kernel as the bots. It never changes the exhaustive current-nuts proof.
+export function handMatchups(s, c) {
+  if (!s.hole?.length || !s.board || !c.made) return null;
+  const known = new Set([...s.hole, ...s.board].map(identify)),
+    pool = deckOfCards().filter((card) => !known.has(identify(card))),
+    own = c.made.score,
+    comparison = s.street ? 'made' : 'structure',
+    cache = new Map(),
+    candidates = [];
+  let hasBehind = false;
+  for (let i = 0; i < pool.length - 1; i++)
+    for (let j = i + 1; j < pool.length; j++) {
+      const cards = [pool[i], pool[j]],
+        made = publicHandData(cards, s.board, { evaluate, cache }),
+        direction = Math.sign(compare(own, made.score));
+      if (direction < 0) hasBehind = true;
+      candidates.push({
+        cards,
+        text: cardText(cards),
+        label: !s.street
+          ? made.score[0] === 1
+            ? '口袋对子'
+            : '高牌'
+          : made.score[0] === 8 && made.score[1] === 14
+            ? '皇家同花顺'
+            : RANK_NAMES[made.score[0]],
+        score: made.score,
+        direction: direction > 0 ? 'ahead' : direction < 0 ? 'behind' : 'tied',
+        key: pairKey(cards),
+        likelihood: 0,
+      });
+    }
+  const ranges = preparePublicRanges(s).sort((a, b) => a.id - b.id);
+  // Each live seat contributes a normalized distribution over the legal pool.
+  // Summing their group masses ranks which holdings merit consideration across
+  // multiple opponents; these masses are not displayed as win probabilities.
+  for (const range of ranges) {
+    const board = range.board || [],
+      boardScore = board.length === 5 ? publicHandData([], board, { evaluate, cache }).score : null,
+      weights = candidates.map((candidate) => {
+        const data =
+          board.length >= 3
+            ? publicHandData(candidate.cards, board, {
+                evaluate,
+                features: botBoardFeatures,
+                cache,
+              })
+            : {};
+        return publicComboWeight(candidate.cards, range, { board, ...data, boardScore, compare });
+      }),
+      total = weights.reduce((sum, weight) => sum + weight, 0);
+    for (let i = 0; i < candidates.length; i++)
+      candidates[i].likelihood += total ? weights[i] / total : 1 / candidates.length;
+  }
+  if (!ranges.length)
+    for (const candidate of candidates) candidate.likelihood = 1 / candidates.length;
+  const groups = { ahead: new Map(), behind: new Map(), tied: new Map() };
+  for (const candidate of candidates) {
+    const group = groupKey(candidate),
+      entries = groups[candidate.direction],
+      previous = entries.get(group);
+    if (!previous) entries.set(group, { ...candidate, group, mass: candidate.likelihood });
+    else {
+      const mass = previous.mass + candidate.likelihood,
+        preferred =
+          candidate.likelihood > previous.likelihood + 1e-12 ||
+          (Math.abs(candidate.likelihood - previous.likelihood) <= 1e-12 &&
+            ordered(candidate.key, previous.key) < 0);
+      entries.set(group, { ...(preferred ? candidate : previous), group, mass });
+    }
+  }
+  const select = (direction, limit) =>
+    [...groups[direction].values()]
+      .sort((a, b) =>
+        Math.abs(a.mass - b.mass) > 1e-12 ? b.mass - a.mass : ordered(a.group, b.group),
+      )
+      .slice(0, limit)
+      .map(({ cards, text, label, score, group }) => ({ cards, text, label, score, group }));
+  const ahead = select('ahead', 3),
+    behind = select('behind', 3),
+    tied = select('tied', 1),
+    lead = ahead[0],
+    lose = behind[0],
+    tie = tied[0],
+    board = c.handClass === 'board',
+    danger = (c.texture.maxSuit >= 3 && own[0] < 5) || (c.texture.connected >= 4 && own[0] < 4),
+    strength = !s.street
+      ? c.tier >= 2
+        ? 'strong'
+        : c.tier === 1
+          ? 'medium'
+          : 'weak'
+      : board
+        ? 'board'
+        : own[0] >= 3 && !danger
+          ? 'strong'
+          : own[0] >= 1
+            ? 'medium'
+            : 'weak';
+  const text = !s.street
+    ? lead && lose
+      ? `翻前牌组对比：${c.handLabel}比 ${lead.text} 的点数或踢脚更好，但面对 ${lose.text} 会处于下风；之后仍要看公共牌。`
+      : lead
+        ? `翻前牌组对比：${c.handLabel}领先例如 ${lead.text}；这手强起手牌可以向较弱对子或高牌取值。`
+        : lose
+          ? `翻前牌组对比：${c.handLabel}面对例如 ${lose.text} 会落后，不能只靠弱牌本身支撑大额投入。`
+          : ''
+    : board
+      ? lose
+        ? `主要牌力来自公共牌；遇到 ${lose.text}（${lose.label}）仍会落后，不能把公共牌成牌当成独占底池。`
+        : `主要牌力来自公共牌，${tie?.text || ''} 也能组成同样的牌；当前争取的是平分底池。`
+      : lead && lose
+        ? `当前成牌对比：${c.handLabel}能赢例如 ${lead.text}（${lead.label}），但会输给 ${lose.text}（${lose.label}）。`
+        : lead
+          ? s.street === 3
+            ? `当前成牌对比：${c.handLabel}能赢例如 ${lead.text}（${lead.label}），河牌已发完，是当前最大成牌。`
+            : `当前成牌对比：${c.handLabel}能赢例如 ${lead.text}（${lead.label}），当前是最大成牌（坚果牌）；后面新发的牌仍可能改变强弱。`
+          : lose
+            ? `当前成牌对比：${c.handLabel}会输给例如 ${lose.text}（${lose.label}）；继续更需要补牌或对手弃牌。`
+            : `当前成牌与 ${tie?.text || ''} 相同，主要争取平分底池。`;
+  return {
+    ahead,
+    behind,
+    tied,
+    handLabel: c.handLabel,
+    comparison,
+    nut: Boolean(s.street) && !hasBehind,
+    strength,
+    relation: !s.street ? strength : board ? 'board' : !hasBehind ? 'current-nuts' : strength,
+    text,
+  };
+}
+
+export function matchupPresentation(matchups, street) {
+  if (!matchups) return null;
+  const structure = matchups.comparison === 'structure',
+    directions = [
+      ['ahead', structure ? '结构上较弱的可能牌组' : '当前可能领先的牌组'],
+      ['behind', structure ? '结构上较强的可能牌组' : '当前可能落后的牌组'],
+      ['tied', '当前可能平分的牌组'],
+    ];
+  return {
+    title: structure ? '起手牌结构对比' : '当前成牌对比',
+    handLabel: matchups.handLabel,
+    note: structure
+      ? '仅比较起手牌结构，不代表获胜概率；之后仍需看公共牌。'
+      : '按位置与此前公开行动估计排序，仅是可能牌组，不代表对手实际底牌。',
+    groups: directions
+      .filter(([direction]) => matchups[direction].length && (!structure || direction !== 'tied'))
+      .map(([direction, label]) => ({ direction, label, examples: matchups[direction] })),
+    nutsNote:
+      !structure && matchups.nut
+        ? street === 3
+          ? '河牌已发完，当前没有可能更强的牌组。'
+          : '当前没有可能更强的牌组；后续公共牌仍可能改变强弱。'
+        : '',
+  };
+}
+
+export function reviewCommentary(paragraphs, matchups, street) {
+  const presentation = matchupPresentation(matchups, street);
+  return paragraphs.map((text) =>
+    presentation && text === matchups.text ? { matchups: presentation } : { text },
+  );
+}
+
+// Conditional value candidates only. Existing analysis and paired-rollout guards
+// still determine the final verdict. All sizing is delegated to the engine helper.
+export function valuePlan(s, c, matchups = c.matchups || handMatchups(s, c)) {
+  const empty = { primary: null, secondary: null, kind: null, reason: '' };
+  if (!matchups || matchups.strength === 'board') return empty;
+  const f = spotFacts(s, c),
+    bigBlind = bigBlindOf(s),
+    live = (s.players || []).filter((p) => p.id !== 0 && !p.folded && !p.allin && p.stack > 0),
+    score = c.made.score[0],
+    facing = f.lastAggression?.street === s.street ? f.lastAggression : null,
+    dry = !c.texture.wet && !c.texture.paired,
+    fullRaise = s.legal.fullRaiseTo ?? s.currentBet + (s.minRaise ?? bigBlind),
+    canRaise =
+      s.legal.canRaise &&
+      s.legal.raiseReopened !== false &&
+      !s.legal.isShortAllin &&
+      s.legal.maxRaiseTo >= fullRaise &&
+      live.length > 0,
+    pocket = s.hole[0].rank === s.hole[1].rank,
+    strongPreflop = !s.street && c.tier === 3,
+    pocketTrap = strongPreflop && pocket && s.hole[0].rank >= 13,
+    boardTrips = c.texture.trips && !s.hole.some((card) => card.rank === c.made.score[1]),
+    valueHand =
+      s.street > 0 &&
+      !boardTrips &&
+      (score >= 2 || ['overpair', 'top-pair'].includes(c.handClass)) &&
+      !(c.texture.maxSuit >= 4 && score < 5) &&
+      !(c.texture.connected >= 4 && score < 4),
+    strongMade = valueHand && (score >= 3 || c.handClass === 'overpair'),
+    topKicker =
+      c.handClass === 'top-pair' &&
+      s.hole.some(
+        (card) => card.rank >= 13 && !s.board.some((boardCard) => boardCard.rank === card.rank),
+      ),
+    dangerousMade =
+      (c.texture.maxSuit >= 3 && score < 5) ||
+      (c.texture.connected >= 3 && score < 4) ||
+      (c.texture.paired && score < 6),
+    shallow = s.pot > 0 && c.spr <= 1.25 && s.stack / s.pot <= 1.25 && s.stack > s.legal.callAmount,
+    shoveHand =
+      s.street > 0 &&
+      valueHand &&
+      (matchups.nut ||
+        (!dangerousMade &&
+          (score >= 3 ||
+            (c.opponents === 1 && (score === 2 || topKicker || c.handClass === 'overpair'))))),
+    trap =
+      canRaise &&
+      facing &&
+      s.stack > s.legal.callAmount &&
+      ((s.street > 0 &&
+        s.street < 3 &&
+        c.opponents === 1 &&
+        live.length === 1 &&
+        dry &&
+        strongMade &&
+        !shallow) ||
+        (!s.street &&
+          pocketTrap &&
+          c.opponents <= 3 &&
+          c.pendingOthers <= 2 &&
+          c.preflopRaises <= 2 &&
+          c.inPosition &&
+          c.effective > Math.max(30 * bigBlind, s.legal.callAmount * 4)));
+  if (
+    canRaise &&
+    ((shallow && shoveHand) ||
+      (strongPreflop && (s.stack <= 15 * bigBlind || shallow) && c.preflopRaises <= 2))
+  )
+    return {
+      primary: { action: 'raise', amount: s.legal.maxRaiseTo },
+      secondary: s.legal.canCheck
+        ? { action: 'check', amount: 0 }
+        : { action: 'call', amount: s.legal.callAmount },
+      kind: 'value-shove',
+      reason: `当时底池 ${number(s.pot)}，你还剩 ${number(s.stack)}；这手强牌可比较价值全下，让${s.street ? '弱成牌或听牌' : '较弱起手牌'}为剩余筹码付费。`,
+    };
+  if (!valueHand && !strongPreflop) return empty;
+  const amount = !s.street
+      ? s.currentBet <= bigBlind
+        ? 3 * bigBlind
+        : s.currentBet * (c.inPosition ? 3 : 4)
+      : s.currentBet > 0
+        ? s.currentBet * (c.inPosition ? 2.5 : 3)
+        : s.pot * (c.texture.wet || c.opponents > 1 ? 0.65 : 0.4),
+    raise = canRaise ? { action: 'raise', amount: legalRaiseTo(amount, s.legal) } : null,
+    flat = s.legal.canCheck
+      ? { action: 'check', amount: 0 }
+      : { action: 'call', amount: s.legal.callAmount };
+  if (trap)
+    return {
+      primary: s.action === 'call' ? flat : raise,
+      secondary: s.action === 'call' ? raise : flat,
+      kind: 'trap',
+      reason: s.street
+        ? `这张 ${cardText(s.board)} 较干燥，对手已经主动下注；平跟 ${number(s.legal.callAmount)} 是埋牌路线，留住这条下注线中的弱牌和诈唬，双方仍有筹码继续下一街。`
+        : `这手 ${cardText(s.hole)} 可以藏在平跟里；对手已有主动加注，你有位置，平跟 ${number(s.legal.callAmount)} 保留其弱牌和诈唬。`,
+    };
+  return {
+    primary: raise,
+    secondary: flat,
+    kind: raise ? 'value-raise' : null,
+    reason: !s.street
+      ? `这手 ${cardText(s.hole)} 可用普通加注建立底池，给较弱对子和高牌留下继续的机会；当前 ${number(s.stack)} 的筹码不必一次全部推出。`
+      : c.opponents > 1 && (c.handClass === 'top-pair' || c.handClass === 'overpair')
+        ? `这张 ${cardText(s.board)} 是多人底池，一对更容易遇到两对或暗三条；可以取值，但不把 ${number(s.stack)} 一次当成必需投入。`
+        : `当前成牌可向较弱牌取值；在 ${cardText(s.board)} 上加注既收取跟注，也让听牌付费，尺度仍要给弱牌留下继续空间。`,
+  };
+}

@@ -17,7 +17,7 @@ const nextLabel = (g, amount) =>
   actionLabel({ ...g, legal: legalActions(g), action: 'raise', amount });
 
 test('preflop 2/3/4-bets survive intervening calls and before-action review snapshots', () => {
-  const g = newGame();
+  const g = newGame(undefined, { smallBlind: 25, bigBlind: 50, startingStack: 5000, chipUnit: 25 });
   g.dealer = 5;
   startHand(g, () => 0.5);
   while (g.actor !== 0) act(g, g.actor, 'fold');
@@ -27,12 +27,12 @@ test('preflop 2/3/4-bets survive intervening calls and before-action review snap
   assert.equal(nextLabel(g, 650), '3-bet 加注至 650');
   act(g, 2, 'raise', 650);
   act(g, 0, 'call');
-  assert.equal(nextLabel(g, 1800), '4-bet 加注至 1,800');
+  assert.equal(nextLabel(g, 1800), '4-bet 加注至 1.8K');
   act(g, 1, 'raise', 1800);
   act(g, 2, 'call');
   act(g, 0, 'call');
   assert.equal(actionLabel(g.decisions[0]), '2-bet 开池至 150');
-  assert.equal(actionLabel(g.decisions[2], 'raise', 3000), '5-bet 加注至 3,000');
+  assert.equal(actionLabel(g.decisions[2], 'raise', 3000), '5-bet 加注至 3K');
   assert.deepEqual(
     g.history.filter((a) => a.action === 'raise').map((a) => a.betLabel),
     ['2-bet 开池至', '3-bet 加注至', '4-bet 加注至'],
@@ -74,7 +74,7 @@ test('first postflop wager omits its ordinal while full and short all-ins keep t
 });
 
 test('short all-in has an ordinal without reopening a prior bettor; all-in calls add no level', () => {
-  const g = newGame();
+  const g = newGame(undefined, { smallBlind: 25, bigBlind: 50, startingStack: 5000, chipUnit: 25 });
   g.dealer = 5;
   g.players[2].stack = 175;
   g.players[3].stack = 100;
@@ -125,7 +125,7 @@ test('historical ordinals use the complete street before truncation; other stree
 });
 
 test('retry clears prior raise sequence and starts again at 2-bet', () => {
-  const g = newGame();
+  const g = newGame(undefined, { smallBlind: 25, bigBlind: 50, startingStack: 5000, chipUnit: 25 });
   g.dealer = 2;
   startHand(g, () => 0.5);
   act(g, 0, 'raise', 150);

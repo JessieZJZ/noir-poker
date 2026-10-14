@@ -3,7 +3,7 @@ import { readFileSync, mkdirSync, readdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { root } from './mobile-lib.mjs';
 
-const icon = readFileSync(path.join(root, 'mobile/icon.svg'));
+const icon = readFileSync(path.join(root, 'public/app-icon.png'));
 const png = (size) => sharp(icon).resize(size, size).png().toBuffer();
 const ios = path.join(root, 'ios/App/App/Assets.xcassets');
 await sharp(icon)
@@ -33,14 +33,15 @@ for (const [density, size] of [
   for (const name of ['ic_launcher.png', 'ic_launcher_round.png'])
     writeFileSync(path.join(dir, name), await png(size));
 }
-// A small original spade stays within Android's adaptive-icon safe zone.
+// Keep the supplied artwork inside Android's adaptive-icon safe zone.
+mkdirSync(path.join(res, 'drawable-nodpi'), { recursive: true });
+await sharp({ create: { width: 648, height: 648, channels: 4, background: '#001011' } })
+  .composite([{ input: await png(432), gravity: 'center' }])
+  .png()
+  .toFile(path.join(res, 'drawable-nodpi/ic_launcher_artwork.png'));
 writeFileSync(
   path.join(res, 'drawable-v24/ic_launcher_foreground.xml'),
-  `<?xml version="1.0" encoding="utf-8"?>
-<vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">
-  <path android:fillColor="#6ee7c5" android:pathData="M54,28 C47,37 36,43 36,52 C36,63 47,66 54,59 C61,66 72,63 72,52 C72,43 61,37 54,28 M50,60 L45,72 L63,72 L58,60 Z"/>
-</vector>
-`,
+  '<?xml version="1.0" encoding="utf-8"?><bitmap xmlns:android="http://schemas.android.com/apk/res/android" android:src="@drawable/ic_launcher_artwork" android:gravity="fill"/>\n',
 );
 writeFileSync(
   path.join(res, 'values/ic_launcher_background.xml'),
@@ -71,4 +72,4 @@ for (const directory of readdirSync(res)) {
     if (!String(error.message).includes('Input file is missing')) throw error;
   }
 }
-console.log('Generated original NOIR app icons and launch artwork');
+console.log('Generated NOIR app icons and launch artwork from public/app-icon.png');

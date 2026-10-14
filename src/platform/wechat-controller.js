@@ -1,9 +1,18 @@
+import { compactChips, compactActionAmounts } from '../engine/chip-format.js';
+import {
+  sanitizeStakes,
+  validateStakes,
+  stakesFromSmallBlind,
+  sameStakes,
+} from '../engine/stakes.js';
 import { createHeroTurnCue } from '../ui/hero-turn.js';
 import { SEAT_ANCHORS } from '../ui/seat-geometry.js';
 import { explainOpponent } from '../review/opponents.js';
 import { publicHistory } from '../review/narrative.js';
+import { reviewCommentary } from '../review/matchups.js';
 import {
   newGame,
+  configureStakes,
   startHand,
   restartHand,
   canRestartHand,
@@ -30,7 +39,7 @@ import {
   assignBotSeat,
   toggleMixedLineup,
 } from '../engine/bot-profiles.js';
-import { CHIP_UNIT, fractionRaiseTo, legalRaiseTo } from '../engine/bet-sizing.js';
+import { chipUnitOf, fractionRaiseTo, legalRaiseTo } from '../engine/bet-sizing.js';
 import {
   createReviewInput,
   analyzeDecision,
@@ -48,9 +57,10 @@ const cardView = (card) => ({
   suit: card.symbol,
   red: card.suit === 1 || card.suit === 3,
 });
-const format = (value) => Number(value).toLocaleString('en-US');
+const format = compactChips;
 const defaults = () => ({
   playerCount: 5,
+  stakes: sanitizeStakes(),
   difficulty: 'normal',
   sound: true,
   hints: true,
@@ -58,6 +68,7 @@ const defaults = () => ({
 });
 const sanitize = (value) => ({
   ...defaults(),
+  stakes: sanitizeStakes(value?.stakes),
   playerCount:
     Number.isInteger(value?.playerCount) && value.playerCount >= 5 && value.playerCount <= 9
       ? value.playerCount
@@ -80,6 +91,7 @@ export function createWechatController({
   unschedule = clearTimeout,
 }) {
   let settings;
+  let stakesError = '';
   try {
     settings = sanitize(JSON.parse(storage?.getItem(STORAGE_KEY)));
   } catch {
@@ -87,8 +99,8 @@ export function createWechatController({
   }
   const peeked = new Map();
   const turnCue = createHeroTurnCue(notifyTurn);
-  let game = newGame(settings.playerCount),
-    raiseTo = 150,
+  let game = newGame(settings.playerCount, settings.stakes),
+    raiseTo = game.bigBlind * 3,
     timer = null,
     pendingBot = null,
     reviewTimer = null,
@@ -99,10 +111,10 @@ export function createWechatController({
     hintKey = '',
     hintText = '',
     reviewEpoch = 0;
-  let sliderMin = 150,
-    sliderMax = 5000,
+  let sliderMin = game.bigBlind * 2,
+    sliderMax = game.stakes.startingStack,
     callCaption = '跟注',
-    callAmountText = '50';
+    callAmountText = format(game.bigBlind);
   game.difficulty = settings.difficulty;
 
   function save() {
@@ -217,7 +229,7 @@ export function createWechatController({
           ? '思考中'
           : retained?.text || player.action || (done ? '未行动' : '等待行动');
       const match =
-        /^(?:(\d+-bet) )?(小盲|大盲|跟注|开池至|加注至|下注至|下注|短全下至|全下至|全下) (\d+)$/.exec(
+        /^(?:(\d+-bet)\s+)?(小盲|大盲|跟注|开池至|加注至|下注至|下注|短全下至|全下至|全下)\s*(\d+)$/.exec(
           rawAction,
         );
       const actionLabel = match
@@ -227,7 +239,7 @@ export function createWechatController({
             ? match[1] +
               (match[2] === '短全下至' ? ' 短全下' : match[2] === '全下至' ? ' 全下' : '')
             : match[2].replace(/至$/, '')
-        : rawAction;
+        : compactActionAmounts(rawAction);
       return {
         id: player.id,
         name: player.name,
@@ -289,11 +301,23 @@ export function createWechatController({
           heroBest.cards.some((c) => c.key === card.key),
       })),
       heroStack: format(hero.stack),
+      startingStackText: format(settings.stakes.startingStack),
+      blindText: `${format(game.smallBlind)} / ${format(game.bigBlind)}`,
+      configuredSmallBlindText: format(settings.stakes.smallBlind),
+      configuredBigBlindText: format(settings.stakes.bigBlind),
+      requestedStakes: { ...settings.stakes },
+      pendingStakes: !sameStakes(settings.stakes, game.stakes),
+      stakesNotice: !sameStakes(settings.stakes, game.stakes)
+        ? `下一手起始盲注${format(settings.stakes.smallBlind)}/${format(settings.stakes.bigBlind)}·筹码恢复为${format(settings.stakes.startingStack)}，统计重新开始`
+        : '',
+      stakesError,
       heroPosition: seatPosition(game, 0),
-      heroAction: cleanAction(
-        hero.folded || hero.allin || hero.lastAction?.street === game.street
-          ? hero.lastAction?.text || ''
-          : '',
+      heroAction: compactActionAmounts(
+        cleanAction(
+          hero.folded || hero.allin || hero.lastAction?.street === game.street
+            ? hero.lastAction?.text || ''
+            : '',
+        ),
       ),
       heroRank: heroBest && (game.revealed || game.showdown) ? heroBest.label : '',
       heroWinner: done && game.winners.some((w) => w.id === 0),
@@ -332,7 +356,7 @@ export function createWechatController({
       maxRaise: sliderMax,
       raiseTo,
       raiseText: format(raiseTo),
-      chipUnit: CHIP_UNIT,
+      chipUnit: chipUnitOf(game),
       callLabel: callCaption,
       callText: callAmountText,
       actionNotice: done
@@ -373,7 +397,7 @@ export function createWechatController({
         .reverse()
         .map((entry, index) => ({
           key: index,
-          text: cleanAction(typeof entry === 'string' ? entry : entry.text),
+          text: compactActionAmounts(cleanAction(typeof entry === 'string' ? entry : entry.text)),
         })),
       stats: {
         hands: game.stats.hands,
@@ -427,16 +451,73 @@ export function createWechatController({
     cancelReview();
     cancelHint();
     hintKey = '';
-    if (game.players.length !== settings.playerCount) game = newGame(settings.playerCount);
+    if (game.players.length !== settings.playerCount || !sameStakes(settings.stakes, game.stakes))
+      game = newGame(settings.playerCount, settings.stakes);
     game.difficulty = settings.difficulty;
     applyBotSettings(game, settings);
     startHand(game);
-    raiseTo = 150;
+    raiseTo = game.bigBlind * 3;
     render();
     effect('deal');
     driveBots();
   }
+  function setStakes(value) {
+    try {
+      const stakes = validateStakes(value);
+      if (!configureStakes(game, stakes)) {
+        const changed = !sameStakes(settings.stakes, stakes);
+        if (changed) {
+          settings.stakes = stakes;
+          save();
+        }
+        stakesError = '';
+        render();
+        return changed;
+      }
+      settings.stakes = stakes;
+      stakesError = '';
+      save();
+      freshHand();
+      return true;
+    } catch (error) {
+      stakesError = error.message;
+      render();
+      return false;
+    }
+  }
+  function requestStakes(value) {
+    try {
+      const stakes = stakesFromSmallBlind(value?.smallBlind);
+      if (value?.bigBlind !== stakes.bigBlind)
+        throw Error('大盲必须为小盲的两倍，起始筹码为100个大盲。');
+      // Check any derived fields supplied by API callers before saving.
+      validateStakes(value);
+      stakesError = '';
+      if (sameStakes(settings.stakes, stakes)) {
+        render();
+        return false;
+      }
+      settings.stakes = stakes;
+      save();
+      render();
+      return true;
+    } catch (error) {
+      stakesError = error.message;
+      render();
+      return false;
+    }
+  }
+  function requestSmallBlind(value) {
+    try {
+      return requestStakes(stakesFromSmallBlind(value));
+    } catch (error) {
+      stakesError = error.message;
+      render();
+      return false;
+    }
+  }
   function setPreference(key, value) {
+    if (key === 'stakes') return requestStakes(value);
     const enablingSound = key === 'sound' && !settings.sound && value === true;
     const next = sanitize({ ...settings, [key]: value });
     settings = next;
@@ -498,7 +579,12 @@ export function createWechatController({
             ? legal.maxRaiseTo
             : ['half', 'pot'].includes(name)
               ? fractionRaiseTo(
-                  { currentBet: game.currentBet, pot: potSize(game), callAmount: legal.callAmount },
+                  {
+                    currentBet: game.currentBet,
+                    pot: potSize(game),
+                    callAmount: legal.callAmount,
+                    chipUnit: legal.chipUnit,
+                  },
                   name === 'half' ? 0.5 : 1,
                 )
               : null;
@@ -531,7 +617,7 @@ export function createWechatController({
       cancelHint();
       hintKey = '';
       restartHand(game);
-      raiseTo = 150;
+      raiseTo = game.bigBlind * 3;
       render();
       effect('deal');
       driveBots();
@@ -540,8 +626,15 @@ export function createWechatController({
     reset() {
       cancelBots();
       cancelReview();
-      game = newGame(settings.playerCount);
+      game = newGame(settings.playerCount, settings.stakes);
       freshHand();
+    },
+    setStakes,
+    requestStakes,
+    requestSmallBlind,
+    clearStakesError() {
+      stakesError = '';
+      render();
     },
     setPreference,
     setSeatProfile(id, profileId) {
@@ -639,18 +732,21 @@ export function createWechatController({
             : '只按行动前可见的信息评价决策。',
           opponents: input.opponents.map((record, index) => {
             const view = record.trace.view;
-            const explanation = explainOpponent(record);
+            const explanation = explainOpponent(
+              record,
+              input.opponents.map(({ id, name }) => ({ id, name })),
+            );
             return {
               index,
               name: record.name,
               id: record.id,
-              profileName: record.trace.profileName,
+              profileName: record.trace.profileName?.replace(/\s*·\s*/g, '，'),
               named: !!getBotProfile(record.trace.profile).research,
               street: STREET_NAMES[view.street],
               actual: cleanAction(
                 actionLabel({ ...view, action: record.action, amount: record.amount }),
               ),
-              label: record.trace.profileName,
+              label: record.trace.profileName?.replace(/\s*·\s*/g, '，'),
               position: view.position,
               pot: format(view.pot),
               stack: format(view.stack),
@@ -658,8 +754,13 @@ export function createWechatController({
               board: view.board.map(cardView),
               title: explanation.title,
               reason: explanation.detail,
+              paragraphs: explanation.paragraphs,
+              commentary: reviewCommentary(
+                explanation.paragraphs,
+                explanation.matchups,
+                view.street,
+              ),
               reasons: explanation.reasons,
-              metrics: explanation.metrics,
               warning: explanation.warning,
             };
           }),
@@ -674,11 +775,17 @@ export function createWechatController({
             keep: r.coaching.kind === 'keep',
             suggestion: cleanAction(r.coaching.suggestion),
             reason: r.coaching.explanation,
+            paragraphs: [...r.coaching.paragraphs, ...(input.publicResponses?.[index] || [])],
+            commentary: reviewCommentary(
+              [...r.coaching.paragraphs, ...(input.publicResponses?.[index] || [])],
+              r.context.matchups,
+              input.decisions[index].street,
+            ),
+            publicResponses: input.publicResponses?.[index] || [],
             followUp: r.coaching.followUp,
-            ev: r.coaching.evText,
             evidence: r.evidence,
             history: publicHistory(input.decisions[index]).map(
-              (a) => `${a.street} · ${a.name} · ${a.action}`,
+              (a) => `${a.street}，${a.name}，${a.action}`,
             ),
             cards: input.decisions[index].hole.map(cardView),
             board: input.decisions[index].board.map(cardView),

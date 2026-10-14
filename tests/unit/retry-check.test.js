@@ -37,7 +37,7 @@ function seeded(seed) {
   };
 }
 check('restart rejects idle, active and between streets without changing state', () => {
-  const g = newGame();
+  const g = newGame(undefined, { smallBlind: 25, bigBlind: 50, startingStack: 5000, chipUnit: 25 });
   assert.equal(canRestartHand(g), false);
   assert.throws(() => restartHand(g));
   startHand(g);
@@ -55,7 +55,7 @@ check('pocket queens all-in folds: same deal, button, stacks and pre-hand statis
   try {
     for (let seed = 1; seed < 5000; seed++) {
       Math.random = seeded(seed);
-      g = newGame();
+      g = newGame(undefined, { smallBlind: 25, bigBlind: 50, startingStack: 5000, chipUnit: 25 });
       g.dealer = 2;
       g.stats = { hands: 9, wins: 4, buyin: 10000 };
       g.players[0].stack = 14000;
@@ -104,7 +104,7 @@ check('pocket queens all-in folds: same deal, button, stacks and pre-hand statis
 for (let n = 5; n <= 9; n++)
   check(`${n} players all button rotations replay correctly`, () => {
     for (let d = 0; d < n; d++) {
-      const g = newGame(n);
+      const g = newGame(n, { smallBlind: 25, bigBlind: 50, startingStack: 5000, chipUnit: 25 });
       g.dealer = (d + n - 1) % n;
       g.players.forEach((p, i) => (p.stack = 1000 + i * 125));
       g.stats = { hands: 7, wins: 3, buyin: 1000 };
@@ -123,7 +123,7 @@ for (let n = 5; n <= 9; n++)
     }
   });
 check('full river runout stays identical after different earlier choices', () => {
-  const g = newGame();
+  const g = newGame(undefined, { smallBlind: 25, bigBlind: 50, startingStack: 5000, chipUnit: 25 });
   startHand(g);
   const baseline = copy(g);
   finish(g);
@@ -146,7 +146,7 @@ check('full river runout stays identical after different earlier choices', () =>
   assert.equal(review.decisions[0].currentBet, 50);
 });
 check('nine unequal all-ins retract eight contested pots and one refund', () => {
-  const g = newGame(9);
+  const g = newGame(9, { smallBlind: 25, bigBlind: 50, startingStack: 5000, chipUnit: 25 });
   g.players.forEach((p, i) => (p.stack = (i + 1) * 100));
   startHand(g);
   const baseline = copy(g);
@@ -171,7 +171,7 @@ check('nine unequal all-ins retract eight contested pots and one refund', () => 
   assert.equal(g.players.reduce((s, p) => s + p.stack, 0) + potSize(g), 4500);
 });
 check('rebuy and short blind restore once with original actual blind amounts', () => {
-  const g = newGame();
+  const g = newGame(undefined, { smallBlind: 25, bigBlind: 50, startingStack: 5000, chipUnit: 25 });
   g.players[0].stack = 0;
   g.players[1].stack = 25;
   g.players[2].stack = 25;
@@ -189,7 +189,7 @@ check('rebuy and short blind restore once with original actual blind amounts', (
   assert.equal(potSize(g), 50);
 });
 check('repeated retries keep baseline immutable and count only latest final attempt', () => {
-  const g = newGame();
+  const g = newGame(undefined, { smallBlind: 25, bigBlind: 50, startingStack: 5000, chipUnit: 25 });
   startHand(g);
   const baseline = copy(g);
   for (let attempt = 1; attempt <= 20; attempt++) {
@@ -213,7 +213,7 @@ check('repeated retries keep baseline immutable and count only latest final atte
   assert.equal(g.stats.hands, 1);
 });
 check('next hand replaces replay baseline and resets retry counter', () => {
-  const g = newGame();
+  const g = newGame(undefined, { smallBlind: 25, bigBlind: 50, startingStack: 5000, chipUnit: 25 });
   startHand(g);
   finish(g, 'fold');
   restartHand(g);

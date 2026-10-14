@@ -23,7 +23,7 @@ for (const locale of ['zh-CN', 'en']) {
       await page.setViewportSize({ width, height });
       for (const count of [5, 9]) {
         await page.evaluate((count) => window.qa.shortAllinSettlement(count), count);
-        await expect(page.locator('.seat-4 .seat-action')).toContainText('4,850');
+        await expect(page.locator('.seat-4 .seat-action')).toContainText('4.85K');
         await expect(page.locator('.seat-4 .seat-action-label')).toContainText(
           locale === 'en' ? 'Short all-in' : '短全下',
         );

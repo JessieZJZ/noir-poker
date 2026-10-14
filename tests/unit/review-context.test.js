@@ -47,6 +47,8 @@ function decision({
     },
   ];
   return {
+    bigBlind: 50,
+    chipUnit: 25,
     index: 0,
     hand: 1,
     hole: cards(hole),
@@ -65,6 +67,7 @@ function decision({
     players,
     history: [],
     legal: {
+      chipUnit: 25,
       enabled: true,
       canCheck: currentBet === 0,
       canRaise: true,
@@ -90,6 +93,28 @@ test('combined flush and straight draw deduplicates the shared ten of spades', (
   assert.equal(draw.straightOuts, 4);
   assert.equal(draw.outs, 12);
   assert.equal(draw.nextChance, 12 / 47);
+});
+
+test('turn draws exclude shared board straights while preserving private completion cards', () => {
+  const setRedraw = drawInfo(cards('7h 7d'), cards('7s Jh 9h Th'));
+  assert.equal(setRedraw.straight, false);
+  assert.equal(setRedraw.flushOuts, 9);
+  assert.equal(setRedraw.outs, 9);
+  assert.equal(setRedraw.nextChance, 9 / 46);
+  const boardOnly = drawInfo(cards('7s 2d'), cards('9h Tc Jd Qc'));
+  assert.equal(boardOnly.straight, false);
+  assert.equal(boardOnly.outs, 0);
+  const q8 = drawInfo(cards('Qd 8h'), cards('9h 7d 3d Ts'));
+  assert.equal(q8.straightType, 'open-ended');
+  assert.equal(q8.straightOuts, 8);
+  assert.equal(q8.outs, 8);
+  const higherPrivate = drawInfo(cards('9s 2d'), cards('4h 5c 6d 7c'));
+  assert.equal(higherPrivate.straightOuts, 4);
+  assert.equal(higherPrivate.outs, 4);
+  const higherPrivateStraightFlush = drawInfo(cards('9h 2d'), cards('4c 5h 6h 7h'));
+  assert.equal(higherPrivateStraightFlush.straightOuts, 4);
+  assert.equal(higherPrivateStraightFlush.flushOuts, 9);
+  assert.equal(higherPrivateStraightFlush.outs, 12);
 });
 
 test('made straight is not mislabeled as a straight draw; river has no next card', () => {

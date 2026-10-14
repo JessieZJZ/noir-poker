@@ -11,6 +11,7 @@ import {
   restartHand,
   applyBotSettings,
   potSize,
+  evaluate,
 } from '../../src/engine/poker.js';
 import {
   BOT_PROFILES,
@@ -22,6 +23,7 @@ import {
   effectiveBotAxes,
   chooseBotAction,
   getBotProfile,
+  botBoardFeatures,
 } from '../../src/engine/bot-profiles.js';
 const copy = (v) => JSON.parse(JSON.stringify(v));
 function seeded(seed) {
@@ -37,6 +39,11 @@ function finish(g, random = seeded(42)) {
     else {
       const d = botDecision(g, random),
         legal = legalActions(g);
+      if (d.trace.view.equityPots)
+        assert.equal(
+          d.trace.view.equityPots.reduce((sum, pot) => sum + pot.amount, 0),
+          d.trace.view.callPrice.contestable,
+        );
       if (d.action === 'raise') {
         assert.ok(legal.canRaise);
         assert.equal(d.amount % 25, 0);
@@ -80,7 +87,7 @@ test('all eight mixed 9-max assignments reach the executed policy with the corre
     8: 'dwan',
   };
   for (let id = 1; id <= 8; id++) {
-    const g = newGame(9);
+    const g = newGame(9, { smallBlind: 25, bigBlind: 50, startingStack: 5000, chipUnit: 25 });
     applyBotSettings(g, { assignments, emotionMode: 'off' });
     startHand(g);
     while (g.actor !== id) act(g, g.actor, 'call');
@@ -97,7 +104,7 @@ test('all eight mixed 9-max assignments reach the executed policy with the corre
 });
 test('each profile decision ignores opponent holes, future deck and eventual results', () => {
   for (const profile of BOT_PROFILES) {
-    const g = newGame(9);
+    const g = newGame(9, { smallBlind: 25, bigBlind: 50, startingStack: 5000, chipUnit: 25 });
     startHand(g);
     g.players[g.actor].botProfile = profile.id;
     const expected = botDecision(g, seeded(50));
@@ -119,7 +126,7 @@ test('each profile decision ignores opponent holes, future deck and eventual res
 test('all profiles and emotion strengths play legal 5–9 person hands and conserve chips', () => {
   for (let count = 5; count <= 9; count++)
     for (const emotionMode of ['off', 'subtle', 'lively']) {
-      const g = newGame(count),
+      const g = newGame(count, { smallBlind: 25, bigBlind: 50, startingStack: 5000, chipUnit: 25 }),
         assignments = {};
       for (let id = 1; id < count; id++)
         assignments[id] = BOT_PROFILES[id % BOT_PROFILES.length].id;
@@ -140,7 +147,7 @@ test('all profiles and emotion strengths play legal 5–9 person hands and conse
     }
 });
 test('no profile raises when a short all-in has not reopened action', () => {
-  const g = newGame();
+  const g = newGame(undefined, { smallBlind: 25, bigBlind: 50, startingStack: 5000, chipUnit: 25 });
   startHand(g);
   const first = g.actor;
   act(g, first, 'raise', 100);
@@ -157,17 +164,17 @@ test('no profile raises when a short all-in has not reopened action', () => {
 });
 test('loss, win and pressure triggers are bounded, cooled down and can be disabled', () => {
   const p = { id: 1, botMood: freshBotMood() };
-  assert.equal(finishBotHand(p, -1249, 'subtle'), null);
-  assert.equal(finishBotHand(p, -1250, 'subtle').kind, 'frustrated');
-  assert.equal(finishBotHand(p, -5000, 'subtle'), null, 'Cooldown prevents repeated triggers');
+  assert.equal(finishBotHand(p, -1249, 'subtle', 50), null);
+  assert.equal(finishBotHand(p, -1250, 'subtle', 50).kind, 'frustrated');
+  assert.equal(finishBotHand(p, -5000, 'subtle', 50), null, 'Cooldown prevents repeated triggers');
   const q = { id: 2, botMood: freshBotMood() };
-  assert.equal(finishBotHand(q, -1250, 'lively').kind, 'cautious');
+  assert.equal(finishBotHand(q, -1250, 'lively', 50).kind, 'cautious');
   const off = { id: 1, botMood: freshBotMood() };
-  assert.equal(finishBotHand(off, -5000, 'off'), null);
+  assert.equal(finishBotHand(off, -5000, 'off', 50), null);
   assert.equal(off.botMood.kind, 'steady');
   const winner = { id: 1, botMood: freshBotMood() };
-  assert.equal(finishBotHand(winner, 500, 'subtle'), null);
-  assert.equal(finishBotHand(winner, 500, 'subtle').kind, 'confident');
+  assert.equal(finishBotHand(winner, 500, 'subtle', 50), null);
+  assert.equal(finishBotHand(winner, 500, 'subtle', 50).kind, 'confident');
   const mood = freshBotMood();
   recordPressureFold(mood, 2, 'subtle');
   recordPressureFold(mood, 3, 'subtle');
@@ -186,7 +193,7 @@ test('emotions adjust actual policy controls with a smaller subtle effect', () =
   assert.ok(strong[4] < mild[4]);
 });
 test('an intervening hand without pressure breaks the consecutive-fold trigger', () => {
-  const g = newGame();
+  const g = newGame(undefined, { smallBlind: 25, bigBlind: 50, startingStack: 5000, chipUnit: 25 });
   for (let hand = 0; hand < 5; hand++) {
     g.dealer = 2;
     startHand(g);
@@ -198,6 +205,8 @@ test('an intervening hand without pressure breaks the consecutive-fold trigger',
 });
 test('style differences change entry and value-trap behavior over common decision samples', () => {
   const view = {
+    bigBlind: 50,
+    chipUnit: 25,
     id: 1,
     hole: [
       { rank: 9, suit: 0 },
@@ -219,6 +228,7 @@ test('style differences change entry and value-trap behavior over common decisio
     features: { wet: false, draw: false, overpair: false },
     playsBoard: false,
     legal: {
+      chipUnit: 25,
       enabled: true,
       toCall: 50,
       callAmount: 50,
@@ -240,18 +250,39 @@ test('style differences change entry and value-trap behavior over common decisio
   );
   const value = {
     ...view,
+    hole: [
+      { rank: 9, suit: 0 },
+      { rank: 9, suit: 1 },
+    ],
+    board: [
+      { rank: 9, suit: 3 },
+      { rank: 13, suit: 2 },
+      { rank: 2, suit: 1 },
+      { rank: 6, suit: 2 },
+    ],
     street: 2,
     equity: 0.9,
     rivals: 1,
-    legal: { ...view.legal, toCall: 0, callAmount: 0, canCheck: true },
+    pot: 800,
+    currentBet: 0,
+    contestable: 800,
+    inPosition: false,
+    opponents: [{ id: 0, stack: 5000, bet: 0, allin: false }],
+    legal: { ...view.legal, toCall: 0, callAmount: 0, canCheck: true, minRaiseTo: 50 },
   };
+  value.features = botBoardFeatures(
+    value.hole,
+    value.board,
+    evaluate([...value.hole, ...value.board]).score,
+  );
+  assert.equal(value.features.strongMade, true);
   assert.ok(
     decisions(st, value).filter((d) => d.action === 'check').length >
       decisions(peter, value).filter((d) => d.action === 'check').length,
   );
 });
 test('uncalled shove refunds are not losses; blind-only hands are not VPIP', () => {
-  const g = newGame();
+  const g = newGame(undefined, { smallBlind: 25, bigBlind: 50, startingStack: 5000, chipUnit: 25 });
   g.dealer = 3;
   startHand(g);
   assert.equal(g.actor, 1);
@@ -266,13 +297,22 @@ test('uncalled shove refunds are not losses; blind-only hands are not VPIP', () 
   for (const p of g.players.slice(2)) assert.equal(p.botStats.vpip, 0);
 });
 test('post-flop bot fractions use the after-call pot with whole 25 chips', () => {
-  const view = {
-    id: 1,
-    hole: [
+  const hole = [
       { rank: 14, suit: 0 },
       { rank: 13, suit: 0 },
     ],
-    board: [],
+    board = [
+      { rank: 14, suit: 1 },
+      { rank: 9, suit: 2 },
+      { rank: 6, suit: 3 },
+      { rank: 2, suit: 1 },
+    ];
+  const view = {
+    bigBlind: 50,
+    chipUnit: 25,
+    id: 1,
+    hole,
+    board,
     street: 2,
     position: 'BTN',
     count: 6,
@@ -285,9 +325,10 @@ test('post-flop bot fractions use the after-call pot with whole 25 chips', () =>
     equity: 0.9,
     difficulty: 'hard',
     history: [],
-    features: { wet: false, draw: false, overpair: false },
+    features: botBoardFeatures(hole, board, evaluate([...hole, ...board]).score),
     playsBoard: false,
     legal: {
+      chipUnit: 25,
       enabled: true,
       toCall: 225,
       callAmount: 225,
@@ -304,13 +345,14 @@ test('post-flop bot fractions use the after-call pot with whole 25 chips', () =>
     'off',
     () => 0.5,
   );
+  assert.equal(view.features.ownMade, true, 'The sizing probe uses an actual made top pair');
   assert.equal(decision.action, 'raise');
   assert.equal(decision.trace.sizing.fraction, 0.625);
   assert.equal(decision.trace.sizing.desired, 625); // 225 + round-to-25(625 × .625)
   assert.equal(decision.amount, 625);
 });
 test('retry restores frozen profile, emotion and simulation statistics exactly once', () => {
-  const g = newGame();
+  const g = newGame(undefined, { smallBlind: 25, bigBlind: 50, startingStack: 5000, chipUnit: 25 });
   applyBotSettings(g, { assignments: { 1: 'tan', 2: 'st' }, emotionMode: 'lively' });
   g.players[1].botMood = {
     ...freshBotMood(),
@@ -337,7 +379,7 @@ test('retry restores frozen profile, emotion and simulation statistics exactly o
   assert.throws(() => applyBotSettings(g, {}), /下一手/);
 });
 test('a reassigned profile starts a separate observed sample', () => {
-  const g = newGame();
+  const g = newGame(undefined, { smallBlind: 25, bigBlind: 50, startingStack: 5000, chipUnit: 25 });
   g.players[1].botStats = { ...freshBotStats(), hands: 20, vpip: 10 };
   applyBotSettings(g, { assignments: { 1: 'peter' } });
   assert.equal(g.players[1].botStats.hands, 0);

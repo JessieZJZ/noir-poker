@@ -878,5 +878,50 @@
     "method": "Manually authored contextual review translations in all nine non-Chinese locales; Traditional Chinese via OpenCC. Draft machine output replaced before delivery.",
     "linguisticReview": "pending",
     "messageCount": 72
+  },
+  "deceptiveReview": {
+    "date": "2026-10-13",
+    "messageCount": 16,
+    "method": "Manually authored translations; Traditional Chinese converted with OpenCC. Placeholder and runtime localization tests cover all supported locales.",
+    "linguisticReview": "Independent native-language review pending."
+  },
+  "causalReviewCopy": {
+    "date": "2026-10-14",
+    "messageCount": 229,
+    "sourceInventoryCount": 1457,
+    "method": "Agent-authored translations in the nine non-Chinese locales, reviewed against the current Chinese source and concrete poker terminology. Traditional Chinese was converted with OpenCC and corrected for poker usage. Existing key order and earlier catalog entries are preserved.",
+    "validation": "Current-source coverage and exact placeholder inventories checked in all ten translated locales. The review-i18n regression exercises all eleven supported locales with actual public responses, callers, pot odds, general hand examples and value/slowplay fixtures. English, Japanese, Korean and Traditional Chinese received a read-through of 118 generated paragraphs each; the other locale owners reviewed their own generated outputs.",
+    "linguisticReview": "Independent native-speaker poker review pending; coverage and placeholder checks are not evidence of complete linguistic quality.",
+    "messageCountScope": "219 review source messages at the initial freeze, one conditional-call replacement, four all-in continuation messages, three terminal draw-fold messages, one current-hand pot-control replacement, and one made-hand-plus-draw fact. The current source inventory contains 1457 messages.",
+    "conditionalCallClarification": "The replacement is manually translated in all ten non-Simplified-Chinese locales. It states the additional call amount only if the player chooses to call; actor labels avoid second-person conjugation and case errors. Placeholder and actual-text checks preserve both actor identities and the amount.",
+    "allInContinuationClarification": "Four manually translated messages distinguish showdown-value calls from draw calls. They preserve the actual call amount and contestable pot, and distinguish a caller who is also all-in from a caller with chips left and possible later side-pot action. All ten translated locales are checked with generated preflop AA and postflop draw responses.",
+    "terminalDrawFoldClarification": "Three manually translated messages distinguish a call that commits the actor from a heads-up opponent who is already all-in. They explain a fold without inventing future betting pressure. The made-hand-plus-draw call uses the existing made-hand wording, preserving its current showdown value.",
+    "potControlClarification": "The pot-control replacement refers to the current hand and showdown chance without assuming it is a medium-strength made hand. All actor slots use grammar that also works with a second-person identity label.",
+    "madeHandRedrawClarification": "The additional two-slot fact is manually translated in all ten non-Simplified-Chinese locales. It states both the current made hand and the remaining draw instead of describing a made-hand call only as chasing a draw.",
+    "terminalActualTextAudit": "All eleven locales checked against actual executed set-plus-flush-draw all-in calls and flush-draw folds, an actual heads-up all-in fold with chips remaining, and an actual high-card pot-control decision. The redraw fact uses a fragment long enough for the existing localizer; Japanese avoids a Chinese literal collision, and German/Russian actor labels avoid second-person case errors. Current inventory: 1457, translated locale missing keys: 0, placeholder mismatches: 0. This is a focused runtime text audit, not native-speaker certification or a broad regression run."
+  },
+  "positionAwareMatchupCopy": {
+    "date": "2026-10-14",
+    "messageCount": 13,
+    "sourceInventoryCount": 1478,
+    "sourceKeys": [
+      "仅比较起手牌结构，不代表获胜概率；之后仍需看公共牌。",
+      "公开未知牌不足以抽取底牌。",
+      "公开范围没有可用底牌组合。",
+      "当前可能平分的牌组",
+      "当前可能落后的牌组",
+      "当前可能领先的牌组",
+      "当前成牌对比",
+      "当前没有可能更强的牌组；后续公共牌仍可能改变强弱。",
+      "按位置与此前公开行动估计排序，仅是可能牌组，不代表对手实际底牌。",
+      "河牌已发完，当前没有可能更强的牌组。",
+      "结构上较弱的可能牌组",
+      "结构上较强的可能牌组",
+      "起手牌结构对比"
+    ],
+    "method": "Agent-authored translations in all ten translated locales. Existing catalog entries and fragments are retained.",
+    "scope": "Eleven review titles, direction labels and limitations, plus two public-range diagnostics. The copy distinguishes preflop starting-hand structure from current made-hand comparisons. Candidate ordering is estimated from position and prior public actions; candidates do not identify the opponent’s actual hole cards. No numeric probabilities or ranking weights are introduced by these labels.",
+    "validation": "i18n extraction and check pass for 1478 source messages and all eleven supported locales, including 213 structured research messages and 60 profile messages. 130 direct localizeText checks cover the new keys across the ten translated locales, with exact translations and no numeric probability text. Pending-blind settings, the 50K maximum and the 200/600/400/1.2K/1K guide facts remain unchanged.",
+    "linguisticReview": "Independent native-language poker review pending; source coverage and placeholder checks do not certify complete linguistic quality."
   }
 }

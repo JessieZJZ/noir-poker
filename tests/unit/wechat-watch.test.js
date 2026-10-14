@@ -136,12 +136,9 @@ test(
       'a live watch iteration must load the new crop metadata, not the startup module cache',
     );
 
-    const iconPath = path.join(directory, 'mobile/icon.svg');
+    const iconPath = path.join(directory, 'mobile/release.json');
     const nativeBuild = watch.buildCount();
-    await writeFile(
-      iconPath,
-      (await readFile(iconPath, 'utf8')) + '\n<!-- WeChat watch native metadata regression -->\n',
-    );
+    await writeFile(iconPath, (await readFile(iconPath, 'utf8')) + '\n');
     await watch.waitForBuild(nativeBuild);
     const nativeChanged = await manifest();
     assert.notEqual(

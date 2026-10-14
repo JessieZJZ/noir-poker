@@ -12,12 +12,15 @@ import {
   restartHand,
   playBotTurn,
 } from '../../src/engine/poker.js';
+import { riverShoveResponse } from '../fixtures/all-in-decisions.js';
 const copy = (v) => structuredClone(v);
 function seeded(seed) {
   return () => (seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0) / 4294967296;
 }
 function sample() {
   return {
+    bigBlind: 50,
+    chipUnit: 25,
     action: 'call',
     trace: {
       equity: 0.6,
@@ -102,6 +105,50 @@ test('a short all-in does not collapse the remaining deep opponents effective st
   ];
   assert.equal(botThinkingTime(d, () => 0.5).factors.effectiveStack, 3000);
 });
+test('all-in timing follows the actual price boundary and pending risk instead of the old opening range', () => {
+  const far = sample();
+  far.trace.percentile = far.trace.range;
+  far.trace.view.allIn = { odds: 0.1, pendingBuffer: 0.04 };
+  far.trace.allIn = far.trace.view.allIn;
+  assert.equal(botThinkingTime(far, () => 0.5).factors.closeness, 0);
+  const shifted = copy(far);
+  shifted.trace.percentile = 0.99;
+  assert.deepEqual(
+    botThinkingTime(shifted, () => 0.5),
+    botThinkingTime(far, () => 0.5),
+  );
+  const close = copy(far);
+  close.trace.equity = 0.16;
+  assert.equal(botThinkingTime(close, () => 0.5).factors.closeness, 1);
+  const noPending = copy(close);
+  noPending.trace.view.allIn.pendingBuffer = 0;
+  assert.ok(
+    botThinkingTime(close, () => 0.5).factors.closeness >
+      botThinkingTime(noPending, () => 0.5).factors.closeness,
+  );
+  assert.ok(
+    botThinkingTime(close, () => 0.5).durationMs > botThinkingTime(noPending, () => 0.5).durationMs,
+  );
+});
+test('guaranteed shared-royal defense is not a price guessing problem', () => {
+  const decision = botDecision(riverShoveResponse(), seeded(1), { trials: 120 });
+  assert.equal(decision.trace.allIn.unbeatableRiver, true);
+  assert.ok(decision.trace.allIn.guaranteedReturn >= decision.trace.allIn.cost);
+  assert.equal(botThinkingTime(decision, () => 0.5).factors.closeness, 0);
+});
+test('all-in pacing uses effective risk while remaining-stack planning still accounts for the gross call', () => {
+  const risk = sample();
+  risk.trace.view.legal = { toCall: 500, callAmount: 500 };
+  risk.trace.view.allIn = { cost: 500, odds: 0.1, pendingBuffer: 0 };
+  risk.trace.allIn = risk.trace.view.allIn;
+  const refunded = copy(risk);
+  refunded.trace.view.allIn.cost = 0;
+  const fullRisk = botThinkingTime(risk, () => 0.5),
+    noRisk = botThinkingTime(refunded, () => 0.5);
+  assert.ok(noRisk.factors.commitment < fullRisk.factors.commitment);
+  assert.equal(fullRisk.factors.effectiveStack, 4500);
+  assert.equal(noRisk.factors.effectiveStack, 4500);
+});
 test('pacing is bounded and varied, with overlapping value, bluff, trap and fold pauses', () => {
   const estimates = [];
   for (const reason of ['value-raise', 'pure-bluff', 'trap', 'outside-range']) {
@@ -138,7 +185,7 @@ test('pacing is bounded and varied, with overlapping value, bluff, trap and fold
   );
 });
 test('planning does not mutate the game and execution reuses its selected action without sampling again', () => {
-  const g = newGame();
+  const g = newGame(undefined, { smallBlind: 25, bigBlind: 50, startingStack: 5000, chipUnit: 25 });
   startHand(g);
   const before = copy(g),
     expected = botDecision(g, seeded(42));
@@ -156,7 +203,12 @@ test('planning does not mutate the game and execution reuses its selected action
   assert.throws(() => executeBotTurn(g, plan), /过期/);
 });
 test('different time randomness leaves the strategy action unchanged and live plans expose no private factors', () => {
-  const first = newGame();
+  const first = newGame(undefined, {
+    smallBlind: 25,
+    bigBlind: 50,
+    startingStack: 5000,
+    chipUnit: 25,
+  });
   startHand(first);
   const second = copy(first);
   const p1 = planBotTurn(first, seeded(44), { timingRandom: () => 0.1 });
@@ -167,7 +219,7 @@ test('different time randomness leaves the strategy action unchanged and live pl
   assert.deepEqual(a, b);
 });
 test('planning cannot read rival holes, the future deck or final winners', () => {
-  const g = newGame(9);
+  const g = newGame(9, { smallBlind: 25, bigBlind: 50, startingStack: 5000, chipUnit: 25 });
   startHand(g);
   const expected = planBotTurn(g, seeded(76), { timingRandom: seeded(77) });
   for (const p of g.players)
@@ -187,7 +239,7 @@ test('planning cannot read rival holes, the future deck or final winners', () =>
   assert.equal(actual.delayMs, expected.delayMs);
 });
 test('plans are rejected after another action, different game, difficulty change or same-hand retry', () => {
-  const g = newGame();
+  const g = newGame(undefined, { smallBlind: 25, bigBlind: 50, startingStack: 5000, chipUnit: 25 });
   startHand(g);
   const plan = planBotTurn(g, seeded(90));
   assert.equal(isBotTurnCurrent(copy(g), plan), false);
@@ -203,7 +255,7 @@ test('plans are rejected after another action, different game, difficulty change
   assert.equal(g.botDecisions.length, 0);
 });
 test('instant bot execution records expedited thinking without a timer or duplicated action', () => {
-  const g = newGame();
+  const g = newGame(undefined, { smallBlind: 25, bigBlind: 50, startingStack: 5000, chipUnit: 25 });
   startHand(g);
   playBotTurn(g, seeded(88));
   assert.equal(g.botDecisions.length, 1);

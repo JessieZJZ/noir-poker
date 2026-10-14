@@ -89,6 +89,14 @@ npm run mobile:test:android
 
 安装测试保存每个页面的设备截图及同内容 Web 对照图，并检查主要组件的尺寸、字号与颜色。Android 截图后若 ADB 明确报告 `device offline`，测试仅重连指定设备、确认系统就绪后重试 WebView 切换一次，并在报告中记录次数；持续断连或系统 ANR/崩溃仍会失败，游戏与复盘断言的时限不变。
 
+排查单个安装场景时，可以用测试专用的 `NOIR_NATIVE_SCENARIOS` 选择报告中的场景名称；默认不设置时执行完整套件。多个名称用逗号分隔，空名称或未知名称会失败。未选场景明确记录为 `skipped`，局部通过不能当作一次完整运行通过：
+
+```sh
+NOIR_NATIVE_SCENARIOS=real-background-cancels-pending-action,every-player-count-matches-web,all-secondary-pages-match-web npm run mobile:test:android -- --udid TEST_EMULATOR_ID --port 4737 --driver-port 8137 --output .artifacts/native-e2e/android-focused
+```
+
+汇总多次运行时，逐项核对通过记录、安装包源码指纹与资源摘要，并保留每次原始报告及失败证据。
+
 `.github/workflows/mobile-build.yml` 在 GitHub PR、main 更新及手动运行时构建 Android debug APK、未签名 AAB 和 iOS 模拟器 `.app`，产物在 Actions 的 Artifacts 下载。CI 的未签名 AAB 用于验证发行编译，模拟器 `.app` 用于开发验证；两者都不能直接上架。CI 不保存商店签名凭据。
 
 独立 `quality` job 检查格式、语言资源、全部单元测试及生产构建，不依赖 Android SDK 或浏览器布局。公共区定位、固定操作区、牌面可读性、首屏、结算布局与提示横幅测试，以及桌面和移动端的其余交互测试，分别并行执行；布局失败不会跳过其余交互测试。两组覆盖完整的 `npm run test:e2e`；失败轨迹与验收截图保存在 `table-geometry-results`、`browser-ui-results-desktop` 和 `browser-ui-results-mobile`。

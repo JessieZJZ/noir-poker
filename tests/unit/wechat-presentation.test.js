@@ -1,3 +1,4 @@
+import { compactChips } from '../../src/engine/chip-format.js';
 import { renderCardArtwork } from '../../src/ui/cards.js';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -13,7 +14,11 @@ vm.runInNewContext(
   {
     module,
     require: (name) =>
-      name.endsWith('/cards.js') ? { renderCardArtwork } : { evaluate, rankText },
+      name.endsWith('/chip-format.js')
+        ? { compactChips }
+        : name.endsWith('/cards.js')
+          ? { renderCardArtwork }
+          : { evaluate, rankText },
   },
 );
 const { presentCard, showdownPresentation, presentationPatch } = module.exports;
@@ -73,7 +78,7 @@ test('WeChat showdown presentation matches Web best-five ordering, highlights an
     ['As Ks', 'Ts Js Qs 2h 3c'],
   ];
   for (const [hole, board] of cases) {
-    const game = newGame(5);
+    const game = newGame(5, { smallBlind: 25, bigBlind: 50, startingStack: 5000, chipUnit: 25 });
     Object.assign(game, {
       phase: 'done',
       showdown: true,

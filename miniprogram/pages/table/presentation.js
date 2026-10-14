@@ -1,3 +1,4 @@
+const { compactChips } = require('../../shared/engine/chip-format.js');
 const { renderCardArtwork } = require('../../shared/ui/cards.js');
 const { evaluate, rankText } = require('../../shared/engine/poker.js');
 
@@ -100,12 +101,12 @@ function showdownPresentation(game, profiles) {
         label: rank.label,
         explanation,
         winner: awards.length > 0,
-        result: awards.length ? `获胜 +${amount.toLocaleString('en-US')}` : '未获底池',
+        result: awards.length ? `获胜 +${compactChips(amount)}` : '未获底池',
         awards: awards.length
           ? awards
               .map(
                 (award) =>
-                  `${award.pot}${award.split ? ' · 平分' : ''} +${award.amount.toLocaleString('en-US')}`,
+                  `${award.pot}${award.split ? ' · 平分' : ''} +${compactChips(award.amount)}`,
               )
               .join(' · ')
           : '最佳五张牌',

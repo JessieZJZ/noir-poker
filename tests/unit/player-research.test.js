@@ -24,6 +24,8 @@ const cards = (...ranks) => ranks.map((rank, suit) => ({ rank, suit }));
 const seeded = (seed) => () => (seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0) / 4294967296;
 function view(overrides = {}) {
   return {
+    bigBlind: 50,
+    chipUnit: 25,
     id: 1,
     hole: cards(11, 9),
     board: cards(14, 7, 2),
@@ -44,6 +46,7 @@ function view(overrides = {}) {
     features: { wet: false, draw: false, overpair: false },
     playsBoard: false,
     legal: {
+      chipUnit: 25,
       enabled: true,
       toCall: 0,
       callAmount: 0,
@@ -198,7 +201,12 @@ test('every persona and emotion mode completes unequal-stack 5/9-max games legal
   for (const profile of BOT_PROFILES)
     for (const count of [5, 9])
       for (const emotionMode of ['off', 'subtle', 'lively']) {
-        const g = newGame(count);
+        const g = newGame(count, {
+          smallBlind: 25,
+          bigBlind: 50,
+          startingStack: 5000,
+          chipUnit: 25,
+        });
         applyBotSettings(g, {
           emotionMode,
           assignments: Object.fromEntries(

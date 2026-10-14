@@ -1,6 +1,9 @@
+import { bigBlindOf, DEFAULT_STAKES } from './stakes.js';
 import research from '../data/player-research.json' with { type: 'json' };
 import { botStyleContext, resolveBotStyle } from './bot-style.js';
-import { fractionRaiseTo, legalRaiseTo } from './bet-sizing.js';
+import { chipUnitOf, fractionRaiseTo, legalRaiseTo } from './bet-sizing.js';
+import { deceptiveAction, isDonkLead } from './bot-deception.js';
+import { publicResponseRisk } from './public-action-context.js';
 
 // These are training controls inferred from a few public examples, not measured
 // statistics of the named players. Emotions are a separate synthetic layer.
@@ -246,7 +249,7 @@ export const BOT_PROFILES = [
       entry: 0.95,
       reraise: 0.7,
       blockerBluffs: true,
-      opening: 100,
+      openingBB: 2,
       potControl: 0.4,
       thinValue: 0.5,
       barrel: 0.8,
@@ -518,19 +521,19 @@ export function recordPressureFold(mood, raiser, mode) {
   }
   return null;
 }
-export function finishBotHand(player, profit, mode) {
+export function finishBotHand(player, profit, mode, bigBlind = DEFAULT_STAKES.bigBlind) {
   const mood = player.botMood;
-  mood.losses = profit <= -250 ? mood.losses + 1 : 0;
-  mood.wins = profit >= 250 ? mood.wins + 1 : 0;
+  mood.losses = profit <= -5 * bigBlind ? mood.losses + 1 : 0;
+  mood.wins = profit >= 5 * bigBlind ? mood.wins + 1 : 0;
   if (mode === 'off' || mood.cooldown) return null;
   // Both reactions are synthetic; no emotional trait is assigned to a person.
-  if (profit <= -1250 || mood.losses >= 3)
+  if (profit <= -25 * bigBlind || mood.losses >= 3)
     return setMood(
       mood,
       player.id % 2 ? 'frustrated' : 'cautious',
-      profit <= -1250 ? '单手净损失至少 25 BB' : '连续三手各净损失至少 5 BB',
+      profit <= -25 * bigBlind ? '单手净损失至少 25 BB' : '连续三手各净损失至少 5 BB',
     );
-  if (mood.wins >= 2 && profit >= 500)
+  if (mood.wins >= 2 && profit >= 10 * bigBlind)
     return setMood(mood, 'confident', '连续两手盈利，本手净赢至少 10 BB');
   return null;
 }
@@ -586,7 +589,7 @@ export function botBoardFeatures(hole, board, score) {
       (s) => known.filter((c) => c.suit === s).length === 4 && hole.some((c) => c.suit === s),
     );
   const straightCompletions = new Set();
-  const straightDraw =
+  const possibleStraightDraw =
     board.length >= 3 &&
     board.length < 5 &&
     score[0] < 4 &&
@@ -606,15 +609,90 @@ export function botBoardFeatures(hole, board, score) {
       },
       false,
     );
+  // A completion that only gives the board a higher straight is not our draw:
+  // 7-2 on 9-T-J-Q cannot treat an 8 as an own straight out.
+  const straightHigh = (cards, extra) => {
+    const values = new Set([...cards.map((c) => c.rank), extra]);
+    if (values.has(14)) values.add(1);
+    return Math.max(
+      0,
+      ...Array.from({ length: 10 }, (_, i) =>
+        Array.from({ length: 5 }, (_, j) => i + j + 1).every((r) => values.has(r)) ? i + 5 : 0,
+      ),
+    );
+  };
+  for (const rank of straightCompletions)
+    if (straightHigh(known, rank) <= straightHigh(board, rank)) straightCompletions.delete(rank);
+  const straightDraw = possibleStraightDraw && straightCompletions.size > 0;
   const highBoard = Math.max(0, ...board.map((c) => c.rank));
-  const overpair = hole[0].rank === hole[1].rank && hole[0].rank > highBoard;
+  const overpair = board.length >= 3 && hole[0].rank === hole[1].rank && hole[0].rank > highBoard;
+  const boardCount = (rank) => board.filter((c) => c.rank === rank).length;
+  const straightRanks = Array.from({ length: 5 }, (_, i) => score[1] - i).map((r) =>
+    r === 1 ? 14 : r,
+  );
+  const flushSuit = [0, 1, 2, 3].find((s) => known.filter((c) => c.suit === s).length >= 5);
+  const ownStraight = hole.some((c) => straightRanks.includes(c.rank) && !boardCount(c.rank));
+  const ownFlush = hole.some((c) => c.suit === flushSuit && score.slice(1).includes(c.rank));
+  const ownMade =
+    board.length >= 3 &&
+    (score[0] === 1
+      ? hole.some((c) => c.rank === score[1])
+      : score[0] === 2
+        ? hole.some((c) => c.rank === score[1] || c.rank === score[2])
+        : score[0] === 3
+          ? hole.some((c) => c.rank === score[1])
+          : score[0] === 4
+            ? ownStraight
+            : score[0] === 5
+              ? ownFlush
+              : score[0] === 6
+                ? hole.some(
+                    (c) =>
+                      (c.rank === score[1] && boardCount(c.rank) < 3) ||
+                      (c.rank === score[2] && boardCount(c.rank) < 2),
+                  )
+                : score[0] === 7
+                  ? hole.some(
+                      (c) =>
+                        c.rank === score[1] ||
+                        (c.rank === score[2] &&
+                          c.rank >
+                            Math.max(
+                              0,
+                              ...board.filter((b) => b.rank !== score[1]).map((b) => b.rank),
+                            )),
+                    )
+                  : score[0] === 8
+                    ? hole.some(
+                        (c) =>
+                          c.suit === flushSuit &&
+                          straightRanks.includes(c.rank) &&
+                          !board.some((b) => b.suit === flushSuit && b.rank === c.rank),
+                      )
+                    : false);
+  const ownTwoPair =
+    score[0] === 2 && [score[1], score[2]].every((rank) => hole.some((c) => c.rank === rank));
+  const drawCards = new Set();
+  for (let suit = 0; suit < 4; suit++)
+    for (let rank = 2; rank <= 14; rank++) {
+      if (known.some((c) => c.rank === rank && c.suit === suit)) continue;
+      if (
+        straightCompletions.has(rank) ||
+        (flushDraw && known.filter((c) => c.suit === suit).length === 4)
+      )
+        drawCards.add(`${suit}-${rank}`);
+    }
   return {
     wet,
+    madeCategory: score[0],
+    ownMade,
+    strongMade: ownMade && (ownTwoPair || score[0] >= 3),
     draw: flushDraw || straightDraw,
+    drawOuts: drawCards.size,
     overpair,
     flushDraw,
     straightOuts: straightCompletions.size * 4,
-    ownPair: score[0] === 1 && hole.some((c) => board.some((b) => b.rank === c.rank)),
+    ownPair: score[0] === 1 && ownMade,
     pairedBoard: new Set(board.map((c) => c.rank)).size < board.length,
   };
 }
@@ -633,6 +711,7 @@ export function effectiveBotAxes(profile, mood, mode) {
 
 // No complete game object is accepted: the caller supplies a white-listed view.
 export function chooseBotAction(view, profile, mood, mode, random = Math.random) {
+  const bigBlind = bigBlindOf(view);
   const legal = view.legal;
   if (!legal.enabled) throw Error('机器人当前不能行动。');
   const style = resolveBotStyle(profile);
@@ -654,12 +733,16 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
     return value;
   };
   const percentile = startingPercentile(view.hole),
-    odds = legal.callAmount / Math.max(1, view.contestable),
+    odds =
+      view.allIn?.odds ?? view.callPrice?.odds ?? legal.callAmount / Math.max(1, view.contestable),
     pressure = legal.toCall / Math.max(1, view.stack + view.bet);
   const noise =
     (random() - 0.5) *
     (view.difficulty === 'easy' ? 0.16 : view.difficulty === 'hard' ? 0.04 : 0.08);
   const equity = Math.max(0, Math.min(1, view.equity + noise));
+  const behind = view.actionContext?.unactedBehindCount,
+    responseRisk = publicResponseRisk(view),
+    assumedOpponents = view.publicEquity?.assumedOpponentIds.length ?? view.rivals;
   const positionScale =
     view.position === 'BTN'
       ? 1.35
@@ -675,11 +758,12 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
     (0.16 + width * 0.42) *
     positionScale *
     (view.count >= 8 ? 0.9 : 1) *
+    (behind == null ? 1 : Math.max(0.75, 1 - behind * 0.04)) *
     style.entry *
     (view.count <= 6 ? style.shortTable : 1);
   let range = baseRange;
   if (raises.length) range *= raises.length === 1 ? 0.68 : 0.42;
-  if (view.position === 'BB' && legal.toCall <= 50) range += 0.1;
+  if (view.position === 'BB' && legal.toCall <= bigBlind) range += 0.1;
   const openingRange = range;
   const preflopHistory = view.history.filter((a) => a.street === 0);
   const firstOpen = preflopHistory.findIndex((a) => a.action === 'raise');
@@ -709,12 +793,18 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
     Math.min(view.stack - legal.callAmount, lastRaiser?.stack ?? 0),
   );
   const lowCommitment = pressure <= 0.08 && legal.callAmount < view.stack;
-  const allInPressure = view.opponents?.some((p) => p.allin) || false;
+  // An earlier short all-in does not turn a deep player's later small side-pot
+  // bet into an all-in price. Match the live aggressor/calling commitment.
+  const allInPressure =
+    !!view.allIn ||
+    !!lastRaiser?.allin ||
+    (!lastRaiser && (view.opponents?.some((p) => p.allin) || false)) ||
+    (legal.callAmount > 0 && legal.callAmount >= view.stack);
   const cheapEntry =
     view.street === 0 &&
     !raises.length &&
-    view.currentBet <= 50 &&
-    legal.toCall <= 50 &&
+    view.currentBet <= bigBlind &&
+    legal.toCall <= bigBlind &&
     lowCommitment &&
     !allInPressure;
   // Small single opens are a different price from 3-bets and shoves. This
@@ -726,11 +816,11 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
     raises.length === 1 &&
     raises[0].id !== view.id &&
     legal.toCall > 0 &&
-    view.currentBet <= 200 &&
-    legal.callAmount <= 200 &&
+    view.currentBet <= 4 * bigBlind &&
+    legal.callAmount <= 4 * bigBlind &&
     lowCommitment &&
     !allInPressure &&
-    effectiveBehind >= Math.max(1000, legal.callAmount * 15);
+    effectiveBehind >= Math.max(20 * bigBlind, legal.callAmount * 15);
   // Normal/hard opponents distinguish a cheap 3-bet from a large re-raise.
   // A random showdown against every unfurled seat undervalues a priced call:
   // players still to act have not all committed to this pot. This range gate
@@ -741,14 +831,14 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
     raises.length === 2 &&
     Boolean(lastRaiser) &&
     raises[1].id !== view.id &&
-    view.currentBet <= 500 &&
+    view.currentBet <= 10 * bigBlind &&
     view.currentBet <= raises[0].amount * 3 &&
-    legal.callAmount <= 350 &&
+    legal.callAmount <= 7 * bigBlind &&
     pressure <= 0.1 &&
     odds <= 0.28 &&
     !allInPressure &&
     legal.callAmount < view.stack &&
-    effectiveBehind >= Math.max(1000, legal.callAmount * 8);
+    effectiveBehind >= Math.max(20 * bigBlind, legal.callAmount * 8);
   if (cheapEntry)
     range +=
       (0.14 + width * 0.2 + (speculative || suitedHigh ? Math.min(2, limpers) * 0.04 : 0)) *
@@ -756,7 +846,7 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
   if (cheapEntry && speculative && ['BTN', 'CO', 'HJ'].includes(view.position))
     range += (0.06 + width * 0.12) * style.entry;
   if (affordableOpen) {
-    const priceScale = Math.max(0.65, 1.1 - (view.currentBet / 50) * 0.08);
+    const priceScale = Math.max(0.65, 1.1 - (view.currentBet / bigBlind) * 0.08);
     const playability = speculative ? 0.14 : suitedHigh ? 0.07 : 0;
     const callerBonus = speculative || suitedHigh ? Math.min(2, openCallers) * 0.04 : 0;
     const blindDiscount = view.position === 'BB' ? 0.08 : 0;
@@ -770,7 +860,7 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
       dominatedAce;
   }
   if (affordableThreeBet) {
-    const priceScale = Math.max(0.55, 1.15 - view.currentBet / 1000);
+    const priceScale = Math.max(0.55, 1.15 - view.currentBet / (20 * bigBlind));
     const committed = view.bet >= raises[0].amount;
     const broadway = high >= 13 && low >= 11;
     const playable = broadway || (pair && high >= 7) || (suited && high >= 11 && low >= 9);
@@ -796,33 +886,53 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
   const premium = percentile < 0.07,
     admitted = percentile <= range,
     openingAdmitted = percentile <= openingRange,
-    affordableRangePassed = (cheapEntry || affordableOpen || affordableThreeBet) && admitted,
-    callTolerance = (callDown - 0.5) * 0.1 + context.publicAdjustment;
+    callTolerance = (callDown - 0.5) * 0.1 + context.publicAdjustment,
+    requiredEquity = odds + responseRisk + 0.02,
+    affordableRangePassed =
+      (cheapEntry || affordableOpen || affordableThreeBet) &&
+      admitted &&
+      (!view.publicEquity || equity + callTolerance >= requiredEquity);
   let sizing = null,
+    deception = null,
     value = false,
     semiBluff = false,
     pureBluff = false,
     smallCbet = false,
     thinValue = false;
   const floatContinue = context.floatCandidate && roll('float', style.float) < style.float;
-  const headsUp = view.rivals === 1,
+  const headsUp = assumedOpponents === 1,
     features = view.features;
+  const structuredPriceContinue =
+    !!view.publicEquity &&
+    view.street > 0 &&
+    !allInPressure &&
+    (features.ownMade || features.draw) &&
+    equity + callTolerance >= requiredEquity;
   const ownLastRaise =
     [...view.history].reverse().find((a) => a.action === 'raise')?.id === view.id;
   const barrelScale = view.street === 2 && ownLastRaise ? style.barrel : 1;
   // Candidate completion cards are not clean winning outs. Discount them on
   // paired/multiway boards, and only preserve calls at a small current price.
   const drawChance =
-    (Math.max(features.flushDraw ? 9 : 0, features.straightOuts || 0) /
+    ((features.drawOuts ?? Math.max(features.flushDraw ? 9 : 0, features.straightOuts || 0)) /
       Math.max(1, 52 - view.hole.length - view.board.length)) *
     (features.pairedBoard ? 0.7 : 0.9) *
     (view.rivals > 2 ? 0.75 : 1);
+  const nearAllInDraw =
+    view.street > 0 &&
+    view.street < 3 &&
+    features.draw &&
+    features.drawOuts > 0 &&
+    legal.callAmount > 0 &&
+    legal.callAmount < view.stack &&
+    view.stack - legal.callAmount <= chipUnitOf(legal) &&
+    view.stack / Math.max(1, view.contestable) <= drawChance;
   const drawContinue =
     view.street > 0 &&
     view.street < 3 &&
     features.draw &&
     !allInPressure &&
-    lowCommitment &&
+    (lowCommitment || nearAllInDraw) &&
     odds <= drawChance &&
     legal.callAmount < view.stack;
   const pairContinue =
@@ -878,6 +988,7 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
     (lateSteal ||
       lateReraise ||
       (view.street > 0 &&
+        !(view.difficulty !== 'easy' && high === 7 && low === 2) &&
         !view.playsBoard &&
         view.rivals <= 2 &&
         story &&
@@ -899,12 +1010,22 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
       mood: { kind: mood?.kind || 'steady', reason: mood?.reason || '' },
       axes,
       baseAxes: [...profile.axes],
-      equityModel: 'random-opponents',
+      equityModel: view.allIn
+        ? view.allIn.isAllIn === false
+          ? 'public-commitment-ranges'
+          : 'public-all-in-ranges'
+        : (view.publicEquity?.model ?? 'random-opponents'),
       trials: view.equityTrials || (view.difficulty === 'hard' ? 52 : 28),
       rawEquity: view.equity,
       noise,
       equity,
       odds,
+      requiredEquity,
+      responseRisk,
+      assumedOpponents,
+      actionContext: view.actionContext || null,
+      structuredPriceContinue,
+      allIn: view.allIn || null,
       pressure,
       percentile,
       range,
@@ -922,12 +1043,14 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
       checks,
       exceptions,
       sizing,
+      deception,
       style: { controls: style, context, floatContinue, smallCbet, thinValue },
       value,
       semiBluff,
       pureBluff,
       draw: view.features.draw,
       drawChance,
+      nearAllInDraw,
       drawContinue,
       pairContinue,
       lateSteal,
@@ -935,6 +1058,33 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
       playsBoard: view.playsBoard,
     },
   });
+  const special = deceptiveAction(view, profile, roll);
+  if (special) {
+    sizing = special.sizing;
+    deception = special.deception;
+    value = special.kind === 'value';
+    semiBluff = special.kind === 'semi-bluff';
+    pureBluff = special.kind === 'bluff';
+    return finish(special.action, special.reason, special.amount);
+  }
+  if (view.allIn) {
+    // A pocket-pair/high-card admission tier is not a licence to call every
+    // shove or large re-raise. Compare additional risk and public-line ranges. Seats
+    // still deciding add a small risk buffer instead of eight random hands.
+    const required = odds + view.allIn.pendingBuffer + 0.02;
+    const lockedRiver =
+      view.allIn.unbeatableRiver && view.allIn.guaranteedReturn >= view.allIn.cost;
+    if (!lockedRiver && equity + callTolerance < required) {
+      const close = required - equity - callTolerance <= 0.12;
+      const mistake = view.difficulty === 'easy' && close ? 0.025 + callDown * 0.04 : 0;
+      if (!mistake || roll('insufficient-equity', mistake) > mistake)
+        return finish('fold', 'insufficient-equity');
+      exceptions.push('insufficient-equity');
+    }
+    // Calling commits to the priced showdown. Do not manufacture a side-pot
+    // raise merely because an old opening-range label called this hand premium.
+    return finish('call', exceptions.length ? 'loose-exception' : 'price-continue');
+  }
   if (legal.toCall > 0) {
     if (view.street === 0 && !admitted && !premium && odds > 0.09) {
       if (roll('outside-range', 0.06 * width) > 0.06 * width)
@@ -942,15 +1092,16 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
       exceptions.push('outside-range');
     }
     if (
-      (!premium || view.street > 0) &&
+      (!premium || view.street > 0 || view.publicEquity) &&
       !affordableRangePassed &&
       !floatContinue &&
       !drawContinue &&
       !pairContinue &&
+      !structuredPriceContinue &&
       !semiBluff &&
       !pureBluff
     ) {
-      if (equity + callTolerance < odds + 0.02) {
+      if (equity + callTolerance < (view.publicEquity ? requiredEquity : odds + 0.02)) {
         if (roll('insufficient-equity', 0.03 + callDown * 0.1) > 0.03 + callDown * 0.1)
           return finish('fold', 'insufficient-equity');
         exceptions.push('insufficient-equity');
@@ -984,7 +1135,8 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
   value =
     view.street === 0
       ? premium || percentile <= raiseRange
-      : !view.playsBoard &&
+      : !!features.ownMade &&
+        !view.playsBoard &&
         (equity > (headsUp ? 0.53 : 1 / (view.rivals + 1) + 0.23) ||
           (features.overpair && equity > 0.4));
   thinValue =
@@ -993,6 +1145,7 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
     headsUp &&
     view.inPosition &&
     legal.canCheck &&
+    features.ownMade &&
     !view.playsBoard &&
     !features.wet &&
     equity >= 0.5 &&
@@ -1021,11 +1174,20 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
   )
     return finish('check', 'pot-control');
   if (
+    view.difficulty === 'easy' &&
     value &&
+    headsUp &&
+    features.strongMade &&
     view.street > 0 &&
     legal.canCheck &&
     !features.wet &&
     equity > 0.65 &&
+    (view.street < 3 ||
+      (!view.inPosition &&
+        view.opponents?.some((p) => !p.allin && p.stack > 0) &&
+        view.opponents.every(
+          (p) => !view.history.some((a) => a.street === view.street && a.id === p.id),
+        ))) &&
     roll('trap', trap * 0.52) < trap * 0.52
   )
     return finish('check', 'trap');
@@ -1044,13 +1206,18 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
     if (mode !== 'off' && ['frustrated', 'confident', 'reactive'].includes(mood.kind))
       fraction *= mode === 'lively' ? 1.2 : 1.1;
     let desired = fractionRaiseTo(
-      { currentBet: view.currentBet, pot: view.pot, callAmount: legal.callAmount },
+      {
+        currentBet: view.currentBet,
+        pot: view.pot,
+        callAmount: legal.callAmount,
+        chipUnit: legal.chipUnit,
+      },
       fraction,
     );
     if (view.street === 0 && !raises.length)
       desired =
-        (style.opening ?? 125 + (attack > 0.8 ? 25 : 0)) +
-        view.history.filter((a) => a.street === 0 && a.action === 'call').length * 50;
+        (style.openingBB == null ? 2.5 + (attack > 0.8 ? 0.5 : 0) : style.openingBB) * bigBlind +
+        view.history.filter((a) => a.street === 0 && a.action === 'call').length * bigBlind;
     const amount = legalRaiseTo(desired, legal);
     sizing = {
       fraction,
@@ -1063,6 +1230,14 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
     };
     if (amount !== legal.maxRaiseTo || value || thinValue || semiBluff) {
       sizing.executed = true;
+      if (isDonkLead(view)) {
+        deception = {
+          strategy: 'donk-lead',
+          source: 'base-policy',
+          kind: value ? 'value' : semiBluff ? 'semi-bluff' : 'bluff',
+        };
+        return finish('raise', 'donk-lead', amount);
+      }
       return finish(
         'raise',
         thinValue
@@ -1087,7 +1262,7 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
     !drawContinue &&
     !pairContinue &&
     (pureBluff || semiBluff) &&
-    equity + callTolerance < odds + 0.02
+    equity + callTolerance < (view.publicEquity ? requiredEquity : odds + 0.02)
   )
     return finish('fold', 'insufficient-equity');
   return finish(

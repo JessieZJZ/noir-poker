@@ -32,6 +32,8 @@ function view(hole = '5s 4s', board = '', overrides = {}) {
   const own = cards(hole),
     publicCards = board ? cards(board) : [];
   return {
+    bigBlind: 50,
+    chipUnit: 25,
     id: 1,
     hole: own,
     board: publicCards,
@@ -52,6 +54,7 @@ function view(hole = '5s 4s', board = '', overrides = {}) {
     opponents: [{ id: 0, stack: 5000, bet: 50, allin: false }],
     features: botBoardFeatures(own, publicCards, evaluate([...own, ...publicCards]).score),
     legal: {
+      chipUnit: 25,
       enabled: true,
       canCheck: false,
       canRaise: true,
@@ -131,7 +134,12 @@ test('bluffs depend on price, position and public story; missed attacks do not f
 
 test('all styles retain legal whole-chip bets, conservation and no hidden-card policy input', () => {
   for (const count of [5, 6, 9]) {
-    const game = newGame(count),
+    const game = newGame(count, {
+        smallBlind: 25,
+        bigBlind: 50,
+        startingStack: 5000,
+        chipUnit: 25,
+      }),
       random = seeded(421 + count);
     applyBotSettings(game, {
       emotionMode: 'off',

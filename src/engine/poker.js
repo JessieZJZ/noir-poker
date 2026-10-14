@@ -1,3 +1,5 @@
+import { DEFAULT_STAKES, validateStakes, bigBlindOf, sameStakes } from './stakes.js';
+import { compactChips } from './chip-format.js';
 import {
   getBotProfile,
   freshBotMood,
@@ -13,7 +15,11 @@ import {
 } from './bot-profiles.js';
 import { raiseCaption } from './action-labels.js';
 import { botThinkingTime } from './bot-timing.js';
-import { CHIP_UNIT, isChipAmount } from './bet-sizing.js';
+import { chipUnitOf, isChipAmount } from './bet-sizing.js';
+import { allInContext, estimateAllInEquity } from './bot-allin.js';
+import { publicActionContext } from './public-action-context.js';
+import { preparePublicRanges } from './public-ranges.js';
+import { estimatePublicEquity } from './public-equity.js';
 export const SUITS = ['♠', '♥', '♣', '♦'];
 export const RANK_NAMES = [
   '高牌',
@@ -104,16 +110,21 @@ export function evaluate(cards) {
     cards: bestCards,
   };
 }
-export function newGame(playerCount = 6) {
+export function newGame(playerCount = 6, configuration = DEFAULT_STAKES) {
   if (!Number.isInteger(playerCount) || playerCount < 5 || playerCount > 9)
     throw Error('牌桌人数须为 5–9 人。');
+  const stakes = validateStakes(configuration);
   return {
+    stakes,
+    chipUnit: stakes.chipUnit,
+    smallBlind: stakes.smallBlind,
+    bigBlind: stakes.bigBlind,
     players: ['你', 'Mia', 'Alex', 'River', 'Kai', 'Luna', 'Theo', 'Jade', 'Leo']
       .slice(0, playerCount)
       .map((name, id) => ({
         id,
         name,
-        stack: 5000,
+        stack: stakes.startingStack,
         hole: [],
         folded: false,
         allin: false,
@@ -135,7 +146,7 @@ export function newGame(playerCount = 6) {
     practiceBoard: null,
     deck: [],
     currentBet: 0,
-    minRaise: 50,
+    minRaise: stakes.bigBlind,
     pending: [],
     actor: -1,
     phase: 'idle',
@@ -145,10 +156,25 @@ export function newGame(playerCount = 6) {
     logs: [],
     winners: [],
     payouts: [],
-    stats: { hands: 0, wins: 0, buyin: 5000 },
+    stats: { hands: 0, wins: 0, buyin: stakes.startingStack },
     difficulty: 'normal',
     emotionMode: 'subtle',
   };
+}
+// A stakes change starts a fresh session; callers cancel their own async work.
+export function configureStakes(g, configuration) {
+  const stakes = validateStakes(configuration);
+  if (sameStakes(g.stakes, stakes)) return false;
+  const next = newGame(g.players.length, stakes);
+  next.difficulty = g.difficulty;
+  next.emotionMode = g.emotionMode;
+  next.players.forEach((player, id) => {
+    player.botProfile = g.players[id].botProfile;
+  });
+  handStarts.delete(g);
+  for (const key of Object.keys(g)) delete g[key];
+  Object.assign(g, next);
+  return true;
 }
 export function applyBotSettings(g, value) {
   if (!['idle', 'done'].includes(g.phase)) throw Error('对手设置在下一手开始时生效。');
@@ -271,8 +297,8 @@ function nextIndex(g, start, list) {
 function log(g, text, player = null, type = 'action') {
   g.logs.unshift({ text, player, type, street: g.street });
 }
-function pay(p, amount) {
-  if (!isChipAmount(amount)) throw Error('投入筹码必须是 25 的倍数。');
+function pay(p, amount, chipUnit) {
+  if (!isChipAmount(amount, chipUnit)) throw Error('投入筹码必须是筹码面额的倍数。');
   const n = Math.min(p.stack, amount);
   p.stack -= n;
   p.bet += n;
@@ -290,7 +316,8 @@ const cloneHand = (value) => JSON.parse(JSON.stringify(value));
 export const canRestartHand = (g) => g.phase === 'done' && handStarts.has(g);
 export function startHand(g) {
   if (g.phase !== 'idle' && g.phase !== 'done') throw Error('当前牌局尚未结束。');
-  if (g.players.some((p) => !isChipAmount(p.stack))) throw Error('玩家筹码必须是 25 的倍数。');
+  if (g.players.some((p) => !isChipAmount(p.stack, chipUnitOf(g))))
+    throw Error('玩家筹码必须是筹码面额的倍数。');
   g.replayAttempt = 0;
   g.potAtShowdown = 0;
   g.hand++;
@@ -300,8 +327,8 @@ export function startHand(g) {
   g.deck = shuffle(deckOfCards());
   g.street = 0;
   g.phase = 'playing';
-  g.currentBet = 50;
-  g.minRaise = 50;
+  g.currentBet = bigBlindOf(g);
+  g.minRaise = bigBlindOf(g);
   g.winners = [];
   g.payouts = [];
   g.pots = [];
@@ -318,9 +345,9 @@ export function startHand(g) {
     if (p.id) decayBotMood(p.botMood);
     p.botHand = { vpip: false, pfr: false, pressureRecorded: false };
     if (p.stack === 0) {
-      p.stack = 5000;
-      if (p.id === 0) g.stats.buyin += 5000;
-      log(g, `${p.name} 补充 5,000 虚拟筹码`, p.id, 'info');
+      p.stack = g.stakes.startingStack;
+      if (p.id === 0) g.stats.buyin += g.stakes.startingStack;
+      log(g, `${p.name} 补充 ${compactChips(g.stakes.startingStack)} 虚拟筹码`, p.id, 'info');
     }
     p.hole = [];
     p.folded = false;
@@ -337,10 +364,10 @@ export function startHand(g) {
       g.players[(g.dealer + i) % g.players.length].hole.push(g.deck.pop());
   const sb = (g.dealer + 1) % g.players.length,
     bb = (g.dealer + 2) % g.players.length;
-  pay(g.players[sb], 25);
+  pay(g.players[sb], g.smallBlind, chipUnitOf(g));
   g.players[sb].action = `小盲 ${g.players[sb].bet}`;
   rememberAction(g, g.players[sb]);
-  pay(g.players[bb], 50);
+  pay(g.players[bb], bigBlindOf(g), chipUnitOf(g));
   g.players[bb].action = `大盲 ${g.players[bb].bet}`;
   rememberAction(g, g.players[bb]);
   log(
@@ -373,11 +400,12 @@ export function legalActions(g, id = g.actor) {
   assertChipState(g);
   const owed = Math.max(0, g.currentBet - p.bet),
     max = p.bet + p.stack,
-    min = g.currentBet === 0 ? 50 : g.currentBet + g.minRaise;
+    min = g.currentBet === 0 ? bigBlindOf(g) : g.currentBet + g.minRaise;
   const reopened = p.actedTo === null || g.currentBet - p.actedTo >= g.minRaise;
   const other = g.players.some((o) => o.id !== id && canAct(o));
   return {
     enabled: true,
+    chipUnit: chipUnitOf(g),
     toCall: owed,
     callAmount: Math.min(p.stack, owed),
     canCheck: owed === 0,
@@ -398,11 +426,11 @@ export function act(g, id, action, amount) {
   if (
     action === 'raise' &&
     (!legal.canRaise ||
-      !isChipAmount(amount) ||
+      !isChipAmount(amount, chipUnitOf(g)) ||
       amount < legal.minRaiseTo ||
       amount > legal.maxRaiseTo)
   )
-    throw Error('请选择合法的加注总额，金额必须是 25 的倍数。');
+    throw Error('请选择合法的加注总额，金额必须是筹码面额的倍数。');
   // Capture only information available before the decision. Opponents' hole
   // cards, the remaining deck and future community cards never enter review.
   const normalized = action === 'call' && legal.canCheck ? 'check' : action;
@@ -446,10 +474,14 @@ export function act(g, id, action, amount) {
       pot: potSize(g),
       currentBet: g.currentBet,
       minRaise: g.minRaise,
+      chipUnit: chipUnitOf(g),
+      smallBlind: g.smallBlind,
+      bigBlind: bigBlindOf(g),
       dealer: g.dealer,
       emotionMode: g.emotionMode,
       legal: { ...legal },
       pending: [...g.pending],
+      actionContext: publicActionContext(g, id),
       action: normalized,
       amount: normalized === 'raise' ? amount : normalized === 'call' ? legal.callAmount : 0,
       players: g.players.map((o) => ({
@@ -476,6 +508,8 @@ export function act(g, id, action, amount) {
   g.history ||= [];
   g.history.push({
     street: g.street,
+    chipUnit: chipUnitOf(g),
+    bigBlind: bigBlindOf(g),
     id,
     action: normalized,
     amount: normalized === 'raise' ? amount : normalized === 'call' ? legal.callAmount : 0,
@@ -492,14 +526,14 @@ export function act(g, id, action, amount) {
     p.actedTo = g.currentBet;
     log(g, `${p.name} 过牌`, id);
   } else if (action === 'call') {
-    const n = pay(p, legal.callAmount);
+    const n = pay(p, legal.callAmount, chipUnitOf(g));
     p.checked = false;
     p.actedTo = g.currentBet;
     p.action = p.allin ? `全下 ${p.bet}` : `跟注 ${n}`;
     log(g, `${p.name} ${p.action}`, id);
   } else {
     const old = g.currentBet;
-    pay(p, amount - p.bet);
+    pay(p, amount - p.bet, chipUnitOf(g));
     g.currentBet = amount;
     p.checked = false;
     p.actedTo = amount;
@@ -569,7 +603,7 @@ export function advanceStreet(g) {
   const count = g.street === 1 ? 3 : 1;
   dealCommunityCards(g.board, g.deck, count);
   g.currentBet = 0;
-  g.minRaise = 50;
+  g.minRaise = bigBlindOf(g);
   for (const p of g.players) {
     p.bet = 0;
     p.actedTo = null;
@@ -608,7 +642,8 @@ function assertChipState(g) {
     g.minRaise,
     ...g.players.flatMap((p) => [p.stack, p.bet, p.total]),
   ];
-  if (amounts.some((amount) => !isChipAmount(amount))) throw Error('牌桌筹码必须是 25 的倍数。');
+  if (amounts.some((amount) => !isChipAmount(amount, chipUnitOf(g))))
+    throw Error('牌桌筹码必须是筹码面额的倍数。');
 }
 export function settle(g, showdown = true) {
   if (g.phase === 'done') throw Error('这手牌已经结算。');
@@ -640,12 +675,12 @@ export function settle(g, showdown = true) {
         ((a.id - g.dealer + g.players.length - 1) % g.players.length) -
         ((b.id - g.dealer + g.players.length - 1) % g.players.length),
     );
-    const chips = pot.amount / CHIP_UNIT,
+    const chips = pot.amount / chipUnitOf(g),
       share = Math.floor(chips / winners.length),
       remainder = chips % winners.length;
     pot.awards = winners.map((p, i) => ({
       id: p.id,
-      amount: (share + (i < remainder ? 1 : 0)) * CHIP_UNIT,
+      amount: (share + (i < remainder ? 1 : 0)) * chipUnitOf(g),
       label: showdown ? ranks.get(p.id).label : '其余玩家均已弃牌',
     }));
     for (const award of pot.awards) {
@@ -681,7 +716,7 @@ export function settle(g, showdown = true) {
           p.name +
           (showdown ? ' ' + p.label : ' 获胜') +
           ' · 获得 ' +
-          p.amount.toLocaleString() +
+          compactChips(p.amount) +
           ' 筹码',
       )
       .join(' / ');
@@ -690,16 +725,16 @@ export function settle(g, showdown = true) {
       g,
       pot.label +
         ' ' +
-        pot.amount.toLocaleString() +
+        compactChips(pot.amount) +
         ' → ' +
-        pot.awards.map((a) => g.players[a.id].name + ' ' + a.amount.toLocaleString()).join(' / '),
+        pot.awards.map((a) => g.players[a.id].name + ' ' + compactChips(a.amount)).join(' / '),
       null,
       'result',
     );
   for (const refund of refunds)
     log(
       g,
-      g.players[refund.id].name + ' 未被跟注的 ' + refund.amount.toLocaleString() + ' 筹码已退还',
+      g.players[refund.id].name + ' 未被跟注的 ' + compactChips(refund.amount) + ' 筹码已退还',
       refund.id,
       'info',
     );
@@ -712,7 +747,7 @@ export function settle(g, showdown = true) {
       p.botMood.pressureFolds = {};
       p.botMood.lastPressureRaiser = null;
     }
-    const event = finishBotHand(p, payouts[p.id] - p.total, g.emotionMode);
+    const event = finishBotHand(p, payouts[p.id] - p.total, g.emotionMode, bigBlindOf(g));
     if (event)
       log(g, `${p.name} 模拟状态：${MOOD_LABELS[event.kind]} · ${event.reason}`, p.id, 'info');
   }
@@ -742,7 +777,7 @@ export function estimateEquity(hole, board, rivals = 1, trials = 35, random = Ma
   }
   return wins / trials;
 }
-export function botDecision(g, random = Math.random, { trials } = {}) {
+export function botDecision(g, random = Math.random, { trials, allInCache } = {}) {
   const p = g.players[g.actor],
     legal = legalActions(g),
     rivals = Math.max(1, live(g).length - 1);
@@ -759,7 +794,10 @@ export function botDecision(g, random = Math.random, { trials } = {}) {
     board: g.board.map((c) => ({ ...c })),
     street: g.street,
     position: seatPosition(g, p.id),
+    actionContext: publicActionContext(g, p.id),
     count: g.players.length,
+    chipUnit: chipUnitOf(g),
+    bigBlind: bigBlindOf(g),
     inPosition:
       Array.from(
         { length: g.players.length },
@@ -769,6 +807,7 @@ export function botDecision(g, random = Math.random, { trials } = {}) {
         .at(-1)?.id === p.id,
     stack: p.stack,
     bet: p.bet,
+    total: p.total,
     pot: potSize(g),
     currentBet: g.currentBet,
     difficulty: g.difficulty,
@@ -776,8 +815,15 @@ export function botDecision(g, random = Math.random, { trials } = {}) {
     rivals,
     opponents: live(g)
       .filter((o) => o.id !== p.id)
-      .map((o) => ({ id: o.id, stack: o.stack, bet: o.bet, allin: o.allin })),
-    equity: estimateEquity(p.hole, g.board, rivals, equityTrials, random),
+      .map((o) => ({
+        id: o.id,
+        position: seatPosition(g, o.id),
+        stack: o.stack,
+        bet: o.bet,
+        total: o.total,
+        allin: o.allin,
+        actedTo: o.actedTo,
+      })),
     equityTrials,
     contestable: contestableAfterCall(g, p.id, legal.callAmount),
     history: (g.history || []).map(({ id, street, action, amount, betLabel }) => ({
@@ -790,6 +836,80 @@ export function botDecision(g, random = Math.random, { trials } = {}) {
     features: botBoardFeatures(p.hole, g.board, score),
     playsBoard: g.board.length === 5 && compare(score, evaluate(g.board).score) === 0,
   };
+  const allIn = allInContext(view);
+  // Only public ledgers enter the existing pot partitioner. Pending seats
+  // contribute their chips already paid, not imaginary future calls.
+  const before = {
+    players: g.players.map(({ id, total, folded }) => ({ id, total, folded })),
+  };
+  const after = {
+    players: before.players.map((o) => ({
+      ...o,
+      total: o.total + (o.id === p.id ? legal.callAmount : 0),
+    })),
+  };
+  const beforeRefund = partitionPots(before).refunds.find((r) => r.id === p.id)?.amount || 0;
+  const partition = partitionPots(after);
+  const afterRefund = partition.refunds.find((r) => r.id === p.id)?.amount || 0;
+  const refundDelta = afterRefund - beforeRefund;
+  view.callPots = partition.pots
+    .filter((pot) => pot.eligible.includes(p.id))
+    .map(({ amount, eligible }) => ({ amount, eligible: [...eligible] }));
+  const contestable = view.callPots.reduce((sum, pot) => sum + pot.amount, 0);
+  const cost = Math.max(0, legal.callAmount - refundDelta);
+  view.callPrice = { cost, contestable, odds: cost / Math.max(1, contestable), refundDelta };
+  if (allIn) {
+    view.allIn = {
+      ...allIn,
+      ...view.callPrice,
+    };
+    const allInTrials = trials ?? (g.difficulty === 'hard' ? 96 : 72);
+    view.equityTrials = allInTrials;
+    const assessment = estimateAllInEquity(view, allIn, {
+      deck: deckOfCards(),
+      evaluate,
+      compare,
+      trials: allInTrials,
+      random,
+      cache: allInCache,
+    });
+    view.equity = assessment.equity;
+    Object.assign(view.allIn, assessment);
+    view.publicEquity = {
+      ...assessment,
+      potEquity: assessment.equity,
+      samples: allInTrials,
+      model: allIn.isAllIn ? 'public-all-in-ranges' : 'public-commitment-ranges',
+      assumedOpponentIds: [...allIn.committedIds],
+    };
+  } else {
+    // Estimate sharing the money exposed by this call. Other live seats may
+    // still cover those layers; an actual all-in retains its paid cap. Cap the
+    // actor's model exposure at the call instead of inventing later actor bets.
+    const equityLedger = {
+      phase: 'playing',
+      players: g.players.map(({ id, total, stack, folded, allin }) => ({
+        id,
+        total: total + (id === p.id ? legal.callAmount : 0),
+        stack: stack - (id === p.id ? legal.callAmount : 0),
+        folded,
+        allin: id === p.id || allin,
+      })),
+    };
+    view.equityPots = currentPots(equityLedger)
+      .pots.filter((pot) => pot.eligible.includes(p.id))
+      .map(({ amount, eligible }) => ({ amount, eligible: [...eligible] }));
+    view.publicEquity = estimatePublicEquity(view, preparePublicRanges(view), {
+      deck: deckOfCards(),
+      evaluate,
+      compare,
+      features: botBoardFeatures,
+      trials: equityTrials,
+      random,
+      cache: allInCache,
+    });
+    view.equity = view.publicEquity.equity;
+  }
   const decision = chooseBotAction(
     view,
     getBotProfile(p.botProfile),

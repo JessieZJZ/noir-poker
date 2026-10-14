@@ -7,8 +7,12 @@
 >
   <view class="nav {{compactNav ? 'nav-compact' : ''}}" style="top: {{topInset + 36}}px;">
     <view class="brand"
-      ><view class="spade" aria-hidden="true" /><text>NOIR</text
-      ><text wx:if="{{!compactNav}}" class="brand-sub">POKER</text></view
+      ><image
+        class="app-icon"
+        src="/assets/app-icon.png"
+        mode="aspectFit"
+        aria-hidden="true"
+      /><text>NOIR</text><text wx:if="{{!compactNav}}" class="brand-sub">POKER</text></view
     >
     <view class="nav-actions"
       ><button hover-class="none" class="icon-button" aria-label="设置" bindtap="openSettings">
@@ -26,7 +30,7 @@
         ><text class="hand-divider">·</text><text>{{street}}</text
         ><text wx:if="{{replay}}" class="replay">重打 {{replay}}</text></view
       >
-      <view class="blind-info"><text>盲注</text><text class="bright">25 / 50</text></view>
+      <view class="blind-info"><text>盲注</text><text class="bright">{{blindText}}</text></view>
     </view>
     <view class="hint-slot {{replay ? 'with-replay' : ''}}">
       <text wx:if="{{replay}}" class="replay-note"
@@ -366,7 +370,48 @@
             <text>{{settings.playerCount}} 人</text><view class="select-chevron" /></button
         ></view>
         <text wx:if="{{settings.playerCount !== activePlayerCount}}" class="table-change-note"
-          >下一手将切为 {{settings.playerCount}} 人桌 · 筹码恢复 5,000，统计重新开始</text
+          >下一手将切为 {{settings.playerCount}} 人桌 · 筹码恢复
+          {{startingStackText}}，统计重新开始</text
+        >
+        <view class="setting-row stakes-setting-row">
+          <view>
+            <text>起始盲注</text>
+            <text class="setting-description">点击小盲修改，大盲为小盲的两倍。</text>
+          </view>
+          <view class="stakes-values">
+            <input
+              wx:if="{{smallBlindEditing}}"
+              id="small-blind-input"
+              class="small-blind-input {{stakesError ? 'invalid' : ''}}"
+              type="text"
+              value="{{smallBlindDraft}}"
+              focus="{{smallBlindEditing}}"
+              confirm-type="done"
+              bindinput="changeSmallBlind"
+              bindblur="finishSmallBlindEdit"
+              bindconfirm="finishSmallBlindEdit"
+              aria-label="起始小盲"
+            />
+            <button
+              wx:else
+              id="small-blind-button"
+              class="small-blind-value"
+              hover-class="none"
+              bindtap="editSmallBlind"
+              aria-label="修改起始小盲"
+            >
+              {{configuredSmallBlindText}}
+            </button>
+            <text>/</text>
+            <text id="big-blind-value">{{configuredBigBlindText}}</text>
+          </view>
+        </view>
+        <text wx:if="{{stakesError}}" id="stakes-error" class="stakes-error">{{stakesError}}</text>
+        <text
+          wx:if="{{pendingStakes}}"
+          id="stakes-change-note"
+          class="table-change-note stakes-change-note"
+          >{{stakesNotice}}</text
         >
         <view class="setting-row"
           ><text>音效与振动</text
@@ -659,7 +704,7 @@
       ></view>
       <view class="review-title-row"
         ><view
-          ><text class="dialog-title">第 {{reviewData.hand}} 手 · 决策复盘</text
+          ><text class="dialog-title">第 {{reviewData.hand}} 手，决策复盘</text
           ><text class="review-context">{{reviewData.resultContext}}</text></view
         ><text class="review-profit">{{reviewData.profit}} 筹码</text></view
       >
@@ -711,8 +756,8 @@
             <text class="review-step-number">{{index + 1}}</text
             ><view
               ><text wx:if="{{reviewPerspective === 'hero'}}" class="review-step-meta"
-                >{{item.street}} · {{item.position}}</text
-              ><text wx:else class="review-step-meta">{{item.name}} · {{item.street}}</text
+                >{{item.street}}，{{item.position}}</text
+              ><text wx:else class="review-step-meta">{{item.name}}，{{item.street}}</text
               ><text class="review-step-action">{{item.actual}}</text></view
             ><text
               wx:if="{{reviewPerspective === 'opponent' || !item.keep}}"
@@ -726,7 +771,7 @@
         <view class="review-detail-header"
           ><text
             >{{reviewPerspective === 'hero' ? '第 ' + (reviewIndex + 1) + ' 步' :
-            selectedReviewStep.name}} · {{selectedReviewStep.street}}</text
+            selectedReviewStep.name}}，{{selectedReviewStep.street}}</text
           ><text
             wx:if="{{reviewPerspective === 'hero'}}"
             class="review-label {{selectedReviewStep.keep ? 'sound' : 'consider'}}"
@@ -772,7 +817,41 @@
           >
         </view>
         <view class="review-coaching">
-          <text>{{selectedReviewStep.reason}}</text>
+          <text wx:if="{{!selectedReviewStep.paragraphs.length}}"
+            >{{selectedReviewStep.reason}}</text
+          >
+          <block wx:if="{{selectedReviewStep.commentary.length}}">
+            <block wx:for="{{selectedReviewStep.commentary}}" wx:key="index">
+              <text wx:if="{{item.text}}">{{item.text}}</text>
+              <view wx:else class="review-matchups">
+                <text class="module-title">{{item.matchups.title}}</text>
+                <text class="review-matchup-hand">{{item.matchups.handLabel}}</text>
+                <text class="review-matchup-note">{{item.matchups.note}}</text>
+                <view
+                  wx:for="{{item.matchups.groups}}"
+                  wx:for-item="group"
+                  wx:key="direction"
+                  data-matchup-direction="{{group.direction}}"
+                >
+                  <text class="module-title">{{group.label}}</text>
+                  <view
+                    wx:for="{{group.examples}}"
+                    wx:for-item="example"
+                    wx:key="group"
+                    class="review-matchup-example"
+                  >
+                    <text>{{example.text}} {{example.label}}</text>
+                  </view>
+                </view>
+                <text wx:if="{{item.matchups.nutsNote}}" class="review-matchup-nuts"
+                  >{{item.matchups.nutsNote}}</text
+                >
+              </view>
+            </block>
+          </block>
+          <block wx:else>
+            <text wx:for="{{selectedReviewStep.paragraphs}}" wx:key="index">{{item}}</text>
+          </block>
           <text wx:for="{{selectedReviewStep.reasons}}" wx:key="*this">{{item}}</text>
           <text wx:if="{{selectedReviewStep.warning}}" class="muted"
             >{{selectedReviewStep.warning}}</text
@@ -796,18 +875,11 @@
             >本轮尚无其他主动行动。</text
           >
         </view>
-        <view wx:if="{{reviewPerspective === 'opponent'}}" class="review-evidence opponent-metrics">
-          <text class="module-title">参考数字</text>
-          <text wx:for="{{selectedReviewStep.metrics}}" wx:key="*this">• {{item}}</text>
-        </view>
       </view>
       <text wx:elif="{{!reviewData.loading}}" class="muted"
         >本手没有主动决策，无法评价选择。盲注是强制投入，不会被归为操作失误。</text
       >
       <text class="review-scope muted">按当时信息判断，单手输赢不直接决定操作好坏。</text>
-      <text wx:if="{{reviewPerspective === 'opponent'}}" class="review-scope muted"
-        >未完整建模对手继续范围、权益实现或未来策略，不是职业牌手的真实心理，也不是最优打法证明。</text
-      >
     </view></scroll-view
   >
 </view>
@@ -887,7 +959,8 @@
       ><button hover-class="none" class="close" bindtap="closeReset" aria-label="关闭重新练习">
         <view class="close-icon" /></button></view
     ><text class="dialog-title">重新开始练习？</text
-    ><text class="dialog-copy">本局将结束，所有玩家恢复到 5,000 筹码，练习统计归零。</text
+    ><text class="dialog-copy"
+      >本局将结束，所有玩家恢复到当前牌桌的起始筹码（100 BB），练习统计归零。</text
     ><view class="dialog-actions"
       ><button hover-class="none" bindtap="closeReset">继续练习</button
       ><button hover-class="none" class="primary" bindtap="confirmReset">重新开始</button></view

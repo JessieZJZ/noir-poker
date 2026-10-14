@@ -61,7 +61,12 @@ const rotations = [
 ];
 for (const expected of rotations)
   check('dealer ' + expected.d + ': blinds, dealing and all four action rounds', () => {
-    const g = newGame();
+    const g = newGame(undefined, {
+      smallBlind: 25,
+      bigBlind: 50,
+      startingStack: 5000,
+      chipUnit: 25,
+    });
     g.dealer = expected.d === 0 ? 5 : expected.d - 1;
     const random = Math.random;
     Math.random = () => 0.999999;
@@ -117,7 +122,7 @@ for (const expected of rotations)
     );
   });
 check('button advances one clockwise seat over a full orbit', () => {
-  const g = newGame();
+  const g = newGame(undefined, { smallBlind: 25, bigBlind: 50, startingStack: 5000, chipUnit: 25 });
   const expected = [0, 1, 2, 3, 4, 5, 0];
   for (const dealer of expected) {
     startHand(g);
@@ -127,7 +132,7 @@ check('button advances one clockwise seat over a full orbit', () => {
   }
 });
 check('big blind retains raise option after five limps', () => {
-  const g = newGame();
+  const g = newGame(undefined, { smallBlind: 25, bigBlind: 50, startingStack: 5000, chipUnit: 25 });
   startHand(g);
   for (let i = 0; i < 5; i++) act(g, g.actor, 'call');
   assert.equal(g.actor, 2);
@@ -145,7 +150,7 @@ check('big blind retains raise option after five limps', () => {
   assert.deepEqual(ids, [3, 4, 5, 0, 1]);
 });
 check('postflop skips folded small blind and all-in big blind', () => {
-  const g = newGame();
+  const g = newGame(undefined, { smallBlind: 25, bigBlind: 50, startingStack: 5000, chipUnit: 25 });
   g.players[2].stack = 50;
   startHand(g);
   for (const id of [3, 4, 5, 0]) act(g, id, 'call');
@@ -161,7 +166,7 @@ check('postflop skips folded small blind and all-in big blind', () => {
   assert.deepEqual(ids, [3, 4, 5, 0]);
 });
 check('two survivors in a six-handed deal do not move the blinds to heads-up positions', () => {
-  const g = newGame();
+  const g = newGame(undefined, { smallBlind: 25, bigBlind: 50, startingStack: 5000, chipUnit: 25 });
   startHand(g);
   for (const id of [3, 4, 5]) act(g, id, 'fold');
   act(g, 0, 'call');
@@ -173,7 +178,7 @@ check('two survivors in a six-handed deal do not move the blinds to heads-up pos
   assert.equal(seatPosition(g, 1), 'SB');
 });
 check('short blinds post actual stacks and keep full big blind bring-in', () => {
-  const g = newGame();
+  const g = newGame(undefined, { smallBlind: 25, bigBlind: 50, startingStack: 5000, chipUnit: 25 });
   g.players[1].stack = 25;
   g.players[2].stack = 25;
   startHand(g);
@@ -186,7 +191,7 @@ check('short blinds post actual stacks and keep full big blind bring-in', () => 
   assert.equal(legalActions(g).minRaiseTo, 100);
 });
 function postflop(stacks = [1000, 1000, 1000, 1000, 1000, 1000]) {
-  const g = newGame();
+  const g = newGame(undefined, { smallBlind: 25, bigBlind: 50, startingStack: 5000, chipUnit: 25 });
   g.dealer = 5;
   g.phase = 'playing';
   g.street = 1;
@@ -245,7 +250,7 @@ check('TDA raise examples distinguish increment from total', () => {
   assert.equal(JSON.stringify(g), before);
 });
 check('short all-in does not remove the unacted big blind raise option', () => {
-  const g = newGame();
+  const g = newGame(undefined, { smallBlind: 25, bigBlind: 50, startingStack: 5000, chipUnit: 25 });
   g.players[3].stack = 75;
   startHand(g);
   act(g, 3, 'raise', 75);
@@ -314,7 +319,7 @@ check('same category compares every relevant kicker only within best five cards'
   assert.deepEqual(evaluate(cards('As Ah Ac Ad Ks Qh Jc')).score, [7, 14, 13]);
 });
 check('blinds and unfinished ordinary raises do not create side pots', () => {
-  const g = newGame();
+  const g = newGame(undefined, { smallBlind: 25, bigBlind: 50, startingStack: 5000, chipUnit: 25 });
   startHand(g);
   assert.equal(currentPots(g).pots.length, 1);
   act(g, 3, 'raise', 125);
@@ -331,7 +336,7 @@ check('blinds and unfinished ordinary raises do not create side pots', () => {
   );
 });
 check('live pots split only at all-in caps and retain uncalled excess separately', () => {
-  const g = newGame();
+  const g = newGame(undefined, { smallBlind: 25, bigBlind: 50, startingStack: 5000, chipUnit: 25 });
   g.phase = 'playing';
   g.players.forEach((p, i) => {
     p.total = [100, 300, 500, 500, 0, 0][i];

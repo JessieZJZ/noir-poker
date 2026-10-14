@@ -1,3 +1,10 @@
+import {
+  sameStakes,
+  validateStakes,
+  stakesFromSmallBlind,
+  SMALL_BLIND_INPUT_ERROR,
+} from '../engine/stakes.js';
+import { compactActionAmounts } from '../engine/chip-format.js';
 import { createHeroTurnCue } from './hero-turn.js';
 import { notifyHeroTurn } from '../platform/haptics.js';
 import { createDialogScrollLock } from './dialog-scroll-lock.js';
@@ -13,6 +20,7 @@ import {
 } from '../i18n/index.js';
 import {
   newGame,
+  configureStakes,
   startHand,
   act,
   advanceStreet,
@@ -42,7 +50,7 @@ import { createShowdownController } from './showdown.js';
 import { createActivityFormatter } from './activity.js';
 import { portraitContent, preparePortraits } from './portraits.js';
 import { presetRaiseTo } from './bet-sizing.js';
-import { CHIP_UNIT, legalRaiseTo } from '../engine/bet-sizing.js';
+import { chipUnitOf, legalRaiseTo } from '../engine/bet-sizing.js';
 import { createSettlementLayout } from './settlement-layout.js';
 import { createPlayViewport } from './play-viewport.js';
 import { createHintNotification } from './hint-notification.js';
@@ -97,13 +105,16 @@ function isSeatHandVisible(player) {
 }
 const tablePreferences = loadTablePreferences();
 let requestedCount = tablePreferences.playerCount;
-let game = newGame(requestedCount),
+let requestedStakes = tablePreferences.stakes;
+let stakesError = '',
+  editingSmallBlind = false;
+let game = newGame(requestedCount, requestedStakes),
   timer = null,
   botWait = null,
   epoch = 0,
   lastBoard = 0,
   lastHand = 0,
-  bet = 150,
+  bet = game.bigBlind * 3,
   finishing = false,
   hints = true,
   sound = true,
@@ -241,11 +252,11 @@ function seatAction(p, { recent = false } = {}) {
   const retained = visibleRecentAction(p);
   const action = retained?.text ?? p.action;
   const match =
-    /^(?:(\d+-bet) )?(小盲|大盲|跟注|开池至|加注至|下注至|下注|短全下至|全下至|全下) (\d+)$/.exec(
+    /^(?:(\d+-bet) )?(小盲|大盲|跟注|开池至|加注至|下注至|下注|短全下至|全下至|全下)\s*(\d+)$/.exec(
       action,
     );
   if (!match)
-    return `<span class="seat-action-label">${action || (game.phase === 'done' ? '未行动' : '等待行动')}</span>`;
+    return `<span class="seat-action-label">${compactActionAmounts(action) || (game.phase === 'done' ? '未行动' : '等待行动')}</span>`;
   const label =
       p.allin && (match[2] === '小盲' || match[2] === '大盲')
         ? '全下'
@@ -264,11 +275,12 @@ function seatAction(p, { recent = false } = {}) {
     (retained ? `${streets[retained.street]} · ` : '') +
     (match[2] === '跟注'
       ? `本次补入 ${format(amount)}，本轮累计投入 ${format(retained?.bet ?? p.bet)}`
-      : `${action} · 本轮累计投入 ${format(amount)}`);
+      : `${compactActionAmounts(action)} · 本轮累计投入 ${format(amount)}`);
   return `<span class="seat-action-label">${label}</span><strong class="seat-action-amount" title="${meaning}">${format(amount)}</strong>`;
 }
 const heroTurnCue = createHeroTurnCue(notifyHeroTurn);
 function render() {
+  renderStakesSettings();
   const activityList = $('#activity-list'),
     activityScrollTop = activityList.scrollTop,
     followActivity =
@@ -281,6 +293,7 @@ function render() {
     game.players.slice(1).some((p) => ['viktor', 'jungleman', 'dwan'].includes(p.botProfile)),
   );
   setLocalizedText($('#table-size-label'), count + ' 人无限注');
+  setLocalizedText($('#blind-values'), `${format(game.smallBlind)} / ${format(game.bigBlind)}`);
   const displayBoard = game.practiceBoard || game.board;
   const hero = game.players[0],
     newHand = game.hand !== lastHand,
@@ -496,7 +509,7 @@ function render() {
     const slider = $('#bet-slider');
     slider.min = min;
     slider.max = max;
-    slider.step = CHIP_UNIT;
+    slider.step = chipUnitOf(game);
     slider.value = bet;
     setLocalizedHTML(
       $('#call-button'),
@@ -744,10 +757,12 @@ function nextHand() {
   showdown.reset();
   epoch++;
   lastBoard = 0;
+  stakesError = '';
+  editingSmallBlind = false;
   $('#pot-dialog').close();
-  if (requestedCount !== game.players.length) {
+  if (requestedCount !== game.players.length || !sameStakes(requestedStakes, game.stakes)) {
     const difficulty = game.difficulty;
-    game = newGame(requestedCount);
+    game = newGame(requestedCount, requestedStakes);
     game.difficulty = difficulty;
     handReview.reset();
     lastHand = 0;
@@ -756,7 +771,7 @@ function nextHand() {
   applyBotSettings(game, pendingBotSettings);
   startHand(game);
   const legal = legalActions(game, 0);
-  bet = legal.enabled ? legalRaiseTo(150, legal) : 150;
+  bet = legal.enabled ? legalRaiseTo(game.bigBlind * 3, legal) : game.bigBlind * 3;
   render();
   soundEffect('deal');
   schedule();
@@ -780,7 +795,7 @@ function retryHand() {
   restartHand(game);
   lastHand = 0;
   lastBoard = 0;
-  bet = 150;
+  bet = game.bigBlind * 3;
   render();
   soundEffect('deal');
   schedule();
@@ -880,10 +895,94 @@ $('#player-count').onchange = (e) => {
   const count = Number(e.target.value);
   if (!Number.isInteger(count) || count < 5 || count > 9) return;
   requestedCount = count;
-  saveTablePreferences({ playerCount: requestedCount, difficulty: game.difficulty });
-  const note = $('#table-change-note');
-  note.hidden = requestedCount === game.players.length;
-  setLocalizedText(note, `下一手切换为 ${requestedCount} 人桌 · 筹码恢复 5,000，统计重新开始`);
+  saveTablePreferences({
+    playerCount: requestedCount,
+    difficulty: game.difficulty,
+    stakes: requestedStakes,
+  });
+  renderStakesSettings();
+};
+function renderStakesSettings() {
+  const input = $('#small-blind-input');
+  $('#small-blind-button').textContent = format(requestedStakes.smallBlind);
+  $('#small-blind-button').hidden = editingSmallBlind;
+  input.hidden = !editingSmallBlind;
+  if (!editingSmallBlind) input.value = String(requestedStakes.smallBlind);
+  input.setAttribute('aria-invalid', String(Boolean(stakesError)));
+  $('#big-blind-value').textContent = format(requestedStakes.bigBlind);
+  $('#stakes-error').hidden = !stakesError;
+  setLocalizedText($('#stakes-error'), stakesError);
+  const note = $('#stakes-change-note');
+  note.hidden = sameStakes(requestedStakes, game.stakes);
+  setLocalizedText(
+    note,
+    `下一手起始盲注${format(requestedStakes.smallBlind)}/${format(requestedStakes.bigBlind)}·筹码恢复为${format(requestedStakes.startingStack)}，统计重新开始`,
+  );
+  const countNote = $('#table-change-note');
+  countNote.hidden = requestedCount === game.players.length;
+  setLocalizedText(
+    countNote,
+    `下一手切换为 ${requestedCount} 人桌 · 筹码恢复 ${format(requestedStakes.startingStack)}，统计重新开始`,
+  );
+}
+function requestStakes(value) {
+  let stakes;
+  try {
+    stakes = validateStakes(value);
+    if (!sameStakes(stakes, stakesFromSmallBlind(stakes.smallBlind)))
+      throw Error(SMALL_BLIND_INPUT_ERROR);
+  } catch {
+    stakesError = SMALL_BLIND_INPUT_ERROR;
+    renderStakesSettings();
+    return false;
+  }
+  const changed = !sameStakes(requestedStakes, stakes);
+  requestedStakes = stakes;
+  stakesError = '';
+  if (changed)
+    saveTablePreferences({ playerCount: requestedCount, difficulty: game.difficulty, stakes });
+  renderStakesSettings();
+  return changed;
+}
+function requestSmallBlind(value) {
+  try {
+    return requestStakes(stakesFromSmallBlind(value));
+  } catch {
+    stakesError = SMALL_BLIND_INPUT_ERROR;
+    renderStakesSettings();
+    return false;
+  }
+}
+$('#small-blind-button').onclick = () => {
+  editingSmallBlind = true;
+  stakesError = '';
+  $('#small-blind-input').value = String(requestedStakes.smallBlind);
+  renderStakesSettings();
+  $('#small-blind-input').focus();
+  $('#small-blind-input').select();
+};
+$('#small-blind-input').oninput = (e) => requestSmallBlind(e.target.value);
+$('#small-blind-input').onblur = () => {
+  if (stakesError) return;
+  editingSmallBlind = false;
+  renderStakesSettings();
+};
+$('#small-blind-input').onkeydown = (e) => {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    requestSmallBlind(e.target.value);
+    if (!stakesError) {
+      editingSmallBlind = false;
+      renderStakesSettings();
+      $('#small-blind-button').focus();
+    }
+  } else if (e.key === 'Escape') {
+    e.preventDefault();
+    stakesError = '';
+    editingSmallBlind = false;
+    renderStakesSettings();
+    $('#small-blind-button').focus();
+  }
 };
 function toggleOpponentHand(id) {
   const p = game.players[id];
@@ -911,7 +1010,11 @@ $('#difficulty').onchange = (e) => {
     ['easy', 'normal', 'hard'].includes(e.target.value)
   ) {
     game.difficulty = e.target.value;
-    saveTablePreferences({ playerCount: requestedCount, difficulty: game.difficulty });
+    saveTablePreferences({
+      playerCount: requestedCount,
+      difficulty: game.difficulty,
+      stakes: requestedStakes,
+    });
     if (game.phase === 'playing' && game.actor !== 0 && !finishing) schedule();
   }
 };
@@ -969,7 +1072,7 @@ $('#confirm-reset').onclick = () => {
   handReview.reset();
   const difficulty = game.difficulty;
   clearTimeout(timer);
-  game = newGame(requestedCount);
+  game = newGame(requestedCount, requestedStakes);
   game.difficulty = difficulty;
   lastHand = 0;
   $('#reset-dialog').close();
@@ -979,6 +1082,12 @@ function publicState() {
   const details = potDetails();
   return {
     playerCount: game.players.length,
+    stakes: { ...game.stakes },
+    requestedStakes: { ...requestedStakes },
+    pendingStakes: !sameStakes(requestedStakes, game.stakes),
+    smallBlind: game.smallBlind,
+    bigBlind: game.bigBlind,
+    chipUnit: chipUnitOf(game),
     emotionMode: game.emotionMode,
     canContinue: canFastFinish(),
     replayAttempt: game.replayAttempt || 0,
@@ -1033,7 +1142,24 @@ function publicState() {
     result: game.result || null,
   };
 }
-window.noir = { getState: publicState };
+function setStakes(value) {
+  const stakes = validateStakes(value);
+  const changed = configureStakes(game, stakes);
+  const requestedChanged = !sameStakes(requestedStakes, stakes);
+  if (!changed && !requestedChanged) return false;
+  requestedStakes = stakes;
+  stakesError = '';
+  saveTablePreferences({ playerCount: requestedCount, difficulty: game.difficulty, stakes });
+  if (!changed) {
+    renderStakesSettings();
+    return true;
+  }
+  handReview.reset();
+  lastHand = 0;
+  nextHand();
+  return true;
+}
+window.noir = { getState: publicState, setStakes, requestStakes, requestSmallBlind };
 function registerTools() {
   const context = document.modelContext;
   if (!context?.registerTool) return;

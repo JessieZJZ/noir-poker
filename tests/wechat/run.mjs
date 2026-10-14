@@ -45,6 +45,25 @@ try {
       argument,
     );
   report.device = await mini.systemInfo();
+  report.stakes = await mini.evaluate(() => {
+    const current = getCurrentPages().at(-1);
+    return {
+      stakes: current._controller.getGame().stakes,
+      blinds: current.data.blindText,
+      unit: current.data.chipUnit,
+    };
+  });
+  assert.deepEqual(report.stakes.stakes, {
+    smallBlind: 100,
+    bigBlind: 200,
+    startingStack: 20000,
+    chipUnit: 100,
+  });
+  assert.equal(report.stakes.blinds, '100 / 200');
+  assert.equal(report.stakes.unit, 100);
+  const icon = await page.$('.app-icon');
+  assert.equal(await icon.attribute('src'), '/assets/app-icon.png');
+
   const wait = async (predicate, timeout = 60000) => {
     const start = Date.now();
     while (Date.now() - start < timeout) {
@@ -574,9 +593,23 @@ try {
   assert.equal((await page.$$('.hand-example')).length, 9);
   assert.equal((await page.$$('.guide-card')).length, 45);
   assert.ok((await (await page.$('.position-glossary')).text()).includes('HJ'));
-  report.visualGuide = { hands: 9, cards: 45 };
+  const readGuideAmounts = async () =>
+    (await Promise.all((await page.$$('.guide-p')).map((element) => element.text())))
+      .join(' ')
+      .replace(/\s+/g, ' ');
+  const actionExample = await readGuideAmounts();
+  assert.ok(actionExample.includes('选择加注 1.2K 则补 1K'));
+  assert.ok(!/\b(?:1200|1000)\b/.test(actionExample), 'Guide chip examples must use K');
   await invoke('toggleGuide', { currentTarget: { dataset: { index: 0 } } });
   assert.equal((await page.data()).guideExpanded[0], true);
+  const raiseExample = await readGuideAmounts();
+  assert.ok(raiseExample.includes('至少要加到 1K'));
+  report.visualGuide = {
+    hands: 9,
+    cards: 45,
+    compactActionExample: true,
+    compactRaiseExample: true,
+  };
   await invoke('closeGuide');
   const cardsBefore = (await page.data()).boardSlots.map((card) => card.key);
   const rowsBefore = await (await page.$('.board-row')).offset();
