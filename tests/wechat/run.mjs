@@ -346,34 +346,39 @@ try {
   // Changing a harmless setting rerenders without restarting this decision.
   report.turnAttention = { phase: (await page.data()).turnPhase };
   assert.equal(report.turnAttention.phase, 'enter');
-  const glow = await page.$('.turn-glow');
-  report.turnAttention.entryDuration = await glow.style('animation-duration');
-  assert.equal(report.turnAttention.entryDuration, '3.2s');
+  const frame = await page.$('.turn-frame');
+  report.turnAttention.frameDuration = await frame.style('animation-duration');
+  assert.equal(report.turnAttention.frameDuration, '2s');
+  assert.equal(await frame.style('animation-name'), 'turn-glow');
   for (const corner of ['top-left', 'top-right', 'bottom-left', 'bottom-right'])
-    assert.equal(await glow.style(`border-${corner}-radius`), '0px');
-  assert.equal(await glow.style('box-shadow'), 'none');
+    assert.equal(await frame.style(`border-${corner}-radius`), '10px');
+  assert.equal(await frame.style('border-top-width'), '1px');
+  assert.equal(await frame.style('border-top-color'), 'rgb(110, 231, 197)');
+  assert.equal(await frame.style('background-image'), 'none');
   const prompt = await page.$('.turn-prompt');
   assert.equal(await prompt.style('animation-name'), 'none');
   assert.equal(await prompt.style('opacity'), '1');
   const rail = await page.$('.turn-line');
   assert.equal(await rail.style('height'), '1px');
-  const railFrom = await rail.style('transform');
+  assert.equal(await rail.style('animation-name'), 'none');
+  assert.equal(await rail.style('box-shadow'), 'none');
+  // The host stays still; shared CSS animates two pseudo-element light fronts.
+  // Web/native frame sampling covers their direction; DevTools retains a capture.
   await page.waitFor(850);
-  const railTo = await rail.style('transform');
-  assert.notEqual(railFrom, railTo, 'The thin rail actually expands from the center');
-  report.turnAttention.railPulse = { from: railFrom, to: railTo };
+  report.turnAttention.railHeight = await rail.style('height');
   await mini.screenshot({ path: path.join(output, 'hero-turn-entry.png') });
   await wait((data) => data.turnPhase === 'waiting');
-  assert.equal(await glow.style('opacity'), '0.24');
-  assert.equal(await (await page.$('.turn-line')).style('animation-name'), 'hero-turn-line-pulse');
+  assert.equal(await frame.style('opacity'), '1');
+  assert.equal(await frame.style('animation-name'), 'turn-glow');
+  assert.equal(await (await page.$('.turn-line')).style('animation-name'), 'none');
   const turnGeometry = async () => ({
     cards: await (await page.$('.hero-cards')).size(),
     actions: await (await page.$('.action-buttons')).size(),
   });
   const beforeAttention = await turnGeometry();
   await wait((data) => data.turnPhase === 'reminder', 10000);
-  report.turnAttention.reminderDuration = await glow.style('animation-duration');
-  assert.equal(report.turnAttention.reminderDuration, '2.2s');
+  report.turnAttention.reminderFrameDuration = await frame.style('animation-duration');
+  assert.equal(report.turnAttention.reminderFrameDuration, '2s');
   await wait((data) => data.turnPhase === 'waiting');
   assert.deepEqual(await turnGeometry(), beforeAttention);
   await invoke('previewRaise', { detail: { value: (await page.data()).minRaise } });

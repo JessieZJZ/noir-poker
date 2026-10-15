@@ -31,6 +31,17 @@ const finishDeal = (page) =>
         .map((animation) => animation.finished),
     ),
   );
+const railMotion = (page) =>
+  page.locator('.turn-line').evaluate((el) =>
+    ['::before', '::after'].map((pseudo) => {
+      const style = getComputedStyle(el, pseudo);
+      return { name: style.animationName, duration: style.animationDuration };
+    }),
+  );
+const outwardPulses = [
+  { name: 'hero-turn-pulse-left', duration: '1.6s' },
+  { name: 'hero-turn-pulse-right', duration: '1.6s' },
+];
 
 test('entry and one idle reminder decorate the whole action area without moving cards or buttons', async ({
   page,
@@ -39,9 +50,9 @@ test('entry and one idle reminder decorate the whole action area without moving 
   await expect(page.locator('.hero-cards-wrap')).toHaveClass(/turn-enter/);
   await expect(page.locator('#turn-prompt')).toBeVisible();
   await expect(page.locator('#turn-prompt')).toHaveText('轮到你行动');
-  await expect(page.locator('.turn-glow')).toHaveCSS('animation-duration', '3.2s');
+  await expect(page.locator('.turn-frame')).toHaveCSS('animation-duration', '2s');
   expect(
-    await page.locator('.turn-glow').evaluate((el) =>
+    await page.locator('.turn-frame').evaluate((el) =>
       ['::before', '::after'].map((pseudo) => ({
         name: getComputedStyle(el, pseudo).animationName,
         duration: getComputedStyle(el, pseudo).animationDuration,
@@ -51,9 +62,10 @@ test('entry and one idle reminder decorate the whole action area without moving 
     { name: 'none', duration: '0s' },
     { name: 'none', duration: '0s' },
   ]);
-  await expect(page.locator('.turn-line')).toHaveCSS('animation-duration', '1.6s');
+  await expect(page.locator('.turn-line')).toHaveCSS('animation-name', 'none');
+  expect(await railMotion(page)).toEqual(outwardPulses);
   // The mocked timer does not advance CSS's document timeline. Let the separate
-  // finite deal animation finish before measuring decorative-glow stability.
+  // finite deal animation finish before measuring decorative-frame stability.
   await finishDeal(page);
   await page.clock.fastForward(1600);
   await expect(phase(page)).toHaveAttribute('data-turn-phase', 'enter');
@@ -66,7 +78,7 @@ test('entry and one idle reminder decorate the whole action area without moving 
   await expect(phase(page)).toHaveAttribute('data-turn-phase', 'reminder');
   expect(await boxes(page)).toEqual(before);
   expect(await page.evaluate(() => window.turnVibrations)).toBe(1);
-  await expect(page.locator('.turn-glow')).toHaveCSS('animation-duration', '2.2s');
+  await expect(page.locator('.turn-frame')).toHaveCSS('animation-duration', '2s');
   await page.clock.fastForward(2199);
   await expect(phase(page)).toHaveAttribute('data-turn-phase', 'reminder');
   await page.clock.fastForward(1);
@@ -84,6 +96,12 @@ test('sizing, background, settlement and retry do not leak old reminders', async
   );
   await expect(phase(page)).toHaveAttribute('data-turn-phase', '');
   await expect(page.locator('.turn-line')).toHaveCSS('animation-name', 'none');
+  expect(await railMotion(page)).toEqual([
+    { name: 'none', duration: '0s' },
+    { name: 'none', duration: '0s' },
+  ]);
+  await expect(page.locator('.turn-frame')).toHaveCSS('animation-name', 'none');
+  await expect(page.locator('.turn-frame')).toHaveCSS('opacity', '0');
   await expect(page.locator('#turn-prompt')).toHaveCSS('animation-name', 'none');
   await page.clock.fastForward(9000);
   await page.evaluate(() =>
@@ -105,15 +123,20 @@ test('reduced motion and muted native feedback keep a visible, localized turn st
   page,
 }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
-  await expect(page.locator('.hero-cards-wrap .turn-glow')).toHaveCSS('animation-name', 'none');
+  await expect(page.locator('.hero-cards-wrap .turn-frame')).toHaveCSS('animation-name', 'none');
+  await expect(page.locator('.turn-frame')).toHaveCSS('opacity', '1');
   await expect(page.locator('.turn-line')).toHaveCSS('animation-name', 'none');
   expect(
     await page
-      .locator('.turn-glow')
+      .locator('.turn-frame')
       .evaluate((el) =>
         ['::before', '::after'].map((pseudo) => getComputedStyle(el, pseudo).animationName),
       ),
   ).toEqual(['none', 'none']);
+  expect(await railMotion(page)).toEqual([
+    { name: 'none', duration: '0s' },
+    { name: 'none', duration: '0s' },
+  ]);
   await expect(page.locator('.turn-line')).toHaveCSS('opacity', '0.72');
   await expect(page.locator('#turn-prompt')).toHaveCSS('animation-name', 'none');
   await expect(page.locator('#turn-prompt')).toHaveCSS('opacity', '1');
@@ -133,56 +156,83 @@ test('reduced motion and muted native feedback keep a visible, localized turn st
   await expect(page.locator('#decision-text')).not.toContainText('轮到');
 });
 
-test('one soft hand glow has no clipped rim; a thin rail pulses from the center while the prompt stays still', async ({
+test('hand frame shares opponent thinking style; two thin fronts move outward while the prompt stays still', async ({
   page,
 }) => {
-  const glow = page.locator('.turn-glow');
-  await expect(glow).toHaveCSS('border-radius', '0px');
-  await expect(glow).toHaveCSS('border-top-width', '0px');
-  await expect(glow).toHaveCSS('box-shadow', 'none');
-  const decorations = await glow.evaluate((el) => ({
-    gradients: getComputedStyle(el).backgroundImage.match(/radial-gradient/g)?.length,
+  const handFrame = page.locator('.turn-frame');
+  await expect(handFrame).toHaveCSS('border-radius', '10px');
+  await expect(handFrame).toHaveCSS('border-top-width', '1px');
+  await expect(handFrame).toHaveCSS('border-top-color', 'rgb(110, 231, 197)');
+  const decorations = await handFrame.evaluate((el) => ({
+    background: getComputedStyle(el).backgroundImage,
     layers: ['::before', '::after'].map((pseudo) => getComputedStyle(el, pseudo).content),
   }));
-  expect(decorations).toEqual({ gradients: 1, layers: ['none', 'none'] });
-  const frame = (selector, name, time) =>
-    page.locator(selector).evaluate(
-      (el, { name, time }) => {
-        const motion = el.getAnimations().find((animation) => animation.animationName === name);
+  expect(decorations).toEqual({ background: 'none', layers: ['none', 'none'] });
+  const matchingThinking = await handFrame.evaluate((el) => {
+    const opponent = document.querySelector('.seat');
+    const wasThinking = opponent.classList.contains('thinking');
+    opponent.classList.add('thinking');
+    const own = getComputedStyle(el);
+    const peer = getComputedStyle(opponent.querySelector('.seat-profile'));
+    const properties = [
+      'borderTopColor',
+      'animationName',
+      'animationDuration',
+      'animationTimingFunction',
+    ];
+    const same = properties.every((property) => own[property] === peer[property]);
+    if (!wasThinking) opponent.classList.remove('thinking');
+    return same;
+  });
+  expect(matchingThinking).toBe(true);
+  const frame = (pseudo, name, time) =>
+    page.locator('.turn-line').evaluate(
+      (el, { pseudo, name, time }) => {
+        const motion = el
+          .getAnimations({ subtree: true })
+          .find((animation) => animation.animationName === name);
         if (!motion) throw Error(`Missing ${name}`);
         motion.pause();
         motion.currentTime = time;
-        const style = getComputedStyle(el);
+        const style = getComputedStyle(el, pseudo);
         return {
           opacity: Number(style.opacity),
-          x: el.getBoundingClientRect().x,
-          width: el.getBoundingClientRect().width,
+          x: new DOMMatrixReadOnly(style.transform).m41,
+          width: parseFloat(style.width),
         };
       },
-      { name, time },
+      { pseudo, name, time },
     );
   await expect(page.locator('.turn-line')).toHaveCSS('height', '1px');
+  await expect(page.locator('.turn-line')).toHaveCSS('box-shadow', 'none');
+  expect(await railMotion(page)).toEqual(outwardPulses);
   await expect(page.locator('#turn-prompt')).toHaveCSS('animation-name', 'none');
   await expect(page.locator('#turn-prompt')).toHaveCSS('opacity', '1');
   await expect(page.locator('#turn-prompt')).toHaveCSS('text-shadow', 'none');
-  const from = await frame('.turn-line', 'hero-turn-line-pulse', 192);
-  const to = await frame('.turn-line', 'hero-turn-line-pulse', 1120);
-  expect(to.x).toBeLessThan(from.x);
-  expect(to.x + to.width).toBeGreaterThan(from.x + from.width);
-  expect(to.x + to.width / 2).toBeCloseTo(from.x + from.width / 2, 3);
-  expect(to.width).toBeGreaterThan(from.width * 5);
-  const faded = await frame('.turn-line', 'hero-turn-line-pulse', 1568);
-  expect(faded.opacity).toBeLessThan(0.15);
+  const leftFrom = await frame('::before', 'hero-turn-pulse-left', 192);
+  const rightFrom = await frame('::after', 'hero-turn-pulse-right', 192);
+  const leftTo = await frame('::before', 'hero-turn-pulse-left', 1120);
+  const rightTo = await frame('::after', 'hero-turn-pulse-right', 1120);
+  expect(leftTo.x).toBeLessThan(leftFrom.x);
+  expect(rightTo.x).toBeGreaterThan(rightFrom.x);
+  expect(leftTo.width).toBe(leftFrom.width);
+  expect(rightTo.width).toBe(rightFrom.width);
+  expect(leftTo.x + rightTo.x).toBeCloseTo(-leftTo.width, 2);
+  const leftFaded = await frame('::before', 'hero-turn-pulse-left', 1568);
+  const rightFaded = await frame('::after', 'hero-turn-pulse-right', 1568);
+  expect(leftFaded.opacity).toBeLessThan(0.15);
+  expect(rightFaded.opacity).toBeLessThan(0.15);
   await page.clock.fastForward(3200);
-  await expect(glow).toHaveCSS('opacity', '0.24');
-  await expect(glow).toHaveCSS('animation-name', 'none');
-  await expect(page.locator('.turn-line')).toHaveCSS('animation-name', 'hero-turn-line-pulse');
+  await expect(handFrame).toHaveCSS('opacity', '1');
+  await expect(handFrame).toHaveCSS('animation-name', 'turn-glow');
+  await expect(page.locator('.turn-line')).toHaveCSS('animation-name', 'none');
   await expect(page.locator('#turn-prompt')).toHaveCSS('animation-name', 'none');
   await expect(page.locator('#turn-prompt')).toHaveCSS('opacity', '1');
   await finishDeal(page);
   const before = await boxes(page);
   const promptBounds = await page.locator('#turn-prompt').boundingBox();
-  await frame('.turn-line', 'hero-turn-line-pulse', 192);
+  await frame('::before', 'hero-turn-pulse-left', 192);
+  await frame('::after', 'hero-turn-pulse-right', 192);
   expect(await boxes(page)).toEqual(before);
   expect(await page.locator('#turn-prompt').boundingBox()).toEqual(promptBounds);
 });

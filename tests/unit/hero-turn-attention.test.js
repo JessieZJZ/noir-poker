@@ -57,7 +57,7 @@ test('using sizing controls cancels the reminder for this decision only', () => 
   cue.update(turn);
   advance(1200);
   cue.engage();
-  assert.equal(cue.phase, 'waiting', 'Sizing retains the class that drives the ongoing rail pulse');
+  assert.equal(cue.phase, 'waiting', 'Sizing retains the hand border and ongoing rail pulses');
   assert.equal(jobs.size, 0, 'Persistent CSS pulses must not require a reminder timer');
   advance(9000);
   cue.update(turn);

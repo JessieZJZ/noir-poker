@@ -402,12 +402,12 @@ export async function nativeScenarios(app) {
         });
       });
       new MutationObserver(() => {
-        const glow = document.querySelector('.turn-glow');
+        const frame = document.querySelector('.turn-frame');
         window.__turnAttentionPhases.push({
           phase: dock.dataset.turnPhase,
           at: Date.now(),
-          glow: ['', '::before', '::after'].map((pseudo) => {
-            const style = getComputedStyle(glow, pseudo || null);
+          frame: ['', '::before', '::after'].map((pseudo) => {
+            const style = getComputedStyle(frame, pseudo || null);
             return { name: style.animationName, duration: style.animationDuration };
           }),
         });
@@ -429,13 +429,13 @@ export async function nativeScenarios(app) {
       90000,
       'A fresh hero decision must become available',
     );
-    // Read the entry at its actual DOM transition. The native driver may return
-    // the legal-state poll after the finite 3.2-second entry has already ended.
+    // Read the first turn frame at its actual DOM transition so a slow driver
+    // does not confuse the controller phase with the persistent border motion.
     const entry = await app.evaluate(
-      () => window.__turnAttentionPhases.find((entry) => entry.phase === 'enter')?.glow,
+      () => window.__turnAttentionPhases.find((entry) => entry.phase === 'enter')?.frame,
     );
     assert.deepEqual(entry, [
-      { name: 'hero-turn-glow', duration: '3.2s' },
+      { name: 'turn-glow', duration: '2s' },
       { name: 'none', duration: '0s' },
       { name: 'none', duration: '0s' },
     ]);
@@ -461,7 +461,13 @@ export async function nativeScenarios(app) {
           lineOpacity: Number(getComputedStyle(document.querySelector('.turn-line')).opacity),
           lineHeight: getComputedStyle(document.querySelector('.turn-line')).height,
           promptOpacity: Number(getComputedStyle(document.querySelector('#turn-prompt')).opacity),
-          glowOpacity: Number(getComputedStyle(document.querySelector('.turn-glow')).opacity),
+          frameOpacity: Number(getComputedStyle(document.querySelector('.turn-frame')).opacity),
+          frameBorder: getComputedStyle(document.querySelector('.turn-frame')).borderTopColor,
+          frameBackground: getComputedStyle(document.querySelector('.turn-frame')).backgroundImage,
+          railPulses: ['::before', '::after'].map((pseudo) => {
+            const style = getComputedStyle(document.querySelector('.turn-line'), pseudo);
+            return { name: style.animationName, duration: style.animationDuration };
+          }),
           attentionMotion: ['.turn-line', '#turn-prompt'].map((selector) => {
             const style = getComputedStyle(document.querySelector(selector));
             return { name: style.animationName, duration: style.animationDuration };
@@ -475,13 +481,18 @@ export async function nativeScenarios(app) {
     const before = await read();
     assert.equal(before.hero, 'waiting');
     assert.equal(before.promptVisible, true);
-    assert.ok(before.glowOpacity > 0);
     assert.equal(before.lineHeight, '1px');
     assert.equal(before.promptOpacity, 1);
-    assert.equal(before.glowOpacity, 0.24);
+    assert.equal(before.frameOpacity, 1);
+    assert.equal(before.frameBorder, 'rgb(110, 231, 197)');
+    assert.equal(before.frameBackground, 'none');
     assert.deepEqual(before.attentionMotion, [
-      { name: 'hero-turn-line-pulse', duration: '1.6s' },
       { name: 'none', duration: '0s' },
+      { name: 'none', duration: '0s' },
+    ]);
+    assert.deepEqual(before.railPulses, [
+      { name: 'hero-turn-pulse-left', duration: '1.6s' },
+      { name: 'hero-turn-pulse-right', duration: '1.6s' },
     ]);
     await app.screenshot('hero-turn-steady');
     const background = await app.background();
