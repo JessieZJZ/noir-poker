@@ -84,6 +84,9 @@
           class="hand-profit {{item.profit > 0 ? 'positive' : item.profit < 0 ? 'negative' : ''}}"
           >{{item.profitText}}</text
         >
+        <view wx:if="{{item.status === 'completed'}}" class="hand-arrow" aria-hidden="true"
+          ><view class="hand-chevron"
+        /></view>
       </view>
     </view>
   </view>

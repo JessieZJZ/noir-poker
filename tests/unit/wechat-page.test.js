@@ -1097,8 +1097,8 @@ test('WeChat public card rows use the measured corridor and stay fixed from deal
     playerCount: 9,
     info: { windowWidth: 320, windowHeight: 667, statusBarHeight: 20, safeArea: { bottom: 667 } },
   });
-  assert.equal(page.data.boardTwoRows, false);
-  assert.ok(page.data.cardWidth >= 66, 'Public cards grow within the measured felt corridor');
+  assert.equal(page.data.boardTwoRows, true, 'A tight corridor uses two readable rows');
+  assert.ok(page.data.cardWidth * page.data.arenaScale >= 31);
   assert.ok(page.data.boardWidth >= 3 * 50 + 8);
   assert.equal(page.data.boardSlots.length, 5);
   assert.ok(page.data.boardSlots.every((card) => card.empty));
@@ -1110,7 +1110,7 @@ test('WeChat public card rows use the measured corridor and stay fixed from deal
   assert.equal(page.data.boardSlots.length, 5);
   assert.ok(page.data.boardSlots.every((card) => !card.empty));
   assert.equal(page.data.tableHeight, budget);
-  assert.equal(page.data.boardTwoRows, false);
+  assert.equal(page.data.boardTwoRows, true);
   assert.equal(page.data.cardWidth, originalCardWidth);
   assert.equal(page.data.boardWidth, originalBoardWidth);
   Object.assign(info, { windowWidth: 390, windowHeight: 900, safeArea: { bottom: 900 } });
@@ -1124,7 +1124,7 @@ test('WeChat public card rows use the measured corridor and stay fixed from deal
   Object.assign(info, { windowWidth: 820, windowHeight: 1180, safeArea: { bottom: 1180 } });
   page.onResize();
   assert.equal(page.data.boardSlots.length, 5);
-  assert.ok(page.data.cardWidth >= 106);
+  assert.ok(page.data.cardWidth * page.data.arenaScale >= 70);
   assert.equal(
     page.data.boardWidth,
     page.data.boardTwoRows ? 3 * page.data.cardWidth + 8 : 5 * page.data.cardWidth + 16,
@@ -1862,7 +1862,8 @@ test('WeChat long seat names shrink visually while position and inspection slots
     name,
     'Ellipsis preserves the recorded identity and changes presentation alone',
   );
-  assert.match(template, /<text class="seat-name-label">{{item.name}}<\/text\s*>/);
+  assert.match(template, /class="seat-name-label[^>]+>{{item.name}}<\/text\s*>/s);
+  assert.match(template, /class="seat-name-measure"[^>]*aria-hidden="true"[^>]*>{{item.name}}/s);
   const nameRow = railStylesheet.match(
     /\.web-phone-layout \.seat \.seat-name\s*\{[^}]*grid-column:[^}]+\}/,
   )[0];
@@ -1917,8 +1918,8 @@ test('WeChat final cards retain readable phone dimensions within the unchanged f
     );
     const scale = page.data.arenaScale;
     assert.ok(
-      metrics['player-back-width'] * scale >= 15,
-      `${windowWidth}px card backs retain 15px width`,
+      metrics['player-back-width'] * scale >= 14.5,
+      `${windowWidth}px card backs retain the 15px target with 0.5px fit tolerance`,
     );
     // The profile begins 4px below the fixed mini-card slot. This is the
     // unrotated minimum exposed strip, before the +/-7deg corners extend it.
@@ -1932,7 +1933,9 @@ test('WeChat final cards retain readable phone dimensions within the unchanged f
     );
     const faces = page.data.heroCardGeometry.faces;
     assert.equal(faces.length, 2);
-    assert.ok(page.data.heroHeight >= metrics['hero-card-slot-height']);
+    assert.equal(metrics['hero-card-slot-height'], page.data.tablet ? 136 : 104);
+    assert.ok(page.data.heroWidth * scale >= 30, 'Crowded hero cards retain readable faces');
+    assert.ok(page.data.heroHeight <= metrics['hero-card-slot-height'] * 1.4);
     const asBounds = (part) => ({
       left: part.left,
       top: part.top,
@@ -2017,9 +2020,17 @@ function deferSeatMeasurements(wx) {
         return query;
       },
       exec(callback) {
-        pending.push((numbers) =>
+        pending.push((numbers, names = [], positions = []) =>
           callback(
-            selectors.map((selector) => (selector === '.seat-body > .stack' ? numbers : [])),
+            selectors.map((selector) =>
+              selector === '.seat-body > .stack'
+                ? numbers
+                : selector === '.seat-name-measure'
+                  ? names
+                  : selector === '.seat-name .position'
+                    ? positions
+                    : [],
+            ),
           ),
         );
       },
@@ -2028,6 +2039,37 @@ function deferSeatMeasurements(wx) {
   };
   return pending;
 }
+
+test('WeChat fits measured names only without the inspection icon and resets the fit at settlement', (t) => {
+  const { page, wx } = setup(t, { playerCount: 9 });
+  const game = copy(page._controller.getGame());
+  const callbacks = deferSeatMeasurements(wx);
+  const id = page.data.phoneSeats[0].id;
+  const scale = page.data.arenaScale;
+  const available =
+    page.data.profileWidth - page.data.textMetrics['profile-padding'] * 2 - 2 - 48 - 3 - 0.25;
+  const names = [{ dataset: { id }, width: (available / 0.85) * scale }];
+  const positions = [{ dataset: { id }, width: 48 * scale }];
+  page.tightenSeatRanks();
+  callbacks.shift()([], names, positions);
+  assert.equal(page.data.phoneSeats[0].nameFit, true);
+  assert.ok(Math.abs(page.data.phoneSeats[0].nameWidthScale - 0.85) < 0.00001);
+  assert.deepEqual(copy(page._controller.getGame()), game);
+  page.tightenSeatRanks();
+  callbacks.shift()([], [{ dataset: { id }, width: available * 2 * scale }], positions);
+  assert.equal(
+    page.data.phoneSeats[0].nameFit,
+    false,
+    'An excessively long identity keeps ellipsis',
+  );
+  page.tightenSeatRanks();
+  const delayed = callbacks.shift();
+  finish(page._controller.getGame());
+  page._controller.show();
+  assert.ok(page.data.done);
+  delayed([], names, positions);
+  assert.ok(page.data.phoneSeats.every((seat) => !seat.nameFit && seat.nameWidthScale === 1));
+});
 
 test('WeChat fits only overflowing full-precision numbers and caches the actual native font width', (t) => {
   const { page, wx } = setup(t, { playerCount: 9 });

@@ -80,7 +80,7 @@
     translate: 0 18px;
   }
   .game-surface .arena[data-player-count] .board {
-    --public-card-width: 80px;
+    --public-card-width: 82px;
   }
   .game-surface .hero-cards {
     min-height: 126px;

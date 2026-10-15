@@ -60,11 +60,12 @@ page {
   background: #101d25;
 }
 .session-item {
+  position: relative;
   color: #dce9ed;
   width: 100%;
   text-align: left;
   margin: 0;
-  padding: 16px;
+  padding: 16px 52px 16px 16px;
   background: transparent;
   border-radius: 0;
 }
@@ -86,15 +87,18 @@ page {
   gap: 10px;
 }
 .session-toggle {
+  position: absolute;
+  right: 16px;
+  top: 50%;
+  transform: translateY(-50%);
   width: 26px;
   height: 26px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 1px solid #38525d;
-  border-radius: 50%;
+  border: 0;
   color: #80dcc9;
-  background: #152a32;
+  background: transparent;
 }
 .session-chevron {
   width: 7px;
@@ -211,6 +215,23 @@ page {
   flex: none;
   font-size: 16px;
   font-weight: 700;
+}
+.hand-arrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  align-self: center;
+  flex: none;
+  width: 14px;
+  height: 22px;
+  color: #768e96;
+}
+.hand-chevron {
+  width: 7px;
+  height: 7px;
+  border-top: 2px solid currentColor;
+  border-right: 2px solid currentColor;
+  transform: translateX(-2px) rotate(45deg);
 }
 .positive {
   color: #6ee7c5;

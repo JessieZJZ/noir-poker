@@ -67,9 +67,9 @@
   flex: 0 0 24px;
   padding: 0;
   margin: 0;
-  border: 1px solid #405d64;
-  border-radius: 50%;
-  background: #15252c;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
   color: #a9c9c0;
 }
 .guide-chevron {
@@ -214,27 +214,29 @@
 }
 .record-session-chevron {
   position: absolute;
-  top: 16px;
+  top: 50%;
   right: 16px;
   display: grid;
   place-items: center;
   width: 30px;
   height: 30px;
-  border: 1px solid #42675e;
-  border-radius: 50%;
-  background: #18322d;
+  border: 0;
+  background: transparent;
   color: #9fd9c4;
   font-size: 0;
+  translate: 0 -50%;
   transition: transform 180ms ease;
 }
-.record-session-chevron::after {
-  content: '';
-  width: 8px;
-  height: 8px;
-  margin-top: -4px;
-  border-right: 2px solid currentColor;
-  border-bottom: 2px solid currentColor;
-  transform: rotate(45deg);
+.record-session-chevron svg,
+.record-hand-arrow svg {
+  display: block;
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 .record-session-heading[aria-expanded='true'] .record-session-chevron {
   transform: rotate(180deg);
@@ -321,7 +323,12 @@ button.record-hand:hover {
   line-height: 1.5;
 }
 .record-hand-arrow {
-  font-size: 24px;
+  display: grid;
+  place-items: center;
+  flex: none;
+  align-self: center;
+  width: 16px;
+  height: 24px;
   color: #768e96;
 }
 .records-page .positive {

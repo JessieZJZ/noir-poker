@@ -69,6 +69,23 @@ export function createSettlementLayout(arena, { observe = true } = {}) {
     // Reads precede writes; unchanged amounts reuse their measured font width.
     for (const { stack, scale } of measured) stack.style.setProperty('--stack-width-scale', scale);
   };
+  const fitNames = () => {
+    const arenaScale = arena.getBoundingClientRect().width / arena.offsetWidth || 1;
+    const fitted = [...arena.querySelectorAll('.seat-name-label')].map((label) => {
+      const range = document.createRange();
+      range.selectNodeContents(label);
+      const transform = getComputedStyle(label).transform;
+      const currentScale = transform === 'none' ? 1 : new DOMMatrix(transform).a;
+      const width = range.getBoundingClientRect().width / arenaScale / currentScale;
+      const scale = numericWidthScale(width, label.clientWidth - 0.25);
+      const fit = !label.parentElement.querySelector('.seat-peek') && scale >= 0.75 && scale < 1;
+      return { label, scale: fit ? scale : 1, fit };
+    });
+    for (const { label, scale, fit } of fitted) {
+      label.dataset.nameFit = String(fit);
+      label.style.setProperty('--name-width-scale', scale);
+    }
+  };
   const center = arena.querySelector('.table-center');
   let frame = null;
   function update() {
@@ -164,6 +181,7 @@ export function createSettlementLayout(arena, { observe = true } = {}) {
       : railLayout({
           width: Math.min(arena.clientWidth, arena.clientHeight * 1.45),
           height: arena.clientHeight,
+          gap: 16,
           // Bound the oval by available height, so wide windows retain a
           // rounded table and readable cards instead of an empty wide ellipse.
           proportional: true,
@@ -261,6 +279,7 @@ export function createSettlementLayout(arena, { observe = true } = {}) {
       transform: 'none',
     });
     fitNumbers();
+    fitNames();
   }
   if (observe) {
     const observer = new ResizeObserver(() => {

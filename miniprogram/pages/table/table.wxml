@@ -117,11 +117,17 @@
             class="seat-body"
             style="width: {{profileWidth}}px; height: {{profileHeight}}px;"
             ><view class="seat-name"
-              ><text class="seat-name-label">{{item.name}}</text
+              ><text
+                class="seat-name-label {{item.nameFit && !done ? 'is-name-fitted' : ''}}"
+                style="--name-width-scale: {{item.nameWidthScale || 1}};"
+                >{{item.name}}</text
+              ><text class="seat-name-measure" data-id="{{item.id}}" aria-hidden="true"
+                >{{item.name}}</text
               ><text
                 class="position {{item.position === 'SB' ? 'position-sb' : item.position === 'BB' ? 'position-bb' : ''}}"
+                data-id="{{item.id}}"
                 >{{item.position}}</text
-              ><view class="seat-eye-slot"
+              ><view wx:if="{{done}}" class="seat-eye-slot"
                 ><button
                   hover-class="none"
                   wx:if="{{done}}"

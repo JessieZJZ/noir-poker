@@ -16,6 +16,7 @@
   min-width: var(--profile-width, 128px);
   max-width: var(--profile-width, 128px);
   padding: var(--profile-padding, 7px);
+  padding-top: calc(var(--profile-padding, 7px) + 1px);
 }
 .game-surface .arena[data-player-count] .seat .seat-profile strong {
   font-size: var(--player-name, 16px);
@@ -31,6 +32,12 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+.game-surface .arena[data-player-count] .seat .seat-name-label[data-name-fit='true'] {
+  overflow: visible;
+  text-overflow: clip;
+  transform: scaleX(var(--name-width-scale, 1));
+  transform-origin: left center;
 }
 .game-surface .arena[data-player-count] .seat .position-badge {
   flex: none;
@@ -108,6 +115,16 @@ html .game-surface .arena[data-player-count] .seat .seat-profile .seat-style-lab
 }
 .game-surface .arena[data-player-count] .hero-name strong .position-badge {
   font-size: var(--hero-position, 16px);
+}
+.game-surface .arena[data-player-count] .position-badge {
+  padding: 1px 5px;
+  line-height: 1.1;
+}
+.game-surface .arena[data-player-count] .position-badge[data-position='BTN'] {
+  padding-inline: 6px;
+}
+.game-surface .arena[data-player-count] .seat .position-badge {
+  padding-inline: 3px;
 }
 .game-surface .arena[data-player-count] .seat .seat-profile {
   grid-template-rows: var(--player-name, 20px) auto var(--player-stack, 20px);

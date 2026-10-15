@@ -415,13 +415,14 @@ test('portrait tablets use the open table width for larger readable contents', a
             viewport: document.querySelector('.table-viewport').clientWidth,
           };
         });
-        // The PC/tablet artwork cap is intentional; fitting a 94px face may
-        // render below the former 84px minimum while remaining readable.
+        // The cap stays fixed; crowded neighbors can require a smaller face.
+        // Keep its aspect ratio and a readable proportion to the public cards.
         return (
           measured.board >= 72 &&
-          measured.hero >= 70 &&
+          measured.hero >= Math.max(60, Math.min(70, measured.board * 0.75)) &&
           measured.heroWidth <= 94 &&
-          measured.heroHeight === 136 &&
+          measured.heroHeight <= 136 &&
+          Math.abs(measured.heroHeight - (measured.heroWidth * 136) / 94) <= 1 &&
           measured.heroWidth === measured.sharedHeroWidth &&
           measured.heroHeight === measured.sharedHeroHeight &&
           measured.profile >= 118 &&

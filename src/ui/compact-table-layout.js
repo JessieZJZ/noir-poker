@@ -27,9 +27,8 @@ export function compactTableLayout({
         ? 66
         : 61;
   let cardHeight = cardWidth * 1.44;
-  const tallNarrow = width <= 360 && !short && count >= 7;
-  let heroWidth = tablet ? 94 : tallNarrow ? 94 : 72;
-  let heroHeight = tablet ? 136 : tallNarrow ? 136 : 104;
+  let heroWidth = tablet ? 94 : 72;
+  let heroHeight = tablet ? 136 : 104;
   const heroSlotHeight = heroHeight;
   const captionWidth = tablet ? (large ? 180 : 160) : count <= 6 ? 116 : 112;
   const profileWidth = tablet
@@ -48,7 +47,7 @@ export function compactTableLayout({
     tablet ? (large ? 120 : 100) : short ? 87 : 82,
   );
   const textMetrics = {
-    'player-name': large ? 28 : tablet ? 24 : short ? 21 : 19,
+    'player-name': large ? 28 : tablet ? 24 : short ? 22 : 20,
     'player-stack': large ? 28 : tablet ? 24 : short ? 21 : 19,
     'player-persona': large ? 23 : tablet ? 20 : short ? 18 : 17,
     'player-position': large ? 20 : tablet ? 17 : short ? 18 : 17,
@@ -111,14 +110,15 @@ export function compactTableLayout({
       ],
     };
   };
-  let fitted = railLayout({
+  const railOptions = {
     width:
       availableWidth ?? Math.round(Math.max(1, width - (width <= 600 ? 18 : width * 0.06 + 2))),
     height: Math.max(1, height),
-    alternatives: count === 9 ? [undefined] : undefined,
+    gap: 16,
+    alternatives: count === 5 ? [[160, 230, 310, 380]] : count === 9 ? [undefined] : undefined,
     angles:
       count === 5
-        ? [160, 230, 310, 380]
+        ? [180, 240, 300, 360]
         : count === 9
           ? tablet
             ? [120, 160, 200, 240, 300, 340, 380, 420]
@@ -150,19 +150,51 @@ export function compactTableLayout({
       ],
     })),
     hero: { width: Math.round(heroWidth * 2 + 7), height: heroFoot },
-    publicRows: [false, true].map((twoRows) => publicRow(cardWidth, twoRows)),
+  };
+  // Compare the readable card faces after each row arrangement has used its
+  // available felt. Choosing rows before growth can leave a tiny single row
+  // beside much larger hero cards, even when two rows have ample space.
+  const candidates = [false, true].map((twoRows) => {
+    const layout = railLayout({
+      ...railOptions,
+      publicRows: [publicRow(cardWidth, twoRows)],
+    });
+    const grown = growPublicCards(layout, { cardWidth, createRow: publicRow, gap: 16 });
+    return { ...grown, scale: Math.min(1, height / layout.arenaHeight) };
   });
-  const grown = growPublicCards(fitted, { cardWidth, createRow: publicRow });
-  fitted = grown.layout;
-  cardWidth = grown.cardWidth;
-  cardHeight = cardWidth * 1.44;
+  const [single, double] = candidates;
+  const readableWidth = tablet ? 52 : Math.max(36, Math.min(44, width * 0.11));
+  const useDouble =
+    single.cardWidth * single.scale < readableWidth &&
+    double.cardWidth * double.scale > single.cardWidth * single.scale * 1.1 &&
+    double.scale >= single.scale * 0.9;
+  const chosen = useDouble ? double : single;
+  let fitted = chosen.layout;
+  cardWidth = chosen.cardWidth;
   const heroCards = growHeroCards(fitted, {
     width: heroWidth,
     height: heroHeight,
     maxGrowth: tablet ? 1 : 1.4,
+    minimumWidth: heroWidth * 0.65,
+    maximumWidth: cardWidth * 1.25,
+    gap: 18,
   });
   heroWidth = heroCards.width;
   heroHeight = heroCards.height;
+  // If side players constrain the hero, keep the public faces in proportion
+  // too. Reuse the existing clear footprint; never shrink the entire table.
+  const publicLimit = Math.floor(heroWidth * 1.35);
+  if (cardWidth > publicLimit) {
+    const balanced = growPublicCards(fitted, {
+      cardWidth: publicLimit,
+      maximumWidth: publicLimit,
+      createRow: publicRow,
+      gap: 16,
+    });
+    fitted = balanced.layout;
+    cardWidth = balanced.cardWidth;
+  }
+  cardHeight = cardWidth * 1.44;
   textMetrics['public-card-width'] = cardWidth;
   textMetrics['hero-card-width'] = heroWidth;
   textMetrics['hero-card-height'] = heroHeight;

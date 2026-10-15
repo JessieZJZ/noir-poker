@@ -8,7 +8,7 @@ test.beforeEach(async ({ page }) => {
   await page.mouse.move(0, 0);
 });
 
-test('automatic guide labels roll downward in a clipped stable slot and arrows have circles', async ({
+test('automatic guide labels roll downward in a clipped stable slot and arrows have no circles', async ({
   page,
 }) => {
   const trigger = page.locator('#rules-button');
@@ -45,7 +45,7 @@ test('automatic guide labels roll downward in a clipped stable slot and arrows h
   expect(motion.outgoing.transforms).toEqual(['translateY(0px)', 'translateY(110%)']);
   expect(motion.incoming.hidden).toBe('false');
   expect(motion.outgoing.hidden).toBe('true');
-  expect(motion.circle).toEqual({ radius: '50%', border: 1 });
+  expect(motion.circle).toEqual({ radius: '0px', border: 0 });
   await page.clock.runFor(400);
   await expect(trigger).not.toHaveAttribute('data-animating');
   const after = await trigger.boundingBox();

@@ -1,6 +1,9 @@
 // Grow cards into unused felt space after fitting the players. The arena and
 // every player stay fixed, so larger cards cannot shrink text or move controls.
-export function growPublicCards(layout, { cardWidth, createRow, gap = 12.5 }) {
+export function growPublicCards(
+  layout,
+  { cardWidth, createRow, gap = 12.5, maximumWidth = Infinity },
+) {
   const parts = (box) =>
     (box.parts ?? [{ left: 0, top: 0, width: box.width, height: box.height }]).map((part) => ({
       ...part,
@@ -42,7 +45,7 @@ export function growPublicCards(layout, { cardWidth, createRow, gap = 12.5 }) {
     );
   };
   let low = cardWidth;
-  let high = Math.max(low, Math.floor(layout.table.width));
+  let high = Math.max(low, Math.floor(Math.min(layout.table.width, maximumWidth)));
   while (low < high) {
     const middle = Math.ceil((low + high) / 2);
     if (safe(place(middle))) low = middle;

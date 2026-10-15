@@ -292,6 +292,7 @@ test('larger rotated hero faces use free felt space without covering cards, play
         const rank = rect(arena.querySelector('.hero-rank-slot'));
         return {
           face: cards[0].offsetWidth * scale,
+          public: arena.querySelector('.board > *').offsetWidth * scale,
           slot: arena.querySelector('.hero-cards').offsetHeight,
           issues: cards.flatMap((card) => {
             const box = rect(card);
@@ -315,8 +316,9 @@ test('larger rotated hero faces use free felt space without covering cards, play
         };
       });
       expect(metric.issues).toEqual([]);
-      if (size.width === 390 && count === 5) expect(metric.face).toBeGreaterThanOrEqual(66);
-      if (size.width === 320 && count === 9) expect(metric.face).toBeGreaterThanOrEqual(34);
+      expect(metric.face).toBeGreaterThanOrEqual(size.height <= 600 ? 27 : 32);
+      expect(metric.face / metric.public).toBeLessThanOrEqual(1.25);
+      expect(metric.public / metric.face).toBeLessThanOrEqual(1.4);
       if (size.width <= 390) expect(metric.slot).toBe(104);
       measurements.push({ ...size, count, ...metric });
     }

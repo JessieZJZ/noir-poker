@@ -38,3 +38,22 @@ test('larger public cards preserve the 32px gap before the raised hero artwork',
   assert.ok(grown.width > 72 && grown.width < 100);
   assert.ok(grown.faces.every((face) => face.top >= 430 + 32));
 });
+
+test('crowded neighboring profiles can shrink artwork without moving its fixed bottom', () => {
+  const original = layout([{ left: 90, top: 470, width: 132, height: 140 }]);
+  const faces = growHeroCards(original, {
+    width: 72,
+    height: 104,
+    minimumWidth: 36,
+    gap: 18,
+  });
+  assert.ok(faces.width < 72 && faces.width >= 36);
+  assert.ok(faces.faces[0].left >= 222 + 18);
+  for (const face of faces.faces)
+    assert.ok(Math.abs(face.top + face.height - (490 + 104 - 1)) < 1e-9);
+});
+
+test('public card proportions bound hero growth even when the felt has unused room', () => {
+  const faces = growHeroCards(layout(), { width: 72, height: 104, maximumWidth: 75 });
+  assert.equal(faces.width, 75);
+});

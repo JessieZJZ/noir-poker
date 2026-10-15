@@ -1,6 +1,9 @@
 // Keep the bottom card/identity slots fixed while artwork grows upward into
 // the felt. Test the rotated faces, rather than their smaller unrotated boxes.
-export function growHeroCards(layout, { width, height, gap = 8, maxGrowth = 1.4 }) {
+export function growHeroCards(
+  layout,
+  { width, height, gap = 8, maxGrowth = 1.4, minimumWidth = width, maximumWidth = Infinity },
+) {
   const angle = 4;
   const radians = (angle * Math.PI) / 180;
   const cx = layout.hero.left + layout.hero.width / 2;
@@ -46,8 +49,10 @@ export function growHeroCards(layout, { width, height, gap = 8, maxGrowth = 1.4 
             part.top + part.height + gap <= face.top,
         ),
     );
-  let low = width;
-  let high = Math.floor(width * maxGrowth);
+  // A crowded rail can require smaller artwork. The original slot and card
+  // bottom remain fixed, so shrinking never moves identity or action controls.
+  let high = Math.max(1, Math.floor(Math.min(width * maxGrowth, maximumWidth)));
+  let low = Math.max(1, Math.min(high, Math.floor(minimumWidth)));
   while (low < high) {
     const middle = Math.ceil((low + high) / 2);
     if (safe(measure(middle))) low = middle;

@@ -51,9 +51,18 @@ async function expectReadableTable(page, { publicWidth, heroWidth }) {
             issues.push(
               `public rows ${publicRows.map((row) => row.count)} instead of ${expectedRows}`,
             );
+          // Dense compact tables trade some hero size for clear neighboring
+          // seats. Preserve an absolute readable floor and its relation to the
+          // enlarged public cards; public readability is never reduced.
+          const heroMinimum = compact
+            ? Math.max(
+                32,
+                Math.min(heroWidth, (publicPositions[0]?.offsetWidth || 0) * scale * 0.7),
+              )
+            : heroWidth;
           for (const [cards, minimum, label] of [
             [publicCards, publicWidth, 'public'],
-            [heroCards, heroWidth, 'hero'],
+            [heroCards, heroMinimum, 'hero'],
           ]) {
             if (!cards.length) issues.push(`${label} cards missing`);
             for (const card of cards) {
@@ -268,7 +277,7 @@ test('inspection follows the position badge and crown JJ keep clear of the hint 
     for (const count of [5, 9]) {
       await page.evaluate((count) => window.qa.heroTurn(count), count);
       const before = await page
-        .locator('.seat-inspect-slot')
+        .locator('.seat-profile')
         .evaluateAll((rows) =>
           rows.map((row) => ({ width: row.offsetWidth, height: row.offsetHeight })),
         );
@@ -323,7 +332,7 @@ test('inspection follows the position badge and crown JJ keep clear of the hint 
         )
         .toEqual([]);
       const after = await page
-        .locator('.seat-inspect-slot')
+        .locator('.seat-profile')
         .evaluateAll((rows) =>
           rows.map((row) => ({ width: row.offsetWidth, height: row.offsetHeight })),
         );

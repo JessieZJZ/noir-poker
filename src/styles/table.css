@@ -808,7 +808,7 @@
   height: var(--seat-eye-size);
 }
 .seat-inspect-slot:empty {
-  visibility: hidden;
+  display: none;
 }
 .seat-peek {
   display: inline-grid;

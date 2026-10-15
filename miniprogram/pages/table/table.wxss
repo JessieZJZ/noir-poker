@@ -1561,6 +1561,13 @@
 .web-phone-layout .hero-identity .position {
   font-size: var(--hero-position);
 }
+.web-phone-layout .position {
+  padding: 1px 5px;
+  line-height: 1.1;
+}
+.web-phone-layout .seat .position {
+  padding-inline: 3px;
+}
 .web-phone-layout .hero-action {
   height: var(--hero-action-height);
   line-height: 1.2;
@@ -1575,9 +1582,28 @@
 .web-phone-layout .seat .seat-body > .stack {
   line-height: 1;
 }
+.web-phone-layout .seat .seat-name {
+  position: relative;
+}
+.web-phone-layout .seat .seat-name-measure {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: max-content;
+  white-space: nowrap;
+  visibility: hidden;
+  pointer-events: none;
+}
+.web-phone-layout .seat .seat-name-label.is-name-fitted {
+  overflow: visible;
+  text-overflow: clip;
+  transform: scaleX(var(--name-width-scale, 1));
+  transform-origin: left center;
+}
 .web-phone-layout .seat .seat-body {
   grid-template-rows: var(--player-name) auto var(--player-stack);
   padding: var(--profile-padding);
+  padding-top: calc(var(--profile-padding) + 1px);
 }
 .web-phone-layout .seat .persona {
   height: calc(var(--player-persona) * 1.15 + 4px);

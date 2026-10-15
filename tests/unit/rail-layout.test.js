@@ -112,3 +112,40 @@ test('tablet-sized PC windows cap hero artwork independently of pointer type', (
     }
   }
 });
+
+test('crowded narrow phones use two rows for readable community cards and balanced hero faces', () => {
+  for (const width of [320, 390]) {
+    const fit = compactTableLayout({
+      width,
+      height: 634,
+      displayHeight: 900,
+      seats: Array.from({ length: 8 }, (_, i) => ({ id: i + 1 })),
+    });
+    assert.equal(fit.twoRows, true);
+    assert.ok(fit.cardWidth * fit.arenaScale >= 40);
+    assert.ok(fit.heroWidth <= fit.cardWidth * 1.25);
+    for (const face of fit.heroCardGeometry.faces)
+      for (const seat of fit.positioned)
+        for (const part of seat.parts) {
+          const left = seat.left + part.left,
+            top = seat.top + part.top;
+          assert.ok(
+            face.left + face.width + 18 <= left ||
+              left + part.width + 18 <= face.left ||
+              face.top + face.height + 18 <= top ||
+              top + part.height + 18 <= face.top,
+          );
+        }
+  }
+});
+
+test('a roomy table keeps five readable community cards in one row', () => {
+  const fit = compactTableLayout({
+    width: 1032,
+    height: 1000,
+    displayHeight: 1376,
+    seats: Array.from({ length: 8 }, (_, i) => ({ id: i + 1 })),
+  });
+  assert.equal(fit.twoRows, false);
+  assert.ok(fit.cardWidth * fit.arenaScale >= 70);
+});

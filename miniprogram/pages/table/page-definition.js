@@ -427,6 +427,9 @@ module.exports = {
             ...seat,
             rankLift: view.hand === this.data.hand ? before?.rankLift || 0 : 0,
             stackWidthScale: before?.stack === seat.stack ? before.stackWidthScale || 1 : 1,
+            nameFit: !view.done && before?.name === seat.name ? before.nameFit || false : false,
+            nameWidthScale:
+              !view.done && before?.name === seat.name ? before.nameWidthScale || 1 : 1,
           };
         }),
         boardSlots: Array.from(
@@ -450,7 +453,9 @@ module.exports = {
       dataset: true,
       computedStyle: ['font-size', 'font-family', 'font-weight'],
     });
-    query.exec(([words, ranks, numbers]) => {
+    query.selectAll('.seat-name-measure').fields({ rect: true, size: true, dataset: true });
+    query.selectAll('.seat-name .position').fields({ rect: true, size: true, dataset: true });
+    query.exec(([words, ranks, numbers, names, positions]) => {
       if (ticket !== this._rankEpoch || this._hidden || this._destroyed) return;
       const bottoms = new Map();
       for (const word of words || [])
@@ -494,6 +499,31 @@ module.exports = {
         const fitted = numericWidthScale(width, available);
         if (Math.abs(fitted - (seat.stackWidthScale || 1)) > 0.0001)
           patch[`phoneSeats[${index}].stackWidthScale`] = fitted;
+      }
+      if (!this.data.done) {
+        for (const name of names || []) {
+          const index = this.data.phoneSeats.findIndex(
+            (seat) => seat.id === Number(name.dataset.id),
+          );
+          const position = positions?.find(
+            (badge) => Number(badge.dataset.id) === Number(name.dataset.id),
+          );
+          if (index < 0 || !position || !(name.width > 0)) continue;
+          const width =
+            this.data.profileWidth -
+            metrics['profile-padding'] * 2 -
+            2 -
+            position.width / scale -
+            3 -
+            0.25;
+          const fitted = numericWidthScale(name.width / scale, width);
+          const fit = fitted >= 0.75 && fitted < 1;
+          const actual = fit ? fitted : 1;
+          const seat = this.data.phoneSeats[index];
+          if (seat.nameFit !== fit) patch[`phoneSeats[${index}].nameFit`] = fit;
+          if (Math.abs((seat.nameWidthScale || 1) - actual) > 0.0001)
+            patch[`phoneSeats[${index}].nameWidthScale`] = actual;
+        }
       }
       if (Object.keys(patch).length) this.setData(patch);
     });

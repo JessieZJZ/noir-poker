@@ -125,8 +125,9 @@ window.qa = {
     render();
     return publicState();
   },
-  heroTurn(count = 6, unequal = false) {
+  heroTurn(count = 6, unequal = false, dealer) {
     fixtureGame(count, true);
+    if (Number.isInteger(dealer)) game.dealer = dealer;
     if (unequal) game.players.slice(1).forEach((p) => (p.stack = 100 + p.id * 100));
     startHand(game);
     render();
