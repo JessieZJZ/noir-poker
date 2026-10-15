@@ -28,6 +28,8 @@ NOIR_WECHAT_APP_ID=wx你的AppID npm run wechat:open
 
 `npm run dev` 同时运行 Vite 和小程序监听器。保存 `src/`、`public/`、`miniprogram/`、`scripts/`、`mobile/` 或构建配置后，小程序重新生成到同一个导入目录；开发者工具读取更新后的文件。单独监听可运行 `npm run wechat:watch`。`npm run build` 的 `postbuild` 也自动生成小程序，`npm run platforms:sync` 一次同步小程序与 iOS/Android 最新资源。
 
+微信开发者工具里的“编译”只编译已导入的 `.artifacts/wechat`，不会执行仓库的源码生成步骤。只修改 `src/` 或 `miniprogram/` 而未重新生成，该按钮仍会读取旧版本。多工作目录并行开发时，监听器必须从当前工程对应的 checkout 启动；另一个 worktree 的监听器不会更新此目录。暂停测试验收时仍可单独生成预览资源，不需要运行 E2E。若重建后工具仍显示旧文件，只清理该工程的编译缓存并重新打开，保留存储与本机 IDE 偏好。
+
 每次生成都从当前共享源码转译 CommonJS/ES2019，把引用的 JSON 数据内嵌到 JavaScript 模块，保留共享 JavaScript 模块之间的引用，压缩并裁切全部本地头像，生成本地声音，写入文件清单和源码 SHA-256。小程序运行时无需 Node 的 JSON 模块加载器。`wechat:verify` 拒绝过期源码、损坏文件、缺失头像或不一致的 AppID。主包采用 2 MiB 的保守预算，超出就阻止构建，不把图片改为在线地址。
 
 `miniprogram/project.config.json` 与 `project.private.config.json` 是本机 IDE 状态，忽略 Git 跟踪及模板源码指纹；项目配置由构建器生成，私有偏好从目标工程保留，不进入运行文件清单。调整 IDE 偏好不会让共享源码或运行资源被误判为过期。
