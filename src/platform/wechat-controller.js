@@ -6,7 +6,7 @@ import {
   stakesFromSmallBlind,
   sameStakes,
 } from '../engine/stakes.js';
-import { createHeroTurnCue } from '../ui/hero-turn.js';
+import { createHeroTurnCue, createHeroTurnAttention } from '../ui/hero-turn.js';
 import { SEAT_ANCHORS } from '../ui/seat-geometry.js';
 import { explainOpponent } from '../review/opponents.js';
 import { publicHistory } from '../review/narrative.js';
@@ -88,6 +88,7 @@ export function createWechatController({
   sound = () => {},
   wager = () => {},
   notifyTurn = () => {},
+  publishAttention = () => {},
   schedule = setTimeout,
   unschedule = clearTimeout,
   readOnlyAttempt = null,
@@ -116,6 +117,11 @@ export function createWechatController({
     portrait: p.id === 'balanced' ? '' : `/assets/portraits/${p.id}.jpg`,
   }));
   const turnCue = createHeroTurnCue(notifyTurn);
+  const attention = createHeroTurnAttention({
+    publish: publishAttention,
+    schedule,
+    unschedule,
+  });
   let game = readOnlyAttempt
       ? JSON.parse(JSON.stringify(readOnlyAttempt.snapshot))
       : resumed || newGame(settings.playerCount, settings.stakes),
@@ -300,7 +306,13 @@ export function createWechatController({
       enabled: legal.enabled,
       active: active && !disposed && settings.sound,
     });
+    attention.update({
+      key: `${game.hand}:${game.replayAttempt || 0}:${game.street}:${game.history.length}`,
+      enabled: legal.enabled,
+      active: active && !disposed,
+    });
     publish({
+      turnPhase: attention.phase,
       hand: game.hand,
       sessionNumber: readOnlySessionNumber || records?.sessionNumber() || 1,
       recordsError: records?.error() || '',
@@ -387,8 +399,8 @@ export function createWechatController({
             ? '已全下，等待摊牌。'
             : legal.enabled
               ? legal.canCheck
-                ? '轮到你了，可以过牌或主动下注。'
-                : `轮到你了，跟注需要 ${format(legal.callAmount)} 筹码。${legal.raiseReopened ? '' : '本轮加注权未重开，仅可跟注或弃牌。'}`
+                ? '可以过牌或主动下注。'
+                : `跟注需要 ${format(legal.callAmount)} 筹码。${legal.raiseReopened ? '' : '本轮加注权未重开，仅可跟注或弃牌。'}`
               : `${game.players[game.actor]?.name || '对手'} 正在思考，请稍候。`,
       profiles,
       settings: { ...settings, assignments: { ...settings.assignments } },
@@ -466,6 +478,7 @@ export function createWechatController({
   }
   function freshHand() {
     if (readOnlyAttempt || disposed) return;
+    attention.reset();
     turnCue.reset();
     peeked.clear();
     cancelBots();
@@ -583,6 +596,7 @@ export function createWechatController({
     destroy() {
       disposed = true;
       active = false;
+      attention.reset();
       cancelBots();
       cancelReview();
       cancelHint();
@@ -621,13 +635,18 @@ export function createWechatController({
                 )
               : null;
       if (target === null) return;
+      attention.engage();
       raiseTo = legalRaiseTo(target, legal);
       render();
+    },
+    engageTurn() {
+      attention.engage();
     },
     setRaise(value) {
       if (readOnlyAttempt) return;
       const legal = legalActions(game, 0);
       if (legal.enabled && legal.canRaise) {
+        attention.engage();
         raiseTo = legalRaiseTo(Number(value), legal);
         render();
       }
@@ -644,6 +663,7 @@ export function createWechatController({
     retry() {
       peeked.clear();
       if (readOnlyAttempt || !canRestartHand(game)) return false;
+      attention.reset();
       turnCue.reset();
       cancelBots();
       cancelReview();

@@ -4,7 +4,7 @@ import {
   stakesFromSmallBlind,
   SMALL_BLIND_INPUT_ERROR,
 } from '../engine/stakes.js';
-import { createHeroTurnCue } from './hero-turn.js';
+import { createHeroTurnCue, createHeroTurnAttention } from './hero-turn.js';
 import { notifyHeroTurn } from '../platform/haptics.js';
 import { createDialogScrollLock } from './dialog-scroll-lock.js';
 import { soundSamples, SOUND_SAMPLE_RATE, createSoundOutput } from './sound-cues.js';
@@ -259,6 +259,23 @@ function seatAction(p, options) {
   return renderSeatAction(game, p, options);
 }
 const heroTurnCue = createHeroTurnCue(notifyHeroTurn);
+const heroTurnAttention = createHeroTurnAttention({
+  publish(phase) {
+    for (const element of [$('.hero-cards-wrap'), $('.action-dock')]) {
+      element.classList.toggle('turn-attention', !!phase);
+      element.classList.toggle('turn-enter', phase === 'enter');
+      element.classList.toggle('turn-reminder', phase === 'reminder');
+      element.dataset.turnPhase = phase;
+    }
+  },
+});
+function syncTurnAttention() {
+  heroTurnAttention.update({
+    key: `${epoch}:${game.hand}:${game.replayAttempt || 0}:${game.street}:${game.history.length}`,
+    enabled: legalActions(game, 0).enabled,
+    active: activityClock.active && !document.hidden,
+  });
+}
 function render() {
   gameRecords.capture(game);
   recordsView.refresh();
@@ -456,6 +473,8 @@ function render() {
     active:
       activityClock.active && (!document.documentElement.classList.contains('native-app') || sound),
   });
+  syncTurnAttention();
+  $('#turn-prompt').hidden = !legal.enabled;
   for (const b of [$('#fold-button'), $('#call-button')]) b.disabled = !legal.enabled;
   $('#raise-button').disabled = !legal.enabled || !legal.canRaise;
   $('#bet-slider').disabled = !legal.enabled || !legal.canRaise;
@@ -487,8 +506,8 @@ function render() {
     setLocalizedText(
       $('#decision-text'),
       legal.canCheck
-        ? '轮到你了，可以过牌或主动下注。'
-        : `轮到你了，跟注需要 ${format(legal.callAmount)} 筹码。${legal.raiseReopened ? '' : '本轮加注权未重开，仅可跟注或弃牌。'}`,
+        ? '可以过牌或主动下注。'
+        : `跟注需要 ${format(legal.callAmount)} 筹码。${legal.raiseReopened ? '' : '本轮加注权未重开，仅可跟注或弃牌。'}`,
     );
   } else if (done) setLocalizedText($('#decision-text'), '');
   else if (game.phase === 'between')
@@ -707,6 +726,7 @@ async function continueDeal() {
   }
 }
 function nextHand() {
+  heroTurnAttention.reset();
   cancelSoundEffects();
   heroTurnCue.reset();
   cancelSoundEffects();
@@ -741,6 +761,7 @@ function nextHand() {
 }
 function retryHand() {
   if (!canRestartHand(game)) return false;
+  heroTurnAttention.reset();
   heroTurnCue.reset();
   cancelSoundEffects();
   botWait = null;
@@ -847,6 +868,7 @@ $('#restart-hand-button').onclick = retryHand;
 $('#bet-slider').oninput = (e) => {
   const legal = legalActions(game, 0);
   if (!legal.enabled || !legal.canRaise) return;
+  heroTurnAttention.engage();
   bet = legalRaiseTo(Number(e.target.value), legal);
   updateBet();
 };
@@ -859,6 +881,7 @@ document.querySelectorAll('[data-preset]').forEach(
         button.dataset.preset,
       );
       if (target === null) return;
+      heroTurnAttention.engage();
       bet = target;
       $('#bet-slider').value = bet;
       updateBet();
@@ -1243,7 +1266,9 @@ function syncActivity() {
   const active = appActive && !isOrientationBlocked();
   hintNotification.setActive(active && !document.hidden);
   if (active && !document.hidden && !compactCoach.matches) updateCoach(true);
-  if (!activityClock.setActive(active)) return;
+  const changed = activityClock.setActive(active);
+  syncTurnAttention();
+  if (!changed) return;
   if (!active) {
     clearTimeout(timer);
     cancelSoundEffects();
@@ -1257,17 +1282,22 @@ document.addEventListener('noir:app-state', ({ detail }) => {
 });
 document.addEventListener('noir:orientation-state', syncActivity);
 document.addEventListener('visibilitychange', () => {
+  syncTurnAttention();
   hintNotification.setActive(activityClock.active && !document.hidden);
   if (activityClock.active && !document.hidden && !compactCoach.matches) updateCoach(true);
 });
 window.addEventListener('pagehide', (event) => {
+  heroTurnAttention.reset();
   if (event.persisted) return;
   compactCoach.removeEventListener('change', changeCoachLayout);
   hintNotification.destroy();
   hintMarquee.destroy();
 });
 window.addEventListener('pageshow', (event) => {
-  if (event.persisted) updateCoach(true);
+  if (event.persisted) {
+    syncTurnAttention();
+    updateCoach(true);
+  }
 });
 nextHand();
 recordsView.initialize();

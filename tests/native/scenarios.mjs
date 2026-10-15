@@ -459,6 +459,181 @@ export async function nativeScenarios(app) {
     assert.equal(bridge.status, 'resolved', bridge.error);
     return bridge;
   });
+  await check('hero-turn-visual-attention', async () => {
+    await app.evaluate(() => {
+      window.__turnAttentionPhases = [];
+      window.__turnAttentionLifecycle = [];
+      const dock = document.querySelector('.action-dock');
+      document.addEventListener('noir:app-state', ({ detail }) => {
+        window.__turnAttentionLifecycle.push({
+          active: detail.active,
+          phase: dock.dataset.turnPhase,
+        });
+      });
+      new MutationObserver(() => {
+        window.__turnAttentionPhases.push({
+          phase: dock.dataset.turnPhase,
+          at: Date.now(),
+          frame: [...document.querySelectorAll('#hero-cards .playing-card')].map((card) => {
+            const style = getComputedStyle(card, '::before');
+            return {
+              name: style.animationName,
+              duration: style.animationDuration,
+              iterations: style.animationIterationCount,
+            };
+          }),
+        });
+      }).observe(dock, { attributes: true, attributeFilter: ['data-turn-phase'] });
+    });
+    // Leave any existing decision so entry and the eight-second reminder are
+    // observed from a fresh, real turn in the installed production bundle.
+    const initial = await app.state();
+    if (initial.legal.enabled) await app.click('#call-button');
+    await app.waitFor(
+      async () => {
+        const state = await app.state();
+        if (state.phase === 'done') {
+          await app.click('#next-button');
+          return false;
+        }
+        return state.legal.enabled;
+      },
+      90000,
+      'A fresh hero decision must become available',
+    );
+    // Read the first turn frame at its actual DOM transition so a slow driver
+    // does not confuse the controller phase with the persistent border motion.
+    const entry = await app.evaluate(
+      () => window.__turnAttentionPhases.find((entry) => entry.phase === 'enter')?.frame,
+    );
+    assert.deepEqual(entry, [
+      { name: 'turn-glow', duration: '2s', iterations: 'infinite' },
+      { name: 'turn-glow', duration: '2s', iterations: 'infinite' },
+    ]);
+    await app.sleep(850);
+    await app.screenshot('hero-turn-visible');
+    await app.waitFor(
+      () =>
+        app.evaluate(() => document.querySelector('.action-dock').dataset.turnPhase === 'waiting'),
+      5000,
+      'Entry must settle into a steady turn state',
+    );
+    const read = () =>
+      app.evaluate(() => {
+        const rect = (element) => {
+          const { x, y, width, height } = element.getBoundingClientRect();
+          return { x, y, width, height };
+        };
+        const card = document.querySelector('#hero-cards .playing-card');
+        const border = getComputedStyle(card, '::before');
+        return {
+          phase: document.querySelector('.action-dock').dataset.turnPhase,
+          hero: document.querySelector('.hero-cards-wrap').dataset.turnPhase,
+          prompt: document.querySelector('#turn-prompt').textContent.trim(),
+          promptVisible: !document.querySelector('#turn-prompt').hidden,
+          lineOpacity: Number(getComputedStyle(document.querySelector('.turn-line')).opacity),
+          lineHeight: getComputedStyle(document.querySelector('.turn-line')).height,
+          promptOpacity: Number(getComputedStyle(document.querySelector('#turn-prompt')).opacity),
+          frameOpacity: Number(border.opacity),
+          frameBorder: border.borderTopColor,
+          frameBackground: border.backgroundImage,
+          frameRadius: border.borderTopLeftRadius,
+          cardRadius: getComputedStyle(card).borderTopLeftRadius,
+          handBorders: [...document.querySelectorAll('#hero-cards .playing-card')].map((card) => {
+            const style = getComputedStyle(card, '::before');
+            return { name: style.animationName, iterations: style.animationIterationCount };
+          }),
+          railPulses: ['::before', '::after'].map((pseudo) => {
+            const style = getComputedStyle(document.querySelector('.turn-line'), pseudo);
+            return { name: style.animationName, duration: style.animationDuration };
+          }),
+          attentionMotion: ['.turn-line', '#turn-prompt'].map((selector) => {
+            const style = getComputedStyle(document.querySelector(selector));
+            return { name: style.animationName, duration: style.animationDuration };
+          }),
+          boxes: [
+            ...document.querySelectorAll('#hero-cards .playing-card, .action-buttons button'),
+          ].map(rect),
+        };
+      });
+    await app.sleep(750); // Finish the independent hand-deal animation, if this is a new hand.
+    const before = await read();
+    assert.equal(before.hero, 'waiting');
+    assert.equal(before.promptVisible, true);
+    assert.equal(before.lineHeight, '2px');
+    assert.equal(before.promptOpacity, 1);
+    assert.equal(before.frameOpacity, 1);
+    assert.equal(before.frameBorder, 'rgb(110, 231, 197)');
+    assert.equal(before.frameBackground, 'none');
+    assert.equal(before.frameRadius, before.cardRadius);
+    assert.deepEqual(before.handBorders, [
+      { name: 'turn-glow', iterations: 'infinite' },
+      { name: 'turn-glow', iterations: 'infinite' },
+    ]);
+    assert.deepEqual(before.attentionMotion, [
+      { name: 'none', duration: '0s' },
+      { name: 'none', duration: '0s' },
+    ]);
+    assert.deepEqual(before.railPulses, [
+      { name: 'hero-turn-pulse-left', duration: '1.6s' },
+      { name: 'hero-turn-pulse-right', duration: '1.6s' },
+    ]);
+    await app.screenshot('hero-turn-steady');
+    const background = await app.background();
+    await app.sleep(9000);
+    assert.ok(
+      [2, 3].includes(await app.nativeState()),
+      'The turn must remain natively backgrounded',
+    );
+    const backgroundMs = performance.now() - background.startedAt;
+    assert.ok(backgroundMs >= 9000);
+    await app.activate();
+    await app.waitFor(
+      () =>
+        app.evaluate(() => document.querySelector('.action-dock').dataset.turnPhase === 'waiting'),
+      5000,
+      'Returning to the same decision must show the steady state',
+    );
+    const lifecycle = await app.evaluate(() => window.__turnAttentionLifecycle);
+    assert.ok(
+      lifecycle.some((entry) => !entry.active && entry.phase === ''),
+      'Real native background must clear visual attention',
+    );
+    await app.waitFor(
+      () =>
+        app.evaluate(() =>
+          window.__turnAttentionPhases.some((entry) => entry.phase === 'reminder'),
+        ),
+      10000,
+      'An untouched turn must remind once',
+    );
+    await app.waitFor(
+      () =>
+        app.evaluate(() => document.querySelector('.action-dock').dataset.turnPhase === 'waiting'),
+      5000,
+      'Reminder must stop pulsing',
+    );
+    const after = await read();
+    assert.deepEqual(after.boxes, before.boxes);
+    const observed = await app.evaluate(() => window.__turnAttentionPhases);
+    assert.equal(observed.filter((entry) => entry.phase === 'enter').length, 1);
+    assert.equal(observed.filter((entry) => entry.phase === 'reminder').length, 1);
+    await app.click('#call-button');
+    assert.equal(
+      await app.evaluate(() => document.querySelector('.action-dock').dataset.turnPhase),
+      '',
+    );
+    return {
+      entry,
+      before,
+      after,
+      observed,
+      lifecycle,
+      backgroundMs,
+      scope:
+        'Installed production UI; native background cancels attention and card/button geometry stays stable',
+    };
+  });
   await check('combined-feedback-preference', async () => {
     await app.evaluate(() => {
       const nativePromise = window.Capacitor.nativePromise;

@@ -46,6 +46,7 @@
     <link rel="stylesheet" href="/src/styles/desktop-play.css" />
     <link rel="stylesheet" href="/src/styles/table-density.css" />
     <link rel="stylesheet" href="/src/styles/game-records.css" />
+    <link rel="stylesheet" href="/src/styles/hero-turn.css" />
   </head>
   <body inert>
     <dialog
@@ -196,7 +197,9 @@
                 <div class="board-caption" id="board-caption">五张公共牌 · 一场好决策</div>
               </div>
               <div class="hero-area">
-                <div class="hero-cards" id="hero-cards"></div>
+                <div class="hero-cards-wrap">
+                  <div class="hero-cards" id="hero-cards"></div>
+                </div>
                 <div class="hero-rank-slot">
                   <div id="hero-hand-rank" class="hand-rank hero-hand-rank" hidden></div>
                 </div>
@@ -219,10 +222,14 @@
           </div>
           <div class="action-dock-slot">
             <div class="action-dock">
+              <span class="turn-line" aria-hidden="true"></span>
               <div class="decision-strip">
                 <span class="decision-indicator"></span
-                ><span id="decision-text" role="status" aria-live="polite"
-                  >牌桌已就绪，开始你的第一手。</span
+                ><span class="decision-copy" role="status" aria-live="polite"
+                  ><span class="turn-prompt" id="turn-prompt" hidden>轮到你行动，</span>
+                  <span id="decision-text" class="decision-detail"
+                    >牌桌已就绪，开始你的第一手。</span
+                  ></span
                 >
               </div>
               <div class="action-panel" id="action-panel">

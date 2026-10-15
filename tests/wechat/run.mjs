@@ -493,6 +493,58 @@ try {
   await invoke('resetPractice');
   await invoke('confirmReset');
   await wait((data) => data.canAct);
+  // Observe an actual decision and its delayed attention state in DevTools.
+  // Changing a harmless setting rerenders without restarting this decision.
+  report.turnAttention = { phase: (await page.data()).turnPhase };
+  assert.equal(report.turnAttention.phase, 'enter');
+  report.turnAttention.handCards = (await page.$$('.hero-cards .hero-card')).length;
+  assert.equal(report.turnAttention.handCards, 2);
+  assert.equal(await page.$('.turn-frame'), null, 'No frame encloses the entire hand');
+  // Hand outlines now belong to each card's ::before. Element.style() exposes
+  // only the host; pseudo-element motion is sampled by Web/native scenarios.
+  const prompt = await page.$('.turn-prompt');
+  assert.equal(await prompt.text(), '轮到你行动，');
+  const detail = await page.$('.decision-detail');
+  assert.equal(await prompt.style('color'), await detail.style('color'));
+  assert.equal(await prompt.style('font-weight'), await detail.style('font-weight'));
+  assert.equal(await prompt.style('animation-name'), 'none');
+  assert.equal(await prompt.style('opacity'), '1');
+  const rail = await page.$('.turn-line');
+  assert.equal(await rail.style('height'), '2px');
+  assert.equal(await rail.style('animation-name'), 'none');
+  assert.equal(await rail.style('box-shadow'), 'none');
+  // The host stays still; shared CSS animates two pseudo-element light fronts.
+  // Web/native frame sampling covers their direction; DevTools retains a capture.
+  await page.waitFor(850);
+  report.turnAttention.railHeight = await rail.style('height');
+  await mini.screenshot({ path: path.join(output, 'hero-turn-entry.png') });
+  await wait((data) => data.turnPhase === 'waiting');
+  assert.equal(await (await page.$('.turn-line')).style('animation-name'), 'none');
+  const turnGeometry = async () => ({
+    cards: await (await page.$('.hero-cards')).size(),
+    actions: await (await page.$('.action-buttons')).size(),
+  });
+  const beforeAttention = await turnGeometry();
+  await wait((data) => data.turnPhase === 'reminder', 10000);
+  await wait((data) => data.turnPhase === 'waiting');
+  assert.deepEqual(await turnGeometry(), beforeAttention);
+  await invoke('previewRaise', { detail: { value: (await page.data()).minRaise } });
+  await invoke('onHide');
+  assert.equal((await page.data()).turnPhase, '');
+  await page.waitFor(9000);
+  assert.equal((await page.data()).turnPhase, '');
+  await invoke('onShow');
+  assert.equal((await page.data()).turnPhase, 'waiting');
+  await page.waitFor(9000);
+  assert.equal((await page.data()).turnPhase, 'waiting');
+  report.turnAttention = {
+    ...report.turnAttention,
+    status: 'passed',
+    before: beforeAttention,
+    after: await turnGeometry(),
+    backgroundCancelled: true,
+    sizingCancelled: true,
+  };
   await capture('table', ['.nav', '.game-shell', '.board-row', '.hero-cards', '.action-buttons']);
   assert.equal((await (await page.$('.nav')).size()).height, 48);
   for (const button of await page.$$('.action-buttons button'))

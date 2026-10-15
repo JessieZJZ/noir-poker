@@ -1972,5 +1972,9 @@
   "当前没有可能更强的牌组；后续公共牌仍可能改变强弱。": "Auf dem aktuellen Board ist keine stärkere Hand möglich. Spätere Gemeinschaftskarten können die Rangfolge noch ändern.",
   "河牌已发完，当前没有可能更强的牌组。": "Der River liegt. Auf diesem Board ist keine stärkere Hand möglich.",
   "公开未知牌不足以抽取底牌。": "Im Modell der öffentlichen Informationen sind nicht genügend unbekannte Karten verfügbar, um Holecards zu ziehen.",
-  "公开范围没有可用底牌组合。": "Die auf öffentlichen Informationen basierende Range enthält keine verwendbaren Holecard-Kombinationen."
+  "公开范围没有可用底牌组合。": "Die auf öffentlichen Informationen basierende Range enthält keine verwendbaren Holecard-Kombinationen.",
+  "轮到你行动": "Du bist dran",
+  "轮到你行动，": "Du bist dran,",
+  "可以过牌或主动下注。": "Du kannst checken oder setzen.",
+  "跟注需要 {0} 筹码。{1}": "Mitgehen kostet {0} Chips. {1}"
 }

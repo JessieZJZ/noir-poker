@@ -101,6 +101,29 @@ test('viewing a historical hand flips only the clicked cards and respects reduce
   expect(await page.evaluate(() => window.qa.snapshot())).toEqual(snapshot);
 });
 
+test('archived tables never inherit the live hero-turn decoration', async ({ page }) => {
+  await page.evaluate(() => window.qa.recordsFinish());
+  const saved = (await records(page))[0];
+  const archived = saved.attempts[0];
+  await page.evaluate(() => window.qa.recordsStart());
+  await expect(page.locator('main.main .hero-cards-wrap')).toHaveClass(/turn-attention/);
+  await openRecords(page);
+  await page.locator(`[data-record-session="${saved.id}"]`).click();
+  await page.locator(`[data-record-hand="${archived.id}"]`).click();
+  const history = page.locator('#history-table');
+  await expect(history.locator('.turn-attention')).toHaveCount(0);
+  await expect(history.locator('[data-turn-phase]')).toHaveCount(0);
+  await page.evaluate(() => {
+    document.dispatchEvent(new CustomEvent('noir:app-state', { detail: { active: false } }));
+    document.dispatchEvent(new CustomEvent('noir:app-state', { detail: { active: true } }));
+  });
+  await expect(history.locator('.turn-attention')).toHaveCount(0);
+  await expect(page.locator('main.main .hero-cards-wrap')).toHaveClass(/turn-attention/);
+  expect((await records(page)).find((row) => row.id === saved.id).attempts[0].snapshot).toEqual(
+    archived.snapshot,
+  );
+});
+
 test('the rotating entry always opens both choices and keyboard focus keeps its label stable', async ({
   page,
 }) => {

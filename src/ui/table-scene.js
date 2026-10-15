@@ -127,6 +127,10 @@ export function createSnapshotSurface(template, g, { sessionNumber, visible, pee
         : new Set();
   surface.classList.add('records-game-surface');
   surface.classList.remove('has-live-hand');
+  for (const element of surface.querySelectorAll('.hero-cards-wrap, .action-dock')) {
+    element.classList.remove('turn-attention', 'turn-enter', 'turn-reminder');
+    delete element.dataset.turnPhase;
+  }
   arena.removeAttribute('style');
   query('.poker-table').removeAttribute('style');
   arena.className = 'arena records-arena is-done';

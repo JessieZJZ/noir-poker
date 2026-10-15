@@ -617,7 +617,7 @@ function text(value) {
 }
 
 test('WeChat turn, fold, settlement and retry keep the table fixed while compacting unused actions', (t) => {
-  assert.match(template, /class="action-notice" wx:if="\{\{!compactActions\}\}"/);
+  assert.match(template, /class="action-notice"\s+wx:if="\{\{!compactActions\}\}"/);
   assert.match(template, /class="raise-controls" wx:if="\{\{!compactActions\}\}"/);
   assert.match(
     template,
@@ -1380,6 +1380,31 @@ test('old deal motion callbacks cannot clear a replay and hiding cancels pending
   page.onHide();
   assert.equal(page._cardTimers.size, 0);
   assert.ok(page.data.heroCards.every((card) => !card.arriving));
+});
+
+test('WeChat shared page receives turn timer patches without changing table geometry', (t) => {
+  const { page, jobs } = setup(t);
+  reachHero(page);
+  assert.equal(page.data.turnPhase, 'enter');
+  const geometry = copy({ height: page.data.tableHeight, style: page.data.heroStyle });
+  const patches = [];
+  const original = page.setData;
+  page.setData = function (patch, callback) {
+    patches.push(Object.keys(patch));
+    return original.call(this, patch, callback);
+  };
+  const [id, job] = [...jobs].find(([, job]) => job.due === 3200);
+  jobs.delete(id);
+  job.fn();
+  assert.equal(page.data.turnPhase, 'waiting');
+  assert.deepEqual(patches, [['turnPhase']]);
+  assert.deepEqual(copy({ height: page.data.tableHeight, style: page.data.heroStyle }), geometry);
+  page.previewRaise({ detail: { value: page.data.minRaise } });
+  assert.ok(![...jobs.values()].some((job) => job.due === 8000));
+  page.onHide();
+  assert.equal(page.data.turnPhase, '');
+  page.onShow();
+  assert.equal(page.data.turnPhase, 'waiting');
 });
 
 test('WeChat record navigation keeps live bot progress and actual app background cancels it', (t) => {

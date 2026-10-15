@@ -20,6 +20,7 @@ test('English templates preserve and reorder dynamic values, while rule state re
   startHand(game, () => 0.42);
   const before = JSON.stringify(game);
   await loadLocale('en');
+  assert.equal(localizeText('轮到你行动，'), 'Your turn,');
   assert.equal(localizeText('第 12 手 · 决策复盘'), 'Hand 12 · Decision review');
   assert.equal(
     localizeText('轮到你了，跟注需要 75 筹码。本轮加注权未重开，仅可跟注或弃牌。'),

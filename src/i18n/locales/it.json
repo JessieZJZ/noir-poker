@@ -1969,5 +1969,9 @@
   "当前没有可能更强的牌组；后续公共牌仍可能改变强弱。": "Sul board attuale non è possibile una mano più forte; le carte comuni successive possono ancora cambiare i rapporti di forza.",
   "河牌已发完，当前没有可能更强的牌组。": "Il river è stato distribuito; sul board attuale non è possibile una mano più forte.",
   "公开未知牌不足以抽取底牌。": "Non restano abbastanza carte sconosciute nel modello basato sulle informazioni pubbliche per campionare le carte coperte.",
-  "公开范围没有可用底牌组合。": "Il range basato sulle informazioni pubbliche non contiene combinazioni utilizzabili di carte coperte."
+  "公开范围没有可用底牌组合。": "Il range basato sulle informazioni pubbliche non contiene combinazioni utilizzabili di carte coperte.",
+  "轮到你行动": "Tocca a te",
+  "轮到你行动，": "Tocca a te,",
+  "可以过牌或主动下注。": "Puoi fare check o puntare.",
+  "跟注需要 {0} 筹码。{1}": "Vedere costa {0} chip. {1}"
 }
