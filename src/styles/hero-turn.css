@@ -1,0 +1,117 @@
+/* Shared verbatim with WeChat. Only decorative layers move; cards and buttons stay put. */
+.turn-glow,
+.turn-line {
+  position: absolute;
+  pointer-events: none;
+  opacity: 0;
+}
+.turn-glow {
+  left: 50%;
+  top: 50%;
+  width: 132%;
+  height: 148%;
+  border-radius: 50%;
+  background: radial-gradient(ellipse, #6ee7c55c 0%, #6ee7c524 42%, #6ee7c500 72%);
+  transform: translate(-50%, -50%);
+}
+.turn-line {
+  top: -1px;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(90deg, #6ee7c500, #6ee7c5 24%, #6ee7c5 76%, #6ee7c500);
+  box-shadow: 0 0 10px #6ee7c54d;
+  transform-origin: center;
+}
+.turn-attention .turn-glow {
+  opacity: 0.38;
+}
+.turn-attention .turn-line {
+  opacity: 0.5;
+}
+.turn-enter .turn-glow {
+  animation: hero-turn-glow 850ms ease-out both;
+}
+.turn-enter .turn-line {
+  animation: hero-turn-line 850ms ease-out both;
+}
+.turn-reminder .turn-glow {
+  animation: hero-turn-glow 1000ms ease-in-out both;
+}
+.turn-reminder .turn-line {
+  animation: hero-turn-breathe 1000ms ease-in-out both;
+}
+@keyframes hero-turn-glow {
+  0% {
+    opacity: 0.15;
+    transform: translate(-50%, -50%) scale(0.88);
+  }
+  45% {
+    opacity: 0.95;
+    transform: translate(-50%, -50%) scale(1.06);
+  }
+  100% {
+    opacity: 0.38;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+@keyframes hero-turn-line {
+  0% {
+    opacity: 0;
+    transform: scaleX(0.08);
+  }
+  45% {
+    opacity: 1;
+    transform: scaleX(1);
+  }
+  100% {
+    opacity: 0.5;
+    transform: scaleX(1);
+  }
+}
+@keyframes hero-turn-breathe {
+  0%,
+  100% {
+    opacity: 0.5;
+  }
+  45% {
+    opacity: 1;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .turn-glow,
+  .turn-line {
+    animation: none !important;
+  }
+}
+
+/* Web/native placement. WeChat supplies the same anchors in its page stylesheet. */
+.hero-cards-wrap {
+  display: flex;
+  position: relative;
+  z-index: 0;
+}
+.hero-cards-wrap > .turn-glow {
+  z-index: 0;
+}
+.hero-cards-wrap > .hero-cards {
+  position: relative;
+  z-index: 1;
+}
+.action-dock {
+  position: relative;
+}
+.turn-prompt {
+  margin-right: 0.4em;
+  font-weight: 700;
+  color: #d6f5e9;
+}
+.decision-copy {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.turn-attention .decision-detail {
+  color: #a8c1ca;
+}

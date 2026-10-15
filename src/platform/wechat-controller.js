@@ -5,7 +5,7 @@ import {
   stakesFromSmallBlind,
   sameStakes,
 } from '../engine/stakes.js';
-import { createHeroTurnCue } from '../ui/hero-turn.js';
+import { createHeroTurnCue, createHeroTurnAttention } from '../ui/hero-turn.js';
 import { SEAT_ANCHORS } from '../ui/seat-geometry.js';
 import { explainOpponent } from '../review/opponents.js';
 import { publicHistory } from '../review/narrative.js';
@@ -87,6 +87,7 @@ export function createWechatController({
   sound = () => {},
   wager = () => {},
   notifyTurn = () => {},
+  publishAttention = () => {},
   schedule = setTimeout,
   unschedule = clearTimeout,
 }) {
@@ -99,6 +100,11 @@ export function createWechatController({
   }
   const peeked = new Map();
   const turnCue = createHeroTurnCue(notifyTurn);
+  const attention = createHeroTurnAttention({
+    publish: publishAttention,
+    schedule,
+    unschedule,
+  });
   let game = newGame(settings.playerCount, settings.stakes),
     raiseTo = game.bigBlind * 3,
     timer = null,
@@ -283,7 +289,13 @@ export function createWechatController({
       enabled: legal.enabled,
       active: active && !disposed && settings.sound,
     });
+    attention.update({
+      key: `${game.hand}:${game.replayAttempt || 0}:${game.street}:${game.history.length}`,
+      enabled: legal.enabled,
+      active: active && !disposed,
+    });
     publish({
+      turnPhase: attention.phase,
       hand: game.hand,
       phase: game.phase,
       street: done ? '本手结束' : STREET_NAMES[game.street] || '准备发牌',
@@ -367,8 +379,8 @@ export function createWechatController({
             ? '已全下，等待摊牌。'
             : legal.enabled
               ? legal.canCheck
-                ? '轮到你了，可以过牌或主动下注。'
-                : `轮到你了，跟注需要 ${format(legal.callAmount)} 筹码。${legal.raiseReopened ? '' : '本轮加注权未重开，仅可跟注或弃牌。'}`
+                ? '可以过牌或主动下注。'
+                : `跟注需要 ${format(legal.callAmount)} 筹码。${legal.raiseReopened ? '' : '本轮加注权未重开，仅可跟注或弃牌。'}`
               : `${game.players[game.actor]?.name || '对手'} 正在思考，请稍候。`,
       profiles,
       settings: { ...settings, assignments: { ...settings.assignments } },
@@ -445,6 +457,7 @@ export function createWechatController({
     }, 0);
   }
   function freshHand() {
+    attention.reset();
     turnCue.reset();
     peeked.clear();
     cancelBots();
@@ -552,6 +565,7 @@ export function createWechatController({
     destroy() {
       disposed = true;
       active = false;
+      attention.reset();
       cancelBots();
       cancelReview();
       cancelHint();
@@ -589,12 +603,17 @@ export function createWechatController({
                 )
               : null;
       if (target === null) return;
+      attention.engage();
       raiseTo = legalRaiseTo(target, legal);
       render();
+    },
+    engageTurn() {
+      attention.engage();
     },
     setRaise(value) {
       const legal = legalActions(game, 0);
       if (legal.enabled && legal.canRaise) {
+        attention.engage();
         raiseTo = legalRaiseTo(Number(value), legal);
         render();
       }
@@ -611,6 +630,7 @@ export function createWechatController({
     retry() {
       peeked.clear();
       if (!canRestartHand(game)) return false;
+      attention.reset();
       turnCue.reset();
       cancelBots();
       cancelReview();

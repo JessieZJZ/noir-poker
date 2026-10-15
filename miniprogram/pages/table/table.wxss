@@ -1,3 +1,4 @@
+@import '../../shared/ui/hero-turn.wxss';
 .screen {
   display: flex;
   flex-direction: column;

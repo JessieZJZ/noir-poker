@@ -93,6 +93,11 @@ async function waitForStaging(fixture, processId) {
 test('generated WeChat JavaScript loads the controller and complete player research without Node JSON modules', async (t) => {
   const workspace = fixture(t);
   assertSuccess(await build(workspace).result);
+  assert.equal(
+    readFileSync(path.join(workspace.output, 'shared/ui/hero-turn.wxss'), 'utf8'),
+    readFileSync(path.join(root, 'src/styles/hero-turn.css'), 'utf8'),
+    'WeChat must ship the identical turn-attention style used by Web and native apps',
+  );
   const context = vm.createContext({ console });
   const modules = new Map();
   function load(request, parent = path.join(workspace.output, 'entry.js')) {

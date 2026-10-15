@@ -1928,5 +1928,8 @@
   "当前没有可能更强的牌组；后续公共牌仍可能改变强弱。": "No board atual, não há uma mão possível mais forte; as cartas comunitárias seguintes ainda podem alterar a força relativa.",
   "河牌已发完，当前没有可能更强的牌组。": "O river já foi distribuído; não há uma mão possível mais forte neste board.",
   "公开未知牌不足以抽取底牌。": "Não há cartas desconhecidas suficientes no modelo de informações públicas para amostrar as cartas fechadas.",
-  "公开范围没有可用底牌组合。": "O range baseado nas informações públicas não contém combinações utilizáveis de cartas fechadas."
+  "公开范围没有可用底牌组合。": "O range baseado nas informações públicas não contém combinações utilizáveis de cartas fechadas.",
+  "轮到你行动": "Sua vez",
+  "可以过牌或主动下注。": "Você pode dar check ou apostar.",
+  "跟注需要 {0} 筹码。{1}": "Pagar custa {0} fichas. {1}"
 }

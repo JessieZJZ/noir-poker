@@ -1,0 +1,93 @@
+import { test, expect } from '@playwright/test';
+
+test.beforeEach(async ({ page }) => {
+  await page.clock.install({ time: 0 });
+  await page.goto('/');
+  await page.waitForFunction(() => !!window.qa);
+  await page.clock.pauseAt(60000);
+  await page.evaluate(() => {
+    window.qa.foldWin(6);
+    navigator.vibrate = () => {
+      window.turnVibrations = (window.turnVibrations || 0) + 1;
+      return true;
+    };
+    window.qa.heroTurn(6);
+  });
+});
+const phase = (page) => page.locator('.action-dock');
+const boxes = (page) =>
+  page.locator('#hero-cards .playing-card, .action-buttons button').evaluateAll((elements) =>
+    elements.map((element) => {
+      const { x, y, width, height } = element.getBoundingClientRect();
+      return { x, y, width, height };
+    }),
+  );
+
+test('entry and one idle reminder decorate the whole action area without moving cards or buttons', async ({
+  page,
+}) => {
+  await expect(phase(page)).toHaveAttribute('data-turn-phase', 'enter');
+  await expect(page.locator('.hero-cards-wrap')).toHaveClass(/turn-enter/);
+  await expect(page.locator('#turn-prompt')).toBeVisible();
+  await expect(page.locator('#turn-prompt')).toHaveText('轮到你行动');
+  await page.clock.fastForward(850);
+  const before = await boxes(page);
+  await expect(phase(page)).toHaveAttribute('data-turn-phase', 'waiting');
+  await page.clock.fastForward(7149);
+  await expect(phase(page)).toHaveAttribute('data-turn-phase', 'waiting');
+  await page.clock.fastForward(1);
+  await expect(phase(page)).toHaveAttribute('data-turn-phase', 'reminder');
+  expect(await boxes(page)).toEqual(before);
+  expect(await page.evaluate(() => window.turnVibrations)).toBe(1);
+  await page.clock.fastForward(1000);
+  await page.clock.fastForward(20000);
+  await expect(phase(page)).toHaveAttribute('data-turn-phase', 'waiting');
+  expect(await boxes(page)).toEqual(before);
+});
+
+test('sizing, background, settlement and retry do not leak old reminders', async ({ page }) => {
+  await page.locator('[data-preset="half"]').click();
+  await page.clock.fastForward(9000);
+  await expect(phase(page)).toHaveAttribute('data-turn-phase', 'waiting');
+  await page.evaluate(() =>
+    document.dispatchEvent(new CustomEvent('noir:app-state', { detail: { active: false } })),
+  );
+  await expect(phase(page)).toHaveAttribute('data-turn-phase', '');
+  await page.clock.fastForward(9000);
+  await page.evaluate(() =>
+    document.dispatchEvent(new CustomEvent('noir:app-state', { detail: { active: true } })),
+  );
+  await expect(phase(page)).toHaveAttribute('data-turn-phase', 'waiting');
+  await page.clock.fastForward(9000);
+  await expect(phase(page)).toHaveAttribute('data-turn-phase', 'waiting');
+  await page.evaluate(() => window.qa.foldWin(6));
+  await expect(phase(page)).toHaveAttribute('data-turn-phase', '');
+  await expect(page.locator('#turn-prompt')).toBeHidden();
+  await page.clock.fastForward(9000);
+  await expect(phase(page)).toHaveAttribute('data-turn-phase', '');
+  await page.locator('#restart-hand-button').click();
+  await expect(phase(page)).toHaveAttribute('data-turn-phase', /enter|waiting/);
+});
+
+test('reduced motion and muted native feedback keep a visible, localized turn state', async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await expect(page.locator('.hero-cards-wrap .turn-glow')).toHaveCSS('animation-name', 'none');
+  await expect(page.locator('.turn-line')).toHaveCSS('animation-name', 'none');
+  await expect(page.locator('.turn-line')).toHaveCSS('opacity', '0.5');
+  await page.evaluate(() => document.documentElement.classList.add('native-app'));
+  await page.locator('#opponents-button').click();
+  await page.locator('#sound-button').click();
+  await page.locator('#opponents-dialog .close-dialog').first().click();
+  await page.evaluate(() => window.qa.heroTurn(7));
+  await expect(phase(page)).toHaveAttribute('data-turn-phase', 'enter');
+  expect(await page.evaluate(() => window.turnVibrations)).toBe(1);
+  await page.evaluate(async () => {
+    const { loadLocale, localizeDocument } = await import('/src/i18n/index.js');
+    await loadLocale('en');
+    localizeDocument(document);
+  });
+  await expect(page.locator('#turn-prompt')).toHaveText('Your turn');
+  await expect(page.locator('#decision-text')).not.toContainText('轮到');
+});

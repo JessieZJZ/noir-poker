@@ -564,7 +564,7 @@ function text(value) {
 }
 
 test('WeChat turn, fold, settlement and retry keep live geometry and preserve the table while compact controls collapse', (t) => {
-  assert.match(template, /class="action-notice" wx:if="\{\{!compactActions\}\}"/);
+  assert.match(template, /class="action-notice"\s+wx:if="\{\{!compactActions\}\}"/);
   assert.match(template, /class="raise-controls" wx:if="\{\{!compactActions\}\}"/);
   assert.equal(
     cssNumber('.settled-buttons button', 'width'),

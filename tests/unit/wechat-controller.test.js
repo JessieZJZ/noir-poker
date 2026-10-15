@@ -71,6 +71,46 @@ function reachHero(controller) {
   controller.show();
   return game;
 }
+
+test('WeChat visual attention survives mute, cancels on sizing/hide/retry/destroy and publishes timer phases', (t) => {
+  const { controller, timers, latest } = setup(t, { sound: false });
+  const phases = [];
+  // The view phase covers rendering; a separate publisher updates only the
+  // decorative layer when timers fire, without rebuilding the table.
+  const clock = scheduler();
+  const adapter = createWechatController({
+    publish: () => {},
+    publishAttention: (phase) => phases.push(phase),
+    schedule: clock.schedule,
+    unschedule: clock.unschedule,
+    storage: { getItem: () => JSON.stringify({ hints: false, sound: false }) },
+  });
+  t.after(() => adapter.destroy());
+  adapter.start();
+  reachHero(controller);
+  assert.equal(latest().turnPhase, 'enter');
+  controller.setRaise(controller.getGame().bigBlind * 4);
+  assert.equal(latest().turnPhase, 'waiting');
+  assert.ok(![...timers.pending.values()].some((job) => job.delay === 8000));
+  controller.hide();
+  assert.equal(latest().turnPhase, '');
+  controller.show();
+  assert.equal(latest().turnPhase, 'waiting');
+  controller.retry();
+  assert.ok(![...timers.pending.values()].some((job) => job.delay === 8000));
+
+  reachHero(adapter);
+  assert.equal(phases.at(-1), 'enter');
+  adapter.show();
+  assert.equal(phases.filter((phase) => phase === 'enter').length, 1);
+  while (phases.at(-1) !== 'reminder') assert.ok(clock.runNext());
+  assert.equal(phases.at(-1), 'reminder');
+  const stale = clock.callbacks();
+  adapter.destroy();
+  stale.forEach((fn) => fn());
+  assert.equal(phases.at(-1), '');
+  assert.equal(clock.pending.size, 0);
+});
 function finish(game, action = 'call') {
   let limit = 0;
   while (game.phase !== 'done') {

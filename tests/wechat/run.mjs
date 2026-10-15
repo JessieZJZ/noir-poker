@@ -342,6 +342,35 @@ try {
   await invoke('resetPractice');
   await invoke('confirmReset');
   await wait((data) => data.canAct);
+  // Observe an actual decision and its delayed attention state in DevTools.
+  // Changing a harmless setting rerenders without restarting this decision.
+  report.turnAttention = { phase: (await page.data()).turnPhase };
+  await wait((data) => data.turnPhase === 'waiting');
+  const turnGeometry = async () => ({
+    cards: await (await page.$('.hero-cards')).size(),
+    actions: await (await page.$('.action-buttons')).size(),
+  });
+  const beforeAttention = await turnGeometry();
+  await wait((data) => data.turnPhase === 'reminder', 10000);
+  await wait((data) => data.turnPhase === 'waiting');
+  assert.deepEqual(await turnGeometry(), beforeAttention);
+  await invoke('previewRaise', { detail: { value: (await page.data()).minRaise } });
+  await invoke('onHide');
+  assert.equal((await page.data()).turnPhase, '');
+  await page.waitFor(9000);
+  assert.equal((await page.data()).turnPhase, '');
+  await invoke('onShow');
+  assert.equal((await page.data()).turnPhase, 'waiting');
+  await page.waitFor(9000);
+  assert.equal((await page.data()).turnPhase, 'waiting');
+  report.turnAttention = {
+    ...report.turnAttention,
+    status: 'passed',
+    before: beforeAttention,
+    after: await turnGeometry(),
+    backgroundCancelled: true,
+    sizingCancelled: true,
+  };
   await capture('table', ['.nav', '.game-shell', '.board-row', '.hero-cards', '.action-buttons']);
   assert.equal((await (await page.$('.nav')).size()).height, 48);
   for (const button of await page.$$('.action-buttons button'))

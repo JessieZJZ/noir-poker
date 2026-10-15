@@ -52,6 +52,7 @@ Page({
     boardWidth: 152,
     boardTwoRows: true,
     heroCards: [],
+    turnPhase: '',
     reviewData: { steps: [] },
     detailProfile: null,
     selectedProfile: 'balanced',
@@ -215,6 +216,9 @@ Page({
       notifyTurn: () => {
         if (!this._hidden && !this._destroyed && this.data.settings.sound)
           wx.vibrateShort?.({ type: 'light', fail: () => {} });
+      },
+      publishAttention: (turnPhase) => {
+        if (!this._destroyed) this.setData({ turnPhase });
       },
     });
     this._controller.start();
@@ -484,6 +488,7 @@ Page({
     this.call('setRaise', event.detail.value);
   },
   previewRaise(event) {
+    this._controller?.engageTurn();
     // Do not write the native slider's controlled value back during dragging.
     // Only its caption changes; the final change commits once to the engine.
     const value = Math.max(
