@@ -8,51 +8,45 @@
 .turn-glow {
   left: 50%;
   top: 50%;
-  width: 184%;
-  height: 198%;
-  border-radius: 50%;
-  background:
-    radial-gradient(ellipse, #c3ffeaa6 0%, #6ee7c582 28%, #27d7c340 50%, #27d7c300 73%),
-    radial-gradient(ellipse at 65% 58%, #79dbff40 0%, #79dbff00 64%);
+  width: 220%;
+  height: 240%;
+  /* Fade to transparent before the box edge, without a rounded clipping edge. */
+  background: radial-gradient(
+    ellipse closest-side,
+    #b6ffedb3 0%,
+    #64edcf8c 22%,
+    #37dbc94d 44%,
+    #37dbc917 66%,
+    #37dbc900 88%
+  );
   transform: translate(-50%, -50%);
-}
-.turn-glow::before,
-.turn-glow::after {
-  content: '';
-  position: absolute;
-  pointer-events: none;
-  border-radius: 50%;
-  opacity: 0;
-}
-.turn-glow::before {
-  inset: 21% 13%;
-  border: 1px solid #b6ffe5c4;
-  box-shadow:
-    0 0 14px #6ee7c58c,
-    inset 0 0 12px #94eaff66,
-    0 0 30px #6ee7c54d;
-}
-.turn-glow::after {
-  inset: 2% 4%;
-  background:
-    radial-gradient(ellipse at 27% 44%, #b0ffe58c 0%, #b0ffe500 44%),
-    radial-gradient(ellipse at 73% 42%, #75e5ff99 0%, #75e5ff00 46%),
-    radial-gradient(ellipse at 52% 70%, #ffe7ab80 0%, #ffe7ab00 48%);
 }
 .turn-line {
   top: -1px;
   left: 0;
   width: 100%;
-  height: 2px;
-  background: linear-gradient(90deg, #6ee7c500, #6ee7c5 24%, #6ee7c5 76%, #6ee7c500);
-  box-shadow: 0 0 10px #6ee7c54d;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    #6ee7c500 0%,
+    #9cffdf 8%,
+    #eafff5 12%,
+    #6ee7c540 30%,
+    #6ee7c500 50%,
+    #6ee7c540 70%,
+    #eafff5 88%,
+    #9cffdf 92%,
+    #6ee7c500 100%
+  );
+  box-shadow: 0 0 4px #6ee7c566;
   transform-origin: center;
 }
 .turn-attention .turn-glow {
-  opacity: 0.62;
+  opacity: 0.24;
 }
 .turn-attention .turn-line {
-  opacity: 0.5;
+  opacity: 0.72;
+  animation: hero-turn-line-pulse 1600ms cubic-bezier(0.22, 0.61, 0.36, 1) infinite;
 }
 .turn-enter {
   --turn-glow-duration: 3200ms;
@@ -64,103 +58,51 @@
 .turn-reminder .turn-glow {
   animation: hero-turn-glow var(--turn-glow-duration) ease-in-out both;
 }
-.turn-enter .turn-glow::before,
-.turn-reminder .turn-glow::before {
-  animation: hero-turn-ring var(--turn-glow-duration) ease-out both;
-}
-.turn-enter .turn-glow::after,
-.turn-reminder .turn-glow::after {
-  animation: hero-turn-shimmer var(--turn-glow-duration) ease-in-out both;
-}
-.turn-enter .turn-line {
-  animation: hero-turn-line 850ms ease-out both;
-}
-.turn-reminder .turn-line {
-  animation: hero-turn-breathe 1000ms ease-in-out both;
-}
 @keyframes hero-turn-glow {
   0% {
-    opacity: 0.2;
-    transform: translate(-50%, -50%) scale(0.74);
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.82);
   }
   18%,
-  62% {
+  52% {
     opacity: 1;
-    transform: translate(-50%, -50%) scale(1.1);
+    transform: translate(-50%, -50%) scale(1.04);
   }
-  42% {
-    opacity: 0.86;
-    transform: translate(-50%, -50%) scale(1.06);
+  34% {
+    opacity: 0.68;
+    transform: translate(-50%, -50%) scale(0.96);
+  }
+  70% {
+    opacity: 0.75;
+    transform: translate(-50%, -50%) scale(1.08);
   }
   100% {
-    opacity: 0.62;
+    opacity: 0.24;
     transform: translate(-50%, -50%) scale(1);
   }
 }
-@keyframes hero-turn-ring {
+@keyframes hero-turn-line-pulse {
   0% {
     opacity: 0;
-    transform: scale(0.62);
+    transform: scaleX(0.02);
   }
-  25% {
+  12% {
+    opacity: 1;
+    transform: scaleX(0.15);
+  }
+  70% {
     opacity: 0.95;
-    transform: scale(0.94);
-  }
-  65% {
-    opacity: 0.65;
-    transform: scale(1.18);
+    transform: scaleX(0.95);
   }
   100% {
     opacity: 0;
-    transform: scale(1.42);
-  }
-}
-@keyframes hero-turn-shimmer {
-  0% {
-    opacity: 0;
-    transform: rotate(-18deg) scale(0.72);
-  }
-  25% {
-    opacity: 0.82;
-    transform: rotate(0deg) scale(0.98);
-  }
-  65% {
-    opacity: 0.62;
-    transform: rotate(26deg) scale(1.08);
-  }
-  100% {
-    opacity: 0;
-    transform: rotate(50deg) scale(1.16);
-  }
-}
-@keyframes hero-turn-line {
-  0% {
-    opacity: 0;
-    transform: scaleX(0.08);
-  }
-  45% {
-    opacity: 1;
     transform: scaleX(1);
-  }
-  100% {
-    opacity: 0.5;
-    transform: scaleX(1);
-  }
-}
-@keyframes hero-turn-breathe {
-  0%,
-  100% {
-    opacity: 0.5;
-  }
-  45% {
-    opacity: 1;
   }
 }
 @media (prefers-reduced-motion: reduce) {
   .turn-glow,
-  .turn-glow::before,
-  .turn-glow::after,
-  .turn-line {
+  .turn-line,
+  .turn-prompt {
     animation: none !important;
   }
 }

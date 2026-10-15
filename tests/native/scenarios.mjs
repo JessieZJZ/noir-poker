@@ -402,7 +402,15 @@ export async function nativeScenarios(app) {
         });
       });
       new MutationObserver(() => {
-        window.__turnAttentionPhases.push({ phase: dock.dataset.turnPhase, at: Date.now() });
+        const glow = document.querySelector('.turn-glow');
+        window.__turnAttentionPhases.push({
+          phase: dock.dataset.turnPhase,
+          at: Date.now(),
+          glow: ['', '::before', '::after'].map((pseudo) => {
+            const style = getComputedStyle(glow, pseudo || null);
+            return { name: style.animationName, duration: style.animationDuration };
+          }),
+        });
       }).observe(dock, { attributes: true, attributeFilter: ['data-turn-phase'] });
     });
     // Leave any existing decision so entry and the eight-second reminder are
@@ -421,20 +429,18 @@ export async function nativeScenarios(app) {
       90000,
       'A fresh hero decision must become available',
     );
-    const entry = await app.evaluate(() => {
-      const glow = document.querySelector('.turn-glow');
-      return ['', '::before', '::after'].map((pseudo) => {
-        const style = getComputedStyle(glow, pseudo || null);
-        return { name: style.animationName, duration: style.animationDuration };
-      });
-    });
+    // Read the entry at its actual DOM transition. The native driver may return
+    // the legal-state poll after the finite 3.2-second entry has already ended.
+    const entry = await app.evaluate(
+      () => window.__turnAttentionPhases.find((entry) => entry.phase === 'enter')?.glow,
+    );
     assert.deepEqual(entry, [
       { name: 'hero-turn-glow', duration: '3.2s' },
-      { name: 'hero-turn-ring', duration: '3.2s' },
-      { name: 'hero-turn-shimmer', duration: '3.2s' },
+      { name: 'none', duration: '0s' },
+      { name: 'none', duration: '0s' },
     ]);
     await app.sleep(850);
-    await app.screenshot('hero-turn-entry');
+    await app.screenshot('hero-turn-visible');
     await app.waitFor(
       () =>
         app.evaluate(() => document.querySelector('.action-dock').dataset.turnPhase === 'waiting'),
@@ -453,7 +459,13 @@ export async function nativeScenarios(app) {
           prompt: document.querySelector('#turn-prompt').textContent.trim(),
           promptVisible: !document.querySelector('#turn-prompt').hidden,
           lineOpacity: Number(getComputedStyle(document.querySelector('.turn-line')).opacity),
+          lineHeight: getComputedStyle(document.querySelector('.turn-line')).height,
+          promptOpacity: Number(getComputedStyle(document.querySelector('#turn-prompt')).opacity),
           glowOpacity: Number(getComputedStyle(document.querySelector('.turn-glow')).opacity),
+          attentionMotion: ['.turn-line', '#turn-prompt'].map((selector) => {
+            const style = getComputedStyle(document.querySelector(selector));
+            return { name: style.animationName, duration: style.animationDuration };
+          }),
           boxes: [
             ...document.querySelectorAll('#hero-cards .playing-card, .action-buttons button'),
           ].map(rect),
@@ -463,7 +475,14 @@ export async function nativeScenarios(app) {
     const before = await read();
     assert.equal(before.hero, 'waiting');
     assert.equal(before.promptVisible, true);
-    assert.ok(before.lineOpacity > 0 && before.glowOpacity > 0);
+    assert.ok(before.glowOpacity > 0);
+    assert.equal(before.lineHeight, '1px');
+    assert.equal(before.promptOpacity, 1);
+    assert.equal(before.glowOpacity, 0.24);
+    assert.deepEqual(before.attentionMotion, [
+      { name: 'hero-turn-line-pulse', duration: '1.6s' },
+      { name: 'none', duration: '0s' },
+    ]);
     await app.screenshot('hero-turn-steady');
     const background = await app.background();
     await app.sleep(9000);

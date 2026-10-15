@@ -22,6 +22,15 @@ const boxes = (page) =>
       return { x, y, width, height };
     }),
   );
+const finishDeal = (page) =>
+  page.locator('#hero-cards').evaluate((el) =>
+    Promise.all(
+      el
+        .getAnimations({ subtree: true })
+        .filter((animation) => Number.isFinite(animation.effect.getComputedTiming().endTime))
+        .map((animation) => animation.finished),
+    ),
+  );
 
 test('entry and one idle reminder decorate the whole action area without moving cards or buttons', async ({
   page,
@@ -39,19 +48,13 @@ test('entry and one idle reminder decorate the whole action area without moving 
       })),
     ),
   ).toEqual([
-    { name: 'hero-turn-ring', duration: '3.2s' },
-    { name: 'hero-turn-shimmer', duration: '3.2s' },
+    { name: 'none', duration: '0s' },
+    { name: 'none', duration: '0s' },
   ]);
+  await expect(page.locator('.turn-line')).toHaveCSS('animation-duration', '1.6s');
   // The mocked timer does not advance CSS's document timeline. Let the separate
   // finite deal animation finish before measuring decorative-glow stability.
-  await page.locator('#hero-cards').evaluate((el) =>
-    Promise.all(
-      el
-        .getAnimations({ subtree: true })
-        .filter((animation) => Number.isFinite(animation.effect.getComputedTiming().endTime))
-        .map((animation) => animation.finished),
-    ),
-  );
+  await finishDeal(page);
   await page.clock.fastForward(1600);
   await expect(phase(page)).toHaveAttribute('data-turn-phase', 'enter');
   await page.clock.fastForward(1600);
@@ -80,6 +83,8 @@ test('sizing, background, settlement and retry do not leak old reminders', async
     document.dispatchEvent(new CustomEvent('noir:app-state', { detail: { active: false } })),
   );
   await expect(phase(page)).toHaveAttribute('data-turn-phase', '');
+  await expect(page.locator('.turn-line')).toHaveCSS('animation-name', 'none');
+  await expect(page.locator('#turn-prompt')).toHaveCSS('animation-name', 'none');
   await page.clock.fastForward(9000);
   await page.evaluate(() =>
     document.dispatchEvent(new CustomEvent('noir:app-state', { detail: { active: true } })),
@@ -109,7 +114,9 @@ test('reduced motion and muted native feedback keep a visible, localized turn st
         ['::before', '::after'].map((pseudo) => getComputedStyle(el, pseudo).animationName),
       ),
   ).toEqual(['none', 'none']);
-  await expect(page.locator('.turn-line')).toHaveCSS('opacity', '0.5');
+  await expect(page.locator('.turn-line')).toHaveCSS('opacity', '0.72');
+  await expect(page.locator('#turn-prompt')).toHaveCSS('animation-name', 'none');
+  await expect(page.locator('#turn-prompt')).toHaveCSS('opacity', '1');
   await page.evaluate(() => document.documentElement.classList.add('native-app'));
   await page.locator('#opponents-button').click();
   await page.locator('#sound-button').click();
@@ -124,4 +131,58 @@ test('reduced motion and muted native feedback keep a visible, localized turn st
   });
   await expect(page.locator('#turn-prompt')).toHaveText('Your turn');
   await expect(page.locator('#decision-text')).not.toContainText('轮到');
+});
+
+test('one soft hand glow has no clipped rim; a thin rail pulses from the center while the prompt stays still', async ({
+  page,
+}) => {
+  const glow = page.locator('.turn-glow');
+  await expect(glow).toHaveCSS('border-radius', '0px');
+  await expect(glow).toHaveCSS('border-top-width', '0px');
+  await expect(glow).toHaveCSS('box-shadow', 'none');
+  const decorations = await glow.evaluate((el) => ({
+    gradients: getComputedStyle(el).backgroundImage.match(/radial-gradient/g)?.length,
+    layers: ['::before', '::after'].map((pseudo) => getComputedStyle(el, pseudo).content),
+  }));
+  expect(decorations).toEqual({ gradients: 1, layers: ['none', 'none'] });
+  const frame = (selector, name, time) =>
+    page.locator(selector).evaluate(
+      (el, { name, time }) => {
+        const motion = el.getAnimations().find((animation) => animation.animationName === name);
+        if (!motion) throw Error(`Missing ${name}`);
+        motion.pause();
+        motion.currentTime = time;
+        const style = getComputedStyle(el);
+        return {
+          opacity: Number(style.opacity),
+          x: el.getBoundingClientRect().x,
+          width: el.getBoundingClientRect().width,
+        };
+      },
+      { name, time },
+    );
+  await expect(page.locator('.turn-line')).toHaveCSS('height', '1px');
+  await expect(page.locator('#turn-prompt')).toHaveCSS('animation-name', 'none');
+  await expect(page.locator('#turn-prompt')).toHaveCSS('opacity', '1');
+  await expect(page.locator('#turn-prompt')).toHaveCSS('text-shadow', 'none');
+  const from = await frame('.turn-line', 'hero-turn-line-pulse', 192);
+  const to = await frame('.turn-line', 'hero-turn-line-pulse', 1120);
+  expect(to.x).toBeLessThan(from.x);
+  expect(to.x + to.width).toBeGreaterThan(from.x + from.width);
+  expect(to.x + to.width / 2).toBeCloseTo(from.x + from.width / 2, 3);
+  expect(to.width).toBeGreaterThan(from.width * 5);
+  const faded = await frame('.turn-line', 'hero-turn-line-pulse', 1568);
+  expect(faded.opacity).toBeLessThan(0.15);
+  await page.clock.fastForward(3200);
+  await expect(glow).toHaveCSS('opacity', '0.24');
+  await expect(glow).toHaveCSS('animation-name', 'none');
+  await expect(page.locator('.turn-line')).toHaveCSS('animation-name', 'hero-turn-line-pulse');
+  await expect(page.locator('#turn-prompt')).toHaveCSS('animation-name', 'none');
+  await expect(page.locator('#turn-prompt')).toHaveCSS('opacity', '1');
+  await finishDeal(page);
+  const before = await boxes(page);
+  const promptBounds = await page.locator('#turn-prompt').boundingBox();
+  await frame('.turn-line', 'hero-turn-line-pulse', 192);
+  expect(await boxes(page)).toEqual(before);
+  expect(await page.locator('#turn-prompt').boundingBox()).toEqual(promptBounds);
 });

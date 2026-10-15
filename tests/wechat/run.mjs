@@ -349,9 +349,23 @@ try {
   const glow = await page.$('.turn-glow');
   report.turnAttention.entryDuration = await glow.style('animation-duration');
   assert.equal(report.turnAttention.entryDuration, '3.2s');
+  for (const corner of ['top-left', 'top-right', 'bottom-left', 'bottom-right'])
+    assert.equal(await glow.style(`border-${corner}-radius`), '0px');
+  assert.equal(await glow.style('box-shadow'), 'none');
+  const prompt = await page.$('.turn-prompt');
+  assert.equal(await prompt.style('animation-name'), 'none');
+  assert.equal(await prompt.style('opacity'), '1');
+  const rail = await page.$('.turn-line');
+  assert.equal(await rail.style('height'), '1px');
+  const railFrom = await rail.style('transform');
   await page.waitFor(850);
+  const railTo = await rail.style('transform');
+  assert.notEqual(railFrom, railTo, 'The thin rail actually expands from the center');
+  report.turnAttention.railPulse = { from: railFrom, to: railTo };
   await mini.screenshot({ path: path.join(output, 'hero-turn-entry.png') });
   await wait((data) => data.turnPhase === 'waiting');
+  assert.equal(await glow.style('opacity'), '0.24');
+  assert.equal(await (await page.$('.turn-line')).style('animation-name'), 'hero-turn-line-pulse');
   const turnGeometry = async () => ({
     cards: await (await page.$('.hero-cards')).size(),
     actions: await (await page.$('.action-buttons')).size(),

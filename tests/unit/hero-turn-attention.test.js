@@ -55,7 +55,10 @@ test('entry settles, reminds once at 8 seconds, and rerenders do not restart eit
 test('using sizing controls cancels the reminder for this decision only', () => {
   const { cue, phases, jobs, advance } = setup();
   cue.update(turn);
+  advance(1200);
   cue.engage();
+  assert.equal(cue.phase, 'waiting', 'Sizing retains the class that drives the ongoing rail pulse');
+  assert.equal(jobs.size, 0, 'Persistent CSS pulses must not require a reminder timer');
   advance(9000);
   cue.update(turn);
   assert.equal(jobs.size, 0);
