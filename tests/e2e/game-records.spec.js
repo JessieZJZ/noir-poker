@@ -127,9 +127,11 @@ test('archived tables never inherit the live hero-turn decoration', async ({ pag
 test('the rotating entry always opens both choices and keyboard focus keeps its label stable', async ({
   page,
 }) => {
+  await expect(page.locator('body')).toHaveJSProperty('inert', false);
   await page.clock.install();
   const trigger = page.locator('#rules-button');
   await trigger.focus();
+  await expect(trigger).toBeFocused();
   const label = await trigger.getAttribute('data-label');
   await page.clock.fastForward(12000);
   expect(await trigger.getAttribute('data-label')).toBe(label);

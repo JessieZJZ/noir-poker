@@ -1917,6 +1917,7 @@
   "小盲须为 25 的正整数倍且不超过 50K，大盲须为小盲的倍数且大于小盲。面额等于小盲，起始筹码为 100 BB。": "La ciega pequeña debe ser un múltiplo positivo de 25, hasta 50K. La ciega grande debe ser un múltiplo de la pequeña y mayor que ella. La denominación de las fichas equivale a la ciega pequeña; los stacks iniciales son de 100 BB.",
   "{0} · 未跟注退回 {1}": "{0} · apuesta no igualada devuelta {1}",
   "{13} 人": "{13} jugadores",
+  "{14} 人": "{14} jugadores",
   "{15} {16} 的底牌": "{15} las cartas privadas de {16}",
   "‹ 返回对局记录": "‹ Volver al historial",
   "净筹码变化": "Cambio neto de fichas",

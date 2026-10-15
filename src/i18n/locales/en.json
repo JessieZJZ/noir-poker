@@ -1921,6 +1921,7 @@
   "小盲须为 25 的正整数倍且不超过 50K，大盲须为小盲的倍数且大于小盲。面额等于小盲，起始筹码为 100 BB。": "The small blind must be a positive multiple of 25, up to 50K. The big blind must be a greater multiple of the small blind. The chip denomination equals the small blind; starting stacks are 100 BB.",
   "{0} · 未跟注退回 {1}": "{0} · uncalled bet returned {1}",
   "{13} 人": "{13} players",
+  "{14} 人": "{14} players",
   "{15} {16} 的底牌": "{15} {16}’s hole cards",
   "‹ 返回对局记录": "‹ Back to game records",
   "净筹码变化": "Net chip change",
