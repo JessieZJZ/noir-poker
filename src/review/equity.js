@@ -1,3 +1,4 @@
+import { reviewCardCache } from './card-cache.js';
 import { deckOfCards, evaluate, compare, partitionPots } from '../engine/poker.js';
 import { botBoardFeatures } from '../engine/bot-profiles.js';
 import { preparePublicRanges, publicComboWeight } from '../engine/public-ranges.js';
@@ -123,7 +124,7 @@ export function sampleValue(s, price, trials, weighted) {
   const opponents = s.players.filter((p) => p.id !== 0 && !p.folded),
     ranges = preparePublicRanges(s),
     descriptors = new Map(ranges.map((range) => [range.id, range])),
-    cache = new Map();
+    cache = reviewCardCache();
   let sum = 0;
   if (s.board.length === 5 && opponents.length === 1) {
     const hero = evaluate([...s.hole, ...s.board]).score,
@@ -134,7 +135,7 @@ export function sampleValue(s, price, trials, weighted) {
     for (let i = 0; i < available.length - 1; i++)
       for (let j = i + 1; j < available.length; j++) {
         const pair = [available[i], available[j]],
-          score = evaluate([...pair, ...s.board]).score,
+          score = publicHandData(pair, s.board, { evaluate, cache }).score,
           c = compare(hero, score),
           fraction =
             price.pots.reduce(

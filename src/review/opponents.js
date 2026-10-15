@@ -94,7 +94,9 @@ export function explainOpponent(record, identities = []) {
           ranges: v.allIn.ranges.map((r) => ({ ...r, id: relativeIds.get(r.id) ?? r.id + 100 })),
         }
       : undefined,
-    pending: [],
+    pending: (v.actionContext?.pendingResponseIds || [])
+      .map((id) => relativeIds.get(id))
+      .filter((id) => id !== undefined),
     history: v.history.map((a) => ({ ...a, id: relativeIds.get(a.id) ?? a.id + 100 })),
   };
   const c = decisionContext(snapshot);
@@ -268,7 +270,17 @@ export function explainOpponent(record, identities = []) {
       );
   }
   const matchups = handMatchups(snapshot, c),
-    paragraphs = [prefix, matchups?.text, logic].filter(Boolean);
+    recorded =
+      t.basis?.version === 1 &&
+      t.basis.action === record.action &&
+      t.basis.reason === t.reason &&
+      (record.action !== 'raise' || t.basis.amount === record.amount),
+    source = recorded
+      ? '依据当时记录的决策条件。'
+      : '旧记录未保存完整决策依据，以下为当时信息下的推断。',
+    squeeze =
+      recorded && t.basis.squeeze ? '前面已有开池和跟注，这次再加注也在挤压两者的继续范围。' : '',
+    paragraphs = [matchups?.text, '复盘分析总结', source, prefix, logic, squeeze].filter(Boolean);
   return {
     title:
       t.reason === 'value-raise' && ((!v.street && c.tier < 2) || (v.street && c.made.score[0] < 1))

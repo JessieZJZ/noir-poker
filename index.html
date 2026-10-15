@@ -497,6 +497,8 @@
               >
             </div>
           </div>
+          <p id="difficulty-description" class="setting-description"></p>
+          <p class="setting-description">同一难度保留牌手风格差异；进阶不代表每手更松或更激进。</p>
         </section>
         <section class="settings-module emotion-module" aria-labelledby="emotion-label">
           <div class="settings-row">
@@ -508,7 +510,7 @@
             </select>
           </div>
           <p class="setting-description">
-            输赢后短暂调整打法，随后恢复；仅为游戏机制，不代表真人性格。
+            情绪只调整当前难度内的入池、进攻与跟注倾向，不增加策略能力；几手后恢复。
           </p>
         </section>
         <div class="opponents-layout">
@@ -945,14 +947,6 @@
               <div class="review-evidence-heading"><h3>当时的关键信息</h3></div>
               <ul id="review-evidence"></ul>
             </section>
-            <details class="review-public-actions">
-              <summary>此前的公开行动</summary>
-              <ul id="review-public-actions"></ul>
-            </details>
-            <div class="review-step-nav">
-              <button id="review-step-prev">上一步</button><span id="review-step-current"></span
-              ><button id="review-step-next">下一步</button>
-            </div>
           </section>
         </div>
       </div>
@@ -962,6 +956,10 @@
         aria-labelledby="review-opponents-tab"
         hidden
       ></section>
+      <details id="review-activity" class="review-activity">
+        <summary>对局动态</summary>
+        <ol id="review-activity-list"></ol>
+      </details>
       <p class="review-scope">按当时信息判断，单手输赢不直接决定操作好坏。</p>
 
       <button class="primary-button close-dialog">回到牌桌</button>

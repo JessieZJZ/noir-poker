@@ -8,7 +8,7 @@ import { compareCandidateActions } from './counterfactual.js';
 import { coachDecision, buildOverview } from './coaching.js';
 import { drawLabel, callOddsText } from './narrative.js';
 import { cardText } from './spot-facts.js';
-import { collectPublicResponses } from './responses.js';
+import { reviewActivity } from './activity.js';
 import { handMatchups, valuePlan } from './matchups.js';
 import { actionLabel } from '../engine/action-labels.js';
 import { legalRaiseTo } from '../engine/bet-sizing.js';
@@ -30,7 +30,7 @@ export function createReviewInput(g) {
       smallBlind: g.smallBlind,
       hole: g.players[0].hole,
       decisions: g.decisions || [],
-      publicResponses: collectPublicResponses(g.decisions, g.history, g.players, g.hand),
+      activity: reviewActivity(g),
       opponents: g.botDecisions || [],
       outcome: {
         profit: (g.payouts[0] || 0) - g.players[0].total,

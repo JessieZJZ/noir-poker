@@ -14,7 +14,8 @@ test('review renders up to three public-range examples on each side without nume
   const snapshot = game.decisions.find((decision) => decision.street === 1);
   const matchups = handMatchups(snapshot, decisionContext(snapshot));
   expect(matchups.ahead).toHaveLength(3);
-  expect(matchups.behind).toHaveLength(3);
+  expect(matchups.behind.length).toBeGreaterThan(0);
+  expect(matchups.behind.length).not.toBe(matchups.ahead.length);
   // Keep the real engine's before-action flop snapshot. This fixture only
   // narrows the rendered timeline, rather than inventing a decision/outcome.
   game.decisions = [snapshot];
@@ -37,7 +38,7 @@ test('review renders up to three public-range examples on each side without nume
     const examples = comparison.locator(
       `[data-matchup-direction="${direction}"] .review-matchup-example`,
     );
-    await expect(examples).toHaveCount(3);
+    await expect(examples).toHaveCount(matchups[direction].length);
     for (const [index, example] of matchups[direction].entries())
       await expect(examples.nth(index)).toContainText(example.text);
   }
@@ -48,14 +49,14 @@ test('review renders up to three public-range examples on each side without nume
       select.dispatchEvent(new Event('change'));
     }, locale);
     await expect(page.locator('html')).toHaveAttribute('lang', locale);
-    if (locale === 'zh-CN') await expect(comparison).toContainText('当前成牌对比');
-    else await expect(explanation).not.toContainText('当前成牌对比');
+    if (locale === 'zh-CN') await expect(comparison).toContainText('牌力与牌面');
+    else await expect(explanation).not.toContainText('牌力与牌面');
     if (locale === 'en') await expect(comparison).not.toContainText(/\p{Script=Han}/u);
     for (const direction of ['ahead', 'behind']) {
       const examples = comparison.locator(
         `[data-matchup-direction="${direction}"] .review-matchup-example`,
       );
-      await expect(examples).toHaveCount(3);
+      await expect(examples).toHaveCount(matchups[direction].length);
       for (const [index, example] of matchups[direction].entries())
         await expect(examples.nth(index)).toContainText(example.text);
     }

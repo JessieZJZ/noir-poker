@@ -323,3 +323,26 @@ test('folded unmatched chips still settle, including a 25-chip odd award', () =>
   );
   assert.ok(g.players.every((player) => player.stack % 25 === 0));
 });
+
+test('new public snapshots preserve the action-time difficulty and rollouts use that strategy tier', () => {
+  for (const difficulty of ['easy', 'normal', 'hard']) {
+    const game = newGame(5, { smallBlind: 25, bigBlind: 50, startingStack: 5000, chipUnit: 25 });
+    game.dealer = 1;
+    game.difficulty = difficulty;
+    startHand(game);
+    act(game, 0, 'call');
+    const snapshot = game.decisions[0];
+    assert.equal(snapshot.difficulty, difficulty);
+    game.difficulty = difficulty === 'hard' ? 'easy' : 'hard';
+    assert.equal(snapshot.difficulty, difficulty);
+    const before = JSON.stringify(snapshot);
+    const result = compareCandidateActions(snapshot, [], { trials: 2 });
+    assert.deepEqual(result.policyDifficulties, [difficulty]);
+    assert.equal(JSON.stringify(snapshot), before);
+  }
+  const legacy = snap();
+  delete legacy.difficulty;
+  assert.deepEqual(compareCandidateActions(legacy, [], { trials: 2 }).policyDifficulties, [
+    'normal',
+  ]);
+});

@@ -1,3 +1,7 @@
+import { difficultyPolicy, hasBotSkill } from './bot-difficulty.js';
+import { handFeatures as botBoardFeatures } from './hand-features.js';
+import { decisionBasis, aggressionSupport } from './decision-basis.js';
+export { handFeatures as botBoardFeatures } from './hand-features.js';
 import { bigBlindOf, DEFAULT_STAKES } from './stakes.js';
 import research from '../data/player-research.json' with { type: 'json' };
 import { botStyleContext, resolveBotStyle } from './bot-style.js';
@@ -491,6 +495,10 @@ export const freshBotStats = () => ({
   hands: 0,
   vpip: 0,
   pfr: 0,
+  threeBetOpportunities: 0,
+  threeBets: 0,
+  facedThreeBets: 0,
+  foldsToThreeBet: 0,
   postActions: 0,
   postRaises: 0,
   postCalls: 0,
@@ -562,140 +570,6 @@ for (let a = 0; a < 52; a++)
 export const startingPercentile = (hole) =>
   combinations.filter((v) => v > startingValue(hole)).length / combinations.length;
 
-export function botBoardFeatures(hole, board, score) {
-  const known = [...hole, ...board],
-    ranks = new Set(known.map((c) => c.rank));
-  if (ranks.has(14)) ranks.add(1);
-  const suits = [0, 1, 2, 3].map((s) => board.filter((c) => c.suit === s).length);
-  const connected = Math.max(
-    0,
-    ...Array.from(
-      { length: 10 },
-      (_, i) =>
-        Array.from({ length: 5 }, (_, j) => i + j + 1).filter((r) =>
-          board.some((c) => c.rank === r || (r === 1 && c.rank === 14)),
-        ).length,
-    ),
-  );
-  const wet =
-    Math.max(0, ...suits) >= 3 ||
-    connected >= 3 ||
-    (board.length === 3 && Math.max(...suits) === 2);
-  const flushDraw =
-    board.length >= 3 &&
-    board.length < 5 &&
-    score[0] < 5 &&
-    [0, 1, 2, 3].some(
-      (s) => known.filter((c) => c.suit === s).length === 4 && hole.some((c) => c.suit === s),
-    );
-  const straightCompletions = new Set();
-  const possibleStraightDraw =
-    board.length >= 3 &&
-    board.length < 5 &&
-    score[0] < 4 &&
-    Array.from({ length: 10 }, (_, i) => Array.from({ length: 5 }, (_, j) => i + j + 1)).reduce(
-      (found, run) => {
-        const draw =
-          run.filter((r) => ranks.has(r)).length === 4 &&
-          hole.some(
-            (c) =>
-              (run.includes(c.rank) || (c.rank === 14 && run.includes(1))) &&
-              !board.some((b) => b.rank === c.rank),
-          );
-        if (draw)
-          for (const rank of run.filter((r) => !ranks.has(r)))
-            straightCompletions.add(rank === 1 ? 14 : rank);
-        return found || draw;
-      },
-      false,
-    );
-  // A completion that only gives the board a higher straight is not our draw:
-  // 7-2 on 9-T-J-Q cannot treat an 8 as an own straight out.
-  const straightHigh = (cards, extra) => {
-    const values = new Set([...cards.map((c) => c.rank), extra]);
-    if (values.has(14)) values.add(1);
-    return Math.max(
-      0,
-      ...Array.from({ length: 10 }, (_, i) =>
-        Array.from({ length: 5 }, (_, j) => i + j + 1).every((r) => values.has(r)) ? i + 5 : 0,
-      ),
-    );
-  };
-  for (const rank of straightCompletions)
-    if (straightHigh(known, rank) <= straightHigh(board, rank)) straightCompletions.delete(rank);
-  const straightDraw = possibleStraightDraw && straightCompletions.size > 0;
-  const highBoard = Math.max(0, ...board.map((c) => c.rank));
-  const overpair = board.length >= 3 && hole[0].rank === hole[1].rank && hole[0].rank > highBoard;
-  const boardCount = (rank) => board.filter((c) => c.rank === rank).length;
-  const straightRanks = Array.from({ length: 5 }, (_, i) => score[1] - i).map((r) =>
-    r === 1 ? 14 : r,
-  );
-  const flushSuit = [0, 1, 2, 3].find((s) => known.filter((c) => c.suit === s).length >= 5);
-  const ownStraight = hole.some((c) => straightRanks.includes(c.rank) && !boardCount(c.rank));
-  const ownFlush = hole.some((c) => c.suit === flushSuit && score.slice(1).includes(c.rank));
-  const ownMade =
-    board.length >= 3 &&
-    (score[0] === 1
-      ? hole.some((c) => c.rank === score[1])
-      : score[0] === 2
-        ? hole.some((c) => c.rank === score[1] || c.rank === score[2])
-        : score[0] === 3
-          ? hole.some((c) => c.rank === score[1])
-          : score[0] === 4
-            ? ownStraight
-            : score[0] === 5
-              ? ownFlush
-              : score[0] === 6
-                ? hole.some(
-                    (c) =>
-                      (c.rank === score[1] && boardCount(c.rank) < 3) ||
-                      (c.rank === score[2] && boardCount(c.rank) < 2),
-                  )
-                : score[0] === 7
-                  ? hole.some(
-                      (c) =>
-                        c.rank === score[1] ||
-                        (c.rank === score[2] &&
-                          c.rank >
-                            Math.max(
-                              0,
-                              ...board.filter((b) => b.rank !== score[1]).map((b) => b.rank),
-                            )),
-                    )
-                  : score[0] === 8
-                    ? hole.some(
-                        (c) =>
-                          c.suit === flushSuit &&
-                          straightRanks.includes(c.rank) &&
-                          !board.some((b) => b.suit === flushSuit && b.rank === c.rank),
-                      )
-                    : false);
-  const ownTwoPair =
-    score[0] === 2 && [score[1], score[2]].every((rank) => hole.some((c) => c.rank === rank));
-  const drawCards = new Set();
-  for (let suit = 0; suit < 4; suit++)
-    for (let rank = 2; rank <= 14; rank++) {
-      if (known.some((c) => c.rank === rank && c.suit === suit)) continue;
-      if (
-        straightCompletions.has(rank) ||
-        (flushDraw && known.filter((c) => c.suit === suit).length === 4)
-      )
-        drawCards.add(`${suit}-${rank}`);
-    }
-  return {
-    wet,
-    madeCategory: score[0],
-    ownMade,
-    strongMade: ownMade && (ownTwoPair || score[0] >= 3),
-    draw: flushDraw || straightDraw,
-    drawOuts: drawCards.size,
-    overpair,
-    flushDraw,
-    straightOuts: straightCompletions.size * 4,
-    ownPair: score[0] === 1 && ownMade,
-    pairedBoard: new Set(board.map((c) => c.rank)).size < board.length,
-  };
-}
 export function effectiveBotAxes(profile, mood, mode) {
   const axes = [...profile.axes],
     strength = mode === 'off' ? 0 : mode === 'lively' ? 1 : 0.5;
@@ -714,7 +588,13 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
   const bigBlind = bigBlindOf(view);
   const legal = view.legal;
   if (!legal.enabled) throw Error('机器人当前不能行动。');
+  const capability = difficultyPolicy(view.difficulty);
   const style = resolveBotStyle(profile);
+  if (!hasBotSkill(view.difficulty, 'float')) style.float = 0;
+  if (!hasBotSkill(view.difficulty, 'thin-value')) style.thinValue = 0;
+  if (!hasBotSkill(view.difficulty, 'pot-control')) style.potControl = 0;
+  if (!hasBotSkill(view.difficulty, 'cbet')) style.smallCbet = 0;
+  if (!hasBotSkill(view.difficulty, 'blocker-bluff')) style.blockerBluffs = false;
   const context = botStyleContext(view, style);
   const axes = effectiveBotAxes(profile, mood, mode);
   const [width, attack, bluff, callDown, trap] = axes.map((n) => n / 100);
@@ -736,9 +616,7 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
     odds =
       view.allIn?.odds ?? view.callPrice?.odds ?? legal.callAmount / Math.max(1, view.contestable),
     pressure = legal.toCall / Math.max(1, view.stack + view.bet);
-  const noise =
-    (random() - 0.5) *
-    (view.difficulty === 'easy' ? 0.16 : view.difficulty === 'hard' ? 0.04 : 0.08);
+  const noise = (random() - 0.5) * capability.noise;
   const equity = Math.max(0, Math.min(1, view.equity + noise));
   const behind = view.actionContext?.unactedBehindCount,
     responseRisk = publicResponseRisk(view),
@@ -760,6 +638,7 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
     (view.count >= 8 ? 0.9 : 1) *
     (behind == null ? 1 : Math.max(0.75, 1 - behind * 0.04)) *
     style.entry *
+    capability.entry *
     (view.count <= 6 ? style.shortTable : 1);
   let range = baseRange;
   if (raises.length) range *= raises.length === 1 ? 0.68 : 0.42;
@@ -879,6 +758,7 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
         openingRange,
         (0.035 + width * 0.085) *
           style.reraise *
+          capability.reraise *
           (raises.length === 1 ? 1 : 0.58) *
           (['BTN', 'CO'].includes(view.position) ? 1.15 : 1),
       )
@@ -901,7 +781,8 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
     thinValue = false;
   const floatContinue = context.floatCandidate && roll('float', style.float) < style.float;
   const headsUp = assumedOpponents === 1,
-    features = view.features;
+    features = view.features,
+    support = aggressionSupport({ ...view, equity });
   const structuredPriceContinue =
     !!view.publicEquity &&
     view.street > 0 &&
@@ -947,6 +828,7 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
       (view.difficulty === 'easy' ? 0.12 : 0.38) + callDown * 0.36;
   const semiThreshold = Math.min(0.7, (0.16 + bluff * 0.42) * (headsUp ? 1 : 0.55) * barrelScale);
   semiBluff =
+    hasBotSkill(view.difficulty, 'semi-bluff') &&
     legal.canRaise &&
     view.street > 0 &&
     view.street < 3 &&
@@ -957,6 +839,7 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
     (legal.canCheck || drawContinue || equity + callTolerance >= odds + 0.02) &&
     roll('semi-bluff', semiThreshold) < semiThreshold;
   const lateSteal =
+    hasBotSkill(view.difficulty, 'position') &&
     cheapEntry &&
     !limpers &&
     ['BTN', 'CO'].includes(view.position) &&
@@ -966,12 +849,23 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
       (0.12 + bluff * 0.2 + attack * 0.1) * style.entry;
   const story = view.street > 0 && (ownLastRaise || !features.wet || context.delayed);
   const lateReraise =
+    hasBotSkill(view.difficulty, 'light-reraise') &&
     affordableOpen &&
     !openCallers &&
     ['BTN', 'CO'].includes(view.position) &&
     context.preflopBlocker &&
     admitted &&
     roll('pure-bluff', 0.03 + bluff * 0.1) < 0.03 + bluff * 0.1;
+  const squeezeBluff =
+    hasBotSkill(view.difficulty, 'squeeze') &&
+    affordableOpen &&
+    openCallers === 1 &&
+    ['BTN', 'CO'].includes(view.position) &&
+    context.preflopBlocker &&
+    admitted &&
+    (view.actionContext?.pendingResponseCount ?? view.rivals) <= 3 &&
+    equity + callTolerance >= requiredEquity &&
+    roll('squeeze', 0.02 + bluff * 0.06) < 0.02 + bluff * 0.06;
   const blockerAllowed = !style.blockerBluffs || view.street !== 3 || context.riverBlocker;
   const bluffThreshold = Math.min(
     0.28,
@@ -987,9 +881,13 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
     legal.canRaise &&
     (lateSteal ||
       lateReraise ||
-      (view.street > 0 &&
+      squeezeBluff ||
+      (hasBotSkill(view.difficulty, 'blocker-bluff') &&
+        view.street > 0 &&
         !(view.difficulty !== 'easy' && high === 7 && low === 2) &&
         !view.playsBoard &&
+        support.bluffCandidate &&
+        support.mayBluff &&
         view.rivals <= 2 &&
         story &&
         blockerAllowed &&
@@ -1003,6 +901,20 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
     action,
     ...(amount === undefined ? {} : { amount }),
     trace: {
+      difficulty: view.difficulty,
+      skills: [...capability.skills],
+      basis: decisionBasis(view, {
+        action,
+        reason,
+        amount,
+        value,
+        semiBluff,
+        pureBluff,
+        drawContinue,
+        pairContinue,
+        structuredPriceContinue,
+        exceptions,
+      }),
       reason,
       profile: profile.id,
       profileName: profile.name,
@@ -1055,6 +967,7 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
       pairContinue,
       lateSteal,
       lateReraise,
+      squeezeBluff,
       playsBoard: view.playsBoard,
     },
   });
@@ -1135,10 +1048,8 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
   value =
     view.street === 0
       ? premium || percentile <= raiseRange
-      : !!features.ownMade &&
-        !view.playsBoard &&
-        (equity > (headsUp ? 0.53 : 1 / (view.rivals + 1) + 0.23) ||
-          (features.overpair && equity > 0.4));
+      : support.valueCandidate &&
+        equity > (headsUp ? 0.53 : Math.max(0.62, 1 / (view.rivals + 1) + 0.23));
   thinValue =
     style.thinValue > 0 &&
     view.street === 3 &&
@@ -1174,7 +1085,7 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
   )
     return finish('check', 'pot-control');
   if (
-    view.difficulty === 'easy' &&
+    hasBotSkill(view.difficulty, 'trap') &&
     value &&
     headsUp &&
     features.strongMade &&
@@ -1192,8 +1103,10 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
   )
     return finish('check', 'trap');
   if (
+    (!isDonkLead(view) || hasBotSkill(view.difficulty, 'donk')) &&
     (value || semiBluff || pureBluff || smallCbet || thinValue) &&
-    roll('attack', 0.2 + attack * 0.72) < 0.2 + attack * 0.72
+    roll('attack', (0.2 + attack * 0.72) * capability.attack) <
+      (0.2 + attack * 0.72) * capability.attack
   ) {
     const interval = style.streetSizing?.[view.street - 1] || profile.sizing;
     let fraction = interval[0] + random() * (interval[1] - interval[0]);
@@ -1218,6 +1131,7 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
       desired =
         (style.openingBB == null ? 2.5 + (attack > 0.8 ? 0.5 : 0) : style.openingBB) * bigBlind +
         view.history.filter((a) => a.street === 0 && a.action === 'call').length * bigBlind;
+    if (squeezeBluff) desired = Math.max(desired, view.currentBet * (view.inPosition ? 4 : 5));
     const amount = legalRaiseTo(desired, legal);
     sizing = {
       fraction,

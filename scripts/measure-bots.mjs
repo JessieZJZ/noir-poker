@@ -1,3 +1,4 @@
+import { observedBotMetrics } from '../src/engine/bot-difficulty.js';
 import {
   newGame,
   startHand,
@@ -13,6 +14,8 @@ const seeded = (seed) => {
 const args = Object.fromEntries(process.argv.slice(2).map((v) => v.replace(/^--/, '').split('=')));
 const count = Number(args.players || 6),
   hands = Number(args.hands || 250),
+  difficulty = args.difficulty || 'normal',
+  emotionMode = args.emotions || 'off',
   profile = args.profile || 'balanced',
   policySeed = Number(args.seed ?? 781),
   deckSeed = Number(args['deck-seed'] ?? 711);
@@ -24,10 +27,16 @@ const random = seeded(policySeed),
   deckRandom = seeded(deckSeed),
   previousRandom = Math.random;
 const g = newGame(count);
+if (
+  !['easy', 'normal', 'hard'].includes(difficulty) ||
+  !['off', 'subtle', 'lively'].includes(emotionMode)
+)
+  throw Error('Invalid difficulty or emotions');
+g.difficulty = difficulty;
 const flops = { hands: 0, players: 0, threePlus: 0, distribution: {} };
 let preflopReraisedHands = 0;
 applyBotSettings(g, {
-  emotionMode: 'off',
+  emotionMode,
   assignments: Object.fromEntries(Array.from({ length: count - 1 }, (_, i) => [i + 1, profile])),
 });
 try {
@@ -58,30 +67,33 @@ try {
 } finally {
   Math.random = previousRandom;
 }
-const total = g.players.slice(1).reduce(
-  (r, p) => ({
-    samples: r.samples + p.botStats.hands,
-    vpip: r.vpip + p.botStats.vpip,
-    pfr: r.pfr + p.botStats.pfr,
-  }),
-  { samples: 0, vpip: 0, pfr: 0 },
-);
+const total = g.players.slice(1).reduce((totals, p) => {
+  for (const [key, value] of Object.entries(p.botStats)) totals[key] = (totals[key] || 0) + value;
+  return totals;
+}, {});
+const metrics = observedBotMetrics(total);
 console.log(
   JSON.stringify({
     profile,
+    difficulty,
+    emotionMode,
+    metrics,
     players: count,
     hands,
     policySeed,
     deckSeed,
     ...total,
-    vpipPercent: (100 * total.vpip) / total.samples,
-    pfrPercent: (100 * total.pfr) / total.samples,
+    hands,
+    samples: total.hands,
+    vpipPercent: (100 * total.vpip) / total.hands,
+    pfrPercent: (100 * total.pfr) / total.hands,
     flopHands: flops.hands,
     averageFlopPlayers: flops.hands ? flops.players / flops.hands : 0,
     threePlusFlopHands: flops.threePlus,
     threePlusFlopPercent: (100 * flops.threePlus) / hands,
     flopPlayerDistribution: flops.distribution,
     preflopReraisedHands,
-    scenario: '100 BB each new hand, same seeded deck, emotions off, hero uses baseline policy',
+    scenario:
+      '100 BB each new hand, seeded deck, hero uses baseline policy; observed ratios with actual opportunity denominators',
   }),
 );

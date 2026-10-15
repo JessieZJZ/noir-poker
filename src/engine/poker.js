@@ -442,6 +442,29 @@ export function act(g, id, action, amount) {
         )
       : null;
   if (id !== 0) {
+    p.botStats = { ...freshBotStats(), ...p.botStats };
+    const preflopRaises =
+      g.street === 0 ? (g.history || []).filter((a) => a.street === 0 && a.action === 'raise') : [];
+    if (
+      g.street === 0 &&
+      preflopRaises.length === 1 &&
+      legal.canRaise &&
+      !p.botHand.threeBetOpportunity
+    ) {
+      p.botHand.threeBetOpportunity = true;
+      p.botStats.threeBetOpportunities++;
+      if (normalized === 'raise') p.botStats.threeBets++;
+    }
+    if (
+      g.street === 0 &&
+      preflopRaises.length === 2 &&
+      legal.toCall > 0 &&
+      !p.botHand.facedThreeBet
+    ) {
+      p.botHand.facedThreeBet = true;
+      p.botStats.facedThreeBets++;
+      if (normalized === 'fold') p.botStats.foldsToThreeBet++;
+    }
     if (g.street === 0 && ['call', 'raise'].includes(normalized)) p.botHand.vpip = true;
     if (g.street === 0 && normalized === 'raise') p.botHand.pfr = true;
     if (g.street > 0 && ['call', 'check', 'raise'].includes(normalized)) {
@@ -479,6 +502,7 @@ export function act(g, id, action, amount) {
       bigBlind: bigBlindOf(g),
       dealer: g.dealer,
       emotionMode: g.emotionMode,
+      difficulty: g.difficulty,
       legal: { ...legal },
       pending: [...g.pending],
       actionContext: publicActionContext(g, id),

@@ -447,8 +447,9 @@ test('raise controls, seats, activity and review share street-specific bet ordin
     '2-bet 开池至 150',
   );
   await page.locator('#review-timeline [data-review-index="2"]').click();
-  await expect(page.locator('#review-public-actions')).toContainText('3-bet 加注至 650');
-  await expect(page.locator('#review-public-actions')).toContainText('4-bet 加注至 1.8K');
+  await page.locator('#review-activity summary').click();
+  await expect(page.locator('#review-activity-list')).toContainText('3-bet 加注至 650');
+  await expect(page.locator('#review-activity-list')).toContainText('4-bet 加注至 1.8K');
 });
 
 test('5–9 player showdown reveals all holes immediately and displays each best five', async ({
@@ -1957,7 +1958,8 @@ test('review timelines hint at horizontal scrolling and keep late selections in 
     const after = await timeline.evaluate((el) => ({ left: el.scrollLeft, top: el.scrollTop }));
     expect(Math.abs(after.left - before.left)).toBeLessThan(1.1);
     expect(Math.abs(after.top - before.top)).toBeLessThan(1.1);
-    await page.locator('[data-opponent-nav="-1"]').evaluate((button) => button.click());
+    await timeline.locator('[data-opponent-index="4"]').click();
+    await expect(page.locator('[data-opponent-nav]')).toHaveCount(0);
     await expect(timeline.locator('[aria-current="step"]')).toHaveAttribute(
       'data-opponent-index',
       '4',

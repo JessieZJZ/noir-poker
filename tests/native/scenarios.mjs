@@ -1439,6 +1439,29 @@ export async function nativeScenarios(app) {
     assert.equal(presentation.method, 0);
     assert.doesNotMatch(presentation.reason, /EV|模型|模拟器|抽样|新增投入/);
     assert.doesNotMatch(presentation.keyInfo, /有效剩余|新增投入/);
+    const analysisLayout = await app.evaluate(() => ({
+      oldControls: document.querySelectorAll(
+        '#review-public-actions, .review-step-nav, [data-opponent-nav]',
+      ).length,
+      sections: document.querySelectorAll('#review-coach-explanation [data-matchup-direction]')
+        .length,
+      collapsed: !document.querySelector('#review-activity').open,
+      summary: document.querySelector('#review-coach-explanation .review-analysis-heading')
+        ?.textContent,
+    }));
+    assert.equal(analysisLayout.oldControls, 0);
+    assert.equal(analysisLayout.sections, 2);
+    assert.equal(analysisLayout.collapsed, true);
+    assert.equal(analysisLayout.summary, '复盘分析总结');
+    await app.click('#review-activity summary');
+    assert.ok(
+      await app.evaluate(
+        () =>
+          document.querySelectorAll('#review-activity-list .review-activity-emphasis').length > 0,
+      ),
+    );
+    await app.screenshot('review-activity-expanded');
+    await app.click('#review-activity summary');
     const observedDeceptiveMotives = [];
     if (app.comparePage) {
       await app.comparePage('review', [

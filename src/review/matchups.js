@@ -1,3 +1,4 @@
+import { reviewCardCache, clearReviewCardCache } from './card-cache.js';
 import { deckOfCards, evaluate, compare, RANK_NAMES } from '../engine/poker.js';
 import { legalRaiseTo } from '../engine/bet-sizing.js';
 import { bigBlindOf } from '../engine/stakes.js';
@@ -6,16 +7,52 @@ import { botBoardFeatures } from '../engine/bot-profiles.js';
 import { preparePublicRanges, publicComboWeight } from '../engine/public-ranges.js';
 import { publicHandData } from '../engine/public-equity.js';
 import { cardText, spotFacts } from './spot-facts.js';
+import { drawLabel } from './narrative.js';
 
 const identify = (card) => `${card.rank}-${card.suit}`;
 const number = compactChips;
 const ordered = (a, b) => (a < b ? -1 : a > b ? 1 : 0);
 const pairKey = (cards) => cards.map(identify).sort().join('|');
-const groupKey = (candidate) => {
+const groupKey = (candidate, street, board) => {
   const [high, low] = candidate.cards.map((card) => card.rank).sort((a, b) => b - a),
     shape = high === low ? 'p' : candidate.cards[0].suit === candidate.cards[1].suit ? 's' : 'o';
-  return `${high}-${low}-${shape}-${candidate.score[0]}`;
+  if (!street) {
+    if (shape === 'p') return `pocket-${high >= 11 ? 'high' : high >= 7 ? 'middle' : 'small'}`;
+    if (high === 14) return `ace-${low >= 10 ? 'broadway' : 'low'}-${shape}`;
+    if (low >= 10) return `broadway-${shape}`;
+    if (shape === 's' && high - low <= 2) return 'suited-connected';
+    return `unpaired-${high >= 11 ? 'high' : 'low'}-${shape}`;
+  }
+  const score = candidate.score,
+    top = Math.max(...board.map((c) => c.rank));
+  const pair = score[0] === 1 ? (score[1] > top ? 'over' : score[1] === top ? 'top' : 'lower') : '';
+  return `${score[0]}-${pair}-${high}-${low}-${candidate.features.draw ? 'draw' : 'made'}`;
 };
+
+// Only card evaluations are shared. Ranges are rebuilt for every public line.
+// Four boards bound retained memory even when many archived hands are opened.
+const cardCache = reviewCardCache();
+export const clearMatchupCache = clearReviewCardCache;
+function cachedCards(cards, board) {
+  const key = board.map((c) => c.key).join('|');
+  if (!cardCache.has(key) && cardCache.size >= 4) cardCache.delete(cardCache.keys().next().value);
+  return publicHandData(cards, board, { evaluate, features: botBoardFeatures, cache: cardCache });
+}
+function handSummary(s, c) {
+  if (!s.street) return c.handLabel;
+  const draw = c.draw.outs ? drawLabel(c.draw) : '';
+  const pairDraw =
+    !draw && c.made.score[0] === 0 && s.street < 3 ? '未成对，可改善为一对；成对也未必领先。' : '';
+  return [
+    c.handLabel,
+    draw,
+    pairDraw,
+    `${c.texture.wet ? '湿润面' : '干燥面'}：${c.texture.label}`,
+    c.draw.outs ? '改善候选不是保证获胜的补牌。' : '',
+  ]
+    .filter(Boolean)
+    .join('；');
+}
 
 // Ranking describes possible opponent holdings from the same public range
 // kernel as the bots. It never changes the exhaustive current-nuts proof.
@@ -25,13 +62,13 @@ export function handMatchups(s, c) {
     pool = deckOfCards().filter((card) => !known.has(identify(card))),
     own = c.made.score,
     comparison = s.street ? 'made' : 'structure',
-    cache = new Map(),
+    cache = cardCache,
     candidates = [];
   let hasBehind = false;
   for (let i = 0; i < pool.length - 1; i++)
     for (let j = i + 1; j < pool.length; j++) {
       const cards = [pool[i], pool[j]],
-        made = publicHandData(cards, s.board, { evaluate, cache }),
+        made = cachedCards(cards, s.board),
         direction = Math.sign(compare(own, made.score));
       if (direction < 0) hasBehind = true;
       candidates.push({
@@ -45,10 +82,31 @@ export function handMatchups(s, c) {
             ? '皇家同花顺'
             : RANK_NAMES[made.score[0]],
         score: made.score,
+        features: made.features || {},
         direction: direction > 0 ? 'ahead' : direction < 0 ? 'behind' : 'tied',
         key: pairKey(cards),
         likelihood: 0,
+        relevance: !s.street
+          ? cards[0].rank === cards[1].rank
+            ? 3
+            : cards.every((card) => card.rank >= 10)
+              ? 4
+              : cards[0].suit === cards[1].suit && Math.abs(cards[0].rank - cards[1].rank) <= 2
+                ? 2
+                : 0
+          : made.score[0] > 0 || made.features?.draw
+            ? 1
+            : 0,
       });
+    }
+  if (s.street)
+    for (const candidate of candidates) {
+      const draw = candidate.features.flushDraw
+        ? '同花听牌'
+        : candidate.features.straightOuts
+          ? '顺子听牌'
+          : '';
+      if (draw) candidate.label += ' + ' + draw;
     }
   const ranges = preparePublicRanges(s).sort((a, b) => a.id - b.id);
   // Each live seat contributes a normalized distribution over the legal pool.
@@ -76,15 +134,18 @@ export function handMatchups(s, c) {
     for (const candidate of candidates) candidate.likelihood = 1 / candidates.length;
   const groups = { ahead: new Map(), behind: new Map(), tied: new Map() };
   for (const candidate of candidates) {
-    const group = groupKey(candidate),
+    const group = groupKey(candidate, s.street, s.board),
       entries = groups[candidate.direction],
       previous = entries.get(group);
     if (!previous) entries.set(group, { ...candidate, group, mass: candidate.likelihood });
     else {
       const mass = previous.mass + candidate.likelihood,
         preferred =
-          candidate.likelihood > previous.likelihood + 1e-12 ||
-          (Math.abs(candidate.likelihood - previous.likelihood) <= 1e-12 &&
+          candidate.relevance > previous.relevance ||
+          (candidate.relevance === previous.relevance &&
+            candidate.likelihood > previous.likelihood + 1e-12) ||
+          (candidate.relevance === previous.relevance &&
+            Math.abs(candidate.likelihood - previous.likelihood) <= 1e-12 &&
             ordered(candidate.key, previous.key) < 0);
       entries.set(group, { ...(preferred ? candidate : previous), group, mass });
     }
@@ -92,12 +153,18 @@ export function handMatchups(s, c) {
   const select = (direction, limit) =>
     [...groups[direction].values()]
       .sort((a, b) =>
-        Math.abs(a.mass - b.mass) > 1e-12 ? b.mass - a.mass : ordered(a.group, b.group),
+        a.relevance !== b.relevance
+          ? b.relevance - a.relevance
+          : Math.abs(a.mass - b.mass) > 1e-12
+            ? b.mass - a.mass
+            : ordered(a.group, b.group),
       )
       .slice(0, limit)
       .map(({ cards, text, label, score, group }) => ({ cards, text, label, score, group }));
-  const ahead = select('ahead', 3),
-    behind = select('behind', 3),
+  const mass = (direction) =>
+    [...groups[direction].values()].reduce((sum, group) => sum + group.mass, 0);
+  const ahead = select('ahead', mass('ahead') >= mass('behind') ? 3 : 1),
+    behind = select('behind', mass('behind') > mass('ahead') ? 3 : 1),
     tied = select('tied', 1),
     lead = ahead[0],
     lose = behind[0],
@@ -143,7 +210,16 @@ export function handMatchups(s, c) {
     behind,
     tied,
     handLabel: c.handLabel,
+    summary: handSummary(s, c),
     comparison,
+    rangeContext: ranges.map(({ id, position, role, line, preflop, postflop }) => ({
+      id,
+      position,
+      role,
+      line,
+      preflop,
+      postflop,
+    })),
     nut: Boolean(s.street) && !hasBehind,
     strength,
     relation: !s.street ? strength : board ? 'board' : !hasBehind ? 'current-nuts' : strength,
@@ -153,27 +229,34 @@ export function handMatchups(s, c) {
 
 export function matchupPresentation(matchups, street) {
   if (!matchups) return null;
-  const structure = matchups.comparison === 'structure',
-    directions = [
-      ['ahead', structure ? '结构上较弱的可能牌组' : '当前可能领先的牌组'],
-      ['behind', structure ? '结构上较强的可能牌组' : '当前可能落后的牌组'],
-      ['tied', '当前可能平分的牌组'],
-    ];
+  const structure = matchups.comparison === 'structure';
+  const nutsNote =
+    !structure && matchups.nut
+      ? street === 3
+        ? '河牌已发完，当前没有可能更强的牌组。'
+        : '当前没有可能更强的牌组；后续公共牌仍可能改变强弱。'
+      : '';
   return {
-    title: structure ? '起手牌结构对比' : '当前成牌对比',
-    handLabel: matchups.handLabel,
+    title: '牌力与牌面',
+    handLabel: matchups.summary || matchups.handLabel,
     note: structure
       ? '仅比较起手牌结构，不代表获胜概率；之后仍需看公共牌。'
       : '按位置与此前公开行动估计排序，仅是可能牌组，不代表对手实际底牌。',
-    groups: directions
-      .filter(([direction]) => matchups[direction].length && (!structure || direction !== 'tied'))
-      .map(([direction, label]) => ({ direction, label, examples: matchups[direction] })),
-    nutsNote:
-      !structure && matchups.nut
-        ? street === 3
-          ? '河牌已发完，当前没有可能更强的牌组。'
-          : '当前没有可能更强的牌组；后续公共牌仍可能改变强弱。'
-        : '',
+    groups: [
+      {
+        direction: 'ahead',
+        label: structure ? '结构上较弱的可能牌组' : '当前能赢的可能牌组',
+        examples: matchups.ahead,
+        empty: '未列出更弱的可能牌组。',
+      },
+      {
+        direction: 'behind',
+        label: structure ? '结构上较强的可能牌组' : '当前会输的可能牌组',
+        examples: matchups.behind,
+        empty: nutsNote || '未列出更强的可能牌组。',
+      },
+    ],
+    nutsNote: matchups.tied.length ? '相同牌力可能平分底池。' : '',
   };
 }
 

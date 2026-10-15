@@ -171,11 +171,11 @@ try {
     const step = (await page.data()).selectedReviewStep;
     verify(step);
     assert.equal(await page.$('.review-comparison'), null);
-    assert.ok(step.evidence.length >= 4 && step.history.length > 0);
+    assert.ok(step.evidence.length >= 4 && (await page.data()).reviewActivity.length > 0);
     assert.equal(Boolean(await page.$('.review-practice-focus')), !step.keep);
     assert.doesNotMatch(step.reason, /EV|模型|模拟器|抽样|新增投入/);
     assert.doesNotMatch(step.evidence.join(''), /有效剩余|新增投入/);
-    assert.deepEqual(step.publicResponses, []);
+    assert.equal(step.publicResponses, undefined);
     report.checks.push({
       name,
       fixture: 'before-action public snapshot; not an actual deal',
@@ -265,8 +265,14 @@ try {
       game.decisions = fixture.decisions.map((decision) => ({ ...decision, hand: game.hand }));
       game.botDecisions = fixture.botDecisions;
       game.history = fixture.history;
+      game.logs = fixture.logs;
     },
-    { decisions: causal.decisions, botDecisions: causal.botDecisions, history: causal.history },
+    {
+      decisions: causal.decisions,
+      botDecisions: causal.botDecisions,
+      history: causal.history,
+      logs: causal.logs,
+    },
   );
   await invoke('openReview');
   await wait((data) => !data.reviewData.loading && data.selectedReviewStep);
@@ -277,12 +283,15 @@ try {
   assert.match(hero.reason, /200/);
   assert.match(hero.reason, /Luna|CO/);
   assert.doesNotMatch(hero.reason, /A[♦♥♣♠]|Q[♦♥♣♠]|EV|模型|模拟器|抽样|新增投入/);
-  const responses = hero.publicResponses.join('');
+  const responses = (await page.data()).reviewActivity.map((event) => event.text).join('');
   assert.match(responses, /Mia.*1K/);
   assert.match(responses, /Alex.*弃牌/);
   assert.match(responses, /River.*950/);
   assert.match(responses, /Luna.*800/);
-  assert.ok(hero.publicResponses.every((paragraph) => hero.paragraphs.includes(paragraph)));
+  assert.equal(hero.publicResponses, undefined);
+  assert.equal((await page.data()).reviewActivityOpen, false);
+  await invoke('toggleReviewActivity');
+  assert.ok((await page.data()).reviewActivity.some((event) => event.emphasized && event.current));
   assert.doesNotMatch(hero.evidence.join(''), /有效剩余|新增投入|赔率|权益.*%/);
   report.checks.push({
     name: '69o-actual-public-responses',
@@ -314,8 +323,9 @@ try {
         game.decisions = fixture.decisions.map((decision) => ({ ...decision, hand: game.hand }));
         game.botDecisions = [];
         game.history = fixture.history;
+        game.logs = fixture.logs;
       },
-      { decisions: fixture.decisions, history: fixture.history },
+      { decisions: fixture.decisions, history: fixture.history, logs: fixture.logs },
     );
     await invoke('openReview');
     await wait((data) => !data.reviewData.loading && data.selectedReviewStep);
@@ -329,21 +339,30 @@ try {
       assert.match(step.reason, /价值|取值/);
       assert.match(step.reason, /能赢.*(?:两对|对子)/);
       assert.match(step.reason, /输给.*三条/);
-      assert.match(step.publicResponses.join(''), /Luna.*900/);
+      assert.match(
+        (await page.data()).reviewActivity.map((event) => event.text).join(''),
+        /Luna.*900/,
+      );
     } else {
       assert.match(step.reason, /埋牌|藏在平跟/);
       assert.match(step.reason, /150/);
       assert.match(step.reason, /领先/);
-      assert.match(step.publicResponses.join(''), /Mia.*弃牌/);
-      assert.match(step.publicResponses.join(''), /Alex.*弃牌/);
+      assert.match(
+        (await page.data()).reviewActivity.map((event) => event.text).join(''),
+        /Mia.*弃牌/,
+      );
+      assert.match(
+        (await page.data()).reviewActivity.map((event) => event.text).join(''),
+        /Alex.*弃牌/,
+      );
     }
     assert.equal(step.ev, undefined);
     assert.doesNotMatch(step.reason, /EV|模型|模拟器|抽样|最终赢家|已经摊牌/);
-    assert.ok(step.publicResponses.every((paragraph) => step.paragraphs.includes(paragraph)));
+    assert.equal(step.publicResponses, undefined);
     const rendered = await Promise.all(
       (await page.$$('.review-coaching text')).map((element) => element.text()),
     );
-    for (const paragraph of step.publicResponses) assert.ok(rendered.join('').includes(paragraph));
+    assert.ok(rendered.join('').includes('复盘分析总结'));
     assert.equal(await page.$('.opponent-metrics'), null);
     report.checks.push({
       name: 'common-hero-' + kind,

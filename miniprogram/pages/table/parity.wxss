@@ -1665,3 +1665,39 @@
   font-size: 12px;
   line-height: 1.8;
 }
+
+.review-activity {
+  margin-top: 24px;
+  border-top: 1px solid #30434e;
+  padding-top: 16px;
+  color: #91a7b2;
+}
+.review-activity-toggle {
+  width: 100%;
+  padding: 8px 0;
+  text-align: left;
+  background: transparent;
+  color: #c8dbdf;
+  font-weight: 700;
+}
+.review-activity-event {
+  padding: 10px 12px;
+  line-height: 1.65;
+  border-radius: 8px;
+}
+.review-activity-emphasis {
+  color: #edf7f5;
+  font-weight: 750;
+  background: #66cbb111;
+}
+.review-activity-current {
+  box-shadow: inset 3px 0 #6be2c5;
+  background: #66cbb124;
+}
+.review-analysis-heading {
+  display: block;
+  color: #e0eae8;
+  font-size: 16px;
+  font-weight: 700;
+  margin: 24px 0 12px;
+}

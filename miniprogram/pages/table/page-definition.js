@@ -1086,8 +1086,22 @@ module.exports = {
         ? reviewData.steps
         : opponents.filter((step) => !filter || step.name === names[filter - 1]);
     const reviewIndex = Math.min(this.data.reviewIndex, Math.max(0, steps.length - 1));
+    const selectedStep = steps[reviewIndex];
+    if (this.data.reviewPerspective !== 'hero' && selectedStep && !selectedStep.analyzed) {
+      Object.assign(selectedStep, this.call('reviewOpponent', selectedStep.index) || {});
+    }
+    const actorId = this.data.reviewPerspective === 'hero' ? 0 : selectedStep?.id;
+    const activity = (reviewData.activity || []).map((event) => ({
+      ...event,
+      emphasized: Number.isInteger(actorId) && event.player === actorId,
+      current:
+        Number.isInteger(actorId) &&
+        event.player === actorId &&
+        event.sequence === selectedStep?.sequence,
+    }));
     this.setData({
       reviewData,
+      reviewActivity: activity,
       opponentOptions: [
         '全部对手',
         ...names.map((name) => {
@@ -1118,11 +1132,15 @@ module.exports = {
   openReview() {
     this.setOverlay({
       reviewOpen: true,
+      reviewActivityOpen: false,
       reviewPerspective: 'hero',
       reviewIndex: 0,
       opponentFilter: 0,
     });
     this.call('review', (reviewData) => this.updateReview(reviewData));
+  },
+  toggleReviewActivity() {
+    this.setData({ reviewActivityOpen: !this.data.reviewActivityOpen });
   },
   closeReview() {
     this.call('cancelReview');

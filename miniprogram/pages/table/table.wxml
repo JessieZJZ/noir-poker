@@ -543,8 +543,12 @@
           >
             进阶
           </button></view
-        ></view
-      >
+        >
+        <text class="setting-description">{{difficultyDescription}}</text>
+        <text class="setting-description"
+          >同一难度保留牌手风格差异；进阶不代表每手更松或更激进。</text
+        >
+      </view>
       <view class="settings-module emotion-module"
         ><view class="setting-row mood"
           ><text>情绪模拟</text
@@ -558,7 +562,7 @@
             <text>{{emotionOptions[emotionIndex]}}</text
             ><view class="select-chevron" /></button></view
         ><text class="setting-description"
-          >输赢后短暂调整打法，随后恢复；仅为游戏机制，不代表真人性格。</text
+          >情绪只调整当前难度内的入池、进攻与跟注倾向，不增加策略能力；几手后恢复。</text
         ></view
       >
       <view class="settings-module"
@@ -902,7 +906,11 @@
           >
           <block wx:if="{{selectedReviewStep.commentary.length}}">
             <block wx:for="{{selectedReviewStep.commentary}}" wx:key="index">
-              <text wx:if="{{item.text}}">{{item.text}}</text>
+              <text
+                wx:if="{{item.text}}"
+                class="{{item.text === '复盘分析总结' ? 'review-analysis-heading' : ''}}"
+                >{{item.text}}</text
+              >
               <view wx:else class="review-matchups">
                 <text class="module-title">{{item.matchups.title}}</text>
                 <text class="review-matchup-hand">{{item.matchups.handLabel}}</text>
@@ -914,6 +922,7 @@
                   data-matchup-direction="{{group.direction}}"
                 >
                   <text class="module-title">{{group.label}}</text>
+                  <text wx:if="{{!group.examples.length}}" class="muted">{{group.empty}}</text>
                   <view
                     wx:for="{{group.examples}}"
                     wx:for-item="example"
@@ -948,17 +957,27 @@
           <text class="module-title">当时的关键信息</text>
           <text wx:for="{{selectedReviewStep.evidence}}" wx:key="*this">• {{item}}</text>
         </view>
-        <view wx:if="{{reviewPerspective === 'hero'}}" class="review-public-actions">
-          <text class="module-title">此前的公开行动</text>
-          <text wx:for="{{selectedReviewStep.history}}" wx:key="index">{{item}}</text>
-          <text wx:if="{{!selectedReviewStep.history.length}}" class="muted"
-            >本轮尚无其他主动行动。</text
-          >
-        </view>
       </view>
       <text wx:elif="{{!reviewData.loading}}" class="muted"
         >本手没有主动决策，无法评价选择。盲注是强制投入，不会被归为操作失误。</text
       >
+      <view class="review-activity">
+        <button
+          class="review-activity-toggle"
+          bindtap="toggleReviewActivity"
+          aria-expanded="{{reviewActivityOpen}}"
+        >
+          {{reviewActivityOpen ? '▾' : '▸'}} 对局动态
+        </button>
+        <view wx:if="{{reviewActivityOpen}}">
+          <view
+            wx:for="{{reviewActivity}}"
+            wx:key="key"
+            class="review-activity-event {{item.emphasized ? 'review-activity-emphasis' : ''}} {{item.current ? 'review-activity-current' : ''}}"
+            ><text>{{index + 1}}. {{item.text}}</text></view
+          >
+        </view>
+      </view>
       <text class="review-scope muted">按当时信息判断，单手输赢不直接决定操作好坏。</text>
     </view></scroll-view
   >

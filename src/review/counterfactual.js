@@ -1,3 +1,4 @@
+import { reviewCardCache } from './card-cache.js';
 import { bigBlindOf } from '../engine/stakes.js';
 import {
   newGame,
@@ -120,6 +121,7 @@ function resume(s, deal) {
     botDecisions: [],
     logs: [],
     emotionMode: s.emotionMode || 'off',
+    difficulty: ['easy', 'normal', 'hard'].includes(s.difficulty) ? s.difficulty : 'normal',
   });
   for (const p of s.players) {
     const mood = freshBotMood();
@@ -150,6 +152,7 @@ function hasFinalFold(g) {
 export function compareCandidateActions(s, alternatives = [], { trials = 40 } = {}) {
   if (!Number.isInteger(trials) || trials < 2) throw Error('模拟次数至少为 2。');
   const candidates = candidateActions(s, alternatives);
+  const policyDifficulties = new Set();
   const rows = candidates.map((action) => ({ action, scenarios: [] }));
   const actualIndex = candidates.findIndex(
     (a) => a.action === s.action && (a.action !== 'raise' || a.amount === s.amount),
@@ -163,7 +166,7 @@ export function compareCandidateActions(s, alternatives = [], { trials = 40 } = 
     const ranges = new Map(preparePublicRanges(s).map((range) => [range.id, range]));
     // Initial range sampling uses the same visible board on every trial.
     // Reuse its pure candidate scores, while every deal remains newly sampled.
-    const samplingCache = new Map();
+    const samplingCache = reviewCardCache();
     // Only the first live opponent has the same available pool across trials.
     // Keep this range proposal local to this snapshot, outside the score cache.
     const firstOpponent = s.players.find((p) => p.id && !p.folded),
@@ -197,6 +200,7 @@ export function compareCandidateActions(s, alternatives = [], { trials = 40 } = 
           if (g.phase === 'between') advanceStreet(g);
           else {
             const d = botDecision(g, policy, { trials: 8, allInCache });
+            policyDifficulties.add(d.trace.difficulty);
             act(g, g.actor, d.action, d.amount);
           }
         }
@@ -264,6 +268,7 @@ export function compareCandidateActions(s, alternatives = [], { trials = 40 } = 
     rows,
     trials,
     policyTrials: 8,
+    policyDifficulties: [...policyDifficulties].sort(),
     best: best.action,
     stable,
     comparisonReady: trials >= 30,

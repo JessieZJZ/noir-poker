@@ -1,3 +1,4 @@
+import { difficultyPolicy } from '../engine/bot-difficulty.js';
 import { createGameRecords } from '../engine/game-records.js';
 import { compactChips, compactActionAmounts } from '../engine/chip-format.js';
 import {
@@ -9,7 +10,7 @@ import {
 import { createHeroTurnCue, createHeroTurnAttention } from '../ui/hero-turn.js';
 import { SEAT_ANCHORS } from '../ui/seat-geometry.js';
 import { explainOpponent } from '../review/opponents.js';
-import { publicHistory } from '../review/narrative.js';
+import { selectedActivity } from '../review/activity.js';
 import { reviewCommentary } from '../review/matchups.js';
 import {
   newGame,
@@ -129,6 +130,8 @@ export function createWechatController({
     timer = null,
     pendingBot = null,
     reviewTimer = null,
+    reviewSource = null,
+    opponentReviews = new Map(),
     hintTimer = null,
     epoch = 0,
     active = true,
@@ -160,6 +163,8 @@ export function createWechatController({
     pendingBot = null;
   }
   function cancelReview() {
+    reviewSource = null;
+    opponentReviews.clear();
     reviewEpoch++;
     if (reviewTimer !== null) unschedule(reviewTimer);
     reviewTimer = null;
@@ -404,6 +409,7 @@ export function createWechatController({
               : `${game.players[game.actor]?.name || '对手'} 正在思考，请稍候。`,
       profiles,
       settings: { ...settings, assignments: { ...settings.assignments } },
+      difficultyDescription: difficultyPolicy(settings.difficulty).description,
       seatSettings: ['Mia', 'Alex', 'River', 'Kai', 'Luna', 'Theo', 'Jade', 'Leo'].map(
         (name, i) => {
           const id = i + 1;
@@ -772,6 +778,8 @@ export function createWechatController({
       const ticket = reviewEpoch,
         input = createReviewInput(game),
         results = [];
+      reviewSource = input;
+      opponentReviews = new Map();
       onProgress({
         loading: true,
         hand: input.hand,
@@ -781,9 +789,7 @@ export function createWechatController({
       function step() {
         if (disposed || !active || ticket !== reviewEpoch) return;
         if (results.length < input.decisions.length) {
-          results.push(
-            analyzeDecision(input.decisions[results.length], { trials: 120, rolloutTrials: 12 }),
-          );
+          results.push(analyzeDecision(input.decisions[results.length]));
           reviewTimer = schedule(step, 0);
           return;
         }
@@ -797,12 +803,9 @@ export function createWechatController({
           resultContext: input.outcome.folded
             ? '你已弃牌，按弃牌前的信息评价。'
             : '只按行动前可见的信息评价决策。',
+          activity: selectedActivity(input),
           opponents: input.opponents.map((record, index) => {
             const view = record.trace.view;
-            const explanation = explainOpponent(
-              record,
-              input.opponents.map(({ id, name }) => ({ id, name })),
-            );
             return {
               index,
               name: record.name,
@@ -819,16 +822,8 @@ export function createWechatController({
               stack: format(view.stack),
               cards: view.hole.map(cardView),
               board: view.board.map(cardView),
-              title: explanation.title,
-              reason: explanation.detail,
-              paragraphs: explanation.paragraphs,
-              commentary: reviewCommentary(
-                explanation.paragraphs,
-                explanation.matchups,
-                view.street,
-              ),
-              reasons: explanation.reasons,
-              warning: explanation.warning,
+              analyzed: false,
+              sequence: record.sequence,
             };
           }),
           steps: results.map((r, index) => ({
@@ -842,24 +837,45 @@ export function createWechatController({
             keep: r.coaching.kind === 'keep',
             suggestion: cleanAction(r.coaching.suggestion),
             reason: r.coaching.explanation,
-            paragraphs: [...r.coaching.paragraphs, ...(input.publicResponses?.[index] || [])],
+            sequence: input.decisions[index].history.length + 1,
+            paragraphs: r.coaching.paragraphs,
             commentary: reviewCommentary(
-              [...r.coaching.paragraphs, ...(input.publicResponses?.[index] || [])],
+              r.coaching.paragraphs,
               r.context.matchups,
               input.decisions[index].street,
             ),
-            publicResponses: input.publicResponses?.[index] || [],
             followUp: r.coaching.followUp,
             evidence: r.evidence,
-            history: publicHistory(input.decisions[index]).map(
-              (a) => `${a.street}，${a.name}，${a.action}`,
-            ),
             cards: input.decisions[index].hole.map(cardView),
             board: input.decisions[index].board.map(cardView),
           })),
         });
       }
       reviewTimer = schedule(step, 0);
+    },
+    reviewOpponent(index) {
+      const record = reviewSource?.opponents[index];
+      if (!record) return null;
+      if (!opponentReviews.has(index)) {
+        const explanation = explainOpponent(
+          record,
+          reviewSource.opponents.map(({ id, name }) => ({ id, name })),
+        );
+        opponentReviews.set(index, {
+          analyzed: true,
+          title: explanation.title,
+          reason: explanation.detail,
+          paragraphs: explanation.paragraphs,
+          commentary: reviewCommentary(
+            explanation.paragraphs,
+            explanation.matchups,
+            record.trace.view.street,
+          ),
+          reasons: explanation.reasons,
+          warning: explanation.warning,
+        });
+      }
+      return opponentReviews.get(index);
     },
     cancelReview,
     getRecords: () => records?.sessions() || [],

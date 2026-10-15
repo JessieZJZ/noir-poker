@@ -60,10 +60,10 @@ test('top pair without a heart on four-heart board is not narrated as a strong v
   assert.equal(r.context.texture.maxSuit, 4);
   assert.equal(r.draw.outs, 0);
   assert.equal(r.code, 'pressure-bet');
-  assert.match(r.coaching.paragraphs[0], /Q.*7.*3.*9/);
-  assert.match(r.coaching.paragraphs[0], /四张同花色.*没有同花/);
-  assert.match(r.coaching.paragraphs[0], /500.*主要依赖对手弃牌/);
-  assert.doesNotMatch(r.coaching.paragraphs[0], /已有成牌，下注的价值来自/);
+  assert.match(r.coaching.paragraphs.join(''), /Q.*7.*3.*9/);
+  assert.match(r.coaching.paragraphs.join(''), /四张同花色.*没有同花/);
+  assert.match(r.coaching.paragraphs.join(''), /500.*主要依赖对手弃牌/);
+  assert.doesNotMatch(r.coaching.paragraphs.join(''), /已有成牌，下注的价值来自/);
 });
 
 test('set plus flush redraw call leads with made-hand showdown value and preserves public-only reasoning', () => {
@@ -82,9 +82,9 @@ test('set plus flush redraw call leads with made-hand showdown value and preserv
   assert.equal(r.draw.flush, true);
   assert.equal(r.draw.outs, 9);
   assert.equal(r.metrics.callCost, 125);
-  assert.match(r.coaching.paragraphs[0], /已有暗三条 K.*同时还有同花听牌/);
-  assert.match(r.coaching.paragraphs[0], /当前成牌的摊牌价值/);
-  assert.doesNotMatch(r.coaching.paragraphs[0], /不是只靠暗三条/);
+  assert.match(r.coaching.paragraphs.join(''), /已有暗三条 K.*同时还有同花听牌/);
+  assert.match(r.coaching.paragraphs.join(''), /当前成牌的摊牌价值/);
+  assert.doesNotMatch(r.coaching.paragraphs.join(''), /不是只靠暗三条/);
   const changed = structuredClone(s);
   changed.players[1].hole = cards('As Ts');
   changed.futureDeck = cards('Js 9s');

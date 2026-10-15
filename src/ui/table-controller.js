@@ -1,3 +1,4 @@
+import { difficultyPolicy } from '../engine/bot-difficulty.js';
 import {
   sameStakes,
   validateStakes,
@@ -139,6 +140,7 @@ const opponents = createOpponentsController({
   getSettings: () => pendingBotSettings,
   onSave: (settings) => {
     pendingBotSettings = settings;
+    setLocalizedText($('#difficulty-description'), difficultyPolicy(game.difficulty).description);
     opponents.refresh();
   },
 });
@@ -409,6 +411,7 @@ function render() {
   document
     .querySelectorAll('input[name="difficulty"]')
     .forEach((input) => (input.checked = input.value === game.difficulty));
+  setLocalizedText($('#difficulty-description'), difficultyPolicy(game.difficulty).description);
   opponents.refresh();
   setLocalizedText(
     $('#board-caption'),
@@ -1006,6 +1009,7 @@ $('#difficulty').onchange = (e) => {
     ['easy', 'normal', 'hard'].includes(e.target.value)
   ) {
     game.difficulty = e.target.value;
+    setLocalizedText($('#difficulty-description'), difficultyPolicy(game.difficulty).description);
     saveTablePreferences({
       playerCount: requestedCount,
       difficulty: game.difficulty,

@@ -709,10 +709,14 @@ test('WeChat Page presents completed shared review copy and per-decision advice'
   for (const field of ['street', 'actual', 'label', 'suggestion', 'reason', 'followUp'])
     text(report.steps[0][field]);
   assert.equal(report.steps[0].ev, undefined);
-  assert.ok(Array.isArray(report.steps[0].publicResponses));
+  assert.ok(Array.isArray(report.activity));
+  assert.equal(page.data.reviewActivityOpen, false);
+  page.toggleReviewActivity();
+  assert.equal(page.data.reviewActivityOpen, true);
+  assert.ok(page.data.reviewActivity.some((event) => event.emphasized));
   assert.equal(report.steps[0].cards.length, 2);
   assert.ok(report.steps[0].evidence.length >= 4);
-  assert.ok(report.steps[0].history.length > 0);
+  assert.ok(report.activity.length > 0);
   assert.doesNotMatch(
     template,
     /你当时选择|它当时选择|下次怎么调整|实际执行记录|逐步查看它当时如何判断/,

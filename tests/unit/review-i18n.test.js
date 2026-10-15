@@ -120,7 +120,7 @@ test('hand-specific rationale and actual public responses localize without losin
     texts.push(...result.coaching.paragraphs, result.coaching.followUp, ...result.evidence);
   }
   const mia = explainOpponent(causal.opponents[0]);
-  texts.push(...mia.paragraphs, ...mia.reasons, ...causal.publicResponses.flat());
+  texts.push(...mia.paragraphs, ...mia.reasons, ...causal.activity.map((event) => event.text));
   assert.deepEqual(mia.metrics, []);
   assert.doesNotMatch(mia.detail, /它|EV|模型|模拟器|抽样/);
   for (const kind of ['set-shove', 'aa-flat']) {
@@ -134,7 +134,7 @@ test('hand-specific rationale and actual public responses localize without losin
         ...result.evidence,
       );
     }
-    texts.push(...input.publicResponses.flat());
+    texts.push(...input.activity.map((event) => event.text));
   }
   for (const [hole, board] of [
     ['8s 9d', '6c 7h Ts'],

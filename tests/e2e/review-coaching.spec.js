@@ -22,9 +22,14 @@ test('draw review connects the full public line and keeps only the requested mod
       '#review-your-action, #review-suggestion, #review-advanced, #review-routes, #review-simulation',
     ),
   ).toHaveCount(0);
-  await page.getByText('此前的公开行动', { exact: true }).click();
-  await expect(page.locator('#review-public-actions')).toContainText('翻牌，');
-  await expect(page.locator('#review-public-actions')).toContainText('转牌，');
+  await expect(page.locator('#review-activity')).not.toHaveAttribute('open', '');
+  await page.locator('#review-activity summary').click();
+  await expect(page.locator('#review-activity-list li')).not.toHaveCount(0);
+  await expect(
+    page.locator(
+      '#review-public-actions, #review-step-prev, #review-step-next, [data-opponent-nav]',
+    ),
+  ).toHaveCount(0);
   const kept = await page.locator('#review-selected-status').textContent();
   if (kept === '值得保留') await expect(page.locator('#review-practice-focus')).toBeHidden();
   else await expect(page.locator('#review-practice-focus')).toBeVisible();
@@ -232,11 +237,12 @@ test('69o three-bet shows real later public responses separately and Mia AQ four
   const hero = page.locator('#review-coach-explanation');
   await expect(hero).toContainText('350');
   await expect(hero).toContainText('200');
-  await expect(hero).toContainText(/Mia.*1K/);
-  await expect(hero).toContainText(/River.*950/);
-  await expect(hero).toContainText(/Luna.*800/);
-  await expect(hero.locator('p').filter({ hasText: /Mia.*1K/ })).toHaveCount(1);
-  await expect(hero.locator('p').last()).toContainText(/Luna.*800/);
+  await expect(hero).not.toContainText(/随后，|你.*后，Mia选择/);
+  await page.locator('#review-activity summary').click();
+  await expect(page.locator('#review-activity-list')).toContainText(/Mia.*1K/);
+  await expect(page.locator('#review-activity-list')).toContainText(/River.*950/);
+  await expect(page.locator('#review-activity-list')).toContainText(/Luna.*800/);
+  await expect(page.locator('#review-activity-list .review-activity-current')).toHaveCount(1);
   // Estimated candidate holdings can contain A/Q; they must remain separate
   // from the actual-action explanation, which cannot reveal Mia's private AQ.
   const actualExplanation = hero.locator(':scope > p');
@@ -249,7 +255,7 @@ test('69o three-bet shows real later public responses separately and Mia AQ four
   await expect(page.locator('#review-evidence')).toContainText('5K');
   await expect(page.locator('#review-evidence')).toContainText('350');
   await expect(page.locator('#review-evidence')).not.toContainText(/赔率|盈亏平衡|权益.*%/);
-  for (const selector of ['#review-timeline', '#review-detail-title', '#review-public-actions'])
+  for (const selector of ['#review-timeline', '#review-detail-title'])
     await expect(page.locator(selector)).not.toContainText('·');
   await info.attach('69o-actual-public-responses', {
     body: await page.screenshot(),
@@ -294,7 +300,7 @@ test('common strong-hand all-ins and preflop flats explain actual value and cond
       await expect(explanation).toContainText(/价值|取值/);
       await expect(explanation).toContainText('1K');
       await expect(explanation).toContainText(/领先|能赢|压过/);
-      await expect(explanation).toContainText(/落后|输给|不如/);
+      await expect(explanation).toContainText(/会输|落后|输给|不如/);
     } else {
       await expect(explanation).toContainText(/埋牌|藏在平跟|隐藏.*强|藏.*强/);
       await expect(explanation).toContainText('150');

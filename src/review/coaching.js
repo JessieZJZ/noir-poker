@@ -205,13 +205,24 @@ export function coachDecision(s, r) {
         r.context.valuePlan?.kind === 'value-shove' && s.action === 'raise'
           ? ''
           : conciseReason || continuation;
-    paragraphs = [actionReason(s, r), facts[0], matchup, supporting, recommendation].filter(
-      Boolean,
-    );
+    paragraphs = [
+      matchup,
+      '复盘分析总结',
+      actionReason(s, r),
+      facts[0],
+      supporting,
+      recommendation,
+    ].filter(Boolean);
     if (!recommendation && continuation && continuation !== supporting)
       paragraphs.push(continuation);
     if (f.allOpponentsAllIn && !paragraphs.some((p) => p.includes('没有后手')))
-      paragraphs = [paragraphs[0], facts.at(-1), ...paragraphs.slice(2)];
+      paragraphs = [
+        paragraphs[0],
+        paragraphs[1],
+        paragraphs[2],
+        facts.at(-1),
+        ...paragraphs.slice(4),
+      ];
     conciseReason = paragraphs.join('');
   } else if (!conciseReason) {
     conciseReason = `你在 ${s.position} 拿 ${r.context.handLabel}，实际选择${actionLabel(s)}；当时底池 ${fmt(s.pot)}，这次实际付出 ${fmt(r.context.extra)}。`;
