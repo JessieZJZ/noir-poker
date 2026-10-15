@@ -5,7 +5,20 @@ import {
   recordsRoute,
   recordRetryLabel,
   formatRecordChange,
+  formatRecordStart,
 } from '../../src/ui/game-records.js';
+
+test('record start times include the calendar year, date and 24-hour time across year boundaries', () => {
+  const before = new Date(2025, 11, 31, 23, 59).getTime();
+  const after = new Date(2026, 0, 1, 0, 1).getTime();
+  assert.equal(formatRecordStart(before, 'zh-CN'), '2025/12/31 23:59');
+  assert.equal(formatRecordStart(after, 'zh-CN'), '2026/01/01 00:01');
+  for (const locale of ['en', 'zh-TW', 'ja', 'ko', 'es', 'it', 'pt', 'de', 'fr', 'ru']) {
+    const output = formatRecordStart(before, locale);
+    assert.match(output, /2025/);
+    assert.match(output, /23:59/);
+  }
+});
 
 test('a pot award can display a win and a net loss together', () => {
   assert.equal(

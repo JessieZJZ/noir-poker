@@ -124,6 +124,31 @@
   justify-content: space-between;
   gap: 16px;
 }
+body[data-records-page='hand'] .records-page-heading {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px 16px;
+  margin-bottom: 24px;
+}
+body[data-records-page='hand'] .records-page-heading > div {
+  display: contents;
+}
+body[data-records-page='hand'] .records-eyebrow {
+  grid-column: 1;
+  grid-row: 1;
+}
+body[data-records-page='hand'] .records-back {
+  grid-column: 2;
+  grid-row: 1;
+}
+#records-hand-start {
+  grid-column: 1 / -1;
+  grid-row: 2;
+  color: #9cafb7;
+  font-size: 13px;
+  line-height: 1.5;
+  font-variant-numeric: tabular-nums;
+}
 .records-page-heading h1 {
   margin: 4px 0 0;
   font-size: 25px;
@@ -186,7 +211,7 @@
   font-size: 17px;
   font-weight: 600;
 }
-.record-session-title > span:not(.record-tag) {
+.record-session-title > time {
   color: #9cafb7;
   font-size: 12px;
 }

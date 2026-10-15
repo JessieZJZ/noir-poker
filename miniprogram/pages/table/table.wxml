@@ -17,15 +17,7 @@
         aria-hidden="true"
       /><text>NOIR</text><text wx:if="{{!compactNav}}" class="brand-sub">POKER</text></view
     >
-    <button
-      wx:if="{{historyReadOnly}}"
-      id="history-return-game"
-      class="history-return-game"
-      bindtap="returnToGame"
-    >
-      返回游戏
-    </button>
-    <view wx:else class="nav-actions"
+    <view wx:if="{{!historyReadOnly}}" class="nav-actions"
       ><button hover-class="none" class="icon-button" aria-label="设置" bindtap="openSettings">
         <view class="gear-icon" /></button
       ><button
@@ -47,6 +39,13 @@
       </view></view
     >
   </view>
+  <view wx:if="{{historyReadOnly}}" class="history-practice-heading">
+    <text class="history-practice-label">本地练习</text>
+    <button id="history-return-game" class="history-return-game" bindtap="returnToGame">
+      返回游戏
+    </button>
+    <text class="history-start-time">{{historyStartedAt}}</text>
+  </view>
   <view
     class="game-shell {{showdown.length ? 'has-showdown' : ''}} {{historyReadOnly ? 'history-shell' : ''}}"
     style="height: {{tableHeight + 50 + 134}}px;"
@@ -56,7 +55,8 @@
         ><text class="session-label">第 {{sessionNumber}} 局</text
         ><text class="hand-divider">·</text
         ><text>第 <text class="hand-number">{{hand < 10 ? '0' : ''}}{{hand}}</text> 手</text
-        ><text class="hand-divider">·</text><text>{{street}}</text
+        ><block wx:if="{{!historyReadOnly}}"
+          ><text class="hand-divider">·</text><text>{{street}}</text></block
         ><text wx:if="{{replay}}" class="replay">重打 {{replay}}</text></view
       >
       <view class="blind-info"><text>盲注</text><text class="bright">{{blindText}}</text></view>

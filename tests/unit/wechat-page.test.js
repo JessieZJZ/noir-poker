@@ -36,6 +36,11 @@ const template = readFileSync(
 );
 const copy = (value) => JSON.parse(JSON.stringify(value));
 const presentationModule = { exports: {} };
+const recordTimeModule = { exports: {} };
+vm.runInNewContext(
+  readFileSync(new URL('../../miniprogram/record-time.js', import.meta.url), 'utf8'),
+  { module: recordTimeModule },
+);
 vm.runInNewContext(
   readFileSync(new URL('../../miniprogram/pages/table/presentation.js', import.meta.url), 'utf8'),
   {
@@ -1516,6 +1521,7 @@ function secondaryPage(t, file, fixture) {
       setTimeout: () => 1,
       clearTimeout() {},
       require(name) {
+        if (name === '../../record-time.js') return recordTimeModule.exports;
         if (name === '../../record-navigation.js') return fixture.navigation;
         if (name === '../../shared/engine/game-records.js') return { recordResult };
         if (name === '../table/page-definition.js') return fixture.definition;
@@ -1759,10 +1765,19 @@ test('WeChat history removes the extra navigation heading while preserving repla
   history.onShow();
   assert.equal(history.data.historyAttemptLabel, undefined);
   assert.equal(history.data.replay, 1);
+  assert.equal(
+    history.data.historyStartedAt,
+    recordTimeModule.exports.recordStartTime(archived.startedAt),
+  );
   assert.equal(fixture.app.noirController, fixture.page._controller);
   assert.equal(fixture.page._controller.getRecords()[0].completed, 1);
   assert.doesNotMatch(template, /history-back|history-nav-title|history-replay-tag/);
   assert.match(template, /id="history-return-game"[^>]*bindtap="returnToGame"/);
+  assert.match(template, /class="history-start-time">{{historyStartedAt}}/);
+  assert.match(
+    template,
+    /<block wx:if="{{!historyReadOnly}}"\s*><text class="hand-divider">·<\/text><text>{{street}}/,
+  );
   assert.doesNotMatch(template, /历史结算|历史记录/);
   assert.match(template, /wx:if="{{replay}}" class="replay"/);
   assert.match(template, /wx:if="{{!historyReadOnly}}"[^>]*bindtap="nextHand"/);

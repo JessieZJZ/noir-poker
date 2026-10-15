@@ -1659,13 +1659,14 @@ export async function nativeScenarios(app) {
     assert.equal(await app.visible('#history-page'), true);
     const archiveBefore = await app.evaluate(() => ({
       title: document.querySelector('#records-title').textContent,
+      startedAt: document.querySelector('#records-hand-start').dateTime,
       table: document.querySelector('#history-table').textContent,
       heroCards: document.querySelectorAll('#history-table .hero-cards .playing-card').length,
       redundantHeading: Boolean(document.querySelector('.records-history-heading')),
       live: window.noir.getState(),
     }));
     assert.equal(archiveBefore.heroCards, 2);
-    assert.ok(archiveBefore.title.includes(`第 ${first.hand} 手`));
+    assert.equal(archiveBefore.startedAt, new Date(first.startedAt).toISOString());
     assert.doesNotMatch(archiveBefore.title, /首次|[·\s]$/);
     assert.equal(archiveBefore.redundantHeading, false);
     await app.sleep(1000);

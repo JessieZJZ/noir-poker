@@ -135,7 +135,8 @@ export function createSnapshotSurface(template, g, { sessionNumber, visible } = 
   );
   setLocalizedText(query('#session-number-label'), `第 ${sessionNumber} 局`);
   setLocalizedText(query('#hand-number'), String(g.hand).padStart(2, '0'));
-  setLocalizedText(query('#street-label'), '本手结束');
+  query('#street-label').remove();
+  query('#street-divider').remove();
   setLocalizedText(query('#blind-values'), `${format(g.smallBlind)} / ${format(g.bigBlind)}`);
   query('#replay-label').hidden = !g.replayAttempt;
   setLocalizedText(query('#replay-label'), '重打 ' + (g.replayAttempt || 0));

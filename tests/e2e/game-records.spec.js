@@ -198,7 +198,14 @@ test('historical details omit the extra heading and use system Back to the list'
   await openRecords(page);
   for (const attempt of session.attempts) {
     await page.locator(`[data-record-hand="${attempt.id}"]`).click();
-    await expect(page.locator('#records-title')).toHaveText(`第 ${session.number} 局 · 第 1 手`);
+    await expect(page.locator('#records-title')).toHaveText('对局记录');
+    await expect(page.locator('#records-title')).toHaveClass(/sr-only/);
+    await expect(page.locator('#records-hand-start')).toHaveAttribute(
+      'datetime',
+      new Date(attempt.startedAt).toISOString(),
+    );
+    await expect(page.locator('.records-live-note')).toBeHidden();
+    await expect(page.locator('#history-street-label, #history-street-divider')).toHaveCount(0);
     await expect(
       page.locator('.records-history-heading, #history-back-button, .records-history-result'),
     ).toHaveCount(0);
@@ -210,6 +217,89 @@ test('historical details omit the extra heading and use system Back to the list'
     await expect(page).toHaveURL(/#records$/);
     await expect(page.locator(`[data-session-id="${session.id}"]`)).toBeVisible();
   }
+});
+
+test('historical headers show each attempt start date with the year, align the return button and omit repeated copy', async ({
+  page,
+}) => {
+  await page.evaluate(() => {
+    window.qa.recordsFinish();
+    window.qa.recordsRetry();
+    window.qa.recordsFinish();
+  });
+  const session = (await records(page))[0];
+  const starts = ['2026-01-01T00:01:00.000Z', '2026-01-02T01:02:00.000Z'];
+  await page.evaluate(
+    ({ id, starts }) => {
+      const data = JSON.parse(localStorage.getItem('noir-game-records-v1'));
+      const session = data.sessions.find((item) => item.id === id);
+      session.startedAt = Date.parse('2025-12-31T15:59:00.000Z');
+      session.attempts.forEach((attempt, i) => {
+        attempt.startedAt = Date.parse(starts[i]);
+      });
+      localStorage.setItem('noir-game-records-v1', JSON.stringify(data));
+    },
+    { id: session.id, starts },
+  );
+  await page.reload();
+  await page.waitForFunction(() => !!window.qa);
+  for (const [width, height] of [
+    [320, 568],
+    [390, 844],
+    [1280, 900],
+  ]) {
+    await page.setViewportSize({ width, height });
+    await openRecords(page);
+    const date = page.locator(`[data-session-id="${session.id}"] .record-session-title time`);
+    await expect(date).toHaveText('2025/12/31 23:59');
+    await expect(date).toHaveAttribute('datetime', '2025-12-31T15:59:00.000Z');
+    for (const [i, attempt] of session.attempts.entries()) {
+      await page.locator(`[data-record-hand="${attempt.id}"]`).click();
+      await expect(page.locator('#records-hand-start')).toHaveAttribute('datetime', starts[i]);
+      await expect(page.locator('#records-hand-start')).toHaveText(
+        i ? '2026/01/02 09:02' : '2026/01/01 08:01',
+      );
+      const layout = await page.evaluate(() => {
+        const label = document.querySelector('.records-eyebrow').getBoundingClientRect();
+        const button = document.querySelector('#records-back-button').getBoundingClientRect();
+        const time = document.querySelector('#records-hand-start').getBoundingClientRect();
+        const actions = document.querySelector('.header-actions');
+        return {
+          centerOffset: Math.abs(label.top + label.height / 2 - button.top - button.height / 2),
+          timeGap: time.top - label.bottom,
+          right: actions.getBoundingClientRect().right,
+          shift: getComputedStyle(actions).left,
+          overflow: document.documentElement.scrollWidth - innerWidth,
+        };
+      });
+      expect(layout.centerOffset).toBeLessThan(1);
+      expect(layout.timeGap).toBeGreaterThan(0);
+      expect(layout.right).toBeLessThanOrEqual(width);
+      expect(layout.shift).toBe('6px');
+      expect(layout.overflow).toBeLessThanOrEqual(1);
+      for (const selector of [
+        '.records-live-note',
+        '#history-street-label',
+        '#history-street-divider',
+      ])
+        await expect(page.locator(selector)).toBeHidden();
+      expect(
+        await page.locator('#records-title').evaluate((el) => el.classList.contains('sr-only')),
+      ).toBe(true);
+      await page.screenshot({ path: test.info().outputPath(`history-heading-${width}-${i}.png`) });
+      await page.goBack();
+    }
+    await page.locator('#records-back-button').click();
+  }
+  await openRecords(page);
+  await page.locator(`[data-record-hand="${session.attempts[0].id}"]`).click();
+  await page.locator('#opponents-button').click();
+  await page.locator('#language-select').selectOption('en');
+  await page.locator('#opponents-dialog .close-dialog').click();
+  await expect(page.locator('#records-hand-start')).toHaveText('01/01/2026, 08:01');
+  await expect(page.locator('#records-hand-start')).toHaveAttribute('datetime', starts[0]);
+  await page.reload();
+  await expect(page.locator('#records-hand-start')).toHaveAttribute('datetime', starts[0]);
 });
 
 // The predecessor is another same-origin page so Back after Return Game is
@@ -421,7 +511,10 @@ test('historical settlement and review stay fixed while the live game advances',
   await openRecords(page);
   await page.locator(`[data-record-hand="${original.id}"]`).click();
   await expect(page.locator('#history-page')).toBeVisible();
-  await expect(page.locator('#records-title')).toContainText('第 1 手');
+  await expect(page.locator('#records-hand-start')).toHaveAttribute(
+    'datetime',
+    new Date(original.startedAt).toISOString(),
+  );
   await expect(
     page.locator('#history-page #next-button, #history-page #restart-hand-button'),
   ).toHaveCount(0);

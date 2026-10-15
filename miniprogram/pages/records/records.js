@@ -2,14 +2,10 @@ const { compactChips } = require('../../shared/engine/chip-format.js');
 const { presentCard } = require('../table/presentation.js');
 const { recordResult } = require('../../shared/engine/game-records.js');
 const navigation = require('../../record-navigation.js');
+const { recordStartTime } = require('../../record-time.js');
 const signed = (value) => {
   const amount = Math.round(Number(value));
   return (amount < 0 ? '-' : '+') + compactChips(Math.abs(amount));
-};
-const timeText = (timestamp) => {
-  const date = new Date(timestamp);
-  const two = (number) => String(number).padStart(2, '0');
-  return `${date.getFullYear()}-${two(date.getMonth() + 1)}-${two(date.getDate())} ${two(date.getHours())}:${two(date.getMinutes())}`;
 };
 Page({
   data: { sessions: [], expanded: {}, topInset: 24, bottomInset: 0, recordsError: '' },
@@ -32,7 +28,7 @@ Page({
     const controller = getApp().noirController;
     const sessions = (controller?.getRecords() || []).map((session) => ({
       ...session,
-      timeText: timeText(session.startedAt),
+      timeText: recordStartTime(session.startedAt),
       profitText: signed(session.profit),
       winrate: session.completed ? Math.round((session.wins / session.completed) * 100) : 0,
       blindText: `${compactChips(session.stakes.smallBlind)} / ${compactChips(session.stakes.bigBlind)}`,

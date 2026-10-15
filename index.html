@@ -117,7 +117,7 @@
             <div class="hand-label">
               <span class="session-label" id="session-number-label">第 1 局</span><span>·</span>
               <i class="hand-prefix">第</i> <b id="hand-number">01</b> <i class="hand-suffix">手</i>
-              <span>·</span> <span id="street-label">准备发牌</span
+              <span id="street-divider">·</span> <span id="street-label">准备发牌</span
               ><span id="replay-label" class="replay-label" hidden></span>
             </div>
             <div class="blind-info">盲注 <b id="blind-values">100 / 200</b></div>
@@ -350,6 +350,7 @@
         <div>
           <p class="records-eyebrow">本地练习</p>
           <h1 id="records-title" tabindex="-1">对局记录</h1>
+          <time id="records-hand-start" tabindex="-1" hidden></time>
         </div>
         <button id="records-back-button" class="records-back">返回游戏</button>
       </div>

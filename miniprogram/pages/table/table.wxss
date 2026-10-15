@@ -1452,6 +1452,7 @@
 }
 .nav-actions {
   position: relative;
+  left: 6px;
   z-index: 70;
 }
 .guide-button {
@@ -1527,6 +1528,24 @@
   border: 1px solid #31434e;
   border-radius: 10px;
   font-size: 14px;
+}
+.history-practice-heading {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px 16px;
+  margin: 18px 8px 24px;
+  flex: none;
+}
+.history-practice-label {
+  color: #83a9a1;
+  font-size: 13px;
+}
+.history-start-time {
+  grid-column: 1 / -1;
+  color: #9cafb7;
+  font-size: 13px;
+  line-height: 1.5;
 }
 .session-label {
   white-space: nowrap;

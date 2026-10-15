@@ -1,4 +1,5 @@
 const tablePage = require('../table/page-definition.js');
+const { recordStartTime } = require('../../record-time.js');
 Page({
   ...tablePage,
   data: { ...tablePage.data, historyReadOnly: true },
@@ -16,5 +17,6 @@ Page({
     this._readOnlyAttempt = attempt;
     this._readOnlySessionNumber = session?.number || 1;
     tablePage.onLoad.call(this);
+    this.setData({ historyStartedAt: recordStartTime(attempt.startedAt) });
   },
 });
