@@ -393,7 +393,14 @@ export async function nativeScenarios(app) {
   await check('hero-turn-visual-attention', async () => {
     await app.evaluate(() => {
       window.__turnAttentionPhases = [];
+      window.__turnAttentionLifecycle = [];
       const dock = document.querySelector('.action-dock');
+      document.addEventListener('noir:app-state', ({ detail }) => {
+        window.__turnAttentionLifecycle.push({
+          active: detail.active,
+          phase: dock.dataset.turnPhase,
+        });
+      });
       new MutationObserver(() => {
         window.__turnAttentionPhases.push({ phase: dock.dataset.turnPhase, at: Date.now() });
       }).observe(dock, { attributes: true, attributeFilter: ['data-turn-phase'] });
@@ -444,6 +451,26 @@ export async function nativeScenarios(app) {
     assert.equal(before.promptVisible, true);
     assert.ok(before.lineOpacity > 0 && before.glowOpacity > 0);
     await app.screenshot('hero-turn-steady');
+    const background = await app.background();
+    await app.sleep(9000);
+    assert.ok(
+      [2, 3].includes(await app.nativeState()),
+      'The turn must remain natively backgrounded',
+    );
+    const backgroundMs = performance.now() - background.startedAt;
+    assert.ok(backgroundMs >= 9000);
+    await app.activate();
+    await app.waitFor(
+      () =>
+        app.evaluate(() => document.querySelector('.action-dock').dataset.turnPhase === 'waiting'),
+      5000,
+      'Returning to the same decision must show the steady state',
+    );
+    const lifecycle = await app.evaluate(() => window.__turnAttentionLifecycle);
+    assert.ok(
+      lifecycle.some((entry) => !entry.active && entry.phase === ''),
+      'Real native background must clear visual attention',
+    );
     await app.waitFor(
       () =>
         app.evaluate(() =>
@@ -461,7 +488,7 @@ export async function nativeScenarios(app) {
     const after = await read();
     assert.deepEqual(after.boxes, before.boxes);
     const observed = await app.evaluate(() => window.__turnAttentionPhases);
-    assert.ok(observed.some((entry) => entry.phase === 'enter'));
+    assert.equal(observed.filter((entry) => entry.phase === 'enter').length, 1);
     assert.equal(observed.filter((entry) => entry.phase === 'reminder').length, 1);
     await app.click('#call-button');
     assert.equal(
@@ -472,8 +499,10 @@ export async function nativeScenarios(app) {
       before,
       after,
       observed,
+      lifecycle,
+      backgroundMs,
       scope:
-        'Installed production UI; decorative entry and reminder preserve card and button geometry',
+        'Installed production UI; native background cancels attention and card/button geometry stays stable',
     };
   });
   await check('combined-feedback-preference', async () => {
