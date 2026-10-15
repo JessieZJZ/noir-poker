@@ -402,13 +402,16 @@ export async function nativeScenarios(app) {
         });
       });
       new MutationObserver(() => {
-        const frame = document.querySelector('.turn-frame');
         window.__turnAttentionPhases.push({
           phase: dock.dataset.turnPhase,
           at: Date.now(),
-          frame: ['', '::before', '::after'].map((pseudo) => {
-            const style = getComputedStyle(frame, pseudo || null);
-            return { name: style.animationName, duration: style.animationDuration };
+          frame: [...document.querySelectorAll('#hero-cards .playing-card')].map((card) => {
+            const style = getComputedStyle(card, '::before');
+            return {
+              name: style.animationName,
+              duration: style.animationDuration,
+              iterations: style.animationIterationCount,
+            };
           }),
         });
       }).observe(dock, { attributes: true, attributeFilter: ['data-turn-phase'] });
@@ -435,9 +438,8 @@ export async function nativeScenarios(app) {
       () => window.__turnAttentionPhases.find((entry) => entry.phase === 'enter')?.frame,
     );
     assert.deepEqual(entry, [
-      { name: 'turn-glow', duration: '2s' },
-      { name: 'none', duration: '0s' },
-      { name: 'none', duration: '0s' },
+      { name: 'turn-glow', duration: '2s', iterations: 'infinite' },
+      { name: 'turn-glow', duration: '2s', iterations: 'infinite' },
     ]);
     await app.sleep(850);
     await app.screenshot('hero-turn-visible');
@@ -453,6 +455,8 @@ export async function nativeScenarios(app) {
           const { x, y, width, height } = element.getBoundingClientRect();
           return { x, y, width, height };
         };
+        const card = document.querySelector('#hero-cards .playing-card');
+        const border = getComputedStyle(card, '::before');
         return {
           phase: document.querySelector('.action-dock').dataset.turnPhase,
           hero: document.querySelector('.hero-cards-wrap').dataset.turnPhase,
@@ -461,9 +465,15 @@ export async function nativeScenarios(app) {
           lineOpacity: Number(getComputedStyle(document.querySelector('.turn-line')).opacity),
           lineHeight: getComputedStyle(document.querySelector('.turn-line')).height,
           promptOpacity: Number(getComputedStyle(document.querySelector('#turn-prompt')).opacity),
-          frameOpacity: Number(getComputedStyle(document.querySelector('.turn-frame')).opacity),
-          frameBorder: getComputedStyle(document.querySelector('.turn-frame')).borderTopColor,
-          frameBackground: getComputedStyle(document.querySelector('.turn-frame')).backgroundImage,
+          frameOpacity: Number(border.opacity),
+          frameBorder: border.borderTopColor,
+          frameBackground: border.backgroundImage,
+          frameRadius: border.borderTopLeftRadius,
+          cardRadius: getComputedStyle(card).borderTopLeftRadius,
+          handBorders: [...document.querySelectorAll('#hero-cards .playing-card')].map((card) => {
+            const style = getComputedStyle(card, '::before');
+            return { name: style.animationName, iterations: style.animationIterationCount };
+          }),
           railPulses: ['::before', '::after'].map((pseudo) => {
             const style = getComputedStyle(document.querySelector('.turn-line'), pseudo);
             return { name: style.animationName, duration: style.animationDuration };
@@ -481,11 +491,16 @@ export async function nativeScenarios(app) {
     const before = await read();
     assert.equal(before.hero, 'waiting');
     assert.equal(before.promptVisible, true);
-    assert.equal(before.lineHeight, '1px');
+    assert.equal(before.lineHeight, '2px');
     assert.equal(before.promptOpacity, 1);
     assert.equal(before.frameOpacity, 1);
     assert.equal(before.frameBorder, 'rgb(110, 231, 197)');
     assert.equal(before.frameBackground, 'none');
+    assert.equal(before.frameRadius, before.cardRadius);
+    assert.deepEqual(before.handBorders, [
+      { name: 'turn-glow', iterations: 'infinite' },
+      { name: 'turn-glow', iterations: 'infinite' },
+    ]);
     assert.deepEqual(before.attentionMotion, [
       { name: 'none', duration: '0s' },
       { name: 'none', duration: '0s' },

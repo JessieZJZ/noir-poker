@@ -156,7 +156,7 @@
           ><view
             class="hero-cards-wrap {{turnPhase ? 'turn-attention' : ''}} turn-{{turnPhase}}"
             style="width: {{heroWidth * 2 + 5}}px; margin: 0 auto;"
-            ><view class="turn-frame" aria-hidden="true" /><view class="hero-cards"
+            ><view class="hero-cards"
               ><view
                 wx:for="{{heroCards}}"
                 wx:key="dealKey"

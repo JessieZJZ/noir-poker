@@ -42,6 +42,24 @@ const outwardPulses = [
   { name: 'hero-turn-pulse-left', duration: '1.6s' },
   { name: 'hero-turn-pulse-right', duration: '1.6s' },
 ];
+const handBorders = (page) =>
+  page.locator('#hero-cards .playing-card').evaluateAll((cards) =>
+    cards.map((card) => {
+      const style = getComputedStyle(card, '::before');
+      return {
+        name: style.animationName,
+        duration: style.animationDuration,
+        iterations: style.animationIterationCount,
+        opacity: style.opacity,
+      };
+    }),
+  );
+const thinkingBorders = Array.from({ length: 2 }, () => ({
+  name: 'turn-glow',
+  duration: '2s',
+  iterations: 'infinite',
+  opacity: '1',
+}));
 
 test('entry and one idle reminder decorate the whole action area without moving cards or buttons', async ({
   page,
@@ -50,18 +68,7 @@ test('entry and one idle reminder decorate the whole action area without moving 
   await expect(page.locator('.hero-cards-wrap')).toHaveClass(/turn-enter/);
   await expect(page.locator('#turn-prompt')).toBeVisible();
   await expect(page.locator('#turn-prompt')).toHaveText('轮到你行动');
-  await expect(page.locator('.turn-frame')).toHaveCSS('animation-duration', '2s');
-  expect(
-    await page.locator('.turn-frame').evaluate((el) =>
-      ['::before', '::after'].map((pseudo) => ({
-        name: getComputedStyle(el, pseudo).animationName,
-        duration: getComputedStyle(el, pseudo).animationDuration,
-      })),
-    ),
-  ).toEqual([
-    { name: 'none', duration: '0s' },
-    { name: 'none', duration: '0s' },
-  ]);
+  expect(await handBorders(page)).toEqual(thinkingBorders);
   await expect(page.locator('.turn-line')).toHaveCSS('animation-name', 'none');
   expect(await railMotion(page)).toEqual(outwardPulses);
   // The mocked timer does not advance CSS's document timeline. Let the separate
@@ -78,19 +85,21 @@ test('entry and one idle reminder decorate the whole action area without moving 
   await expect(phase(page)).toHaveAttribute('data-turn-phase', 'reminder');
   expect(await boxes(page)).toEqual(before);
   expect(await page.evaluate(() => window.turnVibrations)).toBe(1);
-  await expect(page.locator('.turn-frame')).toHaveCSS('animation-duration', '2s');
+  expect(await handBorders(page)).toEqual(thinkingBorders);
   await page.clock.fastForward(2199);
   await expect(phase(page)).toHaveAttribute('data-turn-phase', 'reminder');
   await page.clock.fastForward(1);
   await page.clock.fastForward(20000);
   await expect(phase(page)).toHaveAttribute('data-turn-phase', 'waiting');
   expect(await boxes(page)).toEqual(before);
+  expect(await handBorders(page)).toEqual(thinkingBorders);
 });
 
 test('sizing, background, settlement and retry do not leak old reminders', async ({ page }) => {
   await page.locator('[data-preset="half"]').click();
   await page.clock.fastForward(9000);
   await expect(phase(page)).toHaveAttribute('data-turn-phase', 'waiting');
+  expect(await handBorders(page)).toEqual(thinkingBorders);
   await page.evaluate(() =>
     document.dispatchEvent(new CustomEvent('noir:app-state', { detail: { active: false } })),
   );
@@ -100,8 +109,10 @@ test('sizing, background, settlement and retry do not leak old reminders', async
     { name: 'none', duration: '0s' },
     { name: 'none', duration: '0s' },
   ]);
-  await expect(page.locator('.turn-frame')).toHaveCSS('animation-name', 'none');
-  await expect(page.locator('.turn-frame')).toHaveCSS('opacity', '0');
+  expect((await handBorders(page)).map(({ name, opacity }) => ({ name, opacity }))).toEqual([
+    { name: 'none', opacity: '0' },
+    { name: 'none', opacity: '0' },
+  ]);
   await expect(page.locator('#turn-prompt')).toHaveCSS('animation-name', 'none');
   await page.clock.fastForward(9000);
   await page.evaluate(() =>
@@ -123,16 +134,11 @@ test('reduced motion and muted native feedback keep a visible, localized turn st
   page,
 }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
-  await expect(page.locator('.hero-cards-wrap .turn-frame')).toHaveCSS('animation-name', 'none');
-  await expect(page.locator('.turn-frame')).toHaveCSS('opacity', '1');
+  expect((await handBorders(page)).map(({ name, opacity }) => ({ name, opacity }))).toEqual([
+    { name: 'none', opacity: '1' },
+    { name: 'none', opacity: '1' },
+  ]);
   await expect(page.locator('.turn-line')).toHaveCSS('animation-name', 'none');
-  expect(
-    await page
-      .locator('.turn-frame')
-      .evaluate((el) =>
-        ['::before', '::after'].map((pseudo) => getComputedStyle(el, pseudo).animationName),
-      ),
-  ).toEqual(['none', 'none']);
   expect(await railMotion(page)).toEqual([
     { name: 'none', duration: '0s' },
     { name: 'none', duration: '0s' },
@@ -156,23 +162,29 @@ test('reduced motion and muted native feedback keep a visible, localized turn st
   await expect(page.locator('#decision-text')).not.toContainText('轮到');
 });
 
-test('hand frame shares opponent thinking style; two thin fronts move outward while the prompt stays still', async ({
+test('each card keeps its thinking border throughout the turn; two thicker fronts move outward', async ({
   page,
 }) => {
-  const handFrame = page.locator('.turn-frame');
-  await expect(handFrame).toHaveCSS('border-radius', '10px');
-  await expect(handFrame).toHaveCSS('border-top-width', '1px');
-  await expect(handFrame).toHaveCSS('border-top-color', 'rgb(110, 231, 197)');
+  await expect(page.locator('.turn-frame')).toHaveCount(0);
+  const handFrame = page.locator('#hero-cards .playing-card').first();
   const decorations = await handFrame.evaluate((el) => ({
-    background: getComputedStyle(el).backgroundImage,
-    layers: ['::before', '::after'].map((pseudo) => getComputedStyle(el, pseudo).content),
+    background: getComputedStyle(el, '::before').backgroundImage,
+    border: getComputedStyle(el, '::before').borderTopWidth,
+    radius: getComputedStyle(el, '::before').borderTopLeftRadius,
+    cardRadius: getComputedStyle(el).borderTopLeftRadius,
+    offsets: ['top', 'right', 'bottom', 'left'].map(
+      (side) => getComputedStyle(el, '::before')[side],
+    ),
   }));
-  expect(decorations).toEqual({ background: 'none', layers: ['none', 'none'] });
+  expect(decorations.background).toBe('none');
+  expect(decorations.border).toBe('1px');
+  expect(decorations.radius).toBe(decorations.cardRadius);
+  expect(decorations.offsets).toEqual(['-1px', '-1px', '-1px', '-1px']);
   const matchingThinking = await handFrame.evaluate((el) => {
     const opponent = document.querySelector('.seat');
     const wasThinking = opponent.classList.contains('thinking');
     opponent.classList.add('thinking');
-    const own = getComputedStyle(el);
+    const own = getComputedStyle(el, '::before');
     const peer = getComputedStyle(opponent.querySelector('.seat-profile'));
     const properties = [
       'borderTopColor',
@@ -203,7 +215,7 @@ test('hand frame shares opponent thinking style; two thin fronts move outward wh
       },
       { pseudo, name, time },
     );
-  await expect(page.locator('.turn-line')).toHaveCSS('height', '1px');
+  await expect(page.locator('.turn-line')).toHaveCSS('height', '2px');
   await expect(page.locator('.turn-line')).toHaveCSS('box-shadow', 'none');
   expect(await railMotion(page)).toEqual(outwardPulses);
   await expect(page.locator('#turn-prompt')).toHaveCSS('animation-name', 'none');
@@ -223,8 +235,7 @@ test('hand frame shares opponent thinking style; two thin fronts move outward wh
   expect(leftFaded.opacity).toBeLessThan(0.15);
   expect(rightFaded.opacity).toBeLessThan(0.15);
   await page.clock.fastForward(3200);
-  await expect(handFrame).toHaveCSS('opacity', '1');
-  await expect(handFrame).toHaveCSS('animation-name', 'turn-glow');
+  expect(await handBorders(page)).toEqual(thinkingBorders);
   await expect(page.locator('.turn-line')).toHaveCSS('animation-name', 'none');
   await expect(page.locator('#turn-prompt')).toHaveCSS('animation-name', 'none');
   await expect(page.locator('#turn-prompt')).toHaveCSS('opacity', '1');
@@ -235,4 +246,7 @@ test('hand frame shares opponent thinking style; two thin fronts move outward wh
   await frame('::after', 'hero-turn-pulse-right', 192);
   expect(await boxes(page)).toEqual(before);
   expect(await page.locator('#turn-prompt').boundingBox()).toEqual(promptBounds);
+  await page.clock.fastForward(30000);
+  expect(await handBorders(page)).toEqual(thinkingBorders);
+  expect(await boxes(page)).toEqual(before);
 });
