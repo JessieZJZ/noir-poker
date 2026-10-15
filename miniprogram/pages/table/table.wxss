@@ -1454,10 +1454,11 @@
   position: relative;
   left: 6px;
   z-index: 70;
+  gap: 4px;
 }
 .guide-button {
-  width: 104px;
-  max-width: 104px;
+  width: 88px;
+  max-width: 88px;
   font-size: 13px;
   white-space: nowrap;
   display: flex;

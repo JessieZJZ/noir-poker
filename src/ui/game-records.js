@@ -127,7 +127,7 @@ export function createGameRecordsView({ records, openReview, onReturnGame }) {
     );
     window.scrollTo(0, scroll);
   }
-  function renderArchive() {
+  function renderArchive(peekPlayer) {
     if (!archive) return;
     const snapshot = archive.snapshot,
       formatter = createActivityFormatter(snapshot.players);
@@ -149,6 +149,7 @@ export function createGameRecordsView({ records, openReview, onReturnGame }) {
     const surface = createSnapshotSurface(liveMain.querySelector('.game-surface'), snapshot, {
       sessionNumber: session.number,
       visible,
+      peekPlayer,
     });
     content.querySelector('.records-surface-slot').replaceWith(surface);
     const layout = createSettlementLayout(surface.querySelector('.arena'), { observe: false });
@@ -238,7 +239,7 @@ export function createGameRecordsView({ records, openReview, onReturnGame }) {
       const id = Number(button.dataset.historyPeek);
       if (visible.has(id)) visible.delete(id);
       else visible.add(id);
-      renderArchive();
+      renderArchive(visible.has(id) ? id : undefined);
       content.querySelector(`[data-history-peek="${id}"]`).focus({ preventScroll: true });
     }
   });

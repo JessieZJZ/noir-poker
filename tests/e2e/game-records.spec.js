@@ -19,6 +19,38 @@ test.beforeEach(async ({ page }) => {
   await page.evaluate(() => window.qa.recordsStart());
 });
 
+test('viewing a historical hand flips only the clicked cards and respects reduced motion', async ({
+  page,
+}) => {
+  await page.evaluate(() => window.qa.recordsFinish(1));
+  const saved = await records(page);
+  const live = await state(page);
+  const snapshot = await page.evaluate(() => window.qa.snapshot());
+  await openRecords(page);
+  await page.locator(`[data-record-hand="${saved[0].attempts[0].id}"]`).click();
+  const table = page.locator('#history-arena');
+  await expect(table.locator('.card-deal')).toHaveCount(0);
+  const peek = () => table.locator('[data-history-peek="1"]');
+  await peek().click();
+  const cards = () => table.locator('.seat-1 .mini-cards .playing-card');
+  await expect(cards()).toHaveCount(2);
+  await expect(cards().first()).toHaveClass(/card-deal/);
+  await expect(cards().first()).toHaveCSS('animation-name', 'flip-card');
+  await expect(table.locator('.card-deal')).toHaveCount(2);
+  await expect(peek()).toBeFocused();
+  await peek().click();
+  await expect(cards()).toHaveCount(0);
+  await peek().click();
+  await expect(cards().first()).toHaveCSS('animation-name', 'flip-card');
+  await expect(table.locator('.card-deal')).toHaveCount(2);
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await expect(cards().first()).toHaveCSS('animation-name', 'none');
+  expect(await records(page)).toEqual(saved);
+  const after = await state(page);
+  expect(after.phase).toBe(live.phase);
+  expect(await page.evaluate(() => window.qa.snapshot())).toEqual(snapshot);
+});
+
 test('the rotating entry always opens both choices and keyboard focus keeps its label stable', async ({
   page,
 }) => {
