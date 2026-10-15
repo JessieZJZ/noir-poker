@@ -345,6 +345,12 @@ try {
   // Observe an actual decision and its delayed attention state in DevTools.
   // Changing a harmless setting rerenders without restarting this decision.
   report.turnAttention = { phase: (await page.data()).turnPhase };
+  assert.equal(report.turnAttention.phase, 'enter');
+  const glow = await page.$('.turn-glow');
+  report.turnAttention.entryDuration = await glow.style('animation-duration');
+  assert.equal(report.turnAttention.entryDuration, '3.2s');
+  await page.waitFor(850);
+  await mini.screenshot({ path: path.join(output, 'hero-turn-entry.png') });
   await wait((data) => data.turnPhase === 'waiting');
   const turnGeometry = async () => ({
     cards: await (await page.$('.hero-cards')).size(),
@@ -352,6 +358,8 @@ try {
   });
   const beforeAttention = await turnGeometry();
   await wait((data) => data.turnPhase === 'reminder', 10000);
+  report.turnAttention.reminderDuration = await glow.style('animation-duration');
+  assert.equal(report.turnAttention.reminderDuration, '2.2s');
   await wait((data) => data.turnPhase === 'waiting');
   assert.deepEqual(await turnGeometry(), beforeAttention);
   await invoke('previewRaise', { detail: { value: (await page.data()).minRaise } });

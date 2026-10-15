@@ -30,16 +30,43 @@ test('entry and one idle reminder decorate the whole action area without moving 
   await expect(page.locator('.hero-cards-wrap')).toHaveClass(/turn-enter/);
   await expect(page.locator('#turn-prompt')).toBeVisible();
   await expect(page.locator('#turn-prompt')).toHaveText('轮到你行动');
-  await page.clock.fastForward(850);
+  await expect(page.locator('.turn-glow')).toHaveCSS('animation-duration', '3.2s');
+  expect(
+    await page.locator('.turn-glow').evaluate((el) =>
+      ['::before', '::after'].map((pseudo) => ({
+        name: getComputedStyle(el, pseudo).animationName,
+        duration: getComputedStyle(el, pseudo).animationDuration,
+      })),
+    ),
+  ).toEqual([
+    { name: 'hero-turn-ring', duration: '3.2s' },
+    { name: 'hero-turn-shimmer', duration: '3.2s' },
+  ]);
+  // The mocked timer does not advance CSS's document timeline. Let the separate
+  // finite deal animation finish before measuring decorative-glow stability.
+  await page.locator('#hero-cards').evaluate((el) =>
+    Promise.all(
+      el
+        .getAnimations({ subtree: true })
+        .filter((animation) => Number.isFinite(animation.effect.getComputedTiming().endTime))
+        .map((animation) => animation.finished),
+    ),
+  );
+  await page.clock.fastForward(1600);
+  await expect(phase(page)).toHaveAttribute('data-turn-phase', 'enter');
+  await page.clock.fastForward(1600);
   const before = await boxes(page);
   await expect(phase(page)).toHaveAttribute('data-turn-phase', 'waiting');
-  await page.clock.fastForward(7149);
+  await page.clock.fastForward(4799);
   await expect(phase(page)).toHaveAttribute('data-turn-phase', 'waiting');
   await page.clock.fastForward(1);
   await expect(phase(page)).toHaveAttribute('data-turn-phase', 'reminder');
   expect(await boxes(page)).toEqual(before);
   expect(await page.evaluate(() => window.turnVibrations)).toBe(1);
-  await page.clock.fastForward(1000);
+  await expect(page.locator('.turn-glow')).toHaveCSS('animation-duration', '2.2s');
+  await page.clock.fastForward(2199);
+  await expect(phase(page)).toHaveAttribute('data-turn-phase', 'reminder');
+  await page.clock.fastForward(1);
   await page.clock.fastForward(20000);
   await expect(phase(page)).toHaveAttribute('data-turn-phase', 'waiting');
   expect(await boxes(page)).toEqual(before);
@@ -75,6 +102,13 @@ test('reduced motion and muted native feedback keep a visible, localized turn st
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await expect(page.locator('.hero-cards-wrap .turn-glow')).toHaveCSS('animation-name', 'none');
   await expect(page.locator('.turn-line')).toHaveCSS('animation-name', 'none');
+  expect(
+    await page
+      .locator('.turn-glow')
+      .evaluate((el) =>
+        ['::before', '::after'].map((pseudo) => getComputedStyle(el, pseudo).animationName),
+      ),
+  ).toEqual(['none', 'none']);
   await expect(page.locator('.turn-line')).toHaveCSS('opacity', '0.5');
   await page.evaluate(() => document.documentElement.classList.add('native-app'));
   await page.locator('#opponents-button').click();

@@ -16,9 +16,9 @@ export function createHeroTurnCue(notify) {
   };
 }
 
-export const HERO_TURN_ENTRY_MS = 850;
+export const HERO_TURN_ENTRY_MS = 3200;
 export const HERO_TURN_REMINDER_MS = 8000;
-export const HERO_TURN_PULSE_MS = 1000;
+export const HERO_TURN_PULSE_MS = 2200;
 
 // Visual attention is independent of sound/haptics. Only public decision identity
 // enters this controller; renders and preference changes never restart a pulse.

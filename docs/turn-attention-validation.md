@@ -1,5 +1,23 @@
 # 行动提醒验证记录
 
+## 2026-10-16：增强手牌背光
+
+入场延长至 3.2 秒，8 秒未操作后的单次补提醒延长至 2.2 秒。背光扩大为薄荷绿主光、青色与暖金色流光及扩散光环；收淡后保留更清晰的稳定背光。操作区亮线沿用原有短动效，震动逻辑不变。
+
+- `npm run check`：624 个单元测试及 Web/小程序生产构建通过；提醒、震动与微信适配器专项 32 项通过。
+- 本轮 Web 专项共 22 个不同用例通过：桌面/手机的提醒、静音与震动、布局稳定检查。首次几何比较误将独立发牌动画的中间帧纳入基准；补充等待有限发牌动画完成后，6 项提醒测试重新全部通过。
+- iOS Simulator 与 Android Debug 均重新实际编译成功；统一 `mobile:sync` 和 `mobile:verify` 通过。
+- `wechat:verify`、`wechat:check` 与 `format:check` 通过。DevTools 35 页、0 运行异常及 35 组同内容 Web 对照通过；实测入场 3.2 秒和补提醒 2.2 秒，保留峰值原图。
+- Android API 35 安装包专项通过：3 层动画均为 3.2 秒，真实后台 9.20 秒后返回不重复入场，补提醒仅一次，卡牌与按钮坐标完全一致。此次仅选中提醒场景，另 17 项明确跳过；安装共享源摘要为 `44879ea82fc4151a8a3c4c16b89fd361e206c16f060601b65bc7ce80658dd3ee`。
+- 原生首次服务冷启动超时；预热服务后 Android 设置服务尚未就绪，随后出现 `System UI isn't responding` 系统对话框，均留存失败记录。仅对本任务的 AVD 独立重启，等待系统及 PackageManager 就绪后上述专项通过，未修改断言或关闭其他模拟器。
+- iOS 当前安装包仍停在空白首屏，未完成 WebView 附着，运行不通过。编译和 Android 专项不能替代 iOS 验收；没有执行实体手机震感或商店验收。
+
+本轮证据均在忽略的 `.artifacts/`：`turn-glow-v2-check.log`、`turn-glow-v2-focused-unit.log`、`turn-glow-v2-web.log`、`turn-glow-v2-web-fixed.log`、`turn-glow-v2-{ios,android}-build.log`、`turn-glow-v2-mobile-verify.log`。`turn-glow-v2-preview/hand-glow.gif` 是 Web 实际录屏，`turn-glow-v2-wechat-runtime/hero-turn-entry.png` 是 DevTools 原图。
+
+运行证据：`turn-glow-v2-wechat-runtime/{report,web-reference}.json`、`turn-glow-v2-native-android-reboot/report.json` 及设备 PNG/XML，`turn-glow-v2-native-ios-warm/report.json`；`turn-glow-v2-native-build-proof.json` 另存 Android Java、APK 摘要。失败保留在 `turn-glow-v2-native-{android,ios}/`、`turn-glow-v2-native-android-warm/`、`turn-glow-v2-native-android-ready/`，不覆盖最终通过记录。首次 Web 对照在 DevTools 报告尚未完成时被完整性检查拒绝；完成 35 页后重新执行并通过。
+
+## 2026-10-15：首次行动提醒
+
 2026-10-15，PR #47。实现提交 `0f4dec9`；后续仅扩展原生测试与验证文档。共享源码摘要：`a76916c2eaac0b2de37d19019557d4ad23bca0c05dcf9e77d707d4606074c6ec`。
 
 ## 已通过

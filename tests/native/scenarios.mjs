@@ -421,6 +421,20 @@ export async function nativeScenarios(app) {
       90000,
       'A fresh hero decision must become available',
     );
+    const entry = await app.evaluate(() => {
+      const glow = document.querySelector('.turn-glow');
+      return ['', '::before', '::after'].map((pseudo) => {
+        const style = getComputedStyle(glow, pseudo || null);
+        return { name: style.animationName, duration: style.animationDuration };
+      });
+    });
+    assert.deepEqual(entry, [
+      { name: 'hero-turn-glow', duration: '3.2s' },
+      { name: 'hero-turn-ring', duration: '3.2s' },
+      { name: 'hero-turn-shimmer', duration: '3.2s' },
+    ]);
+    await app.sleep(850);
+    await app.screenshot('hero-turn-entry');
     await app.waitFor(
       () =>
         app.evaluate(() => document.querySelector('.action-dock').dataset.turnPhase === 'waiting'),
@@ -496,6 +510,7 @@ export async function nativeScenarios(app) {
       '',
     );
     return {
+      entry,
       before,
       after,
       observed,
