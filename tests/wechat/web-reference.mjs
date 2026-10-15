@@ -116,8 +116,11 @@ try {
       if (name === 'settings-bottom')
         await page.locator('.opponents-body').evaluate((el) => (el.scrollTop = el.scrollHeight));
       if (screen === 'player') await page.locator('[data-profile-preview="haxton"]').click();
-    } else if (screen === 'guide') await page.locator('#rules-button').click();
-    else if (screen === 'pots') await page.locator('.pot-details-trigger').click();
+    } else if (screen === 'guide') {
+      await page.locator('#rules-button').click();
+      await page.locator('#guide-menu-item').click();
+      await expect(page.locator('#rules-dialog')).toBeVisible();
+    } else if (screen === 'pots') await page.locator('.pot-details-trigger').click();
     else if (screen === 'reset') await page.locator('#reset-button').click();
     else if (['review', 'opponent-review'].includes(screen)) {
       await page.locator('#review-hand-button').click();

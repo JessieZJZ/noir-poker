@@ -497,13 +497,30 @@ try {
   report.checks.push({ name: 'historical-settlement-uses-the-same-rendered-table-geometry' });
   report.stage = 'historical-readonly-review-request';
   const liveBeforeReview = await readLive();
+  report.reviewProtocol = { tapStartedAt: new Date().toISOString() };
   await tap('.review-button');
+  report.reviewProtocol.tapReturnedAt = new Date().toISOString();
   report.stage = 'historical-readonly-review-progress';
+  report.reviewProtocol.afterTap = JSON.parse(
+    await mini.evaluate(() => {
+      const current = getCurrentPages().at(-1);
+      const data = current.data;
+      return JSON.stringify({
+        route: current.route,
+        reviewOpen: !!data.reviewOpen,
+        loading: !!data.reviewData?.loading,
+        hand: data.reviewData?.hand ?? null,
+        heroSteps: data.reviewData?.steps?.length ?? 0,
+        opponentSteps: data.reviewData?.opponents?.length ?? 0,
+      });
+    }),
+  );
   await wait(
     'Archived review',
     () => page.data(),
     (view) => view.reviewOpen && !view.reviewData.loading,
   );
+  report.reviewProtocol.readyAt = new Date().toISOString();
   assert.equal((await page.data()).reviewData.hand, 1);
   assert.deepEqual(await readLive(), liveBeforeReview);
   assert.deepEqual((await readRecords())[0].attempts[0].snapshot, archived.snapshot);
