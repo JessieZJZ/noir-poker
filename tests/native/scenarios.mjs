@@ -1576,6 +1576,90 @@ export async function nativeScenarios(app) {
       );
       return comparisons;
     });
+  await check('records-history-pot-dialog-and-return', async () => {
+    await app.waitFor(
+      async () => {
+        const game = await app.state();
+        return game.phase === 'done' || game.legal.enabled;
+      },
+      90000,
+      'Real practice must reach a hero decision',
+    );
+    if ((await app.state()).phase !== 'done') await app.click('#fold-button');
+    if ((await app.state()).canContinue) {
+      try {
+        await app.click('#continue-deal-button');
+      } catch (error) {
+        // Opponents can settle during the real native tap's measurement.
+        // Only accept the disappearing optional control after proving done.
+        if (
+          !/target geometry did not stabilize|zero size|stale element|not interactable/.test(
+            error.message,
+          ) ||
+          (await app.state()).phase !== 'done'
+        )
+          throw error;
+      }
+    }
+    await app.waitFor(
+      async () => (await app.state()).phase === 'done',
+      90000,
+      'Real hand must settle',
+    );
+    const record = await app.evaluate(() =>
+      window.noir.getRecords()[0].attempts.find((hand) => hand.status === 'completed'),
+    );
+    assert.ok(record?.snapshot);
+    await app.click('#rules-button');
+    await app.click('#records-menu-item');
+    await app.click(`[data-record-hand="${record.id}"]`);
+    const details = await app.evaluate(() => ({
+      page: document.body.dataset.recordsPage,
+      standalonePots: document.querySelectorAll('.records-settlement').length,
+      showdownVisible: !document.querySelector('#history-showdown-stage').hidden,
+      showdownPlayers: document.querySelectorAll('#history-showdown-scene .showdown-player').length,
+    }));
+    assert.equal(details.page, 'hand');
+    assert.equal(details.standalonePots, 0);
+    const showdownCount = record.snapshot.showdown
+      ? record.snapshot.players.filter((player) => !player.folded).length
+      : 0;
+    assert.equal(details.showdownVisible, showdownCount > 0);
+    assert.equal(details.showdownPlayers, showdownCount);
+    await app.screenshot('records-history-current-layout');
+    await app.click('#history-pot-details-button');
+    assert.equal(await app.evaluate(() => document.querySelector('#pot-dialog').open), true);
+    const awards = await app.evaluate(() =>
+      [...document.querySelectorAll('#pot-dialog .pot-award')].map((row) =>
+        Number(row.dataset.awardPlayer),
+      ),
+    );
+    assert.deepEqual(
+      awards,
+      record.snapshot.pots.flatMap((pot) => pot.awards.map((award) => award.id)),
+    );
+    await app.screenshot('records-history-current-pot-dialog');
+    await app.click('#pot-dialog .icon-button.close-dialog');
+    await app.back();
+    await app.waitFor(
+      () => app.evaluate(() => document.body.dataset.recordsPage === 'list'),
+      10000,
+      'Native Back returns to records',
+    );
+    await app.click('#records-back-button');
+    await app.waitFor(
+      () =>
+        app.evaluate(
+          () =>
+            document.body.dataset.recordsPage === 'game' &&
+            !document.querySelector('main.main').hidden,
+        ),
+      10000,
+      'Return Game leaves the records visit',
+    );
+    assert.equal((await app.state()).hand, record.hand);
+    return { attempt: record.id, details, awards, returnedToGame: true };
+  });
   await check('game-records-pages-retry-and-resume', async () => {
     await app.click('#reset-button');
     await app.click('#confirm-reset');

@@ -254,7 +254,7 @@ export function createSnapshotSurface(template, g, { sessionNumber, visible } = 
     delete button.dataset.peekPlayer;
   }
   query('.pot-details-trigger').dataset.historyPots = '';
-  query('.pot-details-trigger').removeAttribute('aria-haspopup');
-  query('.pot-details-trigger').setAttribute('aria-controls', 'history-pot-settlement');
+  query('.pot-details-trigger').setAttribute('aria-haspopup', 'dialog');
+  query('.pot-details-trigger').setAttribute('aria-controls', 'pot-dialog');
   return surface;
 }

@@ -132,8 +132,8 @@ export function createSettlementLayout(arena, { observe = true } = {}) {
                 .map((p) => {
                   const r = p.getBoundingClientRect();
                   return {
-                    left: r.left - box.left,
-                    top: r.top - box.top,
+                    left: p.matches('.mini-cards') ? p.offsetLeft : r.left - box.left,
+                    top: p.matches('.mini-cards') ? p.offsetTop : r.top - box.top,
                     width: p.offsetWidth,
                     height: p.offsetHeight,
                   };

@@ -1236,10 +1236,10 @@
   padding: 1px 3px;
 }
 
-/* One dock footprint keeps live, fold and saved settlement heights identical. */
+/* Compact actions remove unused controls without changing the table itself. */
 .action-dock.compact-actions {
-  flex: 0 0 134px;
-  height: 134px;
+  flex: 0 0 58px;
+  height: 58px;
   padding: 10px 8px;
 }
 .compact-actions .settled-buttons,
@@ -1522,7 +1522,11 @@
 }
 .history-return-game {
   margin: 0;
-  padding: 8px 12px;
+  width: auto;
+  min-width: 0;
+  max-width: none;
+  justify-self: end;
+  padding: 8px 10px;
   color: #d8e7ec;
   background: #16232c;
   border: 1px solid #31434e;
@@ -1534,7 +1538,7 @@
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
   gap: 8px 16px;
-  margin: 18px 8px 24px;
+  margin: 12px 8px 8px;
   flex: none;
 }
 .history-practice-label {
@@ -1653,6 +1657,11 @@
 .history-shell .settled-buttons {
   grid-template-columns: minmax(0, 1fr);
 }
+.history-shell .action-dock {
+  flex: 0 0 58px;
+  height: 58px;
+  padding: 10px 8px;
+}
 .web-phone-layout .hero-cards {
   height: var(--hero-card-slot-height);
   min-height: var(--hero-card-slot-height);
@@ -1675,4 +1684,89 @@
 }
 .web-phone-layout .hero:not(.has-hero-rank) .hero-info {
   translate: 0 calc(-1 * var(--hero-rank-empty-lift));
+}
+
+/* Enlarge only visible opponent faces, preserving the dealt seat footprint. */
+.web-phone-layout .seat .seat-hole.revealed-hole {
+  z-index: 0;
+}
+.web-phone-layout .seat .seat-hole.revealed-hole .mini-card {
+  width: var(--player-face-width);
+  height: var(--player-face-height);
+  --hole-inset: var(--player-face-shift);
+  flex: none;
+}
+.web-phone-layout .seat .seat-body {
+  position: relative;
+  z-index: 1;
+}
+.web-phone-layout.table-area {
+  overflow: visible;
+}
+
+/* Join settlement actions to the result panel, as on Web. */
+.game-shell.has-showdown {
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+  border-bottom-color: #101b22;
+  background: #101b22;
+}
+.game-shell.has-showdown .action-dock {
+  background: #101b22;
+}
+
+.persona-name-measure {
+  position: absolute;
+  width: max-content;
+  visibility: hidden;
+  pointer-events: none;
+  white-space: nowrap;
+  font-size: var(--player-persona);
+  font-weight: 400;
+}
+.name-tooltip-dismiss {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+}
+.seat-name-tooltip {
+  position: fixed;
+  z-index: 91;
+  width: max-content;
+  max-width: 240px;
+  padding: 9px 12px;
+  border: 1px solid #4b8675;
+  border-radius: 9px;
+  background: #18332e;
+  box-shadow: 0 6px 24px #0008;
+  color: #e1fff2;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+  opacity: 0;
+}
+.seat-name-tooltip.is-visible {
+  opacity: 1;
+}
+.name-tooltip-arrow {
+  position: absolute;
+  left: var(--tooltip-arrow);
+  bottom: -5px;
+  width: 7px;
+  height: 7px;
+  border-right: 1px solid #4b8675;
+  border-bottom: 1px solid #4b8675;
+  background: #18332e;
+  transform: translateX(-50%) rotate(45deg);
+}
+.seat-name-tooltip.below .name-tooltip-arrow {
+  bottom: auto;
+  top: -5px;
+  transform: translateX(-50%) rotate(225deg);
+}
+
+/* Avoid adding the normal 8px shell margin to the detail heading's own gap. */
+.history-shell {
+  margin-top: 0;
 }

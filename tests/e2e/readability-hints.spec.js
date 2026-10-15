@@ -262,7 +262,7 @@ test('five-player side seats surround the waist with half card backs and a reada
   }
 });
 
-test('inspection follows the position badge and crown JJ keep clear of the hint edge without a refit', async ({
+test('inspection follows the position badge and enlarged crown faces keep clear of hand labels without a refit', async ({
   page,
 }) => {
   test.setTimeout(60000);
@@ -292,8 +292,8 @@ test('inspection follows the position badge and crown JJ keep clear of the hint 
       await expect
         .poll(() =>
           page.evaluate(() => {
-            const bounds = document.querySelector('.table-viewport').getBoundingClientRect(),
-              scale = new DOMMatrix(getComputedStyle(document.querySelector('#arena')).transform).a,
+            const arena = document.querySelector('#arena'),
+              scale = new DOMMatrix(getComputedStyle(arena).transform).a,
               issues = [];
             for (const seat of document.querySelectorAll('.seat')) {
               const eye = seat.querySelector('.seat-peek'),
@@ -324,8 +324,16 @@ test('inspection follows the position badge and crown JJ keep clear of the hint 
                 issues.push('eye is covered by another player part');
               if (seat.classList.contains('seat-crown'))
                 for (const card of seat.querySelectorAll('.playing-card'))
-                  if (card.getBoundingClientRect().top < bounds.top + 10 * scale - 0.5)
-                    issues.push('crown hand touches the hint edge');
+                  if (
+                    card.getBoundingClientRect().top <
+                    arena
+                      .closest('.game-surface')
+                      .querySelector('.hand-label')
+                      .getBoundingClientRect().bottom +
+                      2 * scale -
+                      0.5
+                  )
+                    issues.push('crown hand covers the hand label');
             }
             return issues;
           }),

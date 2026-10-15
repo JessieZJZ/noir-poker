@@ -142,10 +142,16 @@ const opponents = createOpponentsController({
     opponents.refresh();
   },
 });
+let selectedPotSnapshot = null;
 const recordsView = createGameRecordsView({
   records: gameRecords,
   openReview: (input, key) => handReview.openInput(input, key),
   onReturnGame: () => playViewport.update(game, game.phase === 'done'),
+  openPots: (snapshot) => {
+    selectedPotSnapshot = snapshot;
+    renderPotDetails(currentPots(snapshot), snapshot);
+    potScrollLock.open();
+  },
 });
 const format = (n) => formatChips(n),
   streets = ['翻牌前', '翻牌', '转牌', '河牌'];
@@ -423,7 +429,7 @@ function render() {
         (details.pots.length - 1) +
         ' 个边池',
     );
-  renderPotDetails(details);
+  if (!selectedPotSnapshot) renderPotDetails(details);
   const legal = legalActions(game, 0);
   $('.bet-controls').hidden = done || hero.folded;
   $('.action-buttons').hidden = done || hero.folded;
@@ -762,9 +768,16 @@ function retryHand() {
 function potDetails() {
   return currentPots(game);
 }
-function renderPotDetails(details) {
-  const done = game.phase === 'done',
-    hero = game.players[0],
+const escapePotText = (value) =>
+  String(value)
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;');
+function renderPotDetails(details, potGame = game) {
+  const done = potGame.phase === 'done',
+    hero = potGame.players[0],
     dialog = $('#pot-dialog'),
     expanded = new Set(
       dialog.open
@@ -785,7 +798,7 @@ function renderPotDetails(details) {
       pot.contributions
         .map(
           (c) =>
-            `<li><span>${game.players[c.id].name}${game.players[c.id].folded ? ' · 已弃牌' : game.players[c.id].allin ? ' · 全下' : ''}</span><b>${format(c.amount)}</b></li>`,
+            `<li><span>${escapePotText(potGame.players[c.id].name)}${potGame.players[c.id].folded ? ' · 已弃牌' : potGame.players[c.id].allin ? ' · 全下' : ''}</span><b>${format(c.amount)}</b></li>`,
         )
         .join(''),
     crown = winnerIcon.replace('winner-icon', 'pot-winner-icon');
@@ -802,23 +815,25 @@ function renderPotDetails(details) {
     $('#pot-dialog-content'),
     details.pots
       .map((pot) => {
-        const participants = pot.eligible.map((id) => game.players[id].name).join('、');
+        const participants = pot.eligible
+          .map((id) => escapePotText(potGame.players[id].name))
+          .join('、');
         if (done) {
           const split = pot.awards.length > 1;
           return `<section class="pot-detail-card settled-pot" data-pot-index="${pot.index}">
-        <div class="pot-detail-heading"><h3>${pot.label}</h3>${split ? `<span class="pot-split-total">${format(pot.amount)} 筹码 · 平分</span>` : ''}</div>
-        <div class="pot-awards">${pot.awards.map((a) => `<div class="pot-award" data-award-player="${a.id}"><span class="pot-award-player">${crown}<span><b>${game.players[a.id].name}${split ? '' : ' 获胜'}</b><small>${a.label}</small></span></span><strong>+${format(a.amount)}<small>筹码</small></strong></div>`).join('')}</div>
+        <div class="pot-detail-heading"><h3>${escapePotText(pot.label)}</h3>${split ? `<span class="pot-split-total">${format(pot.amount)} 筹码 · 平分</span>` : ''}</div>
+        <div class="pot-awards">${pot.awards.map((a) => `<div class="pot-award" data-award-player="${a.id}"><span class="pot-award-player">${crown}<span><b>${escapePotText(potGame.players[a.id].name)}${split ? '' : ' 获胜'}</b><small>${escapePotText(a.label)}</small></span></span><strong>+${format(a.amount)}<small>筹码</small></strong></div>`).join('')}</div>
         <details class="pot-distribution" data-pot-index="${pot.index}"${expanded.has(pot.index) ? ' open' : ''}><summary>查看分配详情</summary><div class="pot-distribution-body"><p>${eligibilityLabel(pot)} · 结算资格：${participants}</p><h4>本池投入</h4><ul class="pot-contribution-list">${contributions(pot)}</ul>${split ? '<p class="pot-rounding-note">零头筹码按庄家左侧顺序分配。</p>' : ''}</div></details>
       </section>`;
         }
-        return `<section class="pot-detail-card" data-pot-index="${pot.index}"><div class="pot-detail-heading"><h3>${pot.label}</h3><strong>${format(pot.amount)}<span>筹码</span></strong></div><div class="pot-eligibility ${pot.eligible.includes(0) ? 'hero-eligible' : ''}">${eligibilityLabel(pot)}<span> · ${pot.eligible.length} 人</span></div><p class="pot-player-list">可争夺：${participants}</p><details class="pot-contributions"><summary>查看本池投入</summary><ul>${contributions(pot)}</ul></details></section>`;
+        return `<section class="pot-detail-card" data-pot-index="${pot.index}"><div class="pot-detail-heading"><h3>${escapePotText(pot.label)}</h3><strong>${format(pot.amount)}<span>筹码</span></strong></div><div class="pot-eligibility ${pot.eligible.includes(0) ? 'hero-eligible' : ''}">${eligibilityLabel(pot)}<span> · ${pot.eligible.length} 人</span></div><p class="pot-player-list">可争夺：${participants}</p><details class="pot-contributions"><summary>查看本池投入</summary><ul>${contributions(pot)}</ul></details></section>`;
       })
       .join('') +
       details.refunds
         .map((r) =>
           done
-            ? `<div class="pot-refund compact-refund" data-refund-player="${r.id}" aria-label="${game.players[r.id].name} 未跟注的 ${format(r.amount)} 筹码已退还"><span>未跟注退还 <b>${game.players[r.id].name}</b></span><strong>${format(r.amount)}</strong></div>`
-            : `<div class="pot-refund"><span>待跟注或退还<b>${game.players[r.id].name}</b></span><strong>${format(r.amount)}</strong></div>`,
+            ? `<div class="pot-refund compact-refund" data-refund-player="${r.id}" aria-label="${escapePotText(potGame.players[r.id].name)} 未跟注的 ${format(r.amount)} 筹码已退还"><span>未跟注退还 <b>${escapePotText(potGame.players[r.id].name)}</b></span><strong>${format(r.amount)}</strong></div>`
+            : `<div class="pot-refund"><span>待跟注或退还<b>${escapePotText(potGame.players[r.id].name)}</b></span><strong>${format(r.amount)}</strong></div>`,
         )
         .join(''),
   );
@@ -1012,7 +1027,15 @@ $('#hint-toggle').onclick = () => {
 };
 $('#reset-button').onclick = () => $('#reset-dialog').showModal();
 const potScrollLock = createDialogScrollLock($('#pot-dialog'));
-$('#pot-details-button').onclick = () => potScrollLock.open();
+$('#pot-details-button').onclick = () => {
+  selectedPotSnapshot = null;
+  renderPotDetails(potDetails());
+  potScrollLock.open();
+};
+$('#pot-dialog').addEventListener('close', () => {
+  selectedPotSnapshot = null;
+  renderPotDetails(potDetails());
+});
 document
   .querySelectorAll('.close-dialog')
   .forEach((b) => (b.onclick = () => b.closest('dialog').close()));

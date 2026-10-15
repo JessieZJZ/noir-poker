@@ -372,7 +372,9 @@ export function createGameRecords({ storage, now = Date.now, id } = {}) {
   let state = emptyState(),
     storageError = null,
     readError = null,
-    serial = 0;
+    serial = 0,
+    revision = 0,
+    summaries = null;
   const identity =
     id || (() => `${now().toString(36)}-${++serial}-${Math.random().toString(36).slice(2, 10)}`);
   const adapter = () => storage ?? globalThis.localStorage;
@@ -392,6 +394,8 @@ export function createGameRecords({ storage, now = Date.now, id } = {}) {
   const findAttempt = (attemptId) =>
     state.sessions.flatMap((s) => s.attempts).find((a) => a.id === attemptId);
   const write = () => {
+    revision++;
+    summaries = null;
     try {
       const target = adapter();
       if (!target) throw Error('Storage unavailable');
@@ -547,6 +551,32 @@ export function createGameRecords({ storage, now = Date.now, id } = {}) {
           };
         });
     },
+    // List views never need the settlement/review trees. Project before copying
+    // so reading a list does not serialize every archived hand on each bot turn.
+    summaries() {
+      summaries ??= state.sessions
+        .slice()
+        .sort((a, b) => b.number - a.number)
+        .map((session) => {
+          const counted = session.attempts.filter((a) => a.status === 'completed' && !a.superseded);
+          return {
+            id: session.id,
+            number: session.number,
+            startedAt: session.startedAt,
+            endedAt: session.endedAt,
+            stakes: session.stakes,
+            playerCount: session.playerCount,
+            profit: counted.reduce((sum, a) => sum + a.profit, 0),
+            wins: counted.filter((a) => a.wonPot).length,
+            completed: counted.length,
+            attempts: session.attempts
+              .map(({ snapshot, ...attempt }) => attempt)
+              .sort((a, b) => a.hand - b.hand || a.attempt - b.attempt),
+          };
+        });
+      return copy(summaries);
+    },
+    revision: () => revision,
     sessionNumber: () => current()?.number || 0,
     getAttempt: (attemptId) => {
       const attempt = findAttempt(attemptId);

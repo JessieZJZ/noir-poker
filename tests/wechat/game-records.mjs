@@ -358,7 +358,12 @@ try {
   const liveShellHeight = (await (await waitElement('.game-shell')).size()).height;
   await scrollTo(300);
   assertTableParity(await tableGeometry(firstSettled.players), liveSettlementGeometry);
-  assert.equal((await (await waitElement('.game-shell')).size()).height, liveShellHeight);
+  assert.equal(
+    (await (await waitElement('.game-shell')).size()).height,
+    liveShellHeight,
+    'Live settlement and historical review share the same compact dock',
+  );
+  assert.equal((await (await waitElement('.action-dock')).size()).height, 58);
   await scrollTo(0);
   await tap('.retry-button');
   await wait(

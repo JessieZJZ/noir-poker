@@ -19,6 +19,56 @@ test.beforeEach(async ({ page }) => {
   await page.evaluate(() => window.qa.recordsStart());
 });
 
+test('large archives render collapsed session hands only when expanded and keep snapshots on demand', async ({
+  page,
+}) => {
+  await page.evaluate(() => {
+    window.qa.recordsFinish();
+    const saved = JSON.parse(localStorage.getItem('noir-game-records-v1'));
+    const source = saved.sessions.find((session) => session.id === saved.currentId);
+    const attempt = source.attempts.find((attempt) => attempt.status === 'completed');
+    saved.sessions = Array.from({ length: 8 }, (_, i) => ({
+      ...source,
+      id: `perf-session-${i}`,
+      number: i + 1,
+      endedAt: i === 7 ? null : source.startedAt + 1,
+      attempts: Array.from({ length: 12 }, (_, j) => ({
+        ...attempt,
+        id: `perf-hand-${i}-${j}`,
+        hand: j + 1,
+        snapshot: {
+          ...attempt.snapshot,
+          hand: j + 1,
+          decisions: attempt.snapshot.decisions.map((decision) => ({ ...decision, hand: j + 1 })),
+          botDecisions: attempt.snapshot.botDecisions.map((decision) => ({
+            ...decision,
+            hand: j + 1,
+          })),
+        },
+      })),
+    }));
+    saved.currentId = 'perf-session-7';
+    saved.nextNumber = 9;
+    saved.checkpoint.hand = 12;
+    localStorage.setItem('noir-game-records-v1', JSON.stringify(saved));
+  });
+  await page.reload();
+  await page.waitForFunction(() => !!window.qa);
+  await page.evaluate(() => window.qa.stop());
+  await openRecords(page);
+  await expect(page.locator('.record-session')).toHaveCount(8);
+  const current = page.locator('[data-session-id="perf-session-7"]');
+  await expect(current.locator('.record-hand')).toHaveCount(13);
+  const previous = page.locator('[data-session-id="perf-session-6"]');
+  await expect(previous.locator('.record-hand')).toHaveCount(0);
+  await previous.locator('.record-session-heading').click();
+  await expect(previous.locator('.record-hand')).toHaveCount(12);
+  await previous.locator('.record-hand').first().click();
+  await expect(page.locator('#history-table')).toBeVisible();
+  await expect(page.locator('#history-review-button')).toBeVisible();
+  expect((await state(page)).hand).toBe(13);
+});
+
 test('the rotating entry always opens both choices and keyboard focus keeps its label stable', async ({
   page,
 }) => {
@@ -65,9 +115,12 @@ test('stored historical labels remain text and cannot execute markup', async ({ 
   await page.waitForFunction(() => !!window.qa);
   await openRecords(page);
   await page.locator(`[data-record-hand="${record.id}"]`).click();
-  await expect(page.locator('.records-settlement')).toContainText(source);
+  await page.locator('#history-pot-details-button').click();
+  await expect(page.locator('#pot-dialog')).toBeVisible();
+  await expect(page.locator('#pot-dialog')).toContainText(source);
   expect(await page.evaluate(() => window.historyMarkupExecuted)).toBeUndefined();
-  await expect(page.locator('.records-settlement img')).toHaveCount(0);
+  await expect(page.locator('#pot-dialog img')).toHaveCount(0);
+  await page.locator('#pot-dialog .close-dialog').first().click();
   await expect(page.locator('#history-arena .seat-name-label').first()).toHaveText(source);
   await expect(page.locator('#history-arena .seat-action').first()).toHaveText(source);
   await expect(page.locator('#history-arena img:not(.persona-portrait)')).toHaveCount(0);
@@ -709,4 +762,161 @@ test('nine-seat history keeps cards centered, hero identity unclipped and the mo
         ranksBelowCards: true,
       });
   }
+});
+
+test('records headings keep their note close and revealed opponents use larger fixed slots', async ({
+  page,
+}) => {
+  for (const width of [320, 390, 1280]) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.evaluate(() => {
+      window.qa.recordsStart({ count: 9 });
+      window.qa.allinRest();
+      while (window.noir.getState().phase === 'between') window.qa.finish();
+      window.qa.stop();
+    });
+    const attempt = (await records(page))[0].attempts[0];
+    const read = (selector) => {
+      const arena = document.querySelector(selector);
+      const scale = arena.getBoundingClientRect().width / arena.offsetWidth;
+      return [...arena.querySelectorAll('.revealed-cards')].map((slot) => {
+        const face = slot.querySelector('.playing-card');
+        const profile = slot.parentElement.querySelector('.seat-profile').getBoundingClientRect();
+        const card = face.getBoundingClientRect();
+        return {
+          profileWidth: profile.width / scale,
+          width: card.width / scale,
+          baseWidth: face.offsetWidth,
+          left: card.left,
+          right: card.right,
+          profileLeft: profile.left,
+          profileRight: profile.right,
+          bottom: card.bottom,
+          profileTop: profile.top,
+        };
+      });
+    };
+    await page.waitForTimeout(800);
+    const live = await page.evaluate(read, '#arena');
+    expect(live.length).toBeGreaterThan(0);
+    for (const face of live) {
+      expect(face.baseWidth).toBeGreaterThanOrEqual(44);
+      expect(face.left).toBeGreaterThan(face.profileLeft + 2);
+      expect(face.right).toBeLessThan(face.profileRight - 2);
+      expect(face.bottom - face.profileTop).toBeLessThan(20);
+    }
+    await openRecords(page);
+    const spacing = await page.evaluate(() => {
+      const title = document.querySelector('#records-title').getBoundingClientRect();
+      const note = document.querySelector('.records-live-note').getBoundingClientRect();
+      const row = document.querySelector('.record-session').getBoundingClientRect();
+      const back = document.querySelector('#records-back-button').getBoundingClientRect();
+      return {
+        titleGap: note.top - title.bottom,
+        cardGap: row.top - note.bottom,
+        center: Math.abs(title.top + title.height / 2 - back.top - back.height / 2),
+      };
+    });
+    expect(spacing.titleGap).toBeGreaterThanOrEqual(4);
+    expect(spacing.titleGap).toBeLessThanOrEqual(10);
+    expect(spacing.cardGap).toBe(12);
+    expect(spacing.center).toBeLessThan(1);
+    await page.locator(`[data-record-hand="${attempt.id}"]`).click();
+    const saved = await page.evaluate(read, '#history-arena');
+    expect(saved.map((face) => [face.baseWidth, face.width])).toEqual(
+      live.map((face) => [face.baseWidth, face.width]),
+    );
+    await page.screenshot({ path: test.info().outputPath(`revealed-faces-${width}.png`) });
+    await page.locator('#records-back-button').click();
+  }
+});
+
+test('long press reveals full clipped names on live and archived tables and dismisses safely', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.evaluate(() => {
+    window.qa.recordsStart({ count: 9 });
+    const game = window.qa.snapshot();
+    game.players.slice(1).forEach((player) => {
+      player.botProfile = 'viktor';
+    });
+    window.qa.loadRecordedGame(game);
+    window.qa.recordsFinish();
+  });
+  const attempt = (await records(page))[0].attempts[0];
+  for (const root of ['#arena', '#history-arena']) {
+    if (root === '#history-arena') {
+      await openRecords(page);
+      await page.locator(`[data-record-hand="${attempt.id}"]`).click();
+    }
+    const label = page.locator(`${root} .seat-style-label`).first();
+    await label.scrollIntoViewIfNeeded();
+    expect(await label.evaluate((el) => el.scrollWidth > el.clientWidth + 1)).toBe(true);
+    const full = await label.textContent();
+    const rect = await label.boundingBox();
+    await page.mouse.move(rect.x + rect.width / 2, rect.y + rect.height / 2);
+    await page.mouse.down();
+    await page.waitForTimeout(500);
+    await page.mouse.up();
+    const tooltip = page.getByRole('tooltip');
+    await expect(tooltip).toBeVisible();
+    await expect(tooltip).toHaveText(full);
+    const tip = await tooltip.boundingBox();
+    expect(tip.x).toBeGreaterThanOrEqual(12);
+    expect(tip.x + tip.width).toBeLessThanOrEqual(378);
+    expect(tip.y).toBeGreaterThanOrEqual(12);
+    await page.screenshot({ path: test.info().outputPath(`full-name-${root.slice(1)}.png`) });
+    await page.keyboard.press('Escape');
+    await expect(tooltip).toBeHidden();
+    // Dragging starts a page gesture; it must not become a long press.
+    await page.mouse.down();
+    await page.mouse.move(rect.x + rect.width / 2, rect.y + rect.height / 2 + 20);
+    await page.waitForTimeout(500);
+    await page.mouse.up();
+    await expect(tooltip).toBeHidden();
+  }
+});
+
+test('historical pot dialogs and showdown stay bound to the saved hand while live practice changes', async ({
+  page,
+}) => {
+  await page.evaluate(() => {
+    window.qa.recordsStart({ count: 5 });
+    window.qa.allinRest();
+    while (window.noir.getState().phase === 'between') window.qa.finish();
+    window.qa.stop();
+  });
+  const saved = (await records(page))[0].attempts[0];
+  await page.evaluate(() => window.qa.recordsNext());
+  await openRecords(page);
+  await page.locator(`[data-record-hand="${saved.id}"]`).click();
+  await expect(page.locator('#history-pot-settlement, .records-settlement')).toHaveCount(0);
+  await expect(page.locator('#history-showdown-stage')).toBeVisible();
+  const players = saved.snapshot.players.filter((player) => !player.folded);
+  await expect(page.locator('#history-showdown-scene .showdown-player')).toHaveCount(
+    players.length,
+  );
+  for (const player of players) {
+    const row = page.locator(`#history-showdown-scene [data-player="${player.id}"]`);
+    await expect(row.locator('.winning-card')).toHaveCount(5);
+    await expect(row).toContainText(player.name);
+  }
+  await page.locator('#history-pot-details-button').click();
+  await expect(page.locator('#pot-dialog')).toBeVisible();
+  const potText = await page.locator('#pot-dialog-content').textContent();
+  const showdownText = await page.locator('#history-showdown-scene').textContent();
+  await page.evaluate(() => {
+    window.qa.recordsFinish();
+  });
+  await expect(page.locator('#pot-dialog-content')).toHaveText(potText);
+  await expect(page.locator('#history-showdown-scene')).toHaveText(showdownText);
+  await page.locator('#pot-dialog .close-dialog').first().click();
+  await expect(page.locator('#pot-dialog')).toBeHidden();
+  await expect(page.locator('#history-showdown-stage')).toBeVisible();
+  await page.screenshot({ path: test.info().outputPath('history-showdown.png') });
+  await page.locator('#records-back-button').click();
+  await page.locator('#pot-details-button').click();
+  await expect(page.locator('#pot-dialog')).toBeVisible();
+  expect(await page.locator('#pot-dialog-content').textContent()).not.toBe(potText);
 });

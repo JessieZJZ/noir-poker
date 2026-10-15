@@ -111,6 +111,10 @@ export function createWechatController({
       sound: false,
     });
   const peeked = new Map();
+  const profiles = BOT_PROFILES.map((p) => ({
+    ...p,
+    portrait: p.id === 'balanced' ? '' : `/assets/portraits/${p.id}.jpg`,
+  }));
   const turnCue = createHeroTurnCue(notifyTurn);
   let game = readOnlyAttempt
       ? JSON.parse(JSON.stringify(readOnlyAttempt.snapshot))
@@ -289,10 +293,6 @@ export function createWechatController({
         y: SEAT_ANCHORS[game.players.length][index][1],
       };
     });
-    const profiles = BOT_PROFILES.map((p) => ({
-      ...p,
-      portrait: p.id === 'balanced' ? '' : `/assets/portraits/${p.id}.jpg`,
-    }));
     const pot = done ? game.potAtShowdown || potSize(game) : potSize(game);
     const breakdown = currentPots(game);
     turnCue.update({
@@ -843,6 +843,8 @@ export function createWechatController({
     },
     cancelReview,
     getRecords: () => records?.sessions() || [],
+    getRecordSummaries: () => records?.summaries() || [],
+    getRecordsRevision: () => records?.revision() || 0,
     getRecordsError: () => records?.error() || '',
     getRecord: (id) => records?.getAttempt(id) || null,
     getGame: () => game,

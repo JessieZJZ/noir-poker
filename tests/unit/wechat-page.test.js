@@ -9,6 +9,7 @@ import vm from 'node:vm';
 import { readFileSync } from 'node:fs';
 import { createWechatController } from '../../src/platform/wechat-controller.js';
 import { recordResult } from '../../src/engine/game-records.js';
+import { nameTooltipPosition } from '../../src/ui/name-tooltip-position.js';
 import { numericWidthScale, numericColumnWidth } from '../../src/ui/numeric-width.js';
 import {
   act,
@@ -113,6 +114,7 @@ function setup(
       if (name.endsWith('/chip-format.js')) return { compactChips, compactActionAmounts };
       if (name === './presentation.js') return presentationModule.exports;
       if (name === './phone-layout.js') return { phoneLayout: compactTableLayout };
+      if (name.endsWith('/name-tooltip-position.js')) return { nameTooltipPosition };
       if (name.endsWith('/numeric-width.js')) return { numericWidthScale, numericColumnWidth };
       if (name === '../../shared/engine/poker.js')
         return { completeBoardForPractice, rankText, evaluate };
@@ -614,11 +616,14 @@ function text(value) {
   assert.ok(!value.includes('undefined'));
 }
 
-test('WeChat turn, fold, settlement and retry keep identical table and dock footprints', (t) => {
+test('WeChat turn, fold, settlement and retry keep the table fixed while compacting unused actions', (t) => {
   assert.match(template, /class="action-notice" wx:if="\{\{!compactActions\}\}"/);
   assert.match(template, /class="raise-controls" wx:if="\{\{!compactActions\}\}"/);
-  assert.match(template, /height: {{tableHeight \+ 50 \+ 134}}px/);
-  assert.equal(cssNumber('.action-dock.compact-actions', 'height'), 134);
+  assert.match(
+    template,
+    /height: {{tableHeight \+ 50 \+ \(historyReadOnly \|\| compactActions \? 58 : 134\)}}px/,
+  );
+  assert.equal(cssNumber('.action-dock.compact-actions', 'height'), 58);
   assert.equal(
     cssNumber('.settled-buttons button', 'width'),
     100,
@@ -1560,7 +1565,12 @@ test('WeChat records classify every completed hand including zero folds and zero
       { ...base, id: 'playing', hand: 6, attempt: 0, profit: null, status: 'playing' },
     ],
   };
-  fixture.app.noirController = { getRecords: () => [copy(session)], getRecordsError: () => '' };
+  let revision = 0;
+  fixture.app.noirController = {
+    getRecordSummaries: () => [copy(session)],
+    getRecordsRevision: () => revision,
+    getRecordsError: () => '',
+  };
   const records = secondaryPage(t, 'records/records.js', fixture);
   records.onLoad();
   records.onShow();
@@ -1596,9 +1606,11 @@ test('WeChat records classify every completed hand including zero folds and zero
   assert.equal(view.attempts[4].cards.length, 2);
   assert.equal(view.attempts[4].refill, true);
   session.profit = -25;
+  revision++;
   records.refreshRecords();
   assert.equal(records.data.sessions[0].profitText, '-25');
   session.profit = 25;
+  revision++;
   records.refreshRecords();
   assert.equal(records.data.sessions[0].profitText, '+25');
   const markup = readFileSync(
@@ -1627,8 +1639,8 @@ test('WeChat record rows use full-width native views and reject unfinished hand 
     unfinished: { id: 'unfinished', status: 'unfinished' },
     completed: { id: 'completed', status: 'completed' },
   };
-  fixture.app.noirController = { getRecord: (id) => attempts[id] };
   const records = secondaryPage(t, 'records/records.js', fixture);
+  records.data.sessions = [{ attempts: Object.values(attempts) }];
   for (const id of ['playing', 'unfinished', 'missing']) {
     records.openHand({ currentTarget: { dataset: { id } } });
     assert.equal(fixture.navigations.length, 0);
@@ -1654,6 +1666,147 @@ test('WeChat record rows use full-width native views and reject unfinished hand 
     assert.match(rule, /background:\s*transparent;/);
   }
   assert.match(css, /\.hand-item\.is-disabled\s*\{[^}]*background:\s*transparent;/s);
+});
+
+test('WeChat record lists send bounded summary patches and remain idle without record changes', (t) => {
+  const fixture = setup(t);
+  // Eights have the largest encoded vector rank; cover the worst artwork size.
+  const hole = [
+    { key: '2-8', rank: 8, suit: 2, symbol: '♣' },
+    { key: '0-8', rank: 8, suit: 0, symbol: '♠' },
+  ];
+  let revision = 1,
+    reads = 0;
+  const sessions = Array.from({ length: 25 }, (_, i) => ({
+    id: `session-${i}`,
+    number: 25 - i,
+    startedAt: 1000 + i,
+    endedAt: i ? 2000 : null,
+    stakes: { smallBlind: 100, bigBlind: 200 },
+    playerCount: 9,
+    profit: 0,
+    wins: 0,
+    completed: 90,
+    attempts: Array.from({ length: 90 }, (_, j) => ({
+      id: `attempt-${i}-${j}`,
+      hand: j + 1,
+      attempt: 0,
+      hole,
+      status: 'completed',
+      profit: 0,
+      wonPot: false,
+      superseded: false,
+      refill: false,
+      // A defensive projection must not bridge unknown archive fields either.
+      snapshot: { largeUnusedTree: 'x'.repeat(2000) },
+    })),
+  }));
+  fixture.app.noirController = {
+    getRecords() {
+      throw Error('The list must never clone the full archive');
+    },
+    getRecord() {
+      throw Error('Only the detail page loads a snapshot');
+    },
+    getRecordSummaries() {
+      reads++;
+      return sessions;
+    },
+    getRecordsRevision: () => revision,
+    getRecordsError: () => '',
+  };
+  const page = secondaryPage(t, 'records/records.js', fixture);
+  const patches = [];
+  const setData = page.setData;
+  page.setData = function (patch, callback) {
+    patches.push(copy(patch));
+    setData.call(this, patch, callback);
+  };
+  page.onLoad();
+  page.onShow();
+  const initialBytes = patches.reduce(
+    (sum, patch) => sum + Buffer.byteLength(JSON.stringify(patch)),
+    0,
+  );
+  assert.equal(page.data.sessions.length, 20);
+  assert.equal(page.data.hasMoreSessions, true);
+  assert.equal(page.data.sessions[0].attempts.length, 24);
+  assert.equal(page.data.sessions[1].attempts.length, 0);
+  assert.doesNotMatch(JSON.stringify(page.data), /largeUnusedTree|snapshot/);
+  const idleReads = reads,
+    idlePatches = patches.length;
+  for (let i = 0; i < 20; i++) page.refreshRecords();
+  assert.equal(reads, idleReads);
+  assert.equal(patches.length, idlePatches, 'Polling unchanged records must not call setData');
+  page.moreHands({ currentTarget: { dataset: { id: 'session-0' } } });
+  assert.equal(page.data.sessions[0].attempts.length, 48);
+  page.moreHands({ currentTarget: { dataset: { id: 'session-0' } } });
+  assert.equal(page.data.sessions[0].attempts.length, 72);
+  page.moreHands({ currentTarget: { dataset: { id: 'session-0' } } });
+  assert.equal(page.data.sessions[0].attempts.length, 90);
+  assert.equal(page.data.sessions[0].hasMoreHands, false);
+  page.moreSessions();
+  assert.equal(page.data.sessions.length, 25);
+  assert.equal(page.data.hasMoreSessions, false);
+  page.toggleSession({ currentTarget: { dataset: { id: 'session-24' } } });
+  assert.equal(page.data.sessions[24].attempts.length, 24);
+  sessions[0].attempts[0].profit = -100;
+  sessions[0].profit = -100;
+  revision++;
+  const before = patches.length;
+  page.refreshRecords();
+  assert.equal(page.data.sessions[0].attempts[0].profitText, '-100');
+  assert.equal(patches.length, before + 1);
+  assert.ok(
+    JSON.stringify(patches.at(-1)).length < 500,
+    'A settled amount updates only its changed leaves',
+  );
+  sessions.unshift({ ...sessions[1], id: 'new-session', number: 26, attempts: [] });
+  revision++;
+  page.refreshRecords();
+  assert.equal(page.data.sessions[0].id, 'new-session');
+  assert.equal(page.data.sessions[1].attempts.length, 90, 'Reordering retains expanded rows');
+  assert.ok(
+    Math.max(...patches.map((patch) => Buffer.byteLength(JSON.stringify(patch)))) < 256 * 1024,
+  );
+  page.openHand({ currentTarget: { dataset: { id: 'attempt-0-0' } } });
+  assert.match(fixture.navigations.at(-1), /history\?id=attempt-0-0$/);
+  page.onHide();
+  const hiddenPatches = patches.length;
+  revision++;
+  page.refreshRecords();
+  assert.equal(patches.length, hiddenPatches);
+  t.diagnostic(
+    JSON.stringify({
+      initialBytes,
+      largestPatchBytes: Math.max(
+        ...patches.map((patch) => Buffer.byteLength(JSON.stringify(patch))),
+      ),
+      idleUpdates: patches.length - hiddenPatches,
+      sessions: 25,
+      hands: 2250,
+    }),
+  );
+});
+
+test('WeChat history uses a compact review dock and the records header keeps its return button intrinsic', () => {
+  assert.match(
+    template,
+    /tableHeight \+ 50 \+ \(historyReadOnly \|\| compactActions \? 58 : 134\)/,
+  );
+  assert.match(stylesheet, /\.history-shell \.action-dock\s*\{[^}]*height: 58px/);
+  assert.match(stylesheet, /\.history-practice-heading\s*\{[^}]*margin: 12px 8px 8px/);
+  const markup = readFileSync(
+    new URL('../../miniprogram/pages/records/records.wxml', import.meta.url),
+    'utf8',
+  );
+  const css = readFileSync(
+    new URL('../../miniprogram/pages/records/records.wxss', import.meta.url),
+    'utf8',
+  );
+  assert.ok(markup.indexOf('<text>对局记录</text>') < markup.indexOf('id="records-back"'));
+  assert.doesNotMatch(markup, /每一局的练习足迹/);
+  assert.match(css, /\.records-nav button\s*\{[^}]*width: auto;[^}]*min-width: 0;[^}]*margin: 0;/);
 });
 
 for (const playerCount of [5, 9]) {
@@ -2232,4 +2385,104 @@ test('WeChat untagged hero information rises within the same card and first-scre
     stylesheet,
     /\.web-phone-layout \.hero:not\(\.has-hero-rank\) \.hero-info\s*\{\s*translate: 0 calc\(-1 \* var\(--hero-rank-empty-lift\)\);/,
   );
+});
+
+test('returning from records preserves the painted live layout without replaying offscreen cards', (t) => {
+  const { page, jobs, info } = setup(t);
+  const game = reachHero(page);
+  page.act({ currentTarget: { dataset: { action: 'fold' } } });
+  page.openRecords();
+  page.onHide();
+  for (let count = 0; game.phase !== 'done'; count++) {
+    assert.ok(count < 200);
+    const [id, job] = [...jobs].sort((a, b) => a[1].due - b[1].due || a[0] - b[0])[0];
+    jobs.delete(id);
+    job.fn();
+  }
+  assert.equal(page.data.done, true);
+  const cards = [
+    ...page.data.heroCards,
+    ...page.data.board,
+    ...page.data.boardSlots,
+    ...page.data.phoneSeats.flatMap((seat) => [...seat.cards, ...seat.backCards]),
+  ];
+  assert.ok(cards.every((card) => !card.arriving));
+  assert.ok(page.data.phoneSeats.every((seat) => !seat.peekArriving));
+  const before = copy(page.data);
+  page._numberWidths = new Map([['measured', 123]]);
+  const patches = [];
+  const apply = page.setData;
+  page.setData = function (patch, callback) {
+    patches.push(copy(patch));
+    apply.call(this, patch, callback);
+  };
+  const show = page._controller.show;
+  let shows = 0;
+  page._controller.show = () => {
+    shows++;
+    show();
+  };
+  page.onShow();
+  assert.equal(shows, 0, 'A running live controller is not restarted by native Back');
+  assert.equal(patches.length, 0, 'Unchanged dimensions do not cross the bridge or flash');
+  assert.deepEqual(copy(page.data), before);
+  assert.equal(page._numberWidths.get('measured'), 123);
+  assert.equal(page._cardTimers?.has('number-font'), false);
+  info.windowWidth = 820;
+  info.windowHeight = 1180;
+  info.safeArea.bottom = 1180;
+  page.onResize();
+  assert.equal(patches.length, 1, 'Real rotation publishes window and player geometry atomically');
+  assert.equal(page.data.windowWidth, 820);
+  assert.ok(page.data.phoneSeats.length);
+});
+
+test('WeChat long press expands only truncated names and rejects delayed or hidden tooltips', (t) => {
+  const { page, wx } = setup(t);
+  let naturalWidth = 100,
+    labelWidth = 40,
+    delayed = false;
+  const callbacks = [];
+  wx.createSelectorQuery = () => {
+    const selectors = [];
+    const query = {
+      select(selector) {
+        selectors.push(selector);
+        return query;
+      },
+      fields() {
+        return query;
+      },
+      boundingClientRect() {
+        return query;
+      },
+      exec(callback) {
+        const result =
+          selectors[0] === '.seat-name-tooltip'
+            ? [{ width: 140, height: 40 }]
+            : [{ left: 320, top: 300, width: labelWidth, height: 20 }, { width: naturalWidth }];
+        if (delayed) callbacks.push(() => callback(result));
+        else callback(result);
+      },
+    };
+    return query;
+  };
+  const seat = page.data.phoneSeats[0];
+  page.showNameTooltip({ currentTarget: { dataset: { id: seat.id, kind: 'persona' } } });
+  assert.equal(page.data.nameTooltip.text, seat.profileName);
+  assert.equal(page.data.nameTooltip.visible, true);
+  assert.ok(page.data.nameTooltip.position.left + 140 <= page.data.windowWidth - 12);
+  page.onPageScroll({ scrollTop: 20 });
+  assert.equal(page.data.nameTooltip, null);
+  naturalWidth = labelWidth;
+  page.showNameTooltip({ currentTarget: { dataset: { id: seat.id, kind: 'name' } } });
+  assert.equal(page.data.nameTooltip, null, 'Fully displayed names need no popup');
+  naturalWidth = 100;
+  delayed = true;
+  page.showNameTooltip({ currentTarget: { dataset: { id: seat.id, kind: 'name' } } });
+  page.onHide();
+  callbacks.shift()();
+  assert.equal(page.data.nameTooltip, null);
+  assert.match(template, /bindlongpress="showNameTooltip"/);
+  assert.match(stylesheet, /\.seat-name-tooltip\s*\{[^}]*position: fixed/s);
 });

@@ -48,7 +48,7 @@
   </view>
   <view
     class="game-shell {{showdown.length ? 'has-showdown' : ''}} {{historyReadOnly ? 'history-shell' : ''}}"
-    style="height: {{tableHeight + 50 + 134}}px;"
+    style="height: {{tableHeight + 50 + (historyReadOnly || compactActions ? 58 : 134)}}px;"
   >
     <view class="game-header">
       <view class="hand-label"
@@ -118,10 +118,18 @@
             style="width: {{profileWidth}}px; height: {{profileHeight}}px;"
             ><view class="seat-name"
               ><text
+                id="seat-name-{{item.id}}"
+                data-id="{{item.id}}"
+                data-kind="name"
+                bindlongpress="showNameTooltip"
                 class="seat-name-label {{item.nameFit && !done ? 'is-name-fitted' : ''}}"
                 style="--name-width-scale: {{item.nameWidthScale || 1}};"
                 >{{item.name}}</text
-              ><text class="seat-name-measure" data-id="{{item.id}}" aria-hidden="true"
+              ><text
+                id="seat-name-measure-{{item.id}}"
+                class="seat-name-measure"
+                data-id="{{item.id}}"
+                aria-hidden="true"
                 >{{item.name}}</text
               ><text
                 class="position {{item.position === 'SB' ? 'position-sb' : item.position === 'BB' ? 'position-bb' : ''}}"
@@ -142,7 +150,17 @@
               src="{{item.portrait}}"
               mode="aspectFill"
             /><view wx:else class="avatar initials avatar-{{item.id}}">{{item.initial}}</view
-            ><text class="persona {{item.profileId === 'balanced' ? 'persona-balanced' : ''}}"
+            ><text
+              id="seat-persona-{{item.id}}"
+              data-id="{{item.id}}"
+              data-kind="persona"
+              bindlongpress="showNameTooltip"
+              class="persona {{item.profileId === 'balanced' ? 'persona-balanced' : ''}}"
+              >{{item.profileName}}</text
+            ><text
+              id="seat-persona-measure-{{item.id}}"
+              class="persona-name-measure"
+              aria-hidden="true"
               >{{item.profileName}}</text
             ><text
               class="stack"
@@ -1040,3 +1058,13 @@
     </scroll-view>
   </view>
 </view>
+
+<block wx:if="{{nameTooltip}}">
+  <view class="name-tooltip-dismiss" bindtap="closeNameTooltip" catchtouchmove="closeNameTooltip" />
+  <view
+    class="seat-name-tooltip {{nameTooltip.visible ? 'is-visible' : ''}} {{nameTooltip.position.placement}}"
+    style="left: {{nameTooltip.position.left || 0}}px; top: {{nameTooltip.position.top || 0}}px; --tooltip-arrow: {{nameTooltip.position.arrow || 12}}px;"
+    aria-role="tooltip"
+    >{{nameTooltip.text}}<view class="name-tooltip-arrow"
+  /></view>
+</block>

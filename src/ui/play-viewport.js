@@ -82,7 +82,20 @@ export function createPlayViewport(surface, { layout = () => {} } = {}) {
         ),
       ]
         .filter((el) => !el.hidden)
-        .map((el) => el.getBoundingClientRect())
+        .map((el) => {
+          if (!el.matches('.mini-cards')) return el.getBoundingClientRect();
+          // Revealed artwork grows above its stable slot and may overlap the
+          // coaching hint. It must not shrink or shift the whole settled table.
+          const parent = el.offsetParent.getBoundingClientRect();
+          return {
+            left: parent.left + el.offsetLeft,
+            right: parent.left + el.offsetLeft + el.offsetWidth,
+            top: parent.top + el.offsetTop,
+            bottom: parent.top + el.offsetTop + el.offsetHeight,
+            width: el.offsetWidth,
+            height: el.offsetHeight,
+          };
+        })
         .filter((r) => r.width > 0 && r.height > 0),
       left = Math.min(0, ...parts.map((r) => r.left - box.left)),
       right = Math.max(box.width, ...parts.map((r) => r.right - box.left)),

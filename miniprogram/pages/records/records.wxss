@@ -16,28 +16,28 @@ page {
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  min-height: 64px;
+  min-height: 38px;
   font-size: 19px;
   font-weight: 700;
 }
 .records-nav button {
+  flex: none;
+  width: auto;
+  min-width: 0;
+  max-width: none;
   margin: 0;
   color: #adc2ca;
   background: #15212a;
   border: 1px solid #30434e;
   border-radius: 10px;
-  padding: 8px 12px;
+  padding: 8px 10px;
   font-size: 13px;
 }
 .records-intro {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  margin: 8px 0 20px;
-}
-.records-intro text:first-child {
-  font-size: 24px;
-  font-weight: 700;
+  margin: 4px 0 12px;
 }
 .records-intro text:last-child,
 .records-note,
@@ -245,4 +245,13 @@ page {
 .records-note {
   display: block;
   margin: 20px 4px;
+}
+.records-more {
+  margin: 10px 0;
+  padding: 8px 12px;
+  color: #a5c9c0;
+  background: #14272c;
+  border: 1px solid #304b56;
+  border-radius: 8px;
+  font-size: 13px;
 }

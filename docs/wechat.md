@@ -102,3 +102,11 @@ node tests/wechat/game-records.mjs ws://127.0.0.1:9483 .artifacts/wechat-records
 ```
 
 该套需当前源码生成的包及真实页面导航，保留图形底牌、历史结算／复盘、不中止实时对局、重打与刷新退款的报告和截图。静态编译与 mock 不代表此运行级别通过。Web E2E 使用单独的 Vite 测试服务，不启动小程序监听器，避免覆盖正在验收的微信包。
+
+已有至少一手真实已结算记录时，可单独检查列表传输量、空闲刷新、详情留白和页头布局。该检查使用现有记录，不清除本机存储，不更改当前手的结果；只在测试期间包装视图更新计数器，退出时恢复。
+
+```sh
+node tests/wechat/records-performance.mjs ws://127.0.0.1:9497 .artifacts/records-performance/wechat
+```
+
+端口替换为当前 DevTools 的自动化端口。报告中的 `initialMs` 是同步摘要投影和 `setData` 调用耗时，包含测试计数器，不代表完整页面首屏或真机性能。使用 [本轮性能验证](records-performance-validation-2026-10-15.md) 区分压力单元、Web、DevTools 和安装 App 证据。

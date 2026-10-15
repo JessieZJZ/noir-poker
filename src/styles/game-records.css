@@ -128,7 +128,7 @@ body[data-records-page='hand'] .records-page-heading {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   gap: 8px 16px;
-  margin-bottom: 24px;
+  margin-bottom: 8px;
 }
 body[data-records-page='hand'] .records-page-heading > div {
   display: contents;
@@ -178,7 +178,7 @@ body[data-records-page='hand'] .records-back {
   font-size: 12px;
   line-height: 1.6;
   color: var(--muted);
-  margin: 16px 0 24px;
+  margin: 4px 0 12px;
 }
 .records-storage-error {
   color: #efbc88;
@@ -402,59 +402,6 @@ body[data-records-page='hand'] .records-page-heading {
   color: #d8bef4;
   background: #332640;
 }
-.records-settlement {
-  margin-top: 18px;
-  border: 1px solid #2d404b;
-  border-radius: 12px;
-  padding: 20px;
-  background: #111d26;
-}
-.records-settlement h2 {
-  font-size: 15px;
-  margin: 0 0 16px;
-  font-weight: 500;
-}
-.record-pot + .record-pot {
-  border-top: 1px solid #2b3d46;
-  margin-top: 14px;
-  padding-top: 14px;
-}
-.record-pot > div,
-.record-pot li {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 12px;
-  font-size: 13px;
-}
-.record-pot > div {
-  color: #91aaa7;
-}
-.record-pot strong {
-  font-weight: 500;
-}
-.record-pot ul {
-  padding: 0;
-  margin: 10px 0 0;
-  list-style: none;
-}
-.record-pot li {
-  padding: 6px 0;
-}
-.record-pot li > strong {
-  color: var(--mint);
-  font-size: 16px;
-}
-.record-pot small {
-  display: block;
-  margin-top: 3px;
-  font-size: 11px;
-  color: #8ca5ab;
-}
-.record-refund {
-  color: #a4b8bd;
-  font-size: 12px;
-}
 .records-activity .activity-list {
   max-height: 650px;
 }
@@ -505,9 +452,7 @@ body[data-records-page='hand'] .records-page-heading {
     font-size: 10px;
     padding: 1px 4px;
   }
-  .records-live-note {
-    margin-bottom: 18px;
-  }
+
   .records-activity .activity-list {
     max-height: none;
   }
@@ -525,4 +470,70 @@ body[data-records-page='hand'] .records-page-heading {
 
 .record-hand-tags:empty {
   display: none;
+}
+
+body[data-records-page='list'] .records-eyebrow {
+  display: none;
+}
+body[data-records-page='list'] .records-page-heading h1 {
+  margin-top: 0;
+}
+
+/* Larger faces keep their original slot and tuck behind the profile. */
+.game-surface .arena[data-player-count] .seat .mini-cards.revealed-cards {
+  z-index: 0;
+}
+.game-surface .arena[data-player-count] .seat .mini-cards.revealed-cards .playing-card.small {
+  width: var(--player-face-width, 54px);
+  height: var(--player-face-height, 78px);
+  translate: 0 var(--player-face-shift, 14px);
+  flex: none;
+}
+.game-surface .arena[data-player-count] .seat .seat-profile {
+  position: relative;
+  z-index: 1;
+}
+.game-surface > .table-viewport {
+  overflow: clip;
+  overflow-clip-margin: 40px;
+}
+
+.seat-name-label,
+.seat-style-label {
+  -webkit-touch-callout: none;
+  user-select: none;
+}
+.seat-name-tooltip {
+  position: fixed;
+  z-index: 1000;
+  width: max-content;
+  max-width: min(240px, calc(100vw - 24px));
+  padding: 9px 12px;
+  border: 1px solid #4b8675;
+  border-radius: 9px;
+  background: #18332e;
+  box-shadow: 0 6px 24px #0008;
+  color: #e1fff2;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+  pointer-events: none;
+}
+.seat-name-tooltip::after {
+  content: '';
+  position: absolute;
+  left: var(--tooltip-arrow);
+  width: 7px;
+  height: 7px;
+  background: #18332e;
+  border-right: 1px solid #4b8675;
+  border-bottom: 1px solid #4b8675;
+  bottom: -5px;
+  transform: translateX(-50%) rotate(45deg);
+}
+.seat-name-tooltip[data-placement='below']::after {
+  bottom: auto;
+  top: -5px;
+  transform: translateX(-50%) rotate(225deg);
 }

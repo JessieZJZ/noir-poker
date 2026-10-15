@@ -6,6 +6,7 @@ const { presentCard, showdownPresentation, presentationPatch } = require('./pres
 const PORTRAIT_CREDITS = require('../../assets/portraits/credits.js');
 const { completeBoardForPractice, rankText } = require('../../shared/engine/poker.js');
 const navigation = require('../../record-navigation.js');
+const { nameTooltipPosition } = require('../../shared/ui/name-tooltip-position.js');
 // Capsule 36 + nav 48 + gap 8 + header 48 + live dock 134 + end gap 8 + border 2.
 const VIEWPORT_CHROME_HEIGHT = 284;
 const PROFILE_AXES = [
@@ -69,6 +70,7 @@ module.exports = {
     comparisonOpen: false,
     homeLocked: false,
     homeOffset: 0,
+    nameTooltip: null,
     finishing: false,
     flyingChips: [],
   },
@@ -86,17 +88,23 @@ module.exports = {
         const dealKey = `${view.sessionNumber}:${view.hand}:${view.replay}`;
         const changedDeal = dealKey !== this._dealKey;
         if (changedDeal) {
+          this.closeNameTooltip();
           this._motionEpoch = (this._motionEpoch || 0) + 1;
           this.cancelCardMotion();
           this._seatFaces = new Map();
         }
         if (changedDeal || !view.settings.sound)
           for (const audio of this._audio || []) audio.stop();
+        // Records keep the live hand running offscreen. Its new cards must
+        // settle immediately; there is no visible animation timer while hidden.
+        const animate = !this._hidden;
         const previousCards = dealKey === this._dealKey ? this._boardCount || 0 : 0;
         this._dealKey = dealKey;
         const presentedBoard = board.map((card, index) => ({
           ...presentCard(card),
-          arriving: index >= previousCards || (!changedDeal && this.data.board[index]?.arriving),
+          arriving:
+            animate &&
+            (index >= previousCards || (!changedDeal && this.data.board[index]?.arriving)),
           dealDelay:
             index >= previousCards
               ? (index - previousCards) * 140
@@ -107,25 +115,29 @@ module.exports = {
         const presentedSeats = view.seats.map((seat) => {
           const before = this.data.seats.find((s) => s.id === seat.id);
           const signature = seat.cards.map((card) => card.key).join(',') || 'hidden';
-          const arriving = signature !== this._seatFaces?.get(seat.id) && seat.cards.length > 0;
+          const arriving =
+            animate && signature !== this._seatFaces?.get(seat.id) && seat.cards.length > 0;
           this._seatFaces?.set(seat.id, signature);
           if (arriving) faceArrivals.push(seat.id);
           return {
             ...seat,
             peekArriving:
-              Boolean(arriving && this._peekId === seat.id) ||
-              (!changedDeal && Boolean(before?.peekArriving)),
+              animate &&
+              (Boolean(arriving && this._peekId === seat.id) ||
+                (!changedDeal && Boolean(before?.peekArriving))),
             cards: seat.cards.map((card, index) => ({
               ...presentCard(card),
               dealDelay: index * 140,
-              arriving: arriving || (!changedDeal && Boolean(before?.cards[index]?.arriving)),
+              arriving:
+                animate && (arriving || (!changedDeal && Boolean(before?.cards[index]?.arriving))),
             })),
             backCards: [0, 1].map((index) => ({
               key: `${dealKey}:${index}`,
               delay: seat.id * 65 + index * 140,
               arriving:
-                changedDeal ||
-                (!before?.cards.length && Boolean(before?.backCards[index]?.arriving)),
+                animate &&
+                (changedDeal ||
+                  (!before?.cards.length && Boolean(before?.backCards[index]?.arriving))),
             })),
           };
         });
@@ -140,7 +152,7 @@ module.exports = {
           heroCards: view.heroCards.map((card, index) => ({
             ...presentCard(card),
             dealKey: `${dealKey}:${card.key}`,
-            arriving: changedDeal || Boolean(this.data.heroCards[index]?.arriving),
+            arriving: animate && (changedDeal || Boolean(this.data.heroCards[index]?.arriving)),
           })),
           showdown,
           showdownContext: `${showdown.length} 人参与摊牌${game?.pots.length > 1 ? ' · 主池与边池分别结算' : ''}`,
@@ -183,7 +195,7 @@ module.exports = {
         // Large research catalogs and card artwork need not cross the service/
         // view bridge on every bot turn. Preserve existing card nodes and motion.
         const patch = presentationPatch(this.data, update);
-        this.setData(patch, () => this.tightenSeatRanks());
+        if (Object.keys(patch).length) this.setData(patch, () => this.tightenSeatRanks());
         if (changedDeal)
           this.scheduleCardMotion('deal', 1300, () => {
             const patch = {};
@@ -230,28 +242,41 @@ module.exports = {
     if (!this._readOnlyAttempt) {
       if (typeof getApp === 'function') getApp().noirController = this._controller;
       this._controller.start();
-    } else this._controller.show();
+    } else {
+      this._controller.show();
+      this._initialHistoryShown = true;
+    }
   },
   onShow() {
+    const returningFromRecords = Boolean(this._browsingRecords);
     this._hidden = false;
     this._browsingRecords = false;
-    this._numberWidths?.clear();
-    this.updateWindow();
+    const resized = this.updateWindow();
     this.readResourceMotionPreference();
     this.startResourceRotation();
     if (!this._audio?.length) this.preloadSounds();
-    this._controller?.show();
-    // Embedded fonts may settle just after the first native text measurement.
-    this.scheduleCardMotion('number-font', 1000, () => {
+    // The same controller has kept publishing while records were visible.
+    // Re-showing it would repaint an already-current page during native Back.
+    if (!this._initialHistoryShown && !returningFromRecords) this._controller?.show();
+    this._initialHistoryShown = false;
+    if (!returningFromRecords || resized) {
       this._numberWidths?.clear();
-      this.tightenSeatRanks();
-      return {};
-    });
+      // Embedded fonts may settle just after the first native measurement.
+      this.scheduleCardMotion('number-font', 1000, () => {
+        this._numberWidths?.clear();
+        this.tightenSeatRanks();
+        return {};
+      });
+    }
+    // Hidden actions can change amounts/ranks. Measure their final paint once,
+    // retaining existing width scales until a real difference is observed.
+    if (returningFromRecords) this.tightenSeatRanks();
     if (this._finishRequested && !this.data.done) this.finishHand();
     if (this.data.reviewOpen && this._controller)
       this.call('review', (reviewData) => this.updateReview(reviewData));
   },
   onHide() {
+    this.closeNameTooltip();
     this._hidden = true;
     clearTimeout(this._resourceTimer);
     clearTimeout(this._resourceMotionTimer);
@@ -289,6 +314,7 @@ module.exports = {
     this.stopSounds();
   },
   onResize() {
+    this.closeNameTooltip();
     this.updateWindow();
   },
   scheduleCardMotion(key, delay, readPatch) {
@@ -322,6 +348,7 @@ module.exports = {
     return patch;
   },
   onPageScroll(event) {
+    this.closeNameTooltip();
     if (!this.data.homeLocked) this._homeScroll = event.scrollTop;
   },
   setOverlay(patch) {
@@ -383,7 +410,7 @@ module.exports = {
       /* Menu measurement can be unavailable while an older client initializes. */
     }
     // The table budget stays identical through fold, settlement and retry.
-    this.setData({
+    const viewport = {
       topInset,
       bottomInset,
       windowHeight: info.windowHeight,
@@ -391,31 +418,33 @@ module.exports = {
       compactNav: false,
       windowWidth: info.windowWidth,
       tableHeight: Math.max(0, info.windowHeight - topInset - bottomInset - VIEWPORT_CHROME_HEIGHT),
-    });
-    const arenaHeight = Math.max(300, this.data.tableHeight);
-    const arenaScale = Math.min(1, this.data.tableHeight / arenaHeight);
-    this.setData({
+    };
+    if (Object.entries(viewport).every(([key, value]) => this.data[key] === value)) return false;
+    const arenaHeight = Math.max(300, viewport.tableHeight);
+    const arenaScale = Math.min(1, viewport.tableHeight / arenaHeight);
+    Object.assign(viewport, {
       arenaHeight,
       arenaScale,
       arenaWidth: (info.windowWidth - 18) / (arenaScale || 1),
     });
-    this.setData(this.publicLayout(this.data.board));
+    const layout = this.publicLayout(this.data.board, this.data, { ...this.data, ...viewport });
+    // A single atomic update avoids a frame with the new window but old seats.
+    const patch = presentationPatch(this.data, { ...viewport, ...layout });
+    if (Object.keys(patch).length) this.setData(patch);
+    return true;
   },
-  publicLayout(board = [], view = this.data) {
+  publicLayout(board = [], view = this.data, viewport = this.data) {
     if (view.seats?.length) {
       const tableHeight = Math.max(
         0,
-        this.data.windowHeight -
-          this.data.topInset -
-          this.data.bottomInset -
-          VIEWPORT_CHROME_HEIGHT,
+        viewport.windowHeight - viewport.topInset - viewport.bottomInset - VIEWPORT_CHROME_HEIGHT,
       );
       const fitted = phoneLayout({
-        width: this.data.windowWidth,
-        availableWidth: this.data.windowWidth - 18,
+        width: viewport.windowWidth,
+        availableWidth: viewport.windowWidth - 18,
         height: tableHeight,
         seats: view.seats,
-        displayHeight: this.data.windowHeight - this.data.topInset - this.data.bottomInset - 36,
+        displayHeight: viewport.windowHeight - viewport.topInset - viewport.bottomInset - 36,
       });
       return {
         ...fitted,
@@ -440,6 +469,55 @@ module.exports = {
       };
     }
     return {};
+  },
+  closeNameTooltip() {
+    this._nameTipEpoch = (this._nameTipEpoch || 0) + 1;
+    if (this.data.nameTooltip) this.setData({ nameTooltip: null });
+  },
+  showNameTooltip(event) {
+    const id = Number(event.currentTarget.dataset.id);
+    const kind = event.currentTarget.dataset.kind === 'persona' ? 'persona' : 'name';
+    const seat = this.data.phoneSeats.find((seat) => seat.id === id);
+    if (!seat || (kind === 'name' && seat.nameFit && !this.data.done) || !wx.createSelectorQuery)
+      return;
+    this.closeNameTooltip();
+    const ticket = this._nameTipEpoch;
+    const query = wx.createSelectorQuery();
+    query.select(`#seat-${kind}-${id}`).fields({
+      rect: true,
+      size: true,
+      computedStyle: ['padding-left', 'padding-right', 'border-left-width', 'border-right-width'],
+    });
+    query.select(`#seat-${kind}-measure-${id}`).boundingClientRect();
+    query.exec(([label, natural]) => {
+      if (ticket !== this._nameTipEpoch || this._hidden || this._destroyed || !label || !natural)
+        return;
+      const inset =
+        ['padding-left', 'padding-right', 'border-left-width', 'border-right-width'].reduce(
+          (sum, key) => sum + (parseFloat(label[key]) || 0),
+          0,
+        ) * (this.data.arenaScale || 1);
+      if (natural.width <= label.width - inset + 1) return;
+      this.setData(
+        {
+          nameTooltip: { text: kind === 'persona' ? seat.profileName : seat.name, visible: false },
+        },
+        () => {
+          const measure = wx.createSelectorQuery();
+          measure.select('.seat-name-tooltip').boundingClientRect();
+          measure.exec(([size]) => {
+            if (ticket !== this._nameTipEpoch || this._hidden || this._destroyed || !size) return;
+            const position = nameTooltipPosition(label, size, {
+              width: this.data.windowWidth,
+              height: this.data.windowHeight,
+              top: this.data.topInset + 36,
+              bottom: this.data.bottomInset,
+            });
+            this.setData({ 'nameTooltip.visible': true, 'nameTooltip.position': position });
+          });
+        },
+      );
+    });
   },
   tightenSeatRanks() {
     if (!wx.createSelectorQuery || this._hidden || this._destroyed) return;

@@ -156,6 +156,8 @@ npm run wechat:check         # 官方开源 WXML/WXSS 编译器检查
 node tests/wechat/review-coaching.mjs ws://127.0.0.1:9461 .artifacts/wechat-review
 # 单独检查新增混合打法的九种实际记录；自动化端口按本机实际值替换：
 node tests/wechat/deception-review.mjs ws://127.0.0.1:9471 .artifacts/wechat-deception
+# 已有结算记录时，检查真实记录页传输量与间距；端口以本机实际值为准：
+node tests/wechat/records-performance.mjs ws://127.0.0.1:9497 .artifacts/records-performance/wechat
 npm run platforms:sync      # 同步微信、iOS、Android 最新源码资源
 npm run mobile:test:setup -- ios  # 隔离安装 Appium 与平台驱动
 npm run mobile:test:ios      # 安装实际模拟器 App 并交互验证

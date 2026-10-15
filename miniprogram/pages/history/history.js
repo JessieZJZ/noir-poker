@@ -12,7 +12,7 @@ Page({
       return;
     }
     const session = controller
-      .getRecords()
+      .getRecordSummaries()
       .find((item) => item.attempts.some((row) => row.id === attempt.id));
     this._readOnlyAttempt = attempt;
     this._readOnlySessionNumber = session?.number || 1;

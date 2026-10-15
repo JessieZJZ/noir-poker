@@ -58,7 +58,7 @@ async function assertFixedTable(page, { bottomInset = 0, settled = false } = {})
             const r = part.getBoundingClientRect();
             if (!r.width || !r.height) continue;
             if (
-              r.top < table.top - 1 ||
+              r.top < table.top - (part.matches('.mini-cards.revealed-cards') ? 40 : 1) ||
               r.bottom > table.bottom + 1 ||
               r.left < table.left - 1 ||
               r.right > table.right + 1

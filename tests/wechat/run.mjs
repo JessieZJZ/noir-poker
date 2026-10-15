@@ -200,8 +200,8 @@ try {
       'The table keeps the fixed viewport budget',
     );
     assert.equal(geometry.table.height, tableHeight);
-    assert.equal(Number(geometry.shell.height), tableHeight + 50 + 134);
-    assert.equal(geometry.dockHeight, compact ? 64 : 134);
+    assert.equal(Number(geometry.shell.height), tableHeight + 50 + (compact ? 58 : 134));
+    assert.equal(geometry.dockHeight, compact ? 58 : 134);
     assert.ok(
       Math.abs(geometry.shell.top - (viewport.topInset + 36 + 48 + 8)) <= 1,
       'The shell keeps its original top position',

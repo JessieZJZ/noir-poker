@@ -1,4 +1,3 @@
-import { currentPots } from '../engine/poker.js';
 import { recordResult } from '../engine/game-records.js';
 import { createRecordsNavigation } from './records-navigation.js';
 import { createGuideMenu } from './guide-menu.js';
@@ -11,6 +10,7 @@ import { preparePortraits } from './portraits.js';
 import { createSnapshotSurface } from './table-scene.js';
 import { createSettlementLayout } from './settlement-layout.js';
 import { createPlayViewport } from './play-viewport.js';
+import { createShowdownController } from './showdown.js';
 
 const escape = (value) =>
   String(value)
@@ -62,16 +62,11 @@ function sessionItem(session, expanded) {
       <span class="record-session-stats"><span><small>胜率</small><strong>${session.completed ? Math.round((session.wins / session.completed) * 100) + '%' : '—'}</strong></span><span><small>净筹码变化</small><strong class="${session.profit < 0 ? 'negative' : session.profit > 0 ? 'positive' : ''}">${change(session.profit)}</strong></span><span><small>起始大小盲</small><strong>${formatChips(session.stakes.smallBlind)} / ${formatChips(session.stakes.bigBlind)}</strong></span><span><small>牌桌人数</small><strong>${session.playerCount} 人</strong></span></span>
       <span class="record-session-chevron" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></span>
     </button>
-    <div class="record-session-hands" id="record-session-${escape(session.id)}" ${expanded ? '' : 'hidden'}>${session.attempts.map(handItem).join('') || '<p class="records-empty">这一局还没有对局记录。</p>'}</div>
+    <div class="record-session-hands" id="record-session-${escape(session.id)}" ${expanded ? '' : 'hidden'}>${expanded ? session.attempts.map(handItem).join('') || '<p class="records-empty">这一局还没有对局记录。</p>' : ''}</div>
   </article>`;
 }
 
-function historicalPots(snapshot) {
-  const details = currentPots(snapshot);
-  return `<section id="history-pot-settlement" class="records-settlement" aria-label="底池结算"><h2>底池结算</h2>${details.pots.map((pot) => `<div class="record-pot"><div><strong>${escape(pot.label)}</strong><span>${formatChips(pot.amount)}</span></div><ul>${pot.awards.map((award) => `<li><span>${escape(snapshot.players[award.id].name)}<small>${escape(award.label)}</small></span><strong>+${formatChips(award.amount)}</strong></li>`).join('')}</ul></div>`).join('')}${details.refunds.map((refund) => `<p class="record-refund">${escape(snapshot.players[refund.id].name)} · 未跟注退回 ${formatChips(refund.amount)}</p>`).join('')}</section>`;
-}
-
-export function createGameRecordsView({ records, openReview, onReturnGame }) {
+export function createGameRecordsView({ records, openReview, openPots, onReturnGame }) {
   const liveMain = document.querySelector('main.main'),
     page = document.querySelector('#records-page'),
     content = document.querySelector('#records-content'),
@@ -86,7 +81,8 @@ export function createGameRecordsView({ records, openReview, onReturnGame }) {
     fingerprint = '',
     archive = null,
     historyViewport = null,
-    defaultCurrent = null;
+    defaultCurrent = null,
+    listSessions = new Map();
 
   const navigation = createRecordsNavigation({ window, show: showRoute }),
     guideMenu = createGuideMenu({ onRecords: () => navigate({ page: 'list' }) });
@@ -94,25 +90,11 @@ export function createGameRecordsView({ records, openReview, onReturnGame }) {
     navigation.navigate(next);
   }
   function renderList(force = false) {
-    const sessions = records.sessions();
-    const next =
-      JSON.stringify(
-        sessions.map((session) => [
-          session.id,
-          session.endedAt,
-          session.profit,
-          session.wins,
-          session.completed,
-          session.attempts.map((attempt) => [
-            attempt.id,
-            attempt.status,
-            attempt.superseded,
-            attempt.profit,
-          ]),
-        ]),
-      ) + getLocale();
+    const next = `${records.revision()}:${getLocale()}`;
     if (!force && fingerprint === next) return;
     fingerprint = next;
+    const sessions = records.summaries();
+    listSessions = new Map(sessions.map((session) => [session.id, session]));
     const current = sessions.find((session) => !session.endedAt)?.id;
     if (current && current !== defaultCurrent) {
       expanded.add(current);
@@ -133,7 +115,7 @@ export function createGameRecordsView({ records, openReview, onReturnGame }) {
       formatter = createActivityFormatter(snapshot.players);
     setLocalizedHTML(
       content,
-      `<div id="history-page"><div class="main records-history-grid"><section class="game-column"><div class="records-surface-slot"></div>${historicalPots(snapshot)}</section><aside class="sidebar"><section class="activity-card records-activity"><div class="section-title"><h2>本局动态</h2><span class="subtle-label">FINISHED</span></div><ol class="activity-list" aria-label="本手动态，按时间顺序排列">${snapshot.logs
+      `<div id="history-page"><div class="main records-history-grid"><section class="game-column"><div class="records-surface-slot"></div><div class="records-showdown-slot"></div></section><aside class="sidebar"><section class="activity-card records-activity"><div class="section-title"><h2>本局动态</h2><span class="subtle-label">FINISHED</span></div><ol class="activity-list" aria-label="本手动态，按时间顺序排列">${snapshot.logs
         .slice()
         .reverse()
         .map(
@@ -144,13 +126,23 @@ export function createGameRecordsView({ records, openReview, onReturnGame }) {
     );
     historyViewport?.destroy();
     const session = records
-      .sessions()
+      .summaries()
       .find((entry) => entry.attempts.some((attempt) => attempt.id === archive.id));
     const surface = createSnapshotSurface(liveMain.querySelector('.game-surface'), snapshot, {
       sessionNumber: session.number,
       visible,
     });
     content.querySelector('.records-surface-slot').replaceWith(surface);
+    const showdown = liveMain.querySelector('#showdown-stage').cloneNode(true);
+    for (const element of [showdown, ...showdown.querySelectorAll('[id]')])
+      element.id = `history-${element.id}`;
+    content.querySelector('.records-showdown-slot').replaceWith(showdown);
+    createShowdownController({
+      card: renderCard,
+      root: content,
+      prefix: 'history-',
+      animate: false,
+    }).update(snapshot, 0);
     const layout = createSettlementLayout(surface.querySelector('.arena'), { observe: false });
     historyViewport = createPlayViewport(surface, {
       layout: layout.update,
@@ -226,14 +218,18 @@ export function createGameRecordsView({ records, openReview, onReturnGame }) {
       if (expanded.has(id)) expanded.delete(id);
       else expanded.add(id);
       button.setAttribute('aria-expanded', String(expanded.has(id)));
-      document.getElementById('record-session-' + id).hidden = !expanded.has(id);
+      const hands = document.getElementById('record-session-' + id);
+      if (expanded.has(id) && !hands.childElementCount)
+        setLocalizedHTML(
+          hands,
+          listSessions.get(id).attempts.map(handItem).join('') ||
+            '<p class="records-empty">这一局还没有对局记录。</p>',
+        );
+      hands.hidden = !expanded.has(id);
     } else if (button.dataset.recordHand) navigate({ page: 'hand', id: button.dataset.recordHand });
     else if (button.id === 'history-review-button')
       openReview(createReviewInput(archive.snapshot), 'history:' + archive.id);
-    else if (button.hasAttribute('data-history-pots'))
-      content
-        .querySelector('.records-settlement')
-        .scrollIntoView({ block: 'start', behavior: 'smooth' });
+    else if (button.hasAttribute('data-history-pots')) openPots?.(archive.snapshot);
     else if (button.dataset.historyPeek) {
       const id = Number(button.dataset.historyPeek);
       if (visible.has(id)) visible.delete(id);

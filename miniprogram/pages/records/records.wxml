@@ -4,11 +4,9 @@
   style="padding-top: {{topInset + 36}}px; padding-bottom: {{bottomInset + 20}}px;"
 >
   <view class="records-nav"
-    ><button id="records-back" bindtap="returnToGame">‹ 返回游戏</button><text>对局记录</text></view
+    ><text>对局记录</text><button id="records-back" bindtap="returnToGame">返回游戏</button></view
   >
-  <view class="records-intro"
-    ><text>每一局的练习足迹</text><text>浏览记录时，当前游戏继续进行。</text></view
-  >
+  <view class="records-intro"><text>浏览记录时，当前游戏继续进行。</text></view>
   <view wx:if="{{!sessions.length}}" class="records-empty"
     >还没有对局记录，开始练习后自动保存。</view
   >
@@ -88,8 +86,19 @@
           ><view class="hand-chevron"
         /></view>
       </view>
+      <button
+        wx:if="{{session.hasMoreHands}}"
+        class="records-more"
+        data-id="{{session.id}}"
+        bindtap="moreHands"
+      >
+        加载更多手牌
+      </button>
     </view>
   </view>
+  <button wx:if="{{hasMoreSessions}}" class="records-more" bindtap="moreSessions">
+    加载更早对局
+  </button>
   <text class="records-note"
     >记录保存在本机。胜率按获得底池计算；重打只将最后采用的结果计入本局。</text
   >

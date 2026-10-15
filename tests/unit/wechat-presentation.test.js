@@ -33,13 +33,19 @@ test('presentation updates only changed seat leaves and never reset peer caption
   const after = structuredClone(before);
   after.phoneSeats[1].cards = [{ key: 'As', arriving: true }];
   const patch = JSON.parse(JSON.stringify(presentationPatch(before, after)));
-  assert.deepEqual(patch, { 'phoneSeats[1].cards': after.phoneSeats[1].cards });
+  assert.deepEqual(patch, { 'phoneSeats[1].cards[0]': after.phoneSeats[1].cards[0] });
   assert.deepEqual(
     before.phoneSeats.map((s) => s.rankLift),
     [-12, -8],
   );
   after.phoneSeats.push({ id: 3, rankLift: 0, cards: [], actionLabel: '跟注' });
-  assert.deepEqual(JSON.parse(JSON.stringify(presentationPatch(before, after))), after);
+  assert.deepEqual(JSON.parse(JSON.stringify(presentationPatch(before, after))), {
+    'phoneSeats[1].cards[0]': after.phoneSeats[1].cards[0],
+    'phoneSeats[2]': after.phoneSeats[2],
+  });
+  const reordered = { phoneSeats: after.phoneSeats.toReversed() };
+  assert.deepEqual(JSON.parse(JSON.stringify(presentationPatch(after, reordered))), reordered);
+  assert.deepEqual(JSON.parse(JSON.stringify(presentationPatch(after, before))), before);
 });
 const cards = (text) =>
   text

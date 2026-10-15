@@ -494,3 +494,54 @@ test('capture ignores unregistered games and begin is idempotent for the active 
   store.capture(game);
   assert.equal(store.getAttempt('missing'), null);
 });
+
+test('record list summaries omit snapshots, stay isolated and invalidate only for record changes', () => {
+  const store = records(),
+    game = newGame(9, stakes);
+  const initial = store.revision();
+  startHand(game);
+  store.begin(game);
+  const playing = store.revision();
+  assert.ok(playing > initial);
+  store.begin(game);
+  store.capture(game);
+  assert.equal(
+    store.revision(),
+    playing,
+    'Idempotent reads and live bot renders do not dirty the list',
+  );
+  finish(game);
+  store.capture(game);
+  const completed = store.revision();
+  assert.ok(completed > playing);
+  const summaries = store.summaries();
+  assert.equal(summaries[0].completed, 1);
+  assert.equal(Object.hasOwn(summaries[0].attempts[0], 'snapshot'), false);
+  const full = store.sessions();
+  assert.deepEqual(
+    summaries,
+    full.map((session) => ({
+      ...session,
+      attempts: session.attempts.map(({ snapshot, ...attempt }) => attempt),
+    })),
+  );
+  assert.ok(JSON.stringify(summaries).length < JSON.stringify(full).length / 5);
+  summaries[0].stakes.smallBlind = 1;
+  summaries[0].attempts[0].hole[0].rank = 99;
+  assert.deepEqual(store.summaries()[0].stakes, game.stakes);
+  assert.deepEqual(store.summaries()[0].attempts[0].hole, game.players[0].hole);
+  assert.ok(
+    store.getAttempt(full[0].attempts[0].id).snapshot,
+    'The full hand remains available on demand',
+  );
+  assert.equal(store.capture(game), null);
+  assert.equal(store.revision(), completed);
+  restartHand(game);
+  store.begin(game);
+  assert.ok(store.revision() > completed);
+  assert.equal(store.summaries()[0].completed, 0);
+  assert.equal(store.summaries()[0].attempts[0].superseded, true);
+  finish(game);
+  store.capture(game);
+  assert.equal(store.summaries()[0].completed, 1);
+});
