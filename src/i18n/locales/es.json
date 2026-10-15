@@ -1930,6 +1930,7 @@
   "公开未知牌不足以抽取底牌。": "No quedan suficientes cartas desconocidas en el modelo de información pública para muestrear cartas privadas.",
   "公开范围没有可用底牌组合。": "El rango basado en información pública no contiene combinaciones de cartas privadas utilizables.",
   "轮到你行动": "Tu turno",
+  "轮到你行动，": "Tu turno,",
   "可以过牌或主动下注。": "Puedes pasar o apostar.",
   "跟注需要 {0} 筹码。{1}": "Igualar cuesta {0} fichas. {1}"
 }

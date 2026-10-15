@@ -67,7 +67,13 @@ test('entry and one idle reminder decorate the whole action area without moving 
   await expect(phase(page)).toHaveAttribute('data-turn-phase', 'enter');
   await expect(page.locator('.hero-cards-wrap')).toHaveClass(/turn-enter/);
   await expect(page.locator('#turn-prompt')).toBeVisible();
-  await expect(page.locator('#turn-prompt')).toHaveText('轮到你行动');
+  await expect(page.locator('#turn-prompt')).toHaveText('轮到你行动，');
+  const copyStyle = await page.locator('.decision-copy').evaluate((el) => {
+    const prompt = getComputedStyle(el.querySelector('.turn-prompt'));
+    const detail = getComputedStyle(el.querySelector('.decision-detail'));
+    return { prompt: [prompt.fontWeight, prompt.color], detail: [detail.fontWeight, detail.color] };
+  });
+  expect(copyStyle.prompt).toEqual(copyStyle.detail);
   expect(await handBorders(page)).toEqual(thinkingBorders);
   await expect(page.locator('.turn-line')).toHaveCSS('animation-name', 'none');
   expect(await railMotion(page)).toEqual(outwardPulses);
@@ -158,7 +164,7 @@ test('reduced motion and muted native feedback keep a visible, localized turn st
     await loadLocale('en');
     localizeDocument(document);
   });
-  await expect(page.locator('#turn-prompt')).toHaveText('Your turn');
+  await expect(page.locator('#turn-prompt')).toHaveText('Your turn,');
   await expect(page.locator('#decision-text')).not.toContainText('轮到');
 });
 

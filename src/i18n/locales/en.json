@@ -1934,6 +1934,7 @@
   "公开未知牌不足以抽取底牌。": "Not enough unknown cards remain in the public-information model to sample hole cards.",
   "公开范围没有可用底牌组合。": "The public-information range has no usable hole-card combinations.",
   "轮到你行动": "Your turn",
+  "轮到你行动，": "Your turn,",
   "可以过牌或主动下注。": "You may check or bet.",
   "跟注需要 {0} 筹码。{1}": "Calling costs {0} chips. {1}"
 }

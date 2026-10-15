@@ -210,7 +210,7 @@
           wx:if="{{!compactActions}}"
           aria-role="status"
           aria-live="polite"
-          ><text wx:if="{{canAct}}" class="turn-prompt">轮到你行动 </text
+          ><text wx:if="{{canAct}}" class="turn-prompt">轮到你行动，</text
           ><text class="decision-detail">{{actionNotice}}</text></view
         ><view class="raise-controls" wx:if="{{!compactActions}}"
           ><slider

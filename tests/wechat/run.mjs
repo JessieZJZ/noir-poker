@@ -352,6 +352,10 @@ try {
   // Hand outlines now belong to each card's ::before. Element.style() exposes
   // only the host; pseudo-element motion is sampled by Web/native scenarios.
   const prompt = await page.$('.turn-prompt');
+  assert.equal(await prompt.text(), '轮到你行动，');
+  const detail = await page.$('.decision-detail');
+  assert.equal(await prompt.style('color'), await detail.style('color'));
+  assert.equal(await prompt.style('font-weight'), await detail.style('font-weight'));
   assert.equal(await prompt.style('animation-name'), 'none');
   assert.equal(await prompt.style('opacity'), '1');
   const rail = await page.$('.turn-line');

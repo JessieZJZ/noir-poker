@@ -1933,6 +1933,7 @@
   "公开未知牌不足以抽取底牌。": "Im Modell der öffentlichen Informationen sind nicht genügend unbekannte Karten verfügbar, um Holecards zu ziehen.",
   "公开范围没有可用底牌组合。": "Die auf öffentlichen Informationen basierende Range enthält keine verwendbaren Holecard-Kombinationen.",
   "轮到你行动": "Du bist dran",
+  "轮到你行动，": "Du bist dran,",
   "可以过牌或主动下注。": "Du kannst checken oder setzen.",
   "跟注需要 {0} 筹码。{1}": "Mitgehen kostet {0} Chips. {1}"
 }
