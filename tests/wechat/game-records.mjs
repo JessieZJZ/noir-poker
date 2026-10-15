@@ -298,6 +298,20 @@ try {
   await waitRoute('pages/table/table');
   report.stage = 'real-game-play-and-records-navigation';
   report.device = await mini.systemInfo();
+  const [settingsButtons, resourceLabels] = await nativeRects([
+    '.nav-actions > .icon-button',
+    '.resource-label-window',
+  ]);
+  assert.equal(settingsButtons.length, 1);
+  assert.equal(resourceLabels.length, 1);
+  const navGap = resourceLabels[0].left - settingsButtons[0].right;
+  assert.ok(navGap >= 4 && navGap <= 12, 'The settings icon and resource label stay close');
+  assert.ok(settingsButtons[0].width >= 34 && settingsButtons[0].height >= 34);
+  report.navigationSpacing = {
+    gap: navGap,
+    settings: settingsButtons[0],
+    label: resourceLabels[0],
+  };
   await mini.evaluate(() => {
     const table = getCurrentPages().at(-1);
     for (const method of [

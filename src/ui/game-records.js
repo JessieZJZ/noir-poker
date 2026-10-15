@@ -109,7 +109,7 @@ export function createGameRecordsView({ records, openReview, openPots, onReturnG
     );
     window.scrollTo(0, scroll);
   }
-  function renderArchive() {
+  function renderArchive(peekPlayer) {
     if (!archive) return;
     const snapshot = archive.snapshot,
       formatter = createActivityFormatter(snapshot.players);
@@ -131,6 +131,7 @@ export function createGameRecordsView({ records, openReview, openPots, onReturnG
     const surface = createSnapshotSurface(liveMain.querySelector('.game-surface'), snapshot, {
       sessionNumber: session.number,
       visible,
+      peekPlayer,
     });
     content.querySelector('.records-surface-slot').replaceWith(surface);
     const showdown = liveMain.querySelector('#showdown-stage').cloneNode(true);
@@ -234,7 +235,7 @@ export function createGameRecordsView({ records, openReview, openPots, onReturnG
       const id = Number(button.dataset.historyPeek);
       if (visible.has(id)) visible.delete(id);
       else visible.add(id);
-      renderArchive();
+      renderArchive(visible.has(id) ? id : undefined);
       content.querySelector(`[data-history-peek="${id}"]`).focus({ preventScroll: true });
     }
   });
