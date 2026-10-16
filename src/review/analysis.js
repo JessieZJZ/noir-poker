@@ -113,7 +113,7 @@ export function analyzeDecision(
     code = 'free-fold';
     status = 'attention';
     confidence = '规则与成本明确';
-    title = '无需补筹码，弃牌放弃了免费机会';
+    title = '可以直接过牌，弃牌放弃了免费机会';
     reason = `当时你在 ${s.position}，跟注成本为 0。过牌保留本手权益，不会增加投入；${ctx.pendingOthers ? '后面还有 ' + ctx.pendingOthers + ' 位玩家可以行动。' : '本轮没有必须补齐的下注。'}`;
     alternative = { action: 'check', amount: 0 };
     lesson = '先免费过牌，面对后续下注再评估价格。';

@@ -1310,6 +1310,14 @@
 .review-coaching .module-title {
   font-size: 14px;
 }
+.review-matchups > text,
+.review-matchups > view {
+  display: block;
+  margin-bottom: 12px;
+}
+.review-matchups .review-matchup-hand {
+  margin-top: 8px;
+}
 @media (max-width: 380px) {
   .profile-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));

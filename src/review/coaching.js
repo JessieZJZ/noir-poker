@@ -197,7 +197,7 @@ export function coachDecision(s, r) {
           : action.action === 'raise'
             ? `这手建议${suggested}，额外投入 ${fmt(action.amount - s.bet)}；${r.context.draw.outs ? '保留补牌机会，同时给对手弃牌的压力' : ['pressure-bet', 'large-unbacked-bet'].includes(r.code) || (!s.street && r.context.tier < 2) ? '这次主要争取对手弃牌，要控制为这个底池付出的后手' : '让较弱成牌或起手牌付费，并控制这次投入的尺度'}。`
             : action.action === 'check'
-              ? `这手建议过牌，当前无需补筹码；${r.context.handClass === 'board' ? '你的底牌没有提高公共牌，先保留平分底池的机会' : '先保留 ' + fmt(s.stack) + ' 后手，不主动放大 ' + fmt(s.pot) + ' 的底池'}。`
+              ? `这手建议直接过牌，不必下注；${r.context.handClass === 'board' ? '你的底牌没有提高公共牌，先保留平分底池的机会' : '先保留 ' + fmt(s.stack) + ' 后手，不主动放大 ' + fmt(s.pot) + ' 的底池'}。`
               : `这手建议跟注 ${fmt(s.legal.callAmount)}，继续争夺 ${fmt(r.metrics.contestable)} 的底池；跟住后还留 ${fmt(s.stack - s.legal.callAmount)}，保留当前${r.context.handLabel}的获池机会。`;
     }
     const matchup = r.context.matchups?.text,

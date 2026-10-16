@@ -67,8 +67,48 @@ function handSummary(s, c) {
     draw,
     pairDraw,
     `${c.texture.wet ? '湿润面' : '干燥面'}：${c.texture.label}`,
-    c.draw.outs ? '改善候选不是保证获胜的补牌。' : '',
+    s.street < 3 && c.opponents > 1 && c.made.score[0] === 1
+      ? '多人底池里，一对需要控制底池；选择过牌，也可能让对手免费补成更强的牌。'
+      : '',
   ].filter(Boolean);
+}
+
+function preflopRangeNotes(s) {
+  const actions = (s.history || []).filter((a) => a.street === 0),
+    raises = actions.filter((a) => a.action === 'raise'),
+    last = raises.at(-1),
+    name = (id) => s.players?.find((p) => p.id === id)?.name || '对手',
+    notes = [];
+  if (last)
+    notes.push(
+      raises.length > 1
+        ? `${name(last.id)}已经再加注到 ${number(last.amount)}，要更多考虑大对子和 AK；AQ、同花高张也可能这样打，不能只按普通开池看待。`
+        : `${name(last.id)}开池到 ${number(last.amount)}，可能拿着对子、强 A 或同花高张；后位开池还可能带入同花连张，前位通常会更谨慎。`,
+    );
+  else
+    notes.push(
+      '前面还没有加注，后面的人既可能拿到大对子或强 A，也可能用小对子、同花高张或同花连张入池；越靠后，能参与的牌通常越多。',
+    );
+  const live = new Set(s.players?.filter((p) => !p.folded && p.id !== 0).map((p) => p.id)),
+    callers = [
+      ...new Set(
+        actions
+          .filter(
+            (a, i) =>
+              a.id !== 0 && live.has(a.id) && a.action === 'call' && i > actions.indexOf(last),
+          )
+          .map((a) => name(a.id)),
+      ),
+    ];
+  if (last && callers.length)
+    notes.push(
+      `${callers.join('、')}跟住了这笔加注，小中对子、同花高张和同花连张都值得考虑；平跟也可能藏着强牌。`,
+    );
+  if (s.hole.some((card) => card.rank === 14))
+    notes.push(
+      `${s.players?.find((p) => p.id === 0)?.name || '你'}手里有一张 A，对手能拿到 AA、AK、AQ、AJ 的组合会少一些，但这些强牌仍然可能出现。`,
+    );
+  return notes;
 }
 
 // Ranking describes possible opponent holdings from the same public range
@@ -243,10 +283,51 @@ export function handMatchups(s, c) {
             ? `当前成牌对比：${c.handLabel}会输给例如 ${lose.text}（${lose.label}）；继续更需要补牌或对手弃牌。`
             : `当前成牌与 ${tie?.text || ''} 相同，主要争取平分底池。`;
   const summaryParts = handSummary(s, c);
+  const possible = [];
+  if (!s.street) {
+    const merged = new Map();
+    for (const entries of Object.values(groups))
+      for (const candidate of entries.values()) {
+        const previous = merged.get(candidate.group);
+        merged.set(
+          candidate.group,
+          previous
+            ? {
+                ...(candidate.likelihood > previous.likelihood ? candidate : previous),
+                mass: previous.mass + candidate.mass,
+              }
+            : candidate,
+        );
+      }
+    const families = new Set();
+    for (const candidate of [...merged.values()].sort(
+      (a, b) => b.mass - a.mass || ordered(a.group, b.group),
+    )) {
+      const family = candidate.group.split('-')[0];
+      if (!candidate.relevance || families.has(family)) continue;
+      families.add(family);
+      const { cards, text, score, group } = candidate;
+      possible.push({
+        cards,
+        text,
+        score,
+        group,
+        label:
+          cards[0].rank === cards[1].rank
+            ? '口袋对子'
+            : cards[0].suit === cards[1].suit
+              ? '同花底牌'
+              : '不同花底牌',
+      });
+      if (possible.length === 4) break;
+    }
+  }
   return {
     ahead,
     behind,
     tied,
+    possible,
+    rangeNotes: s.street ? [] : preflopRangeNotes(s),
     handLabel: c.handLabel,
     summary: summaryParts.join('；'),
     summaryParts,
@@ -279,24 +360,25 @@ export function matchupPresentation(matchups, street) {
     title: '牌力与牌面',
     handLabel: matchups.summary || matchups.handLabel,
     summaryParts: matchups.summaryParts || [matchups.handLabel],
-    note: structure
-      ? '仅比较起手牌结构，不代表获胜概率；之后仍需看公共牌。'
-      : '按位置与此前公开行动估计排序，仅是可能牌组，不代表对手实际底牌。',
-    groups: [
-      {
-        direction: 'ahead',
-        label: structure ? '结构上较弱的可能牌组' : '当前能赢的可能牌组',
-        examples: matchups.ahead,
-        empty: '未列出更弱的可能牌组。',
-      },
-      {
-        direction: 'behind',
-        label: structure ? '结构上较强的可能牌组' : '当前会输的可能牌组',
-        examples: matchups.behind,
-        empty: nutsNote || '未列出更强的可能牌组。',
-      },
-    ],
-    nutsNote: matchups.tied.length ? '相同牌力可能平分底池。' : '',
+    note: '',
+    rangeNotes: matchups.rangeNotes || [],
+    groups: structure
+      ? [{ direction: 'possible', label: '对手可能牌组', examples: matchups.possible, empty: '' }]
+      : [
+          {
+            direction: 'ahead',
+            label: '当前能赢的可能牌组',
+            examples: matchups.ahead,
+            empty: '未列出更弱的可能牌组。',
+          },
+          {
+            direction: 'behind',
+            label: '当前会输的可能牌组',
+            examples: matchups.behind,
+            empty: nutsNote || '未列出更强的可能牌组。',
+          },
+        ],
+    nutsNote: !structure && matchups.tied.length ? '相同牌力可能平分底池。' : '',
   };
 }
 

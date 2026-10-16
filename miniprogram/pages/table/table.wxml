@@ -914,7 +914,9 @@
               <view wx:else class="review-matchups">
                 <text class="module-title">{{item.matchups.title}}</text>
                 <text class="review-matchup-hand">{{item.matchups.handLabel}}</text>
-                <text class="review-matchup-note">{{item.matchups.note}}</text>
+                <text wx:if="{{item.matchups.note}}" class="review-matchup-note"
+                  >{{item.matchups.note}}</text
+                >
                 <view
                   wx:for="{{item.matchups.groups}}"
                   wx:for-item="group"
@@ -932,6 +934,13 @@
                     <text>{{example.text}} {{example.label}}</text>
                   </view>
                 </view>
+                <text
+                  wx:for="{{item.matchups.rangeNotes}}"
+                  wx:for-item="note"
+                  wx:key="*this"
+                  class="review-range-note"
+                  >{{note}}</text
+                >
                 <text wx:if="{{item.matchups.nutsNote}}" class="review-matchup-nuts"
                   >{{item.matchups.nutsNote}}</text
                 >

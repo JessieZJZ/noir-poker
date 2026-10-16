@@ -2003,5 +2003,21 @@
   "本轮已没有待行动的对手，过牌不能诱导本轮下注，只能等待下一街。": "Il ne reste aucun adversaire à parler sur cette street. Checker ne peut plus provoquer de mise maintenant ; il faut attendre la street suivante.",
   "湿润面暂时少收一街价值，还承担让听牌免费看牌的风险。": "Le slow play sur un board riche en tirages renonce à une street de valeur et risque de donner une carte gratuite aux tirages.",
   "湿润面过牌的代价，是可能让顺子或同花听牌免费看下一张。": "Checker un board riche en tirages peut offrir une carte gratuite aux tirages quinte ou couleur.",
-  "过牌可以用于控池或诱导，但这次记录没有确认埋牌意图。": "Un check peut contrôler le pot ou provoquer une mise, mais cet enregistrement ne confirme aucune intention de piéger."
+  "过牌可以用于控池或诱导，但这次记录没有确认埋牌意图。": "Un check peut contrôler le pot ou provoquer une mise, mais cet enregistrement ne confirme aucune intention de piéger.",
+  "{0}已经再加注到 {1}，要更多考虑大对子和 AK；AQ、同花高张也可能这样打，不能只按普通开池看待。": "{0} a surrelancé à {1}. Accordez plus de poids aux grosses paires et à AK ; AQ et les broadways assortis restent possibles. Cette ligne est plus forte qu’une simple ouverture.",
+  "{0}开池到 {1}，可能拿着对子、强 A 或同花高张；后位开池还可能带入同花连张，前位通常会更谨慎。": "{0} a ouvert à {1}, avec peut-être une paire, un as fort ou des broadways assortis. En position tardive, des connecteurs assortis sont aussi possibles ; les premières positions jouent généralement plus prudemment.",
+  "{0}本轮已过牌；{1}可以直接过牌，{2}。": "{0} a déjà checké ce tour ; {1} peut aussi checker, {2}.",
+  "{0}跟住了这笔加注，小中对子、同花高张和同花连张都值得考虑；平跟也可能藏着强牌。": "{0} a payé cette relance. Pensez aux petites et moyennes paires, aux broadways et aux connecteurs assortis ; un simple call peut aussi cacher une grosse main.",
+  "{0}手里有一张 A，对手能拿到 AA、AK、AQ、AJ 的组合会少一些，但这些强牌仍然可能出现。": "{0} possède un as, ce qui réduit les combinaisons de AA, AK, AQ et AJ adverses, sans les éliminer.",
+  "你拿 {0} 直接弃牌，但当时可以直接过牌；过牌成本同样是 0，还能保留{1}的获池机会。": "Vous avez couché {0}, mais vous pouviez checker. Cela coûtait aussi 0 et conservait la possibilité de gagner le pot avec {1}.",
+  "前面还没有加注，后面的人既可能拿到大对子或强 A，也可能用小对子、同花高张或同花连张入池；越靠后，能参与的牌通常越多。": "Personne n’a encore relancé. Derrière, il peut y avoir de grosses paires ou des as forts, mais aussi des petites paires, des broadways ou des connecteurs assortis. Les positions tardives jouent généralement plus de mains.",
+  "可以直接过牌，不必再投入筹码": "Vous pouvez checker sans ajouter de jetons",
+  "可以直接过牌，不必再投入筹码。": "Vous pouvez checker sans ajouter de jetons.",
+  "可以直接过牌，不必再投入筹码。{0}用{1}控池，保留摊牌机会；如果后面有人下注，再看价格决定是否继续。": "Checker ne coûte aucun jeton de plus. {0} contrôle le pot avec {1} et garde une chance à l’abattage ; si quelqu’un mise derrière, le prix aidera à décider de continuer.",
+  "可以直接过牌，不必再投入筹码。{0}，先过牌保留补牌机会。": "Checker ne coûte aucun jeton de plus. {0} ; checker garde la possibilité d’améliorer.",
+  "可以直接过牌，弃牌放弃了免费机会": "Le check était possible ; se coucher abandonne une chance gratuite",
+  "多人底池里，一对需要控制底池；选择过牌，也可能让对手免费补成更强的牌。": "Dans un pot à plusieurs, une paire demande de contrôler le pot ; checker peut aussi laisser un adversaire améliorer gratuitement.",
+  "对手可能牌组": "Mains adverses possibles",
+  "过牌也可能是在等后位先下注，给对手继续投入的机会。": "Le check peut aussi attendre une mise derrière, pour donner aux adversaires l’occasion d’investir davantage.",
+  "这手建议直接过牌，不必下注；{0}。": "Ici, checkez sans miser ; {0}."
 }

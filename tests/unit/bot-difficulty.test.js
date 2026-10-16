@@ -57,13 +57,14 @@ test('recorded reasons stay distinct from inferred old records and cannot be rel
   const d = chooseBotAction(view, getBotProfile('balanced'), freshBotMood(), 'off', () => 0);
   d.trace.view = view;
   const record = { ...d, id: 1, name: 'Mia' };
-  assert.match(explainOpponent(record).detail, /依据当时记录/);
+  assert.equal(explainOpponent(record).basisSource, 'recorded');
+  assert.doesNotMatch(explainOpponent(record).detail, /依据当时记录|旧记录|推断/);
   const old = structuredClone(record);
   delete old.trace.basis;
-  assert.match(explainOpponent(old).detail, /旧记录.*推断/);
+  assert.equal(explainOpponent(old).basisSource, 'inferred');
   const mismatched = structuredClone(record);
   mismatched.trace.basis.action = 'fold';
-  assert.match(explainOpponent(mismatched).detail, /旧记录.*推断/);
+  assert.equal(explainOpponent(mismatched).basisSource, 'inferred');
 });
 
 test('HUD denominators are real opportunities, AF excludes checks/folds, and retry retracts a hand exactly once', () => {

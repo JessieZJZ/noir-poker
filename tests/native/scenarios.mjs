@@ -1448,12 +1448,13 @@ export async function nativeScenarios(app) {
       ).length,
       sections: document.querySelectorAll('#review-coach-explanation [data-matchup-direction]')
         .length,
+      preflop: document.querySelectorAll('#review-board .playing-card').length === 0,
       collapsed: !document.querySelector('#review-activity').open,
       summary: document.querySelector('#review-coach-explanation .review-analysis-heading')
         ?.textContent,
     }));
     assert.equal(analysisLayout.oldControls, 0);
-    assert.equal(analysisLayout.sections, 2);
+    assert.equal(analysisLayout.sections, analysisLayout.preflop ? 1 : 2);
     assert.equal(analysisLayout.collapsed, true);
     assert.equal(analysisLayout.summary, '复盘分析总结');
     await app.click('#review-activity summary');

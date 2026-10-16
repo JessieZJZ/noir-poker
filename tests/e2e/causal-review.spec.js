@@ -18,7 +18,7 @@ test('review shares one collapsed activity section, highlights each perspective 
     page.locator('#review-public-actions, .review-step-nav, [data-opponent-nav]'),
   ).toHaveCount(0);
   await expect(page.locator('#review-coach-explanation .review-matchups')).toHaveCount(1);
-  await expect(page.locator('#review-coach-explanation [data-matchup-direction]')).toHaveCount(2);
+  await expect(page.locator('#review-coach-explanation [data-matchup-direction]')).toHaveCount(1);
   await expect(page.locator('#review-coach-explanation h4')).toHaveText('复盘分析总结');
   await page.locator('#review-timeline [data-review-index="0"]').click();
   await page.locator('#review-activity summary').click();
@@ -35,7 +35,9 @@ test('review shares one collapsed activity section, highlights each perspective 
   await page.locator('#review-opponents-tab').click();
   await expect(page.locator('#review-activity')).toHaveAttribute('open', '');
   await expect(page.locator('#review-activity .review-activity-current')).toContainText('Mia');
-  await expect(page.locator('#review-opponent-detail')).toContainText('推断');
+  await expect(page.locator('#review-opponent-detail')).not.toContainText(
+    /依据当时记录|旧记录|推断/,
+  );
   expect(await page.locator('#review-activity-list').innerText()).toBe(heroLogs);
   for (const text of await page
     .locator('#review-activity .review-activity-emphasis')

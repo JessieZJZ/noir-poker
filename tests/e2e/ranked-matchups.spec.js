@@ -4,7 +4,47 @@ import path from 'node:path';
 import { heroValueGame } from '../fixtures/review-spots.js';
 import { decisionContext } from '../../src/review/context.js';
 import { handMatchups } from '../../src/review/matchups.js';
-import { bottomPairReview, topPairCheckReview } from '../fixtures/bottom-pair-review.js';
+import {
+  bottomPairReview,
+  topPairCheckReview,
+  aceFourPreflopReview,
+} from '../fixtures/bottom-pair-review.js';
+
+test('consumer preflop review has one possible-hand group with causal ranges and a separate hand description', async ({
+  page,
+}) => {
+  const game = heroValueGame('overpair');
+  game.decisions = [aceFourPreflopReview()];
+  await page.goto('/');
+  await page.waitForFunction(() => window.qa);
+  await page.evaluate((g) => window.qa.loadRecordedGame(g), game);
+  await page.locator('#review-hand-button').click();
+  await expect(page.locator('#review-dialog')).toHaveAttribute('data-analysis-status', 'done', {
+    timeout: 30000,
+  });
+  const panel = page.locator('#review-coach-explanation');
+  await expect(panel.locator('[data-matchup-direction]')).toHaveCount(1);
+  await expect(panel.locator('[data-matchup-direction="possible"]')).toContainText('对手可能牌组');
+  await expect(panel).toContainText('Luna开池到 4K');
+  await expect(panel).toContainText('Jade跟住了这笔加注');
+  await expect(panel).not.toContainText(/结构上较|不代表获胜概率|依据当时记录|旧记录/);
+  const below = await panel
+    .locator('.review-matchups')
+    .evaluate(
+      (el) =>
+        el.querySelector('.review-matchup-hand').getBoundingClientRect().top >=
+        el.querySelector('p').getBoundingClientRect().bottom,
+    );
+  expect(below).toBe(true);
+  for (const locale of ['en', 'ja', 'ko', 'zh-CN']) {
+    await page.locator('#language-select').evaluate((el, value) => {
+      el.value = value;
+      el.dispatchEvent(new Event('change'));
+    }, locale);
+    if (locale === 'en' || locale === 'ko')
+      await expect(panel).not.toContainText(/\p{Script=Han}/u);
+  }
+});
 
 test('reported bottom pair emphasizes stronger families and combo draws; top-pair checks explain value and risk', async ({
   page,
@@ -39,7 +79,7 @@ test('reported bottom pair emphasizes stronger families and combo draws; top-pai
   await page.locator('#review-opponents-tab').click();
   const opponent = page.locator('#review-opponent-detail');
   await expect(opponent).toContainText('顶对 J，A 踢脚');
-  await expect(opponent).toContainText('没有确认埋牌意图');
+  await expect(opponent).toContainText('过牌也可能是在等后位先下注');
   await expect(opponent).toContainText('免费看下一张');
   await expect(opponent).toContainText('后位仍可下注');
   for (const locale of ['en', 'ja', 'ko', 'zh-CN']) {

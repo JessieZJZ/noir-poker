@@ -2007,5 +2007,21 @@
   "本轮已没有待行动的对手，过牌不能诱导本轮下注，只能等待下一街。": "No opponent remains to act this street. Checking cannot induce a bet now; it waits for the next street.",
   "湿润面暂时少收一街价值，还承担让听牌免费看牌的风险。": "On a wet board, slow-playing forgoes a street of value and risks giving draws a free card.",
   "湿润面过牌的代价，是可能让顺子或同花听牌免费看下一张。": "Checking a wet board may let straight or flush draws see the next card for free.",
-  "过牌可以用于控池或诱导，但这次记录没有确认埋牌意图。": "Checking can control the pot or induce a bet, but this record does not confirm an intent to trap."
+  "过牌可以用于控池或诱导，但这次记录没有确认埋牌意图。": "Checking can control the pot or induce a bet, but this record does not confirm an intent to trap.",
+  "{0}已经再加注到 {1}，要更多考虑大对子和 AK；AQ、同花高张也可能这样打，不能只按普通开池看待。": "{0} has reraised to {1}. Give more weight to big pairs and AK; AQ and suited broadways can also take this line, so treat it as stronger than an ordinary open.",
+  "{0}开池到 {1}，可能拿着对子、强 A 或同花高张；后位开池还可能带入同花连张，前位通常会更谨慎。": "{0} opened to {1}, possibly with a pair, a strong ace or suited broadways. Late-position opens may include suited connectors; early positions usually play more cautiously.",
+  "{0}本轮已过牌；{1}可以直接过牌，{2}。": "{0} already checked this round; {1} can check too, {2}.",
+  "{0}跟住了这笔加注，小中对子、同花高张和同花连张都值得考虑；平跟也可能藏着强牌。": "{0} called this raise. Small and medium pairs, suited broadways and suited connectors are worth considering; a flat call can also conceal a strong hand.",
+  "{0}手里有一张 A，对手能拿到 AA、AK、AQ、AJ 的组合会少一些，但这些强牌仍然可能出现。": "{0} holds an ace, leaving opponents fewer combinations of AA, AK, AQ and AJ, though those strong hands are still possible.",
+  "你拿 {0} 直接弃牌，但当时可以直接过牌；过牌成本同样是 0，还能保留{1}的获池机会。": "You folded {0}, but checking was available. It also cost 0 and would have kept the chance to win with {1}.",
+  "前面还没有加注，后面的人既可能拿到大对子或强 A，也可能用小对子、同花高张或同花连张入池；越靠后，能参与的牌通常越多。": "No one has raised yet. Players behind may have big pairs or strong aces, but can also enter with small pairs, suited broadways or suited connectors. Later positions usually play more hands.",
+  "可以直接过牌，不必再投入筹码": "You can check without putting in more chips",
+  "可以直接过牌，不必再投入筹码。": "You can check without putting in more chips.",
+  "可以直接过牌，不必再投入筹码。{0}用{1}控池，保留摊牌机会；如果后面有人下注，再看价格决定是否继续。": "Checking costs no more chips. {0} controls the pot with {1} and keeps the chance to reach showdown; if someone bets behind, the price will help decide whether to continue.",
+  "可以直接过牌，不必再投入筹码。{0}，先过牌保留补牌机会。": "Checking costs no more chips. {0}; checking keeps the chance to improve.",
+  "可以直接过牌，弃牌放弃了免费机会": "Checking was available; folding gave up a free chance",
+  "多人底池里，一对需要控制底池；选择过牌，也可能让对手免费补成更强的牌。": "In a multiway pot, one pair needs pot control; checking may also let an opponent improve for free.",
+  "对手可能牌组": "Possible opponent hands",
+  "过牌也可能是在等后位先下注，给对手继续投入的机会。": "Checking may also be waiting for a player behind to bet, giving opponents a chance to put in more chips.",
+  "这手建议直接过牌，不必下注；{0}。": "Check here without betting; {0}."
 }

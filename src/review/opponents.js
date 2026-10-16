@@ -218,7 +218,8 @@ export function explainOpponent(record, identities = []) {
     case 'free-check':
       if (v.street > 0 && v.street < 3 && c.handClass === 'top-pair') {
         logic = `${name}的${hand}仍可向较弱的一对或听牌取值；过牌暂时少收这部分价值，并把较强牌保留在过牌范围中。`;
-        checkNotes.push('过牌可以用于控池或诱导，但这次记录没有确认埋牌意图。');
+        if (c.pendingOthers > 0)
+          checkNotes.push('过牌也可能是在等后位先下注，给对手继续投入的机会。');
         if (c.opponents > 1)
           checkNotes.push('多人底池里，一对并不是坚果，应避免让大底池只留下更强的继续范围。');
         if (wet) checkNotes.push('湿润面过牌的代价，是可能让顺子或同花听牌免费看下一张。');
@@ -229,8 +230,8 @@ export function explainOpponent(record, identities = []) {
         );
       } else
         logic = draw.outs
-          ? `当前不用补筹码。${drawText}，因此选择先过牌，没有主动增加追牌成本。`
-          : `当前不用补筹码，${name}没有用${hand}主动做大 ${n(v.pot)} 的底池。${v.street === 3 ? '河牌已经没有补牌机会，因此选择保留摊牌价值。' : ''}`;
+          ? `可以直接过牌，不必再投入筹码。${drawText}，先过牌保留补牌机会。`
+          : `可以直接过牌，不必再投入筹码。${name}用${hand}控池，保留摊牌机会；如果后面有人下注，再看价格决定是否继续。`;
       break;
     case 'float-continue':
       logic = `这是 float：${name}在 ${v.position} 有位置，先补 ${n(cost)}，等下一街观察对手是否停止下注；牌面 ${f.boardText} 较干燥，${name}保留在对手过牌后下注拿池的机会。`;
@@ -288,21 +289,13 @@ export function explainOpponent(record, identities = []) {
       t.basis.action === record.action &&
       t.basis.reason === t.reason &&
       (record.action !== 'raise' || t.basis.amount === record.amount),
-    source = recorded
-      ? '依据当时记录的决策条件。'
-      : '旧记录未保存完整决策依据，以下为当时信息下的推断。',
     squeeze =
       recorded && t.basis.squeeze ? '前面已有开池和跟注，这次再加注也在挤压两者的继续范围。' : '',
-    paragraphs = [
-      matchups?.text,
-      '复盘分析总结',
-      source,
-      prefix,
-      logic,
-      ...checkNotes,
-      squeeze,
-    ].filter(Boolean);
+    paragraphs = [matchups?.text, '复盘分析总结', prefix, logic, ...checkNotes, squeeze].filter(
+      Boolean,
+    );
   return {
+    basisSource: recorded ? 'recorded' : 'inferred',
     title:
       t.reason === 'value-raise' && ((!v.street && c.tier < 2) || (v.street && c.made.score[0] < 1))
         ? '弱牌主动施压'

@@ -2003,5 +2003,21 @@
   "本轮已没有待行动的对手，过牌不能诱导本轮下注，只能等待下一街。": "Non resta alcun avversario che debba agire in questa street. Il check non può indurre una puntata ora; bisogna aspettare la street successiva.",
   "湿润面暂时少收一街价值，还承担让听牌免费看牌的风险。": "Lo slowplay su un board ricco di progetti rinuncia a una street di valore e rischia di regalare una carta ai progetti.",
   "湿润面过牌的代价，是可能让顺子或同花听牌免费看下一张。": "Fare check su un board ricco di progetti può regalare una carta ai progetti di scala o colore.",
-  "过牌可以用于控池或诱导，但这次记录没有确认埋牌意图。": "Il check può controllare il piatto o indurre una puntata, ma questa registrazione non conferma un intento di intrappolare."
+  "过牌可以用于控池或诱导，但这次记录没有确认埋牌意图。": "Il check può controllare il piatto o indurre una puntata, ma questa registrazione non conferma un intento di intrappolare.",
+  "{0}已经再加注到 {1}，要更多考虑大对子和 AK；AQ、同花高张也可能这样打，不能只按普通开池看待。": "{0} ha controrilanciato a {1}. Dai più peso a coppie alte e AK; anche AQ e broadway suited possono seguire questa linea. È più forte di una normale apertura.",
+  "{0}开池到 {1}，可能拿着对子、强 A 或同花高张；后位开池还可能带入同花连张，前位通常会更谨慎。": "{0} ha aperto a {1}, forse con una coppia, un asso forte o broadway suited. In posizione finale può includere connettori suited; le prime posizioni di solito sono più prudenti.",
+  "{0}本轮已过牌；{1}可以直接过牌，{2}。": "{0} ha già fatto check in questo giro; {1} può fare check, {2}.",
+  "{0}跟住了这笔加注，小中对子、同花高张和同花连张都值得考虑；平跟也可能藏着强牌。": "{0} ha chiamato questo rilancio. Considera coppie piccole e medie, broadway suited e connettori suited; un semplice call può anche nascondere una mano forte.",
+  "{0}手里有一张 A，对手能拿到 AA、AK、AQ、AJ 的组合会少一些，但这些强牌仍然可能出现。": "{0} ha un asso, riducendo le combinazioni avversarie di AA, AK, AQ e AJ, senza escluderle.",
+  "你拿 {0} 直接弃牌，但当时可以直接过牌；过牌成本同样是 0，还能保留{1}的获池机会。": "Hai passato {0}, ma potevi fare check. Costava sempre 0 e manteneva la possibilità di vincere il piatto con {1}.",
+  "前面还没有加注，后面的人既可能拿到大对子或强 A，也可能用小对子、同花高张或同花连张入池；越靠后，能参与的牌通常越多。": "Non ci sono ancora rilanci. Dietro possono esserci coppie alte e assi forti, ma anche coppie piccole, broadway suited e connettori suited. Le posizioni finali giocano di solito più mani.",
+  "可以直接过牌，不必再投入筹码": "Puoi fare check senza aggiungere chip",
+  "可以直接过牌，不必再投入筹码。": "Puoi fare check senza aggiungere chip.",
+  "可以直接过牌，不必再投入筹码。{0}用{1}控池，保留摊牌机会；如果后面有人下注，再看价格决定是否继续。": "Il check non costa altre chip. {0} controlla il piatto con {1} e conserva lo showdown; se qualcuno punta dietro, il prezzo aiuterà a decidere se continuare.",
+  "可以直接过牌，不必再投入筹码。{0}，先过牌保留补牌机会。": "Il check non costa altre chip. {0}; fare check mantiene la possibilità di migliorare.",
+  "可以直接过牌，弃牌放弃了免费机会": "Il check era possibile; il fold ha rinunciato a una chance gratuita",
+  "多人底池里，一对需要控制底池；选择过牌，也可能让对手免费补成更强的牌。": "In un piatto multiway, una coppia richiede controllo del piatto; fare check può anche permettere al rivale di migliorare gratis.",
+  "对手可能牌组": "Possibili mani avversarie",
+  "过牌也可能是在等后位先下注，给对手继续投入的机会。": "Il check può anche attendere una puntata da chi agisce dopo, dando all’avversario l’occasione di investire altre chip.",
+  "这手建议直接过牌，不必下注；{0}。": "Qui si consiglia check senza puntare; {0}."
 }

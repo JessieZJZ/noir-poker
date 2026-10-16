@@ -40,7 +40,7 @@ export function situationNotes(s, c, actorId = 0) {
   if (aggression) {
     if (aggression.street !== s.street)
       notes.push(
-        `${aggression.name}此前在${streets[aggression.street]}的行动是${aggression.label}；到了${streets[s.street]}，轮到${who}行动时，${s.legal.canCheck ? '当前无需补筹码，可以免费过牌' : '这次需要再补 ' + n(s.legal.callAmount) + ' 才能继续'}。`,
+        `${aggression.name}此前在${streets[aggression.street]}的行动是${aggression.label}；到了${streets[s.street]}，轮到${who}行动时，${s.legal.canCheck ? '可以直接过牌，不必再投入筹码' : '这次需要再补 ' + n(s.legal.callAmount) + ' 才能继续'}。`,
       );
     else if (aggression.priorChecks.length)
       notes.push(
@@ -104,7 +104,7 @@ export function situationNotes(s, c, actorId = 0) {
           '对手',
       );
       notes.push(
-        `${names.join('、')}本轮已过牌；${who}当前不用补筹码，${s.action === 'raise' ? '这次主动下注是在已有过牌之后争取底池' : '可以保留免费机会，也可以主动下注争取价值或弃牌'}。`,
+        `${names.join('、')}本轮已过牌；${who}可以直接过牌，${s.action === 'raise' ? '这次主动下注是在已有过牌之后争取底池' : '可以保留免费机会，也可以主动下注争取价值或弃牌'}。`,
       );
     }
   }
@@ -146,7 +146,7 @@ export function callOddsText(metrics) {
   if (!metrics.callCost)
     return amount
       ? `实际再补 ${n(amount)}，但计入退回筹码后，本次没有新增风险。`
-      : '当前无需补筹码，跟注成本为 0。';
+      : '可以直接过牌，不必再投入筹码。';
   const ratio = (metrics.contestable - metrics.callCost) / metrics.callCost;
   return amount === metrics.callCost
     ? `再补 ${n(amount)}，跟注后可争夺 ${n(metrics.contestable)}，底池赔率约 ${ratio.toFixed(2)} : 1；至少需要约 ${pct(metrics.required)} 的权益才能打平。`
@@ -187,7 +187,7 @@ export function actionReason(s, r) {
         : `你在 ${s.position} 拿 ${hand}，再补 ${n(s.legal.callAmount)} 跟注，继续争夺 ${n(r.metrics.contestable)} 的底池。`;
   if (s.action === 'fold')
     return s.legal.canCheck
-      ? `你拿 ${hand} 直接弃牌，但当时无需补筹码；过牌成本同样是 0，还能保留${s.street ? c.handLabel : '这手起手牌'}的获池机会。`
+      ? `你拿 ${hand} 直接弃牌，但当时可以直接过牌；过牌成本同样是 0，还能保留${s.street ? c.handLabel : '这手起手牌'}的获池机会。`
       : s.street
         ? `你在 ${s.position} 拿 ${hand}，在 ${f.boardText} 上是${c.handLabel}，选择弃牌，避免再补 ${n(s.legal.callAmount)}。${draw.outs ? '当前有' + drawLabel(draw) + '，' + draw.outs + '张改善候选，下一张约' + pct(draw.nextChance) + '。' : ''}`
         : `你在 ${s.position} 拿 ${hand}，选择弃牌，避免再补 ${n(s.legal.callAmount)}。`;

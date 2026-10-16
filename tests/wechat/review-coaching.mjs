@@ -4,7 +4,11 @@ import { createRequire } from 'node:module';
 import fs from 'node:fs';
 import path from 'node:path';
 import assert from 'node:assert/strict';
-import { bottomPairReview, topPairCheckReview } from '../fixtures/bottom-pair-review.js';
+import {
+  bottomPairReview,
+  topPairCheckReview,
+  aceFourPreflopReview,
+} from '../fixtures/bottom-pair-review.js';
 import { deckOfCards } from '../../src/engine/poker.js';
 import {
   causalReraiseGame,
@@ -269,6 +273,14 @@ try {
     assert.doesNotMatch(step.reason, /一对|非坚果听牌|先前跟注|单看一张高牌/);
     assert.doesNotMatch(step.evidence.join(''), /40(?:\.0)?%/);
   });
+  await fixture('consumer-preflop-ranges', aceFourPreflopReview(), (step) => {
+    const section = step.commentary.find((part) => part.matchups).matchups;
+    assert.equal(section.groups.length, 1);
+    assert.equal(section.groups[0].label, '对手可能牌组');
+    assert.match(section.rangeNotes.join(''), /Luna开池到 4K/);
+    assert.match(section.rangeNotes.join(''), /Jade跟住了这笔加注/);
+    assert.doesNotMatch(step.reason, /结构上较|不代表获胜概率|依据当时记录|旧记录/);
+  });
   await fixture('reported-bottom-pair', bottomPairReview(), (step) => {
     const groups = step.commentary.find((paragraph) => paragraph.matchups).matchups.groups;
     assert.equal(groups[0].examples.length, 1);
@@ -286,7 +298,7 @@ try {
   await wait((data) => data.reviewPerspective === 'opponent' && data.selectedReviewStep?.reason);
   const topPair = (await page.data()).selectedReviewStep;
   assert.match(topPair.reason, /较弱的一对或听牌取值/);
-  assert.match(topPair.reason, /没有确认埋牌意图/);
+  assert.match(topPair.reason, /过牌也可能是在等后位先下注/);
   assert.match(topPair.reason, /免费看下一张/);
   report.checks.push({ name: 'reported-top-pair-check', selected: topPair });
   await capture('reported-top-pair-check');
@@ -398,7 +410,7 @@ try {
       assert.match(step.reason, /输给.*三条/);
       assert.match(
         (await page.data()).reviewActivity.map((event) => event.text).join(''),
-        /Luna.*900/,
+        /Luna.*全下1K/,
       );
     } else {
       assert.match(step.reason, /埋牌|藏在平跟/);

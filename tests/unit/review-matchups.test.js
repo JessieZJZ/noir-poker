@@ -9,7 +9,11 @@ import {
   matchupDrawLabel,
 } from '../../src/review/matchups.js';
 import { handFeatures } from '../../src/engine/hand-features.js';
-import { bottomPairReview, topPairCheckReview } from '../fixtures/bottom-pair-review.js';
+import {
+  bottomPairReview,
+  topPairCheckReview,
+  aceFourPreflopReview,
+} from '../fixtures/bottom-pair-review.js';
 import { explainOpponent } from '../../src/review/opponents.js';
 import { valuePlan } from '../../src/review/routes.js';
 import { analyzeDecision } from '../../src/review/analysis.js';
@@ -21,6 +25,35 @@ import { renderReviewParagraphs } from '../../src/ui/review-matchups.js';
 
 // Public snapshots exercise explanation and route boundaries. Opponent hands
 // below are examples generated from unseen cards, never actual private cards.
+test('consumer preflop ranges combine hand families and explain only actions already taken', () => {
+  const s = aceFourPreflopReview(),
+    c = decisionContext(s),
+    m = handMatchups(s, c),
+    p = matchupPresentation(m, 0),
+    text = p.rangeNotes.join('');
+  assert.equal(p.groups.length, 1);
+  assert.equal(p.groups[0].label, '对手可能牌组');
+  assert.ok(p.groups[0].examples.length > 0);
+  assert.match(text, /Luna开池到 4K/);
+  assert.match(text, /Jade跟住了这笔加注/);
+  assert.doesNotMatch(text, /Kai跟住/);
+  assert.match(text, /A.*AA、AK、AQ、AJ/);
+  const html = renderReviewParagraphs([m.text], m, 0);
+  assert.doesNotMatch(html, /结构上较|不代表|记录|抽样|获胜概率/);
+  const poisoned = structuredClone(s);
+  poisoned.players.forEach((player) => {
+    player.hole = cards('Ks Kh');
+  });
+  poisoned.deck = cards('Qs Qh Qd');
+  poisoned.winners = [5];
+  assert.deepEqual(handMatchups(poisoned, decisionContext(poisoned)), m);
+  const reraised = structuredClone(s);
+  reraised.history.push({ id: 7, street: 0, action: 'raise', amount: 14000 });
+  assert.match(
+    handMatchups(reraised, decisionContext(reraised)).rangeNotes.join(''),
+    /Jade已经再加注到 14K/,
+  );
+});
 function spot(hole, board = '', changes = {}) {
   const community = board ? cards(board) : [];
   const street = community.length ? community.length - 2 : 0;
@@ -132,7 +165,7 @@ test('top-pair checks explain foregone value, checking-range protection and wet 
   const explanation = explainOpponent(record);
   assert.match(explanation.detail, /顶对 J，A 踢脚/);
   assert.match(explanation.detail, /较弱的一对或听牌取值/);
-  assert.match(explanation.detail, /没有确认埋牌意图/);
+  assert.match(explanation.detail, /过牌也可能是在等后位先下注/);
   assert.match(explanation.detail, /多人底池/);
   assert.match(explanation.detail, /免费看下一张/);
   assert.match(explanation.detail, /后位仍可下注/);
@@ -143,7 +176,7 @@ test('top-pair checks explain foregone value, checking-range protection and wet 
   trapped.trace.reason = 'trap';
   trapped.trace.basis.reason = 'trap';
   assert.match(explainOpponent(trapped).detail, /这是.*埋牌/);
-  assert.doesNotMatch(explainOpponent(trapped).detail, /没有确认埋牌意图/);
+  assert.doesNotMatch(explainOpponent(trapped).detail, /过牌也可能是在等后位先下注/);
 });
 
 test('across streets, every shown matchup is a legal current-board comparison rather than a hidden hand claim', () => {
@@ -293,26 +326,27 @@ test('presentation replaces one causal comparison paragraph with ordered rows an
     assert.equal(m.handLabel, c.handLabel);
     assert.ok(presentation.handLabel.includes(c.handLabel));
     assert.ok(html.includes(c.handLabel));
-    assert.equal(presentation.groups.length, 2);
+    assert.equal(presentation.groups.length, s.street ? 2 : 1);
     if (s.hole.every((card) => card.rank === 5)) {
       assert.equal(c.handLabel, '暗三条 5');
       assert.match(html, /暗三条 5/);
     }
     for (const group of presentation.groups) {
-      assert.ok(group.examples.length <= (group.direction === 'tied' ? 1 : 3));
+      assert.ok(
+        group.examples.length <=
+          (group.direction === 'possible' ? 4 : group.direction === 'tied' ? 1 : 3),
+      );
       for (const example of group.examples) assert.ok(html.includes(example.text));
     }
     assert.ok(html.indexOf('before') < html.indexOf('review-matchups'));
     assert.ok(html.indexOf('review-matchups') < html.indexOf('after'));
     assert.doesNotMatch(html, /\d(?:\.\d+)?%|likelihood|weight|mass|概率[:：]?\s*\d/);
     if (!s.street) {
-      assert.match(html, /结构上较弱|结构上较强/);
-      assert.match(html, /不代表获胜概率/);
+      assert.match(html, /对手可能牌组/);
+      assert.ok(presentation.rangeNotes.length > 0);
       assert.doesNotMatch(html, /当前可能领先|当前可能落后|坚果/);
-    } else {
-      assert.match(html, /按位置与此前公开行动估计排序/);
-      assert.match(html, /不代表对手实际底牌/);
     }
+    assert.doesNotMatch(html, /结构上较弱|结构上较强|不代表获胜概率|估计排序|不代表对手实际底牌/);
     if (m.nut) assert.match(html, /当前没有可能更强的牌组/);
   }
 });

@@ -1,5 +1,46 @@
 import { cards } from './deceptive-decisions.js';
 
+export function aceFourPreflopReview() {
+  const s = bottomPairReview();
+  return {
+    ...s,
+    board: [],
+    street: 0,
+    stack: 100000,
+    total: 0,
+    pot: 10500,
+    currentBet: 4000,
+    minRaise: 3000,
+    action: 'call',
+    amount: 4000,
+    pending: [0, 1, 2, 3, 4],
+    history: s.history.slice(0, 5),
+    legal: {
+      ...s.legal,
+      canCheck: false,
+      callAmount: 4000,
+      toCall: 4000,
+      minRaiseTo: 7000,
+      maxRaiseTo: 100000,
+    },
+    players: s.players.map((p) => ({
+      ...p,
+      folded: [6, 8].includes(p.id),
+      total:
+        p.id === 5 || p.id === 7 ? 4000 : p.id === 4 || p.id === 3 ? 1000 : p.id === 2 ? 500 : 0,
+      bet: p.id === 5 || p.id === 7 ? 4000 : p.id === 4 || p.id === 3 ? 1000 : p.id === 2 ? 500 : 0,
+      stack:
+        p.id === 5 || p.id === 7
+          ? 96000
+          : p.id === 4 || p.id === 3
+            ? 99000
+            : p.id === 2
+              ? 99500
+              : 100000,
+    })),
+  };
+}
+
 // User-reported public snapshot. No opponent holes or later outcomes.
 export function bottomPairReview() {
   const names = ['你', 'Mia', 'Alex', 'River', 'Kai', 'Luna', 'Theo', 'Jade', 'Leo'];
