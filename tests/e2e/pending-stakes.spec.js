@@ -183,8 +183,12 @@ test('causal review keeps the recorded blind scale while a new scale is queued a
   await page.locator('[data-review-index="0"]').click();
   const explanation = page.locator('#review-coach-explanation');
   await expect(explanation).toContainText('350');
-  await expect(explanation).toContainText(/Mia.*1K/);
-  await expect(explanation).toContainText(/River.*950/);
+  await page.locator('#review-activity summary').click();
+  await expect(page.locator('#review-activity-list')).toContainText(/Mia.*1K/);
+  await expect(page.locator('#review-activity-list')).toContainText(/River.*950/);
+  expect((await page.locator('#review-activity-list li').allTextContents()).join('\n')).not.toMatch(
+    /10M|100K|50K/,
+  );
   await expect(explanation).not.toContainText(/10M|100K|50K/);
   await expect(page.locator('#review-evidence')).toContainText('5K');
   await page.locator('#review-dialog .close-dialog').first().click();

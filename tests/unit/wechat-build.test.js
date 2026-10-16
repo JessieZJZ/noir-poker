@@ -20,6 +20,8 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { PROFILE_PORTRAITS } from '../../src/ui/portraits.js';
+import { weakSuitedShove } from '../fixtures/review-spots.js';
+import { analyzeDecision } from '../../src/review/analysis.js';
 
 const root = fileURLToPath(new URL('../..', import.meta.url));
 test('WXML bindings keep quoted literals on one line for the DevTools compiler', () => {
@@ -151,6 +153,38 @@ test('generated WeChat JavaScript loads the controller and complete player resea
   assert.equal(typeof load('./shared/ui/hero-card-space.js').growHeroCards, 'function');
   assert.equal(typeof load('./shared/ui/numeric-width.js').numericWidthScale, 'function');
   assert.equal(typeof load('./record-navigation.js').openRecords, 'function');
+});
+
+test('standalone WeChat worker executes the identical full analysis without main-package imports', async (t) => {
+  const workspace = fixture(t);
+  assertSuccess(await build(workspace).result);
+  assert.equal(
+    JSON.parse(readFileSync(path.join(workspace.output, 'app.json'))).workers,
+    'workers',
+  );
+  const messages = [];
+  let receive;
+  const context = vm.createContext({
+    worker: {
+      onMessage(callback) {
+        receive = callback;
+      },
+      postMessage(message) {
+        messages.push(JSON.parse(JSON.stringify(message)));
+      },
+    },
+  });
+  const source = readFileSync(path.join(workspace.output, 'workers/review.js'), 'utf8');
+  assert.doesNotMatch(source, /\brequire\(/);
+  new vm.Script(source).runInContext(context);
+  const decision = weakSuitedShove();
+  receive({ decisions: [decision] });
+  assert.deepEqual(messages, [
+    { type: 'step', index: 0, result: JSON.parse(JSON.stringify(analyzeDecision(decision))) },
+    { type: 'complete' },
+  ]);
+  receive({ decisions: [null] });
+  assert.deepEqual(messages.at(-1), { type: 'error' });
 });
 
 test('WeChat packaging rejects a missing static relative module before publication', async (t) => {

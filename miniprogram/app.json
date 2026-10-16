@@ -6,6 +6,7 @@
     "pages/source/source"
   ],
   "resizable": true,
+  "workers": "workers",
   "window": {
     "pageOrientation": "portrait",
     "navigationStyle": "custom",

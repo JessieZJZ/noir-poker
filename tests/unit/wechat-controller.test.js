@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createWechatController } from '../../src/platform/wechat-controller.js';
 import { act, advanceStreet, legalActions, potSize } from '../../src/engine/poker.js';
-import { createReviewInput } from '../../src/review/analysis.js';
+import { createReviewInput, analyzeDecision } from '../../src/review/analysis.js';
 
 const copy = (value) => JSON.parse(JSON.stringify(value));
 function scheduler() {
@@ -31,7 +31,7 @@ function scheduler() {
     callbacks: () => [...pending.values()].map((job) => job.fn),
   };
 }
-function setup(t, initial = {}) {
+function setup(t, initial = {}, options = {}) {
   const timers = scheduler();
   const preferences = new Map([
     [
@@ -47,6 +47,7 @@ function setup(t, initial = {}) {
   const snapshots = [];
   const sounds = [];
   const controller = createWechatController({
+    ...options,
     publish: (data) => snapshots.push(copy(data)),
     storage: {
       getItem: (key) => preferences.get(key) ?? null,
@@ -110,6 +111,69 @@ test('WeChat visual attention survives mute, cancels on sizing/hide/retry/destro
   stale.forEach((fn) => fn());
   assert.equal(phases.at(-1), '');
   assert.equal(clock.pending.size, 0);
+});
+
+function fakeReviewWorker() {
+  return {
+    stopped: 0,
+    onMessage(callback) {
+      this.receive = callback;
+    },
+    onProcessKilled(callback) {
+      this.killed = callback;
+    },
+    postMessage(payload) {
+      this.payload = payload;
+    },
+    terminate() {
+      this.stopped++;
+    },
+  };
+}
+for (const transition of ['cancelReview', 'nextHand', 'retry', 'reset', 'hide', 'destroy']) {
+  test(`WeChat ${transition} terminates active review workers and rejects late results`, (t) => {
+    const worker = fakeReviewWorker();
+    const { controller } = setup(t, {}, { createReviewWorker: () => worker });
+    reachHero(controller);
+    controller.action('fold');
+    finish(controller.getGame(), 'fold');
+    const updates = [];
+    controller.review((value) => updates.push(value));
+    assert.deepEqual(Object.keys(worker.payload), ['decisions']);
+    assert.ok(worker.payload.decisions.length);
+    for (const decision of worker.payload.decisions) {
+      assert.equal('deck' in decision || 'outcome' in decision, false);
+      assert.ok(decision.players.every((player) => !('hole' in player)));
+    }
+    controller[transition]();
+    worker.receive({ type: 'step', index: 0, result: {} });
+    worker.receive({ type: 'complete' });
+    worker.killed();
+    assert.equal(worker.stopped, 1);
+    assert.equal(updates.length, 1);
+  });
+}
+test('WeChat worker completion equals full fallback and a killed worker retains full-quality analysis', (t) => {
+  const worker = fakeReviewWorker();
+  const { controller, timers } = setup(t, {}, { createReviewWorker: () => worker });
+  reachHero(controller);
+  controller.action('fold');
+  finish(controller.getGame(), 'fold');
+  const updates = [];
+  controller.review((value) => updates.push(value));
+  const decision = worker.payload.decisions[0];
+  const result = analyzeDecision(decision);
+  worker.receive({ type: 'step', index: 0, result });
+  worker.receive({ type: 'complete' });
+  assert.equal(updates.at(-1).loading, false);
+  const expected = copy(updates.at(-1));
+  controller.review((value) => updates.push(value));
+  worker.killed();
+  for (let i = 0; updates.at(-1).loading; i++) {
+    assert.ok(i < 10);
+    assert.ok(timers.runNext());
+  }
+  assert.deepEqual(updates.at(-1), expected);
 });
 function finish(game, action = 'call') {
   let limit = 0;

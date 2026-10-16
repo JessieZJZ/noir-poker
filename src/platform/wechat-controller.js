@@ -92,6 +92,7 @@ export function createWechatController({
   publishAttention = () => {},
   schedule = setTimeout,
   unschedule = clearTimeout,
+  createReviewWorker = null,
   readOnlyAttempt = null,
   readOnlySessionNumber = null,
 }) {
@@ -130,6 +131,7 @@ export function createWechatController({
     timer = null,
     pendingBot = null,
     reviewTimer = null,
+    reviewWorker = null,
     reviewSource = null,
     opponentReviews = new Map(),
     hintTimer = null,
@@ -163,6 +165,9 @@ export function createWechatController({
     pendingBot = null;
   }
   function cancelReview() {
+    const worker = reviewWorker;
+    reviewWorker = null;
+    worker?.terminate();
     reviewSource = null;
     opponentReviews.clear();
     reviewEpoch++;
@@ -794,6 +799,9 @@ export function createWechatController({
           return;
         }
         reviewTimer = null;
+        publishReport();
+      }
+      function publishReport() {
         const report = summarizeReview(input, results);
         onProgress({
           loading: false,
@@ -850,6 +858,40 @@ export function createWechatController({
             board: input.decisions[index].board.map(cardView),
           })),
         });
+      }
+      if (createReviewWorker && input.decisions.length) {
+        let worker;
+        const current = () =>
+          !disposed && active && ticket === reviewEpoch && reviewWorker === worker;
+        const fallback = () => {
+          if (!current()) return;
+          reviewWorker = null;
+          worker.terminate();
+          // Continue with the same full analysis, retaining completed steps.
+          reviewTimer = schedule(step, 0);
+        };
+        try {
+          worker = createReviewWorker();
+          reviewWorker = worker;
+          worker.onMessage((message) => {
+            if (!current()) return;
+            if (message.type === 'step' && message.index === results.length && message.result)
+              results.push(message.result);
+            else if (message.type === 'complete' && results.length === input.decisions.length) {
+              reviewWorker = null;
+              worker.terminate();
+              publishReport();
+            } else if (message.type === 'error' || message.type === 'complete') fallback();
+          });
+          worker.onProcessKilled?.(fallback);
+          // Send only detached before-action snapshots, never the final hand,
+          // opponent hole cards, future deck, outcome or display-only activity.
+          worker.postMessage({ decisions: input.decisions });
+          return;
+        } catch {
+          reviewWorker = null;
+          worker?.terminate();
+        }
       }
       reviewTimer = schedule(step, 0);
     },

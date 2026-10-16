@@ -24,15 +24,43 @@ const report = {
 };
 const mini = await automator.connect({ wsEndpoint: process.argv[2] || 'ws://127.0.0.1:9461' });
 mini.on('exception', (error) => report.exceptions.push(error));
+const send = mini.connection.send.bind(mini.connection);
+mini.connection.send = async (method, params) => {
+  const started = Date.now();
+  try {
+    return await send(method, params);
+  } catch (error) {
+    report.failedCommand ||= { method, elapsedMs: Date.now() - started, stage: report.stage };
+    throw error;
+  }
+};
 const page = await mini.currentPage();
-const invoke = (name, arg) =>
-  mini.evaluate((name, arg) => getCurrentPages().at(-1)[name](arg), name, arg);
+const stage = (name) => {
+  report.stage = name;
+  console.log('[wechat-review]', name);
+};
+const invoke = async (name, arg) => {
+  stage(name);
+  return mini.evaluate((name, arg) => getCurrentPages().at(-1)[name](arg), name, arg);
+};
 const wait = async (predicate) => {
   const start = Date.now();
   while (!predicate(await page.data())) {
     if (Date.now() - start > 45000) throw Error('Review UI did not reach expected state');
     await page.waitFor(100);
   }
+};
+const tap = async (selector) => {
+  stage('tap ' + selector);
+  const started = Date.now();
+  let element;
+  // setData changes logic-layer data before the view layer paints its nodes.
+  // Wait for the actual control instead of treating data readiness as paint.
+  while (!(element = await page.$(selector))) {
+    if (Date.now() - started > 45000) throw Error('Control did not paint: ' + selector);
+    await page.waitFor(100);
+  }
+  await element.tap();
 };
 const capture = async (name) => {
   await page.waitFor(1450);
@@ -41,6 +69,7 @@ const capture = async (name) => {
 let savedDecisions;
 let savedBotDecisions;
 let savedHistory;
+let savedLogs;
 try {
   report.build = JSON.parse(fs.readFileSync(path.join(root, '.artifacts/wechat/build-info.json')));
   await invoke('closeReview');
@@ -69,9 +98,14 @@ try {
   await invoke('act', { currentTarget: { dataset: { action: 'fold' } } });
   await invoke('finishHand');
   await wait((data) => data.done);
-  await (await page.$('.review-button')).tap();
+  // The controller reports settlement before the simulator has finished its
+  // card/layout animation. Tap the painted button after that lifecycle settles.
+  await page.waitFor(1450);
+  stage('real-review-open');
+  await tap('.review-button');
   await wait((data) => !data.reviewData.loading && data.selectedReviewStep);
-  await (await page.$('[data-value="opponent"]')).tap();
+  stage('real-opponent-open');
+  await tap('[data-value="opponent"]');
   await wait((data) => data.reviewPerspective === 'opponent' && data.selectedReviewStep?.reason);
   let data = await page.data();
   assert.ok(data.opponentOptions.some((name) => /Mia.*Tan Xuan/.test(name)));
@@ -79,7 +113,7 @@ try {
   for (const index of [
     ...new Set([0, Math.floor(data.reviewSteps.length / 2), data.reviewSteps.length - 1]),
   ]) {
-    await (await page.$(`.review-step[data-index="${index}"]`)).tap();
+    await tap(`.review-step[data-index="${index}"]`);
     await wait((data) => data.reviewIndex === index);
     data = await page.data();
     assert.ok(data.selectedReviewStep.reason);
@@ -90,7 +124,7 @@ try {
     assert.equal(await page.$('.review-detail-header .review-label'), null);
     report.checks.push({ name: 'real-opponent-step-' + index, selected: data.selectedReviewStep });
   }
-  await (await page.$('#select-opponent')).tap();
+  await tap('#select-opponent');
   await wait((data) => data.selection?.field === 'opponent');
   assert.ok((await page.data()).selection.options.some((name) => /Mia.*Tan Xuan/.test(name)));
   await capture('assigned-player-options');
@@ -108,6 +142,7 @@ try {
     () => getCurrentPages().at(-1)._controller.getGame().botDecisions,
   );
   savedHistory = await mini.evaluate(() => getCurrentPages().at(-1)._controller.getGame().history);
+  savedLogs = await mini.evaluate(() => getCurrentPages().at(-1)._controller.getGame().logs);
   const cards = (text) =>
     text
       .split(' ')
@@ -240,9 +275,9 @@ try {
   }, pocketTensRecords());
   await invoke('openReview');
   await wait((data) => !data.reviewData.loading && data.selectedReviewStep);
-  await (await page.$('[data-value="opponent"]')).tap();
+  await tap('[data-value="opponent"]');
   await wait((data) => data.reviewPerspective === 'opponent' && data.reviewSteps.length === 2);
-  await (await page.$('.review-step[data-index="1"]')).tap();
+  await tap('.review-step[data-index="1"]');
   await wait((data) => data.reviewIndex === 1);
   const tens = (await page.data()).selectedReviewStep;
   const tensText = tens.reason;
@@ -276,7 +311,7 @@ try {
   );
   await invoke('openReview');
   await wait((data) => !data.reviewData.loading && data.selectedReviewStep);
-  await (await page.$('.review-step[data-index="0"]')).tap();
+  await tap('.review-step[data-index="0"]');
   await wait((data) => data.reviewIndex === 0);
   const hero = (await page.data()).selectedReviewStep;
   assert.match(hero.reason, /350/);
@@ -299,7 +334,7 @@ try {
     selected: hero,
   });
   await capture('69o-actual-public-responses');
-  await (await page.$('[data-value="opponent"]')).tap();
+  await tap('[data-value="opponent"]');
   await wait((data) => data.reviewPerspective === 'opponent' && data.reviewSteps.length === 1);
   const mia = (await page.data()).selectedReviewStep;
   assert.match(mia.reason, /Mia/);
@@ -329,7 +364,7 @@ try {
     );
     await invoke('openReview');
     await wait((data) => !data.reviewData.loading && data.selectedReviewStep);
-    await (await page.$(`.review-step[data-index="${index}"]`)).tap();
+    await tap(`.review-step[data-index="${index}"]`);
     await wait((data) => data.reviewIndex === index);
     const step = (await page.data()).selectedReviewStep;
     assert.equal(step.keep, true);
@@ -375,6 +410,7 @@ try {
   report.status = 'passed';
 } catch (error) {
   report.status = 'failed';
+  report.failedStage = report.stage;
   report.error = error.stack;
   throw error;
 } finally {
@@ -389,6 +425,9 @@ try {
     await mini.evaluate((history) => {
       getCurrentPages().at(-1)._controller.getGame().history = history;
     }, savedHistory);
+    await mini.evaluate((logs) => {
+      getCurrentPages().at(-1)._controller.getGame().logs = logs;
+    }, savedLogs);
   }
   report.completedAt = new Date().toISOString();
   fs.writeFileSync(path.join(output, 'report.json'), JSON.stringify(report, null, 2));

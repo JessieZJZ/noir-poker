@@ -1319,9 +1319,12 @@ export async function nativeScenarios(app) {
       Math.abs(layout.table.height - beforeFold.table.height) <= 1,
       'Settlement preserves the live table height',
     );
-    assert.ok(Math.abs(layout.table.top - beforeFold.table.top) <= 1);
+    // Real native taps can scroll the document to reveal a control. Compare
+    // document coordinates so that scrolling cannot masquerade as layout shift.
+    const scrollDelta = layout.scrollY - beforeFold.scrollY;
+    assert.ok(Math.abs(layout.table.top - beforeFold.table.top + scrollDelta) <= 1);
     assert.ok(
-      Math.abs(layout.dock.top - beforeFold.dock.top) <= 1,
+      Math.abs(layout.dock.top - beforeFold.dock.top + scrollDelta) <= 1,
       'Only the control dock shrinks',
     );
     const buttons = layout.settledButtons;

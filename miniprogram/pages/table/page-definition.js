@@ -80,6 +80,8 @@ module.exports = {
     this._audio = [];
     this.preloadSounds();
     this._controller = createWechatController({
+      createReviewWorker:
+        typeof wx.createWorker === 'function' ? () => wx.createWorker('workers/review.js') : null,
       publish: (view) => {
         if (view.done || view.hand !== this.data.hand || view.replay !== this.data.replay)
           this._finishRequested = false;

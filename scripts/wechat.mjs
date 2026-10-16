@@ -234,6 +234,14 @@ export async function buildWechat(output = wechatOutput) {
       });
       await writeFile(path.join(staging, file), result.code);
     }
+    await build({
+      entryPoints: [path.join(template, 'workers/review.js')],
+      bundle: true,
+      minify: true,
+      format: 'iife',
+      target: 'es2019',
+      outfile: path.join(staging, 'workers/review.js'),
+    });
     await portraitAssets(staging);
     await sharp(path.join(root, 'public/app-icon.png'))
       .resize(128, 128)

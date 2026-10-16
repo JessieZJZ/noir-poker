@@ -220,9 +220,11 @@ async function select(selector, value) {
     )
   )
     return;
-  await click(`${selector} + .dropdown-trigger`);
+  // Use the scenario adapter's native geometry/AX preparation for selects too.
+  // Calling the raw closure skipped that preparation after locale relayouts.
+  await this.click(`${selector} + .dropdown-trigger`);
   try {
-    await click(`.dropdown-option[data-value="${value}"]`);
+    await this.click(`.dropdown-option[data-value="${value}"]`);
   } catch (error) {
     // Selecting an option removes the popup. WebKit can return a stale element
     // after dispatching that successful click; accept only the applied value.

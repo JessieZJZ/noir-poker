@@ -29,6 +29,7 @@ export function readTableLayout() {
         .backgroundColor,
     },
     height: innerHeight,
+    scrollY: window.scrollY,
     usableBottom: innerHeight - (parseFloat(getComputedStyle(document.body).paddingBottom) || 0),
     tagCount: document.querySelectorAll('#hero-turn').length,
     identityOffset: (identity.left + identity.right - cards.left - cards.right) / 2,
