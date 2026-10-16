@@ -750,7 +750,12 @@ export async function nativeScenarios(app) {
       );
       assert.equal(enabled.levels.length, enabled.audio);
       assert.ok(
-        enabled.levels.every(({ rms, peak }) => rms >= 0.145 && rms <= 0.165 && peak <= 0.7),
+        enabled.levels.every(({ rms, peak, samples }) => {
+          const enhanced = [7938, 8820, 15876].includes(samples);
+          return (
+            rms >= (enhanced ? 0.21 : 0.145) && rms <= (enhanced ? 0.245 : 0.165) && peak <= 0.7
+          );
+        }),
         'Actual installed-app PCM uses the louder mastered cues with per-cue headroom',
       );
       await app.click('#opponents-button');

@@ -4,6 +4,7 @@ import { createRequire } from 'node:module';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { BACKGROUND_MUSIC_VOLUME } from '../../src/ui/background-music.js';
 
 const root = fileURLToPath(new URL('../../', import.meta.url));
 const require = createRequire(path.join(root, '.artifacts/wechat-tools/package.json'));
@@ -90,7 +91,7 @@ try {
       : null;
   }, 'Local subpackage music must decode and advance');
   assert.equal(initial.audio.loop, true);
-  assert.equal(initial.audio.volume, 0.28);
+  assert.equal(initial.audio.volume, BACKGROUND_MUSIC_VOLUME);
   assert.ok(initial.audio.source.endsWith('/music/background-music.m4a'));
   await mini.screenshot({ path: path.join(output, 'settings-default-on.png') });
   report.checks.push({ name: 'real-local-audio-decode', evidence: initial });

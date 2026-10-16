@@ -85,12 +85,19 @@ test('Web audio loops the same local element, preserves position and rejects a s
     },
   };
   let gain;
+  const mixedOutput = {};
   const context = {
     state: 'running',
     destination: {},
     createMediaElementSource: () => ({ connect: (node) => node, disconnect() {} }),
     createGain() {
-      gain = { gain: {}, connect() {}, disconnect() {} };
+      gain = {
+        gain: {},
+        connect(target) {
+          this.connected = target;
+        },
+        disconnect() {},
+      };
       return gain;
     },
     async suspend() {
@@ -114,10 +121,12 @@ test('Web audio loops the same local element, preserves position and rejects a s
       body: { append() {} },
     },
     createContext: () => context,
+    getOutput: () => mixedOutput,
   });
   assert.equal(audio.src, 'https://example.test/poker/audio/background-music.m4a');
   assert.equal(audio.loop, true);
   assert.equal(gain.gain.value, BACKGROUND_MUSIC_VOLUME);
+  assert.equal(gain.connected, mixedOutput, 'Music and cues share the final mix limiter');
   music.setActive(false);
   finish();
   await Promise.resolve();

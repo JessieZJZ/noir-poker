@@ -1,5 +1,6 @@
 export const BACKGROUND_MUSIC_PATH = 'audio/background-music.m4a';
-export const BACKGROUND_MUSIC_VOLUME = 0.28;
+// The phone-speaker master reserves its own peak headroom for action cues.
+export const BACKGROUND_MUSIC_VOLUME = 0.8;
 
 // The sound preference owns music too. Hand changes never recreate this player.
 export function createMusicController({ createPlayer, enabled = true, active = true }) {

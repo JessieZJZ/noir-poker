@@ -11,19 +11,34 @@ export function botThinkingTime(decision, random = Math.random) {
     draw = v.features.draw,
     raises = v.history.filter((a) => a.action === 'raise'),
     streetRaises = raises.filter((a) => a.street === v.street),
-    lastRaiser = raises.at(-1)?.id;
+    lastRaiser = streetRaises.at(-1)?.id;
   const roll = () => clamp(random());
-  const priceBuffer = 0.02 + (v.allIn?.pendingBuffer || 0);
   const guaranteedRiver = v.allIn?.unbeatableRiver && v.allIn.guaranteedReturn >= v.allIn.cost;
+  // Follow the selected policy's gate, including the new public-range price
+  // and response risk. Passing an entry range no longer bypasses that price.
+  const requiredEquity = v.allIn
+    ? t.odds + 0.02 + (v.allIn.pendingBuffer || 0)
+    : (t.requiredEquity ?? t.odds + 0.02 + (t.responseRisk || 0));
+  const rangeRejected = decision.action === 'fold' && t.reason === 'outside-range' && !v.allIn;
+  const legacyEntry =
+    !v.publicEquity && v.street === 0 && (t.affordableRangePassed ?? (t.cheapEntry && t.admitted));
   const priceCloseness =
     legal.toCall > 0 &&
     !guaranteedRiver &&
-    !(v.street === 0 && (t.affordableRangePassed ?? (t.cheapEntry && t.admitted)))
-      ? clamp(1 - Math.abs(t.equity + t.callTolerance - t.odds - priceBuffer) / 0.16)
+    !rangeRejected &&
+    !legacyEntry &&
+    !t.drawContinue &&
+    !t.pairContinue &&
+    !t.style?.floatContinue
+      ? clamp(1 - Math.abs(t.equity + t.callTolerance - requiredEquity) / 0.16)
       : 0;
   const rangeCloseness =
-    v.street === 0 && !v.allIn ? clamp(1 - Math.abs(t.percentile - t.range) / 0.15) : 0;
-  const closeness = Math.max(priceCloseness, rangeCloseness);
+    v.street === 0 && legal.toCall > 0 && !v.allIn && !t.premium
+      ? clamp(1 - Math.abs(t.percentile - t.range) / 0.15)
+      : 0;
+  const drawCloseness =
+    legal.toCall > 0 && t.drawContinue ? clamp(1 - Math.abs(t.drawChance - t.odds) / 0.12) : 0;
+  const closeness = Math.max(priceCloseness, rangeCloseness, drawCloseness);
   const suits = [0, 1, 2, 3].map((s) => v.board.filter((c) => c.suit === s).length),
     paired = new Set(v.board.map((c) => c.rank)).size < v.board.length;
   const texture = clamp(
@@ -50,10 +65,17 @@ export function botThinkingTime(decision, random = Math.random) {
     v.street > 0 && typeof v.inPosition === 'boolean'
       ? !v.inPosition
       : ['SB', 'BB', 'UTG', 'UTG+1', 'MP', 'LJ'].includes(v.position);
-  const position = clamp((outOfPosition ? 0.3 : 0) + Math.max(0, v.rivals - 1) * 0.12);
+  // Still-to-act seats add response uncertainty, not imaginary showdown hands.
+  const showdownOpponents = t.assumedOpponents ?? v.rivals;
+  const multiway = clamp(Math.max(0, showdownOpponents - 1) * 0.18);
+  const position = clamp((outOfPosition ? 0.3 : 0) + multiway * 0.5);
+  const responses = clamp(
+    (v.actionContext?.pendingResponseCount || 0) * 0.1 +
+      (v.actionContext?.priorActedResponseCount || 0) * 0.12,
+  );
   // The engine's risk includes changes to uncalled refunds, which can differ
   // from the chips physically needed to make the call.
-  const callRisk = (v.allIn?.cost ?? legal.callAmount) / Math.max(1, v.stack),
+  const callRisk = (v.callPrice?.cost ?? v.allIn?.cost ?? legal.callAmount) / Math.max(1, v.stack),
     raiseRisk = decision.action === 'raise' ? (decision.amount - v.bet) / Math.max(1, v.stack) : 0;
   const remaining = Math.max(0, v.stack - legal.callAmount);
   // Exclude all-in rivals from remaining-stack planning, while they still count
@@ -76,9 +98,26 @@ export function botThinkingTime(decision, random = Math.random) {
     decision.action === 'raise'
       ? clamp((decision.amount - v.currentBet) / Math.max(bigBlindOf(v), v.pot + legal.callAmount))
       : 0;
+  // Size selection, side pots and later-street planning apply to value,
+  // bluffs and checks alike. Do not encode a fixed bluff/trap timing tell.
+  const planning = clamp(
+    (legal.canRaise && liveStacks.length ? 0.2 : 0) +
+      (v.street > 0 && legal.canRaise && (draw || v.features.ownMade) ? 0.25 : 0) +
+      (v.street >= 2 && liveStacks.length ? 0.2 : 0) +
+      Math.max(0, (v.callPots?.length || 1) - 1) * 0.25,
+  );
   const routine =
-    (decision.action === 'fold' && t.reason === 'outside-range' && rangeCloseness < 0.15) ||
-    (decision.action === 'check' && t.reason === 'free-check' && !draw && !v.features.wet);
+    (decision.action === 'fold' &&
+      ['outside-range', 'insufficient-equity'].includes(t.reason) &&
+      closeness < 0.15 &&
+      callRisk < 0.15) ||
+    (decision.action === 'check' && t.reason === 'free-check' && !draw && !v.features.wet) ||
+    (decision.action === 'call' &&
+      v.street === 0 &&
+      t.affordableRangePassed &&
+      closeness < 0.15 &&
+      callRisk <= 0.04 &&
+      streetRaises.length <= 1);
   const [width, attack, bluff, , trap] = t.axes.map((n) => n / 100);
   const styleTempo = 1 + (0.5 - attack) * 0.18 + trap * 0.08 + ((v.id % 5) - 2) * 0.04;
   const moodStrength = t.mode === 'off' ? 0 : t.mode === 'lively' ? 1 : 0.5;
@@ -92,33 +131,44 @@ export function botThinkingTime(decision, random = Math.random) {
   const actingRoll = roll(),
     acting = actingRoll < actingChance ? 'deliberate' : actingRoll > 0.91 ? 'quick' : 'neutral',
     actingMs = acting === 'deliberate' ? 400 + roll() * 1400 : acting === 'quick' ? -600 : 0;
-  const base = 1300 + roll() * 1100 + roll() * 700;
+  const base = 1450 + roll() * 850 + roll() * 550;
   const complexity =
-    closeness * 1400 +
-    texture * 750 +
-    route * 1050 +
-    position * 550 +
-    commitment * 1050 +
-    sizing * 400 +
-    (v.street >= 2 ? 350 : v.street === 1 ? 150 : 0);
+    closeness * 1500 +
+    texture * 650 +
+    route * 850 +
+    position * 350 +
+    commitment * 1100 +
+    sizing * 300 +
+    multiway * 400 +
+    responses * 500 +
+    planning * 500 +
+    (v.street >= 2 ? 300 : v.street === 1 ? 150 : 0);
   const durationMs = Math.round(
     clamp(
-      (base + complexity - (routine ? 450 : 0)) * styleTempo + mood + actingMs,
+      (base + complexity - (routine ? 600 : 0)) * styleTempo + mood + actingMs,
       BOT_THINK_LIMITS.minimum,
       BOT_THINK_LIMITS.maximum,
     ),
   );
   return {
     durationMs,
-    model: 'context-pacing-v1',
+    model: 'policy-pacing-v2',
     acting,
     factors: {
       closeness,
+      priceCloseness,
+      rangeCloseness,
+      drawCloseness,
+      requiredEquity,
       texture,
       route,
       position,
       commitment,
       sizing,
+      multiway,
+      responses,
+      planning,
+      routine: Boolean(routine),
       effectiveStack: effective,
       spr,
     },

@@ -2,7 +2,9 @@
 // Unit gain is already mastered; platform adapters must not boost it again.
 export const SOUND_SAMPLE_RATE = 44100;
 export const SOUND_CUES = ['fold', 'check', 'chip', 'deal', 'win'];
-export const SOUND_TARGET_RMS = 0.16;
+// Keep the already audible wooden check and deal unchanged. Softer actions
+// carry more sustained midrange energy for small phone speakers.
+export const SOUND_TARGET_RMS = { fold: 0.25, check: 0.16, chip: 0.25, deal: 0.16, win: 0.24 };
 export const SOUND_PEAK_CEILING = 0.7;
 const triangle = (phase) => (2 / Math.PI) * Math.asin(Math.sin(phase));
 const envelope = (t, peak, attack, end) =>
@@ -56,14 +58,22 @@ export function soundSamples(name) {
             triangle(fallingPhase(dt, 165, 80, 0.045)) * envelope(dt, 0.28, 0.002, 0.065));
       }
     } else if (kind === 'fold') {
-      value = triangle(fallingPhase(t, 260, 75, 0.14)) * envelope(t, 0.288, 0.012, 0.16);
+      const phase = fallingPhase(t, 260, 75, 0.14);
+      value =
+        (triangle(phase) * 0.55 + Math.sin(phase * 5) * 0.45 + Math.sin(phase * 9) * 0.2) *
+        envelope(t, 0.288, 0.012, 0.16);
     } else {
       const notes = kind === 'win' ? [440, 554, 659] : kind === 'deal' ? [820, 570] : [310];
       for (const [index, hz] of notes.entries()) {
         const dt = t - index * 0.08;
         if (dt < 0 || dt >= 0.2) continue;
+        const phase = 2 * Math.PI * hz * dt;
         const oscillator =
-          kind === 'deal' ? triangle(2 * Math.PI * hz * dt) : Math.sin(2 * Math.PI * hz * dt);
+          kind === 'deal'
+            ? triangle(phase)
+            : kind === 'chip'
+              ? Math.sin(phase) * 0.4 + Math.sin(phase * 3) * 0.7 + Math.sin(phase * 5) * 0.35
+              : Math.sin(phase) + Math.sin(phase * 2) * 0.2 + Math.sin(phase * 3) * 0.45;
         value += oscillator * envelope(dt, kind === 'chip' ? 0.32 : 0.2, 0.015, 0.16);
       }
     }
@@ -72,7 +82,7 @@ export function soundSamples(name) {
   // Master complete cues rather than their brief attack peaks. The longer
   // decay keeps quiet actions audible without changing pitch or tap timing.
   const rms = Math.sqrt(data.reduce((sum, value) => sum + value * value, 0) / data.length),
-    gain = SOUND_TARGET_RMS / rms;
+    gain = SOUND_TARGET_RMS[kind] / rms;
   for (let i = 0; i < data.length; i++) {
     const sample = data[i] * gain,
       absolute = Math.abs(sample),

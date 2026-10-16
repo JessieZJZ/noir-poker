@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { createWechatController } from '../../src/platform/wechat-controller.js';
 import { act, advanceStreet, legalActions, potSize } from '../../src/engine/poker.js';
 import { createReviewInput, analyzeDecision } from '../../src/review/analysis.js';
+import { BOT_THINK_LIMITS } from '../../src/engine/bot-timing.js';
 
 const copy = (value) => JSON.parse(JSON.stringify(value));
 function scheduler() {
@@ -72,6 +73,31 @@ function reachHero(controller) {
   controller.show();
   return game;
 }
+
+test('WeChat executes policy pacing once and hiding rejects stale bot callbacks', (t) => {
+  const { controller, timers, latest } = setup(t);
+  const game = reachHero(controller);
+  controller.action('call');
+  assert.ok(timers.runNext(), 'Paint task selects one bot plan');
+  const waits = [...timers.pending.values()].filter(
+    ({ delay }) => delay >= BOT_THINK_LIMITS.minimum && delay <= BOT_THINK_LIMITS.maximum,
+  );
+  assert.equal(waits.length, 1);
+  const stale = timers.callbacks();
+  controller.hide();
+  const paused = copy(game);
+  for (const callback of stale) callback();
+  assert.deepEqual(game, paused);
+  controller.show();
+  while (game.botDecisions.length === 0) assert.ok(timers.runNext());
+  assert.equal(game.botDecisions.length, 1);
+  assert.equal(game.botDecisions[0].trace.thinking.model, 'policy-pacing-v2');
+  assert.equal(game.botDecisions[0].trace.thinking.expedited, false);
+  assert.ok(
+    !JSON.stringify(latest()).includes('policy-pacing-v2'),
+    'Live UI keeps private timing factors hidden',
+  );
+});
 
 test('WeChat visual attention survives mute, cancels on sizing/hide/retry/destroy and publishes timer phases', (t) => {
   const { controller, timers, latest } = setup(t, { sound: false });

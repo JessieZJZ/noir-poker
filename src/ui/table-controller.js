@@ -144,6 +144,7 @@ const backgroundMusic = createWebBackgroundMusic({
     return audio;
   },
   sharedContext: true,
+  getOutput: () => audioOutput,
 });
 let pendingBotSettings = loadBotSettings();
 const opponents = createOpponentsController({

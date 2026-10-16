@@ -10,6 +10,7 @@ export function createWebBackgroundMusic({
   document = globalThis.document,
   createContext = () => new (globalThis.AudioContext || globalThis.webkitAudioContext)(),
   sharedContext = false,
+  getOutput = (context) => context.destination,
 } = {}) {
   return createMusicController({
     enabled,
@@ -32,7 +33,7 @@ export function createWebBackgroundMusic({
         source = context.createMediaElementSource(audio);
         output = context.createGain();
         output.gain.value = BACKGROUND_MUSIC_VOLUME;
-        source.connect(output).connect(context.destination);
+        source.connect(output).connect(getOutput(context));
       } catch {
         // GainNode also supports iOS, where HTMLMediaElement.volume is ignored.
         audio.volume = BACKGROUND_MUSIC_VOLUME;

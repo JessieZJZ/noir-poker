@@ -1274,6 +1274,8 @@ test('bots wait for their contextual deadline, reuse it on scheduling and replan
   expect(records[0].thinking.durationMs).toBe(waiting.delayMs);
   expect(records[0].thinking.waitedMs).toBeGreaterThanOrEqual(waiting.delayMs);
   expect(records[0].thinking.expedited).toBe(false);
+  expect(records[0].thinking.model).toBe('policy-pacing-v2');
+  expect(records[0].thinking.factors.requiredEquity).toBeGreaterThanOrEqual(0);
   const old = await page.evaluate(() => window.qa.thinking());
   const updated = await page.evaluate(() => {
     const input = document.querySelector('input[name="difficulty"][value="hard"]');

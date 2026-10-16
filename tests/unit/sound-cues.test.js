@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import {
   soundSamples,
   SOUND_CUES,
@@ -23,12 +24,16 @@ function level(samples) {
   };
 }
 
-test('every cue has at least 9dB more signal energy and keeps per-cue headroom', () => {
+test('every cue retains mastered signal energy and per-cue headroom', () => {
   for (const name of SOUND_CUES) {
     const samples = soundSamples(name),
       { rms, peak } = level(samples);
     assert.ok(20 * Math.log10(rms / formerRms[name]) >= 9, `${name} signal gain`);
-    assert.ok(rms >= 0.145 && rms <= 0.165, `${name} mastered RMS ${rms}`);
+    const enhanced = ['fold', 'chip', 'win'].includes(name);
+    assert.ok(
+      rms >= (enhanced ? 0.21 : 0.145) && rms <= (enhanced ? 0.245 : 0.165),
+      `${name} mastered RMS ${rms}`,
+    );
     assert.ok(peak <= SOUND_PEAK_CEILING, `${name} peak ${peak}`);
     assert.equal(samples[0], 0);
     assert.equal(samples.at(-1), 0);
@@ -36,6 +41,45 @@ test('every cue has at least 9dB more signal energy and keeps per-cue headroom',
   }
   for (const action of ['bet', 'raise', 'call'])
     assert.deepEqual(soundSamples(action), soundSamples('chip'));
+});
+
+test('phone-band energy rises for soft actions while check/deal/new-game PCM stays unchanged', () => {
+  // A fixed 700–3500 Hz approximation measures presence rather than promising
+  // an acoustic result for a particular phone, volume or outdoor noise level.
+  const previous = {
+    fold: 0.04255247524991775,
+    chip: 0.061378235632582955,
+    win: 0.09252253565920715,
+  };
+  const minimumGain = { fold: 9, chip: 7.5, win: 4 };
+  for (const name of Object.keys(previous)) {
+    let low = 0,
+      high = 0,
+      last = 0,
+      energy = 0;
+    const samples = soundSamples(name),
+      hp = Math.exp((-2 * Math.PI * 700) / SOUND_SAMPLE_RATE),
+      lp = 1 - Math.exp((-2 * Math.PI * 3500) / SOUND_SAMPLE_RATE);
+    for (const sample of samples) {
+      high = hp * (high + sample - last);
+      last = sample;
+      low += lp * (high - low);
+      energy += low * low;
+    }
+    const rms = Math.sqrt(energy / samples.length);
+    assert.ok(20 * Math.log10(rms / previous[name]) >= minimumGain[name], name);
+  }
+  for (const [name, hash] of Object.entries({
+    check: 'a334ffecdc6ed7867768a0a51428136d5645be636b044612e6333151e6cf01b0',
+    deal: '41fa94fad42f1d51b92cc59fd4d2d56e7e30b75a492d6379dd5adc3e5fee2abf',
+  })) {
+    assert.equal(
+      createHash('sha256')
+        .update(new Uint8Array(soundSamples(name).buffer))
+        .digest('hex'),
+      hash,
+    );
+  }
 });
 
 test('the actual encoded WeChat WAVs keep the same normalized PCM as Web and native', () => {

@@ -7,7 +7,9 @@ Web、iOS、Android 和微信小程序的设置提供两个开关：
 
 新设备两项均默认开启。Web/App 分别保存到 `noir-sound`、`noir-vibration`，App 启动前从 Capacitor Preferences 恢复；微信保存到原有设置对象的 `sound`、`vibration` 字段。旧版组合静音且没有独立振动设置时，两项保持关闭；首次分别修改后，声音开关不再改变振动。
 
-音乐与音效共用声音偏好、采用独立音量。当前 BGM 为 0.28 倍增益，为发牌、筹码与行动音效留出空间。设置界面、换手、重打、重新练习和查看对局记录都不会重新创建音乐或从头播放。关闭声音立即暂停，重新打开从原位置继续。
+音乐与音效共用声音偏好、采用独立音量。当前 BGM 为手机外放混音，播放增益 0.8；编码文件约 −19.39 LUFS，实际输出约 −21.33 LUFS，比原文件以 0.28 播放提高约 9.75 dB。设置界面、换手、重打、重新练习和查看对局记录都不会重新创建音乐或从头播放。关闭声音立即暂停，重新打开从原位置继续。
+
+弃牌、筹码（跟注／下注／加注）和获胜提示增强中频及持续响度，完整提示的 RMS 分别约 0.214、0.218、0.238，峰值保持在 0.7 以下。700–3500 Hz 的简化手机频段测量比上一版分别增加约 9.3、7.7、4.1 dB；这不是特定手机扬声器或室外环境的声压测量。已经较清楚的过牌、发牌／开局 PCM 逐字节保持不变。
 
 切到后台、页面离开或手机方向阻塞时暂停音乐；回到活动前台后按保存的声音选择恢复。Web 的隐藏标签页暂停音乐而不改变原有电脑行动时钟。浏览器可能阻止无手势播放，默认开启表示播放意愿；首次真实点击或按键会同时解锁音乐与音效，不能通过计时器绕过浏览器限制。参见 [MDN 自动播放指南](https://developer.mozilla.org/en-US/docs/Web/Media/Guides/Autoplay)。
 
@@ -15,9 +17,9 @@ Web、iOS、Android 和微信小程序的设置提供两个开关：
 
 `public/audio/background-music.m4a` 为「夜色牌桌」的 48 kHz、双声道、96 kbps AAC，约 1.1 MiB，完整保留约 93.659 秒。来源、母带与文件指纹见 [CREDITS](../public/audio/CREDITS.md)。四版无损候选留在 `audio-studio/`，不会全部进入产品。
 
-Web/App 使用同一包内文件、同一个循环 audio 元素；BGM 通过独立 GainNode 接到现有 AudioContext，兼容不支持元素音量调整的 iOS。音效仍使用现有 PCM 和限幅输出。音频资源与全部图片共同进入原生资源指纹，并在最终 `.app` / `.apk` / `.aab` 中逐字节验证。没有生产 `server.url` 或远程音乐地址。
+Web/App 使用同一包内文件、同一个循环 audio 元素；BGM 通过独立 GainNode 接到现有 AudioContext，兼容不支持元素音量调整的 iOS。音乐与音效共同进入最终限幅器，混音峰值不超过 0.92。音频资源与全部图片共同进入原生资源指纹，并在最终 `.app` / `.apk` / `.aab` 中逐字节验证。没有生产 `server.url` 或远程音乐地址。
 
-小程序把相同 AAC 文件复制到本地 `music` 分包；仅在声音开启时通过 `require.async` 加载分包的资源入口，使用单独的 `InnerAudioContext`，`loop=true`、`volume=0.28`。App 生命周期控制音乐，音效池停止或重建不影响它。分包完成与音频就绪回调都检查当前播放意愿；关闭或销毁后的旧回调不能重新启动音乐。加载方式遵循[微信分包异步化](https://developers.weixin.qq.com/miniprogram/dev/framework/subpackages/async.html)，采用[腾讯官方接入示例](https://cloud.tencent.com/document/product/679/116623)同样的 Promise 模块接口。
+小程序把相同 AAC 文件复制到本地 `music` 分包；仅在声音开启时通过 `require.async` 加载分包的资源入口，使用单独的 `InnerAudioContext`，`loop=true`、`volume=0.8`。小程序仅保留最新的动作提示，音乐编码后的真峰值约 −9.50 dBTP，音乐与单条音效的保守峰值之和小于 0.99，留出混音余量。App 生命周期控制音乐，音效池停止或重建不影响它。分包完成与音频就绪回调都检查当前播放意愿；关闭或销毁后的旧回调不能重新启动音乐。加载方式遵循[微信分包异步化](https://developers.weixin.qq.com/miniprogram/dev/framework/subpackages/async.html)，采用[腾讯官方接入示例](https://cloud.tencent.com/document/product/679/116623)同样的 Promise 模块接口。
 
 构建保留主包和各分包各自 2 MiB、总包 20 MiB 的预算，在 `build-info.json.packageBytes` 写入每包大小；文件缺失、损坏或与公共资源不一致均阻止验证。
 
