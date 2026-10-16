@@ -114,6 +114,18 @@ export function withCenteredNativeClicks(app) {
         );
       }
       const token = app.platform === 'ios' ? `native-label-${++labelToken}` : null;
+      // Safari exposes summary through nested AX buttons. Appium's fallback
+      // calibration iframe sits below a modal dialog's top layer. Tap its real
+      // visible native coordinates instead; never dispatch a DOM click.
+      if (
+        app.platform === 'ios' &&
+        app.nativeTap &&
+        (await app.evaluate((selector) => {
+          const target = document.querySelector(selector);
+          return target.matches('summary, a') && !!target.closest('dialog[open]');
+        }, selector))
+      )
+        return app.nativeTap(selector);
       let failed = false;
       try {
         // Appium marks aria-label with a UUID for native AX lookup. A

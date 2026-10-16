@@ -1239,8 +1239,8 @@
 
 /* Compact actions remove unused controls without changing the table itself. */
 .action-dock.compact-actions {
-  flex: 0 0 58px;
-  height: 58px;
+  flex: 0 0 64px;
+  height: 64px;
   padding: 10px 8px;
 }
 .compact-actions .settled-buttons,
@@ -1660,8 +1660,8 @@
   grid-template-columns: minmax(0, 1fr);
 }
 .history-shell .action-dock {
-  flex: 0 0 58px;
-  height: 58px;
+  flex: 0 0 64px;
+  height: 64px;
   padding: 10px 8px;
 }
 .web-phone-layout .hero-cards {

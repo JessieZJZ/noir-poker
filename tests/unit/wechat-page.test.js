@@ -621,9 +621,9 @@ test('WeChat turn, fold, settlement and retry keep the table fixed while compact
   assert.match(template, /class="raise-controls" wx:if="\{\{!compactActions\}\}"/);
   assert.match(
     template,
-    /height: {{tableHeight \+ 50 \+ \(historyReadOnly \|\| compactActions \? 58 : 134\)}}px/,
+    /height: {{tableHeight \+ 50 \+ \(historyReadOnly \|\| compactActions \? 64 : 134\)}}px/,
   );
-  assert.equal(cssNumber('.action-dock.compact-actions', 'height'), 58);
+  assert.equal(cssNumber('.action-dock.compact-actions', 'height'), 64);
   assert.equal(
     cssNumber('.settled-buttons button', 'width'),
     100,
@@ -1821,9 +1821,9 @@ test('WeChat record lists send bounded summary patches and remain idle without r
 test('WeChat history uses a compact review dock and the records header keeps its return button intrinsic', () => {
   assert.match(
     template,
-    /tableHeight \+ 50 \+ \(historyReadOnly \|\| compactActions \? 58 : 134\)/,
+    /tableHeight \+ 50 \+ \(historyReadOnly \|\| compactActions \? 64 : 134\)/,
   );
-  assert.match(stylesheet, /\.history-shell \.action-dock\s*\{[^}]*height: 58px/);
+  assert.match(stylesheet, /\.history-shell \.action-dock\s*\{[^}]*height: 64px/);
   assert.match(stylesheet, /\.history-practice-heading\s*\{[^}]*margin: 12px 8px 8px/);
   const markup = readFileSync(
     new URL('../../miniprogram/pages/records/records.wxml', import.meta.url),

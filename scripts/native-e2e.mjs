@@ -249,6 +249,51 @@ async function select(selector, value) {
     `Selection did not apply: ${selector}`,
   );
 }
+async function nativeTap(selector) {
+  assert.equal(platform, 'ios');
+  const target = await evaluate((selector) => {
+    const element = document.querySelector(selector),
+      r = element.getBoundingClientRect(),
+      x = r.x + r.width / 2,
+      y = r.y + r.height / 2,
+      hit = document.elementFromPoint(x, y);
+    if (!hit || !element.contains(hit)) throw Error('Native touch target is covered');
+    return { x, y, width: innerWidth, height: innerHeight };
+  }, selector);
+  const { nativePoint } = await import('./native-pointer.mjs');
+  await command('POST', '/context', { name: 'NATIVE_APP' });
+  try {
+    const elements = await command('POST', '/elements', {
+      using: 'class name',
+      value: 'XCUIElementTypeWebView',
+    });
+    const frames = [];
+    for (const element of elements) {
+      const id = element['element-6066-11e4-a52e-4f735466cecf'] ?? element.ELEMENT;
+      frames.push(await command('GET', `/element/${id}/rect`));
+    }
+    const frame = frames.sort((a, b) => b.width * b.height - a.width * a.height)[0];
+    assert.ok(frame, 'The installed app must expose its actual WebView frame');
+    const point = nativePoint(target, target, frame);
+    await command('POST', '/actions', {
+      actions: [
+        {
+          type: 'pointer',
+          id: 'native-summary-touch',
+          parameters: { pointerType: 'touch' },
+          actions: [
+            { type: 'pointerMove', duration: 0, origin: 'viewport', ...point },
+            { type: 'pointerDown', button: 0 },
+            { type: 'pause', duration: 80 },
+            { type: 'pointerUp', button: 0 },
+          ],
+        },
+      ],
+    });
+  } finally {
+    await command('POST', '/context', { name: webContext });
+  }
+}
 async function screenshot(name) {
   const imagePath = path.join(output, `${name}.png`);
   const sourcePath = path.join(output, `${name}.native.xml`);
@@ -535,6 +580,7 @@ try {
     evaluate,
     state,
     click,
+    nativeTap,
     select,
     visible,
     waitFor,

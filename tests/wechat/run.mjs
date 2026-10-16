@@ -34,7 +34,9 @@ try {
     getApp().__noirTurnVibrations.push(options.type);
     return { errMsg: 'vibrateShort:ok' };
   });
+  await mini.reLaunch('/pages/table/table');
   let page = await mini.currentPage();
+  assert.equal(page.path, 'pages/table/table');
   const invoke = (name, argument) =>
     mini.evaluate(
       (name, argument) => {
@@ -200,19 +202,21 @@ try {
       'The table keeps the fixed viewport budget',
     );
     assert.equal(geometry.table.height, tableHeight);
-    assert.equal(Number(geometry.shell.height), tableHeight + 50 + (compact ? 58 : 134));
-    assert.equal(geometry.dockHeight, compact ? 58 : 134);
+    assert.equal(Number(geometry.shell.height), tableHeight + 50 + (compact ? 64 : 134));
+    assert.equal(geometry.dockHeight, compact ? 64 : 134);
     assert.ok(
       Math.abs(geometry.shell.top - (viewport.topInset + 36 + 48 + 8)) <= 1,
       'The shell keeps its original top position',
     );
     assert.ok(
-      Math.abs(geometry.shellBottom - (viewport.height - viewport.bottomInset - 8)) <= 1,
-      'The fixed shell reaches the same viewport bottom in live play and settlement',
+      Math.abs(
+        geometry.shellBottom - (viewport.height - viewport.bottomInset - 8 - (compact ? 70 : 0)),
+      ) <= 1,
+      'Settlement releases only the unused 70px of action controls',
     );
     assert.ok(
-      Math.abs(geometry.reservedSpace - (compact ? 70 : 0)) <= 1,
-      'The compact dock leaves its unused budget inside the unchanged shell',
+      Math.abs(geometry.reservedSpace) <= 1,
+      'Neither live nor compact actions leave unused space inside the shell',
     );
   };
   const rememberLiveGeometry = async (name) => {
@@ -241,7 +245,11 @@ try {
           `${name}: ${label} ${field} matches the same live hand`,
         );
     };
-    compareBounds(current.shell, baseline.shell, 'shell');
+    compareBounds(
+      current.shell,
+      { ...baseline.shell, height: baseline.shell.height - 70 },
+      'shell',
+    );
     compareBounds(current.table, baseline.table, 'table');
     for (const [selector, bounds] of Object.entries(baseline.elements)) {
       assert.equal(current.elements[selector].length, bounds.length);
@@ -370,7 +378,10 @@ try {
       selectors = [...selectors, '.review-step'];
     const components = {};
     for (const selector of selectors) {
-      const element = await page.$(selector);
+      let element;
+      const paintDeadline = Date.now() + 15000;
+      while (!(element = await page.$(selector)) && Date.now() < paintDeadline)
+        await page.waitFor(100);
       assert.ok(element, `${name}: ${selector} must exist in the real view`);
       const size = await element.size(),
         offset = await element.offset();
@@ -731,10 +742,10 @@ try {
   await scrollToSetting('.profile-card[data-id="haxton"]', 80);
   await (await page.$('.profile-card[data-id="haxton"]')).tap();
   await wait((data) => !!data.detailProfile);
-  const detail = await page.$('.profile-detail');
+  const profileDetail = await page.$('.profile-detail');
   report.motion = {
-    profileReveal: await detail.style('animation-name'),
-    profileDuration: await detail.style('animation-duration'),
+    profileReveal: await profileDetail.style('animation-name'),
+    profileDuration: await profileDetail.style('animation-duration'),
   };
   assert.equal(report.motion.profileReveal, 'profile-reveal');
   assert.equal(report.motion.profileDuration, '0.42s');

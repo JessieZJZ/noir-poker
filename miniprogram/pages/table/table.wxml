@@ -48,7 +48,7 @@
   </view>
   <view
     class="game-shell {{showdown.length ? 'has-showdown' : ''}} {{historyReadOnly ? 'history-shell' : ''}}"
-    style="height: {{tableHeight + 50 + (historyReadOnly || compactActions ? 58 : 134)}}px;"
+    style="height: {{tableHeight + 50 + (historyReadOnly || compactActions ? 64 : 134)}}px;"
   >
     <view class="game-header">
       <view class="hand-label"

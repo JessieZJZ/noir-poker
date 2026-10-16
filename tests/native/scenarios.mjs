@@ -1351,7 +1351,7 @@ export async function nativeScenarios(app) {
       );
       const inspection = await app.evaluate(() => {
         const seat = document.querySelector('.seat-crown'),
-          view = document.querySelector('.table-viewport').getBoundingClientRect(),
+          header = document.querySelector('.hand-label').getBoundingClientRect(),
           profile = seat.querySelector('.seat-profile').getBoundingClientRect(),
           scale = new DOMMatrix(getComputedStyle(document.querySelector('#arena')).transform).a;
         return {
@@ -1359,7 +1359,9 @@ export async function nativeScenarios(app) {
           cards: [...seat.querySelectorAll('.playing-card')].map((card) => {
             const r = card.getBoundingClientRect();
             return {
-              clearOfHint: r.top >= view.top + 10 * scale - 0.5,
+              clearOfHeader: r.top >= header.bottom + 2 * scale - 0.5,
+              insetFromProfile:
+                r.left >= profile.left + scale - 0.5 && r.right <= profile.right - scale + 0.5,
               visibleFraction: (profile.top - r.top) / r.height,
             };
           }),
@@ -1372,15 +1374,23 @@ export async function nativeScenarios(app) {
       assert.ok(
         inspection.cards.every(
           (card) =>
-            card.clearOfHint && card.visibleFraction >= 0.65 && card.visibleFraction <= 0.98,
+            card.clearOfHeader &&
+            card.insetFromProfile &&
+            card.visibleFraction >= 0.65 &&
+            card.visibleFraction <= 0.98,
         ),
+        JSON.stringify(inspection),
       );
       const peekLayout = await app.evaluate(readTableLayout);
       assertTableLayout(peekLayout);
       for (const anchor of ['arena', 'publicArea'])
         for (const key of ['top', 'left', 'height', 'right'])
           assert.ok(
-            Math.abs(peekLayout[anchor][key] - layout[anchor][key]) <= 1,
+            Math.abs(
+              peekLayout[anchor][key] +
+                (key === 'top' ? peekLayout.scrollY - layout.scrollY : 0) -
+                layout[anchor][key],
+            ) <= 1,
             `${anchor} must stay fixed when inspecting the crown hand`,
           );
       if (expected === 'true') {

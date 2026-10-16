@@ -87,7 +87,7 @@ try {
     if (phase.phase === 'playing' && phase.actor === 0)
       await invoke('act', { currentTarget: { dataset: { action: 'fold' } } });
     await invoke('finishHand');
-    await wait((data) => data.done || data.actor === 0);
+    await wait((data) => data.done || data.canAct);
   }
   const profiles = (await page.data()).profiles;
   await invoke('changeSeat', {
@@ -410,7 +410,7 @@ try {
       assert.match(step.reason, /输给.*三条/);
       assert.match(
         (await page.data()).reviewActivity.map((event) => event.text).join(''),
-        /Luna.*全下1K/,
+        /Luna.*全下\s*1K/,
       );
     } else {
       assert.match(step.reason, /埋牌|藏在平跟/);
