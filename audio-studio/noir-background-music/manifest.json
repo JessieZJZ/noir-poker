@@ -1,0 +1,145 @@
+{
+  "schemaVersion": 1,
+  "created": "2026-10-16",
+  "sampleRate": 48000,
+  "channels": 2,
+  "bitDepth": 24,
+  "bars": 32,
+  "meter": "4/4",
+  "externalAudioSources": [],
+  "tracks": [
+    {
+      "id": "01-midnight-felt",
+      "title": "夜色牌桌",
+      "subtitle": "Midnight Felt",
+      "bpm": 82,
+      "key": "D minor",
+      "style": "夜色爵士 / downtempo lounge",
+      "description": "温暖电钢琴、圆润低音、轻刷鼓与少量玻璃泛音；平稳、有质感，适合默认牌桌。",
+      "seed": 160801,
+      "palette": "#6ee7c5",
+      "frames": 4495610,
+      "durationSeconds": 93.658542,
+      "loopStartFrame": 0,
+      "loopEndFrameExclusive": 4495610,
+      "integratedLUFS": -20.0,
+      "truePeakDBTP": -7.75,
+      "rendererSHA256": "34323a64d3fd0008d79f7bcd155f1605e5ec644ffebb53631ff945107d5b954c",
+      "scoreSHA256": "0e36a50b1b2ccbe5c5aa0916adb71769633b51099f563d5d47ee0261a4ad32ca",
+      "files": {
+        "lossless": {
+          "path": "masters/01-midnight-felt.flac",
+          "sha256": "96d878b64a7eddae7e18b46c7eef6f95679f44fcf1d660ab688602a8a1724e2e"
+        },
+        "preview": {
+          "path": "audio/01-midnight-felt.m4a",
+          "sha256": "e1118699aab07c85fac42607f31bfbbf725d7da94c13da598b677219b59f09b3"
+        },
+        "opus": {
+          "path": "audio/01-midnight-felt.opus",
+          "sha256": "f9506cfd0700b5b7a0ffd14ebf8724a7257cd82f2ae92cf89389cdc2b0c70501"
+        }
+      }
+    },
+    {
+      "id": "02-mint-circuit",
+      "title": "薄荷暗流",
+      "subtitle": "Mint Circuit",
+      "bpm": 94,
+      "key": "C minor",
+      "style": "极简电子 / soft microhouse",
+      "description": "细碎拨弦、柔和合成器、轻量切分鼓点；更现代、更有行进感，适合连续练习。",
+      "seed": 160802,
+      "palette": "#8abaff",
+      "frames": 3921702,
+      "durationSeconds": 81.702125,
+      "loopStartFrame": 0,
+      "loopEndFrameExclusive": 3921702,
+      "integratedLUFS": -20.0,
+      "truePeakDBTP": -6.68,
+      "rendererSHA256": "34323a64d3fd0008d79f7bcd155f1605e5ec644ffebb53631ff945107d5b954c",
+      "scoreSHA256": "b44b820d26cde4712049585f2cdd756f73f2eb127bd439ebd13773b9b8d30bec",
+      "files": {
+        "lossless": {
+          "path": "masters/02-mint-circuit.flac",
+          "sha256": "cd0b059d651e05bb46fca8dc86307e79a9fda1b6cd31d6f6f700898ea0b680dd"
+        },
+        "preview": {
+          "path": "audio/02-mint-circuit.m4a",
+          "sha256": "f53c8daada8675484adf62a023b9720adf3c52fe2b91567a067879bc4549af3c"
+        },
+        "opus": {
+          "path": "audio/02-mint-circuit.opus",
+          "sha256": "446c2d1f2d82b9ab6ee9644a54eb8aefce70f9aa1e1250090925adb58f001c61"
+        }
+      }
+    },
+    {
+      "id": "03-velvet-room",
+      "title": "丝绒会客室",
+      "subtitle": "Velvet Room",
+      "bpm": 76,
+      "key": "B minor / D major",
+      "style": "休闲爵士 / brushed lounge",
+      "description": "柔和毡音钢琴、模拟拨弦低音、刷鼓和颤音琴；温暖轻摆，适合长时间休闲对局。",
+      "seed": 160803,
+      "palette": "#d5b897",
+      "frames": 4850526,
+      "durationSeconds": 101.052625,
+      "loopStartFrame": 0,
+      "loopEndFrameExclusive": 4850526,
+      "integratedLUFS": -20.0,
+      "truePeakDBTP": -6.17,
+      "rendererSHA256": "34323a64d3fd0008d79f7bcd155f1605e5ec644ffebb53631ff945107d5b954c",
+      "scoreSHA256": "d43ed25bf6d81c4af98e582edbe7af9a217605cb1c16d9d8a122d8ce5a134c09",
+      "files": {
+        "lossless": {
+          "path": "masters/03-velvet-room.flac",
+          "sha256": "396d6d33bdfbe4a3c94a75cd41d6401217d4434dbfcd9975c16e98868f585e44"
+        },
+        "preview": {
+          "path": "audio/03-velvet-room.m4a",
+          "sha256": "40c6f7b8d39e83d29e3a1c08f8ceb08e645cad13007b3dd3fe3ad4b0e7098669"
+        },
+        "opus": {
+          "path": "audio/03-velvet-room.opus",
+          "sha256": "28bab5c557eff6b128b41e31abe4a73e1bfc9634d65d118efa26698ff9b26b9a"
+        }
+      }
+    },
+    {
+      "id": "04-quiet-equity",
+      "title": "静夜推演",
+      "subtitle": "Quiet Equity",
+      "bpm": 68,
+      "key": "D major / B minor",
+      "style": "氛围钢琴 / ambient focus",
+      "description": "稀疏钢琴、缓慢铺底、低频呼吸和远处泛音；鼓点最少，适合思考与复盘。",
+      "seed": 160804,
+      "palette": "#b4a2ff",
+      "frames": 5421176,
+      "durationSeconds": 112.941167,
+      "loopStartFrame": 0,
+      "loopEndFrameExclusive": 5421176,
+      "integratedLUFS": -20.0,
+      "truePeakDBTP": -6.77,
+      "rendererSHA256": "34323a64d3fd0008d79f7bcd155f1605e5ec644ffebb53631ff945107d5b954c",
+      "scoreSHA256": "eb68ad0e48cb70edc1c264f3a066bf079566226dc07d244d233a238ad14a59ca",
+      "files": {
+        "lossless": {
+          "path": "masters/04-quiet-equity.flac",
+          "sha256": "7e2b78f850eb90bd03d21a4da03d1a5caee6483969fc0dd5fd2420c70cb3c33d"
+        },
+        "preview": {
+          "path": "audio/04-quiet-equity.m4a",
+          "sha256": "af98281c9728e96727c2cd537dc73bcd5f1352b89bb2050dce193cb3018b40f0"
+        },
+        "opus": {
+          "path": "audio/04-quiet-equity.opus",
+          "sha256": "609302ebaba4f1be7debdc7beb149e87b3e19103c616c5497f4b592a654e0620"
+        }
+      }
+    }
+  ],
+  "rendererSHA256": "34323a64d3fd0008d79f7bcd155f1605e5ec644ffebb53631ff945107d5b954c"
+}

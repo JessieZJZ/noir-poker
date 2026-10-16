@@ -1,0 +1,115 @@
+{
+  "passed": true,
+  "scope": "Offline PCM, hashes, periods, codec decodability, static loudness and loop discontinuity checks. Not a subjective listening assessment or native/WeChat runtime test.",
+  "tracks": [
+    {
+      "id": "01-midnight-felt",
+      "frames": 4495610,
+      "durationSeconds": 93.658542,
+      "integratedLUFS": -20.0,
+      "truePeakDBTP": -7.75,
+      "dcOffset": [
+        4.486646124068905e-11,
+        1.2367445956229517e-10
+      ],
+      "seamStep": 0.0010983943939208984,
+      "seamStepDBFS": -59.18,
+      "internalStepP99": 0.010991651564836502,
+      "seamLimit": 0.027479128912091255,
+      "nonSilentAtBothEnds": true,
+      "flacEqualsLocalWav": true,
+      "formats": {
+        "preview": {
+          "decodedFrames": 4495610,
+          "extraFramesVersusMaster": 0
+        },
+        "opus": {
+          "decodedFrames": 4495610,
+          "extraFramesVersusMaster": 0
+        }
+      }
+    },
+    {
+      "id": "02-mint-circuit",
+      "frames": 3921702,
+      "durationSeconds": 81.702125,
+      "integratedLUFS": -20.0,
+      "truePeakDBTP": -6.68,
+      "dcOffset": [
+        2.826952283374595e-10,
+        3.860461603166776e-11
+      ],
+      "seamStep": 0.00268709659576416,
+      "seamStepDBFS": -51.41,
+      "internalStepP99": 0.011354564689099789,
+      "seamLimit": 0.02838641172274947,
+      "nonSilentAtBothEnds": true,
+      "flacEqualsLocalWav": true,
+      "formats": {
+        "preview": {
+          "decodedFrames": 3921702,
+          "extraFramesVersusMaster": 0
+        },
+        "opus": {
+          "decodedFrames": 3921702,
+          "extraFramesVersusMaster": 0
+        }
+      }
+    },
+    {
+      "id": "03-velvet-room",
+      "frames": 4850526,
+      "durationSeconds": 101.052625,
+      "integratedLUFS": -20.0,
+      "truePeakDBTP": -6.17,
+      "dcOffset": [
+        2.234010199053671e-11,
+        2.8533397866681298e-11
+      ],
+      "seamStep": 0.0011255741119384766,
+      "seamStepDBFS": -58.97,
+      "internalStepP99": 0.021015167236328125,
+      "seamLimit": 0.05253791809082031,
+      "nonSilentAtBothEnds": true,
+      "flacEqualsLocalWav": true,
+      "formats": {
+        "preview": {
+          "decodedFrames": 4850526,
+          "extraFramesVersusMaster": 0
+        },
+        "opus": {
+          "decodedFrames": 4850526,
+          "extraFramesVersusMaster": 0
+        }
+      }
+    },
+    {
+      "id": "04-quiet-equity",
+      "frames": 5421176,
+      "durationSeconds": 112.941167,
+      "integratedLUFS": -20.0,
+      "truePeakDBTP": -6.77,
+      "dcOffset": [
+        -1.5656568055910647e-11,
+        1.0537398731358394e-10
+      ],
+      "seamStep": 0.0005381107330322266,
+      "seamStepDBFS": -65.38,
+      "internalStepP99": 0.01324605941772461,
+      "seamLimit": 0.03311514854431152,
+      "nonSilentAtBothEnds": true,
+      "flacEqualsLocalWav": true,
+      "formats": {
+        "preview": {
+          "decodedFrames": 5421176,
+          "extraFramesVersusMaster": 0
+        },
+        "opus": {
+          "decodedFrames": 5421176,
+          "extraFramesVersusMaster": 0
+        }
+      }
+    }
+  ],
+  "failures": []
+}
