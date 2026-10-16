@@ -59,6 +59,10 @@ export function createOpponentReview({ card, onSelection = () => {} }) {
       panel,
       `<div class="review-opponent-heading"><label>查看对手<select id="review-opponent-filter"><option value="all">全部对手</option>${players.map(([id, player]) => `<option value="${id}">${esc(player.name)}${player.named && player.profile ? `，${esc(reviewPlayerLabel(player.profile))}` : ''}</option>`).join('')}</select></label></div><div class="review-layout"><nav aria-label="对手决策时间线"><div class="review-timeline-title"><strong>对手的实际行动</strong><span>${visible.length} 次</span></div><div class="review-timeline">${visible.map((r, i) => `<button class="review-step ${i === selected ? 'selected' : ''}" data-opponent-index="${i}" aria-current="${i === selected ? 'step' : 'false'}"><span class="review-step-number">${r.sequence}</span><span><small>${esc(r.name)}，${STREET_NAMES[r.trace.view.street]}</small><strong>${actionLabel(step(r))}</strong></span><span class="review-status pending">${esc(reviewPlayerLabel(r.trace.profileName))}</span></button>`).join('')}</div></nav><div id="review-opponent-detail"></div></div>`,
     );
+    panel
+      .querySelector('.review-layout')
+      .classList.toggle('has-horizontal-review', visible.length > 2);
+    panel.querySelector('.review-timeline').classList.toggle('has-overflow', visible.length > 2);
     renderSelection();
     const select = panel.querySelector('select');
     select.value = filter;

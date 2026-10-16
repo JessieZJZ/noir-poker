@@ -1919,7 +1919,7 @@ test('review timelines hint at horizontal scrolling and keep late selections in 
     await expect(page.locator('#review-dialog[data-analysis-status="done"]')).toBeVisible({
       timeout: 30000,
     });
-    if (width < 700) {
+    {
       const heroTimeline = page.locator('#review-timeline');
       const heroIndex = (await heroTimeline.locator('.review-step').count()) - 1;
       await heroTimeline.evaluate((timeline) => {
@@ -1939,22 +1939,21 @@ test('review timelines hint at horizontal scrolling and keep late selections in 
     }
     await page.locator('#review-opponents-tab').click();
     const timeline = page.locator('#review-opponents .review-timeline');
-    if (width < 700) {
+    {
       const preview = await timeline.evaluate((el) => {
-        const second = el.children[1].getBoundingClientRect();
-        return (el.getBoundingClientRect().right - second.left - 2) / second.width;
+        const third = el.children[2].getBoundingClientRect();
+        return (el.getBoundingClientRect().right - third.left - 2) / third.width;
       });
       expect(preview).toBeGreaterThan(0.45);
       expect(preview).toBeLessThan(0.55);
     }
-    await timeline.evaluate((el, mobile) => {
+    await timeline.evaluate((el) => {
       const item = el.children[5].getBoundingClientRect(),
         bounds = el.getBoundingClientRect();
-      if (mobile) el.scrollLeft += item.left - bounds.left - 2;
-      else el.scrollTop += item.top - bounds.top - 2;
-    }, width < 700);
+      el.scrollLeft += item.left - bounds.left - 2;
+    });
     const before = await timeline.evaluate((el) => ({ left: el.scrollLeft, top: el.scrollTop }));
-    if (width < 700) expect(before.left).toBeGreaterThan(0);
+    expect(before.left).toBeGreaterThan(0);
     const lateCard = timeline.locator('[data-opponent-index="5"]');
     const heading = await lateCard.locator('small').innerText();
     await lateCard.click();
@@ -1973,7 +1972,7 @@ test('review timelines hint at horizontal scrolling and keep late selections in 
       'data-opponent-index',
       '4',
     );
-    if (width < 700) expect(await timeline.evaluate((el) => el.scrollLeft)).toBeGreaterThan(0);
+    expect(await timeline.evaluate((el) => el.scrollLeft)).toBeGreaterThan(0);
     await page.locator('#review-opponent-filter').selectOption('1');
     await expect(timeline.locator('.review-step').first()).toHaveAttribute('aria-current', 'step');
     await expect(timeline).toContainText('Mia');

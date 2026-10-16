@@ -11,7 +11,7 @@
     "build": "vite build",
     "postbuild": "npm run wechat:build",
     "preview": "vite preview --host 127.0.0.1",
-    "test": "node --test tests/unit/*.test.js",
+    "test": "node --test --test-concurrency=4 tests/unit/*.test.js",
     "test:e2e": "playwright test",
     "format": "prettier --write src tests docs scripts mobile miniprogram .github index.html public/app-privacy.html README.md AGENTS.md capacitor.config.json vite.config.js playwright.config.js package.json",
     "format:check": "prettier --check src tests docs scripts mobile miniprogram .github index.html public/app-privacy.html README.md AGENTS.md capacitor.config.json vite.config.js playwright.config.js package.json",

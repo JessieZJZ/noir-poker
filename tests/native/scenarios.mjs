@@ -1567,6 +1567,77 @@ export async function nativeScenarios(app) {
       ]);
     return { coverage, pot: settled.pot, settlementBudget, layout, crownInspection };
   });
+  await check('review-overflow-and-activity-size', async () => {
+    if ((await app.state()).phase === 'done') await app.click('#next-button');
+    await waitForNativeHeroTurn(app);
+    await app.click('#fold-button');
+    if (await app.visible('#continue-deal-button')) {
+      try {
+        await app.click('#continue-deal-button');
+      } catch (error) {
+        if ((await app.state()).phase !== 'done') throw error;
+      }
+    }
+    await app.waitFor(
+      async () => (await app.state()).phase === 'done',
+      60000,
+      'A real folded hand must settle',
+    );
+    await app.click('#review-hand-button');
+    await waitForNativeReview(app);
+    const hero = await app.evaluate(() => {
+      const track = document.querySelector('#review-timeline');
+      return { count: track.children.length, hint: track.classList.contains('has-overflow') };
+    });
+    assert.equal(hero.hint, hero.count > 2);
+    await app.click('#review-activity summary');
+    const fontSize = await app.evaluate(
+      () => getComputedStyle(document.querySelector('#review-activity-list li')).fontSize,
+    );
+    assert.equal(fontSize, '13px');
+    await app.screenshot('review-activity-13px');
+    await app.click('#review-opponents-tab');
+    const overflow = await app.evaluate(() => {
+      const track = document.querySelector('#review-opponents .review-timeline'),
+        third = track.children[2]?.getBoundingClientRect(),
+        box = track.getBoundingClientRect();
+      return {
+        count: track.children.length,
+        hint: track.classList.contains('has-overflow'),
+        fraction: third
+          ? (box.right - parseFloat(getComputedStyle(track).paddingRight) - third.left) /
+            third.width
+          : null,
+        scrollable: track.scrollWidth > track.clientWidth,
+      };
+    });
+    assert.ok(overflow.count > 2, 'Recorded opponents supply at least three real decisions');
+    assert.equal(overflow.hint, true);
+    assert.ok(overflow.fraction > 0.45 && overflow.fraction < 0.55);
+    assert.equal(overflow.scrollable, true);
+    await app.screenshot('review-two-and-half-cards');
+    await app.evaluate(() => {
+      const track = document.querySelector('#review-opponents .review-timeline');
+      track.scrollLeft = track.scrollWidth;
+    });
+    const last = overflow.count - 1;
+    await app.click(`[data-opponent-index="${last}"]`);
+    const selected = await app.evaluate(() => ({
+      index: document.querySelector('#review-opponents [aria-current="step"]').dataset
+        .opponentIndex,
+      scroll: document.querySelector('#review-opponents .review-timeline').scrollLeft,
+    }));
+    assert.equal(selected.index, String(last));
+    assert.ok(selected.scroll > 0);
+    await app.click('#review-dialog .icon-button.close-dialog');
+    return {
+      hero,
+      overflow,
+      fontSize,
+      selected,
+      scope: 'Installed production UI and a real recorded hand; no injected deal or review fixture',
+    };
+  });
   await check('settlement-decision-review', async () => {
     await app.click('#review-hand-button');
     const review = await waitForNativeReview(app);

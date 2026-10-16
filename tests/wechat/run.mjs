@@ -973,7 +973,21 @@ try {
   await capture('review', ['.review-sheet', '.review-tabs', '.review-timeline', '.review-scene']);
   assert.equal(await page.$('.review-summary'), null);
   const stepSize = await (await page.$('.review-step')).size();
-  assert.ok(Math.abs(stepSize.width - 160) <= 1, 'Review steps retain the Web phone width');
+  const heroStepCount = (await page.data()).reviewSteps.length;
+  if (heroStepCount > 2) {
+    const track = await page.$('.review-timeline'),
+      third = (await page.$$('.review-step'))[2];
+    const visible =
+      (await track.offset()).left + (await track.size()).width - 2 - (await third.offset()).left;
+    assert.ok(
+      Math.abs(visible / stepSize.width - 0.5) < 0.05,
+      'Third review card hints at horizontal scrolling',
+    );
+  } else
+    assert.ok(
+      Math.abs(stepSize.width - 160) <= 1,
+      'One or two hero steps retain their previous width',
+    );
   await (await page.$('[data-value="opponent"]')).tap();
   await capture('opponent-review', [
     '.review-sheet',

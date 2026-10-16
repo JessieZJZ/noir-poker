@@ -430,6 +430,7 @@
 }
 .review-activity li {
   padding: 10px 12px;
+  font-size: 13px;
   line-height: 1.65;
   border-radius: 8px;
 }
@@ -931,4 +932,35 @@
   line-height: 16px;
   vertical-align: top;
   white-space: nowrap;
+}
+
+/* More than two decisions show two full cards and half of the next card. */
+.review-layout.has-horizontal-review {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 18px;
+}
+.review-layout.has-horizontal-review > nav {
+  min-width: 0;
+}
+.review-timeline.has-overflow {
+  flex-direction: row;
+  max-height: none;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-bottom: 8px;
+}
+.review-timeline.has-overflow > .review-step,
+#review-opponents .review-timeline.has-overflow > .review-step {
+  flex: 0 0 calc((100% - 16px) / 2.5);
+  min-width: 0;
+  max-width: none;
+  grid-template-columns: 24px minmax(0, 1fr);
+}
+.review-timeline.has-overflow > .review-step > span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.review-timeline.has-overflow .review-status {
+  max-width: 100%;
+  white-space: normal;
 }

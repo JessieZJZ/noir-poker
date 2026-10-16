@@ -865,7 +865,7 @@
       >
       <scroll-view
         scroll-x
-        class="review-timeline {{reviewPerspective === 'opponent' ? 'opponent' : ''}}"
+        class="review-timeline {{reviewPerspective === 'opponent' ? 'opponent' : ''}} {{reviewSteps.length > 2 ? 'has-overflow' : ''}}"
         ><view class="review-timeline-inner"
           ><button
             hover-class="none"

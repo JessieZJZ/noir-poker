@@ -6,6 +6,8 @@
 
 各端实测范围与限制见[行动提醒验证记录](docs/turn-attention-validation.md)。
 
+复盘决策超过两张时，时间线显示两张完整卡片和第三张的一半，提示横向滚动；对局动态采用更小字号。各端行为及专项验证入口见[复盘说明](docs/review.md)。
+
 四版原创循环背景音乐候选、试听页、无损母带与来源记录见[音乐工作室](audio-studio/noir-background-music/README.md)。游戏默认循环播放「夜色牌桌」；设置中的“音效与音乐”统一控制背景音乐和操作音效，“振动”独立控制行动提醒，两项均在新设备默认开启并保存选择。旧版关闭声音的选择同时保留为静音和关闭振动；之后两个开关各自保存。详见[背景音乐与反馈](docs/background-music.md)。
 
 工程目录：`/Users/zjz/code/noir-poker`。此目录是后续迭代的主项目，保留原项目的 Git 历史和 Sites 关联。原 Documents 目录中的项目保留为迁移前快照。
@@ -30,6 +32,8 @@ npm run format:check  # 检查格式
 npm run build         # 输出生产文件到 dist/
 npm run preview       # 本地检查生产构建，先停止同端口开发服务
 ```
+
+单元回归最多并行执行 4 个文件，避免与本机浏览器、模拟器同时运行时争抢资源；所有断言和用例保留。
 
 首次运行浏览器测试若提示缺少浏览器，执行 `npx playwright install chromium`。测试会自动在 **4175** 端口启动自己的服务，不占用日常开发的 4173，也不复用其他检出的服务。并行 worktree 可用 `NOIR_E2E_PORT=4189 npm run test:e2e` 指定独立端口；端口已占用时直接失败。
 

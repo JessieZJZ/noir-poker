@@ -137,6 +137,8 @@ export function createReviewController({ card }) {
         })
         .join(''),
     );
+    timeline.classList.toggle('has-overflow', steps.length > 2);
+    timeline.closest('.review-layout').classList.toggle('has-horizontal-review', steps.length > 2);
     timelineKey = last.key;
     timeline.scrollTo({ left: scrollLeft, top: scrollTop });
     if (focusedIndex !== null)

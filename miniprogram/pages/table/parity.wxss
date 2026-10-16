@@ -1123,6 +1123,8 @@
 }
 .review-timeline-inner {
   display: flex;
+  box-sizing: border-box;
+  width: 100%;
   gap: 8px;
   padding: 2px 2px 8px;
 }
@@ -1168,6 +1170,14 @@
   width: calc((100% - 8px) / 1.5);
   min-width: 0;
   max-width: none;
+}
+.review-timeline.has-overflow .review-step {
+  flex: 0 0 calc((100% - 16px) / 2.5);
+  width: calc((100% - 16px) / 2.5) !important;
+  min-width: 0;
+  max-width: none;
+  grid-template-columns: 24px minmax(0, 1fr);
+  overflow-wrap: anywhere;
 }
 .review-step-number {
   margin-top: 0;
@@ -1692,6 +1702,7 @@
 }
 .review-activity-event {
   padding: 10px 12px;
+  font-size: 13px;
   line-height: 1.65;
   border-radius: 8px;
 }
