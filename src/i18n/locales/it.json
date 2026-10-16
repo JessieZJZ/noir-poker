@@ -2008,7 +2008,7 @@
   "{0}开池到 {1}，可能拿着对子、强 A 或同花高张；后位开池还可能带入同花连张，前位通常会更谨慎。": "{0} ha aperto a {1}, forse con una coppia, un asso forte o broadway suited. In posizione finale può includere connettori suited; le prime posizioni di solito sono più prudenti.",
   "{0}本轮已过牌；{1}可以直接过牌，{2}。": "{0} ha già fatto check in questo giro; {1} può fare check, {2}.",
   "{0}跟住了这笔加注，小中对子、同花高张和同花连张都值得考虑；平跟也可能藏着强牌。": "{0} ha chiamato questo rilancio. Considera coppie piccole e medie, broadway suited e connettori suited; un semplice call può anche nascondere una mano forte.",
-  "{0}手里有一张 A，对手能拿到 AA、AK、AQ、AJ 的组合会少一些，但这些强牌仍然可能出现。": "{0} ha un asso, riducendo le combinazioni avversarie di AA, AK, AQ e AJ, senza escluderle.",
+  "{0}手里有一张 A，对手能拿到 AA、AK、AQ、AJ 的组合会少一些，但这些强牌仍然可能出现。": "{0}: con un asso in mano, le combinazioni avversarie di AA, AK, AQ e AJ si riducono, ma restano possibili.",
   "你拿 {0} 直接弃牌，但当时可以直接过牌；过牌成本同样是 0，还能保留{1}的获池机会。": "Hai passato {0}, ma potevi fare check. Costava sempre 0 e manteneva la possibilità di vincere il piatto con {1}.",
   "前面还没有加注，后面的人既可能拿到大对子或强 A，也可能用小对子、同花高张或同花连张入池；越靠后，能参与的牌通常越多。": "Non ci sono ancora rilanci. Dietro possono esserci coppie alte e assi forti, ma anche coppie piccole, broadway suited e connettori suited. Le posizioni finali giocano di solito più mani.",
   "可以直接过牌，不必再投入筹码": "Puoi fare check senza aggiungere chip",

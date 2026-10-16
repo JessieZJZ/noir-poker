@@ -2008,7 +2008,7 @@
   "{0}开池到 {1}，可能拿着对子、强 A 或同花高张；后位开池还可能带入同花连张，前位通常会更谨慎。": "{0} abrió a {1}, posiblemente con una pareja, un as fuerte o broadways del mismo palo. En posiciones tardías también puede abrir conectores del mismo palo; en primeras posiciones suele ser más prudente.",
   "{0}本轮已过牌；{1}可以直接过牌，{2}。": "{0} ya pasó esta ronda; {1} puede pasar también, {2}.",
   "{0}跟住了这笔加注，小中对子、同花高张和同花连张都值得考虑；平跟也可能藏着强牌。": "{0} pagó esta subida. Considera parejas pequeñas y medias, broadways y conectores del mismo palo; un simple call también puede ocultar una mano fuerte.",
-  "{0}手里有一张 A，对手能拿到 AA、AK、AQ、AJ 的组合会少一些，但这些强牌仍然可能出现。": "{0} tiene un as, lo que reduce las combinaciones de AA, AK, AQ y AJ de los rivales, aunque siguen siendo posibles.",
+  "{0}手里有一张 A，对手能拿到 AA、AK、AQ、AJ 的组合会少一些，但这些强牌仍然可能出现。": "{0}: tener un as reduce las combinaciones de AA, AK, AQ y AJ de los rivales, aunque siguen siendo posibles.",
   "你拿 {0} 直接弃牌，但当时可以直接过牌；过牌成本同样是 0，还能保留{1}的获池机会。": "Tiraste {0}, pero podías pasar. También costaba 0 y conservaba la posibilidad de ganar el bote con {1}.",
   "前面还没有加注，后面的人既可能拿到大对子或强 A，也可能用小对子、同花高张或同花连张入池；越靠后，能参与的牌通常越多。": "Aún no hay subidas. Detrás puede haber parejas grandes o ases fuertes, pero también entrarán parejas pequeñas, broadways o conectores del mismo palo. Las posiciones tardías suelen jugar más manos.",
   "可以直接过牌，不必再投入筹码": "Puedes pasar sin poner más fichas",

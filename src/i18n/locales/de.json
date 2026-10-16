@@ -2011,7 +2011,7 @@
   "{0}开池到 {1}，可能拿着对子、强 A 或同花高张；后位开池还可能带入同花连张，前位通常会更谨慎。": "{0} eröffnet auf {1}, möglicherweise mit einem Paar, einem starken Ass oder suited Broadways. In später Position sind auch suited Connectors möglich; frühe Positionen spielen meist vorsichtiger.",
   "{0}本轮已过牌；{1}可以直接过牌，{2}。": "{0} hat in dieser Runde bereits gecheckt; {1} kann ebenfalls checken, {2}.",
   "{0}跟住了这笔加注，小中对子、同花高张和同花连张都值得考虑；平跟也可能藏着强牌。": "{0} hat diesen Raise gecallt. Kleine und mittlere Paare, suited Broadways und suited Connectors kommen infrage; ein Call kann auch eine starke Hand verbergen.",
-  "{0}手里有一张 A，对手能拿到 AA、AK、AQ、AJ 的组合会少一些，但这些强牌仍然可能出现。": "{0} hält ein Ass. Dadurch bleiben den Gegnern weniger Kombinationen von AA, AK, AQ und AJ, möglich sind sie dennoch.",
+  "{0}手里有一张 A，对手能拿到 AA、AK、AQ、AJ 的组合会少一些，但这些强牌仍然可能出现。": "{0}: Mit einem Ass in der Hand bleiben den Gegnern weniger Kombinationen von AA, AK, AQ und AJ. Möglich sind sie dennoch.",
   "你拿 {0} 直接弃牌，但当时可以直接过牌；过牌成本同样是 0，还能保留{1}的获池机会。": "Du hast {0} gefoldet, obwohl Check möglich war. Auch das hätte 0 gekostet und die Chance erhalten, mit {1} den Pot zu gewinnen.",
   "前面还没有加注，后面的人既可能拿到大对子或强 A，也可能用小对子、同花高张或同花连张入池；越靠后，能参与的牌通常越多。": "Noch hat niemand erhöht. Hinter dir sind große Paare oder starke Asse möglich, aber auch kleine Paare, suited Broadways und suited Connectors. Späte Positionen spielen gewöhnlich mehr Hände.",
   "可以直接过牌，不必再投入筹码": "Du kannst ohne weitere Chips checken",

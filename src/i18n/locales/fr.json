@@ -2008,7 +2008,7 @@
   "{0}开池到 {1}，可能拿着对子、强 A 或同花高张；后位开池还可能带入同花连张，前位通常会更谨慎。": "{0} a ouvert à {1}, avec peut-être une paire, un as fort ou des broadways assortis. En position tardive, des connecteurs assortis sont aussi possibles ; les premières positions jouent généralement plus prudemment.",
   "{0}本轮已过牌；{1}可以直接过牌，{2}。": "{0} a déjà checké ce tour ; {1} peut aussi checker, {2}.",
   "{0}跟住了这笔加注，小中对子、同花高张和同花连张都值得考虑；平跟也可能藏着强牌。": "{0} a payé cette relance. Pensez aux petites et moyennes paires, aux broadways et aux connecteurs assortis ; un simple call peut aussi cacher une grosse main.",
-  "{0}手里有一张 A，对手能拿到 AA、AK、AQ、AJ 的组合会少一些，但这些强牌仍然可能出现。": "{0} possède un as, ce qui réduit les combinaisons de AA, AK, AQ et AJ adverses, sans les éliminer.",
+  "{0}手里有一张 A，对手能拿到 AA、AK、AQ、AJ 的组合会少一些，但这些强牌仍然可能出现。": "{0} : avec un as en main, les combinaisons adverses de AA, AK, AQ et AJ sont moins nombreuses, mais restent possibles.",
   "你拿 {0} 直接弃牌，但当时可以直接过牌；过牌成本同样是 0，还能保留{1}的获池机会。": "Vous avez couché {0}, mais vous pouviez checker. Cela coûtait aussi 0 et conservait la possibilité de gagner le pot avec {1}.",
   "前面还没有加注，后面的人既可能拿到大对子或强 A，也可能用小对子、同花高张或同花连张入池；越靠后，能参与的牌通常越多。": "Personne n’a encore relancé. Derrière, il peut y avoir de grosses paires ou des as forts, mais aussi des petites paires, des broadways ou des connecteurs assortis. Les positions tardives jouent généralement plus de mains.",
   "可以直接过牌，不必再投入筹码": "Vous pouvez checker sans ajouter de jetons",

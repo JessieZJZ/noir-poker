@@ -2012,7 +2012,7 @@
   "{0}开池到 {1}，可能拿着对子、强 A 或同花高张；后位开池还可能带入同花连张，前位通常会更谨慎。": "{0} opened to {1}, possibly with a pair, a strong ace or suited broadways. Late-position opens may include suited connectors; early positions usually play more cautiously.",
   "{0}本轮已过牌；{1}可以直接过牌，{2}。": "{0} already checked this round; {1} can check too, {2}.",
   "{0}跟住了这笔加注，小中对子、同花高张和同花连张都值得考虑；平跟也可能藏着强牌。": "{0} called this raise. Small and medium pairs, suited broadways and suited connectors are worth considering; a flat call can also conceal a strong hand.",
-  "{0}手里有一张 A，对手能拿到 AA、AK、AQ、AJ 的组合会少一些，但这些强牌仍然可能出现。": "{0} holds an ace, leaving opponents fewer combinations of AA, AK, AQ and AJ, though those strong hands are still possible.",
+  "{0}手里有一张 A，对手能拿到 AA、AK、AQ、AJ 的组合会少一些，但这些强牌仍然可能出现。": "{0}: holding an ace leaves opponents fewer combinations of AA, AK, AQ and AJ, though those strong hands are still possible.",
   "你拿 {0} 直接弃牌，但当时可以直接过牌；过牌成本同样是 0，还能保留{1}的获池机会。": "You folded {0}, but checking was available. It also cost 0 and would have kept the chance to win with {1}.",
   "前面还没有加注，后面的人既可能拿到大对子或强 A，也可能用小对子、同花高张或同花连张入池；越靠后，能参与的牌通常越多。": "No one has raised yet. Players behind may have big pairs or strong aces, but can also enter with small pairs, suited broadways or suited connectors. Later positions usually play more hands.",
   "可以直接过牌，不必再投入筹码": "You can check without putting in more chips",
