@@ -58,7 +58,7 @@ const html = `<!doctype html>
 @font-face{font-family:'Noto Sans KR';src:url('./fonts/noto-sans-kr.woff2') format('woff2');font-style:normal;font-weight:100 900;font-display:swap}
 body{margin:0;background:#0b1017;color:#edf3f6;font:16px/1.8 Manrope,'Noto Sans SC',sans-serif}
 html[lang=ko] body{font-family:Manrope,'Noto Sans KR','Noto Sans SC',sans-serif}
-main{max-width:760px;margin:auto;padding:32px 24px}h1{font-size:28px}h2{font-size:20px;margin-top:28px}a{color:#6ee7c5}select{max-width:100%;padding:8px;font:inherit}[hidden]{display:none!important}</style>
+main{max-width:760px;margin:auto;padding:32px 24px}h1{font-size:28px;margin-block:0.67em}h2{font-size:20px;margin-top:28px}a{color:#6ee7c5}select{max-width:100%;padding:8px;font:inherit}[hidden]{display:none!important}</style>
 </head><body><main><label for="policy-language">Language</label> <select id="policy-language" aria-label="Language">${SUPPORTED_LOCALES.map((l, i) => `<option value="${l}">${labels[i]}</option>`).join('')}</select>${sections}</main>
 <script>
 const select=document.querySelector('#policy-language');

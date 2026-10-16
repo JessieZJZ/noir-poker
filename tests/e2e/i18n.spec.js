@@ -134,10 +134,17 @@ for (const locale of locales) {
     await expect(page.locator('html')).toHaveAttribute('lang', locale);
     await expect(page.locator('article:visible')).toHaveCount(1);
     await expect(page.locator('article:visible')).toContainText('958182284@qq.com');
+    // A lower-priority layer models the old WebView nested-heading defaults.
+    // Authored margins must keep the page stable across browser generations.
+    await page.addStyleTag({
+      content: '@layer legacyHeadingDefaults { article h1 { margin-block: 0.83em; } }',
+    });
     const policyFonts = await page.evaluate(async () => {
       await document.fonts.ready;
+      const heading = getComputedStyle(document.querySelector('article:not([hidden]) h1'));
       return {
         family: getComputedStyle(document.body).fontFamily,
+        headingMargins: [heading.marginBlockStart, heading.marginBlockEnd],
         loaded: [...document.fonts]
           .filter((face) => face.status === 'loaded')
           .map((face) => face.family.replace(/["']/g, '')),
@@ -145,6 +152,7 @@ for (const locale of locales) {
     });
     expect(policyFonts.family).toMatch(/^Manrope,/);
     expect(policyFonts.loaded).toContain('Manrope');
+    expect(policyFonts.headingMargins).toEqual(['18.76px', '18.76px']);
     if (locale === 'ko') expect(policyFonts.loaded).toContain('Noto Sans KR');
   });
 }

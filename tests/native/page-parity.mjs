@@ -149,7 +149,11 @@ export function collectNativePageSnapshot(selectors) {
     viewport: { width: innerWidth, height: innerHeight - top - bottom },
     insets: { top, bottom },
     scroll: scrollY
-      ? { bottomDistance: document.documentElement.scrollHeight - scrollY - innerHeight }
+      ? {
+          left: scrollX,
+          top: scrollY,
+          bottomDistance: document.documentElement.scrollHeight - scrollY - innerHeight,
+        }
       : null,
     open: [...document.querySelectorAll('dialog[open]')].map((dialog) => dialog.id),
     scrolls: [...document.querySelectorAll('[id], .opponents-body')]
@@ -160,6 +164,18 @@ export function collectNativePageSnapshot(selectors) {
       })),
     boxes,
   };
+}
+
+export function referenceDocumentScroll({ scroll }) {
+  if (!scroll) return { left: 0, top: 0 };
+  const { left, top } = scroll;
+  assert.ok(
+    Number.isFinite(left) && Number.isFinite(top),
+    'Native replay needs the captured document scroll offsets',
+  );
+  // Keep the same document origin. Matching distance from the page bottom
+  // instead lets rounding in distant content move every measured component.
+  return { left, top };
 }
 
 const privacyOptions = [
@@ -313,33 +329,31 @@ export async function compareNativePage({ root, output, evaluate, screenshot }, 
     await page.setContent(
       `<!doctype html><html lang="${snapshot.lang}"><head><base href="http://127.0.0.1:${server.address().port}/">${snapshot.head}</head>${snapshot.body}</html>`,
     );
-    await page.evaluate(async (snapshot) => {
-      document.documentElement.dataset.appReady = 'true';
-      for (const edge of ['top', 'right', 'bottom', 'left'])
-        document.documentElement.style.setProperty('--safe-area-inset-' + edge, '0px');
-      for (const id of snapshot.open) {
-        const dialog = document.getElementById(id);
-        dialog.removeAttribute('open');
-        dialog.showModal();
-      }
-      await document.fonts.ready;
-      await Promise.all(
-        document
-          .getAnimations()
-          .filter((animation) => Number.isFinite(animation.effect.getComputedTiming().endTime))
-          .map((animation) => animation.finished.catch(() => {})),
-      );
-      for (const scroll of snapshot.scrolls)
-        document.querySelector(scroll.selector).scrollTop = scroll.top;
-      window.scrollTo(
-        0,
-        snapshot.scroll
-          ? document.documentElement.scrollHeight - innerHeight - snapshot.scroll.bottomDistance
-          : 0,
-      );
-      document.activeElement?.blur();
-      await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
-    }, snapshot);
+    await page.evaluate(
+      async ({ snapshot, scroll }) => {
+        document.documentElement.dataset.appReady = 'true';
+        for (const edge of ['top', 'right', 'bottom', 'left'])
+          document.documentElement.style.setProperty('--safe-area-inset-' + edge, '0px');
+        for (const id of snapshot.open) {
+          const dialog = document.getElementById(id);
+          dialog.removeAttribute('open');
+          dialog.showModal();
+        }
+        await document.fonts.ready;
+        await Promise.all(
+          document
+            .getAnimations()
+            .filter((animation) => Number.isFinite(animation.effect.getComputedTiming().endTime))
+            .map((animation) => animation.finished.catch(() => {})),
+        );
+        for (const scroll of snapshot.scrolls)
+          document.querySelector(scroll.selector).scrollTop = scroll.top;
+        window.scrollTo(scroll.left, scroll.top);
+        document.activeElement?.blur();
+        await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+      },
+      { snapshot, scroll: referenceDocumentScroll(snapshot) },
+    );
     // Native's inline offset is relative to its scrolled profile grid. Replay
     // the actual Web positioning rule against this renderer's grid and viewport
     // rather than preserving accumulated border rounding in that old offset.
