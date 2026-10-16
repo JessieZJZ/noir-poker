@@ -2,7 +2,15 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { deckOfCards, evaluate, compare } from '../../src/engine/poker.js';
 import { decisionContext } from '../../src/review/context.js';
-import { handMatchups, matchupPresentation, reviewCommentary } from '../../src/review/matchups.js';
+import {
+  handMatchups,
+  matchupPresentation,
+  reviewCommentary,
+  matchupDrawLabel,
+} from '../../src/review/matchups.js';
+import { handFeatures } from '../../src/engine/hand-features.js';
+import { bottomPairReview, topPairCheckReview } from '../fixtures/bottom-pair-review.js';
+import { explainOpponent } from '../../src/review/opponents.js';
 import { valuePlan } from '../../src/review/routes.js';
 import { analyzeDecision } from '../../src/review/analysis.js';
 import { cards } from '../fixtures/deceptive-decisions.js';
@@ -83,6 +91,60 @@ const table = [
   ['shared royal flush only ties', '2c 3d', 'As Ks Qs Js Ts', true],
   ['unmade high cards', '8s 9d', 'Ah Kc 3d 7s 2h', false],
 ];
+
+test('reported A4 bottom pair lists more meaningful stronger hands, including checked top pair, than weaker draws', () => {
+  const s = bottomPairReview(),
+    c = decisionContext(s),
+    m = handMatchups(s, c);
+  assert.equal(m.ahead.length, 1);
+  assert.equal(m.behind.length, 3);
+  assert.ok(
+    m.behind.some(
+      (x) => x.cards.some((card) => card.rank === 11) && x.cards.some((card) => card.rank >= 12),
+    ),
+  );
+  assert.ok(m.behind.some((x) => x.score[0] === 1 && x.score[1] > 11));
+  assert.equal(m.ahead[0].label, '同花听牌 + 两头顺听牌');
+  assert.doesNotMatch(m.ahead[0].label, /高牌/);
+  const changed = structuredClone(s);
+  changed.players[5].hole = cards('2c 3c');
+  changed.winners = [5];
+  changed.futureDeck = cards('Ah Ac');
+  assert.deepEqual(handMatchups(changed, decisionContext(changed)), m);
+});
+
+test('candidate labels retain both parts of open-ended, gutshot and double-gutshot combo draws', () => {
+  for (const [hole, board, expected] of [
+    ['6s 7s', '5d 4s Js', '同花听牌 + 两头顺听牌'],
+    ['6s 8s', '5d 4s Js', '同花听牌 + 卡顺听牌'],
+    ['7s 8s', '5d 4s Js', '同花听牌 + 卡顺听牌'],
+    ['8s Ts', '6s 9s Qh', '同花听牌 + 双卡顺听牌'],
+  ]) {
+    const h = cards(hole),
+      b = cards(board),
+      features = handFeatures(h, b, evaluate([...h, ...b]).score);
+    assert.equal(matchupDrawLabel(h, b, features), expected);
+  }
+});
+
+test('top-pair checks explain foregone value, checking-range protection and wet multiway risk without inventing a trap', () => {
+  const record = topPairCheckReview();
+  const explanation = explainOpponent(record);
+  assert.match(explanation.detail, /顶对 J，A 踢脚/);
+  assert.match(explanation.detail, /较弱的一对或听牌取值/);
+  assert.match(explanation.detail, /没有确认埋牌意图/);
+  assert.match(explanation.detail, /多人底池/);
+  assert.match(explanation.detail, /免费看下一张/);
+  assert.match(explanation.detail, /后位仍可下注/);
+  const last = structuredClone(record);
+  last.trace.view.actionContext.pendingResponseIds = [];
+  assert.match(explainOpponent(last).detail, /不能诱导本轮下注/);
+  const trapped = structuredClone(record);
+  trapped.trace.reason = 'trap';
+  trapped.trace.basis.reason = 'trap';
+  assert.match(explainOpponent(trapped).detail, /这是.*埋牌/);
+  assert.doesNotMatch(explainOpponent(trapped).detail, /没有确认埋牌意图/);
+});
 
 test('across streets, every shown matchup is a legal current-board comparison rather than a hidden hand claim', () => {
   for (const [name, hole, board, nut] of table) {

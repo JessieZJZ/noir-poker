@@ -4,6 +4,7 @@ import { createRequire } from 'node:module';
 import fs from 'node:fs';
 import path from 'node:path';
 import assert from 'node:assert/strict';
+import { bottomPairReview, topPairCheckReview } from '../fixtures/bottom-pair-review.js';
 import { deckOfCards } from '../../src/engine/poker.js';
 import {
   causalReraiseGame,
@@ -268,6 +269,27 @@ try {
     assert.doesNotMatch(step.reason, /一对|非坚果听牌|先前跟注|单看一张高牌/);
     assert.doesNotMatch(step.evidence.join(''), /40(?:\.0)?%/);
   });
+  await fixture('reported-bottom-pair', bottomPairReview(), (step) => {
+    const groups = step.commentary.find((paragraph) => paragraph.matchups).matchups.groups;
+    assert.equal(groups[0].examples.length, 1);
+    assert.equal(groups[1].examples.length, 3);
+    assert.match(groups[0].examples[0].label, /同花听牌.*两头顺听牌/);
+    assert.ok(groups[1].examples.some((example) => /A.*J/.test(example.text)));
+  });
+  await invoke('closeReview');
+  await mini.evaluate((record) => {
+    getCurrentPages().at(-1)._controller.getGame().botDecisions = [record];
+  }, topPairCheckReview());
+  await invoke('openReview');
+  await wait((data) => !data.reviewData.loading);
+  await tap('[data-value="opponent"]');
+  await wait((data) => data.reviewPerspective === 'opponent' && data.selectedReviewStep?.reason);
+  const topPair = (await page.data()).selectedReviewStep;
+  assert.match(topPair.reason, /较弱的一对或听牌取值/);
+  assert.match(topPair.reason, /没有确认埋牌意图/);
+  assert.match(topPair.reason, /免费看下一张/);
+  report.checks.push({ name: 'reported-top-pair-check', selected: topPair });
+  await capture('reported-top-pair-check');
   await invoke('closeReview');
   await mini.evaluate((records) => {
     const game = getCurrentPages().at(-1)._controller.getGame();
@@ -372,7 +394,7 @@ try {
       assert.match(step.reason, /暗三条\s*5/);
       assert.match(step.reason, /全下/);
       assert.match(step.reason, /价值|取值/);
-      assert.match(step.reason, /能赢.*(?:两对|对子)/);
+      assert.match(step.reason, /能赢.*(?:两对|一对|对子)/);
       assert.match(step.reason, /输给.*三条/);
       assert.match(
         (await page.data()).reviewActivity.map((event) => event.text).join(''),

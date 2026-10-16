@@ -1996,5 +1996,12 @@
   "同一难度保留牌手风格差异；进阶不代表每手更松或更激进。": "Cada nivel conserva los estilos de los jugadores; avanzado no significa jugar más suelto o agresivo en cada mano.",
   "情绪只调整当前难度内的入池、进攻与跟注倾向，不增加策略能力；几手后恢复。": "Las emociones cambian tendencias de entrada, agresión y call dentro del nivel elegido, sin desbloquear estrategias; desaparecen tras unas manos.",
   "五张同花色": "Cinco cartas del mismo palo",
-  "五张连通": "Cinco rangos conectados"
+  "五张连通": "Cinco rangos conectados",
+  "{0}的{1}仍可向较弱的一对或听牌取值；过牌暂时少收这部分价值，并把较强牌保留在过牌范围中。": "El {1} de {0} aún puede obtener valor de parejas más débiles o proyectos; pasar renuncia a parte del valor inmediato y conserva manos fuertes en el rango de check.",
+  "后位仍可下注；再遇下注时，应结合价格和范围重新判断。": "Los jugadores por hablar aún pueden apostar; si lo hacen, hay que reevaluar el precio y los rangos.",
+  "多人底池里，一对并不是坚果，应避免让大底池只留下更强的继续范围。": "En un bote multiway, una pareja no es las nuts; evita crear un bote grande en el que solo continúen rangos más fuertes.",
+  "本轮已没有待行动的对手，过牌不能诱导本轮下注，只能等待下一街。": "Ya no queda ningún rival por actuar en esta calle. Pasar no puede inducir una apuesta ahora; hay que esperar a la siguiente calle.",
+  "湿润面暂时少收一街价值，还承担让听牌免费看牌的风险。": "El slow play en una mesa coordinada renuncia a una calle de valor y arriesga dar una carta gratis a los proyectos.",
+  "湿润面过牌的代价，是可能让顺子或同花听牌免费看下一张。": "Pasar en una mesa coordinada puede dar una carta gratis a los proyectos de escalera o color.",
+  "过牌可以用于控池或诱导，但这次记录没有确认埋牌意图。": "Pasar puede controlar el bote o inducir una apuesta, pero este registro no confirma una intención de hacer una trampa."
 }

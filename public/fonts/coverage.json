@@ -1,9 +1,9 @@
 {
   "files": {
-    "manrope.woff2": "66b1d79a3114dd1658bec063cafd01a65589fb90b04911984477ca2bf54e8229",
-    "noto-sans-sc.woff2": "f093865f904c18d05b417ad5bdc9f4b9e22e1523a0b60b3bb823306a94f133c9",
-    "noto-sans-kr.woff2": "ff281f0002ad935aad42d590d5ab9a0a147fad31e3c5ec2e32f20d2138368c06",
-    "barlow-condensed.woff2": "db4dbb94ddaab455343e69a6eaca7c6a20f52edde2a04c49509fbfbd91652fa0"
+    "manrope.woff2": "1c061d7b69682e49054b885e499728266c76f51d2cda5d4219969043a7d10b88",
+    "noto-sans-sc.woff2": "d1ffcd3eba45c45e7e7b2e5df5201881acab4d3f045fa94da22fd36a946284e2",
+    "noto-sans-kr.woff2": "500caf91cc54fa34a7fbcf02294164dab2b00def67c65476c875c2a8dc799340",
+    "barlow-condensed.woff2": "6e80dd74781a8138d74a7c92a84506f0c80a252ee48a79e3de617bdfb321ec41"
   },
   "codepoints": [
     0,
@@ -2835,6 +2835,7 @@
     51216,
     51217,
     51221,
+    51222,
     51228,
     51256,
     51276,

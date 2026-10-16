@@ -1996,5 +1996,12 @@
   "同一难度保留牌手风格差异；进阶不代表每手更松或更激进。": "Les styles restent distincts à chaque niveau ; avancé ne signifie pas plus large ou plus agressif à chaque main.",
   "情绪只调整当前难度内的入池、进攻与跟注倾向，不增加策略能力；几手后恢复。": "Les émotions modifient l’entrée, l’agression et les calls dans le niveau choisi sans débloquer de stratégie ; elles s’estompent après quelques mains.",
   "五张同花色": "Cinq cartes de même couleur",
-  "五张连通": "Cinq rangs connectés"
+  "五张连通": "Cinq rangs connectés",
+  "{0}的{1}仍可向较弱的一对或听牌取值；过牌暂时少收这部分价值，并把较强牌保留在过牌范围中。": "Le {1} de {0} peut encore prendre de la valeur à des paires plus faibles ou à des tirages ; checker renonce à une partie de la valeur immédiate et conserve des mains fortes dans la range de check.",
+  "后位仍可下注；再遇下注时，应结合价格和范围重新判断。": "Les joueurs suivants peuvent encore miser ; il faudra réévaluer le prix et les ranges face à une mise.",
+  "多人底池里，一对并不是坚果，应避免让大底池只留下更强的继续范围。": "Dans un pot multiway, une paire ne constitue pas les nuts ; évitez de créer un gros pot où seules des ranges plus fortes continuent.",
+  "本轮已没有待行动的对手，过牌不能诱导本轮下注，只能等待下一街。": "Il ne reste aucun adversaire à parler sur cette street. Checker ne peut plus provoquer de mise maintenant ; il faut attendre la street suivante.",
+  "湿润面暂时少收一街价值，还承担让听牌免费看牌的风险。": "Le slow play sur un board riche en tirages renonce à une street de valeur et risque de donner une carte gratuite aux tirages.",
+  "湿润面过牌的代价，是可能让顺子或同花听牌免费看下一张。": "Checker un board riche en tirages peut offrir une carte gratuite aux tirages quinte ou couleur.",
+  "过牌可以用于控池或诱导，但这次记录没有确认埋牌意图。": "Un check peut contrôler le pot ou provoquer une mise, mais cet enregistrement ne confirme aucune intention de piéger."
 }

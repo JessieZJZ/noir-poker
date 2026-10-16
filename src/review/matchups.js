@@ -29,6 +29,25 @@ const groupKey = (candidate, street, board) => {
   return `${score[0]}-${pair}-${high}-${low}-${candidate.features.draw ? 'draw' : 'made'}`;
 };
 
+export function matchupDrawLabel(cards, board, features) {
+  const ranks = new Set([...cards, ...board].map((card) => card.rank));
+  if (ranks.has(14)) ranks.add(1);
+  const openEnded =
+    features.straightOuts > 4 &&
+    Array.from({ length: 9 }, (_, i) => i + 2).some(
+      (low) =>
+        [0, 1, 2, 3].every((offset) => ranks.has(low + offset)) &&
+        !ranks.has(low - 1) &&
+        !ranks.has(low + 4),
+    );
+  return drawLabel({
+    flush: features.flushDraw,
+    straight: features.straightOuts > 0,
+    straightType:
+      features.straightOuts > 4 ? (openEnded ? 'open-ended' : 'double-gutshot') : 'gutshot',
+  });
+}
+
 // Only card evaluations are shared. Ranges are rebuilt for every public line.
 // Four boards bound retained memory even when many archived hands are opened.
 const cardCache = reviewCardCache();
@@ -39,7 +58,7 @@ function cachedCards(cards, board) {
   return publicHandData(cards, board, { evaluate, features: botBoardFeatures, cache: cardCache });
 }
 function handSummary(s, c) {
-  if (!s.street) return c.handLabel;
+  if (!s.street) return [c.handLabel];
   const draw = c.draw.outs ? drawLabel(c.draw) : '';
   const pairDraw =
     !draw && c.made.score[0] === 0 && s.street < 3 ? '未成对，可改善为一对；成对也未必领先。' : '';
@@ -49,9 +68,7 @@ function handSummary(s, c) {
     pairDraw,
     `${c.texture.wet ? '湿润面' : '干燥面'}：${c.texture.label}`,
     c.draw.outs ? '改善候选不是保证获胜的补牌。' : '',
-  ]
-    .filter(Boolean)
-    .join('；');
+  ].filter(Boolean);
 }
 
 // Ranking describes possible opponent holdings from the same public range
@@ -101,12 +118,8 @@ export function handMatchups(s, c) {
     }
   if (s.street)
     for (const candidate of candidates) {
-      const draw = candidate.features.flushDraw
-        ? '同花听牌'
-        : candidate.features.straightOuts
-          ? '顺子听牌'
-          : '';
-      if (draw) candidate.label += ' + ' + draw;
+      const draw = matchupDrawLabel(candidate.cards, s.board, candidate.features);
+      if (draw) candidate.label = candidate.score[0] ? candidate.label + ' + ' + draw : draw;
     }
   const ranges = preparePublicRanges(s).sort((a, b) => a.id - b.id);
   // Each live seat contributes a normalized distribution over the legal pool.
@@ -150,19 +163,43 @@ export function handMatchups(s, c) {
       entries.set(group, { ...(preferred ? candidate : previous), group, mass });
     }
   }
-  const select = (direction, limit) =>
-    [...groups[direction].values()]
-      .sort((a, b) =>
-        a.relevance !== b.relevance
-          ? b.relevance - a.relevance
-          : Math.abs(a.mass - b.mass) > 1e-12
-            ? b.mass - a.mass
-            : ordered(a.group, b.group),
-      )
-      .slice(0, limit)
-      .map(({ cards, text, label, score, group }) => ({ cards, text, label, score, group }));
+  const select = (direction, limit) => {
+    const ranked = [...groups[direction].values()].sort((a, b) =>
+      a.relevance !== b.relevance
+        ? b.relevance - a.relevance
+        : Math.abs(a.mass - b.mass) > 1e-12
+          ? b.mass - a.mass
+          : ordered(a.group, b.group),
+    );
+    // Do not spend every slot on adjacent overpairs while omitting top pairs
+    // or sets. Preserve public weights within each distinct hand family.
+    const chosen = [],
+      families = new Set();
+    if (s.street)
+      for (const candidate of ranked) {
+        const family = candidate.group.split('-').slice(0, 2).join('-');
+        if (!candidate.relevance || families.has(family)) continue;
+        families.add(family);
+        chosen.push(candidate);
+        if (chosen.length === limit) break;
+      }
+    for (const candidate of ranked) {
+      if (chosen.length === limit) break;
+      if (!chosen.includes(candidate)) chosen.push(candidate);
+    }
+    return chosen.map(({ cards, text, label, score, group }) => ({
+      cards,
+      text,
+      label,
+      score,
+      group,
+    }));
+  };
   const mass = (direction) =>
-    [...groups[direction].values()].reduce((sum, group) => sum + group.mass, 0);
+    [...groups[direction].values()].reduce(
+      (sum, group) => sum + (!s.street || group.relevance > 0 ? group.mass : 0),
+      0,
+    );
   const ahead = select('ahead', mass('ahead') >= mass('behind') ? 3 : 1),
     behind = select('behind', mass('behind') > mass('ahead') ? 3 : 1),
     tied = select('tied', 1),
@@ -205,12 +242,14 @@ export function handMatchups(s, c) {
           : lose
             ? `当前成牌对比：${c.handLabel}会输给例如 ${lose.text}（${lose.label}）；继续更需要补牌或对手弃牌。`
             : `当前成牌与 ${tie?.text || ''} 相同，主要争取平分底池。`;
+  const summaryParts = handSummary(s, c);
   return {
     ahead,
     behind,
     tied,
     handLabel: c.handLabel,
-    summary: handSummary(s, c),
+    summary: summaryParts.join('；'),
+    summaryParts,
     comparison,
     rangeContext: ranges.map(({ id, position, role, line, preflop, postflop }) => ({
       id,
@@ -239,6 +278,7 @@ export function matchupPresentation(matchups, street) {
   return {
     title: '牌力与牌面',
     handLabel: matchups.summary || matchups.handLabel,
+    summaryParts: matchups.summaryParts || [matchups.handLabel],
     note: structure
       ? '仅比较起手牌结构，不代表获胜概率；之后仍需看公共牌。'
       : '按位置与此前公开行动估计排序，仅是可能牌组，不代表对手实际底牌。',

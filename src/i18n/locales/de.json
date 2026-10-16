@@ -1999,5 +1999,12 @@
   "同一难度保留牌手风格差异；进阶不代表每手更松或更激进。": "Spielstile bleiben je Stufe unterschiedlich; fortgeschritten bedeutet nicht in jeder Hand looser oder aggressiver.",
   "情绪只调整当前难度内的入池、进攻与跟注倾向，不增加策略能力；几手后恢复。": "Emotionen verändern Einstieg, Aggression und Calls innerhalb der gewählten Stufe, schalten keine Strategien frei und klingen nach wenigen Händen ab.",
   "五张同花色": "Fünf Karten einer Farbe",
-  "五张连通": "Fünf verbundene Ränge"
+  "五张连通": "Fünf verbundene Ränge",
+  "{0}的{1}仍可向较弱的一对或听牌取值；过牌暂时少收这部分价值，并把较强牌保留在过牌范围中。": "{0} kann mit {1} noch Value von schwächeren Paaren oder Draws bekommen; ein Check verzichtet auf einen Teil dieses sofortigen Values und hält starke Hände in der Check-Range.",
+  "后位仍可下注；再遇下注时，应结合价格和范围重新判断。": "Die Spieler dahinter können noch setzen; bei einer Bet müssen Preis und Ranges neu bewertet werden.",
+  "多人底池里，一对并不是坚果，应避免让大底池只留下更强的继续范围。": "In einem Multiway-Pot ist ein Paar nicht die Nuts; vermeide einen großen Pot, in dem nur stärkere Ranges weiterspielen.",
+  "本轮已没有待行动的对手，过牌不能诱导本轮下注，只能等待下一街。": "In dieser Setzrunde ist kein Gegner mehr am Zug. Ein Check kann jetzt keine Bet provozieren; es bleibt die nächste Street abzuwarten.",
+  "湿润面暂时少收一街价值，还承担让听牌免费看牌的风险。": "Slowplay auf einem drawlastigen Board verzichtet auf eine Street Value und riskiert eine kostenlose Karte für Draws.",
+  "湿润面过牌的代价，是可能让顺子或同花听牌免费看下一张。": "Ein Check auf einem drawlastigen Board kann Straight- oder Flushdraws eine kostenlose Karte geben.",
+  "过牌可以用于控池或诱导，但这次记录没有确认埋牌意图。": "Ein Check kann den Pot kontrollieren oder eine Bet provozieren; diese Aufzeichnung bestätigt jedoch keine Trap-Absicht."
 }
