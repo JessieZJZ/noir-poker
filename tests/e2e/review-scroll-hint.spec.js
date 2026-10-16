@@ -1,11 +1,11 @@
 import { test, expect } from '@playwright/test';
 
-test('only timelines with more than two cards expose half of the third at every viewport', async ({
-  page,
-}, info) => {
-  await page.goto('/');
-  await page.waitForFunction(() => !!window.qa);
-  for (const width of [320, 390, 768, 1280]) {
+for (const width of [320, 390, 768, 1280]) {
+  test(`${width}px review exposes half of the third card only when there are more than two`, async ({
+    page,
+  }, info) => {
+    await page.goto('/');
+    await page.waitForFunction(() => !!window.qa);
     await page.setViewportSize({ width, height: 900 });
     for (const count of [1, 2, 3, 4]) {
       await page.evaluate((count) => {
@@ -54,5 +54,5 @@ test('only timelines with more than two cards expose half of the third at every 
       await expect(page.locator('#review-activity-list li').first()).toHaveCSS('font-size', '13px');
       await page.locator('#review-dialog .icon-button.close-dialog').click();
     }
-  }
-});
+  });
+}

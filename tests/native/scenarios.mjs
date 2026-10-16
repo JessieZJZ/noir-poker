@@ -1630,6 +1630,8 @@ export async function nativeScenarios(app) {
     assert.equal(selected.index, String(last));
     assert.ok(selected.scroll > 0);
     await app.click('#review-dialog .icon-button.close-dialog');
+    // Leave the real table active for the following lifecycle scenario.
+    await app.click('#next-button');
     return {
       hero,
       overflow,
