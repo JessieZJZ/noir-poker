@@ -5,13 +5,38 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>NOIR Poker Privacy Policy</title>
     <style>
+      @font-face {
+        font-family: Manrope;
+        src: url('./fonts/manrope.woff2') format('woff2');
+        font-style: normal;
+        font-weight: 200 800;
+        font-display: swap;
+      }
+      @font-face {
+        font-family: 'Noto Sans SC';
+        src: url('./fonts/noto-sans-sc.woff2') format('woff2');
+        font-style: normal;
+        font-weight: 100 900;
+        font-display: swap;
+      }
+      @font-face {
+        font-family: 'Noto Sans KR';
+        src: url('./fonts/noto-sans-kr.woff2') format('woff2');
+        font-style: normal;
+        font-weight: 100 900;
+        font-display: swap;
+      }
       body {
         margin: 0;
         background: #0b1017;
         color: #edf3f6;
         font:
-          16px/1.8 system-ui,
+          16px/1.8 Manrope,
+          'Noto Sans SC',
           sans-serif;
+      }
+      html[lang='ko'] body {
+        font-family: Manrope, 'Noto Sans KR', 'Noto Sans SC', sans-serif;
       }
       main {
         max-width: 760px;

@@ -39,6 +39,7 @@ mini.connection.send = async (method, params) => {
     throw error;
   }
 };
+await mini.reLaunch('/pages/table/table');
 const page = await mini.currentPage();
 const stage = (name) => {
   report.stage = name;
@@ -55,17 +56,18 @@ const wait = async (predicate) => {
     await page.waitFor(100);
   }
 };
-const tap = async (selector) => {
-  stage('tap ' + selector);
+const painted = async (selector) => {
   const started = Date.now();
   let element;
-  // setData changes logic-layer data before the view layer paints its nodes.
-  // Wait for the actual control instead of treating data readiness as paint.
   while (!(element = await page.$(selector))) {
     if (Date.now() - started > 45000) throw Error('Control did not paint: ' + selector);
     await page.waitFor(100);
   }
-  await element.tap();
+  return element;
+};
+const tap = async (selector) => {
+  stage('tap ' + selector);
+  await (await painted(selector)).tap();
 };
 const capture = async (name) => {
   await page.waitFor(1450);
@@ -77,6 +79,8 @@ let savedHistory;
 let savedLogs;
 try {
   report.build = JSON.parse(fs.readFileSync(path.join(root, '.artifacts/wechat/build-info.json')));
+  assert.equal((await page.data()).noticeExpanded, true);
+  assert.equal((await page.data()).guideExpanded[1], true);
   await invoke('closeReview');
   // Settings apply to the next hand; never try to replace an active deal.
   while (!(await page.data()).done) {
@@ -139,6 +143,14 @@ try {
   data = await page.data();
   assert.ok(data.reviewSteps.every((step) => data.opponentOptions[1].startsWith(step.name)));
   await capture('opponent');
+  assert.equal(
+    await (await painted('.review-matchups .module-title')).style('color'),
+    'rgb(228, 206, 160)',
+  );
+  assert.equal(
+    await (await painted('.review-analysis-heading')).style('color'),
+    'rgb(228, 206, 160)',
+  );
   await invoke('closeReview');
   savedDecisions = await mini.evaluate(
     () => getCurrentPages().at(-1)._controller.getGame().decisions,
@@ -263,6 +275,24 @@ try {
     background: await focus.style('background-color'),
     border: await focus.style('border-left-color'),
   };
+  const gold = 'rgb(228, 206, 160)';
+  assert.equal(await (await page.$('.review-practice-focus .module-title')).style('color'), gold);
+  assert.equal(await (await page.$('.review-analysis-heading')).style('color'), gold);
+  assert.equal(await (await page.$('.review-evidence .module-title')).style('color'), gold);
+  assert.equal(
+    await (await page.$('.review-evidence')).style('background-color'),
+    'rgb(22, 39, 43)',
+  );
+  assert.equal(await (await page.$('.review-sheet')).style('left'), '10px');
+  const reviewScroll = await page.$('.review-sheet .sheet-scroll');
+  const focusOffset = await focus.offset(),
+    scrollOffset = await reviewScroll.offset();
+  await reviewScroll.scrollTo(
+    0,
+    (await reviewScroll.property('scrollTop')) + focusOffset.top - scrollOffset.top - 20,
+  );
+  await capture('practice-focus-and-evidence-style');
+
   await fixture('reported-52s-shove', weakSuitedShove(), (step) => {
     assert.equal(step.keep, false);
     assert.equal(step.label, '弃牌');
@@ -277,8 +307,8 @@ try {
     const section = step.commentary.find((part) => part.matchups).matchups;
     assert.equal(section.groups.length, 1);
     assert.equal(section.groups[0].label, '对手可能牌组');
-    assert.match(section.rangeNotes.join(''), /Luna开池到 4K/);
-    assert.match(section.rangeNotes.join(''), /Jade跟住了这笔加注/);
+    assert.match(section.rangeNotes.join(''), /Luna在 UTG\+1 位开池到 4K/);
+    assert.match(section.rangeNotes.join(''), /Jade在 LJ 位跟住了这笔加注/);
     assert.doesNotMatch(step.reason, /结构上较|不代表获胜概率|依据当时记录|旧记录/);
   });
   await fixture('reported-bottom-pair', bottomPairReview(), (step) => {
@@ -361,6 +391,20 @@ try {
   assert.equal((await page.data()).reviewActivityOpen, false);
   await invoke('toggleReviewActivity');
   assert.ok((await page.data()).reviewActivity.some((event) => event.emphasized && event.current));
+  const currentActivity = await painted('.review-activity-current');
+  assert.match(await currentActivity.style('background-color'), /102,\s*203,\s*177/);
+  assert.match(await currentActivity.style('box-shadow'), /3px/);
+  const actorRows = await page.$$('.review-activity-emphasis');
+  let plainActor;
+  for (const row of actorRows)
+    if (!(await row.attribute('class')).includes('review-activity-current')) {
+      plainActor = row;
+      break;
+    }
+  assert.ok(plainActor);
+  assert.match(await plainActor.style('background-color'), /^rgba\(0,\s*0,\s*0,\s*0\)$/);
+  assert.ok((await page.$$('.review-activity .activity-position')).length > 0);
+
   assert.doesNotMatch(hero.evidence.join(''), /有效剩余|新增投入|赔率|权益.*%/);
   report.checks.push({
     name: '69o-actual-public-responses',

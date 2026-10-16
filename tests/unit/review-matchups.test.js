@@ -34,8 +34,8 @@ test('consumer preflop ranges combine hand families and explain only actions alr
   assert.equal(p.groups.length, 1);
   assert.equal(p.groups[0].label, '对手可能牌组');
   assert.ok(p.groups[0].examples.length > 0);
-  assert.match(text, /Luna开池到 4K/);
-  assert.match(text, /Jade跟住了这笔加注/);
+  assert.match(text, /Luna在 UTG\+1 位开池到 4K/);
+  assert.match(text, /Jade在 LJ 位跟住了这笔加注/);
   assert.doesNotMatch(text, /Kai跟住/);
   assert.match(text, /A.*AA、AK、AQ、AJ/);
   const html = renderReviewParagraphs([m.text], m, 0);
@@ -51,7 +51,7 @@ test('consumer preflop ranges combine hand families and explain only actions alr
   reraised.history.push({ id: 7, street: 0, action: 'raise', amount: 14000 });
   assert.match(
     handMatchups(reraised, decisionContext(reraised)).rangeNotes.join(''),
-    /Jade已经再加注到 14K/,
+    /Jade在 LJ 位已经再加注到 14K/,
   );
 });
 function spot(hole, board = '', changes = {}) {

@@ -1818,8 +1818,13 @@ export async function nativeScenarios(app) {
       90000,
       'Real hand must settle',
     );
+    const liveHand = (await app.state()).hand;
     const record = await app.evaluate(() =>
-      window.noir.getRecords()[0].attempts.find((hand) => hand.status === 'completed'),
+      window.noir
+        .getRecords()[0]
+        .attempts.findLast(
+          (hand) => hand.status === 'completed' && hand.hand === window.noir.getState().hand,
+        ),
     );
     assert.ok(record?.snapshot);
     await app.click('#rules-button');
@@ -1869,7 +1874,7 @@ export async function nativeScenarios(app) {
       10000,
       'Return Game leaves the records visit',
     );
-    assert.equal((await app.state()).hand, record.hand);
+    assert.equal((await app.state()).hand, liveHand);
     return { attempt: record.id, details, awards, returnedToGame: true };
   });
   await check('game-records-pages-retry-and-resume', async () => {

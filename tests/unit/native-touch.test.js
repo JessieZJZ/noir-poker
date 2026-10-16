@@ -22,11 +22,29 @@ test('iOS waits for AX-first native tap settings before reading back both requir
   assert.equal(calls.length, 2);
 });
 
-test('Android makes no driver setting requests and unknown platforms fail before any request', async () => {
+test('Android bounds the animated screen idle wait and verifies the real driver readback', async () => {
+  const calls = [];
+  assert.deepEqual(
+    await prepareNativeTouch(async (...args) => {
+      calls.push(args);
+      return { waitForIdleTimeout: 500 };
+    }, 'android'),
+    { waitForIdleTimeout: 500 },
+  );
+  assert.deepEqual(calls, [
+    ['POST', '/appium/settings', { settings: { waitForIdleTimeout: 500 } }],
+    ['GET', '/appium/settings'],
+  ]);
+  for (const value of [0, 10000, '500', undefined])
+    await assert.rejects(
+      prepareNativeTouch(async () => ({ waitForIdleTimeout: value }), 'android'),
+      /Android idle timeout must read back as 500/,
+    );
+});
+
+test('unknown platforms fail before any driver setting request', async () => {
   let requests = 0;
   const command = async () => requests++;
-  assert.equal(await prepareNativeTouch(command, 'android'), undefined);
-  assert.equal(requests, 0);
   for (const platform of ['web', '', undefined, null])
     await assert.rejects(prepareNativeTouch(command, platform), /platform must be ios or android/);
   assert.equal(requests, 0);

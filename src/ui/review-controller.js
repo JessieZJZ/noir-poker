@@ -9,6 +9,7 @@ import {
 import { createOpponentReview } from './opponent-review.js';
 import { selectedActivity } from '../review/activity.js';
 import { renderReviewParagraphs } from './review-matchups.js';
+import { renderActivityParts } from './activity.js';
 const $ = (selector) => document.querySelector(selector),
   format = (n) => formatChips(Math.round(n));
 const statusNames = { attention: '重点改进', consider: '值得讨论', sound: '有合理依据' };
@@ -36,7 +37,7 @@ export function createReviewController({ card }) {
       selectedActivity(last.input, selection.actorId, selection.sequence)
         .map(
           (event) =>
-            `<li class="${event.emphasized ? 'review-activity-emphasis' : ''} ${event.current ? 'review-activity-current' : ''}" ${event.current ? 'aria-current="step"' : ''}><span>${esc(event.text)}</span></li>`,
+            `<li class="${event.emphasized ? 'review-activity-emphasis' : ''} ${event.current ? 'review-activity-current' : ''}" ${event.current ? 'aria-current="step"' : ''}>${event.parts ? renderActivityParts(event.parts) : esc(event.text)}</li>`,
         )
         .join(''),
     );

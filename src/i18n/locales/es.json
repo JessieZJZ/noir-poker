@@ -2019,5 +2019,6 @@
   "多人底池里，一对需要控制底池；选择过牌，也可能让对手免费补成更强的牌。": "En un bote multiway, una pareja necesita controlar el bote; pasar también puede dejar que un rival mejore gratis.",
   "对手可能牌组": "Posibles manos del rival",
   "过牌也可能是在等后位先下注，给对手继续投入的机会。": "Pasar también puede buscar que alguien detrás apueste, dando al rival la oportunidad de invertir más fichas.",
-  "这手建议直接过牌，不必下注；{0}。": "Aquí conviene pasar sin apostar; {0}."
+  "这手建议直接过牌，不必下注；{0}。": "Aquí conviene pasar sin apostar; {0}.",
+  "{0}在 {1} 位": "{0} en {1}"
 }

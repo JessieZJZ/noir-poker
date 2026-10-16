@@ -1,6 +1,20 @@
 <page-meta page-style="{{homeLocked ? 'overflow: hidden;' : ''}}" />
 <view class="safe-chrome top-chrome" style="height: {{topInset + 36}}px;" aria-hidden="true" />
 <view class="safe-chrome bottom-chrome" style="height: {{bottomInset}}px;" aria-hidden="true" />
+<template name="activity-content">
+  <block wx:for="{{parts}}" wx:for-item="part" wx:key="index">
+    <block wx:if="{{part.actor}}"
+      ><text
+        >{{part.name}}<text wx:if="{{part.profile}}" class="activity-persona"
+          >（{{part.profile}}）</text
+        ></text
+      ><text wx:if="{{part.position}}" class="position activity-position"
+        >{{part.position}}</text
+      ></block
+    >
+    <text wx:else>{{part.text}}</text>
+  </block>
+</template>
 <view
   class="screen {{homeLocked ? 'home-locked' : ''}}"
   style="padding-top: {{topInset + 36}}px; padding-bottom: {{bottomInset}}px; {{homeLocked ? 'top: ' + homeOffset + 'px;' : ''}}"
@@ -217,7 +231,7 @@
           style="{{heroStyle}}"
           ><view
             class="hero-cards-wrap {{turnPhase ? 'turn-attention' : ''}} turn-{{turnPhase}}"
-            style="width: {{heroWidth * 2 + 5}}px; margin: 0 auto;"
+            style="width: calc({{heroWidth * 2}}px + var(--hero-card-gap, 7px));"
             ><view class="hero-cards"
               ><view
                 wx:for="{{heroCards}}"
@@ -404,7 +418,13 @@
     ><view class="activity-list"
       ><view wx:for="{{logs}}" wx:key="key" class="activity-item"
         ><text class="log-number">{{index + 1}}.</text
-        ><text class="log-{{item.type}} {{item.hero ? 'log-hero' : ''}}">{{item.text}}</text></view
+        ><view class="log-{{item.type}} {{item.hero ? 'log-hero' : ''}}"
+          ><template
+            wx:if="{{item.parts}}"
+            is="activity-content"
+            data="{{parts: item.parts}}"
+          /><text wx:else>{{item.text}}</text></view
+        ></view
       ></view
     ></view
   >
@@ -900,7 +920,7 @@
             ><view><text>剩余筹码</text><text>{{selectedReviewStep.stack}}</text></view></view
           >
         </view>
-        <view class="review-coaching">
+        <view class="review-coaching {{reviewPerspective === 'opponent' ? 'opponent-reason' : ''}}">
           <text wx:if="{{!selectedReviewStep.paragraphs.length}}"
             >{{selectedReviewStep.reason}}</text
           >
@@ -931,7 +951,8 @@
                     wx:key="group"
                     class="review-matchup-example"
                   >
-                    <text>{{example.text}} {{example.label}}</text>
+                    <text>{{example.text}}</text>
+                    <text class="review-matchup-caption">{{example.label}}</text>
                   </view>
                 </view>
                 <text
@@ -964,7 +985,14 @@
         </view>
         <view wx:if="{{reviewPerspective === 'hero'}}" class="review-evidence">
           <text class="module-title">当时的关键信息</text>
-          <text wx:for="{{selectedReviewStep.evidence}}" wx:key="*this">• {{item}}</text>
+          <view class="review-evidence-facts"
+            ><view
+              wx:for="{{selectedReviewStep.evidence}}"
+              wx:key="*this"
+              class="review-evidence-fact"
+              ><text>•</text><text>{{item}}</text></view
+            ></view
+          >
         </view>
       </view>
       <text wx:elif="{{!reviewData.loading}}" class="muted"
@@ -983,11 +1011,17 @@
             wx:for="{{reviewActivity}}"
             wx:key="key"
             class="review-activity-event {{item.emphasized ? 'review-activity-emphasis' : ''}} {{item.current ? 'review-activity-current' : ''}}"
-            ><text>{{index + 1}}. {{item.text}}</text></view
+            ><text>{{index + 1}}. </text
+            ><template
+              wx:if="{{item.parts}}"
+              is="activity-content"
+              data="{{parts: item.parts}}"
+            /><text wx:else>{{item.text}}</text></view
           >
         </view>
       </view>
       <text class="review-scope muted">按当时信息判断，单手输赢不直接决定操作好坏。</text>
+      <button class="primary return-button" bindtap="closeReview">回到牌桌</button>
     </view></scroll-view
   >
 </view>

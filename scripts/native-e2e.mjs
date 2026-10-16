@@ -603,13 +603,18 @@ try {
   );
   session = created.sessionId;
   report.capabilities = created.capabilities;
-  if (platform === 'ios') report.phase = 'native-touch';
-  report.nativeTouch = await prepareNativeTouch(command, platform);
+  if (platform === 'ios') {
+    report.phase = 'native-touch';
+    report.nativeTouch = await prepareNativeTouch(command, platform);
+  }
   report.phase = 'webview-attach';
   // WDA startup can foreground its runner after the initial simctl launch.
   // Restore the tested app before looking for an actionable native screen.
   if (platform === 'ios') await command('POST', '/appium/device/activate_app', { appId });
   await attachWebview();
+  // Keep Android's default startup settling until Accessibility and the
+  // actionable WebView exist; only then shorten the animated-screen idle wait.
+  if (platform === 'android') report.nativeTouch = await prepareNativeTouch(command, platform);
   await command('POST', '/timeouts', { script: 30000 });
   // XCUITest does not resolve Promise results from execute/sync. The standard
   // async callback reads the metadata from the installed app on both drivers.

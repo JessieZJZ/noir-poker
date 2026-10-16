@@ -38,6 +38,11 @@ const waitRoute = async (route) => {
     () => mini.currentPage(),
     (current) => current.path === route,
   );
+  await wait(
+    'Native navigation completion',
+    () => mini.evaluate(() => getApp().__recordsNavigationProbe?.pending || 0),
+    (pending) => pending === 0,
+  );
   await page.waitFor(200);
 };
 const waitElement = (selector) =>
@@ -203,6 +208,16 @@ const heroInformationGap = async () => {
     assert.ok(box.width > 0 && box.height > 0);
   const view = await page.data();
   const tagged = !!(view.heroRank || view.heroWinner);
+  const hero = await waitElement('.hero');
+  const heroOrigin = await hero.offset(),
+    heroSize = await hero.size();
+  const cardCenter =
+    (Math.min(...cards.map((card) => card.left)) + Math.max(...cards.map((card) => card.right))) /
+    2;
+  assert.ok(
+    Math.abs(cardCenter - heroOrigin.left - heroSize.width / 2) <= 0.6,
+    'Grown hero cards stay centered on the fixed hero identity',
+  );
   const gap = information[0].top - Math.max(...cards.map((card) => card.bottom));
   const expected = (7 + (tagged ? view.textMetrics['hero-rank-empty-lift'] : 0)) * view.arenaScale;
   const sample = {
@@ -291,6 +306,28 @@ try {
   report.stage = 'connect';
   mini = await automator.connect({ wsEndpoint: process.argv[2] || 'ws://127.0.0.1:9483' });
   mini.on('exception', (exception) => report.exceptions.push(exception));
+  // A route enters the page stack before wx.navigateTo's completion callback.
+  // Wait for that callback rather than tapping through an unfinished transition.
+  // This probe exists only in the external test and is restored below.
+  await mini.evaluate(() => {
+    const probe = (getApp().__recordsNavigationProbe = { pending: 0, originals: {} });
+    for (const method of ['navigateTo', 'navigateBack', 'redirectTo', 'reLaunch']) {
+      probe.originals[method] = wx[method];
+      wx[method] = function (options = {}) {
+        probe.pending++;
+        return probe.originals[method].call(wx, {
+          ...options,
+          complete(...args) {
+            try {
+              options.complete?.apply(this, args);
+            } finally {
+              probe.pending--;
+            }
+          },
+        });
+      };
+    }
+  });
   report.stage = 'initial-current-page';
   page = await mini.currentPage();
   report.stage = 'initial-relaunch';
@@ -446,28 +483,41 @@ try {
   const recordsView = await page.data();
   assert.equal(recordsView.sessions[0].number, initialSession.number);
   assert.deepEqual(
-    recordsView.sessions[0].attempts.map((row) => [row.hand, row.attempt]),
+    recordsView.sessions[0].attempts.map((row) => [row.hand, row.attemptText]),
     [
-      [1, 0],
-      [1, 1],
-      [2, 0],
+      [1, ''],
+      [1, '重打1'],
+      [2, ''],
     ],
   );
   assert.deepEqual(
     recordsView.sessions[0].attempts.map((row) => row.attemptText),
     ['', '重打1', ''],
   );
+  const resultFacts = await mini.evaluate(() =>
+    getApp()
+      .noirController.getRecords()
+      .map(({ id, profit, attempts }) => ({
+        id,
+        profit,
+        attempts: attempts.map(({ id, profit, wonPot }) => ({ id, profit, wonPot })),
+      })),
+  );
   for (const session of recordsView.sessions) {
+    const facts = resultFacts.find((item) => item.id === session.id);
+    assert.ok(facts);
     assert.match(session.profitText, /^[+-]\d/);
-    if (session.profit === 0) assert.equal(session.profitText, '+0');
+    if (facts.profit === 0) assert.equal(session.profitText, '+0');
     for (const attempt of session.attempts) {
       if (attempt.status !== 'completed') continue;
+      const result = facts.attempts.find((item) => item.id === attempt.id);
+      assert.ok(result);
       assert.match(attempt.profitText, /^[+-]\d/);
       assert.equal(
         attempt.resultText,
-        attempt.wonPot ? (attempt.profit < 0 ? '获得部分底池 · 净亏损' : '赢') : '输',
+        result.wonPot ? (result.profit < 0 ? '获得部分底池 · 净亏损' : '赢') : '输',
       );
-      if (attempt.profit === 0) {
+      if (result.profit === 0) {
         assert.equal(attempt.profitText, '+0');
       }
     }
@@ -634,6 +684,13 @@ try {
   report.error = error.stack;
   throw error;
 } finally {
+  if (mini)
+    await mini.evaluate(() => {
+      const probe = getApp().__recordsNavigationProbe;
+      if (!probe) return;
+      for (const [method, original] of Object.entries(probe.originals)) wx[method] = original;
+      delete getApp().__recordsNavigationProbe;
+    });
   report.completedAt = new Date().toISOString();
   await writeFile(path.join(output, 'report.json'), JSON.stringify(report, null, 2));
   mini?.disconnect();

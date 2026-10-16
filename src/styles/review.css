@@ -436,15 +436,14 @@
 .review-activity-emphasis {
   color: #edf7f5;
   font-weight: 750;
-  background: #66cbb111;
 }
 .review-activity-current {
   box-shadow: inset 3px 0 #6be2c5;
   background: #66cbb124;
 }
 .review-analysis-heading {
-  color: #e0eae8;
-  font-size: 16px;
+  color: #e4cea0;
+  font-size: 14px;
   margin: 24px 0 12px;
 }
 .review-method {
@@ -667,7 +666,7 @@
   margin: 0;
   font-size: 14px;
   font-weight: 500;
-  color: #d3e4dc;
+  color: #e4cea0;
 }
 .review-evidence-heading span {
   font-size: 12px;
@@ -902,4 +901,34 @@
   .review-simulation td {
     font-size: 12px;
   }
+}
+
+/* Analysis headings share the gold treatment in both perspectives. */
+.review-dialog .review-matchups strong,
+.review-dialog .review-coaching strong {
+  color: #e4cea0;
+  font-size: 13px;
+  font-weight: 500;
+}
+.review-dialog .review-analysis-heading,
+.review-dialog .review-evidence h3,
+.review-dialog .review-activity summary {
+  color: #e4cea0;
+  font-size: 14px;
+  font-weight: 500;
+}
+.activity-position {
+  display: inline-block;
+  padding: 1px 5px;
+  margin: 0 3px;
+  border: 1px solid #50776b;
+  border-radius: 4px;
+  background: #203c36;
+  color: #bde5d8;
+  font-size: 11px;
+  box-sizing: border-box;
+  height: 20px;
+  line-height: 16px;
+  vertical-align: top;
+  white-space: nowrap;
 }

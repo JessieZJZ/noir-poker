@@ -319,7 +319,7 @@
   line-height: 18px;
 }
 .web-phone-layout .hero-cards {
-  gap: 7px;
+  gap: var(--hero-card-gap, 7px);
 }
 .web-phone-layout .hero-card .card-rank {
   font-size: 17px;
@@ -1035,8 +1035,8 @@
   margin: 4px 0;
 }
 .review-sheet {
-  left: 19px;
-  right: 19px;
+  left: 10px;
+  right: 10px;
   border-radius: 14px;
 }
 .review-sheet .sheet-body {
@@ -1302,13 +1302,15 @@
 .review-coaching > text,
 .review-coaching > view {
   display: block;
-  font-size: 13px;
-  line-height: 1.85;
-  color: #aebfcc;
-  margin-bottom: 16px;
+  font-size: 14px;
+  line-height: 1.8;
+  color: #c4d2dd;
+  margin-bottom: 12px;
 }
 .review-coaching .module-title {
-  font-size: 14px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #e4cea0;
 }
 .review-matchups > text,
 .review-matchups > view {
@@ -1696,7 +1698,6 @@
 .review-activity-emphasis {
   color: #edf7f5;
   font-weight: 750;
-  background: #66cbb111;
 }
 .review-activity-current {
   box-shadow: inset 3px 0 #6be2c5;
@@ -1704,8 +1705,112 @@
 }
 .review-analysis-heading {
   display: block;
-  color: #e0eae8;
-  font-size: 16px;
-  font-weight: 700;
+  color: #e4cea0;
+  font-size: 14px;
+  font-weight: 500;
   margin: 24px 0 12px;
+}
+
+/* Center the grown artwork independently of the original fixed hero footprint. */
+.web-phone-layout .hero-cards-wrap {
+  display: flex;
+  justify-content: center;
+  align-self: center;
+  flex: none;
+  position: relative;
+}
+.web-phone-layout .hero-cards-wrap > .hero-cards {
+  flex: none;
+  width: 100%;
+}
+.review-sheet .review-analysis-heading,
+.review-sheet .review-evidence .module-title,
+.review-sheet .review-activity-toggle {
+  color: #e4cea0;
+  font-size: 14px;
+  font-weight: 500;
+}
+.review-sheet .review-matchups .module-title {
+  color: #e4cea0;
+  font-size: 13px;
+  font-weight: 500;
+}
+.review-practice-focus > text {
+  display: block;
+}
+.review-practice-focus > text + text {
+  margin-top: 5px;
+}
+.review-sheet .review-evidence {
+  display: block;
+  margin: 18px 0 0;
+  padding: 16px 18px;
+  border: 1px solid #374950;
+  border-radius: 9px;
+  background: #16272b;
+}
+.review-evidence > text {
+  display: block;
+  color: #aebfb8;
+  font-size: 13px;
+  line-height: 1.9;
+}
+.review-evidence > .module-title {
+  margin-bottom: 12px;
+}
+.activity-position {
+  display: inline-block;
+  padding: 1px 5px;
+  margin: 0 3px;
+  border: 1px solid #50776b;
+  border-radius: 4px;
+  background: #203c36;
+  color: #bde5d8;
+  font-size: 11px;
+  box-sizing: border-box;
+  height: 20px;
+  line-height: 16px;
+  vertical-align: top;
+  white-space: nowrap;
+}
+
+.review-coaching {
+  margin: 20px 0;
+}
+.review-matchups > view {
+  margin-bottom: 0;
+}
+.review-matchups view > .module-title,
+.review-matchup-example {
+  margin-bottom: 12px;
+}
+.review-matchup-caption {
+  font-size: 0.833333em;
+}
+.review-evidence-facts {
+  margin-top: 12px;
+  color: #aebfb8;
+  font-size: 13px;
+  line-height: 1.9;
+}
+.review-evidence-fact {
+  display: flex;
+  gap: 8px;
+}
+.review-evidence-fact > text + text {
+  flex: 1;
+  min-width: 0;
+}
+@media (max-width: 760px) {
+  .review-coaching.opponent-reason > text,
+  .opponent-reason .review-matchups {
+    font-size: 13px;
+    line-height: 1.85;
+  }
+  .review-coaching.opponent-reason > text,
+  .opponent-reason .review-matchup-hand,
+  .opponent-reason .review-matchup-example,
+  .opponent-reason .review-range-note {
+    margin-bottom: 17px;
+  }
 }

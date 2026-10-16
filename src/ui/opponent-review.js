@@ -15,6 +15,7 @@ export function createOpponentReview({ card, onSelection = () => {} }) {
   const panel = document.querySelector('#review-opponents');
   const explanations = new WeakMap();
   let records = [],
+    identities = [],
     selected = 0,
     filter = 'all';
   const step = (r) => ({ ...r.trace.view, action: r.action, amount: r.amount });
@@ -69,12 +70,7 @@ export function createOpponentReview({ card, onSelection = () => {} }) {
   }
   function detail(r) {
     const v = r.trace.view,
-      e =
-        explanations.get(r) ||
-        explainOpponent(
-          r,
-          records.map(({ id, name }) => ({ id, name })),
-        );
+      e = explanations.get(r) || explainOpponent(r, identities);
     explanations.set(r, e);
     return `<div class="review-detail-header"><h3>${esc(r.name)}，${STREET_NAMES[v.street]}</h3></div><div class="review-scene"><div class="review-card-rows"><div class="review-card-group"><span>${esc(r.name)} 当时的底牌</span><div class="review-cards">${v.hole.map((c) => card(c, { small: true })).join('')}</div></div><div class="review-card-group"><span>当时的公共牌</span><div class="review-cards">${v.board.length ? v.board.map((c) => card(c, { small: true })).join('') : '<span class="review-no-board">公共牌尚未发出</span>'}</div></div></div><div class="review-scene-meta"><div><span>位置</span><strong>${v.position}</strong></div><div><span>当时底池</span><strong>${n(v.pot)}</strong></div><div><span>剩余筹码</span><strong>${n(v.stack)}</strong></div></div></div><div class="review-explanation opponent-reason">${renderReviewParagraphs(e.paragraphs || [e.detail], e.matchups, v.street)}${e.reasons.map((s) => `<p>${esc(s)}</p>`).join('')}</div>`;
   }
@@ -88,6 +84,14 @@ export function createOpponentReview({ card, onSelection = () => {} }) {
   return {
     update(input) {
       records = input.opponents || [];
+      identities =
+        input.players ||
+        records.map(({ id, name, trace }) => ({
+          id,
+          name,
+          botProfile: trace.profile,
+          position: trace.view.position,
+        }));
       selected = 0;
       filter = 'all';
       render();

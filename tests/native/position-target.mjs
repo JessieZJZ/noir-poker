@@ -14,7 +14,16 @@ export function nativeTargetReady(selector) {
 
 export function readNativeTargetPosition(selector) {
   const element = document.querySelector(selector);
-  if (!element) throw new Error(`Native target disappeared: ${selector}`);
+  if (
+    !element ||
+    element.disabled ||
+    element.hidden ||
+    !element.getClientRects().length ||
+    (!element.closest('dialog[open]') &&
+      (document.documentElement.dataset.homeScrollLocked === 'true' ||
+        document.querySelector('dialog[open]')))
+  )
+    return null;
   const rect = element.getBoundingClientRect(),
     viewport = window.visualViewport;
   return {
@@ -95,21 +104,25 @@ export function withCenteredNativeClicks(app) {
         // Observe three consecutive positions before delegating one real tap.
         await app.waitFor(
           async () => {
-            if (!(await app.evaluate(nativeTargetReady, selector))) {
+            // Sample readiness and geometry in one WebView round trip. A
+            // software-rendered emulator can spend >1s per driver command.
+            const measured = await app.evaluate(readNativeTargetPosition, selector);
+            if (!measured) {
               previous = undefined;
               stable = 0;
               return false;
             }
-            const position = JSON.stringify(await app.evaluate(readNativeTargetPosition, selector));
+            const position = JSON.stringify(measured);
             if (position === previous) stable++;
             else {
+              const moved = previous !== undefined;
               previous = position;
               stable = 0;
-              await app.evaluate(centerNativeTarget, selector);
+              if (moved) await app.evaluate(centerNativeTarget, selector);
             }
             return stable >= 2;
           },
-          5000,
+          30000,
           `Native target geometry did not stabilize: ${selector}`,
         );
       }

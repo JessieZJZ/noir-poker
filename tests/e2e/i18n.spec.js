@@ -134,6 +134,18 @@ for (const locale of locales) {
     await expect(page.locator('html')).toHaveAttribute('lang', locale);
     await expect(page.locator('article:visible')).toHaveCount(1);
     await expect(page.locator('article:visible')).toContainText('958182284@qq.com');
+    const policyFonts = await page.evaluate(async () => {
+      await document.fonts.ready;
+      return {
+        family: getComputedStyle(document.body).fontFamily,
+        loaded: [...document.fonts]
+          .filter((face) => face.status === 'loaded')
+          .map((face) => face.family.replace(/["']/g, '')),
+      };
+    });
+    expect(policyFonts.family).toMatch(/^Manrope,/);
+    expect(policyFonts.loaded).toContain('Manrope');
+    if (locale === 'ko') expect(policyFonts.loaded).toContain('Noto Sans KR');
   });
 }
 

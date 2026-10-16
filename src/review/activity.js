@@ -1,9 +1,11 @@
 import { compactActionAmounts } from '../engine/chip-format.js';
 import { historyActionLabel } from '../engine/action-labels.js';
+import { createActivityParts } from '../ui/activity-parts.js';
 
 // Completed events are display-only. None are passed to analyzeDecision.
 export function reviewActivity(game) {
   let sequence = 0;
+  const present = createActivityParts(game);
   if (game.logs?.length)
     return [...game.logs]
       .reverse()
@@ -20,6 +22,7 @@ export function reviewActivity(game) {
         return {
           key,
           text: compactActionAmounts(log.text),
+          parts: present(log),
           player: log.player ?? null,
           sequence: action ? ++sequence : null,
         };
@@ -28,6 +31,11 @@ export function reviewActivity(game) {
     key,
     player: event.id,
     sequence: key + 1,
+    parts: present(
+      (game.players?.find((p) => p.id === event.id)?.name || (event.id === 0 ? '你' : '对手')) +
+        ' ' +
+        historyActionLabel(game.history, key),
+    ),
     text:
       (game.players?.find((p) => p.id === event.id)?.name || (event.id === 0 ? '你' : '对手')) +
       ' ' +

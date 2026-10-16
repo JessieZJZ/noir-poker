@@ -12,6 +12,7 @@ import { SEAT_ANCHORS } from '../ui/seat-geometry.js';
 import { explainOpponent } from '../review/opponents.js';
 import { selectedActivity } from '../review/activity.js';
 import { reviewCommentary } from '../review/matchups.js';
+import { createActivityParts } from '../ui/activity-parts.js';
 import {
   newGame,
   configureStakes,
@@ -309,6 +310,7 @@ export function createWechatController({
         y: SEAT_ANCHORS[game.players.length][index][1],
       };
     });
+    const activityParts = createActivityParts(game);
     const pot = done ? game.potAtShowdown || potSize(game) : potSize(game);
     const breakdown = currentPots(game);
     turnCue.update({
@@ -438,10 +440,20 @@ export function createWechatController({
       logs: game.logs
         .slice()
         .reverse()
-        .map((entry, index) => ({
-          key: index,
-          text: compactActionAmounts(cleanAction(typeof entry === 'string' ? entry : entry.text)),
-        })),
+        .map((entry, index) => {
+          const parts = activityParts(entry);
+          return {
+            key: index,
+            text: parts
+              .map((part) =>
+                part.actor ? part.name + (part.profile ? `（${part.profile}）` : '') : part.text,
+              )
+              .join(''),
+            parts,
+            type: entry.type,
+            hero: entry.player === 0,
+          };
+        }),
       stats: {
         hands: game.stats.hands,
         wins: game.stats.wins,
@@ -901,7 +913,13 @@ export function createWechatController({
       if (!opponentReviews.has(index)) {
         const explanation = explainOpponent(
           record,
-          reviewSource.opponents.map(({ id, name }) => ({ id, name })),
+          reviewSource.players ||
+            reviewSource.opponents.map(({ id, name, trace }) => ({
+              id,
+              name,
+              botProfile: trace.profile,
+              position: trace.view.position,
+            })),
         );
         opponentReviews.set(index, {
           analyzed: true,

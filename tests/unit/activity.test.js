@@ -30,7 +30,7 @@ test('activity identifies assigned personas in all mentions, leaving hero and ba
     }
   }
   assert.equal(format('Alexandra 弃牌 · RIVER'), 'Alexandra 弃牌 · RIVER');
-  assert.equal(format('Alex（ST 王） 过牌'), 'Alex（ST 王） 过牌');
+  assert.equal((format('Alex（ST 王） 过牌').match(/ST 王/g) || []).length, 1);
 });
 
 test('activity uses a captured hand identity and safely escapes text', () => {

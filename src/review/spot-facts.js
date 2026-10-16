@@ -1,5 +1,6 @@
 import { rankText } from '../engine/poker.js';
 import { historyActionLabel } from '../engine/action-labels.js';
+import { actorAtPosition } from '../engine/player-identity.js';
 
 const suits = ['♠', '♥', '♣', '♦'];
 export const cardText = (cards = []) =>
@@ -16,7 +17,7 @@ export function spotFacts(s, c, actorId = 0) {
     const player = players.find((p) => p.id === entry.id);
     return {
       ...entry,
-      name: player?.name || (entry.id === 0 ? '你' : '对手'),
+      name: actorAtPosition(s, entry.id),
       position: player?.position || '',
       label: historyActionLabel(history, index),
       index,

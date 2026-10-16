@@ -12,6 +12,7 @@ import { reviewActivity } from './activity.js';
 import { handMatchups, valuePlan } from './matchups.js';
 import { actionLabel } from '../engine/action-labels.js';
 import { legalRaiseTo } from '../engine/bet-sizing.js';
+import { gameIdentities } from '../engine/player-identity.js';
 export { actionLabel } from '../engine/action-labels.js';
 export { callPrice } from './equity.js';
 export { startingTier, drawInfo } from './context.js';
@@ -30,6 +31,7 @@ export function createReviewInput(g) {
       smallBlind: g.smallBlind,
       hole: g.players[0].hole,
       decisions: g.decisions || [],
+      players: gameIdentities(g),
       activity: reviewActivity(g),
       opponents: g.botDecisions || [],
       outcome: {

@@ -120,6 +120,32 @@ test('unready targets and native driver errors stop the scenario without synthet
   );
 });
 
+test('a slow native bridge still observes three identical positions before one trusted tap', async () => {
+  await page.setContent('<button id="ready">Ready</button>');
+  let clock = 0;
+  let samples = 0;
+  let taps = 0;
+  const positioned = withCenteredNativeClicks({
+    async evaluate(fn, value) {
+      clock += 2400;
+      if (fn.name === 'readNativeTargetPosition') samples++;
+      return page.evaluate(fn, value);
+    },
+    async waitFor(predicate, budget) {
+      const deadline = clock + budget;
+      while (clock < deadline) if (await predicate()) return true;
+      throw Error('Slow bridge exhausted the positioning deadline');
+    },
+    async click(selector) {
+      taps++;
+      return driverClick(selector);
+    },
+  });
+  await positioned.click('#ready');
+  assert.equal(samples, 3);
+  assert.equal(taps, 1);
+});
+
 test('a background-page target cannot be tapped through an open modal even when it has a rectangle', async () => {
   await page.setContent(`
     <button id="background">Background</button>
@@ -198,7 +224,7 @@ test('a continually moving target exhausts the finite geometry wait without dele
       },
     });
   await assert.rejects(positioned.click('#moving'), /did not become ready/);
-  assert.deepEqual(deadlines, [30000, 5000]);
+  assert.deepEqual(deadlines, [30000, 30000]);
   assert.equal(delegated, 0);
 });
 

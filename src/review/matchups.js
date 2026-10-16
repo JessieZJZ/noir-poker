@@ -8,6 +8,7 @@ import { preparePublicRanges, publicComboWeight } from '../engine/public-ranges.
 import { publicHandData } from '../engine/public-equity.js';
 import { cardText, spotFacts } from './spot-facts.js';
 import { drawLabel } from './narrative.js';
+import { actorAtPosition } from '../engine/player-identity.js';
 
 const identify = (card) => `${card.rank}-${card.suit}`;
 const number = compactChips;
@@ -77,7 +78,7 @@ function preflopRangeNotes(s) {
   const actions = (s.history || []).filter((a) => a.street === 0),
     raises = actions.filter((a) => a.action === 'raise'),
     last = raises.at(-1),
-    name = (id) => s.players?.find((p) => p.id === id)?.name || '对手',
+    name = (id) => actorAtPosition(s, id),
     notes = [];
   if (last)
     notes.push(

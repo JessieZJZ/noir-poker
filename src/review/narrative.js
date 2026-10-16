@@ -4,6 +4,7 @@ import { rankText } from '../engine/poker.js';
 import { actionLabel, historyActionLabel } from '../engine/action-labels.js';
 import { boardTexture } from './context.js';
 import { spotFacts } from './spot-facts.js';
+import { actorAtPosition, actorName } from '../engine/player-identity.js';
 
 const n = compactChips;
 const pct = (value) => (value * 100).toFixed(1) + '%';
@@ -21,7 +22,7 @@ export function publicCallsAfter(s, index, actorId = 0) {
     .slice(index + 1)
     .filter((a) => a.street === s.street && a.action === 'call' && a.id !== actorId)
     .map((a) => {
-      const name = s.players?.find((p) => p.id === a.id)?.name || '对手';
+      const name = actorAtPosition(s, a.id);
       return `随后，${name}又补 ${n(a.amount)} 跟注。`;
     })
     .join('');
@@ -65,9 +66,7 @@ export function situationNotes(s, c, actorId = 0) {
             f.ownPreviousActions.findLast(
               (a) => a.street === 0 && a.action === 'raise' && a.index < aggression.index,
             ) || raises.at(-2),
-          priorName =
-            s.players?.find((p) => p.id === prior.id)?.name ||
-            (prior.id === actorId ? who : '对手'),
+          priorName = actorAtPosition(s, prior.id),
           called = publicCallsAfter(s, aggression.index, actorId);
         if (called) {
           const response =
@@ -81,15 +80,13 @@ export function situationNotes(s, c, actorId = 0) {
           );
       } else if (s.street === 0 && earlierCall >= 0 && earlierCall < firstRaise) {
         const caller = s.history[earlierCall],
-          name = s.players?.find((p) => p.id === caller.id)?.name || '对手';
+          name = actorAtPosition(s, caller.id);
         notes.push(
-          `${name}先${historyActionLabel(s.history, earlierCall)}进入底池，${aggression.name}（${aggression.position}）随后${aggression.label}；${who}这次选择${actionLabel(s)}，是在已有跟入者的底池中回应开池。`,
+          `${name}先${historyActionLabel(s.history, earlierCall)}进入底池，${actorName(s, aggression.id)}（${aggression.position}）随后${aggression.label}；${who}这次选择${actionLabel(s)}，是在已有跟入者的底池中回应开池。`,
         );
       } else
         notes.push(
-          aggression.position
-            ? `${aggression.name}（${aggression.position}）已${aggression.label}；${who}这次选择${actionLabel(s)}，是在回应这笔下注。`
-            : `${aggression.name}已${aggression.label}；${who}这次选择${actionLabel(s)}，是在回应这笔下注。`,
+          `${aggression.name}已${aggression.label}；${who}这次选择${actionLabel(s)}，是在回应这笔下注。`,
         );
     }
   } else {
@@ -97,12 +94,7 @@ export function situationNotes(s, c, actorId = 0) {
       (a) => a.street === s.street && a.id !== actorId && a.action === 'check',
     );
     if (checks.length) {
-      const names = checks.map(
-        (a) =>
-          s.players?.find((p) => p.id === a.id)?.name ||
-          s.opponents?.find((p) => p.id === a.id)?.name ||
-          '对手',
-      );
+      const names = checks.map((a) => actorAtPosition(s, a.id));
       notes.push(
         `${names.join('、')}本轮已过牌；${who}可以直接过牌，${s.action === 'raise' ? '这次主动下注是在已有过牌之后争取底池' : '可以保留免费机会，也可以主动下注争取价值或弃牌'}。`,
       );
@@ -214,10 +206,7 @@ export function continuationNote(s, c, closing) {
 export function publicHistory(s) {
   return (s.history || []).map((a, i) => ({
     street: streets[a.street],
-    name:
-      s.players?.find((p) => p.id === a.id)?.name ||
-      s.opponents?.find((p) => p.id === a.id)?.name ||
-      (a.id === 0 ? '你' : a.id === s.id ? s.actorName || s.name || '对手' : '对手'),
+    name: actorAtPosition(s, a.id),
     action: historyActionLabel(s.history, i),
   }));
 }

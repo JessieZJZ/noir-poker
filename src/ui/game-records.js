@@ -112,7 +112,7 @@ export function createGameRecordsView({ records, openReview, openPots, onReturnG
   function renderArchive(peekPlayer) {
     if (!archive) return;
     const snapshot = archive.snapshot,
-      formatter = createActivityFormatter(snapshot.players);
+      formatter = createActivityFormatter(snapshot);
     setLocalizedHTML(
       content,
       `<div id="history-page"><div class="main records-history-grid"><section class="game-column"><div class="records-surface-slot"></div><div class="records-showdown-slot"></div></section><aside class="sidebar"><section class="activity-card records-activity"><div class="section-title"><h2>本局动态</h2><span class="subtle-label">FINISHED</span></div><ol class="activity-list" aria-label="本手动态，按时间顺序排列">${snapshot.logs

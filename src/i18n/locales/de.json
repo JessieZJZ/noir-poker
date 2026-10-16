@@ -2022,5 +2022,6 @@
   "多人底池里，一对需要控制底池；选择过牌，也可能让对手免费补成更强的牌。": "In einem Multiway-Pot braucht ein Paar Potkontrolle; ein Check kann den Gegner aber auch kostenlos verbessern lassen.",
   "对手可能牌组": "Mögliche gegnerische Hände",
   "过牌也可能是在等后位先下注，给对手继续投入的机会。": "Der Check kann auch auf eine Bet von hinten warten und dem Gegner Gelegenheit geben, weitere Chips einzuzahlen.",
-  "这手建议直接过牌，不必下注；{0}。": "Hier ohne Einsatz checken; {0}."
+  "这手建议直接过牌，不必下注；{0}。": "Hier ohne Einsatz checken; {0}.",
+  "{0}在 {1} 位": "{0} in Position {1}"
 }

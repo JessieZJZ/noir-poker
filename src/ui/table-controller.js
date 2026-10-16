@@ -392,7 +392,7 @@ function render() {
     $('#stat-winrate'),
     game.stats.hands ? Math.round((game.stats.wins / game.stats.hands) * 100) + '%' : '—',
   );
-  const activityText = createActivityFormatter(game.players);
+  const activityText = createActivityFormatter(game);
   setLocalizedHTML(
     activityList,
     game.logs

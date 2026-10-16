@@ -1,5 +1,5 @@
 import { compactActionAmounts } from '../engine/chip-format.js';
-import { getBotProfile } from '../engine/bot-profiles.js';
+import { createActivityParts } from './activity-parts.js';
 
 const escapeHtml = (value) =>
   compactActionAmounts(value)
@@ -8,24 +8,17 @@ const escapeHtml = (value) =>
     .replaceAll('>', '&gt;')
     .replaceAll('"', '&quot;')
     .replaceAll("'", '&#39;');
-const escapePattern = (value) => String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+export function renderActivityParts(parts) {
+  return parts
+    .map((part) =>
+      part.actor
+        ? `${escapeHtml(part.name)}${part.profile ? `<span class="activity-persona">（${escapeHtml(part.profile)}）</span>` : ''}${part.position ? ` <span class="position activity-position">${escapeHtml(part.position)}</span> ` : ''}`
+        : escapeHtml(part.text),
+    )
+    .join('');
+}
 
-export function createActivityFormatter(players) {
-  const personas = new Map(
-    players
-      .filter((p) => p.id !== 0)
-      .map((p) => [p.name, getBotProfile(p.botProfile)])
-      .filter(([, profile]) => profile.id !== 'balanced'),
-  );
-  if (!personas.size) return escapeHtml;
-  const names = new RegExp(
-    `\\b(${[...personas.keys()].map(escapePattern).join('|')})\\b(?![（(])`,
-    'g',
-  );
-  return (text) =>
-    escapeHtml(text).replace(
-      names,
-      (name) =>
-        `${escapeHtml(name)}<span class="activity-persona">（${escapeHtml(personas.get(name).short)}）</span>`,
-    );
+export function createActivityFormatter(game) {
+  const parts = createActivityParts(game);
+  return (entry) => renderActivityParts(parts(entry));
 }

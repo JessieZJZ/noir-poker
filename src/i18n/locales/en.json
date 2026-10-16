@@ -2023,5 +2023,6 @@
   "多人底池里，一对需要控制底池；选择过牌，也可能让对手免费补成更强的牌。": "In a multiway pot, one pair needs pot control; checking may also let an opponent improve for free.",
   "对手可能牌组": "Possible opponent hands",
   "过牌也可能是在等后位先下注，给对手继续投入的机会。": "Checking may also be waiting for a player behind to bet, giving opponents a chance to put in more chips.",
-  "这手建议直接过牌，不必下注；{0}。": "Check here without betting; {0}."
+  "这手建议直接过牌，不必下注；{0}。": "Check here without betting; {0}.",
+  "{0}在 {1} 位": "{0} in {1}"
 }

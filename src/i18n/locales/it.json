@@ -2019,5 +2019,6 @@
   "多人底池里，一对需要控制底池；选择过牌，也可能让对手免费补成更强的牌。": "In un piatto multiway, una coppia richiede controllo del piatto; fare check può anche permettere al rivale di migliorare gratis.",
   "对手可能牌组": "Possibili mani avversarie",
   "过牌也可能是在等后位先下注，给对手继续投入的机会。": "Il check può anche attendere una puntata da chi agisce dopo, dando all’avversario l’occasione di investire altre chip.",
-  "这手建议直接过牌，不必下注；{0}。": "Qui si consiglia check senza puntare; {0}."
+  "这手建议直接过牌，不必下注；{0}。": "Qui si consiglia check senza puntare; {0}.",
+  "{0}在 {1} 位": "{0} in posizione {1}"
 }

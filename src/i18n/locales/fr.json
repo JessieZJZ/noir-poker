@@ -2019,5 +2019,6 @@
   "多人底池里，一对需要控制底池；选择过牌，也可能让对手免费补成更强的牌。": "Dans un pot à plusieurs, une paire demande de contrôler le pot ; checker peut aussi laisser un adversaire améliorer gratuitement.",
   "对手可能牌组": "Mains adverses possibles",
   "过牌也可能是在等后位先下注，给对手继续投入的机会。": "Le check peut aussi attendre une mise derrière, pour donner aux adversaires l’occasion d’investir davantage.",
-  "这手建议直接过牌，不必下注；{0}。": "Ici, checkez sans miser ; {0}."
+  "这手建议直接过牌，不必下注；{0}。": "Ici, checkez sans miser ; {0}.",
+  "{0}在 {1} 位": "{0} en position {1}"
 }

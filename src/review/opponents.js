@@ -6,6 +6,7 @@ import { decisionContext } from './context.js';
 import { drawLabel, publicHistory } from './narrative.js';
 import { spotFacts } from './spot-facts.js';
 import { handMatchups } from './matchups.js';
+import { actorAtPosition, actorName } from '../engine/player-identity.js';
 
 const pct = (v) => (v * 100).toFixed(1) + '%';
 const n = compactChips;
@@ -58,6 +59,9 @@ export function explainOpponent(record, identities = []) {
   const t = record.trace,
     v = {
       ...t.view,
+      name: record.name,
+      botProfile: t.profile,
+      identities,
       opponents: t.view.opponents?.map((p) => ({
         id: p.id,
         stack: p.stack,
@@ -67,10 +71,23 @@ export function explainOpponent(record, identities = []) {
         allin: p.allin,
         position: p.position,
         name: p.name || identities.find((identity) => identity.id === p.id)?.name,
+        botProfile: p.botProfile || identities.find((identity) => identity.id === p.id)?.botProfile,
       })),
     },
     actorId = v.id ?? record.id ?? 1,
-    name = record.name || '对手';
+    name = actorAtPosition(
+      {
+        ...v,
+        players: [
+          { id: record.id, name: record.name, botProfile: t.profile, position: v.position },
+        ],
+      },
+      record.id,
+    );
+  const plainName = actorName(
+    { ...v, players: [{ id: record.id, name: record.name, botProfile: t.profile }] },
+    record.id,
+  );
   // Reuse the classifier with an actor-relative snapshot. Other hole cards stay unread.
   const opponents =
     v.opponents || Array.from({ length: v.rivals }, (_, i) => ({ id: i + 100, stack: v.stack }));
@@ -81,10 +98,11 @@ export function explainOpponent(record, identities = []) {
     action: record.action,
     amount: record.amount,
     players: [
-      { id: 0, name, position: v.position, stack: v.stack },
+      { id: 0, name: record.name, botProfile: t.profile, position: v.position, stack: v.stack },
       ...opponents.map((p, i) => ({ ...p, id: i + 1 })),
     ],
     opponents: undefined,
+    identities: identities.map((p) => ({ ...p, id: relativeIds.get(p.id) ?? p.id + 100 })),
     allIn: v.allIn
       ? {
           ...v.allIn,
@@ -113,11 +131,11 @@ export function explainOpponent(record, identities = []) {
     aggression = f.lastAggression?.street === v.street ? f.lastAggression : null,
     prefix = v.street
       ? aggression
-        ? `面对${aggression.name}的${aggression.label}，${name}在 ${v.position} 拿 ${f.holeText}，在 ${f.boardText} 上是${hand}，选择${actual}。`
-        : `${name}在 ${v.position} 拿 ${f.holeText}，在 ${f.boardText} 上是${hand}，选择${actual}。`
+        ? `面对${aggression.name}的${aggression.label}，${plainName}在 ${v.position} 拿 ${f.holeText}，在 ${f.boardText} 上是${hand}，选择${actual}。`
+        : `${plainName}在 ${v.position} 拿 ${f.holeText}，在 ${f.boardText} 上是${hand}，选择${actual}。`
       : aggression
-        ? `面对${aggression.name}的${aggression.label}，${name}在 ${v.position} 拿 ${f.holeText}，选择${actual}。`
-        : `${name}在 ${v.position} 拿 ${f.holeText}，选择${actual}。`,
+        ? `面对${aggression.name}的${aggression.label}，${plainName}在 ${v.position} 拿 ${f.holeText}，选择${actual}。`
+        : `${plainName}在 ${v.position} 拿 ${f.holeText}，选择${actual}。`,
     drawText = draw.outs
       ? `${name}在追${drawLabel(draw)}，共有 ${draw.outs} 张牌可能补成顺子／同花；其中有些补牌也会帮对手成更大的牌`
       : '',
@@ -234,7 +252,7 @@ export function explainOpponent(record, identities = []) {
           : `可以直接过牌，不必再投入筹码。${name}用${hand}控池，保留摊牌机会；如果后面有人下注，再看价格决定是否继续。`;
       break;
     case 'float-continue':
-      logic = `这是 float：${name}在 ${v.position} 有位置，先补 ${n(cost)}，等下一街观察对手是否停止下注；牌面 ${f.boardText} 较干燥，${name}保留在对手过牌后下注拿池的机会。`;
+      logic = `这是 float：${plainName}在 ${v.position} 有位置，先补 ${n(cost)}，等下一街观察对手是否停止下注；牌面 ${f.boardText} 较干燥，${name}保留在对手过牌后下注拿池的机会。`;
       break;
     case 'pot-control':
       logic = `这是${hand}控池：底池已经有 ${n(v.pot)}，${name}过牌不再加大投入，保留当前牌力的摊牌机会。`;
@@ -246,15 +264,15 @@ export function explainOpponent(record, identities = []) {
       logic = `${name}是翻前进攻者，在 ${f.boardText} 这张干燥高牌面继续下注 ${n(f.investment)}；小尺度争取让没击中翻牌的牌弃掉，${hand}不等于一定击中了顶对。`;
       break;
     case 'dirty-open':
-      logic = `这是脏牌开池：前面无人开池或跟入，${name}在 ${v.position} 用 ${n(f.investment)} 争取盲注 ${n(v.pot)}，主要靠后面的对手弃牌获利。${f.holeText}被跟住后，成牌质量较弱。`;
+      logic = `这是脏牌开池：前面无人开池或跟入，${plainName}在 ${v.position} 用 ${n(f.investment)} 争取盲注 ${n(v.pot)}，主要靠后面的对手弃牌获利。${f.holeText}被跟住后，成牌质量较弱。`;
       break;
     case 'dirty-reraise':
-      logic = `这是脏牌再加注：面对一次小开池且没有跟入者，${name}在 ${v.position} 用 ${n(f.investment)} 施压；手里的 ${rankText(Math.max(...v.hole.map((card) => card.rank)))} 阻断部分对手强牌组合，想直接拿走 ${n(v.pot)}。被跟住后，较弱踢脚仍会让${name}难打。`;
+      logic = `这是脏牌再加注：面对一次小开池且没有跟入者，${plainName}在 ${v.position} 用 ${n(f.investment)} 施压；手里的 ${rankText(Math.max(...v.hole.map((card) => card.rank)))} 阻断部分对手强牌组合，想直接拿走 ${n(v.pot)}。被跟住后，较弱踢脚仍会让${name}难打。`;
       break;
     case 'seven-two-bluff':
       logic =
         t.deception?.stage === 'opening'
-          ? `这是 2–7 诈唬偷盲：${name}在 ${v.position} 用 ${n(f.investment)} 争取 ${n(v.pot)}，前面无人入池，靠后面的人弃牌获利。`
+          ? `这是 2–7 诈唬偷盲：${plainName}在 ${v.position} 用 ${n(f.investment)} 争取 ${n(v.pot)}，前面无人入池，靠后面的人弃牌获利。`
           : `这是 2–7 诈唬：单挑、有位置，对手本轮已经过牌；${name}在 ${f.boardText} 上用 ${n(f.investment)} 争取 ${n(v.pot)}，没有成牌或大听牌托底，主要赌对手愿意弃牌。`;
       break;
     case 'donk-lead':

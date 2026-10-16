@@ -41,7 +41,8 @@ module.exports = {
     activityOpen: false,
     potOpen: false,
     resetOpen: false,
-    guideExpanded: [false, false],
+    guideExpanded: [false, true],
+    noticeExpanded: true,
     potExpanded: {},
     potSheetHeight: 580,
     reviewPerspective: 'hero',
@@ -160,31 +161,7 @@ module.exports = {
           showdown,
           showdownContext: `${showdown.length} 人参与摊牌${game?.pots.length > 1 ? ' · 主池与边池分别结算' : ''}`,
           activePlayerCount: view.seats.length + 1,
-          logs: game
-            ? game.logs
-                .slice()
-                .reverse()
-                .map((entry, index) => {
-                  let text = typeof entry === 'string' ? entry : entry.text;
-                  for (const player of game.players.filter(
-                    (p) => p.id && p.botProfile !== 'balanced',
-                  )) {
-                    const profile = view.profiles.find((p) => p.id === player.botProfile);
-                    const name = player.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-                    if (profile)
-                      text = text.replace(
-                        new RegExp(`\\b${name}\\b(?![（(])`, 'g'),
-                        `${player.name}（${profile.short}）`,
-                      );
-                  }
-                  return {
-                    key: index,
-                    text: compactActionAmounts(text),
-                    type: entry.type,
-                    hero: entry.player === 0,
-                  };
-                })
-            : view.logs,
+          logs: view.logs,
           board: presentedBoard,
           canPracticeRunout: view.done && view.heroFolded && board.length < 5,
           ...this.publicLayout(presentedBoard, {

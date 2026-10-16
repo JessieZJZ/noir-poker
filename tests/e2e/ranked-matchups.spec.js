@@ -25,8 +25,8 @@ test('consumer preflop review has one possible-hand group with causal ranges and
   const panel = page.locator('#review-coach-explanation');
   await expect(panel.locator('[data-matchup-direction]')).toHaveCount(1);
   await expect(panel.locator('[data-matchup-direction="possible"]')).toContainText('对手可能牌组');
-  await expect(panel).toContainText('Luna开池到 4K');
-  await expect(panel).toContainText('Jade跟住了这笔加注');
+  await expect(panel).toContainText('Luna在 UTG+1 位开池到 4K');
+  await expect(panel).toContainText('Jade在 LJ 位跟住了这笔加注');
   await expect(panel).not.toContainText(/结构上较|不代表获胜概率|依据当时记录|旧记录/);
   const below = await panel
     .locator('.review-matchups')
