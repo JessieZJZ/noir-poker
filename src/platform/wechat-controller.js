@@ -51,7 +51,7 @@ import {
   actionLabel,
 } from '../review/analysis.js';
 
-const STORAGE_KEY = 'noir-wechat-settings-v1';
+export const WECHAT_SETTINGS_KEY = 'noir-wechat-settings-v1';
 const cleanAction = (text) =>
   (text || '').replace(/\b\d+-bet\s*/g, '').replace(/开池|下注/g, '加注');
 const cardView = (card) => ({
@@ -66,6 +66,7 @@ const defaults = () => ({
   stakes: sanitizeStakes(),
   difficulty: 'normal',
   sound: true,
+  vibration: true,
   hints: true,
   ...sanitizeBotSettings(),
 });
@@ -78,6 +79,7 @@ const sanitize = (value) => ({
       : 5,
   difficulty: ['easy', 'normal', 'hard'].includes(value?.difficulty) ? value.difficulty : 'normal',
   sound: value?.sound !== false,
+  vibration: value?.vibration === undefined ? value?.sound !== false : value.vibration !== false,
   hints: value?.hints !== false,
   ...sanitizeBotSettings(value),
 });
@@ -100,7 +102,7 @@ export function createWechatController({
   let settings;
   let stakesError = '';
   try {
-    settings = sanitize(JSON.parse(storage?.getItem(STORAGE_KEY)));
+    settings = sanitize(JSON.parse(storage?.getItem(WECHAT_SETTINGS_KEY)));
   } catch {
     settings = defaults();
   }
@@ -113,6 +115,7 @@ export function createWechatController({
       stakes: readOnlyAttempt.snapshot.stakes,
       hints: false,
       sound: false,
+      vibration: false,
     });
   const peeked = new Map();
   const profiles = BOT_PROFILES.map((p) => ({
@@ -151,7 +154,7 @@ export function createWechatController({
 
   function save() {
     try {
-      storage?.setItem(STORAGE_KEY, JSON.stringify(settings));
+      storage?.setItem(WECHAT_SETTINGS_KEY, JSON.stringify(settings));
     } catch {
       /* Practice works without storage. */
     }
@@ -316,7 +319,7 @@ export function createWechatController({
     turnCue.update({
       key: `${game.hand}:${game.replayAttempt || 0}:${game.street}:${game.history.length}`,
       enabled: legal.enabled,
-      active: active && !disposed && settings.sound,
+      active: active && !disposed && settings.vibration,
     });
     attention.update({
       key: `${game.hand}:${game.replayAttempt || 0}:${game.street}:${game.history.length}`,

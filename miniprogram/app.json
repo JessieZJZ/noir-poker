@@ -6,6 +6,7 @@
     "pages/source/source"
   ],
   "resizable": true,
+  "subpackages": [{ "root": "music", "name": "music", "pages": ["loader"] }],
   "workers": "workers",
   "window": {
     "pageOrientation": "portrait",

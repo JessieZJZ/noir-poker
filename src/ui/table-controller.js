@@ -9,6 +9,8 @@ import { createHeroTurnCue, createHeroTurnAttention } from './hero-turn.js';
 import { notifyHeroTurn } from '../platform/haptics.js';
 import { createDialogScrollLock } from './dialog-scroll-lock.js';
 import { soundSamples, SOUND_SAMPLE_RATE, createSoundOutput } from './sound-cues.js';
+import { loadFeedbackPreferences } from './feedback-preferences.js';
+import { createWebBackgroundMusic } from '../platform/web-background-music.js';
 import {
   renderOpponentSeats,
   renderSeatAction,
@@ -124,15 +126,25 @@ let game = gameRecords.resume() || newGame(requestedCount, requestedStakes),
   finishing = false,
   hints = true,
   sound = true,
+  vibration = true,
   audio = null,
   audioOutput = null;
 let newRecordSession = false;
 game.difficulty = tablePreferences.difficulty;
 $('#player-count').value = String(requestedCount);
 try {
-  sound = preferenceStorage.getItem('noir-sound') !== 'false';
+  ({ sound, vibration } = loadFeedbackPreferences(preferenceStorage));
   hints = preferenceStorage.getItem('noir-hints') !== 'false';
 } catch {}
+const backgroundMusic = createWebBackgroundMusic({
+  enabled: sound,
+  active: activityClock.active && !document.hidden,
+  createContext: () => {
+    prepareAudio();
+    return audio;
+  },
+  sharedContext: true,
+});
 let pendingBotSettings = loadBotSettings();
 const opponents = createOpponentsController({
   getGame: () => game,
@@ -194,7 +206,10 @@ for (const event of ['pointerdown', 'pointerup', 'keydown']) {
   document.addEventListener(
     event,
     (e) => {
-      if (e.isTrusted) void unlockAudio();
+      if (e.isTrusted) {
+        void unlockAudio();
+        backgroundMusic.unlock();
+      }
     },
     { capture: true },
   );
@@ -473,8 +488,7 @@ function render() {
   heroTurnCue.update({
     key: `${game.hand}:${game.replayAttempt || 0}:${game.street}:${game.history.length}`,
     enabled: legal.enabled,
-    active:
-      activityClock.active && (!document.documentElement.classList.contains('native-app') || sound),
+    active: activityClock.active && vibration,
   });
   syncTurnAttention();
   $('#turn-prompt').hidden = !legal.enabled;
@@ -1020,30 +1034,34 @@ $('#difficulty').onchange = (e) => {
 };
 function updateSound() {
   const b = $('#sound-button');
-  const native = document.documentElement.classList.contains('native-app');
-  setLocalizedText($('#sound-label'), native ? '音效与振动' : '音效');
+  setLocalizedText($('#sound-label'), '音效与音乐');
   b.setAttribute('aria-pressed', String(sound));
   b.setAttribute('aria-checked', String(sound));
-  setLocalizedAttribute(
-    b,
-    'title',
-    native
-      ? sound
-        ? '音效与振动已开启'
-        : '音效与振动已关闭'
-      : sound
-        ? '音效已开启'
-        : '音效已关闭',
-  );
+  setLocalizedAttribute(b, 'title', sound ? '音效与音乐已开启' : '音效与音乐已关闭');
 }
 $('#sound-button').onclick = () => {
   sound = !sound;
+  backgroundMusic.setEnabled(sound);
   if (!sound) cancelSoundEffects();
   try {
     preferenceStorage.setItem('noir-sound', String(sound));
   } catch {}
   updateSound();
   if (sound) void unlockAudio().then(() => soundEffect('deal'));
+};
+function updateVibration() {
+  const b = $('#vibration-button');
+  b.setAttribute('aria-pressed', String(vibration));
+  b.setAttribute('aria-checked', String(vibration));
+  setLocalizedAttribute(b, 'title', vibration ? '振动已开启' : '振动已关闭');
+}
+$('#vibration-button').onclick = () => {
+  vibration = !vibration;
+  try {
+    preferenceStorage.setItem('noir-vibration', String(vibration));
+  } catch {}
+  updateVibration();
+  syncTurnAttention();
 };
 $('#hint-toggle').onclick = () => {
   hints = !hints;
@@ -1265,9 +1283,11 @@ function registerTools() {
   });
 }
 updateSound();
+updateVibration();
 positionCoach();
 function syncActivity() {
   const active = appActive && !isOrientationBlocked();
+  backgroundMusic.setActive(active && !document.hidden);
   hintNotification.setActive(active && !document.hidden);
   if (active && !document.hidden && !compactCoach.matches) updateCoach(true);
   const changed = activityClock.setActive(active);
@@ -1286,19 +1306,23 @@ document.addEventListener('noir:app-state', ({ detail }) => {
 });
 document.addEventListener('noir:orientation-state', syncActivity);
 document.addEventListener('visibilitychange', () => {
+  backgroundMusic.setActive(activityClock.active && !document.hidden);
   syncTurnAttention();
   hintNotification.setActive(activityClock.active && !document.hidden);
   if (activityClock.active && !document.hidden && !compactCoach.matches) updateCoach(true);
 });
 window.addEventListener('pagehide', (event) => {
+  backgroundMusic.setActive(false);
   heroTurnAttention.reset();
   if (event.persisted) return;
+  backgroundMusic.dispose();
   compactCoach.removeEventListener('change', changeCoachLayout);
   hintNotification.destroy();
   hintMarquee.destroy();
 });
 window.addEventListener('pageshow', (event) => {
   if (event.persisted) {
+    backgroundMusic.setActive(activityClock.active && !document.hidden);
     syncTurnAttention();
     updateCoach(true);
   }

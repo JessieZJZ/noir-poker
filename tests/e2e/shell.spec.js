@@ -91,7 +91,8 @@ test('mobile settings fill the screen, use accessible switches and return focus 
     await page.setViewportSize(size);
     await page.locator('#opponents-button').click();
     await expect(page.locator('#opponents-title')).toHaveText('设置');
-    await expect(page.getByRole('switch', { name: '音效', exact: true })).toBeChecked();
+    await expect(page.getByRole('switch', { name: '音效与音乐', exact: true })).toBeChecked();
+    await expect(page.getByRole('switch', { name: '振动', exact: true })).toBeChecked();
     await expect(page.getByRole('switch', { name: '牌桌提示', exact: true })).toBeChecked();
     const layout = await page.locator('#opponents-dialog').evaluate((el) => {
       const r = el.getBoundingClientRect(),

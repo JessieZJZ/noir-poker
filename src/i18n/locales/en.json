@@ -2024,5 +2024,11 @@
   "对手可能牌组": "Possible opponent hands",
   "过牌也可能是在等后位先下注，给对手继续投入的机会。": "Checking may also be waiting for a player behind to bet, giving opponents a chance to put in more chips.",
   "这手建议直接过牌，不必下注；{0}。": "Check here without betting; {0}.",
-  "{0}在 {1} 位": "{0} in {1}"
+  "{0}在 {1} 位": "{0} in {1}",
+  "音效与音乐": "Sound effects & music",
+  "振动": "Vibration",
+  "音效与音乐已开启": "Sound effects & music on",
+  "音效与音乐已关闭": "Sound effects & music off",
+  "振动已开启": "Vibration on",
+  "振动已关闭": "Vibration off"
 }

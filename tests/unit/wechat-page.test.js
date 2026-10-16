@@ -1343,15 +1343,20 @@ test('WeChat hero turn vibrates once, rerenders/settings/background do not repea
   assert.deepEqual(vibrations, ['light']);
 });
 
-test('muting the combined feedback preference suppresses later hero turns and clears audio', (t) => {
+test('sound mute clears audio while independent vibration still notifies later hero turns', (t) => {
   const { page, vibrations, audios } = setup(t);
   page.togglePreference({ currentTarget: { dataset: { key: 'sound' } } });
   const count = vibrations.length;
   reachHero(page);
   assert.equal(page.data.settings.sound, false);
-  assert.equal(vibrations.length, count);
+  assert.equal(vibrations.length, count + 1);
   assert.ok(audios.every((audio) => audio.stopped));
-  assert.match(template, /aria-label="音效与振动"/);
+  assert.match(template, /aria-label="音效与音乐"/);
+  page.togglePreference({ currentTarget: { dataset: { key: 'vibration' } } });
+  page._controller.retry();
+  reachHero(page);
+  assert.equal(vibrations.length, count + 1);
+  assert.match(template, /aria-label="振动"/);
 });
 test('peek preserves peer caption lifts and ordinary updates never re-deal the hero', (t) => {
   const { page } = setup(t);

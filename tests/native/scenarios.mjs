@@ -717,7 +717,7 @@ export async function nativeScenarios(app) {
       await app.click('#opponents-button');
       assert.equal(
         await app.evaluate(() => document.querySelector('#sound-label').textContent.trim()),
-        '音效与振动',
+        '音效与音乐',
       );
       assert.equal(
         await app.evaluate(() =>
@@ -732,8 +732,11 @@ export async function nativeScenarios(app) {
       });
       const mutedTurn = await resetToHero();
       const muted = await app.evaluate(() => window.__feedbackProbe);
-      assert.deepEqual(muted, { haptics: 0, audio: 0, levels: [] });
+      assert.equal(muted.audio, 0);
+      assert.deepEqual(muted.levels, []);
+      assert.ok(muted.haptics > 0, 'Sound mute must preserve independent vibration');
       await app.click('#opponents-button');
+      await app.click('#vibration-button');
       await app.click('#sound-button');
       await app.click('#opponents-dialog .close-dialog');
       await app.evaluate(() => {
@@ -742,14 +745,17 @@ export async function nativeScenarios(app) {
       const enabledTurn = await resetToHero();
       const enabled = await app.evaluate(() => window.__feedbackProbe);
       assert.ok(
-        enabled.haptics > 0 && enabled.audio > 0,
-        'Unmuting must restore native turn feedback and WebView sound dispatch',
+        enabled.haptics === 0 && enabled.audio > 0,
+        'Unmuting restores sound while vibration stays disabled',
       );
       assert.equal(enabled.levels.length, enabled.audio);
       assert.ok(
         enabled.levels.every(({ rms, peak }) => rms >= 0.145 && rms <= 0.165 && peak <= 0.7),
         'Actual installed-app PCM uses the louder mastered cues with per-cue headroom',
       );
+      await app.click('#opponents-button');
+      await app.click('#vibration-button');
+      await app.click('#opponents-dialog .close-dialog');
       return {
         muted,
         enabled,
@@ -759,6 +765,99 @@ export async function nativeScenarios(app) {
     } finally {
       await app.evaluate(() => window.__restoreFeedbackProbe?.()).catch(() => {});
     }
+  });
+  await check('background-music-loop-and-independent-vibration', async () => {
+    await app.click('#opponents-button');
+    const read = () =>
+      app.evaluate(() => {
+        const audio = document.querySelector('audio[data-background-music]');
+        return audio
+          ? {
+              paused: audio.paused,
+              loop: audio.loop,
+              time: audio.currentTime,
+              duration: audio.duration,
+              ready: audio.readyState,
+              source: audio.currentSrc,
+            }
+          : null;
+      });
+    const initial = await app.waitFor(
+      async () => {
+        const state = await read();
+        return state && !state.paused && state.ready >= 2 && state.time > 0.1 ? state : null;
+      },
+      15000,
+      'Local bundled background music must decode and advance',
+    );
+    assert.equal(initial.loop, true);
+    assert.ok(initial.duration > 93 && initial.duration < 94);
+    assert.ok(initial.source.endsWith('/audio/background-music.m4a'));
+    await app.evaluate(() => {
+      const audio = document.querySelector('audio[data-background-music]');
+      audio.currentTime = audio.duration - 0.2;
+      window.__musicLifecycle = [];
+      window.__musicLifecycleListener = ({ detail }) =>
+        window.__musicLifecycle.push({
+          active: detail.active,
+          paused: audio.paused,
+          time: audio.currentTime,
+        });
+      document.addEventListener('noir:app-state', window.__musicLifecycleListener);
+    });
+    const wrapped = await app.waitFor(
+      async () => {
+        const state = await read();
+        return state && !state.paused && state.time < 3 ? state : null;
+      },
+      10000,
+      'The installed music player must loop beyond the end',
+    );
+    await app.click('#opponents-dialog .close-dialog');
+    const background = await app.background();
+    await app.sleep(1500);
+    const backgroundState = await app.nativeState();
+    assert.ok([2, 3].includes(backgroundState), 'Music check requires a real native background');
+    const backgroundMs = performance.now() - background.startedAt;
+    await app.activate();
+    const events = await app.evaluate(() => {
+      document.removeEventListener('noir:app-state', window.__musicLifecycleListener);
+      return window.__musicLifecycle;
+    });
+    assert.ok(events.some((event) => !event.active && event.paused));
+    await app.waitFor(
+      async () => !(await read())?.paused,
+      10000,
+      'Music must resume in the foreground',
+    );
+    await app.click('#opponents-button');
+    await app.click('#vibration-button');
+    assert.equal((await read()).paused, false);
+    await app.screenshot('music-on-vibration-off');
+    await app.click('#sound-button');
+    assert.equal((await read()).paused, true);
+    await app.click('#opponents-dialog .close-dialog');
+    await app.relaunch();
+    await app.click('#opponents-button');
+    const saved = await app.evaluate(() => ({
+      sound: document.querySelector('#sound-button').getAttribute('aria-checked'),
+      vibration: document.querySelector('#vibration-button').getAttribute('aria-checked'),
+      musicElements: document.querySelectorAll('audio[data-background-music]').length,
+    }));
+    assert.deepEqual(saved, { sound: 'false', vibration: 'false', musicElements: 0 });
+    await app.screenshot('music-and-vibration-disabled-after-restart');
+    await app.click('#sound-button');
+    await app.click('#vibration-button');
+    await app.click('#opponents-dialog .close-dialog');
+    return {
+      initial,
+      wrapped,
+      background: { ...background, backgroundState, backgroundMs: Math.round(backgroundMs) },
+      events,
+      saved,
+      scope:
+        'Installed app local AAC decode, loop, lifecycle and independent preference persistence; not physical acoustic or motor acceptance',
+    };
   });
   await check('mixed-toggle-and-visual-guide', async () => {
     await app.click('#opponents-button');

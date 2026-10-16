@@ -514,16 +514,34 @@
           >{{stakesNotice}}</text
         >
         <view class="setting-row"
-          ><text>音效与振动</text
+          ><text>音效与音乐</text
           ><button
             hover-class="none"
             class="settings-switch {{settings.sound ? 'on' : ''}}"
+            id="sound-button"
             data-key="sound"
             bindtap="togglePreference"
-            aria-label="音效与振动"
+            aria-role="switch"
+            aria-checked="{{settings.sound}}"
+            aria-label="音效与音乐"
           >
             <view class="switch-track" /><view class="switch-thumb" /></button
         ></view>
+        <view class="setting-row">
+          <text>振动</text>
+          <button
+            hover-class="none"
+            class="settings-switch {{settings.vibration ? 'on' : ''}}"
+            id="vibration-button"
+            data-key="vibration"
+            bindtap="togglePreference"
+            aria-role="switch"
+            aria-checked="{{settings.vibration}}"
+            aria-label="振动"
+          >
+            <view class="switch-track" /><view class="switch-thumb" />
+          </button>
+        </view>
         <view class="setting-row"
           ><view
             ><text>牌桌提示</text

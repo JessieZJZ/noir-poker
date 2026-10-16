@@ -53,7 +53,7 @@ module.exports = {
     countOptions: [5, 6, 7, 8, 9],
     emotionOptions: ['关闭', '轻微波动', '明显波动'],
     profiles: [],
-    settings: { sound: true, hints: true },
+    settings: { sound: true, vibration: true, hints: true },
     seats: [],
     board: [],
     boardTop: [],
@@ -84,6 +84,8 @@ module.exports = {
       createReviewWorker:
         typeof wx.createWorker === 'function' ? () => wx.createWorker('workers/review.js') : null,
       publish: (view) => {
+        if (!this._readOnlyAttempt && typeof getApp === 'function')
+          getApp().noirMusic?.setEnabled(view.settings.sound);
         if (view.done || view.hand !== this.data.hand || view.replay !== this.data.replay)
           this._finishRequested = false;
         const game = this._controller?.getGame();
@@ -218,7 +220,7 @@ module.exports = {
         if (!this._destroyed) this.setData({ turnPhase });
       },
       notifyTurn: () => {
-        if (!this._hidden && !this._destroyed && this.data.settings.sound)
+        if (!this._hidden && !this._destroyed && this.data.settings.vibration)
           wx.vibrateShort?.({ type: 'light', fail: () => {} });
       },
     });
@@ -336,6 +338,7 @@ module.exports = {
   },
   setOverlay(patch) {
     this._audioUnlocked = true;
+    if (typeof getApp === 'function') getApp().noirMusic?.unlock();
     const next = { ...this.data, ...patch };
     const homeLocked = [
       'settingsOpen',
@@ -591,6 +594,7 @@ module.exports = {
   },
   call(method, ...args) {
     this._audioUnlocked = true;
+    if (typeof getApp === 'function') getApp().noirMusic?.unlock();
     try {
       return this._controller[method](...args);
     } catch (error) {

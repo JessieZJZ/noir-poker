@@ -1,4 +1,5 @@
 import { soundSamples, SOUND_SAMPLE_RATE } from '../src/ui/sound-cues.js';
+import { BACKGROUND_MUSIC_PATH } from '../src/ui/background-music.js';
 import { watch } from 'node:fs';
 import { cp, mkdir, open, readFile, readdir, rename, rm, stat, writeFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
@@ -17,6 +18,23 @@ const template = path.join(root, 'miniprogram');
 const manifestName = 'build-info.json';
 const appId = () => process.env.NOIR_WECHAT_APP_ID || 'touristappid';
 const checksum = (bytes) => createHash('sha256').update(bytes).digest('hex');
+
+export function wechatPackageBytes(files, app) {
+  const roots = (app.subpackages || []).map((entry) => entry.root.replace(/\/$/, '') + '/');
+  const sizes = Object.fromEntries(
+    ['main', ...roots.map((root) => root.slice(0, -1))].map((key) => [key, 0]),
+  );
+  for (const file of files) {
+    const root = roots.find((root) => file.path.startsWith(root));
+    sizes[root ? root.slice(0, -1) : 'main'] += file.bytes;
+  }
+  for (const [name, size] of Object.entries(sizes))
+    if (size > 2 * 1024 * 1024)
+      throw Error(`WeChat ${name} package exceeds the 2 MiB budget (${size})`);
+  if (files.reduce((sum, file) => sum + file.bytes, 0) > 20 * 1024 * 1024)
+    throw Error('WeChat total packages exceed the 20 MiB budget');
+  return sizes;
+}
 
 export async function fileList(directory, prefix = '') {
   const files = [];
@@ -202,6 +220,7 @@ export async function buildWechat(output = wechatOutput) {
       'cards.js',
       'hero-turn.js',
       'card-rank-glyphs.js',
+      'background-music.js',
     ]) {
       const compiled = await transform(await readFile(path.join(root, 'src/ui', name), 'utf8'), {
         format: 'cjs',
@@ -251,6 +270,10 @@ export async function buildWechat(output = wechatOutput) {
     await mkdir(path.join(staging, 'assets/sounds'), { recursive: true });
     for (const sound of ['fold', 'check', 'raise', 'call', 'deal', 'win'])
       await writeFile(path.join(staging, `assets/sounds/${sound}.wav`), soundWave(sound));
+    await cp(
+      path.join(root, 'public', BACKGROUND_MUSIC_PATH),
+      path.join(staging, 'music/background-music.m4a'),
+    );
     const project = {
       appid: appId(),
       projectname: 'NOIR Poker',
@@ -276,8 +299,10 @@ export async function buildWechat(output = wechatOutput) {
       files.push({ path: name, bytes: bytes.length, sha256: checksum(bytes) });
     }
     const totalBytes = files.reduce((sum, file) => sum + file.bytes, 0);
-    if (totalBytes > 2 * 1024 * 1024)
-      throw Error(`WeChat main package exceeds the 2 MiB budget (${totalBytes})`);
+    const packageBytes = wechatPackageBytes(
+      files,
+      JSON.parse(await readFile(path.join(staging, 'app.json'), 'utf8')),
+    );
     if (wechatSourceDigest() !== before)
       throw Error('Source changed while building WeChat; retry after saving');
     await writeFile(
@@ -288,6 +313,7 @@ export async function buildWechat(output = wechatOutput) {
           appId: appId(),
           builtAt: new Date().toISOString(),
           totalBytes,
+          packageBytes,
           files,
         },
         null,
@@ -320,7 +346,7 @@ export async function buildWechat(output = wechatOutput) {
     await rm(backup, { recursive: true, force: true });
     await verifyWechat(output);
     console.log(
-      `WeChat project ready: ${output} (${Math.round(totalBytes / 1024)} KiB; current shared source)`,
+      `WeChat project ready: ${output} (${Math.round(packageBytes.main / 1024)} KiB main; ${Math.round(totalBytes / 1024)} KiB total; current shared source)`,
     );
   } finally {
     try {
@@ -342,14 +368,26 @@ export async function verifyWechat(output = wechatOutput) {
   );
   if (JSON.stringify(actual.sort()) !== JSON.stringify(expected.sort()))
     throw Error('WeChat output has missing or unexpected files');
-  for (const file of info.files)
-    if (checksum(await readFile(path.join(output, file.path))) !== file.sha256)
+  for (const file of info.files) {
+    const bytes = await readFile(path.join(output, file.path));
+    if (bytes.length !== file.bytes || checksum(bytes) !== file.sha256)
       throw Error(`Stale WeChat asset: ${file.path}`);
+  }
   for (const id of Object.keys(PROFILE_PORTRAITS))
     if (!expected.includes(`assets/portraits/${id}.jpg`))
       throw Error(`Missing WeChat portrait ${id}`);
   const project = JSON.parse(await readFile(path.join(output, 'project.config.json'), 'utf8'));
   const app = JSON.parse(await readFile(path.join(output, 'app.json'), 'utf8'));
+  const sizes = wechatPackageBytes(info.files, app);
+  if (JSON.stringify(sizes) !== JSON.stringify(info.packageBytes))
+    throw Error('WeChat package sizes differ from the generated manifest');
+  if (!expected.includes('music/background-music.m4a'))
+    throw Error('Missing local background music');
+  if (
+    checksum(await readFile(path.join(output, 'music/background-music.m4a'))) !==
+    checksum(await readFile(path.join(root, 'public', BACKGROUND_MUSIC_PATH)))
+  )
+    throw Error('WeChat background music differs from source');
   if (app.pages?.length < 1 || project.compileType !== 'miniprogram')
     throw Error('Invalid WeChat project');
   const page = await readFile(path.join(output, `${app.pages[0]}.wxml`), 'utf8');

@@ -1,9 +1,9 @@
 {
   "files": {
-    "manrope.woff2": "2a7739c6c307f1e5fe356541c70c3f91694cbfaa82ea08d24fb602bc9651ea4e",
-    "noto-sans-sc.woff2": "8b9689a9846cd9dad6001377374cbfb2a9399638072394c367ab751f391bc53b",
-    "noto-sans-kr.woff2": "39f6647a3f67cae1b3ef1c998001e7b7c171128765c7ea60991fa7856f2fef6b",
-    "barlow-condensed.woff2": "96c9da156774b18cf803d3dc990c1dddab0faa23f3695310ae89bce95a4f6708"
+    "manrope.woff2": "56f4480ac2b7d36d89951a07e98b781185265a7d129ec7f422edde4976a7b12e",
+    "noto-sans-sc.woff2": "efa4bb113893df0c697ac1c5bb39e7389a89cbd5a64c67fcf4ff45423216ec51",
+    "noto-sans-kr.woff2": "91c197c651555834f52ac477787f86ca7b4e49fc4cdb3830e5c1da0edda74e3d",
+    "barlow-condensed.woff2": "c27c112fee87d3d18de1a7a398b925669cacf42633ad6d4adcd6823dfb7aa06e"
   },
   "codepoints": [
     0,
@@ -2306,6 +2306,7 @@
     38646,
     38651,
     38656,
+    38663,
     38706,
     38750,
     38752,

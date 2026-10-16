@@ -63,6 +63,22 @@ test('manifest is deterministic and verifies the complete image directory', (t) 
   assert.equal(report.sourceAssetDigest, first.sourceAssetDigest);
 });
 
+test('local background audio is verified in source, native directories and compiled artifacts', (t) => {
+  const { publicDir, webDir, directory, options } = fixture(t);
+  mkdirSync(path.join(publicDir, 'audio'));
+  const original = Buffer.from('local AAC regression bytes');
+  writeFileSync(path.join(publicDir, 'audio/background-music.m4a'), original);
+  mkdirSync(path.join(webDir, 'audio'));
+  writeFileSync(path.join(webDir, 'audio/background-music.m4a'), original);
+  writeBundledAssetManifest(webDir, options);
+  assert.equal(verifyBundledAssetDirectory(webDir, options).audioCount, 1);
+  const app = path.join(directory, 'Audio.app');
+  cpSync(webDir, path.join(app, 'public'), { recursive: true });
+  assert.equal(verifyBundledArtifact(app, options).audioCount, 1);
+  writeFileSync(path.join(app, 'public/audio/background-music.m4a'), 'damaged');
+  assert.throws(() => verifyBundledArtifact(app, options), /differs from source/);
+});
+
 test('missing, edited and newly added source images all prevent stale delivery', (t) => {
   const { publicDir, webDir, options } = fixture(t);
   const portrait = path.join(webDir, 'portraits/a.jpg');

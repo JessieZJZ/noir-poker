@@ -2,6 +2,7 @@ const KEYS = [
   'noir-table-v1',
   'noir-opponents-v1',
   'noir-sound',
+  'noir-vibration',
   'noir-hints',
   'noir-locale',
   'noir-game-records-v1',

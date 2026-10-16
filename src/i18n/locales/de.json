@@ -2023,5 +2023,11 @@
   "对手可能牌组": "Mögliche gegnerische Hände",
   "过牌也可能是在等后位先下注，给对手继续投入的机会。": "Der Check kann auch auf eine Bet von hinten warten und dem Gegner Gelegenheit geben, weitere Chips einzuzahlen.",
   "这手建议直接过牌，不必下注；{0}。": "Hier ohne Einsatz checken; {0}.",
-  "{0}在 {1} 位": "{0} in Position {1}"
+  "{0}在 {1} 位": "{0} in Position {1}",
+  "音效与音乐": "Effekte und Musik",
+  "振动": "Vibration",
+  "音效与音乐已开启": "Effekte und Musik eingeschaltet",
+  "音效与音乐已关闭": "Effekte und Musik ausgeschaltet",
+  "振动已开启": "Vibration eingeschaltet",
+  "振动已关闭": "Vibration ausgeschaltet"
 }

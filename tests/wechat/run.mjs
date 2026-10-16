@@ -1126,6 +1126,8 @@ try {
   });
   if (!(await page.data()).settings.sound)
     await invoke('togglePreference', { currentTarget: { dataset: { key: 'sound' } } });
+  if (!(await page.data()).settings.vibration)
+    await invoke('togglePreference', { currentTarget: { dataset: { key: 'vibration' } } });
   await invoke('togglePreference', { currentTarget: { dataset: { key: 'sound' } } });
   const mutedBefore = await mini.evaluate(() => ({
     audio: getCurrentPages().at(-1).__audioPlays,
@@ -1137,7 +1139,9 @@ try {
     audio: getCurrentPages().at(-1).__audioPlays,
     vibrations: getApp().__noirTurnVibrations.length,
   }));
-  assert.deepEqual(mutedAfter, mutedBefore, 'Disabled feedback suppresses both channels');
+  assert.equal(mutedAfter.audio, mutedBefore.audio, 'Sound mute suppresses action audio');
+  assert.ok(mutedAfter.vibrations > mutedBefore.vibrations, 'Sound mute retains enabled vibration');
+  await invoke('togglePreference', { currentTarget: { dataset: { key: 'vibration' } } });
   await invoke('togglePreference', { currentTarget: { dataset: { key: 'sound' } } });
   await invoke('resetPractice');
   await invoke('confirmReset');
@@ -1146,7 +1150,9 @@ try {
     audio: getCurrentPages().at(-1).__audioPlays,
     vibrations: getApp().__noirTurnVibrations.length,
   }));
-  assert.ok(enabled.audio > mutedAfter.audio && enabled.vibrations > mutedAfter.vibrations);
+  assert.ok(enabled.audio > mutedAfter.audio, 'Sound unmute restores action audio');
+  assert.equal(enabled.vibrations, mutedAfter.vibrations, 'Vibration mute retains action audio');
+  await invoke('togglePreference', { currentTarget: { dataset: { key: 'vibration' } } });
   report.combinedFeedback = {
     mutedBefore,
     mutedAfter,

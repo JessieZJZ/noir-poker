@@ -6,7 +6,7 @@
 
 各端实测范围与限制见[行动提醒验证记录](docs/turn-attention-validation.md)。
 
-四版原创循环背景音乐候选、试听页、无损母带与来源记录见[音乐工作室](audio-studio/noir-background-music/README.md)。目前供选曲试听，尚未接入游戏播放。
+四版原创循环背景音乐候选、试听页、无损母带与来源记录见[音乐工作室](audio-studio/noir-background-music/README.md)。游戏默认循环播放「夜色牌桌」；设置中的“音效与音乐”统一控制背景音乐和操作音效，“振动”独立控制行动提醒，两项均在新设备默认开启并保存选择。旧版关闭声音的选择同时保留为静音和关闭振动；之后两个开关各自保存。详见[背景音乐与反馈](docs/background-music.md)。
 
 工程目录：`/Users/zjz/code/noir-poker`。此目录是后续迭代的主项目，保留原项目的 Git 历史和 Sites 关联。原 Documents 目录中的项目保留为迁移前快照。
 

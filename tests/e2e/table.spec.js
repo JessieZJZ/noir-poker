@@ -1384,7 +1384,7 @@ test('first visit presents balanced opponents with sound enabled', async ({ page
   await expect(page.locator('#hint-toggle')).toHaveAttribute('aria-pressed', 'true');
   await expect(page.locator('#sound-button')).toHaveAttribute('aria-pressed', 'true');
   await page.locator('#opponents-button').click();
-  await expect(page.locator('#sound-button')).toHaveAccessibleName('音效');
+  await expect(page.locator('#sound-button')).toHaveAccessibleName('音效与音乐');
   await expect(page.locator('#sound-button')).toHaveAttribute('role', 'switch');
   await expect(page.locator('[data-profile-preview="balanced"]')).toHaveAttribute(
     'aria-pressed',
