@@ -1,0 +1,32 @@
+{
+  "date": "2026-10-16",
+  "browser": "Codex in-app browser",
+  "page": "http://127.0.0.1:8788/listen.html",
+  "losslessPlaybackConfirmedByVisibleStatus": [
+    "01-midnight-felt",
+    "02-mint-circuit",
+    "03-velvet-room",
+    "04-quiet-equity"
+  ],
+  "switchingAndStop": "passed",
+  "seamAudition": {
+    "track": "04-quiet-equity",
+    "progressBeforeWrapPercent": 96.6094,
+    "progressAfterWrapPercent": 0.991667,
+    "playbackRemainedActive": true
+  },
+  "consoleErrorsDuringFinalPass": [],
+  "localScreenshot": ".artifacts/background-music/listen-preview.png",
+  "gameIntegration": false,
+  "nativeRuntimeTested": false,
+  "wechatDevToolsTested": false,
+  "subjectiveListeningAssessment": false,
+  "projectChecks": {
+    "unitTestsPassed": 780,
+    "unitTestsFailed": 0,
+    "webProductionBuild": "passed",
+    "wechatGeneration": "passed",
+    "formatCheck": "passed"
+  },
+  "scope": "Observed preview UI, lossless browser decode and audio transport state. Does not prove loudspeaker/headphone output, subjective quality, or playback inside the game."
+}
