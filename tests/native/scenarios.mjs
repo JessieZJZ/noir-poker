@@ -7,7 +7,48 @@ import {
 } from '../fixtures/records-geometry.js';
 import { nativePageReady } from '../../scripts/native-back.mjs';
 import { withCenteredNativeClicks } from './position-target.mjs';
+import { BOT_THINK_LIMITS } from '../../src/engine/bot-timing.js';
 const documentLoginMarker = (text) => /sign in|log in|登录账号/i.test(text);
+
+export async function waitForNativeHeroTurn(app, { now = Date.now } = {}) {
+  const started = now();
+  const { playerCount } = await app.state();
+  // An eight-player reset can have seven sequential, genuine bot pauses.
+  // Budget those configured pauses rather than assuming one 20-second turn.
+  // This changes no application timers or analysis workload.
+  const timeoutMs = (playerCount - 1) * BOT_THINK_LIMITS.maximum + 10000;
+  const observations = [];
+  try {
+    await app.waitFor(
+      async () => {
+        const snapshot = await app.evaluate(() => {
+          const game = window.noir.getState();
+          return {
+            hand: game.hand,
+            phase: game.phase,
+            actor: game.actor,
+            enabled: game.legal.enabled,
+            controlEnabled: !document.querySelector('#call-button').disabled,
+          };
+        });
+        if (JSON.stringify(snapshot) !== JSON.stringify(observations.at(-1)?.state))
+          observations.push({ elapsedMs: now() - started, state: snapshot });
+        return (
+          snapshot.phase === 'playing' &&
+          snapshot.actor === '你' &&
+          snapshot.enabled &&
+          snapshot.controlEnabled
+        );
+      },
+      timeoutMs,
+      'The reset hand must reach the real hero turn',
+    );
+    return { timeoutMs, elapsedMs: now() - started, observations };
+  } catch (error) {
+    error.turnDiagnostics = { timeoutMs, elapsedMs: now() - started, observations };
+    throw error;
+  }
+}
 
 export async function waitForPendingOpponent(app) {
   // A real opponent can answer before Android's next HTTP state read. Follow
@@ -203,6 +244,7 @@ export async function nativeScenarios(app) {
         elapsedMs: Date.now() - started,
         error: error.stack || String(error),
         ...(error.reviewDiagnostics ? { reviewDiagnostics: error.reviewDiagnostics } : {}),
+        ...(error.turnDiagnostics ? { turnDiagnostics: error.turnDiagnostics } : {}),
       });
       throw error;
     }
@@ -669,11 +711,7 @@ export async function nativeScenarios(app) {
     const resetToHero = async () => {
       await app.click('#reset-button');
       await app.click('#confirm-reset');
-      await app.waitFor(
-        () => app.evaluate(() => !document.querySelector('#call-button').disabled),
-        20000,
-        'The reset hand must reach the real hero turn',
-      );
+      return waitForNativeHeroTurn(app);
     };
     try {
       await app.click('#opponents-button');
@@ -692,7 +730,7 @@ export async function nativeScenarios(app) {
       await app.evaluate(() => {
         window.__feedbackProbe = { haptics: 0, audio: 0, levels: [] };
       });
-      await resetToHero();
+      const mutedTurn = await resetToHero();
       const muted = await app.evaluate(() => window.__feedbackProbe);
       assert.deepEqual(muted, { haptics: 0, audio: 0, levels: [] });
       await app.click('#opponents-button');
@@ -701,7 +739,7 @@ export async function nativeScenarios(app) {
       await app.evaluate(() => {
         window.__feedbackProbe = { haptics: 0, audio: 0, levels: [] };
       });
-      await resetToHero();
+      const enabledTurn = await resetToHero();
       const enabled = await app.evaluate(() => window.__feedbackProbe);
       assert.ok(
         enabled.haptics > 0 && enabled.audio > 0,
@@ -715,6 +753,7 @@ export async function nativeScenarios(app) {
       return {
         muted,
         enabled,
+        turns: { muted: mutedTurn, enabled: enabledTurn },
         scope: 'Actual installed-app dispatch; physical hearing and vibration feel are separate',
       };
     } finally {
