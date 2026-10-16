@@ -8,10 +8,11 @@ import { compareCandidateActions } from './counterfactual.js';
 import { coachDecision, buildOverview } from './coaching.js';
 import { drawLabel, callOddsText } from './narrative.js';
 import { cardText } from './spot-facts.js';
-import { collectPublicResponses } from './responses.js';
+import { reviewActivity } from './activity.js';
 import { handMatchups, valuePlan } from './matchups.js';
 import { actionLabel } from '../engine/action-labels.js';
 import { legalRaiseTo } from '../engine/bet-sizing.js';
+import { gameIdentities } from '../engine/player-identity.js';
 export { actionLabel } from '../engine/action-labels.js';
 export { callPrice } from './equity.js';
 export { startingTier, drawInfo } from './context.js';
@@ -30,7 +31,8 @@ export function createReviewInput(g) {
       smallBlind: g.smallBlind,
       hole: g.players[0].hole,
       decisions: g.decisions || [],
-      publicResponses: collectPublicResponses(g.decisions, g.history, g.players, g.hand),
+      players: gameIdentities(g),
+      activity: reviewActivity(g),
       opponents: g.botDecisions || [],
       outcome: {
         profit: (g.payouts[0] || 0) - g.players[0].total,
@@ -113,7 +115,7 @@ export function analyzeDecision(
     code = 'free-fold';
     status = 'attention';
     confidence = '规则与成本明确';
-    title = '无需补筹码，弃牌放弃了免费机会';
+    title = '可以直接过牌，弃牌放弃了免费机会';
     reason = `当时你在 ${s.position}，跟注成本为 0。过牌保留本手权益，不会增加投入；${ctx.pendingOthers ? '后面还有 ' + ctx.pendingOthers + ' 位玩家可以行动。' : '本轮没有必须补齐的下注。'}`;
     alternative = { action: 'check', amount: 0 };
     lesson = '先免费过牌，面对后续下注再评估价格。';

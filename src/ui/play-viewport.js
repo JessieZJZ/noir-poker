@@ -1,11 +1,13 @@
 import { COMPACT_PLAY_QUERY } from './play-geometry.js';
+import { playSurfaceTop, readPlayViewport } from './stable-viewport.js';
 // Keep the whole table in the first screen. Measurements are made at
 // scale 1 before fitting, so collision coordinates never mix CSS/visual pixels.
 export function createPlayViewport(surface, { layout = () => {} } = {}) {
   const viewport = surface.querySelector('.table-viewport'),
-    arena = surface.querySelector('#arena'),
+    arena = surface.querySelector('.arena'),
     mobile = matchMedia(COMPACT_PLAY_QUERY);
-  let frame = null;
+  let frame = null,
+    destroyed = false;
 
   function tightenSeatRanks() {
     for (const seat of arena.querySelectorAll('.seat')) {
@@ -26,6 +28,7 @@ export function createPlayViewport(surface, { layout = () => {} } = {}) {
   }
 
   function fit() {
+    if (destroyed) return;
     if (document.documentElement.dataset.homeScrollLocked === 'true') return;
     arena.style.removeProperty('transform');
     for (const rank of arena.querySelectorAll('.seat .hand-rank'))
@@ -42,11 +45,18 @@ export function createPlayViewport(surface, { layout = () => {} } = {}) {
       seat.style.left = seat.dataset.originalLeft;
       seat.style.top = seat.dataset.originalTop;
     }
-    const screen = window.visualViewport,
-      // Pinch zoom magnifies/pans the page without shrinking its layout.
-      screenHeight = screen && screen.scale <= 1.01 ? screen.height : window.innerHeight,
-      top = surface.getBoundingClientRect().top + window.scrollY,
-      height = Math.max(160, screenHeight - top - 8);
+    const screen = readPlayViewport(),
+      screenHeight = screen.height,
+      height = Math.max(160, screenHeight - playSurfaceTop(surface) - 8);
+    const large = screen.width > 900 && screen.width <= 1100 && screenHeight >= 1100;
+    surface.style.setProperty(
+      '--table-header-font',
+      `${large ? 20 : screen.width > 600 && mobile.matches ? 17 : 14}px`,
+    );
+    surface.style.setProperty(
+      '--table-hint-font',
+      `${large ? 18 : screen.width > 600 ? 14 : 13}px`,
+    );
     surface.style.setProperty('--play-height', `${height}px`);
     // Hidden or rotating WebViews can briefly report a zero-sized viewport.
     // Wait for its resize notification instead of dividing by zero below.
@@ -72,7 +82,20 @@ export function createPlayViewport(surface, { layout = () => {} } = {}) {
         ),
       ]
         .filter((el) => !el.hidden)
-        .map((el) => el.getBoundingClientRect())
+        .map((el) => {
+          if (!el.matches('.mini-cards')) return el.getBoundingClientRect();
+          // Revealed artwork grows above its stable slot and may overlap the
+          // coaching hint. It must not shrink or shift the whole settled table.
+          const parent = el.offsetParent.getBoundingClientRect();
+          return {
+            left: parent.left + el.offsetLeft,
+            right: parent.left + el.offsetLeft + el.offsetWidth,
+            top: parent.top + el.offsetTop,
+            bottom: parent.top + el.offsetTop + el.offsetHeight,
+            width: el.offsetWidth,
+            height: el.offsetHeight,
+          };
+        })
         .filter((r) => r.width > 0 && r.height > 0),
       left = Math.min(0, ...parts.map((r) => r.left - box.left)),
       right = Math.max(box.width, ...parts.map((r) => r.right - box.left)),
@@ -89,6 +112,7 @@ export function createPlayViewport(surface, { layout = () => {} } = {}) {
     viewport.scrollTop = 0;
   }
   function schedule() {
+    if (destroyed) return;
     if (frame !== null) return;
     frame = requestAnimationFrame(() => {
       frame = null;
@@ -102,11 +126,20 @@ export function createPlayViewport(surface, { layout = () => {} } = {}) {
     surface.querySelector('.surface-top'),
     surface.querySelector('.action-dock'),
   ])
-    observer.observe(el);
+    if (el) observer.observe(el);
   window.addEventListener('resize', schedule);
+  window.addEventListener('pageshow', schedule);
   window.visualViewport?.addEventListener('resize', schedule);
   document.fonts.ready.then(schedule);
   return {
+    destroy() {
+      destroyed = true;
+      observer.disconnect();
+      if (frame !== null) cancelAnimationFrame(frame);
+      window.removeEventListener('resize', schedule);
+      window.removeEventListener('pageshow', schedule);
+      window.visualViewport?.removeEventListener('resize', schedule);
+    },
     update(nextTable, done) {
       surface.classList.toggle('has-live-hand', !done);
       fit();

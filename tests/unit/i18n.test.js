@@ -20,6 +20,7 @@ test('English templates preserve and reorder dynamic values, while rule state re
   startHand(game, () => 0.42);
   const before = JSON.stringify(game);
   await loadLocale('en');
+  assert.equal(localizeText('轮到你行动，'), 'Your turn,');
   assert.equal(localizeText('第 12 手 · 决策复盘'), 'Hand 12 · Decision review');
   assert.equal(
     localizeText('轮到你了，跟注需要 75 筹码。本轮加注权未重开，仅可跟注或弃牌。'),
@@ -51,6 +52,26 @@ test('locale preference hydrates and preserves ordered writes through native sto
   store.setItem('noir-locale', 'en');
   await store.flush();
   assert.equal(native.get('noir-locale'), 'en');
+});
+
+test('the practice heading describes the current session in every supported locale', async () => {
+  for (const [locale, expected] of Object.entries({
+    'zh-CN': '本局练习',
+    en: 'Session practice',
+    'zh-TW': '本局練習',
+    ja: 'このセッションの練習',
+    ko: '이번 세션 연습',
+    es: 'Práctica de esta sesión',
+    it: 'Pratica della sessione',
+    pt: 'Prática desta sessão',
+    de: 'Übung dieser Sitzung',
+    fr: 'Pratique de cette session',
+    ru: 'Практика в этой сессии',
+  })) {
+    await loadLocale(locale);
+    assert.equal(localizeText('本局练习'), expected, locale);
+  }
+  await loadLocale('zh-CN');
 });
 
 test('starting-blind settings preserve compact amounts and validation limits in every locale', async () => {

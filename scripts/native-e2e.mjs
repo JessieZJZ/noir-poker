@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { spawn, spawnSync } from 'node:child_process';
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { nativeScenarios } from '../tests/native/scenarios.mjs';
@@ -13,24 +13,36 @@ import { restartNativeApplication } from './native-lifecycle.mjs';
 import { requestNativeOrientation } from './native-orientation.mjs';
 import { compareNativePage } from '../tests/native/page-parity.mjs';
 import { createNativeCommand } from './native-transport.mjs';
+import { nativeBackPage, nativePageReady } from './native-back.mjs';
+import { prepareNativeTouch } from './native-touch.mjs';
+import { nativeAppTarget, assertAndroidTestPackage } from './native-app-target.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const args = process.argv.slice(2);
 const platform = args.shift();
 if (!['ios', 'android'].includes(platform))
   throw Error(
-    'Usage: node scripts/native-e2e.mjs ios|android [--app PATH] [--udid ID] [--output PATH] [--server URL] [--port PORT] [--driver-port PORT]',
+    'Usage: node scripts/native-e2e.mjs ios|android [--variant debug|qa] [--app PATH] [--udid ID] [--output PATH] [--server URL] [--port PORT] [--driver-port PORT] [--adb-port PORT]',
   );
 const options = {};
 for (let i = 0; i < args.length; i += 2) {
   if (
-    !['--app', '--udid', '--output', '--server', '--port', '--driver-port'].includes(args[i]) ||
+    ![
+      '--variant',
+      '--app',
+      '--udid',
+      '--output',
+      '--server',
+      '--port',
+      '--driver-port',
+      '--adb-port',
+    ].includes(args[i]) ||
     !args[i + 1]
   )
     throw Error(`Unknown or incomplete option: ${args[i]}`);
   options[args[i].slice(2)] = args[i + 1];
 }
-for (const key of ['port', 'driver-port']) {
+for (const key of ['port', 'driver-port', 'adb-port']) {
   if (
     options[key] &&
     (!/^\d+$/.test(options[key]) || Number(options[key]) < 1024 || Number(options[key]) > 65535)
@@ -38,19 +50,20 @@ for (const key of ['port', 'driver-port']) {
     throw Error(`Invalid ${key}: use a port between 1024 and 65535`);
 }
 if (options.server && options.port) throw Error('Use --server or --port, not both');
-const appId = JSON.parse(readFileSync(path.join(root, 'capacitor.config.json'), 'utf8')).appId;
-const appPath = path.resolve(
-  root,
-  options.app ??
-    (platform === 'ios'
-      ? '.artifacts/mobile/ios/Build/Products/Debug-iphonesimulator/App.app'
-      : '.artifacts/mobile/noir-poker-debug.apk'),
-);
+const baseAppId = JSON.parse(readFileSync(path.join(root, 'capacitor.config.json'), 'utf8')).appId;
+const target = nativeAppTarget({ platform, appId: baseAppId, variant: options.variant });
+const appId = target.appId;
+const appPath = path.resolve(root, options.app ?? target.appPath);
 const output = path.resolve(root, options.output ?? `.artifacts/native-e2e/${platform}`);
 mkdirSync(output, { recursive: true });
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+const adbArgs = (args) => (options['adb-port'] ? ['-P', options['adb-port'], ...args] : args);
 const run = (binary, argv) => {
-  const value = spawnSync(binary, argv, { encoding: 'utf8', cwd: root, timeout: 120000 });
+  const value = spawnSync(binary, binary === adb ? adbArgs(argv) : argv, {
+    encoding: 'utf8',
+    cwd: root,
+    timeout: 120000,
+  });
   if (value.status !== 0)
     throw Error(
       `${binary} ${argv.join(' ')} failed: ${value.stderr || value.error || value.stdout}`,
@@ -79,6 +92,10 @@ let session;
 let airplaneMode;
 const sdk = process.env.ANDROID_HOME ?? process.env.ANDROID_SDK_ROOT;
 const adb = sdk ? path.join(sdk, 'platform-tools/adb') : 'adb';
+// Keep the CDP discovery range and Chromedriver listener separate from other
+// emulator sessions as well as the UiAutomator system port. The driver still
+// verifies real WebView pages; no discovery or functional checks are disabled.
+const androidDevtoolsPort = Math.min(64000, Number(options['driver-port'] ?? 9200) + 10000);
 const serverUrl =
   options.server ?? `http://127.0.0.1:${options.port ?? (platform === 'ios' ? 4725 : 4727)}`;
 async function request(method, endpoint, body, timeout = 120000) {
@@ -114,10 +131,14 @@ const command = createNativeCommand({
   waitReady: () =>
     waitFor(
       () => {
-        const result = spawnSync(adb, ['-s', udid, 'shell', 'getprop', 'sys.boot_completed'], {
-          encoding: 'utf8',
-          timeout: 3000,
-        });
+        const result = spawnSync(
+          adb,
+          adbArgs(['-s', udid, 'shell', 'getprop', 'sys.boot_completed']),
+          {
+            encoding: 'utf8',
+            timeout: 3000,
+          },
+        );
         return result.status === 0 && result.stdout.trim() === '1';
       },
       10000,
@@ -129,13 +150,16 @@ const command = createNativeCommand({
   },
 });
 let webContext;
-async function attachWebview() {
+async function attachWebview({ expectedPage = 'game' } = {}) {
+  nativeBackPage(expectedPage);
   // Wait for the real document before attaching WebKit. Attaching during the
   // initial blank-page navigation can pause WebKit before the game loads.
   await waitFor(
     async () => {
       const source = await command('GET', '/source');
-      return /XCUIElementTypeButton|android\.widget\.Button/.test(source);
+      return expectedPage === 'privacy'
+        ? /XCUIElementTypeButton|XCUIElementTypeLink|android\.widget\.Button/.test(source)
+        : /XCUIElementTypeButton|android\.widget\.Button/.test(source);
     },
     45000,
     'Native app must render an actionable screen before WebView attachment',
@@ -151,9 +175,11 @@ async function attachWebview() {
   webContext = contexts.find((name) => name.startsWith('WEBVIEW'));
   await command('POST', '/context', { name: webContext });
   await waitFor(
-    () => evaluate(() => Boolean(window.noir?.getState())),
+    () => evaluate(nativePageReady, expectedPage),
     30000,
-    'Bundled game did not initialize',
+    expectedPage === 'privacy'
+      ? 'Native Back did not reach a ready local privacy page with its title and return link'
+      : 'Bundled game did not initialize',
   );
 }
 async function evaluate(fn, ...argv) {
@@ -209,9 +235,11 @@ async function select(selector, value) {
     )
   )
     return;
-  await click(`${selector} + .dropdown-trigger`);
+  // Use the scenario adapter's native geometry/AX preparation for selects too.
+  // Calling the raw closure skipped that preparation after locale relayouts.
+  await this.click(`${selector} + .dropdown-trigger`);
   try {
-    await click(`.dropdown-option[data-value="${value}"]`);
+    await this.click(`.dropdown-option[data-value="${value}"]`);
   } catch (error) {
     // Selecting an option removes the popup. WebKit can return a stale element
     // after dispatching that successful click; accept only the applied value.
@@ -236,6 +264,51 @@ async function select(selector, value) {
     `Selection did not apply: ${selector}`,
   );
 }
+async function nativeTap(selector) {
+  assert.equal(platform, 'ios');
+  const target = await evaluate((selector) => {
+    const element = document.querySelector(selector),
+      r = element.getBoundingClientRect(),
+      x = r.x + r.width / 2,
+      y = r.y + r.height / 2,
+      hit = document.elementFromPoint(x, y);
+    if (!hit || !element.contains(hit)) throw Error('Native touch target is covered');
+    return { x, y, width: innerWidth, height: innerHeight };
+  }, selector);
+  const { nativePoint } = await import('./native-pointer.mjs');
+  await command('POST', '/context', { name: 'NATIVE_APP' });
+  try {
+    const elements = await command('POST', '/elements', {
+      using: 'class name',
+      value: 'XCUIElementTypeWebView',
+    });
+    const frames = [];
+    for (const element of elements) {
+      const id = element['element-6066-11e4-a52e-4f735466cecf'] ?? element.ELEMENT;
+      frames.push(await command('GET', `/element/${id}/rect`));
+    }
+    const frame = frames.sort((a, b) => b.width * b.height - a.width * a.height)[0];
+    assert.ok(frame, 'The installed app must expose its actual WebView frame');
+    const point = nativePoint(target, target, frame);
+    await command('POST', '/actions', {
+      actions: [
+        {
+          type: 'pointer',
+          id: 'native-summary-touch',
+          parameters: { pointerType: 'touch' },
+          actions: [
+            { type: 'pointerMove', duration: 0, origin: 'viewport', ...point },
+            { type: 'pointerDown', button: 0 },
+            { type: 'pause', duration: 80 },
+            { type: 'pointerUp', button: 0 },
+          ],
+        },
+      ],
+    });
+  } finally {
+    await command('POST', '/context', { name: webContext });
+  }
+}
 async function screenshot(name) {
   const imagePath = path.join(output, `${name}.png`);
   const sourcePath = path.join(output, `${name}.native.xml`);
@@ -248,6 +321,41 @@ async function screenshot(name) {
     saveSource: (source) => writeFileSync(sourcePath, source),
   });
   return { imagePath, sourcePath };
+}
+async function back({ expectedPage = 'game' } = {}) {
+  nativeBackPage(expectedPage);
+  if (platform === 'android') {
+    // Dispatch the real Activity back event while keeping the active CDP
+    // connection; the Capacitor backButton listener owns the page stack.
+    run(adb, ['-s', udid, 'shell', 'input', 'keyevent', 'KEYCODE_BACK']);
+    return;
+  }
+  await command('POST', '/context', { name: 'NATIVE_APP' });
+  const rect = await command('GET', '/window/rect');
+  const y = Math.round(rect.height * 0.45);
+  await command('POST', '/actions', {
+    actions: [
+      {
+        type: 'pointer',
+        id: 'records-edge-back',
+        parameters: { pointerType: 'touch' },
+        actions: [
+          { type: 'pointerMove', duration: 0, origin: 'viewport', x: 2, y },
+          { type: 'pointerDown', button: 0 },
+          { type: 'pause', duration: 100 },
+          {
+            type: 'pointerMove',
+            duration: 450,
+            origin: 'viewport',
+            x: Math.round(rect.width * 0.85),
+            y,
+          },
+          { type: 'pointerUp', button: 0 },
+        ],
+      },
+    ],
+  });
+  await attachWebview({ expectedPage });
 }
 async function activate() {
   await command('POST', '/context', { name: 'NATIVE_APP' });
@@ -337,6 +445,27 @@ try {
     udid = devices[0];
   }
   report.udid = udid;
+  if (platform === 'android') {
+    report.deviceKind =
+      run(adb, ['-s', udid, 'shell', 'getprop', 'ro.kernel.qemu']) === '1'
+        ? 'emulator'
+        : 'physical';
+    if (!sdk) throw Error('Set ANDROID_HOME to verify the actual APK package before installation');
+    const buildTools = path.join(sdk, 'build-tools');
+    const aapt = readdirSync(buildTools)
+      .sort((a, b) => b.localeCompare(a, undefined, { numeric: true }))
+      .map((version) =>
+        path.join(buildTools, version, process.platform === 'win32' ? 'aapt.exe' : 'aapt'),
+      )
+      .find(existsSync);
+    if (!aapt) throw Error('Install Android SDK build-tools to verify the actual APK package');
+    report.androidPackage = assertAndroidTestPackage({
+      badging: run(aapt, ['dump', 'badging', appPath]),
+      expectedAppId: appId,
+      baseAppId,
+      isEmulator: report.deviceKind === 'emulator',
+    });
+  }
   report.phase = 'appium-start';
   if (!options.server) {
     const binary = path.join(root, '.artifacts/native-tools/node_modules/appium/build/lib/main.js');
@@ -383,12 +512,28 @@ try {
       120000,
       'Android must finish booting with PackageManager ready before installation',
     );
-    airplaneMode = run(adb, ['-s', udid, 'shell', 'settings', 'get', 'global', 'airplane_mode_on']);
-    run(adb, ['-s', udid, 'shell', 'cmd', 'connectivity', 'airplane-mode', 'enable']);
-    report.offline = {
-      airplaneMode: true,
-      note: 'Installed application launches and plays with Android airplane mode enabled',
-    };
+    if (report.deviceKind === 'emulator') {
+      airplaneMode = run(adb, [
+        '-s',
+        udid,
+        'shell',
+        'settings',
+        'get',
+        'global',
+        'airplane_mode_on',
+      ]);
+      run(adb, ['-s', udid, 'shell', 'cmd', 'connectivity', 'airplane-mode', 'enable']);
+      report.offline = {
+        airplaneMode: true,
+        note: 'Installed application launches and plays with Android airplane mode enabled',
+      };
+    } else {
+      report.offline = {
+        localBundleOriginVerified: true,
+        airplaneMode: false,
+        note: 'Physical device connectivity is preserved, including wireless ADB; no offline runtime claim',
+      };
+    }
   } else {
     report.offline = {
       localBundleOriginVerified: true,
@@ -437,12 +582,16 @@ try {
           // Fresh emulator services can still initialize after boot_completed.
           // Keep driver setup deadlines separate from all gameplay assertions.
           'appium:adbExecTimeout': 60000,
+          ...(options['adb-port'] ? { 'appium:adbPort': Number(options['adb-port']) } : {}),
           'appium:uiautomator2ServerLaunchTimeout': 120000,
           ...(options['driver-port']
             ? { 'appium:systemPort': Number(options['driver-port']) }
             : {}),
           'appium:appPackage': appId,
           'appium:ensureWebviewsHavePages': true,
+          'appium:enableWebviewDetailsCollection': true,
+          'appium:webviewDevtoolsPort': androidDevtoolsPort,
+          'appium:chromedriverPort': androidDevtoolsPort + 101,
           'appium:chromedriverAutodownload': true,
         }),
   };
@@ -454,11 +603,18 @@ try {
   );
   session = created.sessionId;
   report.capabilities = created.capabilities;
+  if (platform === 'ios') {
+    report.phase = 'native-touch';
+    report.nativeTouch = await prepareNativeTouch(command, platform);
+  }
   report.phase = 'webview-attach';
   // WDA startup can foreground its runner after the initial simctl launch.
   // Restore the tested app before looking for an actionable native screen.
   if (platform === 'ios') await command('POST', '/appium/device/activate_app', { appId });
   await attachWebview();
+  // Keep Android's default startup settling until Accessibility and the
+  // actionable WebView exist; only then shorten the animated-screen idle wait.
+  if (platform === 'android') report.nativeTouch = await prepareNativeTouch(command, platform);
   await command('POST', '/timeouts', { script: 30000 });
   // XCUITest does not resolve Promise results from execute/sync. The standard
   // async callback reads the metadata from the installed app on both drivers.
@@ -477,14 +633,17 @@ try {
   assert.equal(report.build.sourceDigest, embeddedBuild.sourceDigest);
   report.phase = 'scenarios';
   report.scenarios = await nativeScenarios({
+    platform,
     record: (entry) => report.scenarios.push(entry),
     evaluate,
     state,
     click,
+    nativeTap,
     select,
     visible,
     waitFor,
     screenshot,
+    back,
     comparePage: (name, selectors) =>
       compareNativePage({ root, output, evaluate, screenshot }, name, selectors),
     relaunch,

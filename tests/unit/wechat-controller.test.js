@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createWechatController } from '../../src/platform/wechat-controller.js';
 import { act, advanceStreet, legalActions, potSize } from '../../src/engine/poker.js';
-import { createReviewInput } from '../../src/review/analysis.js';
+import { createReviewInput, analyzeDecision } from '../../src/review/analysis.js';
 
 const copy = (value) => JSON.parse(JSON.stringify(value));
 function scheduler() {
@@ -31,7 +31,7 @@ function scheduler() {
     callbacks: () => [...pending.values()].map((job) => job.fn),
   };
 }
-function setup(t, initial = {}) {
+function setup(t, initial = {}, options = {}) {
   const timers = scheduler();
   const preferences = new Map([
     [
@@ -47,6 +47,7 @@ function setup(t, initial = {}) {
   const snapshots = [];
   const sounds = [];
   const controller = createWechatController({
+    ...options,
     publish: (data) => snapshots.push(copy(data)),
     storage: {
       getItem: (key) => preferences.get(key) ?? null,
@@ -71,6 +72,109 @@ function reachHero(controller) {
   controller.show();
   return game;
 }
+
+test('WeChat visual attention survives mute, cancels on sizing/hide/retry/destroy and publishes timer phases', (t) => {
+  const { controller, timers, latest } = setup(t, { sound: false });
+  const phases = [];
+  // The view phase covers rendering; a separate publisher updates only the
+  // decorative layer when timers fire, without rebuilding the table.
+  const clock = scheduler();
+  const adapter = createWechatController({
+    publish: () => {},
+    publishAttention: (phase) => phases.push(phase),
+    schedule: clock.schedule,
+    unschedule: clock.unschedule,
+    storage: { getItem: () => JSON.stringify({ hints: false, sound: false }) },
+  });
+  t.after(() => adapter.destroy());
+  adapter.start();
+  reachHero(controller);
+  assert.equal(latest().turnPhase, 'enter');
+  controller.setRaise(controller.getGame().bigBlind * 4);
+  assert.equal(latest().turnPhase, 'waiting');
+  assert.ok(![...timers.pending.values()].some((job) => job.delay === 8000));
+  controller.hide();
+  assert.equal(latest().turnPhase, '');
+  controller.show();
+  assert.equal(latest().turnPhase, 'waiting');
+  controller.retry();
+  assert.ok(![...timers.pending.values()].some((job) => job.delay === 8000));
+
+  reachHero(adapter);
+  assert.equal(phases.at(-1), 'enter');
+  adapter.show();
+  assert.equal(phases.filter((phase) => phase === 'enter').length, 1);
+  while (phases.at(-1) !== 'reminder') assert.ok(clock.runNext());
+  assert.equal(phases.at(-1), 'reminder');
+  const stale = clock.callbacks();
+  adapter.destroy();
+  stale.forEach((fn) => fn());
+  assert.equal(phases.at(-1), '');
+  assert.equal(clock.pending.size, 0);
+});
+
+function fakeReviewWorker() {
+  return {
+    stopped: 0,
+    onMessage(callback) {
+      this.receive = callback;
+    },
+    onProcessKilled(callback) {
+      this.killed = callback;
+    },
+    postMessage(payload) {
+      this.payload = payload;
+    },
+    terminate() {
+      this.stopped++;
+    },
+  };
+}
+for (const transition of ['cancelReview', 'nextHand', 'retry', 'reset', 'hide', 'destroy']) {
+  test(`WeChat ${transition} terminates active review workers and rejects late results`, (t) => {
+    const worker = fakeReviewWorker();
+    const { controller } = setup(t, {}, { createReviewWorker: () => worker });
+    reachHero(controller);
+    controller.action('fold');
+    finish(controller.getGame(), 'fold');
+    const updates = [];
+    controller.review((value) => updates.push(value));
+    assert.deepEqual(Object.keys(worker.payload), ['decisions']);
+    assert.ok(worker.payload.decisions.length);
+    for (const decision of worker.payload.decisions) {
+      assert.equal('deck' in decision || 'outcome' in decision, false);
+      assert.ok(decision.players.every((player) => !('hole' in player)));
+    }
+    controller[transition]();
+    worker.receive({ type: 'step', index: 0, result: {} });
+    worker.receive({ type: 'complete' });
+    worker.killed();
+    assert.equal(worker.stopped, 1);
+    assert.equal(updates.length, 1);
+  });
+}
+test('WeChat worker completion equals full fallback and a killed worker retains full-quality analysis', (t) => {
+  const worker = fakeReviewWorker();
+  const { controller, timers } = setup(t, {}, { createReviewWorker: () => worker });
+  reachHero(controller);
+  controller.action('fold');
+  finish(controller.getGame(), 'fold');
+  const updates = [];
+  controller.review((value) => updates.push(value));
+  const decision = worker.payload.decisions[0];
+  const result = analyzeDecision(decision);
+  worker.receive({ type: 'step', index: 0, result });
+  worker.receive({ type: 'complete' });
+  assert.equal(updates.at(-1).loading, false);
+  const expected = copy(updates.at(-1));
+  controller.review((value) => updates.push(value));
+  worker.killed();
+  for (let i = 0; updates.at(-1).loading; i++) {
+    assert.ok(i < 10);
+    assert.ok(timers.runNext());
+  }
+  assert.deepEqual(updates.at(-1), expected);
+});
 function finish(game, action = 'call') {
   let limit = 0;
   while (game.phase !== 'done') {
@@ -572,4 +676,141 @@ test('WeChat immediate stakes API retracts pending settings without resetting an
   assert.equal(controller.setStakes({ smallBlind: 100, bigBlind: 200 }), false);
   assert.equal(preferences.get('noir-wechat-settings-v1'), saved);
   assert.deepEqual(game, before);
+});
+
+test('WeChat records preserve retries, resume unfinished bankrolls, and open new sessions only on effective settings', (t) => {
+  const { controller, preferences, latest } = setup(t);
+  const game = reachHero(controller);
+  const initialStacks = game.players.map((player) => player.stack + player.total);
+  finish(game);
+  controller.show();
+  const first = controller.getRecords()[0];
+  assert.equal(first.number, 1);
+  assert.equal(latest().sessionNumber, 1);
+  assert.equal(first.attempts[0].status, 'completed');
+  const firstSnapshot = copy(first.attempts[0].snapshot);
+  controller.requestSmallBlind(500);
+  assert.equal(controller.retry(), true);
+  assert.equal(controller.getRecords()[0].attempts[0].superseded, true);
+  assert.deepEqual(controller.getRecord(first.attempts[0].id).snapshot, firstSnapshot);
+  assert.equal(controller.getRecords()[0].completed, 0);
+  controller.action('call');
+  controller.destroy();
+  const snapshots = [];
+  const restored = createWechatController({
+    publish: (view) => snapshots.push(view),
+    storage: {
+      getItem: (key) => preferences.get(key) ?? null,
+      setItem: (key, value) => preferences.set(key, value),
+    },
+    schedule: () => 1,
+    unschedule() {},
+  });
+  t.after(() => restored.destroy());
+  // Resume returns the unfinished attempt's pre-blind bankroll before start().
+  assert.deepEqual(
+    restored.getGame().players.map((player) => player.stack),
+    initialStacks,
+  );
+  assert.equal(restored.getGame().stats.hands, 0);
+  const old = restored.getRecords()[0];
+  assert.equal(old.attempts.at(-1).status, 'unfinished');
+  restored.start();
+  assert.equal(
+    snapshots.at(-1).sessionNumber,
+    2,
+    'Pending blinds take effect at the resumed next hand',
+  );
+  assert.equal(restored.getGame().hand, 1);
+  assert.equal(restored.getGame().smallBlind, 500);
+  assert.equal(restored.getRecords()[1].attempts.length, 2);
+});
+
+test('WeChat history reviews an isolated settlement while the live game advances', (t) => {
+  const { controller, latest } = setup(t);
+  const game = reachHero(controller);
+  finish(game);
+  controller.show();
+  const attempt = controller.getRecords()[0].attempts[0];
+  const archived = copy(attempt.snapshot);
+  const timers = scheduler();
+  let historyView;
+  const history = createWechatController({
+    readOnlyAttempt: attempt,
+    readOnlySessionNumber: 1,
+    publish: (view) => (historyView = view),
+    schedule: timers.schedule,
+    unschedule: timers.unschedule,
+  });
+  t.after(() => history.destroy());
+  history.show();
+  controller.nextHand();
+  const liveBefore = copy(controller.getGame());
+  assert.equal(latest().hand, 2);
+  assert.equal(historyView.hand, 1);
+  assert.equal(historyView.historyReadOnly, true);
+  assert.equal(history.retry(), false);
+  assert.equal(history.action('fold'), false);
+  assert.equal(history.finishHand(), false);
+  history.reset();
+  history.nextHand();
+  assert.equal(history.setStakes({ smallBlind: 500, bigBlind: 1000 }), false);
+  const updates = [];
+  history.review((view) => updates.push(view));
+  for (let count = 0; updates.at(-1)?.loading; count++) {
+    assert.ok(count < 100);
+    assert.ok(timers.runNext());
+  }
+  assert.ok(updates.length >= 2);
+  assert.equal(updates.at(-1).hand, 1);
+  assert.deepEqual(controller.getGame(), liveBefore);
+  assert.deepEqual(history.getGame(), archived);
+  assert.deepEqual(controller.getRecord(attempt.id).snapshot, archived);
+});
+
+test('WeChat relaunch continues the same session and rolls an incomplete hand back before the next deal', (t) => {
+  const { controller, preferences } = setup(t);
+  const game = reachHero(controller);
+  const bankrolls = game.players.map((player) => player.stack + player.total);
+  controller.action('call');
+  const sessionId = controller.getRecords()[0].id;
+  controller.destroy();
+  let view;
+  const resumed = createWechatController({
+    publish: (value) => (view = value),
+    storage: {
+      getItem: (key) => preferences.get(key) ?? null,
+      setItem: (key, value) => preferences.set(key, value),
+    },
+    schedule: () => 1,
+    unschedule() {},
+  });
+  t.after(() => resumed.destroy());
+  resumed.start();
+  assert.equal(view.sessionNumber, 1);
+  assert.equal(view.hand, 2);
+  assert.equal(resumed.getRecords()[0].id, sessionId);
+  assert.equal(resumed.getRecords()[0].attempts[0].status, 'unfinished');
+  assert.deepEqual(
+    resumed.getGame().players.map((player) => player.stack + player.total),
+    bankrolls,
+  );
+  assert.deepEqual(resumed.getGame().stats, { hands: 0, wins: 0, buyin: 5000 });
+});
+
+test('WeChat records mark the first post-refill hand and exclude the virtual buy-in from its result', (t) => {
+  const { controller } = setup(t);
+  const game = reachHero(controller);
+  finish(game);
+  controller.show();
+  game.players[1].stack += game.players[0].stack;
+  game.players[0].stack = 0;
+  controller.nextHand();
+  assert.equal(controller.getRecords()[0].attempts.at(-1).refill, true);
+  assert.equal(game.stats.buyin, 10000);
+  finish(game);
+  controller.show();
+  const attempt = controller.getRecords()[0].attempts.at(-1);
+  assert.equal(attempt.profit, game.payouts[0] - game.players[0].total);
+  verifyChips(game, 7 * 5000);
 });

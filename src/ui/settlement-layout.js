@@ -1,6 +1,8 @@
 import { compactTableLayout } from './compact-table-layout.js';
 import { COMPACT_PLAY_QUERY } from './play-geometry.js';
 import { railLayout } from './rail-layout.js';
+import { readPlayViewport } from './stable-viewport.js';
+import { numericWidthScale } from './numeric-width.js';
 // Select the closest collision-free position to the upper felt center. Using each
 // public part separately leaves usable space beside a narrow pot or caption.
 export function nearestClearTop(ideal, min, max, blocked) {
@@ -32,14 +34,70 @@ export function minimalSeatShift(leftSide, footprint, corridor, bounds) {
 
 // Measure stable wrappers, then share the same rail solver with WeChat.
 export function createSettlementLayout(arena, { observe = true } = {}) {
+  const numberWidths = new Map();
+  const fitNumbers = () => {
+    const entries = [...arena.querySelectorAll('.seat-profile')].map((profile) => {
+      const stack = profile.querySelector('.seat-stack');
+      const style = getComputedStyle(stack);
+      const key = `${stack.textContent}|${style.font}|${document.fonts.status}`;
+      return { profile, stack, key };
+    });
+    // Clear unknown widths together, then measure in one layout phase.
+    for (const { stack, key } of entries)
+      if (!numberWidths.has(key)) stack.style.removeProperty('--stack-width-scale');
+    const measured = [];
+    const arenaScale = arena.getBoundingClientRect().width / arena.offsetWidth || 1;
+    for (const { profile, stack, key } of entries) {
+      let width = numberWidths.get(key);
+      if (width === undefined) {
+        const range = document.createRange();
+        range.selectNodeContents(stack);
+        width = Math.max(stack.offsetWidth, range.getBoundingClientRect().width / arenaScale);
+        if (numberWidths.size > 256) numberWidths.clear();
+        numberWidths.set(key, width);
+      }
+      const profileStyle = getComputedStyle(profile);
+      const available =
+        profile.clientWidth -
+        parseFloat(profileStyle.paddingLeft) -
+        parseFloat(profileStyle.paddingRight) -
+        profile.querySelector('.avatar').offsetWidth -
+        parseFloat(profileStyle.columnGap) -
+        0.25;
+      measured.push({ stack, scale: numericWidthScale(width, available) });
+    }
+    // Reads precede writes; unchanged amounts reuse their measured font width.
+    for (const { stack, scale } of measured) stack.style.setProperty('--stack-width-scale', scale);
+  };
+  const fitNames = () => {
+    const arenaScale = arena.getBoundingClientRect().width / arena.offsetWidth || 1;
+    const fitted = [...arena.querySelectorAll('.seat-name-label')].map((label) => {
+      const range = document.createRange();
+      range.selectNodeContents(label);
+      const transform = getComputedStyle(label).transform;
+      const currentScale = transform === 'none' ? 1 : new DOMMatrix(transform).a;
+      const width = range.getBoundingClientRect().width / arenaScale / currentScale;
+      const scale = numericWidthScale(width, label.clientWidth - 0.25);
+      const fit = !label.parentElement.querySelector('.seat-peek') && scale >= 0.75 && scale < 1;
+      return { label, scale: fit ? scale : 1, fit };
+    });
+    for (const { label, scale, fit } of fitted) {
+      label.dataset.nameFit = String(fit);
+      label.style.setProperty('--name-width-scale', scale);
+    }
+  };
   const center = arena.querySelector('.table-center');
   let frame = null;
   function update() {
+    const heroRank = arena.querySelector('.hero-hand-rank');
+    arena
+      .querySelector('.hero-area')
+      .classList.toggle('has-hero-rank', !!heroRank && !heroRank.hidden);
     arena.style.removeProperty('min-height');
     arena.classList.remove('public-two-rows');
     for (const el of [
       center,
-      arena.querySelector('#board'),
+      arena.querySelector('.board'),
       arena.querySelector('.hero-area'),
       ...arena.querySelectorAll('.seat, .seat-profile'),
     ]) {
@@ -50,7 +108,7 @@ export function createSettlementLayout(arena, { observe = true } = {}) {
     const compact = matchMedia(COMPACT_PLAY_QUERY).matches;
     if (!compact) {
       for (const key of [...arena.style].filter((key) =>
-        /^--(player-|pot-detail|hero-action|hero-rank|hero-card-|action-height|rank-height|profile-width|public-card-width)/.test(
+        /^--(player-|pot-|hero-|action-height|rank-height|caption-|profile-|public-card-width)/.test(
           key,
         ),
       ))
@@ -74,8 +132,8 @@ export function createSettlementLayout(arena, { observe = true } = {}) {
                 .map((p) => {
                   const r = p.getBoundingClientRect();
                   return {
-                    left: r.left - box.left,
-                    top: r.top - box.top,
+                    left: p.matches('.mini-cards') ? p.offsetLeft : r.left - box.left,
+                    top: p.matches('.mini-cards') ? p.offsetTop : r.top - box.top,
                     width: p.offsetWidth,
                     height: p.offsetHeight,
                   };
@@ -86,20 +144,20 @@ export function createSettlementLayout(arena, { observe = true } = {}) {
     };
     const publicSize = () => {
       const group = center.getBoundingClientRect();
-      const board = arena.querySelector('#board').getBoundingClientRect();
+      const board = arena.querySelector('.board').getBoundingClientRect();
       return {
-        ...size(center, '.pot > div, .pot-details-trigger, #board, #board-caption'),
+        ...size(center, '.pot > div, .pot-details-trigger, .board, .board-caption'),
         centerY: board.top - group.top + board.height / 2,
       };
     };
-    arena.querySelector('#board').style.removeProperty('--public-card-width');
+    arena.querySelector('.board').style.removeProperty('--public-card-width');
     const single = { ...publicSize(), twoRows: false };
     arena.classList.add('public-two-rows');
     const double = { ...publicSize(), twoRows: true };
     arena.classList.remove('public-two-rows');
     for (const el of [
       center,
-      arena.querySelector('#board'),
+      arena.querySelector('.board'),
       arena.querySelector('.hero-area'),
       ...arena.querySelectorAll('.seat, .seat-profile'),
     ]) {
@@ -117,12 +175,13 @@ export function createSettlementLayout(arena, { observe = true } = {}) {
           width: innerWidth,
           height: arena.clientHeight,
           availableWidth: arena.clientWidth,
-          displayHeight: innerHeight - insets,
+          displayHeight: readPlayViewport().height - insets,
           seats: seatElements.map((seat, i) => ({ id: i + 1 })),
         })
       : railLayout({
           width: Math.min(arena.clientWidth, arena.clientHeight * 1.45),
           height: arena.clientHeight,
+          gap: 16,
           // Bound the oval by available height, so wide windows retain a
           // rounded table and readable cards instead of an empty wide ellipse.
           proportional: true,
@@ -152,7 +211,7 @@ export function createSettlementLayout(arena, { observe = true } = {}) {
           width: innerWidth,
           height: arena.clientHeight,
           availableWidth: arena.clientWidth,
-          displayHeight: innerHeight - insets,
+          displayHeight: readPlayViewport().height - insets,
           seats: seatElements.map((seat, i) => ({ id: i + 1 })),
           minimumProfileHeight: required,
         });
@@ -165,9 +224,9 @@ export function createSettlementLayout(arena, { observe = true } = {}) {
       center.style.minWidth = '0';
       center.style.width = `${result.public.width}px`;
       center.style.height = `${result.public.height}px`;
-      arena.querySelector('#board').style.width = `${result.public.width}px`;
+      arena.querySelector('.board').style.width = `${result.public.width}px`;
       arena
-        .querySelector('#board')
+        .querySelector('.board')
         .style.setProperty('--public-card-width', `${result.cardWidth}px`);
       arena.querySelector('.hero-area').style.width = `${result.hero.width}px`;
       arena.querySelector('.hero-area').style.height = `${result.hero.height}px`;
@@ -179,7 +238,7 @@ export function createSettlementLayout(arena, { observe = true } = {}) {
       center.style.removeProperty('width');
       center.style.removeProperty('height');
       center.style.removeProperty('min-width');
-      arena.querySelector('#board').style.removeProperty('width');
+      arena.querySelector('.board').style.removeProperty('width');
       arena.querySelector('.hero-area').style.removeProperty('width');
       arena.querySelector('.hero-area').style.removeProperty('height');
       seatElements.forEach((seat) =>
@@ -219,6 +278,8 @@ export function createSettlementLayout(arena, { observe = true } = {}) {
       bottom: 'auto',
       transform: 'none',
     });
+    fitNumbers();
+    fitNames();
   }
   if (observe) {
     const observer = new ResizeObserver(() => {

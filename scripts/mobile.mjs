@@ -212,7 +212,7 @@ if (command === 'doctor') {
   } finally {
     release();
   }
-} else if (['android', 'android-bundle', 'ios', 'ios-archive'].includes(command)) {
+} else if (['android', 'android-qa', 'android-bundle', 'ios', 'ios-archive'].includes(command)) {
   const ios = command.startsWith('ios');
   if (
     command === 'android-bundle' &&
@@ -271,16 +271,21 @@ if (command === 'doctor') {
     );
     console.log(JSON.stringify(verifyBundledArtifact(artifact)));
   } else {
+    const qa = command === 'android-qa';
+    const debug = command === 'android';
     run(
       process.platform === 'win32' ? 'gradlew.bat' : './gradlew',
-      [command === 'android' ? 'assembleDebug' : 'bundleRelease', '--no-daemon'],
+      [qa ? 'assembleQa' : debug ? 'assembleDebug' : 'bundleRelease', '--no-daemon'],
       { cwd: path.join(root, 'android'), env },
     );
-    const kind =
-      command === 'android' ? 'apk/debug/app-debug.apk' : 'bundle/release/app-release.aab';
+    const kind = qa
+      ? 'apk/qa/app-qa.apk'
+      : debug
+        ? 'apk/debug/app-debug.apk'
+        : 'bundle/release/app-release.aab';
     const destination = path.join(
       output,
-      command === 'android' ? 'noir-poker-debug.apk' : 'noir-poker-release.aab',
+      qa ? 'noir-poker-qa.apk' : debug ? 'noir-poker-debug.apk' : 'noir-poker-release.aab',
     );
     mkdirSync(output, { recursive: true });
     cpSync(path.join(root, 'android/app/build/outputs', kind), destination);

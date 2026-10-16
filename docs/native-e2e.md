@@ -36,7 +36,7 @@ iOS 先对指定测试设备干净安装，用 Simulator 服务独立启动应�
 
 iOS 自动选择最新可用 runtime 中兼容的标准尺寸 iPhone，仅复用同一 runtime、同一设备类型的专用模拟器。可用 `NOIR_IOS_RUNTIME` 和 `NOIR_IOS_DEVICE_TYPE` 指定 `simctl list runtimes -j` / `simctl list devicetypes -j` 返回的完整 identifier；选择不可用或不兼容时直接失败，不自动换设备。指定 UDID 时使用该设备。报告记录自动选择的 runtime 和设备类型。
 
-**测试执行干净安装，会清除所选测试设备上的应用数据。请只指定测试设备，不要选择存有个人练习数据的设备。** iOS 只卸载这个测试应用，保留模拟器和测试驱动。默认专用模拟器在脚本自行启动时，会在完成后关闭。
+**测试执行干净安装，会清除所选测试应用的数据。** iOS 只卸载这个测试应用，保留模拟器和测试驱动，必须使用测试模拟器；默认专用模拟器在脚本自行启动时，会在完成后关闭。安卓真机强制使用下述独立 QA 包，原有应用的练习数据不受测试重置影响。
 
 Android 要先启动专用 AVD；脚本等待系统启动完成和包管理服务就绪后才安装、连接驱动。只有一个已连接设备时自动选中，否则通过 `--udid emulator-5554` 指定。也支持 `NOIR_IOS_UDID` 和 `NOIR_ANDROID_UDID`。指定 UDID 的 iOS 设备在脚本自行启动时关闭，已启动的设备保持运行。
 
@@ -47,9 +47,30 @@ node scripts/native-e2e.mjs ios --app /absolute/path/App.app --output .artifacts
 node scripts/native-e2e.mjs android --app /absolute/path/app-debug.apk --udid emulator-5554
 ```
 
-`--server http://127.0.0.1:4723` 可复用已启动的 Appium；没有这个参数时，脚本自行启动本地 Appium 并在结束后关闭。iOS 使用 4725 端口，Android 使用 4727。可用 `--port` 修改脚本自建服务器端口，用 `--driver-port` 指定 iOS WDA 或 Android UiAutomator2 的设备连接端口；并行任务应各用独立测试设备和端口。`--port` 与 `--server` 不同时使用。只使用 Debug 原生外壳的调试能力，Web 内容仍是正常 native production build；上架 Release 不需要打开 WebView 调试。
+`--server http://127.0.0.1:4723` 可复用已启动的 Appium；没有这个参数时，脚本自行启动本地 Appium 并在结束后关闭。iOS 使用 4725 端口，Android 使用 4727。可用 `--port` 修改脚本自建服务器端口，用 `--driver-port` 指定 iOS WDA 或 Android UiAutomator2 的设备连接端口；并行任务应各用独立测试设备和端口。Android WebView 探测另分配 `min(64000, driverPort + 10000)` 起的 100 个端口及起点加 101 的 ChromeDriver 端口（未指定 driverPort 时用 9200 计算），运行前也须确认这些端口可用。`--port` 与 `--server` 不同时使用。只使用 Debug 原生外壳的调试能力，Web 内容仍是正常 native production build；上架 Release 不需要打开 WebView 调试。
+
+## 安卓真机与无线连接
+
+```sh
+npm run mobile:android:qa
+npm run mobile:test:android -- --variant qa --udid SERIAL --output .artifacts/native-e2e/android-physical
+```
+
+`--variant qa` 选择 `noir-poker-qa.apk` 和 `.qa` 包名；可选 `--app` 指定另一份 QA APK。安装前会读取 APK 的实际包名，拒绝包名不符的文件，也拒绝在真机上重置原始包。桌面名称为“NOIR Poker 测试”，练习、设置与原有应用隔离。调试辅助服务仍由 Appium 安装。
+
+Android 11 及以上可在手机开发者选项中开启无线调试，手机与 Mac 连接同一 Wi-Fi。打开“使用配对码配对设备”，保持弹窗打开，以其中的地址和配对码执行 `adb pair IP:配对端口`；成功后若未自动连接，再用无线调试主页的地址执行 `adb connect IP:连接端口`。这两个端口不同，弹窗关闭后不能继续使用旧配对端口。用 `adb devices -l` 确认 `device` 状态，再将完整标识作为 `SERIAL`。依据：[Android 无线 ADB](https://developer.android.com/tools/adb#connect-to-a-device-over-wi-fi)。
+
+如果需隔离旧 ADB 后台服务，可在未占用端口上启动 `adb -P 5049 nodaemon server`，配对和连接也都加 `-P 5049`，运行测试时对应加 `--adb-port 5049`；测试驱动与设备命令共用该服务。不要为排查一个设备关闭其他任务的全局 ADB 服务。真机运行保持现有网络连接，不切飞行模式，避免无线调试掉线；报告只核对本地资源来源，离线运行仍需单独验收。模拟器原有飞行模式检查保留。
+
+模拟器也可以在启动前设置 `ANDROID_ADB_SERVER_PORT`，让它注册到同一个隔离服务；先确认目标 AVD、服务端口及模拟器端口未被其他任务使用，冷启动时保留声音且不载入旧快照。具体启动参数与设备版本写入当次报告，不能把此前设备的通过结果代入当前包。启动选项依据 [Android Emulator 命令行文档](https://developer.android.com/studio/run/emulator-commandline)。
+
+原生触摸前仍要求连续三次位置、滚动和视口完全相同。可见性与位置改为一次 WebView 读取，稳定等待限时 30 秒，避免软件绘制模拟器每次驱动通信耗时一两秒时误报 5 秒超时。Android 先保留默认首启等待，实际 WebView 可操作后才将 UiAutomator2 `waitForIdleTimeout` 设置为 500ms 并读回核对，避免牌桌持续动画让每次触摸耗尽默认空闲等待；不关闭产品动画、不合成 DOM 点击，也不改变页面对照的 2px 几何要求。该设置依据 [UiAutomator2 官方设置说明](https://github.com/appium/appium-uiautomator2-driver#settings-api)。
+
+音效与振动的重开测试按当前人数等待真实轮到玩家：上限为对手人数乘以游戏现有的单次思考上限，再加 10 秒驱动余量。多人桌连续几个对手行动可能超过旧测试的整轮 20 秒限制；报告保留当事人、手号和耗时，停滞或按钮与合法行动不一致仍会失败。没有缩短游戏思考时间，也没有延长复盘的 30 秒分析要求。
 
 ## 覆盖的实际流程
+
+- 轮到玩家时检查手牌背光、整个操作区顶部亮线与行动提示；记录入场、稳定、8 秒后的一次轻提醒，真实后台至少 9 秒后返回不重播入场，核对卡牌和按钮坐标保持不变。现有原生 Haptics 桥接检查继续保留，模拟器不能验证真实震感。
 
 - 通过原生驱动请求横屏再恢复正常竖屏：手机 App 的 WebView 保持竖屏，平板允许横屏；两次旋转均不重新发牌。保存横屏请求时的设备截图及窗口尺寸。平板必须使用平板模拟器/仿真器执行，手机通过不能算平板通过。
   手机锁定竖屏时，UiAutomator2 可能明确报告程序锁定，iOS WDA 也可能报告 `Unable To Rotate Device`；测试记录该拒绝，再检查实际窗口保持正向竖屏、旋转提示未打开且牌局不变。平板拒绝旋转、恢复竖屏失败和其他驱动错误均直接失败。
@@ -68,6 +89,7 @@ node scripts/native-e2e.mjs android --app /absolute/path/app-debug.apk --udid em
 - 在真实随机牌局中累计加注、正额跟注、弃牌和结算；核对实际支付金额为 25 的倍数，结算后筹码守恒。零筹码过牌不计作跟注。
 - 从结算打开复盘，确认本地分析生成总览和行动建议，并能关闭弹窗。
 - 重打恢复原底牌，完成手数撤回一次；下一手增加手数并清理重打状态。
+- 对局记录场景使用实际 Android Activity 返回键或 iOS 边缘滑动，检查详情→列表→游戏与“返回游戏”后的再次浏览；滚动历史结算页时桌高与所有座位几何保持不变。隐私页画面对照之后通过页面自带“返回牌桌”链接恢复游戏，再执行记录场景。
 - 在对手待行动时将真实原生应用切到后台至少 6 秒；被动记录原生 inactive/active 事件对应的公开状态，确认期间不前进，恢复后确实发生新行动。
 
 后台时长由 Node 单调时钟计时，并在等待前后使用原生驱动确认应用状态为后台或暂停。Android 可能暂停 WebView 的 JavaScript，再于恢复时投递生命周期回调，因此报告将实际原生后台时长与 JS 回调间隔分别记录。

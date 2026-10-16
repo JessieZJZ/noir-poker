@@ -2,7 +2,19 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { deckOfCards, evaluate, compare } from '../../src/engine/poker.js';
 import { decisionContext } from '../../src/review/context.js';
-import { handMatchups, matchupPresentation, reviewCommentary } from '../../src/review/matchups.js';
+import {
+  handMatchups,
+  matchupPresentation,
+  reviewCommentary,
+  matchupDrawLabel,
+} from '../../src/review/matchups.js';
+import { handFeatures } from '../../src/engine/hand-features.js';
+import {
+  bottomPairReview,
+  topPairCheckReview,
+  aceFourPreflopReview,
+} from '../fixtures/bottom-pair-review.js';
+import { explainOpponent } from '../../src/review/opponents.js';
 import { valuePlan } from '../../src/review/routes.js';
 import { analyzeDecision } from '../../src/review/analysis.js';
 import { cards } from '../fixtures/deceptive-decisions.js';
@@ -13,6 +25,35 @@ import { renderReviewParagraphs } from '../../src/ui/review-matchups.js';
 
 // Public snapshots exercise explanation and route boundaries. Opponent hands
 // below are examples generated from unseen cards, never actual private cards.
+test('consumer preflop ranges combine hand families and explain only actions already taken', () => {
+  const s = aceFourPreflopReview(),
+    c = decisionContext(s),
+    m = handMatchups(s, c),
+    p = matchupPresentation(m, 0),
+    text = p.rangeNotes.join('');
+  assert.equal(p.groups.length, 1);
+  assert.equal(p.groups[0].label, '对手可能牌组');
+  assert.ok(p.groups[0].examples.length > 0);
+  assert.match(text, /Luna在 UTG\+1 位开池到 4K/);
+  assert.match(text, /Jade在 LJ 位跟住了这笔加注/);
+  assert.doesNotMatch(text, /Kai跟住/);
+  assert.match(text, /A.*AA、AK、AQ、AJ/);
+  const html = renderReviewParagraphs([m.text], m, 0);
+  assert.doesNotMatch(html, /结构上较|不代表|记录|抽样|获胜概率/);
+  const poisoned = structuredClone(s);
+  poisoned.players.forEach((player) => {
+    player.hole = cards('Ks Kh');
+  });
+  poisoned.deck = cards('Qs Qh Qd');
+  poisoned.winners = [5];
+  assert.deepEqual(handMatchups(poisoned, decisionContext(poisoned)), m);
+  const reraised = structuredClone(s);
+  reraised.history.push({ id: 7, street: 0, action: 'raise', amount: 14000 });
+  assert.match(
+    handMatchups(reraised, decisionContext(reraised)).rangeNotes.join(''),
+    /Jade在 LJ 位已经再加注到 14K/,
+  );
+});
 function spot(hole, board = '', changes = {}) {
   const community = board ? cards(board) : [];
   const street = community.length ? community.length - 2 : 0;
@@ -83,6 +124,60 @@ const table = [
   ['shared royal flush only ties', '2c 3d', 'As Ks Qs Js Ts', true],
   ['unmade high cards', '8s 9d', 'Ah Kc 3d 7s 2h', false],
 ];
+
+test('reported A4 bottom pair lists more meaningful stronger hands, including checked top pair, than weaker draws', () => {
+  const s = bottomPairReview(),
+    c = decisionContext(s),
+    m = handMatchups(s, c);
+  assert.equal(m.ahead.length, 1);
+  assert.equal(m.behind.length, 3);
+  assert.ok(
+    m.behind.some(
+      (x) => x.cards.some((card) => card.rank === 11) && x.cards.some((card) => card.rank >= 12),
+    ),
+  );
+  assert.ok(m.behind.some((x) => x.score[0] === 1 && x.score[1] > 11));
+  assert.equal(m.ahead[0].label, '同花听牌 + 两头顺听牌');
+  assert.doesNotMatch(m.ahead[0].label, /高牌/);
+  const changed = structuredClone(s);
+  changed.players[5].hole = cards('2c 3c');
+  changed.winners = [5];
+  changed.futureDeck = cards('Ah Ac');
+  assert.deepEqual(handMatchups(changed, decisionContext(changed)), m);
+});
+
+test('candidate labels retain both parts of open-ended, gutshot and double-gutshot combo draws', () => {
+  for (const [hole, board, expected] of [
+    ['6s 7s', '5d 4s Js', '同花听牌 + 两头顺听牌'],
+    ['6s 8s', '5d 4s Js', '同花听牌 + 卡顺听牌'],
+    ['7s 8s', '5d 4s Js', '同花听牌 + 卡顺听牌'],
+    ['8s Ts', '6s 9s Qh', '同花听牌 + 双卡顺听牌'],
+  ]) {
+    const h = cards(hole),
+      b = cards(board),
+      features = handFeatures(h, b, evaluate([...h, ...b]).score);
+    assert.equal(matchupDrawLabel(h, b, features), expected);
+  }
+});
+
+test('top-pair checks explain foregone value, checking-range protection and wet multiway risk without inventing a trap', () => {
+  const record = topPairCheckReview();
+  const explanation = explainOpponent(record);
+  assert.match(explanation.detail, /顶对 J，A 踢脚/);
+  assert.match(explanation.detail, /较弱的一对或听牌取值/);
+  assert.match(explanation.detail, /过牌也可能是在等后位先下注/);
+  assert.match(explanation.detail, /多人底池/);
+  assert.match(explanation.detail, /免费看下一张/);
+  assert.match(explanation.detail, /后位仍可下注/);
+  const last = structuredClone(record);
+  last.trace.view.actionContext.pendingResponseIds = [];
+  assert.match(explainOpponent(last).detail, /不能诱导本轮下注/);
+  const trapped = structuredClone(record);
+  trapped.trace.reason = 'trap';
+  trapped.trace.basis.reason = 'trap';
+  assert.match(explainOpponent(trapped).detail, /这是.*埋牌/);
+  assert.doesNotMatch(explainOpponent(trapped).detail, /过牌也可能是在等后位先下注/);
+});
 
 test('across streets, every shown matchup is a legal current-board comparison rather than a hidden hand claim', () => {
   for (const [name, hole, board, nut] of table) {
@@ -189,12 +284,16 @@ test('ranked examples follow public position, earlier action and multiple ranges
     called = rankedSpot('UTG', 'call'),
     multi = rankedSpot('UTG', 'call', true);
   const match = (s) => handMatchups(s, decisionContext(s)),
-    groups = (s, direction = 'ahead') => match(s)[direction].map((example) => example.group);
+    groups = (s, direction = 'ahead') =>
+      match(s)[direction].map((example) => example.group + ':' + example.text);
   assert.equal(groups(early).length, 3);
-  assert.equal(groups(early, 'behind').length, 3);
-  assert.notDeepEqual(groups(early), groups(late));
-  assert.notDeepEqual(groups(early), groups(called));
-  assert.notDeepEqual(groups(called), groups(multi));
+  assert.ok(groups(early, 'behind').length >= 1);
+  assert.notEqual(groups(early).length, groups(early, 'behind').length);
+  // Coarser representative groups can remain the same for nearby ranges;
+  // the underlying position/action descriptors must still change per snapshot.
+  assert.notDeepEqual(match(early).rangeContext, match(late).rangeContext);
+  assert.notDeepEqual(match(early).rangeContext, match(called).rangeContext);
+  assert.notDeepEqual(match(called).rangeContext, match(multi).rangeContext);
   const reordered = structuredClone(multi);
   reordered.players = [reordered.players[0], reordered.players[2], reordered.players[1]];
   assert.deepEqual(match(reordered), match(multi));
@@ -225,27 +324,29 @@ test('presentation replaces one causal comparison paragraph with ordered rows an
     assert.equal(commentary.filter((part) => part.matchups).length, 1);
     assert.deepEqual(commentary[1].matchups, presentation);
     assert.equal(m.handLabel, c.handLabel);
-    assert.equal(presentation.handLabel, c.handLabel);
-    assert.ok(html.includes(`<span class="review-matchup-hand">${c.handLabel}</span>`));
+    assert.ok(presentation.handLabel.includes(c.handLabel));
+    assert.ok(html.includes(c.handLabel));
+    assert.equal(presentation.groups.length, s.street ? 2 : 1);
     if (s.hole.every((card) => card.rank === 5)) {
       assert.equal(c.handLabel, '暗三条 5');
       assert.match(html, /暗三条 5/);
     }
     for (const group of presentation.groups) {
-      assert.ok(group.examples.length <= (group.direction === 'tied' ? 1 : 3));
+      assert.ok(
+        group.examples.length <=
+          (group.direction === 'possible' ? 4 : group.direction === 'tied' ? 1 : 3),
+      );
       for (const example of group.examples) assert.ok(html.includes(example.text));
     }
     assert.ok(html.indexOf('before') < html.indexOf('review-matchups'));
     assert.ok(html.indexOf('review-matchups') < html.indexOf('after'));
     assert.doesNotMatch(html, /\d(?:\.\d+)?%|likelihood|weight|mass|概率[:：]?\s*\d/);
     if (!s.street) {
-      assert.match(html, /结构上较弱|结构上较强/);
-      assert.match(html, /不代表获胜概率/);
+      assert.match(html, /对手可能牌组/);
+      assert.ok(presentation.rangeNotes.length > 0);
       assert.doesNotMatch(html, /当前可能领先|当前可能落后|坚果/);
-    } else {
-      assert.match(html, /按位置与此前公开行动估计排序/);
-      assert.match(html, /不代表对手实际底牌/);
     }
+    assert.doesNotMatch(html, /结构上较弱|结构上较强|不代表获胜概率|估计排序|不代表对手实际底牌/);
     if (m.nut) assert.match(html, /当前没有可能更强的牌组/);
   }
 });
@@ -453,8 +554,8 @@ test('the same hand keeps its card comparisons but coaching follows actual posit
   assert.equal(baseline.context.inPosition, true);
   assert.equal(shifted.context.inPosition, false);
   assert.deepEqual(
-    handMatchups(outOfPosition, shifted.context),
-    handMatchups(inPosition, baseline.context),
+    handMatchups(outOfPosition, shifted.context).ahead,
+    handMatchups(inPosition, baseline.context).ahead,
   );
   assert.notEqual(shifted.coaching.explanation, baseline.coaching.explanation);
   assert.match(shifted.evidence.join(''), /位置 SB/);

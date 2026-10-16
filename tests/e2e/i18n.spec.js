@@ -1,5 +1,18 @@
 import { test, expect } from '@playwright/test';
 const locales = ['zh-CN', 'en', 'zh-TW', 'ja', 'ko', 'es', 'it', 'pt', 'de', 'fr', 'ru'];
+const practiceTitles = {
+  'zh-CN': '本局练习',
+  en: 'Session practice',
+  'zh-TW': '本局練習',
+  ja: 'このセッションの練習',
+  ko: '이번 세션 연습',
+  es: 'Práctica de esta sesión',
+  it: 'Pratica della sessione',
+  pt: 'Prática desta sessão',
+  de: 'Übung dieser Sitzung',
+  fr: 'Pratique de cette session',
+  ru: 'Практика в этой сессии',
+};
 test('localized HTML preserves URLs, identifiers and serialized rule data', async ({ page }) => {
   await page.goto('/');
   const result = await page.evaluate(async () => {
@@ -45,6 +58,10 @@ for (const locale of locales) {
     await page.goto('/');
     await expect(page.locator('html')).toHaveAttribute('lang', locale);
     await expect(page.locator('html')).toHaveAttribute('data-app-ready', 'true');
+    await expect(page.locator('.session-card .section-title h2')).toHaveText(
+      practiceTitles[locale],
+    );
+    await expect(page.locator('.session-card .section-title .subtle-label')).toHaveCount(0);
     await page.locator('#opponents-button').click();
     await expect(page.locator('#language-select')).toHaveValue(locale);
     await expect(page.locator('#language-select option')).toHaveCount(11);
@@ -64,6 +81,7 @@ for (const locale of locales) {
     await expect(page.locator('#table-size-label')).toContainText('9');
     await page.evaluate(() => window.qa.stop());
     await page.locator('#rules-button').click();
+    await page.locator('#guide-menu-item').click();
     const guide = page.locator('#rules-dialog');
     await expect(guide).toBeVisible();
     const raiseExample = ['es', 'it', 'pt', 'de', 'fr', 'ru'].includes(locale) ? '1,2K' : '1.2K';
@@ -116,6 +134,18 @@ for (const locale of locales) {
     await expect(page.locator('html')).toHaveAttribute('lang', locale);
     await expect(page.locator('article:visible')).toHaveCount(1);
     await expect(page.locator('article:visible')).toContainText('958182284@qq.com');
+    const policyFonts = await page.evaluate(async () => {
+      await document.fonts.ready;
+      return {
+        family: getComputedStyle(document.body).fontFamily,
+        loaded: [...document.fonts]
+          .filter((face) => face.status === 'loaded')
+          .map((face) => face.family.replace(/["']/g, '')),
+      };
+    });
+    expect(policyFonts.family).toMatch(/^Manrope,/);
+    expect(policyFonts.loaded).toContain('Manrope');
+    if (locale === 'ko') expect(policyFonts.loaded).toContain('Noto Sans KR');
   });
 }
 
@@ -173,6 +203,10 @@ test('live switching keeps settings, controls and the entire current hand across
     expect(await page.evaluate(() => window.qa.state())).toEqual(state);
     expect(await page.evaluate(() => window.qa.snapshot())).toEqual(fullState);
     expect(await page.locator('#stat-hands').textContent()).toBe(stats);
+    await expect(page.locator('.session-card .section-title h2')).toHaveText(
+      practiceTitles[locale],
+    );
+    await expect(page.locator('.session-card .section-title .subtle-label')).toHaveCount(0);
     expect(await page.evaluate(() => !!window.languageSession)).toBe(true);
     expect(await page.locator('.hint-marquee-copy').textContent()).toBe(
       await page.locator('#coach-tip').textContent(),

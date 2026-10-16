@@ -101,6 +101,7 @@ test('cold navigation and reload show only the initialized table, even when modu
       }
       await page.screenshot({ path: testInfo.outputPath(`${navigation}-ready.png`) });
       await page.locator('#rules-button').click();
+      await page.locator('#guide-menu-item').click();
       await expect(page.locator('#rules-dialog')).toBeVisible();
       await page.locator('#rules-dialog .close-dialog').first().click();
     } finally {

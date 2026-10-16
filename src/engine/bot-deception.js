@@ -1,3 +1,4 @@
+import { hasBotSkill } from './bot-difficulty.js';
 import { chipUnitOf, fractionRaiseTo, legalRaiseTo } from './bet-sizing.js';
 import { bigBlindOf } from './stakes.js';
 
@@ -8,10 +9,18 @@ export function deceptionPolicy(profile, difficulty) {
   const baseline = profile.id === 'balanced';
   const scale = difficulty === 'hard' ? 1.8 : difficulty === 'normal' ? 1 : 0;
   return {
-    trap: Math.min(0.95, (baseline || trap >= 0.5 ? trap * 0.52 + 0.04 : 0) * scale),
-    dirty: (baseline || (width >= 0.8 && bluff >= 0.7) ? 0.015 + bluff * 0.04 : 0) * scale,
-    donk: (baseline || (attack >= 0.8 && bluff >= 0.58) ? 0.04 + attack * 0.08 : 0) * scale,
-    sevenTwo: (baseline || (width >= 0.8 && bluff >= 0.8) ? 0.008 + bluff * 0.012 : 0) * scale,
+    trap: hasBotSkill(difficulty, 'trap')
+      ? Math.min(0.95, (baseline || trap >= 0.5 ? trap * 0.52 + 0.04 : 0) * scale)
+      : 0,
+    dirty: hasBotSkill(difficulty, 'light-reraise')
+      ? (baseline || (width >= 0.8 && bluff >= 0.7) ? 0.015 + bluff * 0.04 : 0) * scale
+      : 0,
+    donk: hasBotSkill(difficulty, 'donk')
+      ? (baseline || (attack >= 0.8 && bluff >= 0.58) ? 0.04 + attack * 0.08 : 0) * scale
+      : 0,
+    sevenTwo: hasBotSkill(difficulty, 'rare-bluff')
+      ? (baseline || (width >= 0.8 && bluff >= 0.8) ? 0.008 + bluff * 0.012 : 0) * scale
+      : 0,
   };
 }
 

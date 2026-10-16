@@ -4,6 +4,11 @@ import { createRequire } from 'node:module';
 import fs from 'node:fs';
 import path from 'node:path';
 import assert from 'node:assert/strict';
+import {
+  bottomPairReview,
+  topPairCheckReview,
+  aceFourPreflopReview,
+} from '../fixtures/bottom-pair-review.js';
 import { deckOfCards } from '../../src/engine/poker.js';
 import {
   causalReraiseGame,
@@ -24,15 +29,45 @@ const report = {
 };
 const mini = await automator.connect({ wsEndpoint: process.argv[2] || 'ws://127.0.0.1:9461' });
 mini.on('exception', (error) => report.exceptions.push(error));
+const send = mini.connection.send.bind(mini.connection);
+mini.connection.send = async (method, params) => {
+  const started = Date.now();
+  try {
+    return await send(method, params);
+  } catch (error) {
+    report.failedCommand ||= { method, elapsedMs: Date.now() - started, stage: report.stage };
+    throw error;
+  }
+};
+await mini.reLaunch('/pages/table/table');
 const page = await mini.currentPage();
-const invoke = (name, arg) =>
-  mini.evaluate((name, arg) => getCurrentPages().at(-1)[name](arg), name, arg);
+const stage = (name) => {
+  report.stage = name;
+  console.log('[wechat-review]', name);
+};
+const invoke = async (name, arg) => {
+  stage(name);
+  return mini.evaluate((name, arg) => getCurrentPages().at(-1)[name](arg), name, arg);
+};
 const wait = async (predicate) => {
   const start = Date.now();
   while (!predicate(await page.data())) {
     if (Date.now() - start > 45000) throw Error('Review UI did not reach expected state');
     await page.waitFor(100);
   }
+};
+const painted = async (selector) => {
+  const started = Date.now();
+  let element;
+  while (!(element = await page.$(selector))) {
+    if (Date.now() - started > 45000) throw Error('Control did not paint: ' + selector);
+    await page.waitFor(100);
+  }
+  return element;
+};
+const tap = async (selector) => {
+  stage('tap ' + selector);
+  await (await painted(selector)).tap();
 };
 const capture = async (name) => {
   await page.waitFor(1450);
@@ -41,8 +76,11 @@ const capture = async (name) => {
 let savedDecisions;
 let savedBotDecisions;
 let savedHistory;
+let savedLogs;
 try {
   report.build = JSON.parse(fs.readFileSync(path.join(root, '.artifacts/wechat/build-info.json')));
+  assert.equal((await page.data()).noticeExpanded, true);
+  assert.equal((await page.data()).guideExpanded[1], true);
   await invoke('closeReview');
   // Settings apply to the next hand; never try to replace an active deal.
   while (!(await page.data()).done) {
@@ -53,7 +91,7 @@ try {
     if (phase.phase === 'playing' && phase.actor === 0)
       await invoke('act', { currentTarget: { dataset: { action: 'fold' } } });
     await invoke('finishHand');
-    await wait((data) => data.done || data.actor === 0);
+    await wait((data) => data.done || data.canAct);
   }
   const profiles = (await page.data()).profiles;
   await invoke('changeSeat', {
@@ -69,9 +107,14 @@ try {
   await invoke('act', { currentTarget: { dataset: { action: 'fold' } } });
   await invoke('finishHand');
   await wait((data) => data.done);
-  await (await page.$('.review-button')).tap();
+  // The controller reports settlement before the simulator has finished its
+  // card/layout animation. Tap the painted button after that lifecycle settles.
+  await page.waitFor(1450);
+  stage('real-review-open');
+  await tap('.review-button');
   await wait((data) => !data.reviewData.loading && data.selectedReviewStep);
-  await (await page.$('[data-value="opponent"]')).tap();
+  stage('real-opponent-open');
+  await tap('[data-value="opponent"]');
   await wait((data) => data.reviewPerspective === 'opponent' && data.selectedReviewStep?.reason);
   let data = await page.data();
   assert.ok(data.opponentOptions.some((name) => /Mia.*Tan Xuan/.test(name)));
@@ -79,7 +122,7 @@ try {
   for (const index of [
     ...new Set([0, Math.floor(data.reviewSteps.length / 2), data.reviewSteps.length - 1]),
   ]) {
-    await (await page.$(`.review-step[data-index="${index}"]`)).tap();
+    await tap(`.review-step[data-index="${index}"]`);
     await wait((data) => data.reviewIndex === index);
     data = await page.data();
     assert.ok(data.selectedReviewStep.reason);
@@ -90,7 +133,7 @@ try {
     assert.equal(await page.$('.review-detail-header .review-label'), null);
     report.checks.push({ name: 'real-opponent-step-' + index, selected: data.selectedReviewStep });
   }
-  await (await page.$('#select-opponent')).tap();
+  await tap('#select-opponent');
   await wait((data) => data.selection?.field === 'opponent');
   assert.ok((await page.data()).selection.options.some((name) => /Mia.*Tan Xuan/.test(name)));
   await capture('assigned-player-options');
@@ -100,6 +143,14 @@ try {
   data = await page.data();
   assert.ok(data.reviewSteps.every((step) => data.opponentOptions[1].startsWith(step.name)));
   await capture('opponent');
+  assert.equal(
+    await (await painted('.review-matchups .module-title')).style('color'),
+    'rgb(228, 206, 160)',
+  );
+  assert.equal(
+    await (await painted('.review-analysis-heading')).style('color'),
+    'rgb(228, 206, 160)',
+  );
   await invoke('closeReview');
   savedDecisions = await mini.evaluate(
     () => getCurrentPages().at(-1)._controller.getGame().decisions,
@@ -108,6 +159,7 @@ try {
     () => getCurrentPages().at(-1)._controller.getGame().botDecisions,
   );
   savedHistory = await mini.evaluate(() => getCurrentPages().at(-1)._controller.getGame().history);
+  savedLogs = await mini.evaluate(() => getCurrentPages().at(-1)._controller.getGame().logs);
   const cards = (text) =>
     text
       .split(' ')
@@ -171,11 +223,11 @@ try {
     const step = (await page.data()).selectedReviewStep;
     verify(step);
     assert.equal(await page.$('.review-comparison'), null);
-    assert.ok(step.evidence.length >= 4 && step.history.length > 0);
+    assert.ok(step.evidence.length >= 4 && (await page.data()).reviewActivity.length > 0);
     assert.equal(Boolean(await page.$('.review-practice-focus')), !step.keep);
     assert.doesNotMatch(step.reason, /EV|模型|模拟器|抽样|新增投入/);
     assert.doesNotMatch(step.evidence.join(''), /有效剩余|新增投入/);
-    assert.deepEqual(step.publicResponses, []);
+    assert.equal(step.publicResponses, undefined);
     report.checks.push({
       name,
       fixture: 'before-action public snapshot; not an actual deal',
@@ -223,6 +275,24 @@ try {
     background: await focus.style('background-color'),
     border: await focus.style('border-left-color'),
   };
+  const gold = 'rgb(228, 206, 160)';
+  assert.equal(await (await page.$('.review-practice-focus .module-title')).style('color'), gold);
+  assert.equal(await (await page.$('.review-analysis-heading')).style('color'), gold);
+  assert.equal(await (await page.$('.review-evidence .module-title')).style('color'), gold);
+  assert.equal(
+    await (await page.$('.review-evidence')).style('background-color'),
+    'rgb(22, 39, 43)',
+  );
+  assert.equal(await (await page.$('.review-sheet')).style('left'), '10px');
+  const reviewScroll = await page.$('.review-sheet .sheet-scroll');
+  const focusOffset = await focus.offset(),
+    scrollOffset = await reviewScroll.offset();
+  await reviewScroll.scrollTo(
+    0,
+    (await reviewScroll.property('scrollTop')) + focusOffset.top - scrollOffset.top - 20,
+  );
+  await capture('practice-focus-and-evidence-style');
+
   await fixture('reported-52s-shove', weakSuitedShove(), (step) => {
     assert.equal(step.keep, false);
     assert.equal(step.label, '弃牌');
@@ -233,6 +303,35 @@ try {
     assert.doesNotMatch(step.reason, /一对|非坚果听牌|先前跟注|单看一张高牌/);
     assert.doesNotMatch(step.evidence.join(''), /40(?:\.0)?%/);
   });
+  await fixture('consumer-preflop-ranges', aceFourPreflopReview(), (step) => {
+    const section = step.commentary.find((part) => part.matchups).matchups;
+    assert.equal(section.groups.length, 1);
+    assert.equal(section.groups[0].label, '对手可能牌组');
+    assert.match(section.rangeNotes.join(''), /Luna在 UTG\+1 位开池到 4K/);
+    assert.match(section.rangeNotes.join(''), /Jade在 LJ 位跟住了这笔加注/);
+    assert.doesNotMatch(step.reason, /结构上较|不代表获胜概率|依据当时记录|旧记录/);
+  });
+  await fixture('reported-bottom-pair', bottomPairReview(), (step) => {
+    const groups = step.commentary.find((paragraph) => paragraph.matchups).matchups.groups;
+    assert.equal(groups[0].examples.length, 1);
+    assert.equal(groups[1].examples.length, 3);
+    assert.match(groups[0].examples[0].label, /同花听牌.*两头顺听牌/);
+    assert.ok(groups[1].examples.some((example) => /A.*J/.test(example.text)));
+  });
+  await invoke('closeReview');
+  await mini.evaluate((record) => {
+    getCurrentPages().at(-1)._controller.getGame().botDecisions = [record];
+  }, topPairCheckReview());
+  await invoke('openReview');
+  await wait((data) => !data.reviewData.loading);
+  await tap('[data-value="opponent"]');
+  await wait((data) => data.reviewPerspective === 'opponent' && data.selectedReviewStep?.reason);
+  const topPair = (await page.data()).selectedReviewStep;
+  assert.match(topPair.reason, /较弱的一对或听牌取值/);
+  assert.match(topPair.reason, /过牌也可能是在等后位先下注/);
+  assert.match(topPair.reason, /免费看下一张/);
+  report.checks.push({ name: 'reported-top-pair-check', selected: topPair });
+  await capture('reported-top-pair-check');
   await invoke('closeReview');
   await mini.evaluate((records) => {
     const game = getCurrentPages().at(-1)._controller.getGame();
@@ -240,9 +339,9 @@ try {
   }, pocketTensRecords());
   await invoke('openReview');
   await wait((data) => !data.reviewData.loading && data.selectedReviewStep);
-  await (await page.$('[data-value="opponent"]')).tap();
+  await tap('[data-value="opponent"]');
   await wait((data) => data.reviewPerspective === 'opponent' && data.reviewSteps.length === 2);
-  await (await page.$('.review-step[data-index="1"]')).tap();
+  await tap('.review-step[data-index="1"]');
   await wait((data) => data.reviewIndex === 1);
   const tens = (await page.data()).selectedReviewStep;
   const tensText = tens.reason;
@@ -265,24 +364,47 @@ try {
       game.decisions = fixture.decisions.map((decision) => ({ ...decision, hand: game.hand }));
       game.botDecisions = fixture.botDecisions;
       game.history = fixture.history;
+      game.logs = fixture.logs;
     },
-    { decisions: causal.decisions, botDecisions: causal.botDecisions, history: causal.history },
+    {
+      decisions: causal.decisions,
+      botDecisions: causal.botDecisions,
+      history: causal.history,
+      logs: causal.logs,
+    },
   );
   await invoke('openReview');
   await wait((data) => !data.reviewData.loading && data.selectedReviewStep);
-  await (await page.$('.review-step[data-index="0"]')).tap();
+  await tap('.review-step[data-index="0"]');
   await wait((data) => data.reviewIndex === 0);
   const hero = (await page.data()).selectedReviewStep;
   assert.match(hero.reason, /350/);
   assert.match(hero.reason, /200/);
   assert.match(hero.reason, /Luna|CO/);
   assert.doesNotMatch(hero.reason, /A[♦♥♣♠]|Q[♦♥♣♠]|EV|模型|模拟器|抽样|新增投入/);
-  const responses = hero.publicResponses.join('');
+  const responses = (await page.data()).reviewActivity.map((event) => event.text).join('');
   assert.match(responses, /Mia.*1K/);
   assert.match(responses, /Alex.*弃牌/);
   assert.match(responses, /River.*950/);
   assert.match(responses, /Luna.*800/);
-  assert.ok(hero.publicResponses.every((paragraph) => hero.paragraphs.includes(paragraph)));
+  assert.equal(hero.publicResponses, undefined);
+  assert.equal((await page.data()).reviewActivityOpen, false);
+  await invoke('toggleReviewActivity');
+  assert.ok((await page.data()).reviewActivity.some((event) => event.emphasized && event.current));
+  const currentActivity = await painted('.review-activity-current');
+  assert.match(await currentActivity.style('background-color'), /102,\s*203,\s*177/);
+  assert.match(await currentActivity.style('box-shadow'), /3px/);
+  const actorRows = await page.$$('.review-activity-emphasis');
+  let plainActor;
+  for (const row of actorRows)
+    if (!(await row.attribute('class')).includes('review-activity-current')) {
+      plainActor = row;
+      break;
+    }
+  assert.ok(plainActor);
+  assert.match(await plainActor.style('background-color'), /^rgba\(0,\s*0,\s*0,\s*0\)$/);
+  assert.ok((await page.$$('.review-activity .activity-position')).length > 0);
+
   assert.doesNotMatch(hero.evidence.join(''), /有效剩余|新增投入|赔率|权益.*%/);
   report.checks.push({
     name: '69o-actual-public-responses',
@@ -290,7 +412,7 @@ try {
     selected: hero,
   });
   await capture('69o-actual-public-responses');
-  await (await page.$('[data-value="opponent"]')).tap();
+  await tap('[data-value="opponent"]');
   await wait((data) => data.reviewPerspective === 'opponent' && data.reviewSteps.length === 1);
   const mia = (await page.data()).selectedReviewStep;
   assert.match(mia.reason, /Mia/);
@@ -314,12 +436,13 @@ try {
         game.decisions = fixture.decisions.map((decision) => ({ ...decision, hand: game.hand }));
         game.botDecisions = [];
         game.history = fixture.history;
+        game.logs = fixture.logs;
       },
-      { decisions: fixture.decisions, history: fixture.history },
+      { decisions: fixture.decisions, history: fixture.history, logs: fixture.logs },
     );
     await invoke('openReview');
     await wait((data) => !data.reviewData.loading && data.selectedReviewStep);
-    await (await page.$(`.review-step[data-index="${index}"]`)).tap();
+    await tap(`.review-step[data-index="${index}"]`);
     await wait((data) => data.reviewIndex === index);
     const step = (await page.data()).selectedReviewStep;
     assert.equal(step.keep, true);
@@ -327,23 +450,32 @@ try {
       assert.match(step.reason, /暗三条\s*5/);
       assert.match(step.reason, /全下/);
       assert.match(step.reason, /价值|取值/);
-      assert.match(step.reason, /能赢.*(?:两对|对子)/);
+      assert.match(step.reason, /能赢.*(?:两对|一对|对子)/);
       assert.match(step.reason, /输给.*三条/);
-      assert.match(step.publicResponses.join(''), /Luna.*900/);
+      assert.match(
+        (await page.data()).reviewActivity.map((event) => event.text).join(''),
+        /Luna.*全下\s*1K/,
+      );
     } else {
       assert.match(step.reason, /埋牌|藏在平跟/);
       assert.match(step.reason, /150/);
       assert.match(step.reason, /领先/);
-      assert.match(step.publicResponses.join(''), /Mia.*弃牌/);
-      assert.match(step.publicResponses.join(''), /Alex.*弃牌/);
+      assert.match(
+        (await page.data()).reviewActivity.map((event) => event.text).join(''),
+        /Mia.*弃牌/,
+      );
+      assert.match(
+        (await page.data()).reviewActivity.map((event) => event.text).join(''),
+        /Alex.*弃牌/,
+      );
     }
     assert.equal(step.ev, undefined);
     assert.doesNotMatch(step.reason, /EV|模型|模拟器|抽样|最终赢家|已经摊牌/);
-    assert.ok(step.publicResponses.every((paragraph) => step.paragraphs.includes(paragraph)));
+    assert.equal(step.publicResponses, undefined);
     const rendered = await Promise.all(
       (await page.$$('.review-coaching text')).map((element) => element.text()),
     );
-    for (const paragraph of step.publicResponses) assert.ok(rendered.join('').includes(paragraph));
+    assert.ok(rendered.join('').includes('复盘分析总结'));
     assert.equal(await page.$('.opponent-metrics'), null);
     report.checks.push({
       name: 'common-hero-' + kind,
@@ -356,6 +488,7 @@ try {
   report.status = 'passed';
 } catch (error) {
   report.status = 'failed';
+  report.failedStage = report.stage;
   report.error = error.stack;
   throw error;
 } finally {
@@ -370,6 +503,9 @@ try {
     await mini.evaluate((history) => {
       getCurrentPages().at(-1)._controller.getGame().history = history;
     }, savedHistory);
+    await mini.evaluate((logs) => {
+      getCurrentPages().at(-1)._controller.getGame().logs = logs;
+    }, savedLogs);
   }
   report.completedAt = new Date().toISOString();
   fs.writeFileSync(path.join(output, 'report.json'), JSON.stringify(report, null, 2));

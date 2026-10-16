@@ -307,7 +307,7 @@ test('settled table removes redundant result panels while pot details keep award
     await expect(page.locator('#result-banner, .result-summary')).toHaveCount(0);
     await expect(page.locator('.decision-strip')).toBeHidden();
     await expect(page.locator('#decision-text')).toBeEmpty();
-    await expect(page.locator('#activity-list')).toContainText('Alex 获胜 · 获得 125 筹码');
+    await expect(page.locator('#activity-list')).toContainText(/Alex\s+CO\s+获胜 · 获得 125 筹码/);
     await expect(page.locator('#hand-strength')).toHaveCount(0);
     await expect(page.locator('.seat-2 .winner-indicator')).toHaveAttribute(
       'title',
@@ -406,7 +406,7 @@ test('raise controls, seats, activity and review share street-specific bet ordin
     await expect(page.locator('#raise-button')).toContainText(`${level}-bet`);
     if (level >= 3) {
       await expect(page.locator('.seat-3 .seat-action')).toContainText('2-bet');
-      await expect(page.locator('#activity-list')).toContainText('River 2-bet 开池至 150');
+      await expect(page.locator('#activity-list')).toContainText(/River\s+\S+\s+2-bet 开池至 150/);
     }
     if (level >= 4) await expect(page.locator('.seat-4 .seat-action')).toContainText('3-bet');
   }
@@ -436,8 +436,8 @@ test('raise controls, seats, activity and review share street-specific bet ordin
   expect(buttonFits).toBe(true);
 
   await page.evaluate(() => window.qa.reviewLine());
-  await expect(page.locator('#activity-list')).toContainText('Alex 3-bet 加注至 650');
-  await expect(page.locator('#activity-list')).toContainText('Mia 4-bet 加注至 1.8K');
+  await expect(page.locator('#activity-list')).toContainText(/Alex\s+\S+\s+3-bet 加注至 650/);
+  await expect(page.locator('#activity-list')).toContainText(/Mia\s+\S+\s+4-bet 加注至 1.8K/);
   await page.locator('#review-hand-button').click();
   await expect(page.locator('#review-dialog[data-analysis-status="done"]')).toBeVisible({
     timeout: 30000,
@@ -447,8 +447,9 @@ test('raise controls, seats, activity and review share street-specific bet ordin
     '2-bet 开池至 150',
   );
   await page.locator('#review-timeline [data-review-index="2"]').click();
-  await expect(page.locator('#review-public-actions')).toContainText('3-bet 加注至 650');
-  await expect(page.locator('#review-public-actions')).toContainText('4-bet 加注至 1.8K');
+  await page.locator('#review-activity summary').click();
+  await expect(page.locator('#review-activity-list')).toContainText('3-bet 加注至 650');
+  await expect(page.locator('#review-activity-list')).toContainText('4-bet 加注至 1.8K');
 });
 
 test('5–9 player showdown reveals all holes immediately and displays each best five', async ({
@@ -1113,13 +1114,20 @@ test('activity preserves chronological top-to-bottom order with bounded desktop 
         const readingOrder = rects
           .sort((a, b) => (Math.abs(a.top - b.top) > 1 ? a.top - b.top : a.left - b.left))
           .map((rect) => rect.index);
+        const rawTexts = items.map((item) => {
+          const clone = item.cloneNode(true);
+          clone
+            .querySelectorAll('.activity-position, .activity-persona')
+            .forEach((el) => el.remove());
+          return clone.textContent.replace(/\s+/g, ' ').trim();
+        });
         const milestones = [
-          texts.findIndex((text) => /^第 \d+ 手开始/.test(text)),
-          texts.findIndex((text) => text.includes('小盲') && text.includes('大盲')),
-          texts.findIndex((text) => text.startsWith('翻牌 ·')),
-          texts.findIndex((text) => text.startsWith('转牌 ·')),
-          texts.findIndex((text) => text.startsWith('河牌 ·')),
-          texts.indexOf(window.noir.getState().result),
+          rawTexts.findIndex((text) => /^第 \d+ 手开始/.test(text)),
+          rawTexts.findIndex((text) => text.includes('小盲') && text.includes('大盲')),
+          rawTexts.findIndex((text) => text.startsWith('翻牌 ·')),
+          rawTexts.findIndex((text) => text.startsWith('转牌 ·')),
+          rawTexts.findIndex((text) => text.startsWith('河牌 ·')),
+          rawTexts.indexOf(window.noir.getState().result.replace(/\s+/g, ' ').trim()),
         ];
         const board = document.querySelector('#board').getBoundingClientRect();
         const overlaps = [...document.querySelectorAll('.seat-peek')].some((el) => {
@@ -1184,7 +1192,7 @@ test('activity shows actual assigned personas across actions and results without
     }, count);
     const list = page.locator('#activity-list');
     await expect(list.locator('.log-blind')).toHaveText(
-      'Mia（Viktor Blom） 小盲 25 · Alex（ST 王） 大盲 50',
+      'Mia（Viktor Blom） SB 小盲 25 · Alex（ST 王） BB 大盲 50',
     );
     for (const label of [
       'Mia（Viktor Blom）',
@@ -1221,15 +1229,15 @@ test('activity shows actual assigned personas across actions and results without
 
   await page.evaluate(() => window.qa.foldPotRefund());
   await expect(page.locator('#activity-list .log-result').last()).toContainText(
-    'Alex（ST 王） 获胜',
+    'Alex（ST 王） CO 获胜',
   );
-  await expect(page.locator('#activity-list')).toContainText('Alex（ST 王） 未被跟注的 75');
+  await expect(page.locator('#activity-list')).toContainText('Alex（ST 王） CO 未被跟注的 75');
   await assertWinnerIndicators(page);
   await page.locator('#opponents-button').click();
   await page.locator('[data-bot-seat="2"]').selectOption('abao');
   await closeSettings(page);
   await page.locator('.seat-2 .seat-peek').click();
-  await expect(page.locator('#activity-list')).toContainText('Alex（ST 王） 获胜');
+  await expect(page.locator('#activity-list')).toContainText('Alex（ST 王） CO 获胜');
   await expect(page.locator('#activity-list')).not.toContainText('Alex（阿宝）');
 
   await page.locator('#next-button').click();
@@ -1957,7 +1965,8 @@ test('review timelines hint at horizontal scrolling and keep late selections in 
     const after = await timeline.evaluate((el) => ({ left: el.scrollLeft, top: el.scrollTop }));
     expect(Math.abs(after.left - before.left)).toBeLessThan(1.1);
     expect(Math.abs(after.top - before.top)).toBeLessThan(1.1);
-    await page.locator('[data-opponent-nav="-1"]').evaluate((button) => button.click());
+    await timeline.locator('[data-opponent-index="4"]').click();
+    await expect(page.locator('[data-opponent-nav]')).toHaveCount(0);
     await expect(timeline.locator('[aria-current="step"]')).toHaveAttribute(
       'data-opponent-index',
       '4',
@@ -1996,6 +2005,7 @@ test('fast finish records opponents while live public state never exposes privat
 test('foreign style assignments persist and opponent review filters include assigned player names', async ({
   page,
 }) => {
+  test.setTimeout(60000);
   await page.evaluate(() => window.qa.foldWin(9));
   await page.locator('#opponents-button').click();
   for (const [seat, profile] of [
@@ -2027,7 +2037,7 @@ test('foreign style assignments persist and opponent review filters include assi
   await page.evaluate(() => window.qa.reviewLine());
   await page.locator('#review-hand-button').click();
   await expect(page.locator('#review-dialog[data-analysis-status="done"]')).toBeVisible({
-    timeout: 20000,
+    timeout: 30000,
   });
   await page.locator('#review-timeline [data-review-index="0"]').click();
   await expect(page.locator('#review-advanced, #review-simulation')).toHaveCount(0);

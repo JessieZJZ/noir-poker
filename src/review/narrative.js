@@ -4,6 +4,7 @@ import { rankText } from '../engine/poker.js';
 import { actionLabel, historyActionLabel } from '../engine/action-labels.js';
 import { boardTexture } from './context.js';
 import { spotFacts } from './spot-facts.js';
+import { actorAtPosition, actorName } from '../engine/player-identity.js';
 
 const n = compactChips;
 const pct = (value) => (value * 100).toFixed(1) + '%';
@@ -21,7 +22,7 @@ export function publicCallsAfter(s, index, actorId = 0) {
     .slice(index + 1)
     .filter((a) => a.street === s.street && a.action === 'call' && a.id !== actorId)
     .map((a) => {
-      const name = s.players?.find((p) => p.id === a.id)?.name || '对手';
+      const name = actorAtPosition(s, a.id);
       return `随后，${name}又补 ${n(a.amount)} 跟注。`;
     })
     .join('');
@@ -40,7 +41,7 @@ export function situationNotes(s, c, actorId = 0) {
   if (aggression) {
     if (aggression.street !== s.street)
       notes.push(
-        `${aggression.name}此前在${streets[aggression.street]}的行动是${aggression.label}；到了${streets[s.street]}，轮到${who}行动时，${s.legal.canCheck ? '当前无需补筹码，可以免费过牌' : '这次需要再补 ' + n(s.legal.callAmount) + ' 才能继续'}。`,
+        `${aggression.name}此前在${streets[aggression.street]}的行动是${aggression.label}；到了${streets[s.street]}，轮到${who}行动时，${s.legal.canCheck ? '可以直接过牌，不必再投入筹码' : '这次需要再补 ' + n(s.legal.callAmount) + ' 才能继续'}。`,
       );
     else if (aggression.priorChecks.length)
       notes.push(
@@ -65,9 +66,7 @@ export function situationNotes(s, c, actorId = 0) {
             f.ownPreviousActions.findLast(
               (a) => a.street === 0 && a.action === 'raise' && a.index < aggression.index,
             ) || raises.at(-2),
-          priorName =
-            s.players?.find((p) => p.id === prior.id)?.name ||
-            (prior.id === actorId ? who : '对手'),
+          priorName = actorAtPosition(s, prior.id),
           called = publicCallsAfter(s, aggression.index, actorId);
         if (called) {
           const response =
@@ -81,15 +80,13 @@ export function situationNotes(s, c, actorId = 0) {
           );
       } else if (s.street === 0 && earlierCall >= 0 && earlierCall < firstRaise) {
         const caller = s.history[earlierCall],
-          name = s.players?.find((p) => p.id === caller.id)?.name || '对手';
+          name = actorAtPosition(s, caller.id);
         notes.push(
-          `${name}先${historyActionLabel(s.history, earlierCall)}进入底池，${aggression.name}（${aggression.position}）随后${aggression.label}；${who}这次选择${actionLabel(s)}，是在已有跟入者的底池中回应开池。`,
+          `${name}先${historyActionLabel(s.history, earlierCall)}进入底池，${actorName(s, aggression.id)}（${aggression.position}）随后${aggression.label}；${who}这次选择${actionLabel(s)}，是在已有跟入者的底池中回应开池。`,
         );
       } else
         notes.push(
-          aggression.position
-            ? `${aggression.name}（${aggression.position}）已${aggression.label}；${who}这次选择${actionLabel(s)}，是在回应这笔下注。`
-            : `${aggression.name}已${aggression.label}；${who}这次选择${actionLabel(s)}，是在回应这笔下注。`,
+          `${aggression.name}已${aggression.label}；${who}这次选择${actionLabel(s)}，是在回应这笔下注。`,
         );
     }
   } else {
@@ -97,14 +94,9 @@ export function situationNotes(s, c, actorId = 0) {
       (a) => a.street === s.street && a.id !== actorId && a.action === 'check',
     );
     if (checks.length) {
-      const names = checks.map(
-        (a) =>
-          s.players?.find((p) => p.id === a.id)?.name ||
-          s.opponents?.find((p) => p.id === a.id)?.name ||
-          '对手',
-      );
+      const names = checks.map((a) => actorAtPosition(s, a.id));
       notes.push(
-        `${names.join('、')}本轮已过牌；${who}当前不用补筹码，${s.action === 'raise' ? '这次主动下注是在已有过牌之后争取底池' : '可以保留免费机会，也可以主动下注争取价值或弃牌'}。`,
+        `${names.join('、')}本轮已过牌；${who}可以直接过牌，${s.action === 'raise' ? '这次主动下注是在已有过牌之后争取底池' : '可以保留免费机会，也可以主动下注争取价值或弃牌'}。`,
       );
     }
   }
@@ -146,7 +138,7 @@ export function callOddsText(metrics) {
   if (!metrics.callCost)
     return amount
       ? `实际再补 ${n(amount)}，但计入退回筹码后，本次没有新增风险。`
-      : '当前无需补筹码，跟注成本为 0。';
+      : '可以直接过牌，不必再投入筹码。';
   const ratio = (metrics.contestable - metrics.callCost) / metrics.callCost;
   return amount === metrics.callCost
     ? `再补 ${n(amount)}，跟注后可争夺 ${n(metrics.contestable)}，底池赔率约 ${ratio.toFixed(2)} : 1；至少需要约 ${pct(metrics.required)} 的权益才能打平。`
@@ -187,7 +179,7 @@ export function actionReason(s, r) {
         : `你在 ${s.position} 拿 ${hand}，再补 ${n(s.legal.callAmount)} 跟注，继续争夺 ${n(r.metrics.contestable)} 的底池。`;
   if (s.action === 'fold')
     return s.legal.canCheck
-      ? `你拿 ${hand} 直接弃牌，但当时无需补筹码；过牌成本同样是 0，还能保留${s.street ? c.handLabel : '这手起手牌'}的获池机会。`
+      ? `你拿 ${hand} 直接弃牌，但当时可以直接过牌；过牌成本同样是 0，还能保留${s.street ? c.handLabel : '这手起手牌'}的获池机会。`
       : s.street
         ? `你在 ${s.position} 拿 ${hand}，在 ${f.boardText} 上是${c.handLabel}，选择弃牌，避免再补 ${n(s.legal.callAmount)}。${draw.outs ? '当前有' + drawLabel(draw) + '，' + draw.outs + '张改善候选，下一张约' + pct(draw.nextChance) + '。' : ''}`
         : `你在 ${s.position} 拿 ${hand}，选择弃牌，避免再补 ${n(s.legal.callAmount)}。`;
@@ -214,10 +206,7 @@ export function continuationNote(s, c, closing) {
 export function publicHistory(s) {
   return (s.history || []).map((a, i) => ({
     street: streets[a.street],
-    name:
-      s.players?.find((p) => p.id === a.id)?.name ||
-      s.opponents?.find((p) => p.id === a.id)?.name ||
-      (a.id === 0 ? '你' : a.id === s.id ? s.actorName || s.name || '对手' : '对手'),
+    name: actorAtPosition(s, a.id),
     action: historyActionLabel(s.history, i),
   }));
 }

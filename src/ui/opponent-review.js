@@ -11,9 +11,11 @@ const esc = (v) =>
     .replaceAll('>', '&gt;')
     .replaceAll('"', '&quot;');
 const n = (v) => formatChips(Math.round(v));
-export function createOpponentReview({ card }) {
+export function createOpponentReview({ card, onSelection = () => {} }) {
   const panel = document.querySelector('#review-opponents');
+  const explanations = new WeakMap();
   let records = [],
+    identities = [],
     selected = 0,
     filter = 'all';
   const step = (r) => ({ ...r.trace.view, action: r.action, amount: r.amount });
@@ -26,6 +28,11 @@ export function createOpponentReview({ card }) {
       button.setAttribute('aria-current', i === selected ? 'step' : 'false');
     });
     const record = visible[selected];
+    onSelection(
+      record
+        ? { actorId: record.id, sequence: record.sequence }
+        : { actorId: null, sequence: null },
+    );
     setLocalizedHTML(
       panel.querySelector('#review-opponent-detail'),
       record
@@ -63,42 +70,28 @@ export function createOpponentReview({ card }) {
   }
   function detail(r) {
     const v = r.trace.view,
-      e = explainOpponent(
-        r,
-        records.map(({ id, name }) => ({ id, name })),
-      ),
-      navigationLabel = '第 ' + r.sequence + ' 次公开行动';
-    return `<div class="review-detail-header"><h3>${esc(r.name)}，${STREET_NAMES[v.street]}</h3></div><div class="review-scene"><div class="review-card-rows"><div class="review-card-group"><span>${esc(r.name)} 当时的底牌</span><div class="review-cards">${v.hole.map((c) => card(c, { small: true })).join('')}</div></div><div class="review-card-group"><span>当时的公共牌</span><div class="review-cards">${v.board.length ? v.board.map((c) => card(c, { small: true })).join('') : '<span class="review-no-board">公共牌尚未发出</span>'}</div></div></div><div class="review-scene-meta"><div><span>位置</span><strong>${v.position}</strong></div><div><span>当时底池</span><strong>${n(v.pot)}</strong></div><div><span>剩余筹码</span><strong>${n(v.stack)}</strong></div></div></div><div class="review-explanation opponent-reason">${renderReviewParagraphs(e.paragraphs || [e.detail], e.matchups, v.street)}${e.reasons.map((s) => `<p>${esc(s)}</p>`).join('')}</div><div class="review-step-nav"><button data-opponent-nav="-1" ${selected === 0 ? 'disabled' : ''}>上一步</button><span>${navigationLabel}</span><button data-opponent-nav="1" ${selected >= records.filter((x) => filter === 'all' || x.id === Number(filter)).length - 1 ? 'disabled' : ''}>下一步</button></div>`;
+      e = explanations.get(r) || explainOpponent(r, identities);
+    explanations.set(r, e);
+    return `<div class="review-detail-header"><h3>${esc(r.name)}，${STREET_NAMES[v.street]}</h3></div><div class="review-scene"><div class="review-card-rows"><div class="review-card-group"><span>${esc(r.name)} 当时的底牌</span><div class="review-cards">${v.hole.map((c) => card(c, { small: true })).join('')}</div></div><div class="review-card-group"><span>当时的公共牌</span><div class="review-cards">${v.board.length ? v.board.map((c) => card(c, { small: true })).join('') : '<span class="review-no-board">公共牌尚未发出</span>'}</div></div></div><div class="review-scene-meta"><div><span>位置</span><strong>${v.position}</strong></div><div><span>当时底池</span><strong>${n(v.pot)}</strong></div><div><span>剩余筹码</span><strong>${n(v.stack)}</strong></div></div></div><div class="review-explanation opponent-reason">${renderReviewParagraphs(e.paragraphs || [e.detail], e.matchups, v.street)}${e.reasons.map((s) => `<p>${esc(s)}</p>`).join('')}</div>`;
   }
   panel.addEventListener('click', (e) => {
-    const b = e.target.closest('[data-opponent-index], [data-opponent-nav]');
+    const b = e.target.closest('[data-opponent-index]');
     if (!b) return;
-    selected =
-      b.dataset.opponentIndex !== undefined
-        ? Number(b.dataset.opponentIndex)
-        : selected + Number(b.dataset.opponentNav);
+    selected = Number(b.dataset.opponentIndex);
     renderSelection();
-    if (b.dataset.opponentNav !== undefined) {
-      const timeline = panel.querySelector('.review-timeline'),
-        button = timeline.querySelector('[aria-current="step"]'),
-        bounds = timeline.getBoundingClientRect(),
-        item = button.getBoundingClientRect();
-      timeline.scrollBy({
-        left:
-          item.left < bounds.left
-            ? item.left - bounds.left
-            : Math.max(0, item.right - bounds.right),
-        top:
-          item.top < bounds.top ? item.top - bounds.top : Math.max(0, item.bottom - bounds.bottom),
-      });
-      const navigation = panel.querySelector(`[data-opponent-nav="${b.dataset.opponentNav}"]`);
-      (navigation.disabled ? button : navigation).focus({ preventScroll: true });
-    }
   });
   document.addEventListener('noir:locale-changed', render);
   return {
     update(input) {
       records = input.opponents || [];
+      identities =
+        input.players ||
+        records.map(({ id, name, trace }) => ({
+          id,
+          name,
+          botProfile: trace.profile,
+          position: trace.view.position,
+        }));
       selected = 0;
       filter = 'all';
       render();

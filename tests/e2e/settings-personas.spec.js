@@ -360,6 +360,7 @@ test('the guide teaches winning, streets, actions and position before introducin
   page,
 }) => {
   await page.locator('#rules-button').click();
+  await page.locator('#guide-menu-item').click();
   const guide = page.locator('#rules-dialog');
   await expect(guide).toHaveAttribute('aria-labelledby', 'rules-dialog-title');
   const headings = await guide.locator('h3').allTextContents();
@@ -380,11 +381,9 @@ test('the guide teaches winning, streets, actions and position before introducin
   await expect(guide).toContainText('各座位分配风格');
   await expect(guide).toContainText('难度');
   await expect(guide).toContainText('轻松、标准到进阶');
-  await guide
-    .locator('details')
-    .filter({ hasText: '关于具名牌手与训练原型' })
-    .locator('summary')
-    .click();
+  await expect(
+    guide.locator('details').filter({ hasText: '关于具名牌手与训练原型' }),
+  ).toHaveAttribute('open', '');
   await expect(guide.locator('a[href="https://www.kpclive.com/"]')).toBeVisible();
   await expect(guide.locator('a[href="https://tritonpokerseries.com/en-US/home"]')).toBeVisible();
   await expect(guide).toContainText('不代表本人真实或完整的打法');

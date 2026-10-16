@@ -410,47 +410,41 @@
   color: #8199a9 !important;
   margin: 10px 0 18px !important;
 }
-.review-public-actions {
-  margin-top: 18px;
-  color: #9dafbf;
-  font-size: 13px;
+/* Full public chronology is separate from before-action grading. */
+.review-activity {
+  margin-top: 24px;
+  border-top: 1px solid #30434e;
+  padding-top: 16px;
+  color: #91a7b2;
 }
-.review-public-actions summary {
+.review-activity summary {
   cursor: pointer;
-  width: fit-content;
-  padding: 5px 0;
+  padding: 8px 0;
+  font-weight: 700;
+  color: #c8dbdf;
 }
-.review-public-actions ul {
-  list-style: none;
+.review-activity ol {
+  list-style-position: inside;
   padding: 0;
   margin: 10px 0;
 }
-.review-public-actions li {
-  display: flex;
-  justify-content: space-between;
-  gap: 15px;
-  padding: 8px 0;
-  border-bottom: 1px solid #2d3e4c;
-  font-size: 13px;
+.review-activity li {
+  padding: 10px 12px;
+  line-height: 1.65;
+  border-radius: 8px;
 }
-.review-step-nav {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  margin-top: 22px;
+.review-activity-emphasis {
+  color: #edf7f5;
+  font-weight: 750;
 }
-.review-step-nav button {
-  background: #273544;
-  border: 1px solid #455565;
-  border-radius: 6px;
-  padding: 10px 15px;
-  font-size: 13px;
+.review-activity-current {
+  box-shadow: inset 3px 0 #6be2c5;
+  background: #66cbb124;
 }
-.review-step-nav span {
-  font-family: Manrope;
-  color: #8196a9;
-  font-size: 13px;
+.review-analysis-heading {
+  color: #e4cea0;
+  font-size: 14px;
+  margin: 24px 0 12px;
 }
 .review-method {
   border-top: 1px solid #374454;
@@ -672,7 +666,7 @@
   margin: 0;
   font-size: 14px;
   font-weight: 500;
-  color: #d3e4dc;
+  color: #e4cea0;
 }
 .review-evidence-heading span {
   font-size: 12px;
@@ -907,4 +901,34 @@
   .review-simulation td {
     font-size: 12px;
   }
+}
+
+/* Analysis headings share the gold treatment in both perspectives. */
+.review-dialog .review-matchups strong,
+.review-dialog .review-coaching strong {
+  color: #e4cea0;
+  font-size: 13px;
+  font-weight: 500;
+}
+.review-dialog .review-analysis-heading,
+.review-dialog .review-evidence h3,
+.review-dialog .review-activity summary {
+  color: #e4cea0;
+  font-size: 14px;
+  font-weight: 500;
+}
+.activity-position {
+  display: inline-block;
+  padding: 1px 5px;
+  margin: 0 3px;
+  border: 1px solid #50776b;
+  border-radius: 4px;
+  background: #203c36;
+  color: #bde5d8;
+  font-size: 11px;
+  box-sizing: border-box;
+  height: 20px;
+  line-height: 16px;
+  vertical-align: top;
+  white-space: nowrap;
 }

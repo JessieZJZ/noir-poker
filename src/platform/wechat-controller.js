@@ -1,3 +1,5 @@
+import { difficultyPolicy } from '../engine/bot-difficulty.js';
+import { createGameRecords } from '../engine/game-records.js';
 import { compactChips, compactActionAmounts } from '../engine/chip-format.js';
 import {
   sanitizeStakes,
@@ -5,11 +7,12 @@ import {
   stakesFromSmallBlind,
   sameStakes,
 } from '../engine/stakes.js';
-import { createHeroTurnCue } from '../ui/hero-turn.js';
+import { createHeroTurnCue, createHeroTurnAttention } from '../ui/hero-turn.js';
 import { SEAT_ANCHORS } from '../ui/seat-geometry.js';
 import { explainOpponent } from '../review/opponents.js';
-import { publicHistory } from '../review/narrative.js';
+import { selectedActivity } from '../review/activity.js';
 import { reviewCommentary } from '../review/matchups.js';
+import { createActivityParts } from '../ui/activity-parts.js';
 import {
   newGame,
   configureStakes,
@@ -87,8 +90,12 @@ export function createWechatController({
   sound = () => {},
   wager = () => {},
   notifyTurn = () => {},
+  publishAttention = () => {},
   schedule = setTimeout,
   unschedule = clearTimeout,
+  createReviewWorker = null,
+  readOnlyAttempt = null,
+  readOnlySessionNumber = null,
 }) {
   let settings;
   let stakesError = '';
@@ -97,25 +104,50 @@ export function createWechatController({
   } catch {
     settings = defaults();
   }
+  const records = readOnlyAttempt ? null : createGameRecords({ storage });
+  const resumed = records?.resume();
+  if (readOnlyAttempt)
+    settings = sanitize({
+      ...settings,
+      playerCount: readOnlyAttempt.snapshot.players.length,
+      stakes: readOnlyAttempt.snapshot.stakes,
+      hints: false,
+      sound: false,
+    });
   const peeked = new Map();
+  const profiles = BOT_PROFILES.map((p) => ({
+    ...p,
+    portrait: p.id === 'balanced' ? '' : `/assets/portraits/${p.id}.jpg`,
+  }));
   const turnCue = createHeroTurnCue(notifyTurn);
-  let game = newGame(settings.playerCount, settings.stakes),
+  const attention = createHeroTurnAttention({
+    publish: publishAttention,
+    schedule,
+    unschedule,
+  });
+  let game = readOnlyAttempt
+      ? JSON.parse(JSON.stringify(readOnlyAttempt.snapshot))
+      : resumed || newGame(settings.playerCount, settings.stakes),
     raiseTo = game.bigBlind * 3,
     timer = null,
     pendingBot = null,
     reviewTimer = null,
+    reviewWorker = null,
+    reviewSource = null,
+    opponentReviews = new Map(),
     hintTimer = null,
     epoch = 0,
     active = true,
     disposed = false,
     hintKey = '',
     hintText = '',
-    reviewEpoch = 0;
+    reviewEpoch = 0,
+    newSession = false;
   let sliderMin = game.bigBlind * 2,
     sliderMax = game.stakes.startingStack,
     callCaption = '跟注',
     callAmountText = format(game.bigBlind);
-  game.difficulty = settings.difficulty;
+  if (!readOnlyAttempt) game.difficulty = settings.difficulty;
 
   function save() {
     try {
@@ -134,6 +166,11 @@ export function createWechatController({
     pendingBot = null;
   }
   function cancelReview() {
+    const worker = reviewWorker;
+    reviewWorker = null;
+    worker?.terminate();
+    reviewSource = null;
+    opponentReviews.clear();
     reviewEpoch++;
     if (reviewTimer !== null) unschedule(reviewTimer);
     reviewTimer = null;
@@ -191,6 +228,7 @@ export function createWechatController({
   }
   function render() {
     if (disposed) return;
+    records?.capture(game);
     updateHint();
     const hero = game.players[0],
       legal = legalActions(game, 0),
@@ -272,10 +310,7 @@ export function createWechatController({
         y: SEAT_ANCHORS[game.players.length][index][1],
       };
     });
-    const profiles = BOT_PROFILES.map((p) => ({
-      ...p,
-      portrait: p.id === 'balanced' ? '' : `/assets/portraits/${p.id}.jpg`,
-    }));
+    const activityParts = createActivityParts(game);
     const pot = done ? game.potAtShowdown || potSize(game) : potSize(game);
     const breakdown = currentPots(game);
     turnCue.update({
@@ -283,8 +318,17 @@ export function createWechatController({
       enabled: legal.enabled,
       active: active && !disposed && settings.sound,
     });
+    attention.update({
+      key: `${game.hand}:${game.replayAttempt || 0}:${game.street}:${game.history.length}`,
+      enabled: legal.enabled,
+      active: active && !disposed,
+    });
     publish({
+      turnPhase: attention.phase,
       hand: game.hand,
+      sessionNumber: readOnlySessionNumber || records?.sessionNumber() || 1,
+      recordsError: records?.error() || '',
+      historyReadOnly: !!readOnlyAttempt,
       phase: game.phase,
       street: done ? '本手结束' : STREET_NAMES[game.street] || '准备发牌',
       replay: game.replayAttempt || 0,
@@ -367,11 +411,12 @@ export function createWechatController({
             ? '已全下，等待摊牌。'
             : legal.enabled
               ? legal.canCheck
-                ? '轮到你了，可以过牌或主动下注。'
-                : `轮到你了，跟注需要 ${format(legal.callAmount)} 筹码。${legal.raiseReopened ? '' : '本轮加注权未重开，仅可跟注或弃牌。'}`
+                ? '可以过牌或主动下注。'
+                : `跟注需要 ${format(legal.callAmount)} 筹码。${legal.raiseReopened ? '' : '本轮加注权未重开，仅可跟注或弃牌。'}`
               : `${game.players[game.actor]?.name || '对手'} 正在思考，请稍候。`,
       profiles,
       settings: { ...settings, assignments: { ...settings.assignments } },
+      difficultyDescription: difficultyPolicy(settings.difficulty).description,
       seatSettings: ['Mia', 'Alex', 'River', 'Kai', 'Luna', 'Theo', 'Jade', 'Leo'].map(
         (name, i) => {
           const id = i + 1;
@@ -395,10 +440,20 @@ export function createWechatController({
       logs: game.logs
         .slice()
         .reverse()
-        .map((entry, index) => ({
-          key: index,
-          text: compactActionAmounts(cleanAction(typeof entry === 'string' ? entry : entry.text)),
-        })),
+        .map((entry, index) => {
+          const parts = activityParts(entry);
+          return {
+            key: index,
+            text: parts
+              .map((part) =>
+                part.actor ? part.name + (part.profile ? `（${part.profile}）` : '') : part.text,
+              )
+              .join(''),
+            parts,
+            type: entry.type,
+            hero: entry.player === 0,
+          };
+        }),
       stats: {
         hands: game.stats.hands,
         wins: game.stats.wins,
@@ -445,25 +500,34 @@ export function createWechatController({
     }, 0);
   }
   function freshHand() {
+    if (readOnlyAttempt || disposed) return;
+    attention.reset();
     turnCue.reset();
     peeked.clear();
     cancelBots();
     cancelReview();
     cancelHint();
     hintKey = '';
-    if (game.players.length !== settings.playerCount || !sameStakes(settings.stakes, game.stakes))
+    if (game.players.length !== settings.playerCount || !sameStakes(settings.stakes, game.stakes)) {
+      records?.abandon(game);
       game = newGame(settings.playerCount, settings.stakes);
+      newSession = true;
+    }
     game.difficulty = settings.difficulty;
     applyBotSettings(game, settings);
     startHand(game);
+    records?.begin(game, { newSession });
+    newSession = false;
     raiseTo = game.bigBlind * 3;
     render();
     effect('deal');
     driveBots();
   }
   function setStakes(value) {
+    if (readOnlyAttempt) return false;
     try {
       const stakes = validateStakes(value);
+      if (!sameStakes(game.stakes, stakes)) records?.abandon(game);
       if (!configureStakes(game, stakes)) {
         const changed = !sameStakes(settings.stakes, stakes);
         if (changed) {
@@ -476,6 +540,7 @@ export function createWechatController({
       }
       settings.stakes = stakes;
       stakesError = '';
+      newSession = true;
       save();
       freshHand();
       return true;
@@ -486,6 +551,7 @@ export function createWechatController({
     }
   }
   function requestStakes(value) {
+    if (readOnlyAttempt) return false;
     try {
       const stakes = stakesFromSmallBlind(value?.smallBlind);
       if (value?.bigBlind !== stakes.bigBlind)
@@ -517,6 +583,7 @@ export function createWechatController({
     }
   }
   function setPreference(key, value) {
+    if (readOnlyAttempt) return;
     if (key === 'stakes') return requestStakes(value);
     const enablingSound = key === 'sound' && !settings.sound && value === true;
     const next = sanitize({ ...settings, [key]: value });
@@ -552,13 +619,14 @@ export function createWechatController({
     destroy() {
       disposed = true;
       active = false;
+      attention.reset();
       cancelBots();
       cancelReview();
       cancelHint();
     },
     action(action) {
       const legal = legalActions(game, 0);
-      if (!active || !legal.enabled) return false;
+      if (readOnlyAttempt || !active || !legal.enabled) return false;
       cancelBots();
       const contribution = game.players[0].total;
       act(game, 0, action, action === 'raise' ? raiseTo : undefined);
@@ -570,6 +638,7 @@ export function createWechatController({
       return true;
     },
     preset(name) {
+      if (readOnlyAttempt) return;
       const legal = legalActions(game, 0);
       if (!legal.enabled || !legal.canRaise) return;
       const target =
@@ -589,18 +658,24 @@ export function createWechatController({
                 )
               : null;
       if (target === null) return;
+      attention.engage();
       raiseTo = legalRaiseTo(target, legal);
       render();
     },
+    engageTurn() {
+      attention.engage();
+    },
     setRaise(value) {
+      if (readOnlyAttempt) return;
       const legal = legalActions(game, 0);
       if (legal.enabled && legal.canRaise) {
+        attention.engage();
         raiseTo = legalRaiseTo(Number(value), legal);
         render();
       }
     },
     nextHand() {
-      if (game.phase === 'done') freshHand();
+      if (!readOnlyAttempt && game.phase === 'done') freshHand();
     },
     peek(id) {
       if (game.phase !== 'done' || !game.players[id] || id === 0) return false;
@@ -610,13 +685,16 @@ export function createWechatController({
     },
     retry() {
       peeked.clear();
-      if (!canRestartHand(game)) return false;
+      if (readOnlyAttempt || !canRestartHand(game)) return false;
+      attention.reset();
       turnCue.reset();
       cancelBots();
       cancelReview();
       cancelHint();
       hintKey = '';
+      records?.capture(game);
       restartHand(game);
+      records?.begin(game);
       raiseTo = game.bigBlind * 3;
       render();
       effect('deal');
@@ -624,6 +702,9 @@ export function createWechatController({
       return true;
     },
     reset() {
+      if (readOnlyAttempt) return;
+      records?.abandon(game);
+      newSession = true;
       cancelBots();
       cancelReview();
       game = newGame(settings.playerCount, settings.stakes);
@@ -638,6 +719,7 @@ export function createWechatController({
     },
     setPreference,
     setSeatProfile(id, profileId) {
+      if (readOnlyAttempt) return;
       if (
         !Number.isInteger(id) ||
         id < 1 ||
@@ -650,6 +732,7 @@ export function createWechatController({
       render();
     },
     setAllProfiles(profileId) {
+      if (readOnlyAttempt) return;
       if (!BOT_PROFILES.some((p) => p.id === profileId)) return;
       settings = sanitize({
         ...settings,
@@ -661,12 +744,19 @@ export function createWechatController({
       render();
     },
     toggleMixedProfiles() {
+      if (readOnlyAttempt) return;
       settings = sanitize({ ...settings, ...toggleMixedLineup(settings, settings.playerCount) });
       save();
       render();
     },
     finishHand() {
-      if (disposed || !active || (!game.players[0].folded && !game.players[0].allin)) return false;
+      if (
+        readOnlyAttempt ||
+        disposed ||
+        !active ||
+        (!game.players[0].folded && !game.players[0].allin)
+      )
+        return false;
       let waiting = pendingBot;
       cancelBots();
       const ticket = epoch;
@@ -705,6 +795,8 @@ export function createWechatController({
       const ticket = reviewEpoch,
         input = createReviewInput(game),
         results = [];
+      reviewSource = input;
+      opponentReviews = new Map();
       onProgress({
         loading: true,
         hand: input.hand,
@@ -714,13 +806,14 @@ export function createWechatController({
       function step() {
         if (disposed || !active || ticket !== reviewEpoch) return;
         if (results.length < input.decisions.length) {
-          results.push(
-            analyzeDecision(input.decisions[results.length], { trials: 120, rolloutTrials: 12 }),
-          );
+          results.push(analyzeDecision(input.decisions[results.length]));
           reviewTimer = schedule(step, 0);
           return;
         }
         reviewTimer = null;
+        publishReport();
+      }
+      function publishReport() {
         const report = summarizeReview(input, results);
         onProgress({
           loading: false,
@@ -730,12 +823,9 @@ export function createWechatController({
           resultContext: input.outcome.folded
             ? '你已弃牌，按弃牌前的信息评价。'
             : '只按行动前可见的信息评价决策。',
+          activity: selectedActivity(input),
           opponents: input.opponents.map((record, index) => {
             const view = record.trace.view;
-            const explanation = explainOpponent(
-              record,
-              input.opponents.map(({ id, name }) => ({ id, name })),
-            );
             return {
               index,
               name: record.name,
@@ -752,16 +842,8 @@ export function createWechatController({
               stack: format(view.stack),
               cards: view.hole.map(cardView),
               board: view.board.map(cardView),
-              title: explanation.title,
-              reason: explanation.detail,
-              paragraphs: explanation.paragraphs,
-              commentary: reviewCommentary(
-                explanation.paragraphs,
-                explanation.matchups,
-                view.street,
-              ),
-              reasons: explanation.reasons,
-              warning: explanation.warning,
+              analyzed: false,
+              sequence: record.sequence,
             };
           }),
           steps: results.map((r, index) => ({
@@ -775,26 +857,92 @@ export function createWechatController({
             keep: r.coaching.kind === 'keep',
             suggestion: cleanAction(r.coaching.suggestion),
             reason: r.coaching.explanation,
-            paragraphs: [...r.coaching.paragraphs, ...(input.publicResponses?.[index] || [])],
+            sequence: input.decisions[index].history.length + 1,
+            paragraphs: r.coaching.paragraphs,
             commentary: reviewCommentary(
-              [...r.coaching.paragraphs, ...(input.publicResponses?.[index] || [])],
+              r.coaching.paragraphs,
               r.context.matchups,
               input.decisions[index].street,
             ),
-            publicResponses: input.publicResponses?.[index] || [],
             followUp: r.coaching.followUp,
             evidence: r.evidence,
-            history: publicHistory(input.decisions[index]).map(
-              (a) => `${a.street}，${a.name}，${a.action}`,
-            ),
             cards: input.decisions[index].hole.map(cardView),
             board: input.decisions[index].board.map(cardView),
           })),
         });
       }
+      if (createReviewWorker && input.decisions.length) {
+        let worker;
+        const current = () =>
+          !disposed && active && ticket === reviewEpoch && reviewWorker === worker;
+        const fallback = () => {
+          if (!current()) return;
+          reviewWorker = null;
+          worker.terminate();
+          // Continue with the same full analysis, retaining completed steps.
+          reviewTimer = schedule(step, 0);
+        };
+        try {
+          worker = createReviewWorker();
+          reviewWorker = worker;
+          worker.onMessage((message) => {
+            if (!current()) return;
+            if (message.type === 'step' && message.index === results.length && message.result)
+              results.push(message.result);
+            else if (message.type === 'complete' && results.length === input.decisions.length) {
+              reviewWorker = null;
+              worker.terminate();
+              publishReport();
+            } else if (message.type === 'error' || message.type === 'complete') fallback();
+          });
+          worker.onProcessKilled?.(fallback);
+          // Send only detached before-action snapshots, never the final hand,
+          // opponent hole cards, future deck, outcome or display-only activity.
+          worker.postMessage({ decisions: input.decisions });
+          return;
+        } catch {
+          reviewWorker = null;
+          worker?.terminate();
+        }
+      }
       reviewTimer = schedule(step, 0);
     },
+    reviewOpponent(index) {
+      const record = reviewSource?.opponents[index];
+      if (!record) return null;
+      if (!opponentReviews.has(index)) {
+        const explanation = explainOpponent(
+          record,
+          reviewSource.players ||
+            reviewSource.opponents.map(({ id, name, trace }) => ({
+              id,
+              name,
+              botProfile: trace.profile,
+              position: trace.view.position,
+            })),
+        );
+        opponentReviews.set(index, {
+          analyzed: true,
+          title: explanation.title,
+          reason: explanation.detail,
+          paragraphs: explanation.paragraphs,
+          commentary: reviewCommentary(
+            explanation.paragraphs,
+            explanation.matchups,
+            record.trace.view.street,
+          ),
+          reasons: explanation.reasons,
+          warning: explanation.warning,
+        });
+      }
+      return opponentReviews.get(index);
+    },
     cancelReview,
+    getRecords: () => records?.sessions() || [],
+    getRecordSummaries: () => records?.summaries() || [],
+    getRecordsRevision: () => records?.revision() || 0,
+    getRecordsError: () => records?.error() || '',
+    getRecord: (id) => records?.getAttempt(id) || null,
     getGame: () => game,
     getSettings: () => ({ ...settings, assignments: { ...settings.assignments } }),
   };

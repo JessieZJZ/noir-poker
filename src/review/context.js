@@ -1,3 +1,5 @@
+import { boardTexture, handFeatures } from '../engine/hand-features.js';
+export { boardTexture } from '../engine/hand-features.js';
 import { deckOfCards, evaluate, compare, rankText } from '../engine/poker.js';
 
 export function startingTier(hole) {
@@ -82,39 +84,6 @@ export function drawInfo(hole, board) {
           : 'gutshot',
   };
 }
-export function boardTexture(board) {
-  const suits = [0, 1, 2, 3].map((s) => board.filter((c) => c.suit === s).length),
-    counts = new Map();
-  board.forEach((c) => counts.set(c.rank, (counts.get(c.rank) || 0) + 1));
-  const ranks = new Set(board.map((c) => c.rank));
-  if (ranks.has(14)) ranks.add(1);
-  const connected = Math.max(
-    0,
-    ...Array.from(
-      { length: 10 },
-      (_, i) => Array.from({ length: 5 }, (_, j) => i + j + 1).filter((r) => ranks.has(r)).length,
-    ),
-  );
-  const maxSuit = Math.max(0, ...suits),
-    paired = [...counts.values()].some((n) => n >= 2),
-    trips = [...counts.values()].some((n) => n >= 3);
-  const tags = [];
-  if (paired) tags.push(trips ? '公共牌三条' : '公共牌有对子');
-  if (maxSuit >= 4) tags.push('四张同花色');
-  else if (maxSuit === 3) tags.push('三张同花色');
-  else if (board.length === 3 && maxSuit === 2) tags.push('两张同花色');
-  else if (board.length === 3 && maxSuit === 1) tags.push('彩虹面');
-  if (connected >= 4) tags.push('四张连通');
-  else if (connected === 3) tags.push('顺子连接明显');
-  return {
-    paired,
-    trips,
-    maxSuit,
-    connected,
-    wet: maxSuit >= 3 || connected >= 3 || (board.length === 3 && maxSuit === 2),
-    label: tags.join('、') || '花色分散、连接较少',
-  };
-}
 export function decisionContext(s) {
   const made = evaluate([...s.hole, ...s.board]),
     texture = boardTexture(s.board),
@@ -191,6 +160,7 @@ export function decisionContext(s) {
   const previousDraw = s.street === 3 ? drawInfo(s.hole, s.board.slice(0, 4)) : null;
   return {
     made,
+    features: handFeatures(s.hole, s.board, made.score),
     texture,
     draw,
     opponents: opponents.length,

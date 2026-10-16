@@ -41,6 +41,27 @@ test('seat presentation rejects full backs, distant hero identity and cramped ac
     actions: [{ font: 11, margin: 4 }],
   };
   assert.doesNotThrow(() => assertSeatPresentation(presentation, viewport));
+  assert.doesNotThrow(() =>
+    assertSeatPresentation(
+      {
+        ...presentation,
+        heroGap: 6,
+        heroRankSpace: { height: 30, tag: null },
+      },
+      viewport,
+    ),
+  );
+  for (const heroGap of [2.99, 10.01])
+    assert.throws(() =>
+      assertSeatPresentation(
+        {
+          ...presentation,
+          heroGap,
+          heroRankSpace: { height: 30, tag: null },
+        },
+        viewport,
+      ),
+    );
   for (const invalid of [
     { backs: [0.349] },
     { backs: [0.701] },
@@ -88,6 +109,7 @@ test('installed layout checks reject cramped profiles and tablet type reduced by
         styleSize: 14,
         stackSize: 17,
         stackBelowStyle: true,
+        contentInsets: { top: 4, right: 6, bottom: 4, left: 6 },
       },
     ],
   };
@@ -100,6 +122,10 @@ test('installed layout checks reject cramped profiles and tablet type reduced by
     { styleSize: 13.99 },
     { stackSize: 16.99 },
     { stackBelowStyle: false },
+    { contentInsets: null },
+    ...['top', 'right', 'bottom', 'left'].map((edge) => ({
+      contentInsets: { ...layout.profiles[0].contentInsets, [edge]: 3.74 },
+    })),
   ])
     assert.throws(
       () => assertTableLayout({ ...layout, profiles: [{ ...layout.profiles[0], ...invalid }] }),
@@ -111,6 +137,37 @@ test('installed layout checks reject cramped profiles and tablet type reduced by
       width: 390,
       profiles: [{ ...layout.profiles[0], nameSize: 11, styleSize: 9, stackSize: 10 }],
     }),
+  );
+});
+
+test('larger hero rank spacing follows the measured slot and rejects oversized or overlapping badges', () => {
+  const viewport = { width: 390, height: 844 };
+  const presentation = {
+    backs: [0.5],
+    heroGap: 34,
+    heroInset: 8,
+    heroFont: 22,
+    heroNameFont: 22,
+    actions: [{ font: 19, margin: 4 }],
+    heroRankSpace: { height: 30, tag: { height: 28, bottom: 29, identityGap: 3 } },
+  };
+  assert.doesNotThrow(() => assertSeatPresentation(presentation, viewport));
+  for (const invalid of [
+    { heroGap: 38.01 },
+    { heroGap: 29.99 },
+    { heroRankSpace: { height: 0, tag: null } },
+    { heroRankSpace: { height: 37, tag: null }, heroGap: 41 },
+    { heroRankSpace: { height: 80, tag: null }, heroGap: 84 },
+    { heroRankSpace: { height: 30, tag: { height: 31, bottom: 30, identityGap: 1 } } },
+    { heroRankSpace: { height: 30, tag: { height: 28, bottom: 31, identityGap: 1 } } },
+    { heroRankSpace: { height: 30, tag: { height: 28, bottom: 29, identityGap: -0.01 } } },
+  ])
+    assert.throws(() => assertSeatPresentation({ ...presentation, ...invalid }, viewport));
+  assert.doesNotThrow(() =>
+    assertSeatPresentation(
+      { ...presentation, heroGap: 6, heroRankSpace: { height: 30, tag: null } },
+      viewport,
+    ),
   );
 });
 

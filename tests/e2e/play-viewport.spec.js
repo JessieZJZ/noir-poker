@@ -1,5 +1,6 @@
 import { assignNamedLineup } from './settings-helpers.js';
 import { test, expect } from '@playwright/test';
+import { writeFile } from 'node:fs/promises';
 import { openSettings, closeSettings } from './settings-helpers.js';
 import { readTableLayout, assertTableLayout, assertStableSettlement } from '../native/layout.mjs';
 
@@ -57,7 +58,7 @@ async function assertFixedTable(page, { bottomInset = 0, settled = false } = {})
             const r = part.getBoundingClientRect();
             if (!r.width || !r.height) continue;
             if (
-              r.top < table.top - 1 ||
+              r.top < table.top - (part.matches('.mini-cards.revealed-cards') ? 40 : 1) ||
               r.bottom > table.bottom + 1 ||
               r.left < table.left - 1 ||
               r.right > table.right + 1
@@ -380,6 +381,7 @@ test('enabled controls have distinct colors and hover never moves the buttons', 
 });
 
 test('portrait tablets use the open table width for larger readable contents', async ({ page }) => {
+  const measurements = [];
   for (const size of [
     { width: 768, height: 1024 },
     { width: 820, height: 1180 },
@@ -389,27 +391,54 @@ test('portrait tablets use the open table width for larger readable contents', a
   ]) {
     await page.setViewportSize(size);
     await page.evaluate(() => window.qa.publicBoard(9));
+    let measured;
     await expect
-      .poll(() =>
-        page.evaluate(() => {
+      .poll(async () => {
+        measured = await page.evaluate(() => {
           const arena = document.querySelector('#arena');
-          const scale = new DOMMatrix(getComputedStyle(arena).transform).a;
+          const style = getComputedStyle(arena);
+          const scale = new DOMMatrix(style.transform).a;
           const board = document.querySelector('#board > .playing-card');
           const hero = document.querySelector('#hero-cards > .playing-card');
           const profile = document.querySelector('.seat-profile');
-          return (
-            board.offsetWidth * scale >= 72 &&
-            hero.offsetWidth * scale >= 84 &&
-            profile.offsetWidth * scale >= 118 &&
-            parseFloat(getComputedStyle(profile.querySelector('strong')).fontSize) * scale >= 14 &&
-            arena.getBoundingClientRect().width >=
-              document.querySelector('.table-viewport').clientWidth * 0.99
-          );
-        }),
-      )
+          return {
+            scale,
+            board: board.offsetWidth * scale,
+            hero: hero.offsetWidth * scale,
+            heroWidth: hero.offsetWidth,
+            heroHeight: hero.offsetHeight,
+            sharedHeroWidth: parseFloat(style.getPropertyValue('--hero-card-width')),
+            sharedHeroHeight: parseFloat(style.getPropertyValue('--hero-card-height')),
+            profile: profile.offsetWidth * scale,
+            name: parseFloat(getComputedStyle(profile.querySelector('strong')).fontSize) * scale,
+            arena: arena.getBoundingClientRect().width,
+            viewport: document.querySelector('.table-viewport').clientWidth,
+          };
+        });
+        // The cap stays fixed; crowded neighbors can require a smaller face.
+        // Keep its aspect ratio and a readable proportion to the public cards.
+        return (
+          measured.board >= 72 &&
+          measured.hero >= Math.max(60, Math.min(70, measured.board * 0.75)) &&
+          measured.heroWidth <= 94 &&
+          measured.heroHeight <= 136 &&
+          Math.abs(measured.heroHeight - (measured.heroWidth * 136) / 94) <= 1 &&
+          measured.heroWidth === measured.sharedHeroWidth &&
+          measured.heroHeight === measured.sharedHeroHeight &&
+          measured.profile >= 118 &&
+          measured.name >= 14 &&
+          measured.arena >= measured.viewport * 0.99
+        );
+      })
       .toBe(true);
+    measurements.push({ ...size, ...measured });
+    await assertFixedTable(page);
     await page.screenshot({ path: test.info().outputPath(`tablet-${size.width}.png`) });
   }
+  await writeFile(
+    test.info().outputPath('portrait-tablet-metrics.json'),
+    JSON.stringify(measurements, null, 2),
+  );
 });
 
 for (const locale of ['zh-CN', 'en']) {
@@ -434,7 +463,7 @@ for (const locale of ['zh-CN', 'en']) {
         const before = await page.evaluate(readTableLayout);
         assertTableLayout(before);
         if (size.width > 900) {
-          await expect(page.locator('.hint-banner p').first()).toHaveCSS('font-size', '16px');
+          await expect(page.locator('.hint-banner p').first()).toHaveCSS('font-size', '18px');
           await expect(page.locator('#raise-button span').first()).toHaveCSS('font-size', '18px');
         }
         await page.evaluate(

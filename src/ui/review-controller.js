@@ -7,14 +7,17 @@ import {
   summarizeReview,
 } from '../review/analysis.js';
 import { createOpponentReview } from './opponent-review.js';
-import { publicHistory } from '../review/narrative.js';
+import { selectedActivity } from '../review/activity.js';
 import { renderReviewParagraphs } from './review-matchups.js';
+import { renderActivityParts } from './activity.js';
 const $ = (selector) => document.querySelector(selector),
   format = (n) => formatChips(Math.round(n));
 const statusNames = { attention: '重点改进', consider: '值得讨论', sound: '有合理依据' };
 
 export function createReviewController({ card }) {
   let last = null,
+    live = null,
+    historical = false,
     seen = '',
     worker = null,
     job = 0,
@@ -22,8 +25,33 @@ export function createReviewController({ card }) {
     selectionTouched = false,
     timelineKey = '';
   const dialog = $('#review-dialog');
-  const opponents = createOpponentReview({ card });
+  let opponentPerspective = false,
+    opponentSelection = { actorId: null, sequence: null };
+  function renderActivity() {
+    if (!last) return;
+    const selection = opponentPerspective
+      ? opponentSelection
+      : { actorId: 0, sequence: last.input.decisions[selected]?.history.length + 1 };
+    setLocalizedHTML(
+      $('#review-activity-list'),
+      selectedActivity(last.input, selection.actorId, selection.sequence)
+        .map(
+          (event) =>
+            `<li class="${event.emphasized ? 'review-activity-emphasis' : ''} ${event.current ? 'review-activity-current' : ''}" ${event.current ? 'aria-current="step"' : ''}>${event.parts ? renderActivityParts(event.parts) : esc(event.text)}</li>`,
+        )
+        .join(''),
+    );
+  }
+  const opponents = createOpponentReview({
+    card,
+    onSelection(selection) {
+      opponentSelection = selection;
+      renderActivity();
+    },
+  });
   function perspective(opponent) {
+    opponentPerspective = opponent;
+    renderActivity();
     $('#review-hero-tab').setAttribute('aria-selected', String(!opponent));
     $('#review-opponents-tab').setAttribute('aria-selected', String(opponent));
     $('#review-hero-panel').hidden = opponent;
@@ -59,7 +87,7 @@ export function createReviewController({ card }) {
       steps = input.decisions,
       analysis = last.analysis,
       decision = steps[selected],
-      result = analysis?.steps[selected];
+      result = analysis?.steps[selected] || last.partial?.[selected];
     setLocalizedText($('#review-dialog-title'), '第 ' + input.hand + ' 手，决策复盘');
     setLocalizedText(
       $('#review-result-change'),
@@ -103,7 +131,7 @@ export function createReviewController({ card }) {
       timeline,
       steps
         .map((s, i) => {
-          const r = analysis?.steps[i],
+          const r = analysis?.steps[i] || last.partial?.[i],
             status = coachingStatus(r);
           return `<button class="review-step ${selected === i ? 'selected' : ''}" data-review-index="${i}" aria-current="${selected === i ? 'step' : 'false'}"><span class="review-step-number">${i + 1}</span><span><small>${STREET_NAMES[s.street]}，${s.position}</small><strong>${actionLabel(s)}</strong></span>${r?.coaching.kind === 'keep' ? '' : `<span class="review-status ${status || 'pending'}">${r?.coaching.label || (status ? statusNames[status] : '待分析')}</span>`}</button>`;
         })
@@ -118,6 +146,7 @@ export function createReviewController({ card }) {
     setLocalizedText($('#review-step-count'), steps.length + ' 次行动');
     $('#review-empty').hidden = !!decision;
     $('#review-detail').hidden = !decision;
+    renderActivity();
     if (!decision) return;
     setLocalizedText(
       $('#review-detail-title'),
@@ -145,10 +174,7 @@ export function createReviewController({ card }) {
     setLocalizedHTML(
       $('#review-coach-explanation'),
       renderReviewParagraphs(
-        [
-          ...(result?.coaching.paragraphs || ['正在比较当时的合法选择…']),
-          ...(input.publicResponses?.[selected] || []),
-        ],
+        result?.coaching.paragraphs || ['正在比较当时的合法选择…'],
         result?.context.matchups,
         decision.street,
       ),
@@ -159,26 +185,15 @@ export function createReviewController({ card }) {
       $('#review-evidence'),
       result ? result.evidence.map((fact) => `<li>${esc(fact)}</li>`).join('') : '',
     );
-    const publicActions = publicHistory(decision);
-    setLocalizedHTML(
-      $('#review-public-actions'),
-      publicActions.length
-        ? publicActions
-            .map(
-              (a) =>
-                `<li><span>${esc(a.street)}，${esc(a.name)}</span><span>${esc(a.action)}</span></li>`,
-            )
-            .join('')
-        : '<li>本轮尚无其他主动行动。</li>',
-    );
-    $('#review-step-prev').disabled = selected === 0;
-    $('#review-step-next').disabled = selected >= steps.length - 1;
-    setLocalizedText($('#review-step-current'), selected + 1 + ' / ' + steps.length);
   }
   function receive(message, id) {
     if (id !== job || !last) return;
     if (message.type === 'progress') {
       last.progress = message.done;
+      if (message.result) {
+        (last.partial ||= [])[message.done - 1] = message.result;
+        renderDialog();
+      }
       setLocalizedText(
         $('#review-analysis-state'),
         '正在分析决策 ' + message.done + ' / ' + message.total + '…',
@@ -206,8 +221,16 @@ export function createReviewController({ card }) {
       for (const s of input.decisions) {
         await new Promise((resolve) => setTimeout(resolve, 0));
         if (id !== job) return;
-        steps.push(analyzeDecision(s, { trials: 180 }));
-        receive({ type: 'progress', done: steps.length, total: input.decisions.length }, id);
+        steps.push(analyzeDecision(s));
+        receive(
+          {
+            type: 'progress',
+            done: steps.length,
+            total: input.decisions.length,
+            result: steps.at(-1),
+          },
+          id,
+        );
       }
       receive({ type: 'complete', analysis: summarizeReview(input, steps) }, id);
     } catch {
@@ -242,12 +265,56 @@ export function createReviewController({ card }) {
     }
   }
   function open() {
+    if (live && last !== live) selectInput(live, false);
     if (!last) return;
+    $('#review-activity').open = false;
     opponents.update(last.input);
     renderDialog();
     if (!dialog.open) dialog.showModal();
     analyze();
   }
+  function selectInput(entry, archive) {
+    worker?.terminate();
+    worker = null;
+    job++;
+    if (last?.status === 'running') last.status = 'idle';
+    last = entry;
+    historical = archive;
+    selected = 0;
+    selectionTouched = false;
+    $('#review-activity').open = false;
+    perspective(false);
+    opponents.update(entry.input);
+  }
+  // An archived review has its own input. A live hand may finish while this
+  // dialog is open without replacing the historical decision snapshots.
+  function openInput(input, key) {
+    if (!input?.outcome || !Array.isArray(input.decisions)) return false;
+    selectInput(
+      {
+        key: 'archive:' + key,
+        input: structuredClone(input),
+        status: 'idle',
+        progress: 0,
+        analysis: null,
+      },
+      true,
+    );
+    renderDialog();
+    if (!dialog.open) dialog.showModal();
+    analyze();
+    return true;
+  }
+  dialog.addEventListener('close', () => {
+    if (!historical) return;
+    worker?.terminate();
+    worker = null;
+    job++;
+    historical = false;
+    last = live;
+    selected = 0;
+    selectionTouched = false;
+  });
   $('#review-hand-button').onclick = open;
   $('#review-retry').onclick = analyze;
   dialog.addEventListener('click', (e) => {
@@ -263,46 +330,30 @@ export function createReviewController({ card }) {
     if (!fromTimeline)
       $('#review-detail-title').scrollIntoView({ block: 'nearest', behavior: 'smooth' });
   });
-  $('#review-step-prev').onclick = () => {
-    if (selected > 0) {
-      selected--;
-      selectionTouched = true;
-      renderDialog();
-    }
-  };
-  $('#review-step-next').onclick = () => {
-    if (last && selected < last.input.decisions.length - 1) {
-      selected++;
-      selectionTouched = true;
-      renderDialog();
-    }
-  };
   return {
+    openInput,
     update(g, token) {
       const key = token + ':' + g.hand;
       if (g.phase === 'done' && key !== seen) {
         seen = key;
         const input = createReviewInput(g);
         {
-          worker?.terminate();
-          worker = null;
-          job++;
-          last = { key, input, status: 'idle', progress: 0, analysis: null };
-          selected = 0;
-          selectionTouched = false;
-          perspective(false);
-          opponents.update(input);
-          if (dialog.open) {
-            renderDialog();
-            analyze();
+          live = { key, input, status: 'idle', progress: 0, analysis: null };
+          if (!historical) {
+            selectInput(live, false);
+            if (dialog.open) {
+              renderDialog();
+              analyze();
+            }
           }
         }
       }
-      $('#review-hand-button').hidden = !(g.phase === 'done' && last?.key === key);
+      $('#review-hand-button').hidden = !(g.phase === 'done' && live?.key === key);
     },
     rollback(g, token) {
       const key = token + ':' + g.hand;
-      if (last?.key === key) {
+      if (live?.key === key) live = null;
+      if (!historical && last?.key === key) {
         worker?.terminate();
         worker = null;
         job++;
@@ -311,10 +362,16 @@ export function createReviewController({ card }) {
         selectionTouched = false;
       }
       if (seen === key) seen = '';
-      dialog.close();
+      if (!historical) dialog.close();
       $('#review-hand-button').hidden = true;
     },
     reset() {
+      live = null;
+      seen = '';
+      if (historical) {
+        $('#review-hand-button').hidden = true;
+        return;
+      }
       worker?.terminate();
       worker = null;
       job++;

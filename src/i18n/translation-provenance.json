@@ -900,6 +900,61 @@
     "madeHandRedrawClarification": "The additional two-slot fact is manually translated in all ten non-Simplified-Chinese locales. It states both the current made hand and the remaining draw instead of describing a made-hand call only as chasing a draw.",
     "terminalActualTextAudit": "All eleven locales checked against actual executed set-plus-flush-draw all-in calls and flush-draw folds, an actual heads-up all-in fold with chips remaining, and an actual high-card pot-control decision. The redraw fact uses a fragment long enough for the existing localizer; Japanese avoids a Chinese literal collision, and German/Russian actor labels avoid second-person case errors. Current inventory: 1457, translated locale missing keys: 0, placeholder mismatches: 0. This is a focused runtime text audit, not native-speaker certification or a broad regression run."
   },
+  "gameRecordsDrafts": {
+    "date": "2026-10-14",
+    "method": "Manually authored draft translations for game records, historical settlement, recovery, and local privacy copy; placeholders retained.",
+    "linguisticReview": "pending",
+    "locales": ["en", "zh-TW", "ja", "ko", "es", "it", "pt", "de", "fr", "ru"],
+    "keys": [
+      "‹ 返回对局记录",
+      "净筹码变化",
+      "历史记录",
+      "发牌后才能开始记录本手。",
+      "完成一手后，可以在这里查看结算和复盘。",
+      "对局记录",
+      "对局记录保存失败，关闭后可能丢失。",
+      "已被重打替代",
+      "底池结算",
+      "当前局",
+      "持平",
+      "未完成",
+      "本地练习",
+      "本机对局记录读取失败，已开始新的记录。",
+      "浏览记录时，当前游戏继续进行。",
+      "补充",
+      "补码",
+      "赢",
+      "获得部分底池 · 净亏损",
+      "起始大小盲",
+      "输",
+      "返回游戏",
+      "还没有对局记录",
+      "这一局还没有对局记录。",
+      "进行中",
+      "首次",
+      "设置与对局记录仅保存在此设备，不上传到本应用服务器；关闭后继续原局的新一手。",
+      "牌局、电脑对手和决策复盘在设备上计算。设置、对局记录与筹码恢复数据保存在设备本地，不上传到发行者服务器。关闭后继续原局的新一手，未完成手的下注会撤回。卸载或清除应用数据可移除这些本地数据；系统备份恢复可能恢复数据。",
+      "生效日期：2026-10-14",
+      "第 {0} 局",
+      "第 {5} 局",
+      "第 1 局",
+      "第 {9} 手",
+      "第 {0} 次重打",
+      "{13} 人",
+      "第 {0} 局 · 第 {1} 手 · {2}",
+      "盲注 {2} / {3}",
+      "{0} · 未跟注退回 {1}",
+      "{15} {16} 的底牌"
+    ],
+    "partialPotCopyClarification": "The label describes a partial pot award with an overall net chip loss without naming the awarded pool; statistics and settlement rules are unchanged.",
+    "itemPresentationRevision": {
+      "date": "2026-10-14",
+      "keys": ["重打{0}", "第 {0} 局 · 第 {1} 手{2}"],
+      "method": "Manually authored compact retry tags and conditional historical titles in all ten translated locales. First attempts and zero-net outcomes omit text; signed figures retain existing localized K/M precision.",
+      "linguisticReview": "pending",
+      "historyNavigationRevision": "The historical heading uses the existing translated session and hand wording without a retry suffix. Retry tags appear only beside the back-to-records button; generic historical and superseded tags are omitted. The two-slot title retains the existing translations in all ten translated locales."
+    }
+  },
   "positionAwareMatchupCopy": {
     "date": "2026-10-14",
     "messageCount": 13,
@@ -923,5 +978,12 @@
     "scope": "Eleven review titles, direction labels and limitations, plus two public-range diagnostics. The copy distinguishes preflop starting-hand structure from current made-hand comparisons. Candidate ordering is estimated from position and prior public actions; candidates do not identify the opponent’s actual hole cards. No numeric probabilities or ranking weights are introduced by these labels.",
     "validation": "i18n extraction and check pass for 1478 source messages and all eleven supported locales, including 213 structured research messages and 60 profile messages. 130 direct localizeText checks cover the new keys across the ten translated locales, with exact translations and no numeric probability text. Pending-blind settings, the 50K maximum and the 200/600/400/1.2K/1K guide facts remain unchanged.",
     "linguisticReview": "Independent native-language poker review pending; source coverage and placeholder checks do not certify complete linguistic quality."
+  },
+  "sessionPracticeTitleRevision": {
+    "date": "2026-10-15",
+    "sourceKeys": ["本局练习"],
+    "method": "Agent-authored session-specific practice title in all ten translated locales. Simplified Chinese and the WeChat template use the source title directly.",
+    "scope": "Rename the practice statistics card heading and remove its table-session subtitle. Chip statistics, net-change wording and all other practice copy remain unchanged.",
+    "linguisticReview": "Independent native-language review pending."
   }
 }

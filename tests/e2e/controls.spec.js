@@ -16,6 +16,9 @@ async function installPCMProbe(page) {
       state = 'suspended';
       currentTime = 0;
       destination = {};
+      createWaveShaper() {
+        return { connect() {} };
+      }
       resume() {
         this.state = 'running';
         return Promise.resolve();
@@ -195,12 +198,16 @@ test('sound prepares the shared PCM player, waits for a real gesture and handles
   const errors = [];
   page.on('pageerror', (error) => errors.push(error.message));
   await page.addInitScript(() => {
-    window.audioProbe = { created: 0, resumes: 0, notes: 0, reject: false, gains: [] };
+    window.audioProbe = { created: 0, resumes: 0, notes: 0, reject: false, gains: [], limiters: 0 };
     const parameter = () => ({ setValueAtTime() {}, exponentialRampToValueAtTime() {} });
     window.AudioContext = class {
       state = 'suspended';
       currentTime = 0;
       destination = {};
+      createWaveShaper() {
+        window.audioProbe.limiters++;
+        return { connect() {} };
+      }
       constructor() {
         window.audioProbe.created++;
       }
@@ -250,6 +257,7 @@ test('sound prepares the shared PCM player, waits for a real gesture and handles
     notes: 0,
   });
   expect(await page.evaluate(() => window.audioProbe.gains.length)).toBe(0);
+  expect(await page.evaluate(() => window.audioProbe.limiters)).toBe(1);
   await page.keyboard.press('Tab');
   expect(await page.evaluate(() => window.audioProbe)).toMatchObject({
     created: 1,

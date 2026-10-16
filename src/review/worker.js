@@ -5,7 +5,13 @@ self.onmessage = (event) => {
     const steps = [];
     for (const decision of input.decisions) {
       steps.push(analyzeDecision(decision));
-      self.postMessage({ id, type: 'progress', done: steps.length, total: input.decisions.length });
+      self.postMessage({
+        id,
+        type: 'progress',
+        done: steps.length,
+        total: input.decisions.length,
+        result: steps.at(-1),
+      });
     }
     self.postMessage({ id, type: 'complete', analysis: summarizeReview(input, steps) });
   } catch {

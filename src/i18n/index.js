@@ -95,7 +95,7 @@ export async function loadLocale(value) {
   literals.sort((a, b) => b.length - a.length);
   phrases = literals.length ? new RegExp(literals.map(escaped).join('|'), 'gu') : null;
 }
-function translate(text, depth = 0) {
+function translateCore(text, depth = 0) {
   const source = normalized(text);
   if (Object.hasOwn(messages, source)) return messages[source];
   if (depth < 3)
@@ -121,6 +121,24 @@ function translate(text, depth = 0) {
   return phrases
     ? output.replace(phrases, (match) => messages[normalized(match)] ?? match)
     : output;
+}
+function translate(text, depth = 0) {
+  // A public actor label is one value. Its "在 ... 位" must not be mistaken
+  // for the following sentence's board/position delimiter by a parent template.
+  const actors = [];
+  const masked = text.replace(
+    /(?:你|对手|[A-Za-z][A-Za-z0-9_-]*)(?:（[^（）]+）)?在 (?:BTN|SB|BB|UTG(?:\+\d+)?|MP|LJ|HJ|CO) 位/g,
+    (actor) => {
+      actors.push(actor);
+      return `\uE000${actors.length - 1}\uE001`;
+    },
+  );
+  const translated = translateCore(masked, depth);
+  return actors.length
+    ? translated.replace(/\uE000(\d+)\uE001/g, (token, index) =>
+        actors[index] === undefined ? token : translateCore(actors[index], 0),
+      )
+    : translated;
 }
 export function localizeText(value) {
   const text = String(value ?? '');

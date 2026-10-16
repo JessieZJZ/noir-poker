@@ -45,6 +45,8 @@
     <link rel="stylesheet" href="/src/styles/table-readability.css" />
     <link rel="stylesheet" href="/src/styles/desktop-play.css" />
     <link rel="stylesheet" href="/src/styles/table-density.css" />
+    <link rel="stylesheet" href="/src/styles/game-records.css" />
+    <link rel="stylesheet" href="/src/styles/hero-turn.css" />
   </head>
   <body inert>
     <dialog
@@ -84,7 +86,29 @@
           </svg>
         </button>
         <span id="opponents-summary" class="sr-only">均衡</span>
-        <button class="quiet-button" id="rules-button">玩法指南 <span>?</span></button>
+        <div class="guide-menu">
+          <button
+            class="quiet-button"
+            id="rules-button"
+            aria-haspopup="menu"
+            aria-expanded="false"
+            aria-controls="guide-menu"
+          >
+            <span class="guide-rotating-label">
+              <span data-guide-label="guide">玩法指南</span>
+              <span data-guide-label="records" aria-hidden="true">对局记录</span>
+            </span>
+            <span class="guide-menu-arrow" aria-hidden="true">
+              <svg class="guide-chevron" viewBox="0 0 16 16">
+                <path d="m4 6 4 4 4-4" />
+              </svg>
+            </span>
+          </button>
+          <div id="guide-menu" class="guide-menu-options" role="menu" hidden>
+            <button id="guide-menu-item" role="menuitem">玩法指南</button>
+            <button id="records-menu-item" role="menuitem">对局记录</button>
+          </div>
+        </div>
       </div>
     </header>
     <main class="main">
@@ -92,8 +116,9 @@
         <div class="game-surface">
           <div class="surface-top">
             <div class="hand-label">
+              <span class="session-label" id="session-number-label">第 1 局</span><span>·</span>
               <i class="hand-prefix">第</i> <b id="hand-number">01</b> <i class="hand-suffix">手</i>
-              <span>·</span> <span id="street-label">准备发牌</span
+              <span id="street-divider">·</span> <span id="street-label">准备发牌</span
               ><span id="replay-label" class="replay-label" hidden></span>
             </div>
             <div class="blind-info">盲注 <b id="blind-values">100 / 200</b></div>
@@ -172,7 +197,9 @@
                 <div class="board-caption" id="board-caption">五张公共牌 · 一场好决策</div>
               </div>
               <div class="hero-area">
-                <div class="hero-cards" id="hero-cards"></div>
+                <div class="hero-cards-wrap">
+                  <div class="hero-cards" id="hero-cards"></div>
+                </div>
                 <div class="hero-rank-slot">
                   <div id="hero-hand-rank" class="hand-rank hero-hand-rank" hidden></div>
                 </div>
@@ -195,10 +222,14 @@
           </div>
           <div class="action-dock-slot">
             <div class="action-dock">
+              <span class="turn-line" aria-hidden="true"></span>
               <div class="decision-strip">
                 <span class="decision-indicator"></span
-                ><span id="decision-text" role="status" aria-live="polite"
-                  >牌桌已就绪，开始你的第一手。</span
+                ><span class="decision-copy" role="status" aria-live="polite"
+                  ><span class="turn-prompt" id="turn-prompt" hidden>轮到你行动，</span>
+                  <span id="decision-text" class="decision-detail"
+                    >牌桌已就绪，开始你的第一手。</span
+                  ></span
                 >
               </div>
               <div class="action-panel" id="action-panel">
@@ -272,8 +303,7 @@
       <aside class="sidebar">
         <section class="session-card">
           <div class="section-title">
-            <h2>你的练习</h2>
-            <span class="subtle-label">本次牌桌</span>
+            <h2>本局练习</h2>
           </div>
           <div class="session-balance">
             <span>当前筹码</span><strong id="session-stack">20K<span>CHIPS</span></strong
@@ -321,6 +351,19 @@
         </div>
         <span>仅使用虚拟筹码</span>
       </footer>
+    </main>
+    <main id="records-page" class="records-page" aria-labelledby="records-title" hidden>
+      <div class="records-page-heading">
+        <div>
+          <p class="records-eyebrow">本地练习</p>
+          <h1 id="records-title" tabindex="-1">对局记录</h1>
+          <time id="records-hand-start" tabindex="-1" hidden></time>
+        </div>
+        <button id="records-back-button" class="records-back">返回游戏</button>
+      </div>
+      <p class="records-live-note">浏览记录时，当前游戏继续进行。</p>
+      <p id="records-storage-error" class="records-storage-error" role="status" hidden></p>
+      <div id="records-content"></div>
     </main>
     <dialog
       id="opponents-dialog"
@@ -454,6 +497,8 @@
               >
             </div>
           </div>
+          <p id="difficulty-description" class="setting-description"></p>
+          <p class="setting-description">同一难度保留牌手风格差异；进阶不代表每手更松或更激进。</p>
         </section>
         <section class="settings-module emotion-module" aria-labelledby="emotion-label">
           <div class="settings-row">
@@ -465,7 +510,7 @@
             </select>
           </div>
           <p class="setting-description">
-            输赢后短暂调整打法，随后恢复；仅为游戏机制，不代表真人性格。
+            情绪只调整当前难度内的入池、进攻与跟注倾向，不增加策略能力；几手后恢复。
           </p>
         </section>
         <div class="opponents-layout">
@@ -764,7 +809,7 @@
       <p>
         牌桌提示提供当前阶段的简短练习提醒。宽屏在右侧提示卡上开关；窄屏在设置中开关，提醒出现在盲注下方，可左右滑动阅读，几秒后收起。声音也可在设置中开关。所有设置保存在此设备，重打保留原来的对手风格与情绪。
       </p>
-      <details data-persona-reference>
+      <details data-persona-reference open>
         <summary>关于具名牌手与训练原型</summary>
         <p>
           具名对手参考网上公开赛事、牌局记录与资料制作，仅供娱乐和策略练习。模拟行动、参数及情绪不代表本人真实或完整的打法、实际操作或心理状态；姓名和资料来源仅用于说明参考对象，不表示本人或赛事方参与、合作、推荐或背书。本应用无意贬损、攻击任何个人。
@@ -902,14 +947,6 @@
               <div class="review-evidence-heading"><h3>当时的关键信息</h3></div>
               <ul id="review-evidence"></ul>
             </section>
-            <details class="review-public-actions">
-              <summary>此前的公开行动</summary>
-              <ul id="review-public-actions"></ul>
-            </details>
-            <div class="review-step-nav">
-              <button id="review-step-prev">上一步</button><span id="review-step-current"></span
-              ><button id="review-step-next">下一步</button>
-            </div>
           </section>
         </div>
       </div>
@@ -919,6 +956,10 @@
         aria-labelledby="review-opponents-tab"
         hidden
       ></section>
+      <details id="review-activity" class="review-activity">
+        <summary>对局动态</summary>
+        <ol id="review-activity-list"></ol>
+      </details>
       <p class="review-scope">按当时信息判断，单手输赢不直接决定操作好坏。</p>
 
       <button class="primary-button close-dialog">回到牌桌</button>

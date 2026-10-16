@@ -36,6 +36,7 @@
     "mobile:ios": "node scripts/mobile.mjs ios",
     "mobile:ios:archive": "node scripts/mobile.mjs ios-archive",
     "mobile:android": "node scripts/mobile.mjs android",
+    "mobile:android:qa": "node scripts/mobile.mjs android-qa",
     "mobile:android:bundle": "node scripts/mobile.mjs android-bundle",
     "i18n:extract": "node scripts/i18n-extract.mjs",
     "i18n:check": "node scripts/i18n-check.mjs",

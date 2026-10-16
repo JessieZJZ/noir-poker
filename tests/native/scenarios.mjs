@@ -1,7 +1,54 @@
 import assert from 'node:assert/strict';
 import { readTableLayout, assertTableLayout } from './layout.mjs';
 import { readCardRankState, readNativeRankInk, assertStableRankInk } from './card-ranks.mjs';
+import {
+  readRecordTableGeometry,
+  recordGeometryDifferences,
+} from '../fixtures/records-geometry.js';
+import { nativePageReady } from '../../scripts/native-back.mjs';
+import { withCenteredNativeClicks } from './position-target.mjs';
+import { BOT_THINK_LIMITS } from '../../src/engine/bot-timing.js';
 const documentLoginMarker = (text) => /sign in|log in|登录账号/i.test(text);
+
+export async function waitForNativeHeroTurn(app, { now = Date.now } = {}) {
+  const started = now();
+  const { playerCount } = await app.state();
+  // An eight-player reset can have seven sequential, genuine bot pauses.
+  // Budget those configured pauses rather than assuming one 20-second turn.
+  // This changes no application timers or analysis workload.
+  const timeoutMs = (playerCount - 1) * BOT_THINK_LIMITS.maximum + 10000;
+  const observations = [];
+  try {
+    await app.waitFor(
+      async () => {
+        const snapshot = await app.evaluate(() => {
+          const game = window.noir.getState();
+          return {
+            hand: game.hand,
+            phase: game.phase,
+            actor: game.actor,
+            enabled: game.legal.enabled,
+            controlEnabled: !document.querySelector('#call-button').disabled,
+          };
+        });
+        if (JSON.stringify(snapshot) !== JSON.stringify(observations.at(-1)?.state))
+          observations.push({ elapsedMs: now() - started, state: snapshot });
+        return (
+          snapshot.phase === 'playing' &&
+          snapshot.actor === '你' &&
+          snapshot.enabled &&
+          snapshot.controlEnabled
+        );
+      },
+      timeoutMs,
+      'The reset hand must reach the real hero turn',
+    );
+    return { timeoutMs, elapsedMs: now() - started, observations };
+  } catch (error) {
+    error.turnDiagnostics = { timeoutMs, elapsedMs: now() - started, observations };
+    throw error;
+  }
+}
 
 export async function waitForPendingOpponent(app) {
   // A real opponent can answer before Android's next HTTP state read. Follow
@@ -96,9 +143,72 @@ export async function waitForNativeReview(app, { now = Date.now } = {}) {
   }
 }
 
+export async function readNativePersonaTags(app) {
+  const token = `persona-tags-${Date.now()}-${Math.random()}`;
+  // XCUITest execute/sync serializes a returned Promise as {}. Start the real
+  // asynchronous paint read in-page, then transport only a completed string.
+  await app.evaluate((token) => {
+    const observation = { token, result: null };
+    window.__nativePersonaTagsObservation = observation;
+    void (async () => {
+      try {
+        await document.fonts.ready;
+        await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+        const state = window.noir.getState();
+        observation.result = JSON.stringify({
+          snapshot: {
+            hand: state.hand,
+            stack: state.stack,
+            hole: state.hole,
+            completedHands: document.querySelector('#stat-hands').textContent,
+            tags: [...document.querySelectorAll('#seats .seat-style-label')].map((tag) => ({
+              text: tag.textContent,
+              height: tag.getBoundingClientRect().height,
+              fontSize: getComputedStyle(tag).fontSize,
+            })),
+          },
+        });
+      } catch (error) {
+        observation.result = JSON.stringify({ error: error.message || String(error) });
+      }
+    })();
+    return token;
+  }, token);
+  try {
+    const serialized = await app.waitFor(
+      () =>
+        app.evaluate((token) => {
+          const observation = window.__nativePersonaTagsObservation;
+          return observation?.token === token ? observation.result : null;
+        }, token),
+      10000,
+      'Installed persona tags must finish fonts.ready and two animation frames',
+    );
+    assert.equal(
+      typeof serialized,
+      'string',
+      'Persona measurement must cross the native bridge as JSON',
+    );
+    const result = JSON.parse(serialized);
+    if (result.error) throw new Error(`Installed persona tag measurement failed: ${result.error}`);
+    return result.snapshot;
+  } finally {
+    try {
+      await app.evaluate((token) => {
+        if (window.__nativePersonaTagsObservation?.token === token)
+          delete window.__nativePersonaTagsObservation;
+        return true;
+      }, token);
+    } catch {
+      // Cleanup must not replace the original read/timeout failure.
+    }
+  }
+}
+
 // These scenarios drive the installed production bundle. They read only the
 // public state already exposed by the app and never install browser fixtures.
 export async function nativeScenarios(app) {
+  app = withCenteredNativeClicks(app);
   const result = [];
   const selection = process.env.NOIR_NATIVE_SCENARIOS;
   const selectedScenarios = selection?.split(',').map((name) => name.trim());
@@ -134,6 +244,7 @@ export async function nativeScenarios(app) {
         elapsedMs: Date.now() - started,
         error: error.stack || String(error),
         ...(error.reviewDiagnostics ? { reviewDiagnostics: error.reviewDiagnostics } : {}),
+        ...(error.turnDiagnostics ? { turnDiagnostics: error.turnDiagnostics } : {}),
       });
       throw error;
     }
@@ -390,11 +501,186 @@ export async function nativeScenarios(app) {
     assert.equal(bridge.status, 'resolved', bridge.error);
     return bridge;
   });
+  await check('hero-turn-visual-attention', async () => {
+    await app.evaluate(() => {
+      window.__turnAttentionPhases = [];
+      window.__turnAttentionLifecycle = [];
+      const dock = document.querySelector('.action-dock');
+      document.addEventListener('noir:app-state', ({ detail }) => {
+        window.__turnAttentionLifecycle.push({
+          active: detail.active,
+          phase: dock.dataset.turnPhase,
+        });
+      });
+      new MutationObserver(() => {
+        window.__turnAttentionPhases.push({
+          phase: dock.dataset.turnPhase,
+          at: Date.now(),
+          frame: [...document.querySelectorAll('#hero-cards .playing-card')].map((card) => {
+            const style = getComputedStyle(card, '::before');
+            return {
+              name: style.animationName,
+              duration: style.animationDuration,
+              iterations: style.animationIterationCount,
+            };
+          }),
+        });
+      }).observe(dock, { attributes: true, attributeFilter: ['data-turn-phase'] });
+    });
+    // Leave any existing decision so entry and the eight-second reminder are
+    // observed from a fresh, real turn in the installed production bundle.
+    const initial = await app.state();
+    if (initial.legal.enabled) await app.click('#call-button');
+    await app.waitFor(
+      async () => {
+        const state = await app.state();
+        if (state.phase === 'done') {
+          await app.click('#next-button');
+          return false;
+        }
+        return state.legal.enabled;
+      },
+      90000,
+      'A fresh hero decision must become available',
+    );
+    // Read the first turn frame at its actual DOM transition so a slow driver
+    // does not confuse the controller phase with the persistent border motion.
+    const entry = await app.evaluate(
+      () => window.__turnAttentionPhases.find((entry) => entry.phase === 'enter')?.frame,
+    );
+    assert.deepEqual(entry, [
+      { name: 'turn-glow', duration: '2s', iterations: 'infinite' },
+      { name: 'turn-glow', duration: '2s', iterations: 'infinite' },
+    ]);
+    await app.sleep(850);
+    await app.screenshot('hero-turn-visible');
+    await app.waitFor(
+      () =>
+        app.evaluate(() => document.querySelector('.action-dock').dataset.turnPhase === 'waiting'),
+      5000,
+      'Entry must settle into a steady turn state',
+    );
+    const read = () =>
+      app.evaluate(() => {
+        const rect = (element) => {
+          const { x, y, width, height } = element.getBoundingClientRect();
+          return { x, y, width, height };
+        };
+        const card = document.querySelector('#hero-cards .playing-card');
+        const border = getComputedStyle(card, '::before');
+        return {
+          phase: document.querySelector('.action-dock').dataset.turnPhase,
+          hero: document.querySelector('.hero-cards-wrap').dataset.turnPhase,
+          prompt: document.querySelector('#turn-prompt').textContent.trim(),
+          promptVisible: !document.querySelector('#turn-prompt').hidden,
+          lineOpacity: Number(getComputedStyle(document.querySelector('.turn-line')).opacity),
+          lineHeight: getComputedStyle(document.querySelector('.turn-line')).height,
+          promptOpacity: Number(getComputedStyle(document.querySelector('#turn-prompt')).opacity),
+          frameOpacity: Number(border.opacity),
+          frameBorder: border.borderTopColor,
+          frameBackground: border.backgroundImage,
+          frameRadius: border.borderTopLeftRadius,
+          cardRadius: getComputedStyle(card).borderTopLeftRadius,
+          handBorders: [...document.querySelectorAll('#hero-cards .playing-card')].map((card) => {
+            const style = getComputedStyle(card, '::before');
+            return { name: style.animationName, iterations: style.animationIterationCount };
+          }),
+          railPulses: ['::before', '::after'].map((pseudo) => {
+            const style = getComputedStyle(document.querySelector('.turn-line'), pseudo);
+            return { name: style.animationName, duration: style.animationDuration };
+          }),
+          attentionMotion: ['.turn-line', '#turn-prompt'].map((selector) => {
+            const style = getComputedStyle(document.querySelector(selector));
+            return { name: style.animationName, duration: style.animationDuration };
+          }),
+          boxes: [
+            ...document.querySelectorAll('#hero-cards .playing-card, .action-buttons button'),
+          ].map(rect),
+        };
+      });
+    await app.sleep(750); // Finish the independent hand-deal animation, if this is a new hand.
+    const before = await read();
+    assert.equal(before.hero, 'waiting');
+    assert.equal(before.promptVisible, true);
+    assert.equal(before.lineHeight, '2px');
+    assert.equal(before.promptOpacity, 1);
+    assert.equal(before.frameOpacity, 1);
+    assert.equal(before.frameBorder, 'rgb(110, 231, 197)');
+    assert.equal(before.frameBackground, 'none');
+    assert.equal(before.frameRadius, before.cardRadius);
+    assert.deepEqual(before.handBorders, [
+      { name: 'turn-glow', iterations: 'infinite' },
+      { name: 'turn-glow', iterations: 'infinite' },
+    ]);
+    assert.deepEqual(before.attentionMotion, [
+      { name: 'none', duration: '0s' },
+      { name: 'none', duration: '0s' },
+    ]);
+    assert.deepEqual(before.railPulses, [
+      { name: 'hero-turn-pulse-left', duration: '1.6s' },
+      { name: 'hero-turn-pulse-right', duration: '1.6s' },
+    ]);
+    await app.screenshot('hero-turn-steady');
+    const background = await app.background();
+    await app.sleep(9000);
+    assert.ok(
+      [2, 3].includes(await app.nativeState()),
+      'The turn must remain natively backgrounded',
+    );
+    const backgroundMs = performance.now() - background.startedAt;
+    assert.ok(backgroundMs >= 9000);
+    await app.activate();
+    await app.waitFor(
+      () =>
+        app.evaluate(() => document.querySelector('.action-dock').dataset.turnPhase === 'waiting'),
+      5000,
+      'Returning to the same decision must show the steady state',
+    );
+    const lifecycle = await app.evaluate(() => window.__turnAttentionLifecycle);
+    assert.ok(
+      lifecycle.some((entry) => !entry.active && entry.phase === ''),
+      'Real native background must clear visual attention',
+    );
+    await app.waitFor(
+      () =>
+        app.evaluate(() =>
+          window.__turnAttentionPhases.some((entry) => entry.phase === 'reminder'),
+        ),
+      10000,
+      'An untouched turn must remind once',
+    );
+    await app.waitFor(
+      () =>
+        app.evaluate(() => document.querySelector('.action-dock').dataset.turnPhase === 'waiting'),
+      5000,
+      'Reminder must stop pulsing',
+    );
+    const after = await read();
+    assert.deepEqual(after.boxes, before.boxes);
+    const observed = await app.evaluate(() => window.__turnAttentionPhases);
+    assert.equal(observed.filter((entry) => entry.phase === 'enter').length, 1);
+    assert.equal(observed.filter((entry) => entry.phase === 'reminder').length, 1);
+    await app.click('#call-button');
+    assert.equal(
+      await app.evaluate(() => document.querySelector('.action-dock').dataset.turnPhase),
+      '',
+    );
+    return {
+      entry,
+      before,
+      after,
+      observed,
+      lifecycle,
+      backgroundMs,
+      scope:
+        'Installed production UI; native background cancels attention and card/button geometry stays stable',
+    };
+  });
   await check('combined-feedback-preference', async () => {
     await app.evaluate(() => {
       const nativePromise = window.Capacitor.nativePromise;
       const start = AudioBufferSourceNode.prototype.start;
-      window.__feedbackProbe = { haptics: 0, audio: 0 };
+      window.__feedbackProbe = { haptics: 0, audio: 0, levels: [] };
       window.__restoreFeedbackProbe = () => {
         window.Capacitor.nativePromise = nativePromise;
         AudioBufferSourceNode.prototype.start = start;
@@ -405,17 +691,27 @@ export async function nativeScenarios(app) {
       };
       AudioBufferSourceNode.prototype.start = function (...args) {
         window.__feedbackProbe.audio++;
+        const samples = this.buffer?.getChannelData(0);
+        if (samples?.length) {
+          let energy = 0,
+            peak = 0;
+          for (const sample of samples) {
+            energy += sample * sample;
+            peak = Math.max(peak, Math.abs(sample));
+          }
+          window.__feedbackProbe.levels.push({
+            samples: samples.length,
+            rms: Math.sqrt(energy / samples.length),
+            peak,
+          });
+        }
         return start.apply(this, args);
       };
     });
     const resetToHero = async () => {
       await app.click('#reset-button');
       await app.click('#confirm-reset');
-      await app.waitFor(
-        () => app.evaluate(() => !document.querySelector('#call-button').disabled),
-        20000,
-        'The reset hand must reach the real hero turn',
-      );
+      return waitForNativeHeroTurn(app);
     };
     try {
       await app.click('#opponents-button');
@@ -432,26 +728,32 @@ export async function nativeScenarios(app) {
       await app.click('#sound-button');
       await app.click('#opponents-dialog .close-dialog');
       await app.evaluate(() => {
-        window.__feedbackProbe = { haptics: 0, audio: 0 };
+        window.__feedbackProbe = { haptics: 0, audio: 0, levels: [] };
       });
-      await resetToHero();
+      const mutedTurn = await resetToHero();
       const muted = await app.evaluate(() => window.__feedbackProbe);
-      assert.deepEqual(muted, { haptics: 0, audio: 0 });
+      assert.deepEqual(muted, { haptics: 0, audio: 0, levels: [] });
       await app.click('#opponents-button');
       await app.click('#sound-button');
       await app.click('#opponents-dialog .close-dialog');
       await app.evaluate(() => {
-        window.__feedbackProbe = { haptics: 0, audio: 0 };
+        window.__feedbackProbe = { haptics: 0, audio: 0, levels: [] };
       });
-      await resetToHero();
+      const enabledTurn = await resetToHero();
       const enabled = await app.evaluate(() => window.__feedbackProbe);
       assert.ok(
         enabled.haptics > 0 && enabled.audio > 0,
         'Unmuting must restore native turn feedback and WebView sound dispatch',
       );
+      assert.equal(enabled.levels.length, enabled.audio);
+      assert.ok(
+        enabled.levels.every(({ rms, peak }) => rms >= 0.145 && rms <= 0.165 && peak <= 0.7),
+        'Actual installed-app PCM uses the louder mastered cues with per-cue headroom',
+      );
       return {
         muted,
         enabled,
+        turns: { muted: mutedTurn, enabled: enabledTurn },
         scope: 'Actual installed-app dispatch; physical hearing and vibration feel are separate',
       };
     } finally {
@@ -483,6 +785,7 @@ export async function nativeScenarios(app) {
     assert.deepEqual(assignments, ['tan', 'balanced', 'ivey']);
     await app.click('#opponents-dialog .close-dialog');
     await app.click('#rules-button');
+    await app.click('#guide-menu-item');
     const guide = await app.evaluate(() => ({
       hands: document.querySelectorAll('.hand-example').length,
       cards: document.querySelectorAll('.guide-card').length,
@@ -500,6 +803,7 @@ export async function nativeScenarios(app) {
     return { assignments, guide };
   });
   await check('settings-autosave-and-local-portraits', async () => {
+    await app.waitHero();
     await app.click('#opponents-button');
     const languageChanges = [];
     const changeLanguage = async (target) => {
@@ -524,7 +828,7 @@ export async function nativeScenarios(app) {
             hand: window.noir?.getState().hand,
           }));
           return loaded.language === target &&
-            loaded.title === (target === 'en' ? 'Settings' : '设置') &&
+            loaded.title === { en: 'Settings', ko: '설정', 'zh-CN': '设置' }[target] &&
             loaded.ready &&
             loaded.initialized
             ? loaded
@@ -547,6 +851,24 @@ export async function nativeScenarios(app) {
     // Force a real change even on a simulator that already starts in Chinese;
     // this exercises the same live catalog path as an English CI simulator.
     await changeLanguage(initialLanguage === 'en' ? 'zh-CN' : 'en');
+    await changeLanguage('zh-CN');
+    const chineseTags = await readNativePersonaTags(app);
+    await changeLanguage('ko');
+    const koreanTags = await readNativePersonaTags(app);
+    assert.ok(chineseTags.tags.length > 0);
+    assert.equal(koreanTags.tags.length, chineseTags.tags.length);
+    for (let index = 0; index < chineseTags.tags.length; index++) {
+      assert.ok(
+        Math.abs(koreanTags.tags[index].height - chineseTags.tags[index].height) <= 0.6,
+        'Korean persona tags retain their installed table height',
+      );
+      assert.equal(koreanTags.tags[index].fontSize, chineseTags.tags[index].fontSize);
+    }
+    assert.deepEqual(
+      [koreanTags.hand, koreanTags.stack, koreanTags.hole, koreanTags.completedHands],
+      [chineseTags.hand, chineseTags.stack, chineseTags.hole, chineseTags.completedHands],
+    );
+    await app.screenshot('korean-persona-tag-height');
     await changeLanguage('zh-CN');
     await app.select('#player-count', '5');
     await app.select('#emotion-mode', 'lively');
@@ -604,7 +926,7 @@ export async function nativeScenarios(app) {
       sound: 'false',
     });
     await app.click('#opponents-dialog .close-dialog');
-    return { saved, languageChanges, portraits: images };
+    return { saved, languageChanges, personaTags: { chineseTags, koreanTags }, portraits: images };
   });
   await check('pending-blinds-validation-retry-and-next-hand', async () => {
     const defaults = { smallBlind: 100, bigBlind: 200, startingStack: 20000, chipUnit: 100 };
@@ -1036,9 +1358,12 @@ export async function nativeScenarios(app) {
       Math.abs(layout.table.height - beforeFold.table.height) <= 1,
       'Settlement preserves the live table height',
     );
-    assert.ok(Math.abs(layout.table.top - beforeFold.table.top) <= 1);
+    // Real native taps can scroll the document to reveal a control. Compare
+    // document coordinates so that scrolling cannot masquerade as layout shift.
+    const scrollDelta = layout.scrollY - beforeFold.scrollY;
+    assert.ok(Math.abs(layout.table.top - beforeFold.table.top + scrollDelta) <= 1);
     assert.ok(
-      Math.abs(layout.dock.top - beforeFold.dock.top) <= 1,
+      Math.abs(layout.dock.top - beforeFold.dock.top + scrollDelta) <= 1,
       'Only the control dock shrinks',
     );
     const buttons = layout.settledButtons;
@@ -1065,7 +1390,7 @@ export async function nativeScenarios(app) {
       );
       const inspection = await app.evaluate(() => {
         const seat = document.querySelector('.seat-crown'),
-          view = document.querySelector('.table-viewport').getBoundingClientRect(),
+          header = document.querySelector('.hand-label').getBoundingClientRect(),
           profile = seat.querySelector('.seat-profile').getBoundingClientRect(),
           scale = new DOMMatrix(getComputedStyle(document.querySelector('#arena')).transform).a;
         return {
@@ -1073,7 +1398,9 @@ export async function nativeScenarios(app) {
           cards: [...seat.querySelectorAll('.playing-card')].map((card) => {
             const r = card.getBoundingClientRect();
             return {
-              clearOfHint: r.top >= view.top + 10 * scale - 0.5,
+              clearOfHeader: r.top >= header.bottom + 2 * scale - 0.5,
+              insetFromProfile:
+                r.left >= profile.left + scale - 0.5 && r.right <= profile.right - scale + 0.5,
               visibleFraction: (profile.top - r.top) / r.height,
             };
           }),
@@ -1086,15 +1413,23 @@ export async function nativeScenarios(app) {
       assert.ok(
         inspection.cards.every(
           (card) =>
-            card.clearOfHint && card.visibleFraction >= 0.65 && card.visibleFraction <= 0.98,
+            card.clearOfHeader &&
+            card.insetFromProfile &&
+            card.visibleFraction >= 0.65 &&
+            card.visibleFraction <= 0.98,
         ),
+        JSON.stringify(inspection),
       );
       const peekLayout = await app.evaluate(readTableLayout);
       assertTableLayout(peekLayout);
       for (const anchor of ['arena', 'publicArea'])
         for (const key of ['top', 'left', 'height', 'right'])
           assert.ok(
-            Math.abs(peekLayout[anchor][key] - layout[anchor][key]) <= 1,
+            Math.abs(
+              peekLayout[anchor][key] +
+                (key === 'top' ? peekLayout.scrollY - layout.scrollY : 0) -
+                layout[anchor][key],
+            ) <= 1,
             `${anchor} must stay fixed when inspecting the crown hand`,
           );
       if (expected === 'true') {
@@ -1156,6 +1491,30 @@ export async function nativeScenarios(app) {
     assert.equal(presentation.method, 0);
     assert.doesNotMatch(presentation.reason, /EV|模型|模拟器|抽样|新增投入/);
     assert.doesNotMatch(presentation.keyInfo, /有效剩余|新增投入/);
+    const analysisLayout = await app.evaluate(() => ({
+      oldControls: document.querySelectorAll(
+        '#review-public-actions, .review-step-nav, [data-opponent-nav]',
+      ).length,
+      sections: document.querySelectorAll('#review-coach-explanation [data-matchup-direction]')
+        .length,
+      preflop: document.querySelectorAll('#review-board .playing-card').length === 0,
+      collapsed: !document.querySelector('#review-activity').open,
+      summary: document.querySelector('#review-coach-explanation .review-analysis-heading')
+        ?.textContent,
+    }));
+    assert.equal(analysisLayout.oldControls, 0);
+    assert.equal(analysisLayout.sections, analysisLayout.preflop ? 1 : 2);
+    assert.equal(analysisLayout.collapsed, true);
+    assert.equal(analysisLayout.summary, '复盘分析总结');
+    await app.click('#review-activity summary');
+    assert.ok(
+      await app.evaluate(
+        () =>
+          document.querySelectorAll('#review-activity-list .review-activity-emphasis').length > 0,
+      ),
+    );
+    await app.screenshot('review-activity-expanded');
+    await app.click('#review-activity summary');
     const observedDeceptiveMotives = [];
     if (app.comparePage) {
       await app.comparePage('review', [
@@ -1377,6 +1736,7 @@ export async function nativeScenarios(app) {
     await check('all-secondary-pages-match-web', async () => {
       const comparisons = [];
       await app.click('#rules-button');
+      await app.click('#guide-menu-item');
       comparisons.push(
         await app.comparePage('guide', [
           '#rules-dialog',
@@ -1453,8 +1813,479 @@ export async function nativeScenarios(app) {
           'article:not([hidden]) p',
         ]),
       );
+      await app.click('article:not([hidden]) a[href="./"]');
+      await app.waitFor(
+        async () =>
+          (await app.evaluate(
+            () =>
+              document.documentElement.dataset.appReady === 'true' &&
+              typeof window.noir?.getState === 'function' &&
+              !!window.noir.getState(),
+          )) && (await app.visible('#reset-button')),
+        15000,
+        'The privacy return link must load a ready game before the next scenario',
+      );
       return comparisons;
     });
+  await check('records-history-pot-dialog-and-return', async () => {
+    await app.waitFor(
+      async () => {
+        const game = await app.state();
+        return game.phase === 'done' || game.legal.enabled;
+      },
+      90000,
+      'Real practice must reach a hero decision',
+    );
+    if ((await app.state()).phase !== 'done') await app.click('#fold-button');
+    if ((await app.state()).canContinue) {
+      try {
+        await app.click('#continue-deal-button');
+      } catch (error) {
+        // Opponents can settle during the real native tap's measurement.
+        // Only accept the disappearing optional control after proving done.
+        if (
+          !/target geometry did not stabilize|zero size|stale element|not interactable/.test(
+            error.message,
+          ) ||
+          (await app.state()).phase !== 'done'
+        )
+          throw error;
+      }
+    }
+    await app.waitFor(
+      async () => (await app.state()).phase === 'done',
+      90000,
+      'Real hand must settle',
+    );
+    const liveHand = (await app.state()).hand;
+    const record = await app.evaluate(() =>
+      window.noir
+        .getRecords()[0]
+        .attempts.findLast(
+          (hand) => hand.status === 'completed' && hand.hand === window.noir.getState().hand,
+        ),
+    );
+    assert.ok(record?.snapshot);
+    await app.click('#rules-button');
+    await app.click('#records-menu-item');
+    await app.click(`[data-record-hand="${record.id}"]`);
+    const details = await app.evaluate(() => ({
+      page: document.body.dataset.recordsPage,
+      standalonePots: document.querySelectorAll('.records-settlement').length,
+      showdownVisible: !document.querySelector('#history-showdown-stage').hidden,
+      showdownPlayers: document.querySelectorAll('#history-showdown-scene .showdown-player').length,
+    }));
+    assert.equal(details.page, 'hand');
+    assert.equal(details.standalonePots, 0);
+    const showdownCount = record.snapshot.showdown
+      ? record.snapshot.players.filter((player) => !player.folded).length
+      : 0;
+    assert.equal(details.showdownVisible, showdownCount > 0);
+    assert.equal(details.showdownPlayers, showdownCount);
+    await app.screenshot('records-history-current-layout');
+    await app.click('#history-pot-details-button');
+    assert.equal(await app.evaluate(() => document.querySelector('#pot-dialog').open), true);
+    const awards = await app.evaluate(() =>
+      [...document.querySelectorAll('#pot-dialog .pot-award')].map((row) =>
+        Number(row.dataset.awardPlayer),
+      ),
+    );
+    assert.deepEqual(
+      awards,
+      record.snapshot.pots.flatMap((pot) => pot.awards.map((award) => award.id)),
+    );
+    await app.screenshot('records-history-current-pot-dialog');
+    await app.click('#pot-dialog .icon-button.close-dialog');
+    await app.back();
+    await app.waitFor(
+      () => app.evaluate(() => document.body.dataset.recordsPage === 'list'),
+      10000,
+      'Native Back returns to records',
+    );
+    await app.click('#records-back-button');
+    await app.waitFor(
+      () =>
+        app.evaluate(
+          () =>
+            document.body.dataset.recordsPage === 'game' &&
+            !document.querySelector('main.main').hidden,
+        ),
+      10000,
+      'Return Game leaves the records visit',
+    );
+    assert.equal((await app.state()).hand, liveHand);
+    return { attempt: record.id, details, awards, returnedToGame: true };
+  });
+  await check('game-records-pages-retry-and-resume', async () => {
+    await app.click('#reset-button');
+    await app.click('#confirm-reset');
+    const finish = async () => {
+      const turn = await app.waitFor(
+        async () => {
+          const current = await app.state();
+          return current.phase === 'done' || current.legal.enabled ? current : null;
+        },
+        90000,
+        'Real play must reach a hero decision or settlement',
+      );
+      if (turn.phase !== 'done') await app.click('#fold-button');
+      const afterFold = await app.state();
+      if (afterFold.phase !== 'done' && afterFold.canContinue) {
+        try {
+          // On a short viewport, nearest scrolling can leave the fast-finish
+          // control underneath the fixed native header. Center the actual
+          // control before the normal WebDriver click.
+          await app.evaluate(() =>
+            document.querySelector('#continue-deal-button').scrollIntoView({
+              block: 'center',
+              inline: 'nearest',
+              behavior: 'instant',
+            }),
+          );
+          await app.click('#continue-deal-button');
+        } catch (error) {
+          // Opponents may settle during the native click's scroll/locate
+          // round trips. Accept that race only after proving real settlement.
+          if (
+            !/zero size|stale element|not interactable|element click intercepted/.test(
+              error.message,
+            ) ||
+            (await app.state()).phase !== 'done'
+          )
+            throw error;
+        }
+      }
+      return app.waitFor(
+        async () => {
+          const current = await app.state();
+          return current.phase === 'done' ? current : null;
+        },
+        90000,
+        'The actual installed game must finish before archiving',
+      );
+    };
+    let settled, first;
+    for (let attempt = 0; attempt < 6; attempt++) {
+      settled = await finish();
+      first = await app.evaluate(() => window.noir.getRecords()[0].attempts.at(-1));
+      if (first.snapshot.decisions.length) break;
+      await app.click('#reset-button');
+      await app.click('#confirm-reset');
+    }
+    assert.ok(
+      first.snapshot.decisions.length,
+      'Historical review needs a real recorded hero decision',
+    );
+    assert.equal(first.status, 'completed');
+    assert.equal(first.snapshot.deck, undefined);
+    assert.equal(first.hand, settled.hand);
+    await app.sleep(1000);
+    await app.screenshot('game-records-live-settlement');
+    const liveGeometry = await app.evaluate(readRecordTableGeometry, '#arena');
+    await app.click('#restart-hand-button');
+    const retried = await app.state();
+    assert.equal(retried.replayAttempt, 1);
+    assert.deepEqual(retried.hole, settled.hole);
+    await finish();
+    const attempts = await app.evaluate(() => window.noir.getRecords()[0].attempts);
+    assert.equal(attempts.length, 2);
+    assert.equal(attempts[0].superseded, true);
+    assert.equal(attempts[1].superseded, false);
+    await app.click('#next-button');
+    await app.click('#rules-button');
+    await app.click('#records-menu-item');
+    assert.equal(await app.visible('#records-page'), true);
+    await app.click(`[data-record-hand="${first.id}"]`);
+    assert.equal(await app.visible('#history-page'), true);
+    const archiveBefore = await app.evaluate(() => ({
+      title: document.querySelector('#records-title').textContent,
+      startedAt: document.querySelector('#records-hand-start').dateTime,
+      table: document.querySelector('#history-table').textContent,
+      heroCards: document.querySelectorAll('#history-table .hero-cards .playing-card').length,
+      redundantHeading: Boolean(document.querySelector('.records-history-heading')),
+      live: window.noir.getState(),
+    }));
+    assert.equal(archiveBefore.heroCards, 2);
+    assert.equal(archiveBefore.startedAt, new Date(first.startedAt).toISOString());
+    assert.doesNotMatch(archiveBefore.title, /首次|[·\s]$/);
+    assert.equal(archiveBefore.redundantHeading, false);
+    await app.sleep(1000);
+    await app.screenshot('game-records-historical-settlement');
+    const historyGeometry = await app.evaluate(readRecordTableGeometry, '#history-arena');
+    assert.deepEqual(
+      recordGeometryDifferences(historyGeometry, liveGeometry),
+      [],
+      'The historical settlement must keep the live table cards, seats and captions in the same layout',
+    );
+    for (const top of [180, 420, 0]) {
+      await app.evaluate((top) => window.scrollTo(0, top), top);
+      await app.sleep(250);
+      assert.deepEqual(
+        recordGeometryDifferences(
+          await app.evaluate(readRecordTableGeometry, '#history-arena'),
+          historyGeometry,
+        ),
+        [],
+        'Scrolling a native history page must preserve its table height and all seat geometry',
+      );
+    }
+    await app.click('#history-review-button');
+    const review = await waitForNativeReview(app);
+    await app.click('#review-dialog .close-dialog');
+    assert.equal(
+      await app.evaluate(() => document.querySelector('#history-table').textContent),
+      archiveBefore.table,
+    );
+    await app.back();
+    await app.waitFor(
+      () => app.visible('#history-page').then((visible) => !visible),
+      10000,
+      'Native Back must pop the detail to its records parent',
+    );
+    await app.click(`[data-record-hand="${attempts[1].id}"]`);
+    const retryArchive = await app.evaluate(() => ({
+      title: document.querySelector('#records-title').textContent,
+      redundantHeading: Boolean(document.querySelector('.records-history-heading')),
+    }));
+    assert.doesNotMatch(retryArchive.title, /重打/);
+    assert.equal(retryArchive.redundantHeading, false);
+    await app.sleep(1000);
+    await app.screenshot('game-records-retry-history');
+    await app.back();
+    await app.waitFor(
+      () => app.visible('#history-page').then((visible) => !visible),
+      10000,
+      'A retry detail must use the same native parent-page Back',
+    );
+    await app.sleep(1000);
+    await app.screenshot('game-records-list');
+    const list = await app.evaluate(() => ({
+      cards: document.querySelectorAll('.record-session:first-child .record-cards .playing-card')
+        .length,
+      rows: [...document.querySelectorAll('.record-session:first-child .record-attempt')].map(
+        (row) => [row.dataset.hand, row.dataset.attempt],
+      ),
+      heading: document.querySelector('.record-session-heading').textContent,
+      text: document.querySelector('#records-page').textContent,
+      firstCopy: [...document.querySelectorAll('.record-hand[data-attempt="0"]')].map(
+        (row) => row.textContent,
+      ),
+      retry: document.querySelector('.record-retry')?.textContent,
+      deltas: [...document.querySelectorAll('.record-hand-result strong')].map(
+        (element) => element.textContent,
+      ),
+      neutralResults: [...document.querySelectorAll('.record-hand-result')]
+        .filter((result) => result.querySelector('strong').textContent === '+0')
+        .map((result) => result.textContent.trim()),
+    }));
+    assert.ok(list.cards >= 4);
+    assert.deepEqual(list.rows.slice(0, 2), [
+      [String(first.hand), '0'],
+      [String(first.hand), '1'],
+    ]);
+    assert.doesNotMatch(list.heading, /已完成|手数/);
+    assert.doesNotMatch(list.text, /已被重打替代/);
+    list.firstCopy.forEach((text) => assert.doesNotMatch(text, /首次/));
+    assert.equal(list.retry, '重打1');
+    list.deltas.filter((value) => value !== '—').forEach((value) => assert.match(value, /^[+-]\d/));
+    list.neutralResults.forEach((text) => assert.match(text, /^\+0\s*(?:输|赢)$/));
+    await app.click('#records-back-button');
+    await app.waitFor(
+      () => app.visible('#records-page').then((visible) => !visible),
+      10000,
+      'Return Game must pop the entire records visit',
+    );
+    const gameHash = await app.evaluate(() => location.hash);
+    assert.equal(gameHash, '');
+    await app.click('#rules-button');
+    await app.click('#records-menu-item');
+    await app.back();
+    await app.waitFor(
+      () => app.visible('#records-page').then((visible) => !visible),
+      10000,
+      'A fresh records visit must pop directly to game without an old detail underneath',
+    );
+    if ((await app.state()).phase === 'done') await app.click('#next-button');
+    const leaving = await app.state();
+    const countedBefore = await app.evaluate(
+      () =>
+        window.noir
+          .getRecords()[0]
+          .attempts.filter((attempt) => attempt.status === 'completed' && !attempt.superseded)
+          .length,
+    );
+    const wealth = leaving.players.reduce((sum, p) => sum + p.stack, 0) + leaving.pot;
+    await app.relaunch();
+    const resumed = await app.state();
+    assert.equal(resumed.sessionNumber, leaving.sessionNumber);
+    assert.equal(resumed.hand, leaving.hand + 1);
+    assert.equal(resumed.players.reduce((sum, p) => sum + p.stack, 0) + resumed.pot, wealth);
+    const restored = await app.evaluate(() => window.noir.getRecords()[0]);
+    assert.equal(
+      restored.attempts.find((attempt) => attempt.hand === leaving.hand && !attempt.superseded)
+        .status,
+      'unfinished',
+    );
+    assert.equal(
+      restored.attempts.filter((attempt) => attempt.status === 'completed' && !attempt.superseded)
+        .length,
+      countedBefore,
+    );
+    // Exercise the remaining native navigation boundaries after the hand and
+    // chip assertions: privacy navigation starts a fresh document/next hand.
+    const waitGamePage = () =>
+      app.waitFor(
+        async () =>
+          (await app.evaluate(nativePageReady, 'game')) &&
+          (await app.evaluate(
+            () =>
+              document.documentElement.dataset.appReady === 'true' &&
+              document.body.dataset.recordsPage === 'game' &&
+              location.hash === '',
+          )) &&
+          (await app.visible('main.main')),
+        15000,
+        'Native navigation must return to a ready game without an old records route',
+      );
+    const openSavedHand = async () => {
+      await app.click('#rules-button');
+      await app.click('#records-menu-item');
+      await app.click(`[data-record-hand="${first.id}"]`);
+      assert.equal(await app.visible('#history-page'), true);
+    };
+    await openSavedHand();
+    await app.click('#history-review-button');
+    await app.waitFor(
+      () => app.visible('#review-dialog'),
+      10000,
+      'The historical review must still be open when native Back begins',
+    );
+    const reviewBeforeBack = await app.evaluate(() => ({
+      title: document.querySelector('#review-dialog-title').textContent,
+      open: document.querySelector('#review-dialog').open,
+      page: document.body.dataset.recordsPage,
+    }));
+    assert.equal(reviewBeforeBack.open, true);
+    assert.equal(reviewBeforeBack.page, 'hand');
+    assert.ok(reviewBeforeBack.title.includes(`第 ${first.hand} 手`));
+    await app.back();
+    if (app.platform === 'android') {
+      await app.waitFor(
+        () =>
+          app.evaluate(
+            () =>
+              document.body.dataset.recordsPage === 'hand' &&
+              !document.querySelector('#review-dialog').open,
+          ),
+        10000,
+        'Android Back must close the modal before popping its historical page',
+      );
+      await app.back();
+    }
+    const reviewBack = await app.waitFor(
+      async () => {
+        const result = await app.evaluate(() => ({
+          page: document.body.dataset.recordsPage,
+          hash: location.hash,
+          reviewOpen: document.querySelector('#review-dialog').open,
+          depth: history.state?.noirRecordsNavigation?.depth,
+        }));
+        return result.page === 'list' && !result.reviewOpen && result.hash === '#records'
+          ? result
+          : null;
+      },
+      10000,
+      'Real native Back must leave the saved hand for its list and close historical review',
+    );
+    assert.equal(reviewBack.depth, 1);
+    assert.equal(await app.visible('#records-page'), true);
+    assert.equal(await app.visible('#history-page'), false);
+    await app.sleep(1000);
+    await app.screenshot('game-records-review-native-back');
+    await app.click('#records-back-button');
+    await waitGamePage();
+    let returnGameBack;
+    if (app.platform === 'android') {
+      const beforeMinimize = await app.state();
+      await app.back();
+      const nativeState = await app.waitFor(
+        async () => {
+          const value = await app.nativeState();
+          return [2, 3].includes(value) ? value : null;
+        },
+        10000,
+        'Back after Return Game must actually minimize Android instead of reopening records',
+      );
+      await app.activate();
+      await waitGamePage();
+      const afterActivate = await app.state();
+      assert.equal(afterActivate.sessionNumber, beforeMinimize.sessionNumber);
+      assert.equal(afterActivate.hand, beforeMinimize.hand);
+      assert.equal(await app.visible('#records-page'), false);
+      returnGameBack = {
+        nativeState,
+        session: afterActivate.sessionNumber,
+        hand: afterActivate.hand,
+      };
+    } else {
+      // Establish an observable parent through real links. Never fabricate
+      // History API entries to make the edge gesture appear successful.
+      await app.click('#native-about-button');
+      await app.click('#native-about-dialog a[href="./app-privacy.html"]');
+      await app.waitFor(
+        () => app.evaluate(nativePageReady, 'privacy'),
+        15000,
+        'The visible privacy link must establish a ready predecessor page',
+      );
+      const readPrivacyPage = () => ({
+        pathname: location.pathname,
+        title: document.querySelector('article:not([hidden]) h1').textContent.trim(),
+        locale: document.querySelector('#policy-language').value,
+        returnLink: document
+          .querySelector('article:not([hidden]) a[href="./"]')
+          .getAttribute('href'),
+        hasRecords: Boolean(document.querySelector('#records-page')),
+      });
+      const privacyParent = await app.evaluate(readPrivacyPage);
+      await app.click('article:not([hidden]) a[href="./"]');
+      await waitGamePage();
+      await openSavedHand();
+      await app.click('#records-back-button');
+      await waitGamePage();
+      await app.back({ expectedPage: 'privacy' });
+      const privacy = await app.evaluate(readPrivacyPage);
+      assert.ok(privacy.pathname.endsWith('/app-privacy.html'));
+      assert.deepEqual(
+        privacy,
+        privacyParent,
+        'Edge Back must return to the actual localized predecessor',
+      );
+      assert.equal(privacy.returnLink, './');
+      assert.equal(privacy.hasRecords, false);
+      await app.sleep(1000);
+      await app.screenshot('game-records-return-game-edge-privacy');
+      await app.click('article:not([hidden]) a[href="./"]');
+      await waitGamePage();
+      returnGameBack = privacy;
+    }
+    await app.sleep(1000);
+    await app.screenshot('game-records-return-game-native-back');
+    return {
+      first: { hand: first.hand, profit: first.profit },
+      liveGeometry,
+      historyGeometry,
+      attempts: attempts.map(({ hand, attempt, status, superseded }) => ({
+        hand,
+        attempt,
+        status,
+        superseded,
+      })),
+      list,
+      review,
+      resumed: { session: resumed.sessionNumber, hand: resumed.hand, wealth },
+      nativeBack: { reviewBeforeBack, reviewBack, returnGameBack },
+    };
+  });
   const unknown = selectedScenarios?.filter((name) => !seenScenarios.has(name));
   if (unknown?.length)
     throw Error(`Unknown NOIR_NATIVE_SCENARIOS selection: ${unknown.join(', ')}`);

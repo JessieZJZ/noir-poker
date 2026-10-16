@@ -13,18 +13,21 @@ npm run mobile:sync
 
 `mobile:sync` 不需要 Xcode 或 Android SDK，执行原始图标生成、原生模式的 Web 构建、版本同步、两端插件和资源同步，再校验源码指纹与两端资源副本。生成文件放在 `.artifacts/mobile/`，不提交到 Git。
 
-| 操作              | 命令                            | 环境与输出                                                                     |
-| ----------------- | ------------------------------- | ------------------------------------------------------------------------------ |
-| 同步两端工程      | `npm run mobile:sync`           | Node.js 22.12+；重新构建当前 Web 源码                                          |
-| 检查资源是否过期  | `npm run mobile:verify`         | 检查源码指纹及两个资源副本；过期会失败                                         |
-| 打开 iOS 工程     | `npm run mobile:ios:open`       | macOS + Xcode 26；先同步再打开                                                 |
-| 打开 Android 工程 | `npm run mobile:android:open`   | Android Studio；先同步再打开                                                   |
-| iOS 模拟器构建    | `npm run mobile:ios`            | Xcode 26；`.artifacts/mobile/ios/Build/Products/Debug-iphonesimulator/App.app` |
-| Android 调试 APK  | `npm run mobile:android`        | JDK 21、Android SDK 36；`.artifacts/mobile/noir-poker-debug.apk`               |
-| iOS 签名归档      | `npm run mobile:ios:archive`    | Apple Team、开发者证书；`.artifacts/mobile/NOIR-Poker.xcarchive`               |
-| Android 签名 AAB  | `npm run mobile:android:bundle` | 四项签名环境变量；`.artifacts/mobile/noir-poker-release.aab`                   |
+| 操作                 | 命令                            | 环境与输出                                                                     |
+| -------------------- | ------------------------------- | ------------------------------------------------------------------------------ |
+| 同步两端工程         | `npm run mobile:sync`           | Node.js 22.12+；重新构建当前 Web 源码                                          |
+| 检查资源是否过期     | `npm run mobile:verify`         | 检查源码指纹及两个资源副本；过期会失败                                         |
+| 打开 iOS 工程        | `npm run mobile:ios:open`       | macOS + Xcode 26；先同步再打开                                                 |
+| 打开 Android 工程    | `npm run mobile:android:open`   | Android Studio；先同步再打开                                                   |
+| iOS 模拟器构建       | `npm run mobile:ios`            | Xcode 26；`.artifacts/mobile/ios/Build/Products/Debug-iphonesimulator/App.app` |
+| Android 调试 APK     | `npm run mobile:android`        | JDK 21、Android SDK 36；`.artifacts/mobile/noir-poker-debug.apk`               |
+| Android 独立测试 APK | `npm run mobile:android:qa`     | JDK 21、Android SDK 36；`.artifacts/mobile/noir-poker-qa.apk`                  |
+| iOS 签名归档         | `npm run mobile:ios:archive`    | Apple Team、开发者证书；`.artifacts/mobile/NOIR-Poker.xcarchive`               |
+| Android 签名 AAB     | `npm run mobile:android:bundle` | 四项签名环境变量；`.artifacts/mobile/noir-poker-release.aab`                   |
 
 支持 iOS 15+、Android 7.0/API 24+；Android 编译和目标 SDK 为 36。Xcode 的 Swift Package Manager 管理 Capacitor，无需 CocoaPods。系统要求以 [Capacitor 环境说明](https://capacitorjs.com/docs/getting-started/environment-setup) 与 [v8 升级说明](https://capacitorjs.com/docs/updating/8-0) 为准。
+
+独立测试 APK 的桌面名称为“NOIR Poker 测试”，包名为 `io.github.jessiezjz.noirpoker.qa`，可与现有应用并存，练习记录和设置分别保存。它使用调试签名，只供安装验收；正常 Debug 和发行包的名称、包名保持原样。测试流程会重置这个独立应用的数据。真机安装回归必须使用 `--variant qa`，并在安装前检查 APK 中的实际包名；无线连接、指定设备和可选独立 ADB 服务见 [原生 E2E](native-e2e.md#安卓真机与无线连接)。
 
 ## Web 迭代如何进入安装包
 
@@ -47,8 +50,8 @@ npm run mobile:sync
 
 - 人数、难度、风格、提示和声音设置通过 Capacitor Preferences 保存；启动时先读设置，再初始化牌桌。Web 仍使用浏览器存储，两端数据彼此独立。
 - App 的声音选项显示为“音效与振动”，默认开启，关闭后同时禁止声音与 Haptics 回合提示。安装运行回归通过真实桥接请求及 AudioBufferSourceNode 播放请求检查两者关闭／恢复；模拟器请求通过不等于实体手机震感或听感验收。
-- 切到后台时暂停机器人和发牌等待，回到前台后从剩余思考时间继续。重打、换手或重新练习仍会取消旧任务。当前牌局不保存到磁盘，进程被系统杀死后开启新练习。
-- Android 返回键先关闭当前对话框；没有对话框时回到后台。
+- 切到后台时暂停机器人和发牌等待，回到前台后从剩余思考时间继续。重打、换手或重新练习仍会取消旧任务。对局记录与筹码恢复点保存到本机 Preferences；进程被系统杀死后继续原局的新一手，未完成手的所有下注撤回且不计入统计。浏览记录和历史结算页不暂停练习，真正切到系统后台仍暂停计时。
+- Android 返回键依次关闭当前对话框、下拉菜单，再按历史详情→记录列表→游戏回退；在游戏页才回到后台。iOS 的 WKWebView 开启系统边缘回退手势，记录浏览使用同一组父页面关系。“返回游戏”退出整次记录浏览，重新打开不会叠加列表。
 - 处理刘海、状态栏和底部手势区域；增加包内“关于与隐私”入口，显示实际原生版本和构建号。
 - Web 与原生包使用同一组本地字体，人物名称、头像、来源署名和已有说明与 Web 保持一致。全部本地图片随包提供，无需远程字体请求。构建生成图片 SHA-256 清单，同步副本以及实际 `.app`、APK、AAB 均检查图片内容，缺失或过期会阻止交付。
 

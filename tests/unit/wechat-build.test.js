@@ -1,4 +1,5 @@
 import { soundSamples, SOUND_SAMPLE_RATE } from '../../src/ui/sound-cues.js';
+import { verifyLocalWechatModules } from '../../scripts/wechat.mjs';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import vm from 'node:vm';
@@ -19,6 +20,8 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { PROFILE_PORTRAITS } from '../../src/ui/portraits.js';
+import { weakSuitedShove } from '../fixtures/review-spots.js';
+import { analyzeDecision } from '../../src/review/analysis.js';
 
 const root = fileURLToPath(new URL('../..', import.meta.url));
 test('WXML bindings keep quoted literals on one line for the DevTools compiler', () => {
@@ -93,6 +96,11 @@ async function waitForStaging(fixture, processId) {
 test('generated WeChat JavaScript loads the controller and complete player research without Node JSON modules', async (t) => {
   const workspace = fixture(t);
   assertSuccess(await build(workspace).result);
+  assert.equal(
+    readFileSync(path.join(workspace.output, 'shared/ui/hero-turn.wxss'), 'utf8'),
+    readFileSync(path.join(root, 'src/styles/hero-turn.css'), 'utf8'),
+    'WeChat must ship the identical turn-attention style used by Web and native apps',
+  );
   const context = vm.createContext({ console });
   const modules = new Map();
   function load(request, parent = path.join(workspace.output, 'entry.js')) {
@@ -133,6 +141,66 @@ test('generated WeChat JavaScript loads the controller and complete player resea
   assert.equal(controller.getGame().players.length, 5);
   assert.equal(snapshot.seats.length, 4);
   assert.equal(snapshot.heroPosition, 'BTN');
+  context.wx = {};
+  context.getCurrentPages = () => [];
+  const table = load('./pages/table/page-definition.js');
+  assert.equal(
+    typeof table.onLoad,
+    'function',
+    'The actual generated page loads all local dependencies',
+  );
+  assert.equal(typeof load('./shared/ui/public-card-space.js').growPublicCards, 'function');
+  assert.equal(typeof load('./shared/ui/hero-card-space.js').growHeroCards, 'function');
+  assert.equal(typeof load('./shared/ui/numeric-width.js').numericWidthScale, 'function');
+  assert.equal(typeof load('./record-navigation.js').openRecords, 'function');
+});
+
+test('standalone WeChat worker executes the identical full analysis without main-package imports', async (t) => {
+  const workspace = fixture(t);
+  assertSuccess(await build(workspace).result);
+  assert.equal(
+    JSON.parse(readFileSync(path.join(workspace.output, 'app.json'))).workers,
+    'workers',
+  );
+  const messages = [];
+  let receive;
+  const context = vm.createContext({
+    worker: {
+      onMessage(callback) {
+        receive = callback;
+      },
+      postMessage(message) {
+        messages.push(JSON.parse(JSON.stringify(message)));
+      },
+    },
+  });
+  const source = readFileSync(path.join(workspace.output, 'workers/review.js'), 'utf8');
+  assert.doesNotMatch(source, /\brequire\(/);
+  new vm.Script(source).runInContext(context);
+  const decision = weakSuitedShove();
+  receive({ decisions: [decision] });
+  assert.deepEqual(messages, [
+    { type: 'step', index: 0, result: JSON.parse(JSON.stringify(analyzeDecision(decision))) },
+    { type: 'complete' },
+  ]);
+  receive({ decisions: [null] });
+  assert.deepEqual(messages.at(-1), { type: 'error' });
+});
+
+test('WeChat packaging rejects a missing static relative module before publication', async (t) => {
+  const directory = mkdtempSync(path.join(tmpdir(), 'noir-wechat-modules-'));
+  t.after(() => rmSync(directory, { recursive: true, force: true }));
+  writeFileSync(path.join(directory, 'entry.js'), "require('./record-navigation.js');\n");
+  await assert.rejects(
+    verifyLocalWechatModules(directory),
+    /entry\.js -> \.\/record-navigation\.js/,
+  );
+  writeFileSync(path.join(directory, 'record-navigation.js'), 'module.exports = {};\n');
+  await verifyLocalWechatModules(directory);
+  writeFileSync(path.join(directory, 'entry.js'), "require('./shared-space');\n");
+  await assert.rejects(verifyLocalWechatModules(directory), /entry\.js -> \.\/shared-space/);
+  writeFileSync(path.join(directory, 'shared-space.js'), 'module.exports = {};\n');
+  await verifyLocalWechatModules(directory);
 });
 
 test('concurrent WeChat builders serialize and preserve DevTools private preferences', async (t) => {

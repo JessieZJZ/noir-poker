@@ -1,3 +1,4 @@
+@import '../../shared/ui/hero-turn.wxss';
 .screen {
   display: flex;
   flex-direction: column;
@@ -1236,11 +1237,10 @@
   padding: 1px 3px;
 }
 
-/* Compact phases shrink the shell while retaining tableHeight from the live
-   viewport budget. The four sides keep padding around a single button row. */
+/* Compact actions remove unused controls without changing the table itself. */
 .action-dock.compact-actions {
-  flex: 0 0 58px;
-  height: 58px;
+  flex: 0 0 64px;
+  height: 64px;
   padding: 10px 8px;
 }
 .compact-actions .settled-buttons,
@@ -1420,4 +1420,355 @@
   width: 28px;
   height: 28px;
   border-radius: 7px;
+}
+
+.resource-menu {
+  position: absolute;
+  top: 46px;
+  right: 0;
+  width: 140px;
+  padding: 5px;
+  z-index: 72;
+  border: 1px solid #31434e;
+  border-radius: 12px;
+  background: #14212a;
+  box-shadow: 0 12px 34px #0008;
+}
+.resource-menu button {
+  display: block;
+  width: 100%;
+  padding: 10px 12px;
+  text-align: left;
+  color: #d8e7ec;
+  background: transparent;
+  font-size: 14px;
+}
+.resource-dismiss {
+  position: fixed;
+  inset: 0;
+  z-index: 68;
+}
+.nav.resource-menu-active {
+  z-index: 70;
+}
+.nav-actions {
+  position: relative;
+  left: 6px;
+  z-index: 70;
+  gap: 4px;
+}
+.guide-button {
+  width: 88px;
+  max-width: 88px;
+  font-size: 13px;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  animation-duration: 0.4s;
+}
+.resource-label-window {
+  position: relative;
+  height: 20px;
+  width: 64px;
+  line-height: 20px;
+  overflow: hidden;
+}
+.resource-label-current,
+.resource-label-previous,
+.resource-label-static {
+  position: absolute;
+  inset: 0;
+  display: block;
+}
+.resource-label-previous,
+.resource-label-static {
+  display: none;
+}
+.resource-label-window.is-rolling .resource-label-current {
+  animation: resource-label-in 0.4s ease-out both;
+}
+.resource-label-window.is-rolling .resource-label-previous {
+  display: block;
+  animation: resource-label-out 0.4s ease-out both;
+}
+@keyframes resource-label-in {
+  from {
+    transform: translateY(-100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+@keyframes resource-label-out {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(100%);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .guide-button {
+    animation-duration: 0s;
+  }
+  .resource-label-window .resource-label-current,
+  .resource-label-window .resource-label-previous {
+    display: none;
+    animation: none;
+  }
+  .resource-label-window .resource-label-static {
+    display: block;
+  }
+}
+.history-return-game {
+  margin: 0;
+  width: auto;
+  min-width: 0;
+  max-width: none;
+  justify-self: end;
+  padding: 8px 10px;
+  color: #d8e7ec;
+  background: #16232c;
+  border: 1px solid #31434e;
+  border-radius: 10px;
+  font-size: 14px;
+}
+.history-practice-heading {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px 16px;
+  margin: 12px 8px 8px;
+  flex: none;
+}
+.history-practice-label {
+  color: #83a9a1;
+  font-size: 13px;
+}
+.history-start-time {
+  grid-column: 1 / -1;
+  color: #9cafb7;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.session-label {
+  white-space: nowrap;
+}
+.hand-label {
+  gap: 4px;
+  font-size: 13px;
+  flex-wrap: wrap;
+}
+.blind-info {
+  font-size: 13px;
+}
+.hint-mask {
+  font-size: 12px;
+}
+.web-phone-layout .pot-number {
+  font-size: var(--pot-number);
+  line-height: 1.1;
+}
+.web-phone-layout .pot-row {
+  height: var(--pot-height);
+  min-height: var(--pot-height);
+}
+.web-phone-layout .hero-info {
+  height: var(--hero-info-height);
+}
+.web-phone-layout .hero-identity {
+  height: var(--hero-identity-height);
+  font-size: var(--hero-identity);
+  line-height: 1.2;
+}
+.web-phone-layout .hero-identity .position {
+  font-size: var(--hero-position);
+}
+.web-phone-layout .position {
+  padding: 1px 5px;
+  line-height: 1.1;
+}
+.web-phone-layout .seat .position {
+  padding-inline: 3px;
+}
+.web-phone-layout .hero-action {
+  height: var(--hero-action-height);
+  line-height: 1.2;
+}
+.web-phone-layout .seat .seat-caption {
+  position: relative;
+  width: var(--caption-width);
+  left: 50%;
+  transform: translateX(-50%);
+}
+.web-phone-layout .seat .seat-name,
+.web-phone-layout .seat .seat-body > .stack {
+  line-height: 1;
+}
+.web-phone-layout .seat .seat-name {
+  position: relative;
+}
+.web-phone-layout .seat .seat-name-measure {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: max-content;
+  white-space: nowrap;
+  visibility: hidden;
+  pointer-events: none;
+}
+.web-phone-layout .seat .seat-name-label.is-name-fitted {
+  overflow: visible;
+  text-overflow: clip;
+  transform: scaleX(var(--name-width-scale, 1));
+  transform-origin: left center;
+}
+.web-phone-layout .seat .seat-body {
+  grid-template-rows: var(--player-name) auto var(--player-stack);
+  padding: var(--profile-padding);
+  padding-top: calc(var(--profile-padding) + 1px);
+}
+.web-phone-layout .seat .persona {
+  height: calc(var(--player-persona) * 1.15 + 4px);
+  min-height: calc(var(--player-persona) * 1.15 + 4px);
+  max-height: calc(var(--player-persona) * 1.15 + 4px);
+}
+.web-phone-layout .seat .card-back {
+  flex: none;
+  width: var(--player-back-width);
+  height: var(--player-back-height);
+  transform: translateY(var(--player-back-shift)) rotate(-7deg);
+}
+.web-phone-layout .seat .card-back + .card-back {
+  transform: translateY(var(--player-back-shift)) rotate(7deg);
+}
+.action-notice {
+  font-size: 13px;
+  line-height: 18px;
+}
+.presets button {
+  font-size: 12px;
+}
+.action-buttons button,
+.compact-actions .settled-buttons button,
+.compact-actions .continue-buttons button {
+  font-size: 14px;
+}
+.history-shell .settled-buttons {
+  grid-template-columns: minmax(0, 1fr);
+}
+.history-shell .action-dock {
+  flex: 0 0 64px;
+  height: 64px;
+  padding: 10px 8px;
+}
+.web-phone-layout .hero-cards {
+  height: var(--hero-card-slot-height);
+  min-height: var(--hero-card-slot-height);
+  align-items: flex-start;
+  gap: var(--hero-card-gap);
+}
+.web-phone-layout .hero-card {
+  position: relative;
+  top: calc(-1 * var(--hero-card-shift));
+  transform: rotate(var(--hero-card-left-angle));
+}
+.web-phone-layout .hero-card + .hero-card {
+  transform: rotate(var(--hero-card-right-angle));
+}
+.web-phone-layout .seat .seat-body > .stack {
+  font-family: 'Barlow Condensed', Manrope, sans-serif;
+  font-weight: 600;
+  transform: scaleX(var(--stack-width-scale, 1));
+  transform-origin: left center;
+}
+.web-phone-layout .hero:not(.has-hero-rank) .hero-info {
+  translate: 0 calc(-1 * var(--hero-rank-empty-lift));
+}
+
+/* Enlarge only visible opponent faces, preserving the dealt seat footprint. */
+.web-phone-layout .seat .seat-hole.revealed-hole {
+  z-index: 0;
+}
+.web-phone-layout .seat .seat-hole.revealed-hole .mini-card {
+  width: var(--player-face-width);
+  height: var(--player-face-height);
+  --hole-inset: var(--player-face-shift);
+  flex: none;
+}
+.web-phone-layout .seat .seat-body {
+  position: relative;
+  z-index: 1;
+}
+.web-phone-layout.table-area {
+  overflow: visible;
+}
+
+/* Join settlement actions to the result panel, as on Web. */
+.game-shell.has-showdown {
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+  border-bottom-color: #101b22;
+  background: #101b22;
+}
+.game-shell.has-showdown .action-dock {
+  background: #101b22;
+}
+
+.persona-name-measure {
+  position: absolute;
+  width: max-content;
+  visibility: hidden;
+  pointer-events: none;
+  white-space: nowrap;
+  font-size: var(--player-persona);
+  font-weight: 400;
+}
+.name-tooltip-dismiss {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+}
+.seat-name-tooltip {
+  position: fixed;
+  z-index: 91;
+  width: max-content;
+  max-width: 240px;
+  padding: 9px 12px;
+  border: 1px solid #4b8675;
+  border-radius: 9px;
+  background: #18332e;
+  box-shadow: 0 6px 24px #0008;
+  color: #e1fff2;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+  opacity: 0;
+}
+.seat-name-tooltip.is-visible {
+  opacity: 1;
+}
+.name-tooltip-arrow {
+  position: absolute;
+  left: var(--tooltip-arrow);
+  bottom: -5px;
+  width: 7px;
+  height: 7px;
+  border-right: 1px solid #4b8675;
+  border-bottom: 1px solid #4b8675;
+  background: #18332e;
+  transform: translateX(-50%) rotate(45deg);
+}
+.seat-name-tooltip.below .name-tooltip-arrow {
+  bottom: auto;
+  top: -5px;
+  transform: translateX(-50%) rotate(225deg);
+}
+
+/* Avoid adding the normal 8px shell margin to the detail heading's own gap. */
+.history-shell {
+  margin-top: 0;
 }

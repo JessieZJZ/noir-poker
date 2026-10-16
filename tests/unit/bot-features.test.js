@@ -122,8 +122,9 @@ test('high equity estimates cannot label air or shared board pairs as ordinary v
 });
 
 test('real top-pair value donk trace explains making weaker hands pay rather than unbacked bluffing', () => {
-  const game = topPairDonkResponse(),
-    decision = botDecision(game, allInRandom(1), { trials: 120 }),
+  const game = topPairDonkResponse();
+  game.difficulty = 'hard';
+  const decision = botDecision(game, allInRandom(2), { trials: 120 }),
     review = explainOpponent(
       { ...decision, id: game.actor, name: game.players[game.actor].name },
       game.players,

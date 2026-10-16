@@ -51,8 +51,8 @@ export function storeIndexSource(source) {
       `<div class="persona-notice"><h4>${STORE_PROFILE_TITLE}</h4><p>${STORE_PROFILE_NOTICE}</p></div>`,
     )
     .replace(
-      /<details data-persona-reference>[\s\S]*?<\/details>/,
-      `<details><summary>${STORE_PROFILE_TITLE}</summary><p>${STORE_PROFILE_NOTICE}</p></details>`,
+      /<details data-persona-reference(?:\s+open)?>[\s\S]*?<\/details>/,
+      `<details open><summary>${STORE_PROFILE_TITLE}</summary><p>${STORE_PROFILE_NOTICE}</p></details>`,
     )
     .replace(/<p data-persona-reference>[\s\S]*?<\/p>/, `<p>${STORE_PROFILE_NOTICE}</p>`);
 }

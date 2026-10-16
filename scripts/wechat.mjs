@@ -31,6 +31,19 @@ export async function fileList(directory, prefix = '') {
   return files;
 }
 
+export async function verifyLocalWechatModules(directory) {
+  const files = await fileList(directory);
+  const available = new Set(files);
+  for (const file of files.filter((name) => name.endsWith('.js'))) {
+    const source = await readFile(path.join(directory, file), 'utf8');
+    for (const match of source.matchAll(/\brequire\(\s*(['"])(\.{1,2}\/[^'"]+)\1\s*\)/g)) {
+      const target = path.posix.normalize(path.posix.join(path.posix.dirname(file), match[2]));
+      if (!available.has(target) && !available.has(`${target}.js`))
+        throw Error(`Missing local WeChat module: ${file} -> ${match[2]}`);
+    }
+  }
+}
+
 export function wechatSourceDigest() {
   return checksum(
     sourceDigest() +
@@ -102,7 +115,7 @@ async function portraitAssets(output) {
   await cp(path.join(root, 'public/portraits/CREDITS.md'), path.join(directory, 'CREDITS.md'));
 }
 
-function soundWave(kind) {
+export function soundWave(kind) {
   const sampleRate = SOUND_SAMPLE_RATE,
     samples = soundSamples(kind),
     length = samples.length;
@@ -172,11 +185,20 @@ export async function buildWechat(output = wechatOutput) {
     for (const file of await fileList(path.join(staging, 'shared/platform')))
       if (!file.startsWith('wechat-')) await rm(path.join(staging, 'shared/platform', file));
     await mkdir(path.join(staging, 'shared/ui'), { recursive: true });
+    await cp(
+      path.join(root, 'src/styles/hero-turn.css'),
+      path.join(staging, 'shared/ui/hero-turn.wxss'),
+    );
     for (const name of [
       'bet-sizing.js',
       'seat-geometry.js',
       'rail-layout.js',
       'compact-table-layout.js',
+      'public-card-space.js',
+      'hero-card-space.js',
+      'activity-parts.js',
+      'numeric-width.js',
+      'name-tooltip-position.js',
       'cards.js',
       'hero-turn.js',
       'card-rank-glyphs.js',
@@ -213,6 +235,14 @@ export async function buildWechat(output = wechatOutput) {
       });
       await writeFile(path.join(staging, file), result.code);
     }
+    await build({
+      entryPoints: [path.join(template, 'workers/review.js')],
+      bundle: true,
+      minify: true,
+      format: 'iife',
+      target: 'es2019',
+      outfile: path.join(staging, 'workers/review.js'),
+    });
     await portraitAssets(staging);
     await sharp(path.join(root, 'public/app-icon.png'))
       .resize(128, 128)
@@ -237,6 +267,7 @@ export async function buildWechat(output = wechatOutput) {
     };
     await writeFile(path.join(staging, 'project.config.json'), JSON.stringify(project, null, 2));
     await writeFile(path.join(staging, 'package.json'), '{"type":"commonjs","private":true}\n');
+    await verifyLocalWechatModules(staging);
     const files = [];
     // Local IDE preferences are preserved below, outside the runtime manifest.
     await rm(path.join(staging, 'project.private.config.json'), { force: true });

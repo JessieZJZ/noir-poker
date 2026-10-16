@@ -59,7 +59,7 @@ test('Q8 turn call describes open-ended draw, delayed bet, new connectivity and 
   assert.equal(r.draw.outs, 8);
   assert.match(r.coaching.explanation, /两头顺听牌/);
   assert.match(r.coaching.explanation, /125/);
-  assert.match(r.coaching.explanation, /River此前在翻牌过牌/);
+  assert.match(r.coaching.explanation, /River在 BB 位此前在翻牌过牌/);
   assert.equal(r.context.texture.connected, 3);
   assert.match(r.coaching.explanation, /6\s*\/\s*J/);
   assert.match(r.coaching.explanation, /河牌/);

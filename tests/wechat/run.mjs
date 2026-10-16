@@ -34,7 +34,9 @@ try {
     getApp().__noirTurnVibrations.push(options.type);
     return { errMsg: 'vibrateShort:ok' };
   });
+  await mini.reLaunch('/pages/table/table');
   let page = await mini.currentPage();
+  assert.equal(page.path, 'pages/table/table');
   const invoke = (name, argument) =>
     mini.evaluate(
       (name, argument) => {
@@ -95,6 +97,167 @@ try {
     report.fastFinishes ??= [];
     report.fastFinishes.push({ screen, elapsedMs: Date.now() - started, repeatedClicks: 0 });
   };
+  const liveTableGeometry = new Map();
+  const geometryKey = (data) => `${data.sessionNumber}:${data.hand}:${data.replay || 0}`;
+  const readTableGeometry = async () => {
+    const data = await page.data();
+    const table = await page.$('.table-area');
+    const shell = await page.$('.game-shell');
+    const dock = await page.$('.action-dock');
+    assert.ok(table && shell && dock, 'The actual table, shell and action dock must exist');
+    assert.ok(await table.$('.table-arena'), 'The table owns its rendered arena');
+    const [origin, tableSize, shellOffset, shellSize, dockOffset, dockSize] = await Promise.all([
+      table.offset(),
+      table.size(),
+      shell.offset(),
+      shell.size(),
+      dock.offset(),
+      dock.size(),
+    ]);
+    const expectedPlayers = data.settings.playerCount - 1;
+    assert.equal(data.seats.length, expectedPlayers);
+    assert.equal(data.phoneSeats.length, expectedPlayers);
+    const elements = {};
+    for (const [selector, count] of [
+      ['.table-arena', 1],
+      ['.felt', 1],
+      ['.community', 1],
+      ['.board-row', 1],
+      ['.board-row > view', 5],
+      ['.hero', 1],
+      ['.hero-cards', 1],
+      ['.hero-card', 2],
+      ['.seat', expectedPlayers],
+      ['.seat-hole', expectedPlayers],
+      ['.seat-body', expectedPlayers],
+      ['.seat-caption', expectedPlayers],
+    ]) {
+      // The official WXML selector bridge does not match the native `view`
+      // type here; both concrete classes still identify all five real slots.
+      const matches =
+        selector === '.board-row > view'
+          ? [
+              ...(await table.$$('.board-row .card-placeholder')),
+              ...(await table.$$('.board-row .community-card')),
+            ]
+          : await table.$$(selector);
+      assert.equal(matches.length, count, `${selector} keeps every actual slot and player`);
+      elements[selector] = await Promise.all(
+        matches.map(async (element) => {
+          const [offset, size] = await Promise.all([element.offset(), element.size()]);
+          const bounds = {
+            left: Number(offset.left) - origin.left,
+            top: Number(offset.top) - origin.top,
+            width: Number(size.width),
+            height: Number(size.height),
+          };
+          assert.ok(Object.values(bounds).every(Number.isFinite), `${selector} has finite bounds`);
+          assert.ok(bounds.width > 0 && bounds.height > 0, `${selector} has a nonempty footprint`);
+          return bounds;
+        }),
+      );
+      if (selector === '.board-row > view')
+        elements[selector].sort((a, b) =>
+          Math.abs(a.top - b.top) > Math.min(a.height, b.height) / 2
+            ? a.top - b.top
+            : a.left - b.left,
+        );
+    }
+    const bodyIds = await Promise.all(
+      (await table.$$('.seat-body')).map((body) => body.attribute('id')),
+    );
+    assert.deepEqual(
+      bodyIds,
+      data.phoneSeats.map((seat) => `seat-body-${seat.id}`),
+    );
+    const shellBottom = Number(shellOffset.top) + Number(shellSize.height);
+    return {
+      key: geometryKey(data),
+      playerIds: data.phoneSeats.map((seat) => seat.id),
+      viewport: {
+        width: data.windowWidth,
+        height: data.windowHeight,
+        topInset: data.topInset,
+        bottomInset: data.bottomInset,
+      },
+      tableHeight: data.tableHeight,
+      shell: { ...shellOffset, ...shellSize },
+      table: {
+        left: Number(origin.left) - shellOffset.left,
+        top: Number(origin.top) - shellOffset.top,
+        width: Number(tableSize.width),
+        height: Number(tableSize.height),
+      },
+      dockHeight: Number(dockSize.height),
+      shellBottom,
+      reservedSpace: shellBottom - 1 - Number(dockOffset.top) - Number(dockSize.height),
+      elements,
+    };
+  };
+  const assertTableBudget = (geometry, compact) => {
+    const { viewport, tableHeight } = geometry;
+    assert.equal(
+      tableHeight,
+      Math.max(0, viewport.height - viewport.topInset - viewport.bottomInset - 284),
+      'The table keeps the fixed viewport budget',
+    );
+    assert.equal(geometry.table.height, tableHeight);
+    assert.equal(Number(geometry.shell.height), tableHeight + 50 + (compact ? 64 : 134));
+    assert.equal(geometry.dockHeight, compact ? 64 : 134);
+    assert.ok(
+      Math.abs(geometry.shell.top - (viewport.topInset + 36 + 48 + 8)) <= 1,
+      'The shell keeps its original top position',
+    );
+    assert.ok(
+      Math.abs(
+        geometry.shellBottom - (viewport.height - viewport.bottomInset - 8 - (compact ? 70 : 0)),
+      ) <= 1,
+      'Settlement releases only the unused 70px of action controls',
+    );
+    assert.ok(
+      Math.abs(geometry.reservedSpace) <= 1,
+      'Neither live nor compact actions leave unused space inside the shell',
+    );
+  };
+  const rememberLiveGeometry = async (name) => {
+    await page.waitFor(1450);
+    const data = await page.data();
+    assert.ok(!data.done && data.canAct, 'The geometry baseline must precede a real hero fold');
+    const geometry = await readTableGeometry();
+    report.tableGeometry ??= { live: {}, comparisons: [] };
+    report.tableGeometry.live[geometry.key] = { name, ...geometry };
+    assertTableBudget(geometry, false);
+    liveTableGeometry.set(geometry.key, geometry);
+  };
+  const assertSettledGeometry = async (name) => {
+    const current = await readTableGeometry();
+    const baseline = liveTableGeometry.get(current.key);
+    report.tableGeometry ??= { live: {}, comparisons: [] };
+    report.tableGeometry.comparisons.push({ name, key: current.key, baseline, current });
+    assert.ok(baseline, `${name} must use the same session, hand and retry's live baseline`);
+    assertTableBudget(current, true);
+    assert.deepEqual(current.viewport, baseline.viewport);
+    assert.deepEqual(current.playerIds, baseline.playerIds);
+    const compareBounds = (actual, expected, label) => {
+      for (const field of ['left', 'top', 'width', 'height'])
+        assert.ok(
+          Math.abs(Number(actual[field]) - Number(expected[field])) <= 1,
+          `${name}: ${label} ${field} matches the same live hand`,
+        );
+    };
+    compareBounds(
+      current.shell,
+      { ...baseline.shell, height: baseline.shell.height - 70 },
+      'shell',
+    );
+    compareBounds(current.table, baseline.table, 'table');
+    for (const [selector, bounds] of Object.entries(baseline.elements)) {
+      assert.equal(current.elements[selector].length, bounds.length);
+      bounds.forEach((expected, index) =>
+        compareBounds(current.elements[selector][index], expected, `${selector}[${index}]`),
+      );
+    }
+  };
   const capture = async (name, selectors) => {
     // Wait for finite sheet/card entrance animations before comparing geometry.
     // Nine-seat backs and five-card runouts finish after stagger + 650ms.
@@ -102,12 +265,7 @@ try {
     await page.waitFor(1450);
     if (name === 'settlement' || name === 'practice-runout' || /^settlement-[5-9]$/.test(name)) {
       const data = await page.data();
-      const shell = await page.$('.game-shell');
-      const shellBottom = (await shell.offset()).top + (await shell.size()).height;
-      assert.ok(
-        Math.abs(shellBottom - (data.windowHeight - data.bottomInset - 8 - 76)) <= 1,
-        'Table preserves its live height while only the dock collapses',
-      );
+      await assertSettledGeometry(name);
       const buttons = await page.$$('.settled-buttons button');
       assert.equal(buttons.length, 2 + Number(data.canRetry) + Number(data.canPracticeRunout));
       assert.ok(await page.$('.retry-button'), 'Replay remains visible alongside practice runout');
@@ -220,7 +378,10 @@ try {
       selectors = [...selectors, '.review-step'];
     const components = {};
     for (const selector of selectors) {
-      const element = await page.$(selector);
+      let element;
+      const paintDeadline = Date.now() + 15000;
+      while (!(element = await page.$(selector)) && Date.now() < paintDeadline)
+        await page.waitFor(100);
       assert.ok(element, `${name}: ${selector} must exist in the real view`);
       const size = await element.size(),
         offset = await element.offset();
@@ -327,6 +488,7 @@ try {
     'DevTools must load the current Page source, not cached compiled code',
   );
   for (const close of [
+    'closeResourceMenu',
     'closeProfile',
     'closeSettings',
     'closeGuide',
@@ -342,6 +504,58 @@ try {
   await invoke('resetPractice');
   await invoke('confirmReset');
   await wait((data) => data.canAct);
+  // Observe an actual decision and its delayed attention state in DevTools.
+  // Changing a harmless setting rerenders without restarting this decision.
+  report.turnAttention = { phase: (await page.data()).turnPhase };
+  assert.equal(report.turnAttention.phase, 'enter');
+  report.turnAttention.handCards = (await page.$$('.hero-cards .hero-card')).length;
+  assert.equal(report.turnAttention.handCards, 2);
+  assert.equal(await page.$('.turn-frame'), null, 'No frame encloses the entire hand');
+  // Hand outlines now belong to each card's ::before. Element.style() exposes
+  // only the host; pseudo-element motion is sampled by Web/native scenarios.
+  const prompt = await page.$('.turn-prompt');
+  assert.equal(await prompt.text(), '轮到你行动，');
+  const detail = await page.$('.decision-detail');
+  assert.equal(await prompt.style('color'), await detail.style('color'));
+  assert.equal(await prompt.style('font-weight'), await detail.style('font-weight'));
+  assert.equal(await prompt.style('animation-name'), 'none');
+  assert.equal(await prompt.style('opacity'), '1');
+  const rail = await page.$('.turn-line');
+  assert.equal(await rail.style('height'), '2px');
+  assert.equal(await rail.style('animation-name'), 'none');
+  assert.equal(await rail.style('box-shadow'), 'none');
+  // The host stays still; shared CSS animates two pseudo-element light fronts.
+  // Web/native frame sampling covers their direction; DevTools retains a capture.
+  await page.waitFor(850);
+  report.turnAttention.railHeight = await rail.style('height');
+  await mini.screenshot({ path: path.join(output, 'hero-turn-entry.png') });
+  await wait((data) => data.turnPhase === 'waiting');
+  assert.equal(await (await page.$('.turn-line')).style('animation-name'), 'none');
+  const turnGeometry = async () => ({
+    cards: await (await page.$('.hero-cards')).size(),
+    actions: await (await page.$('.action-buttons')).size(),
+  });
+  const beforeAttention = await turnGeometry();
+  await wait((data) => data.turnPhase === 'reminder', 10000);
+  await wait((data) => data.turnPhase === 'waiting');
+  assert.deepEqual(await turnGeometry(), beforeAttention);
+  await invoke('previewRaise', { detail: { value: (await page.data()).minRaise } });
+  await invoke('onHide');
+  assert.equal((await page.data()).turnPhase, '');
+  await page.waitFor(9000);
+  assert.equal((await page.data()).turnPhase, '');
+  await invoke('onShow');
+  assert.equal((await page.data()).turnPhase, 'waiting');
+  await page.waitFor(9000);
+  assert.equal((await page.data()).turnPhase, 'waiting');
+  report.turnAttention = {
+    ...report.turnAttention,
+    status: 'passed',
+    before: beforeAttention,
+    after: await turnGeometry(),
+    backgroundCancelled: true,
+    sizingCancelled: true,
+  };
   await capture('table', ['.nav', '.game-shell', '.board-row', '.hero-cards', '.action-buttons']);
   assert.equal((await (await page.$('.nav')).size()).height, 48);
   for (const button of await page.$$('.action-buttons button'))
@@ -528,10 +742,10 @@ try {
   await scrollToSetting('.profile-card[data-id="haxton"]', 80);
   await (await page.$('.profile-card[data-id="haxton"]')).tap();
   await wait((data) => !!data.detailProfile);
-  const detail = await page.$('.profile-detail');
+  const profileDetail = await page.$('.profile-detail');
   report.motion = {
-    profileReveal: await detail.style('animation-name'),
-    profileDuration: await detail.style('animation-duration'),
+    profileReveal: await profileDetail.style('animation-name'),
+    profileDuration: await profileDetail.style('animation-duration'),
   };
   assert.equal(report.motion.profileReveal, 'profile-reveal');
   assert.equal(report.motion.profileDuration, '0.42s');
@@ -586,7 +800,10 @@ try {
 
   await invoke('closeProfile');
   await invoke('closeSettings');
-  await (await page.$('.guide-button')).tap();
+  await (await page.$('#resource-menu-button')).tap();
+  await wait(async (data) => data.resourceMenuOpen && !!(await page.$('#resource-guide')), 5000);
+  await (await page.$('#resource-guide')).tap();
+  await wait((data) => data.guideOpen && !data.resourceMenuOpen, 5000);
   for (const [index, expanded] of (await page.data()).guideExpanded.entries())
     if (expanded) await invoke('toggleGuide', { currentTarget: { dataset: { index } } });
   await capture('guide', ['.guide-sheet', '.guide-h2', '.rules-flow', '.guide-p']);
@@ -686,6 +903,7 @@ try {
     type: 'light',
     scope: 'Actual controller dispatch with wx.vibrateShort mocked; physical feel needs a phone',
   };
+  await rememberLiveGeometry('settlement');
   await (await page.$('[data-action="fold"]')).tap();
   await settle('settlement');
   await capture('settlement', ['.settled-buttons', '.hero', '.board-row']);
@@ -835,6 +1053,7 @@ try {
       '.hero',
       '.felt',
     ]);
+    await rememberLiveGeometry(`settlement-${count}`);
     await (await page.$('[data-action="fold"]')).tap();
     await settle(`settlement-${count}`);
     await capture(`settlement-${count}`, ['.settled-buttons', '.hero', '.board-row']);
@@ -887,8 +1106,11 @@ try {
       finiteFrames: [`motion-${method}-early.png`, `motion-${method}-complete.png`],
     });
     await wait((data) => data.canAct);
+    await rememberLiveGeometry(`motion-${method}`);
     await (await page.$('[data-action="fold"]')).tap();
     await settle(`motion-${method}`);
+    await page.waitFor(1450);
+    await assertSettledGeometry(`motion-${method}`);
   }
   // Count actual Page audio.play requests, while retaining the real contexts.
   await mini.evaluate(() => {

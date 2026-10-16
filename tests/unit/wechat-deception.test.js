@@ -44,7 +44,9 @@ test('WeChat review transports the executed deceptive logic from the shared engi
       /2–7.*(?:开池|偷盲)/,
       /(?=.*2–7)(?=.*本轮已经过牌)(?=.*诈唬)/,
     ];
-    result.opponents.forEach((r, index) => {
+    result.opponents.forEach((meta, index) => {
+      assert.equal(meta.analyzed, false);
+      const r = { ...meta, ...c.reviewOpponent(index) };
       assert.match(r.reason, expected[index]);
       assert.equal(r.metrics, undefined);
       assert.doesNotMatch(r.reason, /它|EV|模型|模拟器|抽样|奖励/);
@@ -91,7 +93,7 @@ test('WeChat transports real all-in and near-all-in motives without numeric or d
         callback();
       }
       assert.equal(report.opponents.length, 1);
-      const step = report.opponents[0];
+      const step = { ...report.opponents[0], ...controller.reviewOpponent(0) };
       assert.match(step.reason, new RegExp(cost));
       assert.ok(step.reason.includes(game.botDecisions[0].name));
       assert.equal(step.metrics, undefined);

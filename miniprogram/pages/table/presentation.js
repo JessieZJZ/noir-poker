@@ -131,7 +131,7 @@ function presentationPatch(previous, next) {
     if (
       Array.isArray(before) &&
       Array.isArray(after) &&
-      before.length === after.length &&
+      before.length <= after.length &&
       before.every(
         (item, i) =>
           (item?.dealKey ?? item?.id ?? item?.key) ===

@@ -33,11 +33,12 @@ test('new mix is standard and advanced only, and capabilities follow base styles
       normal = deceptionPolicy(p, 'normal'),
       hard = deceptionPolicy(p, 'hard');
     assert.ok(Object.values(easy).every((v) => v === 0));
-    for (const key of Object.keys(normal)) assert.equal(hard[key], normal[key] * 1.8);
+    assert.equal(hard.trap, normal.trap * 1.8);
+    for (const key of ['dirty', 'donk', 'sevenTwo']) assert.equal(normal[key], 0);
   }
   for (const id of ['balanced', 'tan', 'viktor', 'dwan']) {
-    assert.ok(deceptionPolicy(getBotProfile(id), 'normal').sevenTwo > 0);
-    assert.ok(deceptionPolicy(getBotProfile(id), 'normal').dirty > 0);
+    assert.ok(deceptionPolicy(getBotProfile(id), 'hard').sevenTwo > 0);
+    assert.ok(deceptionPolicy(getBotProfile(id), 'hard').dirty > 0);
   }
   for (const id of ['st', 'hellmuth', 'negreanu', 'koon']) {
     assert.equal(deceptionPolicy(getBotProfile(id), 'hard').dirty, 0);
@@ -108,7 +109,9 @@ test('conditional executed mix rises with difficulty at fixed inputs and determi
     }
     assert.equal(totals.easy, 0);
     assert.ok(
-      totals.normal > 50 && totals.hard > totals.normal * 1.5,
+      name.includes('trap')
+        ? totals.normal > 50 && totals.hard > totals.normal * 1.5
+        : totals.normal === 0 && totals.hard > 50,
       `${name}: ${JSON.stringify(totals)}`,
     );
     measured[name] = totals;
@@ -179,10 +182,10 @@ test('slow-play requires genuine own strength, a safe price, deep stacks and a d
   );
 });
 
-test('easy river slow-play also requires an opponent who can still respond to the check', () => {
+test('standard river slow-play also requires an opponent who can still respond to the check', () => {
   const input = (overrides = {}) =>
     deceptiveView('9s 9h', '9d Kc 2h 6c Ad', {
-      difficulty: 'easy',
+      difficulty: 'normal',
       equity: 0.9,
       inPosition: false,
       rivals: 1,
@@ -192,7 +195,7 @@ test('easy river slow-play also requires an opponent who can still respond to th
     chooseBotAction(view, getBotProfile('balanced'), freshBotMood(), 'off', () => 0);
   const inducing = input();
   assert.equal(inducing.features.strongMade, true);
-  assert.equal(decide(inducing).trace.reason, 'trap');
+  assert.ok(['trap', 'strong-trap'].includes(decide(inducing).trace.reason));
   for (const closed of [
     input({ inPosition: true, history: [{ id: 0, street: 3, action: 'check', amount: 0 }] }),
     input({ history: [{ id: 0, street: 3, action: 'check', amount: 0 }] }),

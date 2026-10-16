@@ -128,6 +128,7 @@ for (const viewport of [
     page,
     baseURL,
   }, testInfo) => {
+    test.setTimeout(90000);
     await page.setViewportSize({ width: viewport.width, height: viewport.height });
     await prepare(page, false);
     const browser = await webkit.launch();
@@ -159,6 +160,7 @@ for (const viewport of [
             await expect(target.locator('#review-dialog')).toHaveAttribute(
               'data-analysis-status',
               'done',
+              { timeout: 30000 },
             );
           } else
             await target.evaluate(

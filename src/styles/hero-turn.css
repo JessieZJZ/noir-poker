@@ -1,0 +1,150 @@
+/* Shared verbatim with WeChat. Only decorative layers move; cards and buttons stay put. */
+.turn-line {
+  position: absolute;
+  pointer-events: none;
+  opacity: 0;
+}
+.hero-cards-wrap .hero-cards > .playing-card::before,
+.hero-cards-wrap .hero-cards > .hero-card::before {
+  content: '';
+  position: absolute;
+  top: -1px;
+  right: -1px;
+  bottom: -1px;
+  left: -1px;
+  border: 1px solid transparent;
+  border-radius: inherit;
+  background: none;
+  pointer-events: none;
+  opacity: 0;
+  z-index: 1;
+}
+.hero-cards-wrap.turn-attention .hero-cards > .playing-card,
+.hero-cards-wrap.turn-attention .hero-cards > .hero-card {
+  overflow: visible;
+}
+.turn-line {
+  top: -1px;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  overflow: hidden;
+  background: none;
+  box-shadow: none;
+}
+.turn-line::before,
+.turn-line::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 0;
+  width: 50%;
+  height: 100%;
+  pointer-events: none;
+  opacity: 0;
+}
+.turn-line::before {
+  background: linear-gradient(90deg, #ecfff6 0%, #83ffe6 8%, #6ee7c533 35%, #6ee7c500 65%);
+}
+.turn-line::after {
+  background: linear-gradient(270deg, #ecfff6 0%, #83ffe6 8%, #6ee7c533 35%, #6ee7c500 65%);
+}
+.turn-attention .hero-cards > .playing-card::before,
+.turn-attention .hero-cards > .hero-card::before {
+  opacity: 1;
+  border-color: #6ee7c5;
+  box-shadow:
+    0 0 0 3px #6ee7c516,
+    0 0 22px #6ee7c523;
+  /* Reuse the opponent-thinking animation in both platform stylesheets. */
+  animation: turn-glow 2s ease-in-out infinite;
+}
+.turn-attention .turn-line {
+  opacity: 1;
+  animation: none;
+}
+.turn-attention .turn-line::before {
+  animation: hero-turn-pulse-left 1600ms linear infinite;
+}
+.turn-attention .turn-line::after {
+  animation: hero-turn-pulse-right 1600ms linear infinite;
+}
+@keyframes hero-turn-pulse-left {
+  0% {
+    opacity: 0;
+    transform: translateX(0);
+  }
+  6% {
+    opacity: 1;
+    transform: translateX(-4%);
+  }
+  72% {
+    opacity: 1;
+    transform: translateX(-85%);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(-100%);
+  }
+}
+@keyframes hero-turn-pulse-right {
+  0% {
+    opacity: 0;
+    transform: translateX(-100%);
+  }
+  6% {
+    opacity: 1;
+    transform: translateX(-96%);
+  }
+  72% {
+    opacity: 1;
+    transform: translateX(-15%);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(0);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero-cards-wrap .hero-cards > .playing-card::before,
+  .hero-cards-wrap .hero-cards > .hero-card::before,
+  .turn-line,
+  .turn-line::before,
+  .turn-line::after,
+  .turn-prompt {
+    animation: none !important;
+  }
+  .turn-attention .turn-line {
+    opacity: 0.72;
+    background: linear-gradient(90deg, #6ee7c500, #6ee7c5 25%, #6ee7c5 75%, #6ee7c500);
+  }
+}
+
+/* Web/native placement. WeChat supplies the same anchors in its page stylesheet. */
+.hero-cards-wrap {
+  display: flex;
+  position: relative;
+  z-index: 0;
+}
+.hero-cards-wrap > .hero-cards {
+  position: relative;
+  z-index: 1;
+}
+.action-dock {
+  position: relative;
+}
+.turn-prompt,
+.decision-detail {
+  font-weight: inherit;
+  color: inherit;
+  animation: none !important;
+  transition: none !important;
+  opacity: 1 !important;
+  text-shadow: none !important;
+}
+.decision-copy {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}

@@ -190,7 +190,6 @@
   min-height: 30px;
   font-size: 11px;
   line-height: 13.2px;
-  padding-top: 2px;
   white-space: normal;
   overflow-wrap: anywhere;
   color: #91abae;
@@ -1173,6 +1172,7 @@
   font-size: var(--player-action);
   height: var(--action-height);
   min-height: var(--action-height);
+  padding-top: var(--caption-padding);
   line-height: 1.2;
 }
 .web-phone-layout .seat .seat-caption {
@@ -1214,15 +1214,36 @@
 .web-phone-layout .seat .seat-name {
   grid-column: 1 / -1;
   grid-row: 1;
+  justify-self: stretch;
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
   justify-content: center;
   align-items: center;
   height: auto;
   line-height: 1.15;
 }
+.web-phone-layout .seat .seat-name-label {
+  display: block;
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.web-phone-layout .seat .seat-name .position {
+  flex: none;
+}
+.web-phone-layout.large-layout .seat-eye-slot,
+.web-phone-layout.large-layout .seat-eye {
+  width: 22px !important;
+  min-width: 22px;
+  height: 22px;
+}
 .web-phone-layout .seat .seat-body > .avatar {
   grid-column: 1;
   grid-row: 2 / 4;
-  align-self: center;
+  align-self: end;
   width: var(--player-avatar);
   height: var(--player-avatar);
 }

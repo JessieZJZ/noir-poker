@@ -117,6 +117,7 @@ test('a phone opened in landscape is blocked from its first usable frame in ever
     await rotate(false);
     await expect(page.locator('#orientation-dialog')).not.toBeVisible();
     await page.locator('#rules-button').click();
+    await page.locator('#guide-menu-item').click();
     await expect(page.locator('#rules-dialog')).toBeVisible();
   } finally {
     await context.close();
@@ -149,6 +150,7 @@ for (const tablet of [
         await expect(page.locator('#orientation-dialog')).not.toBeVisible();
         expect(await page.evaluate(() => window.noir.getState())).toEqual(before);
         await page.locator('#rules-button').click();
+        await page.locator('#guide-menu-item').click();
         await expect(page.locator('#rules-dialog')).toBeVisible();
         await page.locator('#rules-dialog .close-dialog').first().click();
         await page.screenshot({

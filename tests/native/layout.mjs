@@ -29,6 +29,7 @@ export function readTableLayout() {
         .backgroundColor,
     },
     height: innerHeight,
+    scrollY: window.scrollY,
     usableBottom: innerHeight - (parseFloat(getComputedStyle(document.body).paddingBottom) || 0),
     tagCount: document.querySelectorAll('#hero-turn').length,
     identityOffset: (identity.left + identity.right - cards.left - cards.right) / 2,
@@ -42,7 +43,7 @@ export function readTableLayout() {
       const box = el.getBoundingClientRect();
       return { left: box.left, right: box.right, top: box.top, bottom: box.bottom };
     }),
-    inspection: [...document.querySelectorAll('.seat-peek')].map((eye) => {
+    inspection: [...arena.querySelectorAll('.seat-peek')].map((eye) => {
       const seat = eye.closest('.seat'),
         e = eye.getBoundingClientRect(),
         badge = seat.querySelector('.position-badge').getBoundingClientRect(),
@@ -59,13 +60,38 @@ export function readTableLayout() {
           e.bottom <= profile.bottom,
       };
     }),
-    profiles: [...document.querySelectorAll('.seat-profile')].map((profile) => {
+    profiles: [...arena.querySelectorAll('.seat-profile')].map((profile) => {
       const style = getComputedStyle(profile),
         tag = getComputedStyle(profile.querySelector('.seat-style-label')),
         tagBox = profile.querySelector('.seat-style-label').getBoundingClientRect(),
         stackBox = profile.querySelector('.seat-stack').getBoundingClientRect(),
         font = (selector) =>
           parseFloat(getComputedStyle(profile.querySelector(selector)).fontSize) * scale;
+      const profileBox = profile.getBoundingClientRect();
+      const content = [
+        ...profile.querySelectorAll(
+          '.avatar, .seat-name-label, .position-badge, .seat-peek, .seat-style-label, .seat-stack',
+        ),
+      ].flatMap((el) => {
+        const box = el.getBoundingClientRect();
+        if (!box.width || !box.height) return [];
+        if (el.matches('.avatar, .position-badge, .seat-peek')) return [box];
+        const range = document.createRange();
+        range.selectNodeContents(el);
+        const glyph = range.getBoundingClientRect();
+        // Ellipsized text still exposes its full hidden range horizontally.
+        // Only that axis is clipped; retain the real font's ascender/descender
+        // extent so a short line box cannot hide a vertical padding failure.
+        const clipped = getComputedStyle(el).overflowX === 'hidden';
+        return [
+          {
+            left: clipped ? Math.max(glyph.left, box.left) : glyph.left,
+            right: clipped ? Math.min(glyph.right, box.right) : glyph.right,
+            top: Math.min(glyph.top, box.top),
+            bottom: Math.max(glyph.bottom, box.bottom),
+          },
+        ];
+      });
       return {
         id: profile.closest('.seat').dataset.player,
         padding: [style.paddingTop, style.paddingRight, style.paddingBottom, style.paddingLeft].map(
@@ -78,35 +104,60 @@ export function readTableLayout() {
         styleSize: parseFloat(tag.fontSize) * scale,
         stackSize: font('.seat-stack'),
         stackBelowStyle: stackBox.top >= tagBox.bottom - 0.5,
+        contentInsets: content.length
+          ? {
+              top: Math.min(...content.map((box) => (box.top - profileBox.top) / scale)),
+              right: Math.min(...content.map((box) => (profileBox.right - box.right) / scale)),
+              bottom: Math.min(...content.map((box) => (profileBox.bottom - box.bottom) / scale)),
+              left: Math.min(...content.map((box) => (box.left - profileBox.left) / scale)),
+            }
+          : null,
       };
     }),
     rail: {
       felt: rect('.poker-table'),
       public: rect('#board'),
       hero: rect('.hero-area'),
-      seats: [...document.querySelectorAll('.seat')].map((seat) => {
+      seats: [...arena.querySelectorAll('.seat')].map((seat) => {
         const r = seat.getBoundingClientRect();
         return { left: r.left, right: r.right, top: r.top, bottom: r.bottom };
       }),
     },
     presentation: {
+      heroRankSpace: (() => {
+        const slot = document.querySelector('.hero-rank-slot');
+        const tag = document.querySelector('#hero-hand-rank');
+        const slotBox = slot.getBoundingClientRect();
+        const tagBox = tag.getBoundingClientRect();
+        return {
+          height: slot.offsetHeight,
+          tag:
+            tag.hidden || !tagBox.height
+              ? null
+              : {
+                  height: tagBox.height / scale,
+                  identityGap: (identity.top - tagBox.bottom) / scale,
+                  bottom: (tagBox.bottom - slotBox.top) / scale,
+                },
+        };
+      })(),
       heroGap: (identity.top - cards.bottom) / scale,
       heroInset: (rect('#arena').bottom - identity.bottom) / scale,
       heroFont: parseFloat(getComputedStyle(document.querySelector('.hero-identity')).fontSize),
       heroNameFont: parseFloat(
         getComputedStyle(document.querySelector('.hero-identity strong')).fontSize,
       ),
-      actions: [...document.querySelectorAll('.seat .seat-action')].map((el) => ({
+      actions: [...arena.querySelectorAll('.seat .seat-action')].map((el) => ({
         font: parseFloat(getComputedStyle(el).fontSize),
         margin: parseFloat(getComputedStyle(el).marginTop),
       })),
-      backs: [...document.querySelectorAll('.seat .card-back')].map((el) => {
+      backs: [...arena.querySelectorAll('.seat .card-back')].map((el) => {
         const back = el.getBoundingClientRect(),
           profile = el.closest('.seat').querySelector('.seat-profile').getBoundingClientRect();
         return (profile.top - back.top) / back.height;
       }),
     },
-    rankSpacing: [...document.querySelectorAll('.seat .hand-rank')].flatMap((rank) => {
+    rankSpacing: [...arena.querySelectorAll('.seat .hand-rank')].flatMap((rank) => {
       const seat = rank.closest('.seat'),
         action = seat.querySelector('.seat-action'),
         badge = rank.getBoundingClientRect();
@@ -123,7 +174,7 @@ export function readTableLayout() {
           ]
         : [];
     }),
-    captions: [...document.querySelectorAll('.seat .seat-action')].map((el) => {
+    captions: [...arena.querySelectorAll('.seat .seat-action')].map((el) => {
       const range = document.createRange();
       range.selectNodeContents(el);
       const bounds = (box) => ({
@@ -138,7 +189,7 @@ export function readTableLayout() {
         lines: [...range.getClientRects()].map(bounds),
       };
     }),
-    revealed: [...document.querySelectorAll('.seat .revealed-cards .playing-card')].map((el) => {
+    revealed: [...arena.querySelectorAll('.seat .revealed-cards .playing-card')].map((el) => {
       const card = el.getBoundingClientRect(),
         profile = el.closest('.seat').querySelector('.seat-profile').getBoundingClientRect();
       return { width: el.offsetWidth, exposed: (profile.top - card.top) / card.height };
@@ -213,6 +264,14 @@ export function assertTableLayout(info) {
     );
   }
   for (const profile of info.profiles) {
+    if ('contentInsets' in profile)
+      assert.ok(
+        profile.contentInsets &&
+          Object.values(profile.contentInsets).every(
+            (inset) => Number.isFinite(inset) && inset >= 3.75,
+          ),
+        `Seat ${profile.id} visible text and controls need a border plus 3px of real padding`,
+      );
     if (profile.stackBelowStyle !== undefined)
       assert.ok(profile.stackBelowStyle, `Seat ${profile.id} chips must sit below its style tag`);
     assert.ok(
@@ -261,10 +320,32 @@ export function assertSeatPresentation(presentation, viewport, largeTablet = fal
       'Opponent backs must remain half tucked during the deal and subsequent renders',
     );
   if (viewport.width > 1100 || viewport.height <= viewport.width) return;
-  assert.ok(
-    presentation.heroGap >= 18 && presentation.heroGap <= (largeTablet ? 39 : 28),
-    'Hero identity must stay close to the cards with space reserved for the hand rank',
-  );
+  if (presentation.heroRankSpace) {
+    const { height, tag } = presentation.heroRankSpace;
+    assert.ok(
+      Number.isFinite(height) && height >= 18 && height <= (viewport.width > 600 ? 42 : 36),
+      'Hero rank slot must reserve a bounded readable line',
+    );
+    assert.ok(
+      tag
+        ? presentation.heroGap >= height && presentation.heroGap <= height + 8
+        : presentation.heroGap >= 3 && presentation.heroGap <= 10,
+      'Hero identity must follow a visible rank or move close to the cards when the reserved slot is empty',
+    );
+    if (tag)
+      assert.ok(
+        tag.height > 0 &&
+          tag.height <= height + 0.5 &&
+          tag.bottom <= height + 0.5 &&
+          tag.identityGap >= 0,
+        'Hero rank must stay inside its reserved slot and clear the identity',
+      );
+  } else {
+    assert.ok(
+      presentation.heroGap >= 18 && presentation.heroGap <= (largeTablet ? 39 : 28),
+      'Hero identity must stay close to the cards with space reserved for the hand rank',
+    );
+  }
   assert.ok(presentation.heroInset >= 0, 'Hero identity must stay inside the visible arena');
   assert.ok(
     presentation.heroFont >= 15 &&
