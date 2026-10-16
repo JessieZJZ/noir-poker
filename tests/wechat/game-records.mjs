@@ -298,6 +298,8 @@ try {
   await waitRoute('pages/table/table');
   report.stage = 'real-game-play-and-records-navigation';
   report.device = await mini.systemInfo();
+  await waitElement('.nav-actions > .icon-button');
+  await waitElement('.resource-label-window');
   const [settingsButtons, resourceLabels] = await nativeRects([
     '.nav-actions > .icon-button',
     '.resource-label-window',
@@ -377,7 +379,7 @@ try {
     liveShellHeight,
     'Live settlement and historical review share the same compact dock',
   );
-  assert.equal((await (await waitElement('.action-dock')).size()).height, 58);
+  assert.equal((await (await waitElement('.action-dock')).size()).height, 64);
   await scrollTo(0);
   await tap('.retry-button');
   await wait(

@@ -36,7 +36,7 @@ iOS 先对指定测试设备干净安装，用 Simulator 服务独立启动应�
 
 iOS 自动选择最新可用 runtime 中兼容的标准尺寸 iPhone，仅复用同一 runtime、同一设备类型的专用模拟器。可用 `NOIR_IOS_RUNTIME` 和 `NOIR_IOS_DEVICE_TYPE` 指定 `simctl list runtimes -j` / `simctl list devicetypes -j` 返回的完整 identifier；选择不可用或不兼容时直接失败，不自动换设备。指定 UDID 时使用该设备。报告记录自动选择的 runtime 和设备类型。
 
-**测试执行干净安装，会清除所选测试设备上的应用数据。请只指定测试设备，不要选择存有个人练习数据的设备。** iOS 只卸载这个测试应用，保留模拟器和测试驱动。默认专用模拟器在脚本自行启动时，会在完成后关闭。
+**测试执行干净安装，会清除所选测试应用的数据。** iOS 只卸载这个测试应用，保留模拟器和测试驱动，必须使用测试模拟器；默认专用模拟器在脚本自行启动时，会在完成后关闭。安卓真机强制使用下述独立 QA 包，原有应用的练习数据不受测试重置影响。
 
 Android 要先启动专用 AVD；脚本等待系统启动完成和包管理服务就绪后才安装、连接驱动。只有一个已连接设备时自动选中，否则通过 `--udid emulator-5554` 指定。也支持 `NOIR_IOS_UDID` 和 `NOIR_ANDROID_UDID`。指定 UDID 的 iOS 设备在脚本自行启动时关闭，已启动的设备保持运行。
 
@@ -48,6 +48,19 @@ node scripts/native-e2e.mjs android --app /absolute/path/app-debug.apk --udid em
 ```
 
 `--server http://127.0.0.1:4723` 可复用已启动的 Appium；没有这个参数时，脚本自行启动本地 Appium 并在结束后关闭。iOS 使用 4725 端口，Android 使用 4727。可用 `--port` 修改脚本自建服务器端口，用 `--driver-port` 指定 iOS WDA 或 Android UiAutomator2 的设备连接端口；并行任务应各用独立测试设备和端口。Android WebView 探测另分配 `min(64000, driverPort + 10000)` 起的 100 个端口及起点加 101 的 ChromeDriver 端口（未指定 driverPort 时用 9200 计算），运行前也须确认这些端口可用。`--port` 与 `--server` 不同时使用。只使用 Debug 原生外壳的调试能力，Web 内容仍是正常 native production build；上架 Release 不需要打开 WebView 调试。
+
+## 安卓真机与无线连接
+
+```sh
+npm run mobile:android:qa
+npm run mobile:test:android -- --variant qa --udid SERIAL --output .artifacts/native-e2e/android-physical
+```
+
+`--variant qa` 选择 `noir-poker-qa.apk` 和 `.qa` 包名；可选 `--app` 指定另一份 QA APK。安装前会读取 APK 的实际包名，拒绝包名不符的文件，也拒绝在真机上重置原始包。桌面名称为“NOIR Poker 测试”，练习、设置与原有应用隔离。调试辅助服务仍由 Appium 安装。
+
+Android 11 及以上可在手机开发者选项中开启无线调试，手机与 Mac 连接同一 Wi-Fi。打开“使用配对码配对设备”，保持弹窗打开，以其中的地址和配对码执行 `adb pair IP:配对端口`；成功后若未自动连接，再用无线调试主页的地址执行 `adb connect IP:连接端口`。这两个端口不同，弹窗关闭后不能继续使用旧配对端口。用 `adb devices -l` 确认 `device` 状态，再将完整标识作为 `SERIAL`。依据：[Android 无线 ADB](https://developer.android.com/tools/adb#connect-to-a-device-over-wi-fi)。
+
+如果需隔离旧 ADB 后台服务，可在未占用端口上启动 `adb -P 5049 nodaemon server`，配对和连接也都加 `-P 5049`，运行测试时对应加 `--adb-port 5049`；测试驱动与设备命令共用该服务。不要为排查一个设备关闭其他任务的全局 ADB 服务。真机运行保持现有网络连接，不切飞行模式，避免无线调试掉线；报告只核对本地资源来源，离线运行仍需单独验收。模拟器原有飞行模式检查保留。
 
 ## 覆盖的实际流程
 

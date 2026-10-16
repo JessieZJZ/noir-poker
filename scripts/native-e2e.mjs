@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { spawn, spawnSync } from 'node:child_process';
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { nativeScenarios } from '../tests/native/scenarios.mjs';
@@ -15,24 +15,34 @@ import { compareNativePage } from '../tests/native/page-parity.mjs';
 import { createNativeCommand } from './native-transport.mjs';
 import { nativeBackPage, nativePageReady } from './native-back.mjs';
 import { prepareNativeTouch } from './native-touch.mjs';
+import { nativeAppTarget, assertAndroidTestPackage } from './native-app-target.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const args = process.argv.slice(2);
 const platform = args.shift();
 if (!['ios', 'android'].includes(platform))
   throw Error(
-    'Usage: node scripts/native-e2e.mjs ios|android [--app PATH] [--udid ID] [--output PATH] [--server URL] [--port PORT] [--driver-port PORT]',
+    'Usage: node scripts/native-e2e.mjs ios|android [--variant debug|qa] [--app PATH] [--udid ID] [--output PATH] [--server URL] [--port PORT] [--driver-port PORT] [--adb-port PORT]',
   );
 const options = {};
 for (let i = 0; i < args.length; i += 2) {
   if (
-    !['--app', '--udid', '--output', '--server', '--port', '--driver-port'].includes(args[i]) ||
+    ![
+      '--variant',
+      '--app',
+      '--udid',
+      '--output',
+      '--server',
+      '--port',
+      '--driver-port',
+      '--adb-port',
+    ].includes(args[i]) ||
     !args[i + 1]
   )
     throw Error(`Unknown or incomplete option: ${args[i]}`);
   options[args[i].slice(2)] = args[i + 1];
 }
-for (const key of ['port', 'driver-port']) {
+for (const key of ['port', 'driver-port', 'adb-port']) {
   if (
     options[key] &&
     (!/^\d+$/.test(options[key]) || Number(options[key]) < 1024 || Number(options[key]) > 65535)
@@ -40,19 +50,20 @@ for (const key of ['port', 'driver-port']) {
     throw Error(`Invalid ${key}: use a port between 1024 and 65535`);
 }
 if (options.server && options.port) throw Error('Use --server or --port, not both');
-const appId = JSON.parse(readFileSync(path.join(root, 'capacitor.config.json'), 'utf8')).appId;
-const appPath = path.resolve(
-  root,
-  options.app ??
-    (platform === 'ios'
-      ? '.artifacts/mobile/ios/Build/Products/Debug-iphonesimulator/App.app'
-      : '.artifacts/mobile/noir-poker-debug.apk'),
-);
+const baseAppId = JSON.parse(readFileSync(path.join(root, 'capacitor.config.json'), 'utf8')).appId;
+const target = nativeAppTarget({ platform, appId: baseAppId, variant: options.variant });
+const appId = target.appId;
+const appPath = path.resolve(root, options.app ?? target.appPath);
 const output = path.resolve(root, options.output ?? `.artifacts/native-e2e/${platform}`);
 mkdirSync(output, { recursive: true });
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+const adbArgs = (args) => (options['adb-port'] ? ['-P', options['adb-port'], ...args] : args);
 const run = (binary, argv) => {
-  const value = spawnSync(binary, argv, { encoding: 'utf8', cwd: root, timeout: 120000 });
+  const value = spawnSync(binary, binary === adb ? adbArgs(argv) : argv, {
+    encoding: 'utf8',
+    cwd: root,
+    timeout: 120000,
+  });
   if (value.status !== 0)
     throw Error(
       `${binary} ${argv.join(' ')} failed: ${value.stderr || value.error || value.stdout}`,
@@ -120,10 +131,14 @@ const command = createNativeCommand({
   waitReady: () =>
     waitFor(
       () => {
-        const result = spawnSync(adb, ['-s', udid, 'shell', 'getprop', 'sys.boot_completed'], {
-          encoding: 'utf8',
-          timeout: 3000,
-        });
+        const result = spawnSync(
+          adb,
+          adbArgs(['-s', udid, 'shell', 'getprop', 'sys.boot_completed']),
+          {
+            encoding: 'utf8',
+            timeout: 3000,
+          },
+        );
         return result.status === 0 && result.stdout.trim() === '1';
       },
       10000,
@@ -430,6 +445,27 @@ try {
     udid = devices[0];
   }
   report.udid = udid;
+  if (platform === 'android') {
+    report.deviceKind =
+      run(adb, ['-s', udid, 'shell', 'getprop', 'ro.kernel.qemu']) === '1'
+        ? 'emulator'
+        : 'physical';
+    if (!sdk) throw Error('Set ANDROID_HOME to verify the actual APK package before installation');
+    const buildTools = path.join(sdk, 'build-tools');
+    const aapt = readdirSync(buildTools)
+      .sort((a, b) => b.localeCompare(a, undefined, { numeric: true }))
+      .map((version) =>
+        path.join(buildTools, version, process.platform === 'win32' ? 'aapt.exe' : 'aapt'),
+      )
+      .find(existsSync);
+    if (!aapt) throw Error('Install Android SDK build-tools to verify the actual APK package');
+    report.androidPackage = assertAndroidTestPackage({
+      badging: run(aapt, ['dump', 'badging', appPath]),
+      expectedAppId: appId,
+      baseAppId,
+      isEmulator: report.deviceKind === 'emulator',
+    });
+  }
   report.phase = 'appium-start';
   if (!options.server) {
     const binary = path.join(root, '.artifacts/native-tools/node_modules/appium/build/lib/main.js');
@@ -476,12 +512,28 @@ try {
       120000,
       'Android must finish booting with PackageManager ready before installation',
     );
-    airplaneMode = run(adb, ['-s', udid, 'shell', 'settings', 'get', 'global', 'airplane_mode_on']);
-    run(adb, ['-s', udid, 'shell', 'cmd', 'connectivity', 'airplane-mode', 'enable']);
-    report.offline = {
-      airplaneMode: true,
-      note: 'Installed application launches and plays with Android airplane mode enabled',
-    };
+    if (report.deviceKind === 'emulator') {
+      airplaneMode = run(adb, [
+        '-s',
+        udid,
+        'shell',
+        'settings',
+        'get',
+        'global',
+        'airplane_mode_on',
+      ]);
+      run(adb, ['-s', udid, 'shell', 'cmd', 'connectivity', 'airplane-mode', 'enable']);
+      report.offline = {
+        airplaneMode: true,
+        note: 'Installed application launches and plays with Android airplane mode enabled',
+      };
+    } else {
+      report.offline = {
+        localBundleOriginVerified: true,
+        airplaneMode: false,
+        note: 'Physical device connectivity is preserved, including wireless ADB; no offline runtime claim',
+      };
+    }
   } else {
     report.offline = {
       localBundleOriginVerified: true,
@@ -530,6 +582,7 @@ try {
           // Fresh emulator services can still initialize after boot_completed.
           // Keep driver setup deadlines separate from all gameplay assertions.
           'appium:adbExecTimeout': 60000,
+          ...(options['adb-port'] ? { 'appium:adbPort': Number(options['adb-port']) } : {}),
           'appium:uiautomator2ServerLaunchTimeout': 120000,
           ...(options['driver-port']
             ? { 'appium:systemPort': Number(options['driver-port']) }

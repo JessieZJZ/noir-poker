@@ -139,6 +139,7 @@ npm run mobile:sync          # 生成并校验两端最新资源，无需原生 
 npm run mobile:ios:open      # 打开 Xcode 工程
 npm run mobile:android:open  # 打开 Android Studio 工程
 npm run mobile:android       # 调试 APK，需要 JDK 21 / SDK 36
+npm run mobile:android:qa    # 独立“NOIR Poker 测试” APK，保留现有应用的数据
 npm run mobile:ios           # 模拟器 App，需要 macOS / Xcode 26
 ```
 
@@ -169,6 +170,8 @@ npm run mobile:test:setup -- ios  # 隔离安装 Appium 与平台驱动
 npm run mobile:test:ios      # 安装实际模拟器 App 并交互验证
 npm run mobile:test:setup -- android
 npm run mobile:test:android  # 启动 Android 仿真器后安装 APK 并交互验证
+# 真机使用独立测试应用（SERIAL 替换为 adb devices 中的标识）：
+npm run mobile:test:android -- --variant qa --udid SERIAL
 node tests/native/system-bars.mjs .artifacts/native-e2e/android/local-launch-and-no-login.png
 # 多任务使用独立测试设备和端口：
 npm run mobile:test:ios -- --udid TEST_SIMULATOR_ID --port 4735 --driver-port 8135

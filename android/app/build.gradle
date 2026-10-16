@@ -35,6 +35,11 @@ android {
         }
     }
     buildTypes {
+        qa {
+            initWith debug
+            applicationIdSuffix ".qa"
+            matchingFallbacks = ['debug']
+        }
         release {
             if (hasReleaseSigning) signingConfig signingConfigs.release
             minifyEnabled false

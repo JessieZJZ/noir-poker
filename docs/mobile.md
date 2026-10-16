@@ -13,18 +13,21 @@ npm run mobile:sync
 
 `mobile:sync` 不需要 Xcode 或 Android SDK，执行原始图标生成、原生模式的 Web 构建、版本同步、两端插件和资源同步，再校验源码指纹与两端资源副本。生成文件放在 `.artifacts/mobile/`，不提交到 Git。
 
-| 操作              | 命令                            | 环境与输出                                                                     |
-| ----------------- | ------------------------------- | ------------------------------------------------------------------------------ |
-| 同步两端工程      | `npm run mobile:sync`           | Node.js 22.12+；重新构建当前 Web 源码                                          |
-| 检查资源是否过期  | `npm run mobile:verify`         | 检查源码指纹及两个资源副本；过期会失败                                         |
-| 打开 iOS 工程     | `npm run mobile:ios:open`       | macOS + Xcode 26；先同步再打开                                                 |
-| 打开 Android 工程 | `npm run mobile:android:open`   | Android Studio；先同步再打开                                                   |
-| iOS 模拟器构建    | `npm run mobile:ios`            | Xcode 26；`.artifacts/mobile/ios/Build/Products/Debug-iphonesimulator/App.app` |
-| Android 调试 APK  | `npm run mobile:android`        | JDK 21、Android SDK 36；`.artifacts/mobile/noir-poker-debug.apk`               |
-| iOS 签名归档      | `npm run mobile:ios:archive`    | Apple Team、开发者证书；`.artifacts/mobile/NOIR-Poker.xcarchive`               |
-| Android 签名 AAB  | `npm run mobile:android:bundle` | 四项签名环境变量；`.artifacts/mobile/noir-poker-release.aab`                   |
+| 操作                 | 命令                            | 环境与输出                                                                     |
+| -------------------- | ------------------------------- | ------------------------------------------------------------------------------ |
+| 同步两端工程         | `npm run mobile:sync`           | Node.js 22.12+；重新构建当前 Web 源码                                          |
+| 检查资源是否过期     | `npm run mobile:verify`         | 检查源码指纹及两个资源副本；过期会失败                                         |
+| 打开 iOS 工程        | `npm run mobile:ios:open`       | macOS + Xcode 26；先同步再打开                                                 |
+| 打开 Android 工程    | `npm run mobile:android:open`   | Android Studio；先同步再打开                                                   |
+| iOS 模拟器构建       | `npm run mobile:ios`            | Xcode 26；`.artifacts/mobile/ios/Build/Products/Debug-iphonesimulator/App.app` |
+| Android 调试 APK     | `npm run mobile:android`        | JDK 21、Android SDK 36；`.artifacts/mobile/noir-poker-debug.apk`               |
+| Android 独立测试 APK | `npm run mobile:android:qa`     | JDK 21、Android SDK 36；`.artifacts/mobile/noir-poker-qa.apk`                  |
+| iOS 签名归档         | `npm run mobile:ios:archive`    | Apple Team、开发者证书；`.artifacts/mobile/NOIR-Poker.xcarchive`               |
+| Android 签名 AAB     | `npm run mobile:android:bundle` | 四项签名环境变量；`.artifacts/mobile/noir-poker-release.aab`                   |
 
 支持 iOS 15+、Android 7.0/API 24+；Android 编译和目标 SDK 为 36。Xcode 的 Swift Package Manager 管理 Capacitor，无需 CocoaPods。系统要求以 [Capacitor 环境说明](https://capacitorjs.com/docs/getting-started/environment-setup) 与 [v8 升级说明](https://capacitorjs.com/docs/updating/8-0) 为准。
+
+独立测试 APK 的桌面名称为“NOIR Poker 测试”，包名为 `io.github.jessiezjz.noirpoker.qa`，可与现有应用并存，练习记录和设置分别保存。它使用调试签名，只供安装验收；正常 Debug 和发行包的名称、包名保持原样。测试流程会重置这个独立应用的数据。真机安装回归必须使用 `--variant qa`，并在安装前检查 APK 中的实际包名；无线连接、指定设备和可选独立 ADB 服务见 [原生 E2E](native-e2e.md#安卓真机与无线连接)。
 
 ## Web 迭代如何进入安装包
 
