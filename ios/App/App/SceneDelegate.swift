@@ -67,8 +67,9 @@ class NoirBridgeViewController: CAPBridgeViewController, UIGestureRecognizerDele
 
     fileprivate func finishLaunch(_ message: WKScriptMessage) {
         guard message.frameInfo.isMainFrame,
-              message.frameInfo.request.url?.scheme == "capacitor",
-              message.frameInfo.request.url?.host == "localhost",
+              message.webView === webView,
+              webView?.url?.scheme == "capacitor",
+              webView?.url?.host == "localhost",
               message.body as? String == "ready" else { return }
         launchCover?.removeFromSuperview()
         launchCover = nil
