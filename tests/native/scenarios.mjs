@@ -771,6 +771,70 @@ export async function nativeScenarios(app) {
       await app.evaluate(() => window.__restoreFeedbackProbe?.()).catch(() => {});
     }
   });
+  await check('music-volume-and-chip-stack', async () => {
+    await app.evaluate(() => {
+      window.__polishCues = [];
+      window.__polishStart = AudioBufferSourceNode.prototype.start;
+      AudioBufferSourceNode.prototype.start = function (...args) {
+        const pcm = this.buffer.getChannelData(0);
+        window.__polishCues.push({
+          samples: pcm.length,
+          rms: Math.sqrt(pcm.reduce((sum, value) => sum + value * value, 0) / pcm.length),
+          peak: pcm.reduce((peak, value) => Math.max(peak, Math.abs(value)), 0),
+        });
+        return window.__polishStart.apply(this, args);
+      };
+    });
+    try {
+      await app.click('#opponents-button');
+      const music = await app.waitFor(
+        () =>
+          app.evaluate(() => {
+            const audio = document.querySelector('audio[data-background-music]');
+            return audio && !audio.paused && audio.readyState >= 2 && audio.currentTime > 0.1
+              ? {
+                  source: audio.currentSrc,
+                  time: audio.currentTime,
+                  duration: audio.duration,
+                  loop: audio.loop,
+                }
+              : null;
+          }),
+        15000,
+        'The new bundled music must decode and advance after a real tap',
+      );
+      assert.equal(music.loop, true);
+      assert.ok(music.duration > 93.6 && music.duration < 93.8);
+      await app.click('#opponents-dialog .close-dialog');
+      await waitForNativeHeroTurn(app);
+      const state = await app.state();
+      if (state.legal.canRaise) await app.click('#raise-button');
+      else {
+        assert.ok(state.legal.callAmount > 0, 'A real paid action is required for chip audio');
+        await app.click('#call-button');
+      }
+      const cue = await app.waitFor(
+        () => app.evaluate(() => window.__polishCues.find((cue) => cue.samples === 14994)),
+        10000,
+        'An actual wager must play the new chip stack',
+      );
+      assert.ok(cue.rms > 0.21 && cue.rms < 0.245);
+      assert.ok(cue.peak <= 0.7);
+      await app.screenshot('music-and-chip-stack');
+      return {
+        music,
+        cue,
+        scope:
+          'Installed production AAC playback and real wager PCM; no synthetic deal, physical hearing not assessed',
+      };
+    } finally {
+      await app.evaluate(() => {
+        AudioBufferSourceNode.prototype.start = window.__polishStart;
+        delete window.__polishStart;
+        delete window.__polishCues;
+      });
+    }
+  });
   await check('background-music-loop-and-independent-vibration', async () => {
     await app.click('#opponents-button');
     const read = () =>
