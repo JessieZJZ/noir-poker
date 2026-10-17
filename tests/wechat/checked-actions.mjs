@@ -41,6 +41,7 @@ try {
     report.checks.push({ name, street: game.street, actor: game.actor, label: mia.actionLabel });
   };
   await check('completed-check-without-cached-text', '过牌');
+  await page.waitFor(1450);
   await mini.screenshot({ path: path.join(output, 'mia-checked.png') });
   act(game, 2, 'raise', game.bigBlind);
   while (game.actor !== 1) {
@@ -52,6 +53,7 @@ try {
   await check('new-call-replaces-check', '跟注');
   advanceStreet(game);
   await check('new-street-before-own-action', '等待行动');
+  await page.waitFor(1450);
   await mini.screenshot({ path: path.join(output, 'mia-new-street.png') });
   assert.deepEqual(report.exceptions, []);
   report.status = 'passed';

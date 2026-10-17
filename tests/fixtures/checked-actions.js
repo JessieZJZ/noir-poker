@@ -2,7 +2,7 @@ import { newGame, startHand, act, advanceStreet } from '../../src/engine/poker.j
 
 export function checkedSeatGame(count = 9, street = 2) {
   const game = newGame(count);
-  game.dealer = 1; // Mia is CO, Leo is BTN after startHand rotates the button.
+  game.dealer = 1; // Mia is CO, Alex is BTN after startHand rotates the button.
   startHand(game);
   while (game.street < street) {
     while (game.phase === 'playing') act(game, game.actor, 'call');

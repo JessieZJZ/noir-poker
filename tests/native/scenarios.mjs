@@ -332,6 +332,12 @@ export async function nativeScenarios(app) {
     };
   });
   await check('completed-check-persists', async () => {
+    await app.click('#opponents-button');
+    await app.select('#player-count', '9');
+    await app.click('#opponents-dialog .close-dialog');
+    await app.click('#reset-button');
+    await app.click('#confirm-reset');
+    await app.waitFor(async () => (await app.state()).playerCount === 9, 15000);
     // Observe normal renders in the installed bundle, without changing the
     // deal, action fields, bot timers or production code.
     await app.evaluate(() => {
