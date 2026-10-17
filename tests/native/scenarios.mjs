@@ -937,6 +937,41 @@ export async function nativeScenarios(app) {
         'Installed app local AAC decode, loop, lifecycle and independent preference persistence; not physical acoustic or motor acceptance',
     };
   });
+  await check('hand-rankings-shortcut', async () => {
+    await waitForNativeHeroTurn(app);
+    const before = await app.state();
+    const targets = [];
+    for (let attempt = 0; attempt < 2; attempt++) {
+      await app.click('#hand-rankings-button');
+      const target = await app.evaluate(() => {
+        const dialog = document.querySelector('#rules-dialog');
+        const body = dialog.querySelector('.guide-body');
+        const target = dialog.querySelector('#hand-rankings').getBoundingClientRect();
+        const header = dialog.querySelector('.dialog-header').getBoundingClientRect();
+        return {
+          open: dialog.open,
+          offset: target.top - body.getBoundingClientRect().top,
+          top: target.top,
+          headerBottom: header.bottom,
+          scrollTop: body.scrollTop,
+        };
+      });
+      assert.ok(target.open && target.offset >= 0 && target.offset <= 14);
+      assert.ok(target.top >= target.headerBottom && target.scrollTop > 50);
+      targets.push(target);
+      if (!attempt) await app.screenshot('hand-rankings-target');
+      await app.click('#rules-dialog .dialog-header .close-dialog');
+    }
+    await app.click('#rules-button');
+    await app.click('#guide-menu-item');
+    assert.equal(
+      await app.evaluate(() => document.querySelector('#rules-dialog .guide-body').scrollTop),
+      0,
+    );
+    await app.click('#rules-dialog .dialog-header .close-dialog');
+    assert.equal((await app.state()).hand, before.hand);
+    return { targets, sameHand: true, normalGuideStartsAtTop: true };
+  });
   await check('guide-sticky-header', async () => {
     await app.click('#rules-button');
     await app.click('#guide-menu-item');

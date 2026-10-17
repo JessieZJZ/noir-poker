@@ -828,6 +828,41 @@ try {
     compactRaiseExample: true,
   };
   await invoke('closeGuide');
+  for (let attempt = 0; attempt < 3 && !(await page.data()).canAct; attempt++) {
+    await invoke('nextHand');
+    await wait((data) => data.canAct || data.done, 60000);
+  }
+  assert.equal((await page.data()).canAct, true);
+  const handBeforeRankings = (await page.data()).hand;
+  report.handRankings = [];
+  for (let attempt = 0; attempt < 2; attempt++) {
+    await (await page.$('#hand-rankings-button')).tap();
+    await wait((data) => data.guideOpen && data.guideScrollTarget === 'hand-rankings', 5000);
+    const target = await page.$('#hand-rankings'),
+      body = await page.$('.guide-scroll');
+    await wait(async () => {
+      const offset = (await target.offset()).top - (await body.offset()).top;
+      return offset >= -1 && offset <= 2;
+    }, 5000);
+    const heading = await page.$('.guide-heading');
+    const evidence = {
+      target: await target.offset(),
+      body: await body.offset(),
+      header: await heading.offset(),
+      headerSize: await heading.size(),
+    };
+    assert.ok(evidence.target.top >= evidence.header.top + evidence.headerSize.height - 1);
+    report.handRankings.push(evidence);
+    if (!attempt)
+      await capture('hand-rankings', ['.guide-sheet', '#hand-rankings', '.hand-example']);
+    await (await heading.$('button')).tap();
+    await wait((data) => !data.guideOpen, 5000);
+  }
+  assert.equal((await page.data()).hand, handBeforeRankings);
+  await invoke('openGuide');
+  await wait((data) => data.guideOpen && data.guideScrollTarget === '', 5000);
+  assert.equal(await (await page.$('.guide-scroll')).property('scrollTop'), 0);
+  await invoke('closeGuide');
   const cardsBefore = (await page.data()).boardSlots.map((card) => card.key);
   const rowsBefore = await (await page.$('.board-row')).offset();
   await (await page.$('.pot-detail')).tap();

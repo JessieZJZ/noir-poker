@@ -2530,3 +2530,37 @@ test('WeChat long press expands only truncated names and rejects delayed or hidd
   assert.match(template, /bindlongpress="showNameTooltip"/);
   assert.match(stylesheet, /\.seat-name-tooltip\s*\{[^}]*position: fixed/s);
 });
+
+test('WeChat hand rankings shortcut resets the guide anchor on normal open and can jump again', (t) => {
+  const { page } = setup(t);
+  page._homeScroll = 120;
+  page.openHandRankings();
+  assert.equal(page.data.guideOpen, true);
+  assert.equal(page.data.homeLocked, true);
+  assert.equal(page.data.guideScrollTarget, 'hand-rankings');
+  assert.equal(page.data.guideScrollTop, 0);
+  page.closeGuide();
+  assert.equal(page.data.guideOpen, false);
+  assert.equal(page._homeScroll, 120);
+  page.openGuide();
+  assert.equal(page.data.guideScrollTarget, '');
+  page.closeGuide();
+  page.openHandRankings();
+  assert.equal(page.data.guideScrollTarget, 'hand-rankings');
+  assert.match(template, /id="hand-rankings-button"/);
+  assert.match(template, /scroll-into-view="\{\{guideScrollTarget\}\}"/);
+});
+
+test('a late guide jump cannot move a closed or newly opened normal guide', (t) => {
+  const { page } = setup(t);
+  const pending = [];
+  const setData = page.setData.bind(page);
+  page.setData = (patch, callback) =>
+    setData(patch, callback ? () => pending.push(callback) : undefined);
+  page.openHandRankings();
+  page.closeGuide();
+  page.openGuide();
+  for (const callback of pending) callback();
+  assert.equal(page.data.guideOpen, true);
+  assert.equal(page.data.guideScrollTarget, '');
+});

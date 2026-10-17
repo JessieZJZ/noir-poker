@@ -113,10 +113,20 @@ export function createGuideMenu({ onRecords }) {
   on(document, 'keydown', (event) => {
     if (event.key === 'Escape' && !menu.hidden) close(true);
   });
-  on(document.querySelector('#guide-menu-item'), 'click', () => {
+  function openGuide(section) {
     close();
-    document.querySelector('#rules-dialog').showModal();
-  });
+    const dialog = document.querySelector('#rules-dialog');
+    if (!dialog.open) dialog.showModal();
+    const body = dialog.querySelector('.guide-body');
+    body.scrollTop = 0;
+    if (section) {
+      const target = dialog.querySelector(`#${section}`);
+      target.focus({ preventScroll: true });
+      body.scrollTop = target.getBoundingClientRect().top - body.getBoundingClientRect().top - 12;
+    }
+  }
+  on(document.querySelector('#guide-menu-item'), 'click', () => openGuide());
+  on(document.querySelector('#hand-rankings-button'), 'click', () => openGuide('hand-rankings'));
   on(document.querySelector('#records-menu-item'), 'click', () => {
     close();
     onRecords();

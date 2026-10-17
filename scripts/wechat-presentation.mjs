@@ -31,7 +31,8 @@ export function guideTemplate(html) {
       }
       if (name === 'button') return '<button class="primary return-button" bindtap="closeGuide">';
       const target = ['span', 'i', 'b'].includes(name) ? 'text' : 'view';
-      return `<${target} class="guide-${name}${classes ? ' ' + classes : ''}">`;
+      const id = tag.match(/\bid="([\w-]+)"/)?.[1];
+      return `<${target}${id ? ` id="${id}"` : ''} class="guide-${name}${classes ? ' ' + classes : ''}">`;
     })
     .replace(/>[^<]+</g, (text) => text.replace(/\s+/g, ' '));
 }

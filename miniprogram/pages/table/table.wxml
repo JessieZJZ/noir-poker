@@ -292,13 +292,18 @@
         ></block
       >
       <block wx:else
-        ><view
-          class="action-notice"
-          wx:if="{{!compactActions}}"
-          aria-role="status"
-          aria-live="polite"
-          ><text wx:if="{{canAct}}" class="turn-prompt">轮到你行动，</text
-          ><text class="decision-detail">{{actionNotice}}</text></view
+        ><view class="action-notice" wx:if="{{!compactActions}}"
+          ><view class="decision-copy" aria-role="status" aria-live="polite"
+            ><text wx:if="{{canAct}}" class="turn-prompt">轮到你行动，</text
+            ><text class="decision-detail">{{actionNotice}}</text></view
+          ><button
+            id="hand-rankings-button"
+            class="hand-rankings-button"
+            hover-class="none"
+            bindtap="openHandRankings"
+          >
+            牌力表
+          </button></view
         ><view class="raise-controls" wx:if="{{!compactActions}}"
           ><slider
             min="{{minRaise}}"
@@ -812,7 +817,11 @@
     ><button hover-class="none" class="close" bindtap="closeGuide" aria-label="关闭玩法指南">
       <view class="close-icon" /></button
   ></view>
-  <scroll-view scroll-y class="sheet-scroll guide-scroll"
+  <scroll-view
+    scroll-y
+    class="sheet-scroll guide-scroll"
+    scroll-into-view="{{guideScrollTarget}}"
+    scroll-top="{{guideScrollTop}}"
     ><view class="sheet-body"><include src="guide.wxml" /></view
   ></scroll-view>
 </view>

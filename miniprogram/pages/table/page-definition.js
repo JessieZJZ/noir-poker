@@ -38,6 +38,8 @@ module.exports = {
     historyReadOnly: false,
     settingsOpen: false,
     guideOpen: false,
+    guideScrollTarget: '',
+    guideScrollTop: 0,
     reviewOpen: false,
     activityOpen: false,
     potOpen: false,
@@ -338,7 +340,7 @@ module.exports = {
     this.closeNameTooltip();
     if (!this.data.homeLocked) this._homeScroll = event.scrollTop;
   },
-  setOverlay(patch) {
+  setOverlay(patch, onReady) {
     this._audioUnlocked = true;
     if (typeof getApp === 'function') getApp().noirMusic?.unlock();
     const next = { ...this.data, ...patch };
@@ -353,6 +355,7 @@ module.exports = {
     const unlocking = this.data.homeLocked && !homeLocked;
     this.setData({ ...patch, homeLocked, homeOffset: -(this._homeScroll || 0) }, () => {
       if (unlocking) wx.pageScrollTo?.({ scrollTop: this._homeScroll || 0, duration: 0 });
+      onReady?.();
     });
   },
   updateWindow() {
@@ -1025,10 +1028,21 @@ module.exports = {
     navigation.returnToGame();
   },
   openGuide() {
+    this.showGuide();
+  },
+  openHandRankings() {
+    this.showGuide('hand-rankings');
+  },
+  showGuide(target = '') {
     this.closeResourceMenu();
-    this.setOverlay({ guideOpen: true });
+    const token = (this._guideOpenToken = (this._guideOpenToken || 0) + 1);
+    this.setOverlay({ guideOpen: true, guideScrollTarget: '', guideScrollTop: 0 }, () => {
+      if (this.data.guideOpen && this._guideOpenToken === token && target)
+        this.setData({ guideScrollTarget: target });
+    });
   },
   closeGuide() {
+    this._guideOpenToken = (this._guideOpenToken || 0) + 1;
     this.setOverlay({ guideOpen: false });
   },
   copyGuideSource(event) {
