@@ -19,6 +19,7 @@ const report = {
 };
 mini.on('exception', (error) => report.exceptions.push(error));
 const fields = [
+  'tableReady',
   'reviewOpen',
   'reviewData',
   'reviewSteps',
@@ -38,7 +39,17 @@ try {
   const page = await mini.currentPage();
   assert.equal(page.path, 'pages/table/table');
   const data = await page.data();
+  assert.equal(data.tableReady, true);
+  assert.equal(data.heroCards.length, 2);
   saved = Object.fromEntries(fields.map((key) => [key, data[key]]));
+  await page.setData({ tableReady: false });
+  assert.equal(await page.$('.nav'), null);
+  const launch = await page.$('.launch-screen image');
+  assert.equal(await launch.attribute('src'), '/assets/launch-icon.png');
+  await mini.screenshot({ path: path.join(output, 'launch-artwork.png') });
+  await page.setData({ tableReady: true });
+  assert.ok(await page.$('.nav'));
+  report.startup = { initializedHand: true, launchFixtureHidesNavigation: true };
   await mini.evaluate(() => getCurrentPages().at(-1).setOverlay({ reviewOpen: true }));
   for (const perspective of ['hero', 'opponent'])
     for (const count of [1, 2, 3, 4]) {
