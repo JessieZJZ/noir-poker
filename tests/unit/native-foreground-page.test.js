@@ -95,6 +95,16 @@ test('explicit preservation also guards Android Back minimization', async () => 
   assert.equal(f.window().__nativeForegroundPage, undefined);
 });
 
+test('preparing the page before a pending opponent avoids another WebView command before background', async () => {
+  const f = fixture();
+  await f.app.preserveForegroundPage();
+  const marker = f.window().__nativeForegroundPage;
+  await f.app.background();
+  assert.equal(f.window().__nativeForegroundPage, marker);
+  await f.app.activate();
+  assert.equal(f.window().__nativeForegroundPage, undefined);
+});
+
 test('non-Android and unmarked foreground operations retain their original behavior', async () => {
   const ios = { platform: 'ios' };
   assert.equal(withPreservedForegroundPage(ios), ios);

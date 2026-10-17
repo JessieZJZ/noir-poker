@@ -15,7 +15,7 @@ export function withPreservedForegroundPage(app) {
     ...app,
     preserveForegroundPage,
     async background(...args) {
-      await preserveForegroundPage();
+      if (!pendingPage) await preserveForegroundPage();
       return app.background(...args);
     },
     async activate(...args) {

@@ -9,6 +9,7 @@ import { nativePageReady } from '../../scripts/native-back.mjs';
 import { withCenteredNativeClicks } from './position-target.mjs';
 import { withPreservedForegroundPage } from './foreground-page.mjs';
 import { watchNativeMusicLoop } from './music-loop-probe.mjs';
+import { pressSelectedAndroidHome } from './immediate-background.mjs';
 import { BOT_THINK_LIMITS } from '../../src/engine/bot-timing.js';
 import { readReviewTagGeometry } from '../fixtures/review-tag-geometry.js';
 const documentLoginMarker = (text) => /sign in|log in|登录账号/i.test(text);
@@ -1984,7 +1985,11 @@ export async function nativeScenarios(app) {
         });
       });
     });
+    // Prepare realm identity before observing the short real opponent window.
+    // HOME then freezes the app before slow context discovery can miss it.
+    await app.preserveForegroundPage?.();
     await waitForPendingOpponent(app);
+    const immediateHome = pressSelectedAndroidHome({ platform: app.platform });
     const nativeBackground = await app.background();
     await app.sleep(6000);
     const stillBackgrounded = await app.nativeState();
@@ -2020,6 +2025,7 @@ export async function nativeScenarios(app) {
       pausedActor: paused.state.actor,
       pausedHand: paused.state.hand,
       pausedPhase: paused.state.phase,
+      immediateHome,
     };
   });
   if (app.comparePage)
