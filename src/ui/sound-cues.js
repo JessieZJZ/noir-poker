@@ -4,7 +4,7 @@ export const SOUND_SAMPLE_RATE = 44100;
 export const SOUND_CUES = ['fold', 'check', 'chip', 'deal', 'win'];
 // Keep the already audible wooden check and deal unchanged. Softer actions
 // carry more sustained midrange energy for small phone speakers.
-export const SOUND_TARGET_RMS = { fold: 0.25, check: 0.16, chip: 0.25, deal: 0.16, win: 0.24 };
+export const SOUND_TARGET_RMS = { fold: 0.25, check: 0.16, chip: 0.27, deal: 0.16, win: 0.24 };
 export const SOUND_PEAK_CEILING = 0.7;
 const triangle = (phase) => (2 / Math.PI) * Math.asin(Math.sin(phase));
 const envelope = (t, peak, attack, end) =>
@@ -28,7 +28,10 @@ export function soundSamples(name) {
     x1 = 0,
     x2 = 0,
     y1 = 0,
-    y2 = 0;
+    y2 = 0,
+    chipGrainFast = 0,
+    chipGrainSmooth = 0,
+    chipGrainLow = 0;
   const w = (2 * Math.PI * 850) / SOUND_SAMPLE_RATE,
     alpha = Math.sin(w) / (2 * 0.7);
   for (let i = 0; i < noise.length; i++) {
@@ -63,27 +66,36 @@ export function soundSamples(name) {
         (triangle(phase) * 0.55 + Math.sin(phase * 5) * 0.45 + Math.sin(phase * 9) * 0.2) *
         envelope(t, 0.288, 0.012, 0.16);
     } else if (kind === 'chip') {
-      // Short inharmonic ceramic contacts, then the stack settling on felt.
-      // Locally synthesized, without recordings or sample-pack audio.
-      for (const [contact, offset] of [0, 0.031, 0.067, 0.112, 0.162, 0.221].entries()) {
+      // Dense, irregular plastic/ceramic contacts rather than pitched notes.
+      // The reference informs timing/timbre only; no recording is sampled.
+      seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;
+      const white = seed / 2147483648 - 1;
+      chipGrainFast += 0.56 * (white - chipGrainFast);
+      chipGrainSmooth += 0.56 * (chipGrainFast - chipGrainSmooth);
+      chipGrainLow += 0.2 * (chipGrainSmooth - chipGrainLow);
+      const grain = chipGrainSmooth - chipGrainLow;
+      for (const [contact, offset] of [
+        0, 0.014, 0.031, 0.046, 0.067, 0.087, 0.112, 0.137, 0.162, 0.188, 0.221, 0.247, 0.272,
+      ].entries()) {
         const dt = t - offset;
-        if (dt <= 0 || dt >= 0.1) continue;
-        const strength = [0.68, 0.9, 0.76, 1, 0.82, 0.56][contact];
-        const variation = 1 + ((contact % 3) - 1) * 0.045;
-        const attack = Math.min(1, dt / 0.0008);
+        if (dt <= 0 || dt >= 0.045) continue;
+        const strength = [0.9, 0.35, 1, 0.48, 0.82, 0.4, 0.94, 0.38, 0.84, 0.52, 0.78, 0.42, 0.24][
+          contact
+        ];
+        const variation = 1 + ((contact % 5) - 2) * 0.035;
+        const attack = Math.min(1, dt / 0.00035);
         let contactSound = 0;
         for (const [hz, weight, decay] of [
-          [1140, 0.58, 0.018],
-          [2070, 0.45, 0.012],
-          [3460, 0.32, 0.009],
-          [4930, 0.16, 0.006],
+          [2330, 0.18, 0.0045],
+          [3610, 0.22, 0.004],
+          [5320, 0.25, 0.0035],
+          [7290, 0.19, 0.003],
+          [9820, 0.12, 0.002],
         ])
           contactSound +=
             Math.sin(2 * Math.PI * hz * variation * dt) * weight * Math.exp(-dt / decay);
-        seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;
-        const grain = (seed / 2147483648 - 1) * Math.exp(-dt / 0.006) * 0.24;
-        const felt = Math.sin(2 * Math.PI * 185 * dt) * Math.exp(-dt / 0.022) * 0.2;
-        value += strength * attack * (contactSound + grain + felt);
+        const felt = Math.sin(2 * Math.PI * 390 * dt) * Math.exp(-dt / 0.008) * 0.055;
+        value += strength * attack * (contactSound + grain * Math.exp(-dt / 0.007) * 1.35 + felt);
       }
     } else {
       const notes = kind === 'win' ? [440, 554, 659] : [820, 570];
