@@ -11,6 +11,24 @@ import { BOT_THINK_LIMITS } from '../../src/engine/bot-timing.js';
 import { readReviewTagGeometry } from '../fixtures/review-tag-geometry.js';
 const documentLoginMarker = (text) => /sign in|log in|登录账号/i.test(text);
 
+async function waitForNativeGuidePaint(app) {
+  // DOM geometry can precede UIKit's composited dialog and scroll frame.
+  await app.evaluate(() => {
+    window.__nativeGuidePainted = false;
+    requestAnimationFrame(() =>
+      requestAnimationFrame(() => {
+        window.__nativeGuidePainted = true;
+      }),
+    );
+  });
+  await app.waitFor(
+    () => app.evaluate(() => window.__nativeGuidePainted),
+    5000,
+    'The guide must paint before the native screenshot',
+  );
+  await app.sleep(750);
+}
+
 export async function waitForNativeHeroTurn(app, { now = Date.now, advanceSettled = false } = {}) {
   const started = now();
   const { playerCount } = await app.state();
@@ -960,22 +978,7 @@ export async function nativeScenarios(app) {
       assert.ok(target.top >= target.headerBottom && target.scrollTop > 50);
       targets.push(target);
       if (!attempt) {
-        // UIKit can still capture the table in the frame that opens a dialog.
-        // Wait for the real rendered guide before retaining device evidence.
-        await app.evaluate(() => {
-          window.__nativeRankingsPainted = false;
-          requestAnimationFrame(() =>
-            requestAnimationFrame(() => {
-              window.__nativeRankingsPainted = true;
-            }),
-          );
-        });
-        await app.waitFor(
-          () => app.evaluate(() => window.__nativeRankingsPainted),
-          5000,
-          'The hand rankings guide must paint before the native screenshot',
-        );
-        await app.sleep(750);
+        await waitForNativeGuidePaint(app);
         await app.screenshot('hand-rankings-target');
       }
       await app.click('#rules-dialog .dialog-header .close-dialog');
@@ -1022,10 +1025,11 @@ export async function nativeScenarios(app) {
     assert.ok(Math.abs(after.top - before.top) < 1);
     assert.ok(Math.abs(after.bottom - before.bottom) < 1);
     assert.ok(after.top >= 0 && after.bodyTop >= after.bottom - 1);
+    await waitForNativeGuidePaint(app);
     await app.screenshot('guide-header-after-scroll');
     await app.click('#rules-dialog .dialog-header .close-dialog');
     assert.equal(await app.evaluate(() => document.querySelector('#rules-dialog').open), false);
-    return { before, after, scope: 'Installed app guide scrolling; audio regressions excluded' };
+    return { before, after, scope: 'Installed app guide scrolling and fixed header geometry' };
   });
   await check('mixed-toggle-and-visual-guide', async () => {
     await app.click('#opponents-button');
