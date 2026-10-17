@@ -110,6 +110,18 @@ try {
     return state.audio.time < 3 && state.controller.playing ? state : null;
   }, 'Real InnerAudioContext must loop beyond the end');
   report.checks.push({ name: 'real-audio-loop', seeked, wrapped });
+  const duringCue = await mini.evaluate(() => {
+    getCurrentPages().at(-1).playSound('call');
+    const audio = getApp().__bgmProbe.audios.find((audio) => audio.src.includes('/music/'));
+    return { volume: audio.volume, paused: audio.paused };
+  });
+  assert.equal(duringCue.volume, 0.5);
+  assert.equal(duringCue.paused, false);
+  const restored = await wait(async () => {
+    const state = await inspect();
+    return state.audio.volume === 1 && state.controller.playing ? state : null;
+  }, 'Music must recover its enhanced level after the real chip cue');
+  report.checks.push({ name: 'real-cue-music-headroom-and-restore', duringCue, restored });
   const sound = await page.$('#sound-button');
   await sound.tap();
   const muted = await wait(async () => {

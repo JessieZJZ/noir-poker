@@ -853,13 +853,16 @@ test('WeChat Page stops and destroys native audio plus pending work when backgro
 });
 
 test('WeChat boosted sound cues keep only the latest context active and respect all playback gates', (t) => {
-  const { page, audios } = setup(t);
+  const { page, audios, app } = setup(t);
+  let ducks = 0;
+  app.noirMusic = { duck: () => ducks++, unlock() {}, setEnabled() {} };
   const fold = page._soundPool.fold;
   const call = page._soundPool.chip;
   const snapshots = () => audios.map((audio) => [audio.playCount || 0, audio.stopCount || 0]);
   let before = snapshots();
   page.playSound('fold');
   assert.deepEqual(snapshots(), before, 'No gesture must neither stop nor play a cue');
+  assert.equal(ducks, 0);
   page._audioUnlocked = true;
   page.playSound('fold');
   assert.equal(fold.playCount, 1);
@@ -876,6 +879,7 @@ test('WeChat boosted sound cues keep only the latest context active and respect 
   assert.equal(call.src, '/assets/sounds/chip.wav');
   page.playSound('raise');
   assert.equal(call.playCount, 2, 'Raise and call reuse the same recorded chip context');
+  assert.equal(ducks, 3, 'Every actually played cue reserves music headroom');
   assert.deepEqual(
     audios.filter((audio) => audio.playing),
     [call],

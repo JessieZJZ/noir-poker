@@ -1,5 +1,5 @@
 import { soundSamples, SOUND_SAMPLE_RATE } from '../src/ui/sound-cues.js';
-import { BACKGROUND_MUSIC_PATH } from '../src/ui/background-music.js';
+import { MOBILE_BACKGROUND_MUSIC_PATH } from '../src/ui/background-music.js';
 import { watch } from 'node:fs';
 import { cp, mkdir, open, readFile, readdir, rename, rm, stat, writeFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
@@ -278,7 +278,7 @@ export async function buildWechat(output = wechatOutput) {
     for (const sound of ['fold', 'check', 'chip', 'deal', 'win'])
       await writeFile(path.join(staging, `assets/sounds/${sound}.wav`), soundWave(sound));
     await cp(
-      path.join(root, 'public', BACKGROUND_MUSIC_PATH),
+      path.join(root, 'public', MOBILE_BACKGROUND_MUSIC_PATH),
       path.join(staging, 'music/background-music.m4a'),
     );
     const project = {
@@ -392,7 +392,7 @@ export async function verifyWechat(output = wechatOutput) {
     throw Error('Missing local background music');
   if (
     checksum(await readFile(path.join(output, 'music/background-music.m4a'))) !==
-    checksum(await readFile(path.join(root, 'public', BACKGROUND_MUSIC_PATH)))
+    checksum(await readFile(path.join(root, 'public', MOBILE_BACKGROUND_MUSIC_PATH)))
   )
     throw Error('WeChat background music differs from source');
   if (app.pages?.length < 1 || project.compileType !== 'miniprogram')

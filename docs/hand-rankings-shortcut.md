@@ -25,4 +25,4 @@ npm run mobile:verify
 
 专项覆盖：`tests/e2e/guide-header.spec.js`、`tests/unit/wechat-page.test.js`、原生 `hand-rankings-shortcut` / `guide-sticky-header` 场景、`tests/wechat/run.mjs`。
 
-浏览器、资源/模板编译、安装版模拟器和微信 DevTools 各自记录，不将其中一种替代另一种。完整结果见本次交付报告。
+浏览器、资源/模板编译、安装版模拟器和微信 DevTools 各自记录，不将其中一种替代另一种。完整结果见[本次交付报告](hand-rankings-validation.md)。

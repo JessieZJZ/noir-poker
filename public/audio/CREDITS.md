@@ -22,6 +22,23 @@ ffmpeg -stream_loop 2 -i audio-studio/noir-background-music/masters/01-midnight-
 
 编码器不是曲库授权来源。原创合成减少外部录音/采样授权风险，不构成全球曲库相似性比对或绝对零风险保证。详见音乐工作室 README 的来源与使用边界。
 
+## 手机专用响度版本（2026-10-17）
+
+桌面继续使用上述文件，字节及播放增益不变。原生 App、触摸设备浏览器和微信使用 `background-music-mobile.m4a`；微信仅复制手机版本到音乐分包，不增加第二份文件。
+
+手机版本从原始无损母带制作：100 Hz 高通、1.6 kHz 提升、动态压缩、响度处理和峰值控制，保留同一曲目和 93.659 秒循环。AAC 128 kbps / 48 kHz / 双声道，1,570,495 字节；编码后实测约 −13.67 LUFS、−6.94 dBTP，相比桌面版平均响度提高 5.30 dB。SHA-256：`411fea885fc40696dfa6202c6c04e12da523c6bdbe9f063a565e71d7b6cbf58d`。
+
+App 继续共用最终混音限幅。微信动作音效响起时音乐临时降至 0.5，650 ms 后恢复 1.0；连续动作延长保护窗口，关闭声音、进入后台或释放播放器均取消恢复计时，避免迟到回调影响下一次播放。该余量按解码后峰值和单个动作音效上限检查。
+
+```sh
+ffmpeg -stream_loop 2 -i audio-studio/noir-background-music/masters/01-midnight-felt.flac \
+  -af 'highpass=f=100,equalizer=f=1600:t=o:w=2:g=4,acompressor=threshold=0.035:ratio=4:attack=5:release=100:makeup=4,loudnorm=I=-12:TP=-2:LRA=3,aresample=48000,alimiter=limit=0.4:attack=5:release=80:level=false:latency=true,atrim=start_sample=4495610:end_sample=8991220,asetpts=PTS-STARTPTS,afade=t=in:d=0.004,afade=t=out:st=93.654542:d=0.004' \
+  -ar 48000 -map_metadata -1 -c:a aac -b:a 128k -movflags +faststart \
+  public/audio/background-music-mobile.m4a
+```
+
+手机半音量在嘈杂环境中的实际听感仍受设备扬声器、系统音量曲线与环境噪声影响；本机解码、响度和模拟器结果不代替实体手机听音。
+
 ## 筹码操作音效
 
 [Joma86 — AllInPushChips2.wav](https://freesound.org/people/Joma86/sounds/532860/)，CC0。作者使用 Behringer C-1 录制推入一摞真实筹码的声音。本项目采用页面公开 HQ 预览的 0.15–0.75 秒，做首尾淡化、增益及峰值控制。Web/App 共用内嵌 PCM，微信生成相同的本地 WAV；详细处理与来源指纹见 `audio-studio/chip-stack/README.md`。

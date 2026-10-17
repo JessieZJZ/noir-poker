@@ -11,6 +11,31 @@ const musicState = (page) =>
     source: audio.currentSrc,
   }));
 
+test('a touch browser plays the phone master and preserves the combined sound switch', async ({
+  browser,
+}) => {
+  const context = await browser.newContext({
+    hasTouch: true,
+    viewport: { width: 390, height: 844 },
+    locale: 'zh-CN',
+  });
+  try {
+    const page = await context.newPage();
+    await page.goto('/');
+    await page.waitForFunction(() => !!window.qa);
+    await openSettings(page);
+    await expect.poll(async () => (await musicState(page)).paused).toBe(false);
+    expect(new URL((await musicState(page)).source).pathname).toBe(
+      '/audio/background-music-mobile.m4a',
+    );
+    await page.locator('#sound-button').click();
+    expect((await musicState(page)).paused).toBe(true);
+    await expect(page.locator('#vibration-button')).toHaveAttribute('aria-checked', 'true');
+  } finally {
+    await context.close();
+  }
+});
+
 test('music loops locally with sound, vibration is independent, and both preferences survive reload', async ({
   page,
 }) => {

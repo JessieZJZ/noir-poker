@@ -1,6 +1,7 @@
 import {
   createMusicController,
   BACKGROUND_MUSIC_PATH,
+  MOBILE_BACKGROUND_MUSIC_PATH,
   BACKGROUND_MUSIC_VOLUME,
 } from '../ui/background-music.js';
 
@@ -8,6 +9,8 @@ export function createWebBackgroundMusic({
   enabled = true,
   active = true,
   document = globalThis.document,
+  mobile = document.documentElement?.classList.contains('native-app') ||
+    Boolean(globalThis.matchMedia?.('(pointer: coarse)').matches),
   createContext = () => new (globalThis.AudioContext || globalThis.webkitAudioContext)(),
   sharedContext = false,
   getOutput = (context) => context.destination,
@@ -19,7 +22,10 @@ export function createWebBackgroundMusic({
       const audio = document.createElement('audio');
       audio.hidden = true;
       audio.dataset.backgroundMusic = 'midnight-felt';
-      audio.src = new URL(BACKGROUND_MUSIC_PATH, document.baseURI).href;
+      audio.src = new URL(
+        mobile ? MOBILE_BACKGROUND_MUSIC_PATH : BACKGROUND_MUSIC_PATH,
+        document.baseURI,
+      ).href;
       audio.preload = 'auto';
       audio.loop = true;
       document.body.append(audio);

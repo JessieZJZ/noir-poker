@@ -201,3 +201,91 @@ test('WeChat late subpackage load/canplay cannot resurrect muted, hidden or disp
   assert.equal(audio.playCount, 2);
   assert.equal(audio.destroyed, true);
 });
+
+test('native apps and touch browsers select the phone master; desktop keeps the existing mix', () => {
+  for (const [native, mobile, expected] of [
+    [false, undefined, 'background-music.m4a'],
+    [true, undefined, 'background-music-mobile.m4a'],
+    [false, true, 'background-music-mobile.m4a'],
+  ]) {
+    const audio = {
+      dataset: {},
+      paused: true,
+      play() {},
+      pause() {},
+      removeAttribute() {},
+      load() {},
+      remove() {},
+    };
+    const music = createWebBackgroundMusic({
+      document: {
+        baseURI: 'https://example.test/poker/',
+        documentElement: { classList: { contains: () => native } },
+        createElement: () => audio,
+        body: { append() {} },
+      },
+      ...(mobile === undefined ? {} : { mobile }),
+      createContext: () => {
+        throw Error('No Web Audio');
+      },
+    });
+    assert.equal(audio.src, `https://example.test/poker/audio/${expected}`);
+    assert.equal(audio.volume, 1, 'Phone mastering also works without Web Audio');
+    assert.equal(audio.loop, true);
+    music.dispose();
+  }
+});
+
+test('WeChat ducks across overlapping cues and cancels stale volume timers on hide, mute and disposal', async () => {
+  let serial = 0;
+  const jobs = new Map();
+  const audio = {
+    onPlay(fn) {
+      this.played = fn;
+    },
+    play() {
+      this.played();
+    },
+    pause() {},
+    stop() {},
+    destroy() {},
+  };
+  const music = createWechatBackgroundMusic(
+    { createInnerAudioContext: () => audio },
+    {
+      loadSource: () => '/music/background-music.m4a',
+      schedule(fn, delay) {
+        assert.equal(delay, 650);
+        jobs.set(++serial, fn);
+        return serial;
+      },
+      unschedule: (id) => jobs.delete(id),
+    },
+  );
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  assert.equal(audio.volume, 1);
+  music.duck();
+  const stale = jobs.get(serial);
+  music.duck();
+  stale();
+  assert.equal(audio.volume, 0.5, 'Earlier cue cannot restore a later cue’s mix');
+  jobs.get(serial)();
+  assert.equal(audio.volume, 1);
+  for (const stop of [
+    () => music.setActive(false),
+    () => music.setEnabled(false),
+    () => music.dispose(),
+  ]) {
+    music.setEnabled(true);
+    music.setActive(true);
+    music.duck();
+    const cancelled = jobs.get(serial);
+    stop();
+    assert.equal(jobs.size, 0);
+    assert.equal(audio.volume, 1);
+    cancelled();
+    assert.equal(audio.volume, 1);
+  }
+  music.duck();
+  assert.equal(jobs.size, 0);
+});

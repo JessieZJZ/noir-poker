@@ -832,6 +832,7 @@ export async function nativeScenarios(app) {
         'The new bundled music must decode and advance after a real tap',
       );
       assert.equal(music.loop, true);
+      assert.ok(music.source.endsWith('/audio/background-music-mobile.m4a'));
       assert.ok(music.duration > 93.6 && music.duration < 93.8);
       await app.click('#opponents-dialog .close-dialog');
       await waitForNativeHeroTurn(app);
@@ -889,7 +890,7 @@ export async function nativeScenarios(app) {
     );
     assert.equal(initial.loop, true);
     assert.ok(initial.duration > 93 && initial.duration < 94);
-    assert.ok(initial.source.endsWith('/audio/background-music.m4a'));
+    assert.ok(initial.source.endsWith('/audio/background-music-mobile.m4a'));
     await app.evaluate(() => {
       const audio = document.querySelector('audio[data-background-music]');
       audio.currentTime = audio.duration - 0.2;

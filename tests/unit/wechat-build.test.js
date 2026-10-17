@@ -267,7 +267,7 @@ test('concurrent WeChat builders serialize and preserve DevTools private prefere
   assert.equal(manifest.totalBytes, manifest.packageBytes.main + manifest.packageBytes.music);
   assert.deepEqual(
     readFileSync(path.join(workspace.output, 'music/background-music.m4a')),
-    readFileSync(path.join(workspace.directory, 'public/audio/background-music.m4a')),
+    readFileSync(path.join(workspace.directory, 'public/audio/background-music-mobile.m4a')),
   );
   for (const name of ['fold', 'check', 'chip', 'deal', 'win']) {
     const wave = readFileSync(path.join(workspace.output, `assets/sounds/${name}.wav`));

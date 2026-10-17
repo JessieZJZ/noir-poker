@@ -58,10 +58,18 @@ test('the shipped AAC reserves phone-mix headroom and Web Audio bounds coinciden
   await page.goto('/');
   const result = await page.evaluate(async () => {
     const { soundSamples, createSoundOutput } = await import('/src/ui/sound-cues.js');
-    const { BACKGROUND_MUSIC_VOLUME } = await import('/src/ui/background-music.js');
+    const { BACKGROUND_MUSIC_VOLUME, BACKGROUND_MUSIC_DUCK_VOLUME } =
+      await import('/src/ui/background-music.js');
     const context = new OfflineAudioContext(2, 44100, 44100);
-    const bytes = await (await fetch('/audio/background-music.m4a')).arrayBuffer();
+    const bytes = await (await fetch('/audio/background-music-mobile.m4a')).arrayBuffer();
     const music = await context.decodeAudioData(bytes);
+    const desktop = await context.decodeAudioData(
+      await (await fetch('/audio/background-music.m4a')).arrayBuffer(),
+    );
+    const rms = (buffer) => {
+      const samples = buffer.getChannelData(0);
+      return Math.sqrt(samples.reduce((sum, value) => sum + value * value, 0) / samples.length);
+    };
     let musicPeak = 0,
       seam = 0;
     for (let channel = 0; channel < music.numberOfChannels; channel++) {
@@ -88,12 +96,21 @@ test('the shipped AAC reserves phone-mix headroom and Web Audio bounds coinciden
     const rendered = await context.startRendering();
     let mixPeak = 0;
     for (const sample of rendered.getChannelData(0)) mixPeak = Math.max(mixPeak, Math.abs(sample));
-    return { duration: music.duration, musicPeak, mixPeak, seam, gain: BACKGROUND_MUSIC_VOLUME };
+    return {
+      duration: music.duration,
+      musicPeak,
+      mixPeak,
+      seam,
+      gain: BACKGROUND_MUSIC_VOLUME,
+      duck: BACKGROUND_MUSIC_DUCK_VOLUME,
+      loudnessIncreaseDB: 20 * Math.log10(rms(music) / rms(desktop)),
+    };
   });
   expect(result.duration).toBeGreaterThan(93.6);
   expect(result.duration).toBeLessThan(93.8);
-  expect(result.musicPeak * result.gain + 0.7).toBeLessThan(0.99);
-  expect(result.musicPeak).toBeGreaterThan(0.25);
+  expect(result.musicPeak * result.duck + 0.7).toBeLessThan(0.99);
+  expect(result.loudnessIncreaseDB).toBeGreaterThan(4.8);
+  expect(result.musicPeak).toBeLessThan(0.58);
   expect(result.mixPeak).toBeGreaterThan(0.7);
   expect(result.mixPeak).toBeLessThan(0.92);
   expect(result.seam).toBeLessThan(0.015);

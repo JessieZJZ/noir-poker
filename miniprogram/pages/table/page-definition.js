@@ -625,6 +625,7 @@ module.exports = {
       for (const other of this._audio || []) if (other !== audio) other.stop();
       audio.stop();
       audio.seek?.(0);
+      if (typeof getApp === 'function') getApp().noirMusic?.duck?.();
       audio.play();
     } catch {
       /* A device can block audio until the first user gesture. */
