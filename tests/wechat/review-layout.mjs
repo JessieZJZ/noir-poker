@@ -59,7 +59,7 @@ try {
         street: ['翻牌前', '翻牌', '转牌', '河牌'][index],
         position: 'SB',
         actual: index ? '过牌' : '跟注 3.1K',
-        keep: index > 0,
+        keep: false,
         label:
           perspective === 'opponent'
             ? ['ST', '谭老板，Tan Xuan', '阿宝，KPC A Bao', 'Peter，HCL'][index]
@@ -86,7 +86,9 @@ try {
       assert.equal(hint, count > 2);
       const evidence = { perspective, count, hint, width: (await cards[0].size()).width };
       evidence.tags = [];
-      for (const tag of await page.$$('.review-step > .review-label')) {
+      const tags = await page.$$('.review-timeline .review-label');
+      assert.equal(tags.length, count);
+      for (const tag of tags) {
         const height = (await tag.size()).height;
         const lineHeight = parseFloat(await tag.style('line-height'));
         const top = parseFloat(await tag.style('padding-top'));
