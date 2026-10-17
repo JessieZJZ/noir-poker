@@ -9,6 +9,7 @@ import {
 } from '../engine/stakes.js';
 import { createHeroTurnCue, createHeroTurnAttention } from '../ui/hero-turn.js';
 import { SEAT_ANCHORS } from '../ui/seat-geometry.js';
+import { visibleRecentAction } from '../ui/recent-action.js';
 import { explainOpponent } from '../review/opponents.js';
 import { selectedActivity } from '../review/activity.js';
 import { reviewCommentary } from '../review/matchups.js';
@@ -258,10 +259,7 @@ export function createWechatController({
       const revealed = done && (peeked.get(player.id) ?? (game.revealed && !player.folded));
       const best =
         revealed && game.board.length === 5 ? evaluate([...player.hole, ...game.board]) : null;
-      const retained =
-        done || player.folded || player.allin || player.lastAction?.street === game.street
-          ? player.lastAction
-          : null;
+      const retained = visibleRecentAction(game, player);
       const rawAction =
         game.actor === player.id && !done
           ? '思考中'
@@ -356,13 +354,7 @@ export function createWechatController({
         : '',
       stakesError,
       heroPosition: seatPosition(game, 0),
-      heroAction: compactActionAmounts(
-        cleanAction(
-          hero.folded || hero.allin || hero.lastAction?.street === game.street
-            ? hero.lastAction?.text || ''
-            : '',
-        ),
-      ),
+      heroAction: compactActionAmounts(cleanAction(visibleRecentAction(game, hero)?.text || '')),
       heroRank: heroBest && (game.revealed || game.showdown) ? heroBest.label : '',
       heroWinner: done && game.winners.some((w) => w.id === 0),
       heroFolded: hero.folded,

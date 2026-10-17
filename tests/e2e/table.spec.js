@@ -646,6 +646,36 @@ test('hero recent actions persist within the street and clear on new streets exc
   await assertFits();
 });
 
+test('Mia keeps her check while other players think, until her next action or a new street', async ({
+  page,
+}) => {
+  for (const missingLabel of [false, true]) {
+    await page.evaluate((missing) => window.qa.checkedSeat(9, missing), missingLabel);
+    const mia = page.locator('.seat-1 .seat-action');
+    await expect(mia).toHaveText('过牌');
+    await expect(page.locator('.seat-2 .seat-action')).toHaveText('思考中');
+    await page.evaluate(() => window.qa.resumeBots());
+    await expect(mia).toHaveText('过牌');
+    await page.evaluate(() => window.qa.stop());
+    await page.evaluate(() => window.qa.seatAction('raise', 200));
+    await expect(mia).toHaveText('过牌');
+    for (
+      let remaining = 8;
+      remaining > 0 && (await page.evaluate(() => window.noir.getState().actor)) !== 'Mia';
+      remaining--
+    ) {
+      await expect(mia).toHaveText('过牌');
+      await page.evaluate(() => window.qa.seatAction('call'));
+    }
+    await expect(mia).toHaveText('思考中');
+    await page.evaluate(() => window.qa.seatAction('call'));
+    await expect(mia).toHaveText(/^跟注\s*200$/);
+    await page.evaluate(() => window.qa.finish());
+    await expect(mia).toHaveText('等待行动');
+    await page.screenshot({ path: test.info().outputPath(`mia-new-street-${missingLabel}.png`) });
+  }
+});
+
 test('each community-card round clears ordinary actions while fold and all-in persist in 5–9 seats', async ({
   page,
 }) => {
