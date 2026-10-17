@@ -959,7 +959,25 @@ export async function nativeScenarios(app) {
       assert.ok(target.open && target.offset >= 0 && target.offset <= 14);
       assert.ok(target.top >= target.headerBottom && target.scrollTop > 50);
       targets.push(target);
-      if (!attempt) await app.screenshot('hand-rankings-target');
+      if (!attempt) {
+        // UIKit can still capture the table in the frame that opens a dialog.
+        // Wait for the real rendered guide before retaining device evidence.
+        await app.evaluate(() => {
+          window.__nativeRankingsPainted = false;
+          requestAnimationFrame(() =>
+            requestAnimationFrame(() => {
+              window.__nativeRankingsPainted = true;
+            }),
+          );
+        });
+        await app.waitFor(
+          () => app.evaluate(() => window.__nativeRankingsPainted),
+          5000,
+          'The hand rankings guide must paint before the native screenshot',
+        );
+        await app.sleep(750);
+        await app.screenshot('hand-rankings-target');
+      }
       await app.click('#rules-dialog .dialog-header .close-dialog');
     }
     await app.click('#rules-button');
