@@ -115,10 +115,11 @@ export function withCenteredNativeClicks(app) {
             const position = JSON.stringify(measured);
             if (position === previous) stable++;
             else {
-              const moved = previous !== undefined;
               previous = position;
               stable = 0;
-              if (moved) await app.evaluate(centerNativeTarget, selector);
+              // A late modal scroll restore can precede our very first sample.
+              // Re-center that sample too, then require three stable readings.
+              await app.evaluate(centerNativeTarget, selector);
             }
             return stable >= 2;
           },

@@ -178,29 +178,37 @@ test('closing a modal waits for unlock and late scroll restoration before the si
         setTimeout(() => {
           delete document.documentElement.dataset.homeScrollLocked;
           window.unlocked = true;
-          setTimeout(() => {
-            window.scrollTo(0, 600);
-            window.dispatchEvent(new Event('resize'));
-            window.restored = true;
-          }, 30);
         }, 80);
       });
       document.querySelector('#reset').addEventListener('click', event =>
         window.taps.push({ trusted: event.isTrusted, restored: window.restored }));
     </script>`);
   const delegations = [],
-    positioned = withCenteredNativeClicks(
-      app(async (selector) => {
-        delegations.push(selector);
-        if (selector === '#reset')
-          assert.equal(
-            await page.evaluate(() => window.restored),
-            true,
-            'Late native scroll restoration must finish before the real click',
-          );
-        return driverClick(selector);
-      }),
-    );
+    base = app(async (selector) => {
+      delegations.push(selector);
+      if (selector === '#reset')
+        assert.equal(
+          await page.evaluate(() => window.restored),
+          true,
+          'Late native scroll restoration must finish before the real click',
+        );
+      return driverClick(selector);
+    }),
+    positioned = withCenteredNativeClicks({
+      ...base,
+      async evaluate(fn, selector) {
+        if (selector === '#reset' && fn === readNativeTargetPosition)
+          await page.evaluate(() => {
+            if (window.restored) return;
+            // Restore after the first centering but before its first sample.
+            // This ordering must hold even on a CPU-throttled browser.
+            window.scrollTo(0, 600);
+            window.dispatchEvent(new Event('resize'));
+            window.restored = true;
+          });
+        return base.evaluate(fn, selector);
+      },
+    });
   await positioned.click('#close');
   const point = await positioned.click('#reset');
   assert.deepEqual(delegations, ['#close', '#reset']);

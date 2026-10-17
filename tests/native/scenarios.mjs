@@ -1317,8 +1317,8 @@ export async function nativeScenarios(app) {
     const preferencesBefore = await app.waitFor(
       async () => {
         const preferences = await readPreferences();
-        return typeof preferences.native === 'string' &&
-          typeof preferences.web === 'string' &&
+        // An unchanged default table legitimately has no saved key yet.
+        return (preferences.native === null || typeof preferences.native === 'string') &&
           preferences.native === preferences.web
           ? preferences
           : null;
