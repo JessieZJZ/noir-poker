@@ -11,7 +11,7 @@ import { BOT_THINK_LIMITS } from '../../src/engine/bot-timing.js';
 import { readReviewTagGeometry } from '../fixtures/review-tag-geometry.js';
 const documentLoginMarker = (text) => /sign in|log in|登录账号/i.test(text);
 
-export async function waitForNativeHeroTurn(app, { now = Date.now } = {}) {
+export async function waitForNativeHeroTurn(app, { now = Date.now, advanceSettled = false } = {}) {
   const started = now();
   const { playerCount } = await app.state();
   // An eight-player reset can have seven sequential, genuine bot pauses.
@@ -19,6 +19,7 @@ export async function waitForNativeHeroTurn(app, { now = Date.now } = {}) {
   // This changes no application timers or analysis workload.
   const timeoutMs = (playerCount - 1) * BOT_THINK_LIMITS.maximum + 10000;
   const observations = [];
+  let advancedSettlement = false;
   try {
     await app.waitFor(
       async () => {
@@ -34,6 +35,11 @@ export async function waitForNativeHeroTurn(app, { now = Date.now } = {}) {
         });
         if (JSON.stringify(snapshot) !== JSON.stringify(observations.at(-1)?.state))
           observations.push({ elapsedMs: now() - started, state: snapshot });
+        if (advanceSettled && !advancedSettlement && snapshot.phase === 'done') {
+          advancedSettlement = true;
+          await app.click('#next-button');
+          return false;
+        }
         return (
           snapshot.phase === 'playing' &&
           snapshot.actor === '你' &&
@@ -44,7 +50,7 @@ export async function waitForNativeHeroTurn(app, { now = Date.now } = {}) {
       timeoutMs,
       'The reset hand must reach the real hero turn',
     );
-    return { timeoutMs, elapsedMs: now() - started, observations };
+    return { timeoutMs, elapsedMs: now() - started, observations, advancedSettlement };
   } catch (error) {
     error.turnDiagnostics = { timeoutMs, elapsedMs: now() - started, observations };
     throw error;
@@ -1633,8 +1639,7 @@ export async function nativeScenarios(app) {
     return { coverage, pot: settled.pot, settlementBudget, layout, crownInspection };
   });
   await check('review-overflow-and-activity-size', async () => {
-    if ((await app.state()).phase === 'done') await app.click('#next-button');
-    await waitForNativeHeroTurn(app);
+    await waitForNativeHeroTurn(app, { advanceSettled: true });
     await app.click('#fold-button');
     if (await app.visible('#continue-deal-button')) {
       try {
