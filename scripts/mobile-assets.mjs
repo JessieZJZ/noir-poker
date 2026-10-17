@@ -43,7 +43,8 @@ await sharp({ create: { width: 648, height: 648, channels: 4, background: '#0010
   .toFile(path.join(res, 'drawable-nodpi/ic_launcher_artwork.png'));
 // Android's system launch icon is independent from its opaque launcher tile.
 await sharp({ create: { width: 648, height: 648, channels: 4, background: '#00000000' } })
-  .composite([{ input: await launchPng(432), gravity: 'center' }])
+  // A square tile must fit INSIDE Android's circular splash safe zone.
+  .composite([{ input: await launchPng(324), gravity: 'center' }])
   .png()
   .toFile(path.join(res, 'drawable-nodpi/launch_artwork.png'));
 writeFileSync(

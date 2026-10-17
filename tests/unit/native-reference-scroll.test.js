@@ -1,7 +1,19 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { chromium } from '@playwright/test';
-import { referenceDocumentScroll } from '../native/page-parity.mjs';
+import { referenceDocumentScroll, localReferenceHead } from '../native/page-parity.mjs';
+
+test('native replay resolves asynchronously loaded local CSS from its own asset server', () => {
+  for (const scheme of ['https', 'http', 'capacitor']) {
+    const head = `<link rel="stylesheet" href="${scheme}://localhost/assets/app.css?v=2#rules">`;
+    assert.equal(
+      localReferenceHead(head),
+      '<link rel="stylesheet" href="/assets/app.css?v=2#rules">',
+    );
+  }
+  const unchanged = '<link href="./assets/app.css"><link href="https://example.com/external.css">';
+  assert.equal(localReferenceHead(unchanged), unchanged);
+});
 
 test('native replay preserves the captured origin when distant content changes total height', () => {
   const capturedTop = 320.76190185546875;
