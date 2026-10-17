@@ -396,3 +396,28 @@ test('iOS preserves the difference between absent and explicitly empty labelledb
     assert.equal(await page.evaluate(() => window.__noirNativeTargetLabels), undefined);
   }
 });
+
+test('iOS footer reset and rankings use the actual native viewport tap and open their dialog', async () => {
+  for (const id of ['reset-button', 'hand-rankings-button']) {
+    await page.setContent(`
+      <style>body{margin:0}header{position:fixed;top:0;height:88px;width:100%;background:black;z-index:2}.before{height:1800px}.after{height:600px}button{height:40px;width:160px;margin-left:100px}</style>
+      <header></header><div class="before"></div><button id="${id}">Open</button><div class="after"></div><dialog>Guide or reset confirmation</dialog>
+      <script>window.taps=[];document.querySelector('button').onclick=event=>{window.taps.push(event.isTrusted);document.querySelector('dialog').showModal()};</script>`);
+    const taps = [];
+    const positioned = withCenteredNativeClicks({
+      ...app(() => {
+        throw Error('AX calibration must not handle this viewport-edge control');
+      }),
+      platform: 'ios',
+      nativeTap: async (selector) => {
+        taps.push(selector);
+        return driverClick(selector);
+      },
+    });
+    const point = await positioned.click(`#${id}`);
+    assert.ok(point.y > 88 && point.y < 840);
+    assert.deepEqual(taps, [`#${id}`]);
+    assert.equal(await page.locator('dialog').evaluate((element) => element.open), true);
+    assert.deepEqual(await page.evaluate(() => window.taps), [true]);
+  }
+});
