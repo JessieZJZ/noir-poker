@@ -48,13 +48,23 @@ for (const width of [320, 390, 768, 1280]) {
       return tags;
     };
     await checkTags('#review-timeline');
+    const capture = async (name) => {
+      if (width === 390)
+        await info.attach(name, {
+          body: await page.locator('#review-timeline').screenshot(),
+          contentType: 'image/png',
+        });
+    };
+    await capture('pending-tags');
     await page.waitForFunction((count) => window.heldReviewMessages.length >= count + 1, count);
     await page.evaluate(() => window.heldReviewMessages.shift()());
     await expect(page.locator('#review-analysis-state')).toContainText(`1 / ${count}`);
     await checkTags('#review-timeline');
+    await capture('partially-analyzed-tags');
     await page.evaluate(() => window.heldReviewMessages.splice(0).forEach((deliver) => deliver()));
     await expect(page.locator('#review-dialog')).toHaveAttribute('data-analysis-status', 'done');
     await checkTags('#review-timeline');
+    await capture('completed-tags');
     await page.locator('#review-opponents-tab').click();
     const tags = await checkTags('#review-opponents .review-timeline');
     if (width <= 390) expect(tags.some((tag) => tag.lines > 1)).toBe(true);
