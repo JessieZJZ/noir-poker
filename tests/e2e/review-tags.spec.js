@@ -49,11 +49,10 @@ for (const width of [320, 390, 768, 1280]) {
     };
     await checkTags('#review-timeline');
     const capture = async (name) => {
-      if (width === 390)
-        await info.attach(name, {
-          body: await page.locator('#review-timeline').screenshot(),
-          contentType: 'image/png',
-        });
+      if (width !== 390) return;
+      const path = info.outputPath(`${name}.png`);
+      await page.locator('#review-timeline').screenshot({ path });
+      await info.attach(name, { path, contentType: 'image/png' });
     };
     await capture('pending-tags');
     await page.waitForFunction((count) => window.heldReviewMessages.length >= count + 1, count);
@@ -68,10 +67,10 @@ for (const width of [320, 390, 768, 1280]) {
     await page.locator('#review-opponents-tab').click();
     const tags = await checkTags('#review-opponents .review-timeline');
     if (width <= 390) expect(tags.some((tag) => tag.lines > 1)).toBe(true);
-    if (width === 390)
-      await info.attach('compact-opponent-tags', {
-        body: await page.locator('#review-dialog').screenshot(),
-        contentType: 'image/png',
-      });
+    if (width === 390) {
+      const path = info.outputPath('compact-opponent-tags.png');
+      await page.locator('#review-dialog').screenshot({ path });
+      await info.attach('compact-opponent-tags', { path, contentType: 'image/png' });
+    }
   });
 }
