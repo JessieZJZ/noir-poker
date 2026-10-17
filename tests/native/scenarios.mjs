@@ -8,6 +8,7 @@ import {
 import { nativePageReady } from '../../scripts/native-back.mjs';
 import { withCenteredNativeClicks } from './position-target.mjs';
 import { withPreservedForegroundPage } from './foreground-page.mjs';
+import { watchNativeMusicLoop } from './music-loop-probe.mjs';
 import { BOT_THINK_LIMITS } from '../../src/engine/bot-timing.js';
 import { readReviewTagGeometry } from '../fixtures/review-tag-geometry.js';
 const documentLoginMarker = (text) => /sign in|log in|登录账号/i.test(text);
@@ -891,9 +892,9 @@ export async function nativeScenarios(app) {
     assert.equal(initial.loop, true);
     assert.ok(initial.duration > 93 && initial.duration < 94);
     assert.ok(initial.source.endsWith('/audio/background-music-mobile.m4a'));
+    await app.evaluate(watchNativeMusicLoop);
     await app.evaluate(() => {
       const audio = document.querySelector('audio[data-background-music]');
-      audio.currentTime = audio.duration - 0.2;
       window.__musicLifecycle = [];
       window.__musicLifecycleListener = ({ detail }) =>
         window.__musicLifecycle.push({
@@ -906,11 +907,13 @@ export async function nativeScenarios(app) {
     const wrapped = await app.waitFor(
       async () => {
         const state = await read();
-        return state && !state.paused && state.time < 3 ? state : null;
+        const loop = await app.evaluate(() => window.__nativeMusicLoop);
+        return state && !state.paused && loop?.wrapped ? { ...state, loop } : null;
       },
       10000,
       'The installed music player must loop beyond the end',
     );
+    await app.evaluate(() => window.__stopNativeMusicLoopProbe());
     await app.click('#opponents-dialog .close-dialog');
     const background = await app.background();
     await app.sleep(1500);
