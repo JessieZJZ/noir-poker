@@ -767,11 +767,8 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
     admitted = percentile <= range,
     openingAdmitted = percentile <= openingRange,
     callTolerance = (callDown - 0.5) * 0.1 + context.publicAdjustment,
-    requiredEquity = odds + responseRisk + 0.02,
-    affordableRangePassed =
-      (cheapEntry || affordableOpen || affordableThreeBet) &&
-      admitted &&
-      (!view.publicEquity || equity + callTolerance >= requiredEquity);
+    requiredEquity = view.allIn ? odds + view.allIn.pendingBuffer : odds + responseRisk + 0.02,
+    affordableRangePassed = (cheapEntry || affordableOpen || affordableThreeBet) && admitted;
   let sizing = null,
     deception = null,
     value = false,
@@ -984,7 +981,10 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
     // A pocket-pair/high-card admission tier is not a licence to call every
     // shove or large re-raise. Compare additional risk and public-line ranges. Seats
     // still deciding add a small risk buffer instead of eight random hands.
-    const required = odds + view.allIn.pendingBuffer + 0.02;
+    // The sampled range already prices the exposed money. Pending responses
+    // have their own buffer; adding another fixed margin systematically folds
+    // profitable but close strong-hand calls, especially against open shoves.
+    const required = requiredEquity;
     const lockedRiver =
       view.allIn.unbeatableRiver && view.allIn.guaranteedReturn >= view.allIn.cost;
     if (!lockedRiver && equity + callTolerance < required) {

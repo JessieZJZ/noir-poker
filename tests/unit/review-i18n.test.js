@@ -12,6 +12,14 @@ import {
   weakSuitedShove,
   pocketTensRecords,
 } from '../fixtures/review-spots.js';
+import {
+  turnBluffReview,
+  turnStraightCallRecord,
+  suitedBroadwayFiveBetFold,
+  pocketNinesCheckedBoard,
+} from '../fixtures/review-summary.js';
+
+const clauses = (review) => review.paragraphParts?.flat() || review.paragraphs;
 
 test('hand-specific rationale and actual public responses localize without losing cards, names or chips', async () => {
   const cards = (text) =>
@@ -79,22 +87,21 @@ test('hand-specific rationale and actual public responses localize without losin
     },
   });
   const texts = [
-    ...r.coaching.paragraphs,
+    ...clauses(r.coaching),
     r.coaching.followUp,
     ...r.evidence,
-    ...(bot.paragraphs || [bot.detail]),
+    ...clauses(bot),
     ...bot.reasons,
     ...bot.metrics,
   ];
+  for (const spot of [turnBluffReview(), suitedBroadwayFiveBetFold(), pocketNinesCheckedBoard()])
+    texts.push(...clauses(analyzeDecision(spot, { trials: 120, rolloutTrials: 12 }).coaching));
+  texts.push(...clauses(explainOpponent(turnStraightCallRecord())));
   const reported = analyzeDecision(weakSuitedShove(), { trials: 120 });
-  texts.push(...reported.coaching.paragraphs, reported.coaching.followUp, ...reported.evidence);
+  texts.push(...clauses(reported.coaching), reported.coaching.followUp, ...reported.evidence);
   for (const record of pocketTensRecords()) {
     const explanation = explainOpponent(record);
-    texts.push(
-      ...(explanation.paragraphs || [explanation.detail]),
-      ...explanation.reasons,
-      ...explanation.metrics,
-    );
+    texts.push(...clauses(explanation), ...explanation.reasons, ...explanation.metrics);
   }
 
   const defense = explainOpponent({
@@ -108,19 +115,14 @@ test('hand-specific rationale and actual public responses localize without losin
       affordableThreeBet: true,
     },
   });
-  texts.push(
-    defense.title,
-    ...(defense.paragraphs || [defense.detail]),
-    ...defense.reasons,
-    ...defense.metrics,
-  );
+  texts.push(defense.title, ...clauses(defense), ...defense.reasons, ...defense.metrics);
   const causal = createReviewInput(causalReraiseGame());
   for (const decision of causal.decisions) {
     const result = analyzeDecision(decision, { trials: 120, rolloutTrials: 12 });
-    texts.push(...result.coaching.paragraphs, result.coaching.followUp, ...result.evidence);
+    texts.push(...clauses(result.coaching), result.coaching.followUp, ...result.evidence);
   }
   const mia = explainOpponent(causal.opponents[0]);
-  texts.push(...mia.paragraphs, ...mia.reasons, ...causal.activity.map((event) => event.text));
+  texts.push(...clauses(mia), ...mia.reasons, ...causal.activity.map((event) => event.text));
   assert.deepEqual(mia.metrics, []);
   assert.doesNotMatch(mia.detail, /它|EV|模型|模拟器|抽样/);
   for (const kind of ['set-shove', 'aa-flat']) {
@@ -128,7 +130,7 @@ test('hand-specific rationale and actual public responses localize without losin
     for (const decision of input.decisions) {
       const result = analyzeDecision(decision, { trials: 120, rolloutTrials: 12 });
       texts.push(
-        ...result.coaching.paragraphs,
+        ...clauses(result.coaching),
         result.context.matchups.handLabel,
         result.coaching.followUp,
         ...result.evidence,

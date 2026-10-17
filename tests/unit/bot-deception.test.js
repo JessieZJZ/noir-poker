@@ -328,7 +328,7 @@ test('every executed deceptive rationale localizes and keeps key poker informati
     await loadLocale(locale);
     for (const r of deceptiveRecords()) {
       const e = explainOpponent(r);
-      for (const text of [e.title, ...(e.paragraphs || [e.detail]), ...e.reasons, ...e.metrics]) {
+      for (const text of [e.title, ...e.paragraphParts.flat(), ...e.reasons, ...e.metrics]) {
         const translated = localizeText(text);
         assert.doesNotMatch(translated, /\{\d+\}/);
         if (!['zh-CN', 'zh-TW', 'ja'].includes(locale))

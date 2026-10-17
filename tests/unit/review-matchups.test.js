@@ -30,7 +30,7 @@ test('consumer preflop ranges combine hand families and explain only actions alr
     c = decisionContext(s),
     m = handMatchups(s, c),
     p = matchupPresentation(m, 0),
-    text = p.rangeNotes.join('');
+    text = analyzeDecision(s, { trials: 120, rolloutTrials: 12 }).coaching.explanation;
   assert.equal(p.groups.length, 1);
   assert.equal(p.groups[0].label, '对手可能牌组');
   assert.ok(p.groups[0].examples.length > 0);
@@ -51,7 +51,7 @@ test('consumer preflop ranges combine hand families and explain only actions alr
   reraised.history.push({ id: 7, street: 0, action: 'raise', amount: 14000 });
   assert.match(
     handMatchups(reraised, decisionContext(reraised)).rangeNotes.join(''),
-    /Jade在 LJ 位已经再加注到 14K/,
+    /Jade在 LJ 位，已有加注时3-bet 加注至 14K/,
   );
 });
 function spot(hole, board = '', changes = {}) {
@@ -343,7 +343,9 @@ test('presentation replaces one causal comparison paragraph with ordered rows an
     assert.doesNotMatch(html, /\d(?:\.\d+)?%|likelihood|weight|mass|概率[:：]?\s*\d/);
     if (!s.street) {
       assert.match(html, /对手可能牌组/);
-      assert.ok(presentation.rangeNotes.length > 0);
+      assert.deepEqual(presentation.rangeNotes, []);
+      assert.ok(m.rangeNotes.length > 0);
+      assert.equal(html.includes(m.rangeNotes[0]), false);
       assert.doesNotMatch(html, /当前可能领先|当前可能落后|坚果/);
     }
     assert.doesNotMatch(html, /结构上较弱|结构上较强|不代表获胜概率|估计排序|不代表对手实际底牌/);

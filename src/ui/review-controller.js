@@ -177,6 +177,7 @@ export function createReviewController({ card }) {
         result?.coaching.paragraphs || ['正在比较当时的合法选择…'],
         result?.context.matchups,
         decision.street,
+        result?.coaching.paragraphParts,
       ),
     );
     $('#review-practice-focus').hidden = !result || result.coaching.kind === 'keep';

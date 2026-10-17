@@ -1,0 +1,996 @@
+{
+  "sourceDigest": "e63c0e92b67f3a93564ea12731a32f04bf900de85ca6f53c4d2d0a999643aea4",
+  "scope": "1000 reset-to-100BB full engine hands per lineup and policy; same independent seeds; not solver targets or recovered screenshot histories",
+  "balanced": {
+    "before": {
+      "hands": 1000,
+      "players": 9,
+      "policySeed": 781,
+      "deckSeed": 711,
+      "difficulty": "hard",
+      "emotionMode": "lively",
+      "policySourceDigest": "cadc99edff3616ecc42b671ffc233c4abfaa498ce4b5074ecd9b0c67cb03264d",
+      "lineup": [
+        "balanced",
+        "balanced",
+        "balanced",
+        "balanced",
+        "balanced",
+        "balanced",
+        "balanced",
+        "balanced"
+      ],
+      "samples": 8000,
+      "vpipPercent": 36.3375,
+      "pfrPercent": 10.7375,
+      "metrics": {
+        "hands": 8000,
+        "vpip": 0.363375,
+        "pfr": 0.107375,
+        "threeBet": 0.04499437570303712,
+        "foldToThreeBet": 0.801358234295416,
+        "af": 1.6046966731898238,
+        "afInfinite": false
+      },
+      "flopHands": 759,
+      "averageFlopPlayers": 3.13965744400527,
+      "fourPlusFlopHands": 252,
+      "fourPlusActiveFlopHands": 252,
+      "flopPlayerDistribution": {
+        "2": 314,
+        "3": 193,
+        "4": 137,
+        "5": 66,
+        "6": 45,
+        "7": 4
+      },
+      "chipConservation": true
+    },
+    "after": {
+      "hands": 1000,
+      "players": 9,
+      "policySeed": 781,
+      "deckSeed": 711,
+      "difficulty": "hard",
+      "emotionMode": "lively",
+      "policySourceDigest": "8657b2b60f8ef8569e4d8265b7a0a6c0403e886ba8ef0a7f25bc36ba961cfbfd",
+      "lineup": [
+        "balanced",
+        "balanced",
+        "balanced",
+        "balanced",
+        "balanced",
+        "balanced",
+        "balanced",
+        "balanced"
+      ],
+      "samples": 8000,
+      "vpipPercent": 44.4375,
+      "pfrPercent": 11.6,
+      "metrics": {
+        "hands": 8000,
+        "vpip": 0.444375,
+        "pfr": 0.116,
+        "threeBet": 0.054945054945054944,
+        "foldToThreeBet": 0.8029925187032418,
+        "af": 1.45750452079566,
+        "afInfinite": false
+      },
+      "flopHands": 812,
+      "averageFlopPlayers": 3.602216748768473,
+      "fourPlusFlopHands": 384,
+      "fourPlusActiveFlopHands": 384,
+      "flopPlayerDistribution": {
+        "2": 270,
+        "3": 158,
+        "4": 168,
+        "5": 108,
+        "6": 65,
+        "7": 35,
+        "8": 8
+      },
+      "chipConservation": true
+    }
+  },
+  "mixed": {
+    "before": {
+      "hands": 1000,
+      "players": 9,
+      "policySeed": 781,
+      "deckSeed": 711,
+      "difficulty": "hard",
+      "emotionMode": "lively",
+      "policySourceDigest": "cadc99edff3616ecc42b671ffc233c4abfaa498ce4b5074ecd9b0c67cb03264d",
+      "lineup": [
+        "peter",
+        "abao",
+        "viktor",
+        "jungleman",
+        "dwan",
+        "st",
+        "tan",
+        "abao"
+      ],
+      "samples": 8000,
+      "vpipPercent": 37.1,
+      "pfrPercent": 15.175,
+      "metrics": {
+        "hands": 8000,
+        "vpip": 0.371,
+        "pfr": 0.15175,
+        "threeBet": 0.06095661846496107,
+        "foldToThreeBet": 0.8431535269709544,
+        "af": 2.037128712871287,
+        "afInfinite": false
+      },
+      "flopHands": 650,
+      "averageFlopPlayers": 2.8461538461538463,
+      "fourPlusFlopHands": 158,
+      "fourPlusActiveFlopHands": 158,
+      "flopPlayerDistribution": {
+        "2": 326,
+        "3": 166,
+        "4": 107,
+        "5": 37,
+        "6": 11,
+        "7": 3
+      },
+      "chipConservation": true
+    },
+    "after": {
+      "hands": 1000,
+      "players": 9,
+      "policySeed": 781,
+      "deckSeed": 711,
+      "difficulty": "hard",
+      "emotionMode": "lively",
+      "policySourceDigest": "8657b2b60f8ef8569e4d8265b7a0a6c0403e886ba8ef0a7f25bc36ba961cfbfd",
+      "lineup": [
+        "peter",
+        "abao",
+        "viktor",
+        "jungleman",
+        "dwan",
+        "st",
+        "tan",
+        "abao"
+      ],
+      "samples": 8000,
+      "vpipPercent": 47.925,
+      "pfrPercent": 16.5875,
+      "metrics": {
+        "hands": 8000,
+        "vpip": 0.47925,
+        "pfr": 0.165875,
+        "threeBet": 0.0832,
+        "foldToThreeBet": 0.8204667863554758,
+        "af": 1.644,
+        "afInfinite": false
+      },
+      "flopHands": 739,
+      "averageFlopPlayers": 3.4167794316644113,
+      "fourPlusFlopHands": 307,
+      "fourPlusActiveFlopHands": 307,
+      "flopPlayerDistribution": {
+        "2": 319,
+        "3": 113,
+        "4": 116,
+        "5": 101,
+        "6": 55,
+        "7": 31,
+        "8": 4
+      },
+      "chipConservation": true
+    }
+  },
+  "pressure": {
+    "before": [
+      {
+        "name": "AKo/46BB-UTG-shove/CO",
+        "samples": 100,
+        "actions": {
+          "call": 30,
+          "fold": 70
+        },
+        "reasons": {
+          "price-continue": 30,
+          "insufficient-equity": 70
+        },
+        "averageEquity": 0.5038541666666668,
+        "odds": 0.4919786096256686
+      },
+      {
+        "name": "88/46BB-UTG-shove/SB",
+        "samples": 100,
+        "actions": {
+          "fold": 99,
+          "call": 1
+        },
+        "reasons": {
+          "insufficient-equity": 99,
+          "price-continue": 1
+        },
+        "averageEquity": 0.38812499999999994,
+        "odds": 0.48924731182795744
+      },
+      {
+        "name": "AQo/3BB-BTN-isolation/3-limpers",
+        "samples": 100,
+        "actions": {
+          "call": 35,
+          "raise": 55,
+          "fold": 10
+        },
+        "reasons": {
+          "affordable-open": 35,
+          "value-raise": 55,
+          "insufficient-equity": 10
+        },
+        "averageEquity": 0.3230929487179488,
+        "odds": 0.2105263157894736
+      },
+      {
+        "name": "AQo/16.5BB-BTN-isolation/3-limpers",
+        "samples": 100,
+        "actions": {
+          "fold": 90,
+          "raise": 6,
+          "call": 4
+        },
+        "reasons": {
+          "insufficient-equity": 90,
+          "value-raise": 6,
+          "loose-exception": 3,
+          "premium-continue": 1
+        },
+        "averageEquity": 0.32535256410256413,
+        "odds": 0.42465753424657543
+      },
+      {
+        "name": "A6o/6BB-BTN-isolation/3-limpers",
+        "samples": 100,
+        "actions": {
+          "fold": 100
+        },
+        "reasons": {
+          "outside-range": 99,
+          "insufficient-equity": 1
+        },
+        "averageEquity": 0.22064102564102558,
+        "odds": 0.322580645161291
+      },
+      {
+        "name": "76s/3BB-BTN-isolation/3-limpers",
+        "samples": 100,
+        "actions": {
+          "fold": 99,
+          "call": 1
+        },
+        "reasons": {
+          "outside-range": 98,
+          "insufficient-equity": 1,
+          "loose-exception": 1
+        },
+        "averageEquity": 0.24431089743589746,
+        "odds": 0.2105263157894736
+      }
+    ],
+    "after": [
+      {
+        "name": "AKo/46BB-UTG-shove/CO",
+        "samples": 100,
+        "actions": {
+          "call": 74,
+          "fold": 26
+        },
+        "reasons": {
+          "price-continue": 74,
+          "insufficient-equity": 26
+        },
+        "averageEquity": 0.5341015625,
+        "odds": 0.4919786096256686
+      },
+      {
+        "name": "88/46BB-UTG-shove/SB",
+        "samples": 100,
+        "actions": {
+          "fold": 73,
+          "call": 27
+        },
+        "reasons": {
+          "insufficient-equity": 73,
+          "price-continue": 27
+        },
+        "averageEquity": 0.4733984375,
+        "odds": 0.48924731182795744
+      },
+      {
+        "name": "AQo/3BB-BTN-isolation/3-limpers",
+        "samples": 100,
+        "actions": {
+          "call": 39,
+          "raise": 61
+        },
+        "reasons": {
+          "affordable-open": 39,
+          "value-raise": 61
+        },
+        "averageEquity": 0.4404141363022942,
+        "odds": 0.2105263157894736
+      },
+      {
+        "name": "AQo/16.5BB-BTN-isolation/3-limpers",
+        "samples": 100,
+        "actions": {
+          "raise": 58,
+          "call": 39,
+          "fold": 3
+        },
+        "reasons": {
+          "value-raise": 58,
+          "premium-continue": 39,
+          "insufficient-equity": 3
+        },
+        "averageEquity": 0.5715994906919566,
+        "odds": 0.42465753424657543
+      },
+      {
+        "name": "A6o/6BB-BTN-isolation/3-limpers",
+        "samples": 100,
+        "actions": {
+          "fold": 99,
+          "call": 1
+        },
+        "reasons": {
+          "outside-range": 99,
+          "loose-exception": 1
+        },
+        "averageEquity": 0.4042224979321753,
+        "odds": 0.322580645161291
+      },
+      {
+        "name": "76s/3BB-BTN-isolation/3-limpers",
+        "samples": 100,
+        "actions": {
+          "fold": 98,
+          "call": 2
+        },
+        "reasons": {
+          "outside-range": 98,
+          "loose-exception": 2
+        },
+        "averageEquity": 0.3274755398110662,
+        "odds": 0.2105263157894736
+      }
+    ]
+  },
+  "mixedStrongResponses": {
+    "before": {
+      "KK/single-open/up-to-4BB": {
+        "decisions": 11,
+        "folds": 0,
+        "calls": 0,
+        "raises": 11,
+        "checks": 0
+      },
+      "KK/unraised/up-to-4BB": {
+        "decisions": 21,
+        "folds": 0,
+        "calls": 3,
+        "raises": 18,
+        "checks": 0
+      },
+      "KK/single-open/over-4BB": {
+        "decisions": 5,
+        "folds": 0,
+        "calls": 0,
+        "raises": 5,
+        "checks": 0
+      },
+      "AQ/single-open/up-to-4BB": {
+        "decisions": 24,
+        "folds": 3,
+        "calls": 2,
+        "raises": 19,
+        "checks": 0
+      },
+      "AA/single-open/up-to-4BB": {
+        "decisions": 14,
+        "folds": 0,
+        "calls": 3,
+        "raises": 11,
+        "checks": 0
+      },
+      "AK/unraised/up-to-4BB": {
+        "decisions": 43,
+        "folds": 0,
+        "calls": 5,
+        "raises": 38,
+        "checks": 0
+      },
+      "88/single-open/up-to-4BB": {
+        "decisions": 18,
+        "folds": 6,
+        "calls": 0,
+        "raises": 12,
+        "checks": 0
+      },
+      "AQ/unraised/up-to-4BB": {
+        "decisions": 43,
+        "folds": 0,
+        "calls": 7,
+        "raises": 36,
+        "checks": 0
+      },
+      "AQ/single-open/over-4BB": {
+        "decisions": 11,
+        "folds": 8,
+        "calls": 2,
+        "raises": 1,
+        "checks": 0
+      },
+      "AK/single-open/over-4BB": {
+        "decisions": 16,
+        "folds": 6,
+        "calls": 2,
+        "raises": 8,
+        "checks": 0
+      },
+      "AA/unraised/up-to-4BB": {
+        "decisions": 13,
+        "folds": 0,
+        "calls": 3,
+        "raises": 10,
+        "checks": 0
+      },
+      "AK/single-open/up-to-4BB": {
+        "decisions": 34,
+        "folds": 1,
+        "calls": 3,
+        "raises": 30,
+        "checks": 0
+      },
+      "TT/single-open/up-to-4BB": {
+        "decisions": 12,
+        "folds": 0,
+        "calls": 1,
+        "raises": 11,
+        "checks": 0
+      },
+      "KK/reraise/over-4BB": {
+        "decisions": 14,
+        "folds": 0,
+        "calls": 2,
+        "raises": 12,
+        "checks": 0
+      },
+      "TT/commitment": {
+        "decisions": 6,
+        "folds": 1,
+        "calls": 5,
+        "raises": 0,
+        "checks": 0
+      },
+      "AK/reraise/over-4BB": {
+        "decisions": 28,
+        "folds": 6,
+        "calls": 3,
+        "raises": 19,
+        "checks": 0
+      },
+      "88/unraised/up-to-4BB": {
+        "decisions": 15,
+        "folds": 0,
+        "calls": 1,
+        "raises": 14,
+        "checks": 0
+      },
+      "99/single-open/up-to-4BB": {
+        "decisions": 14,
+        "folds": 1,
+        "calls": 1,
+        "raises": 12,
+        "checks": 0
+      },
+      "99/unraised/up-to-4BB": {
+        "decisions": 18,
+        "folds": 0,
+        "calls": 1,
+        "raises": 17,
+        "checks": 0
+      },
+      "99/reraise/over-4BB": {
+        "decisions": 20,
+        "folds": 5,
+        "calls": 2,
+        "raises": 13,
+        "checks": 0
+      },
+      "JJ/unraised/up-to-4BB": {
+        "decisions": 15,
+        "folds": 0,
+        "calls": 1,
+        "raises": 14,
+        "checks": 0
+      },
+      "JJ/reraise/over-4BB": {
+        "decisions": 12,
+        "folds": 2,
+        "calls": 0,
+        "raises": 10,
+        "checks": 0
+      },
+      "99/commitment": {
+        "decisions": 9,
+        "folds": 5,
+        "calls": 4,
+        "raises": 0,
+        "checks": 0
+      },
+      "88/single-open/over-4BB": {
+        "decisions": 2,
+        "folds": 1,
+        "calls": 0,
+        "raises": 1,
+        "checks": 0
+      },
+      "88/reraise/over-4BB": {
+        "decisions": 8,
+        "folds": 3,
+        "calls": 3,
+        "raises": 2,
+        "checks": 0
+      },
+      "88/commitment": {
+        "decisions": 2,
+        "folds": 2,
+        "calls": 0,
+        "raises": 0,
+        "checks": 0
+      },
+      "AQ/reraise/over-4BB": {
+        "decisions": 19,
+        "folds": 5,
+        "calls": 0,
+        "raises": 14,
+        "checks": 0
+      },
+      "AQ/commitment": {
+        "decisions": 8,
+        "folds": 5,
+        "calls": 3,
+        "raises": 0,
+        "checks": 0
+      },
+      "QQ/unraised/up-to-4BB": {
+        "decisions": 15,
+        "folds": 0,
+        "calls": 0,
+        "raises": 15,
+        "checks": 0
+      },
+      "TT/unraised/up-to-4BB": {
+        "decisions": 15,
+        "folds": 0,
+        "calls": 0,
+        "raises": 15,
+        "checks": 0
+      },
+      "JJ/single-open/up-to-4BB": {
+        "decisions": 19,
+        "folds": 0,
+        "calls": 4,
+        "raises": 15,
+        "checks": 0
+      },
+      "AA/reraise/over-4BB": {
+        "decisions": 13,
+        "folds": 0,
+        "calls": 1,
+        "raises": 12,
+        "checks": 0
+      },
+      "AA/commitment": {
+        "decisions": 6,
+        "folds": 0,
+        "calls": 6,
+        "raises": 0,
+        "checks": 0
+      },
+      "TT/reraise/over-4BB": {
+        "decisions": 14,
+        "folds": 3,
+        "calls": 3,
+        "raises": 8,
+        "checks": 0
+      },
+      "AK/commitment": {
+        "decisions": 11,
+        "folds": 3,
+        "calls": 8,
+        "raises": 0,
+        "checks": 0
+      },
+      "QQ/single-open/up-to-4BB": {
+        "decisions": 15,
+        "folds": 0,
+        "calls": 3,
+        "raises": 12,
+        "checks": 0
+      },
+      "AA/single-open/over-4BB": {
+        "decisions": 4,
+        "folds": 0,
+        "calls": 1,
+        "raises": 3,
+        "checks": 0
+      },
+      "TT/single-open/over-4BB": {
+        "decisions": 5,
+        "folds": 2,
+        "calls": 0,
+        "raises": 3,
+        "checks": 0
+      },
+      "QQ/reraise/over-4BB": {
+        "decisions": 14,
+        "folds": 1,
+        "calls": 3,
+        "raises": 10,
+        "checks": 0
+      },
+      "JJ/commitment": {
+        "decisions": 4,
+        "folds": 0,
+        "calls": 4,
+        "raises": 0,
+        "checks": 0
+      },
+      "99/single-open/over-4BB": {
+        "decisions": 3,
+        "folds": 2,
+        "calls": 0,
+        "raises": 1,
+        "checks": 0
+      },
+      "KK/commitment": {
+        "decisions": 3,
+        "folds": 0,
+        "calls": 3,
+        "raises": 0,
+        "checks": 0
+      },
+      "QQ/commitment": {
+        "decisions": 3,
+        "folds": 0,
+        "calls": 3,
+        "raises": 0,
+        "checks": 0
+      },
+      "JJ/single-open/over-4BB": {
+        "decisions": 1,
+        "folds": 0,
+        "calls": 0,
+        "raises": 1,
+        "checks": 0
+      }
+    },
+    "after": {
+      "KK/single-open/up-to-4BB": {
+        "decisions": 13,
+        "folds": 0,
+        "calls": 2,
+        "raises": 11,
+        "checks": 0
+      },
+      "KK/unraised/up-to-4BB": {
+        "decisions": 21,
+        "folds": 0,
+        "calls": 3,
+        "raises": 18,
+        "checks": 0
+      },
+      "KK/single-open/over-4BB": {
+        "decisions": 3,
+        "folds": 0,
+        "calls": 1,
+        "raises": 2,
+        "checks": 0
+      },
+      "AQ/single-open/up-to-4BB": {
+        "decisions": 25,
+        "folds": 0,
+        "calls": 3,
+        "raises": 22,
+        "checks": 0
+      },
+      "AQ/reraise/over-4BB": {
+        "decisions": 24,
+        "folds": 3,
+        "calls": 3,
+        "raises": 18,
+        "checks": 0
+      },
+      "AA/single-open/up-to-4BB": {
+        "decisions": 14,
+        "folds": 0,
+        "calls": 2,
+        "raises": 12,
+        "checks": 0
+      },
+      "AK/unraised/up-to-4BB": {
+        "decisions": 42,
+        "folds": 0,
+        "calls": 6,
+        "raises": 36,
+        "checks": 0
+      },
+      "88/single-open/up-to-4BB": {
+        "decisions": 17,
+        "folds": 0,
+        "calls": 1,
+        "raises": 16,
+        "checks": 0
+      },
+      "88/reraise/over-4BB": {
+        "decisions": 12,
+        "folds": 3,
+        "calls": 1,
+        "raises": 8,
+        "checks": 0
+      },
+      "88/commitment": {
+        "decisions": 5,
+        "folds": 2,
+        "calls": 3,
+        "raises": 0,
+        "checks": 0
+      },
+      "AK/single-open/over-4BB": {
+        "decisions": 17,
+        "folds": 1,
+        "calls": 3,
+        "raises": 13,
+        "checks": 0
+      },
+      "AA/unraised/up-to-4BB": {
+        "decisions": 13,
+        "folds": 0,
+        "calls": 0,
+        "raises": 13,
+        "checks": 0
+      },
+      "TT/single-open/over-4BB": {
+        "decisions": 3,
+        "folds": 0,
+        "calls": 0,
+        "raises": 3,
+        "checks": 0
+      },
+      "KK/reraise/over-4BB": {
+        "decisions": 15,
+        "folds": 0,
+        "calls": 0,
+        "raises": 15,
+        "checks": 0
+      },
+      "TT/commitment": {
+        "decisions": 13,
+        "folds": 2,
+        "calls": 11,
+        "raises": 0,
+        "checks": 0
+      },
+      "AK/reraise/over-4BB": {
+        "decisions": 36,
+        "folds": 3,
+        "calls": 3,
+        "raises": 30,
+        "checks": 0
+      },
+      "AK/commitment": {
+        "decisions": 20,
+        "folds": 3,
+        "calls": 17,
+        "raises": 0,
+        "checks": 0
+      },
+      "AQ/unraised/up-to-4BB": {
+        "decisions": 41,
+        "folds": 0,
+        "calls": 7,
+        "raises": 34,
+        "checks": 0
+      },
+      "AK/single-open/up-to-4BB": {
+        "decisions": 31,
+        "folds": 0,
+        "calls": 3,
+        "raises": 28,
+        "checks": 0
+      },
+      "88/unraised/up-to-4BB": {
+        "decisions": 14,
+        "folds": 0,
+        "calls": 2,
+        "raises": 12,
+        "checks": 0
+      },
+      "AA/reraise/over-4BB": {
+        "decisions": 13,
+        "folds": 0,
+        "calls": 2,
+        "raises": 11,
+        "checks": 0
+      },
+      "AA/commitment": {
+        "decisions": 8,
+        "folds": 0,
+        "calls": 8,
+        "raises": 0,
+        "checks": 0
+      },
+      "99/single-open/up-to-4BB": {
+        "decisions": 13,
+        "folds": 0,
+        "calls": 0,
+        "raises": 13,
+        "checks": 0
+      },
+      "99/unraised/up-to-4BB": {
+        "decisions": 19,
+        "folds": 0,
+        "calls": 3,
+        "raises": 16,
+        "checks": 0
+      },
+      "99/reraise/over-4BB": {
+        "decisions": 16,
+        "folds": 2,
+        "calls": 4,
+        "raises": 10,
+        "checks": 0
+      },
+      "JJ/unraised/up-to-4BB": {
+        "decisions": 13,
+        "folds": 0,
+        "calls": 0,
+        "raises": 13,
+        "checks": 0
+      },
+      "JJ/reraise/over-4BB": {
+        "decisions": 15,
+        "folds": 0,
+        "calls": 2,
+        "raises": 13,
+        "checks": 0
+      },
+      "99/commitment": {
+        "decisions": 9,
+        "folds": 4,
+        "calls": 5,
+        "raises": 0,
+        "checks": 0
+      },
+      "99/single-open/over-4BB": {
+        "decisions": 6,
+        "folds": 0,
+        "calls": 0,
+        "raises": 6,
+        "checks": 0
+      },
+      "QQ/unraised/up-to-4BB": {
+        "decisions": 14,
+        "folds": 0,
+        "calls": 2,
+        "raises": 12,
+        "checks": 0
+      },
+      "QQ/reraise/over-4BB": {
+        "decisions": 15,
+        "folds": 0,
+        "calls": 3,
+        "raises": 12,
+        "checks": 0
+      },
+      "TT/unraised/up-to-4BB": {
+        "decisions": 14,
+        "folds": 0,
+        "calls": 2,
+        "raises": 12,
+        "checks": 0
+      },
+      "JJ/single-open/up-to-4BB": {
+        "decisions": 20,
+        "folds": 0,
+        "calls": 0,
+        "raises": 20,
+        "checks": 0
+      },
+      "TT/single-open/up-to-4BB": {
+        "decisions": 13,
+        "folds": 0,
+        "calls": 1,
+        "raises": 12,
+        "checks": 0
+      },
+      "TT/reraise/over-4BB": {
+        "decisions": 18,
+        "folds": 1,
+        "calls": 3,
+        "raises": 14,
+        "checks": 0
+      },
+      "JJ/commitment": {
+        "decisions": 6,
+        "folds": 1,
+        "calls": 5,
+        "raises": 0,
+        "checks": 0
+      },
+      "QQ/single-open/up-to-4BB": {
+        "decisions": 15,
+        "folds": 0,
+        "calls": 1,
+        "raises": 14,
+        "checks": 0
+      },
+      "AA/single-open/over-4BB": {
+        "decisions": 5,
+        "folds": 0,
+        "calls": 2,
+        "raises": 3,
+        "checks": 0
+      },
+      "QQ/commitment": {
+        "decisions": 6,
+        "folds": 0,
+        "calls": 6,
+        "raises": 0,
+        "checks": 0
+      },
+      "AQ/single-open/over-4BB": {
+        "decisions": 13,
+        "folds": 1,
+        "calls": 2,
+        "raises": 10,
+        "checks": 0
+      },
+      "JJ/single-open/over-4BB": {
+        "decisions": 1,
+        "folds": 0,
+        "calls": 0,
+        "raises": 1,
+        "checks": 0
+      },
+      "AQ/commitment": {
+        "decisions": 7,
+        "folds": 4,
+        "calls": 3,
+        "raises": 0,
+        "checks": 0
+      },
+      "KK/commitment": {
+        "decisions": 3,
+        "folds": 0,
+        "calls": 3,
+        "raises": 0,
+        "checks": 0
+      },
+      "88/single-open/over-4BB": {
+        "decisions": 3,
+        "folds": 1,
+        "calls": 0,
+        "raises": 2,
+        "checks": 0
+      },
+      "QQ/single-open/over-4BB": {
+        "decisions": 1,
+        "folds": 0,
+        "calls": 0,
+        "raises": 1,
+        "checks": 0
+      }
+    }
+  }
+}

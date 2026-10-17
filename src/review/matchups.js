@@ -9,6 +9,7 @@ import { publicHandData } from '../engine/public-equity.js';
 import { cardText, spotFacts } from './spot-facts.js';
 import { drawLabel } from './narrative.js';
 import { actorAtPosition } from '../engine/player-identity.js';
+import { historyActionLabel } from '../engine/action-labels.js';
 
 const identify = (card) => `${card.rank}-${card.suit}`;
 const number = compactChips;
@@ -74,23 +75,33 @@ function handSummary(s, c) {
   ].filter(Boolean);
 }
 
-function preflopRangeNotes(s) {
+export function preflopRangeNotes(s) {
   const actions = (s.history || []).filter((a) => a.street === 0),
     raises = actions.filter((a) => a.action === 'raise'),
-    last = raises.at(-1),
+    last = raises.findLast((a) => a.id !== 0),
     name = (id) => actorAtPosition(s, id),
     notes = [];
-  if (last)
+  if (last) {
+    const position = s.players?.find((p) => p.id === last.id)?.position,
+      early = ['UTG', 'UTG+1', 'MP', 'LJ'].includes(position),
+      late = ['HJ', 'CO', 'BTN'].includes(position);
+    if (raises.length > 1)
+      notes.push(
+        `${name(last.id)}，${raises.length >= 3 ? '多次再加注后仍' : '已有加注时'}${historyActionLabel(s.history, s.history.indexOf(last))}，因此继续范围通常比普通开池更集中于大对子和 AK；AQ、同花高张也可能这样打。`,
+      );
+    else
+      notes.push(
+        `${name(last.id)}开池到 ${number(last.amount)}，可能拿着对子、强 A 或同花高张。${early ? '前位开池后还有较多人能跟注或再加注，因此通常需要更强的起手牌；用容易被强 A 或大对子压制的牌继续时，要更谨慎。' : late ? '后位开池需要越过的人较少，翻后也更容易最后行动，因此还可能用小对子或同花连张争夺盲注；较强起手牌不必只按对手有大对子来防守。' : ['SB', 'BB'].includes(position) ? '盲位翻后通常先行动，较弱高张不易实现摊牌价值，因此不能只因这次开池就假定对手在偷盲。' : '中小对子可能被更大对子压住，高张成对后也可能遇到更好的踢脚，所以不能只凭起手牌好看就继续。'}`,
+      );
+  } else
     notes.push(
-      raises.length > 1
-        ? `${name(last.id)}已经再加注到 ${number(last.amount)}，要更多考虑大对子和 AK；AQ、同花高张也可能这样打，不能只按普通开池看待。`
-        : `${name(last.id)}开池到 ${number(last.amount)}，可能拿着对子、强 A 或同花高张；后位开池还可能带入同花连张，前位通常会更谨慎。`,
-    );
-  else
-    notes.push(
-      '前面还没有加注，后面的人既可能拿到大对子或强 A，也可能用小对子、同花高张或同花连张入池；越靠后，能参与的牌通常越多。',
+      '前面还没有对手加注，后面的玩家仍可能拿到大对子或强 A，也可能用小对子、同花高张或同花连张入池。后位需要越过的人较少，翻后也更容易最后行动，因此能用更多起手牌争夺盲注；开池时仍要预留面对跟注或再加注的余地。',
     );
   const live = new Set(s.players?.filter((p) => !p.folded && p.id !== 0).map((p) => p.id)),
+    firstRaise = actions.findIndex((a) => a.action === 'raise'),
+    limpers = actions.filter(
+      (a, i) => a.id !== 0 && live.has(a.id) && a.action === 'call' && i < firstRaise,
+    ),
     callers = [
       ...new Set(
         actions
@@ -101,9 +112,13 @@ function preflopRangeNotes(s) {
           .map((a) => name(a.id)),
       ),
     ];
+  if (limpers.length)
+    notes.push(
+      `${limpers.map((a) => name(a.id) + '先跟注 ' + number(a.amount)).join('、')}入池，仍未弃牌；这类平跟可能是小对子或同花牌，也可能藏着强牌，因此再加注时不能只考虑开池者会不会弃牌。`,
+    );
   if (last && callers.length)
     notes.push(
-      `${callers.join('、')}跟住了这笔加注，小中对子、同花高张和同花连张都值得考虑；平跟也可能藏着强牌。`,
+      `${callers.join('、')}跟住了这笔加注，可能用小中对子追暗三条，或用同花高张、同花连张争取翻后成大牌；平跟也可能藏着强牌。因此再加注想直接拿走底池，需要让加注者和这些跟注者都放弃；只跟入则要准备面对多人竞争。`,
     );
   if (s.hole.some((card) => card.rank === 14))
     notes.push(
@@ -362,7 +377,7 @@ export function matchupPresentation(matchups, street) {
     handLabel: matchups.summary || matchups.handLabel,
     summaryParts: matchups.summaryParts || [matchups.handLabel],
     note: '',
-    rangeNotes: matchups.rangeNotes || [],
+    rangeNotes: [],
     groups: structure
       ? [{ direction: 'possible', label: '对手可能牌组', examples: matchups.possible, empty: '' }]
       : [
@@ -379,14 +394,16 @@ export function matchupPresentation(matchups, street) {
             empty: nutsNote || '未列出更强的可能牌组。',
           },
         ],
-    nutsNote: !structure && matchups.tied.length ? '相同牌力可能平分底池。' : '',
+    nutsNote: '',
   };
 }
 
-export function reviewCommentary(paragraphs, matchups, street) {
+export function reviewCommentary(paragraphs, matchups, street, paragraphParts) {
   const presentation = matchupPresentation(matchups, street);
-  return paragraphs.map((text) =>
-    presentation && text === matchups.text ? { matchups: presentation } : { text },
+  return paragraphs.map((text, index) =>
+    presentation && text === matchups.text
+      ? { matchups: presentation }
+      : { text, ...(paragraphParts ? { parts: paragraphParts[index] } : {}) },
   );
 }
 

@@ -3,7 +3,7 @@ import { rankText } from '../engine/poker.js';
 import { actionLabel } from '../engine/action-labels.js';
 import { MOOD_LABELS } from '../engine/bot-profiles.js';
 import { decisionContext } from './context.js';
-import { drawLabel, publicHistory } from './narrative.js';
+import { drawLabel, drawCompletion, publicHistory } from './narrative.js';
 import { spotFacts } from './spot-facts.js';
 import { handMatchups } from './matchups.js';
 import { actorAtPosition, actorName } from '../engine/player-identity.js';
@@ -129,15 +129,14 @@ export function explainOpponent(record, identities = []) {
     allinCall = record.action === 'call' && cost === v.stack,
     actual = actionLabel(snapshot),
     aggression = f.lastAggression?.street === v.street ? f.lastAggression : null,
+    actionEnd = t.reason === 'price-continue' && draw.outs && !t.allIn ? '，' : '。',
     prefix = v.street
-      ? aggression
-        ? `面对${aggression.name}的${aggression.label}，${plainName}在 ${v.position} 拿 ${f.holeText}，在 ${f.boardText} 上是${hand}，选择${actual}。`
-        : `${plainName}在 ${v.position} 拿 ${f.holeText}，在 ${f.boardText} 上是${hand}，选择${actual}。`
-      : aggression
-        ? `面对${aggression.name}的${aggression.label}，${plainName}在 ${v.position} 拿 ${f.holeText}，选择${actual}。`
-        : `${plainName}在 ${v.position} 拿 ${f.holeText}，选择${actual}。`,
+      ? aggression && actionEnd !== '，'
+        ? `面对${aggression.name}的${aggression.label}，${plainName}在 ${v.position} 拿 ${f.holeText}，在 ${f.boardText} 上是${hand}，选择${actual}${actionEnd}`
+        : `${plainName}在 ${v.position} 拿 ${f.holeText}，在 ${f.boardText} 上是${hand}，选择${actual}${actionEnd}`
+      : `${plainName}在 ${v.position} 拿 ${f.holeText}，选择${actual}${actionEnd}`,
     drawText = draw.outs
-      ? `${name}在追${drawLabel(draw)}，共有 ${draw.outs} 张牌可能补成顺子／同花；其中有些补牌也会帮对手成更大的牌`
+      ? `共有 ${draw.outs} 张牌可能补成${drawCompletion(draw)}；其中有些补牌也会帮对手成更大的牌`
       : '',
     ownOpen = f.ownPreviousActions.find((a) => a.street === 0 && a.action === 'raise');
   let logic = '';
@@ -156,7 +155,7 @@ export function explainOpponent(record, identities = []) {
         logic = `${name}放弃用${drawLabel(draw)}追这笔下注，避免再投入 ${n(cost)}，保住剩下的 ${n(v.stack)}。${risk}`;
       } else
         logic = draw.outs
-          ? `继续要补 ${n(cost)}；${drawText}。${c.opponents > 1 ? '还有多位对手留在底池，补中也可能遇到更大的成牌。' : '若没补中，当前牌力难以接住后续下注。'}因此${name}放弃这次追牌，保住剩下的 ${n(v.stack)}。`
+          ? `继续要补 ${n(cost)}，追的是${drawLabel(draw)}，${drawText}。${c.opponents > 1 ? '还有多位对手留在底池，补中也可能遇到更大的成牌。' : '若没补中，当前牌力难以接住后续下注。'}因此${name}放弃这次追牌，保住剩下的 ${n(v.stack)}。`
           : !v.street
             ? c.tier >= 2
               ? `继续要补 ${n(cost)}，${name}这次防守较紧，放弃用${hand}接下这条加注线，保住剩下的 ${n(v.stack)}。`
@@ -198,14 +197,14 @@ export function explainOpponent(record, identities = []) {
             : `${name}接下这笔下注，需要再补 ${n(cost)}，可以争夺 ${n(t.allIn.contestable)} 的底池；这次底池赔率支持用${hand}的摊牌价值继续。${continuation}`;
       } else
         logic = draw.outs
-          ? `${name}跟注 ${n(cost)} 的目的不是只靠${hand}摊牌。${drawText}。${allinCall ? '跟完就全下，只能等发牌，不能再靠后街诈唬拿池。' : '跟完手里还留 ' + n(v.stack - cost) + '，下一街是否继续要看补牌和新的下注。'}`
+          ? `目的不是只靠${hand}摊牌，而是在追${drawLabel(draw)}，${drawText}。${allinCall ? '跟完就全下，只能等发牌，不能再靠后街诈唬拿池。' : '跟完手里还留 ' + n(v.stack - cost) + '，下一街是否继续要看补牌和新的下注。'}`
           : `${v.street === 0 && v.hole[0].rank === v.hole[1].rank ? pocketComparison(v, name) : name + '认为当前的' + hand + '仍有摊牌机会'}，所以选择补 ${n(cost)}，继续争夺 ${n(v.contestable)} 的底池。`;
       break;
     case 'value-raise':
       if (!v.street) {
         const paired = v.hole[0].rank === v.hole[1].rank;
         const support = paired
-          ? `${name}的${hand}能压过较小对子，所以选择加注，让较弱起手牌付费`
+          ? `${name}的${hand}能压过较小对子，也能领先尚未成对的两张高牌，所以选择加注，让这些牌为看翻牌付费；但遇到更大对子仍会明显落后`
           : c.tier >= 2
             ? `${name}的${hand}有击中顶对的机会，手里的 ${rankText(Math.max(...v.hole.map((card) => card.rank)))} 也减少了对手部分强高牌组合，所以选择再加注施压`
             : `${name}的${hand}成牌质量较弱，这次进攻更依赖对手弃牌，被强牌跟住后会较难打`;
@@ -213,7 +212,7 @@ export function explainOpponent(record, identities = []) {
           ? `${name}没有只补 ${n(cost)} 跟注，而是再拿出 ${n(f.investment)} 把下注抬到 ${n(record.amount)}。${support}；对手若不愿继续付费，就会放弃当前 ${n(v.pot)} 的底池。`
           : `${name}用${hand}主动开池，拿出 ${n(f.investment)} 建立底池，希望较弱起手牌跟入；后面的玩家若不愿付这笔筹码，就会直接弃牌。`;
       } else if (c.made.score[0] >= 1 && !['board', 'board-pair'].includes(c.handClass))
-        logic = `这是用${hand}取值：这次拿出 ${n(f.investment)}，希望更弱成牌${draw.outs || wet ? '或听牌' : ''}付费。${wet ? '牌面有同花或顺子连接，下注也让追牌的人付出成本。' : '牌面较干燥，价值主要来自更弱成牌的跟注。'}`;
+        logic = `这是用${hand}取值：这次拿出 ${n(f.investment)}，希望更弱成牌${draw.outs || wet ? '或听牌' : ''}付费。${v.hole[0].rank === v.hole[1].rank && c.made.score[0] <= 2 && v.street < 3 ? '尚未成对的高张跟注也会付出成本；高张若弃牌，就失去了免费看下一张反超的机会。' : wet ? '牌面有同花或顺子连接，下注也让追牌的人付出成本。' : '牌面较干燥，价值主要来自更弱成牌的跟注。'}`;
       else
         logic = `${name}只有${hand}，却按价值牌进攻了 ${n(f.investment)}；没有明确的弱成牌付费依据，这次把牌力看得过于乐观。`;
       break;
@@ -248,7 +247,7 @@ export function explainOpponent(record, identities = []) {
         );
       } else
         logic = draw.outs
-          ? `可以直接过牌，不必再投入筹码。${drawText}，先过牌保留补牌机会。`
+          ? `可以直接过牌，不必再投入筹码；先过牌保留${drawLabel(draw)}的补牌机会，${drawText}。`
           : `可以直接过牌，不必再投入筹码。${name}用${hand}控池，保留摊牌机会；如果后面有人下注，再看价格决定是否继续。`;
       break;
     case 'float-continue':
@@ -278,7 +277,7 @@ export function explainOpponent(record, identities = []) {
     case 'donk-lead':
       logic =
         t.deception?.kind === 'semi-bluff'
-          ? `这是 donk 半诈唬：前一街进攻者还没行动，${name}先领打 ${n(f.investment)}。${drawText}。既想直接拿池，也保留被跟住后的补牌机会。`
+          ? `这是 donk 半诈唬：前一街进攻者还没行动，${name}用${drawLabel(draw)}先领打 ${n(f.investment)}，${drawText}。既想直接拿池，也保留被跟住后的补牌机会。`
           : t.deception?.kind === 'value' &&
               c.made.score[0] >= 1 &&
               !['board', 'board-pair'].includes(c.handClass)
@@ -309,9 +308,13 @@ export function explainOpponent(record, identities = []) {
       (record.action !== 'raise' || t.basis.amount === record.amount),
     squeeze =
       recorded && t.basis.squeeze ? '前面已有开池和跟注，这次再加注也在挤压两者的继续范围。' : '',
-    paragraphs = [matchups?.text, '复盘分析总结', prefix, logic, ...checkNotes, squeeze].filter(
-      Boolean,
-    );
+    paragraphParts = [
+      [matchups?.text],
+      ['复盘分析总结'],
+      ...(matchups?.rangeNotes || []).map((note) => [note]),
+      [prefix, logic, ...checkNotes, squeeze].filter(Boolean),
+    ].filter((parts) => parts[0]),
+    paragraphs = paragraphParts.map((parts) => parts.join(''));
   return {
     basisSource: recorded ? 'recorded' : 'inferred',
     title:
@@ -320,6 +323,7 @@ export function explainOpponent(record, identities = []) {
         : BOT_REASON_NAMES[t.reason],
     detail: paragraphs.join(''),
     paragraphs,
+    paragraphParts,
     matchups,
     reasons,
     metrics: [],

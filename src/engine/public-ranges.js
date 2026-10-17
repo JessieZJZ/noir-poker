@@ -139,6 +139,19 @@ function allInPreflopWeight(hole, range) {
     if (suited && high === 14 && low <= 5) return 0.035;
     return 0.002;
   }
+  // A medium-depth first-in shove has not survived a 3/4-bet exchange.
+  // Keep medium pairs and strong broadways in this synthetic prior; treating
+  // every 31–60 BB open shove like a deep premium-only stack-off overfolds AK.
+  // This is a training heuristic, not a measured opponent or solver chart.
+  if (range.line === 'cold-shove' && range.depthBB <= 60) {
+    if ((pair && high >= 10) || (high === 14 && low >= 12)) return 1;
+    if (pair && high >= 7) return 1;
+    if (high === 14 && low >= 10) return suited ? 0.8 : low === 11 ? 0.7 : 0.25;
+    if (suited && high === 13 && low >= 11) return low === 12 ? 0.8 : 0.4;
+    if (pair) return 0.3;
+    if (suited && high === 14) return 0.15;
+    return 0.005;
+  }
   if ((pair && high >= 10) || (high === 14 && low >= 12)) return 1;
   if ((pair && high === 9) || (suited && high >= 13 && low >= 11)) return 0.3;
   if (suited && high === 14 && low <= 5) return 0.04;
@@ -200,7 +213,14 @@ export function publicComboWeight(
       descriptor.depthBB > 30 &&
       tier(pair) < 3
     )
-      weight *= late(descriptor.position) ? 1.35 : 0.7;
+      weight *=
+        descriptor.line === 'cold-shove' && descriptor.depthBB <= 60
+          ? late(descriptor.position)
+            ? 1.15
+            : 0.9
+          : late(descriptor.position)
+            ? 1.35
+            : 0.7;
     return clamp(weight);
   }
   const handTier = tier(pair),

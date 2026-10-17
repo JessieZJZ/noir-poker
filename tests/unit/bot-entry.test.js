@@ -186,7 +186,7 @@ test('opponent review explains the exact small-open call and separate re-raising
   assert.match(explanation.detail, /跟注 150/);
   assert.match(explanation.detail, /还留 4\.85K/);
   assert.match(explanation.detail, /同花/);
-  assert.match(explanation.detail, /开池至 150/);
+  assert.match(explanation.detail, /开池(?:至|到) 150/);
   assert.deepEqual(explanation.metrics, []);
   assert.doesNotMatch(explanation.detail, /EV|模型|模拟器|抽样|它/);
   assert.doesNotMatch(explanation.detail, /这是未加注底池/);
