@@ -2,6 +2,7 @@
 // It deliberately uses the controller's real rendering, actions and engine.
 import { deckOfCards, settle } from '../engine/poker.js';
 import { deceptiveRecords } from '../../tests/fixtures/deceptive-decisions.js';
+import { pairedFlushReviewGame } from '../../tests/fixtures/paired-flush-review.js';
 import {
   weakSuitedShove,
   pocketTensRecords,
@@ -27,6 +28,13 @@ function fixtureGame(count = 6, heroFirst = false) {
 }
 
 window.qa = {
+  pairedFlushReview() {
+    fixtureGame(9);
+    game = pairedFlushReviewGame();
+    handReview.reset();
+    render();
+    return publicState();
+  },
   recordsStart({ count = 5, smallBlind = 100, refill = false } = {}) {
     gameRecords.abandon(game);
     fixtureGame(count, true);

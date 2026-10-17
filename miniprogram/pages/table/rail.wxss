@@ -1234,6 +1234,12 @@
 .web-phone-layout .seat .seat-name .position {
   flex: none;
 }
+.web-phone-layout .seat .seat-name .seat-eye-slot,
+.web-phone-layout .seat .seat-name .seat-eye {
+  width: var(--player-eye-size, 20px) !important;
+  min-width: var(--player-eye-size, 20px);
+  height: var(--player-eye-size, 20px);
+}
 .web-phone-layout.large-layout .seat-eye-slot,
 .web-phone-layout.large-layout .seat-eye {
   width: 22px !important;

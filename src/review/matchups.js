@@ -214,10 +214,21 @@ export function handMatchups(s, c) {
     );
     // Do not spend every slot on adjacent overpairs while omitting top pairs
     // or sets. Preserve public weights within each distinct hand family.
+    // A higher kicker on the same two pair should not consume the last slot
+    // while a distinct winning hand type (for example a flush) is omitted.
+    const sameTwoPair = (candidate) =>
+      own[0] === 2 &&
+      candidate.score[0] === 2 &&
+      candidate.score[1] === own[1] &&
+      candidate.score[2] === own[2];
+    const representatives =
+      direction === 'behind' && s.street && own[0] === 2
+        ? [...ranked.filter((candidate) => !sameTwoPair(candidate)), ...ranked.filter(sameTwoPair)]
+        : ranked;
     const chosen = [],
       families = new Set();
     if (s.street)
-      for (const candidate of ranked) {
+      for (const candidate of representatives) {
         const family = candidate.group.split('-').slice(0, 2).join('-');
         if (!candidate.relevance || families.has(family)) continue;
         families.add(family);
@@ -242,7 +253,7 @@ export function handMatchups(s, c) {
       0,
     );
   const ahead = select('ahead', mass('ahead') >= mass('behind') ? 3 : 1),
-    behind = select('behind', mass('behind') > mass('ahead') ? 3 : 1),
+    behind = select('behind', s.street ? 4 : mass('behind') > mass('ahead') ? 3 : 1),
     tied = select('tied', 1),
     lead = ahead[0],
     lose = behind[0],
