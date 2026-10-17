@@ -7,11 +7,13 @@ class NoirBridgeViewController: CAPBridgeViewController, UIGestureRecognizerDele
     private let launchHandler = NoirLaunchReadyHandler()
     private var launchCover: UIView?
 
-    override func webViewConfiguration(for instanceConfiguration: InstanceConfiguration) -> WKWebViewConfiguration {
-        let configuration = super.webViewConfiguration(for: instanceConfiguration)
+    private func installLaunchReadiness(in webView: WKWebView) {
+        // Capacitor replaces the configuration's initial content controller.
+        // Register after its bridge has installed the final WebView controller.
+        let controller = webView.configuration.userContentController
         launchHandler.owner = self
-        configuration.userContentController.add(launchHandler, name: "noirLaunchReady")
-        configuration.userContentController.addUserScript(WKUserScript(source: """
+        controller.add(launchHandler, name: "noirLaunchReady")
+        controller.addUserScript(WKUserScript(source: """
             (() => {
               const observer = new MutationObserver(ready);
               function ready() {
@@ -26,7 +28,6 @@ class NoirBridgeViewController: CAPBridgeViewController, UIGestureRecognizerDele
               ready();
             })();
             """, injectionTime: .atDocumentStart, forMainFrameOnly: true))
-        return configuration
     }
 
     override func capacitorDidLoad() {
@@ -55,6 +56,7 @@ class NoirBridgeViewController: CAPBridgeViewController, UIGestureRecognizerDele
             artwork.heightAnchor.constraint(equalToConstant: 180)
         ])
         launchCover = cover
+        installLaunchReadiness(in: webView)
         // Records are same-document pages. Let their managed navigation own
         // each Back, rather than WKWebView's automatic history-item skipping.
         webView.allowsBackForwardNavigationGestures = false
