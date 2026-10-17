@@ -88,3 +88,5 @@ Worker 只收到玩家输入，私有对手记录留在另一面板。
 参考：[Doug Polk 翻前问答](https://upswingpoker.com/pre-flop-no-limit-poker-strategy-questions-answered-doug-polk/)，[Upswing 挤压加注](https://upswingpoker.com/squeeze-play-poker/)，[PokerStars 起手牌与位置](https://www.pokerstars.com/poker/learn/lesson/poker-starting-hands/)，[底池赔率](https://www.pokerstars.com/poker/learn/lesson/pot-odds/)。
 
 对手时间线卡片按当前可见列表连续编号，筛选后从 1 重新开始。内部整手事件序号仍用于对局动态的准确高亮，不以显示编号查找事件。行动摘要同时呈现成牌与直接听牌，避免把有两头顺／同花听牌的跟注仅概括为高牌。
+
+时间线卡片保留等高排列，内部网格从顶部排布；状态和牌手标签按自身文字行高撑开，上下内边距各 4px，不随同行较长的行动文案拉伸。`review-tags.spec.js` 保留真实 Worker 计算，仅控制消息投递，分别核对待分析、部分完成和全部完成的标签高度，并覆盖对手标签换行。安装版复盘和微信开发工具布局专项也测量标签高度。

@@ -8,6 +8,7 @@ import {
 import { nativePageReady } from '../../scripts/native-back.mjs';
 import { withCenteredNativeClicks } from './position-target.mjs';
 import { BOT_THINK_LIMITS } from '../../src/engine/bot-timing.js';
+import { readReviewTagGeometry } from '../fixtures/review-tag-geometry.js';
 const documentLoginMarker = (text) => /sign in|log in|登录账号/i.test(text);
 
 export async function waitForNativeHeroTurn(app, { now = Date.now } = {}) {
@@ -1649,6 +1650,9 @@ export async function nativeScenarios(app) {
     );
     await app.click('#review-hand-button');
     await waitForNativeReview(app);
+    const heroTags = await app.evaluate(readReviewTagGeometry, '#review-timeline');
+    for (const tag of heroTags)
+      assert.ok(Math.abs(tag.height - tag.naturalHeight) <= 1, JSON.stringify(tag));
     const hero = await app.evaluate(() => {
       const track = document.querySelector('#review-timeline');
       return { count: track.children.length, hint: track.classList.contains('has-overflow') };
@@ -1661,6 +1665,13 @@ export async function nativeScenarios(app) {
     assert.equal(fontSize, '13px');
     await app.screenshot('review-activity-13px');
     await app.click('#review-opponents-tab');
+    const opponentTags = await app.evaluate(
+      readReviewTagGeometry,
+      '#review-opponents .review-timeline',
+    );
+    assert.ok(opponentTags.length > 0);
+    for (const tag of opponentTags)
+      assert.ok(Math.abs(tag.height - tag.naturalHeight) <= 1, JSON.stringify(tag));
     const overflow = await app.evaluate(() => {
       const track = document.querySelector('#review-opponents .review-timeline'),
         third = track.children[2]?.getBoundingClientRect(),
@@ -1707,6 +1718,8 @@ export async function nativeScenarios(app) {
     await app.click('#next-button');
     return {
       hero,
+      heroTags,
+      opponentTags,
       overflow,
       fontSize,
       selected,

@@ -60,7 +60,10 @@ try {
         position: 'SB',
         actual: index ? '过牌' : '跟注 3.1K',
         keep: index > 0,
-        label: index ? '值得保留' : '弃牌',
+        label:
+          perspective === 'opponent'
+            ? ['ST', '谭老板，Tan Xuan', '阿宝，KPC A Bao', 'Peter，HCL'][index]
+            : ['待分析', '弃牌', '待分析', '弃牌'][index],
       }));
       await page.setData({
         reviewOpen: true,
@@ -82,6 +85,19 @@ try {
       const hint = (await track.attribute('class')).includes('has-overflow');
       assert.equal(hint, count > 2);
       const evidence = { perspective, count, hint, width: (await cards[0].size()).width };
+      evidence.tags = [];
+      for (const tag of await page.$$('.review-step > .review-label')) {
+        const height = (await tag.size()).height;
+        const lineHeight = parseFloat(await tag.style('line-height'));
+        const top = parseFloat(await tag.style('padding-top'));
+        const bottom = parseFloat(await tag.style('padding-bottom'));
+        assert.equal(top, 4);
+        assert.equal(bottom, 4);
+        const lines = (height - top - bottom) / lineHeight;
+        assert.ok(Math.abs(lines - Math.round(lines)) < 0.07);
+        evidence.tags.push({ text: await tag.text(), height, lines });
+      }
+      assert.ok(Math.abs(evidence.tags[0].lines - 1) < 0.07);
       if (count > 2) {
         const third = cards[2],
           box = await track.offset(),

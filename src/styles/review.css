@@ -194,6 +194,8 @@
 .review-step {
   display: grid;
   grid-template-columns: 24px 1fr;
+  align-content: start;
+  align-items: start;
   gap: 8px;
   text-align: left;
   background: #1a283566;
@@ -231,6 +233,8 @@
 .review-status {
   display: inline-block;
   width: fit-content;
+  align-self: start;
+  line-height: 1.5;
   white-space: nowrap;
   font-size: 12px;
   padding: 4px 7px;
