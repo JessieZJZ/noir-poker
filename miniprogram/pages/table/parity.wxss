@@ -1849,3 +1849,26 @@
   background: #6ee7c5;
   border-radius: 2px;
 }
+
+.guide-sheet {
+  display: flex;
+  flex-direction: column;
+}
+.guide-sheet > .guide-heading {
+  flex: none;
+  height: auto;
+  min-height: 66px;
+  padding: 22px 22px 12px;
+  background: #14202a;
+}
+.guide-sheet > .guide-scroll {
+  flex: 1;
+  min-height: 0;
+  height: 0;
+}
+.guide-scroll .sheet-body {
+  padding-top: 0;
+}
+.guide-scroll .guide-h2:first-child {
+  margin-top: 4px;
+}

@@ -758,9 +758,11 @@ export async function nativeScenarios(app) {
       assert.equal(enabled.levels.length, enabled.audio);
       assert.ok(
         enabled.levels.every(({ rms, peak, samples }) => {
-          const enhanced = [7938, 14994, 15876].includes(samples);
+          const enhanced = [7938, 26460, 15876].includes(samples);
           return (
-            rms >= (enhanced ? 0.21 : 0.145) && rms <= (enhanced ? 0.245 : 0.165) && peak <= 0.7
+            rms >= (samples === 26460 ? 0.18 : enhanced ? 0.21 : 0.145) &&
+            rms <= (samples === 26460 ? 0.195 : enhanced ? 0.245 : 0.165) &&
+            peak <= 0.7
           );
         }),
         'Actual installed-app PCM uses the louder mastered cues with per-cue headroom',
@@ -821,11 +823,11 @@ export async function nativeScenarios(app) {
         await app.click('#call-button');
       }
       const cue = await app.waitFor(
-        () => app.evaluate(() => window.__polishCues.find((cue) => cue.samples === 14994)),
+        () => app.evaluate(() => window.__polishCues.find((cue) => cue.samples === 26460)),
         10000,
         'An actual wager must play the new chip stack',
       );
-      assert.ok(cue.rms > 0.21 && cue.rms < 0.245);
+      assert.ok(cue.rms > 0.18 && cue.rms < 0.195);
       assert.ok(cue.peak <= 0.7);
       await app.screenshot('music-and-chip-stack');
       return {
@@ -934,6 +936,43 @@ export async function nativeScenarios(app) {
       scope:
         'Installed app local AAC decode, loop, lifecycle and independent preference persistence; not physical acoustic or motor acceptance',
     };
+  });
+  await check('guide-sticky-header', async () => {
+    await app.click('#rules-button');
+    await app.click('#guide-menu-item');
+    const before = await app.evaluate(() => {
+      const header = document.querySelector('#rules-dialog .dialog-header');
+      const body = document.querySelector('#rules-dialog .guide-body');
+      const rect = header.getBoundingClientRect();
+      body.scrollTop = body.scrollHeight;
+      return { top: rect.top, bottom: rect.bottom };
+    });
+    const after = await app.waitFor(
+      () =>
+        app.evaluate(() => {
+          const header = document
+            .querySelector('#rules-dialog .dialog-header')
+            .getBoundingClientRect();
+          const body = document.querySelector('#rules-dialog .guide-body');
+          return body.scrollTop > 100
+            ? {
+                top: header.top,
+                bottom: header.bottom,
+                bodyTop: body.getBoundingClientRect().top,
+                scrollTop: body.scrollTop,
+              }
+            : null;
+        }),
+      5000,
+      'Guide body must scroll independently',
+    );
+    assert.ok(Math.abs(after.top - before.top) < 1);
+    assert.ok(Math.abs(after.bottom - before.bottom) < 1);
+    assert.ok(after.top >= 0 && after.bodyTop >= after.bottom - 1);
+    await app.screenshot('guide-header-after-scroll');
+    await app.click('#rules-dialog .dialog-header .close-dialog');
+    assert.equal(await app.evaluate(() => document.querySelector('#rules-dialog').open), false);
+    return { before, after, scope: 'Installed app guide scrolling; audio regressions excluded' };
   });
   await check('mixed-toggle-and-visual-guide', async () => {
     await app.click('#opponents-button');

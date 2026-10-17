@@ -1615,8 +1615,33 @@ select,
 }
 
 #rules-dialog {
+  --guide-padding: 28px;
   max-height: 85dvh;
+  padding: 0;
+  overflow: hidden;
+}
+#rules-dialog[open] {
+  display: flex;
+  flex-direction: column;
+}
+#rules-dialog > .dialog-header {
+  flex: none;
+  padding: var(--guide-padding) var(--guide-padding) 12px;
+  background: #14202a;
+}
+#rules-dialog > .guide-body {
+  min-height: 0;
   overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 0 var(--guide-padding) var(--guide-padding);
   scrollbar-width: thin;
   scrollbar-color: #406459 transparent;
+}
+#rules-dialog-title {
+  margin-top: 4px;
+}
+@media (max-width: 900px) {
+  #rules-dialog {
+    --guide-padding: 22px;
+  }
 }

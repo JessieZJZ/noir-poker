@@ -275,7 +275,7 @@ export async function buildWechat(output = wechatOutput) {
       .png({ compressionLevel: 9 })
       .toFile(path.join(staging, 'assets/launch-icon.png'));
     await mkdir(path.join(staging, 'assets/sounds'), { recursive: true });
-    for (const sound of ['fold', 'check', 'raise', 'call', 'deal', 'win'])
+    for (const sound of ['fold', 'check', 'chip', 'deal', 'win'])
       await writeFile(path.join(staging, `assets/sounds/${sound}.wav`), soundWave(sound));
     await cp(
       path.join(root, 'public', BACKGROUND_MUSIC_PATH),

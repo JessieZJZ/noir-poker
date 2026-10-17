@@ -2,7 +2,10 @@
 // Only this known, local HTML fragment is converted; it is never remote input.
 export function guideTemplate(html) {
   const dialog = html.match(/<dialog id="rules-dialog"[\s\S]*?<\/dialog>/)[0];
-  const body = dialog.slice(dialog.indexOf('<h2'), dialog.lastIndexOf('</dialog>'));
+  const guideBody = dialog.match(/<div class="guide-body">([\s\S]*)<\/div>\s*<\/dialog>/);
+  const body = guideBody
+    ? guideBody[1]
+    : dialog.slice(dialog.indexOf('<h2'), dialog.lastIndexOf('</dialog>'));
   let detail = -1;
   let current = -1;
   return body

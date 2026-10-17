@@ -807,14 +807,13 @@
   class="sheet guide-sheet"
   style="top: {{topInset + (windowHeight - topInset - bottomInset) * 0.075}}px; height: {{(windowHeight - topInset - bottomInset) * 0.85}}px;"
 >
-  <scroll-view scroll-y class="sheet-scroll"
-    ><view class="sheet-body">
-      <view class="dialog-heading"
-        ><text class="eyebrow">QUICK GUIDE</text
-        ><button hover-class="none" class="close" bindtap="closeGuide" aria-label="关闭玩法指南">
-          <view class="close-icon" /></button
-      ></view>
-      <include src="guide.wxml" /> </view
+  <view class="dialog-heading guide-heading"
+    ><text class="eyebrow">QUICK GUIDE</text
+    ><button hover-class="none" class="close" bindtap="closeGuide" aria-label="关闭玩法指南">
+      <view class="close-icon" /></button
+  ></view>
+  <scroll-view scroll-y class="sheet-scroll guide-scroll"
+    ><view class="sheet-body"><include src="guide.wxml" /></view
   ></scroll-view>
 </view>
 <view

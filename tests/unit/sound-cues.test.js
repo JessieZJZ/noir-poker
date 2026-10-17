@@ -28,10 +28,14 @@ test('every cue retains mastered signal energy and per-cue headroom', () => {
   for (const name of SOUND_CUES) {
     const samples = soundSamples(name),
       { rms, peak } = level(samples);
-    assert.ok(20 * Math.log10(rms / formerRms[name]) >= 9, `${name} signal gain`);
+    assert.ok(
+      20 * Math.log10(rms / formerRms[name]) >= (name === 'chip' ? 11 : 9),
+      `${name} signal gain`,
+    );
     const enhanced = ['fold', 'chip', 'win'].includes(name);
     assert.ok(
-      rms >= (enhanced ? 0.21 : 0.145) && rms <= (enhanced ? 0.245 : 0.165),
+      rms >= (name === 'chip' ? 0.18 : enhanced ? 0.21 : 0.145) &&
+        rms <= (name === 'chip' ? 0.195 : enhanced ? 0.245 : 0.165),
       `${name} mastered RMS ${rms}`,
     );
     assert.ok(peak <= SOUND_PEAK_CEILING, `${name} peak ${peak}`);
@@ -48,10 +52,9 @@ test('phone-band energy rises for soft actions while check/deal/new-game PCM sta
   // an acoustic result for a particular phone, volume or outdoor noise level.
   const previous = {
     fold: 0.04255247524991775,
-    chip: 0.061378235632582955,
     win: 0.09252253565920715,
   };
-  const minimumGain = { fold: 9, chip: 7.5, win: 4 };
+  const minimumGain = { fold: 9, win: 4 };
   for (const name of Object.keys(previous)) {
     let low = 0,
       high = 0,
@@ -99,25 +102,16 @@ test('the actual encoded WeChat WAVs keep the same normalized PCM as Web and nat
   }
 });
 
-test('a stack of chips contains separate sharp contacts and settles without a tone or trailing click', () => {
+test('chip actions use the same real recording with trimmed edges and natural decay', () => {
   const samples = soundSamples('chip');
-  assert.equal(samples.length, Math.round(0.34 * SOUND_SAMPLE_RATE));
-  for (const [start, end] of [
-    [0, 0.028],
-    [0.031, 0.058],
-    [0.067, 0.096],
-    [0.112, 0.14],
-    [0.162, 0.19],
-    [0.221, 0.25],
-  ]) {
-    const hit = samples.slice(
-      Math.round(start * SOUND_SAMPLE_RATE),
-      Math.round(end * SOUND_SAMPLE_RATE),
-    );
-    assert.ok(level(hit).peak > 0.5, `Chip contact at ${start}`);
-  }
-  assert.ok(level(samples.slice(Math.round(0.3 * SOUND_SAMPLE_RATE))).rms < 0.025);
+  assert.equal(samples.length, Math.round(0.6 * SOUND_SAMPLE_RATE));
+  assert.equal(samples[0], 0);
   assert.equal(samples.at(-1), 0);
+  assert.ok(level(samples.slice(Math.round(0.55 * SOUND_SAMPLE_RATE))).rms < 0.04);
+  assert.equal(
+    createHash('sha256').update(soundWave('chip')).digest('hex'),
+    '3451841cd3aae9467ea9a02867035434f96574ba03fd9f3c1535c84ffc3c9dfa',
+  );
 });
 
 test('the final Web mix retains single-cue unity and bounds coincident action cues', () => {

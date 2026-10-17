@@ -608,8 +608,8 @@ module.exports = {
     const names = {
       fold: 'fold',
       check: 'check',
-      raise: 'raise',
-      call: 'call',
+      raise: 'chip',
+      call: 'chip',
       deal: 'deal',
       win: 'win',
     };
@@ -630,7 +630,7 @@ module.exports = {
   preloadSounds() {
     this._soundPool = {};
     if (!wx.createInnerAudioContext) return;
-    for (const name of ['fold', 'check', 'raise', 'call', 'deal', 'win']) {
+    for (const name of ['fold', 'check', 'chip', 'deal', 'win']) {
       const audio = wx.createInnerAudioContext();
       audio.src = `/assets/sounds/${name}.wav`;
       audio.volume = 1;

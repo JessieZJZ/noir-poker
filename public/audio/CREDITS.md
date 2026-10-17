@@ -21,3 +21,7 @@ ffmpeg -stream_loop 2 -i audio-studio/noir-background-music/masters/01-midnight-
 ```
 
 编码器不是曲库授权来源。原创合成减少外部录音/采样授权风险，不构成全球曲库相似性比对或绝对零风险保证。详见音乐工作室 README 的来源与使用边界。
+
+## 筹码操作音效
+
+[Joma86 — AllInPushChips2.wav](https://freesound.org/people/Joma86/sounds/532860/)，CC0。作者使用 Behringer C-1 录制推入一摞真实筹码的声音。本项目采用页面公开 HQ 预览的 0.15–0.75 秒，做首尾淡化、增益及峰值控制。Web/App 共用内嵌 PCM，微信生成相同的本地 WAV；详细处理与来源指纹见 `audio-studio/chip-stack/README.md`。

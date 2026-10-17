@@ -1,3 +1,5 @@
+import { chipRecording } from './chip-recording.js';
+
 // One deterministic PCM definition for Web, native WebViews and WeChat WAVs.
 // Unit gain is already mastered; platform adapters must not boost it again.
 export const SOUND_SAMPLE_RATE = 44100;
@@ -20,18 +22,16 @@ const fallingPhase = (t, from, to, end) => {
 export function soundSamples(name) {
   const kind = ['bet', 'raise', 'call'].includes(name) ? 'chip' : name;
   if (!SOUND_CUES.includes(kind)) throw new RangeError('Unknown sound cue');
-  const duration = { fold: 0.18, check: 0.22, chip: 0.34, deal: 0.28, win: 0.36 }[kind];
-  const data = new Float32Array(Math.round(duration * SOUND_SAMPLE_RATE));
+  const duration = { fold: 0.18, check: 0.22, chip: 0.6, deal: 0.28, win: 0.36 }[kind];
+  const data =
+    kind === 'chip' ? chipRecording() : new Float32Array(Math.round(duration * SOUND_SAMPLE_RATE));
   const noise = new Float32Array(Math.ceil(0.025 * SOUND_SAMPLE_RATE));
   // Fixed noise is shared too; two taps reuse the same damped wooden attack.
   let seed = 731,
     x1 = 0,
     x2 = 0,
     y1 = 0,
-    y2 = 0,
-    chipGrainFast = 0,
-    chipGrainSmooth = 0,
-    chipGrainLow = 0;
+    y2 = 0;
   const w = (2 * Math.PI * 850) / SOUND_SAMPLE_RATE,
     alpha = Math.sin(w) / (2 * 0.7);
   for (let i = 0; i < noise.length; i++) {
@@ -47,7 +47,7 @@ export function soundSamples(name) {
     y2 = y1;
     y1 = y;
   }
-  for (let i = 0; i < data.length; i++) {
+  for (let i = 0; kind !== 'chip' && i < data.length; i++) {
     const t = i / SOUND_SAMPLE_RATE;
     let value = 0;
     if (kind === 'check') {
@@ -65,38 +65,6 @@ export function soundSamples(name) {
       value =
         (triangle(phase) * 0.55 + Math.sin(phase * 5) * 0.45 + Math.sin(phase * 9) * 0.2) *
         envelope(t, 0.288, 0.012, 0.16);
-    } else if (kind === 'chip') {
-      // Dense, irregular plastic/ceramic contacts rather than pitched notes.
-      // The reference informs timing/timbre only; no recording is sampled.
-      seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;
-      const white = seed / 2147483648 - 1;
-      chipGrainFast += 0.56 * (white - chipGrainFast);
-      chipGrainSmooth += 0.56 * (chipGrainFast - chipGrainSmooth);
-      chipGrainLow += 0.2 * (chipGrainSmooth - chipGrainLow);
-      const grain = chipGrainSmooth - chipGrainLow;
-      for (const [contact, offset] of [
-        0, 0.014, 0.031, 0.046, 0.067, 0.087, 0.112, 0.137, 0.162, 0.188, 0.221, 0.247, 0.272,
-      ].entries()) {
-        const dt = t - offset;
-        if (dt <= 0 || dt >= 0.045) continue;
-        const strength = [0.9, 0.35, 1, 0.48, 0.82, 0.4, 0.94, 0.38, 0.84, 0.52, 0.78, 0.42, 0.24][
-          contact
-        ];
-        const variation = 1 + ((contact % 5) - 2) * 0.035;
-        const attack = Math.min(1, dt / 0.00035);
-        let contactSound = 0;
-        for (const [hz, weight, decay] of [
-          [2330, 0.18, 0.0045],
-          [3610, 0.22, 0.004],
-          [5320, 0.25, 0.0035],
-          [7290, 0.19, 0.003],
-          [9820, 0.12, 0.002],
-        ])
-          contactSound +=
-            Math.sin(2 * Math.PI * hz * variation * dt) * weight * Math.exp(-dt / decay);
-        const felt = Math.sin(2 * Math.PI * 390 * dt) * Math.exp(-dt / 0.008) * 0.055;
-        value += strength * attack * (contactSound + grain * Math.exp(-dt / 0.007) * 1.35 + felt);
-      }
     } else {
       const notes = kind === 'win' ? [440, 554, 659] : [820, 570];
       for (const [index, hz] of notes.entries()) {
