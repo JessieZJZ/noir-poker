@@ -27,7 +27,11 @@ for (const width of [320, 390, 768, 1280]) {
     await page.waitForFunction(() => window.qa);
     const count = await page.evaluate(() => {
       window.qa.reviewLine();
-      return window.qa.snapshot().decisions.length;
+      const game = window.qa.snapshot();
+      game.botDecisions[1].trace.profile = 'tan';
+      game.botDecisions[1].trace.profileName = '谭老板，Tan Xuan';
+      window.qa.loadRecordedGame(game);
+      return game.decisions.length;
     });
     await page.locator('#review-hand-button').click();
     await expect(page.locator('#review-timeline .review-status.pending')).toHaveCount(count);
