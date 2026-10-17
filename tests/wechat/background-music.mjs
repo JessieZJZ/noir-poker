@@ -86,7 +86,10 @@ try {
   let page = await mini.currentPage();
   const initial = await wait(async () => {
     const state = await inspect();
-    return state.audio?.duration > 93 && state.audio.time > 0.1 && state.controller?.playing
+    return state.audio?.duration > 93 &&
+      state.audio.time > 0.1 &&
+      state.audio.volume === BACKGROUND_MUSIC_VOLUME &&
+      state.controller?.playing
       ? state
       : null;
   }, 'Local subpackage music must decode and advance');
@@ -117,11 +120,15 @@ try {
   });
   assert.equal(duringCue.volume, 0.5);
   assert.equal(duringCue.paused, false);
-  const restored = await wait(async () => {
+  const cueRestored = await wait(async () => {
     const state = await inspect();
     return state.audio.volume === 1 && state.controller.playing ? state : null;
   }, 'Music must recover its enhanced level after the real chip cue');
-  report.checks.push({ name: 'real-cue-music-headroom-and-restore', duringCue, restored });
+  report.checks.push({
+    name: 'real-cue-music-headroom-and-restore',
+    duringCue,
+    restored: cueRestored,
+  });
   const sound = await page.$('#sound-button');
   await sound.tap();
   const muted = await wait(async () => {
