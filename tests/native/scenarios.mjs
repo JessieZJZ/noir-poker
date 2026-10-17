@@ -7,6 +7,7 @@ import {
 } from '../fixtures/records-geometry.js';
 import { nativePageReady } from '../../scripts/native-back.mjs';
 import { withCenteredNativeClicks } from './position-target.mjs';
+import { withPreservedForegroundPage } from './foreground-page.mjs';
 import { BOT_THINK_LIMITS } from '../../src/engine/bot-timing.js';
 import { readReviewTagGeometry } from '../fixtures/review-tag-geometry.js';
 const documentLoginMarker = (text) => /sign in|log in|登录账号/i.test(text);
@@ -233,7 +234,7 @@ export async function readNativePersonaTags(app) {
 // These scenarios drive the installed production bundle. They read only the
 // public state already exposed by the app and never install browser fixtures.
 export async function nativeScenarios(app) {
-  app = withCenteredNativeClicks(app);
+  app = withCenteredNativeClicks(withPreservedForegroundPage(app));
   const result = [];
   const selection = process.env.NOIR_NATIVE_SCENARIOS;
   const selectedScenarios = selection?.split(',').map((name) => name.trim());
@@ -2571,6 +2572,7 @@ export async function nativeScenarios(app) {
     let returnGameBack;
     if (app.platform === 'android') {
       const beforeMinimize = await app.state();
+      await app.preserveForegroundPage();
       await app.back();
       const nativeState = await app.waitFor(
         async () => {
