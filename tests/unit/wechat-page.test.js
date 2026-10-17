@@ -470,7 +470,7 @@ test('practice runout preserves Web rank visibility without modifying the engine
 
 test('secondary pages lock the home scroll and source titles navigate to a separate web page', (t) => {
   const { page, scrolls, navigations, audios } = setup(t);
-  assert.equal(audios.length, 6, 'All local effects are preloaded on entry');
+  assert.equal(audios.length, 5, 'Each unique local effect is preloaded once on entry');
   assert.ok(audios.every((audio) => audio.volume === 1));
   page.onPageScroll({ scrollTop: 240 });
   for (const [open, close] of [
@@ -855,7 +855,7 @@ test('WeChat Page stops and destroys native audio plus pending work when backgro
 test('WeChat boosted sound cues keep only the latest context active and respect all playback gates', (t) => {
   const { page, audios } = setup(t);
   const fold = page._soundPool.fold;
-  const call = page._soundPool.call;
+  const call = page._soundPool.chip;
   const snapshots = () => audios.map((audio) => [audio.playCount || 0, audio.stopCount || 0]);
   let before = snapshots();
   page.playSound('fold');
@@ -873,6 +873,9 @@ test('WeChat boosted sound cues keep only the latest context active and respect 
   assert.equal(fold.stopCount, stopped + 1);
   assert.equal(call.playCount, 1);
   assert.equal(call.seekPosition, 0);
+  assert.equal(call.src, '/assets/sounds/chip.wav');
+  page.playSound('raise');
+  assert.equal(call.playCount, 2, 'Raise and call reuse the same recorded chip context');
   assert.deepEqual(
     audios.filter((audio) => audio.playing),
     [call],
