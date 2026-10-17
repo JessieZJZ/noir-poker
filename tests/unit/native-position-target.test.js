@@ -2,6 +2,7 @@ import { after, before, test } from 'node:test';
 import assert from 'node:assert/strict';
 import { chromium } from '@playwright/test';
 import {
+  readNativeTargetPosition,
   restoreNativeTargetLabelledBy,
   withCenteredNativeClicks,
 } from '../native/position-target.mjs';
@@ -208,16 +209,22 @@ test('closing a modal waits for unlock and late scroll restoration before the si
 });
 
 test('a continually moving target exhausts the finite geometry wait without delegating a tap', async () => {
-  await page.setContent(`
-    <style>
-      @keyframes move { from { transform: translateX(0); } to { transform: translateX(100px); } }
-      button { animation: move 3s linear infinite; }
-    </style><button id="moving">Moving</button>`);
-  let delegated = 0;
+  await page.setContent('<button id="moving">Moving</button>');
+  let delegated = 0,
+    samples = 0;
   const base = app(async () => delegated++),
     deadlines = [],
     positioned = withCenteredNativeClicks({
       ...base,
+      async evaluate(fn, selector) {
+        // Advance physical geometry on each observation. A throttled browser
+        // can otherwise return one CSS-animation frame three times in a row.
+        if (fn === readNativeTargetPosition)
+          await page.locator('#moving').evaluate((element, step) => {
+            element.style.transform = `translateX(${step * 2}px)`;
+          }, ++samples);
+        return base.evaluate(fn, selector);
+      },
       waitFor(predicate, timeout) {
         deadlines.push(timeout);
         return base.waitFor(predicate, timeout);
