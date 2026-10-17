@@ -6,8 +6,9 @@ export const SOUND_SAMPLE_RATE = 44100;
 export const SOUND_CUES = ['fold', 'check', 'chip', 'deal', 'win'];
 // Keep the already audible wooden check and deal unchanged. Softer actions
 // carry more sustained midrange energy for small phone speakers.
-export const SOUND_TARGET_RMS = { fold: 0.25, check: 0.16, chip: 0.27, deal: 0.16, win: 0.24 };
-export const SOUND_PEAK_CEILING = 0.7;
+export const SOUND_TARGET_RMS = { fold: 0.25, check: 0.16, deal: 0.16, win: 0.24 };
+export const SOUND_PEAK_CEILING = 0.78;
+const SYNTH_PEAK_CEILING = 0.7;
 const triangle = (phase) => (2 / Math.PI) * Math.asin(Math.sin(phase));
 const envelope = (t, peak, attack, end) =>
   t < 0 || t >= end
@@ -22,9 +23,11 @@ const fallingPhase = (t, from, to, end) => {
 export function soundSamples(name) {
   const kind = ['bet', 'raise', 'call'].includes(name) ? 'chip' : name;
   if (!SOUND_CUES.includes(kind)) throw new RangeError('Unknown sound cue');
-  const duration = { fold: 0.18, check: 0.22, chip: 0.6, deal: 0.28, win: 0.36 }[kind];
-  const data =
-    kind === 'chip' ? chipRecording() : new Float32Array(Math.round(duration * SOUND_SAMPLE_RATE));
+  // The approved audition already contains its final gain and edge fades.
+  // Re-mastering it would flatten the chip contacts and change the chosen sound.
+  if (kind === 'chip') return chipRecording();
+  const duration = { fold: 0.18, check: 0.22, deal: 0.28, win: 0.36 }[kind];
+  const data = new Float32Array(Math.round(duration * SOUND_SAMPLE_RATE));
   const noise = new Float32Array(Math.ceil(0.025 * SOUND_SAMPLE_RATE));
   // Fixed noise is shared too; two taps reuse the same damped wooden attack.
   let seed = 731,
@@ -47,7 +50,7 @@ export function soundSamples(name) {
     y2 = y1;
     y1 = y;
   }
-  for (let i = 0; kind !== 'chip' && i < data.length; i++) {
+  for (let i = 0; i < data.length; i++) {
     const t = i / SOUND_SAMPLE_RATE;
     let value = 0;
     if (kind === 'check') {
@@ -88,7 +91,7 @@ export function soundSamples(name) {
     const sample = data[i] * gain,
       absolute = Math.abs(sample),
       knee = 0.6,
-      headroom = SOUND_PEAK_CEILING - knee,
+      headroom = SYNTH_PEAK_CEILING - knee,
       limited =
         absolute <= knee
           ? sample

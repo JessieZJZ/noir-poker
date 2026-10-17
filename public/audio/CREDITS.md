@@ -28,7 +28,7 @@ ffmpeg -stream_loop 2 -i audio-studio/noir-background-music/masters/01-midnight-
 
 手机版本从原始无损母带制作：100 Hz 高通、1.6 kHz 提升、动态压缩、响度处理和峰值控制，保留同一曲目和 93.659 秒循环。AAC 128 kbps / 48 kHz / 双声道，1,570,495 字节；编码后实测约 −13.67 LUFS、−6.94 dBTP，相比桌面版平均响度提高 5.30 dB。SHA-256：`411fea885fc40696dfa6202c6c04e12da523c6bdbe9f063a565e71d7b6cbf58d`。
 
-App 继续共用最终混音限幅。微信动作音效响起时音乐临时降至 0.5，650 ms 后恢复 1.0；连续动作延长保护窗口，关闭声音、进入后台或释放播放器均取消恢复计时，避免迟到回调影响下一次播放。该余量按解码后峰值和单个动作音效上限检查。
+App 继续共用最终混音限幅。微信动作音效响起时音乐临时降至 0.45，650 ms 后恢复 1.0；连续动作延长保护窗口，关闭声音、进入后台或释放播放器均取消恢复计时，避免迟到回调影响下一次播放。该余量按解码后峰值和单个动作音效上限检查。
 
 ```sh
 ffmpeg -stream_loop 2 -i audio-studio/noir-background-music/masters/01-midnight-felt.flac \
@@ -41,4 +41,4 @@ ffmpeg -stream_loop 2 -i audio-studio/noir-background-music/masters/01-midnight-
 
 ## 筹码操作音效
 
-[Joma86 — AllInPushChips2.wav](https://freesound.org/people/Joma86/sounds/532860/)，CC0。作者使用 Behringer C-1 录制推入一摞真实筹码的声音。本项目采用页面公开 HQ 预览的 0.15–0.75 秒，做首尾淡化、增益及峰值控制。Web/App 共用内嵌 PCM，微信生成相同的本地 WAV；详细处理与来源指纹见 `audio-studio/chip-stack/README.md`。
+2026-10-18 按用户确认采用其提供视频 `43b358c5c3da4c38bcc9103f3a7cc290.mp4` 中 1.458–1.968 秒的下注声，版本「01 原视频节奏」。仅作边缘淡化和线性增益，保留原碰撞节奏；不再采用此前 Joma86 录音。Web/App 共享内嵌 PCM，微信生成完全相同的本地 WAV。文件指纹与处理说明见 `audio-studio/chip-stack/README.md`。

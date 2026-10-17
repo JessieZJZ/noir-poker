@@ -779,14 +779,14 @@ export async function nativeScenarios(app) {
       assert.equal(enabled.levels.length, enabled.audio);
       assert.ok(
         enabled.levels.every(({ rms, peak, samples }) => {
-          const enhanced = [7938, 26460, 15876].includes(samples);
+          const enhanced = [7938, 22491, 15876].includes(samples);
           return (
-            rms >= (samples === 26460 ? 0.18 : enhanced ? 0.21 : 0.145) &&
-            rms <= (samples === 26460 ? 0.195 : enhanced ? 0.245 : 0.165) &&
-            peak <= 0.7
+            rms >= (samples === 22491 ? 0.05 : enhanced ? 0.21 : 0.145) &&
+            rms <= (samples === 22491 ? 0.06 : enhanced ? 0.245 : 0.165) &&
+            peak <= (samples === 22491 ? 0.78 : 0.7)
           );
         }),
-        'Actual installed-app PCM uses the louder mastered cues with per-cue headroom',
+        'Actual installed-app PCM uses the approved chip and mastered cues with per-cue headroom',
       );
       await app.click('#opponents-button');
       await app.click('#vibration-button');
@@ -845,12 +845,12 @@ export async function nativeScenarios(app) {
         await app.click('#call-button');
       }
       const cue = await app.waitFor(
-        () => app.evaluate(() => window.__polishCues.find((cue) => cue.samples === 26460)),
+        () => app.evaluate(() => window.__polishCues.find((cue) => cue.samples === 22491)),
         10000,
         'An actual wager must play the new chip stack',
       );
-      assert.ok(cue.rms > 0.18 && cue.rms < 0.195);
-      assert.ok(cue.peak <= 0.7);
+      assert.ok(cue.rms > 0.05 && cue.rms < 0.06);
+      assert.ok(cue.peak <= 0.78);
       await app.screenshot('music-and-chip-stack');
       return {
         music,

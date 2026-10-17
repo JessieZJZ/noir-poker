@@ -1,6 +1,10 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { createMusicController, BACKGROUND_MUSIC_VOLUME } from '../../src/ui/background-music.js';
+import {
+  createMusicController,
+  BACKGROUND_MUSIC_VOLUME,
+  BACKGROUND_MUSIC_DUCK_VOLUME,
+} from '../../src/ui/background-music.js';
 import { createWebBackgroundMusic } from '../../src/platform/web-background-music.js';
 import { createWechatBackgroundMusic } from '../../src/platform/wechat-background-music.js';
 import { loadFeedbackPreferences } from '../../src/ui/feedback-preferences.js';
@@ -268,7 +272,11 @@ test('WeChat ducks across overlapping cues and cancels stale volume timers on hi
   const stale = jobs.get(serial);
   music.duck();
   stale();
-  assert.equal(audio.volume, 0.5, 'Earlier cue cannot restore a later cue’s mix');
+  assert.equal(
+    audio.volume,
+    BACKGROUND_MUSIC_DUCK_VOLUME,
+    'Earlier cue cannot restore a later cue’s mix',
+  );
   jobs.get(serial)();
   assert.equal(audio.volume, 1);
   for (const stop of [

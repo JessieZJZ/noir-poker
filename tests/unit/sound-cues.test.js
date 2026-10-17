@@ -28,14 +28,12 @@ test('every cue retains mastered signal energy and per-cue headroom', () => {
   for (const name of SOUND_CUES) {
     const samples = soundSamples(name),
       { rms, peak } = level(samples);
-    assert.ok(
-      20 * Math.log10(rms / formerRms[name]) >= (name === 'chip' ? 11 : 9),
-      `${name} signal gain`,
-    );
+    if (name !== 'chip')
+      assert.ok(20 * Math.log10(rms / formerRms[name]) >= 9, `${name} signal gain`);
     const enhanced = ['fold', 'chip', 'win'].includes(name);
     assert.ok(
-      rms >= (name === 'chip' ? 0.18 : enhanced ? 0.21 : 0.145) &&
-        rms <= (name === 'chip' ? 0.195 : enhanced ? 0.245 : 0.165),
+      rms >= (name === 'chip' ? 0.05 : enhanced ? 0.21 : 0.145) &&
+        rms <= (name === 'chip' ? 0.06 : enhanced ? 0.245 : 0.165),
       `${name} mastered RMS ${rms}`,
     );
     assert.ok(peak <= SOUND_PEAK_CEILING, `${name} peak ${peak}`);
@@ -97,24 +95,23 @@ test('the actual encoded WeChat WAVs keep the same normalized PCM as Web and nat
     assert.equal(wave.readUInt32LE(40), expected.length * 2);
     for (let i = 0; i < decoded.length; i++) decoded[i] = wave.readInt16LE(44 + i * 2) / 32768;
     assert.deepEqual(decoded, expected);
-    assert.ok(level(decoded).rms >= 0.145);
+    assert.ok(level(decoded).rms >= (['raise', 'call'].includes(name) ? 0.05 : 0.145));
     assert.ok(level(decoded).peak <= SOUND_PEAK_CEILING);
   }
 });
 
-test('chip actions use the same real recording with trimmed edges and natural decay', () => {
+test('chip actions retain the approved video audition without re-mastering', () => {
   const samples = soundSamples('chip');
-  assert.equal(samples.length, Math.round(0.6 * SOUND_SAMPLE_RATE));
+  assert.equal(samples.length, Math.round(0.51 * SOUND_SAMPLE_RATE));
   assert.equal(samples[0], 0);
   assert.equal(samples.at(-1), 0);
-  // Natural recorded tail stays at least 12 dB below the whole cue. Exact
-  // recorded PCM is pinned below; do not gate it on rounded RMS 0.0400.
+  // Preserve the quiet settling tail and the exact user-approved audition.
   assert.ok(
-    level(samples.slice(Math.round(0.55 * SOUND_SAMPLE_RATE))).rms < level(samples).rms * 0.25,
+    level(samples.slice(Math.round(0.46 * SOUND_SAMPLE_RATE))).rms < level(samples).rms * 0.25,
   );
   assert.equal(
     createHash('sha256').update(soundWave('chip')).digest('hex'),
-    '3451841cd3aae9467ea9a02867035434f96574ba03fd9f3c1535c84ffc3c9dfa',
+    'd853c5acc8657d6968603cf1dfb747d0e06267f1584a28d842a8d3c635158aa2',
   );
 });
 

@@ -3,7 +3,7 @@ export const MOBILE_BACKGROUND_MUSIC_PATH = 'audio/background-music-mobile.m4a';
 // Both masters include their own peak headroom for action cues.
 export const BACKGROUND_MUSIC_VOLUME = 1;
 // WeChat mixes separate audio contexts, so cues temporarily reserve extra room.
-export const BACKGROUND_MUSIC_DUCK_VOLUME = 0.5;
+export const BACKGROUND_MUSIC_DUCK_VOLUME = 0.45;
 
 // The sound preference owns music too. Hand changes never recreate this player.
 export function createMusicController({ createPlayer, enabled = true, active = true }) {

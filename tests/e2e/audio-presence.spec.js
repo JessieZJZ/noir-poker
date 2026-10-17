@@ -44,11 +44,11 @@ test('actual actions use enhanced phone cues and music enters the shared output 
       ({ from, to }) => from === 'WaveShaperNode' && to === 'AudioDestinationNode',
     ),
   ).toBe(true);
-  for (const length of [7938, 26460]) {
+  for (const length of [7938, 22491]) {
     const cue = actual.cues.find(({ samples }) => samples === length);
     expect(cue).toBeTruthy();
-    expect(cue.rms).toBeGreaterThan(length === 26460 ? 0.18 : 0.21);
-    expect(cue.peak).toBeLessThanOrEqual(0.7);
+    expect(cue.rms).toBeGreaterThan(length === 22491 ? 0.05 : 0.21);
+    expect(cue.peak).toBeLessThanOrEqual(length === 22491 ? 0.78 : 0.7);
   }
 });
 
@@ -84,9 +84,11 @@ test('the shipped AAC reserves phone-mix headroom and Web Audio bounds coinciden
     gain.gain.value = BACKGROUND_MUSIC_VOLUME;
     source.connect(gain).connect(output);
     source.start(0, 45);
+    let cuePeak = 0;
     for (const name of ['fold', 'check', 'chip', 'deal', 'win']) {
       const samples = soundSamples(name),
         cue = context.createBuffer(1, samples.length, 44100);
+      for (const sample of samples) cuePeak = Math.max(cuePeak, Math.abs(sample));
       cue.getChannelData(0).set(samples);
       const node = context.createBufferSource();
       node.buffer = cue;
@@ -100,6 +102,7 @@ test('the shipped AAC reserves phone-mix headroom and Web Audio bounds coinciden
       duration: music.duration,
       musicPeak,
       mixPeak,
+      cuePeak,
       seam,
       gain: BACKGROUND_MUSIC_VOLUME,
       duck: BACKGROUND_MUSIC_DUCK_VOLUME,
@@ -108,7 +111,7 @@ test('the shipped AAC reserves phone-mix headroom and Web Audio bounds coinciden
   });
   expect(result.duration).toBeGreaterThan(93.6);
   expect(result.duration).toBeLessThan(93.8);
-  expect(result.musicPeak * result.duck + 0.7).toBeLessThan(0.99);
+  expect(result.musicPeak * result.duck + result.cuePeak).toBeLessThan(0.99);
   expect(result.loudnessIncreaseDB).toBeGreaterThan(4.8);
   expect(result.musicPeak).toBeLessThan(0.58);
   expect(result.mixPeak).toBeGreaterThan(0.7);

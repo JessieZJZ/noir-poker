@@ -4,7 +4,10 @@ import { createRequire } from 'node:module';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { BACKGROUND_MUSIC_VOLUME } from '../../src/ui/background-music.js';
+import {
+  BACKGROUND_MUSIC_VOLUME,
+  BACKGROUND_MUSIC_DUCK_VOLUME,
+} from '../../src/ui/background-music.js';
 
 const root = fileURLToPath(new URL('../../', import.meta.url));
 const require = createRequire(path.join(root, '.artifacts/wechat-tools/package.json'));
@@ -118,7 +121,7 @@ try {
     const audio = getApp().__bgmProbe.audios.find((audio) => audio.src.includes('/music/'));
     return { volume: audio.volume, paused: audio.paused };
   });
-  assert.equal(duringCue.volume, 0.5);
+  assert.equal(duringCue.volume, BACKGROUND_MUSIC_DUCK_VOLUME);
   assert.equal(duringCue.paused, false);
   const cueRestored = await wait(async () => {
     const state = await inspect();
