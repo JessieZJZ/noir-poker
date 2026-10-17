@@ -283,7 +283,8 @@
     "音效与音乐已开启": "Sound effects & music on",
     "音效与音乐已关闭": "Sound effects & music off",
     "振动已开启": "Vibration on",
-    "振动已关闭": "Vibration off"
+    "振动已关闭": "Vibration off",
+    "{0}，带{1}": "{0}, with {1}"
   },
   "zh-TW": {
     "设置": "設定",
@@ -395,7 +396,8 @@
     "音效与音乐已开启": "音效與音樂已開啟",
     "音效与音乐已关闭": "音效與音樂已關閉",
     "振动已开启": "震動已開啟",
-    "振动已关闭": "震動已關閉"
+    "振动已关闭": "震動已關閉",
+    "{0}，带{1}": "{0}，帶{1}"
   },
   "ja": {
     "设置": "設定",
@@ -507,7 +509,8 @@
     "音效与音乐已开启": "効果音と音楽：オン",
     "音效与音乐已关闭": "効果音と音楽：オフ",
     "振动已开启": "振動：オン",
-    "振动已关闭": "振動：オフ"
+    "振动已关闭": "振動：オフ",
+    "{0}，带{1}": "{0}、{1}あり"
   },
   "ko": {
     "设置": "설정",
@@ -619,7 +622,8 @@
     "音效与音乐已开启": "효과음 및 음악 켜짐",
     "音效与音乐已关闭": "효과음 및 음악 꺼짐",
     "振动已开启": "진동 켜짐",
-    "振动已关闭": "진동 꺼짐"
+    "振动已关闭": "진동 꺼짐",
+    "{0}，带{1}": "{0}, {1} 보유"
   },
   "es": {
     "设置": "Ajustes",
@@ -731,7 +735,8 @@
     "音效与音乐已开启": "Efectos y música activados",
     "音效与音乐已关闭": "Efectos y música desactivados",
     "振动已开启": "Vibración activada",
-    "振动已关闭": "Vibración desactivada"
+    "振动已关闭": "Vibración desactivada",
+    "{0}，带{1}": "{0}, con {1}"
   },
   "it": {
     "设置": "Impostazioni",
@@ -843,7 +848,8 @@
     "音效与音乐已开启": "Effetti e musica attivati",
     "音效与音乐已关闭": "Effetti e musica disattivati",
     "振动已开启": "Vibrazione attivata",
-    "振动已关闭": "Vibrazione disattivata"
+    "振动已关闭": "Vibrazione disattivata",
+    "{0}，带{1}": "{0}, con {1}"
   },
   "pt": {
     "设置": "Definições",
@@ -955,7 +961,8 @@
     "音效与音乐已开启": "Efeitos e música ativados",
     "音效与音乐已关闭": "Efeitos e música desativados",
     "振动已开启": "Vibração ativada",
-    "振动已关闭": "Vibração desativada"
+    "振动已关闭": "Vibração desativada",
+    "{0}，带{1}": "{0}, com {1}"
   },
   "de": {
     "设置": "Einstellungen",
@@ -1067,7 +1074,8 @@
     "音效与音乐已开启": "Effekte und Musik eingeschaltet",
     "音效与音乐已关闭": "Effekte und Musik ausgeschaltet",
     "振动已开启": "Vibration eingeschaltet",
-    "振动已关闭": "Vibration ausgeschaltet"
+    "振动已关闭": "Vibration ausgeschaltet",
+    "{0}，带{1}": "{0}, mit {1}"
   },
   "fr": {
     "设置": "Paramètres",
@@ -1179,7 +1187,8 @@
     "音效与音乐已开启": "Effets sonores et musique activés",
     "音效与音乐已关闭": "Effets sonores et musique désactivés",
     "振动已开启": "Vibrations activées",
-    "振动已关闭": "Vibrations désactivées"
+    "振动已关闭": "Vibrations désactivées",
+    "{0}，带{1}": "{0}, avec {1}"
   },
   "ru": {
     "设置": "Настройки",
@@ -1291,6 +1300,7 @@
     "音效与音乐已开启": "Звуковые эффекты и музыка включены",
     "音效与音乐已关闭": "Звуковые эффекты и музыка выключены",
     "振动已开启": "Вибрация включена",
-    "振动已关闭": "Вибрация выключена"
+    "振动已关闭": "Вибрация выключена",
+    "{0}，带{1}": "{0}, с {1}"
   }
 }

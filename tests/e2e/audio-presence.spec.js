@@ -44,7 +44,7 @@ test('actual actions use enhanced phone cues and music enters the shared output 
       ({ from, to }) => from === 'WaveShaperNode' && to === 'AudioDestinationNode',
     ),
   ).toBe(true);
-  for (const length of [7938, 8820]) {
+  for (const length of [7938, 14994]) {
     const cue = actual.cues.find(({ samples }) => samples === length);
     expect(cue).toBeTruthy();
     expect(cue.rms).toBeGreaterThan(0.21);

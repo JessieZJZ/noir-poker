@@ -86,3 +86,5 @@ Worker 只收到玩家输入，私有对手记录留在另一面板。
 `review-check.test.js`、`review-context.test.js`、`review-lines.test.js`、`counterfactual.test.js`、`coaching.test.js` 覆盖公开输入隔离、结果不影响评级、确定性、真实 A7 开池／再加注线、Q7 同花事实、行动前缀范围、模拟不修改原状态、分池、退款、公共牌平分、合法备选、赢牌但负收益、合理输牌、价值机会与主题去重；浏览器测试覆盖两个复盘视角、对手筛选、实际 Worker 与窄屏。
 
 参考：[Doug Polk 翻前问答](https://upswingpoker.com/pre-flop-no-limit-poker-strategy-questions-answered-doug-polk/)，[Upswing 挤压加注](https://upswingpoker.com/squeeze-play-poker/)，[PokerStars 起手牌与位置](https://www.pokerstars.com/poker/learn/lesson/poker-starting-hands/)，[底池赔率](https://www.pokerstars.com/poker/learn/lesson/pot-odds/)。
+
+对手时间线卡片按当前可见列表连续编号，筛选后从 1 重新开始。内部整手事件序号仍用于对局动态的准确高亮，不以显示编号查找事件。行动摘要同时呈现成牌与直接听牌，避免把有两头顺／同花听牌的跟注仅概括为高牌。

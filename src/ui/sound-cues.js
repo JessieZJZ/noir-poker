@@ -20,7 +20,7 @@ const fallingPhase = (t, from, to, end) => {
 export function soundSamples(name) {
   const kind = ['bet', 'raise', 'call'].includes(name) ? 'chip' : name;
   if (!SOUND_CUES.includes(kind)) throw new RangeError('Unknown sound cue');
-  const duration = { fold: 0.18, check: 0.22, chip: 0.2, deal: 0.28, win: 0.36 }[kind];
+  const duration = { fold: 0.18, check: 0.22, chip: 0.34, deal: 0.28, win: 0.36 }[kind];
   const data = new Float32Array(Math.round(duration * SOUND_SAMPLE_RATE));
   const noise = new Float32Array(Math.ceil(0.025 * SOUND_SAMPLE_RATE));
   // Fixed noise is shared too; two taps reuse the same damped wooden attack.
@@ -62,8 +62,31 @@ export function soundSamples(name) {
       value =
         (triangle(phase) * 0.55 + Math.sin(phase * 5) * 0.45 + Math.sin(phase * 9) * 0.2) *
         envelope(t, 0.288, 0.012, 0.16);
+    } else if (kind === 'chip') {
+      // Short inharmonic ceramic contacts, then the stack settling on felt.
+      // Locally synthesized, without recordings or sample-pack audio.
+      for (const [contact, offset] of [0, 0.031, 0.067, 0.112, 0.162, 0.221].entries()) {
+        const dt = t - offset;
+        if (dt <= 0 || dt >= 0.1) continue;
+        const strength = [0.68, 0.9, 0.76, 1, 0.82, 0.56][contact];
+        const variation = 1 + ((contact % 3) - 1) * 0.045;
+        const attack = Math.min(1, dt / 0.0008);
+        let contactSound = 0;
+        for (const [hz, weight, decay] of [
+          [1140, 0.58, 0.018],
+          [2070, 0.45, 0.012],
+          [3460, 0.32, 0.009],
+          [4930, 0.16, 0.006],
+        ])
+          contactSound +=
+            Math.sin(2 * Math.PI * hz * variation * dt) * weight * Math.exp(-dt / decay);
+        seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;
+        const grain = (seed / 2147483648 - 1) * Math.exp(-dt / 0.006) * 0.24;
+        const felt = Math.sin(2 * Math.PI * 185 * dt) * Math.exp(-dt / 0.022) * 0.2;
+        value += strength * attack * (contactSound + grain + felt);
+      }
     } else {
-      const notes = kind === 'win' ? [440, 554, 659] : kind === 'deal' ? [820, 570] : [310];
+      const notes = kind === 'win' ? [440, 554, 659] : [820, 570];
       for (const [index, hz] of notes.entries()) {
         const dt = t - index * 0.08;
         if (dt < 0 || dt >= 0.2) continue;
@@ -71,10 +94,8 @@ export function soundSamples(name) {
         const oscillator =
           kind === 'deal'
             ? triangle(phase)
-            : kind === 'chip'
-              ? Math.sin(phase) * 0.4 + Math.sin(phase * 3) * 0.7 + Math.sin(phase * 5) * 0.35
-              : Math.sin(phase) + Math.sin(phase * 2) * 0.2 + Math.sin(phase * 3) * 0.45;
-        value += oscillator * envelope(dt, kind === 'chip' ? 0.32 : 0.2, 0.015, 0.16);
+            : Math.sin(phase) + Math.sin(phase * 2) * 0.2 + Math.sin(phase * 3) * 0.45;
+        value += oscillator * envelope(dt, 0.2, 0.015, 0.16);
       }
     }
     data[i] = value;

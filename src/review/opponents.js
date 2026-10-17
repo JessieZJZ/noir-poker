@@ -125,14 +125,15 @@ export function explainOpponent(record, identities = []) {
       v.features?.wet ??
       (c.texture.maxSuit >= (v.board.length === 3 ? 2 : 3) || c.texture.connected >= 3),
     hand = c.handLabel,
+    summaryHand = draw.outs ? `${hand}，带${drawLabel(draw)}` : hand,
     cost = v.legal.callAmount,
     allinCall = record.action === 'call' && cost === v.stack,
     actual = actionLabel(snapshot),
     aggression = f.lastAggression?.street === v.street ? f.lastAggression : null,
     prefix = v.street
       ? aggression
-        ? `面对${aggression.name}的${aggression.label}，${plainName}在 ${v.position} 拿 ${f.holeText}，在 ${f.boardText} 上是${hand}，选择${actual}。`
-        : `${plainName}在 ${v.position} 拿 ${f.holeText}，在 ${f.boardText} 上是${hand}，选择${actual}。`
+        ? `面对${aggression.name}的${aggression.label}，${plainName}在 ${v.position} 拿 ${f.holeText}，在 ${f.boardText} 上是${summaryHand}，选择${actual}。`
+        : `${plainName}在 ${v.position} 拿 ${f.holeText}，在 ${f.boardText} 上是${summaryHand}，选择${actual}。`
       : aggression
         ? `面对${aggression.name}的${aggression.label}，${plainName}在 ${v.position} 拿 ${f.holeText}，选择${actual}。`
         : `${plainName}在 ${v.position} 拿 ${f.holeText}，选择${actual}。`,

@@ -63,6 +63,15 @@ test('cold load and refresh never paint the HTML shell while the entry script is
       await expect.poll(() => requested).toBe(true);
       await page.waitForFunction(() => window.startupFrames.length >= 3);
       await expect(page.locator('body')).toBeHidden();
+      await expect(page.locator('#rules-button [data-guide-label="guide"]')).toBeHidden();
+      const launch = await page.locator('html').evaluate((el) => ({
+        image: getComputedStyle(el, '::before').backgroundImage,
+        iconLoaded: performance
+          .getEntriesByType('resource')
+          .some((entry) => entry.name.endsWith('/launch-icon.png')),
+      }));
+      expect(launch.image).toContain('launch-icon.png');
+      expect(launch.iconLoaded).toBe(true);
       await expect(page.locator('html')).toHaveCSS('background-color', 'rgb(11, 16, 23)');
       expect(await page.evaluate(() => document.body.inert)).toBe(true);
     } finally {
@@ -87,6 +96,7 @@ test('a delayed local stylesheet cannot expose a partially styled table', async 
     await page.goto('/', { waitUntil: 'commit' });
     await expect.poll(() => requested).toBe(true);
     await expect(page.locator('body')).toBeHidden();
+    await expect(page.locator('#rules-button [data-guide-label="guide"]')).toBeHidden();
     expect(await page.evaluate(() => document.documentElement.dataset.appReady)).toBeUndefined();
   } finally {
     pending.release();

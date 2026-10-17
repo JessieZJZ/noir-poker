@@ -4,8 +4,8 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <style>
-      /* Apply before Vite's CSS modules load. Keep the initial DOM measurable
-         while platform, locale and the first hand are being prepared. */
+      /* Startup artwork paints independently of the asynchronously loaded app CSS.
+         Keep the first hand measurable, but hide every descendant until ready. */
       html {
         background: #0b1017;
         color-scheme: dark;
@@ -13,13 +13,48 @@
       body {
         margin: 0;
       }
-      html:not([data-app-ready='true']) body {
+      html:not([data-app-ready='true']) body,
+      html:not([data-app-ready='true']) body * {
         visibility: hidden !important;
       }
-      body[inert] {
-        visibility: hidden;
+      body[inert],
+      body[inert] * {
+        visibility: hidden !important;
+      }
+      html:not([data-app-ready='true'])::before {
+        content: '';
+        position: fixed;
+        inset: 0;
+        z-index: 2147483646;
+        background: #0b1017 url('/launch-icon.png') center / 180px 180px no-repeat;
+      }
+      html:not([data-app-ready='true'])::after {
+        content: '';
+        position: fixed;
+        z-index: 2147483647;
+        top: calc(50% + 118px);
+        left: calc(50% - 24px);
+        width: 48px;
+        height: 2px;
+        border-radius: 2px;
+        background: #6ee7c5;
+        animation: launch-pulse 1.4s ease-in-out infinite alternate;
+      }
+      @keyframes launch-pulse {
+        from {
+          opacity: 0.25;
+        }
+        to {
+          opacity: 0.85;
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        html::after {
+          animation: none !important;
+        }
       }
     </style>
+    <link rel="preload" href="/launch-icon.png" as="image" />
     <title>NOIR Poker · 德州扑克单机练习</title>
     <meta
       name="description"
@@ -27,26 +62,6 @@
     />
     <link rel="icon" type="image/png" href="favicon.png" />
     <link rel="apple-touch-icon" href="apple-touch-icon.png" />
-    <link rel="stylesheet" href="/src/styles/fonts.css" />
-    <link rel="stylesheet" href="/src/styles/base.css" />
-    <link rel="stylesheet" href="/src/styles/game.css" />
-    <link rel="stylesheet" href="/src/styles/review.css" />
-    <link rel="stylesheet" href="/src/styles/showdown.css" />
-    <link rel="stylesheet" href="/src/styles/table.css" />
-    <link rel="stylesheet" href="/src/styles/opponents.css" />
-    <link rel="stylesheet" href="/src/styles/native.css" />
-    <link rel="stylesheet" href="/src/styles/hint-banner.css" />
-    <link rel="stylesheet" href="/src/styles/play-viewport.css" />
-    <link rel="stylesheet" href="/src/styles/controls-layout.css" />
-    <link rel="stylesheet" href="/src/styles/persona-browser.css" />
-    <link rel="stylesheet" href="/src/styles/settings-layout.css" />
-    <link rel="stylesheet" href="/src/styles/i18n.css" />
-    <link rel="stylesheet" href="/src/styles/dropdowns.css" />
-    <link rel="stylesheet" href="/src/styles/table-readability.css" />
-    <link rel="stylesheet" href="/src/styles/desktop-play.css" />
-    <link rel="stylesheet" href="/src/styles/table-density.css" />
-    <link rel="stylesheet" href="/src/styles/game-records.css" />
-    <link rel="stylesheet" href="/src/styles/hero-turn.css" />
   </head>
   <body inert>
     <dialog

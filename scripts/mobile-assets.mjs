@@ -5,6 +5,8 @@ import { root } from './mobile-lib.mjs';
 
 const icon = readFileSync(path.join(root, 'public/app-icon.png'));
 const png = (size) => sharp(icon).resize(size, size).png().toBuffer();
+const launchIcon = readFileSync(path.join(root, 'public/launch-icon.png'));
+const launchPng = (size) => sharp(launchIcon).resize(size, size).png().toBuffer();
 const ios = path.join(root, 'ios/App/App/Assets.xcassets');
 await sharp(icon)
   .resize(1024, 1024)
@@ -14,7 +16,7 @@ await sharp(icon)
 const splash = await sharp({
   create: { width: 2732, height: 2732, channels: 3, background: '#0b1017' },
 })
-  .composite([{ input: await png(640), gravity: 'center' }])
+  .composite([{ input: await launchPng(640), gravity: 'center' }])
   .png()
   .toBuffer();
 for (const name of ['splash-2732x2732.png', 'splash-2732x2732-1.png', 'splash-2732x2732-2.png'])
@@ -39,6 +41,11 @@ await sharp({ create: { width: 648, height: 648, channels: 4, background: '#0010
   .composite([{ input: await png(432), gravity: 'center' }])
   .png()
   .toFile(path.join(res, 'drawable-nodpi/ic_launcher_artwork.png'));
+// Android's system launch icon is independent from its opaque launcher tile.
+await sharp({ create: { width: 648, height: 648, channels: 4, background: '#00000000' } })
+  .composite([{ input: await launchPng(432), gravity: 'center' }])
+  .png()
+  .toFile(path.join(res, 'drawable-nodpi/launch_artwork.png'));
 writeFileSync(
   path.join(res, 'drawable-v24/ic_launcher_foreground.xml'),
   '<?xml version="1.0" encoding="utf-8"?><bitmap xmlns:android="http://schemas.android.com/apk/res/android" android:src="@drawable/ic_launcher_artwork" android:gravity="fill"/>\n',
@@ -62,7 +69,7 @@ for (const directory of readdirSync(res)) {
     const { width, height } = await sharp(filename).metadata();
     const size = Math.round(Math.min(width, height) * 0.24);
     await sharp({ create: { width, height, channels: 3, background: '#0b1017' } })
-      .composite([{ input: await png(size), gravity: 'center' }])
+      .composite([{ input: await launchPng(size), gravity: 'center' }])
       .png()
       .toFile(filename + '.new');
     writeFileSync(filename, readFileSync(filename + '.new'));

@@ -19,6 +19,7 @@ const PROFILE_AXES = [
 
 module.exports = {
   data: {
+    tableReady: false,
     topInset: 24,
     bottomInset: 0,
     windowHeight: 800,
@@ -149,6 +150,7 @@ module.exports = {
         });
         const update = {
           ...view,
+          tableReady: view.heroCards.length === 2 && view.seats.length >= 4,
           finishing:
             view.done || view.hand !== this.data.hand || view.replay !== this.data.replay
               ? false

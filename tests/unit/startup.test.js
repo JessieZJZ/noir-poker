@@ -5,21 +5,25 @@ import config from '../../vite.config.js';
 
 const html = readFileSync(new URL('../../index.html', import.meta.url), 'utf8');
 
-test('every local stylesheet is render-blocking in the head before the inert app shell', () => {
+test('all game styles load through an awaited module while independent launch artwork can paint', () => {
   const head = html.slice(0, html.indexOf('</head>'));
-  const styles = [...head.matchAll(/<link rel="stylesheet" href="\/src\/styles\/([^"/]+)"\s*\/>/g)];
+  const styles = [
+    ...readFileSync(new URL('../../src/styles/app.js', import.meta.url), 'utf8').matchAll(
+      /import '\.\/([^']+\.css)'/g,
+    ),
+  ];
   assert.deepEqual(
     styles.map((match) => match[1]).sort(),
     readdirSync(new URL('../../src/styles', import.meta.url))
       .filter((name) => name.endsWith('.css'))
       .sort(),
   );
-  assert.match(head, /body\[inert\]\s*\{\s*visibility:\s*hidden;/);
+  assert.doesNotMatch(head, /rel="stylesheet"/);
+  assert.match(head, /body\[inert\] \*\s*\{\s*visibility:\s*hidden !important;/);
+  assert.match(head, /rel="preload" href="\/launch-icon\.png" as="image"/);
+  assert.match(head, /html:not\(\[data-app-ready='true'\]\)::before/);
   assert.match(html, /<body inert>/);
-  assert.doesNotMatch(
-    readFileSync(new URL('../../src/main.js', import.meta.url), 'utf8'),
-    /import\s+['"][^'"]+\.css/,
-  );
+  assert.match(readFileSync(new URL('../../src/main.js', import.meta.url), 'utf8'), /await styles/);
 });
 
 test('Web and native use identical local fonts without a remote font request', () => {

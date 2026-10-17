@@ -241,6 +241,16 @@ function setup(
   };
 }
 
+test('WeChat publishes its first complete hand atomically after the launch artwork', (t) => {
+  const { page, definition } = setup(t);
+  assert.equal(definition.data.tableReady, false);
+  assert.equal(page.data.tableReady, true);
+  assert.equal(page.data.heroCards.length, 2);
+  assert.equal(page.data.seats.length, page.data.settings.playerCount - 1);
+  assert.match(template, /wx:if="\{\{!tableReady\}\}" class="launch-screen"/);
+  assert.match(template, /<view\s+wx:else\s+class="screen /);
+});
+
 test('measuring the pot sheet cannot change the table pot row or public-card placement', (t) => {
   const { page, wx } = setup(t);
   const before = copy({

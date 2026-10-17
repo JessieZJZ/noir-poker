@@ -1897,6 +1897,10 @@ test('A7 review separates steal, 3bet and 4bet; opponents expose actual decision
   ).toBeGreaterThan(0);
   await expect(page.locator('#review-opponents .review-timeline')).toContainText('Mia');
   await expect(page.locator('#review-opponents .review-timeline')).not.toContainText('Alex');
+  const filteredNumbers = await page
+    .locator('#review-opponents .review-step-number')
+    .allTextContents();
+  expect(filteredNumbers).toEqual(filteredNumbers.map((_, index) => String(index + 1)));
   await page.locator('#review-hero-tab').click();
   await expect(page.locator('#review-coach-explanation')).toContainText('1.8K');
   const layout = await page.evaluate(() => {

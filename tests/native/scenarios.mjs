@@ -751,7 +751,7 @@ export async function nativeScenarios(app) {
       assert.equal(enabled.levels.length, enabled.audio);
       assert.ok(
         enabled.levels.every(({ rms, peak, samples }) => {
-          const enhanced = [7938, 8820, 15876].includes(samples);
+          const enhanced = [7938, 14994, 15876].includes(samples);
           return (
             rms >= (enhanced ? 0.21 : 0.145) && rms <= (enhanced ? 0.245 : 0.165) && peak <= 0.7
           );
@@ -1615,6 +1615,15 @@ export async function nativeScenarios(app) {
     assert.equal(overflow.hint, true);
     assert.ok(overflow.fraction > 0.45 && overflow.fraction < 0.55);
     assert.equal(overflow.scrollable, true);
+    const numbers = await app.evaluate(() =>
+      [...document.querySelectorAll('#review-opponents .review-step-number')].map((el) =>
+        Number(el.textContent),
+      ),
+    );
+    assert.deepEqual(
+      numbers,
+      Array.from({ length: overflow.count }, (_, index) => index + 1),
+    );
     await app.screenshot('review-two-and-half-cards');
     await app.evaluate(() => {
       const track = document.querySelector('#review-opponents .review-timeline');

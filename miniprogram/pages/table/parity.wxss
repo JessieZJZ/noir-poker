@@ -1825,3 +1825,24 @@
     margin-bottom: 17px;
   }
 }
+.launch-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: #0b1017;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.launch-screen image {
+  width: 180px;
+  height: 180px;
+}
+.launch-progress {
+  position: absolute;
+  top: calc(50% + 118px);
+  width: 48px;
+  height: 2px;
+  background: #6ee7c5;
+  border-radius: 2px;
+}

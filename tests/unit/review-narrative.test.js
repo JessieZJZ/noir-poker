@@ -177,6 +177,10 @@ test('bot explanations separate made hand and draw without a numeric reference m
     mood: { kind: 'steady' },
   };
   const explanation = explainOpponent({ id: 1, action: 'raise', amount: 250, trace });
+  assert.match(
+    explanation.paragraphs.find((text) => text.includes('选择')),
+    /高牌，带两头顺听牌/,
+  );
   assert.match(explanation.detail, /两头顺听牌半诈唬/);
   assert.deepEqual(explanation.metrics, []);
   trace.reason = 'value-raise';

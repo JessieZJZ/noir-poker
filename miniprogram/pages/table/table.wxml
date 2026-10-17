@@ -15,7 +15,12 @@
     <text wx:else>{{part.text}}</text>
   </block>
 </template>
+<view wx:if="{{!tableReady}}" class="launch-screen" aria-label="NOIR Poker">
+  <image src="/assets/launch-icon.png" mode="aspectFit" />
+  <view class="launch-progress" />
+</view>
 <view
+  wx:else
   class="screen {{homeLocked ? 'home-locked' : ''}}"
   style="padding-top: {{topInset + 36}}px; padding-bottom: {{bottomInset}}px; {{homeLocked ? 'top: ' + homeOffset + 'px;' : ''}}"
 >

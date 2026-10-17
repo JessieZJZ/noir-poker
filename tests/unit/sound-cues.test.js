@@ -99,6 +99,27 @@ test('the actual encoded WeChat WAVs keep the same normalized PCM as Web and nat
   }
 });
 
+test('a stack of chips contains separate sharp contacts and settles without a tone or trailing click', () => {
+  const samples = soundSamples('chip');
+  assert.equal(samples.length, Math.round(0.34 * SOUND_SAMPLE_RATE));
+  for (const [start, end] of [
+    [0, 0.028],
+    [0.031, 0.058],
+    [0.067, 0.096],
+    [0.112, 0.14],
+    [0.162, 0.19],
+    [0.221, 0.25],
+  ]) {
+    const hit = samples.slice(
+      Math.round(start * SOUND_SAMPLE_RATE),
+      Math.round(end * SOUND_SAMPLE_RATE),
+    );
+    assert.ok(level(hit).peak > 0.5, `Chip contact at ${start}`);
+  }
+  assert.ok(level(samples.slice(Math.round(0.3 * SOUND_SAMPLE_RATE))).rms < 0.025);
+  assert.equal(samples.at(-1), 0);
+});
+
 test('the final Web mix retains single-cue unity and bounds coincident action cues', () => {
   const destination = {},
     node = {

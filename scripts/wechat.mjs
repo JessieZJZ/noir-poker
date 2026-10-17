@@ -195,7 +195,10 @@ export async function buildWechat(output = wechatOutput) {
   try {
     const before = wechatSourceDigest();
     await rm(staging, { recursive: true, force: true });
-    await cp(template, staging, { recursive: true });
+    await cp(template, staging, {
+      recursive: true,
+      filter: (source) => path.basename(source) !== '.DS_Store',
+    });
     for (const directory of ['engine', 'review'])
       await compileJs(path.join(root, 'src', directory), path.join(staging, 'shared', directory));
     await compileJs(path.join(root, 'src/platform'), path.join(staging, 'shared/platform'));
@@ -267,6 +270,10 @@ export async function buildWechat(output = wechatOutput) {
       .resize(128, 128)
       .png()
       .toFile(path.join(staging, 'assets/app-icon.png'));
+    await sharp(path.join(root, 'public/launch-icon.png'))
+      .resize(128, 128)
+      .png({ compressionLevel: 9 })
+      .toFile(path.join(staging, 'assets/launch-icon.png'));
     await mkdir(path.join(staging, 'assets/sounds'), { recursive: true });
     for (const sound of ['fold', 'check', 'raise', 'call', 'deal', 'win'])
       await writeFile(path.join(staging, `assets/sounds/${sound}.wav`), soundWave(sound));
