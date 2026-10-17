@@ -1793,8 +1793,8 @@ export async function nativeScenarios(app) {
     assert.equal(selected.index, String(last));
     assert.ok(selected.scroll > 0);
     await app.click('#review-dialog .icon-button.close-dialog');
-    // Leave the real table active for the following lifecycle scenario.
-    await app.click('#next-button');
+    // The next scenario reopens this hand's settled review before retrying it.
+    assert.equal((await app.state()).phase, 'done');
     return {
       hero,
       heroTags,
