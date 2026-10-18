@@ -644,12 +644,6 @@ export async function nativeScenarios(app) {
     ]);
     await app.sleep(850);
     await app.screenshot('hero-turn-visible');
-    await app.waitFor(
-      () =>
-        app.evaluate(() => document.querySelector('.action-dock').dataset.turnPhase === 'waiting'),
-      5000,
-      'Entry must settle into a steady turn state',
-    );
     const read = () =>
       app.evaluate(() => {
         const rect = (element) => {
@@ -697,8 +691,14 @@ export async function nativeScenarios(app) {
         };
       });
     await app.sleep(750); // Finish the independent hand-deal animation, if this is a new hand.
-    const before = await read();
-    assert.ok(before.noticeSpacing.topGap >= 10, JSON.stringify(before.noticeSpacing));
+    const before = await app.waitFor(
+      () => read().then((frame) => (frame.hero === 'waiting' ? frame : null)),
+      5000,
+      'Entry must settle into a steady turn state',
+    );
+    // Fractional Android display densities quantize the 24px button by less
+    // than one CSS pixel; compare the resulting clearance at pixel precision.
+    assert.ok(Math.round(before.noticeSpacing.topGap) >= 10, JSON.stringify(before.noticeSpacing));
     assert.ok(before.noticeSpacing.sliderGap >= 4, JSON.stringify(before.noticeSpacing));
     assert.equal(before.hero, 'waiting');
     assert.equal(before.promptVisible, true);
