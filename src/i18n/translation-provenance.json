@@ -985,5 +985,9 @@
     "method": "Agent-authored session-specific practice title in all ten translated locales. Simplified Chinese and the WeChat template use the source title directly.",
     "scope": "Rename the practice statistics card heading and remove its table-session subtitle. Chip statistics, net-change wording and all other practice copy remain unchanged.",
     "linguisticReview": "Independent native-language review pending."
+  },
+  "reviewSummary20261017": {
+    "method": "Authored Simplified Chinese and English; other locale drafts translated from these messages with Google Translate, preserving interpolation slots. Live switching and card, amount and identity preservation are regression checked.",
+    "linguisticReview": "pending"
   }
 }

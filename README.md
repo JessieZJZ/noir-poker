@@ -208,3 +208,12 @@ PR44 的策略修正与具体行动复盘随本次盲注改动一并提交；兼
 本机对局记录的 Web 回归、安装运行与微信验收边界见 [初版验证](docs/game-records-validation-2026-10-14.md)；历史牌桌与游戏布局一致、重打短标签及有符号净变化的结果见 [布局修订验证](docs/game-records-layout-validation-2026-10-14.md)。
 
 当前牌面权益、实际待行动人数与公开范围候选的实现及本轮 Web 验收见 [公开范围与成牌候选验证](docs/position-equity-validation-2026-10-14.md)。
+
+复盘总结的因果表述、去重和跨端验证见 [复盘总结修订](docs/review-summary-validation-2026-10-17.md)。九人桌低成本跟入、强起手牌防守及批量模拟见 [机器人入池与承压验证](docs/bot-entry-validation-2026-10-17.md)。
+
+```sh
+# 九人混合风格桌，进阶难度、明显情绪波动；每手恢复 100 BB，牌序与策略独立设种子。
+npm run measure:bots -- --players=9 --hands=1000 --profile=mixed --difficulty=hard --emotions=lively --seed=781 --deck-seed=711
+# 重建公开下注线路，分别统计 AK、88、AQ、A6 等场景的 100 个策略样本。
+node tests/bot-pressure-audit.mjs
+```

@@ -1854,11 +1854,17 @@ export async function nativeScenarios(app) {
       reason: document.querySelector('#review-coach-explanation').textContent,
       keyInfo: document.querySelector('#review-evidence').textContent,
       method: document.querySelectorAll('.review-method, #review-method').length,
+      rangeNotes: document.querySelectorAll('#review-coach-explanation .review-range-note').length,
     }));
     assert.equal(presentation.removed, 0);
     assert.ok(presentation.evidence >= 4);
     assert.equal(presentation.focusHidden, presentation.keep);
     assert.equal(presentation.method, 0);
+    assert.equal(presentation.rangeNotes, 0);
+    assert.doesNotMatch(
+      presentation.reason,
+      /相同牌力可能平分底池|不能只按成牌标签|是在回应这笔下注|已有过牌之后争取底池/,
+    );
     assert.doesNotMatch(presentation.reason, /EV|模型|模拟器|抽样|新增投入/);
     assert.doesNotMatch(presentation.keyInfo, /有效剩余|新增投入/);
     const analysisLayout = await app.evaluate(() => ({
@@ -1901,10 +1907,13 @@ export async function nativeScenarios(app) {
           '#review-opponent-detail .review-choice, #review-opponent-detail .review-status, #review-opponent-detail details',
         ).length,
         reason: document.querySelector('#review-opponent-detail .review-explanation')?.textContent,
+        rangeNotes: document.querySelectorAll('#review-opponent-detail .review-range-note').length,
         scope: document.querySelector('.review-scope').textContent,
       }));
       assert.ok(opponent.reason);
       assert.equal(opponent.metrics, 0);
+      assert.equal(opponent.rangeNotes, 0);
+      assert.doesNotMatch(opponent.reason, /相同牌力可能平分底池|补成顺子／同花/);
       assert.doesNotMatch(opponent.reason, /它|EV|模型|模拟器|抽样/);
       assert.equal(opponent.removed, 0);
       assert.match(opponent.scope, /按当时信息判断/);

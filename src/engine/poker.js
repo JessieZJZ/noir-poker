@@ -887,7 +887,7 @@ export function botDecision(g, random = Math.random, { trials, allInCache } = {}
       ...allIn,
       ...view.callPrice,
     };
-    const allInTrials = trials ?? (g.difficulty === 'hard' ? 96 : 72);
+    const allInTrials = trials ?? (g.difficulty === 'hard' ? (g.street === 0 ? 256 : 96) : 72);
     view.equityTrials = allInTrials;
     const assessment = estimateAllInEquity(view, allIn, {
       deck: deckOfCards(),
@@ -932,7 +932,7 @@ export function botDecision(g, random = Math.random, { trials, allInCache } = {}
       random,
       cache: allInCache,
     });
-    view.equity = view.publicEquity.equity;
+    view.equity = view.publicEquity.priceEquity ?? view.publicEquity.equity;
   }
   const decision = chooseBotAction(
     view,

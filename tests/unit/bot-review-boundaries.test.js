@@ -73,7 +73,7 @@ test('closing draw folds, made plus redraw calls and high-card pot control local
   for (const locale of SUPPORTED_LOCALES) {
     await loadLocale(locale);
     for (const { record, review } of cases)
-      for (const text of [review.title, ...review.paragraphs, ...review.reasons]) {
+      for (const text of [review.title, ...review.paragraphParts.flat(), ...review.reasons]) {
         const translated = localizeText(text);
         assert.doesNotMatch(translated, /\{\d+\}/, `${locale}: ${translated}`);
         if (!['zh-CN', 'zh-TW', 'ja'].includes(locale))
