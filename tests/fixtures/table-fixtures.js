@@ -2,6 +2,7 @@
 // It deliberately uses the controller's real rendering, actions and engine.
 import { deckOfCards, settle } from '../engine/poker.js';
 import { deceptiveRecords } from '../../tests/fixtures/deceptive-decisions.js';
+import { checkedSeatGame } from '../../tests/fixtures/checked-actions.js';
 import {
   weakSuitedShove,
   pocketTensRecords,
@@ -27,6 +28,22 @@ function fixtureGame(count = 6, heroFirst = false) {
 }
 
 window.qa = {
+  checkedSeat(count = 9, missingLabel = false) {
+    fixtureGame(count);
+    game = checkedSeatGame(count);
+    if (missingLabel) {
+      game.players[1].action = '';
+      game.players[1].lastAction = null;
+    }
+    render();
+    return publicState();
+  },
+  seatAction(action, amount) {
+    this.stop();
+    act(game, game.actor, action, amount);
+    render();
+    return publicState();
+  },
   recordsStart({ count = 5, smallBlind = 100, refill = false } = {}) {
     gameRecords.abandon(game);
     fixtureGame(count, true);

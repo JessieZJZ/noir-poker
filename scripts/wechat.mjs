@@ -213,6 +213,7 @@ export async function buildWechat(output = wechatOutput) {
     for (const name of [
       'bet-sizing.js',
       'seat-geometry.js',
+      'recent-action.js',
       'rail-layout.js',
       'compact-table-layout.js',
       'public-card-space.js',

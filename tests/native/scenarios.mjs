@@ -359,6 +359,68 @@ export async function nativeScenarios(app) {
       startup: info.startup,
     };
   });
+  await check('completed-check-persists', async () => {
+    await app.click('#opponents-button');
+    await app.select('#player-count', '9');
+    await app.click('#opponents-dialog .close-dialog');
+    await app.click('#reset-button');
+    await app.click('#confirm-reset');
+    await app.waitFor(async () => (await app.state()).playerCount === 9, 15000);
+    // Observe normal renders in the installed bundle, without changing the
+    // deal, action fields, bot timers or production code.
+    await app.evaluate(() => {
+      const evidence = { checks: [], waiting: [], errors: [] };
+      const read = () => {
+        const state = window.noir.getState();
+        if (state.phase !== 'playing') return;
+        for (const player of state.players.slice(1)) {
+          if (player.folded || player.allin || player.name === state.actor) continue;
+          const label = document.querySelector(`.seat-${player.id} .seat-action`)?.textContent;
+          const street = ['翻牌前', '翻牌', '转牌', '河牌'][player.lastAction?.street];
+          const row = {
+            hand: state.hand,
+            street: state.street,
+            id: player.id,
+            actor: state.actor,
+            label,
+          };
+          if (player.lastAction?.text === '过牌' && street === state.street) {
+            evidence.checks.push(row);
+            if (label !== '过牌') evidence.errors.push(row);
+          } else if (state.street !== '翻牌前' && !player.action && street !== state.street) {
+            evidence.waiting.push(row);
+            if (label !== '等待行动') evidence.errors.push(row);
+          }
+        }
+      };
+      const observer = new MutationObserver(read);
+      observer.observe(document.querySelector('#seats'), { childList: true });
+      window.__nativeCheckCaption = { evidence, observer };
+      read();
+    });
+    try {
+      for (let decision = 0; decision < 24; decision++) {
+        const evidence = await app.evaluate(() => window.__nativeCheckCaption.evidence);
+        assert.deepEqual(evidence.errors, []);
+        if (evidence.checks.length >= 2 && evidence.waiting.length) return evidence;
+        const state = await app.waitFor(
+          async () => {
+            const state = await app.state();
+            return state.phase === 'done' || state.legal.enabled ? state : null;
+          },
+          90000,
+          'Normal play must reach the next hero decision or settlement',
+        );
+        await app.click(state.phase === 'done' ? '#next-button' : '#call-button');
+      }
+      throw Error('Normal play did not produce enough completed-check observations');
+    } finally {
+      await app.evaluate(() => {
+        window.__nativeCheckCaption.observer.disconnect();
+        delete window.__nativeCheckCaption;
+      });
+    }
+  });
   await check('configured-stakes-and-shared-icon', async () => {
     const state = await app.state();
     assert.deepEqual(state.stakes, {
