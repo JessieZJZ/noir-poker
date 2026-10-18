@@ -3,6 +3,7 @@
 import { deckOfCards, settle } from '../engine/poker.js';
 import { deceptiveRecords } from '../../tests/fixtures/deceptive-decisions.js';
 import { checkedSeatGame } from '../../tests/fixtures/checked-actions.js';
+import { pairedFlushReviewGame } from '../../tests/fixtures/paired-flush-review.js';
 import {
   weakSuitedShove,
   pocketTensRecords,
@@ -41,6 +42,13 @@ window.qa = {
   seatAction(action, amount) {
     this.stop();
     act(game, game.actor, action, amount);
+    render();
+    return publicState();
+  },
+  pairedFlushReview() {
+    fixtureGame(9);
+    game = pairedFlushReviewGame();
+    handReview.reset();
     render();
     return publicState();
   },

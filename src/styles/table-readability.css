@@ -23,6 +23,7 @@
   padding-top: calc(var(--profile-padding, 7px) + 1px);
 }
 .game-surface .arena[data-player-count] .seat .seat-profile strong {
+  --seat-eye-size: var(--player-eye-size, 20px);
   font-size: var(--player-name, 16px);
   line-height: 1;
   justify-self: stretch;

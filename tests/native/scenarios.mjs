@@ -1734,6 +1734,12 @@ export async function nativeScenarios(app) {
           scale = new DOMMatrix(getComputedStyle(document.querySelector('#arena')).transform).a;
         return {
           pressed: seat.querySelector('.seat-peek').getAttribute('aria-pressed'),
+          positionFont: parseFloat(
+            getComputedStyle(seat.querySelector('.position-badge')).fontSize,
+          ),
+          nameFont: parseFloat(getComputedStyle(seat.querySelector('.seat-name-label')).fontSize),
+          eyeWidth: parseFloat(getComputedStyle(seat.querySelector('.seat-peek')).width),
+          eyeArtworkWidth: parseFloat(getComputedStyle(seat.querySelector('.seat-peek svg')).width),
           cards: [...seat.querySelectorAll('.playing-card')].map((card) => {
             const r = card.getBoundingClientRect();
             return {
@@ -1748,6 +1754,9 @@ export async function nativeScenarios(app) {
       const expected =
         toggle === 0 ? (initialPressed === 'true' ? 'false' : 'true') : initialPressed;
       assert.equal(inspection.pressed, expected);
+      assert.ok(inspection.positionFont < inspection.nameFont);
+      assert.ok(inspection.eyeWidth >= 20 && inspection.eyeWidth > inspection.positionFont);
+      assert.ok(inspection.eyeArtworkWidth >= 15);
       assert.equal(inspection.cards.length, expected === 'true' ? 2 : 0);
       assert.ok(
         inspection.cards.every(
@@ -1939,11 +1948,15 @@ export async function nativeScenarios(app) {
       collapsed: !document.querySelector('#review-activity').open,
       summary: document.querySelector('#review-coach-explanation .review-analysis-heading')
         ?.textContent,
+      losingExamples: document.querySelectorAll(
+        '#review-coach-explanation [data-matchup-direction="behind"] .review-matchup-example',
+      ).length,
     }));
     assert.equal(analysisLayout.oldControls, 0);
     assert.equal(analysisLayout.sections, analysisLayout.preflop ? 1 : 2);
     assert.equal(analysisLayout.collapsed, true);
     assert.equal(analysisLayout.summary, '复盘分析总结');
+    assert.ok(analysisLayout.losingExamples <= 4);
     await app.click('#review-activity summary');
     assert.ok(
       await app.evaluate(
