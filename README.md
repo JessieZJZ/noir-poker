@@ -6,6 +6,8 @@
 
 各端实测范围与限制见[行动提醒验证记录](docs/turn-attention-validation.md)。
 
+四版原创循环背景音乐候选、试听页、无损母带与来源记录见[音乐工作室](audio-studio/noir-background-music/README.md)。目前供选曲试听，尚未接入游戏播放。
+
 工程目录：`/Users/zjz/code/noir-poker`。此目录是后续迭代的主项目，保留原项目的 Git 历史和 Sites 关联。原 Documents 目录中的项目保留为迁移前快照。
 
 ## 开始开发

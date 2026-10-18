@@ -1,0 +1,385 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>NOIR · 原创背景音乐试听</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', sans-serif;
+        background: #0b1017;
+        color: #edf3f6;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+      }
+      main {
+        width: min(1080px, 92%);
+        margin: 58px auto 32px;
+      }
+      header {
+        border-bottom: 1px solid #25313d;
+        padding-bottom: 30px;
+        margin-bottom: 26px;
+      }
+      .brand {
+        letter-spacing: 5px;
+        color: #6ee7c5;
+        font-size: 12px;
+      }
+      h1 {
+        font-size: clamp(27px, 4vw, 42px);
+        letter-spacing: -1px;
+        margin: 17px 0 12px;
+        font-weight: 600;
+      }
+      .intro {
+        max-width: 750px;
+        color: #95a5b4;
+        font-size: 14px;
+        line-height: 1.9;
+        margin: 0;
+      }
+      .toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 14px 22px;
+        padding: 14px 18px;
+        margin: 24px 0;
+        background: #111923;
+        border: 1px solid #25313d;
+        border-radius: 12px;
+        font-size: 13px;
+      }
+      .toolbar label {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      input {
+        accent-color: #6ee7c5;
+        width: 125px;
+      }
+      #status {
+        color: #9baebb;
+        margin-left: auto;
+      }
+      .tracks {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 18px;
+      }
+      article {
+        position: relative;
+        overflow: hidden;
+        border: 1px solid #293642;
+        background: #111923;
+        padding: 26px;
+        border-radius: 16px;
+        transition: border-color 0.2s;
+      }
+      article.playing {
+        border-color: var(--accent);
+      }
+      article::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 26px;
+        right: 26px;
+        height: 2px;
+        background: var(--accent);
+        opacity: 0.8;
+      }
+      .number {
+        font-size: 12px;
+        color: var(--accent);
+        letter-spacing: 2px;
+      }
+      .name {
+        display: flex;
+        justify-content: space-between;
+        gap: 16px;
+        align-items: center;
+      }
+      h2 {
+        margin: 14px 0 5px;
+        font-size: 23px;
+        font-weight: 550;
+      }
+      .english {
+        font-size: 13px;
+        letter-spacing: 1px;
+        color: #91a2b0;
+      }
+      .bpm {
+        white-space: nowrap;
+        border: 1px solid #32414d;
+        padding: 6px 8px;
+        border-radius: 6px;
+        font-size: 12px;
+        color: #c7d5df;
+      }
+      .description {
+        color: #acbac5;
+        font-size: 13px;
+        line-height: 1.9;
+        min-height: 50px;
+        margin: 21px 0;
+      }
+      .meta {
+        color: #8194a3;
+        font-size: 12px;
+        display: flex;
+        gap: 17px;
+        margin: 14px 0;
+      }
+      button {
+        font: inherit;
+        cursor: pointer;
+        border: 1px solid #334451;
+        border-radius: 8px;
+        background: #1b2834;
+        color: #c9d8e1;
+        padding: 10px 13px;
+        font-size: 12px;
+      }
+      button:disabled {
+        opacity: 0.6;
+        cursor: wait;
+      }
+      button:focus-visible,
+      a:focus-visible {
+        outline: 2px solid #6ee7c5;
+        outline-offset: 4px;
+      }
+      .play {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: #112022;
+        min-width: 110px;
+        font-weight: 600;
+      }
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 9px;
+        align-items: center;
+      }
+      .downloads {
+        margin-top: 20px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 16px;
+        font-size: 12px;
+      }
+      a {
+        color: #8fa4b4;
+        text-underline-offset: 4px;
+      }
+      .progress {
+        height: 3px;
+        background: #273540;
+        margin: 22px 0 0;
+        border-radius: 4px;
+        overflow: hidden;
+      }
+      .progress span {
+        display: block;
+        height: 100%;
+        width: 0;
+        background: var(--accent);
+      }
+      footer {
+        color: #8093a3;
+        font-size: 12px;
+        line-height: 1.9;
+        margin: 25px 0;
+      }
+      footer strong {
+        font-weight: 500;
+        color: #b5c4cf;
+      }
+      #error {
+        color: #e99ca7;
+        white-space: pre-wrap;
+      }
+      @media (max-width: 650px) {
+        main {
+          margin-top: 30px;
+        }
+        .tracks {
+          grid-template-columns: 1fr;
+        }
+        article {
+          padding: 23px;
+        }
+        #status {
+          margin-left: 0;
+          width: 100%;
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        article {
+          transition: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header>
+        <div class="brand">♠ NOIR POKER · SOUND STUDIES</div>
+        <h1>四种夜色，一张牌桌。</h1>
+        <p class="intro">
+          为深色牌桌与从容思考编写的四版原创器乐。轻律动、缓慢变化、保留行动音效的空间。每版约 1–2
+          分钟，可连续循环。
+        </p>
+      </header>
+      <div class="toolbar">
+        <label for="volume"
+          >试听音量 <input id="volume" type="range" min="0" max="1" step="0.01" value="0.65"
+        /></label>
+        <button id="stop" type="button">停止播放</button>
+        <span id="status" role="status" aria-live="polite">请选择一版试听</span>
+      </div>
+      <div id="tracks" class="tracks"></div>
+      <p id="error" role="alert"></p>
+      <footer>
+        <strong>本页播放无损版本，按精确采样边界循环。</strong>「听循环接缝」会从末尾 4 秒播放到开头
+        6 秒；预览下载为 AAC，后续游戏集成应从无损母带解码，并保留独立音乐音量。<br />
+        旋律、编配与音色均在本次制作；未使用外部歌曲、人声、录音、采样包、MIDI 或音源库。详细记录见
+        <a href="README.md">制作与使用说明</a>。
+      </footer>
+    </main>
+    <script>
+      const cards = document.querySelector('#tracks');
+      const status = document.querySelector('#status');
+      const error = document.querySelector('#error');
+      let context, output, current, stopTimer;
+      const cache = new Map();
+      let request = 0;
+      function stop() {
+        request++;
+        clearTimeout(stopTimer);
+        if (current) {
+          const old = current;
+          old.gain.gain.cancelScheduledValues(context.currentTime);
+          old.gain.gain.setTargetAtTime(0, context.currentTime, 0.035);
+          old.source.stop(context.currentTime + 0.18);
+          current = null;
+        }
+        document.querySelectorAll('article').forEach((card) => {
+          card.classList.remove('playing');
+          card.querySelector('.play').textContent = '播放 · 循环';
+          card.querySelector('.progress span').style.width = '0';
+        });
+        status.textContent = '已停止';
+      }
+      async function play(track, seam) {
+        stop();
+        const token = request;
+        const card = document.getElementById(track.id);
+        const button = card.querySelector('.play');
+        button.disabled = true;
+        error.textContent = '';
+        try {
+          context ||= new AudioContext();
+          if (!output) {
+            output = context.createGain();
+            output.gain.value = Number(document.querySelector('#volume').value);
+            output.connect(context.destination);
+          }
+          await context.resume();
+          status.textContent = '正在载入无损音频…';
+          if (!cache.has(track.id)) {
+            const response = await fetch(track.files.lossless.path);
+            if (!response.ok) throw new Error('音频读取失败：' + response.status);
+            cache.set(track.id, await context.decodeAudioData(await response.arrayBuffer()));
+          }
+          if (request !== token) return;
+          const buffer = cache.get(track.id);
+          const expectedFrames = Math.round((track.frames * context.sampleRate) / 48000);
+          if (Math.abs(buffer.length - expectedFrames) > 1)
+            throw new Error('当前浏览器的解码长度与母带不符，请下载无损版试听。');
+          const source = context.createBufferSource();
+          const gain = context.createGain();
+          source.buffer = buffer;
+          source.loop = true;
+          source.loopStart = 0;
+          source.loopEnd = buffer.duration;
+          source.connect(gain).connect(output);
+          gain.gain.setValueAtTime(0, context.currentTime);
+          gain.gain.linearRampToValueAtTime(1, context.currentTime + 0.15);
+          const offset = seam ? buffer.duration - 4 : 0;
+          current = {
+            source,
+            gain,
+            track,
+            offset,
+            started: context.currentTime,
+            duration: buffer.duration,
+          };
+          source.start(0, offset);
+          card.classList.add('playing');
+          button.textContent = '正在循环播放';
+          status.textContent = track.title + (seam ? ' · 循环接缝试听（10 秒）' : ' · 无损循环中');
+          if (seam) stopTimer = setTimeout(stop, 10000);
+        } catch (e) {
+          if (request === token) {
+            status.textContent = '播放未开始';
+            error.textContent = e.message + '\n可先点击「AAC 试听」直接播放。';
+          }
+        } finally {
+          button.disabled = false;
+        }
+      }
+      document.querySelector('#stop').onclick = stop;
+      document.querySelector('#volume').oninput = (e) => {
+        if (output) output.gain.setTargetAtTime(Number(e.target.value), context.currentTime, 0.025);
+      };
+      // Stop when hidden, so this audition page never plays behind other work.
+      document.addEventListener('visibilitychange', () => {
+        if (document.hidden) stop();
+      });
+      function progress() {
+        if (current) {
+          const seconds =
+            (context.currentTime - current.started + current.offset) % current.duration;
+          document.getElementById(current.track.id).querySelector('.progress span').style.width =
+            `${(seconds / current.duration) * 100}%`;
+        }
+        requestAnimationFrame(progress);
+      }
+      fetch('manifest.json')
+        .then((r) => {
+          if (!r.ok) throw new Error('清单读取失败');
+          return r.json();
+        })
+        .then((manifest) => {
+          for (const [index, track] of manifest.tracks.entries()) {
+            const seconds = Math.round(track.durationSeconds);
+            const card = document.createElement('article');
+            card.id = track.id;
+            card.style.setProperty('--accent', track.palette);
+            // All fields below are renderer-authored local metadata.
+            card.innerHTML = `<div class="number">VERSION ${String(index + 1).padStart(2, '0')}${index === 0 ? ' · 推荐先听' : ''}</div><div class="name"><div><h2>${track.title}</h2><div class="english">${track.subtitle}</div></div><span class="bpm">${track.bpm} BPM</span></div><p class="description">${track.description}</p><div class="meta"><span>${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}</span><span>32 小节</span><span>${track.key}</span></div><div class="actions"><button class="play" type="button">播放 · 循环</button><button class="seam" type="button">听循环接缝</button></div><div class="progress" aria-hidden="true"><span></span></div><div class="downloads"><a href="${track.files.preview.path}" target="_blank" rel="noopener">AAC 试听 ↗</a><a href="${track.files.lossless.path}" download>下载无损 FLAC</a><a href="${track.files.opus.path}" download>下载 Opus</a></div>`;
+            card.querySelector('.play').onclick = () => play(track, false);
+            card.querySelector('.seam').onclick = () => play(track, true);
+            cards.append(card);
+          }
+          requestAnimationFrame(progress);
+        })
+        .catch((e) => {
+          error.textContent =
+            e.message +
+            '\n请通过说明中的本地 HTTP 地址打开此页。直接试听也可打开 audio/ 目录里的 M4A。';
+        });
+    </script>
+  </body>
+</html>
