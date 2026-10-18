@@ -133,6 +133,12 @@
 .action-dock {
   position: relative;
 }
+/* Lower the notice without shifting the wager controls or the table budget. */
+.action-dock:not(.compact-actions) > .decision-strip,
+.action-dock:not(.compact-actions) > .action-notice {
+  position: relative;
+  top: 6px;
+}
 .turn-prompt,
 .decision-detail {
   font-weight: inherit;

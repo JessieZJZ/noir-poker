@@ -65,6 +65,8 @@ Page({
           session.attempts.length > (this._handLimits[session.id] || HAND_BATCH_SIZE),
         attempts: this.data.expanded[session.id]
           ? session.attempts
+              .slice()
+              .reverse()
               .slice(0, this._handLimits[session.id] || HAND_BATCH_SIZE)
               .map((attempt) => ({
                 id: attempt.id,
