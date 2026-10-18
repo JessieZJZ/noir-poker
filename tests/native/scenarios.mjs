@@ -644,12 +644,6 @@ export async function nativeScenarios(app) {
     ]);
     await app.sleep(850);
     await app.screenshot('hero-turn-visible');
-    await app.waitFor(
-      () =>
-        app.evaluate(() => document.querySelector('.action-dock').dataset.turnPhase === 'waiting'),
-      5000,
-      'Entry must settle into a steady turn state',
-    );
     const read = () =>
       app.evaluate(() => {
         const rect = (element) => {
@@ -658,7 +652,15 @@ export async function nativeScenarios(app) {
         };
         const card = document.querySelector('#hero-cards .playing-card');
         const border = getComputedStyle(card, '::before');
+        const dock = document.querySelector('.action-dock').getBoundingClientRect();
+        const notice = document.querySelector('.decision-copy').getBoundingClientRect();
+        const rankings = document.querySelector('#hand-rankings-button').getBoundingClientRect();
+        const slider = document.querySelector('#bet-slider').getBoundingClientRect();
         return {
+          noticeSpacing: {
+            topGap: Math.min(notice.top, rankings.top) - dock.top,
+            sliderGap: slider.top - Math.max(notice.bottom, rankings.bottom),
+          },
           phase: document.querySelector('.action-dock').dataset.turnPhase,
           hero: document.querySelector('.hero-cards-wrap').dataset.turnPhase,
           prompt: document.querySelector('#turn-prompt').textContent.trim(),
@@ -689,7 +691,15 @@ export async function nativeScenarios(app) {
         };
       });
     await app.sleep(750); // Finish the independent hand-deal animation, if this is a new hand.
-    const before = await read();
+    const before = await app.waitFor(
+      () => read().then((frame) => (frame.hero === 'waiting' ? frame : null)),
+      5000,
+      'Entry must settle into a steady turn state',
+    );
+    // Fractional Android display densities quantize the 24px button by less
+    // than one CSS pixel; compare the resulting clearance at pixel precision.
+    assert.ok(Math.round(before.noticeSpacing.topGap) >= 10, JSON.stringify(before.noticeSpacing));
+    assert.ok(before.noticeSpacing.sliderGap >= 4, JSON.stringify(before.noticeSpacing));
     assert.equal(before.hero, 'waiting');
     assert.equal(before.promptVisible, true);
     assert.equal(before.lineHeight, '2px');
@@ -2525,6 +2535,11 @@ export async function nativeScenarios(app) {
       rows: [...document.querySelectorAll('.record-session:first-child .record-attempt')].map(
         (row) => [row.dataset.hand, row.dataset.attempt],
       ),
+      expectedRows: window.noir
+        .getRecords()[0]
+        .attempts.slice()
+        .reverse()
+        .map((attempt) => [String(attempt.hand), String(attempt.attempt)]),
       heading: document.querySelector('.record-session-heading').textContent,
       text: document.querySelector('#records-page').textContent,
       firstCopy: [...document.querySelectorAll('.record-hand[data-attempt="0"]')].map(
@@ -2539,9 +2554,10 @@ export async function nativeScenarios(app) {
         .map((result) => result.textContent.trim()),
     }));
     assert.ok(list.cards >= 4);
-    assert.deepEqual(list.rows.slice(0, 2), [
-      [String(first.hand), '0'],
+    assert.deepEqual(list.rows, list.expectedRows);
+    assert.deepEqual(list.rows.slice(-2), [
       [String(first.hand), '1'],
+      [String(first.hand), '0'],
     ]);
     assert.doesNotMatch(list.heading, /已完成|手数/);
     assert.doesNotMatch(list.text, /已被重打替代/);

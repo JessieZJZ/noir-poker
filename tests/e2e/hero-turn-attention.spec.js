@@ -61,6 +61,32 @@ const thinkingBorders = Array.from({ length: 2 }, () => ({
   opacity: '1',
 }));
 
+for (const [width, height] of [
+  [320, 568],
+  [390, 844],
+  [820, 1180],
+  [1024, 1366],
+  [1280, 900],
+]) {
+  test(`action notice clears the top edge and wager controls at ${width}x${height}`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width, height });
+    const spacing = await page.locator('.action-dock').evaluate((dock) => {
+      const top = dock.getBoundingClientRect().top;
+      const notice = dock.querySelector('.decision-copy').getBoundingClientRect();
+      const rankings = dock.querySelector('#hand-rankings-button').getBoundingClientRect();
+      const slider = dock.querySelector('#bet-slider').getBoundingClientRect();
+      return {
+        topGap: Math.min(notice.top, rankings.top) - top,
+        sliderGap: slider.top - Math.max(notice.bottom, rankings.bottom),
+      };
+    });
+    expect(spacing.topGap).toBeGreaterThanOrEqual(10);
+    expect(spacing.sliderGap).toBeGreaterThanOrEqual(4);
+  });
+}
+
 test('entry and one idle reminder decorate the whole action area without moving cards or buttons', async ({
   page,
 }) => {

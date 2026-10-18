@@ -478,16 +478,16 @@ try {
   await wait(
     'Records refresh',
     () => page.data(),
-    (view) => view.sessions[0]?.attempts.at(-1)?.status === 'completed',
+    (view) => view.sessions[0]?.attempts[0]?.status === 'completed',
   );
   const recordsView = await page.data();
   assert.equal(recordsView.sessions[0].number, initialSession.number);
   assert.deepEqual(
     recordsView.sessions[0].attempts.map((row) => [row.hand, row.attemptText]),
     [
-      [1, ''],
-      [1, '重打1'],
       [2, ''],
+      [1, '重打1'],
+      [1, ''],
     ],
   );
   assert.deepEqual(
@@ -534,7 +534,7 @@ try {
   report.recordLayout = { completed: await recordLayout() };
   await capture('03-records-list');
   report.checks.push({
-    name: 'real-records-page-ascending-attempts-graphic-cards-live-progress',
+    name: 'real-records-page-newest-attempts-first-graphic-cards-live-progress',
     historyBefore: beforeBrowse.history.length,
     historyAfter: liveCompleted.history.length,
   });
