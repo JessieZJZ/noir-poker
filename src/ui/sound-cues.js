@@ -1,9 +1,14 @@
+import { chipRecording } from './chip-recording.js';
+
 // One deterministic PCM definition for Web, native WebViews and WeChat WAVs.
 // Unit gain is already mastered; platform adapters must not boost it again.
 export const SOUND_SAMPLE_RATE = 44100;
 export const SOUND_CUES = ['fold', 'check', 'chip', 'deal', 'win'];
-export const SOUND_TARGET_RMS = 0.16;
-export const SOUND_PEAK_CEILING = 0.7;
+// Keep the already audible wooden check and deal unchanged. Softer actions
+// carry more sustained midrange energy for small phone speakers.
+export const SOUND_TARGET_RMS = { fold: 0.25, check: 0.16, deal: 0.16, win: 0.24 };
+export const SOUND_PEAK_CEILING = 0.78;
+const SYNTH_PEAK_CEILING = 0.7;
 const triangle = (phase) => (2 / Math.PI) * Math.asin(Math.sin(phase));
 const envelope = (t, peak, attack, end) =>
   t < 0 || t >= end
@@ -18,7 +23,10 @@ const fallingPhase = (t, from, to, end) => {
 export function soundSamples(name) {
   const kind = ['bet', 'raise', 'call'].includes(name) ? 'chip' : name;
   if (!SOUND_CUES.includes(kind)) throw new RangeError('Unknown sound cue');
-  const duration = { fold: 0.18, check: 0.22, chip: 0.2, deal: 0.28, win: 0.36 }[kind];
+  // The approved audition already contains its final gain and edge fades.
+  // Re-mastering it would flatten the chip contacts and change the chosen sound.
+  if (kind === 'chip') return chipRecording();
+  const duration = { fold: 0.18, check: 0.22, deal: 0.28, win: 0.36 }[kind];
   const data = new Float32Array(Math.round(duration * SOUND_SAMPLE_RATE));
   const noise = new Float32Array(Math.ceil(0.025 * SOUND_SAMPLE_RATE));
   // Fixed noise is shared too; two taps reuse the same damped wooden attack.
@@ -56,15 +64,21 @@ export function soundSamples(name) {
             triangle(fallingPhase(dt, 165, 80, 0.045)) * envelope(dt, 0.28, 0.002, 0.065));
       }
     } else if (kind === 'fold') {
-      value = triangle(fallingPhase(t, 260, 75, 0.14)) * envelope(t, 0.288, 0.012, 0.16);
+      const phase = fallingPhase(t, 260, 75, 0.14);
+      value =
+        (triangle(phase) * 0.55 + Math.sin(phase * 5) * 0.45 + Math.sin(phase * 9) * 0.2) *
+        envelope(t, 0.288, 0.012, 0.16);
     } else {
-      const notes = kind === 'win' ? [440, 554, 659] : kind === 'deal' ? [820, 570] : [310];
+      const notes = kind === 'win' ? [440, 554, 659] : [820, 570];
       for (const [index, hz] of notes.entries()) {
         const dt = t - index * 0.08;
         if (dt < 0 || dt >= 0.2) continue;
+        const phase = 2 * Math.PI * hz * dt;
         const oscillator =
-          kind === 'deal' ? triangle(2 * Math.PI * hz * dt) : Math.sin(2 * Math.PI * hz * dt);
-        value += oscillator * envelope(dt, kind === 'chip' ? 0.32 : 0.2, 0.015, 0.16);
+          kind === 'deal'
+            ? triangle(phase)
+            : Math.sin(phase) + Math.sin(phase * 2) * 0.2 + Math.sin(phase * 3) * 0.45;
+        value += oscillator * envelope(dt, 0.2, 0.015, 0.16);
       }
     }
     data[i] = value;
@@ -72,12 +86,12 @@ export function soundSamples(name) {
   // Master complete cues rather than their brief attack peaks. The longer
   // decay keeps quiet actions audible without changing pitch or tap timing.
   const rms = Math.sqrt(data.reduce((sum, value) => sum + value * value, 0) / data.length),
-    gain = SOUND_TARGET_RMS / rms;
+    gain = SOUND_TARGET_RMS[kind] / rms;
   for (let i = 0; i < data.length; i++) {
     const sample = data[i] * gain,
       absolute = Math.abs(sample),
       knee = 0.6,
-      headroom = SOUND_PEAK_CEILING - knee,
+      headroom = SYNTH_PEAK_CEILING - knee,
       limited =
         absolute <= knee
           ? sample

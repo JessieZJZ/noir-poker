@@ -1,0 +1,21 @@
+// Loaded as one awaited module: startup artwork can paint before game CSS arrives.
+import './fonts.css';
+import './base.css';
+import './game.css';
+import './review.css';
+import './showdown.css';
+import './table.css';
+import './opponents.css';
+import './native.css';
+import './hint-banner.css';
+import './play-viewport.css';
+import './controls-layout.css';
+import './persona-browser.css';
+import './settings-layout.css';
+import './i18n.css';
+import './dropdowns.css';
+import './table-readability.css';
+import './desktop-play.css';
+import './table-density.css';
+import './game-records.css';
+import './hero-turn.css';

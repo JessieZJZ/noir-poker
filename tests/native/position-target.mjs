@@ -115,10 +115,11 @@ export function withCenteredNativeClicks(app) {
             const position = JSON.stringify(measured);
             if (position === previous) stable++;
             else {
-              const moved = previous !== undefined;
               previous = position;
               stable = 0;
-              if (moved) await app.evaluate(centerNativeTarget, selector);
+              // A late modal scroll restore can precede our very first sample.
+              // Re-center that sample too, then require three stable readings.
+              await app.evaluate(centerNativeTarget, selector);
             }
             return stable >= 2;
           },
@@ -127,15 +128,19 @@ export function withCenteredNativeClicks(app) {
         );
       }
       const token = app.platform === 'ios' ? `native-label-${++labelToken}` : null;
-      // Safari exposes summary through nested AX buttons. Appium's fallback
-      // calibration iframe sits below a modal dialog's top layer. Tap its real
-      // visible native coordinates instead; never dispatch a DOM click.
+      // Safari exposes summary through nested AX buttons. The calibration
+      // iframe also cannot calibrate through a modal, and page-tail controls
+      // sit next to the home inset. Use the actual WebView frame for these
+      // native taps; never dispatch a DOM click.
       if (
         app.platform === 'ios' &&
         app.nativeTap &&
         (await app.evaluate((selector) => {
           const target = document.querySelector(selector);
-          return target.matches('summary, a') && !!target.closest('dialog[open]');
+          return (
+            (target.matches('summary, a') && !!target.closest('dialog[open]')) ||
+            ['reset-button', 'hand-rankings-button'].includes(target.id)
+          );
         }, selector))
       )
         return app.nativeTap(selector);

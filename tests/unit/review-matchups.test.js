@@ -22,6 +22,7 @@ import { heroValueGame } from '../fixtures/review-spots.js';
 import { actionReason } from '../../src/review/narrative.js';
 import { weakSuitedShove } from '../fixtures/review-spots.js';
 import { renderReviewParagraphs } from '../../src/ui/review-matchups.js';
+import { pairedFlushReviewGame } from '../fixtures/paired-flush-review.js';
 
 // Public snapshots exercise explanation and route boundaries. Opponent hands
 // below are examples generated from unseen cards, never actual private cards.
@@ -30,7 +31,7 @@ test('consumer preflop ranges combine hand families and explain only actions alr
     c = decisionContext(s),
     m = handMatchups(s, c),
     p = matchupPresentation(m, 0),
-    text = p.rangeNotes.join('');
+    text = analyzeDecision(s, { trials: 120, rolloutTrials: 12 }).coaching.explanation;
   assert.equal(p.groups.length, 1);
   assert.equal(p.groups[0].label, '对手可能牌组');
   assert.ok(p.groups[0].examples.length > 0);
@@ -51,7 +52,7 @@ test('consumer preflop ranges combine hand families and explain only actions alr
   reraised.history.push({ id: 7, street: 0, action: 'raise', amount: 14000 });
   assert.match(
     handMatchups(reraised, decisionContext(reraised)).rangeNotes.join(''),
-    /Jade在 LJ 位已经再加注到 14K/,
+    /Jade在 LJ 位，已有加注时3-bet 加注至 14K/,
   );
 });
 function spot(hole, board = '', changes = {}) {
@@ -130,7 +131,7 @@ test('reported A4 bottom pair lists more meaningful stronger hands, including ch
     c = decisionContext(s),
     m = handMatchups(s, c);
   assert.equal(m.ahead.length, 1);
-  assert.equal(m.behind.length, 3);
+  assert.equal(m.behind.length, 4);
   assert.ok(
     m.behind.some(
       (x) => x.cards.some((card) => card.rank === 11) && x.cards.some((card) => card.rank >= 12),
@@ -196,7 +197,9 @@ test('across streets, every shown matchup is a legal current-board comparison ra
       ['tied', 0],
     ]) {
       assert.ok(
-        Array.isArray(m[direction]) && m[direction].length <= (direction === 'tied' ? 1 : 3),
+        Array.isArray(m[direction]) &&
+          m[direction].length <=
+            (direction === 'tied' ? 1 : direction === 'behind' && s.street ? 4 : 3),
         name + '/' + direction,
       );
       assert.equal(new Set(m[direction].map((example) => example.group)).size, m[direction].length);
@@ -334,7 +337,11 @@ test('presentation replaces one causal comparison paragraph with ordered rows an
     for (const group of presentation.groups) {
       assert.ok(
         group.examples.length <=
-          (group.direction === 'possible' ? 4 : group.direction === 'tied' ? 1 : 3),
+          (['possible', 'behind'].includes(group.direction)
+            ? 4
+            : group.direction === 'tied'
+              ? 1
+              : 3),
       );
       for (const example of group.examples) assert.ok(html.includes(example.text));
     }
@@ -343,12 +350,58 @@ test('presentation replaces one causal comparison paragraph with ordered rows an
     assert.doesNotMatch(html, /\d(?:\.\d+)?%|likelihood|weight|mass|概率[:：]?\s*\d/);
     if (!s.street) {
       assert.match(html, /对手可能牌组/);
-      assert.ok(presentation.rangeNotes.length > 0);
+      assert.deepEqual(presentation.rangeNotes, []);
+      assert.ok(m.rangeNotes.length > 0);
+      assert.equal(html.includes(m.rangeNotes[0]), false);
       assert.doesNotMatch(html, /当前可能领先|当前可能落后|坚果/);
     }
     assert.doesNotMatch(html, /结构上较弱|结构上较强|不代表获胜概率|估计排序|不代表对手实际底牌/);
     if (m.nut) assert.match(html, /当前没有可能更强的牌组/);
   }
+});
+
+test('reported paired three-spade river keeps four distinct threats including the flush', () => {
+  const games = ['8h 8d', 'Ks Qs'].map(pairedFlushReviewGame);
+  const matchups = games.map((game) => {
+    const snapshot = game.decisions.at(-1);
+    assert.equal(snapshot.pot, 26600);
+    assert.equal(snapshot.stack, 13600);
+    const context = decisionContext(snapshot);
+    const result = handMatchups(snapshot, context);
+    assert.deepEqual(
+      result.behind.map((example) => example.label),
+      ['顺子', '三条', '葫芦', '同花'],
+    );
+    const known = new Set([...snapshot.hole, ...snapshot.board].map((card) => card.key));
+    for (const example of result.behind) {
+      assert.equal(
+        compare(evaluate([...example.cards, ...snapshot.board]).score, context.made.score),
+        1,
+      );
+      assert.ok(example.cards.every((card) => !known.has(card.key)));
+    }
+    assert.equal(
+      game.players.reduce((sum, player) => sum + player.stack, 0),
+      180000,
+    );
+    return result;
+  });
+  assert.notDeepEqual(games[0].winners, games[1].winners);
+  assert.deepEqual(
+    matchups[0],
+    matchups[1],
+    'Actual opponent cards and payout must not select examples',
+  );
+  const dry = spot('4c Ac', '7s Jd As Tc Jh');
+  assert.ok(
+    handMatchups(dry, decisionContext(dry)).behind.every((example) => example.score[0] !== 5),
+  );
+  const strongerTwoPair = spot('7h 6c', 'Kh 6s 7c 2c 3d');
+  assert.ok(
+    handMatchups(strongerTwoPair, decisionContext(strongerTwoPair)).behind.some(
+      (example) => example.score[0] === 2 && example.score[1] === 13,
+    ),
+  );
 });
 
 test('ranked display cannot use hidden cards, a future board or final winners to prove nuts or choose value routes', () => {

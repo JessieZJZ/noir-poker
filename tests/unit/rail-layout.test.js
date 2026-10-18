@@ -2,6 +2,26 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { compactTableLayout } from '../../src/ui/compact-table-layout.js';
 
+test('compact opponent tags are smaller than identity text and eyes reserve a larger shared footprint', () => {
+  for (const [width, displayHeight, tag, eye] of [
+    [390, 844, 14, 20],
+    [390, 720, 15, 20],
+    [768, 1180, 14, 24],
+    [1032, 1376, 17, 26],
+  ]) {
+    const fit = compactTableLayout({
+      width,
+      height: 650,
+      displayHeight,
+      seats: Array.from({ length: 8 }, (_, index) => ({ id: index + 1 })),
+    });
+    assert.equal(fit.textMetrics['player-position'], tag);
+    assert.equal(fit.textMetrics['player-eye-size'], eye);
+    assert.ok(tag < fit.textMetrics['player-name']);
+    assert.ok(eye <= fit.textMetrics['player-name']);
+  }
+});
+
 for (const width of [320, 390, 440, 768, 820, 1032]) {
   for (const count of [5, 6, 7, 8, 9]) {
     test(`${count} players at ${width}px keep the public cards centered and each whole player on the rail`, () => {

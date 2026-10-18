@@ -8,6 +8,7 @@ import { root } from './mobile-lib.mjs';
 
 export const BUNDLED_ASSET_MANIFEST = 'bundled-assets.json';
 const imageExtension = /\.(?:avif|bmp|gif|ico|jpe?g|png|svg|tiff?|webp)$/i;
+const audioExtension = /\.(?:m4a|mp3|ogg|opus|wav|flac)$/i;
 const sha256 = (bytes) => createHash('sha256').update(bytes).digest('hex');
 
 function assetPath(value) {
@@ -22,7 +23,7 @@ function assetPath(value) {
   return relative;
 }
 
-/** Every public image is copied byte-for-byte, including portraits not currently selected. */
+/** Public images and audio are checked byte-for-byte in every native package. */
 export function createBundledAssetManifest({
   publicDir = path.join(root, 'public'),
   portraits = PROFILE_PORTRAITS,
@@ -37,7 +38,7 @@ export function createBundledAssetManifest({
     )) {
       const relative = prefix + entry.name;
       if (entry.isDirectory()) visit(path.join(directory, entry.name), relative + '/');
-      else if (entry.isFile() && imageExtension.test(relative)) {
+      else if (entry.isFile() && (imageExtension.test(relative) || audioExtension.test(relative))) {
         const bytes = readFileSync(path.join(directory, entry.name));
         if (!bytes.length) throw Error(`Source image is empty: ${relative}`);
         assets.push({
@@ -88,7 +89,8 @@ function verifyAssets(read, options = {}) {
   }
   return {
     sourceAssetDigest: expected.sourceAssetDigest,
-    imageCount: expected.assets.length,
+    imageCount: expected.assets.filter((asset) => imageExtension.test(asset.path)).length,
+    audioCount: expected.assets.filter((asset) => audioExtension.test(asset.path)).length,
     portraitCount: expected.assets.filter((asset) => asset.profileId).length,
   };
 }

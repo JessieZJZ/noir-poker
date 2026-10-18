@@ -1,5 +1,5 @@
 import { soundSamples, SOUND_SAMPLE_RATE } from '../../src/ui/sound-cues.js';
-import { verifyLocalWechatModules } from '../../scripts/wechat.mjs';
+import { verifyLocalWechatModules, wechatPackageBytes } from '../../scripts/wechat.mjs';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import vm from 'node:vm';
@@ -24,6 +24,23 @@ import { weakSuitedShove } from '../fixtures/review-spots.js';
 import { analyzeDecision } from '../../src/review/analysis.js';
 
 const root = fileURLToPath(new URL('../..', import.meta.url));
+test('music is budgeted separately while main and subpackage retain exact size limits', () => {
+  const limit = 2 * 1024 * 1024;
+  const app = { subpackages: [{ root: 'music', pages: ['loader'] }] };
+  const files = [
+    { path: 'app.js', bytes: limit },
+    { path: 'music/background-music.m4a', bytes: limit },
+  ];
+  assert.deepEqual(wechatPackageBytes(files, app), { main: limit, music: limit });
+  assert.throws(
+    () => wechatPackageBytes([{ ...files[0], bytes: limit + 1 }, files[1]], app),
+    /main package exceeds/,
+  );
+  assert.throws(
+    () => wechatPackageBytes([files[0], { ...files[1], bytes: limit + 1 }], app),
+    /music package exceeds/,
+  );
+});
 test('WXML bindings keep quoted literals on one line for the DevTools compiler', () => {
   const source = readFileSync(path.join(root, 'miniprogram/pages/table/table.wxml'), 'utf8');
   // The glass-easel compiler accepts a quoted newline that DevTools rejects.
@@ -245,8 +262,14 @@ test('concurrent WeChat builders serialize and preserve DevTools private prefere
     manifest.files.filter((file) => /^assets\/portraits\/.*\.jpg$/.test(file.path)).length,
     Object.keys(PROFILE_PORTRAITS).length,
   );
-  assert.ok(manifest.totalBytes < 2 * 1024 * 1024);
-  for (const name of ['fold', 'check', 'raise', 'call', 'deal', 'win']) {
+  assert.ok(manifest.packageBytes.main < 2 * 1024 * 1024);
+  assert.ok(manifest.packageBytes.music < 2 * 1024 * 1024);
+  assert.equal(manifest.totalBytes, manifest.packageBytes.main + manifest.packageBytes.music);
+  assert.deepEqual(
+    readFileSync(path.join(workspace.output, 'music/background-music.m4a')),
+    readFileSync(path.join(workspace.directory, 'public/audio/background-music-mobile.m4a')),
+  );
+  for (const name of ['fold', 'check', 'chip', 'deal', 'win']) {
     const wave = readFileSync(path.join(workspace.output, `assets/sounds/${name}.wav`));
     let peak = 0,
       saturated = 0;

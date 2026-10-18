@@ -178,6 +178,19 @@ export function referenceDocumentScroll({ scroll }) {
   return { left, top };
 }
 
+export function localReferenceHead(head) {
+  // Vite's async CSS loader writes an absolute native localhost URL. Replay
+  // those assets from the reference server, preserving all actual CSS rules.
+  return head.replace(/\b(href|src)=(["'])(.*?)\2/g, (attribute, name, quote, value) => {
+    try {
+      const url = new URL(value);
+      if (['capacitor:', 'http:', 'https:'].includes(url.protocol) && url.hostname === 'localhost')
+        return `${name}=${quote}${url.pathname}${url.search}${url.hash}${quote}`;
+    } catch {}
+    return attribute;
+  });
+}
+
 const privacyOptions = [
   ['zh-CN', '简体中文'],
   ['en', 'English'],
@@ -327,7 +340,7 @@ export async function compareNativePage({ root, output, evaluate, screenshot }, 
     });
     await writeFile(path.join(output, 'parity-' + name + '-head.html'), snapshot.head);
     await page.setContent(
-      `<!doctype html><html lang="${snapshot.lang}"><head><base href="http://127.0.0.1:${server.address().port}/">${snapshot.head}</head>${snapshot.body}</html>`,
+      `<!doctype html><html lang="${snapshot.lang}"><head><base href="http://127.0.0.1:${server.address().port}/">${localReferenceHead(snapshot.head)}</head>${snapshot.body}</html>`,
     );
     await page.evaluate(
       async ({ snapshot, scroll }) => {

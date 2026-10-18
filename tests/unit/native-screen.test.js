@@ -86,3 +86,97 @@ test('iOS capture saves native coordinates for pixel analysis without Android er
   assert.deepEqual(evidence, { image: 'device-png', source });
   assert.deepEqual(contexts, ['NATIVE_APP', 'WEBVIEW_noir']);
 });
+
+function recoverableCapture({
+  lost = 1,
+  replaced = false,
+  otherError = false,
+  native = false,
+} = {}) {
+  let marker,
+    attempts = 0;
+  const evidence = {};
+  const calls = [];
+  const missing = new Error(otherError ? 'Transport denied' : 'No such context found');
+  return {
+    evidence,
+    calls,
+    missing,
+    attempts: () => attempts,
+    options: {
+      webContext: 'WEBVIEW_noir',
+      checkSystemErrors: true,
+      saveImage: (value) => {
+        evidence.image = value;
+      },
+      saveSource: (value) => {
+        evidence.source = value;
+      },
+      command: async (method, endpoint, body) => {
+        calls.push([method, endpoint, body]);
+        if (method === 'GET' && endpoint === '/context')
+          return native ? 'NATIVE_APP' : 'WEBVIEW_noir';
+        if (endpoint === '/execute/sync') {
+          if (body.args.length) {
+            marker = body.args[0];
+            return null;
+          }
+          return replaced ? undefined : marker;
+        }
+        if (method === 'POST' && endpoint === '/context' && body.name === 'WEBVIEW_noir') {
+          attempts++;
+          if (attempts <= lost) throw missing;
+        }
+        if (endpoint === '/contexts') return ['NATIVE_APP', 'WEBVIEW_noir'];
+        if (endpoint === '/screenshot') return 'device-png';
+        if (endpoint === '/source') return '<node package="io.github.jessiezjz.noirpoker"/>';
+      },
+    },
+  };
+}
+
+test('Android capture refreshes transient discovery but verifies the same page and original context', async () => {
+  const fixture = recoverableCapture();
+  await captureNativeScreen(fixture.options);
+  assert.equal(fixture.attempts(), 2);
+  assert.equal(fixture.evidence.image, 'device-png');
+  assert.equal(fixture.calls.filter(([, path]) => path === '/screenshot').length, 1);
+  assert.equal(fixture.calls.filter(([, path]) => path === '/contexts').length, 1);
+  assert.ok(
+    fixture.calls
+      .filter(([method, path]) => method === 'POST' && path === '/context')
+      .every(([, , body]) => ['NATIVE_APP', 'WEBVIEW_noir'].includes(body.name)),
+  );
+});
+
+test('Android capture rejects a replacement page even when transport reconnects successfully', async () => {
+  const fixture = recoverableCapture({ replaced: true });
+  await assert.rejects(captureNativeScreen(fixture.options), /retain the same live page/);
+});
+
+test('Android capture bounds discovery retries and does not retry unrelated errors or an unmarked page', async () => {
+  for (const options of [{ lost: 10 }, { otherError: true }, { native: true }]) {
+    const fixture = recoverableCapture(options);
+    await assert.rejects(
+      captureNativeScreen(fixture.options),
+      (error) => error === fixture.missing,
+    );
+    assert.equal(fixture.attempts(), options.lost ? 3 : 1);
+  }
+});
+
+test('native system errors retain priority when restoring the WebView also fails', async () => {
+  const fixture = recoverableCapture({ lost: 10 });
+  const command = fixture.options.command;
+  fixture.options.command = (method, path, body) =>
+    path === '/source'
+      ? '<node resource-id="android:id/aerr_close"/>'
+      : command(method, path, body);
+  await assert.rejects(
+    captureNativeScreen(fixture.options),
+    (error) =>
+      /Native system error dialog/.test(error.message) &&
+      /No such context/.test(error.restoreError),
+  );
+  assert.equal(fixture.evidence.source, '<node resource-id="android:id/aerr_close"/>');
+});

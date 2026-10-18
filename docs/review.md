@@ -2,6 +2,10 @@
 
 界面直接进入决策时间线与逐步建议，不再展示整手总结卡片。分析期间显示轻量进度，失败可重试；结果完成后优先选中需复盘的决策。
 
+Web、iOS、Android 与微信小程序中，本人或对手的决策卡片超过两张时，初始横向列表显示两张完整卡片和第三张的约一半，提示还有后续内容；只有一至两张时保留原布局。宽屏在超过两张时也使用占满内容宽度的横向列表，分析正文置于下方。选择较后卡片、渐进分析与语言切换保留当前滚动位置。复盘“对局动态”正文为 13px，标题和当前行动的强调保留。
+
+浏览器回归覆盖 320/390/768/1280 宽度、本人／对手视角与 1/2/3/4 张卡片。安装后的 App 专项 `review-overflow-and-activity-size` 使用真实完成的牌局检查半张提示、较后卡片选择与动态字号。微信开发者工具的显示夹具专项命令为 `node tests/wechat/review-layout.mjs ws://127.0.0.1:9463 .artifacts/review-layout/wechat`（端口替换为当前 `--auto-port`）；它验证实际渲染，但不代表真实牌局或实体客户端验收。
+
 ## 输入隔离
 
 玩家的每次合法行动先保存自身底牌、当时公共牌、公开筹码、位置、风格／情绪类别、行动权和此前公开行动。对手真实底牌、未来牌序、结算结果、机器人私有判断轨迹不参与玩家评级。
@@ -82,3 +86,7 @@ Worker 只收到玩家输入，私有对手记录留在另一面板。
 `review-check.test.js`、`review-context.test.js`、`review-lines.test.js`、`counterfactual.test.js`、`coaching.test.js` 覆盖公开输入隔离、结果不影响评级、确定性、真实 A7 开池／再加注线、Q7 同花事实、行动前缀范围、模拟不修改原状态、分池、退款、公共牌平分、合法备选、赢牌但负收益、合理输牌、价值机会与主题去重；浏览器测试覆盖两个复盘视角、对手筛选、实际 Worker 与窄屏。
 
 参考：[Doug Polk 翻前问答](https://upswingpoker.com/pre-flop-no-limit-poker-strategy-questions-answered-doug-polk/)，[Upswing 挤压加注](https://upswingpoker.com/squeeze-play-poker/)，[PokerStars 起手牌与位置](https://www.pokerstars.com/poker/learn/lesson/poker-starting-hands/)，[底池赔率](https://www.pokerstars.com/poker/learn/lesson/pot-odds/)。
+
+对手时间线卡片按当前可见列表连续编号，筛选后从 1 重新开始。内部整手事件序号仍用于对局动态的准确高亮，不以显示编号查找事件。行动摘要同时呈现成牌与直接听牌，避免把有两头顺／同花听牌的跟注仅概括为高牌。
+
+时间线卡片保留等高排列，内部网格从顶部排布；状态和牌手标签按自身文字行高撑开，上下内边距各 4px，不随同行较长的行动文案拉伸。`review-tags.spec.js` 保留真实 Worker 计算，仅控制消息投递，分别核对待分析、部分完成和全部完成的标签高度，并覆盖对手标签换行。安装版复盘和微信开发工具布局专项也测量标签高度。

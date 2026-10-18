@@ -4,8 +4,8 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <style>
-      /* Apply before Vite's CSS modules load. Keep the initial DOM measurable
-         while platform, locale and the first hand are being prepared. */
+      /* Startup artwork paints independently of the asynchronously loaded app CSS.
+         Keep the first hand measurable, but hide every descendant until ready. */
       html {
         background: #0b1017;
         color-scheme: dark;
@@ -13,13 +13,48 @@
       body {
         margin: 0;
       }
-      html:not([data-app-ready='true']) body {
+      html:not([data-app-ready='true']) body,
+      html:not([data-app-ready='true']) body * {
         visibility: hidden !important;
       }
-      body[inert] {
-        visibility: hidden;
+      body[inert],
+      body[inert] * {
+        visibility: hidden !important;
+      }
+      html:not([data-app-ready='true'])::before {
+        content: '';
+        position: fixed;
+        inset: 0;
+        z-index: 2147483646;
+        background: #0b1017 url('/launch-icon.png') center / 180px 180px no-repeat;
+      }
+      html:not([data-app-ready='true'])::after {
+        content: '';
+        position: fixed;
+        z-index: 2147483647;
+        top: calc(50% + 118px);
+        left: calc(50% - 24px);
+        width: 48px;
+        height: 2px;
+        border-radius: 2px;
+        background: #6ee7c5;
+        animation: launch-pulse 1.4s ease-in-out infinite alternate;
+      }
+      @keyframes launch-pulse {
+        from {
+          opacity: 0.25;
+        }
+        to {
+          opacity: 0.85;
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        html::after {
+          animation: none !important;
+        }
       }
     </style>
+    <link rel="preload" href="/launch-icon.png" as="image" />
     <title>NOIR Poker · 德州扑克单机练习</title>
     <meta
       name="description"
@@ -27,26 +62,6 @@
     />
     <link rel="icon" type="image/png" href="favicon.png" />
     <link rel="apple-touch-icon" href="apple-touch-icon.png" />
-    <link rel="stylesheet" href="/src/styles/fonts.css" />
-    <link rel="stylesheet" href="/src/styles/base.css" />
-    <link rel="stylesheet" href="/src/styles/game.css" />
-    <link rel="stylesheet" href="/src/styles/review.css" />
-    <link rel="stylesheet" href="/src/styles/showdown.css" />
-    <link rel="stylesheet" href="/src/styles/table.css" />
-    <link rel="stylesheet" href="/src/styles/opponents.css" />
-    <link rel="stylesheet" href="/src/styles/native.css" />
-    <link rel="stylesheet" href="/src/styles/hint-banner.css" />
-    <link rel="stylesheet" href="/src/styles/play-viewport.css" />
-    <link rel="stylesheet" href="/src/styles/controls-layout.css" />
-    <link rel="stylesheet" href="/src/styles/persona-browser.css" />
-    <link rel="stylesheet" href="/src/styles/settings-layout.css" />
-    <link rel="stylesheet" href="/src/styles/i18n.css" />
-    <link rel="stylesheet" href="/src/styles/dropdowns.css" />
-    <link rel="stylesheet" href="/src/styles/table-readability.css" />
-    <link rel="stylesheet" href="/src/styles/desktop-play.css" />
-    <link rel="stylesheet" href="/src/styles/table-density.css" />
-    <link rel="stylesheet" href="/src/styles/game-records.css" />
-    <link rel="stylesheet" href="/src/styles/hero-turn.css" />
   </head>
   <body inert>
     <dialog
@@ -231,6 +246,9 @@
                     >牌桌已就绪，开始你的第一手。</span
                   ></span
                 >
+                <button id="hand-rankings-button" class="hand-rankings-button" type="button">
+                  牌力表
+                </button>
               </div>
               <div class="action-panel" id="action-panel">
                 <div class="bet-controls">
@@ -445,7 +463,7 @@
           <p id="stakes-error" class="stakes-error" role="alert" hidden></p>
           <p id="stakes-change-note" class="table-change-note" role="status" hidden></p>
           <div class="settings-row">
-            <span id="sound-label">音效</span>
+            <span id="sound-label">音效与音乐</span>
             <button
               id="sound-button"
               class="settings-switch"
@@ -453,7 +471,21 @@
               aria-labelledby="sound-label"
               aria-checked="true"
               aria-pressed="true"
-              title="音效已开启"
+              title="音效与音乐已开启"
+            >
+              <span class="switch-thumb" aria-hidden="true"></span>
+            </button>
+          </div>
+          <div class="settings-row">
+            <span id="vibration-label">振动</span>
+            <button
+              id="vibration-button"
+              class="settings-switch"
+              role="switch"
+              aria-labelledby="vibration-label"
+              aria-checked="true"
+              aria-pressed="true"
+              title="振动已开启"
             >
               <span class="switch-thumb" aria-hidden="true"></span>
             </button>
@@ -582,259 +614,269 @@
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" /></svg>
         </button>
       </div>
-      <h2 id="rules-dialog-title">先懂规则，再开始练习。</h2>
-      <p>
-        这是无需登录的无限注德州扑克练习。先了解怎么赢、怎么行动，再用复盘和不同对手练习自己的决策。
-      </p>
-      <h3>1. 怎样赢下一手</h3>
-      <p>
-        每人两张底牌，桌上最多发出五张公共牌。从这七张牌中任选五张组成最好的牌，可以用两张、一张或不用自己的底牌。其他人都弃牌时，最后留下的人直接获得底池；多人留到最后时，比较各自最好的五张牌。
-      </p>
-      <p class="rank-list">
-        牌型从强到弱：同花顺 → 四条 → 葫芦 → 同花 → 顺子 → 三条 → 两对 → 一对 → 高牌
-      </p>
-      <p>
-        同一牌型先比组成牌型的点数，再比剩余牌的点数（踢脚）。最佳五张完全相同就平分，花色不分大小。A
-        可以作最大牌，也可以组成 A2345 的最小顺子。
-      </p>
-      <div class="hand-examples" aria-label="牌型示例">
-        <div class="hand-example" data-guide-hand="9h Th Jh Qh Kh">
-          <strong>同花顺</strong>
-          <div class="example-cards">
-            <span class="guide-card red pattern-card" aria-label="9h"
-              ><span>9</span><span>♥</span></span
-            ><span class="guide-card red pattern-card" aria-label="Th"
-              ><span>10</span><span>♥</span></span
-            ><span class="guide-card red pattern-card" aria-label="Jh"
-              ><span>J</span><span>♥</span></span
-            ><span class="guide-card red pattern-card" aria-label="Qh"
-              ><span>Q</span><span>♥</span></span
-            ><span class="guide-card red pattern-card" aria-label="Kh"
-              ><span>K</span><span>♥</span></span
+      <div class="guide-body">
+        <h2 id="rules-dialog-title">先懂规则，再开始练习。</h2>
+        <p>
+          这是无需登录的无限注德州扑克练习。先了解怎么赢、怎么行动，再用复盘和不同对手练习自己的决策。
+        </p>
+        <h3>1. 怎样赢下一手</h3>
+        <p>
+          每人两张底牌，桌上最多发出五张公共牌。从这七张牌中任选五张组成最好的牌，可以用两张、一张或不用自己的底牌。其他人都弃牌时，最后留下的人直接获得底池；多人留到最后时，比较各自最好的五张牌。
+        </p>
+        <p id="hand-rankings" class="rank-list" tabindex="-1">
+          牌型从强到弱：同花顺 → 四条 → 葫芦 → 同花 → 顺子 → 三条 → 两对 → 一对 → 高牌
+        </p>
+        <p>
+          同一牌型先比组成牌型的点数，再比剩余牌的点数（踢脚）。最佳五张完全相同就平分，花色不分大小。A
+          可以作最大牌，也可以组成 A2345 的最小顺子。
+        </p>
+        <div class="hand-examples" aria-label="牌型示例">
+          <div class="hand-example" data-guide-hand="9h Th Jh Qh Kh">
+            <strong>同花顺</strong>
+            <div class="example-cards">
+              <span class="guide-card red pattern-card" aria-label="9h"
+                ><span>9</span><span>♥</span></span
+              ><span class="guide-card red pattern-card" aria-label="Th"
+                ><span>10</span><span>♥</span></span
+              ><span class="guide-card red pattern-card" aria-label="Jh"
+                ><span>J</span><span>♥</span></span
+              ><span class="guide-card red pattern-card" aria-label="Qh"
+                ><span>Q</span><span>♥</span></span
+              ><span class="guide-card red pattern-card" aria-label="Kh"
+                ><span>K</span><span>♥</span></span
+              >
+            </div>
+            <p>同一花色，五张连续。</p>
+          </div>
+          <div class="hand-example" data-guide-hand="As Ah Ac Ad Kh">
+            <strong>四条</strong>
+            <div class="example-cards">
+              <span class="guide-card pattern-card" aria-label="As"
+                ><span>A</span><span>♠</span></span
+              ><span class="guide-card red pattern-card" aria-label="Ah"
+                ><span>A</span><span>♥</span></span
+              ><span class="guide-card pattern-card" aria-label="Ac"
+                ><span>A</span><span>♣</span></span
+              ><span class="guide-card red pattern-card" aria-label="Ad"
+                ><span>A</span><span>♦</span></span
+              ><span class="guide-card red" aria-label="Kh"><span>K</span><span>♥</span></span>
+            </div>
+            <p>四张相同点数，另加一张。</p>
+          </div>
+          <div class="hand-example" data-guide-hand="Ks Kh Kc Qs Qh">
+            <strong>葫芦</strong>
+            <div class="example-cards">
+              <span class="guide-card pattern-card" aria-label="Ks"
+                ><span>K</span><span>♠</span></span
+              ><span class="guide-card red pattern-card" aria-label="Kh"
+                ><span>K</span><span>♥</span></span
+              ><span class="guide-card pattern-card" aria-label="Kc"
+                ><span>K</span><span>♣</span></span
+              ><span class="guide-card pattern-card" aria-label="Qs"
+                ><span>Q</span><span>♠</span></span
+              ><span class="guide-card red pattern-card" aria-label="Qh"
+                ><span>Q</span><span>♥</span></span
+              >
+            </div>
+            <p>三张相同点数，加一对。</p>
+          </div>
+          <div class="hand-example" data-guide-hand="As Js 9s 6s 2s">
+            <strong>同花</strong>
+            <div class="example-cards">
+              <span class="guide-card pattern-card" aria-label="As"
+                ><span>A</span><span>♠</span></span
+              ><span class="guide-card pattern-card" aria-label="Js"
+                ><span>J</span><span>♠</span></span
+              ><span class="guide-card pattern-card" aria-label="9s"
+                ><span>9</span><span>♠</span></span
+              ><span class="guide-card pattern-card" aria-label="6s"
+                ><span>6</span><span>♠</span></span
+              ><span class="guide-card pattern-card" aria-label="2s"
+                ><span>2</span><span>♠</span></span
+              >
+            </div>
+            <p>五张同一花色，不要求连续。</p>
+          </div>
+          <div class="hand-example" data-guide-hand="5s 6h 7c 8d 9s">
+            <strong>顺子</strong>
+            <div class="example-cards">
+              <span class="guide-card pattern-card" aria-label="5s"
+                ><span>5</span><span>♠</span></span
+              ><span class="guide-card red pattern-card" aria-label="6h"
+                ><span>6</span><span>♥</span></span
+              ><span class="guide-card pattern-card" aria-label="7c"
+                ><span>7</span><span>♣</span></span
+              ><span class="guide-card red pattern-card" aria-label="8d"
+                ><span>8</span><span>♦</span></span
+              ><span class="guide-card pattern-card" aria-label="9s"
+                ><span>9</span><span>♠</span></span
+              >
+            </div>
+            <p>五张连续点数，花色可以不同。</p>
+          </div>
+          <div class="hand-example" data-guide-hand="Qs Qh Qc 8d 2s">
+            <strong>三条</strong>
+            <div class="example-cards">
+              <span class="guide-card pattern-card" aria-label="Qs"
+                ><span>Q</span><span>♠</span></span
+              ><span class="guide-card red pattern-card" aria-label="Qh"
+                ><span>Q</span><span>♥</span></span
+              ><span class="guide-card pattern-card" aria-label="Qc"
+                ><span>Q</span><span>♣</span></span
+              ><span class="guide-card red" aria-label="8d"><span>8</span><span>♦</span></span
+              ><span class="guide-card" aria-label="2s"><span>2</span><span>♠</span></span>
+            </div>
+            <p>三张相同点数，另加两张。</p>
+          </div>
+          <div class="hand-example" data-guide-hand="Js Jh 7c 7d As">
+            <strong>两对</strong>
+            <div class="example-cards">
+              <span class="guide-card pattern-card" aria-label="Js"
+                ><span>J</span><span>♠</span></span
+              ><span class="guide-card red pattern-card" aria-label="Jh"
+                ><span>J</span><span>♥</span></span
+              ><span class="guide-card pattern-card" aria-label="7c"
+                ><span>7</span><span>♣</span></span
+              ><span class="guide-card red pattern-card" aria-label="7d"
+                ><span>7</span><span>♦</span></span
+              ><span class="guide-card" aria-label="As"><span>A</span><span>♠</span></span>
+            </div>
+            <p>两组对子，另加一张。</p>
+          </div>
+          <div class="hand-example" data-guide-hand="Ts Th Ac 8d 3s">
+            <strong>一对</strong>
+            <div class="example-cards">
+              <span class="guide-card pattern-card" aria-label="Ts"
+                ><span>10</span><span>♠</span></span
+              ><span class="guide-card red pattern-card" aria-label="Th"
+                ><span>10</span><span>♥</span></span
+              ><span class="guide-card" aria-label="Ac"><span>A</span><span>♣</span></span
+              ><span class="guide-card red" aria-label="8d"><span>8</span><span>♦</span></span
+              ><span class="guide-card" aria-label="3s"><span>3</span><span>♠</span></span>
+            </div>
+            <p>一组对子，另加三张。</p>
+          </div>
+          <div class="hand-example" data-guide-hand="As Kh 9c 6d 2s">
+            <strong>高牌</strong>
+            <div class="example-cards">
+              <span class="guide-card pattern-card" aria-label="As"
+                ><span>A</span><span>♠</span></span
+              ><span class="guide-card red" aria-label="Kh"><span>K</span><span>♥</span></span
+              ><span class="guide-card" aria-label="9c"><span>9</span><span>♣</span></span
+              ><span class="guide-card red" aria-label="6d"><span>6</span><span>♦</span></span
+              ><span class="guide-card" aria-label="2s"><span>2</span><span>♠</span></span>
+            </div>
+            <p>没有以上组合，先比最大单牌。</p>
+          </div>
+        </div>
+        <h3>2. 一手牌怎样进行</h3>
+        <div class="rules-flow">
+          <span>底牌 2 张</span><i>·</i><span>翻牌 3 张</span><i>·</i><span>转牌 1 张</span><i>·</i
+          ><span>河牌 1 张</span>
+        </div>
+        <p>
+          小盲和大盲按当前牌桌设置先投入筹码，其他人依次决定是否参与。翻牌前、翻牌、转牌、河牌各有一轮下注；仍可行动的人跟齐当前下注后，才进入下一轮。任何一轮只剩一人，都可以提前结束。
+        </p>
+        <h3>3. 轮到你时怎么选</h3>
+        <div class="rules-grid">
+          <p><b>弃牌</b>放弃本手，已下注筹码留在底池。</p>
+          <p><b>过牌 / 跟注</b>无需补筹码时过牌，否则补齐当前下注。</p>
+          <p><b>加注</b>提高当前下注，让后面的人重新选择。</p>
+          <p><b>全下</b>投入全部剩余筹码，之后不再下注。</p>
+        </div>
+        <p>
+          跟注旁的数字是这次要补的筹码；加注旁的数字是这一轮累计投入的总额。例如你已投 200，对手加到
+          600：跟注要补 400，选择加注 1.2K 则补 1K。所有筹码金额都是当前筹码面额的倍数。
+        </p>
+        <h3>4. 位置为什么重要</h3>
+        <p>
+          BTN 是庄位，顺时针下一家是 SB（小盲），再下一家是
+          BB（大盲）。翻牌前从大盲后面开始行动；翻牌后从庄位左侧仍能行动的人开始。越晚行动，越能先看到对手的选择。每手结束后庄位移动一席。
+        </p>
+        <div class="position-glossary">
+          <div><b>BTN · Button</b><span>庄位：翻牌后最后行动的位置。</span></div>
+          <div><b>SB · Small Blind</b><span>小盲：庄位顺时针下一席，先投小盲注。</span></div>
+          <div><b>BB · Big Blind</b><span>大盲：小盲顺时针下一席，先投大盲注。</span></div>
+          <div><b>UTG · Under the Gun</b><span>枪口位：大盲后第一席，翻牌前最先行动。</span></div>
+          <div><b>UTG+1</b><span>枪口位后一席。</span></div>
+          <div><b>MP · Middle Position</b><span>中位：前位与后位之间的位置。</span></div>
+          <div><b>LJ · Lojack</b><span>低劫位：劫位前一席。</span></div>
+          <div><b>HJ · Hijack</b><span>劫位：关煞位前一席。</span></div>
+          <div><b>CO · Cutoff</b><span>关煞位：庄位前一席。</span></div>
+        </div>
+        <p>人数减少时会省略部分前位和中位名称；BTN、SB、BB 的相对顺序保持不变。</p>
+        <details>
+          <summary>进一步了解：最小加注、半池 / 底池和边池</summary>
+          <p>
+            最小下注为当前大盲。完整加注的增量不能小于本轮上一次完整下注或加注的增量。例如上一位从
+            200 加到 600，增量是 400，你至少要加到
+            1K。筹码不足时可以全下，但不够一次完整加注的短全下，不一定让已经行动的人重新获得加注权。
+          </p>
+          <p>
+            “最小、½ 底池、底池、全下”是尺度快捷项。无人下注时，半池 /
+            底池按当前底池计算；面对下注时，先补齐跟注，再按跟注后的底池计算加注增量。金额会取到当前面额的整枚筹码，并满足最小加注与剩余筹码限制；无限注允许超过底池下注。
+          </p>
+          <p>
+            全下后只能争夺自己有投入的部分。筹码多的人继续下注会形成边池，各池分别比较；弃牌者已投入的筹码仍留在池里，无法争夺。没有人跟上的超额投入会退还，不能把退款当作额外赢得的筹码。
+          </p>
+        </details>
+        <h3>5. 打完后，先复盘再重打</h3>
+        <p>
+          点击“复盘这一手”，先看最值得调整的决策，再逐步查看当时局面、实际动作和可练习的替代路线。输了，检查能否降低损失或争取更多价值；赢了，也检查操作是否有依据、有没有被好结果掩盖的失误，以及还能怎样多拿价值。
+        </p>
+        <p>
+          EV
+          是长期重复一种打法的预期筹码收益，一次赢牌不能证明长期赚钱。复盘根据你行动前可见的信息与假设的对手范围做模拟估算，不用对手暗牌或后来发出的牌评价选择，也不保证最优解或必胜路线。可以切换“对手为什么这样打”，了解本局电脑的实际行动原因。
+        </p>
+        <p>
+          “重打这手牌”保留原底牌、庄位、起始筹码和发牌顺序，从翻牌前重新选择。原结算与统计会撤回，采用最新一次结果；电脑会重新响应你的打法。你已经知道部分牌局，适合练习思路，不能用重打后的盈利证明长期收益。“下一手”则开始新的牌局。
+        </p>
+        <h3>6. 设置适合自己的练习桌</h3>
+        <div class="rules-grid">
+          <p>
+            <b>牌桌人数</b>在顶部设置中选择 5–9 人。下一手换桌，筹码恢复为 100
+            BB，练习统计重新开始。
+          </p>
+          <p><b>对手难度</b>从轻松、标准到进阶逐步练习，修改后立即生效。</p>
+          <p>
+            <b>对手风格与座位</b
+            >点选牌手了解训练风格，再给各座位分配风格，或使用混合阵容。修改自动保存，下一手生效。
+          </p>
+          <p>
+            <b>情绪模拟</b
+            >控制电脑在游戏输赢后是否改变策略倾向。它是合成游戏机制，不代表任何真人的情绪；修改自动保存，下一手生效。
+          </p>
+        </div>
+        <p>
+          牌桌提示提供当前阶段的简短练习提醒。宽屏在右侧提示卡上开关；窄屏在设置中开关，提醒出现在盲注下方，可左右滑动阅读，几秒后收起。声音也可在设置中开关。所有设置保存在此设备，重打保留原来的对手风格与情绪。
+        </p>
+        <details data-persona-reference open>
+          <summary>关于具名牌手与训练原型</summary>
+          <p>
+            具名对手参考网上公开赛事、牌局记录与资料制作，仅供娱乐和策略练习。模拟行动、参数及情绪不代表本人真实或完整的打法、实际操作或心理状态；姓名和资料来源仅用于说明参考对象，不表示本人或赛事方参与、合作、推荐或背书。本应用无意贬损、攻击任何个人。
+          </p>
+          <p>
+            想了解真实牌手，请观看
+            <a href="https://www.kpclive.com/" target="_blank" rel="noopener noreferrer"
+              >KPC LIVE 官方内容</a
             >
-          </div>
-          <p>同一花色，五张连续。</p>
-        </div>
-        <div class="hand-example" data-guide-hand="As Ah Ac Ad Kh">
-          <strong>四条</strong>
-          <div class="example-cards">
-            <span class="guide-card pattern-card" aria-label="As"><span>A</span><span>♠</span></span
-            ><span class="guide-card red pattern-card" aria-label="Ah"
-              ><span>A</span><span>♥</span></span
-            ><span class="guide-card pattern-card" aria-label="Ac"
-              ><span>A</span><span>♣</span></span
-            ><span class="guide-card red pattern-card" aria-label="Ad"
-              ><span>A</span><span>♦</span></span
-            ><span class="guide-card red" aria-label="Kh"><span>K</span><span>♥</span></span>
-          </div>
-          <p>四张相同点数，另加一张。</p>
-        </div>
-        <div class="hand-example" data-guide-hand="Ks Kh Kc Qs Qh">
-          <strong>葫芦</strong>
-          <div class="example-cards">
-            <span class="guide-card pattern-card" aria-label="Ks"><span>K</span><span>♠</span></span
-            ><span class="guide-card red pattern-card" aria-label="Kh"
-              ><span>K</span><span>♥</span></span
-            ><span class="guide-card pattern-card" aria-label="Kc"
-              ><span>K</span><span>♣</span></span
-            ><span class="guide-card pattern-card" aria-label="Qs"
-              ><span>Q</span><span>♠</span></span
-            ><span class="guide-card red pattern-card" aria-label="Qh"
-              ><span>Q</span><span>♥</span></span
-            >
-          </div>
-          <p>三张相同点数，加一对。</p>
-        </div>
-        <div class="hand-example" data-guide-hand="As Js 9s 6s 2s">
-          <strong>同花</strong>
-          <div class="example-cards">
-            <span class="guide-card pattern-card" aria-label="As"><span>A</span><span>♠</span></span
-            ><span class="guide-card pattern-card" aria-label="Js"
-              ><span>J</span><span>♠</span></span
-            ><span class="guide-card pattern-card" aria-label="9s"
-              ><span>9</span><span>♠</span></span
-            ><span class="guide-card pattern-card" aria-label="6s"
-              ><span>6</span><span>♠</span></span
-            ><span class="guide-card pattern-card" aria-label="2s"
-              ><span>2</span><span>♠</span></span
-            >
-          </div>
-          <p>五张同一花色，不要求连续。</p>
-        </div>
-        <div class="hand-example" data-guide-hand="5s 6h 7c 8d 9s">
-          <strong>顺子</strong>
-          <div class="example-cards">
-            <span class="guide-card pattern-card" aria-label="5s"><span>5</span><span>♠</span></span
-            ><span class="guide-card red pattern-card" aria-label="6h"
-              ><span>6</span><span>♥</span></span
-            ><span class="guide-card pattern-card" aria-label="7c"
-              ><span>7</span><span>♣</span></span
-            ><span class="guide-card red pattern-card" aria-label="8d"
-              ><span>8</span><span>♦</span></span
-            ><span class="guide-card pattern-card" aria-label="9s"
-              ><span>9</span><span>♠</span></span
-            >
-          </div>
-          <p>五张连续点数，花色可以不同。</p>
-        </div>
-        <div class="hand-example" data-guide-hand="Qs Qh Qc 8d 2s">
-          <strong>三条</strong>
-          <div class="example-cards">
-            <span class="guide-card pattern-card" aria-label="Qs"><span>Q</span><span>♠</span></span
-            ><span class="guide-card red pattern-card" aria-label="Qh"
-              ><span>Q</span><span>♥</span></span
-            ><span class="guide-card pattern-card" aria-label="Qc"
-              ><span>Q</span><span>♣</span></span
-            ><span class="guide-card red" aria-label="8d"><span>8</span><span>♦</span></span
-            ><span class="guide-card" aria-label="2s"><span>2</span><span>♠</span></span>
-          </div>
-          <p>三张相同点数，另加两张。</p>
-        </div>
-        <div class="hand-example" data-guide-hand="Js Jh 7c 7d As">
-          <strong>两对</strong>
-          <div class="example-cards">
-            <span class="guide-card pattern-card" aria-label="Js"><span>J</span><span>♠</span></span
-            ><span class="guide-card red pattern-card" aria-label="Jh"
-              ><span>J</span><span>♥</span></span
-            ><span class="guide-card pattern-card" aria-label="7c"
-              ><span>7</span><span>♣</span></span
-            ><span class="guide-card red pattern-card" aria-label="7d"
-              ><span>7</span><span>♦</span></span
-            ><span class="guide-card" aria-label="As"><span>A</span><span>♠</span></span>
-          </div>
-          <p>两组对子，另加一张。</p>
-        </div>
-        <div class="hand-example" data-guide-hand="Ts Th Ac 8d 3s">
-          <strong>一对</strong>
-          <div class="example-cards">
-            <span class="guide-card pattern-card" aria-label="Ts"
-              ><span>10</span><span>♠</span></span
-            ><span class="guide-card red pattern-card" aria-label="Th"
-              ><span>10</span><span>♥</span></span
-            ><span class="guide-card" aria-label="Ac"><span>A</span><span>♣</span></span
-            ><span class="guide-card red" aria-label="8d"><span>8</span><span>♦</span></span
-            ><span class="guide-card" aria-label="3s"><span>3</span><span>♠</span></span>
-          </div>
-          <p>一组对子，另加三张。</p>
-        </div>
-        <div class="hand-example" data-guide-hand="As Kh 9c 6d 2s">
-          <strong>高牌</strong>
-          <div class="example-cards">
-            <span class="guide-card pattern-card" aria-label="As"><span>A</span><span>♠</span></span
-            ><span class="guide-card red" aria-label="Kh"><span>K</span><span>♥</span></span
-            ><span class="guide-card" aria-label="9c"><span>9</span><span>♣</span></span
-            ><span class="guide-card red" aria-label="6d"><span>6</span><span>♦</span></span
-            ><span class="guide-card" aria-label="2s"><span>2</span><span>♠</span></span>
-          </div>
-          <p>没有以上组合，先比最大单牌。</p>
-        </div>
+            或
+            <a
+              href="https://tritonpokerseries.com/en-US/home"
+              target="_blank"
+              rel="noopener noreferrer"
+              >Triton 官方赛事</a
+            >，结合完整牌局与当时环境理解其选择。
+            <a href="./app-privacy.html#persona-notice" target="_blank" rel="noopener noreferrer"
+              >查看完整说明</a
+            >。
+          </p>
+        </details>
+        <p class="rules-note">
+          电脑仅根据自己的底牌和公共信息决策。全部筹码为虚拟筹码，没有现金兑换、奖金或真人赌注。“重新练习”会结束当前局，并把筹码与练习统计重置。
+        </p>
+        <button class="primary-button close-dialog">回到牌桌</button>
       </div>
-      <h3>2. 一手牌怎样进行</h3>
-      <div class="rules-flow">
-        <span>底牌 2 张</span><i>·</i><span>翻牌 3 张</span><i>·</i><span>转牌 1 张</span><i>·</i
-        ><span>河牌 1 张</span>
-      </div>
-      <p>
-        小盲和大盲按当前牌桌设置先投入筹码，其他人依次决定是否参与。翻牌前、翻牌、转牌、河牌各有一轮下注；仍可行动的人跟齐当前下注后，才进入下一轮。任何一轮只剩一人，都可以提前结束。
-      </p>
-      <h3>3. 轮到你时怎么选</h3>
-      <div class="rules-grid">
-        <p><b>弃牌</b>放弃本手，已下注筹码留在底池。</p>
-        <p><b>过牌 / 跟注</b>无需补筹码时过牌，否则补齐当前下注。</p>
-        <p><b>加注</b>提高当前下注，让后面的人重新选择。</p>
-        <p><b>全下</b>投入全部剩余筹码，之后不再下注。</p>
-      </div>
-      <p>
-        跟注旁的数字是这次要补的筹码；加注旁的数字是这一轮累计投入的总额。例如你已投 200，对手加到
-        600：跟注要补 400，选择加注 1.2K 则补 1K。所有筹码金额都是当前筹码面额的倍数。
-      </p>
-      <h3>4. 位置为什么重要</h3>
-      <p>
-        BTN 是庄位，顺时针下一家是 SB（小盲），再下一家是
-        BB（大盲）。翻牌前从大盲后面开始行动；翻牌后从庄位左侧仍能行动的人开始。越晚行动，越能先看到对手的选择。每手结束后庄位移动一席。
-      </p>
-      <div class="position-glossary">
-        <div><b>BTN · Button</b><span>庄位：翻牌后最后行动的位置。</span></div>
-        <div><b>SB · Small Blind</b><span>小盲：庄位顺时针下一席，先投小盲注。</span></div>
-        <div><b>BB · Big Blind</b><span>大盲：小盲顺时针下一席，先投大盲注。</span></div>
-        <div><b>UTG · Under the Gun</b><span>枪口位：大盲后第一席，翻牌前最先行动。</span></div>
-        <div><b>UTG+1</b><span>枪口位后一席。</span></div>
-        <div><b>MP · Middle Position</b><span>中位：前位与后位之间的位置。</span></div>
-        <div><b>LJ · Lojack</b><span>低劫位：劫位前一席。</span></div>
-        <div><b>HJ · Hijack</b><span>劫位：关煞位前一席。</span></div>
-        <div><b>CO · Cutoff</b><span>关煞位：庄位前一席。</span></div>
-      </div>
-      <p>人数减少时会省略部分前位和中位名称；BTN、SB、BB 的相对顺序保持不变。</p>
-      <details>
-        <summary>进一步了解：最小加注、半池 / 底池和边池</summary>
-        <p>
-          最小下注为当前大盲。完整加注的增量不能小于本轮上一次完整下注或加注的增量。例如上一位从 200
-          加到 600，增量是 400，你至少要加到
-          1K。筹码不足时可以全下，但不够一次完整加注的短全下，不一定让已经行动的人重新获得加注权。
-        </p>
-        <p>
-          “最小、½ 底池、底池、全下”是尺度快捷项。无人下注时，半池 /
-          底池按当前底池计算；面对下注时，先补齐跟注，再按跟注后的底池计算加注增量。金额会取到当前面额的整枚筹码，并满足最小加注与剩余筹码限制；无限注允许超过底池下注。
-        </p>
-        <p>
-          全下后只能争夺自己有投入的部分。筹码多的人继续下注会形成边池，各池分别比较；弃牌者已投入的筹码仍留在池里，无法争夺。没有人跟上的超额投入会退还，不能把退款当作额外赢得的筹码。
-        </p>
-      </details>
-      <h3>5. 打完后，先复盘再重打</h3>
-      <p>
-        点击“复盘这一手”，先看最值得调整的决策，再逐步查看当时局面、实际动作和可练习的替代路线。输了，检查能否降低损失或争取更多价值；赢了，也检查操作是否有依据、有没有被好结果掩盖的失误，以及还能怎样多拿价值。
-      </p>
-      <p>
-        EV
-        是长期重复一种打法的预期筹码收益，一次赢牌不能证明长期赚钱。复盘根据你行动前可见的信息与假设的对手范围做模拟估算，不用对手暗牌或后来发出的牌评价选择，也不保证最优解或必胜路线。可以切换“对手为什么这样打”，了解本局电脑的实际行动原因。
-      </p>
-      <p>
-        “重打这手牌”保留原底牌、庄位、起始筹码和发牌顺序，从翻牌前重新选择。原结算与统计会撤回，采用最新一次结果；电脑会重新响应你的打法。你已经知道部分牌局，适合练习思路，不能用重打后的盈利证明长期收益。“下一手”则开始新的牌局。
-      </p>
-      <h3>6. 设置适合自己的练习桌</h3>
-      <div class="rules-grid">
-        <p>
-          <b>牌桌人数</b>在顶部设置中选择 5–9 人。下一手换桌，筹码恢复为 100 BB，练习统计重新开始。
-        </p>
-        <p><b>对手难度</b>从轻松、标准到进阶逐步练习，修改后立即生效。</p>
-        <p>
-          <b>对手风格与座位</b
-          >点选牌手了解训练风格，再给各座位分配风格，或使用混合阵容。修改自动保存，下一手生效。
-        </p>
-        <p>
-          <b>情绪模拟</b
-          >控制电脑在游戏输赢后是否改变策略倾向。它是合成游戏机制，不代表任何真人的情绪；修改自动保存，下一手生效。
-        </p>
-      </div>
-      <p>
-        牌桌提示提供当前阶段的简短练习提醒。宽屏在右侧提示卡上开关；窄屏在设置中开关，提醒出现在盲注下方，可左右滑动阅读，几秒后收起。声音也可在设置中开关。所有设置保存在此设备，重打保留原来的对手风格与情绪。
-      </p>
-      <details data-persona-reference open>
-        <summary>关于具名牌手与训练原型</summary>
-        <p>
-          具名对手参考网上公开赛事、牌局记录与资料制作，仅供娱乐和策略练习。模拟行动、参数及情绪不代表本人真实或完整的打法、实际操作或心理状态；姓名和资料来源仅用于说明参考对象，不表示本人或赛事方参与、合作、推荐或背书。本应用无意贬损、攻击任何个人。
-        </p>
-        <p>
-          想了解真实牌手，请观看
-          <a href="https://www.kpclive.com/" target="_blank" rel="noopener noreferrer"
-            >KPC LIVE 官方内容</a
-          >
-          或
-          <a
-            href="https://tritonpokerseries.com/en-US/home"
-            target="_blank"
-            rel="noopener noreferrer"
-            >Triton 官方赛事</a
-          >，结合完整牌局与当时环境理解其选择。
-          <a href="./app-privacy.html#persona-notice" target="_blank" rel="noopener noreferrer"
-            >查看完整说明</a
-          >。
-        </p>
-      </details>
-      <p class="rules-note">
-        电脑仅根据自己的底牌和公共信息决策。全部筹码为虚拟筹码，没有现金兑换、奖金或真人赌注。“重新练习”会结束当前局，并把筹码与练习统计重置。
-      </p>
-      <button class="primary-button close-dialog">回到牌桌</button>
     </dialog>
     <dialog id="reset-dialog">
       <div class="dialog-header">

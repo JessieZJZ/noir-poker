@@ -828,6 +828,41 @@ try {
     compactRaiseExample: true,
   };
   await invoke('closeGuide');
+  for (let attempt = 0; attempt < 3 && !(await page.data()).canAct; attempt++) {
+    await invoke('nextHand');
+    await wait((data) => data.canAct || data.done, 60000);
+  }
+  assert.equal((await page.data()).canAct, true);
+  const handBeforeRankings = (await page.data()).hand;
+  report.handRankings = [];
+  for (let attempt = 0; attempt < 2; attempt++) {
+    await (await page.$('#hand-rankings-button')).tap();
+    await wait((data) => data.guideOpen && data.guideScrollTarget === 'hand-rankings', 5000);
+    const target = await page.$('#hand-rankings'),
+      body = await page.$('.guide-scroll');
+    await wait(async () => {
+      const offset = (await target.offset()).top - (await body.offset()).top;
+      return offset >= -1 && offset <= 2;
+    }, 5000);
+    const heading = await page.$('.guide-heading');
+    const evidence = {
+      target: await target.offset(),
+      body: await body.offset(),
+      header: await heading.offset(),
+      headerSize: await heading.size(),
+    };
+    assert.ok(evidence.target.top >= evidence.header.top + evidence.headerSize.height - 1);
+    report.handRankings.push(evidence);
+    if (!attempt)
+      await capture('hand-rankings', ['.guide-sheet', '#hand-rankings', '.hand-example']);
+    await (await heading.$('button')).tap();
+    await wait((data) => !data.guideOpen, 5000);
+  }
+  assert.equal((await page.data()).hand, handBeforeRankings);
+  await invoke('openGuide');
+  await wait((data) => data.guideOpen && data.guideScrollTarget === '', 5000);
+  assert.equal(await (await page.$('.guide-scroll')).property('scrollTop'), 0);
+  await invoke('closeGuide');
   const cardsBefore = (await page.data()).boardSlots.map((card) => card.key);
   const rowsBefore = await (await page.$('.board-row')).offset();
   await (await page.$('.pot-detail')).tap();
@@ -973,7 +1008,21 @@ try {
   await capture('review', ['.review-sheet', '.review-tabs', '.review-timeline', '.review-scene']);
   assert.equal(await page.$('.review-summary'), null);
   const stepSize = await (await page.$('.review-step')).size();
-  assert.ok(Math.abs(stepSize.width - 160) <= 1, 'Review steps retain the Web phone width');
+  const heroStepCount = (await page.data()).reviewSteps.length;
+  if (heroStepCount > 2) {
+    const track = await page.$('.review-timeline'),
+      third = (await page.$$('.review-step'))[2];
+    const visible =
+      (await track.offset()).left + (await track.size()).width - 2 - (await third.offset()).left;
+    assert.ok(
+      Math.abs(visible / stepSize.width - 0.5) < 0.05,
+      'Third review card hints at horizontal scrolling',
+    );
+  } else
+    assert.ok(
+      Math.abs(stepSize.width - 160) <= 1,
+      'One or two hero steps retain their previous width',
+    );
   await (await page.$('[data-value="opponent"]')).tap();
   await capture('opponent-review', [
     '.review-sheet',
@@ -1126,6 +1175,8 @@ try {
   });
   if (!(await page.data()).settings.sound)
     await invoke('togglePreference', { currentTarget: { dataset: { key: 'sound' } } });
+  if (!(await page.data()).settings.vibration)
+    await invoke('togglePreference', { currentTarget: { dataset: { key: 'vibration' } } });
   await invoke('togglePreference', { currentTarget: { dataset: { key: 'sound' } } });
   const mutedBefore = await mini.evaluate(() => ({
     audio: getCurrentPages().at(-1).__audioPlays,
@@ -1137,7 +1188,9 @@ try {
     audio: getCurrentPages().at(-1).__audioPlays,
     vibrations: getApp().__noirTurnVibrations.length,
   }));
-  assert.deepEqual(mutedAfter, mutedBefore, 'Disabled feedback suppresses both channels');
+  assert.equal(mutedAfter.audio, mutedBefore.audio, 'Sound mute suppresses action audio');
+  assert.ok(mutedAfter.vibrations > mutedBefore.vibrations, 'Sound mute retains enabled vibration');
+  await invoke('togglePreference', { currentTarget: { dataset: { key: 'vibration' } } });
   await invoke('togglePreference', { currentTarget: { dataset: { key: 'sound' } } });
   await invoke('resetPractice');
   await invoke('confirmReset');
@@ -1146,7 +1199,9 @@ try {
     audio: getCurrentPages().at(-1).__audioPlays,
     vibrations: getApp().__noirTurnVibrations.length,
   }));
-  assert.ok(enabled.audio > mutedAfter.audio && enabled.vibrations > mutedAfter.vibrations);
+  assert.ok(enabled.audio > mutedAfter.audio, 'Sound unmute restores action audio');
+  assert.equal(enabled.vibrations, mutedAfter.vibrations, 'Vibration mute retains action audio');
+  await invoke('togglePreference', { currentTarget: { dataset: { key: 'vibration' } } });
   report.combinedFeedback = {
     mutedBefore,
     mutedAfter,

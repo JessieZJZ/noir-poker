@@ -241,6 +241,16 @@ function setup(
   };
 }
 
+test('WeChat publishes its first complete hand atomically after the launch artwork', (t) => {
+  const { page, definition } = setup(t);
+  assert.equal(definition.data.tableReady, false);
+  assert.equal(page.data.tableReady, true);
+  assert.equal(page.data.heroCards.length, 2);
+  assert.equal(page.data.seats.length, page.data.settings.playerCount - 1);
+  assert.match(template, /wx:if="\{\{!tableReady\}\}" class="launch-screen"/);
+  assert.match(template, /<view\s+wx:else\s+class="screen /);
+});
+
 test('measuring the pot sheet cannot change the table pot row or public-card placement', (t) => {
   const { page, wx } = setup(t);
   const before = copy({
@@ -460,7 +470,7 @@ test('practice runout preserves Web rank visibility without modifying the engine
 
 test('secondary pages lock the home scroll and source titles navigate to a separate web page', (t) => {
   const { page, scrolls, navigations, audios } = setup(t);
-  assert.equal(audios.length, 6, 'All local effects are preloaded on entry');
+  assert.equal(audios.length, 5, 'Each unique local effect is preloaded once on entry');
   assert.ok(audios.every((audio) => audio.volume === 1));
   page.onPageScroll({ scrollTop: 240 });
   for (const [open, close] of [
@@ -843,13 +853,16 @@ test('WeChat Page stops and destroys native audio plus pending work when backgro
 });
 
 test('WeChat boosted sound cues keep only the latest context active and respect all playback gates', (t) => {
-  const { page, audios } = setup(t);
+  const { page, audios, app } = setup(t);
+  let ducks = 0;
+  app.noirMusic = { duck: () => ducks++, unlock() {}, setEnabled() {} };
   const fold = page._soundPool.fold;
-  const call = page._soundPool.call;
+  const call = page._soundPool.chip;
   const snapshots = () => audios.map((audio) => [audio.playCount || 0, audio.stopCount || 0]);
   let before = snapshots();
   page.playSound('fold');
   assert.deepEqual(snapshots(), before, 'No gesture must neither stop nor play a cue');
+  assert.equal(ducks, 0);
   page._audioUnlocked = true;
   page.playSound('fold');
   assert.equal(fold.playCount, 1);
@@ -863,6 +876,10 @@ test('WeChat boosted sound cues keep only the latest context active and respect 
   assert.equal(fold.stopCount, stopped + 1);
   assert.equal(call.playCount, 1);
   assert.equal(call.seekPosition, 0);
+  assert.equal(call.src, '/assets/sounds/chip.wav');
+  page.playSound('raise');
+  assert.equal(call.playCount, 2, 'Raise and call reuse the same recorded chip context');
+  assert.equal(ducks, 3, 'Every actually played cue reserves music headroom');
   assert.deepEqual(
     audios.filter((audio) => audio.playing),
     [call],
@@ -1343,15 +1360,20 @@ test('WeChat hero turn vibrates once, rerenders/settings/background do not repea
   assert.deepEqual(vibrations, ['light']);
 });
 
-test('muting the combined feedback preference suppresses later hero turns and clears audio', (t) => {
+test('sound mute clears audio while independent vibration still notifies later hero turns', (t) => {
   const { page, vibrations, audios } = setup(t);
   page.togglePreference({ currentTarget: { dataset: { key: 'sound' } } });
   const count = vibrations.length;
   reachHero(page);
   assert.equal(page.data.settings.sound, false);
-  assert.equal(vibrations.length, count);
+  assert.equal(vibrations.length, count + 1);
   assert.ok(audios.every((audio) => audio.stopped));
-  assert.match(template, /aria-label="音效与振动"/);
+  assert.match(template, /aria-label="音效与音乐"/);
+  page.togglePreference({ currentTarget: { dataset: { key: 'vibration' } } });
+  page._controller.retry();
+  reachHero(page);
+  assert.equal(vibrations.length, count + 1);
+  assert.match(template, /aria-label="振动"/);
 });
 test('peek preserves peer caption lifts and ordinary updates never re-deal the hero', (t) => {
   const { page } = setup(t);
@@ -2514,4 +2536,38 @@ test('WeChat long press expands only truncated names and rejects delayed or hidd
   assert.equal(page.data.nameTooltip, null);
   assert.match(template, /bindlongpress="showNameTooltip"/);
   assert.match(stylesheet, /\.seat-name-tooltip\s*\{[^}]*position: fixed/s);
+});
+
+test('WeChat hand rankings shortcut resets the guide anchor on normal open and can jump again', (t) => {
+  const { page } = setup(t);
+  page._homeScroll = 120;
+  page.openHandRankings();
+  assert.equal(page.data.guideOpen, true);
+  assert.equal(page.data.homeLocked, true);
+  assert.equal(page.data.guideScrollTarget, 'hand-rankings');
+  assert.equal(page.data.guideScrollTop, 0);
+  page.closeGuide();
+  assert.equal(page.data.guideOpen, false);
+  assert.equal(page._homeScroll, 120);
+  page.openGuide();
+  assert.equal(page.data.guideScrollTarget, '');
+  page.closeGuide();
+  page.openHandRankings();
+  assert.equal(page.data.guideScrollTarget, 'hand-rankings');
+  assert.match(template, /id="hand-rankings-button"/);
+  assert.match(template, /scroll-into-view="\{\{guideScrollTarget\}\}"/);
+});
+
+test('a late guide jump cannot move a closed or newly opened normal guide', (t) => {
+  const { page } = setup(t);
+  const pending = [];
+  const setData = page.setData.bind(page);
+  page.setData = (patch, callback) =>
+    setData(patch, callback ? () => pending.push(callback) : undefined);
+  page.openHandRankings();
+  page.closeGuide();
+  page.openGuide();
+  for (const callback of pending) callback();
+  assert.equal(page.data.guideOpen, true);
+  assert.equal(page.data.guideScrollTarget, '');
 });

@@ -350,3 +350,30 @@ button:not(.profile-card):not(.review-step) {
     font-size: 0;
   }
 }
+
+.game-surface .decision-copy {
+  flex: 1 1 auto;
+}
+.game-surface .decision-indicator {
+  flex: none;
+}
+.game-surface .hand-rankings-button {
+  flex: none;
+  margin-left: auto;
+  width: auto;
+  height: 24px;
+  min-height: 24px;
+  padding: 0 8px;
+  border: 1px solid #35534e;
+  border-radius: 6px;
+  background: #16302e;
+  color: #aee5d6;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 22px;
+  white-space: nowrap;
+}
+.game-surface .hand-rankings-button:hover {
+  border-color: #6ee7c5;
+  background: #1d3c36;
+}

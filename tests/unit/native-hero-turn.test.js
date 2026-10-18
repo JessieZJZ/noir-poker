@@ -57,3 +57,24 @@ test('stalled bot and mismatched hero controls fail within a finite unchanged bu
     });
   }
 });
+
+test('review and background checks advance once when the preceding real hand has settled', async () => {
+  let advances = 0;
+  const fake = harness((elapsed) =>
+    elapsed === 0
+      ? { ...waiting(null), phase: 'done' }
+      : { ...waiting('你'), hand: 2, enabled: true, controlEnabled: true },
+  );
+  fake.app.click = async (selector) => {
+    assert.equal(selector, '#next-button');
+    advances++;
+  };
+  const result = await waitForNativeHeroTurn(fake.app, { now: fake.now, advanceSettled: true });
+  assert.equal(advances, 1);
+  assert.equal(result.advancedSettlement, true);
+  assert.equal(result.timeoutMs, 7 * BOT_THINK_LIMITS.maximum + 10000);
+  assert.deepEqual(
+    result.observations.map(({ state }) => state.phase),
+    ['done', 'playing'],
+  );
+});

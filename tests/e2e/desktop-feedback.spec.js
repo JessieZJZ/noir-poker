@@ -139,9 +139,7 @@ test('pot detail freezes the page, scrolls internally and restores the original 
   await expect(page.locator('html')).not.toHaveAttribute('data-home-scroll-locked', 'true');
   await expect.poll(() => page.evaluate(() => scrollY)).toBe(before.y);
 });
-test('native combined feedback switch mutes subsequent hero-turn notifications', async ({
-  page,
-}) => {
+test('vibration switches independently from sound effects and music', async ({ page }) => {
   await page.evaluate(() => {
     document.documentElement.classList.add('native-app');
     navigator.vibrate = () => {
@@ -152,16 +150,27 @@ test('native combined feedback switch mutes subsequent hero-turn notifications',
   });
   await openSettings(page);
   await page.locator('#sound-button').click();
-  await expect(page.locator('#sound-label')).toHaveText('音效与振动');
-  await expect(page.locator('#sound-button')).toHaveAttribute('title', '音效与振动已关闭');
+  await expect(page.locator('#sound-label')).toHaveText('音效与音乐');
+  await expect(page.locator('#sound-button')).toHaveAttribute('title', '音效与音乐已关闭');
   await closeSettings(page);
   await page.evaluate(() => window.qa.heroTurn(7));
-  expect(await page.evaluate(() => window.feedbackCalls)).toBe(0);
+  expect(await page.evaluate(() => window.feedbackCalls)).toBe(1);
   await openSettings(page);
+  await page.locator('#vibration-button').click();
   await page.locator('#sound-button').click();
   await closeSettings(page);
   await page.evaluate(() => window.qa.heroTurn(6));
   await expect.poll(() => page.evaluate(() => window.feedbackCalls)).toBe(1);
+  await openSettings(page);
+  await page.locator('#vibration-button').click();
+  await closeSettings(page);
+  await page.evaluate(() => {
+    window.qa.heroTurn(5);
+    document.querySelector('#call-button').click();
+    window.qa.respondToHero(0, true);
+    window.qa.stop();
+  });
+  await expect.poll(() => page.evaluate(() => window.feedbackCalls)).toBe(2);
 });
 test('mixed lineup has a transparent unselected state', async ({ page }) => {
   await openSettings(page);

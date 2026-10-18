@@ -277,7 +277,14 @@
     "{0} / {1} 同花": "{0} / {1} suited",
     "{0} / {1} 不同花": "{0} / {1} offsuit",
     "{0} / {1} 非同花": "{0} / {1} offsuit",
-    "切换语言立即生效，保留当前设置页面与正在进行的对局。": "Language changes apply immediately, keeping settings open and the current hand intact."
+    "切换语言立即生效，保留当前设置页面与正在进行的对局。": "Language changes apply immediately, keeping settings open and the current hand intact.",
+    "音效与音乐": "Sound effects & music",
+    "振动": "Vibration",
+    "音效与音乐已开启": "Sound effects & music on",
+    "音效与音乐已关闭": "Sound effects & music off",
+    "振动已开启": "Vibration on",
+    "振动已关闭": "Vibration off",
+    "{0}，带{1}": "{0}, with {1}"
   },
   "zh-TW": {
     "设置": "設定",
@@ -383,7 +390,14 @@
     "第": "第",
     "关闭对话框": "關閉對話框",
     "盲注": "盲注",
-    "你持 {0}，{1} 位对手仍在局中。": "你持 {0}，{1} 位對手仍在局中。"
+    "你持 {0}，{1} 位对手仍在局中。": "你持 {0}，{1} 位對手仍在局中。",
+    "音效与音乐": "音效與音樂",
+    "振动": "震動",
+    "音效与音乐已开启": "音效與音樂已開啟",
+    "音效与音乐已关闭": "音效與音樂已關閉",
+    "振动已开启": "震動已開啟",
+    "振动已关闭": "震動已關閉",
+    "{0}，带{1}": "{0}，帶{1}"
   },
   "ja": {
     "设置": "設定",
@@ -489,7 +503,14 @@
     "第": "ハンド",
     "关闭对话框": "ダイアログを閉じる",
     "盲注": "ブラインド",
-    "你持 {0}，{1} 位对手仍在局中。": "手札は {0}。まだ {1} 人の相手が参加しています。"
+    "你持 {0}，{1} 位对手仍在局中。": "手札は {0}。まだ {1} 人の相手が参加しています。",
+    "音效与音乐": "効果音と音楽",
+    "振动": "振動",
+    "音效与音乐已开启": "効果音と音楽：オン",
+    "音效与音乐已关闭": "効果音と音楽：オフ",
+    "振动已开启": "振動：オン",
+    "振动已关闭": "振動：オフ",
+    "{0}，带{1}": "{0}、{1}あり"
   },
   "ko": {
     "设置": "설정",
@@ -595,7 +616,14 @@
     "第": "핸드",
     "关闭对话框": "대화 상자 닫기",
     "盲注": "블라인드",
-    "你持 {0}，{1} 位对手仍在局中。": "내 카드는 {0}입니다. 상대 {1}명이 아직 핸드에 참여하고 있습니다."
+    "你持 {0}，{1} 位对手仍在局中。": "내 카드는 {0}입니다. 상대 {1}명이 아직 핸드에 참여하고 있습니다.",
+    "音效与音乐": "효과음 및 음악",
+    "振动": "진동",
+    "音效与音乐已开启": "효과음 및 음악 켜짐",
+    "音效与音乐已关闭": "효과음 및 음악 꺼짐",
+    "振动已开启": "진동 켜짐",
+    "振动已关闭": "진동 꺼짐",
+    "{0}，带{1}": "{0}, {1} 보유"
   },
   "es": {
     "设置": "Ajustes",
@@ -701,7 +729,14 @@
     "第": "Mano",
     "关闭对话框": "Cerrar diálogo",
     "盲注": "Ciegas",
-    "你持 {0}，{1} 位对手仍在局中。": "Tienes {0}. Quedan {1} rivales en la mano."
+    "你持 {0}，{1} 位对手仍在局中。": "Tienes {0}. Quedan {1} rivales en la mano.",
+    "音效与音乐": "Efectos y música",
+    "振动": "Vibración",
+    "音效与音乐已开启": "Efectos y música activados",
+    "音效与音乐已关闭": "Efectos y música desactivados",
+    "振动已开启": "Vibración activada",
+    "振动已关闭": "Vibración desactivada",
+    "{0}，带{1}": "{0}, con {1}"
   },
   "it": {
     "设置": "Impostazioni",
@@ -807,7 +842,14 @@
     "第": "Mano",
     "关闭对话框": "Chiudi finestra",
     "盲注": "Bui",
-    "你持 {0}，{1} 位对手仍在局中。": "Hai {0}. Restano {1} avversari nella mano."
+    "你持 {0}，{1} 位对手仍在局中。": "Hai {0}. Restano {1} avversari nella mano.",
+    "音效与音乐": "Effetti e musica",
+    "振动": "Vibrazione",
+    "音效与音乐已开启": "Effetti e musica attivati",
+    "音效与音乐已关闭": "Effetti e musica disattivati",
+    "振动已开启": "Vibrazione attivata",
+    "振动已关闭": "Vibrazione disattivata",
+    "{0}，带{1}": "{0}, con {1}"
   },
   "pt": {
     "设置": "Definições",
@@ -913,7 +955,14 @@
     "第": "Mão",
     "关闭对话框": "Fechar diálogo",
     "盲注": "Blinds",
-    "你持 {0}，{1} 位对手仍在局中。": "Tens {0}. Restam {1} adversários na mão."
+    "你持 {0}，{1} 位对手仍在局中。": "Tens {0}. Restam {1} adversários na mão.",
+    "音效与音乐": "Efeitos e música",
+    "振动": "Vibração",
+    "音效与音乐已开启": "Efeitos e música ativados",
+    "音效与音乐已关闭": "Efeitos e música desativados",
+    "振动已开启": "Vibração ativada",
+    "振动已关闭": "Vibração desativada",
+    "{0}，带{1}": "{0}, com {1}"
   },
   "de": {
     "设置": "Einstellungen",
@@ -1019,7 +1068,14 @@
     "第": "Hand",
     "关闭对话框": "Dialog schließen",
     "盲注": "Blinds",
-    "你持 {0}，{1} 位对手仍在局中。": "Du hältst {0}. Noch {1} Gegner sind in der Hand."
+    "你持 {0}，{1} 位对手仍在局中。": "Du hältst {0}. Noch {1} Gegner sind in der Hand.",
+    "音效与音乐": "Effekte und Musik",
+    "振动": "Vibration",
+    "音效与音乐已开启": "Effekte und Musik eingeschaltet",
+    "音效与音乐已关闭": "Effekte und Musik ausgeschaltet",
+    "振动已开启": "Vibration eingeschaltet",
+    "振动已关闭": "Vibration ausgeschaltet",
+    "{0}，带{1}": "{0}, mit {1}"
   },
   "fr": {
     "设置": "Paramètres",
@@ -1125,7 +1181,14 @@
     "第": "Main",
     "关闭对话框": "Fermer la boîte de dialogue",
     "盲注": "Blindes",
-    "你持 {0}，{1} 位对手仍在局中。": "Vous avez {0}. Il reste {1} adversaires dans la main."
+    "你持 {0}，{1} 位对手仍在局中。": "Vous avez {0}. Il reste {1} adversaires dans la main.",
+    "音效与音乐": "Effets sonores et musique",
+    "振动": "Vibrations",
+    "音效与音乐已开启": "Effets sonores et musique activés",
+    "音效与音乐已关闭": "Effets sonores et musique désactivés",
+    "振动已开启": "Vibrations activées",
+    "振动已关闭": "Vibrations désactivées",
+    "{0}，带{1}": "{0}, avec {1}"
   },
   "ru": {
     "设置": "Настройки",
@@ -1231,6 +1294,13 @@
     "第": "Раздача",
     "关闭对话框": "Закрыть диалог",
     "盲注": "Блайнды",
-    "你持 {0}，{1} 位对手仍在局中。": "У вас {0}. В раздаче остаются {1} соперников."
+    "你持 {0}，{1} 位对手仍在局中。": "У вас {0}. В раздаче остаются {1} соперников.",
+    "音效与音乐": "Звуковые эффекты и музыка",
+    "振动": "Вибрация",
+    "音效与音乐已开启": "Звуковые эффекты и музыка включены",
+    "音效与音乐已关闭": "Звуковые эффекты и музыка выключены",
+    "振动已开启": "Вибрация включена",
+    "振动已关闭": "Вибрация выключена",
+    "{0}，带{1}": "{0}, с {1}"
   }
 }

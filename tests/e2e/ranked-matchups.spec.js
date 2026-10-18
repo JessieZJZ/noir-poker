@@ -66,7 +66,7 @@ test('reported bottom pair emphasizes stronger families and combo draws; top-pai
   );
   await expect(
     own.locator('[data-matchup-direction="behind"] .review-matchup-example'),
-  ).toHaveCount(3);
+  ).toHaveCount(4);
   await expect(own).toContainText('同花听牌 + 两头顺听牌');
   await expect(own.locator('[data-matchup-direction="behind"]')).toContainText('A♠ J♥');
   await own.locator('.review-matchups').scrollIntoViewIfNeeded();
@@ -99,7 +99,7 @@ test('reported bottom pair emphasizes stronger families and combo draws; top-pai
   });
 });
 
-test('review renders up to three public-range examples on each side without numeric probabilities', async ({
+test('review renders up to three ahead and four behind public-range examples without numeric probabilities', async ({
   page,
 }, info) => {
   const errors = [];
@@ -109,6 +109,7 @@ test('review renders up to three public-range examples on each side without nume
   const matchups = handMatchups(snapshot, decisionContext(snapshot));
   expect(matchups.ahead).toHaveLength(3);
   expect(matchups.behind.length).toBeGreaterThan(0);
+  expect(matchups.behind.length).toBeLessThanOrEqual(4);
   expect(matchups.behind.length).not.toBe(matchups.ahead.length);
   // Keep the real engine's before-action flop snapshot. This fixture only
   // narrows the rendered timeline, rather than inventing a decision/outcome.

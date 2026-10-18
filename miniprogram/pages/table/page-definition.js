@@ -19,6 +19,7 @@ const PROFILE_AXES = [
 
 module.exports = {
   data: {
+    tableReady: false,
     topInset: 24,
     bottomInset: 0,
     windowHeight: 800,
@@ -37,6 +38,8 @@ module.exports = {
     historyReadOnly: false,
     settingsOpen: false,
     guideOpen: false,
+    guideScrollTarget: '',
+    guideScrollTop: 0,
     reviewOpen: false,
     activityOpen: false,
     potOpen: false,
@@ -53,7 +56,7 @@ module.exports = {
     countOptions: [5, 6, 7, 8, 9],
     emotionOptions: ['关闭', '轻微波动', '明显波动'],
     profiles: [],
-    settings: { sound: true, hints: true },
+    settings: { sound: true, vibration: true, hints: true },
     seats: [],
     board: [],
     boardTop: [],
@@ -84,6 +87,8 @@ module.exports = {
       createReviewWorker:
         typeof wx.createWorker === 'function' ? () => wx.createWorker('workers/review.js') : null,
       publish: (view) => {
+        if (!this._readOnlyAttempt && typeof getApp === 'function')
+          getApp().noirMusic?.setEnabled(view.settings.sound);
         if (view.done || view.hand !== this.data.hand || view.replay !== this.data.replay)
           this._finishRequested = false;
         const game = this._controller?.getGame();
@@ -147,6 +152,7 @@ module.exports = {
         });
         const update = {
           ...view,
+          tableReady: view.heroCards.length === 2 && view.seats.length >= 4,
           finishing:
             view.done || view.hand !== this.data.hand || view.replay !== this.data.replay
               ? false
@@ -218,7 +224,7 @@ module.exports = {
         if (!this._destroyed) this.setData({ turnPhase });
       },
       notifyTurn: () => {
-        if (!this._hidden && !this._destroyed && this.data.settings.sound)
+        if (!this._hidden && !this._destroyed && this.data.settings.vibration)
           wx.vibrateShort?.({ type: 'light', fail: () => {} });
       },
     });
@@ -334,8 +340,9 @@ module.exports = {
     this.closeNameTooltip();
     if (!this.data.homeLocked) this._homeScroll = event.scrollTop;
   },
-  setOverlay(patch) {
+  setOverlay(patch, onReady) {
     this._audioUnlocked = true;
+    if (typeof getApp === 'function') getApp().noirMusic?.unlock();
     const next = { ...this.data, ...patch };
     const homeLocked = [
       'settingsOpen',
@@ -348,6 +355,7 @@ module.exports = {
     const unlocking = this.data.homeLocked && !homeLocked;
     this.setData({ ...patch, homeLocked, homeOffset: -(this._homeScroll || 0) }, () => {
       if (unlocking) wx.pageScrollTo?.({ scrollTop: this._homeScroll || 0, duration: 0 });
+      onReady?.();
     });
   },
   updateWindow() {
@@ -591,6 +599,7 @@ module.exports = {
   },
   call(method, ...args) {
     this._audioUnlocked = true;
+    if (typeof getApp === 'function') getApp().noirMusic?.unlock();
     try {
       return this._controller[method](...args);
     } catch (error) {
@@ -602,8 +611,8 @@ module.exports = {
     const names = {
       fold: 'fold',
       check: 'check',
-      raise: 'raise',
-      call: 'call',
+      raise: 'chip',
+      call: 'chip',
       deal: 'deal',
       win: 'win',
     };
@@ -616,6 +625,7 @@ module.exports = {
       for (const other of this._audio || []) if (other !== audio) other.stop();
       audio.stop();
       audio.seek?.(0);
+      if (typeof getApp === 'function') getApp().noirMusic?.duck?.();
       audio.play();
     } catch {
       /* A device can block audio until the first user gesture. */
@@ -624,7 +634,7 @@ module.exports = {
   preloadSounds() {
     this._soundPool = {};
     if (!wx.createInnerAudioContext) return;
-    for (const name of ['fold', 'check', 'raise', 'call', 'deal', 'win']) {
+    for (const name of ['fold', 'check', 'chip', 'deal', 'win']) {
       const audio = wx.createInnerAudioContext();
       audio.src = `/assets/sounds/${name}.wav`;
       audio.volume = 1;
@@ -1019,10 +1029,21 @@ module.exports = {
     navigation.returnToGame();
   },
   openGuide() {
+    this.showGuide();
+  },
+  openHandRankings() {
+    this.showGuide('hand-rankings');
+  },
+  showGuide(target = '') {
     this.closeResourceMenu();
-    this.setOverlay({ guideOpen: true });
+    const token = (this._guideOpenToken = (this._guideOpenToken || 0) + 1);
+    this.setOverlay({ guideOpen: true, guideScrollTarget: '', guideScrollTop: 0 }, () => {
+      if (this.data.guideOpen && this._guideOpenToken === token && target)
+        this.setData({ guideScrollTarget: target });
+    });
   },
   closeGuide() {
+    this._guideOpenToken = (this._guideOpenToken || 0) + 1;
     this.setOverlay({ guideOpen: false });
   },
   copyGuideSource(event) {

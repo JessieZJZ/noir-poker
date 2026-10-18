@@ -85,11 +85,11 @@ for (const locale of locales) {
     const guide = page.locator('#rules-dialog');
     await expect(guide).toBeVisible();
     const raiseExample = ['es', 'it', 'pt', 'de', 'fr', 'ru'].includes(locale) ? '1,2K' : '1.2K';
-    const callExample = guide.locator(':scope > p').filter({ hasText: raiseExample });
+    const callExample = guide.locator('.guide-body > p').filter({ hasText: raiseExample });
     await expect(callExample).toBeVisible();
     for (const amount of ['200', '600', '400', raiseExample, '1K'])
       await expect(callExample).toContainText(amount);
-    const minimumRules = guide.locator(':scope > details').filter({ hasText: '1K' });
+    const minimumRules = guide.locator('.guide-body > details').filter({ hasText: '1K' });
     await expect(minimumRules).toHaveCount(1);
     await minimumRules.locator(':scope > summary').click();
     const minimumRaise = minimumRules.locator(':scope > p').first();

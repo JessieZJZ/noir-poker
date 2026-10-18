@@ -6,6 +6,13 @@ test.beforeEach(async ({ page }) => {
   await page.waitForFunction(() => !!window.qa);
   await page.evaluate(() => window.qa.stop());
   await page.mouse.move(0, 0);
+  const trigger = page.locator('#rules-button');
+  // Stop rotation before freezing time, then restart its interval exactly at
+  // the paused clock. Wall time between driver calls must not consume the
+  // 400 ms animation window that this test inspects.
+  await trigger.focus();
+  await page.clock.pauseAt(new Date(Date.now() + 60000));
+  await trigger.evaluate((element) => element.blur());
 });
 
 test('automatic guide labels roll downward in a clipped stable slot and arrows have no circles', async ({

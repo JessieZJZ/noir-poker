@@ -6,9 +6,13 @@
 
 各端实测范围与限制见[行动提醒验证记录](docs/turn-attention-validation.md)。
 
-四版原创循环背景音乐候选、试听页、无损母带与来源记录见[音乐工作室](audio-studio/noir-background-music/README.md)。目前供选曲试听，尚未接入游戏播放。
+复盘决策超过两张时，时间线显示两张完整卡片和第三张的一半，提示横向滚动；对局动态采用更小字号。各端行为及专项验证入口见[复盘说明](docs/review.md)。
+
+四版原创循环背景音乐候选、试听页、无损母带与来源记录见[音乐工作室](audio-studio/noir-background-music/README.md)。游戏默认循环播放「夜色牌桌」；设置中的“音效与音乐”统一控制背景音乐和操作音效，“振动”独立控制行动提醒，两项均在新设备默认开启并保存选择。旧版关闭声音的选择同时保留为静音和关闭振动；之后两个开关各自保存。详见[背景音乐与反馈](docs/background-music.md)。
 
 工程目录：`/Users/zjz/code/noir-poker`。此目录是后续迭代的主项目，保留原项目的 Git 历史和 Sites 关联。原 Documents 目录中的项目保留为迁移前快照。
+
+操作区右侧的“牌力表”可直接打开指南并定位到牌型强弱与示例；普通玩法指南入口仍从开头打开。详见 [牌力表入口](docs/hand-rankings-shortcut.md)。
 
 ## 开始开发
 
@@ -30,6 +34,8 @@ npm run format:check  # 检查格式
 npm run build         # 输出生产文件到 dist/
 npm run preview       # 本地检查生产构建，先停止同端口开发服务
 ```
+
+单元回归最多并行执行 4 个文件，避免与本机浏览器、模拟器同时运行时争抢资源；所有断言和用例保留。
 
 首次运行浏览器测试若提示缺少浏览器，执行 `npx playwright install chromium`。测试会自动在 **4175** 端口启动自己的服务，不占用日常开发的 4173，也不复用其他检出的服务。并行 worktree 可用 `NOIR_E2E_PORT=4189 npm run test:e2e` 指定独立端口；端口已占用时直接失败。
 
@@ -115,7 +121,7 @@ docs/                       架构、规则、复盘依据与发布说明
 
 牌桌和操作区在桌面宽屏也按首屏可用高度排布，行动更新保留当前页面滚动位置。PC 根据可用高度限制椭圆宽度，并放大牌面与玩家块。各端最高玩家的完整占位贴近牌桌区上沿，回收顶部空白；手机同时压缩标题区。所有端主行动、弃牌后继续和结算按钮统一为 38px，结算只缩短操作区，牌桌不重新缩放。小程序导航为 48px，行动区预算为 134px。打开底池明细时锁定首页，滚动只作用于明细内容，关闭后恢复原位置。
 
-App 与小程序设置中的“音效与振动”默认开启；关闭后同时停止音效与轮到你行动的振动，已保存的关闭选择继续保留。Web 的声音开关仍单独控制声音。
+所有端的“音效与音乐”统一控制背景音乐和操作音效；“振动”独立保存。新设备默认开启，已有关闭选择继续保留。
 
 - 改机器人策略、情绪或研究依据：读 [机器人风格与情绪模拟](docs/bots.md)，调整 `src/engine/bot-profiles.js` / `src/engine/bot-style.js` 与 `src/data/player-research.json`，保持公开信息边界与重打回滚，逐条来源与测量见 [牌手研究记录](docs/player-research.md)。
 - 理解行动到渲染的路径：读 [架构说明](docs/architecture.md)。
@@ -202,3 +208,12 @@ PR44 的策略修正与具体行动复盘随本次盲注改动一并提交；兼
 本机对局记录的 Web 回归、安装运行与微信验收边界见 [初版验证](docs/game-records-validation-2026-10-14.md)；历史牌桌与游戏布局一致、重打短标签及有符号净变化的结果见 [布局修订验证](docs/game-records-layout-validation-2026-10-14.md)。
 
 当前牌面权益、实际待行动人数与公开范围候选的实现及本轮 Web 验收见 [公开范围与成牌候选验证](docs/position-equity-validation-2026-10-14.md)。
+
+复盘总结的因果表述、去重和跨端验证见 [复盘总结修订](docs/review-summary-validation-2026-10-17.md)。九人桌低成本跟入、强起手牌防守及批量模拟见 [机器人入池与承压验证](docs/bot-entry-validation-2026-10-17.md)。
+
+```sh
+# 九人混合风格桌，进阶难度、明显情绪波动；每手恢复 100 BB，牌序与策略独立设种子。
+npm run measure:bots -- --players=9 --hands=1000 --profile=mixed --difficulty=hard --emotions=lively --seed=781 --deck-seed=711
+# 重建公开下注线路，分别统计 AK、88、AQ、A6 等场景的 100 个策略样本。
+node tests/bot-pressure-audit.mjs
+```

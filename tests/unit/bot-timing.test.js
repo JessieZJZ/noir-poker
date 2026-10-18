@@ -136,6 +136,74 @@ test('guaranteed shared-royal defense is not a price guessing problem', () => {
   assert.ok(decision.trace.allIn.guaranteedReturn >= decision.trace.allIn.cost);
   assert.equal(botThinkingTime(decision, () => 0.5).factors.closeness, 0);
 });
+test('public-range entry timing follows the executed price gate and response risk', () => {
+  const d = sample();
+  d.trace.affordableRangePassed = true;
+  d.trace.assumedOpponents = 1;
+  d.trace.requiredEquity = 0.165;
+  d.trace.responseRisk = 0.045;
+  d.trace.equity = 0.165;
+  d.trace.view.publicEquity = { model: 'public-action-ranges', assumedOpponentIds: [2] };
+  d.trace.view.actionContext = { pendingResponseCount: 5, priorActedResponseCount: 1 };
+  const close = botThinkingTime(d, () => 0.5);
+  assert.equal(close.factors.priceCloseness, 1);
+  assert.equal(close.factors.requiredEquity, 0.165);
+  assert.equal(close.factors.multiway, 0, 'Five waiting seats are not five confirmed opponents');
+  const far = copy(d);
+  far.trace.equity = 0.55;
+  far.trace.view.actionContext = { pendingResponseCount: 0, priorActedResponseCount: 0 };
+  const easy = botThinkingTime(far, () => 0.5);
+  assert.equal(easy.factors.priceCloseness, 0);
+  assert.equal(easy.factors.routine, true);
+  assert.ok(close.durationMs > easy.durationMs + 1000);
+  assert.ok(close.factors.responses > easy.factors.responses);
+});
+test('priced draws use the actual outs gate and clear range folds ignore unrelated equity', () => {
+  const d = sample();
+  Object.assign(d.trace, { drawContinue: true, drawChance: 0.105, equity: 0.7 });
+  d.trace.view.street = 1;
+  d.trace.view.features = { draw: true, wet: true };
+  const close = botThinkingTime(d, () => 0.5);
+  assert.ok(close.factors.drawCloseness > 0.95);
+  assert.equal(close.factors.priceCloseness, 0);
+  d.trace.drawChance = 0.3;
+  assert.ok(botThinkingTime(d, () => 0.5).durationMs < close.durationMs);
+  const fold = sample();
+  fold.action = 'fold';
+  Object.assign(fold.trace, { reason: 'outside-range', percentile: 0.99, equity: 0.12 });
+  assert.equal(botThinkingTime(fold, () => 0.5).factors.closeness, 0);
+  assert.equal(botThinkingTime(fold, () => 0.5).factors.routine, true);
+});
+test('current bot decisions supply the same required equity and remain scale invariant', () => {
+  const game = newGame(9);
+  startHand(game);
+  const decision = botDecision(game, seeded(178));
+  const pacing = botThinkingTime(decision, seeded(44));
+  assert.equal(pacing.model, 'policy-pacing-v2');
+  assert.equal(pacing.factors.requiredEquity, decision.trace.requiredEquity);
+  const scaled = copy(decision),
+    v = scaled.trace.view;
+  for (const key of [
+    'stack',
+    'bet',
+    'total',
+    'pot',
+    'currentBet',
+    'contestable',
+    'bigBlind',
+    'chipUnit',
+  ])
+    if (Number.isFinite(v[key])) v[key] *= 10;
+  for (const key of ['toCall', 'callAmount', 'minRaiseTo', 'maxRaiseTo', 'chipUnit'])
+    if (Number.isFinite(v.legal[key])) v.legal[key] *= 10;
+  for (const p of v.opponents) for (const key of ['stack', 'bet', 'total']) p[key] *= 10;
+  for (const p of v.callPots) p.amount *= 10;
+  for (const key of ['cost', 'contestable', 'refundDelta']) v.callPrice[key] *= 10;
+  if (Number.isFinite(scaled.amount)) scaled.amount *= 10;
+  const other = botThinkingTime(scaled, seeded(44));
+  assert.equal(other.durationMs, pacing.durationMs);
+  assert.equal(other.factors.spr, pacing.factors.spr);
+});
 test('all-in pacing uses effective risk while remaining-stack planning still accounts for the gross call', () => {
   const risk = sample();
   risk.trace.view.legal = { toCall: 500, callAmount: 500 };

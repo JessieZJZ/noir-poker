@@ -62,7 +62,7 @@ test('top pair without a heart on four-heart board is not narrated as a strong v
   assert.equal(r.code, 'pressure-bet');
   assert.match(r.coaching.paragraphs.join(''), /Q.*7.*3.*9/);
   assert.match(r.coaching.paragraphs.join(''), /四张同花色.*没有同花/);
-  assert.match(r.coaching.paragraphs.join(''), /500.*主要依赖对手弃牌/);
+  assert.match(r.coaching.paragraphs.join(''), /500.*尝试诈唬.*更好的牌弃掉/);
   assert.doesNotMatch(r.coaching.paragraphs.join(''), /已有成牌，下注的价值来自/);
 });
 

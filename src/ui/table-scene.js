@@ -10,6 +10,8 @@ import {
 import { renderCard } from './cards.js';
 import { portraitContent } from './portraits.js';
 import { SEAT_ANCHORS } from './seat-geometry.js';
+import { visibleRecentAction } from './recent-action.js';
+export { visibleRecentAction } from './recent-action.js';
 const escape = (value) =>
   String(value)
     .replaceAll('&', '&amp;')
@@ -38,11 +40,6 @@ function positionBadge(g, id) {
   return `<span class="position-badge" data-position="${role}" title="${positionNames[role]}">${role}</span>`;
 }
 
-export function visibleRecentAction(g, p) {
-  return g.phase === 'done' || p.folded || p.allin || p.lastAction?.street === g.street
-    ? p.lastAction
-    : null;
-}
 export function renderSeatAction(g, p, { recent = false } = {}) {
   if (!recent && g.actor === p.id)
     return '<span class="seat-action-label thinking-dots">思考中</span>';

@@ -137,6 +137,8 @@ export function createReviewController({ card }) {
         })
         .join(''),
     );
+    timeline.classList.toggle('has-overflow', steps.length > 2);
+    timeline.closest('.review-layout').classList.toggle('has-horizontal-review', steps.length > 2);
     timelineKey = last.key;
     timeline.scrollTo({ left: scrollLeft, top: scrollTop });
     if (focusedIndex !== null)
@@ -177,6 +179,7 @@ export function createReviewController({ card }) {
         result?.coaching.paragraphs || ['正在比较当时的合法选择…'],
         result?.context.matchups,
         decision.street,
+        result?.coaching.paragraphParts,
       ),
     );
     $('#review-practice-focus').hidden = !result || result.coaching.kind === 'keep';

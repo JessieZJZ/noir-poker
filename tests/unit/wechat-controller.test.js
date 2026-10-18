@@ -3,6 +3,8 @@ import assert from 'node:assert/strict';
 import { createWechatController } from '../../src/platform/wechat-controller.js';
 import { act, advanceStreet, legalActions, potSize } from '../../src/engine/poker.js';
 import { createReviewInput, analyzeDecision } from '../../src/review/analysis.js';
+import { BOT_THINK_LIMITS } from '../../src/engine/bot-timing.js';
+import { checkedSeatGame } from '../fixtures/checked-actions.js';
 
 const copy = (value) => JSON.parse(JSON.stringify(value));
 function scheduler() {
@@ -72,6 +74,31 @@ function reachHero(controller) {
   controller.show();
   return game;
 }
+
+test('WeChat executes policy pacing once and hiding rejects stale bot callbacks', (t) => {
+  const { controller, timers, latest } = setup(t);
+  const game = reachHero(controller);
+  controller.action('call');
+  assert.ok(timers.runNext(), 'Paint task selects one bot plan');
+  const waits = [...timers.pending.values()].filter(
+    ({ delay }) => delay >= BOT_THINK_LIMITS.minimum && delay <= BOT_THINK_LIMITS.maximum,
+  );
+  assert.equal(waits.length, 1);
+  const stale = timers.callbacks();
+  controller.hide();
+  const paused = copy(game);
+  for (const callback of stale) callback();
+  assert.deepEqual(game, paused);
+  controller.show();
+  while (game.botDecisions.length === 0) assert.ok(timers.runNext());
+  assert.equal(game.botDecisions.length, 1);
+  assert.equal(game.botDecisions[0].trace.thinking.model, 'policy-pacing-v2');
+  assert.equal(game.botDecisions[0].trace.thinking.expedited, false);
+  assert.ok(
+    !JSON.stringify(latest()).includes('policy-pacing-v2'),
+    'Live UI keeps private timing factors hidden',
+  );
+});
 
 test('WeChat visual attention survives mute, cancels on sizing/hide/retry/destroy and publishes timer phases', (t) => {
   const { controller, timers, latest } = setup(t, { sound: false });
@@ -272,6 +299,33 @@ test('WeChat difficulty applies immediately; profiles, emotions and seats auto-s
   assert.equal(next.players[1].botProfile, 'tan');
   assert.equal(next.emotionMode, 'lively');
   assert.equal(next.difficulty, 'hard');
+});
+
+test('WeChat retains a completed check during subsequent thinking and clears it on the next street', (t) => {
+  const { controller, latest } = setup(t, { playerCount: 9 });
+  controller.hide();
+  const game = controller.getGame();
+  Object.assign(game, checkedSeatGame());
+  game.players[1].action = '';
+  game.players[1].lastAction = null;
+  controller.show();
+  const mia = () => latest().seats.find((seat) => seat.id === 1);
+  assert.equal(mia().actionLabel, '过牌');
+  assert.equal(latest().seats.find((seat) => seat.id === 2).actionLabel, '思考中');
+  act(game, 2, 'raise', game.bigBlind);
+  while (game.actor !== 1) {
+    controller.show();
+    assert.equal(mia().actionLabel, '过牌');
+    act(game, game.actor, 'call');
+  }
+  controller.show();
+  assert.equal(mia().actionLabel, '思考中');
+  act(game, 1, 'call');
+  controller.show();
+  assert.equal(mia().actionLabel, '跟注');
+  advanceStreet(game);
+  controller.show();
+  assert.equal(mia().actionLabel, '等待行动');
 });
 
 test('WeChat new streets clear previous calls and raises while retaining global folds', (t) => {

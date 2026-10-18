@@ -1,7 +1,7 @@
 import { bigBlindOf } from '../engine/stakes.js';
 import { compactChips } from '../engine/chip-format.js';
 import { actionLabel } from '../engine/action-labels.js';
-import { actionReason, situationNotes, continuationNote, publicCallsAfter } from './narrative.js';
+import { actionReason, situationNotes, continuationNote, drawCompletion } from './narrative.js';
 import { spotFacts } from './spot-facts.js';
 
 const streets = ['翻牌前', '翻牌', '转牌', '河牌'];
@@ -10,7 +10,7 @@ const pct = (n) => Math.round(n * 100) + '%';
 const same = (a, b) => a.action === b.action && (a.action !== 'raise' || a.amount === b.amount);
 const valueCodes = new Set(['premium-flat', 'value-check', 'deep-value-shove']);
 
-function explanation(s, r, evKind) {
+function explanation(s, r, evKind, suggested) {
   const c = r.context,
     draw = c.draw || r.draw,
     f = spotFacts(s, c),
@@ -29,27 +29,21 @@ function explanation(s, r, evKind) {
     const drawValue =
         draw.nextChance < r.metrics.required
           ? r.metrics.closing
-            ? '单靠补成顺子／同花还不够，还需要现有牌的其他摊牌获胜机会。'
-            : '单靠补成顺子／同花还不够，还需要现有牌的摊牌机会或成牌后再赢筹码。'
+            ? `单靠补成${drawCompletion(draw)}还不够，还需要现有牌的其他摊牌获胜机会。`
+            : `单靠补成${drawCompletion(draw)}还不够，还需要现有牌的摊牌机会或成牌后再赢筹码。`
           : '补牌机会高于这次赔率要求，但改善候选并不全是干净 outs，成牌仍可能输。',
       continuation = r.metrics.closing
         ? '这次跟注后已没有后续下注。'
         : '本次跟注不保证免费把剩余公共牌看完。',
       conditions = drawValue + continuation;
     return !r.metrics.closing || s.street === 2
-      ? `你需要再补 ${cost}，跟注后可争夺 ${fmt(r.metrics.contestable)}，底池赔率要求至少约 ${pct(r.metrics.required)} 权益；你的 ${draw.outs} 张顺子／同花改善候选，下一张约 ${pct(draw.nextChance)}。${conditions}`
+      ? `跟注后可争夺 ${fmt(r.metrics.contestable)}，底池赔率要求至少约 ${pct(r.metrics.required)} 权益；下一张补成${drawCompletion(draw)}的机会约 ${pct(draw.nextChance)}。${conditions}`
       : `你需要再补 ${cost}，跟注后可争夺 ${fmt(r.metrics.contestable)}，底池赔率要求至少约 ${pct(r.metrics.required)} 权益。这次跟注后已没有后续下注，可以看完剩余公共牌；这 ${draw.outs} 张只是下一张的改善候选，不能直接当成最终获胜率。`;
   }
   if (s.action === 'call' && r.metrics.closing)
     return `${hand}这次跟注后已没有后续下注，补 ${cost} 只能争夺当前 ${fmt(r.metrics.contestable)} 的底池。${evKind === 'negative' ? '面对这条下注线，当前牌力不适合接下这笔投入，建议保住剩余筹码。' : s.street === 0 && s.hole[0].rank === s.hole[1].rank ? '这手对子能领先更小对子，面对两张更高牌常接近五五开，但遇到更大对子会明显落后。' : '已有牌力决定这次摊牌机会，后面不能再靠下注把更好的牌赶走。'}`;
   if (s.action === 'raise' && f.shove && c.tier >= 2 && s.street === 0)
     return `${hand}可以做价值再加注，但把 ${fmt(c.extra)} 全部推向 ${fmt(s.pot)} 的底池，可能让本来会接小加注的较弱牌弃掉；这手更值得比较普通加注能留下多少价值。`;
-  if (
-    s.action === 'raise' &&
-    !draw.outs &&
-    ['high', 'underpair', 'middle-pair', 'board-pair'].includes(c.handClass)
-  )
-    return `在 ${f.boardText} 上，你的${hand}难从更弱成牌收取价值；投入 ${fmt(c.extra)} 是想让更好的牌弃掉。对手若继续，你不能只靠当前牌力轻松摊牌。`;
   if (s.action === 'check' && r.code === 'value-check')
     return s.street === 3 && r.metrics.closing
       ? `你是河牌最后行动者，${hand}过牌就直接摊牌，已经不能诱导后面的下注；比较主动下注能否让较弱成牌付费。`
@@ -57,21 +51,15 @@ function explanation(s, r, evKind) {
   if (s.action === 'check' && c.handClass === 'board')
     return `在 ${f.boardText} 上，${f.holeText}没有提高公共牌的牌力；这手主要争取平分底池，过牌不把平分机会误当成独占价值。`;
   if (s.action === 'fold' && !s.legal.canCheck && s.street === 0 && f.lastAggression) {
-    const called = publicCallsAfter(s, f.lastAggression.index),
-      handRisk =
-        c.tier >= 2
-          ? '这手本身有较强牌力，不必只因遇到加注就自动弃牌'
-          : s.hole[0].rank === s.hole[1].rank
-            ? '这手小对子未中暗三条时，面对大对子和高张牌面不容易继续'
-            : Math.max(...s.hole.map((card) => card.rank)) >= 11
-              ? '这组高牌成一对后仍可能被更好的踢脚或大对子压制'
-              : '这两张低牌不是对子或强高牌，击中一对后点数仍偏低';
-    if (called) {
-      const pressure =
-        called + `这笔再加注已经被接住；你若再补 ${cost}，会用这组牌进入多人加注底池。`;
-      return `你拿 ${f.holeText}，${handRisk}。${pressure}`;
-    }
-    return `你拿 ${f.holeText}，${handRisk}。面对${f.lastAggression.name}的${f.lastAggression.label}，继续需要再补 ${cost}；弃牌保住了手里剩下的 ${fmt(s.stack)}。`;
+    const handRisk = s.hole.every((card) => card.rank === 14)
+      ? 'AA 翻前领先其他起手牌，面对加注仍有很强的继续依据'
+      : s.hole[0].rank === s.hole[1].rank
+        ? '这手对子遇到更大对子明显落后；如果主要靠翻牌中暗三条获利，还要有合适的跟注价格和成牌后的可赢筹码'
+        : Math.max(...s.hole.map((card) => card.rank)) >= 11
+          ? '这组高牌即使击中一对，也可能被大对子或更好踢脚压制'
+          : '这两张低牌不是对子或强高牌，击中一对后点数仍偏低';
+    const keep = suggested.action === 'fold';
+    return `${handRisk}。继续需要再补 ${cost}，${keep ? '这次弃牌可以保留，保住剩下的 ' + fmt(s.stack) + '，不再承担这笔投入' : '应结合对手愿意用哪些较弱牌继续，再决定是否接下这笔投入'}。`;
   }
   if (s.action === 'fold' && !s.legal.canCheck)
     return `继续需要再补 ${cost}，跟注后可争夺 ${fmt(r.metrics.contestable)}，底池赔率要求至少约 ${pct(r.metrics.required)} 权益。${draw.outs ? '当前补牌机会需要和这笔赔率比较，不能只按“有听牌”决定追。' : s.street === 0 ? hand + '的翻后潜力还要承担当前下注线和位置带来的压力。' : hand + '能否达到这个权益要求，取决于对手这条下注线包含多少更强成牌和诈唬。'}`;
@@ -182,8 +170,9 @@ export function coachDecision(s, r) {
         ? 'keep'
         : 'compare';
   let followUp = practiceFocus(s, r, action),
-    conciseReason = explanation(s, r, evKind),
-    paragraphs = [conciseReason].filter(Boolean);
+    conciseReason = explanation(s, r, evKind, action),
+    paragraphs = [conciseReason].filter(Boolean),
+    paragraphParts;
   if (s.hole && s.board && r.context.texture) {
     const f = spotFacts(s, r.context),
       facts = situationNotes(s, r.context),
@@ -205,24 +194,23 @@ export function coachDecision(s, r) {
         r.context.valuePlan?.kind === 'value-shove' && s.action === 'raise'
           ? ''
           : conciseReason || continuation;
-    paragraphs = [
-      matchup,
-      '复盘分析总结',
-      actionReason(s, r),
-      facts[0],
-      supporting,
-      recommendation,
-    ].filter(Boolean);
+    // Keep translatable clauses separate while rendering one visual paragraph.
+    paragraphParts = [
+      [matchup],
+      ['复盘分析总结'],
+      ...(r.context.matchups?.rangeNotes || []).map((note) => [note]),
+      [
+        actionReason(s, r),
+        s.street > 0 && f.lastAggression?.street === s.street ? facts[0] : '',
+        supporting,
+        recommendation,
+      ].filter(Boolean),
+    ].filter((parts) => parts[0]);
     if (!recommendation && continuation && continuation !== supporting)
-      paragraphs.push(continuation);
-    if (f.allOpponentsAllIn && !paragraphs.some((p) => p.includes('没有后手')))
-      paragraphs = [
-        paragraphs[0],
-        paragraphs[1],
-        paragraphs[2],
-        facts.at(-1),
-        ...paragraphs.slice(4),
-      ];
+      paragraphParts.at(-1).push(continuation);
+    if (f.allOpponentsAllIn && !paragraphParts.flat().some((p) => p.includes('没有后手')))
+      paragraphParts.at(-1).push(facts.find((p) => p.includes('没有后手')));
+    paragraphs = paragraphParts.map((parts) => parts.join(''));
     conciseReason = paragraphs.join('');
   } else if (!conciseReason) {
     conciseReason = `你在 ${s.position} 拿 ${r.context.handLabel}，实际选择${actionLabel(s)}；当时底池 ${fmt(s.pot)}，这次实际付出 ${fmt(r.context.extra)}。`;
@@ -233,6 +221,7 @@ export function coachDecision(s, r) {
     label: kind === 'keep' ? '值得保留' : actionLabel(s, action.action, action.amount),
     explanation: conciseReason,
     paragraphs,
+    paragraphParts: paragraphParts || paragraphs.map((text) => [text]),
     suggestedAction: actionLabel(s, action.action, action.amount),
     suggestion: unchanged
       ? s.street === 3 || noFurtherDecision

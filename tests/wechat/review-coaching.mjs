@@ -16,6 +16,12 @@ import {
   weakSuitedShove,
   pocketTensRecords,
 } from '../fixtures/review-spots.js';
+import {
+  turnBluffReview,
+  turnStraightCallRecord,
+  suitedBroadwayFiveBetFold,
+  pocketNinesCheckedBoard,
+} from '../fixtures/review-summary.js';
 const root = new URL('../../', import.meta.url).pathname;
 const require = createRequire(path.join(root, '.artifacts/wechat-tools/package.json'));
 const automator = require('miniprogram-automator');
@@ -293,6 +299,34 @@ try {
   );
   await capture('practice-focus-and-evidence-style');
 
+  await fixture('summary-turn-bluff', turnBluffReview(), (step) => {
+    assert.match(step.reason, /尝试诈唬.*更好的牌弃掉/);
+    assert.doesNotMatch(step.reason, /不能只按成牌标签|此前在翻牌前|相同牌力/);
+  });
+  await fixture('summary-KQs-five-bet-fold', suitedBroadwayFiveBetFold(), (step) => {
+    assert.match(step.reason, /再补 8.3K.*弃牌可以保留.*19K/);
+    assert.doesNotMatch(step.reason, /不必只因|是在回应|是在决定/);
+    assert.equal(step.commentary.find((part) => part.matchups).matchups.rangeNotes.length, 0);
+  });
+  await fixture('summary-nines-protection', pocketNinesCheckedBoard(), (step) => {
+    assert.match(step.reason, /过牌后.*更小对子.*高张付费/);
+    assert.match(step.reason, /高张若弃牌.*免费.*反超/);
+  });
+  await invoke('closeReview');
+  await mini.evaluate((record) => {
+    getCurrentPages().at(-1)._controller.getGame().botDecisions = [record];
+  }, turnStraightCallRecord());
+  await invoke('openReview');
+  await wait((data) => !data.reviewData.loading);
+  await tap('[data-value="opponent"]');
+  await wait((data) => data.reviewPerspective === 'opponent' && data.selectedReviewStep?.reason);
+  const straightCall = (await page.data()).selectedReviewStep;
+  assert.match(straightCall.reason, /选择跟注 6.3K，目的不是只靠高牌摊牌，而是在追两头顺听牌/);
+  assert.match(straightCall.reason, /8 张牌可能补成顺子/);
+  assert.doesNotMatch(straightCall.reason, /补成顺子[／或]同花|相同牌力/);
+  report.checks.push({ name: 'summary-straight-call', selected: straightCall });
+  await capture('summary-straight-call');
+
   await fixture('reported-52s-shove', weakSuitedShove(), (step) => {
     assert.equal(step.keep, false);
     assert.equal(step.label, '弃牌');
@@ -307,14 +341,16 @@ try {
     const section = step.commentary.find((part) => part.matchups).matchups;
     assert.equal(section.groups.length, 1);
     assert.equal(section.groups[0].label, '对手可能牌组');
-    assert.match(section.rangeNotes.join(''), /Luna在 UTG\+1 位开池到 4K/);
-    assert.match(section.rangeNotes.join(''), /Jade在 LJ 位跟住了这笔加注/);
+    assert.deepEqual(section.rangeNotes, []);
+    assert.match(step.reason, /Luna在 UTG\+1 位开池到 4K/);
+    assert.deepEqual(section.rangeNotes, []);
+    assert.match(step.reason, /Jade在 LJ 位跟住了这笔加注/);
     assert.doesNotMatch(step.reason, /结构上较|不代表获胜概率|依据当时记录|旧记录/);
   });
   await fixture('reported-bottom-pair', bottomPairReview(), (step) => {
     const groups = step.commentary.find((paragraph) => paragraph.matchups).matchups.groups;
     assert.equal(groups[0].examples.length, 1);
-    assert.equal(groups[1].examples.length, 3);
+    assert.equal(groups[1].examples.length, 4);
     assert.match(groups[0].examples[0].label, /同花听牌.*两头顺听牌/);
     assert.ok(groups[1].examples.some((example) => /A.*J/.test(example.text)));
   });

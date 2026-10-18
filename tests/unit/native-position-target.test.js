@@ -2,6 +2,7 @@ import { after, before, test } from 'node:test';
 import assert from 'node:assert/strict';
 import { chromium } from '@playwright/test';
 import {
+  readNativeTargetPosition,
   restoreNativeTargetLabelledBy,
   withCenteredNativeClicks,
 } from '../native/position-target.mjs';
@@ -177,29 +178,37 @@ test('closing a modal waits for unlock and late scroll restoration before the si
         setTimeout(() => {
           delete document.documentElement.dataset.homeScrollLocked;
           window.unlocked = true;
-          setTimeout(() => {
-            window.scrollTo(0, 600);
-            window.dispatchEvent(new Event('resize'));
-            window.restored = true;
-          }, 30);
         }, 80);
       });
       document.querySelector('#reset').addEventListener('click', event =>
         window.taps.push({ trusted: event.isTrusted, restored: window.restored }));
     </script>`);
   const delegations = [],
-    positioned = withCenteredNativeClicks(
-      app(async (selector) => {
-        delegations.push(selector);
-        if (selector === '#reset')
-          assert.equal(
-            await page.evaluate(() => window.restored),
-            true,
-            'Late native scroll restoration must finish before the real click',
-          );
-        return driverClick(selector);
-      }),
-    );
+    base = app(async (selector) => {
+      delegations.push(selector);
+      if (selector === '#reset')
+        assert.equal(
+          await page.evaluate(() => window.restored),
+          true,
+          'Late native scroll restoration must finish before the real click',
+        );
+      return driverClick(selector);
+    }),
+    positioned = withCenteredNativeClicks({
+      ...base,
+      async evaluate(fn, selector) {
+        if (selector === '#reset' && fn === readNativeTargetPosition)
+          await page.evaluate(() => {
+            if (window.restored) return;
+            // Restore after the first centering but before its first sample.
+            // This ordering must hold even on a CPU-throttled browser.
+            window.scrollTo(0, 600);
+            window.dispatchEvent(new Event('resize'));
+            window.restored = true;
+          });
+        return base.evaluate(fn, selector);
+      },
+    });
   await positioned.click('#close');
   const point = await positioned.click('#reset');
   assert.deepEqual(delegations, ['#close', '#reset']);
@@ -208,16 +217,22 @@ test('closing a modal waits for unlock and late scroll restoration before the si
 });
 
 test('a continually moving target exhausts the finite geometry wait without delegating a tap', async () => {
-  await page.setContent(`
-    <style>
-      @keyframes move { from { transform: translateX(0); } to { transform: translateX(100px); } }
-      button { animation: move 3s linear infinite; }
-    </style><button id="moving">Moving</button>`);
-  let delegated = 0;
+  await page.setContent('<button id="moving">Moving</button>');
+  let delegated = 0,
+    samples = 0;
   const base = app(async () => delegated++),
     deadlines = [],
     positioned = withCenteredNativeClicks({
       ...base,
+      async evaluate(fn, selector) {
+        // Advance physical geometry on each observation. A throttled browser
+        // can otherwise return one CSS-animation frame three times in a row.
+        if (fn === readNativeTargetPosition)
+          await page.locator('#moving').evaluate((element, step) => {
+            element.style.transform = `translateX(${step * 2}px)`;
+          }, ++samples);
+        return base.evaluate(fn, selector);
+      },
       waitFor(predicate, timeout) {
         deadlines.push(timeout);
         return base.waitFor(predicate, timeout);
@@ -394,5 +409,30 @@ test('iOS preserves the difference between absent and explicitly empty labelledb
     }).click('#target');
     assert.equal(await page.locator('button').getAttribute('aria-labelledby'), value);
     assert.equal(await page.evaluate(() => window.__noirNativeTargetLabels), undefined);
+  }
+});
+
+test('iOS footer reset and rankings use the actual native viewport tap and open their dialog', async () => {
+  for (const id of ['reset-button', 'hand-rankings-button']) {
+    await page.setContent(`
+      <style>body{margin:0}header{position:fixed;top:0;height:88px;width:100%;background:black;z-index:2}.before{height:1800px}.after{height:600px}button{height:40px;width:160px;margin-left:100px}</style>
+      <header></header><div class="before"></div><button id="${id}">Open</button><div class="after"></div><dialog>Guide or reset confirmation</dialog>
+      <script>window.taps=[];document.querySelector('button').onclick=event=>{window.taps.push(event.isTrusted);document.querySelector('dialog').showModal()};</script>`);
+    const taps = [];
+    const positioned = withCenteredNativeClicks({
+      ...app(() => {
+        throw Error('AX calibration must not handle this viewport-edge control');
+      }),
+      platform: 'ios',
+      nativeTap: async (selector) => {
+        taps.push(selector);
+        return driverClick(selector);
+      },
+    });
+    const point = await positioned.click(`#${id}`);
+    assert.ok(point.y > 88 && point.y < 840);
+    assert.deepEqual(taps, [`#${id}`]);
+    assert.equal(await page.locator('dialog').evaluate((element) => element.open), true);
+    assert.deepEqual(await page.evaluate(() => window.taps), [true]);
   }
 });

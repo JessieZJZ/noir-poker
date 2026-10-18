@@ -15,7 +15,12 @@
     <text wx:else>{{part.text}}</text>
   </block>
 </template>
+<view wx:if="{{!tableReady}}" class="launch-screen" aria-label="NOIR Poker">
+  <image src="/assets/launch-icon.png" mode="aspectFit" />
+  <view class="launch-progress" />
+</view>
 <view
+  wx:else
   class="screen {{homeLocked ? 'home-locked' : ''}}"
   style="padding-top: {{topInset + 36}}px; padding-bottom: {{bottomInset}}px; {{homeLocked ? 'top: ' + homeOffset + 'px;' : ''}}"
 >
@@ -287,13 +292,18 @@
         ></block
       >
       <block wx:else
-        ><view
-          class="action-notice"
-          wx:if="{{!compactActions}}"
-          aria-role="status"
-          aria-live="polite"
-          ><text wx:if="{{canAct}}" class="turn-prompt">轮到你行动，</text
-          ><text class="decision-detail">{{actionNotice}}</text></view
+        ><view class="action-notice" wx:if="{{!compactActions}}"
+          ><view class="decision-copy" aria-role="status" aria-live="polite"
+            ><text wx:if="{{canAct}}" class="turn-prompt">轮到你行动，</text
+            ><text class="decision-detail">{{actionNotice}}</text></view
+          ><button
+            id="hand-rankings-button"
+            class="hand-rankings-button"
+            hover-class="none"
+            bindtap="openHandRankings"
+          >
+            牌力表
+          </button></view
         ><view class="raise-controls" wx:if="{{!compactActions}}"
           ><slider
             min="{{minRaise}}"
@@ -514,16 +524,34 @@
           >{{stakesNotice}}</text
         >
         <view class="setting-row"
-          ><text>音效与振动</text
+          ><text>音效与音乐</text
           ><button
             hover-class="none"
             class="settings-switch {{settings.sound ? 'on' : ''}}"
+            id="sound-button"
             data-key="sound"
             bindtap="togglePreference"
-            aria-label="音效与振动"
+            aria-role="switch"
+            aria-checked="{{settings.sound}}"
+            aria-label="音效与音乐"
           >
             <view class="switch-track" /><view class="switch-thumb" /></button
         ></view>
+        <view class="setting-row">
+          <text>振动</text>
+          <button
+            hover-class="none"
+            class="settings-switch {{settings.vibration ? 'on' : ''}}"
+            id="vibration-button"
+            data-key="vibration"
+            bindtap="togglePreference"
+            aria-role="switch"
+            aria-checked="{{settings.vibration}}"
+            aria-label="振动"
+          >
+            <view class="switch-track" /><view class="switch-thumb" />
+          </button>
+        </view>
         <view class="setting-row"
           ><view
             ><text>牌桌提示</text
@@ -784,14 +812,17 @@
   class="sheet guide-sheet"
   style="top: {{topInset + (windowHeight - topInset - bottomInset) * 0.075}}px; height: {{(windowHeight - topInset - bottomInset) * 0.85}}px;"
 >
-  <scroll-view scroll-y class="sheet-scroll"
-    ><view class="sheet-body">
-      <view class="dialog-heading"
-        ><text class="eyebrow">QUICK GUIDE</text
-        ><button hover-class="none" class="close" bindtap="closeGuide" aria-label="关闭玩法指南">
-          <view class="close-icon" /></button
-      ></view>
-      <include src="guide.wxml" /> </view
+  <view class="dialog-heading guide-heading"
+    ><text class="eyebrow">QUICK GUIDE</text
+    ><button hover-class="none" class="close" bindtap="closeGuide" aria-label="关闭玩法指南">
+      <view class="close-icon" /></button
+  ></view>
+  <scroll-view
+    scroll-y
+    class="sheet-scroll guide-scroll"
+    scroll-into-view="{{guideScrollTarget}}"
+    scroll-top="{{guideScrollTop}}"
+    ><view class="sheet-body"><include src="guide.wxml" /></view
   ></scroll-view>
 </view>
 <view
@@ -847,7 +878,7 @@
       >
       <scroll-view
         scroll-x
-        class="review-timeline {{reviewPerspective === 'opponent' ? 'opponent' : ''}}"
+        class="review-timeline {{reviewPerspective === 'opponent' ? 'opponent' : ''}} {{reviewSteps.length > 2 ? 'has-overflow' : ''}}"
         ><view class="review-timeline-inner"
           ><button
             hover-class="none"

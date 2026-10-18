@@ -153,7 +153,11 @@ test('larger fitted text keeps phone actions in the first screen and saved table
       expect(metric.name).toBeGreaterThanOrEqual(primary);
       expect(metric.action).toBeGreaterThanOrEqual(primary - 0.5);
       expect(metric.persona).toBeGreaterThanOrEqual(primary - 1.5);
-      expect(metric.position).toBeGreaterThanOrEqual(primary - 1.5);
+      // Position tags deliberately use smaller type than the player's name.
+      // Keep a painted-size floor; exact responsive sizes are also covered in
+      // compact-tags-matchups.spec.js, including the working inspection eye.
+      expect(metric.position).toBeGreaterThanOrEqual(primary * 0.6);
+      expect(metric.position).toBeLessThan(metric.name);
       if (size.width === 390 || size.width === 320)
         await page.screenshot({
           path: test.info().outputPath(`readable-live-${size.width}-${count}.png`),

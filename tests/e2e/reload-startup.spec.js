@@ -56,6 +56,7 @@ test('cold navigation and reload show only the initialized table, even when modu
       else await page.reload({ waitUntil: 'commit' });
       await page.waitForFunction(() => window.startupFrames.length >= 3);
       await expect(page.locator('.header')).toBeHidden();
+      await expect(page.locator('#rules-button [data-guide-label="guide"]')).toBeHidden();
       expect(await page.evaluate(() => document.body.inert)).toBe(true);
       await page.screenshot({ path: testInfo.outputPath(`${navigation}-before-css.png`) });
 
@@ -64,6 +65,7 @@ test('cold navigation and reload show only the initialized table, even when modu
         .poll(() => page.locator('.header').evaluate((el) => getComputedStyle(el).display))
         .toBe('flex');
       await expect(page.locator('.header')).toBeHidden();
+      await expect(page.locator('#rules-button [data-guide-label="guide"]')).toBeHidden();
       await expect(page.locator('#seats .seat')).toHaveCount(0);
       for (const control of await page
         .locator('.bet-controls input, .bet-presets button, .action-buttons button')

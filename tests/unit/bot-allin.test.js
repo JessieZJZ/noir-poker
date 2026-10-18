@@ -344,7 +344,7 @@ test('actual all-in motives localize across all supported locales without losing
     const game = reviewedAllInGame(kind),
       record = game.botDecisions[0],
       review = explainOpponent(record, game.players);
-    return { record, texts: [review.title, ...review.paragraphs, ...review.reasons] };
+    return { record, texts: [review.title, ...review.paragraphParts.flat(), ...review.reasons] };
   });
   for (const locale of SUPPORTED_LOCALES) {
     await loadLocale(locale);

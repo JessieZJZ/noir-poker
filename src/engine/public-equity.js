@@ -217,6 +217,21 @@ export function estimatePublicEquity(
         eligible: pot.eligible.filter((id) => id === view.id || assumed.has(id)),
       })),
     contestable = pots.reduce((sum, pot) => sum + pot.amount, 0),
+    // A limper who has not matched a later raise contests only the layers
+    // already paid. The full-field estimate above remains useful, but cannot
+    // price a current preflop call as though every limper covered every layer.
+    // No new chips, hands, scores or random samples are introduced here.
+    pricePots =
+      view.street === 0 &&
+      view.legal?.callAmount > 0 &&
+      view.history.some((a) => a.street === 0 && a.action === 'raise') &&
+      view.callPots
+        ? view.callPots.map((pot) => ({
+            ...pot,
+            eligible: pot.eligible.filter((id) => id === view.id || assumed.has(id)),
+          }))
+        : null,
+    priceContestable = pricePots?.reduce((sum, pot) => sum + pot.amount, 0),
     stats = { proposals: 0, cdfFallbacks: 0 };
   // Only the first seat sees the same full available pool on every trial.
   // Later seats keep preparing against the cards left by prior sampled seats.
@@ -224,6 +239,7 @@ export function estimatePublicEquity(
     ? createPublicPairSampler(available, selected[0], { evaluate, features, compare, cache })
     : null;
   let share = 0,
+    priceShare = 0,
     wins = 0,
     ties = 0;
   for (let trial = 0; trial < trials; trial++) {
@@ -270,11 +286,20 @@ export function estimatePublicEquity(
       if (comparisons.every((comparison) => comparison >= 0))
         share += pot.amount / (1 + comparisons.filter((comparison) => comparison === 0).length);
     }
+    for (const pot of pricePots || []) {
+      const comparisons = pot.eligible
+        .filter((id) => id !== view.id)
+        .map((id) => compare(own, scores.get(id)));
+      if (comparisons.every((comparison) => comparison >= 0))
+        priceShare +=
+          pot.amount / (1 + comparisons.filter((comparison) => comparison === 0).length);
+    }
   }
   const equity = contestable ? share / trials / contestable : 0;
   return {
     equity,
     potEquity: equity,
+    ...(priceContestable ? { priceEquity: priceShare / trials / priceContestable } : {}),
     winProbability: wins / trials,
     tieProbability: ties / trials,
     lossProbability: 1 - (wins + ties) / trials,
