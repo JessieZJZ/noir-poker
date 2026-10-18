@@ -62,6 +62,34 @@ export async function verifyLocalWechatModules(directory) {
   }
 }
 
+// Page, app, subpackage and worker scripts are entry points. Shared modules
+// enter the package only when a static local require reaches them.
+export async function pruneUnusedSharedModules(directory) {
+  const files = await fileList(directory);
+  const modules = new Set(files.filter((name) => name.endsWith('.js')));
+  const pending = [...modules].filter((name) => !name.startsWith('shared/'));
+  const reachable = new Set();
+  while (pending.length) {
+    const file = pending.pop();
+    if (reachable.has(file)) continue;
+    reachable.add(file);
+    const source = await readFile(path.join(directory, file), 'utf8');
+    // A computed dependency cannot be proved unreachable. Keep the shared
+    // directory intact rather than guessing which target it will load.
+    if (/\brequire(?:\.async)?\(\s*([^'"\s])/.test(source)) return [];
+    for (const match of source.matchAll(
+      /\brequire(?:\.async)?\(\s*(['"])(\.{1,2}\/[^'"]+)\1\s*\)/g,
+    )) {
+      const target = path.posix.normalize(path.posix.join(path.posix.dirname(file), match[2]));
+      const resolved = modules.has(target) ? target : `${target}.js`;
+      if (modules.has(resolved)) pending.push(resolved);
+    }
+  }
+  const removed = [...modules].filter((name) => name.startsWith('shared/') && !reachable.has(name));
+  for (const file of removed) await rm(path.join(directory, file));
+  return removed;
+}
+
 export function wechatSourceDigest() {
   return checksum(
     sourceDigest() +
@@ -80,6 +108,7 @@ async function compileJs(sourceDirectory, destination) {
       external: ['*.js'],
       format: 'cjs',
       target: 'es2019',
+      minifyWhitespace: true,
       write: false,
     });
     const target = path.join(destination, file);
@@ -229,6 +258,7 @@ export async function buildWechat(output = wechatOutput) {
       const compiled = await transform(await readFile(path.join(root, 'src/ui', name), 'utf8'), {
         format: 'cjs',
         target: 'es2019',
+        minifyWhitespace: true,
       });
       await writeFile(path.join(staging, 'shared/ui', name), compiled.code);
     }
@@ -255,6 +285,7 @@ export async function buildWechat(output = wechatOutput) {
       const result = await transform(await readFile(path.join(staging, file), 'utf8'), {
         format: 'cjs',
         target: 'es2019',
+        minifyWhitespace: true,
       });
       await writeFile(path.join(staging, file), result.code);
     }
@@ -298,6 +329,7 @@ export async function buildWechat(output = wechatOutput) {
     };
     await writeFile(path.join(staging, 'project.config.json'), JSON.stringify(project, null, 2));
     await writeFile(path.join(staging, 'package.json'), '{"type":"commonjs","private":true}\n');
+    await pruneUnusedSharedModules(staging);
     await verifyLocalWechatModules(staging);
     const files = [];
     // Local IDE preferences are preserved below, outside the runtime manifest.

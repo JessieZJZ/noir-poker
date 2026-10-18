@@ -274,6 +274,6 @@ export function compareCandidateActions(s, alternatives = [], { trials = 40 } = 
     comparisonReady: trials >= 30,
     comparisonCritical,
     method: 'sampled-engine-rollout',
-    note: '从当时局面抽样未知牌，按公开风格继续打完；你后续采用均衡机器人策略，每次判断抽样 8 次。数值是此模拟策略的筹码净变化估计，已投入视为沉没成本，包含分池、退还与之后下注；误差为近似抽样误差，不覆盖范围／策略模型错误。不是 GTO 或真人最优 EV。',
+    note: '从当时局面抽样未知牌，按公开风格继续打完，你后续采用均衡机器人策略，每次判断抽样 8 次。数值是此模拟策略的筹码净变化估计，已投入视为沉没成本，包含分池、退还与之后下注，误差为近似抽样误差，不覆盖范围／策略模型错误。不是 GTO 或真人最优 EV。',
   };
 }

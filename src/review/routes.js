@@ -18,7 +18,7 @@ export function comparisonRoutes(s, ctx, { code, status, alternative, pre }) {
       status === 'sound' && same(actual, alternative)
         ? '保留此路线，按对手范围调整'
         : label(alternative),
-    condition: '使用当时已知信息；范围改变时重新判断。',
+    condition: '使用当时已知信息，范围改变时重新判断。',
     tradeoff: '候选行动未计算完整未来策略的收益。',
   };
   let secondary;
@@ -58,8 +58,8 @@ export function comparisonRoutes(s, ctx, { code, status, alternative, pre }) {
       : '保留后位开池，比较 2–3 BB 尺度';
     primary.condition = pre.limpers
       ? '跛入者范围较宽，且后面未出现明显强范围。'
-      : '无人开池，盲位有可利用的弃牌率；翻后位置有利。';
-    primary.tradeoff = '争夺盲注与控制成本；被跟注后不再按随机对手牌力判断。';
+      : '无人开池，盲位有可利用的弃牌率，翻后位置有利。';
+    primary.tradeoff = '争夺盲注与控制成本，被跟注后不再按随机对手牌力判断。';
     secondary = raise(
       alternative.amount > (2 + pre.limpers) * bigBlindOf(s)
         ? (2 + pre.limpers) * bigBlindOf(s)
@@ -67,12 +67,12 @@ export function comparisonRoutes(s, ctx, { code, status, alternative, pre }) {
     );
     if (secondary)
       Object.assign(secondary, {
-        condition: '重打时比较另一开池尺度，记录盲位继续频率；隔离较黏的跛入者可用较大尺度。',
+        condition: '重打时比较另一开池尺度，记录盲位继续频率，隔离较黏的跛入者可用较大尺度。',
         tradeoff:
-          '较小尺度降低失败成本，但可能让更多牌防守；较大尺度增加压力，也可能只留下更强范围。',
+          '较小尺度降低失败成本，但可能让更多牌防守，较大尺度增加压力，也可能只留下更强范围。',
       });
   } else if (code === 'early-suited-entry') {
-    primary.summary = '保守基线收紧；比较有条件的小开池';
+    primary.summary = '保守基线收紧，比较有条件的小开池';
     primary.condition = '早位、多家待行动且缺少对手过度弃牌证据时，避免边缘同花牌扩大底池。';
     primary.tradeoff = '放弃潜在同花与偷盲收益，换取更少的无位置和踢脚风险。';
     secondary = raise(2.5 * bigBlindOf(s));
@@ -80,20 +80,20 @@ export function comparisonRoutes(s, ctx, { code, status, alternative, pre }) {
       Object.assign(secondary, {
         condition: '后面防守过紧、较少 3-bet，且能在被继续后及时控池或退出时。',
         tradeoff:
-          '主动争夺盲注，但较强 Qx/Kx 与再加注会使同花潜力难以实现；模拟结果只是该假设下的比较。',
+          '主动争夺盲注，但较强 Qx/Kx 与再加注会使同花潜力难以实现，模拟结果只是该假设下的比较。',
       });
   } else if (code === 'squeeze-candidate') {
     primary.condition = '缺少开池者宽范围、平跟者可弃牌的依据时，优先收紧。';
-    primary.tradeoff = '避免弱 A 被强继续范围压制；阻断部分强 A 不等于足够弃牌率。';
+    primary.tradeoff = '避免弱 A 被强继续范围压制，阻断部分强 A 不等于足够弃牌率。';
     secondary = raise(s.currentBet * 4.5);
     if (secondary)
       Object.assign(secondary, {
         condition: '开池者范围宽、平跟者有封顶倾向，且对手会对再加注弃牌时，才比较挤压。',
-        tradeoff: '争夺多人死钱，但失败成本更大；被跟注或 4-bet 后需停止无依据施压。',
+        tradeoff: '争夺多人死钱，但失败成本更大，被跟注或 4-bet 后需停止无依据施压。',
       });
   } else if (['weak-threebet-defense', 'weak-fourbet-defense', 'weak-entry'].includes(code)) {
     primary.condition = '大尺度、多人继续或少诈唬的强范围下，优先减少新增投入。';
-    primary.tradeoff = '放弃当前权益，避免弱踢脚与后续压力；已投入筹码不计作继续理由。';
+    primary.tradeoff = '放弃当前权益，避免弱踢脚与后续压力，已投入筹码不计作继续理由。';
     secondary = s.legal.canCheck
       ? null
       : {
@@ -101,8 +101,8 @@ export function comparisonRoutes(s, ctx, { code, status, alternative, pre }) {
           amount: s.legal.callAmount,
           condition:
             pre?.raises >= 3
-              ? '仅在对手极宽范围有明确证据、且价格与封口条件有利时讨论；常规强范围不适用。'
-              : '小尺度、宽范围且有位置或大盲折扣时才考虑；不要默认成立。',
+              ? '仅在对手极宽范围有明确证据、且价格与封口条件有利时讨论，常规强范围不适用。'
+              : '小尺度、宽范围且有位置或大盲折扣时才考虑，不要默认成立。',
           tradeoff: '保留摊牌权益，但被更强 Ax 压制及面对后续下注的风险仍在。',
         };
   } else if (alternative.action === 'raise') {
@@ -114,8 +114,8 @@ export function comparisonRoutes(s, ctx, { code, status, alternative, pre }) {
           : '列得出会付费的较弱牌，并能承担被加注后重新判断。';
     primary.tradeoff =
       s.street === 3
-        ? '比较取值和弃牌收益；尺度越大，对手继续范围可能越强。'
-        : '建立底池与保护权益；尺度越大，对手继续范围可能越强。';
+        ? '比较取值和弃牌收益，尺度越大，对手继续范围可能越强。'
+        : '建立底池与保护权益，尺度越大，对手继续范围可能越强。';
     secondary = {
       action: s.legal.canCheck ? 'check' : 'call',
       amount: s.legal.callAmount,
@@ -140,7 +140,7 @@ export function comparisonRoutes(s, ctx, { code, status, alternative, pre }) {
       : null;
   } else if (alternative.action === 'call') {
     primary.condition = closing
-      ? '对手范围与当前价格有足够余量；这次跟注后不再付后续下注。'
+      ? '对手范围与当前价格有足够余量，这次跟注后不再付后续下注。'
       : '对手范围与价格有足够余量，且后续压力可控。';
     primary.tradeoff = '保留较宽范围，避免把弱价值牌转成孤立强牌的加注。';
     secondary = {
@@ -149,7 +149,7 @@ export function comparisonRoutes(s, ctx, { code, status, alternative, pre }) {
       condition: closing
         ? '对手真实价值范围比当前假设更窄，或当前价格没有足够余量时。'
         : '对手价值范围更窄、后面可能再加注，或无法承担后续投入时。',
-      tradeoff: '让出部分权益，换取更低风险；不因已跟过一轮而自动续跟。',
+      tradeoff: '让出部分权益，换取更低风险，不因已跟过一轮而自动续跟。',
     };
   } else {
     primary.condition =
@@ -160,16 +160,16 @@ export function comparisonRoutes(s, ctx, { code, status, alternative, pre }) {
           : '无最后行动优势时，先观察对手下注和牌面变化。';
     primary.tradeoff =
       s.street === 3 && closing
-        ? '过牌后直接摊牌；可能错过价值，但不会给听牌新的改善机会。'
-        : '节省投入；不是保证免费看牌，仍需为后续下注设定条件。';
+        ? '过牌后直接摊牌，可能错过价值，但不会给听牌新的改善机会。'
+        : '节省投入，不是保证免费看牌，仍需为后续下注设定条件。';
     if (ctx.handClass !== 'board' && s.legal.canRaise) {
       secondary = raise(Math.max(bigBlindOf(s), s.pot * (ctx.texture.wet ? 0.6 : 0.33)));
       if (secondary)
         Object.assign(secondary, {
           condition: ctx.draw.outs
             ? '对手有足够弃牌且听牌能承担被跟注时，比较半诈唬。'
-            : '有明确较弱跟注目标，或对手会放弃较好的牌时；没有依据就保留过牌。',
-          tradeoff: '换取价值或弃牌权益，但暴露于跟注／加注；没有证明这条路线更赚。',
+            : '有明确较弱跟注目标，或对手会放弃较好的牌时，没有依据就保留过牌。',
+          tradeoff: '换取价值或弃牌权益，但暴露于跟注／加注，没有证明这条路线更赚。',
         });
     }
   }

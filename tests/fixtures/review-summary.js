@@ -166,3 +166,110 @@ export function pocketNinesCheckedBoard() {
     history: [{ id: 1, street: 1, action: 'check', amount: 0 }],
   };
 }
+
+// Reconstructed from the displayed cards and prices, not a recovered full hand.
+export function reportedKeyInfoCall(hole = 'As Qs') {
+  return {
+    ...turnBluffReview(),
+    smallBlind: 10000,
+    bigBlind: 20000,
+    chipUnit: 10000,
+    hole: cards(hole),
+    board: [],
+    street: 0,
+    position: 'SB',
+    stack: 2650000,
+    total: 60000,
+    bet: 60000,
+    pot: 460000,
+    currentBet: 200000,
+    minRaise: 140000,
+    action: 'call',
+    amount: 140000,
+    players: [
+      { id: 0, name: '你', position: 'SB', stack: 2650000, total: 60000, bet: 60000 },
+      {
+        id: 1,
+        name: 'Mia',
+        botProfile: 'tan',
+        position: 'BB',
+        stack: 2500000,
+        total: 200000,
+        bet: 200000,
+      },
+      {
+        id: 2,
+        name: 'River',
+        botProfile: 'peter',
+        position: 'HJ',
+        stack: 2500000,
+        total: 200000,
+        bet: 200000,
+      },
+    ],
+    history: [
+      { id: 2, street: 0, action: 'raise', amount: 60000 },
+      { id: 0, street: 0, action: 'call', amount: 60000 },
+      { id: 1, street: 0, action: 'raise', amount: 200000 },
+      { id: 2, street: 0, action: 'call', amount: 140000 },
+    ],
+    legal: {
+      chipUnit: 10000,
+      canCheck: false,
+      callAmount: 140000,
+      toCall: 140000,
+      canRaise: true,
+      minRaiseTo: 340000,
+      fullRaiseTo: 340000,
+      maxRaiseTo: 2710000,
+    },
+  };
+}
+
+export function reportedGutshotCall() {
+  const s = reportedKeyInfoCall('Ad Qs');
+  return {
+    ...s,
+    hole: cards('Ad Qs'),
+    board: cards('6c Ks Th 9h'),
+    street: 2,
+    position: 'CO',
+    stack: 2830000,
+    bet: 0,
+    total: 345000,
+    pot: 1210000,
+    currentBet: 520000,
+    minRaise: 520000,
+    amount: 520000,
+    smallBlind: 5000,
+    bigBlind: 10000,
+    chipUnit: 5000,
+    players: [
+      { id: 0, name: '你', position: 'CO', stack: 2830000, bet: 0, total: 345000 },
+      {
+        id: 1,
+        name: 'River',
+        botProfile: 'peter',
+        position: 'BB',
+        stack: 0,
+        bet: 520000,
+        total: 865000,
+        allin: true,
+      },
+    ],
+    history: [
+      { id: 1, street: 1, action: 'check', amount: 0 },
+      { id: 0, street: 1, action: 'check', amount: 0 },
+      { id: 1, street: 2, action: 'raise', amount: 520000 },
+    ],
+    legal: {
+      chipUnit: 5000,
+      canCheck: false,
+      callAmount: 520000,
+      toCall: 520000,
+      canRaise: false,
+      minRaiseTo: 1040000,
+      maxRaiseTo: 2830000,
+    },
+  };
+}

@@ -1,5 +1,9 @@
 import { soundSamples, SOUND_SAMPLE_RATE } from '../../src/ui/sound-cues.js';
-import { verifyLocalWechatModules, wechatPackageBytes } from '../../scripts/wechat.mjs';
+import {
+  verifyLocalWechatModules,
+  wechatPackageBytes,
+  pruneUnusedSharedModules,
+} from '../../scripts/wechat.mjs';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import vm from 'node:vm';
@@ -9,6 +13,7 @@ import {
   cpSync,
   existsSync,
   mkdtempSync,
+  mkdirSync,
   readFileSync,
   readdirSync,
   renameSync,
@@ -24,6 +29,41 @@ import { weakSuitedShove } from '../fixtures/review-spots.js';
 import { analyzeDecision } from '../../src/review/analysis.js';
 
 const root = fileURLToPath(new URL('../..', import.meta.url));
+test('shared-module pruning keeps page, worker, asynchronous and transitive imports', async (t) => {
+  const directory = mkdtempSync(path.join(tmpdir(), 'noir-wechat-reachable-'));
+  t.after(() => rmSync(directory, { recursive: true, force: true }));
+  const sources = {
+    'app.js': `require('./shared/active'); require.async('./shared/async.js')`,
+    'pages/table/table.js': `require('../../shared/page.js')`,
+    'workers/review.js': `require('../shared/worker.js')`,
+    'shared/active.js': `module.exports = require('./transitive.js')`,
+    'shared/transitive.js': 'module.exports = 1',
+    'shared/async.js': 'module.exports = 2',
+    'shared/page.js': 'module.exports = 3',
+    'shared/worker.js': 'module.exports = 4',
+    'shared/unused.js': `module.exports = require('./unused-child.js')`,
+    'shared/unused-child.js': 'module.exports = 5',
+    'shared/style.wxss': 'view { color: red; }',
+  };
+  for (const [file, source] of Object.entries(sources)) {
+    mkdirSync(path.dirname(path.join(directory, file)), { recursive: true });
+    writeFileSync(path.join(directory, file), source);
+  }
+  assert.deepEqual(await pruneUnusedSharedModules(directory), [
+    'shared/unused-child.js',
+    'shared/unused.js',
+  ]);
+  await verifyLocalWechatModules(directory);
+  for (const file of Object.keys(sources).filter((name) => !name.includes('unused')))
+    assert.ok(existsSync(path.join(directory, file)), file);
+  writeFileSync(
+    path.join(directory, 'app.js'),
+    `const name = './shared/dynamic.js'; require(name)`,
+  );
+  writeFileSync(path.join(directory, 'shared/dynamic.js'), 'module.exports = 6');
+  assert.deepEqual(await pruneUnusedSharedModules(directory), []);
+  assert.ok(existsSync(path.join(directory, 'shared/dynamic.js')));
+});
 test('music is budgeted separately while main and subpackage retain exact size limits', () => {
   const limit = 2 * 1024 * 1024;
   const app = { subpackages: [{ root: 'music', pages: ['loader'] }] };
@@ -113,6 +153,8 @@ async function waitForStaging(fixture, processId) {
 test('generated WeChat JavaScript loads the controller and complete player research without Node JSON modules', async (t) => {
   const workspace = fixture(t);
   assertSuccess(await build(workspace).result);
+  assert.equal(existsSync(path.join(workspace.output, 'shared/engine/store-profiles.js')), false);
+  assert.equal(existsSync(path.join(workspace.output, 'shared/ui/bet-sizing.js')), false);
   assert.equal(
     readFileSync(path.join(workspace.output, 'shared/ui/hero-turn.wxss'), 'utf8'),
     readFileSync(path.join(root, 'src/styles/hero-turn.css'), 'utf8'),

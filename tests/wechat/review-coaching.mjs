@@ -21,6 +21,8 @@ import {
   turnStraightCallRecord,
   suitedBroadwayFiveBetFold,
   pocketNinesCheckedBoard,
+  reportedKeyInfoCall,
+  reportedGutshotCall,
 } from '../fixtures/review-summary.js';
 const root = new URL('../../', import.meta.url).pathname;
 const require = createRequire(path.join(root, '.artifacts/wechat-tools/package.json'));
@@ -299,6 +301,19 @@ try {
   );
   await capture('practice-focus-and-evidence-style');
 
+  await fixture('clear-call-information-and-suited-ace', reportedKeyInfoCall(), (step) => {
+    assert.match(step.evidence.join(''), /跟注前底池 460K.*底池赔率约 3.29:1/);
+    assert.match(step.evidence.join(''), /23.3% 的胜率，风险和收益才能持平/);
+    assert.match(step.reason, /你若再加注.*你若只跟注/);
+    assert.match(step.reason, /坚果同花听牌.*击中 A.*较弱 Ax/);
+    assert.doesNotMatch(step.reason + step.evidence.join(''), /；/);
+  });
+  await fixture('gutshot-label-and-reason-agree', reportedGutshotCall(), (step) => {
+    assert.equal(step.keep, false);
+    assert.equal(step.label, '需要比较');
+    assert.match(step.reason, /这手需要比较跟注与弃牌/);
+    assert.doesNotMatch(step.reason, /这手建议跟注|；/);
+  });
   await fixture('summary-turn-bluff', turnBluffReview(), (step) => {
     assert.match(step.reason, /尝试诈唬.*更好的牌弃掉/);
     assert.doesNotMatch(step.reason, /不能只按成牌标签|此前在翻牌前|相同牌力/);

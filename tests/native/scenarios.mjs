@@ -1937,6 +1937,11 @@ export async function nativeScenarios(app) {
       /相同牌力可能平分底池|不能只按成牌标签|是在回应这笔下注|已有过牌之后争取底池/,
     );
     assert.doesNotMatch(presentation.reason, /EV|模型|模拟器|抽样|新增投入/);
+    assert.doesNotMatch(presentation.reason + presentation.keyInfo, /；/);
+    assert.match(
+      presentation.keyInfo,
+      /这次(?:弃牌不再投入|过牌无需投入|(?:全下|加注|跟注|跟注全下)拿出)/,
+    );
     assert.doesNotMatch(presentation.keyInfo, /有效剩余|新增投入/);
     const analysisLayout = await app.evaluate(() => ({
       oldControls: document.querySelectorAll(
