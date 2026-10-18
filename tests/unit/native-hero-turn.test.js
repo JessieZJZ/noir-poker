@@ -58,7 +58,7 @@ test('stalled bot and mismatched hero controls fail within a finite unchanged bu
   }
 });
 
-test('review advances once if the preceding real hand settles before the first turn poll', async () => {
+test('review and background checks advance once when the preceding real hand has settled', async () => {
   let advances = 0;
   const fake = harness((elapsed) =>
     elapsed === 0

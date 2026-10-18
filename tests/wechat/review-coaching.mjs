@@ -350,7 +350,7 @@ try {
   await fixture('reported-bottom-pair', bottomPairReview(), (step) => {
     const groups = step.commentary.find((paragraph) => paragraph.matchups).matchups.groups;
     assert.equal(groups[0].examples.length, 1);
-    assert.equal(groups[1].examples.length, 3);
+    assert.equal(groups[1].examples.length, 4);
     assert.match(groups[0].examples[0].label, /同花听牌.*两头顺听牌/);
     assert.ok(groups[1].examples.some((example) => /A.*J/.test(example.text)));
   });

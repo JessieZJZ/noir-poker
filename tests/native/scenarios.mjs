@@ -2055,7 +2055,7 @@ export async function nativeScenarios(app) {
     };
   });
   await check('real-background-cancels-pending-action', async () => {
-    await app.waitHero();
+    const heroTurn = await waitForNativeHeroTurn(app, { advanceSettled: true });
     // Observers only record public snapshots. No timers, cards, legal actions
     // or production behavior are replaced. Android hides WebView debugging in
     // the background, so capture both real native lifecycle boundaries.
@@ -2102,6 +2102,7 @@ export async function nativeScenarios(app) {
       'Game should resume after native foreground event',
     );
     return {
+      heroTurn,
       backgroundMs: Math.round(backgroundMs),
       nativeStateBefore: nativeBackground.nativeState,
       nativeStateAfter: stillBackgrounded,
