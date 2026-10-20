@@ -2689,5 +2689,9 @@
   "若继续，建议用剩余 {0} 全下跟注，之后不再参与下注决策。": "Si decides continuar, se recomienda igualar all-in con los {0} restantes. Después ya no tomarás decisiones de apuesta.",
   "，较高踢脚有机会领先较弱 Ax": ", y un kicker más alto puede darte ventaja frente a Ax más débiles",
   "，但仍可能输给更大踢脚的 Ax": ", pero aún puedes perder contra Ax con un kicker más alto",
-  "这次开池尺度明显大于普通开池，不能只根据位置套用常规范围，需要结合尺度和公开行动判断。": "Esta apertura es mucho mayor que una apertura estándar. No se puede aplicar un rango habitual solo por la posición. Considera el tamaño y las acciones públicas."
+  "这次开池尺度明显大于普通开池，不能只根据位置套用常规范围，需要结合尺度和公开行动判断。": "Esta apertura es mucho mayor que una apertura estándar. No se puede aplicar un rango habitual solo por la posición. Considera el tamaño y las acciones públicas.",
+  "高牌大额跟注缺少继续依据": "Un call grande con carta alta carece de motivos para continuar",
+  "只有更弱高牌诈唬的具体证据能够提供足够胜率时，再比较跟注。": "Vuelve a comparar el call solo si hay pruebas concretas de que los faroles con cartas altas más débiles proporcionan suficientes opciones de ganar.",
+  "优先停止这笔新增投入，之前的跟注不构成继续的理由。": "Prioriza no añadir esta inversión. Los calls anteriores no justifican continuar.",
+  "当前只有高牌，没有顺子、同花的直接听牌，这笔跟注至少用掉行动前筹码的一半。按当前行动加权范围估计，获胜机会不足以覆盖成本，较宽范围的估计也没有稳定余量，不能只因对手可能诈唬就肯定跟注。": "Actualmente solo tienes carta alta, sin proyecto directo de escalera ni de color. Este call consume al menos la mitad del stack que tenías antes de actuar. Frente al rango actual ponderado por las acciones, las opciones estimadas de ganar no cubren el coste. La estimación frente a un rango más amplio tampoco tiene un margen estable, así que la mera posibilidad de un farol no basta para dar por bueno el call."
 }

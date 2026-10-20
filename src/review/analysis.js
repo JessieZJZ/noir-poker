@@ -320,6 +320,23 @@ export function analyzeDecision(
       ? '优先比较普通下注或加注与全下，让较弱成牌有机会付费。'
       : '优先比较正常开池或再加注与全下，让较弱范围有机会付费。';
     plan = `可以先用 ${actionLabel(s, alternative.action, alternative.amount)} 这条路线练习，若对手再加注，再结合其范围和有效筹码决定继续。此尺度是练习候选，不保证多赚。`;
+  } else if (
+    s.street > 0 &&
+    s.action === 'call' &&
+    handClass === 'high' &&
+    !draw.outs &&
+    price.cost >= s.stack * 0.5 &&
+    strong.equity + uncertainty < price.required &&
+    wide.equity - uncertainty <= price.required
+  ) {
+    code = 'unbacked-high-card-call';
+    status = 'consider';
+    title = '高牌大额跟注缺少继续依据';
+    reason =
+      '当前只有高牌，没有顺子、同花的直接听牌，这笔跟注至少用掉行动前筹码的一半。按当前行动加权范围估计，获胜机会不足以覆盖成本，较宽范围的估计也没有稳定余量，不能只因对手可能诈唬就肯定跟注。';
+    alternative = { action: 'fold', amount: 0 };
+    lesson = '只有更弱高牌诈唬的具体证据能够提供足够胜率时，再比较跟注。';
+    plan = '优先停止这笔新增投入，之前的跟注不构成继续的理由。';
   } else if (s.action === 'call' && price.cost > 0 && high + uncertainty + 0.035 < price.required) {
     code = 'expensive-call';
     status = price.closing ? 'attention' : 'consider';

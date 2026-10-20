@@ -110,14 +110,23 @@ if (args.refresh) {
           s.action === 'raise' &&
           current.preflopRaises >= 3 &&
           !s.hole.every((card) => card.rank >= 13 && card.rank === s.hole[0].rank);
+        const changedHighCardCall =
+          s.street > 0 &&
+          s.action === 'call' &&
+          current.handClass === 'high' &&
+          !current.draw.outs &&
+          s.legal.callAmount >= s.stack * 0.5;
         if (
           args.reanalyze ||
           (args['strategy-refresh'] &&
             entry.analysisDigest !== sourceDigest &&
-            (changedCall ||
-              changedPressure ||
-              changedReraise ||
-              r.context.handClass !== current.handClass))
+            (args['strategy-refresh'] === 'high-card-call'
+              ? changedHighCardCall
+              : changedCall ||
+                changedPressure ||
+                changedReraise ||
+                changedHighCardCall ||
+                r.context.handClass !== current.handClass))
         ) {
           r = analyzeDecision(s, { trials, rolloutTrials });
           entry.analysis = r;

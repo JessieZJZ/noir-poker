@@ -31,6 +31,16 @@ function explanation(s, r, evKind, suggested, kind) {
     pressure = foldPressure(s);
   const suggestedAllInCall =
     s.action === 'fold' && suggested.action === 'call' && s.legal.callAmount >= s.stack;
+  if (r.code === 'unbacked-high-card-call' && suggested.action === 'fold')
+    return [
+      r.reason,
+      `按当前可争夺底池计算，需要至少 ${pricePct(r.metrics.required)} 的胜率，风险和收益才能持平。`,
+      exhaustsStack(s) ? '你已投入全部剩余筹码，之后不再参与下注决策。' : '',
+      !exhaustsStack(s) && s.street < 3
+        ? '本次跟注不保证免费把剩余公共牌看完，下一街的投入还要另算。'
+        : '',
+      c.pendingOthers ? '其余玩家尚可行动，他们是否继续会改变你能争夺的底池和对抗人数。' : '',
+    ].filter(Boolean);
   if ((exhaustsStack(s) && s.action === 'call') || suggestedAllInCall) {
     const pocket = s.hole[0].rank === s.hole[1].rank;
     return [

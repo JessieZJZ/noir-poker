@@ -2689,5 +2689,9 @@
   "若继续，建议用剩余 {0} 全下跟注，之后不再参与下注决策。": "Se continui, si consiglia un call all-in con lo stack rimanente di {0}. Dopo non ci saranno altre decisioni di puntata.",
   "，较高踢脚有机会领先较弱 Ax": ", con un kicker più alto che può dare un vantaggio sugli Ax più deboli",
   "，但仍可能输给更大踢脚的 Ax": ", ma puoi ancora perdere contro Ax con un kicker più alto",
-  "这次开池尺度明显大于普通开池，不能只根据位置套用常规范围，需要结合尺度和公开行动判断。": "Questa apertura è molto più grande di un’apertura standard. La sola posizione non consente di applicare un range abituale. Considera misura e azioni pubbliche."
+  "这次开池尺度明显大于普通开池，不能只根据位置套用常规范围，需要结合尺度和公开行动判断。": "Questa apertura è molto più grande di un’apertura standard. La sola posizione non consente di applicare un range abituale. Considera misura e azioni pubbliche.",
+  "高牌大额跟注缺少继续依据": "Un call grande con carta alta non ha basi sufficienti per continuare",
+  "只有更弱高牌诈唬的具体证据能够提供足够胜率时，再比较跟注。": "Riconsidera il call solo con prove concrete che i bluff con carte alte più deboli offrano probabilità sufficienti di vincere.",
+  "优先停止这笔新增投入，之前的跟注不构成继续的理由。": "Preferisci interrompere questo investimento aggiuntivo. I call precedenti non giustificano il proseguimento.",
+  "当前只有高牌，没有顺子、同花的直接听牌，这笔跟注至少用掉行动前筹码的一半。按当前行动加权范围估计，获胜机会不足以覆盖成本，较宽范围的估计也没有稳定余量，不能只因对手可能诈唬就肯定跟注。": "Attualmente hai solo carta alta, senza un progetto diretto di scala o colore. Questo call impiega almeno metà dello stack che avevi prima di agire. Contro il range attuale ponderato per le azioni, le probabilità stimate di vincere non coprono il costo. Anche la stima contro un range più ampio non offre un margine stabile, quindi la sola possibilità di un bluff non basta ad approvare il call."
 }

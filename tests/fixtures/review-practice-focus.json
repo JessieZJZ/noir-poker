@@ -4981,6 +4981,1000 @@
           "amount": 800000
         }
       ]
+    },
+    "unbacked-highcard-allin": {
+      "index": 2,
+      "hand": 1,
+      "street": 2,
+      "position": "HJ",
+      "hole": [
+        {
+          "rank": 8,
+          "suit": 1,
+          "symbol": "♥",
+          "key": "1-8"
+        },
+        {
+          "rank": 10,
+          "suit": 0,
+          "symbol": "♠",
+          "key": "0-10"
+        }
+      ],
+      "board": [
+        {
+          "rank": 11,
+          "suit": 3,
+          "symbol": "♦",
+          "key": "3-11"
+        },
+        {
+          "rank": 4,
+          "suit": 2,
+          "symbol": "♣",
+          "key": "2-4"
+        },
+        {
+          "rank": 6,
+          "suit": 0,
+          "symbol": "♠",
+          "key": "0-6"
+        },
+        {
+          "rank": 3,
+          "suit": 1,
+          "symbol": "♥",
+          "key": "1-3"
+        }
+      ],
+      "stack": 525,
+      "bet": 0,
+      "total": 475,
+      "pot": 2150,
+      "currentBet": 525,
+      "minRaise": 525,
+      "chipUnit": 25,
+      "smallBlind": 25,
+      "bigBlind": 50,
+      "dealer": 2,
+      "emotionMode": "off",
+      "difficulty": "easy",
+      "legal": {
+        "enabled": true,
+        "chipUnit": 25,
+        "toCall": 525,
+        "callAmount": 525,
+        "canCheck": false,
+        "raiseReopened": true,
+        "canRaise": false,
+        "minRaiseTo": 525,
+        "fullRaiseTo": 1050,
+        "maxRaiseTo": 525,
+        "isShortAllin": true
+      },
+      "pending": [0, 1],
+      "actionContext": {
+        "roundOrderIds": [0, 1],
+        "pendingResponseIds": [1],
+        "unactedBehindIds": [1],
+        "priorActedResponseIds": [],
+        "liveShowdownIds": [1, 7],
+        "enteredIds": [1, 7],
+        "pendingResponseCount": 1,
+        "unactedBehindCount": 1,
+        "priorActedResponseCount": 0
+      },
+      "action": "call",
+      "amount": 525,
+      "players": [
+        {
+          "id": 0,
+          "name": "你",
+          "position": "HJ",
+          "stack": 525,
+          "bet": 0,
+          "total": 475,
+          "folded": false,
+          "allin": false,
+          "action": "",
+          "botProfile": null,
+          "publicAxes": null,
+          "botMoodKind": null,
+          "actedTo": null,
+          "checked": false
+        },
+        {
+          "id": 1,
+          "name": "Mia",
+          "position": "CO",
+          "stack": 525,
+          "bet": 0,
+          "total": 475,
+          "folded": false,
+          "allin": false,
+          "action": "",
+          "botProfile": "viktor",
+          "publicAxes": [90, 94, 88, 70, 18],
+          "botMoodKind": "steady",
+          "actedTo": null,
+          "checked": false
+        },
+        {
+          "id": 2,
+          "name": "Alex",
+          "position": "BTN",
+          "stack": 950,
+          "bet": 0,
+          "total": 50,
+          "folded": true,
+          "allin": false,
+          "action": "弃牌",
+          "botProfile": "jungleman",
+          "publicAxes": [65, 82, 66, 64, 72],
+          "botMoodKind": "steady",
+          "actedTo": null,
+          "checked": false
+        },
+        {
+          "id": 3,
+          "name": "River",
+          "position": "SB",
+          "stack": 950,
+          "bet": 0,
+          "total": 50,
+          "folded": true,
+          "allin": false,
+          "action": "弃牌",
+          "botProfile": "dwan",
+          "publicAxes": [85, 90, 85, 75, 55],
+          "botMoodKind": "steady",
+          "actedTo": null,
+          "checked": false
+        },
+        {
+          "id": 4,
+          "name": "Kai",
+          "position": "BB",
+          "stack": 950,
+          "bet": 0,
+          "total": 50,
+          "folded": true,
+          "allin": false,
+          "action": "弃牌",
+          "botProfile": "tan",
+          "publicAxes": [85, 90, 82, 70, 25],
+          "botMoodKind": "steady",
+          "actedTo": null,
+          "checked": false
+        },
+        {
+          "id": 5,
+          "name": "Luna",
+          "position": "UTG",
+          "stack": 1000,
+          "bet": 0,
+          "total": 0,
+          "folded": true,
+          "allin": false,
+          "action": "弃牌",
+          "botProfile": "koon",
+          "publicAxes": [53, 83, 60, 56, 42],
+          "botMoodKind": "steady",
+          "actedTo": null,
+          "checked": false
+        },
+        {
+          "id": 6,
+          "name": "Theo",
+          "position": "UTG+1",
+          "stack": 950,
+          "bet": 0,
+          "total": 50,
+          "folded": true,
+          "allin": false,
+          "action": "弃牌",
+          "botProfile": "balanced",
+          "publicAxes": [50, 50, 40, 50, 20],
+          "botMoodKind": "steady",
+          "actedTo": null,
+          "checked": false
+        },
+        {
+          "id": 7,
+          "name": "Jade",
+          "position": "LJ",
+          "stack": 0,
+          "bet": 525,
+          "total": 1000,
+          "folded": false,
+          "allin": true,
+          "action": "全下至 525",
+          "botProfile": "peter",
+          "publicAxes": [92, 88, 72, 84, 18],
+          "botMoodKind": "steady",
+          "actedTo": 525,
+          "checked": false
+        }
+      ],
+      "history": [
+        {
+          "street": 0,
+          "chipUnit": 25,
+          "bigBlind": 50,
+          "id": 5,
+          "action": "fold",
+          "amount": 0
+        },
+        {
+          "street": 0,
+          "chipUnit": 25,
+          "bigBlind": 50,
+          "id": 6,
+          "action": "call",
+          "amount": 50
+        },
+        {
+          "street": 0,
+          "chipUnit": 25,
+          "bigBlind": 50,
+          "id": 7,
+          "action": "call",
+          "amount": 50
+        },
+        {
+          "street": 0,
+          "chipUnit": 25,
+          "bigBlind": 50,
+          "id": 0,
+          "action": "call",
+          "amount": 50
+        },
+        {
+          "street": 0,
+          "chipUnit": 25,
+          "bigBlind": 50,
+          "id": 1,
+          "action": "call",
+          "amount": 50
+        },
+        {
+          "street": 0,
+          "chipUnit": 25,
+          "bigBlind": 50,
+          "id": 2,
+          "action": "call",
+          "amount": 50
+        },
+        {
+          "street": 0,
+          "chipUnit": 25,
+          "bigBlind": 50,
+          "id": 3,
+          "action": "call",
+          "amount": 25
+        },
+        {
+          "street": 0,
+          "chipUnit": 25,
+          "bigBlind": 50,
+          "id": 4,
+          "action": "check",
+          "amount": 0
+        },
+        {
+          "street": 1,
+          "chipUnit": 25,
+          "bigBlind": 50,
+          "id": 3,
+          "action": "check",
+          "amount": 0
+        },
+        {
+          "street": 1,
+          "chipUnit": 25,
+          "bigBlind": 50,
+          "id": 4,
+          "action": "check",
+          "amount": 0
+        },
+        {
+          "street": 1,
+          "chipUnit": 25,
+          "bigBlind": 50,
+          "id": 6,
+          "action": "check",
+          "amount": 0
+        },
+        {
+          "street": 1,
+          "chipUnit": 25,
+          "bigBlind": 50,
+          "id": 7,
+          "action": "raise",
+          "amount": 425,
+          "betLabel": "下注至"
+        },
+        {
+          "street": 1,
+          "chipUnit": 25,
+          "bigBlind": 50,
+          "id": 0,
+          "action": "call",
+          "amount": 425
+        },
+        {
+          "street": 1,
+          "chipUnit": 25,
+          "bigBlind": 50,
+          "id": 1,
+          "action": "call",
+          "amount": 425
+        },
+        {
+          "street": 1,
+          "chipUnit": 25,
+          "bigBlind": 50,
+          "id": 2,
+          "action": "fold",
+          "amount": 0
+        },
+        {
+          "street": 1,
+          "chipUnit": 25,
+          "bigBlind": 50,
+          "id": 3,
+          "action": "fold",
+          "amount": 0
+        },
+        {
+          "street": 1,
+          "chipUnit": 25,
+          "bigBlind": 50,
+          "id": 4,
+          "action": "fold",
+          "amount": 0
+        },
+        {
+          "street": 1,
+          "chipUnit": 25,
+          "bigBlind": 50,
+          "id": 6,
+          "action": "fold",
+          "amount": 0
+        },
+        {
+          "street": 2,
+          "chipUnit": 25,
+          "bigBlind": 50,
+          "id": 7,
+          "action": "raise",
+          "amount": 525,
+          "betLabel": "全下至"
+        }
+      ]
+    },
+    "unbacked-highcard-near-allin": {
+      "index": 2,
+      "hand": 1,
+      "street": 2,
+      "position": "HJ",
+      "hole": [
+        {
+          "rank": 11,
+          "suit": 3,
+          "symbol": "♦",
+          "key": "3-11"
+        },
+        {
+          "rank": 4,
+          "suit": 0,
+          "symbol": "♠",
+          "key": "0-4"
+        }
+      ],
+      "board": [
+        {
+          "rank": 13,
+          "suit": 3,
+          "symbol": "♦",
+          "key": "3-13"
+        },
+        {
+          "rank": 3,
+          "suit": 1,
+          "symbol": "♥",
+          "key": "1-3"
+        },
+        {
+          "rank": 9,
+          "suit": 2,
+          "symbol": "♣",
+          "key": "2-9"
+        },
+        {
+          "rank": 14,
+          "suit": 3,
+          "symbol": "♦",
+          "key": "3-14"
+        }
+      ],
+      "stack": 6000,
+      "bet": 0,
+      "total": 2000,
+      "pot": 10300,
+      "currentBet": 5600,
+      "minRaise": 5600,
+      "chipUnit": 100,
+      "smallBlind": 100,
+      "bigBlind": 200,
+      "dealer": 2,
+      "emotionMode": "off",
+      "difficulty": "normal",
+      "legal": {
+        "enabled": true,
+        "chipUnit": 100,
+        "toCall": 5600,
+        "callAmount": 5600,
+        "canCheck": false,
+        "raiseReopened": true,
+        "canRaise": true,
+        "minRaiseTo": 6000,
+        "fullRaiseTo": 11200,
+        "maxRaiseTo": 6000,
+        "isShortAllin": true
+      },
+      "pending": [0],
+      "actionContext": {
+        "roundOrderIds": [5, 0],
+        "pendingResponseIds": [],
+        "unactedBehindIds": [],
+        "priorActedResponseIds": [],
+        "liveShowdownIds": [5],
+        "enteredIds": [5],
+        "pendingResponseCount": 0,
+        "unactedBehindCount": 0,
+        "priorActedResponseCount": 0
+      },
+      "action": "call",
+      "amount": 5600,
+      "players": [
+        {
+          "id": 0,
+          "name": "你",
+          "position": "HJ",
+          "stack": 6000,
+          "bet": 0,
+          "total": 2000,
+          "folded": false,
+          "allin": false,
+          "action": "",
+          "botProfile": null,
+          "publicAxes": null,
+          "botMoodKind": null,
+          "actedTo": null,
+          "checked": false
+        },
+        {
+          "id": 1,
+          "name": "Mia",
+          "position": "CO",
+          "stack": 8000,
+          "bet": 0,
+          "total": 0,
+          "folded": true,
+          "allin": false,
+          "action": "弃牌",
+          "botProfile": "koon",
+          "publicAxes": [53, 83, 60, 56, 42],
+          "botMoodKind": "steady",
+          "actedTo": null,
+          "checked": false
+        },
+        {
+          "id": 2,
+          "name": "Alex",
+          "position": "BTN",
+          "stack": 8000,
+          "bet": 0,
+          "total": 0,
+          "folded": true,
+          "allin": false,
+          "action": "弃牌",
+          "botProfile": "balanced",
+          "publicAxes": [50, 50, 40, 50, 20],
+          "botMoodKind": "steady",
+          "actedTo": null,
+          "checked": false
+        },
+        {
+          "id": 3,
+          "name": "River",
+          "position": "SB",
+          "stack": 7900,
+          "bet": 0,
+          "total": 100,
+          "folded": true,
+          "allin": false,
+          "action": "弃牌",
+          "botProfile": "peter",
+          "publicAxes": [92, 88, 72, 84, 18],
+          "botMoodKind": "steady",
+          "actedTo": null,
+          "checked": false
+        },
+        {
+          "id": 4,
+          "name": "Kai",
+          "position": "BB",
+          "stack": 7400,
+          "bet": 0,
+          "total": 600,
+          "folded": true,
+          "allin": false,
+          "action": "弃牌",
+          "botProfile": "abao",
+          "publicAxes": [55, 82, 72, 50, 34],
+          "botMoodKind": "steady",
+          "actedTo": null,
+          "checked": false
+        },
+        {
+          "id": 5,
+          "name": "Luna",
+          "position": "UTG",
+          "stack": 400,
+          "bet": 5600,
+          "total": 7600,
+          "folded": false,
+          "allin": false,
+          "action": "下注至 5600",
+          "botProfile": "viktor",
+          "publicAxes": [90, 94, 88, 70, 18],
+          "botMoodKind": "steady",
+          "actedTo": 5600,
+          "checked": false
+        },
+        {
+          "id": 6,
+          "name": "Theo",
+          "position": "LJ",
+          "stack": 8000,
+          "bet": 0,
+          "total": 0,
+          "folded": true,
+          "allin": false,
+          "action": "弃牌",
+          "botProfile": "jungleman",
+          "publicAxes": [65, 82, 66, 64, 72],
+          "botMoodKind": "steady",
+          "actedTo": null,
+          "checked": false
+        }
+      ],
+      "history": [
+        {
+          "street": 0,
+          "chipUnit": 100,
+          "bigBlind": 200,
+          "id": 5,
+          "action": "raise",
+          "amount": 600,
+          "betLabel": "2-bet 开池至"
+        },
+        {
+          "street": 0,
+          "chipUnit": 100,
+          "bigBlind": 200,
+          "id": 6,
+          "action": "fold",
+          "amount": 0
+        },
+        {
+          "street": 0,
+          "chipUnit": 100,
+          "bigBlind": 200,
+          "id": 0,
+          "action": "call",
+          "amount": 600
+        },
+        {
+          "street": 0,
+          "chipUnit": 100,
+          "bigBlind": 200,
+          "id": 1,
+          "action": "fold",
+          "amount": 0
+        },
+        {
+          "street": 0,
+          "chipUnit": 100,
+          "bigBlind": 200,
+          "id": 2,
+          "action": "fold",
+          "amount": 0
+        },
+        {
+          "street": 0,
+          "chipUnit": 100,
+          "bigBlind": 200,
+          "id": 3,
+          "action": "fold",
+          "amount": 0
+        },
+        {
+          "street": 0,
+          "chipUnit": 100,
+          "bigBlind": 200,
+          "id": 4,
+          "action": "call",
+          "amount": 400
+        },
+        {
+          "street": 1,
+          "chipUnit": 100,
+          "bigBlind": 200,
+          "id": 4,
+          "action": "check",
+          "amount": 0
+        },
+        {
+          "street": 1,
+          "chipUnit": 100,
+          "bigBlind": 200,
+          "id": 5,
+          "action": "raise",
+          "amount": 1400,
+          "betLabel": "下注至"
+        },
+        {
+          "street": 1,
+          "chipUnit": 100,
+          "bigBlind": 200,
+          "id": 0,
+          "action": "call",
+          "amount": 1400
+        },
+        {
+          "street": 1,
+          "chipUnit": 100,
+          "bigBlind": 200,
+          "id": 4,
+          "action": "fold",
+          "amount": 0
+        },
+        {
+          "street": 2,
+          "chipUnit": 100,
+          "bigBlind": 200,
+          "id": 5,
+          "action": "raise",
+          "amount": 5600,
+          "betLabel": "下注至"
+        }
+      ]
+    },
+    "cheap-highcard-river-call": {
+      "index": 3,
+      "hand": 1,
+      "street": 3,
+      "position": "HJ",
+      "hole": [
+        {
+          "rank": 11,
+          "suit": 3,
+          "symbol": "♦",
+          "key": "3-11"
+        },
+        {
+          "rank": 4,
+          "suit": 0,
+          "symbol": "♠",
+          "key": "0-4"
+        }
+      ],
+      "board": [
+        {
+          "rank": 13,
+          "suit": 3,
+          "symbol": "♦",
+          "key": "3-13"
+        },
+        {
+          "rank": 3,
+          "suit": 1,
+          "symbol": "♥",
+          "key": "1-3"
+        },
+        {
+          "rank": 9,
+          "suit": 2,
+          "symbol": "♣",
+          "key": "2-9"
+        },
+        {
+          "rank": 14,
+          "suit": 3,
+          "symbol": "♦",
+          "key": "3-14"
+        },
+        {
+          "rank": 2,
+          "suit": 2,
+          "symbol": "♣",
+          "key": "2-2"
+        }
+      ],
+      "stack": 400,
+      "bet": 0,
+      "total": 7600,
+      "pot": 16300,
+      "currentBet": 400,
+      "minRaise": 400,
+      "chipUnit": 100,
+      "smallBlind": 100,
+      "bigBlind": 200,
+      "dealer": 2,
+      "emotionMode": "off",
+      "difficulty": "normal",
+      "legal": {
+        "enabled": true,
+        "chipUnit": 100,
+        "toCall": 400,
+        "callAmount": 400,
+        "canCheck": false,
+        "raiseReopened": true,
+        "canRaise": false,
+        "minRaiseTo": 400,
+        "fullRaiseTo": 800,
+        "maxRaiseTo": 400,
+        "isShortAllin": true
+      },
+      "pending": [0],
+      "actionContext": {
+        "roundOrderIds": [0],
+        "pendingResponseIds": [],
+        "unactedBehindIds": [],
+        "priorActedResponseIds": [],
+        "liveShowdownIds": [5],
+        "enteredIds": [5],
+        "pendingResponseCount": 0,
+        "unactedBehindCount": 0,
+        "priorActedResponseCount": 0
+      },
+      "action": "call",
+      "amount": 400,
+      "players": [
+        {
+          "id": 0,
+          "name": "你",
+          "position": "HJ",
+          "stack": 400,
+          "bet": 0,
+          "total": 7600,
+          "folded": false,
+          "allin": false,
+          "action": "",
+          "botProfile": null,
+          "publicAxes": null,
+          "botMoodKind": null,
+          "actedTo": null,
+          "checked": false
+        },
+        {
+          "id": 1,
+          "name": "Mia",
+          "position": "CO",
+          "stack": 8000,
+          "bet": 0,
+          "total": 0,
+          "folded": true,
+          "allin": false,
+          "action": "弃牌",
+          "botProfile": "koon",
+          "publicAxes": [53, 83, 60, 56, 42],
+          "botMoodKind": "steady",
+          "actedTo": null,
+          "checked": false
+        },
+        {
+          "id": 2,
+          "name": "Alex",
+          "position": "BTN",
+          "stack": 8000,
+          "bet": 0,
+          "total": 0,
+          "folded": true,
+          "allin": false,
+          "action": "弃牌",
+          "botProfile": "balanced",
+          "publicAxes": [50, 50, 40, 50, 20],
+          "botMoodKind": "steady",
+          "actedTo": null,
+          "checked": false
+        },
+        {
+          "id": 3,
+          "name": "River",
+          "position": "SB",
+          "stack": 7900,
+          "bet": 0,
+          "total": 100,
+          "folded": true,
+          "allin": false,
+          "action": "弃牌",
+          "botProfile": "peter",
+          "publicAxes": [92, 88, 72, 84, 18],
+          "botMoodKind": "steady",
+          "actedTo": null,
+          "checked": false
+        },
+        {
+          "id": 4,
+          "name": "Kai",
+          "position": "BB",
+          "stack": 7400,
+          "bet": 0,
+          "total": 600,
+          "folded": true,
+          "allin": false,
+          "action": "弃牌",
+          "botProfile": "abao",
+          "publicAxes": [55, 82, 72, 50, 34],
+          "botMoodKind": "steady",
+          "actedTo": null,
+          "checked": false
+        },
+        {
+          "id": 5,
+          "name": "Luna",
+          "position": "UTG",
+          "stack": 0,
+          "bet": 400,
+          "total": 8000,
+          "folded": false,
+          "allin": true,
+          "action": "全下至 400",
+          "botProfile": "viktor",
+          "publicAxes": [90, 94, 88, 70, 18],
+          "botMoodKind": "steady",
+          "actedTo": 400,
+          "checked": false
+        },
+        {
+          "id": 6,
+          "name": "Theo",
+          "position": "LJ",
+          "stack": 8000,
+          "bet": 0,
+          "total": 0,
+          "folded": true,
+          "allin": false,
+          "action": "弃牌",
+          "botProfile": "jungleman",
+          "publicAxes": [65, 82, 66, 64, 72],
+          "botMoodKind": "steady",
+          "actedTo": null,
+          "checked": false
+        }
+      ],
+      "history": [
+        {
+          "street": 0,
+          "chipUnit": 100,
+          "bigBlind": 200,
+          "id": 5,
+          "action": "raise",
+          "amount": 600,
+          "betLabel": "2-bet 开池至"
+        },
+        {
+          "street": 0,
+          "chipUnit": 100,
+          "bigBlind": 200,
+          "id": 6,
+          "action": "fold",
+          "amount": 0
+        },
+        {
+          "street": 0,
+          "chipUnit": 100,
+          "bigBlind": 200,
+          "id": 0,
+          "action": "call",
+          "amount": 600
+        },
+        {
+          "street": 0,
+          "chipUnit": 100,
+          "bigBlind": 200,
+          "id": 1,
+          "action": "fold",
+          "amount": 0
+        },
+        {
+          "street": 0,
+          "chipUnit": 100,
+          "bigBlind": 200,
+          "id": 2,
+          "action": "fold",
+          "amount": 0
+        },
+        {
+          "street": 0,
+          "chipUnit": 100,
+          "bigBlind": 200,
+          "id": 3,
+          "action": "fold",
+          "amount": 0
+        },
+        {
+          "street": 0,
+          "chipUnit": 100,
+          "bigBlind": 200,
+          "id": 4,
+          "action": "call",
+          "amount": 400
+        },
+        {
+          "street": 1,
+          "chipUnit": 100,
+          "bigBlind": 200,
+          "id": 4,
+          "action": "check",
+          "amount": 0
+        },
+        {
+          "street": 1,
+          "chipUnit": 100,
+          "bigBlind": 200,
+          "id": 5,
+          "action": "raise",
+          "amount": 1400,
+          "betLabel": "下注至"
+        },
+        {
+          "street": 1,
+          "chipUnit": 100,
+          "bigBlind": 200,
+          "id": 0,
+          "action": "call",
+          "amount": 1400
+        },
+        {
+          "street": 1,
+          "chipUnit": 100,
+          "bigBlind": 200,
+          "id": 4,
+          "action": "fold",
+          "amount": 0
+        },
+        {
+          "street": 2,
+          "chipUnit": 100,
+          "bigBlind": 200,
+          "id": 5,
+          "action": "raise",
+          "amount": 5600,
+          "betLabel": "下注至"
+        },
+        {
+          "street": 2,
+          "chipUnit": 100,
+          "bigBlind": 200,
+          "id": 0,
+          "action": "call",
+          "amount": 5600
+        },
+        {
+          "street": 3,
+          "chipUnit": 100,
+          "bigBlind": 200,
+          "id": 5,
+          "action": "raise",
+          "amount": 400,
+          "betLabel": "全下至"
+        }
+      ]
     }
   },
   "opponents": [

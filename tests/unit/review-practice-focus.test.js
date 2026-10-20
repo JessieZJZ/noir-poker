@@ -25,6 +25,29 @@ test('an ace all-in call explains kicker risk without future investment choices'
   assert.match(summary(r), /但仍可能输给更大踢脚的 Ax/);
   assert.doesNotMatch(summary(r), /向它们取值|仍需控制投入/);
 });
+for (const name of ['unbacked-highcard-allin', 'unbacked-highcard-near-allin'])
+  test(`${name} does not mistake a large unsupported high-card call for a supported keep`, () => {
+    const s = fixtures.heroes[name],
+      r = analyzeDecision(s, { trials: 600, rolloutTrials: 40 }),
+      text = summary(r);
+    assert.equal(r.code, 'unbacked-high-card-call');
+    assert.equal(r.status, 'consider');
+    assert.equal(r.coaching.recommendedAction.action, 'fold');
+    assert.notEqual(r.coaching.kind, 'keep');
+    assert.match(text, /当前只有高牌.*行动前筹码的一半/);
+    assert.match(text, /较宽范围的估计也没有稳定余量/);
+    assert.doesNotMatch(text, /值得保留的依据|两种.*都.*亏/);
+    if (s.legal.callAmount >= s.stack)
+      assert.doesNotMatch(text, /下一街的投入还要另算|你在翻后有位置/);
+  });
+test('a very cheap high-card river call retains its independent range and price comparison', () => {
+  const s = fixtures.heroes['cheap-highcard-river-call'],
+    r = analyzeDecision(s, { trials: 600, rolloutTrials: 40 });
+  assert.ok(r.metrics.required < 0.03);
+  assert.ok(r.metrics.randomEquity - r.metrics.uncertainty > r.metrics.required);
+  assert.notEqual(r.code, 'unbacked-high-card-call');
+  assert.equal(r.coaching.recommendedAction.action, 'call');
+});
 const summary = (r) =>
   r.coaching.paragraphs.slice(r.coaching.paragraphs.indexOf('复盘分析总结') + 1).join('');
 

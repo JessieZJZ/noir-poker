@@ -2692,5 +2692,9 @@
   "若继续，建议用剩余 {0} 全下跟注，之后不再参与下注决策。": "Wenn du weiterspielst, empfiehlt sich ein All-in-Call mit den verbleibenden {0}. Danach triffst du keine weiteren Einsatzentscheidungen.",
   "，较高踢脚有机会领先较弱 Ax": ", mit dem höheren Kicker kannst du vor schwächeren Ax liegen",
   "，但仍可能输给更大踢脚的 Ax": ", doch Ax mit einem höheren Kicker können weiterhin gewinnen",
-  "这次开池尺度明显大于普通开池，不能只根据位置套用常规范围，需要结合尺度和公开行动判断。": "Dieses Open-Raise ist deutlich größer als ein gewöhnliches. Allein anhand der Position darf keine Standardrange unterstellt werden. Berücksichtige Größe und öffentliche Aktionen."
+  "这次开池尺度明显大于普通开池，不能只根据位置套用常规范围，需要结合尺度和公开行动判断。": "Dieses Open-Raise ist deutlich größer als ein gewöhnliches. Allein anhand der Position darf keine Standardrange unterstellt werden. Berücksichtige Größe und öffentliche Aktionen.",
+  "高牌大额跟注缺少继续依据": "Für einen großen Call mit High Card fehlen Fortsetzungsgründe",
+  "只有更弱高牌诈唬的具体证据能够提供足够胜率时，再比较跟注。": "Vergleiche den Call erst erneut, wenn konkrete Hinweise auf Bluffs mit schwächeren High-Card-Händen genügend Gewinnchancen begründen.",
+  "优先停止这笔新增投入，之前的跟注不构成继续的理由。": "Verzichte vorzugsweise auf diesen zusätzlichen Einsatz. Frühere Calls sind kein Grund weiterzuspielen.",
+  "当前只有高牌，没有顺子、同花的直接听牌，这笔跟注至少用掉行动前筹码的一半。按当前行动加权范围估计，获胜机会不足以覆盖成本，较宽范围的估计也没有稳定余量，不能只因对手可能诈唬就肯定跟注。": "Du hast derzeit nur High Card, ohne direkten Straight- oder Flushdraw. Dieser Call verbraucht mindestens die Hälfte deines Stacks vor der Aktion. Gegen die aktuelle, nach Aktionen gewichtete Range reichen die geschätzten Gewinnchancen nicht für die Kosten. Auch die Schätzung gegen eine breitere Range bietet keinen verlässlichen Puffer. Die bloße Möglichkeit eines Bluffs rechtfertigt daher keine Zustimmung zum Call."
 }

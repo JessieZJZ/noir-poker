@@ -37,7 +37,12 @@ function recordedExamples() {
   const shove = { ...structuredClone(call), action: 'raise', amount: 2710000 };
   const allinCall = structuredClone(call);
   allinCall.stack = allinCall.players[0].stack = 140000;
-  allinCall.legal.maxRaiseTo = 200000;
+  Object.assign(allinCall.legal, {
+    canRaise: false,
+    minRaiseTo: 200000,
+    maxRaiseTo: 200000,
+    isShortAllin: true,
+  });
   const paired = reportedGutshotCall();
   paired.hole = reportedKeyInfoCall('Ks Ad').hole;
   paired.board = [

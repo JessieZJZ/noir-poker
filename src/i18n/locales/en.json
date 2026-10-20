@@ -2693,5 +2693,9 @@
   "若继续，建议用剩余 {0} 全下跟注，之后不再参与下注决策。": "If you continue, the recommendation is to call all-in with your remaining {0}. You will have no further betting decisions.",
   "，较高踢脚有机会领先较弱 Ax": ", with a higher kicker that can put you ahead of weaker Ax",
   "，但仍可能输给更大踢脚的 Ax": ", but you can still lose to Ax with a higher kicker",
-  "这次开池尺度明显大于普通开池，不能只根据位置套用常规范围，需要结合尺度和公开行动判断。": "This open-raise is much larger than a standard open. Position alone cannot justify applying a standard range. Consider the size and public actions."
+  "这次开池尺度明显大于普通开池，不能只根据位置套用常规范围，需要结合尺度和公开行动判断。": "This open-raise is much larger than a standard open. Position alone cannot justify applying a standard range. Consider the size and public actions.",
+  "高牌大额跟注缺少继续依据": "A large high-card call lacks grounds to continue",
+  "只有更弱高牌诈唬的具体证据能够提供足够胜率时，再比较跟注。": "Reconsider calling only with specific evidence that weaker high-card bluffs provide sufficient winning chances.",
+  "优先停止这笔新增投入，之前的跟注不构成继续的理由。": "Prefer to stop this additional investment. Earlier calls do not justify continuing.",
+  "当前只有高牌，没有顺子、同花的直接听牌，这笔跟注至少用掉行动前筹码的一半。按当前行动加权范围估计，获胜机会不足以覆盖成本，较宽范围的估计也没有稳定余量，不能只因对手可能诈唬就肯定跟注。": "You currently have only high card, with no direct straight or flush draw. This call uses at least half of your stack before acting. Against the current action-weighted range, the estimated winning chances do not cover the cost. The wider-range estimate also lacks a reliable cushion, so the mere possibility of a bluff does not justify endorsing the call."
 }
