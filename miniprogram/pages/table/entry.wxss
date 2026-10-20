@@ -1,5 +1,6 @@
 .nav-actions {
-  gap: 14px;
+  left: 0;
+  gap: 10px;
 }
 .nav-actions .settings-button {
   display: flex;

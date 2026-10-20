@@ -38,3 +38,5 @@ node tests/wechat/entry-experience.mjs ws://127.0.0.1:9466 .artifacts/entry-expe
 ```
 
 端口替换为实际自动化端口。该专项观察真实 `InnerAudioContext`，保留待入座截图，覆盖所有等待人数及继续原局编号，并保存、恢复本地测试前的设置和对局记录。生命周期部分调用真实 App 处理器，与实体微信客户端切后台和实体手机听感分别报告。
+
+本轮通过项、失败重试与原生运行阻塞见[验收记录](entry-experience-validation-2026-10-20.md)。

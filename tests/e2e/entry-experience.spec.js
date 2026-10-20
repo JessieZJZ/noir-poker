@@ -1,4 +1,52 @@
 import { test, expect, chromium } from '@playwright/test';
+
+test('all entry locales fit 320px and 390px touch viewports with labelled settings', async ({
+  browser,
+  baseURL,
+}) => {
+  test.setTimeout(120000);
+  const context = await browser.newContext({ baseURL, isMobile: true, hasTouch: true });
+  const page = await context.newPage();
+  try {
+    await page.goto('/');
+    for (const width of [320, 390]) {
+      await page.setViewportSize({ width, height: 844 });
+      for (const locale of [
+        'zh-CN',
+        'en',
+        'zh-TW',
+        'ja',
+        'ko',
+        'es',
+        'it',
+        'pt',
+        'de',
+        'fr',
+        'ru',
+      ]) {
+        await page.evaluate((value) => localStorage.setItem('noir-locale', value), locale);
+        await page.reload();
+        await expect(page.locator('html')).toHaveAttribute('data-app-ready', 'true');
+        await expect
+          .poll(() =>
+            page.evaluate(() => {
+              const nav = document.querySelector('.header-actions').getBoundingClientRect();
+              return {
+                width: innerWidth,
+                scroll: document.documentElement.scrollWidth,
+                navFits: nav.left >= 0 && nav.right <= document.documentElement.clientWidth,
+                settingsHeight: document.querySelector('#opponents-button').getBoundingClientRect()
+                  .height,
+              };
+            }),
+          )
+          .toEqual({ width, scroll: width, navFits: true, settingsHeight: 44 });
+      }
+    }
+  } finally {
+    await context.close();
+  }
+});
 import { openSettings, closeSettings } from './settings-helpers.js';
 
 for (const count of [5, 6, 7, 8, 9]) {

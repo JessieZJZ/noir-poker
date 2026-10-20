@@ -107,10 +107,24 @@
   }
 }
 @media (max-width: 600px) {
+  .header .brand,
+  .header .brand > span:last-child {
+    min-width: 0;
+  }
+  .header .brand-mark {
+    flex-shrink: 0;
+  }
+  .header .brand > span:last-child {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
   .header-actions .settings-button {
     font-size: 12px;
   }
   .header-actions {
+    left: 0;
+    flex-shrink: 0;
     gap: 10px;
   }
   .entry-welcome {
@@ -118,6 +132,12 @@
   }
   .entry-welcome h1 {
     font-size: 21px;
+  }
+}
+@media (max-width: 360px) {
+  .header {
+    padding-inline: 12px;
+    gap: 6px;
   }
 }
 @media (prefers-reduced-motion: reduce) {
