@@ -89,6 +89,7 @@ const log = (message) => console.log(`[native-e2e:${platform}] ${message}`);
 let server;
 let serverStream;
 let session;
+let sessionCapabilities;
 let airplaneMode;
 const sdk = process.env.ANDROID_HOME ?? process.env.ANDROID_SDK_ROOT;
 const adb = sdk ? path.join(sdk, 'platform-tools/adb') : 'adb';
@@ -363,8 +364,33 @@ async function activate() {
   await attachWebview();
 }
 async function relaunch() {
-  await restartNativeApplication(command, appId);
+  await restartNativeApplication(command, appId, {
+    resetDriver: platform === 'ios' ? resetIOSDriver : undefined,
+  });
   await attachWebview();
+}
+async function resetIOSDriver() {
+  await request('DELETE', `/session/${session}`);
+  session = null;
+  webContext = undefined;
+  const caps = {
+    ...sessionCapabilities,
+    'appium:bundleId': appId,
+    'appium:noReset': true,
+    'appium:fullReset': false,
+    'appium:autoLaunch': false,
+  };
+  // The verified app remains installed. A fresh automation session must not
+  // reinstall it or clear the preferences that this restart is checking.
+  delete caps['appium:app'];
+  const created = await request(
+    'POST',
+    '/session',
+    { capabilities: { alwaysMatch: caps, firstMatch: [{}] } },
+    360000,
+  );
+  session = created.sessionId;
+  report.driverSessionResets = (report.driverSessionResets || 0) + 1;
 }
 async function background() {
   await command('POST', '/context', { name: 'NATIVE_APP' });
@@ -595,6 +621,7 @@ try {
           'appium:chromedriverAutodownload': true,
         }),
   };
+  sessionCapabilities = caps;
   const created = await request(
     'POST',
     '/session',
