@@ -3,7 +3,9 @@ import { test, expect } from '@playwright/test';
 test.beforeEach(async ({ page }) => {
   await page.clock.install({ time: 0 });
   await page.goto('/');
-  await page.waitForFunction(() => !!window.qa);
+  await page.waitForFunction(
+    () => !!window.qa && document.documentElement.dataset.appReady === 'true',
+  );
   await page.clock.pauseAt(60000);
   await page.evaluate(() => {
     window.qa.foldWin(6);
@@ -72,6 +74,9 @@ for (const [width, height] of [
     page,
   }) => {
     await page.setViewportSize({ width, height });
+    await page.evaluate(() => document.fonts.ready);
+    // The frozen clock must advance through the resize and fitting frames.
+    await page.clock.runFor(100);
     const spacing = await page.locator('.action-dock').evaluate((dock) => {
       const top = dock.getBoundingClientRect().top;
       const notice = dock.querySelector('.decision-copy').getBoundingClientRect();
@@ -80,10 +85,17 @@ for (const [width, height] of [
       return {
         topGap: Math.min(notice.top, rankings.top) - top,
         sliderGap: slider.top - Math.max(notice.bottom, rankings.bottom),
+        details: {
+          notice: notice.toJSON(),
+          rankings: rankings.toJSON(),
+          slider: slider.toJSON(),
+          strip: dock.querySelector('.decision-strip').getBoundingClientRect().toJSON(),
+          dock: dock.getBoundingClientRect().toJSON(),
+        },
       };
     });
     expect(spacing.topGap).toBeGreaterThanOrEqual(10);
-    expect(spacing.sliderGap).toBeGreaterThanOrEqual(4);
+    expect(spacing.sliderGap, JSON.stringify(spacing)).toBeGreaterThanOrEqual(4);
   });
 }
 
