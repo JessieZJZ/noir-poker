@@ -5,6 +5,7 @@ import { act, advanceStreet, legalActions, potSize } from '../../src/engine/poke
 import { createReviewInput, analyzeDecision } from '../../src/review/analysis.js';
 import { BOT_THINK_LIMITS } from '../../src/engine/bot-timing.js';
 import { checkedSeatGame } from '../fixtures/checked-actions.js';
+import { tableHint } from '../../src/review/table-hint.js';
 
 const copy = (value) => JSON.parse(JSON.stringify(value));
 function scheduler() {
@@ -546,10 +547,7 @@ test('Chinese table hints match Web prices and stale timers cannot clear a new d
   ];
   controller.setPreference('hints', false);
   controller.setPreference('hints', true);
-  assert.equal(
-    latest().hintText,
-    '口袋对子有成三条的潜力；面对大额加注，先考虑跟注成本。 跟注占可争夺底池约 18%。',
-  );
+  assert.equal(latest().hintText, tableHint(game));
   const old = Array.from(timers.pending.values()).find((job) => job.delay === 24000).fn;
   controller.hide();
   assert.equal(latest().hintText, '');
@@ -563,7 +561,7 @@ test('Chinese table hints match Web prices and stale timers cannot clear a new d
   assert.equal(latest().hintText, current);
   finish(controller.getGame(), 'fold');
   controller.show();
-  assert.ok(latest().hintText.startsWith('复盘本手') || latest().hintText.startsWith('回看弃牌'));
+  assert.equal(latest().hintText, tableHint(controller.getGame()));
 });
 
 test('WeChat mixed lineup persists ownership and manual selections survive cancellation', (t) => {

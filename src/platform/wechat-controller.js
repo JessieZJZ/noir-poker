@@ -8,6 +8,7 @@ import {
   sameStakes,
 } from '../engine/stakes.js';
 import { createHeroTurnCue, createHeroTurnAttention } from '../ui/hero-turn.js';
+import { tableHint } from '../review/table-hint.js';
 import { SEAT_ANCHORS } from '../ui/seat-geometry.js';
 import { visibleRecentAction } from '../ui/recent-action.js';
 import { explainOpponent } from '../review/opponents.js';
@@ -30,7 +31,6 @@ import {
   executeBotTurn,
   seatPosition,
   potSize,
-  contestableAfterCall,
   currentPots,
   rankText,
   evaluate,
@@ -194,34 +194,7 @@ export function createWechatController({
     if (key === hintKey) return;
     hintKey = key;
     cancelHint();
-    // Keep the Chinese presentation copy and public price calculation used by Web.
-    const hero = game.players[0],
-      rank = evaluate([...hero.hole, ...game.board]);
-    if (game.phase === 'done')
-      hintText = hero.folded
-        ? '回看弃牌时的价格与对手范围，判断是否值得继续。'
-        : game.showdown
-          ? `你以${rank.label}摊牌。复盘关键下注，区分决策质量与发牌运气。`
-          : '复盘本手加注，判断对手弃牌能否让这条路线长期盈利。';
-    else if (game.street === 0) {
-      const [a, b] = hero.hole;
-      hintText =
-        a?.rank === b?.rank
-          ? '口袋对子有成三条的潜力；面对大额加注，先考虑跟注成本。'
-          : a?.rank >= 11 && b?.rank >= 11
-            ? '两张高牌可主动争夺底池；面对大额加注，仍要判断对手范围。'
-            : a?.suit === b?.suit
-              ? '同花底牌有成牌潜力，仍需结合位置和跟注价格。'
-              : '前位谨慎选牌，后位利用更多信息；结合价格决定是否入池。';
-    } else
-      hintText =
-        rank.score[0] >= 3
-          ? `你已形成${rank.label}，可考虑价值下注，并留意牌面上更强的组合。`
-          : rank.score[0] >= 1
-            ? `目前是${rank.label}；多人底池或持续大额加注时，谨慎判断。`
-            : '尚未成对，结合成牌机会、跟注价格与对手范围决定。';
-    if (legal.enabled && legal.toCall > 0)
-      hintText += ` 跟注占可争夺底池约 ${Math.round((legal.callAmount / contestableAfterCall(game, 0, legal.callAmount)) * 100)}%。`;
+    hintText = tableHint(game, legal);
     const ticket = epoch;
     hintTimer = schedule(() => {
       if (ticket !== epoch || !active || disposed || key !== hintKey) return;

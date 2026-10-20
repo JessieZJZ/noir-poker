@@ -84,11 +84,10 @@ export function drawInfo(hole, board) {
           : 'gutshot',
   };
 }
-export function decisionContext(s) {
+export function handContext(s) {
   const made = evaluate([...s.hole, ...s.board]),
     texture = boardTexture(s.board),
-    draw = drawInfo(s.hole, s.board),
-    opponents = s.players.filter((p) => p.id !== 0 && !p.folded);
+    draw = drawInfo(s.hole, s.board);
   const high = Math.max(0, ...s.board.map((c) => c.rank)),
     pocket = s.hole.length === 2 && s.hole[0].rank === s.hole[1].rank,
     holeRank = s.hole[0]?.rank;
@@ -153,6 +152,21 @@ export function decisionContext(s) {
         : `${handClass === 'top-pair' ? '顶对' : '非顶对'} ${rankText(made.score[1])}，${rankText(kicker)} 踢脚`;
     }
   }
+  return {
+    made,
+    texture,
+    draw,
+    handClass,
+    handLabel,
+    features: handFeatures(s.hole, s.board, made.score),
+    tier: startingTier(s.hole),
+  };
+}
+
+export function decisionContext(s) {
+  const cards = handContext(s),
+    { made, texture, draw } = cards,
+    opponents = s.players.filter((p) => p.id !== 0 && !p.folded);
   const actionOrder = ['SB', 'BB', 'UTG', 'UTG+1', 'MP', 'LJ', 'HJ', 'CO', 'BTN'],
     heroOrder = actionOrder.indexOf(s.position);
   const inPosition = opponents.every((p) => p.allin || actionOrder.indexOf(p.position) < heroOrder),
@@ -181,13 +195,8 @@ export function decisionContext(s) {
       flushSuit !== null && s.hole.some((c) => c.suit === flushSuit && c.rank === 14);
   const previousDraw = s.street === 3 ? drawInfo(s.hole, s.board.slice(0, 4)) : null;
   return {
-    made,
-    features: handFeatures(s.hole, s.board, made.score),
-    texture,
-    draw,
+    ...cards,
     opponents: opponents.length,
-    handClass,
-    handLabel,
     inPosition,
     pendingOthers,
     effective,
@@ -200,6 +209,5 @@ export function decisionContext(s) {
     pastCallActions,
     nutFlushBlocker,
     missedDraw: !!previousDraw?.outs && made.score[0] < 4,
-    tier: startingTier(s.hole),
   };
 }

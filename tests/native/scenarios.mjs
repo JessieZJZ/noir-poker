@@ -766,6 +766,29 @@ export async function nativeScenarios(app) {
         'Installed production UI; native background cancels attention and card/button geometry stays stable',
     };
   });
+  await check('table-hint-content', async () => {
+    await waitForNativeHeroTurn(app, { advanceSettled: true });
+    // Refresh via the actual preference control, without injecting a hand or
+    // exposing any private state in the installed production application.
+    const observed = await app.evaluate(() => {
+      const toggle = document.querySelector('#hint-toggle');
+      if (toggle.getAttribute('aria-checked') === 'true') toggle.click();
+      toggle.click();
+      return {
+        state: window.noir.getState(),
+        text: document.querySelector('#coach-tip').textContent,
+        visible: !document.querySelector('#coach-content').hidden,
+      };
+    });
+    assert.equal(observed.visible, true);
+    assert.equal(observed.state.actor, '你');
+    assert.doesNotMatch(observed.text, /；|权益|跟注占可争夺底池/);
+    if (observed.state.legal.toCall > 0)
+      assert.match(observed.text, /跟注.*可争夺.*需要约 [\d.]+% 的胜率才能持平/);
+    else assert.match(observed.text, /可以过牌|可以加注/);
+    await app.screenshot('table-hint-content');
+    return observed;
+  });
   await check('combined-feedback-preference', async () => {
     await app.evaluate(() => {
       const nativePromise = window.Capacitor.nativePromise;

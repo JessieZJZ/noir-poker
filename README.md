@@ -221,3 +221,5 @@ node tests/bot-pressure-audit.mjs
 复盘文案的离线模拟审查可运行 `node scripts/audit-review.mjs --hands=1000`，输出留在 `.artifacts/review-audit/`，流程和边界见 [复盘说明](docs/review.md#牌面牌力与文案审查)。
 
 本轮复盘内容与跨端验收范围见 [1000 手审查记录](docs/review-content-validation-2026-10-20.md)。
+
+牌桌即时提示的通俗化、共用文案和跨端检查见 [提示优化验收记录](docs/table-hints-validation-2026-10-20.md)。
