@@ -301,7 +301,9 @@ function practiceFocus(s, r, action) {
   if (plannedValueShove(s, c) && action.action === 'raise' && action.amount === s.legal.maxRaiseTo)
     return s.street === 3 && c.matchups?.nut
       ? `重打 ${f.holeText} 这手，比较${suggestion}与较小尺度：当前已是河牌最大成牌，重点核对弱牌是否愿意支付全下，以及较小尺度能否收到更多跟注，不能仅凭坚果牌认定全下最优。`
-      : `重打 ${f.holeText} 这手，先比较${suggestion}：底池 ${fmt(s.pot)}，你还剩 ${fmt(s.stack)}。${s.street ? '当前成牌' : '这手强起手牌'}与筹码深度支持比较价值全下，但仍要留意更大的牌组。`;
+      : !s.street && s.hole.every((card) => card.rank === 14)
+        ? `重打 ${f.holeText} 这手，先比较${suggestion}：AA 是翻前最强起手牌，重点核对对手会用哪些较弱牌付费，以及这次全下尺度是否合适。`
+        : `重打 ${f.holeText} 这手，先比较${suggestion}：底池 ${fmt(s.pot)}，你还剩 ${fmt(s.stack)}。${s.street ? '当前成牌' : '这手强起手牌'}与筹码深度支持比较价值全下，但仍要留意更大的牌组。`;
   if (c.valuePlan?.kind === 'trap' && s.action === 'call')
     return `重打 ${f.holeText} 这手，平跟 ${fmt(s.legal.callAmount)} 是保留弱牌和诈唬的埋牌路线，对照${suggestion}，再看主动加注是否会赶走本来愿意继续的弱牌。`;
   if (s.street === 0 && s.action === 'raise' && c.tier === 0 && f.shove && f.potRatio > 4)

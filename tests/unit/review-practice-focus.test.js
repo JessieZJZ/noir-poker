@@ -35,7 +35,8 @@ for (const name of ['unbacked-highcard-allin', 'unbacked-highcard-near-allin'])
     assert.equal(r.coaching.recommendedAction.action, 'fold');
     assert.notEqual(r.coaching.kind, 'keep');
     assert.match(text, /当前只有高牌.*行动前筹码的一半/);
-    assert.match(text, /较宽范围的估计也没有稳定余量/);
+    assert.match(text, /根据对手之前的行动估计/);
+    assert.match(text, /即使按更宽的底牌范围估计，也还不能确认这笔跟注划算/);
     assert.doesNotMatch(text, /值得保留的依据|两种.*都.*亏/);
     if (s.legal.callAmount >= s.stack)
       assert.doesNotMatch(text, /下一街的投入还要另算|你在翻后有位置/);
@@ -48,6 +49,17 @@ test('a very cheap high-card river call retains its independent range and price 
   assert.notEqual(r.code, 'unbacked-high-card-call');
   assert.equal(r.coaching.recommendedAction.action, 'call');
 });
+for (const name of ['aces-flat-clamped-value-shove', 'aces-flat-explicit-value-shove'])
+  test(`${name} explains value sizing without an impossible larger preflop hand`, () => {
+    const s = fixtures.heroes[name],
+      r = analyzeDecision(s, { trials: 600, rolloutTrials: 40 });
+    assert.equal(s.action, 'call');
+    assert.equal(r.coaching.recommendedAction.action, 'raise');
+    assert.equal(r.coaching.recommendedAction.amount, s.legal.maxRaiseTo);
+    assert.match(r.coaching.followUp, /AA 是翻前最强起手牌/);
+    assert.match(r.coaching.followUp, /较弱牌付费.*全下尺度/);
+    assert.doesNotMatch(r.coaching.followUp, /更大.*牌|再补.*跟注/);
+  });
 const summary = (r) =>
   r.coaching.paragraphs.slice(r.coaching.paragraphs.indexOf('复盘分析总结') + 1).join('');
 
