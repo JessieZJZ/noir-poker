@@ -221,3 +221,5 @@ node tests/bot-pressure-audit.mjs
 ## 训练风格
 
 所有端使用均衡及十六种以打法命名的训练风格。均衡保留文字头像，其余使用成熟插画。介绍覆盖入池、分街打法、特色操作和应对思路，策略参数沿用既有配置。详情见 [角色说明](docs/characters.md) 与 [插画记录](docs/character-artwork.md)。
+
+入场、音乐渐入和所有端的验证入口见[入座体验](docs/entry-experience.md)。

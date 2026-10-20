@@ -11,6 +11,7 @@ import { createDialogScrollLock } from './dialog-scroll-lock.js';
 import { soundSamples, SOUND_SAMPLE_RATE, createSoundOutput } from './sound-cues.js';
 import { loadFeedbackPreferences } from './feedback-preferences.js';
 import { createWebBackgroundMusic } from '../platform/web-background-music.js';
+import { createDealGate } from './deal-gate.js';
 import {
   renderOpponentSeats,
   renderSeatAction,
@@ -130,6 +131,7 @@ let game = gameRecords.resume() || newGame(requestedCount, requestedStakes),
   audio = null,
   audioOutput = null;
 let newRecordSession = false;
+game.history ||= [];
 game.difficulty = tablePreferences.difficulty;
 $('#player-count').value = String(requestedCount);
 try {
@@ -138,7 +140,7 @@ try {
 } catch {}
 const backgroundMusic = createWebBackgroundMusic({
   enabled: sound,
-  active: activityClock.active && !document.hidden,
+  active: false,
   createContext: () => {
     prepareAudio();
     return audio;
@@ -147,6 +149,13 @@ const backgroundMusic = createWebBackgroundMusic({
   getOutput: () => audioOutput,
 });
 let pendingBotSettings = loadBotSettings();
+const dealGate = createDealGate({
+  active: activityClock.active,
+  complete() {
+    render();
+    schedule();
+  },
+});
 const opponents = createOpponentsController({
   getGame: () => game,
   getCount: () => requestedCount,
@@ -154,7 +163,10 @@ const opponents = createOpponentsController({
   onSave: (settings) => {
     pendingBotSettings = settings;
     setLocalizedText($('#difficulty-description'), difficultyPolicy(game.difficulty).description);
-    opponents.refresh();
+    if (game.phase === 'idle') {
+      applyBotSettings(game, pendingBotSettings);
+      render();
+    } else opponents.refresh();
   },
 });
 let selectedPotSnapshot = null;
@@ -289,8 +301,8 @@ const heroTurnAttention = createHeroTurnAttention({
 });
 function syncTurnAttention() {
   heroTurnAttention.update({
-    key: `${epoch}:${game.hand}:${game.replayAttempt || 0}:${game.street}:${game.history.length}`,
-    enabled: legalActions(game, 0).enabled,
+    key: `${epoch}:${game.hand}:${game.replayAttempt || 0}:${game.street}:${game.history?.length || 0}`,
+    enabled: !dealGate.pending && legalActions(game, 0).enabled,
     active: activityClock.active && !document.hidden,
   });
 }
@@ -303,6 +315,14 @@ function render() {
     followActivity =
       game.hand !== lastHand ||
       activityList.scrollHeight - activityList.clientHeight - activityScrollTop <= 24;
+  const waiting = game.phase === 'idle';
+  const dealing = dealGate.pending;
+  const nextEntryHand = gameRecords.nextHandIdentity(game, { newSession: newRecordSession });
+  const entryState = waiting ? 'waiting' : dealing ? 'dealing' : 'playing';
+  $('.game-surface').dataset.entryState = entryState;
+  $('.activity-card').hidden = waiting;
+  $('#entry-welcome').hidden = !waiting;
+  $('#join-table-button').disabled = !waiting;
   const count = game.players.length;
   $('#arena').dataset.playerCount = count;
   $('#arena').classList.toggle(
@@ -319,14 +339,20 @@ function render() {
     game.showdown && !hero.folded
       ? new Set(evaluate([...hero.hole, ...game.board]).cards.map((c) => c.key))
       : new Set();
-  setLocalizedText($('#hand-number'), String(game.hand).padStart(2, '0'));
+  setLocalizedText($('#hand-number'), waiting ? '—' : String(game.hand).padStart(2, '0'));
   setLocalizedText($('#session-number-label'), `第 ${gameRecords.sessionNumber()} 局`);
   $('#replay-label').hidden = !game.replayAttempt;
   setLocalizedText($('#replay-label'), '重打 ' + game.replayAttempt);
   $('#replay-note').hidden = !game.replayAttempt;
   setLocalizedText(
     $('#street-label'),
-    game.phase === 'done' ? '本手结束' : streets[game.street] || '准备发牌',
+    waiting
+      ? `等待入座，即将开始第 ${nextEntryHand.sessionNumber} 局第 ${nextEntryHand.hand} 手`
+      : dealing
+        ? '正在发牌…'
+        : game.phase === 'done'
+          ? '本手结束'
+          : streets[game.street] || '准备发牌',
   );
   setLocalizedText(
     $('#pot-value'),
@@ -347,7 +373,7 @@ function render() {
   );
   setLocalizedHTML(
     $('#seats'),
-    renderOpponentSeats(game, { card, newHand, isSeatHandVisible, seatFaceSignatures }),
+    renderOpponentSeats(game, { card, newHand, dealing, isSeatHandVisible, seatFaceSignatures }),
   );
   preparePortraits($('#seats'));
   setLocalizedHTML(
@@ -423,7 +449,7 @@ function render() {
   setLocalizedText($('#activity-count'), game.phase === 'done' ? 'FINISHED' : 'LIVE');
   const done = game.phase === 'done';
   $('#arena').classList.toggle('is-done', done);
-  $('.decision-strip').hidden = done;
+  $('.decision-strip').hidden = done || waiting;
   document
     .querySelectorAll('input[name="difficulty"]')
     .forEach((input) => (input.checked = input.value === game.difficulty));
@@ -467,8 +493,9 @@ function render() {
     );
   if (!selectedPotSnapshot) renderPotDetails(details);
   const legal = legalActions(game, 0);
-  $('.bet-controls').hidden = done || hero.folded;
-  $('.action-buttons').hidden = done || hero.folded;
+  const canAct = legal.enabled && !dealing && !waiting;
+  $('.bet-controls').hidden = done || hero.folded || waiting;
+  $('.action-buttons').hidden = done || hero.folded || waiting;
   $('#next-button').hidden = !done;
   $('#continue-deal-button').hidden = !canFastFinish() && !finishing;
   $('#continue-deal-button').disabled = finishing;
@@ -477,7 +504,7 @@ function render() {
   $('#restart-hand-button').hidden = !canRestartHand(game);
   $('#action-panel').classList.toggle('settled-actions', done);
   $('.action-dock').classList.toggle('compact-actions', done || hero.folded);
-  $('.action-dock').classList.toggle('is-enabled', legal.enabled);
+  $('.action-dock').classList.toggle('is-enabled', canAct);
   setLocalizedText($('#next-button'), hero.stack === 0 ? '补充筹码，继续练习' : '下一手');
   $('#next-button').classList.toggle('has-mobile-label', hero.stack === 0);
   setLocalizedAttribute($('#next-button'), 'data-mobile-label', '补充筹码');
@@ -487,19 +514,20 @@ function render() {
     hero.stack === 0 ? '补充筹码，继续练习' : '下一手',
   );
   heroTurnCue.update({
-    key: `${game.hand}:${game.replayAttempt || 0}:${game.street}:${game.history.length}`,
-    enabled: legal.enabled,
+    key: `${game.hand}:${game.replayAttempt || 0}:${game.street}:${game.history?.length || 0}`,
+    enabled: canAct,
     active: activityClock.active && vibration,
   });
   syncTurnAttention();
-  $('#turn-prompt').hidden = !legal.enabled;
-  for (const b of [$('#fold-button'), $('#call-button')]) b.disabled = !legal.enabled;
-  $('#raise-button').disabled = !legal.enabled || !legal.canRaise;
-  $('#bet-slider').disabled = !legal.enabled || !legal.canRaise;
+  $('#turn-prompt').hidden = !canAct;
+  for (const b of [$('#fold-button'), $('#call-button')]) b.disabled = !canAct;
+  $('#raise-button').disabled = !canAct || !legal.canRaise;
+  $('#bet-slider').disabled = !canAct || !legal.canRaise;
   document
     .querySelectorAll('[data-preset]')
-    .forEach((b) => (b.disabled = !legal.enabled || !legal.canRaise));
-  if (legal.enabled) {
+    .forEach((b) => (b.disabled = !canAct || !legal.canRaise));
+  if (waiting || dealing) setLocalizedText($('#decision-text'), waiting ? '' : '正在发牌…');
+  else if (legal.enabled) {
     const min = legal.minRaiseTo,
       max = legal.maxRaiseTo;
     bet = legalRaiseTo(bet, legal);
@@ -544,7 +572,7 @@ function render() {
         ? `${game.players[game.actor]?.name || '对手'} 正在行动，你可以观察这一手。`
         : `${game.players[game.actor]?.name || '对手'} 正在思考，请稍候。`,
     );
-  updateBet();
+  if (!waiting) updateBet();
   updateCoach();
   handReview.update(game, epoch);
   showdown.update(game, epoch);
@@ -576,6 +604,10 @@ function updateCoach(force = false) {
   toggle.setAttribute('aria-checked', String(hints));
   setLocalizedAttribute(toggle, 'title', hints ? '牌桌提示已开启' : '牌桌提示已关闭');
   $('#coach-disabled').hidden = hints || compactCoach.matches;
+  if (game.phase === 'idle' || dealGate.pending) {
+    hintNotification.update({ enabled: false });
+    return;
+  }
   const p = game.players[0],
     e = evaluate([...p.hole, ...game.board]);
   let tip = '';
@@ -620,7 +652,7 @@ function changeCoachLayout() {
 compactCoach.addEventListener('change', changeCoachLayout);
 function schedule() {
   clearTimeout(timer);
-  if (!activityClock.active) return;
+  if (!activityClock.active || game.phase === 'idle' || dealGate.pending) return;
   const ticket = epoch;
   if (game.phase === 'done' || finishing) {
     botWait = null;
@@ -685,7 +717,7 @@ function schedule() {
   } else botWait = null;
 }
 function heroAction(action, amount) {
-  if (!activityClock.active) return false;
+  if (!activityClock.active || dealGate.pending) return false;
   if (!legalActions(game, 0).enabled) return false;
   const legal = legalActions(game, 0);
   act(game, 0, action, amount);
@@ -744,6 +776,7 @@ async function continueDeal() {
   }
 }
 function nextHand() {
+  dealGate.cancel();
   heroTurnAttention.reset();
   cancelSoundEffects();
   heroTurnCue.reset();
@@ -769,6 +802,7 @@ function nextHand() {
   $('#table-change-note').hidden = true;
   applyBotSettings(game, pendingBotSettings);
   startHand(game);
+  dealGate.begin();
   gameRecords.begin(game, { newSession: newRecordSession });
   newRecordSession = false;
   const legal = legalActions(game, 0);
@@ -779,6 +813,7 @@ function nextHand() {
 }
 function retryHand() {
   if (!canRestartHand(game)) return false;
+  dealGate.cancel();
   heroTurnAttention.reset();
   heroTurnCue.reset();
   cancelSoundEffects();
@@ -795,6 +830,7 @@ function retryHand() {
     e.remove();
   });
   restartHand(game);
+  dealGate.begin();
   gameRecords.begin(game);
   lastHand = 0;
   lastBoard = 0;
@@ -914,8 +950,20 @@ $('#player-count').onchange = (e) => {
     difficulty: game.difficulty,
     stakes: requestedStakes,
   });
-  renderStakesSettings();
+  if (!refreshWaitingTable()) renderStakesSettings();
 };
+function refreshWaitingTable() {
+  if (game.phase !== 'idle') return false;
+  if (requestedCount !== game.players.length || !sameStakes(requestedStakes, game.stakes)) {
+    const difficulty = game.difficulty;
+    game = newGame(requestedCount, requestedStakes);
+    game.history = [];
+    game.difficulty = difficulty;
+  }
+  applyBotSettings(game, pendingBotSettings);
+  render();
+  return true;
+}
 function renderStakesSettings() {
   const input = $('#small-blind-input');
   $('#small-blind-button').textContent = format(requestedStakes.smallBlind);
@@ -955,7 +1003,7 @@ function requestStakes(value) {
   stakesError = '';
   if (changed)
     saveTablePreferences({ playerCount: requestedCount, difficulty: game.difficulty, stakes });
-  renderStakesSettings();
+  if (!refreshWaitingTable()) renderStakesSettings();
   return changed;
 }
 function requestSmallBlind(value) {
@@ -1109,6 +1157,7 @@ $('#confirm-reset').onclick = () => {
 function publicState() {
   const details = potDetails();
   return {
+    entryState: game.phase === 'idle' ? 'waiting' : dealGate.pending ? 'dealing' : 'playing',
     playerCount: game.players.length,
     stakes: { ...game.stakes },
     requestedStakes: { ...requestedStakes },
@@ -1292,6 +1341,7 @@ function syncActivity() {
   hintNotification.setActive(active && !document.hidden);
   if (active && !document.hidden && !compactCoach.matches) updateCoach(true);
   const changed = activityClock.setActive(active);
+  dealGate.setActive(active && !document.hidden);
   syncTurnAttention();
   if (!changed) return;
   if (!active) {
@@ -1307,6 +1357,7 @@ document.addEventListener('noir:app-state', ({ detail }) => {
 });
 document.addEventListener('noir:orientation-state', syncActivity);
 document.addEventListener('visibilitychange', () => {
+  dealGate.setActive(activityClock.active && !document.hidden);
   backgroundMusic.setActive(activityClock.active && !document.hidden);
   syncTurnAttention();
   hintNotification.setActive(activityClock.active && !document.hidden);
@@ -1316,6 +1367,7 @@ window.addEventListener('pagehide', (event) => {
   backgroundMusic.setActive(false);
   heroTurnAttention.reset();
   if (event.persisted) return;
+  dealGate.cancel();
   backgroundMusic.dispose();
   compactCoach.removeEventListener('change', changeCoachLayout);
   hintNotification.destroy();
@@ -1328,6 +1380,17 @@ window.addEventListener('pageshow', (event) => {
     updateCoach(true);
   }
 });
-nextHand();
+$('#join-table-button').onclick = () => {
+  if (game.phase !== 'idle' || !activityClock.active) return;
+  nextHand();
+};
+document.addEventListener(
+  'noir:ready',
+  () => {
+    backgroundMusic.setActive(activityClock.active && !document.hidden);
+  },
+  { once: true },
+);
+refreshWaitingTable();
 recordsView.initialize();
 registerTools();

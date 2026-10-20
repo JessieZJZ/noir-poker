@@ -105,6 +105,10 @@ test('WeChat compiled controller completes a real nine-seat hand without modern 
   });
   try {
     controller.start();
+    controller.join();
+    const [dealId, deal] = pending.entries().next().value;
+    pending.delete(dealId);
+    deal();
     const game = controller.getGame();
     while (game.actor !== 0) api.act(game, game.actor, 'call');
     controller.preset('all');

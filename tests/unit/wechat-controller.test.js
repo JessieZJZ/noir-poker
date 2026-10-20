@@ -61,6 +61,8 @@ function setup(t, initial = {}, options = {}) {
   });
   t.after(() => controller.destroy());
   controller.start();
+  controller.join();
+  while (snapshots.at(-1).dealing) timers.runNext();
   return { controller, timers, preferences, sounds, snapshots, latest: () => snapshots.at(-1) };
 }
 function reachHero(controller) {
@@ -115,6 +117,8 @@ test('WeChat visual attention survives mute, cancels on sizing/hide/retry/destro
   });
   t.after(() => adapter.destroy());
   adapter.start();
+  adapter.join();
+  clock.runNext();
   reachHero(controller);
   assert.equal(latest().turnPhase, 'enter');
   controller.setRaise(controller.getGame().bigBlind * 4);
@@ -688,6 +692,7 @@ test('WeChat accepts inclusive small-blind boundaries, restores queued preferenc
   });
   t.after(() => resumed.destroy());
   resumed.start();
+  resumed.join();
   assert.equal(resumed.getGame().smallBlind, 50000);
   assert.equal(resumed.getGame().players[0].stack, 10000000);
   assert.equal(controller.requestSmallBlind('25'), true);
@@ -770,6 +775,7 @@ test('WeChat records preserve retries, resume unfinished bankrolls, and open new
   const old = restored.getRecords()[0];
   assert.equal(old.attempts.at(-1).status, 'unfinished');
   restored.start();
+  restored.join();
   assert.equal(
     snapshots.at(-1).sessionNumber,
     2,
@@ -841,6 +847,7 @@ test('WeChat relaunch continues the same session and rolls an incomplete hand ba
   });
   t.after(() => resumed.destroy());
   resumed.start();
+  resumed.join();
   assert.equal(view.sessionNumber, 1);
   assert.equal(view.hand, 2);
   assert.equal(resumed.getRecords()[0].id, sessionId);

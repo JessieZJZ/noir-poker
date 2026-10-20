@@ -333,6 +333,8 @@ test('SE initial rendering and repeated resizes retain a readable proportional t
     await page.setViewportSize(size);
     await page.reload();
     await page.waitForFunction(() => !!window.qa);
+    await page.locator('#join-table-button').click();
+    await expect(page.locator('.game-surface')).toHaveAttribute('data-entry-state', 'playing');
     await page.evaluate(() => {
       window.qa.stop();
       return document.fonts.ready;

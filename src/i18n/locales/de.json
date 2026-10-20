@@ -1915,5 +1915,10 @@
   "延迟进攻": "Verzögerte Aggression",
   "关闭风格介绍": "Stilübersicht schließen",
   "所有风格的训练参数（0–100）": "Trainingsparameter für alle Prototypen (0-100)",
-  "风格": "Stil"
+  "风格": "Stil",
+  "入座开练": "Platz nehmen",
+  "已就位": "Bereit",
+  "牌桌已就绪": "Der Tisch ist bereit",
+  "等待入座，即将开始第 {0} 局第 {1} 手": "Einstieg offen · Als Nächstes: Sitzung {0}, Hand {1}",
+  "虚拟筹码 · 本地练习": "Virtuelle Chips · Lokales Training"
 }

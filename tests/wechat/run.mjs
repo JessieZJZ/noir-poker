@@ -74,6 +74,10 @@ try {
     }
     throw Error('Mini-program page did not reach the expected state');
   };
+  await wait((data) => data.tableReady && data.waitingForSeat);
+  await mini.screenshot({ path: path.join(output, 'waiting-before-entry.png') });
+  await (await page.$('#join-table-button')).tap();
+  await wait((data) => !data.dealing && !data.waitingForSeat);
   const scrollHomeTop = async () => {
     // Native page scrolling and the Page's onPageScroll event are asynchronous.
     // Finish any overlay restoration before opening the next modal at the top.

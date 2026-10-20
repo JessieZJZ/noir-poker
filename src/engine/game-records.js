@@ -392,6 +392,16 @@ export function createGameRecords({ storage, now = Date.now, id } = {}) {
     return candidate;
   };
   const current = () => state.sessions.find((session) => session.id === state.currentId);
+  function needsSession(game, newSession = false) {
+    const session = current();
+    return (
+      newSession ||
+      !session ||
+      session.playerCount !== game.players.length ||
+      !sameStakes(session.stakes, game.stakes) ||
+      (!(game.replayAttempt || 0) && session.attempts.some((attempt) => attempt.hand >= game.hand))
+    );
+  }
   const findAttempt = (attemptId) =>
     state.sessions.flatMap((s) => s.attempts).find((a) => a.id === attemptId);
   const write = () => {
@@ -443,12 +453,7 @@ export function createGameRecords({ storage, now = Date.now, id } = {}) {
         sameStakes(session.stakes, game.stakes)
       )
         return copy(existing);
-      const fresh =
-        newSession ||
-        !session ||
-        session.playerCount !== game.players.length ||
-        !sameStakes(session.stakes, game.stakes) ||
-        (attemptNumber === 0 && session.attempts.some((a) => a.hand >= game.hand));
+      const fresh = needsSession(game, newSession);
       finishUnfinished();
       if (fresh) {
         if (session) session.endedAt = now();
@@ -579,6 +584,13 @@ export function createGameRecords({ storage, now = Date.now, id } = {}) {
       return copy(summaries);
     },
     revision: () => revision,
+    nextHandIdentity(game, { newSession = false } = {}) {
+      const next = { ...game, hand: game.hand + 1, replayAttempt: 0 };
+      return {
+        sessionNumber: needsSession(next, newSession) ? state.nextNumber : current().number,
+        hand: next.hand,
+      };
+    },
     sessionNumber: () => current()?.number || 0,
     getAttempt: (attemptId) => {
       const attempt = findAttempt(attemptId);

@@ -1439,6 +1439,9 @@ test('first visit presents balanced opponents with sound enabled', async ({ page
 test('returning restores all saved options before the first fresh hand, including pending choices', async ({
   page,
 }) => {
+  await page.locator('#join-table-button').click();
+  await expect(page.locator('.game-surface')).toHaveAttribute('data-entry-state', 'playing');
+  await page.evaluate(() => window.qa.stop());
   await openSettings(page);
   await page.locator('#player-count').selectOption('9');
   await toggleHints(page);
@@ -1479,7 +1482,8 @@ test('returning restores all saved options before the first fresh hand, includin
     'theo',
     'finn',
   ]);
-  expect(state.hand).toBe(1);
+  expect(state.hand).toBe(0);
+  expect(state.phase).toBe('idle');
   expect(state.board).toEqual([]);
   expect(state.result).toBeNull();
   for (const player of state.players) expect(player.stack + player.bet).toBe(20000);

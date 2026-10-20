@@ -129,7 +129,7 @@ test('Web audio loops the same local element, preserves position and rejects a s
   });
   assert.equal(audio.src, 'https://example.test/poker/audio/background-music.m4a');
   assert.equal(audio.loop, true);
-  assert.equal(gain.gain.value, BACKGROUND_MUSIC_VOLUME);
+  assert.equal(gain.gain.value, 0, 'Entry starts quietly');
   assert.equal(gain.connected, mixedOutput, 'Music and cues share the final mix limiter');
   music.setActive(false);
   finish();
@@ -137,6 +137,7 @@ test('Web audio loops the same local element, preserves position and rejects a s
   assert.equal(audio.paused, true);
   assert.equal(audio.currentTime, 27);
   music.setActive(true);
+  await Promise.resolve();
   assert.equal(audio.paused, false);
   assert.equal(allocations, 1);
   music.setEnabled(false);
@@ -190,7 +191,7 @@ test('WeChat late subpackage load/canplay cannot resurrect muted, hidden or disp
   const audio = audios[0];
   assert.equal(audio.src, '/music/background-music.m4a');
   assert.equal(audio.loop, true);
-  assert.equal(audio.volume, BACKGROUND_MUSIC_VOLUME);
+  assert.equal(audio.volume, 0);
   assert.equal(audio.playCount, 1);
   music.setActive(false);
   audio.ready();
@@ -234,14 +235,15 @@ test('native apps and touch browsers select the phone master; desktop keeps the 
       },
     });
     assert.equal(audio.src, `https://example.test/poker/audio/${expected}`);
-    assert.equal(audio.volume, 1, 'Phone mastering also works without Web Audio');
+    assert.equal(audio.volume, 0, 'Entry fade also works without Web Audio');
     assert.equal(audio.loop, true);
     music.dispose();
   }
 });
 
 test('WeChat ducks across overlapping cues and cancels stale volume timers on hide, mute and disposal', async () => {
-  let serial = 0;
+  let serial = 0,
+    now = 0;
   const jobs = new Map();
   const audio = {
     onPlay(fn) {
@@ -258,8 +260,9 @@ test('WeChat ducks across overlapping cues and cancels stale volume timers on hi
     { createInnerAudioContext: () => audio },
     {
       loadSource: () => '/music/background-music.m4a',
+      now: () => now,
       schedule(fn, delay) {
-        assert.equal(delay, 650);
+        assert.ok([40, 650].includes(delay));
         jobs.set(++serial, fn);
         return serial;
       },
@@ -267,6 +270,11 @@ test('WeChat ducks across overlapping cues and cancels stale volume timers on hi
     },
   );
   await new Promise((resolve) => setTimeout(resolve, 0));
+  assert.equal(audio.volume, 0);
+  now = 2400;
+  const initial = jobs.entries().next().value;
+  jobs.delete(initial[0]);
+  initial[1]();
   assert.equal(audio.volume, 1);
   music.duck();
   const stale = jobs.get(serial);
@@ -290,9 +298,9 @@ test('WeChat ducks across overlapping cues and cancels stale volume timers on hi
     const cancelled = jobs.get(serial);
     stop();
     assert.equal(jobs.size, 0);
-    assert.equal(audio.volume, 1);
+    assert.equal(audio.volume, 0);
     cancelled();
-    assert.equal(audio.volume, 1);
+    assert.equal(audio.volume, 0);
   }
   music.duck();
   assert.equal(jobs.size, 0);

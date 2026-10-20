@@ -157,7 +157,8 @@ test('generated WeChat JavaScript loads the controller and complete player resea
   controller.start();
   assert.equal(controller.getGame().players.length, 5);
   assert.equal(snapshot.seats.length, 4);
-  assert.equal(snapshot.heroPosition, 'BTN');
+  assert.equal(snapshot.heroPosition, '');
+  assert.equal(snapshot.entryState, 'waiting');
   context.wx = {};
   context.getCurrentPages = () => [];
   const table = load('./pages/table/page-definition.js');

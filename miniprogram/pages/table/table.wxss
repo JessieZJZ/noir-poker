@@ -1781,3 +1781,5 @@
   margin: 10px 0;
   line-height: 1.65;
 }
+
+@import './entry.wxss';

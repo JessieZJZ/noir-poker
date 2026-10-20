@@ -12,6 +12,7 @@ import {
 } from '../../tests/fixtures/review-spots.js';
 
 function fixtureGame(count = 6, heroFirst = false) {
+  dealGate.cancel();
   seatHandVisibility.clear();
   clearTimeout(timer);
   botWait = null;
@@ -123,6 +124,10 @@ window.qa = {
     return game.players[id].hole.map((c) => rankText(c.rank) + c.symbol);
   },
   stop() {
+    if (dealGate.pending) {
+      dealGate.cancel();
+      render();
+    }
     clearTimeout(timer);
     botWait = null;
   },

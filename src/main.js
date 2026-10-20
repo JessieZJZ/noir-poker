@@ -11,7 +11,9 @@ const { prepareDropdowns } = await import('./ui/dropdowns.js');
 prepareDropdowns();
 const { prepareNameTooltips } = await import('./ui/name-tooltip.js');
 prepareNameTooltips();
-// The controller has prepared the hand and scheduled its pre-paint fitting.
+// The controller has prepared the waiting table and its pre-paint fitting.
 // Readiness must also complete while the page's animation clock is paused.
 document.documentElement.dataset.appReady = 'true';
 document.body.inert = false;
+
+document.dispatchEvent(new Event('noir:ready'));

@@ -139,7 +139,7 @@ module.exports = {
               arriving:
                 animate && (arriving || (!changedDeal && Boolean(before?.cards[index]?.arriving))),
             })),
-            backCards: [0, 1].map((index) => ({
+            backCards: (view.waitingForSeat ? [] : [0, 1]).map((index) => ({
               key: `${dealKey}:${index}`,
               delay: seat.id * 65 + index * 140,
               arriving:
@@ -151,7 +151,8 @@ module.exports = {
         });
         const update = {
           ...view,
-          tableReady: view.heroCards.length === 2 && view.seats.length >= 4,
+          tableReady:
+            (view.waitingForSeat || view.heroCards.length === 2) && view.seats.length >= 4,
           finishing:
             view.done || view.hand !== this.data.hand || view.replay !== this.data.replay
               ? false
@@ -180,7 +181,14 @@ module.exports = {
         // Large research catalogs and card artwork need not cross the service/
         // view bridge on every bot turn. Preserve existing card nodes and motion.
         const patch = presentationPatch(this.data, update);
-        if (Object.keys(patch).length) this.setData(patch, () => this.tightenSeatRanks());
+        if (Object.keys(patch).length)
+          this.setData(patch, () => {
+            this.tightenSeatRanks();
+            if (update.tableReady && !this._readOnlyAttempt && typeof getApp === 'function') {
+              getApp().noirTableReady = true;
+              getApp().noirMusic?.setActive?.(!this._hidden && !this._destroyed);
+            }
+          });
         if (changedDeal)
           this.scheduleCardMotion('deal', 1300, () => {
             const patch = {};
@@ -234,6 +242,9 @@ module.exports = {
       this._controller.show();
       this._initialHistoryShown = true;
     }
+  },
+  joinTable() {
+    this._controller?.join();
   },
   onShow() {
     const returningFromRecords = Boolean(this._browsingRecords);

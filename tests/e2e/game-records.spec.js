@@ -8,6 +8,11 @@ import {
 const records = (page) => page.evaluate(() => window.noir.getRecords());
 const state = (page) => page.evaluate(() => window.noir.getState());
 const openRecords = async (page) => {
+  if ((await state(page)).phase === 'idle' && (await page.locator('main.main').isVisible())) {
+    await page.locator('#join-table-button').click();
+    await expect(page.locator('.game-surface')).toHaveAttribute('data-entry-state', 'playing');
+    await page.evaluate(() => window.qa.stop());
+  }
   await page.locator('#rules-button').click();
   await expect(page.locator('#guide-menu')).toBeVisible();
   await page.locator('#records-menu-item').click();
@@ -493,7 +498,8 @@ test('reloading a historical URL retains its list parent and does not reload pra
   await page.waitForFunction(() => !!window.qa);
   await page.evaluate(() => window.qa.stop());
   const resumed = await state(page);
-  expect(resumed.hand).toBe(before.hand + 1);
+  expect(resumed.hand).toBe(before.hand);
+  expect(resumed.phase).toBe('idle');
   expect(resumed.sessionNumber).toBe(before.sessionNumber);
   await expect(page.locator('#history-page')).toBeVisible();
   await page.evaluate(() => (window.recordsReloadDocument = true));
@@ -680,6 +686,9 @@ test('reload keeps the session, refunds an unfinished attempt and starts a new h
   expect(live.phase).not.toBe('done');
   await page.reload();
   await page.waitForFunction(() => !!window.qa);
+  expect((await state(page)).phase).toBe('idle');
+  await page.locator('#join-table-button').click();
+  await expect(page.locator('.game-surface')).toHaveAttribute('data-entry-state', 'playing');
   await page.evaluate(() => window.qa.stop());
   const after = await page.evaluate(() => window.qa.snapshot());
   expect(after.hand).toBe(before.hand + 1);

@@ -220,6 +220,8 @@ export async function buildWechat(output = wechatOutput) {
       'hero-turn.js',
       'card-rank-glyphs.js',
       'background-music.js',
+      'music-fade.js',
+      'deal-gate.js',
     ]) {
       const compiled = await transform(await readFile(path.join(root, 'src/ui', name), 'utf8'), {
         format: 'cjs',

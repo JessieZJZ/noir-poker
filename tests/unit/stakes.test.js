@@ -231,6 +231,7 @@ test('stakes changes immediately rebuild Web engine and WeChat session, rejectin
     unschedule: (id) => jobs.delete(id),
   });
   c.start();
+  c.join();
   const old = c.getGame();
   assert.deepEqual(old.stakes, DEFAULT_STAKES);
   while (old.phase === 'playing') act(old, old.actor, 'fold');

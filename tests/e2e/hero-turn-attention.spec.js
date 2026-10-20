@@ -171,6 +171,7 @@ test('sizing, background, settlement and retry do not leak old reminders', async
   await page.clock.fastForward(9000);
   await expect(phase(page)).toHaveAttribute('data-turn-phase', '');
   await page.locator('#restart-hand-button').click();
+  await page.clock.runFor(1300);
   await expect(phase(page)).toHaveAttribute('data-turn-phase', /enter|waiting/);
 });
 

@@ -1909,5 +1909,10 @@
   "后位能以较宽范围争夺盲注，并在翻后获得位置优势。": "In posizione avanzata puoi contendere i bui con un range più ampio e mantenere il vantaggio di posizione dopo il flop.",
   "复盘本手加注，判断对手弃牌能否让这条路线长期盈利。": "Rivedi il rilancio di questa mano e valuta se i fold avversari possono rendere questa linea redditizia nel lungo periodo.",
   "弃牌避免投入，但也放弃了后位争夺盲注的机会。": "Il fold evita un investimento, ma rinuncia anche alla possibilità di contendere i bui da posizione avanzata.",
-  "赢了，但有一步不值得长期重复": "Hai vinto, ma una decisione non merita di essere ripetuta nel lungo periodo"
+  "赢了，但有一步不值得长期重复": "Hai vinto, ma una decisione non merita di essere ripetuta nel lungo periodo",
+  "入座开练": "Siediti al tavolo",
+  "已就位": "Pronto",
+  "牌桌已就绪": "Il tavolo è pronto",
+  "等待入座，即将开始第 {0} 局第 {1} 手": "In attesa del tuo arrivo · Segue sessione {0}, mano {1}",
+  "虚拟筹码 · 本地练习": "Fiches virtuali · Allenamento locale"
 }

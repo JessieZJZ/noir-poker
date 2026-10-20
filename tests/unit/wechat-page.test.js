@@ -58,6 +58,7 @@ function setup(
   t,
   {
     playerCount = 6,
+    waiting = false,
     info = { windowWidth: 390, windowHeight: 844, statusBarHeight: 47, safeArea: { bottom: 810 } },
     menuRect,
   } = {},
@@ -211,6 +212,15 @@ function setup(
   };
   stack.push(page);
   page.onLoad();
+  if (!waiting) {
+    page.joinTable();
+    for (let count = 0; page.data.dealing && count < 50; count++) {
+      const [id, job] = [...jobs].sort((a, b) => a[1].due - b[1].due || a[0] - b[0])[0];
+      jobs.delete(id);
+      now = job.due;
+      job.fn();
+    }
+  }
   t.after(() => page.onUnload());
   function flush() {
     for (let count = 0; jobs.size; count++) {
@@ -241,11 +251,12 @@ function setup(
   };
 }
 
-test('WeChat publishes its first complete hand atomically after the launch artwork', (t) => {
-  const { page, definition } = setup(t);
+test('WeChat publishes the waiting table atomically after the launch artwork', (t) => {
+  const { page, definition } = setup(t, { waiting: true });
   assert.equal(definition.data.tableReady, false);
   assert.equal(page.data.tableReady, true);
-  assert.equal(page.data.heroCards.length, 2);
+  assert.equal(page.data.heroCards.length, 0);
+  assert.equal(page.data.waitingForSeat, true);
   assert.equal(page.data.seats.length, page.data.settings.playerCount - 1);
   assert.match(template, /wx:if="\{\{!tableReady\}\}" class="launch-screen"/);
   assert.match(template, /<view\s+wx:else\s+class="screen /);
@@ -632,7 +643,7 @@ test('WeChat turn, fold, settlement and retry keep the table fixed while compact
   assert.match(template, /class="raise-controls" wx:if="\{\{!compactActions\}\}"/);
   assert.match(
     template,
-    /height: {{tableHeight \+ 50 \+ \(historyReadOnly \|\| compactActions \? 64 : 134\)}}px/,
+    /height: {{tableHeight \+ 50 \+ \(waitingForSeat \? 0 : historyReadOnly \|\| compactActions \? 64 : 134\)}}px/,
   );
   assert.equal(cssNumber('.action-dock.compact-actions', 'height'), 64);
   assert.equal(
@@ -1411,14 +1422,14 @@ test('WeChat shared page receives turn timer patches without changing table geom
     patches.push(Object.keys(patch));
     return original.call(this, patch, callback);
   };
-  const [id, job] = [...jobs].find(([, job]) => job.due === 3200);
+  const [id, job] = [...jobs].find(([, job]) => job.due === 1300 + 3200);
   jobs.delete(id);
   job.fn();
   assert.equal(page.data.turnPhase, 'waiting');
   assert.deepEqual(patches, [['turnPhase']]);
   assert.deepEqual(copy({ height: page.data.tableHeight, style: page.data.heroStyle }), geometry);
   page.previewRaise({ detail: { value: page.data.minRaise } });
-  assert.ok(![...jobs.values()].some((job) => job.due === 8000));
+  assert.ok(![...jobs.values()].some((job) => job.due === 1300 + 8000));
   page.onHide();
   assert.equal(page.data.turnPhase, '');
   page.onShow();
@@ -1841,7 +1852,7 @@ test('WeChat record lists send bounded summary patches and remain idle without r
 test('WeChat history uses a compact review dock and the records header keeps its return button intrinsic', () => {
   assert.match(
     template,
-    /tableHeight \+ 50 \+ \(historyReadOnly \|\| compactActions \? 64 : 134\)/,
+    /tableHeight \+ 50 \+ \(waitingForSeat \? 0 : historyReadOnly \|\| compactActions \? 64 : 134\)/,
   );
   assert.match(stylesheet, /\.history-shell \.action-dock\s*\{[^}]*height: 64px/);
   assert.match(stylesheet, /\.history-practice-heading\s*\{[^}]*margin: 12px 8px 8px/);

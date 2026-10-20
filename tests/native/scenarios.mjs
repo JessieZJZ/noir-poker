@@ -12,6 +12,16 @@ import { watchNativeMusicLoop } from './music-loop-probe.mjs';
 import { pressSelectedAndroidHome } from './immediate-background.mjs';
 import { BOT_THINK_LIMITS } from '../../src/engine/bot-timing.js';
 import { readReviewTagGeometry } from '../fixtures/review-tag-geometry.js';
+async function enterNativeTable(app) {
+  if ((await app.state()).phase !== 'idle') return;
+  await app.click('#join-table-button');
+  await app.waitFor(
+    async () => (await app.state()).entryState === 'playing',
+    10000,
+    'The entry deal must finish before play',
+  );
+}
+
 const documentLoginMarker = (text) => /sign in|log in|登录账号/i.test(text);
 
 async function waitForNativeGuidePaint(app) {
@@ -34,6 +44,7 @@ async function waitForNativeGuidePaint(app) {
 
 export async function waitForNativeHeroTurn(app, { now = Date.now, advanceSettled = false } = {}) {
   const started = now();
+  await enterNativeTable(app);
   const { playerCount } = await app.state();
   // An eight-player reset can have seven sequential, genuine bot pauses.
   // Budget those configured pauses rather than assuming one 20-second turn.
@@ -259,6 +270,7 @@ export async function nativeScenarios(app) {
     }
     const started = Date.now();
     try {
+      if (name !== 'entry-waiting-music-and-first-deal') await enterNativeTable(app);
       const evidence = await run();
       await app.screenshot(name);
       const entry = { name, status: 'passed', elapsedMs: Date.now() - started, evidence };
@@ -277,6 +289,133 @@ export async function nativeScenarios(app) {
       throw error;
     }
   };
+  await check('entry-waiting-music-and-first-deal', async () => {
+    const before = await app.state();
+    assert.equal(before.phase, 'idle');
+    assert.equal(before.entryState, 'waiting');
+    assert.equal(before.pot, 0);
+    assert.equal(before.hole.length, 0);
+    assert.ok(before.players.every((player) => player.bet === 0));
+    const music = await app.waitFor(
+      () =>
+        app.evaluate(() => {
+          const audio = document.querySelector('audio[data-background-music]');
+          return audio &&
+            !audio.paused &&
+            audio.currentTime > 0.1 &&
+            Number(audio.dataset.musicGain) === 1
+            ? {
+                time: audio.currentTime,
+                gain: Number(audio.dataset.musicGain),
+                source: audio.currentSrc,
+                count: document.querySelectorAll('audio[data-background-music]').length,
+              }
+            : null;
+        }),
+      15000,
+      'Music must already play before the first native touch',
+    );
+    await app.sleep(300);
+    const later = await app.evaluate(
+      () => document.querySelector('audio[data-background-music]').currentTime,
+    );
+    assert.ok(later > music.time);
+    assert.deepEqual(await app.state(), before, 'Waiting must not start a hand or move chips');
+    const chrome = await app.evaluate(() => {
+      const settings = document.querySelector('#opponents-button'),
+        menu = document.querySelector('#rules-button');
+      const a = getComputedStyle(settings),
+        b = getComputedStyle(menu);
+      return {
+        font: a.fontSize,
+        menuFont: b.fontSize,
+        weight: a.fontWeight,
+        menuWeight: b.fontWeight,
+        border: a.borderWidth,
+        dock: document.querySelector('.action-dock-slot').getBoundingClientRect().height,
+        activityHidden: document.querySelector('.activity-card').hidden,
+        entryCopy: document.querySelector('#entry-welcome').textContent.trim(),
+      };
+    });
+    assert.equal(chrome.font, chrome.menuFont);
+    assert.equal(chrome.weight, chrome.menuWeight);
+    assert.equal(chrome.border, '0px');
+    assert.equal(chrome.dock, 0);
+    assert.equal(chrome.activityHidden, true);
+    assert.ok(!chrome.entryCopy.includes('第一手'));
+    await app.screenshot('waiting-before-first-touch');
+    await app.click('#join-table-button');
+    const during = await app.state();
+    assert.equal(during.hand, before.hand + 1);
+    assert.equal(during.hole.length, 2);
+    assert.equal(
+      during.players.reduce((sum, player) => sum + player.stack, 0) + during.pot,
+      before.players.reduce((sum, player) => sum + player.stack, 0),
+    );
+    await app.waitFor(
+      async () => (await app.state()).entryState === 'playing',
+      10000,
+      'Visible entry deal must finish',
+    );
+    assert.equal((await app.state()).hand, during.hand);
+    const continued = await app.evaluate(() => ({
+      time: document.querySelector('audio[data-background-music]').currentTime,
+      count: document.querySelectorAll('audio[data-background-music]').length,
+    }));
+    assert.ok(continued.time > music.time);
+    assert.equal(continued.count, 1);
+    await app.evaluate(() => {
+      window.__entryMusicLifecycle = [];
+      window.__entryMusicListener = ({ detail }) => {
+        const audio = document.querySelector('audio[data-background-music]');
+        window.__entryMusicLifecycle.push({
+          active: detail.active,
+          paused: audio.paused,
+          time: audio.currentTime,
+          gain: Number(audio.dataset.musicGain),
+        });
+      };
+      document.addEventListener('noir:app-state', window.__entryMusicListener);
+    });
+    await app.background();
+    await app.sleep(500);
+    assert.ok([2, 3].includes(await app.nativeState()));
+    await app.activate();
+    const events = await app.evaluate(() => {
+      document.removeEventListener('noir:app-state', window.__entryMusicListener);
+      return window.__entryMusicLifecycle;
+    });
+    const hiddenIndex = events.findIndex((event) => !event.active);
+    const paused = events[hiddenIndex];
+    const foreground = events.slice(hiddenIndex + 1).find((event) => event.active);
+    assert.ok(paused && foreground, 'Both actual native lifecycle boundaries must arrive');
+    assert.equal(paused.paused, true);
+    assert.equal(paused.gain, 0);
+    assert.ok(foreground.time >= paused.time);
+    assert.ok(foreground.time - paused.time < 0.8);
+    const resumed = await app.waitFor(
+      () =>
+        app.evaluate(() => {
+          const audio = document.querySelector('audio[data-background-music]');
+          return !audio.paused && Number(audio.dataset.musicGain) === 1
+            ? { time: audio.currentTime }
+            : null;
+        }),
+      10000,
+      'Foreground music must resume',
+    );
+    assert.ok(resumed.time >= paused.time);
+    return {
+      before,
+      musicBeforeFirstTouch: music,
+      chrome,
+      during,
+      continued,
+      paused,
+      foreground,
+      resumed,
+    };
+  });
   await check('local-launch-and-no-login', async () => {
     const fonts = await app.waitFor(
       () =>

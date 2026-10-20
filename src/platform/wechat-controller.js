@@ -1,3 +1,4 @@
+import { createDealGate } from '../ui/deal-gate.js';
 import { difficultyPolicy } from '../engine/bot-difficulty.js';
 import { createGameRecords } from '../engine/game-records.js';
 import { compactChips, compactActionAmounts } from '../engine/chip-format.js';
@@ -147,6 +148,15 @@ export function createWechatController({
     hintText = '',
     reviewEpoch = 0,
     newSession = false;
+  game.history ||= [];
+  const dealGate = createDealGate({
+    schedule,
+    unschedule,
+    complete() {
+      render();
+      driveBots();
+    },
+  });
   let sliderMin = game.bigBlind * 2,
     sliderMax = game.stakes.startingStack,
     callCaption = '跟注',
@@ -186,7 +196,13 @@ export function createWechatController({
   }
   function updateHint() {
     const legal = legalActions(game, 0);
-    if (!settings.hints || !active || (!legal.enabled && game.phase !== 'done')) {
+    if (
+      dealGate.pending ||
+      game.phase === 'idle' ||
+      !settings.hints ||
+      !active ||
+      (!legal.enabled && game.phase !== 'done')
+    ) {
       cancelHint();
       return;
     }
@@ -235,7 +251,10 @@ export function createWechatController({
     records?.capture(game);
     updateHint();
     const hero = game.players[0],
-      legal = legalActions(game, 0),
+      legal = {
+        ...legalActions(game, 0),
+        enabled: !dealGate.pending && legalActions(game, 0).enabled,
+      },
       done = game.phase === 'done';
     if (legal.enabled && legal.canRaise) {
       raiseTo = legalRaiseTo(raiseTo, legal);
@@ -246,6 +265,9 @@ export function createWechatController({
       callCaption = legal.canCheck ? '过牌' : legal.callAmount < legal.toCall ? '全下' : '跟注';
       callAmountText = legal.canCheck ? '' : format(legal.callAmount || 0);
     }
+    const waitingForSeat = game.phase === 'idle';
+    const nextEntryHand = records?.nextHandIdentity(game, { newSession });
+    const dealing = dealGate.pending;
     const displayBoard = game.practiceBoard || game.board;
     const heroBest =
       done && game.board.length === 5 ? evaluate([...hero.hole, ...game.board]) : null;
@@ -264,9 +286,11 @@ export function createWechatController({
         revealed && game.board.length === 5 ? evaluate([...player.hole, ...game.board]) : null;
       const retained = visibleRecentAction(game, player);
       const rawAction =
-        game.actor === player.id && !done
+        game.actor === player.id && !done && !dealing
           ? '思考中'
-          : retained?.text || player.action || (done ? '未行动' : '等待行动');
+          : retained?.text ||
+            player.action ||
+            (waitingForSeat ? '已就位' : done ? '未行动' : '等待行动');
       const match =
         /^(?:(\d+-bet)\s+)?(小盲|大盲|跟注|开池至|加注至|下注至|下注|短全下至|全下至|全下)\s*(\d+)$/.exec(
           rawAction,
@@ -282,7 +306,7 @@ export function createWechatController({
       return {
         id: player.id,
         name: player.name,
-        position: seatPosition(game, player.id),
+        position: waitingForSeat ? '' : seatPosition(game, player.id),
         profileId: profile.id,
         profileName: profile.short,
         portrait: profile.id === 'balanced' ? '' : `/assets/portraits/${profile.id}.jpg`,
@@ -291,7 +315,7 @@ export function createWechatController({
         action: actionLabel + (match ? ' ' + format(Number(match[3])) : ''),
         actionLabel,
         actionAmount: match ? format(Number(match[3])) : '',
-        thinking: !done && game.actor === player.id,
+        thinking: !done && !dealing && game.actor === player.id,
         folded: player.folded,
         winner: done && game.winners.some((w) => w.id === player.id),
         cards: revealed
@@ -325,13 +349,22 @@ export function createWechatController({
       active: active && !disposed,
     });
     publish({
+      entryState: waitingForSeat ? 'waiting' : dealing ? 'dealing' : 'playing',
+      waitingForSeat,
+      dealing,
       turnPhase: attention.phase,
       hand: game.hand,
       sessionNumber: readOnlySessionNumber || records?.sessionNumber() || 1,
       recordsError: records?.error() || '',
       historyReadOnly: !!readOnlyAttempt,
       phase: game.phase,
-      street: done ? '本手结束' : STREET_NAMES[game.street] || '准备发牌',
+      street: waitingForSeat
+        ? `等待入座，即将开始第 ${nextEntryHand.sessionNumber} 局第 ${nextEntryHand.hand} 手`
+        : dealing
+          ? '正在发牌…'
+          : done
+            ? '本手结束'
+            : STREET_NAMES[game.street] || '准备发牌',
       replay: game.replayAttempt || 0,
       seats,
       board,
@@ -356,7 +389,7 @@ export function createWechatController({
         ? `下一手起始盲注${format(settings.stakes.smallBlind)}/${format(settings.stakes.bigBlind)}·筹码恢复为${format(settings.stakes.startingStack)}，统计重新开始`
         : '',
       stakesError,
-      heroPosition: seatPosition(game, 0),
+      heroPosition: waitingForSeat ? '' : seatPosition(game, 0),
       heroAction: compactActionAmounts(cleanAction(visibleRecentAction(game, hero)?.text || '')),
       heroRank: heroBest && (game.revealed || game.showdown) ? heroBest.label : '',
       heroWinner: done && game.winners.some((w) => w.id === 0),
@@ -388,7 +421,7 @@ export function createWechatController({
       })),
       done,
       canRetry: canRestartHand(game),
-      waiting: !done && !legal.enabled,
+      waiting: !done && !waitingForSeat && !legal.enabled,
       canRaise: !!(legal.enabled && legal.canRaise),
       canAct: !!legal.enabled,
       minRaise: sliderMin,
@@ -398,17 +431,21 @@ export function createWechatController({
       chipUnit: chipUnitOf(game),
       callLabel: callCaption,
       callText: callAmountText,
-      actionNotice: done
+      actionNotice: waitingForSeat
         ? ''
-        : hero.folded
-          ? '已弃牌，正在完成这手。'
-          : hero.allin
-            ? '已全下，等待摊牌。'
-            : legal.enabled
-              ? legal.canCheck
-                ? '可以过牌或主动下注。'
-                : `跟注需要 ${format(legal.callAmount)} 筹码。${legal.raiseReopened ? '' : '本轮加注权未重开，仅可跟注或弃牌。'}`
-              : `${game.players[game.actor]?.name || '对手'} 正在思考，请稍候。`,
+        : dealing
+          ? '正在发牌…'
+          : done
+            ? ''
+            : hero.folded
+              ? '已弃牌，正在完成这手。'
+              : hero.allin
+                ? '已全下，等待摊牌。'
+                : legal.enabled
+                  ? legal.canCheck
+                    ? '可以过牌或主动下注。'
+                    : `跟注需要 ${format(legal.callAmount)} 筹码。${legal.raiseReopened ? '' : '本轮加注权未重开，仅可跟注或弃牌。'}`
+                  : `${game.players[game.actor]?.name || '对手'} 正在思考，请稍候。`,
       profiles,
       settings: { ...settings, assignments: { ...settings.assignments } },
       difficultyDescription: difficultyPolicy(settings.difficulty).description,
@@ -457,7 +494,15 @@ export function createWechatController({
     });
   }
   function driveBots() {
-    if (disposed || !active || game.phase === 'done' || timer !== null) return;
+    if (
+      disposed ||
+      !active ||
+      game.phase === 'idle' ||
+      dealGate.pending ||
+      game.phase === 'done' ||
+      timer !== null
+    )
+      return;
     const ticket = epoch;
     if (game.phase === 'between') {
       timer = schedule(() => {
@@ -496,6 +541,7 @@ export function createWechatController({
   }
   function freshHand() {
     if (readOnlyAttempt || disposed) return;
+    dealGate.cancel();
     attention.reset();
     turnCue.reset();
     peeked.clear();
@@ -511,6 +557,7 @@ export function createWechatController({
     game.difficulty = settings.difficulty;
     applyBotSettings(game, settings);
     startHand(game);
+    dealGate.begin();
     records?.begin(game, { newSession });
     newSession = false;
     raiseTo = game.bigBlind * 3;
@@ -560,6 +607,7 @@ export function createWechatController({
       }
       settings.stakes = stakes;
       save();
+      refreshWaitingTable();
       render();
       return true;
     } catch (error) {
@@ -577,13 +625,23 @@ export function createWechatController({
       return false;
     }
   }
+  function refreshWaitingTable() {
+    if (game.phase !== 'idle') return;
+    if (game.players.length !== settings.playerCount || !sameStakes(game.stakes, settings.stakes)) {
+      game = newGame(settings.playerCount, settings.stakes);
+      game.history = [];
+    }
+    game.difficulty = settings.difficulty;
+    applyBotSettings(game, settings);
+  }
   function setPreference(key, value) {
     if (readOnlyAttempt) return;
     if (key === 'stakes') return requestStakes(value);
     const enablingSound = key === 'sound' && !settings.sound && value === true;
     const next = sanitize({ ...settings, [key]: value });
     settings = next;
-    if (enablingSound) effect('deal');
+    refreshWaitingTable();
+    if (enablingSound && game.phase !== 'idle') effect('deal');
     save();
     if (key === 'difficulty') {
       cancelBots();
@@ -597,15 +655,26 @@ export function createWechatController({
     driveBots();
   }
   return {
-    start: freshHand,
+    start() {
+      if (disposed || readOnlyAttempt) return;
+      refreshWaitingTable();
+      render();
+    },
+    join() {
+      if (disposed || readOnlyAttempt || !active || game.phase !== 'idle') return false;
+      freshHand();
+      return true;
+    },
     show() {
       if (disposed) return;
       active = true;
+      dealGate.setActive(true);
       render();
       driveBots();
     },
     hide() {
       active = false;
+      dealGate.setActive(false);
       cancelBots();
       cancelReview();
       cancelHint();
@@ -614,6 +683,7 @@ export function createWechatController({
     destroy() {
       disposed = true;
       active = false;
+      dealGate.cancel();
       attention.reset();
       cancelBots();
       cancelReview();
@@ -621,7 +691,7 @@ export function createWechatController({
     },
     action(action) {
       const legal = legalActions(game, 0);
-      if (readOnlyAttempt || !active || !legal.enabled) return false;
+      if (readOnlyAttempt || !active || dealGate.pending || !legal.enabled) return false;
       cancelBots();
       const contribution = game.players[0].total;
       act(game, 0, action, action === 'raise' ? raiseTo : undefined);
@@ -681,6 +751,7 @@ export function createWechatController({
     retry() {
       peeked.clear();
       if (readOnlyAttempt || !canRestartHand(game)) return false;
+      dealGate.cancel();
       attention.reset();
       turnCue.reset();
       cancelBots();
@@ -689,6 +760,7 @@ export function createWechatController({
       hintKey = '';
       records?.capture(game);
       restartHand(game);
+      dealGate.begin();
       records?.begin(game);
       raiseTo = game.bigBlind * 3;
       render();
@@ -723,6 +795,7 @@ export function createWechatController({
       )
         return;
       settings = sanitize({ ...settings, ...assignBotSeat(settings, id, profileId) });
+      refreshWaitingTable();
       save();
       render();
     },
@@ -735,12 +808,14 @@ export function createWechatController({
         mixed: false,
         mixedSeats: [],
       });
+      refreshWaitingTable();
       save();
       render();
     },
     toggleMixedProfiles() {
       if (readOnlyAttempt) return;
       settings = sanitize({ ...settings, ...toggleMixedLineup(settings, settings.playerCount) });
+      refreshWaitingTable();
       save();
       render();
     },

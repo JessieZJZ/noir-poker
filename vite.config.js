@@ -4,6 +4,8 @@ import { defineConfig } from 'vite';
 export default defineConfig(({ mode }) => ({
   base: './',
   server: {
+    // Keep test pages stable while another local task edits the shared source.
+    hmr: mode !== 'test',
     port: 4173,
     strictPort: true,
     // Native copies are build outputs, not changes to the shared Web source.

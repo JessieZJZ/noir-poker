@@ -155,7 +155,8 @@ test('the 50K small-blind limit saves raw digits, displays K/M, and applies when
   await page.evaluate(() => window.qa.stop());
   const fresh = await page.evaluate(() => window.qa.snapshot());
   expect(fresh.stakes).toEqual(stakes(50000));
-  expect(fresh.hand).toBe(1);
+  expect(fresh.hand).toBe(0);
+  expect(fresh.phase).toBe('idle');
   expect(fresh.stats).toEqual({ hands: 0, wins: 0, buyin: 10000000 });
   expect(fresh.players.every((player) => player.stack + player.total === 10000000)).toBe(true);
   await expect(page.locator('#blind-values')).toHaveText('50K / 100K');

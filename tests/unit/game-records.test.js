@@ -43,6 +43,33 @@ function finish(game, action = 'call') {
 }
 const stakes = { smallBlind: 125, bigBlind: 250 };
 
+test('entry previews the actual next session and hand without creating records or moving chips', () => {
+  const storage = memory(),
+    store = records(storage),
+    game = newGame(5, stakes);
+  const before = JSON.stringify(game);
+  const saved = storage.getItem(GAME_RECORDS_KEY);
+  assert.deepEqual(store.nextHandIdentity(game), { sessionNumber: 1, hand: 1 });
+  assert.equal(storage.getItem(GAME_RECORDS_KEY), saved);
+  assert.equal(JSON.stringify(game), before);
+  startHand(game);
+  store.begin(game);
+  finish(game, 'fold');
+  store.capture(game);
+  const continued = store.resume();
+  assert.deepEqual(store.nextHandIdentity(continued), { sessionNumber: 1, hand: 2 });
+  const changed = newGame(9, { smallBlind: 250, bigBlind: 500 });
+  assert.deepEqual(store.nextHandIdentity(changed), { sessionNumber: 2, hand: 1 });
+  assert.deepEqual(store.nextHandIdentity(continued, { newSession: true }), {
+    sessionNumber: 2,
+    hand: 2,
+  });
+  startHand(continued);
+  store.begin(continued);
+  assert.equal(store.sessionNumber(), 1);
+  assert.equal(continued.hand, 2);
+});
+
 test('zero-investment folds are settled losses while zero-net pot winners remain wins', () => {
   const store = records(),
     game = newGame(5, stakes);

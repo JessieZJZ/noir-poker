@@ -37,8 +37,13 @@
       /><text>NOIR</text><text wx:if="{{!compactNav}}" class="brand-sub">POKER</text></view
     >
     <view wx:if="{{!historyReadOnly}}" class="nav-actions"
-      ><button hover-class="none" class="icon-button" aria-label="设置" bindtap="openSettings">
-        <view class="gear-icon" /></button
+      ><button
+        hover-class="none"
+        class="icon-button settings-button"
+        aria-label="设置"
+        bindtap="openSettings"
+      >
+        <view class="gear-icon" /><text>设置</text></button
       ><button
         hover-class="none"
         class="guide-button"
@@ -66,17 +71,20 @@
     <text class="history-start-time">{{historyStartedAt}}</text>
   </view>
   <view
-    class="game-shell {{showdown.length ? 'has-showdown' : ''}} {{historyReadOnly ? 'history-shell' : ''}}"
-    style="height: {{tableHeight + 50 + (historyReadOnly || compactActions ? 64 : 134)}}px;"
+    class="game-shell entry-{{entryState}} {{showdown.length ? 'has-showdown' : ''}} {{historyReadOnly ? 'history-shell' : ''}}"
+    style="height: {{tableHeight + 50 + (waitingForSeat ? 0 : historyReadOnly || compactActions ? 64 : 134)}}px;"
   >
     <view class="game-header">
       <view class="hand-label"
-        ><text class="session-label">第 {{sessionNumber}} 局</text
-        ><text class="hand-divider">·</text
-        ><text>第 <text class="hand-number">{{hand < 10 ? '0' : ''}}{{hand}}</text> 手</text
-        ><block wx:if="{{!historyReadOnly}}"
-          ><text class="hand-divider">·</text><text>{{street}}</text></block
-        ><text wx:if="{{replay}}" class="replay">重打 {{replay}}</text></view
+        ><text wx:if="{{waitingForSeat}}">{{street}}</text
+        ><block wx:else
+          ><text class="session-label">第 {{sessionNumber}} 局</text
+          ><text class="hand-divider">·</text
+          ><text>第 <text class="hand-number">{{hand < 10 ? '0' : ''}}{{hand}}</text> 手</text
+          ><block wx:if="{{!historyReadOnly}}"
+            ><text class="hand-divider">·</text><text>{{street}}</text></block
+          ><text wx:if="{{replay}}" class="replay">重打 {{replay}}</text></block
+        ></view
       >
       <view class="blind-info"><text>盲注</text><text class="bright">{{blindText}}</text></view>
     </view>
@@ -230,6 +238,18 @@
               ><view wx:else class="card-art" style="{{item.artStyle}}"
             /></view>
           </view>
+        </view>
+        <view
+          wx:if="{{waitingForSeat}}"
+          class="entry-welcome"
+          style="left: {{arenaWidth / 2}}px; top: {{arenaHeight * 0.44}}px; --entry-scale: {{1 / arenaScale}};"
+        >
+          <text class="entry-eyebrow">NOIR POKER</text>
+          <text class="entry-title">牌桌已就绪</text>
+          <button id="join-table-button" class="entry-join" hover-class="none" bindtap="joinTable">
+            入座开练
+          </button>
+          <text class="entry-footnote">虚拟筹码 · 本地练习</text>
         </view>
         <view
           class="hero {{heroFolded ? 'hero-folded' : ''}} {{heroRank || heroWinner ? 'has-hero-rank' : ''}}"
@@ -422,7 +442,7 @@
       ><view><text>{{winrate}}%</text><text>胜率</text></view></view
     ></view
   >
-  <view class="activity-panel"
+  <view wx:if="{{!waitingForSeat}}" class="activity-panel"
     ><view class="session-title"
       ><text>本局动态</text><text>{{done ? 'FINISHED' : 'LIVE'}}</text></view
     ><view class="activity-list"
