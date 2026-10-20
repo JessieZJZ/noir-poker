@@ -22,7 +22,7 @@ const count = Number(args.players || 6),
   profile = args.profile || 'balanced',
   policySeed = Number(args.seed ?? 781),
   deckSeed = Number(args['deck-seed'] ?? 711);
-const mixed = ['peter', 'abao', 'viktor', 'jungleman', 'dwan', 'st', 'tan', 'abao'];
+const mixed = ['jett', 'mira', 'knox', 'theo', 'finn', 'vale', 'rook', 'mira'];
 if (profile !== 'mixed' && !BOT_PROFILES.some((p) => p.id === profile))
   throw Error('Invalid profile');
 if (!Number.isInteger(hands) || hands < 1 || hands > 10000) throw Error('hands must be 1–10000');

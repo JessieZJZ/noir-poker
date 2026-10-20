@@ -14,7 +14,7 @@ function actualReview(kind) {
 }
 function highCardControl() {
   const view = deceptiveView('As Kh', 'Qd 8c 2h', { equity: 0.5 }),
-    decision = chooseBotAction(view, getBotProfile('negreanu'), freshBotMood(), 'off', () => 0.1),
+    decision = chooseBotAction(view, getBotProfile('nico'), freshBotMood(), 'off', () => 0.1),
     record = { ...decision, id: 1, name: 'Mia', trace: { ...decision.trace, view } };
   return { record, review: explainOpponent(record) };
 }
@@ -79,7 +79,8 @@ test('closing draw folds, made plus redraw calls and high-card pot control local
         if (!['zh-CN', 'zh-TW', 'ja'].includes(locale))
           assert.doesNotMatch(translated, /\p{Script=Han}/u, `${locale}: ${translated}`);
         for (const fact of [record.name, '4.95K', '10K', '800'])
-          if (text.includes(fact)) assert.ok(translated.includes(fact), `${locale}: ${fact}`);
+          if (text.includes(fact))
+            assert.ok(translated.includes(localizeText(fact)), `${locale}: ${fact}`);
       }
   }
 });

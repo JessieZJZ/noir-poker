@@ -28,8 +28,8 @@ for (const width of [320, 390, 768, 1280]) {
     const count = await page.evaluate(() => {
       window.qa.reviewLine();
       const game = window.qa.snapshot();
-      game.botDecisions[1].trace.profile = 'tan';
-      game.botDecisions[1].trace.profileName = '谭老板，Tan Xuan';
+      game.botDecisions[1].trace.profile = 'rook';
+      game.botDecisions[1].trace.profileName = '多街施压，多街施压';
       window.qa.loadRecordedGame(game);
       return game.decisions.length;
     });
@@ -66,7 +66,8 @@ for (const width of [320, 390, 768, 1280]) {
     await capture('completed-tags');
     await page.locator('#review-opponents-tab').click();
     const tags = await checkTags('#review-opponents .review-timeline');
-    if (width <= 390) expect(tags.some((tag) => tag.lines > 1)).toBe(true);
+    expect(tags.some((tag) => tag.text.includes('多街施压'))).toBe(true);
+    expect(tags.some((tag) => tag.text.includes('多街施压，多街施压'))).toBe(false);
     if (width === 390) {
       const path = info.outputPath('compact-opponent-tags.png');
       await page.locator('#review-dialog').screenshot({ path });

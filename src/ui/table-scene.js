@@ -100,7 +100,7 @@ export function renderOpponentSeats(
           : '';
       const profile = getBotProfile(p.botProfile),
         mood = g.emotionMode === 'off' ? 'steady' : p.botMood.kind,
-        title = `${p.name} · ${profile.short}（训练原型） · 模拟状态：${MOOD_LABELS[mood]}`;
+        title = `${p.name} · ${profile.short}（电脑角色） · 模拟状态：${MOOD_LABELS[mood]}`;
       const faceSignature = `${g.hand}:${g.replayAttempt || 0}:${reveal ? p.hole.map((c) => c.key).join(',') : 'hidden'}`;
       const arriving =
         reveal && isSeatHandAnimated(p) && seatFaceSignatures.get(p.id) !== faceSignature;
@@ -134,7 +134,7 @@ export function createSnapshotSurface(template, g, { sessionNumber, visible, pee
   arena.dataset.playerCount = g.players.length;
   arena.classList.toggle(
     'has-full-player-names',
-    g.players.slice(1).some((p) => ['viktor', 'jungleman', 'dwan'].includes(p.botProfile)),
+    g.players.slice(1).some((p) => ['knox', 'theo', 'finn'].includes(p.botProfile)),
   );
   setLocalizedText(query('#session-number-label'), `第 ${sessionNumber} 局`);
   setLocalizedText(query('#hand-number'), String(g.hand).padStart(2, '0'));

@@ -1,108 +1,70 @@
-// Presentation-only assets: profile IDs stay stable in saved settings and hands.
+// Original illustrations; profile IDs also preserve saved configuration.
 export const PROFILE_PORTRAITS = {
-  negreanu: {
-    src: '/portraits/negreanu.jpg',
-    source: 'https://commons.wikimedia.org/wiki/File:DNegs_at_2022_WSOP.jpg',
-    credit: 'Captain Q Farf \u00b7 CC BY-SA 4.0',
-    position: '50% top',
+  rook: {
+    src: '/portraits/rook.jpg',
+    position: '50% 35%',
   },
-  holz: {
-    src: '/portraits/holz.jpg',
-    source: 'https://commons.wikimedia.org/wiki/File:Fedor_Holz_2018.jpg',
-    credit: '888poker Spain \u00b7 CC BY 3.0',
-    position: '50% top',
+  vale: {
+    src: '/portraits/vale.jpg',
+    position: '50% 35%',
   },
-  haxton: {
-    src: '/portraits/haxton.jpg',
-    source: 'https://commons.wikimedia.org/wiki/File:Isaac_Haxton_2018.jpg',
-    credit: '888poker Spain \u00b7 CC BY 3.0',
-    position: '50% top',
+  slate: {
+    src: '/portraits/slate.jpg',
+    position: '50% 35%',
   },
-  koon: {
-    src: '/portraits/koon.jpg',
-    source: 'https://commons.wikimedia.org/wiki/File:Jason_Koon_partypoker_Millions_2018.jpg',
-    credit: 'World Poker Tour \u00b7 CC BY 3.0',
-    position: '50% top',
+  jett: {
+    src: '/portraits/jett.jpg',
+    position: '50% 35%',
   },
-  antonius: {
-    src: '/portraits/antonius.jpg',
-    source: 'https://commons.wikimedia.org/wiki/File:Patrik_Antonius_2008.jpg',
-    credit: 'Equipo Unibet \u00b7 CC BY 2.0',
-    position: '50% top',
+  mira: {
+    src: '/portraits/mira.jpg',
+    position: '50% 35%',
   },
-  hellmuth: {
-    src: '/portraits/hellmuth.jpg',
-    source: 'https://commons.wikimedia.org/wiki/File:Phil_Hellmuth_2021.jpg',
-    credit: 'World Poker Tour \u00b7 CC BY 3.0',
-    position: '50% top',
+  knox: {
+    src: '/portraits/knox.jpg',
+    position: '50% 35%',
   },
-  ivey: {
-    src: '/portraits/ivey.jpg',
-    source: 'https://commons.wikimedia.org/wiki/File:Phil_Ivey_(2009_WSOP).jpg',
-    credit: 'www.LasVegasVegas.com \u00b7 CC BY-SA 3.0',
-    position: '50% top',
+  theo: {
+    src: '/portraits/theo.jpg',
+    position: '50% 35%',
   },
-  chidwick: {
-    src: '/portraits/chidwick.jpg',
-    source: 'https://commons.wikimedia.org/wiki/File:Stephen_Chidwick_2018.jpg',
-    credit: 'World Poker Tour \u00b7 CC BY 3.0',
-    position: '50% top',
+  finn: {
+    src: '/portraits/finn.jpg',
+    position: '50% 35%',
   },
-  tan: {
-    src: '/portraits/tan.jpeg',
-    source: 'https://cash-game-invitational-1.triton-series.com/',
-    credit: 'Triton Poker Series',
+  sage: {
+    src: '/portraits/sage.jpg',
+    position: '50% 35%',
   },
-  st: {
-    src: '/portraits/st.jpeg',
-    source: 'https://cash-game-invitational-1.triton-series.com/',
-    credit: 'Triton Poker Series',
+  nico: {
+    src: '/portraits/nico.jpg',
+    position: '50% 35%',
   },
-  zang: {
-    src: '/portraits/zang.jpeg',
-    source: 'https://cash-game-invitational-1.triton-series.com/',
-    credit: 'Triton Poker Series',
+  bram: {
+    src: '/portraits/bram.jpg',
+    position: '50% 35%',
   },
-  peter: {
-    src: '/portraits/peter.webp',
-    source: 'https://toppokerstreamers.com/player/peter-entrepreneur/',
-    credit: 'Top Poker Streamers · HCL',
-    position: '65% top',
-    zoom: 1.65,
-    origin: '50% top',
+  leon: {
+    src: '/portraits/leon.jpg',
+    position: '50% 35%',
   },
-  abao: {
-    src: '/portraits/abao.png',
-    source:
-      'https://pokerati.com/2026/08/top-streamed-hands-of-the-week-malinowski-and-dwan-take-on-the-kpc-high-rollers/',
-    credit: 'KPC Live · Pokerati',
-    // Use the explicitly labelled A BAO headshot within the original frame.
-    position: 'left center',
-    zoom: 8,
-    origin: '10.9% 54.8%',
+  owen: {
+    src: '/portraits/owen.jpg',
+    position: '50% 35%',
   },
-  viktor: {
-    src: '/portraits/viktor.jpg',
-    source: 'https://commons.wikimedia.org/wiki/File:Viktor_Blom_at_a_poker_event.jpg',
-    credit: 'Danny Maxwell Photography · CC BY-SA 4.0',
-    position: '50% 10%',
+  ezra: {
+    src: '/portraits/ezra.jpg',
+    position: '50% 35%',
   },
-  jungleman: {
-    src: '/portraits/jungleman.jpg',
-    source: 'https://commons.wikimedia.org/wiki/File:Daniel_Cates_2018.jpg',
-    credit: '888poker Spain · CC BY 3.0',
-    position: '50% 5%',
-    zoom: 1.35,
-    origin: '50% top',
+  luka: {
+    src: '/portraits/luka.jpg',
+    position: '50% 35%',
   },
-  dwan: {
-    src: '/portraits/dwan.jpg',
-    source: 'https://commons.wikimedia.org/wiki/File:Tom_Dwan_2021.jpg',
-    credit: 'World Poker Tour · CC BY 3.0',
-    position: '50% top',
+  iris: {
+    src: '/portraits/iris.jpg',
+    position: '50% 35%',
   },
 };
-
 const escape = (value) =>
   String(value).replace(
     /[&<>"']/g,
@@ -114,11 +76,8 @@ export function portraitContent(profileId, fallback, initialSource = null) {
   return `<span class="portrait-fallback" aria-hidden="true"${initialSource ? ` data-i18n-initial="${escape(initialSource)}"` : ''}>${escape(fallback)}</span>${photo ? `<img class="persona-portrait" data-portrait-profile="${profileId}" src="${photo.src}" alt="" decoding="async" style="object-position:${photo.position || 'center'};--portrait-zoom:${photo.zoom || 1};--portrait-origin:${photo.origin || 'center'}" />` : ''}`;
 }
 
-export function portraitCredit(profileId) {
-  const photo = PROFILE_PORTRAITS[profileId];
-  return photo
-    ? `<a class="profile-photo-credit" href="${photo.source}" target="_blank" rel="noopener noreferrer">头像：${photo.credit}</a>`
-    : '';
+export function portraitCredit() {
+  return '';
 }
 
 export function preparePortraits(root) {

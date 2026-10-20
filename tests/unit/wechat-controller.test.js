@@ -282,21 +282,21 @@ test('WeChat difficulty applies immediately; profiles, emotions and seats auto-s
   assert.equal(game.difficulty, 'hard');
   for (const callback of stale) callback();
   assert.equal(game.history.length, 0);
-  controller.setSeatProfile(1, 'tan');
+  controller.setSeatProfile(1, 'rook');
   controller.setPreference('emotionMode', 'lively');
   controller.setPreference('playerCount', 5);
   assert.equal(game.players[1].botProfile, 'balanced');
   assert.equal(game.emotionMode, 'subtle');
   assert.equal(game.players.length, 9);
   const saved = JSON.parse(preferences.get('noir-wechat-settings-v1'));
-  assert.equal(saved.assignments[1], 'tan');
+  assert.equal(saved.assignments[1], 'rook');
   assert.equal(saved.emotionMode, 'lively');
   assert.equal(saved.playerCount, 5);
   finish(game, 'fold');
   controller.nextHand();
   const next = controller.getGame();
   assert.equal(next.players.length, 5);
-  assert.equal(next.players[1].botProfile, 'tan');
+  assert.equal(next.players[1].botProfile, 'rook');
   assert.equal(next.emotionMode, 'lively');
   assert.equal(next.difficulty, 'hard');
 });
@@ -421,7 +421,7 @@ test('WeChat retry restores original private deal and retracts awards/statistics
   finish(game, 'fold');
   assert.equal(game.stats.hands, 1);
   assert.ok(game.players[0].stack > baseline.players[0].stack);
-  controller.setSeatProfile(1, 'dwan');
+  controller.setSeatProfile(1, 'finn');
   controller.setPreference('emotionMode', 'lively');
   assert.equal(controller.retry(), true);
   assert.deepEqual(originalState(game), baseline);
@@ -433,7 +433,7 @@ test('WeChat retry restores original private deal and retracts awards/statistics
   assert.deepEqual(game, restored);
   assert.equal(game.players[1].botProfile, 'balanced');
   assert.equal(game.emotionMode, 'subtle');
-  assert.equal(controller.getSettings().assignments[1], 'dwan');
+  assert.equal(controller.getSettings().assignments[1], 'finn');
 });
 
 test('WeChat hide and destroy reject already queued bot callbacks; show resumes cleanly', (t) => {
@@ -568,14 +568,14 @@ test('Chinese table hints match Web prices and stale timers cannot clear a new d
 
 test('WeChat mixed lineup persists ownership and manual selections survive cancellation', (t) => {
   const { controller, latest, preferences } = setup(t);
-  controller.setSeatProfile(1, 'tan');
+  controller.setSeatProfile(1, 'rook');
   controller.toggleMixedProfiles();
   assert.equal(latest().settings.mixed, true);
-  assert.equal(latest().settings.assignments[1], 'tan');
+  assert.equal(latest().settings.assignments[1], 'rook');
   const auto = latest().settings.assignments[2];
   controller.setSeatProfile(2, auto);
   controller.toggleMixedProfiles();
-  assert.equal(latest().settings.assignments[1], 'tan');
+  assert.equal(latest().settings.assignments[1], 'rook');
   assert.equal(latest().settings.assignments[2], auto);
   for (const id of [3, 4, 5]) assert.equal(latest().settings.assignments[id], 'balanced');
   assert.equal(JSON.parse(preferences.get('noir-wechat-settings-v1')).mixed, false);

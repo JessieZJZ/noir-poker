@@ -486,14 +486,14 @@ test('showdown participant names include the current named style and stay readab
   await closeSettings(page);
   const names = [
     '你',
-    'Mia（谭老板）',
-    'Alex（ST 王）',
-    'River（臧书奴）',
-    'Kai（Peter）',
-    'Luna（阿宝）',
-    'Theo（Viktor Blom）',
-    'Jade（Daniel Cates）',
-    'Leo（Tom Dwan）',
+    'Mia（多街施压）',
+    'Alex（强牌诱导）',
+    'River（河牌争夺）',
+    'Kai（宽松取值）',
+    'Luna（听牌施压）',
+    'Theo（松凶强攻）',
+    'Jade（计算进攻）',
+    'Leo（多线进攻）',
   ];
   for (const width of [320, 390, 1280]) {
     await page.setViewportSize({ width, height: 900 });
@@ -532,11 +532,11 @@ test('showdown participant names include the current named style and stay readab
     }
   }
   await page.locator('#opponents-button').click();
-  await page.locator('[data-bot-seat="7"]').selectOption('peter');
+  await page.locator('[data-bot-seat="7"]').selectOption('jett');
   await closeSettings(page);
   await expect(
     page.locator('.showdown-player[data-player="7"] .showdown-player-heading > strong'),
-  ).toHaveText('Jade（Daniel Cates）');
+  ).toHaveText('Jade（计算进攻）');
   await page.locator('#next-button').click();
   await page.evaluate(() => window.qa.stop());
   await expect(page.locator('.decision-strip')).toBeVisible();
@@ -547,7 +547,7 @@ test('showdown participant names include the current named style and stay readab
   });
   await expect(
     page.locator('.showdown-player[data-player="7"] .showdown-player-heading > strong'),
-  ).toHaveText('Jade（Peter）');
+  ).toHaveText('Jade（宽松取值）');
 });
 
 test('hero recent actions persist within the street and clear on new streets except fold and all-in', async ({
@@ -1207,10 +1207,10 @@ test('activity shows actual assigned personas across actions and results without
   await page.evaluate(() => window.qa.stop());
   await page.locator('#opponents-button').click();
   for (const [id, profile] of Object.entries({
-    1: 'viktor',
-    2: 'st',
-    3: 'jungleman',
-    4: 'dwan',
+    1: 'knox',
+    2: 'vale',
+    3: 'theo',
+    4: 'finn',
   }))
     await page.locator(`[data-bot-seat="${id}"]`).selectOption(profile);
   await closeSettings(page);
@@ -1222,13 +1222,13 @@ test('activity shows actual assigned personas across actions and results without
     }, count);
     const list = page.locator('#activity-list');
     await expect(list.locator('.log-blind')).toHaveText(
-      'Mia（Viktor Blom） SB 小盲 25 · Alex（ST 王） BB 大盲 50',
+      'Mia（松凶强攻） SB 小盲 25 · Alex（强牌诱导） BB 大盲 50',
     );
     for (const label of [
-      'Mia（Viktor Blom）',
-      'Alex（ST 王）',
-      'River（Daniel Cates）',
-      'Kai（Tom Dwan）',
+      'Mia（松凶强攻）',
+      'Alex（强牌诱导）',
+      'River（计算进攻）',
+      'Kai（多线进攻）',
     ])
       await expect(list).toContainText(label);
     await expect(list).not.toContainText('Luna（');
@@ -1259,24 +1259,24 @@ test('activity shows actual assigned personas across actions and results without
 
   await page.evaluate(() => window.qa.foldPotRefund());
   await expect(page.locator('#activity-list .log-result').last()).toContainText(
-    'Alex（ST 王） CO 获胜',
+    'Alex（强牌诱导） CO 获胜',
   );
-  await expect(page.locator('#activity-list')).toContainText('Alex（ST 王） CO 未被跟注的 75');
+  await expect(page.locator('#activity-list')).toContainText('Alex（强牌诱导） CO 未被跟注的 75');
   await assertWinnerIndicators(page);
   await page.locator('#opponents-button').click();
-  await page.locator('[data-bot-seat="2"]').selectOption('abao');
+  await page.locator('[data-bot-seat="2"]').selectOption('mira');
   await closeSettings(page);
   await page.locator('.seat-2 .seat-peek').click();
-  await expect(page.locator('#activity-list')).toContainText('Alex（ST 王） CO 获胜');
-  await expect(page.locator('#activity-list')).not.toContainText('Alex（阿宝）');
+  await expect(page.locator('#activity-list')).toContainText('Alex（强牌诱导） CO 获胜');
+  await expect(page.locator('#activity-list')).not.toContainText('Alex（听牌施压）');
 
   await page.locator('#next-button').click();
   await page.evaluate(() => {
     window.qa.stop();
     window.qa.foldRest();
   });
-  await expect(page.locator('#activity-list')).toContainText('Alex（阿宝）');
-  await expect(page.locator('#activity-list')).not.toContainText('Alex（ST 王）');
+  await expect(page.locator('#activity-list')).toContainText('Alex（听牌施压）');
+  await expect(page.locator('#activity-list')).not.toContainText('Alex（强牌诱导）');
 });
 
 test('bots wait for their contextual deadline, reuse it on scheduling and replan after a difficulty change', async ({
@@ -1470,14 +1470,14 @@ test('returning restores all saved options before the first fresh hand, includin
   expect(state.playerCount).toBe(9);
   expect(state.emotionMode).toBe('lively');
   expect(state.players.slice(1).map((p) => p.botProfile)).toEqual([
-    'tan',
-    'st',
-    'zang',
-    'peter',
-    'abao',
-    'viktor',
-    'jungleman',
-    'dwan',
+    'rook',
+    'vale',
+    'slate',
+    'jett',
+    'mira',
+    'knox',
+    'theo',
+    'finn',
   ]);
   expect(state.hand).toBe(1);
   expect(state.board).toEqual([]);
@@ -1490,7 +1490,7 @@ test('returning restores all saved options before the first fresh hand, includin
   });
   await page.locator('#opponents-button').click();
   await expect(page.locator('#emotion-mode')).toHaveValue('lively');
-  await expect(page.locator('[data-bot-seat="8"]')).toHaveValue('dwan');
+  await expect(page.locator('[data-bot-seat="8"]')).toHaveValue('finn');
 });
 
 test('per-seat styles apply next hand, survive resize and refresh, and freeze on retry', async ({
@@ -1498,7 +1498,7 @@ test('per-seat styles apply next hand, survive resize and refresh, and freeze on
 }) => {
   await page.evaluate(() => window.qa.foldWin(6));
   await page.locator('#opponents-button').click();
-  const assignments = { 1: 'tan', 2: 'st', 3: 'zang', 4: 'peter', 5: 'abao', 8: 'st' };
+  const assignments = { 1: 'rook', 2: 'vale', 3: 'slate', 4: 'jett', 5: 'mira', 8: 'vale' };
   for (const [id, style] of Object.entries(assignments))
     await page.locator(`[data-bot-seat="${id}"]`).selectOption(style);
   await page.locator('#emotion-mode').selectOption('lively');
@@ -1527,16 +1527,16 @@ test('per-seat styles apply next hand, survive resize and refresh, and freeze on
       return window.noir.getState();
     });
     expect(state.playerCount).toBe(count);
-    if (count === 9) expect(state.players[8].botProfile).toBe('st');
+    if (count === 9) expect(state.players[8].botProfile).toBe('vale');
   }
   await page.reload();
   await page.waitForFunction(() => !!window.qa);
   await expect(page.locator('#player-count')).toHaveValue('9');
   expect((await page.evaluate(() => window.noir.getState())).playerCount).toBe(9);
-  expect((await page.evaluate(() => window.noir.getState())).players[1].botProfile).toBe('tan');
+  expect((await page.evaluate(() => window.noir.getState())).players[1].botProfile).toBe('rook');
   await page.locator('#opponents-button').click();
-  await expect(page.locator('[data-bot-seat="8"]')).toHaveValue('st');
-  await expect(page.locator('#opponents-dialog .settings-info')).toContainText('训练原型');
+  await expect(page.locator('[data-bot-seat="8"]')).toHaveValue('vale');
+  await expect(page.locator('#opponents-dialog .settings-info')).toContainText('训练风格');
   await expect(page.locator('#opponents-dialog .settings-info')).toContainText('策略倾向');
 });
 
@@ -1544,24 +1544,24 @@ test('nine-seat style assignment shows every persona at all sizes and executes t
   page,
 }) => {
   const assignments = {
-    1: 'tan',
-    2: 'st',
-    3: 'zang',
-    4: 'peter',
-    5: 'abao',
-    6: 'viktor',
-    7: 'jungleman',
-    8: 'dwan',
+    1: 'rook',
+    2: 'vale',
+    3: 'slate',
+    4: 'jett',
+    5: 'mira',
+    6: 'knox',
+    7: 'theo',
+    8: 'finn',
   };
   const labels = [
-    '谭老板',
-    'ST 王',
-    '臧书奴',
-    'Peter',
-    '阿宝',
-    'Viktor Blom',
-    'Daniel Cates',
-    'Tom Dwan',
+    '多街施压',
+    '强牌诱导',
+    '河牌争夺',
+    '宽松取值',
+    '听牌施压',
+    '松凶强攻',
+    '计算进攻',
+    '多线进攻',
   ];
   await page.evaluate(() => window.qa.foldWin(9));
   await page.locator('#opponents-button').click();
@@ -1652,7 +1652,7 @@ test('all named portraits preview immediately, follow saved styles next hand and
   page,
 }) => {
   test.setTimeout(60000);
-  const profiles = ['tan', 'st', 'zang', 'peter', 'abao', 'viktor', 'jungleman', 'dwan'];
+  const profiles = ['rook', 'vale', 'slate', 'jett', 'mira', 'knox', 'theo', 'finn'];
   await setPlayerCount(page, 9);
   await page.evaluate(() => window.qa.foldWin(9));
   await page.locator('#opponents-button').click();
@@ -1666,27 +1666,26 @@ test('all named portraits preview immediately, follow saved styles next hand and
         ),
     )
     .toBe(true);
-  await expect(page.locator('#profile-cards')).toContainText('谭老板');
+  await expect(page.locator('#profile-cards')).toContainText('多街施压');
   await expect(page.locator('#profile-cards')).not.toContainText('谈老板');
   await assignNamedLineup(page);
   const firstDraft = page.locator('[data-opponent-row="1"] .opponent-portrait');
-  await expect(firstDraft.locator('img')).toHaveAttribute('data-portrait-profile', 'tan');
+  await expect(firstDraft.locator('img')).toHaveAttribute('data-portrait-profile', 'rook');
   await page.locator('[data-bot-seat="1"]').focus();
-  await page.locator('[data-bot-seat="1"]').selectOption('dwan');
-  await expect(firstDraft.locator('img')).toHaveAttribute('data-portrait-profile', 'dwan');
+  await page.locator('[data-bot-seat="1"]').selectOption('finn');
+  await expect(firstDraft.locator('img')).toHaveAttribute('data-portrait-profile', 'finn');
   await expect(page.locator('[data-bot-seat="1"]')).toBeFocused();
-  await page.locator('[data-profile-preview="dwan"]').click();
+  await page.locator('[data-profile-preview="finn"]').click();
   await expect(page.locator('#profile-detail')).toBeVisible();
   await expect(page.locator('#profile-detail img')).toHaveAttribute(
     'data-portrait-profile',
-    'dwan',
+    'finn',
   );
-  await expect(page.locator('#profile-detail .profile-photo-credit')).toContainText(
-    'World Poker Tour',
-  );
+  await expect(page.locator('#profile-detail .profile-photo-credit')).toHaveCount(0);
+  await expect(page.locator('#profile-detail .character-section')).toHaveCount(5);
   if (await page.locator('[data-close-profile-detail]').isVisible())
     await page.locator('[data-close-profile-detail]').click();
-  await page.locator('[data-bot-seat="1"]').selectOption('tan');
+  await page.locator('[data-bot-seat="1"]').selectOption('rook');
   await closeSettings(page);
   await expect(page.locator('#seats .persona-portrait')).toHaveCount(0);
   await page.locator('#next-button').click();
@@ -1730,7 +1729,7 @@ test('all named portraits preview immediately, follow saved styles next hand and
   }
   await page.locator('#opponents-button').click();
   for (let id = 2; id <= 8; id++)
-    await page.locator(`[data-bot-seat="${id}"]`).selectOption('jungleman');
+    await page.locator(`[data-bot-seat="${id}"]`).selectOption('theo');
   await closeSettings(page);
   for (const width of [320, 390, 700, 768, 901, 1000, 1150, 1280]) {
     await page.setViewportSize({ width, height: 900 });
@@ -1782,14 +1781,14 @@ test('all named portraits preview immediately, follow saved styles next hand and
   await closeSettings(page);
   await expect(page.locator('.seat-1 .persona-portrait')).toHaveAttribute(
     'data-portrait-profile',
-    'tan',
+    'rook',
   );
   await page.evaluate(() => window.qa.foldRest());
   await page.locator('#restart-hand-button').click();
   await page.evaluate(() => window.qa.stop());
   await expect(page.locator('.seat-1 .persona-portrait')).toHaveAttribute(
     'data-portrait-profile',
-    'tan',
+    'rook',
   );
   await page.evaluate(() => window.qa.foldRest());
   await page.locator('#next-button').click();
@@ -1805,19 +1804,19 @@ test('all named portraits preview immediately, follow saved styles next hand and
 test('a failed portrait keeps its initial and selection controls intact, and another style still loads', async ({
   page,
 }) => {
-  await page.route('**/portraits/tan.jpeg', (route) => route.abort());
+  await page.route('**/portraits/rook.jpg', (route) => route.abort());
   await page.locator('#opponents-button').click();
-  const card = page.locator('[data-profile-preview="tan"]');
+  const card = page.locator('[data-profile-preview="rook"]');
   await expect(card.locator('img')).toBeHidden();
   await expect(card.locator('.portrait-fallback')).toBeVisible();
-  await expect(card.locator('.portrait-fallback')).toHaveText('谭');
+  await expect(card.locator('.portrait-fallback')).toHaveText('多');
   await page.locator('[data-bot-seat="1"]').focus();
-  await page.locator('[data-bot-seat="1"]').selectOption('tan');
+  await page.locator('[data-bot-seat="1"]').selectOption('rook');
   const avatar = page.locator('[data-opponent-row="1"] .opponent-portrait');
   await expect(avatar.locator('img')).toBeHidden();
   await expect(avatar.locator('.portrait-fallback')).toHaveText('M');
   const before = await avatar.boundingBox();
-  await page.locator('[data-bot-seat="1"]').selectOption('st');
+  await page.locator('[data-bot-seat="1"]').selectOption('vale');
   await expect
     .poll(() => avatar.locator('img').evaluate((image) => image.complete && image.naturalWidth > 0))
     .toBe(true);
@@ -1833,7 +1832,7 @@ test('configured bots use the fast-deal path and observed samples roll back on r
 }) => {
   await page.evaluate(() => window.qa.foldWin(6));
   await page.locator('#opponents-button').click();
-  for (let id = 1; id < 6; id++) await page.locator(`[data-bot-seat="${id}"]`).selectOption('abao');
+  for (let id = 1; id < 6; id++) await page.locator(`[data-bot-seat="${id}"]`).selectOption('mira');
   await closeSettings(page);
   await page.evaluate(() => window.qa.heroTurn(6));
   await page.locator('#fold-button').click();
@@ -1842,7 +1841,7 @@ test('configured bots use the fast-deal path and observed samples roll back on r
   await page.waitForFunction(() => window.noir.getState().phase === 'done');
   const state = await page.evaluate(() => window.noir.getState());
   for (const p of state.players.slice(1)) {
-    expect(p.botProfile).toBe('abao');
+    expect(p.botProfile).toBe('mira');
     expect(p.botStats.hands).toBe(1);
     expect(p.botStats.pfr).toBeLessThanOrEqual(p.botStats.vpip);
     expect(p.botStats.vpip).toBeLessThanOrEqual(p.botStats.hands);
@@ -1853,7 +1852,7 @@ test('configured bots use the fast-deal path and observed samples roll back on r
     return window.noir.getState();
   });
   for (const p of retry.players.slice(1)) {
-    expect(p.botProfile).toBe('abao');
+    expect(p.botProfile).toBe('mira');
     expect(p.botStats.hands).toBe(0);
   }
 });
@@ -2044,16 +2043,16 @@ test('foreign style assignments persist and opponent review filters include assi
   await page.evaluate(() => window.qa.foldWin(9));
   await page.locator('#opponents-button').click();
   for (const [seat, profile] of [
-    [1, 'viktor'],
-    [2, 'jungleman'],
-    [3, 'dwan'],
+    [1, 'knox'],
+    [2, 'theo'],
+    [3, 'finn'],
   ])
     await page.locator(`[data-bot-seat="${seat}"]`).selectOption(profile);
   await expect(page.locator('#profile-cards .profile-card')).toHaveCount(17);
   for (const [profile, name] of [
-    ['viktor', 'Viktor Blom'],
-    ['jungleman', 'Daniel Cates'],
-    ['dwan', 'Tom Dwan'],
+    ['knox', '松凶强攻'],
+    ['theo', '计算进攻'],
+    ['finn', '多线进攻'],
   ]) {
     const choice = page.locator(`[data-profile-preview="${profile}"]`);
     await expect(choice.locator('strong')).toHaveText(name);
@@ -2066,9 +2065,9 @@ test('foreign style assignments persist and opponent review filters include assi
   await page.locator('#next-button').click();
   await page.evaluate(() => window.qa.stop());
   const state = await page.evaluate(() => window.noir.getState());
-  expect(state.players[1].botProfile).toBe('viktor');
-  expect(state.players[2].botProfile).toBe('jungleman');
-  expect(state.players[3].botProfile).toBe('dwan');
+  expect(state.players[1].botProfile).toBe('knox');
+  expect(state.players[2].botProfile).toBe('theo');
+  expect(state.players[3].botProfile).toBe('finn');
   await page.evaluate(() => window.qa.reviewLine());
   await page.locator('#review-hand-button').click();
   await expect(page.locator('#review-dialog[data-analysis-status="done"]')).toBeVisible({
@@ -2078,5 +2077,5 @@ test('foreign style assignments persist and opponent review filters include assi
   await expect(page.locator('#review-advanced, #review-simulation')).toHaveCount(0);
   await page.locator('#review-opponents-tab').click();
   const options = await page.locator('#review-opponent-filter option').allTextContents();
-  expect(options.some((name) => /Mia.*(Viktor|Isildur)/.test(name))).toBe(true);
+  expect(options.some((name) => /Mia.*松凶强攻/.test(name))).toBe(true);
 });

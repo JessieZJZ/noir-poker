@@ -139,11 +139,11 @@ test('generated WeChat JavaScript loads the controller and complete player resea
   }
   const { BOT_PROFILES } = load('./shared/engine/bot-profiles.js');
   const research = JSON.parse(
-    readFileSync(path.join(workspace.directory, 'src/data/player-research.json'), 'utf8'),
+    readFileSync(path.join(workspace.directory, 'src/data/characters.json'), 'utf8'),
   );
-  for (const [id, player] of Object.entries(research.players))
+  for (const [id, player] of Object.entries(research.characters))
     assert.deepEqual(
-      JSON.parse(JSON.stringify(BOT_PROFILES.find((profile) => profile.id === id).research)),
+      JSON.parse(JSON.stringify(BOT_PROFILES.find((profile) => profile.id === id).character)),
       player,
     );
   const { createWechatController } = load('./shared/platform/wechat-controller.js');

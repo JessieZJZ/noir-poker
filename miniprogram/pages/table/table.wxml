@@ -614,7 +614,7 @@
         ></view
       >
       <view class="settings-module"
-        ><text class="module-title">牌手介绍</text
+        ><text class="module-title">风格介绍</text
         ><view class="profile-grid"
           ><button
             hover-class="none"
@@ -645,7 +645,7 @@
             aria-pressed="{{settings.mixed}}"
             bindtap="mixProfiles"
           >
-            混合阵容
+            混合风格
           </button></view
         ><view class="seat-roster"
           ><view
@@ -681,7 +681,7 @@
         <scroll-view wx:if="{{comparisonOpen}}" scroll-x class="comparison-scroll"
           ><view class="comparison-table"
             ><view class="comparison-row"
-              ><text>原型</text><text>入池宽度</text><text>进攻倾向</text><text>诈唬倾向</text
+              ><text>风格</text><text>入池宽度</text><text>进攻倾向</text><text>诈唬倾向</text
               ><text>跟到底倾向</text><text>强牌诱导</text><text>下注 / 池</text></view
             ><view class="comparison-row" wx:for="{{profiles}}" wx:key="id"
               ><text>{{item.short}}</text
@@ -694,19 +694,12 @@
       <view class="info-module"
         ><text class="module-title">使用说明</text
         ><text>设置自动保存。难度立即生效；风格与情绪下一手生效，当前手与重打保持原设置。</text
-        ><text
-          >根据公开牌局与资料提炼的娱乐训练原型，非本人复刻。0–100 是游戏内策略倾向，不是真人的 VPIP
-          或 PFR；精彩牌局无法代表长期表现。</text
-        >
-        <text class="notice-title">关于具名牌手的模拟</text>
-        <text
-          >模拟行动与情绪不代表本人实际打法或操作；本应用与牌手及赛事方无合作、授权或背书关系，不对本人作评价或贬损。请通过
-          KPC Live 和 Triton 等官方赛事内容了解真实牌手。</text
-        >
-        <text class="notice-link" bindtap="togglePersonaNotice">查看完整说明</text>
+        ><text>0–100 表示游戏内策略倾向。位置、人数、牌力、跟注价格和合法动作优先于所选风格。</text
+        ><text class="notice-title">关于训练风格</text
+        ><text>电脑角色的策略和情绪均为游戏设定，介绍描述常见倾向，不保证每次采用相同操作。</text
+        ><text class="notice-link" bindtap="togglePersonaNotice">查看完整说明</text>
         <view wx:if="{{noticeExpanded}}" class="notice-expanded"
-          ><text
-            >电脑策略、参数、行动、思考时间和情绪均为合成训练机制，不代表任何真人的完整打法、心理状态或职业水平。公开资料来源不表示相关人物或赛事方参与、合作、推荐或背书。资料引用及免责声明不是姓名、照片或商标的使用授权。</text
+          ><text>电脑角色的策略和情绪均为游戏设定，介绍描述常见倾向，不保证每次采用相同操作。</text
           ><text
             >复盘使用行动发生前可见的信息和假设对手范围进行估算，不用对手隐藏底牌、后续发牌或最终赢家评价你的决策；不保证最优打法或收益。</text
           ></view
@@ -725,9 +718,10 @@
           src="{{detailProfile.portrait}}"
           class="detail-avatar"
           mode="aspectFill"
-        /><text>{{detailProfile.name}}</text></view
+        /><view wx:else class="detail-avatar initials">均</view
+        ><text>{{detailProfile.name}}</text></view
       >
-      <button hover-class="none" class="close" bindtap="closeProfile" aria-label="关闭牌手介绍">
+      <button hover-class="none" class="close" bindtap="closeProfile" aria-label="关闭风格介绍">
         <view class="close-icon" /></button></view
     ><scroll-view scroll-y class="modal-scroll"
       ><view class="modal-body"
@@ -742,57 +736,15 @@
           >常用翻后下注：<text class="profile-sizing-value"
             >{{detailProfile.sizingLow}}–{{detailProfile.sizingHigh}}% 池</text
           ></text
-        ><text wx:if="{{!detailProfile.research}}" class="detail-evidence"
-          >{{detailProfile.evidence}}</text
-        ><view wx:if="{{detailProfile.research}}" class="research-copy"
-          ><view class="profile-overview"
-            ><text class="module-title">公开资料</text><text>{{detailProfile.evidence}}</text
-            ><text>{{detailProfile.research.identity}}</text
-            ><text>{{detailProfile.research.formatsText}}</text
-            ><text>{{detailProfile.research.limits}}</text
-            ><text class="muted">资料核对日期 · {{detailProfile.research.reviewedAt}}</text></view
-          ><text wx:if="{{detailProfile.research.career.length}}" class="module-title"
-            >履历摘录</text
-          ><view class="research-paragraph" wx:for="{{detailProfile.research.career}}" wx:key="text"
-            ><text>• {{item.text}}</text>
-            <text
-              wx:for="{{item.references}}"
-              wx:for-item="reference"
-              wx:key="url"
-              class="research-link"
-              data-url="{{reference.url}}"
-              bindtap="openResearchSource"
-              >{{reference.label}}
-            </text></view
-          ><text class="module-title">公开打法样本</text
+        ><view class="research-copy"
           ><view
-            class="research-paragraph"
-            wx:for="{{detailProfile.research.observations}}"
-            wx:key="text"
-            ><text>• {{item.text}}</text>
-            <text
-              wx:for="{{item.references}}"
-              wx:for-item="reference"
-              wx:key="url"
-              class="research-link"
-              data-url="{{reference.url}}"
-              bindtap="openResearchSource"
-              >{{reference.label}}
-            </text></view
-          ><text class="module-title">本地策略改编</text
-          ><text wx:for="{{detailProfile.research.adaptation}}" wx:key="*this">• {{item}}</text
-          ><view wx:for="{{detailProfile.sources}}" wx:key="id" class="research-source"
-            ><text class="research-link" data-url="{{item.url}}" bindtap="openResearchSource"
-              >[{{index + 1}}] {{item.label}}</text
-            ><text class="muted">{{item.kind}} · {{item.publishedAt || item.reviewedAt}}</text
-            ><text>{{item.context}}</text></view
+            class="character-section"
+            wx:for="{{detailProfile.character.sections}}"
+            wx:key="title"
+            wx:for-item="section"
+            ><text class="module-title">{{section.title}}</text
+            ><text wx:for="{{section.paragraphs}}" wx:key="*this">{{item}}</text></view
           ></view
-        ><text
-          wx:if="{{detailProfile.portraitCredit}}"
-          class="portrait-credit research-link"
-          data-url="{{detailProfile.portraitCredit.url}}"
-          bindtap="openResearchSource"
-          >头像：{{detailProfile.portraitCredit.label}}</text
         ></view
       ></scroll-view
     ></view

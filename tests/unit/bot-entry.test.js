@@ -115,7 +115,7 @@ test('small-open continuation keeps style and position differences and rejects g
   assert.equal(decision({ ...v, position: 'CO' }).action, 'call');
   assert.equal(decision({ ...v, position: 'UTG' }).action, 'fold');
   assert.equal(decision(smallOpen('7s 2h')).action, 'fold');
-  const totals = ['st', 'balanced', 'peter'].map((profile) => {
+  const totals = ['vale', 'balanced', 'jett'].map((profile) => {
     let continues = 0;
     for (let a = 0; a < deck.length; a++)
       for (let b = a + 1; b < deck.length; b++) {

@@ -62,7 +62,7 @@ try {
         keep: false,
         label:
           perspective === 'opponent'
-            ? ['ST', '谭老板，Tan Xuan', '阿宝，KPC A Bao', 'Peter，HCL'][index]
+            ? ['ST', '多街施压，多街施压', '听牌施压，KPC A Bao', 'Peter，HCL'][index]
             : ['待分析', '弃牌', '待分析', '弃牌'][index],
       }));
       await page.setData({

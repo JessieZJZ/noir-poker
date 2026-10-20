@@ -1107,7 +1107,7 @@ export async function nativeScenarios(app) {
       )
     )
       await app.click('#mix-opponents');
-    await app.select('[data-bot-seat="1"]', 'tan');
+    await app.select('[data-bot-seat="1"]', 'rook');
     await app.select('[data-bot-seat="2"]', 'balanced');
     await app.click('#mix-opponents');
     assert.equal(
@@ -1116,12 +1116,12 @@ export async function nativeScenarios(app) {
       ),
       'true',
     );
-    await app.select('[data-bot-seat="3"]', 'ivey');
+    await app.select('[data-bot-seat="3"]', 'sage');
     await app.click('#mix-opponents');
     const assignments = await app.evaluate(() =>
       [1, 2, 3].map((id) => document.querySelector(`[data-bot-seat="${id}"]`).value),
     );
-    assert.deepEqual(assignments, ['tan', 'balanced', 'ivey']);
+    assert.deepEqual(assignments, ['rook', 'balanced', 'sage']);
     await app.click('#opponents-dialog .close-dialog');
     await app.click('#rules-button');
     await app.click('#guide-menu-item');
@@ -1211,7 +1211,7 @@ export async function nativeScenarios(app) {
     await changeLanguage('zh-CN');
     await app.select('#player-count', '5');
     await app.select('#emotion-mode', 'lively');
-    await app.select('[data-bot-seat="1"]', 'tan');
+    await app.select('[data-bot-seat="1"]', 'rook');
     await app.click('#sound-button');
     await app.waitFor(
       async () => {
@@ -1261,7 +1261,7 @@ export async function nativeScenarios(app) {
       language: 'zh-CN',
       players: '5',
       emotion: 'lively',
-      profile: 'tan',
+      profile: 'rook',
       sound: 'false',
     });
     await app.click('#opponents-dialog .close-dialog');
@@ -1514,8 +1514,26 @@ export async function nativeScenarios(app) {
       restoredStakes: restored.stakes,
     };
   });
-  await check('researched-players-and-new-style-persistence', async () => {
-    const ids = ['ivey', 'negreanu', 'hellmuth', 'antonius', 'koon', 'chidwick', 'holz', 'haxton'];
+  await check('training-styles-and-persistence', async () => {
+    const ids = [
+      'balanced',
+      'rook',
+      'vale',
+      'slate',
+      'jett',
+      'mira',
+      'knox',
+      'theo',
+      'finn',
+      'sage',
+      'nico',
+      'bram',
+      'leon',
+      'owen',
+      'ezra',
+      'luka',
+      'iris',
+    ];
     await app.click('#opponents-button');
     const details = [];
     for (const id of ids) {
@@ -1536,15 +1554,31 @@ export async function nativeScenarios(app) {
         return {
           text: section.textContent,
           claims: section.querySelectorAll('a').length,
+          sections: section.querySelectorAll('.character-section').length,
+          images: [...document.querySelectorAll('#profile-detail img')].map((i) => ({
+            loaded: i.complete && i.naturalWidth > 0,
+            src: i.getAttribute('src'),
+          })),
+          fallback: document.querySelector('#profile-detail .portrait-fallback').textContent,
           sources: document.querySelectorAll('#profile-detail .profile-source-records a').length,
           overflow: section.scrollWidth > section.clientWidth + 1,
         };
       });
-      assert.ok(detail.text.includes('2026-10-11'));
-      assert.ok(detail.claims > 0 && detail.sources >= 2);
+      assert.equal(detail.sections, 5);
+      assert.equal(detail.claims, 0);
+      assert.equal(detail.sources, 0);
+      assert.doesNotMatch(detail.text, /Triton|KPC|Phil Ivey|ST Wang|履历摘录|公开打法样本/);
+      if (id === 'balanced') {
+        assert.equal(detail.images.length, 0);
+        assert.equal(detail.fallback, '均');
+      } else {
+        assert.equal(detail.images.length, 1);
+        assert.ok(detail.images[0].loaded);
+        assert.equal(detail.images[0].src, `/portraits/${id}.jpg`);
+      }
       assert.equal(detail.overflow, false);
-      if (id === 'haxton') {
-        await app.screenshot('researched-haxton-detail');
+      if (id === 'iris') {
+        await app.screenshot('delayed-aggression-style-detail');
         if (app.comparePage)
           await app.comparePage('player', [
             '#profile-detail',
@@ -1556,14 +1590,14 @@ export async function nativeScenarios(app) {
       if (await app.visible('[data-close-profile-detail]'))
         await app.click('[data-close-profile-detail]');
     }
-    await app.select('[data-bot-seat="1"]', 'haxton');
+    await app.select('[data-bot-seat="1"]', 'iris');
     await app.click('#opponents-dialog .close-dialog');
     await app.relaunch();
     const applied = await app.state();
-    assert.equal(applied.players[1].botProfile, 'haxton');
+    assert.equal(applied.players[1].botProfile, 'iris');
     await app.click('#opponents-button');
     const saved = await app.evaluate(() => document.querySelector('[data-bot-seat="1"]').value);
-    assert.equal(saved, 'haxton');
+    assert.equal(saved, 'iris');
     await app.click('#opponents-dialog .close-dialog');
     return { details, saved, applied: applied.players[1].botProfile };
   });

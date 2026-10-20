@@ -227,7 +227,7 @@ function botSnapshot() {
 
 test('public actor identities remain atomic inside translated action and board clauses', async () => {
   const text =
-    '这是 2–7 诈唬：单挑、有位置，对手本轮已经过牌；River（谭老板）在 BTN 位在 A♠ K♦ 9♥ 6♣ 3♦ 上用 325 争取 800，没有成牌或大听牌托底，主要赌对手愿意弃牌。';
+    '这是 2–7 诈唬：单挑、有位置，对手本轮已经过牌；River（多街施压）在 BTN 位在 A♠ K♦ 9♥ 6♣ 3♦ 上用 325 争取 800，没有成牌或大听牌托底，主要赌对手愿意弃牌。';
   try {
     for (const locale of SUPPORTED_LOCALES.filter(
       (locale) => !['zh-CN', 'zh-TW', 'ja'].includes(locale),

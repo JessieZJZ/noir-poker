@@ -180,8 +180,8 @@ test('Chinese, Korean and long locale persona tags keep the same height without 
   ]) {
     await prepare(page, size);
     await page.locator('#opponents-button').click();
-    await page.locator('[data-bot-seat="3"]').selectOption('viktor');
-    await page.locator('[data-bot-seat="4"]').selectOption('haxton');
+    await page.locator('[data-bot-seat="3"]').selectOption('knox');
+    await page.locator('[data-bot-seat="4"]').selectOption('iris');
     await closeSettings(page);
     await page.evaluate(() => window.qa.heroTurn(9));
     const read = () =>

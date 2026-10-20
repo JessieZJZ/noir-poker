@@ -68,23 +68,23 @@ function finish(g, random = seeded(42)) {
 test('saved settings reject unknown profiles and malformed modes', () => {
   const result = sanitizeBotSettings({
     emotionMode: 'hack',
-    assignments: { 1: 'tan', 2: 'nope', 9: 'peter' },
+    assignments: { 1: 'rook', 2: 'nope', 9: 'jett' },
   });
   assert.equal(result.emotionMode, 'subtle');
-  assert.equal(result.assignments[1], 'tan');
+  assert.equal(result.assignments[1], 'rook');
   assert.equal(result.assignments[2], 'balanced');
   assert.equal(Object.keys(result.assignments).length, 8);
 });
 test('all eight mixed 9-max assignments reach the executed policy with the corresponding parameter vector', () => {
   const assignments = {
-    1: 'tan',
-    2: 'st',
-    3: 'zang',
-    4: 'peter',
-    5: 'abao',
-    6: 'viktor',
-    7: 'jungleman',
-    8: 'dwan',
+    1: 'rook',
+    2: 'vale',
+    3: 'slate',
+    4: 'jett',
+    5: 'mira',
+    6: 'knox',
+    7: 'theo',
+    8: 'finn',
   };
   for (let id = 1; id <= 8; id++) {
     const g = newGame(9, { smallBlind: 25, bigBlind: 50, startingStack: 5000, chipUnit: 25 });
@@ -242,8 +242,8 @@ test('style differences change entry and value-trap behavior over common decisio
     Array.from({ length: 300 }, (_, seed) =>
       chooseBotAction(input, profile, freshBotMood(), 'off', seeded(seed + 100)),
     );
-  const peter = BOT_PROFILES.find((p) => p.id === 'peter'),
-    st = BOT_PROFILES.find((p) => p.id === 'st');
+  const peter = BOT_PROFILES.find((p) => p.id === 'jett'),
+    st = BOT_PROFILES.find((p) => p.id === 'vale');
   assert.ok(
     decisions(peter, view).filter((d) => d.action === 'raise').length >
       decisions(st, view).filter((d) => d.action === 'raise').length,
@@ -353,7 +353,7 @@ test('post-flop bot fractions use the after-call pot with whole 25 chips', () =>
 });
 test('retry restores frozen profile, emotion and simulation statistics exactly once', () => {
   const g = newGame(undefined, { smallBlind: 25, bigBlind: 50, startingStack: 5000, chipUnit: 25 });
-  applyBotSettings(g, { assignments: { 1: 'tan', 2: 'st' }, emotionMode: 'lively' });
+  applyBotSettings(g, { assignments: { 1: 'rook', 2: 'vale' }, emotionMode: 'lively' });
   g.players[1].botMood = {
     ...freshBotMood(),
     kind: 'frustrated',
@@ -367,7 +367,7 @@ test('retry restores frozen profile, emotion and simulation statistics exactly o
   );
   for (let attempt = 0; attempt < 4; attempt++) {
     finish(g, seeded(attempt + 5));
-    applyBotSettings(g, { assignments: { 1: 'peter' }, emotionMode: 'off' });
+    applyBotSettings(g, { assignments: { 1: 'jett' }, emotionMode: 'off' });
     restartHand(g);
     assert.equal(g.emotionMode, 'lively');
     assert.deepEqual(
@@ -381,6 +381,6 @@ test('retry restores frozen profile, emotion and simulation statistics exactly o
 test('a reassigned profile starts a separate observed sample', () => {
   const g = newGame(undefined, { smallBlind: 25, bigBlind: 50, startingStack: 5000, chipUnit: 25 });
   g.players[1].botStats = { ...freshBotStats(), hands: 20, vpip: 10 };
-  applyBotSettings(g, { assignments: { 1: 'peter' } });
+  applyBotSettings(g, { assignments: { 1: 'jett' } });
   assert.equal(g.players[1].botStats.hands, 0);
 });

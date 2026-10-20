@@ -3,7 +3,6 @@ const { createWechatController } = require('../../shared/platform/wechat-control
 const { phoneLayout } = require('./phone-layout.js');
 const { numericWidthScale, numericColumnWidth } = require('../../shared/ui/numeric-width.js');
 const { presentCard, showdownPresentation, presentationPatch } = require('./presentation.js');
-const PORTRAIT_CREDITS = require('../../assets/portraits/credits.js');
 const { completeBoardForPractice, rankText } = require('../../shared/engine/poker.js');
 const navigation = require('../../record-navigation.js');
 const { nameTooltipPosition } = require('../../shared/ui/name-tooltip-position.js');
@@ -862,29 +861,8 @@ module.exports = {
     const detailProfile = profile
       ? {
           ...profile,
-          portraitCredit: PORTRAIT_CREDITS[profile.id] || null,
           sizingLow: Math.round(profile.sizing[0] * 100),
           sizingHigh: Math.round(profile.sizing[1] * 100),
-          research: profile.research
-            ? {
-                ...profile.research,
-                formatsText: profile.research.formats.join(' · '),
-                career: profile.research.career.map((item) => ({
-                  ...item,
-                  references: item.sourceIds.map((id) => ({
-                    label: `[${profile.sources.findIndex((s) => s.id === id) + 1}]`,
-                    url: profile.sources.find((s) => s.id === id)?.url,
-                  })),
-                })),
-                observations: profile.research.observations.map((item) => ({
-                  ...item,
-                  references: item.sourceIds.map((id) => ({
-                    label: `[${profile.sources.findIndex((s) => s.id === id) + 1}]`,
-                    url: profile.sources.find((s) => s.id === id)?.url,
-                  })),
-                })),
-              }
-            : null,
           axisRows: PROFILE_AXES.map(([id, label], index) => ({
             id,
             label,

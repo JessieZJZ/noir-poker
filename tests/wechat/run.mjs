@@ -682,13 +682,6 @@ try {
         c.left >= a.left && c.left + cs.width <= a.left + a.width + 0.5,
         'Profile text stays inside its own column',
       );
-      if (
-        selector === '.profile-name' &&
-        ['Daniel Negreanu', 'Patrik Antonius', 'Stephen Chidwick'].includes(
-          (await page.data()).profiles[i].short,
-        )
-      )
-        assert.ok(cs.height >= 40, 'Long proper names wrap into multiple lines');
     }
   }
   await capture('settings-profiles', [
@@ -709,18 +702,18 @@ try {
   };
   if ((await page.data()).settings.mixed) await invoke('mixProfiles');
   assert.equal(await (await page.$('.small-button')).style('background-color'), 'rgba(0, 0, 0, 0)');
-  await chooseSeat(1, 'tan');
+  await chooseSeat(1, 'rook');
   await chooseSeat(2, 'balanced');
   await invoke('mixProfiles');
   assert.equal((await page.data()).settings.mixed, true);
-  assert.equal((await page.data()).settings.assignments[1], 'tan');
-  await chooseSeat(3, 'ivey');
+  assert.equal((await page.data()).settings.assignments[1], 'rook');
+  await chooseSeat(3, 'sage');
   await invoke('mixProfiles');
   const mixedSettings = (await page.data()).settings;
   assert.equal(mixedSettings.mixed, false);
-  assert.equal(mixedSettings.assignments[1], 'tan');
+  assert.equal(mixedSettings.assignments[1], 'rook');
   assert.equal(mixedSettings.assignments[2], 'balanced');
-  assert.equal(mixedSettings.assignments[3], 'ivey');
+  assert.equal(mixedSettings.assignments[3], 'sage');
   report.mixedToggle = mixedSettings;
   await capture('settings-roster', [
     '.settings-modal',
@@ -739,8 +732,8 @@ try {
     'Settings background covers system/capsule areas as well',
   );
   await capture('settings-bottom', ['.settings-modal', '.info-module', '.settings-save-row']);
-  await scrollToSetting('.profile-card[data-id="haxton"]', 80);
-  await (await page.$('.profile-card[data-id="haxton"]')).tap();
+  await scrollToSetting('.profile-card[data-id="iris"]', 80);
+  await (await page.$('.profile-card[data-id="iris"]')).tap();
   await wait((data) => !!data.detailProfile);
   const profileDetail = await page.$('.profile-detail');
   report.motion = {
@@ -758,43 +751,20 @@ try {
     '.axis',
     '.profile-sizing',
   ]);
-  assert.match((await page.data()).detailProfile.research.identity, /\S/);
-  const sourceUrl = (await page.data()).detailProfile.sources[0].url;
-  const sourceLink = await page.$('.research-source .research-link');
-  const sourceScroll = await page.$('.profile-detail .modal-scroll');
-  const linkOffset = await sourceLink.offset(),
-    scrollOffset = await sourceScroll.offset();
-  await sourceScroll.scrollTo(
-    0,
-    Math.max(
-      0,
-      (await sourceScroll.property('scrollTop')) + linkOffset.top - scrollOffset.top - 20,
-    ),
-  );
-  await page.waitFor(250);
-  // web-view pages are outside miniprogram-automator's inspectable WXML view.
-  // Verify the real link tap and URL handoff separately from the live page suite.
-  await mini.evaluate(() => {
-    getApp().__noirSourceNavigation = null;
-  });
-  await mini.mockWxMethod('navigateTo', function (options) {
-    getApp().__noirSourceNavigation = options.url;
-    return { errMsg: 'navigateTo:ok' };
-  });
-  try {
-    await sourceLink.tap();
-    await wait(async () => !!(await mini.evaluate(() => getApp().__noirSourceNavigation)), 5000);
-    const requested = await mini.evaluate(() => getApp().__noirSourceNavigation);
-    assert.equal(requested, `/pages/source/source?url=${encodeURIComponent(sourceUrl)}`);
-    report.sourceNavigation = {
-      url: sourceUrl,
-      requested,
-      mode: 'Real link tap; platform navigation mocked. External web-view requires separate GUI/device validation.',
-    };
-  } finally {
-    await mini.restoreWxMethod('navigateTo');
-    await mini.evaluate(() => {
-      delete getApp().__noirSourceNavigation;
+  assert.equal((await page.data()).detailProfile.character.sections.length, 5);
+  assert.equal((await page.$$('.profile-detail .research-link')).length, 0);
+  report.originalCharacters = [];
+  for (const profile of (await page.data()).profiles) {
+    await invoke('viewProfile', { currentTarget: { dataset: { id: profile.id } } });
+    await wait((data) => data.detailProfile?.id === profile.id);
+    const detail = (await page.data()).detailProfile;
+    assert.equal(detail.character.sections.length, 5);
+    assert.equal(detail.sources.length, 0);
+    report.originalCharacters.push({
+      id: detail.id,
+      name: detail.name,
+      sections: detail.character.sections.length,
+      portrait: detail.portrait,
     });
   }
 

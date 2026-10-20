@@ -115,7 +115,7 @@ try {
         .evaluate((el, top) => (el.scrollTop = top), settingsScroll);
       if (name === 'settings-bottom')
         await page.locator('.opponents-body').evaluate((el) => (el.scrollTop = el.scrollHeight));
-      if (screen === 'player') await page.locator('[data-profile-preview="haxton"]').click();
+      if (screen === 'player') await page.locator('[data-profile-preview="iris"]').click();
     } else if (screen === 'guide') {
       await page.locator('#rules-button').click();
       await page.locator('#guide-menu-item').click();

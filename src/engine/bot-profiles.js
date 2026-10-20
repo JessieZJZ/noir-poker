@@ -3,38 +3,39 @@ import { handFeatures as botBoardFeatures } from './hand-features.js';
 import { decisionBasis, aggressionSupport } from './decision-basis.js';
 export { handFeatures as botBoardFeatures } from './hand-features.js';
 import { bigBlindOf, DEFAULT_STAKES } from './stakes.js';
-import research from '../data/player-research.json' with { type: 'json' };
+import characters from '../data/characters.json' with { type: 'json' };
+import { canonicalProfileId } from './profile-id.js';
 import { botStyleContext, resolveBotStyle } from './bot-style.js';
 import { chipUnitOf, fractionRaiseTo, legalRaiseTo } from './bet-sizing.js';
 import { deceptiveAction, isDonkLead } from './bot-deception.js';
 import { publicResponseRisk } from './public-action-context.js';
 
-// These are training controls inferred from a few public examples, not measured
-// statistics of the named players. Emotions are a separate synthetic layer.
+// Original fictional characters share the existing training controls.
+// Emotions are a separate synthetic game mechanic.
 export const BOT_PROFILES = [
   {
     id: 'balanced',
-    name: '均衡练习',
+    name: '均衡',
     short: '均衡',
     tag: '稳定的基准对手',
     description: '中等范围、常规尺度，兼顾价值下注与少量诈唬。',
     axes: [50, 50, 40, 50, 20],
     sizing: [0.45, 0.8],
-    evidence: '基准训练策略，不对应任何真人。',
+    evidence: '电脑角色的策略和情绪均为游戏设定，介绍描述常见倾向，不保证每次采用相同操作。',
     sources: [],
+    character: characters.characters.balanced,
   },
   {
-    id: 'tan',
-    name: '谭老板 · Tan Xuan',
-    short: '谭老板',
+    id: 'rook',
+    name: '多街施压',
+    short: '多街施压',
     tag: '宽范围 · 多街施压',
     description: '更宽地争夺底池，弱牌与强牌共用进攻路线，偏好持续施压。',
     axes: [85, 90, 82, 70, 25],
     sizing: [0.65, 1.15],
-    evidence:
-      'Triton 现金桌报道记录了弱牌四下注和多街诈唬；本人短牌采访也自述喜欢宽松与诈唬。短牌频率不移植到本桌。',
-    sources: research.players.tan.sources,
-    research: research.players.tan,
+    evidence: '电脑角色的策略和情绪均为游戏设定，介绍描述常见倾向，不保证每次采用相同操作。',
+    sources: [],
+    character: characters.characters.rook,
     policy: {
       entry: 1.08,
       reraise: 1.05,
@@ -49,16 +50,16 @@ export const BOT_PROFILES = [
     },
   },
   {
-    id: 'st',
-    name: 'ST Wang',
-    short: 'ST 王',
+    id: 'vale',
+    name: '强牌诱导',
+    short: '强牌诱导',
     tag: '选择性进攻 · 价值诱导',
     description: '收紧边缘入池，强牌在安全牌面诱导，也能面对大注及时止损。',
     axes: [40, 65, 43, 42, 78],
     sizing: [0.45, 0.9],
-    evidence: '官方报道中，大池失利后的 AQ 仍能在河牌弃牌；另一手 AA 使用河牌过牌全下的价值陷阱。',
-    sources: research.players.st.sources,
-    research: research.players.st,
+    evidence: '电脑角色的策略和情绪均为游戏设定，介绍描述常见倾向，不保证每次采用相同操作。',
+    sources: [],
+    character: characters.characters.vale,
     policy: {
       entry: 0.85,
       reraise: 0.85,
@@ -69,16 +70,16 @@ export const BOT_PROFILES = [
     },
   },
   {
-    id: 'zang',
-    name: '臧书奴 · Aaron Zang',
-    short: '臧书奴',
+    id: 'slate',
+    name: '河牌争夺',
+    short: '河牌争夺',
     tag: '经验进攻 · 河牌争夺',
     description: '中宽范围，有位置时争夺底池，河牌保留主动加注与抓诈路线。',
     axes: [63, 75, 62, 63, 50],
     sizing: [0.6, 1.0],
-    evidence: 'Triton 记录了河牌把 23k 小注加到 105k 的诈唬样本。单手不能说明其长期频率。',
-    sources: research.players.zang.sources,
-    research: research.players.zang,
+    evidence: '电脑角色的策略和情绪均为游戏设定，介绍描述常见倾向，不保证每次采用相同操作。',
+    sources: [],
+    character: characters.characters.slate,
     policy: {
       entry: 1,
       reraise: 0.95,
@@ -93,17 +94,16 @@ export const BOT_PROFILES = [
     },
   },
   {
-    id: 'peter',
-    name: 'Peter · HCL',
-    short: 'Peter',
+    id: 'jett',
+    name: '宽松取值',
+    short: '宽松取值',
     tag: '宽范围 · 大尺度搏杀',
-    description: '更愿意低成本跟入，强牌榨取大尺度价值；普通桌不使用附加规则的特殊推入。',
+    description: '更愿意低成本跟入，命中强牌后偏向大尺度价值下注。',
     axes: [92, 88, 72, 84, 18],
     sizing: [0.75, 1.25],
-    evidence:
-      'HCL 记录了暗三条的河牌满池再加注；另一场有小口袋对子大推入。后者带 Stand-Up 附加规则，不能照搬整场频率。此处指 HCL 常客。',
-    sources: research.players.peter.sources,
-    research: research.players.peter,
+    evidence: '电脑角色的策略和情绪均为游戏设定，介绍描述常见倾向，不保证每次采用相同操作。',
+    sources: [],
+    character: characters.characters.jett,
     policy: {
       entry: 1.12,
       reraise: 0.8,
@@ -114,17 +114,16 @@ export const BOT_PROFILES = [
     },
   },
   {
-    id: 'abao',
-    name: '阿宝 · KPC A Bao',
-    short: '阿宝',
+    id: 'mira',
+    name: '听牌施压',
+    short: '听牌施压',
     tag: '选择性压迫 · 半诈唬',
     description: '有听牌权益时更积极，小翻牌下注之后可用大转牌下注继续施压。',
     axes: [55, 82, 72, 50, 34],
     sizing: [0.5, 1.0],
-    evidence:
-      'KPC 详细牌局报道中，AJ 同花使用约 31% 池翻牌下注、90% 池转牌半诈唬；另有 98 同花听牌推入样本。本名未可靠确认。',
-    sources: research.players.abao.sources,
-    research: research.players.abao,
+    evidence: '电脑角色的策略和情绪均为游戏设定，介绍描述常见倾向，不保证每次采用相同操作。',
+    sources: [],
+    character: characters.characters.mira,
     policy: {
       entry: 0.95,
       reraise: 0.95,
@@ -135,17 +134,16 @@ export const BOT_PROFILES = [
     },
   },
   {
-    id: 'viktor',
-    name: 'Viktor Blom',
-    short: 'Viktor Blom',
+    id: 'knox',
+    name: '松凶强攻',
+    short: '松凶强攻',
     tag: '松凶施压 · 宽范围争夺',
     description: '更宽地争夺后位和低成本底池，听牌与价值牌共用积极进攻路线，偏好较大尺度。',
     axes: [90, 94, 88, 70, 18],
     sizing: [0.7, 1.25],
-    evidence:
-      'PokerStars 原访谈与官方回顾支持其历史松凶风格。这里归纳的是训练原型，不是实时打法或真人频率；单挑经验不直接移植成多人精确参数。',
-    sources: research.players.viktor.sources,
-    research: research.players.viktor,
+    evidence: '电脑角色的策略和情绪均为游戏设定，介绍描述常见倾向，不保证每次采用相同操作。',
+    sources: [],
+    character: characters.characters.knox,
     policy: {
       entry: 1.08,
       reraise: 1.1,
@@ -160,17 +158,16 @@ export const BOT_PROFILES = [
     },
   },
   {
-    id: 'jungleman',
-    name: 'Daniel Cates',
-    short: 'Daniel Cates',
+    id: 'theo',
+    name: '计算进攻',
+    short: '计算进攻',
     tag: '计算型进攻 · 强牌诱导',
     description: '保留有价格的防守，兼顾主动施压与强牌诱导；大额继续仍要通过权益和筹码压力检查。',
     axes: [65, 82, 66, 64, 72],
     sizing: [0.45, 0.95],
-    evidence:
-      '本人原访谈强调计算、观察实际行为并调整，避免机械平衡。当前机器人用范围和价格近似这些思路，未复刻职业级读人或动态学习。',
-    sources: research.players.jungleman.sources,
-    research: research.players.jungleman,
+    evidence: '电脑角色的策略和情绪均为游戏设定，介绍描述常见倾向，不保证每次采用相同操作。',
+    sources: [],
+    character: characters.characters.theo,
     policy: {
       entry: 0.98,
       reraise: 1,
@@ -186,18 +183,17 @@ export const BOT_PROFILES = [
     },
   },
   {
-    id: 'dwan',
-    name: 'Tom Dwan',
-    short: 'Tom Dwan',
+    id: 'finn',
+    name: '多线进攻',
+    short: '多线进攻',
     tag: '创造性施压 · 多街诈唬',
     description:
       '更积极争夺有位置的底池，在有进攻叙事或听牌时混合多街施压，也能用强牌保留对手范围。',
     axes: [85, 90, 85, 75, 55],
     sizing: [0.65, 1.2],
-    evidence:
-      '原采访、同行评价和 PokerStars 回顾支持其历史创造性与多街诈唬风格。参数仅为可调的模拟倾向，不推断真人真实 VPIP 或心理状态。',
-    sources: research.players.dwan.sources,
-    research: research.players.dwan,
+    evidence: '电脑角色的策略和情绪均为游戏设定，介绍描述常见倾向，不保证每次采用相同操作。',
+    sources: [],
+    character: characters.characters.finn,
     policy: {
       entry: 1.06,
       reraise: 1.05,
@@ -214,16 +210,16 @@ export const BOT_PROFILES = [
   },
 
   {
-    id: 'ivey',
-    name: 'Phil Ivey',
-    short: 'Phil Ivey',
+    id: 'sage',
+    name: '观察调整',
+    short: '观察调整',
     tag: '选择性进攻 · 价值诱导',
     description: '中宽范围，兼顾强牌诱导与河牌价值，按公开行动小幅调整。',
     axes: [62, 82, 63, 65, 75],
     sizing: [0.4, 1.2],
-    evidence: '公开资料与模拟改编见下方；数字为训练参数。',
-    sources: research.players.ivey.sources,
-    research: research.players.ivey,
+    evidence: '电脑角色的策略和情绪均为游戏设定，介绍描述常见倾向，不保证每次采用相同操作。',
+    sources: [],
+    character: characters.characters.sage,
     policy: {
       entry: 0.98,
       reraise: 1,
@@ -239,16 +235,16 @@ export const BOT_PROFILES = [
     },
   },
   {
-    id: 'negreanu',
-    name: 'Daniel Negreanu',
-    short: 'Daniel Negreanu',
-    tag: '历史 small-ball · 控池',
+    id: 'nico',
+    name: '小注控池',
+    short: '小注控池',
+    tag: '小尺度 · 控池',
     description: '较小尺度争夺底池，中等牌力保留过牌与薄价值。',
     axes: [60, 62, 42, 62, 55],
     sizing: [0.3, 0.75],
-    evidence: '公开资料与模拟改编见下方；数字为训练参数。',
-    sources: research.players.negreanu.sources,
-    research: research.players.negreanu,
+    evidence: '电脑角色的策略和情绪均为游戏设定，介绍描述常见倾向，不保证每次采用相同操作。',
+    sources: [],
+    character: characters.characters.nico,
     policy: {
       entry: 0.95,
       reraise: 0.7,
@@ -266,16 +262,16 @@ export const BOT_PROFILES = [
     },
   },
   {
-    id: 'hellmuth',
-    name: 'Phil Hellmuth',
-    short: 'Phil Hellmuth',
+    id: 'bram',
+    name: '耐心防守',
+    short: '耐心防守',
     tag: '耐心防守 · 强牌诱导',
     description: '谨慎面对再加注与大额投入，安全牌面保留强牌诱导。',
     axes: [35, 55, 30, 42, 82],
     sizing: [0.4, 1],
-    evidence: '公开资料与模拟改编见下方；数字为训练参数。',
-    sources: research.players.hellmuth.sources,
-    research: research.players.hellmuth,
+    evidence: '电脑角色的策略和情绪均为游戏设定，介绍描述常见倾向，不保证每次采用相同操作。',
+    sources: [],
+    character: characters.characters.bram,
     policy: {
       entry: 0.8,
       reraise: 0.65,
@@ -291,16 +287,16 @@ export const BOT_PROFILES = [
     },
   },
   {
-    id: 'antonius',
-    name: 'Patrik Antonius',
-    short: 'Patrik Antonius',
+    id: 'leon',
+    name: '稳健进攻',
+    short: '稳健进攻',
     tag: '稳健短桌 · 权益进攻',
     description: '短桌稍宽，听牌积极，转河牌变化后重新检查风险。',
     axes: [58, 80, 58, 65, 48],
     sizing: [0.5, 1.25],
-    evidence: '公开资料与模拟改编见下方；数字为训练参数。',
-    sources: research.players.antonius.sources,
-    research: research.players.antonius,
+    evidence: '电脑角色的策略和情绪均为游戏设定，介绍描述常见倾向，不保证每次采用相同操作。',
+    sources: [],
+    character: characters.characters.leon,
     policy: {
       entry: 0.94,
       reraise: 0.95,
@@ -316,16 +312,16 @@ export const BOT_PROFILES = [
     },
   },
   {
-    id: 'koon',
-    name: 'Jason Koon',
-    short: 'Jason Koon',
+    id: 'owen',
+    name: '范围纪律',
+    short: '范围纪律',
     tag: '范围纪律 · 分街尺度',
     description: '有纪律的范围与阻断牌选择，小翻牌下注配合较大后街尺度。',
     axes: [53, 83, 60, 56, 42],
     sizing: [0.33, 1.2],
-    evidence: '公开资料与模拟改编见下方；数字为训练参数。',
-    sources: research.players.koon.sources,
-    research: research.players.koon,
+    evidence: '电脑角色的策略和情绪均为游戏设定，介绍描述常见倾向，不保证每次采用相同操作。',
+    sources: [],
+    character: characters.characters.owen,
     policy: {
       entry: 0.9,
       reraise: 1.1,
@@ -341,16 +337,16 @@ export const BOT_PROFILES = [
     },
   },
   {
-    id: 'chidwick',
-    name: 'Stephen Chidwick',
-    short: 'Stephen Chidwick',
+    id: 'ezra',
+    name: '分街调整',
+    short: '分街调整',
     tag: '理论启发 · 公开调整',
     description: '按范围和街次选择行动，公开样本足够后做小幅调整。',
     axes: [52, 80, 58, 58, 48],
     sizing: [0.35, 1.25],
-    evidence: '公开资料与模拟改编见下方；数字为训练参数。',
-    sources: research.players.chidwick.sources,
-    research: research.players.chidwick,
+    evidence: '电脑角色的策略和情绪均为游戏设定，介绍描述常见倾向，不保证每次采用相同操作。',
+    sources: [],
+    character: characters.characters.ezra,
     policy: {
       entry: 0.9,
       reraise: 1.05,
@@ -366,16 +362,16 @@ export const BOT_PROFILES = [
     },
   },
   {
-    id: 'holz',
-    name: 'Fedor Holz',
-    short: 'Fedor Holz',
+    id: 'luka',
+    name: '小注持续',
+    short: '小注持续',
     tag: '小注持续 · 选择性施压',
     description: '干燥高牌翻牌偏小注，中等牌力控池，后街选择性施压。',
     axes: [57, 85, 65, 51, 40],
     sizing: [0.35, 1.2],
-    evidence: '公开资料与模拟改编见下方；数字为训练参数。',
-    sources: research.players.holz.sources,
-    research: research.players.holz,
+    evidence: '电脑角色的策略和情绪均为游戏设定，介绍描述常见倾向，不保证每次采用相同操作。',
+    sources: [],
+    character: characters.characters.luka,
     policy: {
       entry: 0.93,
       reraise: 1,
@@ -392,16 +388,16 @@ export const BOT_PROFILES = [
     },
   },
   {
-    id: 'haxton',
-    name: 'Isaac Haxton',
-    short: 'Isaac Haxton',
+    id: 'iris',
+    name: '延迟进攻',
+    short: '延迟进攻',
     tag: '有位置 Float · 延迟进攻',
     description: '低价格干燥翻牌可少量先跟，下一街对手过牌后争夺底池。',
     axes: [62, 84, 70, 65, 50],
     sizing: [0.4, 1.3],
-    evidence: '公开资料与模拟改编见下方；数字为训练参数。',
-    sources: research.players.haxton.sources,
-    research: research.players.haxton,
+    evidence: '电脑角色的策略和情绪均为游戏设定，介绍描述常见倾向，不保证每次采用相同操作。',
+    sources: [],
+    character: characters.characters.iris,
     policy: {
       entry: 1,
       reraise: 1.05,
@@ -427,7 +423,8 @@ export const MOOD_LABELS = {
   confident: '连胜自信',
   reactive: '受压反击',
 };
-export const getBotProfile = (id) => BOT_PROFILES.find((p) => p.id === id) || BOT_PROFILES[0];
+export const getBotProfile = (id) =>
+  BOT_PROFILES.find((p) => p.id === canonicalProfileId(id)) || BOT_PROFILES[0];
 export const defaultBotSettings = () => ({
   emotionMode: 'subtle',
   assignments: Object.fromEntries(Array.from({ length: 8 }, (_, i) => [i + 1, 'balanced'])),
@@ -439,7 +436,7 @@ export function sanitizeBotSettings(value) {
   if (value && Object.hasOwn(EMOTION_MODES, value.emotionMode))
     settings.emotionMode = value.emotionMode;
   for (let id = 1; id <= 8; id++) {
-    const profile = value?.assignments?.[id];
+    const profile = canonicalProfileId(value?.assignments?.[id]);
     if (BOT_PROFILES.some((p) => p.id === profile)) settings.assignments[id] = profile;
   }
   settings.mixed = value?.mixed === true;
@@ -455,6 +452,7 @@ export function sanitizeBotSettings(value) {
 // Manual selections take ownership, including reselecting the same style.
 export function assignBotSeat(value, id, profileId) {
   const settings = sanitizeBotSettings(value);
+  profileId = canonicalProfileId(profileId);
   if (id < 1 || id > 8 || !Number.isInteger(id) || !BOT_PROFILES.some((p) => p.id === profileId))
     return settings;
   settings.assignments[id] = profileId;

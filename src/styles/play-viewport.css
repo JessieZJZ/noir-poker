@@ -741,9 +741,9 @@
     line-height: 12px;
     white-space: nowrap;
   }
-  .game-surface .arena[data-player-count] .seat-style-label[data-style-profile='viktor'],
-  .game-surface .arena[data-player-count] .seat-style-label[data-style-profile='jungleman'],
-  .game-surface .arena[data-player-count] .seat-style-label[data-style-profile='dwan'] {
+  .game-surface .arena[data-player-count] .seat-style-label[data-style-profile='knox'],
+  .game-surface .arena[data-player-count] .seat-style-label[data-style-profile='theo'],
+  .game-surface .arena[data-player-count] .seat-style-label[data-style-profile='finn'] {
     font-size: 8.5px;
   }
   .game-surface .arena[data-player-count] .seat-style-label[data-style-profile='balanced'] {

@@ -293,7 +293,7 @@ test('WeChat activity retains full hand history, bet ordinals and Web persona la
   const { page } = setup(t);
   const game = page._controller.getGame();
   const player = game.players[1];
-  player.botProfile = 'haxton';
+  player.botProfile = 'iris';
   game.logs = Array.from({ length: 41 }, (_, index) => ({
     text: `${player.name} 3-bet 加注至 ${200 + index * 25}`,
     player: player.id,
@@ -310,7 +310,7 @@ test('WeChat activity retains full hand history, bet ordinals and Web persona la
 test('WeChat hero actions and persona-expanded activity compact every chip amount, preserving hand counts', (t) => {
   const { page } = setup(t);
   const game = page._controller.getGame();
-  game.players[1].botProfile = 'haxton';
+  game.players[1].botProfile = 'iris';
   game.players[0].lastAction = { street: game.street, text: '全下至18800' };
   game.players[1].lastAction = { street: game.street, text: '3-bet 全下至18800' };
   game.logs = [
@@ -488,12 +488,13 @@ test('secondary pages lock the home scroll and source titles navigate to a separ
     assert.equal(scrolls.at(-1), 240);
   }
   page.openSettings();
-  page.viewProfile({ currentTarget: { dataset: { id: 'tan' } } });
-  const url = page.data.detailProfile.sources[0].url;
+  page.viewProfile({ currentTarget: { dataset: { id: 'rook' } } });
+  assert.deepEqual(copy(page.data.detailProfile.sources), []);
+  const url = 'https://example.com/unlisted';
   page.openResearchSource({ currentTarget: { dataset: { url } } });
-  assert.equal(navigations.at(-1), `/pages/source/source?url=${encodeURIComponent(url)}`);
+  assert.equal(navigations.length, 0);
   page.openResearchSource({ currentTarget: { dataset: { url: 'https://example.com/' } } });
-  assert.equal(navigations.length, 1);
+  assert.equal(navigations.length, 0);
 });
 
 test('public flips stagger only newly dealt cards and details preserve their slots and anchors', (t) => {
@@ -607,13 +608,13 @@ test('WeChat opponent review picker filters recorded actions and restores the fu
   const report = {
     steps: [],
     opponents: [
-      { name: 'Alex', actual: '跟注', named: true, profileName: '谭老板 · Tan Xuan' },
+      { name: 'Alex', actual: '跟注', named: true, profileName: '多街施压' },
       { name: 'River', actual: '加注' },
       { name: 'Alex', actual: '弃牌' },
     ],
   };
   page.updateReview(report);
-  assert.equal(page.data.opponentOptions[1], 'Alex，谭老板，Tan Xuan');
+  assert.equal(page.data.opponentOptions[1], 'Alex，多街施压');
   page.changeOpponentFilter({ detail: { value: '1' } });
   assert.equal(page.data.reviewSteps.length, 2);
   assert.ok(page.data.reviewSteps.every((step) => step.name === 'Alex'));
@@ -757,7 +758,7 @@ test('WeChat Page automatically saves settings and changes the requested next ha
   assert.notEqual(page.data.settings.playerCount, page.data.activePlayerCount);
   assert.equal(saved.difficulty, 'hard');
   assert.equal(saved.emotionMode, 'lively');
-  assert.equal(saved.assignments[1], 'tan');
+  assert.equal(saved.assignments[1], 'rook');
   assert.equal(
     page._controller.getGame().players.length,
     6,
@@ -772,8 +773,8 @@ test('WeChat Page automatically saves settings and changes the requested next ha
   page.nextHand();
   assert.equal(page.data.seats.length, 8);
   assert.equal(page.data.activePlayerCount, page.data.settings.playerCount);
-  assert.equal(page.data.seats[0].profileId, 'tan');
-  assert.equal(page.data.seats[0].portrait, '/assets/portraits/tan.jpg');
+  assert.equal(page.data.seats[0].profileId, 'rook');
+  assert.equal(page.data.seats[0].portrait, '/assets/portraits/rook.jpg');
 });
 
 test('WeChat settings expose compact blinds, validate raw edits in red and apply queued amounts after retry', (t) => {
@@ -955,7 +956,7 @@ test('WeChat profile parameters keep stable unique keys when values repeat', (t)
     ['入池宽度', '进攻倾向', '诈唬倾向', '跟到底倾向', '强牌诱导'],
   );
   assert.match(template, /wx:for="\{\{detailProfile.axisRows\}\}" wx:key="id"/);
-  page.viewProfile({ currentTarget: { dataset: { id: 'tan' } } });
+  page.viewProfile({ currentTarget: { dataset: { id: 'rook' } } });
   assert.deepEqual(
     page.data.detailProfile.axisRows.map((row) => row.id),
     rows.map((row) => row.id),
@@ -1092,21 +1093,17 @@ for (const playerCount of [5, 6, 7, 8, 9]) {
   }
 }
 
-test('WeChat exposes all researched players, linked claims and only copies a selected known source', (t) => {
+test('WeChat exposes original character descriptions without source links or photo credits', (t) => {
   const { page, clipboard } = setup(t, { playerCount: 9 });
-  const profiles = page.data.profiles.filter((p) => p.research);
+  const profiles = page.data.profiles.filter((p) => p.id !== 'balanced');
   assert.equal(profiles.length, 16);
   for (const profile of profiles) {
     page.viewProfile({ currentTarget: { dataset: { id: profile.id } } });
     const detail = page.data.detailProfile;
-    assert.equal(detail.research.reviewedAt, '2026-10-11');
-    for (const claim of [...detail.research.career, ...detail.research.observations])
-      for (const reference of claim.references) {
-        assert.match(reference.label, /\[\d+\]/);
-        assert.ok(profile.sources.some((source) => source.url === reference.url));
-      }
-    page.copyResearchSource({ currentTarget: { dataset: { url: profile.sources[0].url } } });
-    assert.equal(clipboard.at(-1), profile.sources[0].url);
+    assert.equal(detail.character.sections.length, 5);
+    assert.equal(detail.research, undefined);
+    assert.equal(detail.portraitCredit, undefined);
+    assert.deepEqual(copy(detail.sources), []);
     const length = clipboard.length;
     page.copyResearchSource({
       currentTarget: { dataset: { url: 'https://example.com/unlisted' } },
@@ -1114,13 +1111,8 @@ test('WeChat exposes all researched players, linked claims and only copies a sel
     assert.equal(clipboard.length, length);
     page.closeProfile();
   }
-  assert.match(
-    template,
-    /class="profile-overview"[\s\S]*?detailProfile.evidence[\s\S]*?detailProfile.research.limits[\s\S]*?资料核对日期/,
-  );
-  assert.doesNotMatch(template, />资料边界</);
-  assert.match(template, /公开资料/);
-  assert.match(template, /openResearchSource/);
+  assert.match(template, /detailProfile.character.sections/);
+  assert.doesNotMatch(template, /公开资料|履历摘录|公开打法样本|detailProfile.research|头像：/);
 });
 
 test('WeChat public card rows use the measured corridor and stay fixed from deal to settlement and resize', (t) => {
@@ -1253,16 +1245,16 @@ test('settings keep eight assignable seats and retain off-table choices for the 
   assert.equal(page.data.seatSettings.length, 8);
   assert.equal(page.data.seatSettings.filter((s) => s.offTable).length, 4);
   const before = JSON.stringify(page._controller.getGame());
-  const index = page.data.profiles.findIndex((p) => p.id === 'viktor');
+  const index = page.data.profiles.findIndex((p) => p.id === 'knox');
   page.changeSeat({ currentTarget: { dataset: { id: 8 } }, detail: { value: index } });
   assert.equal(JSON.stringify(page._controller.getGame()), before);
-  assert.equal(page.data.seatSettings[7].profileName, 'Viktor Blom');
-  assert.match(page.data.seatSettings[7].portrait, /viktor/);
+  assert.equal(page.data.seatSettings[7].profileName, '松凶强攻');
+  assert.match(page.data.seatSettings[7].portrait, /knox/);
   page.changeCount({ detail: { value: 4 } });
   finish(page._controller.getGame());
   page._controller.show();
   page.nextHand();
-  assert.equal(page._controller.getGame().players[8].botProfile, 'viktor');
+  assert.equal(page._controller.getGame().players[8].botProfile, 'knox');
 });
 
 test('dropdown data anchors the options below the original control and settings have no reset footer', (t) => {

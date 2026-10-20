@@ -1772,3 +1772,12 @@
 .history-shell {
   margin-top: 0;
 }
+
+.character-section + .character-section {
+  margin-top: 22px;
+}
+.character-section > text {
+  display: block;
+  margin: 10px 0;
+  line-height: 1.65;
+}

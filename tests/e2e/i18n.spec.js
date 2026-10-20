@@ -283,7 +283,7 @@ test('Japanese and Korean profile cards and ranges fit a narrow settings page', 
     expect(
       bounds.every((b) => b.height < 250 && b.fits && !/[⁇�]|\?{2}|(.{1,12})\1{5}/u.test(b.text)),
     ).toBe(true);
-    await page.locator('[data-profile-preview="zang"]').click();
+    await page.locator('[data-profile-preview="slate"]').click();
     await expect(page.locator('#profile-detail')).toBeVisible();
     await expect(page.locator('.profile-sizing strong')).toHaveText(
       locale === 'ja' ? 'ポットの 60–100%' : '팟의 60–100%',
@@ -317,7 +317,7 @@ test('DOM sources survive rerenders, duplicate translated labels and rapid langu
     await loadLocale('en');
     setLocalizedHTML(
       holder,
-      '<button title="弃牌">弃牌</button><span>已弃牌</span><b translate="no">谭老板</b>',
+      '<button title="弃牌">弃牌</button><span>已弃牌</span><b translate="no">多街施压</b>',
     );
     const button = holder.querySelector('button');
     button.dataset.rule = '弃牌';
@@ -346,7 +346,7 @@ test('DOM sources survive rerenders, duplicate translated labels and rapid langu
     text: '跟注',
     title: '跟注',
     span: '已弃牌',
-    legalName: '谭老板',
+    legalName: '多街施压',
     rule: '弃牌',
     clicked: 'true',
   });

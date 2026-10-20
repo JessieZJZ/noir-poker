@@ -26,7 +26,7 @@ export function turnBluffReview() {
       {
         id: 1,
         name: 'Kai',
-        botProfile: 'peter',
+        botProfile: 'jett',
         position: 'LJ',
         stack: 13300,
         total: 9300,
@@ -63,7 +63,7 @@ export function turnStraightCallRecord() {
     action: 'call',
     amount: 6300,
     trace: {
-      profile: 'peter',
+      profile: 'jett',
       profileName: 'Peter',
       reason: 'price-continue',
       mode: 'off',
@@ -118,7 +118,7 @@ export function suitedBroadwayFiveBetFold() {
       {
         id: 1,
         name: 'Jade',
-        botProfile: 'jungleman',
+        botProfile: 'theo',
         position: 'MP',
         stack: 10700,
         total: 9300,
@@ -127,7 +127,7 @@ export function suitedBroadwayFiveBetFold() {
       {
         id: 2,
         name: 'Theo',
-        botProfile: 'viktor',
+        botProfile: 'knox',
         position: 'CO',
         stack: 14500,
         total: 5500,
@@ -162,7 +162,7 @@ export function pocketNinesCheckedBoard() {
     position: 'BTN',
     pot: 5200,
     amount: 3400,
-    players: [s.players[0], { ...s.players[1], name: 'Leo', botProfile: 'dwan', position: 'BB' }],
+    players: [s.players[0], { ...s.players[1], name: 'Leo', botProfile: 'finn', position: 'BB' }],
     history: [{ id: 1, street: 1, action: 'check', amount: 0 }],
   };
 }

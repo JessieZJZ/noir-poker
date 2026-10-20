@@ -1,4 +1,5 @@
 import { newGame } from './poker.js';
+import { migrateCharacterState } from './character-state.js';
 import { sameStakes, validateStakes } from './stakes.js';
 
 export const GAME_RECORDS_KEY = 'noir-game-records-v1';
@@ -410,7 +411,8 @@ export function createGameRecords({ storage, now = Date.now, id } = {}) {
     if (!target) throw Error('Storage unavailable');
     const saved = target.getItem(GAME_RECORDS_KEY);
     if (target.error?.(GAME_RECORDS_KEY)) throw Error('Storage unavailable');
-    if (saved !== null && saved !== undefined) state = validateState(JSON.parse(saved));
+    if (saved !== null && saved !== undefined)
+      state = validateState(migrateCharacterState(JSON.parse(saved)));
   } catch {
     readError = '本机对局记录读取失败，已开始新的记录。';
   }

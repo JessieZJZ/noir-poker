@@ -307,7 +307,7 @@ function render() {
   $('#arena').dataset.playerCount = count;
   $('#arena').classList.toggle(
     'has-full-player-names',
-    game.players.slice(1).some((p) => ['viktor', 'jungleman', 'dwan'].includes(p.botProfile)),
+    game.players.slice(1).some((p) => ['knox', 'theo', 'finn'].includes(p.botProfile)),
   );
   setLocalizedText($('#table-size-label'), count + ' 人无限注');
   setLocalizedText($('#blind-values'), `${format(game.smallBlind)} / ${format(game.bigBlind)}`);

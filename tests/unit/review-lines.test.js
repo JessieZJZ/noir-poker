@@ -246,7 +246,7 @@ test('Q7 suited UTG acknowledges its suit and treats the open as a range-sensiti
   assert.equal(r.simulation.rows.length >= 4, true);
 });
 test('foreign styles are accepted independently and retain distinct control vectors', () => {
-  for (const id of ['viktor', 'jungleman', 'dwan']) {
+  for (const id of ['knox', 'theo', 'finn']) {
     const g = newGame(undefined, {
       smallBlind: 25,
       bigBlind: 50,
@@ -254,11 +254,11 @@ test('foreign styles are accepted independently and retain distinct control vect
       chipUnit: 25,
     });
     const profile = BOT_PROFILES.find((p) => p.id === id);
-    assert.ok(profile && profile.sources.length);
+    assert.ok(profile && profile.character.sections.length);
     assert.equal(profile.axes.length, 5);
   }
-  const vectors = BOT_PROFILES.filter((p) => ['viktor', 'jungleman', 'dwan'].includes(p.id)).map(
-    (p) => p.axes.join(','),
+  const vectors = BOT_PROFILES.filter((p) => ['knox', 'theo', 'finn'].includes(p.id)).map((p) =>
+    p.axes.join(','),
   );
   assert.equal(new Set(vectors).size, 3);
 });

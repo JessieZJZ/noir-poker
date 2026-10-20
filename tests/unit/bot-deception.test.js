@@ -36,17 +36,17 @@ test('new mix is standard and advanced only, and capabilities follow base styles
     assert.equal(hard.trap, normal.trap * 1.8);
     for (const key of ['dirty', 'donk', 'sevenTwo']) assert.equal(normal[key], 0);
   }
-  for (const id of ['balanced', 'tan', 'viktor', 'dwan']) {
+  for (const id of ['balanced', 'rook', 'knox', 'finn']) {
     assert.ok(deceptionPolicy(getBotProfile(id), 'hard').sevenTwo > 0);
     assert.ok(deceptionPolicy(getBotProfile(id), 'hard').dirty > 0);
   }
-  for (const id of ['st', 'hellmuth', 'negreanu', 'koon']) {
+  for (const id of ['vale', 'bram', 'nico', 'owen']) {
     assert.equal(deceptionPolicy(getBotProfile(id), 'hard').dirty, 0);
     assert.equal(deceptionPolicy(getBotProfile(id), 'hard').sevenTwo, 0);
   }
-  assert.ok(deceptionPolicy(getBotProfile('st'), 'normal').trap > 0);
-  assert.equal(deceptionPolicy(getBotProfile('viktor'), 'hard').trap, 0);
-  assert.equal(deceptionPolicy(getBotProfile('hellmuth'), 'hard').donk, 0);
+  assert.ok(deceptionPolicy(getBotProfile('vale'), 'normal').trap > 0);
+  assert.equal(deceptionPolicy(getBotProfile('knox'), 'hard').trap, 0);
+  assert.equal(deceptionPolicy(getBotProfile('bram'), 'hard').donk, 0);
 });
 
 test('actual slow-plays, trash raises, donks and 7-2 bluffs have distinct executed traces and reasons', () => {
@@ -297,7 +297,7 @@ test('actual bot perspective and chip conservation remain intact in standard and
     g.difficulty = difficulty;
     applyBotSettings(g, {
       emotionMode: 'off',
-      assignments: { 1: 'balanced', 2: 'tan', 3: 'st', 4: 'dwan' },
+      assignments: { 1: 'balanced', 2: 'rook', 3: 'vale', 4: 'finn' },
     });
     const random = seeded(391);
     for (let hand = 0; hand < 6; hand++) {

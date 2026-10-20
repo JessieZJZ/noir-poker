@@ -102,7 +102,7 @@ try {
   const profiles = (await page.data()).profiles;
   await invoke('changeSeat', {
     currentTarget: { dataset: { id: 1 } },
-    detail: { value: profiles.findIndex((p) => p.id === 'tan') },
+    detail: { value: profiles.findIndex((p) => p.id === 'rook') },
   });
   await invoke('nextHand');
   const start = Date.now();
@@ -123,7 +123,7 @@ try {
   await tap('[data-value="opponent"]');
   await wait((data) => data.reviewPerspective === 'opponent' && data.selectedReviewStep?.reason);
   let data = await page.data();
-  assert.ok(data.opponentOptions.some((name) => /Mia.*Tan Xuan/.test(name)));
+  assert.ok(data.opponentOptions.some((name) => /Mia.*多街施压/.test(name)));
   report.checks.push({ name: 'real-assigned-player-name', options: data.opponentOptions });
   for (const index of [
     ...new Set([0, Math.floor(data.reviewSteps.length / 2), data.reviewSteps.length - 1]),
@@ -141,7 +141,7 @@ try {
   }
   await tap('#select-opponent');
   await wait((data) => data.selection?.field === 'opponent');
-  assert.ok((await page.data()).selection.options.some((name) => /Mia.*Tan Xuan/.test(name)));
+  assert.ok((await page.data()).selection.options.some((name) => /Mia.*多街施压/.test(name)));
   await capture('assigned-player-options');
   await invoke('closeSelect');
   await invoke('changeOpponentFilter', { detail: { value: '1' } });

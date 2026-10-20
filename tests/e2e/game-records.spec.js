@@ -896,7 +896,7 @@ test('long press reveals full clipped names on live and archived tables and dism
     window.qa.recordsStart({ count: 9 });
     const game = window.qa.snapshot();
     game.players.slice(1).forEach((player) => {
-      player.botProfile = 'viktor';
+      player.botProfile = 'knox';
     });
     window.qa.loadRecordedGame(game);
     window.qa.recordsFinish();

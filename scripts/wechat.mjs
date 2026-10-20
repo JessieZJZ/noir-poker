@@ -91,14 +91,9 @@ async function compileJs(sourceDirectory, destination) {
 async function portraitAssets(output) {
   const directory = path.join(output, 'assets/portraits');
   await mkdir(directory, { recursive: true });
-  await writeFile(
-    path.join(directory, 'credits.js'),
-    `module.exports = ${JSON.stringify(Object.fromEntries(Object.entries(PROFILE_PORTRAITS).map(([id, image]) => [id, { label: image.credit, url: image.source }])))};\n`,
-  );
   for (const [id, photo] of Object.entries(PROFILE_PORTRAITS)) {
     const source = path.join(root, 'public', photo.src.slice(1));
-    // Resolve the same object-fit/zoom window as the Web avatar into a small,
-    // local JPEG. This includes the labelled A BAO face inside its wider frame.
+    // Match the original illustration crop used by Web and native.
     const { width, height } = await sharp(source).metadata();
     const edge = Math.min(width, height),
       zoom = photo.zoom || 1;

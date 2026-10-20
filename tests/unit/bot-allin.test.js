@@ -355,7 +355,8 @@ test('actual all-in motives localize across all supported locales without losing
         if (!['zh-CN', 'zh-TW', 'ja'].includes(locale))
           assert.doesNotMatch(translated, /\p{Script=Han}/u, `${locale}: ${translated}`);
         for (const value of [record.name, '4.95K', '4.85K', '10.15K'])
-          if (text.includes(value)) assert.ok(translated.includes(value), `${locale}: ${value}`);
+          if (text.includes(value))
+            assert.ok(translated.includes(localizeText(value)), `${locale}: ${value}`);
       }
   }
 });
