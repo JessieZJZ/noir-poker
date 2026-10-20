@@ -489,12 +489,12 @@ test('showdown participant names include the current named style and stay readab
     '你',
     'Mia（多街施压）',
     'Alex（范围纪律）',
-    'River（多街施压）',
+    'River（强牌诱导）',
     'Kai（宽松取值）',
-    'Luna（多街施压）',
-    'Theo（多街施压）',
-    'Jade（范围纪律）',
-    'Leo（多街施压）',
+    'Luna（听牌施压）',
+    'Theo（小注控池）',
+    'Jade（延迟进攻）',
+    'Leo',
   ];
   for (const width of [320, 390, 1280]) {
     await page.setViewportSize({ width, height: 900 });
@@ -537,7 +537,7 @@ test('showdown participant names include the current named style and stay readab
   await closeSettings(page);
   await expect(
     page.locator('.showdown-player[data-player="7"] .showdown-player-heading > strong'),
-  ).toHaveText('Jade（范围纪律）');
+  ).toHaveText('Jade（延迟进攻）');
   await page.locator('#next-button').click();
   await page.evaluate(() => window.qa.stop());
   await expect(page.locator('.decision-strip')).toBeVisible();
@@ -1466,7 +1466,7 @@ test('returning restores all saved options before the first fresh hand, includin
   await expect(page.getByLabel('进阶', { exact: true })).toBeChecked();
   await expect(page.locator('#hint-toggle')).toHaveAttribute('aria-pressed', 'false');
   await expect(page.locator('#sound-button')).toHaveAttribute('aria-pressed', 'false');
-  await expect(page.locator('#opponents-summary')).toHaveText('8 位风格对手');
+  await expect(page.locator('#opponents-summary')).toHaveText('7 位风格对手');
   await expect(page.locator('#opponents-change-note')).toHaveCount(0);
   await expect(page.locator('#table-change-note')).toBeHidden();
   await expect(page.locator('#stat-hands')).toHaveText('0');
@@ -1476,12 +1476,12 @@ test('returning restores all saved options before the first fresh hand, includin
   expect(state.players.slice(1).map((p) => p.botProfile)).toEqual([
     'rook',
     'owen',
-    'rook',
+    'vale',
     'jett',
-    'rook',
-    'rook',
-    'owen',
-    'rook',
+    'mira',
+    'nico',
+    'iris',
+    'balanced',
   ]);
   expect(state.hand).toBe(0);
   expect(state.phase).toBe('idle');
@@ -1495,7 +1495,7 @@ test('returning restores all saved options before the first fresh hand, includin
   });
   await page.locator('#opponents-button').click();
   await expect(page.locator('#emotion-mode')).toHaveValue('lively');
-  await expect(page.locator('[data-bot-seat="8"]')).toHaveValue('rook');
+  await expect(page.locator('[data-bot-seat="8"]')).toHaveValue('balanced');
 });
 
 test('per-seat styles apply next hand, survive resize and refresh, and freeze on retry', async ({

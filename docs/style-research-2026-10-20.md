@@ -65,6 +65,7 @@
 25. [Upswing：有位置延迟持续下注，2020-01-31](https://upswingpoker.com/delay-c-bet-bluffs/)。翻前主动方翻牌先过，转牌再次被让过时可选择进攻；需限制诈唬组合，不把有摊牌价值的高牌一律转成诈唬。这与当前仅“低价Float后接管”的实现范围不同，可作为后续定位复核，不能声称当前已实现全部路线。
 26. [Upswing：转牌Probe的适用与禁用例](https://upswingpoker.com/probe-bet-probing-poker-strategy/)。无位置接管发生在对手前街放弃持续下注之后，特定高牌或对子转牌可能更有利于对手过牌范围；不能把任何过牌都当成软弱。该路线与有位置Float分开，不混用术语或直接复制其频率。
 27. [PokerStars：翻牌牌力与干湿牌面](https://www.pokerstars.com/poker/learn/lesson/the-flop-and-your-hand/)。干燥面可选择控池或强牌诱导，湿面需重视保护及对手听牌。示例牌面中有重复牌的排版错误，因此只使用其定性原则，不照抄或重建该例。
+28. [PokerStars：位置与起手范围](https://www.pokerstars.com/poker/learn/lesson/position/)。后位允许较宽地争夺未开启的底池，前位需要更严格筛选；翻后位置提供观察行动、控制底池和择机争夺的空间。2026-10-21复核原文，作为延迟进攻机会偏少时重新定位的依据，不把教学示例的范围数字当成职业牌手频率或当前机器人实测。
 
 ## 测量预先约定
 

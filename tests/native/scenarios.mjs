@@ -1569,7 +1569,9 @@ export async function nativeScenarios(app) {
             }),
           ),
         );
-        return images.length === 3 && images.every((image) => image.loaded && image.local)
+        return images.length === 7 &&
+          new Set(images.map((image) => image.profile)).size === 7 &&
+          images.every((image) => image.loaded && image.local)
           ? images
           : null;
       },
