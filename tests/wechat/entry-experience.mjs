@@ -216,7 +216,8 @@ try {
   const title = await page.$('.practice-panel .session-title > text'),
     titleOffset = await title.offset(),
     titleSize = await title.size();
-  assert.ok(resetSize.height >= 44 && resetSize.width > 0);
+  assert.equal(resetSize.width, 70);
+  assert.equal(resetSize.height, 44);
   assert.ok(resetOffset.left >= titleOffset.left + titleSize.width + 8);
   assert.ok(
     Math.abs(resetOffset.top + resetSize.height / 2 - titleOffset.top - titleSize.height / 2) < 1,

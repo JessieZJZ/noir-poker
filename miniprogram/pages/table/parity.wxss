@@ -1863,8 +1863,8 @@
   min-height: 44px;
   gap: 12px;
 }
-.practice-reset {
-  width: auto;
+.practice-panel .session-title .practice-reset {
+  width: 70px;
   min-width: 0;
   max-width: 62%;
   min-height: 44px;
@@ -1881,6 +1881,6 @@
   align-items: center;
   justify-content: center;
 }
-.practice-reset::after {
+.practice-panel .session-title .practice-reset::after {
   border: 0;
 }
