@@ -3,6 +3,8 @@ import { heroValueGame } from '../fixtures/review-spots.js';
 import {
   reportedKeyInfoCall,
   reportedGutshotCall,
+  reportedLowConnectorCall,
+  reportedFivesAllIn,
   turnStraightCallRecord,
 } from '../fixtures/review-summary.js';
 
@@ -17,7 +19,28 @@ function recordedExamples() {
   const allinCall = structuredClone(call);
   allinCall.stack = allinCall.players[0].stack = 140000;
   allinCall.legal.maxRaiseTo = 200000;
-  game.decisions = [call, fold, check, raise, shove, allinCall, reportedGutshotCall()];
+  const paired = reportedGutshotCall();
+  paired.hole = reportedKeyInfoCall('Ks Ad').hole;
+  paired.board = [
+    { rank: 6, suit: 3, key: '3-6' },
+    { rank: 5, suit: 1, key: '1-5' },
+    { rank: 3, suit: 0, key: '0-3' },
+    { rank: 5, suit: 3, key: '3-5' },
+    { rank: 13, suit: 1, key: '1-13' },
+  ];
+  paired.street = 3;
+  game.decisions = [
+    call,
+    fold,
+    check,
+    raise,
+    shove,
+    allinCall,
+    reportedGutshotCall(),
+    reportedLowConnectorCall(),
+    reportedFivesAllIn(),
+    paired,
+  ];
   const opponent = turnStraightCallRecord();
   opponent.trace.reason = 'stack-pressure';
   game.botDecisions = [opponent];
@@ -69,6 +92,39 @@ test('review prices, actor references and draw verdicts stay coherent in the exi
     body: await page.screenshot(),
     contentType: 'image/png',
   });
+  await select(7);
+  await expect(evidence).toContainText('4 / 5 同花连接牌');
+  await expect(summary).toContainText(
+    /同花连接牌.*37.0%.*点数仍偏低.*更高同花.*他们若再加注.*建议弃牌/,
+  );
+  await expect(summary).not.toContainText(/被强 A.*压制|；/);
+  await summary.scrollIntoViewIfNeeded();
+  await info.attach('low-connector-fold-rationale', {
+    body: await page.screenshot(),
+    contentType: 'image/png',
+  });
+  await select(8);
+  await expect(page.locator('#review-selected-status')).toHaveText('值得保留');
+  await expect(summary).toContainText(/全下跟注.*27.0%.*看完剩余公共牌.*值得保留的依据/);
+  await expect(summary).not.toContainText(/还留.*0|你在翻后有位置|你需要重新决定/);
+  const ownParagraph = summary.locator('p').last();
+  expect((await ownParagraph.textContent()).match(/1.62M/g)).toHaveLength(1);
+  await info.attach('all-in-causal-rationale', {
+    body: await page.screenshot(),
+    contentType: 'image/png',
+  });
+  await select(9);
+  const board = summary.locator('.review-board-summary');
+  const strength = summary.locator('.review-matchup-hand');
+  await expect(board).toContainText('公共牌有对子');
+  await expect(strength).toContainText('底牌击中顶对 K，与公共牌的一对 5 共同组成两对，A 作为踢脚');
+  expect(
+    await board.evaluate(
+      (a) =>
+        a.compareDocumentPosition(a.parentElement.querySelector('.review-matchup-hand')) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ),
+  ).toBeTruthy();
   await page.locator('#review-opponents-tab').click();
   const bot = page.locator('#review-opponent-detail .review-explanation');
   await expect(bot).toContainText('他选择保住后手');
@@ -97,7 +153,7 @@ test('new recommendation clauses and key information switch across all locales',
       el.dispatchEvent(new Event('change'));
     }, locale);
     await expect(page.locator('html')).toHaveAttribute('lang', locale);
-    for (const i of [0, 6]) {
+    for (const i of [0, 6, 7, 8, 9]) {
       await page.locator(`[data-review-index="${i}"]`).click();
       const text = await page
         .locator('#review-coach-explanation, #review-evidence')
@@ -105,7 +161,34 @@ test('new recommendation clauses and key information switch across all locales',
       expect(text.join('')).not.toMatch(/\{\d+\}/);
       if (!['zh-CN', 'zh-TW', 'ja'].includes(locale))
         expect(text.join('')).not.toMatch(/\p{Script=Han}/u);
-      await expect(page.locator('#review-evidence')).toContainText(i === 0 ? '140K' : '520K');
+      await expect(page.locator('#review-evidence')).toContainText(
+        i === 0 ? '140K' : [6, 9].includes(i) ? '520K' : i === 8 ? '1.62M' : '100K',
+      );
     }
+  }
+});
+
+test('guide glossary is at the end and explains review terms in every locale', async ({
+  page,
+}, info) => {
+  await page.goto('/');
+  await expect(page.locator('html')).toHaveAttribute('data-app-ready', 'true');
+  await page.locator('#rules-button').click();
+  await page.locator('#guide-menu-item').click();
+  const glossary = page.locator('#review-glossary');
+  await glossary.scrollIntoViewIfNeeded();
+  await expect(glossary).toContainText('底池赔率／保本胜率');
+  await expect(glossary).toContainText('全下只会结束自己的下注选择');
+  await info.attach('guide-glossary', { body: await page.screenshot(), contentType: 'image/png' });
+  await page.locator('#rules-dialog .dialog-header .close-dialog').click();
+  for (const locale of ['en', 'zh-TW', 'ja', 'ko', 'es', 'it', 'pt', 'de', 'fr', 'ru']) {
+    await page.locator('#language-select').evaluate((el, locale) => {
+      el.value = locale;
+      el.dispatchEvent(new Event('change'));
+    }, locale);
+    await expect(page.locator('html')).toHaveAttribute('lang', locale);
+    const text = await glossary.textContent();
+    expect(text).not.toMatch(/\{\d+\}/);
+    if (!['zh-TW', 'ja'].includes(locale)) expect(text).not.toMatch(/\p{Script=Han}/u);
   }
 });

@@ -1,3 +1,4 @@
+import { heavyPreflopPressure } from './presentation.js';
 import { compactChips } from '../engine/chip-format.js';
 import { bigBlindOf } from '../engine/stakes.js';
 import { callPrice, sampleValue } from './equity.js';
@@ -90,7 +91,7 @@ export function analyzeDecision(
     s.street > 0 &&
     !['high', 'underpair', 'middle-pair', 'board', 'board-pair'].includes(handClass) &&
     !(texture.maxSuit >= 4 && ctx.made.score[0] < 5);
-  const valueTarget = strongMade || (s.street === 0 && tier >= 2);
+  const valueTarget = strongMade || (s.street === 0 && tier >= 2 && !heavyPreflopPressure(s, ctx));
   let status = 'sound',
     code = '',
     title = '',

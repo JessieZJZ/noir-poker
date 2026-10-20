@@ -30,7 +30,7 @@ test('reported reviews render coherent causal summaries and preserve them across
   await page.locator('[data-review-index="1"]').click();
   await expect(hero.locator('.review-range-note')).toHaveCount(0);
   await expect(hero.locator('.review-analysis-heading ~ p').first()).toContainText(
-    /多次再加注后仍.*继续范围.*更集中/,
+    /再加注通常比普通开池更集中.*5-bet/,
   );
   await expect(hero).toContainText(/再补 8.3K.*弃牌可以保留.*19K/);
   await expect(hero).not.toContainText('不必只因遇到加注就自动弃牌');

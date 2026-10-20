@@ -964,6 +964,8 @@
               >
               <view wx:else class="review-matchups">
                 <text class="module-title">{{item.matchups.title}}</text>
+                <text class="review-board-summary">{{item.matchups.boardSummary}}</text>
+                <text class="module-title">{{item.matchups.strengthTitle}}</text>
                 <text class="review-matchup-hand">{{item.matchups.handLabel}}</text>
                 <text wx:if="{{item.matchups.note}}" class="review-matchup-note"
                   >{{item.matchups.note}}</text

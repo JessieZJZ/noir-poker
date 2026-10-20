@@ -98,6 +98,11 @@ export async function loadLocale(value) {
 function translateCore(text, depth = 0) {
   const source = normalized(text);
   if (Object.hasOwn(messages, source)) return messages[source];
+  // Texture labels are lists of exact catalog facts, not sentence templates.
+  // Resolve every list item before a broad "公共牌{0}" template can consume it.
+  const list = source.split('、');
+  if (list.length > 1 && list.every((part) => Object.hasOwn(messages, part)))
+    return list.map((part) => messages[part]).join(' / ');
   if (depth < 3)
     for (const entry of templates) {
       const match = entry.pattern.exec(source);

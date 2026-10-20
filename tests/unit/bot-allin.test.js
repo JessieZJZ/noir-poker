@@ -320,7 +320,7 @@ test('real executed bot plans replay their own call or fold motive without raw s
     if (kind === 'flop-qq') {
       assert.match(review.detail, /超对 Q/);
       assert.match(review.detail, /10.15K/);
-      assert.match(review.detail, /之后只能等发牌|只能等发牌/);
+      assert.match(review.detail, /之后不再参与下注决策/);
       assert.doesNotMatch(review.detail, /9♦ 8♣/);
     } else if (kind === 'shared-royal') assert.match(review.detail, /平分底池/);
   }

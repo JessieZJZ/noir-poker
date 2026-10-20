@@ -273,3 +273,99 @@ export function reportedGutshotCall() {
     },
   };
 }
+
+// Reconstructed public prices and actions from the 4d5d screenshot. Unshown
+// stacks and waiting seats are illustrative, not a recovered original hand.
+export function reportedLowConnectorCall() {
+  const s = reportedKeyInfoCall('4d 5d');
+  const seats = ['HJ', 'UTG', 'UTG+1', 'MP', 'LJ', 'CO', 'BTN', 'SB', 'BB'];
+  const bets = [0, 0, 20000, 20000, 100000, 0, 0, 10000, 20000];
+  return {
+    ...s,
+    position: 'HJ',
+    stack: 6270000,
+    bet: 0,
+    total: 0,
+    pot: 170000,
+    currentBet: 100000,
+    minRaise: 80000,
+    amount: 100000,
+    pending: [0, 5, 6, 7, 8, 2, 3],
+    players: seats.map((position, id) => ({
+      id,
+      position,
+      name: ['你', 'River', 'Theo', 'Jade', 'Leo', 'Kai', 'Mia', 'Alex', 'Sam'][id],
+      stack: id ? 6000000 : 6270000,
+      bet: bets[id],
+      total: bets[id],
+      folded: id === 1,
+    })),
+    history: [
+      { id: 1, street: 0, action: 'fold', amount: 0 },
+      { id: 2, street: 0, action: 'call', amount: 20000 },
+      { id: 3, street: 0, action: 'call', amount: 20000 },
+      { id: 4, street: 0, action: 'raise', amount: 100000 },
+    ],
+    legal: {
+      ...s.legal,
+      callAmount: 100000,
+      toCall: 100000,
+      minRaiseTo: 180000,
+      fullRaiseTo: 180000,
+      maxRaiseTo: 6270000,
+    },
+  };
+}
+
+// Displayed public ledger before hero's 55 all-in. Other actors' remaining
+// stacks are illustrative; their later response/cards never enter the review.
+export function reportedFivesAllIn() {
+  const s = reportedKeyInfoCall('5h 5c');
+  const positions = ['BTN', 'SB', 'BB', 'UTG', 'UTG+1', 'MP', 'LJ', 'HJ', 'CO'];
+  const totals = [380000, 10000, 1520000, 20000, 5720000, 80000, 0, 0, 380000];
+  return {
+    ...s,
+    position: 'BTN',
+    stack: 1620000,
+    bet: 380000,
+    total: 380000,
+    pot: 8110000,
+    currentBet: 5720000,
+    minRaise: 4200000,
+    amount: 1620000,
+    pending: [0, 2],
+    players: positions.map((position, id) => ({
+      id,
+      position,
+      name: ['你', 'Mia', 'Alex', 'River', 'Kai', 'Luna', 'Theo', 'Jade', 'Leo'][id],
+      stack: id ? 2000000 : 1620000,
+      bet: totals[id],
+      total: totals[id],
+      folded: ![0, 2, 4].includes(id),
+    })),
+    history: [
+      { id: 3, street: 0, action: 'call', amount: 20000 },
+      { id: 4, street: 0, action: 'raise', amount: 80000 },
+      { id: 5, street: 0, action: 'call', amount: 80000 },
+      { id: 6, street: 0, action: 'fold', amount: 0 },
+      { id: 7, street: 0, action: 'fold', amount: 0 },
+      { id: 8, street: 0, action: 'raise', amount: 380000 },
+      { id: 0, street: 0, action: 'call', amount: 380000 },
+      { id: 1, street: 0, action: 'fold', amount: 0 },
+      { id: 2, street: 0, action: 'raise', amount: 1520000 },
+      { id: 3, street: 0, action: 'fold', amount: 0 },
+      { id: 4, street: 0, action: 'raise', amount: 5720000 },
+      { id: 5, street: 0, action: 'fold', amount: 0 },
+      { id: 8, street: 0, action: 'fold', amount: 0 },
+    ],
+    legal: {
+      ...s.legal,
+      callAmount: 1620000,
+      toCall: 5340000,
+      canRaise: false,
+      minRaiseTo: 9920000,
+      fullRaiseTo: 9920000,
+      maxRaiseTo: 2000000,
+    },
+  };
+}

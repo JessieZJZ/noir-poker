@@ -6,12 +6,55 @@ import { explainOpponent } from '../../src/review/opponents.js';
 import {
   reportedKeyInfoCall,
   reportedGutshotCall,
+  reportedLowConnectorCall,
   turnStraightCallRecord,
 } from '../fixtures/review-summary.js';
 import { cards } from '../fixtures/deceptive-decisions.js';
+import { decisionContext } from '../../src/review/context.js';
 
 const options = { trials: 120, rolloutTrials: 12 };
 const summary = (c) => c.paragraphs.slice(c.paragraphs.indexOf('复盘分析总结') + 1).join('');
+
+test('connector labels distinguish consecutive ranks from suited gaps and pairs', () => {
+  for (const [hole, label] of [
+    ['4d 5d', '4 / 5 同花连接牌'],
+    ['4d 5s', '4 / 5 不同花连接牌'],
+    ['4d 6d', '4 / 6 同花底牌'],
+    ['4d 4s', '口袋 4'],
+  ]) {
+    const s = reportedLowConnectorCall();
+    s.hole = cards(hole);
+    assert.equal(decisionContext(s).handLabel, label);
+  }
+});
+
+test('a fold recommendation for a low connector explains potential, price and actual risks', () => {
+  const s = reportedLowConnectorCall();
+  const before = structuredClone(s);
+  const r = analyzeDecision(s, options);
+  const text = summary(r.coaching);
+  assert.match(text, /有机会在翻后形成顺子、同花听牌/);
+  assert.match(text, /100K（5.0 BB）/);
+  assert.match(text, /跟注，继续争夺 270K 的底池.*需要至少 37.0% 的胜率/);
+  assert.match(text, /击中一对.*点数仍偏低.*更高同花/);
+  assert.match(text, /身后还有 6 人等待行动.*他们若再加注/);
+  assert.match(text, /后续下注和成牌后的收益还要另算.*不能把连接牌一律当成弃牌.*建议弃牌/);
+  assert.doesNotMatch(text, /被强 A.*压制|踢脚.*压制|；/);
+  assert.deepEqual(s, before);
+  for (const player of s.players.filter((p) => p.id))
+    Object.defineProperty(player, 'hole', {
+      get() {
+        throw Error('hidden cards read');
+      },
+    });
+  s.futureDeck = cards('3d 6d 7d');
+  assert.deepEqual(analyzeDecision(s, options).coaching, r.coaching);
+  const off = reportedLowConnectorCall();
+  off.hole = cards('4d 5s');
+  const offText = summary(analyzeDecision(off, options).coaching);
+  assert.match(offText, /点数相连.*顺子听牌/);
+  assert.doesNotMatch(offText, /成花机会|更高同花/);
+});
 
 test('key information uses the agreed price wording and before-action values', () => {
   const s = reportedKeyInfoCall();

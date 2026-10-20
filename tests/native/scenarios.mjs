@@ -1130,8 +1130,13 @@ export async function nativeScenarios(app) {
       cards: document.querySelectorAll('.guide-card').length,
       positions: document.querySelector('.position-glossary').textContent,
       text: document.querySelector('#rules-dialog').textContent.replace(/\s+/g, ' '),
+      glossary: document.querySelector('#review-glossary')?.textContent,
+      glossaryEntries: document.querySelectorAll('#review-glossary .position-glossary > div')
+        .length,
     }));
     assert.equal(guide.hands, 9);
+    assert.equal(guide.glossaryEntries, 27);
+    assert.match(guide.glossary, /底池赔率／保本胜率.*全下只会结束自己的下注选择/s);
     assert.equal(guide.cards, 45);
     assert.ok(guide.positions.includes('HJ · Hijack') && guide.positions.includes('CO · Cutoff'));
     assert.ok(guide.text.includes('选择加注 1.2K 则补 1K'));
@@ -1928,6 +1933,8 @@ export async function nativeScenarios(app) {
       rangeNotes: document.querySelectorAll('#review-coach-explanation .review-range-note').length,
     }));
     assert.equal(presentation.removed, 0);
+    assert.ok(presentation.reason.indexOf('当前牌面') < presentation.reason.indexOf('当前牌力'));
+    assert.match(presentation.reason, /当前牌面.*当前牌力/s);
     assert.ok(presentation.evidence >= 4);
     assert.equal(presentation.focusHidden, presentation.keep);
     assert.equal(presentation.method, 0);

@@ -26,7 +26,7 @@ test('consumer preflop review has one possible-hand group with causal ranges and
   await expect(panel.locator('[data-matchup-direction]')).toHaveCount(1);
   await expect(panel.locator('[data-matchup-direction="possible"]')).toContainText('对手可能牌组');
   await expect(panel).toContainText('Luna在 UTG+1 位开池到 4K');
-  await expect(panel).toContainText('Jade在 LJ 位跟住了这笔加注');
+  await expect(panel).toContainText('Jade在 LJ 位跟注了这笔加注');
   await expect(panel).not.toContainText(/结构上较|不代表获胜概率|依据当时记录|旧记录/);
   const below = await panel
     .locator('.review-matchups')
@@ -144,8 +144,8 @@ test('review renders up to three ahead and four behind public-range examples wit
       select.dispatchEvent(new Event('change'));
     }, locale);
     await expect(page.locator('html')).toHaveAttribute('lang', locale);
-    if (locale === 'zh-CN') await expect(comparison).toContainText('牌力与牌面');
-    else await expect(explanation).not.toContainText('牌力与牌面');
+    if (locale === 'zh-CN') await expect(comparison).toContainText('当前牌面');
+    else await expect(explanation).not.toContainText('当前牌面');
     if (locale === 'en') await expect(comparison).not.toContainText(/\p{Script=Han}/u);
     for (const direction of ['ahead', 'behind']) {
       const examples = comparison.locator(

@@ -10,6 +10,7 @@ import { cardText, spotFacts } from './spot-facts.js';
 import { drawLabel } from './narrative.js';
 import { actorAtPosition } from '../engine/player-identity.js';
 import { historyActionLabel } from '../engine/action-labels.js';
+import { strengthParts, boardParts } from './presentation.js';
 
 const identify = (card) => `${card.rank}-${card.suit}`;
 const number = compactChips;
@@ -64,15 +65,7 @@ function handSummary(s, c) {
   const draw = c.draw.outs ? drawLabel(c.draw) : '';
   const pairDraw =
     !draw && c.made.score[0] === 0 && s.street < 3 ? '未成对，可改善为一对，成对也未必领先。' : '';
-  return [
-    c.handLabel,
-    draw,
-    pairDraw,
-    `${c.texture.wet ? '湿润面' : '干燥面'}：${c.texture.label}`,
-    s.street < 3 && c.opponents > 1 && c.made.score[0] === 1
-      ? '多人底池里，一对需要控制底池，选择过牌，也可能让对手免费补成更强的牌。'
-      : '',
-  ].filter(Boolean);
+  return [...strengthParts(s, c), draw, pairDraw].filter(Boolean);
 }
 
 export function preflopRangeNotes(s) {
@@ -88,38 +81,51 @@ export function preflopRangeNotes(s) {
       late = ['HJ', 'CO', 'BTN'].includes(position);
     if (raises.length > 1)
       notes.push(
-        `${name(last.id)}，${raises.length >= 3 ? '多次再加注后仍' : '已有加注时'}${historyActionLabel(s.history, s.history.indexOf(last))}，因此继续范围通常比普通开池更集中于大对子和 AK，AQ、同花高张也可能这样打。`,
+        '再加注通常比普通开池更集中于大对子和 AK，AQ、同花高张也可能这样打。' +
+          `${name(last.id)}${historyActionLabel(s.history, s.history.indexOf(last))}。`,
       );
     else
       notes.push(
-        `${name(last.id)}开池到 ${number(last.amount)}，可能拿着对子、强 A 或同花高张。${early ? '前位开池后还有较多人能跟注或再加注，因此通常需要更强的起手牌，用容易被强 A 或大对子压制的牌继续时，要更谨慎。' : late ? '后位开池需要越过的人较少，翻后也更容易最后行动，因此还可能用小对子或同花连张争夺盲注，较强起手牌不必只按对手有大对子来防守。' : ['SB', 'BB'].includes(position) ? '盲位翻后通常先行动，较弱高张不易实现摊牌价值，因此不能只因这次开池就假定对手在偷盲。' : '中小对子可能被更大对子压住，高张成对后也可能遇到更好的踢脚，所以不能只凭起手牌好看就继续。'}`,
+        `${early ? '前位开池需要越过更多玩家，通常应先按较紧的范围防守，再结合开池尺度和自己的翻后潜力决定是否继续，而' : late ? '后位开池需要越过的玩家较少，范围可能包含更多小对子、同花牌和高张。' : '面对开池，需要结合尺度、位置和翻后潜力判断。'}${name(last.id)}开池到 ${number(last.amount)}，可能拿着对子、强 A 或同花高张。`,
       );
   } else
     notes.push(
-      '前面还没有对手加注，后面的玩家仍可能拿到大对子或强 A，也可能用小对子、同花高张或同花连张入池。后位需要越过的人较少，翻后也更容易最后行动，因此能用更多起手牌争夺盲注，开池时仍要预留面对跟注或再加注的余地。',
+      '前面还没有对手加注，后面的玩家仍可能入池或再加注，需要结合位置、底牌和价格决定是否主动争夺底池。',
     );
   const live = new Set(s.players?.filter((p) => !p.folded && p.id !== 0).map((p) => p.id)),
     firstRaise = actions.findIndex((a) => a.action === 'raise'),
     limpers = actions.filter(
-      (a, i) => a.id !== 0 && live.has(a.id) && a.action === 'call' && i < firstRaise,
+      (a, i) =>
+        a.id !== 0 &&
+        live.has(a.id) &&
+        a.action === 'call' &&
+        i < firstRaise &&
+        !raises.some((raise) => raise.id === a.id) &&
+        !actions
+          .slice(firstRaise + 1)
+          .some((later) => later.id === a.id && later.action === 'call'),
     ),
     callers = [
       ...new Set(
         actions
           .filter(
             (a, i) =>
-              a.id !== 0 && live.has(a.id) && a.action === 'call' && i > actions.indexOf(last),
+              last &&
+              a.id !== 0 &&
+              live.has(a.id) &&
+              a.action === 'call' &&
+              i > actions.indexOf(last),
           )
           .map((a) => name(a.id)),
       ),
     ];
-  if (limpers.length)
+  if (last && limpers.length)
     notes.push(
-      `${limpers.map((a) => name(a.id) + '先跟注 ' + number(a.amount)).join('、')}入池，仍未弃牌，这类平跟可能是小对子或同花牌，也可能藏着强牌。${subject}若再加注，不能只考虑开池者会不会弃牌。`,
+      `${s.legal.canRaise ? subject + '若再加注，不能只考虑开池者会不会弃牌，' : '当前底池里还有先跟注入池的玩家，'}${limpers.map((a) => name(a.id) + '先跟注 ' + number(a.amount) + ' 入池').join('、')}，没有弃牌，这类平跟可能是小对子或同花牌，也可能藏着强牌。`,
     );
   if (last && callers.length)
     notes.push(
-      `${callers.join('、')}跟住了这笔加注，可能用小中对子追暗三条，或用同花高张、同花连张争取翻后成大牌，平跟也可能藏着强牌。${subject}若再加注，想直接拿走底池，需要让加注者和这些跟注者都放弃。${subject}若只跟注，就要准备面对多人竞争。`,
+      `${s.legal.canRaise ? subject + '若再加注，需要同时考虑加注者和跟注者的继续范围，' + (subject === '你' ? '你' : s.reviewPronoun || '他') + '若只跟注，就要准备面对多人竞争。' : '跟注需要考虑加注者与跟注者的范围，准备面对多人竞争。'}${callers.join('、')}跟注了这笔加注，可能用小中对子追暗三条，或用同花高张、同花连接牌争取翻后成大牌，平跟也可能藏着强牌。`,
     );
   if (s.hole.some((card) => card.rank === 14))
     notes.push(
@@ -359,6 +365,8 @@ export function handMatchups(s, c) {
     handLabel: c.handLabel,
     summary: summaryParts.join('，'),
     summaryParts,
+    boardParts: boardParts(s, c),
+    strengthParts: summaryParts,
     comparison,
     rangeContext: ranges.map(({ id, position, role, line, preflop, postflop }) => ({
       id,
@@ -385,7 +393,11 @@ export function matchupPresentation(matchups, street) {
         : '当前没有可能更强的牌组，后续公共牌仍可能改变强弱。'
       : '';
   return {
-    title: '牌力与牌面',
+    title: '当前牌面',
+    boardParts: matchups.boardParts || [],
+    boardSummary: (matchups.boardParts || []).join('，'),
+    strengthTitle: '当前牌力',
+    strengthParts: matchups.strengthParts || matchups.summaryParts || [matchups.handLabel],
     handLabel: matchups.summary || matchups.handLabel,
     summaryParts: matchups.summaryParts || [matchups.handLabel],
     note: '',
@@ -424,6 +436,8 @@ export function reviewCommentary(paragraphs, matchups, street, paragraphParts) {
 export function valuePlan(s, c, matchups = c.matchups || handMatchups(s, c)) {
   const empty = { primary: null, secondary: null, kind: null, reason: '' };
   if (!matchups || matchups.strength === 'board') return empty;
+  const shoveReason = () =>
+    `当时底池 ${number(s.pot)}，你还剩 ${number(s.stack)}，这手强牌可比较价值全下，让${s.street ? '弱成牌或听牌' : '较弱起手牌'}为剩余筹码付费。`;
   const f = spotFacts(s, c),
     bigBlind = bigBlindOf(s),
     live = (s.players || []).filter((p) => p.id !== 0 && !p.folded && !p.allin && p.stack > 0),
@@ -438,11 +452,13 @@ export function valuePlan(s, c, matchups = c.matchups || handMatchups(s, c)) {
       s.legal.maxRaiseTo >= fullRaise &&
       live.length > 0,
     pocket = s.hole[0].rank === s.hole[1].rank,
-    strongPreflop = !s.street && c.tier === 3,
+    strongPreflop =
+      !s.street && c.tier === 3 && (c.preflopRaises < 3 || (pocket && s.hole[0].rank >= 13)),
     pocketTrap = strongPreflop && pocket && s.hole[0].rank >= 13,
     boardTrips = c.texture.trips && !s.hole.some((card) => card.rank === c.made.score[1]),
     valueHand =
       s.street > 0 &&
+      !['board', 'board-pair', 'underpair', 'middle-pair'].includes(c.handClass) &&
       !boardTrips &&
       (score >= 2 || ['overpair', 'top-pair'].includes(c.handClass)) &&
       !(c.texture.maxSuit >= 4 && score < 5) &&
@@ -494,7 +510,7 @@ export function valuePlan(s, c, matchups = c.matchups || handMatchups(s, c)) {
         ? { action: 'check', amount: 0 }
         : { action: 'call', amount: s.legal.callAmount },
       kind: 'value-shove',
-      reason: `当时底池 ${number(s.pot)}，你还剩 ${number(s.stack)}，这手强牌可比较价值全下，让${s.street ? '弱成牌或听牌' : '较弱起手牌'}为剩余筹码付费。`,
+      reason: shoveReason(),
     };
   if (!valueHand && !strongPreflop) return empty;
   const amount = !s.street
@@ -522,9 +538,16 @@ export function valuePlan(s, c, matchups = c.matchups || handMatchups(s, c)) {
     secondary: flat,
     kind: raise ? 'value-raise' : null,
     reason: !s.street
-      ? `这手 ${cardText(s.hole)} 可用普通加注建立底池，给较弱对子和高牌留下继续的机会，当前 ${number(s.stack)} 的筹码不必一次全部推出。`
+      ? raise && raise.amount - s.bet >= s.stack
+        ? shoveReason()
+        : `这手 ${cardText(s.hole)} 可用普通加注建立底池，给较弱对子和高牌留下继续的机会，当前 ${number(s.stack)} 的筹码不必一次全部推出。`
       : c.opponents > 1 && (c.handClass === 'top-pair' || c.handClass === 'overpair')
         ? `这张 ${cardText(s.board)} 是多人底池，一对更容易遇到两对或暗三条，可以取值，但不把 ${number(s.stack)} 一次当成必需投入。`
-        : `当前成牌可向较弱牌取值，在 ${cardText(s.board)} 上加注既收取跟注，也让听牌付费，尺度仍要给弱牌留下继续空间。`,
+        : s.street === 3
+          ? `当前成牌可向较弱成牌取值，在 ${cardText(s.board)} 上加注，收益来自它们愿意跟注付费，尺度仍要给弱牌留下继续空间。`
+          : `当前成牌可向较弱牌取值，在 ${cardText(s.board)} 上加注既收取跟注，也让听牌付费，尺度仍要给弱牌留下继续空间。`,
   };
 }
+
+// Preserve one visual paragraph, but translate complete sentences independently.
+export const rangeNoteClauses = (note) => note.match(/[^。]+。?/g) || [note];

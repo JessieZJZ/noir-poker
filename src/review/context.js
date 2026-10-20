@@ -99,10 +99,16 @@ export function decisionContext(s) {
     handClass = pocket ? 'pocket' : 'unpaired';
     handLabel = pocket
       ? `口袋 ${rankText(holeRank)}`
-      : `${s.hole.map((c) => rankText(c.rank)).join(' / ')} ${s.hole[0]?.suit === s.hole[1]?.suit ? '同花底牌' : '不同花底牌'}`;
+      : `${s.hole.map((c) => rankText(c.rank)).join(' / ')} ${Math.abs(s.hole[0].rank - s.hole[1].rank) === 1 ? (s.hole[0].suit === s.hole[1].suit ? '同花连接牌' : '不同花连接牌') : s.hole[0].suit === s.hole[1].suit ? '同花底牌' : '不同花底牌'}`;
   } else if (playsBoard) {
     handClass = 'board';
     handLabel = '公共牌成牌，底牌未提高牌力';
+  } else if (
+    made.score[0] === 7 &&
+    s.board.filter((card) => card.rank === made.score[1]).length === 4
+  ) {
+    handClass = 'board-pair';
+    handLabel = `四条来自公共牌，${rankText(made.score[2])} 踢脚`;
   } else if (made.score[0] >= 4) {
     handClass = 'strong';
     handLabel = made.label;
@@ -110,25 +116,41 @@ export function decisionContext(s) {
     handClass = 'set';
     handLabel = `暗三条 ${rankText(holeRank)}`;
   } else if (made.score[0] === 3) {
-    handClass = 'trips';
-    handLabel = made.label;
+    const shared = s.board.filter((card) => card.rank === made.score[1]).length === 3;
+    handClass = shared ? 'board-pair' : 'trips';
+    handLabel = shared
+      ? `三条来自公共牌，${made.score.slice(2).map(rankText).join(' / ')} 踢脚`
+      : made.label;
   } else if (pocket && holeRank > high) {
     handClass = 'overpair';
     handLabel = `超对 ${rankText(holeRank)}${texture.paired ? '，公共牌带对子' : ''}`;
   } else if (made.score[0] === 2) {
-    handClass = 'two-pair';
-    handLabel = made.label;
+    const boardPairs = [...new Set(s.board.map((card) => card.rank))].filter(
+      (rank) => s.board.filter((card) => card.rank === rank).length >= 2,
+    );
+    const shared = made.score.slice(1, 3).every((rank) => boardPairs.includes(rank));
+    const privatePair = made.score.slice(1, 3).find((rank) => !boardPairs.includes(rank));
+    handClass = shared
+      ? 'board-pair'
+      : boardPairs.length === 1
+        ? pocket
+          ? 'underpair'
+          : privatePair === high
+            ? 'top-pair'
+            : 'middle-pair'
+        : 'two-pair';
+    handLabel = shared ? `两对来自公共牌，${rankText(made.score[3])} 踢脚` : made.label;
   } else if (made.score[0] === 1) {
     if (pocket) {
       handClass = 'underpair';
       handLabel = `口袋 ${rankText(holeRank)}，公共牌有更高点数`;
     } else {
       const paired = s.hole.find((c) => s.board.some((b) => b.rank === c.rank)),
-        kicker = s.hole.find((c) => c !== paired);
+        kicker = made.score[2];
       handClass = !paired ? 'board-pair' : paired.rank === high ? 'top-pair' : 'middle-pair';
       handLabel = !paired
         ? `对子 ${rankText(made.score[1])} 来自公共牌，底牌提供踢脚`
-        : `${handClass === 'top-pair' ? '顶对' : '非顶对'} ${rankText(made.score[1])}，${rankText(kicker?.rank || made.score[2])} 踢脚`;
+        : `${handClass === 'top-pair' ? '顶对' : '非顶对'} ${rankText(made.score[1])}，${rankText(kicker)} 踢脚`;
     }
   }
   const actionOrder = ['SB', 'BB', 'UTG', 'UTG+1', 'MP', 'LJ', 'HJ', 'CO', 'BTN'],

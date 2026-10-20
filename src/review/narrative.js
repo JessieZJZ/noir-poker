@@ -5,6 +5,7 @@ import { actionLabel, historyActionLabel } from '../engine/action-labels.js';
 import { boardTexture } from './context.js';
 import { spotFacts } from './spot-facts.js';
 import { actorAtPosition } from '../engine/player-identity.js';
+import { exhaustsStack, heavyPreflopPressure } from './presentation.js';
 
 const n = compactChips;
 const pct = (value) => (value * 100).toFixed(1) + '%';
@@ -25,6 +26,8 @@ export function preflopPotential(s, subject = '你') {
   const [high, low] = s.hole.map((card) => card.rank).sort((a, b) => b - a);
   if (s.street || high === low) return [];
   const suited = s.hole[0].suit === s.hole[1].suit;
+  if (suited && high - low === 1 && high <= 8)
+    return ['这是低张同花连接牌，有机会在翻后形成顺子、同花听牌。'];
   const flush = !suited
     ? ''
     : high === 14
@@ -34,7 +37,9 @@ export function preflopPotential(s, subject = '你') {
     high === 14
       ? `${subject}若击中 A，可形成顶对${low >= 10 ? '，较高踢脚有机会领先较弱 Ax，并向它们取值' : '，但面对更大踢脚的 Ax 时仍需控制投入'}。`
       : '';
-  return [flush, pair].filter(Boolean);
+  const connected =
+    high - low === 1 ? `${subject}的两张底牌点数相连，能争取顺子听牌和成顺机会。` : '';
+  return [flush, connected, pair].filter(Boolean);
 }
 
 export function investmentText(s, c, price) {
@@ -76,7 +81,7 @@ export function situationNotes(s, c, actorId = 0) {
       );
     else if (new Set(aggression.line.map((a) => a.street)).size >= 2)
       notes.push(
-        `${aggression.name}的下注线是${aggression.line.map((a) => streets[a.street] + ' ' + a.label).join(' → ')}，${who}这次面对的是连续施压，如果选择跟注，需要再补 ${n(s.legal.callAmount)}。`,
+        `${aggression.name}的下注线是${aggression.line.map((a) => streets[a.street] + ' ' + a.label).join(' → ')}，${who}这次面对的是连续施压，需要结合这条下注线判断对手的价值牌和诈唬。`,
       );
   }
   if (s.board.length >= 4) {
@@ -121,7 +126,7 @@ export function callOddsText(metrics, action = 'call') {
   const ratio = (metrics.contestable - metrics.callCost) / metrics.callCost;
   return amount === metrics.callCost
     ? `${action === 'fold' ? '若跟注' : '跟注'} ${n(amount)} 后可争夺 ${n(metrics.contestable)} 底池，需要至少 ${pct(metrics.required)} 的胜率，风险和收益才能持平。`
-    : `实际再补 ${n(amount)}，算入弃牌与跟注时退回筹码的差额，本次风险为 ${n(metrics.callCost)}。跟注后可争夺 ${n(metrics.contestable)}，底池赔率约 ${ratio.toFixed(2)} : 1，至少需要约 ${pct(metrics.required)} 的权益才能打平。`;
+    : `实际再补 ${n(amount)}，算入弃牌与跟注时退回筹码的差额，本次风险为 ${n(metrics.callCost)}。跟注后可争夺 ${n(metrics.contestable)}，底池赔率约 ${ratio.toFixed(2)} : 1，需要至少 ${pct(metrics.required)} 的胜率，风险和收益才能持平。`;
 }
 
 export function actionReason(s, r) {
@@ -130,13 +135,17 @@ export function actionReason(s, r) {
     actual = actionLabel(s),
     draw = c.draw,
     hand = f.holeText;
+  if (exhaustsStack(s) && s.action === 'call')
+    return `你在 ${s.position} 拿 ${hand}，用剩下的 ${n(s.stack)} 全下跟注，可争夺 ${n(r.metrics.contestable)} 的底池。`;
   if (s.action === 'raise') {
+    if (heavyPreflopPressure(s, c))
+      return `你拿 ${hand} 在 ${s.position} ${actual}，这次拿出 ${n(f.investment)} 争取 ${n(s.pot)} 的底池。面对多次再加注，不能只凭起手牌较强就当作价值加注，继续进攻需要对手有足够会弃牌的组合，被大对子或 AK 等强牌跟注时要承担明显风险。`;
     if (c.valuePlan?.kind === 'value-shove' && f.shove)
       return `你拿 ${hand} 在 ${s.position} ${actual}，这次拿出 ${n(f.investment)}。${c.valuePlan.reason}`;
     if (f.shove && f.potRatio > 4)
-      return `你拿 ${hand} 在 ${s.position} ${actual}，把 ${n(f.investment)}（${(f.investment / bigBlindOf(s)).toFixed(0)} BB）投入当时 ${n(s.pot)} 的底池，是底池的 ${f.potRatio.toFixed(1)} 倍。${s.street === 0 && c.tier < 2 ? '这笔大额进攻主要靠对手弃牌获利，被强牌跟住后，这手起手牌的胜算会明显下降。' : '如此大的尺度会让对手的继续范围更集中于强牌，需要比较较小加注能留下哪些跟注牌。'}`;
+      return `你拿 ${hand} 在 ${s.position} ${actual}，把 ${n(f.investment)}（${(f.investment / bigBlindOf(s)).toFixed(0)} BB）投入当时 ${n(s.pot)} 的底池，是底池的 ${f.potRatio.toFixed(1)} 倍。${s.street > 0 && draw.outs && (c.made.score[0] === 0 || ['board', 'board-pair', 'middle-pair', 'underpair'].includes(c.handClass)) ? '这次进攻有半诈唬的依据，对手弃牌可以直接获利，被跟注后仍有' + drawLabel(draw) + '的补牌机会，但如此大的投入需要足够的弃牌率，单靠听牌不能证明这个尺度划算。' : s.street === 0 && c.tier < 2 ? '这笔大额进攻主要靠对手弃牌获利，被强牌跟注后，这手起手牌的胜算会明显下降。' : '如此大的尺度会让对手的继续范围更集中于强牌，需要比较较小加注能留下哪些跟注牌。'}`;
     if (s.street === 0)
-      return `你拿 ${hand} 在 ${s.position} ${actual}，这次拿出 ${n(f.investment)} 去争取底池 ${n(s.pot)}。${c.tier >= 2 ? '这手牌有价值加注的牌力，可以让较弱起手牌付费。' : f.lastAggression ? (c.opponents > 1 ? '已有开池时，这次是再加注诈唬候选，需要开池者和其他未弃牌的玩家都放弃，才能直接拿走底池。' : '已有开池时，这次是再加注诈唬候选，需要开池者愿意弃牌，才能直接拿走底池。') : '前面没有开池，这次进攻可以直接争夺盲注，被跟住后再看这手牌的翻后潜力。'}`;
+      return `你拿 ${hand} 在 ${s.position} ${actual}，这次拿出 ${n(f.investment)} 去争取底池 ${n(s.pot)}。${c.tier >= 2 ? '这手牌有价值加注的牌力，可以让较弱起手牌付费。' : f.lastAggression ? (c.opponents > 1 ? '已有开池时，这次是再加注诈唬候选，需要开池者和其他未弃牌的玩家都放弃，才能直接拿走底池。' : '已有开池时，这次是再加注诈唬候选，需要开池者愿意弃牌，才能直接拿走底池。') : '前面没有开池，这次进攻可以直接争夺盲注，被跟注后再看这手牌的翻后潜力。'}`;
     if (
       !draw.outs &&
       ['pressure-bet', 'large-unbacked-bet'].includes(r.code) &&
@@ -144,7 +153,7 @@ export function actionReason(s, r) {
         ['board', 'board-pair'].includes(c.handClass) ||
         c.texture.maxSuit >= 4)
     )
-      return `你拿 ${hand}，在 ${f.boardText} 上${actual}，当前${c.handLabel}，牌面${c.texture.label}${c.texture.maxSuit >= 4 && c.made.score[0] < 5 ? '，你没有同花' : ''}。这次拿出 ${n(f.investment)} 是在尝试诈唬，想让更好的牌弃掉，被跟住后，当前牌力很难赢到摊牌。`;
+      return `你拿 ${hand}，在 ${f.boardText} 上${actual}，当前${c.handLabel}，牌面${c.texture.label}${c.texture.maxSuit >= 4 && c.made.score[0] < 5 ? '，你没有同花' : ''}。这次拿出 ${n(f.investment)} 是在尝试诈唬，想让更好的牌弃掉，被跟注后，当前牌力很难赢到摊牌。`;
     if (
       s.street < 3 &&
       !draw.outs &&
@@ -158,22 +167,13 @@ export function actionReason(s, r) {
       return `你拿 ${hand}，在 ${f.boardText} 上${actual}，这次拿出 ${n(f.investment)}。${checked.length ? checked.join('、') + '过牌后，' : ''}下注可以让${s.hole[0].rank > 2 ? '更小对子或尚未成对的高张' : '尚未成对的高张'}付费，高张若弃牌，也就失去了免费看下一张反超你的机会。这并不保证你领先：对手仍可能用更大的对子或慢打的强牌继续。${s.legal.canCheck ? '过牌可以控制底池，但也可能让这些牌免费改善。' : ''}`;
     }
     return draw.outs
-      ? `你拿 ${hand}，在 ${f.boardText} 上${actual}，这次拿出 ${n(f.investment)}，目前是${c.handLabel}加${drawLabel(draw)}，共有 ${draw.outs} 张牌可以补成${drawCompletion(draw)}。${['high', 'underpair', 'middle-pair', 'board-pair'].includes(c.handClass) ? '这次属于半诈唬，对手弃牌可直接拿池，被跟住后仍能补牌。' : '已有成牌可以向弱牌取值，同时保留听牌改善。'}`
-      : `你拿 ${hand}，在 ${f.boardText} 上${actual}，这次拿出 ${n(f.investment)}。${['high', 'underpair', 'middle-pair', 'board-pair'].includes(c.handClass) ? '目前牌力偏弱，这次下注主要需要更好的牌弃掉。' : c.handClass === 'board' ? '主要牌力来自公共牌，你的底牌没有增加优势，这笔下注很难单靠价值跟注获利。' : '目前已有成牌，下注的价值来自对手用更弱成牌跟住。'}`;
+      ? `你拿 ${hand}，在 ${f.boardText} 上${actual}，这次拿出 ${n(f.investment)}，目前是${c.handLabel}加${drawLabel(draw)}，共有 ${draw.outs} 张牌可以补成${drawCompletion(draw)}。${['high', 'underpair', 'middle-pair', 'board-pair'].includes(c.handClass) ? '这次属于半诈唬，对手弃牌可直接拿池，被跟注后仍能补牌。' : '已有成牌可以向弱牌取值，同时保留听牌改善。'}`
+      : `你拿 ${hand}，在 ${f.boardText} 上${actual}，这次拿出 ${n(f.investment)}。${['high', 'underpair', 'middle-pair', 'board-pair'].includes(c.handClass) ? '目前牌力偏弱，这次下注主要需要更好的牌弃掉。' : c.handClass === 'board' ? '主要牌力来自公共牌，你的底牌没有增加优势，这笔下注很难单靠价值跟注获利。' : '目前已有成牌，下注的价值来自对手用更弱成牌跟注。'}`;
   }
-  if (
-    s.action === 'call' &&
-    draw.outs &&
-    c.made.score[0] >= 1 &&
-    !['board', 'board-pair'].includes(c.handClass)
-  )
-    return `你拿 ${hand}，在 ${f.boardText} 上跟注 ${n(s.legal.callAmount)}，已有${c.handLabel}，同时还有${drawLabel(draw)}的 ${draw.outs} 张改善候选。跟注既保留当前成牌的摊牌价值，也争取补成更强牌。`;
   if (s.action === 'call')
-    return draw.outs
-      ? `你拿 ${hand}，在 ${f.boardText} 上跟注 ${n(s.legal.callAmount)} 的依据是${drawLabel(draw)}，不是只靠${c.handLabel}摊牌。${draw.straightRanks?.length ? draw.straightRanks.map(rankText).join(' / ') + ' 可补顺子，' : ''}共有 ${draw.outs} 张牌可以补成${drawCompletion(draw)}，其中有些成牌仍可能输。`
-      : s.street
-        ? `你在 ${s.position} 拿 ${hand}，在 ${f.boardText} 上是${c.handLabel}，再补 ${n(s.legal.callAmount)} 跟注，继续争夺 ${n(r.metrics.contestable)} 的底池。`
-        : `你在 ${s.position} 拿 ${hand}，再补 ${n(s.legal.callAmount)} 跟注，继续争夺 ${n(r.metrics.contestable)} 的底池。`;
+    return s.street
+      ? `你在 ${s.position} 拿 ${hand}，在 ${f.boardText} 上是${c.handLabel}，再补 ${n(s.legal.callAmount)} 跟注，继续争夺 ${n(r.metrics.contestable)} 的底池。`
+      : `你在 ${s.position} 拿 ${hand}，再补 ${n(s.legal.callAmount)} 跟注，继续争夺 ${n(r.metrics.contestable)} 的底池。`;
   if (s.action === 'fold')
     return s.legal.canCheck
       ? `你拿 ${hand} 直接弃牌，但当时可以直接过牌，过牌成本同样是 0，还能保留${s.street ? c.handLabel : '这手起手牌'}的获池机会。`
@@ -188,10 +188,12 @@ export function actionReason(s, r) {
 export function continuationNote(s, c, closing) {
   if (
     s.action === 'fold' ||
+    exhaustsStack(s) ||
     (s.action === 'raise' && s.amount === s.legal.maxRaiseTo) ||
     s.street !== 2 ||
     closing ||
     !c.draw.outs ||
+    c.made.score[0] > 0 ||
     !c.inPosition ||
     c.opponents !== 1 ||
     c.effective <= s.legal.callAmount
