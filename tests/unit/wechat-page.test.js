@@ -1619,35 +1619,33 @@ test('WeChat records classify every completed hand including zero folds and zero
   records.onShow();
   const view = records.data.sessions[0];
   assert.equal(view.profitText, '+0');
+  assert.deepEqual(copy(view.attempts.map((attempt) => [attempt.hand, attempt.attemptText])), [
+    [6, ''],
+    [5, ''],
+    [4, '重打2'],
+    [4, '重打1'],
+    [3, ''],
+    [2, ''],
+    [1, ''],
+  ]);
   assert.deepEqual(copy(view.attempts.map((attempt) => attempt.profitText)), [
-    '+25',
-    '+0',
-    '+0',
-    '-1.025K',
+    '—',
+    '—',
     '+1.025K',
-    '—',
-    '—',
+    '-1.025K',
+    '+0',
+    '+0',
+    '+25',
   ]);
-  assert.deepEqual(copy(view.attempts.map((attempt) => attempt.attemptText)), [
-    '',
-    '',
-    '',
-    '重打1',
-    '重打2',
-    '',
-    '',
-  ]);
-  assert.equal(
-    view.attempts[1].resultText,
-    '赢',
-    'A split award with zero net change still wins a pot',
-  );
-  assert.equal(view.attempts[2].resultText, '输');
-  assert.equal(view.attempts[5].resultText, '未完成');
-  assert.equal(view.attempts[6].resultText, '进行中');
-  assert.equal(view.attempts[0].superseded, true, 'The internal replacement state stays available');
-  assert.equal(view.attempts[4].cards.length, 2);
-  assert.equal(view.attempts[4].refill, true);
+  const row = (id) => view.attempts.find((attempt) => attempt.id === id);
+  assert.equal(row('initial-split').resultText, '赢', 'A zero net award still wins a pot');
+  assert.equal(row('zero-without-pot').resultText, '输');
+  assert.equal(row('unfinished').resultText, '未完成');
+  assert.equal(row('playing').resultText, '进行中');
+  assert.equal(row('initial-win').superseded, true, 'Replacement state stays available');
+  assert.equal(row('replay-two').cards.length, 2);
+  assert.equal(row('replay-two').refill, true);
+  assert.equal(session.attempts[0].id, 'initial-win', 'Rendering does not reorder saved records');
   session.profit = -25;
   revision++;
   records.refreshRecords();
@@ -1774,6 +1772,10 @@ test('WeChat record lists send bounded summary patches and remain idle without r
   assert.equal(page.data.sessions.length, 20);
   assert.equal(page.data.hasMoreSessions, true);
   assert.equal(page.data.sessions[0].attempts.length, 24);
+  assert.deepEqual(
+    copy(page.data.sessions[0].attempts.map((row) => row.hand)),
+    Array.from({ length: 24 }, (_, i) => 90 - i),
+  );
   assert.equal(page.data.sessions[1].attempts.length, 0);
   assert.doesNotMatch(JSON.stringify(page.data), /largeUnusedTree|snapshot/);
   const idleReads = reads,
@@ -1783,6 +1785,10 @@ test('WeChat record lists send bounded summary patches and remain idle without r
   assert.equal(patches.length, idlePatches, 'Polling unchanged records must not call setData');
   page.moreHands({ currentTarget: { dataset: { id: 'session-0' } } });
   assert.equal(page.data.sessions[0].attempts.length, 48);
+  assert.deepEqual(
+    copy(page.data.sessions[0].attempts.map((row) => row.hand)),
+    Array.from({ length: 48 }, (_, i) => 90 - i),
+  );
   page.moreHands({ currentTarget: { dataset: { id: 'session-0' } } });
   assert.equal(page.data.sessions[0].attempts.length, 72);
   page.moreHands({ currentTarget: { dataset: { id: 'session-0' } } });
@@ -1798,7 +1804,7 @@ test('WeChat record lists send bounded summary patches and remain idle without r
   revision++;
   const before = patches.length;
   page.refreshRecords();
-  assert.equal(page.data.sessions[0].attempts[0].profitText, '-100');
+  assert.equal(page.data.sessions[0].attempts.at(-1).profitText, '-100');
   assert.equal(patches.length, before + 1);
   assert.ok(
     JSON.stringify(patches.at(-1)).length < 500,
