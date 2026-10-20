@@ -498,7 +498,7 @@ module.exports = {
           (sum, key) => sum + (parseFloat(label[key]) || 0),
           0,
         ) * (this.data.arenaScale || 1);
-      if (natural.width <= label.width - inset + 1) return;
+      if (kind === 'name' && natural.width <= label.width - inset + 1) return;
       this.setData(
         {
           nameTooltip: { text: kind === 'persona' ? seat.profileName : seat.name, visible: false },

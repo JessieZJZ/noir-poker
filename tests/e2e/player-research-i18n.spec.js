@@ -69,7 +69,7 @@ for (const locale of SUPPORTED_LOCALES) {
         expect(image.loaded).toBe(true);
         expect(image.src).toBe(`/portraits/${p.id}.jpg`);
       }
-      if (p.id === 'iris')
+      if (p.id === 'owen')
         await page.screenshot({
           path: test.info().outputPath(`characters-${locale}.png`),
           animations: 'disabled',
@@ -87,14 +87,14 @@ test('live language changes retain the hand and update original character descri
   await expect(page.locator('html')).toHaveAttribute('data-app-ready', 'true');
   await page.evaluate(() => window.qa.stop());
   await page.locator('#opponents-button').click();
-  await page.locator('[data-profile-preview="iris"]').click();
+  await page.locator('[data-profile-preview="owen"]').click();
   if (await page.locator('[data-close-profile-detail]').isVisible())
     await page.locator('[data-close-profile-detail]').click();
   const before = await page.evaluate(() => JSON.stringify(window.noir.getState()));
   for (const locale of ['en', 'fr', 'ja', 'zh-TW', 'ko', 'ru', 'zh-CN']) {
     await page.locator('#language-select').selectOption(locale);
     await expect(page.locator('html')).toHaveAttribute('lang', locale);
-    const r = await inspect(page, 'iris');
+    const r = await inspect(page, 'owen');
     expect(r.missing).toEqual([]);
     expect(r.text).not.toMatch(forbidden);
     expect(await page.evaluate(() => JSON.stringify(window.noir.getState()))).toBe(before);

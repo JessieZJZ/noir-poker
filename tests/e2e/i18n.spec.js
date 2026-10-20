@@ -272,7 +272,7 @@ test('Japanese and Korean profile cards and ranges fit a narrow settings page', 
     await page.locator('#language-select').selectOption(locale);
     await expect(page.locator('html')).toHaveAttribute('lang', locale);
     const cards = page.locator('.profile-card');
-    await expect(cards).toHaveCount(17);
+    await expect(cards).toHaveCount(4);
     const bounds = await cards.evaluateAll((items) =>
       items.map((el) => ({
         height: el.getBoundingClientRect().height,
@@ -283,10 +283,10 @@ test('Japanese and Korean profile cards and ranges fit a narrow settings page', 
     expect(
       bounds.every((b) => b.height < 250 && b.fits && !/[⁇�]|\?{2}|(.{1,12})\1{5}/u.test(b.text)),
     ).toBe(true);
-    await page.locator('[data-profile-preview="slate"]').click();
+    await page.locator('[data-profile-preview="rook"]').click();
     await expect(page.locator('#profile-detail')).toBeVisible();
     await expect(page.locator('.profile-sizing strong')).toHaveText(
-      locale === 'ja' ? 'ポットの 60–100%' : '팟의 60–100%',
+      locale === 'ja' ? 'ポットの 65–115%' : '팟의 65–115%',
     );
     expect(
       await page

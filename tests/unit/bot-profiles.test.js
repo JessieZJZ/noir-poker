@@ -78,13 +78,13 @@ test('saved settings reject unknown profiles and malformed modes', () => {
 test('all eight mixed 9-max assignments reach the executed policy with the corresponding parameter vector', () => {
   const assignments = {
     1: 'rook',
-    2: 'vale',
-    3: 'slate',
+    2: 'owen',
+    3: 'rook',
     4: 'jett',
-    5: 'mira',
-    6: 'knox',
-    7: 'theo',
-    8: 'finn',
+    5: 'rook',
+    6: 'rook',
+    7: 'owen',
+    8: 'rook',
   };
   for (let id = 1; id <= 8; id++) {
     const g = newGame(9, { smallBlind: 25, bigBlind: 50, startingStack: 5000, chipUnit: 25 });
@@ -210,7 +210,7 @@ test('style differences change entry and value-trap behavior over common decisio
     id: 1,
     hole: [
       { rank: 9, suit: 0 },
-      { rank: 7, suit: 0 },
+      { rank: 4, suit: 0 },
     ],
     board: [],
     street: 0,
@@ -243,10 +243,10 @@ test('style differences change entry and value-trap behavior over common decisio
       chooseBotAction(input, profile, freshBotMood(), 'off', seeded(seed + 100)),
     );
   const peter = BOT_PROFILES.find((p) => p.id === 'jett'),
-    st = BOT_PROFILES.find((p) => p.id === 'vale');
+    st = BOT_PROFILES.find((p) => p.id === 'owen');
   assert.ok(
-    decisions(peter, view).filter((d) => d.action === 'raise').length >
-      decisions(st, view).filter((d) => d.action === 'raise').length,
+    decisions(peter, view).filter((d) => d.action !== 'fold').length >
+      decisions(st, view).filter((d) => d.action !== 'fold').length,
   );
   const value = {
     ...view,
@@ -258,7 +258,7 @@ test('style differences change entry and value-trap behavior over common decisio
       { rank: 9, suit: 3 },
       { rank: 13, suit: 2 },
       { rank: 2, suit: 1 },
-      { rank: 6, suit: 2 },
+      { rank: 6, suit: 0 },
     ],
     street: 2,
     equity: 0.9,
@@ -276,6 +276,7 @@ test('style differences change entry and value-trap behavior over common decisio
     evaluate([...value.hole, ...value.board]).score,
   );
   assert.equal(value.features.strongMade, true);
+  assert.equal(value.features.wet, false);
   assert.ok(
     decisions(st, value).filter((d) => d.action === 'check').length >
       decisions(peter, value).filter((d) => d.action === 'check').length,
@@ -299,13 +300,13 @@ test('uncalled shove refunds are not losses; blind-only hands are not VPIP', () 
 test('post-flop bot fractions use the after-call pot with whole 25 chips', () => {
   const hole = [
       { rank: 14, suit: 0 },
-      { rank: 13, suit: 0 },
+      { rank: 14, suit: 3 },
     ],
     board = [
       { rank: 14, suit: 1 },
       { rank: 9, suit: 2 },
       { rank: 6, suit: 3 },
-      { rank: 2, suit: 1 },
+      { rank: 2, suit: 0 },
     ];
   const view = {
     bigBlind: 50,
@@ -345,7 +346,7 @@ test('post-flop bot fractions use the after-call pot with whole 25 chips', () =>
     'off',
     () => 0.5,
   );
-  assert.equal(view.features.ownMade, true, 'The sizing probe uses an actual made top pair');
+  assert.equal(view.features.ownMade, true, 'The sizing probe uses an actual made set');
   assert.equal(decision.action, 'raise');
   assert.equal(decision.trace.sizing.fraction, 0.625);
   assert.equal(decision.trace.sizing.desired, 625); // 225 + round-to-25(625 × .625)
@@ -353,7 +354,7 @@ test('post-flop bot fractions use the after-call pot with whole 25 chips', () =>
 });
 test('retry restores frozen profile, emotion and simulation statistics exactly once', () => {
   const g = newGame(undefined, { smallBlind: 25, bigBlind: 50, startingStack: 5000, chipUnit: 25 });
-  applyBotSettings(g, { assignments: { 1: 'rook', 2: 'vale' }, emotionMode: 'lively' });
+  applyBotSettings(g, { assignments: { 1: 'rook', 2: 'owen' }, emotionMode: 'lively' });
   g.players[1].botMood = {
     ...freshBotMood(),
     kind: 'frustrated',

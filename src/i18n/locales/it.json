@@ -79,8 +79,8 @@
   "{1} / 门槛 {2} · {3}": "{1} / Il limite {2} · {3}",
   "{1} 未跟注的 {2} 筹码已退还": "{1} non chiamato di {2} chips è stato rimborsato",
   "{1} 次": "{1} Successivo",
-  "{24} 本手风格：{25}": "Stile di {24} in questa mano: {25}",
-  "{29} 的最近行动": "Ultima azione di {29}",
+  "{25} 本手风格：{26}": "Stile di {25} in questa mano: {26}",
+  "{30} 的最近行动": "Ultima azione di {30}",
   "{2} {3} 的底牌": "{2} Il {3} Le carte di buco",
   "{3} 当时的底牌": "{3} Le carte di buco",
   "{4}–{5}% 池": "{4}–{5}% del piatto",
@@ -1910,9 +1910,14 @@
   "复盘本手加注，判断对手弃牌能否让这条路线长期盈利。": "Rivedi il rilancio di questa mano e valuta se i fold avversari possono rendere questa linea redditizia nel lungo periodo.",
   "弃牌避免投入，但也放弃了后位争夺盲注的机会。": "Il fold evita un investimento, ma rinuncia anche alla possibilità di contendere i bui da posizione avanzata.",
   "赢了，但有一步不值得长期重复": "Hai vinto, ma una decisione non merita di essere ripetuta nel lungo periodo",
-  "入座开练": "Siediti al tavolo",
+  "结合位置选择入池，加入持续下注、听牌半诈唬、控池、强牌埋牌和低价 Float。": "Ingressi in base alla posizione, continuation bet, semibluff con progetti, controllo del piatto, trappole con mani forti e float economici.",
+  "在标准策略上加入阻断诈唬、薄价值、挤压和选择性领打。": "Aggiunge bluff con blocker, valore sottile, squeeze e donk bet selettive al gioco standard.",
+  "入座开局": "Siediti al tavolo",
   "已就位": "Pronto",
   "牌桌已就绪": "Il tavolo è pronto",
-  "等待入座，即将开始第 {0} 局第 {1} 手": "In attesa del tuo arrivo · Segue sessione {0}, mano {1}",
-  "虚拟筹码 · 本地练习": "Fiches virtuali · Allenamento locale"
+  "等待入座": "In attesa del tuo arrivo",
+  "虚拟筹码 · 本地练习": "Fiches virtuali · Allenamento locale",
+  "特色路线是干燥高牌翻牌先下小注，合适听牌主动争夺，后街再选择进攻机会。": "La linea tipica punta poco sui flop asciutti con carte alte, contende il piatto con progetti adatti e sceglie quando attaccare nelle strade successive.",
+  "入座开练": "Siediti al tavolo",
+  "等待入座，即将开始第 {0} 局第 {1} 手": "In attesa del tuo arrivo · Segue sessione {0}, mano {1}"
 }

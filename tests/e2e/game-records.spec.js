@@ -400,7 +400,7 @@ test('historical headers show each attempt start date with the year, align the r
       expect(layout.centerOffset).toBeLessThan(1);
       expect(layout.timeGap).toBeGreaterThan(0);
       expect(layout.right).toBeLessThanOrEqual(width);
-      expect(layout.shift).toBe('6px');
+      expect(layout.shift).toBe(width <= 600 ? '0px' : '6px');
       expect(layout.overflow).toBeLessThanOrEqual(1);
       for (const selector of [
         '.records-live-note',
@@ -915,7 +915,7 @@ test('long press reveals full clipped names on live and archived tables and dism
     window.qa.recordsStart({ count: 9 });
     const game = window.qa.snapshot();
     game.players.slice(1).forEach((player) => {
-      player.botProfile = 'knox';
+      player.botProfile = 'rook';
     });
     window.qa.loadRecordedGame(game);
     window.qa.recordsFinish();

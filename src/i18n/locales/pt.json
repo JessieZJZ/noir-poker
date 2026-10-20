@@ -79,8 +79,8 @@
   "{1} / 门槛 {2} · {3}": "{1} / Fronteiras {2} · {3}",
   "{1} 未跟注的 {2} 筹码已退还": "{1} descuido de {2} chips foi reembolsado",
   "{1} 次": "{1} Seguinte",
-  "{24} 本手风格：{25}": "Estilo de {24} nesta mão: {25}",
-  "{29} 的最近行动": "Última ação de {29}",
+  "{25} 本手风格：{26}": "Estilo de {25} nesta mão: {26}",
+  "{30} 的最近行动": "Última ação de {30}",
   "{2} {3} 的底牌": "{2} O que {3} Os mapas de buraco",
   "{3} 当时的底牌": "{3} Os mapas de buraco",
   "{4}–{5}% 池": "{4}–{5}% do pote",
@@ -1913,9 +1913,14 @@
   "关闭风格介绍": "Fechar guia de estilos",
   "所有风格的训练参数（0–100）": "Parâmetros de treinamento para todos os protótipos (0-100)",
   "风格": "Estilo",
-  "入座开练": "Sentar à mesa",
+  "结合位置选择入池，加入持续下注、听牌半诈唬、控池、强牌埋牌和低价 Float。": "Entradas por posição, apostas de continuação, semiblefes com draws, controle do pote, armadilhas com mãos fortes e floats baratos.",
+  "在标准策略上加入阻断诈唬、薄价值、挤压和选择性领打。": "Adiciona blefes com bloqueadores, valor fino, squeezes e donk bets seletivas ao jogo padrão.",
+  "入座开局": "Sentar à mesa",
   "已就位": "Pronto",
   "牌桌已就绪": "A mesa está pronta",
-  "等待入座，即将开始第 {0} 局第 {1} 手": "Aguardando sua chegada · A seguir: sessão {0}, mão {1}",
-  "虚拟筹码 · 本地练习": "Fichas virtuais · Prática local"
+  "等待入座": "Aguardando você se sentar",
+  "虚拟筹码 · 本地练习": "Fichas virtuais · Prática local",
+  "特色路线是干燥高牌翻牌先下小注，合适听牌主动争夺，后街再选择进攻机会。": "A linha característica começa com apostas pequenas em flops secos de cartas altas, disputa o pote com draws adequados e escolhe oportunidades para atacar nas streets seguintes.",
+  "入座开练": "Sentar à mesa",
+  "等待入座，即将开始第 {0} 局第 {1} 手": "Aguardando sua chegada · A seguir: sessão {0}, mão {1}"
 }

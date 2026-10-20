@@ -6,8 +6,8 @@ import { newGame, startHand, act, advanceStreet, legalActions } from '../../src/
 const players = [
   { id: 0, name: '你', botProfile: 'rook' },
   { id: 1, name: 'Mia', botProfile: 'balanced' },
-  { id: 2, name: 'Alex', botProfile: 'vale' },
-  { id: 3, name: 'River', botProfile: 'theo' },
+  { id: 2, name: 'Alex', botProfile: 'owen' },
+  { id: 3, name: 'River', botProfile: 'owen' },
 ];
 
 test('activity identifies assigned personas in all mentions, leaving hero and balanced opponents plain', () => {
@@ -22,23 +22,23 @@ test('activity identifies assigned personas in all mentions, leaving hero and ba
   ]) {
     const html = format(text);
     for (const [name, persona] of [
-      ['Alex', '强牌诱导'],
-      ['River', '计算进攻'],
+      ['Alex', '范围纪律'],
+      ['River', '范围纪律'],
     ]) {
       if (text.includes(name))
         assert.ok(html.includes(`${name}<span class="activity-persona">（${persona}）</span>`));
     }
   }
   assert.equal(format('Alexandra 弃牌 · RIVER'), 'Alexandra 弃牌 · RIVER');
-  assert.equal((format('Alex（强牌诱导） 过牌').match(/强牌诱导/g) || []).length, 1);
+  assert.equal((format('Alex（范围纪律） 过牌').match(/范围纪律/g) || []).length, 1);
 });
 
 test('activity uses a captured hand identity and safely escapes text', () => {
   const hand = structuredClone(players);
   const format = createActivityFormatter(hand);
-  hand[2].botProfile = 'finn';
-  assert.ok(format('Alex 获胜').includes('强牌诱导'));
-  assert.ok(createActivityFormatter(hand)('Alex 获胜').includes('多线进攻'));
+  hand[2].botProfile = 'rook';
+  assert.ok(format('Alex 获胜').includes('范围纪律'));
+  assert.ok(createActivityFormatter(hand)('Alex 获胜').includes('多街施压'));
   assert.equal(format('<img src=x> & "chips"'), '&lt;img src=x&gt; &amp; &quot;chips&quot;');
 });
 
@@ -48,7 +48,7 @@ test('activity formats raw chip amounts while retaining ordinals, names and meta
   assert.equal(format('你 全下至18800'), '你 全下至18.8K');
   assert.equal(
     format('Alex 全下至10000000'),
-    'Alex<span class="activity-persona">（强牌诱导）</span> 全下至10M',
+    'Alex<span class="activity-persona">（范围纪律）</span> 全下至10M',
   );
   assert.equal(format('第 1200 手 · 2026 年 · 1000%'), '第 1200 手 · 2026 年 · 1000%');
   assert.equal(format('Mia 跟注 1.2K'), 'Mia 跟注 1.2K');

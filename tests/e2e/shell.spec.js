@@ -137,12 +137,12 @@ test('combined settings immediately save preferences without changing the curren
   expect(
     await page.evaluate(() => JSON.parse(localStorage.getItem('noir-table-v1')).difficulty),
   ).toBe('hard');
-  await page.locator('[data-bot-seat="1"]').selectOption('knox');
+  await page.locator('[data-bot-seat="1"]').selectOption('rook');
   await page.locator('#emotion-mode').selectOption('lively');
   await page.locator('#opponents-dialog .close-dialog').click();
   await page.locator('#opponents-button').click();
   await expect(page.getByLabel('进阶', { exact: true })).toBeChecked();
-  await expect(page.locator('[data-bot-seat="1"]')).toHaveValue('knox');
+  await expect(page.locator('[data-bot-seat="1"]')).toHaveValue('rook');
   await expect(page.locator('#emotion-mode')).toHaveValue('lively');
   await page.getByLabel('进阶', { exact: true }).focus();
   await page.keyboard.press('ArrowLeft');
@@ -155,7 +155,7 @@ test('combined settings immediately save preferences without changing the curren
   await page.waitForFunction(() => !!window.qa);
   await page.locator('#opponents-button').click();
   await expect(page.getByLabel('标准', { exact: true })).toBeChecked();
-  await expect(page.locator('[data-bot-seat="1"]')).toHaveValue('knox');
+  await expect(page.locator('[data-bot-seat="1"]')).toHaveValue('rook');
   await expect(page.locator('#save-opponents')).toHaveCount(0);
 });
 

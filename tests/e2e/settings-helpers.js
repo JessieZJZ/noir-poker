@@ -39,7 +39,7 @@ export async function toggleHints(page) {
 
 // Explicit names keep layout fixtures deterministic; mixed lineups are random.
 export async function assignNamedLineup(page) {
-  const assignments = ['rook', 'vale', 'slate', 'jett', 'mira', 'knox', 'theo', 'finn'];
+  const assignments = ['rook', 'owen', 'rook', 'jett', 'rook', 'rook', 'owen', 'rook'];
   for (const [index, style] of assignments.entries())
     await page.locator(`[data-bot-seat="${index + 1}"]`).selectOption(style);
 }

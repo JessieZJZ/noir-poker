@@ -265,8 +265,7 @@ async function select(selector, value) {
     `Selection did not apply: ${selector}`,
   );
 }
-async function nativeTap(selector) {
-  assert.equal(platform, 'ios');
+async function nativeTouch(selector, duration) {
   const target = await evaluate((selector) => {
     const element = document.querySelector(selector),
       r = element.getBoundingClientRect(),
@@ -281,7 +280,7 @@ async function nativeTap(selector) {
   try {
     const elements = await command('POST', '/elements', {
       using: 'class name',
-      value: 'XCUIElementTypeWebView',
+      value: platform === 'ios' ? 'XCUIElementTypeWebView' : 'android.webkit.WebView',
     });
     const frames = [];
     for (const element of elements) {
@@ -300,7 +299,7 @@ async function nativeTap(selector) {
           actions: [
             { type: 'pointerMove', duration: 0, origin: 'viewport', ...point },
             { type: 'pointerDown', button: 0 },
-            { type: 'pause', duration: 80 },
+            { type: 'pause', duration },
             { type: 'pointerUp', button: 0 },
           ],
         },
@@ -309,6 +308,13 @@ async function nativeTap(selector) {
   } finally {
     await command('POST', '/context', { name: webContext });
   }
+}
+async function nativeTap(selector) {
+  assert.equal(platform, 'ios');
+  return nativeTouch(selector, 80);
+}
+async function nativeHold(selector) {
+  return nativeTouch(selector, 650);
 }
 async function screenshot(name) {
   const imagePath = path.join(output, `${name}.png`);
@@ -666,6 +672,7 @@ try {
     state,
     click,
     nativeTap,
+    nativeHold,
     select,
     visible,
     waitFor,

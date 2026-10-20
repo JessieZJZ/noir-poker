@@ -1,0 +1,596 @@
+{
+  "starts": {
+    "B": 40,
+    "D": 40
+  },
+  "completed": 80,
+  "responses": 228,
+  "violations": [],
+  "codes": {
+    "B": {
+      "hands": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40
+      ],
+      "hero_positions": {
+        "CO": 8,
+        "UTG": 8,
+        "BB": 8,
+        "SB": 8,
+        "BTN": 8
+      },
+      "target_positions": {
+        "BTN": 8,
+        "SB": 8,
+        "BB": 8,
+        "UTG": 8,
+        "CO": 8
+      },
+      "stats": {
+        "target_voluntary_hands": 38,
+        "target_post_hands": 35,
+        "target_st1_check": 27,
+        "target_st2_check": 23,
+        "target_st3_check": 17,
+        "target_st1_raise": 1,
+        "target_st2_raise": 3,
+        "target_st3_raise": 5,
+        "hero_facing_target_post": 1,
+        "target_pre_raise_hands": 16,
+        "hero_facing_target_pre": 15,
+        "target_st1_fold": 6,
+        "target_st3_fold": 3,
+        "target_facing_hero_post": 7,
+        "target_st3_call": 3,
+        "target_st1_call": 5,
+        "target_st2_fold": 5,
+        "target_facing_hero_pre": 8,
+        "target_st2_call": 2
+      },
+      "hero_actions": {
+        "fold": 34,
+        "call": 8,
+        "check": 10,
+        "raise": 15
+      },
+      "shared_flops": [
+        3,
+        9,
+        12,
+        18,
+        20,
+        24,
+        26,
+        32
+      ],
+      "direct_opportunities": [
+        {
+          "hand": 3,
+          "street": 1,
+          "who": "hero",
+          "response": "fold",
+          "betTo": null
+        },
+        {
+          "hand": 4,
+          "street": 0,
+          "who": "hero",
+          "response": "fold",
+          "betTo": null
+        },
+        {
+          "hand": 9,
+          "street": 3,
+          "who": "target",
+          "response": "fold",
+          "betTo": null
+        },
+        {
+          "hand": 10,
+          "street": 0,
+          "who": "hero",
+          "response": "fold",
+          "betTo": null
+        },
+        {
+          "hand": 12,
+          "street": 0,
+          "who": "hero",
+          "response": "call",
+          "betTo": null
+        },
+        {
+          "hand": 12,
+          "street": 1,
+          "who": "target",
+          "response": "call",
+          "betTo": null
+        },
+        {
+          "hand": 12,
+          "street": 3,
+          "who": "target",
+          "response": "call",
+          "betTo": null
+        },
+        {
+          "hand": 14,
+          "street": 0,
+          "who": "hero",
+          "response": "fold",
+          "betTo": null
+        },
+        {
+          "hand": 16,
+          "street": 0,
+          "who": "hero",
+          "response": "fold",
+          "betTo": null
+        },
+        {
+          "hand": 17,
+          "street": 0,
+          "who": "hero",
+          "response": "fold",
+          "betTo": null
+        },
+        {
+          "hand": 18,
+          "street": 0,
+          "who": "target",
+          "response": "call",
+          "betTo": null
+        },
+        {
+          "hand": 18,
+          "street": 2,
+          "who": "target",
+          "response": "fold",
+          "betTo": null
+        },
+        {
+          "hand": 19,
+          "street": 0,
+          "who": "hero",
+          "response": "fold",
+          "betTo": null
+        },
+        {
+          "hand": 20,
+          "street": 0,
+          "who": "hero",
+          "response": "raise",
+          "betTo": 2200
+        },
+        {
+          "hand": 20,
+          "street": 0,
+          "who": "target",
+          "response": "call",
+          "betTo": null
+        },
+        {
+          "hand": 20,
+          "street": 1,
+          "who": "target",
+          "response": "call",
+          "betTo": null
+        },
+        {
+          "hand": 20,
+          "street": 2,
+          "who": "target",
+          "response": "fold",
+          "betTo": null
+        },
+        {
+          "hand": 21,
+          "street": 0,
+          "who": "target",
+          "response": "call",
+          "betTo": null
+        },
+        {
+          "hand": 22,
+          "street": 0,
+          "who": "target",
+          "response": "raise",
+          "betTo": 3500
+        },
+        {
+          "hand": 22,
+          "street": 0,
+          "who": "hero",
+          "response": "fold",
+          "betTo": null
+        },
+        {
+          "hand": 23,
+          "street": 0,
+          "who": "target",
+          "response": "raise",
+          "betTo": 1700
+        },
+        {
+          "hand": 23,
+          "street": 0,
+          "who": "hero",
+          "response": "fold",
+          "betTo": null
+        },
+        {
+          "hand": 24,
+          "street": 0,
+          "who": "target",
+          "response": "call",
+          "betTo": null
+        },
+        {
+          "hand": 26,
+          "street": 0,
+          "who": "target",
+          "response": "call",
+          "betTo": null
+        },
+        {
+          "hand": 26,
+          "street": 1,
+          "who": "target",
+          "response": "fold",
+          "betTo": null
+        },
+        {
+          "hand": 29,
+          "street": 0,
+          "who": "hero",
+          "response": "fold",
+          "betTo": null
+        },
+        {
+          "hand": 30,
+          "street": 0,
+          "who": "hero",
+          "response": "fold",
+          "betTo": null
+        },
+        {
+          "hand": 34,
+          "street": 0,
+          "who": "hero",
+          "response": "fold",
+          "betTo": null
+        },
+        {
+          "hand": 35,
+          "street": 0,
+          "who": "hero",
+          "response": "fold",
+          "betTo": null
+        },
+        {
+          "hand": 40,
+          "street": 0,
+          "who": "target",
+          "response": "raise",
+          "betTo": 4700
+        },
+        {
+          "hand": 40,
+          "street": 0,
+          "who": "hero",
+          "response": "fold",
+          "betTo": null
+        }
+      ]
+    },
+    "D": {
+      "hands": [
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        54,
+        55,
+        56,
+        57,
+        58,
+        59,
+        60,
+        61,
+        62,
+        63,
+        64,
+        65,
+        66,
+        67,
+        68,
+        69,
+        70,
+        71,
+        72,
+        73,
+        74,
+        75,
+        76,
+        77,
+        78,
+        79,
+        80
+      ],
+      "hero_positions": {
+        "CO": 8,
+        "UTG": 8,
+        "BB": 8,
+        "SB": 8,
+        "BTN": 8
+      },
+      "target_positions": {
+        "BTN": 8,
+        "SB": 8,
+        "BB": 8,
+        "UTG": 8,
+        "CO": 8
+      },
+      "stats": {
+        "target_voluntary_hands": 30,
+        "target_post_hands": 24,
+        "target_st1_fold": 7,
+        "target_facing_hero_pre": 5,
+        "target_facing_hero_post": 3,
+        "target_pre_raise_hands": 14,
+        "target_st1_check": 14,
+        "target_st2_check": 9,
+        "target_st3_raise": 5,
+        "hero_facing_target_pre": 12,
+        "target_st3_check": 4,
+        "target_st1_raise": 5,
+        "target_st2_raise": 5,
+        "hero_facing_target_post": 5,
+        "target_st2_call": 4,
+        "target_st3_fold": 6
+      },
+      "hero_actions": {
+        "raise": 14,
+        "check": 20,
+        "fold": 34,
+        "call": 13
+      },
+      "shared_flops": [
+        41,
+        49,
+        50,
+        51,
+        55,
+        57,
+        63,
+        69,
+        71,
+        72
+      ],
+      "direct_opportunities": [
+        {
+          "hand": 41,
+          "street": 0,
+          "who": "target",
+          "response": "call",
+          "betTo": null
+        },
+        {
+          "hand": 41,
+          "street": 1,
+          "who": "target",
+          "response": "fold",
+          "betTo": null
+        },
+        {
+          "hand": 42,
+          "street": 0,
+          "who": "target",
+          "response": "fold",
+          "betTo": null
+        },
+        {
+          "hand": 43,
+          "street": 0,
+          "who": "target",
+          "response": "fold",
+          "betTo": null
+        },
+        {
+          "hand": 44,
+          "street": 0,
+          "who": "hero",
+          "response": "fold",
+          "betTo": null
+        },
+        {
+          "hand": 47,
+          "street": 0,
+          "who": "target",
+          "response": "fold",
+          "betTo": null
+        },
+        {
+          "hand": 49,
+          "street": 0,
+          "who": "hero",
+          "response": "call",
+          "betTo": null
+        },
+        {
+          "hand": 49,
+          "street": 1,
+          "who": "hero",
+          "response": "call",
+          "betTo": null
+        },
+        {
+          "hand": 49,
+          "street": 2,
+          "who": "hero",
+          "response": "call",
+          "betTo": null
+        },
+        {
+          "hand": 49,
+          "street": 3,
+          "who": "hero",
+          "response": "call",
+          "betTo": null
+        },
+        {
+          "hand": 50,
+          "street": 0,
+          "who": "hero",
+          "response": "call",
+          "betTo": null
+        },
+        {
+          "hand": 51,
+          "street": 0,
+          "who": "hero",
+          "response": "call",
+          "betTo": null
+        },
+        {
+          "hand": 52,
+          "street": 0,
+          "who": "hero",
+          "response": "fold",
+          "betTo": null
+        },
+        {
+          "hand": 56,
+          "street": 0,
+          "who": "hero",
+          "response": "fold",
+          "betTo": null
+        },
+        {
+          "hand": 57,
+          "street": 1,
+          "who": "target",
+          "response": "fold",
+          "betTo": null
+        },
+        {
+          "hand": 60,
+          "street": 0,
+          "who": "hero",
+          "response": "fold",
+          "betTo": null
+        },
+        {
+          "hand": 61,
+          "street": 0,
+          "who": "hero",
+          "response": "fold",
+          "betTo": null
+        },
+        {
+          "hand": 63,
+          "street": 0,
+          "who": "target",
+          "response": "call",
+          "betTo": null
+        },
+        {
+          "hand": 64,
+          "street": 0,
+          "who": "hero",
+          "response": "fold",
+          "betTo": null
+        },
+        {
+          "hand": 69,
+          "street": 0,
+          "who": "hero",
+          "response": "call",
+          "betTo": null
+        },
+        {
+          "hand": 69,
+          "street": 1,
+          "who": "hero",
+          "response": "call",
+          "betTo": null
+        },
+        {
+          "hand": 69,
+          "street": 2,
+          "who": "hero",
+          "response": "fold",
+          "betTo": null
+        },
+        {
+          "hand": 71,
+          "street": 3,
+          "who": "target",
+          "response": "fold",
+          "betTo": null
+        },
+        {
+          "hand": 76,
+          "street": 0,
+          "who": "hero",
+          "response": "fold",
+          "betTo": null
+        },
+        {
+          "hand": 80,
+          "street": 0,
+          "who": "hero",
+          "response": "fold",
+          "betTo": null
+        }
+      ]
+    }
+  }
+}

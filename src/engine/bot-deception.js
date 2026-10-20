@@ -7,10 +7,12 @@ import { bigBlindOf } from './stakes.js';
 export function deceptionPolicy(profile, difficulty) {
   const [width, attack, bluff, , trap] = profile.axes.map((n) => n / 100);
   const baseline = profile.id === 'balanced';
+  const trapRate = profile.policy?.trapRate;
   const scale = difficulty === 'hard' ? 1.8 : difficulty === 'normal' ? 1 : 0;
+  const trapScale = trapRate == null ? scale : difficulty === 'hard' ? 1.15 : 1;
   return {
     trap: hasBotSkill(difficulty, 'trap')
-      ? Math.min(0.95, (baseline || trap >= 0.5 ? trap * 0.52 + 0.04 : 0) * scale)
+      ? Math.min(0.95, (trapRate ?? (baseline || trap >= 0.5 ? trap * 0.52 + 0.04 : 0)) * trapScale)
       : 0,
     dirty: hasBotSkill(difficulty, 'light-reraise')
       ? (baseline || (width >= 0.8 && bluff >= 0.7) ? 0.015 + bluff * 0.04 : 0) * scale

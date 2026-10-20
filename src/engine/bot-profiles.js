@@ -5,13 +5,22 @@ export { handFeatures as botBoardFeatures } from './hand-features.js';
 import { bigBlindOf, DEFAULT_STAKES } from './stakes.js';
 import characters from '../data/characters.json' with { type: 'json' };
 import { canonicalProfileId } from './profile-id.js';
-import { botStyleContext, resolveBotStyle } from './bot-style.js';
+import {
+  botStyleContext,
+  resolveBotStyle,
+  valueRaiseSupported,
+  safeStrongValue,
+  expensiveWeakPair,
+  checkedToPairValue,
+  checkedThroughPairValue,
+  valueBetCap,
+  expensivePreflopDefense,
+} from './bot-style.js';
 import { chipUnitOf, fractionRaiseTo, legalRaiseTo } from './bet-sizing.js';
 import { deceptiveAction, isDonkLead } from './bot-deception.js';
 import { publicResponseRisk } from './public-action-context.js';
 
-// Original fictional characters share the existing training controls.
-// Emotions are a separate synthetic game mechanic.
+// Evidence-informed fictional training styles; numeric controls are authored.
 export const BOT_PROFILES = [
   {
     id: 'balanced',
@@ -23,7 +32,12 @@ export const BOT_PROFILES = [
     sizing: [0.45, 0.8],
     evidence: '电脑角色的策略和情绪均为游戏设定，介绍描述常见倾向，不保证每次采用相同操作。',
     sources: [],
-    character: characters.characters.balanced,
+    policy: {
+      potControl: 0.35,
+      thinValue: 0.25,
+      float: 0.4,
+      delayedProbe: 0.3,
+    },
   },
   {
     id: 'rook',
@@ -31,66 +45,25 @@ export const BOT_PROFILES = [
     short: '多街施压',
     tag: '宽范围 · 多街施压',
     description: '更宽地争夺底池，弱牌与强牌共用进攻路线，偏好持续施压。',
-    axes: [85, 90, 82, 70, 25],
+    axes: [85, 96, 88, 62, 8],
     sizing: [0.65, 1.15],
     evidence: '电脑角色的策略和情绪均为游戏设定，介绍描述常见倾向，不保证每次采用相同操作。',
     sources: [],
-    character: characters.characters.rook,
     policy: {
       entry: 1.08,
       reraise: 1.05,
       blockerBluffs: true,
-      barrel: 1.3,
+      barrel: 1.6,
+      semiBluff: 0.8,
       riverBluff: 1.2,
       streetSizing: [
-        [0.5, 0.8],
-        [0.85, 1.2],
-        [0.9, 1.3],
+        [0.6, 0.85],
+        [0.9, 1.2],
+        [0.95, 1.3],
       ],
-    },
-  },
-  {
-    id: 'vale',
-    name: '强牌诱导',
-    short: '强牌诱导',
-    tag: '选择性进攻 · 价值诱导',
-    description: '收紧边缘入池，强牌在安全牌面诱导，也能面对大注及时止损。',
-    axes: [40, 65, 43, 42, 78],
-    sizing: [0.45, 0.9],
-    evidence: '电脑角色的策略和情绪均为游戏设定，介绍描述常见倾向，不保证每次采用相同操作。',
-    sources: [],
-    character: characters.characters.vale,
-    policy: {
-      entry: 0.85,
-      reraise: 0.85,
-      blockerBluffs: true,
-      barrel: 0.8,
-      riverBluff: 0.65,
-      riverValue: 1.15,
-    },
-  },
-  {
-    id: 'slate',
-    name: '河牌争夺',
-    short: '河牌争夺',
-    tag: '经验进攻 · 河牌争夺',
-    description: '中宽范围，有位置时争夺底池，河牌保留主动加注与抓诈路线。',
-    axes: [63, 75, 62, 63, 50],
-    sizing: [0.6, 1.0],
-    evidence: '电脑角色的策略和情绪均为游戏设定，介绍描述常见倾向，不保证每次采用相同操作。',
-    sources: [],
-    character: characters.characters.slate,
-    policy: {
-      entry: 1,
-      reraise: 0.95,
-      blockerBluffs: true,
-      riverBluff: 1.25,
-      riverProbe: 1.35,
-      streetSizing: [
-        [0.5, 0.8],
-        [0.6, 1],
-        [0.9, 1.3],
-      ],
+      smallCbet: 0.98,
+      flopCbet: 0.33,
+      turnSemiBluff: 0.8,
     },
   },
   {
@@ -99,216 +72,17 @@ export const BOT_PROFILES = [
     short: '宽松取值',
     tag: '宽范围 · 大尺度搏杀',
     description: '更愿意低成本跟入，命中强牌后偏向大尺度价值下注。',
-    axes: [92, 88, 72, 84, 18],
+    axes: [96, 35, 25, 84, 8],
     sizing: [0.75, 1.25],
     evidence: '电脑角色的策略和情绪均为游戏设定，介绍描述常见倾向，不保证每次采用相同操作。',
     sources: [],
-    character: characters.characters.jett,
     policy: {
-      entry: 1.12,
-      reraise: 0.8,
-      blockerBluffs: true,
-      barrel: 1,
-      riverBluff: 0.8,
-      riverValue: 1.25,
-    },
-  },
-  {
-    id: 'mira',
-    name: '听牌施压',
-    short: '听牌施压',
-    tag: '选择性压迫 · 半诈唬',
-    description: '有听牌权益时更积极，小翻牌下注之后可用大转牌下注继续施压。',
-    axes: [55, 82, 72, 50, 34],
-    sizing: [0.5, 1.0],
-    evidence: '电脑角色的策略和情绪均为游戏设定，介绍描述常见倾向，不保证每次采用相同操作。',
-    sources: [],
-    character: characters.characters.mira,
-    policy: {
-      entry: 0.95,
-      reraise: 0.95,
-      blockerBluffs: true,
-      barrel: 1.2,
-      flopCbet: 0.33,
-      turnSemiBluff: 0.9,
-    },
-  },
-  {
-    id: 'knox',
-    name: '松凶强攻',
-    short: '松凶强攻',
-    tag: '松凶施压 · 宽范围争夺',
-    description: '更宽地争夺后位和低成本底池，听牌与价值牌共用积极进攻路线，偏好较大尺度。',
-    axes: [90, 94, 88, 70, 18],
-    sizing: [0.7, 1.25],
-    evidence: '电脑角色的策略和情绪均为游戏设定，介绍描述常见倾向，不保证每次采用相同操作。',
-    sources: [],
-    character: characters.characters.knox,
-    policy: {
-      entry: 1.08,
-      reraise: 1.1,
-      blockerBluffs: true,
-      barrel: 1.35,
-      riverBluff: 1.2,
-      streetSizing: [
-        [0.6, 1],
-        [0.85, 1.3],
-        [0.95, 1.4],
-      ],
-    },
-  },
-  {
-    id: 'theo',
-    name: '计算进攻',
-    short: '计算进攻',
-    tag: '计算型进攻 · 强牌诱导',
-    description: '保留有价格的防守，兼顾主动施压与强牌诱导；大额继续仍要通过权益和筹码压力检查。',
-    axes: [65, 82, 66, 64, 72],
-    sizing: [0.45, 0.95],
-    evidence: '电脑角色的策略和情绪均为游戏设定，介绍描述常见倾向，不保证每次采用相同操作。',
-    sources: [],
-    character: characters.characters.theo,
-    policy: {
-      entry: 0.98,
-      reraise: 1,
-      blockerBluffs: true,
-      adapt: 0.7,
-      barrel: 1.1,
-      potControl: 0.1,
-      streetSizing: [
-        [0.4, 0.65],
-        [0.65, 1],
-        [0.7, 1.1],
-      ],
-    },
-  },
-  {
-    id: 'finn',
-    name: '多线进攻',
-    short: '多线进攻',
-    tag: '创造性施压 · 多街诈唬',
-    description:
-      '更积极争夺有位置的底池，在有进攻叙事或听牌时混合多街施压，也能用强牌保留对手范围。',
-    axes: [85, 90, 85, 75, 55],
-    sizing: [0.65, 1.2],
-    evidence: '电脑角色的策略和情绪均为游戏设定，介绍描述常见倾向，不保证每次采用相同操作。',
-    sources: [],
-    character: characters.characters.finn,
-    policy: {
-      entry: 1.06,
-      reraise: 1.05,
-      blockerBluffs: true,
-      barrel: 1.3,
-      riverBluff: 1.25,
-      potControl: 0.15,
-      streetSizing: [
-        [0.5, 0.85],
-        [0.8, 1.25],
-        [0.9, 1.4],
-      ],
-    },
-  },
-
-  {
-    id: 'sage',
-    name: '观察调整',
-    short: '观察调整',
-    tag: '选择性进攻 · 价值诱导',
-    description: '中宽范围，兼顾强牌诱导与河牌价值，按公开行动小幅调整。',
-    axes: [62, 82, 63, 65, 75],
-    sizing: [0.4, 1.2],
-    evidence: '电脑角色的策略和情绪均为游戏设定，介绍描述常见倾向，不保证每次采用相同操作。',
-    sources: [],
-    character: characters.characters.sage,
-    policy: {
-      entry: 0.98,
-      reraise: 1,
-      blockerBluffs: true,
-      adapt: 0.8,
-      potControl: 0.1,
-      riverValue: 1.2,
-      streetSizing: [
-        [0.4, 0.7],
-        [0.65, 1],
-        [0.75, 1.2],
-      ],
-    },
-  },
-  {
-    id: 'nico',
-    name: '小注控池',
-    short: '小注控池',
-    tag: '小尺度 · 控池',
-    description: '较小尺度争夺底池，中等牌力保留过牌与薄价值。',
-    axes: [60, 62, 42, 62, 55],
-    sizing: [0.3, 0.75],
-    evidence: '电脑角色的策略和情绪均为游戏设定，介绍描述常见倾向，不保证每次采用相同操作。',
-    sources: [],
-    character: characters.characters.nico,
-    policy: {
-      entry: 0.95,
-      reraise: 0.7,
-      blockerBluffs: true,
-      openingBB: 2,
-      potControl: 0.4,
-      thinValue: 0.5,
-      barrel: 0.8,
-      riverBluff: 0.7,
-      streetSizing: [
-        [0.3, 0.5],
-        [0.4, 0.65],
-        [0.45, 0.75],
-      ],
-    },
-  },
-  {
-    id: 'bram',
-    name: '耐心防守',
-    short: '耐心防守',
-    tag: '耐心防守 · 强牌诱导',
-    description: '谨慎面对再加注与大额投入，安全牌面保留强牌诱导。',
-    axes: [35, 55, 30, 42, 82],
-    sizing: [0.4, 1],
-    evidence: '电脑角色的策略和情绪均为游戏设定，介绍描述常见倾向，不保证每次采用相同操作。',
-    sources: [],
-    character: characters.characters.bram,
-    policy: {
-      entry: 0.8,
+      entry: 1.24,
       reraise: 0.65,
       blockerBluffs: true,
-      potControl: 0.25,
-      barrel: 0.7,
-      riverBluff: 0.55,
-      streetSizing: [
-        [0.4, 0.65],
-        [0.5, 0.85],
-        [0.65, 1],
-      ],
-    },
-  },
-  {
-    id: 'leon',
-    name: '稳健进攻',
-    short: '稳健进攻',
-    tag: '稳健短桌 · 权益进攻',
-    description: '短桌稍宽，听牌积极，转河牌变化后重新检查风险。',
-    axes: [58, 80, 58, 65, 48],
-    sizing: [0.5, 1.25],
-    evidence: '电脑角色的策略和情绪均为游戏设定，介绍描述常见倾向，不保证每次采用相同操作。',
-    sources: [],
-    character: characters.characters.leon,
-    policy: {
-      entry: 0.94,
-      reraise: 0.95,
-      shortTable: 1.12,
-      blockerBluffs: true,
-      barrel: 1.1,
-      riverValue: 1.15,
-      streetSizing: [
-        [0.5, 0.8],
-        [0.7, 1.1],
-        [0.8, 1.25],
-      ],
+      barrel: 0.8,
+      riverBluff: 0.5,
+      riverValue: 1.25,
     },
   },
   {
@@ -316,104 +90,26 @@ export const BOT_PROFILES = [
     name: '范围纪律',
     short: '范围纪律',
     tag: '范围纪律 · 分街尺度',
-    description: '有纪律的范围与阻断牌选择，小翻牌下注配合较大后街尺度。',
-    axes: [53, 83, 60, 56, 42],
+    description: '主动挑选适合进攻的起手牌，面对再加注时同时考虑继续成本与剩余筹码。',
+    axes: [35, 80, 35, 48, 75],
     sizing: [0.33, 1.2],
     evidence: '电脑角色的策略和情绪均为游戏设定，介绍描述常见倾向，不保证每次采用相同操作。',
     sources: [],
-    character: characters.characters.owen,
     policy: {
-      entry: 0.9,
+      entry: 0.55,
       reraise: 1.1,
       blockerBluffs: true,
       adapt: 0.45,
-      smallCbet: 0.3,
-      barrel: 1.1,
-      streetSizing: [
-        [0.33, 0.55],
-        [0.7, 1],
-        [0.8, 1.2],
-      ],
-    },
-  },
-  {
-    id: 'ezra',
-    name: '分街调整',
-    short: '分街调整',
-    tag: '理论启发 · 公开调整',
-    description: '按范围和街次选择行动，公开样本足够后做小幅调整。',
-    axes: [52, 80, 58, 58, 48],
-    sizing: [0.35, 1.25],
-    evidence: '电脑角色的策略和情绪均为游戏设定，介绍描述常见倾向，不保证每次采用相同操作。',
-    sources: [],
-    character: characters.characters.ezra,
-    policy: {
-      entry: 0.9,
-      reraise: 1.05,
-      blockerBluffs: true,
-      adapt: 0.55,
-      smallCbet: 0.25,
       barrel: 1.05,
       streetSizing: [
-        [0.35, 0.6],
-        [0.65, 1],
-        [0.8, 1.25],
+        [0.5, 0.7],
+        [0.7, 1],
+        [0.8, 1.15],
       ],
+      trapRate: 0.6,
     },
   },
-  {
-    id: 'luka',
-    name: '小注持续',
-    short: '小注持续',
-    tag: '小注持续 · 选择性施压',
-    description: '干燥高牌翻牌偏小注，中等牌力控池，后街选择性施压。',
-    axes: [57, 85, 65, 51, 40],
-    sizing: [0.35, 1.2],
-    evidence: '电脑角色的策略和情绪均为游戏设定，介绍描述常见倾向，不保证每次采用相同操作。',
-    sources: [],
-    character: characters.characters.luka,
-    policy: {
-      entry: 0.93,
-      reraise: 1,
-      blockerBluffs: true,
-      smallCbet: 0.55,
-      potControl: 0.25,
-      flopCbet: 0.4,
-      barrel: 1.1,
-      streetSizing: [
-        [0.35, 0.55],
-        [0.65, 1],
-        [0.8, 1.2],
-      ],
-    },
-  },
-  {
-    id: 'iris',
-    name: '延迟进攻',
-    short: '延迟进攻',
-    tag: '有位置 Float · 延迟进攻',
-    description: '低价格干燥翻牌可少量先跟，下一街对手过牌后争夺底池。',
-    axes: [62, 84, 70, 65, 50],
-    sizing: [0.4, 1.3],
-    evidence: '电脑角色的策略和情绪均为游戏设定，介绍描述常见倾向，不保证每次采用相同操作。',
-    sources: [],
-    character: characters.characters.iris,
-    policy: {
-      entry: 1,
-      reraise: 1.05,
-      blockerBluffs: true,
-      adapt: 0.6,
-      float: 0.3,
-      delayed: 1.4,
-      barrel: 1.1,
-      streetSizing: [
-        [0.4, 0.7],
-        [0.75, 1.1],
-        [0.85, 1.3],
-      ],
-    },
-  },
-];
+].map((profile) => ({ ...profile, character: characters.characters[profile.id] }));
 export const PROFILE_AXES = ['入池宽度', '进攻倾向', '诈唬倾向', '跟到底倾向', '强牌诱导'];
 export const EMOTION_MODES = { off: '关闭', subtle: '轻微波动', lively: '明显波动' };
 export const MOOD_LABELS = {
@@ -442,8 +138,7 @@ export function sanitizeBotSettings(value) {
   settings.mixed = value?.mixed === true;
   settings.mixedSeats = settings.mixed
     ? [...new Set(Array.isArray(value?.mixedSeats) ? value.mixedSeats : [])].filter(
-        (id) =>
-          Number.isInteger(id) && id >= 1 && id <= 8 && settings.assignments[id] !== 'balanced',
+        (id) => Number.isInteger(id) && id >= 1 && id <= 8,
       )
     : [];
   return settings;
@@ -468,9 +163,11 @@ export function toggleMixedLineup(value, count = 9, random = Math.random) {
     return settings;
   }
   settings.mixed = true;
-  const available = BOT_PROFILES.filter((p) => p.id !== 'balanced').map((p) => p.id);
+  const styles = BOT_PROFILES.map((p) => p.id);
+  let available = [...styles];
   for (let id = 1; id < Math.min(9, count); id++) {
     if (settings.assignments[id] !== 'balanced') continue;
+    if (!available.length) available = [...styles];
     const index = Math.min(
       available.length - 1,
       Math.max(0, Math.floor(random() * available.length)),
@@ -761,7 +458,9 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
           (['BTN', 'CO'].includes(view.position) ? 1.15 : 1),
       )
     : openingRange;
-  const premium = percentile < 0.07,
+  // The heuristic percentile ranks small pairs too highly to define a
+  // premium stack-off tier. Keep the range ordering and premium tier separate.
+  const premium = (pair && high >= 11) || (high === 14 && low === 13),
     admitted = percentile <= range,
     openingAdmitted = percentile <= openingRange,
     callTolerance = (callDown - 0.5) * 0.1 + context.publicAdjustment,
@@ -821,7 +520,10 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
     equity + callTolerance >= odds - 0.06 &&
     roll('price-continue', (view.difficulty === 'easy' ? 0.12 : 0.38) + callDown * 0.36) <
       (view.difficulty === 'easy' ? 0.12 : 0.38) + callDown * 0.36;
-  const semiThreshold = Math.min(0.7, (0.16 + bluff * 0.42) * (headsUp ? 1 : 0.55) * barrelScale);
+  const semiThreshold = Math.min(
+    0.95,
+    (style.semiBluff ?? 0.16 + bluff * 0.42) * (headsUp ? 1 : 0.55) * barrelScale,
+  );
   semiBluff =
     hasBotSkill(view.difficulty, 'semi-bluff') &&
     legal.canRaise &&
@@ -829,6 +531,7 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
     view.street < 3 &&
     features.draw &&
     view.rivals <= 2 &&
+    raises.length <= 1 &&
     !allInPressure &&
     pressure <= 0.12 &&
     (legal.canCheck || drawContinue || equity + callTolerance >= odds + 0.02) &&
@@ -892,6 +595,25 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
         (legal.canCheck || odds <= 0.2) &&
         raises.length <= 1 &&
         roll('pure-bluff', bluffThreshold) < bluffThreshold));
+  // A priced flop float can turn into a modest stab after a public check.
+  // Keep the same own-hand, price, texture and no-all-in protections. This
+  // authored preference is not evidence of a particular opponent's weakness.
+  if (
+    style.delayedProbe > 0 &&
+    hasBotSkill(view.difficulty, 'float') &&
+    context.delayed &&
+    headsUp &&
+    legal.canRaise &&
+    legal.canCheck &&
+    !features.wet &&
+    !view.playsBoard &&
+    support.bluffCandidate &&
+    support.mayBluff &&
+    equity >= 0.15 &&
+    !allInPressure &&
+    roll('pure-bluff', style.delayedProbe) < style.delayedProbe
+  )
+    pureBluff = true;
   const finish = (action, reason, amount) => ({
     action,
     ...(amount === undefined ? {} : { amount }),
@@ -996,6 +718,8 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
     // raise merely because an old opening-range label called this hand premium.
     return finish('call', exceptions.length ? 'loose-exception' : 'price-continue');
   }
+  if (expensivePreflopDefense(view, equity)) return finish('fold', 'outside-range');
+  if (expensiveWeakPair(view, equity)) return finish('fold', 'stack-pressure');
   if (legal.toCall > 0) {
     if (view.street === 0 && !admitted && !premium && odds > 0.09) {
       if (roll('outside-range', 0.06 * width) > 0.06 * width)
@@ -1013,12 +737,19 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
       !pureBluff
     ) {
       if (equity + callTolerance < (view.publicEquity ? requiredEquity : odds + 0.02)) {
-        if (roll('insufficient-equity', 0.03 + callDown * 0.1) > 0.03 + callDown * 0.1)
+        const mistake =
+          view.difficulty === 'easy'
+            ? 0.03 + callDown * 0.1
+            : view.difficulty === 'normal' && requiredEquity - equity - callTolerance <= 0.04
+              ? 0.02
+              : 0;
+        if (!mistake || roll('insufficient-equity', mistake) > mistake)
           return finish('fold', 'insufficient-equity');
         exceptions.push('insufficient-equity');
       }
       if (pressure > 0.4 && equity + callTolerance < (view.street === 0 ? 0.38 : 0.32)) {
-        if (roll('stack-pressure', 0.03 + callDown * 0.07) > 0.03 + callDown * 0.07)
+        const mistake = view.difficulty === 'easy' ? 0.03 + callDown * 0.07 : 0;
+        if (!mistake || roll('stack-pressure', mistake) > mistake)
           return finish('fold', 'stack-pressure');
         exceptions.push('stack-pressure');
       }
@@ -1045,9 +776,14 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
     );
   value =
     view.street === 0
-      ? premium || percentile <= raiseRange
-      : support.valueCandidate &&
-        equity > (headsUp ? 0.53 : Math.max(0.62, 1 / (view.rivals + 1) + 0.23));
+      ? (raises.length < 2 || (pair && high >= 12) || (high === 14 && low === 13)) &&
+        (premium || percentile <= raiseRange)
+      : valueRaiseSupported(view, equity) &&
+        ((support.valueCandidate &&
+          equity > (headsUp ? 0.53 : Math.max(0.62, 1 / (view.rivals + 1) + 0.23))) ||
+          safeStrongValue(view, equity) ||
+          checkedToPairValue(view, equity) ||
+          checkedThroughPairValue(view, equity));
   thinValue =
     style.thinValue > 0 &&
     view.street === 3 &&
@@ -1084,6 +820,7 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
     return finish('check', 'pot-control');
   if (
     hasBotSkill(view.difficulty, 'trap') &&
+    style.trapRate == null &&
     value &&
     headsUp &&
     features.strongMade &&
@@ -1100,11 +837,22 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
     roll('trap', trap * 0.52) < trap * 0.52
   )
     return finish('check', 'trap');
+  const pairValue =
+    value && (checkedToPairValue(view, equity) || checkedThroughPairValue(view, equity));
+  const attackRate =
+    value && view.street === 0 && premium
+      ? Math.max(0.92, (0.2 + attack * 0.72) * capability.attack)
+      : value && view.street === 0 && profile.id === 'balanced' && !raises.length
+        ? Math.max(0.75, (0.2 + attack * 0.72) * capability.attack)
+        : value && safeStrongValue(view, equity)
+          ? Math.max(0.88, (0.2 + attack * 0.72) * capability.attack)
+          : pairValue
+            ? Math.max(0.75, (0.2 + attack * 0.72) * capability.attack)
+            : (0.2 + attack * 0.72) * capability.attack;
   if (
     (!isDonkLead(view) || hasBotSkill(view.difficulty, 'donk')) &&
     (value || semiBluff || pureBluff || smallCbet || thinValue) &&
-    roll('attack', (0.2 + attack * 0.72) * capability.attack) <
-      (0.2 + attack * 0.72) * capability.attack
+    roll('attack', attackRate) < attackRate
   ) {
     const interval = style.streetSizing?.[view.street - 1] || profile.sizing;
     let fraction = interval[0] + random() * (interval[1] - interval[0]);
@@ -1116,6 +864,8 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
     if (view.street === 3 && value && equity > 0.7) fraction *= style.riverValue;
     if (mode !== 'off' && ['frustrated', 'confident', 'reactive'].includes(mood.kind))
       fraction *= mode === 'lively' ? 1.2 : 1.1;
+    if (view.street > 0 && value) fraction = Math.min(fraction, valueBetCap(view));
+    if (pairValue) fraction = Math.min(fraction, view.rivals >= 3 ? 0.35 : 0.4);
     let desired = fractionRaiseTo(
       {
         currentBet: view.currentBet,
@@ -1140,7 +890,22 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
       opening: view.street === 0 && !raises.length,
       executed: false,
     };
-    if (amount !== legal.maxRaiseTo || value || thinValue || semiBluff) {
+    const bluffRiskAllowed =
+      view.street === 0 ||
+      value ||
+      thinValue ||
+      amount - view.bet <= Math.max(0, (view.stack + (view.total || 0)) * 0.25 - (view.total || 0));
+    const pairRaiseRiskAllowed =
+      view.street === 0 ||
+      legal.canCheck ||
+      !value ||
+      features.strongMade ||
+      amount - view.bet <= (view.stack + (view.total || 0)) * 0.2;
+    if (
+      (amount !== legal.maxRaiseTo || value || thinValue || semiBluff) &&
+      bluffRiskAllowed &&
+      pairRaiseRiskAllowed
+    ) {
       sizing.executed = true;
       if (isDonkLead(view)) {
         deception = {

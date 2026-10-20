@@ -33,20 +33,23 @@ test('new mix is standard and advanced only, and capabilities follow base styles
       normal = deceptionPolicy(p, 'normal'),
       hard = deceptionPolicy(p, 'hard');
     assert.ok(Object.values(easy).every((v) => v === 0));
-    assert.equal(hard.trap, normal.trap * 1.8);
+    assert.equal(
+      hard.trap,
+      Math.min(0.95, normal.trap * (p.policy?.trapRate == null ? 1.8 : 1.15)),
+    );
     for (const key of ['dirty', 'donk', 'sevenTwo']) assert.equal(normal[key], 0);
   }
-  for (const id of ['balanced', 'rook', 'knox', 'finn']) {
+  for (const id of ['balanced', 'rook', 'rook', 'rook']) {
     assert.ok(deceptionPolicy(getBotProfile(id), 'hard').sevenTwo > 0);
     assert.ok(deceptionPolicy(getBotProfile(id), 'hard').dirty > 0);
   }
-  for (const id of ['vale', 'bram', 'nico', 'owen']) {
+  for (const id of ['owen', 'jett']) {
     assert.equal(deceptionPolicy(getBotProfile(id), 'hard').dirty, 0);
     assert.equal(deceptionPolicy(getBotProfile(id), 'hard').sevenTwo, 0);
   }
-  assert.ok(deceptionPolicy(getBotProfile('vale'), 'normal').trap > 0);
-  assert.equal(deceptionPolicy(getBotProfile('knox'), 'hard').trap, 0);
-  assert.equal(deceptionPolicy(getBotProfile('bram'), 'hard').donk, 0);
+  assert.ok(deceptionPolicy(getBotProfile('owen'), 'normal').trap > 0);
+  assert.equal(deceptionPolicy(getBotProfile('rook'), 'hard').trap, 0);
+  assert.equal(deceptionPolicy(getBotProfile('owen'), 'hard').donk, 0);
 });
 
 test('actual slow-plays, trash raises, donks and 7-2 bluffs have distinct executed traces and reasons', () => {
@@ -297,7 +300,7 @@ test('actual bot perspective and chip conservation remain intact in standard and
     g.difficulty = difficulty;
     applyBotSettings(g, {
       emotionMode: 'off',
-      assignments: { 1: 'balanced', 2: 'rook', 3: 'vale', 4: 'finn' },
+      assignments: { 1: 'balanced', 2: 'rook', 3: 'owen', 4: 'rook' },
     });
     const random = seeded(391);
     for (let hand = 0; hand < 6; hand++) {

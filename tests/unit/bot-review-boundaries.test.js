@@ -14,7 +14,7 @@ function actualReview(kind) {
 }
 function highCardControl() {
   const view = deceptiveView('As Kh', 'Qd 8c 2h', { equity: 0.5 }),
-    decision = chooseBotAction(view, getBotProfile('nico'), freshBotMood(), 'off', () => 0.1),
+    decision = chooseBotAction(view, getBotProfile('balanced'), freshBotMood(), 'off', () => 0.1),
     record = { ...decision, id: 1, name: 'Mia', trace: { ...decision.trace, view } };
   return { record, review: explainOpponent(record) };
 }

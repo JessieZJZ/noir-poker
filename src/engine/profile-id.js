@@ -17,9 +17,28 @@ const legacy = {
   3799774413: 'ezra',
   3812169722: 'mira',
 };
+// Retired overlapping styles migrate to the retained training archetype.
+const merged = {
+  nico: 'balanced',
+  luka: 'rook',
+  vale: 'owen',
+  mira: 'luka',
+  iris: 'nico',
+  slate: 'rook',
+  knox: 'rook',
+  finn: 'rook',
+  theo: 'owen',
+  sage: 'vale',
+  bram: 'vale',
+  leon: 'owen',
+  ezra: 'owen',
+};
 export function canonicalProfileId(value) {
   if (typeof value !== 'string') return value;
   let hash = 2166136261;
   for (const char of value) hash = Math.imul(hash ^ char.charCodeAt(0), 16777619);
-  return legacy[hash >>> 0] || value;
+  const id = legacy[hash >>> 0] || value;
+  let current = id;
+  while (merged[current]) current = merged[current];
+  return current;
 }

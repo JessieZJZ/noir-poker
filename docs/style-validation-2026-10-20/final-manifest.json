@@ -1,0 +1,16 @@
+{
+  "sourceDigest": "733de8028fdf5d0469944de62562ad3584a1b71aaf3d225564905ac852872aa1",
+  "harnessDigest": "17c9a4a27ba2448f479fd9c0efe3aa43d74de47f596861e9b9c2db2678d279e5",
+  "protocol": "split-streams-v2.1",
+  "referenceRoot": "/Users/zjz/code/noir-poker/.artifacts/style-audit-2026-10-20/baseline",
+  "profiles": ["balanced", "rook", "jett", "owen"],
+  "counts": [5, 6, 7, 8, 9],
+  "difficulties": ["normal", "hard"],
+  "seeds": [781, 9182, 16061],
+  "handsPerCell": 80,
+  "opponents": "frozen historical balanced/small-ball/pressure; test seat rotates each hand",
+  "emotion": "off",
+  "startingStacks": "100BB reset each hand",
+  "chipUnit": "small blind",
+  "jobs": 120
+}

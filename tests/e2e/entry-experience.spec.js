@@ -119,8 +119,10 @@ for (const count of [5, 6, 7, 8, 9]) {
       path: testInfo.outputPath(`entry-${count}-seats.png`),
       fullPage: true,
     });
-    await page.clock.install();
-    await page.clock.pauseAt(new Date());
+    // Start from a known clock and pause well ahead of installation. Using the
+    // host's current time can already be in the past when a busy runner applies it.
+    await page.clock.install({ time: new Date('2026-01-01T00:00:00Z') });
+    await page.clock.pauseAt(new Date('2026-01-01T01:00:00Z'));
     await page.locator('#join-table-button').click();
     await expect(page.locator('.game-surface')).toHaveAttribute('data-entry-state', 'dealing');
     const dealt = await page.evaluate(() => window.noir.getState());

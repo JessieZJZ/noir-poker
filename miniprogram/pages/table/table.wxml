@@ -142,13 +142,16 @@
           <view
             id="seat-body-{{item.id}}"
             class="seat-body"
+            data-id="{{item.id}}"
+            data-kind="persona"
+            bindlongpress="showNameTooltip"
             style="width: {{profileWidth}}px; height: {{profileHeight}}px;"
             ><view class="seat-name"
               ><text
                 id="seat-name-{{item.id}}"
                 data-id="{{item.id}}"
                 data-kind="name"
-                bindlongpress="showNameTooltip"
+                catchlongpress="showNameTooltip"
                 class="seat-name-label {{item.nameFit && !done ? 'is-name-fitted' : ''}}"
                 style="--name-width-scale: {{item.nameWidthScale || 1}};"
                 >{{item.name}}</text
@@ -167,6 +170,7 @@
                   hover-class="none"
                   wx:if="{{done}}"
                   class="seat-eye"
+                  catchlongpress="closeNameTooltip"
                   data-id="{{item.id}}"
                   bindtap="peekSeat"
                   aria-label="查看底牌" /></view
@@ -181,7 +185,7 @@
               id="seat-persona-{{item.id}}"
               data-id="{{item.id}}"
               data-kind="persona"
-              bindlongpress="showNameTooltip"
+              catchlongpress="showNameTooltip"
               class="persona {{item.profileId === 'balanced' ? 'persona-balanced' : ''}}"
               >{{item.profileName}}</text
             ><text

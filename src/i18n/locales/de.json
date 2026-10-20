@@ -79,8 +79,8 @@
   "{1} / 门槛 {2} · {3}": "{1} / Grenzwerte {2} · {3}",
   "{1} 未跟注的 {2} 筹码已退还": "{1} uncalled von {2} Chips wurde zurückgegeben",
   "{1} 次": "{1} Nächster",
-  "{24} 本手风格：{25}": "Stil von {24} in dieser Hand: {25}",
-  "{29} 的最近行动": "Letzte Aktion von {29}",
+  "{25} 本手风格：{26}": "Stil von {25} in dieser Hand: {26}",
+  "{30} 的最近行动": "Letzte Aktion von {30}",
   "{2} {3} 的底牌": "{2} Die {3} Die Lochkarten",
   "{3} 当时的底牌": "{3} Die Lochkarten",
   "{4}–{5}% 池": "{4}–{5}% des Pots",
@@ -1916,9 +1916,14 @@
   "关闭风格介绍": "Stilübersicht schließen",
   "所有风格的训练参数（0–100）": "Trainingsparameter für alle Prototypen (0-100)",
   "风格": "Stil",
-  "入座开练": "Platz nehmen",
+  "结合位置选择入池，加入持续下注、听牌半诈唬、控池、强牌埋牌和低价 Float。": "Positionsabhängige Einstiege mit Continuation-Bets, Draw-Semibluffs, Potkontrolle, Fallen mit starken Händen und günstigen Floats.",
+  "在标准策略上加入阻断诈唬、薄价值、挤压和选择性领打。": "Ergänzt Blocker-Bluffs, dünne Value-Bets, Squeezes und gezielte Donk-Bets.",
+  "入座开局": "Platz nehmen",
   "已就位": "Bereit",
   "牌桌已就绪": "Der Tisch ist bereit",
-  "等待入座，即将开始第 {0} 局第 {1} 手": "Einstieg offen · Als Nächstes: Sitzung {0}, Hand {1}",
-  "虚拟筹码 · 本地练习": "Virtuelle Chips · Lokales Training"
+  "等待入座": "Warte auf deinen Einstieg",
+  "虚拟筹码 · 本地练习": "Virtuelle Chips · Lokales Training",
+  "特色路线是干燥高牌翻牌先下小注，合适听牌主动争夺，后街再选择进攻机会。": "Eine typische Linie beginnt auf trockenen Flops mit hohen Karten klein, kämpft mit passenden Draws um den Pot und wählt spätere Angriffsmöglichkeiten.",
+  "入座开练": "Platz nehmen",
+  "等待入座，即将开始第 {0} 局第 {1} 手": "Einstieg offen · Als Nächstes: Sitzung {0}, Hand {1}"
 }

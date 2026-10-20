@@ -33,7 +33,7 @@ test('public activity captures names, assignments and per-hand positions without
     ],
   );
   game.dealer = 2;
-  game.players[1].botProfile = 'finn';
+  game.players[1].botProfile = 'rook';
   assert.equal(present('Mia 弃牌')[0].profile, '多街施压');
   assert.equal(present('Mia 弃牌')[0].position, position);
   assert.match(format('你 跟注 300'), /你.*activity-position.*跟注 300/);

@@ -572,6 +572,20 @@ try {
     sizingCancelled: true,
   };
   await capture('table', ['.nav', '.game-shell', '.board-row', '.hero-cards', '.action-buttons']);
+  const styleSeat = (await page.data()).phoneSeats[0];
+  const styleHit = await page.$(`#seat-body-${styleSeat.id}`);
+  await styleHit.longpress();
+  await wait((data) => data.nameTooltip?.visible);
+  assert.equal((await page.data()).nameTooltip.text, styleSeat.profileName);
+  assert.equal(await (await page.$('.seat-name-tooltip')).text(), styleSeat.profileName);
+  report.styleTooltip = {
+    text: styleSeat.profileName,
+    hitTarget: 'seat-body',
+    scope: 'DevTools longpress on the expanded seat region, including untruncated styles',
+  };
+  await capture('style-tooltip', ['.seat-name-tooltip']);
+  await (await page.$('.name-tooltip-dismiss')).tap();
+  await wait((data) => !data.nameTooltip);
   assert.equal((await (await page.$('.nav')).size()).height, 48);
   for (const button of await page.$$('.action-buttons button'))
     assert.equal((await button.size()).height, 38);
@@ -722,13 +736,13 @@ try {
   await invoke('mixProfiles');
   assert.equal((await page.data()).settings.mixed, true);
   assert.equal((await page.data()).settings.assignments[1], 'rook');
-  await chooseSeat(3, 'sage');
+  await chooseSeat(3, 'owen');
   await invoke('mixProfiles');
   const mixedSettings = (await page.data()).settings;
   assert.equal(mixedSettings.mixed, false);
   assert.equal(mixedSettings.assignments[1], 'rook');
   assert.equal(mixedSettings.assignments[2], 'balanced');
-  assert.equal(mixedSettings.assignments[3], 'sage');
+  assert.equal(mixedSettings.assignments[3], 'owen');
   report.mixedToggle = mixedSettings;
   await capture('settings-roster', [
     '.settings-modal',
@@ -747,8 +761,8 @@ try {
     'Settings background covers system/capsule areas as well',
   );
   await capture('settings-bottom', ['.settings-modal', '.info-module', '.settings-save-row']);
-  await scrollToSetting('.profile-card[data-id="iris"]', 80);
-  await (await page.$('.profile-card[data-id="iris"]')).tap();
+  await scrollToSetting('.profile-card[data-id="owen"]', 80);
+  await (await page.$('.profile-card[data-id="owen"]')).tap();
   await wait((data) => !!data.detailProfile);
   const profileDetail = await page.$('.profile-detail');
   report.motion = {
@@ -1102,6 +1116,26 @@ try {
       '.review-scene',
     ]);
     await invoke('closeReview');
+  }
+  // The count/layout passes deliberately fold Hero. They cannot guarantee a
+  // showdown between bots, so exercise actual legal check/calls separately.
+  report.showdownCoverage = { additionalHands: 0, heroCheckCalls: 0 };
+  for (
+    let hand = 0;
+    hand < 10 && !report.pages.some((entry) => entry.name === 'showdown');
+    hand++
+  ) {
+    await scrollHomeTop();
+    await invoke('nextHand');
+    report.showdownCoverage.additionalHands++;
+    for (let decision = 0; decision < 30; decision++) {
+      await wait((data) => data.done || data.canAct);
+      if ((await page.data()).done) break;
+      await (await page.$('[data-action="call"]')).tap();
+      report.showdownCoverage.heroCheckCalls++;
+    }
+    await wait((data) => data.done);
+    await captureShowdown();
   }
   assert.ok(
     report.pages.some((entry) => entry.name === 'showdown'),

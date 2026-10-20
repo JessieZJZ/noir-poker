@@ -425,7 +425,7 @@ test('WeChat retry restores original private deal and retracts awards/statistics
   finish(game, 'fold');
   assert.equal(game.stats.hands, 1);
   assert.ok(game.players[0].stack > baseline.players[0].stack);
-  controller.setSeatProfile(1, 'finn');
+  controller.setSeatProfile(1, 'rook');
   controller.setPreference('emotionMode', 'lively');
   assert.equal(controller.retry(), true);
   assert.deepEqual(originalState(game), baseline);
@@ -437,7 +437,7 @@ test('WeChat retry restores original private deal and retracts awards/statistics
   assert.deepEqual(game, restored);
   assert.equal(game.players[1].botProfile, 'balanced');
   assert.equal(game.emotionMode, 'subtle');
-  assert.equal(controller.getSettings().assignments[1], 'finn');
+  assert.equal(controller.getSettings().assignments[1], 'rook');
 });
 
 test('WeChat hide and destroy reject already queued bot callbacks; show resumes cleanly', (t) => {

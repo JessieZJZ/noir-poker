@@ -309,7 +309,7 @@ test('WeChat activity retains full hand history, bet ordinals and Web persona la
   const { page } = setup(t);
   const game = page._controller.getGame();
   const player = game.players[1];
-  player.botProfile = 'iris';
+  player.botProfile = 'owen';
   game.logs = Array.from({ length: 41 }, (_, index) => ({
     text: `${player.name} 3-bet 加注至 ${200 + index * 25}`,
     player: player.id,
@@ -326,7 +326,7 @@ test('WeChat activity retains full hand history, bet ordinals and Web persona la
 test('WeChat hero actions and persona-expanded activity compact every chip amount, preserving hand counts', (t) => {
   const { page } = setup(t);
   const game = page._controller.getGame();
-  game.players[1].botProfile = 'iris';
+  game.players[1].botProfile = 'owen';
   game.players[0].lastAction = { street: game.street, text: '全下至18800' };
   game.players[1].lastAction = { street: game.street, text: '3-bet 全下至18800' };
   game.logs = [
@@ -1112,7 +1112,7 @@ for (const playerCount of [5, 6, 7, 8, 9]) {
 test('WeChat exposes original character descriptions without source links or photo credits', (t) => {
   const { page, clipboard } = setup(t, { playerCount: 9 });
   const profiles = page.data.profiles.filter((p) => p.id !== 'balanced');
-  assert.equal(profiles.length, 16);
+  assert.equal(profiles.length, 3);
   for (const profile of profiles) {
     page.viewProfile({ currentTarget: { dataset: { id: profile.id } } });
     const detail = page.data.detailProfile;
@@ -1261,16 +1261,16 @@ test('settings keep eight assignable seats and retain off-table choices for the 
   assert.equal(page.data.seatSettings.length, 8);
   assert.equal(page.data.seatSettings.filter((s) => s.offTable).length, 4);
   const before = JSON.stringify(page._controller.getGame());
-  const index = page.data.profiles.findIndex((p) => p.id === 'knox');
+  const index = page.data.profiles.findIndex((p) => p.id === 'rook');
   page.changeSeat({ currentTarget: { dataset: { id: 8 } }, detail: { value: index } });
   assert.equal(JSON.stringify(page._controller.getGame()), before);
-  assert.equal(page.data.seatSettings[7].profileName, '松凶强攻');
-  assert.match(page.data.seatSettings[7].portrait, /knox/);
+  assert.equal(page.data.seatSettings[7].profileName, '多街施压');
+  assert.match(page.data.seatSettings[7].portrait, /rook/);
   page.changeCount({ detail: { value: 4 } });
   finish(page._controller.getGame());
   page._controller.show();
   page.nextHand();
-  assert.equal(page._controller.getGame().players[8].botProfile, 'knox');
+  assert.equal(page._controller.getGame().players[8].botProfile, 'rook');
 });
 
 test('dropdown data anchors the options below the original control and settings have no reset footer', (t) => {
@@ -2513,7 +2513,7 @@ test('returning from records preserves the painted live layout without replaying
   assert.ok(page.data.phoneSeats.length);
 });
 
-test('WeChat long press expands only truncated names and rejects delayed or hidden tooltips', (t) => {
+test('WeChat long press shows every style, only clipped player names, and rejects stale tooltips', (t) => {
   const { page, wx } = setup(t);
   let naturalWidth = 100,
     labelWidth = 40,
@@ -2551,6 +2551,13 @@ test('WeChat long press expands only truncated names and rejects delayed or hidd
   page.onPageScroll({ scrollTop: 20 });
   assert.equal(page.data.nameTooltip, null);
   naturalWidth = labelWidth;
+  page.showNameTooltip({ currentTarget: { dataset: { id: seat.id, kind: 'persona' } } });
+  assert.equal(
+    page.data.nameTooltip.text,
+    seat.profileName,
+    'A fully visible short style still opens',
+  );
+  page.closeNameTooltip();
   page.showNameTooltip({ currentTarget: { dataset: { id: seat.id, kind: 'name' } } });
   assert.equal(page.data.nameTooltip, null, 'Fully displayed names need no popup');
   naturalWidth = 100;
@@ -2559,7 +2566,9 @@ test('WeChat long press expands only truncated names and rejects delayed or hidd
   page.onHide();
   callbacks.shift()();
   assert.equal(page.data.nameTooltip, null);
-  assert.match(template, /bindlongpress="showNameTooltip"/);
+  assert.match(template, /class="seat-body"[\s\S]*?bindlongpress="showNameTooltip"/);
+  assert.match(template, /catchlongpress="showNameTooltip"/);
+  assert.match(template, /class="seat-eye"[\s\S]*?catchlongpress="closeNameTooltip"/);
   assert.match(stylesheet, /\.seat-name-tooltip\s*\{[^}]*position: fixed/s);
 });
 

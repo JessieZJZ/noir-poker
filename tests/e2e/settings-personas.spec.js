@@ -108,8 +108,8 @@ test('style assignments, mixed lineups and emotions automatically persist while 
   const original = await page.evaluate(() => window.qa.foldWin(6));
   const saved = () => page.evaluate(() => JSON.parse(localStorage.getItem('noir-opponents-v1')));
   await openSettings(page);
-  await page.locator('[data-bot-seat="1"]').selectOption('finn');
-  expect((await saved()).assignments['1']).toBe('finn');
+  await page.locator('[data-bot-seat="1"]').selectOption('rook');
+  expect((await saved()).assignments['1']).toBe('rook');
   await expect(page.locator('#opponents-dialog')).toBeVisible();
   await page.locator('#emotion-mode').selectOption('lively');
   expect((await saved()).emotionMode).toBe('lively');
@@ -118,19 +118,21 @@ test('style assignments, mixed lineups and emotions automatically persist while 
   const mixed = await saved();
   expect(mixed.mixed).toBe(true);
   expect(mixed.mixedSeats).toEqual([2, 3, 4, 5]);
-  expect(mixed.assignments['1']).toBe('finn');
-  expect(mixed.mixedSeats.every((id) => mixed.assignments[id] !== 'balanced')).toBe(true);
+  expect(mixed.assignments['1']).toBe('rook');
+  expect(new Set(mixed.mixedSeats.map((id) => mixed.assignments[id]))).toEqual(
+    new Set(['balanced', 'rook', 'jett', 'owen']),
+  );
   await expect(page.locator('#mix-opponents')).toHaveAttribute('aria-pressed', 'true');
   // The settings cover all future seats, including those currently off table.
   await page.locator('[data-bot-seat="8"]').selectOption('balanced');
   const persisted = await saved();
-  await page.locator('[data-profile-preview="vale"]').click();
-  await expect(page.locator('#profile-detail h3')).toHaveText('强牌诱导');
+  await page.locator('[data-profile-preview="owen"]').click();
+  await expect(page.locator('#profile-detail h3')).toHaveText('范围纪律');
   expect(await saved()).toEqual(persisted);
   await page.locator('[data-close-profile-detail]').click();
   await closeSettings(page);
   await openSettings(page);
-  await expect(page.locator('[data-bot-seat="1"]')).toHaveValue('finn');
+  await expect(page.locator('[data-bot-seat="1"]')).toHaveValue('rook');
   await expect(page.locator('[data-bot-seat="8"]')).toHaveValue('balanced');
   await expect(page.locator('#emotion-mode')).toHaveValue('lively');
   await closeSettings(page);
@@ -161,7 +163,7 @@ test('style assignments, mixed lineups and emotions automatically persist while 
   await page.waitForFunction(() => !!window.qa);
   await page.evaluate(() => window.qa.stop());
   await openSettings(page);
-  await expect(page.locator('[data-bot-seat="1"]')).toHaveValue('finn');
+  await expect(page.locator('[data-bot-seat="1"]')).toHaveValue('rook');
   await expect(page.locator('[data-bot-seat="8"]')).toHaveValue('balanced');
   await expect(page.locator('#emotion-mode')).toHaveValue('lively');
   expect(await saved()).toEqual(persisted);
@@ -181,15 +183,15 @@ test('mobile persona details cover the selector in place and closing restores it
   for (const width of [320, 390, 700]) {
     await page.setViewportSize({ width, height: 844 });
     await openSettings(page);
-    const card = page.locator('[data-profile-preview="iris"]');
+    const card = page.locator('[data-profile-preview="owen"]');
     await card.scrollIntoViewIfNeeded();
     const before = await page.locator('.opponents-body').evaluate((el) => el.scrollTop);
     await card.click();
     const stage = page.locator('#profile-stage');
     await expect(stage).toHaveAttribute('data-detail-open', 'true');
-    await expect(page.locator('#profile-detail')).toHaveAttribute('data-profile-id', 'iris');
+    await expect(page.locator('#profile-detail')).toHaveAttribute('data-profile-id', 'owen');
     await expect(page.locator('#profile-detail')).toBeVisible();
-    await expect(page.locator('#profile-detail h3')).toHaveText('延迟进攻');
+    await expect(page.locator('#profile-detail h3')).toHaveText('范围纪律');
     await expect(page.locator('[data-close-profile-detail]')).toBeFocused();
     const reveal = await page.evaluate(() => window.profileReveals.at(-1));
     expect(reveal.keyframes[0].clipPath).toMatch(/^circle\(0px at /);
@@ -224,11 +226,13 @@ test('mobile persona details cover the selector in place and closing restores it
           close = detail.querySelector('[data-close-profile-detail]'),
           closeBounds = close.getBoundingClientRect(),
           footer = document.querySelector('.opponents-save-row').getBoundingClientRect();
-        const covered = [...document.querySelectorAll('.opponent-portrait')]
+        const covered = [...document.querySelectorAll('.opponent-portrait, .profile-card')]
           .map((portrait) => {
             const r = portrait.getBoundingClientRect();
             return {
-              name: portrait.closest('.opponent-row').querySelector('strong').textContent,
+              name:
+                portrait.closest('.opponent-row')?.querySelector('strong')?.textContent ||
+                portrait.textContent.trim(),
               x: r.left + r.width / 2,
               y: r.top + r.height / 2,
             };
@@ -255,8 +259,8 @@ test('mobile persona details cover the selector in place and closing restores it
           ),
         };
       });
-    // Geometry alone missed avatars from the following seat-assignment module
-    // painting above the overlay. Check the actual hit layer at those avatars.
+    // Check the actual hit layer over selector cards and assignment avatars.
+    // A shorter merged style list need not overlap the later roster.
     await expect.poll(checkDetailLayer).toMatchObject({
       blocked: [],
       closeVisible: true,
@@ -331,9 +335,9 @@ test('desktop persona detail stays below the available selector while a mobile r
 }) => {
   await page.setViewportSize({ width: 1280, height: 900 });
   await openSettings(page);
-  const choice = page.locator('[data-profile-preview="vale"]');
+  const choice = page.locator('[data-profile-preview="owen"]');
   await choice.click();
-  await expect(page.locator('#profile-detail h3')).toHaveText('强牌诱导');
+  await expect(page.locator('#profile-detail h3')).toHaveText('范围纪律');
   const layout = await page.evaluate(() => ({
     gridBottom: document.querySelector('#profile-cards').getBoundingClientRect().bottom,
     detailTop: document.querySelector('#profile-detail').getBoundingClientRect().top,
@@ -352,7 +356,7 @@ test('desktop persona detail stays below the available selector while a mobile r
   await page.setViewportSize({ width: 1280, height: 900 });
   await expect(page.locator('#profile-detail')).toBeVisible();
   expect(await page.locator('#profile-cards').evaluate((el) => el.inert)).toBe(false);
-  await expect(page.locator('[data-profile-preview="finn"]')).toBeEnabled();
+  await expect(page.locator('[data-profile-preview="rook"]')).toBeEnabled();
 });
 
 test('the guide teaches winning, streets, actions and position before introducing review and table settings', async ({
@@ -392,15 +396,15 @@ test('the guide teaches winning, streets, actions and position before introducin
   await guide.screenshot({ path: test.info().outputPath('guide-basics.png') });
 });
 
-test('all sixteen illustrated styles show behavior guidance and assignments survive next hand, retry and reload', async ({
+test('all retained illustrated styles show behavior guidance and assignments survive next hand, retry and reload', async ({
   page,
 }) => {
   test.setTimeout(90000);
   await page.evaluate(() => window.qa.foldWin(9));
   await openSettings(page);
   await page.locator('#player-count').selectOption('9');
-  await expect(page.locator('.profile-card')).toHaveCount(17);
-  await expect(page.locator('#profile-cards img')).toHaveCount(16);
+  await expect(page.locator('.profile-card')).toHaveCount(4);
+  await expect(page.locator('#profile-cards img')).toHaveCount(3);
   const profiles = await page.evaluate(async () =>
     (await import('/src/engine/bot-profiles.js')).BOT_PROFILES.filter((p) => p.id !== 'balanced'),
   );
@@ -421,10 +425,10 @@ test('all sixteen illustrated styles show behavior guidance and assignments surv
     if (await page.locator('[data-close-profile-detail]').isVisible())
       await page.locator('[data-close-profile-detail]').click();
   }
-  const ids = ['sage', 'nico', 'bram', 'leon', 'owen', 'ezra', 'luka', 'iris'];
+  const ids = ['rook', 'owen', 'jett', 'rook', 'owen', 'owen', 'rook', 'owen'];
   for (const [i, id] of ids.entries())
     await page.locator(`[data-bot-seat="${i + 1}"]`).selectOption(id);
-  await page.locator('[data-profile-preview="iris"]').click();
+  await page.locator('[data-profile-preview="owen"]').click();
   await page
     .locator('#profile-detail')
     .screenshot({ path: test.info().outputPath('original-iris.png') });

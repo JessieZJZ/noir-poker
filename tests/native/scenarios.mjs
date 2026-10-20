@@ -283,6 +283,7 @@ export async function nativeScenarios(app) {
         error: error.stack || String(error),
         ...(error.reviewDiagnostics ? { reviewDiagnostics: error.reviewDiagnostics } : {}),
         ...(error.turnDiagnostics ? { turnDiagnostics: error.turnDiagnostics } : {}),
+        ...(error.tooltipDiagnostics ? { tooltipDiagnostics: error.tooltipDiagnostics } : {}),
       });
       throw error;
     }
@@ -1316,6 +1317,88 @@ export async function nativeScenarios(app) {
     assert.equal(await app.evaluate(() => document.querySelector('#rules-dialog').open), false);
     return { before, after, scope: 'Installed app guide scrolling and fixed header geometry' };
   });
+  await check('style-tag-long-press', async () => {
+    await app.waitHero();
+    const selector = '#seats .seat-style-label';
+    await app.evaluate((selector) => {
+      const label = document.querySelector(selector);
+      const events = new AbortController();
+      window.__noirTooltipEvents = [];
+      window.__noirTooltipStop = () => events.abort();
+      const record = (type, event) => {
+        if (window.__noirTooltipEvents.length >= 256) return;
+        const tip = document.querySelector('#seat-name-tooltip');
+        window.__noirTooltipEvents.push({
+          type,
+          at: performance.now(),
+          target: event?.target?.className,
+          x: event?.clientX,
+          y: event?.clientY,
+          button: event?.button,
+          connected: label.isConnected,
+          visible: tip && !tip.hidden,
+        });
+      };
+      for (const type of [
+        'pointerdown',
+        'pointerup',
+        'pointercancel',
+        'touchstart',
+        'touchend',
+        'contextmenu',
+        'scroll',
+      ])
+        document.addEventListener(type, (event) => record(type, event), {
+          capture: true,
+          signal: events.signal,
+        });
+      document.addEventListener(
+        'pointerdown',
+        () => {
+          for (const delay of [100, 400, 500, 700])
+            setTimeout(() => record(`after-${delay}`), delay);
+        },
+        { once: true, signal: events.signal },
+      );
+    }, selector);
+    const before = await app.evaluate((selector) => {
+      const label = document.querySelector(selector);
+      return {
+        text: label.getAttribute('data-full-name'),
+        hand: window.noir.getState().hand,
+      };
+    }, selector);
+    let tooltip;
+    try {
+      await app.nativeHold(selector);
+      tooltip = await app.waitFor(
+        () =>
+          app.evaluate(() => {
+            const el = document.querySelector('#seat-name-tooltip');
+            return el && !el.hidden
+              ? { text: el.textContent, selected: getSelection().toString() }
+              : null;
+          }),
+        5000,
+        'A real native touch hold must open the style name',
+      );
+    } catch (error) {
+      error.tooltipDiagnostics = await app.evaluate(() => window.__noirTooltipEvents);
+      throw error;
+    } finally {
+      await app.evaluate(() => window.__noirTooltipStop?.());
+    }
+    assert.equal(tooltip.text, before.text);
+    assert.equal(tooltip.selected, '');
+    assert.equal((await app.state()).hand, before.hand);
+    await app.screenshot('style-tag-native-hold');
+    await app.click('#arena .hero-identity');
+    assert.equal(
+      await app.evaluate(() => document.querySelector('#seat-name-tooltip').hidden),
+      true,
+    );
+    return { before, tooltip, scope: 'Installed app, real native pointer hold, no text selection' };
+  });
   await check('mixed-toggle-and-visual-guide', async () => {
     await app.click('#opponents-button');
     if (
@@ -1333,12 +1416,16 @@ export async function nativeScenarios(app) {
       ),
       'true',
     );
-    await app.select('[data-bot-seat="3"]', 'sage');
+    // A random mixed allocation can already be Owen. Make an actual changed
+    // selection so the native picker emits the user's ownership event.
+    if (await app.evaluate(() => document.querySelector('[data-bot-seat="3"]').value === 'owen'))
+      await app.select('[data-bot-seat="3"]', 'jett');
+    await app.select('[data-bot-seat="3"]', 'owen');
     await app.click('#mix-opponents');
     const assignments = await app.evaluate(() =>
       [1, 2, 3].map((id) => document.querySelector(`[data-bot-seat="${id}"]`).value),
     );
-    assert.deepEqual(assignments, ['rook', 'balanced', 'sage']);
+    assert.deepEqual(assignments, ['rook', 'balanced', 'owen']);
     await app.click('#opponents-dialog .close-dialog');
     await app.click('#rules-button');
     await app.click('#guide-menu-item');
@@ -1442,12 +1529,12 @@ export async function nativeScenarios(app) {
             }),
           ),
         );
-        return images.length === 16 && images.every((image) => image.loaded && image.local)
+        return images.length === 3 && images.every((image) => image.loaded && image.local)
           ? images
           : null;
       },
       15000,
-      'All sixteen portraits must load from the installed bundle',
+      'All retained portraits must load from the installed bundle',
     );
     const images = await app.evaluate(() =>
       [...document.querySelectorAll('#profile-cards img')].map((image) => ({
@@ -1732,25 +1819,7 @@ export async function nativeScenarios(app) {
     };
   });
   await check('training-styles-and-persistence', async () => {
-    const ids = [
-      'balanced',
-      'rook',
-      'vale',
-      'slate',
-      'jett',
-      'mira',
-      'knox',
-      'theo',
-      'finn',
-      'sage',
-      'nico',
-      'bram',
-      'leon',
-      'owen',
-      'ezra',
-      'luka',
-      'iris',
-    ];
+    const ids = ['balanced', 'rook', 'jett', 'owen'];
     await app.click('#opponents-button');
     const details = [];
     for (const id of ids) {
@@ -1794,7 +1863,7 @@ export async function nativeScenarios(app) {
         assert.equal(detail.images[0].src, `/portraits/${id}.jpg`);
       }
       assert.equal(detail.overflow, false);
-      if (id === 'iris') {
+      if (id === 'owen') {
         await app.screenshot('delayed-aggression-style-detail');
         if (app.comparePage)
           await app.comparePage('player', [
@@ -1807,14 +1876,14 @@ export async function nativeScenarios(app) {
       if (await app.visible('[data-close-profile-detail]'))
         await app.click('[data-close-profile-detail]');
     }
-    await app.select('[data-bot-seat="1"]', 'iris');
+    await app.select('[data-bot-seat="1"]', 'owen');
     await app.click('#opponents-dialog .close-dialog');
     await app.relaunch();
     const applied = await app.state();
-    assert.equal(applied.players[1].botProfile, 'iris');
+    assert.equal(applied.players[1].botProfile, 'owen');
     await app.click('#opponents-button');
     const saved = await app.evaluate(() => document.querySelector('[data-bot-seat="1"]').value);
-    assert.equal(saved, 'iris');
+    assert.equal(saved, 'owen');
     await app.click('#opponents-dialog .close-dialog');
     return { details, saved, applied: applied.players[1].botProfile };
   });

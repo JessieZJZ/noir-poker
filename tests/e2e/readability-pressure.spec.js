@@ -18,19 +18,19 @@ test('mix is a persistent toggle and never undoes manual ownership', async ({ pa
   const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('noir-opponents-v1')));
   expect(saved.assignments[1]).toBe('rook');
   expect(saved.mixedSeats).toHaveLength(7);
-  await page.locator('[data-bot-seat="3"]').selectOption('sage');
+  await page.locator('[data-bot-seat="3"]').selectOption('owen');
   await button.click();
   await expect(button).toHaveAttribute('aria-pressed', 'false');
   for (const id of [2, 4, 5, 6, 7, 8])
     await expect(page.locator(`[data-bot-seat="${id}"]`)).toHaveValue('balanced');
   await expect(page.locator('[data-bot-seat="1"]')).toHaveValue('rook');
-  await expect(page.locator('[data-bot-seat="3"]')).toHaveValue('sage');
+  await expect(page.locator('[data-bot-seat="3"]')).toHaveValue('owen');
   await closeSettings(page);
   await page.reload();
   await page.waitForFunction(() => !!window.qa);
   await openSettings(page);
   await expect(button).toHaveAttribute('aria-pressed', 'false');
-  await expect(page.locator('[data-bot-seat="3"]')).toHaveValue('sage');
+  await expect(page.locator('[data-bot-seat="3"]')).toHaveValue('owen');
 });
 test('portraits span style and stack, cards grow on nine-seat phones, persona cards start at the top', async ({
   page,

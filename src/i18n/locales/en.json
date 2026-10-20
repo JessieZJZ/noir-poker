@@ -79,8 +79,8 @@
   "{1} / 门槛 {2} · {3}": "{1} / threshold {2} · {3}",
   "{1} 未跟注的 {2} 筹码已退还": "{1} uncalled of {2} chips has been refunded",
   "{1} 次": "{1} next",
-  "{24} 本手风格：{25}": "{24}’s style this hand: {25}",
-  "{29} 的最近行动": "{29}’s latest action",
+  "{25} 本手风格：{26}": "{25}’s style this hand: {26}",
+  "{30} 的最近行动": "{30}’s latest action",
   "{2} {3} 的底牌": "{2} The {3} The Hole Cards",
   "{3} 当时的底牌": "{3} The Hole Cards",
   "{4}–{5}% 池": "{4}–{5}% of the pot",
@@ -1928,9 +1928,14 @@
   "关闭风格介绍": "Close style guide",
   "所有风格的训练参数（0–100）": "Training parameters for all prototypes (0-100)",
   "风格": "Style",
-  "入座开练": "Take a seat",
+  "结合位置选择入池，加入持续下注、听牌半诈唬、控池、强牌埋牌和低价 Float。": "Position-aware entries with continuation bets, draw semi-bluffs, pot control, strong-hand traps and low-cost floats.",
+  "在标准策略上加入阻断诈唬、薄价值、挤压和选择性领打。": "Adds blocker bluffs, thin value, squeezes and selective donk leads to standard play.",
+  "入座开局": "Take a seat",
   "已就位": "Ready",
   "牌桌已就绪": "Table ready",
-  "等待入座，即将开始第 {0} 局第 {1} 手": "Waiting for you · Session {0}, hand {1} next",
-  "虚拟筹码 · 本地练习": "Virtual chips · Local practice"
+  "等待入座": "Waiting for you",
+  "虚拟筹码 · 本地练习": "Virtual chips · Local practice",
+  "特色路线是干燥高牌翻牌先下小注，合适听牌主动争夺，后街再选择进攻机会。": "A signature line starts small on dry high-card flops, contests pots with suitable draws and selects later opportunities to attack.",
+  "入座开练": "Take a seat",
+  "等待入座，即将开始第 {0} 局第 {1} 手": "Waiting for you · Session {0}, hand {1} next"
 }

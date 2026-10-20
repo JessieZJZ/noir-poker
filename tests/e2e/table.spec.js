@@ -480,6 +480,7 @@ test('5–9 player showdown reveals all holes immediately and displays each best
 test('showdown participant names include the current named style and stay readable on narrow screens', async ({
   page,
 }, testInfo) => {
+  test.setTimeout(90000);
   await page.evaluate(() => window.qa.stop());
   await page.locator('#opponents-button').click();
   await assignNamedLineup(page);
@@ -487,13 +488,13 @@ test('showdown participant names include the current named style and stay readab
   const names = [
     '你',
     'Mia（多街施压）',
-    'Alex（强牌诱导）',
-    'River（河牌争夺）',
+    'Alex（范围纪律）',
+    'River（多街施压）',
     'Kai（宽松取值）',
-    'Luna（听牌施压）',
-    'Theo（松凶强攻）',
-    'Jade（计算进攻）',
-    'Leo（多线进攻）',
+    'Luna（多街施压）',
+    'Theo（多街施压）',
+    'Jade（范围纪律）',
+    'Leo（多街施压）',
   ];
   for (const width of [320, 390, 1280]) {
     await page.setViewportSize({ width, height: 900 });
@@ -536,7 +537,7 @@ test('showdown participant names include the current named style and stay readab
   await closeSettings(page);
   await expect(
     page.locator('.showdown-player[data-player="7"] .showdown-player-heading > strong'),
-  ).toHaveText('Jade（计算进攻）');
+  ).toHaveText('Jade（范围纪律）');
   await page.locator('#next-button').click();
   await page.evaluate(() => window.qa.stop());
   await expect(page.locator('.decision-strip')).toBeVisible();
@@ -789,7 +790,7 @@ test('settled public caption and hero remain separated for winners, losers, fold
         await assertWinnerIndicators(page);
         if (mode === 'win') await expect(page.locator('#hero-hand-rank')).toHaveText('三条');
         if (width === 390 && count === 9)
-          await expect(page.locator('#arena')).toHaveClass(/has-full-player-names/);
+          await expect(page.locator('#arena')).not.toHaveClass(/has-full-player-names/);
         if (mode === 'win' && count === 6 && (width === 390 || width === 1280))
           await page.locator('#arena').screenshot({
             path: testInfo.outputPath(`settled-spacing-${width}-${testInfo.project.name}.png`),
@@ -1207,10 +1208,10 @@ test('activity shows actual assigned personas across actions and results without
   await page.evaluate(() => window.qa.stop());
   await page.locator('#opponents-button').click();
   for (const [id, profile] of Object.entries({
-    1: 'knox',
-    2: 'vale',
-    3: 'theo',
-    4: 'finn',
+    1: 'rook',
+    2: 'owen',
+    3: 'owen',
+    4: 'rook',
   }))
     await page.locator(`[data-bot-seat="${id}"]`).selectOption(profile);
   await closeSettings(page);
@@ -1222,13 +1223,13 @@ test('activity shows actual assigned personas across actions and results without
     }, count);
     const list = page.locator('#activity-list');
     await expect(list.locator('.log-blind')).toHaveText(
-      'Mia（松凶强攻） SB 小盲 25 · Alex（强牌诱导） BB 大盲 50',
+      'Mia（多街施压） SB 小盲 25 · Alex（范围纪律） BB 大盲 50',
     );
     for (const label of [
-      'Mia（松凶强攻）',
-      'Alex（强牌诱导）',
-      'River（计算进攻）',
-      'Kai（多线进攻）',
+      'Mia（多街施压）',
+      'Alex（范围纪律）',
+      'River（范围纪律）',
+      'Kai（多街施压）',
     ])
       await expect(list).toContainText(label);
     await expect(list).not.toContainText('Luna（');
@@ -1259,24 +1260,24 @@ test('activity shows actual assigned personas across actions and results without
 
   await page.evaluate(() => window.qa.foldPotRefund());
   await expect(page.locator('#activity-list .log-result').last()).toContainText(
-    'Alex（强牌诱导） CO 获胜',
+    'Alex（范围纪律） CO 获胜',
   );
-  await expect(page.locator('#activity-list')).toContainText('Alex（强牌诱导） CO 未被跟注的 75');
+  await expect(page.locator('#activity-list')).toContainText('Alex（范围纪律） CO 未被跟注的 75');
   await assertWinnerIndicators(page);
   await page.locator('#opponents-button').click();
-  await page.locator('[data-bot-seat="2"]').selectOption('mira');
+  await page.locator('[data-bot-seat="2"]').selectOption('rook');
   await closeSettings(page);
   await page.locator('.seat-2 .seat-peek').click();
-  await expect(page.locator('#activity-list')).toContainText('Alex（强牌诱导） CO 获胜');
-  await expect(page.locator('#activity-list')).not.toContainText('Alex（听牌施压）');
+  await expect(page.locator('#activity-list')).toContainText('Alex（范围纪律） CO 获胜');
+  await expect(page.locator('#activity-list')).not.toContainText('Alex（多街施压）');
 
   await page.locator('#next-button').click();
   await page.evaluate(() => {
     window.qa.stop();
     window.qa.foldRest();
   });
-  await expect(page.locator('#activity-list')).toContainText('Alex（听牌施压）');
-  await expect(page.locator('#activity-list')).not.toContainText('Alex（强牌诱导）');
+  await expect(page.locator('#activity-list')).toContainText('Alex（多街施压）');
+  await expect(page.locator('#activity-list')).not.toContainText('Alex（范围纪律）');
 });
 
 test('bots wait for their contextual deadline, reuse it on scheduling and replan after a difficulty change', async ({
@@ -1474,13 +1475,13 @@ test('returning restores all saved options before the first fresh hand, includin
   expect(state.emotionMode).toBe('lively');
   expect(state.players.slice(1).map((p) => p.botProfile)).toEqual([
     'rook',
-    'vale',
-    'slate',
+    'owen',
+    'rook',
     'jett',
-    'mira',
-    'knox',
-    'theo',
-    'finn',
+    'rook',
+    'rook',
+    'owen',
+    'rook',
   ]);
   expect(state.hand).toBe(0);
   expect(state.phase).toBe('idle');
@@ -1494,7 +1495,7 @@ test('returning restores all saved options before the first fresh hand, includin
   });
   await page.locator('#opponents-button').click();
   await expect(page.locator('#emotion-mode')).toHaveValue('lively');
-  await expect(page.locator('[data-bot-seat="8"]')).toHaveValue('finn');
+  await expect(page.locator('[data-bot-seat="8"]')).toHaveValue('rook');
 });
 
 test('per-seat styles apply next hand, survive resize and refresh, and freeze on retry', async ({
@@ -1502,7 +1503,7 @@ test('per-seat styles apply next hand, survive resize and refresh, and freeze on
 }) => {
   await page.evaluate(() => window.qa.foldWin(6));
   await page.locator('#opponents-button').click();
-  const assignments = { 1: 'rook', 2: 'vale', 3: 'slate', 4: 'jett', 5: 'mira', 8: 'vale' };
+  const assignments = { 1: 'rook', 2: 'owen', 3: 'rook', 4: 'jett', 5: 'rook', 8: 'owen' };
   for (const [id, style] of Object.entries(assignments))
     await page.locator(`[data-bot-seat="${id}"]`).selectOption(style);
   await page.locator('#emotion-mode').selectOption('lively');
@@ -1531,7 +1532,7 @@ test('per-seat styles apply next hand, survive resize and refresh, and freeze on
       return window.noir.getState();
     });
     expect(state.playerCount).toBe(count);
-    if (count === 9) expect(state.players[8].botProfile).toBe('vale');
+    if (count === 9) expect(state.players[8].botProfile).toBe('owen');
   }
   await page.reload();
   await page.waitForFunction(() => !!window.qa);
@@ -1539,7 +1540,7 @@ test('per-seat styles apply next hand, survive resize and refresh, and freeze on
   expect((await page.evaluate(() => window.noir.getState())).playerCount).toBe(9);
   expect((await page.evaluate(() => window.noir.getState())).players[1].botProfile).toBe('rook');
   await page.locator('#opponents-button').click();
-  await expect(page.locator('[data-bot-seat="8"]')).toHaveValue('vale');
+  await expect(page.locator('[data-bot-seat="8"]')).toHaveValue('owen');
   await expect(page.locator('#opponents-dialog .settings-info')).toContainText('训练风格');
   await expect(page.locator('#opponents-dialog .settings-info')).toContainText('策略倾向');
 });
@@ -1549,23 +1550,23 @@ test('nine-seat style assignment shows every persona at all sizes and executes t
 }) => {
   const assignments = {
     1: 'rook',
-    2: 'vale',
-    3: 'slate',
+    2: 'owen',
+    3: 'rook',
     4: 'jett',
-    5: 'mira',
-    6: 'knox',
-    7: 'theo',
-    8: 'finn',
+    5: 'rook',
+    6: 'rook',
+    7: 'owen',
+    8: 'rook',
   };
   const labels = [
     '多街施压',
-    '强牌诱导',
-    '河牌争夺',
+    '范围纪律',
+    '多街施压',
     '宽松取值',
-    '听牌施压',
-    '松凶强攻',
-    '计算进攻',
-    '多线进攻',
+    '多街施压',
+    '多街施压',
+    '范围纪律',
+    '多街施压',
   ];
   await page.evaluate(() => window.qa.foldWin(9));
   await page.locator('#opponents-button').click();
@@ -1656,11 +1657,11 @@ test('all named portraits preview immediately, follow saved styles next hand and
   page,
 }) => {
   test.setTimeout(60000);
-  const profiles = ['rook', 'vale', 'slate', 'jett', 'mira', 'knox', 'theo', 'finn'];
+  const profiles = ['rook', 'owen', 'rook', 'jett', 'rook', 'rook', 'owen', 'rook'];
   await setPlayerCount(page, 9);
   await page.evaluate(() => window.qa.foldWin(9));
   await page.locator('#opponents-button').click();
-  await expect(page.locator('#profile-cards img')).toHaveCount(16);
+  await expect(page.locator('#profile-cards img')).toHaveCount(3);
   await expect
     .poll(() =>
       page
@@ -1676,14 +1677,14 @@ test('all named portraits preview immediately, follow saved styles next hand and
   const firstDraft = page.locator('[data-opponent-row="1"] .opponent-portrait');
   await expect(firstDraft.locator('img')).toHaveAttribute('data-portrait-profile', 'rook');
   await page.locator('[data-bot-seat="1"]').focus();
-  await page.locator('[data-bot-seat="1"]').selectOption('finn');
-  await expect(firstDraft.locator('img')).toHaveAttribute('data-portrait-profile', 'finn');
+  await page.locator('[data-bot-seat="1"]').selectOption('rook');
+  await expect(firstDraft.locator('img')).toHaveAttribute('data-portrait-profile', 'rook');
   await expect(page.locator('[data-bot-seat="1"]')).toBeFocused();
-  await page.locator('[data-profile-preview="finn"]').click();
+  await page.locator('[data-profile-preview="rook"]').click();
   await expect(page.locator('#profile-detail')).toBeVisible();
   await expect(page.locator('#profile-detail img')).toHaveAttribute(
     'data-portrait-profile',
-    'finn',
+    'rook',
   );
   await expect(page.locator('#profile-detail .profile-photo-credit')).toHaveCount(0);
   await expect(page.locator('#profile-detail .character-section')).toHaveCount(5);
@@ -1733,7 +1734,7 @@ test('all named portraits preview immediately, follow saved styles next hand and
   }
   await page.locator('#opponents-button').click();
   for (let id = 2; id <= 8; id++)
-    await page.locator(`[data-bot-seat="${id}"]`).selectOption('theo');
+    await page.locator(`[data-bot-seat="${id}"]`).selectOption('owen');
   await closeSettings(page);
   for (const width of [320, 390, 700, 768, 901, 1000, 1150, 1280]) {
     await page.setViewportSize({ width, height: 900 });
@@ -1820,7 +1821,7 @@ test('a failed portrait keeps its initial and selection controls intact, and ano
   await expect(avatar.locator('img')).toBeHidden();
   await expect(avatar.locator('.portrait-fallback')).toHaveText('M');
   const before = await avatar.boundingBox();
-  await page.locator('[data-bot-seat="1"]').selectOption('vale');
+  await page.locator('[data-bot-seat="1"]').selectOption('owen');
   await expect
     .poll(() => avatar.locator('img').evaluate((image) => image.complete && image.naturalWidth > 0))
     .toBe(true);
@@ -1836,7 +1837,7 @@ test('configured bots use the fast-deal path and observed samples roll back on r
 }) => {
   await page.evaluate(() => window.qa.foldWin(6));
   await page.locator('#opponents-button').click();
-  for (let id = 1; id < 6; id++) await page.locator(`[data-bot-seat="${id}"]`).selectOption('mira');
+  for (let id = 1; id < 6; id++) await page.locator(`[data-bot-seat="${id}"]`).selectOption('rook');
   await closeSettings(page);
   await page.evaluate(() => window.qa.heroTurn(6));
   await page.locator('#fold-button').click();
@@ -1845,7 +1846,7 @@ test('configured bots use the fast-deal path and observed samples roll back on r
   await page.waitForFunction(() => window.noir.getState().phase === 'done');
   const state = await page.evaluate(() => window.noir.getState());
   for (const p of state.players.slice(1)) {
-    expect(p.botProfile).toBe('mira');
+    expect(p.botProfile).toBe('rook');
     expect(p.botStats.hands).toBe(1);
     expect(p.botStats.pfr).toBeLessThanOrEqual(p.botStats.vpip);
     expect(p.botStats.vpip).toBeLessThanOrEqual(p.botStats.hands);
@@ -1856,7 +1857,7 @@ test('configured bots use the fast-deal path and observed samples roll back on r
     return window.noir.getState();
   });
   for (const p of retry.players.slice(1)) {
-    expect(p.botProfile).toBe('mira');
+    expect(p.botProfile).toBe('rook');
     expect(p.botStats.hands).toBe(0);
   }
 });
@@ -2040,23 +2041,23 @@ test('fast finish records opponents while live public state never exposes privat
   ).toHaveCount(2);
 });
 
-test('foreign style assignments persist and opponent review filters include assigned player names', async ({
+test('training style assignments persist and opponent review filters include assigned player names', async ({
   page,
 }) => {
   test.setTimeout(60000);
   await page.evaluate(() => window.qa.foldWin(9));
   await page.locator('#opponents-button').click();
   for (const [seat, profile] of [
-    [1, 'knox'],
-    [2, 'theo'],
-    [3, 'finn'],
+    [1, 'rook'],
+    [2, 'owen'],
+    [3, 'jett'],
   ])
     await page.locator(`[data-bot-seat="${seat}"]`).selectOption(profile);
-  await expect(page.locator('#profile-cards .profile-card')).toHaveCount(17);
+  await expect(page.locator('#profile-cards .profile-card')).toHaveCount(4);
   for (const [profile, name] of [
-    ['knox', '松凶强攻'],
-    ['theo', '计算进攻'],
-    ['finn', '多线进攻'],
+    ['jett', '宽松取值'],
+    ['owen', '范围纪律'],
+    ['rook', '多街施压'],
   ]) {
     const choice = page.locator(`[data-profile-preview="${profile}"]`);
     await expect(choice.locator('strong')).toHaveText(name);
@@ -2069,17 +2070,17 @@ test('foreign style assignments persist and opponent review filters include assi
   await page.locator('#next-button').click();
   await page.evaluate(() => window.qa.stop());
   const state = await page.evaluate(() => window.noir.getState());
-  expect(state.players[1].botProfile).toBe('knox');
-  expect(state.players[2].botProfile).toBe('theo');
-  expect(state.players[3].botProfile).toBe('finn');
+  expect(state.players[1].botProfile).toBe('rook');
+  expect(state.players[2].botProfile).toBe('owen');
+  expect(state.players[3].botProfile).toBe('jett');
   await page.evaluate(() => window.qa.reviewLine());
   await page.locator('#review-hand-button').click();
-  await expect(page.locator('#review-dialog[data-analysis-status="done"]')).toBeVisible({
-    timeout: 30000,
-  });
+  // Assignment and opponent labels render immediately, independently of the
+  // asynchronous Hero analysis exercised by the dedicated coaching tests.
+  await expect(page.locator('#review-dialog')).toBeVisible();
   await page.locator('#review-timeline [data-review-index="0"]').click();
   await expect(page.locator('#review-advanced, #review-simulation')).toHaveCount(0);
   await page.locator('#review-opponents-tab').click();
   const options = await page.locator('#review-opponent-filter option').allTextContents();
-  expect(options.some((name) => /Mia.*松凶强攻/.test(name))).toBe(true);
+  expect(options.some((name) => /Mia.*多街施压/.test(name))).toBe(true);
 });

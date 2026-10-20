@@ -501,7 +501,16 @@ body[data-records-page='list'] .records-page-heading h1 {
 .seat-name-label,
 .seat-style-label {
   -webkit-touch-callout: none;
+  -webkit-user-select: none;
   user-select: none;
+}
+.seat-style-label {
+  touch-action: manipulation;
+  cursor: help;
+}
+.seat-style-label:focus-visible {
+  outline: 2px solid #b9e6d7;
+  outline-offset: 2px;
 }
 .seat-name-tooltip {
   position: fixed;

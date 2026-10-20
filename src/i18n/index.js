@@ -154,7 +154,7 @@ export function localizeText(value) {
 export function formatChips(value) {
   return compactChips(value, locale === 'en' ? 'en-US' : locale);
 }
-const attributes = ['aria-label', 'title', 'data-mobile-label', 'placeholder'];
+const attributes = ['aria-label', 'title', 'data-mobile-label', 'data-full-name', 'placeholder'];
 // Remember source text on the actual DOM nodes. Language changes only replace
 // presentation values; controls, listeners, focus and game objects stay alive.
 const textSources = new WeakMap();
