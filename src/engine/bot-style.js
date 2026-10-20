@@ -24,6 +24,7 @@ export function resolveBotStyle(profile) {
     turnSemiBluff: null,
     semiBluff: null,
     delayedProbe: 0,
+    valueAttack: 0,
     ...profile.policy,
   };
 }

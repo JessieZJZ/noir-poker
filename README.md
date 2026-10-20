@@ -6,7 +6,7 @@
 
 各端实测范围与限制见[行动提醒验证记录](docs/turn-attention-validation.md)。
 
-训练风格、兼容迁移、完整牌局模拟和匿名 AI 验收入口见[电脑训练风格](docs/bots.md)。本轮资料依据见[风格复核](docs/style-research-2026-10-20.md)，量化结果和原始反馈见[验收报告](docs/style-validation-2026-10-20.md)。
+训练风格、兼容迁移、完整牌局模拟和匿名 AI 验收入口见[电脑训练风格](docs/bots.md)。本轮资料依据见[风格复核](docs/style-research-2026-10-20.md)，八种新阵容的验证状态见[最新记录](docs/style-validation-2026-10-21.md)，四种候选的量化和原始反馈见[历史记录](docs/style-validation-2026-10-20.md)。
 
 复盘决策超过两张时，时间线显示两张完整卡片和第三张的一半，提示横向滚动；对局动态采用更小字号。各端行为及专项验证入口见[复盘说明](docs/review.md)。
 

@@ -4,7 +4,7 @@ import { readFileSync, readdirSync } from 'node:fs';
 import { BOT_PROFILES, getBotProfile, sanitizeBotSettings } from '../../src/engine/bot-profiles.js';
 import { migrateCharacterState } from '../../src/engine/character-state.js';
 import baseline from '../fixtures/character-strategies.json' with { type: 'json' };
-import calibrated from '../fixtures/style-strategies-v5.json' with { type: 'json' };
+import calibrated from '../fixtures/style-strategies-v6.json' with { type: 'json' };
 test('calibrated styles retain an explicit versioned strategy snapshot and the historical baseline', () => {
   assert.deepEqual(
     BOT_PROFILES.map(({ id, axes, sizing, policy }) => ({ id, axes, sizing, policy })),
@@ -14,9 +14,9 @@ test('calibrated styles retain an explicit versioned strategy snapshot and the h
     previous = baseline[0];
   assert.deepEqual(current.axes, previous.axes);
   assert.deepEqual(current.sizing, previous.sizing);
-  assert.equal(current.policy.potControl, 0.35);
+  assert.equal(current.policy.potControl, 0.15);
   assert.equal(baseline.length, 17);
-  assert.equal(BOT_PROFILES.length, 4);
+  assert.equal(BOT_PROFILES.length, 8);
 });
 test('old settings and snapshots migrate identities without changing cards, chips or statistics', () => {
   const legacy = {
@@ -26,14 +26,14 @@ test('old settings and snapshots migrate identities without changing cards, chip
     stats: { hands: 12, wins: 3 },
   };
   const migrated = migrateCharacterState(structuredClone(legacy));
-  assert.equal(migrated.assignments[1], 'owen');
-  assert.equal(migrated.players[0].botProfile, 'owen');
-  assert.equal(migrated.trace.profileName, '范围纪律');
+  assert.equal(migrated.assignments[1], 'vale');
+  assert.equal(migrated.players[0].botProfile, 'vale');
+  assert.equal(migrated.trace.profileName, '强牌诱导');
   assert.deepEqual(migrated.players[0].hole, legacy.players[0].hole);
   assert.equal(migrated.players[0].stack, legacy.players[0].stack);
   assert.deepEqual(migrated.stats, legacy.stats);
-  assert.equal(sanitizeBotSettings(legacy).assignments[2], 'owen');
-  assert.equal(getBotProfile('ivey').id, 'owen');
+  assert.equal(sanitizeBotSettings(legacy).assignments[2], 'vale');
+  assert.equal(getBotProfile('ivey').id, 'vale');
   assert.deepEqual(migrateCharacterState(structuredClone(migrated)), migrated);
 });
 test('distributed source assets contain only original portraits and no retired biographies', () => {

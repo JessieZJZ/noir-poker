@@ -19,11 +19,7 @@ const legacy = {
 };
 // Retired overlapping styles migrate to the retained training archetype.
 const merged = {
-  nico: 'balanced',
-  luka: 'rook',
-  vale: 'owen',
-  mira: 'luka',
-  iris: 'nico',
+  luka: 'nico',
   slate: 'rook',
   knox: 'rook',
   finn: 'rook',

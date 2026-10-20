@@ -71,6 +71,7 @@ async function worker() {
           `--profile=${job.id}`,
           '--public=yes',
           '--opponents=current',
+          ...(args.companions ? [`--companions=${args.companions}`] : []),
         ],
         { stdio: ['ignore', 'ignore', 'inherit', 'ipc'] },
       );

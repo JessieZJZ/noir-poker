@@ -62,8 +62,8 @@ const decide = (id, v, random = () => 0.3) =>
   chooseBotAction(v, get(id), freshBotMood(), 'off', random);
 test('all original characters have distinct names, complete strategy descriptions and local illustrations', () => {
   const named = BOT_PROFILES.filter((p) => p.id !== 'balanced');
-  assert.equal(named.length, 3);
-  assert.equal(new Set(named.map((p) => p.short)).size, 3);
+  assert.equal(named.length, 7);
+  assert.equal(new Set(named.map((p) => p.short)).size, 7);
   for (const p of BOT_PROFILES) {
     assert.equal(p.sources.length, 0);
     assert.equal(p.research, undefined);
@@ -90,27 +90,31 @@ test('character rendering escapes content and contains no biographies, credits o
   assert.match(playerResearchMarkup(get('balanced')), /入池选择/);
 });
 test('small-cbet, draw-pressure and pot-control styles retain distinct executed choices', () => {
-  const flop = decide('rook', view());
+  const flop = decide('nico', view());
   assert.equal(flop.action, 'raise');
   assert.equal(flop.trace.reason, 'small-cbet');
-  assert.equal(flop.amount, 325);
+  assert.equal(flop.amount, 300);
   const turn = decide(
-    'rook',
+    'mira',
     view({ street: 2, equity: 0.4, features: { wet: true, draw: true } }),
     () => 0.1,
   );
   assert.equal(turn.action, 'raise');
-  assert.equal(turn.trace.sizing.fraction, 0.8);
+  assert.equal(turn.trace.sizing.fraction, 0.75);
   const sample = (id) =>
     Array.from({ length: 500 }, (_, i) =>
-      decide(id, view({ equity: 0.57 }), seeded(i + 99)),
+      decide(
+        id,
+        view({ equity: 0.57, history: [{ id: 0, street: 0, action: 'raise', amount: 150 }] }),
+        seeded(i + 99),
+      ),
     ).filter((d) => d.trace.reason === 'pot-control').length;
-  assert.ok(sample('balanced') > sample('rook') + 50);
+  assert.ok(sample('nico') > sample('rook') + 50);
 });
 test('Float needs position, a dry heads-up board, affordable price and no all-in pressure', () => {
   const base = view({ equity: 0.16, currentBet: 250, contestable: 1250 });
   base.legal = { ...base.legal, toCall: 250, callAmount: 250, canCheck: false, canRaise: false };
-  assert.equal(decide('balanced', base, () => 0.1).trace.reason, 'float-continue');
+  assert.equal(decide('iris', base, () => 0.1).trace.reason, 'float-continue');
   for (const change of [
     { inPosition: false },
     { rivals: 2 },
@@ -122,7 +126,7 @@ test('Float needs position, a dry heads-up board, affordable price and no all-in
     { legal: { ...base.legal, toCall: 275, callAmount: 275 } },
   ])
     assert.equal(
-      decide('balanced', { ...base, ...change }, () => 0.9).trace.style.floatContinue,
+      decide('iris', { ...base, ...change }, () => 0.9).trace.style.floatContinue,
       false,
     );
   const delayed = view({
@@ -133,10 +137,10 @@ test('Float needs position, a dry heads-up board, affordable price and no all-in
       { id: 0, street: 2, action: 'check' },
     ],
   });
-  assert.equal(decide('balanced', { ...base, inPosition: false }, () => 0.9).action, 'fold');
-  assert.equal(decide('balanced', delayed).trace.style.context.delayed, true);
+  assert.equal(decide('iris', { ...base, inPosition: false }, () => 0.9).action, 'fold');
+  assert.equal(decide('iris', delayed).trace.style.context.delayed, true);
   assert.equal(
-    decide('balanced', { ...delayed, inPosition: false }).trace.style.context.delayed,
+    decide('iris', { ...delayed, inPosition: false }).trace.style.context.delayed,
     false,
   );
 });

@@ -44,13 +44,15 @@ test('malformed mix ownership cannot reset arbitrary seats', () => {
   assert.equal(toggleMixedLineup(settings).assignments[2], 'owen');
 });
 
-test('nine seats cycle through the smaller active style pool without losing mixed ownership', () => {
+test('nine seats include all eight active styles without losing mixed ownership', () => {
   const settings = toggleMixedLineup(defaultBotSettings(), 9, () => 0.4);
   assert.equal(settings.mixedSeats.length, 8);
-  assert.equal(new Set(Object.values(settings.assignments)).size, 4);
+  assert.equal(new Set(Object.values(settings.assignments)).size, 8);
   assert.ok(
     settings.mixedSeats.every((id) =>
-      ['balanced', 'rook', 'jett', 'owen'].includes(settings.assignments[id]),
+      ['balanced', 'rook', 'jett', 'owen', 'vale', 'nico', 'mira', 'iris'].includes(
+        settings.assignments[id],
+      ),
     ),
   );
   assert.ok(

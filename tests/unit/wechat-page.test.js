@@ -1112,7 +1112,7 @@ for (const playerCount of [5, 6, 7, 8, 9]) {
 test('WeChat exposes original character descriptions without source links or photo credits', (t) => {
   const { page, clipboard } = setup(t, { playerCount: 9 });
   const profiles = page.data.profiles.filter((p) => p.id !== 'balanced');
-  assert.equal(profiles.length, 3);
+  assert.equal(profiles.length, 7);
   for (const profile of profiles) {
     page.viewProfile({ currentTarget: { dataset: { id: profile.id } } });
     const detail = page.data.detailProfile;

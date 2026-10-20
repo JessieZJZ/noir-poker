@@ -12,6 +12,9 @@ const out = resolve(args.out || '.artifacts/style-audit-2026-10-20/current');
 const load = (name) => import(pathToFileURL(join(root, 'src/engine', name + '.js')));
 const engine = await load('poker');
 const { BOT_PROFILES, chooseBotAction, freshBotMood } = await load('bot-profiles');
+const currentCompanions = (args.companions || 'balanced,jett,rook').split(',');
+if (currentCompanions.some((id) => !BOT_PROFILES.some((p) => p.id === id)))
+  throw Error('--companions must contain active style IDs');
 const referenceRoot = resolve(
   args['reference-root'] || '.artifacts/style-audit-2026-10-20/baseline',
 );
@@ -245,7 +248,7 @@ if (args.mode === 'job') {
       // Equity and legality still come from the production botDecision view.
       const referenceId =
         args.opponents === 'current'
-          ? ['balanced', 'jett', 'rook'][actor % 3]
+          ? currentCompanions[actor % currentCompanions.length]
           : ['balanced', 'nico', 'rook'][actor % 3];
       const reference =
         args.opponents === 'current'
@@ -333,6 +336,7 @@ if (args.mode === 'job') {
       protocol,
       referenceRoot,
       opponents: args.opponents || 'frozen',
+      ...(args.opponents === 'current' ? { companions: currentCompanions } : {}),
       chipConservation: true,
       equitySampling: 'production defaults: 28/52; all-in 72/96/256',
     }),
@@ -401,6 +405,7 @@ if (args.mode === 'job') {
             `--root=${root}`,
             `--reference-root=${referenceRoot}`,
             `--opponents=${args.opponents || 'frozen'}`,
+            ...(args.companions ? [`--companions=${args.companions}`] : []),
             `--out=${out}`,
             `--hands=${args.hands || 80}`,
             ...Object.entries(job).map(([k, v]) => `--${k}=${v}`),

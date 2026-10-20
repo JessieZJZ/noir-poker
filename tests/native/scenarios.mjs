@@ -1859,7 +1859,7 @@ export async function nativeScenarios(app) {
     };
   });
   await check('training-styles-and-persistence', async () => {
-    const ids = ['balanced', 'rook', 'jett', 'owen'];
+    const ids = ['balanced', 'rook', 'jett', 'owen', 'vale', 'nico', 'mira', 'iris'];
     await app.click('#opponents-button');
     const details = [];
     for (const id of ids) {
@@ -1903,7 +1903,7 @@ export async function nativeScenarios(app) {
         assert.equal(detail.images[0].src, `/portraits/${id}.jpg`);
       }
       assert.equal(detail.overflow, false);
-      if (id === 'owen') {
+      if (id === 'iris') {
         await app.screenshot('delayed-aggression-style-detail');
         if (app.comparePage)
           await app.comparePage('player', [

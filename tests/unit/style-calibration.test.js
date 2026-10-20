@@ -31,8 +31,8 @@ test('retired style selections migrate idempotently without becoming an unavaila
     'rook',
     'rook',
     'owen',
-    'owen',
-    'owen',
+    'vale',
+    'vale',
     'owen',
     'owen',
   ]);
@@ -41,13 +41,13 @@ test('retired style selections migrate idempotently without becoming an unavaila
 test('strong-hand traps stand out on deep dry boards and do not leak into wet or shallow protection spots', () => {
   const v = deceptiveView('9s 9h', '9d Kc 2h', { equity: 0.9, inPosition: false });
   const check = (d) => d.action === 'check';
-  assert.ok(rate('owen', v, check) > rate('balanced', v, check) + 0.25);
+  assert.ok(rate('vale', v, check) > rate('balanced', v, check) + 0.25);
   for (const changed of [
     deceptiveView('9s 9h', '9d Kc 2c', { equity: 0.9, inPosition: false }),
     { ...v, stack: 500 },
     { ...v, rivals: 2, opponents: [...v.opponents, { id: 2, stack: 5000, allin: false }] },
   ])
-    assert.notEqual(decide('owen', changed, 2).trace.reason, 'strong-trap');
+    assert.notEqual(decide('vale', changed, 2).trace.reason, 'strong-trap');
 });
 test('draw emphasis affects executed aggression but retains price, all-in and population boundaries', () => {
   const v = deceptiveView('As Js', 'Qs 8h 2s', {
@@ -59,7 +59,7 @@ test('draw emphasis affects executed aggression but retains price, all-in and po
     ],
   });
   const raise = (d) => d.action === 'raise';
-  assert.ok(rate('rook', v, raise) > rate('balanced', v, raise) + 0.25);
+  assert.ok(rate('mira', v, raise) > rate('balanced', v, raise) + 0.25);
   for (const changed of [
     { ...v, rivals: 3 },
     { ...v, opponents: [{ id: 0, stack: 0, allin: true }] },
@@ -70,7 +70,7 @@ test('draw emphasis affects executed aggression but retains price, all-in and po
     },
     { ...v, difficulty: 'easy' },
   ])
-    assert.equal(decide('rook', changed, 2).trace.semiBluff, false);
+    assert.equal(decide('mira', changed, 2).trace.semiBluff, false);
 });
 test('the delayed style can float at standard difficulty and cannot bypass an expensive call or act from no position', () => {
   const v = deceptiveView('Ks Jh', 'Ac 7d 2h', {
@@ -92,13 +92,13 @@ test('the delayed style can float at standard difficulty and cannot bypass an ex
     },
   });
   const call = (d) => d.action === 'call';
-  assert.ok(rate('balanced', v, call) > 0.25);
+  assert.ok(rate('iris', v, call) > 0.25);
   for (const changed of [
     { ...v, inPosition: false },
     { ...v, difficulty: 'easy' },
     { ...v, legal: { ...v.legal, toCall: 300, callAmount: 300 } },
   ])
-    assert.equal(decide('balanced', changed, 2).trace.style.floatContinue, false);
+    assert.equal(decide('iris', changed, 2).trace.style.floatContinue, false);
   const turn = deceptiveView('Ks Jh', 'Ac 7d 2h 9s', {
     equity: 0.25,
     difficulty: 'normal',
@@ -107,7 +107,28 @@ test('the delayed style can float at standard difficulty and cannot bypass an ex
       { id: 0, street: 2, action: 'check', amount: 0 },
     ],
   });
-  assert.ok(rate('balanced', turn, (d) => d.action === 'raise') > 0.15);
+  assert.ok(rate('iris', turn, (d) => d.action === 'raise') > 0.15);
+});
+
+test('supported ordinary value hands remain active without admitting unsupported air as value', () => {
+  const publicSituation = {
+    equity: 0.68,
+    inPosition: false,
+    rivals: 3,
+    opponents: [0, 2, 3].map((id) => ({ id, stack: 5000, allin: false })),
+    history: [
+      { id: 1, street: 0, action: 'raise', amount: 150 },
+      { id: 0, street: 1, action: 'check', amount: 0 },
+      { id: 2, street: 1, action: 'check', amount: 0 },
+    ],
+  };
+  const topPair = deceptiveView('As Kh', 'Ad 6c 5h', publicSituation);
+  assert.ok(rate('balanced', topPair, (d) => d.action === 'raise') > 0.76);
+  const air = deceptiveView('9s 8h', 'Ad Qc 5h', { ...publicSituation, equity: 0.25 });
+  assert.equal(
+    rate('balanced', air, (d) => d.action === 'raise'),
+    0,
+  );
 });
 
 // Regression from anonymous session A18: a weak top pair must not use the
@@ -163,7 +184,7 @@ test('all historical and retired selections resolve transitively to active style
   const active = new Set(BOT_PROFILES.map((p) => p.id));
   for (const p of original) assert.ok(active.has(getBotProfile(p.id).id), p.id);
   const settings = sanitizeBotSettings({ assignments: { 1: 'vale', 2: 'mira', 3: 'iris' } });
-  assert.deepEqual(Object.values(settings.assignments).slice(0, 3), ['owen', 'rook', 'balanced']);
+  assert.deepEqual(Object.values(settings.assignments).slice(0, 3), ['vale', 'mira', 'iris']);
 });
 
 test('safe multiway strong hands seek value while threat boards retain their protection', async () => {

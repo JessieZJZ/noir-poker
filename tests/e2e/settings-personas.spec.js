@@ -119,9 +119,13 @@ test('style assignments, mixed lineups and emotions automatically persist while 
   expect(mixed.mixed).toBe(true);
   expect(mixed.mixedSeats).toEqual([2, 3, 4, 5]);
   expect(mixed.assignments['1']).toBe('rook');
-  expect(new Set(mixed.mixedSeats.map((id) => mixed.assignments[id]))).toEqual(
-    new Set(['balanced', 'rook', 'jett', 'owen']),
-  );
+  const automatic = mixed.mixedSeats.map((id) => mixed.assignments[id]);
+  expect(new Set(automatic).size).toBe(4);
+  expect(
+    automatic.every((id) =>
+      ['balanced', 'rook', 'jett', 'owen', 'vale', 'nico', 'mira', 'iris'].includes(id),
+    ),
+  ).toBe(true);
   await expect(page.locator('#mix-opponents')).toHaveAttribute('aria-pressed', 'true');
   // The settings cover all future seats, including those currently off table.
   await page.locator('[data-bot-seat="8"]').selectOption('balanced');
@@ -403,8 +407,8 @@ test('all retained illustrated styles show behavior guidance and assignments sur
   await page.evaluate(() => window.qa.foldWin(9));
   await openSettings(page);
   await page.locator('#player-count').selectOption('9');
-  await expect(page.locator('.profile-card')).toHaveCount(4);
-  await expect(page.locator('#profile-cards img')).toHaveCount(3);
+  await expect(page.locator('.profile-card')).toHaveCount(8);
+  await expect(page.locator('#profile-cards img')).toHaveCount(7);
   const profiles = await page.evaluate(async () =>
     (await import('/src/engine/bot-profiles.js')).BOT_PROFILES.filter((p) => p.id !== 'balanced'),
   );

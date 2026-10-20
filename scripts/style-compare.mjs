@@ -7,7 +7,42 @@ const data = JSON.parse(readFileSync(join(directory, 'probes.json'))),
 const seeded = (n) => () => (n = (Math.imul(n, 1664525) + 1013904223) >>> 0) / 4294967296;
 const fields = ['raise', 'call', 'check', 'small', 'large', 'continue'];
 const rate = (s, field) => (field === 'continue' ? 1 - s.fold / s.n : s[field] / s.n);
+function playerCounts(a, b, field) {
+  const groups = new Map();
+  for (let i = 0; i < a.snapshots.length; i++) {
+    const x = a.snapshots[i],
+      y = b.snapshots[i];
+    if (x.unit !== y?.unit) throw Error('Unpaired snapshots');
+    const count = x.unit.match(/^[^-]+-([5-9])-(?:normal|hard)-\d+-\d+$/)?.[1];
+    if (!count) throw Error(`Snapshot has no table-size identity: ${x.unit}`);
+    const g = groups.get(count) || { first: 0, second: 0, decisions: 0, snapshots: 0 };
+    if (x.n !== y.n) throw Error('Unequal paired decision counts');
+    g.first += rate(x, field) * x.n;
+    g.second += rate(y, field) * y.n;
+    g.decisions += x.n;
+    g.snapshots++;
+    groups.set(count, g);
+  }
+  return Object.fromEntries(
+    [5, 6, 7, 8, 9].map((count) => {
+      const g = groups.get(String(count));
+      return [
+        count,
+        g
+          ? {
+              firstRate: g.first / g.decisions,
+              secondRate: g.second / g.decisions,
+              differencePP: ((g.first - g.second) / g.decisions) * 100,
+              snapshots: g.snapshots,
+              conditionalDecisionsPerStyle: g.decisions,
+            }
+          : null,
+      ];
+    }),
+  );
+}
 function paired(a, b, field) {
+  if (a.snapshots.length !== b.snapshots.length) throw Error('Unequal paired snapshots');
   const groups = new Map();
   for (let i = 0; i < a.snapshots.length; i++) {
     const x = a.snapshots[i],
@@ -81,6 +116,7 @@ if (args.lock) {
       secondRate: rate(b, field),
       ...effect,
       strata,
+      byPlayers: playerCounts(a, b, field),
       passed:
         effect.handClusters >= 30 &&
         Math.abs(effect.differencePP) >= 20 &&
@@ -113,7 +149,15 @@ for (let i = 0; i < profiles.length; i++)
       const b = data.results[second][metric];
       for (const field of fields) {
         const difference = Math.abs(rate(a, field) - rate(b, field));
-        if (difference >= 0.18) metrics.push({ metric, field, ...paired(a, b, field) });
+        if (difference >= 0.18)
+          metrics.push({
+            metric,
+            field,
+            firstRate: rate(a, field),
+            secondRate: rate(b, field),
+            ...paired(a, b, field),
+            byPlayers: playerCounts(a, b, field),
+          });
       }
     }
     metrics.sort((a, b) => Math.abs(b.differencePP) - Math.abs(a.differencePP));

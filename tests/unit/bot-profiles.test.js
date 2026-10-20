@@ -79,12 +79,12 @@ test('all eight mixed 9-max assignments reach the executed policy with the corre
   const assignments = {
     1: 'rook',
     2: 'owen',
-    3: 'rook',
+    3: 'vale',
     4: 'jett',
-    5: 'rook',
-    6: 'rook',
-    7: 'owen',
-    8: 'rook',
+    5: 'mira',
+    6: 'nico',
+    7: 'iris',
+    8: 'balanced',
   };
   for (let id = 1; id <= 8; id++) {
     const g = newGame(9, { smallBlind: 25, bigBlind: 50, startingStack: 5000, chipUnit: 25 });

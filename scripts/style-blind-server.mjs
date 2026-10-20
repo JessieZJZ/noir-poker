@@ -9,6 +9,10 @@ const args = Object.fromEntries(process.argv.slice(2).map((v) => v.replace(/^--/
 const root = resolve(args.root || '.');
 const { newGame, startHand, botDecision, act, advanceStreet, legalActions, potSize, seatPosition } =
   await import(pathToFileURL(join(root, 'src/engine/poker.js')));
+const { BOT_PROFILES } = await import(pathToFileURL(join(root, 'src/engine/bot-profiles.js')));
+const companions = (args.companions || 'balanced,jett,rook').split(',');
+if (companions.some((id) => !BOT_PROFILES.some((p) => p.id === id)))
+  throw Error('--companions must contain active style IDs');
 const packet = resolve(args.packet || '.artifacts/style-audit-2026-10-20/blind-round-1-isolated');
 const seeded = (n) => () => (n = (Math.imul(n, 1664525) + 1013904223) >>> 0) / 4294967296;
 const cards = (a) => a.map((c) => '23456789TJQKA'[c.rank - 2] + 'shcd'[c.suit]).join(' ');
@@ -120,7 +124,7 @@ const server = createServer(async (req, res) => {
           Math.random = old;
         }
         s.game.players.forEach((p) => {
-          p.botProfile = p.id === s.target ? s.key[s.code] : ['balanced', 'jett', 'rook'][p.id % 3];
+          p.botProfile = p.id === s.target ? s.key[s.code] : companions[p.id % companions.length];
         });
         s.random = seeded(313131 + Number(id) * 1031 + s.number * 70001);
         s.events = [];

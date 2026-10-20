@@ -272,7 +272,7 @@ test('Japanese and Korean profile cards and ranges fit a narrow settings page', 
     await page.locator('#language-select').selectOption(locale);
     await expect(page.locator('html')).toHaveAttribute('lang', locale);
     const cards = page.locator('.profile-card');
-    await expect(cards).toHaveCount(4);
+    await expect(cards).toHaveCount(8);
     const bounds = await cards.evaluateAll((items) =>
       items.map((el) => ({
         height: el.getBoundingClientRect().height,

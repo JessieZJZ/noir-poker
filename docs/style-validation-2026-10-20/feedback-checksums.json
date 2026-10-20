@@ -458,5 +458,77 @@
   {
     "file": "round-7/reviewer-3/preflop-assist-plan.md",
     "sha256": "febc6c82ee0c1dd7653d584765e1471e142a11199cc97c030ca7ee6e1bb505b7"
+  },
+  {
+    "file": "round-8/reviewer-1/classification-notes.md",
+    "sha256": "749e3e4cc422ff8f1795e557aff70ff3310d9cca6f16149c82c53e2bcc179c4e"
+  },
+  {
+    "file": "round-8/reviewer-1/classifications.json",
+    "sha256": "7e377b353f4b5a98944db1bb404558c30d3c7e95873193246ddc4ea56e368300"
+  },
+  {
+    "file": "round-8/reviewer-1/free-review.md",
+    "sha256": "3b3b92d8084d611710ca23943a5a957a6076b6326532f942d36bc41eea80a8bc"
+  },
+  {
+    "file": "round-8/reviewer-1/hero-plan.md",
+    "sha256": "2ad489747ae44bb79158ec75c5cc335806dfa4b0afc3ff311ef68532422d22ca"
+  },
+  {
+    "file": "round-8/reviewer-1/interactive-audit.json",
+    "sha256": "0e645c06e66be39111e7968968f67b4c4ced6ab106dab9a345d87b60e50d8632"
+  },
+  {
+    "file": "round-8/reviewer-1/interactive-review.md",
+    "sha256": "a21e7b1364f2ae19ea6d37d564a688526719de2ca77edc4b64a3fc6b39670aa9"
+  },
+  {
+    "file": "round-8/reviewer-2/classification-notes.md",
+    "sha256": "a951506f48f182ca268071631e2216094b636604d60acdccfece44ec8c1a89d6"
+  },
+  {
+    "file": "round-8/reviewer-2/classifications.json",
+    "sha256": "098c7b6d4156d5738257092fe8f2a1b7e6792522906d2731cda1db5cd7613f14"
+  },
+  {
+    "file": "round-8/reviewer-2/free-review.md",
+    "sha256": "afe8e8b9f31ab4fea04848a1f5598a23b52da7b6ceba9dd3e1c1ab679581b36c"
+  },
+  {
+    "file": "round-8/reviewer-2/hero-plan.md",
+    "sha256": "ad4d5dc4b8d28d6fb185f49f8d9fb319f7f062f85c54dbdaf4bc50bf2b55de83"
+  },
+  {
+    "file": "round-8/reviewer-2/interactive-audit.json",
+    "sha256": "02c78769caa2c9d239877e88cad4474fb54267ddaebb253f1c0b3ebbc6cb8387"
+  },
+  {
+    "file": "round-8/reviewer-2/interactive-review.md",
+    "sha256": "d4ecd3b920673c07ed1576b48683a1aecc445b0832ccefc0045f380dd14b455b"
+  },
+  {
+    "file": "round-8/reviewer-3/classification-notes.md",
+    "sha256": "cb37a4f3ccdf597a15d9b7c6447cb535fc2275a273fd49282c0deb32a1ebc996"
+  },
+  {
+    "file": "round-8/reviewer-3/classifications.json",
+    "sha256": "6cb7ac1115ae14a59f092a9ea6f2cb994ce16b701c5976590753fb33f6a60661"
+  },
+  {
+    "file": "round-8/reviewer-3/free-review.md",
+    "sha256": "86f372efaf459a8ae974475741a6df7985ca1ba743086455a52369c2ffddc1f4"
+  },
+  {
+    "file": "round-8/reviewer-3/hero-plan.md",
+    "sha256": "666f928262a84a68c747f845bd292acacbfcd9254e0ba18a3e02703c3085c980"
+  },
+  {
+    "file": "round-8/reviewer-3/interactive-audit.json",
+    "sha256": "df4bf356b5e45dbec509c7cc3c128da2f2562702bd67e46c36721bdce3d45545"
+  },
+  {
+    "file": "round-8/reviewer-3/interactive-review.md",
+    "sha256": "6224da7ce17c0a92a47e0515222774a3dd79f5dcba026efe6ed12f5000a52684"
   }
 ]

@@ -146,7 +146,7 @@ test('all styles retain legal whole-chip bets, conservation and no hidden-card p
       assignments: Object.fromEntries(
         Array.from({ length: count - 1 }, (_, i) => [
           i + 1,
-          ['balanced', 'rook', 'jett', 'owen'][i % 4],
+          ['balanced', 'rook', 'jett', 'owen', 'vale', 'nico', 'mira', 'iris'][i % 8],
         ]),
       ),
     });

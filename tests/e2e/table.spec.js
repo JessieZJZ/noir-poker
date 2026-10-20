@@ -1551,22 +1551,22 @@ test('nine-seat style assignment shows every persona at all sizes and executes t
   const assignments = {
     1: 'rook',
     2: 'owen',
-    3: 'rook',
+    3: 'vale',
     4: 'jett',
-    5: 'rook',
-    6: 'rook',
-    7: 'owen',
-    8: 'rook',
+    5: 'mira',
+    6: 'nico',
+    7: 'iris',
+    8: 'balanced',
   };
   const labels = [
     '多街施压',
     '范围纪律',
-    '多街施压',
+    '强牌诱导',
     '宽松取值',
-    '多街施压',
-    '多街施压',
-    '范围纪律',
-    '多街施压',
+    '听牌施压',
+    '小注控池',
+    '延迟进攻',
+    '均衡',
   ];
   await page.evaluate(() => window.qa.foldWin(9));
   await page.locator('#opponents-button').click();
@@ -1657,11 +1657,11 @@ test('all named portraits preview immediately, follow saved styles next hand and
   page,
 }) => {
   test.setTimeout(60000);
-  const profiles = ['rook', 'owen', 'rook', 'jett', 'rook', 'rook', 'owen', 'rook'];
+  const profiles = ['rook', 'owen', 'vale', 'jett', 'mira', 'nico', 'iris', 'rook'];
   await setPlayerCount(page, 9);
   await page.evaluate(() => window.qa.foldWin(9));
   await page.locator('#opponents-button').click();
-  await expect(page.locator('#profile-cards img')).toHaveCount(3);
+  await expect(page.locator('#profile-cards img')).toHaveCount(7);
   await expect
     .poll(() =>
       page
@@ -1674,6 +1674,7 @@ test('all named portraits preview immediately, follow saved styles next hand and
   await expect(page.locator('#profile-cards')).toContainText('多街施压');
   await expect(page.locator('#profile-cards')).not.toContainText('谈老板');
   await assignNamedLineup(page);
+  await page.locator('[data-bot-seat="8"]').selectOption('rook');
   const firstDraft = page.locator('[data-opponent-row="1"] .opponent-portrait');
   await expect(firstDraft.locator('img')).toHaveAttribute('data-portrait-profile', 'rook');
   await page.locator('[data-bot-seat="1"]').focus();
@@ -2053,7 +2054,7 @@ test('training style assignments persist and opponent review filters include ass
     [3, 'jett'],
   ])
     await page.locator(`[data-bot-seat="${seat}"]`).selectOption(profile);
-  await expect(page.locator('#profile-cards .profile-card')).toHaveCount(4);
+  await expect(page.locator('#profile-cards .profile-card')).toHaveCount(8);
   for (const [profile, name] of [
     ['jett', '宽松取值'],
     ['owen', '范围纪律'],
