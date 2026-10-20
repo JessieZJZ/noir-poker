@@ -99,9 +99,13 @@
   display: none;
 }
 .entry-waiting .game-header {
+  flex-basis: 50px;
   flex-wrap: wrap;
   align-content: center;
   gap: 2px;
+}
+.entry-waiting .hint-slot {
+  display: none;
 }
 .entry-waiting .hand-label {
   width: 100%;

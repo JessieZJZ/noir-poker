@@ -121,6 +121,22 @@ try {
   assert.equal(await settings.style('border-top-width'), '0px');
   assert.equal((await (await page.$('#join-table-button')).text()).trim(), '入座开练');
   assert.equal((await page.$$('.activity-panel')).length, 0);
+  const header = await page.$('.game-header');
+  const headerOffset = await header.offset(),
+    headerSize = await header.size();
+  for (const selector of ['.hand-label', '.blind-info']) {
+    const label = await page.$(selector);
+    assert.ok(label, `${selector} must exist`);
+    const offset = await label.offset(),
+      size = await label.size();
+    assert.ok(size.height > 0);
+    assert.ok(offset.top >= headerOffset.top, `${selector} must not clip above the header`);
+    assert.ok(
+      offset.top + size.height <= headerOffset.top + headerSize.height,
+      `${selector} must stay inside the header`,
+    );
+  }
+  assert.equal((await page.$$('.hero-identity .position')).length, 0);
   report.checks.push({ name: 'compact-labelled-settings-and-no-empty-activity', font, menuFont });
   await (await page.$('#join-table-button')).tap();
   const during = await wait(async () => {

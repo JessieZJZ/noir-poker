@@ -256,10 +256,15 @@ test('WeChat publishes the waiting table atomically after the launch artwork', (
   assert.equal(definition.data.tableReady, false);
   assert.equal(page.data.tableReady, true);
   assert.equal(page.data.heroCards.length, 0);
+  assert.equal(page.data.heroPosition, '');
   assert.equal(page.data.waitingForSeat, true);
   assert.equal(page.data.seats.length, page.data.settings.playerCount - 1);
   assert.match(template, /wx:if="\{\{!tableReady\}\}" class="launch-screen"/);
   assert.match(template, /<view\s+wx:else\s+class="screen /);
+  assert.match(
+    template,
+    /<text\s+wx:if="\{\{!waitingForSeat\}\}"\s+class="position">\s*\{\{heroPosition\}\}\s*<\/text>/,
+  );
 });
 
 test('measuring the pot sheet cannot change the table pot row or public-card placement', (t) => {
