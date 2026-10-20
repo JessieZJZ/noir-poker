@@ -4,13 +4,16 @@ import { actionLabel } from '../engine/action-labels.js';
 import { callPrice } from './equity.js';
 import { legalRaiseTo } from '../engine/bet-sizing.js';
 import { valuePlan } from './matchups.js';
+import { foldPressure, foldWinNote } from './presentation.js';
 export { valuePlan } from './matchups.js';
 
 export function comparisonRoutes(s, ctx, { code, status, alternative, pre }) {
   const label = (a) => actionLabel(s, a.action, a.amount);
   const same = (a, b) => a.action === b.action && (a.action !== 'raise' || a.amount === b.amount);
   const actual = { action: s.action, amount: s.amount };
-  const closing = callPrice(s).closing;
+  const closing = callPrice(s).closing,
+    pressure = foldPressure(s),
+    foldNote = pressure.hasAllInOpponent ? foldWinNote(s) : '';
   const primary = {
     ...alternative,
     label: label(alternative),
@@ -29,6 +32,44 @@ export function comparisonRoutes(s, ctx, { code, status, alternative, pre }) {
           amount: legalRaiseTo(amount, s.legal),
         }
       : null;
+  if (code === 'positioned-entry') {
+    const entry = ctx.positionedEntry;
+    primary.condition = '跟注成本相对有效筹码较小，翻后有位置，底牌能够争取强牌或强听牌。';
+    primary.tradeoff = [
+      entry.waiting
+        ? '身后的盲位仍可能再加注，遇到新压力后要按新的价格重新判断。'
+        : '本轮跟注后结束下注，下一街的投入仍要另算。',
+      entry.shape === 'connector' || entry.shape === 'one-gap'
+        ? '你补成同花时，也可能遇到更高同花。'
+        : '',
+    ].join('');
+    secondary = entry.raiseTo
+      ? {
+          action: 'raise',
+          amount: entry.raiseTo,
+          condition: pre.callersAfterOpen
+            ? '开池者范围较宽、平跟者有足够弃牌空间，且对手不会频繁以强再加注反击时。'
+            : '开池者范围较宽、有足够弃牌空间，且对手不会频繁以强再加注反击时。',
+          tradeoff: '争取直接拿池，被跟注后利用位置和底牌潜力，不能仅凭主动权认定有范围优势。',
+        }
+      : null;
+    if (secondary) secondary.label = label(secondary);
+    return { primary, secondary };
+  }
+  if (code === 'weak-late-limp') {
+    primary.condition = '底牌缺少同花和连接潜力，后面仍有玩家行动时，不因跟注成本低就跛入。';
+    primary.tradeoff = '保留后手，也放弃本次改善与争夺盲注的机会。';
+    secondary = pressure.hasAllInOpponent ? null : raise(2.5 * bigBlindOf(s));
+    if (secondary && secondary.amount <= 3 * bigBlindOf(s) && secondary.amount < s.legal.maxRaiseTo)
+      Object.assign(secondary, {
+        label: label(secondary),
+        condition:
+          '只有已有公开行动显示盲位过度弃牌，且能在被继续后及时控池或退出时，才考虑主动开池。',
+        tradeoff: '用小尺度争夺盲注，面对跟注或再加注仍要重新判断，不能假设未观察到的弃牌倾向。',
+      });
+    else secondary = null;
+    return { primary, secondary };
+  }
   const value = ctx.valuePlan || valuePlan(s, ctx);
   if (
     value.primary &&
@@ -83,13 +124,17 @@ export function comparisonRoutes(s, ctx, { code, status, alternative, pre }) {
           '主动争夺盲注，但较强 Qx/Kx 与再加注会使同花潜力难以实现，模拟结果只是该假设下的比较。',
       });
   } else if (code === 'squeeze-candidate') {
-    primary.condition = '缺少开池者宽范围、平跟者可弃牌的依据时，优先收紧。';
+    primary.condition = pressure.hasAllInOpponent
+      ? '缺少仍有筹码的对手愿意弃牌和剩余摊牌机会的依据时，优先收紧。'
+      : '缺少开池者宽范围、平跟者可弃牌的依据时，优先收紧。';
     primary.tradeoff = '避免弱 A 被强继续范围压制，阻断部分强 A 不等于足够弃牌率。';
     secondary = raise(s.currentBet * 4.5);
     if (secondary)
       Object.assign(secondary, {
-        condition: '开池者范围宽、平跟者有封顶倾向，且对手会对再加注弃牌时，才比较挤压。',
-        tradeoff: '争夺多人死钱，但失败成本更大，被跟注或 4-bet 后需停止无依据施压。',
+        condition: pressure.hasAllInOpponent
+          ? '仅当仍有筹码的对手会退出，且剩余摊牌机会足以支持时讨论，不能要求已全下的玩家弃牌。'
+          : '开池者范围宽、平跟者有封顶倾向，且对手会对再加注弃牌时，才比较挤压。',
+        tradeoff: foldNote || '争夺多人死钱，但失败成本更大，被跟注或 4-bet 后需停止无依据施压。',
       });
   } else if (['weak-threebet-defense', 'weak-fourbet-defense', 'weak-entry'].includes(code)) {
     primary.condition = '大尺度、多人继续或少诈唬的强范围下，优先减少新增投入。';
@@ -108,14 +153,19 @@ export function comparisonRoutes(s, ctx, { code, status, alternative, pre }) {
   } else if (alternative.action === 'raise') {
     primary.condition =
       code === 'pressure-bet'
-        ? '有明确较好的牌会退出，且尺度带来的弃牌率能补偿被跟注后的弱权益。'
+        ? pressure.hasAllInOpponent
+          ? '仍有筹码的对手会放弃较好的牌，且剩余摊牌机会与投入尺度能够支持进攻。'
+          : '有明确较好的牌会退出，且尺度带来的弃牌率能补偿被跟注后的弱权益。'
         : ctx.draw.outs && !['overpair', 'set', 'strong', 'two-pair'].includes(ctx.handClass)
-          ? '听牌有被跟注后的权益，且目标范围有足够弃牌。'
+          ? pressure.hasAllInOpponent
+            ? '听牌有摊牌改善机会，且仍有筹码的对手有足够弃牌空间。'
+            : '听牌有被跟注后的权益，且目标范围有足够弃牌。'
           : '列得出会付费的较弱牌，并能承担被加注后重新判断。';
     primary.tradeoff =
-      s.street === 3
+      foldNote ||
+      (s.street === 3
         ? '比较取值和弃牌收益，尺度越大，对手继续范围可能越强。'
-        : '建立底池与保护权益，尺度越大，对手继续范围可能越强。';
+        : '建立底池与保护权益，尺度越大，对手继续范围可能越强。');
     secondary = {
       action: s.legal.canCheck ? 'check' : 'call',
       amount: s.legal.callAmount,
@@ -167,9 +217,13 @@ export function comparisonRoutes(s, ctx, { code, status, alternative, pre }) {
       if (secondary)
         Object.assign(secondary, {
           condition: ctx.draw.outs
-            ? '对手有足够弃牌且听牌能承担被跟注时，比较半诈唬。'
-            : '有明确较弱跟注目标，或对手会放弃较好的牌时，没有依据就保留过牌。',
-          tradeoff: '换取价值或弃牌权益，但暴露于跟注／加注，没有证明这条路线更赚。',
+            ? pressure.hasAllInOpponent
+              ? '仍有筹码的对手有足够弃牌空间，且听牌能支持剩余摊牌机会时，比较半诈唬。'
+              : '对手有足够弃牌且听牌能承担被跟注时，比较半诈唬。'
+            : pressure.hasAllInOpponent
+              ? '仍有筹码的对手会用弱牌跟注或放弃较好的牌时才考虑，没有依据就保留过牌。'
+              : '有明确较弱跟注目标，或对手会放弃较好的牌时，没有依据就保留过牌。',
+          tradeoff: foldNote || '换取价值或弃牌权益，但暴露于跟注／加注，没有证明这条路线更赚。',
         });
     }
   }

@@ -11,6 +11,7 @@ import { drawLabel } from './narrative.js';
 import { actorAtPosition } from '../engine/player-identity.js';
 import { historyActionLabel } from '../engine/action-labels.js';
 import { strengthParts, boardParts } from './presentation.js';
+import { preflopRaiseTarget } from './preflop.js';
 
 const identify = (card) => `${card.rank}-${card.suit}`;
 const number = compactChips;
@@ -84,11 +85,28 @@ export function preflopRangeNotes(s) {
         '再加注通常比普通开池更集中于大对子和 AK，AQ、同花高张也可能这样打。' +
           `${name(last.id)}${historyActionLabel(s.history, s.history.indexOf(last))}。`,
       );
+    else if (last.amount > 8 * bigBlindOf(s))
+      notes.push(
+        `这次开池尺度明显大于普通开池，不能只根据位置套用常规范围，需要结合尺度和公开行动判断。${name(last.id)}${historyActionLabel(s.history, s.history.indexOf(last))}。`,
+      );
     else
       notes.push(
         `${early ? '前位开池需要越过更多玩家，通常应先按较紧的范围防守，再结合开池尺度和自己的翻后潜力决定是否继续，而' : late ? '后位开池需要越过的玩家较少，范围可能包含更多小对子、同花牌和高张。' : '面对开池，需要结合尺度、位置和翻后潜力判断。'}${name(last.id)}开池到 ${number(last.amount)}，可能拿着对子、强 A 或同花高张。`,
       );
-  } else
+  } else if (
+    s.legal.canCheck &&
+    !(s.pending || []).some(
+      (id) =>
+        id !== 0 &&
+        !s.players?.find((p) => p.id === id)?.folded &&
+        !s.players?.find((p) => p.id === id)?.allin,
+    )
+  )
+    notes.push(
+      `本轮已轮到${subject}最后回应，可以免费过牌看翻牌。` +
+        (s.legal.canRaise ? '也可结合底牌和对手范围比较主动加注。' : ''),
+    );
+  else
     notes.push(
       '前面还没有对手加注，后面的玩家仍可能入池或再加注，需要结合位置、底牌和价格决定是否主动争夺底池。',
     );
@@ -129,7 +147,7 @@ export function preflopRangeNotes(s) {
     );
   if (s.hole.some((card) => card.rank === 14))
     notes.push(
-      `${s.players?.find((p) => p.id === 0)?.name || '你'}手里有一张 A，对手能拿到 AA、AK、AQ、AJ 的组合会少一些，但这些强牌仍然可能出现。`,
+      `${s.players?.find((p) => p.id === 0)?.name || '你'}手中的 A 会减少对手拿到 AA、AK、AQ、AJ 的组合，但这些强牌仍然可能出现。`,
     );
   return notes;
 }
@@ -437,7 +455,7 @@ export function valuePlan(s, c, matchups = c.matchups || handMatchups(s, c)) {
   const empty = { primary: null, secondary: null, kind: null, reason: '' };
   if (!matchups || matchups.strength === 'board') return empty;
   const shoveReason = () =>
-    `当时底池 ${number(s.pot)}，你还剩 ${number(s.stack)}，这手强牌可比较价值全下，让${s.street ? '弱成牌或听牌' : '较弱起手牌'}为剩余筹码付费。`;
+    `当时底池 ${number(s.pot)}，你还剩 ${number(s.stack)}，这手强牌可比较价值全下，让${s.street === 3 ? '弱成牌' : s.street ? '弱成牌或听牌' : '较弱起手牌'}为剩余筹码付费。`;
   const f = spotFacts(s, c),
     bigBlind = bigBlindOf(s),
     live = (s.players || []).filter((p) => p.id !== 0 && !p.folded && !p.allin && p.stack > 0),
@@ -514,9 +532,7 @@ export function valuePlan(s, c, matchups = c.matchups || handMatchups(s, c)) {
     };
   if (!valueHand && !strongPreflop) return empty;
   const amount = !s.street
-      ? s.currentBet <= bigBlind
-        ? 3 * bigBlind
-        : s.currentBet * (c.inPosition ? 3 : 4)
+      ? preflopRaiseTarget(s, c)
       : s.currentBet > 0
         ? s.currentBet * (c.inPosition ? 2.5 : 3)
         : s.pot * (c.texture.wet || c.opponents > 1 ? 0.65 : 0.4),

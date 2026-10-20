@@ -1875,9 +1875,24 @@ export async function nativeScenarios(app) {
       readReviewTagGeometry,
       '#review-opponents .review-timeline',
     );
-    assert.ok(opponentTags.length > 0);
-    for (const tag of opponentTags)
-      assert.ok(Math.abs(tag.height - tag.naturalHeight) <= 1, JSON.stringify(tag));
+    assert.equal(opponentTags.length, 0, 'Opponent action cards omit every persona/style tag');
+    const opponentCards = await app.evaluate(() =>
+      [...document.querySelectorAll('#review-opponents .review-step')].map((card) => ({
+        number: card.querySelector('.review-step-number')?.textContent,
+        playerAndStreet: card.querySelector('small')?.textContent,
+        action: card.querySelector('strong')?.textContent,
+      })),
+    );
+    assert.ok(opponentCards.length > 0, 'Real recorded opponent action cards remain visible');
+    opponentCards.forEach((card, index) => {
+      assert.equal(card.number, String(index + 1));
+      assert.ok(
+        card.playerAndStreet?.split(/[，,]/).every((part) => part.trim()) &&
+          card.playerAndStreet.split(/[，,]/).length >= 2,
+        'Each opponent card retains its player and street',
+      );
+      assert.ok(card.action?.trim(), 'Each opponent card retains its executed action');
+    });
     const overflow = await app.evaluate(() => {
       const track = document.querySelector('#review-opponents .review-timeline'),
         third = track.children[2]?.getBoundingClientRect(),

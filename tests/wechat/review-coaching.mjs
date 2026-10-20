@@ -352,7 +352,7 @@ try {
   await tap('[data-value="opponent"]');
   await wait((data) => data.reviewPerspective === 'opponent' && data.selectedReviewStep?.reason);
   const straightCall = (await page.data()).selectedReviewStep;
-  assert.match(straightCall.reason, /选择跟注 6.3K，目的不是只靠高牌摊牌，而是在追两头顺听牌/);
+  assert.match(straightCall.reason, /选择跟注 6.3K，当前主要依靠听牌改善争取获胜/);
   assert.match(straightCall.reason, /8 张牌可能补成顺子/);
   assert.doesNotMatch(straightCall.reason, /补成顺子[／或]同花|相同牌力/);
   report.checks.push({ name: 'summary-straight-call', selected: straightCall });
@@ -573,11 +573,13 @@ try {
   await invoke('closeReview');
   await invoke('showGuide', 'review-glossary');
   const glossary = await painted('#review-glossary');
-  assert.equal((await page.$$('#review-glossary .guide-b')).length, 27);
+  assert.equal((await page.$$('#review-glossary .guide-b')).length, 29);
   const glossaryText = await glossary.text();
   assert.match(glossaryText, /底池赔率／保本胜率/);
   assert.match(glossaryText, /全下只会结束自己的下注选择/);
-  report.checks.push({ name: 'guide-review-glossary', entries: 27 });
+  assert.match(glossaryText, /主动权／范围优势/);
+  assert.match(glossaryText, /胜率／权益／弃牌权益/);
+  report.checks.push({ name: 'guide-review-glossary', entries: 29 });
   await capture('guide-review-glossary');
   await invoke('closeGuide');
   assert.equal(report.exceptions.length, 0);

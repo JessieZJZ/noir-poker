@@ -5,7 +5,13 @@ import { actionLabel, historyActionLabel } from '../engine/action-labels.js';
 import { boardTexture } from './context.js';
 import { spotFacts } from './spot-facts.js';
 import { actorAtPosition } from '../engine/player-identity.js';
-import { exhaustsStack, heavyPreflopPressure } from './presentation.js';
+import {
+  exhaustsStack,
+  heavyPreflopPressure,
+  plannedValueShove,
+  foldPressure,
+  foldWinNote,
+} from './presentation.js';
 
 const n = compactChips;
 const pct = (value) => (value * 100).toFixed(1) + '%';
@@ -134,18 +140,45 @@ export function actionReason(s, r) {
     f = spotFacts(s, c),
     actual = actionLabel(s),
     draw = c.draw,
-    hand = f.holeText;
+    hand = f.holeText,
+    pressure = foldPressure(s),
+    foldNote = pressure.hasAllInOpponent ? foldWinNote(s) : '';
   if (exhaustsStack(s) && s.action === 'call')
     return `你在 ${s.position} 拿 ${hand}，用剩下的 ${n(s.stack)} 全下跟注，可争夺 ${n(r.metrics.contestable)} 的底池。`;
   if (s.action === 'raise') {
     if (heavyPreflopPressure(s, c))
-      return `你拿 ${hand} 在 ${s.position} ${actual}，这次拿出 ${n(f.investment)} 争取 ${n(s.pot)} 的底池。面对多次再加注，不能只凭起手牌较强就当作价值加注，继续进攻需要对手有足够会弃牌的组合，被大对子或 AK 等强牌跟注时要承担明显风险。`;
-    if (c.valuePlan?.kind === 'value-shove' && f.shove)
+      return `你拿 ${hand} 在 ${s.position} ${actual}，这次拿出 ${n(f.investment)} 争取 ${n(s.pot)} 的底池。${foldNote || '面对多次再加注，不能只凭起手牌较强就当作价值加注，继续进攻需要对手有足够会弃牌的组合，被大对子或 AK 等强牌跟注时要承担明显风险。'}`;
+    if (plannedValueShove(s, c) && f.shove)
       return `你拿 ${hand} 在 ${s.position} ${actual}，这次拿出 ${n(f.investment)}。${c.valuePlan.reason}`;
-    if (f.shove && f.potRatio > 4)
-      return `你拿 ${hand} 在 ${s.position} ${actual}，把 ${n(f.investment)}（${(f.investment / bigBlindOf(s)).toFixed(0)} BB）投入当时 ${n(s.pot)} 的底池，是底池的 ${f.potRatio.toFixed(1)} 倍。${s.street > 0 && draw.outs && (c.made.score[0] === 0 || ['board', 'board-pair', 'middle-pair', 'underpair'].includes(c.handClass)) ? '这次进攻有半诈唬的依据，对手弃牌可以直接获利，被跟注后仍有' + drawLabel(draw) + '的补牌机会，但如此大的投入需要足够的弃牌率，单靠听牌不能证明这个尺度划算。' : s.street === 0 && c.tier < 2 ? '这笔大额进攻主要靠对手弃牌获利，被强牌跟注后，这手起手牌的胜算会明显下降。' : '如此大的尺度会让对手的继续范围更集中于强牌，需要比较较小加注能留下哪些跟注牌。'}`;
+    if (f.shove && f.potRatio > 4) {
+      let rationale;
+      if (
+        s.street > 0 &&
+        draw.outs &&
+        (c.made.score[0] === 0 ||
+          ['board', 'board-pair', 'middle-pair', 'underpair'].includes(c.handClass))
+      )
+        rationale = foldNote
+          ? `这次进攻有半诈唬的依据。${foldNote}听牌仍提供${drawLabel(draw)}的补牌机会，但如此大的投入需要足够的弃牌率，单靠听牌不能证明这个尺度划算。`
+          : `这次进攻有半诈唬的依据，对手弃牌可以直接获利，被跟注后仍有${drawLabel(draw)}的补牌机会，但如此大的投入需要足够的弃牌率，单靠听牌不能证明这个尺度划算。`;
+      else if (
+        s.street > 0 &&
+        (c.made.score[0] === 0 || ['board', 'board-pair'].includes(c.handClass))
+      )
+        rationale = foldNote
+          ? `当前缺少能独占底池的强成牌和直接听牌。${foldNote}被跟注时要承担整笔筹码的风险。`
+          : '当前缺少能独占底池的强成牌和直接听牌，这次全下主要依赖对手弃掉更好的牌，被跟注时要承担整笔筹码的风险。';
+      else if (!s.street && c.tier < 2)
+        rationale = foldNote
+          ? `${foldNote}被强牌跟注后，这手起手牌的胜算会明显下降。`
+          : '这笔大额进攻主要靠对手弃牌获利，被强牌跟注后，这手起手牌的胜算会明显下降。';
+      else
+        rationale =
+          '如此大的尺度会让对手的继续范围更集中于强牌，需要比较较小加注能留下哪些跟注牌。';
+      return `你拿 ${hand} 在 ${s.position} ${actual}，把 ${n(f.investment)}（${(f.investment / bigBlindOf(s)).toFixed(0)} BB）投入当时 ${n(s.pot)} 的底池，是底池的 ${f.potRatio.toFixed(1)} 倍。${rationale}`;
+    }
     if (s.street === 0)
-      return `你拿 ${hand} 在 ${s.position} ${actual}，这次拿出 ${n(f.investment)} 去争取底池 ${n(s.pot)}。${c.tier >= 2 ? '这手牌有价值加注的牌力，可以让较弱起手牌付费。' : f.lastAggression ? (c.opponents > 1 ? '已有开池时，这次是再加注诈唬候选，需要开池者和其他未弃牌的玩家都放弃，才能直接拿走底池。' : '已有开池时，这次是再加注诈唬候选，需要开池者愿意弃牌，才能直接拿走底池。') : '前面没有开池，这次进攻可以直接争夺盲注，被跟注后再看这手牌的翻后潜力。'}`;
+      return `你拿 ${hand} 在 ${s.position} ${actual}，这次拿出 ${n(f.investment)} 去争取底池 ${n(s.pot)}。${c.tier >= 2 ? '这手牌有价值加注的牌力，可以让较弱起手牌付费。' : foldNote ? '这次是再加注诈唬。' + foldNote : f.lastAggression ? (c.opponents > 1 ? '已有开池时，这次是再加注诈唬，需要开池者和其他未弃牌的玩家都放弃，才能直接拿走底池。' : '已有开池时，这次是再加注诈唬，需要开池者愿意弃牌，才能直接拿走底池。') : '前面没有开池，这次进攻可以直接争夺盲注，被跟注后再看这手牌的翻后潜力。'}`;
     if (
       !draw.outs &&
       ['pressure-bet', 'large-unbacked-bet'].includes(r.code) &&
@@ -153,7 +186,9 @@ export function actionReason(s, r) {
         ['board', 'board-pair'].includes(c.handClass) ||
         c.texture.maxSuit >= 4)
     )
-      return `你拿 ${hand}，在 ${f.boardText} 上${actual}，当前${c.handLabel}，牌面${c.texture.label}${c.texture.maxSuit >= 4 && c.made.score[0] < 5 ? '，你没有同花' : ''}。这次拿出 ${n(f.investment)} 是在尝试诈唬，想让更好的牌弃掉，被跟注后，当前牌力很难赢到摊牌。`;
+      return foldNote
+        ? `你拿 ${hand}，在 ${f.boardText} 上${actual}，当前${c.handLabel}，牌面${c.texture.label}${c.texture.maxSuit >= 4 && c.made.score[0] < 5 ? '，你没有同花' : ''}。这次拿出 ${n(f.investment)} 是在尝试诈唬。${foldNote}被跟注后，当前牌力很难赢到摊牌。`
+        : `你拿 ${hand}，在 ${f.boardText} 上${actual}，当前${c.handLabel}，牌面${c.texture.label}${c.texture.maxSuit >= 4 && c.made.score[0] < 5 ? '，你没有同花' : ''}。这次拿出 ${n(f.investment)} 是在尝试诈唬，想让更好的牌弃掉，被跟注后，当前牌力很难赢到摊牌。`;
     if (
       s.street < 3 &&
       !draw.outs &&
@@ -167,8 +202,8 @@ export function actionReason(s, r) {
       return `你拿 ${hand}，在 ${f.boardText} 上${actual}，这次拿出 ${n(f.investment)}。${checked.length ? checked.join('、') + '过牌后，' : ''}下注可以让${s.hole[0].rank > 2 ? '更小对子或尚未成对的高张' : '尚未成对的高张'}付费，高张若弃牌，也就失去了免费看下一张反超你的机会。这并不保证你领先：对手仍可能用更大的对子或慢打的强牌继续。${s.legal.canCheck ? '过牌可以控制底池，但也可能让这些牌免费改善。' : ''}`;
     }
     return draw.outs
-      ? `你拿 ${hand}，在 ${f.boardText} 上${actual}，这次拿出 ${n(f.investment)}，目前是${c.handLabel}加${drawLabel(draw)}，共有 ${draw.outs} 张牌可以补成${drawCompletion(draw)}。${['high', 'underpair', 'middle-pair', 'board-pair'].includes(c.handClass) ? '这次属于半诈唬，对手弃牌可直接拿池，被跟注后仍能补牌。' : '已有成牌可以向弱牌取值，同时保留听牌改善。'}`
-      : `你拿 ${hand}，在 ${f.boardText} 上${actual}，这次拿出 ${n(f.investment)}。${['high', 'underpair', 'middle-pair', 'board-pair'].includes(c.handClass) ? '目前牌力偏弱，这次下注主要需要更好的牌弃掉。' : c.handClass === 'board' ? '主要牌力来自公共牌，你的底牌没有增加优势，这笔下注很难单靠价值跟注获利。' : '目前已有成牌，下注的价值来自对手用更弱成牌跟注。'}`;
+      ? `你拿 ${hand}，在 ${f.boardText} 上${actual}，这次拿出 ${n(f.investment)}，目前是${c.handLabel}加${drawLabel(draw)}，共有 ${draw.outs} 张牌可以补成${drawCompletion(draw)}。${['high', 'underpair', 'middle-pair', 'board-pair'].includes(c.handClass) ? (foldNote ? '这次属于半诈唬。' + foldNote + '听牌仍提供改善机会。' : '这次属于半诈唬，对手弃牌可直接拿池，被跟注后仍能补牌。') : '已有成牌可以向弱牌取值，同时保留听牌改善。'}`
+      : `你拿 ${hand}，在 ${f.boardText} 上${actual}，这次拿出 ${n(f.investment)}。${['high', 'underpair', 'middle-pair', 'board-pair'].includes(c.handClass) ? (foldNote ? '目前牌力偏弱。' + foldNote : '目前牌力偏弱，这次下注主要需要更好的牌弃掉。') : c.handClass === 'board' ? '主要牌力来自公共牌，你的底牌没有增加优势，这笔下注很难单靠价值跟注获利。' : '目前已有成牌，下注的价值来自对手用更弱成牌跟注。'}`;
   }
   if (s.action === 'call')
     return s.street
@@ -180,8 +215,9 @@ export function actionReason(s, r) {
       : s.street
         ? `你在 ${s.position} 拿 ${hand}，在 ${f.boardText} 上是${c.handLabel}，选择弃牌，避免再补 ${n(s.legal.callAmount)}。${draw.outs ? '当前有' + drawLabel(draw) + '，' + draw.outs + '张改善候选，下一张约' + pct(draw.nextChance) + '。' : ''}`
         : `你在 ${s.position} 拿 ${hand}，选择弃牌。`;
+  if (!s.street) return `你在 ${s.position} 拿 ${hand}，这次可以免费过牌，保留看翻牌的机会。`;
   return draw.outs
-    ? `你拿 ${hand} 在 ${f.boardText} 上过牌，保留${drawLabel(draw)}的 ${draw.outs} 张改善候选，本次投入 0。${c.pendingOthers ? '本轮还有 ' + c.pendingOthers + ' 人能行动，因此不保证免费见下一张。' : '本轮没有待行动的对手，可以免费见下一张牌。'}`
+    ? `你拿 ${hand}，在 ${f.boardText} 上是${c.handLabel}，过牌保留${drawLabel(draw)}的 ${draw.outs} 张改善候选，本次投入 0。${c.pendingOthers ? '本轮还有 ' + c.pendingOthers + ' 人能行动，因此不保证免费见下一张。' : '本轮没有待行动的对手，可以免费见下一张牌。'}`
     : `你拿 ${hand} 在 ${f.boardText} 上是${c.handLabel}，这次过牌没有增加投入。${s.street === 3 && r.metrics.closing ? '你是河牌最后行动者，过牌后直接摊牌。' : c.pendingOthers ? '本轮还有 ' + c.pendingOthers + ' 人能行动，过牌保留了面对他们下注再决定的机会。' : '对手本轮已行动，你选择保留当前底池大小。'}`;
 }
 

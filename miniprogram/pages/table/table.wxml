@@ -895,7 +895,7 @@
               ><text wx:else class="review-step-meta">{{item.name}}，{{item.street}}</text
               ><text class="review-step-action">{{item.actual}}</text></view
             ><text
-              wx:if="{{reviewPerspective === 'opponent' || !item.keep}}"
+              wx:if="{{reviewPerspective === 'hero' && !item.keep}}"
               class="review-label {{reviewPerspective === 'hero' ? 'consider' : ''}}"
               >{{item.label}}</text
             >

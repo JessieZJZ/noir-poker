@@ -15,6 +15,7 @@ import { seedRandom, snapshotSeed } from './equity.js';
 import { preparePublicRanges } from '../engine/public-ranges.js';
 import { createPublicPairSampler, samplePublicPair } from '../engine/public-equity.js';
 import { isChipAmount, legalRaiseTo, chipUnitOf } from '../engine/bet-sizing.js';
+import { preflopContext, preflopRaiseTarget } from './preflop.js';
 const copy = (v) => JSON.parse(JSON.stringify(v));
 export function candidateActions(s, alternatives = []) {
   const candidates = [
@@ -33,6 +34,18 @@ export function candidateActions(s, alternatives = []) {
         action: 'raise',
         amount: legalRaiseTo(value, s.legal),
       });
+    if (!s.street && s.currentBet > bigBlindOf(s)) {
+      const pre = preflopContext(s),
+        order = ['SB', 'BB', 'UTG', 'UTG+1', 'MP', 'LJ', 'HJ', 'CO', 'BTN'],
+        inPosition = s.players
+          .filter((p) => p.id && !p.folded && !p.allin)
+          .every((p) => order.indexOf(p.position) < order.indexOf(s.position));
+      if (pre.raises === 1 && pre.callersAfterOpen)
+        candidates.push({
+          action: 'raise',
+          amount: legalRaiseTo(preflopRaiseTarget(s, { inPosition }, pre), s.legal),
+        });
+    }
   }
   candidates.push({ action: s.action, amount: s.amount }, ...alternatives.filter(Boolean));
   return [

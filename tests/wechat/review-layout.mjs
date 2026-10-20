@@ -87,7 +87,13 @@ try {
       const evidence = { perspective, count, hint, width: (await cards[0].size()).width };
       evidence.tags = [];
       const tags = await page.$$('.review-timeline .review-label');
-      assert.equal(tags.length, count);
+      assert.equal(tags.length, perspective === 'hero' ? count : 0);
+      for (let index = 0; index < cards.length; index++) {
+        const card = cards[index];
+        assert.equal(await (await card.$('.review-step-number')).text(), String(index + 1));
+        assert.ok((await (await card.$('.review-step-meta')).text()).trim());
+        assert.equal(await (await card.$('.review-step-action')).text(), steps[index].actual);
+      }
       for (const tag of tags) {
         const height = (await tag.size()).height;
         const lineHeight = parseFloat(await tag.style('line-height'));
@@ -99,7 +105,7 @@ try {
         assert.ok(Math.abs(lines - Math.round(lines)) < 0.07);
         evidence.tags.push({ text: await tag.text(), height, lines });
       }
-      assert.ok(Math.abs(evidence.tags[0].lines - 1) < 0.07);
+      if (perspective === 'hero') assert.ok(Math.abs(evidence.tags[0].lines - 1) < 0.07);
       if (count > 2) {
         const third = cards[2],
           box = await track.offset(),

@@ -93,6 +93,8 @@ test('guide ends with shared, individually explained review terminology', () => 
     '同花连接牌',
     '坚果',
     '底池赔率',
+    '主动权／范围优势',
+    '胜率／权益／弃牌权益',
     '2-bet',
     '封口',
     '彩虹面',

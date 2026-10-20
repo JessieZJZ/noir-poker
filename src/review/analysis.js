@@ -1,9 +1,9 @@
-import { heavyPreflopPressure } from './presentation.js';
+import { heavyPreflopPressure, plannedValueShove } from './presentation.js';
 import { compactChips } from '../engine/chip-format.js';
 import { bigBlindOf } from '../engine/stakes.js';
 import { callPrice, sampleValue } from './equity.js';
 import { decisionContext, startingTier, drawInfo } from './context.js';
-import { preflopContext } from './preflop.js';
+import { preflopContext, positionedEntry, preflopRaiseTarget } from './preflop.js';
 import { comparisonRoutes } from './routes.js';
 import { compareCandidateActions } from './counterfactual.js';
 import { coachDecision, buildOverview } from './coaching.js';
@@ -71,6 +71,7 @@ export function analyzeDecision(
   ctx.matchups = handMatchups(s, ctx);
   ctx.valuePlan = valuePlan(s, ctx, ctx.matchups);
   const pre = s.street === 0 ? preflopContext(s) : null;
+  if (pre) ctx.positionedEntry = positionedEntry(s, ctx, pre);
   const low = Math.min(wide.equity, strong.equity),
     high = Math.max(wide.equity, strong.equity),
     uncertainty = Math.max(wide.margin, strong.margin);
@@ -103,11 +104,7 @@ export function analyzeDecision(
   const raiseTo = () => {
     let target;
     if (s.street === 0) {
-      const limpers = s.history.filter((a) => a.street === 0 && a.action === 'call').length;
-      target =
-        s.currentBet <= bigBlind
-          ? (3 + limpers) * bigBlind
-          : s.currentBet * (ctx.inPosition ? 3 : 4);
+      target = preflopRaiseTarget(s, ctx, pre);
     } else if (s.currentBet > 0) target = s.currentBet * (ctx.inPosition ? 2.5 : 3);
     else target = s.pot * (texture.wet || ctx.opponents > 1 ? 0.65 : 0.4);
     alternative = {
@@ -124,6 +121,66 @@ export function analyzeDecision(
     alternative = { action: 'check', amount: 0 };
     lesson = '先免费过牌，面对后续下注再评估价格。';
     plan = '下一步若有人下注，按新的金额和参与人数重新计算，不预先承诺跟到底。';
+  } else if (ctx.positionedEntry?.eligible && !price.closing) {
+    code = 'positioned-entry';
+    status = s.action === 'call' ? 'sound' : 'consider';
+    title = '好位置与深有效筹码，支持低成本进入翻后';
+    reason = `${handLabel} 在 ${s.position}，面对一次常规开池，跟注只占你的筹码约 ${(ctx.positionedEntry.stackRatio * 100).toFixed(1)}%，与你已入池对手的有效筹码至少约 ${ctx.positionedEntry.depthBB.toFixed(0)} BB。位置、较小投入和底牌的翻后潜力共同支持跟注，不能只因为尚未成对就默认弃牌。`;
+    alternative = { action: 'call', amount: s.legal.callAmount };
+    lesson = '区分便宜地保留翻后潜力和无依据持续投入，遇到再加注或后续不利牌面时重新判断。';
+    plan =
+      '击中强牌时争取让较弱牌付费，形成强听牌时结合价格与对手弃牌空间决定跟注或半诈唬，完全落空且面对不利下注时退出，能免费过牌时保留机会。';
+  } else if (
+    pre &&
+    pre.raises >= 2 &&
+    tier === 1 &&
+    s.hole[0].rank !== s.hole[1].rank &&
+    s.action === 'call' &&
+    price.cost >= s.stack &&
+    strong.equity + strong.margin < price.required
+  ) {
+    code = 'unbacked-speculative-allin';
+    status = 'consider';
+    title = '投机底牌全下接再加注，不能依赖后续隐含收益';
+    reason = `${handLabel} 这次需要拿出全部 ${number(s.stack)}，行动加权范围的胜率估计加上抽样余量仍未达到当前保本门槛，不能只凭同花或连接潜力支持这笔全下。`;
+    alternative = { action: 'fold', amount: 0 };
+    lesson = '低成本保留翻后潜力，与一次投入全部筹码看完公共牌，需要不同的价格依据。';
+    plan = '除非有明确的更宽范围依据，否则先保留剩余筹码，不能靠全下后的下注或成牌取值弥补成本。';
+  } else if (
+    !s.street &&
+    s.action === 'call' &&
+    s.hole[0].rank === s.hole[1].rank &&
+    s.hole[0].rank <= 7 &&
+    !price.closing &&
+    price.cost < s.stack &&
+    price.cost >= s.stack * 0.25 &&
+    low - uncertainty <= price.required + 0.05
+  ) {
+    code = 'costly-small-pair-flat';
+    status = 'consider';
+    title = '短筹码小对子大额平跟，需要核对价格与改善空间';
+    reason = `${handLabel} 已有对子，但这次跟注要拿出 ${number(price.cost)}，约占剩余筹码的 ${((price.cost / s.stack) * 100).toFixed(1)}%，两种范围估计扣除抽样余量后没有足够价格余量，不能单靠追暗三条支撑这笔投入。`;
+    alternative = { action: 'fold', amount: 0 };
+    lesson = '小对子不只靠暗三条获胜，但大额平跟也不能默认能靠成牌后的收益补足。';
+    plan = '有明确宽范围或更有利的价格依据时再讨论跟注，全下跟注需要单独核对摊牌价格。';
+  } else if (
+    pre?.unopened &&
+    pre.late &&
+    !pre.limpers &&
+    !pre.suited &&
+    tier === 0 &&
+    s.action === 'call' &&
+    Math.max(...s.hole.map((card) => card.rank)) <= 10 &&
+    Math.min(...s.hole.map((card) => card.rank)) <= 6 &&
+    Math.abs(s.hole[0].rank - s.hole[1].rank) >= 3
+  ) {
+    code = 'weak-late-limp';
+    status = 'consider';
+    title = '弱不同花散牌不能只因为跟注便宜就跛入';
+    reason = `${handLabel} 不同花且点数相隔较远，成强牌的路径较少，后面仍有玩家可以加注，较低跟注成本不能单独支持这次入池。`;
+    alternative = { action: 'fold', amount: 0 };
+    lesson = '后位可以更灵活争夺盲注，但弱不同花散牌跛入不自动获得位置与收益优势。';
+    plan = '只有盲位明显过度弃牌等依据时，再比较小尺度主动开池，遭遇跟注或再加注后重新判断。';
   } else if (
     pre?.unopened &&
     pre.late &&
@@ -227,19 +284,41 @@ export function analyzeDecision(
     lesson = '主动开池、平跟已有开池和防守再加注需要不同范围，不能只按起手牌档位判断。';
     plan = '若以后在大盲面对很小加注，应重新按价格判断，不能把“弱牌”直接等同于必须弃牌。';
   } else if (
+    s.street > 0 &&
     s.action === 'raise' &&
     s.amount === s.legal.maxRaiseTo &&
     deep &&
     ctx.betRatio > 4 &&
-    s.street === 0 &&
-    tier >= 2
+    draw.outs > 0 &&
+    !valueTarget &&
+    !plannedValueShove(s, ctx)
+  ) {
+    code = 'oversized-draw-shove';
+    status = 'consider';
+    title = '深筹码听牌直接全下，需要比较较小的半诈唬尺度';
+    reason = `${handLabel} 带${drawLabel(draw)}，这次投入 ${number(ctx.extra)} 是当时底池的 ${ctx.betRatio.toFixed(1)} 倍，补牌机会不能单独证明这个全下尺度划算。`;
+    raiseTo();
+    lesson = '有听牌可以讨论半诈唬，但还要比较弃牌空间和被跟注后的风险。';
+    plan = '优化应放在全下之前，先比较较小的合法下注或加注，缺少弃牌空间时保留过牌或按价格跟注。';
+  } else if (
+    s.action === 'raise' &&
+    s.amount === s.legal.maxRaiseTo &&
+    deep &&
+    ctx.betRatio > 4 &&
+    ((s.street === 0 && tier >= 2) ||
+      (s.street > 0 &&
+        ctx.valuePlan.primary?.action === 'raise' &&
+        ctx.valuePlan.primary.amount < s.legal.maxRaiseTo)) &&
+    !plannedValueShove(s, ctx)
   ) {
     code = 'deep-value-shove';
     status = 'consider';
     title = '深筹码强牌直接全下，可能压缩价值空间';
     reason = `${handLabel} 有价值，但这次额外投入 ${number(ctx.extra)}（约 ${Math.round(ctx.extra / bigBlind)} BB），是当时底池 ${number(s.pot)} 的 ${ctx.betRatio.toFixed(1)} 倍，有效剩余筹码约 ${Math.round(ctx.effective / bigBlind)} BB。如此大的压力可能让愿意跟常规加注的较弱牌退出，不能仅凭强牌认定全下最好。`;
     raiseTo();
-    lesson = '优先比较正常开池或再加注与全下，让较弱范围有机会付费。';
+    lesson = s.street
+      ? '优先比较普通下注或加注与全下，让较弱成牌有机会付费。'
+      : '优先比较正常开池或再加注与全下，让较弱范围有机会付费。';
     plan = `可以先用 ${actionLabel(s, alternative.action, alternative.amount)} 这条路线练习，若对手再加注，再结合其范围和有效筹码决定继续。此尺度是练习候选，不保证多赚。`;
   } else if (s.action === 'call' && price.cost > 0 && high + uncertainty + 0.035 < price.required) {
     code = 'expensive-call';
@@ -368,6 +447,18 @@ export function analyzeDecision(
         : '主动施压的收益依赖对手退出范围';
     reason = `${handLabel} 额外投入 ${number(ctx.extra)}，约底池的 ${percent(ctx.betRatio)}，公共牌${s.street ? texture.label : '尚未发出'}，${ctx.opponents} 位对手尚在。${draw.outs ? '同时有 ' + draw.outs + ' 张直接成牌候选，下一张约 ' + percent(draw.nextChance) + '。' : valueTarget ? '可以尝试从较弱的牌取得价值，对手愿意跟哪些牌仍需判断。' : '当前未识别出直接的顺子或同花听牌，不能默认被跟注后有足够改善机会。'}`;
     alternative = { action: 'raise', amount: s.amount };
+    if (s.street > 0 && !valueTarget && !draw.outs) {
+      status = 'consider';
+      const affordableMade =
+        ctx.made.score[0] >= 1 &&
+        !['board', 'board-pair'].includes(ctx.handClass) &&
+        low - uncertainty > price.required + 0.05;
+      alternative = s.legal.canCheck
+        ? { action: 'check', amount: 0 }
+        : affordableMade
+          ? { action: 'call', amount: s.legal.callAmount }
+          : { action: 'fold', amount: 0 };
+    }
     lesson = valueTarget
       ? '具体列出愿意付费的较弱牌，不把牌型名称当成最优尺度的证明。'
       : '先确定哪些对手范围会退出，再衡量被跟注后是否能继续。';

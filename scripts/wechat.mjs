@@ -108,7 +108,7 @@ async function compileJs(sourceDirectory, destination) {
       external: ['*.js'],
       format: 'cjs',
       target: 'es2019',
-      minifyWhitespace: true,
+      minify: true,
       write: false,
     });
     const target = path.join(destination, file);
@@ -258,7 +258,7 @@ export async function buildWechat(output = wechatOutput) {
       const compiled = await transform(await readFile(path.join(root, 'src/ui', name), 'utf8'), {
         format: 'cjs',
         target: 'es2019',
-        minifyWhitespace: true,
+        minify: true,
       });
       await writeFile(path.join(staging, 'shared/ui', name), compiled.code);
     }
@@ -285,7 +285,7 @@ export async function buildWechat(output = wechatOutput) {
       const result = await transform(await readFile(path.join(staging, file), 'utf8'), {
         format: 'cjs',
         target: 'es2019',
-        minifyWhitespace: true,
+        minify: true,
       });
       await writeFile(path.join(staging, file), result.code);
     }

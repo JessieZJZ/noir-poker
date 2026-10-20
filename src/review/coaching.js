@@ -11,7 +11,7 @@ import {
 } from './narrative.js';
 import { rankText } from '../engine/poker.js';
 import { spotFacts } from './spot-facts.js';
-import { exhaustsStack } from './presentation.js';
+import { exhaustsStack, plannedValueShove, foldPressure } from './presentation.js';
 import { heavyPreflopPressure } from './presentation.js';
 import { rangeNoteClauses } from './matchups.js';
 
@@ -27,7 +27,8 @@ function explanation(s, r, evKind, suggested, kind) {
     draw = c.draw || r.draw,
     f = spotFacts(s, c),
     hand = c.handLabel,
-    cost = fmt(s.legal.callAmount);
+    cost = fmt(s.legal.callAmount),
+    pressure = foldPressure(s);
   if (exhaustsStack(s) && s.action === 'call') {
     const pocket = s.hole[0].rank === s.hole[1].rank;
     return [
@@ -48,7 +49,9 @@ function explanation(s, r, evKind, suggested, kind) {
             ? `当前有${drawLabel(c.draw)}，补成${drawCompletion(c.draw)}是获胜机会的一部分，补中也未必领先。`
             : !s.street
               ? preflopPotential(s)
-              : `当前${hand}的摊牌价值需要结合对手的成牌与诈唬范围判断。`,
+              : c.handClass === 'board-pair'
+                ? '当前主要靠公共牌上的对子和底牌踢脚争取摊牌，要结合对手的成牌与诈唬范围判断。'
+                : `当前${hand}的摊牌价值需要结合对手的成牌与诈唬范围判断。`,
       c.handClass === 'board'
         ? '是否划算取决于能够平分底池的机会与可分得的份额，还要计入对手用底牌组成更大牌的可能。'
         : s.action === 'call' && suggested.action === 'call' && kind === 'keep'
@@ -65,14 +68,53 @@ function explanation(s, r, evKind, suggested, kind) {
   }
   if (c.valuePlan?.kind === 'trap' && s.action === 'call' && evKind !== 'negative')
     return c.valuePlan.reason;
-  if (c.valuePlan?.kind === 'value-shove' && s.action === 'raise') return c.valuePlan.reason;
+  if (plannedValueShove(s, c) && s.action === 'raise') return c.valuePlan.reason;
+  if (r.code === 'pressure-bet' && s.action === 'raise' && suggested.action === 'call')
+    return [
+      `你已有${hand}，跟注只需 ${cost}，按当前可争夺底池计算，需要至少 ${pricePct(r.metrics.required)} 的胜率，风险和收益才能持平。`,
+      '在当前两种对手范围假设下，已有成牌与较低价格支持先比较跟注，保留摊牌机会，避免把边缘成牌变成只让更强牌继续的大加注。',
+      '对手范围更紧或后续价格改变时要重新判断，这并不是完整后续打法的盈利证明。',
+    ];
+  if (r.code === 'positioned-entry' && c.positionedEntry?.eligible) {
+    const entry = c.positionedEntry;
+    if (exhaustsStack(s))
+      return [
+        ...preflopPotential(s),
+        `这些潜力可以支持先考虑${actionLabel(s, 'call', s.legal.callAmount)}，不能单独证明把全部 ${fmt(s.stack)} 推出去划算。`,
+        '你实际已经全下，之后不再有控制投入或弃牌的选择，这笔进攻需要对手有足够的弃牌空间。',
+      ];
+    return [
+      ...preflopPotential(s),
+      `这笔跟注约占你行动前筹码的 ${(entry.stackRatio * 100).toFixed(1)}%，与你已入池对手的有效筹码至少约 ${entry.depthBB.toFixed(0)} BB，较低成本和较深筹码为成强牌后的收益留下空间。`,
+      suggested.action === 'fold'
+        ? '这些翻后潜力不能保证跟注盈利，当前两种范围下的后续模拟更支持停止投入。'
+        : s.action === 'call'
+          ? '你在翻后有位置，可以先看对手行动，再决定控池、取值或带听牌施压。'
+          : '若按建议跟注，翻后可以先看对手行动，再决定控池、取值或带听牌施压。',
+      entry.raiseTo && suggested.action !== 'fold'
+        ? `若${entry.callers ? '开池者范围较宽、平跟者有足够弃牌空间' : '开池者范围较宽且有足够弃牌空间'}，也可以考虑${actionLabel(s, 'raise', entry.raiseTo)}，争取直接拿池，对手较紧或不愿弃牌时优先跟注。`
+        : '',
+      entry.raiseTo && suggested.action !== 'fold'
+        ? '再加注只是取得主动权，不代表天然拥有范围优势，翻后仍要结合公共牌和对手的继续范围判断。'
+        : '',
+      entry.shape === 'small-pair'
+        ? '小对子已有摊牌机会，翻牌击中暗三条后可以争取更多价值。'
+        : entry.shape === 'connector' || entry.shape === 'one-gap'
+          ? '击中两对、三条、顺子或同花后可以争取价值，形成听牌时仍需比较价格，较低同花也可能输给更高同花。'
+          : '',
+      '底牌没有改善且面对不利下注时弃牌，若能免费过牌则保留机会，不必机械退出。',
+      entry.waiting ? '身后的盲位仍可能再加注，遇到新压力后要按新的价格重新判断。' : '',
+    ].filter(Boolean);
+  }
   if (s.action === 'raise' && heavyPreflopPressure(s, c)) return preflopPotential(s);
   if (s.street === 0 && s.action === 'raise' && c.tier === 0) {
     const high = Math.max(...(s.hole || []).map((card) => card.rank));
     if (kind === 'keep')
       return [
         ...preflopPotential(s),
-        '这次进攻保留的是主动争取对手弃牌、直接拿走底池的思路，能否划算取决于投入尺度和对手愿意弃牌的频率。',
+        pressure.hasAllInOpponent
+          ? '这次进攻是否划算，还要比较投入尺度、仍有筹码的对手愿意弃牌的频率，以及剩余摊牌机会。'
+          : '这次进攻保留的是主动争取对手弃牌、直接拿走底池的思路，能否划算取决于投入尺度和对手愿意弃牌的频率。',
         exhaustsStack(s)
           ? '被强牌跟注后，这手牌的摊牌能力偏弱，之后已没有继续下注或弃牌的选择。'
           : high >= 13
@@ -166,8 +208,6 @@ function explanation(s, r, evKind, suggested, kind) {
           ? '按当前范围估计，获胜机会能够覆盖成本，这是这次跟注值得保留的依据。'
           : '这次跟注保留了摊牌机会，前提是对手有足够较弱牌或诈唬，面对更紧的范围应弃牌。',
     ];
-  if (s.action === 'raise' && f.shove && c.tier >= 2 && s.street === 0)
-    return '这手牌有价值加注的基础，但直接全下可能让本来愿意跟注较小加注的弱牌弃牌，需要比较正常尺度能留下多少价值。';
   if (s.action === 'check' && r.code === 'value-check')
     return s.street === 3 && r.metrics.closing
       ? '这次过牌已经不能诱导后面的下注，需要比较主动下注能否让较弱成牌付费。'
@@ -175,16 +215,18 @@ function explanation(s, r, evKind, suggested, kind) {
         ? `你已有${hand}，过牌可以观察后面玩家是否下注，但他们也过牌时，可能少收一轮价值。`
         : '你是本轮最后行动者，过牌会结束本轮下注，需要比较免费观察下一张与主动让较弱牌付费。';
   if (s.action === 'check' && c.handClass === 'board')
-    return `在 ${f.boardText} 上，${f.holeText}没有提高公共牌的牌力，这手主要争取平分底池，过牌不把平分机会误当成独占价值。`;
+    return '过牌保留平分底池的机会，避免把公共牌成牌误当成独占底池的价值。';
   if (s.street === 0 && ['call', 'fold'].includes(s.action) && suggested.action === 'call')
     return [
       ...preflopPotential(s),
       s.action === 'fold'
         ? `若按建议跟注，行动后还留有 ${fmt(s.stack - s.legal.callAmount)} 筹码。`
         : `这次跟注后还留有 ${fmt(s.stack - s.legal.callAmount)} 筹码。`,
-      r.context.tier < 2
-        ? '这条跟注路线的依据是当前价格下保留改善与摊牌机会，仍依赖对手范围较宽，底牌未改善时不自动跟到底。'
-        : '这手起手牌已有较强的摊牌竞争力，跟注可保留对手较弱牌，同时按后续公共牌调整。',
+      c.preflopRaises >= 2 && r.context.tier >= 2
+        ? '面对多次加注，起手牌较强不代表可以自动跟注，只有对手包含足够较弱牌或未成对高牌、价格也合适时才有继续依据。'
+        : r.context.tier < 2
+          ? '这条跟注路线的依据是当前价格下保留改善与摊牌机会，仍依赖对手范围较宽，底牌未改善时弃牌。'
+          : '这手起手牌已有较强的摊牌竞争力，跟注可保留对手较弱牌，同时按后续公共牌调整。',
       r.metrics.closing
         ? '跟注后没有后续下注，继续的依据是这手牌对当前范围的摊牌机会。'
         : c.inPosition
@@ -210,7 +252,9 @@ function explanation(s, r, evKind, suggested, kind) {
       '前面还没有对手加注，当前是在决定是否跟大盲入池。',
       c.tier >= 2
         ? '这手起手牌有较强竞争力，可以比较主动加注与跟注，不必自动放弃。'
-        : '这手起手牌击中一对后仍可能偏弱，需要结合位置、跟注价格和后面的待行动玩家判断，不能只因为便宜就入池。',
+        : s.hole[0].rank === s.hole[1].rank
+          ? '这手小对子已有摊牌机会，也能争取翻牌击中暗三条，需要结合位置、跟注价格、有效筹码和后面的再加注风险判断。'
+          : '这手起手牌击中一对后仍可能偏弱，需要结合位置、跟注价格和后面的待行动玩家判断，不能只因为便宜就入池。',
     ];
   if (s.action === 'fold' && !s.legal.canCheck)
     return `跟注需要至少约 ${pricePct(r.metrics.required)} 的胜率。${draw.outs ? '当前补牌机会需要和这笔赔率比较，不能只按“有听牌”决定追。' : '当前牌力能否达到这个要求，取决于对手这条下注线包含多少更强成牌和诈唬。'}`;
@@ -238,8 +282,14 @@ function practiceFocus(s, r, action) {
     return `重打 ${f.holeText} 这手，重点比较全下前的价格、对手范围与${suggestion}，全下后已没有继续下注或弃牌的选择。`;
   if (s.legal.isShortAllin && f.shove)
     return `本次全下至 ${fmt(s.amount)} 是短全下，不一定重开其他人的加注权，重打这手先比较${suggestion}，不能选超过 ${fmt(s.legal.maxRaiseTo)} 的普通加注。`;
-  if (c.valuePlan?.kind === 'value-shove')
-    return `重打 ${f.holeText} 这手，先比较${suggestion}：底池 ${fmt(s.pot)}，你还剩 ${fmt(s.stack)}。${s.street ? '当前成牌' : '这手强起手牌'}与筹码深度支持比较价值全下，但仍要留意更大的牌组。`;
+  if (r.code === 'positioned-entry')
+    return c.positionedEntry.raiseTo
+      ? `重打 ${f.holeText} 这手，先比较跟注 ${fmt(s.legal.callAmount)} 与有条件的${actionLabel(s, 'raise', c.positionedEntry.raiseTo)}，记录对手是否愿意弃牌，以及被跟注后的位置和成牌机会，不能只凭主动权持续诈唬。`
+      : `重打 ${f.holeText} 这手，比较跟注 ${fmt(s.legal.callAmount)} 与弃牌，重点看有效筹码、身后再加注风险与翻后能否实现底牌潜力。`;
+  if (plannedValueShove(s, c) && action.action === 'raise' && action.amount === s.legal.maxRaiseTo)
+    return s.street === 3 && c.matchups?.nut
+      ? `重打 ${f.holeText} 这手，比较${suggestion}与较小尺度：当前已是河牌最大成牌，重点核对弱牌是否愿意支付全下，以及较小尺度能否收到更多跟注，不能仅凭坚果牌认定全下最优。`
+      : `重打 ${f.holeText} 这手，先比较${suggestion}：底池 ${fmt(s.pot)}，你还剩 ${fmt(s.stack)}。${s.street ? '当前成牌' : '这手强起手牌'}与筹码深度支持比较价值全下，但仍要留意更大的牌组。`;
   if (c.valuePlan?.kind === 'trap' && s.action === 'call')
     return `重打 ${f.holeText} 这手，平跟 ${fmt(s.legal.callAmount)} 是保留弱牌和诈唬的埋牌路线，对照${suggestion}，再看主动加注是否会赶走本来愿意继续的弱牌。`;
   if (s.street === 0 && s.action === 'raise' && c.tier === 0 && f.shove && f.potRatio > 4)
@@ -252,21 +302,21 @@ function practiceFocus(s, r, action) {
     if (c.tier >= 2)
       return `重打 ${f.holeText} 这手，${facing}，优先比较${suggestion}。底池 ${fmt(s.pot)}，本次拿出 ${fmt(c.extra)}，试着让较弱对子或高牌愿意跟注，让这手强起手牌收取价值。`;
     const entry = hasCaller ? `${facing}，此前也有其他玩家跟注入池` : facing;
-    return `重打 ${f.holeText} 这手，${entry}，优先选择${suggestion}，不要为了争夺 ${fmt(s.pot)} 直接拿出 ${fmt(c.extra)}。${s.hole[0].rank === s.hole[1].rank ? '这手小对子未中暗三条时，面对高张牌面和持续下注不容易继续。' : Math.max(...s.hole.map((card) => card.rank)) >= 11 ? '这组高牌击中一对后，仍要提防更好的踢脚和大对子。' : '这组低张击中一对时点数仍偏低，面对大对子或强高张继续容易落后。'}`;
+    return `重打 ${f.holeText} 这手，${entry}，优先比较${suggestion}，核对这次为 ${fmt(s.pot)} 的底池拿出 ${fmt(c.extra)}，能否争取足够弃牌或让较弱牌付费。${s.hole[0].rank === s.hole[1].rank ? '这手小对子未中暗三条时，面对高张牌面和持续下注不容易继续。' : Math.max(...s.hole.map((card) => card.rank)) >= 11 ? '这组高牌击中一对后，仍要提防更好的踢脚和大对子。' : '这组低张击中一对时点数仍偏低，面对大对子或强高张继续容易落后。'}`;
   }
   if (s.action === 'raise')
-    return `重打 ${f.holeText || c.handLabel} 这手，先对照${actual}与${suggestion}：底池 ${fmt(s.pot)}，你原本还有 ${fmt(s.stack)}，这次拿出 ${fmt(c.extra)}。${c.draw.outs ? '被跟注后还可以补牌，但若对手再加注，要重新比较这笔投入与听牌机会。' : ['pressure-bet', 'large-unbacked-bet'].includes(r.code) ? '当前没有听牌托底，别为争夺这个底池投入过多后手。' : '已有成牌时，练习选择能让弱牌付费的尺度，避免大加注只留下更强的牌。'}`;
+    return `重打 ${f.holeText || c.handLabel} 这手，${same(action, { action: s.action, amount: s.amount }) ? '核对' + actual + '的依据' : '先对照' + actual + '与' + suggestion}：底池 ${fmt(s.pot)}，你原本还有 ${fmt(s.stack)}，这次拿出 ${fmt(c.extra)}。${c.draw.outs ? '被跟注后还可以补牌，但若对手再加注，要重新比较这笔投入与听牌机会。' : ['pressure-bet', 'large-unbacked-bet'].includes(r.code) ? '当前没有听牌托底，别为争夺这个底池投入过多后手。' : '已有成牌时，练习选择能让弱牌付费的尺度，避免大加注只留下更强的牌。'}`;
   if (s.action === 'check' && c.handClass === 'board')
     return `重打 ${f.boardText} 这手时，先看 ${f.holeText || c.handLabel} 是否提高了公共牌，本次没有提高，平分机会不能算成独占底池。`;
   if (s.action === 'check')
-    return `重打这手${c.handLabel}，对照免费过牌与${suggestion}。${s.street === 3 && r.metrics.closing ? '本次河牌最后行动，比较的是免费摊牌与让弱牌付费。' : '当前底池 ' + fmt(s.pot) + '，还要观察剩下 ' + c.opponents + ' 位对手能否用弱牌接下注。'}`;
+    return `重打 ${f.holeText || c.handLabel} 这手，${action.action === 'check' ? '核对免费过牌的依据' : '对照免费过牌与' + suggestion}。${s.street === 3 && r.metrics.closing ? '本次河牌最后行动，比较的是免费摊牌与让弱牌付费。' : '当前底池 ' + fmt(s.pot) + '，还要观察剩下 ' + c.opponents + ' 位对手能否用弱牌接下注。'}`;
   if (s.action === 'fold' && s.legal.canCheck)
     return `这手 ${f.holeText || c.handLabel} 的跟注成本为 0，重打时先选择过牌，保留免费机会。`;
   if (draw.outs && r.metrics.closing && s.street === 1)
     return `重打 ${f.holeText || c.handLabel} 这手，比较补 ${fmt(s.legal.callAmount)} 所需的 ${pct(r.metrics.required)} 胜率与${suggestion}。若跟注，就能看完转牌和河牌，${draw.outs} 张只是下一张的改善候选，不能拿下一张概率直接代替最终获胜机会。`;
   return draw.outs
     ? `重打 ${f.holeText || c.handLabel} 这手，先对照 ${draw.outs} 张改善候选、下一张约 ${pct(draw.nextChance)}，和再补 ${fmt(s.legal.callAmount)} 所需的 ${pct(r.metrics.required)} 胜率，再比较${suggestion}。${r.metrics.closing ? '若跟注，之后已没有后续下注，不能靠成牌后再取值补足价格。' : '只把下一张的机会算进这笔跟注，后续下注另算。'}`
-    : `重打 ${f.holeText || c.handLabel} 这手，面对当前 ${fmt(s.currentBet)} 的下注，先比较${suggestion}与再补 ${fmt(s.legal.callAmount)}。${r.metrics.closing ? '跟注后只能等摊牌，不能再靠后街下注赶走更好的牌。' : c.pendingOthers ? '本轮还没封口，后面的玩家再加注时，你需要重新决定要不要跟。' : '这一轮已经轮到你最后回应，继续后，下一街还要面对新的牌面与下注。'}`;
+    : `重打 ${f.holeText || c.handLabel} 这手，面对当前 ${fmt(s.currentBet)} 的下注，先比较${suggestion}与${action.action === 'call' ? '弃牌' : '再补 ' + fmt(s.legal.callAmount)}。${s.action === 'fold' ? '若改为跟注，' : ''}${r.metrics.closing ? '跟注后只能等摊牌，不能再靠后街下注赶走更好的牌。' : c.pendingOthers ? '本轮还没封口，后面的玩家再加注时，你需要重新决定要不要跟。' : '这一轮已经轮到你最后回应，继续后，下一街还要面对新的牌面与下注。'}`;
 }
 
 // Decision quality depends only on this before-action snapshot and its analysis.
@@ -363,18 +413,20 @@ export function coachDecision(s, r) {
           : action.action === 'fold'
             ? `这手建议弃牌，保住行动前剩下的 ${fmt(s.stack)}，不再付出筹码。`
             : action.action === 'raise'
-              ? `这手建议${suggested}，额外投入 ${fmt(action.amount - s.bet)}，${r.context.draw.outs ? '保留补牌机会，同时给对手弃牌的压力' : ['pressure-bet', 'large-unbacked-bet'].includes(r.code) || (!s.street && r.context.tier < 2) ? '这次主要争取对手弃牌，要控制为这个底池付出的后手' : '让较弱成牌或起手牌付费，并控制这次投入的尺度'}。`
+              ? `这手建议${suggested}，额外投入 ${fmt(action.amount - s.bet)}，${r.context.valuePlan?.primary?.action === 'raise' ? '让较弱成牌或起手牌付费，并控制这次投入的尺度' : r.context.draw.outs ? (foldPressure(s).hasAllInOpponent ? '保留补牌机会，施压对象限于仍有筹码的对手' : '保留补牌机会，同时给对手弃牌的压力') : ['pressure-bet', 'large-unbacked-bet'].includes(r.code) || (!s.street && r.context.tier < 2) ? (foldPressure(s).hasAllInOpponent ? '这次只能争取仍有筹码的对手弃牌，要控制为这个底池付出的后手' : '这次主要争取对手弃牌，要控制为这个底池付出的后手') : '让较弱成牌或起手牌付费，并控制这次投入的尺度'}。`
               : action.action === 'check'
                 ? `这手建议直接过牌，不必下注，${r.context.handClass === 'board' ? '你的底牌没有提高公共牌，先保留平分底池的机会' : '先保留 ' + fmt(s.stack) + ' 后手，不主动放大 ' + fmt(s.pot) + ' 的底池'}。`
                 : s.legal.callAmount >= s.stack
                   ? '这手保留全下跟注，依据是当前价格下的摊牌机会。'
                   : s.street === 3
                     ? '这手建议跟注，依据是当前牌力对这条下注范围的摊牌机会。'
-                    : '这手建议跟注，保留当前牌力和改善后的获池机会。';
+                    : r.code === 'positioned-entry'
+                      ? `这手建议${suggested}，先用较小成本保留翻后位置和改善机会。`
+                      : '这手建议跟注，保留当前牌力和改善后的获池机会。';
     }
     const matchup = r.context.matchups?.text,
       supporting =
-        r.context.valuePlan?.kind === 'value-shove' && s.action === 'raise'
+        plannedValueShove(s, r.context) && s.action === 'raise'
           ? []
           : conciseReason
             ? reasonParts
@@ -403,6 +455,7 @@ export function coachDecision(s, r) {
   }
   return {
     kind,
+    recommendedAction: { ...action },
     label:
       kind === 'keep'
         ? '值得保留'

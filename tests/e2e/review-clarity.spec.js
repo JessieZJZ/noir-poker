@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { heroValueGame } from '../fixtures/review-spots.js';
+import { reviewFlexibilitySnapshot } from '../fixtures/review-flexibility.js';
 import {
   reportedKeyInfoCall,
   reportedGutshotCall,
@@ -7,6 +8,24 @@ import {
   reportedFivesAllIn,
   turnStraightCallRecord,
 } from '../fixtures/review-summary.js';
+
+test('deep button suited connectors receive a concrete call and conditional squeeze plan', async ({
+  page,
+}) => {
+  const game = heroValueGame('overpair');
+  game.decisions = [reviewFlexibilitySnapshot()];
+  await page.goto('/');
+  await page.waitForFunction(() => window.qa);
+  await page.evaluate((record) => window.qa.loadRecordedGame(record), game);
+  await page.locator('#review-hand-button').click();
+  await expect(page.locator('#review-dialog')).toHaveAttribute('data-analysis-status', 'done');
+  const detail = page.locator('#review-detail');
+  await expect(detail).toContainText('这手建议跟注 500');
+  await expect(detail).toContainText('3-bet 加注至 2K');
+  await expect(detail).toContainText('不代表天然拥有范围优势');
+  await expect(detail).toContainText('免费过牌则保留机会');
+  await expect(page.locator('#review-timeline .review-status')).not.toContainText('值得保留');
+});
 
 function recordedExamples() {
   const game = heroValueGame('overpair');

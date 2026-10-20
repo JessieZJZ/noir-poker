@@ -1,5 +1,12 @@
 // Offline review corpus. No fixtures or diagnostics enter a client bundle.
-import { mkdirSync, writeFileSync, readFileSync, readdirSync } from 'node:fs';
+import {
+  mkdirSync,
+  writeFileSync,
+  readFileSync,
+  readdirSync,
+  existsSync,
+  copyFileSync,
+} from 'node:fs';
 import { createHash } from 'node:crypto';
 import path from 'node:path';
 import {
@@ -18,6 +25,9 @@ import { coachDecision } from '../src/review/coaching.js';
 import { decisionContext } from '../src/review/context.js';
 import { handMatchups, valuePlan } from '../src/review/matchups.js';
 import { exhaustsStack } from '../src/review/presentation.js';
+import { preflopContext, positionedEntry } from '../src/review/preflop.js';
+import { comparisonRoutes } from '../src/review/routes.js';
+import { bigBlindOf } from '../src/engine/stakes.js';
 const args = Object.fromEntries(
   process.argv.slice(2).map((arg) => arg.replace(/^--/, '').split('=')),
 );
@@ -54,6 +64,8 @@ const manifest = {
   sourceDigest,
   source: 'real engine legal actions and before-action snapshots',
   counts: {},
+  actionMatrix: {},
+  strata: {},
   issues: [],
   files: [],
 };
@@ -62,9 +74,14 @@ const summary = (c) => c.paragraphs.slice(c.paragraphs.indexOf('复盘分析总�
 // Re-render saved public analyses after wording-only repairs. Numeric estimates,
 // candidate simulations and the original complete action history stay intact.
 if (args.refresh) {
+  if (args.backup) mkdirSync(path.resolve(args.backup), { recursive: true });
   for (const file of readdirSync(output)
     .filter((f) => /^hand-\d{4}\.json$/.test(f))
     .sort()) {
+    const handIndex = Number(file.slice(5, 9));
+    if (handIndex < start || handIndex >= end) continue;
+    if (args.backup && !existsSync(path.join(args.backup, file)))
+      copyFileSync(path.join(output, file), path.join(args.backup, file));
     const data = JSON.parse(readFileSync(path.join(output, file), 'utf8'));
     for (const entry of data.entries) {
       if (entry.perspective === 'hero' && !args['nouns-only']) {
@@ -73,6 +90,23 @@ if (args.refresh) {
         const s = entry.snapshot,
           current = decisionContext(s);
         if (
+          args.reanalyze ||
+          (args['strategy-refresh'] &&
+            entry.analysisDigest !== sourceDigest &&
+            ((!s.street &&
+              s.action === 'call' &&
+              ((s.hole[0].rank === s.hole[1].rank &&
+                s.hole[0].rank <= 7 &&
+                s.legal.callAmount < s.stack &&
+                s.legal.callAmount >= s.stack * 0.25) ||
+                (!r.context.tier && s.hole[0].suit !== s.hole[1].suit) ||
+                (r.context.tier === 1 && s.legal.callAmount >= s.stack))) ||
+              (s.street > 0 &&
+                s.action === 'raise' &&
+                (r.code === 'pressure-bet' ||
+                  (s.amount === s.legal.maxRaiseTo &&
+                    r.context.effective >= 50 * bigBlindOf(s) &&
+                    r.context.betRatio > 4))))) ||
           r.context.handClass !== current.handClass ||
           (!s.street &&
             s.action === 'raise' &&
@@ -81,12 +115,21 @@ if (args.refresh) {
         ) {
           r = analyzeDecision(s, { trials, rolloutTrials });
           entry.analysis = r;
+          entry.analysisDigest = sourceDigest;
           entry.review.metrics = r.metrics;
           entry.review.code = r.code;
         }
         r.context = current;
         r.context.matchups = handMatchups(s, r.context);
         r.context.valuePlan = valuePlan(s, r.context, r.context.matchups);
+        const pre = s.street ? null : preflopContext(s);
+        if (pre) r.context.positionedEntry = positionedEntry(s, r.context, pre);
+        r.routes = comparisonRoutes(s, r.context, {
+          code: r.code,
+          status: r.status,
+          alternative: r.alternative,
+          pre,
+        });
         r.coaching = coachDecision(s, r);
         Object.assign(entry.review, {
           label: r.coaching.label,
@@ -112,6 +155,7 @@ if (args.refresh) {
       }
     }
     data.presentationDigest = sourceDigest;
+    if (args.reanalyze) data.analysisDigest = sourceDigest;
     writeFileSync(path.join(output, file), JSON.stringify(data, null, 2));
   }
   console.log(JSON.stringify({ refreshed: output, presentationDigest: sourceDigest }));
@@ -128,6 +172,33 @@ try {
       startingStack: smallBlind * 200,
       chipUnit: smallBlind,
     });
+    // Unequal bankrolls represent later-hand situations. The configured
+    // starting stakes stay 100 BB, and every assigned chip is accounted for.
+    const scene = Math.floor(h / 5) % 10,
+      uniform = [20, 40, 75, 100, 150, 250][scene],
+      sceneName = uniform ? `uniform-${uniform}BB` : `mixed-${scene}`;
+    game.players.forEach((player) => {
+      const depth =
+        uniform ||
+        (scene === 6
+          ? player.id
+            ? [50, 100, 200][player.id % 3]
+            : 250
+          : scene === 7
+            ? player.id
+              ? 200
+              : 40
+            : scene === 8
+              ? player.id === 3
+                ? 20
+                : player.id === 0
+                  ? 150
+                  : 250
+              : player.id % 3 === 0
+                ? 10
+                : 100);
+      player.stack = depth * game.bigBlind;
+    });
     game.dealer = h % players;
     game.difficulty = ['easy', 'normal', 'hard'][h % 3];
     applyBotSettings(game, {
@@ -137,6 +208,45 @@ try {
       ),
     });
     startHand(game);
+    // Half random deals, half varied fixed hole-card shapes. Redistribute the
+    // full shuffled deck so no card is duplicated, then use only public input
+    // for the review. No future board is selected to favor a recommendation.
+    if (h % 2 === 0) {
+      const shapes = [
+          'As Ah',
+          'Ks Kh',
+          'Qs Qh',
+          '5s 5h',
+          '7c 8c',
+          '4d 5d',
+          'As 5s',
+          'As Kd',
+          'Ts Js',
+          '6h 8h',
+          '7s 2d',
+          'Kh Td',
+        ],
+        names = shapes[Math.floor(h / 10) % shapes.length].split(' '),
+        own = names.map((name) => {
+          const rank = '23456789TJQKA'.indexOf(name[0]) + 2,
+            suit = 'shcd'.indexOf(name[1]);
+          return [...game.deck, ...game.players.flatMap((p) => p.hole)].find(
+            (c) => c.rank === rank && c.suit === suit,
+          );
+        }),
+        keys = new Set(own.map((c) => c.key)),
+        rest = [...game.deck, ...game.players.flatMap((p) => p.hole)].filter(
+          (c) => !keys.has(c.key),
+        );
+      game.players[0].hole = own;
+      game.players.slice(1).forEach((p) => (p.hole = rest.splice(0, 2)));
+      game.deck = rest;
+      if (
+        new Set([...game.deck, ...game.players.flatMap((p) => p.hole)].map((c) => c.key)).size !==
+        52
+      )
+        throw Error('Duplicate card in scenario');
+    }
     const initial = game.players.reduce((sum, p) => sum + p.stack + p.total, 0);
     let moves = 0;
     while (game.phase !== 'done') {
@@ -172,6 +282,7 @@ try {
     if (game.players.reduce((sum, p) => sum + p.stack, 0) !== initial)
       throw Error('Chip conservation failed');
     if (h < start) continue;
+    count(`scenario-${sceneName}`);
     const input = createReviewInput(game),
       entries = [];
     for (const s of input.decisions) {
@@ -184,6 +295,31 @@ try {
       if (!s.street && s.hole.every((c) => c.rank === s.hole[0].rank) && s.hole[0].rank >= 13)
         tags.push('premium');
       for (const tag of tags) count(tag);
+      const recommendation = review.coaching.recommendedAction || review.alternative,
+        recommended =
+          recommendation.action === 'raise' && recommendation.amount === s.legal.maxRaiseTo
+            ? 'all-in-raise'
+            : recommendation.action === 'call' && s.legal.callAmount >= s.stack
+              ? 'all-in-call'
+              : recommendation.action,
+        transition = `${s.action}->${recommended}`,
+        depth = review.context.positionedEntry?.effective || review.context.effective,
+        depthBB = depth / bigBlindOf(s),
+        depthBand =
+          depthBB < 25
+            ? 'under-25BB'
+            : depthBB < 75
+              ? '25-74BB'
+              : depthBB < 150
+                ? '75-149BB'
+                : '150BB-plus',
+        shape = review.context.positionedEntry?.shape || review.context.handClass,
+        raises = s.street ? review.context.preflopRaises : preflopContext(s).raises,
+        stratum = `${s.street}:${s.position}:${shape}:${depthBand}:${raises}-raises`;
+      count(`recommend-${recommended}`);
+      manifest.actionMatrix[transition] = (manifest.actionMatrix[transition] || 0) + 1;
+      manifest.strata[stratum] ||= {};
+      manifest.strata[stratum][recommended] = (manifest.strata[stratum][recommended] || 0) + 1;
       const faults = [];
       if (/[；;]/.test(text)) faults.push('semicolon');
       if (/跟住|仍未弃牌|还留有?\s*0(?:[，。\s]|$)/.test(text)) faults.push('wording');
@@ -233,6 +369,7 @@ try {
           players,
           roster: input.players,
           smallBlind,
+          scenario: sceneName,
           activity: input.activity,
           entries,
         },

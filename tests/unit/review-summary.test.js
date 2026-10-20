@@ -20,7 +20,7 @@ test('reported turn call merges action and motive, names only its real straight 
   const r = explainOpponent(record),
     text = summary(r);
   assert.equal(r.paragraphs.length, 3);
-  assert.match(text, /选择跟注 6.3K，目的不是只靠高牌摊牌，而是在追两头顺听牌/);
+  assert.match(text, /选择跟注 6.3K，当前主要依靠听牌改善争取获胜/);
   assert.match(text, /8 张牌可能补成顺子/);
   assert.match(text, /帮对手成更大的牌/);
   assert.match(text, /还留 7K/);

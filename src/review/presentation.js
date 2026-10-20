@@ -1,4 +1,54 @@
-import { rankText } from '../engine/poker.js';
+import { rankText, partitionPots } from '../engine/poker.js';
+
+// Pressure can remove only players who still have chips. An existing side pot
+// must come from the public contribution ledger, never from a proposed wager.
+export function foldPressure(s, actorId = s.id ?? 0) {
+  const players = s.players || [
+      { id: actorId, total: s.total ?? s.bet ?? 0, folded: false },
+      ...(s.opponents || []),
+    ],
+    opponents = players.filter((p) => p.id !== actorId && !p.folded),
+    committed = opponents.filter((p) => p.allin),
+    foldable = opponents.filter((p) => !p.allin && p.stack !== 0),
+    committedIds = new Set(committed.map((p) => p.id)),
+    foldableIds = new Set(foldable.map((p) => p.id)),
+    pots = committed.length
+      ? partitionPots({
+          players: players.map((p) => ({
+            id: p.id,
+            total: p.total ?? p.bet ?? 0,
+            folded: !!p.folded,
+          })),
+        }).pots
+      : [];
+  return {
+    hasAllInOpponent: committed.length > 0,
+    foldableCount: foldable.length,
+    hasContestableSidePot: pots.some(
+      (pot) =>
+        pot.eligible.includes(actorId) &&
+        pot.eligible.some((id) => foldableIds.has(id)) &&
+        !pot.eligible.some((id) => committedIds.has(id)),
+    ),
+  };
+}
+
+export function foldWinNote(s, actorId = s.id ?? 0) {
+  const pressure = foldPressure(s, actorId);
+  if (!pressure.hasAllInOpponent) return '';
+  if (!pressure.foldableCount) return '对手都已全下，已没有可施压弃牌的目标，底池仍需摊牌决定。';
+  return pressure.hasContestableSidePot
+    ? '若仍有筹码的对手都弃牌，可以争取已有的边池，已全下者参与的底池仍需摊牌。'
+    : '这次只能争取让仍有筹码的对手退出，已全下者参与的底池仍需摊牌，不能靠其他玩家弃牌直接拿走整个底池。';
+}
+
+export function plannedValueShove(s, c) {
+  return (
+    ['value-shove', 'value-raise'].includes(c.valuePlan?.kind) &&
+    c.valuePlan.primary?.action === 'raise' &&
+    c.valuePlan.primary.amount === s.legal.maxRaiseTo
+  );
+}
 
 export function heavyPreflopPressure(s, c) {
   return (
