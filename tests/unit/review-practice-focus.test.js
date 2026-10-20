@@ -7,6 +7,24 @@ const fixtures = JSON.parse(
   readFileSync(new URL('../fixtures/review-practice-focus.json', import.meta.url)),
 );
 const options = { trials: 120, rolloutTrials: 4 };
+for (const name of ['kings-fold-allin-call', 'ace-king-fold-allin-call'])
+  test(`${name} recommends an all-in call without zero-stack or future betting plans`, () => {
+    const s = fixtures.heroes[name],
+      r = analyzeDecision(s, { trials: 600, rolloutTrials: 40 }),
+      text = summary(r);
+    assert.equal(r.coaching.recommendedAction.action, 'call');
+    assert.match(text, /若继续，建议用剩余 .* 全下跟注/);
+    assert.match(text, /之后不再参与下注决策/);
+    assert.doesNotMatch(text, /还留有\s*0|后续公共牌调整|你在翻后有位置|这手保留全下跟注/);
+    assert.doesNotMatch(text, /向它们取值|控制投入/);
+    assert.equal((text.match(/风险和收益才能持平/g) || []).length, 1);
+    assert.equal((text.match(/值得保留的依据/g) || []).length, 1);
+  });
+test('an ace all-in call explains kicker risk without future investment choices', () => {
+  const r = analyzeDecision(fixtures.heroes['weak-ace-allin-call'], options);
+  assert.match(summary(r), /但仍可能输给更大踢脚的 Ax/);
+  assert.doesNotMatch(summary(r), /向它们取值|仍需控制投入/);
+});
 const summary = (r) =>
   r.coaching.paragraphs.slice(r.coaching.paragraphs.indexOf('复盘分析总结') + 1).join('');
 

@@ -615,9 +615,13 @@ test('the same hand keeps its card comparisons but coaching follows actual posit
   assert.notEqual(plan(outOfPosition).primary.amount, plan(inPosition).primary.amount);
   const shorter = spot('As Kd', 'Ks 7h 2c', { stack: 500, legal: { maxRaiseTo: 500 } });
   const shortReview = analyzeDecision(shorter, { trials: 120, rolloutTrials: 12 });
+  assert.equal(shortReview.context.effective, 500);
+  assert.ok(shortReview.context.spr < baseline.context.spr);
+  assert.equal(shortReview.context.valuePlan.kind, 'value-shove');
+  assert.deepEqual(shortReview.context.valuePlan.primary, { action: 'raise', amount: 500 });
   assert.notEqual(
-    shortReview.coaching.explanation + shortReview.coaching.followUp,
-    baseline.coaching.explanation + baseline.coaching.followUp,
+    shortReview.context.valuePlan.primary.amount,
+    baseline.context.valuePlan.primary.amount,
   );
   assert.match(shortReview.evidence.join(''), /行动前你手里有 500/);
 });

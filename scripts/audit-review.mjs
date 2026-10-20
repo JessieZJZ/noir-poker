@@ -89,29 +89,35 @@ if (args.refresh) {
         let r = entry.analysis;
         const s = entry.snapshot,
           current = decisionContext(s);
+        const changedCall =
+          !s.street &&
+          s.action === 'call' &&
+          ((s.hole[0].rank === s.hole[1].rank &&
+            s.hole[0].rank <= 7 &&
+            s.legal.callAmount < s.stack &&
+            s.legal.callAmount >= s.stack * 0.25) ||
+            (!r.context.tier && s.hole[0].suit !== s.hole[1].suit) ||
+            (r.context.tier === 1 && s.legal.callAmount >= s.stack));
+        const changedPressure =
+          s.street > 0 &&
+          s.action === 'raise' &&
+          (r.code === 'pressure-bet' ||
+            (s.amount === s.legal.maxRaiseTo &&
+              r.context.effective >= 50 * bigBlindOf(s) &&
+              r.context.betRatio > 4));
+        const changedReraise =
+          !s.street &&
+          s.action === 'raise' &&
+          current.preflopRaises >= 3 &&
+          !s.hole.every((card) => card.rank >= 13 && card.rank === s.hole[0].rank);
         if (
           args.reanalyze ||
           (args['strategy-refresh'] &&
             entry.analysisDigest !== sourceDigest &&
-            ((!s.street &&
-              s.action === 'call' &&
-              ((s.hole[0].rank === s.hole[1].rank &&
-                s.hole[0].rank <= 7 &&
-                s.legal.callAmount < s.stack &&
-                s.legal.callAmount >= s.stack * 0.25) ||
-                (!r.context.tier && s.hole[0].suit !== s.hole[1].suit) ||
-                (r.context.tier === 1 && s.legal.callAmount >= s.stack))) ||
-              (s.street > 0 &&
-                s.action === 'raise' &&
-                (r.code === 'pressure-bet' ||
-                  (s.amount === s.legal.maxRaiseTo &&
-                    r.context.effective >= 50 * bigBlindOf(s) &&
-                    r.context.betRatio > 4))))) ||
-          r.context.handClass !== current.handClass ||
-          (!s.street &&
-            s.action === 'raise' &&
-            current.preflopRaises >= 3 &&
-            !s.hole.every((card) => card.rank >= 13 && card.rank === s.hole[0].rank))
+            (changedCall ||
+              changedPressure ||
+              changedReraise ||
+              r.context.handClass !== current.handClass))
         ) {
           r = analyzeDecision(s, { trials, rolloutTrials });
           entry.analysis = r;

@@ -87,7 +87,8 @@ export function preflopRangeNotes(s) {
       );
     else if (last.amount > 8 * bigBlindOf(s))
       notes.push(
-        `这次开池尺度明显大于普通开池，不能只根据位置套用常规范围，需要结合尺度和公开行动判断。${name(last.id)}${historyActionLabel(s.history, s.history.indexOf(last))}。`,
+        '这次开池尺度明显大于普通开池，不能只根据位置套用常规范围，需要结合尺度和公开行动判断。',
+        `${name(last.id)}${historyActionLabel(s.history, s.history.indexOf(last))}。`,
       );
     else
       notes.push(

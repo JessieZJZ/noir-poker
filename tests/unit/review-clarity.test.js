@@ -93,7 +93,12 @@ test('fold, check, raise and both kinds of all-in state actual cost without inve
   }
   const call = reportedKeyInfoCall();
   call.stack = call.players[0].stack = 140000;
-  call.legal.maxRaiseTo = 200000;
+  Object.assign(call.legal, {
+    canRaise: false,
+    minRaiseTo: 200000,
+    maxRaiseTo: 200000,
+    isShortAllin: true,
+  });
   assert.match(analyzeDecision(call, options).evidence[3], /跟注全下拿出 140K/);
 });
 

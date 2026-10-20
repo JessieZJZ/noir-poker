@@ -29,13 +29,15 @@ function explanation(s, r, evKind, suggested, kind) {
     hand = c.handLabel,
     cost = fmt(s.legal.callAmount),
     pressure = foldPressure(s);
-  if (exhaustsStack(s) && s.action === 'call') {
+  const suggestedAllInCall =
+    s.action === 'fold' && suggested.action === 'call' && s.legal.callAmount >= s.stack;
+  if ((exhaustsStack(s) && s.action === 'call') || suggestedAllInCall) {
     const pocket = s.hole[0].rank === s.hole[1].rank;
     return [
-      s.action === 'call'
-        ? `按当前可争夺底池计算，需要至少 ${pricePct(r.metrics.required)} 的胜率，风险和收益才能持平。`
-        : '',
-      '你已投入全部剩余筹码，之后不再参与下注决策。',
+      `按当前可争夺底池计算，需要至少 ${pricePct(r.metrics.required)} 的胜率，风险和收益才能持平。`,
+      suggestedAllInCall
+        ? `若继续，建议用剩余 ${fmt(s.stack)} 全下跟注，之后不再参与下注决策。`
+        : '你已投入全部剩余筹码，之后不再参与下注决策。',
       s.street < 3 ? '你可以看完剩余公共牌，无需再支付筹码。' : '',
       !s.street && pocket
         ? s.hole[0].rank >= 13
@@ -48,13 +50,13 @@ function explanation(s, r, evKind, suggested, kind) {
           : s.street && c.draw.outs
             ? `当前有${drawLabel(c.draw)}，补成${drawCompletion(c.draw)}是获胜机会的一部分，补中也未必领先。`
             : !s.street
-              ? preflopPotential(s)
+              ? preflopPotential(s, '你', true)
               : c.handClass === 'board-pair'
                 ? '当前主要靠公共牌上的对子和底牌踢脚争取摊牌，要结合对手的成牌与诈唬范围判断。'
                 : `当前${hand}的摊牌价值需要结合对手的成牌与诈唬范围判断。`,
       c.handClass === 'board'
         ? '是否划算取决于能够平分底池的机会与可分得的份额，还要计入对手用底牌组成更大牌的可能。'
-        : s.action === 'call' && suggested.action === 'call' && kind === 'keep'
+        : suggested.action === 'call' && (kind === 'keep' || suggestedAllInCall)
           ? evKind === 'positive'
             ? '按当前对手范围估计，获胜机会能够覆盖跟注成本，这是这次全下跟注值得保留的依据。'
             : '这次全下跟注值得保留的依据是当前价格和摊牌机会，但依赖对手范围中包含足够较弱牌或未成对高牌。'
@@ -417,7 +419,9 @@ export function coachDecision(s, r) {
               : action.action === 'check'
                 ? `这手建议直接过牌，不必下注，${r.context.handClass === 'board' ? '你的底牌没有提高公共牌，先保留平分底池的机会' : '先保留 ' + fmt(s.stack) + ' 后手，不主动放大 ' + fmt(s.pot) + ' 的底池'}。`
                 : s.legal.callAmount >= s.stack
-                  ? '这手保留全下跟注，依据是当前价格下的摊牌机会。'
+                  ? s.action === 'fold'
+                    ? ''
+                    : '这手保留全下跟注，依据是当前价格下的摊牌机会。'
                   : s.street === 3
                     ? '这手建议跟注，依据是当前牌力对这条下注范围的摊牌机会。'
                     : r.code === 'positioned-entry'

@@ -28,7 +28,7 @@ export function drawCompletion(draw) {
   return draw.flush && draw.straight ? '顺子或同花' : draw.flush ? '同花' : '顺子';
 }
 
-export function preflopPotential(s, subject = '你') {
+export function preflopPotential(s, subject = '你', showdownOnly = exhaustsStack(s)) {
   const [high, low] = s.hole.map((card) => card.rank).sort((a, b) => b - a);
   if (s.street || high === low) return [];
   const suited = s.hole[0].suit === s.hole[1].suit;
@@ -41,7 +41,7 @@ export function preflopPotential(s, subject = '你') {
       : `${subject}的两张同花底牌能争取同花听牌和成花机会。`;
   const pair =
     high === 14
-      ? `${subject}若击中 A，可形成顶对${low >= 10 ? '，较高踢脚有机会领先较弱 Ax，并向它们取值' : '，但面对更大踢脚的 Ax 时仍需控制投入'}。`
+      ? `${subject}若击中 A，可形成顶对${low >= 10 ? (showdownOnly ? '，较高踢脚有机会领先较弱 Ax' : '，较高踢脚有机会领先较弱 Ax，并向它们取值') : showdownOnly ? '，但仍可能输给更大踢脚的 Ax' : '，但面对更大踢脚的 Ax 时仍需控制投入'}。`
       : '';
   const connected =
     high - low === 1 ? `${subject}的两张底牌点数相连，能争取顺子听牌和成顺机会。` : '';
