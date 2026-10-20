@@ -524,6 +524,17 @@ try {
   assert.equal(await rail.style('height'), '2px');
   assert.equal(await rail.style('animation-name'), 'none');
   assert.equal(await rail.style('box-shadow'), 'none');
+  const notice = await page.$('.action-notice');
+  const slider = await page.$('.raise-controls slider');
+  const noticeTop = (await notice.offset()).top;
+  report.turnAttention.noticeSpacing = {
+    topGap: noticeTop - (await (await page.$('.action-dock')).offset()).top,
+    sliderGap: (await slider.offset()).top - noticeTop - (await notice.size()).height,
+  };
+  // WeChat's 24px notice sits in its own compact dock, whose original gap is 2.5px.
+  assert.equal(await notice.style('top'), '6px');
+  assert.ok(report.turnAttention.noticeSpacing.topGap >= 8);
+  assert.ok(report.turnAttention.noticeSpacing.sliderGap >= 0);
   // The host stays still; shared CSS animates two pseudo-element light fronts.
   // Web/native frame sampling covers their direction; DevTools retains a capture.
   await page.waitFor(850);

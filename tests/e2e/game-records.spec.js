@@ -59,10 +59,12 @@ test('large archives render collapsed session hands only when expanded and keep 
   await expect(page.locator('.record-session')).toHaveCount(8);
   const current = page.locator('[data-session-id="perf-session-7"]');
   await expect(current.locator('.record-hand')).toHaveCount(13);
+  await expect(current.locator('.record-hand').first()).toHaveAttribute('data-hand', '13');
   const previous = page.locator('[data-session-id="perf-session-6"]');
   await expect(previous.locator('.record-hand')).toHaveCount(0);
   await previous.locator('.record-session-heading').click();
   await expect(previous.locator('.record-hand')).toHaveCount(12);
+  await expect(previous.locator('.record-hand').first()).toHaveAttribute('data-hand', '12');
   await previous.locator('.record-hand').first().click();
   await expect(page.locator('#history-table')).toBeVisible();
   await expect(page.locator('#history-review-button')).toBeVisible();
@@ -184,7 +186,7 @@ test('stored historical labels remain text and cannot execute markup', async ({ 
   await expect(page.locator('#history-arena [data-archive-injected]')).toHaveCount(0);
 });
 
-test('records group sessions newest first and show graphic hands in chronological attempt order', async ({
+test('records show sessions, hands and retries newest first without changing saved order', async ({
   page,
 }) => {
   const initial = await state(page);
@@ -214,12 +216,20 @@ test('records group sessions newest first and show graphic hands in chronologica
       .locator('.record-hand')
       .evaluateAll((rows) => rows.map((r) => [r.dataset.hand, r.dataset.attempt])),
   ).toEqual([
-    ['1', '0'],
-    ['1', '1'],
     ['2', '0'],
+    ['1', '1'],
+    ['1', '0'],
   ]);
-  await expect(session.locator('.record-hand').first()).toHaveAttribute('data-superseded', 'true');
-  await expect(session.locator('.record-hand').first()).toHaveClass(/record-superseded/);
+  await expect(session.locator('.record-hand').last()).toHaveAttribute('data-superseded', 'true');
+  await expect(session.locator('.record-hand').last()).toHaveClass(/record-superseded/);
+  await session.locator('.record-session-heading').click();
+  await session.locator('.record-session-heading').click();
+  await expect(session.locator('.record-hand').first()).toHaveAttribute('data-hand', '2');
+  expect((await records(page))[0].attempts.map((a) => [a.hand, a.attempt])).toEqual([
+    [1, 0],
+    [1, 1],
+    [2, 0],
+  ]);
   await expect(session).not.toContainText('已被重打替代');
   await page.locator('#records-back-button').click();
   await page.locator('#reset-button').click();
@@ -271,7 +281,7 @@ test('record rows omit first-attempt copy, retain settled outcomes, color retrie
     .map(Number);
   expect(Math.max(...channels) - Math.min(...channels)).toBeGreaterThan(10);
   for (let index = 0; index < session.attempts.length; index++) {
-    const profit = session.attempts[index].profit;
+    const profit = session.attempts.at(-1 - index).profit;
     expect(Math.abs(profit)).toBeLessThan(1000);
     await expect(rows.nth(index).locator('.record-hand-result strong')).toHaveText(
       `${profit < 0 ? '-' : '+'}${Math.abs(profit)}`,
