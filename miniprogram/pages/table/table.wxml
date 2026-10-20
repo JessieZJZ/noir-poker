@@ -278,7 +278,7 @@
           ><view class="hero-info"
             ><view class="hero-identity"
               ><text
-                >你 <text wx:if="{{!waitingForSeat}}" class="position">{{heroPosition}}</text></text
+                >你<text wx:if="{{!waitingForSeat}}" class="position">{{heroPosition}}</text></text
               ><text class="stack">{{heroStack}}</text></view
             ><view class="hero-action">{{heroAction}}</view></view
           ></view

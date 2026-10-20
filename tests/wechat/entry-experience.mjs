@@ -41,7 +41,13 @@ try {
     app.noirTableReady = false;
     wx.setStorageSync(
       'noir-wechat-settings-v1',
-      JSON.stringify({ playerCount: 5, hints: false, sound: true, vibration: false }),
+      JSON.stringify({
+        playerCount: 5,
+        stakes: { smallBlind: 10000, bigBlind: 20000 },
+        hints: false,
+        sound: true,
+        vibration: false,
+      }),
     );
     wx.removeStorageSync('noir-game-records-v1');
     app.__entryProbe = { original: wx.createInnerAudioContext, audios: [], samples: [] };
@@ -144,6 +150,19 @@ try {
       `${selector} must stay inside the header`,
     );
   }
+  const handOffset = await (await page.$('.hand-label')).offset();
+  const blindOffset = await (await page.$('.blind-info')).offset();
+  assert.ok(
+    Math.abs(handOffset.top - blindOffset.top) <= 1,
+    'Waiting blinds share the first header row',
+  );
+  const heroName = await page.$('.hero-identity > text'),
+    heroStack = await page.$('.hero-identity .stack');
+  const heroGap =
+    (await heroStack.offset()).left -
+    (await heroName.offset()).left -
+    (await heroName.size()).width;
+  assert.ok(heroGap >= 0 && heroGap <= 7, `Waiting hero gap must be compact, got ${heroGap}`);
   assert.equal((await page.$$('.hero-identity .position')).length, 0);
   await menu.tap();
   await wait(async () => (await page.data()).resourceMenuOpen, 'Left menu must open');
@@ -217,7 +236,7 @@ try {
     titleOffset = await title.offset(),
     titleSize = await title.size();
   assert.equal(resetSize.width, 70);
-  assert.equal(resetSize.height, 44);
+  assert.equal(resetSize.height, 32);
   assert.ok(resetOffset.left >= titleOffset.left + titleSize.width + 8);
   assert.ok(
     Math.abs(resetOffset.top + resetSize.height / 2 - titleOffset.top - titleSize.height / 2) < 1,

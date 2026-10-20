@@ -17,7 +17,6 @@ import {
   renderSeatAction,
   visibleRecentAction as sceneRecentAction,
 } from './table-scene.js';
-import { COMPACT_PLAY_QUERY } from './play-geometry.js';
 import {
   localizeText,
   formatChips,
@@ -72,19 +71,10 @@ let appActive = isAppActive();
 activityClock.setActive(appActive && !isOrientationBlocked());
 let dealWait = null;
 const $ = (s) => document.querySelector(s);
-const compactCoach = window.matchMedia(COMPACT_PLAY_QUERY);
 const coachContent = $('#coach-content');
-function positionCoach() {
-  const compact = compactCoach.matches;
-  (compact ? $('.surface-top') : $('#coach-desktop-body')).append(coachContent);
-  (compact ? $('#hint-setting-row') : $('#coach-toggle-slot')).append($('#hint-toggle'));
-  $('#hint-setting-row').hidden = !compact;
-  $('#coach-desktop-card').hidden = compact;
-  $('#hint-toggle').setAttribute('aria-labelledby', compact ? 'hint-label' : 'coach-card-title');
-}
 const settlementLayout = createSettlementLayout($('#arena'), { observe: false });
 const playViewport = createPlayViewport($('.game-surface'), { layout: settlementLayout.update });
-const hintMarquee = createHintMarquee(coachContent, $('#coach-tip'), () => compactCoach.matches);
+const hintMarquee = createHintMarquee(coachContent, $('#coach-tip'), () => true);
 const hintNotification = createHintNotification({
   publish({ visible, text, stage }) {
     $('#coach-content').hidden = !visible;
@@ -310,11 +300,7 @@ function render() {
   gameRecords.capture(game);
   recordsView.refresh();
   renderStakesSettings();
-  const activityList = $('#activity-list'),
-    activityScrollTop = activityList.scrollTop,
-    followActivity =
-      game.hand !== lastHand ||
-      activityList.scrollHeight - activityList.clientHeight - activityScrollTop <= 24;
+  const activityList = $('#activity-list');
   const waiting = game.phase === 'idle';
   const dealing = dealGate.pending;
   const nextEntryHand = gameRecords.nextHandIdentity(game, { newSession: newRecordSession });
@@ -579,10 +565,6 @@ function render() {
   lastHand = game.hand;
   lastBoard = displayBoard.length;
   playViewport.update(game, done);
-  // Desktop history is bounded by the table. Keep following new actions only
-  // while the reader is at the bottom; reviewing earlier actions keeps its place.
-  if (!compactCoach.matches)
-    activityList.scrollTop = followActivity ? activityList.scrollHeight : activityScrollTop;
 }
 function updateBet() {
   const legal = legalActions(game, 0);
@@ -603,7 +585,6 @@ function updateCoach(force = false) {
   toggle.setAttribute('aria-pressed', String(hints));
   toggle.setAttribute('aria-checked', String(hints));
   setLocalizedAttribute(toggle, 'title', hints ? '牌桌提示已开启' : '牌桌提示已关闭');
-  $('#coach-disabled').hidden = hints || compactCoach.matches;
   if (game.phase === 'idle' || dealGate.pending) {
     hintNotification.update({ enabled: false });
     return;
@@ -633,23 +614,16 @@ function updateCoach(force = false) {
   const stage = game.phase === 'done' ? '本手复盘' : streets[game.street] + '策略';
   hintNotification.update({
     enabled: hints,
-    key: `${compactCoach.matches ? 'banner' : 'card'}:${epoch}:${game.hand}:${game.street}:${game.phase === 'done' ? 'done' : legal.enabled ? `turn:${game.currentBet}:${p.bet}` : 'waiting'}`,
+    key: `banner:${epoch}:${game.hand}:${game.street}:${game.phase === 'done' ? 'done' : legal.enabled ? `turn:${game.currentBet}:${p.bet}` : 'waiting'}`,
     text: tip,
     stage,
     force,
-    persistent: !compactCoach.matches,
     notify:
-      !compactCoach.matches ||
       force ||
       game.phase === 'done' ||
       (!p.folded && (legal.enabled || game.hand !== lastHand || game.board.length !== lastBoard)),
   });
 }
-function changeCoachLayout() {
-  positionCoach();
-  updateCoach(true);
-}
-compactCoach.addEventListener('change', changeCoachLayout);
 function schedule() {
   clearTimeout(timer);
   if (!activityClock.active || game.phase === 'idle' || dealGate.pending) return;
@@ -1334,12 +1308,10 @@ function registerTools() {
 }
 updateSound();
 updateVibration();
-positionCoach();
 function syncActivity() {
   const active = appActive && !isOrientationBlocked();
   backgroundMusic.setActive(active && !document.hidden);
   hintNotification.setActive(active && !document.hidden);
-  if (active && !document.hidden && !compactCoach.matches) updateCoach(true);
   const changed = activityClock.setActive(active);
   dealGate.setActive(active && !document.hidden);
   syncTurnAttention();
@@ -1361,7 +1333,6 @@ document.addEventListener('visibilitychange', () => {
   backgroundMusic.setActive(activityClock.active && !document.hidden);
   syncTurnAttention();
   hintNotification.setActive(activityClock.active && !document.hidden);
-  if (activityClock.active && !document.hidden && !compactCoach.matches) updateCoach(true);
 });
 window.addEventListener('pagehide', (event) => {
   backgroundMusic.setActive(false);
@@ -1369,7 +1340,6 @@ window.addEventListener('pagehide', (event) => {
   if (event.persisted) return;
   dealGate.cancel();
   backgroundMusic.dispose();
-  compactCoach.removeEventListener('change', changeCoachLayout);
   hintNotification.destroy();
   hintMarquee.destroy();
 });

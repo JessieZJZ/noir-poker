@@ -42,7 +42,9 @@ test('all entry locales fit 320px and 390px touch viewports with labelled settin
                   const title = document.querySelector('.session-card h2').getBoundingClientRect();
                   const reset = document.querySelector('#reset-button').getBoundingClientRect();
                   return (
-                    reset.left >= title.right + 8 && reset.right <= card.right && reset.height >= 44
+                    reset.left >= title.right + 8 &&
+                    reset.right <= card.right &&
+                    reset.height === 32
                   );
                 })(),
                 settingsOnRight:
@@ -63,6 +65,57 @@ test('all entry locales fit 320px and 390px touch viewports with labelled settin
     }
   } finally {
     await context.close();
+  }
+});
+test('entry stakes stay at the header top and the hero label has no reserved badge gap', async ({
+  page,
+}) => {
+  await page.addInitScript(() =>
+    localStorage.setItem(
+      'noir-table-v1',
+      JSON.stringify({ playerCount: 9, stakes: { smallBlind: 10000, bigBlind: 20000 } }),
+    ),
+  );
+  await page.goto('/');
+  await expect(page.locator('html')).toHaveAttribute('data-app-ready', 'true');
+  await expect(page.locator('.blind-info b')).toHaveText('10K / 20K');
+  for (const width of [320, 390, 768, 1024, 1280, 1700, 2256]) {
+    await page.setViewportSize({ width, height: 1000 });
+    await expect
+      .poll(() =>
+        page.evaluate(() => {
+          const box = (s) => document.querySelector(s).getBoundingClientRect();
+          const hand = box('.hand-label'),
+            blinds = box('.blind-info'),
+            surface = box('.game-surface'),
+            card = box('.session-card');
+          const name = box('.hero-identity strong'),
+            stack = box('#hero-stack');
+          return {
+            sameTop: Math.abs(hand.top - blinds.top) <= 1,
+            headerFits: hand.right <= blinds.left && blinds.right <= box('.surface-top').right,
+            heroGap: stack.left - name.right >= 0 && stack.left - name.right <= 7,
+            noPositionSlot: box('#hero-position').width === 0,
+            practiceBelow: card.top >= surface.bottom && card.top - surface.bottom <= 20,
+            sameWidth: Math.abs(card.width - surface.width) <= 1,
+            noOverflow: document.documentElement.scrollWidth <= innerWidth,
+          };
+        }),
+      )
+      .toEqual({
+        sameTop: true,
+        headerFits: true,
+        heroGap: true,
+        noPositionSlot: true,
+        practiceBelow: true,
+        sameWidth: true,
+        noOverflow: true,
+      });
+    if ([390, 1700].includes(width))
+      await page.screenshot({
+        path: test.info().outputPath(`waiting-layout-${width}.png`),
+        fullPage: true,
+      });
   }
 });
 import { openSettings, closeSettings } from './settings-helpers.js';

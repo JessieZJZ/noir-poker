@@ -1,3 +1,24 @@
+/* Practice details follow the table at every viewport width. */
+.main {
+  grid-template-columns: minmax(0, 1fr);
+  row-gap: 18px;
+}
+.main > .sidebar {
+  display: flex;
+  flex-direction: column;
+  align-self: start;
+  padding-top: 0;
+  gap: 14px;
+}
+.main > .sidebar > .activity-card {
+  contain: none;
+  flex: none;
+}
+.main .activity-card .activity-list {
+  flex: none;
+  max-height: none;
+  overflow: visible;
+}
 .header-actions {
   gap: 18px;
 }
@@ -52,12 +73,24 @@
   display: none;
 }
 .game-surface[data-entry-state='waiting'] .surface-top .hand-label {
-  grid-column: 1 / -1;
+  grid-column: 1;
+  align-self: start;
   white-space: normal;
   line-height: 1.45;
 }
+.main .game-surface[data-entry-state='waiting'] > .surface-top {
+  grid-template-rows: auto 22px;
+}
 .game-surface[data-entry-state='waiting'] .surface-top .blind-info {
-  grid-row: 2;
+  grid-row: 1;
+  align-self: start;
+  line-height: 1.45;
+}
+.game-surface[data-entry-state='waiting'] #hero-position {
+  display: none;
+}
+.game-surface[data-entry-state='waiting'] .hero-identity {
+  gap: 6px;
 }
 .game-surface[data-entry-state='waiting'] > .action-dock-slot {
   display: none;

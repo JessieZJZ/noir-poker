@@ -352,6 +352,14 @@ export async function nativeScenarios(app) {
         border: a.borderWidth,
         settingsOnRight:
           menu.getBoundingClientRect().right <= settings.getBoundingClientRect().left,
+        blindsAtTop:
+          Math.abs(
+            document.querySelector('.hand-label').getBoundingClientRect().top -
+              document.querySelector('.blind-info').getBoundingClientRect().top,
+          ) <= 1,
+        heroGap:
+          document.querySelector('#hero-stack').getBoundingClientRect().left -
+          document.querySelector('.hero-identity strong').getBoundingClientRect().right,
         dock: document.querySelector('.action-dock-slot').getBoundingClientRect().height,
         activityHidden: document.querySelector('.activity-card').hidden,
         entryCopy: document.querySelector('#entry-welcome').textContent.trim(),
@@ -361,6 +369,8 @@ export async function nativeScenarios(app) {
     assert.equal(chrome.weight, chrome.menuWeight);
     assert.equal(chrome.border, '0px');
     assert.equal(chrome.settingsOnRight, true);
+    assert.equal(chrome.blindsAtTop, true);
+    assert.ok(chrome.heroGap >= 0 && chrome.heroGap <= 7);
     assert.equal(chrome.dock, 0);
     assert.equal(chrome.activityHidden, true);
     assert.ok(!chrome.entryCopy.includes('第一手'));
@@ -441,6 +451,36 @@ export async function nativeScenarios(app) {
       resumed,
     };
   });
+  await check('entry-high-stakes-layout', async () => {
+    await app.relaunch();
+    await app.evaluate(() => window.noir.requestSmallBlind('10000'));
+    await app.relaunch();
+    const layout = await app.evaluate(() => {
+      const box = (s) => document.querySelector(s).getBoundingClientRect();
+      const hand = box('.hand-label'),
+        blinds = box('.blind-info'),
+        surface = box('.game-surface'),
+        practice = box('.session-card');
+      return {
+        waiting: document.querySelector('.game-surface').dataset.entryState,
+        blinds: document.querySelector('.blind-info b').textContent,
+        stack: document.querySelector('#hero-stack').textContent,
+        sameTop: Math.abs(hand.top - blinds.top) <= 1,
+        noOverlap: hand.right <= blinds.left,
+        gap: box('#hero-stack').left - box('.hero-identity strong').right,
+        followsTable: practice.top >= surface.bottom && practice.top - surface.bottom <= 20,
+      };
+    });
+    assert.equal(layout.waiting, 'waiting');
+    assert.equal(layout.blinds, '10K / 20K');
+    assert.equal(layout.stack, '2M');
+    assert.equal(layout.sameTop, true);
+    assert.equal(layout.noOverlap, true);
+    assert.ok(layout.gap >= 0 && layout.gap <= 7);
+    assert.equal(layout.followsTable, true);
+    await app.screenshot('waiting-high-stakes-layout');
+    return layout;
+  });
   await check('practice-reset-in-card-heading', async () => {
     await app.evaluate(() =>
       document.querySelector('.session-card').scrollIntoView({ block: 'center' }),
@@ -464,7 +504,7 @@ export async function nativeScenarios(app) {
       aligned: true,
       rightOfTitle: true,
       fits: true,
-      height: 44,
+      height: 32,
       oldFooter: false,
     });
     const before = await app.state();

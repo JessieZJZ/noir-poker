@@ -1124,7 +1124,7 @@ test('review completes through real worker with facts and a conditional follow-u
   await expect(page.locator('#review-coach-explanation')).not.toBeEmpty();
 });
 
-test('activity preserves chronological top-to-bottom order with bounded desktop scrolling and mobile expansion', async ({
+test('activity preserves chronological top-to-bottom order with page expansion at every width', async ({
   page,
 }) => {
   for (const width of [320, 360, 390, 600, 768, 900, 901, 1280]) {
@@ -1192,9 +1192,9 @@ test('activity preserves chronological top-to-bottom order with bounded desktop 
       for (let i = 1; i < layout.milestones.length; i++)
         expect(layout.milestones[i]).toBeGreaterThan(layout.milestones[i - 1]);
       expect(layout.readingOrder).toEqual(Array.from({ length: layout.logCount }, (_, i) => i));
-      expect(layout.overflow).toBe(width > 900 ? 'auto' : 'visible');
-      if (width <= 900) expect(layout.scrollHeight - layout.clientHeight).toBeLessThanOrEqual(1);
-      else expect(layout.clientHeight).toBeGreaterThan(0);
+      expect(layout.overflow).toBe('visible');
+      expect(layout.scrollHeight - layout.clientHeight).toBeLessThanOrEqual(1);
+      expect(layout.clientHeight).toBeGreaterThan(0);
       expect(layout.peekOverlaps).toBe(false);
       await page.locator('.seat-peek').first().click();
       await expect(page.locator('#activity-list li')).toHaveText(layout.texts);

@@ -1860,14 +1860,14 @@
 
 .practice-panel .session-title {
   height: auto;
-  min-height: 44px;
+  min-height: 32px;
   gap: 12px;
 }
 .practice-panel .session-title .practice-reset {
   width: 70px;
   min-width: 0;
   max-width: 62%;
-  min-height: 44px;
+  min-height: 32px;
   flex: none;
   margin: 0 !important;
   padding: 5px 10px;

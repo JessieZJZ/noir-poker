@@ -2231,7 +2231,7 @@ test('WeChat practice heading owns reset and omits the old footer', () => {
   );
   assert.match(
     readFileSync(new URL('../../miniprogram/pages/table/parity.wxss', import.meta.url), 'utf8'),
-    /\.practice-reset\s*\{[^}]*width: 70px;[^}]*min-height: 44px/s,
+    /\.practice-reset\s*\{[^}]*width: 70px;[^}]*min-height: 32px/s,
   );
   assert.match(template, /本次练习净变化/);
   assert.match(template, /<text>本局动态<\/text><text>{{done \? 'FINISHED' : 'LIVE'}}<\/text>/);

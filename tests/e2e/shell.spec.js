@@ -64,7 +64,7 @@ test('settings stay on the right and practice reset belongs to the session headi
                 .contains(document.querySelector('#reset-button')) &&
               Math.abs(middle(title) - middle(reset)) < 1 &&
               reset.left - title.right >= 8 &&
-              reset.height >= 44,
+              reset.height === 32,
             oldFooterRemoved: !document.querySelector('.practice-info'),
             buttonsFit: [reset, about].every((r) => r.left >= 0 && r.right <= innerWidth),
             noOverflow: document.documentElement.scrollWidth <= innerWidth,
@@ -214,7 +214,7 @@ test('desktop actions keep one-line labels and aligned button rows before and af
   }
 });
 
-test('retry explanation stays aligned directly under the hand header and the desktop columns end together', async ({
+test('retry explanation stays aligned and practice details follow the table without an empty column', async ({
   page,
 }) => {
   for (const width of [1101, 1280, 1700]) {
@@ -243,14 +243,16 @@ test('retry explanation stays aligned directly under the hand header and the des
           if (Math.abs(note.left - hand.left) > 1)
             issues.push('retry note is not aligned with the hand');
           if (note.bottom > table.top) issues.push('retry note covers the table');
-          if (Math.abs(surface.bottom - sidebar.bottom) > 2)
-            issues.push('desktop columns end at different heights');
-          if (footer.height !== 0) issues.push('empty Web footer must not occupy space');
+          if (sidebar.top < surface.bottom || sidebar.top - surface.bottom > 20)
+            issues.push('practice details must immediately follow the table');
           if (
-            !['auto', 'scroll'].includes(getComputedStyle(activity).overflowY) ||
-            activity.clientHeight <= 0
+            Math.abs(sidebar.left - surface.left) > 1 ||
+            Math.abs(sidebar.width - surface.width) > 1
           )
-            issues.push('activity timeline has no usable independent scroll area');
+            issues.push('practice details must share the table width');
+          if (footer.height !== 0) issues.push('empty Web footer must not occupy space');
+          if (getComputedStyle(activity).overflowY !== 'visible' || activity.clientHeight <= 0)
+            issues.push('activity timeline must expand with its contents');
           return issues;
         }),
       )

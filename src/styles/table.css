@@ -327,7 +327,7 @@
 .practice-reset {
   flex: none;
   max-width: 62%;
-  min-height: 44px;
+  min-height: 32px;
   padding: 5px 10px;
   border: 1px solid #354750;
   border-radius: 6px;

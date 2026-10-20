@@ -104,21 +104,27 @@
 }
 .entry-waiting .game-header {
   flex-basis: 50px;
-  flex-wrap: wrap;
-  align-content: center;
-  gap: 2px;
+  flex-wrap: nowrap;
+  align-items: flex-start;
+  gap: 8px;
 }
 .entry-waiting .hint-slot {
   display: none;
 }
 .entry-waiting .hand-label {
-  width: 100%;
+  flex: 1;
+  width: auto;
   white-space: normal;
   line-height: 1.45;
 }
 .entry-waiting .blind-info {
   margin-left: auto;
+  line-height: 1.45;
 }
 .entry-welcome {
   transform: translate(-50%, -50%) scale(var(--entry-scale, 1));
+}
+
+.entry-waiting .hero-identity {
+  gap: 6px;
 }

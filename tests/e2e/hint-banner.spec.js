@@ -149,96 +149,73 @@ test('single-line hints scroll horizontally below blinds without moving the tabl
   }
 });
 
-test('desktop coaching stays in the sidebar, wraps naturally and exposes its only toggle on the card', async ({
-  page,
-}) => {
+test('wide screens use the same inline hints and settings switch as phones', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 900 });
-  // Exercise a navigation slower than the old fixed pause target.
-  await page.route('**/src/main.js', async (route) => {
-    await new Promise((resolve) => setTimeout(resolve, 1200));
-    await route.continue();
-  });
   await page.clock.install({ time: new Date('2026-01-01T00:00:00Z') });
   await page.clock.pauseAt(new Date('2026-01-01T00:00:01Z'));
   await page.reload();
   await page.waitForFunction(() => !!window.qa);
-  await page.evaluate(() => window.qa.stop());
-  await page.evaluate(() => window.qa.heroTurn(9));
-  const card = page.locator('#coach-desktop-card');
-  await expect(card).toBeVisible();
-  await expect(card.locator('#coach-content')).toBeVisible();
-  await expect(card.locator('#hint-toggle')).toBeChecked();
-  await expect(page.locator('#coach-stage')).toBeVisible();
-  await expect(page.locator('.surface-top #coach-content')).toHaveCount(0);
-  await expect(page.locator('#hint-toggle, #coach-content')).toHaveCount(2);
+  await page.evaluate(() => {
+    window.qa.stop();
+    window.qa.heroTurn(9);
+  });
+  const banner = page.locator('.surface-top #coach-content');
+  await expect(banner).toBeVisible();
+  await expect(page.locator('.sidebar .coach-card')).toHaveCount(0);
+  await expect(page.locator('#hint-setting-row #hint-toggle')).toHaveCount(1);
   expect(await page.locator('#coach-tip').evaluate((el) => getComputedStyle(el).whiteSpace)).toBe(
-    'normal',
+    'nowrap',
   );
-  await page.clock.runFor(30000);
-  await expect(card.locator('#coach-content')).toBeVisible();
-  await card.screenshot({ path: test.info().outputPath('desktop-persistent-coach.png') });
+  await page.screenshot({
+    path: test.info().outputPath('desktop-inline-coach.png'),
+    fullPage: true,
+  });
+  await page.clock.runFor(Number(await banner.getAttribute('data-hint-duration')) + 1);
+  await expect(banner).toBeHidden();
   await openSettings(page);
-  await expect(page.locator('#hint-setting-row')).toBeHidden();
-  await expect(page.locator('#opponents-dialog #hint-toggle')).toHaveCount(0);
-  await closeSettings(page);
-  await card.locator('#hint-toggle').click();
-  await expect(card.locator('#hint-toggle')).not.toBeChecked();
-  await expect(card.locator('#coach-content')).toBeHidden();
+  await expect(page.locator('#hint-setting-row')).toBeVisible();
+  await page.locator('#hint-toggle').click();
   expect(await page.evaluate(() => localStorage.getItem('noir-hints'))).toBe('false');
-  await card.locator('#hint-toggle').click();
-  await expect(card.locator('#coach-content')).toBeVisible();
-  await page.clock.runFor(
-    Number(await page.locator('#coach-content').getAttribute('data-hint-duration')) + 1,
-  );
-  await expect(card.locator('#coach-content')).toBeVisible();
+  await page.locator('#hint-toggle').click();
+  await closeSettings(page);
+  await expect(banner).toBeVisible();
 });
 
-test('breakpoint changes reuse the same hint preference and cancel stale mobile expiry', async ({
-  page,
-}) => {
+test('resizing retains the same inline hint, expiry and saved preference', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.clock.install({ time: new Date('2026-01-01T00:00:00Z') });
-  // Freeze before navigation so slow loading cannot pass the fixed pause target.
   await page.clock.pauseAt(new Date('2026-01-01T00:00:01Z'));
   await page.reload();
   await page.waitForFunction(() => !!window.qa);
-  await page.evaluate(() => window.qa.stop());
   await page.evaluate(() => {
+    window.qa.stop();
     window.qa.heroTurn(9);
     window.hintNode = document.querySelector('#coach-content');
     window.hintToggleNode = document.querySelector('#hint-toggle');
   });
+  const banner = page.locator('.surface-top #coach-content');
   await page.clock.runFor(5000);
+  for (const width of [1280, 900, 901, 1700, 390]) {
+    await page.setViewportSize({ width, height: 900 });
+    await expect(banner).toBeVisible();
+    await expect(page.locator('#hint-setting-row #hint-toggle')).toHaveCount(1);
+    expect(
+      await page.evaluate(
+        () =>
+          window.hintNode === document.querySelector('#coach-content') &&
+          window.hintToggleNode === document.querySelector('#hint-toggle'),
+      ),
+    ).toBe(true);
+  }
+  await page.clock.runFor(Number(await banner.getAttribute('data-hint-duration')) + 1);
+  await expect(banner).toBeHidden();
   await page.setViewportSize({ width: 1280, height: 900 });
-  await expect(page.locator('#coach-desktop-card #coach-content')).toBeVisible();
-  await page.clock.runFor(10000);
-  await expect(page.locator('#coach-content')).toBeVisible();
-  await page.setViewportSize({ width: 900, height: 900 });
-  await expect(page.locator('#coach-desktop-card')).toBeHidden();
-  await expect(page.locator('.surface-top #coach-content')).toBeVisible();
-  await page.clock.runFor(
-    Number(await page.locator('#coach-content').getAttribute('data-hint-duration')) + 1,
-  );
-  await expect(page.locator('#coach-content')).toBeHidden();
-  await page.setViewportSize({ width: 901, height: 900 });
-  await expect(page.locator('#coach-desktop-card #coach-content')).toBeVisible();
-  await expect(page.locator('#hint-toggle')).toHaveCount(1);
-  await expect(page.locator('#coach-content')).toHaveCount(1);
-  expect(
-    await page.evaluate(
-      () =>
-        window.hintNode === document.querySelector('#coach-content') &&
-        window.hintToggleNode === document.querySelector('#hint-toggle'),
-    ),
-  ).toBe(true);
-  await page.locator('#hint-toggle').click();
-  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(banner).toBeHidden();
   await openSettings(page);
-  await expect(page.locator('#hint-setting-row #hint-toggle')).not.toBeChecked();
+  await page.locator('#hint-toggle').click();
   await closeSettings(page);
-  await expect(page.locator('#coach-content')).toBeHidden();
   await page.reload();
   await page.waitForFunction(() => !!window.qa);
   await page.evaluate(() => window.qa.heroTurn(9));
-  await expect(page.locator('#coach-content')).toBeHidden();
+  await expect(banner).toBeHidden();
 });

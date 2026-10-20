@@ -1079,7 +1079,7 @@ try {
   );
   const resetSize = await (await page.$('.practice-reset')).size();
   assert.ok(
-    resetSize.width > 0 && resetSize.height >= 44,
+    resetSize.width > 0 && resetSize.height === 32,
     'The reset control in the practice heading has a real touch target',
   );
   await scrollHomeTop();
