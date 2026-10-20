@@ -68,12 +68,13 @@ test('wide action logs expand below the table without stretching the game area o
     expect(readingPosition).toBeGreaterThan(0);
     await page.evaluate(() => window.qa.raiseActions(9));
     expect(await page.evaluate(() => scrollY)).toBeCloseTo(readingPosition, 0);
-    expect(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)).toBe(false);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)).toBe(
+      false,
+    );
     expect(await gameBounds(page)).toEqual(initial);
     await page.evaluate(() => scrollTo(0, 0));
     await page.evaluate(() => window.qa.raiseActions(9));
     expect(await page.evaluate(() => scrollY)).toBe(0);
-
   }
 });
 
