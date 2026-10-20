@@ -117,6 +117,14 @@ try {
   const font = await settings.style('font-size'),
     menuFont = await menu.style('font-size');
   assert.equal(font, menuFont);
+  const settingsOffset = await settings.offset(),
+    menuOffset = await menu.offset(),
+    menuSize = await menu.size();
+  assert.ok(
+    menuOffset.left + menuSize.width <= settingsOffset.left,
+    'Settings is the rightmost control',
+  );
+  assert.equal((await page.$$('.bottom-links, .practice-info')).length, 0);
   assert.equal((await settings.text()).trim(), '设置');
   assert.equal(await settings.style('border-top-width'), '0px');
   assert.equal((await (await page.$('#join-table-button')).text()).trim(), '入座开练');
@@ -137,6 +145,19 @@ try {
     );
   }
   assert.equal((await page.$$('.hero-identity .position')).length, 0);
+  await menu.tap();
+  await wait(async () => (await page.data()).resourceMenuOpen, 'Left menu must open');
+  const dropdown = await page.$('.resource-menu'),
+    dropdownOffset = await dropdown.offset(),
+    dropdownSize = await dropdown.size();
+  assert.ok(
+    Math.abs(dropdownOffset.left - menuOffset.left) < 1,
+    'Dropdown follows the left menu control',
+  );
+  assert.ok(dropdownOffset.left + dropdownSize.width <= (await page.data()).windowWidth);
+  await mini.screenshot({ path: path.join(output, 'left-menu-right-settings.png') });
+  await menu.tap();
+  await wait(async () => !(await page.data()).resourceMenuOpen, 'Menu closes normally');
   report.checks.push({ name: 'compact-labelled-settings-and-no-empty-activity', font, menuFont });
   await (await page.$('#join-table-button')).tap();
   const during = await wait(async () => {
@@ -185,6 +206,46 @@ try {
     await mini.screenshot({ path: path.join(output, `waiting-${count}-seats.png`) });
   }
   report.checks.push({ name: 'next-session-hand-and-all-waiting-table-sizes', reentry });
+  const reset = await page.$('.practice-panel .session-title .practice-reset');
+  assert.ok(reset);
+  await mini.pageScrollTo(
+    Math.max(0, (await reset.offset()).top - (await page.data()).topInset - 100),
+  );
+  const resetSize = await reset.size(),
+    resetOffset = await reset.offset();
+  const title = await page.$('.practice-panel .session-title > text'),
+    titleOffset = await title.offset(),
+    titleSize = await title.size();
+  assert.ok(resetSize.height >= 44 && resetSize.width > 0);
+  assert.ok(resetOffset.left >= titleOffset.left + titleSize.width + 8);
+  assert.ok(
+    Math.abs(resetOffset.top + resetSize.height / 2 - titleOffset.top - titleSize.height / 2) < 1,
+  );
+  await mini.screenshot({ path: path.join(output, 'practice-heading.png') });
+  await reset.tap();
+  await wait(
+    async () => (await page.data()).resetOpen,
+    'Moved reset opens the existing confirmation',
+  );
+  await (await page.$('.reset-sheet .close')).tap();
+  await wait(async () => !(await page.data()).resetOpen, 'Cancel closes reset');
+  assert.equal((await inspect()).hand, 0);
+  await reset.tap();
+  const confirm = await wait(
+    async () => page.$('.reset-sheet .primary'),
+    'Confirmation button must render after reopening reset',
+  );
+  await confirm.tap();
+  await wait(
+    async () => (await inspect()).hand === 1 && !(await page.data()).resetOpen,
+    'Confirmed reset starts the new practice',
+  );
+  assert.equal((await page.data()).stats.hands, 0);
+  report.checks.push({
+    name: 'practice-reset-in-heading-cancel-and-confirm',
+    resetSize,
+    settingsOnRight: true,
+  });
   assert.deepEqual(report.exceptions, []);
   report.status = 'passed';
 } catch (error) {

@@ -39,13 +39,6 @@
     <view wx:if="{{!historyReadOnly}}" class="nav-actions"
       ><button
         hover-class="none"
-        class="icon-button settings-button"
-        aria-label="设置"
-        bindtap="openSettings"
-      >
-        <view class="gear-icon" /><text>设置</text></button
-      ><button
-        hover-class="none"
         class="guide-button"
         id="resource-menu-button"
         bindtap="toggleResourceMenu"
@@ -55,7 +48,14 @@
           <text class="resource-label-previous">{{resourcePreviousLabel}}</text>
           <text class="resource-label-current">{{resourceLabel}}</text>
           <text class="resource-label-static">玩法指南</text> </view
-        ><text class="resource-chevron">▾</text>
+        ><text class="resource-chevron">▾</text></button
+      ><button
+        hover-class="none"
+        class="icon-button settings-button"
+        aria-label="设置"
+        bindtap="openSettings"
+      >
+        <view class="gear-icon" /><text>设置</text>
       </button>
       <view wx:if="{{resourceMenuOpen}}" class="resource-menu">
         <button id="resource-guide" bindtap="openGuide">玩法指南</button>
@@ -430,7 +430,11 @@
     </view>
   </view>
   <view wx:if="{{!historyReadOnly}}" class="practice-panel"
-    ><view class="session-title"><text>本局练习</text></view
+    ><view class="session-title"
+      ><text>本局练习</text
+      ><button class="practice-reset" hover-class="none" bindtap="resetPractice">
+        重新练习
+      </button></view
     ><view class="session-balance"
       ><text class="session-caption">当前筹码</text
       ><text class="session-stack">{{heroStack}}<text class="session-unit">CHIPS</text></text
@@ -458,13 +462,6 @@
         ></view
       ></view
     ></view
-  >
-  <view wx:if="{{!historyReadOnly}}" class="bottom-links"
-    ><view class="practice-info"
-      ><view><view class="live-dot" /><text>本地电脑对手 · 无需登录</text></view
-      ><button hover-class="none" bindtap="resetPractice">重新练习</button></view
-    >
-    <text>仅使用虚拟筹码</text></view
   >
 </view>
 

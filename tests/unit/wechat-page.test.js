@@ -2216,12 +2216,19 @@ test('WeChat final cards retain readable phone dimensions within the unchanged f
   );
 });
 
-test('WeChat practice statistics show only the current-session title', () => {
+test('WeChat practice heading owns reset and omits the old footer', () => {
   assert.match(
     template,
-    /class="practice-panel"\s*><view class="session-title"><text>本局练习<\/text><\/view\s*>/,
+    /class="practice-panel"\s*><view class="session-title"\s*><text>本局练习<\/text\s*><button class="practice-reset"[^>]*bindtap="resetPractice">\s*重新练习\s*<\/button\s*>/,
   );
-  assert.doesNotMatch(template, /你的练习|本次牌桌/);
+  assert.doesNotMatch(
+    template,
+    /你的练习|本次牌桌|class="bottom-links"|class="practice-info"|本地电脑对手 · 无需登录/,
+  );
+  assert.ok(
+    template.indexOf('id="resource-menu-button"') <
+      template.indexOf('class="icon-button settings-button"'),
+  );
   assert.match(template, /本次练习净变化/);
   assert.match(template, /<text>本局动态<\/text><text>{{done \? 'FINISHED' : 'LIVE'}}<\/text>/);
 });

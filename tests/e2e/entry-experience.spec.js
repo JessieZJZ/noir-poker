@@ -37,10 +37,28 @@ test('all entry locales fit 320px and 390px touch viewports with labelled settin
                 navFits: nav.left >= 0 && nav.right <= document.documentElement.clientWidth,
                 settingsHeight: document.querySelector('#opponents-button').getBoundingClientRect()
                   .height,
+                resetFits: (() => {
+                  const card = document.querySelector('.session-card').getBoundingClientRect();
+                  const title = document.querySelector('.session-card h2').getBoundingClientRect();
+                  const reset = document.querySelector('#reset-button').getBoundingClientRect();
+                  return (
+                    reset.left >= title.right + 8 && reset.right <= card.right && reset.height >= 44
+                  );
+                })(),
+                settingsOnRight:
+                  document.querySelector('#rules-button').getBoundingClientRect().right <=
+                  document.querySelector('#opponents-button').getBoundingClientRect().left,
               };
             }),
           )
-          .toEqual({ width, scroll: width, navFits: true, settingsHeight: 44 });
+          .toEqual({
+            width,
+            scroll: width,
+            navFits: true,
+            settingsHeight: 44,
+            resetFits: true,
+            settingsOnRight: true,
+          });
       }
     }
   } finally {
@@ -84,7 +102,7 @@ for (const count of [5, 6, 7, 8, 9]) {
         menuFont: b.fontSize,
         weight: a.fontWeight,
         menuWeight: b.fontWeight,
-        gap: br.left - ar.right,
+        gap: ar.left - br.right,
         height: ar.height,
         icon: settings.querySelector('svg').getBoundingClientRect().width,
         dock: document.querySelector('.action-dock-slot').getBoundingClientRect().height,

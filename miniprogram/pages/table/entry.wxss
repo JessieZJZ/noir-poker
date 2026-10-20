@@ -2,6 +2,10 @@
   left: 0;
   gap: 10px;
 }
+.nav-actions .resource-menu {
+  left: 0;
+  right: auto;
+}
 .nav-actions .settings-button {
   display: flex;
   gap: 7px;

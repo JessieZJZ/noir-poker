@@ -1031,8 +1031,8 @@ try {
   await capture('session-activity', [
     '.practice-panel',
     '.activity-panel',
-    '.bottom-links',
-    '.bottom-links button',
+    '.practice-panel .session-title',
+    '.practice-reset',
   ]);
   for (let attempt = 0; attempt < 3; attempt++) {
     await mini.pageScrollTo(100000);
@@ -1063,10 +1063,10 @@ try {
     /^第 \d+ 手开始/,
     'Display the real hand start before later activity',
   );
-  const resetSize = await (await page.$('.bottom-links button')).size();
+  const resetSize = await (await page.$('.practice-reset')).size();
   assert.ok(
-    resetSize.width >= 74 && resetSize.width <= 82,
-    'The footer reset control keeps the Web text-button width, not WeChat’s 184px default',
+    resetSize.width > 0 && resetSize.height >= 44,
+    'The reset control in the practice heading has a real touch target',
   );
   await scrollHomeTop();
   for (const count of [5, 6, 7, 8, 9]) {

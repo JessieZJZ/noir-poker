@@ -22,8 +22,6 @@ async function enterNativeTable(app) {
   );
 }
 
-const documentLoginMarker = (text) => /sign in|log in|登录账号/i.test(text);
-
 async function waitForNativeGuidePaint(app) {
   // DOM geometry can precede UIKit's composited dialog and scroll frame.
   await app.evaluate(() => {
@@ -315,11 +313,30 @@ export async function nativeScenarios(app) {
       15000,
       'Music must already play before the first native touch',
     );
+    await app.evaluate(() => {
+      const audio = document.querySelector('audio[data-background-music]');
+      window.__entryMusicAudio = audio;
+      window.__entryMusicTimes = [audio.currentTime];
+      window.__entryMusicObserve = () => window.__entryMusicTimes.push(audio.currentTime);
+      audio.addEventListener('timeupdate', window.__entryMusicObserve);
+    });
+    const progress = () =>
+      app.evaluate(() => {
+        const audio = document.querySelector('audio[data-background-music]');
+        const samples = window.__entryMusicTimes;
+        return {
+          time: audio.currentTime,
+          count: document.querySelectorAll('audio[data-background-music]').length,
+          samePlayer: audio === window.__entryMusicAudio,
+          naturalLoop: samples.some(
+            (time, index) => index > 0 && samples[index - 1] > audio.duration - 0.6 && time < 0.6,
+          ),
+        };
+      });
     await app.sleep(300);
-    const later = await app.evaluate(
-      () => document.querySelector('audio[data-background-music]').currentTime,
-    );
-    assert.ok(later > music.time);
+    const later = await progress();
+    assert.ok(later.time > music.time || later.naturalLoop);
+    assert.equal(later.samePlayer, true);
     assert.deepEqual(await app.state(), before, 'Waiting must not start a hand or move chips');
     const chrome = await app.evaluate(() => {
       const settings = document.querySelector('#opponents-button'),
@@ -332,6 +349,8 @@ export async function nativeScenarios(app) {
         weight: a.fontWeight,
         menuWeight: b.fontWeight,
         border: a.borderWidth,
+        settingsOnRight:
+          menu.getBoundingClientRect().right <= settings.getBoundingClientRect().left,
         dock: document.querySelector('.action-dock-slot').getBoundingClientRect().height,
         activityHidden: document.querySelector('.activity-card').hidden,
         entryCopy: document.querySelector('#entry-welcome').textContent.trim(),
@@ -340,6 +359,7 @@ export async function nativeScenarios(app) {
     assert.equal(chrome.font, chrome.menuFont);
     assert.equal(chrome.weight, chrome.menuWeight);
     assert.equal(chrome.border, '0px');
+    assert.equal(chrome.settingsOnRight, true);
     assert.equal(chrome.dock, 0);
     assert.equal(chrome.activityHidden, true);
     assert.ok(!chrome.entryCopy.includes('第一手'));
@@ -358,12 +378,16 @@ export async function nativeScenarios(app) {
       'Visible entry deal must finish',
     );
     assert.equal((await app.state()).hand, during.hand);
-    const continued = await app.evaluate(() => ({
-      time: document.querySelector('audio[data-background-music]').currentTime,
-      count: document.querySelectorAll('audio[data-background-music]').length,
-    }));
-    assert.ok(continued.time > music.time);
+    const continued = await progress();
+    assert.ok(continued.time > music.time || continued.naturalLoop);
+    assert.equal(continued.samePlayer, true);
     assert.equal(continued.count, 1);
+    await app.evaluate(() => {
+      window.__entryMusicAudio.removeEventListener('timeupdate', window.__entryMusicObserve);
+      delete window.__entryMusicAudio;
+      delete window.__entryMusicObserve;
+      delete window.__entryMusicTimes;
+    });
     await app.evaluate(() => {
       window.__entryMusicLifecycle = [];
       window.__entryMusicListener = ({ detail }) => {
@@ -416,6 +440,48 @@ export async function nativeScenarios(app) {
       resumed,
     };
   });
+  await check('practice-reset-in-card-heading', async () => {
+    await app.evaluate(() =>
+      document.querySelector('.session-card').scrollIntoView({ block: 'center' }),
+    );
+    const layout = await app.evaluate(() => {
+      const card = document.querySelector('.session-card'),
+        title = card.querySelector('h2').getBoundingClientRect(),
+        reset = document.querySelector('#reset-button'),
+        rect = reset.getBoundingClientRect();
+      return {
+        inHeading: card.querySelector('.section-title').contains(reset),
+        aligned: Math.abs((rect.top + rect.bottom - title.top - title.bottom) / 2) < 1,
+        rightOfTitle: rect.left >= title.right + 8,
+        fits: rect.right <= card.getBoundingClientRect().right,
+        height: rect.height,
+        oldFooter: Boolean(document.querySelector('.practice-info')),
+      };
+    });
+    assert.deepEqual(layout, {
+      inHeading: true,
+      aligned: true,
+      rightOfTitle: true,
+      fits: true,
+      height: 44,
+      oldFooter: false,
+    });
+    const before = await app.state();
+    await app.click('#reset-button');
+    assert.equal(await app.evaluate(() => document.querySelector('#reset-dialog').open), true);
+    await app.screenshot('practice-reset-confirmation');
+    await app.click('#reset-dialog .dialog-actions .close-dialog');
+    assert.equal((await app.state()).hand, before.hand);
+    await app.click('#reset-button');
+    await app.click('#confirm-reset');
+    await app.waitFor(
+      async () => (await app.state()).hand === 1,
+      15000,
+      'Practice reset must start a fresh first hand',
+    );
+    assert.equal(await app.evaluate(() => document.querySelector('#stat-hands').textContent), '0');
+    return { layout, cancelPreservesHand: true, confirmedResetHands: 0 };
+  });
   await check('local-launch-and-no-login', async () => {
     const fonts = await app.waitFor(
       () =>
@@ -443,7 +509,8 @@ export async function nativeScenarios(app) {
       href: location.href,
       native: document.documentElement.classList.contains('native-app'),
       fixtures: typeof window.qa,
-      footer: document.querySelector('.practice-info')?.textContent,
+      footerIntro: Boolean(document.querySelector('.practice-info')),
+      login: Boolean(document.querySelector('input[type=password], input[autocomplete=username]')),
       state: window.noir?.getState(),
       startup: {
         ready: document.documentElement.dataset.appReady === 'true',
@@ -467,7 +534,8 @@ export async function nativeScenarios(app) {
       /^(capacitor|https?):\/\/localhost(?:\/|$)/.test(info.href),
       'App must load bundled local code',
     );
-    assert.ok(info.footer && !documentLoginMarker(info.footer));
+    assert.equal(info.footerIntro, false);
+    assert.equal(info.login, false);
     assert.equal(info.state.playerCount, 5, 'A clean install starts with five players');
     assert.deepEqual(info.startup, {
       ready: true,
@@ -2430,7 +2498,7 @@ export async function nativeScenarios(app) {
         await app.comparePage('session-activity', [
           '.session-card',
           '.activity-card',
-          '.site-footer',
+          '.session-card .section-title',
         ]),
       );
       await app.evaluate(() => window.scrollTo(0, 0));

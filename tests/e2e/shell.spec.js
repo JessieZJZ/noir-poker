@@ -9,7 +9,7 @@ test.beforeEach(async ({ page }) => {
   });
 });
 
-test('one header settings control replaces table options and the footer follows all page content', async ({
+test('settings stay on the right and practice reset belongs to the session heading', async ({
   page,
 }) => {
   await expect(page.locator('.table-heading, #table-tag, .table-settings')).toHaveCount(0);
@@ -45,23 +45,27 @@ test('one header settings control replaces table options and the footer follows 
             settings = box('#opponents-button'),
             rules = box('#rules-button'),
             footer = box('.site-footer'),
-            status = box('.practice-info > span'),
+            title = box('.session-card h2'),
             reset = box('#reset-button'),
             about = box('#native-about-button');
           const middle = (r) => (r.top + r.bottom) / 2;
           return {
             blindsOnRight: blinds.left > hand.right,
             blindsAligned: Math.abs(middle(hand) - middle(blinds)) < 1,
-            settingsBeforeRules: settings.right <= rules.left,
+            settingsAfterRules: rules.right <= settings.left,
             settingsAligned: Math.abs(middle(settings) - middle(rules)) < 1,
-            settingsFit: settings.left >= 0 && settings.height >= 44 && rules.right <= innerWidth,
+            settingsFit: rules.left >= 0 && settings.height >= 44 && settings.right <= innerWidth,
             footerAtEnd: document.querySelector('.main').lastElementChild.matches('.site-footer'),
             footerAfterContent:
               footer.top >= Math.max(box('.game-column').bottom, box('.sidebar').bottom),
-            resetAdjacent:
-              Math.abs(middle(status) - middle(reset)) < 1 &&
-              reset.left - status.right >= 8 &&
-              reset.left - status.right <= 12,
+            resetInHeading:
+              document
+                .querySelector('.session-card .section-title')
+                .contains(document.querySelector('#reset-button')) &&
+              Math.abs(middle(title) - middle(reset)) < 1 &&
+              reset.left - title.right >= 8 &&
+              reset.height >= 44,
+            oldFooterRemoved: !document.querySelector('.practice-info'),
             buttonsFit: [reset, about].every((r) => r.left >= 0 && r.right <= innerWidth),
             noOverflow: document.documentElement.scrollWidth <= innerWidth,
           };
@@ -241,11 +245,7 @@ test('retry explanation stays aligned directly under the hand header and the des
           if (note.bottom > table.top) issues.push('retry note covers the table');
           if (Math.abs(surface.bottom - sidebar.bottom) > 2)
             issues.push('desktop columns end at different heights');
-          if (
-            footer.top < Math.max(surface.bottom, sidebar.bottom) ||
-            footer.top - Math.max(surface.bottom, sidebar.bottom) > 32
-          )
-            issues.push('extra blank strip before footer');
+          if (footer.height !== 0) issues.push('empty Web footer must not occupy space');
           if (
             !['auto', 'scroll'].includes(getComputedStyle(activity).overflowY) ||
             activity.clientHeight <= 0

@@ -84,24 +84,6 @@
         ><span id="table-size-label">5 人无限注</span>
       </div>
       <div class="header-actions">
-        <button
-          class="icon-button settings-button"
-          id="opponents-button"
-          aria-label="设置"
-          aria-haspopup="dialog"
-          aria-controls="opponents-dialog"
-          aria-describedby="opponents-summary"
-          title="设置"
-        >
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path
-              d="m9.5 3-.6 2.3-2 .9L4.8 5.5 2.5 9.4l1.7 1.6v2l-1.7 1.6 2.3 3.9 2.1-.7 2 .9.6 2.3h5l.6-2.3 2-.9 2.1.7 2.3-3.9-1.7-1.6v-2l1.7-1.6-2.3-3.9-2.1.7-2-.9L14.5 3Z"
-            />
-            <circle cx="12" cy="12" r="3" />
-          </svg>
-          <span>设置</span>
-        </button>
-        <span id="opponents-summary" class="sr-only">均衡</span>
         <div class="guide-menu">
           <button
             class="quiet-button"
@@ -125,6 +107,24 @@
             <button id="records-menu-item" role="menuitem">对局记录</button>
           </div>
         </div>
+        <button
+          class="icon-button settings-button"
+          id="opponents-button"
+          aria-label="设置"
+          aria-haspopup="dialog"
+          aria-controls="opponents-dialog"
+          aria-describedby="opponents-summary"
+          title="设置"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path
+              d="m9.5 3-.6 2.3-2 .9L4.8 5.5 2.5 9.4l1.7 1.6v2l-1.7 1.6 2.3 3.9 2.1-.7 2 .9.6 2.3h5l.6-2.3 2-.9 2.1.7 2.3-3.9-1.7-1.6v-2l1.7-1.6-2.3-3.9-2.1.7-2-.9L14.5 3Z"
+            />
+            <circle cx="12" cy="12" r="3" />
+          </svg>
+          <span>设置</span>
+        </button>
+        <span id="opponents-summary" class="sr-only">均衡</span>
       </div>
     </header>
     <main class="main">
@@ -329,6 +329,7 @@
         <section class="session-card">
           <div class="section-title">
             <h2>本局练习</h2>
+            <button id="reset-button" class="practice-reset">重新练习</button>
           </div>
           <div class="session-balance">
             <span>当前筹码</span><strong id="session-stack">20K<span>CHIPS</span></strong
@@ -369,13 +370,7 @@
           </ol>
         </section>
       </aside>
-      <footer class="table-footer site-footer">
-        <div class="practice-info">
-          <span><span class="live-dot"></span>本地电脑对手 · 无需登录</span>
-          <button id="reset-button">重新练习</button>
-        </div>
-        <span>仅使用虚拟筹码</span>
-      </footer>
+      <footer class="table-footer site-footer"></footer>
     </main>
     <main id="records-page" class="records-page" aria-labelledby="records-title" hidden>
       <div class="records-page-heading">
