@@ -62,7 +62,7 @@ test('deal presentation pauses in the background and stale callbacks cannot comp
   assert.equal(timer.jobs.size, 0);
 });
 
-test('music fades only when started, preserves ducking, and cancels on pause before a shorter resume', () => {
+test('music fades only when started and cancels on pause before a shorter resume', () => {
   const timer = clock();
   let volume;
   const fade = createMusicFade({ ...timer, setVolume: (value) => (volume = value) });
@@ -73,11 +73,8 @@ test('music fades only when started, preserves ducking, and cancels on pause bef
   timer.advance(MUSIC_ENTRY_FADE_MS / 2);
   assert.equal(volume, 0.5);
   fade.start();
-  fade.setScale(0.45);
-  assert.equal(volume, 0.225);
+  assert.equal(volume, 0.5, 'Repeated playback requests do not restart the entry fade');
   timer.advance(MUSIC_ENTRY_FADE_MS / 2);
-  assert.equal(volume, 0.45);
-  fade.setScale(1);
   assert.equal(volume, 1);
   fade.pause();
   assert.equal(volume, 0);

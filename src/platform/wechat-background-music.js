@@ -1,8 +1,4 @@
-import {
-  createMusicController,
-  BACKGROUND_MUSIC_VOLUME,
-  BACKGROUND_MUSIC_DUCK_VOLUME,
-} from '../ui/background-music.js';
+import { createMusicController, BACKGROUND_MUSIC_VOLUME } from '../ui/background-music.js';
 import { createMusicFade } from '../ui/music-fade.js';
 
 export function createWechatBackgroundMusic(
@@ -27,9 +23,6 @@ export function createWechatBackgroundMusic(
       let disposed = false;
       let playing = false;
       let source = '';
-      let ducked = false;
-      let duckTimer = null;
-      let duckToken = 0;
       const fade = createMusicFade({
         schedule,
         unschedule,
@@ -38,13 +31,6 @@ export function createWechatBackgroundMusic(
           if (audio) audio.volume = value * BACKGROUND_MUSIC_VOLUME;
         },
       });
-      function restoreVolume() {
-        duckToken++;
-        if (duckTimer !== null) unschedule(duckTimer);
-        duckTimer = null;
-        ducked = false;
-        fade.setScale(1);
-      }
       function start() {
         if (!wanted || disposed || !loaded || !wx.createInnerAudioContext) return;
         if (!audio) {
@@ -90,31 +76,18 @@ export function createWechatBackgroundMusic(
           return loading;
         },
         pause() {
-          restoreVolume();
           wanted = false;
           playing = false;
           fade.pause();
           audio?.pause();
         },
         dispose() {
-          restoreVolume();
           disposed = true;
           wanted = false;
           playing = false;
           fade.pause();
           audio?.stop();
           audio?.destroy();
-        },
-        duck() {
-          if (!wanted || disposed) return;
-          restoreVolume();
-          ducked = true;
-          fade.setScale(BACKGROUND_MUSIC_DUCK_VOLUME);
-          const token = ++duckToken;
-          // Longest local cue is 600 ms; allow 50 ms for its native start.
-          duckTimer = schedule(() => {
-            if (token === duckToken && !disposed) restoreVolume();
-          }, 650);
         },
       };
     },

@@ -13,8 +13,7 @@ export function createMusicFade({
   let started = false;
   let running = false;
   let level = 0;
-  let scale = 1;
-  const apply = () => setVolume(level * scale);
+  const apply = () => setVolume(level);
   function cancel() {
     epoch++;
     if (timer !== null) unschedule(timer);
@@ -45,10 +44,6 @@ export function createMusicFade({
       cancel();
       running = false;
       level = 0;
-      apply();
-    },
-    setScale(value) {
-      scale = value;
       apply();
     },
   };

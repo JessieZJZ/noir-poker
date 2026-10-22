@@ -1833,6 +1833,10 @@
   height: 24px;
   overflow: visible;
 }
+.action-dock:not(.compact-actions) > .action-notice {
+  position: relative;
+  top: 4.75px;
+}
 .action-notice .decision-copy {
   flex: 1;
   min-width: 0;

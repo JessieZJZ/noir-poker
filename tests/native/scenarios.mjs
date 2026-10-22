@@ -10,6 +10,7 @@ import { withCenteredNativeClicks } from './position-target.mjs';
 import { withPreservedForegroundPage } from './foreground-page.mjs';
 import { watchNativeMusicLoop } from './music-loop-probe.mjs';
 import { pressSelectedAndroidHome } from './immediate-background.mjs';
+import { readActionNoticeSpacing } from '../fixtures/action-notice-spacing.js';
 import { BOT_THINK_LIMITS } from '../../src/engine/bot-timing.js';
 import { readReviewTagGeometry } from '../fixtures/review-tag-geometry.js';
 async function enterNativeTable(app) {
@@ -900,15 +901,7 @@ export async function nativeScenarios(app) {
         };
         const card = document.querySelector('#hero-cards .playing-card');
         const border = getComputedStyle(card, '::before');
-        const dock = document.querySelector('.action-dock').getBoundingClientRect();
-        const notice = document.querySelector('.decision-copy').getBoundingClientRect();
-        const rankings = document.querySelector('#hand-rankings-button').getBoundingClientRect();
-        const slider = document.querySelector('#bet-slider').getBoundingClientRect();
         return {
-          noticeSpacing: {
-            topGap: Math.min(notice.top, rankings.top) - dock.top,
-            sliderGap: slider.top - Math.max(notice.bottom, rankings.bottom),
-          },
           phase: document.querySelector('.action-dock').dataset.turnPhase,
           hero: document.querySelector('.hero-cards-wrap').dataset.turnPhase,
           prompt: document.querySelector('#turn-prompt').textContent.trim(),
@@ -944,10 +937,13 @@ export async function nativeScenarios(app) {
       5000,
       'Entry must settle into a steady turn state',
     );
-    // Fractional Android display densities quantize the 24px button by less
-    // than one CSS pixel; compare the resulting clearance at pixel precision.
-    assert.ok(Math.round(before.noticeSpacing.topGap) >= 10, JSON.stringify(before.noticeSpacing));
-    assert.ok(before.noticeSpacing.sliderGap >= 4, JSON.stringify(before.noticeSpacing));
+    before.noticeSpacing = await app.evaluate(readActionNoticeSpacing);
+    assert.ok(before.noticeSpacing.topGap >= 4, JSON.stringify(before.noticeSpacing));
+    assert.ok(before.noticeSpacing.controlGap >= 4, JSON.stringify(before.noticeSpacing));
+    assert.ok(
+      Math.abs(before.noticeSpacing.topGap - before.noticeSpacing.controlGap) <= 1,
+      JSON.stringify(before.noticeSpacing),
+    );
     assert.equal(before.hero, 'waiting');
     assert.equal(before.promptVisible, true);
     assert.equal(before.lineHeight, '2px');
@@ -1131,6 +1127,9 @@ export async function nativeScenarios(app) {
           samples: pcm.length,
           rms: Math.sqrt(pcm.reduce((sum, value) => sum + value * value, 0) / pcm.length),
           peak: pcm.reduce((peak, value) => Math.max(peak, Math.abs(value)), 0),
+          musicGain: Number(
+            document.querySelector('audio[data-background-music]')?.dataset.musicGain,
+          ),
         });
         return window.__polishStart.apply(this, args);
       };
@@ -1156,8 +1155,32 @@ export async function nativeScenarios(app) {
       assert.equal(music.loop, true);
       assert.ok(music.source.endsWith('/audio/background-music-mobile.m4a'));
       assert.ok(music.duration > 93.6 && music.duration < 93.8);
+      await app.waitFor(
+        () =>
+          app.evaluate(
+            () =>
+              Number(document.querySelector('audio[data-background-music]')?.dataset.musicGain) ===
+              1,
+          ),
+        5000,
+        'Entry music fade must finish before action volume is checked',
+      );
       await app.click('#opponents-dialog .close-dialog');
       await waitForNativeHeroTurn(app);
+      await app.evaluate(() => {
+        const audio = document.querySelector('audio[data-background-music]');
+        window.__polishCues = [];
+        window.__steadyMusic = { audio, started: audio.currentTime, samples: [] };
+        window.__steadyMusic.timer = setInterval(
+          () =>
+            window.__steadyMusic.samples.push({
+              gain: Number(audio.dataset.musicGain),
+              paused: audio.paused,
+              samePlayer: document.querySelector('audio[data-background-music]') === audio,
+            }),
+          20,
+        );
+      });
       const state = await app.state();
       if (state.legal.canRaise) await app.click('#raise-button');
       else {
@@ -1171,15 +1194,30 @@ export async function nativeScenarios(app) {
       );
       assert.ok(cue.rms > 0.05 && cue.rms < 0.06);
       assert.ok(cue.peak <= 0.78);
+      assert.equal(cue.musicGain, 1, 'A real wager must not lower music volume');
+      await app.sleep(900);
+      const steady = await app.evaluate(() => {
+        const probe = window.__steadyMusic;
+        clearInterval(probe.timer);
+        return { started: probe.started, ended: probe.audio.currentTime, samples: probe.samples };
+      });
+      assert.ok(steady.samples.length >= 20);
+      assert.ok(steady.ended > steady.started);
+      assert.ok(
+        steady.samples.every((sample) => sample.gain === 1 && !sample.paused && sample.samePlayer),
+      );
       await app.screenshot('music-and-chip-stack');
       return {
         music,
         cue,
+        steady,
         scope:
           'Installed production AAC playback and real wager PCM; no synthetic deal, physical hearing not assessed',
       };
     } finally {
       await app.evaluate(() => {
+        clearInterval(window.__steadyMusic?.timer);
+        delete window.__steadyMusic;
         AudioBufferSourceNode.prototype.start = window.__polishStart;
         delete window.__polishStart;
         delete window.__polishCues;

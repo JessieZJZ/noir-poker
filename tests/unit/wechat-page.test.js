@@ -896,7 +896,7 @@ test('WeChat boosted sound cues keep only the latest context active and respect 
   assert.equal(call.src, '/assets/sounds/chip.wav');
   page.playSound('raise');
   assert.equal(call.playCount, 2, 'Raise and call reuse the same recorded chip context');
-  assert.equal(ducks, 3, 'Every actually played cue reserves music headroom');
+  assert.equal(ducks, 0, 'Playing cues must leave background music volume alone');
   assert.deepEqual(
     audios.filter((audio) => audio.playing),
     [call],

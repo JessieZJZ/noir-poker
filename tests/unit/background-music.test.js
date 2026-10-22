@@ -1,10 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import {
-  createMusicController,
-  BACKGROUND_MUSIC_VOLUME,
-  BACKGROUND_MUSIC_DUCK_VOLUME,
-} from '../../src/ui/background-music.js';
+import { createMusicController, BACKGROUND_MUSIC_VOLUME } from '../../src/ui/background-music.js';
 import { createWebBackgroundMusic } from '../../src/platform/web-background-music.js';
 import { createWechatBackgroundMusic } from '../../src/platform/wechat-background-music.js';
 import { loadFeedbackPreferences } from '../../src/ui/feedback-preferences.js';
@@ -241,7 +237,7 @@ test('native apps and touch browsers select the phone master; desktop keeps the 
   }
 });
 
-test('WeChat ducks across overlapping cues and cancels stale volume timers on hide, mute and disposal', async () => {
+test('WeChat maintains full music volume across unlocks and cancels fade timers on hide, mute and disposal', async () => {
   let serial = 0,
     now = 0;
   const jobs = new Map();
@@ -262,7 +258,7 @@ test('WeChat ducks across overlapping cues and cancels stale volume timers on hi
       loadSource: () => '/music/background-music.m4a',
       now: () => now,
       schedule(fn, delay) {
-        assert.ok([40, 650].includes(delay));
+        assert.equal(delay, 40, 'Only the entry/resume fade schedules music volume updates');
         jobs.set(++serial, fn);
         return serial;
       },
@@ -275,33 +271,28 @@ test('WeChat ducks across overlapping cues and cancels stale volume timers on hi
   const initial = jobs.entries().next().value;
   jobs.delete(initial[0]);
   initial[1]();
-  assert.equal(audio.volume, 1);
-  music.duck();
-  const stale = jobs.get(serial);
-  music.duck();
-  stale();
-  assert.equal(
-    audio.volume,
-    BACKGROUND_MUSIC_DUCK_VOLUME,
-    'Earlier cue cannot restore a later cue’s mix',
-  );
-  jobs.get(serial)();
-  assert.equal(audio.volume, 1);
+  assert.equal(audio.volume, BACKGROUND_MUSIC_VOLUME);
+  for (let action = 0; action < 10; action++) {
+    music.unlock();
+    assert.equal(audio.volume, BACKGROUND_MUSIC_VOLUME);
+    assert.equal(jobs.size, 0, 'Repeated action gestures must not schedule another fade');
+  }
   for (const stop of [
     () => music.setActive(false),
     () => music.setEnabled(false),
     () => music.dispose(),
   ]) {
+    music.setActive(false);
     music.setEnabled(true);
     music.setActive(true);
-    music.duck();
     const cancelled = jobs.get(serial);
+    assert.equal(typeof cancelled, 'function');
     stop();
     assert.equal(jobs.size, 0);
     assert.equal(audio.volume, 0);
     cancelled();
     assert.equal(audio.volume, 0);
   }
-  music.duck();
+  music.unlock();
   assert.equal(jobs.size, 0);
 });

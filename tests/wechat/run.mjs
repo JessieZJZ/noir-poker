@@ -532,13 +532,21 @@ try {
   const slider = await page.$('.raise-controls slider');
   const noticeTop = (await notice.offset()).top;
   report.turnAttention.noticeSpacing = {
-    topGap: noticeTop - (await (await page.$('.action-dock')).offset()).top,
-    sliderGap: (await slider.offset()).top - noticeTop - (await notice.size()).height,
+    topGap: noticeTop - (await rail.offset()).top - (await rail.size()).height,
+    controlGap:
+      (await slider.offset()).top +
+      ((await slider.size()).height - 15) / 2 -
+      noticeTop -
+      (await notice.size()).height,
   };
-  // WeChat's 24px notice sits in its own compact dock, whose original gap is 2.5px.
-  assert.equal(await notice.style('top'), '6px');
-  assert.ok(report.turnAttention.noticeSpacing.topGap >= 8);
-  assert.ok(report.turnAttention.noticeSpacing.sliderGap >= 0);
+  assert.ok(report.turnAttention.noticeSpacing.topGap >= 4);
+  assert.ok(report.turnAttention.noticeSpacing.controlGap >= 4);
+  assert.ok(
+    Math.abs(
+      report.turnAttention.noticeSpacing.topGap - report.turnAttention.noticeSpacing.controlGap,
+    ) <= 1,
+    JSON.stringify(report.turnAttention.noticeSpacing),
+  );
   // The host stays still; shared CSS animates two pseudo-element light fronts.
   // Web/native frame sampling covers their direction; DevTools retains a capture.
   await page.waitFor(850);

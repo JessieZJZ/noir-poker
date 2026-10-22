@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { readActionNoticeSpacing } from '../fixtures/action-notice-spacing.js';
 
 test.beforeEach(async ({ page }) => {
   await page.clock.install({ time: 0 });
@@ -69,6 +70,7 @@ for (const [width, height] of [
   [820, 1180],
   [1024, 1366],
   [1280, 900],
+  [1920, 1080],
 ]) {
   test(`action notice clears the top edge and wager controls at ${width}x${height}`, async ({
     page,
@@ -77,25 +79,13 @@ for (const [width, height] of [
     await page.evaluate(() => document.fonts.ready);
     // The frozen clock must advance through the resize and fitting frames.
     await page.clock.runFor(100);
-    const spacing = await page.locator('.action-dock').evaluate((dock) => {
-      const top = dock.getBoundingClientRect().top;
-      const notice = dock.querySelector('.decision-copy').getBoundingClientRect();
-      const rankings = dock.querySelector('#hand-rankings-button').getBoundingClientRect();
-      const slider = dock.querySelector('#bet-slider').getBoundingClientRect();
-      return {
-        topGap: Math.min(notice.top, rankings.top) - top,
-        sliderGap: slider.top - Math.max(notice.bottom, rankings.bottom),
-        details: {
-          notice: notice.toJSON(),
-          rankings: rankings.toJSON(),
-          slider: slider.toJSON(),
-          strip: dock.querySelector('.decision-strip').getBoundingClientRect().toJSON(),
-          dock: dock.getBoundingClientRect().toJSON(),
-        },
-      };
-    });
-    expect(spacing.topGap).toBeGreaterThanOrEqual(10);
-    expect(spacing.sliderGap, JSON.stringify(spacing)).toBeGreaterThanOrEqual(4);
+    const spacing = await page.evaluate(readActionNoticeSpacing);
+    expect(spacing.topGap).toBeGreaterThanOrEqual(4);
+    expect(spacing.controlGap).toBeGreaterThanOrEqual(4);
+    expect(
+      Math.abs(spacing.topGap - spacing.controlGap),
+      JSON.stringify(spacing),
+    ).toBeLessThanOrEqual(1);
   });
 }
 
