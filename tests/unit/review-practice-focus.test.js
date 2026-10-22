@@ -23,7 +23,10 @@ for (const key of ['small-pair-min-squeeze', 'small-pair-five-bet', 'small-pair-
     assert.notEqual(r.coaching.kind, 'keep');
     assert.ok(['call', 'fold'].includes(r.routes.primary.action));
     assert.match(summary(r), /需要有对手会放弃哪些牌的依据/);
-    assert.match(r.coaching.followUp, /先比较跟注 .*与弃牌/);
+    assert.match(
+      r.coaching.followUp,
+      r.coaching.recommendedAction.action === 'call' ? /先比较跟注 .*与弃牌/ : /先比较弃牌与再补 /,
+    );
     assert.doesNotMatch(r.coaching.followUp, /能否争取足够弃牌或让较弱牌付费/);
     assert.doesNotMatch(summary(r), /面对多次再加注，不能只凭起手牌较强就当作价值加注/);
   });
