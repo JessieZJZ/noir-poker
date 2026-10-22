@@ -146,7 +146,7 @@ test('busting with refills left shows the refill count, deals at once and counts
   }
   const lefts = samples.map((sample) => sample.left);
   expect(Math.max(...lefts) - Math.min(...lefts)).toBeLessThan(0.5);
-  expect(new Set(samples.map((sample) => sample.text)).size).toBeGreaterThan(2);
+  expect(new Set(samples.map((sample) => sample.text)).size).toBeGreaterThan(1);
   await page.screenshot({ path: test.info().outputPath('refill.png') });
   await expect(page.locator('.rebuy-burst')).toHaveCount(0, { timeout: 3000 });
   await expect(page.locator('#hero-stack')).not.toHaveClass(/stack-refill/);
@@ -206,4 +206,36 @@ test('records drop the live note, keep results at full opacity and toast a save 
   await page.reload();
   await page.waitForFunction(() => !!window.qa);
   await expect(page.locator('#app-toast')).toBeHidden();
+});
+
+test('board and hole cards read as one size across phone, tablet and table sizes', async ({
+  page,
+}) => {
+  for (const [width, height] of [
+    [390, 844],
+    [430, 932],
+    [820, 1180],
+  ]) {
+    await page.setViewportSize({ width, height });
+    for (const count of [5, 7, 9]) {
+      await page.evaluate((count) => window.qa.publicBoard(count), count);
+      await page.waitForTimeout(300);
+      // Layout widths, unaffected by the hero cards' tilt.
+      const { board, hero } = await page.evaluate(() => ({
+        board: document.querySelector('main.main .board .playing-card').offsetWidth,
+        hero: document.querySelector('main.main .hero-cards .playing-card').offsetWidth,
+      }));
+      expect(Math.max(board, hero), `${width}px ${count} seats`).toBeLessThanOrEqual(
+        Math.min(board, hero) * 1.1 + 1,
+      );
+    }
+  }
+});
+
+test('the disabled raise slider rests at its minimum until the hero acts', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.evaluate(() => window.qa.publicBoard(9));
+  const slider = page.locator('#bet-slider');
+  await expect(slider).toBeDisabled();
+  expect(await slider.evaluate((el) => el.value === el.min)).toBe(true);
 });

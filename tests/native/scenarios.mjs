@@ -2550,7 +2550,7 @@ export async function nativeScenarios(app) {
         (element) => element.textContent,
       ),
       neutralResults: [...document.querySelectorAll('.record-hand-result')]
-        .filter((result) => result.querySelector('strong').textContent === '+0')
+        .filter((result) => /^[+-]0$/.test(result.querySelector('strong').textContent))
         .map((result) => result.textContent.trim()),
     }));
     assert.ok(list.cards >= 4);
@@ -2564,7 +2564,8 @@ export async function nativeScenarios(app) {
     list.firstCopy.forEach((text) => assert.doesNotMatch(text, /首次/));
     assert.equal(list.retry, '重打1');
     list.deltas.filter((value) => value !== '—').forEach((value) => assert.match(value, /^[+-]\d/));
-    list.neutralResults.forEach((text) => assert.match(text, /^\+0\s*(?:输|赢)$/));
+    // A zero-change win reads "+0", a zero-change loss "-0".
+    list.neutralResults.forEach((text) => assert.match(text, /^(?:\+0\s*赢|-0\s*输)$/));
     await app.click('#records-back-button');
     await app.waitFor(
       () => app.visible('#records-page').then((visible) => !visible),

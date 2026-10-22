@@ -595,6 +595,9 @@ function render() {
   document
     .querySelectorAll('[data-preset]')
     .forEach((b) => (b.disabled = !legal.enabled || !legal.canRaise));
+  // Off turn the disabled slider rests at its minimum; its range is only
+  // known on the hero's turn, so a stale range must not pin it to the right.
+  if (!legal.enabled) $('#bet-slider').value = $('#bet-slider').min;
   if (legal.enabled) {
     const min = legal.minRaiseTo,
       max = legal.maxRaiseTo;

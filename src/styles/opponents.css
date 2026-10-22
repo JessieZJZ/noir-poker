@@ -479,19 +479,6 @@
   line-height: 16px;
   white-space: nowrap;
 }
-.seat[data-mood='frustrated'] .avatar,
-.seat[data-mood='reactive'] .avatar {
-  outline: 2px solid #d89568;
-  outline-offset: 2px;
-}
-.seat[data-mood='cautious'] .avatar {
-  outline: 2px solid #a2b4d9;
-  outline-offset: 2px;
-}
-.seat[data-mood='confident'] .avatar {
-  outline: 2px solid #e1c173;
-  outline-offset: 2px;
-}
 @media (max-width: 760px) {
   .opponents-layout {
     grid-template-columns: 1fr;

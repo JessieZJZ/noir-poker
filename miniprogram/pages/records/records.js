@@ -5,9 +5,10 @@ const navigation = require('../../record-navigation.js');
 const { recordStartTime } = require('../../record-time.js');
 const HAND_BATCH_SIZE = 24;
 const SESSION_BATCH_SIZE = 20;
-const signed = (value) => {
+// A lost hand with no net chip change reads "-0", as on Web.
+const signed = (value, loss = false) => {
   const amount = Math.round(Number(value));
-  return (amount < 0 ? '-' : '+') + compactChips(Math.abs(amount));
+  return (amount < 0 || (amount === 0 && loss) ? '-' : '+') + compactChips(Math.abs(amount));
 };
 Page({
   data: {
@@ -89,7 +90,10 @@ Page({
                   return artwork;
                 }),
                 attemptText: attempt.attempt ? `重打${attempt.attempt}` : '',
-                profitText: attempt.profit === null ? '—' : signed(attempt.profit),
+                profitText:
+                  attempt.profit === null
+                    ? '—'
+                    : signed(attempt.profit, recordResult(attempt) === 'loss'),
                 resultText:
                   recordResult(attempt) === 'unfinished'
                     ? '未完成'

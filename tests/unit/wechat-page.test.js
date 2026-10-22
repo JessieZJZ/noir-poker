@@ -1023,7 +1023,12 @@ test('large portrait tablets reserve five larger public positions through settle
   assert.equal(page.data.boardWidth, 5 * page.data.cardWidth + 16);
   Object.assign(info, { windowWidth: 820, windowHeight: 1180 });
   page.onResize();
-  assert.ok(page.data.cardWidth >= 106);
+  // Board and hole cards read as one size: within 10% of each other.
+  assert.ok(page.data.cardWidth >= 94);
+  assert.ok(
+    Math.max(page.data.cardWidth, page.data.heroWidth) <=
+      Math.min(page.data.cardWidth, page.data.heroWidth) * 1.1 + 1,
+  );
   assert.equal(
     page.data.boardWidth,
     page.data.boardTwoRows ? 3 * page.data.cardWidth + 8 : 5 * page.data.cardWidth + 16,
@@ -1659,7 +1664,7 @@ test('WeChat records classify every completed hand including zero folds and zero
     '—',
     '+1.025K',
     '-1.025K',
-    '+0',
+    '-0',
     '+0',
     '+25',
   ]);

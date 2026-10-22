@@ -505,6 +505,8 @@ export function createWechatController({
       canRaise: !!(legal.enabled && legal.canRaise),
       canAct: !!legal.enabled,
       minRaise: sliderMin,
+      // Off turn the disabled slider rests at its minimum, as on Web.
+      sliderValue: legal.enabled && legal.canRaise ? raiseTo : sliderMin,
       maxRaise: sliderMax,
       raiseTo,
       raiseText: format(raiseTo),

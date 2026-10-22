@@ -335,7 +335,7 @@
             min="{{minRaise}}"
             max="{{maxRaise}}"
             step="{{chipUnit}}"
-            value="{{raiseTo}}"
+            value="{{sliderValue}}"
             disabled="{{!canRaise}}"
             activeColor="#6ee7c5"
             backgroundColor="#354650"
