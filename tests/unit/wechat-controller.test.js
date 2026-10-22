@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createWechatController } from '../../src/platform/wechat-controller.js';
+import { compactChips } from '../../src/engine/chip-format.js';
 import { act, advanceStreet, legalActions, potSize } from '../../src/engine/poker.js';
 import { createReviewInput, analyzeDecision } from '../../src/review/analysis.js';
 import { BOT_THINK_LIMITS } from '../../src/engine/bot-timing.js';
@@ -893,7 +894,7 @@ function shoveFinale(game, heroWins) {
   }
 }
 
-test('WeChat refills only through the count-up, then deals once; three refills per game', (t) => {
+test('WeChat refill deals the next hand at once and counts the stack up during it', (t) => {
   const { controller, timers, latest } = setup(t);
   const game = controller.getGame();
   finish(game);
@@ -905,33 +906,21 @@ test('WeChat refills only through the count-up, then deals once; three refills p
   assert.equal(latest().nextLabel, '补充筹码');
   assert.equal(latest().rebuysLeft, 3);
   const hand = game.hand;
-  controller.nextHand();
+  assert.equal(controller.nextHand(), true);
+  assert.equal(game.hand, hand + 1, 'The next hand is dealt immediately');
+  assert.notEqual(game.phase, 'done');
   assert.equal(latest().rebuying, true);
-  assert.equal(latest().heroStack, '0', 'The stack counts up from zero');
-  assert.equal(controller.nextHand(), false, 'A second tap during the count-up is ignored');
-  assert.equal(latest().canRetry, false);
-  while (game.hand === hand) assert.ok(timers.runNext());
-  assert.equal(latest().rebuying, false);
+  assert.equal(latest().heroStack, '0', 'The stack counts up from zero in the new hand');
+  assert.equal(latest().rebuyBurst, '+5K');
+  assert.equal(latest().needsRebuy, false);
   assert.equal(game.rebuys, 1);
   assert.equal(latest().rebuysLeft, 2);
   assert.equal(game.stats.buyin, 10000);
-});
-
-test('WeChat refill finishes into exactly one dealt hand with the full stack', (t) => {
-  const { controller, timers } = setup(t);
-  const game = controller.getGame();
-  finish(game);
-  controller.show();
-  game.players[1].stack += game.players[0].stack;
-  game.players[0].stack = 0;
-  controller.nextHand();
-  assert.equal(game.rebuys, 1);
-  // Retry is hidden while refilling; the page cannot reach it.
-  assert.equal(controller.getGame().phase, 'done');
-  const hand = game.hand;
-  for (let i = 0; i < 40 && timers.runNext(); i++);
-  assert.equal(game.hand, hand + 1);
-  assert.equal(game.players[0].stack + game.players[0].total, 5000);
+  while (latest().rebuying) assert.ok(timers.runNext());
+  const hero = game.players[0];
+  assert.equal(latest().heroStack, compactChips(hero.stack));
+  assert.equal(hero.stack + hero.total, 5000);
+  assert.equal(game.hand, hand + 1, 'Exactly one hand was dealt');
 });
 
 for (const heroWins of [true, false]) {

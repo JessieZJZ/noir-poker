@@ -7,6 +7,8 @@ import {
   CONFETTI_DURATION_MS,
   premiumSparks,
   confettiPieces,
+  refillCountValues,
+  REFILL_COUNT_STEPS,
 } from './effect-layouts.js';
 import { CROWN_MARKUP } from './table-scene.js';
 const reducedMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -35,17 +37,16 @@ export function createGameEffects() {
     node.remove();
     nodes.delete(node);
   };
-  let counting = null;
   return {
     cancel() {
       for (const timer of timers) clearTimeout(timer);
       timers.clear();
       for (const node of nodes) node.remove();
       nodes.clear();
-      if (counting) cancelAnimationFrame(counting);
-      counting = null;
       document.querySelector('.hero-cards-wrap')?.classList.remove('premium-start');
-      document.querySelector('#hero-stack')?.classList.remove('stack-refill');
+      const stack = document.querySelector('#hero-stack');
+      stack?.classList.remove('stack-refill');
+      stack?.style.removeProperty('--refill-width');
     },
     premiumStart(wrap) {
       later(() => {
@@ -65,23 +66,32 @@ export function createGameEffects() {
         }, PREMIUM_DURATION_MS);
       }, PREMIUM_DELAY_MS);
     },
-    // Count the refilled stack up from zero under a rising "+amount".
-    rebuy(anchor, stack, amount, done) {
+    // Count the refilled stack up from zero under a rising "+amount" while the
+    // next hand is already being played. The stack keeps the width of its
+    // widest value, so the name row beside it does not move.
+    rebuy(anchor, stack, { added, target }, done) {
+      const values = refillCountValues(target);
       stack.classList.add('stack-refill');
-      const burst = mount(anchor, `+${formatChips(amount)}`, 'rebuy-burst');
-      const started = performance.now(),
-        countFor = REBUY_DURATION_MS * 0.7;
-      const step = (now) => {
-        const progress = Math.min(1, (now - started) / countFor);
-        stack.textContent = formatChips(
-          Math.round((amount * (1 - Math.pow(1 - progress, 3))) / 100) * 100,
-        );
-        counting = progress < 1 ? requestAnimationFrame(step) : null;
-      };
-      counting = requestAnimationFrame(step);
+      stack.style.removeProperty('--refill-width');
+      let widest = 0;
+      for (const value of [0, ...values]) {
+        stack.textContent = formatChips(value);
+        // Layout width, unaffected by the pill's scale animation.
+        widest = Math.max(widest, stack.offsetWidth);
+      }
+      stack.style.setProperty('--refill-width', `${Math.ceil(widest)}px`);
+      stack.textContent = formatChips(0);
+      const burst = mount(anchor, `+${formatChips(added)}`, 'rebuy-burst');
+      values.forEach((value, index) =>
+        later(
+          () => (stack.textContent = formatChips(value)),
+          Math.round((REBUY_DURATION_MS * 0.7 * (index + 1)) / REFILL_COUNT_STEPS),
+        ),
+      );
       later(() => {
         unmount(burst);
         stack.classList.remove('stack-refill');
+        stack.style.removeProperty('--refill-width');
         done();
       }, REBUY_DURATION_MS);
     },

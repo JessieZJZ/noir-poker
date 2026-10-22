@@ -16,6 +16,20 @@ function sequence(seed) {
 }
 const round = (value) => Math.round(value * 10) / 10;
 
+// The refill count shows these ten values on every platform. Values before the
+// last are rounded to two significant digits, so they never print wider than
+// necessary, and the last is the exact stack.
+export const REFILL_COUNT_STEPS = 10;
+export function refillCountValues(target) {
+  const unit = Math.pow(10, Math.max(0, Math.floor(Math.log10(Math.max(1, target))) - 1));
+  return Array.from({ length: REFILL_COUNT_STEPS }, (_, index) => {
+    const step = index + 1;
+    if (step === REFILL_COUNT_STEPS) return target;
+    const eased = 1 - Math.pow(1 - step / REFILL_COUNT_STEPS, 3);
+    return Math.round((target * eased) / unit) * unit;
+  });
+}
+
 // Sparks leave the outline of the two hole cards and fly outward.
 export function premiumSparks(count = 18) {
   const random = sequence(97);

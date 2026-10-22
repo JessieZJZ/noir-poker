@@ -16,14 +16,13 @@
 .seat-profile {
   position: relative;
 }
-/* The crown rests on the avatar: beside the name on wide tables, and in the
-   avatar's own grid cell on the compact game surface. */
+/* The crown sits upright on top of the avatar: beside the name on wide
+   tables, and in the avatar's own grid cell on the compact game surface. */
 .seat-champion-crown {
   left: 16px;
-  top: -4px;
+  top: -3px;
   width: 22px;
   height: 17px;
-  rotate: -16deg;
 }
 .game-surface .arena[data-player-count] .seat-profile > .seat-champion-crown {
   position: relative;
@@ -41,7 +40,7 @@
   border-color: #d9b45a;
   box-shadow: 0 0 18px #d9b45a40;
 }
-/* The hero wears the crown tilted on the "你" of the name row. */
+/* The hero wears the crown upright, centred above the "你" of the name row. */
 .hero-identity > strong {
   position: relative;
 }
@@ -53,20 +52,16 @@
   height: 0;
 }
 .hero-champion-crown {
-  left: -13px;
-  top: -15px;
+  left: calc(0.5em - 12px);
+  top: -19px;
   width: 24px;
   height: 18px;
-  rotate: -18deg;
 }
 .hero-name.is-champion .hero-identity {
   text-shadow: 0 0 10px #f4c95d66;
 }
 .hero-identity {
   position: relative;
-}
-.hero-stack.stack-refill {
-  padding: 0 8px;
 }
 /* Remaining refills sit as a badge on the button's right edge. */
 .next-button.rebuy-button {

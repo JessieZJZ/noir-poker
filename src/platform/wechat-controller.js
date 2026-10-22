@@ -7,6 +7,8 @@ import {
   REBUY_DURATION_MS,
   CROWN_FLIGHT_MS,
   CONFETTI_DURATION_MS,
+  refillCountValues,
+  REFILL_COUNT_STEPS,
 } from '../ui/effect-layouts.js';
 import { compactChips, compactActionAmounts } from '../engine/chip-format.js';
 import {
@@ -428,11 +430,12 @@ export function createWechatController({
       sessionTitle: game.over ? '本局结束' : '本局练习',
       standingText: game.over ? standingLabel(game.over.heroPlace) : '',
       standingClass: game.over ? standingClass(game.over.heroPlace) : '',
-      needsRebuy: (needsHeroRebuy(game) && !game.over) || !!rebuying,
+      needsRebuy: needsHeroRebuy(game) && !game.over,
       rebuysLeft: heroRebuysLeft(game),
       rebuying: !!rebuying,
+      heroStackFinal: format(hero.stack),
       rebuyBurst: rebuying ? `+${format(game.stakes.startingStack)}` : '',
-      nextLabel: game.over ? '下一局' : needsHeroRebuy(game) || rebuying ? '补充筹码' : '下一手',
+      nextLabel: game.over ? '下一局' : needsHeroRebuy(game) ? '补充筹码' : '下一手',
       premium,
       ceremony: ceremony ? { ...ceremony } : null,
       confetti,
@@ -497,7 +500,7 @@ export function createWechatController({
         amount: format(r.amount),
       })),
       done,
-      canRetry: canRestartHand(game) && !rebuying,
+      canRetry: canRestartHand(game),
       waiting: !done && !legal.enabled,
       canRaise: !!(legal.enabled && legal.canRaise),
       canAct: !!legal.enabled,
@@ -604,7 +607,7 @@ export function createWechatController({
       }, plan.delayMs);
     }, 0);
   }
-  function freshHand() {
+  function freshHand({ refilled = false } = {}) {
     if (readOnlyAttempt || disposed) return;
     attention.reset();
     turnCue.reset();
@@ -631,35 +634,39 @@ export function createWechatController({
     records?.begin(game, { newSession });
     newSession = false;
     raiseTo = game.bigBlind * 3;
+    // The first paint of a refilled hand already starts the count from zero.
+    if (refilled) countRefill();
     render();
     effect('deal');
     premiumDeal();
     driveBots();
   }
-  // Refill, count the stack up from zero, then deal the next hand.
-  function refillAndDeal() {
-    if (rebuying || !needsHeroRebuy(game) || !heroRebuysLeft(game)) return false;
-    cancelBots();
-    rebuyHero(game);
-    const amount = game.players[0].stack,
-      steps = 10;
+  // Count the refilled stack up from zero while the new hand is played, with
+  // the same ten values and timing as Web. The page lays out the final value
+  // and draws the count over it, so the row beside it stays still.
+  function countRefill() {
+    const values = refillCountValues(game.players[0].stack);
     rebuying = { shown: 0 };
-    render();
-    for (let step = 1; step <= steps; step++)
+    values.forEach((value, index) =>
       later(
         () => {
           if (!rebuying) return;
-          const progress = step / steps;
-          rebuying.shown = Math.round((amount * (1 - Math.pow(1 - progress, 3))) / 100) * 100;
+          rebuying.shown = value;
           render();
         },
-        Math.round((REBUY_DURATION_MS * 0.7 * step) / steps),
-      );
+        Math.round((REBUY_DURATION_MS * 0.7 * (index + 1)) / REFILL_COUNT_STEPS),
+      ),
+    );
     later(() => {
-      if (!rebuying) return;
       rebuying = null;
-      freshHand();
+      render();
     }, REBUY_DURATION_MS);
+  }
+  // Refill and deal the next hand at once.
+  function refillAndDeal() {
+    if (!needsHeroRebuy(game) || !heroRebuysLeft(game)) return false;
+    rebuyHero(game);
+    freshHand({ refilled: true });
     return true;
   }
   function setStakes(value) {
@@ -750,14 +757,11 @@ export function createWechatController({
     },
     hide() {
       active = false;
-      const pendingRefill = !!rebuying;
       cancelBots();
       cancelReview();
       cancelHint();
       cancelEffects();
-      // A refill cut short by leaving the page still deals its next hand.
-      if (pendingRefill) freshHand();
-      else render();
+      render();
     },
     destroy() {
       disposed = true;
@@ -819,7 +823,7 @@ export function createWechatController({
       }
     },
     nextHand() {
-      if (readOnlyAttempt || game.phase !== 'done' || rebuying) return false;
+      if (readOnlyAttempt || game.phase !== 'done') return false;
       if (!game.over && needsHeroRebuy(game)) return refillAndDeal();
       freshHand();
       return true;

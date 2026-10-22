@@ -560,16 +560,14 @@ function render() {
   $('#continue-deal-button').disabled = finishing;
   setLocalizedText($('#continue-deal-button'), finishing ? '正在发牌…' : '立刻发完');
   $('#action-panel').classList.toggle('folded-actions', hero.folded && !done);
-  $('#restart-hand-button').hidden = !canRestartHand(game) || rebuying;
+  $('#restart-hand-button').hidden = !canRestartHand(game);
   // "下一局" replaces a reset once the game has ended.
   $('#reset-button').hidden = !!game.over;
   $('#action-panel').classList.toggle('settled-actions', done);
   $('.action-dock').classList.toggle('compact-actions', done || hero.folded);
   $('.action-dock').classList.toggle('is-enabled', legal.enabled);
   // Next game after the game ends; a mandatory refill after losing every chip.
-  // The refill label stays while the stack counts up.
-  const refill = needsHeroRebuy(game) || rebuying;
-  $('#next-button').disabled = rebuying;
+  const refill = needsHeroRebuy(game);
   $('#next-button').classList.toggle('rebuy-button', refill);
   setLocalizedHTML(
     $('#next-button'),
@@ -885,19 +883,23 @@ function nextHand() {
   soundEffect('deal');
   schedule();
 }
-// Refill, show the stack counting up, then deal the next hand.
+// Refill and deal the next hand at once; the stack counts up during it.
 function refillAndDeal() {
-  if (rebuying || !needsHeroRebuy(game) || !heroRebuysLeft(game)) return false;
-  clearTimeout(timer);
+  if (!needsHeroRebuy(game) || !heroRebuysLeft(game)) return false;
   rebuyHero(game);
+  nextHand();
   rebuying = true;
   const ticket = epoch;
-  render();
-  effects.rebuy($('.hero-identity'), $('#hero-stack'), game.players[0].stack, () => {
-    if (ticket !== epoch || !rebuying) return;
-    rebuying = false;
-    nextHand();
-  });
+  effects.rebuy(
+    $('.hero-identity'),
+    $('#hero-stack'),
+    { added: game.stakes.startingStack, target: game.players[0].stack },
+    () => {
+      if (ticket !== epoch) return;
+      rebuying = false;
+      render();
+    },
+  );
   return true;
 }
 function advanceGame() {

@@ -58,6 +58,16 @@ for (const heroWins of [true, false]) {
     await expect(page.locator('.crown-stage')).toHaveCount(0, { timeout: 4000 });
     await expect(page.locator(resting)).not.toHaveClass(/crown-pending/);
     await expect(page.locator('.champion-crown')).toHaveCount(1);
+    // The crown is worn upright: no rotation, only the landing scale.
+    expect(
+      await page.locator(resting).evaluate((crown) => {
+        const style = getComputedStyle(crown);
+        const [, b = 0, c = 0] = (style.transform.match(/matrix\(([^)]+)\)/)?.[1] || '')
+          .split(',')
+          .map(Number);
+        return { rotate: style.rotate, skew: Math.abs(b) + Math.abs(c) };
+      }),
+    ).toEqual({ rotate: 'none', skew: 0 });
     await expect(page.locator('#street-label')).toHaveText('本局结束');
     await expect(page.locator('#next-button')).toHaveText('下一局');
     await expect(page.locator('#reset-button')).toBeHidden();
@@ -100,7 +110,7 @@ test('retrying the deciding hand withdraws the crown and the final standing', as
   await expect(page.locator('#reset-button')).toBeVisible();
 });
 
-test('busting with refills left shows the refill count, counts the stack up and deals once', async ({
+test('busting with refills left shows the refill count, deals at once and counts the stack up', async ({
   page,
 }) => {
   await page.evaluate(() => window.qa.finale({ heroWins: false, rivals: 3, rebuysUsed: 1 }));
@@ -111,20 +121,38 @@ test('busting with refills left shows the refill count, counts the stack up and 
   const next = page.locator('#next-button');
   await expect(next).toContainText('补充筹码');
   await expect(next.locator('.rebuy-count')).toHaveText('剩 2 次');
-  await expect(page.locator('#restart-hand-button')).toBeVisible();
   const hand = view.hand;
   await next.click();
+  // The next hand is dealt immediately; the refill effect plays during it.
+  const dealt = await state(page);
+  expect(dealt.hand).toBe(hand + 1);
+  expect(dealt.phase).not.toBe('done');
+  expect(dealt.rebuysLeft).toBe(1);
+  expect(dealt.needsRebuy).toBe(false);
+  await expect(next).toBeHidden();
   await expect(page.locator('.rebuy-burst')).toHaveText('+20K');
   await expect(page.locator('#hero-stack')).toHaveClass(/stack-refill/);
-  await expect(page.locator('#restart-hand-button')).toBeHidden();
-  await expect(next).toBeDisabled();
+  // The name row stays still while the stack counts up.
+  const samples = [];
+  for (let i = 0; i < 12; i++) {
+    samples.push(
+      await page.evaluate(() => {
+        const name = document.querySelector('.hero-identity > strong').getBoundingClientRect(),
+          stack = document.querySelector('#hero-stack');
+        return { left: Math.round(name.left * 10) / 10, text: stack.textContent };
+      }),
+    );
+    await page.waitForTimeout(80);
+  }
+  const lefts = samples.map((sample) => sample.left);
+  expect(Math.max(...lefts) - Math.min(...lefts)).toBeLessThan(0.5);
+  expect(new Set(samples.map((sample) => sample.text)).size).toBeGreaterThan(2);
   await page.screenshot({ path: test.info().outputPath('refill.png') });
-  await expect.poll(async () => (await state(page)).hand).toBe(hand + 1);
-  const after = await state(page);
-  expect(after.rebuysLeft).toBe(1);
-  expect(after.needsRebuy).toBe(false);
-  await expect(page.locator('.rebuy-burst')).toHaveCount(0);
+  await expect(page.locator('.rebuy-burst')).toHaveCount(0, { timeout: 3000 });
   await expect(page.locator('#hero-stack')).not.toHaveClass(/stack-refill/);
+  // After the count the stack shows the real amount again (blinds included).
+  await expect(page.locator('#hero-stack')).not.toHaveText('0');
+  expect((await state(page)).hand).toBe(hand + 1);
 });
 
 test('busting after the last refill ends the game with a place and no champion', async ({

@@ -119,13 +119,20 @@
     transform: translate(-50%, -26px) scale(0.96);
   }
 }
+/* The pill is drawn outward with shadows and the width is reserved for the
+   widest count value, so the row around the stack never moves. */
 .stack-refill {
+  display: inline-block;
+  min-width: var(--refill-width, auto);
   border-radius: 999px;
   color: #ffffff;
-  background: linear-gradient(180deg, #2fbf62, #138a3d);
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  background: #1f9e4c;
   box-shadow:
-    0 0 0 2px #5ff08a,
-    0 0 14px 3px #34d36a99;
+    0 0 0 5px #1f9e4c,
+    0 0 0 7px #5ff08a,
+    0 0 16px 7px #34d36a99;
   animation: stack-refill 1.3s ease-out both;
 }
 @keyframes stack-refill {
@@ -305,13 +312,11 @@
   }
   92% {
     opacity: 1;
-    transform: translate(var(--crown-x, 0), var(--crown-y, 0)) scale(var(--crown-scale, 0.25))
-      rotate(-12deg);
+    transform: translate(var(--crown-x, 0), var(--crown-y, 0)) scale(var(--crown-scale, 0.25));
   }
   100% {
     opacity: 0;
-    transform: translate(var(--crown-x, 0), var(--crown-y, 0)) scale(var(--crown-scale, 0.25))
-      rotate(-12deg);
+    transform: translate(var(--crown-x, 0), var(--crown-y, 0)) scale(var(--crown-scale, 0.25));
   }
 }
 
