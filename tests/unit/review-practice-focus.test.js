@@ -55,7 +55,15 @@ test('folding a suited connector explains its potential before the expensive ent
   assert.doesNotMatch(text, /这两张低牌不是对子或强高牌/);
 });
 test('the original opener reraising a bluff needs opponents to fold, not himself', () => {
-  const text = summary(analyzeDecision(fixtures.heroes['hero-open-reraise-bluff'], options));
+  // The original 55 snapshot now correctly uses the small-pair price guard.
+  // A weak non-pair isolates the bluff paragraph whose actor must be checked.
+  const s = structuredClone(fixtures.heroes['hero-open-reraise-bluff']);
+  s.hole = s.hole.map((card, index) => ({
+    ...card,
+    rank: index ? 2 : 7,
+    key: `${card.suit}-${index ? 2 : 7}`,
+  }));
+  const text = summary(analyzeDecision(s, options));
   assert.match(text, /需要所有仍在底池里的对手都弃牌/);
   assert.doesNotMatch(text, /需要开池者愿意弃牌/);
 });

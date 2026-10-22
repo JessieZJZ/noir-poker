@@ -15,9 +15,14 @@ test('contextual advice and existing-side-pot clauses localize as displayed with
     allInPressureSnapshot(),
     allInPressureSnapshot({ sidePot: true }),
     cheapMiddlePairRaise(),
-    ...['preflop-check', 'made-redraw-value-check', 'speculative-allin-reraise'].map(
-      (k) => fixtures.heroes[k],
-    ),
+    ...[
+      'preflop-check',
+      'made-redraw-value-check',
+      'speculative-allin-reraise',
+      'small-pair-min-squeeze',
+      'unbacked-highcard-pending-flop',
+      'cheap-highcard-river-call',
+    ].map((k) => fixtures.heroes[k]),
   ];
   const results = cases.map((s) => analyzeDecision(s, { trials: 60, rolloutTrials: 2 }));
   for (const locale of SUPPORTED_LOCALES) {
