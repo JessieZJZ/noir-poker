@@ -470,9 +470,13 @@ body[data-records-page='list'] .records-page-heading h1 {
   position: relative;
   z-index: 1;
 }
+/* Clip sideways only. Revealed artwork of the top seats may rise over the
+   header and hint text; Safari has no overflow-clip-margin, so a vertical clip
+   would cut the cards off there. */
 .game-surface > .table-viewport {
-  overflow: clip;
-  overflow-clip-margin: 40px;
+  overflow-x: clip;
+  overflow-y: visible;
+  z-index: 1;
 }
 
 .seat-name-label,

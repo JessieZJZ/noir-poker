@@ -804,6 +804,16 @@ function canFastFinish() {
     (game.phase !== 'done' || (game.board.length < 5 && !game.practiceBoard))
   );
 }
+// Resolve after the browser has painted a frame (or shortly, when frames are
+// paused); a zero timeout alone can run before any paint.
+const nextFrame = () =>
+  new Promise((resolve) => {
+    const fallback = setTimeout(resolve, 50);
+    requestAnimationFrame(() => {
+      clearTimeout(fallback);
+      setTimeout(resolve, 0);
+    });
+  });
 async function continueDeal() {
   if (!canFastFinish()) return false;
   clearTimeout(timer);
@@ -812,9 +822,17 @@ async function continueDeal() {
   const ticket = ++epoch;
   finishing = true;
   render();
+  // Show "正在发牌…" before the remaining bot work starts.
+  await nextFrame();
   try {
+    let slice = performance.now();
     while (ticket === epoch && game.phase !== 'done') {
-      await new Promise((resolve) => setTimeout(resolve, 0));
+      // Bot decisions run in short slices so the page keeps painting. Streets
+      // are not laid out one by one; the settled table renders once at the end.
+      if (performance.now() - slice > 12) {
+        await nextFrame();
+        slice = performance.now();
+      }
       await activityClock.waitUntilActive();
       if (ticket !== epoch) return false;
       if (game.phase === 'between') advanceStreet(game);
@@ -826,7 +844,6 @@ async function continueDeal() {
           });
         else playBotTurn(game);
       }
-      if (game.phase === 'between') render();
     }
     await activityClock.waitUntilActive();
     if (ticket === epoch) completeBoardForPractice(game);

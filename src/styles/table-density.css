@@ -13,7 +13,7 @@
 .game-surface:has(.compact-actions) {
   height: calc(
     var(--play-height) - var(--live-dock-height) + var(--compact-dock-height) -
-      var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px))
+      var(--dock-bottom-inset)
   );
 }
 .game-surface > .action-dock-slot:has(.compact-actions),

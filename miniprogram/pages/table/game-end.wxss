@@ -8,11 +8,19 @@
   opacity: 0.45;
   filter: grayscale(0.85);
 }
+/* Upright on the avatar's head, its lower half over the portrait, clear of
+   the name: it shares the avatar's grid cell and rises to its top edge. */
 .seat-champion-crown {
-  left: calc(var(--profile-padding, 5px) - 1px);
-  top: calc(var(--player-name, 14px) + var(--profile-padding, 5px) - 12px);
-  width: 20px;
-  height: 15px;
+  width: 14px;
+  height: 10px;
+}
+.web-phone-layout .seat .seat-body > .seat-champion-crown {
+  position: relative;
+  grid-column: 1;
+  grid-row: 2 / 4;
+  align-self: end;
+  justify-self: center;
+  margin-bottom: calc(var(--player-avatar, 24px) - 5px);
 }
 .seat.is-champion .seat-body {
   border-color: #d9b45a;
@@ -21,11 +29,12 @@
 .hero-name-text {
   position: relative;
 }
+/* Centred on the "你" glyph, which is one em wide. */
 .hero-champion-crown {
-  left: calc(0.5em - 12px);
-  top: -19px;
-  width: 24px;
-  height: 18px;
+  left: calc(0.5em - 11px);
+  top: -18px;
+  width: 22px;
+  height: 16px;
 }
 .hero-identity {
   position: relative;

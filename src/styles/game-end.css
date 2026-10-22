@@ -16,13 +16,14 @@
 .seat-profile {
   position: relative;
 }
-/* The crown sits upright on top of the avatar: beside the name on wide
-   tables, and in the avatar's own grid cell on the compact game surface. */
+/* The crown sits upright on the avatar's head, its lower half over the
+   portrait so it stays clear of the name row: beside the name on wide tables,
+   and in the avatar's own grid cell on the compact game surface. */
 .seat-champion-crown {
-  left: 16px;
-  top: -3px;
-  width: 22px;
-  height: 17px;
+  left: 19px;
+  top: calc(50% - 22px);
+  width: 16px;
+  height: 12px;
 }
 .game-surface .arena[data-player-count] .seat-profile > .seat-champion-crown {
   position: relative;
@@ -32,30 +33,42 @@
   justify-self: center;
   left: 0;
   top: 0;
-  margin-top: -11px;
-  width: 20px;
-  height: 15px;
+  margin-top: -5px;
+  width: 14px;
+  height: 10px;
 }
 .seat.is-champion .seat-profile {
   border-color: #d9b45a;
   box-shadow: 0 0 18px #d9b45a40;
 }
-/* The hero wears the crown upright, centred above the "你" of the name row. */
-.hero-identity > strong {
+/* The hero wears the crown upright, centred on the "你" glyph itself.
+   `.hero-name strong span` styles the position badge; the name and crown
+   spans must not inherit its size, colour, padding or margin. */
+.hero-name strong .hero-you,
+.hero-name strong .hero-you span {
+  margin: 0;
+  padding: 0;
+  border-radius: 0;
+  background: none;
+  font-size: inherit;
+  color: inherit;
+}
+.hero-you {
   position: relative;
+  display: inline-block;
 }
 .hero-crown-slot {
   position: absolute;
-  left: 0;
+  left: 50%;
   top: 0;
   width: 0;
   height: 0;
 }
 .hero-champion-crown {
-  left: calc(0.5em - 12px);
-  top: -19px;
-  width: 24px;
-  height: 18px;
+  left: -11px;
+  top: -18px;
+  width: 22px;
+  height: 16px;
 }
 .hero-name.is-champion .hero-identity {
   text-shadow: 0 0 10px #f4c95d66;

@@ -931,9 +931,8 @@ export function createWechatController({
           waiting = null;
         } else return;
         if (game.phase === 'done') return step();
-        if (game.phase === 'between') render();
-        // Yield to lifecycle/reset handlers, without painting every intermediate
-        // turn or adding simulated thinking delays to an explicit fast finish.
+        // Yield to lifecycle/reset handlers. Streets are not published one by
+        // one; the settled table is published once, like Web.
         timer = schedule(() => {
           timer = null;
           step();
