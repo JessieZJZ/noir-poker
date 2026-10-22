@@ -257,14 +257,21 @@ function explanation(s, r, evKind, suggested, kind) {
         ? 'KK 是翻前仅次于 AA 的顶级起手牌，领先较小对子和多数高牌，本身的强度足以支持积极争夺底池'
         : s.hole[0].rank === s.hole[1].rank
           ? '这手对子遇到更大对子明显落后，如果主要靠翻牌中暗三条获利，还要有合适的跟注价格和成牌后的可赢筹码'
-          : Math.max(...s.hole.map((card) => card.rank)) >= 11
-            ? '这组高牌即使击中一对，也可能被大对子或更好踢脚压制'
-            : '这两张低牌不是对子或强高牌，击中一对后点数仍偏低';
+          : s.hole.some((card) => card.rank === 14) && s.hole.some((card) => card.rank === 13)
+            ? 'AK 击中 A 或 K 时有顶对顶踢脚潜力，未击中时仍需结合价格和对手范围判断'
+            : Math.max(...s.hole.map((card) => card.rank)) >= 11
+              ? '这组高牌即使击中一对，也可能被大对子或更好踢脚压制'
+              : '这两张低牌不是对子或强高牌，击中一对后点数仍偏低';
     const keep = suggested.action === 'fold';
     const suitedConnector =
       s.hole[0].suit === s.hole[1].suit && Math.abs(s.hole[0].rank - s.hole[1].rank) === 1;
     return [
       ...(suitedConnector ? preflopPotential(s) : [handRisk + '。']),
+      suitedConnector &&
+      Math.max(...s.hole.map((card) => card.rank)) >= 11 &&
+      Math.max(...s.hole.map((card) => card.rank)) <= 13
+        ? handRisk + '。'
+        : '',
       suitedConnector
         ? `当前面对加注至 ${fmt(s.currentBet)}，约 ${(s.currentBet / bigBlindOf(s)).toFixed(1)} BB，需要结合尺度和有效筹码判断，不能只凭连接与同花潜力继续。`
         : '',

@@ -35,9 +35,8 @@ test('executed preflop re-raises are called bluffs rather than bluff candidates'
       snapshot.players = snapshot.players.filter((player) => !player.id || player.id === aggressor);
     }
     const text = actionReason(snapshot, { context: decisionContext(snapshot) });
-    assert.match(text, /这次是再加注诈唬，需要开池者/);
+    assert.match(text, /这次是再加注诈唬，需要所有仍在底池里的对手都弃牌/);
     assert.doesNotMatch(text, /再加注诈唬候选/);
-    if (headsUp) assert.match(text, /开池者愿意弃牌/);
-    else assert.match(text, /开池者和其他未弃牌的玩家都放弃/);
+    assert.doesNotMatch(text, /需要开池者愿意弃牌|开池者和其他未弃牌的玩家都放弃/);
   }
 });
