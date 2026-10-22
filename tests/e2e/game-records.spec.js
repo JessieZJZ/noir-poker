@@ -6,6 +6,24 @@ import {
 } from '../fixtures/records-geometry.js';
 
 const records = (page) => page.evaluate(() => window.noir.getRecords());
+// Rewrite the saved records in the legacy inline format, which loading
+// migrates into the snapshot store; tests edit snapshots through it.
+const legacyRecords = () => {
+  const saved = JSON.parse(localStorage.getItem('noir-game-records-v1')),
+    full = new Map(
+      window.noir
+        .getRecords()
+        .flatMap((session) => session.attempts)
+        .map((attempt) => [attempt.id, attempt.snapshot]),
+    );
+  saved.version = 1;
+  for (const attempt of saved.sessions.flatMap((session) => session.attempts)) {
+    attempt.snapshot = full.get(attempt.id) ?? null;
+    delete attempt.bytes;
+    delete attempt.over;
+  }
+  return saved;
+};
 const state = (page) => page.evaluate(() => window.noir.getState());
 const openRecords = async (page) => {
   await page.locator('#rules-button').click();
@@ -22,9 +40,9 @@ test.beforeEach(async ({ page }) => {
 test('large archives render collapsed session hands only when expanded and keep snapshots on demand', async ({
   page,
 }) => {
-  await page.evaluate(() => {
+  await page.evaluate((legacy) => {
     window.qa.recordsFinish();
-    const saved = JSON.parse(localStorage.getItem('noir-game-records-v1'));
+    const saved = new Function(`return (${legacy})()`)();
     const source = saved.sessions.find((session) => session.id === saved.currentId);
     const attempt = source.attempts.find((attempt) => attempt.status === 'completed');
     saved.sessions = Array.from({ length: 8 }, (_, i) => ({
@@ -51,7 +69,7 @@ test('large archives render collapsed session hands only when expanded and keep 
     saved.nextNumber = 9;
     saved.checkpoint.hand = 12;
     localStorage.setItem('noir-game-records-v1', JSON.stringify(saved));
-  });
+  }, String(legacyRecords));
   await page.reload();
   await page.waitForFunction(() => !!window.qa);
   await page.evaluate(() => window.qa.stop());
@@ -155,8 +173,8 @@ test('stored historical labels remain text and cannot execute markup', async ({ 
   const record = (await records(page))[0].attempts[0];
   const source = '<img src=x onerror="window.historyMarkupExecuted=true">';
   await page.evaluate(
-    ({ source, id }) => {
-      const saved = JSON.parse(localStorage.getItem('noir-game-records-v1'));
+    ({ source, id, legacy }) => {
+      const saved = new Function(`return (${legacy})()`)();
       const attempt = saved.sessions
         .flatMap((session) => session.attempts)
         .find((a) => a.id === id);
@@ -168,7 +186,7 @@ test('stored historical labels remain text and cannot execute markup', async ({ 
       attempt.snapshot.winners[0].label = 'award " data-archive-injected="true';
       localStorage.setItem('noir-game-records-v1', JSON.stringify(saved));
     },
-    { source, id: record.id },
+    { source, id: record.id, legacy: String(legacyRecords) },
   );
   await page.reload();
   await page.waitForFunction(() => !!window.qa);
@@ -324,7 +342,7 @@ test('historical details omit the extra heading and use system Back to the list'
       'datetime',
       new Date(attempt.startedAt).toISOString(),
     );
-    await expect(page.locator('.records-live-note')).toBeHidden();
+    await expect(page.locator('.records-live-note')).toHaveCount(0);
     await expect(page.locator('#history-street-label, #history-street-divider')).toHaveCount(0);
     await expect(
       page.locator('.records-history-heading, #history-back-button, .records-history-result'),
@@ -397,11 +415,7 @@ test('historical headers show each attempt start date with the year, align the r
       expect(layout.right).toBeLessThanOrEqual(width);
       expect(layout.shift).toBe('6px');
       expect(layout.overflow).toBeLessThanOrEqual(1);
-      for (const selector of [
-        '.records-live-note',
-        '#history-street-label',
-        '#history-street-divider',
-      ])
+      for (const selector of ['#history-street-label', '#history-street-divider'])
         await expect(page.locator(selector)).toBeHidden();
       expect(
         await page.locator('#records-title').evaluate((el) => el.classList.contains('sr-only')),
@@ -873,20 +887,18 @@ test('records headings keep their note close and revealed opponents use larger f
       expect(face.bottom - face.profileTop).toBeLessThan(20);
     }
     await openRecords(page);
+    // The live-play note is gone; the first card sits a fixed gap below the heading.
     const spacing = await page.evaluate(() => {
+      const heading = document.querySelector('.records-page-heading').getBoundingClientRect();
       const title = document.querySelector('#records-title').getBoundingClientRect();
-      const note = document.querySelector('.records-live-note').getBoundingClientRect();
       const row = document.querySelector('.record-session').getBoundingClientRect();
       const back = document.querySelector('#records-back-button').getBoundingClientRect();
       return {
-        titleGap: note.top - title.bottom,
-        cardGap: row.top - note.bottom,
+        cardGap: row.top - heading.bottom,
         center: Math.abs(title.top + title.height / 2 - back.top - back.height / 2),
       };
     });
-    expect(spacing.titleGap).toBeGreaterThanOrEqual(4);
-    expect(spacing.titleGap).toBeLessThanOrEqual(10);
-    expect(spacing.cardGap).toBe(12);
+    expect(spacing.cardGap).toBe(16);
     expect(spacing.center).toBeLessThan(1);
     await page.locator(`[data-record-hand="${attempt.id}"]`).click();
     const saved = await page.evaluate(read, '#history-arena');

@@ -8,9 +8,25 @@ import assert from 'node:assert/strict';
 import vm from 'node:vm';
 import { readFileSync } from 'node:fs';
 import { createWechatController } from '../../src/platform/wechat-controller.js';
-import { recordResult } from '../../src/engine/game-records.js';
+import { recordResult, sessionStanding } from '../../src/engine/game-records.js';
 import { nameTooltipPosition } from '../../src/ui/name-tooltip-position.js';
 import { numericWidthScale, numericColumnWidth } from '../../src/ui/numeric-width.js';
+import * as effectLayouts from '../../src/ui/effect-layouts.js';
+import * as ceremonySounds from '../../src/ui/ceremony-sounds.js';
+const pageEffectsSource = readFileSync(
+  new URL('../../miniprogram/pages/table/game-effects.js', import.meta.url),
+  'utf8',
+);
+// The page's effect helper runs against the same mocked wx as the page.
+function loadPageEffects(wx) {
+  const module = { exports: {} };
+  vm.runInNewContext(pageEffectsSource, {
+    module,
+    wx,
+    require: (name) => (name.endsWith('/ceremony-sounds.js') ? ceremonySounds : effectLayouts),
+  });
+  return module.exports;
+}
 import {
   act,
   advanceStreet,
@@ -116,6 +132,7 @@ function setup(
       if (name === './phone-layout.js') return { phoneLayout: compactTableLayout };
       if (name.endsWith('/name-tooltip-position.js')) return { nameTooltipPosition };
       if (name.endsWith('/numeric-width.js')) return { numericWidthScale, numericColumnWidth };
+      if (name === './game-effects.js') return loadPageEffects(context.wx);
       if (name === '../../shared/engine/poker.js')
         return { completeBoardForPractice, rankText, evaluate };
       assert.equal(name, '../../shared/platform/wechat-controller.js');
@@ -1579,7 +1596,8 @@ function secondaryPage(t, file, fixture) {
       require(name) {
         if (name === '../../record-time.js') return recordTimeModule.exports;
         if (name === '../../record-navigation.js') return fixture.navigation;
-        if (name === '../../shared/engine/game-records.js') return { recordResult };
+        if (name === '../../shared/engine/game-records.js')
+          return { recordResult, sessionStanding };
         if (name === '../table/page-definition.js') return fixture.definition;
         if (name === '../table/presentation.js') return presentationModule.exports;
         assert.equal(name, '../../shared/engine/chip-format.js');
@@ -1651,6 +1669,7 @@ test('WeChat records classify every completed hand including zero folds and zero
   assert.equal(row('unfinished').resultText, '未完成');
   assert.equal(row('playing').resultText, '进行中');
   assert.equal(row('initial-win').superseded, true, 'Replacement state stays available');
+  assert.equal(records.data.sessions[0].standing.text, '进行中');
   assert.equal(row('replay-two').cards.length, 2);
   assert.equal(row('replay-two').refill, true);
   assert.equal(session.attempts[0].id, 'initial-win', 'Rendering does not reorder saved records');
@@ -1667,18 +1686,21 @@ test('WeChat records classify every completed hand including zero folds and zero
     'utf8',
   );
   assert.match(markup, /wx:if="{{item.attemptText}}" class="hand-tag hand-replay"/);
-  assert.match(markup, /wx:if="{{item.resultText}}"/);
+  assert.match(markup, /class="hand-outcome">{{item.resultText}}/);
   assert.doesNotMatch(markup, /已被重打替代/);
-  assert.match(markup, /wx:if="{{item.refill \|\| item.resultText}}"/);
-  assert.match(markup, /item.superseded \? 'superseded'/, 'Existing muted styling is retained');
+  assert.match(markup, /wx:if="{{item.attemptText \|\| item.refill}}"/);
+  // Like Web, replaced and unfinished rows keep full-opacity results.
+  assert.doesNotMatch(markup, /'superseded'/);
+  assert.doesNotMatch(markup, /浏览记录时/);
   const css = readFileSync(
     new URL('../../miniprogram/pages/records/records.wxss', import.meta.url),
     'utf8',
   );
   assert.match(
     css,
-    /\.hand-tag\.hand-replay\s*\{[^}]*color: #[0-9a-f]+;[^}]*border-color: #[0-9a-f]+;[^}]*background:/s,
+    /\.hand-tag\.hand-replay\s*\{[^}]*border-color: #[0-9a-f]+;[^}]*color: #[0-9a-f]+;[^}]*background:/s,
   );
+  assert.doesNotMatch(css, /opacity:\s*0\.\d/);
 });
 
 test('WeChat record rows use full-width native views and reject unfinished hand entry', (t) => {
@@ -2211,7 +2233,7 @@ test('WeChat final cards retain readable phone dimensions within the unchanged f
 test('WeChat practice statistics show only the current-session title', () => {
   assert.match(
     template,
-    /class="practice-panel"\s*><view class="session-title"><text>本局练习<\/text><\/view\s*>/,
+    /class="practice-panel"\s*><view class="session-title"\s*><view class="session-heading"\s*><text>{{sessionTitle}}<\/text\s*><text wx:if="{{standingText}}" class="standing-tag {{standingClass}}"/,
   );
   assert.doesNotMatch(template, /你的练习|本次牌桌/);
   assert.match(template, /本次练习净变化/);

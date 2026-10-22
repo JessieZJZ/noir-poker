@@ -1,5 +1,13 @@
 import { difficultyPolicy } from '../engine/bot-difficulty.js';
-import { createGameRecords } from '../engine/game-records.js';
+import { createGameRecords, standingLabel, standingClass } from '../engine/game-records.js';
+import { isPremiumStart } from '../engine/starting-hands.js';
+import {
+  PREMIUM_DELAY_MS,
+  PREMIUM_DURATION_MS,
+  REBUY_DURATION_MS,
+  CROWN_FLIGHT_MS,
+  CONFETTI_DURATION_MS,
+} from '../ui/effect-layouts.js';
 import { compactChips, compactActionAmounts } from '../engine/chip-format.js';
 import {
   sanitizeStakes,
@@ -21,6 +29,9 @@ import {
   restartHand,
   canRestartHand,
   applyBotSettings,
+  rebuyHero,
+  heroRebuysLeft,
+  needsHeroRebuy,
   advanceStreet,
   completeBoardForPractice,
   legalActions,
@@ -90,6 +101,9 @@ const sanitize = (value) => ({
 export function createWechatController({
   publish,
   storage,
+  snapshots,
+  recordsBudget,
+  toast = () => {},
   sound = () => {},
   wager = () => {},
   notifyTurn = () => {},
@@ -107,7 +121,9 @@ export function createWechatController({
   } catch {
     settings = defaults();
   }
-  const records = readOnlyAttempt ? null : createGameRecords({ storage });
+  const records = readOnlyAttempt
+    ? null
+    : createGameRecords({ storage, snapshots, budget: recordsBudget });
   const resumed = records?.resume();
   if (readOnlyAttempt)
     settings = sanitize({
@@ -147,6 +163,75 @@ export function createWechatController({
     hintText = '',
     reviewEpoch = 0,
     newSession = false;
+  // Presentation-only effect state. Every timer is cancelled with the hand.
+  const effectTimers = new Set();
+  let premium = false,
+    rebuying = null,
+    ceremony = null,
+    ceremonyKey = '',
+    crownedKey = '',
+    confetti = false,
+    effectEpoch = 0;
+  // A callback already handed to the platform cannot outlive its cancellation.
+  function later(fn, ms) {
+    const ticket = effectEpoch;
+    const timer = schedule(() => {
+      effectTimers.delete(timer);
+      if (!disposed && ticket === effectEpoch) fn();
+    }, ms);
+    effectTimers.add(timer);
+  }
+  function cancelEffects() {
+    effectEpoch++;
+    for (const timer of effectTimers) unschedule(timer);
+    effectTimers.clear();
+    premium = false;
+    rebuying = null;
+    confetti = false;
+    if (ceremony) crownedKey = ceremony.key;
+    ceremony = null;
+  }
+  const gameEndKey = () =>
+    game.over && game.over.championId !== null
+      ? `${records?.sessionNumber() || 0}:${game.hand}:${game.replayAttempt || 0}`
+      : '';
+  function premiumDeal() {
+    if (readOnlyAttempt || !isPremiumStart(game.players[0].hole)) return;
+    later(() => {
+      premium = true;
+      render();
+      later(() => {
+        premium = false;
+        render();
+      }, PREMIUM_DURATION_MS);
+    }, PREMIUM_DELAY_MS);
+  }
+  // The coronation starts once per decided game; the crown then stays on.
+  function celebrate() {
+    const key = gameEndKey();
+    if (!key || ceremonyKey === key || readOnlyAttempt || !active) return false;
+    ceremonyKey = key;
+    const champion = game.over.championId;
+    ceremony = {
+      key,
+      championId: champion,
+      heroWon: champion === 0,
+      caption: champion === 0 ? '你获得冠军' : `${game.players[champion].name} 获得冠军`,
+    };
+    confetti = champion === 0;
+    effect(champion === 0 ? 'champion' : 'crowned');
+    later(() => {
+      crownedKey = key;
+      ceremony = null;
+      render();
+    }, CROWN_FLIGHT_MS);
+    if (confetti)
+      later(() => {
+        confetti = false;
+        render();
+      }, CONFETTI_DURATION_MS);
+    return true;
+  }
   let sliderMin = game.bigBlind * 2,
     sliderMax = game.stakes.startingStack,
     callCaption = '跟注',
@@ -233,7 +318,13 @@ export function createWechatController({
   function render() {
     if (disposed) return;
     records?.capture(game);
+    const notice = records?.takeNotice();
+    if (notice) toast(notice);
+    if (celebrate()) return render();
     updateHint();
+    const endKey = gameEndKey(),
+      crowned =
+        endKey && (ceremony?.key === endKey || crownedKey === endKey) ? game.over.championId : null;
     const hero = game.players[0],
       legal = legalActions(game, 0),
       done = game.phase === 'done';
@@ -264,9 +355,11 @@ export function createWechatController({
         revealed && game.board.length === 5 ? evaluate([...player.hole, ...game.board]) : null;
       const retained = visibleRecentAction(game, player);
       const rawAction =
-        game.actor === player.id && !done
-          ? '思考中'
-          : retained?.text || player.action || (done ? '未行动' : '等待行动');
+        player.out && !player.hole.length
+          ? `出局 · 第${player.place}名`
+          : game.actor === player.id && !done
+            ? '思考中'
+            : retained?.text || player.action || (done ? '未行动' : '等待行动');
       const match =
         /^(?:(\d+-bet)\s+)?(小盲|大盲|跟注|开池至|加注至|下注至|下注|短全下至|全下至|全下)\s*(\d+)$/.exec(
           rawAction,
@@ -279,9 +372,12 @@ export function createWechatController({
               (match[2] === '短全下至' ? ' 短全下' : match[2] === '全下至' ? ' 全下' : '')
             : match[2].replace(/至$/, '')
         : compactActionAmounts(rawAction);
+      const out = !!player.out && !player.hole.length;
       return {
         id: player.id,
         name: player.name,
+        out,
+        crowned: crowned === player.id,
         position: seatPosition(game, player.id),
         profileId: profile.id,
         profileName: profile.short,
@@ -328,10 +424,24 @@ export function createWechatController({
       turnPhase: attention.phase,
       hand: game.hand,
       sessionNumber: readOnlySessionNumber || records?.sessionNumber() || 1,
-      recordsError: records?.error() || '',
+      over: game.over ? { ...game.over } : null,
+      sessionTitle: game.over ? '本局结束' : '本局练习',
+      standingText: game.over ? standingLabel(game.over.heroPlace) : '',
+      standingClass: game.over ? standingClass(game.over.heroPlace) : '',
+      needsRebuy: (needsHeroRebuy(game) && !game.over) || !!rebuying,
+      rebuysLeft: heroRebuysLeft(game),
+      rebuying: !!rebuying,
+      rebuyBurst: rebuying ? `+${format(game.stakes.startingStack)}` : '',
+      nextLabel: game.over ? '下一局' : needsHeroRebuy(game) || rebuying ? '补充筹码' : '下一手',
+      premium,
+      ceremony: ceremony ? { ...ceremony } : null,
+      confetti,
+      crownPending: !!ceremony,
+      heroCrowned: crowned === 0,
+      heroOut: !!hero.out,
       historyReadOnly: !!readOnlyAttempt,
       phase: game.phase,
-      street: done ? '本手结束' : STREET_NAMES[game.street] || '准备发牌',
+      street: game.over ? '本局结束' : done ? '本手结束' : STREET_NAMES[game.street] || '准备发牌',
       replay: game.replayAttempt || 0,
       seats,
       board,
@@ -345,7 +455,7 @@ export function createWechatController({
           !!heroBest &&
           heroBest.cards.some((c) => c.key === card.key),
       })),
-      heroStack: format(hero.stack),
+      heroStack: rebuying ? format(rebuying.shown) : format(hero.stack),
       startingStackText: format(settings.stakes.startingStack),
       blindText: `${format(game.smallBlind)} / ${format(game.bigBlind)}`,
       configuredSmallBlindText: format(settings.stakes.smallBlind),
@@ -387,7 +497,7 @@ export function createWechatController({
         amount: format(r.amount),
       })),
       done,
-      canRetry: canRestartHand(game),
+      canRetry: canRestartHand(game) && !rebuying,
       waiting: !done && !legal.enabled,
       canRaise: !!(legal.enabled && legal.canRaise),
       canAct: !!legal.enabled,
@@ -502,12 +612,19 @@ export function createWechatController({
     cancelBots();
     cancelReview();
     cancelHint();
+    cancelEffects();
     hintKey = '';
-    if (game.players.length !== settings.playerCount || !sameStakes(settings.stakes, game.stakes)) {
+    if (
+      game.over ||
+      game.players.length !== settings.playerCount ||
+      !sameStakes(settings.stakes, game.stakes)
+    ) {
       records?.abandon(game);
       game = newGame(settings.playerCount, settings.stakes);
       newSession = true;
     }
+    // A refill left pending when the app closed is completed before dealing.
+    if (needsHeroRebuy(game) && heroRebuysLeft(game)) rebuyHero(game);
     game.difficulty = settings.difficulty;
     applyBotSettings(game, settings);
     startHand(game);
@@ -516,7 +633,34 @@ export function createWechatController({
     raiseTo = game.bigBlind * 3;
     render();
     effect('deal');
+    premiumDeal();
     driveBots();
+  }
+  // Refill, count the stack up from zero, then deal the next hand.
+  function refillAndDeal() {
+    if (rebuying || !needsHeroRebuy(game) || !heroRebuysLeft(game)) return false;
+    cancelBots();
+    rebuyHero(game);
+    const amount = game.players[0].stack,
+      steps = 10;
+    rebuying = { shown: 0 };
+    render();
+    for (let step = 1; step <= steps; step++)
+      later(
+        () => {
+          if (!rebuying) return;
+          const progress = step / steps;
+          rebuying.shown = Math.round((amount * (1 - Math.pow(1 - progress, 3))) / 100) * 100;
+          render();
+        },
+        Math.round((REBUY_DURATION_MS * 0.7 * step) / steps),
+      );
+    later(() => {
+      if (!rebuying) return;
+      rebuying = null;
+      freshHand();
+    }, REBUY_DURATION_MS);
+    return true;
   }
   function setStakes(value) {
     if (readOnlyAttempt) return false;
@@ -606,10 +750,14 @@ export function createWechatController({
     },
     hide() {
       active = false;
+      const pendingRefill = !!rebuying;
       cancelBots();
       cancelReview();
       cancelHint();
-      render();
+      cancelEffects();
+      // A refill cut short by leaving the page still deals its next hand.
+      if (pendingRefill) freshHand();
+      else render();
     },
     destroy() {
       disposed = true;
@@ -618,6 +766,7 @@ export function createWechatController({
       cancelBots();
       cancelReview();
       cancelHint();
+      cancelEffects();
     },
     action(action) {
       const legal = legalActions(game, 0);
@@ -670,7 +819,10 @@ export function createWechatController({
       }
     },
     nextHand() {
-      if (!readOnlyAttempt && game.phase === 'done') freshHand();
+      if (readOnlyAttempt || game.phase !== 'done' || rebuying) return false;
+      if (!game.over && needsHeroRebuy(game)) return refillAndDeal();
+      freshHand();
+      return true;
     },
     peek(id) {
       if (game.phase !== 'done' || !game.players[id] || id === 0) return false;
@@ -686,6 +838,7 @@ export function createWechatController({
       cancelBots();
       cancelReview();
       cancelHint();
+      cancelEffects();
       hintKey = '';
       records?.capture(game);
       restartHand(game);
@@ -693,6 +846,7 @@ export function createWechatController({
       raiseTo = game.bigBlind * 3;
       render();
       effect('deal');
+      premiumDeal();
       driveBots();
       return true;
     },
@@ -938,7 +1092,7 @@ export function createWechatController({
     getRecords: () => records?.sessions() || [],
     getRecordSummaries: () => records?.summaries() || [],
     getRecordsRevision: () => records?.revision() || 0,
-    getRecordsError: () => records?.error() || '',
+    takeRecordsNotice: () => records?.takeNotice() || '',
     getRecord: (id) => records?.getAttempt(id) || null,
     getGame: () => game,
     getSettings: () => ({ ...settings, assignments: { ...settings.assignments } }),

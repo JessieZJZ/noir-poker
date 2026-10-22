@@ -1,4 +1,4 @@
-import { recordResult } from '../engine/game-records.js';
+import { recordResult, sessionStanding } from '../engine/game-records.js';
 import { createRecordsNavigation } from './records-navigation.js';
 import { createGuideMenu } from './guide-menu.js';
 export { recordsRoute } from './records-navigation.js';
@@ -56,9 +56,10 @@ function handItem(attempt) {
 }
 
 function sessionItem(session, expanded) {
+  const standing = sessionStanding(session);
   return `<article class="record-session" data-session-id="${escape(session.id)}" data-session-number="${session.number}">
     <button class="record-session-heading" data-record-session="${escape(session.id)}" aria-expanded="${expanded}" aria-controls="record-session-${escape(session.id)}">
-      <span class="record-session-title"><strong>第 ${session.number} 局</strong><time datetime="${new Date(session.startedAt).toISOString()}">${escape(formatRecordStart(session.startedAt))}</time>${session.endedAt ? '' : '<span class="record-tag record-current">当前局</span>'}</span>
+      <span class="record-session-title"><strong>第 ${session.number} 局</strong><time datetime="${new Date(session.startedAt).toISOString()}">${escape(formatRecordStart(session.startedAt))}</time>${standing ? `<span class="record-tag standing-tag record-standing ${standing.className}">${standing.text}</span>` : ''}</span>
       <span class="record-session-stats"><span><small>胜率</small><strong>${session.completed ? Math.round((session.wins / session.completed) * 100) + '%' : '—'}</strong></span><span><small>净筹码变化</small><strong class="${session.profit < 0 ? 'negative' : session.profit > 0 ? 'positive' : ''}">${change(session.profit)}</strong></span><span><small>起始大小盲</small><strong>${formatChips(session.stakes.smallBlind)} / ${formatChips(session.stakes.bigBlind)}</strong></span><span><small>牌桌人数</small><strong>${session.playerCount} 人</strong></span></span>
       <span class="record-session-chevron" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></span>
     </button>
@@ -73,14 +74,12 @@ function handItems(attempts) {
   );
 }
 
-export function createGameRecordsView({ records, openReview, openPots, onReturnGame }) {
+export function createGameRecordsView({ records, openReview, openPots, onReturnGame, toast }) {
   const liveMain = document.querySelector('main.main'),
     page = document.querySelector('#records-page'),
     content = document.querySelector('#records-content'),
     title = document.querySelector('#records-title'),
-    started = document.querySelector('#records-hand-start'),
-    note = page.querySelector('.records-live-note'),
-    error = document.querySelector('#records-storage-error');
+    started = document.querySelector('#records-hand-start');
   const expanded = new Set(),
     visible = new Set();
   let route = { page: 'game' },
@@ -170,7 +169,6 @@ export function createGameRecordsView({ records, openReview, openPots, onReturnG
     document.body.dataset.recordsPage = route.page;
     title.classList.toggle('sr-only', route.page === 'hand');
     started.hidden = route.page !== 'hand';
-    note.hidden = route.page === 'hand';
     historyViewport?.destroy();
     historyViewport = null;
     if (route.page === 'game') {
@@ -209,9 +207,8 @@ export function createGameRecordsView({ records, openReview, openPots, onReturnG
     refresh();
   }
   function refresh() {
-    const message = records.error();
-    error.hidden = !message;
-    if (message) setLocalizedText(error, message);
+    const message = records.takeNotice();
+    if (message) toast?.(message);
     if (route.page === 'list') renderList();
   }
 

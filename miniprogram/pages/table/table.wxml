@@ -106,7 +106,7 @@
         <view
           wx:for="{{phoneSeats}}"
           wx:key="id"
-          class="seat {{item.y === 0 ? 'seat-crown' : ''}} {{item.thinking ? 'thinking' : ''}} {{item.folded ? 'folded' : ''}} {{item.winner ? 'winner' : ''}}"
+          class="seat {{item.y === 0 ? 'seat-crown' : ''}} {{item.thinking ? 'thinking' : ''}} {{item.folded ? 'folded' : ''}} {{item.winner ? 'winner' : ''}} {{item.out ? 'seat-out' : ''}} {{item.crowned ? 'is-champion' : ''}}"
           style="left: {{item.left}}px; top: {{item.top}}px; width: {{seatWidth}}px; height: {{seatHeight}}px; transform: none;"
         >
           <view
@@ -154,7 +154,7 @@
                 class="position {{item.position === 'SB' ? 'position-sb' : item.position === 'BB' ? 'position-bb' : ''}}"
                 data-id="{{item.id}}"
                 >{{item.position}}</text
-              ><view wx:if="{{done}}" class="seat-eye-slot"
+              ><view wx:if="{{done && !item.out}}" class="seat-eye-slot"
                 ><button
                   hover-class="none"
                   wx:if="{{done}}"
@@ -163,6 +163,12 @@
                   bindtap="peekSeat"
                   aria-label="查看底牌" /></view
             ></view>
+            <view
+              wx:if="{{item.crowned}}"
+              id="seat-crown-{{item.id}}"
+              class="champion-crown seat-champion-crown {{crownPending ? 'crown-pending' : 'crown-arrive'}}"
+              ><view class="crown-shape"
+            /></view>
             <image
               wx:if="{{item.portrait}}"
               class="avatar"
@@ -232,10 +238,10 @@
           </view>
         </view>
         <view
-          class="hero {{heroFolded ? 'hero-folded' : ''}} {{heroRank || heroWinner ? 'has-hero-rank' : ''}}"
+          class="hero {{heroFolded ? 'hero-folded' : ''}} {{heroOut ? 'hero-out' : ''}} {{heroRank || heroWinner ? 'has-hero-rank' : ''}}"
           style="{{heroStyle}}"
           ><view
-            class="hero-cards-wrap {{turnPhase ? 'turn-attention' : ''}} turn-{{turnPhase}}"
+            class="hero-cards-wrap {{turnPhase ? 'turn-attention' : ''}} turn-{{turnPhase}} {{premium ? 'premium-start' : ''}}"
             style="width: calc({{heroWidth * 2}}px + var(--hero-card-gap, 7px));"
             ><view class="hero-cards"
               ><view
@@ -243,8 +249,15 @@
                 wx:key="dealKey"
                 class="card hero-card {{item.red ? 'red' : ''}} {{item.best ? 'best-card' : ''}} {{item.arriving ? 'hero-arrive' : ''}}"
                 style="width: {{heroWidth}}px;height: {{heroHeight}}px; --card-delay: {{420 + index * 130}}ms;"
-                ><view class="card-art" style="{{item.artStyle}}" /></view
-            ></view> </view
+                ><view class="card-art" style="{{item.artStyle}}" /></view></view
+            ><view wx:if="{{premium}}" class="premium-sparks"
+              ><view
+                wx:for="{{premiumSparks}}"
+                wx:for-item="spark"
+                wx:key="key"
+                class="premium-spark"
+                style="{{spark.style}}"
+            /></view> </view
           ><view class="hero-rank"
             ><view wx:if="{{heroRank || heroWinner}}" class="rank {{heroWinner ? 'won' : ''}}"
               ><view wx:if="{{heroWinner}}" class="winner-icon" /><text
@@ -253,8 +266,15 @@
             ></view
           ><view class="hero-info"
             ><view class="hero-identity"
-              ><text>你 <text class="position">{{heroPosition}}</text></text
-              ><text class="stack">{{heroStack}}</text></view
+              ><view class="hero-name-text"
+                ><view
+                  wx:if="{{heroCrowned}}"
+                  id="hero-crown"
+                  class="champion-crown hero-champion-crown {{crownPending ? 'crown-pending' : 'crown-arrive'}}"
+                  ><view class="crown-shape" /></view
+                ><text>你 <text class="position">{{heroPosition}}</text></text></view
+              ><text class="stack {{rebuying ? 'stack-refill' : ''}}">{{heroStack}}</text
+              ><text wx:if="{{rebuyBurst}}" class="rebuy-burst">{{rebuyBurst}}</text></view
             ><view class="hero-action">{{heroAction}}</view></view
           ></view
         >
@@ -276,10 +296,13 @@
           ><button
             wx:if="{{!historyReadOnly}}"
             hover-class="none"
-            class="primary"
+            class="primary {{needsRebuy ? 'rebuy-button' : ''}}"
+            disabled="{{rebuying}}"
             bindtap="nextHand"
           >
-            下一手</button
+            {{nextLabel}}<text wx:if="{{needsRebuy}}" class="rebuy-count"
+              >剩 {{rebuysLeft}} 次</text
+            ></button
           ><button
             hover-class="none"
             wx:if="{{canRetry && !historyReadOnly}}"
@@ -409,7 +432,13 @@
     </view>
   </view>
   <view wx:if="{{!historyReadOnly}}" class="practice-panel"
-    ><view class="session-title"><text>本局练习</text></view
+    ><view class="session-title"
+      ><view class="session-heading"
+        ><text>{{sessionTitle}}</text
+        ><text wx:if="{{standingText}}" class="standing-tag {{standingClass}}"
+          >{{standingText}}</text
+        ></view
+      ></view
     ><view class="session-balance"
       ><text class="session-caption">当前筹码</text
       ><text class="session-stack">{{heroStack}}<text class="session-unit">CHIPS</text></text
@@ -441,12 +470,26 @@
   <view wx:if="{{!historyReadOnly}}" class="bottom-links"
     ><view class="practice-info"
       ><view><view class="live-dot" /><text>本地电脑对手 · 无需登录</text></view
-      ><button hover-class="none" bindtap="resetPractice">重新练习</button></view
+      ><button wx:if="{{!over}}" hover-class="none" bindtap="resetPractice">重新练习</button></view
     >
     <text>仅使用虚拟筹码</text></view
   >
+  <text class="compliance-footer">单机练习·虚拟筹码·禁止赌博</text>
 </view>
 
+<view wx:if="{{confetti}}" class="confetti-layer" aria-hidden="true"
+  ><view
+    wx:for="{{confettiPieces}}"
+    wx:for-item="piece"
+    wx:key="key"
+    class="confetti-piece"
+    style="{{piece.style}}"
+/></view>
+<view wx:if="{{ceremony}}" class="crown-stage" aria-hidden="true"
+  ><view class="crown-rays" /><view class="crown-flight" style="{{crownStyle}}"
+    ><view class="crown-shape" /></view
+  ><text class="crown-caption">{{ceremony.caption}}</text></view
+>
 <view wx:if="{{resourceMenuOpen}}" class="resource-dismiss" bindtap="closeResourceMenu" />
 
 <view

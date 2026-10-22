@@ -7,6 +7,13 @@ const PORTRAIT_CREDITS = require('../../assets/portraits/credits.js');
 const { completeBoardForPractice, rankText } = require('../../shared/engine/poker.js');
 const navigation = require('../../record-navigation.js');
 const { nameTooltipPosition } = require('../../shared/ui/name-tooltip-position.js');
+const {
+  WECHAT_RECORDS_BUDGET,
+  createSnapshotFiles,
+  ceremonySoundFiles,
+  PREMIUM_SPARKS,
+  CONFETTI_PIECES,
+} = require('./game-effects.js');
 // Capsule 36 + nav 48 + gap 8 + header 48 + live dock 134 + end gap 8 + border 2.
 const VIEWPORT_CHROME_HEIGHT = 284;
 const PROFILE_AXES = [
@@ -78,6 +85,9 @@ module.exports = {
     nameTooltip: null,
     finishing: false,
     flyingChips: [],
+    premiumSparks: PREMIUM_SPARKS,
+    confettiPieces: CONFETTI_PIECES,
+    crownStyle: '',
   },
   onLoad() {
     this.updateWindow();
@@ -180,8 +190,14 @@ module.exports = {
         };
         // Large research catalogs and card artwork need not cross the service/
         // view bridge on every bot turn. Preserve existing card nodes and motion.
+        const startsCeremony = !!view.ceremony && view.ceremony.key !== this.data.ceremony?.key;
+        if (startsCeremony) update.crownStyle = '';
         const patch = presentationPatch(this.data, update);
-        if (Object.keys(patch).length) this.setData(patch, () => this.tightenSeatRanks());
+        if (Object.keys(patch).length)
+          this.setData(patch, () => {
+            this.tightenSeatRanks();
+            if (startsCeremony) this.aimCrown(view.ceremony);
+          });
         if (changedDeal)
           this.scheduleCardMotion('deal', 1300, () => {
             const patch = {};
@@ -214,6 +230,9 @@ module.exports = {
       },
       readOnlyAttempt: this._readOnlyAttempt || null,
       readOnlySessionNumber: this._readOnlySessionNumber || null,
+      snapshots: this._readOnlyAttempt ? undefined : createSnapshotFiles() || undefined,
+      recordsBudget: WECHAT_RECORDS_BUDGET,
+      toast: (title) => wx.showToast?.({ title, icon: 'none', duration: 3000 }),
       storage: {
         getItem: (key) => wx.getStorageSync(key) || null,
         setItem: (key, value) => wx.setStorageSync(key, value),
@@ -606,6 +625,23 @@ module.exports = {
       wx.showToast({ title: error.message || '请重试', icon: 'none' });
     }
   },
+  // The flying crown lands on the hidden resting crown of the champion.
+  aimCrown(ceremony) {
+    if (!wx.createSelectorQuery) return;
+    const target = ceremony.heroWon ? '#hero-crown' : `#seat-crown-${ceremony.championId}`;
+    wx.createSelectorQuery()
+      .in(this)
+      .select(target)
+      .boundingClientRect()
+      .exec(([rect] = []) => {
+        if (!rect || this._destroyed || this.data.ceremony?.key !== ceremony.key) return;
+        const x = rect.left + rect.width / 2 - this.data.windowWidth / 2,
+          y = rect.top + rect.height / 2 - this.data.windowHeight * 0.45;
+        this.setData({
+          crownStyle: `--crown-x:${Math.round(x)}px;--crown-y:${Math.round(y)}px;--crown-scale:${(rect.width / 96).toFixed(3)}`,
+        });
+      });
+  },
   playSound(name) {
     if (this._hidden || !wx.createInnerAudioContext || !this._audioUnlocked) return;
     const names = {
@@ -615,6 +651,8 @@ module.exports = {
       call: 'chip',
       deal: 'deal',
       win: 'win',
+      champion: 'champion',
+      crowned: 'crowned',
     };
     if (!names[name]) return;
     try {
@@ -637,6 +675,15 @@ module.exports = {
     for (const name of ['fold', 'check', 'chip', 'deal', 'win']) {
       const audio = wx.createInnerAudioContext();
       audio.src = `/assets/sounds/${name}.wav`;
+      audio.volume = 1;
+      audio.obeyMuteSwitch = false;
+      audio.onError(() => {});
+      this._audio.push(audio);
+      this._soundPool[name] = audio;
+    }
+    for (const [name, path] of Object.entries(ceremonySoundFiles())) {
+      const audio = wx.createInnerAudioContext();
+      audio.src = path;
       audio.volume = 1;
       audio.obeyMuteSwitch = false;
       audio.onError(() => {});

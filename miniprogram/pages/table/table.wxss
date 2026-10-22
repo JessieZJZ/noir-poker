@@ -1,4 +1,5 @@
 @import '../../shared/ui/hero-turn.wxss';
+@import '../../shared/ui/game-effects.wxss';
 .screen {
   display: flex;
   flex-direction: column;
@@ -1415,6 +1416,7 @@
 
 @import 'parity.wxss';
 @import 'rail.wxss';
+@import 'game-end.wxss';
 
 .app-icon {
   width: 28px;

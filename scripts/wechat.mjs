@@ -80,6 +80,9 @@ async function compileJs(sourceDirectory, destination) {
       external: ['*.js'],
       format: 'cjs',
       target: 'es2019',
+      // Whitespace only: identifiers and strings stay readable for audits,
+      // while the shared rules fit the 2 MiB main package.
+      minifyWhitespace: true,
       write: false,
     });
     const target = path.join(destination, file);
@@ -210,6 +213,10 @@ export async function buildWechat(output = wechatOutput) {
       path.join(root, 'src/styles/hero-turn.css'),
       path.join(staging, 'shared/ui/hero-turn.wxss'),
     );
+    await cp(
+      path.join(root, 'src/styles/game-effects.css'),
+      path.join(staging, 'shared/ui/game-effects.wxss'),
+    );
     for (const name of [
       'bet-sizing.js',
       'seat-geometry.js',
@@ -225,10 +232,13 @@ export async function buildWechat(output = wechatOutput) {
       'hero-turn.js',
       'card-rank-glyphs.js',
       'background-music.js',
+      'effect-layouts.js',
+      'ceremony-sounds.js',
     ]) {
       const compiled = await transform(await readFile(path.join(root, 'src/ui', name), 'utf8'), {
         format: 'cjs',
         target: 'es2019',
+        minifyWhitespace: true,
       });
       await writeFile(path.join(staging, 'shared/ui', name), compiled.code);
     }

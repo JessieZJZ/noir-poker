@@ -1,6 +1,6 @@
 const { compactChips } = require('../../shared/engine/chip-format.js');
 const { presentCard, presentationPatch } = require('../table/presentation.js');
-const { recordResult } = require('../../shared/engine/game-records.js');
+const { recordResult, sessionStanding } = require('../../shared/engine/game-records.js');
 const navigation = require('../../record-navigation.js');
 const { recordStartTime } = require('../../record-time.js');
 const HAND_BATCH_SIZE = 24;
@@ -15,7 +15,6 @@ Page({
     expanded: {},
     topInset: 24,
     bottomInset: 0,
-    recordsError: '',
     hasMoreSessions: false,
   },
   onLoad() {
@@ -39,7 +38,9 @@ Page({
     if (this._hidden || this._destroyed) return;
     const controller = getApp().noirController;
     const revision = controller?.getRecordsRevision();
-    const recordsError = controller?.getRecordsError() || '';
+    // Storage failures are announced once as a toast, never kept on the page.
+    const notice = controller?.takeRecordsNotice?.();
+    if (notice) wx.showToast?.({ title: notice, icon: 'none', duration: 3000 });
     if (
       force ||
       !this._rendered ||
@@ -58,7 +59,10 @@ Page({
         playerCount: session.playerCount,
         timeText: recordStartTime(session.startedAt),
         profitText: signed(session.profit),
-        winrate: session.completed ? Math.round((session.wins / session.completed) * 100) : 0,
+        winrateText: session.completed
+          ? Math.round((session.wins / session.completed) * 100) + '%'
+          : '—',
+        standing: sessionStanding(session),
         blindText: `${compactChips(session.stakes.smallBlind)} / ${compactChips(session.stakes.bigBlind)}`,
         hasMoreHands:
           !!this.data.expanded[session.id] &&
@@ -102,7 +106,6 @@ Page({
       const patch = presentationPatch(this.data, {
         sessions,
         hasMoreSessions: summaries.length > this._sessionLimit,
-        recordsError,
       });
       // A new session may reorder the list. Send its small headings first and
       // restore expanded rows in bounded batches instead of one giant payload.
@@ -118,7 +121,7 @@ Page({
           this.setData(batch);
         }
       });
-    } else if (recordsError !== this.data.recordsError) this.setData({ recordsError });
+    }
     this._recordsTimer = setTimeout(() => this.refreshRecords(), 1000);
   },
   onHide() {

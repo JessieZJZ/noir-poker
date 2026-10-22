@@ -1,0 +1,82 @@
+/* WeChat placement of the shared effect classes; mirrors src/styles/game-end.css. */
+.seat.seat-out {
+  opacity: 0.4;
+  filter: grayscale(0.85);
+}
+.hero.hero-out .hero-info,
+.hero.hero-out .hero-cards-wrap {
+  opacity: 0.45;
+  filter: grayscale(0.85);
+}
+.seat-champion-crown {
+  left: calc(var(--profile-padding, 5px) - 1px);
+  top: calc(var(--player-name, 14px) + var(--profile-padding, 5px) - 12px);
+  width: 20px;
+  height: 15px;
+  transform: rotate(-16deg);
+}
+.seat.is-champion .seat-body {
+  border-color: #d9b45a;
+  box-shadow: 0 0 18px #d9b45a40;
+}
+.hero-name-text {
+  position: relative;
+}
+.hero-champion-crown {
+  left: -13px;
+  top: -15px;
+  width: 24px;
+  height: 18px;
+  transform: rotate(-18deg);
+}
+.hero-identity {
+  position: relative;
+}
+.hero-identity .stack.stack-refill {
+  padding: 0 8px;
+}
+.hero-identity > .rebuy-burst {
+  left: 78%;
+}
+.hero-card {
+  position: relative;
+}
+.settled-buttons .rebuy-button {
+  position: relative;
+  overflow: visible;
+}
+.rebuy-count {
+  position: absolute;
+  top: -9px;
+  right: 6px;
+  padding: 0 6px;
+  border: 1px solid #6ee7c5;
+  border-radius: 999px;
+  background: #0b2a22;
+  color: #8ff0c9;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 17px;
+  white-space: nowrap;
+}
+.session-heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.compliance-footer {
+  display: block;
+  padding: 14px 16px;
+  text-align: center;
+  font-size: 11px;
+  letter-spacing: 1px;
+  color: #6b7a87;
+}
+/* WeChat views do not paint the shared ::after overlay here; the hero card
+   carries the same keyframes itself once its deal animation has finished. */
+.premium-start .hero-card {
+  animation: premium-glow 2.6s ease-in-out both;
+}
+.premium-start .hero-card::after {
+  display: none;
+}

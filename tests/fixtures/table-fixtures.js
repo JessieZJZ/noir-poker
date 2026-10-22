@@ -58,7 +58,10 @@ window.qa = {
     requestedStakes = stakesFromSmallBlind(smallBlind);
     game = newGame(count, requestedStakes);
     game.dealer = count - 4;
-    if (refill) game.players[0].stack = 0;
+    if (refill) {
+      game.players[0].stack = 0;
+      rebuyHero(game);
+    }
     saveTablePreferences({
       playerCount: count,
       difficulty: game.difficulty,
@@ -77,6 +80,75 @@ window.qa = {
       else act(game, game.actor, game.actor === winner ? 'call' : 'fold');
     }
     render();
+    return publicState();
+  },
+  // A rigged last hand: seat 1 is the only other seat left, or `rivals` seats
+  // remain. The hero (AA) or seat 1 (AA) wins an all-in on a dry board.
+  finale({ heroWins = true, rivals = 1, rebuysUsed = 3, count = 5, heroStack, rivalStack } = {}) {
+    gameRecords.abandon(game);
+    fixtureGame(count, true);
+    requestedStakes = stakesFromSmallBlind(100);
+    game = newGame(count, requestedStakes);
+    applyBotSettings(game, pendingBotSettings);
+    game.dealer = count - 1;
+    game.rebuys = rebuysUsed;
+    const unit = requestedStakes.startingStack;
+    for (const p of game.players.slice(rivals + 1)) {
+      p.out = true;
+      p.stack = 0;
+      p.place = count - (p.id - rivals - 1);
+    }
+    game.players[0].stack = heroStack ?? (heroWins ? unit * 2 : unit);
+    game.players[1].stack = rivalStack ?? (heroWins ? unit : unit * 2);
+    saveTablePreferences({
+      playerCount: count,
+      difficulty: game.difficulty,
+      stakes: requestedStakes,
+    });
+    startHand(game);
+    const card = (rank, suit) => ({ rank, suit, symbol: '♠♥♣♦'[suit], key: `${suit}-${rank}` });
+    const strong = [card(14, 0), card(14, 1)],
+      weak = [card(7, 2), card(2, 3)],
+      board = [card(13, 2), card(9, 3), card(4, 0), card(3, 1), card(12, 2)],
+      used = new Set([...strong, ...weak, ...board].map((c) => c.key));
+    game.players[0].hole = heroWins ? strong : weak;
+    game.players[1].hole = heroWins ? weak : strong;
+    const others = game.players.slice(2).filter((p) => !p.out);
+    const rest = deckOfCards().filter((c) => !used.has(c.key));
+    for (const p of others) p.hole = [rest.pop(), rest.pop()];
+    // Cards pop from the end: burn, flop, burn, turn, burn, river.
+    game.deck = [
+      ...rest.slice(0, 10),
+      board[4],
+      rest[10],
+      board[3],
+      rest[11],
+      ...board.slice(0, 3).reverse(),
+      rest[12],
+    ];
+    gameRecords.begin(game, { newSession: true });
+    render();
+    this.stop();
+    return publicState();
+  },
+  // Hero shoves, seat 1 calls, everyone else folds, and the board runs out.
+  finaleShowdown() {
+    this.stop();
+    while (game.phase !== 'done') {
+      if (game.phase === 'between') advanceStreet(game);
+      else if (game.actor === 0) act(game, 0, 'raise', legalActions(game, 0).maxRaiseTo);
+      else act(game, game.actor, game.actor === 1 ? 'call' : 'fold');
+    }
+    render();
+    return publicState();
+  },
+  premiumStart() {
+    fixtureGame(5, true);
+    startHand(game);
+    const card = (rank, suit) => ({ rank, suit, symbol: '♠♥♣♦'[suit], key: `${suit}-${rank}` });
+    game.players[0].hole = [card(14, 0), card(13, 0)];
+    render();
+    this.stop();
     return publicState();
   },
   recordsNext() {

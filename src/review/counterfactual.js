@@ -123,6 +123,7 @@ function resume(s, deal) {
     emotionMode: s.emotionMode || 'off',
     difficulty: ['easy', 'normal', 'hard'].includes(s.difficulty) ? s.difficulty : 'normal',
   });
+  g.positions = s.players.map((p) => p.position || '');
   for (const p of s.players) {
     const mood = freshBotMood();
     mood.kind = p.botMoodKind || 'steady';
@@ -134,7 +135,8 @@ function resume(s, deal) {
       allin: p.allin,
       actedTo: p.actedTo ?? null,
       checked: p.checked || false,
-      hole: copy(deal.holes.get(p.id)),
+      out: !!p.out,
+      hole: p.out ? [] : copy(deal.holes.get(p.id)),
       botProfile: getBotProfile(p.botProfile).id,
       botMood: mood,
     });

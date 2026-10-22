@@ -45,7 +45,16 @@ import {
   restartHand,
   canRestartHand,
   applyBotSettings,
+  rebuyHero,
+  heroRebuysLeft,
+  needsHeroRebuy,
 } from '../engine/poker.js';
+import { isPremiumStart } from '../engine/starting-hands.js';
+import { standingLabel, standingClass } from '../engine/game-records.js';
+import { recordSnapshots } from '../platform/record-snapshots.js';
+import { createGameEffects } from './game-effects.js';
+import { CROWN_MARKUP } from './table-scene.js';
+import { ceremonySamples, CEREMONY_SAMPLE_RATE, CEREMONY_CUES } from './ceremony-sounds.js';
 import { raiseCaption } from '../engine/action-labels.js';
 import { loadBotSettings, createOpponentsController } from './opponents-controller.js';
 import { loadTablePreferences, saveTablePreferences } from './preferences.js';
@@ -111,7 +120,24 @@ function isSeatHandVisible(player) {
   return (game.showdown || game.revealed) && !player.folded;
 }
 const tablePreferences = loadTablePreferences();
-const gameRecords = createGameRecords({ storage: preferenceStorage });
+const gameRecords = createGameRecords({ storage: preferenceStorage, snapshots: recordSnapshots });
+const effects = createGameEffects();
+// Each game end is celebrated once; the crown then stays on the champion.
+let ceremonyKey = '',
+  crownedKey = '',
+  rebuying = false,
+  toastTimer = null;
+function showToast(message) {
+  const toast = $('#app-toast');
+  setLocalizedText(toast, message);
+  toast.hidden = false;
+  toast.classList.remove('is-leaving');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => {
+    toast.classList.add('is-leaving');
+    toastTimer = setTimeout(() => (toast.hidden = true), 320);
+  }, 3200);
+}
 let requestedCount = tablePreferences.playerCount;
 let requestedStakes = tablePreferences.stakes;
 let stakesError = '',
@@ -161,6 +187,7 @@ let selectedPotSnapshot = null;
 const recordsView = createGameRecordsView({
   records: gameRecords,
   openReview: (input, key) => handReview.openInput(input, key),
+  toast: showToast,
   onReturnGame: () => playViewport.update(game, game.phase === 'done'),
   openPots: (snapshot) => {
     selectedPotSnapshot = snapshot;
@@ -230,8 +257,13 @@ function soundEffect(kind = 'chip') {
   try {
     let buffer = soundBuffers.get(kind);
     if (!buffer) {
-      const samples = soundSamples(kind);
-      buffer = audio.createBuffer(1, samples.length, SOUND_SAMPLE_RATE);
+      const ceremony = CEREMONY_CUES.includes(kind),
+        samples = ceremony ? ceremonySamples(kind) : soundSamples(kind);
+      buffer = audio.createBuffer(
+        1,
+        samples.length,
+        ceremony ? CEREMONY_SAMPLE_RATE : SOUND_SAMPLE_RATE,
+      );
       buffer.getChannelData(0).set(samples);
       soundBuffers.set(kind, buffer);
     }
@@ -294,6 +326,33 @@ function syncTurnAttention() {
     active: activityClock.active && !document.hidden,
   });
 }
+const gameEndKey = () =>
+  game.over && game.over.championId !== null
+    ? `${gameRecords.sessionNumber()}:${game.hand}:${game.replayAttempt || 0}`
+    : '';
+// The coronation runs once per decided game, after the settlement paints.
+function celebrate() {
+  const key = gameEndKey();
+  if (!key || ceremonyKey === key) return;
+  ceremonyKey = key;
+  // Paint the hidden resting crown first; the flight lands exactly on it.
+  render();
+  const champion = game.over.championId,
+    heroWon = champion === 0,
+    crown = () => $(champion === 0 ? '.hero-champion-crown' : `.seat-${champion} .champion-crown`);
+  soundEffect(heroWon ? 'champion' : 'crowned');
+  effects.coronation({
+    target: crown(),
+    caption: heroWon ? '你获得冠军' : `${game.players[champion].name} 获得冠军`,
+    confetti: heroWon,
+    done: () => {
+      if (gameEndKey() !== key) return;
+      crownedKey = key;
+      render();
+      crown()?.classList.add('crown-arrive');
+    },
+  });
+}
 function render() {
   gameRecords.capture(game);
   recordsView.refresh();
@@ -326,7 +385,11 @@ function render() {
   $('#replay-note').hidden = !game.replayAttempt;
   setLocalizedText(
     $('#street-label'),
-    game.phase === 'done' ? '本手结束' : streets[game.street] || '准备发牌',
+    game.over
+      ? '本局结束'
+      : game.phase === 'done'
+        ? '本手结束'
+        : streets[game.street] || '准备发牌',
   );
   setLocalizedText(
     $('#pot-value'),
@@ -345,9 +408,19 @@ function render() {
         : `<div class="board-slot" aria-label="未发出的公共牌">${['♠', '♣', '♥', '♦', '♠'][i]}</div>`,
     ).join(''),
   );
+  const endKey = gameEndKey(),
+    crowned = endKey && ceremonyKey === endKey ? game.over.championId : null,
+    crownPending = crowned !== null && crownedKey !== endKey;
   setLocalizedHTML(
     $('#seats'),
-    renderOpponentSeats(game, { card, newHand, isSeatHandVisible, seatFaceSignatures }),
+    renderOpponentSeats(game, {
+      card,
+      newHand,
+      isSeatHandVisible,
+      seatFaceSignatures,
+      crownedId: crowned,
+      crownPending,
+    }),
   );
   preparePortraits($('#seats'));
   setLocalizedHTML(
@@ -356,6 +429,14 @@ function render() {
       .map((c, i) => card(c, { animate: newHand, delay: 420 + i * 130, best: heroBest.has(c.key) }))
       .join(''),
   );
+  if (newHand && game.phase !== 'done' && isPremiumStart(hero.hole))
+    effects.premiumStart($('.hero-cards-wrap'));
+  $('.hero-name').classList.toggle('is-champion', crowned === 0);
+  $('#hero-crown-slot').innerHTML =
+    crowned === 0
+      ? `<span class="champion-crown hero-champion-crown ${crownPending ? 'crown-pending' : ''}">${CROWN_MARKUP}</span>`
+      : '';
+  $('.hero-area').classList.toggle('hero-out', !!hero.out);
   const heroRank = $('#hero-hand-rank'),
     heroWinner = game.winners.find((w) => w.id === 0),
     showHeroRank = game.board.length === 5 && (game.revealed || game.showdown);
@@ -382,7 +463,7 @@ function render() {
   }
   $('.hero-area').classList.toggle('hero-folded', hero.folded);
   $('.hero-name').classList.toggle('is-active', game.actor === 0);
-  setLocalizedText($('#hero-stack'), format(hero.stack));
+  if (!rebuying) setLocalizedText($('#hero-stack'), format(hero.stack));
   const heroPosition = seatPosition(game, 0);
   setLocalizedText($('#hero-position'), heroPosition);
   $('#hero-position').dataset.position = heroPosition;
@@ -394,6 +475,11 @@ function render() {
     heroRecentAction ? seatAction(hero, { recent: true }) : '',
   );
   setLocalizedHTML($('#session-stack'), `${format(hero.stack)}<span>CHIPS</span>`);
+  setLocalizedText($('#session-title'), game.over ? '本局结束' : '本局练习');
+  const standing = $('#session-standing');
+  standing.hidden = !game.over;
+  standing.className = `standing-tag ${game.over ? standingClass(game.over.heroPlace) : ''}`;
+  if (game.over) setLocalizedText(standing, standingLabel(game.over.heroPlace));
   const diff = hero.stack - game.stats.buyin;
   setLocalizedText(
     $('#session-change'),
@@ -474,17 +560,29 @@ function render() {
   $('#continue-deal-button').disabled = finishing;
   setLocalizedText($('#continue-deal-button'), finishing ? '正在发牌…' : '立刻发完');
   $('#action-panel').classList.toggle('folded-actions', hero.folded && !done);
-  $('#restart-hand-button').hidden = !canRestartHand(game);
+  $('#restart-hand-button').hidden = !canRestartHand(game) || rebuying;
+  // "下一局" replaces a reset once the game has ended.
+  $('#reset-button').hidden = !!game.over;
   $('#action-panel').classList.toggle('settled-actions', done);
   $('.action-dock').classList.toggle('compact-actions', done || hero.folded);
   $('.action-dock').classList.toggle('is-enabled', legal.enabled);
-  setLocalizedText($('#next-button'), hero.stack === 0 ? '补充筹码，继续练习' : '下一手');
-  $('#next-button').classList.toggle('has-mobile-label', hero.stack === 0);
-  setLocalizedAttribute($('#next-button'), 'data-mobile-label', '补充筹码');
+  // Next game after the game ends; a mandatory refill after losing every chip.
+  // The refill label stays while the stack counts up.
+  const refill = needsHeroRebuy(game) || rebuying;
+  $('#next-button').disabled = rebuying;
+  $('#next-button').classList.toggle('rebuy-button', refill);
+  setLocalizedHTML(
+    $('#next-button'),
+    game.over
+      ? '下一局'
+      : refill
+        ? `<span>补充筹码</span><span class="rebuy-count">剩 ${heroRebuysLeft(game)} 次</span>`
+        : '下一手',
+  );
   setLocalizedAttribute(
     $('#next-button'),
     'aria-label',
-    hero.stack === 0 ? '补充筹码，继续练习' : '下一手',
+    game.over ? '下一局' : refill ? `补充筹码，剩余 ${heroRebuysLeft(game)} 次` : '下一手',
   );
   heroTurnCue.update({
     key: `${game.hand}:${game.replayAttempt || 0}:${game.street}:${game.history.length}`,
@@ -551,6 +649,7 @@ function render() {
   lastHand = game.hand;
   lastBoard = displayBoard.length;
   playViewport.update(game, done);
+  celebrate();
   // Desktop history is bounded by the table. Keep following new actions only
   // while the reader is at the bottom; reviewing earlier actions keeps its place.
   if (!compactCoach.matches)
@@ -758,14 +857,23 @@ function nextHand() {
   stakesError = '';
   editingSmallBlind = false;
   $('#pot-dialog').close();
-  if (requestedCount !== game.players.length || !sameStakes(requestedStakes, game.stakes)) {
+  effects.cancel();
+  rebuying = false;
+  if (
+    game.over ||
+    requestedCount !== game.players.length ||
+    !sameStakes(requestedStakes, game.stakes)
+  ) {
     gameRecords.abandon(game);
+    if (game.over) newRecordSession = true;
     const difficulty = game.difficulty;
     game = newGame(requestedCount, requestedStakes);
     game.difficulty = difficulty;
     handReview.reset();
     lastHand = 0;
   }
+  // A refill left pending when the app closed is completed before dealing.
+  if (needsHeroRebuy(game) && heroRebuysLeft(game)) rebuyHero(game);
   $('#table-change-note').hidden = true;
   applyBotSettings(game, pendingBotSettings);
   startHand(game);
@@ -777,8 +885,31 @@ function nextHand() {
   soundEffect('deal');
   schedule();
 }
+// Refill, show the stack counting up, then deal the next hand.
+function refillAndDeal() {
+  if (rebuying || !needsHeroRebuy(game) || !heroRebuysLeft(game)) return false;
+  clearTimeout(timer);
+  rebuyHero(game);
+  rebuying = true;
+  const ticket = epoch;
+  render();
+  effects.rebuy($('.hero-identity'), $('#hero-stack'), game.players[0].stack, () => {
+    if (ticket !== epoch || !rebuying) return;
+    rebuying = false;
+    nextHand();
+  });
+  return true;
+}
+function advanceGame() {
+  if (game.phase !== 'done' && game.phase !== 'idle') return false;
+  if (!game.over && needsHeroRebuy(game)) return refillAndDeal();
+  nextHand();
+  return true;
+}
 function retryHand() {
   if (!canRestartHand(game)) return false;
+  effects.cancel();
+  rebuying = false;
   heroTurnAttention.reset();
   heroTurnCue.reset();
   cancelSoundEffects();
@@ -881,7 +1012,7 @@ function renderPotDetails(details, potGame = game) {
 $('#fold-button').onclick = () => heroAction('fold');
 $('#call-button').onclick = () => heroAction('call');
 $('#raise-button').onclick = () => heroAction('raise', bet);
-$('#next-button').onclick = nextHand;
+$('#next-button').onclick = advanceGame;
 $('#restart-hand-button').onclick = retryHand;
 $('#bet-slider').oninput = (e) => {
   const legal = legalActions(game, 0);
@@ -1120,6 +1251,9 @@ function publicState() {
     canContinue: canFastFinish(),
     replayAttempt: game.replayAttempt || 0,
     canRestart: canRestartHand(game),
+    rebuysLeft: heroRebuysLeft(game),
+    needsRebuy: needsHeroRebuy(game),
+    over: game.over ? { ...game.over } : null,
     hand: game.hand,
     sessionNumber: gameRecords.sessionNumber(),
     recordsRoute: recordsView.route(),
@@ -1158,6 +1292,8 @@ function publicState() {
       folded: p.folded,
       allin: p.allin,
       bet: p.bet,
+      out: !!p.out,
+      place: p.place ?? null,
       action: p.action,
       lastAction: p.lastAction ? { ...p.lastAction } : null,
       ...(p.id
@@ -1271,14 +1407,14 @@ function registerTools() {
     name: 'start_next_poker_hand',
     title: '开始下一手',
     description:
-      'Deal the next hand after the current hand has ended. Refills any empty virtual chip stack.',
+      'Deal the next hand after the current hand has ended. If you lost every chip, use one of your three refills first; after the game ends, start the next game.',
     inputSchema: { type: 'object', properties: {}, additionalProperties: false },
     annotations: { readOnlyHint: false },
     execute: (input) => {
       if (!input || typeof input !== 'object' || Object.keys(input).length)
         throw Error('请传入空对象。');
       if (game.phase !== 'done') throw Error('当前牌局尚未结束。');
-      nextHand();
+      advanceGame();
       return publicState();
     },
   });

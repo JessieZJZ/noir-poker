@@ -6,6 +6,8 @@ await prepareLocale();
 await styles;
 const { prepareOrientation } = await import('./platform/orientation.js');
 prepareOrientation(window, document);
+const { recordSnapshots } = await import('./platform/record-snapshots.js');
+await recordSnapshots.prepare();
 await import('./ui/table-controller.js');
 const { prepareDropdowns } = await import('./ui/dropdowns.js');
 prepareDropdowns();
