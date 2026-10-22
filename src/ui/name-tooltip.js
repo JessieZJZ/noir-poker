@@ -71,7 +71,11 @@ export function prepareNameTooltips() {
     document,
     'pointermove',
     (event) => {
-      if (timer && Math.hypot(event.clientX - origin.x, event.clientY - origin.y) > 10) cancel();
+      if (
+        (timer || (anchor && event.buttons & 1)) &&
+        Math.hypot(event.clientX - origin.x, event.clientY - origin.y) > 10
+      )
+        close();
     },
     { passive: true },
   );
