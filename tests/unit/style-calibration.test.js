@@ -14,6 +14,27 @@ const rate = (id, v, predicate) =>
   Array.from({ length: 1600 }, (_, i) => decide(id, v, 18013 + i * 7919)).filter(predicate).length /
   1600;
 
+test('call-induction entry preference is priced, range-limited and absent against raises or shallow commitments', () => {
+  const cheap = deceptiveView('Kh Th', '', { equity: 0.4, position: 'CO', difficulty: 'normal' });
+  const calls = (d) => d.action === 'call';
+  assert.ok(rate('vale', cheap, calls) > rate('balanced', cheap, calls) + 0.25);
+  const usedPreference = (v) =>
+    decide('vale', v, 2).trace.checks.some((c) => c.code === 'entry-call');
+  assert.equal(usedPreference(cheap), true);
+  for (const changed of [
+    { ...cheap, stack: 300 },
+    { ...cheap, hole: deceptiveView('As Ah').hole },
+    {
+      ...cheap,
+      currentBet: 200,
+      history: [{ id: 0, street: 0, action: 'raise', amount: 200 }],
+      legal: { ...cheap.legal, toCall: 200, callAmount: 200, minRaiseTo: 350 },
+    },
+    deceptiveView('Ks Jh', 'Ac 7d 2h', { equity: 0.2, difficulty: 'normal' }),
+  ])
+    assert.equal(usedPreference(changed), false);
+});
+
 test('retired style selections migrate idempotently without becoming an unavailable choice', () => {
   const assignments = {
     1: 'slate',
@@ -48,6 +69,51 @@ test('strong-hand traps stand out on deep dry boards and do not leak into wet or
     { ...v, rivals: 2, opponents: [...v.opponents, { id: 2, stack: 5000, allin: false }] },
   ])
     assert.notEqual(decide('vale', changed, 2).trace.reason, 'strong-trap');
+});
+test('safe top-pair induction is limited to a deep dry heads-up flop with a strong kicker', () => {
+  const top = deceptiveView('As Qh', 'Ac 7d 2h', { equity: 0.8, inPosition: false });
+  for (const difficulty of ['normal', 'hard']) {
+    const v = { ...top, difficulty };
+    const trap = (d) => d.trace.reason === 'strong-trap';
+    assert.ok(rate('vale', v, trap) > rate('balanced', v, trap) + 0.25);
+    for (const changed of [
+      { ...v, street: 2 },
+      { ...v, stack: 500 },
+      { ...v, rivals: 2 },
+      { ...v, equity: 0.65 },
+      deceptiveView('As Qh', 'Ac 7d 2d', { equity: 0.8, inPosition: false, difficulty }),
+      deceptiveView('As Jh', 'Ac 7d 2h', { equity: 0.8, inPosition: false, difficulty }),
+      { ...v, opponents: [{ id: 0, stack: 0, allin: true }] },
+    ])
+      assert.notEqual(decide('vale', changed, 2).trace.reason, 'strong-trap');
+  }
+});
+test('late-position emphasis changes unopened entry and attack without widening the re-raise tier', () => {
+  const pre = deceptiveView('Kh Th', '', { equity: 0.4, position: 'BTN', history: [] });
+  for (const difficulty of ['normal', 'hard']) {
+    const late = { ...pre, difficulty },
+      early = { ...late, position: 'UTG' };
+    assert.ok(
+      decide('iris', late, 2).trace.openingRange > decide('iris', early, 2).trace.openingRange * 2,
+    );
+    // This already-admitted hand checks the attack preference. The population
+    // signature and its 25-point target are measured separately on full hands.
+    const raise = (d) => d.action === 'raise';
+    assert.ok(rate('iris', late, raise) > rate('balanced', late, raise) + 0.2);
+    const easy = { ...late, difficulty: 'easy' };
+    assert.ok(
+      decide('iris', easy, 2).trace.openingRange /
+        decide('iris', { ...easy, position: 'UTG' }, 2).trace.openingRange <
+        2,
+    );
+    const raised = {
+      ...late,
+      currentBet: 500,
+      history: [{ id: 0, street: 0, action: 'raise', amount: 500 }],
+      legal: { ...late.legal, toCall: 500, callAmount: 500, minRaiseTo: 950 },
+    };
+    assert.ok(decide('iris', raised, 2).trace.raiseRange < 0.2);
+  }
 });
 test('draw emphasis affects executed aggression but retains price, all-in and population boundaries', () => {
   const v = deceptiveView('As Js', 'Qs 8h 2s', {

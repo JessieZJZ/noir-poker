@@ -4,7 +4,7 @@ import { readFileSync, readdirSync } from 'node:fs';
 import { BOT_PROFILES, getBotProfile, sanitizeBotSettings } from '../../src/engine/bot-profiles.js';
 import { migrateCharacterState } from '../../src/engine/character-state.js';
 import baseline from '../fixtures/character-strategies.json' with { type: 'json' };
-import calibrated from '../fixtures/style-strategies-v6.json' with { type: 'json' };
+import calibrated from '../fixtures/style-strategies-v8.json' with { type: 'json' };
 test('calibrated styles retain an explicit versioned strategy snapshot and the historical baseline', () => {
   assert.deepEqual(
     BOT_PROFILES.map(({ id, axes, sizing, policy }) => ({ id, axes, sizing, policy })),
@@ -28,7 +28,7 @@ test('old settings and snapshots migrate identities without changing cards, chip
   const migrated = migrateCharacterState(structuredClone(legacy));
   assert.equal(migrated.assignments[1], 'vale');
   assert.equal(migrated.players[0].botProfile, 'vale');
-  assert.equal(migrated.trace.profileName, '强牌诱导');
+  assert.equal(migrated.trace.profileName, '跟注诱导');
   assert.deepEqual(migrated.players[0].hole, legacy.players[0].hole);
   assert.equal(migrated.players[0].stack, legacy.players[0].stack);
   assert.deepEqual(migrated.stats, legacy.stats);

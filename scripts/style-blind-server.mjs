@@ -5,6 +5,7 @@ import { readFileSync } from 'node:fs';
 import { resolve, join } from 'node:path';
 import { randomBytes } from 'node:crypto';
 import { pathToFileURL } from 'node:url';
+import { appendPublicSnapshot, completedCardInspection } from './style-public-snapshot.mjs';
 const args = Object.fromEntries(process.argv.slice(2).map((v) => v.replace(/^--/, '').split('=')));
 const root = resolve(args.root || '.');
 const { newGame, startHand, botDecision, act, advanceStreet, legalActions, potSize, seatPosition } =
@@ -55,6 +56,9 @@ const view = (s) => {
     })),
     legal: g.phase === 'playing' && g.actor === 0 ? legalActions(g) : null,
     events: s.events,
+    ...(args.inspection === 'completed' && g.phase === 'done'
+      ? { inspection: completedCardInspection(g, true, who, cards) }
+      : {}),
   };
 };
 function advance(s) {
@@ -144,8 +148,7 @@ const server = createServer(async (req, res) => {
         });
         advance(s);
       } else throw Error('unknown endpoint');
-      const evidence = view(s);
-      s.evidence.push(evidence);
+      appendPublicSnapshot(s.evidence, view(s));
     }
     res.end(JSON.stringify(view(s)));
   } catch (error) {

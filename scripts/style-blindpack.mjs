@@ -32,7 +32,9 @@ for (let reviewer = 0; reviewer < seeds.length; reviewer++) {
       '独立 AI 公开牌谱盲评。每个代号是一个固定策略对手，位置会轮换。',
       '5 人桌，每手 100 BB，SB/BB=100/200，无情绪，进阶难度。其他座位是固定的陪测策略。',
       `每个代号包含连续 ${hands} 手，没有筛选胜负或特色动作。牌局由真实游戏引擎完成。`,
-      '每手仅披露 Hero 底牌、公开行动，以及确实进入摊牌的未弃牌底牌。',
+      args.inspection === 'completed'
+        ? '每手结束后可查看所有座位底牌，等同产品结算后点击眼睛查看。本轮使用此功能评估练习体验，对局中的未公开底牌仍不可知。'
+        : '每手仅披露 Hero 底牌、公开行动，以及确实进入摊牌的未弃牌底牌。',
       'history 中 betTo 为本街总下注额，paid 为新增投入，potBefore 为动作前底池。',
       '你可以使用公开内容计算统计，但不得读取项目源码、其他目录、private 目录或其他评审结果。',
       '先自由描述各代号的行为并引用代号/手号，不预设一定能区分。证据不够时明确写不确定。',
@@ -72,6 +74,7 @@ async function worker() {
           '--public=yes',
           '--opponents=current',
           ...(args.companions ? [`--companions=${args.companions}`] : []),
+          ...(args.inspection ? [`--inspection=${args.inspection}`] : []),
         ],
         { stdio: ['ignore', 'ignore', 'inherit', 'ipc'] },
       );
@@ -126,6 +129,14 @@ async function worker() {
         board: cards(hand.board),
         history,
         showdown: hand.showdown.map((p) => ({ actor: who(p.id), hole: cards(p.hole) })),
+        ...(hand.inspection
+          ? {
+              inspection: hand.inspection.map((p) => ({
+                actor: who(p.actor),
+                hole: cards(p.hole),
+              })),
+            }
+          : {}),
         targetNetBB: (hand.finalStacks[hand.target] - 20000) / 200,
       };
     });

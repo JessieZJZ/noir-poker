@@ -489,11 +489,11 @@ test('showdown participant names include the current named style and stay readab
     '你',
     'Mia（多街施压）',
     'Alex（范围纪律）',
-    'River（强牌诱导）',
+    'River（跟注诱导）',
     'Kai（宽松取值）',
     'Luna（听牌施压）',
     'Theo（小注控池）',
-    'Jade（延迟进攻）',
+    'Jade（后位争夺）',
     'Leo',
   ];
   for (const width of [320, 390, 1280]) {
@@ -537,7 +537,7 @@ test('showdown participant names include the current named style and stay readab
   await closeSettings(page);
   await expect(
     page.locator('.showdown-player[data-player="7"] .showdown-player-heading > strong'),
-  ).toHaveText('Jade（延迟进攻）');
+  ).toHaveText('Jade（后位争夺）');
   await page.locator('#next-button').click();
   await page.evaluate(() => window.qa.stop());
   await expect(page.locator('.decision-strip')).toBeVisible();
@@ -1561,11 +1561,11 @@ test('nine-seat style assignment shows every persona at all sizes and executes t
   const labels = [
     '多街施压',
     '范围纪律',
-    '强牌诱导',
+    '跟注诱导',
     '宽松取值',
     '听牌施压',
     '小注控池',
-    '延迟进攻',
+    '后位争夺',
     '均衡',
   ];
   await page.evaluate(() => window.qa.foldWin(9));

@@ -70,8 +70,21 @@ export function deceptiveAction(view, profile, roll) {
     .filter((a) => a.street === view.street - 1 && a.action === 'raise')
     .at(-1);
   const liveIds = new Set(opponents.map((p) => p.id));
+  const boardHigh = Math.max(0, ...view.board.map((c) => c.rank));
+  const topKicker = Math.max(0, ...ranks.filter((r) => r !== boardHigh));
+  const topPairTrap =
+    profile.policy?.topPairTrap &&
+    view.street === 1 &&
+    legal.canCheck &&
+    f.ownPair &&
+    f.madeCategory === 1 &&
+    view.board.filter((c) => c.rank === boardHigh).length === 1 &&
+    ranks.includes(boardHigh) &&
+    topKicker >= 12 &&
+    view.equity >= 0.72;
   const strongMade =
-    !view.playsBoard && (!!f.strongMade || (f.overpair && ranks[0] >= 12 && view.equity >= 0.72));
+    !view.playsBoard &&
+    (!!f.strongMade || topPairTrap || (f.overpair && ranks[0] >= 12 && view.equity >= 0.72));
   const price = legal.callAmount / Math.max(1, view.contestable);
   const safeCall = legal.callAmount < effective * 0.08 && legal.callAmount < view.stack;
   // Another deep seat does not make the actual opener deep enough to trap.

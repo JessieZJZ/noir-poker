@@ -1,0 +1,169 @@
+[
+  {
+    "reviewer": 1,
+    "checks": [
+      {
+        "file": "hero-plan.md",
+        "sha256": "d9e0d9d2e39dab4edb3b2b97502fb6846b64f08ac5ce958d4d294bdf2c96417d"
+      },
+      {
+        "file": "free-review.md",
+        "sha256": "adaa64cf30b83d2c5425243445aa4101cea3552331d58ce048c5ec0367c8f1a4"
+      },
+      {
+        "file": "interactive-review.md",
+        "sha256": "aeb97237b73b03c4a6a431ba12d3a0c634d4cc660897d73200cc4706bb2ab897"
+      },
+      {
+        "file": "interactive-audit.json",
+        "sha256": "695a87086395c42cff8a8703fbd58f0e3fff3b8e6defa5c22dd0a312eec02df1"
+      },
+      {
+        "file": "interactive-log.jsonl",
+        "sha256": "be7b66e21d3334c04408f2f87b742e072707b2f51345a72a90d2e32d1b0b1f81"
+      },
+      {
+        "file": "interact.py",
+        "sha256": "c9146209e97c43115a2afd7678970ada9eadb63cbc5fbca3da9a8bed7f390c5d"
+      },
+      {
+        "file": "audit.py",
+        "sha256": "0d6bdc6cd8fe32afeef7e279df49c478df7c77c4ad49fe75fef75e453db94bc2"
+      }
+    ]
+  },
+  {
+    "reviewer": 2,
+    "checks": [
+      {
+        "file": "free-review.md",
+        "sha256": "d6977df509f06342a02153f6892e888fd6b18c81e8984996e71e06b93b9e4265"
+      },
+      {
+        "file": "interactive-review.md",
+        "sha256": "36d43d0e26d9e02b3b7157559a05102109d58a246ca76f89778016d21446c1e7"
+      },
+      {
+        "file": "interactive-audit.json",
+        "sha256": "6dcb2baf136b947f991ae6d58706cb415dd5e269cd1b294fb946e3ed5b09dc01"
+      },
+      {
+        "file": "http-log.jsonl",
+        "sha256": "70249f07f02ccb6d420d32c4c19a86cdc63ce609c52a30a8d9060165dce0b0e4"
+      },
+      {
+        "file": "decisions.jsonl",
+        "sha256": "4985dd23a257c4489314e32b6d073487d2183a5c4a01bbfde4ccaa648120b2e5"
+      },
+      {
+        "file": "completed-hands.jsonl",
+        "sha256": "f8d2bb75e183432f26cdb647b0293cb48e3d52003df18d7044b58d3f59b7e3cf"
+      },
+      {
+        "file": "opportunities.jsonl",
+        "sha256": "64379f6455cd52f3a10bf7d14da6dae6e10b1ea4cee4e8e9290fcbd0f8aae64e"
+      },
+      {
+        "file": "hero-plan.md",
+        "sha256": "802b763a3b93b1b7af60e16443aeaeeb7075456cd99bd620daa332ba98b7dbd4"
+      },
+      {
+        "file": "client.py",
+        "sha256": "c28e5e41a7200d5f86aa4a4721d170db9d576ba59104b8c9e5bd7c485471bf70"
+      },
+      {
+        "file": "audit.py",
+        "sha256": "9c935b646eaa9d10e079d1bc4a13d238567b19c1ed49818ddac00e7a837722c4"
+      }
+    ]
+  },
+  {
+    "reviewer": 3,
+    "checks": [
+      {
+        "file": "hero-plan.md",
+        "sha256": "89a8c49d31e86f318fe3f3458cd1de0bc08a5e6282ca203327754f1f721fcef1"
+      },
+      {
+        "file": "free-review.md",
+        "sha256": "3793a131b4d9a7181ca6d4beb79aa9a89866d7a238ce80040a47a3c998940cc3"
+      },
+      {
+        "file": "free-review.sha256",
+        "sha256": "136f928b080da4a7da0b090e7b7dc9ca25ffc5bfbb82faeb3d99901afc18ee81"
+      },
+      {
+        "file": "interactive-review.md",
+        "sha256": "878f4de89153c96d01e9b061a2792bb31b7c00bc2f5efb9ba869957cb2ccf96c"
+      },
+      {
+        "file": "interactive-audit.json",
+        "sha256": "e3486634adb7cf81bbc15208b0a0d508f26b5e5a2edf0525fbfe5bcbdcb12895"
+      },
+      {
+        "file": "http-log.jsonl",
+        "sha256": "d4450476aa94f27f39033240cc579444f68848857a2f424a25795032ee412837"
+      },
+      {
+        "file": "requests-before-send.jsonl",
+        "sha256": "d8fb1b0a93f03567b55cf9c26382c9c43e80bba4f4e301d4dec218c86e1aa1bd"
+      },
+      {
+        "file": "hero-action-audit.json",
+        "sha256": "d236dfdb193324ff4f206e2fe89c94b08b0cd5277bf0b906e2339d9f8d4abed3"
+      },
+      {
+        "file": "interactive-hands.json",
+        "sha256": "90ec30dc61d2b0b20a9eaf4fed7db28098818b4a7bbf225398cc380172e0804f"
+      },
+      {
+        "file": "observation-stats.json",
+        "sha256": "03ba7b5fd25280cebe78c6a9c888898f3ea40f661d3a779faa9a3338584f3ae7"
+      },
+      {
+        "file": "evidence-excerpts.txt",
+        "sha256": "4d1951179e6081e7f16655572b5b5e09ee0c7438c8a6feee8ff884dcfa819026"
+      },
+      {
+        "file": "interact.py",
+        "sha256": "a7a18fc36327e5b646954209ba96371c38a3f3fd0a1dba095cc7c6c8c07a15eb"
+      },
+      {
+        "file": "audit.py",
+        "sha256": "041e8481a2e365fe1ebcc97270ad49af82600e6da8ca0220cfb7baf7b22f20f0"
+      },
+      {
+        "file": "A.jsonl",
+        "sha256": "d3c7d113b5697e578e51bfe3b117f57813401c3909983ce48fa41632f994d77b"
+      },
+      {
+        "file": "B.jsonl",
+        "sha256": "904367b8f5222cc7a0a7682a07e14ed38977d135afa4ab29a19f42813de93504"
+      },
+      {
+        "file": "C.jsonl",
+        "sha256": "af124a59c75a368dfc3e0bc7971dbde2ce1c0514b1ba7ef08ee371794ad85ae3"
+      },
+      {
+        "file": "D.jsonl",
+        "sha256": "470c6ec7ab7b8cbcf0d3ccede2dce0c26d6450566c9b364ee3c36164beb61aa2"
+      },
+      {
+        "file": "E.jsonl",
+        "sha256": "d2dcfd7b98f827ad1bcd4c7ed55a6afd82ac57ac50a451b2c55ab220b4ac3148"
+      },
+      {
+        "file": "F.jsonl",
+        "sha256": "1046e4e70b610b68fa70d8ce9a9b3600b89fbb4c0befae3c3cb6426796636b6c"
+      },
+      {
+        "file": "G.jsonl",
+        "sha256": "40aba946c022652a8364833599caef0ec22094cf1e27c58636101dc9ddf78e05"
+      },
+      {
+        "file": "H.jsonl",
+        "sha256": "f616ca213013309be007e29ffbb5a76397791b5d7d307414f63585494da432ca"
+      }
+    ]
+  }
+]

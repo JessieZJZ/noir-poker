@@ -1,0 +1,267 @@
+{
+  "reviewer": 3,
+  "role": "AI策略体验评审，不是真人或UI验收",
+  "method": "每代码独立判断，不推断隐藏映射，不按排除法配齐。置信度是主观证据充分度，不是校准概率。允许重复，A与D同选小注控池，延迟进攻未被强行分配。",
+  "basis": {
+    "observation": "A–H各100连续公开手，全部在菜单前处理并冻结",
+    "directInteraction": "仅C/D各100手，五位置各20，403个逐状态自主动作，200手后停止接口",
+    "freeReviewSha256": "3793a131b4d9a7181ca6d4beb79aa9a89866d7a238ce80040a47a3c998940cc3",
+    "interactiveReviewSha256": "878f4de89153c96d01e9b061a2792bb31b7c00bc2f5efb9ba869957cb2ccf96c"
+  },
+  "classifications": [
+    {
+      "code": "A",
+      "firstChoice": "小注控池",
+      "confidence": 0.8,
+      "mainConfusions": [
+        "强牌诱导",
+        "均衡"
+      ],
+      "support": [
+        {
+          "phase": "observation",
+          "hand": 3,
+          "hole": "Kc Kd",
+          "board": "6s 7s 6d 5d 3d",
+          "behavior": "把500小加到1000；2700底池翻牌800，转牌过牌跟2200，河牌8700下3000。强一对兼有控池与小尺度价值。"
+        },
+        {
+          "phase": "observation",
+          "hand": 27,
+          "hole": "Ah Ad",
+          "board": "3d 4h Jc 8h Kd",
+          "behavior": "大盲补300跟500，翻牌过牌，转牌1600下500，河牌2600下1100。"
+        }
+      ],
+      "counterEvidence": "A#19已成Q高同花后加4500、河牌跟6200，不能把所有主动都称为小注。无直接互动。"
+    },
+    {
+      "code": "B",
+      "firstChoice": "宽松取值",
+      "confidence": 0.74,
+      "mainConfusions": [
+        "多街施压",
+        "小注控池"
+      ],
+      "support": [
+        {
+          "phase": "observation",
+          "behavior": "100手VPIP85/PFR18，大量便宜跟入，主动频次并不高。"
+        },
+        {
+          "phase": "observation",
+          "hand": 93,
+          "hole": "Ah 2s",
+          "board": "Ad Ts Qh 2d 4h",
+          "behavior": "跟500、翻牌跟1500；转牌成两对面对4200加到11800，河牌跟6200。成牌愿意放大底池。"
+        },
+        {
+          "phase": "observation",
+          "hand": 50,
+          "hole": "Ah Qs",
+          "board": "4c Ac Ts Tc 3h",
+          "behavior": "开500，顶对翻牌800、转牌1600、河牌3200连续取值。"
+        }
+      ],
+      "counterEvidence": "B#56用Q2弱成牌跟1300/3300/5500过于黏，未必是有纪律的取值；无直接互动。"
+    },
+    {
+      "code": "C",
+      "firstChoice": "均衡",
+      "confidence": 0.38,
+      "mainConfusions": [
+        "小注控池",
+        "延迟进攻",
+        "无法判断"
+      ],
+      "support": [
+        {
+          "phase": "observation",
+          "behavior": "VPIP57/PFR19，常规500开池、大量过牌及少数价值线，更像菜单所指基准，不能据此宣称理论均衡。"
+        },
+        {
+          "phase": "interactive",
+          "hand": 58,
+          "hole": "Kc Jc",
+          "board": "2s Jh 3h Ad Td",
+          "behavior": "跟按钮400，顶对在900领先400，A/T两街过牌，正常牌力与牌面控制。"
+        },
+        {
+          "phase": "interactive",
+          "hand": 68,
+          "hole": "Ks Tc",
+          "board": "5c 6s Th 4d 2d",
+          "behavior": "多人2100底池顶对领先1100，转河过牌。"
+        }
+      ],
+      "counterEvidence": "C#35用8对加双头顺听牌转牌加到3600，C#78用AQ高冷跟2000和翻牌1500，均可能属别项。旁观翻后主动11次、互动26次差异大。与D仍最混淆，首选置信度低。"
+    },
+    {
+      "code": "D",
+      "firstChoice": "小注控池",
+      "confidence": 0.48,
+      "mainConfusions": [
+        "延迟进攻",
+        "均衡",
+        "听牌施压"
+      ],
+      "support": [
+        {
+          "phase": "observation",
+          "hand": 76,
+          "hole": "Qd Ac",
+          "board": "2s Js Ad 2d 6s",
+          "behavior": "顶对在2200领先700，转牌3600下1800，河牌过牌，小翻牌下注后普通牌力控制。"
+        },
+        {
+          "phase": "observation",
+          "hand": 5,
+          "hole": "Th As",
+          "board": "Qh 4d Ah Qd Qc",
+          "behavior": "顶对翻牌过牌，转牌1500下600，河牌QQQAA葫芦在2700下1700。"
+        },
+        {
+          "phase": "interactive",
+          "hand": 165,
+          "hole": "Ts Ah",
+          "board": "9d 4h 7h Td 9h",
+          "behavior": "翻牌过牌，转牌顶对跟1200，河牌配9和三红桃过牌。"
+        },
+        {
+          "phase": "interactive",
+          "hand": 168,
+          "hole": "6s 6h",
+          "board": "Jc Jh As Ad 4c",
+          "behavior": "大盲把500仅加到1200，三人翻后全过牌，普通口袋对保留摊牌。"
+        }
+      ],
+      "counterEvidence": "D#181以J对加9卡顺转牌加到2800，河牌一对续3500，明显超出安静控池。也有延迟进攻线索，但干燥/位置/示弱条件未系统隔离，不能因剩余标签改选。"
+    },
+    {
+      "code": "E",
+      "firstChoice": "范围纪律",
+      "confidence": 0.67,
+      "mainConfusions": [
+        "均衡",
+        "宽松取值"
+      ],
+      "support": [
+        {
+          "phase": "observation",
+          "behavior": "VPIP27/PFR16，八组最少自愿参与，进场相对常加注。"
+        },
+        {
+          "phase": "observation",
+          "hand": 52,
+          "hole": "9c 9h",
+          "board": "8s 9s Qd 5d 5c",
+          "behavior": "开500，暗三面对1100加到3600，转牌8000、河牌剩余7900，价值线清晰。"
+        }
+      ],
+      "counterEvidence": "E#89用AK高在44825面跟1000/2600/5600，昂贵防守纪律不足，因此菜单定义只获部分支持。仅12次公开摊牌，无直接互动。"
+    },
+    {
+      "code": "F",
+      "firstChoice": "强牌诱导",
+      "confidence": 0.56,
+      "mainConfusions": [
+        "宽松取值",
+        "均衡"
+      ],
+      "support": [
+        {
+          "phase": "observation",
+          "hand": 1,
+          "hole": "9s 8h",
+          "board": "8c 2h 8d 8s Js",
+          "behavior": "跟到500，翻牌三条、转牌四条，三街先过牌，深筹保留对方行动。"
+        },
+        {
+          "phase": "observation",
+          "hand": 26,
+          "hole": "Td Jd",
+          "board": "Jc 6h 4s Ts 5s",
+          "behavior": "顶对翻牌过牌，转牌两对仍先过，河牌2100下1100，延缓强牌投入。"
+        },
+        {
+          "phase": "observation",
+          "hand": 23,
+          "hole": "Qh Qs",
+          "board": "9d Qc Ts 8c 3h",
+          "behavior": "翻前多次加注后，顶暗三翻牌仍过牌，转牌投剩余6700；低SPR并非安全深筹例证，只作慢打补充。"
+        }
+      ],
+      "counterEvidence": "F#30成J高梅花后连续再加到19800，强牌亦可直接进攻。过牌不证明主观诱导意图，不能凭一次四条定性，无直接互动。"
+    },
+    {
+      "code": "G",
+      "firstChoice": "听牌施压",
+      "confidence": 0.69,
+      "mainConfusions": [
+        "多街施压",
+        "延迟进攻"
+      ],
+      "support": [
+        {
+          "phase": "observation",
+          "hand": 47,
+          "hole": "5d Jh",
+          "board": "8s 4d 7c 6d Ks",
+          "behavior": "翻牌仅6卡顺时过牌把600加到1700；转牌6成顺后3700、河牌7700，真实听牌进攻转价值。"
+        },
+        {
+          "phase": "observation",
+          "hand": 89,
+          "hole": "4s Ad",
+          "board": "5c 3d Tc 9h 6s",
+          "behavior": "有2卡顺时翻牌300，转牌未成牌续800，河牌过牌，带潜力进攻。"
+        },
+        {
+          "phase": "observation",
+          "behavior": "55/27、31次翻后主动，比被动基准更愿意争取。"
+        }
+      ],
+      "counterEvidence": "卡顺半诈唬仅少数可见例子，未知底牌进攻不能全算半诈唬，同样可能多街施压；无直接互动。"
+    },
+    {
+      "code": "H",
+      "firstChoice": "多街施压",
+      "confidence": 0.75,
+      "mainConfusions": [
+        "宽松取值",
+        "听牌施压"
+      ],
+      "support": [
+        {
+          "phase": "observation",
+          "behavior": "VPIP82/PFR32，参与宽且翻前主动较高，转牌有多次较大再加注。"
+        },
+        {
+          "phase": "observation",
+          "hand": 62,
+          "hole": "As Jh",
+          "board": "Js 7s 7c 5c 6s",
+          "behavior": "开800后再补1500跟注，顶对翻牌2700、转牌5400连续下注，河牌过牌。"
+        },
+        {
+          "phase": "observation",
+          "hand": 78,
+          "hole": "Th Jh",
+          "board": "9h Ah 4h 4c 6c",
+          "behavior": "翻牌已成同花，2900下2100，转牌面对4600加到剩余17200，后街尺寸鲜明。"
+        }
+      ],
+      "counterEvidence": "H#78是成花而非听牌，不能当半诈唬例证；H#45普通两对跟河牌大再加注也像宽松取值，大量过牌仍在，无直接互动。"
+    }
+  ],
+  "mostConfusedPair": [
+    "C",
+    "D"
+  ],
+  "inferenceLimits": [
+    "未知底牌保持未知。",
+    "摊牌只核实当时牌力，不用最终输赢证明动作正确。",
+    "均衡仅按菜单基准含义，不宣称GTO。"
+  ]
+}
+

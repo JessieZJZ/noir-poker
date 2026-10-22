@@ -110,19 +110,22 @@ export const BOT_PROFILES = [
   },
   {
     id: 'vale',
-    name: '强牌诱导',
-    short: '强牌诱导',
-    tag: '选择性进攻 · 价值诱导',
-    description: '收紧边缘入池，强牌在安全牌面诱导，也能面对大注及时止损。',
-    axes: [45, 65, 25, 46, 98],
+    name: '跟注诱导',
+    short: '跟注诱导',
+    tag: '低价跟入 · 选择性诱导',
+    description: '更常用跟注进入便宜底池，安全强牌保留诱导，面对高成本仍会退出。',
+    axes: [60, 45, 25, 46, 98],
     sizing: [0.45, 0.9],
     evidence: '电脑角色的策略和情绪均为游戏设定，介绍描述常见倾向，不保证每次采用相同操作。',
     sources: [],
     policy: {
-      entry: 0.95,
+      entry: 1.05,
+      entryCall: 0.95,
       reraise: 0.8,
       blockerBluffs: true,
       trapRate: 0.9,
+      topPairTrap: true,
+      potControl: 0.5,
       barrel: 0.75,
       riverBluff: 0.5,
       riverValue: 1.15,
@@ -186,16 +189,19 @@ export const BOT_PROFILES = [
   },
   {
     id: 'iris',
-    name: '延迟进攻',
-    short: '延迟进攻',
-    tag: '有位置 Float · 延迟进攻',
-    description: '低价格干燥翻牌可少量先跟，下一街对手过牌后争夺底池。',
+    name: '后位争夺',
+    short: '后位争夺',
+    tag: '位置优先 · 择机争夺',
+    description: '前位收紧、后位争夺盲注，有位置时保留小注与延迟进攻。',
     axes: [62, 70, 40, 65, 8],
     sizing: [0.4, 0.7],
     evidence: '电脑角色的策略和情绪均为游戏设定，介绍描述常见倾向，不保证每次采用相同操作。',
     sources: [],
     policy: {
-      entry: 0.95,
+      entry: 0.9,
+      lateEntry: 1.6,
+      earlyEntry: 0.65,
+      lateOpenAttack: 0.98,
       reraise: 0.9,
       blockerBluffs: true,
       float: 0.95,
@@ -429,12 +435,21 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
             ? 0.95
             : 0.75;
   const raises = view.history.filter((a) => a.street === view.street && a.action === 'raise');
+  const entryScale =
+    style.entry *
+    (hasBotSkill(view.difficulty, 'position')
+      ? ['BTN', 'CO'].includes(view.position)
+        ? (style.lateEntry ?? 1)
+        : !['SB', 'BB', 'HJ'].includes(view.position)
+          ? (style.earlyEntry ?? 1)
+          : 1
+      : 1);
   const baseRange =
     (0.16 + width * 0.42) *
     positionScale *
     (view.count >= 8 ? 0.9 : 1) *
     (behind == null ? 1 : Math.max(0.75, 1 - behind * 0.04)) *
-    style.entry *
+    entryScale *
     capability.entry *
     (view.count <= 6 ? style.shortTable : 1);
   let range = baseRange;
@@ -518,9 +533,9 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
   if (cheapEntry)
     range +=
       (0.14 + width * 0.2 + (speculative || suitedHigh ? Math.min(2, limpers) * 0.04 : 0)) *
-      style.entry;
+      entryScale;
   if (cheapEntry && speculative && ['BTN', 'CO', 'HJ'].includes(view.position))
-    range += (0.06 + width * 0.12) * style.entry;
+    range += (0.06 + width * 0.12) * entryScale;
   if (affordableOpen) {
     const priceScale = Math.max(0.65, 1.1 - (view.currentBet / bigBlind) * 0.08);
     const playability = speculative ? 0.14 : suitedHigh ? 0.07 : 0;
@@ -529,7 +544,7 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
     const dominatedAce = !suited && high === 14 && low <= 8 ? 0.08 : 0;
     range =
       baseRange * priceScale +
-      (0.12 + width * 0.18) * style.entry +
+      (0.12 + width * 0.18) * entryScale +
       playability +
       callerBonus +
       blindDiscount -
@@ -542,7 +557,7 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
     const playable = broadway || (pair && high >= 7) || (suited && high >= 11 && low >= 9);
     range = Math.max(
       range,
-      (0.09 + width * 0.2) * style.entry * positionScale * priceScale +
+      (0.09 + width * 0.2) * entryScale * positionScale * priceScale +
         (committed ? 0.05 : 0) +
         (playable ? 0.055 : 0),
     );
@@ -645,8 +660,8 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
     ['BTN', 'CO'].includes(view.position) &&
     admitted &&
     (speculative || suitedHigh || (suited && low >= 5) || (high - low === 1 && low >= 6)) &&
-    roll('pure-bluff', (0.12 + bluff * 0.2 + attack * 0.1) * style.entry) <
-      (0.12 + bluff * 0.2 + attack * 0.1) * style.entry;
+    roll('pure-bluff', (0.12 + bluff * 0.2 + attack * 0.1) * entryScale) <
+      (0.12 + bluff * 0.2 + attack * 0.1) * entryScale;
   const story = view.street > 0 && (ownLastRaise || !features.wet || context.delayed);
   const lateReraise =
     hasBotSkill(view.difficulty, 'light-reraise') &&
@@ -876,6 +891,15 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
                     ? 'premium-continue'
                     : 'price-continue',
     );
+  if (
+    style.entryCall > 0 &&
+    cheapEntry &&
+    admitted &&
+    !premium &&
+    legal.callAmount > 0 &&
+    roll('entry-call', style.entryCall) < style.entryCall
+  )
+    return finish('call', 'affordable-entry');
   value =
     view.street === 0
       ? (raises.length < 2 || (pair && high >= 12) || (high === 14 && low === 13)) &&
@@ -953,6 +977,14 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
             ? Math.max(0.75, (0.2 + attack * 0.72) * capability.attack)
             : (0.2 + attack * 0.72) * capability.attack;
   if (value && view.street > 0) attackRate = Math.max(attackRate, style.valueAttack);
+  if (
+    value &&
+    cheapEntry &&
+    !limpers &&
+    hasBotSkill(view.difficulty, 'position') &&
+    ['BTN', 'CO'].includes(view.position)
+  )
+    attackRate = Math.max(attackRate, style.lateOpenAttack ?? 0);
   if (
     (!isDonkLead(view) || hasBotSkill(view.difficulty, 'donk')) &&
     (value || semiBluff || pureBluff || smallCbet || thinValue) &&

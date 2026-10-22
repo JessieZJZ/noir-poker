@@ -67,6 +67,11 @@
 27. [PokerStars：翻牌牌力与干湿牌面](https://www.pokerstars.com/poker/learn/lesson/the-flop-and-your-hand/)。干燥面可选择控池或强牌诱导，湿面需重视保护及对手听牌。示例牌面中有重复牌的排版错误，因此只使用其定性原则，不照抄或重建该例。
 28. [PokerStars：位置与起手范围](https://www.pokerstars.com/poker/learn/lesson/position/)。后位允许较宽地争夺未开启的底池，前位需要更严格筛选；翻后位置提供观察行动、控制底池和择机争夺的空间。2026-10-21复核原文，作为延迟进攻机会偏少时重新定位的依据，不把教学示例的范围数字当成职业牌手频率或当前机器人实测。
 
+29. [PokerStars：应对跛入](https://www.pokerstars.com/poker/learn/lesson/when-someone-limps/)。区分适合隔离加注、可低成本跟入和应弃牌的牌，强调位置、可获跟注和弃牌收益。文章不推荐常规六人桌率先跛入，因此候选9的被动跟入定位用于学习应对这类对手，不能包装为职业最优策略。
+30. [PokerStars：避免被动打法，2026-09-24](https://www.pokerstars.com/poker/learn/strategies/how-to-avoid-becoming-a-passive-player/)。被动型主要体现跟注、过牌较多和较少再加注，可以偏松也可以偏紧。候选9将vale的常见主行为改为低成本跟入，安全强牌诱导仅作补充，不再承诺每段自然牌局都会展示慢打。2026-10-23复核。
+
+以上新增教学支持对手类型和适用条件，不支持某位历史参考对象的精确频率或一一对应。训练角色包含便于练习识别的局限，不能据此推荐玩家照搬。
+
 ## 测量预先约定
 
 - 在修改前保留源代码快照及 `tests/fixtures/character-strategies.json`，不覆盖历史基准。

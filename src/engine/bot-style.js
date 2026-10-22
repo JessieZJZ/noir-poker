@@ -5,6 +5,11 @@ import { boardTexture } from './hand-features.js';
 export function resolveBotStyle(profile) {
   return {
     entry: 1,
+    entryCall: 0,
+    lateEntry: 1,
+    earlyEntry: 1,
+    lateOpenAttack: 0,
+    topPairTrap: false,
     reraise: 1,
     shortTable: 1,
     blockerBluffs: false,

@@ -5,6 +5,7 @@ import { resolve, join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { createHash } from 'node:crypto';
 import { fork } from 'node:child_process';
+import { completedCardInspection } from './style-public-snapshot.mjs';
 
 const args = Object.fromEntries(process.argv.slice(2).map((x) => x.replace(/^--/, '').split('=')));
 const root = resolve(args.root || '.');
@@ -21,12 +22,13 @@ const referenceRoot = resolve(
 const referenceSelector = (
   await import(pathToFileURL(join(referenceRoot, 'src/engine/bot-profiles.js')))
 ).chooseBotAction;
-const protocol = 'split-streams-v2.1';
+const protocol = 'split-streams-v2.3';
 const references = JSON.parse(
   readFileSync(new URL('../tests/fixtures/character-strategies.json', import.meta.url)),
 );
 const harnessDigest = createHash('sha256')
   .update(readFileSync(new URL(import.meta.url)))
+  .update(readFileSync(new URL('./style-public-snapshot.mjs', import.meta.url)))
   .digest('hex');
 const seeded = (initial) => {
   let n = initial >>> 0;
@@ -83,15 +85,31 @@ export function opportunities(v) {
     (checked || odds <= Math.min(0.25, (f.drawOuts || 0) / (52 - v.hole.length - v.board.length)))
   )
     result.push('draw-pressure');
+  const boardHigh = Math.max(0, ...v.board.map((c) => c.rank));
+  const ranks = v.hole.map((c) => c.rank);
+  const safeTopPair =
+    v.street === 1 &&
+    f.ownPair &&
+    f.madeCategory === 1 &&
+    v.board.filter((c) => c.rank === boardHigh).length === 1 &&
+    ranks.includes(boardHigh) &&
+    Math.max(0, ...ranks.filter((rank) => rank !== boardHigh)) >= 12;
+  const ownStrong =
+    !v.playsBoard && (f.strongMade || safeTopPair || (f.overpair && Math.max(...ranks) >= 12));
+  const effective = Math.min(v.stack, Math.max(0, ...(v.opponents || []).map((p) => p.stack)));
   if (
     checked &&
     dry &&
-    f.strongMade &&
+    ownStrong &&
     v.equity >= 0.72 &&
-    v.stack >= v.pot * 2 &&
-    (v.street < 3 || !v.inPosition)
+    effective >= v.pot * 2 &&
+    (v.street < 3 ||
+      (!v.inPosition &&
+        (v.opponents || []).every(
+          (p) => !v.history.some((a) => a.street === v.street && a.id === p.id),
+        )))
   )
-    result.push('safe-strong-hand');
+    result.push('safe-value-induction');
   if (
     checked &&
     dry &&
@@ -213,6 +231,18 @@ if (args.mode === 'job') {
     corpus = {},
     totals = { hands, vpip: 0, pfr: 0, post: 0, postRaises: 0, postCalls: 0, decisions: 0 };
   const publicHands = [];
+  // A separate evolving stream avoids correlated first LCG draws for every
+  // event. Per-cell/metric hashing does not consume deck or policy randomness.
+  const reservoirStreams = new Map();
+  const reservoirRandom = (metric) => {
+    if (!reservoirStreams.has(metric)) {
+      let hash = 2166136261;
+      for (const c of `${seed}/${profile}/${count}/${difficulty}/${metric}`)
+        hash = Math.imul(hash ^ c.charCodeAt(0), 16777619) >>> 0;
+      reservoirStreams.set(metric, seeded(hash));
+    }
+    return reservoirStreams.get(metric)();
+  };
   // Separate per-hand policy/deck streams prevent earlier policy divergence
   // from changing the initial deal in subsequent paired hands.
   for (let h = 0; h < hands; h++) {
@@ -285,12 +315,10 @@ if (args.mode === 'job') {
           record((metrics[metric] ||= empty()), d, v);
           const items = (corpus[metric] ||= []);
           // Deterministic reservoir across the complete run, not first-hand cherry-picking.
-          const index = Math.floor(
-            seeded(seed + h * 139 + v.history.length * 17)() * metrics[metric].n,
-          );
+          const index = Math.floor(reservoirRandom(metric) * metrics[metric].n);
           const snapshot = { ...v, auditUnit: `${profile}-${count}-${difficulty}-${seed}-${h}` };
-          if (items.length < 4) items.push(snapshot);
-          else if (index < 4) items[index] = snapshot;
+          if (items.length < 8) items.push(snapshot);
+          else if (index < 8) items[index] = snapshot;
         }
       }
       events.push({
@@ -317,6 +345,16 @@ if (args.mode === 'job') {
           g.players.filter((p) => !p.folded).length > 1
             ? g.players.filter((p) => !p.folded).map((p) => ({ id: p.id, hole: p.hole }))
             : [],
+        ...(args.inspection === 'completed'
+          ? {
+              inspection: completedCardInspection(
+                g,
+                true,
+                (id) => id,
+                (hole) => hole,
+              ),
+            }
+          : {}),
         finalStacks: g.players.map((p) => p.stack),
       });
   }
@@ -392,7 +430,13 @@ if (args.mode === 'job') {
       );
       try {
         const saved = JSON.parse(readFileSync(filename));
-        if (saved.sourceDigest === sourceDigest && saved.harnessDigest === harnessDigest) {
+        if (
+          saved.sourceDigest === sourceDigest &&
+          saved.harnessDigest === harnessDigest &&
+          saved.totals.hands === +(args.hands || 80) &&
+          saved.chipConservation &&
+          JSON.parse(readFileSync(filename.replace(/\.json$/, '.corpus.json')))
+        ) {
           done++;
           continue;
         }

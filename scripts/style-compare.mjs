@@ -79,8 +79,63 @@ function paired(a, b, field) {
     conditionalDecisions: a.n,
   };
 }
+if (args.signatures) {
+  const spec = JSON.parse(readFileSync(resolve(args.signatures)));
+  if (spec.sourceDigest !== data.sourceDigest) throw Error('Signature source digest mismatch');
+  const signatures = spec.styles.map((s) => {
+    const a = data.results[s.profile]?.[s.metric],
+      b = data.results.balanced?.[s.metric];
+    if (!a?.n || !b?.n)
+      return { ...s, passed: false, reason: 'missing representative opportunities' };
+    const effect = paired(a, b, s.field);
+    const strata = Object.fromEntries(
+      ['normal', 'hard'].map((difficulty) => {
+        const x = a.byDifficulty[difficulty],
+          y = b.byDifficulty[difficulty];
+        return [
+          difficulty,
+          x?.n && y?.n
+            ? { n: x.n, differencePP: (rate(x, s.field) - rate(y, s.field)) * 100 }
+            : null,
+        ];
+      }),
+    );
+    return {
+      ...s,
+      firstRate: rate(a, s.field),
+      balancedRate: rate(b, s.field),
+      ...effect,
+      strata,
+      byPlayers: playerCounts(a, b, s.field),
+      passed:
+        effect.handClusters >= 30 &&
+        effect.differencePP * s.direction >= 25 &&
+        (effect.ci95PP[0] > 0 || effect.ci95PP[1] < 0) &&
+        Object.values(strata).every((v) => v && v.differencePP * s.direction > 0),
+    };
+  });
+  const result = {
+    sourceDigest: data.sourceDigest,
+    cohort: args.lock ? 'held-out' : 'development',
+    specification: resolve(args.signatures),
+    denominator:
+      'All eligible conditional decisions, including checks and folds; not completed hands or bets only.',
+    signatures,
+    passedStyles: signatures.filter((s) => s.passed).length,
+    totalStyles: signatures.length,
+  };
+  writeFileSync(join(directory, 'signature-validation.json'), JSON.stringify(result, null, 2));
+  console.log(
+    JSON.stringify({
+      cohort: result.cohort,
+      passedStyles: result.passedStyles,
+      totalStyles: result.totalStyles,
+    }),
+  );
+}
 if (args.lock) {
   const locked = JSON.parse(readFileSync(resolve(args.lock)));
+  if (locked.sourceDigest !== data.sourceDigest) throw Error('Locked source digest mismatch');
   const verified = locked.pairs.map((spec) => {
     const metric = spec.best?.metric,
       field = spec.best?.field;
@@ -122,7 +177,9 @@ if (args.lock) {
         Math.abs(effect.differencePP) >= 20 &&
         effect.differencePP * spec.best.differencePP > 0 &&
         (effect.ci95PP[0] > 0 || effect.ci95PP[1] < 0) &&
-        Object.values(strata).every((v) => !v || v.differencePP * spec.best.differencePP > 0),
+        Object.values(strata).every(
+          (v) => v && v.n > 0 && v.differencePP * spec.best.differencePP > 0,
+        ),
     };
   });
   const result = {
