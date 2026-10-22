@@ -29,6 +29,11 @@ function explanation(s, r, evKind, suggested, kind) {
     hand = c.handLabel,
     cost = fmt(s.legal.callAmount),
     pressure = foldPressure(s);
+  if (['unbacked-small-pair-reraise', 'unbacked-pair-reraise'].includes(r.code))
+    return [
+      r.reason,
+      exhaustsStack(s) ? '你已投入全部剩余筹码，之后不再参与下注决策。' : '',
+    ].filter(Boolean);
   const suggestedAllInCall =
     s.action === 'fold' && suggested.action === 'call' && s.legal.callAmount >= s.stack;
   if (r.code === 'unbacked-high-card-call' && suggested.action === 'fold')
@@ -63,7 +68,7 @@ function explanation(s, r, evKind, suggested, kind) {
               ? preflopPotential(s, '你', true)
               : c.handClass === 'board-pair'
                 ? '当前主要靠公共牌上的对子和底牌踢脚争取摊牌，要结合对手的成牌与诈唬范围判断。'
-                : `当前${hand}的摊牌价值需要结合对手的成牌与诈唬范围判断。`,
+                : '需要结合对手的成牌与诈唬范围，判断你当前牌力的摊牌价值。',
       c.handClass === 'board'
         ? '是否划算取决于能够平分底池的机会与可分得的份额，还要计入对手用底牌组成更大牌的可能。'
         : suggested.action === 'call' && (kind === 'keep' || suggestedAllInCall)
@@ -256,7 +261,18 @@ function explanation(s, r, evKind, suggested, kind) {
             ? '这组高牌即使击中一对，也可能被大对子或更好踢脚压制'
             : '这两张低牌不是对子或强高牌，击中一对后点数仍偏低';
     const keep = suggested.action === 'fold';
-    return `${handRisk}。继续需要再补 ${cost}，${keep ? '这次弃牌可以保留，保住剩下的 ' + fmt(s.stack) + '，不再承担这笔投入' : '应结合对手愿意用哪些较弱牌继续，再决定是否接下这笔投入'}。`;
+    const suitedConnector =
+      s.hole[0].suit === s.hole[1].suit && Math.abs(s.hole[0].rank - s.hole[1].rank) === 1;
+    return [
+      ...(suitedConnector ? preflopPotential(s) : [handRisk + '。']),
+      suitedConnector
+        ? `当前面对加注至 ${fmt(s.currentBet)}，约 ${(s.currentBet / bigBlindOf(s)).toFixed(1)} BB，需要结合尺度和有效筹码判断，不能只凭连接与同花潜力继续。`
+        : '',
+      `继续需要再补 ${cost}，${keep ? '这次弃牌可以保留，保住剩下的 ' + fmt(s.stack) + '，不再承担这笔投入' : '应结合对手愿意用哪些较弱牌继续，再决定是否接下这笔投入'}。`,
+      suitedConnector && c.pendingOthers
+        ? `你身后还有 ${c.pendingOthers} 人等待行动，他们再加注时，继续需要付出更多筹码。`
+        : '',
+    ].filter(Boolean);
   }
   if (s.action === 'fold' && !s.legal.canCheck && s.street === 0)
     return [

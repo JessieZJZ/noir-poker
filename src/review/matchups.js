@@ -455,6 +455,13 @@ export function reviewCommentary(paragraphs, matchups, street, paragraphParts) {
 export function valuePlan(s, c, matchups = c.matchups || handMatchups(s, c)) {
   const empty = { primary: null, secondary: null, kind: null, reason: '' };
   if (!matchups || matchups.strength === 'board') return empty;
+  if (
+    s.street > 0 &&
+    c.handClass === 'top-pair' &&
+    s.legal.callAmount > 0 &&
+    (c.opponents > 1 || (s.street === 3 && s.bet > 0))
+  )
+    return empty;
   const shoveReason = () =>
     `当时底池 ${number(s.pot)}，你还剩 ${number(s.stack)}，这手强牌可比较价值全下，让${s.street === 3 ? '弱成牌' : s.street ? '弱成牌或听牌' : '较弱起手牌'}为剩余筹码付费。`;
   const f = spotFacts(s, c),

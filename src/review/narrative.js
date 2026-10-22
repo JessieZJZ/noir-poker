@@ -146,6 +146,8 @@ export function actionReason(s, r) {
   if (exhaustsStack(s) && s.action === 'call')
     return `你在 ${s.position} 拿 ${hand}，用剩下的 ${n(s.stack)} 全下跟注，可争夺 ${n(r.metrics.contestable)} 的底池。`;
   if (s.action === 'raise') {
+    if (r.code === 'unbacked-pair-reraise')
+      return `你拿 ${hand}，在 ${f.boardText} 上${actual}，这次拿出 ${n(f.investment)}。`;
     if (heavyPreflopPressure(s, c))
       return `你拿 ${hand} 在 ${s.position} ${actual}，这次拿出 ${n(f.investment)} 争取 ${n(s.pot)} 的底池。${foldNote || '面对多次再加注，不能只凭起手牌较强就当作价值加注，继续进攻需要对手有足够会弃牌的组合，被大对子或 AK 等强牌跟注时要承担明显风险。'}`;
     if (plannedValueShove(s, c) && f.shove)
@@ -178,7 +180,7 @@ export function actionReason(s, r) {
       return `你拿 ${hand} 在 ${s.position} ${actual}，把 ${n(f.investment)}（${(f.investment / bigBlindOf(s)).toFixed(0)} BB）投入当时 ${n(s.pot)} 的底池，是底池的 ${f.potRatio.toFixed(1)} 倍。${rationale}`;
     }
     if (s.street === 0)
-      return `你拿 ${hand} 在 ${s.position} ${actual}，这次拿出 ${n(f.investment)} 去争取底池 ${n(s.pot)}。${c.tier >= 2 ? '这手牌有价值加注的牌力，可以让较弱起手牌付费。' : foldNote ? '这次是再加注诈唬。' + foldNote : f.lastAggression ? (c.opponents > 1 ? '已有开池时，这次是再加注诈唬，需要开池者和其他未弃牌的玩家都放弃，才能直接拿走底池。' : '已有开池时，这次是再加注诈唬，需要开池者愿意弃牌，才能直接拿走底池。') : '前面没有开池，这次进攻可以直接争夺盲注，被跟注后再看这手牌的翻后潜力。'}`;
+      return `你拿 ${hand} 在 ${s.position} ${actual}，这次拿出 ${n(f.investment)} 去争取底池 ${n(s.pot)}。${c.tier >= 2 ? '这手牌有价值加注的牌力，可以让较弱起手牌付费。' : foldNote ? '这次是再加注诈唬。' + foldNote : f.lastAggression ? '已有加注时，这次是再加注诈唬，需要所有仍在底池里的对手都弃牌，才能直接拿走底池。' : '前面没有开池，这次进攻可以直接争夺盲注，被跟注后再看这手牌的翻后潜力。'}`;
     if (
       !draw.outs &&
       ['pressure-bet', 'large-unbacked-bet'].includes(r.code) &&

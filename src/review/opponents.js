@@ -194,7 +194,7 @@ export function explainOpponent(record, identities = []) {
       logic = `这次属于较松的跟注：${hand}的牌力支撑有限，但${subject}仍选择继续争夺底池，没有收紧防守。`;
       break;
     case 'premium-continue':
-      logic = `${ownOpen ? subject + '此前开池至 ' + n(ownOpen.amount) + '，' : ''}面对这次加注，${subject}认为${hand}仍值得继续，因此选择跟注保留摊牌机会。${v.hole[0].rank === v.hole[1].rank ? pocketComparison(v, subject) : v.hole.some((card) => card.rank === 14) && v.hole.some((card) => card.rank === 13) ? 'AK 击中 A 或 K 时有顶对顶踢脚潜力，未击中时仍需结合价格和对手范围判断' : '这组高牌有击中顶对的机会，仍需结合踢脚、价格和对手范围判断'}。`;
+      logic = `${ownOpen ? subject + '此前加注至 ' + n(ownOpen.amount) + '，' : ''}面对这次加注，${subject}认为${hand}仍值得继续，因此选择跟注保留摊牌机会。${v.hole[0].rank === v.hole[1].rank ? pocketComparison(v, subject) : v.hole.some((card) => card.rank === 14) && v.hole.some((card) => card.rank === 13) ? 'AK 击中 A 或 K 时有顶对顶踢脚潜力，未击中时仍需结合价格和对手范围判断' : '这组高牌有击中顶对的机会，仍需结合踢脚、价格和对手范围判断'}。`;
       break;
     case 'affordable-entry':
     case 'affordable-open':
@@ -272,7 +272,7 @@ export function explainOpponent(record, identities = []) {
         if (c.pendingOthers > 0)
           checkNotes.push('过牌也可能是在等后位先下注，给对手继续投入的机会。');
         if (c.opponents > 1)
-          checkNotes.push('多人底池里，一对并不是坚果，应避免让大底池只留下更强的继续范围。');
+          checkNotes.push('多人底池里，这手成牌并不是坚果，应避免让大底池只留下更强的继续范围。');
         if (wet) checkNotes.push('湿润面过牌的代价，是可能让顺子或同花听牌免费看下一张。');
         checkNotes.push(
           c.pendingOthers > 0

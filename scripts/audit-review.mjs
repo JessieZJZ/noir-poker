@@ -20,7 +20,7 @@ import {
 } from '../src/engine/poker.js';
 import { createReviewInput, analyzeDecision } from '../src/review/analysis.js';
 import { explainOpponent } from '../src/review/opponents.js';
-import { seedRandom } from '../src/review/equity.js';
+import { seedRandom, callPrice } from '../src/review/equity.js';
 import { coachDecision } from '../src/review/coaching.js';
 import { decisionContext } from '../src/review/context.js';
 import { handMatchups, valuePlan } from '../src/review/matchups.js';
@@ -74,6 +74,8 @@ const summary = (c) => c.paragraphs.slice(c.paragraphs.indexOf('复盘分析总�
 // Re-render saved public analyses after wording-only repairs. Numeric estimates,
 // candidate simulations and the original complete action history stay intact.
 if (args.refresh) {
+  if (args['reuse-facts'] && args['strategy-refresh'] !== 'narrow-pair')
+    throw Error('Cached facts are supported only for the isolated narrow-pair refresh');
   if (args.backup) mkdirSync(path.resolve(args.backup), { recursive: true });
   for (const file of readdirSync(output)
     .filter((f) => /^hand-\d{4}\.json$/.test(f))
@@ -83,12 +85,15 @@ if (args.refresh) {
     if (args.backup && !existsSync(path.join(args.backup, file)))
       copyFileSync(path.join(output, file), path.join(args.backup, file));
     const data = JSON.parse(readFileSync(path.join(output, file), 'utf8'));
+    if (args['reuse-facts'] && data.presentationDigest !== args['reuse-facts'])
+      throw Error('Cached facts require the explicitly verified input digest: ' + file);
     for (const entry of data.entries) {
       if (entry.perspective === 'hero' && !args['nouns-only']) {
         if (!entry.analysis) throw Error('Refresh requires a saved analysis: ' + file);
-        let r = entry.analysis;
+        let r = entry.analysis,
+          reanalyzed = false;
         const s = entry.snapshot,
-          current = decisionContext(s);
+          current = args['reuse-facts'] ? r.context : decisionContext(s);
         const changedCall =
           !s.street &&
           s.action === 'call' &&
@@ -108,35 +113,65 @@ if (args.refresh) {
         const changedReraise =
           !s.street &&
           s.action === 'raise' &&
-          current.preflopRaises >= 3 &&
-          !s.hole.every((card) => card.rank >= 13 && card.rank === s.hole[0].rank);
+          ((s.hole[0].rank === s.hole[1].rank && s.hole[0].rank <= 7) ||
+            (current.preflopRaises >= 3 &&
+              !s.hole.every((card) => card.rank >= 13 && card.rank === s.hole[0].rank)));
+        const changedPairValue =
+          s.street > 0 &&
+          current.handClass === 'top-pair' &&
+          s.legal.callAmount > 0 &&
+          (current.opponents > 1 || s.street === 3);
         const changedHighCardCall =
           s.street > 0 &&
           s.action === 'call' &&
           current.handClass === 'high' &&
           !current.draw.outs &&
-          s.legal.callAmount >= s.stack * 0.5;
+          (s.legal.callAmount >= s.stack * 0.5 || callPrice(s).required >= 0.2);
+        const finalBoundary =
+          changedHighCardCall ||
+          changedReraise ||
+          changedPairValue ||
+          (!s.street &&
+            s.action === 'call' &&
+            r.code === 'priced-call' &&
+            current.tier === 0 &&
+            s.hole[0].suit !== s.hole[1].suit);
+        const narrowPair =
+          s.street === 3 &&
+          s.bet === 0 &&
+          current.opponents === 1 &&
+          current.handClass === 'top-pair' &&
+          s.legal.callAmount > 0;
         if (
           args.reanalyze ||
           (args['strategy-refresh'] &&
             entry.analysisDigest !== sourceDigest &&
             (args['strategy-refresh'] === 'high-card-call'
               ? changedHighCardCall
-              : changedCall ||
-                changedPressure ||
-                changedReraise ||
-                changedHighCardCall ||
-                r.context.handClass !== current.handClass))
+              : args['strategy-refresh'] === 'final-boundaries'
+                ? finalBoundary
+                : args['strategy-refresh'] === 'narrow-pair'
+                  ? narrowPair
+                  : changedCall ||
+                    changedPressure ||
+                    changedReraise ||
+                    changedPairValue ||
+                    changedHighCardCall ||
+                    r.context.handClass !== current.handClass))
         ) {
           r = analyzeDecision(s, { trials, rolloutTrials });
           entry.analysis = r;
+          reanalyzed = true;
           entry.analysisDigest = sourceDigest;
           entry.review.metrics = r.metrics;
           entry.review.code = r.code;
         }
-        r.context = current;
-        r.context.matchups = handMatchups(s, r.context);
-        r.context.valuePlan = valuePlan(s, r.context, r.context.matchups);
+        if (!args['reuse-facts']) {
+          r.context = current;
+          r.context.matchups = handMatchups(s, r.context);
+          r.context.valuePlan = valuePlan(s, r.context, r.context.matchups);
+        } else if (!reanalyzed && !r.context.matchups)
+          throw Error('Cached facts require complete prior matchups: ' + file);
         const pre = s.street ? null : preflopContext(s);
         if (pre) r.context.positionedEntry = positionedEntry(s, r.context, pre);
         r.routes = comparisonRoutes(s, r.context, {
@@ -157,6 +192,7 @@ if (args.refresh) {
         });
       } else if (
         entry.perspective === 'opponent' &&
+        !args['reuse-facts'] &&
         (!args['nouns-only'] || /(?:口袋|超对|顶对|非顶对) [^，。]*，/.test(entry.review.summary))
       ) {
         const r = explainOpponent(entry.record, data.roster);

@@ -132,6 +132,30 @@ export function analyzeDecision(
       '击中强牌时争取让较弱牌付费，形成强听牌时结合价格与对手弃牌空间决定跟注或半诈唬，完全落空且面对不利下注时退出，能免费过牌时保留机会。';
   } else if (
     pre &&
+    s.action === 'raise' &&
+    s.hole[0].rank === s.hole[1].rank &&
+    s.hole[0].rank <= 7 &&
+    (pre.raises >= 2 ||
+      (pre.raises === 1 &&
+        !ctx.inPosition &&
+        pre.limpers + pre.callersAfterOpen > 0 &&
+        s.amount === s.legal.minRaiseTo &&
+        s.amount < preflopRaiseTarget(s, ctx, pre) * (2 / 3)))
+  ) {
+    code = 'unbacked-small-pair-reraise';
+    status = 'consider';
+    title = '小对子再加注，不能只凭施压意图肯定这条路线';
+    reason =
+      '小对子已有摊牌机会，但面对加注，不能只凭这点牌力就反复再加注。需要有对手会放弃哪些牌的依据，过小的再加注也可能让他低成本继续，未中暗三条时仍要面对高张和后续压力。';
+    alternative = {
+      action: price.cost < s.stack * 0.25 && low - uncertainty > price.required ? 'call' : 'fold',
+      amount:
+        price.cost < s.stack * 0.25 && low - uncertainty > price.required ? s.legal.callAmount : 0,
+    };
+    lesson = '按价格跟注与主动反复再加注需要不同的依据。';
+    plan = '先比较控制投入的路线，只有明确的宽范围和弃牌空间，才讨论更积极的再加注。';
+  } else if (
+    pre &&
     pre.raises >= 2 &&
     tier === 1 &&
     s.hole[0].rank !== s.hole[1].rank &&
@@ -165,22 +189,26 @@ export function analyzeDecision(
     plan = '有明确宽范围或更有利的价格依据时再讨论跟注，全下跟注需要单独核对摊牌价格。';
   } else if (
     pre?.unopened &&
-    pre.late &&
-    !pre.limpers &&
     !pre.suited &&
     tier === 0 &&
     s.action === 'call' &&
-    Math.max(...s.hole.map((card) => card.rank)) <= 10 &&
     Math.min(...s.hole.map((card) => card.rank)) <= 6 &&
-    Math.abs(s.hole[0].rank - s.hole[1].rank) >= 3
+    Math.abs(s.hole[0].rank - s.hole[1].rank) >= 3 &&
+    ((pre.late && !pre.limpers && Math.max(...s.hole.map((card) => card.rank)) <= 10) ||
+      (['HJ', 'CO', 'BTN'].includes(s.position) &&
+        pre.limpers > 0 &&
+        s.bet === 0 &&
+        Math.max(...s.hole.map((card) => card.rank)) <= 11 &&
+        high + uncertainty < price.required))
   ) {
     code = 'weak-late-limp';
     status = 'consider';
     title = '弱不同花散牌不能只因为跟注便宜就跛入';
     reason = `${handLabel} 不同花且点数相隔较远，成强牌的路径较少，后面仍有玩家可以加注，较低跟注成本不能单独支持这次入池。`;
     alternative = { action: 'fold', amount: 0 };
-    lesson = '后位可以更灵活争夺盲注，但弱不同花散牌跛入不自动获得位置与收益优势。';
-    plan = '只有盲位明显过度弃牌等依据时，再比较小尺度主动开池，遭遇跟注或再加注后重新判断。';
+    lesson = '位置、底牌与价格需要共同支持入池，不能只因为跟注金额小就继续。';
+    plan =
+      '有明确更宽范围与更有利价格依据时再讨论跟注，已经有人跛入时，加注还需要考虑他们的继续范围。';
   } else if (
     pre?.unopened &&
     pre.late &&
@@ -322,10 +350,28 @@ export function analyzeDecision(
     plan = `可以先用 ${actionLabel(s, alternative.action, alternative.amount)} 这条路线练习，若对手再加注，再结合其范围和有效筹码决定继续。此尺度是练习候选，不保证多赚。`;
   } else if (
     s.street > 0 &&
+    s.action === 'raise' &&
+    handClass === 'top-pair' &&
+    s.legal.callAmount > 0 &&
+    (ctx.opponents > 1 || (s.street === 3 && s.bet > 0))
+  ) {
+    code = 'unbacked-pair-reraise';
+    status = 'consider';
+    title = '顶对面对已有下注，不能自动当成大额价值再加注';
+    reason =
+      '面对多人下注或河牌加注，顶对不能自动当成大额价值再加注。需要先明确哪些更弱成牌会继续付费，有听牌或阻断牌也不能单独证明对手会弃牌。';
+    alternative = {
+      action: high + uncertainty < price.required ? 'fold' : 'call',
+      amount: high + uncertainty < price.required ? 0 : s.legal.callAmount,
+    };
+    lesson = '先按当前价格比较跟注与弃牌，强听牌可以增加继续依据，但不自动构成价值加注。';
+    plan = '只有对手会用足够较弱牌付费，或有明确弃牌空间时，再比较较大的加注。';
+  } else if (
+    s.street > 0 &&
     s.action === 'call' &&
     handClass === 'high' &&
     !draw.outs &&
-    price.cost >= s.stack * 0.5 &&
+    (price.cost >= s.stack * 0.5 || price.required >= 0.2) &&
     strong.equity + uncertainty < price.required &&
     wide.equity - uncertainty <= price.required
   ) {
@@ -333,7 +379,7 @@ export function analyzeDecision(
     status = 'consider';
     title = '高牌大额跟注缺少继续依据';
     reason =
-      '当前只有高牌，没有顺子、同花的直接听牌，这笔跟注至少用掉行动前筹码的一半。根据对手之前的行动估计，获胜机会不足以覆盖成本，即使按更宽的底牌范围估计，也还不能确认这笔跟注划算，不能只因对手可能诈唬就肯定跟注。';
+      '当前只有高牌，没有顺子、同花的直接听牌。根据对手之前的行动估计，获胜机会不足以覆盖成本，即使按更宽的底牌范围估计，也还不能确认这笔跟注划算，不能只因对手可能诈唬就肯定跟注。';
     alternative = { action: 'fold', amount: 0 };
     lesson = '只有更弱高牌诈唬的具体证据能够提供足够胜率时，再比较跟注。';
     plan = '优先停止这笔新增投入，之前的跟注不构成继续的理由。';

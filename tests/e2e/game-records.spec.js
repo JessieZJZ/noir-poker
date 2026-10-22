@@ -918,17 +918,22 @@ test('long press reveals full clipped names on live and archived tables and dism
       await page.locator(`[data-record-hand="${attempt.id}"]`).click();
     }
     const label = page.locator(`${root} .seat-style-label`).first();
+    const hint = page.locator(root === '#arena' ? '#coach-content' : '#history-coach-content');
     await label.scrollIntoViewIfNeeded();
     expect(await label.evaluate((el) => el.scrollWidth > el.clientWidth + 1)).toBe(true);
     const full = await label.textContent();
     const rect = await label.boundingBox();
     await page.mouse.move(rect.x + rect.width / 2, rect.y + rect.height / 2);
     await page.mouse.down();
+    // The hint banner scrolls its own text without moving the pressed name.
+    await hint.evaluate((el) => el.dispatchEvent(new Event('scroll')));
     await page.waitForTimeout(500);
     await page.mouse.up();
     const tooltip = page.getByRole('tooltip');
     await expect(tooltip).toBeVisible();
     await expect(tooltip).toHaveText(full);
+    await hint.evaluate((el) => el.dispatchEvent(new Event('scroll')));
+    await expect(tooltip).toBeVisible();
     const tip = await tooltip.boundingBox();
     expect(tip.x).toBeGreaterThanOrEqual(12);
     expect(tip.x + tip.width).toBeLessThanOrEqual(378);
@@ -941,6 +946,14 @@ test('long press reveals full clipped names on live and archived tables and dism
     await page.mouse.move(rect.x + rect.width / 2, rect.y + rect.height / 2 + 20);
     await page.waitForTimeout(500);
     await page.mouse.up();
+    await expect(tooltip).toBeHidden();
+    // A scroll of the table containing the anchor still dismisses the tooltip.
+    await page.mouse.move(rect.x + rect.width / 2, rect.y + rect.height / 2);
+    await page.mouse.down();
+    await page.waitForTimeout(500);
+    await page.mouse.up();
+    await expect(tooltip).toBeVisible();
+    await label.evaluate((el) => el.closest('.arena').dispatchEvent(new Event('scroll')));
     await expect(tooltip).toBeHidden();
   }
 });

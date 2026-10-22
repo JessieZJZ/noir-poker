@@ -1168,14 +1168,20 @@ export async function nativeScenarios(app) {
         .length,
     }));
     assert.equal(guide.hands, 9);
-    assert.equal(guide.glossaryEntries, 27);
+    assert.equal(guide.glossaryEntries, 29);
     assert.match(guide.glossary, /底池赔率／保本胜率.*全下只会结束自己的下注选择/s);
+    assert.match(guide.glossary, /主动权.*并不改变行动顺序/s);
+    assert.match(guide.glossary, /权益把获胜和平分计为底池份额/);
     assert.equal(guide.cards, 45);
     assert.ok(guide.positions.includes('HJ · Hijack') && guide.positions.includes('CO · Cutoff'));
     assert.ok(guide.text.includes('选择加注 1.2K 则补 1K'));
     assert.ok(guide.text.includes('至少要加到 1K'));
     assert.ok(!/\b(?:1200|1000)\b/.test(guide.text), 'Guide chip examples must use K');
     await app.screenshot('visual-beginner-guide');
+    await app.evaluate(() =>
+      document.querySelector('#review-glossary').scrollIntoView({ block: 'start' }),
+    );
+    await app.screenshot('review-terms-glossary');
     await app.click('#rules-dialog .icon-button.close-dialog');
     return { assignments, guide };
   });

@@ -8,12 +8,13 @@ export function prepareNameTooltips() {
   tooltip.role = 'tooltip';
   tooltip.hidden = true;
   document.body.append(tooltip);
-  let timer, anchor, origin, pressed, observer;
+  let timer, anchor, pendingAnchor, origin, pressed, observer;
   const on = (target, event, fn, options = {}) =>
     target.addEventListener(event, fn, { ...options, signal: events.signal });
   const cancel = () => {
     clearTimeout(timer);
     timer = null;
+    pendingAnchor = null;
   };
   const close = () => {
     cancel();
@@ -63,6 +64,7 @@ export function prepareNameTooltips() {
     const label = labelAt(event);
     if (!label) return;
     origin = { x: event.clientX, y: event.clientY };
+    pendingAnchor = label;
     timer = setTimeout(() => show(label), 450);
   });
   on(
@@ -97,7 +99,15 @@ export function prepareNameTooltips() {
   on(document, 'keydown', (event) => {
     if (event.key === 'Escape') close();
   });
-  on(document, 'scroll', close, { capture: true, passive: true });
+  on(
+    document,
+    'scroll',
+    (event) => {
+      const label = anchor || pendingAnchor;
+      if (event.target === document || (label && event.target.contains?.(label))) close();
+    },
+    { capture: true, passive: true },
+  );
   on(document, 'visibilitychange', () => {
     if (document.hidden) close();
   });

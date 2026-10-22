@@ -7,6 +7,76 @@ const fixtures = JSON.parse(
   readFileSync(new URL('../fixtures/review-practice-focus.json', import.meta.url)),
 );
 const options = { trials: 120, rolloutTrials: 4 };
+test('weak offsuit overlimps need more than a small nominal price', () => {
+  const r = analyzeDecision(fixtures.heroes['unsupported-overlimp'], {
+    trials: 600,
+    rolloutTrials: 40,
+  });
+  assert.equal(r.code, 'weak-late-limp');
+  assert.equal(r.coaching.recommendedAction.action, 'fold');
+  assert.notEqual(r.coaching.kind, 'keep');
+});
+for (const key of ['small-pair-min-squeeze', 'small-pair-five-bet', 'small-pair-seven-bet'])
+  test(`${key} does not default to keeping a pressure raise`, () => {
+    const r = analyzeDecision(fixtures.heroes[key], options);
+    assert.equal(r.code, 'unbacked-small-pair-reraise');
+    assert.notEqual(r.coaching.kind, 'keep');
+    assert.ok(['call', 'fold'].includes(r.routes.primary.action));
+    assert.match(summary(r), /需要有对手会放弃哪些牌的依据/);
+  });
+test('a multiway top pair with a public pair and flush draw does not become an automatic value raise', () => {
+  const r = analyzeDecision(fixtures.heroes['multiway-public-two-pair-call'], options);
+  assert.equal(r.context.handClass, 'top-pair');
+  assert.equal(r.context.made.score[0], 2);
+  assert.ok(r.context.draw.flush);
+  assert.equal(r.context.valuePlan.primary, null);
+  assert.equal(r.routes.primary.action, 'call');
+});
+test('a river top-pair three-bet needs an explicit weaker range instead of automatic value', () => {
+  const r = analyzeDecision(fixtures.heroes['river-pair-three-bet'], options);
+  assert.equal(r.code, 'unbacked-pair-reraise');
+  assert.notEqual(r.coaching.kind, 'keep');
+  assert.ok(['call', 'fold'].includes(r.routes.primary.action));
+  assert.doesNotMatch(summary(r), /目前已有成牌，下注的价值来自对手用更弱成牌跟注/);
+});
+test('folding a suited connector explains its potential before the expensive entry', () => {
+  const text = summary(
+    analyzeDecision(fixtures.heroes['suited-connector-large-open-fold'], options),
+  );
+  assert.match(text, /有机会在翻后形成顺子、同花听牌/);
+  assert.match(text, /8\.0 BB/);
+  assert.match(text, /你身后还有 1 人等待行动/);
+  assert.doesNotMatch(text, /这两张低牌不是对子或强高牌/);
+});
+test('the original opener reraising a bluff needs opponents to fold, not himself', () => {
+  const text = summary(analyzeDecision(fixtures.heroes['hero-open-reraise-bluff'], options));
+  assert.match(text, /需要所有仍在底池里的对手都弃牌/);
+  assert.doesNotMatch(text, /需要开池者愿意弃牌/);
+});
+test('opponent continuation distinguishes a previous reraise from opening the pot', () => {
+  const text = explainOpponent(
+    fixtures.opponentCorrections['previous-reraise'],
+    fixtures.roster,
+  ).detail;
+  assert.match(text, /此前加注至 300/);
+  assert.doesNotMatch(text, /此前开池至/);
+});
+test('a public pair does not make two-pair check reasoning switch to a one-pair hand', () => {
+  const text = explainOpponent(
+    fixtures.opponentCorrections['public-pair-two-pair'],
+    fixtures.roster,
+  ).detail;
+  assert.match(text, /两对/);
+  assert.match(text, /多人底池里，这手成牌并不是坚果/);
+  assert.doesNotMatch(text, /多人底池里，一对并不是坚果/);
+});
+test('all-in showdown reasoning does not insert compound hand labels into a noun slot', () => {
+  for (const key of ['allin-labeled-pocket', 'allin-labeled-overpair']) {
+    const text = summary(analyzeDecision(fixtures.heroes[key], options));
+    assert.match(text, /需要结合对手的成牌与诈唬范围，判断你当前牌力的摊牌价值/);
+    assert.doesNotMatch(text, /公共牌[^。]*的摊牌价值/);
+  }
+});
 for (const name of ['kings-fold-allin-call', 'ace-king-fold-allin-call'])
   test(`${name} recommends an all-in call without zero-stack or future betting plans`, () => {
     const s = fixtures.heroes[name],
@@ -25,7 +95,12 @@ test('an ace all-in call explains kicker risk without future investment choices'
   assert.match(summary(r), /但仍可能输给更大踢脚的 Ax/);
   assert.doesNotMatch(summary(r), /向它们取值|仍需控制投入/);
 });
-for (const name of ['unbacked-highcard-allin', 'unbacked-highcard-near-allin'])
+for (const name of [
+  'unbacked-highcard-allin',
+  'unbacked-highcard-near-allin',
+  'unbacked-highcard-strong-line',
+  'unbacked-highcard-pending-flop',
+])
   test(`${name} does not mistake a large unsupported high-card call for a supported keep`, () => {
     const s = fixtures.heroes[name],
       r = analyzeDecision(s, { trials: 600, rolloutTrials: 40 }),
@@ -34,7 +109,7 @@ for (const name of ['unbacked-highcard-allin', 'unbacked-highcard-near-allin'])
     assert.equal(r.status, 'consider');
     assert.equal(r.coaching.recommendedAction.action, 'fold');
     assert.notEqual(r.coaching.kind, 'keep');
-    assert.match(text, /当前只有高牌.*行动前筹码的一半/);
+    assert.match(text, /当前只有高牌，没有顺子、同花的直接听牌/);
     assert.match(text, /根据对手之前的行动估计/);
     assert.match(text, /即使按更宽的底牌范围估计，也还不能确认这笔跟注划算/);
     assert.doesNotMatch(text, /值得保留的依据|两种.*都.*亏/);

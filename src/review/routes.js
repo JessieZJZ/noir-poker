@@ -59,7 +59,7 @@ export function comparisonRoutes(s, ctx, { code, status, alternative, pre }) {
   if (code === 'weak-late-limp') {
     primary.condition = '底牌缺少同花和连接潜力，后面仍有玩家行动时，不因跟注成本低就跛入。';
     primary.tradeoff = '保留后手，也放弃本次改善与争夺盲注的机会。';
-    secondary = pressure.hasAllInOpponent ? null : raise(2.5 * bigBlindOf(s));
+    secondary = pressure.hasAllInOpponent || pre.limpers ? null : raise(2.5 * bigBlindOf(s));
     if (secondary && secondary.amount <= 3 * bigBlindOf(s) && secondary.amount < s.legal.maxRaiseTo)
       Object.assign(secondary, {
         label: label(secondary),
@@ -81,6 +81,9 @@ export function comparisonRoutes(s, ctx, { code, status, alternative, pre }) {
       'weak-entry',
       'squeeze-candidate',
       'early-suited-entry',
+      'unbacked-small-pair-reraise',
+      'unbacked-pair-reraise',
+      'multiway-top-pair',
     ].includes(code)
   ) {
     Object.assign(primary, value.primary, {

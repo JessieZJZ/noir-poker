@@ -626,7 +626,7 @@ test('the same hand keeps its card comparisons but coaching follows actual posit
   assert.match(shortReview.evidence.join(''), /行动前你手里有 500/);
 });
 
-test('strong-flat support requires the recorded legal call and cannot replace expensive-call or crowding guards', () => {
+test('strong-flat support requires the recorded legal call and cannot replace unsupported-call or crowding guards', () => {
   const s = heroValueGame('aa-flat').decisions[0];
   const supported = analyzeDecision(s, { trials: 120, rolloutTrials: 12 });
   assert.equal(supported.code, 'strong-flat-trap');
@@ -672,7 +672,7 @@ test('strong-flat support requires the recorded legal call and cannot replace ex
     ],
   });
   const rejected = analyzeDecision(expensive, { trials: 120, rolloutTrials: 12 });
-  assert.equal(rejected.code, 'expensive-call');
+  assert.equal(rejected.code, 'unbacked-high-card-call');
   assert.equal(rejected.coaching.label, '弃牌');
   assert.equal(rejected.coaching.evKind, 'negative');
 });
