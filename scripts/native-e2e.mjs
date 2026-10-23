@@ -549,17 +549,22 @@ try {
   if (platform === 'ios') {
     // Launch the clean installed app independently before XCUITest attaches.
     // Later application restarts stay within WDA so it tracks the current PID.
-    run('xcrun', ['simctl', 'install', udid, appPath]);
+    // A fresh CI simulator can take minutes to install and first launch an app.
+    run('xcrun', ['simctl', 'install', udid, appPath], { timeout: 600000 });
     const launchStarted = performance.now();
     const stderrPath = path.join(output, 'ios.stderr.log');
-    const launched = run('xcrun', [
-      'simctl',
-      'launch',
-      `--stdout=${path.join(output, 'ios.stdout.log')}`,
-      `--stderr=${stderrPath}`,
-      udid,
-      appId,
-    ]);
+    const launched = run(
+      'xcrun',
+      [
+        'simctl',
+        'launch',
+        `--stdout=${path.join(output, 'ios.stdout.log')}`,
+        `--stderr=${stderrPath}`,
+        udid,
+        appId,
+      ],
+      { timeout: 600000 },
+    );
     const processId = iosLaunchProcessId(launched);
     report.phase = 'independent-startup';
     report.initialLaunch = { processId, stderrPath, ready: false };

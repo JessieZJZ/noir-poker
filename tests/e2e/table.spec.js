@@ -1955,8 +1955,9 @@ test('review timelines hint at horizontal scrolling and keep late selections in 
   page,
 }) => {
   // Allow three real simulations on shared CI hardware without reducing
-  // the sampling or dropping the decision and scrolling assertions.
-  test.setTimeout(120000);
+  // the sampling or dropping the decision and scrolling assertions; each
+  // analysis may take up to its 60s wait there.
+  test.setTimeout(240000);
   for (const width of [320, 390, 1280]) {
     await page.setViewportSize({ width, height: 900 });
     await page.evaluate(() => window.qa.reviewLine());
