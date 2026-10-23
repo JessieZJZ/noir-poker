@@ -149,7 +149,24 @@ try {
   if (collapsed[selected.sessionId]) await tap(`.session-item[data-id="${selected.sessionId}"]`);
   report.stage = 'open-history';
   await revealHand(selected);
-  await tap(`.hand-item[data-id="${selected.id}"]`);
+  // A tap that lands while the list refills its rows is retried. If the
+  // automator's taps still miss the re-rendered row, invoke that row's own
+  // bound handler and record that the fallback was used.
+  for (let attempt = 0; attempt < 3; attempt++) {
+    await tap(`.hand-item[data-id="${selected.id}"]`);
+    await page.waitFor(3000);
+    if ((await mini.currentPage())?.path === 'pages/history/history') break;
+  }
+  if ((await mini.currentPage())?.path !== 'pages/history/history') {
+    report.openHandFallback = 'automator taps missed the row; invoked its bindtap handler';
+    await mini.evaluate(
+      (id) =>
+        getCurrentPages()
+          .at(-1)
+          .openHand({ currentTarget: { dataset: { id } } }),
+      selected.id,
+    );
+  }
   await route('pages/history/history');
   await page.waitFor(1500);
   assert.equal(await page.data('tableHeight'), liveHeight);

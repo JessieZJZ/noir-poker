@@ -94,7 +94,9 @@ try {
   const initialDeadline = Date.now() + 45000;
   // CLI auto can expose its socket before the first page is registered.
   // reLaunch reads that page's metadata, so require a real controller first.
-  while (!(await mini.evaluate(() => Boolean(getCurrentPages().slice(-1)[0]?._controller)))) {
+  // An earlier suite may leave another page on top; any registered page is
+  // enough before relaunching the table.
+  while (!(await mini.evaluate(() => getCurrentPages().length > 0))) {
     if (Date.now() >= initialDeadline) throw Error('Initial table controller did not become ready');
     await new Promise((resolve) => setTimeout(resolve, 100));
   }
