@@ -28,11 +28,19 @@ export function collectNativePageSnapshot(selectors) {
   });
   clone.querySelectorAll('script').forEach((script) => script.remove());
   // Web's content viewport excludes the native gesture area. The fitted
-  // surface stores the full native height; remove that inset in the replay.
+  // surface stores the full native height and its dock keeps part of that
+  // area as bottom padding: the whole inset on Android, a small clearance on
+  // iOS. The replay has no inset, so remove the dock's actual padding; the
+  // rest of the dock then extends below the viewport exactly as natively.
   const surface = clone.querySelector('.game-surface');
   const playHeight = parseFloat(surface?.style.getPropertyValue('--play-height'));
+  const dock = document.querySelector('.game-surface .action-dock'),
+    dockInset = dock ? parseFloat(getComputedStyle(dock).paddingBottom) : NaN;
   if (Number.isFinite(playHeight))
-    surface.style.setProperty('--play-height', playHeight - bottom + 'px');
+    surface.style.setProperty(
+      '--play-height',
+      playHeight - (Number.isFinite(dockInset) ? dockInset : bottom) + 'px',
+    );
   const boxes = Object.fromEntries(
     selectors.map((selector) => {
       const element = document.querySelector(selector),
