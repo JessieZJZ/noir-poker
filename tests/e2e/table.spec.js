@@ -1815,7 +1815,7 @@ test('a failed portrait keeps its initial and selection controls intact, and ano
   const card = page.locator('[data-profile-preview="rook"]');
   await expect(card.locator('img')).toBeHidden();
   await expect(card.locator('.portrait-fallback')).toBeVisible();
-  await expect(card.locator('.portrait-fallback')).toHaveText('多');
+  await expect(card.locator('.portrait-fallback')).toHaveText('大');
   await page.locator('[data-bot-seat="1"]').focus();
   await page.locator('[data-bot-seat="1"]').selectOption('rook');
   const avatar = page.locator('[data-opponent-row="1"] .opponent-portrait');

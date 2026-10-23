@@ -301,6 +301,8 @@ test('autoplay-capable entry fades real local music from its start before joinin
       });
     await expect.poll(read).toMatchObject({ paused: false, count: 1 });
     // Observe the actual playback event, even if a busy host delays the next driver round trip.
+    // play() clears paused before the asynchronous playing event is delivered.
+    await expect.poll(() => page.evaluate(() => window.musicStarts.length)).toBeGreaterThan(0);
     const initial = await page.evaluate(() => window.musicStarts[0]);
     expect(initial.time).toBeLessThan(0.8);
     expect(initial.gain).toBeLessThan(0.3);
