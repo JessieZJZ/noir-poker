@@ -18,6 +18,7 @@ export function handleAndroidBack(document, app) {
 export async function preparePlatform() {
   if (!Capacitor.isNativePlatform()) return;
   document.documentElement.classList.add('native-app');
+  if (Capacitor.getPlatform() === 'ios') document.documentElement.classList.add('native-ios');
   const [{ App }, { Preferences }] = await Promise.all([
     import('@capacitor/app'),
     import('@capacitor/preferences'),

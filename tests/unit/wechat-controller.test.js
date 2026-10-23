@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createWechatController } from '../../src/platform/wechat-controller.js';
+import { compactChips } from '../../src/engine/chip-format.js';
 import { act, advanceStreet, legalActions, potSize } from '../../src/engine/poker.js';
 import { createReviewInput, analyzeDecision } from '../../src/review/analysis.js';
 import { BOT_THINK_LIMITS } from '../../src/engine/bot-timing.js';
@@ -858,13 +859,16 @@ test('WeChat relaunch continues the same session and rolls an incomplete hand ba
 });
 
 test('WeChat records mark the first post-refill hand and exclude the virtual buy-in from its result', (t) => {
-  const { controller } = setup(t);
+  const { controller, timers } = setup(t);
   const game = reachHero(controller);
   finish(game);
   controller.show();
   game.players[1].stack += game.players[0].stack;
   game.players[0].stack = 0;
-  controller.nextHand();
+  const hand = game.hand;
+  assert.equal(controller.nextHand(), true);
+  // The refill counts up first; the next hand is dealt when it finishes.
+  while (game.hand === hand) assert.ok(timers.runNext());
   assert.equal(controller.getRecords()[0].attempts.at(-1).refill, true);
   assert.equal(game.stats.buyin, 10000);
   finish(game);
@@ -872,4 +876,161 @@ test('WeChat records mark the first post-refill hand and exclude the virtual buy
   const attempt = controller.getRecords()[0].attempts.at(-1);
   assert.equal(attempt.profit, game.payouts[0] - game.players[0].total);
   verifyChips(game, 7 * 5000);
+});
+
+// Settle the current hand with the hero (AA) shoving into seat 1, everyone
+// else folding, so the result is fixed regardless of the shuffled deal.
+// Hero shoves and seat 1 calls; the others fold, or with `allIn` call with
+// rigged hands that lose to the aces.
+function shoveFinale(game, heroWins, { allIn = false } = {}) {
+  const card = (rank, suit) => ({ rank, suit, symbol: '♠♥♣♦'[suit], key: `${suit}-${rank}` });
+  game.players[0].hole = heroWins ? [card(14, 0), card(14, 1)] : [card(7, 2), card(2, 3)];
+  game.players[1].hole = heroWins ? [card(7, 2), card(2, 3)] : [card(14, 0), card(14, 1)];
+  const losers = [
+    [card(5, 0), card(2, 0)],
+    [card(6, 1), card(2, 1)],
+    [card(8, 3), card(5, 3)],
+  ];
+  if (allIn)
+    game.players.slice(2).forEach((p, index) => {
+      if (!p.out) p.hole = losers[index];
+    });
+  const used = ['0-14', '1-14', '2-7', '3-2', '2-13', '3-9', '0-4', '1-3', '2-12'];
+  if (allIn) used.push(...losers.flat().map((c) => c.key));
+  game.deck = game.deck.filter((c) => !used.includes(c.key));
+  game.deck.push(card(12, 2), game.deck.shift(), card(3, 1), game.deck.shift());
+  game.deck.push(card(4, 0), card(9, 3), card(13, 2), game.deck.shift());
+  while (game.phase !== 'done') {
+    if (game.phase === 'between') advanceStreet(game);
+    else {
+      const legal = legalActions(game);
+      if (game.actor === 0) act(game, 0, 'raise', legal.maxRaiseTo);
+      else act(game, game.actor, allIn || game.actor === 1 ? 'call' : 'fold');
+    }
+  }
+}
+
+test('WeChat refill deals the next hand at once and counts the stack up during it', (t) => {
+  const { controller, timers, latest } = setup(t);
+  const game = controller.getGame();
+  finish(game);
+  controller.show();
+  game.players[1].stack += game.players[0].stack;
+  game.players[0].stack = 0;
+  controller.show();
+  assert.equal(latest().needsRebuy, true);
+  assert.equal(latest().nextLabel, '补充筹码');
+  assert.equal(latest().rebuysLeft, 3);
+  const hand = game.hand;
+  assert.equal(controller.nextHand(), true);
+  assert.equal(game.hand, hand + 1, 'The next hand is dealt immediately');
+  assert.notEqual(game.phase, 'done');
+  assert.equal(latest().rebuying, true);
+  assert.equal(latest().heroStack, '0', 'The stack counts up from zero in the new hand');
+  assert.equal(latest().rebuyBurst, '+5K');
+  assert.equal(latest().needsRebuy, false);
+  assert.equal(game.rebuys, 1);
+  assert.equal(latest().rebuysLeft, 2);
+  assert.equal(game.stats.buyin, 10000);
+  while (latest().rebuying) assert.ok(timers.runNext());
+  const hero = game.players[0];
+  assert.equal(latest().heroStack, compactChips(hero.stack));
+  assert.equal(hero.stack + hero.total, 5000);
+  assert.equal(game.hand, hand + 1, 'Exactly one hand was dealt');
+});
+
+for (const heroWins of [true, false]) {
+  test(`WeChat ${heroWins ? 'hero' : 'bot'} championship crowns the winner once and starts a new game`, (t) => {
+    const { controller, timers, latest, sounds } = setup(t);
+    const game = controller.getGame();
+    game.rebuys = 3;
+    // Only the hero and seat 1 remain; the next hand decides the game.
+    finish(game);
+    controller.show();
+    for (const p of game.players.slice(2)) Object.assign(p, { out: true, stack: 0, place: 6 });
+    game.players[0].stack = heroWins ? 20000 : 5000;
+    game.players[1].stack = heroWins ? 5000 : 20000;
+    controller.nextHand();
+    shoveFinale(game, heroWins);
+    controller.show();
+    const view = latest();
+    assert.deepEqual(view.over, { heroPlace: heroWins ? 1 : 2, championId: heroWins ? 0 : 1 });
+    assert.equal(view.ceremony.heroWon, heroWins);
+    assert.equal(view.confetti, heroWins, 'Confetti celebrates only the hero');
+    assert.equal(view.crownPending, true);
+    assert.equal(sounds.filter((s) => s === (heroWins ? 'champion' : 'crowned')).length, 1);
+    assert.equal(view.nextLabel, '下一局');
+    assert.equal(view.street, '本局结束');
+    assert.equal(view.sessionTitle, '本局结束');
+    assert.equal(view.standingText, heroWins ? '冠军' : '第2名');
+    while (latest().ceremony) assert.ok(timers.runNext());
+    assert.equal(latest().crownPending, false);
+    assert.equal(heroWins ? latest().heroCrowned : latest().seats[0].crowned, true);
+    controller.show();
+    assert.equal(sounds.filter((s) => s === (heroWins ? 'champion' : 'crowned')).length, 1);
+    const session = controller.getRecordSummaries()[0];
+    assert.deepEqual(session.result, { place: heroWins ? 1 : 2, champion: heroWins });
+    controller.nextHand();
+    assert.equal(controller.getGame().over, null);
+    assert.equal(controller.getGame().hand, 1);
+    assert.equal(controller.getRecordSummaries().length, 2, 'The next game is a new session');
+    assert.equal(controller.getRecordSummaries()[1].result.place, heroWins ? 1 : 2);
+  });
+}
+
+test('WeChat crowns a bot that takes the last refill and every other seat in one hand', (t) => {
+  const { controller, latest, sounds } = setup(t);
+  const game = controller.getGame();
+  game.rebuys = 3;
+  for (const p of game.players.slice(4)) Object.assign(p, { out: true, stack: 0, place: 6 });
+  game.players[1].stack = game.players.reduce((sum, p) => sum + p.stack, 0);
+  controller.show();
+  controller.nextHand();
+  shoveFinale(game, false, { allIn: true });
+  controller.show();
+  assert.deepEqual(
+    game.players.filter((p) => !p.out).map((p) => p.id),
+    [1],
+  );
+  assert.equal(latest().over.championId, 1);
+  assert.equal(latest().ceremony.caption, `${game.players[1].name} 获得冠军`);
+  assert.equal(latest().confetti, false);
+  assert.equal(sounds.filter((s) => s === 'crowned').length, 1);
+  assert.ok(!sounds.includes('champion'));
+  assert.equal(latest().nextLabel, '下一局');
+  assert.equal(latest().standingText, `第${latest().over.heroPlace}名`);
+});
+
+test('WeChat ends the game without a champion when the hero busts with bots left', (t) => {
+  const { controller, latest, sounds, timers } = setup(t);
+  const game = controller.getGame();
+  game.rebuys = 3;
+  finish(game);
+  controller.show();
+  // Seat 1 covers the hero, so the shove always busts the hero.
+  game.players[0].stack = 5000;
+  game.players[1].stack = 20000;
+  controller.nextHand();
+  shoveFinale(game, false);
+  controller.show();
+  assert.equal(latest().over.championId, null);
+  assert.equal(latest().ceremony, null);
+  assert.equal(latest().confetti, false);
+  assert.ok(!sounds.includes('crowned') && !sounds.includes('champion'));
+  assert.equal(latest().nextLabel, '下一局');
+  assert.equal(latest().standingText, `第${latest().over.heroPlace}名`);
+  // The grey farewell card tells the place once, with its own cue, then leaves.
+  assert.deepEqual(latest().farewell.place, `第${latest().over.heroPlace}名`);
+  assert.equal(sounds.filter((s) => s === 'farewell').length, 1);
+  controller.show();
+  assert.equal(sounds.filter((s) => s === 'farewell').length, 1);
+  // A retry withdraws the result and the card with it.
+  assert.equal(controller.retry(), true);
+  assert.equal(latest().over, null);
+  assert.equal(latest().farewell, null);
+  shoveFinale(game, false);
+  controller.show();
+  assert.equal(sounds.filter((s) => s === 'farewell').length, 2);
+  while (latest().farewell) assert.ok(timers.runNext());
+  assert.equal(latest().standingText, `第${latest().over.heroPlace}名`);
 });

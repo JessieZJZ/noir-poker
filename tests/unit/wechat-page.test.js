@@ -8,9 +8,25 @@ import assert from 'node:assert/strict';
 import vm from 'node:vm';
 import { readFileSync } from 'node:fs';
 import { createWechatController } from '../../src/platform/wechat-controller.js';
-import { recordResult } from '../../src/engine/game-records.js';
+import { recordResult, sessionStanding } from '../../src/engine/game-records.js';
 import { nameTooltipPosition } from '../../src/ui/name-tooltip-position.js';
 import { numericWidthScale, numericColumnWidth } from '../../src/ui/numeric-width.js';
+import * as effectLayouts from '../../src/ui/effect-layouts.js';
+import * as ceremonySounds from '../../src/ui/ceremony-sounds.js';
+const pageEffectsSource = readFileSync(
+  new URL('../../miniprogram/pages/table/game-effects.js', import.meta.url),
+  'utf8',
+);
+// The page's effect helper runs against the same mocked wx as the page.
+function loadPageEffects(wx) {
+  const module = { exports: {} };
+  vm.runInNewContext(pageEffectsSource, {
+    module,
+    wx,
+    require: (name) => (name.endsWith('/ceremony-sounds.js') ? ceremonySounds : effectLayouts),
+  });
+  return module.exports;
+}
 import {
   act,
   advanceStreet,
@@ -117,6 +133,7 @@ function setup(
       if (name === './phone-layout.js') return { phoneLayout: compactTableLayout };
       if (name.endsWith('/name-tooltip-position.js')) return { nameTooltipPosition };
       if (name.endsWith('/numeric-width.js')) return { numericWidthScale, numericColumnWidth };
+      if (name === './game-effects.js') return loadPageEffects(context.wx);
       if (name === '../../shared/engine/poker.js')
         return { completeBoardForPractice, rankText, evaluate };
       assert.equal(name, '../../shared/platform/wechat-controller.js');
@@ -263,7 +280,7 @@ test('WeChat publishes the waiting table atomically after the launch artwork', (
   assert.match(template, /<view\s+wx:else\s+class="screen /);
   assert.match(
     template,
-    /<text\s+wx:if="\{\{!waitingForSeat\}\}"\s+class="position">\s*\{\{heroPosition\}\}\s*<\/text>/,
+    /<text\s+wx:if="\{\{!waitingForSeat\}\}"\s+class="position"\s*>\s*\{\{heroPosition\}\}\s*<\/text\s*>/,
   );
 });
 
@@ -1023,7 +1040,12 @@ test('large portrait tablets reserve five larger public positions through settle
   assert.equal(page.data.boardWidth, 5 * page.data.cardWidth + 16);
   Object.assign(info, { windowWidth: 820, windowHeight: 1180 });
   page.onResize();
-  assert.ok(page.data.cardWidth >= 106);
+  // Board and hole cards read as one size: within 10% of each other.
+  assert.ok(page.data.cardWidth >= 94);
+  assert.ok(
+    Math.max(page.data.cardWidth, page.data.heroWidth) <=
+      Math.min(page.data.cardWidth, page.data.heroWidth) * 1.1 + 1,
+  );
   assert.equal(
     page.data.boardWidth,
     page.data.boardTwoRows ? 3 * page.data.cardWidth + 8 : 5 * page.data.cardWidth + 16,
@@ -1587,7 +1609,8 @@ function secondaryPage(t, file, fixture) {
       require(name) {
         if (name === '../../record-time.js') return recordTimeModule.exports;
         if (name === '../../record-navigation.js') return fixture.navigation;
-        if (name === '../../shared/engine/game-records.js') return { recordResult };
+        if (name === '../../shared/engine/game-records.js')
+          return { recordResult, sessionStanding };
         if (name === '../table/page-definition.js') return fixture.definition;
         if (name === '../table/presentation.js') return presentationModule.exports;
         assert.equal(name, '../../shared/engine/chip-format.js');
@@ -1649,7 +1672,7 @@ test('WeChat records classify every completed hand including zero folds and zero
     '—',
     '+1.025K',
     '-1.025K',
-    '+0',
+    '-0',
     '+0',
     '+25',
   ]);
@@ -1659,6 +1682,7 @@ test('WeChat records classify every completed hand including zero folds and zero
   assert.equal(row('unfinished').resultText, '未完成');
   assert.equal(row('playing').resultText, '进行中');
   assert.equal(row('initial-win').superseded, true, 'Replacement state stays available');
+  assert.equal(records.data.sessions[0].standing.text, '进行中');
   assert.equal(row('replay-two').cards.length, 2);
   assert.equal(row('replay-two').refill, true);
   assert.equal(session.attempts[0].id, 'initial-win', 'Rendering does not reorder saved records');
@@ -1675,18 +1699,21 @@ test('WeChat records classify every completed hand including zero folds and zero
     'utf8',
   );
   assert.match(markup, /wx:if="{{item.attemptText}}" class="hand-tag hand-replay"/);
-  assert.match(markup, /wx:if="{{item.resultText}}"/);
+  assert.match(markup, /class="hand-outcome">{{item.resultText}}/);
   assert.doesNotMatch(markup, /已被重打替代/);
-  assert.match(markup, /wx:if="{{item.refill \|\| item.resultText}}"/);
-  assert.match(markup, /item.superseded \? 'superseded'/, 'Existing muted styling is retained');
+  assert.match(markup, /wx:if="{{item.attemptText \|\| item.refill}}"/);
+  // Like Web, replaced and unfinished rows keep full-opacity results.
+  assert.doesNotMatch(markup, /'superseded'/);
+  assert.doesNotMatch(markup, /浏览记录时/);
   const css = readFileSync(
     new URL('../../miniprogram/pages/records/records.wxss', import.meta.url),
     'utf8',
   );
   assert.match(
     css,
-    /\.hand-tag\.hand-replay\s*\{[^}]*color: #[0-9a-f]+;[^}]*border-color: #[0-9a-f]+;[^}]*background:/s,
+    /\.hand-tag\.hand-replay\s*\{[^}]*border-color: #[0-9a-f]+;[^}]*color: #[0-9a-f]+;[^}]*background:/s,
   );
+  assert.doesNotMatch(css, /opacity:\s*0\.\d/);
 });
 
 test('WeChat record rows use full-width native views and reject unfinished hand entry', (t) => {
@@ -1779,6 +1806,39 @@ test('WeChat record lists send bounded summary patches and remain idle without r
     patches.push(copy(patch));
     setData.call(this, patch, callback);
   };
+  // The intersection observer and the list measurements are driven by hand.
+  let report = null,
+    observed = 0;
+  page.createIntersectionObserver = () => ({
+    relativeToViewport(margins) {
+      assert.deepEqual(copy(margins), { top: 844, bottom: 844 });
+      return this;
+    },
+    observe(selector, callback) {
+      assert.equal(selector, '.hand-list');
+      observed++;
+      report = (id, near) => {
+        callback({ dataset: { id }, intersectionRatio: near ? 1 : 0 });
+        page.refreshRecords(true);
+      };
+    },
+    disconnect() {},
+  });
+  page.createSelectorQuery = () => ({
+    selectAll() {
+      return this;
+    },
+    fields() {
+      return this;
+    },
+    exec(done) {
+      done([
+        page.data.sessions
+          .filter((session) => session.expanded)
+          .map((session) => ({ dataset: { id: session.id }, height: 1800, top: 0, bottom: 1800 })),
+      ]);
+    },
+  });
   page.onLoad();
   page.onShow();
   const initialBytes = patches.reduce(
@@ -1787,18 +1847,48 @@ test('WeChat record lists send bounded summary patches and remain idle without r
   );
   assert.equal(page.data.sessions.length, 20);
   assert.equal(page.data.hasMoreSessions, true);
+  assert.equal(observed, 1);
+  // Every game is expanded; only the first screens' game has its rows.
+  assert.ok(page.data.sessions.every((session) => session.expanded));
+  assert.equal(page.data.sessions[0].filled, true);
   assert.equal(page.data.sessions[0].attempts.length, 24);
   assert.deepEqual(
     copy(page.data.sessions[0].attempts.map((row) => row.hand)),
     Array.from({ length: 24 }, (_, i) => 90 - i),
   );
+  assert.equal(page.data.sessions[1].filled, false);
   assert.equal(page.data.sessions[1].attempts.length, 0);
+  assert.equal(page.data.sessions[1].listStyle, 'height:1765px', 'Estimated 24-row height');
+  // Each card face crosses the bridge once; rows only name it.
+  assert.deepEqual(Object.keys(page.data.cardArt).sort(), ['c0_8', 'c2_8']);
+  assert.match(page.data.cardArt.c2_8, /^background-image:url\("data:image\/svg\+xml,/);
+  assert.deepEqual(copy(page.data.sessions[0].attempts[0].cards[0]), {
+    key: '2-8',
+    art: 'c2_8',
+    rank: '8',
+    suit: '♣',
+    red: false,
+  });
+  assert.ok(initialBytes < 32 * 1024, `First screen sends ${initialBytes} bytes`);
   assert.doesNotMatch(JSON.stringify(page.data), /largeUnusedTree|snapshot/);
   const idleReads = reads,
     idlePatches = patches.length;
   for (let i = 0; i < 20; i++) page.refreshRecords();
   assert.equal(reads, idleReads);
   assert.equal(patches.length, idlePatches, 'Polling unchanged records must not call setData');
+  // Scrolling: the next game comes near and fills; the first leaves and keeps
+  // its measured height as a placeholder.
+  report('session-1', true);
+  assert.equal(page.data.sessions[1].attempts.length, 24);
+  report('session-0', false);
+  assert.equal(page.data.sessions[0].filled, false);
+  assert.equal(page.data.sessions[0].attempts.length, 0);
+  assert.equal(page.data.sessions[0].listStyle, 'height:1800px');
+  assert.ok(
+    patches.slice(idlePatches).every((patch) => !JSON.stringify(patch).includes('cardArt')),
+    'Faces already sent are not sent again',
+  );
+  report('session-0', true);
   page.moreHands({ currentTarget: { dataset: { id: 'session-0' } } });
   assert.equal(page.data.sessions[0].attempts.length, 48);
   assert.deepEqual(
@@ -1813,6 +1903,12 @@ test('WeChat record lists send bounded summary patches and remain idle without r
   page.moreSessions();
   assert.equal(page.data.sessions.length, 25);
   assert.equal(page.data.hasMoreSessions, false);
+  assert.equal(observed, 2, 'Newly listed games are observed too');
+  report('session-24', true);
+  assert.equal(page.data.sessions[24].attempts.length, 24);
+  page.toggleSession({ currentTarget: { dataset: { id: 'session-24' } } });
+  assert.equal(page.data.sessions[24].expanded, false);
+  assert.equal(page.data.sessions[24].attempts.length, 0);
   page.toggleSession({ currentTarget: { dataset: { id: 'session-24' } } });
   assert.equal(page.data.sessions[24].attempts.length, 24);
   sessions[0].attempts[0].profit = -100;
@@ -1830,9 +1926,9 @@ test('WeChat record lists send bounded summary patches and remain idle without r
   revision++;
   page.refreshRecords();
   assert.equal(page.data.sessions[0].id, 'new-session');
-  assert.equal(page.data.sessions[1].attempts.length, 90, 'Reordering retains expanded rows');
+  assert.equal(page.data.sessions[1].attempts.length, 90, 'Reordering retains filled rows');
   assert.ok(
-    Math.max(...patches.map((patch) => Buffer.byteLength(JSON.stringify(patch)))) < 256 * 1024,
+    Math.max(...patches.map((patch) => Buffer.byteLength(JSON.stringify(patch)))) < 64 * 1024,
   );
   page.openHand({ currentTarget: { dataset: { id: 'attempt-0-0' } } });
   assert.match(fixture.navigations.at(-1), /history\?id=attempt-0-0$/);
@@ -2219,7 +2315,7 @@ test('WeChat final cards retain readable phone dimensions within the unchanged f
 test('WeChat practice heading owns reset and omits the old footer', () => {
   assert.match(
     template,
-    /class="practice-panel"\s*><view class="session-title"\s*><text>本局练习<\/text\s*><button class="practice-reset"[^>]*bindtap="resetPractice">\s*重新练习\s*<\/button\s*>/,
+    /class="practice-panel"\s*><view class="session-title"\s*><view class="session-heading"\s*><text>{{sessionTitle}}<\/text\s*><text wx:if="{{standingText}}" class="standing-tag {{standingClass}}"\s*>{{standingText}}<\/text\s*><\/view\s*><button wx:if="{{!over}}" class="practice-reset"[^>]*bindtap="resetPractice">\s*重新练习\s*<\/button\s*>/,
   );
   assert.doesNotMatch(
     template,

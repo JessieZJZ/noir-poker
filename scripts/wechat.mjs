@@ -234,6 +234,10 @@ export async function buildWechat(output = wechatOutput) {
       path.join(root, 'src/styles/hero-turn.css'),
       path.join(staging, 'shared/ui/hero-turn.wxss'),
     );
+    await cp(
+      path.join(root, 'src/styles/game-effects.css'),
+      path.join(staging, 'shared/ui/game-effects.wxss'),
+    );
     for (const name of [
       'bet-sizing.js',
       'seat-geometry.js',
@@ -251,6 +255,8 @@ export async function buildWechat(output = wechatOutput) {
       'background-music.js',
       'music-fade.js',
       'deal-gate.js',
+      'effect-layouts.js',
+      'ceremony-sounds.js',
     ]) {
       const compiled = await transform(await readFile(path.join(root, 'src/ui', name), 'utf8'), {
         format: 'cjs',

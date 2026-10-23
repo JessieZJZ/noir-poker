@@ -3,6 +3,43 @@ import { migrateCharacterState } from './character-state.js';
 import { sameStakes, validateStakes } from './stakes.js';
 
 export const GAME_RECORDS_KEY = 'noir-game-records-v1';
+// Settled hands keep their full table snapshot in a separate store, so the
+// small index never outgrows key-value storage. Oldest records go first once
+// the snapshots exceed this many characters.
+export const DEFAULT_RECORDS_BUDGET = 40_000_000;
+export const RECORDS_SAVE_FAILED = '对局记录保存失败，关闭后可能丢失。';
+export const RECORDS_READ_FAILED = '本机对局记录读取失败，已开始新的记录。';
+export const standingLabel = (place) => (place === 1 ? '冠军' : `第${place}名`);
+export const standingClass = (place) =>
+  place === 1 ? 'standing-champion' : `standing-${Math.min(place, 4)}`;
+// In progress, champion or the hero's final place; abandoned games carry none.
+export function sessionStanding(session) {
+  if (session.result)
+    return {
+      text: standingLabel(session.result.place),
+      className: standingClass(session.result.place),
+    };
+  return session.endedAt ? null : { text: '进行中', className: 'standing-live' };
+}
+export function createMemorySnapshots() {
+  const items = new Map();
+  return {
+    keys: () => [...items.keys()],
+    get: (id) => items.get(id) ?? null,
+    set: (id, text) => void items.set(id, text),
+    remove: (id) => void items.delete(id),
+  };
+}
+// A game's final standing: the hero's place, and whether the hero won it all.
+export function sessionResult(session) {
+  const last = session.attempts
+    .filter((a) => !a.superseded && a.status !== 'unfinished')
+    .sort((a, b) => a.hand - b.hand || a.attempt - b.attempt)
+    .at(-1);
+  return last?.status === 'completed' && last.over
+    ? { place: last.over.heroPlace, champion: last.over.heroPlace === 1 }
+    : null;
+}
 // A settled hand has a result even when no chips were invested or net chips
 // balance to zero. Pot ownership and net change remain separate facts.
 export function recordResult(attempt) {
@@ -10,7 +47,7 @@ export function recordResult(attempt) {
   if (attempt.status !== 'completed') return 'playing';
   return attempt.wonPot ? 'win' : 'loss';
 }
-const VERSION = 1;
+const VERSION = 2;
 const copy = (value) => JSON.parse(JSON.stringify(value));
 const integer = (value, minimum = 0) => Number.isSafeInteger(value) && value >= minimum;
 const timestamp = (value) => integer(value) && Number.isFinite(new Date(value).getTime());
@@ -94,7 +131,12 @@ function gameShape(game, stakes, playerCount, phase) {
     for (const key of ['hands', 'vpip', 'pfr', 'postActions', 'postRaises', 'postCalls'])
       assert(integer(player.botStats[key]));
     cards(player.hole, 2);
-    assert(player.hole.length === (phase === 'done' ? 2 : 0));
+    // Seats eliminated in an earlier hand hold no cards; this hand's busts still do.
+    assert(
+      phase === 'done'
+        ? player.hole.length === 2 || (player.out && player.hole.length === 0)
+        : player.hole.length === 0,
+    );
   }
   assert(['easy', 'normal', 'hard'].includes(game.difficulty));
   assert(['off', 'subtle', 'lively'].includes(game.emotionMode));
@@ -253,6 +295,24 @@ function gameShape(game, stakes, playerCount, phase) {
     }
   }
 }
+const validOver = (over) =>
+  over === null ||
+  (object(over) &&
+    integer(over.heroPlace, 1) &&
+    (over.championId === null || integer(over.championId)));
+function validateSnapshot(attempt, snapshot, session) {
+  const stakes = validateStakes(session.stakes);
+  gameShape(snapshot, stakes, session.playerCount, 'done');
+  assert(
+    snapshot.hand === attempt.hand &&
+      (snapshot.replayAttempt || 0) === attempt.attempt &&
+      JSON.stringify(snapshot.players[0].hole) === JSON.stringify(attempt.hole),
+  );
+  assert(
+    attempt.profit === snapshot.payouts[0] - snapshot.players[0].total &&
+      attempt.wonPot === snapshot.winners.some((winner) => winner.id === 0),
+  );
+}
 function validateState(value) {
   assert(
     object(value) &&
@@ -292,21 +352,17 @@ function validateState(value) {
       );
       cards(attempt.hole, 2);
       assert(attempt.hole.length === 2);
+      assert(!('snapshot' in attempt) && integer(attempt.bytes) && validOver(attempt.over));
       if (attempt.status === 'completed') {
         assert(Number.isSafeInteger(attempt.profit) && attempt.profit % stakes.chipUnit === 0);
         assert(typeof attempt.wonPot === 'boolean');
-        gameShape(attempt.snapshot, stakes, session.playerCount, 'done');
-        assert(
-          attempt.snapshot.hand === attempt.hand &&
-            (attempt.snapshot.replayAttempt || 0) === attempt.attempt &&
-            JSON.stringify(attempt.snapshot.players[0].hole) === JSON.stringify(attempt.hole),
-        );
-        assert(
-          attempt.profit === attempt.snapshot.payouts[0] - attempt.snapshot.players[0].total &&
-            attempt.wonPot === attempt.snapshot.winners.some((winner) => winner.id === 0),
-        );
       } else
-        assert(attempt.profit === null && attempt.wonPot === null && attempt.snapshot === null);
+        assert(
+          attempt.profit === null &&
+            attempt.wonPot === null &&
+            attempt.over === null &&
+            attempt.bytes === 0,
+        );
     }
   }
   assert(value.nextNumber > maximum);
@@ -336,6 +392,8 @@ function checkpoint(game, beforeAttempt = false) {
   restored.hand = game.hand;
   restored.dealer = game.dealer;
   restored.stats = copy(game.stats);
+  restored.rebuys = game.rebuys || 0;
+  restored.over = game.over ? copy(game.over) : null;
   restored.difficulty = game.difficulty;
   restored.emotionMode = game.emotionMode;
   restored.decisions = [];
@@ -369,10 +427,15 @@ const emptyState = () => ({
   sessions: [],
 });
 
-export function createGameRecords({ storage, now = Date.now, id } = {}) {
+export function createGameRecords({
+  storage,
+  snapshots = createMemorySnapshots(),
+  budget = DEFAULT_RECORDS_BUDGET,
+  now = Date.now,
+  id,
+} = {}) {
   let state = emptyState(),
-    storageError = null,
-    readError = null,
+    notice = null,
     serial = 0,
     revision = 0,
     summaries = null;
@@ -404,18 +467,86 @@ export function createGameRecords({ storage, now = Date.now, id } = {}) {
   }
   const findAttempt = (attemptId) =>
     state.sessions.flatMap((s) => s.attempts).find((a) => a.id === attemptId);
+  // Each failure is announced once per run; storage that stays full or
+  // unavailable does not keep repeating it.
+  const announced = new Set();
+  const announce = (message) => {
+    if (announced.has(message)) return;
+    announced.add(message);
+    notice = message;
+  };
+  const removeAttempt = (session, attempt) => {
+    session.attempts.splice(session.attempts.indexOf(attempt), 1);
+    try {
+      snapshots.remove(attempt.id);
+    } catch {}
+  };
+  // Drop the oldest finished game, or the current game's oldest settled hand.
+  const dropOldest = ({ current: includeCurrent = true, keep = null } = {}) => {
+    const oldest = state.sessions
+      .filter((session) => session.id !== state.currentId)
+      .sort((a, b) => a.number - b.number)[0];
+    if (oldest) {
+      for (const attempt of [...oldest.attempts]) removeAttempt(oldest, attempt);
+      state.sessions.splice(state.sessions.indexOf(oldest), 1);
+      return true;
+    }
+    if (!includeCurrent) return false;
+    const session = current(),
+      attempt = session?.attempts
+        .filter((a) => a.status !== 'playing' && a.id !== keep)
+        .sort((a, b) => a.startedAt - b.startedAt || a.hand - b.hand)[0];
+    if (!attempt) return false;
+    removeAttempt(session, attempt);
+    return true;
+  };
+  const used = () =>
+    state.sessions.reduce(
+      (sum, session) => sum + session.attempts.reduce((n, attempt) => n + attempt.bytes, 0),
+      0,
+    );
+  const storeSnapshot = (attempt, game) => {
+    const text = JSON.stringify(withoutDeck(copy(game)));
+    attempt.bytes = 0;
+    for (let tries = 0; ; tries++) {
+      try {
+        snapshots.set(attempt.id, text);
+        attempt.bytes = text.length;
+        break;
+      } catch {
+        if (tries > 4 || !dropOldest()) {
+          announce(RECORDS_SAVE_FAILED);
+          break;
+        }
+      }
+    }
+    if (snapshots.available?.() === false) announce(RECORDS_SAVE_FAILED);
+    while (used() > budget && dropOldest({ keep: attempt.id }));
+  };
   const write = () => {
     revision++;
     summaries = null;
-    try {
-      const target = adapter();
-      if (!target) throw Error('Storage unavailable');
-      target.setItem(GAME_RECORDS_KEY, JSON.stringify(state));
-      storageError = target.error?.(GAME_RECORDS_KEY) ? '对局记录保存失败，关闭后可能丢失。' : null;
-    } catch {
-      storageError = '对局记录保存失败，关闭后可能丢失。';
+    for (let tries = 0; ; tries++) {
+      try {
+        const target = adapter();
+        if (!target) throw Error('Storage unavailable');
+        // A failed asynchronous native write is reported, not pruned for:
+        // only a write rejected right now (a full store) drops old records.
+        const earlier = target.error?.(GAME_RECORDS_KEY);
+        target.setItem(GAME_RECORDS_KEY, JSON.stringify(state));
+        if (target.error?.(GAME_RECORDS_KEY) && !earlier) throw Error('Storage full');
+        if (earlier) announce(RECORDS_SAVE_FAILED);
+        return;
+      } catch {
+        // The index is small; only finished games are dropped to make room.
+        if (tries > 4 || !dropOldest({ current: false })) {
+          announce(RECORDS_SAVE_FAILED);
+          return;
+        }
+      }
     }
   };
+  snapshots.onError?.(() => announce(RECORDS_SAVE_FAILED));
   try {
     const target = adapter();
     if (!target) throw Error('Storage unavailable');
@@ -424,8 +555,27 @@ export function createGameRecords({ storage, now = Date.now, id } = {}) {
     if (saved !== null && saved !== undefined)
       state = validateState(migrateCharacterState(JSON.parse(saved)));
   } catch {
-    readError = '本机对局记录读取失败，已开始新的记录。';
+    state = emptyState();
+    announce(RECORDS_READ_FAILED);
   }
+  // Snapshots whose index row was never saved, or was pruned, are removed.
+  try {
+    const kept = new Set(state.sessions.flatMap((session) => session.attempts.map((a) => a.id)));
+    for (const key of snapshots.keys?.() || []) if (!kept.has(key)) snapshots.remove(key);
+  } catch {}
+  // A snapshot that is missing or does not match its index row is not shown.
+  const loadSnapshot = (attempt) => {
+    if (attempt.status !== 'completed') return null;
+    try {
+      const session = state.sessions.find((s) => s.attempts.includes(attempt)),
+        snapshot = JSON.parse(snapshots.get(attempt.id));
+      validateSnapshot(attempt, snapshot, session);
+      return snapshot;
+    } catch {
+      return null;
+    }
+  };
+  const withSnapshot = (attempt) => ({ ...copy(attempt), snapshot: loadSnapshot(attempt) });
   const finishUnfinished = () => {
     if (!state.active) return;
     const attempt = findAttempt(state.active.attemptId);
@@ -484,7 +634,8 @@ export function createGameRecords({ storage, now = Date.now, id } = {}) {
         hole: copy(game.players[0].hole),
         profit: null,
         wonPot: null,
-        snapshot: null,
+        over: null,
+        bytes: 0,
       };
       target.attempts.push(attempt);
       const baseline = checkpoint(game, true);
@@ -511,15 +662,17 @@ export function createGameRecords({ storage, now = Date.now, id } = {}) {
           revealed: game.revealed,
           logs: game.logs,
         };
+        const snapshot = loadSnapshot(settled);
         if (
+          !snapshot ||
           Object.entries(presentation).every(
-            ([key, value]) => JSON.stringify(value) === JSON.stringify(settled.snapshot[key]),
+            ([key, value]) => JSON.stringify(value) === JSON.stringify(snapshot[key]),
           )
         )
           return null;
-        Object.assign(settled.snapshot, copy(presentation));
+        storeSnapshot(settled, Object.assign(snapshot, copy(presentation)));
         write();
-        return copy(settled);
+        return withSnapshot(settled);
       }
       const attempt = findAttempt(state.active.attemptId);
       if (
@@ -533,11 +686,12 @@ export function createGameRecords({ storage, now = Date.now, id } = {}) {
       attempt.endedAt = now();
       attempt.profit = (game.payouts[0] || 0) - game.players[0].total;
       attempt.wonPot = game.winners.some((winner) => winner.id === 0);
-      attempt.snapshot = withoutDeck(copy(game));
+      attempt.over = game.over ? copy(game.over) : null;
       state.checkpoint = checkpoint(game);
       state.active = null;
+      storeSnapshot(attempt, game);
       write();
-      return copy(attempt);
+      return withSnapshot(attempt);
     },
     abandon(game) {
       if (game?.phase === 'done') this.capture(game);
@@ -545,16 +699,20 @@ export function createGameRecords({ storage, now = Date.now, id } = {}) {
       write();
     },
     sessions() {
-      return copy(state.sessions)
+      return state.sessions
+        .slice()
         .sort((a, b) => b.number - a.number)
         .map((session) => {
           const counted = session.attempts.filter((a) => a.status === 'completed' && !a.superseded);
           return {
-            ...session,
+            ...copy(session),
+            result: sessionResult(session),
             profit: counted.reduce((sum, a) => sum + a.profit, 0),
             wins: counted.filter((a) => a.wonPot).length,
             completed: counted.length,
-            attempts: session.attempts.sort((a, b) => a.hand - b.hand || a.attempt - b.attempt),
+            attempts: session.attempts
+              .map(withSnapshot)
+              .sort((a, b) => a.hand - b.hand || a.attempt - b.attempt),
           };
         });
     },
@@ -573,11 +731,12 @@ export function createGameRecords({ storage, now = Date.now, id } = {}) {
             endedAt: session.endedAt,
             stakes: session.stakes,
             playerCount: session.playerCount,
+            result: sessionResult(session),
             profit: counted.reduce((sum, a) => sum + a.profit, 0),
             wins: counted.filter((a) => a.wonPot).length,
             completed: counted.length,
             attempts: session.attempts
-              .map(({ snapshot, ...attempt }) => attempt)
+              .map(({ bytes, ...attempt }) => attempt)
               .sort((a, b) => a.hand - b.hand || a.attempt - b.attempt),
           };
         });
@@ -594,16 +753,13 @@ export function createGameRecords({ storage, now = Date.now, id } = {}) {
     sessionNumber: () => current()?.number || 0,
     getAttempt: (attemptId) => {
       const attempt = findAttempt(attemptId);
-      return attempt ? copy(attempt) : null;
+      return attempt ? withSnapshot(attempt) : null;
     },
-    error() {
-      if (storageError) return storageError;
-      try {
-        if (adapter()?.error?.(GAME_RECORDS_KEY)) return '对局记录保存失败，关闭后可能丢失。';
-      } catch {
-        return '对局记录保存失败，关闭后可能丢失。';
-      }
-      return readError;
+    // A one-time message for a toast; reading it clears it.
+    takeNotice() {
+      const message = notice;
+      notice = null;
+      return message;
     },
   };
 }

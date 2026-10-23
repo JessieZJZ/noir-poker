@@ -20,3 +20,5 @@ import './table-density.css';
 import './game-records.css';
 import './hero-turn.css';
 import './entry.css';
+import './game-effects.css';
+import './game-end.css';

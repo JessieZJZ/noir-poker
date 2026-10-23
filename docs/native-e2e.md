@@ -18,8 +18,10 @@ Android 示例（Apple Silicon 使用 arm64-v8a；Linux CI 使用 x86_64）：
 ```sh
 sdkmanager 'emulator' 'system-images;android-36;google_apis;arm64-v8a'
 avdmanager create avd -n Noir_Poker_E2E -k 'system-images;android-36;google_apis;arm64-v8a' --device pixel_9
-emulator -avd Noir_Poker_E2E -no-window -no-audio -no-snapshot -gpu swiftshader
+emulator -avd Noir_Poker_E2E -no-window -no-audio -no-snapshot -gpu host -memory 4096 -cores 4
 ```
+
+Apple Silicon Mac 上无界面模拟器也能用 `-gpu host`：经 MoltenVK/Metal 走硬件渲染，`dumpsys SurfaceFlinger` 的 GLES 一行应显示 Apple 芯片，而不是 SwiftShader。纯软件渲染每条 WebView 指令约 2–3 秒，整套场景要一小时以上，所以本机默认用 GPU。给模拟器 4 核、4GB：2 核、2GB 的 AVD 在后台／回前台场景里曾整机无响应，`adb shell` 也卡住。若 host 模式出现 QEMU HangDetector 崩溃，或 PackageManager/ADB 无响应，只重启该 AVD 并改用 `-gpu swiftshader_indirect` 补验，保留失败记录。Linux CI 无 GPU，继续使用 `-gpu swiftshader`。
 
 ## 构建并运行
 

@@ -17,6 +17,9 @@ try {
   startup.stage('orientation');
   const { prepareOrientation } = await import('./platform/orientation.js');
   prepareOrientation(window, document);
+  startup.stage('records');
+  const { recordSnapshots } = await import('./platform/record-snapshots.js');
+  await recordSnapshots.prepare();
   startup.stage('table');
   await import('./ui/table-controller.js');
   startup.stage('controls');

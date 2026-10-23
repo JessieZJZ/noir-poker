@@ -74,6 +74,9 @@ test('a long legal hand retains every activity entry in chronological order and 
     g.players.reduce((sum, player) => sum + player.stack, 0),
     45000,
   );
+  // This all-in hand eliminates seats; seat them again to test the next deal.
+  for (const p of g.players) if (p.stack === 0) Object.assign(p, { stack: 5000, out: false });
+  g.over = null;
   startHand(g);
   assert.match(g.logs.at(-1).text, /^第 2 手开始/);
   assert.ok(g.logs.length < 15);

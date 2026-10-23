@@ -227,7 +227,11 @@
                 </div>
                 <div class="hero-name">
                   <div class="hero-identity">
-                    <strong>你 <span id="hero-position" class="position-badge">BTN</span></strong
+                    <strong
+                      ><span class="hero-you"
+                        >你<span id="hero-crown-slot" class="hero-crown-slot"></span
+                      ></span>
+                      <span id="hero-position" class="position-badge">BTN</span></strong
                     ><span class="hero-stack" id="hero-stack">20K</span>
                   </div>
                   <div class="hero-action-slot">
@@ -328,7 +332,10 @@
       <aside class="sidebar">
         <section class="session-card">
           <div class="section-title">
-            <h2>本局练习</h2>
+            <h2 class="session-heading">
+              <span id="session-title">本局练习</span
+              ><span id="session-standing" class="standing-tag" hidden></span>
+            </h2>
             <button id="reset-button" class="practice-reset">重新练习</button>
           </div>
           <div class="session-balance">
@@ -368,10 +375,10 @@
         </div>
         <button id="records-back-button" class="records-back">返回游戏</button>
       </div>
-      <p class="records-live-note">浏览记录时，当前游戏继续进行。</p>
-      <p id="records-storage-error" class="records-storage-error" role="status" hidden></p>
       <div id="records-content"></div>
     </main>
+    <p class="compliance-footer">单机练习·虚拟筹码·禁止赌博</p>
+    <div id="app-toast" class="app-toast" role="status" aria-live="polite" hidden></div>
     <dialog
       id="opponents-dialog"
       class="opponents-dialog settings-dialog"

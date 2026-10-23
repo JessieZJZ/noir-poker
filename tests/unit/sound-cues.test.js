@@ -146,3 +146,19 @@ test('the final Web mix retains single-cue unity and bounds coincident action cu
   assert.ok(level(raw).peak > 1);
   assert.ok(level(limited).peak < 0.92);
 });
+
+test('game-end cues are distinct, bounded and fade to silence on every platform', async () => {
+  const { ceremonySamples, ceremonyWav, CEREMONY_CUES, CEREMONY_SAMPLE_RATE } =
+    await import('../../src/ui/ceremony-sounds.js');
+  assert.deepEqual(CEREMONY_CUES, ['champion', 'crowned', 'farewell']);
+  const signatures = new Set();
+  for (const cue of CEREMONY_CUES) {
+    const samples = ceremonySamples(cue);
+    const peak = samples.reduce((max, value) => Math.max(max, Math.abs(value)), 0);
+    assert.ok(peak > 0.2 && peak < 1, `${cue} peak ${peak}`);
+    assert.ok(Math.abs(samples.at(-1)) < 1e-3, `${cue} ends silent`);
+    assert.equal(ceremonyWav(cue).byteLength, 44 + samples.length * 2);
+    signatures.add(samples.length / CEREMONY_SAMPLE_RATE + ':' + samples[4000].toFixed(4));
+  }
+  assert.equal(signatures.size, CEREMONY_CUES.length);
+});

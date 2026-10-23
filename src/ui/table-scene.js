@@ -35,14 +35,18 @@ const positionNames = {
   HJ: '劫位',
   CO: '关煞位',
 };
+export const CROWN_MARKUP = '<span class="crown-shape" aria-hidden="true"></span>';
 function positionBadge(g, id) {
   if (g.phase === 'idle') return '';
   const role = seatPosition(g, id);
+  if (!role) return '';
   return `<span class="position-badge" data-position="${role}" title="${positionNames[role]}">${role}</span>`;
 }
 
 export function renderSeatAction(g, p, { recent = false, dealing = false } = {}) {
   if (g.phase === 'idle') return '<span class="seat-action-label">已就位</span>';
+  if (p.out && !p.hole.length)
+    return `<span class="seat-action-label">出局 · 第${p.place}名</span>`;
   if (!recent && g.actor === p.id && !dealing)
     return '<span class="seat-action-label thinking-dots">思考中</span>';
   const retained = visibleRecentAction(g, p);
@@ -85,6 +89,8 @@ export function renderOpponentSeats(
     isSeatHandVisible = (player) => (g.showdown || g.revealed) && !player.folded,
     isSeatHandAnimated = () => true,
     seatFaceSignatures = new Map(),
+    crownedId = g.over?.championId ?? null,
+    crownPending = false,
   } = {},
 ) {
   const count = g.players.length;
@@ -108,7 +114,11 @@ export function renderOpponentSeats(
       const arriving =
         reveal && isSeatHandAnimated(p) && seatFaceSignatures.get(p.id) !== faceSignature;
       seatFaceSignatures.set(p.id, faceSignature);
-      return `<div class="seat seat-${p.id} ${y === 0 ? 'seat-crown' : ''} ${x < 25 ? 'seat-left' : x > 75 ? 'seat-right' : ''} ${p.folded ? 'folded' : ''} ${g.actor === p.id && !dealing ? 'thinking' : ''} ${isWinner ? 'winner' : ''}" data-player="${p.id}" data-profile="${escape(p.botProfile)}" data-mood="${escape(mood)}" style="left:${x}%;top:${y}%"><div id="seat-hand-${p.id}" class="mini-cards ${reveal ? 'revealed-cards' : ''}">${reveal ? p.hole.map((c, i) => card(c, { small: true, animate: arriving, delay: i * 140, best: !!rank && rank.cards.some((best) => best.key === c.key) })).join('') : p.hole.map((c, i) => `<span class="card-back ${newHand ? 'card-deal' : ''}" style="--delay:${p.id * 65 + i * 140}ms" aria-label="对手底牌"></span>`).join('')}</div><div class="seat-profile"><span class="avatar avatar-${p.id - 1}" title="${escape(title)}" aria-label="${escape(title)}">${portraitContent(profile.id, profiles[p.id])}</span><div><strong><span class="seat-name-label">${escape(p.name)}</span>${positionBadge(g, p.id)}<span class="seat-inspect-slot">${g.phase === 'done' ? `<button class="seat-peek" data-peek-player="${p.id}" title="${reveal ? '收起底牌' : '查看底牌'}" aria-label="${reveal ? '收起' : '查看'} ${escape(p.name)} 的底牌" aria-pressed="${!!reveal}" aria-controls="seat-hand-${p.id}"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M2 10C4 6 7 5 10 5C13 5 16 6 18 10C16 14 13 15 10 15C7 15 4 14 2 10Z"/><circle cx="10" cy="10" r="2.5"/></svg></button>` : ''}</span></strong><span class="seat-style-label" data-style-profile="${profile.id}" data-full-name="${escape(profile.name)}" role="button" tabindex="0" title="${profile.name} · ${profile.tag}" aria-label="${escape(p.name)} 本手风格：${profile.name}">${profile.short}</span><span class="seat-bankroll"><span class="seat-stack">${format(p.stack)}</span></span></div></div><div class="seat-rank-slot">${rankMarkup}</div><div class="seat-action" aria-label="${escape(p.name)} 的最近行动">${renderSeatAction(g, p, { dealing })}</div></div>`;
+      const crown =
+        crownedId === p.id
+          ? `<span class="champion-crown seat-champion-crown ${crownPending ? 'crown-pending' : ''}" title="冠军">${CROWN_MARKUP}</span>`
+          : '';
+      return `<div class="seat seat-${p.id} ${y === 0 ? 'seat-crown' : ''} ${x < 25 ? 'seat-left' : x > 75 ? 'seat-right' : ''} ${p.folded ? 'folded' : ''} ${p.out && !p.hole.length ? 'seat-out' : ''} ${crownedId === p.id ? 'is-champion' : ''} ${g.actor === p.id && !dealing ? 'thinking' : ''} ${isWinner ? 'winner' : ''}" data-player="${p.id}" data-profile="${escape(p.botProfile)}" data-mood="${escape(mood)}" style="left:${x}%;top:${y}%"><div id="seat-hand-${p.id}" class="mini-cards ${reveal ? 'revealed-cards' : ''}">${reveal ? p.hole.map((c, i) => card(c, { small: true, animate: arriving, delay: i * 140, best: !!rank && rank.cards.some((best) => best.key === c.key) })).join('') : p.hole.map((c, i) => `<span class="card-back ${newHand ? 'card-deal' : ''}" style="--delay:${p.id * 65 + i * 140}ms" aria-label="对手底牌"></span>`).join('')}</div><div class="seat-profile">${crown}<span class="avatar avatar-${p.id - 1}" title="${escape(title)}" aria-label="${escape(title)}">${portraitContent(profile.id, profiles[p.id])}</span><div><strong><span class="seat-name-label">${escape(p.name)}</span>${positionBadge(g, p.id)}<span class="seat-inspect-slot">${g.phase === 'done' && p.hole.length ? `<button class="seat-peek" data-peek-player="${p.id}" title="${reveal ? '收起底牌' : '查看底牌'}" aria-label="${reveal ? '收起' : '查看'} ${escape(p.name)} 的底牌" aria-pressed="${!!reveal}" aria-controls="seat-hand-${p.id}"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M2 10C4 6 7 5 10 5C13 5 16 6 18 10C16 14 13 15 10 15C7 15 4 14 2 10Z"/><circle cx="10" cy="10" r="2.5"/></svg></button>` : ''}</span></strong><span class="seat-style-label" data-style-profile="${profile.id}" data-full-name="${escape(profile.name)}" role="button" tabindex="0" title="${profile.name} · ${profile.tag}" aria-label="${escape(p.name)} 本手风格：${profile.name}">${profile.short}</span><span class="seat-bankroll"><span class="seat-stack">${format(p.stack)}</span></span></div></div><div class="seat-rank-slot">${rankMarkup}</div><div class="seat-action" aria-label="${escape(p.name)} 的最近行动">${renderSeatAction(g, p, { dealing })}</div></div>`;
     })
     .join('');
 }
@@ -214,6 +224,11 @@ export function createSnapshotSurface(template, g, { sessionNumber, visible, pee
   }
   query('.hero-area').classList.toggle('hero-folded', hero.folded);
   query('.hero-area').removeAttribute('style');
+  query('.hero-name').classList.toggle('is-champion', g.over?.championId === 0);
+  query('#hero-crown-slot').innerHTML =
+    g.over?.championId === 0
+      ? `<span class="champion-crown hero-champion-crown">${CROWN_MARKUP}</span>`
+      : '';
   query('.hero-name').classList.toggle('is-active', g.actor === 0);
   setLocalizedText(query('#hero-stack'), format(hero.stack));
   const position = seatPosition(g, 0);

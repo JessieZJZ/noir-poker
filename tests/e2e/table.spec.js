@@ -62,7 +62,7 @@ test('settled controls fill one equal-width row, including runout and refill', a
       await page.locator('#continue-deal-button').click();
       await expect(page.locator('#continue-deal-button')).toBeHidden();
     }
-    await expect(page.locator('#next-button')).toHaveText(refill ? '补充筹码，继续练习' : '下一手');
+    await expect(page.locator('#next-button')).toHaveText(refill ? '补充筹码剩 3 次' : '下一手');
     await expect(page.locator('#review-hand-button')).toBeVisible();
     for (const width of [320, 390, 600, 601, 700, 701, 900, 901, 1150, 1151, 1280, 1600]) {
       await page.setViewportSize({ width, height: 900 });
