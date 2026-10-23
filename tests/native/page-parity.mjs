@@ -29,13 +29,23 @@ export function collectNativePageSnapshot(selectors) {
   clone.querySelectorAll('script').forEach((script) => script.remove());
   // Web's content viewport excludes the native gesture area. The fitted
   // surface stores the full native height and its dock keeps part of that
-  // area as bottom padding: the whole inset on Android, a small clearance on
-  // iOS. The replay has no inset, so remove the dock's actual padding; the
-  // rest of the dock then extends below the viewport exactly as natively.
+  // area (--dock-bottom-inset): the whole inset on Android, a small clearance
+  // on iOS. The replay has no inset, so remove that clearance; the rest of the
+  // dock then extends below the viewport exactly as natively. The settled
+  // single-row dock drops its padding but keeps the same table height, so the
+  // variable itself is resolved rather than the dock's current padding.
   const surface = clone.querySelector('.game-surface');
   const playHeight = parseFloat(surface?.style.getPropertyValue('--play-height'));
-  const dock = document.querySelector('.game-surface .action-dock'),
-    dockInset = dock ? parseFloat(getComputedStyle(dock).paddingBottom) : NaN;
+  const live = document.querySelector('.game-surface');
+  let dockInset = NaN;
+  if (live) {
+    const probe = document.createElement('span');
+    probe.style.cssText =
+      'position:absolute;visibility:hidden;width:0;height:var(--dock-bottom-inset);pointer-events:none';
+    live.append(probe);
+    dockInset = probe.getBoundingClientRect().height;
+    probe.remove();
+  }
   if (Number.isFinite(playHeight))
     surface.style.setProperty(
       '--play-height',

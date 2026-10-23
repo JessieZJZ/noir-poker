@@ -417,6 +417,17 @@ export async function nativeScenarios(app) {
     await app.sleep(500);
     assert.ok([2, 3].includes(await app.nativeState()));
     await app.activate();
+    // The foreground event can arrive after the native resume returns.
+    await app.waitFor(
+      () =>
+        app.evaluate(() => {
+          const events = window.__entryMusicLifecycle,
+            hidden = events.findIndex((event) => !event.active);
+          return hidden >= 0 && events.slice(hidden + 1).some((event) => event.active);
+        }),
+      10000,
+      'Both actual native lifecycle boundaries must arrive',
+    );
     const events = await app.evaluate(() => {
       document.removeEventListener('noir:app-state', window.__entryMusicListener);
       return window.__entryMusicLifecycle;

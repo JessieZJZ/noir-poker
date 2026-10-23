@@ -950,7 +950,8 @@ try {
   await settle('settlement');
   await capture('settlement', ['.settled-buttons', '.hero', '.board-row']);
   const beforePeek = await page.data();
-  const target = beforePeek.phoneSeats.find((seat) => seat.cards.length === 0);
+  // A folded opponent: an unrevealed winner would swap "获胜" for its hand.
+  const target = beforePeek.phoneSeats.find((seat) => seat.cards.length === 0 && seat.folded);
   assert.ok(target, 'A folded opponent must be available for the peek regression');
   const targetCardIndex = beforePeek.phoneSeats
     .slice(0, beforePeek.phoneSeats.indexOf(target))

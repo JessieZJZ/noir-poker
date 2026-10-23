@@ -336,14 +336,20 @@ try {
   report.stage = 'real-game-play-and-records-navigation';
   report.device = await mini.systemInfo();
   await waitElement('.nav-actions > .icon-button');
-  await waitElement('.resource-label-window');
+  await waitElement('#resource-menu-button');
+  // The whole resource button (label and chevron) sits left of the settings icon.
   const [settingsButtons, resourceLabels] = await nativeRects([
     '.nav-actions > .icon-button',
-    '.resource-label-window',
+    '#resource-menu-button',
   ]);
   assert.equal(settingsButtons.length, 1);
   assert.equal(resourceLabels.length, 1);
-  const navGap = resourceLabels[0].left - settingsButtons[0].right;
+  // The resource menu sits left of the settings icon; measure the space between.
+  const [left, right] =
+    resourceLabels[0].left < settingsButtons[0].left
+      ? [resourceLabels[0], settingsButtons[0]]
+      : [settingsButtons[0], resourceLabels[0]];
+  const navGap = right.left - left.right;
   assert.ok(navGap >= 4 && navGap <= 12, 'The settings icon and resource label stay close');
   assert.ok(settingsButtons[0].width >= 34 && settingsButtons[0].height >= 34);
   report.navigationSpacing = {
@@ -468,10 +474,12 @@ try {
   await tap('#resource-records');
   await waitRoute('pages/records/records');
   await assertStack('pages/table/table', 'pages/records/records');
+  // Bots think for seconds each; a multiway nine-seat hand can exceed a minute.
   const liveCompleted = await wait(
     'Live game while records are open',
     readLive,
     (game) => game.phase === 'done',
+    180000,
   );
   assert.equal(liveCompleted.hand, 2);
   assert.ok(liveCompleted.history.length > beforeBrowse.history.length);
@@ -517,8 +525,9 @@ try {
         attempt.resultText,
         result.wonPot ? (result.profit < 0 ? '获得部分底池 · 净亏损' : '赢') : '输',
       );
+      // A lost hand without a chip change reads -0, as on Web.
       if (result.profit === 0) {
-        assert.equal(attempt.profitText, '+0');
+        assert.equal(attempt.profitText, result.wonPot ? '+0' : '-0');
       }
     }
   }
@@ -528,8 +537,13 @@ try {
   assert.ok(replayColor && replayColor !== (await replayTag.style('background-color')));
   assert.equal((await page.$$('.hand-attempt')).length, 0);
   assert.equal(recordsView.sessions[0].attempts[0].cards.length, 2);
-  assert.match(recordsView.sessions[0].attempts[0].cards[0].artStyle, /data:image\/svg\+xml/);
-  const cards = await page.$$('.record-card');
+  // Card faces are shared page data; each row names its face.
+  const face = recordsView.sessions[0].attempts[0].cards[0];
+  assert.match(recordsView.cardArt[face.art], /data:image\/svg\+xml/);
+  // Earlier games may be filled too; count this game's three rows.
+  const cards = await page.$$(
+    `.records-session[data-id="${recordsView.sessions[0].id}"] .record-card`,
+  );
   assert.equal(cards.length, 6);
   report.recordLayout = { completed: await recordLayout() };
   await capture('03-records-list');
@@ -603,7 +617,8 @@ try {
   await mini.navigateBack();
   await waitRoute('pages/records/records');
   await assertStack('pages/table/table', 'pages/records/records');
-  assert.equal((await page.data()).expanded[initialSession.id], true);
+  // Every game starts expanded; nothing folded this one.
+  assert.notEqual((await page.data()).collapsed[initialSession.id], true);
   for (let i = 0; i < 2; i++) {
     await tap(`.hand-item[data-id="${archived.id}"]`);
     await waitRoute('pages/history/history');
@@ -634,6 +649,8 @@ try {
   await wait('Wager before relaunch', readLive, (game) => game.decisions.length > decisionCount);
   await mini.reLaunch('/pages/table/table');
   await waitRoute('pages/table/table');
+  // After a launch the table waits for the hero to take a seat.
+  await (await waitElement('#join-table-button')).tap();
   await wait('Resume new hand', readLive, (game) => game.hand === 4);
   const resumed = await readLive();
   const continued = (await readRecords())[0];

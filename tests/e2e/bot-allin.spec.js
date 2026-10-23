@@ -69,7 +69,9 @@ test('real all-in bot calls and tight 4-bet folds replay the actual public actio
     if (kind === 'flop-qq') {
       await expect(opponent.locator('.review-explanation')).toContainText(/超对 Q/);
       await expect(opponent.locator('.review-explanation')).toContainText('10.15K');
-      await expect(opponent.locator('.review-explanation')).toContainText(/只能等发牌|只能等待/);
+      // After an all-in call the bot only sees the rest of the board.
+      await expect(opponent.locator('.review-explanation')).toContainText('之后不再参与下注决策');
+      await expect(opponent.locator('.review-explanation')).toContainText('无需再支付筹码');
       await expect(opponent.locator('.review-explanation')).not.toContainText('9♦ 8♣');
     } else if (kind === 'multi-qq') {
       await expect(opponent.locator('.review-explanation')).toContainText('弃牌');
@@ -84,7 +86,7 @@ test('real all-in bot calls and tight 4-bet folds replay the actual public actio
       );
       await expect(opponent.locator('.review-explanation')).toContainText('10K');
       await expect(opponent.locator('.review-explanation')).not.toContainText('赔率支持继续追');
-      await expect(opponent.locator('.review-explanation')).toContainText(/只能等发牌或摊牌/);
+      await expect(opponent.locator('.review-explanation')).toContainText('之后不再参与下注决策');
     } else {
       await expect(opponent.locator('.review-explanation')).toContainText('同花听牌');
       await expect(opponent.locator('.review-explanation')).toContainText('弃牌');

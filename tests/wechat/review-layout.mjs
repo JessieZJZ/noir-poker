@@ -4,6 +4,7 @@ import { createRequire } from 'node:module';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { seatAtTable } from './seat.mjs';
 
 const root = fileURLToPath(new URL('../../', import.meta.url));
 const require = createRequire(path.join(root, '.artifacts/wechat-tools/package.json'));
@@ -36,7 +37,7 @@ try {
   report.build = JSON.parse(
     await readFile(path.join(root, '.artifacts/wechat/build-info.json'), 'utf8'),
   );
-  const page = await mini.currentPage();
+  const page = await seatAtTable(mini);
   assert.equal(page.path, 'pages/table/table');
   const data = await page.data();
   assert.equal(data.tableReady, true);

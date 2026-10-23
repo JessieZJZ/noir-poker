@@ -816,8 +816,9 @@ async function continueDeal() {
   const ticket = ++epoch;
   finishing = true;
   render();
-  // Show "正在发牌…" before the remaining bot work starts.
-  await nextFrame();
+  // Show "正在发牌…" before the remaining bot work starts. A settled fold-win
+  // only completes its practice board and needs no wait.
+  if (game.phase !== 'done') await nextFrame();
   try {
     let slice = performance.now();
     while (ticket === epoch && game.phase !== 'done') {

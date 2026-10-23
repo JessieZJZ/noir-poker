@@ -359,7 +359,8 @@ test('desktop persona detail stays below the available selector while a mobile r
   await expect(page.locator('#profile-detail')).toBeVisible();
   await page.setViewportSize({ width: 1280, height: 900 });
   await expect(page.locator('#profile-detail')).toBeVisible();
-  expect(await page.locator('#profile-cards').evaluate((el) => el.inert)).toBe(false);
+  // The media query change arrives asynchronously after the resize.
+  await expect.poll(() => page.locator('#profile-cards').evaluate((el) => el.inert)).toBe(false);
   await expect(page.locator('[data-profile-preview="rook"]')).toBeEnabled();
 });
 
@@ -371,7 +372,8 @@ test('the guide teaches winning, streets, actions and position before introducin
   const guide = page.locator('#rules-dialog');
   await expect(guide).toHaveAttribute('aria-labelledby', 'rules-dialog-title');
   const headings = await guide.locator('h3').allTextContents();
-  expect(headings).toHaveLength(6);
+  // Six teaching sections, then the review terms glossary.
+  expect(headings).toHaveLength(7);
   expect(headings.slice(0, 4)).toEqual([
     expect.stringContaining('赢'),
     expect.stringContaining('一手牌'),
@@ -380,6 +382,7 @@ test('the guide teaches winning, streets, actions and position before introducin
   ]);
   expect(headings[4]).toContain('复盘');
   expect(headings[5]).toContain('设置');
+  expect(headings[6]).toContain('术语解释');
   await expect(guide).toContainText('复盘这一手');
   await expect(guide).toContainText('一次赢牌不能证明长期赚钱');
   await expect(guide).toContainText('不用对手暗牌或后来发出的牌评价');

@@ -65,6 +65,14 @@ async function rect(selector) {
   assert.ok(element, selector);
   return { ...(await element.offset()), ...(await element.size()) };
 }
+async function revealHand({ sessionId, id }) {
+  const session = await page.$(`.records-session[data-id="${sessionId}"]`);
+  assert.ok(session, sessionId);
+  await mini.pageScrollTo(Math.max(0, (await session.offset()).top - 120));
+  await page.waitFor(`.hand-item[data-id="${id}"]`);
+  // Let the observer's refill settle so the tap reaches the final row.
+  await page.waitFor(1500);
+}
 async function tap(selector) {
   await page.waitFor(selector);
   await (await page.$(selector)).tap();
@@ -80,8 +88,12 @@ try {
   await route('pages/table/table');
   const liveHeight = await page.data('tableHeight');
   const selected = await mini.evaluate(() => {
-    for (const session of getApp().noirController.getRecordSummaries().slice(0, 20)) {
-      const attempt = session.attempts.find((row) => row.status === 'completed');
+    // Only a hand whose snapshot file is still present opens its history.
+    const controller = getApp().noirController;
+    for (const session of controller.getRecordSummaries().slice(0, 20)) {
+      const attempt = session.attempts.find(
+        (row) => row.status === 'completed' && controller.getRecord(row.id)?.snapshot,
+      );
       if (attempt) return { id: attempt.id, sessionId: session.id };
     }
     return null;
@@ -123,18 +135,20 @@ try {
     'no snapshots or unchanged polling transfers; individual patches below 256 KiB',
   );
   const title = await rect('.records-nav');
-  const note = await rect('.records-intro');
   const firstSession = await rect('.records-session');
-  assert.ok(note.top - title.top - title.height <= 5);
-  assert.equal(firstSession.top - note.top - note.height, 12);
+  // The browsing note is gone; the first game follows the title directly.
+  const titleGap = firstSession.top - title.top - title.height;
+  assert.ok(titleGap >= 8 && titleGap <= 24, `Title to first game: ${titleGap}px`);
   const back = await rect('#records-back');
   assert.ok(title.left < back.left);
   assert.ok(back.width < 130);
   report.recordsHeader = { title, back };
   await mini.screenshot({ path: path.join(output, 'records-header.png') });
-  const expanded = await page.data('expanded');
-  if (!expanded[selected.sessionId]) await tap(`.session-item[data-id="${selected.sessionId}"]`);
+  // Games start expanded; rows exist only near the viewport, so scroll there.
+  const collapsed = await page.data('collapsed');
+  if (collapsed[selected.sessionId]) await tap(`.session-item[data-id="${selected.sessionId}"]`);
   report.stage = 'open-history';
+  await revealHand(selected);
   await tap(`.hand-item[data-id="${selected.id}"]`);
   await route('pages/history/history');
   await page.waitFor(1500);
@@ -149,7 +163,8 @@ try {
     belowReview: dock.top + dock.height - review.top - review.height,
   };
   assert.ok(report.spacing.headingGap >= 4 && report.spacing.headingGap <= 12);
-  assert.ok(Math.abs(report.spacing.dockHeight - 58) < 2);
+  // The read-only history dock is the single 64px settled row on every branch.
+  assert.ok(Math.abs(report.spacing.dockHeight - 64) < 2);
   assert.ok(report.spacing.belowReview >= 6 && report.spacing.belowReview <= 14);
   report.checks.push(
     'compact heading and review spacing, unchanged table geometry, narrow return button',

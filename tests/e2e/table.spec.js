@@ -412,11 +412,13 @@ test('raise controls, seats, activity and review share street-specific bet ordin
   }
   for (const street of [1, 2, 3]) {
     await page.evaluate((s) => window.qa.bettingTurn(1, s), street);
-    await expect(page.locator('#raise-button')).toContainText('加注至');
+    // The first wager of a street is a bet, not a raise.
+    await expect(page.locator('#raise-button')).toContainText('下注至');
     await expect(page.locator('#raise-button')).not.toContainText('1-bet');
     await page.evaluate((s) => window.qa.bettingTurn(3, s), street);
     await expect(page.locator('#raise-button')).toContainText('3-bet 加注至');
-    await expect(page.locator('.seat-1 .seat-action-label')).toHaveText('加注');
+    // Seat 1 opened the street's betting, so it bet rather than raised.
+    await expect(page.locator('.seat-1 .seat-action-label')).toHaveText('下注');
     await expect(page.locator('.seat-2 .seat-action')).toContainText('2-bet');
     await expect(page.locator('#activity-list')).not.toContainText('1-bet');
   }

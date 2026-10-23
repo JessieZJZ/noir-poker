@@ -214,6 +214,8 @@ test('records drop the live note, keep results at full opacity and toast a save 
   page,
 }) => {
   await page.evaluate(() => {
+    // The table waits for the hero to take a seat; start a recorded hand.
+    window.qa.recordsStart();
     window.qa.recordsFinish();
     window.qa.recordsRetry();
     window.qa.recordsFinish();

@@ -156,7 +156,8 @@ try {
     Math.abs(handOffset.top - blindOffset.top) <= 1,
     'Waiting blinds share the first header row',
   );
-  const heroName = await page.$('.hero-identity > text'),
+  // The name sits in a wrapper that also anchors the champion's crown.
+  const heroName = await page.$('.hero-identity > .hero-name-text'),
     heroStack = await page.$('.hero-identity .stack');
   const heroGap =
     (await heroStack.offset()).left -
@@ -232,7 +233,8 @@ try {
   );
   const resetSize = await reset.size(),
     resetOffset = await reset.offset();
-  const title = await page.$('.practice-panel .session-title > text'),
+  // The title sits in the heading with its (hidden while playing) standing tag.
+  const title = await page.$('.practice-panel .session-title > .session-heading'),
     titleOffset = await title.offset(),
     titleSize = await title.size();
   assert.equal(resetSize.width, 70);

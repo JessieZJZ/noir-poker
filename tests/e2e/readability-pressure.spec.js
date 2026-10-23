@@ -77,7 +77,8 @@ test('guide shows every hand and position in each supported locale', async ({ pa
   await page.locator('#guide-menu-item').click();
   await expect(page.locator('.hand-example')).toHaveCount(9);
   await expect(page.locator('.guide-card')).toHaveCount(45);
-  await expect(page.locator('.position-glossary')).toContainText('HJ · Hijack');
+  // The first glossary lists positions; the review terms glossary follows.
+  await expect(page.locator('.position-glossary').first()).toContainText('HJ · Hijack');
   for (const locale of ['en', 'zh-TW', 'ja', 'ko', 'es', 'it', 'pt', 'de', 'fr', 'ru', 'zh-CN']) {
     await page.locator('#rules-dialog .close-dialog').first().click();
     await openSettings(page);

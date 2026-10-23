@@ -10,6 +10,7 @@ import {
   aceFourPreflopReview,
 } from '../fixtures/bottom-pair-review.js';
 import { deckOfCards } from '../../src/engine/poker.js';
+import { seatAtTable } from './seat.mjs';
 import { getBotProfile } from '../../src/engine/bot-profiles.js';
 import {
   causalReraiseGame,
@@ -102,6 +103,7 @@ try {
   report.build = JSON.parse(fs.readFileSync(path.join(root, '.artifacts/wechat/build-info.json')));
   assert.equal((await page.data()).noticeExpanded, true);
   assert.equal((await page.data()).guideExpanded[1], true);
+  page = await seatAtTable(mini);
   await invoke('closeReview');
   // Settings apply to the next hand; never try to replace an active deal.
   while (!(await page.data()).done) {

@@ -4,6 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import assert from 'node:assert/strict';
 import { deceptiveRecords } from '../fixtures/deceptive-decisions.js';
+import { seatAtTable } from './seat.mjs';
 const root = new URL('../../', import.meta.url).pathname;
 const require = createRequire(path.join(root, '.artifacts/wechat-tools/package.json'));
 const automator = require('miniprogram-automator');
@@ -17,7 +18,7 @@ const report = {
 };
 const mini = await automator.connect({ wsEndpoint: process.argv[2] || 'ws://127.0.0.1:9463' });
 mini.on('exception', (e) => report.exceptions.push(e));
-const page = await mini.currentPage();
+const page = await seatAtTable(mini);
 const invoke = (name, arg) =>
   mini.evaluate((name, arg) => getCurrentPages().at(-1)[name](arg), name, arg);
 const wait = async (predicate) => {
