@@ -36,7 +36,7 @@ test('consumer preflop ranges combine hand families and explain only actions alr
   assert.equal(p.groups[0].label, '对手可能牌组');
   assert.ok(p.groups[0].examples.length > 0);
   assert.match(text, /Luna在 UTG\+1 位开池到 4K/);
-  assert.match(text, /Jade在 LJ 位跟住了这笔加注/);
+  assert.match(text, /Jade在 LJ 位跟注了这笔加注/);
   assert.doesNotMatch(text, /Kai跟住/);
   assert.match(text, /A.*AA、AK、AQ、AJ/);
   const html = renderReviewParagraphs([m.text], m, 0);
@@ -52,7 +52,7 @@ test('consumer preflop ranges combine hand families and explain only actions alr
   reraised.history.push({ id: 7, street: 0, action: 'raise', amount: 14000 });
   assert.match(
     handMatchups(reraised, decisionContext(reraised)).rangeNotes.join(''),
-    /Jade在 LJ 位，已有加注时3-bet 加注至 14K/,
+    /再加注通常.*Jade在 LJ 位3-bet 加注至 14K/,
   );
 });
 function spot(hole, board = '', changes = {}) {
@@ -615,14 +615,18 @@ test('the same hand keeps its card comparisons but coaching follows actual posit
   assert.notEqual(plan(outOfPosition).primary.amount, plan(inPosition).primary.amount);
   const shorter = spot('As Kd', 'Ks 7h 2c', { stack: 500, legal: { maxRaiseTo: 500 } });
   const shortReview = analyzeDecision(shorter, { trials: 120, rolloutTrials: 12 });
+  assert.equal(shortReview.context.effective, 500);
+  assert.ok(shortReview.context.spr < baseline.context.spr);
+  assert.equal(shortReview.context.valuePlan.kind, 'value-shove');
+  assert.deepEqual(shortReview.context.valuePlan.primary, { action: 'raise', amount: 500 });
   assert.notEqual(
-    shortReview.coaching.explanation + shortReview.coaching.followUp,
-    baseline.coaching.explanation + baseline.coaching.followUp,
+    shortReview.context.valuePlan.primary.amount,
+    baseline.context.valuePlan.primary.amount,
   );
   assert.match(shortReview.evidence.join(''), /行动前你手里有 500/);
 });
 
-test('strong-flat support requires the recorded legal call and cannot replace expensive-call or crowding guards', () => {
+test('strong-flat support requires the recorded legal call and cannot replace unsupported-call or crowding guards', () => {
   const s = heroValueGame('aa-flat').decisions[0];
   const supported = analyzeDecision(s, { trials: 120, rolloutTrials: 12 });
   assert.equal(supported.code, 'strong-flat-trap');
@@ -668,7 +672,7 @@ test('strong-flat support requires the recorded legal call and cannot replace ex
     ],
   });
   const rejected = analyzeDecision(expensive, { trials: 120, rolloutTrials: 12 });
-  assert.equal(rejected.code, 'expensive-call');
+  assert.equal(rejected.code, 'unbacked-high-card-call');
   assert.equal(rejected.coaching.label, '弃牌');
   assert.equal(rejected.coaching.evKind, 'negative');
 });

@@ -1032,6 +1032,29 @@ export async function nativeScenarios(app) {
         'Installed production UI; native background cancels attention and card/button geometry stays stable',
     };
   });
+  await check('table-hint-content', async () => {
+    await waitForNativeHeroTurn(app, { advanceSettled: true });
+    // Refresh via the actual preference control, without injecting a hand or
+    // exposing any private state in the installed production application.
+    const observed = await app.evaluate(() => {
+      const toggle = document.querySelector('#hint-toggle');
+      if (toggle.getAttribute('aria-checked') === 'true') toggle.click();
+      toggle.click();
+      return {
+        state: window.noir.getState(),
+        text: document.querySelector('#coach-tip').textContent,
+        visible: !document.querySelector('#coach-content').hidden,
+      };
+    });
+    assert.equal(observed.visible, true);
+    assert.equal(observed.state.actor, '你');
+    assert.doesNotMatch(observed.text, /；|权益|跟注占可争夺底池/);
+    if (observed.state.legal.toCall > 0)
+      assert.match(observed.text, /跟注.*可争夺.*需要约 [\d.]+% 的胜率才能持平/);
+    else assert.match(observed.text, /可以过牌|可以加注/);
+    await app.screenshot('table-hint-content');
+    return observed;
+  });
   await check('combined-feedback-preference', async () => {
     await app.evaluate(() => {
       const nativePromise = window.Capacitor.nativePromise;
@@ -1524,14 +1547,25 @@ export async function nativeScenarios(app) {
       cards: document.querySelectorAll('.guide-card').length,
       positions: document.querySelector('.position-glossary').textContent,
       text: document.querySelector('#rules-dialog').textContent.replace(/\s+/g, ' '),
+      glossary: document.querySelector('#review-glossary')?.textContent,
+      glossaryEntries: document.querySelectorAll('#review-glossary .position-glossary > div')
+        .length,
     }));
     assert.equal(guide.hands, 9);
+    assert.equal(guide.glossaryEntries, 29);
+    assert.match(guide.glossary, /底池赔率／保本胜率.*全下只会结束自己的下注选择/s);
+    assert.match(guide.glossary, /主动权.*并不改变行动顺序/s);
+    assert.match(guide.glossary, /权益把获胜和平分计为底池份额/);
     assert.equal(guide.cards, 45);
     assert.ok(guide.positions.includes('HJ · Hijack') && guide.positions.includes('CO · Cutoff'));
     assert.ok(guide.text.includes('选择加注 1.2K 则补 1K'));
     assert.ok(guide.text.includes('至少要加到 1K'));
     assert.ok(!/\b(?:1200|1000)\b/.test(guide.text), 'Guide chip examples must use K');
     await app.screenshot('visual-beginner-guide');
+    await app.evaluate(() =>
+      document.querySelector('#review-glossary').scrollIntoView({ block: 'start' }),
+    );
+    await app.screenshot('review-terms-glossary');
     await app.click('#rules-dialog .icon-button.close-dialog');
     return { assignments, guide };
   });
@@ -2259,9 +2293,24 @@ export async function nativeScenarios(app) {
       readReviewTagGeometry,
       '#review-opponents .review-timeline',
     );
-    assert.ok(opponentTags.length > 0);
-    for (const tag of opponentTags)
-      assert.ok(Math.abs(tag.height - tag.naturalHeight) <= 1, JSON.stringify(tag));
+    assert.equal(opponentTags.length, 0, 'Opponent action cards omit every persona/style tag');
+    const opponentCards = await app.evaluate(() =>
+      [...document.querySelectorAll('#review-opponents .review-step')].map((card) => ({
+        number: card.querySelector('.review-step-number')?.textContent,
+        playerAndStreet: card.querySelector('small')?.textContent,
+        action: card.querySelector('strong')?.textContent,
+      })),
+    );
+    assert.ok(opponentCards.length > 0, 'Real recorded opponent action cards remain visible');
+    opponentCards.forEach((card, index) => {
+      assert.equal(card.number, String(index + 1));
+      assert.ok(
+        card.playerAndStreet?.split(/[，,]/).every((part) => part.trim()) &&
+          card.playerAndStreet.split(/[，,]/).length >= 2,
+        'Each opponent card retains its player and street',
+      );
+      assert.ok(card.action?.trim(), 'Each opponent card retains its executed action');
+    });
     const overflow = await app.evaluate(() => {
       const track = document.querySelector('#review-opponents .review-timeline'),
         third = track.children[2]?.getBoundingClientRect(),
@@ -2340,6 +2389,8 @@ export async function nativeScenarios(app) {
       rangeNotes: document.querySelectorAll('#review-coach-explanation .review-range-note').length,
     }));
     assert.equal(presentation.removed, 0);
+    assert.ok(presentation.reason.indexOf('当前牌面') < presentation.reason.indexOf('当前牌力'));
+    assert.match(presentation.reason, /当前牌面.*当前牌力/s);
     assert.ok(presentation.evidence >= 4);
     assert.equal(presentation.focusHidden, presentation.keep);
     assert.equal(presentation.method, 0);
@@ -2349,6 +2400,11 @@ export async function nativeScenarios(app) {
       /相同牌力可能平分底池|不能只按成牌标签|是在回应这笔下注|已有过牌之后争取底池/,
     );
     assert.doesNotMatch(presentation.reason, /EV|模型|模拟器|抽样|新增投入/);
+    assert.doesNotMatch(presentation.reason + presentation.keyInfo, /；/);
+    assert.match(
+      presentation.keyInfo,
+      /这次(?:弃牌不再投入|过牌无需投入|(?:全下|加注|跟注|跟注全下)拿出)/,
+    );
     assert.doesNotMatch(presentation.keyInfo, /有效剩余|新增投入/);
     const analysisLayout = await app.evaluate(() => ({
       oldControls: document.querySelectorAll(

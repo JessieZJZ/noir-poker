@@ -67,6 +67,7 @@ test('difficulty settings describe the growing strategy set and emotion boundari
   await expect(page.locator('.emotion-module')).toContainText('不增加策略能力');
   for (const locale of ['en', 'zh-TW', 'ja', 'ko', 'es', 'it', 'pt', 'de', 'fr', 'ru']) {
     await page.locator('#language-select').selectOption(locale);
+    await expect(page.locator('html')).toHaveAttribute('lang', locale);
     await expect(page.locator('#difficulty-description')).not.toBeEmpty();
     if (!['ja', 'zh-TW'].includes(locale)) {
       await expect(page.locator('#difficulty-description')).not.toContainText(/\p{Script=Han}/u);

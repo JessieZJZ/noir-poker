@@ -34,7 +34,6 @@ import {
   legalActions,
   potSize,
   currentPots,
-  contestableAfterCall,
   playBotTurn,
   planBotTurn,
   executeBotTurn,
@@ -59,6 +58,7 @@ import { chipUnitOf, legalRaiseTo } from '../engine/bet-sizing.js';
 import { createSettlementLayout } from './settlement-layout.js';
 import { createPlayViewport } from './play-viewport.js';
 import { createHintNotification } from './hint-notification.js';
+import { tableHint } from '../review/table-hint.js';
 import { createHintMarquee } from './hint-marquee.js';
 import { preferenceStorage } from '../platform/storage.js';
 import { createGameRecords } from '../engine/game-records.js';
@@ -590,27 +590,8 @@ function updateCoach(force = false) {
     return;
   }
   const p = game.players[0],
-    e = evaluate([...p.hole, ...game.board]);
-  let tip = '';
-  if (game.phase === 'done')
-    tip = p.folded
-      ? '回看弃牌时的价格与对手范围，判断是否值得继续。'
-      : game.showdown
-        ? `你以${e.label}摊牌。复盘关键下注，区分决策质量与发牌运气。`
-        : '复盘本手加注，判断对手弃牌能否让这条路线长期盈利。';
-  else if (game.street === 0) {
-    const [a, b] = p.hole;
-    if (a?.rank === b?.rank) tip = '口袋对子有成三条的潜力；面对大额加注，先考虑跟注成本。';
-    else if (a?.rank >= 11 && b?.rank >= 11)
-      tip = '两张高牌可主动争夺底池；面对大额加注，仍要判断对手范围。';
-    else if (a?.suit === b?.suit) tip = '同花底牌有成牌潜力，仍需结合位置和跟注价格。';
-    else tip = '前位谨慎选牌，后位利用更多信息；结合价格决定是否入池。';
-  } else if (e.score[0] >= 3) tip = `你已形成${e.label}，可考虑价值下注，并留意牌面上更强的组合。`;
-  else if (e.score[0] >= 1) tip = `目前是${e.label}；多人底池或持续大额加注时，谨慎判断。`;
-  else tip = '尚未成对，结合成牌机会、跟注价格与对手范围决定。';
-  const legal = legalActions(game, 0);
-  if (legal.enabled && legal.toCall > 0)
-    tip += ` 跟注占可争夺底池约 ${Math.round((legal.callAmount / contestableAfterCall(game, 0, legal.callAmount)) * 100)}%。`;
+    legal = legalActions(game, 0),
+    tip = tableHint(game, legal);
   const stage = game.phase === 'done' ? '本手复盘' : streets[game.street] + '策略';
   hintNotification.update({
     enabled: hints,

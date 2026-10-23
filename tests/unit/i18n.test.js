@@ -54,6 +54,39 @@ test('locale preference hydrates and preserves ordered writes through native sto
   assert.equal(native.get('noir-locale'), 'en');
 });
 
+test('practice comparisons translate complete trailing sentences after adjacent optional values', async () => {
+  const cases = [
+    '重打 Q♦ 10♥ 这手，面对当前 50 的下注，先比较跟注 50与弃牌。本轮还没封口，后面的玩家再加注时，你需要重新决定要不要跟。',
+    '重打 Q♦ 10♥ 这手，面对当前 50 的下注，先比较弃牌与再补 50。若改为跟注，跟注后只能等摊牌，不能再靠后街下注赶走更好的牌。',
+    '重打 Q♦ 10♥ 这手，面对当前 50 的下注，先比较跟注 50与弃牌。这一轮已经轮到你最后回应，继续后，下一街还要面对新的牌面与下注。',
+    '重打 Q♦ 10♥ 这手，面对当前 50 的下注，先比较弃牌与再补 50。若改为跟注，本轮还没封口，后面的玩家再加注时，你需要重新决定要不要跟。',
+    '重打 Q♦ 10♥ 这手，面对当前 50 的下注，先比较弃牌与再补 50。若改为跟注，这一轮已经轮到你最后回应，继续后，下一街还要面对新的牌面与下注。',
+    '重打 Q♦ 10♥ 这手，面对当前 50 的下注，先比较跟注 50与弃牌。跟注后只能等摊牌，不能再靠后街下注赶走更好的牌。',
+  ];
+  for (const locale of ['en', 'zh-TW', 'ja', 'ko', 'es', 'it', 'pt', 'de', 'fr', 'ru']) {
+    await loadLocale(locale);
+    for (const source of cases) {
+      const value = localizeText(source);
+      assert.doesNotMatch(value, /\{\d+\}/, `${locale}: ${value}`);
+      assert.ok(value.includes('Q♦ 10♥'), `${locale}: ${value}`);
+      assert.equal(value.match(/50/g)?.length, 2, `${locale}: ${value}`);
+      if (!['zh-TW', 'ja'].includes(locale))
+        assert.doesNotMatch(value, /\p{Script=Han}/u, `${locale}: ${value}`);
+    }
+  }
+  await loadLocale('en');
+  assert.match(localizeText(cases[0]), /first compare Call 50 with Fold/);
+  assert.match(localizeText(cases[0]), /Betting is not closed this round/);
+  assert.match(localizeText(cases[1]), /If you call instead/);
+  assert.match(localizeText(cases[2]), /last player responding this round/);
+  assert.match(localizeText(cases[2]), /next street brings a new board/);
+  for (const source of [cases[1], cases[5]]) {
+    assert.match(localizeText(source), /only showdown/);
+    assert.doesNotMatch(localizeText(source), /next street/);
+  }
+  await loadLocale('zh-CN');
+});
+
 test('the practice heading describes the current session in every supported locale', async () => {
   for (const [locale, expected] of Object.entries({
     'zh-CN': '本局练习',

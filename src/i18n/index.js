@@ -72,9 +72,18 @@ export async function loadLocale(value) {
         slots.push(part);
         // A value cannot consume another complete sentence. Otherwise a short
         // amount template can accidentally swallow the following review text.
-        return index === parts.length - 2 && !parts.at(-1) && parts[index - 1]?.endsWith('。')
-          ? '(.*?)'
-          : '([^。]*?)';
+        // Adjacent final values can contain an optional lead-in and a complete
+        // sentence. Treat that trailing group like a single sentence suffix,
+        // while amount/name values before literal text remain sentence-bound.
+        const sentenceSuffix =
+          index === parts.length - 2 &&
+          !parts.at(-1) &&
+          parts
+            .slice(0, index)
+            .filter((part) => part && !/^\{\d+\}$/.test(part))
+            .at(-1)
+            ?.endsWith('。');
+        return sentenceSuffix ? '(.*?)' : '([^。]*?)';
       })
       .join('');
     templates.push({
@@ -98,6 +107,11 @@ export async function loadLocale(value) {
 function translateCore(text, depth = 0) {
   const source = normalized(text);
   if (Object.hasOwn(messages, source)) return messages[source];
+  // Texture labels are lists of exact catalog facts, not sentence templates.
+  // Resolve every list item before a broad "公共牌{0}" template can consume it.
+  const list = source.split('、');
+  if (list.length > 1 && list.every((part) => Object.hasOwn(messages, part)))
+    return list.map((part) => messages[part]).join(' / ');
   if (depth < 3)
     for (const entry of templates) {
       const match = entry.pattern.exec(source);

@@ -22,7 +22,7 @@ test('native diagnostic selection rejects empty and unknown names instead of rep
         }),
       /Unknown NOIR_NATIVE_SCENARIOS selection: misspelled-native-scenario/,
     );
-    assert.equal(recorded.length, 30);
+    assert.equal(recorded.length, 31);
     assert.ok(recorded.some((entry) => entry.name === 'review-overflow-and-activity-size'));
     assert.ok(recorded.some((entry) => entry.name === 'hand-rankings-shortcut'));
     assert.ok(recorded.some((entry) => entry.name === 'guide-sticky-header'));
@@ -30,6 +30,7 @@ test('native diagnostic selection rejects empty and unknown names instead of rep
     assert.ok(recorded.some((entry) => entry.name === 'practice-reset-in-card-heading'));
     assert.ok(recorded.some((entry) => entry.name === 'style-tag-long-press'));
     assert.ok(recorded.some((entry) => entry.name === 'entry-high-stakes-layout'));
+    assert.ok(recorded.some((entry) => entry.name === 'table-hint-content'));
     assert.ok(
       recorded.every(
         (entry) => entry.status === 'skipped' && /NOIR_NATIVE_SCENARIOS/.test(entry.reason),
@@ -67,14 +68,14 @@ test('native diagnostic reports retain explicit skips beside the selected pass',
       }),
       screenshot: async (name) => screenshots.push(name),
     });
-    assert.equal(results.length, 30);
+    assert.equal(results.length, 31);
     assert.deepEqual(results, recorded);
     assert.deepEqual(screenshots, ['configured-stakes-and-shared-icon']);
     assert.deepEqual(
       results.filter((entry) => entry.status === 'passed').map((entry) => entry.name),
       ['configured-stakes-and-shared-icon'],
     );
-    assert.equal(results.filter((entry) => entry.status === 'skipped').length, 29);
+    assert.equal(results.filter((entry) => entry.status === 'skipped').length, 30);
   } finally {
     if (previous === undefined) delete process.env.NOIR_NATIVE_SCENARIOS;
     else process.env.NOIR_NATIVE_SCENARIOS = previous;

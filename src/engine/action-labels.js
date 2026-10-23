@@ -26,7 +26,7 @@ export function raiseCaption(step, amount) {
       : allin
         ? '全下至'
         : level === 1
-          ? '加注至'
+          ? '下注至'
           : step.currentBet === 0
             ? '下注至'
             : step.street === 0 && level === 2

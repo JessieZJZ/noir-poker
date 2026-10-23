@@ -310,7 +310,7 @@ test('69o BTN three-bet and Mia AQo four-bet explain the actual limper, opener a
   assert.match(result.evidence.join(''), /5K/);
   assert.match(result.evidence.join(''), /350/);
   const fold = analyzeDecision(game.decisions[1], { trials: 120, rolloutTrials: 12 });
-  const callPrice = fold.evidence.find((line) => line.includes('底池赔率'));
+  const callPrice = fold.evidence.join(' ');
   assert.match(callPrice, /650/);
   assert.match(callPrice, /4.05K/);
   assert.match(callPrice, /5\.23\s*:\s*1/);

@@ -183,7 +183,7 @@ test('opponent review explains the exact small-open call and separate re-raising
   const v = smallOpen();
   const d = decision(v);
   const explanation = explainOpponent({ ...d, trace: { ...d.trace, view: v } });
-  assert.match(explanation.detail, /跟注 150/);
+  assert.match(explanation.detail, /只补 150/);
   assert.match(explanation.detail, /还留 4\.85K/);
   assert.match(explanation.detail, /同花/);
   assert.match(explanation.detail, /开池(?:至|到) 150/);

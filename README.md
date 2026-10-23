@@ -225,3 +225,9 @@ node tests/bot-pressure-audit.mjs
 所有端使用均衡及十六种以打法命名的训练风格。均衡保留文字头像，其余使用成熟插画。介绍覆盖入池、分街打法、特色操作和应对思路，策略参数沿用既有配置。详情见 [角色说明](docs/characters.md) 与 [插画记录](docs/character-artwork.md)。
 
 入场、音乐渐入和所有端的验证入口见[入座体验](docs/entry-experience.md)。
+
+复盘文案的离线模拟审查可运行 `node scripts/audit-review.mjs --hands=2000`，输出留在 `.artifacts/review-audit/`，流程和边界见 [复盘说明](docs/review.md#牌面牌力与文案审查)。
+
+此前复盘内容与跨端验收范围见 [1000 手审查记录](docs/review-content-validation-2026-10-20.md)，本轮深浅筹码、灵活建议与四种视角复验见 [2000 手补充审查](docs/review-flexibility-validation-2026-10-21.md)。
+
+牌桌即时提示的通俗化、共用文案和跨端检查见 [提示优化验收记录](docs/table-hints-validation-2026-10-20.md)。

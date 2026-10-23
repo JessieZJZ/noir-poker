@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { openSettings, closeSettings } from './settings-helpers.js';
+import { tableHintGame } from '../fixtures/table-hints.js';
 
 test.beforeEach(async ({ page }) => {
   await page.goto('/');
@@ -26,7 +27,7 @@ test('necessary hints appear below blinds, expire without reappearing on ordinar
   await page.evaluate(() => window.qa.heroTurn(9));
   await expect(banner).toBeVisible();
   await expect(page.locator('#coach-stage')).toHaveText('翻牌前策略');
-  await expect(page.locator('#coach-tip')).toContainText('跟注占可争夺底池约');
+  await expect(page.locator('#coach-tip')).toContainText('的胜率才能持平');
   await expect(page.locator('.sidebar #coach-content')).toHaveCount(0);
   await page.clock.runFor(32);
   const before = await page.locator('.table-viewport').boundingBox();
@@ -218,4 +219,21 @@ test('resizing retains the same inline hint, expiry and saved preference', async
   await page.waitForFunction(() => !!window.qa);
   await page.evaluate(() => window.qa.heroTurn(9));
   await expect(banner).toBeHidden();
+});
+
+test('table hints explain cards and real call prices including capped all-ins', async ({
+  page,
+}) => {
+  const tip = page.locator('#coach-tip');
+  const game = tableHintGame();
+  await page.evaluate((g) => window.qa.loadRecordedGame(g), game);
+  await expect(tip).toContainText('AA，是翻牌前最强的起手牌');
+  await expect(tip).toContainText('跟注 200 后可争夺 475');
+  await expect(tip).not.toContainText('；');
+  const draw = tableHintGame('As 2s', '8s Kh 4s');
+  await page.evaluate((g) => window.qa.loadRecordedGame(g), draw);
+  await expect(tip).toContainText('补成后是最大的同花');
+  const capped = tableHintGame('5h 5c', '', 200, 100);
+  await page.evaluate((g) => window.qa.loadRecordedGame(g), capped);
+  await expect(tip).toContainText('全下 100，可争夺 275');
 });
