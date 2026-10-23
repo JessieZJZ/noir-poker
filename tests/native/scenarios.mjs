@@ -414,20 +414,27 @@ export async function nativeScenarios(app) {
       document.addEventListener('noir:app-state', window.__entryMusicListener);
     });
     await app.background();
-    await app.sleep(500);
+    // As in the music check, stay out long enough for the pause to reach the
+    // page; a slower Android emulator can resume before a shorter stay is seen.
+    await app.sleep(1500);
     assert.ok([2, 3].includes(await app.nativeState()));
     await app.activate();
     // The foreground event can arrive after the native resume returns.
-    await app.waitFor(
-      () =>
-        app.evaluate(() => {
-          const events = window.__entryMusicLifecycle,
-            hidden = events.findIndex((event) => !event.active);
-          return hidden >= 0 && events.slice(hidden + 1).some((event) => event.active);
-        }),
-      10000,
-      'Both actual native lifecycle boundaries must arrive',
-    );
+    try {
+      await app.waitFor(
+        () =>
+          app.evaluate(() => {
+            const events = window.__entryMusicLifecycle,
+              hidden = events.findIndex((event) => !event.active);
+            return hidden >= 0 && events.slice(hidden + 1).some((event) => event.active);
+          }),
+        10000,
+        'Both actual native lifecycle boundaries must arrive',
+      );
+    } catch (error) {
+      const seen = await app.evaluate(() => window.__entryMusicLifecycle);
+      throw Error(`${error.message}; received ${JSON.stringify(seen)}`);
+    }
     const events = await app.evaluate(() => {
       document.removeEventListener('noir:app-state', window.__entryMusicListener);
       return window.__entryMusicLifecycle;
@@ -3062,6 +3069,8 @@ export async function nativeScenarios(app) {
     );
     const wealth = leaving.players.reduce((sum, p) => sum + p.stack, 0) + leaving.pot;
     await app.relaunch();
+    // After a launch the table waits for the hero to take a seat.
+    await enterNativeTable(app);
     const resumed = await app.state();
     assert.equal(resumed.sessionNumber, leaving.sessionNumber);
     assert.equal(resumed.hand, leaving.hand + 1);
