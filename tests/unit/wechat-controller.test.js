@@ -110,8 +110,9 @@ test('WeChat visual attention survives mute, cancels on sizing/hide/retry/destro
   // The view phase covers rendering; a separate publisher updates only the
   // decorative layer when timers fire, without rebuilding the table.
   const clock = scheduler();
+  const views = [];
   const adapter = createWechatController({
-    publish: () => {},
+    publish: (view) => views.push({ dealing: view.dealing }),
     publishAttention: (phase) => phases.push(phase),
     schedule: clock.schedule,
     unschedule: clock.unschedule,
@@ -120,7 +121,8 @@ test('WeChat visual attention survives mute, cancels on sizing/hide/retry/destro
   t.after(() => adapter.destroy());
   adapter.start();
   adapter.join();
-  clock.runNext();
+  // Other timers, such as a premium start's glow, can precede the deal's end.
+  while (views.at(-1)?.dealing) assert.ok(clock.runNext());
   reachHero(controller);
   assert.equal(latest().turnPhase, 'enter');
   controller.setRaise(controller.getGame().bigBlind * 4);

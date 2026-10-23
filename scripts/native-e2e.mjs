@@ -599,9 +599,10 @@ try {
     );
     server.stdout.pipe(serverStream);
     server.stderr.pipe(serverStream);
+    // A first start after a fresh driver install builds Appium's driver cache.
     await waitFor(
       () => request('GET', '/status', undefined, 1000),
-      30000,
+      120000,
       'Appium server did not start',
     );
     report.testServiceReadyAt = new Date().toISOString();
