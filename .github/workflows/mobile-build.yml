@@ -150,8 +150,12 @@ jobs:
           test -r /dev/kvm
           test -w /dev/kvm
           df -h "$HOME"
+      # The GPU-less CI emulator completes only a few scenarios in this budget,
+      # so CI checks the installed-app smoke set; the full suite runs locally.
       - name: Installed Android App end-to-end tests
-        timeout-minutes: 25
+        timeout-minutes: 30
+        env:
+          NOIR_NATIVE_SCENARIOS: local-launch-and-no-login,entry-waiting-music-and-first-deal,entry-high-stakes-layout,practice-reset-in-card-heading
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 36
