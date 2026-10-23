@@ -197,8 +197,12 @@ jobs:
           if-no-files-found: error
           retention-days: 7
       - run: npm run mobile:test:setup -- ios
+      # The hosted macOS simulator runs about one scenario every few minutes,
+      # so CI checks an installed-app smoke set; the full suite runs locally.
       - run: npm run mobile:test:ios
-        timeout-minutes: 20
+        timeout-minutes: 30
+        env:
+          NOIR_NATIVE_SCENARIOS: local-launch-and-no-login,entry-waiting-music-and-first-deal,entry-high-stakes-layout,practice-reset-in-card-heading
       - uses: actions/upload-artifact@v7.0.2
         if: always()
         with:

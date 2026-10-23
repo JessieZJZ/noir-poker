@@ -18,11 +18,13 @@ test.afterEach(async ({ page }) => {
 test('review separates lucky bad-price wins from reasonable losses with concise visible evidence', async ({
   page,
 }) => {
+  // The real review worker runs on slower CI machines too.
+  test.setTimeout(120000);
   for (const win of [true, false]) {
     await page.evaluate((win) => window.qa.reviewClosingCall(win), win);
     await page.locator('#review-hand-button').click();
     await expect(page.locator('#review-dialog[data-analysis-status="done"]')).toBeVisible({
-      timeout: 20000,
+      timeout: 60000,
     });
     await expect(page.locator('.review-summary, #review-overview, #review-priority')).toHaveCount(
       0,
@@ -400,7 +402,7 @@ test('pot details retain per-pot awards, odd split shares and conditional live e
 test('raise controls, seats, activity and review share street-specific bet ordinals', async ({
   page,
 }) => {
-  test.setTimeout(60000);
+  test.setTimeout(120000);
   for (const level of [2, 3, 4]) {
     await page.evaluate((n) => window.qa.bettingTurn(n), level);
     await expect(page.locator('#raise-button')).toContainText(`${level}-bet`);
@@ -442,7 +444,7 @@ test('raise controls, seats, activity and review share street-specific bet ordin
   await expect(page.locator('#activity-list')).toContainText(/Mia\s+\S+\s+4-bet 加注至 1.8K/);
   await page.locator('#review-hand-button').click();
   await expect(page.locator('#review-dialog[data-analysis-status="done"]')).toBeVisible({
-    timeout: 30000,
+    timeout: 60000,
   });
   await page.locator('#review-timeline [data-review-index="0"]').click();
   await expect(page.locator('#review-timeline [data-review-index="0"]')).toContainText(
@@ -1106,6 +1108,8 @@ test('fast finish fills all five visible board cards after preflop, flop or turn
 test('review completes through real worker with facts and a conditional follow-up plan', async ({
   page,
 }) => {
+  // The real review worker runs on slower CI machines too.
+  test.setTimeout(120000);
   await page.evaluate(() => window.qa.heroTurn());
   await page.locator('#fold-button').click();
   await page.evaluate(() => window.qa.stop());
@@ -1116,7 +1120,7 @@ test('review completes through real worker with facts and a conditional follow-u
   await page.locator('#review-hand-button').click();
   await expect(page.locator('#review-dialog')).toBeVisible();
   await expect(page.locator('#review-dialog[data-analysis-status="done"]')).toBeVisible({
-    timeout: 15000,
+    timeout: 60000,
   });
   expect(await page.locator('#review-evidence li').count()).toBeGreaterThanOrEqual(4);
   if ((await page.locator('#review-selected-status').textContent()) !== '值得保留') {
@@ -1903,11 +1907,11 @@ test('loss simulation remains available while redundant seat explanations are re
 test('A7 review separates steal, 3bet and 4bet; opponents expose actual decisions after settlement', async ({
   page,
 }) => {
-  test.setTimeout(60000);
+  test.setTimeout(120000);
   await page.evaluate(() => window.qa.reviewLine());
   await page.locator('#review-hand-button').click();
   await expect(page.locator('#review-dialog[data-analysis-status="done"]')).toBeVisible({
-    timeout: 30000,
+    timeout: 60000,
   });
   await page.locator('#review-timeline [data-review-index="0"]').click();
   await expect(page.locator('#review-coach-explanation')).toContainText(/开池|偷盲/);
@@ -1958,7 +1962,7 @@ test('review timelines hint at horizontal scrolling and keep late selections in 
     await page.evaluate(() => window.qa.reviewLine());
     await page.locator('#review-hand-button').click();
     await expect(page.locator('#review-dialog[data-analysis-status="done"]')).toBeVisible({
-      timeout: 30000,
+      timeout: 60000,
     });
     {
       const heroTimeline = page.locator('#review-timeline');
