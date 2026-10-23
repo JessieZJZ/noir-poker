@@ -624,13 +624,13 @@ test('WeChat opponent review picker filters recorded actions and restores the fu
   const report = {
     steps: [],
     opponents: [
-      { name: 'Alex', actual: '跟注', named: true, profileName: '多街施压' },
+      { name: 'Alex', actual: '跟注', named: true, profileName: '大注强攻' },
       { name: 'River', actual: '加注' },
       { name: 'Alex', actual: '弃牌' },
     ],
   };
   page.updateReview(report);
-  assert.equal(page.data.opponentOptions[1], 'Alex，多街施压');
+  assert.equal(page.data.opponentOptions[1], 'Alex，大注强攻');
   page.changeOpponentFilter({ detail: { value: '1' } });
   assert.equal(page.data.reviewSteps.length, 2);
   assert.ok(page.data.reviewSteps.every((step) => step.name === 'Alex'));
@@ -1264,7 +1264,7 @@ test('settings keep eight assignable seats and retain off-table choices for the 
   const index = page.data.profiles.findIndex((p) => p.id === 'rook');
   page.changeSeat({ currentTarget: { dataset: { id: 8 } }, detail: { value: index } });
   assert.equal(JSON.stringify(page._controller.getGame()), before);
-  assert.equal(page.data.seatSettings[7].profileName, '多街施压');
+  assert.equal(page.data.seatSettings[7].profileName, '大注强攻');
   assert.match(page.data.seatSettings[7].portrait, /rook/);
   page.changeCount({ detail: { value: 4 } });
   finish(page._controller.getGame());

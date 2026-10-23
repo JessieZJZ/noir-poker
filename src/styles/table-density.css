@@ -1,5 +1,6 @@
 .game-surface {
-  --live-dock-height: 138px;
+  /* Include the top rail so desktop wager controls fit without overflowing. */
+  --live-dock-height: 139px;
   --compact-dock-height: 58px;
 }
 .game-surface .action-panel .action,

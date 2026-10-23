@@ -12,7 +12,7 @@ test('review heading styles, hand identities, position tags and selected activit
   await page.waitForFunction(() => window.qa);
   await page.evaluate((g) => window.qa.loadRecordedGame(g), game);
   await expect(page.locator('#activity-list .activity-position').first()).toBeVisible();
-  await expect(page.locator('#activity-list')).toContainText('Mia（多街施压）');
+  await expect(page.locator('#activity-list')).toContainText('Mia（大注强攻）');
   await page.locator('#review-hand-button').click();
   await expect(page.locator('#review-dialog')).toHaveAttribute('data-analysis-status', 'done', {
     timeout: 30000,
@@ -39,7 +39,7 @@ test('review heading styles, hand identities, position tags and selected activit
     gold,
   );
   await expect(page.locator('#review-opponent-detail h4')).toHaveCSS('color', gold);
-  await expect(page.locator('#review-opponent-detail')).toContainText('Mia（多街施压）');
+  await expect(page.locator('#review-opponent-detail')).toContainText('Mia（大注强攻）');
   await expect(page.locator('#review-opponent-detail .review-explanation')).toContainText(
     /在 .* 位/,
   );

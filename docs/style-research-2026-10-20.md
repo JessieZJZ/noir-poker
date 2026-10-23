@@ -69,6 +69,11 @@
 
 29. [PokerStars：应对跛入](https://www.pokerstars.com/poker/learn/lesson/when-someone-limps/)。区分适合隔离加注、可低成本跟入和应弃牌的牌，强调位置、可获跟注和弃牌收益。文章不推荐常规六人桌率先跛入，因此候选9的被动跟入定位用于学习应对这类对手，不能包装为职业最优策略。
 30. [PokerStars：避免被动打法，2026-09-24](https://www.pokerstars.com/poker/learn/strategies/how-to-avoid-becoming-a-passive-player/)。被动型主要体现跟注、过牌较多和较少再加注，可以偏松也可以偏紧。候选9将vale的常见主行为改为低成本跟入，安全强牌诱导仅作补充，不再承诺每段自然牌局都会展示慢打。2026-10-23复核。
+31. [PokerStars：进入现金桌底池](https://www.pokerstars.com/poker/learn/lesson/entering-a-cash-game-pot/)。率先决定参与未开启底池时，通常采用开池加注；已有跛入者、加注者及筹码深度需要分别处理。2026-10-23复核，用于隔离实验中“已准入、未加注、无跛入、至少40BB”的主动开池路线，不把教学示例尺度或实验概率当成职业频率。
+32. [PokerStars：进攻行为与适用条件，2022-12-07](https://www.pokerstars.com/poker/learn/news/aggressive-poker-plays-and-when-to-use-them/)。宽范围与主动下注、加注共同构成松凶型，单靠较宽地跟入不足以体现该类型；位置、对手与范围质量仍是前提。实验仅改变特定机会中继续方式的偏好，不据此推荐所有已准入边缘牌主动开池，也不扩大后街价值大注边界。
+33. [PokerStars：观察对手，2021-12-08](https://www.pokerstars.com/poker/learn/strategies/reading-your-opponents/)。区分率先跛入、过宽开池、轻率防守及缺乏牌面支持的多街进攻，强调行动路径与实际展示牌的交叉观察。前位弱杂牌开池或多人不利牌面盲目连打可以是被利用的缺点，不能包装成更高级策略。该资料支持辨认与应对训练，也提示隔离实验还需选牌和实际体验复核。
+34. [PokerStars：下注尺度](https://www.pokerstars.com/poker/learn/lesson/bet-sizing/)。尺度需要结合位置、牌面、有效筹码与双方范围；后街较极化的范围可以使用大尺度，中等牌力并不因此都该大注。2026-10-23复核。候选10将rook展示定位改为“大注强攻”，是结合开发实测作出的作者设计，不把该教学当成任何职业牌手的频率或当前机器人最优性证明。
+35. [PokerStars：Pete Clarke极化与混合范围教学，2021-11-16](https://www.pokerstars.com/poker/learn/strategies/hand-reading-for-beginners-polarised-ranges-vs-merged-ranges/)。对手连续跟注后继续范围通常收紧，后街价值下注需要相应支持，中等牌力不能仅为展示进攻而持续投入。2026-10-23复核。该边界支持保留价值、价格和牌面保护，不支持为凑25个百分点而给弱牌增加无条件大注。
 
 以上新增教学支持对手类型和适用条件，不支持某位历史参考对象的精确频率或一一对应。训练角色包含便于练习识别的局限，不能据此推荐玩家照搬。
 

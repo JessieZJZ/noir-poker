@@ -1,0 +1,252 @@
+{
+  "time": "2026-10-23T03:48:58.747648+00:00",
+  "totalHands": 600,
+  "manualHeroActions": 1236,
+  "results": [
+    {
+      "reviewer": 1,
+      "rawFile": "interactive-raw.jsonl",
+      "rawSha256": "34b1cad4e6f182efa3eb427a5e7dc5f492e4d7d69c9727a5b712d1c875687edd",
+      "httpResponses": 631,
+      "completeHands": 200,
+      "codeHands": {
+        "B": 100,
+        "F": 100
+      },
+      "manualHeroActions": 430,
+      "manualActions": {
+        "fold": 148,
+        "raise": 101,
+        "check": 129,
+        "call": 52
+      },
+      "heroPositions": {
+        "B": {
+          "CO": 20,
+          "UTG": 20,
+          "BB": 20,
+          "SB": 20,
+          "BTN": 20
+        },
+        "F": {
+          "CO": 20,
+          "UTG": 20,
+          "BB": 20,
+          "SB": 20,
+          "BTN": 20
+        }
+      },
+      "targetPositions": {
+        "B": {
+          "BTN": 20,
+          "SB": 20,
+          "BB": 20,
+          "UTG": 20,
+          "CO": 20
+        },
+        "F": {
+          "BTN": 20,
+          "SB": 20,
+          "BB": 20,
+          "UTG": 20,
+          "CO": 20
+        }
+      },
+      "byCode": {
+        "B": {
+          "heroVPIPHands": 42,
+          "heroPFRHands": 29,
+          "commonFlop": 21,
+          "commonTurn": 13,
+          "commonRiver": 10,
+          "targetFacingHero": 11,
+          "targetFacingHero_call": 3,
+          "targetFacingHero_fold": 8,
+          "heroFacingTarget": 7,
+          "heroFacingTarget_fold": 6,
+          "heroFacingTarget_call": 1
+        },
+        "F": {
+          "heroVPIPHands": 39,
+          "heroPFRHands": 22,
+          "commonFlop": 26,
+          "commonTurn": 20,
+          "commonRiver": 14,
+          "heroFacingTarget": 10,
+          "heroFacingTarget_fold": 6,
+          "targetFacingHero": 10,
+          "targetFacingHero_call": 4,
+          "targetFacingHero_fold": 4,
+          "heroFacingTarget_call": 4,
+          "targetFacingHero_raise": 2
+        }
+      },
+      "publicInformationOnly": true,
+      "wholeChipsAndConservation": true,
+      "allManualActionsLegalAndReasoned": true,
+      "note": "Interaction opportunities reconstructed from public contribution and last-aggressor sequence; third-party raises reset attribution. Counts are not a human UX score."
+    },
+    {
+      "reviewer": 2,
+      "rawFile": "interaction-raw.jsonl",
+      "rawSha256": "6bb7fcf5b0085d91daa045c8ad0ea730bb7a861dda4f5c91bf7da406b10b2bd1",
+      "httpResponses": 563,
+      "completeHands": 200,
+      "codeHands": {
+        "A": 100,
+        "H": 100
+      },
+      "manualHeroActions": 363,
+      "manualActions": {
+        "fold": 166,
+        "raise": 72,
+        "check": 87,
+        "call": 38
+      },
+      "heroPositions": {
+        "A": {
+          "CO": 20,
+          "UTG": 20,
+          "BB": 20,
+          "SB": 20,
+          "BTN": 20
+        },
+        "H": {
+          "CO": 20,
+          "UTG": 20,
+          "BB": 20,
+          "SB": 20,
+          "BTN": 20
+        }
+      },
+      "targetPositions": {
+        "A": {
+          "BTN": 20,
+          "SB": 20,
+          "BB": 20,
+          "UTG": 20,
+          "CO": 20
+        },
+        "H": {
+          "BTN": 20,
+          "SB": 20,
+          "BB": 20,
+          "UTG": 20,
+          "CO": 20
+        }
+      },
+      "byCode": {
+        "A": {
+          "heroVPIPHands": 31,
+          "heroPFRHands": 19,
+          "commonFlop": 15,
+          "commonTurn": 12,
+          "commonRiver": 9,
+          "heroFacingTarget": 2,
+          "heroFacingTarget_fold": 2,
+          "targetFacingHero": 3,
+          "targetFacingHero_fold": 3
+        },
+        "H": {
+          "heroVPIPHands": 35,
+          "heroPFRHands": 22,
+          "commonFlop": 18,
+          "commonTurn": 12,
+          "commonRiver": 8,
+          "heroFacingTarget": 6,
+          "heroFacingTarget_fold": 3,
+          "targetFacingHero": 11,
+          "targetFacingHero_call": 3,
+          "targetFacingHero_fold": 8,
+          "heroFacingTarget_call": 3
+        }
+      },
+      "publicInformationOnly": true,
+      "wholeChipsAndConservation": true,
+      "allManualActionsLegalAndReasoned": true,
+      "note": "Interaction opportunities reconstructed from public contribution and last-aggressor sequence; third-party raises reset attribution. Counts are not a human UX score."
+    },
+    {
+      "reviewer": 3,
+      "rawFile": "requests.jsonl",
+      "rawSha256": "96d11822fb551a9c932ca58273dc8d6d57136e847b6ef848f6c9b1ac99fa3cb9",
+      "httpResponses": 1089,
+      "completeHands": 200,
+      "codeHands": {
+        "A": 100,
+        "B": 100
+      },
+      "manualHeroActions": 443,
+      "manualActions": {
+        "fold": 138,
+        "call": 59,
+        "check": 122,
+        "raise": 124
+      },
+      "heroPositions": {
+        "A": {
+          "CO": 20,
+          "UTG": 20,
+          "BB": 20,
+          "SB": 20,
+          "BTN": 20
+        },
+        "B": {
+          "CO": 20,
+          "UTG": 20,
+          "BB": 20,
+          "SB": 20,
+          "BTN": 20
+        }
+      },
+      "targetPositions": {
+        "A": {
+          "BTN": 20,
+          "SB": 20,
+          "BB": 20,
+          "UTG": 20,
+          "CO": 20
+        },
+        "B": {
+          "BTN": 20,
+          "SB": 20,
+          "BB": 20,
+          "UTG": 20,
+          "CO": 20
+        }
+      },
+      "byCode": {
+        "A": {
+          "heroVPIPHands": 40,
+          "heroPFRHands": 26,
+          "commonFlop": 20,
+          "commonTurn": 15,
+          "commonRiver": 11,
+          "targetFacingHero": 11,
+          "targetFacingHero_call": 10,
+          "heroFacingTarget": 8,
+          "heroFacingTarget_fold": 5,
+          "heroFacingTarget_call": 3,
+          "targetFacingHero_fold": 1
+        },
+        "B": {
+          "heroVPIPHands": 50,
+          "heroPFRHands": 33,
+          "commonFlop": 28,
+          "commonTurn": 16,
+          "commonRiver": 13,
+          "targetFacingHero": 13,
+          "targetFacingHero_fold": 7,
+          "targetFacingHero_call": 6,
+          "heroFacingTarget": 5,
+          "heroFacingTarget_fold": 4,
+          "heroFacingTarget_call": 1
+        }
+      },
+      "publicInformationOnly": true,
+      "wholeChipsAndConservation": true,
+      "allManualActionsLegalAndReasoned": true,
+      "note": "Interaction opportunities reconstructed from public contribution and last-aggressor sequence; third-party raises reset attribution. Counts are not a human UX score."
+    }
+  ]
+}

@@ -487,7 +487,7 @@ test('showdown participant names include the current named style and stay readab
   await closeSettings(page);
   const names = [
     '你',
-    'Mia（多街施压）',
+    'Mia（大注强攻）',
     'Alex（范围纪律）',
     'River（跟注诱导）',
     'Kai（宽松取值）',
@@ -1223,13 +1223,13 @@ test('activity shows actual assigned personas across actions and results without
     }, count);
     const list = page.locator('#activity-list');
     await expect(list.locator('.log-blind')).toHaveText(
-      'Mia（多街施压） SB 小盲 25 · Alex（范围纪律） BB 大盲 50',
+      'Mia（大注强攻） SB 小盲 25 · Alex（范围纪律） BB 大盲 50',
     );
     for (const label of [
-      'Mia（多街施压）',
+      'Mia（大注强攻）',
       'Alex（范围纪律）',
       'River（范围纪律）',
-      'Kai（多街施压）',
+      'Kai（大注强攻）',
     ])
       await expect(list).toContainText(label);
     await expect(list).not.toContainText('Luna（');
@@ -1269,14 +1269,14 @@ test('activity shows actual assigned personas across actions and results without
   await closeSettings(page);
   await page.locator('.seat-2 .seat-peek').click();
   await expect(page.locator('#activity-list')).toContainText('Alex（范围纪律） CO 获胜');
-  await expect(page.locator('#activity-list')).not.toContainText('Alex（多街施压）');
+  await expect(page.locator('#activity-list')).not.toContainText('Alex（大注强攻）');
 
   await page.locator('#next-button').click();
   await page.evaluate(() => {
     window.qa.stop();
     window.qa.foldRest();
   });
-  await expect(page.locator('#activity-list')).toContainText('Alex（多街施压）');
+  await expect(page.locator('#activity-list')).toContainText('Alex（大注强攻）');
   await expect(page.locator('#activity-list')).not.toContainText('Alex（范围纪律）');
 });
 
@@ -1559,7 +1559,7 @@ test('nine-seat style assignment shows every persona at all sizes and executes t
     8: 'balanced',
   };
   const labels = [
-    '多街施压',
+    '大注强攻',
     '范围纪律',
     '跟注诱导',
     '宽松取值',
@@ -1671,7 +1671,7 @@ test('all named portraits preview immediately, follow saved styles next hand and
         ),
     )
     .toBe(true);
-  await expect(page.locator('#profile-cards')).toContainText('多街施压');
+  await expect(page.locator('#profile-cards')).toContainText('大注强攻');
   await expect(page.locator('#profile-cards')).not.toContainText('谈老板');
   await assignNamedLineup(page);
   await page.locator('[data-bot-seat="8"]').selectOption('rook');
@@ -2058,7 +2058,7 @@ test('training style assignments persist and opponent review filters include ass
   for (const [profile, name] of [
     ['jett', '宽松取值'],
     ['owen', '范围纪律'],
-    ['rook', '多街施压'],
+    ['rook', '大注强攻'],
   ]) {
     const choice = page.locator(`[data-profile-preview="${profile}"]`);
     await expect(choice.locator('strong')).toHaveText(name);
@@ -2083,5 +2083,5 @@ test('training style assignments persist and opponent review filters include ass
   await expect(page.locator('#review-advanced, #review-simulation')).toHaveCount(0);
   await page.locator('#review-opponents-tab').click();
   const options = await page.locator('#review-opponent-filter option').allTextContents();
-  expect(options.some((name) => /Mia.*多街施压/.test(name))).toBe(true);
+  expect(options.some((name) => /Mia.*大注强攻/.test(name))).toBe(true);
 });

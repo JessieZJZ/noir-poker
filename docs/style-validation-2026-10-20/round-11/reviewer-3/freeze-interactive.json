@@ -1,0 +1,134 @@
+{
+  "reviewer": 3,
+  "phase": "all-observation-and-interactive-frozen-awaiting-neutral-menu",
+  "frozenAt": "2026-10-23T03:43:40.171336+00:00",
+  "observedHands": 800,
+  "interactiveHands": 200,
+  "selectedOpponents": [
+    "A",
+    "B"
+  ],
+  "perCodeHands": {
+    "A": 100,
+    "B": 100
+  },
+  "positionsPerCode": {
+    "A": {
+      "CO": 20,
+      "UTG": 20,
+      "BB": 20,
+      "SB": 20,
+      "BTN": 20
+    },
+    "B": {
+      "CO": 20,
+      "UTG": 20,
+      "BB": 20,
+      "SB": 20,
+      "BTN": 20
+    }
+  },
+  "apiStoppedAfterHand": 200,
+  "lastRequestAt": "2026-10-23T03:33:20.276350+00:00",
+  "lastStatePhase": "done",
+  "requestsWithRawHTTP": 1089,
+  "loggedHeroDecisions": 443,
+  "unloggedPreflightReadOnlyRequests": 1,
+  "originalFreeHashUnchanged": true,
+  "originalDecisionReasonsUnchanged": true,
+  "classified": false,
+  "scored": false,
+  "neutralMenuRead": false,
+  "auditErrors": [],
+  "files": {
+    "A.jsonl": {
+      "sha256": "5e1aada4be2cbc037199edc7dc90c18c03139e9c9e95086db5b69328c1490acd",
+      "bytes": 125079
+    },
+    "API.md": {
+      "sha256": "c50ead9552a14a43284e7b839568b6fbde01466dc5771ad25b3727af3ff5ca9d",
+      "bytes": 1602
+    },
+    "B.jsonl": {
+      "sha256": "028d1ec226129d6addc3709f12252e081067b4c897da53afe8eb1053d361ebc9",
+      "bytes": 122199
+    },
+    "C.jsonl": {
+      "sha256": "8ff8adb92edc029c625e93680345ef2e5c36d922e1bba43ff8a9e46cfb91712d",
+      "bytes": 125164
+    },
+    "D.jsonl": {
+      "sha256": "6a194cff76fb8461d5a7c5f744a06f116ce66ec85ddb64cae0c0e8348505b910",
+      "bytes": 120308
+    },
+    "E.jsonl": {
+      "sha256": "d0cb0df7ca5db4cf99659d8f334e939a3753c939df1ae0ebefb530131c6dd902",
+      "bytes": 124604
+    },
+    "F.jsonl": {
+      "sha256": "b6799d23c552265080b078899cff01db399a3ff57483df92fa0dc81be085bedb",
+      "bytes": 119687
+    },
+    "G.jsonl": {
+      "sha256": "a49b6cf4070482cd3008c58fd98de4d764933416b956a70fac4bcf6394cbf50d",
+      "bytes": 126430
+    },
+    "H.jsonl": {
+      "sha256": "f0436416f90ed0501315ed6c38f5011c15f4cd1596a529f11b0a8cb1046127fd",
+      "bytes": 121794
+    },
+    "README.txt": {
+      "sha256": "4fcb02a6a8ed2059a0832544014f91f0994e77cee2db52c3917fb8ba36dbb715",
+      "bytes": 1017
+    },
+    "audit-records.py": {
+      "sha256": "521542a69eee9686e40cbdb5d5d9664de6286057ecb200db4152973d9a37c5a5",
+      "bytes": 10866
+    },
+    "audit.json": {
+      "sha256": "1aeba377985ff42c918da92d2c8d10a0bf46e21c4372cef2b9c995254c1a8dc4",
+      "bytes": 67777
+    },
+    "free-review.md": {
+      "sha256": "9d5641dffcd07353ff8c407091b4619e45d9c7f8afcc90468b6af006de640fcc",
+      "bytes": 8878
+    },
+    "freeze-free.json": {
+      "sha256": "18772bb9cef1ef28d719260d1eb10245fafa09cf5286a3337a7d8ba61ee9596e",
+      "bytes": 2222
+    },
+    "interactive-review.md": {
+      "sha256": "49d060ccfdb4ed0397947ce414a2e3c40c8723bfa5c334a8441c7b14b1b6b26a",
+      "bytes": 9105
+    },
+    "observation-statistics.json": {
+      "sha256": "bf0d775b5319dabac09c459f762b51cdb4edf6f4cf27a11e4db0d46ff51d7a7f",
+      "bytes": 2883
+    },
+    "request-prestates.jsonl": {
+      "sha256": "6580077919a7ba11e161271c11d5855f7391f4d64629ef2d4d61cbfeda6d6cfa",
+      "bytes": 1663639
+    },
+    "requests.jsonl": {
+      "sha256": "96d11822fb551a9c932ca58273dc8d6d57136e847b6ef848f6c9b1ac99fa3cb9",
+      "bytes": 2926835
+    },
+    "self-corrections.json": {
+      "sha256": "363695d893a652ad7a217411e35ff56b021470d74f19f6985dcdbe020d7259b6",
+      "bytes": 1049
+    },
+    "transport-state.json": {
+      "sha256": "92e2d82bf3dbfa95e4aa2d22b8ff999b9e0456018eed537ad8a539e0718ccd94",
+      "bytes": 51
+    },
+    "transport.py": {
+      "sha256": "4c3cf5459f991aef66c8da6888025f5c301c638beba7c22b57db867630c42b2e",
+      "bytes": 5106
+    },
+    "SHA256SUMS.txt": {
+      "sha256": "cde93306b4871d0ae7f71e16b586232f8b7f621d771b6ce9a7f6e8514a4b70b6",
+      "bytes": 1673
+    }
+  },
+  "note": "Manifest hashes all submitted original and derived files including SHA256SUMS.txt. It excludes only this freeze manifest itself to avoid a circular hash. The freeze manifest SHA256 is sent separately."
+}

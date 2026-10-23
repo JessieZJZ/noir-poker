@@ -227,7 +227,11 @@
     "更常用跟注进入便宜底池，安全强牌保留诱导，面对高成本仍会退出。": "Tends to call into cheap pots, retains traps with safe strong hands, and folds when the price is too high.",
     "低成本时更倾向跟入而非主动加注，仍按起手牌范围和筹码压力筛选。": "At low prices prefers calling to raising, while still filtering hands by range and stack pressure.",
     "特色路线是低价先跟保留对手，命中安全强牌后选择过牌或跟注诱导，危险局面恢复价值进攻。": "Often starts with a cheap call to keep opponents in, then checks or calls with safe strong hands to induce action. On dangerous boards returns to value aggression.",
-    "可以用位置和价值牌隔离，但不能把它的每次跟注都当成弱牌。": "Use position and value hands to isolate, but do not treat every call as a weak hand."
+    "可以用位置和价值牌隔离，但不能把它的每次跟注都当成弱牌。": "Use position and value hands to isolate, but do not treat every call as a weak hand.",
+    "大注强攻": "Big-bet pressure",
+    "宽范围 · 后街大注": "Wide range · Big later-street bets",
+    "更宽地参与底池，合适的后街偏向大尺度取值，并保留有依据的诈唬。": "Enters more pots, favors larger value bets on suitable later streets, and retains supported bluffs.",
+    "特色路线是在合适的转牌或河牌用大尺度增加对手的继续成本，中等牌力仍会控制投入。": "Its signature line uses large bets on suitable turns or rivers to increase the cost of continuing, while medium-strength hands still limit their investment."
   },
   "zh-TW": {
     "设置": "設定",
@@ -331,7 +335,11 @@
     "更常用跟注进入便宜底池，安全强牌保留诱导，面对高成本仍会退出。": "更常用跟注進入便宜底池，安全強牌保留誘導，面對高成本仍會退出。",
     "低成本时更倾向跟入而非主动加注，仍按起手牌范围和筹码压力筛选。": "低成本時更傾向跟入而非主動加注，仍按起手牌範圍和籌碼壓力篩選。",
     "特色路线是低价先跟保留对手，命中安全强牌后选择过牌或跟注诱导，危险局面恢复价值进攻。": "特色路線是低價先跟保留對手，命中安全強牌後選擇過牌或跟注誘導，危險局面恢復價值進攻。",
-    "可以用位置和价值牌隔离，但不能把它的每次跟注都当成弱牌。": "可以用位置和價值牌隔離，但不能把它的每次跟注都當成弱牌。"
+    "可以用位置和价值牌隔离，但不能把它的每次跟注都当成弱牌。": "可以用位置和價值牌隔離，但不能把它的每次跟注都當成弱牌。",
+    "大注强攻": "大注強攻",
+    "宽范围 · 后街大注": "寬範圍 · 後街大注",
+    "更宽地参与底池，合适的后街偏向大尺度取值，并保留有依据的诈唬。": "更寬地參與底池，合適的後街偏向大尺度取值，並保留有依據的詐唬。",
+    "特色路线是在合适的转牌或河牌用大尺度增加对手的继续成本，中等牌力仍会控制投入。": "特色路線是在合適的轉牌或河牌用大尺度增加對手的繼續成本，中等牌力仍會控制投入。"
   },
   "ja": {
     "设置": "設定",
@@ -435,7 +443,11 @@
     "更常用跟注进入便宜底池，安全强牌保留诱导，面对高成本仍会退出。": "安いポットにはコールで参加しやすく、安全な強いハンドでは誘う余地を残す。高いコストには降りることもある。",
     "低成本时更倾向跟入而非主动加注，仍按起手牌范围和筹码压力筛选。": "安い価格ではレイズよりコールを好むが、ハンドの範囲とスタックへの負担で参加を選ぶ。",
     "特色路线是低价先跟保留对手，命中安全强牌后选择过牌或跟注诱导，危险局面恢复价值进攻。": "安いコールで相手を残し、安全な強いハンドができればチェックやコールで誘う。危険なボードではバリューを取る攻撃に戻る。",
-    "可以用位置和价值牌隔离，但不能把它的每次跟注都当成弱牌。": "ポジションとバリューハンドでアイソレートできるが、すべてのコールを弱いハンドと決めつけない。"
+    "可以用位置和价值牌隔离，但不能把它的每次跟注都当成弱牌。": "ポジションとバリューハンドでアイソレートできるが、すべてのコールを弱いハンドと決めつけない。",
+    "大注强攻": "大きなベットで圧力",
+    "宽范围 · 后街大注": "広いレンジ · 後半の大きなベット",
+    "更宽地参与底池，合适的后街偏向大尺度取值，并保留有依据的诈唬。": "幅広くポットに参加し、適切な後半のストリートでは大きめのバリューベットを好み、根拠のあるブラフも残します。",
+    "特色路线是在合适的转牌或河牌用大尺度增加对手的继续成本，中等牌力仍会控制投入。": "適切なターンやリバーで大きくベットして相手の継続コストを上げますが、中程度のハンドでは投入額を抑えます。"
   },
   "ko": {
     "设置": "설정",
@@ -539,7 +551,11 @@
     "更常用跟注进入便宜底池，安全强牌保留诱导，面对高成本仍会退出。": "저렴한 팟에는 콜로 참여하는 편이다. 안전한 강한 패로는 유도할 여지를 남기지만 가격이 너무 비싸면 포기한다.",
     "低成本时更倾向跟入而非主动加注，仍按起手牌范围和筹码压力筛选。": "낮은 가격에서는 레이즈보다 콜을 선호하지만 시작 패 범위와 스택 부담에 따라 참여를 고른다.",
     "特色路线是低价先跟保留对手，命中安全强牌后选择过牌或跟注诱导，危险局面恢复价值进攻。": "저렴하게 콜해 상대를 남겨 두고 안전한 강한 패가 되면 체크나 콜로 행동을 유도한다. 위험한 보드에서는 가치 베팅으로 돌아간다.",
-    "可以用位置和价值牌隔离，但不能把它的每次跟注都当成弱牌。": "포지션과 가치 있는 패로 아이솔레이션할 수 있지만 모든 콜을 약한 패라고 단정하지 않는다."
+    "可以用位置和价值牌隔离，但不能把它的每次跟注都当成弱牌。": "포지션과 가치 있는 패로 아이솔레이션할 수 있지만 모든 콜을 약한 패라고 단정하지 않는다.",
+    "大注强攻": "큰 베팅 압박",
+    "宽范围 · 后街大注": "넓은 범위 · 후반 큰 베팅",
+    "更宽地参与底池，合适的后街偏向大尺度取值，并保留有依据的诈唬。": "더 넓게 팟에 참여하고 적절한 후반 스트리트에서 큰 밸류 베팅을 선호하며 근거 있는 블러프도 유지합니다.",
+    "特色路线是在合适的转牌或河牌用大尺度增加对手的继续成本，中等牌力仍会控制投入。": "적절한 턴이나 리버에서 큰 베팅으로 상대의 계속 비용을 높이지만 중간 강도 패로는 투입을 조절합니다."
   },
   "es": {
     "设置": "Ajustes",
@@ -643,7 +659,11 @@
     "更常用跟注进入便宜底池，安全强牌保留诱导，面对高成本仍会退出。": "Entra más a menudo pagando barato, conserva trampas con manos fuertes en situaciones seguras y puede retirarse si el precio es demasiado alto.",
     "低成本时更倾向跟入而非主动加注，仍按起手牌范围和筹码压力筛选。": "Con precios bajos prefiere igualar a subir, pero sigue seleccionando las manos por rango y presión sobre el stack.",
     "特色路线是低价先跟保留对手，命中安全强牌后选择过牌或跟注诱导，危险局面恢复价值进攻。": "Suele empezar pagando barato para mantener rivales. Con una mano fuerte en una situación segura puede pasar o igualar para inducir acción; en mesas peligrosas vuelve a apostar por valor.",
-    "可以用位置和价值牌隔离，但不能把它的每次跟注都当成弱牌。": "Usa posición y manos de valor para aislar, sin asumir que cada call representa una mano débil."
+    "可以用位置和价值牌隔离，但不能把它的每次跟注都当成弱牌。": "Usa posición y manos de valor para aislar, sin asumir que cada call representa una mano débil.",
+    "大注强攻": "Presión con apuestas grandes",
+    "宽范围 · 后街大注": "Rango amplio · Apuestas grandes en calles finales",
+    "更宽地参与底池，合适的后街偏向大尺度取值，并保留有依据的诈唬。": "Participa en más botes, prefiere apuestas de valor grandes en calles finales adecuadas y mantiene faroles con fundamento.",
+    "特色路线是在合适的转牌或河牌用大尺度增加对手的继续成本，中等牌力仍会控制投入。": "Su línea distintiva usa apuestas grandes en turns o rivers adecuados para encarecer la continuación rival, mientras limita la inversión con manos de fuerza media."
   },
   "it": {
     "设置": "Impostazioni",
@@ -747,7 +767,11 @@
     "更常用跟注进入便宜底池，安全强牌保留诱导，面对高成本仍会退出。": "Entra più spesso con call economici, conserva trappole con mani forti in situazioni sicure e può passare se il prezzo diventa eccessivo.",
     "低成本时更倾向跟入而非主动加注，仍按起手牌范围和筹码压力筛选。": "A prezzi bassi preferisce chiamare anziché rilanciare, ma seleziona comunque le mani in base al range e alla pressione sullo stack.",
     "特色路线是低价先跟保留对手，命中安全强牌后选择过牌或跟注诱导，危险局面恢复价值进攻。": "Inizia spesso con un call economico per tenere gli avversari nel piatto. Con mani forti su board sicuri può fare check o call per indurre azione; sui board pericolosi torna a puntare per valore.",
-    "可以用位置和价值牌隔离，但不能把它的每次跟注都当成弱牌。": "Usa posizione e mani di valore per isolare, senza considerare ogni call una mano debole."
+    "可以用位置和价值牌隔离，但不能把它的每次跟注都当成弱牌。": "Usa posizione e mani di valore per isolare, senza considerare ogni call una mano debole.",
+    "大注强攻": "Pressione con puntate grandi",
+    "宽范围 · 后街大注": "Range ampio · Puntate grandi nelle street finali",
+    "更宽地参与底池，合适的后街偏向大尺度取值，并保留有依据的诈唬。": "Entra in più piatti, preferisce puntate di valore grandi nelle street finali adatte e mantiene bluff motivati.",
+    "特色路线是在合适的转牌或河牌用大尺度增加对手的继续成本，中等牌力仍会控制投入。": "La sua linea caratteristica usa puntate grandi sui turn o river adatti per aumentare il costo di continuare, limitando invece gli investimenti con mani di forza media."
   },
   "pt": {
     "设置": "Definições",
@@ -851,7 +875,11 @@
     "更常用跟注进入便宜底池，安全强牌保留诱导，面对高成本仍会退出。": "Entra mais vezes pagando barato, mantém armadilhas com mãos fortes em situações seguras e pode desistir se o preço ficar alto demais.",
     "低成本时更倾向跟入而非主动加注，仍按起手牌范围和筹码压力筛选。": "Com preços baixos prefere pagar a aumentar, mas ainda seleciona as mãos pelo range e pela pressão sobre o stack.",
     "特色路线是低价先跟保留对手，命中安全强牌后选择过牌或跟注诱导，危险局面恢复价值进攻。": "Costuma começar com um call barato para manter os adversários. Com mãos fortes em boards seguros pode dar check ou pagar para induzir ação; em boards perigosos volta a apostar por valor.",
-    "可以用位置和价值牌隔离，但不能把它的每次跟注都当成弱牌。": "Use posição e mãos de valor para isolar, sem presumir que todo call representa uma mão fraca."
+    "可以用位置和价值牌隔离，但不能把它的每次跟注都当成弱牌。": "Use posição e mãos de valor para isolar, sem presumir que todo call representa uma mão fraca.",
+    "大注强攻": "Pressão com apostas grandes",
+    "宽范围 · 后街大注": "Range amplo · Apostas grandes nas ruas finais",
+    "更宽地参与底池，合适的后街偏向大尺度取值，并保留有依据的诈唬。": "Participa de mais potes, prefere apostas grandes por valor nas ruas finais adequadas e mantém blefes fundamentados.",
+    "特色路线是在合适的转牌或河牌用大尺度增加对手的继续成本，中等牌力仍会控制投入。": "Sua linha característica usa apostas grandes em turns ou rivers adequados para aumentar o custo de continuar, enquanto controla o investimento com mãos de força média."
   },
   "de": {
     "设置": "Einstellungen",
@@ -955,7 +983,11 @@
     "更常用跟注进入便宜底池，安全强牌保留诱导，面对高成本仍会退出。": "Steigt häufiger günstig mit Calls ein, hält mit sicheren starken Händen Fallen offen und kann bei zu hohen Kosten aussteigen.",
     "低成本时更倾向跟入而非主动加注，仍按起手牌范围和筹码压力筛选。": "Bevorzugt bei kleinen Preisen Calls statt Raises, wählt die Hände aber weiterhin nach Range und Stackbelastung aus.",
     "特色路线是低价先跟保留对手，命中安全强牌后选择过牌或跟注诱导，危险局面恢复价值进攻。": "Beginnt oft mit einem günstigen Call, um Gegner im Pot zu halten. Mit sicheren starken Händen können Checks oder Calls weitere Aktionen anregen; auf gefährlichen Boards kehrt er zu Value-Aggression zurück.",
-    "可以用位置和价值牌隔离，但不能把它的每次跟注都当成弱牌。": "Mit Position und Value-Händen lässt er sich isolieren. Dennoch ist nicht jeder Call eine schwache Hand."
+    "可以用位置和价值牌隔离，但不能把它的每次跟注都当成弱牌。": "Mit Position und Value-Händen lässt er sich isolieren. Dennoch ist nicht jeder Call eine schwache Hand.",
+    "大注强攻": "Druck mit großen Einsätzen",
+    "宽范围 · 后街大注": "Breite Range · Große Einsätze auf späten Straßen",
+    "更宽地参与底池，合适的后街偏向大尺度取值，并保留有依据的诈唬。": "Spielt mehr Pots, bevorzugt auf passenden späten Straßen größere Value-Bets und behält begründete Bluffs bei.",
+    "特色路线是在合适的转牌或河牌用大尺度增加对手的继续成本，中等牌力仍会控制投入。": "Die typische Linie erhöht mit großen Einsätzen auf passenden Turns oder Rivers die Kosten des Weiterspielens; mittelstarke Hände begrenzen weiterhin ihren Einsatz."
   },
   "fr": {
     "设置": "Paramètres",
@@ -1059,7 +1091,11 @@
     "更常用跟注进入便宜底池，安全强牌保留诱导，面对高成本仍会退出。": "Entre plus souvent en suivant à petit prix, conserve des pièges avec ses mains fortes et sûres, mais peut abandonner si le coût devient trop élevé.",
     "低成本时更倾向跟入而非主动加注，仍按起手牌范围和筹码压力筛选。": "À petit prix, préfère suivre plutôt que relancer, tout en sélectionnant ses mains selon sa range et la pression sur son tapis.",
     "特色路线是低价先跟保留对手，命中安全强牌后选择过牌或跟注诱导，危险局面恢复价值进攻。": "Commence souvent par suivre à petit prix pour garder les adversaires. Avec une main forte sur un tableau sûr, peut checker ou suivre pour provoquer une mise; sur un tableau dangereux, revient à des mises de valorisation.",
-    "可以用位置和价值牌隔离，但不能把它的每次跟注都当成弱牌。": "Utiliser la position et des mains de valeur pour isoler, sans considérer chaque call comme une main faible."
+    "可以用位置和价值牌隔离，但不能把它的每次跟注都当成弱牌。": "Utiliser la position et des mains de valeur pour isoler, sans considérer chaque call comme une main faible.",
+    "大注强攻": "Pression par grosses mises",
+    "宽范围 · 后街大注": "Range large · Grosses mises sur les dernières streets",
+    "更宽地参与底池，合适的后街偏向大尺度取值，并保留有依据的诈唬。": "Participe à davantage de pots, préfère de grosses mises de value sur les dernières streets appropriées et conserve des bluffs justifiés.",
+    "特色路线是在合适的转牌或河牌用大尺度增加对手的继续成本，中等牌力仍会控制投入。": "Sa ligne caractéristique utilise de grosses mises sur les turns ou rivers appropriés pour rendre la poursuite plus coûteuse, tout en limitant les investissements avec les mains de force moyenne."
   },
   "ru": {
     "设置": "Настройки",
@@ -1163,6 +1199,10 @@
     "更常用跟注进入便宜底池，安全强牌保留诱导，面对高成本仍会退出。": "Чаще входит недорогим коллом, сохраняет ловушки с сильными руками на безопасной доске и может сбросить при слишком высокой цене.",
     "低成本时更倾向跟入而非主动加注，仍按起手牌范围和筹码压力筛选。": "При низкой цене предпочитает колл рейзу, но по-прежнему отбирает руки с учётом диапазона и нагрузки на стек.",
     "特色路线是低价先跟保留对手，命中安全强牌后选择过牌或跟注诱导，危险局面恢复价值进攻。": "Часто начинает с недорогого колла, чтобы оставить соперников в банке. С сильной рукой на безопасной доске может чекать или коллировать, провоцируя действие; на опасной доске возвращается к ставкам на вэлью.",
-    "可以用位置和价值牌隔离，但不能把它的每次跟注都当成弱牌。": "Используйте позицию и вэлью-руки для изоляции, но не считайте каждый колл признаком слабой руки."
+    "可以用位置和价值牌隔离，但不能把它的每次跟注都当成弱牌。": "Используйте позицию и вэлью-руки для изоляции, но не считайте каждый колл признаком слабой руки.",
+    "大注强攻": "Давление крупными ставками",
+    "宽范围 · 后街大注": "Широкий диапазон · Крупные ставки на поздних улицах",
+    "更宽地参与底池，合适的后街偏向大尺度取值，并保留有依据的诈唬。": "Участвует в большем числе банков, предпочитает крупные ставки на вэлью на подходящих поздних улицах и сохраняет обоснованные блефы.",
+    "特色路线是在合适的转牌或河牌用大尺度增加对手的继续成本，中等牌力仍会控制投入。": "Характерная линия — крупные ставки на подходящих тёрнах или риверах, повышающие цену продолжения для соперника; со средними руками вложения остаются ограниченными."
   }
 }

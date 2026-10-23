@@ -1,10 +1,10 @@
 {
-  "sourceDigest": "5932c97a6ef366aa3d3b3b0a539690d2d897ab9409d02e34a7edc438b0582156",
-  "note": "Representative name-fitting measures chosen before final development completion and any held-out results. 25pp vs balanced, 30 initial-shuffle clusters, CI excludes zero, normal/hard directions agree. Conditional actions, not hands.",
+  "sourceDigest": "08ae9259e31b51169dd3655fc29e43e6255de13bd3051fbb78fd59c3490fa3e6",
+  "note": "Prospective candidate 10 representative measures fixed before reserved held-out results. Rook repositioned to Big-bet pressure after development; previous turn-barrel.large 22.107pp remains a failed candidate 9 measure. No policy changes. 25pp vs balanced, 30 initial-shuffle clusters, CI excludes zero, normal/hard directions agree. Conditional decisions, not hands.",
   "styles": [
     {
       "profile": "rook",
-      "metric": "turn-barrel",
+      "metric": "river-value",
       "field": "large",
       "direction": 1
     },
@@ -44,5 +44,6 @@
       "field": "raise",
       "direction": 1
     }
-  ]
+  ],
+  "lockedAt": "2026-10-23T04:56:37.936Z"
 }

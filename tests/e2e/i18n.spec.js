@@ -317,7 +317,7 @@ test('DOM sources survive rerenders, duplicate translated labels and rapid langu
     await loadLocale('en');
     setLocalizedHTML(
       holder,
-      '<button title="弃牌">弃牌</button><span>已弃牌</span><b translate="no">多街施压</b>',
+      '<button title="弃牌">弃牌</button><span>已弃牌</span><b translate="no">大注强攻</b>',
     );
     const button = holder.querySelector('button');
     button.dataset.rule = '弃牌';
@@ -346,7 +346,7 @@ test('DOM sources survive rerenders, duplicate translated labels and rapid langu
     text: '跟注',
     title: '跟注',
     span: '已弃牌',
-    legalName: '多街施压',
+    legalName: '大注强攻',
     rule: '弃牌',
     clicked: 'true',
   });

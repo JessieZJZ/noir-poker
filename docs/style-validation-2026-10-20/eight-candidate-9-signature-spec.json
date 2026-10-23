@@ -1,0 +1,48 @@
+{
+  "sourceDigest": "5932c97a6ef366aa3d3b3b0a539690d2d897ab9409d02e34a7edc438b0582156",
+  "note": "Representative name-fitting measures chosen before final development completion and any held-out results. 25pp vs balanced, 30 initial-shuffle clusters, CI excludes zero, normal/hard directions agree. Conditional actions, not hands.",
+  "styles": [
+    {
+      "profile": "rook",
+      "metric": "turn-barrel",
+      "field": "large",
+      "direction": 1
+    },
+    {
+      "profile": "jett",
+      "metric": "river-value",
+      "field": "large",
+      "direction": 1
+    },
+    {
+      "profile": "owen",
+      "metric": "small-open-defense",
+      "field": "continue",
+      "direction": -1
+    },
+    {
+      "profile": "vale",
+      "metric": "cheap-entry",
+      "field": "call",
+      "direction": 1
+    },
+    {
+      "profile": "nico",
+      "metric": "turn-barrel",
+      "field": "small",
+      "direction": 1
+    },
+    {
+      "profile": "mira",
+      "metric": "draw-pressure",
+      "field": "raise",
+      "direction": 1
+    },
+    {
+      "profile": "iris",
+      "metric": "late-open",
+      "field": "raise",
+      "direction": 1
+    }
+  ]
+}

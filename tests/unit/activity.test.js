@@ -38,7 +38,7 @@ test('activity uses a captured hand identity and safely escapes text', () => {
   const format = createActivityFormatter(hand);
   hand[2].botProfile = 'rook';
   assert.ok(format('Alex 获胜').includes('范围纪律'));
-  assert.ok(createActivityFormatter(hand)('Alex 获胜').includes('多街施压'));
+  assert.ok(createActivityFormatter(hand)('Alex 获胜').includes('大注强攻'));
   assert.equal(format('<img src=x> & "chips"'), '&lt;img src=x&gt; &amp; &quot;chips&quot;');
 });
 

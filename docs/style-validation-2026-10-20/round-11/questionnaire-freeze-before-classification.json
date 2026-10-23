@@ -1,0 +1,11 @@
+{
+  "frozenAt": "2026-10-22T21:21:59.606502+00:00",
+  "questionnaireSha256": "83131b52a8e8681b99aff6b6d8715e8fa719ad27002c867ad15a79617dd4fb97",
+  "sentToReviewers": false,
+  "freeManuscripts": {
+    "1": "f7b65a4f214decc77d3e110ca46e87b0d8931bc4c1b44bf990e943dc2317b093",
+    "2": "454eaae82357afea8a67794c224ad636231122f24897fdd443f60a47821f3664",
+    "3": "9d5641dffcd07353ff8c407091b4619e45d9c7f8afcc90468b6af006de640fcc"
+  },
+  "note": "Neutral menu fixed while all reviewers still had no classification; only release after all interaction manuscripts frozen and independently verified."
+}
