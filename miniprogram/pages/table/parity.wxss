@@ -788,10 +788,11 @@
   font-size: 15px;
   gap: 12px;
 }
+/* Web's descriptions inherit the page's 1.9 line height. */
 .setting-description {
   display: block;
   font-size: 12px;
-  line-height: 1.5;
+  line-height: 1.9;
   color: #95a8b0;
   margin: 3px 0 0;
 }

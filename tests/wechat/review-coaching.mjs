@@ -101,7 +101,6 @@ try {
   await mini.reLaunch('/pages/table/table');
   page = await mini.currentPage();
   report.build = JSON.parse(fs.readFileSync(path.join(root, '.artifacts/wechat/build-info.json')));
-  assert.equal((await page.data()).noticeExpanded, true);
   assert.equal((await page.data()).guideExpanded[1], true);
   page = await seatAtTable(mini);
   await invoke('closeReview');

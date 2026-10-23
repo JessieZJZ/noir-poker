@@ -1112,19 +1112,6 @@
   margin-bottom: 2px;
 }
 
-.settings-modal .info-module > .notice-link {
-  color: #9ce0c7;
-  text-decoration: underline;
-  margin: 0;
-  font-size: 12px;
-  line-height: 21.6px;
-}
-.notice-expanded {
-  color: #9fb7b1;
-  font-size: 12px;
-  line-height: 1.8;
-  padding-top: 8px;
-}
 .settings-modal .info-module {
   margin-bottom: 0;
 }

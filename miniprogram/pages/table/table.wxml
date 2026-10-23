@@ -772,15 +772,10 @@
         ><text>设置自动保存。难度立即生效；风格与情绪下一手生效，当前手与重打保持原设置。</text
         ><text>0–100 表示游戏内策略倾向。位置、人数、牌力、跟注价格和合法动作优先于所选风格。</text
         ><text class="notice-title">关于训练风格</text
-        ><text>电脑角色的策略和情绪均为游戏设定，介绍描述常见倾向，不保证每次采用相同操作。</text
-        ><text class="notice-link" bindtap="togglePersonaNotice">查看完整说明</text>
-        <view wx:if="{{noticeExpanded}}" class="notice-expanded"
-          ><text>电脑角色的策略和情绪均为游戏设定，介绍描述常见倾向，不保证每次采用相同操作。</text
-          ><text
-            >复盘使用行动发生前可见的信息和假设对手范围进行估算，不用对手隐藏底牌、后续发牌或最终赢家评价你的决策；不保证最优打法或收益。</text
-          ></view
-        >
-      </view>
+        ><text
+          >电脑角色的策略和情绪均为游戏设定，介绍描述常见倾向，不保证每次采用相同操作。</text
+        ></view
+      >
     </view></scroll-view
   ><view class="settings-save-row"><text>设置自动保存在此设备。</text></view>
   <view

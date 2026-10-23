@@ -51,7 +51,6 @@ module.exports = {
     potOpen: false,
     resetOpen: false,
     guideExpanded: [false, true],
-    noticeExpanded: true,
     potExpanded: {},
     potSheetHeight: 580,
     reviewPerspective: 'hero',
@@ -969,9 +968,6 @@ module.exports = {
   settingsScrolled(event) {
     this._settingsScroll = event.detail.scrollTop;
     this.closeSelect();
-  },
-  togglePersonaNotice() {
-    this.setData({ noticeExpanded: !this.data.noticeExpanded });
   },
   toggleComparison() {
     this.setData({ comparisonOpen: !this.data.comparisonOpen });
