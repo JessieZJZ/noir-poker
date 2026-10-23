@@ -10,6 +10,7 @@ import {
   aceFourPreflopReview,
 } from '../fixtures/bottom-pair-review.js';
 import { deckOfCards } from '../../src/engine/poker.js';
+import { getBotProfile } from '../../src/engine/bot-profiles.js';
 import {
   causalReraiseGame,
   heroValueGame,
@@ -26,6 +27,7 @@ const root = new URL('../../', import.meta.url).pathname;
 const require = createRequire(path.join(root, '.artifacts/wechat-tools/package.json'));
 const automator = require('miniprogram-automator');
 const output = path.resolve(process.argv[3] || path.join(root, '.artifacts/wechat-review'));
+const assignedProfileName = getBotProfile('rook').name;
 fs.mkdirSync(output, { recursive: true });
 const report = {
   status: 'running',
@@ -123,7 +125,11 @@ try {
   await tap('[data-value="opponent"]');
   await wait((data) => data.reviewPerspective === 'opponent' && data.selectedReviewStep?.reason);
   let data = await page.data();
-  assert.ok(data.opponentOptions.some((name) => /Mia.*多街施压/.test(name)));
+  assert.ok(
+    data.opponentOptions.some(
+      (name) => name.startsWith('Mia') && name.includes(assignedProfileName),
+    ),
+  );
   report.checks.push({ name: 'real-assigned-player-name', options: data.opponentOptions });
   for (const index of [
     ...new Set([0, Math.floor(data.reviewSteps.length / 2), data.reviewSteps.length - 1]),
@@ -141,7 +147,11 @@ try {
   }
   await tap('#select-opponent');
   await wait((data) => data.selection?.field === 'opponent');
-  assert.ok((await page.data()).selection.options.some((name) => /Mia.*多街施压/.test(name)));
+  assert.ok(
+    (await page.data()).selection.options.some(
+      (name) => name.startsWith('Mia') && name.includes(assignedProfileName),
+    ),
+  );
   await capture('assigned-player-options');
   await invoke('closeSelect');
   await invoke('changeOpponentFilter', { detail: { value: '1' } });

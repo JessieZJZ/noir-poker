@@ -80,6 +80,23 @@ for (const [width, height] of [
     // The frozen clock must advance through the resize and fitting frames.
     await page.clock.runFor(100);
     const spacing = await page.evaluate(readActionNoticeSpacing);
+    await test.info().attach('action-notice-spacing', {
+      body: JSON.stringify(spacing),
+      contentType: 'application/json',
+    });
+    const animatedGeometry = await page.locator('.bet-presets button').evaluateAll((buttons) =>
+      buttons.flatMap((button) =>
+        button
+          .getAnimations()
+          .filter(
+            (animation) =>
+              animation instanceof CSSTransition &&
+              /^(font-size|padding-|height|width|min-|max-)/.test(animation.transitionProperty),
+          )
+          .map((animation) => animation.transitionProperty),
+      ),
+    );
+    expect(animatedGeometry).toEqual([]);
     expect(spacing.topGap).toBeGreaterThanOrEqual(4);
     expect(spacing.controlGap).toBeGreaterThanOrEqual(4);
     expect(

@@ -453,34 +453,46 @@ export async function nativeScenarios(app) {
     };
   });
   await check('entry-high-stakes-layout', async () => {
+    const originalStakes = (await app.state()).stakes;
     await app.relaunch();
-    await app.evaluate(() => window.noir.requestSmallBlind('10000'));
-    await app.relaunch();
-    const layout = await app.evaluate(() => {
-      const box = (s) => document.querySelector(s).getBoundingClientRect();
-      const hand = box('.hand-label'),
-        blinds = box('.blind-info'),
-        surface = box('.game-surface'),
-        practice = box('.session-card');
-      return {
-        waiting: document.querySelector('.game-surface').dataset.entryState,
-        blinds: document.querySelector('.blind-info b').textContent,
-        stack: document.querySelector('#hero-stack').textContent,
-        sameTop: Math.abs(hand.top - blinds.top) <= 1,
-        noOverlap: hand.right <= blinds.left,
-        gap: box('#hero-stack').left - box('.hero-identity strong').right,
-        followsTable: practice.top >= surface.bottom && practice.top - surface.bottom <= 20,
-      };
-    });
-    assert.equal(layout.waiting, 'waiting');
-    assert.equal(layout.blinds, '10K / 20K');
-    assert.equal(layout.stack, '2M');
-    assert.equal(layout.sameTop, true);
-    assert.equal(layout.noOverlap, true);
-    assert.ok(layout.gap >= 0 && layout.gap <= 7);
-    assert.equal(layout.followsTable, true);
-    await app.screenshot('waiting-high-stakes-layout');
-    return layout;
+    try {
+      await app.evaluate(() => window.noir.requestSmallBlind('10000'));
+      await app.relaunch();
+      const layout = await app.evaluate(() => {
+        const box = (s) => document.querySelector(s).getBoundingClientRect();
+        const hand = box('.hand-label'),
+          blinds = box('.blind-info'),
+          surface = box('.game-surface'),
+          practice = box('.session-card');
+        return {
+          waiting: document.querySelector('.game-surface').dataset.entryState,
+          blinds: document.querySelector('.blind-info b').textContent,
+          stack: document.querySelector('#hero-stack').textContent,
+          sameTop: Math.abs(hand.top - blinds.top) <= 1,
+          noOverlap: hand.right <= blinds.left,
+          gap: box('#hero-stack').left - box('.hero-identity strong').right,
+          followsTable: practice.top >= surface.bottom && practice.top - surface.bottom <= 20,
+        };
+      });
+      assert.equal(layout.waiting, 'waiting');
+      assert.equal(layout.blinds, '10K / 20K');
+      assert.equal(layout.stack, '2M');
+      assert.equal(layout.sameTop, true);
+      assert.equal(layout.noOverlap, true);
+      assert.ok(layout.gap >= 0 && layout.gap <= 7);
+      assert.equal(layout.followsTable, true);
+      await app.screenshot('waiting-high-stakes-layout');
+      return layout;
+    } finally {
+      // This scenario changes a persisted setting. Later scenarios still
+      // verify the clean install's original stakes and denomination.
+      await app.evaluate(
+        (smallBlind) => window.noir.requestSmallBlind(String(smallBlind)),
+        originalStakes.smallBlind,
+      );
+      await app.relaunch();
+      assert.deepEqual((await app.state()).stakes, originalStakes);
+    }
   });
   await check('practice-reset-in-card-heading', async () => {
     await app.evaluate(() =>

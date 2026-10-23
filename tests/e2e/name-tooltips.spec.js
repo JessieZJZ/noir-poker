@@ -75,6 +75,8 @@ test('unrelated automatic scrolling does not cancel a style hold, while scrollin
       'position:fixed;left:0;bottom:0;width:100px;height:10px;overflow:auto;white-space:nowrap';
     hint.textContent = '滚动中的牌桌提示 '.repeat(80);
     document.body.append(hint);
+    window.__tooltipHintScrollEvents = 0;
+    hint.addEventListener('scroll', () => window.__tooltipHintScrollEvents++);
     window.__tooltipHintScroll = setInterval(() => {
       hint.scrollLeft = (hint.scrollLeft + 3) % 300;
     }, 16);
@@ -85,9 +87,9 @@ test('unrelated automatic scrolling does not cancel a style hold, while scrollin
   await expect(page.getByRole('tooltip')).toBeVisible();
   await page.waitForTimeout(250);
   await expect(page.getByRole('tooltip')).toBeVisible();
-  expect(
-    await page.locator('#tooltip-scroll-probe').evaluate((el) => el.scrollLeft),
-  ).toBeGreaterThan(0);
+  // The position wraps to zero; prove actual scrolling instead of sampling its phase.
+  await expect.poll(() => page.evaluate(() => window.__tooltipHintScrollEvents)).toBeGreaterThan(0);
+  await expect(page.getByRole('tooltip')).toBeVisible();
   await page.evaluate(() => {
     clearInterval(window.__tooltipHintScroll);
     document.querySelector('#arena').dispatchEvent(new Event('scroll'));

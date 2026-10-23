@@ -16,6 +16,8 @@ import { createNativeCommand } from './native-transport.mjs';
 import { nativeBackPage, nativePageReady } from './native-back.mjs';
 import { prepareNativeTouch } from './native-touch.mjs';
 import { nativeAppTarget, assertAndroidTestPackage } from './native-app-target.mjs';
+import { nativeServerArguments } from './native-server.mjs';
+import { iosLaunchProcessId, iosInitialScreenReady } from './native-startup.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const args = process.argv.slice(2);
@@ -498,41 +500,6 @@ try {
       isEmulator: report.deviceKind === 'emulator',
     });
   }
-  report.phase = 'appium-start';
-  if (!options.server) {
-    const binary = path.join(root, '.artifacts/native-tools/node_modules/appium/build/lib/main.js');
-    if (!existsSync(binary))
-      throw Error('Install native E2E tools first: node scripts/native-e2e-setup.mjs');
-    const { createWriteStream } = await import('node:fs');
-    serverStream = createWriteStream(path.join(output, 'appium.log'));
-    server = spawn(
-      process.execPath,
-      [
-        binary,
-        '--address',
-        '127.0.0.1',
-        '--port',
-        new URL(serverUrl).port,
-        '--allow-insecure',
-        'uiautomator2:chromedriver_autodownload',
-      ],
-      {
-        cwd: root,
-        env: {
-          ...process.env,
-          APPIUM_HOME: path.join(root, '.artifacts/native-tools/appium-home'),
-        },
-        stdio: ['ignore', 'pipe', 'pipe'],
-      },
-    );
-    server.stdout.pipe(serverStream);
-    server.stderr.pipe(serverStream);
-    await waitFor(
-      () => request('GET', '/status', undefined, 1000),
-      30000,
-      'Appium server did not start',
-    );
-  }
   report.phase = 'install-launch';
   if (platform === 'android') {
     // adb can list a device before Android has finished booting and before
@@ -582,8 +549,63 @@ try {
     // Launch the clean installed app independently before XCUITest attaches.
     // Later application restarts stay within WDA so it tracks the current PID.
     run('xcrun', ['simctl', 'install', udid, appPath]);
-    run('xcrun', ['simctl', 'launch', udid, appId]);
+    const launchStarted = performance.now();
+    const stderrPath = path.join(output, 'ios.stderr.log');
+    const launched = run('xcrun', [
+      'simctl',
+      'launch',
+      `--stdout=${path.join(output, 'ios.stdout.log')}`,
+      `--stderr=${stderrPath}`,
+      udid,
+      appId,
+    ]);
+    const processId = iosLaunchProcessId(launched);
+    report.phase = 'independent-startup';
+    report.initialLaunch = { processId, stderrPath, ready: false };
+    await waitFor(
+      () =>
+        existsSync(stderrPath) &&
+        iosInitialScreenReady(readFileSync(stderrPath, 'utf8'), processId),
+      45000,
+      'iOS must finish its independent first screen before XCUITest attaches',
+    );
+    Object.assign(report.initialLaunch, {
+      ready: true,
+      readyAt: new Date().toISOString(),
+      waitMs: Math.round(performance.now() - launchStarted),
+    });
+    log(`Independent iOS first screen ready for PID ${processId}`);
+    report.phase = 'install-launch';
   }
+  report.phase = 'appium-start';
+  if (!options.server) {
+    const binary = path.join(root, '.artifacts/native-tools/node_modules/appium/build/lib/main.js');
+    if (!existsSync(binary))
+      throw Error('Install native E2E tools first: node scripts/native-e2e-setup.mjs');
+    const { createWriteStream } = await import('node:fs');
+    serverStream = createWriteStream(path.join(output, 'appium.log'));
+    server = spawn(
+      process.execPath,
+      [binary, ...nativeServerArguments(platform, new URL(serverUrl).port)],
+      {
+        cwd: root,
+        env: {
+          ...process.env,
+          APPIUM_HOME: path.join(root, '.artifacts/native-tools/appium-home'),
+        },
+        stdio: ['ignore', 'pipe', 'pipe'],
+      },
+    );
+    server.stdout.pipe(serverStream);
+    server.stderr.pipe(serverStream);
+    await waitFor(
+      () => request('GET', '/status', undefined, 1000),
+      30000,
+      'Appium server did not start',
+    );
+    report.testServiceReadyAt = new Date().toISOString();
+  }
+  report.phase = 'install-launch';
   const caps = {
     platformName: platform === 'ios' ? 'iOS' : 'Android',
     'appium:automationName': platform === 'ios' ? 'XCUITest' : 'UiAutomator2',
