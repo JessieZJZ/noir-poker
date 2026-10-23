@@ -178,7 +178,10 @@ class NoirBridgeViewController: CAPBridgeViewController, UIGestureRecognizerDele
             self?.edgeBackPending = false
             guard error == nil else { return }
             if (result as? Bool) != true, let webView = webView, webView.canGoBack {
-                webView.goBack()
+                // Step back exactly one page, as Android's Back and the page's
+                // own history do. WKWebView's goBack may skip a page WebKit
+                // considers uninteracted, such as the local privacy page.
+                webView.evaluateJavaScript("history.back()")
             }
         }
     }
