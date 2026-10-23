@@ -6,9 +6,9 @@ import {
 } from '../fixtures/records-geometry.js';
 
 const records = (page) => page.evaluate(() => window.noir.getRecords());
-// Rewrite the saved records in the legacy inline format, which loading
-// migrates into the snapshot store; tests edit snapshots through it.
-const legacyRecords = () => {
+// The saved index with each hand's snapshot attached, for tests to edit and
+// store back through `qa.writeRecords`.
+const editableRecords = () => {
   const saved = JSON.parse(localStorage.getItem('noir-game-records-v1')),
     full = new Map(
       window.noir
@@ -16,12 +16,8 @@ const legacyRecords = () => {
         .flatMap((session) => session.attempts)
         .map((attempt) => [attempt.id, attempt.snapshot]),
     );
-  saved.version = 1;
-  for (const attempt of saved.sessions.flatMap((session) => session.attempts)) {
+  for (const attempt of saved.sessions.flatMap((session) => session.attempts))
     attempt.snapshot = full.get(attempt.id) ?? null;
-    delete attempt.bytes;
-    delete attempt.over;
-  }
   return saved;
 };
 const state = (page) => page.evaluate(() => window.noir.getState());
@@ -40,9 +36,9 @@ test.beforeEach(async ({ page }) => {
 test('large archives render collapsed session hands only when expanded and keep snapshots on demand', async ({
   page,
 }) => {
-  await page.evaluate((legacy) => {
+  await page.evaluate((editable) => {
     window.qa.recordsFinish();
-    const saved = new Function(`return (${legacy})()`)();
+    const saved = new Function(`return (${editable})()`)();
     const source = saved.sessions.find((session) => session.id === saved.currentId);
     const attempt = source.attempts.find((attempt) => attempt.status === 'completed');
     saved.sessions = Array.from({ length: 8 }, (_, i) => ({
@@ -68,8 +64,8 @@ test('large archives render collapsed session hands only when expanded and keep 
     saved.currentId = 'perf-session-7';
     saved.nextNumber = 9;
     saved.checkpoint.hand = 12;
-    localStorage.setItem('noir-game-records-v1', JSON.stringify(saved));
-  }, String(legacyRecords));
+    return window.qa.writeRecords(saved);
+  }, String(editableRecords));
   await page.reload();
   await page.waitForFunction(() => !!window.qa);
   await page.evaluate(() => window.qa.stop());
@@ -173,8 +169,8 @@ test('stored historical labels remain text and cannot execute markup', async ({ 
   const record = (await records(page))[0].attempts[0];
   const source = '<img src=x onerror="window.historyMarkupExecuted=true">';
   await page.evaluate(
-    ({ source, id, legacy }) => {
-      const saved = new Function(`return (${legacy})()`)();
+    ({ source, id, editable }) => {
+      const saved = new Function(`return (${editable})()`)();
       const attempt = saved.sessions
         .flatMap((session) => session.attempts)
         .find((a) => a.id === id);
@@ -184,9 +180,9 @@ test('stored historical labels remain text and cannot execute markup', async ({ 
       attempt.snapshot.players[1].action = source;
       attempt.snapshot.players[1].lastAction.text = source;
       attempt.snapshot.winners[0].label = 'award " data-archive-injected="true';
-      localStorage.setItem('noir-game-records-v1', JSON.stringify(saved));
+      return window.qa.writeRecords(saved);
     },
-    { source, id: record.id, legacy: String(legacyRecords) },
+    { source, id: record.id, editable: String(editableRecords) },
   );
   await page.reload();
   await page.waitForFunction(() => !!window.qa);
@@ -966,12 +962,15 @@ test('historical pot dialogs and showdown stay bound to the saved hand while liv
   page,
 }) => {
   await page.evaluate(() => {
-    window.qa.recordsStart({ count: 5 });
+    // Seat 1 covers the hero, so the all-in cannot end the game and the
+    // saved hand stays in the live, expanded session.
+    window.qa.recordsStart({ count: 5, rivalStack: 40000 });
     window.qa.allinRest();
     while (window.noir.getState().phase === 'between') window.qa.finish();
     window.qa.stop();
   });
   const saved = (await records(page))[0].attempts[0];
+  expect((await state(page)).over).toBeNull();
   await page.evaluate(() => window.qa.recordsNext());
   await openRecords(page);
   await page.locator(`[data-record-hand="${saved.id}"]`).click();

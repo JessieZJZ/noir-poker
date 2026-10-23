@@ -52,12 +52,15 @@ window.qa = {
     render();
     return publicState();
   },
-  recordsStart({ count = 5, smallBlind = 100, refill = false } = {}) {
+  // `rivalStack` gives seat 1 a stack the hero cannot cover, so one all-in
+  // hand cannot clear the table and end the game.
+  recordsStart({ count = 5, smallBlind = 100, refill = false, rivalStack } = {}) {
     gameRecords.abandon(game);
     fixtureGame(count, true);
     requestedStakes = stakesFromSmallBlind(smallBlind);
     game = newGame(count, requestedStakes);
     game.dealer = count - 4;
+    if (rivalStack) game.players[1].stack = rivalStack;
     if (refill) {
       game.players[0].stack = 0;
       rebuyHero(game);
@@ -72,6 +75,21 @@ window.qa = {
     render();
     this.stop();
     return publicState();
+  },
+  // Store edited records as the app does: the index in localStorage and each
+  // attached `snapshot` in the snapshot store, persisted before a reload.
+  async writeRecords(saved) {
+    this.stop();
+    for (const attempt of saved.sessions.flatMap((session) => session.attempts)) {
+      if (attempt.snapshot) {
+        const text = JSON.stringify(attempt.snapshot);
+        recordSnapshots.set(attempt.id, text);
+        attempt.bytes = text.length;
+      }
+      delete attempt.snapshot;
+    }
+    localStorage.setItem('noir-game-records-v1', JSON.stringify(saved));
+    await recordSnapshots.flush();
   },
   recordsFinish(winner = 0) {
     this.stop();

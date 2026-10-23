@@ -391,27 +391,22 @@ test('snapshots beyond the budget drop the oldest games first, then the oldest h
   assert.equal(store.takeNotice(), null, 'Pruning for space is silent');
 });
 
-test('version 1 records with inline snapshots migrate into the snapshot store', () => {
+test('records in any other format start fresh with one notice and keep no inline snapshot', () => {
   const source = storage(),
     store = createGameRecords({ storage: source }),
     g = newGame(5, stakes);
   playOne(store, g);
-  const legacy = JSON.parse(source.getItem(GAME_RECORDS_KEY));
-  legacy.version = 1;
-  for (const row of legacy.sessions[0].attempts) {
-    row.snapshot = store.getAttempt(row.id).snapshot;
-    delete row.bytes;
-    delete row.over;
-  }
+  const other = JSON.parse(source.getItem(GAME_RECORDS_KEY));
+  other.version = 1;
+  for (const row of other.sessions[0].attempts) row.snapshot = store.getAttempt(row.id).snapshot;
   const target = storage();
-  target.setItem(GAME_RECORDS_KEY, JSON.stringify(legacy));
-  const migrated = createGameRecords({ storage: target, snapshots: target.snapshots }),
-    id = legacy.sessions[0].attempts[0].id;
-  assert.equal(migrated.takeNotice(), null);
-  assert.deepEqual(migrated.getAttempt(id).snapshot, legacy.sessions[0].attempts[0].snapshot);
-  migrated.resume();
+  target.setItem(GAME_RECORDS_KEY, JSON.stringify(other));
+  const fresh = createGameRecords({ storage: target, snapshots: target.snapshots });
+  assert.equal(fresh.takeNotice(), '本机对局记录读取失败，已开始新的记录。');
+  assert.equal(fresh.takeNotice(), null);
+  assert.deepEqual(fresh.sessions(), []);
+  playOne(fresh, newGame(5, stakes));
   const saved = JSON.parse(target.getItem(GAME_RECORDS_KEY));
-  assert.equal(saved.version, 2);
-  assert.ok(!('snapshot' in saved.sessions[0].attempts[0]));
-  assert.ok(saved.sessions[0].attempts[0].bytes > 0);
+  assert.equal(saved.sessions.length, 1);
+  assert.ok(saved.sessions.every((session) => session.attempts.every((a) => !('snapshot' in a))));
 });

@@ -299,26 +299,6 @@ const validOver = (over) =>
   (object(over) &&
     integer(over.heroPlace, 1) &&
     (over.championId === null || integer(over.championId)));
-// Version 1 kept every snapshot inline. Move them into the snapshot store.
-function migrate(value, snapshots) {
-  if (!object(value) || value.version !== 1 || !Array.isArray(value.sessions)) return value;
-  for (const session of value.sessions) {
-    assert(object(session) && Array.isArray(session.attempts));
-    for (const attempt of session.attempts) {
-      assert(object(attempt));
-      const snapshot = attempt.snapshot;
-      delete attempt.snapshot;
-      attempt.over = null;
-      attempt.bytes = 0;
-      if (attempt.status !== 'completed') continue;
-      validateSnapshot(attempt, snapshot, session);
-      const text = JSON.stringify(snapshot);
-      snapshots.set(attempt.id, text);
-      attempt.bytes = text.length;
-    }
-  }
-  return { ...value, version: VERSION };
-}
 function validateSnapshot(attempt, snapshot, session) {
   const stakes = validateStakes(session.stakes);
   gameShape(snapshot, stakes, session.playerCount, 'done');
@@ -561,8 +541,7 @@ export function createGameRecords({
     if (!target) throw Error('Storage unavailable');
     const saved = target.getItem(GAME_RECORDS_KEY);
     if (target.error?.(GAME_RECORDS_KEY)) throw Error('Storage unavailable');
-    if (saved !== null && saved !== undefined)
-      state = validateState(migrate(JSON.parse(saved), snapshots));
+    if (saved !== null && saved !== undefined) state = validateState(JSON.parse(saved));
   } catch {
     state = emptyState();
     announce(RECORDS_READ_FAILED);
