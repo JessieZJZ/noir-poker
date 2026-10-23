@@ -60,11 +60,11 @@ const output = path.resolve(root, options.output ?? `.artifacts/native-e2e/${pla
 mkdirSync(output, { recursive: true });
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 const adbArgs = (args) => (options['adb-port'] ? ['-P', options['adb-port'], ...args] : args);
-const run = (binary, argv) => {
+const run = (binary, argv, { timeout = 120000 } = {}) => {
   const value = spawnSync(binary, binary === adb ? adbArgs(argv) : argv, {
     encoding: 'utf8',
     cwd: root,
-    timeout: 120000,
+    timeout,
   });
   if (value.status !== 0)
     throw Error(
@@ -461,7 +461,8 @@ try {
     ) {
       run('xcrun', ['simctl', 'boot', udid]);
       ownedSimulator = true;
-      run('xcrun', ['simctl', 'bootstatus', udid, '-b']);
+      // A freshly created simulator's first boot on a CI runner can take minutes.
+      run('xcrun', ['simctl', 'bootstatus', udid, '-b'], { timeout: 600000 });
     }
   }
   if (platform === 'android' && !udid) {

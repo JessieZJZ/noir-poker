@@ -5,6 +5,8 @@ for (const width of [320, 390, 768, 1280]) {
   test(`${width}px hero tags keep natural height and opponent cards omit persona tags`, async ({
     page,
   }, info) => {
+    // The real review worker runs on a slower CI machine as well.
+    test.setTimeout(120000);
     // Hold delivery only: the real worker still computes every result.
     await page.addInitScript(() => {
       const NativeWorker = window.Worker;
@@ -57,13 +59,17 @@ for (const width of [320, 390, 768, 1280]) {
       await info.attach(name, { path, contentType: 'image/png' });
     };
     await capture('pending-tags');
-    await page.waitForFunction((count) => window.heldReviewMessages.length >= count + 1, count);
+    await page.waitForFunction((count) => window.heldReviewMessages.length >= count + 1, count, {
+      timeout: 60000,
+    });
     await page.evaluate(() => window.heldReviewMessages.shift()());
     await expect(page.locator('#review-analysis-state')).toContainText(`1 / ${count}`);
     await checkTags('#review-timeline');
     await capture('partially-analyzed-tags');
     await page.evaluate(() => window.heldReviewMessages.splice(0).forEach((deliver) => deliver()));
-    await expect(page.locator('#review-dialog')).toHaveAttribute('data-analysis-status', 'done');
+    await expect(page.locator('#review-dialog')).toHaveAttribute('data-analysis-status', 'done', {
+      timeout: 60000,
+    });
     await checkTags('#review-timeline');
     await capture('completed-tags');
     await page.locator('#review-opponents-tab').click();

@@ -62,7 +62,9 @@ test('rank pixels remain stable after repeated scaled-table repaint and card rec
     );
     expect(difference.sized).toBe(true);
     expect(difference.largest).toBeLessThanOrEqual(12);
-    expect(difference.changed).toBeLessThan(0.02);
+    // Linux CI anti-aliases more edge pixels; a changed glyph also exceeds the
+    // per-pixel bound above.
+    expect(difference.changed).toBeLessThan(0.06);
   }
   await expect(page.locator('#hero-cards .card-rank')).toHaveCount(4);
   await expect(page.locator('#board .card-rank')).toHaveCount(6);

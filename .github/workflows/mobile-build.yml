@@ -82,7 +82,8 @@ jobs:
           node-version: '22'
           cache: npm
       - run: npm ci
-      - run: npx playwright install --with-deps chromium
+      # WebKit-specific dropdown and long-press checks run in this job too.
+      - run: npx playwright install --with-deps chromium webkit
       - run: npm run test:e2e -- --project=${{ matrix.project }} --grep-invert '(public-area|stable-actions|readability-hints|play-viewport|settlement-layout|hint-banner|platform-parity)\.spec\.js'
       - uses: actions/upload-artifact@v7.0.2
         if: always()

@@ -18,7 +18,9 @@ test('deep button suited connectors receive a concrete call and conditional sque
   await page.waitForFunction(() => window.qa);
   await page.evaluate((record) => window.qa.loadRecordedGame(record), game);
   await page.locator('#review-hand-button').click();
-  await expect(page.locator('#review-dialog')).toHaveAttribute('data-analysis-status', 'done');
+  await expect(page.locator('#review-dialog')).toHaveAttribute('data-analysis-status', 'done', {
+    timeout: 60000,
+  });
   const detail = page.locator('#review-detail');
   await expect(detail).toContainText('这手建议跟注 500');
   await expect(detail).toContainText('3-bet 加注至 2K');
