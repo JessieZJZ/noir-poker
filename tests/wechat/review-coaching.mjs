@@ -49,8 +49,7 @@ mini.connection.send = async (method, params) => {
     throw error;
   }
 };
-await mini.reLaunch('/pages/table/table');
-const page = await mini.currentPage();
+let page;
 const stage = (name) => {
   report.stage = name;
   console.log('[wechat-review]', name);
@@ -88,6 +87,16 @@ let savedBotDecisions;
 let savedHistory;
 let savedLogs;
 try {
+  stage('initial-page-ready');
+  const initialDeadline = Date.now() + 45000;
+  // CLI auto can expose its socket before the first page is registered.
+  // reLaunch reads that page's metadata, so require a real controller first.
+  while (!(await mini.evaluate(() => Boolean(getCurrentPages().slice(-1)[0]?._controller)))) {
+    if (Date.now() >= initialDeadline) throw Error('Initial table controller did not become ready');
+    await new Promise((resolve) => setTimeout(resolve, 100));
+  }
+  await mini.reLaunch('/pages/table/table');
+  page = await mini.currentPage();
   report.build = JSON.parse(fs.readFileSync(path.join(root, '.artifacts/wechat/build-info.json')));
   assert.equal((await page.data()).noticeExpanded, true);
   assert.equal((await page.data()).guideExpanded[1], true);
