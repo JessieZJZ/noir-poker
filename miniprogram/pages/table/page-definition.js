@@ -653,6 +653,7 @@ module.exports = {
       win: 'win',
       champion: 'champion',
       crowned: 'crowned',
+      farewell: 'farewell',
     };
     if (!names[name]) return;
     try {

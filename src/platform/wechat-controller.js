@@ -7,6 +7,7 @@ import {
   REBUY_DURATION_MS,
   CROWN_FLIGHT_MS,
   CONFETTI_DURATION_MS,
+  FAREWELL_DURATION_MS,
   refillCountValues,
   REFILL_COUNT_STEPS,
 } from '../ui/effect-layouts.js';
@@ -173,6 +174,7 @@ export function createWechatController({
     ceremonyKey = '',
     crownedKey = '',
     confetti = false,
+    farewell = null,
     effectEpoch = 0;
   // A callback already handed to the platform cannot outlive its cancellation.
   function later(fn, ms) {
@@ -190,13 +192,13 @@ export function createWechatController({
     premium = false;
     rebuying = null;
     confetti = false;
+    farewell = null;
     if (ceremony) crownedKey = ceremony.key;
     ceremony = null;
   }
-  const gameEndKey = () =>
-    game.over && game.over.championId !== null
-      ? `${records?.sessionNumber() || 0}:${game.hand}:${game.replayAttempt || 0}`
-      : '';
+  const overKey = () =>
+    game.over ? `${records?.sessionNumber() || 0}:${game.hand}:${game.replayAttempt || 0}` : '';
+  const gameEndKey = () => (game.over && game.over.championId !== null ? overKey() : '');
   function premiumDeal() {
     if (readOnlyAttempt || !isPremiumStart(game.players[0].hole)) return;
     later(() => {
@@ -208,11 +210,21 @@ export function createWechatController({
       }, PREMIUM_DURATION_MS);
     }, PREMIUM_DELAY_MS);
   }
-  // The coronation starts once per decided game; the crown then stays on.
+  // The coronation starts once per decided game; the crown then stays on. A
+  // game the hero leaves without a champion gets the farewell card instead.
   function celebrate() {
-    const key = gameEndKey();
+    const key = overKey();
     if (!key || ceremonyKey === key || readOnlyAttempt || !active) return false;
     ceremonyKey = key;
+    if (game.over.championId === null) {
+      farewell = { key, place: standingLabel(game.over.heroPlace) };
+      effect('farewell');
+      later(() => {
+        farewell = null;
+        render();
+      }, FAREWELL_DURATION_MS);
+      return true;
+    }
     const champion = game.over.championId;
     ceremony = {
       key,
@@ -439,6 +451,7 @@ export function createWechatController({
       premium,
       ceremony: ceremony ? { ...ceremony } : null,
       confetti,
+      farewell: farewell ? { ...farewell } : null,
       crownPending: !!ceremony,
       heroCrowned: crowned === 0,
       heroOut: !!hero.out,

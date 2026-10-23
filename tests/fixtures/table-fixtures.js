@@ -131,13 +131,14 @@ window.qa = {
     this.stop();
     return publicState();
   },
-  // Hero shoves, seat 1 calls, everyone else folds, and the board runs out.
-  finaleShowdown() {
+  // Hero shoves, seat 1 calls, everyone else folds (or calls with `allIn`),
+  // and the board runs out.
+  finaleShowdown({ allIn = false } = {}) {
     this.stop();
     while (game.phase !== 'done') {
       if (game.phase === 'between') advanceStreet(game);
       else if (game.actor === 0) act(game, 0, 'raise', legalActions(game, 0).maxRaiseTo);
-      else act(game, game.actor, game.actor === 1 ? 'call' : 'fold');
+      else act(game, game.actor, allIn || game.actor === 1 ? 'call' : 'fold');
     }
     render();
     return publicState();

@@ -2101,5 +2101,7 @@
   "本局补码次数已用完。": "In diesem Spiel sind keine Auffüllungen mehr übrig.",
   "第{0}名": "Platz {0}",
   "补充筹码，剩余 {0} 次": "Chips auffüllen, noch {0}",
-  "请先补充筹码。": "Fülle zuerst deine Chips auf."
+  "请先补充筹码。": "Fülle zuerst deine Chips auf.",
+  "很遗憾，本局结束": "Leider ist das Spiel vorbei",
+  "补码次数已用完": "Keine Auffüllungen mehr"
 }

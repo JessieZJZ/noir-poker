@@ -2098,5 +2098,7 @@
   "本局补码次数已用完。": "Ricariche esaurite in questa partita.",
   "第{0}名": "{0}°",
   "补充筹码，剩余 {0} 次": "Ricarica fiches, ne restano {0}",
-  "请先补充筹码。": "Ricarica prima le fiches."
+  "请先补充筹码。": "Ricarica prima le fiches.",
+  "很遗憾，本局结束": "Peccato, la partita è finita",
+  "补码次数已用完": "Ricariche esaurite"
 }

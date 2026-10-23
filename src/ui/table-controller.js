@@ -326,15 +326,20 @@ function syncTurnAttention() {
     active: activityClock.active && !document.hidden,
   });
 }
-const gameEndKey = () =>
-  game.over && game.over.championId !== null
-    ? `${gameRecords.sessionNumber()}:${game.hand}:${game.replayAttempt || 0}`
-    : '';
-// The coronation runs once per decided game, after the settlement paints.
+const overKey = () =>
+  game.over ? `${gameRecords.sessionNumber()}:${game.hand}:${game.replayAttempt || 0}` : '';
+const gameEndKey = () => (game.over && game.over.championId !== null ? overKey() : '');
+// The coronation runs once per decided game, after the settlement paints; a
+// game the hero leaves without a champion gets the farewell card instead.
 function celebrate() {
-  const key = gameEndKey();
+  const key = overKey();
   if (!key || ceremonyKey === key) return;
   ceremonyKey = key;
+  if (game.over.championId === null) {
+    soundEffect('farewell');
+    effects.farewell($('.table-viewport'), game.over.heroPlace);
+    return;
+  }
   // Paint the hidden resting crown first; the flight lands exactly on it.
   render();
   const champion = game.over.championId,

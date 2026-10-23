@@ -2098,5 +2098,7 @@
   "本局补码次数已用完。": "Plus aucune recharge dans cette partie.",
   "第{0}名": "{0}e",
   "补充筹码，剩余 {0} 次": "Recharger les jetons, reste {0}",
-  "请先补充筹码。": "Rechargez d’abord vos jetons."
+  "请先补充筹码。": "Rechargez d’abord vos jetons.",
+  "很遗憾，本局结束": "Dommage, la partie est terminée",
+  "补码次数已用完": "Plus aucune recharge"
 }

@@ -6,6 +6,7 @@ export const PREMIUM_DURATION_MS = 2600;
 export const REBUY_DURATION_MS = 1300;
 export const CROWN_FLIGHT_MS = 2300;
 export const CONFETTI_DURATION_MS = 3800;
+export const FAREWELL_DURATION_MS = 2800;
 
 function sequence(seed) {
   let state = seed >>> 0;

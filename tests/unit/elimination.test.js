@@ -48,10 +48,12 @@ function rig(g, holes) {
     rest[12],
   ];
 }
-// Every seat still able to act shoves or calls; the rigged board decides.
-function shoveAll(g) {
+// Every seat still able to act shoves or calls, except the folders; the
+// rigged board decides.
+function shoveAll(g, folders = []) {
   while (g.phase !== 'done') {
     if (g.phase === 'between') advanceStreet(g);
+    else if (folders.includes(g.actor)) act(g, g.actor, 'fold');
     else {
       const legal = legalActions(g);
       act(g, g.actor, legal.canRaise ? 'raise' : 'call', legal.maxRaiseTo);
@@ -137,7 +139,7 @@ test('busting after the last refill ends the game at once without a champion', (
   g.dealer = 4;
   startHand(g);
   rig(g, { 0: weak, 1: aces });
-  shoveAll(g);
+  shoveAll(g, [2, 3, 4]);
   assert.equal(g.players[0].out, true);
   assert.equal(g.players[0].stack, 0);
   // Four seats remained; the hero leaves fifth, the others are not simulated.
@@ -147,7 +149,7 @@ test('busting after the last refill ends the game at once without a champion', (
   assert.throws(() => startHand(g), /本局已结束/);
 });
 
-test('a bot is crowned only by beating the hero heads-up; the hero is crowned by clearing the table', () => {
+test('the last seat left is crowned, heads-up or by clearing the table', () => {
   for (const heroWins of [true, false]) {
     const g = newGame(5, stakes);
     g.rebuys = MAX_HERO_REBUYS;
@@ -165,7 +167,7 @@ test('a bot is crowned only by beating the hero heads-up; the hero is crowned by
     });
     assert.equal(g.players[heroWins ? 0 : 1].place, 1);
   }
-  // Hero and a bot bust in the same hand: the last bot is not crowned.
+  // A bot takes the hero's last chips along with the other bot: it is crowned.
   const g = newGame(5, stakes);
   g.rebuys = MAX_HERO_REBUYS;
   for (const p of g.players.slice(3)) Object.assign(p, { out: true, stack: 0, place: 7 - p.id });
@@ -175,7 +177,54 @@ test('a bot is crowned only by beating the hero heads-up; the hero is crowned by
   assert.equal(g.players[2].out, true);
   // Equal starting stacks share second place.
   assert.equal(g.players[2].place, 2);
-  assert.deepEqual(g.over, { heroPlace: 2, championId: null });
+  assert.equal(g.players[1].place, 1);
+  assert.deepEqual(g.over, { heroPlace: 2, championId: 1 });
+});
+
+test('four left, one hand clears the other three and decides the champion', () => {
+  const fourLeft = (rebuys) => {
+    const g = newGame(5, stakes);
+    g.rebuys = rebuys;
+    Object.assign(g.players[4], { out: true, stack: 0, place: 5 });
+    [4000, 10000, 3000, 2000].forEach((stack, id) => (g.players[id].stack = stack));
+    return g;
+  };
+  // The hero covers every bot and clears the table in one hand.
+  let g = fourLeft(0);
+  g.players[0].stack = 12000;
+  let chips = total(g);
+  startHand(g);
+  rig(g, { 0: aces, 1: eights, 2: weak, 3: weaker });
+  shoveAll(g);
+  assert.equal(total(g), chips);
+  // The others ranked by the stack they started the hand with.
+  assert.deepEqual(
+    g.players.slice(0, 4).map((p) => p.place),
+    [1, 2, 3, 4],
+  );
+  assert.deepEqual(g.over, { heroPlace: 1, championId: 0 });
+  // A bot takes everyone, the hero's last chips included: it is champion.
+  g = fourLeft(MAX_HERO_REBUYS);
+  chips = total(g);
+  startHand(g);
+  rig(g, { 1: aces, 0: eights, 2: weak, 3: weaker });
+  shoveAll(g);
+  assert.equal(total(g), chips);
+  assert.equal(g.players[1].place, 1);
+  // Seats bust with the hand's starting stacks: the hero started largest.
+  assert.deepEqual(g.over, { heroPlace: 2, championId: 1 });
+  // With a refill left the hero is not out: the game goes on heads-up.
+  g = fourLeft(MAX_HERO_REBUYS - 1);
+  startHand(g);
+  rig(g, { 1: aces, 0: eights, 2: weak, 3: weaker });
+  shoveAll(g);
+  assert.equal(g.over, null);
+  assert.equal(g.players[0].out, false);
+  assert.ok(needsHeroRebuy(g));
+  assert.deepEqual(
+    g.players.filter((p) => !p.out).map((p) => p.id),
+    [0, 1],
+  );
 });
 
 test('heads-up the button posts the small blind, acts first preflop and last after the flop', () => {

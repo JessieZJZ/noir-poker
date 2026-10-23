@@ -2098,5 +2098,7 @@
   "本局补码次数已用完。": "Não restam reposições neste jogo.",
   "第{0}名": "{0}º",
   "补充筹码，剩余 {0} 次": "Repor fichas, restam {0}",
-  "请先补充筹码。": "Reponha suas fichas primeiro."
+  "请先补充筹码。": "Reponha suas fichas primeiro.",
+  "很遗憾，本局结束": "Que pena, o jogo terminou",
+  "补码次数已用完": "Não restam reposições"
 }

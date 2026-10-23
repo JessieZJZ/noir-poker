@@ -282,6 +282,13 @@
           ></view
         >
       </view>
+      <view wx:if="{{farewell}}" class="farewell-stage" aria-role="status"
+        ><view class="farewell-card"
+          ><view class="farewell-ring" /><text class="farewell-title">很遗憾，本局结束</text
+          ><text class="farewell-place">{{farewell.place}}</text
+          ><text class="farewell-note">补码次数已用完</text></view
+        ></view
+      >
     </view>
     <view
       class="action-dock {{compactActions ? 'compact-actions' : ''}} {{canAct ? 'is-enabled' : ''}} {{turnPhase ? 'turn-attention' : ''}} turn-{{turnPhase}}"

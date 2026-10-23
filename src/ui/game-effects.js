@@ -5,12 +5,14 @@ import {
   REBUY_DURATION_MS,
   CROWN_FLIGHT_MS,
   CONFETTI_DURATION_MS,
+  FAREWELL_DURATION_MS,
   premiumSparks,
   confettiPieces,
   refillCountValues,
   REFILL_COUNT_STEPS,
 } from './effect-layouts.js';
 import { CROWN_MARKUP } from './table-scene.js';
+import { standingLabel } from '../engine/game-records.js';
 const reducedMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 // Presentation only: every effect is cancelled by `cancel()`, which the table
@@ -126,6 +128,17 @@ export function createGameEffects() {
         unmount(stage);
         done();
       }, CROWN_FLIGHT_MS);
+    },
+    // The hero is out and nobody is crowned: a grey card at the table's
+    // centre gives the final place.
+    farewell(parent, place) {
+      const stage = mount(
+        parent,
+        `<div class="farewell-card"><span class="farewell-ring"></span><span class="farewell-title">${localizeText('很遗憾，本局结束')}</span><strong class="farewell-place">${localizeText(standingLabel(place))}</strong><span class="farewell-note">${localizeText('补码次数已用完')}</span></div>`,
+        'farewell-stage',
+      );
+      stage.setAttribute('role', 'status');
+      later(() => unmount(stage), FAREWELL_DURATION_MS);
     },
   };
 }

@@ -875,13 +875,24 @@ test('WeChat records mark the first post-refill hand and exclude the virtual buy
 
 // Settle the current hand with the hero (AA) shoving into seat 1, everyone
 // else folding, so the result is fixed regardless of the shuffled deal.
-function shoveFinale(game, heroWins) {
+// Hero shoves and seat 1 calls; the others fold, or with `allIn` call with
+// rigged hands that lose to the aces.
+function shoveFinale(game, heroWins, { allIn = false } = {}) {
   const card = (rank, suit) => ({ rank, suit, symbol: '♠♥♣♦'[suit], key: `${suit}-${rank}` });
   game.players[0].hole = heroWins ? [card(14, 0), card(14, 1)] : [card(7, 2), card(2, 3)];
   game.players[1].hole = heroWins ? [card(7, 2), card(2, 3)] : [card(14, 0), card(14, 1)];
-  game.deck = game.deck.filter(
-    (c) => !['0-14', '1-14', '2-7', '3-2', '2-13', '3-9', '0-4', '1-3', '2-12'].includes(c.key),
-  );
+  const losers = [
+    [card(5, 0), card(2, 0)],
+    [card(6, 1), card(2, 1)],
+    [card(8, 3), card(5, 3)],
+  ];
+  if (allIn)
+    game.players.slice(2).forEach((p, index) => {
+      if (!p.out) p.hole = losers[index];
+    });
+  const used = ['0-14', '1-14', '2-7', '3-2', '2-13', '3-9', '0-4', '1-3', '2-12'];
+  if (allIn) used.push(...losers.flat().map((c) => c.key));
+  game.deck = game.deck.filter((c) => !used.includes(c.key));
   game.deck.push(card(12, 2), game.deck.shift(), card(3, 1), game.deck.shift());
   game.deck.push(card(4, 0), card(9, 3), card(13, 2), game.deck.shift());
   while (game.phase !== 'done') {
@@ -889,7 +900,7 @@ function shoveFinale(game, heroWins) {
     else {
       const legal = legalActions(game);
       if (game.actor === 0) act(game, 0, 'raise', legal.maxRaiseTo);
-      else act(game, game.actor, game.actor === 1 ? 'call' : 'fold');
+      else act(game, game.actor, allIn || game.actor === 1 ? 'call' : 'fold');
     }
   }
 }
@@ -962,8 +973,31 @@ for (const heroWins of [true, false]) {
   });
 }
 
-test('WeChat ends the game without a champion when the hero busts with bots left', (t) => {
+test('WeChat crowns a bot that takes the last refill and every other seat in one hand', (t) => {
   const { controller, latest, sounds } = setup(t);
+  const game = controller.getGame();
+  game.rebuys = 3;
+  for (const p of game.players.slice(4)) Object.assign(p, { out: true, stack: 0, place: 6 });
+  game.players[1].stack = game.players.reduce((sum, p) => sum + p.stack, 0);
+  controller.show();
+  controller.nextHand();
+  shoveFinale(game, false, { allIn: true });
+  controller.show();
+  assert.deepEqual(
+    game.players.filter((p) => !p.out).map((p) => p.id),
+    [1],
+  );
+  assert.equal(latest().over.championId, 1);
+  assert.equal(latest().ceremony.caption, `${game.players[1].name} 获得冠军`);
+  assert.equal(latest().confetti, false);
+  assert.equal(sounds.filter((s) => s === 'crowned').length, 1);
+  assert.ok(!sounds.includes('champion'));
+  assert.equal(latest().nextLabel, '下一局');
+  assert.equal(latest().standingText, `第${latest().over.heroPlace}名`);
+});
+
+test('WeChat ends the game without a champion when the hero busts with bots left', (t) => {
+  const { controller, latest, sounds, timers } = setup(t);
   const game = controller.getGame();
   game.rebuys = 3;
   finish(game);
@@ -976,5 +1010,19 @@ test('WeChat ends the game without a champion when the hero busts with bots left
   assert.equal(latest().confetti, false);
   assert.ok(!sounds.includes('crowned') && !sounds.includes('champion'));
   assert.equal(latest().nextLabel, '下一局');
+  assert.equal(latest().standingText, `第${latest().over.heroPlace}名`);
+  // The grey farewell card tells the place once, with its own cue, then leaves.
+  assert.deepEqual(latest().farewell.place, `第${latest().over.heroPlace}名`);
+  assert.equal(sounds.filter((s) => s === 'farewell').length, 1);
+  controller.show();
+  assert.equal(sounds.filter((s) => s === 'farewell').length, 1);
+  // A retry withdraws the result and the card with it.
+  assert.equal(controller.retry(), true);
+  assert.equal(latest().over, null);
+  assert.equal(latest().farewell, null);
+  shoveFinale(game, false);
+  controller.show();
+  assert.equal(sounds.filter((s) => s === 'farewell').length, 2);
+  while (latest().farewell) assert.ok(timers.runNext());
   assert.equal(latest().standingText, `第${latest().over.heroPlace}名`);
 });

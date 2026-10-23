@@ -1,11 +1,12 @@
 // Game-end cues are synthesized at runtime on every platform, so the WeChat
 // main package carries code instead of long WAV files.
 export const CEREMONY_SAMPLE_RATE = 22050;
-export const CEREMONY_CUES = ['champion', 'crowned'];
+export const CEREMONY_CUES = ['champion', 'crowned', 'farewell'];
 const TAU = 2 * Math.PI;
 const note = (semitones) => 261.63 * Math.pow(2, semitones / 12);
-// A bright horn-like partial stack for the hero's fanfare; a soft bell for a
-// bot's coronation. Both decay smoothly to silence before the buffer ends.
+// A bright horn-like partial stack for the hero's fanfare, a soft bell for a
+// bot's coronation and a muted, almost pure tone for a game the hero leaves
+// without a champion. All decay smoothly to silence before the buffer ends.
 const horn = (phase) =>
   Math.sin(phase) +
   0.55 * Math.sin(2 * phase) +
@@ -13,6 +14,7 @@ const horn = (phase) =>
   0.12 * Math.sin(4 * phase);
 const bell = (phase) =>
   Math.sin(phase) + 0.35 * Math.sin(2.76 * phase) + 0.16 * Math.sin(5.4 * phase);
+const muted = (phase) => Math.sin(phase) + 0.25 * Math.sin(2 * phase) + 0.08 * Math.sin(3 * phase);
 function voice(t, start, length, attack, release) {
   const dt = t - start;
   if (dt < 0 || dt > length + release) return 0;
@@ -48,6 +50,20 @@ const SCORES = {
       [12, 0.44, 1.1],
       [7, 0.44, 1.1],
       [0, 0.44, 1.1],
+    ],
+    sparkle: [],
+  },
+  // G–E♭–C falling slowly onto a low C-minor chord.
+  farewell: {
+    duration: 2.4,
+    gain: 0.38,
+    tone: muted,
+    notes: [
+      [7, 0, 0.34],
+      [3, 0.3, 0.34],
+      [0, 0.6, 1.2],
+      [-9, 0.6, 1.2],
+      [-12, 0.6, 1.2],
     ],
     sparkle: [],
   },

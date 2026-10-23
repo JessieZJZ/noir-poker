@@ -825,8 +825,9 @@ export function settle(g, showdown = true) {
 // Seats that lose every chip leave the game. Seats busting in the same hand
 // are ranked by the stack they started it with; equal stacks share a place.
 // The hero leaves only after the last refill, which ends the game at once:
-// remaining bots are not simulated. A champion is decided only when the hero
-// is the last seat left, or loses a heads-up hand against the last bot.
+// remaining bots are not simulated. Whoever is the last seat left is the
+// champion: the hero by clearing the table, a bot by taking the hero's last
+// chips along with every other remaining seat.
 function eliminate(g) {
   const hero = g.players[0],
     heroMayRefill = hero.stack === 0 && heroRebuysLeft(g) > 0,
@@ -842,8 +843,7 @@ function eliminate(g) {
   for (const p of leaving.sort((a, b) => b.place - a.place))
     log(g, `${p.name} 筹码输光，出局 · 第 ${p.place} 名`, p.id, 'result');
   const left = g.players.filter((p) => !p.out),
-    champion =
-      left.length === 1 && (left[0].id === 0 || remaining + leaving.length === 2) ? left[0] : null;
+    champion = left.length === 1 ? left[0] : null;
   if (champion) {
     champion.place = 1;
     log(g, `${champion.name} 获得冠军`, champion.id, 'result');

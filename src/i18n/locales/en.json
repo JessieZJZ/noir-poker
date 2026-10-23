@@ -2102,5 +2102,7 @@
   "本局补码次数已用完。": "No refills left in this game.",
   "第{0}名": "#{0}",
   "补充筹码，剩余 {0} 次": "Refill chips, {0} left",
-  "请先补充筹码。": "Refill your chips first."
+  "请先补充筹码。": "Refill your chips first.",
+  "很遗憾，本局结束": "Sorry, the game is over",
+  "补码次数已用完": "No refills left"
 }

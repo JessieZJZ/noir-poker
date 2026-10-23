@@ -49,6 +49,7 @@ for (const heroWins of [true, false]) {
       heroWins ? '你获得冠军' : 'Mia 获得冠军',
     );
     await expect(page.locator('.confetti-layer')).toHaveCount(heroWins ? 1 : 0);
+    await expect(page.locator('.farewell-stage')).toHaveCount(0);
     if (heroWins) await expect(page.locator('.confetti-piece')).toHaveCount(112);
     const resting = heroWins ? '.hero-champion-crown' : '.seat-1 .champion-crown';
     await expect(page.locator(resting)).toHaveClass(/crown-pending/);
@@ -155,6 +156,24 @@ test('busting with refills left shows the refill count, deals at once and counts
   expect((await state(page)).hand).toBe(hand + 1);
 });
 
+test('a bot taking the last refill and every other seat in one hand is crowned', async ({
+  page,
+}) => {
+  await page.evaluate(() => window.qa.finale({ heroWins: false, rivals: 3, rebuysUsed: 3 }));
+  await page.evaluate(() => window.qa.finaleShowdown({ allIn: true }));
+  const view = await state(page);
+  expect(view.over.championId).toBe(1);
+  expect(view.players.filter((p) => !p.out).map((p) => p.id)).toEqual([1]);
+  await expect(page.locator('.crown-stage')).toHaveCount(1);
+  await expect(page.locator('.crown-caption')).toHaveText('Mia 获得冠军');
+  await expect(page.locator('.confetti-layer')).toHaveCount(0);
+  await page.evaluate(() => document.getAnimations().forEach((a) => a.finish()));
+  await expect(page.locator('.crown-stage')).toHaveCount(0, { timeout: 4000 });
+  await expect(page.locator('.seat-1 .champion-crown')).not.toHaveClass(/crown-pending/);
+  await expect(page.locator('#next-button')).toHaveText('下一局');
+  await expect(page.locator('#session-standing')).toHaveText(`第${view.over.heroPlace}名`);
+});
+
 test('busting after the last refill ends the game with a place and no champion', async ({
   page,
 }) => {
@@ -163,6 +182,25 @@ test('busting after the last refill ends the game with a place and no champion',
   const view = await state(page);
   expect(view.over.championId).toBeNull();
   await expect(page.locator('.crown-stage, .confetti-layer, .champion-crown')).toHaveCount(0);
+  // A grey card at the table's centre tells the final place, then leaves.
+  const farewell = page.locator('.table-viewport > .farewell-stage');
+  await expect(farewell).toHaveCount(1);
+  await expect(farewell.locator('.farewell-title')).toHaveText('很遗憾，本局结束');
+  await expect(farewell.locator('.farewell-place')).toHaveText(`第${view.over.heroPlace}名`);
+  await expect(farewell.locator('.farewell-note')).toHaveText('补码次数已用完');
+  const [card, table] = await Promise.all([
+    farewell.locator('.farewell-card').boundingBox(),
+    page.locator('.poker-table').boundingBox(),
+  ]);
+  expect(Math.abs(card.x + card.width / 2 - (table.x + table.width / 2))).toBeLessThan(
+    table.width * 0.1,
+  );
+  expect(card.y).toBeGreaterThan(table.y);
+  expect(card.y + card.height).toBeLessThan(table.y + table.height);
+  await seek(page, '.farewell-stage', 1200);
+  await page.screenshot({ path: test.info().outputPath('farewell.png') });
+  await page.evaluate(() => document.getAnimations().forEach((a) => a.finish()));
+  await expect(farewell).toHaveCount(0, { timeout: 4000 });
   await expect(page.locator('#next-button')).toHaveText('下一局');
   await expect(page.locator('#reset-button')).toBeHidden();
   await expect(page.locator('#session-standing')).toHaveText(`第${view.over.heroPlace}名`);

@@ -2098,5 +2098,7 @@
   "本局补码次数已用完。": "No quedan recargas en esta partida.",
   "第{0}名": "{0}.º",
   "补充筹码，剩余 {0} 次": "Recargar fichas, quedan {0}",
-  "请先补充筹码。": "Recarga primero tus fichas."
+  "请先补充筹码。": "Recarga primero tus fichas.",
+  "很遗憾，本局结束": "Lo sentimos, la partida ha terminado",
+  "补码次数已用完": "No quedan recargas"
 }

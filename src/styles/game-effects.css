@@ -362,6 +362,117 @@
   }
 }
 
+/* The hero is out and nobody is crowned: a grey card at the table's centre
+   tells the final place, then fades. */
+.farewell-stage {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  background: radial-gradient(circle at 50% 50%, #0b0f1399 0%, #0b0f1355 45%, #0b0f1300 75%);
+  animation: farewell-stage 2.8s ease both;
+}
+@keyframes farewell-stage {
+  0% {
+    opacity: 0;
+  }
+  14%,
+  78% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+.farewell-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 14px 28px 12px;
+  border: 1px solid #7d8996;
+  border-radius: 14px;
+  background: linear-gradient(180deg, #2a323bf2, #1a2027f2);
+  box-shadow:
+    0 0 0 4px #7d899622,
+    0 14px 34px #000000aa;
+  text-align: center;
+  animation: farewell-card 2.8s cubic-bezier(0.2, 0.7, 0.3, 1) both;
+}
+@keyframes farewell-card {
+  0% {
+    opacity: 0;
+    transform: translateY(10px) scale(0.92);
+  }
+  16% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  78% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+}
+.farewell-ring {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 180px;
+  height: 180px;
+  margin: -90px 0 0 -90px;
+  border: 2px solid #9aa6b2;
+  border-radius: 50%;
+  opacity: 0;
+  animation: farewell-ring 1.6s ease-out 0.2s both;
+}
+@keyframes farewell-ring {
+  0% {
+    opacity: 0.5;
+    transform: scale(0.5);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.35);
+  }
+}
+.farewell-title {
+  display: block;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  line-height: 20px;
+  color: #b7c1cb;
+}
+.farewell-place {
+  display: block;
+  margin-top: 2px;
+  font-size: 30px;
+  font-weight: 800;
+  letter-spacing: 2px;
+  line-height: 38px;
+  color: #e3e8ed;
+  text-shadow:
+    0 2px 0 #11161b,
+    0 0 14px #9aa6b266;
+}
+.farewell-note {
+  display: block;
+  margin-top: 2px;
+  font-size: 12px;
+  line-height: 17px;
+  color: #8a96a2;
+}
+
 /* Final standing tags: champion gold, then silver, bronze and slate. */
 .standing-tag {
   display: inline-flex;
@@ -399,7 +510,8 @@
 @media (prefers-reduced-motion: reduce) {
   .premium-spark,
   .confetti-piece,
-  .crown-rays {
+  .crown-rays,
+  .farewell-ring {
     animation: none;
     opacity: 0;
   }

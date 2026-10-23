@@ -49,4 +49,4 @@ npm run wechat:check
 
 ## 强牌、补码与冠军动效
 
-强牌高亮、补码计数、冠军头冠、撒花和名次标签的样式只写在 `src/styles/game-effects.css`，构建时原样复制为微信 `shared/ui/game-effects.wxss`；粒子位置与时长由 `src/ui/effect-layouts.js` 生成，三端相同。各端只负责摆放：Web/原生在 `src/styles/game-end.css`，微信在 `miniprogram/pages/table/game-end.wxss`。微信视图不绘制共享的卡牌 `::after` 光晕，改由手牌自身播放同一组关键帧。冠军音效由 `src/ui/ceremony-sounds.js` 运行时合成（微信写入用户目录后播放），不增加主包体积。强牌范围：所有对子，AK/AQ/AJ，同花 AT/KQ/KJ/QJ/JT（约 11% 组合）；仅作展示，不参与机器人决策或复盘评分。所有动效在下一手、重打和重新练习时取消。
+强牌高亮、补码计数、冠军头冠、撒花、无冠军出局时牌桌中央的灰色“很遗憾，本局结束 · 第x名”卡片和名次标签的样式只写在 `src/styles/game-effects.css`，构建时原样复制为微信 `shared/ui/game-effects.wxss`；粒子位置与时长由 `src/ui/effect-layouts.js` 生成，三端相同。各端只负责摆放：Web/原生在 `src/styles/game-end.css`，微信在 `miniprogram/pages/table/game-end.wxss`。微信视图不绘制共享的卡牌 `::after` 光晕，改由手牌自身播放同一组关键帧。冠军、机器人夺冠与出局遗憾三段音效由 `src/ui/ceremony-sounds.js` 运行时合成（微信写入用户目录后播放），不增加主包体积。强牌范围：所有对子，AK/AQ/AJ，同花 AT/KQ/KJ/QJ/JT（约 11% 组合）；仅作展示，不参与机器人决策或复盘评分。所有动效在下一手、重打和重新练习时取消。
