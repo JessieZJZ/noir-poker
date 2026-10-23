@@ -166,9 +166,13 @@ test('mobile 5–9 player tables retain their first-screen space as the hand pro
             surfaceStable: Math.abs(surface.height - baseline.surface) <= 2,
             tableStable: Math.abs(tableBounds.height - baseline.table) <= 2,
             tableBeforeDock: tableBounds.bottom <= dock.top + 1,
+            // overflow-y stays visible for revealed seat cards; a clipped x
+            // axis still keeps the table from becoming a scroll container.
             tableFixed:
               table.scrollTop === 0 &&
-              ['clip', 'hidden'].includes(getComputedStyle(table).overflowY),
+              (['clip', 'hidden'].includes(getComputedStyle(table).overflowY) ||
+                (getComputedStyle(table).overflowY === 'visible' &&
+                  getComputedStyle(table).overflowX === 'clip')),
             controlsVisible: ['#raise-button', '#fold-button', '#call-button'].every((selector) => {
               const button = document.querySelector(selector).getBoundingClientRect();
               return (

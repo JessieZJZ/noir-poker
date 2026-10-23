@@ -301,8 +301,12 @@ test('record rows omit first-attempt copy, retain settled outcomes, color retrie
   for (let index = 0; index < session.attempts.length; index++) {
     const profit = session.attempts.at(-1 - index).profit;
     expect(Math.abs(profit)).toBeLessThan(1000);
+    // A lost hand without a chip change reads -0.
+    const lost = (await rows.nth(index).locator('.record-hand-result span').allTextContents())
+      .join('')
+      .includes('输');
     await expect(rows.nth(index).locator('.record-hand-result strong')).toHaveText(
-      `${profit < 0 ? '-' : '+'}${Math.abs(profit)}`,
+      `${profit < 0 || (profit === 0 && lost) ? '-' : '+'}${Math.abs(profit)}`,
     );
   }
   await expect(rows.nth(1).locator('.record-hand-result span')).toHaveText('输');
@@ -483,8 +487,9 @@ test('native Back events pop independent records pages while the live document s
   expect(attempt.profit).toBe(0);
   expect(attempt.snapshot.players[0].folded).toBe(true);
   await openRecords(page);
+  // Folding without a chip change is still a lost hand: -0.
   await expect(page.locator(`[data-record-hand="${attempt.id}"] .record-hand-result`)).toHaveText(
-    '+0输',
+    '-0输',
   );
   await page.locator(`[data-record-hand="${attempt.id}"]`).click();
   const live = await state(page);

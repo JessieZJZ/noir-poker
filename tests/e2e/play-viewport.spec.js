@@ -43,9 +43,16 @@ async function assertFixedTable(page, { bottomInset = 0, settled = false } = {})
           if (scrollY !== 0) issues.push('page moved before any interaction');
           if (table.height <= 70) issues.push('table is too short');
           if (table.top < 0 || table.bottom > dock.top + 1) issues.push('table covers controls');
+          // Revealed seat cards may paint above the table (overflow-y stays
+          // visible), but clipping either axis keeps it from becoming a
+          // scroll container.
+          const overflow = getComputedStyle(viewport);
           if (
             viewport.scrollTop !== 0 ||
-            !['clip', 'hidden'].includes(getComputedStyle(viewport).overflowY)
+            !(
+              ['clip', 'hidden'].includes(overflow.overflowY) ||
+              (overflow.overflowY === 'visible' && overflow.overflowX === 'clip')
+            )
           )
             issues.push('table can scroll');
           const visible = (el) => !el.hidden && getComputedStyle(el).display !== 'none';
