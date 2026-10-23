@@ -56,7 +56,7 @@ function handItem(attempt) {
   </${element}>`;
 }
 
-function sessionItem(session, expanded) {
+function sessionItem(session, expanded, hands) {
   const standing = sessionStanding(session);
   return `<article class="record-session" data-session-id="${escape(session.id)}" data-session-number="${session.number}">
     <button class="record-session-heading" data-record-session="${escape(session.id)}" aria-expanded="${expanded}" aria-controls="record-session-${escape(session.id)}">
@@ -64,16 +64,18 @@ function sessionItem(session, expanded) {
       <span class="record-session-stats"><span><small>胜率</small><strong>${session.completed ? Math.round((session.wins / session.completed) * 100) + '%' : '—'}</strong></span><span><small>净筹码变化</small><strong class="${session.profit < 0 ? 'negative' : session.profit > 0 ? 'positive' : ''}">${change(session.profit)}</strong></span><span><small>起始大小盲</small><strong>${formatChips(session.stakes.smallBlind)} / ${formatChips(session.stakes.bigBlind)}</strong></span><span><small>牌桌人数</small><strong>${session.playerCount} 人</strong></span></span>
       <span class="record-session-chevron" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></span>
     </button>
-    <div class="record-session-hands" id="record-session-${escape(session.id)}" ${expanded ? '' : 'hidden'}>${expanded ? handItems(session.attempts) : ''}</div>
+    <div class="record-session-hands" id="record-session-${escape(session.id)}" ${expanded ? '' : 'hidden'}>${expanded ? hands(session) : ''}</div>
   </article>`;
 }
 
-function handItems(attempts) {
-  return (
-    attempts.slice().reverse().map(handItem).join('') ||
-    '<p class="records-empty">这一局还没有对局记录。</p>'
-  );
-}
+// Hands render in chunks of 20, counted from each game's first hand so a new
+// hand only changes the newest chunk. A chunk holds its rows only while it is
+// within one screen of the viewport; otherwise it is an empty placeholder of
+// its last measured (or estimated) height, so scrolling and the restored list
+// position stay the same while long archives keep few rows in the document.
+const CHUNK_SIZE = 20;
+const chunkAttempts = (attempts, chunk) =>
+  attempts.slice(chunk * CHUNK_SIZE, chunk * CHUNK_SIZE + CHUNK_SIZE);
 
 export function createGameRecordsView({ records, openReview, openPots, onReturnGame, toast }) {
   const liveMain = document.querySelector('main.main'),
@@ -89,7 +91,98 @@ export function createGameRecordsView({ records, openReview, openPots, onReturnG
     fingerprint = '',
     archive = null,
     historyViewport = null,
-    listSessions = new Map();
+    listSessions = new Map(),
+    listOrder = '',
+    listSignatures = new Map(),
+    rowHeight = 78;
+  const filledChunks = new Set(),
+    chunkHeights = new Map();
+  const chunkObserver =
+    typeof IntersectionObserver === 'function'
+      ? new IntersectionObserver(
+          (entries) => {
+            for (const entry of entries)
+              if (entry.isIntersecting) fillChunk(entry.target);
+              else releaseChunk(entry.target);
+          },
+          { rootMargin: '100% 0px' },
+        )
+      : null;
+  function handsMarkup(session) {
+    const count = Math.ceil(session.attempts.length / CHUNK_SIZE);
+    if (!count) return '<p class="records-empty">这一局还没有对局记录。</p>';
+    return Array.from({ length: count }, (_, i) => {
+      const chunk = count - 1 - i,
+        key = `${session.id}:${chunk}`,
+        rows = chunkAttempts(session.attempts, chunk).length,
+        known = chunkHeights.get(key);
+      const height = known?.rows === rows ? known.height : rows * rowHeight;
+      return `<div class="record-hand-chunk" data-chunk="${escape(key)}" data-rows="${rows}" style="height:${height}px"></div>`;
+    }).join('');
+  }
+  function fillChunk(element) {
+    const key = element.dataset.chunk;
+    if (filledChunks.has(key) && element.childElementCount) return;
+    const split = key.lastIndexOf(':'),
+      session = listSessions.get(key.slice(0, split));
+    if (!session) return;
+    setLocalizedHTML(
+      element,
+      chunkAttempts(session.attempts, Number(key.slice(split + 1)))
+        .reverse()
+        .map(handItem)
+        .join(''),
+    );
+    element.style.removeProperty('height');
+    filledChunks.add(key);
+  }
+  function releaseChunk(element) {
+    const key = element.dataset.chunk;
+    if (!filledChunks.has(key)) return;
+    filledChunks.delete(key);
+    const rows = element.childElementCount,
+      height = element.offsetHeight;
+    // A folded game reports zero height; keep the last real measurement.
+    if (rows && height) {
+      chunkHeights.set(key, { rows, height });
+      element.style.height = `${height}px`;
+    }
+    element.replaceChildren();
+  }
+  // Watch new chunks; fill the ones on or near the screen right away so a
+  // render never flashes empty placeholders.
+  function primeChunks(root) {
+    const elements = [...root.querySelectorAll('.record-hand-chunk')];
+    if (!chunkObserver) return elements.forEach(fillChunk);
+    const near = elements.filter((element) => {
+      const rect = element.getBoundingClientRect();
+      return rect.height && rect.bottom > -innerHeight && rect.top < innerHeight * 2;
+    });
+    near.forEach(fillChunk);
+    calibrate(elements);
+    elements.forEach((element) => chunkObserver.observe(element));
+  }
+  // Size unmeasured placeholders from a filled chunk's real rows, so the
+  // list keeps one height before and after the reader scrolls through it.
+  function calibrate(elements) {
+    const sample = elements
+      .filter((element) => element.childElementCount)
+      .sort((a, b) => b.childElementCount - a.childElementCount)[0];
+    const measured = sample && sample.offsetHeight / sample.childElementCount;
+    if (!measured || Math.abs(measured - rowHeight) < 0.01) return;
+    rowHeight = measured;
+    for (const element of elements) {
+      const known = chunkHeights.get(element.dataset.chunk);
+      if (!element.childElementCount && known?.rows !== Number(element.dataset.rows))
+        element.style.height = `${element.dataset.rows * rowHeight}px`;
+    }
+  }
+  function forgetChunks(root) {
+    for (const element of root.querySelectorAll('.record-hand-chunk')) {
+      chunkObserver?.unobserve(element);
+      filledChunks.delete(element.dataset.chunk);
+    }
+  }
 
   const navigation = createRecordsNavigation({ window, show: showRoute }),
     guideMenu = createGuideMenu({ onRecords: () => navigate({ page: 'list' }) });
@@ -102,19 +195,42 @@ export function createGameRecordsView({ records, openReview, openPots, onReturnG
     fingerprint = next;
     const sessions = records.summaries();
     listSessions = new Map(sessions.map((session) => [session.id, session]));
-    const scroll = window.scrollY;
-    setLocalizedHTML(
-      content,
-      sessions.length
-        ? sessions.map((session) => sessionItem(session, !collapsed.has(session.id))).join('')
-        : '<div class="records-empty"><h2>还没有对局记录</h2><p>完成一手后，可以在这里查看结算和复盘。</p></div>',
-    );
+    const order = `${getLocale()} ${sessions.map((session) => session.id).join(' ')}`,
+      signatures = new Map(sessions.map((session) => [session.id, JSON.stringify(session)])),
+      scroll = window.scrollY,
+      item = (session) => sessionItem(session, !collapsed.has(session.id), handsMarkup);
+    // A settled hand changes one game: replace only the games that changed.
+    if (!force && order === listOrder && content.querySelector('.record-session')) {
+      for (const session of sessions) {
+        if (listSignatures.get(session.id) === signatures.get(session.id)) continue;
+        const current = content.querySelector(`[data-session-id="${CSS.escape(session.id)}"]`),
+          holder = document.createElement('div');
+        setLocalizedHTML(holder, item(session));
+        forgetChunks(current);
+        const next = holder.firstElementChild;
+        current.replaceWith(next);
+        primeChunks(next);
+      }
+    } else {
+      forgetChunks(content);
+      setLocalizedHTML(
+        content,
+        sessions.length
+          ? sessions.map(item).join('')
+          : '<div class="records-empty"><h2>还没有对局记录</h2><p>完成一手后，可以在这里查看结算和复盘。</p></div>',
+      );
+      primeChunks(content);
+    }
+    listOrder = order;
+    listSignatures = signatures;
     window.scrollTo(0, scroll);
   }
   function renderArchive(peekPlayer) {
     if (!archive) return;
     const snapshot = archive.snapshot,
       formatter = createActivityFormatter(snapshot);
+    forgetChunks(content);
+    listOrder = '';
     setLocalizedHTML(
       content,
       `<div id="history-page"><div class="main records-history-grid"><section class="game-column"><div class="records-surface-slot"></div><div class="records-showdown-slot"></div></section><aside class="sidebar"><section class="activity-card records-activity"><div class="section-title"><h2>本局动态</h2><span class="subtle-label">FINISHED</span></div><ol class="activity-list" aria-label="本手动态，按时间顺序排列">${snapshot.logs
@@ -221,9 +337,11 @@ export function createGameRecordsView({ records, openReview, openPots, onReturnG
       const open = !collapsed.has(id);
       button.setAttribute('aria-expanded', String(open));
       const hands = document.getElementById('record-session-' + id);
-      if (open && !hands.childElementCount)
-        setLocalizedHTML(hands, handItems(listSessions.get(id).attempts));
       hands.hidden = !open;
+      if (open && !hands.childElementCount) {
+        setLocalizedHTML(hands, handsMarkup(listSessions.get(id)));
+        primeChunks(hands);
+      }
     } else if (button.dataset.recordHand) navigate({ page: 'hand', id: button.dataset.recordHand });
     else if (button.id === 'history-review-button')
       openReview(createReviewInput(archive.snapshot), 'history:' + archive.id);

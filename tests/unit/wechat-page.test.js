@@ -1798,6 +1798,39 @@ test('WeChat record lists send bounded summary patches and remain idle without r
     patches.push(copy(patch));
     setData.call(this, patch, callback);
   };
+  // The intersection observer and the list measurements are driven by hand.
+  let report = null,
+    observed = 0;
+  page.createIntersectionObserver = () => ({
+    relativeToViewport(margins) {
+      assert.deepEqual(copy(margins), { top: 844, bottom: 844 });
+      return this;
+    },
+    observe(selector, callback) {
+      assert.equal(selector, '.hand-list');
+      observed++;
+      report = (id, near) => {
+        callback({ dataset: { id }, intersectionRatio: near ? 1 : 0 });
+        page.refreshRecords(true);
+      };
+    },
+    disconnect() {},
+  });
+  page.createSelectorQuery = () => ({
+    selectAll() {
+      return this;
+    },
+    fields() {
+      return this;
+    },
+    exec(done) {
+      done([
+        page.data.sessions
+          .filter((session) => session.expanded)
+          .map((session) => ({ dataset: { id: session.id }, height: 1800, top: 0, bottom: 1800 })),
+      ]);
+    },
+  });
   page.onLoad();
   page.onShow();
   const initialBytes = patches.reduce(
@@ -1806,20 +1839,48 @@ test('WeChat record lists send bounded summary patches and remain idle without r
   );
   assert.equal(page.data.sessions.length, 20);
   assert.equal(page.data.hasMoreSessions, true);
+  assert.equal(observed, 1);
+  // Every game is expanded; only the first screens' game has its rows.
+  assert.ok(page.data.sessions.every((session) => session.expanded));
+  assert.equal(page.data.sessions[0].filled, true);
   assert.equal(page.data.sessions[0].attempts.length, 24);
   assert.deepEqual(
     copy(page.data.sessions[0].attempts.map((row) => row.hand)),
     Array.from({ length: 24 }, (_, i) => 90 - i),
   );
-  // Every game is expanded by default, each to its first batch of hands.
-  assert.ok(page.data.sessions.every((session) => session.expanded));
-  assert.equal(page.data.sessions[1].attempts.length, 24);
+  assert.equal(page.data.sessions[1].filled, false);
+  assert.equal(page.data.sessions[1].attempts.length, 0);
+  assert.equal(page.data.sessions[1].listStyle, 'height:1765px', 'Estimated 24-row height');
+  // Each card face crosses the bridge once; rows only name it.
+  assert.deepEqual(Object.keys(page.data.cardArt).sort(), ['c0_8', 'c2_8']);
+  assert.match(page.data.cardArt.c2_8, /^background-image:url\("data:image\/svg\+xml,/);
+  assert.deepEqual(copy(page.data.sessions[0].attempts[0].cards[0]), {
+    key: '2-8',
+    art: 'c2_8',
+    rank: '8',
+    suit: '♣',
+    red: false,
+  });
+  assert.ok(initialBytes < 32 * 1024, `First screen sends ${initialBytes} bytes`);
   assert.doesNotMatch(JSON.stringify(page.data), /largeUnusedTree|snapshot/);
   const idleReads = reads,
     idlePatches = patches.length;
   for (let i = 0; i < 20; i++) page.refreshRecords();
   assert.equal(reads, idleReads);
   assert.equal(patches.length, idlePatches, 'Polling unchanged records must not call setData');
+  // Scrolling: the next game comes near and fills; the first leaves and keeps
+  // its measured height as a placeholder.
+  report('session-1', true);
+  assert.equal(page.data.sessions[1].attempts.length, 24);
+  report('session-0', false);
+  assert.equal(page.data.sessions[0].filled, false);
+  assert.equal(page.data.sessions[0].attempts.length, 0);
+  assert.equal(page.data.sessions[0].listStyle, 'height:1800px');
+  assert.ok(
+    patches.slice(idlePatches).every((patch) => !JSON.stringify(patch).includes('cardArt')),
+    'Faces already sent are not sent again',
+  );
+  report('session-0', true);
   page.moreHands({ currentTarget: { dataset: { id: 'session-0' } } });
   assert.equal(page.data.sessions[0].attempts.length, 48);
   assert.deepEqual(
@@ -1834,6 +1895,8 @@ test('WeChat record lists send bounded summary patches and remain idle without r
   page.moreSessions();
   assert.equal(page.data.sessions.length, 25);
   assert.equal(page.data.hasMoreSessions, false);
+  assert.equal(observed, 2, 'Newly listed games are observed too');
+  report('session-24', true);
   assert.equal(page.data.sessions[24].attempts.length, 24);
   page.toggleSession({ currentTarget: { dataset: { id: 'session-24' } } });
   assert.equal(page.data.sessions[24].expanded, false);
@@ -1855,9 +1918,9 @@ test('WeChat record lists send bounded summary patches and remain idle without r
   revision++;
   page.refreshRecords();
   assert.equal(page.data.sessions[0].id, 'new-session');
-  assert.equal(page.data.sessions[1].attempts.length, 90, 'Reordering retains expanded rows');
+  assert.equal(page.data.sessions[1].attempts.length, 90, 'Reordering retains filled rows');
   assert.ok(
-    Math.max(...patches.map((patch) => Buffer.byteLength(JSON.stringify(patch)))) < 256 * 1024,
+    Math.max(...patches.map((patch) => Buffer.byteLength(JSON.stringify(patch)))) < 64 * 1024,
   );
   page.openHand({ currentTarget: { dataset: { id: 'attempt-0-0' } } });
   assert.match(fixture.navigations.at(-1), /history\?id=attempt-0-0$/);

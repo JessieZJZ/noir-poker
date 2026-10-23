@@ -274,6 +274,10 @@ body[data-records-page='hand'] .records-back {
 .record-hand:last-child {
   border-bottom: 0;
 }
+/* Hands render in chunks; only the list's very last row drops its rule. */
+.record-hand-chunk:not(:last-child) > .record-hand:last-child {
+  border-bottom: 1px solid #25343e;
+}
 button.record-hand:hover {
   background: #182b2b;
   border-radius: 8px;

@@ -94,6 +94,85 @@ test('large archives open every game expanded, fold on demand and keep snapshots
   expect((await state(page)).hand).toBe(13);
 });
 
+test('long archives keep only nearby hands in the document and restore the list position', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  const original = await page.evaluate((editable) => {
+    window.qa.recordsFinish();
+    const saved = new Function(`return (${editable})()`)();
+    const source = saved.sessions.find((session) => session.id === saved.currentId);
+    const attempt = source.attempts.find((row) => row.status === 'completed');
+    // 40 games of 100 hands; game 21's first hand keeps a snapshot.
+    saved.sessions = Array.from({ length: 40 }, (_, i) => ({
+      ...source,
+      id: `long-${i}`,
+      number: i + 1,
+      endedAt: i === 39 ? null : source.startedAt + 1,
+      attempts: Array.from({ length: 100 }, (_, j) => {
+        const kept = i === 20 && j === 0;
+        return {
+          ...attempt,
+          id: kept ? attempt.id : `long-${i}-${j}`,
+          hand: j + 1,
+          snapshot: kept ? attempt.snapshot : null,
+        };
+      }),
+    }));
+    saved.currentId = 'long-39';
+    saved.nextNumber = 41;
+    saved.checkpoint.hand = 100;
+    return window.qa.writeRecords(saved).then(() => attempt.id);
+  }, String(editableRecords));
+  await page.reload();
+  await page.waitForFunction(() => !!window.qa);
+  await page.evaluate(() => window.qa.stop());
+  await openRecords(page);
+  await expect(page.locator('.record-session')).toHaveCount(40);
+  await expect(page.locator('.record-session-heading[aria-expanded="true"]')).toHaveCount(40);
+  const rows = () => page.locator('.record-hand').count();
+  expect(await rows()).toBeGreaterThan(0);
+  expect(await rows()).toBeLessThanOrEqual(60);
+  // A hand settling while the list is open replaces only its own game.
+  await page.evaluate(() => {
+    document.querySelector('[data-session-id="long-38"]').dataset.untouched = 'true';
+  });
+  const live = page.locator('[data-session-id="long-39"] .record-hand').first();
+  await expect(live).toHaveAttribute('data-status', 'playing');
+  await page.evaluate(() => window.qa.recordsFinish());
+  await expect(live).toHaveAttribute('data-status', 'completed');
+  await expect(page.locator('[data-session-id="long-38"][data-untouched="true"]')).toHaveCount(1);
+  // Chunks keep the row rule between them; only the list's last row drops it.
+  const rule = await page
+    .locator('[data-session-id="long-39"] .record-hand-chunk')
+    .nth(1)
+    .evaluate((chunk) => getComputedStyle(chunk.lastElementChild).borderBottomWidth);
+  expect(rule).toBe('1px');
+  // Scrolling to the bottom fills the oldest game and releases the newest.
+  const height = await page.evaluate(() => document.documentElement.scrollHeight);
+  await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+  await expect(page.locator('[data-session-id="long-0"] .record-hand').first()).toBeVisible();
+  await expect(page.locator('[data-session-id="long-39"] .record-hand')).toHaveCount(0);
+  expect(await rows()).toBeLessThanOrEqual(80);
+  // Placeholders match the real rows: the list does not grow or shrink.
+  expect(
+    Math.abs((await page.evaluate(() => document.documentElement.scrollHeight)) - height),
+  ).toBeLessThan(40);
+  // A hand in the middle of the archive opens and the list returns to it.
+  await page.locator('[data-chunk="long-20:0"]').scrollIntoViewIfNeeded();
+  const kept = page.locator(`[data-record-hand="${original}"]`);
+  await expect(kept).toBeVisible();
+  await kept.scrollIntoViewIfNeeded();
+  const scroll = await page.evaluate(() => window.scrollY);
+  expect(scroll).toBeLessThan(height - 2000);
+  await kept.click();
+  await expect(page.locator('#history-table')).toBeVisible();
+  await page.goBack();
+  await expect(page.locator('.record-session')).toHaveCount(40);
+  await expect(kept).toBeInViewport();
+  expect(Math.abs((await page.evaluate(() => window.scrollY)) - scroll)).toBeLessThan(4);
+});
+
 test('viewing a historical hand flips only the clicked cards and respects reduced motion', async ({
   page,
 }) => {

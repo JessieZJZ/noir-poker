@@ -46,8 +46,13 @@
         ><view class="session-chevron"
       /></view>
     </view>
-    <view wx:if="{{session.expanded}}" class="hand-list">
-      <view wx:if="{{!session.attempts.length}}" class="records-empty hand-empty"
+    <view
+      wx:if="{{session.expanded}}"
+      class="hand-list"
+      data-id="{{session.id}}"
+      style="{{session.listStyle}}"
+    >
+      <view wx:if="{{session.filled && !session.attempts.length}}" class="records-empty hand-empty"
         >这一局还没有对局记录。</view
       >
       <view
@@ -65,7 +70,7 @@
             wx:for-item="card"
             wx:key="key"
             class="record-card {{card.red ? 'red' : ''}}"
-            style="{{card.artStyle}}"
+            style="{{cardArt[card.art]}}"
             aria-label="{{card.rank}}{{card.suit}}"
         /></view>
         <view class="hand-details"
@@ -87,7 +92,7 @@
         /></view>
       </view>
       <button
-        wx:if="{{session.hasMoreHands}}"
+        wx:if="{{session.filled && session.hasMoreHands}}"
         class="records-more"
         data-id="{{session.id}}"
         bindtap="moreHands"
