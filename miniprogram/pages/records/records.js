@@ -13,7 +13,8 @@ const signed = (value, loss = false) => {
 Page({
   data: {
     sessions: [],
-    expanded: {},
+    // Every game starts expanded; only the games the reader folds stay folded.
+    collapsed: {},
     topInset: 24,
     bottomInset: 0,
     hasMoreSessions: false,
@@ -27,8 +28,6 @@ Page({
     this._sessionLimit = SESSION_BATCH_SIZE;
     this._handLimits = {};
     this._cardArtwork = new Map();
-    const current = getApp().noirController?.getRecordSummaries()[0];
-    if (current) this.setData({ expanded: { [current.id]: true } });
   },
   onShow() {
     this._hidden = false;
@@ -65,10 +64,11 @@ Page({
           : '—',
         standing: sessionStanding(session),
         blindText: `${compactChips(session.stakes.smallBlind)} / ${compactChips(session.stakes.bigBlind)}`,
+        expanded: !this.data.collapsed[session.id],
         hasMoreHands:
-          !!this.data.expanded[session.id] &&
+          !this.data.collapsed[session.id] &&
           session.attempts.length > (this._handLimits[session.id] || HAND_BATCH_SIZE),
-        attempts: this.data.expanded[session.id]
+        attempts: !this.data.collapsed[session.id]
           ? session.attempts
               .slice()
               .reverse()
@@ -111,20 +111,28 @@ Page({
         sessions,
         hasMoreSessions: summaries.length > this._sessionLimit,
       });
-      // A new session may reorder the list. Send its small headings first and
-      // restore expanded rows in bounded batches instead of one giant payload.
-      const reordered = patch.sessions;
-      if (reordered) patch.sessions = reordered.map((session) => ({ ...session, attempts: [] }));
+      // Every game is expanded, and a new session may reorder the list. Send
+      // the small headings first and each game's rows in bounded batches
+      // instead of one giant payload.
+      const batches = [];
+      const defer = (index, session) => {
+        if (session.attempts.length) batches.push([index, session.attempts]);
+        return { ...session, attempts: [] };
+      };
+      if (patch.sessions) patch.sessions = patch.sessions.map((session, i) => defer(i, session));
+      for (const key of Object.keys(patch)) {
+        const index = /^sessions\[(\d+)\]$/.exec(key)?.[1];
+        if (index !== undefined) patch[key] = defer(Number(index), patch[key]);
+      }
       if (Object.keys(patch).length) this.setData(patch);
-      reordered?.forEach((session, i) => {
-        for (let start = 0; start < session.attempts.length; start += HAND_BATCH_SIZE) {
+      for (const [i, attempts] of batches)
+        for (let start = 0; start < attempts.length; start += HAND_BATCH_SIZE) {
           const batch = {};
-          session.attempts.slice(start, start + HAND_BATCH_SIZE).forEach((attempt, j) => {
+          attempts.slice(start, start + HAND_BATCH_SIZE).forEach((attempt, j) => {
             batch[`sessions[${i}].attempts[${start + j}]`] = attempt;
           });
           this.setData(batch);
         }
-      });
     }
     this._recordsTimer = setTimeout(() => this.refreshRecords(), 1000);
   },
@@ -138,7 +146,7 @@ Page({
   },
   toggleSession(event) {
     const id = event.currentTarget.dataset.id;
-    this.setData({ expanded: { ...this.data.expanded, [id]: !this.data.expanded[id] } });
+    this.setData({ collapsed: { ...this.data.collapsed, [id]: !this.data.collapsed[id] } });
     this.refreshRecords(true);
   },
   moreHands(event) {

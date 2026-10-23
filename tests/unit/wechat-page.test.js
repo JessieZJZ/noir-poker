@@ -1811,7 +1811,9 @@ test('WeChat record lists send bounded summary patches and remain idle without r
     copy(page.data.sessions[0].attempts.map((row) => row.hand)),
     Array.from({ length: 24 }, (_, i) => 90 - i),
   );
-  assert.equal(page.data.sessions[1].attempts.length, 0);
+  // Every game is expanded by default, each to its first batch of hands.
+  assert.ok(page.data.sessions.every((session) => session.expanded));
+  assert.equal(page.data.sessions[1].attempts.length, 24);
   assert.doesNotMatch(JSON.stringify(page.data), /largeUnusedTree|snapshot/);
   const idleReads = reads,
     idlePatches = patches.length;
@@ -1832,6 +1834,10 @@ test('WeChat record lists send bounded summary patches and remain idle without r
   page.moreSessions();
   assert.equal(page.data.sessions.length, 25);
   assert.equal(page.data.hasMoreSessions, false);
+  assert.equal(page.data.sessions[24].attempts.length, 24);
+  page.toggleSession({ currentTarget: { dataset: { id: 'session-24' } } });
+  assert.equal(page.data.sessions[24].expanded, false);
+  assert.equal(page.data.sessions[24].attempts.length, 0);
   page.toggleSession({ currentTarget: { dataset: { id: 'session-24' } } });
   assert.equal(page.data.sessions[24].attempts.length, 24);
   sessions[0].attempts[0].profit = -100;

@@ -81,14 +81,14 @@ export function createGameRecordsView({ records, openReview, openPots, onReturnG
     content = document.querySelector('#records-content'),
     title = document.querySelector('#records-title'),
     started = document.querySelector('#records-hand-start');
-  const expanded = new Set(),
+  // Every game starts expanded; only the games the reader folds stay folded.
+  const collapsed = new Set(),
     visible = new Set();
   let route = { page: 'game' },
     listScroll = 0,
     fingerprint = '',
     archive = null,
     historyViewport = null,
-    defaultCurrent = null,
     listSessions = new Map();
 
   const navigation = createRecordsNavigation({ window, show: showRoute }),
@@ -102,16 +102,11 @@ export function createGameRecordsView({ records, openReview, openPots, onReturnG
     fingerprint = next;
     const sessions = records.summaries();
     listSessions = new Map(sessions.map((session) => [session.id, session]));
-    const current = sessions.find((session) => !session.endedAt)?.id;
-    if (current && current !== defaultCurrent) {
-      expanded.add(current);
-      defaultCurrent = current;
-    }
     const scroll = window.scrollY;
     setLocalizedHTML(
       content,
       sessions.length
-        ? sessions.map((session) => sessionItem(session, expanded.has(session.id))).join('')
+        ? sessions.map((session) => sessionItem(session, !collapsed.has(session.id))).join('')
         : '<div class="records-empty"><h2>还没有对局记录</h2><p>完成一手后，可以在这里查看结算和复盘。</p></div>',
     );
     window.scrollTo(0, scroll);
@@ -221,13 +216,14 @@ export function createGameRecordsView({ records, openReview, openPots, onReturnG
     if (!button) return;
     if (button.dataset.recordSession) {
       const id = button.dataset.recordSession;
-      if (expanded.has(id)) expanded.delete(id);
-      else expanded.add(id);
-      button.setAttribute('aria-expanded', String(expanded.has(id)));
+      if (collapsed.has(id)) collapsed.delete(id);
+      else collapsed.add(id);
+      const open = !collapsed.has(id);
+      button.setAttribute('aria-expanded', String(open));
       const hands = document.getElementById('record-session-' + id);
-      if (expanded.has(id) && !hands.childElementCount)
+      if (open && !hands.childElementCount)
         setLocalizedHTML(hands, handItems(listSessions.get(id).attempts));
-      hands.hidden = !expanded.has(id);
+      hands.hidden = !open;
     } else if (button.dataset.recordHand) navigate({ page: 'hand', id: button.dataset.recordHand });
     else if (button.id === 'history-review-button')
       openReview(createReviewInput(archive.snapshot), 'history:' + archive.id);

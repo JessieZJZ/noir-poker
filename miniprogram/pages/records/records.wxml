@@ -21,7 +21,7 @@
       bindtap="toggleSession"
       data-id="{{session.id}}"
       aria-role="button"
-      aria-expanded="{{expanded[session.id] ? 'true' : 'false'}}"
+      aria-expanded="{{session.expanded ? 'true' : 'false'}}"
     >
       <view class="session-title"
         ><text class="session-number">第 {{session.number}} 局</text
@@ -42,11 +42,11 @@
         ><view><text>起始大小盲</text><text>{{session.blindText}}</text></view
         ><view><text>牌桌人数</text><text>{{session.playerCount}} 人</text></view></view
       >
-      <view class="session-toggle {{expanded[session.id] ? 'is-expanded' : ''}}" aria-hidden="true"
+      <view class="session-toggle {{session.expanded ? 'is-expanded' : ''}}" aria-hidden="true"
         ><view class="session-chevron"
       /></view>
     </view>
-    <view wx:if="{{expanded[session.id]}}" class="hand-list">
+    <view wx:if="{{session.expanded}}" class="hand-list">
       <view wx:if="{{!session.attempts.length}}" class="records-empty hand-empty"
         >这一局还没有对局记录。</view
       >

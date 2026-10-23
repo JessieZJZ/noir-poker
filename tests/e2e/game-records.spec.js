@@ -33,7 +33,7 @@ test.beforeEach(async ({ page }) => {
   await page.evaluate(() => window.qa.recordsStart());
 });
 
-test('large archives render collapsed session hands only when expanded and keep snapshots on demand', async ({
+test('large archives open every game expanded, fold on demand and keep snapshots on demand', async ({
   page,
 }) => {
   await page.evaluate((editable) => {
@@ -74,10 +74,19 @@ test('large archives render collapsed session hands only when expanded and keep 
   const current = page.locator('[data-session-id="perf-session-7"]');
   await expect(current.locator('.record-hand')).toHaveCount(13);
   await expect(current.locator('.record-hand').first()).toHaveAttribute('data-hand', '13');
+  // Finished games are expanded by default too; a heading folds and reopens.
   const previous = page.locator('[data-session-id="perf-session-6"]');
-  await expect(previous.locator('.record-hand')).toHaveCount(0);
+  await expect(page.locator('.record-session-heading[aria-expanded="true"]')).toHaveCount(8);
+  await expect(previous.locator('.record-hand')).toHaveCount(12);
+  await previous.locator('.record-session-heading').click();
+  await expect(previous.locator('.record-session-heading')).toHaveAttribute(
+    'aria-expanded',
+    'false',
+  );
+  await expect(previous.locator('.record-session-hands')).toBeHidden();
   await previous.locator('.record-session-heading').click();
   await expect(previous.locator('.record-hand')).toHaveCount(12);
+  await expect(previous.locator('.record-hand').first()).toBeVisible();
   await expect(previous.locator('.record-hand').first()).toHaveAttribute('data-hand', '12');
   await previous.locator('.record-hand').first().click();
   await expect(page.locator('#history-table')).toBeVisible();
@@ -124,7 +133,7 @@ test('archived tables never inherit the live hero-turn decoration', async ({ pag
   await page.evaluate(() => window.qa.recordsStart());
   await expect(page.locator('main.main .hero-cards-wrap')).toHaveClass(/turn-attention/);
   await openRecords(page);
-  await page.locator(`[data-record-session="${saved.id}"]`).click();
+  // The earlier game is already expanded.
   await page.locator(`[data-record-hand="${archived.id}"]`).click();
   const history = page.locator('#history-table');
   await expect(history.locator('.turn-attention')).toHaveCount(0);
