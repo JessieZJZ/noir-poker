@@ -139,7 +139,7 @@ docs/                       架构、规则、复盘依据与发布说明
 
 ## 策略测量
 
-`npm run measure:bots -- --hands=250 --players=6 --profile=balanced` 在固定牌序、每手 100 BB、无情绪条件下测量当前模拟策略的 VPIP/PFR、3-bet、弃给 3-bet、翻后 AF、真实翻牌人数分布、三人以上翻牌比例及翻前再加注局数。可加 `--difficulty=easy|normal|hard --emotions=off|subtle|lively` 对照难度和情绪；指标按实际机会作分母，无样本时为 null，AF 无跟注且有进攻时另标记无限。可将 profile 改为 `rook`、`iris`、`nico` 等，或增加 `--seed=9182 --deck-seed=123` 切换可重现的随机样本。玩家使用当前均衡策略，因此结果是该完整模拟环境的表现，不能当作真人频率；策略及调整前后实测见 [机器人风格与情绪模拟](docs/bots.md)。
+`npm run measure:bots -- --hands=250 --players=6 --profile=balanced` 在固定牌序、每手 100 BB、无情绪条件下测量当前模拟策略的 VPIP/PFR、3-bet、弃给 3-bet、翻后 AF、真实翻牌人数分布、三人以上翻牌比例、翻前再加注局数，以及按位置与跛入人数统计的开池尺度分布（`openSizes`）。可加 `--difficulty=easy|normal|hard --emotions=off|subtle|lively` 对照难度和情绪；指标按实际机会作分母，无样本时为 null，AF 无跟注且有进攻时另标记无限。可将 profile 改为 `rook`、`iris`、`nico` 等，或增加 `--seed=9182 --deck-seed=123` 切换可重现的随机样本。玩家使用当前均衡策略，因此结果是该完整模拟环境的表现，不能当作真人频率；策略及调整前后实测见 [机器人风格与情绪模拟](docs/bots.md)。
 
 复盘在内部比较不同合法行动，抽样未知牌后由同一规则引擎完整结算。玩家界面解释具体操作依据；跟注或弃牌时可查看准确的底池赔率，暂不展示 EV。对手解释独立读取执行记录；不会将真实对手底牌或后来牌序用于评价你的决策。
 

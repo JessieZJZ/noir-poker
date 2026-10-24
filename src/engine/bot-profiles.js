@@ -6,7 +6,9 @@ import { bigBlindOf, DEFAULT_STAKES } from './stakes.js';
 import characters from '../data/characters.json' with { type: 'json' };
 import { canonicalProfileId } from './profile-id.js';
 import {
+  botOpenRaiseTo,
   botStyleContext,
+  openBaseBB,
   resolveBotStyle,
   valueRaiseSupported,
   safeStrongValue,
@@ -886,7 +888,9 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
     const jam = valueJam();
     if (jam) return jam;
   }
-  const special = deceptiveAction(view, profile, roll);
+  // Deceptive opens share the value size, so the amount reveals nothing.
+  const openTo = botOpenRaiseTo(view, openBaseBB(style, attack));
+  const special = deceptiveAction(view, profile, roll, openTo);
   if (special) {
     sizing = special.sizing;
     deception = special.deception;
@@ -1024,7 +1028,7 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
   if (firstIn || isolation) {
     const threshold = firstIn ? style.firstInRaise : style.isolation;
     if (roll(firstIn ? 'first-in' : 'position-isolation', threshold) < threshold) {
-      const desired = ((firstIn ? 2.5 : 3.5) + limpers) * bigBlind;
+      const desired = openTo;
       const amount = legalRaiseTo(desired, legal);
       if (
         amount < legal.maxRaiseTo &&
@@ -1194,10 +1198,7 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
       },
       fraction,
     );
-    if (view.street === 0 && !raises.length)
-      desired =
-        (style.openingBB == null ? 2.5 + (attack > 0.8 ? 0.5 : 0) : style.openingBB) * bigBlind +
-        view.history.filter((a) => a.street === 0 && a.action === 'call').length * bigBlind;
+    if (view.street === 0 && !raises.length) desired = openTo;
     if (squeezeBluff) desired = Math.max(desired, view.currentBet * (view.inPosition ? 4 : 5));
     if (view.street === 0 && value && premium && raises.length > 0)
       desired = Math.max(

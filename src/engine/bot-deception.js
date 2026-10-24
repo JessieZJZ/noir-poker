@@ -1,6 +1,7 @@
 import { hasBotSkill } from './bot-difficulty.js';
 import { chipUnitOf, fractionRaiseTo, legalRaiseTo } from './bet-sizing.js';
 import { bigBlindOf } from './stakes.js';
+import { botOpenRaiseTo, openBaseBB, resolveBotStyle } from './bot-style.js';
 
 // Synthetic training controls. Eligibility follows the existing base style,
 // never a claim that a named player used 7-2 or donked at these frequencies.
@@ -53,7 +54,12 @@ export function isDonkLead(view) {
 
 // Only actor cards and before-action public information enter this selector.
 // It returns an executable action, not an intention later mistaken for one.
-export function deceptiveAction(view, profile, roll) {
+export function deceptiveAction(
+  view,
+  profile,
+  roll,
+  openTo = botOpenRaiseTo(view, openBaseBB(resolveBotStyle(profile), profile.axes[1] / 100)),
+) {
   const policy = deceptionPolicy(profile, view.difficulty);
   if (!Object.values(policy).some(Boolean)) return null;
   const { legal, features: f } = view;
@@ -155,7 +161,7 @@ export function deceptiveAction(view, profile, roll) {
   if (!legal.canRaise || effective < 20 * bigBlind) return null;
   const proposal = (fraction, opening = false) => {
     const desired = opening
-      ? 2.5 * bigBlind
+      ? openTo
       : fractionRaiseTo(
           {
             currentBet: view.currentBet,

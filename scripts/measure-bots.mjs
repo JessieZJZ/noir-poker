@@ -54,6 +54,10 @@ const sourceHash = createHash('sha256');
 for (const file of ['poker', 'bot-profiles', 'bot-style', 'public-equity', 'public-ranges'])
   sourceHash.update(readFileSync(new URL(`../src/engine/${file}.js`, import.meta.url)));
 let preflopReraisedHands = 0;
+// First-in raises only: open size by position and limper count, separated by
+// premium flag so a hand-strength sizing tell would be visible.
+const opens = {};
+const bb = (amount) => amount / g.bigBlind;
 applyBotSettings(g, {
   emotionMode,
   assignments: Object.fromEntries(
@@ -110,13 +114,51 @@ try {
             bucket[`${d.action}s`]++;
           }
         }
+        const firstIn =
+          g.street === 0 &&
+          d.action === 'raise' &&
+          !g.history.some((a) => a.street === 0 && a.action === 'raise');
+        const openIndex = g.history.length,
+          opener = g.actor;
         act(g, g.actor, d.action, d.amount);
+        if (firstIn) {
+          const limpers = g.history
+            .slice(0, openIndex)
+            .filter((a) => a.street === 0 && a.action === 'call').length;
+          const key = `${d.trace.view.position}/${limpers}L`;
+          const bucket = (opens[key] ||= {
+            opens: 0,
+            sizesBB: {},
+            premiumBB: 0,
+            premiumOpens: 0,
+            otherBB: 0,
+            otherOpens: 0,
+            pending: [],
+          });
+          const size = bb(d.amount);
+          bucket.opens++;
+          bucket.sizesBB[size] = (bucket.sizesBB[size] || 0) + 1;
+          if (d.trace.premium) (bucket.premiumOpens++, (bucket.premiumBB += size));
+          else (bucket.otherOpens++, (bucket.otherBB += size));
+          bucket.pending.push({ openIndex, opener });
+        }
         if (g.players.some((p) => p.stack < 0 || p.stack % g.chipUnit || p.total % g.chipUnit))
           throw Error('Invalid chip ledger');
       }
     }
     if (g.history.filter((a) => a.street === 0 && a.action === 'raise').length >= 2)
       preflopReraisedHands++;
+    for (const bucket of Object.values(opens))
+      for (const { openIndex } of bucket.pending.splice(0)) {
+        const after = g.history.slice(openIndex + 1).filter((a) => a.street === 0);
+        const reraise = after.findIndex((a) => a.action === 'raise');
+        const callers = (reraise < 0 ? after : after.slice(0, reraise)).filter(
+          (a) => a.action === 'call',
+        ).length;
+        bucket.callers = (bucket.callers || 0) + callers;
+        if (reraise >= 0) bucket.reraised = (bucket.reraised || 0) + 1;
+        else if (!callers) bucket.uncontested = (bucket.uncontested || 0) + 1;
+      }
     if (g.players.reduce((sum, p) => sum + p.stack, 0) !== count * g.bigBlind * 100)
       throw Error('Chip conservation failed');
   }
@@ -160,6 +202,22 @@ console.log(
     chipConservation: true,
     flopPlayerDistribution: flops.distribution,
     preflopReraisedHands,
+    openSizes: Object.fromEntries(
+      Object.entries(opens)
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([key, b]) => [
+          key,
+          {
+            opens: b.opens,
+            sizesBB: b.sizesBB,
+            premiumAverageBB: b.premiumOpens ? b.premiumBB / b.premiumOpens : null,
+            otherAverageBB: b.otherOpens ? b.otherBB / b.otherOpens : null,
+            averageCallers: (b.callers || 0) / b.opens,
+            uncontestedPercent: (100 * (b.uncontested || 0)) / b.opens,
+            reraisedPercent: (100 * (b.reraised || 0)) / b.opens,
+          },
+        ]),
+    ),
     scenario:
       '100 BB each new hand, seeded deck, hero uses baseline policy; observed ratios with actual opportunity denominators',
   }),

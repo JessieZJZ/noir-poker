@@ -1,4 +1,5 @@
 import { boardTexture } from './hand-features.js';
+import { bigBlindOf } from './stakes.js';
 
 // Author-controlled training heuristics, never measured frequencies of a person.
 // These helpers accept only the acting player's public perspective.
@@ -300,4 +301,27 @@ export function valueBetCap(view) {
     if (!view.hole.some((c) => c.suit === suit && c.rank >= 12)) return 0.5;
   }
   return Infinity;
+}
+
+// The style's base first-in size in big blinds; mood moves it only through attack.
+export const openBaseBB = (style, attack) =>
+  style.openingBB == null ? 2.5 + (attack > 0.8 ? 0.5 : 0) : style.openingBB;
+
+// One first-in raise size for the style's whole opening range, so the amount
+// never separates premiums from steals or deceptive opens. Four or more seats
+// still to act (UTG from five-handed up) add 1 BB, three add 0.5 BB; the blinds,
+// out of position after the flop, add 0.5 BB. Isolating limpers adds 1 BB plus
+// 1 BB per limper. Steps are half big blinds, i.e. whole small-blind chips.
+export function botOpenRaiseTo(view, baseBB) {
+  const preflop = view.history.filter((a) => a.street === 0);
+  const behind =
+    view.actionContext?.unactedBehindCount ??
+    (view.opponents || []).filter((p) => !p.allin && !preflop.some((a) => a.id === p.id)).length;
+  const limpers = new Set(
+    preflop.filter((a) => a.action === 'call' && a.amount > 0 && a.id !== view.id).map((a) => a.id),
+  ).size;
+  const seats = behind >= 4 ? 1 : behind === 3 ? 0.5 : 0;
+  const blind = ['SB', 'BB'].includes(view.position) ? 0.5 : 0;
+  const isolation = limpers ? 1 + limpers : 0;
+  return (baseBB + seats + blind + isolation) * bigBlindOf(view);
 }
