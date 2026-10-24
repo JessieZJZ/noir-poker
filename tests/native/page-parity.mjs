@@ -345,10 +345,13 @@ export async function compareNativePage({ root, output, evaluate, screenshot }, 
   await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
   // WebView applies Android's display scale during CSS layout, including
   // fractional border widths. DPR emulation alone only changes raster density.
-  const browser = await chromium.launch({
-    args: [`--force-device-scale-factor=${snapshot.layoutScale}`],
-  });
+  let browser;
   try {
+    // Launch inside the try: a missing browser must still close the server,
+    // or its open socket keeps the test process alive until the CI timeout.
+    browser = await chromium.launch({
+      args: [`--force-device-scale-factor=${snapshot.layoutScale}`],
+    });
     const page = await browser.newPage({
       viewport: snapshot.viewport,
       // Android commonly uses fractional densities (for example 2.625).
@@ -482,7 +485,7 @@ export async function compareNativePage({ root, output, evaluate, screenshot }, 
       paint,
     };
   } finally {
-    await browser.close();
+    await browser?.close();
     await new Promise((resolve) => server.close(resolve));
   }
 }

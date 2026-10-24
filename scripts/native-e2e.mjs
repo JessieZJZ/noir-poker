@@ -13,6 +13,7 @@ import { restartNativeApplication } from './native-lifecycle.mjs';
 import { requestNativeOrientation } from './native-orientation.mjs';
 import { compareNativePage } from '../tests/native/page-parity.mjs';
 import { createNativeCommand } from './native-transport.mjs';
+import { webDriverRequest } from './native-http.mjs';
 import { nativeBackPage, nativePageReady } from './native-back.mjs';
 import { prepareNativeTouch } from './native-touch.mjs';
 import { nativeAppTarget, assertAndroidTestPackage } from './native-app-target.mjs';
@@ -102,16 +103,7 @@ const androidDevtoolsPort = Math.min(64000, Number(options['driver-port'] ?? 920
 const serverUrl =
   options.server ?? `http://127.0.0.1:${options.port ?? (platform === 'ios' ? 4725 : 4727)}`;
 async function request(method, endpoint, body, timeout = 120000) {
-  const response = await fetch(`${serverUrl}${endpoint}`, {
-    method,
-    headers: { 'content-type': 'application/json' },
-    ...(body ? { body: JSON.stringify(body) } : {}),
-    signal: AbortSignal.timeout(timeout),
-  });
-  const payload = await response.json();
-  if (!response.ok || payload.value?.error)
-    throw Error(`${method} ${endpoint}: ${payload.value?.message || response.statusText}`);
-  return payload.value;
+  return webDriverRequest(`${serverUrl}${endpoint}`, method, body, timeout);
 }
 async function waitFor(test, timeout = 30000, message = 'Condition did not become true') {
   const deadline = Date.now() + timeout;
