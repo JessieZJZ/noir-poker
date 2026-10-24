@@ -315,7 +315,7 @@ export async function compareNativePage({ root, output, evaluate, screenshot }, 
   // Give the device compositor time to present dialog and scrolling changes.
   await new Promise((resolve) => setTimeout(resolve, 750));
   const snapshot = await evaluate(collectNativePageSnapshot, selectors);
-  const nativeCapture = await screenshot('parity-' + name + '-native');
+  let nativeCapture = await screenshot('parity-' + name + '-native');
   const directory = path.join(root, '.artifacts/mobile/web');
   const server = createServer(async (request, response) => {
     try {
@@ -414,9 +414,19 @@ export async function compareNativePage({ root, output, evaluate, screenshot }, 
     const webImage = path.join(output, 'parity-' + name + '-web.png');
     // A GPU-less hosted macOS runner can take over 30 s to rasterize the page.
     await page.screenshot({ path: webImage, timeout: 90000 });
-    const paint = /^(?:table|settlement)(?:-[5-9])?$/.test(name)
+    let paint = /^(?:table|settlement)(?:-[5-9])?$/.test(name)
       ? await compareNativePaint(nativeCapture, webImage, snapshot)
       : undefined;
+    // A GPU-less hosted simulator can keep presenting a stale frame, such as a
+    // dialog the page already closed, for several seconds. Recapture the same
+    // unchanged page before judging; a real paint difference persists.
+    let paintRecaptures = 0;
+    while (paint && paint.meanChannelError > paint.limit && paintRecaptures < 4) {
+      await new Promise((resolve) => setTimeout(resolve, 3000));
+      paintRecaptures++;
+      nativeCapture = await screenshot('parity-' + name + '-native');
+      paint = await compareNativePaint(nativeCapture, webImage, snapshot);
+    }
     const comparison = {
       name,
       mode: 'Installed app DOM replay in Chromium; same content, usable viewport and local CSS',
@@ -436,6 +446,7 @@ export async function compareNativePage({ root, output, evaluate, screenshot }, 
             }
           : undefined,
       paint,
+      paintRecaptures,
     };
     await writeFile(
       path.join(output, 'parity-' + name + '.json'),
