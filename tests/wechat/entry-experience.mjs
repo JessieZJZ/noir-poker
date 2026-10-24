@@ -200,6 +200,24 @@ try {
   const after = await inspect();
   assert.equal(after.players, 1);
   assert.ok(after.music.time > first.music.time);
+  // As on Web, the position badge sits 0.45em after "你", centred on it.
+  const heroText = await page.$('.hero-identity .hero-name-text > text'),
+    heroBadge = await page.$('.hero-identity .position');
+  const textOffset = await heroText.offset(),
+    textSize = await heroText.size(),
+    badgeOffset = await heroBadge.offset(),
+    badgeSize = await heroBadge.size();
+  const heroScale = textSize.width / parseFloat(await heroText.style('font-size'));
+  const badgeGap = badgeOffset.left - textOffset.left - textSize.width;
+  assert.ok(
+    Math.abs(badgeGap / heroScale - 0.45 * parseFloat(await heroText.style('font-size'))) <= 1.5,
+    `Hero badge gap must be 0.45em, got ${badgeGap}`,
+  );
+  assert.ok(
+    Math.abs(badgeOffset.top + badgeSize.height / 2 - (textOffset.top + textSize.height / 2)) <= 1,
+    'Hero badge is centred on the name',
+  );
+  assert.ok(badgeSize.height < textSize.height, 'Hero badge is shorter than the name line');
   report.checks.push({ name: 'join-once-and-complete-deal-before-actions', during, after });
   await mini.evaluate(() => getApp().onHide());
   const paused = await inspect();

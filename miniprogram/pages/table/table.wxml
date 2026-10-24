@@ -294,11 +294,8 @@
                   id="hero-crown"
                   class="champion-crown hero-champion-crown {{crownPending ? 'crown-pending' : 'crown-arrive'}}"
                   ><view class="crown-shape" /></view
-                ><text
-                  >你<text wx:if="{{!waitingForSeat}}" class="position"
-                    >{{heroPosition}}</text
-                  ></text
-                ></view
+                ><text>你</text
+                ><text wx:if="{{!waitingForSeat}}" class="position">{{heroPosition}}</text></view
               ><view wx:if="{{rebuying}}" class="stack stack-refill refill-hold"
                 ><text class="refill-final">{{heroStackFinal}}</text
                 ><text class="refill-count">{{heroStack}}</text></view

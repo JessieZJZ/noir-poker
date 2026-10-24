@@ -26,8 +26,13 @@
   border-color: #d9b45a;
   box-shadow: 0 0 18px #d9b45a40;
 }
+/* As on Web, "你" and the position badge are separate items: the badge is
+   centred on the name and sits 0.45em after it. */
 .hero-name-text {
   position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.45em;
 }
 /* Centred on the "你" glyph, which is one em wide. */
 .hero-champion-crown {

@@ -282,6 +282,11 @@ test('WeChat publishes the waiting table atomically after the launch artwork', (
     template,
     /<text\s+wx:if="\{\{!waitingForSeat\}\}"\s+class="position"\s*>\s*\{\{heroPosition\}\}\s*<\/text\s*>/,
   );
+  // "你" and the badge are siblings, so the badge can keep Web's gap.
+  assert.match(
+    template,
+    /<text>你<\/text\s*><text wx:if="\{\{!waitingForSeat\}\}" class="position">/,
+  );
 });
 
 test('measuring the pot sheet cannot change the table pot row or public-card placement', (t) => {

@@ -1549,6 +1549,7 @@
 }
 .web-phone-layout .hero-identity .position {
   font-size: var(--hero-position);
+  padding: 1px 6px;
 }
 .web-phone-layout .position {
   padding: 1px 5px;
