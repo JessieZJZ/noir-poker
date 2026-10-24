@@ -17,6 +17,21 @@ test('chip amounts switch units at K/M boundaries without hiding a whole chip', 
     assert.equal(compactChips(amount), expected);
 });
 
+test('chip amounts format identically on WeChat device engines without Intl', () => {
+  const intl = globalThis.Intl;
+  const amounts = [0, -0, 7, 999, 1000, 1025, 18800, 999999, 1000000, 1000025, 10000000, -18800];
+  const expected = amounts.map((amount) => compactChips(amount));
+  try {
+    delete globalThis.Intl;
+    assert.deepEqual(
+      amounts.map((amount) => compactChips(amount)),
+      expected,
+    );
+  } finally {
+    globalThis.Intl = intl;
+  }
+});
+
 test('action presentation formats adjacent and spaced monetary amounts only', () => {
   for (const [source, expected] of [
     ['你 3-bet 加注至1200', '你 3-bet 加注至1.2K'],

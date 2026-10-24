@@ -1,3 +1,4 @@
+import '../../src/platform/wechat-compat.js';
 import { analyzeDecision } from '../../src/review/analysis.js';
 
 // Bundled independently: WeChat workers can require only their own directory.

@@ -587,6 +587,11 @@ module.exports = {
         if (Math.abs(lift - current) > 0.1) patch[`phoneSeats[${index}].rankLift`] = lift;
       }
       const metrics = this.data.textMetrics;
+      // Seats (and their text metrics) may not be laid out yet.
+      if (!metrics) {
+        if (Object.keys(patch).length) this.setData(patch);
+        return;
+      }
       const available = numericColumnWidth({
         profileWidth: this.data.profileWidth,
         padding: metrics['profile-padding'],
