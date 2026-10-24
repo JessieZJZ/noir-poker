@@ -451,13 +451,19 @@ export async function nativeScenarios(app) {
         app.evaluate(() => {
           const audio = document.querySelector('audio[data-background-music]');
           return !audio.paused && Number(audio.dataset.musicGain) === 1
-            ? { time: audio.currentTime }
+            ? { time: audio.currentTime, duration: audio.duration }
             : null;
         }),
       10000,
       'Foreground music must resume',
     );
-    assert.ok(resumed.time >= paused.time);
+    // Slow runners can pause near the end of the looping track; the resumed
+    // position then wraps to the start instead of restarting mid-track.
+    const wrapped = paused.time > resumed.duration - 10 && resumed.time < 10;
+    assert.ok(
+      resumed.time >= paused.time || wrapped,
+      `Music resumed at ${resumed.time}s after pausing at ${paused.time}s of ${resumed.duration}s`,
+    );
     return {
       before,
       musicBeforeFirstTouch: music,
