@@ -14,6 +14,7 @@ import { sourceDigest, directoryDigest, root } from './mobile-lib.mjs';
 import { guideTemplate } from './wechat-presentation.mjs';
 
 export const wechatOutput = path.join(root, '.artifacts/wechat');
+export const wechatChineseFont = path.join(root, 'src/platform/wechat-fonts/noto-sans-sc.woff2');
 const template = path.join(root, 'miniprogram');
 const manifestName = 'build-info.json';
 const appId = () => process.env.NOIR_WECHAT_APP_ID || 'touristappid';
@@ -279,8 +280,9 @@ export async function buildWechat(output = wechatOutput) {
       });
       await writeFile(path.join(staging, 'shared/ui', name), compiled.code);
     }
-    // WXSS cannot load package-relative font files. Embed the same WOFF2 bytes
-    // used by Web/native; no network request or separate font source is needed.
+    // WXSS cannot load package-relative font files. Embed the Web/native Latin
+    // and numeric WOFF2 bytes plus a Chinese subset limited to the copy that
+    // ships in the mini-program; no network request is needed.
     const fontCSS = await readFile(path.join(root, 'src/styles/fonts.css'), 'utf8');
     const chineseFaces = fontCSS.replace(
       /@font-face\s*\{[^}]*font-family: 'Noto Sans KR';[^}]*\}/s,
@@ -288,7 +290,11 @@ export async function buildWechat(output = wechatOutput) {
     );
     let fonts = chineseFaces;
     for (const match of chineseFaces.matchAll(/url\('\/fonts\/([^']+)'\)/g)) {
-      const bytes = await readFile(path.join(root, 'public/fonts', match[1]));
+      const bytes = await readFile(
+        match[1] === 'noto-sans-sc.woff2'
+          ? wechatChineseFont
+          : path.join(root, 'public/fonts', match[1]),
+      );
       fonts = fonts.replace(match[0], `url('data:font/woff2;base64,${bytes.toString('base64')}')`);
     }
     await writeFile(path.join(staging, 'fonts.wxss'), fonts);

@@ -22,6 +22,7 @@ import {
   writeFileSync,
 } from 'node:fs';
 import { tmpdir } from 'node:os';
+import { createHash } from 'node:crypto';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { PROFILE_PORTRAITS } from '../../src/ui/portraits.js';
@@ -89,6 +90,48 @@ test('WXML bindings keep quoted literals on one line for the DevTools compiler',
     for (const literal of binding[1].matchAll(/'(?:\\.|[^'\\])*'|"(?:\\.|[^"\\])*"/g))
       assert.doesNotMatch(literal[0], /[\r\n]/, `Invalid WXML literal: ${literal[0]}`);
 });
+// The mini-program embeds a Chinese subset generated from its own package
+// copy. Every shipped CJK character must be in it, or WeChat falls back to the
+// system font.
+function assertWechatGlyphCoverage(output) {
+  const coverage = JSON.parse(
+    readFileSync(path.join(root, 'src/platform/wechat-fonts/coverage.json'), 'utf8'),
+  );
+  assert.equal(
+    createHash('sha256')
+      .update(readFileSync(path.join(root, 'src/platform/wechat-fonts/noto-sans-sc.woff2')))
+      .digest('hex'),
+    coverage.sha256,
+  );
+  const codepoints = new Set(coverage.codepoints);
+  const missing = new Set();
+  const visit = (directory) => {
+    for (const entry of readdirSync(directory, { withFileTypes: true })) {
+      const child = path.join(directory, entry.name);
+      if (entry.isDirectory()) visit(child);
+      else if (/\.(js|json|wxml|wxss)$/.test(entry.name) && entry.name !== 'fonts.wxss') {
+        // esbuild writes non-ASCII JavaScript strings as escapes.
+        const text = readFileSync(child, 'utf8')
+          .replace(/\\u\{([0-9a-f]+)\}/gi, (_, hex) => String.fromCodePoint(parseInt(hex, 16)))
+          .replace(/\\u([0-9a-f]{4})/gi, (_, hex) => String.fromCodePoint(parseInt(hex, 16)));
+        for (const character of text)
+          if (
+            /\p{Script=Han}|\p{Script=Hiragana}|\p{Script=Katakana}|\p{Script=Hangul}/u.test(
+              character,
+            ) &&
+            !codepoints.has(character.codePointAt(0))
+          )
+            missing.add(character);
+      }
+    }
+  };
+  visit(output);
+  assert.deepEqual(
+    [...missing],
+    [],
+    'New WeChat CJK copy requires scripts/subset-fonts.py; see docs/interface-parity.md',
+  );
+}
 function fixture(t) {
   const directory = mkdtempSync(path.join(tmpdir(), 'noir-wechat-builder-'));
   t.after(() => rmSync(directory, { recursive: true, force: true }));
@@ -288,11 +331,24 @@ test('concurrent WeChat builders serialize and preserve DevTools private prefere
   const results = await Promise.all([first.result, second.result]);
   for (const result of results) assertSuccess(result);
   const fonts = readFileSync(path.join(workspace.output, 'fonts.wxss'), 'utf8');
-  for (const name of ['manrope', 'noto-sans-sc', 'barlow-condensed']) {
+  for (const name of ['manrope', 'barlow-condensed']) {
     const bytes = readFileSync(path.join(workspace.directory, `public/fonts/${name}.woff2`));
     assert.ok(fonts.includes(bytes.toString('base64')), `${name} must use the Web/native bytes`);
   }
+  const chinese = readFileSync(
+    path.join(workspace.directory, 'src/platform/wechat-fonts/noto-sans-sc.woff2'),
+  );
+  assert.ok(fonts.includes(chinese.toString('base64')), 'WeChat embeds its Chinese subset');
+  assert.equal(
+    fonts.includes(
+      readFileSync(path.join(workspace.directory, 'public/fonts/noto-sans-sc.woff2')).toString(
+        'base64',
+      ),
+    ),
+    false,
+  );
   assert.doesNotMatch(fonts, /url\(['"]?https?:/);
+  assertWechatGlyphCoverage(workspace.output);
   assert.equal(
     readFileSync(path.join(workspace.output, 'project.private.config.json'), 'utf8'),
     preferences,

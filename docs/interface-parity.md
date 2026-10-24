@@ -4,11 +4,11 @@ Web 和 Capacitor App 共享 DOM、CSS 和布局计算。浏览器模拟器的�
 
 所有平台使用包内 Manrope 与 Noto Sans SC；Web/App 另含韩文 Noto Sans KR，以及牌型视觉所需的 Barlow Condensed。字体来自 [Google Fonts 源仓库](https://github.com/google/fonts)，许可证随文件放在 `public/fonts/`。Web 不再请求 Google Fonts；原生构建也不删掉字体。日文使用同一 Noto CJK 子集，韩文使用本地韩文字体。系统文字自动放大固定为 100%，避免 WebView 调整已定义的字号。浏览器与 WebView 的像素栅格仍可能略有不同。
 
-微信不能直接复用网页 DOM。其 WXML/WXSS 继续维护原生控件，但座位锚点共用 `src/ui/seat-geometry.js`，构建把相同中文字体文件转为内嵌 WXSS 数据，不请求网络。极短屏幕保留紧凑排布；微信原生胶囊按钮仍占用导航空间。小程序模板、mock 和官方编译器检查不能证明微信真机渲染一致。
+微信不能直接复用网页 DOM。其 WXML/WXSS 继续维护原生控件，但座位锚点共用 `src/ui/seat-geometry.js`，构建把与 Web/App 相同的 Manrope 和 Barlow Condensed 字体文件转为内嵌 WXSS 数据，不请求网络。中文 Noto Sans SC 使用 `src/platform/wechat-fonts/` 中的小程序专用子集，只覆盖小程序包实际包含的文案，约为 Web 子集体积的一半，为 2 MiB 主包留出空间；字形与 Web 子集来自同一源字体。极短屏幕保留紧凑排布；微信原生胶囊按钮仍占用导航空间。小程序模板、mock 和官方编译器检查不能证明微信真机渲染一致。
 
 底部安全区只保护贴近屏幕底部的操作区和页面末端。结算按钮收为一排后，其下方仍有可滚动摊牌内容，因此不再在按钮与摊牌之间插入手势区内边距；牌桌可用高度仍按行动期间的预算保留，避免结算跳动。品牌黑桃用矢量图形，避免 iOS 自动选成彩色 emoji。
 
-字体子集覆盖仓库内现有 UI 和语言资源。更新 CJK 文案时重新生成，避免新增汉字回退到系统字体：
+字体子集覆盖仓库内现有 UI 和语言资源。更新 CJK 文案时重新生成，避免新增汉字回退到系统字体。脚本先生成 Web/App 子集，再运行 `wechat:build`，从小程序产物（除 `fonts.wxss`）收集文字，生成小程序中文子集；之后再运行一次 `wechat:build` 嵌入新字体。`tests/unit/local-fonts.test.js` 检查 Web/App 覆盖，`tests/unit/wechat-build.test.js` 检查小程序产物中每个中日韩字符都在小程序子集内：
 
 ```sh
 python3 -m venv .artifacts/font-tools
@@ -19,6 +19,7 @@ python3 -m venv .artifacts/font-tools
 # noto-kr.ttf: ofl/notosanskr/NotoSansKR[wght].ttf
 # barlow.ttf: ofl/barlowcondensed/BarlowCondensed-SemiBold.ttf
 .artifacts/font-tools/bin/python scripts/subset-fonts.py /absolute/path/to/font-sources
+npm run wechat:build
 npm run check
 npm run test:e2e
 npm run mobile:sync
