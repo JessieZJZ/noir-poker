@@ -14,6 +14,9 @@ test.beforeEach(async ({ page }) => {
 test('necessary hints appear below blinds, expire without reappearing on ordinary renders and renew on a new street', async ({
   page,
 }) => {
+  // Several streets, renders and fake-clock expiries ran past 30 seconds on a
+  // loaded CI runner.
+  test.setTimeout(60000);
   await page.setViewportSize({ width: 390, height: 844 });
   await page.clock.install({ time: new Date('2026-01-01T00:00:00Z') });
   // The notification captures its timer at module initialization. Install the
