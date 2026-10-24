@@ -1,16 +1,12 @@
 <view class="records-chrome" style="height: {{topInset + 36}}px;" />
 <view
   class="records-screen"
-  style="padding-top: {{topInset + 36}}px; padding-bottom: {{bottomInset + 20}}px;"
+  style="padding-top: {{topInset + 36}}px; padding-bottom: {{bottomInset}}px;"
 >
-  <view class="records-nav"
-    ><text>对局记录</text><button id="records-back" bindtap="returnToGame">返回游戏</button></view
-  >
-  <view class="records-intro"><text>浏览记录时，当前游戏继续进行。</text></view>
+  <view class="records-nav"><text>对局记录</text></view>
   <view wx:if="{{!sessions.length}}" class="records-empty"
     >还没有对局记录，开始练习后自动保存。</view
   >
-  <view wx:if="{{recordsError}}" class="records-empty">{{recordsError}}</view>
   <view
     wx:for="{{sessions}}"
     wx:key="id"
@@ -23,36 +19,44 @@
       bindtap="toggleSession"
       data-id="{{session.id}}"
       aria-role="button"
-      aria-expanded="{{expanded[session.id] ? 'true' : 'false'}}"
+      aria-expanded="{{session.expanded ? 'true' : 'false'}}"
     >
-      <view class="session-item-heading"
-        ><text>第 {{session.number}} 局</text
-        ><view class="session-heading-end"
-          ><text class="session-status">{{session.endedAt ? '已结束' : '进行中'}}</text
-          ><view
-            class="session-toggle {{expanded[session.id] ? 'is-expanded' : ''}}"
-            aria-hidden="true"
-            ><view class="session-chevron" /></view></view
-      ></view>
-      <text class="session-time">{{session.timeText}}</text>
-      <view class="session-metrics"
-        ><view><text>胜率</text><text>{{session.winrate}}%</text></view
+      <view class="session-title"
+        ><text class="session-number">第 {{session.number}} 局</text
+        ><text class="session-time">{{session.timeText}}</text
+        ><text
+          wx:if="{{session.standing}}"
+          class="standing-tag session-standing {{session.standing.className}}"
+          >{{session.standing.text}}</text
+        ></view
+      >
+      <view class="session-stats"
+        ><view><text>胜率</text><text>{{session.winrateText}}</text></view
         ><view
           ><text>净筹码变化</text
           ><text class="{{session.profit > 0 ? 'positive' : session.profit < 0 ? 'negative' : ''}}"
             >{{session.profitText}}</text
           ></view
-        ></view
+        ><view><text>起始大小盲</text><text>{{session.blindText}}</text></view
+        ><view><text>牌桌人数</text><text>{{session.playerCount}} 人</text></view></view
       >
-      <view class="session-config"
-        ><text>起始盲注 {{session.blindText}}</text><text>{{session.playerCount}} 人桌</text></view
-      >
+      <view class="session-toggle {{session.expanded ? 'is-expanded' : ''}}" aria-hidden="true"
+        ><view class="session-chevron"
+      /></view>
     </view>
-    <view wx:if="{{expanded[session.id]}}" class="hand-list">
+    <view
+      wx:if="{{session.expanded}}"
+      class="hand-list"
+      data-id="{{session.id}}"
+      style="{{session.listStyle}}"
+    >
+      <view wx:if="{{session.filled && !session.attempts.length}}" class="records-empty hand-empty"
+        >这一局还没有对局记录。</view
+      >
       <view
         wx:for="{{session.attempts}}"
         wx:key="id"
-        class="hand-item {{item.superseded ? 'superseded' : ''}} {{item.status !== 'completed' ? 'is-disabled' : ''}}"
+        class="hand-item {{item.status !== 'completed' ? 'is-disabled' : ''}}"
         data-id="{{item.id}}"
         bindtap="openHand"
         aria-role="button"
@@ -64,30 +68,29 @@
             wx:for-item="card"
             wx:key="key"
             class="record-card {{card.red ? 'red' : ''}}"
-            style="{{card.artStyle}}"
+            style="{{cardArt[card.art]}}"
             aria-label="{{card.rank}}{{card.suit}}"
         /></view>
         <view class="hand-details"
-          ><view class="hand-item-title"
-            ><text>第 {{item.hand}} 手</text
+          ><text class="hand-title">第 {{item.hand}} 手</text
+          ><view wx:if="{{item.attemptText || item.refill}}" class="hand-tags"
             ><text wx:if="{{item.attemptText}}" class="hand-tag hand-replay"
               >{{item.attemptText}}</text
-            ></view
-          ><view wx:if="{{item.refill || item.resultText}}" class="hand-tags"
-            ><text wx:if="{{item.refill}}" class="hand-tag">补码</text
-            ><text wx:if="{{item.resultText}}">{{item.resultText}}</text></view
+            ><text wx:if="{{item.refill}}" class="hand-tag hand-refill">补码</text></view
           ></view
         >
-        <text
-          class="hand-profit {{item.profit > 0 ? 'positive' : item.profit < 0 ? 'negative' : ''}}"
-          >{{item.profitText}}</text
+        <view class="hand-result"
+          ><text
+            class="hand-profit {{item.profit > 0 ? 'positive' : item.profit < 0 ? 'negative' : ''}}"
+            >{{item.profitText}}</text
+          ><text class="hand-outcome">{{item.resultText}}</text></view
         >
         <view wx:if="{{item.status === 'completed'}}" class="hand-arrow" aria-hidden="true"
           ><view class="hand-chevron"
         /></view>
       </view>
       <button
-        wx:if="{{session.hasMoreHands}}"
+        wx:if="{{session.filled && session.hasMoreHands}}"
         class="records-more"
         data-id="{{session.id}}"
         bindtap="moreHands"
@@ -99,7 +102,5 @@
   <button wx:if="{{hasMoreSessions}}" class="records-more" bindtap="moreSessions">
     加载更早对局
   </button>
-  <text class="records-note"
-    >记录保存在本机。胜率按获得底池计算；重打只将最后采用的结果计入本局。</text
-  >
+  <text class="compliance-footer">单机练习·虚拟筹码·禁止赌博</text>
 </view>

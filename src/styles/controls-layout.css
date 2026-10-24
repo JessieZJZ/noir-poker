@@ -62,14 +62,23 @@ button:not(.profile-card):not(.review-step) {
    collapsing controls never releases space to the main table. */
 .game-surface {
   --live-dock-height: 152px;
+  /* Space the live dock keeps below its controls for the system bottom inset. */
+  --dock-bottom-inset: var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px));
+}
+/* iOS: the home indicator needs a small clearance, not the whole 34px inset;
+   the released height goes to the table. Android keeps the full inset for
+   its navigation bar. */
+html.native-ios .game-surface {
+  --dock-bottom-inset: max(
+    10px,
+    calc(var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)) - 20px)
+  );
 }
 .game-surface > .action-dock-slot {
   display: flex;
   flex-direction: column;
   flex: none;
-  height: calc(
-    var(--live-dock-height) + var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px))
-  );
+  height: calc(var(--live-dock-height) + var(--dock-bottom-inset));
   justify-content: flex-end;
 }
 .game-surface .decision-strip {
@@ -100,22 +109,6 @@ button:not(.profile-card):not(.review-step) {
 /* The retry badge must fit in the same header row as an ordinary hand label. */
 .main .game-surface > .surface-top {
   grid-template-rows: 28px 22px;
-}
-.surface-top .replay-note {
-  grid-area: 2 / 1;
-  min-width: 0;
-  margin: 0;
-  padding: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  line-height: 22px;
-  font-size: 12px;
-}
-.surface-top:has(.replay-note:not([hidden])) .hint-banner {
-  grid-area: 2 / 2;
-  max-width: clamp(88px, 24vw, 160px);
-  justify-self: end;
 }
 @media (min-width: 1101px), (min-width: 901px) and (orientation: landscape) {
   .main .game-surface > .surface-top {
@@ -198,9 +191,6 @@ button:not(.profile-card):not(.review-step) {
   }
 }
 @media (max-width: 900px), (min-width: 901px) and (max-width: 1100px) and (orientation: portrait) {
-  .surface-top .replay-note {
-    font-size: 10px;
-  }
   .game-surface {
     --live-dock-height: 146px;
   }
@@ -226,10 +216,7 @@ button:not(.profile-card):not(.review-step) {
 /* Shrink the whole surface by exactly the collapsed dock space. The table
    keeps its live dimensions without leaving an empty strip above the row. */
 .game-surface:has(.compact-actions) {
-  height: calc(
-    var(--play-height) - var(--live-dock-height) + 64px -
-      var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px))
-  );
+  height: calc(var(--play-height) - var(--live-dock-height) + 64px - var(--dock-bottom-inset));
 }
 .game-surface > .action-dock-slot:has(.compact-actions) {
   height: 64px;
@@ -241,7 +228,7 @@ button:not(.profile-card):not(.review-step) {
   height: 100%;
   border-top: 1px solid #253039;
   background: #101b22;
-  padding-bottom: var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px));
+  padding-bottom: var(--dock-bottom-inset);
 }
 .game-surface .action-dock.compact-actions {
   height: 64px;
@@ -318,8 +305,7 @@ button:not(.profile-card):not(.review-step) {
   .game-surface .blind-info {
     font-size: 18px;
   }
-  .game-surface .hint-banner p,
-  .surface-top .replay-note {
+  .game-surface .hint-banner p {
     font-size: 16px;
     line-height: 26px;
   }

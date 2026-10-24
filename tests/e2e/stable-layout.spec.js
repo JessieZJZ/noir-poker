@@ -26,7 +26,7 @@ async function gameBounds(page) {
   });
 }
 
-test('desktop action logs scroll independently without progressively stretching the game area', async ({
+test('wide action logs expand below the table without stretching the game area or moving the page', async ({
   page,
 }) => {
   for (const width of [1101, 1280, 1700]) {
@@ -60,39 +60,21 @@ test('desktop action logs scroll independently without progressively stretching 
     expect(timeline.count).toBeGreaterThanOrEqual(63);
     expect(timeline.count).toBe(timeline.actualLogs);
     expect(timeline.numbers).toEqual(Array.from({ length: timeline.count }, (_, i) => i + 1));
-    expect(timeline.overflow).toBe('auto');
+    expect(timeline.overflow).toBe('visible');
     expect(timeline.clientHeight).toBeGreaterThan(0);
-    expect(timeline.scrollHeight).toBeGreaterThan(timeline.clientHeight);
-    await page.locator('#activity-list').evaluate((el) => {
-      el.scrollTop = el.scrollHeight;
-    });
-    const finalVisible = await page.locator('#activity-list').evaluate((el) => {
-      const bounds = el.getBoundingClientRect(),
-        last = el.lastElementChild.getBoundingClientRect();
-      return {
-        scrolled: el.scrollTop > 0,
-        lastInside: last.top >= bounds.top - 1 && last.bottom <= bounds.bottom + 1,
-        horizontalOverflow: document.documentElement.scrollWidth > innerWidth,
-      };
-    });
-    expect(finalVisible).toEqual({
-      scrolled: true,
-      lastInside: true,
-      horizontalOverflow: false,
-    });
+    expect(timeline.scrollHeight - timeline.clientHeight).toBeLessThanOrEqual(1);
+    await page.locator('#activity-list li').last().scrollIntoViewIfNeeded();
+    const readingPosition = await page.evaluate(() => scrollY);
+    expect(readingPosition).toBeGreaterThan(0);
     await page.evaluate(() => window.qa.raiseActions(9));
-    await expect
-      .poll(() =>
-        page
-          .locator('#activity-list')
-          .evaluate((el) => el.scrollHeight - el.clientHeight - el.scrollTop < 2),
-      )
-      .toBe(true);
-    await page.locator('#activity-list').evaluate((el) => {
-      el.scrollTop = 0;
-    });
+    expect(await page.evaluate(() => scrollY)).toBeCloseTo(readingPosition, 0);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)).toBe(
+      false,
+    );
+    expect(await gameBounds(page)).toEqual(initial);
+    await page.evaluate(() => scrollTo(0, 0));
     await page.evaluate(() => window.qa.raiseActions(9));
-    await expect.poll(() => page.locator('#activity-list').evaluate((el) => el.scrollTop)).toBe(0);
+    expect(await page.evaluate(() => scrollY)).toBe(0);
   }
 });
 
@@ -166,9 +148,13 @@ test('mobile 5–9 player tables retain their first-screen space as the hand pro
             surfaceStable: Math.abs(surface.height - baseline.surface) <= 2,
             tableStable: Math.abs(tableBounds.height - baseline.table) <= 2,
             tableBeforeDock: tableBounds.bottom <= dock.top + 1,
+            // overflow-y stays visible for revealed seat cards; a clipped x
+            // axis still keeps the table from becoming a scroll container.
             tableFixed:
               table.scrollTop === 0 &&
-              ['clip', 'hidden'].includes(getComputedStyle(table).overflowY),
+              (['clip', 'hidden'].includes(getComputedStyle(table).overflowY) ||
+                (getComputedStyle(table).overflowY === 'visible' &&
+                  getComputedStyle(table).overflowX === 'clip')),
             controlsVisible: ['#raise-button', '#fold-button', '#call-button'].every((selector) => {
               const button = document.querySelector(selector).getBoundingClientRect();
               return (

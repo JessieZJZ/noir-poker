@@ -1,0 +1,100 @@
+/* WeChat placement of the shared effect classes; mirrors src/styles/game-end.css. */
+.seat.seat-out {
+  opacity: 0.4;
+  filter: grayscale(0.85);
+}
+.hero.hero-out .hero-info,
+.hero.hero-out .hero-cards-wrap {
+  opacity: 0.45;
+  filter: grayscale(0.85);
+}
+/* Upright on the avatar's head, its lower half over the portrait, clear of
+   the name: it shares the avatar's grid cell and rises to its top edge. */
+.seat-champion-crown {
+  width: 14px;
+  height: 10px;
+}
+.web-phone-layout .seat .seat-body > .seat-champion-crown {
+  position: relative;
+  grid-column: 1;
+  grid-row: 2 / 4;
+  align-self: end;
+  justify-self: center;
+  margin-bottom: calc(var(--player-avatar, 24px) - 5px);
+}
+.seat.is-champion .seat-body {
+  border-color: #d9b45a;
+  box-shadow: 0 0 18px #d9b45a40;
+}
+.hero-name-text {
+  position: relative;
+}
+/* Centred on the "你" glyph, which is one em wide. */
+.hero-champion-crown {
+  left: calc(0.5em - 11px);
+  top: -18px;
+  width: 22px;
+  height: 16px;
+}
+.hero-identity {
+  position: relative;
+}
+.hero-identity > .rebuy-burst {
+  left: 78%;
+}
+.hero-card {
+  position: relative;
+}
+.settled-buttons .rebuy-button {
+  position: relative;
+  overflow: visible;
+}
+.rebuy-count {
+  position: absolute;
+  top: -9px;
+  right: 6px;
+  padding: 0 6px;
+  border: 1px solid #6ee7c5;
+  border-radius: 999px;
+  background: #0b2a22;
+  color: #8ff0c9;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 17px;
+  white-space: nowrap;
+}
+.session-heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.compliance-footer {
+  display: block;
+  padding: 14px 16px;
+  text-align: center;
+  font-size: 11px;
+  letter-spacing: 1px;
+  color: #6b7a87;
+}
+/* WeChat views do not paint the shared ::after overlay here; the hero card
+   carries the same keyframes itself once its deal animation has finished. */
+.premium-start .hero-card {
+  animation: premium-glow 2.6s ease-in-out both;
+}
+.premium-start .hero-card::after {
+  display: none;
+}
+/* The final stack holds the layout; the count is drawn centred over it. */
+.refill-hold {
+  position: relative;
+}
+.refill-final {
+  visibility: hidden;
+}
+.refill-count {
+  position: absolute;
+  left: -20px;
+  right: -20px;
+  top: 0;
+  text-align: center;
+}

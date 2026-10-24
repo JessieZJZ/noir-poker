@@ -1,0 +1,59 @@
+{
+  "reviewer": 2,
+  "evaluationType": "AI strategy blind review; not a human study or UI test",
+  "confidenceScale": "0 to 1: confidence that the selected menu label adequately summarizes the observed behavior; unknown means evidence or menu fit is insufficient",
+  "allowedDuplicateLabels": true,
+  "classifications": {
+    "A": {
+      "label": "未知",
+      "confidence": 0.35,
+      "reasons": [
+        "连续50手VPIP 52%、PFR 6%，显示中等偏宽的入池量与明显的跟入偏好。52个翻后动作中38次过牌、仅2次主动加压，无法充分确认兼顾常规价值与控池的完整均衡特征。",
+        "第32、44手有翻前再加注，第25手有河牌主动，第40手K3两对面对河牌下注大幅再加，显示策略并非完全静态，但这些少量事件不足以稳定归纳整体类型。",
+        "第19手三条T河牌只跟、第22手TT一路过牌，支持偏被动或控池的描述；未摊牌底牌与动机仍未知。A未获追加交互，具体菜单拟合保留未知。"
+      ],
+      "evidenceScope": "50 consecutive public hands; no additional interactive hands"
+    },
+    "B": {
+      "label": "多街施压",
+      "confidence": 0.85,
+      "reasons": [
+        "最初50手VPIP/PFR为78%/34%，追加80手为85%/33.75%，宽参与与主动翻前加压在两批观察均出现。",
+        "初读第36、37手在确实摊牌三条时连续多街取值，第39、40手在公开成顺后大幅加压；追加第13、28、57、74、78手均出现跨街主动，具有小到中尺度启动、后街扩大压力的可观察节奏。",
+        "追加80手有31个翻后主动动作，明显多于C的10个；也有多街过牌和加压后退出，支持有变化的施压风格。未摊牌下注不能直接称为听牌进攻或诈唬。",
+        "直接共同翻牌仅7手，Hero翻后面对B下注仅1次；分类主要依赖完整公开桌面行动，针对Hero的应变能力证据有限。"
+      ],
+      "evidenceScope": "50 consecutive public hands plus 80 fixed interactive hands; interaction hand IDs 1 to 80"
+    },
+    "C": {
+      "label": "宽松取值",
+      "confidence": 0.84,
+      "reasons": [
+        "最初50手VPIP/PFR为88%/30%，追加80手为81.25%/26.25%，可确认愿意大量以跟注进入多人底池。",
+        "最初第12手Q3两对、第15手54三条、第30手64两对公开支持成牌后的较大取值；翻后大量过牌、跟后退出，比持续主动加压更突出。",
+        "追加80手114次翻后过牌、10次主动加压，初读100个翻后动作中65次过牌、6次主动，低主动性在两批均可见。",
+        "直接第109手跟Hero两街后河牌退出、第144手跟转牌后过牌，为愿意继续但后街收缩的具体体验；牌未公开，无法说明其跟注是否合理或当时是否听牌。"
+      ],
+      "evidenceScope": "50 consecutive public hands plus 80 fixed interactive hands; interaction hand IDs 81 to 160"
+    },
+    "D": {
+      "label": "范围纪律",
+      "confidence": 0.78,
+      "reasons": [
+        "连续50手VPIP/PFR为16%/8%，大量翻前直接退出，选择性入池是最明确且容易辨识的公开特征。",
+        "第7、38手有明确再加注，后者确实展示88；第22手55暗三条在翻牌转牌主动取值并面对大幅加注继续，入池后具有正常的价值进攻能力。",
+        "第33手AA在翻牌转牌过牌、河牌成暗三条后小额取值，可与安全强牌保留行动的菜单特征相容，但无法确认其是否刻意诱导。",
+        "只有8手自愿入池、19个翻后动作且未获追加交互，对防守细节和诱导频率的把握较弱。"
+      ],
+      "evidenceScope": "50 consecutive public hands; no additional interactive hands"
+    }
+  },
+  "frozenArtifactHashes": {
+    "hero-plan.md": "3fe9077fad5e6314943a0aa2981801c5e6f5010d30f749d85b893486211ae591",
+    "free-review.md": "066d5034ae9281d94e9a5e8b75d6286450de3a5c40059009df47389c57ca08d3",
+    "interactive-review.md": "2e54c8e3773e0ca95f4b09930eb1a0dfa6340a8675ce11460bdf962902b1dfc6",
+    "interactive-audit.json": "e4b4b473aaa19b963a19bc42def197ea7b99d54262d466b617861884e21dae3f"
+  },
+  "noFurtherGameApiCalls": true,
+  "scoringBasis": "Observable participation, betting rhythm, variation and direct interaction; no use of profit or final outcome as quality evidence"
+}

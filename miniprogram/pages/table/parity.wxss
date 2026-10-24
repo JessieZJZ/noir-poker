@@ -330,53 +330,6 @@
 .pot-detail {
   font-size: 11px;
 }
-.bottom-links {
-  height: auto;
-  min-height: 49px;
-  flex-wrap: wrap;
-  margin-top: 18px;
-  padding: 4px 0 12px;
-  font-size: 13px;
-  justify-content: flex-start;
-  gap: 12px 16px;
-}
-.practice-info {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-.practice-info > view {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  white-space: nowrap;
-}
-.practice-info .live-dot {
-  width: 5px;
-  height: 5px;
-  flex: none;
-  border-radius: 50%;
-  background: #6ee7c5;
-}
-.bottom-links button {
-  width: 78px;
-  min-width: 0;
-  max-width: none;
-  flex: none;
-  margin: 0 !important;
-  padding: 5px 10px;
-  border: 1px solid #354750;
-  border-radius: 6px;
-  background: #18252d;
-  color: #bfd3d9;
-  font-size: 14px;
-  line-height: 1.5;
-}
-@media (max-width: 900px) {
-  .bottom-links > text {
-    display: none;
-  }
-}
 .practice-panel,
 .activity-panel {
   border: 1px solid #2f3d49;
@@ -835,14 +788,16 @@
   font-size: 15px;
   gap: 12px;
 }
+/* Web's descriptions inherit the page's 1.9 line height. */
 .setting-description {
   display: block;
   font-size: 12px;
-  line-height: 1.5;
+  line-height: 1.9;
   color: #95a8b0;
   margin: 3px 0 0;
 }
-.general-settings > .setting-description {
+.general-settings > .setting-description,
+.table-settings > .setting-description {
   line-height: 1.9;
 }
 .table-change-note {
@@ -1366,8 +1321,7 @@
 }
 .sheet,
 .practice-panel,
-.activity-panel,
-.bottom-links {
+.activity-panel {
   line-height: 1.5;
 }
 .pot-detail {
@@ -1881,6 +1835,10 @@
   height: 24px;
   overflow: visible;
 }
+.action-dock:not(.compact-actions) > .action-notice {
+  position: relative;
+  top: 4.75px;
+}
 .action-notice .decision-copy {
   flex: 1;
   min-width: 0;
@@ -1904,4 +1862,31 @@
   font-size: 12px;
   font-weight: 400;
   line-height: 22px;
+}
+
+.practice-panel .session-title {
+  height: auto;
+  min-height: 32px;
+  gap: 12px;
+}
+.practice-panel .session-title .practice-reset {
+  width: 70px;
+  min-width: 0;
+  max-width: 62%;
+  min-height: 32px;
+  flex: none;
+  margin: 0 !important;
+  padding: 5px 10px;
+  border: 1px solid #354750;
+  border-radius: 6px;
+  background: #18252d;
+  color: #bfd3d9;
+  font-size: 12px;
+  line-height: 1.5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.practice-panel .session-title .practice-reset::after {
+  border: 0;
 }

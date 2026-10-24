@@ -14,8 +14,13 @@ export function publicActionContext(state, actorId = state.id ?? state.actor ?? 
     ),
     hasActed = (id) =>
       byId.get(id).actedTo === undefined ? actedIds.has(id) : byId.get(id).actedTo !== null,
-    first = dealer + (state.street === 0 ? 3 : 1),
-    roundOrderIds = Array.from({ length: count }, (_, i) => (first + i) % count).filter((id) =>
+    // Eliminated seats leave the ring. It starts left of the button, so the
+    // first preflop actor follows the big blind (the button when heads-up).
+    ring = Array.from({ length: count }, (_, i) => (dealer + 1 + i) % count).filter(
+      (id) => !byId.get(id)?.out,
+    ),
+    first = state.street === 0 ? (ring.length === 2 ? 1 : 2) % ring.length : 0,
+    roundOrderIds = [...ring.slice(first), ...ring.slice(0, first)].filter((id) =>
       canAct(byId.get(id)),
     ),
     actorIndex = roundOrderIds.indexOf(actorId),
@@ -81,7 +86,7 @@ export function allInContext(view) {
   // bypass the price test. Keep normal small-open/3-bet branches separate.
   const highCommitment =
     view.street === 0 &&
-    raises.length >= 2 &&
+    raises.length >= 1 &&
     matched >= 20 * bigBlindOf(view) &&
     legal.callAmount >= view.stack * 0.35;
   if (!aggressorAllIn && !callerAllIn && !highCommitment) return null;

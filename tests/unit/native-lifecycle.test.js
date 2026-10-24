@@ -39,3 +39,44 @@ test('native restart propagates activation failure instead of continuing with a 
     (received) => received === error,
   );
 });
+
+test('native restart releases the old inspector while stopped before activating the new process', async () => {
+  let running = true;
+  let inspectorAttached = true;
+  let ready = false;
+  const command = async (_method, endpoint) => {
+    if (endpoint === '/appium/device/terminate_app') running = false;
+    if (endpoint === '/appium/device/activate_app') {
+      running = true;
+      ready = !inspectorAttached;
+    }
+  };
+  await restartNativeApplication(command, 'selected.app', {
+    async resetDriver() {
+      assert.equal(running, false, 'The old driver must detach before the new process starts');
+      inspectorAttached = false;
+    },
+  });
+  assert.equal(running, true);
+  assert.equal(ready, true);
+});
+
+test('a failed driver reconnect cannot activate an app with a stale inspector', async () => {
+  const error = Error('Could not establish the new driver session');
+  let activated = false;
+  await assert.rejects(
+    restartNativeApplication(
+      async (_method, endpoint) => {
+        if (endpoint === '/appium/device/activate_app') activated = true;
+      },
+      'selected.app',
+      {
+        resetDriver: async () => {
+          throw error;
+        },
+      },
+    ),
+    (received) => received === error,
+  );
+  assert.equal(activated, false);
+});

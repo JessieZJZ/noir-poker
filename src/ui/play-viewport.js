@@ -47,7 +47,11 @@ export function createPlayViewport(surface, { layout = () => {} } = {}) {
     }
     const screen = readPlayViewport(),
       screenHeight = screen.height,
-      height = Math.max(160, screenHeight - playSurfaceTop(surface) - 8);
+      waiting = surface.dataset.entryState === 'waiting',
+      reservedDock = waiting
+        ? parseFloat(getComputedStyle(surface).getPropertyValue('--live-dock-height')) || 152
+        : 0,
+      height = Math.max(160, screenHeight - playSurfaceTop(surface) - 8 - reservedDock);
     const large = screen.width > 900 && screen.width <= 1100 && screenHeight >= 1100;
     surface.style.setProperty(
       '--table-header-font',
@@ -109,6 +113,7 @@ export function createPlayViewport(surface, { layout = () => {} } = {}) {
       x = (viewport.clientWidth - (right - left) * scale) / 2 - left * scale,
       y = (availableHeight - (bottom - topEdge) * scale) / 2 - topEdge * scale;
     arena.style.transform = `translate(${x}px, ${y}px) scale(${scale})`;
+    arena.style.setProperty('--entry-scale', String(1 / scale));
     viewport.scrollTop = 0;
   }
   function schedule() {

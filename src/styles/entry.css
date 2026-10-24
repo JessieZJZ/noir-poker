@@ -1,0 +1,180 @@
+/* Practice details follow the table at every viewport width. */
+.main {
+  grid-template-columns: minmax(0, 1fr);
+  row-gap: 18px;
+}
+.main > .sidebar {
+  display: flex;
+  flex-direction: column;
+  align-self: start;
+  padding-top: 0;
+  gap: 14px;
+}
+.main > .sidebar > .activity-card {
+  contain: none;
+  flex: none;
+}
+.main .activity-card .activity-list {
+  flex: none;
+  max-height: none;
+  overflow: visible;
+}
+.header-actions {
+  gap: 18px;
+}
+.header-actions .settings-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  width: auto;
+  min-width: 66px;
+  height: 44px;
+  padding: 0 7px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #b9c7d0;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: normal;
+  white-space: nowrap;
+}
+.header-actions .settings-button svg {
+  width: 19px;
+  height: 19px;
+}
+.header-actions .settings-button:hover {
+  background: #17232d;
+}
+.game-surface[data-entry-state='waiting'] {
+  animation: table-arrive 650ms ease-out both;
+}
+.game-surface[data-entry-state='waiting'] .table-center > :not(.entry-welcome),
+.game-surface[data-entry-state='waiting'] .hero-position,
+.game-surface[data-entry-state='waiting'] #hero-position,
+.game-surface[data-entry-state='waiting'] .action-dock {
+  visibility: hidden;
+}
+.entry-welcome {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  text-align: center;
+  white-space: nowrap;
+  transform: scale(var(--entry-scale, 1));
+}
+.game-surface[data-entry-state='waiting'] .hand-label > :not(#street-label) {
+  display: none;
+}
+.game-surface[data-entry-state='waiting'] .surface-top .hand-label {
+  grid-column: 1;
+  align-self: start;
+  white-space: normal;
+  line-height: 1.45;
+}
+.main .game-surface[data-entry-state='waiting'] > .surface-top {
+  grid-template-rows: auto 22px;
+}
+.game-surface[data-entry-state='waiting'] .surface-top .blind-info {
+  grid-row: 1;
+  align-self: start;
+  line-height: 1.45;
+}
+.game-surface[data-entry-state='waiting'] #hero-position {
+  display: none;
+}
+.game-surface[data-entry-state='waiting'] .hero-identity {
+  gap: 6px;
+}
+.game-surface[data-entry-state='waiting'] > .action-dock-slot {
+  display: none;
+}
+.entry-eyebrow {
+  color: #86a59d;
+  font-size: 10px;
+  letter-spacing: 3px;
+}
+.entry-welcome h1 {
+  margin: 0;
+  color: #e9f2ef;
+  font-size: 23px;
+  font-weight: 600;
+  letter-spacing: 2px;
+}
+.entry-welcome p {
+  margin: 0;
+  color: #a4b8b2;
+  font-size: 12px;
+}
+.entry-welcome .entry-join {
+  min-width: 150px;
+  min-height: 44px;
+  margin-top: 5px;
+  padding: 11px 25px;
+  border: 1px solid #8debd2;
+  border-radius: 9px;
+  background: #6ee7c5;
+  color: #102e27;
+  font-size: 15px;
+  font-weight: 700;
+  box-shadow: 0 5px 24px #0003;
+}
+.entry-footnote {
+  color: #78978e;
+  font-size: 10px;
+}
+@keyframes table-arrive {
+  from {
+    opacity: 0;
+    translate: 0 5px;
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+  }
+}
+@media (max-width: 600px) {
+  .header .brand,
+  .header .brand > span:last-child {
+    min-width: 0;
+  }
+  .header .brand-mark {
+    flex-shrink: 0;
+  }
+  .header .brand > span:last-child {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .header-actions .settings-button {
+    font-size: 12px;
+  }
+  .header-actions {
+    left: 0;
+    flex-shrink: 0;
+    gap: 10px;
+  }
+  .entry-welcome {
+    gap: 8px;
+  }
+  .entry-welcome h1 {
+    font-size: 21px;
+  }
+}
+@media (max-width: 360px) {
+  .header {
+    padding-inline: 12px;
+    gap: 6px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .game-surface[data-entry-state='waiting'] {
+    animation: none;
+  }
+}

@@ -70,7 +70,8 @@ jobs:
 
   browser-ui:
     runs-on: ubuntu-24.04
-    timeout-minutes: 20
+    # The suite has grown past 20 minutes per project on hosted runners.
+    timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
@@ -82,7 +83,8 @@ jobs:
           node-version: '22'
           cache: npm
       - run: npm ci
-      - run: npx playwright install --with-deps chromium
+      # WebKit-specific dropdown and long-press checks run in this job too.
+      - run: npx playwright install --with-deps chromium webkit
       - run: npm run test:e2e -- --project=${{ matrix.project }} --grep-invert '(public-area|stable-actions|readability-hints|play-viewport|settlement-layout|hint-banner|platform-parity)\.spec\.js'
       - uses: actions/upload-artifact@v7.0.2
         if: always()
@@ -138,6 +140,8 @@ jobs:
           if-no-files-found: error
           retention-days: 7
       - run: npm run mobile:test:setup -- android
+      # Installed-app parity scenarios replay the WebView DOM in Chromium.
+      - run: npx playwright install --with-deps chromium
       - name: Enable KVM for the Android test emulator
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
@@ -149,8 +153,12 @@ jobs:
           test -r /dev/kvm
           test -w /dev/kvm
           df -h "$HOME"
+      # The GPU-less CI emulator completes only a few scenarios in this budget,
+      # so CI checks the installed-app smoke set; the full suite runs locally.
       - name: Installed Android App end-to-end tests
-        timeout-minutes: 25
+        timeout-minutes: 30
+        env:
+          NOIR_NATIVE_SCENARIOS: local-launch-and-no-login,entry-waiting-music-and-first-deal,entry-high-stakes-layout,practice-reset-in-card-heading
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 36
@@ -196,8 +204,14 @@ jobs:
           if-no-files-found: error
           retention-days: 7
       - run: npm run mobile:test:setup -- ios
+      # Installed-app parity scenarios replay the WebView DOM in Chromium.
+      - run: npx playwright install chromium
+      # The hosted macOS simulator runs about one scenario every few minutes,
+      # so CI checks an installed-app smoke set; the full suite runs locally.
       - run: npm run mobile:test:ios
-        timeout-minutes: 20
+        timeout-minutes: 30
+        env:
+          NOIR_NATIVE_SCENARIOS: local-launch-and-no-login,entry-waiting-music-and-first-deal,entry-high-stakes-layout,practice-reset-in-card-heading
       - uses: actions/upload-artifact@v7.0.2
         if: always()
         with:

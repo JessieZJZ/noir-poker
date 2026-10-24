@@ -2,9 +2,11 @@ import { test, expect } from '@playwright/test';
 import { readReviewTagGeometry } from '../fixtures/review-tag-geometry.js';
 
 for (const width of [320, 390, 768, 1280]) {
-  test(`${width}px review tags keep natural height during partial and completed analysis`, async ({
+  test(`${width}px hero tags keep natural height and opponent cards omit persona tags`, async ({
     page,
   }, info) => {
+    // The real review worker runs on a slower CI machine as well.
+    test.setTimeout(120000);
     // Hold delivery only: the real worker still computes every result.
     await page.addInitScript(() => {
       const NativeWorker = window.Worker;
@@ -28,8 +30,10 @@ for (const width of [320, 390, 768, 1280]) {
     const count = await page.evaluate(() => {
       window.qa.reviewLine();
       const game = window.qa.snapshot();
-      game.botDecisions[1].trace.profile = 'tan';
-      game.botDecisions[1].trace.profileName = '谭老板，Tan Xuan';
+      game.botDecisions[0].trace.profile = 'balanced';
+      game.botDecisions[0].trace.profileName = '均衡';
+      game.botDecisions[1].trace.profile = 'rook';
+      game.botDecisions[1].trace.profileName = '大注强攻，大注强攻';
       window.qa.loadRecordedGame(game);
       return game.decisions.length;
     });
@@ -55,22 +59,34 @@ for (const width of [320, 390, 768, 1280]) {
       await info.attach(name, { path, contentType: 'image/png' });
     };
     await capture('pending-tags');
-    await page.waitForFunction((count) => window.heldReviewMessages.length >= count + 1, count);
+    await page.waitForFunction((count) => window.heldReviewMessages.length >= count + 1, count, {
+      timeout: 60000,
+    });
     await page.evaluate(() => window.heldReviewMessages.shift()());
     await expect(page.locator('#review-analysis-state')).toContainText(`1 / ${count}`);
     await checkTags('#review-timeline');
     await capture('partially-analyzed-tags');
     await page.evaluate(() => window.heldReviewMessages.splice(0).forEach((deliver) => deliver()));
-    await expect(page.locator('#review-dialog')).toHaveAttribute('data-analysis-status', 'done');
+    await expect(page.locator('#review-dialog')).toHaveAttribute('data-analysis-status', 'done', {
+      timeout: 60000,
+    });
     await checkTags('#review-timeline');
     await capture('completed-tags');
     await page.locator('#review-opponents-tab').click();
-    const tags = await checkTags('#review-opponents .review-timeline');
-    if (width <= 390) expect(tags.some((tag) => tag.lines > 1)).toBe(true);
+    const cards = page.locator('#review-opponents .review-step');
+    expect(await cards.count()).toBeGreaterThan(0);
+    await expect(cards.locator('.review-status')).toHaveCount(0);
+    expect((await cards.allTextContents()).join('\n')).not.toMatch(/均衡|大注强攻/);
+    for (let index = 0; index < (await cards.count()); index++) {
+      const card = cards.nth(index);
+      await expect(card.locator('.review-step-number')).toHaveText(String(index + 1));
+      await expect(card.locator('small')).toHaveText(/\S+，(?:翻牌前|翻牌|转牌|河牌)/);
+      await expect(card.locator('strong')).toHaveText(/\S+/);
+    }
     if (width === 390) {
-      const path = info.outputPath('compact-opponent-tags.png');
+      const path = info.outputPath('compact-opponent-actions.png');
       await page.locator('#review-dialog').screenshot({ path });
-      await info.attach('compact-opponent-tags', { path, contentType: 'image/png' });
+      await info.attach('compact-opponent-actions', { path, contentType: 'image/png' });
     }
   });
 }

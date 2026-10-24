@@ -1,0 +1,252 @@
+{
+  "candidate": 9,
+  "sourceDigest": "5932c97a6ef366aa3d3b3b0a539690d2d897ab9409d02e34a7edc438b0582156",
+  "gradedAt": "2026-10-23T03:55:54.563771+00:00",
+  "observedHands": 2400,
+  "interactiveHands": 600,
+  "manualHeroActions": 1236,
+  "correct": 19,
+  "total": 24,
+  "accuracy": 0.7916666666666666,
+  "classificationTarget": 0.8,
+  "classificationPassed": false,
+  "naturalExperienceTarget": 4,
+  "naturalExperiencePassed": false,
+  "results": [
+    {
+      "reviewer": 1,
+      "correct": 7,
+      "total": 8,
+      "scores": {
+        "recognizability": 3,
+        "naturalExperience": 3,
+        "trainingValue": 4
+      },
+      "rows": [
+        {
+          "code": "A",
+          "profile": "mira",
+          "actual": "听牌施压",
+          "guess": "多街施压",
+          "correct": false,
+          "confidence": 0.72
+        },
+        {
+          "code": "B",
+          "profile": "balanced",
+          "actual": "均衡",
+          "guess": "均衡",
+          "correct": true,
+          "confidence": 0.58
+        },
+        {
+          "code": "C",
+          "profile": "iris",
+          "actual": "后位争夺",
+          "guess": "后位争夺",
+          "correct": true,
+          "confidence": 0.92
+        },
+        {
+          "code": "D",
+          "profile": "rook",
+          "actual": "多街施压",
+          "guess": "多街施压",
+          "correct": true,
+          "confidence": 0.67
+        },
+        {
+          "code": "E",
+          "profile": "vale",
+          "actual": "跟注诱导",
+          "guess": "跟注诱导",
+          "correct": true,
+          "confidence": 0.55
+        },
+        {
+          "code": "F",
+          "profile": "nico",
+          "actual": "小注控池",
+          "guess": "小注控池",
+          "correct": true,
+          "confidence": 0.93
+        },
+        {
+          "code": "G",
+          "profile": "jett",
+          "actual": "宽松取值",
+          "guess": "宽松取值",
+          "correct": true,
+          "confidence": 0.81
+        },
+        {
+          "code": "H",
+          "profile": "owen",
+          "actual": "范围纪律",
+          "guess": "范围纪律",
+          "correct": true,
+          "confidence": 0.94
+        }
+      ],
+      "freezeSha256": "af61c8b5c7368b002cbaee7b57e21be29e8db9c4b0e3fe30085ac81f7ac836b3",
+      "freezeVerified": true
+    },
+    {
+      "reviewer": 2,
+      "correct": 5,
+      "total": 8,
+      "scores": {
+        "recognizability": 3,
+        "naturalExperience": 3,
+        "trainingValue": 4
+      },
+      "rows": [
+        {
+          "code": "A",
+          "profile": "mira",
+          "actual": "听牌施压",
+          "guess": "均衡",
+          "correct": false,
+          "confidence": 0.59
+        },
+        {
+          "code": "B",
+          "profile": "nico",
+          "actual": "小注控池",
+          "guess": "小注控池",
+          "correct": true,
+          "confidence": 0.68
+        },
+        {
+          "code": "C",
+          "profile": "balanced",
+          "actual": "均衡",
+          "guess": "跟注诱导",
+          "correct": false,
+          "confidence": 0.57
+        },
+        {
+          "code": "D",
+          "profile": "rook",
+          "actual": "多街施压",
+          "guess": "多街施压",
+          "correct": true,
+          "confidence": 0.82
+        },
+        {
+          "code": "E",
+          "profile": "vale",
+          "actual": "跟注诱导",
+          "guess": "跟注诱导",
+          "correct": true,
+          "confidence": 0.81
+        },
+        {
+          "code": "F",
+          "profile": "jett",
+          "actual": "宽松取值",
+          "guess": "宽松取值",
+          "correct": true,
+          "confidence": 0.88
+        },
+        {
+          "code": "G",
+          "profile": "owen",
+          "actual": "范围纪律",
+          "guess": "范围纪律",
+          "correct": true,
+          "confidence": 0.94
+        },
+        {
+          "code": "H",
+          "profile": "iris",
+          "actual": "后位争夺",
+          "guess": "均衡",
+          "correct": false,
+          "confidence": 0.47
+        }
+      ],
+      "freezeSha256": "27a93a0073c145a845e6d144962b2a37811fc1ec0f53e9d6a15a6f51024a6c7b",
+      "freezeVerified": true
+    },
+    {
+      "reviewer": 3,
+      "correct": 7,
+      "total": 8,
+      "scores": {
+        "recognizability": 3,
+        "naturalExperience": 3,
+        "trainingValue": 4
+      },
+      "rows": [
+        {
+          "code": "A",
+          "profile": "iris",
+          "actual": "后位争夺",
+          "guess": "后位争夺",
+          "correct": true,
+          "confidence": 0.72
+        },
+        {
+          "code": "B",
+          "profile": "balanced",
+          "actual": "均衡",
+          "guess": "后位争夺",
+          "correct": false,
+          "confidence": 0.63
+        },
+        {
+          "code": "C",
+          "profile": "vale",
+          "actual": "跟注诱导",
+          "guess": "跟注诱导",
+          "correct": true,
+          "confidence": 0.8
+        },
+        {
+          "code": "D",
+          "profile": "owen",
+          "actual": "范围纪律",
+          "guess": "范围纪律",
+          "correct": true,
+          "confidence": 0.91
+        },
+        {
+          "code": "E",
+          "profile": "nico",
+          "actual": "小注控池",
+          "guess": "小注控池",
+          "correct": true,
+          "confidence": 0.81
+        },
+        {
+          "code": "F",
+          "profile": "mira",
+          "actual": "听牌施压",
+          "guess": "听牌施压",
+          "correct": true,
+          "confidence": 0.61
+        },
+        {
+          "code": "G",
+          "profile": "jett",
+          "actual": "宽松取值",
+          "guess": "宽松取值",
+          "correct": true,
+          "confidence": 0.84
+        },
+        {
+          "code": "H",
+          "profile": "rook",
+          "actual": "多街施压",
+          "guess": "多街施压",
+          "correct": true,
+          "confidence": 0.64
+        }
+      ],
+      "freezeSha256": "2888f66ab6432cd45f73362220baf709d45b592b2d6494f36e278e6ae7a5c705",
+      "freezeVerified": true
+    }
+  ],
+  "note": "AI feedback, not human/UI/learning-effect acceptance. All original manuscripts frozen before uniform neutral menu. Repeated labels allowed. Completed-hand card inspection differs from earlier showdown-only rounds. Scores read from each frozen JSON, never assigned by grader."
+}

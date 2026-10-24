@@ -1,0 +1,27 @@
+{
+  "reviewer": 3,
+  "createdAt": "2026-10-23T03:42:52.475642+00:00",
+  "originalRecordsAndReasonsUnchanged": true,
+  "items": [
+    {
+      "kind": "preflight_state_before_freeze",
+      "effect": "one read-only GET returned only start instruction; no deal started; no game information exposed",
+      "rawResponse": "{\"message\":\"POST /start with {opponent:\"A\"}\"}"
+    },
+    {
+      "kind": "reason_wording_error",
+      "hand": 120,
+      "street": 2,
+      "original": "两头顺听牌",
+      "correction": "实际为9或K改善的双卡顺，非四张连续牌的两头顺；当时选择与原理由未改写",
+      "effect": "没有使用未来牌或对手底牌；原始记录保留"
+    }
+  ],
+  "provenanceNote": {
+    "file": "request-prestates.jsonl",
+    "kind": "posthoc_derived_index",
+    "source": "explicit decision.preState where present, otherwise previous chronological original HTTP response; first startup request has no prior state",
+    "notBackdated": true
+  },
+  "unloggedPreflightExcludedFromRequestCount": true
+}

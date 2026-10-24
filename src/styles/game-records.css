@@ -124,29 +124,19 @@
   justify-content: space-between;
   gap: 16px;
 }
+body[data-records-page='list'] .records-page-heading {
+  margin-bottom: 16px;
+}
+/* A hand's own page needs no heading: its time sits on the table and the
+   system Back or gesture returns to the list. */
 body[data-records-page='hand'] .records-page-heading {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 8px 16px;
-  margin-bottom: 8px;
+  display: none;
 }
-body[data-records-page='hand'] .records-page-heading > div {
-  display: contents;
-}
-body[data-records-page='hand'] .records-eyebrow {
-  grid-column: 1;
-  grid-row: 1;
-}
-body[data-records-page='hand'] .records-back {
-  grid-column: 2;
-  grid-row: 1;
-}
-#records-hand-start {
-  grid-column: 1 / -1;
-  grid-row: 2;
+.history-start-time {
+  grid-area: 2 / 1 / 3 / -1;
   color: #9cafb7;
-  font-size: 13px;
-  line-height: 1.5;
+  font-size: 12px;
+  line-height: 22px;
   font-variant-numeric: tabular-nums;
 }
 .records-page-heading h1 {
@@ -154,37 +144,6 @@ body[data-records-page='hand'] .records-back {
   font-size: 25px;
   line-height: 1.4;
   font-weight: 600;
-}
-.records-eyebrow {
-  margin: 0;
-  color: #83a9a1;
-  font-size: 12px;
-  letter-spacing: 1px;
-}
-.records-back {
-  border: 1px solid #314650;
-  border-radius: 8px;
-  background: #14232b;
-  padding: 10px 13px;
-  color: #b8d8d1;
-  font-size: 13px;
-  flex-shrink: 0;
-}
-.records-back:hover {
-  border-color: #6ee7c580;
-}
-.records-live-note,
-.records-storage-error {
-  font-size: 12px;
-  line-height: 1.6;
-  color: var(--muted);
-  margin: 4px 0 12px;
-}
-.records-storage-error {
-  color: #efbc88;
-  padding: 12px;
-  border: 1px solid #8b633a;
-  border-radius: 8px;
 }
 .record-session {
   border: 1px solid #2d404b;
@@ -284,6 +243,10 @@ body[data-records-page='hand'] .records-back {
 .record-hand:last-child {
   border-bottom: 0;
 }
+/* Hands render in chunks; only the list's very last row drops its rule. */
+.record-hand-chunk:not(:last-child) > .record-hand:last-child {
+  border-bottom: 1px solid #25343e;
+}
 button.record-hand:hover {
   background: #182b2b;
   border-radius: 8px;
@@ -325,7 +288,6 @@ button.record-hand:hover {
   font-size: 11px;
   font-weight: 400;
 }
-.record-current,
 .record-refill {
   border-color: #326857;
   color: #89d9bd;
@@ -362,11 +324,6 @@ button.record-hand:hover {
 .records-page .negative {
   color: #ef8a9a;
 }
-.record-superseded .record-hand-result,
-.record-hand[data-status='unfinished'] .record-hand-result,
-.record-hand[data-status='playing'] .record-hand-result {
-  opacity: 0.65;
-}
 .records-empty {
   padding: 36px 20px;
   text-align: center;
@@ -382,17 +339,6 @@ button.record-hand:hover {
 body[data-records-page='hand'] .records-page {
   max-width: none;
   padding: 0 0 36px;
-}
-body[data-records-page='hand'] .records-page-heading,
-body[data-records-page='hand'] .records-live-note {
-  max-width: 1560px;
-  margin-left: auto;
-  margin-right: auto;
-  padding-left: 4%;
-  padding-right: 4%;
-}
-body[data-records-page='hand'] .records-page-heading {
-  padding-top: 20px;
 }
 .records-history-grid {
   align-items: start;
@@ -411,10 +357,6 @@ body[data-records-page='hand'] .records-page-heading {
   }
   .records-page-heading h1 {
     font-size: 19px;
-  }
-  .records-back {
-    font-size: 12px;
-    padding: 9px;
   }
   .record-session-heading {
     padding: 16px 56px 18px 16px;
@@ -472,9 +414,6 @@ body[data-records-page='hand'] .records-page-heading {
   display: none;
 }
 
-body[data-records-page='list'] .records-eyebrow {
-  display: none;
-}
 body[data-records-page='list'] .records-page-heading h1 {
   margin-top: 0;
 }
@@ -493,15 +432,28 @@ body[data-records-page='list'] .records-page-heading h1 {
   position: relative;
   z-index: 1;
 }
+/* Clip sideways only. Revealed artwork of the top seats may rise over the
+   header and hint text; Safari has no overflow-clip-margin, so a vertical clip
+   would cut the cards off there. */
 .game-surface > .table-viewport {
-  overflow: clip;
-  overflow-clip-margin: 40px;
+  overflow-x: clip;
+  overflow-y: visible;
+  z-index: 1;
 }
 
 .seat-name-label,
 .seat-style-label {
   -webkit-touch-callout: none;
+  -webkit-user-select: none;
   user-select: none;
+}
+.seat-style-label {
+  touch-action: manipulation;
+  cursor: help;
+}
+.seat-style-label:focus-visible {
+  outline: 2px solid #b9e6d7;
+  outline-offset: 2px;
 }
 .seat-name-tooltip {
   position: fixed;

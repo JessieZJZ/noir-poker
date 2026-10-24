@@ -1,0 +1,195 @@
+{
+  "correct": 12,
+  "total": 27,
+  "rows": [
+    {
+      "reviewer": 1,
+      "code": "A",
+      "id": "iris",
+      "label": "宽松取值",
+      "correct": false
+    },
+    {
+      "reviewer": 1,
+      "code": "B",
+      "id": "nico",
+      "label": "小注控池",
+      "correct": true
+    },
+    {
+      "reviewer": 1,
+      "code": "C",
+      "id": "vale",
+      "label": "范围纪律",
+      "correct": false
+    },
+    {
+      "reviewer": 1,
+      "code": "D",
+      "id": "balanced",
+      "label": "不确定",
+      "correct": false
+    },
+    {
+      "reviewer": 1,
+      "code": "E",
+      "id": "jett",
+      "label": "宽松取值",
+      "correct": true
+    },
+    {
+      "reviewer": 1,
+      "code": "F",
+      "id": "mira",
+      "label": "多街施压",
+      "correct": false
+    },
+    {
+      "reviewer": 1,
+      "code": "G",
+      "id": "owen",
+      "label": "范围纪律",
+      "correct": true
+    },
+    {
+      "reviewer": 1,
+      "code": "H",
+      "id": "luka",
+      "label": "听牌施压",
+      "correct": false
+    },
+    {
+      "reviewer": 1,
+      "code": "I",
+      "id": "rook",
+      "label": "听牌施压",
+      "correct": false
+    },
+    {
+      "reviewer": 2,
+      "code": "A",
+      "id": "iris",
+      "label": "多街施压",
+      "correct": false
+    },
+    {
+      "reviewer": 2,
+      "code": "B",
+      "id": "jett",
+      "label": "宽松取值",
+      "correct": true
+    },
+    {
+      "reviewer": 2,
+      "code": "C",
+      "id": "mira",
+      "label": "听牌施压",
+      "correct": true
+    },
+    {
+      "reviewer": 2,
+      "code": "D",
+      "id": "vale",
+      "label": "范围纪律",
+      "correct": false
+    },
+    {
+      "reviewer": 2,
+      "code": "E",
+      "id": "nico",
+      "label": "强牌诱导",
+      "correct": false
+    },
+    {
+      "reviewer": 2,
+      "code": "F",
+      "id": "rook",
+      "label": "多街施压",
+      "correct": true
+    },
+    {
+      "reviewer": 2,
+      "code": "G",
+      "id": "owen",
+      "label": "范围纪律",
+      "correct": true
+    },
+    {
+      "reviewer": 2,
+      "code": "H",
+      "id": "balanced",
+      "label": "均衡",
+      "correct": true
+    },
+    {
+      "reviewer": 2,
+      "code": "I",
+      "id": "luka",
+      "label": "听牌施压",
+      "correct": false
+    },
+    {
+      "reviewer": 3,
+      "code": "A",
+      "id": "rook",
+      "label": "多街施压",
+      "correct": true
+    },
+    {
+      "reviewer": 3,
+      "code": "B",
+      "id": "nico",
+      "label": "小注控池",
+      "correct": true
+    },
+    {
+      "reviewer": 3,
+      "code": "C",
+      "id": "iris",
+      "label": "宽松取值",
+      "correct": false
+    },
+    {
+      "reviewer": 3,
+      "code": "D",
+      "id": "vale",
+      "label": "不确定",
+      "correct": false
+    },
+    {
+      "reviewer": 3,
+      "code": "E",
+      "id": "luka",
+      "label": "不确定",
+      "correct": false
+    },
+    {
+      "reviewer": 3,
+      "code": "F",
+      "id": "mira",
+      "label": "不确定",
+      "correct": false
+    },
+    {
+      "reviewer": 3,
+      "code": "G",
+      "id": "balanced",
+      "label": "不确定",
+      "correct": false
+    },
+    {
+      "reviewer": 3,
+      "code": "H",
+      "id": "jett",
+      "label": "宽松取值",
+      "correct": true
+    },
+    {
+      "reviewer": 3,
+      "code": "I",
+      "id": "owen",
+      "label": "范围纪律",
+      "correct": true
+    }
+  ]
+}

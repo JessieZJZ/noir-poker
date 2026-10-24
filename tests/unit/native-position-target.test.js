@@ -436,3 +436,34 @@ test('iOS footer reset and rankings use the actual native viewport tap and open 
     assert.deepEqual(await page.evaluate(() => window.taps), [true]);
   }
 });
+
+test('iOS relaid-out modal dropdown controls use a trusted viewport tap without AX calibration', async () => {
+  await page.setContent(`
+    <style>.dropdown-menu{height:80px;overflow:auto}.dropdown-option{display:block;height:40px}</style>
+    <dialog><button class="dropdown-trigger">Language</button><div class="dropdown-menu">${Array.from({ length: 12 }, (_, i) => `<button class="dropdown-option" data-value="${i}">${i}</button>`).join('')}</div></dialog>
+    <script>window.taps=[];document.querySelector('dialog').showModal();document.querySelectorAll('button').forEach(button=>button.onclick=event=>window.taps.push({className:button.className,trusted:event.isTrusted}));</script>`);
+  const positioned = withCenteredNativeClicks({
+    ...app(() => {
+      throw Error('Modal dropdown must not use the blocked calibration iframe');
+    }),
+    platform: 'ios',
+    nativeTap: async (selector) => {
+      assert.equal(
+        await page.evaluate((selector) => {
+          const element = document.querySelector(selector),
+            r = element.getBoundingClientRect();
+          return element.contains(document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2));
+        }, selector),
+        true,
+        'The native hit point must already be visible inside its clipped menu',
+      );
+      return driverClick(selector);
+    },
+  });
+  await positioned.click('.dropdown-trigger');
+  await positioned.click('.dropdown-option[data-value="11"]');
+  assert.deepEqual(await page.evaluate(() => window.taps), [
+    { className: 'dropdown-trigger', trusted: true },
+    { className: 'dropdown-option', trusted: true },
+  ]);
+});

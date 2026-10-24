@@ -1,0 +1,112 @@
+/* Game info mirrors Web's waiting card: shown only before the seat is taken
+   (the waiting message stays in the header), it carries centred chips, blinds
+   and results. The waiting shell
+   omits the 134px dock, so the card's 8px gap plus 126px height take that space
+   and the top bar, table and card fill the first screen. Play keeps the
+   practice panel. */
+.game-info {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 12px;
+  box-sizing: border-box;
+  min-height: 126px;
+  margin-top: 8px;
+  padding: 10px 14px 12px;
+  border: 1px solid #27333d;
+  border-radius: 10px;
+  background: linear-gradient(145deg, #17202a88, #11182188);
+  line-height: 1.5;
+}
+.game-info-stats {
+  display: flex;
+  gap: 8px;
+}
+.game-info-stats > view {
+  flex: 1 1 0;
+  min-width: 0;
+  text-align: center;
+}
+.game-info-stats > .game-info-chips {
+  flex-grow: 1.35;
+}
+.game-info-stats > view:nth-child(2) {
+  flex-grow: 1.25;
+}
+.info-term {
+  display: block;
+  color: #7a8d9c;
+  font-size: 11px;
+  line-height: 14px;
+}
+.info-value {
+  display: block;
+  margin-top: 2px;
+  overflow: hidden;
+  color: #e3ebef;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 22px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-variant-numeric: tabular-nums;
+}
+.game-info .session-change {
+  display: inline;
+  min-height: 0;
+  margin-left: 4px;
+  color: #8aa0ad;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: inherit;
+}
+.game-info .session-change.positive {
+  color: #6ee7c5;
+}
+.game-info .session-change.negative {
+  color: #f19a9a;
+}
+/* The waiting header keeps its message; the blinds are in the card. */
+.entry-waiting .game-header .blind-info {
+  visibility: hidden;
+}
+/* Every page ends close to the compliance footer, as on Web. */
+.compliance-footer {
+  padding: 8px 16px 14px;
+}
+@media (max-width: 380px) {
+  .game-info {
+    padding: 9px 11px 10px;
+  }
+  .game-info-stats {
+    gap: 6px;
+  }
+  .info-value {
+    font-size: 14px;
+  }
+}
+/* Emotion legend in Settings, as on Web. */
+.mood-legend {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 10px;
+}
+.mood-legend-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  color: #95a8b0;
+  font-size: 12px;
+  line-height: 1.6;
+}
+.mood-legend-item .mood-badge {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  margin-top: 2px;
+}
+.mood-legend-name {
+  color: #d6dfe2;
+  font-weight: 600;
+}

@@ -1,0 +1,130 @@
+.nav-actions {
+  left: 0;
+  gap: 10px;
+}
+.nav-actions .resource-menu {
+  left: 0;
+  right: auto;
+}
+.nav-actions .settings-button {
+  display: flex;
+  gap: 7px;
+  width: auto;
+  min-width: 66px;
+  max-width: none;
+  height: 44px;
+  padding: 0 7px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #b9c7d0;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.4;
+}
+.nav-actions .guide-button {
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.4;
+}
+.nav-actions .settings-button .gear-icon {
+  width: 19px;
+  height: 19px;
+}
+.game-shell.entry-waiting {
+  animation: table-arrive 650ms ease-out both;
+}
+.entry-waiting .community,
+.entry-waiting .pot,
+.entry-waiting .action-dock {
+  visibility: hidden;
+}
+.entry-welcome {
+  position: absolute;
+  z-index: 8;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  text-align: center;
+  white-space: nowrap;
+}
+.entry-eyebrow {
+  color: #86a59d;
+  font-size: 10px;
+  letter-spacing: 3px;
+}
+.entry-title {
+  color: #e9f2ef;
+  font-size: 21px;
+  font-weight: 600;
+  letter-spacing: 2px;
+}
+.entry-copy {
+  color: #a4b8b2;
+  font-size: 12px;
+}
+.entry-welcome .entry-join {
+  min-width: 150px;
+  min-height: 44px;
+  margin-top: 5px;
+  padding: 11px 25px;
+  border: 1px solid #8debd2;
+  border-radius: 9px;
+  background: #6ee7c5;
+  color: #102e27;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 20px;
+  box-shadow: 0 5px 24px #0003;
+}
+.entry-footnote {
+  color: #78978e;
+  font-size: 10px;
+}
+@keyframes table-arrive {
+  from {
+    opacity: 0;
+    translate: 0 5px;
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .game-shell.entry-waiting {
+    animation: none;
+  }
+}
+
+.entry-waiting .action-dock {
+  display: none;
+}
+.entry-waiting .game-header {
+  flex-basis: 50px;
+  flex-wrap: nowrap;
+  align-items: flex-start;
+  gap: 8px;
+}
+.entry-waiting .hint-slot {
+  display: none;
+}
+.entry-waiting .hand-label {
+  flex: 1;
+  width: auto;
+  white-space: normal;
+  line-height: 1.45;
+}
+.entry-waiting .blind-info {
+  margin-left: auto;
+  line-height: 1.45;
+}
+.entry-welcome {
+  transform: translate(-50%, -50%) scale(var(--entry-scale, 1));
+}
+
+.entry-waiting .hero-identity {
+  gap: 6px;
+}

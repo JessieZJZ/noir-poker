@@ -289,6 +289,8 @@ try {
     };
   });
   await (await page.$('#small-blind-button')).tap();
+  // The editor renders after the tap's own setData.
+  await page.waitFor('#small-blind-input');
   const input = await page.$('#small-blind-input');
   assert.equal(await input.value(), '100');
   for (const value of ['0', '-25', '25.5', '1K', '50025']) {

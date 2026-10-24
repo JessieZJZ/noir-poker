@@ -743,13 +743,6 @@
   padding: 3px 6px;
   margin-left: 9px;
 }
-.replay-note {
-  color: #c5b58c;
-  font-size: 12px;
-  line-height: 1.6;
-  margin: 0;
-  padding: 0 25px 15px;
-}
 .restart-hand-button {
   border-color: #82724d !important;
   color: #e5ce98 !important;
@@ -762,9 +755,5 @@
   .replay-label {
     font-size: 10px;
     margin-left: 7px;
-  }
-  .replay-note {
-    font-size: 11px;
-    padding: 0 14px 14px;
   }
 }

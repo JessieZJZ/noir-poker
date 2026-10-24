@@ -119,7 +119,25 @@ export function compactTableLayout({
       availableWidth ?? Math.round(Math.max(1, width - (width <= 600 ? 18 : width * 0.06 + 2))),
     height: Math.max(1, height),
     gap: 16,
-    alternatives: count === 5 ? [[160, 230, 310, 380]] : count === 9 ? [undefined] : undefined,
+    // On phones, eight and nine seats also try rails that pull the lowest
+    // seats toward the hero, which spaces the side columns and fits larger
+    // players.
+    alternatives:
+      count === 5
+        ? [[160, 230, 310, 380]]
+        : count === 9
+          ? [
+              undefined,
+              ...(width <= 600
+                ? [
+                    [122, 166, 226, 256, 284, 314, 374, 418],
+                    [118, 170, 230, 256, 284, 310, 370, 422],
+                  ]
+                : []),
+            ]
+          : count === 8 && width <= 600
+            ? [undefined, [126, 178, 234, 270, 306, 362, 414]]
+            : undefined,
     angles:
       count === 5
         ? [180, 240, 300, 360]
@@ -155,43 +173,68 @@ export function compactTableLayout({
     })),
     hero: { width: Math.round(heroWidth * 2 + 7), height: heroFoot },
   };
-  // Compare the readable card faces after each row arrangement has used its
-  // available felt. Choosing rows before growth can leave a tiny single row
-  // beside much larger hero cards, even when two rows have ample space.
+  // Board and hole cards should read as one card size. Grow both for each row
+  // arrangement, keep the arrangement whose smaller face is largest, then keep
+  // either size within 10% of the other. A cap on the on-screen size (after
+  // the arena is scaled to fit) stops faces from crowding the felt.
+  const faceCap = tablet ? (large ? 84 : 76) : 62;
+  // Crowded phone tables (not tablets or desktops) show board and hole cards
+  // at one size, and hold the hole cards further from the neighbouring players.
+  const crowded = width <= 600 && count >= 7;
+  const heroOptions = (boardWidth, cap) => ({
+    width: heroWidth,
+    height: heroHeight,
+    maxGrowth: tablet ? 1 : 1.4,
+    minimumWidth: heroWidth * 0.65,
+    maximumWidth: Math.min(cap, crowded ? boardWidth : Math.round(boardWidth * 1.1)),
+    gap: crowded ? 20 : 18,
+  });
   const candidates = [false, true].map((twoRows) => {
     const layout = railLayout({
       ...railOptions,
       publicRows: [publicRow(cardWidth, twoRows)],
     });
-    const grown = growPublicCards(layout, { cardWidth, createRow: publicRow, gap: 16 });
-    return { ...grown, scale: Math.min(1, height / layout.arenaHeight) };
+    const scale = Math.min(1, height / layout.arenaHeight),
+      cap = Math.floor(faceCap / scale);
+    const grown = growPublicCards(layout, {
+      cardWidth,
+      createRow: publicRow,
+      gap: 16,
+      maximumWidth: cap,
+    });
+    const hero = growHeroCards(grown.layout, heroOptions(grown.cardWidth, cap));
+    return {
+      ...grown,
+      hero,
+      scale,
+      readable: Math.min(grown.cardWidth, hero.width) * scale,
+    };
   });
   const [single, double] = candidates;
+  // Two rows when they make both faces clearly larger, or when one row would
+  // leave the board cards below a readable on-screen width.
   const readableWidth = tablet ? 52 : Math.max(36, Math.min(44, width * 0.11));
-  const useDouble =
+  const tooSmall =
     single.cardWidth * single.scale < readableWidth &&
-    double.cardWidth * double.scale > single.cardWidth * single.scale * 1.1 &&
-    double.scale >= single.scale * 0.9;
-  const chosen = useDouble ? double : single;
+    double.cardWidth * double.scale > single.cardWidth * single.scale * 1.1;
+  const chosen =
+    tooSmall || (double.readable > single.readable * 1.08 && double.scale >= single.scale * 0.9)
+      ? double
+      : single;
   let fitted = chosen.layout;
   cardWidth = chosen.cardWidth;
-  const heroCards = growHeroCards(fitted, {
-    width: heroWidth,
-    height: heroHeight,
-    maxGrowth: tablet ? 1 : 1.4,
-    minimumWidth: heroWidth * 0.65,
-    maximumWidth: cardWidth * 1.25,
-    gap: 18,
-  });
+  const heroCards = chosen.hero;
   heroWidth = heroCards.width;
   heroHeight = heroCards.height;
-  // If side players constrain the hero, keep the public faces in proportion
-  // too. Reuse the existing clear footprint; never shrink the entire table.
-  const publicLimit = Math.floor(heroWidth * 1.35);
-  if (cardWidth > publicLimit) {
+  // Elsewhere readability wins on small screens: the board keeps a readable
+  // on-screen width even if the hero is held smaller by the seats.
+  const boardLimit = crowded
+    ? heroWidth
+    : Math.max(Math.round(heroWidth * 1.1), Math.ceil((tablet ? 52 : 40) / chosen.scale));
+  if (cardWidth > boardLimit) {
     const balanced = growPublicCards(fitted, {
-      cardWidth: publicLimit,
-      maximumWidth: publicLimit,
+      cardWidth: boardLimit,
+      maximumWidth: boardLimit,
       createRow: publicRow,
       gap: 16,
     });

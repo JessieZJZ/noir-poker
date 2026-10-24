@@ -27,7 +27,9 @@ async function device(browser, baseURL, { width = 390, height = 844, userAgent }
       },
     });
     if (page.url() !== 'about:blank')
-      expect(await page.evaluate(() => ({ width: innerWidth, height: innerHeight }))).toEqual(size);
+      await expect
+        .poll(() => page.evaluate(() => ({ width: innerWidth, height: innerHeight })))
+        .toEqual(size);
   };
   await rotate(false);
   await page.goto('/');

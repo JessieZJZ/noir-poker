@@ -3,10 +3,16 @@ const { createWechatController } = require('../../shared/platform/wechat-control
 const { phoneLayout } = require('./phone-layout.js');
 const { numericWidthScale, numericColumnWidth } = require('../../shared/ui/numeric-width.js');
 const { presentCard, showdownPresentation, presentationPatch } = require('./presentation.js');
-const PORTRAIT_CREDITS = require('../../assets/portraits/credits.js');
 const { completeBoardForPractice, rankText } = require('../../shared/engine/poker.js');
 const navigation = require('../../record-navigation.js');
 const { nameTooltipPosition } = require('../../shared/ui/name-tooltip-position.js');
+const {
+  WECHAT_RECORDS_BUDGET,
+  createSnapshotFiles,
+  ceremonySoundFiles,
+  PREMIUM_SPARKS,
+  CONFETTI_PIECES,
+} = require('./game-effects.js');
 // Capsule 36 + nav 48 + gap 8 + header 48 + live dock 134 + end gap 8 + border 2.
 const VIEWPORT_CHROME_HEIGHT = 284;
 const PROFILE_AXES = [
@@ -44,8 +50,7 @@ module.exports = {
     activityOpen: false,
     potOpen: false,
     resetOpen: false,
-    guideExpanded: [false, true],
-    noticeExpanded: true,
+    guideExpanded: [false, false, true],
     potExpanded: {},
     potSheetHeight: 580,
     reviewPerspective: 'hero',
@@ -55,8 +60,25 @@ module.exports = {
     selectedReviewStep: null,
     countOptions: [5, 6, 7, 8, 9],
     emotionOptions: ['关闭', '轻微波动', '明显波动'],
+    // Kept in data: a WXML <text> renders wrapped source lines as line breaks.
+    emotionIntro:
+      '情绪只调整当前难度内的入池、进攻与跟注倾向，不增加策略能力。轻微波动的情绪持续 3 手；明显波动影响更大，持续 4 手，也更容易再次触发。',
+    moodLegend: [
+      { kind: 'frustrated', name: '急于追回', text: '· 橙色火焰：大额亏损后入池更宽、更常跟到底' },
+      {
+        kind: 'cautious',
+        name: '收紧避险',
+        text: '· 蓝色盾牌：大额亏损后入池更紧，少进攻、少跟注',
+      },
+      { kind: 'confident', name: '连胜自信', text: '· 金色星星：连续盈利后入池与进攻略增' },
+      {
+        kind: 'reactive',
+        name: '受压反击',
+        text: '· 红色闪电：4 手内三次被同一对手加注弃牌后更多加注与诈唬',
+      },
+    ],
     profiles: [],
-    settings: { sound: true, vibration: true, hints: true },
+    settings: { sound: true, music: true, vibration: true, hints: true },
     seats: [],
     board: [],
     boardTop: [],
@@ -78,6 +100,9 @@ module.exports = {
     nameTooltip: null,
     finishing: false,
     flyingChips: [],
+    premiumSparks: PREMIUM_SPARKS,
+    confettiPieces: CONFETTI_PIECES,
+    crownStyle: '',
   },
   onLoad() {
     this.updateWindow();
@@ -88,7 +113,7 @@ module.exports = {
         typeof wx.createWorker === 'function' ? () => wx.createWorker('workers/review.js') : null,
       publish: (view) => {
         if (!this._readOnlyAttempt && typeof getApp === 'function')
-          getApp().noirMusic?.setEnabled(view.settings.sound);
+          getApp().noirMusic?.setEnabled(view.settings.music);
         if (view.done || view.hand !== this.data.hand || view.replay !== this.data.replay)
           this._finishRequested = false;
         const game = this._controller?.getGame();
@@ -140,7 +165,7 @@ module.exports = {
               arriving:
                 animate && (arriving || (!changedDeal && Boolean(before?.cards[index]?.arriving))),
             })),
-            backCards: [0, 1].map((index) => ({
+            backCards: (view.waitingForSeat ? [] : [0, 1]).map((index) => ({
               key: `${dealKey}:${index}`,
               delay: seat.id * 65 + index * 140,
               arriving:
@@ -152,7 +177,8 @@ module.exports = {
         });
         const update = {
           ...view,
-          tableReady: view.heroCards.length === 2 && view.seats.length >= 4,
+          tableReady:
+            (view.waitingForSeat || view.heroCards.length === 2) && view.seats.length >= 4,
           finishing:
             view.done || view.hand !== this.data.hand || view.replay !== this.data.replay
               ? false
@@ -180,8 +206,18 @@ module.exports = {
         };
         // Large research catalogs and card artwork need not cross the service/
         // view bridge on every bot turn. Preserve existing card nodes and motion.
+        const startsCeremony = !!view.ceremony && view.ceremony.key !== this.data.ceremony?.key;
+        if (startsCeremony) update.crownStyle = '';
         const patch = presentationPatch(this.data, update);
-        if (Object.keys(patch).length) this.setData(patch, () => this.tightenSeatRanks());
+        if (Object.keys(patch).length)
+          this.setData(patch, () => {
+            this.tightenSeatRanks();
+            if (update.tableReady && !this._readOnlyAttempt && typeof getApp === 'function') {
+              getApp().noirTableReady = true;
+              getApp().noirMusic?.setActive?.(!this._hidden && !this._destroyed);
+            }
+            if (startsCeremony) this.aimCrown(view.ceremony);
+          });
         if (changedDeal)
           this.scheduleCardMotion('deal', 1300, () => {
             const patch = {};
@@ -214,6 +250,9 @@ module.exports = {
       },
       readOnlyAttempt: this._readOnlyAttempt || null,
       readOnlySessionNumber: this._readOnlySessionNumber || null,
+      snapshots: this._readOnlyAttempt ? undefined : createSnapshotFiles() || undefined,
+      recordsBudget: WECHAT_RECORDS_BUDGET,
+      toast: (title) => wx.showToast?.({ title, icon: 'none', duration: 3000 }),
       storage: {
         getItem: (key) => wx.getStorageSync(key) || null,
         setItem: (key, value) => wx.setStorageSync(key, value),
@@ -235,6 +274,9 @@ module.exports = {
       this._controller.show();
       this._initialHistoryShown = true;
     }
+  },
+  joinTable() {
+    this._controller?.join();
   },
   onShow() {
     const returningFromRecords = Boolean(this._browsingRecords);
@@ -488,7 +530,7 @@ module.exports = {
           (sum, key) => sum + (parseFloat(label[key]) || 0),
           0,
         ) * (this.data.arenaScale || 1);
-      if (natural.width <= label.width - inset + 1) return;
+      if (kind === 'name' && natural.width <= label.width - inset + 1) return;
       this.setData(
         {
           nameTooltip: { text: kind === 'persona' ? seat.profileName : seat.name, visible: false },
@@ -606,6 +648,23 @@ module.exports = {
       wx.showToast({ title: error.message || '请重试', icon: 'none' });
     }
   },
+  // The flying crown lands on the hidden resting crown of the champion.
+  aimCrown(ceremony) {
+    if (!wx.createSelectorQuery) return;
+    const target = ceremony.heroWon ? '#hero-crown' : `#seat-crown-${ceremony.championId}`;
+    wx.createSelectorQuery()
+      .in(this)
+      .select(target)
+      .boundingClientRect()
+      .exec(([rect] = []) => {
+        if (!rect || this._destroyed || this.data.ceremony?.key !== ceremony.key) return;
+        const x = rect.left + rect.width / 2 - this.data.windowWidth / 2,
+          y = rect.top + rect.height / 2 - this.data.windowHeight * 0.45;
+        this.setData({
+          crownStyle: `--crown-x:${Math.round(x)}px;--crown-y:${Math.round(y)}px;--crown-scale:${(rect.width / 96).toFixed(3)}`,
+        });
+      });
+  },
   playSound(name) {
     if (this._hidden || !wx.createInnerAudioContext || !this._audioUnlocked) return;
     const names = {
@@ -615,6 +674,9 @@ module.exports = {
       call: 'chip',
       deal: 'deal',
       win: 'win',
+      champion: 'champion',
+      crowned: 'crowned',
+      farewell: 'farewell',
     };
     if (!names[name]) return;
     try {
@@ -625,7 +687,6 @@ module.exports = {
       for (const other of this._audio || []) if (other !== audio) other.stop();
       audio.stop();
       audio.seek?.(0);
-      if (typeof getApp === 'function') getApp().noirMusic?.duck?.();
       audio.play();
     } catch {
       /* A device can block audio until the first user gesture. */
@@ -637,6 +698,15 @@ module.exports = {
     for (const name of ['fold', 'check', 'chip', 'deal', 'win']) {
       const audio = wx.createInnerAudioContext();
       audio.src = `/assets/sounds/${name}.wav`;
+      audio.volume = 1;
+      audio.obeyMuteSwitch = false;
+      audio.onError(() => {});
+      this._audio.push(audio);
+      this._soundPool[name] = audio;
+    }
+    for (const [name, path] of Object.entries(ceremonySoundFiles())) {
+      const audio = wx.createInnerAudioContext();
+      audio.src = path;
       audio.volume = 1;
       audio.obeyMuteSwitch = false;
       audio.onError(() => {});
@@ -862,29 +932,8 @@ module.exports = {
     const detailProfile = profile
       ? {
           ...profile,
-          portraitCredit: PORTRAIT_CREDITS[profile.id] || null,
           sizingLow: Math.round(profile.sizing[0] * 100),
           sizingHigh: Math.round(profile.sizing[1] * 100),
-          research: profile.research
-            ? {
-                ...profile.research,
-                formatsText: profile.research.formats.join(' · '),
-                career: profile.research.career.map((item) => ({
-                  ...item,
-                  references: item.sourceIds.map((id) => ({
-                    label: `[${profile.sources.findIndex((s) => s.id === id) + 1}]`,
-                    url: profile.sources.find((s) => s.id === id)?.url,
-                  })),
-                })),
-                observations: profile.research.observations.map((item) => ({
-                  ...item,
-                  references: item.sourceIds.map((id) => ({
-                    label: `[${profile.sources.findIndex((s) => s.id === id) + 1}]`,
-                    url: profile.sources.find((s) => s.id === id)?.url,
-                  })),
-                })),
-              }
-            : null,
           axisRows: PROFILE_AXES.map(([id, label], index) => ({
             id,
             label,
@@ -936,9 +985,6 @@ module.exports = {
   settingsScrolled(event) {
     this._settingsScroll = event.detail.scrollTop;
     this.closeSelect();
-  },
-  togglePersonaNotice() {
-    this.setData({ noticeExpanded: !this.data.noticeExpanded });
   },
   toggleComparison() {
     this.setData({ comparisonOpen: !this.data.comparisonOpen });
@@ -1024,9 +1070,6 @@ module.exports = {
         this._browsingRecords = false;
       },
     });
-  },
-  returnToGame() {
-    navigation.returnToGame();
   },
   openGuide() {
     this.showGuide();
@@ -1132,7 +1175,7 @@ module.exports = {
   openReview() {
     this.setOverlay({
       reviewOpen: true,
-      reviewActivityOpen: false,
+      reviewActivityOpen: true,
       reviewPerspective: 'hero',
       reviewIndex: 0,
       opponentFilter: 0,

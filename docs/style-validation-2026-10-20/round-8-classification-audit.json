@@ -1,0 +1,96 @@
+{
+  "correct": 12,
+  "total": 12,
+  "rows": [
+    {
+      "reviewer": 1,
+      "code": "A",
+      "id": "jett",
+      "label": "宽松取值",
+      "correct": true
+    },
+    {
+      "reviewer": 1,
+      "code": "B",
+      "id": "rook",
+      "label": "多街施压",
+      "correct": true
+    },
+    {
+      "reviewer": 1,
+      "code": "C",
+      "id": "balanced",
+      "label": "均衡",
+      "correct": true
+    },
+    {
+      "reviewer": 1,
+      "code": "D",
+      "id": "owen",
+      "label": "范围纪律",
+      "correct": true
+    },
+    {
+      "reviewer": 2,
+      "code": "A",
+      "id": "jett",
+      "label": "宽松取值",
+      "correct": true
+    },
+    {
+      "reviewer": 2,
+      "code": "B",
+      "id": "owen",
+      "label": "范围纪律",
+      "correct": true
+    },
+    {
+      "reviewer": 2,
+      "code": "C",
+      "id": "rook",
+      "label": "多街施压",
+      "correct": true
+    },
+    {
+      "reviewer": 2,
+      "code": "D",
+      "id": "balanced",
+      "label": "均衡",
+      "correct": true
+    },
+    {
+      "reviewer": 3,
+      "code": "A",
+      "id": "rook",
+      "label": "多街施压",
+      "correct": true
+    },
+    {
+      "reviewer": 3,
+      "code": "B",
+      "id": "owen",
+      "label": "范围纪律",
+      "correct": true
+    },
+    {
+      "reviewer": 3,
+      "code": "C",
+      "id": "jett",
+      "label": "宽松取值",
+      "correct": true
+    },
+    {
+      "reviewer": 3,
+      "code": "D",
+      "id": "balanced",
+      "label": "均衡",
+      "correct": true
+    }
+  ],
+  "experience": [3, 3, 2],
+  "distinctiveness": [3, 3, 3],
+  "observedHands": 1200,
+  "interactiveHands": 600,
+  "heroDecisions": 1207,
+  "protocol": "100 continuous observation hands per code; 100 manual interactive hands each for two chosen codes; menu after frozen reviews"
+}

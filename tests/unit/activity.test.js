@@ -4,10 +4,10 @@ import { createActivityFormatter } from '../../src/ui/activity.js';
 import { newGame, startHand, act, advanceStreet, legalActions } from '../../src/engine/poker.js';
 
 const players = [
-  { id: 0, name: '你', botProfile: 'tan' },
+  { id: 0, name: '你', botProfile: 'rook' },
   { id: 1, name: 'Mia', botProfile: 'balanced' },
-  { id: 2, name: 'Alex', botProfile: 'st' },
-  { id: 3, name: 'River', botProfile: 'jungleman' },
+  { id: 2, name: 'Alex', botProfile: 'owen' },
+  { id: 3, name: 'River', botProfile: 'owen' },
 ];
 
 test('activity identifies assigned personas in all mentions, leaving hero and balanced opponents plain', () => {
@@ -22,23 +22,23 @@ test('activity identifies assigned personas in all mentions, leaving hero and ba
   ]) {
     const html = format(text);
     for (const [name, persona] of [
-      ['Alex', 'ST 王'],
-      ['River', 'Daniel Cates'],
+      ['Alex', '范围纪律'],
+      ['River', '范围纪律'],
     ]) {
       if (text.includes(name))
         assert.ok(html.includes(`${name}<span class="activity-persona">（${persona}）</span>`));
     }
   }
   assert.equal(format('Alexandra 弃牌 · RIVER'), 'Alexandra 弃牌 · RIVER');
-  assert.equal((format('Alex（ST 王） 过牌').match(/ST 王/g) || []).length, 1);
+  assert.equal((format('Alex（范围纪律） 过牌').match(/范围纪律/g) || []).length, 1);
 });
 
 test('activity uses a captured hand identity and safely escapes text', () => {
   const hand = structuredClone(players);
   const format = createActivityFormatter(hand);
-  hand[2].botProfile = 'dwan';
-  assert.ok(format('Alex 获胜').includes('ST 王'));
-  assert.ok(createActivityFormatter(hand)('Alex 获胜').includes('Tom Dwan'));
+  hand[2].botProfile = 'rook';
+  assert.ok(format('Alex 获胜').includes('范围纪律'));
+  assert.ok(createActivityFormatter(hand)('Alex 获胜').includes('大注强攻'));
   assert.equal(format('<img src=x> & "chips"'), '&lt;img src=x&gt; &amp; &quot;chips&quot;');
 });
 
@@ -48,7 +48,7 @@ test('activity formats raw chip amounts while retaining ordinals, names and meta
   assert.equal(format('你 全下至18800'), '你 全下至18.8K');
   assert.equal(
     format('Alex 全下至10000000'),
-    'Alex<span class="activity-persona">（ST 王）</span> 全下至10M',
+    'Alex<span class="activity-persona">（范围纪律）</span> 全下至10M',
   );
   assert.equal(format('第 1200 手 · 2026 年 · 1000%'), '第 1200 手 · 2026 年 · 1000%');
   assert.equal(format('Mia 跟注 1.2K'), 'Mia 跟注 1.2K');
@@ -74,6 +74,9 @@ test('a long legal hand retains every activity entry in chronological order and 
     g.players.reduce((sum, player) => sum + player.stack, 0),
     45000,
   );
+  // This all-in hand eliminates seats; seat them again to test the next deal.
+  for (const p of g.players) if (p.stack === 0) Object.assign(p, { stack: 5000, out: false });
+  g.over = null;
   startHand(g);
   assert.match(g.logs.at(-1).text, /^第 2 手开始/);
   assert.ok(g.logs.length < 15);

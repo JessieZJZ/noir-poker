@@ -1,8 +1,5 @@
-import {
-  createMusicController,
-  BACKGROUND_MUSIC_VOLUME,
-  BACKGROUND_MUSIC_DUCK_VOLUME,
-} from '../ui/background-music.js';
+import { createMusicController, BACKGROUND_MUSIC_VOLUME } from '../ui/background-music.js';
+import { createMusicFade } from '../ui/music-fade.js';
 
 export function createWechatBackgroundMusic(
   wx,
@@ -12,6 +9,7 @@ export function createWechatBackgroundMusic(
     loadSource,
     schedule = setTimeout,
     unschedule = clearTimeout,
+    now = Date.now,
   } = {},
 ) {
   return createMusicController({
@@ -25,27 +23,26 @@ export function createWechatBackgroundMusic(
       let disposed = false;
       let playing = false;
       let source = '';
-      let ducked = false;
-      let duckTimer = null;
-      let duckToken = 0;
-      function restoreVolume() {
-        duckToken++;
-        if (duckTimer !== null) unschedule(duckTimer);
-        duckTimer = null;
-        ducked = false;
-        if (audio) audio.volume = BACKGROUND_MUSIC_VOLUME;
-      }
+      const fade = createMusicFade({
+        schedule,
+        unschedule,
+        now,
+        setVolume(value) {
+          if (audio) audio.volume = value * BACKGROUND_MUSIC_VOLUME;
+        },
+      });
       function start() {
         if (!wanted || disposed || !loaded || !wx.createInnerAudioContext) return;
         if (!audio) {
           audio = wx.createInnerAudioContext();
           audio.loop = true;
-          audio.volume = ducked ? BACKGROUND_MUSIC_DUCK_VOLUME : BACKGROUND_MUSIC_VOLUME;
+          audio.volume = 0;
           audio.obeyMuteSwitch = false;
           audio.onPlay?.(() => {
             if (disposed) return;
             playing = wanted && !disposed;
             if (!playing) audio.pause();
+            else fade.start();
           });
           audio.onPause?.(() => (playing = false));
           audio.onStop?.(() => (playing = false));
@@ -79,29 +76,18 @@ export function createWechatBackgroundMusic(
           return loading;
         },
         pause() {
-          restoreVolume();
           wanted = false;
           playing = false;
+          fade.pause();
           audio?.pause();
         },
         dispose() {
-          restoreVolume();
           disposed = true;
           wanted = false;
           playing = false;
+          fade.pause();
           audio?.stop();
           audio?.destroy();
-        },
-        duck() {
-          if (!wanted || disposed) return;
-          restoreVolume();
-          ducked = true;
-          if (audio) audio.volume = BACKGROUND_MUSIC_DUCK_VOLUME;
-          const token = ++duckToken;
-          // Longest local cue is 600 ms; allow 50 ms for its native start.
-          duckTimer = schedule(() => {
-            if (token === duckToken && !disposed) restoreVolume();
-          }, 650);
         },
       };
     },

@@ -486,7 +486,11 @@ select {
   border-radius: 4px;
   font-size: 10px;
   padding: 6px 4px;
-  transition: 0.2s;
+  /* Responsive font/padding changes must not squeeze the notice while resizing. */
+  transition:
+    background-color 0.2s,
+    border-color 0.2s,
+    color 0.2s;
 }
 .bet-presets button:hover {
   border-color: #6ee7c56b;

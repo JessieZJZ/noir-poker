@@ -155,7 +155,8 @@ test('the 50K small-blind limit saves raw digits, displays K/M, and applies when
   await page.evaluate(() => window.qa.stop());
   const fresh = await page.evaluate(() => window.qa.snapshot());
   expect(fresh.stakes).toEqual(stakes(50000));
-  expect(fresh.hand).toBe(1);
+  expect(fresh.hand).toBe(0);
+  expect(fresh.phase).toBe('idle');
   expect(fresh.stats).toEqual({ hands: 0, wins: 0, buyin: 10000000 });
   expect(fresh.players.every((player) => player.stack + player.total === 10000000)).toBe(true);
   await expect(page.locator('#blind-values')).toHaveText('50K / 100K');
@@ -183,7 +184,7 @@ test('causal review keeps the recorded blind scale while a new scale is queued a
   await page.locator('[data-review-index="0"]').click();
   const explanation = page.locator('#review-coach-explanation');
   await expect(explanation).toContainText('350');
-  await page.locator('#review-activity summary').click();
+  await expect(page.locator('#review-activity')).toHaveAttribute('open', '');
   await expect(page.locator('#review-activity-list')).toContainText(/Mia.*1K/);
   await expect(page.locator('#review-activity-list')).toContainText(/River.*950/);
   expect((await page.locator('#review-activity-list li').allTextContents()).join('\n')).not.toMatch(

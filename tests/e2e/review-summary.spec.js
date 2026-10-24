@@ -30,7 +30,7 @@ test('reported reviews render coherent causal summaries and preserve them across
   await page.locator('[data-review-index="1"]').click();
   await expect(hero.locator('.review-range-note')).toHaveCount(0);
   await expect(hero.locator('.review-analysis-heading ~ p').first()).toContainText(
-    /多次再加注后仍.*继续范围.*更集中/,
+    /再加注通常比普通开池更集中.*5-bet/,
   );
   await expect(hero).toContainText(/再补 8.3K.*弃牌可以保留.*19K/);
   await expect(hero).not.toContainText('不必只因遇到加注就自动弃牌');
@@ -46,7 +46,7 @@ test('reported reviews render coherent causal summaries and preserve them across
   await page.locator('#review-opponents-tab').click();
   const bot = page.locator('#review-opponent-detail .review-explanation');
   await expect(bot.locator('.review-analysis-heading ~ p')).toHaveCount(1);
-  await expect(bot).toContainText(/选择跟注 6.3K，目的不是只靠高牌摊牌，而是在追两头顺听牌/);
+  await expect(bot).toContainText(/选择跟注 6.3K，当前主要依靠听牌改善争取获胜/);
   await expect(bot).toContainText('8 张牌可能补成顺子');
   await expect(bot).not.toContainText(/补成顺子[／或]同花|相同牌力/);
   await bot.locator('.review-analysis-heading').scrollIntoViewIfNeeded();

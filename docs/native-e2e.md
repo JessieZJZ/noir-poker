@@ -18,8 +18,10 @@ Android 示例（Apple Silicon 使用 arm64-v8a；Linux CI 使用 x86_64）：
 ```sh
 sdkmanager 'emulator' 'system-images;android-36;google_apis;arm64-v8a'
 avdmanager create avd -n Noir_Poker_E2E -k 'system-images;android-36;google_apis;arm64-v8a' --device pixel_9
-emulator -avd Noir_Poker_E2E -no-window -no-audio -no-snapshot -gpu swiftshader
+emulator -avd Noir_Poker_E2E -no-window -no-audio -no-snapshot -gpu host -memory 4096 -cores 4
 ```
+
+Apple Silicon Mac 上无界面模拟器也能用 `-gpu host`：经 MoltenVK/Metal 走硬件渲染，`dumpsys SurfaceFlinger` 的 GLES 一行应显示 Apple 芯片，而不是 SwiftShader。纯软件渲染每条 WebView 指令约 2–3 秒，整套场景要一小时以上，所以本机默认用 GPU。给模拟器 4 核、4GB：2 核、2GB 的 AVD 在后台／回前台场景里曾整机无响应，`adb shell` 也卡住。若 host 模式出现 QEMU HangDetector 崩溃，或 PackageManager/ADB 无响应，只重启该 AVD 并改用 `-gpu swiftshader_indirect` 补验，保留失败记录。Linux CI 无 GPU，继续使用 `-gpu swiftshader`。
 
 ## 构建并运行
 
@@ -32,7 +34,7 @@ node scripts/native-e2e.mjs android
 node tests/native/system-bars.mjs .artifacts/native-e2e/android/local-launch-and-no-login.png
 ```
 
-iOS 先对指定测试设备干净安装，用 Simulator 服务独立启动应用，再以 `autoLaunch: false` 接入 XCUITest。首启不在 WDA 附着后额外替换应用进程。后续设置持久化场景的重启通过 WDA 执行，不用外部 simctl 替换正在跟踪的进程。指定 `--udid` 的关闭状态设备也会先启动；仅关闭脚本本次启动的设备。
+iOS 先对指定测试设备干净安装，用 Simulator 服务独立启动应用，等待当前应用 PID 的原生“首屏就绪、封面移除”标记，才以 `autoLaunch: false` 接入 XCUITest。等待仍限时 45 秒，旧进程的日志不能放行新启动。首屏就绪前不调用 JavaScript 状态查询或附着 Web Inspector，也不在 WDA 附着后额外替换应用进程。后续设置持久化场景的重启通过 WDA 执行，不用外部 simctl 替换正在跟踪的进程。指定 `--udid` 的关闭状态设备也会先启动；仅关闭脚本本次启动的设备。
 
 iOS 自动选择最新可用 runtime 中兼容的标准尺寸 iPhone，仅复用同一 runtime、同一设备类型的专用模拟器。可用 `NOIR_IOS_RUNTIME` 和 `NOIR_IOS_DEVICE_TYPE` 指定 `simctl list runtimes -j` / `simctl list devicetypes -j` 返回的完整 identifier；选择不可用或不兼容时直接失败，不自动换设备。指定 UDID 时使用该设备。报告记录自动选择的 runtime 和设备类型。
 
@@ -106,11 +108,13 @@ Android 测试期间打开飞行模式，结束后恢复原设置。iOS Simulato
 
 结算用例还会点击顶部座位的查看按钮，验证眼睛位于位置标签右侧、亮牌的数字和花色完整可见且不贴提示栏；牌底少量藏在玩家卡片后。测试同时检查两行行动文案没有截断，并记录查看前后的牌桌与公共区位置。
 
-结果保存在 `.artifacts/native-e2e/<platform>/report.json`、每个流程的全设备截图以及 `appium.log` 中。报告包含设备、产物、打包源码指纹、各项实际耗时和失败原因；失败不能视为已验证。CI 需先编译产物，再执行脚本，上传这些证据；只验证 `mobile:sync` 或成功编译不能替代此流程。
+结果保存在 `.artifacts/native-e2e/<platform>/report.json`、每个流程的全设备截图以及 `appium.log` 中。报告包含设备、产物、打包源码指纹、各项实际耗时和失败原因；失败不能视为已验证。CI 需先编译产物，再执行脚本，上传这些证据；只验证 `mobile:sync` 或成功编译不能替代此流程。GitHub 托管的 macOS 模拟器和无 GPU 的 Android 模拟器都要几分钟才跑完一个场景，所以 CI 的 iOS 与 Android 任务用 `NOIR_NATIVE_SCENARIOS` 只跑已安装应用的冒烟场景（本地启动、入座音乐、高额盲注布局、标题中的重新练习）；完整 31 个场景仍在本机模拟器上运行并单独报告，CI 冒烟通过不能当作完整原生通过。两个原生 CI 任务都安装 Playwright Chromium，供本地启动等场景把已安装应用的 DOM 回放为 Web 对照；对照浏览器启动失败时也会关闭本地资源服务器，避免进程挂到任务超时。WebDriver 请求使用 Node `http` 并只受调用方超时约束，CI 首次构建 WebDriverAgent 超过 5 分钟时不会被 `fetch` 默认的响应头超时提前中断。
+
+iOS 独立首启还将应用输出写入结果目录的 `ios.stdout.log` 和 `ios.stderr.log`。Debug 外壳通过 `[NOIR startup]` 记录共享页面的启动阶段及原始错误，便于区分平台设置、语言、样式、牌桌初始化和启动封面消息。日志只观察现有就绪流程，不跳过初始化或提前显示牌桌；进入就绪或失败状态后停止观察页面变化，Release 不安装此日志桥接。
 
 缺少包、资源过期、设备选择或启动失败也会写入失败报告，`phase` 区分预检、设备准备、Appium 启动、安装、WebView 连接与场景运行。脚本自行启动的模拟器即使在 `bootstatus` 失败后也会尝试关闭。已通过场景和当前失败场景同时保留；复盘保留 30 秒完成要求，并记录公开分析进度、每步耗时及 WebView 读取错误，便于区分计算耗时与驱动故障。
 
-脚本自行启动的 Appium 退出前，会终止它当前仍存活的子进程，包括分离启动的 WDA `xcodebuild`；仅按该 Appium PID 的父子关系清理，不扫描或终止其他测试服务。外部 `--server` 由调用方管理生命周期。报告的 `serverCleanup` 保留清理进程和错误。
+脚本自行启动的 Appium 只加载目标平台的驱动，避免另一平台驱动的初始化占用服务启动时间。iOS 先完成独立首屏，Android 先确认系统与包管理服务就绪，然后才启动本任务的服务；报告记录独立首屏与服务就绪时间。退出前，会终止它当前仍存活的子进程，包括分离启动的 WDA `xcodebuild`；仅按该 Appium PID 的父子关系清理，不扫描或终止其他测试服务。外部 `--server` 由调用方管理生命周期。报告的 `serverCleanup` 保留清理进程和错误。
 
 Android 每次保存设备截图时还读取原生 UI 层级，遇到系统 ANR/崩溃对话框就失败并保留 `.native.xml` 和截图。WebView 内断言通过不能覆盖系统弹窗；测试不会自动关闭弹窗继续当作通过。
 

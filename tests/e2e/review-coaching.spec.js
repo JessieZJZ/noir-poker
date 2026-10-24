@@ -22,8 +22,9 @@ test('draw review connects the full public line and keeps only the requested mod
       '#review-your-action, #review-suggestion, #review-advanced, #review-routes, #review-simulation',
     ),
   ).toHaveCount(0);
-  await expect(page.locator('#review-activity')).not.toHaveAttribute('open', '');
-  await page.locator('#review-activity summary').click();
+  // The hand activity opens by default.
+  await expect(page.locator('#review-activity')).toHaveAttribute('open', '');
+  await expect(page.locator('#review-activity')).toHaveAttribute('open', '');
   await expect(page.locator('#review-activity-list li')).not.toHaveCount(0);
   await expect(
     page.locator(
@@ -238,7 +239,7 @@ test('69o three-bet shows real later public responses separately and Mia AQ four
   await expect(hero).toContainText('350');
   await expect(hero).toContainText('200');
   await expect(hero).not.toContainText(/随后，|你.*后，Mia选择/);
-  await page.locator('#review-activity summary').click();
+  await expect(page.locator('#review-activity')).toHaveAttribute('open', '');
   await expect(page.locator('#review-activity-list')).toContainText(/Mia.*1K/);
   await expect(page.locator('#review-activity-list')).toContainText(/River.*950/);
   await expect(page.locator('#review-activity-list')).toContainText(/Luna.*800/);

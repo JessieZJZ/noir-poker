@@ -1,0 +1,271 @@
+{
+  "reviewer": 3,
+  "kind": "independent AI strategy interaction; not human or UI acceptance",
+  "selection": [
+    "B",
+    "D"
+  ],
+  "fixedTotalHands": 200,
+  "requestResponseEntries": 593,
+  "actionRequestCount": 393,
+  "startCount": 200,
+  "doneCount": 200,
+  "allActionsDecidedByReviewingAI": true,
+  "actionSelectionCodeUsed": false,
+  "httpRecorderOnly": true,
+  "statisticsComputedAfterFixedSample": true,
+  "classificationOrScoringPerformed": false,
+  "definitions": {
+    "VPIP": "at least one preflop call or raise; forced blinds/checks excluded",
+    "PFR": "at least one preflop raise",
+    "commonFlop": "board reached flop and neither Hero nor target folded preflop",
+    "facingOpposingBet": "current outstanding highest voluntary bet was most recently raised by the opposing actor; count actual decision events, including fold; third-party reraises supersede direct attribution",
+    "targetPostflopObservedAfterHeroPreflopFold": "target took a postflop action after Hero had folded preflop; observer evidence only",
+    "chipConservation": "sum of five final stacks equals 100000 on every done response; pot field is display total and is not added again"
+  },
+  "stats": {
+    "B": {
+      "starts": 100,
+      "done": 100,
+      "globalHandRange": [
+        1,
+        100
+      ],
+      "heroPositions": {
+        "CO": 20,
+        "UTG": 20,
+        "BB": 20,
+        "SB": 20,
+        "BTN": 20
+      },
+      "heroActionRequests": 212,
+      "heroVPIPHands": 45,
+      "heroPostflopHands": 40,
+      "heroPFRHands": 25,
+      "targetVPIPHands": 22,
+      "targetPFRHands": 9,
+      "targetPostflopHands": 18,
+      "targetPostflopObservedAfterHeroPreflopFold": 12,
+      "heroFacesTargetDecisions": 9,
+      "heroFacesTargetHands": 8,
+      "targetFacesHeroDecisions": 15,
+      "targetFacesHeroHands": 15,
+      "commonFlopHands": 6,
+      "heroFacesTargetPostflopDecisions": 1,
+      "heroFacesTargetPostflopHands": 1,
+      "targetFacesHeroPostflopDecisions": 0,
+      "targetFacesHeroPostflopHands": 0,
+      "handLists": {
+        "targetPostflopObservedAfterHeroPreflopFold": [
+          15,
+          27,
+          38,
+          39,
+          41,
+          61,
+          63,
+          65,
+          70,
+          78,
+          91,
+          92
+        ],
+        "heroFacesTargetHands": [
+          15,
+          16,
+          39,
+          51,
+          53,
+          54,
+          70,
+          90
+        ],
+        "targetFacesHeroHands": [
+          17,
+          18,
+          28,
+          37,
+          45,
+          47,
+          49,
+          54,
+          66,
+          67,
+          81,
+          83,
+          85,
+          93,
+          97
+        ],
+        "commonFlopHands": [
+          51,
+          53,
+          75,
+          81,
+          90,
+          98
+        ],
+        "heroFacesTargetPostflopHands": [
+          53
+        ]
+      }
+    },
+    "D": {
+      "starts": 100,
+      "done": 100,
+      "globalHandRange": [
+        101,
+        200
+      ],
+      "heroPositions": {
+        "CO": 20,
+        "UTG": 20,
+        "BB": 20,
+        "SB": 20,
+        "BTN": 20
+      },
+      "heroActionRequests": 181,
+      "targetVPIPHands": 49,
+      "targetPFRHands": 22,
+      "heroFacesTargetDecisions": 15,
+      "heroFacesTargetHands": 15,
+      "targetPostflopHands": 43,
+      "targetPostflopObservedAfterHeroPreflopFold": 32,
+      "heroVPIPHands": 34,
+      "heroPFRHands": 14,
+      "heroPostflopHands": 26,
+      "targetFacesHeroDecisions": 16,
+      "targetFacesHeroHands": 13,
+      "commonFlopHands": 11,
+      "targetFacesHeroPostflopDecisions": 6,
+      "targetFacesHeroPostflopHands": 5,
+      "heroFacesTargetPostflopDecisions": 1,
+      "heroFacesTargetPostflopHands": 1,
+      "handLists": {
+        "heroFacesTargetHands": [
+          104,
+          115,
+          116,
+          129,
+          130,
+          132,
+          134,
+          144,
+          150,
+          153,
+          159,
+          171,
+          184,
+          189,
+          190
+        ],
+        "targetPostflopObservedAfterHeroPreflopFold": [
+          105,
+          106,
+          107,
+          111,
+          115,
+          116,
+          117,
+          118,
+          126,
+          127,
+          130,
+          131,
+          132,
+          134,
+          140,
+          141,
+          142,
+          143,
+          144,
+          148,
+          153,
+          158,
+          159,
+          160,
+          161,
+          171,
+          174,
+          178,
+          180,
+          185,
+          192,
+          197
+        ],
+        "targetFacesHeroHands": [
+          108,
+          121,
+          123,
+          128,
+          138,
+          150,
+          155,
+          157,
+          168,
+          169,
+          181,
+          182,
+          184
+        ],
+        "commonFlopHands": [
+          110,
+          121,
+          129,
+          150,
+          151,
+          155,
+          168,
+          169,
+          189,
+          190,
+          193
+        ],
+        "targetFacesHeroPostflopHands": [
+          121,
+          150,
+          155,
+          168,
+          169
+        ],
+        "heroFacesTargetPostflopHands": [
+          129
+        ]
+      }
+    }
+  },
+  "validationErrors": [],
+  "selfReview": {
+    "clearCardOrDrawDescriptionCorrections": [
+      {
+        "hand": 67,
+        "detail": "转牌理由先只提 7 卡顺，下一决策已认出 7/J 双卡顺；最终弃牌理由使用八张顺牌且方片污染。"
+      },
+      {
+        "hand": 190,
+        "detail": "翻牌理由出现 QQ 的即时口误，同行即更正实际 Q99；动作按 Q99 未中牌过牌。"
+      }
+    ],
+    "strategicUncertainties": [
+      {
+        "hand": 53,
+        "detail": "97s 小盲跟 BB 4.5BB 隔离无位置，偏宽且隐含收益判断乐观。"
+      },
+      {
+        "hand": 59,
+        "detail": "99 在 A 高面河牌跟半池抓诈唬，缺少对该陪测座位诈唬频率的明确证据。"
+      },
+      {
+        "hand": 98,
+        "detail": "配对面坚果花听加卡顺面对转牌超池下注跟注，未充分折扣葫芦和脏出路，偏乐观。"
+      },
+      {
+        "hand": 200,
+        "detail": "J3o 按钮最小开池属于边缘尝试，与先前多次弃弱 J 不完全一致；不是分数最优化或筛牌依据。"
+      }
+    ],
+    "outcomeDoesNotDetermineError": true,
+    "provenIllegalActions": 0
+  },
+  "stoppedAfterHand": 200
+}

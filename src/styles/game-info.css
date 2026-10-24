@@ -1,0 +1,94 @@
+/* Game info: shown only while waiting for the seat (the waiting message stays
+   in the table header). It carries chips, blinds and results, centred, and is
+   stretched to the action dock's reserved space so the top bar, the table and
+   this card fill the first screen. Play keeps the practice card instead. */
+.main > .sidebar > .game-info {
+  display: grid;
+  align-content: center;
+  gap: 12px;
+  box-sizing: border-box;
+  padding: 10px 14px 12px;
+}
+.main > .sidebar > .game-info[hidden] {
+  display: none;
+}
+.game-info-stats {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(0, 1.25fr) repeat(3, minmax(0, 1fr));
+  gap: 4px 8px;
+  margin: 0;
+}
+.game-info-stats > div {
+  display: block;
+  min-width: 0;
+  text-align: center;
+}
+.game-info-stats dt {
+  color: #7a8d9c;
+  font-size: 11px;
+  line-height: 14px;
+  /* Long translations wrap (hyphenated where the browser can) rather than
+     widening the narrow phone columns. */
+  overflow-wrap: anywhere;
+  hyphens: auto;
+}
+.game-info-stats dd {
+  margin: 2px 0 0;
+  overflow: hidden;
+  color: #e3ebef;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 22px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-variant-numeric: tabular-nums;
+}
+.game-info-stats dd b {
+  font-weight: inherit;
+}
+.game-info-chips em {
+  margin-left: 4px;
+  color: #8aa0ad;
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 500;
+}
+.game-info-chips em.positive {
+  color: var(--mint);
+}
+.game-info-chips em.negative {
+  color: #f19a9a;
+}
+/* The waiting header keeps its message; the blinds are in the card. */
+.game-surface[data-entry-state='waiting'] > .surface-top > .blind-info {
+  visibility: hidden;
+}
+@media (max-width: 380px) {
+  .main > .sidebar > .game-info {
+    padding: 9px 11px 10px;
+  }
+  .game-info-stats {
+    gap: 2px 6px;
+  }
+  .game-info-stats dd {
+    font-size: 14px;
+  }
+}
+/* Wide screens keep the stats on one centred row. */
+@media (min-width: 900px) {
+  .main > .sidebar > .game-info {
+    padding: 10px 16px;
+  }
+  .game-info-stats {
+    width: 100%;
+    max-width: 640px;
+    margin: 0 auto;
+  }
+}
+
+/* Every page ends close to the compliance footer. */
+main.main,
+.records-page,
+body[data-records-page='hand'] .records-page {
+  padding-bottom: 12px;
+}

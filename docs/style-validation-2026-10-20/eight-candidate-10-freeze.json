@@ -1,0 +1,33 @@
+{
+  "sourceDigest": "08ae9259e31b51169dd3655fc29e43e6255de13bd3051fbb78fd59c3490fa3e6",
+  "harnessDigest": "0fe2802ef54f224fbaf5f0fe89fc580f07e2b8a33cc0715314d5c12246c4c68b",
+  "schemaVersion": 8,
+  "files": {
+    "src/engine/action-labels.js": "0418bd1390c423ca42d3b0090baabeeee95458d30dac3f78b508ea05f563c8b2",
+    "src/engine/bet-sizing.js": "b41939af678a7570dd5c68d212945be4ba46b7621787a3b5296388df6ac96d32",
+    "src/engine/bot-allin.js": "cffb9dd723987113110c5979412765fd3d59d543db0e6648d6d110aaf261470a",
+    "src/engine/bot-deception.js": "76a16e57d2567e40d70baadee91b98acd24927d2c7e56dbc01af8a190722c0ee",
+    "src/engine/bot-difficulty.js": "85668fe013d1ea9734fd3351fbea6ccb002bc3d57e0d7bfeab66110fe94f1831",
+    "src/engine/bot-profiles.js": "95d78335ec6cd083e19de68f6119dd31d9916c25f26434d06508504b8caf2903",
+    "src/engine/bot-style.js": "a3b238a76156f2ce0871ab82d7502935d070030934a3e080776d1b2cacd48f2a",
+    "src/engine/bot-timing.js": "71d3bf6d924790bf12d6a2ab929e31ae856d9b5051dbc6575b48526984b1b3d1",
+    "src/engine/character-state.js": "6168ceb8ffdf3cf5306dd939919086e8eb7cffe343400a3089d2eba4fd60ab49",
+    "src/engine/chip-format.js": "1571738850e08b7c8fde6672588e907e7982e429a598778dbcc6dae25ed67482",
+    "src/engine/decision-basis.js": "da067625d2c912595ce26db17a142725de3e3fb8614dc9d3d2db7a3db5ac0f5b",
+    "src/engine/game-records.js": "76fc11ee03c4b5e333f4dbd057b129adcc23b13949ea0d80b0f6307dffcaf7c8",
+    "src/engine/hand-features.js": "2c661dc0274abef1dcb58e9bf4fc8bcb3e1496cb13955f7a9095b13781fabf6d",
+    "src/engine/player-identity.js": "8928efaf2681da2fb7f14ac70faa257906454fd7aa9a9bcbf45c5f278a39e0d1",
+    "src/engine/poker.js": "22cb461f45f7104f2b79fa05af37d30148cff64750e6cd29041cef6b92b2da91",
+    "src/engine/profile-id.js": "d9a2a1165ce2d8369e08c20866752080faffd54f507a0892f3561b803af3bfe1",
+    "src/engine/public-action-context.js": "6abdbe26f3baf7ea27e8ad2d4ad8ca208a6298e36c435dff2f2b4e08454c7fa2",
+    "src/engine/public-equity.js": "4ab8ba1e21aee69b6617081d642ae2d638bd472c0dd2b1d3d3c8bcfc46f84e4b",
+    "src/engine/public-ranges.js": "13fdd0622d2a9744bfccb43cc2bf14e4d9ffc3698d76c202cd4b9cd6cc10defb",
+    "src/engine/stakes.js": "2707a84d5af499760efb33a0e979287d44a3f7d3e7b82536a0ba0c21a0821f0e",
+    "src/engine/store-profiles.js": "f4054ce44b9cc4e51ddb4f27b48856d6eeddfe943a13debad4174118bdb5d54e",
+    "src/data/characters.json": "b90c2a0c8136576e12e6d222aaaed20c2cf9c7acb00770c86ec0ea0bed9c9183"
+  },
+  "frozenAt": "2026-10-23T04:56:37.936Z",
+  "heldOutStarted": false,
+  "metadataOnlyPredecessor": "5932c97a6ef366aa3d3b3b0a539690d2d897ab9409d02e34a7edc438b0582156",
+  "equivalenceSha256": "f569e988802074ae3baee9987b877b15472fc0d1c84d7c7aa8b6ed67595417be"
+}

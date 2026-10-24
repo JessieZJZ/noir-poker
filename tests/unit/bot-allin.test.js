@@ -153,7 +153,12 @@ test('a near-all-in 4-bet prices the real risk without restoring automatic 77 pr
       const game = largeFourBetResponse(hole, amount),
         decision = decide(game),
         pressure = decision.trace.allIn;
-      assert.equal(decision.action, action, `${hole}/${amount}`);
+      assert.equal(
+        decision.action,
+        hole === 'As Ah' && amount === 4000 ? 'raise' : action,
+        `${hole}/${amount}`,
+      );
+      if (decision.action === 'raise') assert.equal(decision.amount, legalActions(game).maxRaiseTo);
       assert.equal(pressure.line, 'multi-raise-shove');
       assert.equal(pressure.cost, amount - 150);
       assert.equal(pressure.aggressorAllIn, amount === 5000);
@@ -320,7 +325,7 @@ test('real executed bot plans replay their own call or fold motive without raw s
     if (kind === 'flop-qq') {
       assert.match(review.detail, /超对 Q/);
       assert.match(review.detail, /10.15K/);
-      assert.match(review.detail, /之后只能等发牌|只能等发牌/);
+      assert.match(review.detail, /之后不再参与下注决策/);
       assert.doesNotMatch(review.detail, /9♦ 8♣/);
     } else if (kind === 'shared-royal') assert.match(review.detail, /平分底池/);
   }
@@ -355,7 +360,8 @@ test('actual all-in motives localize across all supported locales without losing
         if (!['zh-CN', 'zh-TW', 'ja'].includes(locale))
           assert.doesNotMatch(translated, /\p{Script=Han}/u, `${locale}: ${translated}`);
         for (const value of [record.name, '4.95K', '4.85K', '10.15K'])
-          if (text.includes(value)) assert.ok(translated.includes(value), `${locale}: ${value}`);
+          if (text.includes(value))
+            assert.ok(translated.includes(localizeText(value)), `${locale}: ${value}`);
       }
   }
 });

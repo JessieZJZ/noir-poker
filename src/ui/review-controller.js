@@ -270,7 +270,7 @@ export function createReviewController({ card }) {
   function open() {
     if (live && last !== live) selectInput(live, false);
     if (!last) return;
-    $('#review-activity').open = false;
+    $('#review-activity').open = true;
     opponents.update(last.input);
     renderDialog();
     if (!dialog.open) dialog.showModal();
@@ -285,7 +285,7 @@ export function createReviewController({ card }) {
     historical = archive;
     selected = 0;
     selectionTouched = false;
-    $('#review-activity').open = false;
+    $('#review-activity').open = true;
     perspective(false);
     opponents.update(entry.input);
   }

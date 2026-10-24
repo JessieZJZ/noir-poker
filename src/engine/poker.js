@@ -138,6 +138,8 @@ export function newGame(playerCount = 6, configuration = DEFAULT_STAKES) {
         botMood: freshBotMood(),
         botStats: freshBotStats(),
         botHand: { vpip: false, pfr: false, pressureRecorded: false },
+        out: false,
+        place: null,
       })),
     dealer: playerCount - 1,
     hand: 0,
@@ -157,6 +159,8 @@ export function newGame(playerCount = 6, configuration = DEFAULT_STAKES) {
     winners: [],
     payouts: [],
     stats: { hands: 0, wins: 0, buyin: stakes.startingStack },
+    rebuys: 0,
+    over: null,
     difficulty: 'normal',
     emotionMode: 'subtle',
   };
@@ -190,15 +194,49 @@ export function applyBotSettings(g, value) {
   g.emotionMode = settings.emotionMode;
 }
 // Seat IDs follow the physical table clockwise, starting at the hero.
+// Eliminated seats leave the ring, so a game may finish short-handed.
 export const POSITION_ROLES = {
+  2: ['BTN', 'BB'],
+  3: ['BTN', 'SB', 'BB'],
+  4: ['BTN', 'SB', 'BB', 'CO'],
   5: ['BTN', 'SB', 'BB', 'UTG', 'CO'],
   6: ['BTN', 'SB', 'BB', 'UTG', 'HJ', 'CO'],
   7: ['BTN', 'SB', 'BB', 'UTG', 'LJ', 'HJ', 'CO'],
   8: ['BTN', 'SB', 'BB', 'UTG', 'UTG+1', 'LJ', 'HJ', 'CO'],
   9: ['BTN', 'SB', 'BB', 'UTG', 'UTG+1', 'MP', 'LJ', 'HJ', 'CO'],
 };
-export const seatPosition = (g, id) =>
-  POSITION_ROLES[g.players.length][(id - g.dealer + g.players.length) % g.players.length];
+// Seats still in the game, clockwise from the seat after `from`.
+export function seatedRing(g, from = g.dealer) {
+  const n = g.players.length;
+  return Array.from({ length: n }, (_, i) => g.players[(from + 1 + i) % n]).filter((p) => !p.out);
+}
+// Positions are fixed when the hand starts; a seat eliminated at settlement
+// keeps the badge it played this hand with.
+export function seatPosition(g, id) {
+  if (g.positions) return g.positions[id] || '';
+  return POSITION_ROLES[g.players.length][(id - g.dealer + g.players.length) % g.players.length];
+}
+function assignPositions(g) {
+  const ring = seatedRing(g),
+    roles = POSITION_ROLES[ring.length];
+  g.positions = g.players.map(() => '');
+  // The ring ends with the button; heads-up the button is also the small blind.
+  ring.forEach((p, i) => (g.positions[p.id] = roles[(i + 1) % ring.length]));
+}
+export const MAX_HERO_REBUYS = 3;
+export const heroRebuysLeft = (g) => Math.max(0, MAX_HERO_REBUYS - (g.rebuys || 0));
+export const needsHeroRebuy = (g) =>
+  ['idle', 'done'].includes(g.phase) && !g.over && !g.players[0].out && g.players[0].stack === 0;
+// Only the hero can refill, and only between hands after losing every chip.
+export function rebuyHero(g) {
+  if (!needsHeroRebuy(g)) throw Error('只有筹码输光后才能补充筹码。');
+  if (!heroRebuysLeft(g)) throw Error('本局补码次数已用完。');
+  g.players[0].stack = g.stakes.startingStack;
+  g.rebuys = (g.rebuys || 0) + 1;
+  g.stats.buyin += g.stakes.startingStack;
+  g.refilled = true;
+  return g;
+}
 export const potSize = (g) => g.players.reduce((sum, p) => sum + p.total, 0);
 // Contribution layers determine eligibility. Folded chips stay in the pots;
 // adjacent layers with the same eligible players belong to the same pot.
@@ -316,12 +354,15 @@ const cloneHand = (value) => JSON.parse(JSON.stringify(value));
 export const canRestartHand = (g) => g.phase === 'done' && handStarts.has(g);
 export function startHand(g) {
   if (g.phase !== 'idle' && g.phase !== 'done') throw Error('当前牌局尚未结束。');
+  if (g.over) throw Error('本局已结束，请开始下一局。');
   if (g.players.some((p) => !isChipAmount(p.stack, chipUnitOf(g))))
     throw Error('玩家筹码必须是筹码面额的倍数。');
+  if (g.players.some((p) => !p.out && p.stack === 0)) throw Error('请先补充筹码。');
   g.replayAttempt = 0;
   g.potAtShowdown = 0;
   g.hand++;
-  g.dealer = (g.dealer + 1) % g.players.length;
+  g.dealer = seatedRing(g)[0].id;
+  assignPositions(g);
   g.board = [];
   g.practiceBoard = null;
   g.deck = shuffle(deckOfCards());
@@ -344,13 +385,15 @@ export function startHand(g) {
   for (const p of g.players) {
     if (p.id) decayBotMood(p.botMood);
     p.botHand = { vpip: false, pfr: false, pressureRecorded: false };
-    if (p.stack === 0) {
-      p.stack = g.stakes.startingStack;
-      if (p.id === 0) g.stats.buyin += g.stakes.startingStack;
-      log(g, `${p.name} 补充 ${compactChips(g.stakes.startingStack)} 虚拟筹码`, p.id, 'info');
-    }
+    if (p.id === 0 && g.refilled)
+      log(
+        g,
+        `${p.name} 补充 ${compactChips(g.stakes.startingStack)} 虚拟筹码 · 第 ${g.rebuys} 次补码`,
+        p.id,
+        'info',
+      );
     p.hole = [];
-    p.folded = false;
+    p.folded = !!p.out;
     p.allin = false;
     p.bet = 0;
     p.total = 0;
@@ -359,11 +402,11 @@ export function startHand(g) {
     p.action = '';
     p.lastAction = null;
   }
-  for (let round = 0; round < 2; round++)
-    for (let i = 1; i <= g.players.length; i++)
-      g.players[(g.dealer + i) % g.players.length].hole.push(g.deck.pop());
-  const sb = (g.dealer + 1) % g.players.length,
-    bb = (g.dealer + 2) % g.players.length;
+  g.refilled = false;
+  const ring = seatedRing(g);
+  for (let round = 0; round < 2; round++) for (const p of ring) p.hole.push(g.deck.pop());
+  const sb = ring.length === 2 ? g.dealer : ring[0].id,
+    bb = ring.length === 2 ? ring[0].id : ring[1].id;
   pay(g.players[sb], g.smallBlind, chipUnitOf(g));
   g.players[sb].action = `小盲 ${g.players[sb].bet}`;
   rememberAction(g, g.players[sb]);
@@ -477,10 +520,10 @@ export function act(g, id, action, amount) {
       .find((a) => a.street === g.street && a.action === 'raise');
     if (normalized === 'fold' && facing && !p.botHand.pressureRecorded) {
       p.botHand.pressureRecorded = true;
-      const event = recordPressureFold(p.botMood, facing.id, g.emotionMode);
+      const event = recordPressureFold(p.botMood, facing.id, g.hand, g.emotionMode);
       if (event)
         log(g, `${p.name} 模拟状态：${MOOD_LABELS[event.kind]} · ${event.reason}`, id, 'info');
-    } else if (normalized !== 'fold' && facing) p.botMood.pressureFolds[facing.id] = 0;
+    }
   }
   if (id === 0) {
     g.decisions ||= [];
@@ -525,6 +568,7 @@ export function act(g, id, action, amount) {
         botMoodKind: o.id ? o.botMood.kind : null,
         actedTo: o.actedTo,
         checked: o.checked,
+        out: !!o.out,
       })),
       history: (g.history || []).map((a) => ({ ...a })),
     });
@@ -732,6 +776,7 @@ export function settle(g, showdown = true) {
   g.stats.hands++;
   if (won[0] > 0) g.stats.wins++;
   g.players.forEach((p) => (p.stack += payouts[p.id]));
+  eliminate(g);
   g.result =
     (pots.length > 1 ? '分池结算 · ' : '') +
     g.winners
@@ -767,15 +812,40 @@ export function settle(g, showdown = true) {
     p.botStats.hands++;
     if (p.botHand.vpip) p.botStats.vpip++;
     if (p.botHand.pfr) p.botStats.pfr++;
-    if (!p.botHand.pressureRecorded) {
-      p.botMood.pressureFolds = {};
-      p.botMood.lastPressureRaiser = null;
-    }
     const event = finishBotHand(p, payouts[p.id] - p.total, g.emotionMode, bigBlindOf(g));
     if (event)
       log(g, `${p.name} 模拟状态：${MOOD_LABELS[event.kind]} · ${event.reason}`, p.id, 'info');
   }
   return g;
+}
+// Seats that lose every chip leave the game. Seats busting in the same hand
+// are ranked by the stack they started it with; equal stacks share a place.
+// The hero leaves only after the last refill, which ends the game at once:
+// remaining bots are not simulated. Whoever is the last seat left is the
+// champion: the hero by clearing the table, a bot by taking the hero's last
+// chips along with every other remaining seat.
+function eliminate(g) {
+  const hero = g.players[0],
+    heroMayRefill = hero.stack === 0 && heroRebuysLeft(g) > 0,
+    leaving = g.players.filter((p) => !p.out && p.stack === 0 && (p.id !== 0 || !heroMayRefill));
+  if (!leaving.length) return;
+  // Busting seats end with nothing, so everything they started with is in the pots.
+  const started = (p) => p.total,
+    remaining = g.players.filter((p) => !p.out).length - leaving.length;
+  for (const p of leaving) {
+    p.out = true;
+    p.place = remaining + 1 + leaving.filter((o) => started(o) > started(p)).length;
+  }
+  for (const p of leaving.sort((a, b) => b.place - a.place))
+    log(g, `${p.name} 筹码输光，出局 · 第 ${p.place} 名`, p.id, 'result');
+  const left = g.players.filter((p) => !p.out),
+    champion = left.length === 1 ? left[0] : null;
+  if (champion) {
+    champion.place = 1;
+    log(g, `${champion.name} 获得冠军`, champion.id, 'result');
+  }
+  if (hero.out || champion)
+    g.over = { heroPlace: hero.place, championId: champion ? champion.id : null };
 }
 export function estimateEquity(hole, board, rivals = 1, trials = 35, random = Math.random) {
   const known = new Set([...hole, ...board].map((c) => c.key)),
@@ -819,7 +889,7 @@ export function botDecision(g, random = Math.random, { trials, allInCache } = {}
     street: g.street,
     position: seatPosition(g, p.id),
     actionContext: publicActionContext(g, p.id),
-    count: g.players.length,
+    count: seatedRing(g).length,
     chipUnit: chipUnitOf(g),
     bigBlind: bigBlindOf(g),
     inPosition:
@@ -887,7 +957,9 @@ export function botDecision(g, random = Math.random, { trials, allInCache } = {}
       ...allIn,
       ...view.callPrice,
     };
-    const allInTrials = trials ?? (g.difficulty === 'hard' ? (g.street === 0 ? 256 : 96) : 72);
+    const allInTrials =
+      trials ??
+      (g.street === 0 && g.difficulty !== 'easy' ? 512 : g.difficulty === 'hard' ? 96 : 72);
     view.equityTrials = allInTrials;
     const assessment = estimateAllInEquity(view, allIn, {
       deck: deckOfCards(),

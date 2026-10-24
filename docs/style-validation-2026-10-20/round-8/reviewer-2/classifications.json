@@ -1,0 +1,229 @@
+{
+  "reviewer": 2,
+  "round": 8,
+  "evaluation_type": "AI public-information strategy review; not human or UI acceptance",
+  "menu_received_after_free_review_and_fixed_200_hand_freeze": true,
+  "independent_judgments": true,
+  "one_to_one_elimination_used": false,
+  "additional_hands_played_after_menu": 0,
+  "confidence_definition": "Subjective fit to the supplied behavioral label, not a calibrated probability or a claim of strategy optimality.",
+  "classifications": {
+    "A": {
+      "label": "宽松取值",
+      "subjective_confidence": 0.9,
+      "confidence_note": "较高。两批入池频率及跟入与加注差距均明显，强成牌大尺寸证据重复出现。",
+      "evidence": [
+        {
+          "source": "static",
+          "hands": [
+            1,
+            64,
+            95
+          ],
+          "basis": "A1 72s翻牌两对后转牌2200/2500与河牌3500/6900取值。A64 T6翻牌两头顺听，转牌5成顺下注14100/12800。A95 94河牌成七高顺下注4100/3000。",
+          "hole_status": "这些手均实际摊牌；成牌时间与听牌阶段分开判断。"
+        },
+        {
+          "source": "interactive",
+          "hands": [
+            38,
+            98
+          ],
+          "basis": "A38以A3在JJ6及转牌9面对800/2500、2600/4100跟注，当时均只有A高。A98以J4较低顺接Hero转牌与河牌取值。",
+          "hole_status": "最终公开底牌，只用于说明公开可证实的牌力路径，不按输赢判断动作好坏。"
+        }
+      ],
+      "statistics": {
+        "static_vpip_pfr_percent": [
+          87,
+          20
+        ],
+        "interactive_vpip_pfr_percent": [
+          85,
+          18
+        ]
+      },
+      "limits": "并非只会跟注。A64有听牌进攻，A23未知底牌的超池线不能证明诈唬或取值；标签是总体最接近。"
+    },
+    "B": {
+      "label": "范围纪律",
+      "subjective_confidence": 0.88,
+      "confidence_note": "较高，但主要来自翻前选择，翻后样本较少。",
+      "evidence": [
+        {
+          "source": "static",
+          "hands": [
+            27,
+            98
+          ],
+          "basis": "连续100手自愿入池20手、翻前加注5手。B27对多人500加到1700再半池持续下注；B98公开K6在662面三条下注、转牌继续大尺寸、河牌跟注。",
+          "hole_status": "B27底牌未知，不能直接当作强牌。B98是真实三条。"
+        },
+        {
+          "source": "static",
+          "hands": [
+            14,
+            57
+          ],
+          "basis": "B14转牌半池下注后河牌面对下注弃牌，显示有继续选择。B57公开99在TT57转牌主动下注并接大幅加注，提示范围纪律不等于翻后绝不付钱。",
+          "hole_status": "B14未知底牌，B57公开99。"
+        }
+      ],
+      "statistics": {
+        "static_vpip_pfr_percent": [
+          20,
+          5
+        ],
+        "interactive_hands": 0
+      },
+      "limits": "未与B亲自互动，不能证明其安全强牌是否经常诱导，也不将所有翻前弃牌视为已证实正确。"
+    },
+    "C": {
+      "label": "多街施压",
+      "subjective_confidence": 0.79,
+      "confidence_note": "中等偏高。主动性和晚街扩张较明显，但许多多人底池仍全过。",
+      "evidence": [
+        {
+          "source": "static",
+          "hands": [
+            58,
+            94
+          ],
+          "basis": "C58公开Q9在A9673用九对转、河连续约半池下注。C94公开KQ在AQT翻牌一对加卡J顺听加至3700，转牌继续4600且接大再加注。",
+          "hole_status": "两手均有公开底牌。C94翻牌是非坚果成牌加听牌，不是已成顺。"
+        },
+        {
+          "source": "static",
+          "hands": [
+            37,
+            50
+          ],
+          "basis": "C37公开93在297JA跟两街后河牌下注，存在薄取值/转诈意图不确定性。C50 A7在单色AQ3顶对、转牌7两对时承受大注，河牌领打余码。",
+          "hole_status": "实际摊牌可见，但不能从输赢反推施压质量或意图。"
+        }
+      ],
+      "statistics": {
+        "static_vpip_pfr_percent": [
+          75,
+          29
+        ],
+        "interactive_hands": 0
+      },
+      "limits": "没有与C亲自互动。样本支持多街主动推进，不足以证明每次大开池或后街下注是诈唬，也不是每手都持续下注。"
+    },
+    "D": {
+      "label": "均衡",
+      "subjective_confidence": 0.62,
+      "confidence_note": "中等偏低，仅指菜单中的中等参与、常规尺度和取值/控池并存，不是博弈均衡认证。",
+      "evidence": [
+        {
+          "source": "static",
+          "hands": [
+            54,
+            92
+          ],
+          "basis": "D54 AK在K9374翻、转半池取值后河牌过牌。D92 QT在J857Q河牌命中顶对后半池取值。",
+          "hole_status": "均实际公开底牌。"
+        },
+        {
+          "source": "interactive",
+          "hands": [
+            118,
+            134,
+            184,
+            196
+          ],
+          "basis": "118 AT在转牌A后下注并河牌继续。134 AK在A65-Q-3四人池三街控池。184 44在K84翻牌对下注和跟注大加注。196 98方块转牌以真实同花听牌下注，河牌8成对后约半池下注。",
+          "hole_status": "均在最终公开底牌后核对成牌时间。196不能写成转牌已有八对。"
+        }
+      ],
+      "statistics": {
+        "static_vpip_pfr_percent": [
+          58,
+          20
+        ],
+        "interactive_vpip_pfr_percent": [
+          48,
+          16
+        ]
+      },
+      "limits": "D140 CO开82o和D176 AQ高面对492-J-J两街跟注，使范围一致性和防守纪律并不清晰。D实际仅13手与Hero共同翻牌、仅2次面对Hero翻后下注，宽松取值也是可考虑的替代解释，未按其他代码标签排除。"
+    }
+  },
+  "global_scores": {
+    "style_identifiability": {
+      "score": 3,
+      "scale_min": 1,
+      "scale_max": 5,
+      "basis": "连续样本的入池选择能辨出较清楚差别，B最清楚，A宽入池和C较多主动线也可识别。但A/D很多具体单手和长串过牌相同，D标签把握仅中等偏低，不能在未知单手里稳定辨认。"
+    },
+    "natural_continuous_strategy_interaction_experience": {
+      "score": 3,
+      "scale_min": 1,
+      "scale_max": 5,
+      "basis": "存在按价格防守、半诈唬、薄取值与抓诈等可响应决策。A提供38手共同翻牌及20次面对Hero翻后下注，D仅13手与2次，连续样本中许多多人底池反复全过，部分高牌大跟注使策略来回显得不够连贯。评价是AI策略体验，不是真人感受或UI验收。"
+    }
+  },
+  "evidence_scope": {
+    "static_observation": {
+      "A": 100,
+      "B": 100,
+      "C": 100,
+      "D": 100
+    },
+    "interactive_completed": {
+      "A": 100,
+      "D": 100
+    },
+    "interactive_global_hand_numbers": {
+      "A": [
+        1,
+        100
+      ],
+      "D": [
+        101,
+        200
+      ]
+    },
+    "shared_flops": {
+      "A": 38,
+      "D": 13
+    },
+    "shared_flops_excluding_preflop_allin_runout": {
+      "A": 37,
+      "D": 13
+    },
+    "observer_only_target_flops": {
+      "A": 36,
+      "D": 22
+    },
+    "hero_faces_target_postflop": {
+      "A": {
+        "decisions": 4,
+        "hands": 4
+      },
+      "D": {
+        "decisions": 4,
+        "hands": 3
+      }
+    },
+    "target_faces_hero_postflop": {
+      "A": {
+        "decisions": 20,
+        "hands": 17
+      },
+      "D": {
+        "decisions": 2,
+        "hands": 2
+      }
+    }
+  },
+  "limitations": [
+    "Different deals and unequal encounter opportunities; Hero actions also differ.",
+    "B/C have static observation only.",
+    "Unknown folded opponent hole cards remain unknown.",
+    "No person mapping, project source, service internals, other reviewers or earlier rounds read.",
+    "Classification files are additions only; original frozen feedback remains unchanged."
+  ],
+  "terminology_note": "A38 与 D176 的高牌指底牌未组成对子、仅公共配对牌加高牌踢脚：A38 翻牌/转牌是公共J对加A踢脚，D176河牌是公共J对加AQ踢脚，并非忽略公共对子。"
+}

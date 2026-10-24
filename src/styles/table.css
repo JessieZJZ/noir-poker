@@ -311,34 +311,32 @@
   padding: 4px 0 12px;
   font-size: 13px;
 }
-.practice-info {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-.practice-info > span {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  white-space: nowrap;
-}
-.practice-info .live-dot {
-  flex: none;
-  margin: 0;
+.main > .site-footer:empty {
+  display: none;
 }
 .main > .site-footer button {
   font-size: 14px;
   line-height: 1.5;
 }
-.site-footer #reset-button {
+.session-card .section-title {
+  gap: 12px;
+}
+.session-card .section-title h2 {
+  min-width: 0;
+}
+.practice-reset {
+  flex: none;
+  max-width: 62%;
+  min-height: 32px;
   padding: 5px 10px;
   border: 1px solid #354750;
   border-radius: 6px;
   background: #18252d;
   color: #bfd3d9;
-  white-space: nowrap;
+  font-size: 12px;
+  line-height: 1.5;
 }
-.site-footer #reset-button:hover {
+.practice-reset:hover {
   border-color: #6ba18f;
   color: #c0f4df;
 }

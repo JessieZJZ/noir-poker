@@ -49,15 +49,15 @@ export function createOpponentReview({ card, onSelection = () => {} }) {
           r.id,
           {
             name: r.name,
-            profile: r.trace.profileName,
-            named: !!getBotProfile(r.trace.profile).research,
+            profile: getBotProfile(r.trace.profile).short,
+            named: getBotProfile(r.trace.profile).id !== 'balanced',
           },
         ]),
       ).entries(),
     ];
     setLocalizedHTML(
       panel,
-      `<div class="review-opponent-heading"><label>查看对手<select id="review-opponent-filter"><option value="all">全部对手</option>${players.map(([id, player]) => `<option value="${id}">${esc(player.name)}${player.named && player.profile ? `，${esc(reviewPlayerLabel(player.profile))}` : ''}</option>`).join('')}</select></label></div><div class="review-layout"><nav aria-label="对手决策时间线"><div class="review-timeline-title"><strong>对手的实际行动</strong><span>${visible.length} 次</span></div><div class="review-timeline">${visible.map((r, i) => `<button class="review-step ${i === selected ? 'selected' : ''}" data-opponent-index="${i}" aria-current="${i === selected ? 'step' : 'false'}"><span class="review-step-number">${i + 1}</span><span><small>${esc(r.name)}，${STREET_NAMES[r.trace.view.street]}</small><strong>${actionLabel(step(r))}</strong></span><span class="review-status pending">${esc(reviewPlayerLabel(r.trace.profileName))}</span></button>`).join('')}</div></nav><div id="review-opponent-detail"></div></div>`,
+      `<div class="review-opponent-heading"><label>查看对手<select id="review-opponent-filter"><option value="all">全部对手</option>${players.map(([id, player]) => `<option value="${id}">${esc(player.name)}${player.named && player.profile ? `，${esc(reviewPlayerLabel(player.profile))}` : ''}</option>`).join('')}</select></label></div><div class="review-layout"><nav aria-label="对手决策时间线"><div class="review-timeline-title"><strong>对手的实际行动</strong><span>${visible.length} 次</span></div><div class="review-timeline">${visible.map((r, i) => `<button class="review-step ${i === selected ? 'selected' : ''}" data-opponent-index="${i}" aria-current="${i === selected ? 'step' : 'false'}"><span class="review-step-number">${i + 1}</span><span><small>${esc(r.name)}，${STREET_NAMES[r.trace.view.street]}</small><strong>${actionLabel(step(r))}</strong></span></button>`).join('')}</div></nav><div id="review-opponent-detail"></div></div>`,
     );
     panel
       .querySelector('.review-layout')

@@ -69,7 +69,9 @@ test('real all-in bot calls and tight 4-bet folds replay the actual public actio
     if (kind === 'flop-qq') {
       await expect(opponent.locator('.review-explanation')).toContainText(/超对 Q/);
       await expect(opponent.locator('.review-explanation')).toContainText('10.15K');
-      await expect(opponent.locator('.review-explanation')).toContainText(/只能等发牌|只能等待/);
+      // After an all-in call the bot only sees the rest of the board.
+      await expect(opponent.locator('.review-explanation')).toContainText('之后不再参与下注决策');
+      await expect(opponent.locator('.review-explanation')).toContainText('无需再支付筹码');
       await expect(opponent.locator('.review-explanation')).not.toContainText('9♦ 8♣');
     } else if (kind === 'multi-qq') {
       await expect(opponent.locator('.review-explanation')).toContainText('弃牌');
@@ -84,7 +86,7 @@ test('real all-in bot calls and tight 4-bet folds replay the actual public actio
       );
       await expect(opponent.locator('.review-explanation')).toContainText('10K');
       await expect(opponent.locator('.review-explanation')).not.toContainText('赔率支持继续追');
-      await expect(opponent.locator('.review-explanation')).toContainText(/只能等发牌或摊牌/);
+      await expect(opponent.locator('.review-explanation')).toContainText('之后不再参与下注决策');
     } else {
       await expect(opponent.locator('.review-explanation')).toContainText('同花听牌');
       await expect(opponent.locator('.review-explanation')).toContainText('弃牌');
@@ -107,4 +109,32 @@ test('real all-in bot calls and tight 4-bet folds replay the actual public actio
       .getByRole('button', { name: '关闭复盘', exact: true })
       .click();
   }
+});
+
+test('a real AA preflop value shove replays its full investment without exposing the opener cards', async ({
+  page,
+}, info) => {
+  const game = reviewedAllInGame('deep-value-jam');
+  const record = game.botDecisions[0];
+  expect(record.action).toBe('raise');
+  expect(record.amount).toBe(5000);
+  expect(record.trace.basis.shove).toBe(true);
+  expect(game.players.reduce((sum, p) => sum + p.stack, 0)).toBe(30000);
+  await page.goto('/');
+  await page.waitForFunction(() => window.qa);
+  await page.evaluate((snapshot) => window.qa.loadRecordedGame(snapshot), game);
+  await page.locator('#review-hand-button').click();
+  await page.locator('#review-opponents-tab').click();
+  const detail = page.locator('#review-opponent-detail .review-explanation');
+  await expect(detail).toContainText('A♠ A♥');
+  await expect(detail).toContainText('4.85K');
+  await expect(detail).toContainText(/主动|加注/);
+  await expect(detail).not.toContainText(/9♦ 8♣|抽样|模拟器|EV|全下者已不能/);
+  await mkdir('.artifacts/preflop-pressure-2026-10-24/web', { recursive: true });
+  const screenshot = path.resolve(
+    '.artifacts/preflop-pressure-2026-10-24/web',
+    `${info.project.name}-aa-value-jam.png`,
+  );
+  await page.screenshot({ path: screenshot });
+  await info.attach('aa-preflop-value-jam', { path: screenshot, contentType: 'image/png' });
 });

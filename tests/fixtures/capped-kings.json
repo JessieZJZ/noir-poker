@@ -1,0 +1,251 @@
+{
+  "index": 1,
+  "hand": 1,
+  "street": 0,
+  "position": "CO",
+  "hole": [
+    {
+      "rank": 13,
+      "suit": 0,
+      "symbol": "♠",
+      "key": "0-13"
+    },
+    {
+      "rank": 13,
+      "suit": 1,
+      "symbol": "♥",
+      "key": "1-13"
+    }
+  ],
+  "board": [],
+  "stack": 17500,
+  "bet": 2500,
+  "total": 2500,
+  "pot": 16600,
+  "currentBet": 11200,
+  "minRaise": 8700,
+  "chipUnit": 100,
+  "smallBlind": 100,
+  "bigBlind": 200,
+  "dealer": 1,
+  "emotionMode": "off",
+  "difficulty": "normal",
+  "legal": {
+    "enabled": true,
+    "chipUnit": 100,
+    "toCall": 8700,
+    "callAmount": 8700,
+    "canCheck": false,
+    "raiseReopened": true,
+    "canRaise": true,
+    "minRaiseTo": 19900,
+    "fullRaiseTo": 19900,
+    "maxRaiseTo": 20000,
+    "isShortAllin": false
+  },
+  "pending": [0, 2],
+  "actionContext": {
+    "roundOrderIds": [6, 0, 2],
+    "pendingResponseIds": [2],
+    "unactedBehindIds": [],
+    "priorActedResponseIds": [2],
+    "liveShowdownIds": [2, 6],
+    "enteredIds": [2, 6],
+    "pendingResponseCount": 1,
+    "unactedBehindCount": 0,
+    "priorActedResponseCount": 1
+  },
+  "action": "fold",
+  "amount": 0,
+  "players": [
+    {
+      "id": 0,
+      "name": "你",
+      "position": "CO",
+      "stack": 17500,
+      "bet": 2500,
+      "total": 2500,
+      "folded": false,
+      "allin": false,
+      "action": "3-bet 加注至 2500",
+      "botProfile": null,
+      "publicAxes": null,
+      "botMoodKind": null,
+      "actedTo": 2500,
+      "checked": false
+    },
+    {
+      "id": 1,
+      "name": "Mia",
+      "position": "BTN",
+      "stack": 20000,
+      "bet": 0,
+      "total": 0,
+      "folded": true,
+      "allin": false,
+      "action": "弃牌",
+      "botProfile": "peter",
+      "publicAxes": [92, 88, 72, 84, 18],
+      "botMoodKind": "steady",
+      "actedTo": null,
+      "checked": false
+    },
+    {
+      "id": 2,
+      "name": "Alex",
+      "position": "SB",
+      "stack": 17500,
+      "bet": 2500,
+      "total": 2500,
+      "folded": false,
+      "allin": false,
+      "action": "跟注 2400",
+      "botProfile": "abao",
+      "publicAxes": [55, 82, 72, 50, 34],
+      "botMoodKind": "steady",
+      "actedTo": 2500,
+      "checked": false
+    },
+    {
+      "id": 3,
+      "name": "River",
+      "position": "BB",
+      "stack": 19800,
+      "bet": 200,
+      "total": 200,
+      "folded": true,
+      "allin": false,
+      "action": "弃牌",
+      "botProfile": "viktor",
+      "publicAxes": [90, 94, 88, 70, 18],
+      "botMoodKind": "steady",
+      "actedTo": null,
+      "checked": false
+    },
+    {
+      "id": 4,
+      "name": "Kai",
+      "position": "UTG",
+      "stack": 19800,
+      "bet": 200,
+      "total": 200,
+      "folded": true,
+      "allin": false,
+      "action": "弃牌",
+      "botProfile": "jungleman",
+      "publicAxes": [65, 82, 66, 64, 72],
+      "botMoodKind": "steady",
+      "actedTo": 200,
+      "checked": false
+    },
+    {
+      "id": 5,
+      "name": "Luna",
+      "position": "LJ",
+      "stack": 20000,
+      "bet": 0,
+      "total": 0,
+      "folded": true,
+      "allin": false,
+      "action": "弃牌",
+      "botProfile": "dwan",
+      "publicAxes": [85, 90, 85, 75, 55],
+      "botMoodKind": "steady",
+      "actedTo": null,
+      "checked": false
+    },
+    {
+      "id": 6,
+      "name": "Theo",
+      "position": "HJ",
+      "stack": 8800,
+      "bet": 11200,
+      "total": 11200,
+      "folded": false,
+      "allin": false,
+      "action": "4-bet 加注至 11200",
+      "botProfile": "tan",
+      "publicAxes": [85, 90, 82, 70, 25],
+      "botMoodKind": "steady",
+      "actedTo": 11200,
+      "checked": false
+    }
+  ],
+  "history": [
+    {
+      "street": 0,
+      "chipUnit": 100,
+      "bigBlind": 200,
+      "id": 4,
+      "action": "call",
+      "amount": 200
+    },
+    {
+      "street": 0,
+      "chipUnit": 100,
+      "bigBlind": 200,
+      "id": 5,
+      "action": "fold",
+      "amount": 0
+    },
+    {
+      "street": 0,
+      "chipUnit": 100,
+      "bigBlind": 200,
+      "id": 6,
+      "action": "raise",
+      "amount": 800,
+      "betLabel": "2-bet 开池至"
+    },
+    {
+      "street": 0,
+      "chipUnit": 100,
+      "bigBlind": 200,
+      "id": 0,
+      "action": "raise",
+      "amount": 2500,
+      "betLabel": "3-bet 加注至"
+    },
+    {
+      "street": 0,
+      "chipUnit": 100,
+      "bigBlind": 200,
+      "id": 1,
+      "action": "fold",
+      "amount": 0
+    },
+    {
+      "street": 0,
+      "chipUnit": 100,
+      "bigBlind": 200,
+      "id": 2,
+      "action": "call",
+      "amount": 2400
+    },
+    {
+      "street": 0,
+      "chipUnit": 100,
+      "bigBlind": 200,
+      "id": 3,
+      "action": "fold",
+      "amount": 0
+    },
+    {
+      "street": 0,
+      "chipUnit": 100,
+      "bigBlind": 200,
+      "id": 4,
+      "action": "fold",
+      "amount": 0
+    },
+    {
+      "street": 0,
+      "chipUnit": 100,
+      "bigBlind": 200,
+      "id": 6,
+      "action": "raise",
+      "amount": 11200,
+      "betLabel": "4-bet 加注至"
+    }
+  ]
+}

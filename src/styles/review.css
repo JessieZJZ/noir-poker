@@ -519,6 +519,8 @@
     padding: 20px 18px;
     max-height: 92dvh;
     width: calc(100% - 20px);
+    /* The modal dialog's default max-width would cap it 18px narrower. */
+    max-width: none;
     border-radius: 14px;
   }
   .review-title-row {

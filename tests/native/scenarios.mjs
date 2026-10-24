@@ -10,9 +10,18 @@ import { withCenteredNativeClicks } from './position-target.mjs';
 import { withPreservedForegroundPage } from './foreground-page.mjs';
 import { watchNativeMusicLoop } from './music-loop-probe.mjs';
 import { pressSelectedAndroidHome } from './immediate-background.mjs';
+import { readActionNoticeSpacing } from '../fixtures/action-notice-spacing.js';
 import { BOT_THINK_LIMITS } from '../../src/engine/bot-timing.js';
 import { readReviewTagGeometry } from '../fixtures/review-tag-geometry.js';
-const documentLoginMarker = (text) => /sign in|log in|登录账号/i.test(text);
+async function enterNativeTable(app) {
+  if ((await app.state()).phase !== 'idle') return;
+  await app.click('#join-table-button');
+  await app.waitFor(
+    async () => (await app.state()).entryState === 'playing',
+    10000,
+    'The entry deal must finish before play',
+  );
+}
 
 async function waitForNativeGuidePaint(app) {
   // DOM geometry can precede UIKit's composited dialog and scroll frame.
@@ -34,6 +43,7 @@ async function waitForNativeGuidePaint(app) {
 
 export async function waitForNativeHeroTurn(app, { now = Date.now, advanceSettled = false } = {}) {
   const started = now();
+  await enterNativeTable(app);
   const { playerCount } = await app.state();
   // An eight-player reset can have seven sequential, genuine bot pauses.
   // Budget those configured pauses rather than assuming one 20-second turn.
@@ -259,6 +269,7 @@ export async function nativeScenarios(app) {
     }
     const started = Date.now();
     try {
+      if (name !== 'entry-waiting-music-and-first-deal') await enterNativeTable(app);
       const evidence = await run();
       await app.screenshot(name);
       const entry = { name, status: 'passed', elapsedMs: Date.now() - started, evidence };
@@ -273,10 +284,281 @@ export async function nativeScenarios(app) {
         error: error.stack || String(error),
         ...(error.reviewDiagnostics ? { reviewDiagnostics: error.reviewDiagnostics } : {}),
         ...(error.turnDiagnostics ? { turnDiagnostics: error.turnDiagnostics } : {}),
+        ...(error.tooltipDiagnostics ? { tooltipDiagnostics: error.tooltipDiagnostics } : {}),
       });
       throw error;
     }
   };
+  await check('entry-waiting-music-and-first-deal', async () => {
+    const before = await app.state();
+    assert.equal(before.phase, 'idle');
+    assert.equal(before.entryState, 'waiting');
+    assert.equal(before.pot, 0);
+    assert.equal(before.hole.length, 0);
+    assert.ok(before.players.every((player) => player.bet === 0));
+    const music = await app.waitFor(
+      () =>
+        app.evaluate(() => {
+          const audio = document.querySelector('audio[data-background-music]');
+          return audio &&
+            !audio.paused &&
+            audio.currentTime > 0.1 &&
+            Number(audio.dataset.musicGain) === 1
+            ? {
+                time: audio.currentTime,
+                gain: Number(audio.dataset.musicGain),
+                source: audio.currentSrc,
+                count: document.querySelectorAll('audio[data-background-music]').length,
+              }
+            : null;
+        }),
+      15000,
+      'Music must already play before the first native touch',
+    );
+    await app.evaluate(() => {
+      const audio = document.querySelector('audio[data-background-music]');
+      window.__entryMusicAudio = audio;
+      window.__entryMusicTimes = [audio.currentTime];
+      window.__entryMusicObserve = () => window.__entryMusicTimes.push(audio.currentTime);
+      audio.addEventListener('timeupdate', window.__entryMusicObserve);
+    });
+    const progress = () =>
+      app.evaluate(() => {
+        const audio = document.querySelector('audio[data-background-music]');
+        const samples = window.__entryMusicTimes;
+        return {
+          time: audio.currentTime,
+          count: document.querySelectorAll('audio[data-background-music]').length,
+          samePlayer: audio === window.__entryMusicAudio,
+          naturalLoop: samples.some(
+            (time, index) => index > 0 && samples[index - 1] > audio.duration - 0.6 && time < 0.6,
+          ),
+        };
+      });
+    await app.sleep(300);
+    const later = await progress();
+    assert.ok(later.time > music.time || later.naturalLoop);
+    assert.equal(later.samePlayer, true);
+    assert.deepEqual(await app.state(), before, 'Waiting must not start a hand or move chips');
+    const chrome = await app.evaluate(() => {
+      const settings = document.querySelector('#opponents-button'),
+        menu = document.querySelector('#rules-button');
+      const a = getComputedStyle(settings),
+        b = getComputedStyle(menu);
+      return {
+        font: a.fontSize,
+        menuFont: b.fontSize,
+        weight: a.fontWeight,
+        menuWeight: b.fontWeight,
+        border: a.borderWidth,
+        settingsOnRight:
+          menu.getBoundingClientRect().right <= settings.getBoundingClientRect().left,
+        // Waiting, the header keeps the message and the game info card the blinds.
+        blindsAtTop:
+          document.querySelector('.surface-top .hand-label').getBoundingClientRect().bottom <=
+          document.querySelector('#info-blinds').getBoundingClientRect().top,
+        heroGap:
+          document.querySelector('#hero-stack').getBoundingClientRect().left -
+          document.querySelector('.hero-identity strong').getBoundingClientRect().right,
+        dock: document.querySelector('.action-dock-slot').getBoundingClientRect().height,
+        activityHidden: document.querySelector('.activity-card').hidden,
+        entryCopy: document.querySelector('#entry-welcome').textContent.trim(),
+      };
+    });
+    assert.equal(chrome.font, chrome.menuFont);
+    assert.equal(chrome.weight, chrome.menuWeight);
+    assert.equal(chrome.border, '0px');
+    assert.equal(chrome.settingsOnRight, true);
+    assert.equal(chrome.blindsAtTop, true);
+    assert.ok(chrome.heroGap >= 0 && chrome.heroGap <= 7);
+    assert.equal(chrome.dock, 0);
+    assert.equal(chrome.activityHidden, true);
+    assert.ok(!chrome.entryCopy.includes('第一手'));
+    await app.screenshot('waiting-before-first-touch');
+    await app.click('#join-table-button');
+    const during = await app.state();
+    assert.equal(during.hand, before.hand + 1);
+    assert.equal(during.hole.length, 2);
+    assert.equal(
+      during.players.reduce((sum, player) => sum + player.stack, 0) + during.pot,
+      before.players.reduce((sum, player) => sum + player.stack, 0),
+    );
+    await app.waitFor(
+      async () => (await app.state()).entryState === 'playing',
+      10000,
+      'Visible entry deal must finish',
+    );
+    assert.equal((await app.state()).hand, during.hand);
+    const continued = await progress();
+    assert.ok(continued.time > music.time || continued.naturalLoop);
+    assert.equal(continued.samePlayer, true);
+    assert.equal(continued.count, 1);
+    await app.evaluate(() => {
+      window.__entryMusicAudio.removeEventListener('timeupdate', window.__entryMusicObserve);
+      delete window.__entryMusicAudio;
+      delete window.__entryMusicObserve;
+      delete window.__entryMusicTimes;
+    });
+    await app.evaluate(() => {
+      window.__entryMusicLifecycle = [];
+      window.__entryMusicListener = ({ detail }) => {
+        const audio = document.querySelector('audio[data-background-music]');
+        window.__entryMusicLifecycle.push({
+          active: detail.active,
+          paused: audio.paused,
+          time: audio.currentTime,
+          gain: Number(audio.dataset.musicGain),
+        });
+      };
+      document.addEventListener('noir:app-state', window.__entryMusicListener);
+    });
+    await app.background();
+    // As in the music check, stay out long enough for the pause to reach the
+    // page; a slower Android emulator can resume before a shorter stay is seen.
+    await app.sleep(1500);
+    assert.ok([2, 3].includes(await app.nativeState()));
+    await app.activate();
+    // The foreground event can arrive after the native resume returns.
+    try {
+      await app.waitFor(
+        () =>
+          app.evaluate(() => {
+            const events = window.__entryMusicLifecycle,
+              hidden = events.findIndex((event) => !event.active);
+            return hidden >= 0 && events.slice(hidden + 1).some((event) => event.active);
+          }),
+        10000,
+        'Both actual native lifecycle boundaries must arrive',
+      );
+    } catch (error) {
+      const seen = await app.evaluate(() => window.__entryMusicLifecycle);
+      throw Error(`${error.message}; received ${JSON.stringify(seen)}`);
+    }
+    const events = await app.evaluate(() => {
+      document.removeEventListener('noir:app-state', window.__entryMusicListener);
+      return window.__entryMusicLifecycle;
+    });
+    const hiddenIndex = events.findIndex((event) => !event.active);
+    const paused = events[hiddenIndex];
+    const foreground = events.slice(hiddenIndex + 1).find((event) => event.active);
+    assert.ok(paused && foreground, 'Both actual native lifecycle boundaries must arrive');
+    assert.equal(paused.paused, true);
+    assert.equal(paused.gain, 0);
+    assert.ok(foreground.time >= paused.time);
+    assert.ok(foreground.time - paused.time < 0.8);
+    const resumed = await app.waitFor(
+      () =>
+        app.evaluate(() => {
+          const audio = document.querySelector('audio[data-background-music]');
+          return !audio.paused && Number(audio.dataset.musicGain) === 1
+            ? { time: audio.currentTime }
+            : null;
+        }),
+      10000,
+      'Foreground music must resume',
+    );
+    assert.ok(resumed.time >= paused.time);
+    return {
+      before,
+      musicBeforeFirstTouch: music,
+      chrome,
+      during,
+      continued,
+      paused,
+      foreground,
+      resumed,
+    };
+  });
+  await check('entry-high-stakes-layout', async () => {
+    const originalStakes = (await app.state()).stakes;
+    await app.relaunch();
+    try {
+      await app.evaluate(() => window.noir.requestSmallBlind('10000'));
+      await app.relaunch();
+      const layout = await app.evaluate(() => {
+        const box = (s) => document.querySelector(s).getBoundingClientRect();
+        // Waiting, the game info card replaces the practice card below the table.
+        const hand = box('.surface-top .hand-label'),
+          blinds = box('#info-blinds'),
+          surface = box('.game-surface'),
+          practice = box('.game-info');
+        return {
+          waiting: document.querySelector('.game-surface').dataset.entryState,
+          blinds: document.querySelector('#info-blinds').textContent,
+          stack: document.querySelector('#hero-stack').textContent,
+          sameTop: hand.bottom <= blinds.top,
+          noOverlap: hand.right <= surface.right && blinds.right <= practice.right,
+          gap: box('#hero-stack').left - box('.hero-identity strong').right,
+          followsTable: practice.top >= surface.bottom && practice.top - surface.bottom <= 20,
+        };
+      });
+      assert.equal(layout.waiting, 'waiting');
+      assert.equal(layout.blinds, '10K / 20K');
+      assert.equal(layout.stack, '2M');
+      assert.equal(layout.sameTop, true);
+      assert.equal(layout.noOverlap, true);
+      assert.ok(layout.gap >= 0 && layout.gap <= 7);
+      assert.equal(layout.followsTable, true);
+      await app.screenshot('waiting-high-stakes-layout');
+      return layout;
+    } finally {
+      // This scenario changes a persisted setting. Later scenarios still
+      // verify the clean install's original stakes and denomination.
+      await app.evaluate(
+        (smallBlind) => window.noir.requestSmallBlind(String(smallBlind)),
+        originalStakes.smallBlind,
+      );
+      await app.relaunch();
+      assert.deepEqual((await app.state()).stakes, originalStakes);
+    }
+  });
+  await check('practice-reset-in-card-heading', async () => {
+    await app.evaluate(() =>
+      document.querySelector('.session-card').scrollIntoView({ block: 'center' }),
+    );
+    const layout = await app.evaluate(() => {
+      const card = document.querySelector('.session-card'),
+        title = card.querySelector('h2').getBoundingClientRect(),
+        reset = document.querySelector('#reset-button'),
+        rect = reset.getBoundingClientRect();
+      return {
+        inHeading: card.querySelector('.section-title').contains(reset),
+        aligned: Math.abs((rect.top + rect.bottom - title.top - title.bottom) / 2) < 1,
+        rightOfTitle: rect.left >= title.right + 8,
+        fits: rect.right <= card.getBoundingClientRect().right,
+        height: rect.height,
+        oldFooter: Boolean(document.querySelector('.practice-info')),
+      };
+    });
+    assert.deepEqual(layout, {
+      inHeading: true,
+      aligned: true,
+      rightOfTitle: true,
+      fits: true,
+      height: 32,
+      oldFooter: false,
+    });
+    const before = await app.state();
+    await app.click('#reset-button');
+    assert.equal(await app.evaluate(() => document.querySelector('#reset-dialog').open), true);
+    await app.screenshot('practice-reset-confirmation');
+    await app.click('#reset-dialog .dialog-actions .close-dialog');
+    assert.equal((await app.state()).hand, before.hand);
+    await app.click('#reset-button');
+    await app.click('#confirm-reset');
+    await app.waitFor(
+      async () => (await app.state()).hand === 1,
+      15000,
+      'Practice reset must start a fresh first hand',
+    );
+    assert.equal(await app.evaluate(() => document.querySelector('#stat-hands').textContent), '0');
+    await app.waitFor(
+      () => app.evaluate(() => !document.querySelector('#reset-dialog').open),
+      5000,
+      'The reset confirmation must close',
+    );
+    return { layout, cancelPreservesHand: true, confirmedResetHands: 0 };
+  });
   await check('local-launch-and-no-login', async () => {
     const fonts = await app.waitFor(
       () =>
@@ -290,7 +572,16 @@ export async function nativeScenarios(app) {
       5000,
       'Installed WebView must load the shared local UI fonts',
     );
-    if (app.comparePage)
+    if (app.comparePage) {
+      // Compare the first screen. An earlier scenario may leave the page
+      // scrolled, and a GPU-less CI simulator presents the next frame late.
+      await app.evaluate(() => window.scrollTo(0, 0));
+      await app.waitFor(
+        () => app.evaluate(() => scrollY === 0 && !document.querySelector('dialog[open]')),
+        5000,
+        'The table must be at the top with no dialog open',
+      );
+      await app.sleep(1500);
       await app.comparePage('table', [
         '.header',
         '.surface-top',
@@ -298,13 +589,15 @@ export async function nativeScenarios(app) {
         '#bet-slider',
         '.action-buttons',
       ]);
+    }
     const layout = await app.evaluate(readTableLayout);
     assertTableLayout(layout);
     const info = await app.evaluate(() => ({
       href: location.href,
       native: document.documentElement.classList.contains('native-app'),
       fixtures: typeof window.qa,
-      footer: document.querySelector('.practice-info')?.textContent,
+      footerIntro: Boolean(document.querySelector('.practice-info')),
+      login: Boolean(document.querySelector('input[type=password], input[autocomplete=username]')),
       state: window.noir?.getState(),
       startup: {
         ready: document.documentElement.dataset.appReady === 'true',
@@ -328,7 +621,8 @@ export async function nativeScenarios(app) {
       /^(capacitor|https?):\/\/localhost(?:\/|$)/.test(info.href),
       'App must load bundled local code',
     );
-    assert.ok(info.footer && !documentLoginMarker(info.footer));
+    assert.equal(info.footerIntro, false);
+    assert.equal(info.login, false);
     assert.equal(info.state.playerCount, 5, 'A clean install starts with five players');
     assert.deepEqual(info.startup, {
       ready: true,
@@ -652,15 +946,7 @@ export async function nativeScenarios(app) {
         };
         const card = document.querySelector('#hero-cards .playing-card');
         const border = getComputedStyle(card, '::before');
-        const dock = document.querySelector('.action-dock').getBoundingClientRect();
-        const notice = document.querySelector('.decision-copy').getBoundingClientRect();
-        const rankings = document.querySelector('#hand-rankings-button').getBoundingClientRect();
-        const slider = document.querySelector('#bet-slider').getBoundingClientRect();
         return {
-          noticeSpacing: {
-            topGap: Math.min(notice.top, rankings.top) - dock.top,
-            sliderGap: slider.top - Math.max(notice.bottom, rankings.bottom),
-          },
           phase: document.querySelector('.action-dock').dataset.turnPhase,
           hero: document.querySelector('.hero-cards-wrap').dataset.turnPhase,
           prompt: document.querySelector('#turn-prompt').textContent.trim(),
@@ -696,10 +982,13 @@ export async function nativeScenarios(app) {
       5000,
       'Entry must settle into a steady turn state',
     );
-    // Fractional Android display densities quantize the 24px button by less
-    // than one CSS pixel; compare the resulting clearance at pixel precision.
-    assert.ok(Math.round(before.noticeSpacing.topGap) >= 10, JSON.stringify(before.noticeSpacing));
-    assert.ok(before.noticeSpacing.sliderGap >= 4, JSON.stringify(before.noticeSpacing));
+    before.noticeSpacing = await app.evaluate(readActionNoticeSpacing);
+    assert.ok(before.noticeSpacing.topGap >= 4, JSON.stringify(before.noticeSpacing));
+    assert.ok(before.noticeSpacing.controlGap >= 4, JSON.stringify(before.noticeSpacing));
+    assert.ok(
+      Math.abs(before.noticeSpacing.topGap - before.noticeSpacing.controlGap) <= 1,
+      JSON.stringify(before.noticeSpacing),
+    );
     assert.equal(before.hero, 'waiting');
     assert.equal(before.promptVisible, true);
     assert.equal(before.lineHeight, '2px');
@@ -776,6 +1065,29 @@ export async function nativeScenarios(app) {
         'Installed production UI; native background cancels attention and card/button geometry stays stable',
     };
   });
+  await check('table-hint-content', async () => {
+    await waitForNativeHeroTurn(app, { advanceSettled: true });
+    // Refresh via the actual preference control, without injecting a hand or
+    // exposing any private state in the installed production application.
+    const observed = await app.evaluate(() => {
+      const toggle = document.querySelector('#hint-toggle');
+      if (toggle.getAttribute('aria-checked') === 'true') toggle.click();
+      toggle.click();
+      return {
+        state: window.noir.getState(),
+        text: document.querySelector('#coach-tip').textContent,
+        visible: !document.querySelector('#coach-content').hidden,
+      };
+    });
+    assert.equal(observed.visible, true);
+    assert.equal(observed.state.actor, '你');
+    assert.doesNotMatch(observed.text, /；|权益|跟注占可争夺底池/);
+    if (observed.state.legal.toCall > 0)
+      assert.match(observed.text, /跟注.*可争夺.*需要约 [\d.]+% 的胜率才能持平/);
+    else assert.match(observed.text, /可以过牌|可以加注/);
+    await app.screenshot('table-hint-content');
+    return observed;
+  });
   await check('combined-feedback-preference', async () => {
     await app.evaluate(() => {
       const nativePromise = window.Capacitor.nativePromise;
@@ -817,7 +1129,7 @@ export async function nativeScenarios(app) {
       await app.click('#opponents-button');
       assert.equal(
         await app.evaluate(() => document.querySelector('#sound-label').textContent.trim()),
-        '音效与音乐',
+        '音效',
       );
       assert.equal(
         await app.evaluate(() =>
@@ -883,6 +1195,9 @@ export async function nativeScenarios(app) {
           samples: pcm.length,
           rms: Math.sqrt(pcm.reduce((sum, value) => sum + value * value, 0) / pcm.length),
           peak: pcm.reduce((peak, value) => Math.max(peak, Math.abs(value)), 0),
+          musicGain: Number(
+            document.querySelector('audio[data-background-music]')?.dataset.musicGain,
+          ),
         });
         return window.__polishStart.apply(this, args);
       };
@@ -908,8 +1223,32 @@ export async function nativeScenarios(app) {
       assert.equal(music.loop, true);
       assert.ok(music.source.endsWith('/audio/background-music-mobile.m4a'));
       assert.ok(music.duration > 93.6 && music.duration < 93.8);
+      await app.waitFor(
+        () =>
+          app.evaluate(
+            () =>
+              Number(document.querySelector('audio[data-background-music]')?.dataset.musicGain) ===
+              1,
+          ),
+        5000,
+        'Entry music fade must finish before action volume is checked',
+      );
       await app.click('#opponents-dialog .close-dialog');
       await waitForNativeHeroTurn(app);
+      await app.evaluate(() => {
+        const audio = document.querySelector('audio[data-background-music]');
+        window.__polishCues = [];
+        window.__steadyMusic = { audio, started: audio.currentTime, samples: [] };
+        window.__steadyMusic.timer = setInterval(
+          () =>
+            window.__steadyMusic.samples.push({
+              gain: Number(audio.dataset.musicGain),
+              paused: audio.paused,
+              samePlayer: document.querySelector('audio[data-background-music]') === audio,
+            }),
+          20,
+        );
+      });
       const state = await app.state();
       if (state.legal.canRaise) await app.click('#raise-button');
       else {
@@ -923,15 +1262,30 @@ export async function nativeScenarios(app) {
       );
       assert.ok(cue.rms > 0.05 && cue.rms < 0.06);
       assert.ok(cue.peak <= 0.78);
+      assert.equal(cue.musicGain, 1, 'A real wager must not lower music volume');
+      await app.sleep(900);
+      const steady = await app.evaluate(() => {
+        const probe = window.__steadyMusic;
+        clearInterval(probe.timer);
+        return { started: probe.started, ended: probe.audio.currentTime, samples: probe.samples };
+      });
+      assert.ok(steady.samples.length >= 20);
+      assert.ok(steady.ended > steady.started);
+      assert.ok(
+        steady.samples.every((sample) => sample.gain === 1 && !sample.paused && sample.samePlayer),
+      );
       await app.screenshot('music-and-chip-stack');
       return {
         music,
         cue,
+        steady,
         scope:
           'Installed production AAC playback and real wager PCM; no synthetic deal, physical hearing not assessed',
       };
     } finally {
       await app.evaluate(() => {
+        clearInterval(window.__steadyMusic?.timer);
+        delete window.__steadyMusic;
         AudioBufferSourceNode.prototype.start = window.__polishStart;
         delete window.__polishStart;
         delete window.__polishCues;
@@ -1008,19 +1362,29 @@ export async function nativeScenarios(app) {
     await app.click('#vibration-button');
     assert.equal((await read()).paused, false);
     await app.screenshot('music-on-vibration-off');
+    // Sound effects and background music are separate switches.
     await app.click('#sound-button');
+    assert.equal((await read()).paused, false);
+    await app.click('#music-button');
     assert.equal((await read()).paused, true);
     await app.click('#opponents-dialog .close-dialog');
     await app.relaunch();
     await app.click('#opponents-button');
     const saved = await app.evaluate(() => ({
       sound: document.querySelector('#sound-button').getAttribute('aria-checked'),
+      music: document.querySelector('#music-button').getAttribute('aria-checked'),
       vibration: document.querySelector('#vibration-button').getAttribute('aria-checked'),
       musicElements: document.querySelectorAll('audio[data-background-music]').length,
     }));
-    assert.deepEqual(saved, { sound: 'false', vibration: 'false', musicElements: 0 });
+    assert.deepEqual(saved, {
+      sound: 'false',
+      music: 'false',
+      vibration: 'false',
+      musicElements: 0,
+    });
     await app.screenshot('music-and-vibration-disabled-after-restart');
     await app.click('#sound-button');
+    await app.click('#music-button');
     await app.click('#vibration-button');
     await app.click('#opponents-dialog .close-dialog');
     return {
@@ -1109,6 +1473,88 @@ export async function nativeScenarios(app) {
     assert.equal(await app.evaluate(() => document.querySelector('#rules-dialog').open), false);
     return { before, after, scope: 'Installed app guide scrolling and fixed header geometry' };
   });
+  await check('style-tag-long-press', async () => {
+    await app.waitHero();
+    const selector = '#seats .seat-style-label';
+    await app.evaluate((selector) => {
+      const label = document.querySelector(selector);
+      const events = new AbortController();
+      window.__noirTooltipEvents = [];
+      window.__noirTooltipStop = () => events.abort();
+      const record = (type, event) => {
+        if (window.__noirTooltipEvents.length >= 256) return;
+        const tip = document.querySelector('#seat-name-tooltip');
+        window.__noirTooltipEvents.push({
+          type,
+          at: performance.now(),
+          target: event?.target?.className,
+          x: event?.clientX,
+          y: event?.clientY,
+          button: event?.button,
+          connected: label.isConnected,
+          visible: tip && !tip.hidden,
+        });
+      };
+      for (const type of [
+        'pointerdown',
+        'pointerup',
+        'pointercancel',
+        'touchstart',
+        'touchend',
+        'contextmenu',
+        'scroll',
+      ])
+        document.addEventListener(type, (event) => record(type, event), {
+          capture: true,
+          signal: events.signal,
+        });
+      document.addEventListener(
+        'pointerdown',
+        () => {
+          for (const delay of [100, 400, 500, 700])
+            setTimeout(() => record(`after-${delay}`), delay);
+        },
+        { once: true, signal: events.signal },
+      );
+    }, selector);
+    const before = await app.evaluate((selector) => {
+      const label = document.querySelector(selector);
+      return {
+        text: label.getAttribute('data-full-name'),
+        hand: window.noir.getState().hand,
+      };
+    }, selector);
+    let tooltip;
+    try {
+      await app.nativeHold(selector);
+      tooltip = await app.waitFor(
+        () =>
+          app.evaluate(() => {
+            const el = document.querySelector('#seat-name-tooltip');
+            return el && !el.hidden
+              ? { text: el.textContent, selected: getSelection().toString() }
+              : null;
+          }),
+        5000,
+        'A real native touch hold must open the style name',
+      );
+    } catch (error) {
+      error.tooltipDiagnostics = await app.evaluate(() => window.__noirTooltipEvents);
+      throw error;
+    } finally {
+      await app.evaluate(() => window.__noirTooltipStop?.());
+    }
+    assert.equal(tooltip.text, before.text);
+    assert.equal(tooltip.selected, '');
+    assert.equal((await app.state()).hand, before.hand);
+    await app.screenshot('style-tag-native-hold');
+    await app.click('#arena .hero-identity');
+    assert.equal(
+      await app.evaluate(() => document.querySelector('#seat-name-tooltip').hidden),
+      true,
+    );
+    return { before, tooltip, scope: 'Installed app, real native pointer hold, no text selection' };
+  });
   await check('mixed-toggle-and-visual-guide', async () => {
     await app.click('#opponents-button');
     if (
@@ -1117,7 +1563,7 @@ export async function nativeScenarios(app) {
       )
     )
       await app.click('#mix-opponents');
-    await app.select('[data-bot-seat="1"]', 'tan');
+    await app.select('[data-bot-seat="1"]', 'rook');
     await app.select('[data-bot-seat="2"]', 'balanced');
     await app.click('#mix-opponents');
     assert.equal(
@@ -1126,12 +1572,16 @@ export async function nativeScenarios(app) {
       ),
       'true',
     );
-    await app.select('[data-bot-seat="3"]', 'ivey');
+    // A random mixed allocation can already be Owen. Make an actual changed
+    // selection so the native picker emits the user's ownership event.
+    if (await app.evaluate(() => document.querySelector('[data-bot-seat="3"]').value === 'owen'))
+      await app.select('[data-bot-seat="3"]', 'jett');
+    await app.select('[data-bot-seat="3"]', 'owen');
     await app.click('#mix-opponents');
     const assignments = await app.evaluate(() =>
       [1, 2, 3].map((id) => document.querySelector(`[data-bot-seat="${id}"]`).value),
     );
-    assert.deepEqual(assignments, ['tan', 'balanced', 'ivey']);
+    assert.deepEqual(assignments, ['rook', 'balanced', 'owen']);
     await app.click('#opponents-dialog .close-dialog');
     await app.click('#rules-button');
     await app.click('#guide-menu-item');
@@ -1140,14 +1590,25 @@ export async function nativeScenarios(app) {
       cards: document.querySelectorAll('.guide-card').length,
       positions: document.querySelector('.position-glossary').textContent,
       text: document.querySelector('#rules-dialog').textContent.replace(/\s+/g, ' '),
+      glossary: document.querySelector('#review-glossary')?.textContent,
+      glossaryEntries: document.querySelectorAll('#review-glossary .position-glossary > div')
+        .length,
     }));
     assert.equal(guide.hands, 9);
+    assert.equal(guide.glossaryEntries, 29);
+    assert.match(guide.glossary, /底池赔率／保本胜率.*全下只会结束自己的下注选择/s);
+    assert.match(guide.glossary, /主动权.*并不改变行动顺序/s);
+    assert.match(guide.glossary, /权益把获胜和平分计为底池份额/);
     assert.equal(guide.cards, 45);
     assert.ok(guide.positions.includes('HJ · Hijack') && guide.positions.includes('CO · Cutoff'));
     assert.ok(guide.text.includes('选择加注 1.2K 则补 1K'));
     assert.ok(guide.text.includes('至少要加到 1K'));
     assert.ok(!/\b(?:1200|1000)\b/.test(guide.text), 'Guide chip examples must use K');
     await app.screenshot('visual-beginner-guide');
+    await app.evaluate(() =>
+      document.querySelector('#review-glossary').scrollIntoView({ block: 'start' }),
+    );
+    await app.screenshot('review-terms-glossary');
     await app.click('#rules-dialog .icon-button.close-dialog');
     return { assignments, guide };
   });
@@ -1221,7 +1682,7 @@ export async function nativeScenarios(app) {
     await changeLanguage('zh-CN');
     await app.select('#player-count', '5');
     await app.select('#emotion-mode', 'lively');
-    await app.select('[data-bot-seat="1"]', 'tan');
+    await app.select('[data-bot-seat="1"]', 'rook');
     await app.click('#sound-button');
     await app.waitFor(
       async () => {
@@ -1235,12 +1696,14 @@ export async function nativeScenarios(app) {
             }),
           ),
         );
-        return images.length === 16 && images.every((image) => image.loaded && image.local)
+        return images.length === 7 &&
+          new Set(images.map((image) => image.profile)).size === 7 &&
+          images.every((image) => image.loaded && image.local)
           ? images
           : null;
       },
       15000,
-      'All sixteen portraits must load from the installed bundle',
+      'All retained portraits must load from the installed bundle',
     );
     const images = await app.evaluate(() =>
       [...document.querySelectorAll('#profile-cards img')].map((image) => ({
@@ -1271,7 +1734,7 @@ export async function nativeScenarios(app) {
       language: 'zh-CN',
       players: '5',
       emotion: 'lively',
-      profile: 'tan',
+      profile: 'rook',
       sound: 'false',
     });
     await app.click('#opponents-dialog .close-dialog');
@@ -1524,8 +1987,8 @@ export async function nativeScenarios(app) {
       restoredStakes: restored.stakes,
     };
   });
-  await check('researched-players-and-new-style-persistence', async () => {
-    const ids = ['ivey', 'negreanu', 'hellmuth', 'antonius', 'koon', 'chidwick', 'holz', 'haxton'];
+  await check('training-styles-and-persistence', async () => {
+    const ids = ['balanced', 'rook', 'jett', 'owen', 'vale', 'nico', 'mira', 'iris'];
     await app.click('#opponents-button');
     const details = [];
     for (const id of ids) {
@@ -1546,15 +2009,31 @@ export async function nativeScenarios(app) {
         return {
           text: section.textContent,
           claims: section.querySelectorAll('a').length,
+          sections: section.querySelectorAll('.character-section').length,
+          images: [...document.querySelectorAll('#profile-detail img')].map((i) => ({
+            loaded: i.complete && i.naturalWidth > 0,
+            src: i.getAttribute('src'),
+          })),
+          fallback: document.querySelector('#profile-detail .portrait-fallback').textContent,
           sources: document.querySelectorAll('#profile-detail .profile-source-records a').length,
           overflow: section.scrollWidth > section.clientWidth + 1,
         };
       });
-      assert.ok(detail.text.includes('2026-10-11'));
-      assert.ok(detail.claims > 0 && detail.sources >= 2);
+      assert.equal(detail.sections, 5);
+      assert.equal(detail.claims, 0);
+      assert.equal(detail.sources, 0);
+      assert.doesNotMatch(detail.text, /Triton|KPC|Phil Ivey|ST Wang|履历摘录|公开打法样本/);
+      if (id === 'balanced') {
+        assert.equal(detail.images.length, 0);
+        assert.equal(detail.fallback, '均');
+      } else {
+        assert.equal(detail.images.length, 1);
+        assert.ok(detail.images[0].loaded);
+        assert.equal(detail.images[0].src, `/portraits/${id}.jpg`);
+      }
       assert.equal(detail.overflow, false);
-      if (id === 'haxton') {
-        await app.screenshot('researched-haxton-detail');
+      if (id === 'iris') {
+        await app.screenshot('delayed-aggression-style-detail');
         if (app.comparePage)
           await app.comparePage('player', [
             '#profile-detail',
@@ -1566,14 +2045,14 @@ export async function nativeScenarios(app) {
       if (await app.visible('[data-close-profile-detail]'))
         await app.click('[data-close-profile-detail]');
     }
-    await app.select('[data-bot-seat="1"]', 'haxton');
+    await app.select('[data-bot-seat="1"]', 'owen');
     await app.click('#opponents-dialog .close-dialog');
     await app.relaunch();
     const applied = await app.state();
-    assert.equal(applied.players[1].botProfile, 'haxton');
+    assert.equal(applied.players[1].botProfile, 'owen');
     await app.click('#opponents-button');
     const saved = await app.evaluate(() => document.querySelector('[data-bot-seat="1"]').value);
-    assert.equal(saved, 'haxton');
+    assert.equal(saved, 'owen');
     await app.click('#opponents-dialog .close-dialog');
     return { details, saved, applied: applied.players[1].botProfile };
   });
@@ -1846,7 +2325,7 @@ export async function nativeScenarios(app) {
       return { count: track.children.length, hint: track.classList.contains('has-overflow') };
     });
     assert.equal(hero.hint, hero.count > 2);
-    await app.click('#review-activity summary');
+    // The hand activity opens by default.
     const fontSize = await app.evaluate(
       () => getComputedStyle(document.querySelector('#review-activity-list li')).fontSize,
     );
@@ -1857,9 +2336,24 @@ export async function nativeScenarios(app) {
       readReviewTagGeometry,
       '#review-opponents .review-timeline',
     );
-    assert.ok(opponentTags.length > 0);
-    for (const tag of opponentTags)
-      assert.ok(Math.abs(tag.height - tag.naturalHeight) <= 1, JSON.stringify(tag));
+    assert.equal(opponentTags.length, 0, 'Opponent action cards omit every persona/style tag');
+    const opponentCards = await app.evaluate(() =>
+      [...document.querySelectorAll('#review-opponents .review-step')].map((card) => ({
+        number: card.querySelector('.review-step-number')?.textContent,
+        playerAndStreet: card.querySelector('small')?.textContent,
+        action: card.querySelector('strong')?.textContent,
+      })),
+    );
+    assert.ok(opponentCards.length > 0, 'Real recorded opponent action cards remain visible');
+    opponentCards.forEach((card, index) => {
+      assert.equal(card.number, String(index + 1));
+      assert.ok(
+        card.playerAndStreet?.split(/[，,]/).every((part) => part.trim()) &&
+          card.playerAndStreet.split(/[，,]/).length >= 2,
+        'Each opponent card retains its player and street',
+      );
+      assert.ok(card.action?.trim(), 'Each opponent card retains its executed action');
+    });
     const overflow = await app.evaluate(() => {
       const track = document.querySelector('#review-opponents .review-timeline'),
         third = track.children[2]?.getBoundingClientRect(),
@@ -1938,6 +2432,8 @@ export async function nativeScenarios(app) {
       rangeNotes: document.querySelectorAll('#review-coach-explanation .review-range-note').length,
     }));
     assert.equal(presentation.removed, 0);
+    assert.ok(presentation.reason.indexOf('当前牌面') < presentation.reason.indexOf('当前牌力'));
+    assert.match(presentation.reason, /当前牌面.*当前牌力/s);
     assert.ok(presentation.evidence >= 4);
     assert.equal(presentation.focusHidden, presentation.keep);
     assert.equal(presentation.method, 0);
@@ -1947,6 +2443,11 @@ export async function nativeScenarios(app) {
       /相同牌力可能平分底池|不能只按成牌标签|是在回应这笔下注|已有过牌之后争取底池/,
     );
     assert.doesNotMatch(presentation.reason, /EV|模型|模拟器|抽样|新增投入/);
+    assert.doesNotMatch(presentation.reason + presentation.keyInfo, /；/);
+    assert.match(
+      presentation.keyInfo,
+      /这次(?:弃牌不再投入|过牌无需投入|(?:全下|加注|跟注|跟注全下)拿出)/,
+    );
     assert.doesNotMatch(presentation.keyInfo, /有效剩余|新增投入/);
     const analysisLayout = await app.evaluate(() => ({
       oldControls: document.querySelectorAll(
@@ -1955,7 +2456,8 @@ export async function nativeScenarios(app) {
       sections: document.querySelectorAll('#review-coach-explanation [data-matchup-direction]')
         .length,
       preflop: document.querySelectorAll('#review-board .playing-card').length === 0,
-      collapsed: !document.querySelector('#review-activity').open,
+      // The hand activity opens by default.
+      activityOpen: document.querySelector('#review-activity').open,
       summary: document.querySelector('#review-coach-explanation .review-analysis-heading')
         ?.textContent,
       losingExamples: document.querySelectorAll(
@@ -1964,10 +2466,9 @@ export async function nativeScenarios(app) {
     }));
     assert.equal(analysisLayout.oldControls, 0);
     assert.equal(analysisLayout.sections, analysisLayout.preflop ? 1 : 2);
-    assert.equal(analysisLayout.collapsed, true);
+    assert.equal(analysisLayout.activityOpen, true);
     assert.equal(analysisLayout.summary, '复盘分析总结');
     assert.ok(analysisLayout.losingExamples <= 4);
-    await app.click('#review-activity summary');
     assert.ok(
       await app.evaluate(
         () =>
@@ -2257,7 +2758,7 @@ export async function nativeScenarios(app) {
         await app.comparePage('session-activity', [
           '.session-card',
           '.activity-card',
-          '.site-footer',
+          '.session-card .section-title',
         ]),
       );
       await app.evaluate(() => window.scrollTo(0, 0));
@@ -2291,7 +2792,9 @@ export async function nativeScenarios(app) {
               document.documentElement.dataset.appReady === 'true' &&
               typeof window.noir?.getState === 'function' &&
               !!window.noir.getState(),
-          )) && (await app.visible('#reset-button')),
+          )) &&
+          // A reload waits for the seat, where the restart control is hidden.
+          ((await app.visible('#join-table-button')) || (await app.visible('#reset-button'))),
         15000,
         'The privacy return link must load a ready game before the next scenario',
       );
@@ -2372,7 +2875,7 @@ export async function nativeScenarios(app) {
       10000,
       'Native Back returns to records',
     );
-    await app.click('#records-back-button');
+    await app.back();
     await app.waitFor(
       () =>
         app.evaluate(
@@ -2550,7 +3053,7 @@ export async function nativeScenarios(app) {
         (element) => element.textContent,
       ),
       neutralResults: [...document.querySelectorAll('.record-hand-result')]
-        .filter((result) => result.querySelector('strong').textContent === '+0')
+        .filter((result) => /^[+-]0$/.test(result.querySelector('strong').textContent))
         .map((result) => result.textContent.trim()),
     }));
     assert.ok(list.cards >= 4);
@@ -2564,8 +3067,9 @@ export async function nativeScenarios(app) {
     list.firstCopy.forEach((text) => assert.doesNotMatch(text, /首次/));
     assert.equal(list.retry, '重打1');
     list.deltas.filter((value) => value !== '—').forEach((value) => assert.match(value, /^[+-]\d/));
-    list.neutralResults.forEach((text) => assert.match(text, /^\+0\s*(?:输|赢)$/));
-    await app.click('#records-back-button');
+    // A zero-change win reads "+0", a zero-change loss "-0".
+    list.neutralResults.forEach((text) => assert.match(text, /^(?:\+0\s*赢|-0\s*输)$/));
+    await app.back();
     await app.waitFor(
       () => app.visible('#records-page').then((visible) => !visible),
       10000,
@@ -2592,6 +3096,8 @@ export async function nativeScenarios(app) {
     );
     const wealth = leaving.players.reduce((sum, p) => sum + p.stack, 0) + leaving.pot;
     await app.relaunch();
+    // After a launch the table waits for the hero to take a seat.
+    await enterNativeTable(app);
     const resumed = await app.state();
     assert.equal(resumed.sessionNumber, leaving.sessionNumber);
     assert.equal(resumed.hand, leaving.hand + 1);
@@ -2609,6 +3115,23 @@ export async function nativeScenarios(app) {
     );
     // Exercise the remaining native navigation boundaries after the hand and
     // chip assertions: privacy navigation starts a fresh document/next hand.
+    // Records rely on system Back from the list too. A driver edge swipe sent
+    // right after the previous one can be dropped by the simulator (a manual
+    // swipe on the same list returns to the game), so retry once if the page
+    // has not left the list.
+    const backFromRecordsList = async () => {
+      for (let attempt = 0; attempt < 2; attempt++) {
+        await app.back();
+        const left = await app
+          .waitFor(
+            () => app.evaluate(() => document.body.dataset.recordsPage !== 'list'),
+            4000,
+            'Back from the records list',
+          )
+          .catch(() => false);
+        if (left) return;
+      }
+    };
     const waitGamePage = () =>
       app.waitFor(
         async () =>
@@ -2678,7 +3201,7 @@ export async function nativeScenarios(app) {
     assert.equal(await app.visible('#history-page'), false);
     await app.sleep(1000);
     await app.screenshot('game-records-review-native-back');
-    await app.click('#records-back-button');
+    await backFromRecordsList();
     await waitGamePage();
     let returnGameBack;
     if (app.platform === 'android') {
@@ -2727,7 +3250,14 @@ export async function nativeScenarios(app) {
       await app.click('article:not([hidden]) a[href="./"]');
       await waitGamePage();
       await openSavedHand();
-      await app.click('#records-back-button');
+      // Without a return button, Back unwinds the saved hand, then the list.
+      await app.back();
+      await app.waitFor(
+        () => app.evaluate(() => document.body.dataset.recordsPage === 'list'),
+        10000,
+        'Back from the saved hand must return to its list',
+      );
+      await backFromRecordsList();
       await waitGamePage();
       await app.back({ expectedPage: 'privacy' });
       const privacy = await app.evaluate(readPrivacyPage);

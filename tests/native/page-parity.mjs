@@ -28,11 +28,29 @@ export function collectNativePageSnapshot(selectors) {
   });
   clone.querySelectorAll('script').forEach((script) => script.remove());
   // Web's content viewport excludes the native gesture area. The fitted
-  // surface stores the full native height; remove that inset in the replay.
+  // surface stores the full native height and its dock keeps part of that
+  // area (--dock-bottom-inset): the whole inset on Android, a small clearance
+  // on iOS. The replay has no inset, so remove that clearance; the rest of the
+  // dock then extends below the viewport exactly as natively. The settled
+  // single-row dock drops its padding but keeps the same table height, so the
+  // variable itself is resolved rather than the dock's current padding.
   const surface = clone.querySelector('.game-surface');
   const playHeight = parseFloat(surface?.style.getPropertyValue('--play-height'));
+  const live = document.querySelector('.game-surface');
+  let dockInset = NaN;
+  if (live) {
+    const probe = document.createElement('span');
+    probe.style.cssText =
+      'position:absolute;visibility:hidden;width:0;height:var(--dock-bottom-inset);pointer-events:none';
+    live.append(probe);
+    dockInset = probe.getBoundingClientRect().height;
+    probe.remove();
+  }
   if (Number.isFinite(playHeight))
-    surface.style.setProperty('--play-height', playHeight - bottom + 'px');
+    surface.style.setProperty(
+      '--play-height',
+      playHeight - (Number.isFinite(dockInset) ? dockInset : bottom) + 'px',
+    );
   const boxes = Object.fromEntries(
     selectors.map((selector) => {
       const element = document.querySelector(selector),
@@ -327,10 +345,13 @@ export async function compareNativePage({ root, output, evaluate, screenshot }, 
   await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
   // WebView applies Android's display scale during CSS layout, including
   // fractional border widths. DPR emulation alone only changes raster density.
-  const browser = await chromium.launch({
-    args: [`--force-device-scale-factor=${snapshot.layoutScale}`],
-  });
+  let browser;
   try {
+    // Launch inside the try: a missing browser must still close the server,
+    // or its open socket keeps the test process alive until the CI timeout.
+    browser = await chromium.launch({
+      args: [`--force-device-scale-factor=${snapshot.layoutScale}`],
+    });
     const page = await browser.newPage({
       viewport: snapshot.viewport,
       // Android commonly uses fractional densities (for example 2.625).
@@ -391,7 +412,8 @@ export async function compareNativePage({ root, output, evaluate, screenshot }, 
       }, profileDetailBounds(profileGeometry));
     const { boxes } = await page.evaluate(collectNativePageSnapshot, selectors);
     const webImage = path.join(output, 'parity-' + name + '-web.png');
-    await page.screenshot({ path: webImage });
+    // A GPU-less hosted macOS runner can take over 30 s to rasterize the page.
+    await page.screenshot({ path: webImage, timeout: 90000 });
     const paint = /^(?:table|settlement)(?:-[5-9])?$/.test(name)
       ? await compareNativePaint(nativeCapture, webImage, snapshot)
       : undefined;
@@ -464,7 +486,7 @@ export async function compareNativePage({ root, output, evaluate, screenshot }, 
       paint,
     };
   } finally {
-    await browser.close();
+    await browser?.close();
     await new Promise((resolve) => server.close(resolve));
   }
 }
