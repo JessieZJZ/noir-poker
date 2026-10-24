@@ -625,6 +625,9 @@ try {
               }
             : {}),
           'appium:wdaLaunchTimeout': 240000,
+          // Hosted CI simulators can take minutes to report boot completion to
+          // the driver, beyond its 120 s default, after simctl already booted.
+          'appium:simulatorStartupTimeout': 600000,
           'appium:waitForQuiescence': false,
           'appium:waitForIdleTimeout': 0,
           'appium:webviewConnectTimeout': 30000,
