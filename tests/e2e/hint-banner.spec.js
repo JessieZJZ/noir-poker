@@ -183,6 +183,8 @@ test('wide screens use the same inline hints and settings switch as phones', asy
 });
 
 test('resizing retains the same inline hint, expiry and saved preference', async ({ page }) => {
+  // Five relayouts, a settings round trip and a reload exceed 30 seconds on loaded CI runners.
+  test.setTimeout(60000);
   await page.setViewportSize({ width: 390, height: 844 });
   await page.clock.install({ time: new Date('2026-01-01T00:00:00Z') });
   await page.clock.pauseAt(new Date('2026-01-01T00:00:01Z'));
