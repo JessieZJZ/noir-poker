@@ -811,10 +811,16 @@
   gap: 8px;
   flex: none;
   color: #d9e9e5;
-}
-.settings-modal .stakes-setting-row {
   font-size: 16px;
+}
+/* As on Web, the label matches the other settings (15px); the separator
+   stays 16px and the big blind 15px. */
+.settings-modal .stakes-setting-row {
+  font-size: 15px;
   line-height: 1.5;
+}
+#big-blind-value {
+  font-size: 15px;
 }
 .stakes-setting-row > view:first-child {
   min-width: 0;

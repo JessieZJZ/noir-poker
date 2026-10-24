@@ -2740,3 +2740,14 @@ test('a late guide jump cannot move a closed or newly opened normal guide', (t) 
   assert.equal(page.data.guideOpen, true);
   assert.equal(page.data.guideScrollTarget, '');
 });
+
+test('WeChat starting-blind label uses the other settings label size, as on Web', () => {
+  // Labels are 15px; the "/" separator stays 16px and the big blind 15px.
+  assert.match(stylesheet, /\.settings-modal \.stakes-setting-row\s*\{\s*font-size: 15px;/);
+  assert.match(stylesheet, /\.stakes-values\s*\{[^}]*font-size: 16px;/s);
+  assert.match(stylesheet, /#big-blind-value\s*\{\s*font-size: 15px;/);
+  assert.match(
+    readFileSync(new URL('../../miniprogram/pages/table/parity.wxss', import.meta.url), 'utf8'),
+    /\.setting-row\s*\{[^}]*font-size: 15px;/s,
+  );
+});
