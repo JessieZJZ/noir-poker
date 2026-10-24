@@ -83,6 +83,7 @@ function installNativeAbout(info) {
   policy.textContent = localizeText('隐私政策');
   dialog.append(publisher, policy, document.createElement('br'), link);
   document.body.append(dialog);
-  document.querySelector('.table-footer').append(button);
+  // A second, centred line of the compliance footer, in the same type.
+  document.querySelector('.compliance-footer').append(button);
   button.onclick = () => dialog.showModal();
 }

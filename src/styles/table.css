@@ -340,9 +340,6 @@
   border-color: #6ba18f;
   color: #c0f4df;
 }
-.site-footer #native-about-button {
-  margin-left: auto;
-}
 /* Keep the total pot visible alongside seat-level winner indicators. */
 .pot {
   display: flex;

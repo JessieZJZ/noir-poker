@@ -113,3 +113,14 @@ html[data-orientation-blocked='true'] {
 .native-app .compliance-footer {
   padding-bottom: 14px;
 }
+/* About & privacy sits centred under the compliance line, in its type. */
+.compliance-footer #native-about-button {
+  display: block;
+  margin: 4px auto 0;
+  padding: 4px 8px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+}

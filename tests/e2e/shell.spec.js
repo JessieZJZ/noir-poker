@@ -24,12 +24,12 @@ test('settings stay on the right and practice reset belongs to the session headi
   await expect(page.locator('.header-actions button:visible')).toHaveCount(2);
   await expect(page.locator('#opponents-dialog #difficulty')).toHaveCount(1);
   await expect(page.locator('#opponents-dialog #player-count')).toHaveCount(1);
-  // The native platform appends this same button to the footer.
+  // The native platform appends this same button to the compliance footer.
   await page.evaluate(() => {
     const button = document.createElement('button');
     button.id = 'native-about-button';
     button.textContent = '关于与隐私';
-    document.querySelector('.table-footer').append(button);
+    document.querySelector('.compliance-footer').append(button);
   });
   for (const width of [320, 390, 768, 1280, 1700]) {
     await page.setViewportSize({ width, height: 900 });
@@ -46,11 +46,12 @@ test('settings stay on the right and practice reset belongs to the session headi
             blinds = box('.blind-info'),
             settings = box('#opponents-button'),
             rules = box('#rules-button'),
-            footer = box('.site-footer'),
+            footer = box('.compliance-footer'),
             title = box('.session-card h2'),
             reset = box('#reset-button'),
             about = box('#native-about-button');
           const middle = (r) => (r.top + r.bottom) / 2;
+          const middleX = (r) => (r.left + r.right) / 2;
           return {
             blindsOnRight: blinds.left > hand.right,
             blindsAligned: Math.abs(middle(hand) - middle(blinds)) < 1,
@@ -69,6 +70,24 @@ test('settings stay on the right and practice reset belongs to the session headi
               reset.height === 32,
             oldFooterRemoved: !document.querySelector('.practice-info'),
             buttonsFit: [reset, about].every((r) => r.left >= 0 && r.right <= innerWidth),
+            // About & privacy is centred under the compliance line, in its type.
+            aboutUnderCompliance: (() => {
+              const line = document.querySelector('.compliance-footer');
+              const range = document.createRange();
+              range.selectNodeContents(line.firstChild);
+              const text = range.getBoundingClientRect();
+              const button = document.querySelector('#native-about-button');
+              const own = getComputedStyle(button),
+                inherited = getComputedStyle(line);
+              return (
+                about.top >= text.bottom &&
+                Math.abs(middleX(about) - middleX(text)) < 1 &&
+                ['fontSize', 'color', 'letterSpacing', 'fontWeight'].every(
+                  (key) => own[key] === inherited[key],
+                ) &&
+                own.backgroundColor === 'rgba(0, 0, 0, 0)'
+              );
+            })(),
             noOverflow: document.documentElement.scrollWidth <= innerWidth,
           };
         });
