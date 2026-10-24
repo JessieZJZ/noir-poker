@@ -86,7 +86,7 @@ export function allInContext(view) {
   // bypass the price test. Keep normal small-open/3-bet branches separate.
   const highCommitment =
     view.street === 0 &&
-    raises.length >= 2 &&
+    raises.length >= 1 &&
     matched >= 20 * bigBlindOf(view) &&
     legal.callAmount >= view.stack * 0.35;
   if (!aggressorAllIn && !callerAllIn && !highCommitment) return null;

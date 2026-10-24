@@ -20,6 +20,7 @@ import {
 import { chipUnitOf, fractionRaiseTo, legalRaiseTo } from './bet-sizing.js';
 import { deceptiveAction, isDonkLead } from './bot-deception.js';
 import { publicResponseRisk } from './public-action-context.js';
+import { preflopJamPlan } from './bot-preflop-commitment.js';
 
 // Evidence-informed fictional training styles; numeric controls are authored.
 export const BOT_PROFILES = [
@@ -426,7 +427,11 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
     odds =
       view.allIn?.odds ?? view.callPrice?.odds ?? legal.callAmount / Math.max(1, view.contestable),
     pressure = legal.toCall / Math.max(1, view.stack + view.bet);
-  const noise = (random() - 0.5) * capability.noise;
+  const noiseDraw = random();
+  const noise =
+    view.street === 0 && view.allIn && view.difficulty !== 'easy'
+      ? 0
+      : (noiseDraw - 0.5) * capability.noise;
   const equity = Math.max(0, Math.min(1, view.equity + noise));
   const behind = view.actionContext?.unactedBehindCount,
     responseRisk = publicResponseRisk(view),
@@ -833,6 +838,26 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
       playsBoard: view.playsBoard,
     },
   });
+  const jamPlan = preflopJamPlan(view, profile);
+  const valueJam = () => {
+    if (!jamPlan || equity + callTolerance < requiredEquity) return null;
+    if (roll('preflop-value-jam', jamPlan.rate) >= jamPlan.rate) return null;
+    value = true;
+    sizing = {
+      desired: jamPlan.amount,
+      actual: jamPlan.amount,
+      minimum: legal.minRaiseTo,
+      maximum: legal.maxRaiseTo,
+      opening: !raises.length,
+      executed: true,
+      commitment: jamPlan,
+    };
+    return finish('raise', 'value-raise', jamPlan.amount);
+  };
+  if (!view.allIn) {
+    const jam = valueJam();
+    if (jam) return jam;
+  }
   const special = deceptiveAction(view, profile, roll);
   if (special) {
     sizing = special.sizing;
@@ -859,8 +884,10 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
         return finish('fold', 'insufficient-equity');
       exceptions.push('insufficient-equity');
     }
-    // Calling commits to the priced showdown. Do not manufacture a side-pot
-    // raise merely because an old opening-range label called this hand premium.
+    // A large non-all-in raise still leaves an opponent able to pay a value
+    // shove. Actual all-ins cannot manufacture a discretionary side-pot raise.
+    const jam = valueJam();
+    if (jam) return jam;
     return finish('call', exceptions.length ? 'loose-exception' : 'price-continue');
   }
   if (expensivePreflopDefense(view, equity)) return finish('fold', 'outside-range');
@@ -1093,6 +1120,11 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
         (style.openingBB == null ? 2.5 + (attack > 0.8 ? 0.5 : 0) : style.openingBB) * bigBlind +
         view.history.filter((a) => a.street === 0 && a.action === 'call').length * bigBlind;
     if (squeezeBluff) desired = Math.max(desired, view.currentBet * (view.inPosition ? 4 : 5));
+    if (view.street === 0 && value && premium && raises.length > 0)
+      desired = Math.max(
+        desired,
+        view.currentBet * (raises.length === 1 ? (view.inPosition ? 3 : 3.5) : 2.5),
+      );
     const amount = legalRaiseTo(desired, legal);
     sizing = {
       fraction,

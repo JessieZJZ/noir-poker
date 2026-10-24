@@ -153,7 +153,12 @@ test('a near-all-in 4-bet prices the real risk without restoring automatic 77 pr
       const game = largeFourBetResponse(hole, amount),
         decision = decide(game),
         pressure = decision.trace.allIn;
-      assert.equal(decision.action, action, `${hole}/${amount}`);
+      assert.equal(
+        decision.action,
+        hole === 'As Ah' && amount === 4000 ? 'raise' : action,
+        `${hole}/${amount}`,
+      );
+      if (decision.action === 'raise') assert.equal(decision.amount, legalActions(game).maxRaiseTo);
       assert.equal(pressure.line, 'multi-raise-shove');
       assert.equal(pressure.cost, amount - 150);
       assert.equal(pressure.aggressorAllIn, amount === 5000);

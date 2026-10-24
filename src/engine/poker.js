@@ -961,7 +961,9 @@ export function botDecision(g, random = Math.random, { trials, allInCache } = {}
       ...allIn,
       ...view.callPrice,
     };
-    const allInTrials = trials ?? (g.difficulty === 'hard' ? (g.street === 0 ? 256 : 96) : 72);
+    const allInTrials =
+      trials ??
+      (g.street === 0 && g.difficulty !== 'easy' ? 512 : g.difficulty === 'hard' ? 96 : 72);
     view.equityTrials = allInTrials;
     const assessment = estimateAllInEquity(view, allIn, {
       deck: deckOfCards(),

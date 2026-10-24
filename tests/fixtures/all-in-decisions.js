@@ -187,7 +187,7 @@ export function reviewedAllInGame(kind = 'flop-qq') {
   const game =
     kind === 'multi-qq'
       ? multiRaiseShoveResponse()
-      : kind === 'deep-nonallin'
+      : ['deep-nonallin', 'deep-value-jam'].includes(kind)
         ? openerShoveResponse('As Ah', 5000, 4000)
         : kind === 'made-redraw'
           ? headsUpShoveResponse()
@@ -196,7 +196,11 @@ export function reviewedAllInGame(kind = 'flop-qq') {
             : kind === 'shared-royal'
               ? riverShoveResponse()
               : flopShoveResponse();
-  const plan = planBotTurn(game, allInRandom(1), { timingRandom: allInRandom(2) });
+  // Preserve the deliberately sampled flat-call copy check separately from
+  // the new, more common AA value shove over the same non-all-in 80BB bet.
+  const plan = planBotTurn(game, allInRandom(kind === 'deep-nonallin' ? 2 : 1), {
+    timingRandom: allInRandom(2),
+  });
   executeBotTurn(game, plan, { expedited: true });
   return finishScriptedHand(game);
 }

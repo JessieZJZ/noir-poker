@@ -81,6 +81,12 @@ export function preparePublicRanges(view) {
         allIn?.line ??
         (preflopRaises >= 3 ? 'multi-raise' : preflopRaises === 2 ? 'reraise' : 'open'),
       depthBB,
+      seatedCount:
+        view.count ??
+        (view.players ? view.players.filter((p) => !p.out).length : opponents.length + 1),
+      committedCount: commitment?.committedIds?.length ?? 0,
+      opponentCount: opponents.length,
+      waitingCount: commitment?.waitingIds?.length ?? 0,
       allIn: !!allIn,
       actualAllIn: opponent.allin === true,
       street,
@@ -111,6 +117,55 @@ function allInPreflopWeight(hole, range) {
     if ((pair && high >= 8) || (high >= 13 && low >= 10)) return 1;
     if (pair || (suited && high === 14) || (suited && high - low <= 2 && low >= 5)) return 0.4;
     return 0.08;
+  }
+  const singleLate =
+    range.role === 'shover' &&
+    range.committedCount === 1 &&
+    (range.seatedCount <= 3 || late(range.position));
+  if (singleLate && range.line === 'cold-shove' && range.depthBB <= 25) {
+    if (pair || (high === 14 && (suited || low >= 5))) return 1;
+    if ((high === 13 && low >= 10) || (high === 12 && low >= 10)) return suited ? 1 : 0.75;
+    if (suited && high >= 9 && high - low <= 2) return 0.55;
+    if (high === 14 || (suited && high === 13)) return 0.3;
+    return 0.01;
+  }
+  if (singleLate && range.line === 'cold-shove' && range.depthBB <= 60) {
+    if ((pair && high >= 6) || (high === 14 && low >= 10)) return 1;
+    if (high >= 12 && low >= 11) return suited ? 1 : 0.5;
+    if (pair || (suited && high === 14)) return 0.4;
+    return 0.004;
+  }
+  if (singleLate && range.line === 'cold-shove' && range.depthBB <= 120) {
+    if ((pair && high >= 9) || (high === 14 && low >= 12)) return 1;
+    if (suited && high === 13 && low === 12) return 0.8;
+    if (pair && high >= 7) return high === 8 ? 0.45 : 0.15;
+    if (suited && high === 14 && low >= 10) return 0.5;
+    if (suited && high === 14 && low <= 5) return 0.12;
+    return 0.003;
+  }
+  if (singleLate && range.line === 'reraise-shove' && range.depthBB > 30 && range.depthBB <= 110) {
+    if ((pair && high >= 11) || (high === 14 && low === 13)) return 1;
+    if (pair && high === 10) return 0.8;
+    if (high === 14 && low === 12) return suited ? 1 : 0.55;
+    if ((pair && high === 9) || (suited && high === 14 && low === 11)) return 0.35;
+    if (suited && high === 13 && low === 12) return 0.3;
+    if (suited && high === 14 && low <= 5) return 0.12;
+    return 0.003;
+  }
+  if (
+    range.role === 'shover' &&
+    range.committedCount === 1 &&
+    (singleLate || (range.opponentCount === 1 && range.waitingCount === 0)) &&
+    range.line === 'multi-raise-shove' &&
+    range.depthBB > 30 &&
+    range.depthBB <= 110 &&
+    range.preflop?.raises === 3
+  ) {
+    if ((pair && high >= 11) || (high === 14 && low === 13)) return 1;
+    if (pair && high === 10) return 0.5;
+    if (high === 14 && low === 12) return suited ? 0.75 : 0.25;
+    if (suited && high === 14 && low <= 5) return 0.2;
+    return 0.002;
   }
   if (range.depthBB <= 15) {
     if (pair && high >= 5) return 1;

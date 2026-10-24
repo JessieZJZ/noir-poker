@@ -110,3 +110,31 @@ test('real all-in bot calls and tight 4-bet folds replay the actual public actio
       .click();
   }
 });
+
+test('a real AA preflop value shove replays its full investment without exposing the opener cards', async ({
+  page,
+}, info) => {
+  const game = reviewedAllInGame('deep-value-jam');
+  const record = game.botDecisions[0];
+  expect(record.action).toBe('raise');
+  expect(record.amount).toBe(5000);
+  expect(record.trace.basis.shove).toBe(true);
+  expect(game.players.reduce((sum, p) => sum + p.stack, 0)).toBe(30000);
+  await page.goto('/');
+  await page.waitForFunction(() => window.qa);
+  await page.evaluate((snapshot) => window.qa.loadRecordedGame(snapshot), game);
+  await page.locator('#review-hand-button').click();
+  await page.locator('#review-opponents-tab').click();
+  const detail = page.locator('#review-opponent-detail .review-explanation');
+  await expect(detail).toContainText('A♠ A♥');
+  await expect(detail).toContainText('4.85K');
+  await expect(detail).toContainText(/主动|加注/);
+  await expect(detail).not.toContainText(/9♦ 8♣|抽样|模拟器|EV|全下者已不能/);
+  await mkdir('.artifacts/preflop-pressure-2026-10-24/web', { recursive: true });
+  const screenshot = path.resolve(
+    '.artifacts/preflop-pressure-2026-10-24/web',
+    `${info.project.name}-aa-value-jam.png`,
+  );
+  await page.screenshot({ path: screenshot });
+  await info.attach('aa-preflop-value-jam', { path: screenshot, contentType: 'image/png' });
+});

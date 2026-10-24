@@ -83,9 +83,15 @@ test('WeChat executes policy pacing once and hiding rejects stale bot callbacks'
   const { controller, timers, latest } = setup(t);
   const game = reachHero(controller);
   controller.action('call');
+  const existingTimers = new Set(timers.pending.keys());
   assert.ok(timers.runNext(), 'Paint task selects one bot plan');
-  const waits = [...timers.pending.values()].filter(
-    ({ delay }) => delay >= BOT_THINK_LIMITS.minimum && delay <= BOT_THINK_LIMITS.maximum,
+  // A premium-hand animation can already have a timer in the same delay band.
+  // Count only the new wait installed by the bot plan's paint callback.
+  const waits = [...timers.pending].filter(
+    ([id, { delay }]) =>
+      !existingTimers.has(id) &&
+      delay >= BOT_THINK_LIMITS.minimum &&
+      delay <= BOT_THINK_LIMITS.maximum,
   );
   assert.equal(waits.length, 1);
   const stale = timers.callbacks();
