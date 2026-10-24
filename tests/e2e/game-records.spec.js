@@ -338,7 +338,7 @@ test('records show sessions, hands and retries newest first without changing sav
     [2, 0],
   ]);
   await expect(session).not.toContainText('已被重打替代');
-  await page.locator('#records-back-button').click();
+  await backToGame(page);
   await page.locator('#reset-button').click();
   await page.locator('#confirm-reset').click();
   await page.evaluate(() => window.qa.stop());
@@ -443,7 +443,8 @@ test('historical details omit the extra heading and use system Back to the list'
     await expect(
       page.locator('#records-title .record-tag, #history-page .record-retry'),
     ).toHaveCount(0);
-    await expect(page.getByRole('button', { name: '返回游戏', exact: true })).toBeVisible();
+    // No return button: system Back returns to the list.
+    await expect(page.getByRole('button', { name: '返回游戏', exact: true })).toHaveCount(0);
     await page.goBack();
     await expect(page).toHaveURL(/#records$/);
     await expect(page.locator(`[data-session-id="${session.id}"]`)).toBeVisible();
@@ -490,14 +491,17 @@ test('historical headers show each attempt start date with the year, align the r
       await expect(page.locator('#records-hand-start')).toHaveText(
         i ? '2026/01/02 09:02' : '2026/01/01 08:01',
       );
+      // No practice label or return button: the time sits under the table
+      // card's game and hand label, aligned to its left edge.
+      await expect(page.locator('.records-eyebrow, #records-back-button')).toHaveCount(0);
       const layout = await page.evaluate(() => {
-        const label = document.querySelector('.records-eyebrow').getBoundingClientRect();
-        const button = document.querySelector('#records-back-button').getBoundingClientRect();
-        const time = document.querySelector('#records-hand-start').getBoundingClientRect();
+        const start = document.querySelector('#records-hand-start');
+        const label = start.parentElement.querySelector('.hand-label').getBoundingClientRect();
+        const time = start.getBoundingClientRect();
         const actions = document.querySelector('.header-actions');
         return {
-          centerOffset: Math.abs(label.top + label.height / 2 - button.top - button.height / 2),
-          timeGap: time.top - label.bottom,
+          centerOffset: Math.abs(time.left - label.left),
+          timeGap: time.top - label.bottom + 1,
           right: actions.getBoundingClientRect().right,
           shift: getComputedStyle(actions).left,
           overflow: document.documentElement.scrollWidth - innerWidth,
@@ -516,7 +520,7 @@ test('historical headers show each attempt start date with the year, align the r
       await page.screenshot({ path: test.info().outputPath(`history-heading-${width}-${i}.png`) });
       await page.goBack();
     }
-    await page.locator('#records-back-button').click();
+    await backToGame(page);
   }
   await openRecords(page);
   await page.locator(`[data-record-hand="${session.attempts[0].id}"]`).click();
@@ -531,7 +535,7 @@ test('historical headers show each attempt start date with the year, align the r
 
 // The predecessor is another same-origin page so Back after Return Game is
 // observable without leaving the test host or relying on browser startup tabs.
-test('returning to the game closes the records visit without nested Back routes', async ({
+test('system Back returns from records to the game without nested Back routes', async ({
   page,
 }) => {
   await page.goto('/app-privacy.html');
@@ -547,7 +551,10 @@ test('returning to the game closes the records visit without nested Back routes'
   for (let visit = 0; visit < 3; visit++) {
     await openRecords(page);
     await page.locator(`[data-record-hand="${attempt.id}"]`).click();
-    await page.locator('#records-back-button').click();
+    // Detail, then list, then the live game: each visit unwinds completely.
+    await page.goBack();
+    await expect(page).toHaveURL(/#records$/);
+    await page.goBack();
     await expect(page).not.toHaveURL(/#records/);
     await expect(page.locator('main.main')).toBeVisible();
     expect(await page.evaluate(() => window.recordsDocument.same)).toBe(true);
@@ -555,14 +562,6 @@ test('returning to the game closes the records visit without nested Back routes'
       hand: before.hand,
       sessionNumber: before.sessionNumber,
     });
-    if (visit === 0) {
-      await page.evaluate(() => history.forward());
-      await expect
-        .poll(() => page.evaluate(() => history.state.noirRecordsNavigation.depth))
-        .toBe(0);
-      await expect(page).not.toHaveURL(/#records/);
-      expect(await page.evaluate(() => window.recordsDocument.same)).toBe(true);
-    }
   }
   await page.goBack();
   await expect(page).toHaveURL(/app-privacy\.html$/);
@@ -610,7 +609,7 @@ test('reloading a historical URL retains its list parent and does not reload pra
   await expect(page).toHaveURL(/#records$/);
   expect(await page.evaluate(() => window.recordsReloadDocument)).toBe(true);
   expect((await state(page)).hand).toBe(resumed.hand);
-  await page.locator('#records-back-button').click();
+  await backToGame(page);
   await expect(page).not.toHaveURL(/#records/);
   expect(await page.evaluate(() => window.recordsReloadDocument)).toBe(true);
   expect((await state(page)).hand).toBe(resumed.hand);
@@ -725,7 +724,7 @@ for (const count of [5, 9]) {
           await page.locator('#history-page').screenshot({
             path: test.info().outputPath(`history-${count}-${mode}-${width}.png`),
           });
-        await page.locator('#records-back-button').click();
+        await backToGame(page);
       }
     }
   });
@@ -771,7 +770,7 @@ test('historical settlement and review stay fixed while the live game advances',
   await page.locator('#review-dialog .close-dialog').first().click();
   await page.goBack();
   await expect(page).toHaveURL(/#records$/);
-  await page.locator('#records-back-button').click();
+  await backToGame(page);
   await expect(page.locator('main.main')).toBeVisible();
   expect((await state(page)).phase).toBe('done');
   await page.locator('#review-hand-button').click();
@@ -828,7 +827,7 @@ test('refills use the short tag and pending blind changes start another session 
   await openRecords(page);
   await expect(page.locator('.record-session').first().locator('.record-refill')).toHaveCount(2);
   await expect(page.locator('.record-session').first()).not.toContainText('补充后首手');
-  await page.locator('#records-back-button').click();
+  await backToGame(page);
   await page.evaluate(() => window.qa.recordsNext());
   expect((await state(page)).sessionNumber).toBe(original.sessionNumber + 1);
   expect((await state(page)).smallBlind).toBe(500);
@@ -990,21 +989,23 @@ test('records headings keep their note close and revealed opponents use larger f
       const heading = document.querySelector('.records-page-heading').getBoundingClientRect();
       const title = document.querySelector('#records-title').getBoundingClientRect();
       const row = document.querySelector('.record-session').getBoundingClientRect();
-      const back = document.querySelector('#records-back-button').getBoundingClientRect();
       return {
         cardGap: row.top - heading.bottom,
-        center: Math.abs(title.top + title.height / 2 - back.top - back.height / 2),
+        back: document.querySelectorAll('#records-back-button').length,
+        title: title.height > 0,
       };
     });
     expect(spacing.cardGap).toBe(16);
-    expect(spacing.center).toBeLessThan(1);
+    // Records rely on system Back or the gesture; no return button remains.
+    expect(spacing.back).toBe(0);
+    expect(spacing.title).toBe(true);
     await page.locator(`[data-record-hand="${attempt.id}"]`).click();
     const saved = await page.evaluate(read, '#history-arena');
     expect(saved.map((face) => [face.baseWidth, face.width])).toEqual(
       live.map((face) => [face.baseWidth, face.width]),
     );
     await page.screenshot({ path: test.info().outputPath(`revealed-faces-${width}.png`) });
-    await page.locator('#records-back-button').click();
+    await backToGame(page);
   }
 });
 
@@ -1108,8 +1109,13 @@ test('historical pot dialogs and showdown stay bound to the saved hand while liv
   await expect(page.locator('#pot-dialog')).toBeHidden();
   await expect(page.locator('#history-showdown-stage')).toBeVisible();
   await page.screenshot({ path: test.info().outputPath('history-showdown.png') });
-  await page.locator('#records-back-button').click();
+  await backToGame(page);
   await page.locator('#pot-details-button').click();
   await expect(page.locator('#pot-dialog')).toBeVisible();
   expect(await page.locator('#pot-dialog-content').textContent()).not.toBe(potText);
 });
+
+// Records rely on system Back: unwind the detail and list pages to the game.
+async function backToGame(page) {
+  while (/#records/.test(page.url())) await page.goBack();
+}

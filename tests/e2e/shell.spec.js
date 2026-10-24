@@ -12,7 +12,9 @@ test.beforeEach(async ({ page }) => {
 test('settings stay on the right and practice reset belongs to the session heading', async ({
   page,
 }) => {
-  await expect(page.locator('.table-heading, #table-tag, .table-settings')).toHaveCount(0);
+  await expect(
+    page.locator('.table-heading, #table-tag, .game-surface .table-settings'),
+  ).toHaveCount(0);
   await expect(
     page.locator(
       '.surface-top #difficulty, .surface-top #player-count, .surface-top #opponents-button',
@@ -95,7 +97,8 @@ test('mobile settings fill the screen, use accessible switches and return focus 
     await page.setViewportSize(size);
     await page.locator('#opponents-button').click();
     await expect(page.locator('#opponents-title')).toHaveText('设置');
-    await expect(page.getByRole('switch', { name: '音效与音乐', exact: true })).toBeChecked();
+    await expect(page.getByRole('switch', { name: '音效', exact: true })).toBeChecked();
+    await expect(page.getByRole('switch', { name: '背景音乐', exact: true })).toBeChecked();
     await expect(page.getByRole('switch', { name: '振动', exact: true })).toBeChecked();
     await expect(page.getByRole('switch', { name: '牌桌提示', exact: true })).toBeChecked();
     const layout = await page.locator('#opponents-dialog').evaluate((el) => {
@@ -214,7 +217,7 @@ test('desktop actions keep one-line labels and aligned button rows before and af
   }
 });
 
-test('retry explanation stays aligned and practice details follow the table without an empty column', async ({
+test('a retry shows no explanation strip, the hint takes its row and practice details follow the table', async ({
   page,
 }) => {
   for (const width of [1101, 1280, 1700]) {
@@ -222,13 +225,15 @@ test('retry explanation stays aligned and practice details follow the table with
     await page.evaluate(() => window.qa.foldWin(9));
     await page.locator('#restart-hand-button').click();
     await page.evaluate(() => window.qa.stop());
-    await expect(page.locator('#replay-note')).toBeVisible();
+    // The retry is named by the hand label's tag; no explanation strip remains.
+    await expect(page.locator('#replay-note')).toHaveCount(0);
+    await expect(page.locator('#replay-label')).toBeVisible();
     await expect
       .poll(() =>
         page.evaluate(() => {
           const box = (selector) => document.querySelector(selector).getBoundingClientRect();
           const hand = box('.hand-label'),
-            note = box('#replay-note'),
+            hint = box('#coach-content'),
             table = box('.table-viewport');
           const header = document.querySelector('.surface-top'),
             sidebar = box('.sidebar'),
@@ -236,13 +241,16 @@ test('retry explanation stays aligned and practice details follow the table with
           const surface = box('.game-surface');
           const activity = document.querySelector('#activity-list');
           const issues = [];
-          if (!header.contains(document.querySelector('#replay-note')))
-            issues.push('retry note is outside header');
-          if (note.top < hand.bottom || note.top - hand.bottom > 34)
-            issues.push('retry note is far below the hand');
-          if (Math.abs(note.left - hand.left) > 1)
-            issues.push('retry note is not aligned with the hand');
-          if (note.bottom > table.top) issues.push('retry note covers the table');
+          // The hint row below the hand label spans the whole header width.
+          const pad = getComputedStyle(header);
+          const row =
+            header.getBoundingClientRect().width -
+            parseFloat(pad.paddingLeft) -
+            parseFloat(pad.paddingRight);
+          if (hint.width && Math.abs(hint.width - row) > 1)
+            issues.push('hint does not take the full header row');
+          if (hint.width && hint.top < hand.bottom) issues.push('hint overlaps the hand label');
+          if (hint.bottom > table.top) issues.push('hint covers the table');
           if (sidebar.top < surface.bottom || sidebar.top - surface.bottom > 20)
             issues.push('practice details must immediately follow the table');
           if (

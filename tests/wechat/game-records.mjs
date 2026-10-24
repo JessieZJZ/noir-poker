@@ -91,8 +91,14 @@ const recordLayout = async (disabled = false) => {
   assert.match(background, /^(?:transparent|rgba\([^)]*,\s*0\))$/);
   return { containerWidth, headingWidth, listWidth, handWidth, background, disabled };
 };
+// The engine can reach the hero during the deal animation, before the page
+// enables the actions; wait for both so a tap is never dropped.
 const waitHero = () =>
-  wait('Hero turn', readLive, (game) => game.phase === 'playing' && game.actor === 0);
+  wait(
+    'Hero turn',
+    async () => ({ game: await readLive(), canAct: await page.data('canAct') }),
+    ({ game, canAct }) => game.phase === 'playing' && game.actor === 0 && canAct,
+  );
 const capture = async (name) => {
   await page.waitFor(1450);
   const filename = path.join(output, `${name}.png`);
@@ -569,7 +575,8 @@ try {
   assert.equal((await page.$$('.history-nav-title')).length, 0);
   assert.equal((await page.$$('.history-replay-tag')).length, 0);
   assert.equal((await page.$$('#history-back')).length, 0);
-  assert.ok(await page.$('#history-return-game'));
+  // No return button: the saved hand relies on the native Back button or gesture.
+  assert.equal((await page.$$('#history-return-game')).length, 0);
   assert.ok(await page.$('.activity-panel'));
   await capture('04-historical-settlement');
   const historySettlementGeometry = await tableGeometry(archived.snapshot.players);
@@ -626,7 +633,9 @@ try {
     await mini.navigateBack();
     await waitRoute('pages/records/records');
   }
-  await tap('#records-back');
+  // Records rely on the native Back button or gesture.
+  assert.equal(await page.$('#records-back'), null);
+  await mini.navigateBack();
   await waitRoute('pages/table/table');
   await assertStack('pages/table/table');
   await tap('#resource-menu-button');
@@ -634,7 +643,10 @@ try {
   await waitRoute('pages/records/records');
   await tap(`.hand-item[data-id="${archived.id}"]`);
   await waitRoute('pages/history/history');
-  await tap('#history-return-game');
+  // Native Back unwinds the saved hand, then the list, to the live table.
+  await mini.navigateBack();
+  await waitRoute('pages/records/records');
+  await mini.navigateBack();
   await waitRoute('pages/table/table');
   await assertStack('pages/table/table');
   report.checks.push({ name: 'native-back-and-return-game-preserve-a-bounded-page-stack' });
@@ -679,7 +691,9 @@ try {
   assert.equal((await mini.currentPage()).path, 'pages/records/records');
   await assertStack('pages/table/table', 'pages/records/records');
   await capture('07-full-width-unfinished-records');
-  await tap('#records-back');
+  // Records rely on the native Back button or gesture.
+  assert.equal(await page.$('#records-back'), null);
+  await mini.navigateBack();
   await waitRoute('pages/table/table');
   await assertStack('pages/table/table');
   report.checks.push({

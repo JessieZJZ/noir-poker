@@ -15,6 +15,13 @@ const seek = (page, selector, time) =>
     },
     { selector, time },
   );
+// Settle every finite animation; looping ones (turn glow, emotion halos) have
+// no end to jump to.
+const finishAnimations = () =>
+  document
+    .getAnimations()
+    .filter((animation) => animation.effect?.getComputedTiming().endTime !== Infinity)
+    .forEach((animation) => animation.finish());
 test.beforeEach(async ({ page }) => {
   await page.goto('/');
   await page.waitForFunction(() => !!window.qa);
@@ -55,7 +62,7 @@ for (const heroWins of [true, false]) {
     await expect(page.locator(resting)).toHaveClass(/crown-pending/);
     await seek(page, '.crown-stage', 1000);
     await page.screenshot({ path: test.info().outputPath(`coronation-${heroWins}.png`) });
-    await page.evaluate(() => document.getAnimations().forEach((a) => a.finish()));
+    await page.evaluate(finishAnimations);
     await expect(page.locator('.crown-stage')).toHaveCount(0, { timeout: 4000 });
     await expect(page.locator(resting)).not.toHaveClass(/crown-pending/);
     await expect(page.locator('.champion-crown')).toHaveCount(1);
@@ -100,7 +107,7 @@ for (const heroWins of [true, false]) {
 test('retrying the deciding hand withdraws the crown and the final standing', async ({ page }) => {
   await page.evaluate(() => window.qa.finale({ heroWins: true }));
   await page.evaluate(() => window.qa.finaleShowdown());
-  await page.evaluate(() => document.getAnimations().forEach((a) => a.finish()));
+  await page.evaluate(finishAnimations);
   await expect(page.locator('.hero-champion-crown')).toHaveCount(1);
   await page.locator('#restart-hand-button').click();
   const view = await state(page);
@@ -167,7 +174,7 @@ test('a bot taking the last refill and every other seat in one hand is crowned',
   await expect(page.locator('.crown-stage')).toHaveCount(1);
   await expect(page.locator('.crown-caption')).toHaveText('Mia 获得冠军');
   await expect(page.locator('.confetti-layer')).toHaveCount(0);
-  await page.evaluate(() => document.getAnimations().forEach((a) => a.finish()));
+  await page.evaluate(finishAnimations);
   await expect(page.locator('.crown-stage')).toHaveCount(0, { timeout: 4000 });
   await expect(page.locator('.seat-1 .champion-crown')).not.toHaveClass(/crown-pending/);
   await expect(page.locator('#next-button')).toHaveText('下一局');
@@ -199,7 +206,7 @@ test('busting after the last refill ends the game with a place and no champion',
   expect(card.y + card.height).toBeLessThan(table.y + table.height);
   await seek(page, '.farewell-stage', 1200);
   await page.screenshot({ path: test.info().outputPath('farewell.png') });
-  await page.evaluate(() => document.getAnimations().forEach((a) => a.finish()));
+  await page.evaluate(finishAnimations);
   await expect(farewell).toHaveCount(0, { timeout: 4000 });
   await expect(page.locator('#next-button')).toHaveText('下一局');
   await expect(page.locator('#reset-button')).toBeHidden();
@@ -233,7 +240,7 @@ test('records drop the live note, keep results at full opacity and toast a save 
       return original.call(this, key, value);
     };
   });
-  await page.locator('#records-back-button').click();
+  await backToGame(page);
   await page.evaluate(() => window.qa.recordsNext());
   await expect(page.locator('#app-toast')).toHaveText('对局记录保存失败，关闭后可能丢失。');
   await expect(page.locator('#app-toast')).toBeHidden({ timeout: 5000 });
@@ -279,3 +286,8 @@ test('the disabled raise slider rests at its minimum until the hero acts', async
   await expect(slider).toBeDisabled();
   expect(await slider.evaluate((el) => el.value === el.min)).toBe(true);
 });
+
+// Records rely on system Back: unwind the detail and list pages to the game.
+async function backToGame(page) {
+  while (/#records/.test(page.url())) await page.goBack();
+}

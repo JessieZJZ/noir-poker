@@ -1,0 +1,52 @@
+/* Guide: preflop starting-hand win rates, collapsed by default. */
+.preflop-table {
+  display: grid;
+  margin: 12px 0;
+  border: 1px solid #2c3d45;
+  border-radius: 10px;
+  overflow: hidden;
+  font-size: 13px;
+  line-height: 1.5;
+  font-variant-numeric: tabular-nums;
+}
+.preflop-head,
+.preflop-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 76px 76px;
+  gap: 8px;
+  align-items: center;
+  padding: 5px 12px;
+}
+.preflop-head {
+  background: #15252b;
+  color: #8ea4ad;
+  font-size: 12px;
+}
+.preflop-head b {
+  font-weight: 500;
+}
+.preflop-head span,
+.preflop-row span {
+  text-align: right;
+}
+.preflop-tier {
+  padding: 7px 12px 3px;
+  border-top: 1px solid #2c3d45;
+  color: #a8dacb;
+  font-size: 12px;
+}
+.preflop-row b {
+  color: #e3ebef;
+  font-family: Manrope, sans-serif;
+  font-weight: 700;
+}
+.preflop-row span {
+  color: #bfd0d6;
+}
+.preflop-row:nth-child(even) {
+  background: #ffffff05;
+}
+.preflop-note {
+  color: #8ea4ad;
+  font-size: 12px;
+}

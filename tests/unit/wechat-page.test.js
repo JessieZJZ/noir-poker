@@ -754,9 +754,11 @@ test('WeChat Page presents completed shared review copy and per-decision advice'
     text(report.steps[0][field]);
   assert.equal(report.steps[0].ev, undefined);
   assert.ok(Array.isArray(report.activity));
+  // The hand activity opens by default and still folds.
+  assert.equal(page.data.reviewActivityOpen, true);
+  page.toggleReviewActivity();
   assert.equal(page.data.reviewActivityOpen, false);
   page.toggleReviewActivity();
-  assert.equal(page.data.reviewActivityOpen, true);
   assert.ok(page.data.reviewActivity.some((event) => event.emphasized));
   assert.equal(report.steps[0].cards.length, 2);
   assert.ok(report.steps[0].evidence.length >= 4);
@@ -1158,9 +1160,14 @@ test('WeChat public card rows use the measured corridor and stay fixed from deal
     playerCount: 9,
     info: { windowWidth: 320, windowHeight: 667, statusBarHeight: 20, safeArea: { bottom: 667 } },
   });
-  assert.equal(page.data.boardTwoRows, true, 'A tight corridor uses two readable rows');
-  assert.ok(page.data.cardWidth * page.data.arenaScale >= 31);
-  assert.ok(page.data.boardWidth >= 3 * 50 + 8);
+  // A crowded phone shows board and hole cards at one size.
+  assert.equal(page.data.cardWidth, page.data.heroWidth);
+  assert.ok(page.data.cardWidth * page.data.arenaScale >= 27);
+  assert.equal(
+    page.data.boardWidth,
+    page.data.boardTwoRows ? 3 * page.data.cardWidth + 8 : 5 * page.data.cardWidth + 16,
+  );
+  const rows = page.data.boardTwoRows;
   assert.equal(page.data.boardSlots.length, 5);
   assert.ok(page.data.boardSlots.every((card) => card.empty));
   const budget = page.data.tableHeight;
@@ -1171,7 +1178,7 @@ test('WeChat public card rows use the measured corridor and stay fixed from deal
   assert.equal(page.data.boardSlots.length, 5);
   assert.ok(page.data.boardSlots.every((card) => !card.empty));
   assert.equal(page.data.tableHeight, budget);
-  assert.equal(page.data.boardTwoRows, true);
+  assert.equal(page.data.boardTwoRows, rows);
   assert.equal(page.data.cardWidth, originalCardWidth);
   assert.equal(page.data.boardWidth, originalBoardWidth);
   Object.assign(info, { windowWidth: 390, windowHeight: 900, safeArea: { bottom: 900 } });
@@ -1398,7 +1405,8 @@ test('sound mute clears audio while independent vibration still notifies later h
   assert.equal(page.data.settings.sound, false);
   assert.equal(vibrations.length, count + 1);
   assert.ok(audios.every((audio) => audio.stopped));
-  assert.match(template, /aria-label="音效与音乐"/);
+  assert.match(template, /aria-label="音效"/);
+  assert.match(template, /aria-label="背景音乐"/);
   page.togglePreference({ currentTarget: { dataset: { key: 'vibration' } } });
   page._controller.retry();
   reachHero(page);
@@ -1950,13 +1958,13 @@ test('WeChat record lists send bounded summary patches and remain idle without r
   );
 });
 
-test('WeChat history uses a compact review dock and the records header keeps its return button intrinsic', () => {
+test('WeChat history uses a compact review dock and records rely on native Back', () => {
   assert.match(
     template,
     /tableHeight \+ 50 \+ \(waitingForSeat \? 0 : historyReadOnly \|\| compactActions \? 64 : 134\)/,
   );
   assert.match(stylesheet, /\.history-shell \.action-dock\s*\{[^}]*height: 64px/);
-  assert.match(stylesheet, /\.history-practice-heading\s*\{[^}]*margin: 12px 8px 8px/);
+  assert.doesNotMatch(stylesheet, /\.history-practice-heading/);
   const markup = readFileSync(
     new URL('../../miniprogram/pages/records/records.wxml', import.meta.url),
     'utf8',
@@ -1965,9 +1973,11 @@ test('WeChat history uses a compact review dock and the records header keeps its
     new URL('../../miniprogram/pages/records/records.wxss', import.meta.url),
     'utf8',
   );
-  assert.ok(markup.indexOf('<text>对局记录</text>') < markup.indexOf('id="records-back"'));
+  // System Back or the edge gesture returns from records; no return button.
+  assert.match(markup, /<view class="records-nav"><text>对局记录<\/text><\/view>/);
+  assert.doesNotMatch(markup, /records-back|返回游戏/);
   assert.doesNotMatch(markup, /每一局的练习足迹/);
-  assert.match(css, /\.records-nav button\s*\{[^}]*width: auto;[^}]*min-width: 0;[^}]*margin: 0;/);
+  assert.doesNotMatch(css, /\.records-nav button/);
 });
 
 for (const playerCount of [5, 9]) {
@@ -2086,8 +2096,12 @@ test('WeChat history removes the extra navigation heading while preserving repla
   assert.equal(fixture.app.noirController, fixture.page._controller);
   assert.equal(fixture.page._controller.getRecords()[0].completed, 1);
   assert.doesNotMatch(template, /history-back|history-nav-title|history-replay-tag/);
-  assert.match(template, /id="history-return-game"[^>]*bindtap="returnToGame"/);
-  assert.match(template, /class="history-start-time">{{historyStartedAt}}/);
+  // No practice label or return button: the time sits under the hand label.
+  assert.doesNotMatch(template, /history-return-game|history-practice|returnToGame/);
+  assert.match(
+    template,
+    /<view class="hint-slot">\s*<text wx:if="{{historyReadOnly}}" class="history-start-time">{{historyStartedAt}}<\/text>/,
+  );
   assert.match(
     template,
     /<block wx:if="{{!historyReadOnly}}"\s*><text class="hand-divider">·<\/text><text>{{street}}/,
@@ -2246,8 +2260,11 @@ test('WeChat final cards retain readable phone dimensions within the unchanged f
       page.data.tablet ? [33, 46, 28] : [32, 42, 22],
     );
     const scale = page.data.arenaScale;
+    // The game info card shares the first screen, so the narrowest 320px
+    // phones keep slightly smaller targets than wider phones.
+    const narrow = windowWidth < 360;
     assert.ok(
-      metrics['player-back-width'] * scale >= 14.5,
+      metrics['player-back-width'] * scale >= (narrow ? 13.5 : 14.5),
       `${windowWidth}px card backs retain the 15px target with 0.5px fit tolerance`,
     );
     // The profile begins 4px below the fixed mini-card slot. This is the
@@ -2257,13 +2274,16 @@ test('WeChat final cards retain readable phone dimensions within the unchanged f
       `${windowWidth}px exposes at least 8px of each back above the profile`,
     );
     assert.ok(
-      page.data.cardWidth * scale >= 30.5,
+      page.data.cardWidth * scale >= (narrow ? 28 : 30.5),
       `${windowWidth}px public cards retain the shared 31px target with 0.5px layout tolerance`,
     );
     const faces = page.data.heroCardGeometry.faces;
     assert.equal(faces.length, 2);
     assert.equal(metrics['hero-card-slot-height'], page.data.tablet ? 136 : 104);
-    assert.ok(page.data.heroWidth * scale >= 30, 'Crowded hero cards retain readable faces');
+    assert.ok(
+      page.data.heroWidth * scale >= (narrow ? 28 : 30),
+      'Crowded hero cards retain readable faces',
+    );
     assert.ok(page.data.heroHeight <= metrics['hero-card-slot-height'] * 1.4);
     const asBounds = (part) => ({
       left: part.left,
@@ -2312,11 +2332,16 @@ test('WeChat final cards retain readable phone dimensions within the unchanged f
   );
 });
 
-test('WeChat practice heading owns reset and omits the old footer', () => {
+test('WeChat practice heading owns reset; game info replaces it only while waiting', () => {
   assert.match(
     template,
-    /class="practice-panel"\s*><view class="session-title"\s*><view class="session-heading"\s*><text>{{sessionTitle}}<\/text\s*><text wx:if="{{standingText}}" class="standing-tag {{standingClass}}"\s*>{{standingText}}<\/text\s*><\/view\s*><button wx:if="{{!over}}" class="practice-reset"[^>]*bindtap="resetPractice">\s*重新练习\s*<\/button\s*>/,
+    /class="practice-panel"\s*><view class="session-title"\s*><view class="session-heading"\s*><text>{{sessionTitle}}<\/text\s*><text wx:if="{{standingText}}" class="standing-tag {{standingClass}}"\s*>{{standingText}}<\/text\s*><\/view\s*><button wx:if="{{!over}}" class="practice-reset"[^>]*bindtap="resetPractice">\s*重新开局\s*<\/button\s*>/,
   );
+  assert.match(template, /wx:if="{{!historyReadOnly && !waitingForSeat}}" class="practice-panel"/);
+  // The waiting card carries the waiting message, chips, blinds and results.
+  assert.match(template, /wx:if="{{!historyReadOnly && waitingForSeat}}"\s+class="game-info"/);
+  for (const label of ['当前筹码', '盲注', '已完成', '获胜手数', '胜率'])
+    assert.match(template, new RegExp(`<text class="info-term">${label}</text\\s*>`));
   assert.doesNotMatch(
     template,
     /你的练习|本次牌桌|class="bottom-links"|class="practice-info"|本地电脑对手 · 无需登录/,
@@ -2329,8 +2354,17 @@ test('WeChat practice heading owns reset and omits the old footer', () => {
     readFileSync(new URL('../../miniprogram/pages/table/parity.wxss', import.meta.url), 'utf8'),
     /\.practice-reset\s*\{[^}]*width: 70px;[^}]*min-height: 32px/s,
   );
+  // The waiting card takes the 134px dock space: an 8px gap and 126px card.
+  const info = readFileSync(
+    new URL('../../miniprogram/pages/table/game-info.wxss', import.meta.url),
+    'utf8',
+  );
+  assert.match(
+    info,
+    /\.game-info\s*\{[^}]*box-sizing: border-box;[^}]*min-height: 126px;[^}]*margin-top: 8px/s,
+  );
   assert.match(template, /本次练习净变化/);
-  assert.match(template, /<text>本局动态<\/text><text>{{done \? 'FINISHED' : 'LIVE'}}<\/text>/);
+  assert.match(template, /<text>本手动态<\/text><text>{{done \? 'FINISHED' : 'LIVE'}}<\/text>/);
 });
 
 function measuredNumbers(page, width = 120) {

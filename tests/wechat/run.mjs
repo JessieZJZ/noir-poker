@@ -824,8 +824,15 @@ try {
   const actionExample = await readGuideAmounts();
   assert.ok(actionExample.includes('选择加注 1.2K 则补 1K'));
   assert.ok(!/\b(?:1200|1000)\b/.test(actionExample), 'Guide chip examples must use K');
+  // The preflop win-rate table is collapsed until opened, like Web.
+  assert.equal((await page.$$('.preflop-row')).length, 0);
   await invoke('toggleGuide', { currentTarget: { dataset: { index: 0 } } });
   assert.equal((await page.data()).guideExpanded[0], true);
+  assert.equal((await page.$$('.preflop-row')).length, 39);
+  assert.ok((await (await page.$('.preflop-table')).text()).includes('85%'));
+  await capture('guide-preflop', ['.guide-sheet', '.preflop-table']);
+  await invoke('toggleGuide', { currentTarget: { dataset: { index: 1 } } });
+  assert.equal((await page.data()).guideExpanded[1], true);
   const raiseExample = await readGuideAmounts();
   assert.ok(raiseExample.includes('至少要加到 1K'));
   report.visualGuide = {
@@ -1173,7 +1180,11 @@ try {
     await mini.screenshot({ path: path.join(output, `motion-${method}-early.png`) });
     await page.waitFor(1450);
     assert.equal(await face.style('opacity'), '1');
-    assert.equal(await face.style('animation-name'), 'none');
+    // A random premium hand then plays its 2.6 s glow on the same faces.
+    assert.equal(
+      await face.style('animation-name'),
+      (await page.data()).premium ? 'premium-glow' : 'none',
+    );
     await mini.screenshot({ path: path.join(output, `motion-${method}-complete.png`) });
     report.dealTransitions.push({
       method,

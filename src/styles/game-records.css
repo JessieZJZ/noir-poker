@@ -127,29 +127,16 @@
 body[data-records-page='list'] .records-page-heading {
   margin-bottom: 16px;
 }
+/* A hand's own page needs no heading: its time sits on the table and the
+   system Back or gesture returns to the list. */
 body[data-records-page='hand'] .records-page-heading {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 8px 16px;
-  margin-bottom: 8px;
+  display: none;
 }
-body[data-records-page='hand'] .records-page-heading > div {
-  display: contents;
-}
-body[data-records-page='hand'] .records-eyebrow {
-  grid-column: 1;
-  grid-row: 1;
-}
-body[data-records-page='hand'] .records-back {
-  grid-column: 2;
-  grid-row: 1;
-}
-#records-hand-start {
-  grid-column: 1 / -1;
-  grid-row: 2;
+.history-start-time {
+  grid-area: 2 / 1 / 3 / -1;
   color: #9cafb7;
-  font-size: 13px;
-  line-height: 1.5;
+  font-size: 12px;
+  line-height: 22px;
   font-variant-numeric: tabular-nums;
 }
 .records-page-heading h1 {
@@ -157,24 +144,6 @@ body[data-records-page='hand'] .records-back {
   font-size: 25px;
   line-height: 1.4;
   font-weight: 600;
-}
-.records-eyebrow {
-  margin: 0;
-  color: #83a9a1;
-  font-size: 12px;
-  letter-spacing: 1px;
-}
-.records-back {
-  border: 1px solid #314650;
-  border-radius: 8px;
-  background: #14232b;
-  padding: 10px 13px;
-  color: #b8d8d1;
-  font-size: 13px;
-  flex-shrink: 0;
-}
-.records-back:hover {
-  border-color: #6ee7c580;
 }
 .record-session {
   border: 1px solid #2d404b;
@@ -371,14 +340,6 @@ body[data-records-page='hand'] .records-page {
   max-width: none;
   padding: 0 0 36px;
 }
-body[data-records-page='hand'] .records-page-heading {
-  max-width: 1560px;
-  margin-left: auto;
-  margin-right: auto;
-  padding-left: 4%;
-  padding-right: 4%;
-  padding-top: 20px;
-}
 .records-history-grid {
   align-items: start;
 }
@@ -396,10 +357,6 @@ body[data-records-page='hand'] .records-page-heading {
   }
   .records-page-heading h1 {
     font-size: 19px;
-  }
-  .records-back {
-    font-size: 12px;
-    padding: 9px;
   }
   .record-session-heading {
     padding: 16px 56px 18px 16px;
@@ -457,9 +414,6 @@ body[data-records-page='hand'] .records-page-heading {
   display: none;
 }
 
-body[data-records-page='list'] .records-eyebrow {
-  display: none;
-}
 body[data-records-page='list'] .records-page-heading h1 {
   margin-top: 0;
 }

@@ -1,5 +1,6 @@
 @import '../../shared/ui/hero-turn.wxss';
 @import '../../shared/ui/game-effects.wxss';
+@import '../../shared/ui/emotion-effects.wxss';
 .screen {
   display: flex;
   flex-direction: column;
@@ -1511,36 +1512,10 @@
     display: block;
   }
 }
-.history-return-game {
-  margin: 0;
-  width: auto;
-  min-width: 0;
-  max-width: none;
-  justify-self: end;
-  padding: 8px 10px;
-  color: #d8e7ec;
-  background: #16232c;
-  border: 1px solid #31434e;
-  border-radius: 10px;
-  font-size: 14px;
-}
-.history-practice-heading {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 8px 16px;
-  margin: 12px 8px 8px;
-  flex: none;
-}
-.history-practice-label {
-  color: #83a9a1;
-  font-size: 13px;
-}
 .history-start-time {
-  grid-column: 1 / -1;
   color: #9cafb7;
-  font-size: 13px;
-  line-height: 1.5;
+  font-size: 12px;
+  line-height: 22px;
 }
 .session-label {
   white-space: nowrap;
@@ -1772,3 +1747,7 @@
 }
 
 @import './entry.wxss';
+
+@import './game-info.wxss';
+@import './style-detail.wxss';
+@import './preflop-table.wxss';

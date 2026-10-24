@@ -11,7 +11,8 @@
   color: #dce7e9;
   font-size: 16px;
 }
-.settings-dialog .general-settings {
+.settings-dialog .general-settings,
+.settings-dialog .table-settings {
   margin-bottom: 16px;
 }
 .settings-module .settings-row {
@@ -192,4 +193,30 @@
   .settings-dialog .profile-comparison {
     margin-top: 16px;
   }
+}
+/* Emotion legend: each badge as it appears on an opponent's avatar. */
+.mood-legend {
+  display: grid;
+  gap: 8px;
+  margin: 10px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.mood-legend li {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  color: #95a8b0;
+  font-size: 12px;
+  line-height: 1.6;
+}
+.mood-legend .mood-badge {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  margin-top: 2px;
+}
+.mood-legend b {
+  color: #d6dfe2;
+  font-weight: 600;
 }

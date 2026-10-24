@@ -796,7 +796,8 @@
   color: #95a8b0;
   margin: 3px 0 0;
 }
-.general-settings > .setting-description {
+.general-settings > .setting-description,
+.table-settings > .setting-description {
   line-height: 1.9;
 }
 .table-change-note {

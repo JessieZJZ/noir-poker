@@ -238,6 +238,10 @@ export async function buildWechat(output = wechatOutput) {
       path.join(root, 'src/styles/game-effects.css'),
       path.join(staging, 'shared/ui/game-effects.wxss'),
     );
+    await cp(
+      path.join(root, 'src/styles/emotion-effects.css'),
+      path.join(staging, 'shared/ui/emotion-effects.wxss'),
+    );
     for (const name of [
       'bet-sizing.js',
       'seat-geometry.js',

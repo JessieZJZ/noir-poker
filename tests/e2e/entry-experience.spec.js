@@ -37,14 +37,19 @@ test('all entry locales fit 320px and 390px touch viewports with labelled settin
                 navFits: nav.left >= 0 && nav.right <= document.documentElement.clientWidth,
                 settingsHeight: document.querySelector('#opponents-button').getBoundingClientRect()
                   .height,
+                // Waiting for the seat, the game info card holds only the
+                // wrapped waiting message; the restart control appears later.
                 resetFits: (() => {
-                  const card = document.querySelector('.session-card').getBoundingClientRect();
-                  const title = document.querySelector('.session-card h2').getBoundingClientRect();
-                  const reset = document.querySelector('#reset-button').getBoundingClientRect();
+                  const card = document.querySelector('.game-info').getBoundingClientRect();
+                  // The waiting message stays in the table header.
+                  const label = document
+                    .querySelector('.game-surface .surface-top .hand-label')
+                    .getBoundingClientRect();
                   return (
-                    reset.left >= title.right + 8 &&
-                    reset.right <= card.right &&
-                    reset.height === 32
+                    document.querySelector('.session-card').hidden &&
+                    label.left >= card.left &&
+                    label.right <= card.right &&
+                    label.bottom <= card.top
                   );
                 })(),
                 settingsOnRight:
@@ -67,7 +72,7 @@ test('all entry locales fit 320px and 390px touch viewports with labelled settin
     await context.close();
   }
 });
-test('entry stakes stay at the header top and the hero label has no reserved badge gap', async ({
+test('entry stakes stay in the game info card and the hero label has no reserved badge gap', async ({
   page,
 }) => {
   await page.addInitScript(() =>
@@ -78,22 +83,23 @@ test('entry stakes stay at the header top and the hero label has no reserved bad
   );
   await page.goto('/');
   await expect(page.locator('html')).toHaveAttribute('data-app-ready', 'true');
-  await expect(page.locator('.blind-info b')).toHaveText('10K / 20K');
+  await expect(page.locator('#info-blinds')).toHaveText('10K / 20K');
   for (const width of [320, 390, 768, 1024, 1280, 1700, 2256]) {
     await page.setViewportSize({ width, height: 1000 });
     await expect
       .poll(() =>
         page.evaluate(() => {
           const box = (s) => document.querySelector(s).getBoundingClientRect();
-          const hand = box('.hand-label'),
-            blinds = box('.blind-info'),
+          const hand = box('.game-surface .surface-top .hand-label'),
+            blinds = box('#info-blinds'),
             surface = box('.game-surface'),
-            card = box('.session-card');
+            card = box('.game-info');
           const name = box('.hero-identity strong'),
             stack = box('#hero-stack');
           return {
-            sameTop: Math.abs(hand.top - blinds.top) <= 1,
-            headerFits: hand.right <= blinds.left && blinds.right <= box('.surface-top').right,
+            // The waiting message heads the table; the blinds sit in the card.
+            sameTop: hand.bottom <= blinds.top,
+            headerFits: hand.right <= box('.surface-top').right && blinds.right <= card.right,
             heroGap: stack.left - name.right >= 0 && stack.left - name.right <= 7,
             noPositionSlot: box('#hero-position').width === 0,
             practiceBelow: card.top >= surface.bottom && card.top - surface.bottom <= 20,

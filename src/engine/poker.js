@@ -520,10 +520,10 @@ export function act(g, id, action, amount) {
       .find((a) => a.street === g.street && a.action === 'raise');
     if (normalized === 'fold' && facing && !p.botHand.pressureRecorded) {
       p.botHand.pressureRecorded = true;
-      const event = recordPressureFold(p.botMood, facing.id, g.emotionMode);
+      const event = recordPressureFold(p.botMood, facing.id, g.hand, g.emotionMode);
       if (event)
         log(g, `${p.name} 模拟状态：${MOOD_LABELS[event.kind]} · ${event.reason}`, id, 'info');
-    } else if (normalized !== 'fold' && facing) p.botMood.pressureFolds[facing.id] = 0;
+    }
   }
   if (id === 0) {
     g.decisions ||= [];
@@ -812,10 +812,6 @@ export function settle(g, showdown = true) {
     p.botStats.hands++;
     if (p.botHand.vpip) p.botStats.vpip++;
     if (p.botHand.pfr) p.botStats.pfr++;
-    if (!p.botHand.pressureRecorded) {
-      p.botMood.pressureFolds = {};
-      p.botMood.lastPressureRaiser = null;
-    }
     const event = finishBotHand(p, payouts[p.id] - p.total, g.emotionMode, bigBlindOf(g));
     if (event)
       log(g, `${p.name} 模拟状态：${MOOD_LABELS[event.kind]} · ${event.reason}`, p.id, 'info');

@@ -344,7 +344,9 @@ async function back({ expectedPage = 'game' } = {}) {
         id: 'records-edge-back',
         parameters: { pointerType: 'touch' },
         actions: [
-          { type: 'pointerMove', duration: 0, origin: 'viewport', x: 2, y },
+          // Inside the app's 24 pt edge zone but clear of the system's own
+          // 4 pt edge gesture, which can swallow a touch that starts there.
+          { type: 'pointerMove', duration: 0, origin: 'viewport', x: 8, y },
           { type: 'pointerDown', button: 0 },
           { type: 'pause', duration: 100 },
           {

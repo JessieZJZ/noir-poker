@@ -325,21 +325,34 @@ export function decayBotMood(mood) {
     mood.reason = '';
   }
 }
-function setMood(mood, kind, reason) {
+// Lively emotions last longer and may renew sooner than subtle ones, so the
+// two settings differ in how often emotions show, not only in their strength.
+export const MOOD_TIMING = {
+  subtle: { duration: 3, cooldown: 4 },
+  lively: { duration: 4, cooldown: 2 },
+};
+function setMood(mood, kind, reason, mode) {
+  const timing = MOOD_TIMING[mode] || MOOD_TIMING.subtle;
   mood.kind = kind;
   mood.reason = reason;
-  mood.remaining = 3;
-  mood.cooldown = 4;
+  mood.remaining = timing.duration;
+  mood.cooldown = timing.cooldown;
   return { kind, reason };
 }
-export function recordPressureFold(mood, raiser, mode) {
-  if (raiser == null || mode === 'off') return null;
-  if (mood.lastPressureRaiser !== raiser) mood.pressureFolds = {};
-  mood.lastPressureRaiser = raiser;
-  mood.pressureFolds[raiser] = (mood.pressureFolds[raiser] || 0) + 1;
-  if (mood.pressureFolds[raiser] >= 3 && !mood.cooldown) {
-    mood.pressureFolds[raiser] = 0;
-    return setMood(mood, 'reactive', '连续三手面对同一对手加注后弃牌');
+// Folding to the same opponent's raise in 3 of the last 4 hands builds
+// pressure, even with other raisers in between. pressureFolds maps each such
+// hand number to that raiser's id; older hands drop out. Measured at about
+// 0.5–0.6 triggers per 100 bot-hands (5 and 9 seats).
+export const PRESSURE_WINDOW = 4;
+export function recordPressureFold(mood, raiser, hand, mode) {
+  if (!Number.isInteger(raiser) || !Number.isInteger(hand) || mode === 'off') return null;
+  for (const key of Object.keys(mood.pressureFolds))
+    if (Number(key) <= hand - PRESSURE_WINDOW) delete mood.pressureFolds[key];
+  mood.pressureFolds[hand] = raiser;
+  const folds = Object.values(mood.pressureFolds).filter((id) => id === raiser).length;
+  if (folds >= 3 && !mood.cooldown) {
+    mood.pressureFolds = {};
+    return setMood(mood, 'reactive', '4 手内三次面对同一对手加注后弃牌', mode);
   }
   return null;
 }
@@ -354,9 +367,10 @@ export function finishBotHand(player, profit, mode, bigBlind = DEFAULT_STAKES.bi
       mood,
       player.id % 2 ? 'frustrated' : 'cautious',
       profit <= -25 * bigBlind ? '单手净损失至少 25 BB' : '连续三手各净损失至少 5 BB',
+      mode,
     );
   if (mood.wins >= 2 && profit >= 10 * bigBlind)
-    return setMood(mood, 'confident', '连续两手盈利，本手净赢至少 10 BB');
+    return setMood(mood, 'confident', '连续两手盈利，本手净赢至少 10 BB', mode);
   return null;
 }
 

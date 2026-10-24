@@ -66,6 +66,7 @@ import { presetRaiseTo } from './bet-sizing.js';
 import { chipUnitOf, legalRaiseTo } from '../engine/bet-sizing.js';
 import { createSettlementLayout } from './settlement-layout.js';
 import { createPlayViewport } from './play-viewport.js';
+import { readPlayViewport } from './stable-viewport.js';
 import { createHintNotification } from './hint-notification.js';
 import { tableHint } from '../review/table-hint.js';
 import { createHintMarquee } from './hint-marquee.js';
@@ -82,7 +83,23 @@ let dealWait = null;
 const $ = (s) => document.querySelector(s);
 const coachContent = $('#coach-content');
 const settlementLayout = createSettlementLayout($('#arena'), { observe: false });
-const playViewport = createPlayViewport($('.game-surface'), { layout: settlementLayout.update });
+const playViewport = createPlayViewport($('.game-surface'), {
+  layout() {
+    settlementLayout.update();
+    fillWaitingInfo();
+  },
+});
+// While waiting for the seat the action dock is hidden but its height stays
+// reserved, so the table never resizes on joining. The game info card takes
+// that space: the top bar, table and game info fill the first screen.
+function fillWaitingInfo() {
+  const info = $('.main > .sidebar > .game-info');
+  info.style.removeProperty('min-height');
+  if (info.hidden) return;
+  const bottom = info.getBoundingClientRect().bottom + window.scrollY;
+  const spare = readPlayViewport().height - 8 - bottom;
+  if (spare > 0) info.style.minHeight = `${info.offsetHeight + spare}px`;
+}
 const hintMarquee = createHintMarquee(coachContent, $('#coach-tip'), () => true);
 const hintNotification = createHintNotification({
   publish({ visible, text, stage }) {
@@ -143,6 +160,7 @@ let game = gameRecords.resume() || newGame(requestedCount, requestedStakes),
   finishing = false,
   hints = true,
   sound = true,
+  music = true,
   vibration = true,
   audio = null,
   audioOutput = null;
@@ -151,11 +169,11 @@ game.history ||= [];
 game.difficulty = tablePreferences.difficulty;
 $('#player-count').value = String(requestedCount);
 try {
-  ({ sound, vibration } = loadFeedbackPreferences(preferenceStorage));
+  ({ sound, music, vibration } = loadFeedbackPreferences(preferenceStorage));
   hints = preferenceStorage.getItem('noir-hints') !== 'false';
 } catch {}
 const backgroundMusic = createWebBackgroundMusic({
-  enabled: sound,
+  enabled: music,
   active: false,
   createContext: () => {
     prepareAudio();
@@ -370,6 +388,9 @@ function render() {
   const nextEntryHand = gameRecords.nextHandIdentity(game, { newSession: newRecordSession });
   const entryState = waiting ? 'waiting' : dealing ? 'dealing' : 'playing';
   $('.game-surface').dataset.entryState = entryState;
+  // The game info card replaces the practice card only before the seat is taken.
+  $('.game-info').hidden = !waiting;
+  $('.session-card').hidden = waiting;
   $('.activity-card').hidden = waiting;
   $('#entry-welcome').hidden = !waiting;
   $('#join-table-button').disabled = !waiting;
@@ -393,7 +414,6 @@ function render() {
   setLocalizedText($('#session-number-label'), `第 ${gameRecords.sessionNumber()} 局`);
   $('#replay-label').hidden = !game.replayAttempt;
   setLocalizedText($('#replay-label'), '重打 ' + game.replayAttempt);
-  $('#replay-note').hidden = !game.replayAttempt;
   setLocalizedText(
     $('#street-label'),
     waiting
@@ -504,12 +524,22 @@ function render() {
       : '从这一手开始积累经验',
   );
   $('#session-change').classList.toggle('negative', diff < 0);
+  const winrate = game.stats.hands
+    ? Math.round((game.stats.wins / game.stats.hands) * 100) + '%'
+    : '—';
   setLocalizedText($('#stat-hands'), game.stats.hands);
   setLocalizedText($('#stat-wins'), game.stats.wins);
-  setLocalizedText(
-    $('#stat-winrate'),
-    game.stats.hands ? Math.round((game.stats.wins / game.stats.hands) * 100) + '%' : '—',
-  );
+  setLocalizedText($('#stat-winrate'), winrate);
+  if (waiting) {
+    setLocalizedText($('#info-stack'), format(hero.stack));
+    setLocalizedText($('#info-change'), `${diff >= 0 ? '+' : ''}${format(diff)}`);
+    $('#info-change').classList.toggle('negative', diff < 0);
+    $('#info-change').classList.toggle('positive', diff > 0);
+    setLocalizedText($('#info-blinds'), `${format(game.smallBlind)} / ${format(game.bigBlind)}`);
+    setLocalizedText($('#info-hands'), game.stats.hands);
+    setLocalizedText($('#info-wins'), game.stats.wins);
+    setLocalizedText($('#info-winrate'), winrate);
+  }
   const activityText = createActivityFormatter(game);
   setLocalizedHTML(
     activityList,
@@ -578,8 +608,9 @@ function render() {
   setLocalizedText($('#continue-deal-button'), finishing ? '正在发牌…' : '立刻发完');
   $('#action-panel').classList.toggle('folded-actions', hero.folded && !done);
   $('#restart-hand-button').hidden = !canRestartHand(game);
-  // "下一局" replaces a reset once the game has ended.
-  $('#reset-button').hidden = !!game.over;
+  // "下一局" replaces a reset once the game has ended; before taking the seat
+  // there is nothing to restart yet.
+  $('#reset-button').hidden = !!game.over || waiting;
   $('#action-panel').classList.toggle('settled-actions', done);
   $('.action-dock').classList.toggle('compact-actions', done || hero.folded);
   $('.action-dock').classList.toggle('is-enabled', canAct);
@@ -1195,21 +1226,33 @@ $('#difficulty').onchange = (e) => {
   }
 };
 function updateSound() {
-  const b = $('#sound-button');
-  setLocalizedText($('#sound-label'), '音效与音乐');
-  b.setAttribute('aria-pressed', String(sound));
-  b.setAttribute('aria-checked', String(sound));
-  setLocalizedAttribute(b, 'title', sound ? '音效与音乐已开启' : '音效与音乐已关闭');
+  for (const [id, on, title] of [
+    ['#sound-button', sound, sound ? '音效已开启' : '音效已关闭'],
+    ['#music-button', music, music ? '背景音乐已开启' : '背景音乐已关闭'],
+  ]) {
+    const b = $(id);
+    b.setAttribute('aria-pressed', String(on));
+    b.setAttribute('aria-checked', String(on));
+    setLocalizedAttribute(b, 'title', title);
+  }
 }
 $('#sound-button').onclick = () => {
   sound = !sound;
-  backgroundMusic.setEnabled(sound);
   if (!sound) cancelSoundEffects();
   try {
     preferenceStorage.setItem('noir-sound', String(sound));
   } catch {}
   updateSound();
   if (sound) void unlockAudio().then(() => soundEffect('deal'));
+};
+$('#music-button').onclick = () => {
+  music = !music;
+  backgroundMusic.setEnabled(music);
+  try {
+    preferenceStorage.setItem('noir-music', String(music));
+  } catch {}
+  updateSound();
+  if (music) void unlockAudio();
 };
 function updateVibration() {
   const b = $('#vibration-button');

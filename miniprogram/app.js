@@ -3,13 +3,13 @@ const music = require('./shared/platform/wechat-background-music.js');
 const settings = require('./shared/platform/wechat-controller.js');
 App({
   onLaunch() {
-    let sound = true;
+    let enabled = true;
     try {
-      sound =
-        JSON.parse(wx.getStorageSync(settings.WECHAT_SETTINGS_KEY) || 'null')?.sound !== false;
+      enabled =
+        JSON.parse(wx.getStorageSync(settings.WECHAT_SETTINGS_KEY) || 'null')?.music !== false;
     } catch {}
     this.noirMusic = music.createWechatBackgroundMusic(wx, {
-      enabled: sound,
+      enabled,
       active: false,
       loadSource: () => require.async('./music/source.js'),
     });

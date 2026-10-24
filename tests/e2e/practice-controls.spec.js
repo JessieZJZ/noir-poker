@@ -7,8 +7,12 @@ test('practice heading reset retains cancellation and confirmation behavior with
   await page.waitForFunction(() => Boolean(window.qa));
   await expect(page.locator('.practice-info')).toHaveCount(0);
   await expect(page.locator('.site-footer')).toBeHidden();
-  await expect(page.locator('.session-card .section-title #reset-button')).toHaveText('重新练习');
+  // Waiting for the seat the game info card replaces the practice card.
+  await expect(page.locator('.session-card')).toBeHidden();
+  await expect(page.locator('.game-info')).toBeVisible();
   await page.evaluate(() => window.qa.foldWin(7, 2));
+  await expect(page.locator('.game-info')).toBeHidden();
+  await expect(page.locator('.session-card .section-title #reset-button')).toHaveText('重新开局');
   const before = await page.evaluate(() => window.noir.getState());
   const completed = await page.locator('#stat-hands').textContent();
   await page.locator('#reset-button').scrollIntoViewIfNeeded();

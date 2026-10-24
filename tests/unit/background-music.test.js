@@ -5,32 +5,36 @@ import { createWebBackgroundMusic } from '../../src/platform/web-background-musi
 import { createWechatBackgroundMusic } from '../../src/platform/wechat-background-music.js';
 import { loadFeedbackPreferences } from '../../src/ui/feedback-preferences.js';
 
-test('feedback defaults on, migrates a legacy combined mute, and then persists independently', () => {
+test('sound effects, background music and vibration default on and switch independently', () => {
   const values = new Map();
   const storage = { getItem: (key) => values.get(key) ?? null };
-  assert.deepEqual(loadFeedbackPreferences(storage), { sound: true, vibration: true });
+  assert.deepEqual(loadFeedbackPreferences(storage), { sound: true, music: true, vibration: true });
   values.set('noir-sound', 'false');
-  assert.deepEqual(loadFeedbackPreferences(storage), { sound: false, vibration: false });
-  values.set('noir-vibration', 'true');
-  assert.deepEqual(loadFeedbackPreferences(storage), { sound: false, vibration: true });
-  values.set('noir-vibration', 'false');
+  assert.deepEqual(loadFeedbackPreferences(storage), {
+    sound: false,
+    music: true,
+    vibration: true,
+  });
+  values.set('noir-music', 'false');
+  assert.deepEqual(loadFeedbackPreferences(storage), {
+    sound: false,
+    music: false,
+    vibration: true,
+  });
   values.set('noir-sound', 'true');
-  assert.deepEqual(loadFeedbackPreferences(storage), { sound: true, vibration: false });
-});
-
-test('a first-load vibration migration is saved before later sound changes', () => {
-  for (const initialSound of [null, 'false']) {
-    const values = new Map(initialSound === null ? [] : [['noir-sound', initialSound]]);
-    const storage = {
-      getItem: (key) => values.get(key) ?? null,
-      setItem: (key, value) => values.set(key, value),
-    };
-    const expected = initialSound !== 'false';
-    assert.equal(loadFeedbackPreferences(storage).vibration, expected);
-    values.set('noir-sound', String(!expected));
-    assert.equal(loadFeedbackPreferences(storage).vibration, expected);
-    assert.equal(values.get('noir-vibration'), String(expected));
-  }
+  values.set('noir-vibration', 'false');
+  assert.deepEqual(loadFeedbackPreferences(storage), {
+    sound: true,
+    music: false,
+    vibration: false,
+  });
+  // Unreadable storage keeps every switch on.
+  const broken = {
+    getItem() {
+      throw Error('blocked');
+    },
+  };
+  assert.deepEqual(loadFeedbackPreferences(broken), { sound: true, music: true, vibration: true });
 });
 
 test('muted/hidden music allocates no player and disposal prevents every later restart', () => {

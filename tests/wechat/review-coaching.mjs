@@ -104,7 +104,7 @@ try {
   await mini.reLaunch('/pages/table/table');
   page = await mini.currentPage();
   report.build = JSON.parse(fs.readFileSync(path.join(root, '.artifacts/wechat/build-info.json')));
-  assert.equal((await page.data()).guideExpanded[1], true);
+  assert.equal((await page.data()).guideExpanded[2], true);
   page = await seatAtTable(mini);
   await invoke('closeReview');
   // Settings apply to the next hand; never try to replace an active deal.
@@ -481,8 +481,8 @@ try {
   assert.match(responses, /River.*950/);
   assert.match(responses, /Luna.*800/);
   assert.equal(hero.publicResponses, undefined);
-  assert.equal((await page.data()).reviewActivityOpen, false);
-  await invoke('toggleReviewActivity');
+  // The hand activity opens by default.
+  assert.equal((await page.data()).reviewActivityOpen, true);
   assert.ok((await page.data()).reviewActivity.some((event) => event.emphasized && event.current));
   const currentActivity = await painted('.review-activity-current');
   assert.match(await currentActivity.style('background-color'), /102,\s*203,\s*177/);

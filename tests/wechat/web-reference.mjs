@@ -89,7 +89,6 @@ try {
     `,
     });
     await page.evaluate(() => {
-      document.querySelector('#sound-label').textContent = '音效与音乐';
       window.dispatchEvent(new Event('resize'));
     });
     await page.evaluate(

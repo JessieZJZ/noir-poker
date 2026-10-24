@@ -170,21 +170,31 @@ try {
   await mini.screenshot({ path: path.join(output, 'balanced-action-notice.png') });
   report.checks.push({ name: 'real-action-notice-balanced-spacing', evidence: spacing });
   await mini.evaluate(() => getCurrentPages().at(-1).openSettings());
-  const sound = await page.$('#sound-button');
+  // Sound effects and background music are separate switches.
+  const sound = await page.$('#sound-button'),
+    music = await page.$('#music-button');
   await sound.tap();
+  const effectsOff = await wait(async () => {
+    const state = await inspect();
+    return state.settings.sound === false ? state : null;
+  }, 'Sound switch must turn effects off');
+  assert.equal(effectsOff.controller.playing, true, 'Muting effects leaves music playing');
+  await sound.tap();
+  await music.tap();
   const muted = await wait(async () => {
     const state = await inspect();
-    return state.settings.sound === false && !state.controller.playing && state.audio.paused
+    return state.settings.music === false && !state.controller.playing && state.audio.paused
       ? state
       : null;
-  }, 'Sound switch must pause music');
+  }, 'Music switch must pause music');
+  assert.equal(muted.settings.sound, true);
   assert.equal(muted.settings.vibration, true);
   await (await page.$('#vibration-button')).tap();
-  await sound.tap();
+  await music.tap();
   const restored = await wait(async () => {
     const state = await inspect();
-    return state.settings.sound && state.controller.playing ? state : null;
-  }, 'Unmuting must resume music');
+    return state.settings.music && state.controller.playing ? state : null;
+  }, 'Turning music on must resume it');
   assert.equal(restored.settings.vibration, false);
   await mini.screenshot({ path: path.join(output, 'music-on-vibration-off.png') });
   report.checks.push({ name: 'independent-switches', muted, restored });
@@ -203,6 +213,7 @@ try {
   page = await mini.currentPage();
   const persisted = await inspect();
   assert.equal(persisted.settings.sound, true);
+  assert.equal(persisted.settings.music, true);
   assert.equal(persisted.settings.vibration, false);
   assert.equal(persisted.controller.playing, true);
   report.checks.push({ name: 'page-relaunch-persistence', evidence: persisted });

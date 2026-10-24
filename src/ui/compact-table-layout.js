@@ -119,7 +119,25 @@ export function compactTableLayout({
       availableWidth ?? Math.round(Math.max(1, width - (width <= 600 ? 18 : width * 0.06 + 2))),
     height: Math.max(1, height),
     gap: 16,
-    alternatives: count === 5 ? [[160, 230, 310, 380]] : count === 9 ? [undefined] : undefined,
+    // On phones, eight and nine seats also try rails that pull the lowest
+    // seats toward the hero, which spaces the side columns and fits larger
+    // players.
+    alternatives:
+      count === 5
+        ? [[160, 230, 310, 380]]
+        : count === 9
+          ? [
+              undefined,
+              ...(width <= 600
+                ? [
+                    [122, 166, 226, 256, 284, 314, 374, 418],
+                    [118, 170, 230, 256, 284, 310, 370, 422],
+                  ]
+                : []),
+            ]
+          : count === 8 && width <= 600
+            ? [undefined, [126, 178, 234, 270, 306, 362, 414]]
+            : undefined,
     angles:
       count === 5
         ? [180, 240, 300, 360]
@@ -160,13 +178,16 @@ export function compactTableLayout({
   // either size within 10% of the other. A cap on the on-screen size (after
   // the arena is scaled to fit) stops faces from crowding the felt.
   const faceCap = tablet ? (large ? 84 : 76) : 62;
+  // Crowded phone tables (not tablets or desktops) show board and hole cards
+  // at one size, and hold the hole cards further from the neighbouring players.
+  const crowded = width <= 600 && count >= 7;
   const heroOptions = (boardWidth, cap) => ({
     width: heroWidth,
     height: heroHeight,
     maxGrowth: tablet ? 1 : 1.4,
     minimumWidth: heroWidth * 0.65,
-    maximumWidth: Math.min(cap, Math.round(boardWidth * 1.1)),
-    gap: 18,
+    maximumWidth: Math.min(cap, crowded ? boardWidth : Math.round(boardWidth * 1.1)),
+    gap: crowded ? 20 : 18,
   });
   const candidates = [false, true].map((twoRows) => {
     const layout = railLayout({
@@ -205,12 +226,11 @@ export function compactTableLayout({
   const heroCards = chosen.hero;
   heroWidth = heroCards.width;
   heroHeight = heroCards.height;
-  // On the most crowded small screens readability wins: the board keeps a
-  // readable on-screen width even if the hero is held smaller by the seats.
-  const boardLimit = Math.max(
-    Math.round(heroWidth * 1.1),
-    Math.ceil((tablet ? 52 : 40) / chosen.scale),
-  );
+  // Elsewhere readability wins on small screens: the board keeps a readable
+  // on-screen width even if the hero is held smaller by the seats.
+  const boardLimit = crowded
+    ? heroWidth
+    : Math.max(Math.round(heroWidth * 1.1), Math.ceil((tablet ? 52 : 40) / chosen.scale));
   if (cardWidth > boardLimit) {
     const balanced = growPublicCards(fitted, {
       cardWidth: boardLimit,

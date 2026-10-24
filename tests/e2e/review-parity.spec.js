@@ -22,7 +22,7 @@ test('review heading styles, hand identities, position tags and selected activit
   await expect(page.locator('#review-coach-explanation strong').first()).toHaveCSS('color', gold);
   await expect(page.locator('#review-coach-explanation h4')).toHaveCSS('color', gold);
   await expect(page.locator('.review-evidence h3')).toHaveCSS('color', gold);
-  await page.locator('#review-activity summary').click();
+  await expect(page.locator('#review-activity')).toHaveAttribute('open', '');
   await expect(page.locator('#review-activity .activity-position').first()).toBeVisible();
   const plainActor = page
     .locator('.review-activity-emphasis:not(.review-activity-current)')

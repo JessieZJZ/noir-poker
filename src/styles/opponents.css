@@ -122,6 +122,24 @@
   overflow: hidden;
   flex-shrink: 0;
 }
+/* An emotion's badge sits over the avatar's top-left edge, so the portrait
+   clips itself instead of the avatar clipping its children. */
+.seat .avatar.has-mood {
+  overflow: visible;
+}
+.seat .avatar.has-mood > .persona-portrait {
+  border-radius: inherit;
+}
+.seat .avatar > .mood-badge {
+  position: absolute;
+  /* The top-left corner is clear of the name, style and stack text. */
+  top: -22%;
+  left: -22%;
+  z-index: 1;
+  /* Relative to the avatar, so it stays legible once the arena is scaled. */
+  width: 60%;
+  height: 60%;
+}
 .profile-portrait {
   display: grid;
   place-items: center;

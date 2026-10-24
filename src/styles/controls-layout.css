@@ -110,22 +110,6 @@ html.native-ios .game-surface {
 .main .game-surface > .surface-top {
   grid-template-rows: 28px 22px;
 }
-.surface-top .replay-note {
-  grid-area: 2 / 1;
-  min-width: 0;
-  margin: 0;
-  padding: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  line-height: 22px;
-  font-size: 12px;
-}
-.surface-top:has(.replay-note:not([hidden])) .hint-banner {
-  grid-area: 2 / 2;
-  max-width: clamp(88px, 24vw, 160px);
-  justify-self: end;
-}
 @media (min-width: 1101px), (min-width: 901px) and (orientation: landscape) {
   .main .game-surface > .surface-top {
     grid-template-rows: 28px auto;
@@ -207,9 +191,6 @@ html.native-ios .game-surface {
   }
 }
 @media (max-width: 900px), (min-width: 901px) and (max-width: 1100px) and (orientation: portrait) {
-  .surface-top .replay-note {
-    font-size: 10px;
-  }
   .game-surface {
     --live-dock-height: 146px;
   }
@@ -324,8 +305,7 @@ html.native-ios .game-surface {
   .game-surface .blind-info {
     font-size: 18px;
   }
-  .game-surface .hint-banner p,
-  .surface-top .replay-note {
+  .game-surface .hint-banner p {
     font-size: 16px;
     line-height: 26px;
   }

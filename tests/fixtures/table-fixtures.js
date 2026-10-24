@@ -162,6 +162,18 @@ window.qa = {
     render();
     return publicState();
   },
+  // Every simulated emotion at once, on the first seats, for its avatar effect.
+  moods(count = 5) {
+    fixtureGame(count, true);
+    game.emotionMode = 'subtle';
+    startHand(game);
+    ['frustrated', 'cautious', 'confident', 'reactive'].forEach((kind, index) =>
+      Object.assign(game.players[index + 1].botMood, { kind, remaining: 3 }),
+    );
+    render();
+    this.stop();
+    return publicState();
+  },
   premiumStart() {
     fixtureGame(5, true);
     startHand(game);

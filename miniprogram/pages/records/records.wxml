@@ -1,11 +1,9 @@
 <view class="records-chrome" style="height: {{topInset + 36}}px;" />
 <view
   class="records-screen"
-  style="padding-top: {{topInset + 36}}px; padding-bottom: {{bottomInset + 20}}px;"
+  style="padding-top: {{topInset + 36}}px; padding-bottom: {{bottomInset}}px;"
 >
-  <view class="records-nav"
-    ><text>对局记录</text><button id="records-back" bindtap="returnToGame">返回游戏</button></view
-  >
+  <view class="records-nav"><text>对局记录</text></view>
   <view wx:if="{{!sessions.length}}" class="records-empty"
     >还没有对局记录，开始练习后自动保存。</view
   >

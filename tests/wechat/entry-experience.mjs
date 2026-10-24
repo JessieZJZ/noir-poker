@@ -135,26 +135,33 @@ try {
   assert.equal(await settings.style('border-top-width'), '0px');
   assert.equal((await (await page.$('#join-table-button')).text()).trim(), '入座开练');
   assert.equal((await page.$$('.activity-panel')).length, 0);
-  const header = await page.$('.game-header');
-  const headerOffset = await header.offset(),
-    headerSize = await header.size();
-  for (const selector of ['.hand-label', '.blind-info']) {
-    const label = await page.$(selector);
-    assert.ok(label, `${selector} must exist`);
-    const offset = await label.offset(),
-      size = await label.size();
+  // Waiting, the header keeps the waiting message (its blinds are hidden) and
+  // the game info card replaces the practice panel, as on Web.
+  assert.equal(await (await page.$('.game-header .hand-label')).style('visibility'), 'visible');
+  assert.equal(await (await page.$('.game-header .blind-info')).style('visibility'), 'hidden');
+  assert.equal((await page.$$('.practice-panel')).length, 0);
+  const info = await page.$('.game-info');
+  const infoOffset = await info.offset(),
+    infoSize = await info.size();
+  for (const selector of ['.game-info-stats']) {
+    const part = await page.$(selector);
+    assert.ok(part, `${selector} must exist`);
+    const offset = await part.offset(),
+      size = await part.size();
     assert.ok(size.height > 0);
-    assert.ok(offset.top >= headerOffset.top, `${selector} must not clip above the header`);
+    assert.ok(offset.top >= infoOffset.top, `${selector} must not clip above the card`);
     assert.ok(
-      offset.top + size.height <= headerOffset.top + headerSize.height,
-      `${selector} must stay inside the header`,
+      offset.top + size.height <= infoOffset.top + infoSize.height,
+      `${selector} must stay inside the card`,
     );
   }
-  const handOffset = await (await page.$('.hand-label')).offset();
-  const blindOffset = await (await page.$('.blind-info')).offset();
+  // The card takes the hidden dock's space and ends 8px above the screen bottom.
+  const waitingView = await page.data();
   assert.ok(
-    Math.abs(handOffset.top - blindOffset.top) <= 1,
-    'Waiting blinds share the first header row',
+    Math.abs(
+      infoOffset.top + infoSize.height - (waitingView.windowHeight - waitingView.bottomInset - 8),
+    ) <= 1,
+    'The top bar, table and game info fill the first screen',
   );
   // The name sits in a wrapper that also anchors the champion's crown.
   const heroName = await page.$('.hero-identity > .hero-name-text'),
@@ -226,8 +233,18 @@ try {
     await mini.screenshot({ path: path.join(output, `waiting-${count}-seats.png`) });
   }
   report.checks.push({ name: 'next-session-hand-and-all-waiting-table-sizes', reentry });
-  const reset = await page.$('.practice-panel .session-title .practice-reset');
-  assert.ok(reset);
+  // Waiting for the seat there is nothing to restart yet.
+  assert.equal((await page.$$('.practice-reset')).length, 0);
+  await (await page.$('#join-table-button')).tap();
+  await wait(
+    async () => (await page.data()).entryState === 'playing',
+    'The seat is taken before restarting',
+  );
+  const reset = await wait(
+    async () => page.$('.practice-panel .session-title .practice-reset'),
+    'The restart control appears once practice starts',
+  );
+  assert.equal((await reset.text()).trim(), '重新开局');
   await mini.pageScrollTo(
     Math.max(0, (await reset.offset()).top - (await page.data()).topInset - 100),
   );
@@ -250,8 +267,9 @@ try {
     'Moved reset opens the existing confirmation',
   );
   await (await page.$('.reset-sheet .close')).tap();
+  const seated = { hand: (await inspect()).hand, sessionNumber: (await page.data()).sessionNumber };
   await wait(async () => !(await page.data()).resetOpen, 'Cancel closes reset');
-  assert.equal((await inspect()).hand, 0);
+  assert.equal((await inspect()).hand, seated.hand);
   await reset.tap();
   const confirm = await wait(
     async () => page.$('.reset-sheet .primary'),
@@ -259,7 +277,9 @@ try {
   );
   await confirm.tap();
   await wait(
-    async () => (await inspect()).hand === 1 && !(await page.data()).resetOpen,
+    async () =>
+      (await page.data()).sessionNumber === seated.sessionNumber + 1 &&
+      !(await page.data()).resetOpen,
     'Confirmed reset starts the new practice',
   );
   assert.equal((await page.data()).stats.hands, 0);

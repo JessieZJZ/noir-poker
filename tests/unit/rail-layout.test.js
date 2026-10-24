@@ -133,7 +133,7 @@ test('tablet-sized PC windows cap hero artwork independently of pointer type', (
   }
 });
 
-test('crowded narrow phones use two rows for readable community cards and balanced hero faces', () => {
+test('crowded narrow phones show board and hole cards at one size, clear of the players', () => {
   for (const width of [320, 390]) {
     const fit = compactTableLayout({
       width,
@@ -142,18 +142,18 @@ test('crowded narrow phones use two rows for readable community cards and balanc
       seats: Array.from({ length: 8 }, (_, i) => ({ id: i + 1 })),
     });
     assert.equal(fit.twoRows, true);
-    assert.ok(fit.cardWidth * fit.arenaScale >= 40);
-    assert.ok(fit.heroWidth <= fit.cardWidth * 1.25);
+    assert.equal(fit.heroWidth, fit.cardWidth);
+    assert.ok(fit.cardWidth * fit.arenaScale >= 30);
     for (const face of fit.heroCardGeometry.faces)
       for (const seat of fit.positioned)
         for (const part of seat.parts) {
           const left = seat.left + part.left,
             top = seat.top + part.top;
           assert.ok(
-            face.left + face.width + 18 <= left ||
-              left + part.width + 18 <= face.left ||
-              face.top + face.height + 18 <= top ||
-              top + part.height + 18 <= face.top,
+            face.left + face.width + 20 <= left ||
+              left + part.width + 20 <= face.left ||
+              face.top + face.height + 20 <= top ||
+              top + part.height + 20 <= face.top,
           );
         }
   }

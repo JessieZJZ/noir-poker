@@ -19,6 +19,8 @@ import {
   freshBotMood,
   freshBotStats,
   recordPressureFold,
+  decayBotMood,
+  MOOD_TIMING,
   finishBotHand,
   effectiveBotAxes,
   chooseBotAction,
@@ -175,12 +177,70 @@ test('loss, win and pressure triggers are bounded, cooled down and can be disabl
   const winner = { id: 1, botMood: freshBotMood() };
   assert.equal(finishBotHand(winner, 500, 'subtle', 50), null);
   assert.equal(finishBotHand(winner, 500, 'subtle', 50).kind, 'confident');
-  const mood = freshBotMood();
-  recordPressureFold(mood, 2, 'subtle');
-  recordPressureFold(mood, 3, 'subtle');
-  assert.equal(recordPressureFold(mood, 2, 'subtle'), null);
-  assert.equal(recordPressureFold(mood, 2, 'subtle'), null);
-  assert.equal(recordPressureFold(mood, 2, 'subtle').kind, 'reactive');
+});
+test('folding to one raiser in 3 of 4 hands triggers, with window, raiser and cooldown bounds', () => {
+  // Hands 1, 2 and 4 fall within one four-hand window; raiser 2 in hand 3
+  // does not reset raiser 1's count.
+  const inside = freshBotMood();
+  assert.equal(recordPressureFold(inside, 1, 1, 'subtle'), null);
+  assert.equal(recordPressureFold(inside, 1, 2, 'subtle'), null);
+  assert.equal(recordPressureFold(inside, 2, 3, 'subtle'), null);
+  assert.equal(recordPressureFold(inside, 1, 4, 'subtle').kind, 'reactive');
+  assert.deepEqual(inside.pressureFolds, {});
+  // Hands 1, 2 and 5 span five hands: hand 1 has left the window.
+  const spread = freshBotMood();
+  recordPressureFold(spread, 1, 1, 'subtle');
+  recordPressureFold(spread, 1, 2, 'subtle');
+  assert.equal(recordPressureFold(spread, 1, 5, 'subtle'), null);
+  assert.deepEqual(spread.pressureFolds, { 2: 1, 5: 1 });
+  // Different raisers never add up.
+  const mixed = freshBotMood();
+  recordPressureFold(mixed, 1, 1, 'subtle');
+  recordPressureFold(mixed, 2, 2, 'subtle');
+  assert.equal(recordPressureFold(mixed, 3, 3, 'subtle'), null);
+  // A hand counts once, and cooldown or the off mode block the trigger.
+  const repeated = freshBotMood();
+  for (let i = 0; i < 3; i++) recordPressureFold(repeated, 1, 7, 'subtle');
+  assert.deepEqual(repeated.pressureFolds, { 7: 1 });
+  const cooled = { ...freshBotMood(), cooldown: 1 };
+  for (const hand of [1, 2]) recordPressureFold(cooled, 1, hand, 'subtle');
+  assert.equal(recordPressureFold(cooled, 1, 3, 'subtle'), null);
+  const off = freshBotMood();
+  for (const hand of [1, 2, 3]) assert.equal(recordPressureFold(off, 1, hand, 'off'), null);
+  assert.deepEqual(off.pressureFolds, {});
+});
+test('lively emotions last longer and renew sooner than subtle ones', () => {
+  assert.deepEqual(MOOD_TIMING, {
+    subtle: { duration: 3, cooldown: 4 },
+    lively: { duration: 4, cooldown: 2 },
+  });
+  for (const [mode, duration, cooldown] of [
+    ['subtle', 3, 4],
+    ['lively', 4, 2],
+  ]) {
+    const p = { id: 1, botMood: freshBotMood() };
+    finishBotHand(p, -1250, mode, 50);
+    assert.deepEqual([p.botMood.remaining, p.botMood.cooldown], [duration, cooldown]);
+    for (let hand = 1; hand < duration; hand++) {
+      decayBotMood(p.botMood);
+      assert.equal(p.botMood.kind, 'frustrated', `${mode} hand ${hand}`);
+    }
+    decayBotMood(p.botMood);
+    assert.equal(p.botMood.kind, 'steady', `${mode} ends after ${duration} hands`);
+  }
+  // A lively emotion can renew while it still shows; a subtle one cannot.
+  const lively = { id: 1, botMood: freshBotMood() };
+  finishBotHand(lively, -1250, 'lively', 50);
+  decayBotMood(lively.botMood);
+  decayBotMood(lively.botMood);
+  assert.equal(lively.botMood.kind, 'frustrated');
+  assert.equal(finishBotHand(lively, -1250, 'lively', 50).kind, 'frustrated');
+  assert.equal(lively.botMood.remaining, 4);
+  const subtle = { id: 1, botMood: freshBotMood() };
+  finishBotHand(subtle, -1250, 'subtle', 50);
+  decayBotMood(subtle.botMood);
+  decayBotMood(subtle.botMood);
+  assert.equal(finishBotHand(subtle, -1250, 'subtle', 50), null);
 });
 test('emotions adjust actual policy controls with a smaller subtle effect', () => {
   const profile = BOT_PROFILES[1],
@@ -192,16 +252,27 @@ test('emotions adjust actual policy controls with a smaller subtle effect', () =
   assert.ok(strong[0] > mild[0]);
   assert.ok(strong[4] < mild[4]);
 });
-test('an intervening hand without pressure breaks the consecutive-fold trigger', () => {
-  const g = newGame(undefined, { smallBlind: 25, bigBlind: 50, startingStack: 5000, chipUnit: 25 });
-  for (let hand = 0; hand < 5; hand++) {
-    g.dealer = 2;
-    startHand(g);
-    assert.equal(g.actor, 0);
-    act(g, 0, hand % 2 ? 'fold' : 'raise', 100);
-    while (g.phase !== 'done') act(g, g.actor, 'fold');
-  }
-  assert.equal(g.players[1].botMood.kind, 'steady');
+test('folding to the same raiser in three of four hands makes a bot react; a wider spread does not', () => {
+  const play = (raiseHands, total) => {
+    const g = newGame(undefined, {
+      smallBlind: 25,
+      bigBlind: 50,
+      startingStack: 5000,
+      chipUnit: 25,
+    });
+    for (let hand = 0; hand < total; hand++) {
+      g.dealer = 2;
+      startHand(g);
+      assert.equal(g.actor, 0);
+      act(g, 0, raiseHands.includes(hand) ? 'raise' : 'fold', 100);
+      while (g.phase !== 'done') act(g, g.actor, 'fold');
+    }
+    return g.players[1].botMood.kind;
+  };
+  // The hero raises in hands 1, 2 and 4; hand 3 brings no pressure.
+  assert.equal(play([0, 1, 3], 4), 'reactive');
+  // Raises in hands 1, 3 and 5 never put three inside a four-hand window.
+  assert.equal(play([0, 2, 4], 5), 'steady');
 });
 test('style differences change entry and value-trap behavior over common decision samples', () => {
   const view = {

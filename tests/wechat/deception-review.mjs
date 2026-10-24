@@ -37,8 +37,11 @@ try {
       const g = getCurrentPages().at(-1)._controller.getGame();
       return { phase: g.phase, actor: g.actor };
     });
-    if (phase.phase === 'playing' && phase.actor === 0)
+    if (phase.phase === 'playing' && phase.actor === 0) {
+      // The page enables actions only after the deal animation.
+      await wait((data) => data.canAct);
       await invoke('act', { currentTarget: { dataset: { action: 'fold' } } });
+    }
     await invoke('finishHand');
     await wait((data) => data.done || data.actor === 0);
   }

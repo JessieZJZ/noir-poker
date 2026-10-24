@@ -150,8 +150,8 @@ test('vibration switches independently from sound effects and music', async ({ p
   });
   await openSettings(page);
   await page.locator('#sound-button').click();
-  await expect(page.locator('#sound-label')).toHaveText('音效与音乐');
-  await expect(page.locator('#sound-button')).toHaveAttribute('title', '音效与音乐已关闭');
+  await expect(page.locator('#sound-label')).toHaveText('音效');
+  await expect(page.locator('#sound-button')).toHaveAttribute('title', '音效已关闭');
   await closeSettings(page);
   await page.evaluate(() => window.qa.heroTurn(7));
   expect(await page.evaluate(() => window.feedbackCalls)).toBe(1);

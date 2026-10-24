@@ -138,15 +138,6 @@
               ><span id="replay-label" class="replay-label" hidden></span>
             </div>
             <div class="blind-info">盲注 <b id="blind-values">100 / 200</b></div>
-            <p
-              id="replay-note"
-              class="replay-note"
-              role="status"
-              title="重打本手 · 底牌与发牌顺序不变，原结算已撤回。"
-              hidden
-            >
-              重打本手 · 底牌与发牌顺序不变，原结算已撤回。
-            </p>
             <section
               class="hint-banner"
               id="coach-content"
@@ -330,13 +321,37 @@
         </section>
       </section>
       <aside class="sidebar">
+        <section class="game-info" aria-label="对局信息" hidden>
+          <dl class="game-info-stats">
+            <div class="game-info-chips">
+              <dt>当前筹码</dt>
+              <dd><b id="info-stack">20K</b><em id="info-change">+0</em></dd>
+            </div>
+            <div>
+              <dt>盲注</dt>
+              <dd id="info-blinds">100 / 200</dd>
+            </div>
+            <div>
+              <dt>已完成</dt>
+              <dd id="info-hands">0</dd>
+            </div>
+            <div>
+              <dt>获胜手数</dt>
+              <dd id="info-wins">0</dd>
+            </div>
+            <div>
+              <dt>胜率</dt>
+              <dd id="info-winrate">—</dd>
+            </div>
+          </dl>
+        </section>
         <section class="session-card">
           <div class="section-title">
             <h2 class="session-heading">
               <span id="session-title">本局练习</span
               ><span id="session-standing" class="standing-tag" hidden></span>
             </h2>
-            <button id="reset-button" class="practice-reset">重新练习</button>
+            <button id="reset-button" class="practice-reset">重新开局</button>
           </div>
           <div class="session-balance">
             <span>当前筹码</span><strong id="session-stack">20K<span>CHIPS</span></strong
@@ -350,7 +365,7 @@
         </section>
         <section class="activity-card">
           <div class="section-title">
-            <h2>本局动态</h2>
+            <h2>本手动态</h2>
             <span class="subtle-label" id="activity-count">LIVE</span>
           </div>
           <ol
@@ -369,11 +384,8 @@
     <main id="records-page" class="records-page" aria-labelledby="records-title" hidden>
       <div class="records-page-heading">
         <div>
-          <p class="records-eyebrow">本地练习</p>
           <h1 id="records-title" tabindex="-1">对局记录</h1>
-          <time id="records-hand-start" tabindex="-1" hidden></time>
         </div>
-        <button id="records-back-button" class="records-back">返回游戏</button>
       </div>
       <div id="records-content"></div>
     </main>
@@ -392,8 +404,8 @@
       </div>
       <h2 id="opponents-title">设置</h2>
       <div class="opponents-body">
-        <section class="general-settings settings-module" aria-label="牌桌与声音设置">
-          <h3>牌桌与声音</h3>
+        <section class="general-settings settings-module" aria-label="通用设置">
+          <h3>通用</h3>
           <div class="settings-row">
             <label for="language-select">语言 / Language</label>
             <select id="language-select" aria-describedby="language-note">
@@ -413,6 +425,51 @@
           <p id="language-note" class="setting-description">
             切换语言立即生效，保留当前设置页面与正在进行的对局。
           </p>
+          <div class="settings-row">
+            <span id="sound-label">音效</span>
+            <button
+              id="sound-button"
+              class="settings-switch"
+              role="switch"
+              aria-labelledby="sound-label"
+              aria-checked="true"
+              aria-pressed="true"
+              title="音效已开启"
+            >
+              <span class="switch-thumb" aria-hidden="true"></span>
+            </button>
+          </div>
+          <div class="settings-row">
+            <span id="music-label">背景音乐</span>
+            <button
+              id="music-button"
+              class="settings-switch"
+              role="switch"
+              aria-labelledby="music-label"
+              aria-checked="true"
+              aria-pressed="true"
+              title="背景音乐已开启"
+            >
+              <span class="switch-thumb" aria-hidden="true"></span>
+            </button>
+          </div>
+          <div class="settings-row">
+            <span id="vibration-label">振动</span>
+            <button
+              id="vibration-button"
+              class="settings-switch"
+              role="switch"
+              aria-labelledby="vibration-label"
+              aria-checked="true"
+              aria-pressed="true"
+              title="振动已开启"
+            >
+              <span class="switch-thumb" aria-hidden="true"></span>
+            </button>
+          </div>
+        </section>
+        <section class="table-settings settings-module" aria-label="牌桌设置">
+          <h3>牌桌</h3>
           <div class="settings-row">
             <label for="player-count">牌桌人数</label>
             <select id="player-count" aria-label="牌桌人数">
@@ -458,34 +515,6 @@
           </div>
           <p id="stakes-error" class="stakes-error" role="alert" hidden></p>
           <p id="stakes-change-note" class="table-change-note" role="status" hidden></p>
-          <div class="settings-row">
-            <span id="sound-label">音效与音乐</span>
-            <button
-              id="sound-button"
-              class="settings-switch"
-              role="switch"
-              aria-labelledby="sound-label"
-              aria-checked="true"
-              aria-pressed="true"
-              title="音效与音乐已开启"
-            >
-              <span class="switch-thumb" aria-hidden="true"></span>
-            </button>
-          </div>
-          <div class="settings-row">
-            <span id="vibration-label">振动</span>
-            <button
-              id="vibration-button"
-              class="settings-switch"
-              role="switch"
-              aria-labelledby="vibration-label"
-              aria-checked="true"
-              aria-pressed="true"
-              title="振动已开启"
-            >
-              <span class="switch-thumb" aria-hidden="true"></span>
-            </button>
-          </div>
           <div class="settings-row" id="hint-setting-row">
             <div>
               <span id="hint-label">牌桌提示</span>
@@ -538,8 +567,30 @@
             </select>
           </div>
           <p class="setting-description">
-            情绪只调整当前难度内的入池、进攻与跟注倾向，不增加策略能力；几手后恢复。
+            情绪只调整当前难度内的入池、进攻与跟注倾向，不增加策略能力。轻微波动的情绪持续 3
+            手；明显波动影响更大，持续 4 手，也更容易再次触发。
           </p>
+          <p class="setting-description mood-legend-intro">
+            处于情绪中的对手，头像会亮起对应颜色的光环和图标，直到恢复平稳；平稳时不显示。
+          </p>
+          <ul class="mood-legend" aria-label="情绪标识">
+            <li>
+              <i class="mood-badge mood-frustrated" aria-hidden="true"></i
+              ><span><b>急于追回</b> · 橙色火焰：大额亏损后入池更宽、更常跟到底</span>
+            </li>
+            <li>
+              <i class="mood-badge mood-cautious" aria-hidden="true"></i
+              ><span><b>收紧避险</b> · 蓝色盾牌：大额亏损后入池更紧，少进攻、少跟注</span>
+            </li>
+            <li>
+              <i class="mood-badge mood-confident" aria-hidden="true"></i
+              ><span><b>连胜自信</b> · 金色星星：连续盈利后入池与进攻略增</span>
+            </li>
+            <li>
+              <i class="mood-badge mood-reactive" aria-hidden="true"></i
+              ><span><b>受压反击</b> · 红色闪电：4 手内三次被同一对手加注弃牌后更多加注与诈唬</span>
+            </li>
+          </ul>
         </section>
         <div class="opponents-layout">
           <section class="settings-module personas-module" aria-label="风格介绍">
@@ -745,6 +796,116 @@
             <p>没有以上组合，先比最大单牌。</p>
           </div>
         </div>
+        <details class="preflop-equity">
+          <summary>翻前起手牌胜率表</summary>
+          <p>
+            拿到底牌后可先对照下表了解牌力：数字越高，摊牌时越常赢。s 表示两张同花，o
+            表示不同花，没有字母的是口袋对子。
+          </p>
+          <div class="preflop-table" aria-label="翻前起手牌胜率">
+            <div class="preflop-head"><b>起手牌</b><span>对 1 人</span><span>对 4 人</span></div>
+            <div class="preflop-tier"><b>顶级</b></div>
+            <div class="preflop-row" data-hand="AA"><b>AA</b><span>85%</span><span>56%</span></div>
+            <div class="preflop-row" data-hand="KK"><b>KK</b><span>82%</span><span>50%</span></div>
+            <div class="preflop-row" data-hand="QQ"><b>QQ</b><span>80%</span><span>45%</span></div>
+            <div class="preflop-row" data-hand="JJ"><b>JJ</b><span>78%</span><span>40%</span></div>
+            <div class="preflop-row" data-hand="AKs">
+              <b>AKs</b><span>67%</span><span>36%</span>
+            </div>
+            <div class="preflop-row" data-hand="AKo">
+              <b>AKo</b><span>65%</span><span>32%</span>
+            </div>
+            <div class="preflop-tier"><b>强牌</b></div>
+            <div class="preflop-row" data-hand="TT"><b>TT</b><span>75%</span><span>36%</span></div>
+            <div class="preflop-row" data-hand="99"><b>99</b><span>72%</span><span>33%</span></div>
+            <div class="preflop-row" data-hand="AQs">
+              <b>AQs</b><span>66%</span><span>34%</span>
+            </div>
+            <div class="preflop-row" data-hand="AQo">
+              <b>AQo</b><span>64%</span><span>30%</span>
+            </div>
+            <div class="preflop-row" data-hand="AJs">
+              <b>AJs</b><span>65%</span><span>32%</span>
+            </div>
+            <div class="preflop-row" data-hand="KQs">
+              <b>KQs</b><span>63%</span><span>32%</span>
+            </div>
+            <div class="preflop-tier"><b>可玩</b></div>
+            <div class="preflop-row" data-hand="88"><b>88</b><span>69%</span><span>30%</span></div>
+            <div class="preflop-row" data-hand="77"><b>77</b><span>66%</span><span>27%</span></div>
+            <div class="preflop-row" data-hand="ATs">
+              <b>ATs</b><span>65%</span><span>31%</span>
+            </div>
+            <div class="preflop-row" data-hand="AJo">
+              <b>AJo</b><span>64%</span><span>29%</span>
+            </div>
+            <div class="preflop-row" data-hand="KJs">
+              <b>KJs</b><span>63%</span><span>31%</span>
+            </div>
+            <div class="preflop-row" data-hand="KQo">
+              <b>KQo</b><span>62%</span><span>29%</span>
+            </div>
+            <div class="preflop-row" data-hand="KTs">
+              <b>KTs</b><span>62%</span><span>30%</span>
+            </div>
+            <div class="preflop-row" data-hand="QJs">
+              <b>QJs</b><span>60%</span><span>30%</span>
+            </div>
+            <div class="preflop-row" data-hand="JTs">
+              <b>JTs</b><span>58%</span><span>28%</span>
+            </div>
+            <div class="preflop-tier"><b>投机</b></div>
+            <div class="preflop-row" data-hand="66"><b>66</b><span>63%</span><span>25%</span></div>
+            <div class="preflop-row" data-hand="55"><b>55</b><span>60%</span><span>22%</span></div>
+            <div class="preflop-row" data-hand="44"><b>44</b><span>57%</span><span>20%</span></div>
+            <div class="preflop-row" data-hand="33"><b>33</b><span>54%</span><span>19%</span></div>
+            <div class="preflop-row" data-hand="22"><b>22</b><span>50%</span><span>18%</span></div>
+            <div class="preflop-row" data-hand="A5s">
+              <b>A5s</b><span>60%</span><span>26%</span>
+            </div>
+            <div class="preflop-row" data-hand="A2s">
+              <b>A2s</b><span>58%</span><span>24%</span>
+            </div>
+            <div class="preflop-row" data-hand="T9s">
+              <b>T9s</b><span>54%</span><span>25%</span>
+            </div>
+            <div class="preflop-row" data-hand="98s">
+              <b>98s</b><span>51%</span><span>24%</span>
+            </div>
+            <div class="preflop-row" data-hand="87s">
+              <b>87s</b><span>48%</span><span>22%</span>
+            </div>
+            <div class="preflop-row" data-hand="76s">
+              <b>76s</b><span>46%</span><span>21%</span>
+            </div>
+            <div class="preflop-row" data-hand="65s">
+              <b>65s</b><span>43%</span><span>20%</span>
+            </div>
+            <div class="preflop-tier"><b>偏弱</b></div>
+            <div class="preflop-row" data-hand="K9o">
+              <b>K9o</b><span>58%</span><span>23%</span>
+            </div>
+            <div class="preflop-row" data-hand="Q9o">
+              <b>Q9o</b><span>55%</span><span>22%</span>
+            </div>
+            <div class="preflop-row" data-hand="J8o">
+              <b>J8o</b><span>51%</span><span>20%</span>
+            </div>
+            <div class="preflop-row" data-hand="T7o">
+              <b>T7o</b><span>48%</span><span>18%</span>
+            </div>
+            <div class="preflop-row" data-hand="94o">
+              <b>94o</b><span>41%</span><span>13%</span>
+            </div>
+            <div class="preflop-row" data-hand="72o">
+              <b>72o</b><span>35%</span><span>11%</span>
+            </div>
+          </div>
+          <p class="preflop-note">
+            胜率是对手底牌随机、所有人都打到河牌时赢下底池的平均份额（平局按人数平分），由本游戏的牌型比较模拟估算，误差约
+            1%。实战中对手会弃掉弱牌，留下的牌通常更强，所以真实胜率往往更低；位置、筹码深度和对手行动同样重要，表格只作入门参考。
+          </p>
+        </details>
         <h3>2. 一手牌怎样进行</h3>
         <div class="rules-flow">
           <span>底牌 2 张</span><i>·</i><span>翻牌 3 张</span><i>·</i><span>转牌 1 张</span><i>·</i
@@ -834,7 +995,7 @@
           <p>电脑角色的策略和情绪均为游戏设定，介绍描述常见倾向，不保证每次采用相同操作。</p>
         </details>
         <p class="rules-note">
-          电脑仅根据自己的底牌和公共信息决策。全部筹码为虚拟筹码，没有现金兑换、奖金或真人赌注。“重新练习”会结束当前局，并把筹码与练习统计重置。
+          电脑仅根据自己的底牌和公共信息决策。全部筹码为虚拟筹码，没有现金兑换、奖金或真人赌注。“重新开局”会结束当前局，并把筹码与练习统计重置。
         </p>
         <section id="review-glossary">
           <h3>7. 术语解释</h3>
@@ -1142,8 +1303,8 @@
         aria-labelledby="review-opponents-tab"
         hidden
       ></section>
-      <details id="review-activity" class="review-activity">
-        <summary>对局动态</summary>
+      <details id="review-activity" class="review-activity" open>
+        <summary>本手动态</summary>
         <ol id="review-activity-list"></ol>
       </details>
       <p class="review-scope">按当时信息判断，单手输赢不直接决定操作好坏。</p>

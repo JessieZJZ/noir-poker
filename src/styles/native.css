@@ -107,3 +107,9 @@
 html[data-orientation-blocked='true'] {
   overflow: hidden;
 }
+
+/* The app body already reserves the bottom safe area; the footer must not add
+   it a second time. */
+.native-app .compliance-footer {
+  padding-bottom: 14px;
+}

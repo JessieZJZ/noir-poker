@@ -50,7 +50,7 @@ module.exports = {
     activityOpen: false,
     potOpen: false,
     resetOpen: false,
-    guideExpanded: [false, true],
+    guideExpanded: [false, false, true],
     potExpanded: {},
     potSheetHeight: 580,
     reviewPerspective: 'hero',
@@ -60,8 +60,25 @@ module.exports = {
     selectedReviewStep: null,
     countOptions: [5, 6, 7, 8, 9],
     emotionOptions: ['关闭', '轻微波动', '明显波动'],
+    // Kept in data: a WXML <text> renders wrapped source lines as line breaks.
+    emotionIntro:
+      '情绪只调整当前难度内的入池、进攻与跟注倾向，不增加策略能力。轻微波动的情绪持续 3 手；明显波动影响更大，持续 4 手，也更容易再次触发。',
+    moodLegend: [
+      { kind: 'frustrated', name: '急于追回', text: '· 橙色火焰：大额亏损后入池更宽、更常跟到底' },
+      {
+        kind: 'cautious',
+        name: '收紧避险',
+        text: '· 蓝色盾牌：大额亏损后入池更紧，少进攻、少跟注',
+      },
+      { kind: 'confident', name: '连胜自信', text: '· 金色星星：连续盈利后入池与进攻略增' },
+      {
+        kind: 'reactive',
+        name: '受压反击',
+        text: '· 红色闪电：4 手内三次被同一对手加注弃牌后更多加注与诈唬',
+      },
+    ],
     profiles: [],
-    settings: { sound: true, vibration: true, hints: true },
+    settings: { sound: true, music: true, vibration: true, hints: true },
     seats: [],
     board: [],
     boardTop: [],
@@ -96,7 +113,7 @@ module.exports = {
         typeof wx.createWorker === 'function' ? () => wx.createWorker('workers/review.js') : null,
       publish: (view) => {
         if (!this._readOnlyAttempt && typeof getApp === 'function')
-          getApp().noirMusic?.setEnabled(view.settings.sound);
+          getApp().noirMusic?.setEnabled(view.settings.music);
         if (view.done || view.hand !== this.data.hand || view.replay !== this.data.replay)
           this._finishRequested = false;
         const game = this._controller?.getGame();
@@ -1054,9 +1071,6 @@ module.exports = {
       },
     });
   },
-  returnToGame() {
-    navigation.returnToGame();
-  },
   openGuide() {
     this.showGuide();
   },
@@ -1161,7 +1175,7 @@ module.exports = {
   openReview() {
     this.setOverlay({
       reviewOpen: true,
-      reviewActivityOpen: false,
+      reviewActivityOpen: true,
       reviewPerspective: 'hero',
       reviewIndex: 0,
       opponentFilter: 0,

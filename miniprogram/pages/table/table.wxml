@@ -63,13 +63,6 @@
       </view></view
     >
   </view>
-  <view wx:if="{{historyReadOnly}}" class="history-practice-heading">
-    <text class="history-practice-label">本地练习</text>
-    <button id="history-return-game" class="history-return-game" bindtap="returnToGame">
-      返回游戏
-    </button>
-    <text class="history-start-time">{{historyStartedAt}}</text>
-  </view>
   <view
     class="game-shell entry-{{entryState}} {{showdown.length ? 'has-showdown' : ''}} {{historyReadOnly ? 'history-shell' : ''}}"
     style="height: {{tableHeight + 50 + (waitingForSeat ? 0 : historyReadOnly || compactActions ? 64 : 134)}}px;"
@@ -88,10 +81,8 @@
       >
       <view class="blind-info"><text>盲注</text><text class="bright">{{blindText}}</text></view>
     </view>
-    <view class="hint-slot {{replay ? 'with-replay' : ''}}">
-      <text wx:if="{{replay}}" class="replay-note"
-        >重打本手 · 底牌与发牌顺序不变，原结算已撤回。</text
-      >
+    <view class="hint-slot">
+      <text wx:if="{{historyReadOnly}}" class="history-start-time">{{historyStartedAt}}</text>
       <view wx:if="{{hintText}}" class="hint-mask"
         ><view class="hint-track"
           ><text>{{hintText}}　　</text><text aria-hidden="true">{{hintText}}　　</text></view
@@ -183,11 +174,18 @@
             /></view>
             <image
               wx:if="{{item.portrait}}"
-              class="avatar"
+              class="avatar {{item.mood ? 'mood-' + item.mood : ''}}"
               src="{{item.portrait}}"
               mode="aspectFill"
-            /><view wx:else class="avatar initials avatar-{{item.id}}">{{item.initial}}</view
-            ><text
+            /><view
+              wx:else
+              class="avatar initials avatar-{{item.id}} {{item.mood ? 'mood-' + item.mood : ''}}"
+              >{{item.initial}}</view
+            ><view
+              wx:if="{{item.mood}}"
+              class="mood-badge mood-live mood-{{item.mood}}"
+              aria-hidden="true"
+            /><text
               id="seat-persona-{{item.id}}"
               data-id="{{item.id}}"
               data-kind="persona"
@@ -469,7 +467,27 @@
       </view>
     </view>
   </view>
-  <view wx:if="{{!historyReadOnly}}" class="practice-panel"
+  <view wx:if="{{!historyReadOnly && waitingForSeat}}" class="game-info" aria-label="对局信息"
+    ><view class="game-info-stats"
+      ><view class="game-info-chips"
+        ><text class="info-term">当前筹码</text
+        ><text class="info-value"
+          >{{heroStack}}<text class="session-change {{stats.profitTone}}"
+            >{{stats.profitSigned}}</text
+          ></text
+        ></view
+      ><view><text class="info-term">盲注</text><text class="info-value">{{blindText}}</text></view
+      ><view
+        ><text class="info-term">已完成</text><text class="info-value">{{stats.hands}}</text></view
+      ><view
+        ><text class="info-term">获胜手数</text><text class="info-value">{{stats.wins}}</text></view
+      ><view
+        ><text class="info-term">胜率</text
+        ><text class="info-value">{{stats.hands ? winrate + '%' : '—'}}</text></view
+      ></view
+    ></view
+  >
+  <view wx:if="{{!historyReadOnly && !waitingForSeat}}" class="practice-panel"
     ><view class="session-title"
       ><view class="session-heading"
         ><text>{{sessionTitle}}</text
@@ -477,7 +495,7 @@
           >{{standingText}}</text
         ></view
       ><button wx:if="{{!over}}" class="practice-reset" hover-class="none" bindtap="resetPractice">
-        重新练习
+        重新开局
       </button></view
     ><view class="session-balance"
       ><text class="session-caption">当前筹码</text
@@ -493,7 +511,7 @@
   >
   <view wx:if="{{!waitingForSeat}}" class="activity-panel"
     ><view class="session-title"
-      ><text>本局动态</text><text>{{done ? 'FINISHED' : 'LIVE'}}</text></view
+      ><text>本手动态</text><text>{{done ? 'FINISHED' : 'LIVE'}}</text></view
     ><view class="activity-list"
       ><view wx:for="{{logs}}" wx:key="key" class="activity-item"
         ><text class="log-number">{{index + 1}}.</text
@@ -542,8 +560,54 @@
     bindscroll="settingsScrolled"
     scroll-top="{{settingsScrollTop}}"
     ><view class="modal-body">
-      <view class="settings-module general-settings">
-        <text class="module-title">牌桌与声音</text>
+      <view class="settings-module general-settings" aria-label="通用设置">
+        <text class="module-title">通用</text>
+        <view class="setting-row"
+          ><text>音效</text
+          ><button
+            hover-class="none"
+            class="settings-switch {{settings.sound ? 'on' : ''}}"
+            id="sound-button"
+            data-key="sound"
+            bindtap="togglePreference"
+            aria-role="switch"
+            aria-checked="{{settings.sound}}"
+            aria-label="音效"
+          >
+            <view class="switch-track" /><view class="switch-thumb" /></button
+        ></view>
+        <view class="setting-row"
+          ><text>背景音乐</text
+          ><button
+            hover-class="none"
+            class="settings-switch {{settings.music ? 'on' : ''}}"
+            id="music-button"
+            data-key="music"
+            bindtap="togglePreference"
+            aria-role="switch"
+            aria-checked="{{settings.music}}"
+            aria-label="背景音乐"
+          >
+            <view class="switch-track" /><view class="switch-thumb" /></button
+        ></view>
+        <view class="setting-row">
+          <text>振动</text>
+          <button
+            hover-class="none"
+            class="settings-switch {{settings.vibration ? 'on' : ''}}"
+            id="vibration-button"
+            data-key="vibration"
+            bindtap="togglePreference"
+            aria-role="switch"
+            aria-checked="{{settings.vibration}}"
+            aria-label="振动"
+          >
+            <view class="switch-track" /><view class="switch-thumb" />
+          </button>
+        </view>
+      </view>
+      <view class="settings-module table-settings" aria-label="牌桌设置">
+        <text class="module-title">牌桌</text>
         <view class="setting-row"
           ><text>牌桌人数</text
           ><button
@@ -599,35 +663,6 @@
           class="table-change-note stakes-change-note"
           >{{stakesNotice}}</text
         >
-        <view class="setting-row"
-          ><text>音效与音乐</text
-          ><button
-            hover-class="none"
-            class="settings-switch {{settings.sound ? 'on' : ''}}"
-            id="sound-button"
-            data-key="sound"
-            bindtap="togglePreference"
-            aria-role="switch"
-            aria-checked="{{settings.sound}}"
-            aria-label="音效与音乐"
-          >
-            <view class="switch-track" /><view class="switch-thumb" /></button
-        ></view>
-        <view class="setting-row">
-          <text>振动</text>
-          <button
-            hover-class="none"
-            class="settings-switch {{settings.vibration ? 'on' : ''}}"
-            id="vibration-button"
-            data-key="vibration"
-            bindtap="togglePreference"
-            aria-role="switch"
-            aria-checked="{{settings.vibration}}"
-            aria-label="振动"
-          >
-            <view class="switch-track" /><view class="switch-thumb" />
-          </button>
-        </view>
         <view class="setting-row"
           ><view
             ><text>牌桌提示</text
@@ -685,8 +720,16 @@
           >
             <text>{{emotionOptions[emotionIndex]}}</text
             ><view class="select-chevron" /></button></view
-        ><text class="setting-description"
-          >情绪只调整当前难度内的入池、进攻与跟注倾向，不增加策略能力；几手后恢复。</text
+        ><text class="setting-description">{{emotionIntro}}</text
+        ><text class="setting-description mood-legend-intro"
+          >处于情绪中的对手，头像会亮起对应颜色的光环和图标，直到恢复平稳；平稳时不显示。</text
+        ><view class="mood-legend" aria-label="情绪标识"
+          ><view wx:for="{{moodLegend}}" wx:key="kind" class="mood-legend-item"
+            ><view class="mood-badge mood-{{item.kind}}" aria-hidden="true" /><text
+              ><text class="mood-legend-name">{{item.name}}</text
+              ><text>{{' ' + item.text}}</text></text
+            ></view
+          ></view
         ></view
       >
       <view class="settings-module"
@@ -1060,7 +1103,7 @@
           bindtap="toggleReviewActivity"
           aria-expanded="{{reviewActivityOpen}}"
         >
-          {{reviewActivityOpen ? '▾' : '▸'}} 对局动态
+          {{reviewActivityOpen ? '▾' : '▸'}} 本手动态
         </button>
         <view wx:if="{{reviewActivityOpen}}">
           <view
@@ -1154,7 +1197,7 @@
   <view class="sheet-body"
     ><view class="dialog-heading"
       ><text class="eyebrow">FRESH START</text
-      ><button hover-class="none" class="close" bindtap="closeReset" aria-label="关闭重新练习">
+      ><button hover-class="none" class="close" bindtap="closeReset" aria-label="关闭重新开局">
         <view class="close-icon" /></button></view
     ><text class="dialog-title">重新开始练习？</text
     ><text class="dialog-copy"

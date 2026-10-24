@@ -353,11 +353,10 @@ export async function nativeScenarios(app) {
         border: a.borderWidth,
         settingsOnRight:
           menu.getBoundingClientRect().right <= settings.getBoundingClientRect().left,
+        // Waiting, the header keeps the message and the game info card the blinds.
         blindsAtTop:
-          Math.abs(
-            document.querySelector('.hand-label').getBoundingClientRect().top -
-              document.querySelector('.blind-info').getBoundingClientRect().top,
-          ) <= 1,
+          document.querySelector('.surface-top .hand-label').getBoundingClientRect().bottom <=
+          document.querySelector('#info-blinds').getBoundingClientRect().top,
         heroGap:
           document.querySelector('#hero-stack').getBoundingClientRect().left -
           document.querySelector('.hero-identity strong').getBoundingClientRect().right,
@@ -478,16 +477,17 @@ export async function nativeScenarios(app) {
       await app.relaunch();
       const layout = await app.evaluate(() => {
         const box = (s) => document.querySelector(s).getBoundingClientRect();
-        const hand = box('.hand-label'),
-          blinds = box('.blind-info'),
+        // Waiting, the game info card replaces the practice card below the table.
+        const hand = box('.surface-top .hand-label'),
+          blinds = box('#info-blinds'),
           surface = box('.game-surface'),
-          practice = box('.session-card');
+          practice = box('.game-info');
         return {
           waiting: document.querySelector('.game-surface').dataset.entryState,
-          blinds: document.querySelector('.blind-info b').textContent,
+          blinds: document.querySelector('#info-blinds').textContent,
           stack: document.querySelector('#hero-stack').textContent,
-          sameTop: Math.abs(hand.top - blinds.top) <= 1,
-          noOverlap: hand.right <= blinds.left,
+          sameTop: hand.bottom <= blinds.top,
+          noOverlap: hand.right <= surface.right && blinds.right <= practice.right,
           gap: box('#hero-stack').left - box('.hero-identity strong').right,
           followsTable: practice.top >= surface.bottom && practice.top - surface.bottom <= 20,
         };
@@ -1129,7 +1129,7 @@ export async function nativeScenarios(app) {
       await app.click('#opponents-button');
       assert.equal(
         await app.evaluate(() => document.querySelector('#sound-label').textContent.trim()),
-        '音效与音乐',
+        '音效',
       );
       assert.equal(
         await app.evaluate(() =>
@@ -1362,19 +1362,29 @@ export async function nativeScenarios(app) {
     await app.click('#vibration-button');
     assert.equal((await read()).paused, false);
     await app.screenshot('music-on-vibration-off');
+    // Sound effects and background music are separate switches.
     await app.click('#sound-button');
+    assert.equal((await read()).paused, false);
+    await app.click('#music-button');
     assert.equal((await read()).paused, true);
     await app.click('#opponents-dialog .close-dialog');
     await app.relaunch();
     await app.click('#opponents-button');
     const saved = await app.evaluate(() => ({
       sound: document.querySelector('#sound-button').getAttribute('aria-checked'),
+      music: document.querySelector('#music-button').getAttribute('aria-checked'),
       vibration: document.querySelector('#vibration-button').getAttribute('aria-checked'),
       musicElements: document.querySelectorAll('audio[data-background-music]').length,
     }));
-    assert.deepEqual(saved, { sound: 'false', vibration: 'false', musicElements: 0 });
+    assert.deepEqual(saved, {
+      sound: 'false',
+      music: 'false',
+      vibration: 'false',
+      musicElements: 0,
+    });
     await app.screenshot('music-and-vibration-disabled-after-restart');
     await app.click('#sound-button');
+    await app.click('#music-button');
     await app.click('#vibration-button');
     await app.click('#opponents-dialog .close-dialog');
     return {
@@ -2315,7 +2325,7 @@ export async function nativeScenarios(app) {
       return { count: track.children.length, hint: track.classList.contains('has-overflow') };
     });
     assert.equal(hero.hint, hero.count > 2);
-    await app.click('#review-activity summary');
+    // The hand activity opens by default.
     const fontSize = await app.evaluate(
       () => getComputedStyle(document.querySelector('#review-activity-list li')).fontSize,
     );
@@ -2446,7 +2456,8 @@ export async function nativeScenarios(app) {
       sections: document.querySelectorAll('#review-coach-explanation [data-matchup-direction]')
         .length,
       preflop: document.querySelectorAll('#review-board .playing-card').length === 0,
-      collapsed: !document.querySelector('#review-activity').open,
+      // The hand activity opens by default.
+      activityOpen: document.querySelector('#review-activity').open,
       summary: document.querySelector('#review-coach-explanation .review-analysis-heading')
         ?.textContent,
       losingExamples: document.querySelectorAll(
@@ -2455,10 +2466,9 @@ export async function nativeScenarios(app) {
     }));
     assert.equal(analysisLayout.oldControls, 0);
     assert.equal(analysisLayout.sections, analysisLayout.preflop ? 1 : 2);
-    assert.equal(analysisLayout.collapsed, true);
+    assert.equal(analysisLayout.activityOpen, true);
     assert.equal(analysisLayout.summary, '复盘分析总结');
     assert.ok(analysisLayout.losingExamples <= 4);
-    await app.click('#review-activity summary');
     assert.ok(
       await app.evaluate(
         () =>
@@ -2782,7 +2792,9 @@ export async function nativeScenarios(app) {
               document.documentElement.dataset.appReady === 'true' &&
               typeof window.noir?.getState === 'function' &&
               !!window.noir.getState(),
-          )) && (await app.visible('#reset-button')),
+          )) &&
+          // A reload waits for the seat, where the restart control is hidden.
+          ((await app.visible('#join-table-button')) || (await app.visible('#reset-button'))),
         15000,
         'The privacy return link must load a ready game before the next scenario',
       );
@@ -2863,7 +2875,7 @@ export async function nativeScenarios(app) {
       10000,
       'Native Back returns to records',
     );
-    await app.click('#records-back-button');
+    await app.back();
     await app.waitFor(
       () =>
         app.evaluate(
@@ -3057,7 +3069,7 @@ export async function nativeScenarios(app) {
     list.deltas.filter((value) => value !== '—').forEach((value) => assert.match(value, /^[+-]\d/));
     // A zero-change win reads "+0", a zero-change loss "-0".
     list.neutralResults.forEach((text) => assert.match(text, /^(?:\+0\s*赢|-0\s*输)$/));
-    await app.click('#records-back-button');
+    await app.back();
     await app.waitFor(
       () => app.visible('#records-page').then((visible) => !visible),
       10000,
@@ -3103,6 +3115,23 @@ export async function nativeScenarios(app) {
     );
     // Exercise the remaining native navigation boundaries after the hand and
     // chip assertions: privacy navigation starts a fresh document/next hand.
+    // Records rely on system Back from the list too. A driver edge swipe sent
+    // right after the previous one can be dropped by the simulator (a manual
+    // swipe on the same list returns to the game), so retry once if the page
+    // has not left the list.
+    const backFromRecordsList = async () => {
+      for (let attempt = 0; attempt < 2; attempt++) {
+        await app.back();
+        const left = await app
+          .waitFor(
+            () => app.evaluate(() => document.body.dataset.recordsPage !== 'list'),
+            4000,
+            'Back from the records list',
+          )
+          .catch(() => false);
+        if (left) return;
+      }
+    };
     const waitGamePage = () =>
       app.waitFor(
         async () =>
@@ -3172,7 +3201,7 @@ export async function nativeScenarios(app) {
     assert.equal(await app.visible('#history-page'), false);
     await app.sleep(1000);
     await app.screenshot('game-records-review-native-back');
-    await app.click('#records-back-button');
+    await backFromRecordsList();
     await waitGamePage();
     let returnGameBack;
     if (app.platform === 'android') {
@@ -3221,7 +3250,14 @@ export async function nativeScenarios(app) {
       await app.click('article:not([hidden]) a[href="./"]');
       await waitGamePage();
       await openSavedHand();
-      await app.click('#records-back-button');
+      // Without a return button, Back unwinds the saved hand, then the list.
+      await app.back();
+      await app.waitFor(
+        () => app.evaluate(() => document.body.dataset.recordsPage === 'list'),
+        10000,
+        'Back from the saved hand must return to its list',
+      );
+      await backFromRecordsList();
       await waitGamePage();
       await app.back({ expectedPage: 'privacy' });
       const privacy = await app.evaluate(readPrivacyPage);

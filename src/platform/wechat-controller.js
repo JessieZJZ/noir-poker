@@ -82,6 +82,7 @@ const defaults = () => ({
   stakes: sanitizeStakes(),
   difficulty: 'normal',
   sound: true,
+  music: true,
   vibration: true,
   hints: true,
   ...sanitizeBotSettings(),
@@ -95,7 +96,8 @@ const sanitize = (value) => ({
       : 5,
   difficulty: ['easy', 'normal', 'hard'].includes(value?.difficulty) ? value.difficulty : 'normal',
   sound: value?.sound !== false,
-  vibration: value?.vibration === undefined ? value?.sound !== false : value.vibration !== false,
+  music: value?.music !== false,
+  vibration: value?.vibration !== false,
   hints: value?.hints !== false,
   ...sanitizeBotSettings(value),
 });
@@ -136,6 +138,7 @@ export function createWechatController({
       stakes: readOnlyAttempt.snapshot.stakes,
       hints: false,
       sound: false,
+      music: false,
       vibration: false,
     });
   const peeked = new Map();
@@ -394,6 +397,11 @@ export function createWechatController({
         profileName: profile.short,
         portrait: profile.id === 'balanced' ? '' : `/assets/portraits/${profile.id}.jpg`,
         initial: player.name.slice(0, 1),
+        // As on Web, a non-steady emotion shows on the avatar while it lasts.
+        mood:
+          game.emotionMode === 'off' || out || player.botMood?.kind === 'steady'
+            ? ''
+            : player.botMood?.kind || '',
         stack: format(player.stack),
         action: actionLabel + (match ? ' ' + format(Number(match[3])) : ''),
         actionLabel,
@@ -593,6 +601,14 @@ export function createWechatController({
         hands: game.stats.hands,
         wins: game.stats.wins,
         profit: format(hero.stack - game.stats.buyin),
+        // The waiting game info card shows a signed, coloured change.
+        profitSigned: `${hero.stack >= game.stats.buyin ? '+' : ''}${format(hero.stack - game.stats.buyin)}`,
+        profitTone:
+          hero.stack > game.stats.buyin
+            ? 'positive'
+            : hero.stack < game.stats.buyin
+              ? 'negative'
+              : '',
       },
     });
   }

@@ -451,7 +451,7 @@ test('raise controls, seats, activity and review share street-specific bet ordin
     '2-bet 开池至 150',
   );
   await page.locator('#review-timeline [data-review-index="2"]').click();
-  await page.locator('#review-activity summary').click();
+  await expect(page.locator('#review-activity')).toHaveAttribute('open', '');
   await expect(page.locator('#review-activity-list')).toContainText('3-bet 加注至 650');
   await expect(page.locator('#review-activity-list')).toContainText('4-bet 加注至 1.8K');
 });
@@ -1423,7 +1423,8 @@ test('first visit presents balanced opponents with sound enabled', async ({ page
   await expect(page.locator('#hint-toggle')).toHaveAttribute('aria-pressed', 'true');
   await expect(page.locator('#sound-button')).toHaveAttribute('aria-pressed', 'true');
   await page.locator('#opponents-button').click();
-  await expect(page.locator('#sound-button')).toHaveAccessibleName('音效与音乐');
+  await expect(page.locator('#sound-button')).toHaveAccessibleName('音效');
+  await expect(page.locator('#music-button')).toHaveAccessibleName('背景音乐');
   await expect(page.locator('#sound-button')).toHaveAttribute('role', 'switch');
   await expect(page.locator('[data-profile-preview="balanced"]')).toHaveAttribute(
     'aria-pressed',

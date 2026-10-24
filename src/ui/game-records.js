@@ -81,8 +81,7 @@ export function createGameRecordsView({ records, openReview, openPots, onReturnG
   const liveMain = document.querySelector('main.main'),
     page = document.querySelector('#records-page'),
     content = document.querySelector('#records-content'),
-    title = document.querySelector('#records-title'),
-    started = document.querySelector('#records-hand-start');
+    title = document.querySelector('#records-title');
   // Every game starts expanded; only the games the reader folds stay folded.
   const collapsed = new Set(),
     visible = new Set();
@@ -233,7 +232,7 @@ export function createGameRecordsView({ records, openReview, openPots, onReturnG
     listOrder = '';
     setLocalizedHTML(
       content,
-      `<div id="history-page"><div class="main records-history-grid"><section class="game-column"><div class="records-surface-slot"></div><div class="records-showdown-slot"></div></section><aside class="sidebar"><section class="activity-card records-activity"><div class="section-title"><h2>本局动态</h2><span class="subtle-label">FINISHED</span></div><ol class="activity-list" aria-label="本手动态，按时间顺序排列">${snapshot.logs
+      `<div id="history-page"><div class="main records-history-grid"><section class="game-column"><div class="records-surface-slot"></div><div class="records-showdown-slot"></div></section><aside class="sidebar"><section class="activity-card records-activity"><div class="section-title"><h2>本手动态</h2><span class="subtle-label">FINISHED</span></div><ol class="activity-list" aria-label="本手动态，按时间顺序排列">${snapshot.logs
         .slice()
         .reverse()
         .map(
@@ -252,6 +251,14 @@ export function createGameRecordsView({ records, openReview, openPots, onReturnG
       peekPlayer,
     });
     content.querySelector('.records-surface-slot').replaceWith(surface);
+    // The hand's start time sits under its game and hand label.
+    const started = document.createElement('time');
+    started.id = 'records-hand-start';
+    started.className = 'history-start-time';
+    started.tabIndex = -1;
+    started.dateTime = new Date(archive.startedAt).toISOString();
+    started.textContent = formatRecordStart(archive.startedAt);
+    surface.querySelector('.surface-top').append(started);
     const showdown = liveMain.querySelector('#showdown-stage').cloneNode(true);
     for (const element of [showdown, ...showdown.querySelectorAll('[id]')])
       element.id = `history-${element.id}`;
@@ -280,7 +287,6 @@ export function createGameRecordsView({ records, openReview, openPots, onReturnG
     page.hidden = route.page === 'game';
     document.body.dataset.recordsPage = route.page;
     title.classList.toggle('sr-only', route.page === 'hand');
-    started.hidden = route.page !== 'hand';
     historyViewport?.destroy();
     historyViewport = null;
     if (route.page === 'game') {
@@ -298,8 +304,6 @@ export function createGameRecordsView({ records, openReview, openPots, onReturnG
     }
     if (route.page === 'hand') {
       setLocalizedText(title, '对局记录');
-      started.dateTime = new Date(archive.startedAt).toISOString();
-      started.textContent = formatRecordStart(archive.startedAt);
       visible.clear();
       archive.snapshot.players
         .slice(1)
@@ -315,7 +319,9 @@ export function createGameRecordsView({ records, openReview, openPots, onReturnG
       renderList(true);
       requestAnimationFrame(() => window.scrollTo(0, listScroll));
     }
-    (route.page === 'hand' ? started : title).focus({ preventScroll: true });
+    (route.page === 'hand' ? content.querySelector('#records-hand-start') : title)?.focus({
+      preventScroll: true,
+    });
     refresh();
   }
   function refresh() {
@@ -324,9 +330,6 @@ export function createGameRecordsView({ records, openReview, openPots, onReturnG
     if (route.page === 'list') renderList();
   }
 
-  document
-    .querySelector('#records-back-button')
-    .addEventListener('click', () => navigate({ page: 'game' }));
   content.addEventListener('click', (event) => {
     const button = event.target.closest('button');
     if (!button) return;

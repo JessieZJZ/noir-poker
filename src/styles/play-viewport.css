@@ -358,13 +358,6 @@
   .game-surface .next-button.has-mobile-label {
     font-size: 0;
   }
-  .game-surface > .replay-note {
-    flex: none;
-    margin: 0;
-    padding: 2px 12px;
-    font-size: 10px;
-    line-height: 1.3;
-  }
   .game-surface .action-panel:has(.continue-deal-button:not([hidden])) {
     min-height: 0;
   }

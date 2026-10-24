@@ -266,7 +266,4 @@ Page({
     if (!attempt || attempt.status !== 'completed') return;
     navigation.openHand(id);
   },
-  returnToGame() {
-    navigation.returnToGame();
-  },
 });

@@ -61,6 +61,8 @@ async function readReturnMeasurement() {
   return metrics;
 }
 async function rect(selector) {
+  // The measured bridge re-renders the list; let it settle before measuring.
+  await page.waitFor(selector);
   const element = await page.$(selector);
   assert.ok(element, selector);
   return { ...(await element.offset()), ...(await element.size()) };
@@ -83,8 +85,11 @@ try {
   mini.on('exception', (value) => report.exceptions.push(value));
   page = await mini.currentPage();
   report.stage = 'return-existing-visit';
-  if (page.path === 'pages/records/records') await tap('#records-back');
-  else if (page.path === 'pages/history/history') await tap('#history-return-game');
+  // Return any earlier visit to the table with native Back.
+  while (['pages/records/records', 'pages/history/history'].includes(page.path)) {
+    await mini.navigateBack();
+    page = await mini.currentPage();
+  }
   await route('pages/table/table');
   const liveHeight = await page.data('tableHeight');
   const selected = await mini.evaluate(() => {
@@ -139,10 +144,9 @@ try {
   // The browsing note is gone; the first game follows the title directly.
   const titleGap = firstSession.top - title.top - title.height;
   assert.ok(titleGap >= 8 && titleGap <= 24, `Title to first game: ${titleGap}px`);
-  const back = await rect('#records-back');
-  assert.ok(title.left < back.left);
-  assert.ok(back.width < 130);
-  report.recordsHeader = { title, back };
+  // No return button: records rely on the native Back button or gesture.
+  assert.equal(await page.$('#records-back'), null);
+  report.recordsHeader = { title };
   await mini.screenshot({ path: path.join(output, 'records-header.png') });
   // Games start expanded; rows exist only near the viewport, so scroll there.
   const collapsed = await page.data('collapsed');
@@ -170,16 +174,19 @@ try {
   await route('pages/history/history');
   await page.waitFor(1500);
   assert.equal(await page.data('tableHeight'), liveHeight);
+  // The start time sits inside the table card, under the game and hand label.
   const time = await rect('.history-start-time');
-  const shell = await rect('.game-shell');
+  const label = await rect('.game-header .hand-label');
   const dock = await rect('.action-dock');
   const review = await rect('.review-button');
   report.spacing = {
-    headingGap: shell.top - time.top - time.height,
+    headingGap: time.top - label.top - label.height,
+    timeIndent: Math.abs(time.left - label.left),
     dockHeight: dock.height,
     belowReview: dock.top + dock.height - review.top - review.height,
   };
-  assert.ok(report.spacing.headingGap >= 4 && report.spacing.headingGap <= 12);
+  assert.ok(report.spacing.headingGap >= 0 && report.spacing.headingGap <= 12);
+  assert.ok(report.spacing.timeIndent <= 1);
   // The read-only history dock is the single 64px settled row on every branch.
   assert.ok(Math.abs(report.spacing.dockHeight - 64) < 2);
   assert.ok(report.spacing.belowReview >= 6 && report.spacing.belowReview <= 14);
@@ -216,7 +223,10 @@ try {
   assert.ok(report.fullName, 'A saved real named opponent must exercise truncation');
   report.stage = 'return-game';
   await armReturnMeasurement();
-  await tap('#history-return-game');
+  // Native Back unwinds the saved hand, then the list, to the live table.
+  await mini.navigateBack();
+  await route('pages/records/records');
+  await mini.navigateBack();
   await route('pages/table/table');
   assert.equal((await mini.pageStack()).length, 1);
   report.returnButton = await readReturnMeasurement();

@@ -31,9 +31,6 @@
     padding-top: 0;
     padding-bottom: 0;
   }
-  .surface-top .replay-note {
-    line-height: 20px;
-  }
 }
 @media (min-width: 1101px), (min-width: 901px) and (orientation: landscape) {
   .main .game-surface > .surface-top {
