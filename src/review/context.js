@@ -110,7 +110,10 @@ export function handContext(s) {
     handLabel = `四条来自公共牌，${rankText(made.score[2])} 踢脚`;
   } else if (made.score[0] >= 4) {
     handClass = 'strong';
-    handLabel = made.label;
+    handLabel =
+      made.score[0] === 6
+        ? `葫芦：三张 ${rankText(made.score[1])} 加两张 ${rankText(made.score[2])}`
+        : made.label;
   } else if (pocket && made.score[0] === 3) {
     handClass = 'set';
     handLabel = `暗三条 ${rankText(holeRank)}`;
@@ -131,14 +134,19 @@ export function handContext(s) {
     const privatePair = made.score.slice(1, 3).find((rank) => !boardPairs.includes(rank));
     handClass = shared
       ? 'board-pair'
-      : boardPairs.length === 1
+      : boardPairs.length > 0
         ? pocket
           ? 'underpair'
           : privatePair === high
             ? 'top-pair'
             : 'middle-pair'
         : 'two-pair';
-    handLabel = shared ? `两对来自公共牌，${rankText(made.score[3])} 踢脚` : made.label;
+    const sharedPair = made.score.slice(1, 3).find((rank) => boardPairs.includes(rank));
+    handLabel = shared
+      ? `两对来自公共牌，${rankText(made.score[3])} 踢脚`
+      : sharedPair
+        ? `两对：底牌组成 ${rankText(privatePair)} 对，加公共牌 ${rankText(sharedPair)} 对，${rankText(made.score[3])} 踢脚`
+        : made.label;
   } else if (made.score[0] === 1) {
     if (pocket) {
       handClass = 'underpair';

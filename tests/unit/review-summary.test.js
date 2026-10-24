@@ -97,7 +97,7 @@ test('pair explanations respect deuces, aces and the absence of another card on 
   assert.doesNotMatch(summary(review), /这手对子遇到更大对子|弃牌可以保留/);
 });
 
-test('range notes give a consequence for each actual position and preserve caller families in the summary', () => {
+test('range notes preserve caller families while keeping an actual fold focused on its public pressure', () => {
   const s = suitedBroadwayFiveBetFold();
   s.history = [s.history[0]];
   const range = (s) => handMatchups(s, decisionContext(s)).rangeNotes.join('');
@@ -107,9 +107,16 @@ test('range notes give a consequence for each actual position and preserve calle
   s.history.push({ id: 2, street: 0, action: 'call', amount: 600 });
   const r = analyzeDecision(s, options),
     text = summary(r.coaching);
-  assert.match(text, /Theo.*小中对子.*暗三条.*同花高张、同花连接牌.*藏着强牌/);
-  assert.match(text, /同时考虑加注者和跟注者的继续范围.*多人竞争/);
-  assert.equal(text.match(/跟注了这笔加注/g).length, 1);
+  assert.match(text, /Theo.*小中对子、同花高张、同花连接牌.*藏着强牌/);
+  assert.match(text, /多人继续.*不能只按最初开池者的范围判断/);
+  assert.doesNotMatch(text, /你若再加注|你若只跟注/);
+  assert.equal(text.match(/已经跟注这笔加注/g).length, 1);
+  // An actual call still needs the opener/caller distinction. Shortening a
+  // fold must not remove the public range explanation from a live defense.
+  assert.match(
+    range({ ...s, action: 'call' }),
+    /同时考虑加注者和跟注者的继续范围.*多人竞争.*小中对子.*同花高张、同花连接牌/,
+  );
   for (const spot of [turnBluffReview(), pocketNinesCheckedBoard(), suitedBroadwayFiveBetFold()]) {
     const c = decisionContext(spot),
       m = handMatchups(spot, c);

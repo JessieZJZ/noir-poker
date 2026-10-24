@@ -245,7 +245,8 @@ test('made trips plus a draw explain value before semi-bluff pressure', () => {
   assert.equal(r.context.made.score[0], 3);
   assert.equal(r.context.made.score[1], 14);
   assert.match(text, /是三条.*过牌/);
-  assert.match(text, /让较弱成牌或起手牌付费/);
+  assert.match(text, /让较弱成牌付费/);
+  assert.doesNotMatch(text, /起手牌付费/);
   assert.doesNotMatch(text, /额外投入[^。]*保留补牌机会，同时给对手弃牌的压力/);
 });
 

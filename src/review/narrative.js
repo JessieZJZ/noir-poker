@@ -11,6 +11,7 @@ import {
   plannedValueShove,
   foldPressure,
   foldWinNote,
+  pendingRaiseOpportunity,
 } from './presentation.js';
 
 const n = compactChips;
@@ -81,13 +82,16 @@ export function situationNotes(s, c, actorId = 0) {
         : s.players?.find((p) => p.id === actorId)?.name || s.actorName || s.name || '对手',
     aggression = f.lastAggression;
   if (aggression?.street === s.street) {
-    if (aggression.priorChecks.length)
+    const lastCheckStreet = Math.max(-1, ...aggression.priorChecks);
+    const recentLine = aggression.line.filter((action) => action.street > lastCheckStreet);
+    const recentStreets = new Set(recentLine.map((action) => action.street));
+    if (recentStreets.has(s.street) && recentStreets.has(s.street - 1))
+      notes.push(
+        `${aggression.name}的下注线是${recentLine.map((a) => streets[a.street] + ' ' + a.label).join(' → ')}，${who}这次面对的是连续施压，需要结合这条下注线判断对手的价值牌和诈唬。`,
+      );
+    else if (aggression.priorChecks.length)
       notes.push(
         `${aggression.name}此前在${aggression.priorChecks.map((street) => streets[street]).join('、')}过牌，这次在${streets[aggression.street]}的行动是${aggression.label}，之前的过牌不能排除慢打的强牌，现在也可能是新公共牌带来的取值或诈唬，因此要重新判断这笔下注。`,
-      );
-    else if (new Set(aggression.line.map((a) => a.street)).size >= 2)
-      notes.push(
-        `${aggression.name}的下注线是${aggression.line.map((a) => streets[a.street] + ' ' + a.label).join(' → ')}，${who}这次面对的是连续施压，需要结合这条下注线判断对手的价值牌和诈唬。`,
       );
   }
   if (s.board.length >= 4) {
@@ -118,7 +122,13 @@ export function situationNotes(s, c, actorId = 0) {
     );
   else if (s.street > 0 && c.pendingOthers > 0 && s.action === 'call')
     notes.push(
-      `${who}在 ${s.position} 跟注 ${n(s.legal.callAmount)} 时，本轮尚未封口，后面的玩家若再加注，${who}还要重新决定是否补筹码。`,
+      exhaustsStack(s)
+        ? '本人跟注后已全下，其余玩家仍可回应，但不再需要本人补筹码或弃牌。'
+        : pendingRaiseOpportunity(s) === false
+          ? '其余玩家仍需回应，但当前不能再加注，只能补跟或弃牌。'
+          : pendingRaiseOpportunity(s) === null
+            ? '其余玩家仍需回应，继续后应根据后续公开行动判断。'
+            : `${who}在 ${s.position} 跟注 ${n(s.legal.callAmount)} 时，本轮尚未封口，后面的玩家若再加注，${who}还要重新决定是否补筹码。`,
     );
   return notes;
 }

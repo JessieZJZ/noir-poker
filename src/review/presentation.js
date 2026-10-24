@@ -1,4 +1,52 @@
-import { rankText, partitionPots } from '../engine/poker.js';
+import { rankText, partitionPots, legalActions } from '../engine/poker.js';
+import { chipUnitOf, isChipAmount } from '../engine/bet-sizing.js';
+import { bigBlindOf } from '../engine/stakes.js';
+
+// Ask the rules engine about waiting seats. A pending response does not itself
+// mean that a short all-in reopened a player's right to raise.
+export function pendingRaiseOpportunity(s) {
+  if (!Array.isArray(s.players)) return null;
+  const waiting = (s.pending || []).filter(
+    (id) => id !== 0 && !s.players[id]?.folded && !s.players[id]?.allin && s.players[id]?.stack > 0,
+  );
+  if (!waiting.length) return false;
+  const unit = chipUnitOf(s);
+  if (
+    !s.players.every((p) => Object.hasOwn(p, 'actedTo')) ||
+    ![s.currentBet, s.minRaise, ...s.players.flatMap((p) => [p.stack, p.bet, p.total])].every(
+      (amount) => isChipAmount(amount, unit),
+    )
+  )
+    return null;
+  return waiting.some(
+    (id) =>
+      legalActions(
+        {
+          players: s.players,
+          currentBet: s.currentBet,
+          minRaise: s.minRaise,
+          chipUnit: unit,
+          bigBlind: bigBlindOf(s),
+          phase: 'playing',
+          actor: id,
+        },
+        id,
+      ).canRaise,
+  );
+}
+
+// This is a public stack bound, not a duplicate of raise or settlement rules.
+export function coversOpponentStacks(s, raiseTo) {
+  return (
+    Number.isFinite(raiseTo) &&
+    Array.isArray(s.players) &&
+    s.players
+      .filter((p) => p.id !== 0 && !p.folded)
+      .every(
+        (p) => Number.isFinite(p.bet) && Number.isFinite(p.stack) && p.bet + p.stack <= raiseTo,
+      )
+  );
+}
 
 // Pressure can remove only players who still have chips. An existing side pot
 // must come from the public contribution ledger, never from a proposed wager.

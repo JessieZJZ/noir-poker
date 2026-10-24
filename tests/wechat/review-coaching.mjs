@@ -12,6 +12,7 @@ import {
 import { deckOfCards } from '../../src/engine/poker.js';
 import { seatAtTable } from './seat.mjs';
 import { getBotProfile } from '../../src/engine/bot-profiles.js';
+import { phase3CheckSpot } from '../fixtures/review-phase3.js';
 import {
   causalReraiseGame,
   heroValueGame,
@@ -339,7 +340,10 @@ try {
     assert.doesNotMatch(step.reason, /这手建议跟注|；/);
   });
   await fixture('reported-low-connector', reportedLowConnectorCall(), (step) => {
-    assert.match(step.reason, /同花连接牌.*37.0%.*点数仍偏低.*更高同花.*他们若再加注.*建议弃牌/);
+    assert.match(
+      step.reason,
+      /同花连接牌.*37.0%.*点数仍偏低.*更高同花.*他们若仍有加注权并再次加注.*建议弃牌/,
+    );
     assert.doesNotMatch(step.reason, /被强 A.*压制|；/);
   });
   await fixture('reported-fives-all-in', reportedFivesAllIn(), (step) => {
@@ -592,6 +596,39 @@ try {
   assert.doesNotMatch(noun, /用口袋 5，公共牌/);
   report.checks.push({ name: 'underpair-noun-and-full-board-description', reason: noun });
   await capture('underpair-clear-noun');
+  for (const [name, record, verify] of [
+    [
+      'phase3-set-three-flush',
+      phase3CheckSpot().record,
+      (reason) => {
+        assert.match(reason, /三张同花色.*两张该花色.*组成同花/);
+        assert.match(reason, /葫芦或四条/);
+        assert.match(reason, /免费见到下一张/);
+      },
+    ],
+    [
+      'phase3-trips-block-quads',
+      phase3CheckSpot('8c Kh', '5h 8h 8d 6s Qd', { reason: 'free-check' }).record,
+      (reason) => {
+        assert.match(reason, /仍可能组成葫芦/);
+        assert.doesNotMatch(reason, /可能组成葫芦或四条|下一张/);
+      },
+    ],
+  ]) {
+    await invoke('closeReview');
+    await mini.evaluate((record) => {
+      getCurrentPages().at(-1)._controller.getGame().botDecisions = [record];
+    }, record);
+    await invoke('openReview');
+    await wait((data) => !data.reviewData.loading);
+    await tap('[data-value="opponent"]');
+    await wait((data) => data.reviewPerspective === 'opponent' && data.selectedReviewStep?.reason);
+    const selected = (await page.data()).selectedReviewStep;
+    verify(selected.reason);
+    assert.doesNotMatch(selected.reason, /；/);
+    report.checks.push({ name, scope: 'external public-snapshot display probe', selected });
+    await capture(name);
+  }
   await invoke('closeReview');
   await invoke('showGuide', 'review-glossary');
   const glossary = await painted('#review-glossary');

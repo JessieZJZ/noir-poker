@@ -74,6 +74,9 @@ test('premium raises explain value, and first postflop aggression is a bet', () 
   for (const hole of ['Kh Kd', 'As Ah']) {
     record.trace.view.hole = cards(hole);
     record.trace.reason = 'value-raise';
+    // This is an explicit presentation-branch probe. An execution basis for
+    // the original AQ action cannot certify the newly assigned KK/AA reason.
+    delete record.trace.basis;
     const text = summary(explainOpponent(record));
     assert.match(text, /最强起手牌|顶级起手牌/);
     assert.match(text, /付出更多筹码.*减少对手人数.*强牌仍足以支持/);
@@ -136,7 +139,8 @@ test('playing the board explains a possible share instead of beating weaker hand
   const r = analyzeDecision(s, options),
     text = summary(r.coaching);
   assert.equal(r.context.handClass, 'board');
-  assert.match(text, /平分底池.*底池份额/);
+  assert.equal(r.context.matchups.nut, false);
+  assert.match(text, /落后与平分.*底池份额/);
   assert.doesNotMatch(text, /需要对手.*较弱牌或诈唬|底牌提供的踢脚/);
 });
 

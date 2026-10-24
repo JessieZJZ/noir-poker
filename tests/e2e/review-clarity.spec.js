@@ -121,7 +121,7 @@ test('review prices, actor references and draw verdicts stay coherent in the exi
   await select(7);
   await expect(evidence).toContainText('4 / 5 同花连接牌');
   await expect(summary).toContainText(
-    /同花连接牌.*37.0%.*点数仍偏低.*更高同花.*他们若再加注.*建议弃牌/,
+    /同花连接牌.*37.0%.*点数仍偏低.*更高同花.*他们若仍有加注权并再次加注.*建议弃牌/,
   );
   await expect(summary).not.toContainText(/被强 A.*压制|；/);
   await summary.scrollIntoViewIfNeeded();

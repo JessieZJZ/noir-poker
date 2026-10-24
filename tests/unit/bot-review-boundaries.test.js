@@ -35,7 +35,7 @@ test('real set plus redraw all-in call keeps made-hand support and ends future b
   assert.equal(record.trace.allIn.cost, 4950);
   assert.equal(record.trace.allIn.contestable, 10000);
   assert.match(review.detail, /暗三条 7/);
-  assert.match(review.detail, /当前牌力是暗三条 7.*成牌和补牌都提供摊牌机会/);
+  assert.match(review.detail, /当前(?:已有|牌力是)暗三条 7.*成牌和补牌(?:共同|都)提供摊牌机会/);
   assert.match(review.detail, /(?:另有|另外还有)同花听牌/);
   assert.doesNotMatch(review.detail, /卡顺听牌|两头顺听牌/);
   assert.doesNotMatch(review.detail, /赔率支持继续追/);

@@ -10,6 +10,8 @@
 
 复盘决策超过两张时，时间线显示两张完整卡片和第三张的一半，提示横向滚动；对局动态采用更小字号。各端行为及专项验证入口见[复盘说明](docs/review.md)。
 
+复盘三期增加了危险牌面控池、成牌改善、共享公共对子、下注尺度与全下后行动边界的因果解释。4,000 手审查的生成方法和资料保留规则见[三期审查流程](docs/review.md#复盘三期语料)。 结果、四视角阅读分母与跨端证据见[三期验证记录](docs/review-phase3-validation-2026-10-24.md)。
+
 四版原创循环背景音乐候选、试听页、无损母带与来源记录见[音乐工作室](audio-studio/noir-background-music/README.md)。游戏默认循环播放「夜色牌桌」；设置中的“音效与音乐”统一控制背景音乐和操作音效，“振动”独立控制行动提醒，两项均在新设备默认开启并保存选择。旧版关闭声音的选择同时保留为静音和关闭振动；之后两个开关各自保存。详见[背景音乐与反馈](docs/background-music.md)。
 
 工程目录：`/Users/zjz/code/noir-poker`。此目录是后续迭代的主项目，保留原项目的 Git 历史和 Sites 关联。原 Documents 目录中的项目保留为迁移前快照。
@@ -77,6 +79,7 @@ tests/
   e2e/                      浏览器操作与响应式布局
   fixtures/                 仅测试服务注入的可控牌局
 scripts/measure-bots.mjs      固定牌序下的入池率、进攻率与翻牌人数测量
+scripts/audit-review-phase3.mjs  完整随机牌局与定向复盘场景的离线审查语料
 scripts/mobile.mjs           当前源码构建、原生同步、签名打包和资源校验
 src/platform/                原生生命周期、设备设置与关于/隐私入口
 ios/                         Xcode + Swift Package Manager 工程

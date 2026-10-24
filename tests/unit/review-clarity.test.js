@@ -37,7 +37,7 @@ test('a fold recommendation for a low connector explains potential, price and ac
   assert.match(text, /100K（5.0 BB）/);
   assert.match(text, /跟注，继续争夺 270K 的底池.*需要至少 37.0% 的胜率/);
   assert.match(text, /击中一对.*点数仍偏低.*更高同花/);
-  assert.match(text, /身后还有 6 人等待行动.*他们若再加注/);
+  assert.match(text, /身后还有 6 人等待行动.*他们若仍有加注权并再次加注.*需要重新决定/);
   assert.match(text, /后续下注和成牌后的收益还要另算.*不能把连接牌一律当成弃牌.*建议弃牌/);
   assert.doesNotMatch(text, /被强 A.*压制|踢脚.*压制|；/);
   assert.deepEqual(s, before);
