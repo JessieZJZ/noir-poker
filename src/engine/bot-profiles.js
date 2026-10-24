@@ -21,6 +21,7 @@ import { chipUnitOf, fractionRaiseTo, legalRaiseTo } from './bet-sizing.js';
 import { deceptiveAction, isDonkLead } from './bot-deception.js';
 import { publicResponseRisk } from './public-action-context.js';
 import { preflopJamPlan } from './bot-preflop-commitment.js';
+import { postflopStyleLine, balancedPriceDefense } from './bot-style-lines.js';
 
 // Evidence-informed fictional training styles; numeric controls are authored.
 export const BOT_PROFILES = [
@@ -35,6 +36,7 @@ export const BOT_PROFILES = [
     evidence: '电脑角色的策略和情绪均为游戏设定，介绍描述常见倾向，不保证每次采用相同操作。',
     sources: [],
     policy: {
+      lineStrategy: 'balanced',
       unopenedRange: 0.8,
       firstInRaise: 0.98,
       potControl: 0.15,
@@ -205,6 +207,7 @@ export const BOT_PROFILES = [
     policy: {
       entry: 0.9,
       lateEntry: 1.6,
+      lineStrategy: 'positional',
       earlyEntry: 0.65,
       lateOpenAttack: 0.98,
       firstInRaise: 0.98,
@@ -613,7 +616,8 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
     pureBluff = false,
     smallCbet = false,
     thinValue = false,
-    positionProbe = false;
+    positionProbe = false,
+    linePlan = null;
   const floatContinue = context.floatCandidate && roll('float', style.float) < style.float;
   const headsUp = assumedOpponents === 1,
     features = view.features,
@@ -740,6 +744,7 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
   // Keep the same own-hand, price, texture and no-all-in protections. This
   // authored preference is not evidence of a particular opponent's weakness.
   if (
+    !style.lineStrategy &&
     style.delayedProbe > 0 &&
     hasBotSkill(view.difficulty, 'float') &&
     context.delayed &&
@@ -756,6 +761,7 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
   )
     pureBluff = true;
   if (
+    !style.lineStrategy &&
     style.positionProbe > 0 &&
     hasBotSkill(view.difficulty, 'float') &&
     checkedToPositionProbe(view) &&
@@ -823,7 +829,15 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
       exceptions,
       sizing,
       deception,
-      style: { controls: style, context, floatContinue, smallCbet, thinValue, positionProbe },
+      style: {
+        controls: style,
+        context,
+        floatContinue,
+        smallCbet,
+        thinValue,
+        positionProbe,
+        linePlan,
+      },
       value,
       semiBluff,
       pureBluff,
@@ -927,6 +941,10 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
       }
     }
   }
+  if (balancedPriceDefense(view, style, equity + callTolerance, requiredEquity)) {
+    linePlan = { kind: 'balanced-defense', motive: 'defense', selected: true, executed: true };
+    return finish('call', 'price-continue');
+  }
   if (!legal.canRaise)
     return finish(
       legal.canCheck ? 'check' : 'call',
@@ -1010,6 +1028,53 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
         if (!value) pureBluff = true;
         return finish('raise', value ? 'value-raise' : 'pure-bluff', amount);
       }
+    }
+  }
+  const candidateLine = postflopStyleLine(view, style, equity);
+  if (candidateLine) {
+    const selected =
+      candidateLine.rate >= 1 || roll('style-line', candidateLine.rate) < candidateLine.rate;
+    linePlan = { ...candidateLine, selected, executed: false };
+    if (!selected || candidateLine.motive === 'control') {
+      linePlan.executed = true;
+      return finish('check', candidateLine.motive === 'control' ? 'pot-control' : 'free-check');
+    }
+    positionProbe = candidateLine.kind === 'position-probe';
+    value = candidateLine.motive === 'value';
+    semiBluff = candidateLine.motive === 'semi-bluff';
+    pureBluff = candidateLine.motive === 'bluff';
+    const desired = fractionRaiseTo(
+      {
+        currentBet: view.currentBet,
+        pot: view.pot,
+        callAmount: legal.callAmount,
+        chipUnit: legal.chipUnit,
+      },
+      candidateLine.fraction,
+    );
+    const amount = legalRaiseTo(desired, legal);
+    const budget = (view.stack + (view.total || 0)) * 0.25 - (view.total || 0);
+    if (amount >= legal.maxRaiseTo || (!value && amount - view.bet > Math.max(0, budget))) {
+      linePlan.veto = amount >= legal.maxRaiseTo ? 'commitment-limit' : 'risk-budget';
+      if (!value) return finish('check', 'free-check');
+      // Let the existing value/commitment selector price a strong short-SPR
+      // hand. A bounded training line must not force that hand to check.
+    } else {
+      sizing = {
+        fraction: candidateLine.fraction,
+        desired,
+        actual: amount,
+        minimum: legal.minRaiseTo,
+        maximum: legal.maxRaiseTo,
+        opening: false,
+        executed: true,
+      };
+      linePlan.executed = true;
+      return finish(
+        'raise',
+        value ? 'value-raise' : semiBluff ? 'semi-bluff' : 'pure-bluff',
+        amount,
+      );
     }
   }
   thinValue =
