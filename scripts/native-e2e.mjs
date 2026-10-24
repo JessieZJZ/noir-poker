@@ -758,6 +758,11 @@ try {
     report.serverCleanup = stopOwnedServer(server);
     await sleep(300);
   }
+  // Appium can still write while it exits; stop piping before closing the
+  // log so a late line cannot crash the runner after the tests passed.
+  server?.stdout?.unpipe(serverStream);
+  server?.stderr?.unpipe(serverStream);
+  serverStream?.on('error', () => {});
   serverStream?.end();
   if (platform === 'android' && airplaneMode !== undefined) {
     try {
