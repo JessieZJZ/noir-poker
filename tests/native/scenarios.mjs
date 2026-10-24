@@ -552,6 +552,11 @@ export async function nativeScenarios(app) {
       'Practice reset must start a fresh first hand',
     );
     assert.equal(await app.evaluate(() => document.querySelector('#stat-hands').textContent), '0');
+    await app.waitFor(
+      () => app.evaluate(() => !document.querySelector('#reset-dialog').open),
+      5000,
+      'The reset confirmation must close',
+    );
     return { layout, cancelPreservesHand: true, confirmedResetHands: 0 };
   });
   await check('local-launch-and-no-login', async () => {
@@ -567,7 +572,16 @@ export async function nativeScenarios(app) {
       5000,
       'Installed WebView must load the shared local UI fonts',
     );
-    if (app.comparePage)
+    if (app.comparePage) {
+      // Compare the first screen. An earlier scenario may leave the page
+      // scrolled, and a GPU-less CI simulator presents the next frame late.
+      await app.evaluate(() => window.scrollTo(0, 0));
+      await app.waitFor(
+        () => app.evaluate(() => scrollY === 0 && !document.querySelector('dialog[open]')),
+        5000,
+        'The table must be at the top with no dialog open',
+      );
+      await app.sleep(1500);
       await app.comparePage('table', [
         '.header',
         '.surface-top',
@@ -575,6 +589,7 @@ export async function nativeScenarios(app) {
         '#bet-slider',
         '.action-buttons',
       ]);
+    }
     const layout = await app.evaluate(readTableLayout);
     assertTableLayout(layout);
     const info = await app.evaluate(() => ({
