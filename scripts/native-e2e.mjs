@@ -408,7 +408,18 @@ async function background() {
   );
   return { startedAt: performance.now(), nativeState };
 }
-const queryAppState = () => command('POST', '/appium/device/app_state', { appId });
+// A busy CI emulator can briefly fail `adb shell dumpsys` (exit 255) while the
+// app is fine; retry that transient driver error before reporting a failure.
+const queryAppState = async () => {
+  for (let attempt = 0; ; attempt++) {
+    try {
+      return await command('POST', '/appium/device/app_state', { appId });
+    } catch (error) {
+      if (attempt >= 2 || !/adbExec|exited with code 255/.test(error.message)) throw error;
+      await sleep(1000);
+    }
+  }
+};
 async function rotate(orientation, { allowPortraitLock = false } = {}) {
   const result = await requestNativeOrientation(command, platform, orientation, allowPortraitLock);
   await attachWebview();
