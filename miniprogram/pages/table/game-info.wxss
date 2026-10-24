@@ -1,37 +1,49 @@
 /* Game info mirrors Web's waiting card: shown only before the seat is taken
-   (the waiting message stays in the header), it carries centred chips, blinds
-   and results. The waiting shell
-   omits the 134px dock, so the card's 8px gap plus 126px height take that space
-   and the top bar, table and card fill the first screen. Play keeps the
-   practice panel. */
+   (the waiting message stays in the header), its title and chips, blinds and
+   results share the card's content edges, the stats centred below the title.
+   The waiting shell omits the 134px dock, so the card's 8px gap plus 126px
+   height take that space and the top bar, table and card fill the first
+   screen. Play keeps the practice panel. */
 .game-info {
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  gap: 12px;
+  gap: 10px;
   box-sizing: border-box;
   min-height: 126px;
   margin-top: 8px;
-  padding: 10px 14px 12px;
+  padding: 14px 14px 12px;
   border: 1px solid #27333d;
   border-radius: 10px;
   background: linear-gradient(145deg, #17202a88, #11182188);
   line-height: 1.5;
 }
+.game-info-title {
+  color: #edf3f6;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 18px;
+}
+/* Columns keep their own width with equal gaps: the first starts under the
+   title, the last ends at the card's right edge, and the values share one
+   line. */
 .game-info-stats {
   display: flex;
+  justify-content: space-between;
   gap: 8px;
+  margin: auto 0;
 }
 .game-info-stats > view {
-  flex: 1 1 0;
-  min-width: 0;
+  display: flex;
+  flex: 0 1 auto;
+  flex-direction: column;
+  justify-content: space-between;
   text-align: center;
 }
-.game-info-stats > .game-info-chips {
-  flex-grow: 1.35;
+.game-info-stats > view:first-child {
+  text-align: left;
 }
-.game-info-stats > view:nth-child(2) {
-  flex-grow: 1.25;
+.game-info-stats > view:last-child {
+  text-align: right;
 }
 .info-term {
   display: block;
@@ -58,7 +70,8 @@
   color: #8aa0ad;
   font-size: 11px;
   font-weight: 500;
-  line-height: inherit;
+  /* The smaller change must not deepen the value line. */
+  line-height: 1;
 }
 .game-info .session-change.positive {
   color: #6ee7c5;

@@ -2368,6 +2368,14 @@ test('WeChat practice heading owns reset; game info replaces it only while waiti
     info,
     /\.game-info\s*\{[^}]*box-sizing: border-box;[^}]*min-height: 126px;[^}]*margin-top: 8px/s,
   );
+  // As on Web, a 本局信息 title heads the card; the stats share its edges.
+  assert.match(
+    template,
+    /class="game-info" aria-label="本局信息"\s*><text class="game-info-title">本局信息<\/text\s*><view class="game-info-stats"/,
+  );
+  assert.match(info, /\.game-info-stats\s*\{[^}]*justify-content: space-between;/s);
+  assert.match(info, /\.game-info-stats > view:first-child\s*\{\s*text-align: left;/);
+  assert.match(info, /\.game-info-stats > view:last-child\s*\{\s*text-align: right;/);
   assert.match(template, /本次练习净变化/);
   assert.match(template, /<text>本手动态<\/text><text>{{done \? 'FINISHED' : 'LIVE'}}<\/text>/);
 });

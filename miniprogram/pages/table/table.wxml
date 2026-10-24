@@ -464,7 +464,8 @@
       </view>
     </view>
   </view>
-  <view wx:if="{{!historyReadOnly && waitingForSeat}}" class="game-info" aria-label="对局信息"
+  <view wx:if="{{!historyReadOnly && waitingForSeat}}" class="game-info" aria-label="本局信息"
+    ><text class="game-info-title">本局信息</text
     ><view class="game-info-stats"
       ><view class="game-info-chips"
         ><text class="info-term">当前筹码</text

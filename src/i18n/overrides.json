@@ -526,7 +526,8 @@
     "可玩": "Playable",
     "强牌": "Strong",
     "4 手内三次面对同一对手加注后弃牌": "Folded to the same raiser in three of four hands",
-    "{30} 本手风格：{31}": "{30}’s style this hand: {31}"
+    "{30} 本手风格：{31}": "{30}’s style this hand: {31}",
+    "本局信息": "Session info"
   },
   "zh-TW": {
     "设置": "設定",
@@ -938,7 +939,8 @@
     "连胜自信": "連勝自信",
     "可玩": "可玩",
     "强牌": "強牌",
-    "4 手内三次面对同一对手加注后弃牌": "4 手內三次面對同一對手加注後棄牌"
+    "4 手内三次面对同一对手加注后弃牌": "4 手內三次面對同一對手加注後棄牌",
+    "本局信息": "本局資訊"
   },
   "ja": {
     "设置": "設定",
@@ -1350,7 +1352,8 @@
     "连胜自信": "連勝の自信",
     "可玩": "プレイ可能",
     "强牌": "強い",
-    "4 手内三次面对同一对手加注后弃牌": "4 ハンド中 3 回同じ相手のレイズに降りた"
+    "4 手内三次面对同一对手加注后弃牌": "4 ハンド中 3 回同じ相手のレイズに降りた",
+    "本局信息": "このセッションの情報"
   },
   "ko": {
     "设置": "설정",
@@ -1762,7 +1765,8 @@
     "连胜自信": "연승 자신감",
     "可玩": "플레이 가능",
     "强牌": "강함",
-    "4 手内三次面对同一对手加注后弃牌": "4핸드 중 3번 같은 상대의 레이즈에 폴드"
+    "4 手内三次面对同一对手加注后弃牌": "4핸드 중 3번 같은 상대의 레이즈에 폴드",
+    "本局信息": "이번 세션 정보"
   },
   "es": {
     "设置": "Ajustes",
@@ -2174,7 +2178,8 @@
     "连胜自信": "Racha de confianza",
     "可玩": "Jugables",
     "强牌": "Fuertes",
-    "4 手内三次面对同一对手加注后弃牌": "Se retiró ante el mismo rival que sube en tres de cuatro manos"
+    "4 手内三次面对同一对手加注后弃牌": "Se retiró ante el mismo rival que sube en tres de cuatro manos",
+    "本局信息": "Información de esta sesión"
   },
   "it": {
     "设置": "Impostazioni",
@@ -2586,7 +2591,8 @@
     "连胜自信": "Fiducia vincente",
     "可玩": "Giocabili",
     "强牌": "Forti",
-    "4 手内三次面对同一对手加注后弃牌": "Ha foldato ai rilanci dello stesso avversario in tre mani su quattro"
+    "4 手内三次面对同一对手加注后弃牌": "Ha foldato ai rilanci dello stesso avversario in tre mani su quattro",
+    "本局信息": "Info della sessione"
   },
   "pt": {
     "设置": "Definições",
@@ -2998,7 +3004,8 @@
     "连胜自信": "Confiança vencedora",
     "可玩": "Jogáveis",
     "强牌": "Fortes",
-    "4 手内三次面对同一对手加注后弃牌": "Desistiu diante do mesmo adversário que aumenta em três de quatro mãos"
+    "4 手内三次面对同一对手加注后弃牌": "Desistiu diante do mesmo adversário que aumenta em três de quatro mãos",
+    "本局信息": "Informações desta sessão"
   },
   "de": {
     "设置": "Einstellungen",
@@ -3410,7 +3417,8 @@
     "连胜自信": "Siegesbewusst",
     "可玩": "Spielbar",
     "强牌": "Stark",
-    "4 手内三次面对同一对手加注后弃牌": "Hat in drei von vier Händen gegen denselben Raiser gefoldet"
+    "4 手内三次面对同一对手加注后弃牌": "Hat in drei von vier Händen gegen denselben Raiser gefoldet",
+    "本局信息": "Infos dieser Sitzung"
   },
   "fr": {
     "设置": "Paramètres",
@@ -3822,7 +3830,8 @@
     "连胜自信": "Confiance gagnante",
     "可玩": "Jouables",
     "强牌": "Fortes",
-    "4 手内三次面对同一对手加注后弃牌": "S’est couché face au même relanceur dans trois mains sur quatre"
+    "4 手内三次面对同一对手加注后弃牌": "S’est couché face au même relanceur dans trois mains sur quatre",
+    "本局信息": "Infos de cette session"
   },
   "ru": {
     "设置": "Настройки",
@@ -4234,6 +4243,7 @@
     "连胜自信": "Уверен после побед",
     "可玩": "Играбельные",
     "强牌": "Сильные",
-    "4 手内三次面对同一对手加注后弃牌": "Сбросил карты на рейзы одного соперника в трёх раздачах из четырёх"
+    "4 手内三次面对同一对手加注后弃牌": "Сбросил карты на рейзы одного соперника в трёх раздачах из четырёх",
+    "本局信息": "Сведения об этой сессии"
   }
 }

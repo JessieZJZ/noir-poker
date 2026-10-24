@@ -72,14 +72,16 @@
 .game-surface[data-entry-state='waiting'] .hand-label > :not(#street-label) {
   display: none;
 }
+/* The waiting message sits where the hand label sits in play, centred in
+   the same first row; a wrapped message grows the row instead of clipping. */
 .game-surface[data-entry-state='waiting'] .surface-top .hand-label {
   grid-column: 1;
-  align-self: start;
+  align-self: center;
   white-space: normal;
-  line-height: 1.45;
+  line-height: normal;
 }
 .main .game-surface[data-entry-state='waiting'] > .surface-top {
-  grid-template-rows: auto 22px;
+  grid-template-rows: minmax(var(--hand-row), auto) var(--hint-row);
 }
 .game-surface[data-entry-state='waiting'] .surface-top .blind-info {
   grid-row: 1;

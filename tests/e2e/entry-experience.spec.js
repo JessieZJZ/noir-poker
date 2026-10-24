@@ -105,6 +105,25 @@ test('entry stakes stay in the game info card and the hero label has no reserved
             practiceBelow: card.top >= surface.bottom && card.top - surface.bottom <= 20,
             sameWidth: Math.abs(card.width - surface.width) <= 1,
             noOverflow: document.documentElement.scrollWidth <= innerWidth,
+            // The titled card shares its edges: the title and first stat start
+            // together, the last stat ends with them, and the values share one
+            // line without clipping.
+            titled: (() => {
+              const title = box('#game-info-title'),
+                columns = [...document.querySelectorAll('.game-info-stats > div')].map((c) =>
+                  c.getBoundingClientRect(),
+                ),
+                values = [...document.querySelectorAll('.game-info-stats dd')];
+              const tops = values.map((value) => value.getBoundingClientRect().top);
+              return (
+                document.querySelector('#game-info-title').textContent === '本局信息' &&
+                Math.abs(columns[0].left - title.left) < 1 &&
+                Math.abs(columns.at(-1).right - box('.game-info .section-title').right) < 1 &&
+                title.bottom <= Math.min(...columns.map((c) => c.top)) &&
+                Math.max(...tops) - Math.min(...tops) < 1 &&
+                values.every((value) => value.scrollWidth <= value.clientWidth)
+              );
+            })(),
           };
         }),
       )
@@ -116,6 +135,7 @@ test('entry stakes stay in the game info card and the hero label has no reserved
         practiceBelow: true,
         sameWidth: true,
         noOverflow: true,
+        titled: true,
       });
     if ([390, 1700].includes(width))
       await page.screenshot({
@@ -201,6 +221,39 @@ for (const count of [5, 6, 7, 8, 9]) {
   });
 }
 
+test('the waiting message sits where the hand label sits once play starts', async ({ browser }) => {
+  for (const [width, height] of [
+    [360, 740],
+    [393, 759],
+    [768, 1024],
+    [1280, 800],
+  ]) {
+    const page = await browser.newPage({ viewport: { width, height } });
+    await page.goto('/');
+    await expect(page.locator('html')).toHaveAttribute('data-app-ready', 'true');
+    // The first visible label text, measured from the table card's top edge.
+    const textTop = () =>
+      page.evaluate(() => {
+        const label = document.querySelector('.game-surface .surface-top .hand-label');
+        const text = [...label.querySelectorAll('*')].find(
+          (element) =>
+            element.offsetWidth && element.textContent.trim() && !element.children.length,
+        );
+        const range = document.createRange();
+        range.selectNodeContents(text);
+        return (
+          range.getBoundingClientRect().top -
+          document.querySelector('.game-surface').getBoundingClientRect().top
+        );
+      });
+    await expect(page.locator('.game-surface')).toHaveAttribute('data-entry-state', 'waiting');
+    const waiting = await textTop();
+    await page.locator('#join-table-button').click();
+    await expect(page.locator('.game-surface')).toHaveAttribute('data-entry-state', 'playing');
+    expect(Math.abs((await textTop()) - waiting), `${width}px`).toBeLessThanOrEqual(1);
+    await page.close();
+  }
+});
 test('waiting settings update the undealt table and a reload waits for the next hand in the same session', async ({
   page,
 }) => {

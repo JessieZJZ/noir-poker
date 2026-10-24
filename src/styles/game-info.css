@@ -1,27 +1,42 @@
 /* Game info: shown only while waiting for the seat (the waiting message stays
-   in the table header). It carries chips, blinds and results, centred, and is
-   stretched to the action dock's reserved space so the top bar, the table and
-   this card fill the first screen. Play keeps the practice card instead. */
+   in the table header). Its title and chips, blinds and results share the
+   card's content edges, and it is stretched to the action dock's reserved
+   space so the top bar, the table and this card fill the first screen; the
+   stats stay centred in the space below the title. Play keeps the practice
+   card instead. */
 .main > .sidebar > .game-info {
   display: grid;
-  align-content: center;
-  gap: 12px;
+  grid-template-rows: auto 1fr;
+  gap: 10px;
   box-sizing: border-box;
-  padding: 10px 14px 12px;
+  padding: 14px 14px 12px;
 }
 .main > .sidebar > .game-info[hidden] {
   display: none;
 }
+/* Columns keep their own width with equal gaps: the first starts under the
+   title, the last ends at the card's right edge. */
 .game-info-stats {
-  display: grid;
-  grid-template-columns: minmax(0, 1.35fr) minmax(0, 1.25fr) repeat(3, minmax(0, 1fr));
-  gap: 4px 8px;
+  display: flex;
+  justify-content: space-between;
+  align-self: center;
+  gap: 8px;
   margin: 0;
 }
+/* A column never shrinks below its one-line value; long labels wrap first,
+   and the values stay on one shared line beneath them. */
 .game-info-stats > div {
-  display: block;
-  min-width: 0;
+  display: flex;
+  flex: 0 1 auto;
+  flex-direction: column;
+  justify-content: space-between;
   text-align: center;
+}
+.game-info-stats > div:first-child {
+  text-align: left;
+}
+.game-info-stats > div:last-child {
+  text-align: right;
 }
 .game-info-stats dt {
   color: #7a8d9c;
@@ -48,6 +63,8 @@
 }
 .game-info-chips em {
   margin-left: 4px;
+  /* The smaller change must not deepen the value line. */
+  line-height: 1;
   color: #8aa0ad;
   font-size: 11px;
   font-style: normal;
@@ -68,21 +85,22 @@
     padding: 9px 11px 10px;
   }
   .game-info-stats {
-    gap: 2px 6px;
+    gap: 6px;
   }
   .game-info-stats dd {
     font-size: 14px;
   }
 }
-/* Wide screens keep the stats on one centred row. */
+/* Wide screens keep the title and stats together in one centred column. */
 @media (min-width: 900px) {
   .main > .sidebar > .game-info {
-    padding: 10px 16px;
+    padding: 14px 16px 12px;
   }
-  .game-info-stats {
+  .main > .sidebar > .game-info > * {
+    box-sizing: border-box;
     width: 100%;
     max-width: 640px;
-    margin: 0 auto;
+    margin-inline: auto;
   }
 }
 

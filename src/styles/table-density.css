@@ -26,7 +26,8 @@
     --live-dock-height: 140px;
   }
   .main .game-surface > .surface-top {
-    grid-template-rows: 24px 22px;
+    --hand-row: 24px;
+    --hint-row: 22px;
     row-gap: 2px;
     padding-top: 0;
     padding-bottom: 0;
@@ -111,7 +112,8 @@
     --live-dock-height: 168px;
   }
   .main .game-surface > .surface-top {
-    grid-template-rows: 30px 24px;
+    --hand-row: 30px;
+    --hint-row: 24px;
     padding-top: 6px;
     padding-bottom: 6px;
   }

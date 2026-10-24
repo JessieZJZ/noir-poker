@@ -492,15 +492,22 @@ test('historical headers show each attempt start date with the year, align the r
         i ? '2026/01/02 09:02' : '2026/01/01 08:01',
       );
       // No practice label or return button: the time sits under the table
-      // card's game and hand label, aligned to its left edge.
+      // card's game and hand label, its text starting where the game label's
+      // text starts.
       await expect(page.locator('.records-eyebrow, #records-back-button')).toHaveCount(0);
       const layout = await page.evaluate(() => {
         const start = document.querySelector('#records-hand-start');
+        const text = (element) => {
+          const range = document.createRange();
+          range.selectNodeContents(element);
+          return range.getBoundingClientRect();
+        };
         const label = start.parentElement.querySelector('.hand-label').getBoundingClientRect();
-        const time = start.getBoundingClientRect();
+        const game = text(start.parentElement.querySelector('.session-label'));
+        const time = text(start);
         const actions = document.querySelector('.header-actions');
         return {
-          centerOffset: Math.abs(time.left - label.left),
+          centerOffset: Math.abs(time.left - game.left),
           timeGap: time.top - label.bottom + 1,
           right: actions.getBoundingClientRect().right,
           shift: getComputedStyle(actions).left,

@@ -106,13 +106,17 @@ html.native-ios .game-surface {
 .game-surface .surface-top {
   row-gap: 4px;
 }
-/* The retry badge must fit in the same header row as an ordinary hand label. */
+/* The retry badge must fit in the same header row as an ordinary hand label.
+   Breakpoints set the two row heights; the waiting header reuses them. */
 .main .game-surface > .surface-top {
-  grid-template-rows: 28px 22px;
+  --hand-row: 28px;
+  --hint-row: 22px;
+  grid-template-rows: var(--hand-row) var(--hint-row);
 }
 @media (min-width: 1101px), (min-width: 901px) and (orientation: landscape) {
   .main .game-surface > .surface-top {
-    grid-template-rows: 28px auto;
+    --hand-row: 28px;
+    --hint-row: auto;
   }
   .main {
     align-items: stretch;
@@ -298,7 +302,8 @@ html.native-ios .game-surface {
     --live-dock-height: 174px;
   }
   .main .game-surface > .surface-top {
-    grid-template-rows: 32px 26px;
+    --hand-row: 32px;
+    --hint-row: 26px;
     padding: 12px 18px;
   }
   .game-surface .hand-label,
