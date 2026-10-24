@@ -15,6 +15,7 @@ import {
   checkedThroughPairValue,
   valueBetCap,
   expensivePreflopDefense,
+  checkedToPositionProbe,
 } from './bot-style.js';
 import { chipUnitOf, fractionRaiseTo, legalRaiseTo } from './bet-sizing.js';
 import { deceptiveAction, isDonkLead } from './bot-deception.js';
@@ -33,8 +34,11 @@ export const BOT_PROFILES = [
     evidence: '电脑角色的策略和情绪均为游戏设定，介绍描述常见倾向，不保证每次采用相同操作。',
     sources: [],
     policy: {
+      unopenedRange: 0.8,
+      firstInRaise: 0.98,
       potControl: 0.15,
       thinValue: 0.15,
+      smallCbet: 0.55,
       valueAttack: 0.8,
     },
   },
@@ -202,6 +206,9 @@ export const BOT_PROFILES = [
       lateEntry: 1.6,
       earlyEntry: 0.65,
       lateOpenAttack: 0.98,
+      firstInRaise: 0.98,
+      isolation: 0.9,
+      positionProbe: 0.8,
       reraise: 0.9,
       blockerBluffs: true,
       float: 0.95,
@@ -536,6 +543,17 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
       entryScale;
   if (cheapEntry && speculative && ['BTN', 'CO', 'HJ'].includes(view.position))
     range += (0.06 + width * 0.12) * entryScale;
+  // A first-in opening uses its position range, not the extra discount meant
+  // for a cheap multiway overcall. This keeps a conventional baseline from
+  // repeatedly limping hands it would not choose to open.
+  if (
+    cheapEntry &&
+    !limpers &&
+    style.firstInRaise > 0 &&
+    view.difficulty !== 'easy' &&
+    view.stack + view.bet >= 30 * bigBlind
+  )
+    range = openingRange * style.unopenedRange;
   if (affordableOpen) {
     const priceScale = Math.max(0.65, 1.1 - (view.currentBet / bigBlind) * 0.08);
     const playability = speculative ? 0.14 : suitedHigh ? 0.07 : 0;
@@ -589,7 +607,8 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
     semiBluff = false,
     pureBluff = false,
     smallCbet = false,
-    thinValue = false;
+    thinValue = false,
+    positionProbe = false;
   const floatContinue = context.floatCandidate && roll('float', style.float) < style.float;
   const headsUp = assumedOpponents === 1,
     features = view.features,
@@ -731,6 +750,15 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
     roll('pure-bluff', style.delayedProbe) < style.delayedProbe
   )
     pureBluff = true;
+  if (
+    style.positionProbe > 0 &&
+    hasBotSkill(view.difficulty, 'float') &&
+    checkedToPositionProbe(view) &&
+    roll('position-probe', style.positionProbe) < style.positionProbe
+  ) {
+    pureBluff = true;
+    positionProbe = true;
+  }
   const finish = (action, reason, amount) => ({
     action,
     ...(amount === undefined ? {} : { amount }),
@@ -790,7 +818,7 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
       exceptions,
       sizing,
       deception,
-      style: { controls: style, context, floatContinue, smallCbet, thinValue },
+      style: { controls: style, context, floatContinue, smallCbet, thinValue, positionProbe },
       value,
       semiBluff,
       pureBluff,
@@ -910,6 +938,53 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
           safeStrongValue(view, equity) ||
           checkedToPairValue(view, equity) ||
           checkedThroughPairValue(view, equity));
+  // First-in and isolation are different from cold re-raises. Keep the
+  // existing admission, commitment and all-in gates. Isolation additionally
+  // needs a playable holding, late position and no more than two limpers.
+  const firstIn =
+    cheapEntry &&
+    !limpers &&
+    admitted &&
+    style.firstInRaise > 0 &&
+    view.difficulty !== 'easy' &&
+    view.stack + view.bet >= 30 * bigBlind;
+  const isolation =
+    cheapEntry &&
+    limpers > 0 &&
+    limpers <= 2 &&
+    ['BTN', 'CO'].includes(view.position) &&
+    (behind == null || behind <= 3) &&
+    admitted &&
+    percentile <= Math.min(openingRange, 0.5) &&
+    ((pair && high >= 5) ||
+      (suited && (high === 14 || (low >= 7 && high - low <= 2))) ||
+      (high >= 12 && low >= 10)) &&
+    style.isolation > 0 &&
+    hasBotSkill(view.difficulty, 'position') &&
+    view.stack + view.bet >= 40 * bigBlind;
+  if (firstIn || isolation) {
+    const threshold = firstIn ? style.firstInRaise : style.isolation;
+    if (roll(firstIn ? 'first-in' : 'position-isolation', threshold) < threshold) {
+      const desired = ((firstIn ? 2.5 : 3.5) + limpers) * bigBlind;
+      const amount = legalRaiseTo(desired, legal);
+      if (
+        amount < legal.maxRaiseTo &&
+        amount - view.bet <= (view.stack + (view.total || 0)) * 0.15
+      ) {
+        sizing = {
+          fraction: (amount - view.currentBet) / Math.max(1, view.pot + legal.callAmount),
+          desired,
+          actual: amount,
+          minimum: legal.minRaiseTo,
+          maximum: legal.maxRaiseTo,
+          opening: true,
+          executed: true,
+        };
+        if (!value) pureBluff = true;
+        return finish('raise', value ? 'value-raise' : 'pure-bluff', amount);
+      }
+    }
+  }
   thinValue =
     style.thinValue > 0 &&
     view.street === 3 &&
@@ -977,6 +1052,7 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
             ? Math.max(0.75, (0.2 + attack * 0.72) * capability.attack)
             : (0.2 + attack * 0.72) * capability.attack;
   if (value && view.street > 0) attackRate = Math.max(attackRate, style.valueAttack);
+  if (positionProbe) attackRate = Math.max(attackRate, style.positionProbe);
   if (
     value &&
     cheapEntry &&
@@ -996,6 +1072,7 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
     if (view.street === 2 && semiBluff && style.turnSemiBluff != null)
       fraction = style.turnSemiBluff;
     if (smallCbet) fraction = style.flopCbet ?? interval[0];
+    if (positionProbe && !value && !semiBluff) fraction = Math.min(fraction, 0.5);
     if (thinValue) fraction = Math.min(fraction, 0.5);
     if (view.street === 3 && value && equity > 0.7) fraction *= style.riverValue;
     if (mode !== 'off' && ['frustrated', 'confident', 'reactive'].includes(mood.kind))

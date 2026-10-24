@@ -4,7 +4,7 @@ import { readFileSync, readdirSync } from 'node:fs';
 import { BOT_PROFILES, getBotProfile, sanitizeBotSettings } from '../../src/engine/bot-profiles.js';
 import { migrateCharacterState } from '../../src/engine/character-state.js';
 import baseline from '../fixtures/character-strategies.json' with { type: 'json' };
-import calibrated from '../fixtures/style-strategies-v8.json' with { type: 'json' };
+import calibrated from '../fixtures/style-strategies-v9.json' with { type: 'json' };
 test('calibrated styles retain an explicit versioned strategy snapshot and the historical baseline', () => {
   assert.deepEqual(
     BOT_PROFILES.map(({ id, axes, sizing, policy }) => ({ id, axes, sizing, policy })),

@@ -9,6 +9,10 @@ export function resolveBotStyle(profile) {
     lateEntry: 1,
     earlyEntry: 1,
     lateOpenAttack: 0,
+    firstInRaise: 0,
+    unopenedRange: 1,
+    isolation: 0,
+    positionProbe: 0,
     topPairTrap: false,
     reraise: 1,
     shortTable: 1,
@@ -158,7 +162,7 @@ export function expensiveWeakPair(view, equity) {
     view.difficulty === 'easy' ||
     view.allIn ||
     view.legal.canCheck ||
-    !view.features.ownPair ||
+    !(view.features.ownMade && view.features.madeCategory <= 2) ||
     view.features.draw ||
     view.features.strongMade
   )
@@ -168,6 +172,40 @@ export function expensiveWeakPair(view, equity) {
     (a) => a.id !== view.id && a.street > 0 && a.action === 'raise',
   );
   return view.legal.callAmount > original * 0.2 && aggression.length >= 2 && equity < 0.7;
+}
+
+// A last-to-act stab follows checks that have actually happened. Do not turn
+// medium showdown hands into bluffs, lead into unacted seats, or treat a new
+// flush/four-straight threat as permission to attack.
+export function checkedToPositionProbe(view) {
+  const f = view.features,
+    t = boardTexture(view.board);
+  return (
+    view.street > 0 &&
+    view.street < 3 &&
+    view.inPosition &&
+    view.legal.canCheck &&
+    view.legal.canRaise &&
+    view.rivals <= 2 &&
+    !view.allIn &&
+    !view.playsBoard &&
+    !f.ownMade &&
+    !f.draw &&
+    !f.wet &&
+    t.maxSuit < 3 &&
+    t.connected < 4 &&
+    Math.max(...view.hole.map((c) => c.rank)) >= 12 &&
+    view.equity >= 0.15 &&
+    view.equity < 0.65 &&
+    !view.history.some((a) => a.street === view.street && a.action === 'raise') &&
+    (view.opponents || []).length > 0 &&
+    view.opponents.every(
+      (p) =>
+        !p.allin &&
+        p.stack > 0 &&
+        view.history.some((a) => a.street === view.street && a.id === p.id && a.action === 'check'),
+    )
+  );
 }
 
 // A checked-to good top pair can seek modest value in a dry multiway pot.

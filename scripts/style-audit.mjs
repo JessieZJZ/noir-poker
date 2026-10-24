@@ -6,6 +6,7 @@ import { pathToFileURL } from 'node:url';
 import { createHash } from 'node:crypto';
 import { fork } from 'node:child_process';
 import { completedCardInspection } from './style-public-snapshot.mjs';
+import { freshSimulationGame } from './style-simulation-game.mjs';
 
 const args = Object.fromEntries(process.argv.slice(2).map((x) => x.replace(/^--/, '').split('=')));
 const root = resolve(args.root || '.');
@@ -22,13 +23,14 @@ const referenceRoot = resolve(
 const referenceSelector = (
   await import(pathToFileURL(join(referenceRoot, 'src/engine/bot-profiles.js')))
 ).chooseBotAction;
-const protocol = 'split-streams-v2.3';
+const protocol = 'split-streams-v2.4';
 const references = JSON.parse(
   readFileSync(new URL('../tests/fixtures/character-strategies.json', import.meta.url)),
 );
 const harnessDigest = createHash('sha256')
   .update(readFileSync(new URL(import.meta.url)))
   .update(readFileSync(new URL('./style-public-snapshot.mjs', import.meta.url)))
+  .update(readFileSync(new URL('./style-simulation-game.mjs', import.meta.url)))
   .digest('hex');
 const seeded = (initial) => {
   let n = initial >>> 0;
@@ -219,14 +221,6 @@ if (args.mode === 'job') {
     seed = +args.seed;
   const profile = args.profile,
     difficulty = args.difficulty;
-  const g = engine.newGame(count);
-  g.difficulty = difficulty;
-  engine.applyBotSettings(g, {
-    emotionMode: 'off',
-    assignments: Object.fromEntries(
-      Array.from({ length: count - 1 }, (_, i) => [i + 1, 'balanced']),
-    ),
-  });
   const metrics = {},
     corpus = {},
     totals = { hands, vpip: 0, pfr: 0, post: 0, postRaises: 0, postCalls: 0, decisions: 0 };
@@ -246,11 +240,8 @@ if (args.mode === 'job') {
   // Separate per-hand policy/deck streams prevent earlier policy divergence
   // from changing the initial deal in subsequent paired hands.
   for (let h = 0; h < hands; h++) {
+    const g = freshSimulationGame(engine, count, h, difficulty);
     const deckRandom = seeded(seed + h * 700001 + 19);
-    g.players.forEach((p) => {
-      p.stack = g.bigBlind * 100;
-      p.botProfile = 'balanced';
-    });
     const target = 1 + (h % (count - 1));
     const old = Math.random;
     Math.random = deckRandom;
@@ -259,6 +250,8 @@ if (args.mode === 'job') {
     } finally {
       Math.random = old;
     }
+    if (g.players.some((p) => p.out || p.hole.length !== 2))
+      throw Error('Independent sample inherited an eliminated seat');
     g.players[target].botProfile = profile;
     let vpip = false,
       pfr = false,
@@ -409,7 +402,11 @@ if (args.mode === 'job') {
         difficulties,
         seeds,
         handsPerCell: +(args.hands || 80),
-        opponents: 'frozen historical balanced/small-ball/pressure; test seat rotates each hand',
+        opponents:
+          args.opponents === 'current'
+            ? 'current policies; test seat rotates each hand'
+            : 'frozen historical balanced/small-ball/pressure; test seat rotates each hand',
+        ...(args.opponents === 'current' ? { companions: currentCompanions } : {}),
         emotion: 'off',
         startingStacks: '100BB reset each hand',
         chipUnit: 'small blind',

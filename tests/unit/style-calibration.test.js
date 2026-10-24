@@ -96,10 +96,12 @@ test('late-position emphasis changes unopened entry and attack without widening 
     assert.ok(
       decide('iris', late, 2).trace.openingRange > decide('iris', early, 2).trace.openingRange * 2,
     );
-    // This already-admitted hand checks the attack preference. The population
-    // signature and its 25-point target are measured separately on full hands.
+    // Both conventional first-in ranges now open an admitted hand. Position
+    // separation comes from which hands enter, not artificial limps with the
+    // same admitted holding. Population gaps remain a separate measurement.
     const raise = (d) => d.action === 'raise';
-    assert.ok(rate('iris', late, raise) > rate('balanced', late, raise) + 0.2);
+    assert.ok(rate('iris', late, raise) > 0.9);
+    assert.ok(rate('balanced', late, raise) > 0.9);
     const easy = { ...late, difficulty: 'easy' };
     assert.ok(
       decide('iris', easy, 2).trace.openingRange /
