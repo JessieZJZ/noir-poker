@@ -627,7 +627,9 @@ try {
     'appium:automationName': platform === 'ios' ? 'XCUITest' : 'UiAutomator2',
     'appium:udid': udid,
     'appium:app': appPath,
-    'appium:newCommandTimeout': 180,
+    // Page parity replays the app's DOM in Chromium between native commands;
+    // a GPU-less hosted runner has taken over three minutes to rasterize it.
+    'appium:newCommandTimeout': 600,
     'appium:fullReset': platform === 'android',
     ...(platform === 'ios'
       ? {
