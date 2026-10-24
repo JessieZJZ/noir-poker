@@ -155,11 +155,14 @@ test('generated WeChat JavaScript loads the controller and complete player resea
   assertSuccess(await build(workspace).result);
   assert.equal(existsSync(path.join(workspace.output, 'shared/engine/store-profiles.js')), false);
   assert.equal(existsSync(path.join(workspace.output, 'shared/ui/bet-sizing.js')), false);
-  assert.equal(
-    readFileSync(path.join(workspace.output, 'shared/ui/hero-turn.wxss'), 'utf8'),
-    readFileSync(path.join(root, 'src/styles/hero-turn.css'), 'utf8'),
-    'WeChat must ship the identical turn-attention style used by Web and native apps',
-  );
+  // The same rules as Web and native, compacted like every shipped stylesheet.
+  const { compactWxss } = await import('../../scripts/wechat.mjs');
+  for (const name of ['hero-turn', 'game-effects', 'emotion-effects'])
+    assert.equal(
+      readFileSync(path.join(workspace.output, `shared/ui/${name}.wxss`), 'utf8'),
+      compactWxss(readFileSync(path.join(root, `src/styles/${name}.css`), 'utf8')),
+      `WeChat must ship the identical ${name} style used by Web and native apps`,
+    );
   const context = vm.createContext({ console });
   const modules = new Map();
   function load(request, parent = path.join(workspace.output, 'entry.js')) {
@@ -396,4 +399,32 @@ test('WeChat source-fingerprint failure releases its build lock before returning
   renameSync(path.join(workspace.directory, 'src-missing'), path.join(workspace.directory, 'src'));
   assertSuccess(await build(workspace).result);
   cleanBuildFiles(workspace);
+});
+
+test('WeChat stylesheets drop comments, indentation and blank lines only', async () => {
+  const { compactWxss } = await import('../../scripts/wechat.mjs');
+  assert.equal(
+    compactWxss(`/* note
+   spanning lines */
+.a {
+  color: red; /* inline */
+
+  background: url('data:image/svg+xml;base64,PHN2Zy8+');
+}
+@media (max-width: 380px) {
+  .a {
+    padding: 0;
+  }
+}
+`),
+    `.a {
+color: red;
+background: url('data:image/svg+xml;base64,PHN2Zy8+');
+}
+@media (max-width: 380px) {
+.a {
+padding: 0;
+}
+}`,
+  );
 });

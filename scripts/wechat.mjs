@@ -19,6 +19,16 @@ const manifestName = 'build-info.json';
 const appId = () => process.env.NOIR_WECHAT_APP_ID || 'touristappid';
 const checksum = (bytes) => createHash('sha256').update(bytes).digest('hex');
 
+// Stylesheets ship without comments, indentation or blank lines; rules and
+// declarations are untouched (each line keeps its own content).
+export function compactWxss(text) {
+  return text
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .join('\n');
+}
 export function wechatPackageBytes(files, app) {
   const roots = (app.subpackages || []).map((entry) => entry.root.replace(/\/$/, '') + '/');
   const sizes = Object.fromEntries(
@@ -338,6 +348,11 @@ export async function buildWechat(output = wechatOutput) {
     await writeFile(path.join(staging, 'package.json'), '{"type":"commonjs","private":true}\n');
     await pruneUnusedSharedModules(staging);
     await verifyLocalWechatModules(staging);
+    for (const name of await fileList(staging))
+      if (name.endsWith('.wxss') && name !== 'fonts.wxss') {
+        const file = path.join(staging, name);
+        await writeFile(file, compactWxss(await readFile(file, 'utf8')));
+      }
     const files = [];
     // Local IDE preferences are preserved below, outside the runtime manifest.
     await rm(path.join(staging, 'project.private.config.json'), { force: true });
