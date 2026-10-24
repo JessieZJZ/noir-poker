@@ -102,6 +102,9 @@ const adb = sdk ? path.join(sdk, 'platform-tools/adb') : 'adb';
 const androidDevtoolsPort = Math.min(64000, Number(options['driver-port'] ?? 9200) + 10000);
 const serverUrl =
   options.server ?? `http://127.0.0.1:${options.port ?? (platform === 'ios' ? 4725 : 4727)}`;
+// A fresh hosted runner builds WebDriverAgent during session creation, which
+// has taken over six minutes; the WDA launch itself may take up to ten.
+const SESSION_TIMEOUT_MS = 900000;
 async function request(method, endpoint, body, timeout = 120000) {
   return webDriverRequest(`${serverUrl}${endpoint}`, method, body, timeout);
 }
@@ -387,7 +390,7 @@ async function resetIOSDriver() {
     'POST',
     '/session',
     { capabilities: { alwaysMatch: caps, firstMatch: [{}] } },
-    360000,
+    SESSION_TIMEOUT_MS,
   );
   session = created.sessionId;
   report.driverSessionResets = (report.driverSessionResets || 0) + 1;
@@ -624,7 +627,7 @@ try {
                 'appium:wdaRemotePort': Number(options['driver-port']),
               }
             : {}),
-          'appium:wdaLaunchTimeout': 240000,
+          'appium:wdaLaunchTimeout': 600000,
           // Hosted CI simulators can take minutes to report boot completion to
           // the driver, beyond its 120 s default, after simctl already booted.
           'appium:simulatorStartupTimeout': 600000,
@@ -656,7 +659,7 @@ try {
     'POST',
     '/session',
     { capabilities: { alwaysMatch: caps, firstMatch: [{}] } },
-    360000,
+    SESSION_TIMEOUT_MS,
   );
   session = created.sessionId;
   report.capabilities = created.capabilities;
