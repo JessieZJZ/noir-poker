@@ -70,7 +70,13 @@ applyBotSettings(g, {
 try {
   Math.random = deckRandom;
   for (let h = 0; h < hands; h++) {
-    g.players.forEach((p) => (p.stack = g.bigBlind * 100));
+    // Every hand restarts at 100 BB, so no seat stays eliminated between samples.
+    g.over = null;
+    g.players.forEach((p) => {
+      p.stack = g.bigBlind * 100;
+      p.out = false;
+      p.place = null;
+    });
     startHand(g);
     let actions = 0;
     while (g.phase !== 'done') {
