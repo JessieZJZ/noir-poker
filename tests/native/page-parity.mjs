@@ -412,7 +412,8 @@ export async function compareNativePage({ root, output, evaluate, screenshot }, 
       }, profileDetailBounds(profileGeometry));
     const { boxes } = await page.evaluate(collectNativePageSnapshot, selectors);
     const webImage = path.join(output, 'parity-' + name + '-web.png');
-    await page.screenshot({ path: webImage });
+    // A GPU-less hosted macOS runner can take over 30 s to rasterize the page.
+    await page.screenshot({ path: webImage, timeout: 90000 });
     const paint = /^(?:table|settlement)(?:-[5-9])?$/.test(name)
       ? await compareNativePaint(nativeCapture, webImage, snapshot)
       : undefined;
