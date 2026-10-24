@@ -300,3 +300,81 @@ test('WeChat maintains full music volume across unlocks and cancels fade timers 
   music.unlock();
   assert.equal(jobs.size, 0);
 });
+
+test('WeChat resumes music the system paused, rate-limited, but never a requested pause', async () => {
+  let serial = 0,
+    now = 0;
+  const jobs = new Map();
+  const audio = {
+    playCount: 0,
+    onPlay(fn) {
+      this.played = fn;
+    },
+    onPause(fn) {
+      this.paused = fn;
+    },
+    onStop(fn) {
+      this.stopped = fn;
+    },
+    play() {
+      this.playCount++;
+      this.played();
+    },
+    pause() {
+      this.paused();
+    },
+    stop() {},
+    destroy() {},
+  };
+  const music = createWechatBackgroundMusic(
+    { createInnerAudioContext: () => audio },
+    {
+      loadSource: () => '/music/background-music.m4a',
+      now: () => now,
+      schedule(fn, delay) {
+        jobs.set(++serial, { fn, delay });
+        return serial;
+      },
+      unschedule: (id) => jobs.delete(id),
+    },
+  );
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  const recoveries = () => [...jobs.entries()].filter(([, job]) => job.delay !== 40);
+  const run = ([id, job]) => {
+    jobs.delete(id);
+    job.fn();
+  };
+  assert.equal(audio.playCount, 1);
+  // A page's sound players pause the shared track: it resumes shortly after.
+  audio.paused();
+  assert.equal(recoveries().length, 1);
+  assert.equal(recoveries()[0][1].delay, 300);
+  run(recoveries()[0]);
+  assert.equal(audio.playCount, 2);
+  // A stop right after waits until 2s have passed since the last resume.
+  now = 500;
+  audio.stopped();
+  assert.equal(recoveries()[0][1].delay, 1500);
+  run(recoveries()[0]);
+  assert.equal(audio.playCount, 3);
+  // Requested pauses (hidden, muted) and disposal never resume.
+  for (const stop of [() => music.setActive(false), () => music.setEnabled(false)]) {
+    music.setActive(true);
+    music.setEnabled(true);
+    const before = audio.playCount;
+    stop();
+    assert.equal(recoveries().length, 0);
+    assert.equal(audio.playCount, before);
+  }
+  music.setActive(true);
+  music.setEnabled(true);
+  now = 10000;
+  audio.paused();
+  assert.equal(recoveries().length, 1);
+  const pending = recoveries()[0];
+  music.dispose();
+  assert.equal(recoveries().length, 0, 'Disposal cancels a pending resume');
+  const before = audio.playCount;
+  pending[1].fn();
+  assert.equal(audio.playCount, before);
+});

@@ -20,7 +20,7 @@ Web、iOS、Android 和微信小程序的设置在「通用」模块提供三个
 
 Web/App 使用同一包内文件、同一个循环 audio 元素；BGM 通过独立 GainNode 接到现有 AudioContext，兼容不支持元素音量调整的 iOS。音乐与音效共同进入最终限幅器，混音峰值不超过 0.92。音频资源与全部图片共同进入原生资源指纹，并在最终 `.app` / `.apk` / `.aab` 中逐字节验证。没有生产 `server.url` 或远程音乐地址。
 
-小程序把手机版 AAC 文件复制到本地 `music` 分包；仅在声音开启时通过 `require.async` 加载分包的资源入口，使用单独的 `InnerAudioContext`，`loop=true`、`volume=1.0`。小程序仅保留最新的动作提示，音乐编码后的真峰值约 −6.94 dBTP；动作音效使用独立上下文，播放时不修改音乐音量或安排恢复音量的定时器。App 生命周期控制音乐，音效池停止或重建不影响它。分包完成与音频就绪回调都检查当前播放意愿；关闭或销毁后的旧回调不能重新启动音乐。加载方式遵循[微信分包异步化](https://developers.weixin.qq.com/miniprogram/dev/framework/subpackages/async.html)，采用[腾讯官方接入示例](https://cloud.tencent.com/document/product/679/116623)同样的 Promise 模块接口。
+小程序把手机版 AAC 文件复制到本地 `music` 分包；仅在声音开启时通过 `require.async` 加载分包的资源入口，使用单独的 `InnerAudioContext`，`loop=true`、`volume=1.0`。小程序仅保留最新的动作提示，音乐编码后的真峰值约 −6.94 dBTP；动作音效使用独立上下文，播放时不修改音乐音量或安排恢复音量的定时器。App 生命周期控制音乐，音效池停止或重建不影响它。分包完成与音频就绪回调都检查当前播放意愿；关闭或销毁后的旧回调不能重新启动音乐。微信可能在页面创建或销毁音效上下文时（例如进入对局记录）自行暂停或停止音乐；只要仍应播放，300 ms 后从原位置恢复，两次恢复至少间隔 2 秒，避免系统持续拒绝时反复重试。应用切后台、关闭音乐或销毁时会取消待恢复的播放。加载方式遵循[微信分包异步化](https://developers.weixin.qq.com/miniprogram/dev/framework/subpackages/async.html)，采用[腾讯官方接入示例](https://cloud.tencent.com/document/product/679/116623)同样的 Promise 模块接口。
 
 构建保留主包和各分包各自 2 MiB、总包 20 MiB 的预算，在 `build-info.json.packageBytes` 写入每包大小；文件缺失、损坏或与公共资源不一致均阻止验证。
 
