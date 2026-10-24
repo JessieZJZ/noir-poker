@@ -176,18 +176,27 @@ export function postflopStyleLine(view, style, equity) {
         )
       )
         return { kind: 'balanced-thin-value', motive: 'value', rate: 0.65, fraction: 0.25 };
-    if (f.ownMade && !f.strongMade && !f.draw && equity >= 0.3 && equity <= 0.6)
-      return { kind: 'balanced-showdown', motive: 'control', rate: 1 };
+    // As the preflop raiser, a medium made hand takes a small protection bet on
+    // the flop; later streets keep it for showdown.
     if (
       view.street === 1 &&
       ownOpen &&
-      boardHigh >= 11 &&
-      !f.ownMade &&
+      f.ownMade &&
+      !f.strongMade &&
       !f.draw &&
-      equity >= 0.28 &&
-      equity < 0.6
+      equity >= 0.3 &&
+      equity <= 0.6
     )
-      return { kind: 'balanced-cbet', motive: 'bluff', rate: 0.65, fraction: 0.5 };
+      return { kind: 'balanced-protect', motive: 'value', rate: style.cbet, fraction: 0.33 };
+    if (f.ownMade && !f.strongMade && !f.draw && equity >= 0.3 && equity <= 0.6)
+      return { kind: 'balanced-showdown', motive: 'control', rate: 1 };
+    if (view.street === 1 && ownOpen && !f.ownMade && !f.draw && equity >= 0.2 && equity < 0.6)
+      return {
+        kind: 'balanced-cbet',
+        motive: 'bluff',
+        rate: Math.min(0.9, style.cbet + (boardHigh >= 11 ? 0.15 : 0)),
+        fraction: 0.5,
+      };
   }
   return null;
 }

@@ -280,8 +280,8 @@ test('style differences change entry and value-trap behavior over common decisio
     chipUnit: 25,
     id: 1,
     hole: [
-      { rank: 9, suit: 0 },
-      { rank: 4, suit: 0 },
+      { rank: 13, suit: 0 },
+      { rank: 9, suit: 1 },
     ],
     board: [],
     street: 0,
@@ -348,9 +348,13 @@ test('style differences change entry and value-trap behavior over common decisio
   );
   assert.equal(value.features.strongMade, true);
   assert.equal(value.features.wet, false);
+  // The trapping style keeps a strong turn hand hidden more than the
+  // aggressive style does.
+  const trapper = BOT_PROFILES.find((p) => p.id === 'vale'),
+    attacker = BOT_PROFILES.find((p) => p.id === 'rook');
   assert.ok(
-    decisions(st, value).filter((d) => d.action === 'check').length >
-      decisions(peter, value).filter((d) => d.action === 'check').length,
+    decisions(trapper, value).filter((d) => d.action === 'check').length >
+      decisions(attacker, value).filter((d) => d.action === 'check').length,
   );
 });
 test('uncalled shove refunds are not losses; blind-only hands are not VPIP', () => {

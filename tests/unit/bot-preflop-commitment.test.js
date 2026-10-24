@@ -120,17 +120,19 @@ test('AA values a legal shove over a non-all-in 5-bet at every table size and ch
     }
 });
 
-test('a rare deep open shove is a value mix while a short-stack opening can commit directly', () => {
+test('deep stacks never open-shove AA, while a short-stack opening can commit directly', () => {
   for (const seats of [2, 3, 5, 9]) {
     const short = decision(game('unopened-20', 'QQ', seats)).trace.view;
     const deep = decision(game('unopened-100', 'AA', seats)).trace.view;
     const p = BOT_PROFILES[0];
     const shove = chooseBotAction(short, p, freshBotMood(), 'off', () => 0.4);
     assert.equal(shove.amount, short.legal.maxRaiseTo);
-    const rare = chooseBotAction(deep, p, freshBotMood(), 'off', () => 0.01);
-    assert.equal(rare.amount, deep.legal.maxRaiseTo);
-    const ordinary = chooseBotAction(deep, p, freshBotMood(), 'off', () => 0.999);
-    assert.notEqual(ordinary.amount, deep.legal.maxRaiseTo);
+    assert.equal(preflopJamPlan(deep, p), null);
+    // Only AA/KK would open-shove deep, which would mark the hand.
+    for (const draw of [0.01, 0.5, 0.999]) {
+      const open = chooseBotAction(deep, p, freshBotMood(), 'off', () => draw);
+      assert.notEqual(open.amount, deep.legal.maxRaiseTo, `draw ${draw}`);
+    }
   }
 });
 

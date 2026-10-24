@@ -118,18 +118,21 @@ test('late-position emphasis changes unopened entry and attack without widening 
   }
 });
 test('draw emphasis affects executed aggression but retains price, all-in and population boundaries', () => {
+  // Without the preflop initiative every style's c-bet line is out of play,
+  // so the gap is the draw style's own semi-bluffing.
   const v = deceptiveView('As Js', 'Qs 8h 2s', {
     equity: 0.4,
     difficulty: 'normal',
     history: [
-      { id: 1, street: 0, action: 'raise', amount: 150 },
+      { id: 0, street: 0, action: 'raise', amount: 150 },
+      { id: 1, street: 0, action: 'call', amount: 150 },
       { id: 0, street: 1, action: 'check', amount: 0 },
     ],
   });
   const raise = (d) => d.action === 'raise';
   assert.ok(rate('mira', v, raise) > rate('balanced', v, raise) + 0.25);
   for (const changed of [
-    { ...v, rivals: 3 },
+    { ...v, rivals: 4 },
     { ...v, opponents: [{ id: 0, stack: 0, allin: true }] },
     {
       ...v,

@@ -100,7 +100,8 @@ test('small-cbet, draw-pressure and pot-control styles retain distinct executed 
     () => 0.1,
   );
   assert.equal(turn.action, 'raise');
-  assert.equal(turn.trace.sizing.fraction, 0.75);
+  // The draw style's turn semi-bluff is a full-pot bet after its small flop bet.
+  assert.equal(turn.trace.sizing.fraction, 1);
   const sample = (id) =>
     Array.from({ length: 500 }, (_, i) =>
       decide(

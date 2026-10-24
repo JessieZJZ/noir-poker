@@ -26,6 +26,7 @@ export function preflopJamPlan(view, profile) {
     !view.history.some((a) => a.street === 0 && a.action === 'call' && a.amount > 0);
   let rate = 0,
     trigger = null;
+  // Deep stacks never open-shove: only AA/KK would, which marks the hand.
   if (firstIn && depthBB <= 20) {
     const strong = (pair && high >= 10) || ak;
     const lateValue =
@@ -37,10 +38,6 @@ export function preflopJamPlan(view, profile) {
       rate = strong ? 0.88 : 0.65;
       trigger = 'short-first-in';
     }
-  } else if (firstIn && depthBB <= 100 && pair && high >= 13) {
-    // Deep open shoves are a rare value mix, never the default opening size.
-    rate = high === 14 ? 0.1 : 0.06;
-    trigger = 'rare-deep-first-in';
   } else if (!ownRaise && raises.length === 1 && view.currentBet >= 20 * bigBlindOf(view)) {
     const topPair = pair && high >= 13 && depthBB <= 150;
     const strongHeadsUp = headsUp && depthBB <= 100 && ((pair && high === 12) || ak);

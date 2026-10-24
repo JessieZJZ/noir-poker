@@ -58,8 +58,10 @@ function smallOpen(hole = '7s 6s', overrides = {}) {
 test('deep small opens keep playable calls without turning every admission into a 3-bet', () => {
   // Low synthetic all-player showdown equity probes the new price branch;
   // these inputs are not a measured equity claim for the example hands.
+  // The tight-aggressive baseline keeps implied-odds hands, not weak offsuit or
+  // gapped suited cards; the loose style still calls those.
   for (const count of [6, 9])
-    for (const hole of ['7s 6s', 'Qs 7s', '2s 2h', 'As 5s', 'Ks Jh']) {
+    for (const hole of ['7s 6s', '9s 8s', '2s 2h', 'As 5s']) {
       const v = smallOpen(hole, { count });
       const d = decision(v);
       assert.equal(d.action, 'call', `${count} players, ${hole}`);
@@ -69,10 +71,16 @@ test('deep small opens keep playable calls without turning every admission into 
       assert.equal(d.trace.value, false);
       assert.ok(!d.trace.checks.some((c) => c.code === 'insufficient-equity'));
     }
+  for (const hole of ['Qs 7s', 'Jh 8c']) {
+    assert.equal(decision(smallOpen(hole)).action, 'fold', `balanced ${hole}`);
+    assert.equal(decision(smallOpen(hole), 'jett').action, 'call', `jett ${hole}`);
+  }
   const premium = decision(smallOpen('As Ah'), 'balanced', () => 0.1);
   assert.equal(premium.action, 'raise', 'The price branch must still permit a premium 3-bet');
   assert.ok(premium.amount >= 250);
 });
+// The balanced baseline raises or folds first in, so the limp lines use the
+// loose style that actually limps.
 test('limp then small isolation preserves speculative calls; caller counts use unique live opponents', () => {
   const v = smallOpen('7s 6s', {
     bet: 50,
@@ -92,7 +100,7 @@ test('limp then small isolation preserves speculative calls; caller counts use u
     opponents: [0, 2, 3, 4].map((id) => ({ id, stack: 4800, bet: 175, allin: false })),
     legal: { ...smallOpen().legal, toCall: 125, callAmount: 125 },
   });
-  const d = decision(v);
+  const d = decision(v, 'jett');
   assert.equal(d.action, 'call');
   assert.equal(d.trace.entryContext.limpers, 1);
   assert.equal(d.trace.entryContext.openCallers, 1);
@@ -107,8 +115,8 @@ test('limp then small isolation preserves speculative calls; caller counts use u
     ],
     legal: { ...smallOpen().legal, toCall: 50, callAmount: 50, minRaiseTo: 100 },
   });
-  assert.equal(decision(unraised).action, 'call');
-  assert.equal(decision(unraised).trace.reason, 'affordable-entry');
+  assert.equal(decision(unraised, 'jett').action, 'call');
+  assert.equal(decision(unraised, 'jett').trace.reason, 'affordable-entry');
 });
 test('small-open continuation keeps style and position differences and rejects garbage', () => {
   const v = smallOpen('7s 6s', { count: 9 });
@@ -127,21 +135,22 @@ test('small-open continuation keeps style and position differences and rejects g
 });
 test('the small-open branch stops at size, effective-stack, all-in and re-raise boundaries', () => {
   const v = smallOpen();
-  const atLimit = { ...v, currentBet: 200, legal: { ...v.legal, toCall: 200, callAmount: 200 } };
+  // The priced window ends at 7 BB, with at least max(20 BB, 12 × call) behind.
+  const atLimit = { ...v, currentBet: 350, legal: { ...v.legal, toCall: 350, callAmount: 350 } };
   assert.equal(decision(atLimit).trace.affordableOpen, true);
   const shortRaiser = {
     ...v,
-    opponents: v.opponents.map((p) => (p.id === 0 ? { ...p, stack: 2249 } : p)),
+    opponents: v.opponents.map((p) => (p.id === 0 ? { ...p, stack: 1799 } : p)),
   };
   const enoughRaiser = {
     ...v,
-    opponents: v.opponents.map((p) => (p.id === 0 ? { ...p, stack: 2250 } : p)),
+    opponents: v.opponents.map((p) => (p.id === 0 ? { ...p, stack: 1800 } : p)),
   };
   assert.equal(decision(enoughRaiser).trace.affordableOpen, true);
   const unsafe = [
     { ...v, opponents: undefined },
     { ...v, opponents: v.opponents.filter((p) => p.id !== 0) },
-    { ...atLimit, currentBet: 201, legal: { ...v.legal, toCall: 201, callAmount: 201 } },
+    { ...atLimit, currentBet: 351, legal: { ...v.legal, toCall: 351, callAmount: 351 } },
     { ...v, stack: 1000 },
     shortRaiser,
     { ...v, opponents: v.opponents.map((p) => (p.id === 0 ? { ...p, allin: true, stack: 0 } : p)) },

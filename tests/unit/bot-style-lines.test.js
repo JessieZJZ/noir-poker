@@ -86,7 +86,7 @@ test('selected lines retain real chip budgets, legal raise rights, and cannot fo
   }
 });
 
-test('balanced lines distinguish routine value, medium showdown control and a priced defense', () => {
+test('balanced lines distinguish routine value, medium protection, showdown control and a priced defense', () => {
   const hist = [
     { id: 1, street: 0, action: 'raise', amount: 125 },
     { id: 0, street: 0, action: 'call', amount: 125 },
@@ -103,8 +103,20 @@ test('balanced lines distinguish routine value, medium showdown control and a pr
     null,
   );
   const medium = deceptiveView('Ts Td', 'Ac 8d 3h', { equity: 0.5, history: hist });
-  assert.equal(decide(medium, 'balanced').trace.style.linePlan.kind, 'balanced-showdown');
-  assert.equal(decide(medium, 'balanced').action, 'check');
+  // As the preflop raiser a medium hand takes a small flop protection bet;
+  // without the initiative it keeps the hand for showdown.
+  assert.equal(decide(medium, 'balanced').trace.style.linePlan.kind, 'balanced-protect');
+  assert.equal(decide(medium, 'balanced').action, 'raise');
+  const caller = deceptiveView('Ts Td', 'Ac 8d 3h', {
+    equity: 0.5,
+    history: [
+      { id: 0, street: 0, action: 'raise', amount: 125 },
+      { id: 1, street: 0, action: 'call', amount: 125 },
+      { id: 0, street: 1, action: 'check', amount: 0 },
+    ],
+  });
+  assert.equal(decide(caller, 'balanced').trace.style.linePlan.kind, 'balanced-showdown');
+  assert.equal(decide(caller, 'balanced').action, 'check');
   const defend = {
     ...medium,
     currentBet: 100,

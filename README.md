@@ -79,6 +79,8 @@ tests/
   e2e/                      浏览器操作与响应式布局
   fixtures/                 仅测试服务注入的可控牌局
 scripts/measure-bots.mjs      固定牌序下的入池率、进攻率与翻牌人数测量
+scripts/style-targets.mjs     各风格的目标统计画像与区分门槛
+scripts/style-report.mjs      对照目标与风格两两差异的测量报告
 scripts/audit-review-phase3.mjs  完整随机牌局与定向复盘场景的离线审查语料
 scripts/mobile.mjs           当前源码构建、原生同步、签名打包和资源校验
 src/platform/                原生生命周期、设备设置与关于/隐私入口
@@ -140,6 +142,8 @@ docs/                       架构、规则、复盘依据与发布说明
 ## 策略测量
 
 `npm run measure:bots -- --hands=250 --players=6 --profile=balanced` 在固定牌序、每手 100 BB、无情绪条件下测量当前模拟策略的 VPIP/PFR、3-bet、弃给 3-bet、翻后 AF、真实翻牌人数分布、三人以上翻牌比例、翻前再加注局数，以及按位置与跛入人数统计的开池尺度分布（`openSizes`）。可加 `--difficulty=easy|normal|hard --emotions=off|subtle|lively` 对照难度和情绪；指标按实际机会作分母，无样本时为 null，AF 无跟注且有进攻时另标记无限。可将 profile 改为 `rook`、`iris`、`nico` 等，或增加 `--seed=9182 --deck-seed=123` 切换可重现的随机样本。玩家使用当前均衡策略，因此结果是该完整模拟环境的表现，不能当作真人频率；策略及调整前后实测见 [机器人风格与情绪模拟](docs/bots.md)。
+
+输出的 `styleProfile` 另含持续下注、面对持续下注弃牌、摊牌率、平均尺度与大/小尺度比例、听牌加注率、跛入底池比例和分位置入池率。`--targets=2 --companions=balanced` 只让前两个座位使用被测风格、其余座位为均衡，指标只统计被测座位。校准各风格时逐一测量后运行 `node scripts/style-report.mjs <输出.json…>`，它对照 `scripts/style-targets.mjs` 的目标区间，并列出统计差异不足两项的风格对。
 
 复盘在内部比较不同合法行动，抽样未知牌后由同一规则引擎完整结算。玩家界面解释具体操作依据；跟注或弃牌时可查看准确的底池赔率，暂不展示 EV。对手解释独立读取执行记录；不会将真实对手底牌或后来牌序用于评价你的决策。
 

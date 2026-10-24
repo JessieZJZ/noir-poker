@@ -34,9 +34,36 @@ export function resolveBotStyle(profile) {
     turnSemiBluff: null,
     semiBluff: null,
     delayedProbe: 0,
-    valueAttack: 0,
+    valueAttack: 0.85,
+    // Style dials calibrated against scripts/style-targets.mjs.
+    limpRange: 0.06,
+    coldCall: 1,
+    defendThreeBet: 1,
+    cbet: 0.55,
+    barrelRate: 0.35,
+    stab: 0.35,
+    airRaise: 0,
+    pairRaise: 0,
+    drawPressure: false,
     ...profile.policy,
   };
+}
+
+// Preflop re-raise size for the whole re-raising range: 3x the last raise in
+// position, 4x out of position, plus one raise per caller; 4-bets 2.3x.
+export function botReraiseTo(view) {
+  const raises = view.history.filter((a) => a.street === 0 && a.action === 'raise'),
+    last = raises.at(-1);
+  if (!last) return view.currentBet;
+  const callers = new Set(
+    view.history
+      .slice(view.history.indexOf(last) + 1)
+      .filter((a) => a.street === 0 && a.action === 'call' && a.id !== view.id)
+      .map((a) => a.id),
+  ).size;
+  return raises.length >= 2
+    ? view.currentBet * 2.3
+    : view.currentBet * ((view.inPosition ? 3 : 4) + callers);
 }
 
 export function botStyleContext(view, style) {

@@ -77,16 +77,19 @@ test('normal/hard KQ defends a tiny 3-bet across every style and subtle moods', 
   assert.doesNotMatch(explanation.detail, /EV|模型|模拟器|抽样|它/);
 });
 
+// The window: at most 20 BB and 5x the open, 14 BB to call, odds 0.40, and
+// max(20 BB, 6x the call) behind.
 test('priced 3-bet defense stops at large sizes, short stacks, all-ins and 4-bets', () => {
   const v = input();
+  assert.equal(decide({ ...v, currentBet: 625 }).trace.affordableThreeBet, true);
   for (const overrides of [
     { difficulty: 'easy' },
-    { currentBet: 525 },
+    { currentBet: 650 },
     { stack: 500 },
-    { contestable: 200 },
+    { contestable: 180 },
     { opponents: v.opponents.map((p) => (p.id === 0 ? { ...p, stack: 999 } : p)) },
     { opponents: v.opponents.map((p) => (p.id === 0 ? { ...p, allin: true } : p)) },
-    { legal: { ...v.legal, toCall: 375, callAmount: 375 } },
+    { legal: { ...v.legal, toCall: 725, callAmount: 725 } },
     { history: [...v.history, { id: 2, street: 0, action: 'raise', amount: 300 }] },
     { opponents: [] },
   ])

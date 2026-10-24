@@ -7,6 +7,7 @@ import characters from '../data/characters.json' with { type: 'json' };
 import { canonicalProfileId } from './profile-id.js';
 import {
   botOpenRaiseTo,
+  botReraiseTo,
   botStyleContext,
   openBaseBB,
   resolveBotStyle,
@@ -39,12 +40,18 @@ export const BOT_PROFILES = [
     sources: [],
     policy: {
       lineStrategy: 'balanced',
-      unopenedRange: 0.8,
+      unopenedRange: 0.95,
       firstInRaise: 0.98,
       potControl: 0.15,
       thinValue: 0.15,
       smallCbet: 0.55,
-      valueAttack: 0.8,
+      valueAttack: 0.9,
+      limpRange: 0.03,
+      coldCall: 0.8,
+      defendThreeBet: 1.4,
+      cbet: 0.6,
+      barrelRate: 0.45,
+      airRaise: 0.1,
     },
   },
   {
@@ -58,15 +65,27 @@ export const BOT_PROFILES = [
     evidence: '电脑角色的策略和情绪均为游戏设定，介绍描述常见倾向，不保证每次采用相同操作。',
     sources: [],
     policy: {
-      entry: 1.08,
-      reraise: 1.05,
+      entry: 1.2,
+      reraise: 1.35,
+      floatAir: 0.3,
+      airRaise: 0.6,
+      pairRaise: 0.7,
+      defendThreeBet: 2.6,
+      valueCapScale: 1.5,
+      firstInRaise: 0.95,
       blockerBluffs: true,
       barrel: 1.6,
-      semiBluff: 0.22,
+      semiBluff: 0.6,
       riverBluff: 1.2,
-      valueAttack: 0.9,
+      valueAttack: 0.95,
+      limpRange: 0.04,
+      coldCall: 1,
+      defendThreeBet: 1.6,
+      cbet: 0.9,
+      barrelRate: 0.9,
+      stab: 0.75,
       streetSizing: [
-        [0.6, 0.85],
+        [0.75, 1],
         [0.9, 1.2],
         [0.95, 1.3],
       ],
@@ -83,13 +102,21 @@ export const BOT_PROFILES = [
     evidence: '电脑角色的策略和情绪均为游戏设定，介绍描述常见倾向，不保证每次采用相同操作。',
     sources: [],
     policy: {
-      entry: 1.24,
+      entry: 1.15,
       reraise: 0.65,
       blockerBluffs: true,
       barrel: 0.8,
       riverBluff: 0.5,
       riverValue: 1.25,
-      valueAttack: 0.8,
+      valueAttack: 0.55,
+      preflopRaise: 0.3,
+      floatAir: 0.45,
+      limpRange: 0.16,
+      coldCall: 1.6,
+      defendThreeBet: 0.9,
+      cbet: 0.4,
+      barrelRate: 0.15,
+      stab: 0.15,
     },
   },
   {
@@ -103,7 +130,7 @@ export const BOT_PROFILES = [
     evidence: '电脑角色的策略和情绪均为游戏设定，介绍描述常见倾向，不保证每次采用相同操作。',
     sources: [],
     policy: {
-      entry: 0.55,
+      entry: 0.62,
       reraise: 1.1,
       blockerBluffs: true,
       adapt: 0.45,
@@ -115,6 +142,12 @@ export const BOT_PROFILES = [
       ],
       trapRate: 0.08,
       valueAttack: 0.9,
+      firstInRaise: 0.98,
+      limpRange: 0.02,
+      coldCall: 0.55,
+      defendThreeBet: 0.9,
+      cbet: 0.5,
+      barrelRate: 0.4,
     },
   },
   {
@@ -130,7 +163,7 @@ export const BOT_PROFILES = [
     policy: {
       entry: 1.05,
       entryCall: 0.95,
-      reraise: 0.8,
+      reraise: 0.65,
       blockerBluffs: true,
       trapRate: 0.9,
       topPairTrap: true,
@@ -138,7 +171,15 @@ export const BOT_PROFILES = [
       barrel: 0.75,
       riverBluff: 0.5,
       riverValue: 1.15,
-      valueAttack: 0.8,
+      valueAttack: 0.4,
+      preflopRaise: 0.55,
+      floatAir: 0.35,
+      defendThreeBet: 3,
+      limpRange: 0.12,
+      coldCall: 1.2,
+      cbet: 0.45,
+      barrelRate: 0.12,
+      stab: 0.1,
     },
   },
   {
@@ -153,7 +194,7 @@ export const BOT_PROFILES = [
     sources: [],
     policy: {
       entry: 1,
-      reraise: 0.65,
+      reraise: 0.8,
       openingBB: 2,
       potControl: 0.9,
       thinValue: 0.8,
@@ -161,7 +202,15 @@ export const BOT_PROFILES = [
       flopCbet: 0.3,
       barrel: 0.7,
       riverBluff: 0.35,
-      valueAttack: 0.7,
+      valueAttack: 0.8,
+      preflopRaise: 0.85,
+      stab: 0.6,
+      limpRange: 0.07,
+      floatAir: 0.2,
+      coldCall: 1.1,
+      defendThreeBet: 1.3,
+      cbet: 0.95,
+      barrelRate: 0.55,
       streetSizing: [
         [0.25, 0.4],
         [0.3, 0.45],
@@ -180,15 +229,26 @@ export const BOT_PROFILES = [
     evidence: '电脑角色的策略和情绪均为游戏设定，介绍描述常见倾向，不保证每次采用相同操作。',
     sources: [],
     policy: {
-      entry: 0.92,
-      reraise: 0.95,
+      drawPressure: true,
+      entry: 1.3,
+      reraise: 1.5,
+      floatAir: 0.3,
+      airRaise: 0.45,
+      pairRaise: 0.3,
       blockerBluffs: true,
-      semiBluff: 0.95,
+      semiBluff: 0.98,
       barrel: 1,
       riverBluff: 0.35,
-      flopCbet: 0.4,
-      turnSemiBluff: 0.75,
-      valueAttack: 0.8,
+      flopCbet: 0.55,
+      turnSemiBluff: 1.0,
+      valueAttack: 0.9,
+      firstInRaise: 0.95,
+      limpRange: 0.04,
+      coldCall: 0.9,
+      defendThreeBet: 1.7,
+      cbet: 0.7,
+      barrelRate: 0.75,
+      stab: 0.55,
       streetSizing: [
         [0.35, 0.55],
         [0.6, 0.9],
@@ -208,7 +268,7 @@ export const BOT_PROFILES = [
     sources: [],
     policy: {
       entry: 0.9,
-      lateEntry: 1.6,
+      lateEntry: 1.8,
       lineStrategy: 'positional',
       earlyEntry: 0.65,
       lateOpenAttack: 0.98,
@@ -222,7 +282,13 @@ export const BOT_PROFILES = [
       delayedProbe: 0.98,
       potControl: 0.2,
       barrel: 1,
-      valueAttack: 0.8,
+      valueAttack: 0.85,
+      limpRange: 0.04,
+      coldCall: 0.85,
+      defendThreeBet: 1.2,
+      cbet: 0.65,
+      barrelRate: 0.55,
+      airRaise: 0.35,
       streetSizing: [
         [0.3, 0.5],
         [0.45, 0.65],
@@ -376,19 +442,23 @@ export function finishBotHand(player, profit, mode, bigBlind = DEFAULT_STAKES.bi
   return null;
 }
 
-// A simple, deterministic starting-hand ordering, weighted by the 1,326 actual
-// combinations. This is a range-selection heuristic, not an equity table.
+// A deterministic starting-hand ordering (the Chen formula, with a small
+// high-card tie-break), weighted by the 1,326 actual combinations. It values
+// suited connectors above offsuit gapped high cards. A range-selection
+// heuristic, not an equity table.
 function startingValue(hole) {
   const [high, low] = hole.map((c) => c.rank).sort((a, b) => b - a);
-  if (high === low) return 30 + high * 2;
-  const suited = hole[0].suit === hole[1].suit,
-    gap = high - low;
+  const points = (rank) =>
+    rank === 14 ? 10 : rank === 13 ? 8 : rank === 12 ? 7 : rank === 11 ? 6 : rank / 2;
+  const tieBreak = high * 0.01 + low * 0.001;
+  if (high === low) return Math.max(5, points(high) * 2) + tieBreak;
+  const gap = high - low - 1;
   return (
-    high * 1.9 +
-    low * 0.9 +
-    (suited ? 4 : 0) +
-    (gap === 1 ? 3 : gap === 2 ? 1 : 0) +
-    (high === 14 ? 3 : 0)
+    points(high) +
+    (hole[0].suit === hole[1].suit ? 2 : 0) -
+    (gap <= 2 ? gap : gap === 3 ? 4 : 5) +
+    (gap <= 1 && high < 12 ? 1 : 0) +
+    tieBreak
   );
 }
 const combinations = [];
@@ -479,12 +549,18 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
     (0.16 + width * 0.42) *
     positionScale *
     (view.count >= 8 ? 0.9 : 1) *
-    (behind == null ? 1 : Math.max(0.75, 1 - behind * 0.04)) *
+    // Each seat still to act narrows an unopened range, so a full-ring UTG
+    // opens tighter than a six-handed one.
+    (behind == null ? 1 : Math.max(0.55, 1 - behind * 0.05)) *
     entryScale *
     capability.entry *
     (view.count <= 6 ? style.shortTable : 1);
   let range = baseRange;
-  if (raises.length) range *= raises.length === 1 ? 0.68 : 0.42;
+  const ownPreflopRaise = view.history.some(
+    (a) => a.street === 0 && a.id === view.id && a.action === 'raise',
+  );
+  if (raises.length)
+    range *= raises.length === 1 ? 0.68 : 0.42 * (ownPreflopRaise ? style.defendThreeBet : 1);
   if (view.position === 'BB' && legal.toCall <= bigBlind) range += 0.1;
   const openingRange = range;
   const preflopHistory = view.history.filter((a) => a.street === 0);
@@ -538,11 +614,11 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
     raises.length === 1 &&
     raises[0].id !== view.id &&
     legal.toCall > 0 &&
-    view.currentBet <= 4 * bigBlind &&
-    legal.callAmount <= 4 * bigBlind &&
+    view.currentBet <= 7 * bigBlind &&
+    legal.callAmount <= 7 * bigBlind &&
     lowCommitment &&
     !allInPressure &&
-    effectiveBehind >= Math.max(20 * bigBlind, legal.callAmount * 15);
+    effectiveBehind >= Math.max(20 * bigBlind, legal.callAmount * 12);
   // Normal/hard opponents distinguish a cheap 3-bet from a large re-raise.
   // A random showdown against every unfurled seat undervalues a priced call:
   // players still to act have not all committed to this pot. This range gate
@@ -553,20 +629,19 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
     raises.length === 2 &&
     Boolean(lastRaiser) &&
     raises[1].id !== view.id &&
-    view.currentBet <= 10 * bigBlind &&
-    view.currentBet <= raises[0].amount * 3 &&
-    legal.callAmount <= 7 * bigBlind &&
-    pressure <= 0.1 &&
-    odds <= 0.28 &&
+    view.currentBet <= 20 * bigBlind &&
+    view.currentBet <= raises[0].amount * 5 &&
+    legal.callAmount <= 14 * bigBlind &&
+    pressure <= 0.15 &&
+    odds <= 0.4 &&
     !allInPressure &&
     legal.callAmount < view.stack &&
-    effectiveBehind >= Math.max(20 * bigBlind, legal.callAmount * 8);
-  if (cheapEntry)
-    range +=
-      (0.14 + width * 0.2 + (speculative || suitedHigh ? Math.min(2, limpers) * 0.04 : 0)) *
-      entryScale;
-  if (cheapEntry && speculative && ['BTN', 'CO', 'HJ'].includes(view.position))
-    range += (0.06 + width * 0.12) * entryScale;
+    effectiveBehind >= Math.max(20 * bigBlind, legal.callAmount * 6);
+  // A cheap limp or over-limp suits holdings that play well in a cheap pot:
+  // pairs, suited aces/connectors and broadway cards. Offsuit junk does not
+  // become playable because the price is one big blind.
+  const playable = speculative || suitedHigh || (high >= 12 && low >= 10);
+  if (cheapEntry && playable) range += (style.limpRange + Math.min(2, limpers) * 0.03) * entryScale;
   // A first-in opening uses its position range, not the extra discount meant
   // for a cheap multiway overcall. This keeps a conventional baseline from
   // repeatedly limping hands it would not choose to open.
@@ -578,19 +653,37 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
     view.stack + view.bet >= 30 * bigBlind
   )
     range = openingRange * style.unopenedRange;
+  // Late unopened seats open suited connectors and small pairs the ranking
+  // undervalues, whether the style raises or limps first in.
+  if (cheapEntry && !limpers && speculative && ['BTN', 'CO'].includes(view.position))
+    range += (0.06 + width * 0.12) * entryScale;
   if (affordableOpen) {
-    const priceScale = Math.max(0.65, 1.1 - (view.currentBet / bigBlind) * 0.08);
-    const playability = speculative ? 0.14 : suitedHigh ? 0.07 : 0;
-    const callerBonus = speculative || suitedHigh ? Math.min(2, openCallers) * 0.04 : 0;
-    const blindDiscount = view.position === 'BB' ? 0.08 : 0;
-    const dominatedAce = !suited && high === 14 && low <= 8 ? 0.08 : 0;
+    // Calls narrow smoothly as the open grows instead of switching off at a
+    // fixed size: about 0.93 of the range against 2.5 BB, 0.7 at 4 BB, 0.4 at 6 BB.
+    const elasticity = Math.max(0.3, Math.min(1, 1.3 - (view.currentBet / bigBlind) * 0.15));
+    const playability = speculative ? 0.06 : suitedHigh ? 0.04 : 0;
+    const callerBonus = speculative || suitedHigh ? Math.min(2, openCallers) * 0.03 : 0;
+    const blindDiscount = view.position === 'BB' ? 0.1 : 0;
+    const dominatedAce = !suited && high === 14 && low <= 8 ? 0.06 : 0;
+    // A late-position opener raises wider, so the defence widens; chips already
+    // in from a limp lower the remaining price.
+    const lateOpener = ['BTN', 'CO', 'SB'].includes(lastRaiser?.position) ? 1.35 : 1;
+    const limped = view.bet > 0 && !['SB', 'BB'].includes(view.position) ? 0.03 : 0;
     range =
-      baseRange * priceScale +
-      (0.12 + width * 0.18) * entryScale +
-      playability +
-      callerBonus +
-      blindDiscount -
+      ((baseRange * 0.55 + playability + callerBonus) * style.coldCall * lateOpener +
+        blindDiscount +
+        limped) *
+        elasticity -
       dominatedAce;
+    // The hand ranking undervalues small pairs and suited connectors, which call
+    // for implied odds when deep: admit them by style, seat and open size.
+    if (speculative && effectiveBehind >= 50 * bigBlind) {
+      const shape = pair ? 1 : suited && high === 14 ? 0.8 : 0.85;
+      const seat = ['BB', 'BTN', 'CO'].includes(view.position) ? 1 : 0.75;
+      if (style.coldCall * shape * seat * elasticity >= 0.55) range = Math.max(range, percentile);
+    }
+    // No style folds AQ+ or 99+ to one small open; price checks still follow.
+    if ((pair && high >= 9) || (high === 14 && low >= 12)) range = Math.max(range, percentile);
   }
   if (affordableThreeBet) {
     const priceScale = Math.max(0.55, 1.15 - view.currentBet / (20 * bigBlind));
@@ -599,9 +692,10 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
     const playable = broadway || (pair && high >= 7) || (suited && high >= 11 && low >= 9);
     range = Math.max(
       range,
-      (0.09 + width * 0.2) * entryScale * positionScale * priceScale +
+      ((0.09 + width * 0.2) * entryScale * positionScale * priceScale +
         (committed ? 0.05 : 0) +
-        (playable ? 0.055 : 0),
+        (playable ? 0.055 : 0)) *
+        (committed ? style.defendThreeBet : 1),
     );
   }
   range = Math.min(0.95, range);
@@ -625,6 +719,16 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
     callTolerance = (callDown - 0.5) * 0.1 + context.publicAdjustment,
     requiredEquity = view.allIn ? odds + view.allIn.pendingBuffer : odds + responseRisk + 0.02,
     affordableRangePassed = (cheapEntry || affordableOpen || affordableThreeBet) && admitted;
+  // Each extra postflop bet or raise by the same aggressor narrows the line;
+  // calling-down styles discount this less. The price itself stays exact.
+  const lineAggressor = view.history.filter((a) => a.action === 'raise').at(-1)?.id;
+  const lineBets = view.history.filter(
+    (a) => a.street > 0 && a.action === 'raise' && a.id === lineAggressor && a.id !== view.id,
+  ).length;
+  const lineTax =
+    view.street > 0 && legal.toCall > 0
+      ? Math.max(0, lineBets - 1 + (view.street === 3 ? 1 : 0)) * 0.06 * (1.4 - callDown)
+      : 0;
   let sizing = null,
     deception = null,
     value = false,
@@ -643,7 +747,7 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
     view.street > 0 &&
     !allInPressure &&
     (features.ownMade || features.draw) &&
-    equity + callTolerance >= requiredEquity;
+    equity + callTolerance >= requiredEquity + lineTax;
   const ownLastRaise =
     [...view.history].reverse().find((a) => a.action === 'raise')?.id === view.id;
   const barrelScale = view.street === 2 && ownLastRaise ? style.barrel : 1;
@@ -678,12 +782,14 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
     !allInPressure &&
     lowCommitment &&
     odds <= 0.18 &&
-    equity + callTolerance >= odds - 0.06 &&
+    equity + callTolerance >= odds - 0.06 + lineTax &&
     roll('price-continue', (view.difficulty === 'easy' ? 0.12 : 0.38) + callDown * 0.36) <
       (view.difficulty === 'easy' ? 0.12 : 0.38) + callDown * 0.36;
   const semiThreshold = Math.min(
     0.95,
-    (style.semiBluff ?? 0.16 + bluff * 0.42) * (headsUp ? 1 : 0.55) * barrelScale,
+    (style.semiBluff ?? 0.16 + bluff * 0.42) *
+      (headsUp ? 1 : style.drawPressure ? 0.85 : 0.55) *
+      barrelScale,
   );
   semiBluff =
     hasBotSkill(view.difficulty, 'semi-bluff') &&
@@ -691,10 +797,11 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
     view.street > 0 &&
     view.street < 3 &&
     features.draw &&
-    view.rivals <= 2 &&
+    // A draw-pressure style also semi-bluffs three-way and against larger bets.
+    view.rivals <= (style.drawPressure ? 3 : 2) &&
     raises.length <= 1 &&
     !allInPressure &&
-    pressure <= 0.12 &&
+    pressure <= (style.drawPressure ? 0.2 : 0.12) &&
     (legal.canCheck || drawContinue || equity + callTolerance >= odds + 0.02) &&
     roll('semi-bluff', semiThreshold) < semiThreshold;
   const lateSteal =
@@ -923,6 +1030,38 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
     return finish('call', exceptions.length ? 'loose-exception' : 'price-continue');
   }
   if (expensivePreflopDefense(view, equity)) return finish('fold', 'outside-range');
+  // No pair and no draw facing a postflop bet: fold unless the style floats or
+  // calls down light. Overcards keep a small share against a cheap flop bet.
+  let airFloat = false;
+  if (
+    view.street > 0 &&
+    legal.toCall > 0 &&
+    !view.allIn &&
+    !features.ownMade &&
+    !features.draw &&
+    !floatContinue &&
+    !pureBluff &&
+    !semiBluff
+  ) {
+    const overcards =
+      view.street === 1 &&
+      odds <= 0.3 &&
+      Math.min(...view.hole.map((c) => c.rank)) > Math.max(...view.board.map((c) => c.rank));
+    const airCall = (style.floatAir ?? Math.max(0, callDown - 0.5) * 0.6) + (overcards ? 0.3 : 0);
+    if (roll('air-call', airCall) >= airCall) return finish('fold', 'insufficient-equity');
+    airFloat = true;
+    // Aggressive styles answer some heads-up bets with a bluff raise instead.
+    if (
+      style.airRaise > 0 &&
+      hasBotSkill(view.difficulty, 'semi-bluff') &&
+      legal.canRaise &&
+      raises.length === 1 &&
+      view.rivals === 1 &&
+      pressure <= 0.08 &&
+      roll('air-raise', style.airRaise) < style.airRaise
+    )
+      pureBluff = true;
+  }
   if (expensiveWeakPair(view, equity)) return finish('fold', 'stack-pressure');
   if (legal.toCall > 0) {
     if (view.street === 0 && !admitted && !premium && odds > 0.09) {
@@ -937,10 +1076,11 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
       !drawContinue &&
       !pairContinue &&
       !structuredPriceContinue &&
+      !airFloat &&
       !semiBluff &&
       !pureBluff
     ) {
-      if (equity + callTolerance < (view.publicEquity ? requiredEquity : odds + 0.02)) {
+      if (equity + callTolerance < (view.publicEquity ? requiredEquity : odds + 0.02) + lineTax) {
         const mistake =
           view.difficulty === 'easy'
             ? 0.03 + callDown * 0.1
@@ -959,7 +1099,7 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
       }
     }
   }
-  if (balancedPriceDefense(view, style, equity + callTolerance, requiredEquity)) {
+  if (balancedPriceDefense(view, style, equity + callTolerance, requiredEquity + lineTax)) {
     linePlan = { kind: 'balanced-defense', motive: 'defense', selected: true, executed: true };
     return finish('call', 'price-continue');
   }
@@ -968,7 +1108,7 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
       legal.canCheck ? 'check' : 'call',
       legal.canCheck
         ? 'free-check'
-        : floatContinue
+        : floatContinue || airFloat
           ? 'float-continue'
           : exceptions.length
             ? 'loose-exception'
@@ -991,16 +1131,37 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
     roll('entry-call', style.entryCall) < style.entryCall
   )
     return finish('call', 'affordable-entry');
+  // Aggressive styles raise a heads-up bet with top pair on a dry board.
+  const boardTop = view.board.length ? Math.max(...view.board.map((c) => c.rank)) : 0;
+  const pairPressure =
+    style.pairRaise > 0 &&
+    view.street > 0 &&
+    legal.toCall > 0 &&
+    legal.canRaise &&
+    raises.length === 1 &&
+    view.rivals === 1 &&
+    features.ownPair &&
+    view.hole.some((c) => c.rank === boardTop) &&
+    !features.wet &&
+    pressure <= 0.1 &&
+    !allInPressure &&
+    roll('pair-raise', style.pairRaise) < style.pairRaise;
+  // A limp keeps its story: only premiums or a trapping style re-raise later.
+  const ownLimp =
+    !ownPreflopRaise &&
+    view.history.some((a) => a.street === 0 && a.id === view.id && a.action === 'call');
   value =
     view.street === 0
       ? (raises.length < 2 || (pair && high >= 12) || (high === 14 && low === 13)) &&
-        (premium || percentile <= raiseRange)
-      : valueRaiseSupported(view, equity) &&
-        ((support.valueCandidate &&
-          equity > (headsUp ? 0.53 : Math.max(0.62, 1 / (view.rivals + 1) + 0.23))) ||
-          safeStrongValue(view, equity) ||
-          checkedToPairValue(view, equity) ||
-          checkedThroughPairValue(view, equity));
+        (premium || percentile <= raiseRange) &&
+        (!ownLimp || premium || style.trapRate >= 0.5)
+      : pairPressure ||
+        (valueRaiseSupported(view, equity) &&
+          ((support.valueCandidate &&
+            equity > (headsUp ? 0.53 : Math.max(0.62, 1 / (view.rivals + 1) + 0.23))) ||
+            safeStrongValue(view, equity) ||
+            checkedToPairValue(view, equity) ||
+            checkedThroughPairValue(view, equity)));
   // First-in and isolation are different from cold re-raises. Keep the
   // existing admission, commitment and all-in gates. Isolation additionally
   // needs a playable holding, late position and no more than two limpers.
@@ -1095,6 +1256,49 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
       );
     }
   }
+  // Continuation bets and turn barrels for hands without value. Value hands
+  // use the value branch; the rate is the style's, decided by one roll.
+  // In a limped pot nobody holds the initiative; a checked-to seat may stab.
+  const flopRaises = view.history.filter((a) => a.street === 1 && a.action === 'raise'),
+    turnRaises = view.history.filter((a) => a.street === 2 && a.action === 'raise');
+  const limpedPot = !view.history.some((a) => a.street === 0 && a.action === 'raise');
+  const checkedToStab =
+    limpedPot &&
+    view.street < 3 &&
+    !view.history.some((a) => a.street > 0 && a.street < view.street && a.action === 'raise') &&
+    view.history.some((a) => a.street === view.street && a.id !== view.id && a.action === 'check');
+  const continuation =
+    hasBotSkill(view.difficulty, 'cbet') &&
+    !value &&
+    legal.canCheck &&
+    legal.canRaise &&
+    !raises.length &&
+    !allInPressure &&
+    !view.playsBoard &&
+    view.rivals <= (checkedToStab ? 3 : 2) &&
+    ((view.street === 1 && context.initiative) ||
+      (view.street === 2 && flopRaises.length === 1 && flopRaises[0].id === view.id) ||
+      (view.street === 3 && turnRaises.length === 1 && turnRaises[0].id === view.id) ||
+      checkedToStab);
+  const continuationRate = !continuation
+    ? 0
+    : Math.min(
+        0.95,
+        (checkedToStab
+          ? style.stab
+          : view.street === 1
+            ? style.cbet
+            : view.street === 2
+              ? style.barrelRate
+              : style.barrelRate * 0.6 * style.riverBluff) *
+          (view.rivals >= 2 ? (checkedToStab ? 0.7 : 0.55) : 1) *
+          (features.draw ? 1.3 : features.wet ? 0.8 : 1),
+      );
+  const continuationBet = continuation && roll('continuation', continuationRate) < continuationRate;
+  if (continuationBet) {
+    if (features.draw) semiBluff = true;
+    else pureBluff = true;
+  }
   thinValue =
     style.thinValue > 0 &&
     view.street === 3 &&
@@ -1151,17 +1355,22 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
     return finish('check', 'trap');
   const pairValue =
     value && (checkedToPairValue(view, equity) || checkedThroughPairValue(view, equity));
+  // Value betting frequency is the style's own: passive styles check and call
+  // more of their value, aggressive styles bet it. Premium preflop raises stay.
   let attackRate =
     value && view.street === 0 && premium
       ? Math.max(0.92, (0.2 + attack * 0.72) * capability.attack)
-      : value && view.street === 0 && profile.id === 'balanced' && !raises.length
-        ? Math.max(0.75, (0.2 + attack * 0.72) * capability.attack)
+      : value && view.street === 0
+        ? (style.preflopRaise ??
+          Math.max(style.valueAttack, (0.2 + attack * 0.72) * capability.attack))
         : value && safeStrongValue(view, equity)
-          ? Math.max(0.88, (0.2 + attack * 0.72) * capability.attack)
-          : pairValue
-            ? Math.max(0.75, (0.2 + attack * 0.72) * capability.attack)
+          ? Math.min(0.98, style.valueAttack + 0.08)
+          : value
+            ? style.valueAttack * (pairValue ? 0.9 : 1)
             : (0.2 + attack * 0.72) * capability.attack;
-  if (value && view.street > 0) attackRate = Math.max(attackRate, style.valueAttack);
+  // A semi-bluff or bluff already chosen by the style's own roll is final; a
+  // second generic aggression roll would dilute the style.
+  if (continuationBet || ((semiBluff || pureBluff) && !value && view.street > 0)) attackRate = 1;
   if (positionProbe) attackRate = Math.max(attackRate, style.positionProbe);
   if (
     value &&
@@ -1187,8 +1396,15 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
     if (view.street === 3 && value && equity > 0.7) fraction *= style.riverValue;
     if (mode !== 'off' && ['frustrated', 'confident', 'reactive'].includes(mood.kind))
       fraction *= mode === 'lively' ? 1.2 : 1.1;
-    if (view.street > 0 && value) fraction = Math.min(fraction, valueBetCap(view));
+    if (view.street > 0 && value)
+      fraction = Math.min(fraction, valueBetCap(view) * (style.valueCapScale ?? 1));
     if (pairValue) fraction = Math.min(fraction, view.rivals >= 3 ? 0.35 : 0.4);
+    // Re-raised pots are deeper in the pot already: continue with a smaller bet.
+    if (
+      continuationBet &&
+      view.history.filter((a) => a.street === 0 && a.action === 'raise').length >= 2
+    )
+      fraction = Math.min(fraction, 0.4);
     let desired = fractionRaiseTo(
       {
         currentBet: view.currentBet,
@@ -1199,13 +1415,29 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
       fraction,
     );
     if (view.street === 0 && !raises.length) desired = openTo;
-    if (squeezeBluff) desired = Math.max(desired, view.currentBet * (view.inPosition ? 4 : 5));
-    if (view.street === 0 && value && premium && raises.length > 0)
-      desired = Math.max(
-        desired,
-        view.currentBet * (raises.length === 1 ? (view.inPosition ? 3 : 3.5) : 2.5),
+    // One re-raise size for value, light re-raises and squeezes alike.
+    if (view.street === 0 && raises.length > 0) desired = botReraiseTo(view);
+    // A postflop bluff or semi-bluff raise over a bet stays near 2.5x the bet.
+    if (view.street > 0 && legal.toCall > 0 && !value)
+      desired = Math.min(desired, view.currentBet * 2.6);
+    let amount = legalRaiseTo(desired, legal);
+    // A continuation bet that exceeds the bluff budget shrinks to fit it, as
+    // long as at least a quarter-pot bet remains; otherwise it checks.
+    // A draw-pressure style may risk up to 35% of its starting stack on a
+    // semi-bluff with a real draw; other bluffs stay at 25%.
+    const bluffShare = semiBluff && style.drawPressure && features.drawOuts >= 8 ? 0.35 : 0.25;
+    const bluffBudget = Math.max(
+      0,
+      (view.stack + (view.total || 0)) * bluffShare - (view.total || 0),
+    );
+    if (continuationBet && !value && amount - view.bet > bluffBudget) {
+      const fitted = legalRaiseTo(
+        Math.floor((view.bet + bluffBudget) / chipUnitOf(legal)) * chipUnitOf(legal),
+        legal,
       );
-    const amount = legalRaiseTo(desired, legal);
+      if (fitted - view.bet <= bluffBudget && fitted - view.currentBet >= view.pot * 0.25)
+        amount = fitted;
+    }
     sizing = {
       fraction,
       desired,
@@ -1216,10 +1448,7 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
       executed: false,
     };
     const bluffRiskAllowed =
-      view.street === 0 ||
-      value ||
-      thinValue ||
-      amount - view.bet <= Math.max(0, (view.stack + (view.total || 0)) * 0.25 - (view.total || 0));
+      view.street === 0 || value || thinValue || amount - view.bet <= bluffBudget;
     const pairRaiseRiskAllowed =
       view.street === 0 ||
       legal.canCheck ||
@@ -1261,6 +1490,7 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
     legal.toCall > 0 &&
     !affordableRangePassed &&
     !floatContinue &&
+    !airFloat &&
     !drawContinue &&
     !pairContinue &&
     (pureBluff || semiBluff) &&
@@ -1271,7 +1501,7 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
     legal.canCheck ? 'check' : 'call',
     legal.canCheck
       ? 'free-check'
-      : floatContinue
+      : floatContinue || airFloat
         ? 'float-continue'
         : exceptions.length
           ? 'loose-exception'

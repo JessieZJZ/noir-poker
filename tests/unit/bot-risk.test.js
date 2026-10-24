@@ -70,7 +70,8 @@ const decide = (input, random = () => 0.1, profile = 'balanced') =>
   chooseBotAction(input, getBotProfile(profile), freshBotMood(), 'off', random);
 
 test('styles without first-in discipline retain speculative calls and steals without a mandatory raise', () => {
-  const mixed = (input, random = () => 0.1) => decide(input, random, 'nico');
+  // The loose style opens by limping or raising; tight styles raise or fold.
+  const mixed = (input, random = () => 0.1) => decide(input, random, 'jett');
   for (const hole of ['5s 4s', '8s 6s', '6s 6h', 'As 4s']) {
     const input = view(hole);
     assert.equal(mixed(input).action, 'raise', hole);
@@ -83,7 +84,9 @@ test('styles without first-in discipline retain speculative calls and steals wit
   assert.ok(raises > 30 && raises < 250, `Actual sampled late steals: ${raises}/500`);
   assert.equal(sample.filter((d) => d.action === 'fold').length, 0);
   assert.equal(mixed(view('7s 2h'), () => 0.9).action, 'fold');
-  assert.equal(mixed(view('5s 4s', '', { position: 'UTG' }), () => 0.9).action, 'fold');
+  // Steals are a late-seat line; early seats only enter with a real hand.
+  assert.equal(mixed(view('5s 4s', '', { position: 'UTG' })).trace.lateSteal, false);
+  assert.equal(mixed(view('9s 3h', '', { position: 'UTG' }), () => 0.9).action, 'fold');
   assert.equal(
     mixed(view('5s 4s', '', { history: [{ id: 0, street: 0, action: 'call', amount: 50 }] })).trace
       .lateSteal,
@@ -119,8 +122,9 @@ test('priced flush and open-ended draws survive small bets and can semi-bluff be
 test('bluffs depend on price, position and public story; missed attacks do not flat-call air', () => {
   const input = view('Qs Js', 'Ah 7c 2d', { rivals: 1, pot: 400, contestable: 500 });
   assert.equal(decide(input).trace.reason, 'pure-bluff');
-  let step = 0;
-  const missed = decide(input, () => [0.5, 0.01, 0.99][step++] ?? 0.99);
+  // A chosen bluff that the hand's bluff budget cannot fund folds rather
+  // than flat-calling with air.
+  const missed = decide({ ...input, total: 2000 });
   assert.equal(missed.action, 'fold');
   assert.equal(missed.trace.pureBluff, true);
   for (const overrides of [
