@@ -143,6 +143,36 @@ test('general and table settings stack titled full-width rows with right-aligned
   }
 });
 
+test('seat cards stay two per row down to 340px phones and stack only at 320px', async ({
+  page,
+}) => {
+  for (const [width, columns] of [
+    [320, 1],
+    [340, 2],
+    [375, 2],
+    [414, 2],
+  ]) {
+    await page.setViewportSize({ width, height: 800 });
+    await openSettings(page);
+    const layout = await page.evaluate(() => {
+      const roster = document.querySelector('#opponent-roster');
+      const overflow = [...roster.children].some((row) =>
+        [...row.querySelectorAll('*')].some((element) => {
+          const box = element.getBoundingClientRect(),
+            card = row.getBoundingClientRect();
+          return box.width && (box.right > card.right + 0.5 || box.left < card.left - 0.5);
+        }),
+      );
+      return {
+        columns: getComputedStyle(roster).gridTemplateColumns.split(' ').length,
+        overflow,
+      };
+    });
+    expect(layout, `${width}px`).toEqual({ columns, overflow: false });
+    await closeSettings(page);
+  }
+});
+
 test('settings usage information follows the parameter comparison and remains readable without expanding anything', async ({
   page,
 }) => {

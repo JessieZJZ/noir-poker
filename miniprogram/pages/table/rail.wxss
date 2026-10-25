@@ -877,7 +877,8 @@
   border-bottom: 1px solid #2e4246;
   white-space: normal;
 }
-@media (max-width: 380px) {
+/* As on Web, seat cards stay two per row down to 340px; only 320px stacks. */
+@media (max-width: 339px) {
   .seat-roster {
     grid-template-columns: minmax(0, 1fr);
   }

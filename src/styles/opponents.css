@@ -526,12 +526,15 @@
     height: 900px;
   }
 }
+/* Seat cards stay two per row down to 340px phones; only 320px stacks them. */
+@media (max-width: 339px) {
+  .opponent-roster {
+    grid-template-columns: 1fr;
+  }
+}
 @media (max-width: 380px) {
   .profile-cards {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-  .opponent-roster {
-    grid-template-columns: 1fr;
   }
   .profile-axes > div {
     grid-template-columns: 95px minmax(0, 1fr) 24px;

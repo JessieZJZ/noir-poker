@@ -527,7 +527,9 @@
     "强牌": "Strong",
     "4 手内三次面对同一对手加注后弃牌": "Folded to the same raiser in three of four hands",
     "{30} 本手风格：{31}": "{30}’s style this hand: {31}",
-    "本局信息": "Session info"
+    "本局信息": "Session info",
+    "座位 {0}": "Seat {0}",
+    "暂不在桌": "Not seated"
   },
   "zh-TW": {
     "设置": "設定",
@@ -940,7 +942,9 @@
     "可玩": "可玩",
     "强牌": "強牌",
     "4 手内三次面对同一对手加注后弃牌": "4 手內三次面對同一對手加注後棄牌",
-    "本局信息": "本局資訊"
+    "本局信息": "本局資訊",
+    "座位 {0}": "座位 {0}",
+    "暂不在桌": "暫不在桌"
   },
   "ja": {
     "设置": "設定",
@@ -1353,7 +1357,9 @@
     "可玩": "プレイ可能",
     "强牌": "強い",
     "4 手内三次面对同一对手加注后弃牌": "4 ハンド中 3 回同じ相手のレイズに降りた",
-    "本局信息": "このセッションの情報"
+    "本局信息": "このセッションの情報",
+    "座位 {0}": "座席 {0}",
+    "暂不在桌": "不在"
   },
   "ko": {
     "设置": "설정",
@@ -1766,7 +1772,9 @@
     "可玩": "플레이 가능",
     "强牌": "강함",
     "4 手内三次面对同一对手加注后弃牌": "4핸드 중 3번 같은 상대의 레이즈에 폴드",
-    "本局信息": "이번 세션 정보"
+    "本局信息": "이번 세션 정보",
+    "座位 {0}": "좌석 {0}",
+    "暂不在桌": "자리 비움"
   },
   "es": {
     "设置": "Ajustes",
@@ -2179,7 +2187,9 @@
     "可玩": "Jugables",
     "强牌": "Fuertes",
     "4 手内三次面对同一对手加注后弃牌": "Se retiró ante el mismo rival que sube en tres de cuatro manos",
-    "本局信息": "Información de esta sesión"
+    "本局信息": "Información de esta sesión",
+    "座位 {0}": "Asiento {0}",
+    "暂不在桌": "Fuera de la mesa"
   },
   "it": {
     "设置": "Impostazioni",
@@ -2592,7 +2602,9 @@
     "可玩": "Giocabili",
     "强牌": "Forti",
     "4 手内三次面对同一对手加注后弃牌": "Ha foldato ai rilanci dello stesso avversario in tre mani su quattro",
-    "本局信息": "Info della sessione"
+    "本局信息": "Info della sessione",
+    "座位 {0}": "Posto {0}",
+    "暂不在桌": "Fuori dal tavolo"
   },
   "pt": {
     "设置": "Definições",
@@ -3005,7 +3017,9 @@
     "可玩": "Jogáveis",
     "强牌": "Fortes",
     "4 手内三次面对同一对手加注后弃牌": "Desistiu diante do mesmo adversário que aumenta em três de quatro mãos",
-    "本局信息": "Informações desta sessão"
+    "本局信息": "Informações desta sessão",
+    "座位 {0}": "Lugar {0}",
+    "暂不在桌": "Fora da mesa"
   },
   "de": {
     "设置": "Einstellungen",
@@ -3418,7 +3432,9 @@
     "可玩": "Spielbar",
     "强牌": "Stark",
     "4 手内三次面对同一对手加注后弃牌": "Hat in drei von vier Händen gegen denselben Raiser gefoldet",
-    "本局信息": "Infos dieser Sitzung"
+    "本局信息": "Infos dieser Sitzung",
+    "座位 {0}": "Platz {0}",
+    "暂不在桌": "Nicht am Tisch"
   },
   "fr": {
     "设置": "Paramètres",
@@ -3831,7 +3847,9 @@
     "可玩": "Jouables",
     "强牌": "Fortes",
     "4 手内三次面对同一对手加注后弃牌": "S’est couché face au même relanceur dans trois mains sur quatre",
-    "本局信息": "Infos de cette session"
+    "本局信息": "Infos de cette session",
+    "座位 {0}": "Siège {0}",
+    "暂不在桌": "Hors table"
   },
   "ru": {
     "设置": "Настройки",
@@ -4244,6 +4262,8 @@
     "可玩": "Играбельные",
     "强牌": "Сильные",
     "4 手内三次面对同一对手加注后弃牌": "Сбросил карты на рейзы одного соперника в трёх раздачах из четырёх",
-    "本局信息": "Сведения об этой сессии"
+    "本局信息": "Сведения об этой сессии",
+    "座位 {0}": "Место {0}",
+    "暂不在桌": "Не за столом"
   }
 }

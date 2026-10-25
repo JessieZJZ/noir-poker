@@ -2749,6 +2749,18 @@ test('a late guide jump cannot move a closed or newly opened normal guide', (t) 
   assert.equal(page.data.guideScrollTarget, '');
 });
 
+test('WeChat seat cards stay two per row down to 340px, as on Web', () => {
+  const rail = readFileSync(
+    new URL('../../miniprogram/pages/table/rail.wxss', import.meta.url),
+    'utf8',
+  );
+  assert.match(
+    rail,
+    /@media \(max-width: 339px\) \{\s*\.seat-roster \{\s*grid-template-columns: minmax\(0, 1fr\);/,
+  );
+  assert.doesNotMatch(rail, /@media \(max-width: 380px\) \{\s*\.seat-roster/);
+});
+
 test('WeChat starting-blind label uses the other settings label size, as on Web', () => {
   // Labels are 15px; the "/" separator stays 16px and the big blind 15px.
   assert.match(stylesheet, /\.settings-modal \.stakes-setting-row\s*\{\s*font-size: 15px;/);
