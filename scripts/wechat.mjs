@@ -223,6 +223,31 @@ async function lockBuild(output) {
   }
 }
 
+// DevTools runs its compiler workers inside the opened project folder.
+// Renaming that folder away leaves them in a deleted directory, and the next
+// real-device preview fails with "ENOENT ... uv_cwd". Keep the folder itself
+// and swap its generated entries; a failure restores the previous entries.
+async function replaceContents(output, staging, backup) {
+  await mkdir(output, { recursive: true });
+  await rm(backup, { recursive: true, force: true });
+  await mkdir(backup);
+  try {
+    for (const name of await readdir(output))
+      await rename(path.join(output, name), path.join(backup, name));
+    for (const name of await readdir(staging))
+      await rename(path.join(staging, name), path.join(output, name));
+  } catch (error) {
+    try {
+      for (const name of await readdir(output))
+        await rm(path.join(output, name), { recursive: true, force: true });
+      for (const name of await readdir(backup))
+        await rename(path.join(backup, name), path.join(output, name));
+    } catch {}
+    throw error;
+  }
+  await rm(backup, { recursive: true, force: true });
+}
+
 export async function buildWechat(output = wechatOutput) {
   const unlock = await lockBuild(output);
   const backup = `${output}.previous-${process.pid}`;
@@ -398,21 +423,7 @@ export async function buildWechat(output = wechatOutput) {
     } catch (error) {
       if (error.code !== 'ENOENT') throw error;
     }
-    await rm(backup, { recursive: true, force: true });
-    try {
-      await rename(output, backup);
-    } catch (error) {
-      if (error.code !== 'ENOENT') throw error;
-    }
-    try {
-      await rename(staging, output);
-    } catch (error) {
-      try {
-        await rename(backup, output);
-      } catch {}
-      throw error;
-    }
-    await rm(backup, { recursive: true, force: true });
+    await replaceContents(output, staging, backup);
     await verifyWechat(output);
     console.log(
       `WeChat project ready: ${output} (${Math.round(packageBytes.main / 1024)} KiB main; ${Math.round(totalBytes / 1024)} KiB total; current shared source)`,

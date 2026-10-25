@@ -18,6 +18,7 @@ import {
   readdirSync,
   renameSync,
   rmSync,
+  statSync,
   symlinkSync,
   writeFileSync,
 } from 'node:fs';
@@ -401,6 +402,19 @@ test('concurrent WeChat builders serialize and preserve DevTools private prefere
     manifest.files.some((file) => file.path === 'project.private.config.json'),
     false,
   );
+  cleanBuildFiles(workspace);
+});
+
+test('rebuilding keeps the opened DevTools project folder and drops stale entries', async (t) => {
+  const workspace = fixture(t);
+  assertSuccess(await build(workspace).result);
+  const before = statSync(workspace.output).ino;
+  writeFileSync(path.join(workspace.output, 'stale-generated.js'), '// old build');
+  assertSuccess(await build(workspace).result);
+  // DevTools' compiler workers keep this directory as their working directory.
+  assert.equal(statSync(workspace.output).ino, before);
+  assert.equal(existsSync(path.join(workspace.output, 'stale-generated.js')), false);
+  assert.ok(existsSync(path.join(workspace.output, 'app.json')));
   cleanBuildFiles(workspace);
 });
 
