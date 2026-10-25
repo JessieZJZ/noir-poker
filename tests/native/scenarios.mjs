@@ -408,6 +408,7 @@ export async function nativeScenarios(app) {
           paused: audio.paused,
           time: audio.currentTime,
           gain: Number(audio.dataset.musicGain),
+          at: performance.now(),
         });
       };
       document.addEventListener('noir:app-state', window.__entryMusicListener);
@@ -451,18 +452,24 @@ export async function nativeScenarios(app) {
         app.evaluate(() => {
           const audio = document.querySelector('audio[data-background-music]');
           return !audio.paused && Number(audio.dataset.musicGain) === 1
-            ? { time: audio.currentTime, duration: audio.duration }
+            ? { time: audio.currentTime, duration: audio.duration, at: performance.now() }
             : null;
         }),
       10000,
       'Foreground music must resume',
     );
-    // Slow runners can pause near the end of the looping track; the resumed
-    // position then wraps to the start instead of restarting mid-track.
-    const wrapped = paused.time > resumed.duration - 10 && resumed.time < 10;
+    // The track loops, and a slow runner's sample can arrive long after the
+    // resume. Continuing playback advances (around the loop) by at most the
+    // page time since foreground; a restart from 0 would advance by far more.
+    // Half a second of backward seek jitter at the pause point is not a wrap.
+    const advanced =
+      ((((resumed.time - paused.time + 0.5) % resumed.duration) + resumed.duration) %
+        resumed.duration) -
+      0.5;
+    const elapsed = (resumed.at - foreground.at) / 1000;
     assert.ok(
-      resumed.time >= paused.time || wrapped,
-      `Music resumed at ${resumed.time}s after pausing at ${paused.time}s of ${resumed.duration}s`,
+      advanced <= elapsed + 1,
+      `Music resumed at ${resumed.time}s after pausing at ${paused.time}s of ${resumed.duration}s, ${elapsed.toFixed(1)}s after foreground`,
     );
     return {
       before,
