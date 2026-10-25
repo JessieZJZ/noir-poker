@@ -124,6 +124,16 @@ test('general and table settings stack titled full-width rows with right-aligned
           return getComputedStyle(label.matches('div') ? label.firstElementChild : label).fontSize;
         });
         if (new Set(labels).size !== 1) issues.push(`labels differ in size: ${labels.join(', ')}`);
+        // The small blind field starts where the player-count select does and
+        // is shorter than it.
+        const blinds = section.querySelector('.blind-setting-values');
+        if (blinds) {
+          const select = box(section.querySelector('#player-count'));
+          const field = box(section.querySelector('#small-blind-button'));
+          if (Math.abs(field.left - select.left) > 1)
+            issues.push('small blind not under the select');
+          if (field.height >= select.height) issues.push('small blind field not smaller');
+        }
         return { rows: rows.length, issues };
       }, module);
       expect(layout.rows, `${module} at ${width}px`).toBeGreaterThan(1);

@@ -29,7 +29,10 @@
   display: flex;
   align-items: center;
   flex: none;
-  /* Stays at the right edge with the other controls, also when it wraps. */
+  /* Stays at the right edge with the other controls, also when it wraps, and
+     takes the selects' 110px width so the small blind starts where they do. */
+  box-sizing: border-box;
+  width: 110px;
   margin-left: auto;
   gap: 8px;
   color: #d9e9e5;
@@ -37,9 +40,12 @@
 }
 .small-blind-button,
 .small-blind-input {
-  width: 82px;
-  min-height: 40px;
-  padding: 7px 8px;
+  flex: 1;
+  width: auto;
+  min-width: 0;
+  min-height: 36px;
+  /* Narrow side padding keeps a five-digit small blind visible while typing. */
+  padding: 4px 2px;
   border: 1px solid #45635a;
   border-radius: 8px;
   background: #1b302a;

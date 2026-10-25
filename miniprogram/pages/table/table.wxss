@@ -810,6 +810,11 @@
   justify-content: flex-end;
   gap: 8px;
   flex: none;
+  /* As on Web: the pickers' 110px width, so the small blind starts where they
+     do, and at the right edge also when the row wraps. */
+  box-sizing: border-box;
+  width: 110px;
+  margin-left: auto;
   color: #d9e9e5;
   font-size: 16px;
 }
@@ -833,20 +838,20 @@
 .stakes-setting-row .small-blind-value,
 .stakes-setting-row .small-blind-input {
   box-sizing: border-box;
-  flex: none;
-  min-width: 82px;
-  max-width: 82px;
-  width: 82px;
-  height: 40px;
+  flex: 1;
+  min-width: 0;
+  max-width: none;
+  width: auto;
+  height: 36px;
   border: 1px solid #45635a;
   border-radius: 8px;
   background: #1b302a;
   color: #b5efdb;
   font-size: 16px;
   font-weight: 400;
-  line-height: 38px;
+  line-height: 34px;
   text-align: center;
-  padding: 0 8px;
+  padding: 0 2px;
   margin: 0;
 }
 .stakes-setting-row .small-blind-value {

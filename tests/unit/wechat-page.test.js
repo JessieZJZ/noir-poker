@@ -2753,6 +2753,12 @@ test('WeChat starting-blind label uses the other settings label size, as on Web'
   // Labels are 15px; the "/" separator stays 16px and the big blind 15px.
   assert.match(stylesheet, /\.settings-modal \.stakes-setting-row\s*\{\s*font-size: 15px;/);
   assert.match(stylesheet, /\.stakes-values\s*\{[^}]*font-size: 16px;/s);
+  // The small blind starts under the 110px player-count picker, and is shorter.
+  assert.match(stylesheet, /\.stakes-values\s*\{[^}]*width: 110px;[^}]*margin-left: auto;/s);
+  assert.match(
+    stylesheet,
+    /\.stakes-setting-row \.small-blind-input\s*\{[^}]*flex: 1;[^}]*height: 36px;/s,
+  );
   assert.match(stylesheet, /#big-blind-value\s*\{\s*font-size: 15px;/);
   assert.match(
     readFileSync(new URL('../../miniprogram/pages/table/parity.wxss', import.meta.url), 'utf8'),
