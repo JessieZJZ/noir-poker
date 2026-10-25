@@ -555,17 +555,26 @@ export async function nativeScenarios(app) {
     // A slow simulator can still be settling the centred scroll when the
     // first tap arrives; wait for the dialog and retap once if it missed.
     const resetOpen = () => app.evaluate(() => document.querySelector('#reset-dialog').open);
-    await app.click('#reset-button');
-    try {
-      await app.waitFor(resetOpen, 3000, 'The reset confirmation must open');
-    } catch {
+    const openReset = async () => {
       await app.click('#reset-button');
-      await app.waitFor(resetOpen, 5000, 'The reset confirmation must open');
-    }
+      try {
+        await app.waitFor(resetOpen, 3000, 'The reset confirmation must open');
+      } catch {
+        await app.click('#reset-button');
+        await app.waitFor(resetOpen, 5000, 'The reset confirmation must open');
+      }
+    };
+    await openReset();
     await app.screenshot('practice-reset-confirmation');
     await app.click('#reset-dialog .dialog-actions .close-dialog');
+    await app.waitFor(
+      async () => !(await resetOpen()),
+      5000,
+      'Cancelling must close the reset confirmation',
+    );
     assert.equal((await app.state()).hand, before.hand);
-    await app.click('#reset-button');
+    // The second opening needs the same wait before its confirm control.
+    await openReset();
     await app.click('#confirm-reset');
     await app.waitFor(
       async () => (await app.state()).hand === 1,
