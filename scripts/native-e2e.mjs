@@ -580,7 +580,8 @@ try {
       () =>
         existsSync(stderrPath) &&
         iosInitialScreenReady(readFileSync(stderrPath, 'utf8'), processId),
-      45000,
+      // A fresh CI simulator's first WebView load alone can take ~40s.
+      120000,
       'iOS must finish its independent first screen before XCUITest attaches',
     );
     Object.assign(report.initialLaunch, {
