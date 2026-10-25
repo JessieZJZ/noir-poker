@@ -797,7 +797,7 @@
   margin: 3px 0 0;
 }
 .general-settings > .setting-description,
-.table-settings > .setting-description {
+.table-preferences > .setting-description {
   line-height: 1.9;
 }
 .table-change-note {

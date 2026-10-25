@@ -12,7 +12,7 @@
   font-size: 16px;
 }
 .settings-dialog .general-settings,
-.settings-dialog .table-settings {
+.settings-dialog .table-preferences {
   margin-bottom: 16px;
 }
 .settings-module .settings-row {
@@ -29,6 +29,8 @@
   display: flex;
   align-items: center;
   flex: none;
+  /* Stays at the right edge with the other controls, also when it wraps. */
+  margin-left: auto;
   gap: 8px;
   color: #d9e9e5;
   font-variant-numeric: tabular-nums;

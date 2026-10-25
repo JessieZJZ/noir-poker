@@ -604,7 +604,7 @@
           </button>
         </view>
       </view>
-      <view class="settings-module table-settings" aria-label="牌桌设置">
+      <view class="settings-module table-preferences" aria-label="牌桌设置">
         <text class="module-title">牌桌</text>
         <view class="setting-row"
           ><text>牌桌人数</text

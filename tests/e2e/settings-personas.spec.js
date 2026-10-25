@@ -77,6 +77,62 @@ test('settings group useful information and keep difficulty, emotion, personas a
   }
 });
 
+test('general and table settings stack titled full-width rows with right-aligned controls', async ({
+  page,
+}) => {
+  for (const [width, height] of [
+    [320, 640],
+    [393, 759],
+    [768, 1024],
+    [1280, 800],
+  ]) {
+    await page.setViewportSize({ width, height });
+    await openSettings(page);
+    for (const module of ['.general-settings', '.table-preferences']) {
+      const layout = await page.evaluate((selector) => {
+        const section = document.querySelector(`#opponents-dialog ${selector}`);
+        const box = (element) => element.getBoundingClientRect();
+        const style = getComputedStyle(section);
+        const content = {
+          left:
+            box(section).left + parseFloat(style.borderLeftWidth) + parseFloat(style.paddingLeft),
+          right:
+            box(section).right -
+            parseFloat(style.borderRightWidth) -
+            parseFloat(style.paddingRight),
+        };
+        const title = box(section.querySelector(':scope > h3'));
+        const rows = [...section.querySelectorAll(':scope > .settings-row')].filter(
+          (row) => box(row).height > 0,
+        );
+        const issues = [];
+        rows.forEach((row, index) => {
+          const rect = box(row);
+          const name = row.textContent.trim().slice(0, 8);
+          if (rect.top < title.bottom) issues.push(`${name}: beside or above the title`);
+          if (Math.abs(rect.left - content.left) > 1 || Math.abs(rect.right - content.right) > 1)
+            issues.push(`${name}: does not span the module`);
+          if (Math.abs(rect.left - title.left) > 1) issues.push(`${name}: not under the title`);
+          if (index && rect.top < box(rows[index - 1]).bottom - 0.5)
+            issues.push(`${name}: not below the previous row`);
+          const control = box(row.lastElementChild);
+          if (Math.abs(control.right - rect.right) > 1)
+            issues.push(`${name}: control not at the right`);
+        });
+        const labels = rows.map((row) => {
+          const label = row.firstElementChild;
+          return getComputedStyle(label.matches('div') ? label.firstElementChild : label).fontSize;
+        });
+        if (new Set(labels).size !== 1) issues.push(`labels differ in size: ${labels.join(', ')}`);
+        return { rows: rows.length, issues };
+      }, module);
+      expect(layout.rows, `${module} at ${width}px`).toBeGreaterThan(1);
+      expect(layout.issues, `${module} at ${width}px`).toEqual([]);
+    }
+    await closeSettings(page);
+  }
+});
+
 test('settings usage information follows the parameter comparison and remains readable without expanding anything', async ({
   page,
 }) => {
