@@ -10,6 +10,7 @@ import { publicStoryNotes } from './public-story.js';
 import { actorAtPosition, actorName } from '../engine/player-identity.js';
 import { foldPressure, foldWinNote } from './presentation.js';
 import { checkReasoning, checkRisks, madeRedrawReasoning } from './check-reasoning.js';
+import { defenseReason } from './defense-reason.js';
 
 const pct = (v) => (v * 100).toFixed(1) + '%';
 const n = compactChips;
@@ -269,12 +270,18 @@ export function explainOpponent(record, identities = []) {
     v.gender === 'female'
       ? '她'
       : '他';
+  const matchups = handMatchups({ ...snapshot, reviewPronoun: subject }, c);
   let logic = '',
     logicParts;
   const checkNotes = [];
   switch (usePolicyReason ? t.reason : undefined) {
     case 'outside-range':
     case 'insufficient-equity':
+      if (!draw.outs && (v.street === 0 ? c.tier >= 2 : c.handClass !== 'high')) {
+        logicParts = defenseReason(snapshot, c, matchups);
+        logic = logicParts.join('');
+        break;
+      }
       if (
         draw.outs &&
         (cost >= v.stack || (c.opponents === 1 && v.opponents?.every((p) => p.allin)))
@@ -353,6 +360,18 @@ export function explainOpponent(record, identities = []) {
           : `${v.street === 0 && v.hole[0].rank === v.hole[1].rank ? pocketComparison(v, subject) : subject + '认为当前的' + hand + '仍有摊牌机会'}，所以选择补 ${n(cost)}，继续争夺 ${n(v.contestable)} 的底池。`;
       break;
     case 'value-raise':
+      if (
+        t.style?.linePlan?.executed &&
+        ['limped-pair-value', 'limped-river-value'].includes(t.style.linePlan.kind)
+      ) {
+        logicParts = [
+          t.style.linePlan.kind === 'limped-river-value'
+            ? '前两街无人下注，河牌改善成对后用小注尝试向较弱对子取值；遇到加注仍需重新判断。'
+            : '前面已有玩家过牌，用小注向较弱对子和听牌收费，避免让对手免费见到下一张。',
+        ];
+        logic = logicParts.join('');
+        break;
+      }
       if (!v.street) {
         const paired = v.hole[0].rank === v.hole[1].rank;
         const premium = paired && v.hole[0].rank >= 13;
@@ -565,8 +584,7 @@ export function explainOpponent(record, identities = []) {
         `${name}这次带有${MOOD_LABELS[t.mood.kind]}倾向，因此更愿意继续跟注或主动进攻。`,
       );
   }
-  const matchups = handMatchups({ ...snapshot, reviewPronoun: subject }, c),
-    recorded = usePolicyReason && basisMatches,
+  const recorded = usePolicyReason && basisMatches,
     squeeze =
       recorded && t.basis.squeeze ? '前面已有开池和跟注，这次再加注也在挤压两者的继续范围。' : '',
     paragraphParts = [

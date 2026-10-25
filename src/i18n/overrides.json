@@ -564,7 +564,16 @@
     "当时底池 {0}，全下约占底池的 {1}%，这手强牌可比较价值全下，让{2}付费。": "The pot was {0}; the shove is about {1}% of it. This strong hand can consider a value shove to get paid by {2}.",
     "本次追加 {0}。": "The additional investment is {0}.",
     "虽然已经成同花，对手仍可能用更高的同花领先。": "Although you have a flush, an opponent can still have a higher flush.",
-    "转牌补出了第三张{0}，原本持两张{1}的听牌现在已成同花。": "The turn brought the third {0} card; hands drawing with two {1} cards have now made a flush."
+    "转牌补出了第三张{0}，原本持两张{1}的听牌现在已成同花。": "The turn brought the third {0} card; hands drawing with two {1} cards have now made a flush.",
+    "前两街无人下注，河牌改善成对后用小注尝试向较弱对子取值；遇到加注仍需重新判断。": "Neither previous street was bet. After making a pair on the river, try a small value bet against weaker pairs; reassess if raised.",
+    "前面已有玩家过牌，用小注向较弱对子和听牌收费，避免让对手免费见到下一张。": "Players have already checked. A small bet charges weaker pairs and draws rather than giving a free card.",
+    "可能领先当前手牌的组合有 {0}（{1}）。": "Possible hands ahead of this holding include {0} ({1}).",
+    "后面还有玩家可以跟注或加注，当前底池赔率不代表后续投入已经封顶。": "Players behind can still call or raise, so the current pot odds do not cap later investment.",
+    "机器人按公开行动估算后选择弃牌；这些只是可能的牌组，并非已经看到了对手底牌。": "The bot folds using an estimate from public actions; these are possible holdings, not known opponent cards.",
+    "此前一路过牌，仍可能有慢打强牌，也保留了较弱牌和诈唬，不能仅凭这次下注认定对手有大牌。": "The earlier checks allow slowplays, weaker hands and bluffs. This bet alone does not prove a strong hand.",
+    "继续要补 {0}，可争夺跟注后的 {1} 底池，当前保本门槛为 {2}%。": "Calling costs {0} to contest {1} after the call; the current break-even threshold is {2}%.",
+    "继续还是弃牌，需要结合对手范围与当前价格；强起手牌也不代表任何尺度都必须跟注。": "Continuing or folding depends on the opponent range and current price; a strong starting hand need not call every size.",
+    "若这条加注线主要来自较大对子和 AK，当前价格下应谨慎；若全下范围很宽，则应重新判断。": "If this raising line mostly represents big pairs and AK, caution is warranted at this price; a wide shoving range calls for reassessment."
   },
   "zh-TW": {
     "设置": "設定",
@@ -1014,7 +1023,16 @@
     "当时底池 {0}，全下约占底池的 {1}%，这手强牌可比较价值全下，让{2}付费。": "當時底池 {0}，全下約占底池的 {1}%，這手強牌可比較價值全下，讓{2}付費。",
     "本次追加 {0}。": "本次追加 {0}。",
     "虽然已经成同花，对手仍可能用更高的同花领先。": "雖然已經成同花，對手仍可能用更高的同花領先。",
-    "转牌补出了第三张{0}，原本持两张{1}的听牌现在已成同花。": "轉牌補出了第三張{0}，原本持兩張{1}的聽牌現在已成同花。"
+    "转牌补出了第三张{0}，原本持两张{1}的听牌现在已成同花。": "轉牌補出了第三張{0}，原本持兩張{1}的聽牌現在已成同花。",
+    "前两街无人下注，河牌改善成对后用小注尝试向较弱对子取值；遇到加注仍需重新判断。": "前兩街無人下注，河牌改善成對後用小注嘗試向較弱對子取值；遇到加注仍需重新判斷。",
+    "前面已有玩家过牌，用小注向较弱对子和听牌收费，避免让对手免费见到下一张。": "前面已有玩家過牌，用小注向較弱對子和聽牌收費，避免讓對手免費見到下一張。",
+    "可能领先当前手牌的组合有 {0}（{1}）。": "可能領先目前手牌的組合有 {0}（{1}）。",
+    "后面还有玩家可以跟注或加注，当前底池赔率不代表后续投入已经封顶。": "後面還有玩家可以跟注或加注，目前底池賠率不代表後續投入已經封頂。",
+    "机器人按公开行动估算后选择弃牌；这些只是可能的牌组，并非已经看到了对手底牌。": "機器人按公開行動估算後選擇棄牌；這些只是可能的牌組，並非已經看到了對手底牌。",
+    "此前一路过牌，仍可能有慢打强牌，也保留了较弱牌和诈唬，不能仅凭这次下注认定对手有大牌。": "此前一路過牌，仍可能有慢打強牌，也保留了較弱牌和詐唬，不能僅憑這次下注認定對手有大牌。",
+    "继续要补 {0}，可争夺跟注后的 {1} 底池，当前保本门槛为 {2}%。": "繼續要補 {0}，可爭奪跟注後的 {1} 底池，目前保本門檻為 {2}%。",
+    "继续还是弃牌，需要结合对手范围与当前价格；强起手牌也不代表任何尺度都必须跟注。": "繼續還是棄牌，需要結合對手範圍與目前價格；強起手牌也不代表任何尺度都必須跟注。",
+    "若这条加注线主要来自较大对子和 AK，当前价格下应谨慎；若全下范围很宽，则应重新判断。": "若這條加注線主要來自較大對子和 AK，目前價格下應謹慎；若全下範圍很寬，則應重新判斷。"
   },
   "ja": {
     "设置": "設定",
@@ -1464,7 +1482,16 @@
     "当时底池 {0}，全下约占底池的 {1}%，这手强牌可比较价值全下，让{2}付费。": "その時のポットは {0} で、オールインは約 {1}% です。この強いハンドでは、{2} から支払いを受けるバリューのオールインを比較できます。",
     "本次追加 {0}。": "今回の追加額は {0} です。",
     "虽然已经成同花，对手仍可能用更高的同花领先。": "フラッシュが完成していても、相手がより高いフラッシュを持つ可能性はあります。",
-    "转牌补出了第三张{0}，原本持两张{1}的听牌现在已成同花。": "ターンで3枚目の{0}が出て、{1}を2枚持つドローはフラッシュになりました。"
+    "转牌补出了第三张{0}，原本持两张{1}的听牌现在已成同花。": "ターンで3枚目の{0}が出て、{1}を2枚持つドローはフラッシュになりました。",
+    "前两街无人下注，河牌改善成对后用小注尝试向较弱对子取值；遇到加注仍需重新判断。": "前の2ストリートは全員チェック。リバーでペアになったため、小さく打って弱いペアからバリューを狙い、レイズには再判断します。",
+    "前面已有玩家过牌，用小注向较弱对子和听牌收费，避免让对手免费见到下一张。": "先にチェックが入りました。小さなベットで弱いペアやドローに代金を求め、無料のカードを避けます。",
+    "可能领先当前手牌的组合有 {0}（{1}）。": "この手より強い可能性がある組み合わせは {0}（{1}）です。",
+    "后面还有玩家可以跟注或加注，当前底池赔率不代表后续投入已经封顶。": "後続はコールやレイズが可能なので、現在のポットオッズだけで後の投資上限は決まりません。",
+    "机器人按公开行动估算后选择弃牌；这些只是可能的牌组，并非已经看到了对手底牌。": "ボットは公開アクションから推定してフォールドします。挙げた手は候補であり、相手の実際のカードを知っているわけではありません。",
+    "此前一路过牌，仍可能有慢打强牌，也保留了较弱牌和诈唬，不能仅凭这次下注认定对手有大牌。": "ここまでのチェックにはスロープレー、弱い手、ブラフが残ります。このベットだけで強い手とは断定できません。",
+    "继续要补 {0}，可争夺跟注后的 {1} 底池，当前保本门槛为 {2}%。": "コール費用は {0}、コール後に争えるポットは {1}、現時点の損益分岐点は {2}% です。",
+    "继续还是弃牌，需要结合对手范围与当前价格；强起手牌也不代表任何尺度都必须跟注。": "続行かフォールドかは相手のレンジと価格次第です。強い初期ハンドでも、どんな額にもコールするわけではありません。",
+    "若这条加注线主要来自较大对子和 AK，当前价格下应谨慎；若全下范围很宽，则应重新判断。": "このレイズの流れが主に大きなペアと AK なら、この価格では慎重さが必要です。オールインのレンジが広ければ再判断します。"
   },
   "ko": {
     "设置": "설정",
@@ -1914,7 +1941,16 @@
     "当时底池 {0}，全下约占底池的 {1}%，这手强牌可比较价值全下，让{2}付费。": "당시 팟은 {0}이며 올인은 팟의 약 {1}%입니다. 이 강한 패로 {2}에게서 콜을 받는 가치 올인을 비교할 수 있습니다.",
     "本次追加 {0}。": "이번 추가 투입은 {0}입니다。",
     "虽然已经成同花，对手仍可能用更高的同花领先。": "플러시가 완성됐지만 상대가 더 높은 플러시로 앞설 수 있습니다.",
-    "转牌补出了第三张{0}，原本持两张{1}的听牌现在已成同花。": "턴에 세 번째 {0} 카드가 나와 {1} 카드 두 장으로 듣던 패는 이제 플러시가 완성됐습니다."
+    "转牌补出了第三张{0}，原本持两张{1}的听牌现在已成同花。": "턴에 세 번째 {0} 카드가 나와 {1} 카드 두 장으로 듣던 패는 이제 플러시가 완성됐습니다.",
+    "前两街无人下注，河牌改善成对后用小注尝试向较弱对子取值；遇到加注仍需重新判断。": "앞선 두 스트리트에 베팅이 없었습니다. 리버에 페어가 생겨 약한 페어에서 작은 가치 베팅을 시도하며, 레이즈를 받으면 다시 판단합니다.",
+    "前面已有玩家过牌，用小注向较弱对子和听牌收费，避免让对手免费见到下一张。": "앞선 플레이어들이 체크했습니다. 작은 베팅으로 약한 페어와 드로우에 비용을 요구하여 무료 카드를 막습니다.",
+    "可能领先当前手牌的组合有 {0}（{1}）。": "현재 핸드보다 앞설 수 있는 조합에는 {0}({1})가 있습니다.",
+    "后面还有玩家可以跟注或加注，当前底池赔率不代表后续投入已经封顶。": "뒤의 플레이어가 콜하거나 레이즈할 수 있으므로 현재 팟 오즈가 이후 투자 한도를 정해 주지는 않습니다.",
+    "机器人按公开行动估算后选择弃牌；这些只是可能的牌组，并非已经看到了对手底牌。": "봇은 공개 행동을 바탕으로 추정해 폴드합니다. 제시한 핸드는 후보일 뿐 상대의 실제 카드를 본 것이 아닙니다.",
+    "此前一路过牌，仍可能有慢打强牌，也保留了较弱牌和诈唬，不能仅凭这次下注认定对手有大牌。": "앞선 체크에는 슬로플레이, 약한 패, 블러프가 모두 남아 있습니다. 이번 베팅만으로 강한 패라고 단정할 수 없습니다.",
+    "继续要补 {0}，可争夺跟注后的 {1} 底池，当前保本门槛为 {2}%。": "콜 비용은 {0}, 콜 후 경쟁할 팟은 {1}, 현재 손익분기 기준은 {2}%입니다.",
+    "继续还是弃牌，需要结合对手范围与当前价格；强起手牌也不代表任何尺度都必须跟注。": "계속할지 폴드할지는 상대 범위와 현재 가격에 달려 있습니다. 강한 시작 패라도 모든 크기의 베팅을 콜할 필요는 없습니다.",
+    "若这条加注线主要来自较大对子和 AK，当前价格下应谨慎；若全下范围很宽，则应重新判断。": "이 레이즈 라인이 주로 큰 포켓 페어와 AK라면 현재 가격에서 신중해야 합니다. 올인 범위가 넓다면 다시 판단해야 합니다."
   },
   "es": {
     "设置": "Ajustes",
@@ -2364,7 +2400,16 @@
     "当时底池 {0}，全下约占底池的 {1}%，这手强牌可比较价值全下，让{2}付费。": "El bote era {0}; el all-in es aproximadamente el {1}%. Esta mano fuerte puede comparar un all-in por valor para cobrar a {2}.",
     "本次追加 {0}。": "La inversión adicional es {0}.",
     "虽然已经成同花，对手仍可能用更高的同花领先。": "Aunque tienes color, un rival aún puede tener un color mayor.",
-    "转牌补出了第三张{0}，原本持两张{1}的听牌现在已成同花。": "El turn trajo la tercera carta de {0}; los proyectos con dos cartas de {1} ya completaron color."
+    "转牌补出了第三张{0}，原本持两张{1}的听牌现在已成同花。": "El turn trajo la tercera carta de {0}; los proyectos con dos cartas de {1} ya completaron color.",
+    "前两街无人下注，河牌改善成对后用小注尝试向较弱对子取值；遇到加注仍需重新判断。": "No hubo apuestas en las dos calles anteriores. Al formar pareja en el river, prueba una apuesta pequeña de valor contra parejas peores; reevalúa ante una subida.",
+    "前面已有玩家过牌，用小注向较弱对子和听牌收费，避免让对手免费见到下一张。": "Ya hubo checks. Una apuesta pequeña cobra a parejas peores y proyectos, evitando dar una carta gratis.",
+    "可能领先当前手牌的组合有 {0}（{1}）。": "Entre las manos que podrían ir por delante están {0} ({1}).",
+    "后面还有玩家可以跟注或加注，当前底池赔率不代表后续投入已经封顶。": "Quedan jugadores que pueden pagar o subir; las pot odds actuales no limitan las inversiones posteriores.",
+    "机器人按公开行动估算后选择弃牌；这些只是可能的牌组，并非已经看到了对手底牌。": "El bot se retira según una estimación de las acciones públicas; son manos posibles, no cartas conocidas del rival.",
+    "此前一路过牌，仍可能有慢打强牌，也保留了较弱牌和诈唬，不能仅凭这次下注认定对手有大牌。": "Los checks anteriores permiten manos fuertes jugadas despacio, manos débiles y faroles. Esta apuesta no demuestra por sí sola una mano fuerte.",
+    "继续要补 {0}，可争夺跟注后的 {1} 底池，当前保本门槛为 {2}%。": "Pagar cuesta {0} para disputar {1} tras el call; el umbral actual de equilibrio es {2}%.",
+    "继续还是弃牌，需要结合对手范围与当前价格；强起手牌也不代表任何尺度都必须跟注。": "Continuar o retirarse depende del rango rival y del precio; una mano inicial fuerte no exige pagar cualquier tamaño.",
+    "若这条加注线主要来自较大对子和 AK，当前价格下应谨慎；若全下范围很宽，则应重新判断。": "Si esta línea de subidas representa sobre todo parejas altas y AK, este precio exige cautela; ante un rango amplio de all-in hay que reevaluar."
   },
   "it": {
     "设置": "Impostazioni",
@@ -2814,7 +2859,16 @@
     "当时底池 {0}，全下约占底池的 {1}%，这手强牌可比较价值全下，让{2}付费。": "Il piatto era {0}; lo shove è circa il {1}%. Questa mano forte può confrontare lo shove per valore per farsi pagare da {2}.",
     "本次追加 {0}。": "L’investimento aggiuntivo è {0}.",
     "虽然已经成同花，对手仍可能用更高的同花领先。": "Anche se hai colore, un avversario può ancora avere un colore superiore.",
-    "转牌补出了第三张{0}，原本持两张{1}的听牌现在已成同花。": "Il turn ha portato la terza carta di {0}; i progetti con due carte di {1} hanno ora completato colore."
+    "转牌补出了第三张{0}，原本持两张{1}的听牌现在已成同花。": "Il turn ha portato la terza carta di {0}; i progetti con due carte di {1} hanno ora completato colore.",
+    "前两街无人下注，河牌改善成对后用小注尝试向较弱对子取值；遇到加注仍需重新判断。": "Nessuna puntata nelle due strade precedenti. Dopo aver formato una coppia al river, prova una piccola puntata di valore contro coppie peggiori; rivaluta se subiscono un rilancio.",
+    "前面已有玩家过牌，用小注向较弱对子和听牌收费，避免让对手免费见到下一张。": "Alcuni giocatori hanno già fatto check. Una piccola puntata fa pagare coppie peggiori e progetti, evitando una carta gratuita.",
+    "可能领先当前手牌的组合有 {0}（{1}）。": "Tra le mani che potrebbero essere avanti ci sono {0} ({1}).",
+    "后面还有玩家可以跟注或加注，当前底池赔率不代表后续投入已经封顶。": "Altri giocatori possono ancora chiamare o rilanciare; le pot odds attuali non fissano il limite degli investimenti successivi.",
+    "机器人按公开行动估算后选择弃牌；这些只是可能的牌组，并非已经看到了对手底牌。": "Il bot passa in base a una stima delle azioni pubbliche; sono mani possibili, non carte avversarie conosciute.",
+    "此前一路过牌，仍可能有慢打强牌，也保留了较弱牌和诈唬，不能仅凭这次下注认定对手有大牌。": "I check precedenti lasciano spazio a slowplay, mani deboli e bluff. Questa puntata da sola non dimostra una mano forte.",
+    "继续要补 {0}，可争夺跟注后的 {1} 底池，当前保本门槛为 {2}%。": "Chiamare costa {0} per contendere {1} dopo il call; la soglia attuale di pareggio è {2}%.",
+    "继续还是弃牌，需要结合对手范围与当前价格；强起手牌也不代表任何尺度都必须跟注。": "Continuare o passare dipende dal range avversario e dal prezzo; una mano iniziale forte non deve chiamare qualsiasi importo.",
+    "若这条加注线主要来自较大对子和 AK，当前价格下应谨慎；若全下范围很宽，则应重新判断。": "Se questa sequenza di rilanci rappresenta soprattutto coppie alte e AK, il prezzo richiede prudenza; un range di all-in ampio richiede una nuova valutazione."
   },
   "pt": {
     "设置": "Definições",
@@ -3264,7 +3318,16 @@
     "当时底池 {0}，全下约占底池的 {1}%，这手强牌可比较价值全下，让{2}付费。": "O pote era {0}; o all-in é cerca de {1}% dele. Esta mão forte pode comparar um all-in por valor para receber de {2}.",
     "本次追加 {0}。": "O investimento adicional é {0}.",
     "虽然已经成同花，对手仍可能用更高的同花领先。": "Embora você tenha flush, um oponente ainda pode ter um flush maior.",
-    "转牌补出了第三张{0}，原本持两张{1}的听牌现在已成同花。": "O turn trouxe a terceira carta de {0}; os draws com duas cartas de {1} agora completaram flush."
+    "转牌补出了第三张{0}，原本持两张{1}的听牌现在已成同花。": "O turn trouxe a terceira carta de {0}; os draws com duas cartas de {1} agora completaram flush.",
+    "前两街无人下注，河牌改善成对后用小注尝试向较弱对子取值；遇到加注仍需重新判断。": "Não houve apostas nas duas rodadas anteriores. Ao formar um par no river, tente uma aposta pequena de valor contra pares piores; reavalie se houver aumento.",
+    "前面已有玩家过牌，用小注向较弱对子和听牌收费，避免让对手免费见到下一张。": "Já houve checks. Uma aposta pequena cobra de pares piores e draws, evitando uma carta grátis.",
+    "可能领先当前手牌的组合有 {0}（{1}）。": "Entre as mãos que podem estar à frente estão {0} ({1}).",
+    "后面还有玩家可以跟注或加注，当前底池赔率不代表后续投入已经封顶。": "Ainda há jogadores que podem pagar ou aumentar; as pot odds atuais não limitam os investimentos posteriores.",
+    "机器人按公开行动估算后选择弃牌；这些只是可能的牌组，并非已经看到了对手底牌。": "O bot desiste com base em uma estimativa das ações públicas; são mãos possíveis, não cartas conhecidas do adversário.",
+    "此前一路过牌，仍可能有慢打强牌，也保留了较弱牌和诈唬，不能仅凭这次下注认定对手有大牌。": "Os checks anteriores permitem slowplay, mãos fracas e blefes. Esta aposta isolada não prova uma mão forte.",
+    "继续要补 {0}，可争夺跟注后的 {1} 底池，当前保本门槛为 {2}%。": "Pagar custa {0} para disputar {1} após o call; o limiar atual de equilíbrio é {2}%.",
+    "继续还是弃牌，需要结合对手范围与当前价格；强起手牌也不代表任何尺度都必须跟注。": "Continuar ou desistir depende do range adversário e do preço; uma mão inicial forte não exige pagar qualquer tamanho.",
+    "若这条加注线主要来自较大对子和 AK，当前价格下应谨慎；若全下范围很宽，则应重新判断。": "Se esta linha de aumentos representa principalmente pares altos e AK, o preço exige cautela; um range amplo de all-in exige reavaliação."
   },
   "de": {
     "设置": "Einstellungen",
@@ -3714,7 +3777,16 @@
     "当时底池 {0}，全下约占底池的 {1}%，这手强牌可比较价值全下，让{2}付费。": "Der Pot war {0}; der Shove beträgt etwa {1}% davon. Diese starke Hand kann einen Value-Shove vergleichen, um von {2} bezahlt zu werden.",
     "本次追加 {0}。": "Der zusätzliche Einsatz beträgt {0}.",
     "虽然已经成同花，对手仍可能用更高的同花领先。": "Obwohl du einen Flush hast, kann ein Gegner noch einen höheren Flush halten.",
-    "转牌补出了第三张{0}，原本持两张{1}的听牌现在已成同花。": "Der Turn brachte die dritte {0}-Karte; Draws mit zwei {1}-Karten haben nun einen Flush."
+    "转牌补出了第三张{0}，原本持两张{1}的听牌现在已成同花。": "Der Turn brachte die dritte {0}-Karte; Draws mit zwei {1}-Karten haben nun einen Flush.",
+    "前两街无人下注，河牌改善成对后用小注尝试向较弱对子取值；遇到加注仍需重新判断。": "Auf den beiden vorherigen Straßen wurde nicht gesetzt. Nach dem Paar am River versucht eine kleine Valuebet, von schwächeren Paaren bezahlt zu werden; bei einem Raise neu bewerten.",
+    "前面已有玩家过牌，用小注向较弱对子和听牌收费，避免让对手免费见到下一张。": "Es wurde bereits gecheckt. Eine kleine Bet verlangt von schwächeren Paaren und Draws einen Preis und verhindert eine Gratis-Karte.",
+    "可能领先当前手牌的组合有 {0}（{1}）。": "Mögliche bessere Hände sind {0} ({1}).",
+    "后面还有玩家可以跟注或加注，当前底池赔率不代表后续投入已经封顶。": "Spieler dahinter können noch callen oder raisen; die aktuellen Pot Odds begrenzen spätere Einsätze nicht.",
+    "机器人按公开行动估算后选择弃牌；这些只是可能的牌组，并非已经看到了对手底牌。": "Der Bot foldet anhand einer Schätzung aus öffentlichen Aktionen; dies sind mögliche Hände, keine bekannten gegnerischen Karten.",
+    "此前一路过牌，仍可能有慢打强牌，也保留了较弱牌和诈唬，不能仅凭这次下注认定对手有大牌。": "Die bisherigen Checks lassen Slowplays, schwächere Hände und Bluffs zu. Diese Bet allein beweist keine starke Hand.",
+    "继续要补 {0}，可争夺跟注后的 {1} 底池，当前保本门槛为 {2}%。": "Der Call kostet {0}, danach werden {1} umkämpft; die aktuelle Gewinnschwelle liegt bei {2}%.",
+    "继续还是弃牌，需要结合对手范围与当前价格；强起手牌也不代表任何尺度都必须跟注。": "Weiterspielen oder Folden hängt von gegnerischer Range und Preis ab; eine starke Starthand muss nicht jede Einsatzhöhe callen.",
+    "若这条加注线主要来自较大对子和 AK，当前价格下应谨慎；若全下范围很宽，则应重新判断。": "Steht diese Raise-Linie hauptsächlich für hohe Paare und AK, ist bei diesem Preis Vorsicht geboten; bei einer weiten Shove-Range muss neu bewertet werden."
   },
   "fr": {
     "设置": "Paramètres",
@@ -4164,7 +4236,16 @@
     "当时底池 {0}，全下约占底池的 {1}%，这手强牌可比较价值全下，让{2}付费。": "Le pot était de {0} ; le tapis représente environ {1}%. Cette main forte peut comparer un tapis pour value afin de se faire payer par {2}.",
     "本次追加 {0}。": "L’investissement supplémentaire est de {0}.",
     "虽然已经成同花，对手仍可能用更高的同花领先。": "Même avec une couleur, un adversaire peut encore avoir une couleur supérieure.",
-    "转牌补出了第三张{0}，原本持两张{1}的听牌现在已成同花。": "Le turn a apporté la troisième carte de {0} ; les tirages avec deux cartes de {1} ont désormais une couleur."
+    "转牌补出了第三张{0}，原本持两张{1}的听牌现在已成同花。": "Le turn a apporté la troisième carte de {0} ; les tirages avec deux cartes de {1} ont désormais une couleur.",
+    "前两街无人下注，河牌改善成对后用小注尝试向较弱对子取值；遇到加注仍需重新判断。": "Aucune mise sur les deux streets précédentes. Après avoir formé une paire à la river, tenter une petite mise de value contre des paires inférieures ; réévaluer face à une relance.",
+    "前面已有玩家过牌，用小注向较弱对子和听牌收费，避免让对手免费见到下一张。": "Des joueurs ont déjà checké. Une petite mise fait payer les paires inférieures et les tirages, évitant une carte gratuite.",
+    "可能领先当前手牌的组合有 {0}（{1}）。": "Les mains susceptibles de nous battre comprennent {0} ({1}).",
+    "后面还有玩家可以跟注或加注，当前底池赔率不代表后续投入已经封顶。": "Des joueurs derrière peuvent encore payer ou relancer ; les cotes actuelles ne plafonnent pas les investissements ultérieurs.",
+    "机器人按公开行动估算后选择弃牌；这些只是可能的牌组，并非已经看到了对手底牌。": "Le bot se couche selon une estimation des actions publiques ; il s’agit de mains possibles, pas de cartes adverses connues.",
+    "此前一路过牌，仍可能有慢打强牌，也保留了较弱牌和诈唬，不能仅凭这次下注认定对手有大牌。": "Les checks précédents laissent des slowplays, des mains faibles et des bluffs. Cette mise seule ne prouve pas une main forte.",
+    "继续要补 {0}，可争夺跟注后的 {1} 底池，当前保本门槛为 {2}%。": "Payer coûte {0} pour disputer {1} après le call ; le seuil actuel de rentabilité est de {2}%.",
+    "继续还是弃牌，需要结合对手范围与当前价格；强起手牌也不代表任何尺度都必须跟注。": "Continuer ou se coucher dépend de la range adverse et du prix ; une forte main de départ ne doit pas payer tous les montants.",
+    "若这条加注线主要来自较大对子和 AK，当前价格下应谨慎；若全下范围很宽，则应重新判断。": "Si cette ligne de relances représente surtout de grosses paires et AK, ce prix impose la prudence ; une range de tapis large demande une réévaluation."
   },
   "ru": {
     "设置": "Настройки",
@@ -4614,6 +4695,15 @@
     "当时底池 {0}，全下约占底池的 {1}%，这手强牌可比较价值全下，让{2}付费。": "В банке было {0}; пуш составляет около {1}% банка. С этой сильной рукой можно сравнить пуш на вэлью, чтобы получить оплату от {2}.",
     "本次追加 {0}。": "Дополнительное вложение: {0}.",
     "虽然已经成同花，对手仍可能用更高的同花领先。": "Хотя у тебя флеш, у соперника всё ещё может быть флеш старше.",
-    "转牌补出了第三张{0}，原本持两张{1}的听牌现在已成同花。": "На тёрне вышла третья карта масти {0}; дро с двумя картами масти {1} теперь собрали флеш."
+    "转牌补出了第三张{0}，原本持两张{1}的听牌现在已成同花。": "На тёрне вышла третья карта масти {0}; дро с двумя картами масти {1} теперь собрали флеш.",
+    "前两街无人下注，河牌改善成对后用小注尝试向较弱对子取值；遇到加注仍需重新判断。": "На двух предыдущих улицах ставок не было. Получив пару на ривере, можно попробовать небольшую ставку на вэлью против более слабых пар; на рейз нужно оценить ситуацию заново.",
+    "前面已有玩家过牌，用小注向较弱对子和听牌收费，避免让对手免费见到下一张。": "До нас уже были чеки. Небольшая ставка заставляет слабые пары и дро платить и не даёт бесплатную карту.",
+    "可能领先当前手牌的组合有 {0}（{1}）。": "Среди возможных рук сильнее нашей — {0} ({1}).",
+    "后面还有玩家可以跟注或加注，当前底池赔率不代表后续投入已经封顶。": "Игроки позади ещё могут коллировать или повышать; текущие шансы банка не ограничивают дальнейшие вложения.",
+    "机器人按公开行动估算后选择弃牌；这些只是可能的牌组，并非已经看到了对手底牌。": "Бот пасует по оценке открытых действий; перечислены возможные руки, а не известные карты соперника.",
+    "此前一路过牌，仍可能有慢打强牌，也保留了较弱牌和诈唬，不能仅凭这次下注认定对手有大牌。": "Предыдущие чеки оставляют слоуплеи, слабые руки и блефы. Одна эта ставка не доказывает наличие сильной руки.",
+    "继续要补 {0}，可争夺跟注后的 {1} 底池，当前保本门槛为 {2}%。": "Колл стоит {0}, после него разыгрывается {1}; текущий порог безубыточности — {2}%.",
+    "继续还是弃牌，需要结合对手范围与当前价格；强起手牌也不代表任何尺度都必须跟注。": "Продолжение или пас зависят от диапазона соперника и цены; сильная стартовая рука не обязана коллировать любой размер.",
+    "若这条加注线主要来自较大对子和 AK，当前价格下应谨慎；若全下范围很宽，则应重新判断。": "Если эта линия рейзов в основном означает старшие пары и AK, при такой цене нужна осторожность; при широком диапазоне пуша решение следует пересмотреть."
   }
 }

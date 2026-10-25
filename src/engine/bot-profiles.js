@@ -21,7 +21,7 @@ import { chipUnitOf, fractionRaiseTo, legalRaiseTo } from './bet-sizing.js';
 import { deceptiveAction, isDonkLead } from './bot-deception.js';
 import { publicResponseRisk } from './public-action-context.js';
 import { preflopJamPlan } from './bot-preflop-commitment.js';
-import { postflopStyleLine, balancedPriceDefense } from './bot-style-lines.js';
+import { postflopStyleLine, balancedPriceDefense, limpedPairValueLine } from './bot-style-lines.js';
 import { botOpeningSize, botReraiseSize } from './bot-opening-size.js';
 
 // Evidence-informed fictional training styles; numeric controls are authored.
@@ -1093,7 +1093,8 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
       }
     }
   }
-  const candidateLine = postflopStyleLine(view, style, equity);
+  const candidateLine =
+    limpedPairValueLine(view, style, equity) || postflopStyleLine(view, style, equity);
   if (candidateLine) {
     const selected =
       candidateLine.rate >= 1 || roll('style-line', candidateLine.rate) < candidateLine.rate;

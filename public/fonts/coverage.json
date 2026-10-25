@@ -1,9 +1,9 @@
 {
   "files": {
-    "manrope.woff2": "691899fbf2753d008bf44cbf6653cf620d91e2e289ab30f2aa3dc724c421889c",
-    "noto-sans-sc.woff2": "85ae8d9dbc8cf9046e01f5de44fdd31c3850dd98f4a495c7ef8cf73f478375d0",
-    "noto-sans-kr.woff2": "98adce2c41c253b6b02cfbcb90f0a8bd15d7394fa35edb30570dc07863336a26",
-    "barlow-condensed.woff2": "c250b2dbb6afb703990f562e6fc4cde71f33b4a0a7e089ec9317df85f60c3a0e"
+    "manrope.woff2": "428d08b6012ecfea6b85164175b849f1f1493db2b359040532f9de8d5cc0047b",
+    "noto-sans-sc.woff2": "70c5aae8f93762299835c6ec8b242f0b96fc7ab411d052923fa9d41595c186d5",
+    "noto-sans-kr.woff2": "7f75b8c79a490574f6110d49509c1b7aa34aa32d324bbdca8512fb6952fb1201",
+    "barlow-condensed.woff2": "a05810aa76e69422331a04e1be079b343192010a21983bb35a7ef5c9f6754b30"
   },
   "codepoints": [
     0, 13, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53,

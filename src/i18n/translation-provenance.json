@@ -1045,5 +1045,21 @@
     "locales": ["en", "zh-TW", "ja", "ko", "es", "it", "pt", "de", "fr", "ru"],
     "method": "Assistant-authored public-card value/draw explanations and concise action labels. Numeric/card/suit placeholders preserved; examples remain possible hands, not measured frequencies.",
     "independentLinguisticReview": "not performed"
+  },
+  "limpedDefense20261025": {
+    "messages": [
+      "前两街无人下注，河牌改善成对后用小注尝试向较弱对子取值；遇到加注仍需重新判断。",
+      "前面已有玩家过牌，用小注向较弱对子和听牌收费，避免让对手免费见到下一张。",
+      "可能领先当前手牌的组合有 {0}（{1}）。",
+      "后面还有玩家可以跟注或加注，当前底池赔率不代表后续投入已经封顶。",
+      "机器人按公开行动估算后选择弃牌；这些只是可能的牌组，并非已经看到了对手底牌。",
+      "此前一路过牌，仍可能有慢打强牌，也保留了较弱牌和诈唬，不能仅凭这次下注认定对手有大牌。",
+      "继续要补 {0}，可争夺跟注后的 {1} 底池，当前保本门槛为 {2}%。",
+      "继续还是弃牌，需要结合对手范围与当前价格；强起手牌也不代表任何尺度都必须跟注。",
+      "若这条加注线主要来自较大对子和 AK，当前价格下应谨慎；若全下范围很宽，则应重新判断。"
+    ],
+    "locales": ["en", "zh-TW", "ja", "ko", "es", "it", "pt", "de", "fr", "ru"],
+    "method": "Assistant-authored price and conditional range explanations; card/amount placeholders preserved. Authored training mixes are not solver frequencies.",
+    "independentLinguisticReview": "not performed"
   }
 }

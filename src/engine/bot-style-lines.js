@@ -1,6 +1,7 @@
 import { boardTexture } from './hand-features.js';
 import { checkedToPositionProbe, checkedToPairValue, safeStrongValue } from './bot-style.js';
 import { isDonkLead } from './bot-deception.js';
+import { hasBotSkill } from './bot-difficulty.js';
 
 // Authored training lines, evaluated from the acting seat's public view only.
 // A line selects its action once. Price, legality and wager budgets remain
@@ -13,6 +14,72 @@ const checkedTo = (view) =>
       p.stack > 0 &&
       view.history.some((a) => a.id === p.id && a.street === view.street && a.action === 'check'),
   );
+
+// A small lead is an alternative to checking medium showdown hands forever.
+// Require a genuinely unraised pot and public checks, not a presumed weak
+// opponent. These are bounded training mixes, not solved betting frequencies.
+export function limpedPairValueLine(view, style, equity) {
+  const f = view.features,
+    t = boardTexture(view.board);
+  if (
+    view.difficulty === 'easy' ||
+    !view.legal.canCheck ||
+    !view.legal.canRaise ||
+    view.allIn ||
+    view.playsBoard ||
+    !f.ownMade ||
+    f.strongMade ||
+    view.rivals > 3 ||
+    t.trips ||
+    t.maxSuit > 2 ||
+    t.connected >= 4 ||
+    view.history.some((a) => a.action === 'raise') ||
+    view.stack < view.pot * 4
+  )
+    return null;
+  const high = Math.max(...view.board.map((c) => c.rank));
+  const pairedRank = view.hole.find(
+    (c) =>
+      view.board.some((b) => b.rank === c.rank) &&
+      view.board.filter((b) => b.rank === c.rank).length === 1,
+  )?.rank;
+  const kicker = Math.max(0, ...view.hole.filter((c) => c.rank !== pairedRank).map((c) => c.rank));
+  if (
+    view.street === 1 &&
+    pairedRank === high &&
+    kicker >= 10 &&
+    equity >= 0.42 &&
+    view.history.filter((a) => a.street === 1 && a.action === 'check' && a.id !== view.id).length >=
+      2
+  )
+    return {
+      kind: 'limped-pair-value',
+      motive: 'value',
+      rate: style.topPairTrap ? 0.5 : 0.7,
+      fraction: 0.3,
+    };
+  if (
+    view.street !== 3 ||
+    !hasBotSkill(view.difficulty, 'thin-value') ||
+    kicker < 12 ||
+    equity < 0.33 ||
+    pairedRank !== view.board.at(-1).rank ||
+    pairedRank === high
+  )
+    return null;
+  const ranks = [...new Set(view.board.map((c) => c.rank))].sort((a, b) => b - a);
+  if (pairedRank !== ranks[1]) return null;
+  const ids = [view.id, ...view.opponents.map((p) => p.id)];
+  if (
+    !ids.every((id) =>
+      [1, 2].every((street) =>
+        view.history.some((a) => a.id === id && a.street === street && a.action === 'check'),
+      ),
+    )
+  )
+    return null;
+  return { kind: 'limped-river-value', motive: 'value', rate: 0.55, fraction: 0.25 };
+}
 
 export function balancedPriceDefense(view, style, equity, required) {
   const f = view.features;

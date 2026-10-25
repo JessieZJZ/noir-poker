@@ -322,14 +322,14 @@ export function estimatePublicEquity(
         eligible: pot.eligible.filter((id) => id === view.id || assumed.has(id)),
       })),
     contestable = pots.reduce((sum, pot) => sum + pot.amount, 0),
-    // A limper who has not matched a later raise contests only the layers
-    // already paid. The full-field estimate above remains useful, but cannot
-    // price a current preflop call as though every limper covered every layer.
+    // A waiting seat contests only the layers already paid. Keep the full-field
+    // estimate for betting decisions, but price a call against actual exposed
+    // contributions on every street. A check is not a commitment to match the
+    // next bet; treating it as one invents opponents in the new wager's layer.
     // No new chips, hands, scores or random samples are introduced here.
     pricePots =
-      view.street === 0 &&
       view.legal?.callAmount > 0 &&
-      view.history.some((a) => a.street === 0 && a.action === 'raise') &&
+      view.history.some((a) => a.street === view.street && a.action === 'raise') &&
       view.callPots
         ? view.callPots.map((pot) => ({
             ...pot,
