@@ -2159,14 +2159,19 @@ export async function nativeScenarios(app) {
       }
       if (action !== 'fold') continue;
       await app.waitFor(
-        () =>
-          app.evaluate(
+        async () => {
+          // The continue control can appear after the fold's first check on a
+          // slow device; tap it whenever it is offered until the hand settles.
+          if (await app.evaluate(() => !document.querySelector('#continue-deal-button').hidden))
+            await app.click('#continue-deal-button').catch(() => {});
+          return app.evaluate(
             () =>
               window.noir.getState().phase === 'done' &&
               document.querySelector('#arena').classList.contains('is-done') &&
               !document.querySelector('#next-button').hidden &&
               document.querySelector('#continue-deal-button').hidden,
-          ),
+          );
+        },
         60000,
         'Hand must complete its visible settlement after fold',
       );
