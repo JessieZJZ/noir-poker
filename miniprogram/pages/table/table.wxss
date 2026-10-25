@@ -810,16 +810,31 @@
   justify-content: flex-end;
   gap: 8px;
   flex: none;
-  /* As on Web: the pickers' 110px width, so the small blind starts where they
-     do, and at the right edge also when the row wraps. */
+  /* As on Web: the pickers' 124px column, so the small blind starts where
+     they do, and at the right edge also when the row wraps. */
   box-sizing: border-box;
-  width: 110px;
+  width: 124px;
   margin-left: auto;
   color: #d9e9e5;
-  font-size: 16px;
+  font-size: 15px;
 }
-/* As on Web, the label matches the other settings (15px); the separator
-   stays 16px and the big blind 15px. */
+/* As on Web, settings values read at the labels' 15px and the pickers share
+   the blind field's 36px height in the same control column. */
+.settings-modal .setting-row .picker-value {
+  box-sizing: border-box;
+  width: 124px;
+  min-width: 124px;
+  max-width: 124px;
+  height: 36px;
+  min-height: 36px;
+  padding: 0 12px;
+  font-size: 15px;
+}
+.settings-modal .setting-row .picker-value > text {
+  transform: none;
+}
+/* As on Web, the label matches the other settings (15px), and so do the
+   separator and the big blind. */
 .settings-modal .stakes-setting-row {
   font-size: 15px;
   line-height: 1.5;
@@ -847,7 +862,7 @@
   border-radius: 8px;
   background: #1b302a;
   color: #b5efdb;
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 400;
   line-height: 34px;
   text-align: center;

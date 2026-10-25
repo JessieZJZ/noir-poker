@@ -125,14 +125,21 @@ test('general and table settings stack titled full-width rows with right-aligned
         });
         if (new Set(labels).size !== 1) issues.push(`labels differ in size: ${labels.join(', ')}`);
         // The small blind field starts where the player-count select does and
-        // is shorter than it.
+        // shares its height, as do every value's 15px text sizes.
         const blinds = section.querySelector('.blind-setting-values');
         if (blinds) {
           const select = box(section.querySelector('#player-count'));
           const field = box(section.querySelector('#small-blind-button'));
           if (Math.abs(field.left - select.left) > 1)
             issues.push('small blind not under the select');
-          if (field.height >= select.height) issues.push('small blind field not smaller');
+          if (Math.abs(field.height - select.height) > 0.5)
+            issues.push('small blind field and select heights differ');
+          const sizes = [
+            section.querySelector('#small-blind-button'),
+            section.querySelector('.dropdown-control:has(#player-count) .dropdown-trigger') ??
+              section.querySelector('#player-count'),
+          ].map((el) => getComputedStyle(el).fontSize);
+          if (sizes[0] !== sizes[1]) issues.push(`value text sizes differ: ${sizes.join(', ')}`);
         }
         return { rows: rows.length, issues };
       }, module);

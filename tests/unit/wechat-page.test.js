@@ -2777,11 +2777,20 @@ test('WeChat seat cards stay two per row down to 340px, as on Web', () => {
 });
 
 test('WeChat starting-blind label uses the other settings label size, as on Web', () => {
-  // Labels are 15px; the "/" separator stays 16px and the big blind 15px.
+  // Labels and values are 15px, as on Web.
   assert.match(stylesheet, /\.settings-modal \.stakes-setting-row\s*\{\s*font-size: 15px;/);
-  assert.match(stylesheet, /\.stakes-values\s*\{[^}]*font-size: 16px;/s);
-  // The small blind starts under the 110px player-count picker, and is shorter.
-  assert.match(stylesheet, /\.stakes-values\s*\{[^}]*width: 110px;[^}]*margin-left: auto;/s);
+  assert.match(stylesheet, /\.stakes-values\s*\{[^}]*font-size: 15px;/s);
+  // The small blind starts under the player-count picker in one 124px column,
+  // and the 15px pickers share its 36px height.
+  assert.match(stylesheet, /\.stakes-values\s*\{[^}]*width: 124px;[^}]*margin-left: auto;/s);
+  assert.match(
+    stylesheet,
+    /\.settings-modal \.setting-row \.picker-value\s*\{[^}]*width: 124px;[^}]*height: 36px;[^}]*font-size: 15px;/s,
+  );
+  assert.match(
+    stylesheet,
+    /\.settings-modal \.setting-row \.picker-value > text\s*\{\s*transform: none;/,
+  );
   assert.match(
     stylesheet,
     /\.stakes-setting-row \.small-blind-input\s*\{[^}]*flex: 1;[^}]*height: 36px;/s,
