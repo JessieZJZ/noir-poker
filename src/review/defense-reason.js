@@ -1,5 +1,16 @@
 import { compactChips as n } from '../engine/chip-format.js';
 
+export function straightSplitReason(snapshot, context, matchups) {
+  const stronger = new Set(matchups?.strongerMadeCategories || []);
+  return snapshot.street === 3 &&
+    context.made?.score[0] === 4 &&
+    stronger.size === 1 &&
+    stronger.has(4) &&
+    matchups.tied?.length
+    ? `${snapshot.reviewSubject || '对手'}的顺子可与 ${matchups.tied[0].text} 平分，只输给更高顺子；弃牌需要对手范围明显偏向后者。`
+    : '';
+}
+
 // Explain the recorded range/price decision without pretending its heuristic
 // is a solved fold or knowing which candidate the opponent actually holds.
 export function defenseReason(snapshot, context, matchups) {
@@ -16,9 +27,27 @@ export function defenseReason(snapshot, context, matchups) {
       );
     return clauses;
   }
-  const examples = (matchups?.behind || []).filter((h) => h.score[0] < 6).slice(0, 2);
-  for (const example of examples)
-    clauses.push(`可能领先当前手牌的组合有 ${example.text}（${example.label}）。`);
+  const examples = (matchups?.behind || []).slice(0, 2);
+  const subject = snapshot.reviewSubject || '对手';
+  const represented = new Set(examples.map((hand) => hand.score[0]));
+  const stronger = new Set(matchups?.strongerMadeCategories || []);
+  const split = straightSplitReason(snapshot, context, matchups);
+  if (split) clauses.push(split);
+  const remaining = [
+    [5, '同花'],
+    [4, '顺子'],
+    [6, '葫芦'],
+    [7, '四条'],
+  ]
+    .filter(([category]) => stronger.has(category) && !represented.has(category))
+    .slice(0, 2)
+    .map(([, label]) => label);
+  if (examples.length) {
+    const extra = remaining.length ? `，还需防范${remaining.join('、')}` : '';
+    clauses.push(
+      `${subject}判断自己可能落后于 ${examples.map((example) => `${example.text}（${example.label}）`).join('、')}${extra}。`,
+    );
+  }
   const postflop = snapshot.history.filter((a) => a.street > 0);
   const previous = postflop.slice(
     0,
@@ -30,6 +59,5 @@ export function defenseReason(snapshot, context, matchups) {
     );
   if (context.pendingOthers)
     clauses.push('后面还有玩家可以跟注或加注，当前底池赔率不代表后续投入已经封顶。');
-  clauses.push('机器人按公开行动估算后选择弃牌；这些只是可能的牌组，并非已经看到了对手底牌。');
   return clauses;
 }

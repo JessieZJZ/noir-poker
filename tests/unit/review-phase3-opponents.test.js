@@ -203,7 +203,7 @@ test('an absent legacy reason still explains a pure flush-draw call with a factu
   assert.match(summary(r), /主要依靠同花听牌改善/);
   assert.match(summary(r), /9 张牌可能补成同花/);
   assert.match(summary(r), /补成也不保证获胜/);
-  assert.match(summary(r), /这次补 100/);
+  assert.match(summary(r), /继续要补 100.*1.1K.*9.1%/);
   assert.doesNotMatch(summary(r), /保留这条行动路线|测试|scripted|legacy/);
 });
 
@@ -266,11 +266,12 @@ test('an unknown fold at a free-check option states the lost opportunity instead
   assert.doesNotMatch(summary(r), /保留这条行动路线/);
 });
 
-test('an unknown draw fold distinguishes surrendered improvement from saved chips', () => {
+test('an unknown cheap draw fold compares surrendered improvement with the actual price', () => {
   const r = ordinaryRecord('8d Jh', 'Ac Tc 4s 9h', { action: 'fold' });
-  assert.match(summary(r), /弃牌不再补 100.*保留.*1.5K/);
+  assert.match(summary(r), /选择弃牌.*继续要补 100.*1.1K.*9.1%/);
   assert.match(summary(r), /8 张牌可能补成顺子/);
-  assert.match(summary(r), /弃牌同时放弃了这些改善机会/);
+  assert.match(summary(r), /17.4%.*高于当前价格门槛.*应比较跟注/);
+  assert.doesNotMatch(summary(r), /因此.*弃牌|必须跟注/);
 });
 
 test('unknown reasons never turn mood or exception metadata into an executed motive', () => {

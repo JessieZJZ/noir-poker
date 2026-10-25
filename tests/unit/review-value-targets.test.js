@@ -23,7 +23,7 @@ test('reported top-pair flop explains payment by both weaker made hands and real
   assert.equal(flop.pot, 810000);
   assert.equal(flop.stack, 2020000);
   assert.deepEqual(r.context.matchups.weakerDrawTypes, ['flush', 'straight']);
-  assert.match(text, /更弱成牌跟注/);
+  assert.match(text, /(?:更弱成牌跟注|较弱成牌可能付费)/);
   assert.match(text, /顺子听牌或同花听牌的跟注/);
   assert.match(text, /愿意支付这个尺度/);
   assert.equal(text.match(/810K/g)?.length, 1);
@@ -136,7 +136,10 @@ test('a raise-to amount and its distinct additional investment remain separately
   assert.equal(turn.bet, 200000);
   assert.equal(turn.amount, 1210000);
   assert.match(text, /全下至 1.21M/);
-  assert.match(text, /本次追加 1.01M/);
+  assert.match(text, /这次拿出 1.01M/);
+  assert.equal(text.match(/1.21M/g)?.length, 1);
+  assert.equal(text.match(/1.01M/g)?.length, 1);
+  assert.match(text, /第三张方块.*两张方块.*已成同花/);
 });
 
 test('draw payment is not invented for a dry disconnected flop or for a river', () => {

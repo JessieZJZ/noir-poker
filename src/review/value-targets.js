@@ -1,7 +1,14 @@
 // Public card facts and conditional teaching prompts, never a claim that an
 // unseen opponent will call, or that a textured board proves a shove loses EV.
 export function valueDrawNote(s, c) {
-  if (s.street < 1 || s.street > 2 || s.action !== 'raise' || c.made.score[0] < 1) return '';
+  if (
+    s.street < 1 ||
+    s.street > 2 ||
+    s.action !== 'raise' ||
+    c.made.score[0] < 1 ||
+    !c.features?.ownMade
+  )
+    return '';
   const types = c.matchups?.weakerDrawTypes || [];
   return types.includes('flush') && types.includes('straight')
     ? '取值也可能来自顺子听牌或同花听牌的跟注，前提是对手愿意支付这个尺度。'

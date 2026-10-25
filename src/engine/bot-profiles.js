@@ -23,6 +23,7 @@ import { publicResponseRisk } from './public-action-context.js';
 import { preflopJamPlan } from './bot-preflop-commitment.js';
 import { postflopStyleLine, balancedPriceDefense, limpedPairValueLine } from './bot-style-lines.js';
 import { botOpeningSize, botReraiseSize } from './bot-opening-size.js';
+import { publicStrategyPlan } from './bot-strategy-plan.js';
 
 // Evidence-informed fictional training styles; numeric controls are authored.
 export const BOT_PROFILES = [
@@ -377,29 +378,8 @@ export function finishBotHand(player, profit, mode, bigBlind = DEFAULT_STAKES.bi
   return null;
 }
 
-// A simple, deterministic starting-hand ordering, weighted by the 1,326 actual
-// combinations. This is a range-selection heuristic, not an equity table.
-function startingValue(hole) {
-  const [high, low] = hole.map((c) => c.rank).sort((a, b) => b - a);
-  if (high === low) return 30 + high * 2;
-  const suited = hole[0].suit === hole[1].suit,
-    gap = high - low;
-  return (
-    high * 1.9 +
-    low * 0.9 +
-    (suited ? 4 : 0) +
-    (gap === 1 ? 3 : gap === 2 ? 1 : 0) +
-    (high === 14 ? 3 : 0)
-  );
-}
-const combinations = [];
-for (let a = 0; a < 52; a++)
-  for (let b = a + 1; b < 52; b++)
-    combinations.push(
-      startingValue([a, b].map((v) => ({ rank: (v % 13) + 2, suit: Math.floor(v / 13) }))),
-    );
-export const startingPercentile = (hole) =>
-  combinations.filter((v) => v > startingValue(hole)).length / combinations.length;
+export { startingPercentile } from './starting-range.js';
+import { startingPercentile } from './starting-range.js';
 
 export function effectiveBotAxes(profile, mood, mode) {
   const axes = [...profile.axes],
@@ -964,6 +944,50 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
     const jam = valueJam();
     if (jam) return jam;
     return finish('call', exceptions.length ? 'loose-exception' : 'price-continue');
+  }
+  const strategic = publicStrategyPlan(view, style, profile, {
+    equity,
+    required: requiredEquity,
+    tolerance: callTolerance,
+    roll,
+  });
+  if (strategic) {
+    linePlan = { ...strategic, selected: true, executed: true };
+    value = strategic.motive === 'value';
+    semiBluff = strategic.motive === 'semi-bluff';
+    pureBluff = strategic.motive === 'bluff';
+    if (strategic.amount !== undefined)
+      sizing = {
+        actual: strategic.amount,
+        executed: true,
+        fraction: strategic.option.fraction,
+        minimum: legal.minRaiseTo,
+        maximum: legal.maxRaiseTo,
+        opening: false,
+      };
+    if (strategic.action === 'raise' && isDonkLead(view)) {
+      deception = {
+        strategy: 'donk-lead',
+        source: 'public-response-model',
+        kind: value ? 'value' : 'semi-bluff',
+      };
+      return finish('raise', 'donk-lead', strategic.amount);
+    }
+    return finish(
+      strategic.action,
+      strategic.kind === 'implied-continue'
+        ? 'implied-continue'
+        : strategic.kind === 'story-continue'
+          ? 'story-continue'
+          : strategic.action === 'check'
+            ? 'strong-trap'
+            : value
+              ? 'value-raise'
+              : semiBluff
+                ? 'semi-bluff'
+                : 'pure-bluff',
+      strategic.amount,
+    );
   }
   if (expensivePreflopDefense(view, equity)) return finish('fold', 'outside-range');
   if (expensiveWeakPair(view, equity)) return finish('fold', 'stack-pressure');

@@ -81,3 +81,28 @@ for (const [group, locales] of [
       if (locale !== 'zh-CN') expect(text, locale).not.toContain('强起手牌也不代表任何尺度');
     }
   });
+
+test('a recorded Alex fold groups threats under his name without generic bot disclaimers', async ({
+  page,
+}, info) => {
+  const g = pairedTurn();
+  act(g, 1, 'fold');
+  const plan = planBotTurn(g, clarityRandom(71), { timingRandom: () => 0.4 });
+  expect(botDecision(g, clarityRandom(71)).action).toBe('fold');
+  executeBotTurn(g, plan, { expedited: true });
+  while (g.phase !== 'done') {
+    if (g.phase === 'between') advanceStreet(g);
+    else act(g, g.actor, legalActions(g).canCheck ? 'check' : 'fold');
+  }
+  g.decisions = [];
+  const body = await open(page, g);
+  await expect(body).toContainText(/Alex.*判断自己可能落后于/s);
+  await expect(body).not.toContainText(
+    /机器人按公开|并非已经看到了对手底牌|可能领先当前手牌的组合/,
+  );
+  await body.locator('p').last().scrollIntoViewIfNeeded();
+  await mkdir('.artifacts/strategy-gaps-2026-10-26/web', { recursive: true });
+  await page.screenshot({
+    path: '.artifacts/strategy-gaps-2026-10-26/web/' + info.project.name + '-alex-concise.png',
+  });
+});

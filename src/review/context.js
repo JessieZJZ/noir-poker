@@ -153,11 +153,15 @@ export function handContext(s) {
       handLabel = `口袋 ${rankText(holeRank)}，公共牌有更高点数`;
     } else {
       const paired = s.hole.find((c) => s.board.some((b) => b.rank === c.rank)),
-        kicker = made.score[2];
+        kicker = made.score
+          .slice(2)
+          .find((rank) => s.hole.some((card) => card.rank !== paired?.rank && card.rank === rank));
       handClass = !paired ? 'board-pair' : paired.rank === high ? 'top-pair' : 'middle-pair';
       handLabel = !paired
         ? `对子 ${rankText(made.score[1])} 来自公共牌，底牌提供踢脚`
-        : `${handClass === 'top-pair' ? '顶对' : '非顶对'} ${rankText(made.score[1])}，${rankText(kicker)} 踢脚`;
+        : kicker
+          ? `${handClass === 'top-pair' ? '顶对' : '非顶对'} ${rankText(made.score[1])}，底牌 ${rankText(kicker)} 参与踢脚比较`
+          : `${handClass === 'top-pair' ? '顶对' : '非顶对'} ${rankText(made.score[1])}，踢脚来自公共牌 ${made.score.slice(2).map(rankText).join(' / ')}`;
     }
   }
   return {

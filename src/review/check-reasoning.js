@@ -16,12 +16,19 @@ export function checkRisks(s, c) {
     const suit = [0, 1, 2, 3].find(
       (value) => s.board.filter((card) => card.suit === value).length >= 3,
     );
-    const possible = deckOfCards()
-      .filter((card) => card.suit === suit && !known.has(card.key))
-      .sort((a, b) => b.rank - a.rank)
-      .slice(0, 2);
-    if (compare(evaluate([...s.board, ...possible]).score, c.made.score) > 0)
-      clauses.push('虽然已经成同花，对手仍可能用更高的同花领先。');
+    const possible = deckOfCards().filter((card) => card.suit === suit && !known.has(card.key));
+    let higherFlush = false,
+      straightFlush = false;
+    for (let a = 0; a < possible.length; a++)
+      for (let b = a + 1; b < possible.length; b++) {
+        const other = evaluate([...s.board, possible[a], possible[b]]).score;
+        if (compare(other, c.made.score) > 0) {
+          if (other[0] === 5) higherFlush = true;
+          if (other[0] === 8) straightFlush = true;
+        }
+      }
+    if (higherFlush) clauses.push('虽然已经成同花，对手仍可能用更高的同花领先。');
+    if (straightFlush) clauses.push('对手仍可能组成同花顺，领先当前的普通同花。');
   }
   if (score < 4 && c.texture.connected >= 3) {
     const ranks = new Set(s.board.map((card) => card.rank));
@@ -92,7 +99,12 @@ export function checkReasoning(s, c, { trap = false, closingExplained = false } 
         ? '过牌先不主动做大底池，保留遇到下注后再判断的空间。'
         : '过牌避免主动扩大当前底池。',
     );
-  else if (strong) parts.push('这手强成牌仍有向较弱成牌收取跟注的空间，过牌可能少收一轮价值。');
+  else if (strong)
+    parts.push(
+      c.pendingOthers > 0 && s.street < 3
+        ? '若后位会继续下注，可以过牌诱导后再取值；若其常过回，主动下注更容易向较弱成牌或听牌收费。'
+        : '这手强成牌仍有向较弱成牌收取跟注的空间，过牌可能少收一轮价值。',
+    );
   else if (c.made.score[0] === 0 && !c.draw.outs)
     parts.push('目前只有高牌，较难让更弱成牌付费，过牌避免用薄弱牌力主动做大底池。');
   else if (!c.draw.outs)

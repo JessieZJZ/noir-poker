@@ -45,6 +45,19 @@ test('the turn review explains the completed diamond draw and compares a smaller
   await mkdir(output, { recursive: true });
   await page.screenshot({ path: output + '/' + info.project.name + '-turn-flush-risk.png' });
 });
+test('a reraise keeps the flush-completion warning and distinguishes raise-to from extra chips', async ({
+  page,
+}, info) => {
+  const body = await open(page, () => topPairFlushTurn({ reraise: true }), 'turn');
+  const summary = body.locator('.review-analysis-heading ~ p').first();
+  await expect(summary).toContainText(/第三张方块.*两张方块.*已成同花/);
+  const text = await summary.innerText();
+  expect(text.match(/1.21M/g)).toHaveLength(1);
+  expect(text.match(/1.01M/g)).toHaveLength(1);
+  await summary.scrollIntoViewIfNeeded();
+  await mkdir(output, { recursive: true });
+  await page.screenshot({ path: output + '/' + info.project.name + '-reraise-flush-risk.png' });
+});
 test('the limped small flush lists higher suited connectors and boats using the paired four', async ({
   page,
 }, info) => {

@@ -94,7 +94,7 @@ test('fold pressure uses public ledgers, ignores folded all-ins and has no targe
 test('ordinary semi-bluffs retain their immediate fold-win explanation without an all-in opponent', () => {
   const s = allInPressureSnapshot({ allIn: false });
   assert.equal(foldWinNote(s), '');
-  assert.match(decisionText(analyzeDecision(s, options)), /对手弃牌可直接拿池/);
+  assert.match(decisionText(analyzeDecision(s, options)), /对手(?:全部)?弃牌可直接拿池/);
 });
 
 test('opponent bluff, semi-bluff and donk explanations distinguish the shared pot and existing side pots', () => {

@@ -1468,6 +1468,17 @@ export async function nativeScenarios(app) {
   await check('guide-sticky-header', async () => {
     await app.click('#rules-button');
     await app.click('#guide-menu-item');
+    const terms = await app.evaluate(() =>
+      [...document.querySelectorAll('#review-glossary .position-glossary > div > b')].map(
+        (entry) => entry.textContent,
+      ),
+    );
+    assert.equal(terms.length, 35);
+    for (const term of ['范围优势', '弃牌权益', '隐含收益', '坚果听牌', '继续范围'])
+      assert.ok(
+        terms.some((entry) => entry.includes(term)),
+        `Missing guide term: ${term}`,
+      );
     const before = await app.evaluate(() => {
       const header = document.querySelector('#rules-dialog .dialog-header');
       const body = document.querySelector('#rules-dialog .guide-body');
@@ -1501,7 +1512,12 @@ export async function nativeScenarios(app) {
     await app.screenshot('guide-header-after-scroll');
     await app.click('#rules-dialog .dialog-header .close-dialog');
     assert.equal(await app.evaluate(() => document.querySelector('#rules-dialog').open), false);
-    return { before, after, scope: 'Installed app guide scrolling and fixed header geometry' };
+    return {
+      before,
+      after,
+      terms,
+      scope: 'Installed app strategy glossary, guide scrolling and fixed header geometry',
+    };
   });
   await check('style-tag-long-press', async () => {
     await app.waitHero();

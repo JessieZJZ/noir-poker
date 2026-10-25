@@ -20,6 +20,7 @@ import { allInContext, estimateAllInEquity } from './bot-allin.js';
 import { publicActionContext } from './public-action-context.js';
 import { preparePublicRanges } from './public-ranges.js';
 import { estimatePublicEquity } from './public-equity.js';
+import { assessPublicStrategy } from './public-strategy.js';
 export const SUITS = ['♠', '♥', '♣', '♦'];
 export const RANK_NAMES = [
   '高牌',
@@ -901,6 +902,10 @@ export function botDecision(g, random = Math.random, { trials, allInCache } = {}
     board: g.board.map((c) => ({ ...c })),
     street: g.street,
     position: seatPosition(g, p.id),
+    botProfile: p.id ? p.botProfile : null,
+    publicAxes: p.id
+      ? effectiveBotAxes(getBotProfile(p.botProfile), p.botMood, g.emotionMode)
+      : null,
     actionContext: publicActionContext(g, p.id),
     count: seatedRing(g).length,
     chipUnit: chipUnitOf(g),
@@ -925,6 +930,10 @@ export function botDecision(g, random = Math.random, { trials, allInCache } = {}
       .map((o) => ({
         id: o.id,
         position: seatPosition(g, o.id),
+        botProfile: o.id ? o.botProfile : null,
+        publicAxes: o.id
+          ? effectiveBotAxes(getBotProfile(o.botProfile), o.botMood, g.emotionMode)
+          : null,
         stack: o.stack,
         bet: o.bet,
         total: o.total,
@@ -1019,6 +1028,22 @@ export function botDecision(g, random = Math.random, { trials, allInCache } = {}
     });
     view.equity = view.publicEquity.priceEquity ?? view.publicEquity.equity;
   }
+  if (
+    g.difficulty !== 'easy' &&
+    !view.allIn &&
+    (g.street > 0 ||
+      (p.hole[0].rank === p.hole[1].rank &&
+        legal.callAmount > 0 &&
+        legal.callAmount <= p.stack * 0.06))
+  )
+    view.publicStrategy = assessPublicStrategy(view, {
+      deck: deckOfCards(),
+      evaluate,
+      compare,
+      features: botBoardFeatures,
+      cache: allInCache,
+      samples: trials === 8 ? 8 : g.difficulty === 'hard' ? 48 : 32,
+    });
   const decision = chooseBotAction(
     view,
     getBotProfile(p.botProfile),

@@ -43,7 +43,7 @@ test('a four-connected board does not turn a set check into an unconditional val
 
 test('dry strong checks explain the missed value while quads do not fear a flush', () => {
   const dry = phase3CheckSpot('5c 5d', 'Kh 9d 5s 2c', { reason: 'free-check' });
-  assert.match(text(dry.record), /强成牌.*较弱成牌.*少收一轮价值/);
+  assert.match(text(dry.record), /若后位会继续下注.*过牌诱导.*若其常过回.*较弱成牌或听牌收费/);
   assert.doesNotMatch(text(dry.record), /对手若持两张该花色/);
   const quads = phase3CheckSpot('5c 5d', '5s Qh Ah 5h', { reason: 'free-check' });
   assert.match(text(quads.record), /四条/);

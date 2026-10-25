@@ -56,7 +56,7 @@ test('paired board explains private top pair, shared two pairs, and actual effec
   assert.notEqual(r.code, 'value-check');
   s.hole = cards('5c 4c');
   s.board = cards('3s 9h Tc 8s 5d');
-  assert.match(decisionContext(s).handLabel, /10 踢脚/);
+  assert.match(decisionContext(s).handLabel, /踢脚来自公共牌 10/);
   assert.doesNotMatch(decisionContext(s).handLabel, /4 踢脚/);
 });
 
@@ -96,8 +96,13 @@ test('guide ends with shared, individually explained review terminology', () => 
     '同花连接牌',
     '坚果',
     '底池赔率',
-    '主动权／范围优势',
-    '胜率／权益／弃牌权益',
+    '主动权',
+    '范围优势',
+    '隐含收益',
+    '继续范围／付费范围',
+    '过牌加注',
+    '胜率／权益',
+    '弃牌权益／下注尺度',
     '2-bet',
     '封口',
     '彩虹面',

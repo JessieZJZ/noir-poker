@@ -51,7 +51,8 @@ test('the same real JJ still folds when the river completes the heart draw', asy
   expect(game.botDecisions.at(-1).action).toBe('fold');
   const body = await open(page, game);
   await expect(body).toContainText('选择弃牌');
-  await expect(body).not.toContainText('第三张红桃');
+  await expect(body).toContainText('河牌补出第三张红桃');
+  await expect(body).not.toContainText('河牌没有补出第三张红桃');
 });
 for (const [group, locales] of [
   SUPPORTED_LOCALES.slice(0, 6),

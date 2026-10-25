@@ -305,7 +305,18 @@ export function handMatchups(s, c) {
     if (limped && direction === 'behind' && own[0] === 5 && c.texture.paired) {
       for (let i = 0; i < 2; i++)
         for (const category of [5, 6]) {
-          const candidate = ranked.filter((c) => c.score[0] === category)[i];
+          const pairedRanks = new Set(
+            s.board
+              .filter((card, index, board) =>
+                board.some((other, j) => j !== index && other.rank === card.rank),
+              )
+              .map((card) => card.rank),
+          );
+          const candidate = ranked.filter(
+            (c) =>
+              c.score[0] === category &&
+              (category !== 6 || c.cards.some((card) => pairedRanks.has(card.rank))),
+          )[i];
           if (candidate && chosen.length < limit) chosen.push(candidate);
         }
     }
@@ -383,13 +394,13 @@ export function handMatchups(s, c) {
         ? `主要牌力来自公共牌，遇到 ${lose.text}（${lose.label}）仍会落后，不能把公共牌成牌当成独占底池。`
         : `主要牌力来自公共牌，${tie?.text || ''} 也能组成同样的牌，当前争取的是平分底池。`
       : lead && lose
-        ? `当前成牌对比：${c.handLabel}能赢例如 ${lead.text}（${lead.label}），但会输给 ${lose.text}（${lose.label}）。`
+        ? `当前成牌对比：${c.handLabel}，能赢例如 ${lead.text}（${lead.label}），但会输给 ${lose.text}（${lose.label}）。`
         : lead
           ? s.street === 3
-            ? `当前成牌对比：${c.handLabel}能赢例如 ${lead.text}（${lead.label}），河牌已发完，是当前最大成牌。`
-            : `当前成牌对比：${c.handLabel}能赢例如 ${lead.text}（${lead.label}），当前是最大成牌（坚果牌），后面新发的牌仍可能改变强弱。`
+            ? `当前成牌对比：${c.handLabel}，能赢例如 ${lead.text}（${lead.label}），河牌已发完，是当前最大成牌。`
+            : `当前成牌对比：${c.handLabel}，能赢例如 ${lead.text}（${lead.label}），当前是最大成牌（坚果牌），后面新发的牌仍可能改变强弱。`
           : lose
-            ? `当前成牌对比：${c.handLabel}会输给例如 ${lose.text}（${lose.label}），继续更需要补牌或对手弃牌。`
+            ? `当前成牌对比：${c.handLabel}，会输给例如 ${lose.text}（${lose.label}），继续更需要补牌或对手弃牌。`
             : `当前成牌与 ${tie?.text || ''} 相同，主要争取平分底池。`;
   const summaryParts = handSummary(s, c);
   const possible = [];
@@ -431,8 +442,39 @@ export function handMatchups(s, c) {
       if (possible.length === 4) break;
     }
   }
+  const seenMissed = new Set();
+  const missedDraws =
+    s.street === 3
+      ? candidates
+          .filter(
+            (candidate) =>
+              candidate.direction === 'ahead' &&
+              !candidate.features.ownMade &&
+              ranges.some((range) =>
+                (range.postflopLine || []).some(
+                  (event) =>
+                    event.street < 3 &&
+                    ['bet', 'raise', 'check-raise', 'call'].includes(event.action) &&
+                    cachedCards(candidate.cards, event.board).features.draw,
+                ),
+              ),
+          )
+          .sort((a, b) => b.likelihood - a.likelihood)
+          .filter((candidate) => {
+            const key = candidate.cards
+              .map((card) => card.rank)
+              .sort((a, b) => b - a)
+              .join(':');
+            if (seenMissed.has(key)) return false;
+            seenMissed.add(key);
+            return true;
+          })
+          .slice(0, 2)
+          .map(({ cards, text }) => ({ cards, text }))
+      : [];
   return {
     ahead,
+    missedDraws,
     weakerDrawTypes:
       s.street > 0 && s.street < 3
         ? [
@@ -449,6 +491,11 @@ export function handMatchups(s, c) {
     weakerMadeCategories: [
       ...new Set(
         candidates.filter((hand) => hand.direction === 'ahead').map((hand) => hand.score[0]),
+      ),
+    ].sort((a, b) => a - b),
+    strongerMadeCategories: [
+      ...new Set(
+        candidates.filter((hand) => hand.direction === 'behind').map((hand) => hand.score[0]),
       ),
     ].sort((a, b) => a - b),
     behind,

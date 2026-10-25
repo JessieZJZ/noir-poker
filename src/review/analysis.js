@@ -16,6 +16,8 @@ import { legalRaiseTo } from '../engine/bet-sizing.js';
 import { gameIdentities } from '../engine/player-identity.js';
 import { checkRisks } from './check-reasoning.js';
 import { flushBoardShove } from './value-targets.js';
+import { guaranteedBoardShare } from './strategy-facts.js';
+import { reviewStrategy, enrichStrategy } from './strategy-context.js';
 export { actionLabel } from '../engine/action-labels.js';
 export { callPrice } from './equity.js';
 export { startingTier, drawInfo } from './context.js';
@@ -72,6 +74,7 @@ export function analyzeDecision(
     ctx = decisionContext(s);
   ctx.matchups = handMatchups(s, ctx);
   ctx.valuePlan = valuePlan(s, ctx, ctx.matchups);
+  ctx.guaranteedBoard = guaranteedBoardShare(s, ctx, price);
   const pre = s.street === 0 ? preflopContext(s) : null;
   if (pre) ctx.positionedEntry = positionedEntry(s, ctx, pre);
   const low = Math.min(wide.equity, strong.equity),
@@ -120,7 +123,13 @@ export function analyzeDecision(
       amount: legalRaiseTo(target, s.legal),
     };
   };
-  if (s.action === 'fold' && s.legal.canCheck) {
+  if (ctx.guaranteedBoard) {
+    code = 'guaranteed-board-share';
+    status = s.action === 'fold' ? 'attention' : 'sound';
+    confidence = '规则与成本明确';
+    title = '公共牌已锁定分池，按确定份额与成本判断';
+    alternative = { action: s.legal.canCheck ? 'check' : 'call', amount: s.legal.callAmount };
+  } else if (s.action === 'fold' && s.legal.canCheck) {
     code = 'free-fold';
     status = 'attention';
     confidence = '规则与成本明确';
@@ -222,8 +231,7 @@ export function analyzeDecision(
       (['HJ', 'CO', 'BTN'].includes(s.position) &&
         pre.limpers > 0 &&
         s.bet === 0 &&
-        Math.max(...s.hole.map((card) => card.rank)) <= 11 &&
-        high + uncertainty < price.required))
+        Math.max(...s.hole.map((card) => card.rank)) <= 11))
   ) {
     code = 'weak-late-limp';
     status = 'consider';
@@ -722,7 +730,11 @@ export function analyzeDecision(
   }
   let routes = comparisonRoutes(s, ctx, { code, status, alternative, pre });
   let simulation = null;
-  if (Number.isInteger(s.dealer) && s.players.every((p) => 'actedTo' in p)) {
+  if (
+    !ctx.guaranteedBoard &&
+    Number.isInteger(s.dealer) &&
+    s.players.every((p) => 'actedTo' in p)
+  ) {
     simulation = compareCandidateActions(s, [routes.primary, alternative, routes.secondary], {
       trials: rolloutTrials,
     });
@@ -806,6 +818,13 @@ export function analyzeDecision(
     context: ctx,
   };
   result.coaching = coachDecision(s, result);
+  ctx.publicStrategy = reviewStrategy(s, ctx, price);
+  result.coaching = enrichStrategy(
+    result.coaching,
+    s,
+    ctx.publicStrategy,
+    result.coaching.recommendedAction,
+  );
   return result;
 }
 export function summarizeReview(input, steps) {

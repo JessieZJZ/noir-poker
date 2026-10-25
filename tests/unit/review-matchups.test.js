@@ -165,7 +165,7 @@ test('candidate labels retain both parts of open-ended, gutshot and double-gutsh
 test('top-pair checks explain foregone value, checking-range protection and wet multiway risk without inventing a trap', () => {
   const record = topPairCheckReview();
   const explanation = explainOpponent(record);
-  assert.match(explanation.detail, /顶对 J，A 踢脚/);
+  assert.match(explanation.detail, /顶对 J，底牌 A 参与踢脚比较/);
   assert.match(explanation.detail, /较弱的一对或听牌取值/);
   assert.match(explanation.detail, /过牌也可能是在等后位先下注/);
   assert.match(explanation.detail, /多人底池/);

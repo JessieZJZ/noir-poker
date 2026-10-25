@@ -150,9 +150,10 @@ test('an overpot underpair shove is not justified by charging weaker hands and d
   });
   const r = review(s, { code: 'pressure-bet', action: { action: 'check', amount: 0 } });
   const text = summary(coachDecision(s, r));
-  assert.match(text, /达到或超过当前底池.*很难让更小对子或未成对高张付费/);
+  assert.match(text, /达到或超过当前底池.*更强对子或强听牌/);
   assert.match(text, /不能只用保护对子说明/);
   assert.doesNotMatch(text, /下注可以让更小对子.*高张付费/);
+  assert.doesNotMatch(text, /已有成牌，下注的价值来自/);
 });
 
 test('a small middle-pair bet admits conditional thin value and protection without declaring a pure bluff', () => {
@@ -362,7 +363,7 @@ test('an ordinary strong value bet explains weaker paying hands before higher-fl
     status: 'sound',
   });
   const text = summary(coachDecision(s, r));
-  assert.match(text, /仍能领先更低同花或顺子.*较弱牌愿意跟注/);
+  assert.match(text, /仍能领先更低同花.*较弱牌愿意跟注/);
   assert.ok(text.indexOf('下注的价值来自') < text.indexOf('更高的同花领先'));
 });
 

@@ -1,6 +1,7 @@
 import { bigBlindOf } from './stakes.js';
 import { allInContext } from './public-action-context.js';
 import { publicPostflopLine, publicStoryWeight, hasPublicStory } from './public-story.js';
+import { startingPercentile } from './starting-range.js';
 
 const clamp = (value) => Math.max(0, Math.min(1, value));
 const late = (position) => ['BTN', 'CO', 'SB', 'BB'].includes(position);
@@ -74,6 +75,8 @@ export function preparePublicRanges(view) {
         allIn?.depthBB ?? Math.min(view.stack ?? Infinity, opponent.stack + total) / bigBlind;
     return {
       id: opponent.id,
+      publicStyle: opponent.botProfile ?? null,
+      publicAxes: opponent.publicAxes ?? null,
       position: opponent.position ?? null,
       role:
         allIn?.role ??
@@ -97,6 +100,15 @@ export function preparePublicRanges(view) {
         action: ownPreflop?.action.action ?? null,
         raises: preflopRaises,
         amountBB: (ownPreflop?.action.amount ?? bigBlind) / bigBlind,
+        facedBB: ownPreflop
+          ? Math.max(
+              bigBlind,
+              ...preflop
+                .slice(0, ownPreflop.index)
+                .filter((a) => a.action === 'raise')
+                .map((a) => a.amount),
+            ) / bigBlind
+          : 1,
       },
       postflop: postAction
         ? {
@@ -109,6 +121,39 @@ export function preparePublicRanges(view) {
       aggressionRatio: view.currentBet / Math.max(bigBlind, view.pot - view.currentBet),
     };
   });
+}
+
+// Observer priors from visible style and position, not access to its private
+// policy roll, hole cards or a measured human chart. Keep every legal class
+// possible and <=1 to retain the rejection sampler's proposal bound.
+function visibleStylePrior(pair, descriptor) {
+  if (!descriptor.publicStyle || !descriptor.preflop?.action) return null;
+  const width = Math.max(0, Math.min(1, (descriptor.publicAxes?.[0] ?? 50) / 100));
+  const pre = descriptor.preflop,
+    raising = pre.action === 'raise';
+  let target =
+    pre.raises >= 3
+      ? 0.035 + width * 0.04
+      : pre.raises === 2
+        ? raising
+          ? 0.05 + width * 0.08
+          : 0.12 + width * 0.16
+        : raising
+          ? (0.14 + width * 0.5) * (late(descriptor.position) ? 1.18 : 0.78)
+          : pre.raises
+            ? 0.22 + width * 0.3
+            : 0.38 + width * 0.4;
+  if (!raising && pre.facedBB > 8) target *= 0.75;
+  target = Math.max(0.035, Math.min(0.85, target));
+  const percentile = startingPercentile(pair),
+    [high, low] = pair.map((c) => c.rank).sort((a, b) => b - a);
+  const suited = pair[0].suit === pair[1].suit;
+  const speculative = high === low || (suited && (high === 14 || high - low <= 2));
+  const tail =
+    suited && high === 14 ? 0.08 : speculative && descriptor.depthBB >= 40 ? 0.035 : 0.008;
+  return percentile <= target
+    ? Math.min(1, 0.65 + ((target - percentile) / target) * 0.35)
+    : Math.max(tail, 0.15 * Math.exp(-(percentile - target) / 0.06));
 }
 
 function allInPreflopWeight(hole, range) {
@@ -293,8 +338,9 @@ export function publicComboWeight(
           : preflop.action === 'raise'
             ? [0.2, 0.45, 0.8, 1]
             : [0.3, 0.6, 0.85, 1];
-  let weight = tables[handTier];
-  if (preflop.action && handTier < 3 && descriptor.position)
+  const stylePrior = visibleStylePrior(pair, descriptor);
+  let weight = stylePrior ?? tables[handTier];
+  if (stylePrior === null && preflop.action && handTier < 3 && descriptor.position)
     weight *= late(descriptor.position) ? 1.15 : 0.8;
   if (preflop.action === 'raise' && preflop.amountBB > 4 && handTier < 3) weight *= 0.75;
   if (board.length < 3 || !score) return clamp(weight);

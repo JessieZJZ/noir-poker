@@ -1,3 +1,4 @@
+import { bigBlindOf } from '../engine/stakes.js';
 import { compactChips } from '../engine/chip-format.js';
 import { rankText } from '../engine/poker.js';
 import { actionLabel } from '../engine/action-labels.js';
@@ -10,11 +11,14 @@ import { publicStoryNotes } from './public-story.js';
 import { actorAtPosition, actorName } from '../engine/player-identity.js';
 import { foldPressure, foldWinNote } from './presentation.js';
 import { checkReasoning, checkRisks, madeRedrawReasoning } from './check-reasoning.js';
-import { defenseReason } from './defense-reason.js';
+import { defenseReason, straightSplitReason } from './defense-reason.js';
+import { enrichStrategy } from './strategy-context.js';
 
 const pct = (v) => (v * 100).toFixed(1) + '%';
 const n = compactChips;
 export const BOT_REASON_NAMES = {
+  'implied-continue': '结合成牌后的付费机会跟注',
+  'story-continue': '结合完整行动线跟注防守',
   'outside-range': '放弃这笔跟注',
   'insufficient-equity': '放弃这笔跟注',
   'stack-pressure': '保住后手，不接大额下注',
@@ -77,10 +81,37 @@ function objectiveActionReason(s, c, f, hand, drawText, foldNote) {
     return [
       s.legal.canCheck
         ? '当时可以直接过牌，弃牌并不节省额外筹码，却放弃了继续争夺底池的机会。'
-        : `这次弃牌不再补 ${n(s.legal.callAmount)}，保留行动前剩余的 ${n(s.stack)}。`,
+        : c.reviewPrice
+          ? ''
+          : `这次弃牌不再补 ${n(s.legal.callAmount)}，保留行动前剩余的 ${n(s.stack)}。`,
+      ...(c.reviewPrice && s.legal.callAmount > 0
+        ? [
+            `继续要补 ${n(c.reviewPrice.cost)}，可争夺跟注后的 ${n(c.reviewPrice.contestable)} 底池，当前保本门槛为 ${pct(c.reviewPrice.required)}。`,
+          ]
+        : []),
+      !s.street &&
+      s.hole.every((card) => card.rank === 14) &&
+      c.preflopRaises === 1 &&
+      s.legal.canRaise &&
+      s.currentBet <= 6 * bigBlindOf(s)
+        ? 'AA 是翻前最强起手牌，面对这次普通开池应继续，优先比较再加注，而不是因保留筹码直接弃牌。'
+        : s.street && ownMade
+          ? '若对手仍有足够较弱取值或诈唬，应比较跟注；只有这条线明显集中于更强成牌时，才收紧弃牌。'
+          : '',
+      straightSplitReason(s, c, c.matchups),
+      ...(draw.outs &&
+      c.reviewPrice &&
+      s.legal.callAmount < s.stack &&
+      draw.nextChance > c.reviewPrice.required
+        ? [
+            `下一张出现补牌候选约 ${pct(draw.nextChance)}，高于当前价格门槛；应比较跟注，但补中后可能落后，下一街也可能还要付费。`,
+          ]
+        : []),
       ...improvement,
       draw.outs
-        ? '弃牌同时放弃了这些改善机会，是否值得继续仍需比较价格与对手范围。'
+        ? c.reviewPrice && draw.nextChance > c.reviewPrice.required
+          ? ''
+          : '弃牌同时放弃了这些改善机会，是否值得继续仍需比较价格与对手范围。'
         : ownMade && s.street
           ? '已有成牌仍有摊牌机会，弃牌避免新增投入，也放弃了赢过较弱牌或诈唬的可能。'
           : '',
@@ -95,10 +126,14 @@ function objectiveActionReason(s, c, f, hand, drawText, foldNote) {
             : `当前主要依靠${drawLabel(draw)}改善，不能只靠高牌判断这笔跟注。`
           : !s.street && s.hole[0].rank === s.hole[1].rank
             ? pocketComparison(s, '这位玩家') + '。'
-            : `当前${hand}仍有摊牌或改善机会，跟注能否划算要结合对手范围与价格。`,
+            : s.street === 3
+              ? `当前${hand}保留摊牌机会，河牌已无改善机会，跟注能否划算要结合对手范围与价格。`
+              : `当前${hand}仍有摊牌或改善机会，跟注能否划算要结合对手范围与价格。`,
       ...improvement,
       ...(!s.street ? preflopPotential(s, '这位玩家') : []),
-      `这次补 ${n(s.legal.callAmount)}，继续争夺 ${n(s.contestable)} 的底池。`,
+      c.reviewPrice
+        ? `继续要补 ${n(c.reviewPrice.cost)}，可争夺跟注后的 ${n(c.reviewPrice.contestable)} 底池，当前保本门槛为 ${pct(c.reviewPrice.required)}。`
+        : `这次补 ${n(s.legal.callAmount)}，继续争夺 ${n(s.contestable)} 的底池。`,
       c.pendingOthers
         ? '本轮仍有其他玩家可以行动，后续投入要按新的价格判断。'
         : s.street === 3
@@ -120,12 +155,14 @@ function objectiveActionReason(s, c, f, hand, drawText, foldNote) {
             ? `这次进攻带有${drawLabel(draw)}的改善机会，被跟注后仍能补牌，但不能只凭有听牌就认定这个尺度划算。`
             : '当前缺少强成牌和直接顺子或同花听牌，进攻更依赖对手弃掉较好的牌。';
     return [
-      `这次额外投入 ${n(f.investment)}。`,
+      ...(s.bet > 0 ? [`这次额外投入 ${n(f.investment)}。`] : []),
       support,
       ...(!s.street ? preflopPotential(s, '这位玩家') : []),
       ...improvement,
-      s.street && ownMade && !foldNote
-        ? '还要核对会跟注的较弱牌是否足够，较大的尺度也可能只留下更强的继续范围。'
+      s.street && ownMade && !foldNote && !c.matchups?.nut
+        ? f.potRatio > 1
+          ? '这次投入明显超过底池，需要比较较小下注能否留下更多弱牌，当前牌型本身不能证明这个大尺度划算。'
+          : '还要核对会跟注的较弱牌是否足够，较大的尺度也可能只留下更强的继续范围。'
         : '',
       foldNote,
       f.shove ? '这次已经投入全部剩余筹码，之后不再参与下注决策。' : '',
@@ -150,6 +187,7 @@ export function explainOpponent(record, identities = []) {
         allin: p.allin,
         position: p.position,
         name: p.name || identities.find((identity) => identity.id === p.id)?.name,
+        publicAxes: p.publicAxes,
         botProfile: p.botProfile || identities.find((identity) => identity.id === p.id)?.botProfile,
       })),
     },
@@ -187,7 +225,16 @@ export function explainOpponent(record, identities = []) {
     action: record.action,
     amount: record.amount,
     players: [
-      { id: 0, name: record.name, botProfile: t.profile, position: v.position, stack: v.stack },
+      {
+        id: 0,
+        name: record.name,
+        botProfile: t.profile,
+        position: v.position,
+        stack: v.stack,
+        bet: v.bet,
+        total: v.total,
+        folded: false,
+      },
       ...opponents.map((p, i) => ({ ...p, id: i + 1 })),
     ],
     opponents: undefined,
@@ -208,6 +255,24 @@ export function explainOpponent(record, identities = []) {
   };
   const c = decisionContext(snapshot);
   c.inPosition = !!v.inPosition;
+  // A bot view omits folded seats, whose dead money still belongs to the pot.
+  // Reuse the engine's complete public partition instead of rebuilding it
+  // from this deliberately smaller actor-relative opponent list.
+  const publicPrice = v.callPrice;
+  c.reviewPrice =
+    Number.isFinite(publicPrice?.cost) && publicPrice.contestable > 0
+      ? {
+          cost: publicPrice.cost,
+          contestable: publicPrice.contestable,
+          required: publicPrice.cost / publicPrice.contestable,
+        }
+      : Number.isFinite(v.contestable) && v.contestable > 0
+        ? {
+            cost: v.legal.callAmount,
+            contestable: v.contestable,
+            required: v.legal.callAmount / v.contestable,
+          }
+        : null;
   const f = spotFacts({ ...v, action: record.action, amount: record.amount }, c, actorId),
     draw = c.draw,
     wet =
@@ -271,10 +336,14 @@ export function explainOpponent(record, identities = []) {
       ? '她'
       : '他';
   const matchups = handMatchups({ ...snapshot, reviewPronoun: subject }, c);
+  c.matchups = matchups;
   let logic = '',
     logicParts;
   const checkNotes = [];
   switch (usePolicyReason ? t.reason : undefined) {
+    case 'implied-continue':
+      logic = '';
+      break;
     case 'outside-range':
     case 'insufficient-equity':
       if (!draw.outs && (v.street === 0 ? c.tier >= 2 : c.handClass !== 'high')) {
@@ -335,6 +404,7 @@ export function explainOpponent(record, identities = []) {
     case 'small-reraise-continue':
       logic = `这是小尺度 3-bet 防守：只需再补 ${n(cost)}，跟完还留 ${n(v.stack - cost)}，因此${subject}用${hand}继续看翻牌，${v.hole[0].rank === v.hole[1].rank ? '争取补成暗三条，也保留这手对子本身的摊牌机会' : '争取击中对子或更强的牌'}。加注更大时，这手牌需要付出更多筹码，继续的理由就会变弱。`;
       break;
+    case 'story-continue':
     case 'price-continue':
       if (
         t.allIn &&
@@ -564,7 +634,17 @@ export function explainOpponent(record, identities = []) {
     logic = logicParts.join('');
     checkNotes.length = 0;
   }
-  if (v.street > 0 && ['call', 'fold'].includes(record.action)) {
+  if (
+    v.street > 0 &&
+    ['call', 'fold'].includes(record.action) &&
+    !(
+      usePolicyReason &&
+      record.action === 'fold' &&
+      !draw.outs &&
+      !(c.made.score[0] === 3 && v.street < 3) &&
+      ['outside-range', 'insufficient-equity', 'stack-pressure'].includes(t.reason)
+    )
+  ) {
     const risks = checkRisks(snapshot, c).slice(0, 2);
     if (risks.length) {
       logicParts = [...(logicParts || [logic]), ...risks, ...madeRedrawReasoning(snapshot, c)];
@@ -572,6 +652,8 @@ export function explainOpponent(record, identities = []) {
     }
   }
   const reasons = [];
+  if (record.action === 'raise' && f.shove && v.legal.isShortAllin)
+    checkNotes.push('这是不足完整加注的全下，对已经行动的玩家不一定重新开放加注权。');
   if (usePolicyReason && t.exceptions?.length && t.reason !== 'loose-exception')
     reasons.push(
       `面对这笔加注，${name}选择较宽地继续，这手${hand}被更强的牌跟注后，仍会承受牌力不足的风险。`,
@@ -595,6 +677,17 @@ export function explainOpponent(record, identities = []) {
       [prefix, actionEnd, ...(logicParts || [logic]), ...checkNotes, squeeze].filter(Boolean),
     ].filter((parts) => parts[0]),
     paragraphs = paragraphParts.map((parts) => parts.join(''));
+  const enriched = enrichStrategy(
+    { paragraphParts, paragraphs, explanation: paragraphs.join('') },
+    snapshot,
+    v.publicStrategy,
+    {
+      action: record.action,
+      amount: record.amount,
+      plan: usePolicyReason && (!t.basis || basisMatches) ? t.style?.linePlan : undefined,
+      subject: plainName,
+    },
+  );
   return {
     basisSource: recorded ? 'recorded' : 'inferred',
     title: !usePolicyReason
@@ -623,9 +716,10 @@ export function explainOpponent(record, identities = []) {
                   : t.reason === 'value-raise' && v.street && c.made.score[0] < 1
                     ? '弱牌主动施压'
                     : BOT_REASON_NAMES[t.reason],
-    detail: paragraphs.join(''),
-    paragraphs,
-    paragraphParts,
+    detail: enriched.explanation,
+    paragraphs: enriched.paragraphs,
+    paragraphParts: enriched.paragraphParts,
+    strategyTopics: enriched.strategyTopics || [],
     matchups,
     reasons,
     metrics: [],

@@ -150,7 +150,7 @@ test('recorded folds explain threats and price without claiming those are the ac
   const review = explainOpponent({ id: v.id, name: 'Alex', ...d });
   assert.equal(d.action, 'fold');
   assert.match(review.detail, /33.3%/);
-  assert.match(review.detail, /可能领先当前手牌的组合/);
-  assert.match(review.detail, /并非已经看到了对手底牌/);
+  assert.match(review.detail, /Alex.*判断自己可能落后于/);
+  assert.doesNotMatch(review.detail, /机器人按公开|并非已经看到了对手底牌/);
   assert.doesNotMatch(review.detail, /当前成牌仍可能遇到更大牌/);
 });

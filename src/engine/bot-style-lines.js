@@ -128,6 +128,16 @@ export function postflopStyleLine(view, style, equity) {
     ownFlop = flop.length === 1 && flop[0].id === view.id,
     dry = !f.wet && texture.maxSuit < 3 && texture.connected < 4,
     headsUp = view.rivals === 1 && (view.publicEquity?.assumedOpponentIds.length ?? 1) === 1;
+  // Initiative and a high card are not proof of range advantage. Legacy
+  // isolated fixtures without an assessment retain their original fallback.
+  const rangePressure =
+    !view.publicStrategy ||
+    (view.publicStrategy.range.advantage >
+      Math.max(0.06, view.publicStrategy.range.uncertainty * 0.6) &&
+      view.publicStrategy.range.actorTopMass >= view.publicStrategy.range.opponentTopMass &&
+      view.publicStrategy.options.some(
+        (o) => o.fraction <= 0.6 && o.foldProbability >= 0.4 && o.estimatedValue > 0,
+      ));
 
   if (style.lineStrategy === 'positional') {
     if (!view.inPosition || !checkedTo(view)) return null;
@@ -165,6 +175,7 @@ export function postflopStyleLine(view, style, equity) {
         flopHigh = Math.max(...view.board.slice(0, 3).map((c) => c.rank));
       if (
         ownOpen &&
+        rangePressure &&
         dry &&
         !f.ownMade &&
         !f.draw &&
@@ -248,6 +259,7 @@ export function postflopStyleLine(view, style, equity) {
     if (
       view.street === 1 &&
       ownOpen &&
+      rangePressure &&
       boardHigh >= 11 &&
       !f.ownMade &&
       !f.draw &&
