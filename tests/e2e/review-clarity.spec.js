@@ -90,7 +90,7 @@ test('review prices, actor references and draw verdicts stay coherent in the exi
   await expect(evidence.locator('li')).toHaveCount(6);
   await expect(evidence).toContainText('跟注前底池 460K，底池赔率约 3.29:1');
   await expect(evidence).toContainText('需要至少 23.3% 的胜率，风险和收益才能持平。');
-  await expect(summary).toContainText(/你若再加注.*你若只跟注/);
+  await expect(summary).toContainText('你若再加注，需要同时考虑加注者和这些跟入者的继续范围');
   await expect(summary).toContainText(/坚果同花听牌.*击中 A.*较弱 Ax/);
   await expect(summary).not.toContainText('；');
   await evidence.scrollIntoViewIfNeeded();
@@ -121,7 +121,7 @@ test('review prices, actor references and draw verdicts stay coherent in the exi
   await select(7);
   await expect(evidence).toContainText('4 / 5 同花连接牌');
   await expect(summary).toContainText(
-    /同花连接牌.*37.0%.*点数仍偏低.*更高同花.*他们若仍有加注权并再次加注.*建议弃牌/,
+    /同花连接牌.*37.0%.*点数仍偏低.*更高同花.*他们如果加注或者再加注.*建议弃牌/,
   );
   await expect(summary).not.toContainText(/被强 A.*压制|；/);
   await summary.scrollIntoViewIfNeeded();

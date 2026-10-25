@@ -29,9 +29,11 @@ test('reported reviews render coherent causal summaries and preserve them across
   await expect(hero).not.toContainText(/不能只按成牌标签|相同牌力|是在回应/);
   await page.locator('[data-review-index="1"]').click();
   await expect(hero.locator('.review-range-note')).toHaveCount(0);
+  // The summary opens with the actual 5-bet, not a generic range reminder.
   await expect(hero.locator('.review-analysis-heading ~ p').first()).toContainText(
-    /再加注通常比普通开池更集中.*5-bet/,
+    'Jade（范围纪律）在 MP 位5-bet 加注至 9.3K',
   );
+  await expect(hero).not.toContainText('再加注通常比普通开池更集中');
   await expect(hero).toContainText(/再补 8.3K.*弃牌可以保留.*19K/);
   await expect(hero).not.toContainText('不必只因遇到加注就自动弃牌');
   await hero.locator('.review-analysis-heading').scrollIntoViewIfNeeded();
