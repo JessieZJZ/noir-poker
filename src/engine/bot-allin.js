@@ -15,7 +15,8 @@ export function estimateAllInEquity(
   const available = deck.filter((c) => !known.has(c.key));
   // Scores/features depend only on this public board and a candidate pair.
   // By default this estimate owns the cache. Candidate rollouts may share it
-  // only within one sampled deal, never a live session or actual hidden deal.
+  // within one review snapshot (sampled boards per deal, visible boards across
+  // its deals), never a live session or actual hidden deal.
   // Range roles and pressure still receive their own weights.
   const boards = cache;
   const handData = (hole, board) => {
