@@ -38,11 +38,11 @@ export function preflopPotential(s, subject = '你', showdownOnly = exhaustsStac
   const flush = !suited
     ? ''
     : high === 14
-      ? `${subject}持有 A 同花底牌，翻牌出现两张与你底牌同花色的牌时可形成坚果同花听牌，补成同花后能领先更低的同花。`
+      ? `${subject}持有 A 同花底牌，翻牌出现两张与底牌同花色的公共牌时可形成坚果同花听牌，补成同花后能领先更低的同花。`
       : `${subject}的两张同花底牌能争取同花听牌和成花机会。`;
   const pair =
     high === 14
-      ? `${subject}若击中 A，可形成顶对${low >= 10 ? (showdownOnly ? '，较高踢脚有机会领先较弱 Ax' : '，较高踢脚有机会领先较弱 Ax，并向它们取值') : showdownOnly ? '，但仍可能输给更大踢脚的 Ax' : '，但面对更大踢脚的 Ax 时仍需控制投入'}。`
+      ? `${subject}若击中 A，可形成顶对${low >= 10 ? (showdownOnly ? '，较高踢脚有机会领先较弱 Ax' : '，较高踢脚有机会领先较弱 Ax，并从较弱 Ax 取值') : showdownOnly ? '，但仍可能输给更大踢脚的 Ax' : '，但面对更大踢脚的 Ax 时仍需控制投入'}。`
       : '';
   const connected =
     high - low === 1 ? `${subject}的两张底牌点数相连，能争取顺子听牌和成顺机会。` : '';

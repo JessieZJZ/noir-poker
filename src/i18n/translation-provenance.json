@@ -989,5 +989,28 @@
   "reviewSummary20261017": {
     "method": "Authored Simplified Chinese and English; other locale drafts translated from these messages with Google Translate, preserving interpolation slots. Live switching and card, amount and identity preservation are regression checked.",
     "linguisticReview": "pending"
+  },
+  "reviewClarity20261025": {
+    "method": "assistant-authored targeted translations",
+    "locales": ["en", "zh-TW", "ja", "ko", "es", "it", "pt", "de", "fr", "ru"],
+    "messages": [
+      "{0}先跟注 {1} 入池。",
+      "{0}已跟注这笔加注，补 {1}。",
+      "{0}持有 A 同花底牌，翻牌出现两张与底牌同花色的公共牌时可形成坚果同花听牌，补成同花后能领先更低的同花。",
+      "{0}没有只补 {1} 跟注，而是再拿出 {2} 把下注抬到 {3}。",
+      "{0}若再加注，需要同时考虑加注者和这些跟入者的继续范围。",
+      "{0}补 {1} 跟注后还留 {2}，先用小额投入争取看翻牌。",
+      "{0}都先跟注 {1} 入池。",
+      "{0}都已跟注这笔加注，各补 {1}。",
+      "你身后还有 {0} 人等待行动，他们如果加注或者再加注，你需要重新决定是否继续。",
+      "击中一对后仍可能被更好的踢脚压住。",
+      "后面仍有玩家可以行动，若有人加注或再加注，需要按新的价格重新决定。",
+      "成花后也要留意更高同花。",
+      "手里的 A 减少了对手部分强 A 组合，加注也提高了其他玩家继续入池的成本。",
+      "本轮还没封口，后面的玩家如果加注或者再加注，你需要重新决定要不要跟。",
+      "这类平跟可能是小对子、同花牌或连接牌，也可能藏着强牌。",
+      "，较高踢脚有机会领先较弱 Ax，并从较弱 Ax 取值"
+    ],
+    "independentLinguisticReview": "not performed; rendering and placeholder checks reported separately"
   }
 }

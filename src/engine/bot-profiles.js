@@ -623,6 +623,33 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
           (['BTN', 'CO'].includes(view.position) ? 1.15 : 1),
       )
     : openingRange;
+  // A hand outside the first-in raising range can still buy a cheap flop.
+  // This authored mix is confined to deep, unraised, non-all-in pots. It does
+  // not give the same holding a discount against a later raise or shove.
+  const entryDepthBB =
+    Math.min(
+      view.stack + view.bet,
+      Math.max(0, ...(view.opponents || []).map((p) => p.stack + (p.bet || 0))),
+    ) / bigBlind;
+  const suitedLimpCandidate =
+    cheapEntry &&
+    style.firstInRaise > 0 &&
+    view.difficulty !== 'easy' &&
+    percentile > range &&
+    suited &&
+    high >= 11 &&
+    low >= 8 &&
+    entryDepthBB >= 50 &&
+    legal.callAmount > 0 &&
+    legal.callAmount <= bigBlind;
+  const suitedLimpRate =
+    style.lineStrategy === 'positional'
+      ? ['HJ', 'CO', 'BTN'].includes(view.position)
+        ? 0.65
+        : 0.35
+      : 0.75;
+  const suitedLimp =
+    suitedLimpCandidate && roll('low-cost-suited-entry', suitedLimpRate) < suitedLimpRate;
   // The heuristic percentile ranks small pairs too highly to define a
   // premium stack-off tier. Keep the range ordering and premium tier separate.
   const premium = (pair && high >= 11) || (high === 14 && low === 13),
@@ -630,7 +657,8 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
     openingAdmitted = percentile <= openingRange,
     callTolerance = (callDown - 0.5) * 0.1 + context.publicAdjustment,
     requiredEquity = view.allIn ? odds + view.allIn.pendingBuffer : odds + responseRisk + 0.02,
-    affordableRangePassed = (cheapEntry || affordableOpen || affordableThreeBet) && admitted;
+    affordableRangePassed =
+      ((cheapEntry || affordableOpen || affordableThreeBet) && admitted) || suitedLimp;
   let sizing = null,
     deception = null,
     value = false,
@@ -843,7 +871,17 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
       affordableOpen,
       affordableThreeBet,
       affordableRangePassed,
-      entryContext: { limpers, openCallers, effectiveBehind, speculative, suitedHigh },
+      suitedLimp,
+      entryContext: {
+        limpers,
+        openCallers,
+        effectiveBehind,
+        speculative,
+        suitedHigh,
+        suitedLimpCandidate,
+        suitedLimpRate,
+        entryDepthBB,
+      },
       premium,
       admitted,
       callTolerance,
@@ -874,6 +912,7 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
       playsBoard: view.playsBoard,
     },
   });
+  if (suitedLimp) return finish('call', 'affordable-entry');
   const jamPlan = preflopJamPlan(view, profile);
   const valueJam = () => {
     if (!jamPlan || equity + callTolerance < requiredEquity) return null;

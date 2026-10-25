@@ -3,7 +3,7 @@ import { rankText } from '../engine/poker.js';
 import { actionLabel } from '../engine/action-labels.js';
 import { MOOD_LABELS } from '../engine/bot-profiles.js';
 import { decisionContext } from './context.js';
-import { drawLabel, drawCompletion, publicHistory } from './narrative.js';
+import { drawLabel, drawCompletion, publicHistory, preflopPotential } from './narrative.js';
 import { spotFacts } from './spot-facts.js';
 import { rangeNoteClauses, handMatchups } from './matchups.js';
 import { actorAtPosition, actorName } from '../engine/player-identity.js';
@@ -95,6 +95,7 @@ function objectiveActionReason(s, c, f, hand, drawText, foldNote) {
             ? pocketComparison(s, '这位玩家') + '。'
             : `当前${hand}仍有摊牌或改善机会，跟注能否划算要结合对手范围与价格。`,
       ...improvement,
+      ...(!s.street ? preflopPotential(s, '这位玩家') : []),
       `这次补 ${n(s.legal.callAmount)}，继续争夺 ${n(s.contestable)} 的底池。`,
       c.pendingOthers
         ? '本轮仍有其他玩家可以行动，后续投入要按新的价格判断。'
@@ -119,6 +120,7 @@ function objectiveActionReason(s, c, f, hand, drawText, foldNote) {
     return [
       `这次额外投入 ${n(f.investment)}。`,
       support,
+      ...(!s.street ? preflopPotential(s, '这位玩家') : []),
       ...improvement,
       s.street && ownMade && !foldNote
         ? '还要核对会跟注的较弱牌是否足够，较大的尺度也可能只留下更强的继续范围。'
@@ -300,6 +302,19 @@ export function explainOpponent(record, identities = []) {
       break;
     case 'affordable-entry':
     case 'affordable-open':
+      if (t.suitedLimp) {
+        logicParts = [
+          `${subject}补 ${n(cost)} 跟注后还留 ${n(v.stack - cost)}，先用小额投入争取看翻牌。`,
+          ...preflopPotential(snapshot, subject),
+          '击中一对后仍可能被更好的踢脚压住。',
+          v.hole.every((card) => card.rank < 14) ? '成花后也要留意更高同花。' : '',
+          c.pendingOthers
+            ? '后面仍有玩家可以行动，若有人加注或再加注，需要按新的价格重新决定。'
+            : '',
+        ].filter(Boolean);
+        logic = logicParts.join('');
+        break;
+      }
       logic = widePreflopCall
         ? `${subject}选择较宽地跟注，用 ${n(cost)} 保留看翻牌的机会，这笔投入占行动前剩余筹码的 ${pct(cost / Math.max(1, v.stack))}。即使击中一对，较低点数或较弱踢脚也可能落后，不能只因这笔投入看起来较小，就认定跟注划算。`
         : `${subject}只补 ${n(cost)}，还留 ${n(v.stack - cost)}，${v.hole[0].rank === v.hole[1].rank ? (v.hole[0].rank >= 13 ? '这手顶级对子本身已有很强的摊牌价值，平跟保留了牌力隐蔽性，也让其他玩家低成本入池' : '这手对子可以等翻牌中暗三条') : v.hole[0].suit === v.hole[1].suit ? '两张同花底牌保留了翻后买同花的机会' : '这笔小投入保留了翻牌击中底牌的机会'}。因此选择跟注入池，而没有再加注做大底池。`;
@@ -351,6 +366,19 @@ export function explainOpponent(record, identities = []) {
           : aggression
             ? `${subject}没有只补 ${n(cost)} 跟注，而是再拿出 ${n(f.investment)} 把下注抬到 ${n(record.amount)}。${support}。${foldNote || '对手若不愿继续付费，就会放弃当前 ' + n(v.pot) + ' 的底池。'}`
             : `${subject}用${hand}主动开池，拿出 ${n(f.investment)} 建立底池，希望较弱起手牌跟注入池，后面的玩家若不愿付这笔筹码，就会直接弃牌。`;
+        if (!paired && v.hole[0].suit === v.hole[1].suit && c.tier >= 2) {
+          logicParts = [
+            aggression
+              ? `${subject}没有只补 ${n(cost)} 跟注，而是再拿出 ${n(f.investment)} 把下注抬到 ${n(record.amount)}。`
+              : `${subject}用${hand}主动开池，拿出 ${n(f.investment)} 建立底池，希望较弱起手牌跟注入池，后面的玩家若不愿付这笔筹码，就会直接弃牌。`,
+            ...preflopPotential(snapshot, subject),
+            v.hole.some((card) => card.rank === 14)
+              ? `手里的 A 减少了对手部分强 A 组合，加注也提高了其他玩家继续入池的成本。`
+              : '',
+            foldNote,
+          ].filter(Boolean);
+          logic = logicParts.join('');
+        }
       } else if (c.made.score[0] >= 1 && !['board', 'board-pair'].includes(c.handClass))
         logic = `这是用${hand}取值：这次拿出 ${n(f.investment)}，希望更弱成牌${v.street < 3 && (draw.outs || wet) ? '或听牌' : ''}付费。${v.street === 3 ? '河牌已经发完，价值来自较弱成牌愿意跟注。' : v.hole[0].rank === v.hole[1].rank && c.made.score[0] <= 2 ? '愿意继续的高张也需要付出筹码，不能免费观察下一张。' : wet ? '牌面有同花或顺子连接，下注也让追牌的人付出成本。' : '牌面较干燥，价值主要来自更弱成牌的跟注。'}`;
       else
@@ -387,7 +415,9 @@ export function explainOpponent(record, identities = []) {
             : `这是${hand}埋牌：只跟 ${n(cost)}，没有再加注赶走对手的弱牌或诈唬，还留 ${n(v.stack - cost)}，准备继续争取后街价值。`;
       if (v.street > 0 && record.action === 'check')
         logicParts = [
-          ...(v.street < 3 || c.pendingOthers > 0 ? [`这是${hand}埋牌。`] : []),
+          ...((v.street < 3 || c.pendingOthers > 0) && !checkRisks(snapshot, c).length
+            ? [`这是${hand}埋牌。`]
+            : []),
           ...checkReasoning(snapshot, c, { trap: true }),
         ];
       break;
@@ -421,12 +451,7 @@ export function explainOpponent(record, identities = []) {
         : `这是 float：${plainName}在 ${v.position} 有位置，先补 ${n(cost)}，等下一街观察对手是否停止下注，牌面 ${f.boardText} 较干燥，${subject}保留在对手过牌后下注拿池的机会。`;
       break;
     case 'pot-control':
-      logicParts = [
-        c.made.score[0] >= 3
-          ? `这是${hand}过牌：底池已经有 ${n(v.pot)}，${subject}本次没有主动下注。`
-          : `这是${hand}控池：底池已经有 ${n(v.pot)}，${subject}过牌不再加大投入，保留当前牌力的摊牌机会。`,
-        ...checkReasoning(snapshot, c),
-      ];
+      logicParts = checkReasoning(snapshot, c);
       logic = logicParts.join('');
       break;
     case 'thin-value':
@@ -553,7 +578,7 @@ export function explainOpponent(record, identities = []) {
     basisSource: recorded ? 'recorded' : 'inferred',
     title: !usePolicyReason
       ? actionLabel(snapshot)
-      : widePreflopCall
+      : widePreflopCall && !t.suitedLimp
         ? allinCall
           ? '较宽的全下跟注'
           : '用边缘牌宽跟'
@@ -561,17 +586,22 @@ export function explainOpponent(record, identities = []) {
             ['trap', 'strong-trap'].includes(t.reason) &&
             !c.pendingOthers
           ? '强牌选择过牌'
-          : record.action === 'check' && t.reason === 'pot-control' && !c.made.score[0]
-            ? '高牌选择过牌'
-            : t.reason === 'donk-lead' && previousAggressorAllIn
-              ? '主动下注'
-              : t.reason === 'value-raise' && !v.street && c.tier < 2
-                ? c.preflopRaises
-                  ? '主动加注争夺底池'
-                  : '主动开池争夺底池'
-                : t.reason === 'value-raise' && v.street && c.made.score[0] < 1
-                  ? '弱牌主动施压'
-                  : BOT_REASON_NAMES[t.reason],
+          : record.action === 'check' &&
+              t.reason === 'pot-control' &&
+              c.made.score[0] >= 3 &&
+              c.handClass !== 'board'
+            ? '强牌选择过牌'
+            : record.action === 'check' && t.reason === 'pot-control' && !c.made.score[0]
+              ? '高牌选择过牌'
+              : t.reason === 'donk-lead' && previousAggressorAllIn
+                ? '主动下注'
+                : t.reason === 'value-raise' && !v.street && c.tier < 2
+                  ? c.preflopRaises
+                    ? '主动加注争夺底池'
+                    : '主动开池争夺底池'
+                  : t.reason === 'value-raise' && v.street && c.made.score[0] < 1
+                    ? '弱牌主动施压'
+                    : BOT_REASON_NAMES[t.reason],
     detail: paragraphs.join(''),
     paragraphs,
     paragraphParts,

@@ -47,8 +47,8 @@ test('five-bet KQs fold concludes fold with price and domination risk, never enc
     r = analyzeDecision(s, options),
     text = summary(r.coaching);
   assert.equal(r.coaching.suggestedAction, '弃牌');
-  assert.match(text, /大对子和 AK.*AQ、同花高张/);
-  assert.match(text, /再加注通常.*更集中.*5-bet/);
+  assert.match(text, /Jade（范围纪律）在 MP 位5-bet 加注至 9.3K/);
+  assert.match(text, /当前面对加注至 9.3K，约 46.5 BB/);
   assert.match(text, /击中一对.*踢脚压制/);
   assert.match(text, /再补 8.3K.*弃牌可以保留.*19K/);
   assert.doesNotMatch(text, /不必.*弃牌|本身有较强|是在决定|是在回应/);
@@ -101,21 +101,20 @@ test('range notes preserve caller families while keeping an actual fold focused 
   const s = suitedBroadwayFiveBetFold();
   s.history = [s.history[0]];
   const range = (s) => handMatchups(s, decisionContext(s)).rangeNotes.join('');
-  assert.match(range(s), /前位.*更多玩家.*较紧.*开池尺度.*翻后潜力/);
+  assert.match(range(s), /Jade（范围纪律）在 MP 位2-bet 开池至 600/);
   s.players[1].position = 'BTN';
-  assert.match(range(s), /后位.*较少.*范围.*同花牌/);
+  assert.match(range(s), /Jade（范围纪律）在 BTN 位2-bet 开池至 600/);
   s.history.push({ id: 2, street: 0, action: 'call', amount: 600 });
   const r = analyzeDecision(s, options),
     text = summary(r.coaching);
-  assert.match(text, /Theo.*小中对子、同花高张、同花连接牌.*藏着强牌/);
-  assert.match(text, /多人继续.*不能只按最初开池者的范围判断/);
+  assert.match(text, /Theo.*已跟注这笔加注.*小对子、同花牌或连接牌.*藏着强牌/);
   assert.doesNotMatch(text, /你若再加注|你若只跟注/);
-  assert.equal(text.match(/已经跟注这笔加注/g).length, 1);
+  assert.equal(text.match(/已跟注这笔加注/g).length, 1);
   // An actual call still needs the opener/caller distinction. Shortening a
   // fold must not remove the public range explanation from a live defense.
   assert.match(
     range({ ...s, action: 'call' }),
-    /同时考虑加注者和跟注者的继续范围.*多人竞争.*小中对子.*同花高张、同花连接牌/,
+    /小对子、同花牌或连接牌.*同时考虑加注者和这些跟入者的继续范围/,
   );
   for (const spot of [turnBluffReview(), pocketNinesCheckedBoard(), suitedBroadwayFiveBetFold()]) {
     const c = decisionContext(spot),

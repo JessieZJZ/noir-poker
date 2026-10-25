@@ -8,7 +8,7 @@ import { preparePublicRanges, publicComboWeight } from '../engine/public-ranges.
 import { publicHandData } from '../engine/public-equity.js';
 import { cardText, spotFacts } from './spot-facts.js';
 import { drawLabel } from './narrative.js';
-import { actorAtPosition } from '../engine/player-identity.js';
+import { actorAtPosition, actorIdentity } from '../engine/player-identity.js';
 import { historyActionLabel } from '../engine/action-labels.js';
 import { strengthParts, boardParts } from './presentation.js';
 import { preflopRaiseTarget } from './preflop.js';
@@ -76,25 +76,9 @@ export function preflopRangeNotes(s) {
     name = (id) => actorAtPosition(s, id),
     subject = s.reviewSubject || '你',
     notes = [];
-  if (last) {
-    const position = s.players?.find((p) => p.id === last.id)?.position,
-      early = ['UTG', 'UTG+1', 'MP', 'LJ'].includes(position),
-      late = ['HJ', 'CO', 'BTN'].includes(position);
-    if (raises.length > 1)
-      notes.push(
-        '再加注通常比普通开池更集中于大对子和 AK，AQ、同花高张也可能这样打。' +
-          `${name(last.id)}${historyActionLabel(s.history, s.history.indexOf(last))}。`,
-      );
-    else if (last.amount > 8 * bigBlindOf(s))
-      notes.push(
-        '这次开池尺度明显大于普通开池，不能只根据位置套用常规范围，需要结合尺度和公开行动判断。',
-        `${name(last.id)}${historyActionLabel(s.history, s.history.indexOf(last))}。`,
-      );
-    else
-      notes.push(
-        `${early ? '前位开池需要越过更多玩家，通常应先按较紧的范围防守，再结合开池尺度和自己的翻后潜力决定是否继续。' : late ? '后位开池需要越过的玩家较少，范围可能包含更多小对子、同花牌和高张。' : '面对开池，需要结合尺度、位置和翻后潜力判断。'}${name(last.id)}开池到 ${number(last.amount)}，可能拿着对子、强 A 或同花高张。`,
-      );
-  } else if (
+  if (last)
+    notes.push(`${name(last.id)}${historyActionLabel(s.history, s.history.indexOf(last))}。`);
+  else if (
     s.legal.canCheck &&
     !(s.pending || []).some(
       (id) =>
@@ -106,10 +90,6 @@ export function preflopRangeNotes(s) {
     notes.push(
       `本轮已轮到${subject}最后回应，可以免费过牌看翻牌。` +
         (s.legal.canRaise ? '也可结合底牌和对手范围比较主动加注。' : ''),
-    );
-  else
-    notes.push(
-      '前面还没有对手加注，后面的玩家仍可能入池或再加注，需要结合位置、底牌和价格决定是否主动争夺底池。',
     );
   const live = new Set(s.players?.filter((p) => !p.folded && p.id !== 0).map((p) => p.id)),
     firstRaise = actions.findIndex((a) => a.action === 'raise'),
@@ -124,39 +104,48 @@ export function preflopRangeNotes(s) {
           .slice(firstRaise + 1)
           .some((later) => later.id === a.id && later.action === 'call'),
     ),
-    callers = [
-      ...new Set(
-        actions
-          .filter(
-            (a, i) =>
-              last &&
-              a.id !== 0 &&
-              live.has(a.id) &&
-              a.action === 'call' &&
-              i > actions.indexOf(last),
-          )
-          .map((a) => name(a.id)),
-      ),
-    ];
+    callers = actions.filter(
+      (a, i) =>
+        last && a.id !== 0 && live.has(a.id) && a.action === 'call' && i > actions.indexOf(last),
+    );
+  const groupedCalls = (records, beforeRaise) => {
+    const groups = new Map();
+    for (const action of new Map(records.map((a) => [a.id, a])).values()) {
+      const actor = actorIdentity(s, action.id);
+      const label = actor.position ? `${actor.name}在 ${actor.position} 位` : actor.name;
+      if (!groups.has(action.amount)) groups.set(action.amount, []);
+      groups.get(action.amount).push(label);
+    }
+    return [...groups].map(([amount, names]) =>
+      beforeRaise
+        ? names.length > 1
+          ? `${names.join('、')}都先跟注 ${number(amount)} 入池。`
+          : `${names[0]}先跟注 ${number(amount)} 入池。`
+        : names.length > 1
+          ? `${names.join('、')}都已跟注这笔加注，各补 ${number(amount)}。`
+          : `${names[0]}已跟注这笔加注，补 ${number(amount)}。`,
+    );
+  };
   const callAllIn = s.stack > 0 && s.legal.callAmount >= s.stack,
     commitment = callAllIn || s.players?.some((p) => p.id !== 0 && !p.folded && p.allin);
-  if (last && limpers.length && s.action !== 'fold')
+  if (last && (limpers.length || callers.length))
     notes.push(
-      `${s.legal.canRaise ? subject + '若再加注，不能只考虑开池者会不会弃牌，' : '当前底池里还有先跟注入池的玩家，'}${limpers.map((a) => name(a.id) + '先跟注 ' + number(a.amount) + ' 入池').join('、')}，没有弃牌，这类平跟可能是小对子或同花牌，也可能藏着强牌。${commitment ? '已有全下或跟注即全下的承诺，继续需要核对可争夺底池与当前摊牌机会。' : ''}`,
-    );
-  if (last && callers.length)
-    notes.push(
-      s.action === 'fold'
-        ? `${callers.join('、')}已经跟注这笔加注，可能有小中对子、同花高张、同花连接牌，也可能藏着强牌。` +
-            '多人继续使后续竞争更复杂，不能只按最初开池者的范围判断。'
-        : commitment
-          ? `${callers.join('、')}已经跟注这笔加注，范围可能包含对子和强高张，也可能藏着顶级牌。` +
-            (callAllIn
+      [
+        ...groupedCalls(limpers, true),
+        ...groupedCalls(callers, false),
+        '这类平跟可能是小对子、同花牌或连接牌，也可能藏着强牌。',
+        s.action === 'fold'
+          ? ''
+          : commitment
+            ? callAllIn
               ? '本人跟注后就已全下，不能把后街取值或追中后的额外收益当成继续依据。'
-              : '已全下者不能再被逼弃牌，其他仍有筹码玩家的后续投入需按边池另行判断。')
-          : `${s.legal.canRaise ? subject + '若再加注，需要同时考虑加注者和跟注者的继续范围，' + (subject === '你' ? '你' : s.reviewPronoun || '他') + '若只跟注，就要准备面对多人竞争。' : '跟注需要考虑加注者与跟注者的范围，准备面对多人竞争。'}${callers.join('、')}跟注了这笔加注，可能用小中对子追暗三条，或用同花高张、同花连接牌争取翻后成大牌，平跟也可能藏着强牌。`,
+              : '已全下者不能再被逼弃牌，其他仍有筹码玩家的后续投入需按边池另行判断。'
+            : s.legal.canRaise
+              ? `${subject}若再加注，需要同时考虑加注者和这些跟入者的继续范围。`
+              : '',
+      ].join(''),
     );
-  if (s.hole.some((card) => card.rank === 14))
+  if (!s.reviewSubject && s.hole.some((card) => card.rank === 14))
     notes.push(
       `${s.players?.find((p) => p.id === 0)?.name || '你'}手中的 A 会减少对手拿到 AA、AK、AQ、AJ 的组合，但这些强牌仍然可能出现。`,
     );

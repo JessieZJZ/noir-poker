@@ -62,7 +62,7 @@ function waitingNote(s, c) {
   if (!c.pendingOthers) return '';
   return waitingRaise(s) === false
     ? `你身后还有 ${c.pendingOthers} 人等待回应，但他们当前没有再次加注权，只能补跟或弃牌。`
-    : `你身后还有 ${c.pendingOthers} 人等待行动，他们若仍有加注权并再次加注，你需要重新决定是否继续。`;
+    : `你身后还有 ${c.pendingOthers} 人等待行动，他们如果加注或者再加注，你需要重新决定是否继续。`;
 }
 
 function callingPlan(s, c, closing) {
@@ -70,7 +70,7 @@ function callingPlan(s, c, closing) {
   if (c.pendingOthers)
     return waitingRaise(s) === false
       ? '本轮还有玩家可以补跟或弃牌，但当前没有重新加注权，不会因他们再次加注而要求你补筹码。'
-      : '本轮还没封口，后面的玩家若仍有加注权并再次加注，你需要重新决定要不要跟。';
+      : '本轮还没封口，后面的玩家如果加注或者再加注，你需要重新决定要不要跟。';
   return '这一轮已经轮到你最后回应，继续后，下一街还要面对新的牌面与下注。';
 }
 
