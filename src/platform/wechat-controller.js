@@ -1030,16 +1030,25 @@ export function createWechatController({
         results = [];
       reviewSource = input;
       opponentReviews = new Map();
-      onProgress({
-        loading: true,
-        hand: input.hand,
-        steps: [],
-        profit: format(input.outcome.profit),
-      });
+      // As on Web, report each finished decision: "正在分析决策 done / total…".
+      const progress = () =>
+        onProgress({
+          loading: true,
+          hand: input.hand,
+          steps: [],
+          profit: format(input.outcome.profit),
+          done: results.length,
+          total: input.decisions.length,
+          progressText: input.decisions.length
+            ? `正在分析决策 ${results.length} / ${input.decisions.length}…`
+            : '正在准备这手的决策快照…',
+        });
+      progress();
       function step() {
         if (disposed || !active || ticket !== reviewEpoch) return;
         if (results.length < input.decisions.length) {
           results.push(analyzeDecision(input.decisions[results.length]));
+          progress();
           reviewTimer = schedule(step, 0);
           return;
         }
@@ -1121,9 +1130,10 @@ export function createWechatController({
           reviewWorker = worker;
           worker.onMessage((message) => {
             if (!current()) return;
-            if (message.type === 'step' && message.index === results.length && message.result)
+            if (message.type === 'step' && message.index === results.length && message.result) {
               results.push(message.result);
-            else if (message.type === 'complete' && results.length === input.decisions.length) {
+              progress();
+            } else if (message.type === 'complete' && results.length === input.decisions.length) {
               reviewWorker = null;
               worker.terminate();
               publishReport();

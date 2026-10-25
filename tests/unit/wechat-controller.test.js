@@ -194,6 +194,29 @@ for (const transition of ['cancelReview', 'nextHand', 'retry', 'reset', 'hide', 
     assert.equal(updates.length, 1);
   });
 }
+test('WeChat review reports each finished decision like Web: 正在分析决策 done / total…', (t) => {
+  const worker = fakeReviewWorker();
+  const { controller } = setup(t, {}, { createReviewWorker: () => worker });
+  reachHero(controller);
+  controller.action('fold');
+  finish(controller.getGame(), 'fold');
+  const updates = [];
+  controller.review((value) => updates.push(value));
+  const total = worker.payload.decisions.length;
+  assert.ok(total >= 1);
+  assert.equal(updates[0].progressText, `正在分析决策 0 / ${total}…`);
+  for (let index = 0; index < total; index++) {
+    worker.receive({
+      type: 'step',
+      index,
+      result: analyzeDecision(worker.payload.decisions[index]),
+    });
+    assert.equal(updates.at(-1).loading, true);
+    assert.equal(updates.at(-1).progressText, `正在分析决策 ${index + 1} / ${total}…`);
+  }
+  worker.receive({ type: 'complete' });
+  assert.equal(updates.at(-1).loading, false);
+});
 test('WeChat worker completion equals full fallback and a killed worker retains full-quality analysis', (t) => {
   const worker = fakeReviewWorker();
   const { controller, timers } = setup(t, {}, { createReviewWorker: () => worker });

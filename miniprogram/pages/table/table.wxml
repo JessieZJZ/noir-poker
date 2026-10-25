@@ -907,7 +907,9 @@
           ><text class="review-context">{{reviewData.resultContext}}</text></view
         ><text class="review-profit">{{reviewData.profit}} 筹码</text></view
       >
-      <text wx:if="{{reviewData.loading}}" class="review-progress">正在分析当时的决策…</text>
+      <text wx:if="{{reviewData.loading}}" class="review-progress"
+        >{{reviewData.progressText}}</text
+      >
       <view class="review-tabs"
         ><button
           hover-class="none"
