@@ -11,7 +11,7 @@ test('balanced and positional first-in ranges raise selected hands rather than w
   for (const id of ['balanced', 'iris']) {
     const decision = decide(id, late);
     assert.equal(decision.action, 'raise');
-    assert.equal(decision.amount, 125);
+    assert.equal(decision.amount, 225);
     assert.equal(
       decision.trace.range,
       decision.trace.openingRange * decision.trace.style.controls.unopenedRange,
@@ -42,7 +42,7 @@ test('late isolation needs a playable admitted hand, affordable depth and genuin
   });
   const d = decide('iris', view);
   assert.equal(d.action, 'raise');
-  assert.equal(d.amount, 225);
+  assert.equal(d.amount, 300);
   assert.ok(d.trace.checks.some((r) => r.code === 'position-isolation'));
   for (const change of [
     { ...view, position: 'UTG' },

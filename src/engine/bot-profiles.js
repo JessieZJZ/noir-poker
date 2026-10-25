@@ -22,6 +22,7 @@ import { deceptiveAction, isDonkLead } from './bot-deception.js';
 import { publicResponseRisk } from './public-action-context.js';
 import { preflopJamPlan } from './bot-preflop-commitment.js';
 import { postflopStyleLine, balancedPriceDefense } from './bot-style-lines.js';
+import { botOpeningSize, botReraiseSize } from './bot-opening-size.js';
 
 // Evidence-informed fictional training styles; numeric controls are authored.
 export const BOT_PROFILES = [
@@ -152,7 +153,7 @@ export const BOT_PROFILES = [
     policy: {
       entry: 1,
       reraise: 0.65,
-      openingBB: 2,
+      openingBB: 3.5,
       potControl: 0.9,
       thinValue: 0.8,
       smallCbet: 0.95,
@@ -527,20 +528,25 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
     legal.toCall <= bigBlind &&
     lowCommitment &&
     !allInPressure;
-  // Small single opens are a different price from 3-bets and shoves. This
-  // bounded calling branch does not compare an all-players showdown estimate
-  // with today's price before anyone behind has actually entered the pot.
+  // Single cash-table opens are priced separately from 3-bets and shoves.
+  // Above 5BB only the stronger playable group gets this bounded exemption
+  // from treating every unfurled seat as already committed to a showdown.
+  const openPriceBB = view.currentBet / bigBlind;
+  const largeOpen = openPriceBB > 5;
+  const strongOpenDefense =
+    (pair && high >= 9) || (high === 14 && low >= 12) || (suited && high === 13 && low === 12);
   const affordableOpen =
     view.street === 0 &&
     Boolean(lastRaiser) &&
     raises.length === 1 &&
     raises[0].id !== view.id &&
     legal.toCall > 0 &&
-    view.currentBet <= 4 * bigBlind &&
-    legal.callAmount <= 4 * bigBlind &&
+    view.currentBet <= 8 * bigBlind &&
+    legal.callAmount <= 8 * bigBlind &&
+    (!largeOpen || strongOpenDefense) &&
     lowCommitment &&
     !allInPressure &&
-    effectiveBehind >= Math.max(20 * bigBlind, legal.callAmount * 15);
+    effectiveBehind >= Math.max(20 * bigBlind, legal.callAmount * (largeOpen ? 10 : 15));
   // Normal/hard opponents distinguish a cheap 3-bet from a large re-raise.
   // A random showdown against every unfurled seat undervalues a priced call:
   // players still to act have not all committed to this pot. This range gate
@@ -1024,7 +1030,8 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
   if (firstIn || isolation) {
     const threshold = firstIn ? style.firstInRaise : style.isolation;
     if (roll(firstIn ? 'first-in' : 'position-isolation', threshold) < threshold) {
-      const desired = ((firstIn ? 2.5 : 3.5) + limpers) * bigBlind;
+      const openingPlan = botOpeningSize(view, style, limpers, random());
+      const desired = openingPlan.desired;
       const amount = legalRaiseTo(desired, legal);
       if (
         amount < legal.maxRaiseTo &&
@@ -1037,6 +1044,7 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
           minimum: legal.minRaiseTo,
           maximum: legal.maxRaiseTo,
           opening: true,
+          openingPlan,
           executed: true,
         };
         if (!value) pureBluff = true;
@@ -1173,7 +1181,8 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
     roll('attack', attackRate) < attackRate
   ) {
     const interval = style.streetSizing?.[view.street - 1] || profile.sizing;
-    let fraction = interval[0] + random() * (interval[1] - interval[0]);
+    const sizingDraw = random();
+    let fraction = interval[0] + sizingDraw * (interval[1] - interval[0]);
     if (view.street === 1 && ownLastRaise && style.flopCbet != null) fraction = style.flopCbet;
     if (view.street === 2 && semiBluff && style.turnSemiBluff != null)
       fraction = style.turnSemiBluff;
@@ -1194,24 +1203,24 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
       },
       fraction,
     );
-    if (view.street === 0 && !raises.length)
-      desired =
-        (style.openingBB == null ? 2.5 + (attack > 0.8 ? 0.5 : 0) : style.openingBB) * bigBlind +
-        view.history.filter((a) => a.street === 0 && a.action === 'call').length * bigBlind;
-    if (squeezeBluff) desired = Math.max(desired, view.currentBet * (view.inPosition ? 4 : 5));
-    if (view.street === 0 && value && premium && raises.length > 0)
-      desired = Math.max(
-        desired,
-        view.currentBet * (raises.length === 1 ? (view.inPosition ? 3 : 3.5) : 2.5),
-      );
+    const openingPlan =
+      view.street === 0 && !raises.length ? botOpeningSize(view, style, limpers, sizingDraw) : null;
+    if (openingPlan) desired = openingPlan.desired;
+    const reraisePlan = botReraiseSize(view, sizingDraw);
+    if (reraisePlan) desired = reraisePlan.desired;
     const amount = legalRaiseTo(desired, legal);
     sizing = {
-      fraction,
+      fraction:
+        view.street === 0
+          ? (amount - view.currentBet) / Math.max(1, view.pot + legal.callAmount)
+          : fraction,
       desired,
       actual: amount,
       minimum: legal.minRaiseTo,
       maximum: legal.maxRaiseTo,
       opening: view.street === 0 && !raises.length,
+      ...(openingPlan ? { openingPlan } : {}),
+      ...(reraisePlan ? { reraisePlan } : {}),
       executed: false,
     };
     const bluffRiskAllowed =

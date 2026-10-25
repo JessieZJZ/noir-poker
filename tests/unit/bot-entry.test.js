@@ -125,9 +125,9 @@ test('small-open continuation keeps style and position differences and rejects g
   });
   assert.ok(totals[0] < totals[1] && totals[1] < totals[2], `ST / balanced / Peter: ${totals}`);
 });
-test('the small-open branch stops at size, effective-stack, all-in and re-raise boundaries', () => {
+test('the ordinary-open branch stops above five BB and at stack, all-in and re-raise boundaries', () => {
   const v = smallOpen();
-  const atLimit = { ...v, currentBet: 200, legal: { ...v.legal, toCall: 200, callAmount: 200 } };
+  const atLimit = { ...v, currentBet: 250, legal: { ...v.legal, toCall: 250, callAmount: 250 } };
   assert.equal(decision(atLimit).trace.affordableOpen, true);
   const shortRaiser = {
     ...v,
@@ -141,7 +141,7 @@ test('the small-open branch stops at size, effective-stack, all-in and re-raise 
   const unsafe = [
     { ...v, opponents: undefined },
     { ...v, opponents: v.opponents.filter((p) => p.id !== 0) },
-    { ...atLimit, currentBet: 201, legal: { ...v.legal, toCall: 201, callAmount: 201 } },
+    { ...atLimit, currentBet: 251, legal: { ...v.legal, toCall: 251, callAmount: 251 } },
     { ...v, stack: 1000 },
     shortRaiser,
     { ...v, opponents: v.opponents.map((p) => (p.id === 0 ? { ...p, allin: true, stack: 0 } : p)) },
