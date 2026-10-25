@@ -2072,8 +2072,18 @@ test('training style assignments persist and opponent review filters include ass
     await expect(choice.locator('strong')).toHaveText(name);
     await choice.click();
     await expect(page.locator('.profile-detail-heading h3')).toHaveText(name);
-    if (await page.locator('[data-close-profile-detail]').isVisible())
-      await page.locator('[data-close-profile-detail]').click();
+    // Phones cover the selector with the detail; its close control can appear
+    // a moment after the heading on a slow runner, so wait briefly for it.
+    const close = page.locator('[data-close-profile-detail]');
+    if (
+      await close.waitFor({ state: 'visible', timeout: 1500 }).then(
+        () => true,
+        () => false,
+      )
+    ) {
+      await close.click();
+      await expect(close).toBeHidden();
+    }
   }
   await closeSettings(page);
   await page.locator('#next-button').click();
