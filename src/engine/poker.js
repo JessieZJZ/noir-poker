@@ -56,15 +56,28 @@ export function compare(a, b) {
   }
   return 0;
 }
+// Rank runs of the sorted five cards replace Set/filter grouping: review
+// rollouts evaluate millions of five-card subsets. Scores are unchanged.
 function evaluateFive(cards) {
-  const ranks = cards.map((c) => c.rank).sort((a, b) => b - a),
-    unique = [...new Set(ranks)];
-  const flush = cards.every((c) => c.suit === cards[0].suit);
-  let straight = unique.length === 5 && unique[0] - unique[4] === 4 ? unique[0] : 0;
-  if (unique.join(',') === '14,5,4,3,2') straight = 5;
-  const groups = [...new Set(ranks)]
-    .map((r) => [r, ranks.filter((v) => v === r).length])
-    .sort((a, b) => b[1] - a[1] || b[0] - a[0]);
+  const ranks = [cards[0].rank, cards[1].rank, cards[2].rank, cards[3].rank, cards[4].rank].sort(
+    (a, b) => b - a,
+  );
+  const groups = [];
+  for (let i = 0; i < 5;) {
+    let j = i + 1;
+    while (j < 5 && ranks[j] === ranks[i]) j++;
+    groups.push([ranks[i], j - i]);
+    i = j;
+  }
+  const suit = cards[0].suit,
+    flush =
+      cards[1].suit === suit &&
+      cards[2].suit === suit &&
+      cards[3].suit === suit &&
+      cards[4].suit === suit;
+  let straight = groups.length === 5 && ranks[0] - ranks[4] === 4 ? ranks[0] : 0;
+  if (groups.length === 5 && ranks[0] === 14 && ranks[1] === 5) straight = 5;
+  groups.sort((a, b) => b[1] - a[1] || b[0] - a[0]);
   if (flush && straight) return [8, straight];
   if (groups[0][1] === 4) return [7, groups[0][0], groups[1][0]];
   if (groups[0][1] === 3 && groups[1][1] === 2) return [6, groups[0][0], groups[1][0]];

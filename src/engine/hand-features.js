@@ -47,6 +47,10 @@ export function boardTexture(board) {
   return textures.get(key);
 }
 
+// The ten five-rank straight windows, ace-low (1) first.
+const STRAIGHT_RUNS = Array.from({ length: 10 }, (_, i) =>
+  Array.from({ length: 5 }, (_, j) => i + j + 1),
+);
 export function handFeatures(hole, board, score) {
   const known = [...hole, ...board],
     ranks = new Set(known.map((c) => c.rank));
@@ -64,22 +68,19 @@ export function handFeatures(hole, board, score) {
     board.length >= 3 &&
     board.length < 5 &&
     score[0] < 4 &&
-    Array.from({ length: 10 }, (_, i) => Array.from({ length: 5 }, (_, j) => i + j + 1)).reduce(
-      (found, run) => {
-        const draw =
-          run.filter((r) => ranks.has(r)).length === 4 &&
-          hole.some(
-            (c) =>
-              (run.includes(c.rank) || (c.rank === 14 && run.includes(1))) &&
-              !board.some((b) => b.rank === c.rank),
-          );
-        if (draw)
-          for (const rank of run.filter((r) => !ranks.has(r)))
-            straightCompletions.add(rank === 1 ? 14 : rank);
-        return found || draw;
-      },
-      false,
-    );
+    STRAIGHT_RUNS.reduce((found, run) => {
+      const draw =
+        run.filter((r) => ranks.has(r)).length === 4 &&
+        hole.some(
+          (c) =>
+            (run.includes(c.rank) || (c.rank === 14 && run.includes(1))) &&
+            !board.some((b) => b.rank === c.rank),
+        );
+      if (draw)
+        for (const rank of run.filter((r) => !ranks.has(r)))
+          straightCompletions.add(rank === 1 ? 14 : rank);
+      return found || draw;
+    }, false);
   // A completion that only gives the board a higher straight is not our draw:
   // 7-2 on 9-T-J-Q cannot treat an 8 as an own straight out.
   const straightHigh = (cards, extra) => {
@@ -87,9 +88,7 @@ export function handFeatures(hole, board, score) {
     if (values.has(14)) values.add(1);
     return Math.max(
       0,
-      ...Array.from({ length: 10 }, (_, i) =>
-        Array.from({ length: 5 }, (_, j) => i + j + 1).every((r) => values.has(r)) ? i + 5 : 0,
-      ),
+      ...STRAIGHT_RUNS.map((run, i) => (run.every((r) => values.has(r)) ? i + 5 : 0)),
     );
   };
   for (const rank of straightCompletions)

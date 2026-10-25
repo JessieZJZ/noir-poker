@@ -147,11 +147,18 @@ function priorPairSampler(pool, descriptor) {
 }
 
 // The shared cache stores only pure scores/features of a board and candidate pair.
+// Same keys as map/join, built without intermediate arrays: rollouts look up
+// hundreds of thousands of pairs.
+const cardsKey = (cards) => {
+  let key = cards.length ? cards[0].key : '';
+  for (let i = 1; i < cards.length; i++) key += '|' + cards[i].key;
+  return key;
+};
 export function publicHandData(hole, board, { evaluate, features, cache = new Map() }) {
-  const boardKey = board.map((c) => c.key).join('|');
+  const boardKey = cardsKey(board);
   let pairs = cache.get(boardKey);
   if (!pairs) cache.set(boardKey, (pairs = new Map()));
-  const pairKey = hole.map((c) => c.key).join('|');
+  const pairKey = cardsKey(hole);
   let data = pairs.get(pairKey);
   if (!data) {
     data = { score: evaluate([...hole, ...board]).score };

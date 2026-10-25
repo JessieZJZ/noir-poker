@@ -3,7 +3,11 @@ import assert from 'node:assert/strict';
 import { analyzeDecision } from '../../src/review/analysis.js';
 import { decisionContext } from '../../src/review/context.js';
 import { handMatchups } from '../../src/review/matchups.js';
-import { reviewCardCache, clearReviewCardCache } from '../../src/review/card-cache.js';
+import {
+  SnapshotBoardCache,
+  reviewCardCache,
+  clearReviewCardCache,
+} from '../../src/review/card-cache.js';
 import { heroValueGame } from '../fixtures/review-spots.js';
 import { cards } from '../fixtures/deceptive-decisions.js';
 
@@ -41,4 +45,29 @@ test('reviewing many boards keeps at most four evaluation boards and never trust
     assert.ok(result.summary);
     assert.ok(reviewCardCache().size <= 4);
   }
+});
+
+test('rollout deals share only the visible boards of their snapshot', () => {
+  const visible = new Map(),
+    board = cards('Qs Jd 9c 8h'),
+    keys = (text) =>
+      cards(text)
+        .map((c) => c.key)
+        .join('|');
+  const first = new SnapshotBoardCache(visible, board);
+  first.set(keys('Qs Jd 9c'), 'flop facts');
+  first.set(keys('Qs Jd 9c 8h'), 'turn facts');
+  first.set(keys('Qs Jd 9c 8h 2s'), 'sampled river');
+  first.set('', 'board only');
+  assert.equal(first.size, 2);
+  assert.deepEqual([...visible.keys()], [keys('Qs Jd 9c'), keys('Qs Jd 9c 8h')]);
+  const next = new SnapshotBoardCache(visible, board);
+  assert.equal(next.get(keys('Qs Jd 9c')), 'flop facts');
+  assert.equal(next.get(keys('Qs Jd 9c 8h')), 'turn facts');
+  assert.equal(next.get(keys('Qs Jd 9c 8h 2s')), undefined);
+  assert.equal(next.get(''), undefined);
+  // A preflop snapshot has no visible board, so every deal keeps its own facts.
+  const preflop = new SnapshotBoardCache(new Map(), []);
+  preflop.set(keys('Qs Jd 9c'), 'sampled flop');
+  assert.equal(new SnapshotBoardCache(preflop.fixed, []).get(keys('Qs Jd 9c')), undefined);
 });

@@ -1,4 +1,4 @@
-import { reviewCardCache } from './card-cache.js';
+import { SnapshotBoardCache, reviewCardCache } from './card-cache.js';
 import { bigBlindOf } from '../engine/stakes.js';
 import {
   newGame,
@@ -194,6 +194,7 @@ export function compareCandidateActions(s, alternatives = [], { trials = 40 } = 
               { evaluate, features: botBoardFeatures, compare, cache: samplingCache },
             )
           : null;
+    const visibleBoards = new Map();
     const values = rows.map(() => []),
       immediate = rows.map(() => 0),
       won = rows.map(() => 0);
@@ -201,9 +202,9 @@ export function compareCandidateActions(s, alternatives = [], { trials = 40 } = 
       const deal = sampledDeal(s, rng, weighted, ranges, samplingCache, firstPairSampler),
         policySeed = Math.floor(rng() * 4294967295);
       // Candidates share a hypothetical deal. Reuse only pure board/pair
-      // evaluation; never ranges, decisions or random state. Drop it before
-      // the next sampled deal rather than retaining any live-hand state.
-      const allInCache = new Map();
+      // evaluation; never ranges, decisions or random state. Drop sampled
+      // boards before the next deal; only the visible board's facts persist.
+      const allInCache = new SnapshotBoardCache(visibleBoards, s.board);
       for (let c = 0; c < candidates.length; c++) {
         const g = resume(s, deal),
           policy = seedRandom(policySeed);
