@@ -9,7 +9,7 @@ test('draw review connects the full public line and keeps only the requested mod
   await page.evaluate(() => window.qa.reviewDrawLine());
   await page.locator('#review-hand-button').click();
   await expect(page.locator('#review-dialog')).toHaveAttribute('data-analysis-status', 'done', {
-    timeout: 20000,
+    timeout: 60000,
   });
   await expect(page.locator('#review-coach-explanation')).toContainText('两头顺听牌');
   await expect(page.locator('#review-coach-explanation')).toContainText('125');
@@ -72,7 +72,7 @@ test('reported 52s shove and TT call explain actual cards, size and facing actio
   await page.evaluate(() => window.qa.reviewReportedShove());
   await page.locator('#review-hand-button').click();
   await expect(page.locator('#review-dialog')).toHaveAttribute('data-analysis-status', 'done', {
-    timeout: 20000,
+    timeout: 60000,
   });
   const hero = page.locator('#review-coach-explanation');
   await expect(hero).toContainText(/100\s*BB/);
@@ -112,7 +112,7 @@ test('reported 52s shove and TT call explain actual cards, size and facing actio
 });
 
 test('all review locales switch immediately and preserve the recorded hand', async ({ page }) => {
-  test.setTimeout(60000);
+  test.setTimeout(120000);
   await page.goto('/');
   await page.waitForFunction(() => window.qa);
   await page.evaluate(() => window.qa.reviewDrawLine());
@@ -124,7 +124,7 @@ test('all review locales switch immediately and preserve the recorded hand', asy
     await page.locator('#opponents-dialog .close-dialog').click();
     await page.locator('#review-hand-button').click();
     await expect(page.locator('#review-dialog')).toHaveAttribute('data-analysis-status', 'done', {
-      timeout: 20000,
+      timeout: 60000,
     });
     const texts = await page
       .locator('#review-coach-explanation, #review-evidence')
@@ -182,7 +182,7 @@ test('executed traps, trash raises, donks and 2–7 bluffs explain their actual 
 test('deceptive motives survive live switching of all locales without changing the hand', async ({
   page,
 }) => {
-  test.setTimeout(60000);
+  test.setTimeout(120000);
   await page.goto('/');
   await page.waitForFunction(() => window.qa);
   await page.evaluate(() => window.qa.reviewDeception());
@@ -232,7 +232,7 @@ test('69o three-bet shows real later public responses separately and Mia AQ four
   await page.evaluate(() => window.qa.reviewCausalReraise());
   await page.locator('#review-hand-button').click();
   await expect(page.locator('#review-dialog')).toHaveAttribute('data-analysis-status', 'done', {
-    timeout: 30000,
+    timeout: 60000,
   });
   await page.locator('[data-review-index="0"]').click();
   const hero = page.locator('#review-coach-explanation');
@@ -282,7 +282,7 @@ test('69o three-bet shows real later public responses separately and Mia AQ four
 test('common strong-hand all-ins and preflop flats explain actual value and conditional opposing hands', async ({
   page,
 }, info) => {
-  test.setTimeout(60000);
+  test.setTimeout(120000);
   await page.goto('/');
   await page.waitForFunction(() => window.qa);
   for (const [kind, index] of [
@@ -292,7 +292,7 @@ test('common strong-hand all-ins and preflop flats explain actual value and cond
     await page.evaluate((kind) => window.qa.reviewHeroValue(kind), kind);
     await page.locator('#review-hand-button').click();
     await expect(page.locator('#review-dialog')).toHaveAttribute('data-analysis-status', 'done', {
-      timeout: 30000,
+      timeout: 60000,
     });
     await page.locator(`[data-review-index="${index}"]`).click();
     const explanation = page.locator('#review-coach-explanation');

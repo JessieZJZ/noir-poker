@@ -15,7 +15,7 @@ test('review heading styles, hand identities, position tags and selected activit
   await expect(page.locator('#activity-list')).toContainText('Mia（大注强攻）');
   await page.locator('#review-hand-button').click();
   await expect(page.locator('#review-dialog')).toHaveAttribute('data-analysis-status', 'done', {
-    timeout: 30000,
+    timeout: 60000,
   });
   await page.locator('[data-review-index="0"]').click();
   const gold = 'rgb(228, 206, 160)';

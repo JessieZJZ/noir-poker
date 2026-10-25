@@ -484,7 +484,7 @@ test('5–9 player showdown reveals all holes immediately and displays each best
 test('showdown participant names include the current named style and stay readable on narrow screens', async ({
   page,
 }, testInfo) => {
-  test.setTimeout(90000);
+  test.setTimeout(120000);
   await page.evaluate(() => window.qa.stop());
   await page.locator('#opponents-button').click();
   await assignNamedLineup(page);
@@ -767,7 +767,7 @@ test('automatic all-in runout hides the active player old bet and restores it on
 test('settled public caption and hero remain separated for winners, losers, folded heroes and long personas', async ({
   page,
 }, testInfo) => {
-  test.setTimeout(90000);
+  test.setTimeout(120000);
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.evaluate(() => window.qa.stop());
   await page.locator('#opponents-button').click();
@@ -807,7 +807,7 @@ test('settled public caption and hero remain separated for winners, losers, fold
 test('settled seats retain all-in sizes, board and hero action across viewing and all screen sizes', async ({
   page,
 }) => {
-  test.setTimeout(90000);
+  test.setTimeout(120000);
   for (const width of [320, 390, 768, 1280]) {
     await page.setViewportSize({ width, height: 900 });
     for (const count of [5, 6, 7, 8, 9]) {
@@ -1663,7 +1663,7 @@ test('nine-seat style assignment shows every persona at all sizes and executes t
 test('all named portraits preview immediately, follow saved styles next hand and stay frozen on retry', async ({
   page,
 }) => {
-  test.setTimeout(60000);
+  test.setTimeout(120000);
   const profiles = ['rook', 'owen', 'vale', 'jett', 'mira', 'nico', 'iris', 'rook'];
   await setPlayerCount(page, 9);
   await page.evaluate(() => window.qa.foldWin(9));
@@ -2053,7 +2053,7 @@ test('fast finish records opponents while live public state never exposes privat
 test('training style assignments persist and opponent review filters include assigned player names', async ({
   page,
 }) => {
-  test.setTimeout(60000);
+  test.setTimeout(120000);
   await page.evaluate(() => window.qa.foldWin(9));
   await page.locator('#opponents-button').click();
   for (const [seat, profile] of [

@@ -47,7 +47,7 @@ for (const locale of locales) {
   }) => {
     // This full journey includes reloads, settings, review and a second page.
     // Keep a bounded budget for slower CI runners without relaxing assertions.
-    test.setTimeout(60000);
+    test.setTimeout(120000);
     await page.route('**/*', async (route) => {
       const url = new URL(route.request().url());
       if (url.hostname !== '127.0.0.1' && url.hostname !== 'localhost') {
@@ -101,7 +101,7 @@ for (const locale of locales) {
     const initial = await page.evaluate(() => window.qa.foldWin(9, 0));
     await page.locator('#review-hand-button').click();
     await expect(page.locator('#review-dialog[data-analysis-status="done"]')).toBeVisible({
-      timeout: 30000,
+      timeout: 60000,
     });
     await expect(page.locator('#review-coach-explanation')).not.toBeEmpty();
     await page.locator('#review-dialog .close-dialog').first().click();

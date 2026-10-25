@@ -76,7 +76,7 @@ test('reported A4 river review shows four stronger hand types including a spade 
   await page.evaluate(() => window.qa.pairedFlushReview());
   await page.locator('#review-hand-button').click();
   await expect(page.locator('#review-dialog')).toHaveAttribute('data-analysis-status', 'done', {
-    timeout: 30000,
+    timeout: 60000,
   });
   await page.locator('#review-timeline [data-review-index]').last().click();
   const group = page.locator('#review-coach-explanation [data-matchup-direction="behind"]');

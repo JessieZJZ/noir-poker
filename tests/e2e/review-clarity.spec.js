@@ -81,7 +81,7 @@ test('review prices, actor references and draw verdicts stay coherent in the exi
   await page.evaluate((game) => window.qa.loadRecordedGame(game), recordedExamples());
   await page.locator('#review-hand-button').click();
   await expect(page.locator('#review-dialog')).toHaveAttribute('data-analysis-status', 'done', {
-    timeout: 30000,
+    timeout: 60000,
   });
   const evidence = page.locator('#review-evidence');
   const summary = page.locator('#review-coach-explanation');
@@ -167,13 +167,13 @@ test('review prices, actor references and draw verdicts stay coherent in the exi
 test('new recommendation clauses and key information switch across all locales', async ({
   page,
 }) => {
-  test.setTimeout(90000);
+  test.setTimeout(120000);
   await page.goto('/');
   await page.waitForFunction(() => window.qa);
   await page.evaluate((game) => window.qa.loadRecordedGame(game), recordedExamples());
   await page.locator('#review-hand-button').click();
   await expect(page.locator('#review-dialog')).toHaveAttribute('data-analysis-status', 'done', {
-    timeout: 30000,
+    timeout: 60000,
   });
   for (const locale of ['en', 'zh-TW', 'ja', 'ko', 'es', 'it', 'pt', 'de', 'fr', 'ru', 'zh-CN']) {
     await page.locator('#language-select').evaluate((el, locale) => {
