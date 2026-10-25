@@ -959,6 +959,17 @@
 .hero-identity strong {
   font-size: inherit;
 }
+/* "你", its position badge and the stack are centred flex items sharing the
+   row's one gap: equal spacing, the badge on the text's centre line, and no
+   stray whitespace pushing the row off the hole cards' centre. */
+.game-surface .hero-name .hero-identity strong {
+  display: inline-flex;
+  align-items: center;
+  gap: inherit;
+}
+.game-surface .hero-name .hero-identity strong .position-badge {
+  margin-left: 0;
+}
 .hero-action-slot {
   grid-column: 1;
   display: flex;

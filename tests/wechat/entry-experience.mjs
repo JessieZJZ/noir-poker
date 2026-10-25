@@ -200,18 +200,21 @@ try {
   const after = await inspect();
   assert.equal(after.players, 1);
   assert.ok(after.music.time > first.music.time);
-  // As on Web, the position badge sits 0.45em after "你", centred on it.
+  // As on Web, "你", the position badge and the stack are evenly spaced and
+  // the badge is centred on the name.
   const heroText = await page.$('.hero-identity .hero-name-text > text'),
-    heroBadge = await page.$('.hero-identity .position');
+    heroBadge = await page.$('.hero-identity .position'),
+    heroStackItem = await page.$('.hero-identity .stack');
   const textOffset = await heroText.offset(),
     textSize = await heroText.size(),
     badgeOffset = await heroBadge.offset(),
     badgeSize = await heroBadge.size();
-  const heroScale = textSize.width / parseFloat(await heroText.style('font-size'));
   const badgeGap = badgeOffset.left - textOffset.left - textSize.width;
+  const stackGap = (await heroStackItem.offset()).left - badgeOffset.left - badgeSize.width;
+  assert.ok(badgeGap > 2, `Hero badge needs space after the name, got ${badgeGap}`);
   assert.ok(
-    Math.abs(badgeGap / heroScale - 0.45 * parseFloat(await heroText.style('font-size'))) <= 1.5,
-    `Hero badge gap must be 0.45em, got ${badgeGap}`,
+    Math.abs(badgeGap - stackGap) <= 1,
+    `Hero row gaps must be equal, got ${badgeGap} and ${stackGap}`,
   );
   assert.ok(
     Math.abs(badgeOffset.top + badgeSize.height / 2 - (textOffset.top + textSize.height / 2)) <= 1,
