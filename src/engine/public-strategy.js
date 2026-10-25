@@ -688,7 +688,20 @@ export function assessPublicStrategy(
   const data = (hole, board) => {
     // Scores/features alone may be shared across views; cap board growth in
     // long counterfactual runs. No sampled hand or decision enters this cache.
-    if (cache.size > 64) cache.delete(cache.keys().next().value);
+    // Each sampled runout adds a small board; evict the oldest of those before
+    // the deal's fully enumerated flop/turn/river boards, which every later
+    // weight and equity lookup reuses.
+    if (cache.size > 64) {
+      let evict = null;
+      for (const key of cache.keys()) {
+        evict ??= key;
+        if ((cache.get(key)?.size ?? 0) < 64) {
+          evict = key;
+          break;
+        }
+      }
+      cache.delete(evict);
+    }
     return publicHandData(hole, board, { evaluate, features, cache });
   };
   const context = { data, compare, features, own: data(view.hole, view.board) };
