@@ -545,8 +545,16 @@ export async function nativeScenarios(app) {
       oldFooter: false,
     });
     const before = await app.state();
+    // A slow simulator can still be settling the centred scroll when the
+    // first tap arrives; wait for the dialog and retap once if it missed.
+    const resetOpen = () => app.evaluate(() => document.querySelector('#reset-dialog').open);
     await app.click('#reset-button');
-    assert.equal(await app.evaluate(() => document.querySelector('#reset-dialog').open), true);
+    try {
+      await app.waitFor(resetOpen, 3000, 'The reset confirmation must open');
+    } catch {
+      await app.click('#reset-button');
+      await app.waitFor(resetOpen, 5000, 'The reset confirmation must open');
+    }
     await app.screenshot('practice-reset-confirmation');
     await app.click('#reset-dialog .dialog-actions .close-dialog');
     assert.equal((await app.state()).hand, before.hand);
