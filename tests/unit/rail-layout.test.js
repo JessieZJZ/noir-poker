@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { compactTableLayout } from '../../src/ui/compact-table-layout.js';
+import { CROWDED_CARD_SHARE, compactTableLayout } from '../../src/ui/compact-table-layout.js';
 
 test('compact opponent tags are smaller than identity text and eyes reserve a larger shared footprint', () => {
   for (const [width, displayHeight, tag, eye] of [
@@ -240,4 +240,49 @@ test('crowded phone cards keep a visible clearance only while they stay readable
   // Five- to seven-seat tables keep their larger cards: no extra clearance.
   const five = table(5, 390, 470);
   assert.ok(five.cardWidth * five.arenaScale >= 45);
+});
+
+test('short nine-seat phone tables give spare room to the players, not only the cards', () => {
+  const nine = (width, height, displayHeight) =>
+    compactTableLayout({
+      width,
+      height,
+      availableWidth: width - 18,
+      displayHeight,
+      seats: Array.from({ length: 8 }, (_, i) => ({ id: i + 1 })),
+    });
+  // WeChat's iPhone 12/13 Pro, Pro Max and X tables (below the status and
+  // navigation bars) and Web's own short 375x667 table.
+  for (const [width, height, displayHeight] of [
+    [390, 479, 727],
+    [414, 531, 779],
+    [430, 555, 803],
+    [375, 450, 698],
+    [375, 453, 667],
+  ]) {
+    const fit = nine(width, height, displayHeight);
+    const scale = fit.arenaScale;
+    const label = `${width}x${height}`;
+    assert.equal(fit.profileWidth, 132, `${label}: wider players`);
+    assert.ok(fit.profileWidth * scale >= 61, `${label}: players on screen`);
+    assert.ok(fit.textMetrics['player-name'] > 20, `${label}: larger names`);
+    assert.ok(fit.textMetrics['player-back-width'] * scale >= 15, `${label}: card backs`);
+    for (const card of [fit.cardWidth, fit.heroWidth]) {
+      assert.ok(card <= fit.profileWidth * CROWDED_CARD_SHARE + 1, `${label}: card share`);
+      assert.ok(card * scale >= 39, `${label}: cards stay readable`);
+    }
+  }
+  // Wider players would squeeze 360px cards or backs: those tables keep their
+  // players, and the cards only keep their share. Web's 390x844 is unchanged.
+  for (const [width, height, displayHeight, profile, card] of [
+    [360, 492, 740, 60, 40],
+    [360, 426, 640, 53, 35.5],
+    [390, 630, 844, 72, 40],
+  ]) {
+    const fit = nine(width, height, displayHeight);
+    assert.equal(fit.profileWidth, 116, `${width}x${height}`);
+    assert.ok(fit.profileWidth * fit.arenaScale >= profile, `${width}x${height}: players`);
+    assert.ok(fit.cardWidth <= fit.profileWidth * CROWDED_CARD_SHARE + 1);
+    assert.ok(fit.cardWidth * fit.arenaScale >= card, `${width}x${height}: cards`);
+  }
 });

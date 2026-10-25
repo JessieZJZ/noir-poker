@@ -1,6 +1,9 @@
 import { railLayout } from './rail-layout.js';
 import { growPublicCards } from './public-card-space.js';
 import { growHeroCards } from './hero-card-space.js';
+// Board and hole cards on crowded phone tables: at most this share of a
+// player's profile width (Web's own nine-seat phone tables sit near 0.6).
+export const CROWDED_CARD_SHARE = 0.68;
 // Match the responsive Web wrapper sizes, not platform text measurements.
 export function compactTableLayout({
   width,
@@ -9,6 +12,7 @@ export function compactTableLayout({
   displayHeight = 759,
   availableWidth,
   minimumProfileHeight = 0,
+  wideProfiles = false,
 }) {
   const count = seats.length + 1;
   const tablet = width > 600 && width <= 1100;
@@ -41,8 +45,10 @@ export function compactTableLayout({
       ? roomy
         ? 116
         : 120
-      : 116;
-  const profileHeight = Math.max(
+      : wideProfiles
+        ? 132
+        : 116;
+  let profileHeight = Math.max(
     minimumProfileHeight,
     tablet ? (large ? 120 : 100) : short ? 87 : 82,
   );
@@ -78,6 +84,23 @@ export function compactTableLayout({
     'hero-card-width': heroWidth,
     'hero-card-height': heroHeight,
   };
+  // Wider nine-seat players (below) also get larger name, style and stack text.
+  if (wideProfiles) {
+    for (const key of ['player-name', 'player-stack', 'player-persona', 'player-position'])
+      textMetrics[key] = Math.round(textMetrics[key] * 1.1);
+    // Name, style and stack rows plus their gaps and padding stay inside it.
+    profileHeight = Math.max(
+      profileHeight,
+      Math.ceil(
+        textMetrics['player-name'] +
+          textMetrics['player-stack'] +
+          textMetrics['player-persona'] * 1.15 +
+          8 +
+          textMetrics['profile-padding'] * 2 +
+          2,
+      ),
+    );
+  }
   textMetrics['hero-identity-height'] = Math.ceil(textMetrics['hero-identity'] * 1.2);
   textMetrics['player-avatar'] = Math.ceil(
     textMetrics['player-persona'] * 1.15 + 4 + textMetrics['player-stack'] + 2,
@@ -178,6 +201,9 @@ export function compactTableLayout({
   // Crowded phone tables (not tablets or desktops) show board and hole cards
   // at one size, and hold the hole cards further from the neighbouring players.
   const crowded = width <= 600 && count >= 7;
+  // There the cards also stay in proportion to the players: at most this share
+  // of a player's width, so spare space never only enlarges the cards.
+  const cardShare = crowded ? CROWDED_CARD_SHARE : Infinity;
   const heroOptions = (boardWidth, cap) => ({
     width: heroWidth,
     height: heroHeight,
@@ -199,7 +225,7 @@ export function compactTableLayout({
         publicRows: [publicRow(cardWidth, twoRows)],
       });
       const scale = Math.min(1, height / layout.arenaHeight),
-        cap = Math.floor(faceCap / scale);
+        cap = Math.floor(Math.min(faceCap / scale, profileWidth * cardShare));
       const grow = (boardGap, heroGap) => {
         const grown = growPublicCards(layout, {
           cardWidth,
@@ -263,6 +289,34 @@ export function compactTableLayout({
   const chosen = fullSize
     .filter((option) => option.readable >= bestReadable * 0.94)
     .sort((a, b) => seatSpacing(b) - seatSpacing(a) || b.scale - a.scale)[0];
+  // A short nine-seat phone table (WeChat's, below its status and navigation
+  // bars) has room for larger cards than its players. Give that room to the
+  // players instead: wider profiles with larger text, cards still in proportion.
+  if (
+    crowded &&
+    count === 9 &&
+    !wideProfiles &&
+    Math.min(chosen.cardWidth, chosen.hero.width) >= Math.floor(profileWidth * cardShare)
+  ) {
+    const wide = compactTableLayout({
+      width,
+      height,
+      seats,
+      displayHeight,
+      availableWidth,
+      minimumProfileHeight,
+      wideProfiles: true,
+    });
+    // Only when the table keeps nearly its size, the opponents' card backs
+    // keep their 15px on-screen target, and the board and hole cards stay as
+    // readable: wider players never squeeze the cards smaller.
+    if (
+      wide.arenaScale >= chosen.scale * 0.97 &&
+      wide.textMetrics['player-back-width'] * wide.arenaScale >= 15 &&
+      Math.min(wide.cardWidth, wide.heroWidth) * wide.arenaScale >= chosen.readable * 0.95
+    )
+      return wide;
+  }
   let fitted = chosen.layout;
   cardWidth = chosen.cardWidth;
   const heroCards = chosen.hero;
