@@ -109,9 +109,11 @@ test('review prices, actor references and draw verdicts stay coherent in the exi
     await expect(evidence).toContainText(expected);
     await expect(evidence).not.toContainText('；');
   }
+  // The bettor's full public line (check flop, bet turn) keeps bluffs in range:
+  // both range estimates clear the 30.1% price, so the gutshot call is kept.
   await select(6);
-  await expect(page.locator('#review-selected-status')).toHaveText('需要比较');
-  await expect(summary).toContainText('这手需要比较跟注与弃牌');
+  await expect(page.locator('#review-selected-status')).toHaveText('值得保留');
+  await expect(summary).toContainText(/卡顺听牌.*4 张直接成牌候选.*跟注有继续依据/);
   await expect(summary).not.toContainText(/这手建议跟注|；/);
   await summary.scrollIntoViewIfNeeded();
   await info.attach('gutshot-comparison', {
