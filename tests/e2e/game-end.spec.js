@@ -38,6 +38,15 @@ test('a premium start lights the hole cards after the deal, then the effect leav
   await expect(wrap).toHaveClass(/premium-start/);
   await expect(wrap.locator('.premium-spark')).toHaveCount(18);
   await expect(wrap.locator('.playing-card').first()).toHaveCSS('animation-name', 'deal-card');
+  // The glow sits just outside each card: off the hero's turn too, the cards
+  // must not clip it (iOS and Web showed sparks without the violet edge).
+  await wrap.evaluate((el) => el.classList.remove('turn-attention'));
+  for (const card of await wrap.locator('.hero-cards > .playing-card').all()) {
+    await expect(card).toHaveCSS('overflow', 'visible');
+    expect(await card.evaluate((el) => getComputedStyle(el, '::after').animationName)).toBe(
+      'premium-glow',
+    );
+  }
   await page.clock.runFor(2700);
   await expect(wrap).not.toHaveClass(/premium-start/);
   await expect(wrap.locator('.premium-sparks')).toHaveCount(0);

@@ -37,6 +37,12 @@
     transform: translate(var(--spark-x, 0), var(--spark-y, 0)) scale(1);
   }
 }
+/* The glow sits just outside each card, so the cards must not clip it while
+   it plays (the turn highlight lifts the same clip only on the hero's turn). */
+.hero-cards-wrap.premium-start .hero-cards > .playing-card,
+.hero-cards-wrap.premium-start .hero-cards > .hero-card {
+  overflow: visible;
+}
 /* An overlay carries the glow, leaving the card's own deal animation alone. */
 .premium-start .playing-card::after,
 .premium-start .hero-card::after {
