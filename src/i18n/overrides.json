@@ -545,7 +545,15 @@
     "手里的 A 减少了对手部分强 A 组合，加注也提高了其他玩家继续入池的成本。": "The ace removes some strong Ax combinations from opponents’ ranges; raising also increases their cost to continue.",
     "本轮还没封口，后面的玩家如果加注或者再加注，你需要重新决定要不要跟。": "This round is not closed. If players behind bet or raise, you must decide again whether to call.",
     "这类平跟可能是小对子、同花牌或连接牌，也可能藏着强牌。": "These flat calls may contain small pairs, suited hands or connectors, and can also conceal strong hands.",
-    "，较高踢脚有机会领先较弱 Ax，并从较弱 Ax 取值": ", with a high kicker that may beat weaker Ax and extract value from those hands"
+    "，较高踢脚有机会领先较弱 Ax，并从较弱 Ax 取值": ", with a high kicker that may beat weaker Ax and extract value from those hands",
+    "{0}此前的公开行动：": "{0}'s prior public actions: ",
+    "方块": "diamonds",
+    "梅花": "clubs",
+    "河牌没有补出第三张{0}，此前的同花听牌仍可能转成诈唬。": "The river did not add a third card in {0}; a missed flush draw can still be used as a bluff.",
+    "红桃": "hearts",
+    "过牌加注也可能来自强牌，不能仅凭前面的过牌排除价值牌。": "A check-raise can also represent a strong hand; earlier checks do not rule out value hands.",
+    "过牌后加注至 {0}": "Check-raised to {0}",
+    "黑桃": "spades"
   },
   "zh-TW": {
     "设置": "設定",
@@ -976,7 +984,15 @@
     "手里的 A 减少了对手部分强 A 组合，加注也提高了其他玩家继续入池的成本。": "手裡的 A 減少了對手部分強 A 組合，加注也提高了其他玩家繼續入池的成本。",
     "本轮还没封口，后面的玩家如果加注或者再加注，你需要重新决定要不要跟。": "本輪還沒封口，後面的玩家如果加注或者再加注，你需要重新決定要不要跟。",
     "这类平跟可能是小对子、同花牌或连接牌，也可能藏着强牌。": "這類平跟可能是小對子、同花牌或連接牌，也可能藏著強牌。",
-    "，较高踢脚有机会领先较弱 Ax，并从较弱 Ax 取值": "，較高踢腳有機會領先較弱 Ax，並從較弱 Ax 取值"
+    "，较高踢脚有机会领先较弱 Ax，并从较弱 Ax 取值": "，較高踢腳有機會領先較弱 Ax，並從較弱 Ax 取值",
+    "{0}此前的公开行动：": "{0}此前的公開行動：",
+    "方块": "方塊",
+    "梅花": "梅花",
+    "河牌没有补出第三张{0}，此前的同花听牌仍可能转成诈唬。": "河牌沒有補出第三張{0}，此前的同花聽牌仍可能轉成詐唬。",
+    "红桃": "紅桃",
+    "过牌加注也可能来自强牌，不能仅凭前面的过牌排除价值牌。": "過牌加注也可能來自強牌，不能僅憑前面的過牌排除價值牌。",
+    "过牌后加注至 {0}": "過牌後加注至 {0}",
+    "黑桃": "黑桃"
   },
   "ja": {
     "设置": "設定",
@@ -1407,7 +1423,15 @@
     "手里的 A 减少了对手部分强 A 组合，加注也提高了其他玩家继续入池的成本。": "手札のAは相手の強いAxの組み合わせを減らし、レイズは他のプレイヤーの参加コストも上げる。",
     "本轮还没封口，后面的玩家如果加注或者再加注，你需要重新决定要不要跟。": "このラウンドはまだ閉じていない。後ろからベットやレイズが入れば、コールするか再判断する。",
     "这类平跟可能是小对子、同花牌或连接牌，也可能藏着强牌。": "このようなフラットコールには小さなポケットペア、スーテッドハンド、コネクターが含まれ、強い手を隠している場合もある。",
-    "，较高踢脚有机会领先较弱 Ax，并从较弱 Ax 取值": "。高いキッカーで弱いAxに勝ち、それらからバリューを得られる可能性がある"
+    "，较高踢脚有机会领先较弱 Ax，并从较弱 Ax 取值": "。高いキッカーで弱いAxに勝ち、それらからバリューを得られる可能性がある",
+    "{0}此前的公开行动：": "{0}のこれまでの公開アクション：",
+    "方块": "ダイヤ",
+    "梅花": "クラブ",
+    "河牌没有补出第三张{0}，此前的同花听牌仍可能转成诈唬。": "リバーに3枚目の{0}は出ておらず、ミスしたフラッシュドローがブラフになる可能性は残る。",
+    "红桃": "ハート",
+    "过牌加注也可能来自强牌，不能仅凭前面的过牌排除价值牌。": "チェックレイズには強い手も含まれる。先のチェックだけでバリューハンドを除外することはできない。",
+    "过牌后加注至 {0}": "{0}にチェックレイズ",
+    "黑桃": "スペード"
   },
   "ko": {
     "设置": "설정",
@@ -1838,7 +1862,15 @@
     "手里的 A 减少了对手部分强 A 组合，加注也提高了其他玩家继续入池的成本。": "보유한 A는 상대의 강한 Ax 조합 일부를 줄이며, 레이즈는 다른 플레이어의 참가 비용도 높인다.",
     "本轮还没封口，后面的玩家如果加注或者再加注，你需要重新决定要不要跟。": "이번 라운드는 아직 끝나지 않았다. 뒤에서 베트나 레이즈가 나오면 콜할지 다시 판단해야 한다.",
     "这类平跟可能是小对子、同花牌或连接牌，也可能藏着强牌。": "이런 플랫 콜에는 작은 포켓페어, 수딧 핸드나 커넥터가 포함될 수 있고 강한 패가 숨어 있을 수도 있다.",
-    "，较高踢脚有机会领先较弱 Ax，并从较弱 Ax 取值": ", 높은 키커로 약한 Ax를 앞서고 그 핸드에서 밸류를 얻을 수 있다"
+    "，较高踢脚有机会领先较弱 Ax，并从较弱 Ax 取值": ", 높은 키커로 약한 Ax를 앞서고 그 핸드에서 밸류를 얻을 수 있다",
+    "{0}此前的公开行动：": "{0}의 이전 공개 액션: ",
+    "方块": "다이아몬드",
+    "梅花": "클럽",
+    "河牌没有补出第三张{0}，此前的同花听牌仍可能转成诈唬。": "리버에 세 번째 {0} 카드가 나오지 않아, 완성되지 않은 플러시 드로가 블러프로 이어질 수 있다.",
+    "红桃": "하트",
+    "过牌加注也可能来自强牌，不能仅凭前面的过牌排除价值牌。": "체크 레이즈는 강한 패일 수도 있다. 앞선 체크만으로 밸류 핸드를 배제할 수 없다.",
+    "过牌后加注至 {0}": "{0}까지 체크 레이즈",
+    "黑桃": "스페이드"
   },
   "es": {
     "设置": "Ajustes",
@@ -2269,7 +2301,15 @@
     "手里的 A 减少了对手部分强 A 组合，加注也提高了其他玩家继续入池的成本。": "El A reduce algunas combinaciones fuertes de Ax rivales; subir también encarece su continuación.",
     "本轮还没封口，后面的玩家如果加注或者再加注，你需要重新决定要不要跟。": "La ronda no está cerrada. Si los jugadores de detrás apuestan o suben, debes decidir de nuevo si pagas.",
     "这类平跟可能是小对子、同花牌或连接牌，也可能藏着强牌。": "Estos calls pueden incluir parejas pequeñas, manos suited o conectores, y también ocultar manos fuertes.",
-    "，较高踢脚有机会领先较弱 Ax，并从较弱 Ax 取值": ", con un kicker alto que puede superar a los Ax más débiles y obtener valor de esas manos"
+    "，较高踢脚有机会领先较弱 Ax，并从较弱 Ax 取值": ", con un kicker alto que puede superar a los Ax más débiles y obtener valor de esas manos",
+    "{0}此前的公开行动：": "Acciones públicas previas de {0}: ",
+    "方块": "diamantes",
+    "梅花": "tréboles",
+    "河牌没有补出第三张{0}，此前的同花听牌仍可能转成诈唬。": "El river no añadió una tercera carta de {0}; un proyecto de color fallido todavía puede convertirse en farol.",
+    "红桃": "corazones",
+    "过牌加注也可能来自强牌，不能仅凭前面的过牌排除价值牌。": "Un check-raise también puede representar una mano fuerte; los checks previos no descartan manos de valor.",
+    "过牌后加注至 {0}": "Check-raise a {0}",
+    "黑桃": "picas"
   },
   "it": {
     "设置": "Impostazioni",
@@ -2700,7 +2740,15 @@
     "手里的 A 减少了对手部分强 A 组合，加注也提高了其他玩家继续入池的成本。": "L’A riduce alcune combinazioni forti di Ax degli avversari; il rilancio aumenta anche il loro costo per continuare.",
     "本轮还没封口，后面的玩家如果加注或者再加注，你需要重新决定要不要跟。": "Il giro non è chiuso. Se i giocatori dietro puntano o rilanciano, devi decidere di nuovo se chiamare.",
     "这类平跟可能是小对子、同花牌或连接牌，也可能藏着强牌。": "Questi flat call possono contenere coppie piccole, mani suited o connettori, ma anche nascondere mani forti.",
-    "，较高踢脚有机会领先较弱 Ax，并从较弱 Ax 取值": ", con un kicker alto che può battere gli Ax più deboli e ricavare valore da quelle mani"
+    "，较高踢脚有机会领先较弱 Ax，并从较弱 Ax 取值": ", con un kicker alto che può battere gli Ax più deboli e ricavare valore da quelle mani",
+    "{0}此前的公开行动：": "Azioni pubbliche precedenti di {0}: ",
+    "方块": "quadri",
+    "梅花": "fiori",
+    "河牌没有补出第三张{0}，此前的同花听牌仍可能转成诈唬。": "Il river non ha aggiunto una terza carta di {0}; un progetto di colore mancato può ancora trasformarsi in bluff.",
+    "红桃": "cuori",
+    "过牌加注也可能来自强牌，不能仅凭前面的过牌排除价值牌。": "Un check-raise può anche rappresentare una mano forte; i check precedenti non escludono mani di valore.",
+    "过牌后加注至 {0}": "Check-raise a {0}",
+    "黑桃": "picche"
   },
   "pt": {
     "设置": "Definições",
@@ -3131,7 +3179,15 @@
     "手里的 A 减少了对手部分强 A 组合，加注也提高了其他玩家继续入池的成本。": "O A reduz algumas combinações fortes de Ax dos adversários; aumentar também encarece a continuação deles.",
     "本轮还没封口，后面的玩家如果加注或者再加注，你需要重新决定要不要跟。": "A rodada ainda não está fechada. Se os jogadores de trás apostarem ou aumentarem, é preciso decidir novamente se paga.",
     "这类平跟可能是小对子、同花牌或连接牌，也可能藏着强牌。": "Estes flat calls podem incluir pares baixos, mãos suited ou conectores, e também esconder mãos fortes.",
-    "，较高踢脚有机会领先较弱 Ax，并从较弱 Ax 取值": ", com kicker alto que pode superar Ax mais fracos e extrair valor dessas mãos"
+    "，较高踢脚有机会领先较弱 Ax，并从较弱 Ax 取值": ", com kicker alto que pode superar Ax mais fracos e extrair valor dessas mãos",
+    "{0}此前的公开行动：": "Ações públicas anteriores de {0}: ",
+    "方块": "ouros",
+    "梅花": "paus",
+    "河牌没有补出第三张{0}，此前的同花听牌仍可能转成诈唬。": "O river não trouxe uma terceira carta de {0}; um draw de flush que não completou ainda pode virar blefe.",
+    "红桃": "copas",
+    "过牌加注也可能来自强牌，不能仅凭前面的过牌排除价值牌。": "Um check-raise também pode representar uma mão forte; os checks anteriores não excluem mãos de valor.",
+    "过牌后加注至 {0}": "Check-raise para {0}",
+    "黑桃": "espadas"
   },
   "de": {
     "设置": "Einstellungen",
@@ -3562,7 +3618,15 @@
     "手里的 A 减少了对手部分强 A 组合，加注也提高了其他玩家继续入池的成本。": "Das A blockiert einige starke Ax-Kombinationen der Gegner; eine Erhöhung verteuert außerdem ihr Weiterspielen.",
     "本轮还没封口，后面的玩家如果加注或者再加注，你需要重新决定要不要跟。": "Diese Setzrunde ist noch offen. Falls Spieler hinter dir setzen oder erhöhen, musst du neu über einen Call entscheiden.",
     "这类平跟可能是小对子、同花牌或连接牌，也可能藏着强牌。": "Diese Flatcalls können kleine Paare, suited Hände oder Connectors enthalten, aber auch starke Hände verbergen.",
-    "，较高踢脚有机会领先较弱 Ax，并从较弱 Ax 取值": ", wobei ein hoher Kicker schwächere Ax schlagen und von diesen Händen Value erzielen kann"
+    "，较高踢脚有机会领先较弱 Ax，并从较弱 Ax 取值": ", wobei ein hoher Kicker schwächere Ax schlagen und von diesen Händen Value erzielen kann",
+    "{0}此前的公开行动：": "Bisherige öffentliche Aktionen von {0}: ",
+    "方块": "Karo",
+    "梅花": "Kreuz",
+    "河牌没有补出第三张{0}，此前的同花听牌仍可能转成诈唬。": "Am River kam keine dritte {0}-Karte; ein verpasster Flushdraw kann weiterhin zum Bluff werden.",
+    "红桃": "Herz",
+    "过牌加注也可能来自强牌，不能仅凭前面的过牌排除价值牌。": "Ein Check-Raise kann auch eine starke Hand darstellen; frühere Checks schließen Value-Hände nicht aus.",
+    "过牌后加注至 {0}": "Check-Raise auf {0}",
+    "黑桃": "Pik"
   },
   "fr": {
     "设置": "Paramètres",
@@ -3993,7 +4057,15 @@
     "手里的 A 减少了对手部分强 A 组合，加注也提高了其他玩家继续入池的成本。": "L’A réduit certaines combinaisons fortes de Ax adverses ; relancer augmente aussi leur coût pour continuer.",
     "本轮还没封口，后面的玩家如果加注或者再加注，你需要重新决定要不要跟。": "Ce tour n’est pas terminé. Si les joueurs derrière misent ou relancent, vous devrez décider de nouveau si vous payez.",
     "这类平跟可能是小对子、同花牌或连接牌，也可能藏着强牌。": "Ces flat calls peuvent inclure de petites paires, des mains assorties ou des connecteurs, et aussi cacher des mains fortes.",
-    "，较高踢脚有机会领先较弱 Ax，并从较弱 Ax 取值": ", avec un kicker élevé qui peut battre les Ax plus faibles et obtenir de la value contre ces mains"
+    "，较高踢脚有机会领先较弱 Ax，并从较弱 Ax 取值": ", avec un kicker élevé qui peut battre les Ax plus faibles et obtenir de la value contre ces mains",
+    "{0}此前的公开行动：": "Actions publiques précédentes de {0} : ",
+    "方块": "carreau",
+    "梅花": "trèfle",
+    "河牌没有补出第三张{0}，此前的同花听牌仍可能转成诈唬。": "La river n’a pas ajouté de troisième carte à {0} ; un tirage couleur manqué peut encore devenir un bluff.",
+    "红桃": "cœur",
+    "过牌加注也可能来自强牌，不能仅凭前面的过牌排除价值牌。": "Un check-raise peut aussi représenter une main forte ; les checks précédents ne permettent pas d’exclure les mains de value.",
+    "过牌后加注至 {0}": "Check-raise à {0}",
+    "黑桃": "pique"
   },
   "ru": {
     "设置": "Настройки",
@@ -4424,6 +4496,14 @@
     "手里的 A 减少了对手部分强 A 组合，加注也提高了其他玩家继续入池的成本。": "Туз сокращает число сильных комбинаций Ax у соперников; повышение также увеличивает цену их продолжения.",
     "本轮还没封口，后面的玩家如果加注或者再加注，你需要重新决定要不要跟。": "Торги ещё не закрыты. Если игроки после вас поставят или повысят, придётся заново решать, коллировать ли.",
     "这类平跟可能是小对子、同花牌或连接牌，也可能藏着强牌。": "Такие коллы могут включать младшие пары, одномастные руки или коннекторы, а также скрывать сильные руки.",
-    "，较高踢脚有机会领先较弱 Ax，并从较弱 Ax 取值": ", где высокий кикер может обыгрывать более слабые Ax и получать с них вэлью"
+    "，较高踢脚有机会领先较弱 Ax，并从较弱 Ax 取值": ", где высокий кикер может обыгрывать более слабые Ax и получать с них вэлью",
+    "{0}此前的公开行动：": "Предыдущие открытые действия {0}: ",
+    "方块": "бубен",
+    "梅花": "треф",
+    "河牌没有补出第三张{0}，此前的同花听牌仍可能转成诈唬。": "На ривере не вышла третья карта масти {0}; несобранное флеш-дро всё ещё может стать блефом.",
+    "红桃": "червей",
+    "过牌加注也可能来自强牌，不能仅凭前面的过牌排除价值牌。": "Чек-рейз может означать и сильную руку; предыдущие чеки не исключают руки для вэлью.",
+    "过牌后加注至 {0}": "Чек-рейз до {0}",
+    "黑桃": "пик"
   }
 }

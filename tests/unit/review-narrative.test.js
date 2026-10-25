@@ -104,7 +104,7 @@ test('draw rationale follows actual board, public line and price changes without
   disconnected.board = cards('9h 7d 3d 2c');
   const missed = analyzeDecision(disconnected, { trials: 120 });
   assert.equal(missed.draw.straight, false);
-  assert.doesNotMatch(missed.coaching.explanation, /两头顺听牌/);
+  assert.doesNotMatch(missed.coaching.explanation.split('复盘分析总结').at(-1), /两头顺听牌/);
 
   const blankHistory = { ...snapshot, history: [] };
   assert.doesNotMatch(

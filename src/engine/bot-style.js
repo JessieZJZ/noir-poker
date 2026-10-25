@@ -167,6 +167,15 @@ export function expensiveWeakPair(view, equity) {
     view.features.strongMade
   )
     return false;
+  // A river bluff catcher needs the price against the full public range, not
+  // 70% showdown equity. The ordinary price/risk gate remains the next veto.
+  if (
+    view.street === 3 &&
+    view.rivals === 1 &&
+    view.publicEquity?.exact &&
+    view.publicEquity.rangeModel === 'public-street-lines-v1'
+  )
+    return false;
   const original = view.stack + (view.total || 0);
   const aggression = view.history.filter(
     (a) => a.id !== view.id && a.street > 0 && a.action === 'raise',

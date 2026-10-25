@@ -1012,5 +1012,20 @@
       "，较高踢脚有机会领先较弱 Ax，并从较弱 Ax 取值"
     ],
     "independentLinguisticReview": "not performed; rendering and placeholder checks reported separately"
+  },
+  "publicStory20261025": {
+    "messages": [
+      "{0}此前的公开行动：",
+      "方块",
+      "梅花",
+      "河牌没有补出第三张{0}，此前的同花听牌仍可能转成诈唬。",
+      "红桃",
+      "过牌加注也可能来自强牌，不能仅凭前面的过牌排除价值牌。",
+      "过牌后加注至 {0}",
+      "黑桃"
+    ],
+    "locales": ["en", "zh-TW", "ja", "ko", "es", "it", "pt", "de", "fr", "ru"],
+    "method": "Assistant-authored targeted public-action and missed-draw explanations; same interpolation values in all locales.",
+    "independentLinguisticReview": "not performed"
   }
 }

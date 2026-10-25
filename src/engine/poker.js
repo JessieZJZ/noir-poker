@@ -974,7 +974,7 @@ export function botDecision(g, random = Math.random, { trials, allInCache } = {}
     view.publicEquity = {
       ...assessment,
       potEquity: assessment.equity,
-      samples: allInTrials,
+      samples: assessment.exact ? 0 : allInTrials,
       model: allIn.isAllIn ? 'public-all-in-ranges' : 'public-commitment-ranges',
       assumedOpponentIds: [...allIn.committedIds],
     };

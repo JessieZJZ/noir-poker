@@ -218,7 +218,13 @@ export function handMatchups(s, c) {
                 cache,
               })
             : {};
-        return publicComboWeight(candidate.cards, range, { board, ...data, boardScore, compare });
+        return publicComboWeight(candidate.cards, range, {
+          board,
+          ...data,
+          boardScore,
+          compare,
+          handData: cachedCards,
+        });
       }),
       total = weights.reduce((sum, weight) => sum + weight, 0);
     for (let i = 0; i < candidates.length; i++)
@@ -278,6 +284,20 @@ export function handMatchups(s, c) {
     for (const candidate of ranked) {
       if (chosen.length === limit) break;
       if (!chosen.includes(candidate)) chosen.push(candidate);
+    }
+    // Keep the board's visible flush threat among the few teaching examples.
+    // This is category coverage only; it does not modify any range weight.
+    if (
+      direction === 'behind' &&
+      own[0] < 5 &&
+      c.texture.maxSuit >= 3 &&
+      !chosen.some((candidate) => candidate.score[0] === 5)
+    ) {
+      const flush = ranked.find((candidate) => candidate.score[0] === 5);
+      if (flush) {
+        const rare = chosen.findIndex((candidate) => candidate.score[0] >= 7);
+        chosen[rare < 0 ? chosen.length - 1 : rare] = flush;
+      }
     }
     return chosen.map(({ cards, text, label, score, group }) => ({
       cards,

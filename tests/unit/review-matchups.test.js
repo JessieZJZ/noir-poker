@@ -370,8 +370,8 @@ test('reported paired three-spade river keeps four distinct threats including th
     const context = decisionContext(snapshot);
     const result = handMatchups(snapshot, context);
     assert.deepEqual(
-      result.behind.map((example) => example.label),
-      ['顺子', '三条', '葫芦', '同花'],
+      result.behind.map((example) => example.label).sort(),
+      ['顺子', '三条', '葫芦', '同花'].sort(),
     );
     const known = new Set([...snapshot.hole, ...snapshot.board].map((card) => card.key));
     for (const example of result.behind) {

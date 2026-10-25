@@ -6,6 +6,7 @@ import { decisionContext } from './context.js';
 import { drawLabel, drawCompletion, publicHistory, preflopPotential } from './narrative.js';
 import { spotFacts } from './spot-facts.js';
 import { rangeNoteClauses, handMatchups } from './matchups.js';
+import { publicStoryNotes } from './public-story.js';
 import { actorAtPosition, actorName } from '../engine/player-identity.js';
 import { foldPressure, foldWinNote } from './presentation.js';
 import { checkReasoning, checkRisks, madeRedrawReasoning } from './check-reasoning.js';
@@ -216,7 +217,7 @@ export function explainOpponent(record, identities = []) {
         ? '公共牌的牌力'
         : c.handClass === 'board-pair'
           ? '公共牌组成的牌型与底牌踢脚'
-          : c.handLabel.split('，')[0],
+          : c.handLabel.split(/[，：]/)[0],
     summaryHand = draw.outs ? `${c.handLabel}，带${drawLabel(draw)}` : c.handLabel,
     cost = v.legal.callAmount,
     allinCall = record.action === 'call' && cost === v.stack,
@@ -243,10 +244,11 @@ export function explainOpponent(record, identities = []) {
         ? '跟注'
         : actionLabel(snapshot),
     aggression = f.lastAggression?.street === v.street ? f.lastAggression : null,
+    story = publicStoryNotes(snapshot),
     actionEnd =
       usePolicyReason && t.reason === 'price-continue' && draw.outs && !t.allIn ? '，' : '。',
     prefix = v.street
-      ? aggression && actionEnd !== '，'
+      ? aggression && actionEnd !== '，' && !story.length
         ? `面对${aggression.name}的${aggression.label}，${name}拿 ${f.holeText}，在 ${f.boardText} 上是${summaryHand}，选择${actual}`
         : `${name}拿 ${f.holeText}，在 ${f.boardText} 上是${summaryHand}，选择${actual}`
       : `${name}拿 ${f.holeText}，选择${actual}`,
@@ -570,6 +572,7 @@ export function explainOpponent(record, identities = []) {
     paragraphParts = [
       [matchups?.text],
       ['复盘分析总结'],
+      story,
       ...(matchups?.rangeNotes || []).map(rangeNoteClauses),
       [prefix, actionEnd, ...(logicParts || [logic]), ...checkNotes, squeeze].filter(Boolean),
     ].filter((parts) => parts[0]),

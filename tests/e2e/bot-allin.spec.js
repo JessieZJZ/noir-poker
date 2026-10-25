@@ -81,9 +81,11 @@ test('real all-in bot calls and tight 4-bet folds replay the actual public actio
       await expect(opponent.locator('.review-explanation')).toContainText(
         /(?:另有|另外还有)同花听牌/,
       );
-      await expect(opponent.locator('.review-explanation')).not.toContainText(
-        /卡顺听牌|两头顺听牌/,
-      );
+      // Other candidate hands may have straight draws; this assertion is
+      // about the acting bot's own made hand and actual draw rationale.
+      expect(
+        (await opponent.locator('.review-explanation').innerText()).split('复盘分析总结').at(-1),
+      ).not.toMatch(/卡顺听牌|两头顺听牌/);
       await expect(opponent.locator('.review-explanation')).toContainText('10K');
       await expect(opponent.locator('.review-explanation')).not.toContainText('赔率支持继续追');
       await expect(opponent.locator('.review-explanation')).toContainText('之后不再参与下注决策');

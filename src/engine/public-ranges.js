@@ -1,5 +1,6 @@
 import { bigBlindOf } from './stakes.js';
 import { allInContext } from './public-action-context.js';
+import { publicPostflopLine, publicStoryWeight, hasPublicStory } from './public-story.js';
 
 const clamp = (value) => Math.max(0, Math.min(1, value));
 const late = (position) => ['BTN', 'CO', 'SB', 'BB'].includes(position);
@@ -89,6 +90,7 @@ export function preparePublicRanges(view) {
       waitingCount: commitment?.waitingIds?.length ?? 0,
       allIn: !!allIn,
       actualAllIn: opponent.allin === true,
+      postflopLine: publicPostflopLine(view, opponent.id, street),
       street,
       board,
       preflop: {
@@ -258,6 +260,7 @@ export function publicComboWeight(
     features = null,
     boardScore = null,
     compare = null,
+    handData = null,
   } = {},
 ) {
   if (descriptor.allIn && descriptor.street === 0) {
@@ -295,6 +298,8 @@ export function publicComboWeight(
     weight *= late(descriptor.position) ? 1.15 : 0.8;
   if (preflop.action === 'raise' && preflop.amountBB > 4 && handTier < 3) weight *= 0.75;
   if (board.length < 3 || !score) return clamp(weight);
+  if (handData && hasPublicStory(descriptor.postflopLine))
+    return clamp(weight * publicStoryWeight(pair, descriptor.postflopLine, handData));
   const traits = boardTraits(pair, board, score, features);
   if (descriptor.allIn) {
     const shared = boardScore && compare && compare(score, boardScore) === 0,

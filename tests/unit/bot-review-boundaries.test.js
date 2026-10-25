@@ -37,7 +37,7 @@ test('real set plus redraw all-in call keeps made-hand support and ends future b
   assert.match(review.detail, /暗三条 7/);
   assert.match(review.detail, /当前(?:已有|牌力是)暗三条 7.*成牌和补牌(?:共同|都)提供摊牌机会/);
   assert.match(review.detail, /(?:另有|另外还有)同花听牌/);
-  assert.doesNotMatch(review.detail, /卡顺听牌|两头顺听牌/);
+  assert.doesNotMatch(review.detail.split('复盘分析总结').at(-1), /卡顺听牌|两头顺听牌/);
   assert.doesNotMatch(review.detail, /赔率支持继续追/);
   assert.match(review.detail, /之后不再参与下注决策/);
   assert.deepEqual(review.metrics, []);
