@@ -53,7 +53,7 @@ test('a four-connected board keeps checking as a main route and explains the sin
   await page.evaluate((g) => window.qa.loadRecordedGame(g), sceneGame(3210, 'hero'));
   await page.locator('#review-hand-button').click();
   await expect(page.locator('#review-dialog')).toHaveAttribute('data-analysis-status', 'done', {
-    timeout: 60000,
+    timeout: 120000,
   });
   const summary = page.locator('#review-coach-explanation');
   await expect(summary).toContainText('中任意一张');

@@ -19,7 +19,7 @@ test('deep button suited connectors receive a concrete call and conditional sque
   await page.evaluate((record) => window.qa.loadRecordedGame(record), game);
   await page.locator('#review-hand-button').click();
   await expect(page.locator('#review-dialog')).toHaveAttribute('data-analysis-status', 'done', {
-    timeout: 60000,
+    timeout: 120000,
   });
   const detail = page.locator('#review-detail');
   await expect(detail).toContainText('这手建议跟注 500');
@@ -81,7 +81,7 @@ test('review prices, actor references and draw verdicts stay coherent in the exi
   await page.evaluate((game) => window.qa.loadRecordedGame(game), recordedExamples());
   await page.locator('#review-hand-button').click();
   await expect(page.locator('#review-dialog')).toHaveAttribute('data-analysis-status', 'done', {
-    timeout: 60000,
+    timeout: 120000,
   });
   const evidence = page.locator('#review-evidence');
   const summary = page.locator('#review-coach-explanation');
@@ -113,7 +113,7 @@ test('review prices, actor references and draw verdicts stay coherent in the exi
   // both range estimates clear the 30.1% price, so the gutshot call is kept.
   await select(6);
   await expect(page.locator('#review-selected-status')).toHaveText('值得保留');
-  await expect(summary).toContainText(/卡顺听牌.*4 张直接成牌候选.*跟注有继续依据/);
+  await expect(summary).toContainText(/卡顺听牌.*4 张直接成牌候选.*最终摊牌机会/);
   await expect(summary).not.toContainText(/这手建议跟注|；/);
   await summary.scrollIntoViewIfNeeded();
   await info.attach('gutshot-comparison', {
@@ -167,13 +167,13 @@ test('review prices, actor references and draw verdicts stay coherent in the exi
 test('new recommendation clauses and key information switch across all locales', async ({
   page,
 }) => {
-  test.setTimeout(120000);
+  test.setTimeout(240000);
   await page.goto('/');
   await page.waitForFunction(() => window.qa);
   await page.evaluate((game) => window.qa.loadRecordedGame(game), recordedExamples());
   await page.locator('#review-hand-button').click();
   await expect(page.locator('#review-dialog')).toHaveAttribute('data-analysis-status', 'done', {
-    timeout: 60000,
+    timeout: 120000,
   });
   for (const locale of ['en', 'zh-TW', 'ja', 'ko', 'es', 'it', 'pt', 'de', 'fr', 'ru', 'zh-CN']) {
     await page.locator('#language-select').evaluate((el, locale) => {

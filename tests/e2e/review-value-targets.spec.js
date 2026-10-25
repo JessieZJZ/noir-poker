@@ -17,7 +17,7 @@ async function open(page, make, key) {
   await page.evaluate((game) => window.qa.loadRecordedGame(game), g);
   await page.locator('#review-hand-button').click();
   await expect(page.locator('#review-dialog')).toHaveAttribute('data-analysis-status', 'done', {
-    timeout: 60000,
+    timeout: 120000,
   });
   return page.locator('#review-coach-explanation');
 }

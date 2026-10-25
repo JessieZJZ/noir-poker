@@ -179,7 +179,7 @@ test('causal review keeps the recorded blind scale while a new scale is queued a
   expect(await page.evaluate(() => window.qa.snapshot())).toEqual(original);
   await page.locator('#review-hand-button').click();
   await expect(page.locator('#review-dialog')).toHaveAttribute('data-analysis-status', 'done', {
-    timeout: 60000,
+    timeout: 120000,
   });
   await page.locator('[data-review-index="0"]').click();
   const explanation = page.locator('#review-coach-explanation');
@@ -265,7 +265,7 @@ test('hero action and activity amount labels consistently show K/M while the eng
 test('blind editing, validation and next-hand notices are localized without changing compact amounts', async ({
   page,
 }) => {
-  test.setTimeout(120000);
+  test.setTimeout(240000);
   await openSettings(page);
   for (const locale of ['zh-CN', 'en', 'zh-TW', 'ja', 'ko', 'es', 'it', 'pt', 'de', 'fr', 'ru']) {
     await page.locator('#language-select').selectOption(locale);

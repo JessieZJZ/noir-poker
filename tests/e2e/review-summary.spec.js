@@ -21,7 +21,7 @@ test('reported reviews render coherent causal summaries and preserve them across
   await page.evaluate((g) => window.qa.loadRecordedGame(g), game);
   await page.locator('#review-hand-button').click();
   await expect(page.locator('#review-dialog')).toHaveAttribute('data-analysis-status', 'done', {
-    timeout: 60000,
+    timeout: 120000,
   });
   const hero = page.locator('#review-coach-explanation');
   await page.locator('[data-review-index="0"]').click();

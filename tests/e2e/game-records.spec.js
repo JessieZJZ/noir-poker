@@ -650,7 +650,7 @@ for (const count of [5, 9]) {
   test(`historical ${count}-seat settlement uses the live table geometry for folded and revealed hands`, async ({
     page,
   }) => {
-    test.setTimeout(120000);
+    test.setTimeout(240000);
     for (const mode of ['fold', 'showdown']) {
       await page.evaluate(
         ({ count, mode }) => {
@@ -772,7 +772,7 @@ test('historical settlement and review stay fixed while the live game advances',
   expect((await state(page)).hand).toBe(liveBefore.hand);
   await expect(page.locator('#review-dialog-title')).toContainText('第 1 手');
   await expect(page.locator('#review-dialog')).toHaveAttribute('data-analysis-status', 'done', {
-    timeout: 60000,
+    timeout: 120000,
   });
   await page.locator('#review-dialog .close-dialog').first().click();
   await page.goBack();

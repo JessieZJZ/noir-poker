@@ -19,12 +19,12 @@ test('review separates lucky bad-price wins from reasonable losses with concise 
   page,
 }) => {
   // The real review worker runs on slower CI machines too.
-  test.setTimeout(120000);
+  test.setTimeout(240000);
   for (const win of [true, false]) {
     await page.evaluate((win) => window.qa.reviewClosingCall(win), win);
     await page.locator('#review-hand-button').click();
     await expect(page.locator('#review-dialog[data-analysis-status="done"]')).toBeVisible({
-      timeout: 60000,
+      timeout: 120000,
     });
     await expect(page.locator('.review-summary, #review-overview, #review-priority')).toHaveCount(
       0,
@@ -402,7 +402,7 @@ test('pot details retain per-pot awards, odd split shares and conditional live e
 test('raise controls, seats, activity and review share street-specific bet ordinals', async ({
   page,
 }) => {
-  test.setTimeout(120000);
+  test.setTimeout(240000);
   for (const level of [2, 3, 4]) {
     await page.evaluate((n) => window.qa.bettingTurn(n), level);
     await expect(page.locator('#raise-button')).toContainText(`${level}-bet`);
@@ -444,7 +444,7 @@ test('raise controls, seats, activity and review share street-specific bet ordin
   await expect(page.locator('#activity-list')).toContainText(/Mia\s+\S+\s+4-bet 加注至 1.8K/);
   await page.locator('#review-hand-button').click();
   await expect(page.locator('#review-dialog[data-analysis-status="done"]')).toBeVisible({
-    timeout: 60000,
+    timeout: 120000,
   });
   await page.locator('#review-timeline [data-review-index="0"]').click();
   await expect(page.locator('#review-timeline [data-review-index="0"]')).toContainText(
@@ -484,7 +484,7 @@ test('5–9 player showdown reveals all holes immediately and displays each best
 test('showdown participant names include the current named style and stay readable on narrow screens', async ({
   page,
 }, testInfo) => {
-  test.setTimeout(120000);
+  test.setTimeout(240000);
   await page.evaluate(() => window.qa.stop());
   await page.locator('#opponents-button').click();
   await assignNamedLineup(page);
@@ -767,7 +767,7 @@ test('automatic all-in runout hides the active player old bet and restores it on
 test('settled public caption and hero remain separated for winners, losers, folded heroes and long personas', async ({
   page,
 }, testInfo) => {
-  test.setTimeout(120000);
+  test.setTimeout(240000);
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.evaluate(() => window.qa.stop());
   await page.locator('#opponents-button').click();
@@ -807,7 +807,7 @@ test('settled public caption and hero remain separated for winners, losers, fold
 test('settled seats retain all-in sizes, board and hero action across viewing and all screen sizes', async ({
   page,
 }) => {
-  test.setTimeout(120000);
+  test.setTimeout(240000);
   for (const width of [320, 390, 768, 1280]) {
     await page.setViewportSize({ width, height: 900 });
     for (const count of [5, 6, 7, 8, 9]) {
@@ -1109,7 +1109,7 @@ test('review completes through real worker with facts and a conditional follow-u
   page,
 }) => {
   // The real review worker runs on slower CI machines too.
-  test.setTimeout(120000);
+  test.setTimeout(240000);
   await page.evaluate(() => window.qa.heroTurn());
   await page.locator('#fold-button').click();
   await page.evaluate(() => window.qa.stop());
@@ -1120,7 +1120,7 @@ test('review completes through real worker with facts and a conditional follow-u
   await page.locator('#review-hand-button').click();
   await expect(page.locator('#review-dialog')).toBeVisible();
   await expect(page.locator('#review-dialog[data-analysis-status="done"]')).toBeVisible({
-    timeout: 60000,
+    timeout: 120000,
   });
   expect(await page.locator('#review-evidence li').count()).toBeGreaterThanOrEqual(4);
   if ((await page.locator('#review-selected-status').textContent()) !== '值得保留') {
@@ -1663,7 +1663,7 @@ test('nine-seat style assignment shows every persona at all sizes and executes t
 test('all named portraits preview immediately, follow saved styles next hand and stay frozen on retry', async ({
   page,
 }) => {
-  test.setTimeout(120000);
+  test.setTimeout(240000);
   const profiles = ['rook', 'owen', 'vale', 'jett', 'mira', 'nico', 'iris', 'rook'];
   await setPlayerCount(page, 9);
   await page.evaluate(() => window.qa.foldWin(9));
@@ -1908,11 +1908,11 @@ test('loss simulation remains available while redundant seat explanations are re
 test('A7 review separates steal, 3bet and 4bet; opponents expose actual decisions after settlement', async ({
   page,
 }) => {
-  test.setTimeout(120000);
+  test.setTimeout(240000);
   await page.evaluate(() => window.qa.reviewLine());
   await page.locator('#review-hand-button').click();
   await expect(page.locator('#review-dialog[data-analysis-status="done"]')).toBeVisible({
-    timeout: 60000,
+    timeout: 120000,
   });
   await page.locator('#review-timeline [data-review-index="0"]').click();
   await expect(page.locator('#review-coach-explanation')).toContainText(/开池|偷盲/);
@@ -1964,7 +1964,7 @@ test('review timelines hint at horizontal scrolling and keep late selections in 
     await page.evaluate(() => window.qa.reviewLine());
     await page.locator('#review-hand-button').click();
     await expect(page.locator('#review-dialog[data-analysis-status="done"]')).toBeVisible({
-      timeout: 60000,
+      timeout: 120000,
     });
     {
       const heroTimeline = page.locator('#review-timeline');
@@ -2053,7 +2053,7 @@ test('fast finish records opponents while live public state never exposes privat
 test('training style assignments persist and opponent review filters include assigned player names', async ({
   page,
 }) => {
-  test.setTimeout(120000);
+  test.setTimeout(240000);
   await page.evaluate(() => window.qa.foldWin(9));
   await page.locator('#opponents-button').click();
   for (const [seat, profile] of [

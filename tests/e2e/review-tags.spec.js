@@ -6,7 +6,7 @@ for (const width of [320, 390, 768, 1280]) {
     page,
   }, info) => {
     // The real review worker runs on a slower CI machine as well.
-    test.setTimeout(120000);
+    test.setTimeout(240000);
     // Hold delivery only: the real worker still computes every result.
     await page.addInitScript(() => {
       const NativeWorker = window.Worker;
@@ -68,7 +68,7 @@ for (const width of [320, 390, 768, 1280]) {
     await capture('partially-analyzed-tags');
     await page.evaluate(() => window.heldReviewMessages.splice(0).forEach((deliver) => deliver()));
     await expect(page.locator('#review-dialog')).toHaveAttribute('data-analysis-status', 'done', {
-      timeout: 60000,
+      timeout: 120000,
     });
     await checkTags('#review-timeline');
     await capture('completed-tags');

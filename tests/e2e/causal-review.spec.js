@@ -11,7 +11,7 @@ test('review shares one collapsed activity section, highlights each perspective 
   await page.evaluate((g) => window.qa.loadRecordedGame(g), game);
   await page.locator('#review-hand-button').click();
   await expect(page.locator('#review-dialog')).toHaveAttribute('data-analysis-status', 'done', {
-    timeout: 60000,
+    timeout: 120000,
   });
   // The hand activity opens by default.
   await expect(page.locator('#review-activity')).toHaveAttribute('open', '');

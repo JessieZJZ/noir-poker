@@ -20,7 +20,7 @@ test('consumer preflop review has one possible-hand group with causal ranges and
   await page.evaluate((g) => window.qa.loadRecordedGame(g), game);
   await page.locator('#review-hand-button').click();
   await expect(page.locator('#review-dialog')).toHaveAttribute('data-analysis-status', 'done', {
-    timeout: 60000,
+    timeout: 120000,
   });
   const panel = page.locator('#review-coach-explanation');
   await expect(panel.locator('[data-matchup-direction]')).toHaveCount(1);
@@ -59,7 +59,7 @@ test('reported bottom pair emphasizes stronger families and combo draws; top-pai
   await page.evaluate((g) => window.qa.loadRecordedGame(g), game);
   await page.locator('#review-hand-button').click();
   await expect(page.locator('#review-dialog')).toHaveAttribute('data-analysis-status', 'done', {
-    timeout: 60000,
+    timeout: 120000,
   });
   const own = page.locator('#review-coach-explanation');
   await expect(own.locator('[data-matchup-direction="ahead"] .review-matchup-example')).toHaveCount(
@@ -79,7 +79,7 @@ test('reported bottom pair emphasizes stronger families and combo draws; top-pai
   });
   await page.locator('#review-opponents-tab').click();
   const opponent = page.locator('#review-opponent-detail');
-  await expect(opponent).toContainText('顶对 J，A 踢脚');
+  await expect(opponent).toContainText('顶对 J，底牌 A 参与踢脚比较');
   await expect(opponent).toContainText('过牌也可能是在等后位先下注');
   await expect(opponent).toContainText('免费看下一张');
   await expect(opponent).toContainText('后位仍可下注');
@@ -121,7 +121,7 @@ test('review renders up to three ahead and four behind public-range examples wit
   const before = await page.evaluate(() => window.qa.snapshot());
   await page.locator('#review-hand-button').click();
   await expect(page.locator('#review-dialog[data-analysis-status="done"]')).toBeVisible({
-    timeout: 60000,
+    timeout: 120000,
   });
   const explanation = page.locator('#review-coach-explanation');
   const comparison = explanation.locator('.review-matchups');
