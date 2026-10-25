@@ -232,30 +232,59 @@ export function handMatchups(s, c) {
   }
   if (!ranges.length)
     for (const candidate of candidates) candidate.likelihood = 1 / candidates.length;
+  // Teaching-example priority only. Do not alter equity weights or nut proofs.
+  // A deep unraised pot should not use its limited slots mostly for premiums
+  // which would often have raised, or for a one-combo extreme such as quads.
+  const limped =
+    s.street > 0 &&
+    (s.history || []).some((a) => a.street === 0 && a.action === 'call' && a.amount > 0) &&
+    !(s.history || []).some((a) => a.street === 0 && a.action === 'raise') &&
+    ranges.length > 0 &&
+    ranges.every((r) => r.depthBB >= 30);
+  const priority = (candidate) => {
+    if (!limped) return 1;
+    const [hi, lo] = candidate.cards.map((c) => c.rank).sort((a, b) => b - a);
+    const premium = (hi === lo && hi >= 10) || (hi === 14 && lo === 13);
+    const connector =
+      hi !== lo && hi - lo <= 2 && hi <= 11 && candidate.cards[0].suit === candidate.cards[1].suit;
+    const pairedRank = s.board.find(
+      (c) => s.board.filter((b) => b.rank === c.rank).length === 2,
+    )?.rank;
+    const pairedBoat =
+      candidate.score[0] === 6 && hi !== lo && candidate.cards.some((c) => c.rank === pairedRank);
+    return (
+      (premium ? 0.08 : connector ? (hi <= 10 && hi - lo === 1 ? 2 : 1.15) : 1) *
+      (pairedBoat ? 3 : 1) *
+      (candidate.score[0] >= 7 ? 0.02 : 1)
+    );
+  };
   const groups = { ahead: new Map(), behind: new Map(), tied: new Map() };
   for (const candidate of candidates) {
+    candidate.presentationMass = candidate.likelihood * priority(candidate);
     const group = groupKey(candidate, s.street, s.board),
       entries = groups[candidate.direction],
       previous = entries.get(group);
     if (!previous) entries.set(group, { ...candidate, group, mass: candidate.likelihood });
     else {
       const mass = previous.mass + candidate.likelihood,
+        presentationMass = previous.presentationMass + candidate.presentationMass,
         preferred =
           candidate.relevance > previous.relevance ||
           (candidate.relevance === previous.relevance &&
-            candidate.likelihood > previous.likelihood + 1e-12) ||
+            candidate.presentationMass > previous.likelihood * priority(previous) + 1e-12) ||
           (candidate.relevance === previous.relevance &&
-            Math.abs(candidate.likelihood - previous.likelihood) <= 1e-12 &&
+            Math.abs(candidate.presentationMass - previous.likelihood * priority(previous)) <=
+              1e-12 &&
             ordered(candidate.key, previous.key) < 0);
-      entries.set(group, { ...(preferred ? candidate : previous), group, mass });
+      entries.set(group, { ...(preferred ? candidate : previous), group, mass, presentationMass });
     }
   }
   const select = (direction, limit) => {
     const ranked = [...groups[direction].values()].sort((a, b) =>
       a.relevance !== b.relevance
         ? b.relevance - a.relevance
-        : Math.abs(a.mass - b.mass) > 1e-12
-          ? b.mass - a.mass
+        : Math.abs(a.presentationMass - b.presentationMass) > 1e-12
+          ? b.presentationMass - a.presentationMass
           : ordered(a.group, b.group),
     );
     // Do not spend every slot on adjacent overpairs while omitting top pairs
@@ -273,8 +302,16 @@ export function handMatchups(s, c) {
         : ranked;
     const chosen = [],
       families = new Set();
+    if (limped && direction === 'behind' && own[0] === 5 && c.texture.paired) {
+      for (let i = 0; i < 2; i++)
+        for (const category of [5, 6]) {
+          const candidate = ranked.filter((c) => c.score[0] === category)[i];
+          if (candidate && chosen.length < limit) chosen.push(candidate);
+        }
+    }
     if (s.street)
       for (const candidate of representatives) {
+        if (chosen.length >= limit) break;
         const family = candidate.group.split('-').slice(0, 2).join('-');
         if (!candidate.relevance || families.has(family)) continue;
         families.add(family);
@@ -396,6 +433,17 @@ export function handMatchups(s, c) {
   }
   return {
     ahead,
+    weakerDrawTypes:
+      s.street > 0 && s.street < 3
+        ? [
+            ...(candidates.some((c) => c.direction === 'ahead' && c.features.flushDraw)
+              ? ['flush']
+              : []),
+            ...(candidates.some((c) => c.direction === 'ahead' && c.features.straightOuts > 0)
+              ? ['straight']
+              : []),
+          ]
+        : [],
     // Category existence uses the whole legal card pool, not the few range-
     // ranked examples selected for display. It conveys no rival hidden cards.
     weakerMadeCategories: [
@@ -497,7 +545,7 @@ export function valuePlan(s, c, matchups = c.matchups || handMatchups(s, c)) {
   )
     return empty;
   const shoveReason = () =>
-    `当时底池 ${number(s.pot)}，你还剩 ${number(s.stack)}，这手强牌可比较价值全下，让${s.street === 3 ? '弱成牌' : s.street ? '弱成牌或听牌' : '较弱起手牌'}为剩余筹码付费。`;
+    `当时底池 ${number(s.pot)}，全下约占底池的 ${((s.stack / s.pot) * 100).toFixed(1)}%，这手强牌可比较价值全下，让${s.street === 3 ? '弱成牌' : s.street ? '弱成牌或听牌' : '较弱起手牌'}付费。`;
   const f = spotFacts(s, c),
     bigBlind = bigBlindOf(s),
     live = (s.players || []).filter((p) => p.id !== 0 && !p.folded && !p.allin && p.stack > 0),
@@ -573,12 +621,20 @@ export function valuePlan(s, c, matchups = c.matchups || handMatchups(s, c)) {
       reason: shoveReason(),
     };
   if (!valueHand && !strongPreflop) return empty;
-  const amount = !s.street
-      ? preflopRaiseTarget(s, c)
-      : s.currentBet > 0
-        ? s.currentBet * (c.inPosition ? 2.5 : 3)
-        : s.pot * (c.texture.wet || c.opponents > 1 ? 0.65 : 0.4),
-    raise = canRaise ? { action: 'raise', amount: legalRaiseTo(amount, s.legal) } : null,
+  let amount = !s.street
+    ? preflopRaiseTarget(s, c)
+    : s.currentBet > 0
+      ? s.currentBet * (c.inPosition ? 2.5 : 3)
+      : s.pot * (c.texture.wet || c.opponents > 1 ? 0.65 : 0.4);
+  // Clamping a routine value size to the stack does not establish that a
+  // dangerous hand is a value shove. Keep a smaller comparison if legal.
+  const cappedDanger =
+    dangerousMade && !shoveHand && s.legal.canCheck && amount >= s.legal.maxRaiseTo;
+  if (cappedDanger) amount = s.bet + Math.min(s.pot * 0.25, s.stack * 0.5);
+  const raise =
+      canRaise && (!cappedDanger || legalRaiseTo(amount, s.legal) < s.legal.maxRaiseTo)
+        ? { action: 'raise', amount: legalRaiseTo(amount, s.legal) }
+        : null,
     flat = s.legal.canCheck
       ? { action: 'check', amount: 0 }
       : { action: 'call', amount: s.legal.callAmount };

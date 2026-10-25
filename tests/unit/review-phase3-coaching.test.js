@@ -111,7 +111,7 @@ test('a called all-in keeps made-hand and draw reasons, without equating draw ch
   assert.match(text, /你已有非顶对 5.*未补成听牌.*较弱成牌或未成牌的诈唬/);
   assert.match(text, /同花听牌.*9 张改善候选.*不等于全部获胜机会/);
   assert.match(text, /无需再支付筹码/);
-  assert.match(text, /三张同花色.*两张该花色.*同花/);
+  assert.match(text, /第三张梅花.*两张梅花.*已成同花/);
   assert.doesNotMatch(c.followUp, /后面的玩家再加注时.*重新决定/);
 });
 

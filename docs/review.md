@@ -164,3 +164,5 @@ node scripts/audit-review-phase3.mjs --source=. --seed=202610243 --start=0 --end
 翻后只有高牌且没有直接听牌时，若跟注至少用掉半数后手，行动加权估计加上抽样余量仍不足当前价格，随机宽范围扣除余量后也没有稳定优势，不再因默认跟注分支就标为值得保留。先以弃牌为保守练习基线，再核对较弱高牌诈唬的具体依据。已有成牌、直接听牌、较小成本或宽范围有明确余量的跟注不进入此分支，正式路线模拟若在两种范围中都有可靠支持，仍可支持保留。当前估计不足不等于已证明两种范围都必然亏损。
 
 参考：[PokerStars 同花连接牌](https://www.pokerstars.com/poker/learn/strategies/suited-connectors-are-they-playable-hands/)、[挤压加注](https://www.pokerstars.com/poker/learn/lesson/squeeze-play-nlhe/)。这些材料提供教学原则，不代表本程序内置求解器或能保证收益。
+
+本轮听牌取值、完成同花后的投入控制、跛入池示例和精简动作句见[复盘专项记录](review-value-targets-2026-10-25.md)。

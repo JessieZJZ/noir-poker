@@ -553,7 +553,18 @@
     "红桃": "hearts",
     "过牌加注也可能来自强牌，不能仅凭前面的过牌排除价值牌。": "A check-raise can also represent a strong hand; earlier checks do not rule out value hands.",
     "过牌后加注至 {0}": "Check-raised to {0}",
-    "黑桃": "spades"
+    "黑桃": "spades",
+    "你拿 {0}，在 {1} 上{2}。{3}": "With {0} on {1}, your action is {2}. {3}",
+    "你拿 {0}，在 {1} 上是{2}，{3}。": "With {0} on {1}, you have {2}; your action is {3}.",
+    "取值也可能来自同花听牌的跟注，前提是对手愿意支付这个尺度。": "Value can also come from flush draws calling, provided opponents will pay this size.",
+    "取值也可能来自顺子听牌或同花听牌的跟注，前提是对手愿意支付这个尺度。": "Value can also come from straight or flush draws calling, provided opponents will pay this size.",
+    "取值也可能来自顺子听牌的跟注，前提是对手愿意支付这个尺度。": "Value can also come from straight draws calling, provided opponents will pay this size.",
+    "同花牌面直接全下，先核对较弱牌会不会跟注": "Before shoving on a flush board, check which weaker hands can call",
+    "对手继续范围可能变强，应比较过牌或较小下注；只有较弱对子或尚未完成的听牌仍愿意支付时，再考虑全下取值。": "The continuing range may be stronger. Compare checking or a smaller bet; consider a value shove only if weaker pairs or unfinished draws will still pay.",
+    "当时底池 {0}，全下约占底池的 {1}%，这手强牌可比较价值全下，让{2}付费。": "The pot was {0}; the shove is about {1}% of it. This strong hand can consider a value shove to get paid by {2}.",
+    "本次追加 {0}。": "The additional investment is {0}.",
+    "虽然已经成同花，对手仍可能用更高的同花领先。": "Although you have a flush, an opponent can still have a higher flush.",
+    "转牌补出了第三张{0}，原本持两张{1}的听牌现在已成同花。": "The turn brought the third {0} card; hands drawing with two {1} cards have now made a flush."
   },
   "zh-TW": {
     "设置": "設定",
@@ -992,7 +1003,18 @@
     "红桃": "紅桃",
     "过牌加注也可能来自强牌，不能仅凭前面的过牌排除价值牌。": "過牌加注也可能來自強牌，不能僅憑前面的過牌排除價值牌。",
     "过牌后加注至 {0}": "過牌後加注至 {0}",
-    "黑桃": "黑桃"
+    "黑桃": "黑桃",
+    "你拿 {0}，在 {1} 上{2}。{3}": "你拿 {0}，在 {1} 上{2}。{3}",
+    "你拿 {0}，在 {1} 上是{2}，{3}。": "你拿 {0}，在 {1} 上是{2}，{3}。",
+    "取值也可能来自同花听牌的跟注，前提是对手愿意支付这个尺度。": "取值也可能來自同花聽牌的跟注，前提是對手願意支付這個尺度。",
+    "取值也可能来自顺子听牌或同花听牌的跟注，前提是对手愿意支付这个尺度。": "取值也可能來自順子聽牌或同花聽牌的跟注，前提是對手願意支付這個尺度。",
+    "取值也可能来自顺子听牌的跟注，前提是对手愿意支付这个尺度。": "取值也可能來自順子聽牌的跟注，前提是對手願意支付這個尺度。",
+    "同花牌面直接全下，先核对较弱牌会不会跟注": "同花牌面直接全下，先核對較弱牌會不會跟注",
+    "对手继续范围可能变强，应比较过牌或较小下注；只有较弱对子或尚未完成的听牌仍愿意支付时，再考虑全下取值。": "對手繼續範圍可能變強，應比較過牌或較小下注；只有較弱對子或尚未完成的聽牌仍願意支付時，再考慮全下取值。",
+    "当时底池 {0}，全下约占底池的 {1}%，这手强牌可比较价值全下，让{2}付费。": "當時底池 {0}，全下約占底池的 {1}%，這手強牌可比較價值全下，讓{2}付費。",
+    "本次追加 {0}。": "本次追加 {0}。",
+    "虽然已经成同花，对手仍可能用更高的同花领先。": "雖然已經成同花，對手仍可能用更高的同花領先。",
+    "转牌补出了第三张{0}，原本持两张{1}的听牌现在已成同花。": "轉牌補出了第三張{0}，原本持兩張{1}的聽牌現在已成同花。"
   },
   "ja": {
     "设置": "設定",
@@ -1431,7 +1453,18 @@
     "红桃": "ハート",
     "过牌加注也可能来自强牌，不能仅凭前面的过牌排除价值牌。": "チェックレイズには強い手も含まれる。先のチェックだけでバリューハンドを除外することはできない。",
     "过牌后加注至 {0}": "{0}にチェックレイズ",
-    "黑桃": "スペード"
+    "黑桃": "スペード",
+    "你拿 {0}，在 {1} 上{2}。{3}": "{0} を持ち、ボード {1} で {2}。{3}",
+    "你拿 {0}，在 {1} 上是{2}，{3}。": "{0} を持ち、ボード {1} で {2} となり、{3}。",
+    "取值也可能来自同花听牌的跟注，前提是对手愿意支付这个尺度。": "このサイズに相手が応じるなら、フラッシュドローのコールからもバリューを得られます。",
+    "取值也可能来自顺子听牌或同花听牌的跟注，前提是对手愿意支付这个尺度。": "このサイズに相手が応じるなら、ストレートドローやフラッシュドローのコールからもバリューを得られます。",
+    "取值也可能来自顺子听牌的跟注，前提是对手愿意支付这个尺度。": "このサイズに相手が応じるなら、ストレートドローのコールからもバリューを得られます。",
+    "同花牌面直接全下，先核对较弱牌会不会跟注": "フラッシュが可能なボードのオールインは、弱いハンドがコールするかを先に確認",
+    "对手继续范围可能变强，应比较过牌或较小下注；只有较弱对子或尚未完成的听牌仍愿意支付时，再考虑全下取值。": "相手の継続レンジは強くなる可能性があります。チェックや小さいベットと比較し、弱いペアや未完成のドローがまだ払う場合にバリューのオールインを検討します。",
+    "当时底池 {0}，全下约占底池的 {1}%，这手强牌可比较价值全下，让{2}付费。": "その時のポットは {0} で、オールインは約 {1}% です。この強いハンドでは、{2} から支払いを受けるバリューのオールインを比較できます。",
+    "本次追加 {0}。": "今回の追加額は {0} です。",
+    "虽然已经成同花，对手仍可能用更高的同花领先。": "フラッシュが完成していても、相手がより高いフラッシュを持つ可能性はあります。",
+    "转牌补出了第三张{0}，原本持两张{1}的听牌现在已成同花。": "ターンで3枚目の{0}が出て、{1}を2枚持つドローはフラッシュになりました。"
   },
   "ko": {
     "设置": "설정",
@@ -1870,7 +1903,18 @@
     "红桃": "하트",
     "过牌加注也可能来自强牌，不能仅凭前面的过牌排除价值牌。": "체크 레이즈는 강한 패일 수도 있다. 앞선 체크만으로 밸류 핸드를 배제할 수 없다.",
     "过牌后加注至 {0}": "{0}까지 체크 레이즈",
-    "黑桃": "스페이드"
+    "黑桃": "스페이드",
+    "你拿 {0}，在 {1} 上{2}。{3}": "{0}을 들고 보드 {1}에서 {2}. {3}",
+    "你拿 {0}，在 {1} 上是{2}，{3}。": "{0}을 들고 보드 {1}에서 {2}이며, 행동은 {3}.",
+    "取值也可能来自同花听牌的跟注，前提是对手愿意支付这个尺度。": "상대가 이 크기에 콜한다면 플러시 드로의 콜에서도 가치를 얻을 수 있습니다.",
+    "取值也可能来自顺子听牌或同花听牌的跟注，前提是对手愿意支付这个尺度。": "상대가 이 크기에 콜한다면 스트레이트 드로나 플러시 드로의 콜에서도 가치를 얻을 수 있습니다.",
+    "取值也可能来自顺子听牌的跟注，前提是对手愿意支付这个尺度。": "상대가 이 크기에 콜한다면 스트레이트 드로의 콜에서도 가치를 얻을 수 있습니다.",
+    "同花牌面直接全下，先核对较弱牌会不会跟注": "플러시 보드에서 올인하기 전 더 약한 패가 콜할지 확인",
+    "对手继续范围可能变强，应比较过牌或较小下注；只有较弱对子或尚未完成的听牌仍愿意支付时，再考虑全下取值。": "상대의 계속할 범위가 강해질 수 있습니다. 체크나 더 작은 베팅과 비교하고, 더 약한 페어나 미완성 드로가 여전히 콜할 때 가치 올인을 고려하세요.",
+    "当时底池 {0}，全下约占底池的 {1}%，这手强牌可比较价值全下，让{2}付费。": "당시 팟은 {0}이며 올인은 팟의 약 {1}%입니다. 이 강한 패로 {2}에게서 콜을 받는 가치 올인을 비교할 수 있습니다.",
+    "本次追加 {0}。": "이번 추가 투입은 {0}입니다。",
+    "虽然已经成同花，对手仍可能用更高的同花领先。": "플러시가 완성됐지만 상대가 더 높은 플러시로 앞설 수 있습니다.",
+    "转牌补出了第三张{0}，原本持两张{1}的听牌现在已成同花。": "턴에 세 번째 {0} 카드가 나와 {1} 카드 두 장으로 듣던 패는 이제 플러시가 완성됐습니다."
   },
   "es": {
     "设置": "Ajustes",
@@ -2309,7 +2353,18 @@
     "红桃": "corazones",
     "过牌加注也可能来自强牌，不能仅凭前面的过牌排除价值牌。": "Un check-raise también puede representar una mano fuerte; los checks previos no descartan manos de valor.",
     "过牌后加注至 {0}": "Check-raise a {0}",
-    "黑桃": "picas"
+    "黑桃": "picas",
+    "你拿 {0}，在 {1} 上{2}。{3}": "Con {0} en {1}, tu acción es {2}. {3}",
+    "你拿 {0}，在 {1} 上是{2}，{3}。": "Con {0} en {1}, tienes {2}; tu acción es {3}.",
+    "取值也可能来自同花听牌的跟注，前提是对手愿意支付这个尺度。": "También puedes obtener valor de proyectos de color que paguen, si aceptan este tamaño.",
+    "取值也可能来自顺子听牌或同花听牌的跟注，前提是对手愿意支付这个尺度。": "También puedes obtener valor de proyectos de escalera o color que paguen, si aceptan este tamaño.",
+    "取值也可能来自顺子听牌的跟注，前提是对手愿意支付这个尺度。": "También puedes obtener valor de proyectos de escalera que paguen, si aceptan este tamaño.",
+    "同花牌面直接全下，先核对较弱牌会不会跟注": "Antes de ir all-in en un board de color, comprueba qué manos peores pagan",
+    "对手继续范围可能变强，应比较过牌或较小下注；只有较弱对子或尚未完成的听牌仍愿意支付时，再考虑全下取值。": "El rango que continúa puede ser más fuerte. Compara pasar o apostar menos; considera un all-in por valor solo si parejas peores o proyectos sin completar siguen pagando.",
+    "当时底池 {0}，全下约占底池的 {1}%，这手强牌可比较价值全下，让{2}付费。": "El bote era {0}; el all-in es aproximadamente el {1}%. Esta mano fuerte puede comparar un all-in por valor para cobrar a {2}.",
+    "本次追加 {0}。": "La inversión adicional es {0}.",
+    "虽然已经成同花，对手仍可能用更高的同花领先。": "Aunque tienes color, un rival aún puede tener un color mayor.",
+    "转牌补出了第三张{0}，原本持两张{1}的听牌现在已成同花。": "El turn trajo la tercera carta de {0}; los proyectos con dos cartas de {1} ya completaron color."
   },
   "it": {
     "设置": "Impostazioni",
@@ -2748,7 +2803,18 @@
     "红桃": "cuori",
     "过牌加注也可能来自强牌，不能仅凭前面的过牌排除价值牌。": "Un check-raise può anche rappresentare una mano forte; i check precedenti non escludono mani di valore.",
     "过牌后加注至 {0}": "Check-raise a {0}",
-    "黑桃": "picche"
+    "黑桃": "picche",
+    "你拿 {0}，在 {1} 上{2}。{3}": "Con {0} su {1}, la tua azione è {2}. {3}",
+    "你拿 {0}，在 {1} 上是{2}，{3}。": "Con {0} su {1}, hai {2}; la tua azione è {3}.",
+    "取值也可能来自同花听牌的跟注，前提是对手愿意支付这个尺度。": "Puoi ottenere valore anche dai progetti di colore che chiamano, se accettano questa size.",
+    "取值也可能来自顺子听牌或同花听牌的跟注，前提是对手愿意支付这个尺度。": "Puoi ottenere valore anche dai progetti di scala o colore che chiamano, se accettano questa size.",
+    "取值也可能来自顺子听牌的跟注，前提是对手愿意支付这个尺度。": "Puoi ottenere valore anche dai progetti di scala che chiamano, se accettano questa size.",
+    "同花牌面直接全下，先核对较弱牌会不会跟注": "Prima dello shove su un board di colore, valuta quali mani peggiori chiamano",
+    "对手继续范围可能变强，应比较过牌或较小下注；只有较弱对子或尚未完成的听牌仍愿意支付时，再考虑全下取值。": "Il range che continua può essere più forte. Confronta check e puntate minori; considera lo shove per valore solo se coppie peggiori o progetti incompleti pagano ancora.",
+    "当时底池 {0}，全下约占底池的 {1}%，这手强牌可比较价值全下，让{2}付费。": "Il piatto era {0}; lo shove è circa il {1}%. Questa mano forte può confrontare lo shove per valore per farsi pagare da {2}.",
+    "本次追加 {0}。": "L’investimento aggiuntivo è {0}.",
+    "虽然已经成同花，对手仍可能用更高的同花领先。": "Anche se hai colore, un avversario può ancora avere un colore superiore.",
+    "转牌补出了第三张{0}，原本持两张{1}的听牌现在已成同花。": "Il turn ha portato la terza carta di {0}; i progetti con due carte di {1} hanno ora completato colore."
   },
   "pt": {
     "设置": "Definições",
@@ -3187,7 +3253,18 @@
     "红桃": "copas",
     "过牌加注也可能来自强牌，不能仅凭前面的过牌排除价值牌。": "Um check-raise também pode representar uma mão forte; os checks anteriores não excluem mãos de valor.",
     "过牌后加注至 {0}": "Check-raise para {0}",
-    "黑桃": "espadas"
+    "黑桃": "espadas",
+    "你拿 {0}，在 {1} 上{2}。{3}": "Com {0} em {1}, sua ação é {2}. {3}",
+    "你拿 {0}，在 {1} 上是{2}，{3}。": "Com {0} em {1}, você tem {2}; sua ação é {3}.",
+    "取值也可能来自同花听牌的跟注，前提是对手愿意支付这个尺度。": "O valor também pode vir de draws de flush que paguem, se aceitarem este tamanho.",
+    "取值也可能来自顺子听牌或同花听牌的跟注，前提是对手愿意支付这个尺度。": "O valor também pode vir de draws de sequência ou flush que paguem, se aceitarem este tamanho.",
+    "取值也可能来自顺子听牌的跟注，前提是对手愿意支付这个尺度。": "O valor também pode vir de draws de sequência que paguem, se aceitarem este tamanho.",
+    "同花牌面直接全下，先核对较弱牌会不会跟注": "Antes do all-in num bordo de flush, veja quais mãos piores pagam",
+    "对手继续范围可能变强，应比较过牌或较小下注；只有较弱对子或尚未完成的听牌仍愿意支付时，再考虑全下取值。": "O range que continua pode ficar mais forte. Compare check e apostas menores; considere o all-in por valor só se pares piores ou draws incompletos ainda pagarem.",
+    "当时底池 {0}，全下约占底池的 {1}%，这手强牌可比较价值全下，让{2}付费。": "O pote era {0}; o all-in é cerca de {1}% dele. Esta mão forte pode comparar um all-in por valor para receber de {2}.",
+    "本次追加 {0}。": "O investimento adicional é {0}.",
+    "虽然已经成同花，对手仍可能用更高的同花领先。": "Embora você tenha flush, um oponente ainda pode ter um flush maior.",
+    "转牌补出了第三张{0}，原本持两张{1}的听牌现在已成同花。": "O turn trouxe a terceira carta de {0}; os draws com duas cartas de {1} agora completaram flush."
   },
   "de": {
     "设置": "Einstellungen",
@@ -3626,7 +3703,18 @@
     "红桃": "Herz",
     "过牌加注也可能来自强牌，不能仅凭前面的过牌排除价值牌。": "Ein Check-Raise kann auch eine starke Hand darstellen; frühere Checks schließen Value-Hände nicht aus.",
     "过牌后加注至 {0}": "Check-Raise auf {0}",
-    "黑桃": "Pik"
+    "黑桃": "Pik",
+    "你拿 {0}，在 {1} 上{2}。{3}": "Mit {0} auf {1} ist deine Aktion {2}. {3}",
+    "你拿 {0}，在 {1} 上是{2}，{3}。": "Mit {0} auf {1} hast du {2}; deine Aktion ist {3}.",
+    "取值也可能来自同花听牌的跟注，前提是对手愿意支付这个尺度。": "Auch Calls von Flushdraws können Value bringen, sofern sie diese Größe bezahlen.",
+    "取值也可能来自顺子听牌或同花听牌的跟注，前提是对手愿意支付这个尺度。": "Auch Calls von Straight- oder Flushdraws können Value bringen, sofern sie diese Größe bezahlen.",
+    "取值也可能来自顺子听牌的跟注，前提是对手愿意支付这个尺度。": "Auch Calls von Straightdraws können Value bringen, sofern sie diese Größe bezahlen.",
+    "同花牌面直接全下，先核对较弱牌会不会跟注": "Vor dem Shove auf einem Flushboard prüfen, welche schwächeren Hände callen",
+    "对手继续范围可能变强，应比较过牌或较小下注；只有较弱对子或尚未完成的听牌仍愿意支付时，再考虑全下取值。": "Die weiterspielende Range kann stärker sein. Vergleiche Check und kleinere Bet; ein Value-Shove braucht weiter zahlende schwächere Paare oder nicht angekommene Draws.",
+    "当时底池 {0}，全下约占底池的 {1}%，这手强牌可比较价值全下，让{2}付费。": "Der Pot war {0}; der Shove beträgt etwa {1}% davon. Diese starke Hand kann einen Value-Shove vergleichen, um von {2} bezahlt zu werden.",
+    "本次追加 {0}。": "Der zusätzliche Einsatz beträgt {0}.",
+    "虽然已经成同花，对手仍可能用更高的同花领先。": "Obwohl du einen Flush hast, kann ein Gegner noch einen höheren Flush halten.",
+    "转牌补出了第三张{0}，原本持两张{1}的听牌现在已成同花。": "Der Turn brachte die dritte {0}-Karte; Draws mit zwei {1}-Karten haben nun einen Flush."
   },
   "fr": {
     "设置": "Paramètres",
@@ -4065,7 +4153,18 @@
     "红桃": "cœur",
     "过牌加注也可能来自强牌，不能仅凭前面的过牌排除价值牌。": "Un check-raise peut aussi représenter une main forte ; les checks précédents ne permettent pas d’exclure les mains de value.",
     "过牌后加注至 {0}": "Check-raise à {0}",
-    "黑桃": "pique"
+    "黑桃": "pique",
+    "你拿 {0}，在 {1} 上{2}。{3}": "Avec {0} sur {1}, ton action est {2}. {3}",
+    "你拿 {0}，在 {1} 上是{2}，{3}。": "Avec {0} sur {1}, tu as {2} ; ton action est {3}.",
+    "取值也可能来自同花听牌的跟注，前提是对手愿意支付这个尺度。": "Les tirages couleur peuvent aussi apporter de la value en payant, à condition d’accepter ce montant.",
+    "取值也可能来自顺子听牌或同花听牌的跟注，前提是对手愿意支付这个尺度。": "Les tirages quinte ou couleur peuvent aussi apporter de la value en payant, à condition d’accepter ce montant.",
+    "取值也可能来自顺子听牌的跟注，前提是对手愿意支付这个尺度。": "Les tirages quinte peuvent aussi apporter de la value en payant, à condition d’accepter ce montant.",
+    "同花牌面直接全下，先核对较弱牌会不会跟注": "Avant de faire tapis sur un board à couleur, vérifier quelles mains moins fortes paient",
+    "对手继续范围可能变强，应比较过牌或较小下注；只有较弱对子或尚未完成的听牌仍愿意支付时，再考虑全下取值。": "La range qui continue peut être plus forte. Compare un check ou une petite mise ; n’envisage un tapis pour value que si des paires moins fortes ou des tirages incomplets paient encore.",
+    "当时底池 {0}，全下约占底池的 {1}%，这手强牌可比较价值全下，让{2}付费。": "Le pot était de {0} ; le tapis représente environ {1}%. Cette main forte peut comparer un tapis pour value afin de se faire payer par {2}.",
+    "本次追加 {0}。": "L’investissement supplémentaire est de {0}.",
+    "虽然已经成同花，对手仍可能用更高的同花领先。": "Même avec une couleur, un adversaire peut encore avoir une couleur supérieure.",
+    "转牌补出了第三张{0}，原本持两张{1}的听牌现在已成同花。": "Le turn a apporté la troisième carte de {0} ; les tirages avec deux cartes de {1} ont désormais une couleur."
   },
   "ru": {
     "设置": "Настройки",
@@ -4504,6 +4603,17 @@
     "红桃": "червей",
     "过牌加注也可能来自强牌，不能仅凭前面的过牌排除价值牌。": "Чек-рейз может означать и сильную руку; предыдущие чеки не исключают руки для вэлью.",
     "过牌后加注至 {0}": "Чек-рейз до {0}",
-    "黑桃": "пик"
+    "黑桃": "пик",
+    "你拿 {0}，在 {1} 上{2}。{3}": "С {0} на борде {1} твоё действие: {2}. {3}",
+    "你拿 {0}，在 {1} 上是{2}，{3}。": "С {0} на борде {1} у тебя {2}; твоё действие: {3}.",
+    "取值也可能来自同花听牌的跟注，前提是对手愿意支付这个尺度。": "Вэлью могут принести и коллы флеш-дро, если соперники готовы платить такой размер.",
+    "取值也可能来自顺子听牌或同花听牌的跟注，前提是对手愿意支付这个尺度。": "Вэлью могут принести и коллы стрит-дро или флеш-дро, если соперники готовы платить такой размер.",
+    "取值也可能来自顺子听牌的跟注，前提是对手愿意支付这个尺度。": "Вэлью могут принести и коллы стрит-дро, если соперники готовы платить такой размер.",
+    "同花牌面直接全下，先核对较弱牌会不会跟注": "Перед пушем на флеш-борде проверь, какие слабые руки могут заплатить",
+    "对手继续范围可能变强，应比较过牌或较小下注；只有较弱对子或尚未完成的听牌仍愿意支付时，再考虑全下取值。": "Диапазон продолжения может стать сильнее. Сравни чек и меньшую ставку; пуш на вэлью стоит рассматривать, только если слабые пары или незакрывшиеся дро всё ещё платят.",
+    "当时底池 {0}，全下约占底池的 {1}%，这手强牌可比较价值全下，让{2}付费。": "В банке было {0}; пуш составляет около {1}% банка. С этой сильной рукой можно сравнить пуш на вэлью, чтобы получить оплату от {2}.",
+    "本次追加 {0}。": "Дополнительное вложение: {0}.",
+    "虽然已经成同花，对手仍可能用更高的同花领先。": "Хотя у тебя флеш, у соперника всё ещё может быть флеш старше.",
+    "转牌补出了第三张{0}，原本持两张{1}的听牌现在已成同花。": "На тёрне вышла третья карта масти {0}; дро с двумя картами масти {1} теперь собрали флеш."
   }
 }

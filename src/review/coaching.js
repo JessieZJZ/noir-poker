@@ -22,6 +22,7 @@ import {
 import { heavyPreflopPressure } from './presentation.js';
 import { rangeNoteClauses } from './matchups.js';
 import { checkReasoning, checkRisks, madeRedrawReasoning } from './check-reasoning.js';
+import { valueDrawNote, flushCompletionNote } from './value-targets.js';
 
 const streets = ['翻牌前', '翻牌', '转牌', '河牌'];
 const fmt = compactChips;
@@ -45,6 +46,7 @@ const reviewedBoundaryCodes = new Set([
   'dangerous-value-shove',
   'undersized-value-bet',
   'dirty-draw-bet',
+  'flush-board-shove',
 ]);
 
 function currentHand(s, c) {
@@ -126,6 +128,16 @@ function actualActionReason(s, r) {
       (s.history || [])
         .filter((a) => a.street === 0 && a.id !== 0 && a.action === 'call')
         .map((a) => a.id),
+    );
+  if (
+    s.street &&
+    s.action === 'raise' &&
+    ((f.shove && (plannedValueShove(s, c) || reviewedBoundaryCodes.has(r.code))) ||
+      c.made.score[0] >= 3)
+  )
+    return (
+      `你拿 ${f.holeText}，在 ${f.boardText} 上是${currentHand(s, c)}，${actionLabel(s)}。` +
+      (f.investment !== s.amount ? `本次追加 ${fmt(f.investment)}。` : '')
     );
   if (!s.street && s.action === 'raise' && heavyPreflopPressure(s, c))
     return `你拿 ${f.holeText} 在 ${s.position} ${actionLabel(s)}，这次拿出 ${fmt(f.investment)} 争取 ${fmt(s.pot)} 的底池。${preflopPressureFocus(s, c)}`;
@@ -257,6 +269,7 @@ function explanation(s, r, evKind, suggested, kind) {
       '强成牌不代表任何全下尺度都有价值，应比较较小下注能留下哪些较弱跟注牌，不能只凭目前能赢哪些牌，就认定它们也愿意支付整笔全下。',
     ];
   }
+  if (r.code === 'flush-board-shove') return [r.reason];
   if (r.code === 'undersized-value-bet')
     return [
       `当前${currentHand(s, c)}有取值潜力，这次只拿出 ${fmt(f.investment)}，约占底池的 ${pricePct(f.potRatio)}。`,
@@ -735,9 +748,18 @@ export function coachDecision(s, r) {
                       ? `这手建议${suggested}，先用较小成本保留翻后位置和改善机会。`
                       : '这手建议跟注，保留当前牌力和改善后的获池机会。';
     }
+    const completedFlush = flushCompletionNote(s, r.context);
+    const risks = checkRisks(s, r.context);
+    if (completedFlush) risks.shift(); // The specific turn fact replaces the generic flush clause.
+    if (completedFlush && !reasonParts.includes(completedFlush))
+      reasonParts.unshift(completedFlush);
     const publicAdditions =
       s.street && s.action !== 'check'
-        ? [...checkRisks(s, r.context), ...madeRedrawReasoning(s, r.context)]
+        ? [
+            ...risks,
+            ...madeRedrawReasoning(s, r.context),
+            r.code !== 'flush-board-shove' ? valueDrawNote(s, r.context) : '',
+          ].filter(Boolean)
         : [];
     for (const clause of publicAdditions)
       if (clause && !reasonParts.includes(clause)) reasonParts.push(clause);

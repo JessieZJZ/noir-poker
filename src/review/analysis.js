@@ -15,6 +15,7 @@ import { actionLabel } from '../engine/action-labels.js';
 import { legalRaiseTo } from '../engine/bet-sizing.js';
 import { gameIdentities } from '../engine/player-identity.js';
 import { checkRisks } from './check-reasoning.js';
+import { flushBoardShove } from './value-targets.js';
 export { actionLabel } from '../engine/action-labels.js';
 export { callPrice } from './equity.js';
 export { startingTier, drawInfo } from './context.js';
@@ -353,6 +354,18 @@ export function analyzeDecision(
     alternative = { action: s.legal.canCheck ? 'check' : 'fold', amount: 0 };
     lesson = '主动开池、平跟已有开池和防守再加注需要不同范围，不能只按起手牌档位判断。';
     plan = '若以后在大盲面对很小加注，应重新按价格判断，不能把“弱牌”直接等同于必须弃牌。';
+  } else if (flushBoardShove(s, ctx)) {
+    code = 'flush-board-shove';
+    status = 'consider';
+    title = '同花牌面直接全下，先核对较弱牌会不会跟注';
+    reason =
+      '对手继续范围可能变强，应比较过牌或较小下注；只有较弱对子或尚未完成的听牌仍愿意支付时，再考虑全下取值。';
+    alternative = {
+      action: s.legal.canCheck ? 'check' : high + uncertainty < price.required ? 'fold' : 'call',
+      amount: s.legal.canCheck || high + uncertainty < price.required ? 0 : s.legal.callAmount,
+    };
+    lesson = reason;
+    plan = reason;
   } else if (
     s.street > 0 &&
     s.action === 'raise' &&

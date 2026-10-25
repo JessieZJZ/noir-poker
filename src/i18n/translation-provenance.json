@@ -1027,5 +1027,23 @@
     "locales": ["en", "zh-TW", "ja", "ko", "es", "it", "pt", "de", "fr", "ru"],
     "method": "Assistant-authored targeted public-action and missed-draw explanations; same interpolation values in all locales.",
     "independentLinguisticReview": "not performed"
+  },
+  "reviewValueTargets20261025": {
+    "messages": [
+      "你拿 {0}，在 {1} 上{2}。{3}",
+      "你拿 {0}，在 {1} 上是{2}，{3}。",
+      "取值也可能来自同花听牌的跟注，前提是对手愿意支付这个尺度。",
+      "取值也可能来自顺子听牌或同花听牌的跟注，前提是对手愿意支付这个尺度。",
+      "取值也可能来自顺子听牌的跟注，前提是对手愿意支付这个尺度。",
+      "同花牌面直接全下，先核对较弱牌会不会跟注",
+      "对手继续范围可能变强，应比较过牌或较小下注；只有较弱对子或尚未完成的听牌仍愿意支付时，再考虑全下取值。",
+      "当时底池 {0}，全下约占底池的 {1}%，这手强牌可比较价值全下，让{2}付费。",
+      "本次追加 {0}。",
+      "虽然已经成同花，对手仍可能用更高的同花领先。",
+      "转牌补出了第三张{0}，原本持两张{1}的听牌现在已成同花。"
+    ],
+    "locales": ["en", "zh-TW", "ja", "ko", "es", "it", "pt", "de", "fr", "ru"],
+    "method": "Assistant-authored public-card value/draw explanations and concise action labels. Numeric/card/suit placeholders preserved; examples remain possible hands, not measured frequencies.",
+    "independentLinguisticReview": "not performed"
   }
 }

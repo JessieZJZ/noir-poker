@@ -215,7 +215,8 @@ export function actionReason(s, r) {
     }
     return draw.outs
       ? `你拿 ${hand}，在 ${f.boardText} 上${actual}，这次拿出 ${n(f.investment)}，目前是${c.handLabel}加${drawLabel(draw)}，共有 ${draw.outs} 张牌可以补成${drawCompletion(draw)}。${['high', 'underpair', 'middle-pair', 'board-pair'].includes(c.handClass) ? (foldNote ? '这次属于半诈唬。' + foldNote + '听牌仍提供改善机会。' : '这次属于半诈唬，对手弃牌可直接拿池，被跟注后仍能补牌。') : '已有成牌可以向弱牌取值，同时保留听牌改善。'}`
-      : `你拿 ${hand}，在 ${f.boardText} 上${actual}，这次拿出 ${n(f.investment)}。${['high', 'underpair', 'middle-pair', 'board-pair'].includes(c.handClass) ? (foldNote ? '目前牌力偏弱。' + foldNote : '目前牌力偏弱，这次下注主要需要更好的牌弃掉。') : c.handClass === 'board' ? '主要牌力来自公共牌，你的底牌没有增加优势，这笔下注很难单靠价值跟注获利。' : '目前已有成牌，下注的价值来自对手用更弱成牌跟注。'}`;
+      : `你拿 ${hand}，在 ${f.boardText} 上${actual}。${['high', 'underpair', 'middle-pair', 'board-pair'].includes(c.handClass) ? (foldNote ? '目前牌力偏弱。' + foldNote : '目前牌力偏弱，这次下注主要需要更好的牌弃掉。') : c.handClass === 'board' ? '主要牌力来自公共牌，你的底牌没有增加优势，这笔下注很难单靠价值跟注获利。' : '目前已有成牌，下注的价值来自对手用更弱成牌跟注。'}` +
+          (f.investment !== s.amount ? `本次追加 ${n(f.investment)}。` : '');
   }
   if (s.action === 'call')
     return s.street

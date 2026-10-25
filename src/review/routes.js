@@ -123,6 +123,20 @@ export function comparisonRoutes(s, ctx, { code, status, alternative, pre }) {
     return { primary, secondary };
   }
   const value = ctx.valuePlan || valuePlan(s, ctx);
+  if (code === 'flush-board-shove') {
+    primary.condition =
+      '只有此前行动支持较弱牌仍会跟注时，才比较价值下注，面对加注重新核对价格和范围。';
+    secondary =
+      value.primary && value.primary.amount < s.legal.maxRaiseTo
+        ? {
+            ...value.primary,
+            label: label(value.primary),
+            condition: primary.condition,
+            tradeoff: '小注减少对手继续成本，也可能少收价值或让听牌便宜继续。',
+          }
+        : null;
+    return { primary, secondary };
+  }
   if (
     value.primary &&
     same(value.primary, alternative) &&

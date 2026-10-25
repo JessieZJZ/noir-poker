@@ -21,7 +21,7 @@ export function checkRisks(s, c) {
       .sort((a, b) => b.rank - a.rank)
       .slice(0, 2);
     if (compare(evaluate([...s.board, ...possible]).score, c.made.score) > 0)
-      clauses.push('虽然已经成同花，对手仍可能用更高的同花领先，不能只看成花就把筹码全部投入。');
+      clauses.push('虽然已经成同花，对手仍可能用更高的同花领先。');
   }
   if (score < 4 && c.texture.connected >= 3) {
     const ranks = new Set(s.board.map((card) => card.rank));
