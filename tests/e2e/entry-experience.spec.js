@@ -254,6 +254,50 @@ test('the waiting message sits where the hand label sits once play starts', asyn
     await page.close();
   }
 });
+test('the waiting message keeps clear of the players beside it on short phones', async ({
+  browser,
+}) => {
+  for (const [width, height, count] of [
+    [375, 667, 5],
+    [360, 740, 5],
+    [390, 844, 5],
+    [375, 667, 9],
+  ]) {
+    const page = await browser.newPage({ viewport: { width, height } });
+    await page.addInitScript(
+      (c) => localStorage.setItem('noir-table-v1', JSON.stringify({ playerCount: c })),
+      count,
+    );
+    await page.goto('/');
+    await expect(page.locator('html')).toHaveAttribute('data-app-ready', 'true');
+    await expect(page.locator('.game-surface')).toHaveAttribute('data-entry-state', 'waiting');
+    const gaps = await page.evaluate(() => {
+      const parts = [...document.querySelector('.entry-welcome').children].map((e) =>
+        e.getBoundingClientRect(),
+      );
+      const content = {
+        left: Math.min(...parts.map((b) => b.left)),
+        right: Math.max(...parts.map((b) => b.right)),
+        top: Math.min(...parts.map((b) => b.top)),
+        bottom: Math.max(...parts.map((b) => b.bottom)),
+      };
+      const middle = (content.left + content.right) / 2;
+      const beside = [...document.querySelectorAll('.arena .seat-profile')]
+        .map((e) => e.getBoundingClientRect())
+        .filter((b) => b.bottom > content.top && b.top < content.bottom);
+      return {
+        left:
+          content.left - Math.max(...beside.filter((b) => b.right <= middle).map((b) => b.right)),
+        right:
+          Math.min(...beside.filter((b) => b.left >= middle).map((b) => b.left)) - content.right,
+      };
+    });
+    expect(gaps.left, `${width}x${height} ${count}`).toBeGreaterThanOrEqual(31);
+    expect(gaps.right, `${width}x${height} ${count}`).toBeGreaterThanOrEqual(31);
+    await page.close();
+  }
+});
+
 test('waiting settings update the undealt table and a reload waits for the next hand in the same session', async ({
   page,
 }) => {

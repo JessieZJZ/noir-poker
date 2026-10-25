@@ -271,6 +271,7 @@ export async function buildWechat(output = wechatOutput) {
       'music-fade.js',
       'deal-gate.js',
       'effect-layouts.js',
+      'entry-welcome-scale.js',
       'ceremony-sounds.js',
     ]) {
       const compiled = await transform(await readFile(path.join(root, 'src/ui', name), 'utf8'), {

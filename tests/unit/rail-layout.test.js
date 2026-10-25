@@ -113,8 +113,10 @@ test('narrow phone card backs fit the reserved pair slot while leaving a visible
   assert.ok(top >= 0);
   assert.ok(43 - top >= 20);
   // Keep the smallest tall-phone face/back readable after the solver's fit.
+  // This nine-seat table now picks the rail with far larger faces (about 47px
+  // instead of 32px) at a slightly smaller scale, so backs stay near 15px.
   assert.ok(fit.cardWidth * fit.arenaScale >= 31);
-  assert.ok(text['player-back-width'] * fit.arenaScale >= 15);
+  assert.ok(text['player-back-width'] * fit.arenaScale >= 14.5);
 });
 
 test('tablet-sized PC windows cap hero artwork independently of pointer type', () => {
@@ -168,4 +170,74 @@ test('a roomy table keeps five readable community cards in one row', () => {
   });
   assert.equal(fit.twoRows, false);
   assert.ok(fit.cardWidth * fit.arenaScale >= 70);
+});
+
+// On-screen gaps between side-by-side players, and from the hole cards to them.
+function screenGaps(fit) {
+  let seats = Infinity,
+    hero = Infinity;
+  const boxes = fit.positioned;
+  for (let i = 0; i < boxes.length; i++)
+    for (let j = i + 1; j < boxes.length; j++) {
+      const [a, b] = [boxes[i], boxes[j]];
+      const shared = Math.min(a.top + a.height, b.top + b.height) - Math.max(a.top, b.top);
+      if (shared > a.height * 0.3)
+        seats = Math.min(seats, Math.max(b.left - a.left - a.width, a.left - b.left - b.width));
+    }
+  for (const face of fit.heroCardGeometry.faces)
+    for (const seat of boxes)
+      for (const part of seat.parts) {
+        const left = seat.left + part.left,
+          top = seat.top + part.top;
+        hero = Math.min(
+          hero,
+          Math.max(
+            left - face.left - face.width,
+            face.left - left - part.width,
+            top - face.top - face.height,
+            face.top - top - part.height,
+          ),
+        );
+      }
+  return { seats: seats * fit.arenaScale, hero: hero * fit.arenaScale };
+}
+const table = (count, width, height) =>
+  compactTableLayout({
+    width,
+    height,
+    availableWidth: width - 18,
+    displayHeight: height + 289,
+    seats: Array.from({ length: count - 1 }, (_, i) => ({ id: i + 1 })),
+  });
+
+test('nine-seat phones spread the top players without shrinking readable cards', () => {
+  // Including WeChat's 363px table on a 375x667 phone.
+  for (const [width, height] of [
+    [360, 440],
+    [375, 363],
+    [375, 383],
+    [390, 470],
+    [414, 534],
+  ]) {
+    const fit = table(9, width, height);
+    const gaps = screenGaps(fit);
+    assert.ok(gaps.seats >= 18, `${width}x${height}: players ${gaps.seats.toFixed(1)}px apart`);
+    assert.ok(fit.cardWidth * fit.arenaScale >= 31, `${width}x${height}: board cards`);
+    assert.ok(fit.heroWidth * fit.arenaScale >= 31, `${width}x${height}: hole cards`);
+  }
+});
+
+test('crowded phone cards keep a visible clearance only while they stay readable', () => {
+  for (const [width, height] of [
+    [375, 383],
+    [375, 363],
+    [390, 470],
+  ]) {
+    const fit = table(8, width, height);
+    assert.ok(screenGaps(fit).hero >= 13, `${width}x${height}: hole cards beside players`);
+    assert.ok(Math.min(fit.cardWidth, fit.heroWidth) * fit.arenaScale >= 34);
+  }
+  // Five- to seven-seat tables keep their larger cards: no extra clearance.
+  const five = table(5, 390, 470);
+  assert.ok(five.cardWidth * five.arenaScale >= 45);
 });

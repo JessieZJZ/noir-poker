@@ -7,6 +7,13 @@ const { completeBoardForPractice, rankText } = require('../../shared/engine/poke
 const navigation = require('../../record-navigation.js');
 const { nameTooltipPosition } = require('../../shared/ui/name-tooltip-position.js');
 const {
+  entryWelcomeCorridor,
+  entryWelcomeScale,
+} = require('../../shared/ui/entry-welcome-scale.js');
+// The waiting message's natural size, measured in DevTools: its button (150px
+// plus padding) and four stacked lines.
+const ENTRY_WELCOME_SIZE = { width: 184, height: 132 };
+const {
   WECHAT_RECORDS_BUDGET,
   createSnapshotFiles,
   ceremonySoundFiles,
@@ -479,8 +486,37 @@ module.exports = {
         seats: view.seats,
         displayHeight: viewport.windowHeight - viewport.topInset - viewport.bottomInset - 36,
       });
+      // As on Web, the waiting message keeps its size unless the players beside
+      // it would crowd it; it sits centred at 44% of the arena height.
+      const halfHeight = ENTRY_WELCOME_SIZE.height / fitted.arenaScale / 2;
+      const corridor = entryWelcomeCorridor(
+        fitted.positioned.map((seat) => {
+          const profile = seat.parts?.[1] ?? {
+            left: 0,
+            top: 0,
+            width: seat.width,
+            height: seat.height,
+          };
+          return {
+            left: seat.left + profile.left,
+            top: seat.top + profile.top,
+            width: profile.width,
+            height: profile.height,
+          };
+        }),
+        {
+          centerX: fitted.arenaWidth / 2,
+          top: fitted.arenaHeight * 0.44 - halfHeight,
+          bottom: fitted.arenaHeight * 0.44 + halfHeight,
+        },
+      );
       return {
         ...fitted,
+        entryScale: entryWelcomeScale({
+          arenaScale: fitted.arenaScale,
+          contentWidth: ENTRY_WELCOME_SIZE.width,
+          corridorWidth: corridor * fitted.arenaScale,
+        }),
         tableHeight,
         phoneLayout: true,
         phoneSeats: fitted.positioned.map((seat) => {

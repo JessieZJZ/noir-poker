@@ -11,6 +11,7 @@ import { createWechatController } from '../../src/platform/wechat-controller.js'
 import { recordResult, sessionStanding } from '../../src/engine/game-records.js';
 import { nameTooltipPosition } from '../../src/ui/name-tooltip-position.js';
 import { numericWidthScale, numericColumnWidth } from '../../src/ui/numeric-width.js';
+import { entryWelcomeCorridor, entryWelcomeScale } from '../../src/ui/entry-welcome-scale.js';
 import * as effectLayouts from '../../src/ui/effect-layouts.js';
 import * as ceremonySounds from '../../src/ui/ceremony-sounds.js';
 const pageEffectsSource = readFileSync(
@@ -133,6 +134,8 @@ function setup(
       if (name === './phone-layout.js') return { phoneLayout: compactTableLayout };
       if (name.endsWith('/name-tooltip-position.js')) return { nameTooltipPosition };
       if (name.endsWith('/numeric-width.js')) return { numericWidthScale, numericColumnWidth };
+      if (name.endsWith('/entry-welcome-scale.js'))
+        return { entryWelcomeCorridor, entryWelcomeScale };
       if (name === './game-effects.js') return loadPageEffects(context.wx);
       if (name === '../../shared/engine/poker.js')
         return { completeBoardForPractice, rankText, evaluate };
@@ -2747,6 +2750,18 @@ test('a late guide jump cannot move a closed or newly opened normal guide', (t) 
   for (const callback of pending) callback();
   assert.equal(page.data.guideOpen, true);
   assert.equal(page.data.guideScrollTarget, '');
+});
+
+test('WeChat waiting table matches play and its message keeps clear of players', (t) => {
+  // The waiting header spans the play header plus the hint row: no jump on deal.
+  assert.match(
+    readFileSync(new URL('../../miniprogram/pages/table/entry.wxss', import.meta.url), 'utf8'),
+    /\.entry-waiting \.game-header\s*\{[^}]*flex-basis: 48px;/s,
+  );
+  assert.match(template, /--entry-scale: \{\{entryScale \|\| 1 \/ arenaScale\}\}/);
+  const { page } = setup(t, { waiting: true });
+  assert.ok(page.data.entryScale > 0);
+  assert.ok(page.data.entryScale <= 1 / page.data.arenaScale + 1e-9);
 });
 
 test('WeChat seat cards stay two per row down to 340px, as on Web', () => {

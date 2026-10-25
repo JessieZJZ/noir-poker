@@ -119,33 +119,6 @@ export function compactTableLayout({
       availableWidth ?? Math.round(Math.max(1, width - (width <= 600 ? 18 : width * 0.06 + 2))),
     height: Math.max(1, height),
     gap: 16,
-    // On phones, eight and nine seats also try rails that pull the lowest
-    // seats toward the hero, which spaces the side columns and fits larger
-    // players.
-    alternatives:
-      count === 5
-        ? [[160, 230, 310, 380]]
-        : count === 9
-          ? [
-              undefined,
-              ...(width <= 600
-                ? [
-                    [122, 166, 226, 256, 284, 314, 374, 418],
-                    [118, 170, 230, 256, 284, 310, 370, 422],
-                  ]
-                : []),
-            ]
-          : count === 8 && width <= 600
-            ? [undefined, [126, 178, 234, 270, 306, 362, 414]]
-            : undefined,
-    angles:
-      count === 5
-        ? [180, 240, 300, 360]
-        : count === 9
-          ? tablet
-            ? [120, 160, 200, 240, 300, 340, 380, 420]
-            : [150, 180, 210, 240, 300, 330, 360, 390]
-          : undefined,
     seats: seats.map((s) => ({
       ...s,
       width: s.width ?? seatWidth,
@@ -173,6 +146,30 @@ export function compactTableLayout({
     })),
     hero: { width: Math.round(heroWidth * 2 + 7), height: heroFoot },
   };
+  // On phones, eight and nine seats also try rails that pull the lowest seats
+  // toward the hero, which spaces the side columns and fits larger players.
+  const nineAngles = tablet
+    ? [120, 160, 200, 240, 300, 340, 380, 420]
+    : [150, 180, 210, 240, 300, 330, 360, 390];
+  const rails =
+    count === 5
+      ? [{ angles: [180, 240, 300, 360], alternatives: [[160, 230, 310, 380]] }]
+      : count === 9 && width <= 600
+        ? // Each nine-seat phone rail is scored on its own, below: the newer
+          // ones spread the four top players evenly along the upper rail.
+          [
+            nineAngles,
+            undefined,
+            [122, 166, 226, 256, 284, 314, 374, 418],
+            [118, 170, 230, 256, 284, 310, 370, 422],
+            [122, 166, 214, 254, 286, 326, 374, 418],
+            [118, 170, 214, 254, 286, 326, 370, 422],
+          ].map((angles) => ({ angles }))
+        : count === 9
+          ? [{ angles: nineAngles, alternatives: [undefined] }]
+          : count === 8 && width <= 600
+            ? [{ alternatives: [undefined, [126, 178, 234, 270, 306, 362, 414]] }]
+            : [{}];
   // Board and hole cards should read as one card size. Grow both for each row
   // arrangement, keep the arrangement whose smaller face is largest, then keep
   // either size within 10% of the other. A cap on the on-screen size (after
@@ -189,38 +186,83 @@ export function compactTableLayout({
     maximumWidth: Math.min(cap, crowded ? boardWidth : Math.round(boardWidth * 1.1)),
     gap: crowded ? 20 : 18,
   });
-  const candidates = [false, true].map((twoRows) => {
-    const layout = railLayout({
-      ...railOptions,
-      publicRows: [publicRow(cardWidth, twoRows)],
+  // On crowded phone tables the cards also keep a visible clearance from the
+  // players on screen, not only in arena units, so a scaled-down table does
+  // not look squeezed. The clearance never costs readability: below the
+  // readable face size the tighter arena gaps apply instead.
+  const readableFace = 34;
+  const arrange = (rail) => {
+    const candidates = [false, true].map((twoRows) => {
+      const layout = railLayout({
+        ...railOptions,
+        ...rail,
+        publicRows: [publicRow(cardWidth, twoRows)],
+      });
+      const scale = Math.min(1, height / layout.arenaHeight),
+        cap = Math.floor(faceCap / scale);
+      const grow = (boardGap, heroGap) => {
+        const grown = growPublicCards(layout, {
+          cardWidth,
+          createRow: publicRow,
+          gap: boardGap,
+          maximumWidth: cap,
+        });
+        return {
+          grown,
+          hero: growHeroCards(grown.layout, { ...heroOptions(grown.cardWidth, cap), gap: heroGap }),
+        };
+      };
+      const tight = grow(16, crowded ? 20 : 18);
+      const spaced = crowded && grow(Math.max(16, 12 / scale), Math.max(20, 13 / scale));
+      const { grown, hero } =
+        spaced && Math.min(spaced.grown.cardWidth, spaced.hero.width) * scale >= readableFace
+          ? spaced
+          : tight;
+      return {
+        ...grown,
+        hero,
+        scale,
+        readable: Math.min(grown.cardWidth, hero.width) * scale,
+      };
     });
-    const scale = Math.min(1, height / layout.arenaHeight),
-      cap = Math.floor(faceCap / scale);
-    const grown = growPublicCards(layout, {
-      cardWidth,
-      createRow: publicRow,
-      gap: 16,
-      maximumWidth: cap,
-    });
-    const hero = growHeroCards(grown.layout, heroOptions(grown.cardWidth, cap));
-    return {
-      ...grown,
-      hero,
-      scale,
-      readable: Math.min(grown.cardWidth, hero.width) * scale,
-    };
-  });
-  const [single, double] = candidates;
-  // Two rows when they make both faces clearly larger, or when one row would
-  // leave the board cards below a readable on-screen width.
-  const readableWidth = tablet ? 52 : Math.max(36, Math.min(44, width * 0.11));
-  const tooSmall =
-    single.cardWidth * single.scale < readableWidth &&
-    double.cardWidth * double.scale > single.cardWidth * single.scale * 1.1;
-  const chosen =
-    tooSmall || (double.readable > single.readable * 1.08 && double.scale >= single.scale * 0.9)
+    const [single, double] = candidates;
+    // Two rows when they make both faces clearly larger, or when one row would
+    // leave the board cards below a readable on-screen width.
+    const readableWidth = tablet ? 52 : Math.max(36, Math.min(44, width * 0.11));
+    const tooSmall =
+      single.cardWidth * single.scale < readableWidth &&
+      double.cardWidth * double.scale > single.cardWidth * single.scale * 1.1;
+    return tooSmall ||
+      (double.readable > single.readable * 1.08 && double.scale >= single.scale * 0.9)
       ? double
       : single;
+  };
+  // The narrowest on-screen gap between side-by-side players.
+  const seatSpacing = ({ layout, scale }) => {
+    let narrowest = Infinity;
+    const boxes = layout.positioned;
+    for (let i = 0; i < boxes.length; i++)
+      for (let j = i + 1; j < boxes.length; j++) {
+        const [a, b] = [boxes[i], boxes[j]];
+        const shared = Math.min(a.top + a.height, b.top + b.height) - Math.max(a.top, b.top);
+        if (shared > a.height * 0.3)
+          narrowest = Math.min(
+            narrowest,
+            Math.max(b.left - a.left - a.width, a.left - b.left - b.width),
+          );
+      }
+    return narrowest * scale;
+  };
+  // Keep the table within 10% of the largest rail and the cards within 6% of
+  // the most readable of those, then prefer the rail that spaces the players
+  // most evenly: readable cards and spacing outweigh a slightly smaller table.
+  const arranged = rails.map(arrange);
+  const bestScale = Math.max(...arranged.map((option) => option.scale));
+  const fullSize = arranged.filter((option) => option.scale >= bestScale * 0.9);
+  const bestReadable = Math.max(...fullSize.map((option) => option.readable));
+  const chosen = fullSize
+    .filter((option) => option.readable >= bestReadable * 0.94)
+    .sort((a, b) => seatSpacing(b) - seatSpacing(a) || b.scale - a.scale)[0];
   let fitted = chosen.layout;
   cardWidth = chosen.cardWidth;
   const heroCards = chosen.hero;

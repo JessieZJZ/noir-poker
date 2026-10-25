@@ -250,7 +250,7 @@
         <view
           wx:if="{{waitingForSeat}}"
           class="entry-welcome"
-          style="left: {{arenaWidth / 2}}px; top: {{arenaHeight * 0.44}}px; --entry-scale: {{1 / arenaScale}};"
+          style="left: {{arenaWidth / 2}}px; top: {{arenaHeight * 0.44}}px; --entry-scale: {{entryScale || 1 / arenaScale}};"
         >
           <text class="entry-eyebrow">NOIR POKER</text>
           <text class="entry-title">牌桌已就绪</text>

@@ -102,8 +102,10 @@
 .entry-waiting .action-dock {
   display: none;
 }
+/* The waiting header takes the play header and hint row together (26px +
+   22px), so the table does not move when the first hand is dealt. */
 .entry-waiting .game-header {
-  flex-basis: 50px;
+  flex-basis: 48px;
   flex-wrap: nowrap;
   align-items: flex-start;
   gap: 8px;
