@@ -351,6 +351,8 @@ export async function compareNativePage({ root, output, evaluate, screenshot }, 
     // or its open socket keeps the test process alive until the CI timeout.
     browser = await chromium.launch({
       args: [`--force-device-scale-factor=${snapshot.layoutScale}`],
+      // A loaded hosted macOS runner has needed more than the default 180s.
+      timeout: 600000,
     });
     const page = await browser.newPage({
       viewport: snapshot.viewport,
