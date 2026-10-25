@@ -1595,7 +1595,8 @@ export async function nativeScenarios(app) {
     const assignments = await app.evaluate(() =>
       [1, 2, 3].map((id) => document.querySelector(`[data-bot-seat="${id}"]`).value),
     );
-    assert.deepEqual(assignments, ['rook', 'balanced', 'owen']);
+    // Cancelling the mix returns every seat, manual choices included, to balanced.
+    assert.deepEqual(assignments, ['balanced', 'balanced', 'balanced']);
     await app.click('#opponents-dialog .close-dialog');
     await app.click('#rules-button');
     await app.click('#guide-menu-item');

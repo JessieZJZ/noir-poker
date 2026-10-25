@@ -577,18 +577,18 @@ test('Chinese table hints match Web prices and stale timers cannot clear a new d
   assert.equal(latest().hintText, tableHint(controller.getGame()));
 });
 
-test('WeChat mixed lineup persists ownership and manual selections survive cancellation', (t) => {
+test('WeChat mix gives seated opponents distinct styles and cancelling resets all to balanced', (t) => {
   const { controller, latest, preferences } = setup(t);
   controller.setSeatProfile(1, 'rook');
   controller.toggleMixedProfiles();
-  assert.equal(latest().settings.mixed, true);
-  assert.equal(latest().settings.assignments[1], 'rook');
-  const auto = latest().settings.assignments[2];
-  controller.setSeatProfile(2, auto);
+  const mixed = latest().settings;
+  assert.equal(mixed.mixed, true);
+  const seated = Array.from({ length: mixed.playerCount - 1 }, (_, i) => mixed.assignments[i + 1]);
+  assert.equal(new Set(seated).size, seated.length);
+  assert.ok(seated.every((id) => id !== 'balanced'));
+  controller.setSeatProfile(2, 'owen');
   controller.toggleMixedProfiles();
-  assert.equal(latest().settings.assignments[1], 'rook');
-  assert.equal(latest().settings.assignments[2], auto);
-  for (const id of [3, 4, 5]) assert.equal(latest().settings.assignments[id], 'balanced');
+  for (let id = 1; id <= 8; id++) assert.equal(latest().settings.assignments[id], 'balanced');
   assert.equal(JSON.parse(preferences.get('noir-wechat-settings-v1')).mixed, false);
 });
 

@@ -274,19 +274,21 @@ export function assignBotSeat(value, id, profileId) {
   settings.mixedSeats = settings.mixedSeats.filter((seat) => seat !== id);
   return settings;
 }
+// Selecting the mix gives every seated opponent a different non-balanced
+// style, repeating only after all of them are used (nine seats). Cancelling
+// returns every seat, including manual choices, to balanced.
 export function toggleMixedLineup(value, count = 9, random = Math.random) {
   const settings = sanitizeBotSettings(value);
+  settings.mixedSeats = [];
   if (settings.mixed) {
-    for (const id of settings.mixedSeats) settings.assignments[id] = 'balanced';
+    for (let id = 1; id <= 8; id++) settings.assignments[id] = 'balanced';
     settings.mixed = false;
-    settings.mixedSeats = [];
     return settings;
   }
   settings.mixed = true;
-  const styles = BOT_PROFILES.map((p) => p.id);
-  let available = [...styles];
+  const styles = BOT_PROFILES.map((p) => p.id).filter((id) => id !== 'balanced');
+  let available = [];
   for (let id = 1; id < Math.min(9, count); id++) {
-    if (settings.assignments[id] !== 'balanced') continue;
     if (!available.length) available = [...styles];
     const index = Math.min(
       available.length - 1,

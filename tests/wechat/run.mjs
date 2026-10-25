@@ -645,11 +645,15 @@ try {
   const menu = await page.$('.selection-sheet');
   const t = await trigger.offset(),
     ts = await trigger.size(),
-    m = await menu.offset();
-  assert.ok(
-    Math.abs(m.top - t.top - ts.height - 4) <= 1,
-    'Count dropdown opens immediately below its trigger',
-  );
+    m = await menu.offset(),
+    ms = await menu.size();
+  // It opens 4px below its trigger, or 4px above it when a short screen
+  // leaves too little room below (e.g. a 375x667 simulator).
+  const opensBelow = Math.abs(m.top - t.top - ts.height - 4) <= 1;
+  const placed = (await page.data()).selection;
+  const opensAbove =
+    Math.abs(m.top + placed.height + 4 - t.top) <= 1 && ms.height - placed.height <= 2;
+  assert.ok(opensBelow || opensAbove, 'Count dropdown opens immediately beside its trigger');
   assert.equal(
     await (await page.$('.selection-backdrop')).style('background-color'),
     'rgba(0, 0, 0, 0)',
@@ -742,16 +746,23 @@ try {
   await chooseSeat(1, 'rook');
   await chooseSeat(2, 'balanced');
   await invoke('mixProfiles');
-  assert.equal((await page.data()).settings.mixed, true);
-  assert.equal((await page.data()).settings.assignments[1], 'rook');
+  const mixedOn = (await page.data()).settings;
+  assert.equal(mixedOn.mixed, true);
+  // Every seated opponent, manual choices included, gets a distinct
+  // non-balanced style.
+  const seatedStyles = Array.from(
+    { length: mixedOn.playerCount - 1 },
+    (_, i) => mixedOn.assignments[i + 1],
+  );
+  assert.equal(new Set(seatedStyles).size, Math.min(seatedStyles.length, 7));
+  assert.ok(seatedStyles.every((id) => id !== 'balanced'));
   await chooseSeat(3, 'owen');
   await invoke('mixProfiles');
   const mixedSettings = (await page.data()).settings;
   assert.equal(mixedSettings.mixed, false);
-  assert.equal(mixedSettings.assignments[1], 'rook');
-  assert.equal(mixedSettings.assignments[2], 'balanced');
-  assert.equal(mixedSettings.assignments[3], 'owen');
-  report.mixedToggle = mixedSettings;
+  // Cancelling returns every seat to balanced.
+  assert.ok(Object.values(mixedSettings.assignments).every((id) => id === 'balanced'));
+  report.mixedToggle = { on: mixedOn, off: mixedSettings };
   await capture('settings-roster', [
     '.settings-modal',
     '.seat-roster',

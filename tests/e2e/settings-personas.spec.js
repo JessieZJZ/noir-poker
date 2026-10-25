@@ -213,14 +213,12 @@ test('style assignments, mixed lineups and emotions automatically persist while 
   await page.locator('#mix-opponents').click();
   const mixed = await saved();
   expect(mixed.mixed).toBe(true);
-  expect(mixed.mixedSeats).toEqual([2, 3, 4, 5]);
-  expect(mixed.assignments['1']).toBe('rook');
+  // Every seated opponent, including a manual choice, gets a distinct style.
+  expect(mixed.mixedSeats).toEqual([1, 2, 3, 4, 5]);
   const automatic = mixed.mixedSeats.map((id) => mixed.assignments[id]);
-  expect(new Set(automatic).size).toBe(4);
+  expect(new Set(automatic).size).toBe(5);
   expect(
-    automatic.every((id) =>
-      ['balanced', 'rook', 'jett', 'owen', 'vale', 'nico', 'mira', 'iris'].includes(id),
-    ),
+    automatic.every((id) => ['rook', 'jett', 'owen', 'vale', 'nico', 'mira', 'iris'].includes(id)),
   ).toBe(true);
   await expect(page.locator('#mix-opponents')).toHaveAttribute('aria-pressed', 'true');
   // The settings cover all future seats, including those currently off table.
@@ -232,7 +230,7 @@ test('style assignments, mixed lineups and emotions automatically persist while 
   await page.locator('[data-close-profile-detail]').click();
   await closeSettings(page);
   await openSettings(page);
-  await expect(page.locator('[data-bot-seat="1"]')).toHaveValue('rook');
+  await expect(page.locator('[data-bot-seat="1"]')).toHaveValue(mixed.assignments['1']);
   await expect(page.locator('[data-bot-seat="8"]')).toHaveValue('balanced');
   await expect(page.locator('#emotion-mode')).toHaveValue('lively');
   await closeSettings(page);
@@ -263,7 +261,7 @@ test('style assignments, mixed lineups and emotions automatically persist while 
   await page.waitForFunction(() => !!window.qa);
   await page.evaluate(() => window.qa.stop());
   await openSettings(page);
-  await expect(page.locator('[data-bot-seat="1"]')).toHaveValue('rook');
+  await expect(page.locator('[data-bot-seat="1"]')).toHaveValue(mixed.assignments['1']);
   await expect(page.locator('[data-bot-seat="8"]')).toHaveValue('balanced');
   await expect(page.locator('#emotion-mode')).toHaveValue('lively');
   expect(await saved()).toEqual(persisted);
