@@ -6,7 +6,8 @@ import { startingPercentile } from './starting-range.js';
 const clamp = (value) => Math.max(0, Math.min(1, value));
 const late = (position) => ['BTN', 'CO', 'SB', 'BB'].includes(position);
 const tier = (pair) => {
-  const [high, low] = pair.map((c) => c.rank).sort((a, b) => b - a),
+  const high = Math.max(pair[0].rank, pair[1].rank),
+    low = Math.min(pair[0].rank, pair[1].rank),
     suited = pair[0].suit === pair[1].suit;
   if ((high === low && high >= 11) || (high === 14 && low === 13)) return 3;
   if (
@@ -269,30 +270,35 @@ function boardTraits(pair, board, score, features) {
         pair.some((c) =>
           score.slice(1, score[0] === 2 || score[0] === 6 ? 3 : 2).includes(c.rank),
         )),
-    flushDraw =
+    knownDraw = features?.draw;
+  let draw = knownDraw;
+  if (draw === undefined || draw === null) {
+    const flushDraw =
+        board.length < 5 &&
+        [0, 1, 2, 3].some(
+          (suit) =>
+            [...pair, ...board].filter((c) => c.suit === suit).length === 4 &&
+            pair.some((c) => c.suit === suit),
+        ),
+      ranks = new Set([...pair, ...board].map((c) => c.rank));
+    if (ranks.has(14)) ranks.add(1);
+    const straightDraw =
       board.length < 5 &&
-      [0, 1, 2, 3].some(
-        (suit) =>
-          [...pair, ...board].filter((c) => c.suit === suit).length === 4 &&
-          pair.some((c) => c.suit === suit),
-      ),
-    ranks = new Set([...pair, ...board].map((c) => c.rank));
-  if (ranks.has(14)) ranks.add(1);
-  const straightDraw =
-    board.length < 5 &&
-    Array.from(
-      { length: 10 },
-      (_, i) =>
-        Array.from({ length: 5 }, (_, j) => i + j + 1).filter((rank) => ranks.has(rank)).length ===
-          4 && pair.some((c) => c.rank >= i + 1 && c.rank <= i + 5),
-    ).some(Boolean);
+      Array.from(
+        { length: 10 },
+        (_, i) =>
+          Array.from({ length: 5 }, (_, j) => i + j + 1).filter((rank) => ranks.has(rank))
+            .length === 4 && pair.some((c) => c.rank >= i + 1 && c.rank <= i + 5),
+      ).some(Boolean);
+    draw = flushDraw || straightDraw;
+  }
   return {
     strong: features?.strongMade ?? (own && score?.[0] >= 3),
     own,
     pair:
       (features?.overpair ?? (pair[0].rank === pair[1].rank && pair[0].rank > high)) ||
       (score?.[0] === 1 && score[1] === high && pair.some((c) => c.rank === high)),
-    draw: features?.draw ?? (flushDraw || straightDraw),
+    draw,
   };
 }
 

@@ -176,14 +176,18 @@ function setup(
       vibrateShort(options) {
         vibrations.push(options.type);
       },
-      createInnerAudioContext() {
+      createInnerAudioContext(options) {
         const audio = {
+          options,
           src: '',
           played: false,
           stopped: false,
           destroyed: false,
           onEnded(fn) {
             this.end = fn;
+          },
+          onPlay(fn) {
+            this.onPlayed = fn;
           },
           onError(fn) {
             this.error = fn;
@@ -192,6 +196,7 @@ function setup(
             this.played = true;
             this.playing = true;
             this.playCount = (this.playCount || 0) + 1;
+            this.onPlayed?.();
           },
           stop() {
             this.stopped = true;
@@ -264,6 +269,7 @@ function setup(
     scrolls,
     flush,
     jobs,
+    clockNow: () => now,
     info,
     stack,
     navigation: navigationModule.exports,
@@ -876,11 +882,12 @@ test('WeChat settings expose compact blinds, validate raw edits in red and apply
 });
 
 test('WeChat Page stops and destroys native audio plus pending work when backgrounded', (t) => {
-  const { page, audios, jobs } = setup(t);
+  const { page, audios, jobs } = setup(t, { waiting: true });
   assert.ok(
     audios.every((audio) => !audio.played),
     'Never replay startup audio before a gesture',
   );
+  page.joinTable();
   page.call('setPreference', 'sound', false);
   page.call('setPreference', 'sound', true);
   assert.ok(audios.some((audio) => audio.src === '/assets/sounds/deal.wav' && audio.played));
@@ -930,7 +937,7 @@ test('WeChat record return and hot reload rebuild missing sound fields without d
   assert.equal(page._audio.length, 0);
 });
 test('WeChat boosted sound cues keep only the latest context active and respect all playback gates', (t) => {
-  const { page, audios, app } = setup(t);
+  const { page, audios, app } = setup(t, { waiting: true });
   let ducks = 0;
   app.noirMusic = { duck: () => ducks++, unlock() {}, setEnabled() {} };
   const fold = page._soundPool.fold;
@@ -940,7 +947,7 @@ test('WeChat boosted sound cues keep only the latest context active and respect 
   page.playSound('fold');
   assert.deepEqual(snapshots(), before, 'No gesture must neither stop nor play a cue');
   assert.equal(ducks, 0);
-  page._audioUnlocked = true;
+  page.joinTable();
   page.playSound('fold');
   assert.equal(fold.playCount, 1);
   assert.equal(fold.seekPosition, 0);
@@ -1359,6 +1366,11 @@ test('WeChat slider preview changes only the caption, final change commits the l
   page._controller.show();
   const before = copy(page.data),
     hand = copy(page._controller.getGame());
+  page.startRaise();
+  assert.equal(page._audioUnlocked, true);
+  assert.match(template, /block-size="28"/);
+  assert.match(template, /bindtouchstart="startRaise"/);
+  assert.match(stylesheet, /\.raise-controls slider\s*\{[^}]*height: 28px/);
   page.previewRaise({ detail: { value: 875 } });
   assert.equal(page.data.raiseText, '900');
   assert.equal(page.data.raiseTo, before.raiseTo);
@@ -1368,6 +1380,55 @@ test('WeChat slider preview changes only the caption, final change commits the l
   page.changeRaise({ detail: { value: 875 } });
   assert.equal(page.data.raiseTo, 900);
   assert.equal(page.data.raiseTo % 100, 0);
+});
+
+test('WeChat entry gesture unlocks the first full deal cue using the short-audio backend', (t) => {
+  const { page, audios, app } = setup(t, { waiting: true });
+  let unlocks = 0;
+  app.noirMusic = {
+    unlock() {
+      unlocks++;
+    },
+    setEnabled() {},
+    setActive() {},
+  };
+  assert.ok(audios.every((audio) => !audio.played));
+  page.joinTable();
+  assert.equal(unlocks, 1);
+  assert.equal(page._soundPool.deal.playCount, 1);
+  assert.ok(audios.slice(0, 5).every((audio) => audio.options.useWebAudioImplement));
+});
+
+test('a result cannot truncate the second check knock and queued audio is cancelled on hide or a new deal', (t) => {
+  const { page, jobs, clockNow } = setup(t);
+  const check = page._soundPool.check,
+    win = page._soundPool.win;
+  page.playSound('check');
+  const stopped = check.stopCount;
+  page.playSound('win');
+  assert.equal(check.stopCount, stopped);
+  assert.equal(win.playCount || 0, 0);
+  const timer = page._soundTailTimer,
+    job = jobs.get(timer);
+  assert.equal(job.due - clockNow(), 240);
+  jobs.delete(timer);
+  job.fn();
+  assert.equal(win.playCount, 1);
+  page.playSound('check');
+  page.playSound('win');
+  const stale = jobs.get(page._soundTailTimer);
+  page.onHide();
+  stale.fn();
+  assert.equal(win.playCount, 1);
+  page.onShow();
+  finish(page._controller.getGame());
+  page._controller.show();
+  page.playSound('check');
+  page.playSound('win');
+  const nextStale = jobs.get(page._soundTailTimer);
+  page.nextHand();
+  nextStale.fn();
+  assert.equal(page._soundPool.win.playCount || 0, 0);
 });
 
 test('delayed chip measurements cannot draw into a hidden page or a replayed deal', (t) => {
@@ -1631,6 +1692,16 @@ test('WeChat shared viewport remains stable across scrolling and historical page
   const history = secondaryPage(t, 'history/history.js', fixture);
   history.onLoad({ id: page._controller.getRecords()[0].attempts[0].id });
   history.onShow();
+  assert.ok(history.data.heroCards.every((card) => !card.arriving));
+  assert.ok(history.data.board.every((card) => !card.arriving));
+  assert.ok(
+    history.data.phoneSeats.every(
+      (seat) =>
+        !seat.peekArriving &&
+        seat.cards.every((card) => !card.arriving) &&
+        seat.backCards.every((card) => !card.arriving),
+    ),
+  );
   assert.deepEqual(geometry(history), before);
   page.onShow();
   assert.deepEqual(geometry(page), before);

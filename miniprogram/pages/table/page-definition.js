@@ -116,7 +116,7 @@ module.exports = {
   onLoad() {
     this.updateWindow();
     this._audio = [];
-    this.preloadSounds();
+    if (!this._readOnlyAttempt) this.preloadSounds();
     this._controller = createWechatController({
       createReviewWorker:
         typeof wx.createWorker === 'function' ? () => wx.createWorker('workers/review.js') : null,
@@ -136,11 +136,13 @@ module.exports = {
           this.cancelCardMotion();
           this._seatFaces = new Map();
         }
-        if (changedDeal || !view.settings.sound)
+        if (changedDeal || !view.settings.sound) {
+          this.cancelSoundTail();
           for (const audio of this._audio || []) audio.stop();
+        }
         // Records keep the live hand running offscreen. Its new cards must
         // settle immediately; there is no visible animation timer while hidden.
-        const animate = !this._hidden;
+        const animate = !this._hidden && (!this._readOnlyAttempt || Number.isInteger(this._peekId));
         const previousCards = dealKey === this._dealKey ? this._boardCount || 0 : 0;
         this._dealKey = dealKey;
         const presentedBoard = board.map((card, index) => ({
@@ -228,7 +230,7 @@ module.exports = {
             }
             if (startsCeremony) this.aimCrown(view.ceremony);
           });
-        if (changedDeal)
+        if (changedDeal && animate)
           this.scheduleCardMotion('deal', 1300, () => {
             const patch = {};
             this.data.heroCards.forEach((_, i) => (patch[`heroCards[${i}].arriving`] = false));
@@ -286,7 +288,7 @@ module.exports = {
     }
   },
   joinTable() {
-    this._controller?.join();
+    this.call('join');
   },
   onShow() {
     const returningFromRecords = Boolean(this._browsingRecords);
@@ -295,7 +297,7 @@ module.exports = {
     const resized = this.updateWindow();
     this.readResourceMotionPreference();
     this.startResourceRotation();
-    if (!this._audio?.length) this.preloadSounds();
+    if (!this._readOnlyAttempt && !this._audio?.length) this.preloadSounds();
     // The same controller has kept publishing while records were visible.
     // Re-showing it would repaint an already-current page during native Back.
     if (!this._initialHistoryShown && !returningFromRecords) this._controller?.show();
@@ -684,13 +686,16 @@ module.exports = {
     });
   },
   call(method, ...args) {
-    this._audioUnlocked = true;
-    if (typeof getApp === 'function') getApp().noirMusic?.unlock();
+    this.unlockAudio();
     try {
       return this._controller[method](...args);
     } catch (error) {
       wx.showToast({ title: error.message || '请重试', icon: 'none' });
     }
+  },
+  unlockAudio() {
+    this._audioUnlocked = true;
+    if (!this._readOnlyAttempt && typeof getApp === 'function') getApp().noirMusic?.unlock();
   },
   // The flying crown lands on the hidden resting crown of the champion.
   aimCrown(ceremony) {
@@ -723,6 +728,12 @@ module.exports = {
       farewell: 'farewell',
     };
     if (!names[name]) return;
+    // Finish both knocks before a following result cue. Keep only the latest
+    // pending cue, and discard it on hide, mute, retry or a new deal.
+    if (this._checkTail) {
+      this._soundAfterCheck = name;
+      return;
+    }
     try {
       const audio = this._soundPool?.[names[name]];
       if (!audio) return;
@@ -731,10 +742,26 @@ module.exports = {
       for (const other of this._audio || []) if (other !== audio) other.stop();
       audio.stop();
       audio.seek?.(0);
+      this._activeSound = audio;
+      if (name === 'check') this.holdCheck(1000);
       audio.play();
     } catch {
       /* A device can block audio until the first user gesture. */
     }
+  },
+  holdCheck(delay) {
+    clearTimeout(this._soundTailTimer);
+    const epoch = this._soundEpoch || 0;
+    this._checkTail = true;
+    this._soundTailTimer = setTimeout(() => {
+      if (epoch !== (this._soundEpoch || 0)) return;
+      this._soundTailTimer = null;
+      this._checkTail = false;
+      const next = this._soundAfterCheck;
+      this._soundAfterCheck = null;
+      if (next && !this._hidden && !this._destroyed && this.data.settings.sound)
+        this.playSound(next);
+    }, delay);
   },
   preloadSounds() {
     if (this._audio?.length && this._soundPool) return;
@@ -743,11 +770,22 @@ module.exports = {
     this.stopSounds();
     if (!wx.createInnerAudioContext) return;
     for (const name of ['fold', 'check', 'chip', 'deal', 'win']) {
-      const audio = wx.createInnerAudioContext();
+      const audio = wx.createInnerAudioContext({ useWebAudioImplement: true });
       audio.src = `/assets/sounds/${name}.wav`;
       audio.volume = 1;
       audio.obeyMuteSwitch = false;
-      audio.onError(() => {});
+      if (name === 'check')
+        audio.onPlay?.(() => {
+          // Count the two knocks from actual playback, not a potentially slow
+          // first decode. The request-time timeout only bounds a failed player.
+          if (this._activeSound === audio && this._checkTail && !this._hidden && !this._destroyed)
+            this.holdCheck(240);
+        });
+      audio.onError((error) => {
+        this._audioErrors ||= [];
+        this._audioErrors.push({ name, code: error.errCode, message: error.errMsg });
+        if (this._audioErrors.length > 8) this._audioErrors.shift();
+      });
       this._audio.push(audio);
       this._soundPool[name] = audio;
     }
@@ -762,12 +800,21 @@ module.exports = {
     }
   },
   stopSounds() {
+    this.cancelSoundTail();
     (this._audio || []).forEach((audio) => {
       audio.stop();
       audio.destroy();
     });
     this._audio = [];
     this._soundPool = {};
+    this._activeSound = null;
+  },
+  cancelSoundTail() {
+    this._soundEpoch = (this._soundEpoch || 0) + 1;
+    clearTimeout(this._soundTailTimer);
+    this._soundTailTimer = null;
+    this._checkTail = false;
+    this._soundAfterCheck = null;
   },
   act(event) {
     this.call('action', event.currentTarget.dataset.action);
@@ -777,6 +824,11 @@ module.exports = {
   },
   changeRaise(event) {
     this.call('setRaise', event.detail.value);
+  },
+  startRaise() {
+    if (!this.data.canRaise) return;
+    this.unlockAudio();
+    this._controller?.engageTurn();
   },
   previewRaise(event) {
     this._controller?.engageTurn();
@@ -1175,7 +1227,12 @@ module.exports = {
       this.data.reviewPerspective === 'hero'
         ? reviewData.steps
         : opponents.filter((step) => !filter || step.name === names[filter - 1]);
-    const reviewIndex = Math.min(this.data.reviewIndex, Math.max(0, steps.length - 1));
+    const selectedIndex = this.data.reviewSteps?.[this.data.reviewIndex]?.index;
+    const retainedIndex = steps.findIndex((step) => step.index === selectedIndex);
+    const reviewIndex =
+      retainedIndex >= 0
+        ? retainedIndex
+        : Math.min(this.data.reviewIndex, Math.max(0, steps.length - 1));
     const selectedStep = steps[reviewIndex];
     if (this.data.reviewPerspective !== 'hero' && selectedStep && !selectedStep.analyzed) {
       Object.assign(selectedStep, this.call('reviewOpponent', selectedStep.index) || {});

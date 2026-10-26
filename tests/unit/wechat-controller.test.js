@@ -212,6 +212,12 @@ test('WeChat review reports each finished decision like Web: 正在分析决策 
       result: analyzeDecision(worker.payload.decisions[index]),
     });
     assert.equal(updates.at(-1).loading, true);
+    assert.equal(
+      updates.at(-1).steps.length,
+      index + 1,
+      'Finished decisions are readable before the full report completes',
+    );
+    assert.equal(updates.at(-1).steps.at(-1).index, index);
     assert.equal(updates.at(-1).progressText, `正在分析决策 ${index + 1} / ${total}…`);
   }
   worker.receive({ type: 'complete' });

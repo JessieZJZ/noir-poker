@@ -10,6 +10,9 @@ import {
 } from '../../src/review/card-cache.js';
 import { heroValueGame } from '../fixtures/review-spots.js';
 import { cards } from '../fixtures/deceptive-decisions.js';
+import { publicHandData } from '../../src/engine/public-equity.js';
+import { evaluate } from '../../src/engine/poker.js';
+import { handFeatures } from '../../src/engine/hand-features.js';
 
 test('cold and warm pure-card caches preserve every metric, verdict, candidate and explanation', () => {
   const game = heroValueGame('overpair');
@@ -70,4 +73,21 @@ test('rollout deals share only the visible boards of their snapshot', () => {
   const preflop = new SnapshotBoardCache(new Map(), []);
   preflop.set(keys('Qs Jd 9c'), 'sampled flop');
   assert.equal(new SnapshotBoardCache(preflop.fixed, []).get(keys('Qs Jd 9c')), undefined);
+});
+
+test('reversing two hole cards shares only identical score and feature facts', () => {
+  for (const board of ['2h 7h Qd', '5s 6c Td 9h', 'Ah Kh Qh Jh Th']) {
+    const cache = new Map(),
+      hole = cards('8s 7c'),
+      publicBoard = cards(board);
+    const a = publicHandData(hole, publicBoard, { evaluate, features: handFeatures, cache });
+    const b = publicHandData([...hole].reverse(), publicBoard, {
+      evaluate,
+      features: handFeatures,
+      cache,
+    });
+    assert.equal(a, b);
+    assert.deepEqual(a.features, handFeatures([...hole].reverse(), publicBoard, b.score));
+    assert.equal(cache.values().next().value.size, 1);
+  }
 });

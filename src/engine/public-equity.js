@@ -158,7 +158,12 @@ export function publicHandData(hole, board, { evaluate, features, cache = new Ma
   const boardKey = cardsKey(board);
   let pairs = cache.get(boardKey);
   if (!pairs) cache.set(boardKey, (pairs = new Map()));
-  const pairKey = cardsKey(hole);
+  // Scores and features do not depend on hole-card order. Reversed sampled
+  // pairs share the same pure facts, without caching a range or a decision.
+  const pairKey =
+    hole.length === 2 && hole[0].key > hole[1].key
+      ? hole[1].key + '|' + hole[0].key
+      : cardsKey(hole);
   let data = pairs.get(pairKey);
   if (!data) {
     data = { score: evaluate([...hole, ...board]).score };

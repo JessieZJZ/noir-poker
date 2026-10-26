@@ -1035,7 +1035,8 @@ export function createWechatController({
       reviewSource = input;
       opponentReviews = new Map();
       // As on Web, report each finished decision: "正在分析决策 done / total…".
-      const progress = () =>
+      const progress = () => {
+        if (done) return publishReport(true);
         onProgress({
           loading: true,
           hand: input.hand,
@@ -1047,6 +1048,7 @@ export function createWechatController({
             ? `正在分析决策 ${done} / ${input.decisions.length}…`
             : '正在准备这手的决策快照…',
         });
+      };
       if (done < input.decisions.length) progress();
       function step() {
         if (disposed || !active || ticket !== reviewEpoch) return;
@@ -1064,12 +1066,15 @@ export function createWechatController({
         reviewTimer = null;
         publishReport();
       }
-      function publishReport() {
-        const report = summarizeReview(input, results);
+      function publishReport(loading = false) {
+        const report = loading ? null : summarizeReview(input, results);
         onProgress({
-          loading: false,
+          loading,
+          done,
+          total: input.decisions.length,
+          progressText: `正在分析决策 ${done} / ${input.decisions.length}…`,
           hand: input.hand,
-          scope: report.overview.scope,
+          scope: report?.overview.scope || '',
           profit: format(input.outcome.profit),
           resultContext: input.outcome.folded
             ? '你已弃牌，按弃牌前的信息评价。'
@@ -1097,30 +1102,36 @@ export function createWechatController({
               sequence: record.sequence,
             };
           }),
-          steps: results.map((r, index) => ({
-            index,
-            street: STREET_NAMES[input.decisions[index].street],
-            position: input.decisions[index].position,
-            pot: format(input.decisions[index].pot),
-            stack: format(input.decisions[index].stack),
-            actual: cleanAction(actionLabel(input.decisions[index])),
-            label: r.coaching.label,
-            keep: r.coaching.kind === 'keep',
-            suggestion: cleanAction(r.coaching.suggestion),
-            reason: r.coaching.explanation,
-            sequence: input.decisions[index].history.length + 1,
-            paragraphs: r.coaching.paragraphs,
-            commentary: reviewCommentary(
-              r.coaching.paragraphs,
-              r.context.matchups,
-              input.decisions[index].street,
-              r.coaching.paragraphParts,
-            ),
-            followUp: r.coaching.followUp,
-            evidence: r.evidence,
-            cards: input.decisions[index].hole.map(cardView),
-            board: input.decisions[index].board.map(cardView),
-          })),
+          steps: results
+            .map((r, index) =>
+              r
+                ? {
+                    index,
+                    street: STREET_NAMES[input.decisions[index].street],
+                    position: input.decisions[index].position,
+                    pot: format(input.decisions[index].pot),
+                    stack: format(input.decisions[index].stack),
+                    actual: cleanAction(actionLabel(input.decisions[index])),
+                    label: r.coaching.label,
+                    keep: r.coaching.kind === 'keep',
+                    suggestion: cleanAction(r.coaching.suggestion),
+                    reason: r.coaching.explanation,
+                    sequence: input.decisions[index].history.length + 1,
+                    paragraphs: r.coaching.paragraphs,
+                    commentary: reviewCommentary(
+                      r.coaching.paragraphs,
+                      r.context.matchups,
+                      input.decisions[index].street,
+                      r.coaching.paragraphParts,
+                    ),
+                    followUp: r.coaching.followUp,
+                    evidence: r.evidence,
+                    cards: input.decisions[index].hole.map(cardView),
+                    board: input.decisions[index].board.map(cardView),
+                  }
+                : null,
+            )
+            .filter(Boolean),
         });
       }
       if (done === input.decisions.length) {

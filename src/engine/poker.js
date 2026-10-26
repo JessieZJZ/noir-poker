@@ -95,6 +95,73 @@ function evaluateFive(cards) {
   if (groups[0][1] === 2) return [1, groups[0][0], ...groups.slice(1).map((g) => g[0])];
   return [0, ...ranks];
 }
+// For the 5–7 cards used by Hold'em, rank counts and suit masks determine the
+// same best five without scoring all 21 subsets or allocating their groups.
+function evaluateHoldem(cards) {
+  const counts = new Uint8Array(15),
+    masks = [0, 0, 0, 0],
+    suits = [0, 0, 0, 0];
+  let mask = 0;
+  for (const card of cards) {
+    counts[card.rank]++;
+    masks[card.suit] |= 1 << card.rank;
+    suits[card.suit]++;
+    mask |= 1 << card.rank;
+  }
+  const straight = (bits) => {
+    if (bits & (1 << 14)) bits |= 1 << 1;
+    for (let high = 14; high >= 5; high--) if (((bits >> (high - 4)) & 31) === 31) return high;
+    return 0;
+  };
+  const ranks = (minimum = 1, except = -1) => {
+    const found = [];
+    for (let rank = 14; rank >= 2; rank--)
+      if (rank !== except && counts[rank] >= minimum) found.push(rank);
+    return found;
+  };
+  const flushSuit = suits.findIndex((count) => count >= 5),
+    straightFlush = flushSuit >= 0 ? straight(masks[flushSuit]) : 0,
+    quads = ranks(4)[0],
+    trips = ranks(3)[0],
+    pairs = ranks(2, trips),
+    run = straight(mask);
+  let score;
+  if (straightFlush) score = [8, straightFlush];
+  else if (quads) score = [7, quads, ranks(1, quads)[0]];
+  else if (trips && pairs.length) score = [6, trips, pairs[0]];
+  else if (flushSuit >= 0) {
+    const flush = [];
+    for (let rank = 14; rank >= 2 && flush.length < 5; rank--)
+      if (masks[flushSuit] & (1 << rank)) flush.push(rank);
+    score = [5, ...flush];
+  } else if (run) score = [4, run];
+  else if (trips) score = [3, trips, ...ranks(1, trips).slice(0, 2)];
+  else if (pairs.length >= 2)
+    score = [2, pairs[0], pairs[1], ranks().find((rank) => rank !== pairs[0] && rank !== pairs[1])];
+  else if (pairs.length) score = [1, pairs[0], ...ranks(1, pairs[0]).slice(0, 3)];
+  else score = [0, ...ranks().slice(0, 5)];
+  const wanted = new Uint8Array(15);
+  if (score[0] === 8 || score[0] === 4) {
+    for (let i = 0; i < 5; i++) wanted[score[1] - i === 1 ? 14 : score[1] - i] = 1;
+  } else {
+    for (const rank of score.slice(1)) wanted[rank] = 1;
+    if ([1, 2].includes(score[0])) wanted[score[1]] = 2;
+    if (score[0] === 2 || score[0] === 6) wanted[score[2]] = 2;
+    if (score[0] === 3 || score[0] === 6) wanted[score[1]] = 3;
+    if (score[0] === 7) wanted[score[1]] = 4;
+  }
+  const picked = [];
+  for (const card of cards)
+    if (wanted[card.rank] && (![5, 8].includes(score[0]) || card.suit === flushSuit)) {
+      picked.push(card);
+      wanted[card.rank]--;
+    }
+  return {
+    score,
+    label: score[0] === 8 && score[1] === 14 ? '皇家同花顺' : RANK_NAMES[score[0]],
+    cards: picked,
+  };
+}
 export function evaluate(cards) {
   if (cards.length < 5) {
     const ranks = cards.map((c) => c.rank).sort((a, b) => b - a);
@@ -104,6 +171,7 @@ export function evaluate(cards) {
       cards,
     };
   }
+  if (cards.length <= 7) return evaluateHoldem(cards);
   let best = null,
     bestCards = [];
   for (let a = 0; a < cards.length - 4; a++)

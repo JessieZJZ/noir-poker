@@ -143,14 +143,15 @@ export function handFeatures(hole, board, score) {
   const ownTwoPair =
     score[0] === 2 && [score[1], score[2]].every((rank) => hole.some((c) => c.rank === rank));
   const drawCards = new Set();
-  for (let suit = 0; suit < 4; suit++)
-    for (let rank = 2; rank <= 14; rank++) {
-      if (known.some((c) => c.rank === rank && c.suit === suit)) continue;
-      if (
-        straightCompletions.has(rank) ||
-        (flushDraw && known.filter((c) => c.suit === suit).length === 4)
-      )
-        drawCards.add(`${suit}-${rank}`);
+  if (flushDraw || straightCompletions.size)
+    for (let suit = 0; suit < 4; suit++) {
+      const flushSuit = flushDraw && known.filter((c) => c.suit === suit).length === 4;
+      for (let rank = 2; rank <= 14; rank++)
+        if (
+          (flushSuit || straightCompletions.has(rank)) &&
+          !known.some((c) => c.rank === rank && c.suit === suit)
+        )
+          drawCards.add(`${suit}-${rank}`);
     }
   return {
     wet,
