@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>NOIR Poker · 历史记录无法打开</title>
+    <link rel="stylesheet" href="./screen.css" />
+  </head>
+  <body>
+    <div id="app"></div>
+    <script type="module">
+      // The latest PR64 adds this native modal over the unchanged records list.
+      const query = new URLSearchParams(location.search);
+      query.set('screen', 'records');
+      history.replaceState(null, '', '?' + query.toString());
+      await import('./screen.mjs');
+      await window.designReady;
+      document.body.dataset.ready = 'false';
+      const backdrop = document.createElement('div');
+      backdrop.style.cssText =
+        'position:fixed;inset:0;background:#0009;z-index:80;display:grid;place-items:center;padding:24px;backdrop-filter:blur(4px)';
+      backdrop.innerHTML =
+        '<section class="content-card" role="alertdialog" aria-modal="true" aria-labelledby="archive-error-title" style="max-width:460px;width:100%;padding:28px"><span class="eyebrow">HAND RECORD UNAVAILABLE</span><h2 id="archive-error-title" style="margin:14px 0">无法打开这手记录</h2><p>这手的完整牌谱已缺失或无法读取，不能显示详情。已保存的输赢记录会保留。</p><button class="primary" style="width:100%;margin-top:18px">返回记录</button></section>';
+      document.body.append(backdrop);
+      backdrop.querySelector('button').onclick = () => {
+        location.href = './screen.html?' + query.toString();
+      };
+      document.body.dataset.ready = 'true';
+    </script>
+  </body>
+</html>
