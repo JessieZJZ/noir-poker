@@ -8,6 +8,7 @@ import {
   drawCompletion,
   drawLabel,
   preflopPotential,
+  callStreetNote,
 } from './narrative.js';
 import { rankText } from '../engine/poker.js';
 import { spotFacts } from './spot-facts.js';
@@ -211,9 +212,7 @@ function explanation(s, r, evKind, suggested, kind) {
       r.reason,
       `按当前可争夺底池计算，需要至少 ${pricePct(r.metrics.required)} 的胜率，风险和收益才能持平。`,
       exhaustsStack(s) ? '你已投入全部剩余筹码，之后不再参与下注决策。' : '',
-      !exhaustsStack(s) && s.street < 3
-        ? '本次跟注不保证免费把剩余公共牌看完，下一街的投入还要另算。'
-        : '',
+      !exhaustsStack(s) && s.street < 3 ? callStreetNote(s, r.metrics.closing) : '',
       c.pendingOthers ? '其余玩家尚可行动，他们是否继续会改变你能争夺的底池和对抗人数。' : '',
     ].filter(Boolean);
   if ((exhaustsStack(s) && s.action === 'call') || suggestedAllInCall) {
@@ -415,9 +414,7 @@ function explanation(s, r, evKind, suggested, kind) {
         ? `${draw.straightRanks.map(rankText).join(' / ')} 可补顺子，补中也未必获胜。`
         : '',
       verdict,
-      r.metrics.closing
-        ? '这次跟注后已没有后续下注，不能靠后街诈唬或成牌后再赢筹码弥补成本。'
-        : '本次跟注不保证免费把剩余公共牌看完，下一街的投入还要另算。',
+      callStreetNote(s, r.metrics.closing),
     ];
   }
   if (s.street === 0 && s.action === 'call' && suggested.action === 'fold') {

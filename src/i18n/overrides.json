@@ -692,7 +692,11 @@
     "当前成牌对比：{0}，能赢例如 {1}（{2}），当前是最大成牌（坚果牌），后面新发的牌仍可能改变强弱。": "Current made-hand comparison: {0}. It beats hands such as {1} ({2}) and is currently the strongest possible made hand (the nuts), but later board cards can still change the relative strength of the hands.",
     "当前成牌对比：{0}，能赢例如 {1}（{2}），河牌已发完，是当前最大成牌。": "Current made-hand comparison: {0}. It beats hands such as {1} ({2}). The river has been dealt, and this is the strongest possible made hand.",
     "若后位会继续下注，可以过牌诱导后再取值；若其常过回，主动下注更容易向较弱成牌或听牌收费。": "If the player behind is likely to keep betting, you can check to induce a bet and then seek value; if they often check back, betting yourself makes it easier to charge weaker made hands or draws.",
-    "补中后的额外收入取决于较弱牌是否愿意付费，当前跟注只补齐本轮。": "Any extra winnings after improving depend on whether weaker hands are willing to pay; this call only matches the current bet in this betting round."
+    "补中后的额外收入取决于较弱牌是否愿意付费，当前跟注只补齐本轮。": "Any extra winnings after improving depend on whether weaker hands are willing to pay; this call only matches the current bet in this betting round.",
+    "本轮仍有玩家可以行动，若有人加注或再加注，需要按新的价格重新决定。": "Other players can still act this round. If someone raises or reraises, reassess at the new price.",
+    "河牌已经发完，本轮跟注后直接摊牌。": "The river is already dealt. Calling closes this round and leads to showdown.",
+    "本轮跟注后即可看到最后一张河牌，河牌若再面对下注，仍需另作决定。": "Calling closes this round and reveals the final river card. If you face a river bet, you must decide again.",
+    "本轮跟注后可以看到下一街公共牌，之后的下注仍需另作决定。": "Calling closes this round and reveals the next street. Any later betting requires a new decision."
   },
   "zh-TW": {
     "设置": "設定",
@@ -1270,7 +1274,11 @@
     "当前成牌对比：{0}，能赢例如 {1}（{2}），当前是最大成牌（坚果牌），后面新发的牌仍可能改变强弱。": "目前成牌比較：{0}，能贏例如 {1}（{2}），目前是最強可能成牌（堅果牌），之後發出的公共牌仍可能改變強弱。",
     "当前成牌对比：{0}，能赢例如 {1}（{2}），河牌已发完，是当前最大成牌。": "目前成牌比較：{0}，能贏例如 {1}（{2}）；河牌已發完，是目前最強可能成牌。",
     "若后位会继续下注，可以过牌诱导后再取值；若其常过回，主动下注更容易向较弱成牌或听牌收费。": "若後位玩家會繼續下注，可以過牌誘導後再取值；若其經常隨後過牌，主動下注更容易向較弱成牌或聽牌收費。",
-    "补中后的额外收入取决于较弱牌是否愿意付费，当前跟注只补齐本轮。": "補中後的額外收入取決於較弱牌是否願意付費，這次跟注只補齊本輪目前的下注。"
+    "补中后的额外收入取决于较弱牌是否愿意付费，当前跟注只补齐本轮。": "補中後的額外收入取決於較弱牌是否願意付費，這次跟注只補齊本輪目前的下注。",
+    "本轮仍有玩家可以行动，若有人加注或再加注，需要按新的价格重新决定。": "本輪仍有玩家可以行動，若有人加注或再加注，需要按新的價格重新決定。",
+    "河牌已经发完，本轮跟注后直接摊牌。": "河牌已經發完，本輪跟注後直接攤牌。",
+    "本轮跟注后即可看到最后一张河牌，河牌若再面对下注，仍需另作决定。": "本輪跟注後即可看到最後一張河牌，河牌若再面對下注，仍需另作決定。",
+    "本轮跟注后可以看到下一街公共牌，之后的下注仍需另作决定。": "本輪跟注後可以看到下一街公共牌，之後的下注仍需另作決定。"
   },
   "ja": {
     "设置": "設定",
@@ -1848,7 +1856,11 @@
     "当前成牌对比：{0}，能赢例如 {1}（{2}），当前是最大成牌（坚果牌），后面新发的牌仍可能改变强弱。": "現在の完成ハンドの比較：{0}。例えば {1}（{2}）に勝ち、現時点で可能な最強のハンド（ナッツ）ですが、今後のボードカードで強弱が変わる可能性があります。",
     "当前成牌对比：{0}，能赢例如 {1}（{2}），河牌已发完，是当前最大成牌。": "現在の完成ハンドの比較：{0}。例えば {1}（{2}）に勝ちます。リバーはすでに出ており、これは現在の最強の完成ハンドです。",
     "若后位会继续下注，可以过牌诱导后再取值；若其常过回，主动下注更容易向较弱成牌或听牌收费。": "後ろの相手がベットを続ける見込みなら、チェックで誘ってからバリューを狙えます。相手がよくチェックバックするなら、自分からベットするほうが弱い完成ハンドやドローからチップを得やすくなります。",
-    "补中后的额外收入取决于较弱牌是否愿意付费，当前跟注只补齐本轮。": "ハンドが改善した後の追加の利益は、弱いハンドが支払ってくれるか次第です。今回のコールは、このベッティングラウンドの現在のベットに合わせるだけです。"
+    "补中后的额外收入取决于较弱牌是否愿意付费，当前跟注只补齐本轮。": "ハンドが改善した後の追加の利益は、弱いハンドが支払ってくれるか次第です。今回のコールは、このベッティングラウンドの現在のベットに合わせるだけです。",
+    "本轮仍有玩家可以行动，若有人加注或再加注，需要按新的价格重新决定。": "このラウンドにはまだ行動できるプレイヤーがいます。レイズやリレイズがあれば、新しい額で判断し直します。",
+    "河牌已经发完，本轮跟注后直接摊牌。": "リバーはすでに配られています。コールでこのラウンドが終わり、ショーダウンになります。",
+    "本轮跟注后即可看到最后一张河牌，河牌若再面对下注，仍需另作决定。": "コールでこのラウンドが終わり、最後のリバーカードを見られます。リバーでベットされた場合は改めて判断します。",
+    "本轮跟注后可以看到下一街公共牌，之后的下注仍需另作决定。": "コールでこのラウンドが終わり、次のストリートのカードを見られます。その後のベットには改めて判断が必要です。"
   },
   "ko": {
     "设置": "설정",
@@ -2426,7 +2438,11 @@
     "当前成牌对比：{0}，能赢例如 {1}（{2}），当前是最大成牌（坚果牌），后面新发的牌仍可能改变强弱。": "현재 완성 패 비교: {0}. 예를 들어 {1}({2})에 이기며 현재 가능한 가장 강한 완성 패(넛)이지만, 이후 나오는 공용 카드에 따라 우열이 바뀔 수 있습니다.",
     "当前成牌对比：{0}，能赢例如 {1}（{2}），河牌已发完，是当前最大成牌。": "현재 완성 패 비교: {0}. 예를 들어 {1}({2})에 이깁니다. 리버가 이미 나왔으며 현재 가능한 가장 강한 완성 패입니다.",
     "若后位会继续下注，可以过牌诱导后再取值；若其常过回，主动下注更容易向较弱成牌或听牌收费。": "뒤에서 행동하는 상대가 계속 베팅할 것으로 보이면 체크로 베팅을 유도한 뒤 밸류를 노릴 수 있습니다. 상대가 자주 체크백한다면 먼저 베팅하는 편이 더 약한 완성 패나 드로에 비용을 치르게 하기 쉽습니다.",
-    "补中后的额外收入取决于较弱牌是否愿意付费，当前跟注只补齐本轮。": "패가 발전한 뒤의 추가 수익은 더 약한 패가 기꺼이 지불하는지에 달려 있으며, 이번 콜은 현재 베팅 라운드의 베팅액만 맞춥니다."
+    "补中后的额外收入取决于较弱牌是否愿意付费，当前跟注只补齐本轮。": "패가 발전한 뒤의 추가 수익은 더 약한 패가 기꺼이 지불하는지에 달려 있으며, 이번 콜은 현재 베팅 라운드의 베팅액만 맞춥니다.",
+    "本轮仍有玩家可以行动，若有人加注或再加注，需要按新的价格重新决定。": "이번 라운드에 아직 행동할 플레이어가 있습니다. 누군가 레이즈나 리레이즈하면 새로운 금액을 기준으로 다시 판단해야 합니다.",
+    "河牌已经发完，本轮跟注后直接摊牌。": "리버는 이미 공개되었습니다. 콜하면 이번 라운드가 끝나고 쇼다운으로 이어집니다.",
+    "本轮跟注后即可看到最后一张河牌，河牌若再面对下注，仍需另作决定。": "콜하면 이번 라운드가 끝나고 마지막 리버 카드를 볼 수 있습니다. 리버에서 베팅을 받으면 다시 판단해야 합니다.",
+    "本轮跟注后可以看到下一街公共牌，之后的下注仍需另作决定。": "콜하면 이번 라운드가 끝나고 다음 스트리트의 카드를 볼 수 있습니다. 이후 베팅에는 새로 판단해야 합니다."
   },
   "es": {
     "设置": "Ajustes",
@@ -3004,7 +3020,11 @@
     "当前成牌对比：{0}，能赢例如 {1}（{2}），当前是最大成牌（坚果牌），后面新发的牌仍可能改变强弱。": "Comparación de la mano hecha actual: {0}. Gana a manos como {1} ({2}) y actualmente es la mejor mano hecha posible (las nuts), pero las próximas cartas comunitarias aún pueden cambiar la fuerza relativa de las manos.",
     "当前成牌对比：{0}，能赢例如 {1}（{2}），河牌已发完，是当前最大成牌。": "Comparación de la mano hecha actual: {0}. Gana a manos como {1} ({2}). El river ya está repartido y es la mejor mano hecha posible.",
     "若后位会继续下注，可以过牌诱导后再取值；若其常过回，主动下注更容易向较弱成牌或听牌收费。": "Si es probable que el jugador que actúa después siga apostando, puedes pasar para inducir una apuesta y luego buscar valor; si a menudo pasa también, apostar tú facilita sacar valor de manos hechas más débiles o proyectos.",
-    "补中后的额外收入取决于较弱牌是否愿意付费，当前跟注只补齐本轮。": "Las ganancias adicionales tras mejorar dependen de que manos más débiles estén dispuestas a pagar; este call solo iguala la apuesta actual de esta ronda."
+    "补中后的额外收入取决于较弱牌是否愿意付费，当前跟注只补齐本轮。": "Las ganancias adicionales tras mejorar dependen de que manos más débiles estén dispuestas a pagar; este call solo iguala la apuesta actual de esta ronda.",
+    "本轮仍有玩家可以行动，若有人加注或再加注，需要按新的价格重新决定。": "Otros jugadores aún pueden actuar en esta ronda. Si alguien sube o resube, vuelve a decidir según el nuevo precio.",
+    "河牌已经发完，本轮跟注后直接摊牌。": "El river ya está repartido. Pagar cierra esta ronda y lleva al showdown.",
+    "本轮跟注后即可看到最后一张河牌，河牌若再面对下注，仍需另作决定。": "Pagar cierra esta ronda y permite ver la última carta, el river. Si afrontas una apuesta en el river, tendrás que decidir de nuevo.",
+    "本轮跟注后可以看到下一街公共牌，之后的下注仍需另作决定。": "Pagar cierra esta ronda y permite ver las cartas de la siguiente calle. Las apuestas posteriores requieren una nueva decisión."
   },
   "it": {
     "设置": "Impostazioni",
@@ -3582,7 +3602,11 @@
     "当前成牌对比：{0}，能赢例如 {1}（{2}），当前是最大成牌（坚果牌），后面新发的牌仍可能改变强弱。": "Confronto delle mani già formate: {0}. Batte, per esempio, {1} ({2}) e al momento è la migliore mano già formata possibile (nuts), ma le carte comuni successive possono ancora cambiare i rapporti di forza.",
     "当前成牌对比：{0}，能赢例如 {1}（{2}），河牌已发完，是当前最大成牌。": "Confronto delle mani già formate: {0}. Batte, per esempio, {1} ({2}). Il river è già stato distribuito ed è la migliore mano già formata possibile.",
     "若后位会继续下注，可以过牌诱导后再取值；若其常过回，主动下注更容易向较弱成牌或听牌收费。": "Se chi agisce dopo è propenso a continuare a puntare, puoi fare check per indurre una puntata e poi cercare valore; se invece fa spesso check dietro, puntare per primo rende più facile farsi pagare da mani formate più deboli o da progetti.",
-    "补中后的额外收入取决于较弱牌是否愿意付费，当前跟注只补齐本轮。": "Il guadagno aggiuntivo dopo aver migliorato dipende dalla disponibilità delle mani più deboli a pagare; questo call copre solo la puntata attuale di questo giro."
+    "补中后的额外收入取决于较弱牌是否愿意付费，当前跟注只补齐本轮。": "Il guadagno aggiuntivo dopo aver migliorato dipende dalla disponibilità delle mani più deboli a pagare; questo call copre solo la puntata attuale di questo giro.",
+    "本轮仍有玩家可以行动，若有人加注或再加注，需要按新的价格重新决定。": "Altri giocatori possono ancora agire in questo giro. Se qualcuno rilancia o controrilancia, rivaluta al nuovo prezzo.",
+    "河牌已经发完，本轮跟注后直接摊牌。": "Il river è già stato distribuito. Il call chiude questo giro e porta allo showdown.",
+    "本轮跟注后即可看到最后一张河牌，河牌若再面对下注，仍需另作决定。": "Il call chiude questo giro e permette di vedere l’ultima carta, il river. Se affronti una puntata al river, devi decidere di nuovo.",
+    "本轮跟注后可以看到下一街公共牌，之后的下注仍需另作决定。": "Il call chiude questo giro e permette di vedere le carte della street successiva. Le puntate successive richiedono una nuova decisione."
   },
   "pt": {
     "设置": "Definições",
@@ -4160,7 +4184,11 @@
     "当前成牌对比：{0}，能赢例如 {1}（{2}），当前是最大成牌（坚果牌），后面新发的牌仍可能改变强弱。": "Comparação da mão formada atual: {0}. Vence, por exemplo, {1} ({2}) e é a melhor mão formada possível no momento (nuts), mas novas cartas comunitárias ainda podem mudar a força relativa das mãos.",
     "当前成牌对比：{0}，能赢例如 {1}（{2}），河牌已发完，是当前最大成牌。": "Comparação da mão formada atual: {0}. Vence, por exemplo, {1} ({2}). O river já foi distribuído e esta é a melhor mão formada possível.",
     "若后位会继续下注，可以过牌诱导后再取值；若其常过回，主动下注更容易向较弱成牌或听牌收费。": "Se o jogador que age depois tende a continuar apostando, você pode dar check para induzir uma aposta e depois buscar valor; se ele costuma dar check de volta, apostar primeiro facilita cobrar de mãos formadas mais fracas ou draws.",
-    "补中后的额外收入取决于较弱牌是否愿意付费，当前跟注只补齐本轮。": "O ganho extra após melhorar depende de mãos mais fracas estarem dispostas a pagar; este call apenas iguala a aposta atual desta rodada."
+    "补中后的额外收入取决于较弱牌是否愿意付费，当前跟注只补齐本轮。": "O ganho extra após melhorar depende de mãos mais fracas estarem dispostas a pagar; este call apenas iguala a aposta atual desta rodada.",
+    "本轮仍有玩家可以行动，若有人加注或再加注，需要按新的价格重新决定。": "Outros jogadores ainda podem agir nesta rodada. Se alguém aumentar ou reaumentar, reavalie com base no novo preço.",
+    "河牌已经发完，本轮跟注后直接摊牌。": "O river já foi distribuído. Pagar encerra esta rodada e leva ao showdown.",
+    "本轮跟注后即可看到最后一张河牌，河牌若再面对下注，仍需另作决定。": "Pagar encerra esta rodada e revela a última carta, o river. Se enfrentar uma aposta no river, terá de decidir novamente.",
+    "本轮跟注后可以看到下一街公共牌，之后的下注仍需另作决定。": "Pagar encerra esta rodada e revela as cartas da próxima street. Apostas posteriores exigem uma nova decisão."
   },
   "de": {
     "设置": "Einstellungen",
@@ -4738,7 +4766,11 @@
     "当前成牌对比：{0}，能赢例如 {1}（{2}），当前是最大成牌（坚果牌），后面新发的牌仍可能改变强弱。": "Vergleich der aktuellen fertigen Hand: {0}. Sie schlägt zum Beispiel {1} ({2}) und ist derzeit die stärkste mögliche fertige Hand (die Nuts). Weitere Gemeinschaftskarten können die Stärkeverhältnisse noch ändern.",
     "当前成牌对比：{0}，能赢例如 {1}（{2}），河牌已发完，是当前最大成牌。": "Vergleich der aktuellen fertigen Hand: {0}. Sie schlägt zum Beispiel {1} ({2}). Der River ist bereits ausgeteilt, und sie ist die stärkste mögliche fertige Hand.",
     "若后位会继续下注，可以过牌诱导后再取值；若其常过回，主动下注更容易向较弱成牌或听牌收费。": "Wenn der Spieler hinter dir voraussichtlich weiter setzt, kannst du checken, um ihn zu einer Bet zu bewegen und danach Value zu holen. Checkt er häufig zurück, kannst du mit einer eigenen Bet leichter von schwächeren fertigen Händen oder Draws bezahlt werden.",
-    "补中后的额外收入取决于较弱牌是否愿意付费，当前跟注只补齐本轮。": "Zusätzlicher Gewinn nach einer Verbesserung hängt davon ab, ob schwächere Hände bezahlen; dieser Call gleicht nur den aktuellen Einsatz dieser Setzrunde aus."
+    "补中后的额外收入取决于较弱牌是否愿意付费，当前跟注只补齐本轮。": "Zusätzlicher Gewinn nach einer Verbesserung hängt davon ab, ob schwächere Hände bezahlen; dieser Call gleicht nur den aktuellen Einsatz dieser Setzrunde aus.",
+    "本轮仍有玩家可以行动，若有人加注或再加注，需要按新的价格重新决定。": "Andere Spieler können in dieser Runde noch handeln. Bei einem Raise oder Reraise musst du den neuen Preis erneut bewerten.",
+    "河牌已经发完，本轮跟注后直接摊牌。": "Der River liegt bereits aus. Der Call beendet diese Runde und führt zum Showdown.",
+    "本轮跟注后即可看到最后一张河牌，河牌若再面对下注，仍需另作决定。": "Der Call beendet diese Runde und deckt die letzte Karte, den River, auf. Bei einer River-Bet musst du erneut entscheiden.",
+    "本轮跟注后可以看到下一街公共牌，之后的下注仍需另作决定。": "Der Call beendet diese Runde und deckt die nächste Street auf. Spätere Einsätze erfordern eine neue Entscheidung."
   },
   "fr": {
     "设置": "Paramètres",
@@ -5316,7 +5348,11 @@
     "当前成牌对比：{0}，能赢例如 {1}（{2}），当前是最大成牌（坚果牌），后面新发的牌仍可能改变强弱。": "Comparaison de la main faite actuelle : {0}. Elle bat par exemple {1} ({2}) et est actuellement la meilleure main faite possible (les nuts), mais les prochaines cartes communes peuvent encore changer la force relative des mains.",
     "当前成牌对比：{0}，能赢例如 {1}（{2}），河牌已发完，是当前最大成牌。": "Comparaison de la main faite actuelle : {0}. Elle bat par exemple {1} ({2}). La rivière est déjà distribuée et c’est la meilleure main faite possible.",
     "若后位会继续下注，可以过牌诱导后再取值；若其常过回，主动下注更容易向较弱成牌或听牌收费。": "Si le joueur qui agit après toi est susceptible de continuer à miser, tu peux checker pour provoquer une mise puis chercher de la valeur ; s’il checke souvent derrière, miser toi-même permet plus facilement de faire payer des mains faites plus faibles ou des tirages.",
-    "补中后的额外收入取决于较弱牌是否愿意付费，当前跟注只补齐本轮。": "Les gains supplémentaires après amélioration dépendent de la volonté des mains plus faibles de payer ; ce call ne fait qu’égaliser la mise actuelle de ce tour d’enchères."
+    "补中后的额外收入取决于较弱牌是否愿意付费，当前跟注只补齐本轮。": "Les gains supplémentaires après amélioration dépendent de la volonté des mains plus faibles de payer ; ce call ne fait qu’égaliser la mise actuelle de ce tour d’enchères.",
+    "本轮仍有玩家可以行动，若有人加注或再加注，需要按新的价格重新决定。": "D’autres joueurs peuvent encore agir dans ce tour. En cas de relance ou de surrelance, réévaluez au nouveau prix.",
+    "河牌已经发完，本轮跟注后直接摊牌。": "La river est déjà distribuée. Payer clôt ce tour et mène à l’abattage.",
+    "本轮跟注后即可看到最后一张河牌，河牌若再面对下注，仍需另作决定。": "Payer clôt ce tour et permet de voir la dernière carte, la river. Si vous faites face à une mise à la river, il faudra décider à nouveau.",
+    "本轮跟注后可以看到下一街公共牌，之后的下注仍需另作决定。": "Payer clôt ce tour et permet de voir les cartes de la prochaine street. Les mises ultérieures nécessitent une nouvelle décision."
   },
   "ru": {
     "设置": "Настройки",
@@ -5894,6 +5930,10 @@
     "当前成牌对比：{0}，能赢例如 {1}（{2}），当前是最大成牌（坚果牌），后面新发的牌仍可能改变强弱。": "Сравнение текущих готовых рук: {0}. Эта рука бьёт, например, {1} ({2}) и сейчас является самой сильной возможной готовой рукой (натс), но следующие общие карты ещё могут изменить соотношение сил.",
     "当前成牌对比：{0}，能赢例如 {1}（{2}），河牌已发完，是当前最大成牌。": "Сравнение текущих готовых рук: {0}. Эта рука бьёт, например, {1} ({2}). Ривер уже сдан, и сейчас это самая сильная возможная готовая рука.",
     "若后位会继续下注，可以过牌诱导后再取值；若其常过回，主动下注更容易向较弱成牌或听牌收费。": "Если игрок позади, скорее всего, продолжит ставить, можно сделать чек, спровоцировать ставку и затем добирать. Если он часто делает ответный чек, собственной ставкой легче получить оплату от более слабых готовых рук или дро.",
-    "补中后的额外收入取决于较弱牌是否愿意付费，当前跟注只补齐本轮。": "Дополнительный выигрыш после усиления зависит от того, готовы ли более слабые руки платить; этот колл лишь уравнивает текущую ставку на этой улице."
+    "补中后的额外收入取决于较弱牌是否愿意付费，当前跟注只补齐本轮。": "Дополнительный выигрыш после усиления зависит от того, готовы ли более слабые руки платить; этот колл лишь уравнивает текущую ставку на этой улице.",
+    "本轮仍有玩家可以行动，若有人加注或再加注，需要按新的价格重新决定。": "В этом раунде другие игроки ещё могут действовать. При рейзе или ререйзе нужно заново оценить новую цену.",
+    "河牌已经发完，本轮跟注后直接摊牌。": "Ривер уже открыт. Колл завершает этот раунд и ведёт к вскрытию.",
+    "本轮跟注后即可看到最后一张河牌，河牌若再面对下注，仍需另作决定。": "Колл завершает этот раунд и открывает последнюю карту — ривер. Если на ривере будет ставка, понадобится новое решение.",
+    "本轮跟注后可以看到下一街公共牌，之后的下注仍需另作决定。": "Колл завершает этот раунд и открывает карты следующей улицы. Последующие ставки требуют нового решения."
   }
 }

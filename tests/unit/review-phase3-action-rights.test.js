@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { pendingRaiseOpportunity, coversOpponentStacks } from '../../src/review/presentation.js';
+import { callStreetNote } from '../../src/review/narrative.js';
 const short = () => ({
   bigBlind: 100,
   chipUnit: 50,
@@ -58,4 +59,36 @@ test('raise-right facts do not inspect hidden cards, future deck or payouts', ()
     });
   assert.equal(pendingRaiseOpportunity(s), false);
   assert.equal(coversOpponentStacks(s, 600), false);
+});
+
+test('a turn call buys the final river card when no opponent can raise again', () => {
+  const s = { ...short(), street: 2 };
+  assert.match(callStreetNote(s), /看到最后一张河牌.*河牌若再面对下注/);
+  s.pending = [0];
+  assert.match(callStreetNote(s), /看到最后一张河牌/);
+  for (const key of ['deck', 'winners', 'payouts'])
+    Object.defineProperty(s, key, {
+      get() {
+        throw Error('Future information');
+      },
+    });
+  assert.match(callStreetNote(s), /最后一张河牌/);
+});
+
+test('pending raises, unknown legacy rights, earlier streets and closed betting remain distinct', () => {
+  const s = { ...short(), street: 2 };
+  s.players[1].actedTo = null;
+  assert.match(callStreetNote(s), /若有人加注或再加注.*重新决定/);
+  assert.doesNotMatch(callStreetNote(s), /即可看到/);
+  delete s.players[1].actedTo;
+  assert.match(callStreetNote(s), /若有人加注或再加注/);
+  s.pending = [0];
+  s.street = 1;
+  assert.match(callStreetNote(s), /下一街公共牌.*之后的下注/);
+  s.street = 3;
+  assert.match(callStreetNote(s), /河牌已经发完.*直接摊牌/);
+  assert.doesNotMatch(callStreetNote(s), /下一街|最后一张河牌/);
+  s.street = 2;
+  assert.match(callStreetNote(s, true), /已没有后续下注/);
+  assert.doesNotMatch(callStreetNote(s, true), /河牌若再面对下注/);
 });

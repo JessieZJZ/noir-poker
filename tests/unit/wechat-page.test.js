@@ -1801,6 +1801,33 @@ test('WeChat record rows use full-width native views and reject unfinished hand 
   assert.match(css, /\.hand-item\.is-disabled\s*\{[^}]*background:\s*transparent;/s);
 });
 
+test('a completed index row with a missing archive shows an acknowledged explanation and preserves the live game', (t) => {
+  const fixture = setup(t);
+  const live = fixture.app.noirController;
+  const before = copy(live.getGame());
+  const rows = live.getRecordSummaries();
+  let modal,
+    backs = 0;
+  fixture.wx.showModal = (options) => {
+    modal = options;
+  };
+  fixture.wx.navigateBack = () => {
+    backs++;
+  };
+  const history = secondaryPage(t, 'history/history.js', fixture);
+  history.onLoad({ id: 'missing-archive' });
+  history.onShow();
+  assert.match(modal.content, /完整牌谱已缺失或无法读取.*输赢记录会保留/);
+  assert.equal(modal.showCancel, false);
+  assert.equal(history._controller, undefined);
+  assert.equal(backs, 0, 'The explanation must not disappear behind immediate navigation');
+  assert.deepEqual(copy(live.getGame()), before);
+  assert.deepEqual(live.getRecordSummaries(), rows);
+  modal.success({ confirm: true });
+  assert.equal(backs, 1);
+  assert.equal(fixture.app.noirController, live);
+});
+
 test('WeChat record lists send bounded summary patches and remain idle without record changes', (t) => {
   const fixture = setup(t);
   // Eights have the largest encoded vector rank; cover the worst artwork size.

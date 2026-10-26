@@ -170,3 +170,5 @@ node scripts/audit-review-phase3.mjs --source=. --seed=202610243 --start=0 --end
 参考：[PokerStars 同花连接牌](https://www.pokerstars.com/poker/learn/strategies/suited-connectors-are-they-playable-hands/)、[挤压加注](https://www.pokerstars.com/poker/learn/lesson/squeeze-play-nlhe/)。这些材料提供教学原则，不代表本程序内置求解器或能保证收益。
 
 本轮听牌取值、完成同花后的投入控制、跛入池示例和精简动作句见[复盘专项记录](review-value-targets-2026-10-25.md)。
+
+转牌跟注的说明区分最后一张河牌和后续下注：本轮没有其他玩家能再加注时，跟注后能看到河牌，但河牌上的新下注仍需另作决定。若本轮仍有人可能加注，先说明重新判断价格；若已全下封口，不再提示后续付费。英雄与对手复盘共用这一口径，只读取行动前公开快照。

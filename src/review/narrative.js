@@ -17,6 +17,16 @@ import {
 const n = compactChips;
 const pct = (value) => (value * 100).toFixed(1) + '%';
 const streets = ['翻牌前', '翻牌', '转牌', '河牌'];
+// Seeing the last card and reaching showdown are different promises. Use only
+// the before-action pending seats and the rules engine's raise rights.
+export function callStreetNote(s, closing = false) {
+  if (closing) return '这次跟注后已没有后续下注，不能靠后街诈唬或成牌后再赢筹码弥补成本。';
+  if (pendingRaiseOpportunity(s) !== false)
+    return '本轮仍有玩家可以行动，若有人加注或再加注，需要按新的价格重新决定。';
+  if (s.street === 3) return '河牌已经发完，本轮跟注后直接摊牌。';
+  if (s.street === 2) return '本轮跟注后即可看到最后一张河牌，河牌若再面对下注，仍需另作决定。';
+  return '本轮跟注后可以看到下一街公共牌，之后的下注仍需另作决定。';
+}
 export function drawLabel(draw) {
   const straight =
     { 'open-ended': '两头顺听牌', 'double-gutshot': '双卡顺听牌', gutshot: '卡顺听牌' }[

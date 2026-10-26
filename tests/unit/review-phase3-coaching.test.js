@@ -537,6 +537,24 @@ test('draw-call practice combines current showdown and improvement chances rathe
   assert.doesNotMatch(focus, /只把下一张的机会算进/);
 });
 
+test('the reported 87 turn call distinguishes seeing the last river from paying a river bet', () => {
+  const s = spot({
+    hole: '8s 7c',
+    board: 'Tc 6c Kd 4d',
+    action: 'call',
+    amount: 400,
+    cost: 400,
+    pending: [0],
+    pot: 1200,
+  });
+  for (const code of ['price-call', 'unbacked-high-card-call']) {
+    const r = review(s, { code, action: { action: 'fold', amount: 0 } });
+    const text = summary(coachDecision(s, r));
+    assert.match(text, /本轮跟注后即可看到最后一张河牌，河牌若再面对下注，仍需另作决定/);
+    assert.doesNotMatch(text, /不保证免费.*公共牌看完|不保证免费见完/);
+  }
+});
+
 test('full-house value examples do not invent an impossible smaller full house', () => {
   const s = spot({ hole: '4h 4d', board: '8c 4c Qd 8h', action: 'raise', amount: 1600, pot: 2500 });
   const r = review(s, {

@@ -55,6 +55,20 @@ function record(hole, board, reason, options = {}) {
 
 const summary = (r) => explainOpponent(r).paragraphs.at(-1);
 
+test('an opponent closing the turn call sees the final river without promising a free showdown', () => {
+  const r = record('8s 7c', 'Tc 6c Kd 4d', 'legacy-unknown', {
+    cost: 400,
+    stack: 1600,
+    pot: 1200,
+    opponents: [
+      { id: 0, name: '你', position: 'SB', stack: 1600, bet: 400, total: 600, allin: false },
+    ],
+  });
+  const text = summary(r);
+  assert.match(text, /最后一张河牌.*河牌若再面对下注/);
+  assert.doesNotMatch(text, /不保证免费见完|不再有后续下注/);
+});
+
 test('a no-pair all-in call keeps its real open-ended improvement rather than relying on high card', () => {
   const r = record('8d Jh', 'Ac Tc 4s 9h', 'price-continue');
   const text = summary(r);

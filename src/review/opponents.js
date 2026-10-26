@@ -4,7 +4,13 @@ import { rankText } from '../engine/poker.js';
 import { actionLabel } from '../engine/action-labels.js';
 import { MOOD_LABELS } from '../engine/bot-profiles.js';
 import { decisionContext } from './context.js';
-import { drawLabel, drawCompletion, publicHistory, preflopPotential } from './narrative.js';
+import {
+  drawLabel,
+  drawCompletion,
+  publicHistory,
+  preflopPotential,
+  callStreetNote,
+} from './narrative.js';
 import { spotFacts } from './spot-facts.js';
 import { rangeNoteClauses, handMatchups } from './matchups.js';
 import { publicStoryNotes } from './public-story.js';
@@ -134,11 +140,7 @@ function objectiveActionReason(s, c, f, hand, drawText, foldNote) {
       c.reviewPrice
         ? `继续要补 ${n(c.reviewPrice.cost)}，可争夺跟注后的 ${n(c.reviewPrice.contestable)} 底池，当前保本门槛为 ${pct(c.reviewPrice.required)}。`
         : `这次补 ${n(s.legal.callAmount)}，继续争夺 ${n(s.contestable)} 的底池。`,
-      c.pendingOthers
-        ? '本轮仍有其他玩家可以行动，后续投入要按新的价格判断。'
-        : s.street === 3
-          ? '河牌已经发完，这次跟注后不再有后续下注。'
-          : '这次跟注不保证免费见完所有公共牌，下一街的投入还要另算。',
+      callStreetNote(s),
     ].filter(Boolean);
   if (s.action === 'raise') {
     const support = !s.street
