@@ -70,6 +70,7 @@ function handSummary(s, c) {
 }
 
 export function preflopRangeNotes(s) {
+  const observer = s.reviewAudience === 'observer';
   const actions = (s.history || []).filter((a) => a.street === 0),
     raises = actions.filter((a) => a.action === 'raise'),
     last = raises.findLast((a) => a.id !== 0),
@@ -79,6 +80,7 @@ export function preflopRangeNotes(s) {
   if (last)
     notes.push(`${name(last.id)}${historyActionLabel(s.history, s.history.indexOf(last))}。`);
   else if (
+    !observer &&
     s.legal.canCheck &&
     !(s.pending || []).some(
       (id) =>
@@ -89,7 +91,7 @@ export function preflopRangeNotes(s) {
   )
     notes.push(
       `本轮已轮到${subject}最后回应，可以免费过牌看翻牌。` +
-        (s.legal.canRaise ? '也可结合底牌和对手范围比较主动加注。' : ''),
+        (!observer && s.legal.canRaise ? '也可结合底牌和对手范围比较主动加注。' : ''),
     );
   const live = new Set(s.players?.filter((p) => !p.folded && p.id !== 0).map((p) => p.id)),
     firstRaise = actions.findIndex((a) => a.action === 'raise'),
@@ -134,7 +136,7 @@ export function preflopRangeNotes(s) {
         ...groupedCalls(limpers, true),
         ...groupedCalls(callers, false),
         '这类平跟可能是小对子、同花牌或连接牌，也可能藏着强牌。',
-        s.action === 'fold'
+        observer || s.action === 'fold'
           ? ''
           : commitment
             ? callAllIn

@@ -24,7 +24,7 @@ test('reported turn call merges action and motive, names only its real straight 
   assert.match(text, /8 张牌可能补成顺子/);
   assert.match(text, /帮对手成更大的牌/);
   assert.match(text, /还留 7K/);
-  assert.match(text, /下一街.*补牌和新的下注/);
+  assert.doesNotMatch(text, /下一街.*要看|需要重新决定|仍需另作决定/);
   assert.doesNotMatch(text, /补成.*同花|顺子／同花/);
   assert.equal(text.match(/6.3K/g).length, 1);
   assert.equal(text.match(/Kai/g).length, 1);

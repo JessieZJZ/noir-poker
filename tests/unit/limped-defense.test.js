@@ -124,7 +124,8 @@ test('the screenshot deep AK fold is a range and price decision, not a stack vet
   assert.ok(d.trace.equity < d.trace.requiredEquity);
   const text = explainOpponent({ id: v.id, name: 'Mia', ...d }).detail;
   assert.match(text, /42.4%/);
-  assert.match(text, /范围很宽/);
+  assert.match(text, /多次加注后的强范围.*深筹码全下/);
+  assert.doesNotMatch(text, /则应重新判断|需要结合|应谨慎/);
   assert.doesNotMatch(text, /保住剩下的|保住剩余筹码/);
 });
 

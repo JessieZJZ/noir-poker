@@ -7,7 +7,7 @@ export function straightSplitReason(snapshot, context, matchups) {
     stronger.size === 1 &&
     stronger.has(4) &&
     matchups.tied?.length
-    ? `${snapshot.reviewSubject || '对手'}的顺子可与 ${matchups.tied[0].text} 平分，只输给更高顺子；弃牌需要对手范围明显偏向后者。`
+    ? `${snapshot.reviewSubject || '对手'}的顺子可与 ${matchups.tied[0].text} 平分，只输给更高顺子，这次弃牌也放弃了平分底池的机会。`
     : '';
 }
 
@@ -20,11 +20,9 @@ export function defenseReason(snapshot, context, matchups) {
     `继续要补 ${n(cost)}，可争夺跟注后的 ${n(pot)} 底池，当前保本门槛为 ${((cost / Math.max(1, pot)) * 100).toFixed(1)}%。`,
   ];
   if (!snapshot.street) {
-    clauses.push('继续还是弃牌，需要结合对手范围与当前价格；强起手牌也不代表任何尺度都必须跟注。');
+    clauses.push('这次没有用当前起手牌接下这条加注线。');
     if (snapshot.allIn?.line === 'multi-raise-shove' && snapshot.allIn.depthBB > 110)
-      clauses.push(
-        '若这条加注线主要来自较大对子和 AK，当前价格下应谨慎；若全下范围很宽，则应重新判断。',
-      );
+      clauses.push('这次弃牌侧重防守前面多次加注后的强范围，没有接下深筹码全下。');
     return clauses;
   }
   const examples = (matchups?.behind || []).slice(0, 2);
@@ -43,7 +41,7 @@ export function defenseReason(snapshot, context, matchups) {
     .slice(0, 2)
     .map(([, label]) => label);
   if (examples.length) {
-    const extra = remaining.length ? `，还需防范${remaining.join('、')}` : '';
+    const extra = remaining.length ? `，也可能落后于${remaining.join('、')}` : '';
     clauses.push(
       `${subject}判断自己可能落后于 ${examples.map((example) => `${example.text}（${example.label}）`).join('、')}${extra}。`,
     );
@@ -54,9 +52,7 @@ export function defenseReason(snapshot, context, matchups) {
     postflop.findLastIndex((a) => a.action === 'raise'),
   );
   if (previous.length && previous.every((a) => a.action === 'check'))
-    clauses.push(
-      '此前一路过牌，仍可能有慢打强牌，也保留了较弱牌和诈唬，不能仅凭这次下注认定对手有大牌。',
-    );
+    clauses.push('此前一路过牌，当前下注范围仍可能同时包含慢打强牌、较弱成牌和诈唬。');
   if (context.pendingOthers)
     clauses.push('后面还有玩家可以跟注或加注，当前底池赔率不代表后续投入已经封顶。');
   return clauses;

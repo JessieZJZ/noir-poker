@@ -60,8 +60,9 @@ test('the actual K8s limp executes and its displayed review explains the small p
   await expect(summary).toContainText('20K');
   await expect(summary).toContainText('1.53M');
   await expect(summary).toContainText('同花听牌和成花机会');
-  await expect(summary).toContainText('更高同花');
-  await expect(summary).toContainText('新的价格重新决定');
+  await expect(summary).toContainText('击中一对后仍可能被更好的踢脚压住');
+  await expect(summary).toContainText('成花后仍可能落后于更高同花');
+  await expect(summary).not.toContainText(/成花后也要留意|新的价格重新决定/);
   await summary.locator('p').last().scrollIntoViewIfNeeded();
   await mkdir('.artifacts/review-clarity-2026-10-25/web', { recursive: true });
   await page.screenshot({

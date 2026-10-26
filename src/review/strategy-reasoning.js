@@ -238,7 +238,7 @@ function continuationNote(f) {
   return null;
 }
 
-function bluffCatchNote(s, assessment, f) {
+function bluffCatchNote(s, assessment, f, observer = false) {
   if (f.street !== 3 || !f.call || !['call', 'fold'].includes(f.action)) return null;
   const category = assessment.draw?.madeCategory;
   if (!finite(category) || category < 1 || category > 3) return null;
@@ -263,10 +263,74 @@ function bluffCatchNote(s, assessment, f) {
   const route =
     f.action === 'call'
       ? completed
-        ? `跟注 ${compactChips(f.cost)} 需要其余诈唬或较弱取值支撑，不能再把这些同花当作落空牌。`
+        ? observer
+          ? '这次跟注依靠范围中仍存在的诈唬或较弱取值，已补成的同花属于更强价值牌。'
+          : `跟注 ${compactChips(f.cost)} 需要其余诈唬或较弱取值支撑，不能再把这些同花当作落空牌。`
         : `跟注 ${compactChips(f.cost)} 是抓这些诈唬，仍会输给其中的强成牌。`
       : `弃牌放弃抓诈唬，保留还需支付的 ${compactChips(f.cost)}。`;
+  if (observer) {
+    const parts = [story, '，', value, '。', route];
+    return note('bluff-catch', parts.join(''), parts);
+  }
   return note('bluff-catch', `${story}，${value}；${route}`);
+}
+
+// An observer gets the recorded action's support and tradeoffs, never a list
+// of instructions for what that opponent should do on the next card.
+function observerNotes(s, assessment, f) {
+  const paying = payingNote(assessment, f);
+  const range = rangeNote(s, assessment, f);
+  const rangeFact = range && note('range', range.parts[0] + '。', [range.parts[0], '。']);
+  const call = assessment.call || {};
+  const implied =
+    f.action === 'call' &&
+    !f.closed &&
+    call.eligible &&
+    call.futurePayBound > 0 &&
+    call.impliedValue > 0 &&
+    (f.hasDraw || call.pairMining)
+      ? note(
+          'implied-odds',
+          `${f.subject}这次跟注还保留了${call.pairMining ? '中暗三条' : '补中'}后向较弱牌取值的机会。`,
+        )
+      : null;
+  const sourceDraw = drawNote(s, f);
+  const drawRoute =
+    f.action === 'raise'
+      ? f.live.length
+        ? '这次进攻同时争取对手弃牌和补牌改善。'
+        : '这次加注无法让已全下的对手弃牌。'
+      : f.action === 'call'
+        ? '这次跟注保留了听牌的改善机会。'
+        : f.action === 'check'
+          ? '过牌保留改善机会，也没有主动扩大底池。'
+          : '这次弃牌放弃了听牌的改善机会。';
+  const drawParts = sourceDraw && [
+    sourceDraw.parts[0],
+    drawRoute,
+    f.draw.pairedBoard ? sourceDraw.parts[2] : '',
+  ];
+  const draw = drawParts && note('draw-plan', drawParts.join(''), drawParts.filter(Boolean));
+  const continuation =
+    !f.closed &&
+    !f.allInAction &&
+    f.action === 'check' &&
+    f.canFaceCurrentBet &&
+    f.plan?.kind === 'check-for-raise'
+      ? note('continuation', '这次过牌保留了对手下注后再加注的空间。')
+      : f.action === 'raise' && f.checkRaise && f.plan?.kind === 'check-raise-value'
+        ? note('continuation', '这次过牌加注向愿意继续的较弱牌取值。')
+        : null;
+  const bluffCatch = bluffCatchNote(s, assessment, f, true);
+  const ordered =
+    f.action === 'raise'
+      ? [draw, paying, continuation, rangeFact]
+      : f.action === 'check'
+        ? [continuation, draw, rangeFact]
+        : f.action === 'fold'
+          ? [bluffCatch]
+          : [bluffCatch, implied, draw];
+  return ordered.filter(Boolean).slice(0, 2);
 }
 
 /**
@@ -278,10 +342,18 @@ function bluffCatchNote(s, assessment, f) {
 export function strategyNotes(
   s,
   assessment,
-  { action = s.action, amount = s.amount, plan, subject = '你', includeAction = true } = {},
+  {
+    action = s.action,
+    amount = s.amount,
+    plan,
+    subject = '你',
+    includeAction = true,
+    audience = 'decision',
+  } = {},
 ) {
   if (!assessment || !['check', 'call', 'fold', 'raise'].includes(action)) return [];
   const f = publicFacts(s, assessment, action, amount, plan, subject, includeAction);
+  if (audience === 'observer') return observerNotes(s, assessment, f);
   const paying = payingNote(assessment, f);
   const draw = drawNote(s, f);
   const implied = impliedNote(assessment, f);

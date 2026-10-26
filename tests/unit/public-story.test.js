@@ -218,7 +218,8 @@ test('review exposes the public story and missed draw without declaring that che
   const r = explainOpponent(record, game.players),
     text = r.paragraphs.join('');
   assert.match(text, /此前的公开行动.*翻牌\s*过牌.*转牌\s*过牌后加注至 500K.*河牌\s*下注至 1.37M/);
-  assert.match(text, /不能仅凭前面的过牌排除价值牌/);
+  assert.match(text, /过牌加注同时保留了强成牌和诈唬的可能/);
+  assert.doesNotMatch(text, /不能仅凭前面的过牌/);
   assert.match(text, /第三张红桃.*同花听牌仍可能转成诈唬/);
   assert.doesNotMatch(text, /对手一定没有 A|对手在诈唬|知道.*J.*8/);
 });

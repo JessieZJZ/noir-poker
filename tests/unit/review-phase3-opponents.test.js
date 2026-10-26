@@ -55,7 +55,7 @@ function record(hole, board, reason, options = {}) {
 
 const summary = (r) => explainOpponent(r).paragraphs.at(-1);
 
-test('an opponent closing the turn call sees the final river without promising a free showdown', () => {
+test('an opponent closing the turn call keeps its draw and price without coaching the river', () => {
   const r = record('8s 7c', 'Tc 6c Kd 4d', 'legacy-unknown', {
     cost: 400,
     stack: 1600,
@@ -65,8 +65,8 @@ test('an opponent closing the turn call sees the final river without promising a
     ],
   });
   const text = summary(r);
-  assert.match(text, /最后一张河牌.*河牌若再面对下注/);
-  assert.doesNotMatch(text, /不保证免费见完|不再有后续下注/);
+  assert.match(text, /双卡顺听牌.*8 张牌.*继续要补 400.*25.0%/);
+  assert.doesNotMatch(text, /不保证免费见完|不再有后续下注|仍需另作决定|需要按新的价格/);
 });
 
 test('a no-pair all-in call keeps its real open-ended improvement rather than relying on high card', () => {
@@ -87,7 +87,7 @@ test('a pair plus flush draw all-in call keeps both sources of showdown support 
   assert.match(text, /当前已有非顶对 5.*较弱成牌或未成牌的诈唬/);
   assert.match(text, /另外还有同花听牌/);
   assert.match(text, /9 张牌可能补成同花/);
-  assert.match(text, /听牌张数不能直接当作最终获胜率/);
+  assert.match(text, /补中也不保证获胜/);
   assert.match(text, /三张同花色.*两张该花色/);
 });
 
@@ -130,7 +130,8 @@ test('weak preflop calls describe a wide choice and its price without treating c
     assert.match(summary(r), /较宽地/);
     assert.match(summary(r), /剩余筹码的 6.3%/);
     assert.match(summary(r), /踢脚/);
-    assert.match(summary(r), /不能只因.*认定跟注划算|不能把这次继续当作通用建议/);
+    assert.match(summary(r), /击中一对.*(?:踢脚|对子).*可能落后|击中一对.*可能被更好的踢脚/);
+    assert.doesNotMatch(summary(r), /不能只因|通用建议|需要.*重新决定/);
     assert.doesNotMatch(summary(r), /因此选择跟注入池/);
   }
   const premium = record('As Ah', '', 'affordable-entry', {
@@ -229,7 +230,8 @@ test('an unknown combination-draw raise names both real improvements without inv
   assert.equal(review.basisSource, 'inferred');
   assert.match(summary(r), /同花听牌 \+ 两头顺听牌/);
   assert.match(summary(r), /8 \/ K 落下时可以补成顺子/);
-  assert.match(summary(r), /不能只凭有听牌就认定这个尺度划算/);
+  assert.match(summary(r), /被跟注后仍能补牌/);
+  assert.doesNotMatch(summary(r), /不能只凭|重新比较|建议/);
   assert.doesNotMatch(summary(r), /只有高牌.*不足以支撑|因此.*半诈唬/);
 });
 
@@ -238,7 +240,7 @@ test('an unknown strong-hand raise gives conditional value support rather than a
   r.amount = 300;
   assert.equal(explainOpponent(r).title, '下注至 300');
   assert.match(summary(r), /当前已有暗三条 5.*只有较弱成牌或听牌愿意支付时.*收取价值/);
-  assert.match(summary(r), /核对会跟注的较弱牌是否足够/);
+  assert.doesNotMatch(summary(r), /核对|需要比较|建议/);
   assert.doesNotMatch(summary(r), /当前底池.*保留这条行动路线|诱导.*继续投入/);
 });
 
@@ -254,7 +256,8 @@ test('an unknown board-only closing check names shared value and immediate showd
 test('an unknown board-only call compares only the possible share and has no invented winning hand', () => {
   const r = ordinaryRecord('2c 3d', 'Ts Js Qs Ks As');
   assert.equal(explainOpponent(r).title, '跟注 100');
-  assert.match(summary(r), /主要争取平分底池.*分得的份额比较成本/);
+  assert.match(summary(r), /主要争取平分底池/);
+  assert.doesNotMatch(summary(r), /需要按|比较成本/);
   assert.doesNotMatch(summary(r), /高牌.*取胜|领先所有|更大的牌/);
 });
 
@@ -273,18 +276,19 @@ test('an unknown board-only raise with an all-in opponent cannot claim to force 
   assert.doesNotMatch(summary(r), /对手弃牌就.*整个底池|更高的同花/);
 });
 
-test('an unknown fold at a free-check option states the lost opportunity instead of preserving a route', () => {
+test('an unknown fold at a free-check option reports the action without recommending the alternative', () => {
   const r = ordinaryRecord('2c 3d', '', { action: 'fold', cost: 0 });
   assert.equal(explainOpponent(r).title, '弃牌');
-  assert.match(summary(r), /可以直接过牌.*不节省额外筹码.*放弃/);
-  assert.doesNotMatch(summary(r), /保留这条行动路线/);
+  assert.match(summary(r), /选择弃牌/);
+  assert.doesNotMatch(summary(r), /当时可以直接过牌|不节省额外筹码|保留这条行动路线/);
 });
 
 test('an unknown cheap draw fold compares surrendered improvement with the actual price', () => {
   const r = ordinaryRecord('8d Jh', 'Ac Tc 4s 9h', { action: 'fold' });
   assert.match(summary(r), /选择弃牌.*继续要补 100.*1.1K.*9.1%/);
   assert.match(summary(r), /8 张牌可能补成顺子/);
-  assert.match(summary(r), /17.4%.*高于当前价格门槛.*应比较跟注/);
+  assert.match(summary(r), /17.4%.*高于当前价格门槛.*弃牌放弃了这些改善机会/);
+  assert.doesNotMatch(summary(r), /应比较跟注/);
   assert.doesNotMatch(summary(r), /因此.*弃牌|必须跟注/);
 });
 
