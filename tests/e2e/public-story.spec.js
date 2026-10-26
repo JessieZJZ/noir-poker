@@ -37,7 +37,7 @@ test('a real JJ response catches the river bet and its review shows the full pub
   expect(game.botDecisions.at(-1).action).toBe('call');
   const body = await open(page, game);
   await expect(body).toContainText(/翻牌\s*过牌.*转牌\s*过牌后加注至 500K.*河牌\s*下注至 1.37M/s);
-  await expect(body).toContainText('不能仅凭前面的过牌排除价值牌');
+  await expect(body).toContainText('此前的过牌加注同时保留了强成牌和诈唬的可能');
   await expect(body).toContainText('第三张红桃');
   await expect(body).toContainText('选择跟注');
   await mkdir('.artifacts/story-lines-2026-10-25/web', { recursive: true });

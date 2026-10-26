@@ -155,7 +155,9 @@ test('review prices, actor references and draw verdicts stay coherent in the exi
   ).toBeTruthy();
   await page.locator('#review-opponents-tab').click();
   const bot = page.locator('#review-opponent-detail .review-explanation');
-  await expect(bot).toContainText('他选择保住后手');
+  // The opponent tab explains his own draw and price, not player coaching.
+  await expect(bot).toContainText('当前主要依靠两头顺听牌改善');
+  await expect(bot).toContainText('当前保本门槛为 24.3%');
   const paragraphs = await bot.locator('.review-analysis-heading ~ p').allTextContents();
   expect(paragraphs.join('').match(/Kai/g)).toHaveLength(1);
   await expect(bot).not.toContainText('；');
