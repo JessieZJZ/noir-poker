@@ -12,6 +12,7 @@ import sharp from 'sharp';
 import { PROFILE_PORTRAITS } from '../src/ui/portraits.js';
 import { sourceDigest, directoryDigest, root } from './mobile-lib.mjs';
 import { guideTemplate } from './wechat-presentation.mjs';
+import { reviewRevision } from './review-revision.mjs';
 
 export const wechatOutput = path.join(root, '.artifacts/wechat');
 export const wechatChineseFont = path.join(root, 'src/platform/wechat-fonts/noto-sans-sc.woff2');
@@ -117,6 +118,7 @@ async function compileJs(sourceDirectory, destination) {
       entryPoints: [path.join(sourceDirectory, file)],
       bundle: true,
       external: ['*.js'],
+      define: { __NOIR_REVIEW_REVISION__: JSON.stringify(reviewRevision(root)) },
       format: 'cjs',
       target: 'es2019',
       minify: true,

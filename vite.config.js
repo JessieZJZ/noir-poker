@@ -1,8 +1,10 @@
 import { readFileSync } from 'node:fs';
 import { defineConfig } from 'vite';
+import { reviewRevision, reviewRevisionPlugin } from './scripts/review-revision.mjs';
 
 export default defineConfig(({ mode }) => ({
   base: './',
+  define: { __NOIR_REVIEW_REVISION__: JSON.stringify(reviewRevision()) },
   server: {
     // Keep test pages stable while another local task edits the shared source.
     hmr: mode !== 'test',
@@ -16,6 +18,7 @@ export default defineConfig(({ mode }) => ({
   // Controlled scenarios exist only in the test development server. The
   // production build contains neither fixtures nor access to hidden cards.
   plugins: [
+    reviewRevisionPlugin(),
     ...(mode === 'test'
       ? [
           {

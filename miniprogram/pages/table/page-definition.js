@@ -88,6 +88,8 @@ module.exports = {
     settings: { sound: true, music: true, vibration: true, hints: true },
     seats: [],
     board: [],
+    showdown: [],
+    hasShowdown: false,
     boardTop: [],
     boardBottom: [],
     boardSlots: [],
@@ -198,6 +200,7 @@ module.exports = {
             arriving: animate && (changedDeal || Boolean(this.data.heroCards[index]?.arriving)),
           })),
           showdown,
+          hasShowdown: showdown.length > 0,
           showdownContext: `${showdown.length} 人参与摊牌${game?.pots.length > 1 ? ' · 主池与边池分别结算' : ''}`,
           activePlayerCount: view.seats.length + 1,
           logs: view.logs,
@@ -734,7 +737,10 @@ module.exports = {
     }
   },
   preloadSounds() {
-    this._soundPool = {};
+    if (this._audio?.length && this._soundPool) return;
+    // DevTools hot reload can run onShow without replaying onLoad's fields.
+    // Dispose any orphaned contexts before rebuilding a complete sound pool.
+    this.stopSounds();
     if (!wx.createInnerAudioContext) return;
     for (const name of ['fold', 'check', 'chip', 'deal', 'win']) {
       const audio = wx.createInnerAudioContext();

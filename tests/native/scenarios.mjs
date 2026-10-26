@@ -2352,6 +2352,63 @@ export async function nativeScenarios(app) {
       ]);
     return { coverage, pot: settled.pot, settlementBudget, layout, crownInspection };
   });
+  await check('review-cache-reopen', async () => {
+    await waitForNativeHeroTurn(app, { advanceSettled: true });
+    await app.click('#fold-button');
+    if (await app.visible('#continue-deal-button')) await app.click('#continue-deal-button');
+    await app.waitFor(
+      async () => (await app.state()).phase === 'done',
+      60000,
+      'Real hand must settle',
+    );
+    await app.evaluate(() => {
+      window.__cacheProbe = { original: window.Worker, created: 0 };
+      window.Worker = class extends window.__cacheProbe.original {
+        constructor(...args) {
+          super(...args);
+          window.__cacheProbe.created++;
+        }
+      };
+    });
+    try {
+      const started = Date.now();
+      await app.click('#review-hand-button');
+      await waitForNativeReview(app);
+      const coldMs = Date.now() - started;
+      const before = await app.evaluate(() => ({
+        created: window.__cacheProbe.created,
+        text: document.querySelector('#review-coach-explanation').textContent,
+      }));
+      assert.equal(before.created, 1);
+      await app.click('#review-dialog .icon-button.close-dialog');
+      const warmStart = Date.now();
+      await app.click('#review-hand-button');
+      await waitForNativeReview(app);
+      const warmMs = Date.now() - warmStart;
+      const after = await app.evaluate(() => ({
+        created: window.__cacheProbe.created,
+        text: document.querySelector('#review-coach-explanation').textContent,
+        cacheChars: localStorage.getItem('noir-review-cache-v1')?.length,
+      }));
+      assert.equal(after.created, 1);
+      assert.equal(after.text, before.text);
+      assert.ok(after.cacheChars > 0 && after.cacheChars * 3 <= 1024 * 1024);
+      await app.screenshot('cached-review');
+      return {
+        coldMs,
+        warmMs,
+        workersAfterReopen: after.created,
+        cacheChars: after.cacheChars,
+        scope: 'Installed production UI; full-quality real hand, no deal fixture',
+      };
+    } finally {
+      await app.evaluate(() => {
+        window.Worker = window.__cacheProbe.original;
+        delete window.__cacheProbe;
+        document.querySelector('#review-dialog').close();
+      });
+    }
+  });
   await check('review-overflow-and-activity-size', async () => {
     await waitForNativeHeroTurn(app, { advanceSettled: true });
     await app.click('#fold-button');

@@ -896,6 +896,39 @@ test('WeChat Page stops and destroys native audio plus pending work when backgro
   assert.ok(jobs.size > 0, 'foreground resumes a fresh bot schedule');
 });
 
+test('WeChat showdown visibility has its own initialized boolean rather than an array-length binding', (t) => {
+  const { page } = setup(t);
+  assert.equal(page.data.hasShowdown, false);
+  finish(page._controller.getGame());
+  page._controller.show();
+  assert.equal(page.data.hasShowdown, true);
+  assert.ok(page.data.showdown.length > 0);
+  assert.match(template, /wx:if="{{hasShowdown}}" class="showdown-stage"/);
+  page.nextHand();
+  assert.equal(page.data.hasShowdown, false);
+});
+test('WeChat record return and hot reload rebuild missing sound fields without duplicate contexts', (t) => {
+  const { page, audios } = setup(t);
+  page.stopSounds();
+  delete page._audio;
+  delete page._soundPool;
+  page._browsingRecords = true;
+  assert.doesNotThrow(() => page.onShow());
+  assert.ok(page._audio.length > 0);
+  const restored = [...page._audio];
+  const count = audios.length;
+  page.preloadSounds();
+  assert.equal(audios.length, count);
+  assert.deepEqual([...page._audio], restored);
+  // A reload may retain the contexts but lose the lookup map. Rebuild once,
+  // destroying those orphaned contexts rather than leaking another sound pool.
+  delete page._soundPool;
+  page.preloadSounds();
+  assert.ok(restored.every((audio) => audio.destroyed));
+  assert.equal(page._audio.length, restored.length);
+  page.onHide();
+  assert.equal(page._audio.length, 0);
+});
 test('WeChat boosted sound cues keep only the latest context active and respect all playback gates', (t) => {
   const { page, audios, app } = setup(t);
   let ducks = 0;

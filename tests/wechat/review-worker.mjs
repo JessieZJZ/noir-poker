@@ -93,8 +93,8 @@ try {
       open: p.data.reviewOpen,
     };
   });
-  assert.equal(report.cancellation.created, 2);
-  assert.equal(report.cancellation.terminated, 2);
+  assert.equal(report.cancellation.created, 1, 'Reopening a cached review creates no new worker');
+  assert.equal(report.cancellation.terminated, 1);
   assert.equal(report.cancellation.open, false);
   assert.ok(report.cancellation.cancelMs < 1000);
   report.status = 'passed';

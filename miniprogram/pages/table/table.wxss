@@ -1778,3 +1778,26 @@
 @import './game-info.wxss';
 @import './style-detail.wxss';
 @import './preflop-table.wxss';
+
+/* A single frame owns the table and showdown; no flex gap or doubled edge. */
+.table-panel {
+  flex: none;
+  margin-top: 8px;
+  border: 1px solid #283943;
+  border-radius: 14px;
+  overflow: hidden;
+  background: #101b22;
+}
+.table-panel.history-panel {
+  margin-top: 0;
+}
+.table-panel .game-shell {
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+}
+.table-panel .showdown-stage {
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+}

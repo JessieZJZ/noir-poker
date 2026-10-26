@@ -239,6 +239,65 @@ test('WeChat worker completion equals full fallback and a killed worker retains 
   }
   assert.deepEqual(updates.at(-1), expected);
 });
+test('WeChat cache resumes a cancelled prefix, persists across history controllers and rejects changed prices', (t) => {
+  const workers = [];
+  const { controller, preferences } = setup(
+    t,
+    {},
+    {
+      createReviewWorker: () => {
+        const worker = fakeReviewWorker();
+        workers.push(worker);
+        return worker;
+      },
+    },
+  );
+  reachHero(controller);
+  controller.action('fold');
+  finish(controller.getGame(), 'fold');
+  const game = controller.getGame();
+  game.decisions.push({
+    ...copy(game.decisions[0]),
+    index: 1,
+    stack: game.decisions[0].stack + game.bigBlind,
+  });
+  let updates = [];
+  controller.review((view) => updates.push(view));
+  const first = analyzeDecision(workers[0].payload.decisions[0]);
+  workers[0].receive({ type: 'step', index: 0, result: first });
+  controller.cancelReview();
+  workers[0].receive({ type: 'complete' });
+  controller.review((view) => updates.push(view));
+  assert.equal(updates.at(-1).done, 1);
+  assert.equal(workers[1].payload.decisions.length, 1);
+  const second = analyzeDecision(workers[1].payload.decisions[0]);
+  workers[1].receive({ type: 'step', index: 0, result: second });
+  workers[1].receive({ type: 'complete' });
+  const expected = copy(updates.at(-1));
+  assert.equal(expected.loading, false);
+  controller.cancelReview();
+  controller.review((view) => updates.push(view));
+  assert.equal(workers.length, 2);
+  assert.deepEqual(updates.at(-1), expected);
+  const history = createWechatController({
+    publish() {},
+    storage: {
+      getItem: (key) => preferences.get(key),
+      setItem: (key, value) => preferences.set(key, value),
+    },
+    readOnlyAttempt: { snapshot: copy(game) },
+    createReviewWorker: () => {
+      throw Error('Cached history must not start a worker');
+    },
+  });
+  t.after(() => history.destroy());
+  const historical = [];
+  history.review((view) => historical.push(view));
+  assert.deepEqual(historical, [expected]);
+  game.decisions[0].legal.toCall += game.bigBlind;
+  controller.review(() => {});
+  assert.equal(workers.length, 3);
+});
 function finish(game, action = 'call') {
   let limit = 0;
   while (game.phase !== 'done') {

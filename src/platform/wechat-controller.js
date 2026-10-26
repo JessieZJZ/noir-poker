@@ -24,6 +24,7 @@ import { tableHint } from '../review/table-hint.js';
 import { SEAT_ANCHORS } from '../ui/seat-geometry.js';
 import { visibleRecentAction } from '../ui/recent-action.js';
 import { explainOpponent } from '../review/opponents.js';
+import { createReviewCache } from '../review/result-cache.js';
 import { selectedActivity } from '../review/activity.js';
 import { reviewCommentary } from '../review/matchups.js';
 import { createActivityParts } from '../ui/activity-parts.js';
@@ -120,6 +121,7 @@ export function createWechatController({
   readOnlyAttempt = null,
   readOnlySessionNumber = null,
 }) {
+  const reviewCache = createReviewCache({ storage });
   let settings;
   let stakesError = '';
   try {
@@ -1027,7 +1029,9 @@ export function createWechatController({
       cancelReview();
       const ticket = reviewEpoch,
         input = createReviewInput(game),
-        results = [];
+        results = input.decisions.map((decision) => reviewCache.get('decision', decision)),
+        missing = input.decisions.flatMap((_, index) => (results[index] ? [] : [index]));
+      let done = results.filter(Boolean).length;
       reviewSource = input;
       opponentReviews = new Map();
       // As on Web, report each finished decision: "正在分析决策 done / total…".
@@ -1037,17 +1041,22 @@ export function createWechatController({
           hand: input.hand,
           steps: [],
           profit: format(input.outcome.profit),
-          done: results.length,
+          done,
           total: input.decisions.length,
           progressText: input.decisions.length
-            ? `正在分析决策 ${results.length} / ${input.decisions.length}…`
+            ? `正在分析决策 ${done} / ${input.decisions.length}…`
             : '正在准备这手的决策快照…',
         });
-      progress();
+      if (done < input.decisions.length) progress();
       function step() {
         if (disposed || !active || ticket !== reviewEpoch) return;
-        if (results.length < input.decisions.length) {
-          results.push(analyzeDecision(input.decisions[results.length]));
+        if (done < input.decisions.length) {
+          const index = results.findIndex((result) => !result);
+          const decision = input.decisions[index];
+          const result = analyzeDecision(decision);
+          reviewCache.set('decision', decision, result);
+          results[index] = result;
+          done++;
           progress();
           reviewTimer = schedule(step, 0);
           return;
@@ -1114,8 +1123,13 @@ export function createWechatController({
           })),
         });
       }
+      if (done === input.decisions.length) {
+        publishReport();
+        return;
+      }
       if (createReviewWorker && input.decisions.length) {
         let worker;
+        let received = 0;
         const current = () =>
           !disposed && active && ticket === reviewEpoch && reviewWorker === worker;
         const fallback = () => {
@@ -1130,10 +1144,18 @@ export function createWechatController({
           reviewWorker = worker;
           worker.onMessage((message) => {
             if (!current()) return;
-            if (message.type === 'step' && message.index === results.length && message.result) {
-              results.push(message.result);
+            if (
+              message.type === 'step' &&
+              message.index === received &&
+              received < missing.length &&
+              message.result
+            ) {
+              const index = missing[received++];
+              reviewCache.set('decision', input.decisions[index], message.result);
+              results[index] = message.result;
+              done++;
               progress();
-            } else if (message.type === 'complete' && results.length === input.decisions.length) {
+            } else if (message.type === 'complete' && done === input.decisions.length) {
               reviewWorker = null;
               worker.terminate();
               publishReport();
@@ -1142,7 +1164,7 @@ export function createWechatController({
           worker.onProcessKilled?.(fallback);
           // Send only detached before-action snapshots, never the final hand,
           // opponent hole cards, future deck, outcome or display-only activity.
-          worker.postMessage({ decisions: input.decisions });
+          worker.postMessage({ decisions: missing.map((index) => input.decisions[index]) });
           return;
         } catch {
           reviewWorker = null;
@@ -1155,16 +1177,17 @@ export function createWechatController({
       const record = reviewSource?.opponents[index];
       if (!record) return null;
       if (!opponentReviews.has(index)) {
-        const explanation = explainOpponent(
-          record,
+        const identities =
           reviewSource.players ||
-            reviewSource.opponents.map(({ id, name, trace }) => ({
-              id,
-              name,
-              botProfile: trace.profile,
-              position: trace.view.position,
-            })),
-        );
+          reviewSource.opponents.map(({ id, name, trace }) => ({
+            id,
+            name,
+            botProfile: trace.profile,
+            position: trace.view.position,
+          }));
+        const cached = reviewCache.get('opponent', [record, identities]);
+        const explanation = cached || explainOpponent(record, identities);
+        if (!cached) reviewCache.set('opponent', [record, identities], explanation);
         opponentReviews.set(index, {
           analyzed: true,
           title: explanation.title,
