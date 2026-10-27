@@ -2,6 +2,8 @@
 
 这套测试通过 Appium 安装并启动实际 iOS `.app` / Android `.apk`，在应用自己的 WebView 中点击操作，再切换到原生上下文验证后台和恢复。它不打开桌面浏览器，不使用 Vite 测试模式，也不注入牌局、隐藏牌或 QA fixtures。规则测试、浏览器测试、原生编译和原生 E2E 是四种独立证据。
 
+附着前的就绪条件按平台区分：iOS 先等待原生可访问性树中的实际按钮，避免在初始 WebKit 导航期间附着。Android 的可访问性树可能没有已绘制的 HTML 子按钮，因此通过 UiAutomator2 的 `ensureWebviewsHavePages` 确认可检查页面，再附着并检查实际 DOM。游戏页必须完成文档加载、初始化游戏并出现可见且未禁用的按钮；隐私页则核对当前语言的标题及返回链接。空白页面或仅暴露一个游戏 API 都不能通过，原有超时上限保持不变。该 Android 能力的含义见 [Appium 官方说明](https://appium.github.io/appium-uiautomator2-driver/latest/reference/capabilities/#ensurewebviewshavepages)。
+
 ## 准备工具
 
 需要 Node.js 22.12 或更新版本。iOS 需要 macOS、完整 Xcode 和一个已安装的 iOS Simulator runtime；Android 需要 JDK 21、Android SDK 36、platform-tools、emulator 和对应 system image。

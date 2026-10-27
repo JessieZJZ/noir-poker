@@ -150,18 +150,21 @@ const command = createNativeCommand({
 let webContext;
 async function attachWebview({ expectedPage = 'game' } = {}) {
   nativeBackPage(expectedPage);
-  // Wait for the real document before attaching WebKit. Attaching during the
-  // initial blank-page navigation can pause WebKit before the game loads.
-  await waitFor(
-    async () => {
-      const source = await command('GET', '/source');
-      return expectedPage === 'privacy'
-        ? /XCUIElementTypeButton|XCUIElementTypeLink|android\.widget\.Button/.test(source)
-        : /XCUIElementTypeButton|android\.widget\.Button/.test(source);
-    },
-    45000,
-    'Native app must render an actionable screen before WebView attachment',
-  );
+  // Attaching during initial WebKit navigation can pause the iOS document.
+  // Android accessibility can omit HTML children even when the screen is
+  // painted. Its ensureWebviewsHavePages capability requires an inspectable
+  // page below, then nativePageReady verifies the real initialized DOM.
+  if (platform === 'ios')
+    await waitFor(
+      async () => {
+        const source = await command('GET', '/source');
+        return expectedPage === 'privacy'
+          ? /XCUIElementTypeButton|XCUIElementTypeLink/.test(source)
+          : /XCUIElementTypeButton/.test(source);
+      },
+      45000,
+      'Native app must render an actionable screen before WebView attachment',
+    );
   const contexts = await waitFor(
     async () => {
       const available = await command('GET', '/contexts');
@@ -689,8 +692,8 @@ try {
   // Restore the tested app before looking for an actionable native screen.
   if (platform === 'ios') await command('POST', '/appium/device/activate_app', { appId });
   await attachWebview();
-  // Keep Android's default startup settling until Accessibility and the
-  // actionable WebView exist; only then shorten the animated-screen idle wait.
+  // Keep Android's default settling until the actual document has initialized
+  // and exposes a visible enabled control, then shorten the animated idle wait.
   if (platform === 'android') report.nativeTouch = await prepareNativeTouch(command, platform);
   await command('POST', '/timeouts', { script: 30000 });
   // XCUITest does not resolve Promise results from execute/sync. The standard
