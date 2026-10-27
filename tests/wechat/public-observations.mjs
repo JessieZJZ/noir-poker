@@ -20,13 +20,33 @@ const report = {
   exceptions: [],
 };
 let mini, original;
+let stage = 'launch';
 try {
   mini = await automator.connect({ wsEndpoint: process.argv[2] || 'ws://127.0.0.1:9453' });
-  mini.on('exception', (e) => report.exceptions.push(e));
+  mini.on('exception', (e) => report.exceptions.push({ ...e, stage }));
+  const initialDeadline = Date.now() + 45000;
+  while (!(await mini.evaluate(() => Boolean(getCurrentPages().slice(-1)[0]?._controller)))) {
+    if (Date.now() >= initialDeadline)
+      throw Error('The real mini-program controller did not become ready before reLaunch');
+    await new Promise((resolve) => setTimeout(resolve, 150));
+  }
   // Each run owns this project's page. Start with fresh presentation timers,
   // including after a retained failed fixture run; do not reuse its view arrays.
   await mini.reLaunch('/pages/table/table');
   const page = await seatAtTable(mini, { finished: true });
+  await mini.evaluate(() => {
+    const page = getCurrentPages().at(-1);
+    page.__publicReadOriginalSetData = page.setData;
+    page.__publicReadBridge = { calls: 0, totalBytes: 0, largestPatchBytes: 0 };
+    page.setData = function (patch, callback) {
+      const bytes = encodeURIComponent(JSON.stringify(patch)).replace(/%[A-F\d]{2}/g, 'x').length;
+      const metrics = this.__publicReadBridge;
+      metrics.calls++;
+      metrics.totalBytes += bytes;
+      metrics.largestPatchBytes = Math.max(metrics.largestPatchBytes, bytes);
+      return this.__publicReadOriginalSetData(patch, callback);
+    };
+  });
   report.build = JSON.parse(readFileSync(path.join(root, '.artifacts/wechat/build-info.json')));
   original = await mini.evaluate(() => getCurrentPages().at(-1)._controller.getGame());
   const game = coldShoveResponse('As Kd');
@@ -40,6 +60,7 @@ try {
     postActions: 4,
     postRaises: 4,
   }));
+  stage = 'observed-shove';
   const first = await mini.evaluate((fixture) => {
     const page = getCurrentPages().at(-1);
     const controller = page._controller;
@@ -63,12 +84,17 @@ try {
       equity: record.trace.equity,
       model: record.trace.view.publicReadModel,
       opponentRead: record.trace.view.opponents.find((p) => p.id === 0).publicRead,
+      presentedSeatIds: page.data.seats.map((seat) => seat.id),
+      presentedPhoneSeatIds: page.data.phoneSeats.map((seat) => seat.id),
     };
   }, game);
   assert.equal(first.action, 'call');
   assert.equal(first.model, 'observed-public-actions-v1');
   assert.equal(first.opponentRead.hands, 32);
   assert.equal(first.opponentRead.largeRaiseHands, 32);
+  const expectedSeatIds = game.players.slice(1).map((player) => player.id);
+  assert.deepEqual(first.presentedSeatIds, expectedSeatIds);
+  assert.deepEqual(first.presentedPhoneSeatIds, expectedSeatIds);
   report.checks.push({ kind: 'bundled-policy-execution', ...first });
   const wait = async (condition) => {
     const started = Date.now();
@@ -79,6 +105,15 @@ try {
     }
   };
   await wait((data) => data.done);
+  const settledSeatIds = await mini.evaluate(() => {
+    const page = getCurrentPages().at(-1);
+    return {
+      seats: page.data.seats.map((seat) => seat.id),
+      phoneSeats: page.data.phoneSeats.map((seat) => seat.id),
+    };
+  });
+  assert.deepEqual(settledSeatIds.seats, expectedSeatIds);
+  assert.deepEqual(settledSeatIds.phoneSeats, expectedSeatIds);
   const show = async () => {
     await mini.evaluate(() => getCurrentPages().at(-1).openReview());
     await wait((data) => !data.reviewData.loading);
@@ -94,6 +129,7 @@ try {
     assert.match((await Promise.all(texts.map((el) => el.text()))).join(''), /此前 32 手中 32 手/);
     return step.reason;
   };
+  stage = 'review-and-reopen';
   const reason = await show();
   await mini.evaluate(() => getCurrentPages().at(-1).closeReview());
   assert.equal(await show(), reason);
@@ -105,6 +141,7 @@ try {
   await page.waitFor(1450);
   await mini.screenshot({ path: path.join(output, 'observed-defense.png') });
   const squeezed = observedSqueeze({ count: original.players.length });
+  stage = 'observed-squeeze';
   await mini.evaluate((fixture) => {
     const page = getCurrentPages().at(-1);
     page.closeReview();
@@ -144,6 +181,9 @@ try {
   assert.notEqual(defense.action, 'fold');
   assert.equal(defense.observedDefense.hands, 32);
   assert.ok(defense.observedDefense.realizedEquity >= defense.observedDefense.required + 0.04);
+  report.bridge = await mini.evaluate(() => getCurrentPages().at(-1).__publicReadBridge);
+  assert.ok(report.bridge.calls > 0);
+  assert.ok(report.bridge.largestPatchBytes < 1024 * 1024);
   assert.equal(report.exceptions.length, 0);
   report.status = 'passed';
 } catch (error) {
@@ -156,6 +196,10 @@ try {
     await mini
       .evaluate((game) => {
         const page = getCurrentPages().at(-1);
+        if (page.__publicReadOriginalSetData) {
+          page.setData = page.__publicReadOriginalSetData;
+          delete page.__publicReadOriginalSetData;
+        }
         if (getApp().__publicReadRandomOriginal) {
           Math.random = getApp().__publicReadRandomOriginal;
           delete getApp().__publicReadRandomOriginal;

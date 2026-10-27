@@ -296,6 +296,38 @@ test('WeChat publishes the waiting table atomically after the launch artwork', (
   );
 });
 
+test('rapid WeChat presentation updates retain complete seats even after paint callbacks', (t) => {
+  const { page } = setup(t, { waiting: true });
+  const callbacks = [];
+  const patches = [];
+  const setData = page.setData.bind(page);
+  page.setData = (patch, callback) => {
+    patches.push(copy(patch));
+    setData(patch);
+    callbacks.push(callback);
+  };
+  const initial = copy(page.data.seats);
+  page.setPresentationData({ seats: [...initial, { ...initial[0], id: 9 }] });
+  page.setPresentationData({ 'seats[0].stack': '19K', 'seats[5].stack': '18K' });
+  assert.ok(patches[1].seats, 'a pending resize cannot be followed by array leaf paths');
+  assert.equal(page.data.seats[0].id, initial[0].id);
+  assert.equal(page.data.seats[0].stack, '19K');
+  assert.deepEqual(page.data.seats[0].backCards, initial[0].backCards);
+  assert.equal(page.data.seats[5].id, 9);
+  while (callbacks.length) callbacks.shift()?.();
+  page.setPresentationData({ 'seats[0].stack': '17K' });
+  assert.ok(patches.at(-1).seats, 'a paint callback does not make resized-array leaf updates safe');
+  assert.equal(page.data.seats[0].id, initial[0].id);
+  assert.equal(page.data.seats[0].stack, '17K');
+  assert.equal(page.data.seats[5].id, 9);
+  assert.equal(
+    page.data.positioned,
+    undefined,
+    'geometry must not duplicate the full rendered seats',
+  );
+  while (callbacks.length) callbacks.shift()?.();
+});
+
 test('measuring the pot sheet cannot change the table pot row or public-card placement', (t) => {
   const { page, wx } = setup(t);
   const before = copy({

@@ -2,7 +2,12 @@ const { compactChips, compactActionAmounts } = require('../../shared/engine/chip
 const { createWechatController } = require('../../shared/platform/wechat-controller.js');
 const { phoneLayout } = require('./phone-layout.js');
 const { numericWidthScale, numericColumnWidth } = require('../../shared/ui/numeric-width.js');
-const { presentCard, showdownPresentation, presentationPatch } = require('./presentation.js');
+const {
+  presentCard,
+  showdownPresentation,
+  presentationPatch,
+  coalesceArrayPatch,
+} = require('./presentation.js');
 const { completeBoardForPractice, rankText } = require('../../shared/engine/poker.js');
 const navigation = require('../../record-navigation.js');
 const {
@@ -219,7 +224,7 @@ module.exports = {
         if (startsCeremony) update.crownStyle = '';
         const patch = presentationPatch(this.data, update);
         if (Object.keys(patch).length)
-          this.setData(patch, () => {
+          this.setPresentationData(patch, () => {
             this.tightenSeatRanks();
             if (update.tableReady && !this._readOnlyAttempt && typeof getApp === 'function') {
               getApp().noirTableReady = true;
@@ -335,7 +340,7 @@ module.exports = {
             if (card.arriving) stopped[`${list}[${i}].${cards}[${j}].arriving`] = false;
           });
       });
-    this.setData(stopped);
+    this.setPresentationData(stopped);
     this.setData({ finishing: false, flyingChips: [] });
     this._rankEpoch = (this._rankEpoch || 0) + 1;
     if (!this._browsingRecords) this._controller?.hide();
@@ -355,6 +360,9 @@ module.exports = {
   onResize() {
     this.updateWindow();
   },
+  setPresentationData(patch, callback) {
+    this.setData(coalesceArrayPatch(this.data, patch), callback);
+  },
   scheduleCardMotion(key, delay, readPatch) {
     if (this._hidden || this._destroyed) return;
     this._cardTimers ||= new Map();
@@ -364,7 +372,7 @@ module.exports = {
       if (this._cardTimers.get(key) !== timer) return;
       this._cardTimers.delete(key);
       if (this._hidden || this._destroyed || deal !== this._dealKey) return;
-      this.setData(readPatch());
+      this.setPresentationData(readPatch());
     }, delay);
     this._cardTimers.set(key, timer);
   },
@@ -469,7 +477,7 @@ module.exports = {
     const layout = this.publicLayout(this.data.board, this.data, { ...this.data, ...viewport });
     // A single atomic update avoids a frame with the new window but old seats.
     const patch = presentationPatch(this.data, { ...viewport, ...layout });
-    if (Object.keys(patch).length) this.setData(patch);
+    if (Object.keys(patch).length) this.setPresentationData(patch);
     return true;
   },
   publicLayout(board = [], view = this.data, viewport = this.data) {
@@ -485,11 +493,14 @@ module.exports = {
         seats: view.seats,
         displayHeight: viewport.windowHeight - viewport.topInset - viewport.bottomInset - 36,
       });
+      // The positioned rows are rendered as phoneSeats. Do not send a third,
+      // unused copy of every profile and card over the service/view bridge.
+      const { positioned, ...geometry } = fitted;
       // As on Web, the waiting message keeps its size unless the players beside
       // it would crowd it; it sits centred at 44% of the arena height.
       const halfHeight = ENTRY_WELCOME_SIZE.height / fitted.arenaScale / 2;
       const corridor = entryWelcomeCorridor(
-        fitted.positioned.map((seat) => {
+        positioned.map((seat) => {
           const profile = seat.parts?.[1] ?? {
             left: 0,
             top: 0,
@@ -510,7 +521,7 @@ module.exports = {
         },
       );
       return {
-        ...fitted,
+        ...geometry,
         entryScale: entryWelcomeScale({
           arenaScale: fitted.arenaScale,
           contentWidth: ENTRY_WELCOME_SIZE.width,
@@ -518,7 +529,7 @@ module.exports = {
         }),
         tableHeight,
         phoneLayout: true,
-        phoneSeats: fitted.positioned.map((seat) => {
+        phoneSeats: positioned.map((seat) => {
           const before = this.data.phoneSeats?.find((previous) => previous.id === seat.id);
           return {
             ...seat,
@@ -575,7 +586,7 @@ module.exports = {
       const metrics = this.data.textMetrics;
       // Seats (and their text metrics) may not be laid out yet.
       if (!metrics) {
-        if (Object.keys(patch).length) this.setData(patch);
+        if (Object.keys(patch).length) this.setPresentationData(patch);
         return;
       }
       const available = numericColumnWidth({
@@ -627,7 +638,7 @@ module.exports = {
             patch[`phoneSeats[${index}].nameWidthScale`] = actual;
         }
       }
-      if (Object.keys(patch).length) this.setData(patch);
+      if (Object.keys(patch).length) this.setPresentationData(patch);
     });
   },
   call(method, ...args) {

@@ -21,7 +21,7 @@ vm.runInNewContext(
           : { evaluate, rankText },
   },
 );
-const { presentCard, showdownPresentation, presentationPatch } = module.exports;
+const { presentCard, showdownPresentation, presentationPatch, coalesceArrayPatch } = module.exports;
 const deck = deckOfCards();
 test('presentation updates only changed seat leaves and never reset peer caption offsets', () => {
   const before = {
@@ -51,6 +51,32 @@ test('showdown array growth invalidates WXML length conditions while equal-lengt
     JSON.parse(JSON.stringify(presentationPatch(first, { showdown: [{ id: 0, label: '两对' }] }))),
     { 'showdown[0].label': '两对' },
   );
+});
+test('an unacknowledged array update retains row identity and cards during rapid leaf patches', () => {
+  const data = {
+    seats: [{ id: 1, name: 'Alex', backCards: [{ key: 'back', arriving: true }], stack: '20K' }],
+  };
+  const before = structuredClone(data);
+  const leaves = { 'seats[0].stack': '19K', 'seats[0].backCards[0].arriving': false, done: false };
+  const result = coalesceArrayPatch(data, leaves);
+  assert.deepEqual(JSON.parse(JSON.stringify(result)), {
+    seats: [{ id: 1, name: 'Alex', backCards: [{ key: 'back', arriving: false }], stack: '19K' }],
+    done: false,
+  });
+  assert.deepEqual(data, before);
+  assert.deepEqual(leaves, {
+    'seats[0].stack': '19K',
+    'seats[0].backCards[0].arriving': false,
+    done: false,
+  });
+  // A supplied replacement takes precedence over the old shape, regardless of
+  // key order, and is itself left unchanged.
+  const replacement = [...before.seats, { id: 2, name: 'Kai' }];
+  const mixed = { 'seats[1].stack': '18K', seats: replacement };
+  assert.deepEqual(JSON.parse(JSON.stringify(coalesceArrayPatch(data, mixed))), {
+    seats: [...before.seats, { id: 2, name: 'Kai', stack: '18K' }],
+  });
+  assert.equal(replacement[1].stack, undefined);
 });
 const cards = (text) =>
   text
