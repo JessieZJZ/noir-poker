@@ -10,7 +10,7 @@ App({
     } catch {}
     this.noirMusic = music.createWechatBackgroundMusic(wx, {
       enabled,
-      active: false,
+      active: true,
       loadSource: () => require.async('./music/source.js'),
     });
   },
@@ -19,7 +19,7 @@ App({
     this.noirController?.hide();
   },
   onShow() {
-    if (this.noirTableReady) this.noirMusic?.setActive(true);
+    this.noirMusic?.setActive(true);
     this.noirController?.show();
   },
 });

@@ -614,3 +614,19 @@ test('record list summaries omit snapshots, stay isolated and invalidate only fo
   store.capture(game);
   assert.equal(store.summaries()[0].completed, 1);
 });
+
+test('an empty or unreadable index never deletes files that may belong to another project', () => {
+  const first = memory(),
+    snapshots = first.snapshots;
+  const raw = JSON.stringify({ preserved: 'complete hand from another index' });
+  snapshots.set('other-project-hand', raw);
+  const second = memory();
+  second.snapshots = snapshots;
+  records(second);
+  assert.equal(snapshots.get('other-project-hand'), raw);
+  first.setItem(GAME_RECORDS_KEY, '{interrupted index');
+  const unreadable = records(first);
+  assert.match(unreadable.takeNotice(), /读取失败/);
+  assert.equal(snapshots.get('other-project-hand'), raw);
+  assert.deepEqual(snapshots.keys(), ['other-project-hand']);
+});

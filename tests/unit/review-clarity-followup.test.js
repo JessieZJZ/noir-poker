@@ -49,14 +49,14 @@ test('suited AJ pressure explains nut-flush potential for recorded and legacy/sc
   );
 });
 
-test('legacy set check reasons retain the complete visible threat and response chain without a second action recap', () => {
+test('legacy set checks retain visible threats and tradeoffs without future response coaching', () => {
   for (const reason of ['free-check', 'pot-control', 'strong-trap', 'unrecognized']) {
     const { record } = phase3CheckSpot('5c 5d', '4d Qh Ah 5h', { reason });
     const review = explainOpponent(record),
       text = summary(review);
     assert.match(text, /暗三条 5.*三张同花色.*两张该花色.*同花.*领先当前成牌/);
-    assert.match(text, /不主动做大底池.*葫芦或四条.*免费见到下一张/);
-    assert.match(text, /再遇下注.*金额、人数和此前行动/);
+    assert.match(text, /避免主动扩大当前底池.*葫芦或四条.*免费见到下一张/);
+    assert.doesNotMatch(text, /再遇下注|要结合金额、人数和此前行动/);
     assert.doesNotMatch(text, /这是暗三条 5过牌|暗三条 5控池，保留摊牌机会/);
     if (reason === 'pot-control') assert.equal(review.title, '强牌选择过牌');
   }

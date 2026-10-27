@@ -70,7 +70,7 @@ export function createWechatBackgroundMusic(
           });
           audio.onPause?.(recover);
           audio.onStop?.(recover);
-          audio.onError?.(() => (playing = false));
+          audio.onError?.(recover);
           audio.onCanplay?.(() => {
             if (wanted && !disposed && !playing) audio.play();
           });

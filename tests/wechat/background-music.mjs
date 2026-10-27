@@ -160,7 +160,7 @@ try {
     topGap: noticeTop - (await rail.offset()).top - (await rail.size()).height,
     controlGap:
       (await slider.offset()).top +
-      ((await slider.size()).height - 15) / 2 -
+      ((await slider.size()).height - 28) / 2 -
       noticeTop -
       (await notice.size()).height,
   };

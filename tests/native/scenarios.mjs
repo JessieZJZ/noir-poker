@@ -2504,6 +2504,22 @@ export async function nativeScenarios(app) {
     }));
     assert.equal(selected.index, String(last));
     assert.ok(selected.scroll > 0);
+    const opponentSummary = await app.evaluate(() => {
+      const detail = document.querySelector('#review-opponent-detail');
+      return {
+        actor: detail.querySelector('h3')?.textContent,
+        text: [...detail.querySelectorAll('.opponent-reason > p')]
+          .map((p) => p.textContent)
+          .join(''),
+      };
+    });
+    assert.ok(opponentSummary.actor?.trim());
+    assert.match(opponentSummary.text, /选择(?:弃牌|过牌|跟注|全下|下注|加注|\d+-bet)/);
+    assert.doesNotMatch(
+      opponentSummary.text,
+      /再遇下注时|需要按新的价格重新决定|应结合价格和范围|不能只凭当前牌型/,
+    );
+    await app.screenshot('opponent-observation-summary');
     await app.click('#review-dialog .icon-button.close-dialog');
     // The next scenario reopens this hand's settled review before retrying it.
     assert.equal((await app.state()).phase, 'done');
@@ -2514,6 +2530,7 @@ export async function nativeScenarios(app) {
       overflow,
       fontSize,
       selected,
+      opponentSummary,
       scope: 'Installed production UI and a real recorded hand; no injected deal or review fixture',
     };
   });

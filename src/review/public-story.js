@@ -38,7 +38,11 @@ export function publicStoryNotes(s) {
   });
   parts.push('。');
   if (line.some((a) => a.action === 'check-raise'))
-    parts.push('过牌加注也可能来自强牌，不能仅凭前面的过牌排除价值牌。');
+    parts.push(
+      s.reviewAudience === 'observer'
+        ? '此前的过牌加注同时保留了强成牌和诈唬的可能。'
+        : '过牌加注也可能来自强牌，不能仅凭前面的过牌排除价值牌。',
+    );
   if (s.street === 3) {
     const turn = s.board.slice(0, 4),
       suits = ['黑桃', '红桃', '梅花', '方块'];

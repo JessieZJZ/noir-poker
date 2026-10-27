@@ -82,7 +82,7 @@ test('reported bottom pair emphasizes stronger families and combo draws; top-pai
   await expect(opponent).toContainText('顶对 J，底牌 A 参与踢脚比较');
   await expect(opponent).toContainText('过牌也可能是在等后位先下注');
   await expect(opponent).toContainText('免费看下一张');
-  await expect(opponent).toContainText('后位仍可下注');
+  await expect(opponent).toContainText('给对手继续投入的机会');
   for (const locale of ['en', 'ja', 'ko', 'zh-CN']) {
     await page.locator('#language-select').evaluate((select, value) => {
       select.value = value;

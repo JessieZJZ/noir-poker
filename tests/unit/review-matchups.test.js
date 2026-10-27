@@ -170,10 +170,10 @@ test('top-pair checks explain foregone value, checking-range protection and wet 
   assert.match(explanation.detail, /过牌也可能是在等后位先下注/);
   assert.match(explanation.detail, /多人底池/);
   assert.match(explanation.detail, /免费看下一张/);
-  assert.match(explanation.detail, /后位仍可下注/);
+  assert.doesNotMatch(explanation.detail, /再遇下注时|应结合价格和范围重新判断/);
   const last = structuredClone(record);
   last.trace.view.actionContext.pendingResponseIds = [];
-  assert.match(explainOpponent(last).detail, /不能诱导本轮下注/);
+  assert.doesNotMatch(explainOpponent(last).detail, /等后位先下注|给对手继续投入的机会/);
   const trapped = structuredClone(record);
   trapped.trace.reason = 'trap';
   trapped.trace.basis.reason = 'trap';

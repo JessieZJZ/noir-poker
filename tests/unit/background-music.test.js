@@ -3,6 +3,8 @@ import assert from 'node:assert/strict';
 import { createMusicController, BACKGROUND_MUSIC_VOLUME } from '../../src/ui/background-music.js';
 import { createWebBackgroundMusic } from '../../src/platform/web-background-music.js';
 import { createWechatBackgroundMusic } from '../../src/platform/wechat-background-music.js';
+import vm from 'node:vm';
+import { readFileSync } from 'node:fs';
 import { loadFeedbackPreferences } from '../../src/ui/feedback-preferences.js';
 
 test('sound effects, background music and vibration default on and switch independently', () => {
@@ -316,6 +318,9 @@ test('WeChat resumes music the system paused, rate-limited, but never a requeste
     onStop(fn) {
       this.stopped = fn;
     },
+    onError(fn) {
+      this.failed = fn;
+    },
     play() {
       this.playCount++;
       this.played();
@@ -369,7 +374,7 @@ test('WeChat resumes music the system paused, rate-limited, but never a requeste
   music.setActive(true);
   music.setEnabled(true);
   now = 10000;
-  audio.paused();
+  audio.failed({ errCode: 10003, errMsg: 'temporarily unavailable' });
   assert.equal(recoveries().length, 1);
   const pending = recoveries()[0];
   music.dispose();
@@ -377,4 +382,41 @@ test('WeChat resumes music the system paused, rate-limited, but never a requeste
   const before = audio.playCount;
   pending[1].fn();
   assert.equal(audio.playCount, before);
+});
+
+test('WeChat begins loading music on launch before the table is ready and preserves saved mute', async () => {
+  for (const enabled of [true, false]) {
+    let app,
+      loads = 0;
+    const require = (name) =>
+      name.includes('background-music')
+        ? { createWechatBackgroundMusic }
+        : { WECHAT_SETTINGS_KEY: 'settings' };
+    require.async = async () => {
+      loads++;
+      return '/music/background-music.m4a';
+    };
+    vm.runInNewContext(readFileSync(new URL('../../miniprogram/app.js', import.meta.url), 'utf8'), {
+      require,
+      App(value) {
+        app = value;
+      },
+      wx: { getStorageSync: () => JSON.stringify({ music: enabled }) },
+    });
+    app.onLaunch();
+    await new Promise((resolve) => setImmediate(resolve));
+    assert.equal(app.noirTableReady, undefined);
+    assert.equal(app.noirMusic.getState().active, true);
+    assert.equal(app.noirMusic.getState().enabled, enabled);
+    assert.equal(loads, enabled ? 1 : 0);
+    app.onHide();
+    assert.equal(app.noirMusic.getState().active, false);
+    app.onShow();
+    assert.equal(
+      app.noirMusic.getState().active,
+      true,
+      'Resume must not wait for the table-ready flag',
+    );
+    app.noirMusic.dispose();
+  }
 });

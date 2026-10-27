@@ -35,7 +35,8 @@ test('set check review explains the three-flush risk and the cost of checking to
   const summary = page.locator('#review-opponent-detail .review-explanation');
   await expect(summary).toContainText('暗三条 5');
   await expect(summary).toContainText('两张该花色的底牌');
-  await expect(summary).toContainText('先不主动做大底池');
+  await expect(summary).toContainText('过牌避免主动扩大当前底池');
+  await expect(summary).not.toContainText(/再遇下注时|要结合金额、人数和此前行动/);
   await expect(summary).toContainText('免费见到下一张');
   await expect(summary).not.toContainText('；');
   await summary.locator('p').last().scrollIntoViewIfNeeded();

@@ -558,11 +558,10 @@ export function createGameRecords({
     state = emptyState();
     announce(RECORDS_READ_FAILED);
   }
-  // Snapshots whose index row was never saved, or was pruned, are removed.
-  try {
-    const kept = new Set(state.sessions.flatMap((session) => session.attempts.map((a) => a.id)));
-    for (const key of snapshots.keys?.() || []) if (!kept.has(key)) snapshots.remove(key);
-  } catch {}
+  // An absent index is not proof that a file belongs to this index. DevTools
+  // projects can share an AppID's user files while retaining separate indexes;
+  // a read failure also must not destroy recoverable snapshots. Only explicit
+  // removal/pruning of an indexed attempt owns its corresponding file.
   // A snapshot that is missing or does not match its index row is not shown.
   const loadSnapshot = (attempt) => {
     if (attempt.status !== 'completed') return null;

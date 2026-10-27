@@ -16,9 +16,9 @@ test('the actual screenshot free-check explains a set versus a completed flush w
   const summary = text(record);
   assert.match(summary, /三张同花色.*两张该花色.*组成同花/);
   assert.match(summary, /同时持有 2 和 3/);
-  assert.match(summary, /先不主动做大底池/);
+  assert.match(summary, /过牌避免主动扩大当前底池/);
   assert.match(summary, /葫芦或四条/);
-  assert.match(summary, /金额、人数和此前行动/);
+  assert.doesNotMatch(summary, /再遇下注时|要结合金额、人数和此前行动/);
   assert.match(summary, /免费见到下一张/);
   assert.doesNotMatch(summary, /他已成同花|对手已经成同花|领先你现在/);
 });
@@ -43,7 +43,8 @@ test('a four-connected board does not turn a set check into an unconditional val
 
 test('dry strong checks explain the missed value while quads do not fear a flush', () => {
   const dry = phase3CheckSpot('5c 5d', 'Kh 9d 5s 2c', { reason: 'free-check' });
-  assert.match(text(dry.record), /若后位会继续下注.*过牌诱导.*若其常过回.*较弱成牌或听牌收费/);
+  assert.match(text(dry.record), /强成牌仍有向较弱成牌收取跟注的空间.*过牌可能少收一轮价值/);
+  assert.doesNotMatch(text(dry.record), /若其常过回|再遇下注时/);
   assert.doesNotMatch(text(dry.record), /对手若持两张该花色/);
   const quads = phase3CheckSpot('5c 5d', '5s Qh Ah 5h', { reason: 'free-check' });
   assert.match(text(quads.record), /四条/);

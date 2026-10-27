@@ -93,6 +93,28 @@ export function checkReasoning(s, c, { trap = false, closingExplained = false } 
     parts.push(
       `目前仍有 ${c.draw.outs} 张牌可能补成${c.draw.flush && c.draw.straight ? '同花或顺子' : c.draw.flush ? '同花' : '顺子'}，但这些是成牌补牌，不保证补中后领先对手。`,
     );
+  // The observer panel explains this check; it does not coach the actor's
+  // next decision. Keep board facts, the cost of checking and recorded traps.
+  if (s.reviewAudience === 'observer') {
+    if (risks.length) parts.push('过牌避免主动扩大当前底池。');
+    else if (trap && c.pendingOthers > 0)
+      parts.push('后面还有玩家可以下注，过牌为诱导其弱牌或诈唬继续投入留下机会。');
+    else if (strong) parts.push('这手强成牌仍有向较弱成牌收取跟注的空间，过牌可能少收一轮价值。');
+    else if (c.made.score[0] === 0 && !c.draw.outs)
+      parts.push('目前只有高牌，较难让更弱成牌付费，过牌避免用薄弱牌力主动做大底池。');
+    else if (!c.draw.outs)
+      parts.push('当前成牌保留了摊牌机会，过牌控制投入，也避免下注后只留下更强的继续范围。');
+    if (risks.length) parts.push(...madeRedrawReasoning(s, c));
+    if (s.street < 3 && (strong || c.handClass === 'top-pair'))
+      parts.push('过牌的代价是对手也可能免费见到下一张，补成更强的牌。');
+    if (!c.pendingOthers && !closingExplained)
+      parts.push(
+        s.street === 3
+          ? '这是本轮最后行动，过牌后直接摊牌，已经不能诱导本轮下注。'
+          : '这是本轮最后行动，过牌后免费见下一张，已经不能诱导本轮下注。',
+      );
+    return parts;
+  }
   if (risks.length)
     parts.push(
       c.pendingOthers > 0

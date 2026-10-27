@@ -7,6 +7,7 @@ import { createReviewInput, analyzeDecision } from '../../src/review/analysis.js
 import { BOT_THINK_LIMITS } from '../../src/engine/bot-timing.js';
 import { checkedSeatGame } from '../fixtures/checked-actions.js';
 import { tableHint } from '../../src/review/table-hint.js';
+import { observerRecord } from '../fixtures/opponent-observer.js';
 
 const copy = (value) => JSON.parse(JSON.stringify(value));
 function scheduler() {
@@ -78,6 +79,25 @@ function reachHero(controller) {
   controller.show();
   return game;
 }
+
+test('WeChat observer review preserves threats and the actual fold without future coaching', (t) => {
+  const { controller } = setup(t);
+  const game = controller.getGame();
+  finish(game, 'fold');
+  game.decisions = [];
+  game.botDecisions = [observerRecord()];
+  let report;
+  controller.review((value) => {
+    report = value;
+  });
+  assert.equal(report.loading, false);
+  const review = controller.reviewOpponent(0);
+  assert.equal(review.title, '弃牌');
+  assert.match(review.reason, /Alex在 SB 位.*选择弃牌/);
+  assert.match(review.reason, /三张同花色.*6 和 9/);
+  assert.doesNotMatch(review.reason, /过牌先|再遇下注|要结合金额|需要按新的价格/);
+  assert.deepEqual(controller.reviewOpponent(0), review);
+});
 
 test('WeChat executes policy pacing once and hiding rejects stale bot callbacks', (t) => {
   const { controller, timers, latest } = setup(t);
@@ -212,6 +232,12 @@ test('WeChat review reports each finished decision like Web: 正在分析决策 
       result: analyzeDecision(worker.payload.decisions[index]),
     });
     assert.equal(updates.at(-1).loading, true);
+    assert.equal(
+      updates.at(-1).steps.length,
+      index + 1,
+      'Finished decisions are readable before the full report completes',
+    );
+    assert.equal(updates.at(-1).steps.at(-1).index, index);
     assert.equal(updates.at(-1).progressText, `正在分析决策 ${index + 1} / ${total}…`);
   }
   worker.receive({ type: 'complete' });

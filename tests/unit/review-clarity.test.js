@@ -156,6 +156,8 @@ test('gutshot advice and keep/compare/fold labels follow the same evidence, with
 
 test('opponent summary names its subject once, then uses the recorded pronoun', () => {
   const record = turnStraightCallRecord();
+  record.action = 'fold';
+  record.amount = 0;
   record.trace.reason = 'stack-pressure';
   let text = summary(explainOpponent(record));
   assert.equal(text.match(/Kai/g)?.length, 1);
