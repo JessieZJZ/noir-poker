@@ -2606,5 +2606,6 @@
   "这次弃牌侧重防守前面多次加注后的强范围，没有接下深筹码全下。": "Este fold prioriza la defensa frente al rango fuerte representado por las múltiples subidas anteriores, sin pagar el all-in profundo.",
   "这组底牌成花后仍可能落后于更高同花。": "Incluso tras completar color, estas cartas propias pueden perder contra un color superior.",
   "{0}，{1}。跟完手里还留 {2}。": "{0}, {1}. Tras el call quedan {2} en mano.",
-  "多人底池里，这手成牌并不是坚果。": "En este bote multiway, esta mano hecha no son las nuts."
+  "多人底池里，这手成牌并不是坚果。": "En este bote multiway, esta mano hecha no son las nuts.",
+  "{0}担心后面 {1} 位尚未回应这次全下的玩家会用强牌跟入，因此收紧了继续范围。": "{0} redujo su rango para continuar ante la posibilidad de que los {1} jugadores que aún no habían respondido a este all-in entraran con manos fuertes."
 }

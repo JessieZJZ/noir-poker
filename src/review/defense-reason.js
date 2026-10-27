@@ -20,7 +20,15 @@ export function defenseReason(snapshot, context, matchups) {
     `继续要补 ${n(cost)}，可争夺跟注后的 ${n(pot)} 底池，当前保本门槛为 ${((cost / Math.max(1, pot)) * 100).toFixed(1)}%。`,
   ];
   if (!snapshot.street) {
-    clauses.push('这次没有用当前起手牌接下这条加注线。');
+    if (
+      snapshot.reviewAudience === 'observer' &&
+      snapshot.allIn?.pendingBuffer > 0 &&
+      context.pendingOthers > 0
+    )
+      clauses.push(
+        `${snapshot.reviewSubject || '对手'}担心后面 ${context.pendingOthers} 位尚未回应这次全下的玩家会用强牌跟入，因此收紧了继续范围。`,
+      );
+    else clauses.push('这次没有用当前起手牌接下这条加注线。');
     if (snapshot.allIn?.line === 'multi-raise-shove' && snapshot.allIn.depthBB > 110)
       clauses.push('这次弃牌侧重防守前面多次加注后的强范围，没有接下深筹码全下。');
     return clauses;

@@ -3,6 +3,7 @@ import { mkdir } from 'node:fs/promises';
 import path from 'node:path';
 import {
   coldShoveResponse,
+  pendingShoveResponse,
   allInRandom,
   finishAfterResponse,
 } from '../fixtures/all-in-decisions.js';
@@ -14,6 +15,36 @@ import {
   legalActions,
 } from '../../src/engine/poker.js';
 import { observedSqueeze } from '../fixtures/observed-preflop.js';
+
+test('the actual multiway QQ fold explains the pending all-in responses in rendered review', async ({
+  page,
+}) => {
+  const game = pendingShoveResponse();
+  const response = executeBotTurn(
+    game,
+    planBotTurn(game, allInRandom(1), { timingRandom: allInRandom(2) }),
+    { expedited: true },
+  );
+  expect(response.action).toBe('fold');
+  const record = game.botDecisions[0];
+  expect(record.trace.view.actionContext.pendingResponseIds).toHaveLength(5);
+  expect(record.trace.equity).toBeGreaterThan(record.trace.odds);
+  expect(record.trace.equity).toBeLessThan(record.trace.requiredEquity);
+  while (game.phase !== 'done') {
+    if (game.phase === 'between') advanceStreet(game);
+    else act(game, game.actor, legalActions(game).canCheck ? 'check' : 'fold');
+  }
+  await page.goto('/');
+  await page.waitForFunction(() => window.qa);
+  await page.evaluate((g) => window.qa.loadRecordedGame(g), game);
+  await page.locator('#review-hand-button').click();
+  await page.locator('#review-opponents-tab').click();
+  const text = page.locator('#review-opponent-detail .review-explanation');
+  await expect(text).toContainText('Q♣ Q♠');
+  await expect(text).toContainText('后面 5 位尚未回应这次全下的玩家会用强牌跟入');
+  await expect(text).toContainText('48.5%');
+  await expect(text).not.toContainText(/这次没有用当前起手牌|机器人|模型|建议/);
+});
 
 test('an observed wide squeeze produces a real affordable AJ defense and actor-centered review', async ({
   page,

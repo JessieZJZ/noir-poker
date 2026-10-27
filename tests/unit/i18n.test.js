@@ -4,6 +4,21 @@ import { resolveLocale, loadLocale, localizeText, formatChips } from '../../src/
 import { createPreferenceStorage } from '../../src/platform/storage.js';
 import { newGame, startHand } from '../../src/engine/poker.js';
 
+test('pending all-in callers remain a possible risk rather than known strong cards in every locale', async () => {
+  const source = 'Alex担心后面 5 位尚未回应这次全下的玩家会用强牌跟入，因此收紧了继续范围。';
+  for (const locale of ['en', 'zh-TW', 'ja', 'ko', 'es', 'it', 'pt', 'de', 'fr', 'ru']) {
+    await loadLocale(locale);
+    const value = localizeText(source);
+    assert.ok(value.includes('Alex'), `${locale}: actor missing`);
+    assert.ok(value.includes('5'), `${locale}: pending count missing`);
+    assert.doesNotMatch(value, /\{\d+\}/, locale);
+    if (!['zh-TW', 'ja'].includes(locale)) assert.doesNotMatch(value, /\p{Script=Han}/u, locale);
+  }
+  await loadLocale('en');
+  assert.match(localizeText(source), /yet to respond to this all-in could enter with strong hands/);
+  await loadLocale('zh-CN');
+});
+
 test('saved choice wins; system variants map to available catalogs; unsupported languages use English', () => {
   assert.equal(resolveLocale('ko', ['ja-JP']), 'ko');
   assert.equal(resolveLocale('invalid', ['zh-Hant-HK']), 'zh-TW');

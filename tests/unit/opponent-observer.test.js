@@ -99,3 +99,85 @@ test('a stale or mismatching policy reason never overrides the action; summaries
   r.trace.view.winners = [1];
   assert.deepEqual(explainOpponent(r), expected);
 });
+
+function pendingShoveFold() {
+  const waiting = [2, 3, 4, 5, 6];
+  const r = observerRecord({
+    reason: 'insufficient-equity',
+    hole: 'Qc Qs',
+    board: '',
+    position: 'HJ',
+    cost: 20000,
+    stack: 20000,
+    count: 9,
+    bigBlind: 200,
+    pot: 21200,
+    contestable: 41200,
+    callPrice: { cost: 20000, contestable: 41200 },
+    opponents: [
+      { id: 0, name: '你', position: 'LJ', stack: 0, bet: 20000, allin: true },
+      ...waiting.map((id) => ({ id, stack: 20000, bet: 0, allin: false })),
+    ],
+    actionContext: { pendingResponseIds: waiting },
+    allIn: {
+      pendingBuffer: 0.042,
+      line: 'reraise-shove',
+      depthBB: 100,
+      aggressorId: 0,
+      committedIds: [0],
+      waitingIds: waiting,
+      ranges: [{ id: 0 }],
+    },
+  });
+  r.trace.basis = { version: 1, action: 'fold', reason: 'insufficient-equity' };
+  return r;
+}
+
+test('a recorded QQ multiway shove fold explains the pending callers rather than only raw pot odds', () => {
+  const r = pendingShoveFold();
+  const e = explainOpponent(r);
+  assert.equal(e.basisSource, 'recorded');
+  const text = summary(e);
+  assert.match(text, /Alex.*Q♣ Q♠.*选择弃牌/);
+  assert.match(text, /当前保本门槛为 48\.5%/);
+  assert.match(text, /Alex担心后面 5 位尚未回应这次全下的玩家会用强牌跟入，因此收紧了继续范围/);
+  assert.doesNotMatch(text, /这次没有用当前起手牌|玩家持有强牌|模型|机器人/);
+  assert.doesNotMatch(text, advice);
+  const before = explainOpponent(r);
+  for (const opponent of r.trace.view.opponents)
+    Object.defineProperty(opponent, 'hole', {
+      get() {
+        throw Error('hidden hole read');
+      },
+    });
+  r.trace.view.deck = [{ rank: 14, suit: 1 }];
+  r.trace.view.winners = [0];
+  assert.deepEqual(explainOpponent(r), before);
+});
+
+test('pending-call caution is absent when no risk was recorded, no players wait, or the policy reason is stale', () => {
+  const cases = [
+    (r) => {
+      r.trace.view.allIn.pendingBuffer = 0;
+    },
+    (r) => {
+      r.trace.view.actionContext.pendingResponseIds = [];
+    },
+    (r) => {
+      r.trace.view.opponents.slice(1).forEach((p) => {
+        p.allin = true;
+      });
+    },
+    (r) => {
+      r.trace.basis.action = 'call';
+    },
+    (r) => {
+      r.trace.provenance = 'scripted-action-only';
+    },
+  ];
+  for (const change of cases) {
+    const r = pendingShoveFold();
+    change(r);
+    assert.doesNotMatch(summary(explainOpponent(r)), /担心后面.*尚未回应这次全下/);
+  }
+});

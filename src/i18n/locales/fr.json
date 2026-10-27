@@ -2606,5 +2606,6 @@
   "这次弃牌侧重防守前面多次加注后的强范围，没有接下深筹码全下。": "Ce fold privilégie la défense contre la range forte représentée par les multiples relances précédentes, sans payer le tapis profond.",
   "这组底牌成花后仍可能落后于更高同花。": "Même après avoir formé une couleur, ces cartes privatives peuvent encore perdre contre une couleur supérieure.",
   "{0}，{1}。跟完手里还留 {2}。": "{0}, {1}. Après le call, il reste {2} en main.",
-  "多人底池里，这手成牌并不是坚果。": "Dans ce pot multiway, cette main faite n’est pas les nuts."
+  "多人底池里，这手成牌并不是坚果。": "Dans ce pot multiway, cette main faite n’est pas les nuts.",
+  "{0}担心后面 {1} 位尚未回应这次全下的玩家会用强牌跟入，因此收紧了继续范围。": "{0} a resserré sa range de continuation, craignant que les {1} joueurs qui devaient encore répondre à ce tapis entrent avec des mains fortes."
 }

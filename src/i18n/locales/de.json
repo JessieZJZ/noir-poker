@@ -2609,5 +2609,6 @@
   "这次弃牌侧重防守前面多次加注后的强范围，没有接下深筹码全下。": "Dieser Fold stellt die Vorsicht gegenüber der starken Range nach mehreren Raises in den Vordergrund und callt den Deep-Stack-Shove nicht.",
   "这组底牌成花后仍可能落后于更高同花。": "Auch nach einem getroffenen Flush können diese Handkarten gegen einen höheren Flush verlieren.",
   "{0}，{1}。跟完手里还留 {2}。": "{0}, {1}. Nach dem Call bleiben {2} im Stack.",
-  "多人底池里，这手成牌并不是坚果。": "In diesem Multiway-Pot ist diese fertige Hand nicht die Nuts."
+  "多人底池里，这手成牌并不是坚果。": "In diesem Multiway-Pot ist diese fertige Hand nicht die Nuts.",
+  "{0}担心后面 {1} 位尚未回应这次全下的玩家会用强牌跟入，因此收紧了继续范围。": "{0} engte die Range zum Weiterspielen ein, weil die {1} Spieler, die noch auf dieses All-in reagieren mussten, mit starken Händen einsteigen könnten."
 }

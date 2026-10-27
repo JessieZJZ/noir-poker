@@ -4,7 +4,7 @@ import { createRequire } from 'node:module';
 import { readFileSync, mkdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import assert from 'node:assert/strict';
-import { coldShoveResponse } from '../fixtures/all-in-decisions.js';
+import { coldShoveResponse, pendingShoveResponse } from '../fixtures/all-in-decisions.js';
 import { observedSqueeze } from '../fixtures/observed-preflop.js';
 import { seatAtTable } from './seat.mjs';
 
@@ -181,6 +181,52 @@ try {
   assert.notEqual(defense.action, 'fold');
   assert.equal(defense.observedDefense.hands, 32);
   assert.ok(defense.observedDefense.realizedEquity >= defense.observedDefense.required + 0.04);
+  stage = 'pending-shove-fold';
+  const pending = await mini.evaluate((fixture) => {
+    const page = getCurrentPages().at(-1);
+    page.closeReview();
+    page.onHide();
+    const controller = page._controller;
+    const game = controller.getGame();
+    Object.assign(game, fixture);
+    const originalRandom = Math.random;
+    let seed = 1;
+    try {
+      Math.random = () => (seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0) / 4294967296;
+      page.onShow();
+      controller.finishHand();
+    } finally {
+      Math.random = originalRandom;
+    }
+    const record = game.botDecisions[0];
+    return {
+      action: record.action,
+      equity: record.trace.equity,
+      odds: record.trace.odds,
+      required: record.trace.requiredEquity,
+      pendingResponses: record.trace.view.actionContext.pendingResponseIds.length,
+    };
+  }, pendingShoveResponse());
+  assert.equal(pending.action, 'fold');
+  assert.equal(pending.pendingResponses, 5);
+  assert.ok(pending.equity > pending.odds && pending.equity < pending.required);
+  await wait((data) => data.done);
+  await mini.evaluate(() => getCurrentPages().at(-1).openReview());
+  await wait((data) => !data.reviewData.loading);
+  await (await page.$('[data-value="opponent"]')).tap();
+  await wait((data) => data.reviewPerspective === 'opponent' && data.reviewSteps.length > 0);
+  await (await page.$('.review-step[data-index="0"]')).tap();
+  await wait((data) => data.reviewIndex === 0);
+  const pendingReason = (await page.data()).selectedReviewStep.reason;
+  assert.match(pendingReason, /Q♣ Q♠/);
+  assert.match(pendingReason, /后面 5 位尚未回应这次全下的玩家会用强牌跟入/);
+  assert.doesNotMatch(pendingReason, /这次没有用当前起手牌|机器人|建议|EV|模型|抽样/);
+  const pendingTexts = await page.$$('.review-coaching text');
+  assert.match(
+    (await Promise.all(pendingTexts.map((el) => el.text()))).join(''),
+    /后面 5 位尚未回应这次全下/,
+  );
+  report.checks.push({ kind: 'pending-shove-fold-review', ...pending, reason: pendingReason });
   report.bridge = await mini.evaluate(() => getCurrentPages().at(-1).__publicReadBridge);
   assert.ok(report.bridge.calls > 0);
   assert.ok(report.bridge.largestPatchBytes < 1024 * 1024);

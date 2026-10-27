@@ -45,6 +45,19 @@ export function coldShoveResponse(hole = 'As Ah', stakes = LEGACY_STAKES) {
   act(game, 0, 'raise', scaleAmount(game, 5000));
   return game;
 }
+// Reproduce a recorded nine-seat decision with five pending responses. This
+// tests the explanation of the executed fold, not whether folding QQ is optimal.
+export function pendingShoveResponse(stakes = LEGACY_STAKES) {
+  const game = table(9, 2, {}, stakes);
+  game.difficulty = 'normal';
+  game.players[1].botProfile = 'owen';
+  deal(game, { 0: '9d 8c', 1: 'Qc Qs' });
+  act(game, 6, 'raise', scaleAmount(game, 225));
+  act(game, 7, 'fold');
+  act(game, 8, 'fold');
+  act(game, 0, 'raise', scaleAmount(game, 5000));
+  return game;
+}
 export function openerShoveResponse(
   hole = 'As Ah',
   heroStack = 5000,

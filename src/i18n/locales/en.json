@@ -2621,5 +2621,6 @@
   "这次弃牌侧重防守前面多次加注后的强范围，没有接下深筹码全下。": "This fold prioritizes defending against the strong range represented by the preceding multiple raises, declining the deep-stack shove.",
   "这组底牌成花后仍可能落后于更高同花。": "Even after making a flush, these hole cards can still lose to a higher flush.",
   "{0}，{1}。跟完手里还留 {2}。": "{0}, {1}. Calling leaves {2} in hand.",
-  "多人底池里，这手成牌并不是坚果。": "In this multiway pot, this made hand is not the nuts."
+  "多人底池里，这手成牌并不是坚果。": "In this multiway pot, this made hand is not the nuts.",
+  "{0}担心后面 {1} 位尚未回应这次全下的玩家会用强牌跟入，因此收紧了继续范围。": "{0} narrowed the continuing range out of concern that the {1} players yet to respond to this all-in could enter with strong hands."
 }
