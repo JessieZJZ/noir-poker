@@ -238,3 +238,5 @@ node tests/bot-pressure-audit.mjs
 此前复盘内容与跨端验收范围见 [1000 手审查记录](docs/review-content-validation-2026-10-20.md)，本轮深浅筹码、灵活建议与四种视角复验见 [2000 手补充审查](docs/review-flexibility-validation-2026-10-21.md)。
 
 牌桌即时提示的通俗化、共用文案和跨端检查见 [提示优化验收记录](docs/table-hints-validation-2026-10-20.md)。
+
+固定套路对抗、策略源码研究与统计口径见[机器人策略审计](docs/bot-policy-audit.md)。

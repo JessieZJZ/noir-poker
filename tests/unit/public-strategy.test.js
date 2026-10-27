@@ -179,6 +179,35 @@ test('five legal size estimates have monotonic folds and retain a selective payi
   assert.ok(result.limitations.includes('estimated-values-not-proven-ev'));
 });
 
+test('observed callers and folders alter paying estimates without erasing size selectivity or poisoning the cache', () => {
+  const view = deceptiveView('As Kh', 'Ah Jd 7s 3c 2d');
+  const cache = new Map();
+  const base = assess(view, { cache });
+  const read = { hands: 32, postActions: 128, facedPostBet: 64 };
+  const changed = (foldedPostBet) =>
+    assess(
+      {
+        ...view,
+        opponents: view.opponents.map((p) => ({
+          ...p,
+          publicRead: { ...read, foldedPostBet },
+        })),
+      },
+      { cache },
+    );
+  const caller = changed(0),
+    folder = changed(64);
+  assert.ok(caller.options[0].foldProbability < base.options[0].foldProbability);
+  assert.ok(folder.options[0].foldProbability > base.options[0].foldProbability);
+  assert.ok(caller.options[0].worseMadeCallMass > folder.options[0].worseMadeCallMass);
+  for (const result of [caller, folder])
+    for (const [index, option] of result.options.entries()) {
+      close(option.foldProbability + option.callProbability + option.raiseProbability, 1);
+      if (index) assert.ok(option.foldProbability >= result.options[index - 1].foldProbability);
+    }
+  assert.deepEqual(assess(view, { cache }), base);
+});
+
 test('legal short all-in caps come only from the legal action view', () => {
   const view = facingDraw({
     legal: {

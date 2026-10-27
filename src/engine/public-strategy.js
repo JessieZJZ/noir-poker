@@ -3,6 +3,7 @@ import { bigBlindOf } from './stakes.js';
 import { preparePublicRanges, publicComboWeight } from './public-ranges.js';
 import { publicHandData } from './public-equity.js';
 import { handFeatures } from './hand-features.js';
+import { sanitizePublicRead, observedResponseShift } from './public-observations.js';
 
 const VERSION = 'public-strategy-v1';
 const FRACTIONS = [0.25, 0.5, 0.75, 1, 1.5];
@@ -36,6 +37,7 @@ function publicView(view) {
     position: p.position ?? null,
     botProfile: p.botProfile,
     publicAxes: Array.isArray(p.publicAxes) ? p.publicAxes.map(Number) : null,
+    publicRead: sanitizePublicRead(p.publicRead),
     stack: p.stack ?? 0,
     bet: p.bet ?? 0,
     total: p.total ?? p.bet ?? 0,
@@ -51,6 +53,7 @@ function publicView(view) {
     id,
     botProfile: view.botProfile,
     publicAxes: Array.isArray(view.publicAxes) ? view.publicAxes.map(Number) : null,
+    publicRead: sanitizePublicRead(view.publicRead),
     hole: view.hole.map(card),
     board: view.board.map(card),
     street: view.street,
@@ -92,6 +95,7 @@ function signature(view, includeHole) {
     id: view.id,
     botProfile: view.botProfile,
     publicAxes: view.publicAxes,
+    publicRead: view.publicRead,
     hole: includeHole ? view.hole.map((c) => c.key) : undefined,
     board: view.board.map((c) => c.key),
     street: view.street,
@@ -324,7 +328,12 @@ function responses(entry, opponent, descriptor, amount, view, actor, context) {
     (draw.nutFlushDraw ? 0.035 : 0) +
     (aggressiveLine ? 0.025 : 0);
   let continuation = clamp(
-    1 / (1 + Math.exp((price + Math.log1p(size) * 0.11 - support) * 9)),
+    1 /
+      (1 +
+        Math.exp(
+          (price + Math.log1p(size) * 0.11 - support) * 9 -
+            observedResponseShift(descriptor.publicRead),
+        )),
     0.025,
     0.97,
   );
@@ -723,6 +732,7 @@ export function assessPublicStrategy(
     position: view.position,
     botProfile: view.botProfile,
     publicAxes: view.publicAxes,
+    publicRead: view.publicRead,
     stack: view.stack,
     bet: view.bet,
     total: view.total,

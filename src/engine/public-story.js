@@ -1,4 +1,5 @@
 import { handFeatures } from './hand-features.js';
+import { observedAggressiveLikelihood } from './public-observations.js';
 
 export const hasPublicStory = (line) =>
   Array.isArray(line) &&
@@ -75,9 +76,10 @@ export function publicPostflopLine(view, id, throughStreet = view.street) {
 
 // Every factor is <= 1, preserving the preflop proposal bound used by the
 // rejection sampler. Normalising candidate masses gives the inferred range.
-export function publicStoryWeight(hole, line, handData) {
+export function publicStoryWeight(hole, line, handData, publicRead = null) {
   let weight = 1,
     earlierDraw = false;
+  const observedFloor = observedAggressiveLikelihood(publicRead);
   for (const event of line) {
     const data = handData(hole, event.board);
     const f = data.features || handFeatures(hole, event.board, data.score);
@@ -120,6 +122,8 @@ export function publicStoryWeight(hole, line, handData) {
     } else {
       factor = raising ? 0.015 : large ? 0.025 : 0.1;
     }
+    if (['bet', 'raise', 'check-raise'].includes(event.action))
+      factor = Math.max(factor, observedFloor);
     weight *= factor;
     if (
       event.street < 3 &&

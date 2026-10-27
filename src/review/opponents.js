@@ -193,6 +193,7 @@ export function explainOpponent(record, identities = []) {
         position: p.position,
         name: p.name || identities.find((identity) => identity.id === p.id)?.name,
         publicAxes: p.publicAxes,
+        publicRead: p.publicRead,
         botProfile: p.botProfile || identities.find((identity) => identity.id === p.id)?.botProfile,
       })),
     },
@@ -232,6 +233,7 @@ export function explainOpponent(record, identities = []) {
     id: 0,
     reviewSubject: plainName,
     reviewAudience: 'observer',
+    publicReadModel: usePolicyReason && basisMatches ? v.publicReadModel : null,
     action: record.action,
     amount: record.amount,
     players: [
@@ -244,6 +246,7 @@ export function explainOpponent(record, identities = []) {
         bet: v.bet,
         total: v.total,
         folded: false,
+        publicRead: v.publicRead,
       },
       ...opponents.map((p, i) => ({ ...p, id: i + 1 })),
     ],
@@ -623,7 +626,6 @@ export function explainOpponent(record, identities = []) {
       `这次补 ${n(cost)}，可争夺 ${n((usePolicyReason && t.allIn?.contestable) || v.contestable)} 的底池。`,
       allinCall ? '之后不再参与下注决策。' : '所有对手都已全下，这次跟注后不再有后续下注。',
       v.street < 3 ? '可以看完剩余公共牌，无需再支付筹码。' : '',
-      allinCall && c.pendingOthers ? '其余玩家仍可行动，这位全下者不再跟注、加注或弃牌。' : '',
     ].filter(Boolean);
     logic = logicParts.join('');
     checkNotes.length = 0;

@@ -7,6 +7,7 @@ import { pairedTurn } from '../fixtures/limped-defense.js';
 import { botDecision } from '../../src/engine/poker.js';
 import { clarityRandom } from '../fixtures/review-clarity-followup.js';
 import { enrichStrategy } from '../../src/review/strategy-context.js';
+import { cards } from '../fixtures/deceptive-decisions.js';
 
 const analyze = (s) => analyzeDecision(s, { trials: 12, rolloutTrials: 2 });
 test('nut-draw teaching keeps the current action once and a conditional next-street plan', () => {
@@ -57,4 +58,20 @@ test('opponent draw payment never substitutes for naming the acting hand own dra
     { action: s.action, amount: s.amount },
   );
   assert.match(r.explanation, /K♦ J♦ 带同花听牌/);
+});
+
+test('observer draw enrichment keeps paired-board risk without repeating the purpose of checking', () => {
+  const { flop } = topPairFlushTurn({ hole: 'Kd Jd', turnCard: '2s' });
+  const s = { ...flop, board: cards('5d 5h 6d'), action: 'check', amount: 0 };
+  const text = 'Alex带同花听牌，选择过牌。过牌避免主动扩大当前底池。';
+  const result = enrichStrategy(
+    { paragraphs: [text], paragraphParts: [[text]] },
+    s,
+    { draw: { flushDraw: true, pairedBoard: true, nutFlushDraw: false }, options: [] },
+    { action: 'check', subject: 'Alex', audience: 'observer' },
+  );
+  assert.match(result.explanation, /过牌避免主动扩大当前底池/);
+  assert.match(result.explanation, /补成同花仍可能输给葫芦、四条/);
+  assert.doesNotMatch(result.explanation, /过牌保留改善机会，也没有主动扩大底池/);
+  assert.equal(result.explanation.match(/扩大.*?底池/g)?.length, 1);
 });

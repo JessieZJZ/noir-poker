@@ -696,7 +696,10 @@
     "本轮仍有玩家可以行动，若有人加注或再加注，需要按新的价格重新决定。": "Other players can still act this round. If someone raises or reraises, reassess at the new price.",
     "河牌已经发完，本轮跟注后直接摊牌。": "The river is already dealt. Calling closes this round and leads to showdown.",
     "本轮跟注后即可看到最后一张河牌，河牌若再面对下注，仍需另作决定。": "Calling closes this round and reveals the final river card. If you face a river bet, you must decide again.",
-    "本轮跟注后可以看到下一街公共牌，之后的下注仍需另作决定。": "Calling closes this round and reveals the next street. Any later betting requires a new decision."
+    "本轮跟注后可以看到下一街公共牌，之后的下注仍需另作决定。": "Calling closes this round and reveals the next street. Any later betting requires a new decision.",
+    "{0}结合{1}此前 {2} 手中 {3} 手翻前大额加注的记录，本次估计中保留了更多非顶级起手牌。": "{0} considered {1}'s large preflop raises in {3} of the previous {2} hands, keeping more hands beyond premiums in the estimated range.",
+    "{0}结合{1}此前 {2} 手中 {3} 手翻前加注的记录，本次没有把加注范围限于强牌。": "{0} considered {1}'s preflop raises in {3} of the previous {2} hands, allowing more than strong hands in the raising range.",
+    "{0}结合{1}此前频繁的翻后下注与加注，本次估计保留了更多弱牌施压的可能。": "{0} considered {1}'s frequent postflop bets and raises, leaving more room for pressure with weak hands."
   },
   "zh-TW": {
     "设置": "設定",
@@ -1278,7 +1281,10 @@
     "本轮仍有玩家可以行动，若有人加注或再加注，需要按新的价格重新决定。": "本輪仍有玩家可以行動，若有人加注或再加注，需要按新的價格重新決定。",
     "河牌已经发完，本轮跟注后直接摊牌。": "河牌已經發完，本輪跟注後直接攤牌。",
     "本轮跟注后即可看到最后一张河牌，河牌若再面对下注，仍需另作决定。": "本輪跟注後即可看到最後一張河牌，河牌若再面對下注，仍需另作決定。",
-    "本轮跟注后可以看到下一街公共牌，之后的下注仍需另作决定。": "本輪跟注後可以看到下一街公共牌，之後的下注仍需另作決定。"
+    "本轮跟注后可以看到下一街公共牌，之后的下注仍需另作决定。": "本輪跟注後可以看到下一街公共牌，之後的下注仍需另作決定。",
+    "{0}结合{1}此前 {2} 手中 {3} 手翻前大额加注的记录，本次估计中保留了更多非顶级起手牌。": "{0}結合{1}此前 {2} 手中 {3} 手翻前大額加注的紀錄，本次估計中保留了更多非頂級起手牌。",
+    "{0}结合{1}此前 {2} 手中 {3} 手翻前加注的记录，本次没有把加注范围限于强牌。": "{0}結合{1}此前 {2} 手中 {3} 手翻前加注的紀錄，本次沒有把加注範圍限於強牌。",
+    "{0}结合{1}此前频繁的翻后下注与加注，本次估计保留了更多弱牌施压的可能。": "{0}結合{1}此前頻繁的翻後下注與加注，本次估計保留了更多弱牌施壓的可能。"
   },
   "ja": {
     "设置": "設定",
@@ -1860,7 +1866,10 @@
     "本轮仍有玩家可以行动，若有人加注或再加注，需要按新的价格重新决定。": "このラウンドにはまだ行動できるプレイヤーがいます。レイズやリレイズがあれば、新しい額で判断し直します。",
     "河牌已经发完，本轮跟注后直接摊牌。": "リバーはすでに配られています。コールでこのラウンドが終わり、ショーダウンになります。",
     "本轮跟注后即可看到最后一张河牌，河牌若再面对下注，仍需另作决定。": "コールでこのラウンドが終わり、最後のリバーカードを見られます。リバーでベットされた場合は改めて判断します。",
-    "本轮跟注后可以看到下一街公共牌，之后的下注仍需另作决定。": "コールでこのラウンドが終わり、次のストリートのカードを見られます。その後のベットには改めて判断が必要です。"
+    "本轮跟注后可以看到下一街公共牌，之后的下注仍需另作决定。": "コールでこのラウンドが終わり、次のストリートのカードを見られます。その後のベットには改めて判断が必要です。",
+    "{0}结合{1}此前 {2} 手中 {3} 手翻前大额加注的记录，本次估计中保留了更多非顶级起手牌。": "{0}は、直前の{2}ハンド中{3}ハンドで{1}がプリフロップに大きくレイズした記録を踏まえ、推定レンジにプレミアム以外のハンドもより多く残しました。",
+    "{0}结合{1}此前 {2} 手中 {3} 手翻前加注的记录，本次没有把加注范围限于强牌。": "{0}は、直前の{2}ハンド中{3}ハンドで{1}がプリフロップにレイズした記録を踏まえ、レイズレンジを強いハンドだけに絞りませんでした。",
+    "{0}结合{1}此前频繁的翻后下注与加注，本次估计保留了更多弱牌施压的可能。": "{0}は、{1}がポストフロップで頻繁にベットやレイズをした記録を踏まえ、弱いハンドでプレッシャーをかけている可能性もより多く残しました。"
   },
   "ko": {
     "设置": "설정",
@@ -2442,7 +2451,10 @@
     "本轮仍有玩家可以行动，若有人加注或再加注，需要按新的价格重新决定。": "이번 라운드에 아직 행동할 플레이어가 있습니다. 누군가 레이즈나 리레이즈하면 새로운 금액을 기준으로 다시 판단해야 합니다.",
     "河牌已经发完，本轮跟注后直接摊牌。": "리버는 이미 공개되었습니다. 콜하면 이번 라운드가 끝나고 쇼다운으로 이어집니다.",
     "本轮跟注后即可看到最后一张河牌，河牌若再面对下注，仍需另作决定。": "콜하면 이번 라운드가 끝나고 마지막 리버 카드를 볼 수 있습니다. 리버에서 베팅을 받으면 다시 판단해야 합니다.",
-    "本轮跟注后可以看到下一街公共牌，之后的下注仍需另作决定。": "콜하면 이번 라운드가 끝나고 다음 스트리트의 카드를 볼 수 있습니다. 이후 베팅에는 새로 판단해야 합니다."
+    "本轮跟注后可以看到下一街公共牌，之后的下注仍需另作决定。": "콜하면 이번 라운드가 끝나고 다음 스트리트의 카드를 볼 수 있습니다. 이후 베팅에는 새로 판단해야 합니다.",
+    "{0}结合{1}此前 {2} 手中 {3} 手翻前大额加注的记录，本次估计中保留了更多非顶级起手牌。": "{0}은 {1}이 이전 {2}핸드 중 {3}핸드에서 프리플랍에 크게 레이즈한 기록을 고려해 추정 범위에 최상급이 아닌 시작 패도 더 많이 포함했습니다.",
+    "{0}结合{1}此前 {2} 手中 {3} 手翻前加注的记录，本次没有把加注范围限于强牌。": "{0}은 {1}이 이전 {2}핸드 중 {3}핸드에서 프리플랍에 레이즈한 기록을 고려해 레이즈 범위를 강한 패로만 한정하지 않았습니다.",
+    "{0}结合{1}此前频繁的翻后下注与加注，本次估计保留了更多弱牌施压的可能。": "{0}은 {1}의 잦은 포스트플랍 베팅과 레이즈를 고려해 약한 패로 압박할 가능성도 더 많이 반영했습니다."
   },
   "es": {
     "设置": "Ajustes",
@@ -3024,7 +3036,10 @@
     "本轮仍有玩家可以行动，若有人加注或再加注，需要按新的价格重新决定。": "Otros jugadores aún pueden actuar en esta ronda. Si alguien sube o resube, vuelve a decidir según el nuevo precio.",
     "河牌已经发完，本轮跟注后直接摊牌。": "El river ya está repartido. Pagar cierra esta ronda y lleva al showdown.",
     "本轮跟注后即可看到最后一张河牌，河牌若再面对下注，仍需另作决定。": "Pagar cierra esta ronda y permite ver la última carta, el river. Si afrontas una apuesta en el river, tendrás que decidir de nuevo.",
-    "本轮跟注后可以看到下一街公共牌，之后的下注仍需另作决定。": "Pagar cierra esta ronda y permite ver las cartas de la siguiente calle. Las apuestas posteriores requieren una nueva decisión."
+    "本轮跟注后可以看到下一街公共牌，之后的下注仍需另作决定。": "Pagar cierra esta ronda y permite ver las cartas de la siguiente calle. Las apuestas posteriores requieren una nueva decisión.",
+    "{0}结合{1}此前 {2} 手中 {3} 手翻前大额加注的记录，本次估计中保留了更多非顶级起手牌。": "{0} tuvo en cuenta que {1} hizo subidas grandes preflop en {3} de las {2} manos anteriores e incluyó más manos no prémium en el rango estimado.",
+    "{0}结合{1}此前 {2} 手中 {3} 手翻前加注的记录，本次没有把加注范围限于强牌。": "{0} tuvo en cuenta que {1} subió preflop en {3} de las {2} manos anteriores y no limitó su rango de subida a manos fuertes.",
+    "{0}结合{1}此前频繁的翻后下注与加注，本次估计保留了更多弱牌施压的可能。": "{0} tuvo en cuenta las frecuentes apuestas y subidas postflop de {1}, dando más peso a la posibilidad de que presione con manos débiles."
   },
   "it": {
     "设置": "Impostazioni",
@@ -3606,7 +3621,10 @@
     "本轮仍有玩家可以行动，若有人加注或再加注，需要按新的价格重新决定。": "Altri giocatori possono ancora agire in questo giro. Se qualcuno rilancia o controrilancia, rivaluta al nuovo prezzo.",
     "河牌已经发完，本轮跟注后直接摊牌。": "Il river è già stato distribuito. Il call chiude questo giro e porta allo showdown.",
     "本轮跟注后即可看到最后一张河牌，河牌若再面对下注，仍需另作决定。": "Il call chiude questo giro e permette di vedere l’ultima carta, il river. Se affronti una puntata al river, devi decidere di nuovo.",
-    "本轮跟注后可以看到下一街公共牌，之后的下注仍需另作决定。": "Il call chiude questo giro e permette di vedere le carte della street successiva. Le puntate successive richiedono una nuova decisione."
+    "本轮跟注后可以看到下一街公共牌，之后的下注仍需另作决定。": "Il call chiude questo giro e permette di vedere le carte della street successiva. Le puntate successive richiedono una nuova decisione.",
+    "{0}结合{1}此前 {2} 手中 {3} 手翻前大额加注的记录，本次估计中保留了更多非顶级起手牌。": "{0} ha considerato che {1} ha effettuato rilanci elevati preflop in {3} delle {2} mani precedenti, includendo più mani non premium nel range stimato.",
+    "{0}结合{1}此前 {2} 手中 {3} 手翻前加注的记录，本次没有把加注范围限于强牌。": "{0} ha considerato che {1} ha rilanciato preflop in {3} delle {2} mani precedenti, senza limitare il range di rilancio alle mani forti.",
+    "{0}结合{1}此前频繁的翻后下注与加注，本次估计保留了更多弱牌施压的可能。": "{0} ha considerato le frequenti puntate e i rilanci postflop di {1}, dando più peso alla possibilità di pressione con mani deboli."
   },
   "pt": {
     "设置": "Definições",
@@ -4188,7 +4206,10 @@
     "本轮仍有玩家可以行动，若有人加注或再加注，需要按新的价格重新决定。": "Outros jogadores ainda podem agir nesta rodada. Se alguém aumentar ou reaumentar, reavalie com base no novo preço.",
     "河牌已经发完，本轮跟注后直接摊牌。": "O river já foi distribuído. Pagar encerra esta rodada e leva ao showdown.",
     "本轮跟注后即可看到最后一张河牌，河牌若再面对下注，仍需另作决定。": "Pagar encerra esta rodada e revela a última carta, o river. Se enfrentar uma aposta no river, terá de decidir novamente.",
-    "本轮跟注后可以看到下一街公共牌，之后的下注仍需另作决定。": "Pagar encerra esta rodada e revela as cartas da próxima street. Apostas posteriores exigem uma nova decisão."
+    "本轮跟注后可以看到下一街公共牌，之后的下注仍需另作决定。": "Pagar encerra esta rodada e revela as cartas da próxima street. Apostas posteriores exigem uma nova decisão.",
+    "{0}结合{1}此前 {2} 手中 {3} 手翻前大额加注的记录，本次估计中保留了更多非顶级起手牌。": "{0} considerou os aumentos grandes pré-flop de {1} em {3} das {2} mãos anteriores e incluiu mais mãos que não são premium no range estimado.",
+    "{0}结合{1}此前 {2} 手中 {3} 手翻前加注的记录，本次没有把加注范围限于强牌。": "{0} considerou os aumentos pré-flop de {1} em {3} das {2} mãos anteriores, sem limitar o range de aumento a mãos fortes.",
+    "{0}结合{1}此前频繁的翻后下注与加注，本次估计保留了更多弱牌施压的可能。": "{0} considerou as apostas e os aumentos frequentes de {1} no pós-flop, dando mais peso à possibilidade de pressão com mãos fracas."
   },
   "de": {
     "设置": "Einstellungen",
@@ -4770,7 +4791,10 @@
     "本轮仍有玩家可以行动，若有人加注或再加注，需要按新的价格重新决定。": "Andere Spieler können in dieser Runde noch handeln. Bei einem Raise oder Reraise musst du den neuen Preis erneut bewerten.",
     "河牌已经发完，本轮跟注后直接摊牌。": "Der River liegt bereits aus. Der Call beendet diese Runde und führt zum Showdown.",
     "本轮跟注后即可看到最后一张河牌，河牌若再面对下注，仍需另作决定。": "Der Call beendet diese Runde und deckt die letzte Karte, den River, auf. Bei einer River-Bet musst du erneut entscheiden.",
-    "本轮跟注后可以看到下一街公共牌，之后的下注仍需另作决定。": "Der Call beendet diese Runde und deckt die nächste Street auf. Spätere Einsätze erfordern eine neue Entscheidung."
+    "本轮跟注后可以看到下一街公共牌，之后的下注仍需另作决定。": "Der Call beendet diese Runde und deckt die nächste Street auf. Spätere Einsätze erfordern eine neue Entscheidung.",
+    "{0}结合{1}此前 {2} 手中 {3} 手翻前大额加注的记录，本次估计中保留了更多非顶级起手牌。": "{0} berücksichtigte, dass {1} in {3} der letzten {2} Hände vor dem Flop groß erhöht hatte, und ließ mehr Hände außerhalb der Premiumhände in der geschätzten Range.",
+    "{0}结合{1}此前 {2} 手中 {3} 手翻前加注的记录，本次没有把加注范围限于强牌。": "{0} berücksichtigte, dass {1} in {3} der letzten {2} Hände vor dem Flop erhöht hatte, und beschränkte die Erhöhungsrange nicht auf starke Hände.",
+    "{0}结合{1}此前频繁的翻后下注与加注，本次估计保留了更多弱牌施压的可能。": "{0} berücksichtigte die häufigen Einsätze und Erhöhungen von {1} nach dem Flop und gab Druck mit schwachen Händen mehr Gewicht."
   },
   "fr": {
     "设置": "Paramètres",
@@ -5352,7 +5376,10 @@
     "本轮仍有玩家可以行动，若有人加注或再加注，需要按新的价格重新决定。": "D’autres joueurs peuvent encore agir dans ce tour. En cas de relance ou de surrelance, réévaluez au nouveau prix.",
     "河牌已经发完，本轮跟注后直接摊牌。": "La river est déjà distribuée. Payer clôt ce tour et mène à l’abattage.",
     "本轮跟注后即可看到最后一张河牌，河牌若再面对下注，仍需另作决定。": "Payer clôt ce tour et permet de voir la dernière carte, la river. Si vous faites face à une mise à la river, il faudra décider à nouveau.",
-    "本轮跟注后可以看到下一街公共牌，之后的下注仍需另作决定。": "Payer clôt ce tour et permet de voir les cartes de la prochaine street. Les mises ultérieures nécessitent une nouvelle décision."
+    "本轮跟注后可以看到下一街公共牌，之后的下注仍需另作决定。": "Payer clôt ce tour et permet de voir les cartes de la prochaine street. Les mises ultérieures nécessitent une nouvelle décision.",
+    "{0}结合{1}此前 {2} 手中 {3} 手翻前大额加注的记录，本次估计中保留了更多非顶级起手牌。": "{0} a tenu compte des grosses relances préflop de {1} dans {3} des {2} mains précédentes et a conservé davantage de mains non premium dans l’éventail estimé.",
+    "{0}结合{1}此前 {2} 手中 {3} 手翻前加注的记录，本次没有把加注范围限于强牌。": "{0} a tenu compte des relances préflop de {1} dans {3} des {2} mains précédentes, sans limiter son éventail de relance aux mains fortes.",
+    "{0}结合{1}此前频繁的翻后下注与加注，本次估计保留了更多弱牌施压的可能。": "{0} a tenu compte des mises et relances fréquentes de {1} après le flop, accordant plus de poids à une pression avec des mains faibles."
   },
   "ru": {
     "设置": "Настройки",
@@ -5934,6 +5961,9 @@
     "本轮仍有玩家可以行动，若有人加注或再加注，需要按新的价格重新决定。": "В этом раунде другие игроки ещё могут действовать. При рейзе или ререйзе нужно заново оценить новую цену.",
     "河牌已经发完，本轮跟注后直接摊牌。": "Ривер уже открыт. Колл завершает этот раунд и ведёт к вскрытию.",
     "本轮跟注后即可看到最后一张河牌，河牌若再面对下注，仍需另作决定。": "Колл завершает этот раунд и открывает последнюю карту — ривер. Если на ривере будет ставка, понадобится новое решение.",
-    "本轮跟注后可以看到下一街公共牌，之后的下注仍需另作决定。": "Колл завершает этот раунд и открывает карты следующей улицы. Последующие ставки требуют нового решения."
+    "本轮跟注后可以看到下一街公共牌，之后的下注仍需另作决定。": "Колл завершает этот раунд и открывает карты следующей улицы. Последующие ставки требуют нового решения.",
+    "{0}结合{1}此前 {2} 手中 {3} 手翻前大额加注的记录，本次估计中保留了更多非顶级起手牌。": "{0} учёл крупные префлоп-рейзы {1} в {3} из предыдущих {2} раздач и включил в предполагаемый диапазон больше непремиальных стартовых рук.",
+    "{0}结合{1}此前 {2} 手中 {3} 手翻前加注的记录，本次没有把加注范围限于强牌。": "{0} учёл префлоп-рейзы {1} в {3} из предыдущих {2} раздач и не ограничил диапазон рейза только сильными руками.",
+    "{0}结合{1}此前频繁的翻后下注与加注，本次估计保留了更多弱牌施压的可能。": "{0} учёл частые ставки и рейзы {1} после флопа и придал больше веса возможности давления со слабыми руками."
   }
 }

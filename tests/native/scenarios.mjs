@@ -2075,6 +2075,72 @@ export async function nativeScenarios(app) {
     await app.click('#opponents-dialog .close-dialog');
     return { details, saved, applied: applied.players[1].botProfile };
   });
+  await check('public-observation-memory-and-retry', async () => {
+    await app.click('#opponents-button');
+    await app.select('#player-count', '5');
+    await app.evaluate(() =>
+      document.querySelector('input[name="difficulty"][value="normal"]').click(),
+    );
+    await app.click('#opponents-dialog .close-dialog');
+    await app.click('#reset-button');
+    await app.click('#confirm-reset');
+    const observations = [];
+    const finishRealHand = async () => {
+      await waitForNativeHeroTurn(app, { advanceSettled: true });
+      await app.click('#fold-button');
+      if (await app.visible('#continue-deal-button')) await app.click('#continue-deal-button');
+      await app.waitFor(
+        async () => (await app.state()).phase === 'done',
+        60000,
+        'The real observation hand must settle',
+      );
+      return app.evaluate(() => {
+        const game = window.noir.getState();
+        const session = window.noir.getRecords().find((s) => s.number === game.sessionNumber);
+        const attempt = session.attempts
+          .filter((a) => a.hand === game.hand && a.status === 'completed' && !a.superseded)
+          .at(-1);
+        const snapshot = attempt.snapshot;
+        const decision = snapshot.decisions[0];
+        return {
+          hand: game.hand,
+          attempt: game.replayAttempt,
+          before: decision.players.find((p) => p.id === 0).publicRead?.hands || 0,
+          after: snapshot.players[0].publicReads.length,
+          model: decision.publicReadModel,
+        };
+      });
+    };
+    for (let hand = 1; hand <= 9; hand++) {
+      const observed = await finishRealHand();
+      assert.equal(observed.hand, hand);
+      assert.equal(
+        observed.before,
+        hand - 1,
+        'Before-action memory excludes the current unfinished hand',
+      );
+      assert.equal(observed.after, hand, 'Exactly one completed-hand sample is persisted');
+      assert.equal(observed.model, 'observed-public-actions-v1');
+      observations.push(observed);
+      if (hand < 9) await app.click('#next-button');
+    }
+    await app.click('#restart-hand-button');
+    const retried = await finishRealHand();
+    assert.deepEqual(retried, { ...observations.at(-1), attempt: 1 });
+    await app.click('#next-button');
+    const next = await finishRealHand();
+    assert.equal(next.hand, 10);
+    assert.equal(next.before, 9);
+    assert.equal(next.after, 10);
+    await app.screenshot('public-observation-memory-real-session');
+    return {
+      observations,
+      retried,
+      next,
+      scope:
+        'Eleven actual settled UI hands including one retry; no injected cards, actions, histories or decision snapshots',
+    };
+  });
   await check('raise-call-fold-and-settlement', async () => {
     await app.click('#opponents-button');
     await app.evaluate(() =>

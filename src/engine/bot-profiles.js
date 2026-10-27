@@ -15,6 +15,7 @@ import {
   checkedThroughPairValue,
   valueBetCap,
   expensivePreflopDefense,
+  observedPreflopDefense,
   checkedToPositionProbe,
 } from './bot-style.js';
 import { chipUnitOf, fractionRaiseTo, legalRaiseTo } from './bet-sizing.js';
@@ -658,6 +659,7 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
     !allInPressure &&
     (features.ownMade || features.draw) &&
     equity + callTolerance >= requiredEquity;
+  const observedDefense = observedPreflopDefense(view, equity + callTolerance, requiredEquity);
   const ownLastRaise =
     [...view.history].reverse().find((a) => a.action === 'raise')?.id === view.id;
   const barrelScale = view.street === 2 && ownLastRaise ? style.barrel : 1;
@@ -840,6 +842,7 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
       assumedOpponents,
       actionContext: view.actionContext || null,
       structuredPriceContinue,
+      observedDefense,
       allIn: view.allIn || null,
       pressure,
       percentile,
@@ -989,10 +992,11 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
       strategic.amount,
     );
   }
-  if (expensivePreflopDefense(view, equity)) return finish('fold', 'outside-range');
+  if (!observedDefense && expensivePreflopDefense(view, equity))
+    return finish('fold', 'outside-range');
   if (expensiveWeakPair(view, equity)) return finish('fold', 'stack-pressure');
   if (legal.toCall > 0) {
-    if (view.street === 0 && !admitted && !premium && odds > 0.09) {
+    if (view.street === 0 && !admitted && !premium && !observedDefense && odds > 0.09) {
       if (roll('outside-range', 0.06 * width) > 0.06 * width)
         return finish('fold', 'outside-range');
       exceptions.push('outside-range');

@@ -1,22 +1,56 @@
 import { publicPostflopLine } from '../engine/public-story.js';
-import { actorAtPosition } from '../engine/player-identity.js';
+import { actorAtPosition, actorName } from '../engine/player-identity.js';
 import { compactChips } from '../engine/chip-format.js';
+import { preparePublicRanges } from '../engine/public-ranges.js';
+import { PUBLIC_READ_MODEL, observedAggressiveLikelihood } from '../engine/public-observations.js';
+
+export function publicObservationNotes(s) {
+  if (
+    s.publicReadModel !== PUBLIC_READ_MODEL ||
+    !s.reviewSubject ||
+    !['call', 'fold', 'raise'].includes(s.action)
+  )
+    return [];
+  const last = (s.history || []).findLast(
+    (a) => a.street === s.street && a.action === 'raise' && a.id !== (s.id ?? 0),
+  );
+  if (!last) return [];
+  const range = preparePublicRanges(s).find((r) => r.id === last.id);
+  const observation = range?.rangeObservation;
+  if (!observation || observation.hands < 8) return [];
+  const other = actorName(s, last.id),
+    subject = s.reviewSubject;
+  if (s.street === 0 && observation.events / observation.hands >= 0.5) {
+    if (observation.kind === 'largeRaiseHands')
+      return [
+        `${subject}结合${other}此前 ${observation.hands} 手中 ${observation.events} 手翻前大额加注的记录，本次估计中保留了更多非顶级起手牌。`,
+      ];
+    if (observation.kind === 'raisingHands')
+      return [
+        `${subject}结合${other}此前 ${observation.hands} 手中 ${observation.events} 手翻前加注的记录，本次没有把加注范围限于强牌。`,
+      ];
+  }
+  if (s.street > 0 && observedAggressiveLikelihood(range.publicRead) > 0.1)
+    return [`${subject}结合${other}此前频繁的翻后下注与加注，本次估计保留了更多弱牌施压的可能。`];
+  return [];
+}
 
 // Public facts, not a claim that an archived bot had the current range model.
 export function publicStoryNotes(s) {
-  if (!s.street || !['call', 'fold'].includes(s.action)) return [];
+  const observations = publicObservationNotes(s);
+  if (!s.street || !['call', 'fold'].includes(s.action)) return observations;
   const last = (s.history || []).findLast(
     (a) => a.street === s.street && a.action === 'raise' && a.id !== 0,
   );
-  if (!last) return [];
+  if (!last) return observations;
   const line = publicPostflopLine(s, last.id);
-  if (new Set(line.map((a) => a.street)).size < 2) return [];
+  if (new Set(line.map((a) => a.street)).size < 2) return observations;
   if (
     !line.some((a) => a.action === 'check-raise') &&
     line.filter((a) => ['bet', 'raise'].includes(a.action)).length < 2
   )
-    return [];
-  const parts = [`${actorAtPosition(s, last.id)}此前的公开行动：`, ' '];
+    return observations;
+  const parts = [...observations, `${actorAtPosition(s, last.id)}此前的公开行动：`, ' '];
   const visible = line.filter(
     (a) =>
       a.action !== 'check' ||

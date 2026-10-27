@@ -13,6 +13,7 @@ export function reviewStrategy(s, c, price) {
       inPosition: c.inPosition,
       features: c.features,
       botProfile: null,
+      publicRead: s.players.find((p) => p.id === 0)?.publicRead,
       opponents: s.players.filter((p) => p.id !== 0 && !p.folded),
       callPots: price.pots,
       callPrice: { cost: price.cost, contestable: price.contestable, odds: price.required },
@@ -61,6 +62,14 @@ export function enrichStrategy(coaching, s, assessment, options) {
         /^(?:补成目标牌型后|补中时能争取最大同花)/.test(pieces.at(-1) || '')
       )
         pieces.pop();
+      // The observer's base check explanation already supplies the purpose
+      // and its card facts. Retain any new draw detail without restating pot control.
+      if (
+        options?.audience === 'observer' &&
+        s.action === 'check' &&
+        /过牌[^。]*(?:扩大|做大|控制投入)/.test(flat)
+      )
+        pieces = pieces.filter((text) => text !== '过牌保留改善机会，也没有主动扩大底池。');
       return { ...n, parts: pieces, text: pieces.join('') };
     });
   if (accepted.some((n) => n.topic === 'paying-range'))

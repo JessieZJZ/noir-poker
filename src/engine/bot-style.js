@@ -1,4 +1,5 @@
 import { boardTexture } from './hand-features.js';
+import { observedRangeModel } from './public-observations.js';
 
 // Author-controlled training heuristics, never measured frequencies of a person.
 // These helpers accept only the acting player's public perspective.
@@ -279,6 +280,63 @@ export function checkedThroughPairValue(view, equity) {
     view.opponents.every((p) => prior.some((a) => a.id === p.id && a.action === 'check')) &&
     equity >= (view.rivals === 1 ? 0.52 : 0.45)
   );
+}
+
+export function observedPreflopDefense(view, equity, required) {
+  if (
+    view.street !== 0 ||
+    view.difficulty === 'easy' ||
+    view.allIn ||
+    view.legal.canCheck ||
+    !view.publicEquity ||
+    view.rivals !== 1 ||
+    view.opponents?.length !== 1 ||
+    view.actionContext?.pendingResponseCount !== 0
+  )
+    return null;
+  const raises = view.history.filter((a) => a.street === 0 && a.action === 'raise');
+  const other = view.opponents[0];
+  if (
+    raises.length < 2 ||
+    raises.length > 3 ||
+    raises.at(-1).id !== other.id ||
+    other.allin ||
+    other.stack <= 0
+  )
+    return null;
+  const read = other.publicRead;
+  const model = observedRangeModel(read, { action: 'raise' });
+  if (!model || model.confidence < 0.25 || model.events / model.hands < 0.5 || model.width < 0.35)
+    return null;
+  const [high, low] = view.hole.map((c) => c.rank).sort((a, b) => b - a);
+  const playable =
+    (high === low && high >= 9) ||
+    (high === 14 && low >= 11) ||
+    (high === 13 && low === 12 && view.hole[0].suit === view.hole[1].suit);
+  const cost = view.legal.callAmount;
+  const original = view.stack + (view.total || view.bet || 0);
+  if (
+    !playable ||
+    cost <= 0 ||
+    cost >= view.stack ||
+    cost > original * 0.2 ||
+    view.stack - cost < cost * 2
+  )
+    return null;
+  // A conservative realization discount leaves room for later betting and
+  // domination. This only removes an authored entry veto; it neither proves
+  // EV nor bypasses subsequent price/legality/value-raise checks.
+  const realization = view.inPosition ? 0.88 : 0.78;
+  if (equity * realization < required + 0.04) return null;
+  return {
+    opponentId: other.id,
+    hands: model.hands,
+    raisingHands: model.events,
+    realization,
+    realizedEquity: equity * realization,
+    required,
+    costFraction: cost / original,
+  };
 }
 
 export function expensivePreflopDefense(view, equity) {

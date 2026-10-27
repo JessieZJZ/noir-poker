@@ -21,6 +21,12 @@ import { publicActionContext } from './public-action-context.js';
 import { preparePublicRanges } from './public-ranges.js';
 import { estimatePublicEquity } from './public-equity.js';
 import { assessPublicStrategy } from './public-strategy.js';
+import {
+  publicHandObservations,
+  summarizePublicRead,
+  PUBLIC_READ_WINDOW,
+  PUBLIC_READ_MODEL,
+} from './public-observations.js';
 export const SUITS = ['♠', '♥', '♣', '♦'];
 export const RANK_NAMES = [
   '高牌',
@@ -219,6 +225,7 @@ export function newGame(playerCount = 6, configuration = DEFAULT_STAKES) {
         botProfile: 'balanced',
         botMood: freshBotMood(),
         botStats: freshBotStats(),
+        publicReads: [],
         botHand: { vpip: false, pfr: false, pressureRecorded: false },
         out: false,
         place: null,
@@ -270,6 +277,7 @@ export function applyBotSettings(g, value) {
       p.botProfile = settings.assignments[p.id];
       p.botMood = freshBotMood();
       p.botStats = freshBotStats();
+      p.publicReads = [];
     }
     if (settings.emotionMode === 'off') p.botMood = freshBotMood();
   }
@@ -628,6 +636,7 @@ export function act(g, id, action, amount) {
       dealer: g.dealer,
       emotionMode: g.emotionMode,
       difficulty: g.difficulty,
+      publicReadModel: PUBLIC_READ_MODEL,
       legal: { ...legal },
       pending: [...g.pending],
       actionContext: publicActionContext(g, id),
@@ -644,6 +653,7 @@ export function act(g, id, action, amount) {
         allin: o.allin,
         action: o.action,
         botProfile: o.id ? o.botProfile : null,
+        publicRead: summarizePublicRead(o.publicReads),
         publicAxes: o.id
           ? effectiveBotAxes(getBotProfile(o.botProfile), o.botMood, g.emotionMode)
           : null,
@@ -898,6 +908,16 @@ export function settle(g, showdown = true) {
     if (event)
       log(g, `${p.name} 模拟状态：${MOOD_LABELS[event.kind]} · ${event.reason}`, p.id, 'info');
   }
+  const observations = publicHandObservations({
+    dealtIds: g.players.filter((p) => p.hole.length === 2).map((p) => p.id),
+    history: g.history,
+    bigBlind: bigBlindOf(g),
+  });
+  for (const p of g.players) {
+    const observation = observations.get(p.id);
+    if (observation)
+      p.publicReads = [...(p.publicReads || []), observation].slice(-PUBLIC_READ_WINDOW);
+  }
   return g;
 }
 // Seats that lose every chip leave the game. Seats busting in the same hand
@@ -971,6 +991,8 @@ export function botDecision(g, random = Math.random, { trials, allInCache } = {}
     street: g.street,
     position: seatPosition(g, p.id),
     botProfile: p.id ? p.botProfile : null,
+    publicRead: g.difficulty === 'easy' ? null : summarizePublicRead(p.publicReads),
+    publicReadModel: g.difficulty === 'easy' ? null : PUBLIC_READ_MODEL,
     publicAxes: p.id
       ? effectiveBotAxes(getBotProfile(p.botProfile), p.botMood, g.emotionMode)
       : null,
@@ -999,6 +1021,7 @@ export function botDecision(g, random = Math.random, { trials, allInCache } = {}
         id: o.id,
         position: seatPosition(g, o.id),
         botProfile: o.id ? o.botProfile : null,
+        publicRead: g.difficulty === 'easy' ? null : summarizePublicRead(o.publicReads),
         publicAxes: o.id
           ? effectiveBotAxes(getBotProfile(o.botProfile), o.botMood, g.emotionMode)
           : null,

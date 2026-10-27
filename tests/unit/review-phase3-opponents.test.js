@@ -100,7 +100,9 @@ test('the actor cannot make another decision after calling all-in even if anothe
     ],
   });
   const text = summary(r);
-  assert.match(text, /其余玩家仍可行动.*不再跟注、加注或弃牌/);
+  assert.match(text, /之后不再参与下注决策/);
+  assert.match(text, /可以看完剩余公共牌，无需再支付筹码/);
+  assert.doesNotMatch(text, /这位全下者不再跟注、加注或弃牌/);
   assert.doesNotMatch(text, /等下一街观察对手是否停止下注|保留.*后街进攻/);
 });
 

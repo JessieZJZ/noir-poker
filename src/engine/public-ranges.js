@@ -2,6 +2,12 @@ import { bigBlindOf } from './stakes.js';
 import { allInContext } from './public-action-context.js';
 import { publicPostflopLine, publicStoryWeight, hasPublicStory } from './public-story.js';
 import { startingPercentile } from './starting-range.js';
+import {
+  sanitizePublicRead,
+  observedRangeModel,
+  observedRangeWeight,
+  observedAggressiveLikelihood,
+} from './public-observations.js';
 
 const clamp = (value) => Math.max(0, Math.min(1, value));
 const late = (position) => ['BTN', 'CO', 'SB', 'BB'].includes(position);
@@ -74,7 +80,7 @@ export function preparePublicRanges(view) {
       total = opponent.total ?? opponent.bet ?? 0,
       depthBB =
         allIn?.depthBB ?? Math.min(view.stack ?? Infinity, opponent.stack + total) / bigBlind;
-    return {
+    const descriptor = {
       id: opponent.id,
       publicStyle: opponent.botProfile ?? null,
       publicAxes: opponent.publicAxes ?? null,
@@ -121,6 +127,16 @@ export function preparePublicRanges(view) {
       // Legacy all-in ranges price the latest public aggressor's size.
       aggressionRatio: view.currentBet / Math.max(bigBlind, view.pot - view.currentBet),
     };
+    const read = sanitizePublicRead(opponent.publicRead);
+    if (read) {
+      descriptor.publicRead = read;
+      descriptor.rangeObservation = observedRangeModel(read, {
+        action: descriptor.preflop.action,
+        allIn: descriptor.allIn,
+        role: descriptor.role,
+      });
+    }
+    return descriptor;
   });
 }
 
@@ -330,7 +346,11 @@ export function publicComboWeight(
           : late(descriptor.position)
             ? 1.35
             : 0.7;
-    return clamp(weight);
+    return observedRangeWeight(
+      startingPercentile(pair),
+      clamp(weight),
+      descriptor.rangeObservation,
+    );
   }
   const handTier = tier(pair),
     preflop = descriptor.preflop || { action: null, raises: 0, amountBB: 1 },
@@ -349,9 +369,12 @@ export function publicComboWeight(
   if (stylePrior === null && preflop.action && handTier < 3 && descriptor.position)
     weight *= late(descriptor.position) ? 1.15 : 0.8;
   if (preflop.action === 'raise' && preflop.amountBB > 4 && handTier < 3) weight *= 0.75;
+  weight = observedRangeWeight(startingPercentile(pair), weight, descriptor.rangeObservation);
   if (board.length < 3 || !score) return clamp(weight);
   if (handData && hasPublicStory(descriptor.postflopLine))
-    return clamp(weight * publicStoryWeight(pair, descriptor.postflopLine, handData));
+    return clamp(
+      weight * publicStoryWeight(pair, descriptor.postflopLine, handData, descriptor.publicRead),
+    );
   const traits = boardTraits(pair, board, score, features);
   if (descriptor.allIn) {
     const shared = boardScore && compare && compare(score, boardScore) === 0,
@@ -379,5 +402,5 @@ export function publicComboWeight(
             : large
               ? 0.05
               : 0.2;
-  return clamp(weight * madeWeight);
+  return clamp(weight * Math.max(madeWeight, observedAggressiveLikelihood(descriptor.publicRead)));
 }
