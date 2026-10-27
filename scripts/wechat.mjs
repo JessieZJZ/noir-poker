@@ -1,5 +1,6 @@
 import { soundSamples, SOUND_SAMPLE_RATE } from '../src/ui/sound-cues.js';
 import { MOBILE_BACKGROUND_MUSIC_PATH } from '../src/ui/background-music.js';
+import { CHEER_FILES } from '../src/ui/ceremony-sounds.js';
 import { watch } from 'node:fs';
 import { cp, mkdir, open, readFile, readdir, rename, rm, stat, writeFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
@@ -362,6 +363,12 @@ export async function buildWechat(output = wechatOutput) {
     await mkdir(path.join(staging, 'assets/sounds'), { recursive: true });
     for (const sound of ['fold', 'check', 'chip', 'deal', 'win'])
       await writeFile(path.join(staging, `assets/sounds/${sound}.wav`), soundWave(sound));
+    // The champions' crowd cheers play from the main package, ready at game end.
+    for (const file of Object.values(CHEER_FILES))
+      await cp(
+        path.join(root, 'public', file),
+        path.join(staging, 'assets/sounds', path.basename(file)),
+      );
     await cp(
       path.join(root, 'public', MOBILE_BACKGROUND_MUSIC_PATH),
       path.join(staging, 'music/background-music.m4a'),
@@ -472,6 +479,15 @@ export async function verifyWechat(output = wechatOutput) {
     checksum(await readFile(path.join(root, 'public', MOBILE_BACKGROUND_MUSIC_PATH)))
   )
     throw Error('WeChat background music differs from source');
+  for (const file of Object.values(CHEER_FILES)) {
+    const packaged = `assets/sounds/${path.basename(file)}`;
+    if (!expected.includes(packaged)) throw Error(`Missing local ${packaged}`);
+    if (
+      checksum(await readFile(path.join(output, packaged))) !==
+      checksum(await readFile(path.join(root, 'public', file)))
+    )
+      throw Error(`WeChat ${packaged} differs from source`);
+  }
   if (app.pages?.length < 1 || project.compileType !== 'miniprogram')
     throw Error('Invalid WeChat project');
   const page = await readFile(path.join(output, `${app.pages[0]}.wxml`), 'utf8');

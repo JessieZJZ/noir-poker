@@ -1,15 +1,20 @@
-// Game-end cues are synthesized at runtime on every platform, so the WeChat
-// main package carries code instead of long WAV files.
+// Game-end cues. A championship is greeted by a recorded crowd cheering: the
+// full cheer for the hero's title, a shorter and quieter one for a bot's. A
+// game the hero leaves without a champion keeps a synthesized muted tone.
 export const CEREMONY_SAMPLE_RATE = 22050;
 export const CEREMONY_CUES = ['champion', 'crowned', 'farewell'];
+// Local recordings under public/audio (WeChat: assets/sounds), never fetched remotely.
+export const CHEER_FILES = {
+  champion: 'audio/champion-cheer.m4a',
+  crowned: 'audio/crowned-cheer.m4a',
+};
+export const SYNTHESIZED_CEREMONY_CUES = CEREMONY_CUES.filter((cue) => !CHEER_FILES[cue]);
 // Players that cache the synthesized WAVs (WeChat user files) key them by this
-// version; bump it whenever any cue's samples change, or old sounds persist.
+// version; bump it whenever a synthesized cue's samples change.
 export const CEREMONY_SOUND_VERSION = 3;
 const TAU = 2 * Math.PI;
 const note = (semitones) => 261.63 * Math.pow(2, semitones / 12);
-// A championship is greeted by the crowd: cheering voices, applause and, for
-// the hero's own title, whistles. A game the hero leaves without a champion
-// keeps a muted, almost pure tone. All decay smoothly to silence.
+// A muted, almost pure tone that decays smoothly to silence.
 const muted = (phase) => Math.sin(phase) + 0.25 * Math.sin(2 * phase) + 0.08 * Math.sin(3 * phase);
 function voice(t, start, length, attack, release) {
   const dt = t - start;
@@ -34,146 +39,7 @@ const SCORES = {
     sparkle: [],
   },
 };
-// The hero's title gets the full crowd; a bot's gets warm applause and fewer
-// voices. Seeded noise keeps every platform's buffer identical.
-const CROWDS = {
-  champion: { duration: 3.4, seed: 1729, voices: 30, whistles: 2, clappers: 36, peak: 0.8 },
-  crowned: { duration: 2.8, seed: 2718, voices: 16, whistles: 0, clappers: 28, peak: 0.6 },
-};
-function seeded(seed) {
-  let state = seed >>> 0;
-  return () => {
-    state = (state + 0x6d2b79f5) >>> 0;
-    let x = Math.imul(state ^ (state >>> 15), 1 | state);
-    x ^= x + Math.imul(x ^ (x >>> 7), 61 | x);
-    return ((x ^ (x >>> 14)) >>> 0) / 4294967296;
-  };
-}
-// Constant-peak band-pass (RBJ biquad), used as vocal formants and clap colour.
-function bandPass(frequency, q) {
-  const w = (TAU * frequency) / CEREMONY_SAMPLE_RATE,
-    alpha = Math.sin(w) / (2 * q),
-    a0 = 1 + alpha,
-    b0 = alpha / a0,
-    a1 = (-2 * Math.cos(w)) / a0,
-    a2 = (1 - alpha) / a0;
-  let x1 = 0,
-    x2 = 0,
-    y1 = 0,
-    y2 = 0;
-  return (x) => {
-    const y = b0 * x - b0 * x2 - a1 * y1 - a2 * y2;
-    x2 = x1;
-    x1 = x;
-    y2 = y1;
-    y1 = y;
-    return y;
-  };
-}
-// The crowd swells in, holds, then fades over the last second.
-function crowdLevel(t, duration) {
-  const attack = Math.min(1, t / 0.28);
-  const swell = 0.82 + 0.18 * Math.sin(Math.min(1, t / 1.1) * Math.PI * 0.5);
-  const fade = Math.min(1, Math.max(0, (duration - t) / 1.15));
-  return attack * swell * fade * fade;
-}
-function crowdSamples({ duration, seed, voices, whistles, clappers, peak }) {
-  const rate = CEREMONY_SAMPLE_RATE,
-    length = Math.round(duration * rate),
-    random = seeded(seed),
-    roar = new Float32Array(length),
-    chorus = new Float32Array(length),
-    claps = new Float32Array(length),
-    whistle = new Float32Array(length);
-  // Crowd bed: noise through two moving vowel resonances ("aah" to "ay").
-  const low = bandPass(650, 1.4),
-    high = bandPass(1500, 1.8);
-  for (let i = 0; i < length; i++) {
-    const noise = random() * 2 - 1;
-    roar[i] = low(noise) * 0.9 + high(noise) * 0.55;
-  }
-  // Individual "yay" voices: buzzy sources whose pitch rises then falls,
-  // started a little apart so they never sound like one chord.
-  for (let v = 0; v < voices; v++) {
-    const start = random() * 0.45,
-      span = 1.1 + random() * (duration - 1.6),
-      base = 170 + random() * 230,
-      lift = 1.18 + random() * 0.22,
-      vibrato = 4.5 + random() * 2,
-      level = 0.5 + random() * 0.5,
-      first = bandPass(600 + random() * 250, 3),
-      second = bandPass(1300 + random() * 700, 4);
-    let phase = random();
-    for (let i = Math.floor(start * rate); i < length; i++) {
-      const dt = i / rate - start;
-      if (dt > span) break;
-      const shape = Math.min(1, dt / 0.25),
-        contour = 1 + (lift - 1) * Math.sin(Math.min(1, dt / span) * Math.PI),
-        pitch = base * contour * (1 + 0.025 * Math.sin(TAU * vibrato * dt));
-      phase = (phase + pitch / rate) % 1;
-      const buzz = 2 * phase - 1,
-        envelope = shape * Math.pow(1 - dt / span, 0.6);
-      chorus[i] += level * envelope * (first(buzz) * 0.8 + second(buzz) * 0.45);
-    }
-  }
-  // Applause: each person claps steadily (3.5 to 5 times a second, a little
-  // out of time). A clap is a soft hollow-palm burst: a short rise and a
-  // 6 to 11 ms decay around 0.9 to 1.7 kHz, never a bright instant crack, so
-  // many clappers blend into an even patter instead of firecracker pops.
-  for (let c = 0; c < clappers; c++) {
-    const pace = 3.5 + random() * 1.5,
-      loud = 0.55 + random() * 0.45,
-      decay = 0.006 + random() * 0.005;
-    for (let t = random() * 0.35; t < duration - 0.05;) {
-      const at = Math.floor(t * rate),
-        gain = loud * (0.85 + random() * 0.3);
-      for (let k = 0; k < rate * 0.045 && at + k < length; k++) {
-        const dt = k / rate,
-          shape = Math.min(1, dt / 0.0012) * Math.exp(-dt / decay);
-        claps[at + k] += gain * shape * (random() * 2 - 1);
-      }
-      t += (1 + (random() - 0.5) * 0.3) / pace;
-    }
-  }
-  const palm = bandPass(950, 1.2),
-    cup = bandPass(1650, 1.6);
-  let soft = 0;
-  for (let i = 0; i < length; i++) {
-    const coloured = palm(claps[i]) * 0.9 + cup(claps[i]) * 0.6;
-    // One-pole low-pass near 3.5 kHz takes the remaining edge off each clap.
-    soft += (coloured - soft) * 0.63;
-    claps[i] = soft;
-  }
-  // Two-finger whistles rising and falling, only for the hero's title.
-  for (let w = 0; w < whistles; w++) {
-    const start = 0.55 + w * 0.85 + random() * 0.2,
-      span = 0.7 + random() * 0.25;
-    let phase = 0;
-    for (let i = Math.floor(start * rate); i < length; i++) {
-      const dt = i / rate - start;
-      if (dt > span) break;
-      const pitch = 2100 + 700 * Math.sin((Math.min(1, dt / span) * Math.PI) / 1.2);
-      phase += (TAU * pitch * (1 + 0.006 * Math.sin(TAU * 7 * dt))) / rate;
-      whistle[i] += Math.sin(phase) * Math.min(1, dt / 0.06) * Math.min(1, (span - dt) / 0.15);
-    }
-  }
-  const data = new Float32Array(length);
-  let top = 0;
-  for (let i = 0; i < length; i++) {
-    const t = i / rate,
-      mixed =
-        crowdLevel(t, duration) *
-        (0.5 * roar[i] + 0.11 * chorus[i] + 0.2 * claps[i] + 0.09 * whistle[i]);
-    data[i] = Math.tanh(mixed * 1.4);
-    top = Math.max(top, Math.abs(data[i]));
-  }
-  // Fixed peaks keep the cue inside the shared phone-mix headroom.
-  const scale = top ? peak / top : 0;
-  for (let i = 0; i < length; i++) data[i] *= scale * Math.min(1, (length - 1 - i) / (rate * 0.2));
-  return data;
-}
 export function ceremonySamples(kind) {
-  if (CROWDS[kind]) return crowdSamples(CROWDS[kind]);
   const score = SCORES[kind];
   if (!score) throw new RangeError('Unknown ceremony cue');
   const data = new Float32Array(Math.round(score.duration * CEREMONY_SAMPLE_RATE));

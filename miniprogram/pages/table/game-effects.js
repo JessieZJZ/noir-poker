@@ -1,6 +1,8 @@
 const {
   ceremonyWav,
   CEREMONY_CUES,
+  CHEER_FILES,
+  SYNTHESIZED_CEREMONY_CUES,
   CEREMONY_SOUND_VERSION,
 } = require('../../shared/ui/ceremony-sounds.js');
 const { premiumSparks, confettiPieces } = require('../../shared/ui/effect-layouts.js');
@@ -51,22 +53,32 @@ function createSnapshotFiles() {
     },
   };
 }
-// Game-end cues are synthesized once into user files, not shipped as WAVs.
-// Files are named by the sound version, so changed cues replace the old ones.
+// The champions' cheers are packaged recordings. The remaining game-end cue is
+// synthesized once into a user file named by the sound version, so a changed
+// cue (or a cue that became a recording) replaces or removes the old file.
 function ceremonySoundFiles() {
+  const files = Object.fromEntries(
+    Object.entries(CHEER_FILES).map(([name, file]) => [
+      name,
+      `/assets/sounds/${file.split('/').pop()}`,
+    ]),
+  );
   const fs = wx.getFileSystemManager?.(),
-    root = wx.env?.USER_DATA_PATH,
-    files = {};
+    root = wx.env?.USER_DATA_PATH;
   if (!fs || !root) return files;
   const current = (name) => `noir-${name}-v${CEREMONY_SOUND_VERSION}.wav`;
   try {
     for (const entry of fs.readdirSync(root)) {
       const match = /^noir-(\w+)-v\d+\.wav$/.exec(entry);
-      if (match && CEREMONY_CUES.includes(match[1]) && entry !== current(match[1]))
+      if (
+        match &&
+        CEREMONY_CUES.includes(match[1]) &&
+        (!SYNTHESIZED_CEREMONY_CUES.includes(match[1]) || entry !== current(match[1]))
+      )
         fs.unlinkSync(`${root}/${entry}`);
     }
   } catch {}
-  for (const name of CEREMONY_CUES) {
+  for (const name of SYNTHESIZED_CEREMONY_CUES) {
     const path = `${root}/${current(name)}`;
     try {
       fs.accessSync(path);

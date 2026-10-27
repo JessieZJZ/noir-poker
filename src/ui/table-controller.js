@@ -57,7 +57,12 @@ import { standingLabel, standingClass } from '../engine/game-records.js';
 import { recordSnapshots } from '../platform/record-snapshots.js';
 import { createGameEffects } from './game-effects.js';
 import { TROPHY_MARKUP } from './table-scene.js';
-import { ceremonySamples, CEREMONY_SAMPLE_RATE, CEREMONY_CUES } from './ceremony-sounds.js';
+import {
+  ceremonySamples,
+  CEREMONY_SAMPLE_RATE,
+  CEREMONY_CUES,
+  CHEER_FILES,
+} from './ceremony-sounds.js';
 import { raiseCaption } from '../engine/action-labels.js';
 import { loadBotSettings, createOpponentsController } from './opponents-controller.js';
 import { loadTablePreferences, saveTablePreferences } from './preferences.js';
@@ -268,7 +273,32 @@ function prepareAudio() {
   try {
     audio = new (window.AudioContext || window.webkitAudioContext)();
     audioOutput = createSoundOutput(audio);
+    for (const kind of Object.keys(CHEER_FILES)) void loadCheer(kind);
   } catch {}
+}
+// The champions' crowd cheers are local recordings, decoded once ahead of the
+// game's end. A failed read is retried on the next request, never fetched remotely.
+const cheerLoads = new Map();
+function loadCheer(kind) {
+  if (!cheerLoads.has(kind))
+    cheerLoads.set(
+      kind,
+      fetch(new URL(CHEER_FILES[kind], document.baseURI))
+        .then((response) => {
+          if (!response.ok) throw Error(`Missing ${CHEER_FILES[kind]}`);
+          return response.arrayBuffer();
+        })
+        .then((bytes) => audio.decodeAudioData(bytes))
+        .then((buffer) => {
+          soundBuffers.set(kind, buffer);
+          return buffer;
+        })
+        .catch(() => {
+          cheerLoads.delete(kind);
+          return null;
+        }),
+    );
+  return cheerLoads.get(kind);
 }
 // Allocate the graph on entry. Resume on the first trusted gesture when the
 // browser requires one; never replay effects from earlier turns.
@@ -299,6 +329,14 @@ function soundEffect(kind = 'chip') {
   if (!activityClock.active || !sound || audio?.state !== 'running') return;
   try {
     let buffer = soundBuffers.get(kind);
+    if (!buffer && CHEER_FILES[kind]) {
+      // Still decoding: play it if it is ready while the ceremony is fresh.
+      const requested = performance.now();
+      void loadCheer(kind).then((loaded) => {
+        if (loaded && performance.now() - requested < 1500) soundEffect(kind);
+      });
+      return;
+    }
     if (!buffer) {
       const ceremony = CEREMONY_CUES.includes(kind),
         samples = ceremony ? ceremonySamples(kind) : soundSamples(kind);

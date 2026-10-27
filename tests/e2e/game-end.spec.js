@@ -154,10 +154,13 @@ for (const heroWins of [true, false]) {
         .map((a) => a.animationName)
         .filter((name) => /^trophy-(glow|rays|spark)$/.test(name));
       if (trophy.matches('.hero-champion-trophy')) {
-        const cards = box(document.querySelector('#hero-cards'));
+        const cards = box(document.querySelector('#hero-cards')),
+          board = box(document.querySelector('.table-center .board'));
+        // It shrinks to the room below the board and only sinks onto the
+        // top of the cards (never over the board) when that room runs out.
         return {
           centred: Math.abs(t.left + t.width / 2 - (cards.left + cards.width / 2)) < 2,
-          clear: t.bottom <= cards.top + 1,
+          clear: t.top >= board.bottom - 1 && t.bottom <= cards.top + cards.height * 0.25,
           shimmer: [...new Set(animations)].sort(),
         };
       }
@@ -388,3 +391,43 @@ test('the disabled raise slider rests at its minimum until the hero acts', async
 async function backToGame(page) {
   while (/#records/.test(page.url())) await page.goBack();
 }
+
+for (const heroWins of [true, false])
+  test(`${heroWins ? 'the hero' : 'a bot'} champion is greeted by the local ${heroWins ? 'full' : 'shorter'} crowd cheer`, async ({
+    page,
+  }) => {
+    const requests = [];
+    page.on('request', (request) => {
+      if (/cheer/.test(request.url())) requests.push(new URL(request.url()));
+    });
+    await page.addInitScript(() => {
+      window.startedCues = [];
+      const start = AudioBufferSourceNode.prototype.start;
+      AudioBufferSourceNode.prototype.start = function (...args) {
+        window.startedCues.push({
+          seconds: this.buffer.duration,
+          channels: this.buffer.numberOfChannels,
+        });
+        return start.apply(this, args);
+      };
+    });
+    await page.goto('/');
+    await page.waitForFunction(() => !!window.qa);
+    // A trusted gesture lets the page start its audio context.
+    await page.locator('#opponents-button').click();
+    await page.locator('#opponents-dialog .close-dialog').click();
+    await page.evaluate((heroWins) => window.qa.finale({ heroWins }), heroWins);
+    await page.evaluate(() => window.qa.finaleShowdown());
+    await expect(page.locator('.trophy-stage')).toHaveCount(1);
+    await page.waitForFunction(() => window.startedCues.some((cue) => cue.seconds > 3));
+    const cheers = await page.evaluate(() => window.startedCues.filter((cue) => cue.seconds > 3));
+    expect(cheers).toHaveLength(1);
+    expect(cheers[0].channels).toBe(2);
+    expect(cheers[0].seconds).toBeCloseTo(heroWins ? 5.7 : 3.4, 1);
+    // The recordings come from the page's own origin, never a remote host.
+    expect(requests.length).toBeGreaterThan(0);
+    for (const url of requests) {
+      expect(url.origin).toBe(new URL(page.url()).origin);
+      expect(url.pathname).toMatch(/^\/audio\/(champion|crowned)-cheer\.m4a$/);
+    }
+  });

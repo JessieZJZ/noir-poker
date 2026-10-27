@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { compactTableLayout } from '../../src/ui/compact-table-layout.js';
 import {
+  HERO_TROPHY_MIN_SHARE,
   HERO_TROPHY_SHARE,
   TROPHY_ASPECT,
   heroTrophy,
@@ -69,15 +70,24 @@ test("nine-seat phone trophies stand on the open side of every bot's seat", () =
   assert.deepEqual(sides, ['left', 'right', 'right', 'left', 'right', 'left', 'left', 'right']);
 });
 
-test("the hero's trophy stands above the hole cards and only sinks when the board is close", () => {
+test("the hero's trophy shrinks to the room above the hole cards before it sinks onto them", () => {
   const cards = box(150, 500, 100, 100),
-    height = 100 * HERO_TROPHY_SHARE;
+    full = 100 * HERO_TROPHY_SHARE;
   assert.deepEqual(heroTrophy(cards, { above: 300 }), {
-    width: height * TROPHY_ASPECT,
-    height,
+    width: full * TROPHY_ASPECT,
+    height: full,
     gap: 6,
     drop: 0,
   });
-  // 40 of room for a 72-tall trophy and two gaps: it sinks 44 onto the cards.
-  assert.equal(heroTrophy(cards, { above: 460 }).drop, height + 12 - 40);
+  // 64 of room: a 52-tall trophy fits with both gaps.
+  assert.deepEqual(heroTrophy(cards, { above: 436 }), {
+    width: 52 * TROPHY_ASPECT,
+    height: 52,
+    gap: 6,
+    drop: 0,
+  });
+  // 40 of room: the smallest (half the cards) sinks the rest onto the cards.
+  const tight = heroTrophy(cards, { above: 460 });
+  assert.equal(tight.height, 100 * HERO_TROPHY_MIN_SHARE);
+  assert.equal(tight.drop, 50 + 12 - 40);
 });

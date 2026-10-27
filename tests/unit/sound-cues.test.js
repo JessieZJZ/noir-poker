@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
+import { readFileSync } from 'node:fs';
 import {
   soundSamples,
   SOUND_CUES,
@@ -147,62 +148,57 @@ test('the final Web mix retains single-cue unity and bounds coincident action cu
   assert.ok(level(limited).peak < 0.92);
 });
 
-test('game-end cues are distinct, bounded and fade to silence on every platform', async () => {
-  const { ceremonySamples, ceremonyWav, CEREMONY_CUES, CEREMONY_SAMPLE_RATE } =
+test("champions' crowd cheers are local recordings; the hero's is fuller and louder", async () => {
+  const { CEREMONY_CUES, CHEER_FILES, SYNTHESIZED_CEREMONY_CUES } =
     await import('../../src/ui/ceremony-sounds.js');
   assert.deepEqual(CEREMONY_CUES, ['champion', 'crowned', 'farewell']);
-  const signatures = new Set();
-  for (const cue of CEREMONY_CUES) {
+  assert.deepEqual(SYNTHESIZED_CEREMONY_CUES, ['farewell']);
+  // Duration from the MP4 movie header, in seconds.
+  const seconds = (bytes) => {
+    const at = bytes.indexOf('mvhd'),
+      long = bytes[at + 4] === 1,
+      scale = bytes.readUInt32BE(at + (long ? 24 : 16)),
+      length = long ? Number(bytes.readBigUInt64BE(at + 28)) : bytes.readUInt32BE(at + 20);
+    return length / scale;
+  };
+  const files = Object.fromEntries(
+    Object.entries(CHEER_FILES).map(([cue, file]) => {
+      assert.match(file, /^audio\/[\w-]+\.m4a$/, 'a local packaged path');
+      const bytes = readFileSync(new URL(`../../public/${file}`, import.meta.url));
+      assert.equal(bytes.toString('latin1', 4, 8), 'ftyp', `${cue} is an MP4 audio file`);
+      return [cue, { bytes, seconds: seconds(bytes) }];
+    }),
+  );
+  assert.ok(Math.abs(files.champion.seconds - 5.7) < 0.1, `${files.champion.seconds}s`);
+  assert.ok(Math.abs(files.crowned.seconds - 3.4) < 0.1, `${files.crowned.seconds}s`);
+  // Both stay small enough for the WeChat main package.
+  assert.ok(files.champion.bytes.length + files.crowned.bytes.length < 120 * 1024);
+});
+
+test('the synthesized game-end cue is bounded and fades to silence on every platform', async () => {
+  const { ceremonySamples, ceremonyWav, SYNTHESIZED_CEREMONY_CUES } =
+    await import('../../src/ui/ceremony-sounds.js');
+  for (const cue of SYNTHESIZED_CEREMONY_CUES) {
     const samples = ceremonySamples(cue);
     const peak = samples.reduce((max, value) => Math.max(max, Math.abs(value)), 0);
     assert.ok(peak > 0.2 && peak < 1, `${cue} peak ${peak}`);
     assert.ok(Math.abs(samples.at(-1)) < 1e-3, `${cue} ends silent`);
     assert.equal(ceremonyWav(cue).byteLength, 44 + samples.length * 2);
-    signatures.add(samples.length / CEREMONY_SAMPLE_RATE + ':' + samples[4000].toFixed(4));
   }
-  assert.equal(signatures.size, CEREMONY_CUES.length);
 });
 
-test('cached ceremony WAVs change name whenever any cue changes', async () => {
-  const { ceremonySamples, CEREMONY_CUES, CEREMONY_SOUND_VERSION } =
+test('cached ceremony WAVs change name whenever a synthesized cue changes', async () => {
+  const { ceremonySamples, SYNTHESIZED_CEREMONY_CUES, CEREMONY_SOUND_VERSION } =
     await import('../../src/ui/ceremony-sounds.js');
-  // Fingerprint of every cue at this version. A different fingerprint means
-  // the cues changed: bump CEREMONY_SOUND_VERSION and record the new value,
-  // or WeChat keeps playing its cached copy of the old sounds.
-  const fingerprints = { 3: '856365860' };
+  // Fingerprint of the synthesized cues at this version. A different value
+  // means they changed: bump CEREMONY_SOUND_VERSION and record the new value,
+  // or WeChat keeps playing its cached copy of the old sound.
+  const fingerprints = { 3: '-933754938' };
   let sum = 0;
-  for (const cue of CEREMONY_CUES) {
+  for (const cue of SYNTHESIZED_CEREMONY_CUES) {
     const samples = ceremonySamples(cue);
     for (let i = 0; i < samples.length; i += 97)
       sum = (sum * 31 + Math.round(samples[i] * 1e4)) % 1e9;
   }
   assert.equal(String(sum), fingerprints[CEREMONY_SOUND_VERSION], 'bump CEREMONY_SOUND_VERSION');
-});
-
-test('champion applause is a soft patter, never firecracker crackle', async () => {
-  const { ceremonySamples } = await import('../../src/ui/ceremony-sounds.js');
-  // Bright (above ~4 kHz) energy in 3 ms windows over the steady cheer. Sharp
-  // instant-attack claps showed up as bursts at 1.6 to 2 times the median.
-  for (const cue of ['champion', 'crowned']) {
-    const samples = ceremonySamples(cue),
-      rate = 22050,
-      from = Math.round(0.45 * rate),
-      to = Math.round(1.9 * rate),
-      window = 66,
-      bright = [];
-    let low = 0;
-    for (let i = 0; i < to; i++) {
-      low += (samples[i] - low) * 0.55;
-      bright.push(samples[i] - low);
-    }
-    const levels = [];
-    for (let i = from; i + window < to; i += window) {
-      let energy = 0;
-      for (let j = 0; j < window; j++) energy += bright[i + j] ** 2;
-      levels.push(Math.sqrt(energy / window));
-    }
-    levels.sort((a, b) => a - b);
-    const burst = levels[Math.floor(levels.length * 0.99)] / levels[levels.length >> 1];
-    assert.ok(burst < 1.5, `${cue} bright bursts ${burst.toFixed(2)}x the median`);
-  }
 });

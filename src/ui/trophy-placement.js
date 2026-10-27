@@ -3,8 +3,10 @@
 // arena, WeChat passes its layout boxes, so both choose the same spot.
 export const TROPHY_ASPECT = 0.82;
 export const TROPHY_GAP = 6;
-// The hero's trophy is a little shorter than the hole cards it stands above.
+// The hero's trophy is a little shorter than the hole cards it stands above,
+// and shrinks to the room below the board, down to half the cards' height.
 export const HERO_TROPHY_SHARE = 0.72;
+export const HERO_TROPHY_MIN_SHARE = 0.5;
 
 // A bot's trophy stands beside its profile, as tall as the profile, on the
 // side with more free room before the table edge, another player or the
@@ -25,11 +27,16 @@ export function seatTrophy(profile, { bounds, obstacles = [] }) {
   return { side, width, height, gap: TROPHY_GAP, fits: room[side] >= width + TROPHY_GAP };
 }
 
-// The hero's trophy stands centred above the hole cards. If the board leaves
-// too little room, it sinks onto the top of the cards instead of the board.
+// The hero's trophy stands centred above the hole cards, shrinking to fit
+// the room below the board. Only beyond its smallest size does it sink onto
+// the top of the cards instead of covering the board.
 export function heroTrophy(cards, { above }) {
-  const height = (cards.bottom - cards.top) * HERO_TROPHY_SHARE,
-    width = height * TROPHY_ASPECT,
-    room = cards.top - above;
+  const cardsHeight = cards.bottom - cards.top,
+    room = cards.top - above,
+    height = Math.min(
+      cardsHeight * HERO_TROPHY_SHARE,
+      Math.max(cardsHeight * HERO_TROPHY_MIN_SHARE, room - 2 * TROPHY_GAP),
+    ),
+    width = height * TROPHY_ASPECT;
   return { width, height, gap: TROPHY_GAP, drop: Math.max(0, height + 2 * TROPHY_GAP - room) };
 }

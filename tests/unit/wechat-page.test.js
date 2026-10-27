@@ -648,7 +648,16 @@ test('practice runout preserves Web rank visibility without modifying the engine
 
 test('secondary pages lock the home scroll and source titles navigate to a separate web page', (t) => {
   const { page, scrolls, navigations, audios } = setup(t);
-  assert.equal(audios.length, 5, 'Each unique local effect is preloaded once on entry');
+  // Five action cues plus the two packaged champion cheers, each once.
+  assert.deepEqual(
+    audios.map((audio) => audio.src),
+    [
+      ...['fold', 'check', 'chip', 'deal', 'win'].map((name) => `/assets/sounds/${name}.wav`),
+      '/assets/sounds/champion-cheer.m4a',
+      '/assets/sounds/crowned-cheer.m4a',
+    ],
+    'Each unique local effect is preloaded once on entry',
+  );
   assert.ok(audios.every((audio) => audio.volume === 1));
   page.onPageScroll({ scrollTop: 240 });
   for (const [open, close] of [
@@ -3241,7 +3250,7 @@ test('WeChat starting-blind label uses the other settings label size, as on Web'
   );
 });
 
-test('WeChat replaces cached champion sounds whenever the synthesized cues change', () => {
+test('WeChat plays packaged champion cheers and replaces stale cached cues', () => {
   const files = new Map([
     ['wxfile://usr/noir-champion-v1.wav', 'old fanfare'],
     ['wxfile://usr/noir-crowned-v1.wav', 'old bells'],
@@ -3260,20 +3269,23 @@ test('WeChat replaces cached champion sounds whenever the synthesized cues chang
     env: { USER_DATA_PATH: 'wxfile://usr' },
   });
   const version = ceremonySounds.CEREMONY_SOUND_VERSION;
+  // The champions' cheers play from the packaged recordings; only the
+  // synthesized farewell is cached, and every older cached cue is removed.
   // The page module runs in its own VM realm; compare plain copies.
-  assert.deepEqual({ ...effects.ceremonySoundFiles() }, {
-    champion: `wxfile://usr/noir-champion-v${version}.wav`,
-    crowned: `wxfile://usr/noir-crowned-v${version}.wav`,
-    farewell: `wxfile://usr/noir-farewell-v${version}.wav`,
-  });
+  assert.deepEqual(
+    { ...effects.ceremonySoundFiles() },
+    {
+      champion: '/assets/sounds/champion-cheer.m4a',
+      crowned: '/assets/sounds/crowned-cheer.m4a',
+      farewell: `wxfile://usr/noir-farewell-v${version}.wav`,
+    },
+  );
   assert.deepEqual([...files.keys()].sort(), [
-    `wxfile://usr/noir-champion-v${version}.wav`,
-    `wxfile://usr/noir-crowned-v${version}.wav`,
     `wxfile://usr/noir-farewell-v${version}.wav`,
     'wxfile://usr/records/1.json',
   ]);
   assert.equal(
-    files.get(`wxfile://usr/noir-champion-v${version}.wav`).byteLength,
-    ceremonySounds.ceremonyWav('champion').byteLength,
+    files.get(`wxfile://usr/noir-farewell-v${version}.wav`).byteLength,
+    ceremonySounds.ceremonyWav('farewell').byteLength,
   );
 });
