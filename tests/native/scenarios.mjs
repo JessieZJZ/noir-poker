@@ -41,7 +41,10 @@ async function waitForNativeGuidePaint(app) {
   await app.sleep(750);
 }
 
-export async function waitForNativeHeroTurn(app, { now = Date.now, advanceSettled = false } = {}) {
+export async function waitForNativeHeroTurn(
+  app,
+  { now = Date.now, advanceSettled = false, acceptSettled = false } = {},
+) {
   const started = now();
   await enterNativeTable(app);
   const { playerCount } = await app.state();
@@ -66,6 +69,9 @@ export async function waitForNativeHeroTurn(app, { now = Date.now, advanceSettle
         });
         if (JSON.stringify(snapshot) !== JSON.stringify(observations.at(-1)?.state))
           observations.push({ elapsedMs: now() - started, state: snapshot });
+        // A real walk is a completed hand even though the hero never acts.
+        // Lifecycle audits retain it instead of advancing into another hand.
+        if (acceptSettled && snapshot.phase === 'done') return true;
         if (advanceSettled && !advancedSettlement && snapshot.phase === 'done') {
           advancedSettlement = true;
           await app.click('#next-button');
@@ -81,7 +87,13 @@ export async function waitForNativeHeroTurn(app, { now = Date.now, advanceSettle
       timeoutMs,
       'The reset hand must reach the real hero turn',
     );
-    return { timeoutMs, elapsedMs: now() - started, observations, advancedSettlement };
+    return {
+      timeoutMs,
+      elapsedMs: now() - started,
+      observations,
+      advancedSettlement,
+      ...(acceptSettled ? { settledBeforeHero: observations.at(-1)?.state.phase === 'done' } : {}),
+    };
   } catch (error) {
     error.turnDiagnostics = { timeoutMs, elapsedMs: now() - started, observations };
     throw error;
@@ -2142,9 +2154,11 @@ export async function nativeScenarios(app) {
     await app.click('#confirm-reset');
     const observations = [];
     const finishRealHand = async () => {
-      await waitForNativeHeroTurn(app, { advanceSettled: true });
-      await app.click('#fold-button');
-      if (await app.visible('#continue-deal-button')) await app.click('#continue-deal-button');
+      const ready = await waitForNativeHeroTurn(app, { acceptSettled: true });
+      if (!ready.settledBeforeHero) {
+        await app.click('#fold-button');
+        if (await app.visible('#continue-deal-button')) await app.click('#continue-deal-button');
+      }
       await app.waitFor(
         async () => (await app.state()).phase === 'done',
         60000,
@@ -2158,12 +2172,19 @@ export async function nativeScenarios(app) {
           .at(-1);
         const snapshot = attempt.snapshot;
         const decision = snapshot.decisions[0];
+        // On a walk the first bot's view contains the same before-hand public
+        // memory. No hero decision is invented for a hand with no hero action.
+        const firstBot = snapshot.botDecisions[0]?.trace.view;
+        const before = decision
+          ? decision.players.find((p) => p.id === 0).publicRead
+          : firstBot?.opponents.find((p) => p.id === 0)?.publicRead;
         return {
           hand: game.hand,
           attempt: game.replayAttempt,
-          before: decision.players.find((p) => p.id === 0).publicRead?.hands || 0,
+          before: before?.hands || 0,
           after: snapshot.players[0].publicReads.length,
-          model: decision.publicReadModel,
+          model: decision?.publicReadModel ?? firstBot?.publicReadModel,
+          heroActed: Boolean(decision),
         };
       });
     };
@@ -2182,7 +2203,11 @@ export async function nativeScenarios(app) {
     }
     await app.click('#restart-hand-button');
     const retried = await finishRealHand();
-    assert.deepEqual(retried, { ...observations.at(-1), attempt: 1 });
+    assert.deepEqual(
+      { ...retried, heroActed: undefined },
+      { ...observations.at(-1), attempt: 1, heroActed: undefined },
+      'A natural walk may differ on retry; before/after memory and one retracted sample must not',
+    );
     await app.click('#next-button');
     const next = await finishRealHand();
     assert.equal(next.hand, 10);
@@ -2194,7 +2219,7 @@ export async function nativeScenarios(app) {
       retried,
       next,
       scope:
-        'Eleven actual settled UI hands including one retry; no injected cards, actions, histories or decision snapshots',
+        'Eleven actual settled UI hands including one retry; natural walks retained; no injected cards, actions, histories or decision snapshots',
     };
   });
   await check('raise-call-fold-and-settlement', async () => {

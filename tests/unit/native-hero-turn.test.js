@@ -78,3 +78,21 @@ test('review and background checks advance once when the preceding real hand has
     ['done', 'playing'],
   );
 });
+
+test('public-memory checks retain a natural walk without advancing or increasing the turn budget', async () => {
+  const fake = harness((elapsed) =>
+    elapsed < 2000 ? waiting('River') : { ...waiting(null), phase: 'done' },
+  );
+  fake.app.click = async () => {
+    throw Error('A naturally finished hand must remain available for its memory audit');
+  };
+  const result = await waitForNativeHeroTurn(fake.app, { now: fake.now, acceptSettled: true });
+  assert.equal(result.settledBeforeHero, true);
+  assert.equal(result.advancedSettlement, false);
+  assert.equal(result.elapsedMs, 2000);
+  assert.equal(result.timeoutMs, 7 * BOT_THINK_LIMITS.maximum + 10000);
+  assert.deepEqual(
+    result.observations.map(({ state }) => state.hand),
+    [1, 1],
+  );
+});
