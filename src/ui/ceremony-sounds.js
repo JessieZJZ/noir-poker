@@ -4,7 +4,7 @@ export const CEREMONY_SAMPLE_RATE = 22050;
 export const CEREMONY_CUES = ['champion', 'crowned', 'farewell'];
 // Players that cache the synthesized WAVs (WeChat user files) key them by this
 // version; bump it whenever any cue's samples change, or old sounds persist.
-export const CEREMONY_SOUND_VERSION = 2;
+export const CEREMONY_SOUND_VERSION = 3;
 const TAU = 2 * Math.PI;
 const note = (semitones) => 261.63 * Math.pow(2, semitones / 12);
 // A championship is greeted by the crowd: cheering voices, applause and, for
@@ -37,8 +37,8 @@ const SCORES = {
 // The hero's title gets the full crowd; a bot's gets warm applause and fewer
 // voices. Seeded noise keeps every platform's buffer identical.
 const CROWDS = {
-  champion: { duration: 3.4, seed: 1729, voices: 30, whistles: 2, applause: 150, peak: 0.82 },
-  crowned: { duration: 2.8, seed: 2718, voices: 16, whistles: 0, applause: 110, peak: 0.62 },
+  champion: { duration: 3.4, seed: 1729, voices: 30, whistles: 2, clappers: 36, peak: 0.8 },
+  crowned: { duration: 2.8, seed: 2718, voices: 16, whistles: 0, clappers: 28, peak: 0.6 },
 };
 function seeded(seed) {
   let state = seed >>> 0;
@@ -77,7 +77,7 @@ function crowdLevel(t, duration) {
   const fade = Math.min(1, Math.max(0, (duration - t) / 1.15));
   return attack * swell * fade * fade;
 }
-function crowdSamples({ duration, seed, voices, whistles, applause, peak }) {
+function crowdSamples({ duration, seed, voices, whistles, clappers, peak }) {
   const rate = CEREMONY_SAMPLE_RATE,
     length = Math.round(duration * rate),
     random = seeded(seed),
@@ -116,17 +116,34 @@ function crowdSamples({ duration, seed, voices, whistles, applause, peak }) {
       chorus[i] += level * envelope * (first(buzz) * 0.8 + second(buzz) * 0.45);
     }
   }
-  // Applause: many short, randomly timed claps, densest after the swell.
-  const clapColour = bandPass(2100, 0.8);
-  for (let t = 0; t < duration - 0.05;) {
-    t += -Math.log(1 - random()) / (applause * Math.max(0.15, crowdLevel(t + 0.2, duration)));
-    const at = Math.floor(t * rate),
-      decay = 0.003 + random() * 0.006,
-      gain = 0.4 + random() * 0.6;
-    for (let k = 0; k < rate * 0.035 && at + k < length; k++)
-      claps[at + k] += gain * (random() * 2 - 1) * Math.exp(-k / rate / decay);
+  // Applause: each person claps steadily (3.5 to 5 times a second, a little
+  // out of time). A clap is a soft hollow-palm burst: a short rise and a
+  // 6 to 11 ms decay around 0.9 to 1.7 kHz, never a bright instant crack, so
+  // many clappers blend into an even patter instead of firecracker pops.
+  for (let c = 0; c < clappers; c++) {
+    const pace = 3.5 + random() * 1.5,
+      loud = 0.55 + random() * 0.45,
+      decay = 0.006 + random() * 0.005;
+    for (let t = random() * 0.35; t < duration - 0.05;) {
+      const at = Math.floor(t * rate),
+        gain = loud * (0.85 + random() * 0.3);
+      for (let k = 0; k < rate * 0.045 && at + k < length; k++) {
+        const dt = k / rate,
+          shape = Math.min(1, dt / 0.0012) * Math.exp(-dt / decay);
+        claps[at + k] += gain * shape * (random() * 2 - 1);
+      }
+      t += (1 + (random() - 0.5) * 0.3) / pace;
+    }
   }
-  for (let i = 0; i < length; i++) claps[i] = clapColour(claps[i]);
+  const palm = bandPass(950, 1.2),
+    cup = bandPass(1650, 1.6);
+  let soft = 0;
+  for (let i = 0; i < length; i++) {
+    const coloured = palm(claps[i]) * 0.9 + cup(claps[i]) * 0.6;
+    // One-pole low-pass near 3.5 kHz takes the remaining edge off each clap.
+    soft += (coloured - soft) * 0.63;
+    claps[i] = soft;
+  }
   // Two-finger whistles rising and falling, only for the hero's title.
   for (let w = 0; w < whistles; w++) {
     const start = 0.55 + w * 0.85 + random() * 0.2,
@@ -146,7 +163,7 @@ function crowdSamples({ duration, seed, voices, whistles, applause, peak }) {
     const t = i / rate,
       mixed =
         crowdLevel(t, duration) *
-        (0.5 * roar[i] + 0.11 * chorus[i] + 0.55 * claps[i] + 0.09 * whistle[i]);
+        (0.5 * roar[i] + 0.11 * chorus[i] + 0.2 * claps[i] + 0.09 * whistle[i]);
     data[i] = Math.tanh(mixed * 1.4);
     top = Math.max(top, Math.abs(data[i]));
   }

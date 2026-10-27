@@ -169,7 +169,7 @@ test('cached ceremony WAVs change name whenever any cue changes', async () => {
   // Fingerprint of every cue at this version. A different fingerprint means
   // the cues changed: bump CEREMONY_SOUND_VERSION and record the new value,
   // or WeChat keeps playing its cached copy of the old sounds.
-  const fingerprints = { 2: '327696801' };
+  const fingerprints = { 3: '856365860' };
   let sum = 0;
   for (const cue of CEREMONY_CUES) {
     const samples = ceremonySamples(cue);
@@ -177,4 +177,32 @@ test('cached ceremony WAVs change name whenever any cue changes', async () => {
       sum = (sum * 31 + Math.round(samples[i] * 1e4)) % 1e9;
   }
   assert.equal(String(sum), fingerprints[CEREMONY_SOUND_VERSION], 'bump CEREMONY_SOUND_VERSION');
+});
+
+test('champion applause is a soft patter, never firecracker crackle', async () => {
+  const { ceremonySamples } = await import('../../src/ui/ceremony-sounds.js');
+  // Bright (above ~4 kHz) energy in 3 ms windows over the steady cheer. Sharp
+  // instant-attack claps showed up as bursts at 1.6 to 2 times the median.
+  for (const cue of ['champion', 'crowned']) {
+    const samples = ceremonySamples(cue),
+      rate = 22050,
+      from = Math.round(0.45 * rate),
+      to = Math.round(1.9 * rate),
+      window = 66,
+      bright = [];
+    let low = 0;
+    for (let i = 0; i < to; i++) {
+      low += (samples[i] - low) * 0.55;
+      bright.push(samples[i] - low);
+    }
+    const levels = [];
+    for (let i = from; i + window < to; i += window) {
+      let energy = 0;
+      for (let j = 0; j < window; j++) energy += bright[i + j] ** 2;
+      levels.push(Math.sqrt(energy / window));
+    }
+    levels.sort((a, b) => a - b);
+    const burst = levels[Math.floor(levels.length * 0.99)] / levels[levels.length >> 1];
+    assert.ok(burst < 1.5, `${cue} bright bursts ${burst.toFixed(2)}x the median`);
+  }
 });
