@@ -1546,6 +1546,29 @@ test('old deal motion callbacks cannot clear a replay and hiding cancels pending
   assert.ok(page.data.heroCards.every((card) => !card.arriving));
 });
 
+test('opponent actions do not replace WeChat hero cards or restart premium presentation', (t) => {
+  const { page } = setup(t, { playerCount: 5 });
+  const game = reachHero(page);
+  page.act({ currentTarget: { dataset: { action: 'call' } } });
+  assert.ok(game.actor > 0);
+  const cards = copy(page.data.heroCards),
+    premium = page.data.premium,
+    logs = copy(page.data.logs),
+    patches = [];
+  const original = page.setData;
+  page.setData = function (patch, callback) {
+    patches.push(Object.keys(patch));
+    return original.call(this, patch, callback);
+  };
+  act(game, game.actor, 'call');
+  page._controller.show();
+  assert.notDeepEqual(copy(page.data.logs), logs);
+  assert.deepEqual(copy(page.data.heroCards), cards);
+  assert.equal(page.data.premium, premium);
+  assert.ok(patches.length > 0);
+  assert.ok(patches.flat().every((key) => !key.startsWith('heroCards') && key !== 'premium'));
+});
+
 test('WeChat shared page receives turn timer patches without changing table geometry', (t) => {
   const { page, jobs } = setup(t);
   reachHero(page);

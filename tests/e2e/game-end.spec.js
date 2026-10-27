@@ -52,6 +52,75 @@ test('a premium start lights the hole cards after the deal, then the effect leav
   await expect(wrap.locator('.premium-sparks')).toHaveCount(0);
 });
 
+test('opponent actions preserve premium card nodes and the running glow', async ({ page }) => {
+  await page.clock.install();
+  await page.evaluate(() => {
+    window.qa.premiumStart();
+    window.qa.seatAction('call');
+  });
+  expect((await state(page)).actor).not.toBe('你');
+  await page.clock.runFor(1200);
+  const wrap = page.locator('main.main .hero-cards-wrap');
+  await expect(wrap).toHaveClass(/premium-start/);
+  expect(
+    await wrap.evaluate((wrap) => {
+      window.__premiumCards = [...wrap.querySelectorAll('.hero-cards > .playing-card')];
+      window.__premiumGlows = document
+        .getAnimations()
+        .filter((a) => a.animationName === 'premium-glow');
+      for (const glow of window.__premiumGlows) {
+        glow.pause();
+        glow.currentTime = 850;
+      }
+      return window.__premiumGlows.length;
+    }),
+  ).toBe(2);
+  for (let action = 0; action < 2; action++) {
+    const before = await state(page);
+    expect(before.actor).not.toBe('你');
+    await page.evaluate(() => window.qa.seatAction('call'));
+    expect((await state(page)).actor).not.toBe(before.actor);
+    expect(
+      await wrap.evaluate((wrap) => {
+        const cards = [...wrap.querySelectorAll('.hero-cards > .playing-card')];
+        const animations = document.getAnimations();
+        return {
+          sameCards: cards.every((card, i) => card === window.__premiumCards[i]),
+          sameGlows: window.__premiumGlows.every(
+            (glow) => animations.includes(glow) && glow.currentTime === 850,
+          ),
+        };
+      }),
+    ).toEqual({ sameCards: true, sameGlows: true });
+  }
+  await page.clock.runFor(2700);
+  await expect(wrap).not.toHaveClass(/premium-start/);
+  await expect(wrap.locator('.premium-sparks')).toHaveCount(0);
+  await page.evaluate(() => window.qa.seatAction('call'));
+  await expect(wrap).not.toHaveClass(/premium-start/);
+});
+
+test('retry replaces the card nodes even when the original hole cards are identical', async ({
+  page,
+}) => {
+  const before = await page.evaluate(() => {
+    const state = window.qa.recordsStart();
+    window.__originalHeroCards = [...document.querySelector('#hero-cards').children];
+    return state;
+  });
+  await page.evaluate(() => window.qa.recordsFinish());
+  const after = await page.evaluate(() => window.qa.recordsRetry());
+  expect(after.hole).toEqual(before.hole);
+  expect(after.replayAttempt).toBe(1);
+  expect(
+    await page.evaluate(() => {
+      const cards = [...document.querySelector('#hero-cards').children];
+      return cards.length === 2 && cards.every((card, i) => card !== window.__originalHeroCards[i]);
+    }),
+  ).toBe(true);
+  await expect(page.locator('#hero-cards .card-deal')).toHaveCount(2);
+});
+
 for (const heroWins of [true, false]) {
   test(`${heroWins ? 'the hero' : 'the last bot'} is crowned after winning heads-up`, async ({
     page,
