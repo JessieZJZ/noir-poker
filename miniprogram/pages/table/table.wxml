@@ -136,14 +136,12 @@
               class="seat-body"
               data-id="{{item.id}}"
               data-kind="persona"
-              bindlongpress="showNameTooltip"
               style="width: {{profileWidth}}px; height: {{profileHeight}}px;"
               ><view class="seat-name"
                 ><text
                   id="seat-name-{{item.id}}"
                   data-id="{{item.id}}"
                   data-kind="name"
-                  catchlongpress="showNameTooltip"
                   class="seat-name-label {{item.nameFit && !done ? 'is-name-fitted' : ''}}"
                   style="--name-width-scale: {{item.nameWidthScale || 1}};"
                   >{{item.name}}</text
@@ -162,7 +160,6 @@
                     hover-class="none"
                     wx:if="{{done}}"
                     class="seat-eye"
-                    catchlongpress="closeNameTooltip"
                     data-id="{{item.id}}"
                     bindtap="peekSeat"
                     aria-label="查看底牌" /></view
@@ -190,13 +187,7 @@
                 id="seat-persona-{{item.id}}"
                 data-id="{{item.id}}"
                 data-kind="persona"
-                catchlongpress="showNameTooltip"
                 class="persona {{item.profileId === 'balanced' ? 'persona-balanced' : ''}}"
-                >{{item.profileName}}</text
-              ><text
-                id="seat-persona-measure-{{item.id}}"
-                class="persona-name-measure"
-                aria-hidden="true"
                 >{{item.profileName}}</text
               ><text
                 class="stack"
@@ -1254,13 +1245,3 @@
     </scroll-view>
   </view>
 </view>
-
-<block wx:if="{{nameTooltip}}">
-  <view class="name-tooltip-dismiss" bindtap="closeNameTooltip" catchtouchmove="closeNameTooltip" />
-  <view
-    class="seat-name-tooltip {{nameTooltip.visible ? 'is-visible' : ''}} {{nameTooltip.position.placement}}"
-    style="left: {{nameTooltip.position.left || 0}}px; top: {{nameTooltip.position.top || 0}}px; --tooltip-arrow: {{nameTooltip.position.arrow || 12}}px;"
-    aria-role="tooltip"
-    >{{nameTooltip.text}}<view class="name-tooltip-arrow"
-  /></view>
-</block>

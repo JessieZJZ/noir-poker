@@ -581,19 +581,12 @@ try {
   };
   await capture('table', ['.nav', '.game-shell', '.board-row', '.hero-cards', '.action-buttons']);
   const styleSeat = (await page.data()).phoneSeats[0];
-  const styleHit = await page.$(`#seat-body-${styleSeat.id}`);
-  await styleHit.longpress();
-  await wait((data) => data.nameTooltip?.visible);
-  assert.equal((await page.data()).nameTooltip.text, styleSeat.profileName);
-  assert.equal(await (await page.$('.seat-name-tooltip')).text(), styleSeat.profileName);
-  report.styleTooltip = {
+  assert.equal(await (await page.$(`#seat-persona-${styleSeat.id}`)).text(), styleSeat.profileName);
+  assert.equal(await page.$('.seat-name-tooltip'), null);
+  report.styleFullName = {
     text: styleSeat.profileName,
-    hitTarget: 'seat-body',
-    scope: 'DevTools longpress on the expanded seat region, including untruncated styles',
+    scope: 'Full style always displayed, no long-press overlay',
   };
-  await capture('style-tooltip', ['.seat-name-tooltip']);
-  await (await page.$('.name-tooltip-dismiss')).tap();
-  await wait((data) => !data.nameTooltip);
   assert.equal((await (await page.$('.nav')).size()).height, 48);
   for (const button of await page.$$('.action-buttons button'))
     assert.equal((await button.size()).height, 38);

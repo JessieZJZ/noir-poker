@@ -642,22 +642,25 @@ export function createWechatController({
       timer = null;
       if (disposed || !active || ticket !== epoch || game.phase !== 'playing' || game.actor <= 0)
         return;
-      const plan = planBotTurn(game),
-        started = Date.now();
+      const started = Date.now(),
+        plan = planBotTurn(game);
       pendingBot = { plan, started };
-      timer = schedule(() => {
-        timer = null;
-        if (disposed || !active || ticket !== epoch || !isBotTurnCurrent(game, plan)) return;
-        const id = game.actor;
-        const contribution = game.players[id].total;
-        const result = executeBotTurn(game, plan, { waitedMs: Date.now() - started });
-        pendingBot = null;
-        effect(result.action);
-        if (game.phase === 'done') effect('win');
-        render();
-        if (game.players[id].total > contribution) wager(id);
-        driveBots();
-      }, plan.delayMs);
+      timer = schedule(
+        () => {
+          timer = null;
+          if (disposed || !active || ticket !== epoch || !isBotTurnCurrent(game, plan)) return;
+          const id = game.actor;
+          const contribution = game.players[id].total;
+          const result = executeBotTurn(game, plan, { waitedMs: Date.now() - started });
+          pendingBot = null;
+          effect(result.action);
+          if (game.phase === 'done') effect('win');
+          render();
+          if (game.players[id].total > contribution) wager(id);
+          driveBots();
+        },
+        Math.max(0, plan.delayMs - (Date.now() - started)),
+      );
     }, 0);
   }
   function freshHand({ refilled = false } = {}) {

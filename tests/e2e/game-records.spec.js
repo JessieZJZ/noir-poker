@@ -1016,66 +1016,6 @@ test('records headings keep their note close and revealed opponents use larger f
   }
 });
 
-test('long press reveals full clipped names on live and archived tables and dismisses safely', async ({
-  page,
-}) => {
-  await page.setViewportSize({ width: 390, height: 844 });
-  await page.evaluate(() => {
-    window.qa.recordsStart({ count: 9 });
-    const game = window.qa.snapshot();
-    game.players.slice(1).forEach((player) => {
-      player.botProfile = 'rook';
-    });
-    window.qa.loadRecordedGame(game);
-    window.qa.recordsFinish();
-  });
-  const attempt = (await records(page))[0].attempts[0];
-  for (const root of ['#arena', '#history-arena']) {
-    if (root === '#history-arena') {
-      await openRecords(page);
-      await page.locator(`[data-record-hand="${attempt.id}"]`).click();
-    }
-    const label = page.locator(`${root} .seat-style-label`).first();
-    const hint = page.locator(root === '#arena' ? '#coach-content' : '#history-coach-content');
-    await label.scrollIntoViewIfNeeded();
-    expect(await label.evaluate((el) => el.scrollWidth > el.clientWidth + 1)).toBe(true);
-    const full = await label.textContent();
-    const rect = await label.boundingBox();
-    await page.mouse.move(rect.x + rect.width / 2, rect.y + rect.height / 2);
-    await page.mouse.down();
-    // The hint banner scrolls its own text without moving the pressed name.
-    await hint.evaluate((el) => el.dispatchEvent(new Event('scroll')));
-    await page.waitForTimeout(500);
-    await page.mouse.up();
-    const tooltip = page.getByRole('tooltip');
-    await expect(tooltip).toBeVisible();
-    await expect(tooltip).toHaveText(full);
-    await hint.evaluate((el) => el.dispatchEvent(new Event('scroll')));
-    await expect(tooltip).toBeVisible();
-    const tip = await tooltip.boundingBox();
-    expect(tip.x).toBeGreaterThanOrEqual(12);
-    expect(tip.x + tip.width).toBeLessThanOrEqual(378);
-    expect(tip.y).toBeGreaterThanOrEqual(12);
-    await page.screenshot({ path: test.info().outputPath(`full-name-${root.slice(1)}.png`) });
-    await page.keyboard.press('Escape');
-    await expect(tooltip).toBeHidden();
-    // Dragging starts a page gesture; it must not become a long press.
-    await page.mouse.down();
-    await page.mouse.move(rect.x + rect.width / 2, rect.y + rect.height / 2 + 20);
-    await page.waitForTimeout(500);
-    await page.mouse.up();
-    await expect(tooltip).toBeHidden();
-    // A scroll of the table containing the anchor still dismisses the tooltip.
-    await page.mouse.move(rect.x + rect.width / 2, rect.y + rect.height / 2);
-    await page.mouse.down();
-    await page.waitForTimeout(500);
-    await page.mouse.up();
-    await expect(tooltip).toBeVisible();
-    await label.evaluate((el) => el.closest('.arena').dispatchEvent(new Event('scroll')));
-    await expect(tooltip).toBeHidden();
-  }
-});
-
 test('historical pot dialogs and showdown stay bound to the saved hand while live practice changes', async ({
   page,
 }) => {

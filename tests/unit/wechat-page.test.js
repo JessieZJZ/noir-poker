@@ -9,7 +9,6 @@ import vm from 'node:vm';
 import { readFileSync } from 'node:fs';
 import { createWechatController } from '../../src/platform/wechat-controller.js';
 import { recordResult, sessionStanding } from '../../src/engine/game-records.js';
-import { nameTooltipPosition } from '../../src/ui/name-tooltip-position.js';
 import { numericWidthScale, numericColumnWidth } from '../../src/ui/numeric-width.js';
 import { entryWelcomeCorridor, entryWelcomeScale } from '../../src/ui/entry-welcome-scale.js';
 import * as effectLayouts from '../../src/ui/effect-layouts.js';
@@ -132,7 +131,6 @@ function setup(
       if (name.endsWith('/chip-format.js')) return { compactChips, compactActionAmounts };
       if (name === './presentation.js') return presentationModule.exports;
       if (name === './phone-layout.js') return { phoneLayout: compactTableLayout };
-      if (name.endsWith('/name-tooltip-position.js')) return { nameTooltipPosition };
       if (name.endsWith('/numeric-width.js')) return { numericWidthScale, numericColumnWidth };
       if (name.endsWith('/entry-welcome-scale.js'))
         return { entryWelcomeCorridor, entryWelcomeScale };
@@ -2634,7 +2632,9 @@ test('WeChat fits only overflowing full-precision numbers and caches the actual 
   changedFont[0]['font-size'] = '24px';
   page.tightenSeatRanks();
   callbacks.shift()(changedFont);
-  assert.ok(Math.abs(page.data.phoneSeats[0].stackWidthScale - available / 90) < 0.00001);
+  assert.ok(
+    Math.abs(page.data.phoneSeats[0].stackWidthScale - Math.min(1, available / 90)) < 0.00001,
+  );
   assert.deepEqual(copy(page._controller.getGame()), game);
   assert.match(template, /data-number="{{item.stack}}"/);
   assert.match(template, /--stack-width-scale: {{item.stackWidthScale \|\| 1}};/);
@@ -2790,63 +2790,29 @@ test('returning from records preserves the painted live layout without replaying
   assert.ok(page.data.phoneSeats.length);
 });
 
-test('WeChat long press shows every style, only clipped player names, and rejects stale tooltips', (t) => {
-  const { page, wx } = setup(t);
-  let naturalWidth = 100,
-    labelWidth = 40,
-    delayed = false;
-  const callbacks = [];
-  wx.createSelectorQuery = () => {
-    const selectors = [];
-    const query = {
-      select(selector) {
-        selectors.push(selector);
-        return query;
-      },
-      fields() {
-        return query;
-      },
-      boundingClientRect() {
-        return query;
-      },
-      exec(callback) {
-        const result =
-          selectors[0] === '.seat-name-tooltip'
-            ? [{ width: 140, height: 40 }]
-            : [{ left: 320, top: 300, width: labelWidth, height: 20 }, { width: naturalWidth }];
-        if (delayed) callbacks.push(() => callback(result));
-        else callback(result);
-      },
-    };
-    return query;
-  };
-  const seat = page.data.phoneSeats[0];
-  page.showNameTooltip({ currentTarget: { dataset: { id: seat.id, kind: 'persona' } } });
-  assert.equal(page.data.nameTooltip.text, seat.profileName);
-  assert.equal(page.data.nameTooltip.visible, true);
-  assert.ok(page.data.nameTooltip.position.left + 140 <= page.data.windowWidth - 12);
-  page.onPageScroll({ scrollTop: 20 });
-  assert.equal(page.data.nameTooltip, null);
-  naturalWidth = labelWidth;
-  page.showNameTooltip({ currentTarget: { dataset: { id: seat.id, kind: 'persona' } } });
-  assert.equal(
-    page.data.nameTooltip.text,
-    seat.profileName,
-    'A fully visible short style still opens',
-  );
-  page.closeNameTooltip();
-  page.showNameTooltip({ currentTarget: { dataset: { id: seat.id, kind: 'name' } } });
-  assert.equal(page.data.nameTooltip, null, 'Fully displayed names need no popup');
-  naturalWidth = 100;
-  delayed = true;
-  page.showNameTooltip({ currentTarget: { dataset: { id: seat.id, kind: 'name' } } });
-  page.onHide();
-  callbacks.shift()();
-  assert.equal(page.data.nameTooltip, null);
-  assert.match(template, /class="seat-body"[\s\S]*?bindlongpress="showNameTooltip"/);
-  assert.match(template, /catchlongpress="showNameTooltip"/);
-  assert.match(template, /class="seat-eye"[\s\S]*?catchlongpress="closeNameTooltip"/);
-  assert.match(stylesheet, /\.seat-name-tooltip\s*\{[^}]*position: fixed/s);
+test('WeChat displays complete styles without a long-press overlay or handler', (t) => {
+  const { page } = setup(t);
+  assert.equal(page.showNameTooltip, undefined);
+  assert.equal(page.closeNameTooltip, undefined);
+  assert.doesNotMatch(template, /nameTooltip|seat-name-tooltip|bindlongpress|catchlongpress/);
+  const persona = [...stylesheet.matchAll(/\.web-phone-layout \.seat \.persona\s*\{([^}]+)\}/g)].at(
+    -1,
+  )[1];
+  assert.match(persona, /grid-column: 2/);
+  assert.match(persona, /grid-row: 2/);
+  assert.match(persona, /white-space: nowrap/);
+  assert.match(persona, /font-size: var\(--player-persona-fit\)/);
+  assert.doesNotMatch(persona, /text-overflow: ellipsis/);
+  {
+    const m = page.data.textMetrics;
+    assert.ok(m['player-persona-fit'] > 0);
+    assert.ok(m['player-persona-fit'] <= m['player-persona'] * 0.82);
+    const rightColumn = page.data.profileWidth - m['profile-padding'] * 2 - m['player-avatar'] - 6;
+    assert.ok(
+      m['player-persona-fit'] * 4 + 8 <= rightColumn,
+      'Four CJK glyphs, badge padding and both profile borders fit the original column',
+    );
+  }
 });
 
 test('WeChat hand rankings shortcut resets the guide anchor on normal open and can jump again', (t) => {

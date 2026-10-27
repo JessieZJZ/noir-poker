@@ -197,30 +197,14 @@ try {
   await mini.pageScrollTo(Math.max(0, dock.top - 350));
   await page.waitFor(200);
   await mini.screenshot({ path: path.join(output, 'history-review.png') });
-  report.stage = 'full-name-tooltip';
-  const candidates = await page.$$('.persona');
-  for (const [i, label] of candidates.entries()) {
-    const seat = (await page.data('phoneSeats'))[i];
-    const natural = await rect(`#seat-persona-measure-${seat.id}`);
-    const bounds = await rect(`#seat-persona-${seat.id}`);
-    if (natural.width <= bounds.width + 1) continue;
-    await label.longpress();
-    await page.waitFor('.seat-name-tooltip.is-visible');
-    report.fullName = {
-      text: await (await page.$('.seat-name-tooltip')).text(),
-      bounds: await rect('.seat-name-tooltip'),
-    };
-    assert.equal(report.fullName.text, seat.profileName);
-    assert.ok(report.fullName.bounds.left >= 12);
-    assert.ok(
-      report.fullName.bounds.left + report.fullName.bounds.width <=
-        (await page.data('windowWidth')) - 12,
-    );
-    await mini.screenshot({ path: path.join(output, 'full-name.png') });
-    await tap('.name-tooltip-dismiss');
-    break;
+  report.stage = 'complete-style-names';
+  report.fullNames = [];
+  for (const seat of await page.data('phoneSeats')) {
+    const text = await (await page.$(`#seat-persona-${seat.id}`)).text();
+    assert.equal(text, seat.profileName);
+    report.fullNames.push(text);
   }
-  assert.ok(report.fullName, 'A saved real named opponent must exercise truncation');
+  assert.equal(await page.$('.seat-name-tooltip'), null);
   report.stage = 'return-game';
   await armReturnMeasurement();
   // Native Back unwinds the saved hand, then the list, to the live table.

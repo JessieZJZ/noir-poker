@@ -86,6 +86,29 @@ export function createSettlementLayout(arena, { observe = true } = {}) {
       label.style.setProperty('--name-width-scale', scale);
     }
   };
+  const fitStyles = () => {
+    const labels = [...arena.querySelectorAll('.seat-style-label')];
+    // Start from the intended font each time: a resize or locale switch can
+    // make room for larger text again. Batch writes before measuring glyphs.
+    for (const label of labels) label.style.removeProperty('--style-font');
+    const arenaScale = arena.getBoundingClientRect().width / arena.offsetWidth || 1;
+    const sizes = labels.map((label) => {
+      const style = getComputedStyle(label);
+      const range = document.createRange();
+      range.selectNodeContents(label);
+      const textWidth = range.getBoundingClientRect().width / arenaScale;
+      const available =
+        label.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight) - 0.5;
+      const font = parseFloat(style.fontSize);
+      return {
+        label,
+        font:
+          Math.floor(font * Math.min(1, Math.max(0, available) / Math.max(1, textWidth)) * 100) /
+          100,
+      };
+    });
+    for (const { label, font } of sizes) label.style.setProperty('--style-font', `${font}px`);
+  };
   const center = arena.querySelector('.table-center');
   let frame = null;
   function update() {
@@ -278,6 +301,7 @@ export function createSettlementLayout(arena, { observe = true } = {}) {
       bottom: 'auto',
       transform: 'none',
     });
+    fitStyles();
     fitNumbers();
     fitNames();
   }

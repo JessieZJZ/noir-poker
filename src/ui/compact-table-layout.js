@@ -105,6 +105,19 @@ export function compactTableLayout({
   textMetrics['player-avatar'] = Math.ceil(
     textMetrics['player-persona'] * 1.15 + 4 + textMetrics['player-stack'] + 2,
   );
+  // Four CJK characters share the original right column. Keep the avatar's
+  // original size and expose a single-line font budget for the WeChat renderer.
+  textMetrics['player-persona-fit'] = Math.max(
+    1,
+    Math.min(
+      textMetrics['player-persona'] * 0.82,
+      Math.floor(
+        ((profileWidth - textMetrics['profile-padding'] * 2 - textMetrics['player-avatar'] - 15) /
+          4) *
+          100,
+      ) / 100,
+    ),
+  );
   textMetrics['hero-action-height'] = Math.ceil(textMetrics['hero-action'] * 1.2);
   textMetrics['hero-info-height'] =
     textMetrics['hero-identity-height'] + textMetrics['hero-action-height'] + 2;

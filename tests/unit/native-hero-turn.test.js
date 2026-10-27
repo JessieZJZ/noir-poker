@@ -30,12 +30,12 @@ const waiting = (actor) => ({
 
 test('installed eight-player feedback check permits sequential configured bot pauses', async () => {
   const fake = harness((elapsed) =>
-    elapsed < 40000
-      ? waiting(elapsed < 20000 ? 'River' : 'Theo')
+    elapsed < 14000
+      ? waiting(elapsed < 7000 ? 'River' : 'Theo')
       : { ...waiting('你'), enabled: true, controlEnabled: true },
   );
   const evidence = await waitForNativeHeroTurn(fake.app, { now: fake.now });
-  assert.equal(evidence.elapsedMs, 40000);
+  assert.equal(evidence.elapsedMs, 14000);
   assert.equal(evidence.timeoutMs, 7 * BOT_THINK_LIMITS.maximum + 10000);
   assert.deepEqual(
     evidence.observations.map((entry) => entry.state.actor),
@@ -51,7 +51,7 @@ test('stalled bot and mismatched hero controls fail within a finite unchanged bu
   ]) {
     const fake = harness(() => snapshot);
     await assert.rejects(waitForNativeHeroTurn(fake.app, { now: fake.now }), (error) => {
-      assert.equal(error.turnDiagnostics.elapsedMs, 66000);
+      assert.equal(error.turnDiagnostics.elapsedMs, 31000);
       assert.deepEqual(error.turnDiagnostics.observations[0].state, snapshot);
       return true;
     });

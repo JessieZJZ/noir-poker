@@ -16,6 +16,7 @@ function scheduler() {
   const pending = new Map();
   return {
     pending,
+    now: () => now,
     schedule(fn, delay) {
       const id = ++sequence;
       pending.set(id, { fn, delay, due: now + delay });
@@ -101,6 +102,9 @@ test('WeChat observer review preserves threats and the actual fold without futur
 
 test('WeChat executes policy pacing once and hiding rejects stale bot callbacks', (t) => {
   const { controller, timers, latest } = setup(t);
+  // Planning time is part of the same window; keep wall time on the fake
+  // scheduler so host load cannot consume the simulated waiting interval.
+  t.mock.method(Date, 'now', timers.now);
   const game = reachHero(controller);
   controller.action('call');
   const existingTimers = new Set(timers.pending.keys());
@@ -122,10 +126,10 @@ test('WeChat executes policy pacing once and hiding rejects stale bot callbacks'
   controller.show();
   while (game.botDecisions.length === 0) assert.ok(timers.runNext());
   assert.equal(game.botDecisions.length, 1);
-  assert.equal(game.botDecisions[0].trace.thinking.model, 'policy-pacing-v2');
+  assert.equal(game.botDecisions[0].trace.thinking.model, 'policy-pacing-v3');
   assert.equal(game.botDecisions[0].trace.thinking.expedited, false);
   assert.ok(
-    !JSON.stringify(latest()).includes('policy-pacing-v2'),
+    !JSON.stringify(latest()).includes('policy-pacing-v3'),
     'Live UI keeps private timing factors hidden',
   );
 });

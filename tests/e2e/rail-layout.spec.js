@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import { readTableLayout, assertTableLayout } from '../native/layout.mjs';
 
 for (const width of [320, 390, 820, 1032]) {
-  test(`centered public cards, rail seats and single-line persona labels at ${width}px`, async ({
+  test(`centered public cards, rail seats and complete persona labels in the original right column at ${width}px`, async ({
     page,
   }) => {
     await page.setViewportSize({ width, height: width > 600 ? 1376 : 900 });
@@ -35,13 +35,19 @@ for (const width of [320, 390, 820, 1032]) {
             s = getComputedStyle(el);
           const arena = document.querySelector('#arena'),
             scale = arena.getBoundingClientRect().width / arena.offsetWidth;
-          return { gap: (r.left - a.right) / scale, wrap: s.whiteSpace, overflow: s.textOverflow };
+          return {
+            gap: (r.left - a.right) / scale,
+            full: el.scrollWidth <= el.clientWidth + 1,
+            wrap: s.whiteSpace,
+            overflow: s.textOverflow,
+          };
         }),
       );
       for (const label of labels) {
         expect(Math.abs(label.gap - 4)).toBeLessThanOrEqual(0.1);
+        expect(label.full).toBe(true);
         expect(label.wrap).toBe('nowrap');
-        expect(label.overflow).toBe('ellipsis');
+        expect(label.overflow).toBe('clip');
       }
       await page.evaluate((count) => window.qa.publicBoard(count), count);
       expect(await page.locator('#board .card-art > rect').count()).toBe(0);

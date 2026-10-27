@@ -1617,7 +1617,7 @@
   transform-origin: left center;
 }
 .web-phone-layout .seat .seat-body {
-  grid-template-rows: var(--player-name) auto var(--player-stack);
+  grid-template-rows: auto auto auto;
   padding: var(--profile-padding);
   padding-top: calc(var(--profile-padding) + 1px);
 }
@@ -1708,57 +1708,6 @@
   background: #101b22;
 }
 
-.persona-name-measure {
-  position: absolute;
-  width: max-content;
-  visibility: hidden;
-  pointer-events: none;
-  white-space: nowrap;
-  font-size: var(--player-persona);
-  font-weight: 400;
-}
-.name-tooltip-dismiss {
-  position: fixed;
-  inset: 0;
-  z-index: 90;
-}
-.seat-name-tooltip {
-  position: fixed;
-  z-index: 91;
-  width: max-content;
-  max-width: 240px;
-  padding: 9px 12px;
-  border: 1px solid #4b8675;
-  border-radius: 9px;
-  background: #18332e;
-  box-shadow: 0 6px 24px #0008;
-  color: #e1fff2;
-  font-size: 14px;
-  font-weight: 500;
-  line-height: 1.5;
-  overflow-wrap: anywhere;
-  opacity: 0;
-}
-.seat-name-tooltip.is-visible {
-  opacity: 1;
-}
-.name-tooltip-arrow {
-  position: absolute;
-  left: var(--tooltip-arrow);
-  bottom: -5px;
-  width: 7px;
-  height: 7px;
-  border-right: 1px solid #4b8675;
-  border-bottom: 1px solid #4b8675;
-  background: #18332e;
-  transform: translateX(-50%) rotate(45deg);
-}
-.seat-name-tooltip.below .name-tooltip-arrow {
-  bottom: auto;
-  top: -5px;
-  transform: translateX(-50%) rotate(225deg);
-}
-
 /* Avoid adding the normal 8px shell margin to the detail heading's own gap. */
 .history-shell {
   margin-top: 0;
@@ -1800,4 +1749,43 @@
   margin: 0;
   border: 0;
   border-radius: 0;
+}
+
+/* Preserve the original avatar at left, complete style and chips at right. */
+.web-phone-layout .seat .seat-body > .avatar {
+  grid-column: 1;
+  grid-row: 2 / 4;
+  align-self: end;
+}
+.web-phone-layout .seat .seat-body > .stack {
+  grid-column: 2;
+  grid-row: 3;
+  align-self: start;
+}
+.web-phone-layout .seat .persona {
+  grid-column: 2;
+  grid-row: 2;
+  align-self: end;
+  box-sizing: border-box;
+  min-width: 0;
+  max-width: 100%;
+  font-size: var(--player-persona-fit);
+  line-height: 1.2;
+  padding: 1px 3px;
+  white-space: nowrap;
+  overflow: visible;
+  text-overflow: clip;
+  overflow-wrap: anywhere;
+  height: auto;
+  min-height: 0;
+  max-height: none;
+  text-align: center;
+}
+
+.web-phone-layout .seat .seat-body > .mood-badge {
+  grid-row: 2 / 4;
+}
+
+.web-phone-layout .seat .persona-balanced {
+  font-size: calc(var(--player-persona) * 0.82);
 }

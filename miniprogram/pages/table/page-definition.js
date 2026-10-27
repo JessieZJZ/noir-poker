@@ -5,7 +5,6 @@ const { numericWidthScale, numericColumnWidth } = require('../../shared/ui/numer
 const { presentCard, showdownPresentation, presentationPatch } = require('./presentation.js');
 const { completeBoardForPractice, rankText } = require('../../shared/engine/poker.js');
 const navigation = require('../../record-navigation.js');
-const { nameTooltipPosition } = require('../../shared/ui/name-tooltip-position.js');
 const {
   entryWelcomeCorridor,
   entryWelcomeScale,
@@ -106,7 +105,6 @@ module.exports = {
     comparisonOpen: false,
     homeLocked: false,
     homeOffset: 0,
-    nameTooltip: null,
     finishing: false,
     flyingChips: [],
     premiumSparks: PREMIUM_SPARKS,
@@ -131,7 +129,6 @@ module.exports = {
         const dealKey = `${view.sessionNumber}:${view.hand}:${view.replay}`;
         const changedDeal = dealKey !== this._dealKey;
         if (changedDeal) {
-          this.closeNameTooltip();
           this._motionEpoch = (this._motionEpoch || 0) + 1;
           this.cancelCardMotion();
           this._seatFaces = new Map();
@@ -319,7 +316,6 @@ module.exports = {
       this.call('review', (reviewData) => this.updateReview(reviewData));
   },
   onHide() {
-    this.closeNameTooltip();
     this._hidden = true;
     clearTimeout(this._resourceTimer);
     clearTimeout(this._resourceMotionTimer);
@@ -357,7 +353,6 @@ module.exports = {
     this.stopSounds();
   },
   onResize() {
-    this.closeNameTooltip();
     this.updateWindow();
   },
   scheduleCardMotion(key, delay, readPatch) {
@@ -391,7 +386,6 @@ module.exports = {
     return patch;
   },
   onPageScroll(event) {
-    this.closeNameTooltip();
     if (!this.data.homeLocked) this._homeScroll = event.scrollTop;
   },
   setOverlay(patch, onReady) {
@@ -543,55 +537,6 @@ module.exports = {
       };
     }
     return {};
-  },
-  closeNameTooltip() {
-    this._nameTipEpoch = (this._nameTipEpoch || 0) + 1;
-    if (this.data.nameTooltip) this.setData({ nameTooltip: null });
-  },
-  showNameTooltip(event) {
-    const id = Number(event.currentTarget.dataset.id);
-    const kind = event.currentTarget.dataset.kind === 'persona' ? 'persona' : 'name';
-    const seat = this.data.phoneSeats.find((seat) => seat.id === id);
-    if (!seat || (kind === 'name' && seat.nameFit && !this.data.done) || !wx.createSelectorQuery)
-      return;
-    this.closeNameTooltip();
-    const ticket = this._nameTipEpoch;
-    const query = wx.createSelectorQuery();
-    query.select(`#seat-${kind}-${id}`).fields({
-      rect: true,
-      size: true,
-      computedStyle: ['padding-left', 'padding-right', 'border-left-width', 'border-right-width'],
-    });
-    query.select(`#seat-${kind}-measure-${id}`).boundingClientRect();
-    query.exec(([label, natural]) => {
-      if (ticket !== this._nameTipEpoch || this._hidden || this._destroyed || !label || !natural)
-        return;
-      const inset =
-        ['padding-left', 'padding-right', 'border-left-width', 'border-right-width'].reduce(
-          (sum, key) => sum + (parseFloat(label[key]) || 0),
-          0,
-        ) * (this.data.arenaScale || 1);
-      if (kind === 'name' && natural.width <= label.width - inset + 1) return;
-      this.setData(
-        {
-          nameTooltip: { text: kind === 'persona' ? seat.profileName : seat.name, visible: false },
-        },
-        () => {
-          const measure = wx.createSelectorQuery();
-          measure.select('.seat-name-tooltip').boundingClientRect();
-          measure.exec(([size]) => {
-            if (ticket !== this._nameTipEpoch || this._hidden || this._destroyed || !size) return;
-            const position = nameTooltipPosition(label, size, {
-              width: this.data.windowWidth,
-              height: this.data.windowHeight,
-              top: this.data.topInset + 36,
-              bottom: this.data.bottomInset,
-            });
-            this.setData({ 'nameTooltip.visible': true, 'nameTooltip.position': position });
-          });
-        },
-      );
-    });
   },
   tightenSeatRanks() {
     if (!wx.createSelectorQuery || this._hidden || this._destroyed) return;

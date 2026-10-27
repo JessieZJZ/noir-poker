@@ -1519,87 +1519,59 @@ export async function nativeScenarios(app) {
       scope: 'Installed app strategy glossary, guide scrolling and fixed header geometry',
     };
   });
-  await check('style-tag-long-press', async () => {
-    await app.waitHero();
-    const selector = '#seats .seat-style-label';
-    await app.evaluate((selector) => {
-      const label = document.querySelector(selector);
-      const events = new AbortController();
-      window.__noirTooltipEvents = [];
-      window.__noirTooltipStop = () => events.abort();
-      const record = (type, event) => {
-        if (window.__noirTooltipEvents.length >= 256) return;
-        const tip = document.querySelector('#seat-name-tooltip');
-        window.__noirTooltipEvents.push({
-          type,
-          at: performance.now(),
-          target: event?.target?.className,
-          x: event?.clientX,
-          y: event?.clientY,
-          button: event?.button,
-          connected: label.isConnected,
-          visible: tip && !tip.hidden,
-        });
-      };
-      for (const type of [
-        'pointerdown',
-        'pointerup',
-        'pointercancel',
-        'touchstart',
-        'touchend',
-        'contextmenu',
-        'scroll',
-      ])
-        document.addEventListener(type, (event) => record(type, event), {
-          capture: true,
-          signal: events.signal,
-        });
-      document.addEventListener(
-        'pointerdown',
-        () => {
-          for (const delay of [100, 400, 500, 700])
-            setTimeout(() => record(`after-${delay}`), delay);
-        },
-        { once: true, signal: events.signal },
+  await check('style-tag-full-name', async () => {
+    const all = [];
+    for (const count of [5, 9]) {
+      await app.click('#opponents-button');
+      await app.select('#player-count', String(count));
+      const ids = ['balanced', 'rook', 'jett', 'owen', 'vale', 'nico', 'mira', 'iris'];
+      for (let id = 1; id < count; id++) await app.select(`[data-bot-seat="${id}"]`, ids[id - 1]);
+      await app.click('#opponents-dialog .close-dialog');
+      await app.click('#reset-button');
+      await app.click('#confirm-reset');
+      await app.waitFor(async () => (await app.state()).playerCount === count, 15000);
+      await waitForNativeHeroTurn(app, { advanceSettled: true });
+      await app.evaluate(() => window.scrollTo({ top: 0, left: 0, behavior: 'instant' }));
+      // UIKit can paint the previous scroll position after the DOM has moved.
+      await app.sleep(800);
+      const labels = await app.evaluate(() =>
+        [...document.querySelectorAll('#seats .seat-style-label')].map((el) => {
+          const r = el.getBoundingClientRect(),
+            p = el.closest('.seat-profile').getBoundingClientRect();
+          return {
+            text: el.textContent,
+            expected: el.dataset.fullName,
+            visible:
+              r.top >= document.querySelector('.header').getBoundingClientRect().bottom - 1 &&
+              r.bottom <= innerHeight,
+            width: el.clientWidth,
+            content: el.scrollWidth,
+            height: el.clientHeight,
+            contentHeight: el.scrollHeight,
+            singleLine: getComputedStyle(el).whiteSpace === 'nowrap',
+            inside: r.left >= p.left - 1 && r.right <= p.right + 1 && r.bottom <= p.bottom + 1,
+          };
+        }),
       );
-    }, selector);
-    const before = await app.evaluate((selector) => {
-      const label = document.querySelector(selector);
-      return {
-        text: label.getAttribute('data-full-name'),
-        hand: window.noir.getState().hand,
-      };
-    }, selector);
-    let tooltip;
-    try {
-      await app.nativeHold(selector);
-      tooltip = await app.waitFor(
-        () =>
-          app.evaluate(() => {
-            const el = document.querySelector('#seat-name-tooltip');
-            return el && !el.hidden
-              ? { text: el.textContent, selected: getSelection().toString() }
-              : null;
-          }),
-        5000,
-        'A real native touch hold must open the style name',
-      );
-    } catch (error) {
-      error.tooltipDiagnostics = await app.evaluate(() => window.__noirTooltipEvents);
-      throw error;
-    } finally {
-      await app.evaluate(() => window.__noirTooltipStop?.());
+      assert.equal(labels.length, count - 1);
+      assert.equal(new Set(labels.map((l) => l.text)).size, count - 1);
+      for (const label of labels) {
+        assert.equal(label.text, label.expected);
+        assert.ok(label.content <= label.width + 1);
+        assert.ok(label.contentHeight <= label.height + 1);
+        assert.ok(label.singleLine, 'Styles must never wrap');
+        assert.ok(label.inside);
+        assert.ok(label.visible, 'Full style must be on the actual first screen');
+      }
+      assert.equal(await app.evaluate(() => !!document.querySelector('#seat-name-tooltip')), false);
+      await app.screenshot(`style-tag-full-name-${count}`);
+      all.push({ count, labels });
     }
-    assert.equal(tooltip.text, before.text);
-    assert.equal(tooltip.selected, '');
-    assert.equal((await app.state()).hand, before.hand);
-    await app.screenshot('style-tag-native-hold');
-    await app.click('#arena .hero-identity');
-    assert.equal(
-      await app.evaluate(() => document.querySelector('#seat-name-tooltip').hidden),
-      true,
-    );
-    return { before, tooltip, scope: 'Installed app, real native pointer hold, no text selection' };
+    return {
+      all,
+      scope:
+        'Installed app actual settings, 5/9 seats, eight distinct complete style names, no long-press overlay',
+    };
   });
   await check('mixed-toggle-and-visual-guide', async () => {
     await app.click('#opponents-button');

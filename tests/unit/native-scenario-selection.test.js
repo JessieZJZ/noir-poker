@@ -28,7 +28,7 @@ test('native diagnostic selection rejects empty and unknown names instead of rep
     assert.ok(recorded.some((entry) => entry.name === 'guide-sticky-header'));
     assert.ok(recorded.some((entry) => entry.name === 'completed-check-persists'));
     assert.ok(recorded.some((entry) => entry.name === 'practice-reset-in-card-heading'));
-    assert.ok(recorded.some((entry) => entry.name === 'style-tag-long-press'));
+    assert.ok(recorded.some((entry) => entry.name === 'style-tag-full-name'));
     assert.ok(recorded.some((entry) => entry.name === 'entry-high-stakes-layout'));
     assert.ok(recorded.some((entry) => entry.name === 'table-hint-content'));
     assert.ok(

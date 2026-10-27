@@ -290,7 +290,6 @@ export async function buildWechat(output = wechatOutput) {
       'hero-card-space.js',
       'activity-parts.js',
       'numeric-width.js',
-      'name-tooltip-position.js',
       'cards.js',
       'hero-turn.js',
       'card-rank-glyphs.js',

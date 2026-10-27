@@ -83,6 +83,7 @@ let dealWait = null;
 const $ = (s) => document.querySelector(s);
 const coachContent = $('#coach-content');
 const settlementLayout = createSettlementLayout($('#arena'), { observe: false });
+document.addEventListener('noir:locale-changed', () => settlementLayout.update());
 const playViewport = createPlayViewport($('.game-surface'), {
   layout() {
     settlementLayout.update();
@@ -772,8 +773,8 @@ function schedule() {
   } else if (game.actor !== 0) {
     dealWait = null;
     if (!botWait || !isBotTurnCurrent(game, botWait.plan)) {
-      const plan = planBotTurn(game),
-        startedAt = activityClock.now();
+      const startedAt = activityClock.now(),
+        plan = planBotTurn(game);
       botWait = { plan, startedAt, deadline: startedAt + plan.delayMs };
     }
     const waiting = botWait;

@@ -55,7 +55,7 @@ window.qa = {
   },
   // `rivalStack` gives seat 1 a stack the hero cannot cover, so one all-in
   // hand cannot clear the table and end the game.
-  recordsStart({ count = 5, smallBlind = 100, refill = false, rivalStack } = {}) {
+  recordsStart({ count = 5, smallBlind = 100, refill = false, rivalStack, styles = [] } = {}) {
     gameRecords.abandon(game);
     fixtureGame(count, true);
     requestedStakes = stakesFromSmallBlind(smallBlind);
@@ -72,6 +72,8 @@ window.qa = {
       stakes: requestedStakes,
     });
     startHand(game);
+    for (const player of game.players.slice(1))
+      if (styles[player.id - 1]) player.botProfile = styles[player.id - 1];
     gameRecords.begin(game, { newSession: true });
     render();
     this.stop();
