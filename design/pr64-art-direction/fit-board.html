@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <title>NOIR 5–9人适配总览</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: #06140d;
+        color: #ebf2db;
+        width: 1800px;
+        height: 1660px;
+        padding: 36px 62px;
+        font:
+          15px 'PingFang SC',
+          sans-serif;
+      }
+      header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+        border-bottom: 1px solid #adbc7e4d;
+        padding-bottom: 24px;
+        margin-bottom: 24px;
+      }
+      h1 {
+        font-size: 37px;
+        font-weight: 500;
+        margin: 10px 0 0;
+      }
+      .meta {
+        color: #a9ba9f;
+        line-height: 1.9;
+        font-size: 13px;
+        text-align: right;
+      }
+      .eyebrow {
+        color: #abc79e;
+        letter-spacing: 0.18em;
+        font-size: 12px;
+      }
+      .label {
+        display: flex;
+        justify-content: space-between;
+        margin: 18px 0 12px;
+        color: #c4d2af;
+        font-size: 15px;
+      }
+      .row {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 20px;
+      }
+      .tile {
+        text-align: center;
+        background: #0c2116;
+        border: 1px solid #acbb7a40;
+        border-radius: 10px;
+        overflow: hidden;
+      }
+      .tile h2 {
+        font-size: 16px;
+        font-weight: 500;
+        margin: 12px 0;
+      }
+      .tile img {
+        display: block;
+        width: 100%;
+        height: var(--shot);
+        object-fit: contain;
+        object-position: top;
+      }
+      .foot {
+        color: #8fa783;
+        font-size: 13px;
+        line-height: 1.9;
+        margin-top: 24px;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div>
+        <span class="eyebrow">NOIR POKER / GREEN V2 / RESPONSIVE ART</span>
+        <h1 id="title"></h1>
+      </div>
+      <div class="meta">
+        5 / 6 / 7 / 8 / 9 人均独立排布<br />13类尺寸×5人数×3方案 = 195组适配核验
+      </div>
+    </header>
+    <div class="label">
+      <span>常规手机 · iOS 393×852 · 59 / 34 安全区</span
+      ><span>公共牌3+2 · 姓名与金额不整桌缩放</span>
+    </div>
+    <div class="row" id="normal" style="--shot: 650px"></div>
+    <div class="label">
+      <span>最短窄屏 · SE 320×568 · 20 / 0 安全区</span
+      ><span>紧凑操作 · 不画手势条 · 尺度在操作行内展开</span>
+    </div>
+    <div class="row" id="short" style="--shot: 532px"></div>
+    <p class="foot">
+      照片式牌室、皮革桌沿、毛毡和筹码保持同一美术体系；短屏移除泛化装饰，不用缩小姓名/金额/主操作来塞下九人。<br />这里是浏览器原型的设计目标，不代表安装版或实体设备已验收。每张原图与其他尺寸见设计目录。
+    </p>
+    <script type="module">
+      import { themes } from './manifest.mjs';
+      const t =
+        themes.find((t) => t.id === new URLSearchParams(location.search).get('theme')) || themes[0];
+      document.getElementById('title').textContent = t.name + ' · 5–9 人适配';
+      for (const [id, d] of [
+        ['normal', 'ios-393'],
+        ['short', 'se-320'],
+      ])
+        document.getElementById(id).innerHTML = [5, 6, 7, 8, 9]
+          .map(
+            (n) =>
+              `<article class="tile"><h2>${n} 人桌</h2><img src="/output/fit/${t.id}/${d}/table${n}.jpg" alt="${n}人${d}"></article>`,
+          )
+          .join('');
+    </script>
+  </body>
+</html>

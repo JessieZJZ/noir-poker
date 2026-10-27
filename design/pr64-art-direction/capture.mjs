@@ -3,7 +3,7 @@ import sharp from 'sharp';
 import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { themes, devices, screens, base } from './manifest.mjs';
-const root = path.resolve('.artifacts/art-direction-pr64');
+const root = path.resolve('.artifacts/art-direction-pr64/green-v2');
 const initial = process.argv.includes('--initial');
 const round2 = process.argv.includes('--round2');
 const preview = initial || round2;

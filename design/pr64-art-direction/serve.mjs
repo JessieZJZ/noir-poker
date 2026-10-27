@@ -9,7 +9,7 @@ const portable = await stat(path.join(here, 'assets'))
   .catch(() => false);
 const output = portable
   ? path.join(here, 'output')
-  : path.resolve(repo, '.artifacts/art-direction-pr64');
+  : path.resolve(repo, '.artifacts/art-direction-pr64/green-v2');
 const args = process.argv.slice(2);
 const port = Number(args[args.indexOf('--port') + 1]) || 4394;
 const types = {

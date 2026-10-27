@@ -1,3 +1,4 @@
+import { installSceneLayout } from './scene-layout.mjs';
 import { themes, devices, screens } from './manifest.mjs';
 import { glossary as glossaryContent, privacyHtml } from './content.mjs';
 import { premiumSparks, confettiPieces, refillCountValues } from '/runtime/ui/effect-layouts.js';
@@ -8,10 +9,20 @@ const screen = screens.find((s) => s.id === q.get('screen')) || screens[1];
 const pageId = screen.id;
 const root = document.documentElement;
 root.dataset.theme = theme.id;
+root.dataset.art = 'green-v2';
+root.dataset.tight = innerHeight - device.top - device.bottom < 720 ? 'true' : 'false';
 root.dataset.device = device.id;
 root.dataset.screen = pageId;
-root.style.setProperty('--top', device.top + 'px');
-root.style.setProperty('--bottom', device.bottom + 'px');
+const safeTop = q.has('safeTop')
+  ? Math.max(0, Math.min(100, Number(q.get('safeTop')) || 0))
+  : device.top;
+const safeBottom = q.has('safeBottom')
+  ? Math.max(0, Math.min(60, Number(q.get('safeBottom')) || 0))
+  : device.bottom;
+root.style.setProperty('--top', safeTop + 'px');
+root.style.setProperty('--bottom', safeBottom + 'px');
+root.dataset.notch = q.get('notch') === 'none' ? 'none' : 'default';
+root.dataset.tight = innerHeight - safeTop - safeBottom < 720 ? 'true' : 'false';
 root.style.setProperty('--accent', theme.accent);
 root.style.setProperty('--bg', theme.bg);
 root.style.setProperty('--panel', theme.panel);
@@ -24,7 +35,7 @@ const icon = (name = 'spade') =>
   ({
     spade:
       '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2C8 7 3 9 3 14a5 5 0 0 0 8 4c0 2-1 3-3 4h8c-2-1-3-2-3-4a5 5 0 0 0 8-4c0-5-5-7-9-12Z"/></svg>',
-    gear: '⚙',
+    gear: '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" d="m10 3-.6 2.4-2 .9-2.2-.7-2 3.4 1.7 1.7v2.5L3.2 15l2 3.4 2.3-.7 1.9 1 .6 2.3h4l.6-2.3 2-1 2.2.7 2-3.4-1.7-1.8v-2.5L20.8 9l-2-3.4-2.2.7-2-.9L14 3Z"/><circle fill="none" stroke="currentColor" stroke-width="1.7" cx="12" cy="12" r="3.3"/></svg>',
     close: '×',
     back: '←',
   })[name] || '';
@@ -43,7 +54,7 @@ const platformChrome = () =>
     ? `<div class="platform-bar"><b>9:41</b><span>▰ ▰ ▰</span>${device.id === 'ios' ? '<i class="island"></i>' : ''}${device.id === 'wechat' ? '<div class="capsule">••• │ ◉</div>' : ''}</div>`
     : '';
 const header = () =>
-  `<header>${brand()}<div class="header-middle"><span class="dot"></span> ${theme.en}<span class="sep"></span>本地练习 · 虚拟筹码</div><nav>${btn('玩法指南', 'quiet', 'guide')}${btn('对局记录', 'quiet', 'records')}${btn('⚙ <span>设置</span>', 'quiet', 'settings')}</nav></header>`;
+  `<header>${brand()}<div class="header-middle"><span class="dot"></span> ${theme.en}<span class="sep"></span>本地练习 · 虚拟筹码</div><nav>${btn('玩法指南', 'quiet', 'guide')}${btn('对局记录', 'quiet', 'records')}${btn(icon('gear') + '<span>设置</span>', 'quiet', 'settings')}</nav></header>`;
 const sectionHead = (eyebrow, title, desc = '') =>
   `<div class="section-head"><span class="eyebrow">${eyebrow}</span><h1>${title}</h1>${desc ? `<p>${desc}</p>` : ''}</div>`;
 const field = (label, control, note = '') =>
@@ -130,10 +141,11 @@ function seats(n = 5, entry = false, emotions = false) {
 function table(n = 5, state = 'play') {
   const entry = state === 'entry',
     settled = ['showdown', 'champion', 'eliminated', 'history'].includes(state);
+  const preparing = ['entry', 'strong-hand', 'rebuy'].includes(state);
   const center = entry
     ? `<div class="entry-center"><span class="eyebrow">YOUR SEAT IS READY</span><h1>牌桌已就绪</h1><p>落座，专注这一手。</p>${btn('入座开练 <span>→</span>', 'primary', 'table5')}<small>无需登录 · 虚拟筹码</small></div>`
-    : `<div class="center-board"><div class="pot"><span>底池</span><strong>${state === 'rebuy' ? '0' : state === 'strong-hand' ? '300' : settled ? '4,800' : '2,400'}</strong>${btn('明细 ↗', 'quiet', 'pot')}</div>${['strong-hand', 'rebuy'].includes(state) ? `<div class="board preflop-board">${Array.from({ length: 5 }, back).join('')}</div>` : board()}<div class="table-caption">${state === 'rebuy' ? '下一手将重新发牌' : state === 'strong-hand' ? '尚未发出公共牌' : settled ? '最佳五张牌 · A 一对' : '五张公共牌 · 一场好决策'}</div><div class="pot-chips">${chip('500')}${chip('100', 'second')}${chip('500')}</div></div>`;
-  return `<div class="table-wrap"><div class="table-top"><span>${entry ? '等待入座' : '第 03 局 · 第 12 手'} <i>·</i> ${entry ? '准备发牌' : state === 'rebuy' ? '准备下一手' : state === 'strong-hand' ? '翻牌前' : settled ? '已结算' : '河牌'}</span><span>盲注 <b>100 / 200</b></span></div><div class="felt-area count-${n} state-${state}"><div class="ambient-orbit"></div><div class="rail"><div class="felt"><div class="felt-brand">${icon()}<span>NOIR POKER</span></div></div></div>${seats(n, entry, state === 'emotion')}${center}<div class="hero ${!entry && !settled ? 'your-turn' : ''}"><div class="hero-cards ${state === 'strong-hand' ? 'strong-start' : ''}">${entry || state === 'rebuy' ? back() + back() : card('A', '♥') + card('Q', '♠')}${
+    : `<div class="center-board ${state === 'showdown' ? 'hand-winner' : ''}"><div class="pot"><span>底池</span><strong>${state === 'rebuy' ? '0' : state === 'strong-hand' ? '300' : settled ? '4,800' : '2,400'}</strong>${btn('明细 ↗', 'quiet', 'pot')}</div>${['strong-hand', 'rebuy'].includes(state) ? `<div class="board preflop-board">${Array.from({ length: 5 }, back).join('')}</div>` : board()}<div class="table-caption">${state === 'rebuy' ? '下一手将重新发牌' : state === 'strong-hand' ? '尚未发出公共牌' : settled ? '最佳五张牌 · A 一对' : '五张公共牌 · 一场好决策'}</div>${preparing ? '' : `<div class="pot-chips">${chip('500')}${chip('100', 'second')}${chip('500')}${chip('100', 'fourth')}</div>`}</div>`;
+  return `<div class="table-wrap"><div class="table-top"><span>${entry ? '等待入座' : '第 03 局 · 第 12 手'} <i>·</i> ${entry ? '准备发牌' : state === 'rebuy' ? '准备下一手' : state === 'strong-hand' ? '翻牌前' : settled ? '已结算' : '河牌'}</span><span>盲注 <b>100 / 200</b></span></div><div class="felt-area count-${n} state-${state}"><div class="ambient-orbit"></div><div class="rail"><div class="felt"><div class="felt-brand">${icon()}<span>NOIR</span><small>POKER CLUB</small></div></div></div>${seats(n, entry, state === 'emotion')}${center}<div class="hero ${!entry && !settled ? 'your-turn' : ''}"><div class="hero-cards ${state === 'strong-hand' ? 'strong-start' : ''}">${entry || state === 'rebuy' ? back() + back() : card('A', '♥') + card('Q', '♠')}${
     state === 'strong-hand'
       ? `<div class="premium-sparks">${premiumSparks(12)
           .map((p) => `<i class="design-spark" style="${p.style}"></i>`)
@@ -148,7 +160,7 @@ function table(n = 5, state = 'play') {
   }</div>${entry ? `<div class="entry-stats"><div><span>起始筹码</span><b>20,000</b></div><div><span>盲注</span><b>100 / 200</b></div><div><span>牌桌</span><b>${n} 人无限注</b></div></div>` : state === 'history' ? `<div class="history-lock"><span>◈ 只读历史 · 2026-10-26 20:38 · 不影响当前牌局</span><div>${btn('查看本手复盘', 'primary', 'review')}${btn('返回对局记录', 'secondary', 'records')}</div></div>` : state === 'rebuy' ? `<div class="settlement-actions">${btn('继续下一手 →', 'primary', 'table5')}</div>` : settled ? `<div class="settlement-actions">${btn('查看复盘', 'primary', 'review')}${!['champion', 'eliminated'].includes(state) ? btn('再练这一手', 'secondary', 'table5') : ''}${btn(['champion', 'eliminated'].includes(state) ? '下一局 →' : '下一手 →', 'secondary', ['champion', 'eliminated'].includes(state) ? 'entry' : 'table5')}</div>` : actions()}</div>`;
 }
 function actions() {
-  return `<div class="action-area"><div class="turn-line"><span class="dot"></span><strong>轮到你行动</strong><span>需跟注 600</span>${btn('牌力表 ↗', 'quiet', 'rankings')}</div><div class="bet-control"><div class="bet-title"><span>加注至</span><strong>1,800</strong><span class="unit">筹码</span></div><input type="range" min="600" max="18800" value="1800" aria-label="加注至筹码"><div class="bet-presets">${['½ 底池', '⅔ 底池', '1 底池', '全下'].map((x) => btn(x, 'preset')).join('')}</div></div><div class="action-buttons">${btn('弃牌', 'fold')}${btn('跟注 <strong>600</strong>', 'call')}${btn('加注至 <strong>1,800</strong>', 'primary raise')}</div></div>`;
+  return `<div class="action-area"><div class="turn-line"><span class="dot"></span><strong>轮到你行动</strong><span>需跟注 600</span>${btn('牌力表 ↗', 'quiet', 'rankings')}</div><div class="bet-control"><div class="bet-title"><span>加注至</span><strong>1,800</strong><span class="unit">筹码</span></div><input type="range" min="600" max="18800" value="1800" aria-label="加注至筹码">${btn('尺度 ⌃', 'size-open')}<div class="bet-presets">${['½ 底池', '⅔ 底池', '1 底池', '全下'].map((x) => btn(x, 'preset')).join('') + btn('关闭', 'size-close')}</div></div><div class="action-buttons">${btn('弃牌', 'fold')}${btn('跟注 <strong>600</strong>', 'call')}${btn('加注至 <strong>1,800</strong>', 'primary raise')}</div></div>`;
 }
 const practice = () =>
   `<section class="practice"><div class="block-title"><h2>本局练习</h2>${btn('重新开局', 'quiet', 'reset')}</div><div class="session-value"><span>当前筹码</span><strong>18,800 <small>CHIPS</small></strong><b>−1,200</b></div><div class="metrics"><div><b>12</b><span>已完成</span></div><div><b>5</b><span>获胜手数</span></div><div><b>42%</b><span>胜率</span></div></div></section>`;
@@ -162,7 +174,9 @@ const activity = () =>
     .map(([s, t]) => `<div class="activity-row"><span>${s}</span><p>${t}</p></div>`)
     .join('')}<p class="note">根据行动时公开信息做判断。</p></section>`;
 function playScreen() {
-  const n = pageId.startsWith('table') ? Number(pageId.slice(5)) : 5;
+  const n = pageId.startsWith('table')
+    ? Number(pageId.slice(5))
+    : Math.min(9, Math.max(5, Number(q.get('count')) || 5));
   const state = pageId === 'entry' ? 'entry' : pageId;
   return `<div class="play-layout"><main class="table-main">${table(n, state)}${pageId === 'showdown' || pageId === 'history' ? showdown() : ''}${pageId === 'rebuy' ? rebuy() : ''}${pageId === 'strong-hand' ? alert('强起手牌提示', '只提示既有强牌分类，不代表当前必胜，也不改变机器人或复盘判断。') : ''}${
     pageId === 'emotion'
@@ -386,7 +400,7 @@ let body =
 document.querySelector('#app').innerHTML =
   platformChrome() +
   `<div class="app-content">${['launch', 'orientation'].includes(pageId) ? '' : header()}${body}</div>` +
-  (device.bottom ? '<div class="home-indicator"></div>' : '');
+  (safeBottom > 0 ? '<div class="home-indicator"></div>' : '');
 if (pageId === 'strong-hand') {
   document.querySelector('.turn-line').innerHTML =
     '<strong>发牌展示中</strong><span>完成后才开始行动</span>';
@@ -413,6 +427,8 @@ document.querySelectorAll('.preset').forEach(
     (el.onclick = () => {
       document.querySelectorAll('.preset').forEach((b) => b.classList.remove('selected'));
       el.classList.add('selected');
+      document.querySelector('.bet-presets')?.classList.remove('expanded');
+      document.querySelector('.size-open')?.setAttribute('aria-expanded', 'false');
     }),
 );
 document
@@ -425,6 +441,48 @@ if (search)
       el.hidden = !el.textContent.includes(search.value);
     });
 window.designReady = document.fonts.ready.then(() => {
+  installSceneLayout();
+  const stage = document.querySelector('.felt-area');
+  if (stage && ['strong-hand', 'rebuy', 'champion', 'eliminated'].includes(pageId)) {
+    stage
+      .querySelectorAll('.seat-action')
+      .forEach(
+        (el, i) =>
+          (el.textContent =
+            pageId === 'strong-hand'
+              ? i === 0
+                ? '小盲 100'
+                : i === 1
+                  ? '大盲 200'
+                  : '等待行动'
+              : pageId === 'rebuy'
+                ? '准备下一手'
+                : pageId === 'champion'
+                  ? '本局结束'
+                  : '已结算'),
+      );
+  }
+  const sizeTrigger = document.querySelector('.size-open');
+  const closeSizes = () => {
+    document.querySelector('.bet-presets')?.classList.remove('expanded');
+    sizeTrigger?.setAttribute('aria-expanded', 'false');
+  };
+  sizeTrigger?.setAttribute('aria-expanded', 'false');
+  sizeTrigger?.addEventListener('click', () => {
+    const panel = document.querySelector('.bet-presets');
+    panel.classList.toggle('expanded');
+    sizeTrigger.setAttribute('aria-expanded', panel.classList.contains('expanded'));
+  });
+  document.querySelector('.size-close')?.addEventListener('click', () => {
+    closeSizes();
+    sizeTrigger?.focus();
+  });
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') {
+      closeSizes();
+      sizeTrigger?.focus();
+    }
+  });
   document.body.dataset.ready = 'true';
   return true;
 });

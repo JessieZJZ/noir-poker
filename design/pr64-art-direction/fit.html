@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>NOIR Poker · 5–9人绿色牌室适配</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: #06150c;
+        color: #eef1da;
+        font:
+          14px 'PingFang SC',
+          sans-serif;
+      }
+      header {
+        padding: 32px 5vw;
+        border-bottom: 1px solid #9db98644;
+      }
+      h1 {
+        font-size: 30px;
+        font-weight: 500;
+        margin: 12px 0;
+      }
+      p {
+        color: #a7b99f;
+        line-height: 1.9;
+        max-width: 1000px;
+      }
+      a {
+        color: #b4e1a0;
+        text-decoration: none;
+      }
+      .wrap {
+        padding: 24px 5vw 60px;
+        max-width: 1900px;
+        margin: auto;
+      }
+      .filters {
+        display: flex;
+        gap: 18px;
+        align-items: center;
+        padding: 18px 0;
+        position: sticky;
+        top: 0;
+        background: #07180ff2;
+        z-index: 3;
+        flex-wrap: wrap;
+      }
+      select {
+        font: inherit;
+        color: #e9edcf;
+        border: 1px solid #8fa77066;
+        background: #193722;
+        padding: 12px;
+        border-radius: 6px;
+        min-height: 48px;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 15px;
+      }
+      .tile {
+        background: #0e2819;
+        border: 1px solid #b6bd8633;
+        border-radius: 11px;
+        overflow: hidden;
+      }
+      .tile h2 {
+        font-size: 15px;
+        font-weight: 500;
+        padding: 14px;
+        margin: 0;
+      }
+      .tile img {
+        display: block;
+        width: 100%;
+        height: auto;
+      }
+      .tile a {
+        display: block;
+        font-size: 12px;
+        padding: 14px;
+      }
+      .meta {
+        font-size: 12px;
+        color: #b4c49a;
+      }
+      footer {
+        margin-top: 26px;
+        color: #91a986;
+        font-size: 12px;
+        line-height: 1.9;
+      }
+      @media (max-width: 1000px) {
+        .grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+      }
+      @media (max-width: 540px) {
+        .grid {
+          grid-template-columns: 1fr;
+        }
+        .filters {
+          gap: 8px;
+        }
+        .filters select {
+          max-width: 100%;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <a href="./">← 返回三套方案</a>
+      <h1>同一套美术，5–9 人都要清楚。</h1>
+      <p>
+        逐一验证人数与尺寸，保留牌面、姓名、金额和48px主操作。长屏展示更多房间，短屏减少装饰和展开控件；桌面公共牌单排，手机按空间排3+2。
+      </p>
+    </header>
+    <div class="wrap">
+      <div class="filters">
+        <label
+          >方案
+          <select id="theme"></select></label
+        ><label
+          >尺寸
+          <select id="size"></select></label
+        ><span class="meta" id="meta"></span>
+      </div>
+      <div class="grid" id="grid"></div>
+      <footer>
+        图片均为浏览器原型的设计适配目标；App状态栏与微信胶囊为示意。机器检查覆盖3套×13尺寸×5人数=195种组合；UI/UX专业角色另按重点尺寸看图，范围见审阅记录。
+      </footer>
+    </div>
+    <script type="module">
+      import { themes } from './manifest.mjs';
+      const audit = await fetch('/output/responsive-audit.json').then((r) => r.json());
+      const $ = (s) => document.getElementById(s);
+      $('theme').innerHTML = themes
+        .map((t) => `<option value="${t.id}">${t.name}</option>`)
+        .join('');
+      $('size').innerHTML = audit.sizes
+        .map((d) => `<option value="${d.id}">${d.id} · ${d.w}×${d.h}</option>`)
+        .join('');
+      $('size').value = 'ios-393';
+      function update() {
+        const t = $('theme').value,
+          d = audit.sizes.find((s) => s.id === $('size').value);
+        $('meta').textContent = `系统预留顶部${d.top}px / 底部${d.bottom}px`;
+        const shots = [5, 6, 7, 8, 9];
+        $('grid').innerHTML = shots
+          .map((n) => {
+            const src = `/output/fit/${t}/${d.id}/table${n}.jpg`;
+            return `<article class="tile"><h2>${n} 人桌</h2><a style="padding:0" href="${src}" target="_blank"><img src="${src}" alt="${t} ${n}人 ${d.w}×${d.h}"></a><a href="${src}" target="_blank">查看原尺寸图 ↗</a></article>`;
+          })
+          .join('');
+      }
+      $('theme').onchange = update;
+      $('size').onchange = update;
+      update();
+    </script>
+  </body>
+</html>

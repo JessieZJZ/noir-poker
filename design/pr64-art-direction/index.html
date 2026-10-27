@@ -357,8 +357,8 @@
   <body>
     <header>
       <div>
-        <span class="eyebrow">NOIR POKER / ART DIRECTION / 2026.10.26</span>
-        <h1>同一张牌桌，三种沉浸方式。</h1>
+        <span class="eyebrow">NOIR POKER / ART DIRECTION / 2026.10.27</span>
+        <h1>绿色牌室，真正坐进游戏。</h1>
         <p>
           基于 PR #64
           的完整游戏美术候选稿。先比较三种气质，再按页面和设备查看最终候选视觉。每套方案均经过
@@ -366,16 +366,17 @@
         </p>
       </div>
       <div class="meta">
-        基线 aed7c68 · 34 个页面与状态<br />3 套方案 × 6 类设备 = 612 组效果图<br />设计候选稿 ·
-        尚未应用到生产游戏
+        基线 aed7c68 · 34 个页面与状态<br />3 套方案 × 6 类设备 = 612 组逐页效果图 + 195
+        组人数适配图<br />设计候选稿 · 尚未应用到生产游戏
       </div>
     </header>
     <div class="wrap">
       <div class="directions" id="directions"></div>
       <div class="links">
+        <a href="./fit.html">5–9人 × 13尺寸适配原图 ↗</a>
         <a href="/output/方案说明与还原规范.md">完整方案与跨端还原规范 ↗</a
-        ><a href="/output/reviews/ui-review-2.md">UI 终轮复核 ↗</a
-        ><a href="/output/reviews/ux-review-2.md">UX 终轮复核 ↗</a
+        ><a href="/output/reviews/ui-green-v2-review-2.md">UI 终轮复核 ↗</a
+        ><a href="/output/reviews/ux-green-v2-review-2.md">UX 终轮复核 ↗</a
         ><a href="/output/render-audit.json">逐图渲染核验 ↗</a>
       </div>
       <div class="note">
@@ -512,7 +513,7 @@
       byId('videos').innerHTML = themes
         .map(
           (t) =>
-            `<article class="video-card"><h3>${t.name}</h3><p>桌面 · 32 秒 · 原版配乐 / 筹码声</p><video controls preload="metadata" poster="/output/screens/${t.id}/desktop/table9.webp" src="/output/videos/${t.id}-desktop.mp4"></video><p>iOS 尺寸 · 安全区目标示意</p><video class="phones" controls preload="metadata" poster="/output/screens/${t.id}/ios/table9.webp" src="/output/videos/${t.id}-ios.mp4"></video><p>关闭声音或减少动态的还原规则见规范。</p></article>`,
+            `<article class="video-card"><h3>${t.name}</h3><p>桌面 · 36 秒 · 原版配乐 / 筹码声</p><video controls preload="metadata" poster="/output/screens/${t.id}/desktop/table9.webp" src="/output/videos/${t.id}-desktop.mp4"></video><p>iOS 尺寸 · 安全区目标示意</p><video class="phones" controls preload="metadata" poster="/output/screens/${t.id}/ios/table9.webp" src="/output/videos/${t.id}-ios.mp4"></video><p>关闭声音或减少动态的还原规则见规范。</p></article>`,
         )
         .join('');
       ['theme', 'device', 'screen'].forEach((id) => (byId(id).onchange = update));

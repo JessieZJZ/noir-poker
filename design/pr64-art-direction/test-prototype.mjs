@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFile, writeFile, stat } from 'node:fs/promises';
 import { chromium } from '@playwright/test';
 import { themes, devices, screens } from './manifest.mjs';
-const root = '.artifacts/art-direction-pr64';
+const root = '.artifacts/art-direction-pr64/green-v2';
 const browser = await chromium.launch();
 const page = await browser.newPage();
 const checks = [];
