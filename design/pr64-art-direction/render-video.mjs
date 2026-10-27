@@ -1039,6 +1039,7 @@ const reusedCaptureKeys = new Set(),
 if (args.has('--reuse-correct') && !args.has('--keyframes') && !args.has('--preview')) {
   const previous = JSON.parse(await readFile(path.join(out, 'media-audit.json'), 'utf8'));
   if (
+    previous.engineSha256 !== sha(await readFile('src/engine/poker.js')) ||
     previous.sourceFingerprints.length !== sourceFingerprints.length ||
     sourceFingerprints.some(
       (source) =>
@@ -1046,7 +1047,7 @@ if (args.has('--reuse-correct') && !args.has('--keyframes') && !args.has('--prev
         source.sha256,
     )
   )
-    throw Error('Cannot reuse a capture with different scene source fingerprints');
+    throw Error('Cannot reuse a capture with different scene or engine source fingerprints');
   for (const record of previous.recordings.filter(
     (record) =>
       !record.kind &&
