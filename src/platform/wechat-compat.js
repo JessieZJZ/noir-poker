@@ -30,6 +30,10 @@ define(Array.prototype, 'flatMap', function flatMap(mapper, receiver) {
   }
   return output;
 });
+define(String.prototype, 'replaceAll', function replaceAll(search, replacement) {
+  if (search instanceof RegExp) return this.replace(search, replacement);
+  return String(this).split(String(search)).join(String(replacement));
+});
 define(Object, 'hasOwn', (object, property) =>
   Object.prototype.hasOwnProperty.call(object, property),
 );

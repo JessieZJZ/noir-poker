@@ -1,16 +1,18 @@
 import { analyzeDecision, summarizeReview } from '../review/analysis.js';
 self.onmessage = (event) => {
-  const { id, input } = event.data;
+  const { id, input, completed = [] } = event.data;
   try {
-    const steps = [];
-    for (const decision of input.decisions) {
-      steps.push(analyzeDecision(decision));
+    const steps = [...completed];
+    for (let index = 0; index < input.decisions.length; index++) {
+      if (steps[index]) continue;
+      steps[index] = analyzeDecision(input.decisions[index]);
       self.postMessage({
         id,
         type: 'progress',
-        done: steps.length,
+        done: steps.filter(Boolean).length,
+        index,
         total: input.decisions.length,
-        result: steps.at(-1),
+        result: steps[index],
       });
     }
     self.postMessage({ id, type: 'complete', analysis: summarizeReview(input, steps) });

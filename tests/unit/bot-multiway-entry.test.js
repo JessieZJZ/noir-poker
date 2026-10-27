@@ -38,7 +38,7 @@ test('a priced late overcall uses a bounded entry range instead of requiring all
 });
 
 test('large single opens and all-ins do not inherit the cheap entry exemption', () => {
-  for (const size of [6, 16.5, 40]) {
+  for (const size of [8.5, 16.5, 40]) {
     const d = botDecision(buttonIsolation('As Qc', size), allInRandom(17));
     assert.equal(d.trace.affordableOpen, false);
     assert.equal(d.trace.affordableRangePassed, false);
@@ -96,7 +96,7 @@ test('AK usually defends the reconstructed 46 BB open shove without making 88 a 
     const pair = botDecision(lateColdShove('8s 8c', 7), allInRandom(seed));
     if (ak.action === 'call') akCalls++;
     if (pair.action === 'fold') pairFolds++;
-    assert.equal(ak.trace.trials, 256);
+    assert.equal(ak.trace.trials, 512);
   }
   assert.ok(akCalls > 16, `AK continued ${akCalls}/32`);
   assert.ok(pairFolds > 0, '88 still has a price-sensitive fold branch');

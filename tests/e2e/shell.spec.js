@@ -9,10 +9,12 @@ test.beforeEach(async ({ page }) => {
   });
 });
 
-test('one header settings control replaces table options and the footer follows all page content', async ({
+test('settings stay on the right and practice reset belongs to the session heading', async ({
   page,
 }) => {
-  await expect(page.locator('.table-heading, #table-tag, .table-settings')).toHaveCount(0);
+  await expect(
+    page.locator('.table-heading, #table-tag, .game-surface .table-settings'),
+  ).toHaveCount(0);
   await expect(
     page.locator(
       '.surface-top #difficulty, .surface-top #player-count, .surface-top #opponents-button',
@@ -22,12 +24,12 @@ test('one header settings control replaces table options and the footer follows 
   await expect(page.locator('.header-actions button:visible')).toHaveCount(2);
   await expect(page.locator('#opponents-dialog #difficulty')).toHaveCount(1);
   await expect(page.locator('#opponents-dialog #player-count')).toHaveCount(1);
-  // The native platform appends this same button to the footer.
+  // The native platform appends this same button to the compliance footer.
   await page.evaluate(() => {
     const button = document.createElement('button');
     button.id = 'native-about-button';
     button.textContent = '关于与隐私';
-    document.querySelector('.table-footer').append(button);
+    document.querySelector('.compliance-footer').append(button);
   });
   for (const width of [320, 390, 768, 1280, 1700]) {
     await page.setViewportSize({ width, height: 900 });
@@ -44,25 +46,48 @@ test('one header settings control replaces table options and the footer follows 
             blinds = box('.blind-info'),
             settings = box('#opponents-button'),
             rules = box('#rules-button'),
-            footer = box('.site-footer'),
-            status = box('.practice-info > span'),
+            footer = box('.compliance-footer'),
+            title = box('.session-card h2'),
             reset = box('#reset-button'),
             about = box('#native-about-button');
           const middle = (r) => (r.top + r.bottom) / 2;
+          const middleX = (r) => (r.left + r.right) / 2;
           return {
             blindsOnRight: blinds.left > hand.right,
             blindsAligned: Math.abs(middle(hand) - middle(blinds)) < 1,
-            settingsBeforeRules: settings.right <= rules.left,
+            settingsAfterRules: rules.right <= settings.left,
             settingsAligned: Math.abs(middle(settings) - middle(rules)) < 1,
-            settingsFit: settings.left >= 0 && settings.height >= 44 && rules.right <= innerWidth,
+            settingsFit: rules.left >= 0 && settings.height >= 44 && settings.right <= innerWidth,
             footerAtEnd: document.querySelector('.main').lastElementChild.matches('.site-footer'),
             footerAfterContent:
               footer.top >= Math.max(box('.game-column').bottom, box('.sidebar').bottom),
-            resetAdjacent:
-              Math.abs(middle(status) - middle(reset)) < 1 &&
-              reset.left - status.right >= 8 &&
-              reset.left - status.right <= 12,
+            resetInHeading:
+              document
+                .querySelector('.session-card .section-title')
+                .contains(document.querySelector('#reset-button')) &&
+              Math.abs(middle(title) - middle(reset)) < 1 &&
+              reset.left - title.right >= 8 &&
+              reset.height === 32,
+            oldFooterRemoved: !document.querySelector('.practice-info'),
             buttonsFit: [reset, about].every((r) => r.left >= 0 && r.right <= innerWidth),
+            // About & privacy is centred under the compliance line, in its type.
+            aboutUnderCompliance: (() => {
+              const line = document.querySelector('.compliance-footer');
+              const range = document.createRange();
+              range.selectNodeContents(line.firstChild);
+              const text = range.getBoundingClientRect();
+              const button = document.querySelector('#native-about-button');
+              const own = getComputedStyle(button),
+                inherited = getComputedStyle(line);
+              return (
+                about.top >= text.bottom &&
+                Math.abs(middleX(about) - middleX(text)) < 1 &&
+                ['fontSize', 'color', 'letterSpacing', 'fontWeight'].every(
+                  (key) => own[key] === inherited[key],
+                ) &&
+                own.backgroundColor === 'rgba(0, 0, 0, 0)'
+              );
+            })(),
             noOverflow: document.documentElement.scrollWidth <= innerWidth,
           };
         });
@@ -91,7 +116,8 @@ test('mobile settings fill the screen, use accessible switches and return focus 
     await page.setViewportSize(size);
     await page.locator('#opponents-button').click();
     await expect(page.locator('#opponents-title')).toHaveText('设置');
-    await expect(page.getByRole('switch', { name: '音效与音乐', exact: true })).toBeChecked();
+    await expect(page.getByRole('switch', { name: '音效', exact: true })).toBeChecked();
+    await expect(page.getByRole('switch', { name: '背景音乐', exact: true })).toBeChecked();
     await expect(page.getByRole('switch', { name: '振动', exact: true })).toBeChecked();
     await expect(page.getByRole('switch', { name: '牌桌提示', exact: true })).toBeChecked();
     const layout = await page.locator('#opponents-dialog').evaluate((el) => {
@@ -133,12 +159,12 @@ test('combined settings immediately save preferences without changing the curren
   expect(
     await page.evaluate(() => JSON.parse(localStorage.getItem('noir-table-v1')).difficulty),
   ).toBe('hard');
-  await page.locator('[data-bot-seat="1"]').selectOption('viktor');
+  await page.locator('[data-bot-seat="1"]').selectOption('rook');
   await page.locator('#emotion-mode').selectOption('lively');
   await page.locator('#opponents-dialog .close-dialog').click();
   await page.locator('#opponents-button').click();
   await expect(page.getByLabel('进阶', { exact: true })).toBeChecked();
-  await expect(page.locator('[data-bot-seat="1"]')).toHaveValue('viktor');
+  await expect(page.locator('[data-bot-seat="1"]')).toHaveValue('rook');
   await expect(page.locator('#emotion-mode')).toHaveValue('lively');
   await page.getByLabel('进阶', { exact: true }).focus();
   await page.keyboard.press('ArrowLeft');
@@ -151,7 +177,7 @@ test('combined settings immediately save preferences without changing the curren
   await page.waitForFunction(() => !!window.qa);
   await page.locator('#opponents-button').click();
   await expect(page.getByLabel('标准', { exact: true })).toBeChecked();
-  await expect(page.locator('[data-bot-seat="1"]')).toHaveValue('viktor');
+  await expect(page.locator('[data-bot-seat="1"]')).toHaveValue('rook');
   await expect(page.locator('#save-opponents')).toHaveCount(0);
 });
 
@@ -210,7 +236,7 @@ test('desktop actions keep one-line labels and aligned button rows before and af
   }
 });
 
-test('retry explanation stays aligned directly under the hand header and the desktop columns end together', async ({
+test('a retry shows no explanation strip, the hint takes its row and practice details follow the table', async ({
   page,
 }) => {
   for (const width of [1101, 1280, 1700]) {
@@ -218,13 +244,15 @@ test('retry explanation stays aligned directly under the hand header and the des
     await page.evaluate(() => window.qa.foldWin(9));
     await page.locator('#restart-hand-button').click();
     await page.evaluate(() => window.qa.stop());
-    await expect(page.locator('#replay-note')).toBeVisible();
+    // The retry is named by the hand label's tag; no explanation strip remains.
+    await expect(page.locator('#replay-note')).toHaveCount(0);
+    await expect(page.locator('#replay-label')).toBeVisible();
     await expect
       .poll(() =>
         page.evaluate(() => {
           const box = (selector) => document.querySelector(selector).getBoundingClientRect();
           const hand = box('.hand-label'),
-            note = box('#replay-note'),
+            hint = box('#coach-content'),
             table = box('.table-viewport');
           const header = document.querySelector('.surface-top'),
             sidebar = box('.sidebar'),
@@ -232,25 +260,26 @@ test('retry explanation stays aligned directly under the hand header and the des
           const surface = box('.game-surface');
           const activity = document.querySelector('#activity-list');
           const issues = [];
-          if (!header.contains(document.querySelector('#replay-note')))
-            issues.push('retry note is outside header');
-          if (note.top < hand.bottom || note.top - hand.bottom > 34)
-            issues.push('retry note is far below the hand');
-          if (Math.abs(note.left - hand.left) > 1)
-            issues.push('retry note is not aligned with the hand');
-          if (note.bottom > table.top) issues.push('retry note covers the table');
-          if (Math.abs(surface.bottom - sidebar.bottom) > 2)
-            issues.push('desktop columns end at different heights');
+          // The hint row below the hand label spans the whole header width.
+          const pad = getComputedStyle(header);
+          const row =
+            header.getBoundingClientRect().width -
+            parseFloat(pad.paddingLeft) -
+            parseFloat(pad.paddingRight);
+          if (hint.width && Math.abs(hint.width - row) > 1)
+            issues.push('hint does not take the full header row');
+          if (hint.width && hint.top < hand.bottom) issues.push('hint overlaps the hand label');
+          if (hint.bottom > table.top) issues.push('hint covers the table');
+          if (sidebar.top < surface.bottom || sidebar.top - surface.bottom > 20)
+            issues.push('practice details must immediately follow the table');
           if (
-            footer.top < Math.max(surface.bottom, sidebar.bottom) ||
-            footer.top - Math.max(surface.bottom, sidebar.bottom) > 32
+            Math.abs(sidebar.left - surface.left) > 1 ||
+            Math.abs(sidebar.width - surface.width) > 1
           )
-            issues.push('extra blank strip before footer');
-          if (
-            !['auto', 'scroll'].includes(getComputedStyle(activity).overflowY) ||
-            activity.clientHeight <= 0
-          )
-            issues.push('activity timeline has no usable independent scroll area');
+            issues.push('practice details must share the table width');
+          if (footer.height !== 0) issues.push('empty Web footer must not occupy space');
+          if (getComputedStyle(activity).overflowY !== 'visible' || activity.clientHeight <= 0)
+            issues.push('activity timeline must expand with its contents');
           return issues;
         }),
       )

@@ -10,6 +10,9 @@ import {
   aceFourPreflopReview,
 } from '../fixtures/bottom-pair-review.js';
 import { deckOfCards } from '../../src/engine/poker.js';
+import { seatAtTable } from './seat.mjs';
+import { getBotProfile } from '../../src/engine/bot-profiles.js';
+import { phase3CheckSpot } from '../fixtures/review-phase3.js';
 import {
   causalReraiseGame,
   heroValueGame,
@@ -21,11 +24,16 @@ import {
   turnStraightCallRecord,
   suitedBroadwayFiveBetFold,
   pocketNinesCheckedBoard,
+  reportedKeyInfoCall,
+  reportedGutshotCall,
+  reportedLowConnectorCall,
+  reportedFivesAllIn,
 } from '../fixtures/review-summary.js';
 const root = new URL('../../', import.meta.url).pathname;
 const require = createRequire(path.join(root, '.artifacts/wechat-tools/package.json'));
 const automator = require('miniprogram-automator');
 const output = path.resolve(process.argv[3] || path.join(root, '.artifacts/wechat-review'));
+const assignedProfileName = getBotProfile('rook').name;
 fs.mkdirSync(output, { recursive: true });
 const report = {
   status: 'running',
@@ -45,8 +53,7 @@ mini.connection.send = async (method, params) => {
     throw error;
   }
 };
-await mini.reLaunch('/pages/table/table');
-const page = await mini.currentPage();
+let page;
 const stage = (name) => {
   report.stage = name;
   console.log('[wechat-review]', name);
@@ -84,9 +91,21 @@ let savedBotDecisions;
 let savedHistory;
 let savedLogs;
 try {
+  stage('initial-page-ready');
+  const initialDeadline = Date.now() + 45000;
+  // CLI auto can expose its socket before the first page is registered.
+  // reLaunch reads that page's metadata, so require a real controller first.
+  // An earlier suite may leave another page on top; any registered page is
+  // enough before relaunching the table.
+  while (!(await mini.evaluate(() => getCurrentPages().length > 0))) {
+    if (Date.now() >= initialDeadline) throw Error('Initial table controller did not become ready');
+    await new Promise((resolve) => setTimeout(resolve, 100));
+  }
+  await mini.reLaunch('/pages/table/table');
+  page = await mini.currentPage();
   report.build = JSON.parse(fs.readFileSync(path.join(root, '.artifacts/wechat/build-info.json')));
-  assert.equal((await page.data()).noticeExpanded, true);
-  assert.equal((await page.data()).guideExpanded[1], true);
+  assert.equal((await page.data()).guideExpanded[2], true);
+  page = await seatAtTable(mini);
   await invoke('closeReview');
   // Settings apply to the next hand; never try to replace an active deal.
   while (!(await page.data()).done) {
@@ -102,7 +121,7 @@ try {
   const profiles = (await page.data()).profiles;
   await invoke('changeSeat', {
     currentTarget: { dataset: { id: 1 } },
-    detail: { value: profiles.findIndex((p) => p.id === 'tan') },
+    detail: { value: profiles.findIndex((p) => p.id === 'rook') },
   });
   await invoke('nextHand');
   const start = Date.now();
@@ -123,7 +142,11 @@ try {
   await tap('[data-value="opponent"]');
   await wait((data) => data.reviewPerspective === 'opponent' && data.selectedReviewStep?.reason);
   let data = await page.data();
-  assert.ok(data.opponentOptions.some((name) => /Mia.*Tan Xuan/.test(name)));
+  assert.ok(
+    data.opponentOptions.some(
+      (name) => name.startsWith('Mia') && name.includes(assignedProfileName),
+    ),
+  );
   report.checks.push({ name: 'real-assigned-player-name', options: data.opponentOptions });
   for (const index of [
     ...new Set([0, Math.floor(data.reviewSteps.length / 2), data.reviewSteps.length - 1]),
@@ -141,7 +164,11 @@ try {
   }
   await tap('#select-opponent');
   await wait((data) => data.selection?.field === 'opponent');
-  assert.ok((await page.data()).selection.options.some((name) => /Mia.*Tan Xuan/.test(name)));
+  assert.ok(
+    (await page.data()).selection.options.some(
+      (name) => name.startsWith('Mia') && name.includes(assignedProfileName),
+    ),
+  );
   await capture('assigned-player-options');
   await invoke('closeSelect');
   await invoke('changeOpponentFilter', { detail: { value: '1' } });
@@ -299,6 +326,36 @@ try {
   );
   await capture('practice-focus-and-evidence-style');
 
+  await fixture('clear-call-information-and-suited-ace', reportedKeyInfoCall(), (step) => {
+    assert.match(step.evidence.join(''), /跟注前底池 460K.*底池赔率约 3.29:1/);
+    assert.match(step.evidence.join(''), /23.3% 的胜率，风险和收益才能持平/);
+    assert.match(step.reason, /你若再加注.*你若只跟注/);
+    assert.match(step.reason, /坚果同花听牌.*击中 A.*较弱 Ax/);
+    assert.doesNotMatch(step.reason + step.evidence.join(''), /；/);
+  });
+  await fixture('gutshot-label-and-reason-agree', reportedGutshotCall(), (step) => {
+    assert.equal(step.keep, false);
+    assert.equal(step.label, '需要比较');
+    assert.match(step.reason, /这手需要比较跟注与弃牌/);
+    assert.doesNotMatch(step.reason, /这手建议跟注|；/);
+  });
+  await fixture('reported-low-connector', reportedLowConnectorCall(), (step) => {
+    assert.match(
+      step.reason,
+      /同花连接牌.*37.0%.*点数仍偏低.*更高同花.*他们若仍有加注权并再次加注.*建议弃牌/,
+    );
+    assert.doesNotMatch(step.reason, /被强 A.*压制|；/);
+  });
+  await fixture('reported-fives-all-in', reportedFivesAllIn(), (step) => {
+    assert.equal(step.label, '值得保留');
+    assert.match(step.reason, /全下跟注.*27.0%.*看完剩余公共牌.*值得保留的依据/);
+    assert.doesNotMatch(step.reason, /还留.*0|你在翻后有位置|你需要重新决定/);
+    const own = step.commentary.filter((part) => part.text).at(-1).text;
+    assert.equal((own.match(/1.62M/g) || []).length, 1);
+    const matchup = step.commentary.find((part) => part.matchups).matchups;
+    assert.equal(matchup.title, '当前牌面');
+    assert.equal(matchup.strengthTitle, '当前牌力');
+  });
   await fixture('summary-turn-bluff', turnBluffReview(), (step) => {
     assert.match(step.reason, /尝试诈唬.*更好的牌弃掉/);
     assert.doesNotMatch(step.reason, /不能只按成牌标签|此前在翻牌前|相同牌力/);
@@ -321,7 +378,7 @@ try {
   await tap('[data-value="opponent"]');
   await wait((data) => data.reviewPerspective === 'opponent' && data.selectedReviewStep?.reason);
   const straightCall = (await page.data()).selectedReviewStep;
-  assert.match(straightCall.reason, /选择跟注 6.3K，目的不是只靠高牌摊牌，而是在追两头顺听牌/);
+  assert.match(straightCall.reason, /选择跟注 6.3K，当前主要依靠听牌改善争取获胜/);
   assert.match(straightCall.reason, /8 张牌可能补成顺子/);
   assert.doesNotMatch(straightCall.reason, /补成顺子[／或]同花|相同牌力/);
   report.checks.push({ name: 'summary-straight-call', selected: straightCall });
@@ -344,7 +401,7 @@ try {
     assert.deepEqual(section.rangeNotes, []);
     assert.match(step.reason, /Luna在 UTG\+1 位开池到 4K/);
     assert.deepEqual(section.rangeNotes, []);
-    assert.match(step.reason, /Jade在 LJ 位跟住了这笔加注/);
+    assert.match(step.reason, /Jade在 LJ 位跟注了这笔加注/);
     assert.doesNotMatch(step.reason, /结构上较|不代表获胜概率|依据当时记录|旧记录/);
   });
   await fixture('reported-bottom-pair', bottomPairReview(), (step) => {
@@ -424,8 +481,8 @@ try {
   assert.match(responses, /River.*950/);
   assert.match(responses, /Luna.*800/);
   assert.equal(hero.publicResponses, undefined);
-  assert.equal((await page.data()).reviewActivityOpen, false);
-  await invoke('toggleReviewActivity');
+  // The hand activity opens by default.
+  assert.equal((await page.data()).reviewActivityOpen, true);
   assert.ok((await page.data()).reviewActivity.some((event) => event.emphasized && event.current));
   const currentActivity = await painted('.review-activity-current');
   assert.match(await currentActivity.style('background-color'), /102,\s*203,\s*177/);
@@ -520,6 +577,70 @@ try {
     });
     await capture('common-hero-' + kind);
   }
+  await invoke('closeReview');
+  const underpair = turnStraightCallRecord();
+  underpair.action = 'fold';
+  underpair.amount = 0;
+  underpair.trace.reason = 'outside-range';
+  underpair.trace.view.hole = cards('5c 5s');
+  underpair.trace.view.board = cards('Ad Kc 7h 2s');
+  await mini.evaluate((record) => {
+    getCurrentPages().at(-1)._controller.getGame().botDecisions = [record];
+  }, underpair);
+  await invoke('openReview');
+  await wait((data) => !data.reviewData.loading);
+  await tap('[data-value="opponent"]');
+  await wait((data) => data.reviewPerspective === 'opponent' && data.selectedReviewStep?.reason);
+  const noun = (await page.data()).selectedReviewStep.reason;
+  assert.match(noun, /口袋 5，公共牌有更高点数/);
+  assert.doesNotMatch(noun, /用口袋 5，公共牌/);
+  report.checks.push({ name: 'underpair-noun-and-full-board-description', reason: noun });
+  await capture('underpair-clear-noun');
+  for (const [name, record, verify] of [
+    [
+      'phase3-set-three-flush',
+      phase3CheckSpot().record,
+      (reason) => {
+        assert.match(reason, /三张同花色.*两张该花色.*组成同花/);
+        assert.match(reason, /葫芦或四条/);
+        assert.match(reason, /免费见到下一张/);
+      },
+    ],
+    [
+      'phase3-trips-block-quads',
+      phase3CheckSpot('8c Kh', '5h 8h 8d 6s Qd', { reason: 'free-check' }).record,
+      (reason) => {
+        assert.match(reason, /仍可能组成葫芦/);
+        assert.doesNotMatch(reason, /可能组成葫芦或四条|下一张/);
+      },
+    ],
+  ]) {
+    await invoke('closeReview');
+    await mini.evaluate((record) => {
+      getCurrentPages().at(-1)._controller.getGame().botDecisions = [record];
+    }, record);
+    await invoke('openReview');
+    await wait((data) => !data.reviewData.loading);
+    await tap('[data-value="opponent"]');
+    await wait((data) => data.reviewPerspective === 'opponent' && data.selectedReviewStep?.reason);
+    const selected = (await page.data()).selectedReviewStep;
+    verify(selected.reason);
+    assert.doesNotMatch(selected.reason, /；/);
+    report.checks.push({ name, scope: 'external public-snapshot display probe', selected });
+    await capture(name);
+  }
+  await invoke('closeReview');
+  await invoke('showGuide', 'review-glossary');
+  const glossary = await painted('#review-glossary');
+  assert.equal((await page.$$('#review-glossary .guide-b')).length, 29);
+  const glossaryText = await glossary.text();
+  assert.match(glossaryText, /底池赔率／保本胜率/);
+  assert.match(glossaryText, /全下只会结束自己的下注选择/);
+  assert.match(glossaryText, /主动权／范围优势/);
+  assert.match(glossaryText, /胜率／权益／弃牌权益/);
+  report.checks.push({ name: 'guide-review-glossary', entries: 29 });
+  await capture('guide-review-glossary');
+  await invoke('closeGuide');
   assert.equal(report.exceptions.length, 0);
   report.status = 'passed';
 } catch (error) {

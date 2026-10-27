@@ -192,7 +192,7 @@ export function pocketTensRecords() {
   };
   const trace = {
     view,
-    profile: 'peter',
+    profile: 'jett',
     reason: 'value-raise',
     exceptions: [],
     equity: view.equity,

@@ -180,8 +180,8 @@ test('Chinese, Korean and long locale persona tags keep the same height without 
   ]) {
     await prepare(page, size);
     await page.locator('#opponents-button').click();
-    await page.locator('[data-bot-seat="3"]').selectOption('viktor');
-    await page.locator('[data-bot-seat="4"]').selectOption('haxton');
+    await page.locator('[data-bot-seat="3"]').selectOption('rook');
+    await page.locator('[data-bot-seat="4"]').selectOption('owen');
     await closeSettings(page);
     await page.evaluate(() => window.qa.heroTurn(9));
     const read = () =>
@@ -486,7 +486,7 @@ test('an empty hero rank moves the identity close to the cards without changing 
       measurements.at(-1).historicalEmpty = archivedEmpty;
       if (size.width === 390 && count === 9)
         await page.screenshot({ path: test.info().outputPath('close-history-identity-390-9.png') });
-      await page.locator('#records-back-button').click();
+      await backToGame(page);
     }
   }
   await writeFile(
@@ -494,3 +494,8 @@ test('an empty hero rank moves the identity close to the cards without changing 
     JSON.stringify(measurements, null, 2),
   );
 });
+
+// Records rely on system Back: unwind the detail and list pages to the game.
+async function backToGame(page) {
+  while (/#records/.test(page.url())) await page.goBack();
+}

@@ -12,6 +12,7 @@ import {
   restartHand,
   botDecision,
   deckOfCards,
+  rebuyHero,
 } from '../../src/engine/poker.js';
 import {
   DEFAULT_STAKES,
@@ -190,6 +191,8 @@ test('configuration is copied, validates before mutation, and rebuy uses configu
   ])
     assert.throws(() => validateStakes({ ...DEFAULT_STAKES, ...invalid }));
   g.players[0].stack = 0;
+  assert.throws(() => startHand(g), /补充筹码/);
+  rebuyHero(g);
   startHand(g);
   assert.equal(g.stats.buyin, 40000);
   assert.equal(g.players[0].stack, 20000);
@@ -231,6 +234,7 @@ test('stakes changes immediately rebuild Web engine and WeChat session, rejectin
     unschedule: (id) => jobs.delete(id),
   });
   c.start();
+  c.join();
   const old = c.getGame();
   assert.deepEqual(old.stakes, DEFAULT_STAKES);
   while (old.phase === 'playing') act(old, old.actor, 'fold');

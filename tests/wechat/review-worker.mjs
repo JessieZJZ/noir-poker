@@ -4,13 +4,14 @@ import { createRequire } from 'node:module';
 import { mkdir, writeFile } from 'node:fs/promises';
 import assert from 'node:assert/strict';
 import path from 'node:path';
+import { seatAtTable } from './seat.mjs';
 const root = new URL('../../', import.meta.url).pathname;
 const require = createRequire(path.join(root, '.artifacts/wechat-tools/package.json'));
 const mini = await require('miniprogram-automator').connect({ wsEndpoint: process.argv[2] });
 const output = path.resolve(process.argv[3] || '.artifacts/wechat-review-worker');
 await mkdir(output, { recursive: true });
 const report = { status: 'running', platform: 'WeChat DevTools simulator' };
-const page = await mini.currentPage();
+const page = await seatAtTable(mini, { finished: true });
 try {
   assert.equal((await page.data()).done, true, 'Probe needs a completed real hand');
   await mini.evaluate(() => {
@@ -92,8 +93,8 @@ try {
       open: p.data.reviewOpen,
     };
   });
-  assert.equal(report.cancellation.created, 2);
-  assert.equal(report.cancellation.terminated, 2);
+  assert.equal(report.cancellation.created, 1, 'Reopening a cached review creates no new worker');
+  assert.equal(report.cancellation.terminated, 1);
   assert.equal(report.cancellation.open, false);
   assert.ok(report.cancellation.cancelMs < 1000);
   report.status = 'passed';

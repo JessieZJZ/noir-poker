@@ -60,63 +60,61 @@ function view(overrides = {}) {
 }
 const decide = (id, v, random = () => 0.3) =>
   chooseBotAction(v, get(id), freshBotMood(), 'off', random);
-test('all sixteen named profiles have dated, claim-linked evidence and local attributed portraits', () => {
+test('all original characters have distinct names, complete strategy descriptions and local illustrations', () => {
   const named = BOT_PROFILES.filter((p) => p.id !== 'balanced');
-  assert.equal(named.length, 16);
-  assert.equal(new Set(named.map((p) => p.id)).size, named.length);
-  for (const p of named) {
-    assert.equal(p.research.reviewedAt, '2026-10-11');
-    assert.ok(p.research.identity && p.research.limits && p.research.adaptation.length >= 2);
-    assert.ok(p.sources.length >= 2);
-    for (const claim of [...p.research.career, ...p.research.observations]) {
-      assert.ok(claim.sourceIds.length);
-      assert.ok(claim.sourceIds.every((id) => p.sources.some((s) => s.id === id)));
-    }
-    assert.ok(p.sources.every((s) => /^https:\/\//.test(s.url) && s.kind && s.context));
-    assert.ok(PROFILE_PORTRAITS[p.id]?.src.startsWith('/portraits/'));
+  assert.equal(named.length, 7);
+  assert.equal(new Set(named.map((p) => p.short)).size, 7);
+  for (const p of BOT_PROFILES) {
+    assert.equal(p.sources.length, 0);
+    assert.equal(p.research, undefined);
+    assert.equal(p.character.sections.length, 5);
+    assert.deepEqual(
+      p.character.sections.map((s) => s.title),
+      ['入池选择', '翻牌与转牌', '河牌取舍', '特色操作', '应对思路'],
+    );
+    assert.ok(
+      p.character.sections.every(
+        (s) => s.paragraphs.length && s.paragraphs.every((t) => t.length > 20),
+      ),
+    );
+    if (p.id !== 'balanced') assert.ok(PROFILE_PORTRAITS[p.id].src.startsWith('/portraits/'));
     assert.equal(sanitizeBotSettings({ assignments: { 1: p.id } }).assignments[1], p.id);
   }
-  assert.match(get('negreanu').research.limits, /历史/);
-  assert.match(get('abao').research.limits, /媒体复述/);
-  assert.match(get('peter').research.limits, /附加规则/);
 });
-test('research rendering escapes claims and provides citations without presenting controls as career statistics', () => {
-  const p = structuredClone(get('ivey'));
-  p.research.identity = '<script>untrusted</script>';
+test('character rendering escapes content and contains no biographies, credits or source links', () => {
+  const p = structuredClone(get('owen'));
+  p.character.sections[0].paragraphs[0] = '<script>untrusted</script>';
   const html = playerResearchMarkup(p);
   assert.ok(html.includes('&lt;script&gt;'));
-  const overview = html.match(/<div class="profile-overview">([\s\S]*?)<\/div>/)[1];
-  assert.ok(overview.includes(p.evidence));
-  assert.ok(overview.includes(p.research.limits));
-  assert.ok(overview.includes(p.research.reviewedAt));
-  assert.ok(!html.includes('<h4>资料边界</h4>'));
-  assert.ok(html.includes(p.sources[0].url));
-  assert.ok(!html.includes('translate="no"'));
-  assert.ok(!html.includes('lang="zh-CN"'));
-  assert.equal(playerResearchMarkup(get('balanced')), '');
+  assert.doesNotMatch(html, /<script>|<a |公开资料|履历摘录|公开打法样本|资料核对日期|头像：/);
+  assert.match(playerResearchMarkup(get('balanced')), /入池选择/);
 });
-test('Holz dry high-card cbet is small, turn draw sizing is different, and Negreanu controls middling pots more often', () => {
-  const flop = decide('holz', view());
+test('small-cbet, draw-pressure and pot-control styles retain distinct executed choices', () => {
+  const flop = decide('nico', view());
   assert.equal(flop.action, 'raise');
   assert.equal(flop.trace.reason, 'small-cbet');
-  assert.equal(flop.amount, 400);
+  assert.equal(flop.amount, 300);
   const turn = decide(
-    'abao',
+    'mira',
     view({ street: 2, equity: 0.4, features: { wet: true, draw: true } }),
     () => 0.1,
   );
   assert.equal(turn.action, 'raise');
-  assert.equal(turn.trace.sizing.fraction, 0.9);
+  assert.equal(turn.trace.sizing.fraction, 0.75);
   const sample = (id) =>
     Array.from({ length: 500 }, (_, i) =>
-      decide(id, view({ equity: 0.57 }), seeded(i + 99)),
+      decide(
+        id,
+        view({ equity: 0.57, history: [{ id: 0, street: 0, action: 'raise', amount: 150 }] }),
+        seeded(i + 99),
+      ),
     ).filter((d) => d.trace.reason === 'pot-control').length;
-  assert.ok(sample('negreanu') > sample('dwan') + 50);
+  assert.ok(sample('nico') > sample('rook') + 50);
 });
 test('Float needs position, a dry heads-up board, affordable price and no all-in pressure', () => {
   const base = view({ equity: 0.16, currentBet: 250, contestable: 1250 });
   base.legal = { ...base.legal, toCall: 250, callAmount: 250, canCheck: false, canRaise: false };
-  assert.equal(decide('haxton', base, () => 0.1).trace.reason, 'float-continue');
+  assert.equal(decide('iris', base, () => 0.1).trace.reason, 'float-continue');
   for (const change of [
     { inPosition: false },
     { rivals: 2 },
@@ -128,7 +126,7 @@ test('Float needs position, a dry heads-up board, affordable price and no all-in
     { legal: { ...base.legal, toCall: 275, callAmount: 275 } },
   ])
     assert.equal(
-      decide('haxton', { ...base, ...change }, () => 0.9).trace.style.floatContinue,
+      decide('iris', { ...base, ...change }, () => 0.9).trace.style.floatContinue,
       false,
     );
   const delayed = view({
@@ -139,23 +137,23 @@ test('Float needs position, a dry heads-up board, affordable price and no all-in
       { id: 0, street: 2, action: 'check' },
     ],
   });
-  assert.equal(decide('haxton', { ...base, inPosition: false }, () => 0.9).action, 'fold');
-  assert.equal(decide('haxton', delayed).trace.style.context.delayed, true);
+  assert.equal(decide('iris', { ...base, inPosition: false }, () => 0.9).action, 'fold');
+  assert.equal(decide('iris', delayed).trace.style.context.delayed, true);
   assert.equal(
-    decide('haxton', { ...delayed, inPosition: false }).trace.style.context.delayed,
+    decide('iris', { ...delayed, inPosition: false }).trace.style.context.delayed,
     false,
   );
 });
 test('river air requires a relevant blocker and does not turn board-only strength into a bluff', () => {
   const base = view({ street: 3, board: cards(12, 8, 7, 4, 2), equity: 0.05 });
-  assert.equal(decide('dwan', base, () => 0).action, 'check');
-  assert.equal(decide('dwan', { ...base, hole: cards(14, 6) }, () => 0).trace.reason, 'pure-bluff');
+  assert.equal(decide('rook', base, () => 0).action, 'check');
+  assert.equal(decide('rook', { ...base, hole: cards(14, 6) }, () => 0).trace.reason, 'pure-bluff');
   assert.equal(
-    decide('dwan', { ...base, hole: cards(14, 6), playsBoard: true }, () => 0).action,
+    decide('rook', { ...base, hole: cards(14, 6), playsBoard: true }, () => 0).action,
     'check',
   );
   const flush = { ...base, board: [12, 8, 7, 4, 2].map((rank) => ({ rank, suit: 0 })) };
-  const style = resolveBotStyle(get('koon'));
+  const style = resolveBotStyle(get('owen'));
   assert.equal(
     botStyleContext(
       {
@@ -184,7 +182,7 @@ test('river air requires a relevant blocker and does not turn board-only strengt
   );
 });
 test('public action adjustment needs three observations, stays bounded and excludes our own or folded opponents', () => {
-  const style = resolveBotStyle(get('ivey'));
+  const style = resolveBotStyle(get('owen'));
   const actions = Array.from({ length: 3 }, (_, i) => ({ id: 0, street: i + 1, action: 'raise' }));
   assert.equal(botStyleContext(view({ history: actions.slice(0, 2) }), style).publicAdjustment, 0);
   assert.ok(botStyleContext(view({ history: actions }), style).publicAdjustment <= 0.025);

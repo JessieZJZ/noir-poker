@@ -76,13 +76,15 @@ test('reported A4 river review shows four stronger hand types including a spade 
   await page.evaluate(() => window.qa.pairedFlushReview());
   await page.locator('#review-hand-button').click();
   await expect(page.locator('#review-dialog')).toHaveAttribute('data-analysis-status', 'done', {
-    timeout: 30000,
+    timeout: 120000,
   });
   await page.locator('#review-timeline [data-review-index]').last().click();
   const group = page.locator('#review-coach-explanation [data-matchup-direction="behind"]');
   const examples = group.locator('.review-matchup-example');
   await expect(examples).toHaveCount(4);
-  await expect(examples).toContainText(['顺子', '三条', '葫芦', '同花']);
-  await expect(examples.last()).toContainText('♠');
+  // Examples follow the public range weights; the four hand types do not.
+  const types = (await examples.allTextContents()).map((text) => text.split(' ').at(-1));
+  expect(types.sort()).toEqual(['三条', '同花', '葫芦', '顺子'].sort());
+  await expect(examples.filter({ hasText: '同花' })).toContainText('♠');
   await group.screenshot({ path: test.info().outputPath('four-stronger-hands.png') });
 });

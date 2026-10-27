@@ -1,40 +1,42 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import {
-  createMusicController,
-  BACKGROUND_MUSIC_VOLUME,
-  BACKGROUND_MUSIC_DUCK_VOLUME,
-} from '../../src/ui/background-music.js';
+import { createMusicController, BACKGROUND_MUSIC_VOLUME } from '../../src/ui/background-music.js';
 import { createWebBackgroundMusic } from '../../src/platform/web-background-music.js';
 import { createWechatBackgroundMusic } from '../../src/platform/wechat-background-music.js';
+import vm from 'node:vm';
+import { readFileSync } from 'node:fs';
 import { loadFeedbackPreferences } from '../../src/ui/feedback-preferences.js';
 
-test('feedback defaults on, migrates a legacy combined mute, and then persists independently', () => {
+test('sound effects, background music and vibration default on and switch independently', () => {
   const values = new Map();
   const storage = { getItem: (key) => values.get(key) ?? null };
-  assert.deepEqual(loadFeedbackPreferences(storage), { sound: true, vibration: true });
+  assert.deepEqual(loadFeedbackPreferences(storage), { sound: true, music: true, vibration: true });
   values.set('noir-sound', 'false');
-  assert.deepEqual(loadFeedbackPreferences(storage), { sound: false, vibration: false });
-  values.set('noir-vibration', 'true');
-  assert.deepEqual(loadFeedbackPreferences(storage), { sound: false, vibration: true });
-  values.set('noir-vibration', 'false');
+  assert.deepEqual(loadFeedbackPreferences(storage), {
+    sound: false,
+    music: true,
+    vibration: true,
+  });
+  values.set('noir-music', 'false');
+  assert.deepEqual(loadFeedbackPreferences(storage), {
+    sound: false,
+    music: false,
+    vibration: true,
+  });
   values.set('noir-sound', 'true');
-  assert.deepEqual(loadFeedbackPreferences(storage), { sound: true, vibration: false });
-});
-
-test('a first-load vibration migration is saved before later sound changes', () => {
-  for (const initialSound of [null, 'false']) {
-    const values = new Map(initialSound === null ? [] : [['noir-sound', initialSound]]);
-    const storage = {
-      getItem: (key) => values.get(key) ?? null,
-      setItem: (key, value) => values.set(key, value),
-    };
-    const expected = initialSound !== 'false';
-    assert.equal(loadFeedbackPreferences(storage).vibration, expected);
-    values.set('noir-sound', String(!expected));
-    assert.equal(loadFeedbackPreferences(storage).vibration, expected);
-    assert.equal(values.get('noir-vibration'), String(expected));
-  }
+  values.set('noir-vibration', 'false');
+  assert.deepEqual(loadFeedbackPreferences(storage), {
+    sound: true,
+    music: false,
+    vibration: false,
+  });
+  // Unreadable storage keeps every switch on.
+  const broken = {
+    getItem() {
+      throw Error('blocked');
+    },
+  };
+  assert.deepEqual(loadFeedbackPreferences(broken), { sound: true, music: true, vibration: true });
 });
 
 test('muted/hidden music allocates no player and disposal prevents every later restart', () => {
@@ -129,7 +131,7 @@ test('Web audio loops the same local element, preserves position and rejects a s
   });
   assert.equal(audio.src, 'https://example.test/poker/audio/background-music.m4a');
   assert.equal(audio.loop, true);
-  assert.equal(gain.gain.value, BACKGROUND_MUSIC_VOLUME);
+  assert.equal(gain.gain.value, 0, 'Entry starts quietly');
   assert.equal(gain.connected, mixedOutput, 'Music and cues share the final mix limiter');
   music.setActive(false);
   finish();
@@ -137,6 +139,7 @@ test('Web audio loops the same local element, preserves position and rejects a s
   assert.equal(audio.paused, true);
   assert.equal(audio.currentTime, 27);
   music.setActive(true);
+  await Promise.resolve();
   assert.equal(audio.paused, false);
   assert.equal(allocations, 1);
   music.setEnabled(false);
@@ -190,7 +193,7 @@ test('WeChat late subpackage load/canplay cannot resurrect muted, hidden or disp
   const audio = audios[0];
   assert.equal(audio.src, '/music/background-music.m4a');
   assert.equal(audio.loop, true);
-  assert.equal(audio.volume, BACKGROUND_MUSIC_VOLUME);
+  assert.equal(audio.volume, 0);
   assert.equal(audio.playCount, 1);
   music.setActive(false);
   audio.ready();
@@ -234,14 +237,15 @@ test('native apps and touch browsers select the phone master; desktop keeps the 
       },
     });
     assert.equal(audio.src, `https://example.test/poker/audio/${expected}`);
-    assert.equal(audio.volume, 1, 'Phone mastering also works without Web Audio');
+    assert.equal(audio.volume, 0, 'Entry fade also works without Web Audio');
     assert.equal(audio.loop, true);
     music.dispose();
   }
 });
 
-test('WeChat ducks across overlapping cues and cancels stale volume timers on hide, mute and disposal', async () => {
-  let serial = 0;
+test('WeChat maintains full music volume across unlocks and cancels fade timers on hide, mute and disposal', async () => {
+  let serial = 0,
+    now = 0;
   const jobs = new Map();
   const audio = {
     onPlay(fn) {
@@ -258,8 +262,9 @@ test('WeChat ducks across overlapping cues and cancels stale volume timers on hi
     { createInnerAudioContext: () => audio },
     {
       loadSource: () => '/music/background-music.m4a',
+      now: () => now,
       schedule(fn, delay) {
-        assert.equal(delay, 650);
+        assert.equal(delay, 40, 'Only the entry/resume fade schedules music volume updates');
         jobs.set(++serial, fn);
         return serial;
       },
@@ -267,33 +272,151 @@ test('WeChat ducks across overlapping cues and cancels stale volume timers on hi
     },
   );
   await new Promise((resolve) => setTimeout(resolve, 0));
-  assert.equal(audio.volume, 1);
-  music.duck();
-  const stale = jobs.get(serial);
-  music.duck();
-  stale();
-  assert.equal(
-    audio.volume,
-    BACKGROUND_MUSIC_DUCK_VOLUME,
-    'Earlier cue cannot restore a later cue’s mix',
-  );
-  jobs.get(serial)();
-  assert.equal(audio.volume, 1);
+  assert.equal(audio.volume, 0);
+  now = 2400;
+  const initial = jobs.entries().next().value;
+  jobs.delete(initial[0]);
+  initial[1]();
+  assert.equal(audio.volume, BACKGROUND_MUSIC_VOLUME);
+  for (let action = 0; action < 10; action++) {
+    music.unlock();
+    assert.equal(audio.volume, BACKGROUND_MUSIC_VOLUME);
+    assert.equal(jobs.size, 0, 'Repeated action gestures must not schedule another fade');
+  }
   for (const stop of [
     () => music.setActive(false),
     () => music.setEnabled(false),
     () => music.dispose(),
   ]) {
+    music.setActive(false);
     music.setEnabled(true);
     music.setActive(true);
-    music.duck();
     const cancelled = jobs.get(serial);
+    assert.equal(typeof cancelled, 'function');
     stop();
     assert.equal(jobs.size, 0);
-    assert.equal(audio.volume, 1);
+    assert.equal(audio.volume, 0);
     cancelled();
-    assert.equal(audio.volume, 1);
+    assert.equal(audio.volume, 0);
   }
-  music.duck();
+  music.unlock();
   assert.equal(jobs.size, 0);
+});
+
+test('WeChat resumes music the system paused, rate-limited, but never a requested pause', async () => {
+  let serial = 0,
+    now = 0;
+  const jobs = new Map();
+  const audio = {
+    playCount: 0,
+    onPlay(fn) {
+      this.played = fn;
+    },
+    onPause(fn) {
+      this.paused = fn;
+    },
+    onStop(fn) {
+      this.stopped = fn;
+    },
+    onError(fn) {
+      this.failed = fn;
+    },
+    play() {
+      this.playCount++;
+      this.played();
+    },
+    pause() {
+      this.paused();
+    },
+    stop() {},
+    destroy() {},
+  };
+  const music = createWechatBackgroundMusic(
+    { createInnerAudioContext: () => audio },
+    {
+      loadSource: () => '/music/background-music.m4a',
+      now: () => now,
+      schedule(fn, delay) {
+        jobs.set(++serial, { fn, delay });
+        return serial;
+      },
+      unschedule: (id) => jobs.delete(id),
+    },
+  );
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  const recoveries = () => [...jobs.entries()].filter(([, job]) => job.delay !== 40);
+  const run = ([id, job]) => {
+    jobs.delete(id);
+    job.fn();
+  };
+  assert.equal(audio.playCount, 1);
+  // A page's sound players pause the shared track: it resumes shortly after.
+  audio.paused();
+  assert.equal(recoveries().length, 1);
+  assert.equal(recoveries()[0][1].delay, 300);
+  run(recoveries()[0]);
+  assert.equal(audio.playCount, 2);
+  // A stop right after waits until 2s have passed since the last resume.
+  now = 500;
+  audio.stopped();
+  assert.equal(recoveries()[0][1].delay, 1500);
+  run(recoveries()[0]);
+  assert.equal(audio.playCount, 3);
+  // Requested pauses (hidden, muted) and disposal never resume.
+  for (const stop of [() => music.setActive(false), () => music.setEnabled(false)]) {
+    music.setActive(true);
+    music.setEnabled(true);
+    const before = audio.playCount;
+    stop();
+    assert.equal(recoveries().length, 0);
+    assert.equal(audio.playCount, before);
+  }
+  music.setActive(true);
+  music.setEnabled(true);
+  now = 10000;
+  audio.failed({ errCode: 10003, errMsg: 'temporarily unavailable' });
+  assert.equal(recoveries().length, 1);
+  const pending = recoveries()[0];
+  music.dispose();
+  assert.equal(recoveries().length, 0, 'Disposal cancels a pending resume');
+  const before = audio.playCount;
+  pending[1].fn();
+  assert.equal(audio.playCount, before);
+});
+
+test('WeChat begins loading music on launch before the table is ready and preserves saved mute', async () => {
+  for (const enabled of [true, false]) {
+    let app,
+      loads = 0;
+    const require = (name) =>
+      name.includes('background-music')
+        ? { createWechatBackgroundMusic }
+        : { WECHAT_SETTINGS_KEY: 'settings' };
+    require.async = async () => {
+      loads++;
+      return '/music/background-music.m4a';
+    };
+    vm.runInNewContext(readFileSync(new URL('../../miniprogram/app.js', import.meta.url), 'utf8'), {
+      require,
+      App(value) {
+        app = value;
+      },
+      wx: { getStorageSync: () => JSON.stringify({ music: enabled }) },
+    });
+    app.onLaunch();
+    await new Promise((resolve) => setImmediate(resolve));
+    assert.equal(app.noirTableReady, undefined);
+    assert.equal(app.noirMusic.getState().active, true);
+    assert.equal(app.noirMusic.getState().enabled, enabled);
+    assert.equal(loads, enabled ? 1 : 0);
+    app.onHide();
+    assert.equal(app.noirMusic.getState().active, false);
+    app.onShow();
+    assert.equal(
+      app.noirMusic.getState().active,
+      true,
+      'Resume must not wait for the table-ready flag',
+    );
+    app.noirMusic.dispose();
+  }
 });

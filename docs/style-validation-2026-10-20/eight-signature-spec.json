@@ -1,0 +1,49 @@
+{
+  "sourceDigest": "08ae9259e31b51169dd3655fc29e43e6255de13bd3051fbb78fd59c3490fa3e6",
+  "note": "Prospective candidate 10 representative measures fixed before reserved held-out results. Rook repositioned to Big-bet pressure after development; previous turn-barrel.large 22.107pp remains a failed candidate 9 measure. No policy changes. 25pp vs balanced, 30 initial-shuffle clusters, CI excludes zero, normal/hard directions agree. Conditional decisions, not hands.",
+  "styles": [
+    {
+      "profile": "rook",
+      "metric": "river-value",
+      "field": "large",
+      "direction": 1
+    },
+    {
+      "profile": "jett",
+      "metric": "river-value",
+      "field": "large",
+      "direction": 1
+    },
+    {
+      "profile": "owen",
+      "metric": "small-open-defense",
+      "field": "continue",
+      "direction": -1
+    },
+    {
+      "profile": "vale",
+      "metric": "cheap-entry",
+      "field": "call",
+      "direction": 1
+    },
+    {
+      "profile": "nico",
+      "metric": "turn-barrel",
+      "field": "small",
+      "direction": 1
+    },
+    {
+      "profile": "mira",
+      "metric": "draw-pressure",
+      "field": "raise",
+      "direction": 1
+    },
+    {
+      "profile": "iris",
+      "metric": "late-open",
+      "field": "raise",
+      "direction": 1
+    }
+  ],
+  "lockedAt": "2026-10-23T04:56:37.936Z"
+}

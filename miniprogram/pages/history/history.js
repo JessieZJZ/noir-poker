@@ -7,8 +7,15 @@ Page({
     const controller = getApp().noirController;
     const attempt = controller?.getRecord(options.id);
     if (!attempt || attempt.status !== 'completed' || !attempt.snapshot) {
-      wx.showToast({ title: '这手没有结算记录', icon: 'none' });
-      wx.navigateBack({ delta: 1 });
+      // Keep the explanation visible until acknowledged. A toast followed by
+      // immediate Back looked like an unresponsive row when a file was lost.
+      wx.showModal({
+        title: '无法打开这手记录',
+        content: '这手的完整牌谱已缺失或无法读取，不能显示详情。已保存的输赢记录会保留。',
+        showCancel: false,
+        confirmText: '返回列表',
+        success: () => wx.navigateBack({ delta: 1 }),
+      });
       return;
     }
     const session = controller
@@ -18,5 +25,8 @@ Page({
     this._readOnlySessionNumber = session?.number || 1;
     tablePage.onLoad.call(this);
     this.setData({ historyStartedAt: recordStartTime(attempt.startedAt) });
+  },
+  onShow() {
+    if (this._readOnlyAttempt) tablePage.onShow.call(this);
   },
 });

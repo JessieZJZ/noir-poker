@@ -1,5 +1,9 @@
 import { soundSamples, SOUND_SAMPLE_RATE } from '../../src/ui/sound-cues.js';
-import { verifyLocalWechatModules, wechatPackageBytes } from '../../scripts/wechat.mjs';
+import {
+  verifyLocalWechatModules,
+  wechatPackageBytes,
+  pruneUnusedSharedModules,
+} from '../../scripts/wechat.mjs';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import vm from 'node:vm';
@@ -9,14 +13,17 @@ import {
   cpSync,
   existsSync,
   mkdtempSync,
+  mkdirSync,
   readFileSync,
   readdirSync,
   renameSync,
   rmSync,
+  statSync,
   symlinkSync,
   writeFileSync,
 } from 'node:fs';
 import { tmpdir } from 'node:os';
+import { createHash } from 'node:crypto';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { PROFILE_PORTRAITS } from '../../src/ui/portraits.js';
@@ -24,6 +31,41 @@ import { weakSuitedShove } from '../fixtures/review-spots.js';
 import { analyzeDecision } from '../../src/review/analysis.js';
 
 const root = fileURLToPath(new URL('../..', import.meta.url));
+test('shared-module pruning keeps page, worker, asynchronous and transitive imports', async (t) => {
+  const directory = mkdtempSync(path.join(tmpdir(), 'noir-wechat-reachable-'));
+  t.after(() => rmSync(directory, { recursive: true, force: true }));
+  const sources = {
+    'app.js': `require('./shared/active'); require.async('./shared/async.js')`,
+    'pages/table/table.js': `require('../../shared/page.js')`,
+    'workers/review.js': `require('../shared/worker.js')`,
+    'shared/active.js': `module.exports = require('./transitive.js')`,
+    'shared/transitive.js': 'module.exports = 1',
+    'shared/async.js': 'module.exports = 2',
+    'shared/page.js': 'module.exports = 3',
+    'shared/worker.js': 'module.exports = 4',
+    'shared/unused.js': `module.exports = require('./unused-child.js')`,
+    'shared/unused-child.js': 'module.exports = 5',
+    'shared/style.wxss': 'view { color: red; }',
+  };
+  for (const [file, source] of Object.entries(sources)) {
+    mkdirSync(path.dirname(path.join(directory, file)), { recursive: true });
+    writeFileSync(path.join(directory, file), source);
+  }
+  assert.deepEqual(await pruneUnusedSharedModules(directory), [
+    'shared/unused-child.js',
+    'shared/unused.js',
+  ]);
+  await verifyLocalWechatModules(directory);
+  for (const file of Object.keys(sources).filter((name) => !name.includes('unused')))
+    assert.ok(existsSync(path.join(directory, file)), file);
+  writeFileSync(
+    path.join(directory, 'app.js'),
+    `const name = './shared/dynamic.js'; require(name)`,
+  );
+  writeFileSync(path.join(directory, 'shared/dynamic.js'), 'module.exports = 6');
+  assert.deepEqual(await pruneUnusedSharedModules(directory), []);
+  assert.ok(existsSync(path.join(directory, 'shared/dynamic.js')));
+});
 test('music is budgeted separately while main and subpackage retain exact size limits', () => {
   const limit = 2 * 1024 * 1024;
   const app = { subpackages: [{ root: 'music', pages: ['loader'] }] };
@@ -49,6 +91,48 @@ test('WXML bindings keep quoted literals on one line for the DevTools compiler',
     for (const literal of binding[1].matchAll(/'(?:\\.|[^'\\])*'|"(?:\\.|[^"\\])*"/g))
       assert.doesNotMatch(literal[0], /[\r\n]/, `Invalid WXML literal: ${literal[0]}`);
 });
+// The mini-program embeds a Chinese subset generated from its own package
+// copy. Every shipped CJK character must be in it, or WeChat falls back to the
+// system font.
+function assertWechatGlyphCoverage(output) {
+  const coverage = JSON.parse(
+    readFileSync(path.join(root, 'src/platform/wechat-fonts/coverage.json'), 'utf8'),
+  );
+  assert.equal(
+    createHash('sha256')
+      .update(readFileSync(path.join(root, 'src/platform/wechat-fonts/noto-sans-sc.woff2')))
+      .digest('hex'),
+    coverage.sha256,
+  );
+  const codepoints = new Set(coverage.codepoints);
+  const missing = new Set();
+  const visit = (directory) => {
+    for (const entry of readdirSync(directory, { withFileTypes: true })) {
+      const child = path.join(directory, entry.name);
+      if (entry.isDirectory()) visit(child);
+      else if (/\.(js|json|wxml|wxss)$/.test(entry.name) && entry.name !== 'fonts.wxss') {
+        // esbuild writes non-ASCII JavaScript strings as escapes.
+        const text = readFileSync(child, 'utf8')
+          .replace(/\\u\{([0-9a-f]+)\}/gi, (_, hex) => String.fromCodePoint(parseInt(hex, 16)))
+          .replace(/\\u([0-9a-f]{4})/gi, (_, hex) => String.fromCodePoint(parseInt(hex, 16)));
+        for (const character of text)
+          if (
+            /\p{Script=Han}|\p{Script=Hiragana}|\p{Script=Katakana}|\p{Script=Hangul}/u.test(
+              character,
+            ) &&
+            !codepoints.has(character.codePointAt(0))
+          )
+            missing.add(character);
+      }
+    }
+  };
+  visit(output);
+  assert.deepEqual(
+    [...missing],
+    [],
+    'New WeChat CJK copy requires scripts/subset-fonts.py; see docs/interface-parity.md',
+  );
+}
 function fixture(t) {
   const directory = mkdtempSync(path.join(tmpdir(), 'noir-wechat-builder-'));
   t.after(() => rmSync(directory, { recursive: true, force: true }));
@@ -113,11 +197,16 @@ async function waitForStaging(fixture, processId) {
 test('generated WeChat JavaScript loads the controller and complete player research without Node JSON modules', async (t) => {
   const workspace = fixture(t);
   assertSuccess(await build(workspace).result);
-  assert.equal(
-    readFileSync(path.join(workspace.output, 'shared/ui/hero-turn.wxss'), 'utf8'),
-    readFileSync(path.join(root, 'src/styles/hero-turn.css'), 'utf8'),
-    'WeChat must ship the identical turn-attention style used by Web and native apps',
-  );
+  assert.equal(existsSync(path.join(workspace.output, 'shared/engine/store-profiles.js')), false);
+  assert.equal(existsSync(path.join(workspace.output, 'shared/ui/bet-sizing.js')), false);
+  // The same rules as Web and native, compacted like every shipped stylesheet.
+  const { compactWxss } = await import('../../scripts/wechat.mjs');
+  for (const name of ['hero-turn', 'game-effects', 'emotion-effects'])
+    assert.equal(
+      readFileSync(path.join(workspace.output, `shared/ui/${name}.wxss`), 'utf8'),
+      compactWxss(readFileSync(path.join(root, `src/styles/${name}.css`), 'utf8')),
+      `WeChat must ship the identical ${name} style used by Web and native apps`,
+    );
   const context = vm.createContext({ console });
   const modules = new Map();
   function load(request, parent = path.join(workspace.output, 'entry.js')) {
@@ -139,11 +228,11 @@ test('generated WeChat JavaScript loads the controller and complete player resea
   }
   const { BOT_PROFILES } = load('./shared/engine/bot-profiles.js');
   const research = JSON.parse(
-    readFileSync(path.join(workspace.directory, 'src/data/player-research.json'), 'utf8'),
+    readFileSync(path.join(workspace.directory, 'src/data/characters.json'), 'utf8'),
   );
-  for (const [id, player] of Object.entries(research.players))
+  for (const [id, player] of Object.entries(research.characters))
     assert.deepEqual(
-      JSON.parse(JSON.stringify(BOT_PROFILES.find((profile) => profile.id === id).research)),
+      JSON.parse(JSON.stringify(BOT_PROFILES.find((profile) => profile.id === id).character)),
       player,
     );
   const { createWechatController } = load('./shared/platform/wechat-controller.js');
@@ -157,7 +246,8 @@ test('generated WeChat JavaScript loads the controller and complete player resea
   controller.start();
   assert.equal(controller.getGame().players.length, 5);
   assert.equal(snapshot.seats.length, 4);
-  assert.equal(snapshot.heroPosition, 'BTN');
+  assert.equal(snapshot.heroPosition, '');
+  assert.equal(snapshot.entryState, 'waiting');
   context.wx = {};
   context.getCurrentPages = () => [];
   const table = load('./pages/table/page-definition.js');
@@ -242,11 +332,24 @@ test('concurrent WeChat builders serialize and preserve DevTools private prefere
   const results = await Promise.all([first.result, second.result]);
   for (const result of results) assertSuccess(result);
   const fonts = readFileSync(path.join(workspace.output, 'fonts.wxss'), 'utf8');
-  for (const name of ['manrope', 'noto-sans-sc', 'barlow-condensed']) {
+  for (const name of ['manrope', 'barlow-condensed']) {
     const bytes = readFileSync(path.join(workspace.directory, `public/fonts/${name}.woff2`));
     assert.ok(fonts.includes(bytes.toString('base64')), `${name} must use the Web/native bytes`);
   }
+  const chinese = readFileSync(
+    path.join(workspace.directory, 'src/platform/wechat-fonts/noto-sans-sc.woff2'),
+  );
+  assert.ok(fonts.includes(chinese.toString('base64')), 'WeChat embeds its Chinese subset');
+  assert.equal(
+    fonts.includes(
+      readFileSync(path.join(workspace.directory, 'public/fonts/noto-sans-sc.woff2')).toString(
+        'base64',
+      ),
+    ),
+    false,
+  );
   assert.doesNotMatch(fonts, /url\(['"]?https?:/);
+  assertWechatGlyphCoverage(workspace.output);
   assert.equal(
     readFileSync(path.join(workspace.output, 'project.private.config.json'), 'utf8'),
     preferences,
@@ -302,6 +405,19 @@ test('concurrent WeChat builders serialize and preserve DevTools private prefere
   cleanBuildFiles(workspace);
 });
 
+test('rebuilding keeps the opened DevTools project folder and drops stale entries', async (t) => {
+  const workspace = fixture(t);
+  assertSuccess(await build(workspace).result);
+  const before = statSync(workspace.output).ino;
+  writeFileSync(path.join(workspace.output, 'stale-generated.js'), '// old build');
+  assertSuccess(await build(workspace).result);
+  // DevTools' compiler workers keep this directory as their working directory.
+  assert.equal(statSync(workspace.output).ino, before);
+  assert.equal(existsSync(path.join(workspace.output, 'stale-generated.js')), false);
+  assert.ok(existsSync(path.join(workspace.output, 'app.json')));
+  cleanBuildFiles(workspace);
+});
+
 test('source changes during a WeChat build reject the staging output and keep the prior artifact', async (t) => {
   const workspace = fixture(t);
   assertSuccess(await build(workspace).result);
@@ -353,4 +469,32 @@ test('WeChat source-fingerprint failure releases its build lock before returning
   renameSync(path.join(workspace.directory, 'src-missing'), path.join(workspace.directory, 'src'));
   assertSuccess(await build(workspace).result);
   cleanBuildFiles(workspace);
+});
+
+test('WeChat stylesheets drop comments, indentation and blank lines only', async () => {
+  const { compactWxss } = await import('../../scripts/wechat.mjs');
+  assert.equal(
+    compactWxss(`/* note
+   spanning lines */
+.a {
+  color: red; /* inline */
+
+  background: url('data:image/svg+xml;base64,PHN2Zy8+');
+}
+@media (max-width: 380px) {
+  .a {
+    padding: 0;
+  }
+}
+`),
+    `.a {
+color: red;
+background: url('data:image/svg+xml;base64,PHN2Zy8+');
+}
+@media (max-width: 380px) {
+.a {
+padding: 0;
+}
+}`,
+  );
 });

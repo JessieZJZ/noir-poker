@@ -1,0 +1,56 @@
+/* Guide preflop table, as on Web; the guide converter renders each div as a
+   view and each b/span as text with a guide-<tag> class. */
+.preflop-table {
+  display: flex;
+  flex-direction: column;
+  margin: 12px 0;
+  border: 1px solid #2c3d45;
+  border-radius: 10px;
+  overflow: hidden;
+  font-size: 13px;
+  line-height: 1.5;
+  font-variant-numeric: tabular-nums;
+}
+.preflop-head,
+.preflop-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 12px;
+}
+.preflop-head > .guide-b,
+.preflop-row > .guide-b {
+  flex: 1;
+  min-width: 0;
+}
+.preflop-head > .guide-span,
+.preflop-row > .guide-span {
+  flex: none;
+  width: 76px;
+  text-align: right;
+}
+.preflop-head {
+  background: #15252b;
+  color: #8ea4ad;
+  font-size: 12px;
+}
+.preflop-head > .guide-b {
+  font-weight: 500;
+}
+.preflop-tier {
+  padding: 7px 12px 3px;
+  border-top: 1px solid #2c3d45;
+  color: #a8dacb;
+  font-size: 12px;
+}
+.preflop-row > .guide-b {
+  color: #e3ebef;
+  font-weight: 700;
+}
+.preflop-row > .guide-span {
+  color: #bfd0d6;
+}
+.preflop-note {
+  color: #8ea4ad;
+  font-size: 12px;
+}

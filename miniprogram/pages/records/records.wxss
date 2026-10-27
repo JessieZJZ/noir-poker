@@ -1,178 +1,136 @@
+@import '../../shared/ui/game-effects.wxss';
+/* Mirrors the Web records list at phone width (src/styles/game-records.css). */
 page {
-  background: #0a1117;
-  color: #dce9ed;
+  background: #0b1017;
+  color: #edf3f6;
 }
 .records-chrome {
   position: fixed;
-  inset: 0 0 auto;
+  top: 0;
+  left: 0;
+  right: 0;
   z-index: 20;
-  background: #0a1117;
+  background: #0b1017;
 }
 .records-screen {
-  padding: 0 16px;
+  padding: 0 12px;
 }
 .records-nav {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  min-height: 38px;
+  margin-bottom: 16px;
   font-size: 19px;
-  font-weight: 700;
+  font-weight: 600;
+  line-height: 1.4;
 }
-.records-nav button {
-  flex: none;
-  width: auto;
-  min-width: 0;
-  max-width: none;
-  margin: 0;
-  color: #adc2ca;
-  background: #15212a;
-  border: 1px solid #30434e;
-  border-radius: 10px;
-  padding: 8px 10px;
+.records-empty {
+  padding: 36px 20px;
+  text-align: center;
+  color: #91a8b1;
   font-size: 13px;
-}
-.records-intro {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin: 4px 0 12px;
-}
-.records-intro text:last-child,
-.records-note,
-.records-empty {
-  font-size: 12px;
-  color: #8ea8b5;
-  line-height: 1.7;
-}
-.records-empty {
-  padding: 22px 16px;
-  border: 1px solid #29404a;
-  border-radius: 14px;
-  margin-bottom: 12px;
+  line-height: 1.8;
 }
 .records-session {
-  border: 1px solid #2b414c;
-  border-radius: 15px;
+  border: 1px solid #2d404b;
+  border-radius: 14px;
   overflow: hidden;
-  margin-bottom: 14px;
-  background: #101d25;
+  margin-bottom: 18px;
+  background: #111d26;
 }
 .session-item {
   position: relative;
-  color: #dce9ed;
   width: 100%;
-  text-align: left;
   margin: 0;
-  padding: 16px 52px 16px 16px;
+  padding: 16px 56px 18px 16px;
   background: transparent;
-  border-radius: 0;
 }
-.session-item-heading {
+.session-title {
   display: flex;
-  justify-content: space-between;
+  flex-wrap: wrap;
   align-items: center;
-  font-size: 18px;
-  font-weight: 700;
+  gap: 12px;
 }
-.session-status {
-  color: #8faab6;
-  font-size: 11px;
+.session-number {
+  font-size: 17px;
+  font-weight: 600;
+}
+.session-time {
+  color: #9cafb7;
+  font-size: 12px;
+}
+.session-stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px 12px;
+  margin-top: 18px;
+}
+.session-stats view {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.session-stats view text:first-child {
+  color: #8fa7b1;
+  font-size: 12px;
+}
+.session-stats view text:last-child {
+  font-size: 17px;
   font-weight: 500;
-}
-.session-heading-end {
-  display: flex;
-  align-items: center;
-  gap: 10px;
 }
 .session-toggle {
   position: absolute;
-  right: 16px;
   top: 50%;
-  transform: translateY(-50%);
-  width: 26px;
-  height: 26px;
+  right: 16px;
+  width: 30px;
+  height: 30px;
+  margin-top: -15px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 0;
-  color: #80dcc9;
-  background: transparent;
+  color: #9fd9c4;
+  transition: transform 180ms ease;
 }
 .session-chevron {
-  width: 7px;
-  height: 7px;
+  width: 8px;
+  height: 8px;
   border-right: 2px solid currentColor;
   border-bottom: 2px solid currentColor;
   transform: translateY(-2px) rotate(45deg);
 }
-.session-toggle.is-expanded .session-chevron {
-  transform: translateY(2px) rotate(225deg);
-}
-.session-time {
-  display: block;
-  margin-top: 4px;
-  color: #8faab6;
-  font-size: 11px;
-}
-.session-metrics {
-  display: flex;
-  gap: 28px;
-  margin-top: 16px;
-}
-.session-metrics view {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-}
-.session-metrics view text:first-child {
-  font-size: 11px;
-  color: #8faab6;
-}
-.session-metrics view text:last-child {
-  font-size: 24px;
-  font-weight: 700;
-}
-.session-config {
-  display: flex;
-  gap: 15px;
-  margin-top: 13px;
-  color: #adc0c9;
-  font-size: 12px;
+.session-toggle.is-expanded {
+  transform: rotate(180deg);
 }
 .hand-list {
-  border-top: 1px solid #2b414c;
-  padding: 0 12px;
+  padding: 4px 10px 8px;
+  border-top: 1px solid #293d47;
+  background: #0e1820;
 }
 .hand-item {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   width: 100%;
   margin: 0;
-  padding: 15px 0;
-  color: #dce9ed;
+  padding: 14px 0;
   background: transparent;
-  text-align: left;
-  border-bottom: 1px solid #243944;
-  border-radius: 0;
+  border-bottom: 1px solid #25343e;
+}
+.hand-item.is-disabled {
+  background: transparent;
 }
 .hand-item:last-child {
   border-bottom: 0;
 }
-.hand-item.is-disabled {
-  color: #9aafb8;
-  background: transparent;
-}
 .hand-cards {
   display: flex;
-  gap: 3px;
+  gap: 4px;
   flex: none;
 }
 .record-card {
-  width: 28px;
-  height: 40px;
+  width: 31px;
+  height: 44px;
   border-radius: 4px;
   background-color: #f4f8f5;
   background-size: 100% 100%;
@@ -182,48 +140,60 @@ page {
   flex: 1;
   min-width: 0;
 }
-.hand-item-title {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
-  font-size: 13px;
+.hand-title {
+  display: block;
+  font-size: 14px;
+  font-weight: 500;
 }
 .hand-tags {
   display: flex;
   flex-wrap: wrap;
-  gap: 5px;
-  margin-top: 6px;
-  color: #9db4bf;
-  font-size: 10px;
+  align-items: center;
+  gap: 4px;
+  margin-top: 7px;
 }
 .hand-tag {
-  color: #a7cec1;
-  border: 1px solid #35594e;
+  padding: 1px 4px;
+  border: 1px solid #3b4c53;
   border-radius: 4px;
-  padding: 0 4px;
+  color: #a2b6bd;
+  font-size: 10px;
+  line-height: 1.4;
 }
 .hand-tag.hand-replay {
-  color: #ecd397;
-  border-color: #796534;
-  background: rgba(121, 101, 52, 0.18);
-  font-size: 10px;
-  font-weight: 600;
-  white-space: nowrap;
+  border-color: #7f659c;
+  color: #d8bef4;
+  background: #332640;
+}
+.hand-tag.hand-refill {
+  border-color: #326857;
+  color: #89d9bd;
+  background: #163c31;
+}
+.hand-result {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  max-width: 35%;
+  text-align: right;
 }
 .hand-profit {
-  flex: none;
   font-size: 16px;
-  font-weight: 700;
+  font-weight: 600;
+}
+.hand-outcome {
+  color: #8ea6ad;
+  font-size: 11px;
+  line-height: 1.5;
 }
 .hand-arrow {
   display: flex;
   align-items: center;
   justify-content: center;
-  align-self: center;
   flex: none;
-  width: 14px;
-  height: 22px;
+  width: 16px;
+  height: 24px;
   color: #768e96;
 }
 .hand-chevron {
@@ -237,14 +207,7 @@ page {
   color: #6ee7c5;
 }
 .negative {
-  color: #ff929d;
-}
-.superseded {
-  opacity: 0.7;
-}
-.records-note {
-  display: block;
-  margin: 20px 4px;
+  color: #ef8a9a;
 }
 .records-more {
   margin: 10px 0;
@@ -254,4 +217,12 @@ page {
   border: 1px solid #304b56;
   border-radius: 8px;
   font-size: 13px;
+}
+.compliance-footer {
+  display: block;
+  padding: 8px 16px 14px;
+  text-align: center;
+  font-size: 11px;
+  letter-spacing: 1px;
+  color: #6b7a87;
 }

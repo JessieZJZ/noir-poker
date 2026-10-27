@@ -131,7 +131,9 @@ function presentationPatch(previous, next) {
     if (
       Array.isArray(before) &&
       Array.isArray(after) &&
-      before.length <= after.length &&
+      // A leaf append does not invalidate WXML's array.length dependencies.
+      // Replace structural changes so wx:if, classes and wx:for all update.
+      before.length === after.length &&
       before.every(
         (item, i) =>
           (item?.dealKey ?? item?.id ?? item?.key) ===

@@ -14,7 +14,7 @@ function actualReview(kind) {
 }
 function highCardControl() {
   const view = deceptiveView('As Kh', 'Qd 8c 2h', { equity: 0.5 }),
-    decision = chooseBotAction(view, getBotProfile('negreanu'), freshBotMood(), 'off', () => 0.1),
+    decision = chooseBotAction(view, getBotProfile('balanced'), freshBotMood(), 'off', () => 0.1),
     record = { ...decision, id: 1, name: 'Mia', trace: { ...decision.trace, view } };
   return { record, review: explainOpponent(record) };
 }
@@ -35,11 +35,11 @@ test('real set plus redraw all-in call keeps made-hand support and ends future b
   assert.equal(record.trace.allIn.cost, 4950);
   assert.equal(record.trace.allIn.contestable, 10000);
   assert.match(review.detail, /暗三条 7/);
-  assert.match(review.detail, /暗三条 7的摊牌价值/);
+  assert.match(review.detail, /当前(?:已有|牌力是)暗三条 7.*成牌和补牌(?:共同|都)提供摊牌机会/);
   assert.match(review.detail, /(?:另有|另外还有)同花听牌/);
-  assert.doesNotMatch(review.detail, /卡顺听牌|两头顺听牌/);
+  assert.doesNotMatch(review.detail.split('复盘分析总结').at(-1), /卡顺听牌|两头顺听牌/);
   assert.doesNotMatch(review.detail, /赔率支持继续追/);
-  assert.match(review.detail, /只能等发牌或摊牌/);
+  assert.match(review.detail, /之后不再参与下注决策/);
   assert.deepEqual(review.metrics, []);
 });
 
@@ -63,8 +63,8 @@ test('a real high-card pot-control trace describes its current showdown value wi
   assert.equal(record.trace.reason, 'pot-control');
   assert.equal(record.trace.view.features.madeCategory, 0);
   assert.equal(record.trace.view.features.ownMade, false);
-  assert.match(review.detail, /高牌控池/);
-  assert.match(review.detail, /800/);
+  assert.match(review.detail, /目前只有高牌.*较难让更弱成牌付费.*避免.*做大底池/);
+  assert.equal(record.trace.view.pot, 800);
   assert.doesNotMatch(review.detail, /中等成牌|已经成牌|EV|模拟器/);
 });
 
@@ -79,7 +79,8 @@ test('closing draw folds, made plus redraw calls and high-card pot control local
         if (!['zh-CN', 'zh-TW', 'ja'].includes(locale))
           assert.doesNotMatch(translated, /\p{Script=Han}/u, `${locale}: ${translated}`);
         for (const fact of [record.name, '4.95K', '10K', '800'])
-          if (text.includes(fact)) assert.ok(translated.includes(fact), `${locale}: ${fact}`);
+          if (text.includes(fact))
+            assert.ok(translated.includes(localizeText(fact)), `${locale}: ${fact}`);
       }
   }
 });

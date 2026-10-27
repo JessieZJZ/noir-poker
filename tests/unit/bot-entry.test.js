@@ -115,7 +115,7 @@ test('small-open continuation keeps style and position differences and rejects g
   assert.equal(decision({ ...v, position: 'CO' }).action, 'call');
   assert.equal(decision({ ...v, position: 'UTG' }).action, 'fold');
   assert.equal(decision(smallOpen('7s 2h')).action, 'fold');
-  const totals = ['st', 'balanced', 'peter'].map((profile) => {
+  const totals = ['owen', 'balanced', 'jett'].map((profile) => {
     let continues = 0;
     for (let a = 0; a < deck.length; a++)
       for (let b = a + 1; b < deck.length; b++) {
@@ -125,9 +125,9 @@ test('small-open continuation keeps style and position differences and rejects g
   });
   assert.ok(totals[0] < totals[1] && totals[1] < totals[2], `ST / balanced / Peter: ${totals}`);
 });
-test('the small-open branch stops at size, effective-stack, all-in and re-raise boundaries', () => {
+test('the ordinary-open branch stops above five BB and at stack, all-in and re-raise boundaries', () => {
   const v = smallOpen();
-  const atLimit = { ...v, currentBet: 200, legal: { ...v.legal, toCall: 200, callAmount: 200 } };
+  const atLimit = { ...v, currentBet: 250, legal: { ...v.legal, toCall: 250, callAmount: 250 } };
   assert.equal(decision(atLimit).trace.affordableOpen, true);
   const shortRaiser = {
     ...v,
@@ -141,7 +141,7 @@ test('the small-open branch stops at size, effective-stack, all-in and re-raise 
   const unsafe = [
     { ...v, opponents: undefined },
     { ...v, opponents: v.opponents.filter((p) => p.id !== 0) },
-    { ...atLimit, currentBet: 201, legal: { ...v.legal, toCall: 201, callAmount: 201 } },
+    { ...atLimit, currentBet: 251, legal: { ...v.legal, toCall: 251, callAmount: 251 } },
     { ...v, stack: 1000 },
     shortRaiser,
     { ...v, opponents: v.opponents.map((p) => (p.id === 0 ? { ...p, allin: true, stack: 0 } : p)) },
@@ -183,7 +183,7 @@ test('opponent review explains the exact small-open call and separate re-raising
   const v = smallOpen();
   const d = decision(v);
   const explanation = explainOpponent({ ...d, trace: { ...d.trace, view: v } });
-  assert.match(explanation.detail, /跟注 150/);
+  assert.match(explanation.detail, /只补 150/);
   assert.match(explanation.detail, /还留 4\.85K/);
   assert.match(explanation.detail, /同花/);
   assert.match(explanation.detail, /开池(?:至|到) 150/);

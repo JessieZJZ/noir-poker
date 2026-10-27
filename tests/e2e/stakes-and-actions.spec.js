@@ -64,6 +64,39 @@ test('desktop actions align at the bottom and finish, review and retry share the
       return { height: r.height, bottom: r.bottom };
     }),
   );
+  await info.attach('desktop-action-geometry', {
+    body: JSON.stringify(
+      await page.evaluate(() =>
+        [
+          '.action-panel',
+          '.bet-controls',
+          '.bet-controls > label',
+          '.bet-controls input',
+          '.bet-presets',
+          '.action-buttons',
+          '#raise-button',
+        ].map((selector) => {
+          const el = document.querySelector(selector);
+          if (!el) return { selector, missing: true };
+          const rect = el.getBoundingClientRect();
+          const style = getComputedStyle(el);
+          return {
+            selector,
+            top: rect.top,
+            bottom: rect.bottom,
+            height: rect.height,
+            display: style.display,
+            alignSelf: style.alignSelf,
+            alignItems: style.alignItems,
+            gridRows: style.gridTemplateRows,
+            padding: style.padding,
+            margin: style.margin,
+          };
+        }),
+      ),
+    ),
+    contentType: 'application/json',
+  });
   for (const r of boxes.slice(1)) {
     expect(r.height).toBe(52);
     expect(Math.abs(r.bottom - boxes[0].bottom)).toBeLessThan(1);

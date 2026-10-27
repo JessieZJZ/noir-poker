@@ -1,0 +1,320 @@
+{
+  "reviewer": 3,
+  "stage": "classification after menu and frozen free review",
+  "independentLabels": true,
+  "oneToOneEliminationUsed": false,
+  "repeatedLabelsAndUnknownPermitted": true,
+  "realPersonIdentificationAttempted": false,
+  "additionalHandsPlayed": 0,
+  "frozenSources": [
+    "free-review.md",
+    "interactive-review.md",
+    "interactive-audit.json"
+  ],
+  "classifications": [
+    {
+      "code": "A",
+      "label": "多街施压",
+      "subjectiveConfidence": 0.78,
+      "confidenceMeaning": "uncalibrated subjective fit to supplied menu",
+      "basis": [
+        {
+          "source": "observer A.jsonl",
+          "hands": [
+            16,
+            23,
+            83
+          ],
+          "evidence": "宽参与后多街或间断持续施压，底牌未摊，牌力未知"
+        },
+        {
+          "source": "observer A.jsonl",
+          "hands": [
+            65
+          ],
+          "evidence": "J2o 翻牌无成牌领先下注，转牌成底对后支付"
+        },
+        {
+          "source": "observer A.jsonl",
+          "hands": [
+            71
+          ],
+          "evidence": "KK 在 QJ6、K 转牌有明确强成牌取值"
+        }
+      ],
+      "counterEvidence": [
+        3,
+        28,
+        66
+      ],
+      "directInteractionHands": 0,
+      "unknowns": [
+        "未摊牌线的真实牌力",
+        "长期诈唬频率",
+        "面对 Hero 的适应"
+      ]
+    },
+    {
+      "code": "B",
+      "label": "范围纪律",
+      "subjectiveConfidence": 0.78,
+      "confidenceMeaning": "uncalibrated subjective fit to supplied menu",
+      "basis": [
+        {
+          "source": "observer B.jsonl",
+          "hands": [
+            5,
+            20
+          ],
+          "evidence": "选择性入池样本中 KK 和 AKo 有强投入"
+        },
+        {
+          "source": "observer B.jsonl",
+          "hands": [
+            51
+          ],
+          "evidence": "77 转牌暗三条后明显升级取值"
+        },
+        {
+          "source": "interactive global hands",
+          "hands": [
+            54
+          ],
+          "evidence": "面对 Hero TT 再加注，B 开池后弃牌"
+        },
+        {
+          "source": "interactive global hands",
+          "hands": [
+            53
+          ],
+          "evidence": "A75 单色面 B 半池下注，底牌未知，Hero 弃牌"
+        }
+      ],
+      "counterEvidence": [
+        {
+          "source": "observer B.jsonl",
+          "hands": [
+            42,
+            68
+          ],
+          "evidence": "主动入池后大量过牌不必然代表诱导"
+        },
+        {
+          "source": "interactive global hands",
+          "hands": [
+            65
+          ],
+          "evidence": "AA 跛入平跟后全过，可能含被动倾向"
+        }
+      ],
+      "commonFlopHands": 6,
+      "unknowns": [
+        "翻后纪律是否稳定",
+        "过牌是否属于诱导",
+        "直接应对下注的底牌分布"
+      ]
+    },
+    {
+      "code": "C",
+      "label": "宽松取值",
+      "subjectiveConfidence": 0.82,
+      "confidenceMeaning": "uncalibrated subjective fit to supplied menu",
+      "basis": [
+        {
+          "source": "observer C.jsonl",
+          "hands": [
+            3,
+            15,
+            24
+          ],
+          "evidence": "73o、82o、84s 便宜参与，样本 VPIP/PFR 82/22"
+        },
+        {
+          "source": "observer C.jsonl",
+          "hands": [
+            54
+          ],
+          "evidence": "A7 翻牌两对后大尺度多街取值"
+        },
+        {
+          "source": "observer C.jsonl",
+          "hands": [
+            55
+          ],
+          "evidence": "Q2 翻牌跟注后转牌成两对推入"
+        }
+      ],
+      "counterEvidence": [
+        {
+          "source": "observer C.jsonl",
+          "hands": [
+            38,
+            45,
+            87,
+            88
+          ],
+          "evidence": "未摊牌主动线不能认定纯价值"
+        },
+        {
+          "source": "observer C.jsonl",
+          "hands": [
+            65,
+            75
+          ],
+          "evidence": "薄成牌也有多街支付"
+        }
+      ],
+      "directInteractionHands": 0,
+      "unknowns": [
+        "未知底牌主动线的价值与诈唬构成",
+        "面对 Hero 的适应"
+      ]
+    },
+    {
+      "code": "D",
+      "label": "均衡",
+      "subjectiveConfidence": 0.58,
+      "confidenceMeaning": "uncalibrated subjective fit to supplied menu; lowest confidence",
+      "alternativeLabels": [
+        "宽松取值",
+        "范围纪律"
+      ],
+      "basis": [
+        {
+          "source": "observer D.jsonl",
+          "hands": [
+            17,
+            23,
+            35
+          ],
+          "evidence": "中等参与样本中强成牌正常取值与控池并存"
+        },
+        {
+          "source": "observer D.jsonl",
+          "hands": [
+            43
+          ],
+          "evidence": "坚果花转牌过牌加注、河牌过牌跟注"
+        },
+        {
+          "source": "interactive global hands",
+          "hands": [
+            132
+          ],
+          "evidence": "TT 在 66T 翻牌葫芦过牌，转河取值"
+        },
+        {
+          "source": "interactive global hands",
+          "hands": [
+            171
+          ],
+          "evidence": "T9o 在 KJ2 翻牌 Q 卡顺听加注，后两街过牌"
+        },
+        {
+          "source": "interactive global hands",
+          "hands": [
+            121
+          ],
+          "evidence": "跟 Hero 组合听牌下注后，第三梅花转牌面对第二枪弃牌，D 底牌未知"
+        }
+      ],
+      "counterEvidence": [
+        {
+          "source": "observer D.jsonl",
+          "hands": [
+            19,
+            76
+          ],
+          "evidence": "一对支付显示与宽松取值重叠"
+        },
+        {
+          "source": "interactive global hands",
+          "hands": [
+            153
+          ],
+          "evidence": "J7 河牌成两对后跟略超池下注"
+        }
+      ],
+      "commonFlopHands": 11,
+      "unknowns": [
+        "与宽松取值的稳定边界",
+        "直接双向压力频率",
+        "长期适应"
+      ],
+      "labelDoesNotMeanSolverEquilibrium": true
+    }
+  ],
+  "ratings": {
+    "globalStyleRecognizability": {
+      "score": 3,
+      "scale": [
+        1,
+        5
+      ],
+      "reason": "连续样本的参与宽度和主动性可区分大方向，许多全过与未摊牌压力线重叠，D 尤其不稳"
+    },
+    "naturalContinuousStrategyInteraction": {
+      "score": 2,
+      "scale": [
+        1,
+        5
+      ],
+      "reason": "正常连续牌局中多方全过与翻前离场重复，少数合理取值和权益进攻存在，但双向目标交锋很少，多数大池压力来自陪测座位"
+    }
+  },
+  "scope": {
+    "observerHandsPerCode": 100,
+    "interactiveHands": {
+      "B": 100,
+      "D": 100
+    },
+    "heroPositionsPerCode": {
+      "CO": 20,
+      "UTG": 20,
+      "BB": 20,
+      "SB": 20,
+      "BTN": 20
+    },
+    "heroVPIP_PFR": {
+      "B": [
+        45,
+        25
+      ],
+      "D": [
+        34,
+        14
+      ]
+    },
+    "commonFlopHands": {
+      "B": 6,
+      "D": 11
+    },
+    "heroFacesTargetPostflopHands": {
+      "B": 1,
+      "D": 1
+    },
+    "targetFacesHeroPostflopHands": {
+      "B": 0,
+      "D": 5
+    },
+    "targetFacesHeroPostflopDecisions": {
+      "B": 0,
+      "D": 6
+    },
+    "targetPostflopObservedAfterHeroPreflopFold": {
+      "B": 12,
+      "D": 32
+    },
+    "sameDealsControlledComparison": false,
+    "humanReview": false,
+    "uiAcceptance": false
+  },
+  "limitations": [
+    "A/C 只有旁观，无本轮直接互动",
+    "B/D 牌序不同且 Hero 自身参与率不同",
+    "未摊牌底牌保持未知",
+    "频率仅为样本描述",
+    "评分不是完整产品娱乐性或 UI 评分"
+  ],
+  "stopped": true
+}

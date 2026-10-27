@@ -1,4 +1,4 @@
-import { reviewCardCache } from './card-cache.js';
+import { SnapshotBoardCache, reviewCardCache } from './card-cache.js';
 import { bigBlindOf } from '../engine/stakes.js';
 import {
   newGame,
@@ -15,6 +15,7 @@ import { seedRandom, snapshotSeed } from './equity.js';
 import { preparePublicRanges } from '../engine/public-ranges.js';
 import { createPublicPairSampler, samplePublicPair } from '../engine/public-equity.js';
 import { isChipAmount, legalRaiseTo, chipUnitOf } from '../engine/bet-sizing.js';
+import { preflopContext, preflopRaiseTarget } from './preflop.js';
 const copy = (v) => JSON.parse(JSON.stringify(v));
 export function candidateActions(s, alternatives = []) {
   const candidates = [
@@ -33,6 +34,18 @@ export function candidateActions(s, alternatives = []) {
         action: 'raise',
         amount: legalRaiseTo(value, s.legal),
       });
+    if (!s.street && s.currentBet > bigBlindOf(s)) {
+      const pre = preflopContext(s),
+        order = ['SB', 'BB', 'UTG', 'UTG+1', 'MP', 'LJ', 'HJ', 'CO', 'BTN'],
+        inPosition = s.players
+          .filter((p) => p.id && !p.folded && !p.allin)
+          .every((p) => order.indexOf(p.position) < order.indexOf(s.position));
+      if (pre.raises === 1 && pre.callersAfterOpen)
+        candidates.push({
+          action: 'raise',
+          amount: legalRaiseTo(preflopRaiseTarget(s, { inPosition }, pre), s.legal),
+        });
+    }
   }
   candidates.push({ action: s.action, amount: s.amount }, ...alternatives.filter(Boolean));
   return [
@@ -123,6 +136,7 @@ function resume(s, deal) {
     emotionMode: s.emotionMode || 'off',
     difficulty: ['easy', 'normal', 'hard'].includes(s.difficulty) ? s.difficulty : 'normal',
   });
+  g.positions = s.players.map((p) => p.position || '');
   for (const p of s.players) {
     const mood = freshBotMood();
     mood.kind = p.botMoodKind || 'steady';
@@ -134,7 +148,8 @@ function resume(s, deal) {
       allin: p.allin,
       actedTo: p.actedTo ?? null,
       checked: p.checked || false,
-      hole: copy(deal.holes.get(p.id)),
+      out: !!p.out,
+      hole: p.out ? [] : copy(deal.holes.get(p.id)),
       botProfile: getBotProfile(p.botProfile).id,
       botMood: mood,
     });
@@ -179,6 +194,7 @@ export function compareCandidateActions(s, alternatives = [], { trials = 40 } = 
               { evaluate, features: botBoardFeatures, compare, cache: samplingCache },
             )
           : null;
+    const visibleBoards = new Map();
     const values = rows.map(() => []),
       immediate = rows.map(() => 0),
       won = rows.map(() => 0);
@@ -186,9 +202,9 @@ export function compareCandidateActions(s, alternatives = [], { trials = 40 } = 
       const deal = sampledDeal(s, rng, weighted, ranges, samplingCache, firstPairSampler),
         policySeed = Math.floor(rng() * 4294967295);
       // Candidates share a hypothetical deal. Reuse only pure board/pair
-      // evaluation; never ranges, decisions or random state. Drop it before
-      // the next sampled deal rather than retaining any live-hand state.
-      const allInCache = new Map();
+      // evaluation; never ranges, decisions or random state. Drop sampled
+      // boards before the next deal; only the visible board's facts persist.
+      const allInCache = new SnapshotBoardCache(visibleBoards, s.board);
       for (let c = 0; c < candidates.length; c++) {
         const g = resume(s, deal),
           policy = seedRandom(policySeed);
@@ -274,6 +290,6 @@ export function compareCandidateActions(s, alternatives = [], { trials = 40 } = 
     comparisonReady: trials >= 30,
     comparisonCritical,
     method: 'sampled-engine-rollout',
-    note: '从当时局面抽样未知牌，按公开风格继续打完；你后续采用均衡机器人策略，每次判断抽样 8 次。数值是此模拟策略的筹码净变化估计，已投入视为沉没成本，包含分池、退还与之后下注；误差为近似抽样误差，不覆盖范围／策略模型错误。不是 GTO 或真人最优 EV。',
+    note: '从当时局面抽样未知牌，按公开风格继续打完，你后续采用均衡机器人策略，每次判断抽样 8 次。数值是此模拟策略的筹码净变化估计，已投入视为沉没成本，包含分池、退还与之后下注，误差为近似抽样误差，不覆盖范围／策略模型错误。不是 GTO 或真人最优 EV。',
   };
 }

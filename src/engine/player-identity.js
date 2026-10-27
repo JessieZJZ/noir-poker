@@ -25,7 +25,7 @@ export function actorIdentity(snapshot, id) {
   return {
     id,
     name,
-    profile: profile.research && name !== '你' ? profile.short : '',
+    profile: profile.id !== 'balanced' && name !== '你' ? profile.short : '',
     position:
       player?.position ||
       (self || (id === 0 && snapshot.id === undefined) ? snapshot.position : '') ||

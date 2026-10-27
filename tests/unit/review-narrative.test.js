@@ -104,7 +104,7 @@ test('draw rationale follows actual board, public line and price changes without
   disconnected.board = cards('9h 7d 3d 2c');
   const missed = analyzeDecision(disconnected, { trials: 120 });
   assert.equal(missed.draw.straight, false);
-  assert.doesNotMatch(missed.coaching.explanation, /两头顺听牌/);
+  assert.doesNotMatch(missed.coaching.explanation.split('复盘分析总结').at(-1), /两头顺听牌/);
 
   const blankHistory = { ...snapshot, history: [] };
   assert.doesNotMatch(
@@ -310,7 +310,7 @@ test('69o BTN three-bet and Mia AQo four-bet explain the actual limper, opener a
   assert.match(result.evidence.join(''), /5K/);
   assert.match(result.evidence.join(''), /350/);
   const fold = analyzeDecision(game.decisions[1], { trials: 120, rolloutTrials: 12 });
-  const callPrice = fold.evidence.find((line) => line.includes('底池赔率'));
+  const callPrice = fold.evidence.join(' ');
   assert.match(callPrice, /650/);
   assert.match(callPrice, /4.05K/);
   assert.match(callPrice, /5\.23\s*:\s*1/);

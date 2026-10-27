@@ -10,6 +10,7 @@ import { createOpponentReview } from './opponent-review.js';
 import { selectedActivity } from '../review/activity.js';
 import { renderReviewParagraphs } from './review-matchups.js';
 import { renderActivityParts } from './activity.js';
+import { reviewResultCache } from '../review/result-cache.js';
 const $ = (selector) => document.querySelector(selector),
   format = (n) => formatChips(Math.round(n));
 const statusNames = { attention: '重点改进', consider: '值得讨论', sound: '有合理依据' };
@@ -51,6 +52,7 @@ export function createReviewController({ card }) {
   });
   function perspective(opponent) {
     opponentPerspective = opponent;
+    opponents.setActive(opponent);
     renderActivity();
     $('#review-hero-tab').setAttribute('aria-selected', String(!opponent));
     $('#review-opponents-tab').setAttribute('aria-selected', String(opponent));
@@ -194,7 +196,9 @@ export function createReviewController({ card }) {
     if (message.type === 'progress') {
       last.progress = message.done;
       if (message.result) {
-        (last.partial ||= [])[message.done - 1] = message.result;
+        const index = message.index ?? message.done - 1;
+        (last.partial ||= [])[index] = message.result;
+        reviewResultCache.set('decision', last.input.decisions[index], message.result);
         renderDialog();
       }
       setLocalizedText(
@@ -220,17 +224,19 @@ export function createReviewController({ card }) {
     worker?.terminate();
     worker = null;
     try {
-      const steps = [];
-      for (const s of input.decisions) {
+      const steps = [...(last.partial || [])];
+      for (let index = 0; index < input.decisions.length; index++) {
+        if (steps[index]) continue;
         await new Promise((resolve) => setTimeout(resolve, 0));
         if (id !== job) return;
-        steps.push(analyzeDecision(s));
+        steps[index] = analyzeDecision(input.decisions[index]);
         receive(
           {
             type: 'progress',
-            done: steps.length,
+            done: steps.filter(Boolean).length,
+            index,
             total: input.decisions.length,
-            result: steps.at(-1),
+            result: steps[index],
           },
           id,
         );
@@ -242,10 +248,20 @@ export function createReviewController({ card }) {
   }
   async function analyze() {
     if (!last || last.status === 'running' || last.analysis) return;
+    last.partial = last.input.decisions.map((decision) =>
+      reviewResultCache.get('decision', decision),
+    );
+    if (last.partial.every(Boolean)) {
+      last.analysis = summarizeReview(last.input, last.partial);
+      last.status = 'done';
+      if (!selectionTouched) selected = last.analysis.priorityIndex;
+      renderDialog();
+      return;
+    }
     const id = ++job,
       input = last.input;
     last.status = 'running';
-    last.progress = 0;
+    last.progress = last.partial.filter(Boolean).length;
     renderDialog();
     if (typeof Worker === 'undefined') {
       await fallback(id, input);
@@ -262,6 +278,7 @@ export function createReviewController({ card }) {
       worker.postMessage({
         id,
         input: { hand: input.hand, decisions: input.decisions, outcome: input.outcome },
+        completed: last.partial,
       });
     } catch {
       await fallback(id, input);
@@ -270,7 +287,7 @@ export function createReviewController({ card }) {
   function open() {
     if (live && last !== live) selectInput(live, false);
     if (!last) return;
-    $('#review-activity').open = false;
+    $('#review-activity').open = true;
     opponents.update(last.input);
     renderDialog();
     if (!dialog.open) dialog.showModal();
@@ -285,7 +302,7 @@ export function createReviewController({ card }) {
     historical = archive;
     selected = 0;
     selectionTouched = false;
-    $('#review-activity').open = false;
+    $('#review-activity').open = true;
     perspective(false);
     opponents.update(entry.input);
   }

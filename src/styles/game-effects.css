@@ -1,0 +1,529 @@
+/* Shared verbatim with WeChat (copied to shared/ui/game-effects.wxss).
+   Class selectors only; timings match src/ui/effect-layouts.js. */
+
+/* Premium starting hand: violet edge light with sparks, then it fades. */
+.premium-sparks {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  pointer-events: none;
+  z-index: 3;
+}
+.premium-spark {
+  position: absolute;
+  width: var(--spark-size, 4px);
+  height: var(--spark-size, 4px);
+  margin: -2px 0 0 -2px;
+  border-radius: 50%;
+  background: #f5d0ff;
+  box-shadow:
+    0 0 6px 2px #c084fc,
+    0 0 12px 4px #a855f799;
+  opacity: 0;
+  animation: premium-spark 1.1s ease-out var(--spark-delay, 0ms) 2 both;
+}
+@keyframes premium-spark {
+  0% {
+    opacity: 0;
+    transform: translate(0, 0) scale(0.4);
+  }
+  15% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(var(--spark-x, 0), var(--spark-y, 0)) scale(1);
+  }
+}
+/* The glow sits just outside each card, so the cards must not clip it while
+   it plays (the turn highlight lifts the same clip only on the hero's turn). */
+.hero-cards-wrap.premium-start .hero-cards > .playing-card,
+.hero-cards-wrap.premium-start .hero-cards > .hero-card {
+  overflow: visible;
+}
+/* An overlay carries the glow, leaving the card's own deal animation alone. */
+.premium-start .playing-card::after,
+.premium-start .hero-card::after {
+  content: '';
+  position: absolute;
+  top: -1px;
+  right: -1px;
+  bottom: -1px;
+  left: -1px;
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: 2;
+  animation: premium-glow 2.6s ease-in-out both;
+}
+@keyframes premium-glow {
+  0% {
+    box-shadow:
+      0 0 0 0 #c084fc00,
+      0 0 0 0 #a855f700;
+  }
+  12% {
+    box-shadow:
+      0 0 0 2px #d8b4fe,
+      0 0 22px 6px #a855f7cc;
+  }
+  30% {
+    box-shadow:
+      0 0 0 2px #e9d5ff,
+      0 0 14px 3px #a855f799;
+  }
+  48% {
+    box-shadow:
+      0 0 0 2px #d8b4fe,
+      0 0 24px 7px #a855f7d9;
+  }
+  75% {
+    box-shadow:
+      0 0 0 2px #c084fccc,
+      0 0 16px 4px #a855f780;
+  }
+  100% {
+    box-shadow:
+      0 0 0 0 #c084fc00,
+      0 0 0 0 #a855f700;
+  }
+}
+
+/* Refill: a gold amount rises while the stack counts up on a green pill. */
+.rebuy-burst {
+  position: absolute;
+  left: 50%;
+  bottom: 100%;
+  z-index: 6;
+  pointer-events: none;
+  white-space: nowrap;
+  font-size: 22px;
+  font-weight: 800;
+  color: #fff7e0;
+  text-shadow:
+    0 0 2px #8a4b12,
+    0 2px 0 #8a4b12,
+    0 0 12px #f4b74a;
+  animation: rebuy-burst 1.3s cubic-bezier(0.2, 0.8, 0.3, 1) both;
+}
+@keyframes rebuy-burst {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, 14px) scale(0.6);
+  }
+  22% {
+    opacity: 1;
+    transform: translate(-50%, -4px) scale(1.18);
+  }
+  70% {
+    opacity: 1;
+    transform: translate(-50%, -12px) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -26px) scale(0.96);
+  }
+}
+/* The pill is drawn outward with shadows and the width is reserved for the
+   widest count value, so the row around the stack never moves. */
+.stack-refill {
+  display: inline-block;
+  min-width: var(--refill-width, auto);
+  border-radius: 999px;
+  color: #ffffff;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  background: #1f9e4c;
+  box-shadow:
+    0 0 0 5px #1f9e4c,
+    0 0 0 7px #5ff08a,
+    0 0 16px 7px #34d36a99;
+  animation: stack-refill 1.3s ease-out both;
+}
+@keyframes stack-refill {
+  0% {
+    transform: scale(0.92);
+  }
+  20% {
+    transform: scale(1.08);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* The crown worn by the champion until the next game starts. */
+.champion-crown {
+  position: absolute;
+  z-index: 4;
+  width: 24px;
+  height: 18px;
+  pointer-events: none;
+  filter: drop-shadow(0 2px 3px #00000088) drop-shadow(0 0 6px #f4c95d88);
+}
+.champion-crown.crown-pending {
+  visibility: hidden;
+}
+.champion-crown.crown-arrive {
+  animation: crown-arrive 0.5s cubic-bezier(0.3, 1.6, 0.5, 1) both;
+}
+@keyframes crown-arrive {
+  0% {
+    transform: translateY(-10px) scale(1.5);
+    opacity: 0.4;
+  }
+  100% {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+.crown-shape {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.crown-shape::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  background: linear-gradient(180deg, #fff1b8 0%, #f4c95d 42%, #c98a24 100%);
+  clip-path: polygon(0% 22%, 24% 52%, 50% 0%, 76% 52%, 100% 22%, 90% 82%, 10% 82%);
+}
+.crown-shape::after {
+  content: '';
+  position: absolute;
+  left: 10%;
+  right: 10%;
+  bottom: 0;
+  height: 16%;
+  border-radius: 2px;
+  background: linear-gradient(180deg, #f4c95d, #a8701c);
+}
+
+/* Coronation stage: the crown rises at the centre, then flies to the winner. */
+.crown-stage {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 60;
+  pointer-events: none;
+  animation: crown-stage 2.3s ease both;
+  background: radial-gradient(circle at 50% 45%, #1b120088 0%, #00000066 55%, #00000000 80%);
+}
+@keyframes crown-stage {
+  0% {
+    opacity: 0;
+  }
+  15%,
+  55% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+.crown-rays {
+  position: absolute;
+  left: 50%;
+  top: 45%;
+  width: 320px;
+  height: 320px;
+  margin: -160px 0 0 -160px;
+  border-radius: 50%;
+  background: repeating-conic-gradient(#f4c95d33 0deg 8deg, #f4c95d00 8deg 22deg);
+  animation: crown-rays 2.3s linear both;
+}
+@keyframes crown-rays {
+  0% {
+    opacity: 0;
+    transform: rotate(0deg) scale(0.4);
+  }
+  20% {
+    opacity: 1;
+    transform: rotate(30deg) scale(1);
+  }
+  55% {
+    opacity: 0.9;
+    transform: rotate(80deg) scale(1.05);
+  }
+  70%,
+  100% {
+    opacity: 0;
+    transform: rotate(110deg) scale(1.2);
+  }
+}
+.crown-caption {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(45% + 70px);
+  text-align: center;
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: 2px;
+  color: #ffe9a6;
+  text-shadow:
+    0 2px 0 #6b4310,
+    0 0 16px #f4c95d;
+  animation: crown-caption 2.3s ease both;
+}
+@keyframes crown-caption {
+  0%,
+  12% {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  24%,
+  52% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  64%,
+  100% {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+}
+.crown-flight {
+  position: absolute;
+  left: 50%;
+  top: 45%;
+  width: 96px;
+  height: 72px;
+  margin: -36px 0 0 -48px;
+  filter: drop-shadow(0 6px 10px #000000aa) drop-shadow(0 0 18px #f4c95dcc);
+  animation: crown-flight 2.3s cubic-bezier(0.45, 0, 0.25, 1) both;
+}
+@keyframes crown-flight {
+  0% {
+    opacity: 0;
+    transform: translate(0, 30px) scale(0.2) rotate(-25deg);
+  }
+  20% {
+    opacity: 1;
+    transform: translate(0, 0) scale(1.15) rotate(6deg);
+  }
+  30% {
+    transform: translate(0, 0) scale(1) rotate(0deg);
+  }
+  55% {
+    transform: translate(0, -8px) scale(1.04) rotate(0deg);
+  }
+  92% {
+    opacity: 1;
+    transform: translate(var(--crown-x, 0), var(--crown-y, 0)) scale(var(--crown-scale, 0.25));
+  }
+  100% {
+    opacity: 0;
+    transform: translate(var(--crown-x, 0), var(--crown-y, 0)) scale(var(--crown-scale, 0.25));
+  }
+}
+
+/* Confetti from both lower screen edges, for the hero's championship only. */
+.confetti-layer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 59;
+  overflow: hidden;
+  pointer-events: none;
+}
+.confetti-piece {
+  position: absolute;
+  top: 82vh;
+  width: var(--confetti-width, 7px);
+  height: var(--confetti-height, 12px);
+  border-radius: 1px;
+  background: var(--confetti-color, #f4d06f);
+  opacity: 0;
+  animation: confetti-flight 3.1s linear var(--confetti-delay, 0ms) both;
+}
+@keyframes confetti-flight {
+  0% {
+    opacity: 1;
+    transform: translate(0, 0) rotate(0deg) rotateX(0deg);
+    animation-timing-function: cubic-bezier(0.15, 0.7, 0.4, 1);
+  }
+  32% {
+    transform: translate(var(--confetti-peak-x, 0), var(--confetti-peak-y, 0))
+      rotate(calc(var(--confetti-spin, 0deg) * 0.4)) rotateX(360deg);
+    animation-timing-function: cubic-bezier(0.5, 0, 0.8, 0.6);
+  }
+  85% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(var(--confetti-end-x, 0), var(--confetti-end-y, 0))
+      rotate(var(--confetti-spin, 0deg)) rotateX(1080deg);
+  }
+}
+
+/* The hero is out and nobody is crowned: a grey card at the table's centre
+   tells the final place, then fades. */
+.farewell-stage {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  background: radial-gradient(circle at 50% 50%, #0b0f1399 0%, #0b0f1355 45%, #0b0f1300 75%);
+  animation: farewell-stage 2.8s ease both;
+}
+@keyframes farewell-stage {
+  0% {
+    opacity: 0;
+  }
+  14%,
+  78% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+.farewell-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 14px 28px 12px;
+  border: 1px solid #7d8996;
+  border-radius: 14px;
+  background: linear-gradient(180deg, #2a323bf2, #1a2027f2);
+  box-shadow:
+    0 0 0 4px #7d899622,
+    0 14px 34px #000000aa;
+  text-align: center;
+  animation: farewell-card 2.8s cubic-bezier(0.2, 0.7, 0.3, 1) both;
+}
+@keyframes farewell-card {
+  0% {
+    opacity: 0;
+    transform: translateY(10px) scale(0.92);
+  }
+  16% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  78% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+}
+.farewell-ring {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 180px;
+  height: 180px;
+  margin: -90px 0 0 -90px;
+  border: 2px solid #9aa6b2;
+  border-radius: 50%;
+  opacity: 0;
+  animation: farewell-ring 1.6s ease-out 0.2s both;
+}
+@keyframes farewell-ring {
+  0% {
+    opacity: 0.5;
+    transform: scale(0.5);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.35);
+  }
+}
+.farewell-title {
+  display: block;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  line-height: 20px;
+  color: #b7c1cb;
+}
+.farewell-place {
+  display: block;
+  margin-top: 2px;
+  font-size: 30px;
+  font-weight: 800;
+  letter-spacing: 2px;
+  line-height: 38px;
+  color: #e3e8ed;
+  text-shadow:
+    0 2px 0 #11161b,
+    0 0 14px #9aa6b266;
+}
+.farewell-note {
+  display: block;
+  margin-top: 2px;
+  font-size: 12px;
+  line-height: 17px;
+  color: #8a96a2;
+}
+
+/* Final standing tags: champion gold, then silver, bronze and slate. */
+.standing-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 18px;
+  border: 1px solid #5d6b78;
+  background: #26313c;
+  color: #c9d4dd;
+}
+.standing-tag.standing-champion {
+  border-color: #d9b45a;
+  background: #3a2c0c;
+  color: #f6d47a;
+}
+.standing-tag.standing-2 {
+  border-color: #9fb3c8;
+  background: #233040;
+  color: #dbe7f3;
+}
+.standing-tag.standing-3 {
+  border-color: #c98f5a;
+  background: #35230f;
+  color: #f0bd8c;
+}
+.standing-tag.standing-live {
+  border-color: #3f8f73;
+  background: #173c33;
+  color: #8ff0c9;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .premium-spark,
+  .confetti-piece,
+  .crown-rays,
+  .farewell-ring {
+    animation: none;
+    opacity: 0;
+  }
+  .premium-start .playing-card::after,
+  .premium-start .hero-card::after {
+    animation: none;
+    box-shadow: 0 0 0 2px #d8b4fe;
+  }
+}

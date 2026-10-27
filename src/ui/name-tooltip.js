@@ -8,12 +8,13 @@ export function prepareNameTooltips() {
   tooltip.role = 'tooltip';
   tooltip.hidden = true;
   document.body.append(tooltip);
-  let timer, anchor, origin, pressed, observer;
+  let timer, pendingLabel, anchor, origin, pressed, observer;
   const on = (target, event, fn, options = {}) =>
     target.addEventListener(event, fn, { ...options, signal: events.signal });
   const cancel = () => {
     clearTimeout(timer);
     timer = null;
+    pendingLabel = null;
   };
   const close = () => {
     cancel();
@@ -25,15 +26,17 @@ export function prepareNameTooltips() {
   };
   const show = (label) => {
     cancel();
+    const style = label.matches('.seat-style-label');
+    const text = label.getAttribute('data-full-name')?.trim() || label.textContent.trim();
     if (
       !label.isConnected ||
-      label.scrollWidth <= label.clientWidth + 1 ||
-      label.dataset.nameFit === 'true'
+      !text ||
+      (!style && (label.scrollWidth <= label.clientWidth + 1 || label.dataset.nameFit === 'true'))
     )
       return;
     close();
     anchor = label;
-    tooltip.textContent = label.textContent.trim();
+    tooltip.textContent = text;
     tooltip.hidden = false;
     const box = tooltip.getBoundingClientRect();
     const viewport = window.visualViewport;
@@ -55,26 +58,55 @@ export function prepareNameTooltips() {
     });
     pressed = true;
   };
-  const labelAt = (event) => event.target.closest?.('.seat-name-label, .seat-style-label');
+  const labelAt = (event) => {
+    const target = event.target;
+    const label = target.closest?.('.seat-name-label, .seat-style-label');
+    if (label) return label;
+    // Expand the gesture target without moving the dense seat layout or
+    // intercepting adjacent controls. Coordinates include table transforms.
+    if (target.closest?.('button, a, input, select, textarea')) return null;
+    const arena = target.closest?.('.arena');
+    if (!arena) return null;
+    return [...arena.querySelectorAll('.seat-style-label')].find((el) => {
+      const r = el.getBoundingClientRect();
+      return (
+        r.width > 0 &&
+        r.height > 0 &&
+        event.clientX >= r.left - 10 &&
+        event.clientX <= r.right + 10 &&
+        event.clientY >= r.top - 6 &&
+        event.clientY <= r.bottom + 6
+      );
+    });
+  };
   on(document, 'pointerdown', (event) => {
     if (event.button !== 0) return;
     if (!tooltip.contains(event.target)) close();
     pressed = false;
     const label = labelAt(event);
     if (!label) return;
+    event.preventDefault();
     origin = { x: event.clientX, y: event.clientY };
+    pendingLabel = label;
     timer = setTimeout(() => show(label), 450);
   });
   on(
     document,
     'pointermove',
     (event) => {
-      if (timer && Math.hypot(event.clientX - origin.x, event.clientY - origin.y) > 10) cancel();
+      if (
+        (timer || (anchor && event.buttons & 1)) &&
+        Math.hypot(event.clientX - origin.x, event.clientY - origin.y) > 10
+      )
+        close();
     },
     { passive: true },
   );
   on(document, 'pointerup', cancel);
   on(document, 'pointercancel', cancel);
+  on(document, 'selectstart', (event) => {
+    if (labelAt(event)) event.preventDefault();
+  });
   on(document, 'contextmenu', (event) => {
     const label = labelAt(event);
     if (label) {
@@ -96,8 +128,20 @@ export function prepareNameTooltips() {
   );
   on(document, 'keydown', (event) => {
     if (event.key === 'Escape') close();
+    else if (['Enter', ' '].includes(event.key) && event.target.matches?.('.seat-style-label')) {
+      event.preventDefault();
+      show(event.target);
+    }
   });
-  on(document, 'scroll', close, { capture: true, passive: true });
+  on(
+    document,
+    'scroll',
+    (event) => {
+      const label = anchor || pendingLabel;
+      if (label && (event.target === document || event.target?.contains?.(label))) close();
+    },
+    { capture: true, passive: true },
+  );
   on(document, 'visibilitychange', () => {
     if (document.hidden) close();
   });

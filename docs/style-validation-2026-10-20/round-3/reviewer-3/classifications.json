@@ -1,0 +1,183 @@
+{
+  "A": {
+    "label": "范围纪律",
+    "confidence": 0.78,
+    "evidence": [
+      {
+        "source": "A.jsonl",
+        "hands": [
+          3,
+          46
+        ],
+        "observation": "全样本主动入池14/50、翻前加注6/50，是六组最选择性的一组；两手加至4.5BB直接收池，底牌未知。"
+      },
+      {
+        "source": "A.jsonl",
+        "hands": [
+          36
+        ],
+        "observation": "AQ在A5445四人池三街过牌，以AA55Q两对摊牌，支持低主动性与控池，但不证明该路线最优或安全诱导。"
+      },
+      {
+        "source": "A.jsonl",
+        "hands": [
+          9
+        ],
+        "observation": "低参与仍含翻牌下注、转牌过牌、河牌近满池的路线，底牌未公开，不能一概视为强牌。"
+      }
+    ],
+    "limits": "主要支持选择性入池，安全强牌诱导这一细分特征证据不足；翻后仅5次面对下注回应。"
+  },
+  "B": {
+    "label": "小注持续",
+    "confidence": 0.62,
+    "evidence": [
+      {
+        "source": "B.jsonl",
+        "hands": [
+          5,
+          14,
+          44
+        ],
+        "observation": "三手翻牌第一枪约为4/11.5、4/12、3/9池，后街能放大；中等参与27/50。"
+      },
+      {
+        "source": "interactive-transcript.jsonl",
+        "hands": [
+          4
+        ],
+        "observation": "T5在347翻牌以卡6听顺下注4.5/11.5BB，T转牌成对后下注13.5/20.5，河牌31/47.5，形成公开可核实的前段小注、后段放大。"
+      },
+      {
+        "source": "interactive-transcript.jsonl",
+        "hands": [
+          9
+        ],
+        "observation": "99在五人池T7483三街过牌，说明并非每次翻前加注都连续施压。"
+      }
+    ],
+    "limits": "干燥高牌翻牌偏好的条件分母不足；均衡与小注控池也有部分解释力，和F允许使用同一标签。"
+  },
+  "C": {
+    "label": "宽松取值",
+    "confidence": 0.74,
+    "evidence": [
+      {
+        "source": "C.jsonl",
+        "hands": [
+          2,
+          21,
+          47
+        ],
+        "observation": "主动入池47/50，翻后无须补注仅7/96次下注；KJ两头顺听牌、第二对JT、AJ中对分别存在被动延续路线。"
+      },
+      {
+        "source": "C.jsonl",
+        "hands": [
+          26
+        ],
+        "observation": "AQ在AJJ9J上转牌下注6/9池、河牌22/21池，以JJJAA葫芦摊牌，支持命中后的大注。"
+      },
+      {
+        "source": "C.jsonl",
+        "hands": [
+          8,
+          35
+        ],
+        "observation": "83完成六高顺子、AQ完成五高顺子后均过牌到摊牌，显示命中取值并不稳定。"
+      }
+    ],
+    "limits": "宽松和低主动性证据强，命中后大注这一部分较弱，不能忽略漏取价值的反例。"
+  },
+  "D": {
+    "label": "多街施压",
+    "confidence": 0.77,
+    "evidence": [
+      {
+        "source": "D.jsonl",
+        "hands": [
+          25
+        ],
+        "observation": "K77翻牌面对Hero下注加到11BB，转牌30/27超池，河牌投入余下56.5BB，底牌未知。"
+      },
+      {
+        "source": "D.jsonl",
+        "hands": [
+          33,
+          37
+        ],
+        "observation": "Q4翻牌两对后大额推进，KJ转牌三条后连续超池，至少部分多街压力有真实成牌支撑。"
+      },
+      {
+        "source": "D.jsonl",
+        "hands": [
+          40
+        ],
+        "observation": "55面对翻前加到34.5BB仍跟，966翻牌和Q转牌继续付完，显示宽松支付与压力型表现并存。"
+      }
+    ],
+    "limits": "不能把D25未摊牌强压视为诈唬，也不能证明D40整条线具有合理收益。"
+  },
+  "E": {
+    "label": "不确定",
+    "confidence": 0.35,
+    "evidence": [
+      {
+        "source": "E.jsonl",
+        "hands": [
+          5,
+          6,
+          26
+        ],
+        "observation": "存在先下注后跟再领打、连续三枪、河牌反加等强路线，但均未摊牌；26/50入池与7/44无须补注下注又偏温和。"
+      },
+      {
+        "source": "E.jsonl",
+        "hands": [
+          24,
+          27
+        ],
+        "observation": "88三街控池与J6在双A双J转牌大额支付形成很大反差，难以概括为稳定的小注控池或均衡。"
+      },
+      {
+        "source": "interactive-transcript.jsonl",
+        "hands": [
+          14,
+          20
+        ],
+        "observation": "仅两手共同翻牌；两次面对Hero转牌下注均弃，E20唯一单挑翻牌先过牌。没有Hero亲自面对E翻后下注的机会。"
+      }
+    ],
+    "limits": "候选为均衡或小注控池，但小价值下注的条件证据不足；固定互动未解决B/E混淆，不用排除法补齐标签。"
+  },
+  "F": {
+    "label": "小注持续",
+    "confidence": 0.6,
+    "evidence": [
+      {
+        "source": "F.jsonl",
+        "hands": [
+          7,
+          14
+        ],
+        "observation": "F7翻牌3/9、转牌6.5/15、河牌15/28连续推进；F14持QT翻牌三条后下注5/12.5与8.5/22.5，均为较小前段价值下注。"
+      },
+      {
+        "source": "F.jsonl",
+        "hands": [
+          22
+        ],
+        "observation": "翻牌4/12领打，转牌过牌加到27BB、河牌继续下注，存在后街放大压力。"
+      },
+      {
+        "source": "F.jsonl",
+        "hands": [
+          23,
+          25
+        ],
+        "observation": "Q9方片河牌成Q高同花后取值；87两对在河牌连通性提升后仍大注并跟加注，显示前后牌力适配并不总一致。"
+      }
+    ],
+    "limits": "与B的前小后大路线重叠；干燥高牌翻牌的专门机会分母不足，不能把标签当稳定识别结果。"
+  }
+}

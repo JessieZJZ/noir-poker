@@ -63,9 +63,8 @@ test('WeChat records routes have one game, one list and one replaceable detail d
   assert.equal(stack.length, 2);
   nav.openHand('third');
   finish();
-  nav.returnToGame();
-  assert.equal(calls.at(-1)[1].delta, 2);
-  finish();
+  // Records have no return button; native Back pops the detail and the list.
+  stack.splice(1);
   assert.equal(stack.length, 1);
   for (let i = 0; i < 8; i++) {
     nav.openRecords();
@@ -75,8 +74,7 @@ test('WeChat records routes have one game, one list and one replaceable detail d
     // A native edge gesture/hardware Back pops the detail to the retained list.
     stack.pop();
     assert.equal(stack.at(-1).route, 'pages/records/records');
-    nav.returnToGame();
-    finish();
+    stack.pop();
     assert.equal(stack.length, 1);
   }
 });

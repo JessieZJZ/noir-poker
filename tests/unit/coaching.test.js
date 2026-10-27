@@ -196,7 +196,7 @@ test('river checks and closing all-in calls have no invented future betting or d
   r.routes.primary = { action: 'raise', amount: 300 };
   const c = coachDecision(river, r);
   assert.doesNotMatch(c.explanation, /听牌付费/);
-  assert.match(c.explanation, /直接摊牌/);
+  assert.match(c.explanation, /不能诱导后面的下注/);
   assert.doesNotMatch(c.followUp, /下一轮/);
   const pre = decision('call', 0),
     positive = result();

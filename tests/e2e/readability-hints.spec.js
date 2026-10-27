@@ -511,7 +511,7 @@ test('reduced-motion hints retain manual keyboard scrolling without moving the t
   await page.setViewportSize({ width: 901, height: 1000 });
   await expect(page.locator('.surface-top #coach-content')).toBeVisible();
   await page.setViewportSize({ width: 1101, height: 1000 });
-  await expect(page.locator('#coach-desktop-card #coach-content')).toBeVisible();
+  await expect(page.locator('.surface-top #coach-content')).toBeVisible();
   await expect(banner).toHaveAttribute('data-scrolling', 'false');
   await expect(banner.locator('.hint-marquee-copy')).toBeHidden();
 });

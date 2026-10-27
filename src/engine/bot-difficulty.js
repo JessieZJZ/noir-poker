@@ -1,9 +1,8 @@
 // Training capabilities, not fixed HUD targets or measured human frequencies.
 const basic = ['value', 'price'];
-const standard = [...basic, 'position', 'cbet', 'semi-bluff', 'pot-control', 'trap'];
+const standard = [...basic, 'position', 'cbet', 'semi-bluff', 'pot-control', 'trap', 'float'];
 const advanced = [
   ...standard,
-  'float',
   'thin-value',
   'blocker-bluff',
   'light-reraise',
@@ -26,7 +25,7 @@ export const BOT_DIFFICULTIES = Object.freeze({
     reraise: 1,
     attack: 1,
     noise: 0.08,
-    description: '结合位置选择入池，加入持续下注、听牌半诈唬、控池和强牌埋牌。',
+    description: '结合位置选择入池，加入持续下注、听牌半诈唬、控池、强牌埋牌和低价 Float。',
   }),
   hard: Object.freeze({
     skills: Object.freeze(advanced),
@@ -34,7 +33,7 @@ export const BOT_DIFFICULTIES = Object.freeze({
     reraise: 1.12,
     attack: 1.08,
     noise: 0.04,
-    description: '在标准策略上加入阻断诈唬、薄价值、挤压、延迟进攻和选择性领打。',
+    description: '在标准策略上加入阻断诈唬、薄价值、挤压和选择性领打。',
   }),
 });
 export const difficultyPolicy = (difficulty) =>

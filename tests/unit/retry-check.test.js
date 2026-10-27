@@ -10,6 +10,7 @@ import {
   canRestartHand,
   potSize,
   deckOfCards,
+  rebuyHero,
 } from '../../src/engine/poker.js';
 import { createReviewInput } from '../../src/review/analysis.js';
 let passed = 0;
@@ -175,6 +176,7 @@ check('rebuy and short blind restore once with original actual blind amounts', (
   g.players[0].stack = 0;
   g.players[1].stack = 25;
   g.players[2].stack = 25;
+  rebuyHero(g);
   startHand(g);
   const baseline = copy(g);
   assert.equal(g.stats.buyin, 10000);

@@ -2,6 +2,7 @@ import { chipUnitOf } from './bet-sizing.js';
 
 export { allInContext } from './public-action-context.js';
 import { preparePublicRanges, publicComboWeight } from './public-ranges.js';
+import { exactStoryRiver } from './public-equity.js';
 
 // Evaluator/rule helpers are supplied by poker.js, avoiding a second evaluator
 // or any dependency on the actual deck, other hole cards or final result.
@@ -14,7 +15,8 @@ export function estimateAllInEquity(
   const available = deck.filter((c) => !known.has(c.key));
   // Scores/features depend only on this public board and a candidate pair.
   // By default this estimate owns the cache. Candidate rollouts may share it
-  // only within one sampled deal, never a live session or actual hidden deal.
+  // within one review snapshot (sampled boards per deal, visible boards across
+  // its deals), never a live session or actual hidden deal.
   // Range roles and pressure still receive their own weights.
   const boards = cache;
   const handData = (hole, board) => {
@@ -64,6 +66,11 @@ export function estimateAllInEquity(
             features: data.features,
             boardScore: rangeView === view ? boardScore : null,
             compare,
+            handData: (pair, board) => {
+              const data = handData(pair, board);
+              data.features ??= botBoardFeatures(pair, board, data.score);
+              return data;
+            },
           });
         }
         combos.push({ hole, weight });
@@ -89,6 +96,17 @@ export function estimateAllInEquity(
         0,
       )
     : 0;
+  const exact =
+    pools.length === 1
+      ? exactStoryRiver(view, descriptors.get(pools[0].id), pots, {
+          deck,
+          evaluate,
+          features: botBoardFeatures,
+          compare,
+          cache,
+        })
+      : null;
+  if (exact) return { ...exact, unbeatableRiver, guaranteedReturn };
   let share = 0,
     wins = 0,
     tiesAtShowdown = 0;

@@ -1,4 +1,58 @@
 import { publicComboWeight } from './public-ranges.js';
+import { hasPublicStory } from './public-story.js';
+
+// Exact only for a genuine heads-up river with multi-street public evidence.
+// It cannot learn which candidate is the actual hidden hand.
+export function exactStoryRiver(
+  view,
+  descriptor,
+  pots,
+  { deck, evaluate, features, compare, cache = new Map() },
+) {
+  if (view.street !== 3 || view.rivals !== 1 || !hasPublicStory(descriptor?.postflopLine))
+    return null;
+  const known = new Set([...view.hole, ...view.board].map((c) => c.key));
+  const available = deck.filter((c) => !known.has(c.key));
+  const data = (h, b) => publicHandData(h, b, { evaluate, features, cache });
+  const own = data(view.hole, view.board).score;
+  let total = 0,
+    wins = 0,
+    ties = 0,
+    combinations = 0;
+  for (let a = 0; a < available.length; a++)
+    for (let b = a + 1; b < available.length; b++) {
+      const hole = [available[a], available[b]],
+        facts = data(hole, view.board);
+      const weight = publicComboWeight(hole, descriptor, {
+        board: descriptor.board,
+        ...data(hole, descriptor.board),
+        compare,
+        handData: data,
+      });
+      const result = compare(own, facts.score);
+      total += weight;
+      if (result > 0) wins += weight;
+      else if (result === 0) ties += weight;
+      combinations++;
+    }
+  const share = total ? (wins + ties / 2) / total : 0;
+  const contestable = pots.reduce((sum, p) => sum + p.amount, 0);
+  return {
+    equity: contestable
+      ? pots.reduce(
+          (sum, p) => sum + p.amount * (p.eligible.includes(descriptor.id) ? share : 1),
+          0,
+        ) / contestable
+      : 0,
+    winProbability: total ? wins / total : 0,
+    tieProbability: total ? ties / total : 0,
+    lossProbability: total ? 1 - (wins + ties) / total : 0,
+    samples: 0,
+    enumeratedCombos: combinations,
+    exact: true,
+    rangeModel: 'public-street-lines-v1',
+  };
+}
 
 // Rank/suited classes have at most 169 entries. Exact available-card counts
 // preserve blockers without evaluating or enumerating 1,326 physical pairs.
@@ -93,11 +147,23 @@ function priorPairSampler(pool, descriptor) {
 }
 
 // The shared cache stores only pure scores/features of a board and candidate pair.
+// Same keys as map/join, built without intermediate arrays: rollouts look up
+// hundreds of thousands of pairs.
+const cardsKey = (cards) => {
+  let key = cards.length ? cards[0].key : '';
+  for (let i = 1; i < cards.length; i++) key += '|' + cards[i].key;
+  return key;
+};
 export function publicHandData(hole, board, { evaluate, features, cache = new Map() }) {
-  const boardKey = board.map((c) => c.key).join('|');
+  const boardKey = cardsKey(board);
   let pairs = cache.get(boardKey);
   if (!pairs) cache.set(boardKey, (pairs = new Map()));
-  const pairKey = hole.map((c) => c.key).join('|');
+  // Scores and features do not depend on hole-card order. Reversed sampled
+  // pairs share the same pure facts, without caching a range or a decision.
+  const pairKey =
+    hole.length === 2 && hole[0].key > hole[1].key
+      ? hole[1].key + '|' + hole[0].key
+      : cardsKey(hole);
   let data = pairs.get(pairKey);
   if (!data) {
     data = { score: evaluate([...hole, ...board]).score };
@@ -130,13 +196,24 @@ export function createPublicPairSampler(
     aggressionRatio: descriptor.aggressionRatio,
     preflop: descriptor.preflop ? { ...descriptor.preflop } : undefined,
     postflop: descriptor.postflop ? { ...descriptor.postflop } : undefined,
+    postflopLine: descriptor.postflopLine?.map((a) => ({
+      ...a,
+      board: a.board.map((card) => ({ ...card })),
+    })),
   };
   const board = (descriptor.board || []).map((card) => ({ ...card })),
     boardScore = board.length === 5 ? publicHandData([], board, { evaluate, cache }).score : null,
     weightOf = (pair) => {
       const data =
         board.length >= 3 ? publicHandData(pair, board, { evaluate, features, cache }) : {};
-      return publicComboWeight(pair, range, { board, ...data, boardScore, compare });
+      return publicComboWeight(pair, range, {
+        board,
+        ...data,
+        boardScore,
+        compare,
+        handData: (hole, earlierBoard) =>
+          publicHandData(hole, earlierBoard, { evaluate, features, cache }),
+      });
     };
   const drawPrior =
     range.allIn && range.street > 0
@@ -147,7 +224,41 @@ export function createPublicPairSampler(
           return { pair: [pool[a], pool[b]], weight: 1 };
         }
       : priorPairSampler(pool, range);
-  return ({ random, stats = {} }) => {
+  let cumulative;
+  let storyCdf;
+  return ({ random, stats = {}, available = pool }) => {
+    if (hasPublicStory(range.postflopLine)) {
+      if (!storyCdf) {
+        let total = 0;
+        const pairs = [];
+        for (let a = 0; a < pool.length - 1; a++)
+          for (let b = a + 1; b < pool.length; b++) {
+            const pair = [pool[a], pool[b]],
+              weight = weightOf(pair);
+            if (weight > 0) {
+              total += weight;
+              pairs.push({ pair, weight, cumulative: total });
+            }
+          }
+        if (!total) throw Error('公开范围没有可用底牌组合。');
+        storyCdf = { pairs, total };
+        stats.storyCdfBuilds = (stats.storyCdfBuilds || 0) + 1;
+      }
+      const allowed = new Set(available.map((c) => c.key));
+      for (let attempt = 0; attempt < 24; attempt++) {
+        stats.proposals = (stats.proposals || 0) + 1;
+        const target = random() * storyCdf.total;
+        const picked = (storyCdf.pairs.find((p) => target < p.cumulative) || storyCdf.pairs.at(-1))
+          .pair;
+        if (picked.every((c) => allowed.has(c.key))) return picked;
+      }
+      stats.cdfFallbacks = (stats.cdfFallbacks || 0) + 1;
+      const valid = storyCdf.pairs.filter((p) => p.pair.every((c) => allowed.has(c.key)));
+      let target = random() * valid.reduce((sum, p) => sum + p.weight, 0);
+      const picked = valid.find((p) => (target -= p.weight) < 0) || valid.at(-1);
+      if (!picked) throw Error('公开范围没有可用底牌组合。');
+      return picked.pair;
+    }
     for (let attempt = 0; attempt < 24; attempt++) {
       stats.proposals = (stats.proposals || 0) + 1;
       const { pair, weight: priorWeight } = drawPrior(random),
@@ -155,17 +266,23 @@ export function createPublicPairSampler(
       if (conditional >= 1 || random() < conditional) return pair;
     }
     stats.cdfFallbacks = (stats.cdfFallbacks || 0) + 1;
-    const pairs = [];
-    let total = 0;
-    for (let a = 0; a < pool.length - 1; a++)
-      for (let b = a + 1; b < pool.length; b++) {
-        const pair = [pool[a], pool[b]],
-          weight = weightOf(pair);
-        if (weight > 0) {
-          total += weight;
-          pairs.push({ pair, cumulative: total });
+    // A factory owns one immutable range and pool. Reuse only this local CDF;
+    // the shared cross-view cache above continues to contain card facts only.
+    if (!cumulative) {
+      const pairs = [];
+      let total = 0;
+      for (let a = 0; a < pool.length - 1; a++)
+        for (let b = a + 1; b < pool.length; b++) {
+          const pair = [pool[a], pool[b]],
+            weight = weightOf(pair);
+          if (weight > 0) {
+            total += weight;
+            pairs.push({ pair, cumulative: total });
+          }
         }
-      }
+      cumulative = { pairs, total };
+    }
+    const { pairs, total } = cumulative;
     if (!total) throw Error('公开范围没有可用底牌组合。');
     const target = random() * total;
     return (pairs.find((entry) => target < entry.cumulative) || pairs.at(-1)).pair;
@@ -217,14 +334,14 @@ export function estimatePublicEquity(
         eligible: pot.eligible.filter((id) => id === view.id || assumed.has(id)),
       })),
     contestable = pots.reduce((sum, pot) => sum + pot.amount, 0),
-    // A limper who has not matched a later raise contests only the layers
-    // already paid. The full-field estimate above remains useful, but cannot
-    // price a current preflop call as though every limper covered every layer.
+    // A waiting seat contests only the layers already paid. Keep the full-field
+    // estimate for betting decisions, but price a call against actual exposed
+    // contributions on every street. A check is not a commitment to match the
+    // next bet; treating it as one invents opponents in the new wager's layer.
     // No new chips, hands, scores or random samples are introduced here.
     pricePots =
-      view.street === 0 &&
       view.legal?.callAmount > 0 &&
-      view.history.some((a) => a.street === 0 && a.action === 'raise') &&
+      view.history.some((a) => a.street === view.street && a.action === 'raise') &&
       view.callPots
         ? view.callPots.map((pot) => ({
             ...pot,
@@ -238,6 +355,29 @@ export function estimatePublicEquity(
   const firstSampler = selected.length
     ? createPublicPairSampler(available, selected[0], { evaluate, features, compare, cache })
     : null;
+  const storySamplers = new Map(
+    selected
+      .filter((r) => hasPublicStory(r.postflopLine))
+      .map((range, index) => [
+        range.id,
+        range === selected[0]
+          ? firstSampler
+          : createPublicPairSampler(available, range, { evaluate, features, compare, cache }),
+      ]),
+  );
+  const exact =
+    selected.length === 1
+      ? exactStoryRiver(view, selected[0], pots, { deck, evaluate, features, compare, cache })
+      : null;
+  if (exact)
+    return {
+      ...exact,
+      potEquity: exact.equity,
+      model: 'public-action-ranges',
+      assumedOpponentIds: [...assumed],
+      proposals: 0,
+      cdfFallbacks: 0,
+    };
   let share = 0,
     priceShare = 0,
     wins = 0,
@@ -249,14 +389,16 @@ export function estimatePublicEquity(
       const pair =
         index === 0
           ? firstSampler({ random, stats })
-          : samplePublicPair(pool, range, {
-              random,
-              evaluate,
-              features,
-              compare,
-              cache,
-              stats,
-            });
+          : storySamplers.has(range.id)
+            ? storySamplers.get(range.id)({ random, stats, available: pool })
+            : samplePublicPair(pool, range, {
+                random,
+                evaluate,
+                features,
+                compare,
+                cache,
+                stats,
+              });
       hands.set(range.id, pair);
       for (const card of pair)
         pool.splice(
@@ -305,6 +447,7 @@ export function estimatePublicEquity(
     lossProbability: 1 - (wins + ties) / trials,
     samples: trials,
     model: 'public-action-ranges',
+    ...(storySamplers.size ? { rangeModel: 'public-street-lines-v1' } : {}),
     assumedOpponentIds: [...assumed],
     ...stats,
   };

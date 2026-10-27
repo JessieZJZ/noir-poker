@@ -48,8 +48,8 @@ for (const width of [320, 390, 820, 1032]) {
       assertTableLayout(await page.evaluate(readTableLayout));
     }
     await page.locator('#opponents-button').click();
-    await page.locator('[data-bot-seat="3"]').selectOption('viktor');
-    await page.locator('[data-bot-seat="4"]').selectOption('haxton');
+    await page.locator('[data-bot-seat="3"]').selectOption('rook');
+    await page.locator('[data-bot-seat="4"]').selectOption('owen');
     await page.locator('#opponents-dialog .close-dialog').click();
     await page.evaluate(() => window.qa.heroTurn(9));
     for (const id of [3, 4]) {

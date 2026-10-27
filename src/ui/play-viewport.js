@@ -1,5 +1,6 @@
 import { COMPACT_PLAY_QUERY } from './play-geometry.js';
 import { playSurfaceTop, readPlayViewport } from './stable-viewport.js';
+import { entryWelcomeCorridor, entryWelcomeScale } from './entry-welcome-scale.js';
 // Keep the whole table in the first screen. Measurements are made at
 // scale 1 before fitting, so collision coordinates never mix CSS/visual pixels.
 export function createPlayViewport(surface, { layout = () => {} } = {}) {
@@ -27,6 +28,39 @@ export function createPlayViewport(surface, { layout = () => {} } = {}) {
     }
   }
 
+  // Measured at scale 1, like the fit below: the waiting message keeps its
+  // on-screen size unless the players beside it would crowd it.
+  function waitingMessageScale(box, scale) {
+    const welcome = arena.querySelector('.entry-welcome');
+    const content = welcome ? [...welcome.children].filter((el) => el.offsetWidth) : [];
+    if (surface.dataset.entryState !== 'waiting' || !content.length) return 1 / scale;
+    const local = (r) => ({
+      left: r.left - box.left,
+      top: r.top - box.top,
+      width: r.width,
+      height: r.height,
+    });
+    const center = local(arena.querySelector('.table-center').getBoundingClientRect());
+    const first = content[0],
+      last = content.at(-1);
+    // The message's band, in arena units at its full on-screen size.
+    const halfHeight = (last.offsetTop + last.offsetHeight - first.offsetTop) / scale / 2;
+    const centerY = center.top + center.height / 2;
+    const corridor = entryWelcomeCorridor(
+      [...arena.querySelectorAll('.seat-profile')].map((el) => local(el.getBoundingClientRect())),
+      {
+        centerX: center.left + center.width / 2,
+        top: centerY - halfHeight,
+        bottom: centerY + halfHeight,
+      },
+    );
+    return entryWelcomeScale({
+      arenaScale: scale,
+      contentWidth: Math.max(...content.map((el) => el.offsetWidth)),
+      corridorWidth: corridor * scale,
+    });
+  }
+
   function fit() {
     if (destroyed) return;
     if (document.documentElement.dataset.homeScrollLocked === 'true') return;
@@ -47,7 +81,11 @@ export function createPlayViewport(surface, { layout = () => {} } = {}) {
     }
     const screen = readPlayViewport(),
       screenHeight = screen.height,
-      height = Math.max(160, screenHeight - playSurfaceTop(surface) - 8);
+      waiting = surface.dataset.entryState === 'waiting',
+      reservedDock = waiting
+        ? parseFloat(getComputedStyle(surface).getPropertyValue('--live-dock-height')) || 152
+        : 0,
+      height = Math.max(160, screenHeight - playSurfaceTop(surface) - 8 - reservedDock);
     const large = screen.width > 900 && screen.width <= 1100 && screenHeight >= 1100;
     surface.style.setProperty(
       '--table-header-font',
@@ -108,7 +146,9 @@ export function createPlayViewport(surface, { layout = () => {} } = {}) {
       ),
       x = (viewport.clientWidth - (right - left) * scale) / 2 - left * scale,
       y = (availableHeight - (bottom - topEdge) * scale) / 2 - topEdge * scale;
+    const entryScale = waitingMessageScale(box, scale);
     arena.style.transform = `translate(${x}px, ${y}px) scale(${scale})`;
+    arena.style.setProperty('--entry-scale', String(entryScale));
     viewport.scrollTop = 0;
   }
   function schedule() {

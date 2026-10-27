@@ -1,0 +1,89 @@
+{
+  "reviewer": 2,
+  "stage": "classification-after-all-three-freezes-and-server-crosscheck",
+  "createdAt": "2026-10-23T03:52:54.515733+00:00",
+  "evidence": {
+    "observationHands": 800,
+    "interactionHands": 200,
+    "interactionCodes": [
+      "A",
+      "H"
+    ],
+    "interactionApiHandNumbers": {
+      "A": [
+        1,
+        100
+      ],
+      "H": [
+        101,
+        200
+      ]
+    },
+    "noFurtherApiRequests": true,
+    "priorFilesUnchanged": true,
+    "labelsNotForcedToOneToOne": true
+  },
+  "classifications": [
+    {
+      "code": "A",
+      "firstChoice": "均衡",
+      "secondChoice": "后位争夺",
+      "confidence": 0.59,
+      "reason": "在候选标签中，常规尺度与价值/少量诈唬并存最贴近。观察VPIP/PFR 66/31，常600开局，A50 AK再加7200、A70 AA多街进攻；互动A18用55对Hero隔离再加2200，A93 K6高河牌1500争夺，错过时又常多人过牌。这里的均衡只是相对风格，不能证明理论均衡。与H仍难稳定区分，后位倾向证据也不足。"
+    },
+    {
+      "code": "B",
+      "firstChoice": "小注控池",
+      "secondChoice": "跟注诱导",
+      "confidence": 0.68,
+      "reason": "观察VPIP/PFR 60/11，翻前常400或600，较多跟入与中等牌力过牌。B49 99在6/9/Q面翻牌400、转900、河2200，B18 QT顶对跟后以1800/2600取值，尺度较常规半池偏小。B4 J9中J仍过到底，体现控池；B13 JJ与B44 99成暗三后明显放大，说明不是所有牌都小注。未直接互动B，对长期持续小注频率仍有限制。"
+    },
+    {
+      "code": "C",
+      "firstChoice": "跟注诱导",
+      "secondChoice": "小注控池",
+      "confidence": 0.57,
+      "reason": "观察VPIP/PFR 51/14，入局相对克制但不少低成本跟入。C92 AJ先跛入再跟700，A高面过牌后转河1200/2400；C54 JJ面对翻牌1600先跟再转2700，强牌有延迟行动。C31 A8成花后强烈反加、C44 JJ再加后多街取值也存在。与B/E的共同过牌和跟注底色很接近，无法证明每次平跟意在诱导，标签只描述行为。"
+    },
+    {
+      "code": "D",
+      "firstChoice": "多街施压",
+      "secondChoice": "听牌施压",
+      "confidence": 0.82,
+      "reason": "观察VPIP/PFR 80/39，参与宽且翻前主动。D3 Q3同花翻前800、转2000争夺，D15 J3同花600开局并翻牌1000；D45 T9成顺后反加9200及后续打光，D94 96梅花转成花后3300/15500推进。高后街尺度有具体证据，听牌阶段是否显著更主动仍不确定，所以第二选择较弱。未将D56/D59输掉大池当作策略必错的证据。"
+    },
+    {
+      "code": "E",
+      "firstChoice": "跟注诱导",
+      "secondChoice": "宽松取值",
+      "confidence": 0.81,
+      "reason": "观察VPIP/PFR 66/4，翻前极少主动，低成本跟入最明显。E25 AA对500开与跟注仅跟，E43 AA先跟400后遇1200才到3100，安全强牌有延迟再加；E16 JJ跟2400后多街过牌。强牌形成后E8 A9、E27 AJ会多街扩大价值投入。是否每次都为诱导而跟不能由动作证明，但此标签比单纯宽松取值更贴近低翻前主动和延迟强牌线。"
+    },
+    {
+      "code": "F",
+      "firstChoice": "宽松取值",
+      "secondChoice": "多街施压",
+      "confidence": 0.88,
+      "reason": "观察90手自愿入局、29手翻前加注。F18 82同花、F23 64同花跟700，入局很宽；F4 66先跟700和2000，中暗三后延迟转4400，F60 K6同花转成花后3800/15500，体现宽入后强牌放大。F51 QT顶对连打但河牌被加弃，F72 KJ边缘继续后再弃，说明并非每手无条件攻击或跟到底。无本人互动，不能从这些观察量化其抗压能力。"
+    },
+    {
+      "code": "G",
+      "firstChoice": "范围纪律",
+      "secondChoice": null,
+      "confidence": 0.94,
+      "reason": "观察VPIP/PFR 29/13，明显少于其余代号，成串翻前弃牌。G7 JJ到1400、G26 AK隔离1100、G47 AK到2200，入池后仍能主动取值；G40 AK错过7/8/7面先跟2400后对3900弃，G57 A4顶对下注2500遭7500后弃。G37 A8在三条J面跟较大下注提醒它并非全程胆小。较紧与价格边界有行为证据，不能推论所有弃牌均为最优。"
+    },
+    {
+      "code": "H",
+      "firstChoice": "均衡",
+      "secondChoice": "后位争夺",
+      "confidence": 0.47,
+      "reason": "与A保持重复标签。观察VPIP/PFR 66/28、互动73/26，常500开局及700/900隔离，价值、浮动和过牌均存在。互动H128 KJs花听时600、成花后1800/3200连续取值，H103 Q4中对主动500；H156/H160/H171面对Hero再加都弃。H107 Q9o与H131 Q4o高牌跟一街又退让，行为较宽且有突兀感。后位争夺是可行第二解释，但没做足位置条件化比较，不能为凑齐标签强行确认。"
+    }
+  ],
+  "scores": {
+    "recognizability": 3,
+    "naturalExperience": 3,
+    "trainingValue": 4
+  }
+}

@@ -12,13 +12,25 @@ import sharp from 'sharp';
 import { PROFILE_PORTRAITS } from '../src/ui/portraits.js';
 import { sourceDigest, directoryDigest, root } from './mobile-lib.mjs';
 import { guideTemplate } from './wechat-presentation.mjs';
+import { reviewRevision } from './review-revision.mjs';
 
 export const wechatOutput = path.join(root, '.artifacts/wechat');
+export const wechatChineseFont = path.join(root, 'src/platform/wechat-fonts/noto-sans-sc.woff2');
 const template = path.join(root, 'miniprogram');
 const manifestName = 'build-info.json';
 const appId = () => process.env.NOIR_WECHAT_APP_ID || 'touristappid';
 const checksum = (bytes) => createHash('sha256').update(bytes).digest('hex');
 
+// Stylesheets ship without comments, indentation or blank lines; rules and
+// declarations are untouched (each line keeps its own content).
+export function compactWxss(text) {
+  return text
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .join('\n');
+}
 export function wechatPackageBytes(files, app) {
   const roots = (app.subpackages || []).map((entry) => entry.root.replace(/\/$/, '') + '/');
   const sizes = Object.fromEntries(
@@ -62,6 +74,34 @@ export async function verifyLocalWechatModules(directory) {
   }
 }
 
+// Page, app, subpackage and worker scripts are entry points. Shared modules
+// enter the package only when a static local require reaches them.
+export async function pruneUnusedSharedModules(directory) {
+  const files = await fileList(directory);
+  const modules = new Set(files.filter((name) => name.endsWith('.js')));
+  const pending = [...modules].filter((name) => !name.startsWith('shared/'));
+  const reachable = new Set();
+  while (pending.length) {
+    const file = pending.pop();
+    if (reachable.has(file)) continue;
+    reachable.add(file);
+    const source = await readFile(path.join(directory, file), 'utf8');
+    // A computed dependency cannot be proved unreachable. Keep the shared
+    // directory intact rather than guessing which target it will load.
+    if (/\brequire(?:\.async)?\(\s*([^'"\s])/.test(source)) return [];
+    for (const match of source.matchAll(
+      /\brequire(?:\.async)?\(\s*(['"])(\.{1,2}\/[^'"]+)\1\s*\)/g,
+    )) {
+      const target = path.posix.normalize(path.posix.join(path.posix.dirname(file), match[2]));
+      const resolved = modules.has(target) ? target : `${target}.js`;
+      if (modules.has(resolved)) pending.push(resolved);
+    }
+  }
+  const removed = [...modules].filter((name) => name.startsWith('shared/') && !reachable.has(name));
+  for (const file of removed) await rm(path.join(directory, file));
+  return removed;
+}
+
 export function wechatSourceDigest() {
   return checksum(
     sourceDigest() +
@@ -78,8 +118,10 @@ async function compileJs(sourceDirectory, destination) {
       entryPoints: [path.join(sourceDirectory, file)],
       bundle: true,
       external: ['*.js'],
+      define: { __NOIR_REVIEW_REVISION__: JSON.stringify(reviewRevision(root)) },
       format: 'cjs',
       target: 'es2019',
+      minify: true,
       write: false,
     });
     const target = path.join(destination, file);
@@ -91,14 +133,9 @@ async function compileJs(sourceDirectory, destination) {
 async function portraitAssets(output) {
   const directory = path.join(output, 'assets/portraits');
   await mkdir(directory, { recursive: true });
-  await writeFile(
-    path.join(directory, 'credits.js'),
-    `module.exports = ${JSON.stringify(Object.fromEntries(Object.entries(PROFILE_PORTRAITS).map(([id, image]) => [id, { label: image.credit, url: image.source }])))};\n`,
-  );
   for (const [id, photo] of Object.entries(PROFILE_PORTRAITS)) {
     const source = path.join(root, 'public', photo.src.slice(1));
-    // Resolve the same object-fit/zoom window as the Web avatar into a small,
-    // local JPEG. This includes the labelled A BAO face inside its wider frame.
+    // Match the original illustration crop used by Web and native.
     const { width, height } = await sharp(source).metadata();
     const edge = Math.min(width, height),
       zoom = photo.zoom || 1;
@@ -188,6 +225,31 @@ async function lockBuild(output) {
   }
 }
 
+// DevTools runs its compiler workers inside the opened project folder.
+// Renaming that folder away leaves them in a deleted directory, and the next
+// real-device preview fails with "ENOENT ... uv_cwd". Keep the folder itself
+// and swap its generated entries; a failure restores the previous entries.
+async function replaceContents(output, staging, backup) {
+  await mkdir(output, { recursive: true });
+  await rm(backup, { recursive: true, force: true });
+  await mkdir(backup);
+  try {
+    for (const name of await readdir(output))
+      await rename(path.join(output, name), path.join(backup, name));
+    for (const name of await readdir(staging))
+      await rename(path.join(staging, name), path.join(output, name));
+  } catch (error) {
+    try {
+      for (const name of await readdir(output))
+        await rm(path.join(output, name), { recursive: true, force: true });
+      for (const name of await readdir(backup))
+        await rename(path.join(backup, name), path.join(output, name));
+    } catch {}
+    throw error;
+  }
+  await rm(backup, { recursive: true, force: true });
+}
+
 export async function buildWechat(output = wechatOutput) {
   const unlock = await lockBuild(output);
   const backup = `${output}.previous-${process.pid}`;
@@ -210,6 +272,14 @@ export async function buildWechat(output = wechatOutput) {
       path.join(root, 'src/styles/hero-turn.css'),
       path.join(staging, 'shared/ui/hero-turn.wxss'),
     );
+    await cp(
+      path.join(root, 'src/styles/game-effects.css'),
+      path.join(staging, 'shared/ui/game-effects.wxss'),
+    );
+    await cp(
+      path.join(root, 'src/styles/emotion-effects.css'),
+      path.join(staging, 'shared/ui/emotion-effects.wxss'),
+    );
     for (const name of [
       'bet-sizing.js',
       'seat-geometry.js',
@@ -225,15 +295,22 @@ export async function buildWechat(output = wechatOutput) {
       'hero-turn.js',
       'card-rank-glyphs.js',
       'background-music.js',
+      'music-fade.js',
+      'deal-gate.js',
+      'effect-layouts.js',
+      'entry-welcome-scale.js',
+      'ceremony-sounds.js',
     ]) {
       const compiled = await transform(await readFile(path.join(root, 'src/ui', name), 'utf8'), {
         format: 'cjs',
         target: 'es2019',
+        minify: true,
       });
       await writeFile(path.join(staging, 'shared/ui', name), compiled.code);
     }
-    // WXSS cannot load package-relative font files. Embed the same WOFF2 bytes
-    // used by Web/native; no network request or separate font source is needed.
+    // WXSS cannot load package-relative font files. Embed the Web/native Latin
+    // and numeric WOFF2 bytes plus a Chinese subset limited to the copy that
+    // ships in the mini-program; no network request is needed.
     const fontCSS = await readFile(path.join(root, 'src/styles/fonts.css'), 'utf8');
     const chineseFaces = fontCSS.replace(
       /@font-face\s*\{[^}]*font-family: 'Noto Sans KR';[^}]*\}/s,
@@ -241,7 +318,11 @@ export async function buildWechat(output = wechatOutput) {
     );
     let fonts = chineseFaces;
     for (const match of chineseFaces.matchAll(/url\('\/fonts\/([^']+)'\)/g)) {
-      const bytes = await readFile(path.join(root, 'public/fonts', match[1]));
+      const bytes = await readFile(
+        match[1] === 'noto-sans-sc.woff2'
+          ? wechatChineseFont
+          : path.join(root, 'public/fonts', match[1]),
+      );
       fonts = fonts.replace(match[0], `url('data:font/woff2;base64,${bytes.toString('base64')}')`);
     }
     await writeFile(path.join(staging, 'fonts.wxss'), fonts);
@@ -255,6 +336,7 @@ export async function buildWechat(output = wechatOutput) {
       const result = await transform(await readFile(path.join(staging, file), 'utf8'), {
         format: 'cjs',
         target: 'es2019',
+        minify: true,
       });
       await writeFile(path.join(staging, file), result.code);
     }
@@ -298,7 +380,13 @@ export async function buildWechat(output = wechatOutput) {
     };
     await writeFile(path.join(staging, 'project.config.json'), JSON.stringify(project, null, 2));
     await writeFile(path.join(staging, 'package.json'), '{"type":"commonjs","private":true}\n');
+    await pruneUnusedSharedModules(staging);
     await verifyLocalWechatModules(staging);
+    for (const name of await fileList(staging))
+      if (name.endsWith('.wxss') && name !== 'fonts.wxss') {
+        const file = path.join(staging, name);
+        await writeFile(file, compactWxss(await readFile(file, 'utf8')));
+      }
     const files = [];
     // Local IDE preferences are preserved below, outside the runtime manifest.
     await rm(path.join(staging, 'project.private.config.json'), { force: true });
@@ -337,21 +425,7 @@ export async function buildWechat(output = wechatOutput) {
     } catch (error) {
       if (error.code !== 'ENOENT') throw error;
     }
-    await rm(backup, { recursive: true, force: true });
-    try {
-      await rename(output, backup);
-    } catch (error) {
-      if (error.code !== 'ENOENT') throw error;
-    }
-    try {
-      await rename(staging, output);
-    } catch (error) {
-      try {
-        await rename(backup, output);
-      } catch {}
-      throw error;
-    }
-    await rm(backup, { recursive: true, force: true });
+    await replaceContents(output, staging, backup);
     await verifyWechat(output);
     console.log(
       `WeChat project ready: ${output} (${Math.round(packageBytes.main / 1024)} KiB main; ${Math.round(totalBytes / 1024)} KiB total; current shared source)`,

@@ -4,6 +4,7 @@ import { createRequire } from 'node:module';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { seatAtTable } from './seat.mjs';
 
 const root = fileURLToPath(new URL('../../', import.meta.url));
 const require = createRequire(path.join(root, '.artifacts/wechat-tools/package.json'));
@@ -36,7 +37,7 @@ try {
   report.build = JSON.parse(
     await readFile(path.join(root, '.artifacts/wechat/build-info.json'), 'utf8'),
   );
-  const page = await mini.currentPage();
+  const page = await seatAtTable(mini);
   assert.equal(page.path, 'pages/table/table');
   const data = await page.data();
   assert.equal(data.tableReady, true);
@@ -62,7 +63,7 @@ try {
         keep: false,
         label:
           perspective === 'opponent'
-            ? ['ST', '谭老板，Tan Xuan', '阿宝，KPC A Bao', 'Peter，HCL'][index]
+            ? ['ST', '多街施压，多街施压', '听牌施压，KPC A Bao', 'Peter，HCL'][index]
             : ['待分析', '弃牌', '待分析', '弃牌'][index],
       }));
       await page.setData({
@@ -87,7 +88,13 @@ try {
       const evidence = { perspective, count, hint, width: (await cards[0].size()).width };
       evidence.tags = [];
       const tags = await page.$$('.review-timeline .review-label');
-      assert.equal(tags.length, count);
+      assert.equal(tags.length, perspective === 'hero' ? count : 0);
+      for (let index = 0; index < cards.length; index++) {
+        const card = cards[index];
+        assert.equal(await (await card.$('.review-step-number')).text(), String(index + 1));
+        assert.ok((await (await card.$('.review-step-meta')).text()).trim());
+        assert.equal(await (await card.$('.review-step-action')).text(), steps[index].actual);
+      }
       for (const tag of tags) {
         const height = (await tag.size()).height;
         const lineHeight = parseFloat(await tag.style('line-height'));
@@ -99,7 +106,7 @@ try {
         assert.ok(Math.abs(lines - Math.round(lines)) < 0.07);
         evidence.tags.push({ text: await tag.text(), height, lines });
       }
-      assert.ok(Math.abs(evidence.tags[0].lines - 1) < 0.07);
+      if (perspective === 'hero') assert.ok(Math.abs(evidence.tags[0].lines - 1) < 0.07);
       if (count > 2) {
         const third = cards[2],
           box = await track.offset(),
