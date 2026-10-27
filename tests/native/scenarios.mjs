@@ -794,6 +794,62 @@ export async function nativeScenarios(app) {
     assertStableRankInk(first, second);
     return { before: first, after: second, resizePasses: 6, backgroundMs: 1200 };
   });
+  await check('hero-cards-stable-during-opponent-action', async () => {
+    await waitForNativeHeroTurn(app, { advanceSettled: true });
+    const before = await app.evaluate(() => {
+      const state = window.noir.getState();
+      window.__nativeHeroCardNodes = [...document.querySelector('#hero-cards').children];
+      window.__nativeHeroCardRemovals = 0;
+      window.__nativeHeroCardObserver = new MutationObserver((entries) => {
+        for (const entry of entries)
+          window.__nativeHeroCardRemovals += [...entry.removedNodes].filter(
+            (node) => node.nodeType === 1 && node.matches('.playing-card'),
+          ).length;
+      });
+      window.__nativeHeroCardObserver.observe(document.querySelector('#hero-cards'), {
+        childList: true,
+      });
+      return {
+        hand: state.hand,
+        hole: state.hole,
+        opponents: JSON.stringify(
+          state.players.slice(1).map(({ id, lastAction }) => ({ id, lastAction })),
+        ),
+      };
+    });
+    try {
+      await app.click('#call-button');
+      await app.waitFor(
+        async () =>
+          JSON.stringify(
+            (await app.state()).players.slice(1).map(({ id, lastAction }) => ({ id, lastAction })),
+          ) !== before.opponents,
+        30000,
+        'A real opponent must act after the hero calls',
+      );
+      const after = await app.evaluate(() => {
+        const state = window.noir.getState(),
+          cards = [...document.querySelector('#hero-cards').children];
+        return {
+          hand: state.hand,
+          hole: state.hole,
+          sameNodes: cards.every((node, i) => node === window.__nativeHeroCardNodes[i]),
+          removals: window.__nativeHeroCardRemovals,
+        };
+      });
+      assert.equal(after.hand, before.hand);
+      assert.deepEqual(after.hole, before.hole);
+      assert.equal(after.sameNodes, true);
+      assert.equal(after.removals, 0);
+      return {
+        before,
+        after,
+        scope: 'Natural deal, real hero call and opponent action; no fixtures',
+      };
+    } finally {
+      await app.evaluate(() => window.__nativeHeroCardObserver?.disconnect());
+    }
+  });
   await check('phone-portrait-or-tablet-rotation', async () => {
     await app.waitHero();
     const readOrientation = () =>

@@ -460,12 +460,24 @@ function render() {
     }),
   );
   preparePortraits($('#seats'));
-  setLocalizedHTML(
-    $('#hero-cards'),
-    hero.hole
-      .map((c, i) => card(c, { animate: newHand, delay: 420 + i * 130, best: heroBest.has(c.key) }))
-      .join(''),
-  );
+  const heroCards = $('#hero-cards'),
+    holeKey = hero.hole.map((c) => c.key).join(',');
+  // An opponent action must not recreate the same faces: that would restart
+  // the premium ::after glow and the turn highlight attached to those cards.
+  if (newHand || heroCards.dataset.holeKey !== holeKey) {
+    setLocalizedHTML(
+      heroCards,
+      hero.hole
+        .map((c, i) =>
+          card(c, { animate: newHand, delay: 420 + i * 130, best: heroBest.has(c.key) }),
+        )
+        .join(''),
+    );
+    heroCards.dataset.holeKey = holeKey;
+  } else
+    [...heroCards.children].forEach((node, i) =>
+      node.classList.toggle('best-card', heroBest.has(hero.hole[i].key)),
+    );
   if (newHand && game.phase !== 'done' && isPremiumStart(hero.hole))
     effects.premiumStart($('.hero-cards-wrap'));
   $('.hero-name').classList.toggle('is-champion', crowned === 0);

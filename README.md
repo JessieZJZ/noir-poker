@@ -4,7 +4,7 @@
 
 轮到你时，手牌背光和操作区顶部亮线同步亮起，随后保持清晰的行动状态；8 秒未操作再轻提醒一次，调节下注后取消补提醒。Web、App 与微信小程序共用提醒节奏和动画样式，保留现有震动，并支持系统的减少动态效果设置。
 
-各端实测范围与限制见[行动提醒验证记录](docs/turn-attention-validation.md)。
+各端实测范围与限制见[行动提醒验证记录](docs/turn-attention-validation.md)。强起手牌光效在对手行动后保持连续播放，修复与验收见[底牌动效记录](docs/premium-glow-validation-2026-10-28.md)。
 
 训练风格、兼容迁移、完整牌局模拟和匿名 AI 验收入口见[电脑训练风格](docs/bots.md)。本轮资料依据见[风格复核](docs/style-research-2026-10-20.md)，牌桌保留头像左侧、风格与筹码右侧的排布，风格名完整显示，不再需要长按查看；电脑正常思考节奏为 1–3 秒，见[标签与节奏验收](docs/style-tag-validation-2026-10-27.md)。八种新阵容的验证状态见[最新记录](docs/style-validation-2026-10-21.md)，四种候选的量化和原始反馈见[历史记录](docs/style-validation-2026-10-20.md)。
 
