@@ -35,7 +35,10 @@ const positionNames = {
   HJ: '劫位',
   CO: '关煞位',
 };
-export const CROWN_MARKUP = '<span class="crown-shape" aria-hidden="true"></span>';
+// The champion's trophy: a gold cup that shimmers with a halo, turning rays
+// and twinkling stars. WeChat renders the same class names as views.
+export const TROPHY_MARKUP =
+  '<span class="trophy-shape" aria-hidden="true"><span class="trophy-rays"></span><span class="trophy-glow"></span><span class="trophy-handle handle-left"></span><span class="trophy-handle handle-right"></span><span class="trophy-cup"></span><span class="trophy-stem"></span><span class="trophy-base"></span><span class="trophy-spark spark-1"></span><span class="trophy-spark spark-2"></span><span class="trophy-spark spark-3"></span><span class="trophy-spark spark-4"></span></span>';
 function positionBadge(g, id) {
   if (g.phase === 'idle') return '';
   const role = seatPosition(g, id);
@@ -116,11 +119,12 @@ export function renderOpponentSeats(
       const arriving =
         reveal && isSeatHandAnimated(p) && seatFaceSignatures.get(p.id) !== faceSignature;
       seatFaceSignatures.set(p.id, faceSignature);
-      const crown =
+      // Layout picks the trophy's side; until then it faces the table centre.
+      const trophy =
         crownedId === p.id
-          ? `<span class="champion-crown seat-champion-crown ${crownPending ? 'crown-pending' : ''}" title="冠军">${CROWN_MARKUP}</span>`
+          ? `<span class="champion-trophy seat-champion-trophy ${x < 50 ? 'trophy-right' : 'trophy-left'} ${crownPending ? 'trophy-pending' : ''}" title="冠军">${TROPHY_MARKUP}</span>`
           : '';
-      return `<div class="seat seat-${p.id} ${y === 0 ? 'seat-crown' : ''} ${x < 25 ? 'seat-left' : x > 75 ? 'seat-right' : ''} ${p.folded ? 'folded' : ''} ${p.out && !p.hole.length ? 'seat-out' : ''} ${crownedId === p.id ? 'is-champion' : ''} ${g.actor === p.id && !dealing ? 'thinking' : ''} ${isWinner ? 'winner' : ''}" data-player="${p.id}" data-profile="${escape(p.botProfile)}" data-mood="${escape(mood)}" style="left:${x}%;top:${y}%"><div id="seat-hand-${p.id}" class="mini-cards ${reveal ? 'revealed-cards' : ''}">${reveal ? p.hole.map((c, i) => card(c, { small: true, animate: arriving, delay: i * 140, best: !!rank && rank.cards.some((best) => best.key === c.key) })).join('') : p.hole.map((c, i) => `<span class="card-back ${newHand ? 'card-deal' : ''}" style="--delay:${p.id * 65 + i * 140}ms" aria-label="对手底牌"></span>`).join('')}</div><div class="seat-profile">${crown}<span class="avatar avatar-${p.id - 1} ${moodShown ? `has-mood mood-${mood}` : ''}" title="${escape(title)}" aria-label="${escape(title)}">${portraitContent(profile.id, profiles[p.id])}${moodShown ? `<i class="mood-badge mood-live mood-${mood}" aria-hidden="true"></i>` : ''}</span><div><strong><span class="seat-name-label">${escape(p.name)}</span>${positionBadge(g, p.id)}<span class="seat-inspect-slot">${g.phase === 'done' && p.hole.length ? `<button class="seat-peek" data-peek-player="${p.id}" title="${reveal ? '收起底牌' : '查看底牌'}" aria-label="${reveal ? '收起' : '查看'} ${escape(p.name)} 的底牌" aria-pressed="${!!reveal}" aria-controls="seat-hand-${p.id}"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M2 10C4 6 7 5 10 5C13 5 16 6 18 10C16 14 13 15 10 15C7 15 4 14 2 10Z"/><circle cx="10" cy="10" r="2.5"/></svg></button>` : ''}</span></strong><span class="seat-style-label" data-style-profile="${profile.id}" data-full-name="${escape(profile.name)}" aria-label="${escape(p.name)} 本手风格：${profile.name}">${profile.short}</span><span class="seat-bankroll"><span class="seat-stack">${format(p.stack)}</span></span></div></div><div class="seat-rank-slot">${rankMarkup}</div><div class="seat-action" aria-label="${escape(p.name)} 的最近行动">${renderSeatAction(g, p, { dealing })}</div></div>`;
+      return `<div class="seat seat-${p.id} ${y === 0 ? 'seat-crown' : ''} ${x < 25 ? 'seat-left' : x > 75 ? 'seat-right' : ''} ${p.folded ? 'folded' : ''} ${p.out && !p.hole.length ? 'seat-out' : ''} ${crownedId === p.id ? 'is-champion' : ''} ${g.actor === p.id && !dealing ? 'thinking' : ''} ${isWinner ? 'winner' : ''}" data-player="${p.id}" data-profile="${escape(p.botProfile)}" data-mood="${escape(mood)}" style="left:${x}%;top:${y}%"><div id="seat-hand-${p.id}" class="mini-cards ${reveal ? 'revealed-cards' : ''}">${reveal ? p.hole.map((c, i) => card(c, { small: true, animate: arriving, delay: i * 140, best: !!rank && rank.cards.some((best) => best.key === c.key) })).join('') : p.hole.map((c, i) => `<span class="card-back ${newHand ? 'card-deal' : ''}" style="--delay:${p.id * 65 + i * 140}ms" aria-label="对手底牌"></span>`).join('')}</div><div class="seat-profile">${trophy}<span class="avatar avatar-${p.id - 1} ${moodShown ? `has-mood mood-${mood}` : ''}" title="${escape(title)}" aria-label="${escape(title)}">${portraitContent(profile.id, profiles[p.id])}${moodShown ? `<i class="mood-badge mood-live mood-${mood}" aria-hidden="true"></i>` : ''}</span><div><strong><span class="seat-name-label">${escape(p.name)}</span>${positionBadge(g, p.id)}<span class="seat-inspect-slot">${g.phase === 'done' && p.hole.length ? `<button class="seat-peek" data-peek-player="${p.id}" title="${reveal ? '收起底牌' : '查看底牌'}" aria-label="${reveal ? '收起' : '查看'} ${escape(p.name)} 的底牌" aria-pressed="${!!reveal}" aria-controls="seat-hand-${p.id}"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M2 10C4 6 7 5 10 5C13 5 16 6 18 10C16 14 13 15 10 15C7 15 4 14 2 10Z"/><circle cx="10" cy="10" r="2.5"/></svg></button>` : ''}</span></strong><span class="seat-style-label" data-style-profile="${profile.id}" data-full-name="${escape(profile.name)}" aria-label="${escape(p.name)} 本手风格：${profile.name}">${profile.short}</span><span class="seat-bankroll"><span class="seat-stack">${format(p.stack)}</span></span></div></div><div class="seat-rank-slot">${rankMarkup}</div><div class="seat-action" aria-label="${escape(p.name)} 的最近行动">${renderSeatAction(g, p, { dealing })}</div></div>`;
     })
     .join('');
 }
@@ -226,9 +230,9 @@ export function createSnapshotSurface(template, g, { sessionNumber, visible, pee
   query('.hero-area').classList.toggle('hero-folded', hero.folded);
   query('.hero-area').removeAttribute('style');
   query('.hero-name').classList.toggle('is-champion', g.over?.championId === 0);
-  query('#hero-crown-slot').innerHTML =
+  query('#hero-trophy-slot').innerHTML =
     g.over?.championId === 0
-      ? `<span class="champion-crown hero-champion-crown">${CROWN_MARKUP}</span>`
+      ? `<span class="champion-trophy hero-champion-trophy">${TROPHY_MARKUP}</span>`
       : '';
   query('.hero-name').classList.toggle('is-active', g.actor === 0);
   setLocalizedText(query('#hero-stack'), format(hero.stack));

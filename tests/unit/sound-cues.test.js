@@ -162,3 +162,19 @@ test('game-end cues are distinct, bounded and fade to silence on every platform'
   }
   assert.equal(signatures.size, CEREMONY_CUES.length);
 });
+
+test('cached ceremony WAVs change name whenever any cue changes', async () => {
+  const { ceremonySamples, CEREMONY_CUES, CEREMONY_SOUND_VERSION } =
+    await import('../../src/ui/ceremony-sounds.js');
+  // Fingerprint of every cue at this version. A different fingerprint means
+  // the cues changed: bump CEREMONY_SOUND_VERSION and record the new value,
+  // or WeChat keeps playing its cached copy of the old sounds.
+  const fingerprints = { 2: '327696801' };
+  let sum = 0;
+  for (const cue of CEREMONY_CUES) {
+    const samples = ceremonySamples(cue);
+    for (let i = 0; i < samples.length; i += 97)
+      sum = (sum * 31 + Math.round(samples[i] * 1e4)) % 1e9;
+  }
+  assert.equal(String(sum), fingerprints[CEREMONY_SOUND_VERSION], 'bump CEREMONY_SOUND_VERSION');
+});

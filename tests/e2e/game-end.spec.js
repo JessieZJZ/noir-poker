@@ -122,38 +122,57 @@ test('retry replaces the card nodes even when the original hole cards are identi
 });
 
 for (const heroWins of [true, false]) {
-  test(`${heroWins ? 'the hero' : 'the last bot'} is crowned after winning heads-up`, async ({
+  test(`${heroWins ? 'the hero' : 'the last bot'} gets the trophy after winning heads-up`, async ({
     page,
   }) => {
     await page.evaluate((heroWins) => window.qa.finale({ heroWins }), heroWins);
     await page.evaluate(() => window.qa.finaleShowdown());
     const view = await state(page);
     expect(view.over).toEqual({ heroPlace: heroWins ? 1 : 2, championId: heroWins ? 0 : 1 });
-    await expect(page.locator('.crown-stage')).toHaveCount(1);
-    await expect(page.locator('.crown-caption')).toHaveText(
+    await expect(page.locator('.trophy-stage')).toHaveCount(1);
+    await expect(page.locator('.trophy-caption')).toHaveText(
       heroWins ? '你获得冠军' : 'Mia 获得冠军',
     );
     await expect(page.locator('.confetti-layer')).toHaveCount(heroWins ? 1 : 0);
     await expect(page.locator('.farewell-stage')).toHaveCount(0);
     if (heroWins) await expect(page.locator('.confetti-piece')).toHaveCount(112);
-    const resting = heroWins ? '.hero-champion-crown' : '.seat-1 .champion-crown';
-    await expect(page.locator(resting)).toHaveClass(/crown-pending/);
-    await seek(page, '.crown-stage', 1000);
-    await page.screenshot({ path: test.info().outputPath(`coronation-${heroWins}.png`) });
+    const resting = heroWins ? '.hero-champion-trophy' : '.seat-1 .champion-trophy';
+    await expect(page.locator(resting)).toHaveClass(/trophy-pending/);
+    await seek(page, '.trophy-stage', 1000);
+    await page.screenshot({ path: test.info().outputPath(`trophy-flight-${heroWins}.png`) });
     await page.evaluate(finishAnimations);
-    await expect(page.locator('.crown-stage')).toHaveCount(0, { timeout: 4000 });
-    await expect(page.locator(resting)).not.toHaveClass(/crown-pending/);
-    await expect(page.locator('.champion-crown')).toHaveCount(1);
-    // The crown is worn upright: no rotation, only the landing scale.
-    expect(
-      await page.locator(resting).evaluate((crown) => {
-        const style = getComputedStyle(crown);
-        const [, b = 0, c = 0] = (style.transform.match(/matrix\(([^)]+)\)/)?.[1] || '')
-          .split(',')
-          .map(Number);
-        return { rotate: style.rotate, skew: Math.abs(b) + Math.abs(c) };
-      }),
-    ).toEqual({ rotate: 'none', skew: 0 });
+    await expect(page.locator('.trophy-stage')).toHaveCount(0, { timeout: 4000 });
+    await expect(page.locator(resting)).not.toHaveClass(/trophy-pending/);
+    await expect(page.locator('.champion-trophy')).toHaveCount(1);
+    // The trophy rests clear of its champion: centred above the hero's hole
+    // cards, or beside the bot's profile on its roomier side, and it shimmers.
+    const placement = await page.locator(resting).evaluate((trophy) => {
+      const box = (el) => el.getBoundingClientRect();
+      const t = box(trophy);
+      const animations = trophy
+        .getAnimations({ subtree: true })
+        .map((a) => a.animationName)
+        .filter((name) => /^trophy-(glow|rays|spark)$/.test(name));
+      if (trophy.matches('.hero-champion-trophy')) {
+        const cards = box(document.querySelector('#hero-cards'));
+        return {
+          centred: Math.abs(t.left + t.width / 2 - (cards.left + cards.width / 2)) < 2,
+          clear: t.bottom <= cards.top + 1,
+          shimmer: [...new Set(animations)].sort(),
+        };
+      }
+      const profile = box(trophy.closest('.seat-profile'));
+      return {
+        centred: Math.abs(t.top + t.height / 2 - (profile.top + profile.height / 2)) < 2,
+        clear: t.right <= profile.left || t.left >= profile.right,
+        shimmer: [...new Set(animations)].sort(),
+      };
+    });
+    expect(placement).toEqual({
+      centred: true,
+      clear: true,
+      shimmer: ['trophy-glow', 'trophy-rays', 'trophy-spark'],
+    });
     await expect(page.locator('#street-label')).toHaveText('本局结束');
     await expect(page.locator('#next-button')).toHaveText('下一局');
     await expect(page.locator('#reset-button')).toBeHidden();
@@ -163,14 +182,14 @@ for (const heroWins of [true, false]) {
     await expect(page.locator('#session-standing')).toHaveClass(
       heroWins ? /standing-champion/ : /standing-2/,
     );
-    await page.screenshot({ path: test.info().outputPath(`crowned-${heroWins}.png`) });
+    await page.screenshot({ path: test.info().outputPath(`trophy-${heroWins}.png`) });
     const session = view.sessionNumber;
     await page.locator('#next-button').click();
     const next = await state(page);
     expect(next.over).toBeNull();
     expect(next.sessionNumber).toBe(session + 1);
     expect(next.hand).toBe(1);
-    await expect(page.locator('.champion-crown')).toHaveCount(0);
+    await expect(page.locator('.champion-trophy')).toHaveCount(0);
     await expect(page.locator('#reset-button')).toBeVisible();
     await expect(page.locator('#session-title')).toHaveText('本局练习');
     await page.goto('/#records');
@@ -182,16 +201,16 @@ for (const heroWins of [true, false]) {
   });
 }
 
-test('retrying the deciding hand withdraws the crown and the final standing', async ({ page }) => {
+test('retrying the deciding hand withdraws the trophy and the final standing', async ({ page }) => {
   await page.evaluate(() => window.qa.finale({ heroWins: true }));
   await page.evaluate(() => window.qa.finaleShowdown());
   await page.evaluate(finishAnimations);
-  await expect(page.locator('.hero-champion-crown')).toHaveCount(1);
+  await expect(page.locator('.hero-champion-trophy')).toHaveCount(1);
   await page.locator('#restart-hand-button').click();
   const view = await state(page);
   expect(view.over).toBeNull();
   expect(view.replayAttempt).toBe(1);
-  await expect(page.locator('.champion-crown, .crown-stage')).toHaveCount(0);
+  await expect(page.locator('.champion-trophy, .trophy-stage')).toHaveCount(0);
   await expect(page.locator('#session-title')).toHaveText('本局练习');
   await expect(page.locator('#reset-button')).toBeVisible();
 });
@@ -241,7 +260,7 @@ test('busting with refills left shows the refill count, deals at once and counts
   expect((await state(page)).hand).toBe(hand + 1);
 });
 
-test('a bot taking the last refill and every other seat in one hand is crowned', async ({
+test('a bot taking the last refill and every other seat in one hand gets the trophy', async ({
   page,
 }) => {
   await page.evaluate(() => window.qa.finale({ heroWins: false, rivals: 3, rebuysUsed: 3 }));
@@ -249,12 +268,12 @@ test('a bot taking the last refill and every other seat in one hand is crowned',
   const view = await state(page);
   expect(view.over.championId).toBe(1);
   expect(view.players.filter((p) => !p.out).map((p) => p.id)).toEqual([1]);
-  await expect(page.locator('.crown-stage')).toHaveCount(1);
-  await expect(page.locator('.crown-caption')).toHaveText('Mia 获得冠军');
+  await expect(page.locator('.trophy-stage')).toHaveCount(1);
+  await expect(page.locator('.trophy-caption')).toHaveText('Mia 获得冠军');
   await expect(page.locator('.confetti-layer')).toHaveCount(0);
   await page.evaluate(finishAnimations);
-  await expect(page.locator('.crown-stage')).toHaveCount(0, { timeout: 4000 });
-  await expect(page.locator('.seat-1 .champion-crown')).not.toHaveClass(/crown-pending/);
+  await expect(page.locator('.trophy-stage')).toHaveCount(0, { timeout: 4000 });
+  await expect(page.locator('.seat-1 .champion-trophy')).not.toHaveClass(/trophy-pending/);
   await expect(page.locator('#next-button')).toHaveText('下一局');
   await expect(page.locator('#session-standing')).toHaveText(`第${view.over.heroPlace}名`);
 });
@@ -266,7 +285,7 @@ test('busting after the last refill ends the game with a place and no champion',
   await page.evaluate(() => window.qa.finaleShowdown());
   const view = await state(page);
   expect(view.over.championId).toBeNull();
-  await expect(page.locator('.crown-stage, .confetti-layer, .champion-crown')).toHaveCount(0);
+  await expect(page.locator('.trophy-stage, .confetti-layer, .champion-trophy')).toHaveCount(0);
   // A grey card at the table's centre tells the final place, then leaves.
   const farewell = page.locator('.table-viewport > .farewell-stage');
   await expect(farewell).toHaveCount(1);

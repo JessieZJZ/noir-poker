@@ -16,36 +16,26 @@
 .seat-profile {
   position: relative;
 }
-/* The crown sits upright on the avatar's head, its lower half over the
-   portrait so it stays clear of the name row: beside the name on wide tables,
-   and in the avatar's own grid cell on the compact game surface. */
-.seat-champion-crown {
-  left: 19px;
-  top: calc(50% - 22px);
-  width: 16px;
-  height: 12px;
-}
-.game-surface .arena[data-player-count] .seat-profile > .seat-champion-crown {
-  position: relative;
-  grid-column: 1;
-  grid-row: 2;
-  align-self: start;
-  justify-self: center;
-  left: 0;
+/* A bot champion's trophy stands beside its profile, vertically centred, on
+   the side layout chose; its size comes from the shared placement rules. */
+.seat-champion-trophy {
   top: 0;
-  margin-top: -5px;
-  width: 14px;
-  height: 10px;
+  bottom: 0;
+  margin: auto 0;
+}
+.seat-champion-trophy.trophy-left {
+  right: calc(100% + var(--trophy-gap, 6px));
+}
+.seat-champion-trophy.trophy-right {
+  left: calc(100% + var(--trophy-gap, 6px));
 }
 .seat.is-champion .seat-profile {
   border-color: #d9b45a;
   box-shadow: 0 0 18px #d9b45a40;
 }
-/* The hero wears the crown upright, centred on the "你" glyph itself.
-   `.hero-name strong span` styles the position badge; the name and crown
-   spans must not inherit its size, colour, padding or margin. */
-.hero-name strong .hero-you,
-.hero-name strong .hero-you span {
+/* `.hero-name strong span` styles the position badge; the "你" span must not
+   inherit its size, colour, padding or margin. */
+.hero-name strong .hero-you {
   margin: 0;
   padding: 0;
   border-radius: 0;
@@ -57,18 +47,17 @@
   position: relative;
   display: inline-block;
 }
-.hero-crown-slot {
+/* The hero's trophy stands centred above the hole cards (layout lowers it
+   onto them only when the board leaves too little room). */
+.hero-trophy-slot {
   position: absolute;
   left: 50%;
   top: 0;
+  bottom: 0;
   width: 0;
-  height: 0;
 }
-.hero-champion-crown {
-  left: -11px;
-  top: -18px;
-  width: 22px;
-  height: 16px;
+.hero-champion-trophy {
+  left: 0;
 }
 .hero-name.is-champion .hero-identity {
   text-shadow: 0 0 10px #f4c95d66;

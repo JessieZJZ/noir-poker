@@ -150,9 +150,10 @@
               ></view>
               <view
                 wx:if="{{item.crowned}}"
-                id="seat-crown-{{item.id}}"
-                class="champion-crown seat-champion-crown {{crownPending ? 'crown-pending' : 'crown-arrive'}}"
-                ><view class="crown-shape"
+                id="seat-trophy-{{item.id}}"
+                class="champion-trophy seat-champion-trophy trophy-{{item.trophySide}} {{crownPending ? 'trophy-pending' : 'trophy-arrive'}}"
+                style="{{item.trophyStyle}}"
+                ><template is="trophy"
               /></view>
               <image
                 wx:if="{{item.portrait}}"
@@ -253,6 +254,13 @@
                   class="card hero-card {{item.red ? 'red' : ''}} {{item.best ? 'best-card' : ''}} {{item.arriving ? 'hero-arrive' : ''}}"
                   style="width: {{heroWidth}}px;height: {{heroHeight}}px; --card-delay: {{420 + index * 130}}ms;"
                   ><view class="card-art" style="{{item.artStyle}}" /></view></view
+              ><view
+                wx:if="{{heroCrowned}}"
+                id="hero-trophy"
+                class="champion-trophy hero-champion-trophy {{crownPending ? 'trophy-pending' : 'trophy-arrive'}}"
+                style="{{heroTrophyStyle}}"
+                ><template is="trophy"
+              /></view
               ><view wx:if="{{premium}}" class="premium-sparks"
                 ><view
                   wx:for="{{premiumSparks}}"
@@ -270,11 +278,6 @@
             ><view class="hero-info"
               ><view class="hero-identity"
                 ><view class="hero-name-text"
-                  ><view
-                    wx:if="{{heroCrowned}}"
-                    id="hero-crown"
-                    class="champion-crown hero-champion-crown {{crownPending ? 'crown-pending' : 'crown-arrive'}}"
-                    ><view class="crown-shape" /></view
                   ><text>你</text
                   ><text wx:if="{{!waitingForSeat}}" class="position">{{heroPosition}}</text></view
                 ><view wx:if="{{rebuying}}" class="stack stack-refill refill-hold"
@@ -546,10 +549,11 @@
     class="confetti-piece"
     style="{{piece.style}}"
 /></view>
-<view wx:if="{{ceremony}}" class="crown-stage" aria-hidden="true"
-  ><view class="crown-rays" /><view class="crown-flight" style="{{crownStyle}}"
-    ><view class="crown-shape" /></view
-  ><text class="crown-caption">{{ceremony.caption}}</text></view
+<view wx:if="{{ceremony}}" class="trophy-stage" aria-hidden="true"
+  ><view class="trophy-stage-rays" /><view class="trophy-flight" style="{{crownStyle}}"
+    ><template is="trophy"
+  /></view
+  ><text class="trophy-caption">{{ceremony.caption}}</text></view
 >
 <view wx:if="{{resourceMenuOpen}}" class="resource-dismiss" bindtap="closeResourceMenu" />
 

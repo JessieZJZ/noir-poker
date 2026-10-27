@@ -163,7 +163,7 @@ try {
     ) <= 1,
     'The top bar, table and game info fill the first screen',
   );
-  // The name sits in a wrapper that also anchors the champion's crown.
+  // The name and position badge share one wrapper beside the stack.
   const heroName = await page.$('.hero-identity > .hero-name-text'),
     heroStack = await page.$('.hero-identity .stack');
   const heroGap =

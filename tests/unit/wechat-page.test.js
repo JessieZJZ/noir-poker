@@ -12,6 +12,7 @@ import { createWechatController } from '../../src/platform/wechat-controller.js'
 import { recordResult, sessionStanding } from '../../src/engine/game-records.js';
 import { numericWidthScale, numericColumnWidth } from '../../src/ui/numeric-width.js';
 import { entryWelcomeCorridor, entryWelcomeScale } from '../../src/ui/entry-welcome-scale.js';
+import { heroTrophy, seatTrophy } from '../../src/ui/trophy-placement.js';
 import * as effectLayouts from '../../src/ui/effect-layouts.js';
 import * as ceremonySounds from '../../src/ui/ceremony-sounds.js';
 import { createMusicController } from '../../src/ui/background-music.js';
@@ -144,6 +145,7 @@ function setup(
       if (name.endsWith('/numeric-width.js')) return { numericWidthScale, numericColumnWidth };
       if (name.endsWith('/entry-welcome-scale.js'))
         return { entryWelcomeCorridor, entryWelcomeScale };
+      if (name.endsWith('/trophy-placement.js')) return { heroTrophy, seatTrophy };
       if (name === './game-effects.js') return loadPageEffects(context.wx);
       if (name === '../../shared/engine/poker.js')
         return { completeBoardForPractice, rankText, evaluate };
@@ -3236,5 +3238,42 @@ test('WeChat starting-blind label uses the other settings label size, as on Web'
   assert.match(
     readFileSync(new URL('../../miniprogram/pages/table/parity.wxss', import.meta.url), 'utf8'),
     /\.setting-row\s*\{[^}]*font-size: 15px;/s,
+  );
+});
+
+test('WeChat replaces cached champion sounds whenever the synthesized cues change', () => {
+  const files = new Map([
+    ['wxfile://usr/noir-champion-v1.wav', 'old fanfare'],
+    ['wxfile://usr/noir-crowned-v1.wav', 'old bells'],
+    ['wxfile://usr/records/1.json', 'kept'],
+  ]);
+  const fs = {
+    readdirSync: () => [...files.keys()].map((path) => path.slice('wxfile://usr/'.length)),
+    unlinkSync: (path) => files.delete(path),
+    accessSync: (path) => {
+      if (!files.has(path)) throw Error('missing');
+    },
+    writeFileSync: (path, bytes) => files.set(path, bytes),
+  };
+  const effects = loadPageEffects({
+    getFileSystemManager: () => fs,
+    env: { USER_DATA_PATH: 'wxfile://usr' },
+  });
+  const version = ceremonySounds.CEREMONY_SOUND_VERSION;
+  // The page module runs in its own VM realm; compare plain copies.
+  assert.deepEqual({ ...effects.ceremonySoundFiles() }, {
+    champion: `wxfile://usr/noir-champion-v${version}.wav`,
+    crowned: `wxfile://usr/noir-crowned-v${version}.wav`,
+    farewell: `wxfile://usr/noir-farewell-v${version}.wav`,
+  });
+  assert.deepEqual([...files.keys()].sort(), [
+    `wxfile://usr/noir-champion-v${version}.wav`,
+    `wxfile://usr/noir-crowned-v${version}.wav`,
+    `wxfile://usr/noir-farewell-v${version}.wav`,
+    'wxfile://usr/records/1.json',
+  ]);
+  assert.equal(
+    files.get(`wxfile://usr/noir-champion-v${version}.wav`).byteLength,
+    ceremonySounds.ceremonyWav('champion').byteLength,
   );
 });

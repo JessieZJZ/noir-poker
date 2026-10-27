@@ -4,6 +4,7 @@ import { railLayout } from './rail-layout.js';
 import { readPlayViewport } from './stable-viewport.js';
 import { numericWidthScale } from './numeric-width.js';
 import { styleFontSize } from './style-font.js';
+import { heroTrophy, seatTrophy } from './trophy-placement.js';
 // Select the closest collision-free position to the upper felt center. Using each
 // public part separately leaves usable space beside a narrow pot or caption.
 export function nearestClearTop(ideal, min, max, blocked) {
@@ -334,6 +335,54 @@ export function createSettlementLayout(arena, { observe = true } = {}) {
     fitStyles();
     fitNumbers();
     fitNames();
+    placeTrophy();
+  }
+  // Rest the champion's trophy where the shared rules choose. Rectangles are
+  // read on screen, then sizes are written back in the arena's own units.
+  function placeTrophy() {
+    const trophy = arena.querySelector('.champion-trophy');
+    if (!trophy) return;
+    const box = arena.getBoundingClientRect(),
+      scale = box.width / arena.offsetWidth || 1,
+      rect = (el) => el.getBoundingClientRect(),
+      visible = (el) => el && !el.hidden && el.offsetWidth > 0 && el.offsetHeight > 0;
+    if (trophy.matches('.hero-champion-trophy')) {
+      const cards = rect(arena.querySelector('.hero-cards')),
+        board = arena.querySelector('.table-center .board'),
+        place = heroTrophy(cards, { above: visible(board) ? rect(board).bottom : box.top });
+      Object.assign(trophy.style, {
+        width: `${place.width / scale}px`,
+        height: `${place.height / scale}px`,
+        left: `${-place.width / scale / 2}px`,
+        bottom: `calc(100% + ${(place.gap - place.drop) / scale}px)`,
+      });
+      return;
+    }
+    const seat = trophy.closest('.seat'),
+      profile = seat.querySelector('.seat-profile'),
+      obstacles = [
+        ...[...arena.querySelectorAll('.seat')]
+          .filter((other) => other !== seat)
+          .flatMap((other) => [
+            ...other.querySelectorAll('.seat-profile, .mini-cards, .seat-action'),
+          ]),
+        arena.querySelector('.table-center'),
+        arena.querySelector('.hero-cards-wrap'),
+        arena.querySelector('.hero-name'),
+      ]
+        .filter(visible)
+        .map(rect);
+    const place = seatTrophy(rect(profile), {
+      bounds: { left: box.left, right: box.right },
+      obstacles,
+    });
+    trophy.classList.toggle('trophy-left', place.side === 'left');
+    trophy.classList.toggle('trophy-right', place.side === 'right');
+    Object.assign(trophy.style, {
+      width: `${place.width / scale}px`,
+      height: `${place.height / scale}px`,
+    });
+    trophy.style.setProperty('--trophy-gap', `${place.gap / scale}px`);
   }
   if (observe) {
     const observer = new ResizeObserver(() => {
@@ -346,5 +395,5 @@ export function createSettlementLayout(arena, { observe = true } = {}) {
     observer.observe(arena.closest('.table-viewport') || arena);
     document.fonts.ready.then(update);
   }
-  return { update };
+  return { update, placeTrophy };
 }

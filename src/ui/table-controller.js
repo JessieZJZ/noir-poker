@@ -56,7 +56,7 @@ import { isPremiumStart } from '../engine/starting-hands.js';
 import { standingLabel, standingClass } from '../engine/game-records.js';
 import { recordSnapshots } from '../platform/record-snapshots.js';
 import { createGameEffects } from './game-effects.js';
-import { CROWN_MARKUP } from './table-scene.js';
+import { TROPHY_MARKUP } from './table-scene.js';
 import { ceremonySamples, CEREMONY_SAMPLE_RATE, CEREMONY_CUES } from './ceremony-sounds.js';
 import { raiseCaption } from '../engine/action-labels.js';
 import { loadBotSettings, createOpponentsController } from './opponents-controller.js';
@@ -383,21 +383,23 @@ function celebrate() {
     effects.farewell($('.table-viewport'), game.over.heroPlace);
     return;
   }
-  // Paint the hidden resting crown first; the flight lands exactly on it.
+  // Paint and place the hidden resting trophy first; the flight lands exactly on it.
   render();
+  settlementLayout.placeTrophy();
   const champion = game.over.championId,
     heroWon = champion === 0,
-    crown = () => $(champion === 0 ? '.hero-champion-crown' : `.seat-${champion} .champion-crown`);
+    trophy = () =>
+      $(champion === 0 ? '.hero-champion-trophy' : `.seat-${champion} .champion-trophy`);
   soundEffect(heroWon ? 'champion' : 'crowned');
   effects.coronation({
-    target: crown(),
+    target: trophy(),
     caption: heroWon ? '你获得冠军' : `${game.players[champion].name} 获得冠军`,
     confetti: heroWon,
     done: () => {
       if (gameEndKey() !== key) return;
       crownedKey = key;
       render();
-      crown()?.classList.add('crown-arrive');
+      trophy()?.classList.add('trophy-arrive');
     },
   });
 }
@@ -504,9 +506,9 @@ function render() {
   if (newHand && game.phase !== 'done' && isPremiumStart(hero.hole))
     effects.premiumStart($('.hero-cards-wrap'));
   $('.hero-name').classList.toggle('is-champion', crowned === 0);
-  $('#hero-crown-slot').innerHTML =
+  $('#hero-trophy-slot').innerHTML =
     crowned === 0
-      ? `<span class="champion-crown hero-champion-crown ${crownPending ? 'crown-pending' : ''}">${CROWN_MARKUP}</span>`
+      ? `<span class="champion-trophy hero-champion-trophy ${crownPending ? 'trophy-pending' : ''}">${TROPHY_MARKUP}</span>`
       : '';
   $('.hero-area').classList.toggle('hero-out', !!hero.out);
   const heroRank = $('#hero-hand-rank'),

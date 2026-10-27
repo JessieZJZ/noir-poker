@@ -8,19 +8,19 @@
   opacity: 0.45;
   filter: grayscale(0.85);
 }
-/* Upright on the avatar's head, its lower half over the portrait, clear of
-   the name: it shares the avatar's grid cell and rises to its top edge. */
-.seat-champion-crown {
-  width: 14px;
-  height: 10px;
+/* A bot champion's trophy stands beside its profile, vertically centred, on
+   the side the shared placement chose; its size comes from the same rules. */
+.web-phone-layout .seat .seat-body > .seat-champion-trophy {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  margin: auto 0;
 }
-.web-phone-layout .seat .seat-body > .seat-champion-crown {
-  position: relative;
-  grid-column: 1;
-  grid-row: 2 / 4;
-  align-self: end;
-  justify-self: center;
-  margin-bottom: calc(var(--player-avatar, 24px) - 5px);
+.web-phone-layout .seat .seat-body > .seat-champion-trophy.trophy-left {
+  right: calc(100% + var(--trophy-gap, 6px));
+}
+.web-phone-layout .seat .seat-body > .seat-champion-trophy.trophy-right {
+  left: calc(100% + var(--trophy-gap, 6px));
 }
 .seat.is-champion .seat-body {
   border-color: #d9b45a;
@@ -34,12 +34,10 @@
   align-items: center;
   gap: inherit;
 }
-/* Centred on the "你" glyph, which is one em wide. */
-.hero-champion-crown {
-  left: calc(0.5em - 11px);
-  top: -18px;
-  width: 22px;
-  height: 16px;
+/* The hero's trophy stands centred above the hole cards; layout lowers it
+   onto them only when the board leaves too little room. */
+.hero-cards-wrap > .hero-champion-trophy {
+  position: absolute;
 }
 .hero-identity {
   position: relative;

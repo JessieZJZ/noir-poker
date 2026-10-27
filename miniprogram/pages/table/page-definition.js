@@ -21,6 +21,7 @@ const {
   entryWelcomeCorridor,
   entryWelcomeScale,
 } = require('../../shared/ui/entry-welcome-scale.js');
+const { heroTrophy, seatTrophy } = require('../../shared/ui/trophy-placement.js');
 // The waiting message's natural size, measured in DevTools: its button (150px
 // plus padding) and four stacked lines.
 const ENTRY_WELCOME_SIZE = { width: 184, height: 132 };
@@ -587,8 +588,38 @@ module.exports = {
           bottom: fitted.arenaHeight * 0.44 + halfHeight,
         },
       );
+      // The champion's trophy follows the shared rules on the same layout boxes
+      // Web measures, so it rests in the same spot on every platform.
+      const box = ({ left, top, width, height }) => ({
+          left,
+          top,
+          right: left + width,
+          bottom: top + height,
+        }),
+        seatParts = fitted.positioned.map((seat) =>
+          (seat.parts || [{ left: 0, top: 0, width: seat.width, height: seat.height }]).map(
+            (part) => box({ ...part, left: seat.left + part.left, top: seat.top + part.top }),
+          ),
+        ),
+        boardBox = box(fitted.public),
+        hero = box(fitted.hero),
+        heroCards = { ...hero, bottom: hero.top + fitted.heroHeight },
+        heroPlace = view.heroCrowned ? heroTrophy(heroCards, { above: boardBox.bottom }) : null;
+      const trophyFor = (index) => {
+        const place = seatTrophy(seatParts[index][1] || seatParts[index][0], {
+          bounds: { left: 0, right: fitted.arenaWidth },
+          obstacles: [...seatParts.filter((_, j) => j !== index).flat(), boardBox, hero],
+        });
+        return {
+          trophySide: place.side,
+          trophyStyle: `width:${place.width}px;height:${place.height}px;--trophy-gap:${place.gap}px;`,
+        };
+      };
       return {
         ...geometry,
+        heroTrophyStyle: heroPlace
+          ? `width:${heroPlace.width}px;height:${heroPlace.height}px;left:calc(50% - ${heroPlace.width / 2}px);bottom:calc(100% + ${heroPlace.gap - heroPlace.drop}px);`
+          : '',
         entryScale: entryWelcomeScale({
           arenaScale: fitted.arenaScale,
           contentWidth: entrySize.width,
@@ -596,10 +627,11 @@ module.exports = {
         }),
         tableHeight,
         phoneLayout: true,
-        phoneSeats: positioned.map((seat) => {
+        phoneSeats: positioned.map((seat, index) => {
           const before = this.data.phoneSeats?.find((previous) => previous.id === seat.id);
           return {
             ...seat,
+            ...(seat.crowned ? trophyFor(index) : {}),
             rankLift: view.hand === this.data.hand ? before?.rankLift || 0 : 0,
             stackWidthScale: before?.stack === seat.stack ? before.stackWidthScale || 1 : 1,
             nameFit: !view.done && before?.name === seat.name ? before.nameFit || false : false,
@@ -720,10 +752,10 @@ module.exports = {
     this._audioUnlocked = true;
     if (!this._readOnlyAttempt && typeof getApp === 'function') getApp().noirMusic?.unlock();
   },
-  // The flying crown lands on the hidden resting crown of the champion.
+  // The flying trophy lands on the champion's hidden resting trophy.
   aimCrown(ceremony) {
     if (!wx.createSelectorQuery) return;
-    const target = ceremony.heroWon ? '#hero-crown' : `#seat-crown-${ceremony.championId}`;
+    const target = ceremony.heroWon ? '#hero-trophy' : `#seat-trophy-${ceremony.championId}`;
     wx.createSelectorQuery()
       .in(this)
       .select(target)
@@ -733,7 +765,7 @@ module.exports = {
         const x = rect.left + rect.width / 2 - this.data.windowWidth / 2,
           y = rect.top + rect.height / 2 - this.data.windowHeight * 0.45;
         this.setData({
-          crownStyle: `--crown-x:${Math.round(x)}px;--crown-y:${Math.round(y)}px;--crown-scale:${(rect.width / 96).toFixed(3)}`,
+          crownStyle: `--trophy-x:${Math.round(x)}px;--trophy-y:${Math.round(y)}px;--trophy-scale:${(rect.height / 100).toFixed(3)}`,
         });
       });
   },

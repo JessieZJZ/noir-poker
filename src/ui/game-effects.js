@@ -11,7 +11,7 @@ import {
   refillCountValues,
   REFILL_COUNT_STEPS,
 } from './effect-layouts.js';
-import { CROWN_MARKUP } from './table-scene.js';
+import { TROPHY_MARKUP } from './table-scene.js';
 import { standingLabel } from '../engine/game-records.js';
 const reducedMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -97,13 +97,13 @@ export function createGameEffects() {
         done();
       }, REBUY_DURATION_MS);
     },
-    // The crown rises at the centre and flies onto the champion. The hero's
-    // own championship adds confetti from both screen edges.
+    // The trophy rises at the centre and flies onto the champion's resting
+    // trophy. The hero's own championship adds confetti from both screen edges.
     coronation({ target, caption, confetti, done }) {
       const rect = target?.getBoundingClientRect();
       const x = rect ? rect.left + rect.width / 2 - innerWidth / 2 : 0,
         y = rect ? rect.top + rect.height / 2 - innerHeight * 0.45 : 0,
-        scale = rect ? rect.width / 96 : 0.25;
+        scale = rect ? rect.height / 100 : 0.4;
       if (confetti && !reducedMotion()) {
         const layer = mount(
           document.body,
@@ -120,8 +120,8 @@ export function createGameEffects() {
       }
       const stage = mount(
         document.body,
-        `<div class="crown-rays"></div><div class="crown-flight" style="--crown-x:${Math.round(x)}px;--crown-y:${Math.round(y)}px;--crown-scale:${scale.toFixed(3)}">${CROWN_MARKUP}</div><div class="crown-caption">${localizeText(caption)}</div>`,
-        'crown-stage',
+        `<div class="trophy-stage-rays"></div><div class="trophy-flight" style="--trophy-x:${Math.round(x)}px;--trophy-y:${Math.round(y)}px;--trophy-scale:${scale.toFixed(3)}">${TROPHY_MARKUP}</div><div class="trophy-caption">${localizeText(caption)}</div>`,
+        'trophy-stage',
       );
       stage.setAttribute('aria-hidden', 'true');
       later(() => {
