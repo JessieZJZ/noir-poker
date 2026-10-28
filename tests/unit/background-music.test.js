@@ -631,3 +631,29 @@ test('WeChat start failure releases an unstarted source and still reaches its co
   assert.equal(f.context.state, 'closed');
   music.dispose();
 });
+
+test('WeChat starts a running context and resumes synchronous state changes without waiting on a native Promise', async () => {
+  const f = loopFixture();
+  let resumes = 0;
+  f.context.resume = () => {
+    resumes++;
+    f.context.state = 'running';
+    return new Promise(() => {});
+  };
+  const music = createWechatBackgroundMusic(f.wx, f.options);
+  await f.flush();
+  f.context.decoded({ duration: 93 });
+  await f.flush();
+  assert.equal(resumes, 0, 'Already running contexts need no resume request');
+  assert.equal(f.nodes.length, 1);
+  assert.equal(music.getState().playing, true);
+  music.setActive(false);
+  assert.equal(f.context.state, 'suspended');
+  f.context.currentTime = 8;
+  music.setActive(true);
+  await f.flush();
+  assert.equal(resumes, 1);
+  assert.equal(f.nodes.length, 2);
+  assert.equal(music.getState().playing, true);
+  music.dispose();
+});

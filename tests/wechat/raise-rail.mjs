@@ -7,16 +7,43 @@ const require = createRequire(path.join(process.cwd(), '.artifacts/wechat-tools/
 const mini = await require('miniprogram-automator').connect({ wsEndpoint: process.argv[2] });
 const output = path.resolve(process.argv[3] || '.artifacts/wechat-raise-rail');
 await mkdir(output, { recursive: true });
+// Automator Page.callMethod uses a different receiver in current DevTools.
+// Invoke the real page handler with its own Page instance, as user events do.
+const invoke = (method, argument) =>
+  mini.evaluate(
+    ({ method, argument }) => {
+      const page = getCurrentPages().at(-1);
+      page[method](argument);
+      return true;
+    },
+    { method, argument },
+  );
+
 const report = { status: 'running', platform: 'WeChat DevTools', checks: [] };
+async function waitForRaise(page, amount) {
+  const deadline = Date.now() + 5000;
+  while (Date.now() < deadline) {
+    const state = await page.data();
+    if (state.raiseTo === amount) return state;
+    await new Promise((resolve) => setTimeout(resolve, 50));
+  }
+  assert.equal((await page.data()).raiseTo, amount);
+}
 try {
   report.build = JSON.parse(await readFile('.artifacts/wechat/build-info.json', 'utf8'));
+  report.device = await mini.evaluate(() => {
+    const { model, platform } = wx.getDeviceInfo();
+    const { windowWidth, windowHeight, pixelRatio } = wx.getWindowInfo();
+    return { model, platform, windowWidth, windowHeight, pixelRatio };
+  });
   let page = await mini.currentPage();
+  await invoke('closeSettings');
   for (let i = 0; i < 150; i++) {
     const state = await page.data();
     if (state.canRaise) break;
-    if (state.waitingForSeat) await page.callMethod('joinTable');
-    else if (state.done) await page.callMethod('nextHand');
-    else if (!state.canAct) await page.callMethod('finishHand');
+    if (state.waitingForSeat) await (await page.$('#join-table-button')).tap();
+    else if (state.done) await invoke('nextHand');
+    else if (!state.canAct) await invoke('finishHand');
     await new Promise((resolve) => setTimeout(resolve, 250));
   }
   const before = await page.data();
@@ -33,7 +60,7 @@ try {
       chipUnit: before.chipUnit,
     },
   };
-  await page.callMethod('preset', { currentTarget: { dataset: { preset: 'min' } } });
+  await invoke('preset', { currentTarget: { dataset: { preset: 'min' } } });
   const track = await page.$('#raise-track');
   assert.ok(track);
   const offset = await track.offset(),
@@ -49,13 +76,15 @@ try {
   await track.touchmove({ touches: [touch(0.5)] });
   const preview = await page.data();
   assert.equal(preview.raiseTo, before.minRaise);
-  await track.touchend({ touches: [], changeTouches: [touch(0.5)] });
-  const middle = await page.data();
+  // Current DevTools expects changedTouches; the SDK type's changeTouches
+  // spelling silently emits a touch ending at (0, 0).
+  await track.touchend({ touches: [], changedTouches: [touch(0.5)] });
+  const middle = await waitForRaise(page, sliderRaiseTo(view, RAISE_SLIDER_MAX / 2));
   assert.equal(middle.raiseTo, sliderRaiseTo(view, RAISE_SLIDER_MAX / 2));
   await track.touchstart({ touches: [touch(0.75)] });
   await track.touchmove({ touches: [touch(1)] });
-  await track.touchend({ touches: [], changeTouches: [touch(1)] });
-  assert.equal((await page.data()).raiseTo, before.maxRaise);
+  await track.touchend({ touches: [], changedTouches: [touch(1)] });
+  await waitForRaise(page, before.maxRaise);
   report.checks.push({
     name: 'whole-track-touch-drag-midpoint-and-all-in',
     evidence: { offset, size, min: before.minRaise, mid: middle.raiseTo, max: before.maxRaise },

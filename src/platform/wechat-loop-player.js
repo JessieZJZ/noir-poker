@@ -60,9 +60,15 @@ export function createWechatLoopPlayer(wx, { loadSource, schedule, unschedule, n
   async function start() {
     if (!wanted || disposed || closed || backup) return;
     try {
-      // Also called synchronously by a trusted unlock gesture before loading.
-      await context.resume();
-      if (!wanted || disposed || closed || !buffer || node) return;
+      // WeChat may leave resume() pending when no state change is needed.
+      // Its native transition can also be synchronous before that Promise
+      // settles. Use the observed state, without delaying a ready audio source.
+      if (context.state !== 'running') {
+        const resumed = context.resume();
+        if (context.state !== 'running') await resumed;
+        else Promise.resolve(resumed).catch(useFallback);
+      }
+      if (!wanted || disposed || closed || context.state !== 'running' || !buffer || node) return;
       const next = context.createBufferSource();
       next.buffer = buffer;
       next.loop = true;
