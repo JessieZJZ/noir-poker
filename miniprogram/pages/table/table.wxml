@@ -1074,14 +1074,16 @@
                 >
                   <text class="module-title">{{group.label}}</text>
                   <text wx:if="{{!group.examples.length}}" class="muted">{{group.empty}}</text>
-                  <view
-                    wx:for="{{group.examples}}"
-                    wx:for-item="example"
-                    wx:key="group"
-                    class="review-matchup-example"
-                  >
-                    <text>{{example.text}}</text>
-                    <text class="review-matchup-caption">{{example.label}}</text>
+                  <view wx:if="{{group.examples.length}}" class="review-matchup-examples">
+                    <view
+                      wx:for="{{group.examples}}"
+                      wx:for-item="example"
+                      wx:key="group"
+                      class="review-matchup-example"
+                    >
+                      <text class="review-matchup-cards">{{example.text}}</text>
+                      <text class="review-matchup-caption">{{example.label}}</text>
+                    </view>
                   </view>
                 </view>
                 <text

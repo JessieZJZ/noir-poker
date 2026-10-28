@@ -1755,6 +1755,24 @@
 .review-matchup-caption {
   font-size: 0.833333em;
 }
+.review-sheet .review-matchup-examples {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 16px;
+}
+.review-sheet .review-matchup-examples .review-matchup-example {
+  display: flex;
+  flex-wrap: wrap;
+  align-content: start;
+  align-items: baseline;
+  column-gap: 5px;
+  min-width: 0;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.review-matchup-cards {
+  white-space: nowrap;
+}
 .review-evidence-facts {
   margin-top: 12px;
   color: #aebfb8;

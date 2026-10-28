@@ -2698,6 +2698,49 @@ export async function nativeScenarios(app) {
       });
     }
   });
+  await check('review-hand-groups-two-columns', async () => {
+    await waitForNativeHeroTurn(app, { advanceSettled: true });
+    await app.click('#fold-button');
+    if (await app.visible('#continue-deal-button')) await app.click('#continue-deal-button');
+    await app.waitFor(
+      async () => (await app.state()).phase === 'done',
+      60000,
+      'Real hand must settle before checking its review layout',
+    );
+    await app.click('#review-hand-button');
+    try {
+      await waitForNativeReview(app);
+      const groups = await app.evaluate(() =>
+        [...document.querySelectorAll('#review-coach-explanation .review-matchup-examples')].map(
+          (group) =>
+            [...group.querySelectorAll('.review-matchup-example')].map((element) => {
+              const { x, y, width, height } = element.getBoundingClientRect();
+              return {
+                text: element.textContent,
+                x,
+                y,
+                width,
+                height,
+                overflow: element.scrollWidth - element.clientWidth,
+              };
+            }),
+        ),
+      );
+      assert.ok(groups.some((items) => items.length >= 2));
+      for (const items of groups) {
+        for (const item of items) assert.ok(item.overflow <= 1);
+        for (let i = 1; i < items.length; i += 2) {
+          assert.ok(Math.abs(items[i].y - items[i - 1].y) <= 1);
+          assert.ok(items[i].x >= items[i - 1].x + items[i - 1].width);
+        }
+        if (items.length > 2) assert.ok(items[2].y >= items[0].y + items[0].height);
+      }
+      await app.screenshot('review-hand-groups-two-columns');
+      return { groups, scope: 'Installed production review of a real hand; no injected fixture' };
+    } finally {
+      await app.click('#review-dialog .icon-button.close-dialog');
+    }
+  });
   await check('review-overflow-and-activity-size', async () => {
     await waitForNativeHeroTurn(app, { advanceSettled: true });
     await app.click('#fold-button');

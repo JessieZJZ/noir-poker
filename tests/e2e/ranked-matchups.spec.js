@@ -10,6 +10,26 @@ import {
   aceFourPreflopReview,
 } from '../fixtures/bottom-pair-review.js';
 
+async function expectTwoColumns(panel) {
+  const grids = panel.locator('.review-matchup-examples');
+  expect(await grids.count()).toBeGreaterThan(0);
+  for (const grid of await grids.all()) {
+    const items = await grid.locator('.review-matchup-example').evaluateAll((elements) =>
+      elements.map((element) => {
+        const { x, y, width, height } = element.getBoundingClientRect();
+        return { x, y, width, height, overflow: element.scrollWidth - element.clientWidth };
+      }),
+    );
+    for (const item of items) expect(item.overflow).toBeLessThanOrEqual(1);
+    for (let i = 1; i < items.length; i += 2) {
+      expect(Math.abs(items[i].y - items[i - 1].y)).toBeLessThanOrEqual(1);
+      expect(items[i].x).toBeGreaterThanOrEqual(items[i - 1].x + items[i - 1].width);
+      expect(Math.abs(items[i].width - items[i - 1].width)).toBeLessThanOrEqual(1);
+    }
+    if (items.length > 2) expect(items[2].y).toBeGreaterThanOrEqual(items[0].y + items[0].height);
+  }
+}
+
 test('consumer preflop review has one possible-hand group with causal ranges and a separate hand description', async ({
   page,
 }) => {
@@ -37,6 +57,21 @@ test('consumer preflop review has one possible-hand group with causal ranges and
         el.querySelector('p').getBoundingClientRect().bottom,
     );
   expect(below).toBe(true);
+  const original = page.viewportSize();
+  for (const [width, height] of [
+    [320, 759],
+    [390, 844],
+    [768, 1024],
+    [1112, 834],
+    [1280, 900],
+  ]) {
+    await page.setViewportSize({ width, height });
+    await expectTwoColumns(panel);
+    await panel.locator('.review-matchup-examples').screenshot({
+      path: test.info().outputPath(`possible-hands-${width}.png`),
+    });
+  }
+  await page.setViewportSize(original);
   for (const locale of ['en', 'ja', 'ko', 'zh-CN']) {
     await page.locator('#language-select').evaluate((el, value) => {
       el.value = value;
@@ -44,6 +79,7 @@ test('consumer preflop review has one possible-hand group with causal ranges and
     }, locale);
     if (locale === 'en' || locale === 'ko')
       await expect(panel).not.toContainText(/\p{Script=Han}/u);
+    await expectTwoColumns(panel);
   }
 });
 
@@ -83,6 +119,7 @@ test('reported bottom pair emphasizes stronger families and combo draws; top-pai
   await expect(opponent).toContainText('过牌也可能是在等后位先下注');
   await expect(opponent).toContainText('免费看下一张');
   await expect(opponent).toContainText('给对手继续投入的机会');
+  await expectTwoColumns(opponent);
   for (const locale of ['en', 'ja', 'ko', 'zh-CN']) {
     await page.locator('#language-select').evaluate((select, value) => {
       select.value = value;
@@ -128,6 +165,7 @@ test('review renders up to three ahead and four behind public-range examples wit
   await expect(comparison).toHaveCount(1);
   await expect(comparison.locator('.review-matchup-hand')).toContainText(matchups.handLabel);
   await expect(comparison).not.toContainText(/\d+(?:\.\d+)?%/);
+  await expectTwoColumns(comparison);
   await expect(page.locator('#review-hole .playing-card')).toHaveCount(2);
   await expect(page.locator('#review-board .playing-card')).toHaveCount(3);
   for (const direction of ['ahead', 'behind']) {
@@ -148,6 +186,7 @@ test('review renders up to three ahead and four behind public-range examples wit
     if (locale === 'zh-CN') await expect(comparison).toContainText('当前牌面');
     else await expect(explanation).not.toContainText('当前牌面');
     if (locale === 'en') await expect(comparison).not.toContainText(/\p{Script=Han}/u);
+    await expectTwoColumns(comparison);
     for (const direction of ['ahead', 'behind']) {
       const examples = comparison.locator(
         `[data-matchup-direction="${direction}"] .review-matchup-example`,

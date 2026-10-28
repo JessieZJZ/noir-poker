@@ -132,3 +132,9 @@ Web、App 与小程序共用 `src/ui/hero-turn.js` 的提醒状态，以及 `src
 复盘保留 600 次权益抽样与默认 40 次候选行动模拟。5–7 张牌直接按点数计数和花色掩码求最佳五张，输出与原子集算法一致；无听牌时不扫描无效补牌，已有特征不重复推导。复盘逐决策展示已完成结果，整手统计等全部完成后再生成；后台、重打、换手、关闭仍取消旧 Worker，缓存仅保存已完成的决策。
 
 `tests/wechat/device-experience.mjs` 只允许在独立复制、无用户牌谱的 `touristappid` 工程运行；它会练习一手自然牌局，检查实际音乐／音效事件、原生滑杆尺寸和历史详情终态。先在该副本内以 `NOIR_WECHAT_APP_ID=touristappid node scripts/wechat.mjs build` 构建，再连接该副本自己的自动化端口，例如 `node tests/wechat/device-experience.mjs ws://127.0.0.1:9492 .artifacts/device-experience`。该检查不能证明扬声器听感或实体手机拖动表现，不得为测试清空真实 AppID 的记录，也不要复用其他任务的开发工程。
+
+## 牌组两列布局验收
+
+先构建并校验当前源码，等 DevTools 页面就绪后运行 `node tests/wechat/matchup-columns.mjs ws://127.0.0.1:9498 .artifacts/matchup-columns/wechat`，端口替换为本次工程的自动化端口。脚本临时展示外部公开快照生成的翻前、翻牌和河牌牌组，检查本人／对手视角的每行两个布局，保存实际位置、设备尺寸和截图，结束后还原页面字段及弹层。它不修改牌谱或在生产包内加入测试入口，也不代表实战策略或真机验收。
+
+平板横屏可在同一连接中旋转设备，并用 `NOIR_WECHAT_ORIENTATION=landscape` 启动脚本，脚本会等待实际页面宽度大于高度再检查，不能仅凭文件夹名或可能滞后的系统尺寸认定横屏通过。验收期间不要重建生成目录，以免触发自动重载。

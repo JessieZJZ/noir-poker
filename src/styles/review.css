@@ -911,6 +911,24 @@
 }
 
 /* Analysis headings share the gold treatment in both perspectives. */
+.review-dialog .review-matchup-examples {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 16px;
+}
+.review-dialog .review-matchup-examples .review-matchup-example {
+  display: flex;
+  flex-wrap: wrap;
+  align-content: start;
+  align-items: baseline;
+  column-gap: 5px;
+  min-width: 0;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.review-matchup-example > span {
+  white-space: nowrap;
+}
 .review-dialog .review-matchups strong,
 .review-dialog .review-coaching strong {
   color: #e4cea0;
