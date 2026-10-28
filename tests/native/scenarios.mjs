@@ -1750,8 +1750,21 @@ export async function nativeScenarios(app) {
     await changeLanguage(initialLanguage === 'en' ? 'zh-CN' : 'en');
     await changeLanguage('zh-CN');
     const chineseTags = await readNativePersonaTags(app);
+    const completeTags = () =>
+      app.evaluate(() =>
+        [...document.querySelectorAll('#seats .seat-style-label')].every(
+          (tag) =>
+            tag.textContent === tag.dataset.fullName &&
+            getComputedStyle(tag).whiteSpace === 'nowrap' &&
+            getComputedStyle(tag).textOverflow !== 'ellipsis' &&
+            tag.scrollWidth <= tag.clientWidth + 1 &&
+            tag.scrollHeight <= tag.clientHeight + 1,
+        ),
+      );
+    assert.equal(await completeTags(), true, 'Complete Chinese styles fit their reserved badges');
     await changeLanguage('ko');
     const koreanTags = await readNativePersonaTags(app);
+    assert.equal(await completeTags(), true, 'Complete Korean styles fit their reserved badges');
     assert.ok(chineseTags.tags.length > 0);
     assert.equal(koreanTags.tags.length, chineseTags.tags.length);
     for (let index = 0; index < chineseTags.tags.length; index++) {
@@ -1759,7 +1772,7 @@ export async function nativeScenarios(app) {
         Math.abs(koreanTags.tags[index].height - chineseTags.tags[index].height) <= 0.6,
         'Korean persona tags retain their installed table height',
       );
-      assert.equal(koreanTags.tags[index].fontSize, chineseTags.tags[index].fontSize);
+      // Localized names may shrink to fit; the badge and table stay fixed.
     }
     assert.deepEqual(
       [koreanTags.hand, koreanTags.stack, koreanTags.hole, koreanTags.completedHands],

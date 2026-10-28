@@ -66,9 +66,10 @@ html .game-surface .arena[data-player-count] .seat .seat-profile .seat-style-lab
   min-width: 0;
   max-width: 100%;
   padding: 1px 3px;
-  font-size: var(--style-font, calc(var(--player-persona, 14px) * 0.82));
-  line-height: 1.2;
-  height: auto;
+  font-size: var(--style-font, var(--player-persona, 14px));
+  /* Fit glyphs horizontally without changing the badge's reserved row. */
+  line-height: calc(var(--player-persona, 14px) * 1.15);
+  height: calc(var(--player-persona, 14px) * 1.15 + 4px);
   min-height: 0;
   max-height: none;
   white-space: nowrap;

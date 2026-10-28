@@ -186,14 +186,18 @@ test('Chinese, Korean and long locale persona tags keep the same height without 
     await page.evaluate(() => window.qa.heroTurn(9));
     const read = () =>
       page.evaluate(() => {
-        const arena = document.querySelector('#arena'),
-          scale = new DOMMatrix(getComputedStyle(arena).transform).a;
+        const arena = document.querySelector('#arena');
         const rows = [...arena.querySelectorAll('.seat-profile')].map((profile) => {
           const label = profile.querySelector('.seat-style-label');
           return {
             profile: profile.getBoundingClientRect().height,
             tag: label.getBoundingClientRect().height,
-            font: parseFloat(getComputedStyle(label).fontSize) * scale,
+            // Full localized names can use different font sizes, but must
+            // fit the same reserved badge without changing table geometry.
+            fits:
+              label.scrollWidth <= label.clientWidth + 1 &&
+              label.scrollHeight <= label.clientHeight + 1 &&
+              label.textContent === label.dataset.fullName,
             whiteSpace: getComputedStyle(label).whiteSpace,
             overflow: getComputedStyle(label).textOverflow,
           };
@@ -206,6 +210,7 @@ test('Chinese, Korean and long locale persona tags keep the same height without 
         };
       });
     const before = await read();
+    expect(before.rows.every((row) => row.fits)).toBe(true);
     for (const locale of ['ko', 'de', 'en', 'fr', 'ru', 'ja', 'es', 'it', 'pt', 'zh-TW', 'zh-CN']) {
       await openSettings(page);
       await page.locator('#language-select').selectOption(locale);

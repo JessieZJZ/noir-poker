@@ -2857,7 +2857,12 @@ test('WeChat displays complete styles without a long-press overlay or handler', 
   assert.match(persona, /grid-row: 2/);
   assert.match(persona, /white-space: nowrap/);
   assert.match(persona, /font-size: var\(--player-persona-fit\)/);
+  assert.match(persona, /height: calc\(var\(--player-persona\) \* 1\.15 \+ 4px\)/);
   assert.doesNotMatch(persona, /text-overflow: ellipsis/);
+  const balanced = [
+    ...stylesheet.matchAll(/\.web-phone-layout \.seat \.persona-balanced\s*\{([^}]+)\}/g),
+  ].at(-1)[1];
+  assert.match(balanced, /font-size: var\(--player-persona\)/);
   {
     const m = page.data.textMetrics;
     assert.ok(m['player-persona-fit'] > 0);

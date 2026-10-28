@@ -625,6 +625,8 @@ test('reloading a historical URL retains its list parent and does not reload pra
 test('same-page locale refresh preserves historical review while Back closes it with the page', async ({
   page,
 }) => {
+  const pageErrors = [];
+  page.on('pageerror', (error) => pageErrors.push(error.message));
   await page.evaluate(() => window.qa.recordsFinish());
   const attempt = (await records(page))[0].attempts[0],
     saved = await records(page);
@@ -644,6 +646,7 @@ test('same-page locale refresh preserves historical review while Back closes it 
   await expect(page).toHaveURL(/#records$/);
   await expect(page.locator('#review-dialog')).toBeHidden();
   expect(await records(page)).toEqual(saved);
+  expect(pageErrors).toEqual([]);
 });
 
 for (const count of [5, 9]) {

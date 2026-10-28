@@ -83,7 +83,9 @@ let dealWait = null;
 const $ = (s) => document.querySelector(s);
 const coachContent = $('#coach-content');
 const settlementLayout = createSettlementLayout($('#arena'), { observe: false });
-document.addEventListener('noir:locale-changed', () => settlementLayout.update());
+document.addEventListener('noir:locale-changed', () =>
+  playViewport.update(game, game.phase === 'done'),
+);
 const playViewport = createPlayViewport($('.game-surface'), {
   layout() {
     settlementLayout.update();

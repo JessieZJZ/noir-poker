@@ -112,6 +112,9 @@ export function createSettlementLayout(arena, { observe = true } = {}) {
   const center = arena.querySelector('.table-center');
   let frame = null;
   function update() {
+    // Locale refresh also reaches the live table while a records page hides
+    // it. Keep its geometry until the visible viewport can be measured again.
+    if (!arena.clientWidth || !arena.clientHeight) return;
     const heroRank = arena.querySelector('.hero-hand-rank');
     arena
       .querySelector('.hero-area')

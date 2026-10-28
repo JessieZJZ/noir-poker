@@ -1770,13 +1770,13 @@
   min-width: 0;
   max-width: 100%;
   font-size: var(--player-persona-fit);
-  line-height: 1.2;
+  line-height: calc(var(--player-persona) * 1.15);
   padding: 1px 3px;
   white-space: nowrap;
   overflow: visible;
   text-overflow: clip;
   overflow-wrap: anywhere;
-  height: auto;
+  height: calc(var(--player-persona) * 1.15 + 4px);
   min-height: 0;
   max-height: none;
   text-align: center;
@@ -1787,5 +1787,5 @@
 }
 
 .web-phone-layout .seat .persona-balanced {
-  font-size: calc(var(--player-persona) * 0.82);
+  font-size: var(--player-persona);
 }
