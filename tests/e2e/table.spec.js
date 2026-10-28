@@ -1,4 +1,5 @@
 import { compactChips } from '../../src/engine/chip-format.js';
+import { BOT_THINK_LIMITS } from '../../src/engine/bot-timing.js';
 import { assignNamedLineup } from './settings-helpers.js';
 import { test, expect } from '@playwright/test';
 import { closeSettings, openSettings, setPlayerCount, toggleHints } from './settings-helpers.js';
@@ -1296,8 +1297,8 @@ test('bots wait for their contextual deadline, reuse it on scheduling and replan
     document.querySelector('#call-button').click();
     return window.qa.thinking();
   });
-  expect(waiting.delayMs).toBeGreaterThanOrEqual(1200);
-  expect(waiting.delayMs).toBeLessThanOrEqual(8000);
+  expect(waiting.delayMs).toBeGreaterThanOrEqual(BOT_THINK_LIMITS.minimum);
+  expect(waiting.delayMs).toBeLessThanOrEqual(BOT_THINK_LIMITS.maximum);
   await expect(page.locator(`.seat-${waiting.actor}`)).toHaveClass(/thinking/);
   expect(await page.evaluate(() => window.qa.resumeBots())).toEqual(waiting);
   const live = await page.evaluate(() => window.noir.getState());
