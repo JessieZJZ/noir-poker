@@ -2,6 +2,7 @@ import { test, expect } from '@playwright/test';
 import { writeFile } from 'node:fs/promises';
 import { openSettings, closeSettings } from './settings-helpers.js';
 import { readTableLayout, assertTableLayout } from '../native/layout.mjs';
+import { styleTagFailures } from '../fixtures/style-tag-metrics.js';
 import {
   readRecordTableGeometry,
   recordGeometryDifferences,
@@ -220,7 +221,10 @@ test('Chinese, Korean and long locale persona tags keep the same height without 
       await expect
         .poll(async () => {
           const current = await read();
-          return recordGeometryDifferences(current, before, 0.5);
+          return [
+            ...recordGeometryDifferences(current, before, 0.5),
+            ...(await page.evaluate(styleTagFailures)),
+          ];
         })
         .toEqual([]);
       assertTableLayout(await page.evaluate(readTableLayout));

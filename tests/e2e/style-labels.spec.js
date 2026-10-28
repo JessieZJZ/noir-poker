@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { BOT_PROFILES } from '../../src/engine/bot-profiles.js';
+import { styleTagFailures } from '../fixtures/style-tag-metrics.js';
 const profiles = BOT_PROFILES.map((profile) => profile.id);
 const sizes = [
   [320, 568],
@@ -100,25 +101,7 @@ test('localized styles fit one line completely and holding a label never opens a
       el.value = value;
       el.dispatchEvent(new Event('change'));
     }, locale);
-    await expect
-      .poll(() =>
-        page
-          .locator('#seats .seat-style-label')
-          .evaluateAll(
-            (labels, count) =>
-              labels.length === count &&
-              labels.every(
-                (el) =>
-                  el.textContent === el.dataset.fullName &&
-                  getComputedStyle(el).textOverflow !== 'ellipsis' &&
-                  getComputedStyle(el).whiteSpace === 'nowrap' &&
-                  el.scrollWidth <= el.clientWidth + 1 &&
-                  el.scrollHeight <= el.clientHeight + 1,
-              ),
-            profiles.length,
-          ),
-      )
-      .toBe(true);
+    await expect.poll(() => page.evaluate(styleTagFailures)).toEqual([]);
   }
   const box = await page.locator('#seats .seat-style-label').first().boundingBox();
   await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
@@ -126,4 +109,25 @@ test('localized styles fit one line completely and holding a label never opens a
   await page.waitForTimeout(550);
   await page.mouse.up();
   await expect(page.locator('#seat-name-tooltip')).toHaveCount(0);
+});
+
+test('long localized tags fit their rendered glyphs with fixed letter spacing', async ({
+  page,
+}) => {
+  await page.goto('/');
+  await page.waitForFunction(() => !!window.qa);
+  await page.addStyleTag({ content: '.seat-style-label { letter-spacing: 0.5px !important; }' });
+  await page.evaluate((profiles) => {
+    window.qa.recordsStart({ count: 9, styles: profiles });
+    window.qa.stop();
+  }, profiles);
+  for (const locale of ['fr', 'it', 'zh-CN']) {
+    await page.locator('#language-select').evaluate((el, value) => {
+      el.value = value;
+      el.dispatchEvent(new Event('change'));
+    }, locale);
+    await expect(page.locator('html')).toHaveAttribute('lang', locale);
+    await page.evaluate(() => document.fonts.ready);
+    await expect.poll(() => page.evaluate(styleTagFailures)).toEqual([]);
+  }
 });

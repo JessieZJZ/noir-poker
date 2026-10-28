@@ -3,6 +3,7 @@ import { COMPACT_PLAY_QUERY } from './play-geometry.js';
 import { railLayout } from './rail-layout.js';
 import { readPlayViewport } from './stable-viewport.js';
 import { numericWidthScale } from './numeric-width.js';
+import { styleFontSize } from './style-font.js';
 // Select the closest collision-free position to the upper felt center. Using each
 // public part separately leaves usable space beside a narrow pot or caption.
 export function nearestClearTop(ideal, min, max, blocked) {
@@ -92,22 +93,48 @@ export function createSettlementLayout(arena, { observe = true } = {}) {
     // make room for larger text again. Batch writes before measuring glyphs.
     for (const label of labels) label.style.removeProperty('--style-font');
     const arenaScale = arena.getBoundingClientRect().width / arena.offsetWidth || 1;
-    const sizes = labels.map((label) => {
+    const entries = labels.map((label) => {
       const style = getComputedStyle(label);
+      const profileStyle = getComputedStyle(label.closest('.seat-profile'));
+      // Use the stable grid track, not the badge's rounded, intrinsic width.
+      // A short badge must not shrink itself further on each layout pass.
+      const column = parseFloat(profileStyle.gridTemplateColumns.split(' ').at(-1));
+      const available =
+        column -
+        parseFloat(style.paddingLeft) -
+        parseFloat(style.paddingRight) -
+        parseFloat(style.borderLeftWidth) -
+        parseFloat(style.borderRightWidth) -
+        0.5;
       const range = document.createRange();
       range.selectNodeContents(label);
-      const textWidth = range.getBoundingClientRect().width / arenaScale;
-      const available =
-        label.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight) - 0.5;
-      const font = parseFloat(style.fontSize);
       return {
         label,
-        font:
-          Math.floor(font * Math.min(1, Math.max(0, available) / Math.max(1, textWidth)) * 100) /
-          100,
+        range,
+        available,
+        spacing: (parseFloat(style.letterSpacing) || 0) * [...label.textContent].length,
+        font: parseFloat(style.fontSize),
       };
     });
-    for (const { label, font } of sizes) label.style.setProperty('--style-font', `${font}px`);
+    // Fonts need not scale exactly proportionally at small sizes. Verify real
+    // rendered glyphs after each correction, batching reads before writes.
+    let pending = entries;
+    for (let pass = 0; pass < 4 && pending.length; pass++) {
+      pending = pending.filter((entry) => {
+        const width = entry.range.getBoundingClientRect().width / arenaScale;
+        const height = entry.label.scrollHeight;
+        const rowHeight = entry.label.clientHeight;
+        if (width <= entry.available && height <= rowHeight) return false;
+        // A fallback font's baseline can overflow the fixed row even when a
+        // short name fits horizontally. Keep the row, and fit those glyphs too.
+        entry.font = Math.min(
+          styleFontSize(entry.font, width, entry.available, entry.spacing),
+          styleFontSize(entry.font, height, rowHeight),
+        );
+        return true;
+      });
+      for (const { label, font } of pending) label.style.setProperty('--style-font', `${font}px`);
+    }
   };
   const center = arena.querySelector('.table-center');
   let frame = null;
