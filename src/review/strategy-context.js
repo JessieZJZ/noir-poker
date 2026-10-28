@@ -70,8 +70,15 @@ export function enrichStrategy(coaching, s, assessment, options) {
         /过牌[^。]*(?:扩大|做大|控制投入)/.test(flat)
       )
         pieces = pieces.filter((text) => text !== '过牌保留改善机会，也没有主动扩大底池。');
+      if (
+        options?.audience === 'observer' &&
+        s.action === 'call' &&
+        /(?:当前|目前)主要依靠听牌改善|这次跟注[^。]*(?:补牌|改善机会)/u.test(flat)
+      )
+        pieces = pieces.filter((text) => text !== '这次跟注保留了听牌的改善机会。');
       return { ...n, parts: pieces, text: pieces.join('') };
-    });
+    })
+    .filter((n) => n.parts.length);
   if (accepted.some((n) => n.topic === 'paying-range'))
     parts = parts.map((p) =>
       p.flatMap((text) =>
@@ -81,6 +88,15 @@ export function enrichStrategy(coaching, s, assessment, options) {
             (t) =>
               !/^(?:当前|目前)已有成牌，下注的价值来自对手用更弱成牌跟注。$/.test(t) &&
               !/^河牌已经发完，价值来自较弱成牌愿意跟注。$/.test(t) &&
+              !(
+                options?.audience === 'observer' &&
+                /^这是用[^。]*取值：这次拿出 [^，]+，希望更弱成牌(?:或听牌)?付费。$/u.test(t)
+              ) &&
+              !(
+                options?.audience === 'observer' &&
+                t === '牌面有同花或顺子连接，下注也让追牌的人付出成本。' &&
+                accepted.some((n) => n.topic === 'paying-range' && /听牌/.test(n.text))
+              ) &&
               (!/^取值也可能来自.*听牌.*跟注.*愿意支付这个尺度。$/.test(t) ||
                 !accepted.some((n) => n.topic === 'paying-range' && /听牌/.test(n.text))),
           ),

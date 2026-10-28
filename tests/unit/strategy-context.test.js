@@ -75,3 +75,62 @@ test('observer draw enrichment keeps paired-board risk without repeating the pur
   assert.doesNotMatch(result.explanation, /过牌保留改善机会，也没有主动扩大底池/);
   assert.equal(result.explanation.match(/扩大.*?底池/g)?.length, 1);
 });
+
+test('observer draw calls retain their outs and paired-board risk without repeating an explained improvement', () => {
+  const { flop } = topPairFlushTurn({ hole: 'Kd Jd', turnCard: '2s' });
+  const s = { ...flop, board: cards('5d 5h 6d'), action: 'call' };
+  const text = 'Alex带同花听牌，选择跟注。当前主要依靠听牌改善争取获胜，共有 9 张牌可能补成同花。';
+  const a = { draw: { flushDraw: true, pairedBoard: true, nutFlushDraw: false }, options: [] };
+  const result = enrichStrategy({ paragraphs: [text], paragraphParts: [[text]] }, s, a, {
+    action: 'call',
+    subject: 'Alex',
+    audience: 'observer',
+  });
+  assert.match(result.explanation, /选择跟注.*共有 9 张牌可能补成同花/);
+  assert.match(result.explanation, /补成同花仍可能输给葫芦、四条/);
+  assert.doesNotMatch(result.explanation, /这次跟注保留了听牌的改善机会/);
+});
+
+test('an observer call with no existing draw explanation still gets its own draw and improvement purpose', () => {
+  const { flop } = topPairFlushTurn({ hole: 'Kd Jd', turnCard: '2s' });
+  const s = { ...flop, action: 'call' };
+  const text = 'Alex选择跟注。';
+  const result = enrichStrategy(
+    { paragraphs: [text], paragraphParts: [[text]] },
+    s,
+    { draw: { flushDraw: true, nutFlushDraw: false }, options: [] },
+    { action: 'call', subject: 'Alex', audience: 'observer' },
+  );
+  assert.match(result.explanation, /K♦ J♦ 带同花听牌/);
+  assert.match(result.explanation, /这次跟注保留了听牌的改善机会/);
+});
+
+test('specific observer payment evidence replaces generic value filler while keeping the hand, action and risk', () => {
+  const { flop: s } = topPairFlushTurn();
+  const text =
+    'Alex拿 K♠ 10♣，当前是顶对 10，选择下注至 810K。' +
+    '这是用顶对 10取值：这次拿出 810K，希望更弱成牌或听牌付费。' +
+    '牌面有同花或顺子连接，下注也让追牌的人付出成本。' +
+    '补出同花时可能落后。';
+  const a = {
+    draw: {},
+    options: [
+      { amount: s.amount, worseMadeCallMass: 0.4, drawCallMass: 0.2 },
+      { amount: s.amount + 200000, worseMadeCallMass: 0.1, drawCallMass: 0.1 },
+    ],
+  };
+  const base = { paragraphs: [text], paragraphParts: [[text]] };
+  const result = enrichStrategy(base, s, a, {
+    action: 'raise',
+    amount: s.amount,
+    subject: 'Alex',
+    audience: 'observer',
+  });
+  assert.match(result.explanation, /K♠ 10♣.*顶对 10.*选择下注至 810K/);
+  assert.match(result.explanation, /按这个尺度.*较弱成牌和听牌可能付费/);
+  assert.match(result.explanation, /补出同花时可能落后/);
+  assert.doesNotMatch(result.explanation, /这次拿出|追牌的人付出成本/);
+  assert.equal(result.explanation.match(/810K/g)?.length, 1);
+  const hero = enrichStrategy(base, s, a, { action: 'raise', amount: s.amount });
+  assert.match(hero.explanation, /这是用顶对 10取值/);
+});

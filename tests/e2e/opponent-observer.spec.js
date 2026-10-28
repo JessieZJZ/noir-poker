@@ -63,3 +63,30 @@ test('observed set check retains board danger and redraws without advising a fut
     /再遇下注时|后面仍有玩家可以下注，过牌不保证|需要按新的价格/,
   );
 });
+
+test('observer draw calls keep their concrete outs without a repeated improvement closing', async ({
+  page,
+}, info) => {
+  const detail = await open(
+    page,
+    observerRecord({
+      action: 'call',
+      reason: 'price-continue',
+      hole: 'As 4c',
+      board: '2d Kc Qs 3d',
+      publicStrategy: {
+        draw: { straightDraw: true, pairedBoard: false },
+        options: [],
+        call: { eligible: true, futurePayBound: 300, impliedValue: 5 },
+      },
+    }),
+  );
+  await expect(detail).toContainText('选择跟注');
+  await expect(detail).toContainText('卡顺听牌');
+  await expect(detail).toContainText('共有 4 张牌可能补成顺子');
+  await expect(detail).not.toContainText('这次跟注保留了听牌的改善机会');
+  await expect(detail).not.toContainText(/建议|再遇下注时|机器人/);
+  await detail.locator('.review-analysis-heading').scrollIntoViewIfNeeded();
+  await mkdir('.artifacts/observer-dedup-review-web', { recursive: true });
+  await page.screenshot({ path: `.artifacts/observer-dedup-review-web/${info.project.name}.png` });
+});
