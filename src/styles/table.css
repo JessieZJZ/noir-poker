@@ -286,6 +286,9 @@
 }
 .blind-info {
   display: flex;
+  justify-content: center;
+  text-align: center;
+  line-height: 1.4;
   align-items: center;
   gap: 6px;
   font-size: 13px;
@@ -293,6 +296,7 @@
   color: #98aeb9;
 }
 .blind-info b {
+  line-height: inherit;
   color: #d2dbe3;
   font-weight: 600;
 }

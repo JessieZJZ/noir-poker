@@ -100,7 +100,7 @@ try {
     p.preset({ currentTarget: { dataset: { preset: 'min' } } });
     return true;
   });
-  const slider = await page.$('.raise-controls slider');
+  const slider = await page.$('#raise-track');
   report.slider = {
     size: await slider.size(),
     offset: await slider.offset(),
@@ -110,14 +110,15 @@ try {
   const shellOffset = await shell.offset(),
     shellSize = await shell.size();
   assert.ok(
-    report.slider.offset.left - 14 >= shellOffset.left,
+    report.slider.offset.left - 7.5 >= shellOffset.left,
     'The full minimum-position thumb remains inside the card',
   );
   assert.ok(
-    report.slider.offset.left + report.slider.size.width + 14 <= shellOffset.left + shellSize.width,
+    report.slider.offset.left + report.slider.size.width + 7.5 <=
+      shellOffset.left + shellSize.width,
     'The full maximum-position thumb remains inside the card',
   );
-  assert.ok(report.slider.size.height >= 28, 'Native slider hit height');
+  assert.ok(report.slider.size.height >= 19, 'Compact whole-track drag surface');
   await mini.screenshot({ path: path.join(output, 'slider-min.png') });
   // Real playback event order; cue invocation is a labelled audio-only probe.
   await mini.evaluate(() => {

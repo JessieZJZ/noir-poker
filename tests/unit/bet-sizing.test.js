@@ -148,3 +148,58 @@ test('a real turn pot of 3075 facing 800 produces legal targets and conserves ev
     );
   }
 });
+
+test('nonlinear raise rail reaches pot at halfway, max at the end and stays on the chip grid', async () => {
+  const {
+    sliderRaiseTo,
+    raiseSliderPosition,
+    RAISE_SLIDER_MAX: end,
+  } = await import('../../src/ui/bet-sizing.js');
+  for (const v of [
+    view(),
+    view({ currentBet: 0, pot: 500 }, { callAmount: 0, minRaiseTo: 25 }),
+    view(
+      { currentBet: 1000, pot: 12000 },
+      { chipUnit: 100, callAmount: 500, minRaiseTo: 2000, maxRaiseTo: 100000 },
+    ),
+  ]) {
+    assert.equal(sliderRaiseTo(v, 0), v.legal.minRaiseTo);
+    assert.equal(sliderRaiseTo(v, end / 2), presetRaiseTo(v, 'pot'));
+    assert.equal(sliderRaiseTo(v, end), v.legal.maxRaiseTo);
+    let previous = 0;
+    for (let position = 0; position <= end; position += 1000) {
+      const amount = sliderRaiseTo(v, position);
+      assert.ok(amount >= previous);
+      assert.equal(amount % v.legal.chipUnit, 0);
+      assert.equal(sliderRaiseTo(v, raiseSliderPosition(v, amount)), amount);
+      previous = amount;
+    }
+  }
+  // Below-minimum/above-maximum positions clamp, and no state is mutated.
+  const v = view(),
+    before = JSON.stringify(v);
+  assert.equal(sliderRaiseTo(v, -20), v.legal.minRaiseTo);
+  assert.equal(sliderRaiseTo(v, Infinity), v.legal.maxRaiseTo);
+  assert.equal(sliderRaiseTo(v, NaN), v.legal.minRaiseTo);
+  assert.equal(JSON.stringify(v), before);
+  assert.equal(sliderRaiseTo(view({}, { canRaise: false }), end), null);
+});
+
+test('short-stack or minimum-sized pots use the full rail with no dead half', async () => {
+  const {
+    sliderRaiseTo,
+    raiseSliderPosition,
+    RAISE_SLIDER_MAX: end,
+  } = await import('../../src/ui/bet-sizing.js');
+  for (const v of [
+    view({}, { maxRaiseTo: 3000 }),
+    view({}, { maxRaiseTo: 2000 }),
+    view({ pot: 0, currentBet: 0 }, { callAmount: 0 }),
+    view({}, { minRaiseTo: 1750, maxRaiseTo: 1750 }),
+  ]) {
+    const { minRaiseTo: min, maxRaiseTo: max } = v.legal;
+    assert.equal(sliderRaiseTo(v, end / 2), legalRaiseTo((min + max) / 2, v.legal));
+    assert.equal(sliderRaiseTo(v, end), max);
+    assert.equal(raiseSliderPosition(v, min), 0);
+  }
+});

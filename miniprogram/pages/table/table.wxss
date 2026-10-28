@@ -497,9 +497,33 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.raise-controls slider {
-  margin: 2px 14px 0;
-  height: 28px;
+.raise-track {
+  position: relative;
+  margin: 0 2px;
+  height: 19px;
+  overflow: visible;
+}
+.raise-rail {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 7px;
+  height: 5px;
+  border-radius: 3px;
+  background: #354650;
+}
+.raise-thumb {
+  position: absolute;
+  top: 2px;
+  width: 15px;
+  height: 15px;
+  margin-left: -7.5px;
+  border-radius: 50%;
+  background: #6ee7c5;
+  pointer-events: none;
+}
+.raise-track.disabled {
+  opacity: 0.45;
 }
 .presets {
   display: flex;
@@ -1552,7 +1576,16 @@
   flex-wrap: wrap;
 }
 .blind-info {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  line-height: 1.4;
+  gap: 6px;
   font-size: 13px;
+}
+.blind-info text {
+  line-height: inherit;
 }
 .hint-mask {
   font-size: 12px;

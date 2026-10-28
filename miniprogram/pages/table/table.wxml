@@ -364,20 +364,26 @@
               牌力表
             </button></view
           ><view class="raise-controls" wx:if="{{!compactActions}}"
-            ><slider
-              min="{{minRaise}}"
-              max="{{maxRaise}}"
-              step="{{chipUnit}}"
-              value="{{sliderValue}}"
-              disabled="{{!canRaise}}"
-              activeColor="#6ee7c5"
-              backgroundColor="#354650"
-              block-color="#6ee7c5"
-              block-size="28"
-              bindtouchstart="startRaise"
-              bindchanging="previewRaise"
-              bindchange="changeRaise"
-            /><view class="presets"
+            ><view
+              id="raise-track"
+              class="raise-track {{!canRaise ? 'disabled' : ''}}"
+              aria-role="slider"
+              aria-label="加注筹码"
+              aria-valuemin="{{minRaise}}"
+              aria-valuemax="{{maxRaise}}"
+              aria-valuenow="{{raiseTo}}"
+              aria-valuetext="{{raiseText}}"
+              aria-disabled="{{!canRaise}}"
+              catchtouchstart="startRaise"
+              catchtouchmove="moveRaise"
+              catchtouchend="endRaise"
+              catchtouchcancel="cancelRaise"
+              ><view class="raise-rail"></view
+              ><view
+                class="raise-thumb"
+                style="left: {{sliderValue / sliderLimit * 100}}%;"
+              ></view></view
+            ><view class="presets"
               ><button
                 hover-class="none"
                 data-preset="min"

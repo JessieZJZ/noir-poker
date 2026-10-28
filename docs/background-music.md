@@ -4,7 +4,7 @@ Web、iOS、Android 和微信小程序的设置在「通用」模块提供三个
 
 - **音效**：控制操作音效。
 - **背景音乐**：控制「夜色牌桌」循环背景音乐。
-- **振动**：独立控制轮到玩家行动时的一次轻振提醒。Web 取决于浏览器的振动 API；原生使用 Haptics，小程序使用 `wx.vibrateShort`。
+- **振动**：开启时立即轻振一次（设备支持时），独立控制轮到玩家行动时的一次轻振提醒。Web 取决于浏览器的振动 API；原生使用 Haptics，小程序使用 `wx.vibrateShort`。
 
 新设备三项均默认开启。Web/App 分别保存到 `noir-sound`、`noir-music`、`noir-vibration`，App 启动前从 Capacitor Preferences 恢复；微信保存到设置对象的 `sound`、`music`、`vibration` 字段。应用尚未发布，没有旧版组合静音的兼容迁移。
 
@@ -20,7 +20,9 @@ Web、iOS、Android 和微信小程序的设置在「通用」模块提供三个
 
 Web/App 使用同一包内文件、同一个循环 audio 元素；BGM 通过独立 GainNode 接到现有 AudioContext，兼容不支持元素音量调整的 iOS。音乐与音效共同进入最终限幅器，混音峰值不超过 0.92。音频资源与全部图片共同进入原生资源指纹，并在最终 `.app` / `.apk` / `.aab` 中逐字节验证。没有生产 `server.url` 或远程音乐地址。
 
-小程序把手机版 AAC 文件复制到本地 `music` 分包；仅在声音开启时通过 `require.async` 加载分包的资源入口，使用单独的 `InnerAudioContext`，`loop=true`、`volume=1.0`。小程序仅保留最新的动作提示，音乐编码后的真峰值约 −6.94 dBTP；动作音效使用独立上下文，播放时不修改音乐音量或安排恢复音量的定时器。App 生命周期控制音乐，音效池停止或重建不影响它。分包完成与音频就绪回调都检查当前播放意愿；关闭或销毁后的旧回调不能重新启动音乐。微信可能在页面创建或销毁音效上下文时（例如进入对局记录）自行暂停或停止音乐；只要仍应播放，300 ms 后从原位置恢复，两次恢复至少间隔 2 秒，避免系统持续拒绝时反复重试。应用切后台、关闭音乐或销毁时会取消待恢复的播放。加载方式遵循[微信分包异步化](https://developers.weixin.qq.com/miniprogram/dev/framework/subpackages/async.html)，采用[腾讯官方接入示例](https://cloud.tencent.com/document/product/679/116623)同样的 Promise 模块接口。
+小程序把手机版 AAC 文件复制到本地 `music` 分包；仅在音乐开启时通过 `require.async` 加载。优先使用 `wx.createWebAudioContext`，一次解码本地 AAC（约 36 MiB PCM），由同一个 `BufferSourceNode` 的 `loop` 在音频时钟上连续循环，循环边界不重新加载、解码、淡入或安排 JS 定时器。音乐内容与原生 App 相同。切后台或静音时停止源节点并保存循环内进度，再次播放复用已解码缓冲；销毁时释放缓冲与上下文。迟到的读取、解码和恢复回调不能重启已关闭的播放。
+
+不支持 WebAudio、解码失败或启动失败时回退到独立 `InnerAudioContext`，保留 `loop=true`、音量与生命周期行为。兼容路径仍受客户端播放器循环精度影响。该路径被系统意外暂停时，300 ms 后从原位置恢复，两次恢复至少间隔 2 秒；主动暂停、静音和销毁会取消重试。音效使用独立上下文，不改变音乐音量。资源加载遵循[微信分包异步化](https://developers.weixin.qq.com/miniprogram/dev/framework/subpackages/async.html)，音频接口依据[微信官方类型定义](https://github.com/wechat-miniprogram/api-typings/blob/master/types/wx/lib.wx.api.d.ts)。
 
 构建保留主包和各分包各自 2 MiB、总包 20 MiB 的预算，在 `build-info.json.packageBytes` 写入每包大小；文件缺失、损坏或与公共资源不一致均阻止验证。
 
@@ -47,6 +49,6 @@ npm run wechat:check
 node tests/wechat/background-music.mjs ws://127.0.0.1:9462 .artifacts/background-music/wechat
 ```
 
-该脚本观察真实 `InnerAudioContext` 的解码、时间推进和首尾循环，点击两项开关，验证页面重开后的独立保存。生命周期部分调用实际 App 的 `onHide` / `onShow` 处理器，在报告中与实体微信客户端切后台区分。测试前保存设置，结束后恢复，并保留报告及截图。
+该脚本观察真实 WebAudio 的本地解码、音频时钟推进和完整首尾循环，确认一个循环内不重建源节点或重复淡入，并检查开关、前后台恢复和设置保存。生命周期部分调用实际 App 的 `onHide` / `onShow` 处理器，在报告中与实体微信客户端切后台区分。测试前保存设置，结束后恢复，并保留报告及截图。
 
 2026-10-18 筹码声音色替换的来源、测量与试听见 [筹码声试听](../audio-studio/chip-stack/README.md)。该次音色替换按用户要求未运行回归测试，后续音乐与布局调整的验证单独记录。

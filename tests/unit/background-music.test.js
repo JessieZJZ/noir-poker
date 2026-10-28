@@ -420,3 +420,214 @@ test('WeChat begins loading music on launch before the table is ready and preser
     app.noirMusic.dispose();
   }
 });
+
+function loopFixture() {
+  const nodes = [],
+    jobs = new Map();
+  let reads = 0,
+    decodes = 0,
+    time = 0,
+    serial = 0;
+  const gain = { gain: { value: 0 }, connect() {}, disconnect() {} };
+  const context = {
+    currentTime: 0,
+    state: 'running',
+    destination: {},
+    createGain: () => gain,
+    resume() {
+      this.state = 'running';
+      return Promise.resolve();
+    },
+    suspend() {
+      this.state = 'suspended';
+      return Promise.resolve();
+    },
+    close() {
+      this.state = 'closed';
+      return Promise.resolve();
+    },
+    decodeAudioData(data, success, fail) {
+      decodes++;
+      this.decoded = success;
+      this.failed = fail;
+    },
+    createBufferSource() {
+      const node = {
+        connect() {},
+        disconnect() {},
+        start(when, offset) {
+          this.startOffset = offset;
+        },
+        stop() {
+          this.stopped = true;
+        },
+      };
+      nodes.push(node);
+      return node;
+    },
+  };
+  const wx = {
+    createWebAudioContext: () => context,
+    getFileSystemManager: () => ({
+      readFile({ success }) {
+        reads++;
+        success({ data: new ArrayBuffer(8) });
+      },
+    }),
+  };
+  const options = {
+    loadSource: () => '/music/background-music.m4a',
+    now: () => time,
+    schedule(fn) {
+      jobs.set(++serial, fn);
+      return serial;
+    },
+    unschedule(id) {
+      jobs.delete(id);
+    },
+  };
+  const flush = () => new Promise((resolve) => setTimeout(resolve, 0));
+  return {
+    wx,
+    options,
+    context,
+    gain,
+    jobs,
+    nodes,
+    flush,
+    reads: () => reads,
+    decodes: () => decodes,
+    fadeIn() {
+      time += 2400;
+      for (const [id, fn] of [...jobs]) {
+        jobs.delete(id);
+        fn();
+      }
+    },
+  };
+}
+
+test('WeChat decoded music loops on one source without new decodes or fades at each seam', async () => {
+  const f = loopFixture(),
+    music = createWechatBackgroundMusic(f.wx, f.options);
+  await f.flush();
+  f.context.decoded({ duration: 93.6585 });
+  await f.flush();
+  f.fadeIn();
+  assert.equal(music.getState().playing, true);
+  assert.equal(f.nodes[0].loop, true);
+  assert.equal(f.nodes[0].loopStart, 0);
+  assert.equal(f.nodes[0].loopEnd, 93.6585);
+  assert.equal(f.gain.gain.value, BACKGROUND_MUSIC_VOLUME);
+  for (const time of [93.65, 93.67, 187.4, 285]) {
+    f.context.currentTime = time;
+    music.unlock();
+    await f.flush();
+    assert.equal(f.nodes.length, 1, 'No source restart at loop or repeated gestures');
+    assert.equal(f.gain.gain.value, BACKGROUND_MUSIC_VOLUME);
+    assert.equal(f.jobs.size, 0);
+  }
+  assert.equal(f.reads(), 1);
+  assert.equal(f.decodes(), 1);
+  f.context.currentTime = 100;
+  music.setActive(false);
+  assert.equal(f.nodes[0].stopped, true);
+  assert.equal(music.getState().playing, false);
+  music.setActive(true);
+  await f.flush();
+  assert.ok(Math.abs(f.nodes[1].startOffset - (100 - 93.6585)) < 0.0001);
+  assert.equal(f.decodes(), 1);
+  music.dispose();
+  assert.equal(f.jobs.size, 0);
+  assert.equal(f.context.state, 'closed');
+});
+
+test('WeChat late decode stays silent while hidden or muted and disposal drops it', async () => {
+  for (const action of ['hide', 'mute', 'dispose']) {
+    const f = loopFixture(),
+      music = createWechatBackgroundMusic(f.wx, f.options);
+    await f.flush();
+    if (action === 'hide') music.setActive(false);
+    if (action === 'mute') music.setEnabled(false);
+    if (action === 'dispose') music.dispose();
+    f.context.decoded({ duration: 93 });
+    await f.flush();
+    assert.equal(f.nodes.length, 0);
+    assert.equal(music.getState().playing, false);
+    if (action !== 'dispose') {
+      music.setEnabled(true);
+      music.setActive(true);
+      await f.flush();
+      assert.equal(f.nodes.length, 1);
+    }
+    music.dispose();
+  }
+});
+
+test('WeChat unsupported decoding falls back once to local looping audio', async () => {
+  const f = loopFixture();
+  let created = 0;
+  const audio = {
+    play() {
+      this.played?.();
+    },
+    onPlay(fn) {
+      this.played = fn;
+    },
+    pause() {},
+    stop() {},
+    destroy() {},
+  };
+  f.wx.createInnerAudioContext = () => {
+    created++;
+    return audio;
+  };
+  const music = createWechatBackgroundMusic(f.wx, f.options);
+  await f.flush();
+  f.context.failed(Error('codec unavailable'));
+  await f.flush();
+  assert.equal(created, 1);
+  assert.equal(f.context.state, 'closed');
+  assert.equal(audio.loop, true);
+  assert.equal(audio.src, '/music/background-music.m4a');
+  music.unlock();
+  await f.flush();
+  assert.equal(created, 1);
+  music.dispose();
+});
+
+test('WeChat start failure releases an unstarted source and still reaches its compatibility player', async () => {
+  const f = loopFixture();
+  let plays = 0;
+  const source = {
+    connect() {},
+    disconnect() {},
+    start() {
+      throw Error('start unavailable');
+    },
+    stop() {
+      throw Error('source never started');
+    },
+  };
+  f.context.createBufferSource = () => source;
+  f.wx.createInnerAudioContext = () => ({
+    onPlay(fn) {
+      this.played = fn;
+    },
+    play() {
+      plays++;
+      this.played?.();
+    },
+    pause() {},
+    stop() {},
+    destroy() {},
+  });
+  const music = createWechatBackgroundMusic(f.wx, f.options);
+  await f.flush();
+  f.context.decoded({ duration: 93 });
+  await f.flush();
+  assert.ok(plays >= 1);
+  assert.equal(music.getState().playing, true);
+  assert.equal(f.context.state, 'closed');
+  music.dispose();
+});

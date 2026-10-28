@@ -1,3 +1,4 @@
+const { sliderRaiseTo } = require('../../shared/ui/bet-sizing.js');
 const { compactChips, compactActionAmounts } = require('../../shared/engine/chip-format.js');
 const { createWechatController } = require('../../shared/platform/wechat-controller.js');
 const { phoneLayout } = require('./phone-layout.js');
@@ -145,6 +146,13 @@ module.exports = {
       createReviewWorker:
         typeof wx.createWorker === 'function' ? () => wx.createWorker('workers/review.js') : null,
       publish: (view) => {
+        if (
+          !view.canRaise ||
+          view.hand !== this.data.hand ||
+          view.replay !== this.data.replay ||
+          view.street !== this.data.street
+        )
+          this._raiseGesture = null;
         if (!this._readOnlyAttempt && typeof getApp === 'function')
           getApp().noirMusic?.setEnabled(view.settings.music);
         if (view.done || view.hand !== this.data.hand || view.replay !== this.data.replay)
@@ -345,6 +353,7 @@ module.exports = {
   onHide() {
     stopWindowWatch(this);
     this._hidden = true;
+    this._raiseGesture = null;
     clearTimeout(this._resourceTimer);
     clearTimeout(this._resourceMotionTimer);
     this.setData({ resourceRolling: false });
@@ -372,6 +381,7 @@ module.exports = {
   onUnload() {
     stopWindowWatch(this);
     this._destroyed = true;
+    this._raiseGesture = null;
     clearTimeout(this._resourceTimer);
     clearTimeout(this._resourceMotionTimer);
     if (typeof getApp === 'function' && getApp().noirController === this._controller)
@@ -382,6 +392,7 @@ module.exports = {
     this.stopSounds();
   },
   onResize(event) {
+    if (this._raiseGesture) this.cancelRaise();
     this.updateWindow(event);
   },
   onReady() {
@@ -809,32 +820,86 @@ module.exports = {
     this._soundAfterCheck = null;
   },
   act(event) {
+    this._raiseGesture = null;
     this.call('action', event.currentTarget.dataset.action);
   },
   preset(event) {
+    this._raiseGesture = null;
     this.call('preset', event.currentTarget.dataset.preset);
   },
-  changeRaise(event) {
-    this.call('setRaise', event.detail.value);
+  raiseView() {
+    return {
+      currentBet: this.data.currentBet,
+      pot: this.data.potAmount,
+      legal: {
+        enabled: this.data.canAct,
+        canRaise: this.data.canRaise,
+        chipUnit: this.data.chipUnit,
+        minRaiseTo: this.data.minRaise,
+        maxRaiseTo: this.data.maxRaise,
+        callAmount: this.data.callAmount || 0,
+      },
+    };
   },
-  startRaise() {
-    if (!this.data.canRaise) return;
+  changeRaise(event) {
+    this.call('setRaisePosition', event.detail.value);
+  },
+  startRaise(event) {
+    if (!this.data.canRaise || this._hidden || this._destroyed) return;
+    const touch = event.touches?.[0];
+    if (!touch || !wx.createSelectorQuery) return;
     this.unlockAudio();
     this._controller?.engageTurn();
+    const gesture = (this._raiseGesture = { id: touch.identifier, x: touch.clientX, ended: false });
+    const query = wx.createSelectorQuery();
+    query.select('#raise-track').boundingClientRect();
+    query.exec(([rect]) => {
+      if (this._raiseGesture !== gesture || !rect?.width || this._hidden || this._destroyed) return;
+      gesture.rect = rect;
+      this.updateRaiseGesture();
+    });
+  },
+  moveRaise(event) {
+    const gesture = this._raiseGesture;
+    const touch = event.touches?.find((value) => value.identifier === gesture?.id);
+    if (!gesture || !touch) return;
+    gesture.x = touch.clientX;
+    this.updateRaiseGesture();
+  },
+  endRaise(event) {
+    const gesture = this._raiseGesture;
+    if (!gesture) return;
+    const touch = event.changedTouches?.find((value) => value.identifier === gesture.id);
+    if (!touch) return;
+    gesture.x = touch.clientX;
+    gesture.ended = true;
+    this.updateRaiseGesture();
+  },
+  cancelRaise() {
+    this._raiseGesture = null;
+    if (this.data.canRaise) this._controller?.show();
+  },
+  updateRaiseGesture() {
+    const gesture = this._raiseGesture;
+    if (!gesture?.rect || !this.data.canRaise) return;
+    const position = Math.round(
+      Math.max(0, Math.min(1, (gesture.x - gesture.rect.left) / gesture.rect.width)) *
+        this.data.sliderLimit,
+    );
+    this.previewRaise({ detail: { value: position } });
+    if (gesture.ended) {
+      this._raiseGesture = null;
+      this.changeRaise({ detail: { value: position } });
+    }
   },
   previewRaise(event) {
+    if (!this.data.canRaise) return;
     this._controller?.engageTurn();
-    // Do not write the native slider's controlled value back during dragging.
-    // Only its caption changes; the final change commits once to the engine.
-    const value = Math.max(
-      this.data.minRaise,
-      Math.min(
-        this.data.maxRaise,
-        Math.round(Number(event.detail.value) / this.data.chipUnit) * this.data.chipUnit,
-      ),
-    );
+    const value = sliderRaiseTo(this.raiseView(), event.detail.value);
+    if (value === null) return;
     const text = compactChips(value);
-    if (text !== this.data.raiseText) this.setData({ raiseText: text });
+    const position = Math.max(0, Math.min(this.data.sliderLimit, Number(event.detail.value) || 0));
+    this.setData({ raiseText: text, sliderValue: position });
   },
   flyChips(id) {
     if (!wx.createSelectorQuery || this._hidden || this._destroyed) return;
@@ -866,11 +931,13 @@ module.exports = {
     });
   },
   nextHand() {
+    this._raiseGesture = null;
     this._finishRequested = false;
     this.setData({ finishing: false });
     this.call('nextHand');
   },
   retryHand() {
+    if (this._raiseGesture) this.cancelRaise();
     this._finishRequested = false;
     this.setData({ finishing: false });
     this.call('retry');

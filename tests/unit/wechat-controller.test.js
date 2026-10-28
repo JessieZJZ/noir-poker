@@ -1154,3 +1154,16 @@ test('WeChat ends the game without a champion when the hero busts with bots left
   while (latest().farewell) assert.ok(timers.runNext());
   assert.equal(latest().standingText, `第${latest().over.heroPlace}名`);
 });
+
+test('enabling vibration gives exactly one immediate preview, disabling and repeated true give none', (t) => {
+  let pulses = 0;
+  const { controller } = setup(t, { vibration: false }, { notifyTurn: () => pulses++ });
+  const before = pulses;
+  controller.setPreference('vibration', true);
+  assert.equal(pulses, before + 1);
+  controller.setPreference('vibration', true);
+  controller.setPreference('vibration', false);
+  assert.equal(pulses, before + 1);
+  controller.setPreference('vibration', true);
+  assert.equal(pulses, before + 2);
+});

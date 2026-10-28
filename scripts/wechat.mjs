@@ -295,6 +295,7 @@ export async function buildWechat(output = wechatOutput) {
       'card-rank-glyphs.js',
       'background-music.js',
       'music-fade.js',
+      'bet-sizing.js',
       'deal-gate.js',
       'effect-layouts.js',
       'entry-welcome-scale.js',

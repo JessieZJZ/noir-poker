@@ -1,3 +1,9 @@
+import {
+  presetRaiseTo,
+  sliderRaiseTo,
+  raiseSliderPosition,
+  RAISE_SLIDER_MAX,
+} from '../ui/bet-sizing.js';
 import { createDealGate } from '../ui/deal-gate.js';
 import { difficultyPolicy } from '../engine/bot-difficulty.js';
 import { createGameRecords, standingLabel, standingClass } from '../engine/game-records.js';
@@ -59,7 +65,7 @@ import {
   assignBotSeat,
   toggleMixedLineup,
 } from '../engine/bot-profiles.js';
-import { chipUnitOf, fractionRaiseTo, legalRaiseTo } from '../engine/bet-sizing.js';
+import { chipUnitOf, legalRaiseTo } from '../engine/bet-sizing.js';
 import {
   createReviewInput,
   analyzeDecision,
@@ -537,7 +543,15 @@ export function createWechatController({
       canAct: !!legal.enabled,
       minRaise: sliderMin,
       // Off turn the disabled slider rests at its minimum, as on Web.
-      sliderValue: legal.enabled && legal.canRaise ? raiseTo : sliderMin,
+      sliderValue: raiseSliderPosition(
+        { currentBet: game.currentBet, pot: potSize(game), legal },
+        raiseTo,
+      ),
+      sliderLimit: RAISE_SLIDER_MAX,
+      sliderPot: presetRaiseTo({ currentBet: game.currentBet, pot: potSize(game), legal }, 'pot'),
+      callAmount: legal.callAmount || 0,
+      currentBet: game.currentBet,
+      potAmount: potSize(game),
       maxRaise: sliderMax,
       raiseTo,
       raiseText: format(raiseTo),
@@ -799,6 +813,7 @@ export function createWechatController({
   function setPreference(key, value) {
     if (readOnlyAttempt) return;
     if (key === 'stakes') return requestStakes(value);
+    const enablingVibration = key === 'vibration' && !settings.vibration && value === true;
     const enablingSound = key === 'sound' && !settings.sound && value === true;
     const next = sanitize({ ...settings, [key]: value });
     settings = next;
@@ -813,7 +828,16 @@ export function createWechatController({
       cancelHint();
       hintKey = '';
     }
+    if (enablingVibration)
+      turnCue.acknowledge(
+        `${game.hand}:${game.replayAttempt || 0}:${game.street}:${game.history.length}`,
+      );
     render();
+    if (enablingVibration && active) {
+      try {
+        Promise.resolve(notifyTurn()).catch(() => {});
+      } catch {}
+    }
     driveBots();
   }
   return {
@@ -870,22 +894,10 @@ export function createWechatController({
       if (readOnlyAttempt) return;
       const legal = legalActions(game, 0);
       if (!legal.enabled || !legal.canRaise) return;
-      const target =
-        name === 'min'
-          ? legal.minRaiseTo
-          : name === 'all'
-            ? legal.maxRaiseTo
-            : ['half', 'pot'].includes(name)
-              ? fractionRaiseTo(
-                  {
-                    currentBet: game.currentBet,
-                    pot: potSize(game),
-                    callAmount: legal.callAmount,
-                    chipUnit: legal.chipUnit,
-                  },
-                  name === 'half' ? 0.5 : 1,
-                )
-              : null;
+      const target = presetRaiseTo(
+        { currentBet: game.currentBet, pot: potSize(game), legal },
+        name,
+      );
       if (target === null) return;
       attention.engage();
       raiseTo = legalRaiseTo(target, legal);
@@ -893,6 +905,18 @@ export function createWechatController({
     },
     engageTurn() {
       attention.engage();
+    },
+    setRaisePosition(position) {
+      if (readOnlyAttempt || !active || dealGate.pending) return;
+      const legal = legalActions(game, 0);
+      const amount = sliderRaiseTo(
+        { currentBet: game.currentBet, pot: potSize(game), legal },
+        position,
+      );
+      if (amount === null) return;
+      attention.engage();
+      raiseTo = amount;
+      render();
     },
     setRaise(value) {
       if (readOnlyAttempt) return;

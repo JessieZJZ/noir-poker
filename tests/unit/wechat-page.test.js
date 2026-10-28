@@ -1,3 +1,4 @@
+import * as betSizing from '../../src/ui/bet-sizing.js';
 import { compactChips, compactActionAmounts } from '../../src/engine/chip-format.js';
 import { compactTableLayout } from '../../src/ui/compact-table-layout.js';
 import { renderCardArtwork } from '../../src/ui/cards.js';
@@ -134,6 +135,7 @@ function setup(
             { label: image.credit, url: image.source },
           ]),
         );
+      if (name.endsWith('/ui/bet-sizing.js')) return betSizing;
       if (name.endsWith('/chip-format.js')) return { compactChips, compactActionAmounts };
       if (name === './presentation.js') return presentationModule.exports;
       if (name === './phone-layout.js') return { phoneLayout: compactTableLayout };
@@ -1463,26 +1465,74 @@ test('dropdown data anchors the options below the original control and settings 
   assert.match(template, /top: 0; bottom: 0;/);
 });
 
-test('WeChat slider preview changes only the caption, final change commits the legal amount', (t) => {
-  const { page } = setup(t);
+test('WeChat can drag from anywhere on the compact rail and commits only on release', (t) => {
+  const { page, wx } = setup(t);
   reachHero(page);
   page._controller.show();
   const before = copy(page.data),
     hand = copy(page._controller.getGame());
-  page.startRaise();
+  let measure;
+  wx.createSelectorQuery = () => ({
+    select() {
+      return this;
+    },
+    boundingClientRect() {
+      return this;
+    },
+    exec(callback) {
+      measure = callback;
+    },
+  });
+  page.startRaise({ touches: [{ identifier: 1, clientX: 150 }] });
+  // Finger starts at mid-track, then moves before the asynchronous measure.
+  page.moveRaise({ touches: [{ identifier: 1, clientX: 250 }] });
+  measure([{ left: 50, width: 400 }]);
   assert.equal(page._audioUnlocked, true);
-  assert.match(template, /block-size="28"/);
-  assert.match(template, /bindtouchstart="startRaise"/);
-  assert.match(stylesheet, /\.raise-controls slider\s*\{[^}]*height: 28px/);
-  page.previewRaise({ detail: { value: 875 } });
-  assert.equal(page.data.raiseText, '900');
+  assert.equal(page.data.sliderValue, betSizing.RAISE_SLIDER_MAX / 2);
+  const target = betSizing.presetRaiseTo(page.raiseView(), 'pot');
+  assert.equal(page.data.raiseText, compactChips(target));
   assert.equal(page.data.raiseTo, before.raiseTo);
+  assert.deepEqual(copy(page._controller.getGame()), hand);
   for (const key of ['phoneSeats', 'boardSlots', 'heroCards', 'arenaHeight', 'publicTop'])
     assert.deepEqual(copy(page.data[key]), before[key]);
-  assert.deepEqual(copy(page._controller.getGame()), hand);
-  page.changeRaise({ detail: { value: 875 } });
-  assert.equal(page.data.raiseTo, 900);
-  assert.equal(page.data.raiseTo % 100, 0);
+  page.endRaise({ changedTouches: [{ identifier: 1, clientX: 450 }] });
+  assert.equal(page.data.raiseTo, before.maxRaise);
+  assert.equal(page.data.raiseTo % page.data.chipUnit, 0);
+  assert.match(template, /catchtouchmove="moveRaise"/);
+  assert.doesNotMatch(template, /<slider|block-size="28"/);
+  assert.match(stylesheet, /\.raise-track\s*\{[^}]*height: 19px/);
+});
+
+test('WeChat cancels pending rail measurement on hide, retry and disabled turns', (t) => {
+  const { page, wx } = setup(t);
+  reachHero(page);
+  page._controller.show();
+  let measure;
+  wx.createSelectorQuery = () => ({
+    select() {
+      return this;
+    },
+    boundingClientRect() {
+      return this;
+    },
+    exec(callback) {
+      measure = callback;
+    },
+  });
+  page.startRaise({ touches: [{ identifier: 2, clientX: 400 }] });
+  const amount = page.data.raiseTo;
+  page.onHide();
+  measure([{ left: 0, width: 400 }]);
+  assert.equal(page.data.raiseTo, amount);
+  assert.equal(page._raiseGesture, null);
+  page.onShow();
+  page.startRaise({ touches: [{ identifier: 3, clientX: 200 }] });
+  page.retryHand();
+  measure([{ left: 0, width: 400 }]);
+  assert.equal(page._raiseGesture, null);
+  const before = page.data.raiseTo;
+  page.previewRaise({ detail: { value: betSizing.RAISE_SLIDER_MAX } });
+  assert.equal(page.data.raiseTo, before);
 });
 
 test('WeChat entry gesture unlocks the first full deal cue using the short-audio backend', (t) => {
@@ -1691,7 +1741,7 @@ test('WeChat shared page receives turn timer patches without changing table geom
   assert.equal(page.data.turnPhase, 'waiting');
   assert.deepEqual(patches, [['turnPhase']]);
   assert.deepEqual(copy({ height: page.data.tableHeight, style: page.data.heroStyle }), geometry);
-  page.previewRaise({ detail: { value: page.data.minRaise } });
+  page.previewRaise({ detail: { value: 0 } });
   assert.ok(![...jobs.values()].some((job) => job.due === 1300 + 8000));
   page.onHide();
   assert.equal(page.data.turnPhase, '');

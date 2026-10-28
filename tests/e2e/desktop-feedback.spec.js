@@ -163,6 +163,7 @@ test('vibration switches independently from sound effects and music', async ({ p
   await expect.poll(() => page.evaluate(() => window.feedbackCalls)).toBe(1);
   await openSettings(page);
   await page.locator('#vibration-button').click();
+  await expect.poll(() => page.evaluate(() => window.feedbackCalls)).toBe(2);
   await closeSettings(page);
   await page.evaluate(() => {
     window.qa.heroTurn(5);
@@ -170,7 +171,7 @@ test('vibration switches independently from sound effects and music', async ({ p
     window.qa.respondToHero(0, true);
     window.qa.stop();
   });
-  await expect.poll(() => page.evaluate(() => window.feedbackCalls)).toBe(2);
+  await expect.poll(() => page.evaluate(() => window.feedbackCalls)).toBe(3);
 });
 test('mixed lineup has a transparent unselected state', async ({ page }) => {
   await openSettings(page);

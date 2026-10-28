@@ -22,7 +22,7 @@ test('native diagnostic selection rejects empty and unknown names instead of rep
         }),
       /Unknown NOIR_NATIVE_SCENARIOS selection: misspelled-native-scenario/,
     );
-    assert.equal(recorded.length, 35);
+    assert.equal(recorded.length, 36);
     assert.ok(recorded.some((entry) => entry.name === 'tablet-interface-readability'));
     assert.ok(recorded.some((entry) => entry.name === 'public-observation-memory-and-retry'));
     assert.ok(recorded.some((entry) => entry.name === 'review-overflow-and-activity-size'));
@@ -67,18 +67,18 @@ test('native diagnostic reports retain explicit skips beside the selected pass',
         src: './app-icon.png',
         loaded: true,
         blinds: '100 / 200',
-        step: '100',
+        step: '1',
       }),
       screenshot: async (name) => screenshots.push(name),
     });
-    assert.equal(results.length, 35);
+    assert.equal(results.length, 36);
     assert.deepEqual(results, recorded);
     assert.deepEqual(screenshots, ['configured-stakes-and-shared-icon']);
     assert.deepEqual(
       results.filter((entry) => entry.status === 'passed').map((entry) => entry.name),
       ['configured-stakes-and-shared-icon'],
     );
-    assert.equal(results.filter((entry) => entry.status === 'skipped').length, 34);
+    assert.equal(results.filter((entry) => entry.status === 'skipped').length, 35);
   } finally {
     if (previous === undefined) delete process.env.NOIR_NATIVE_SCENARIOS;
     else process.env.NOIR_NATIVE_SCENARIOS = previous;

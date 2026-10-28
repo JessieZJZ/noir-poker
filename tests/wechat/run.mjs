@@ -562,7 +562,7 @@ try {
   await wait((data) => data.turnPhase === 'reminder', 10000);
   await wait((data) => data.turnPhase === 'waiting');
   assert.deepEqual(await turnGeometry(), beforeAttention);
-  await invoke('previewRaise', { detail: { value: (await page.data()).minRaise } });
+  await invoke('previewRaise', { detail: { value: 0 } });
   await invoke('onHide');
   assert.equal((await page.data()).turnPhase, '');
   await page.waitFor(9000);
@@ -921,11 +921,11 @@ try {
   const vibrationsBefore = await mini.evaluate(() => getApp().__noirTurnVibrations.length);
   assert.ok(vibrationsBefore > 0, 'Real controller turns must dispatch short vibrations');
   const sliderBefore = await page.data();
-  await invoke('previewRaise', { detail: { value: sliderBefore.minRaise + 100 } });
+  await invoke('previewRaise', { detail: { value: sliderBefore.sliderLimit / 2 } });
   const sliderPreview = await page.data();
   assert.equal(sliderPreview.raiseTo, sliderBefore.raiseTo);
   assert.deepEqual(sliderPreview.boardSlots, sliderBefore.boardSlots);
-  await invoke('changeRaise', { detail: { value: sliderBefore.minRaise } });
+  await invoke('changeRaise', { detail: { value: 0 } });
   assert.equal(
     await mini.evaluate(() => getApp().__noirTurnVibrations.length),
     vibrationsBefore,

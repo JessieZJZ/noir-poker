@@ -62,7 +62,12 @@ import { renderCard } from './cards.js';
 import { createShowdownController } from './showdown.js';
 import { createActivityFormatter } from './activity.js';
 import { preparePortraits } from './portraits.js';
-import { presetRaiseTo } from './bet-sizing.js';
+import {
+  presetRaiseTo,
+  sliderRaiseTo,
+  raiseSliderPosition,
+  RAISE_SLIDER_MAX,
+} from './bet-sizing.js';
 import { chipUnitOf, legalRaiseTo } from '../engine/bet-sizing.js';
 import { createSettlementLayout } from './settlement-layout.js';
 import { createPlayViewport } from './play-viewport.js';
@@ -663,14 +668,15 @@ function render() {
   if (!canAct) $('#bet-slider').value = $('#bet-slider').min;
   if (waiting || dealing) setLocalizedText($('#decision-text'), waiting ? '' : '正在发牌…');
   else if (legal.enabled) {
-    const min = legal.minRaiseTo,
-      max = legal.maxRaiseTo;
     bet = legalRaiseTo(bet, legal);
     const slider = $('#bet-slider');
-    slider.min = min;
-    slider.max = max;
-    slider.step = chipUnitOf(game);
-    slider.value = bet;
+    slider.min = 0;
+    slider.max = RAISE_SLIDER_MAX;
+    slider.step = 1;
+    slider.value = raiseSliderPosition(
+      { currentBet: game.currentBet, pot: potSize(game), legal },
+      bet,
+    );
     setLocalizedHTML(
       $('#call-button'),
       legal.canCheck
@@ -717,6 +723,8 @@ function render() {
   celebrate();
 }
 function updateBet() {
+  $('#bet-slider').dataset.raiseTo = String(bet);
+  $('#bet-slider').setAttribute('aria-valuetext', format(bet));
   const legal = legalActions(game, 0);
   setLocalizedText($('#bet-value'), format(bet));
   const action = raiseCaption(
@@ -1082,7 +1090,28 @@ $('#bet-slider').oninput = (e) => {
   const legal = legalActions(game, 0);
   if (!legal.enabled || !legal.canRaise) return;
   heroTurnAttention.engage();
-  bet = legalRaiseTo(Number(e.target.value), legal);
+  bet = sliderRaiseTo({ currentBet: game.currentBet, pot: potSize(game), legal }, e.target.value);
+  updateBet();
+};
+// Keyboard arrows keep their whole-chip precision on the nonlinear rail.
+$('#bet-slider').onkeydown = (event) => {
+  if (!['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End'].includes(event.key))
+    return;
+  const legal = legalActions(game, 0);
+  if (!legal.enabled || !legal.canRaise) return;
+  event.preventDefault();
+  const amount =
+    event.key === 'Home'
+      ? legal.minRaiseTo
+      : event.key === 'End'
+        ? legal.maxRaiseTo
+        : bet + (['ArrowRight', 'ArrowUp'].includes(event.key) ? 1 : -1) * chipUnitOf(game);
+  bet = legalRaiseTo(amount, legal);
+  event.currentTarget.value = raiseSliderPosition(
+    { currentBet: game.currentBet, pot: potSize(game), legal },
+    bet,
+  );
+  heroTurnAttention.engage();
   updateBet();
 };
 document.querySelectorAll('[data-preset]').forEach(
@@ -1096,7 +1125,10 @@ document.querySelectorAll('[data-preset]').forEach(
       if (target === null) return;
       heroTurnAttention.engage();
       bet = target;
-      $('#bet-slider').value = bet;
+      $('#bet-slider').value = raiseSliderPosition(
+        { currentBet: game.currentBet, pot: potSize(game), legal },
+        bet,
+      );
       updateBet();
     }),
 );
@@ -1281,6 +1313,14 @@ $('#vibration-button').onclick = () => {
     preferenceStorage.setItem('noir-vibration', String(vibration));
   } catch {}
   updateVibration();
+  if (vibration)
+    heroTurnCue.acknowledge(
+      `${game.hand}:${game.replayAttempt || 0}:${game.street}:${game.history?.length || 0}`,
+    );
+  if (vibration)
+    Promise.resolve()
+      .then(() => notifyHeroTurn())
+      .catch(() => {});
   syncTurnAttention();
 };
 $('#hint-toggle').onclick = () => {

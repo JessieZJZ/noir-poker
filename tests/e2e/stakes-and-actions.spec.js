@@ -17,10 +17,10 @@ test('default stakes, local icon and custom new games use the per-hand denominat
     { smallBlind: 500, bigBlind: 1000, startingStack: 100000, chipUnit: 500 },
   ]) {
     const before = await page.evaluate((stakes) => window.qa.configuredTurn(stakes), stakes);
-    await expect(page.locator('#bet-slider')).toHaveAttribute('step', String(stakes.chipUnit));
+    await expect(page.locator('#bet-slider')).toHaveAttribute('step', '1');
     expect(before.legal.fullRaiseTo).toBe(2 * stakes.bigBlind);
     await page.locator('[data-preset="pot"]').click();
-    const target = Number(await page.locator('#bet-slider').inputValue());
+    const target = Number(await page.locator('#bet-slider').getAttribute('data-raise-to'));
     expect(target % stakes.chipUnit).toBe(0);
     await page.locator('#raise-button').click();
     await page.evaluate(() => window.qa.stop());

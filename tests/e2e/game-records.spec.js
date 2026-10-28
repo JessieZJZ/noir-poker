@@ -77,6 +77,10 @@ test('large archives open every game expanded, fold on demand and keep snapshots
   await openRecords(page);
   await expect(page.locator('.record-session')).toHaveCount(8);
   const current = page.locator('[data-session-id="perf-session-7"]');
+  // Rows are materialized by intersection, not by opening the list. Bring the
+  // newest chunk into view before requiring its new thirteenth hand in the DOM.
+  await current.locator('.record-hand-chunk').first().scrollIntoViewIfNeeded();
+  await expect(current.locator('.record-hand[data-hand="13"]')).toBeVisible();
   await expect(current.locator('.record-hand')).toHaveCount(13);
   await expect(current.locator('.record-hand').first()).toHaveAttribute('data-hand', '13');
   // Finished games are expanded by default too; a heading folds and reopens.

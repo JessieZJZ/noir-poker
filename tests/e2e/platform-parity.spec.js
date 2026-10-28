@@ -14,10 +14,10 @@ test('Web and WebKit share the wager slider appearance and keyboard interaction'
       await target.evaluate(() => window.qa.heroTurn(8));
       const slider = target.locator('#bet-slider');
       await expect(slider).toBeEnabled();
-      const before = Number(await slider.inputValue());
+      const before = Number(await slider.getAttribute('data-raise-to'));
       await slider.focus();
       await slider.press('ArrowRight');
-      await expect(slider).toHaveValue(String(before + 25));
+      await expect(slider).toHaveAttribute('data-raise-to', String(before + 25));
       styles.push(
         await slider.evaluate((element) => {
           const style = getComputedStyle(element);

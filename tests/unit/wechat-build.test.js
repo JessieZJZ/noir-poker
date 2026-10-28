@@ -198,7 +198,7 @@ test('generated WeChat JavaScript loads the controller and complete player resea
   const workspace = fixture(t);
   assertSuccess(await build(workspace).result);
   assert.equal(existsSync(path.join(workspace.output, 'shared/engine/store-profiles.js')), false);
-  assert.equal(existsSync(path.join(workspace.output, 'shared/ui/bet-sizing.js')), false);
+  assert.equal(existsSync(path.join(workspace.output, 'shared/ui/bet-sizing.js')), true);
   // The same rules as Web and native, compacted like every shipped stylesheet.
   const { compactWxss } = await import('../../scripts/wechat.mjs');
   for (const name of ['hero-turn', 'game-effects', 'emotion-effects'])

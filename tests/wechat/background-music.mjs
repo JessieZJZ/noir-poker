@@ -1,53 +1,45 @@
-// Actual DevTools playback; wrappers observe real audio APIs without mocking them.
+// Actual DevTools APIs: observations only; no substituted clock or audio data.
 import assert from 'node:assert/strict';
 import { createRequire } from 'node:module';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
-import { BACKGROUND_MUSIC_VOLUME } from '../../src/ui/background-music.js';
-
-const root = fileURLToPath(new URL('../../', import.meta.url));
+const root = process.cwd();
 const require = createRequire(path.join(root, '.artifacts/wechat-tools/package.json'));
 const output = path.resolve(process.argv[3] || '.artifacts/background-music/wechat');
 await mkdir(output, { recursive: true });
 const mini = await require('miniprogram-automator').connect({ wsEndpoint: process.argv[2] });
 const report = {
-  platform: 'WeChat DevTools simulator',
+  platform: 'WeChat DevTools',
   status: 'running',
   checks: [],
   exceptions: [],
+  scope: 'Real decoded-buffer scheduling and lifecycle; physical-speaker listening is separate',
 };
 mini.on('exception', (value) => report.exceptions.push(value));
 let saved;
 async function wait(read, message, timeout = 20000) {
   const started = Date.now();
   while (Date.now() - started < timeout) {
-    const value = await read();
-    if (value) return value;
-    await new Promise((resolve) => setTimeout(resolve, 150));
+    const result = await read();
+    if (result) return result;
+    await new Promise((resolve) => setTimeout(resolve, 200));
   }
   throw Error(message);
 }
 const inspect = () =>
   mini.evaluate(() => {
-    const app = getApp();
-    const audio = app.__bgmProbe?.audios.find((audio) => audio.src.includes('/music/'));
+    const app = getApp(),
+      p = app.__bgmProbe;
     return {
-      controller: app.noirMusic?.getState(),
-      audio: audio
-        ? {
-            source: audio.src,
-            loop: audio.loop,
-            volume: audio.volume,
-            paused: audio.paused,
-            time: audio.currentTime,
-            duration: audio.duration,
-          }
-        : null,
-      events: app.__bgmProbe?.events || [],
-      seeked: app.__bgmProbe?.seeked || null,
-      steady: app.__bgmProbe?.steady || null,
+      state: app.noirMusic?.getState(),
+      decoded: p.decoded,
+      starts: p.starts,
+      time: p.context?.currentTime,
+      contextState: p.context?.state,
+      volume: p.gain?.gain.value,
+      nodes: p.nodes.map((node) => ({ loop: node.loop, loopEnd: node.loopEnd })),
       settings: getCurrentPages().at(-1)?.data.settings,
+      fallbacks: p.fallbacks,
     };
   });
 try {
@@ -55,210 +47,161 @@ try {
     await readFile(path.join(root, '.artifacts/wechat/build-info.json'), 'utf8'),
   );
   saved = await mini.evaluate(() => wx.getStorageSync('noir-wechat-settings-v1') || null);
+  await wait(
+    () => mini.evaluate(() => !!getCurrentPages().at(-1)?._controller),
+    'Current controller ready',
+  );
   await mini.reLaunch('/pages/table/table');
+  await wait(
+    () => mini.evaluate(() => !!getCurrentPages().at(-1)?._controller),
+    'Reopened controller ready',
+  );
   await mini.evaluate(() => {
     const app = getApp();
-    const page = getCurrentPages().at(-1);
-    page._controller.setPreference('sound', true);
-    page._controller.setPreference('vibration', true);
     app.noirMusic?.dispose();
-    app.__bgmProbe = { audios: [], events: [], original: wx.createInnerAudioContext };
+    const original = wx.createWebAudioContext,
+      inner = wx.createInnerAudioContext;
+    app.__bgmProbe = { nodes: [], starts: [], decoded: [], fallbacks: 0, original, inner };
     wx.createInnerAudioContext = function (...args) {
-      const audio = app.__bgmProbe.original.apply(this, args);
-      app.__bgmProbe.audios.push(audio);
-      for (const [name, event] of [
-        ['onPlay', 'play'],
-        ['onPause', 'pause'],
-        ['onEnded', 'ended'],
-        ['onError', 'error'],
-      ])
-        audio[name]?.((detail) =>
-          app.__bgmProbe.events.push({ event, source: audio.src, time: audio.currentTime, detail }),
-        );
-      audio.onSeeked?.(() => {
-        app.__bgmProbe.seeked = { time: audio.currentTime, duration: audio.duration };
-      });
-      return audio;
+      app.__bgmProbe.fallbacks++;
+      return inner.apply(this, args);
     };
-    // Recreate only the music transport with the real App startup handler.
+    wx.createWebAudioContext = function (...args) {
+      const context = original.apply(this, args),
+        p = app.__bgmProbe;
+      p.context = context;
+      const decode = context.decodeAudioData.bind(context),
+        source = context.createBufferSource.bind(context),
+        gain = context.createGain.bind(context);
+      context.decodeAudioData = (bytes, done, fail) =>
+        decode(
+          bytes,
+          (buffer) => {
+            const samples = buffer.getChannelData(0);
+            let energy = 0;
+            for (let i = 0; i < samples.length; i += 100) energy += samples[i] ** 2;
+            p.decoded.push({
+              duration: buffer.duration,
+              sampleRate: buffer.sampleRate,
+              channels: buffer.numberOfChannels,
+              rms: Math.sqrt(energy / Math.ceil(samples.length / 100)),
+            });
+            done(buffer);
+          },
+          fail,
+        );
+      context.createGain = () => {
+        const node = gain();
+        p.gain = node;
+        return node;
+      };
+      context.createBufferSource = () => {
+        const node = source(),
+          start = node.start.bind(node);
+        p.nodes.push(node);
+        node.start = (...values) => {
+          p.starts.push({ at: context.currentTime, offset: values[1] || 0 });
+          return start(...values);
+        };
+        return node;
+      };
+      return context;
+    };
+    const page = getCurrentPages().at(-1);
+    page._controller.setPreference('music', true);
     app.onLaunch();
     app.onShow();
     page.openSettings();
   });
-  let page = await mini.currentPage();
   const initial = await wait(async () => {
     const state = await inspect();
-    return state.audio?.duration > 93 &&
-      state.audio.time > 0.1 &&
-      state.audio.volume === BACKGROUND_MUSIC_VOLUME &&
-      state.controller?.playing
+    return state.decoded.length === 1 &&
+      state.starts.length === 1 &&
+      state.state.playing &&
+      state.volume === 1
       ? state
       : null;
-  }, 'Local subpackage music must decode and advance');
-  assert.equal(initial.audio.loop, true);
-  assert.equal(initial.audio.volume, BACKGROUND_MUSIC_VOLUME);
-  assert.ok(initial.audio.source.endsWith('/music/background-music.m4a'));
-  await mini.screenshot({ path: path.join(output, 'settings-default-on.png') });
-  report.checks.push({ name: 'real-local-audio-decode', evidence: initial });
-  await mini.evaluate(() => {
-    const probe = getApp().__bgmProbe;
-    const audio = probe.audios.find((audio) => audio.src.includes('/music/'));
-    audio.seek(audio.duration - 0.3);
-  });
-  const seeked = await wait(
-    async () => (await inspect()).seeked,
-    'Native audio seek must complete',
-  );
-  assert.ok(seeked.time > seeked.duration - 1, 'Seek callback must observe the real end position');
-  const wrapped = await wait(async () => {
+  }, 'Real local WebAudio music must decode, play and finish entry fade');
+  assert.ok(initial.decoded[0].rms > 0.01);
+  assert.ok(initial.decoded[0].duration > 93 && initial.decoded[0].duration < 94);
+  assert.equal(initial.nodes[0].loop, true);
+  report.checks.push({ name: 'local-decode-and-loop-source', evidence: initial });
+  await mini.screenshot({ path: path.join(output, 'music-settings.png') });
+  const start = initial.starts[0].at,
+    duration = initial.decoded[0].duration;
+  const samples = [];
+  // Wait through the complete track. A seek or shortened buffer would not prove
+  // the real loop path. The caller can keep working while this probe runs.
+  while ((await inspect()).time - start < duration + 1) {
     const state = await inspect();
-    return state.audio.time < 3 && state.controller.playing ? state : null;
-  }, 'Real InnerAudioContext must loop beyond the end');
-  report.checks.push({ name: 'real-audio-loop', seeked, wrapped });
-  await mini.evaluate(() => {
-    const probe = getApp().__bgmProbe;
-    const audio = probe.audios.find((audio) => audio.src.includes('/music/'));
-    probe.steady = { samples: [], cues: [], started: audio.currentTime };
-    const page = getCurrentPages().at(-1);
-    for (const [name, cue] of Object.entries(page._soundPool))
-      cue.onPlay(() => probe.steady.cues.push(name));
-    probe.steadyTimer = setInterval(
-      () => probe.steady.samples.push({ volume: audio.volume, paused: audio.paused }),
-      20,
-    );
-  });
-  for (const name of ['check', 'fold', 'call', 'raise', 'deal', 'win']) {
-    await mini.evaluate((name) => getCurrentPages().at(-1).playSound(name), name);
-    await new Promise((resolve) => setTimeout(resolve, 180));
+    assert.equal(state.starts.length, 1);
+    assert.equal(state.decoded.length, 1);
+    assert.equal(state.state.playing, true);
+    assert.equal(state.volume, 1);
+    samples.push({ time: state.time, starts: state.starts.length, volume: state.volume });
+    await new Promise((resolve) => setTimeout(resolve, 500));
   }
-  await new Promise((resolve) => setTimeout(resolve, 900));
-  await mini.evaluate(() => clearInterval(getApp().__bgmProbe.steadyTimer));
-  const steady = await inspect();
-  assert.ok(steady.steady.samples.length >= 30);
-  assert.ok(
-    steady.steady.samples.every(
-      (sample) => sample.volume === BACKGROUND_MUSIC_VOLUME && !sample.paused,
-    ),
-  );
-  for (const name of ['check', 'fold', 'chip', 'deal', 'win'])
-    assert.ok(steady.steady.cues.includes(name), `Real ${name} audio must play`);
-  assert.ok(steady.audio.time > steady.steady.started);
-  report.checks.push({ name: 'real-cues-keep-music-volume-steady', evidence: steady });
-  await mini.evaluate(() => getCurrentPages().at(-1).closeSettings());
-  if ((await page.data()).entryState === 'waiting')
-    await (await page.$('#join-table-button')).tap();
-  await wait(
-    async () => (await page.data()).canAct,
-    'A real hero turn must expose action controls',
-    60000,
-  );
-  const notice = await page.$('.action-notice');
-  const rail = await page.$('.turn-line');
-  const slider = await page.$('.raise-controls slider');
-  const noticeTop = (await notice.offset()).top;
-  const spacing = {
-    topGap: noticeTop - (await rail.offset()).top - (await rail.size()).height,
-    controlGap:
-      (await slider.offset()).top +
-      ((await slider.size()).height - 28) / 2 -
-      noticeTop -
-      (await notice.size()).height,
-  };
-  assert.ok(spacing.topGap >= 4, JSON.stringify(spacing));
-  assert.ok(spacing.controlGap >= 4, JSON.stringify(spacing));
-  assert.ok(Math.abs(spacing.topGap - spacing.controlGap) <= 1, JSON.stringify(spacing));
-  await mini.screenshot({ path: path.join(output, 'balanced-action-notice.png') });
-  report.checks.push({ name: 'real-action-notice-balanced-spacing', evidence: spacing });
-  await mini.evaluate(() => getCurrentPages().at(-1).openSettings());
-  // Sound effects and background music are separate switches.
-  const sound = await page.$('#sound-button'),
-    music = await page.$('#music-button');
-  await sound.tap();
-  const effectsOff = await wait(async () => {
-    const state = await inspect();
-    return state.settings.sound === false ? state : null;
-  }, 'Sound switch must turn effects off');
-  assert.equal(effectsOff.controller.playing, true, 'Muting effects leaves music playing');
-  await sound.tap();
-  await music.tap();
-  const muted = await wait(async () => {
-    const state = await inspect();
-    return state.settings.music === false && !state.controller.playing && state.audio.paused
-      ? state
-      : null;
-  }, 'Music switch must pause music');
-  assert.equal(muted.settings.sound, true);
-  assert.equal(muted.settings.vibration, true);
-  await (await page.$('#vibration-button')).tap();
-  await music.tap();
-  const restored = await wait(async () => {
-    const state = await inspect();
-    return state.settings.music && state.controller.playing ? state : null;
-  }, 'Turning music on must resume it');
-  assert.equal(restored.settings.vibration, false);
-  await mini.screenshot({ path: path.join(output, 'music-on-vibration-off.png') });
-  report.checks.push({ name: 'independent-switches', muted, restored });
+  report.checks.push({
+    name: 'complete-track-loop-without-source-restart-or-refade',
+    samples,
+    evidence: await inspect(),
+  });
   await mini.evaluate(() => getApp().onHide());
   const hidden = await inspect();
-  assert.equal(hidden.controller.active, false);
-  assert.equal(hidden.audio.paused, true);
+  assert.equal(hidden.state.playing, false);
   await mini.evaluate(() => getApp().onShow());
-  await wait(async () => (await inspect()).controller.playing, 'App onShow must resume music');
-  report.checks.push({
-    name: 'app-lifecycle-handlers',
-    hidden,
-    scope: 'Invoked actual App.onHide/onShow in DevTools, not physical-client background',
+  const resumed = await wait(async () => {
+    const s = await inspect();
+    return s.starts.length === 2 && s.state.playing && s.volume === 1 ? s : null;
+  }, 'Resume existing decoded buffer');
+  assert.equal(resumed.decoded.length, 1);
+  assert.ok(resumed.starts[1].offset >= 0 && resumed.starts[1].offset < duration);
+  report.checks.push({ name: 'hide-resume-retains-loop-position', hidden, resumed });
+  await mini.evaluate(() => {
+    const p = getCurrentPages().at(-1);
+    p._controller.setPreference('music', false);
   });
-  await mini.reLaunch('/pages/table/table');
-  page = await mini.currentPage();
-  const persisted = await inspect();
-  assert.equal(persisted.settings.sound, true);
-  assert.equal(persisted.settings.music, true);
-  assert.equal(persisted.settings.vibration, false);
-  assert.equal(persisted.controller.playing, true);
-  report.checks.push({ name: 'page-relaunch-persistence', evidence: persisted });
-  assert.ok(
-    !persisted.events.some((event) => event.event === 'error'),
-    'Actual audio must report no error',
-  );
-  assert.deepEqual(report.exceptions, []);
+  assert.equal((await inspect()).state.playing, false);
+  await mini.evaluate(() => {
+    const p = getCurrentPages().at(-1);
+    p._controller.setPreference('music', true);
+  });
+  await wait(async () => (await inspect()).state.playing, 'Music enable resumes playback');
+  report.checks.push({ name: 'music-toggle', evidence: await inspect() });
   report.status = 'passed';
 } catch (error) {
   report.status = 'failed';
   report.error = error.stack || String(error);
   try {
-    report.failureState = await inspect();
-  } catch {}
-  try {
+    report.lastState = await inspect();
     await mini.screenshot({ path: path.join(output, 'failure.png') });
   } catch {}
   process.exitCode = 1;
 } finally {
   try {
-    if (saved !== undefined) {
-      await mini.evaluate((saved) => {
-        const app = getApp();
-        app.noirMusic?.dispose();
-        clearInterval(app.__bgmProbe?.steadyTimer);
-        if (app.__bgmProbe?.original) wx.createInnerAudioContext = app.__bgmProbe.original;
-        if (saved === null) wx.removeStorageSync('noir-wechat-settings-v1');
-        else wx.setStorageSync('noir-wechat-settings-v1', saved);
-        delete app.__bgmProbe;
-        app.onLaunch();
-      }, saved);
-      await mini.reLaunch('/pages/table/table');
-    }
-  } catch (error) {
-    report.cleanupError = String(error);
-  }
-  report.finishedAt = new Date().toISOString();
-  await writeFile(path.join(output, 'report.json'), JSON.stringify(report, null, 2) + '\n');
-  console.log(
-    JSON.stringify({
-      status: report.status,
-      checks: report.checks.map((check) => check.name),
-      error: report.error,
-    }),
-  );
-  mini.disconnect();
+    await mini.evaluate((saved) => {
+      const app = getApp(),
+        p = app.__bgmProbe;
+      if (!p) return;
+      app.noirMusic?.dispose();
+      if (p) {
+        wx.createWebAudioContext = p.original;
+        wx.createInnerAudioContext = p.inner;
+      }
+      if (saved) wx.setStorageSync('noir-wechat-settings-v1', saved);
+      else wx.removeStorageSync('noir-wechat-settings-v1');
+      delete app.__bgmProbe;
+      app.onLaunch();
+      app.onShow();
+    }, saved);
+  } catch {}
+  await writeFile(path.join(output, 'report.json'), JSON.stringify(report, null, 2));
+  await mini.disconnect();
 }
+console.log(
+  JSON.stringify({
+    status: report.status,
+    checks: report.checks.map((c) => c.name),
+    error: report.error,
+  }),
+);

@@ -121,3 +121,24 @@ test('background pauses music, foreground resumes it, and hands/retry/reset do n
   await expect(page.locator('audio[data-background-music]')).toHaveCount(1);
   await expect.poll(async () => (await musicState(page)).paused).toBe(false);
 });
+
+test('enabling vibration gives one immediate supported-device feedback pulse', async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('noir-vibration', 'false');
+    window.__vibrationPreviews = [];
+    Object.defineProperty(navigator, 'vibrate', {
+      configurable: true,
+      value: (duration) => {
+        window.__vibrationPreviews.push(duration);
+        return true;
+      },
+    });
+  });
+  await page.goto('/');
+  await page.waitForFunction(() => !!window.qa);
+  await openSettings(page);
+  await page.locator('#vibration-button').click();
+  await expect.poll(() => page.evaluate(() => window.__vibrationPreviews)).toEqual([50]);
+  await page.locator('#vibration-button').click();
+  expect(await page.evaluate(() => window.__vibrationPreviews)).toEqual([50]);
+});

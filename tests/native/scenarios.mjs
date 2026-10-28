@@ -777,7 +777,7 @@ export async function nativeScenarios(app) {
     assert.match(artwork.src, /^(?:\.\/|\/)app-icon\.png$/);
     assert.equal(artwork.loaded, true);
     assert.equal(artwork.blinds, '100 / 200');
-    if (state.legal.enabled) assert.equal(artwork.step, '100');
+    if (state.legal.enabled) assert.equal(artwork.step, '1');
     for (const p of state.players) assert.equal(p.stack % state.chipUnit, 0);
     return { stakes: state.stakes, artwork };
   });
@@ -1026,6 +1026,89 @@ export async function nativeScenarios(app) {
       tables.push({ count, presentation, layout });
     }
     return { tables };
+  });
+  await check('raise-rail-and-vibration-preview', async () => {
+    await enterNativeTable(app);
+    await app.waitHero();
+    await app.click('[data-preset="min"]');
+    const before = await app.state();
+    const currentBet = Math.max(...before.players.map((p) => p.bet));
+    const pot = Math.min(
+      before.legal.maxRaiseTo,
+      Math.max(
+        before.legal.minRaiseTo,
+        currentBet +
+          Math.round((before.pot + before.legal.callAmount) / before.chipUnit) * before.chipUnit,
+      ),
+    );
+    await app.click('[data-preset="pot"]');
+    const shortcut = await app.evaluate(() => ({
+      position: Number(document.querySelector('#bet-slider').value),
+      amount: Number(document.querySelector('#bet-slider').dataset.raiseTo),
+    }));
+    assert.equal(shortcut.amount, pot);
+    if (pot > before.legal.minRaiseTo && pot < before.legal.maxRaiseTo)
+      assert.equal(shortcut.position, 500000);
+    await app.click('[data-preset="min"]');
+    await app.evaluate(() =>
+      document.querySelector('#bet-slider').scrollIntoView({ block: 'center' }),
+    );
+    await app.nativeTap('#bet-slider');
+    const trackTap = await app.evaluate(() => ({
+      position: Number(document.querySelector('#bet-slider').value),
+      amount: Number(document.querySelector('#bet-slider').dataset.raiseTo),
+    }));
+    assert.ok(Math.abs(trackTap.position - 500000) < 10000, JSON.stringify(trackTap));
+    assert.equal(trackTap.amount % before.chipUnit, 0);
+    assert.equal((await app.state()).pot, before.pot, 'Selecting an amount does not place a wager');
+    await app.click('#opponents-button');
+    const wasEnabled = await app.evaluate(
+      () => document.querySelector('#vibration-button').getAttribute('aria-checked') === 'true',
+    );
+    if (wasEnabled) await app.click('#vibration-button');
+    await app.evaluate(() => {
+      const original = window.Capacitor.nativePromise;
+      window.__vibrationPreview = [];
+      window.__restoreVibrationPreview = () => {
+        window.Capacitor.nativePromise = original;
+      };
+      window.Capacitor.nativePromise = function (plugin, method, ...args) {
+        const result = original.call(this, plugin, method, ...args);
+        if (plugin === 'Haptics' && method === 'impact') {
+          const entry = { status: 'pending' };
+          window.__vibrationPreview.push(entry);
+          result.then(
+            () => (entry.status = 'resolved'),
+            (error) => {
+              entry.status = 'rejected';
+              entry.error = String(error);
+            },
+          );
+        }
+        return result;
+      };
+    });
+    try {
+      await app.click('#vibration-button');
+      await app.waitFor(
+        () => app.evaluate(() => window.__vibrationPreview[0]?.status === 'resolved'),
+        10000,
+        'Enabling vibration must complete a native feedback pulse',
+      );
+      assert.equal(await app.evaluate(() => window.__vibrationPreview.length), 1);
+      await app.click('#vibration-button');
+      assert.equal(await app.evaluate(() => window.__vibrationPreview.length), 1);
+    } finally {
+      await app.evaluate(() => window.__restoreVibrationPreview());
+      if (wasEnabled) await app.click('#vibration-button');
+      await app.click('#opponents-dialog .close-dialog');
+    }
+    await app.screenshot('raise-rail-and-preview');
+    return {
+      shortcut,
+      trackTap,
+      scope: 'Installed native touch and Haptics completion; physical motor feel is separate',
+    };
   });
   await check('native-turn-haptics-bridge', async () => {
     await app.evaluate(() => {

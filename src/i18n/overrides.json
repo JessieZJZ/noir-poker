@@ -154,7 +154,6 @@
     "每人两张底牌，桌上最多发出五张公共牌。从这七张牌中任选五张组成最好的牌，可以用两张、一张或不用自己的底牌。其他人都弃牌时，最后留下的人直接获得底池；多人留到最后时，比较各自最好的五张牌。": "Each player receives two hole cards, and up to five community cards are dealt. Make the best five-card hand using any combination of these seven cards: two, one or none of your hole cards. If everyone else folds, the remaining player wins the pot. At showdown, compare the best five-card hands.",
     "牌型从强到弱：同花顺 → 四条 → 葫芦 → 同花 → 顺子 → 三条 → 两对 → 一对 → 高牌": "Hand rankings: straight flush → four of a kind → full house → flush → straight → three of a kind → two pair → one pair → high card",
     "同一牌型先比组成牌型的点数，再比剩余牌的点数（踢脚）。最佳五张完全相同就平分，花色不分大小。A 可以作最大牌，也可以组成 A2345 的最小顺子。": "For equal categories, compare the ranks making the hand, then the kickers. Identical best five-card hands split the pot; suits have equal rank. An ace may be high or low in an A2345 straight.",
-    "BTN 是庄位，顺时针下一家是 SB（小盲），再下一家是 BB（大盲）。翻牌前从大盲后面开始行动；翻牌后从庄位左侧仍能行动的人开始。越晚行动，越能先看到对手的选择。每手结束后庄位移动一席。": "BTN is the dealer button. Clockwise, the next seat is SB (small blind), followed by BB (big blind). Preflop action starts after the big blind. Postflop action starts with the first player able to act clockwise from the button. Later position lets you see more actions first. The button advances one seat after each hand.",
     "全下后只能争夺自己有投入的部分。筹码多的人继续下注会形成边池，各池分别比较；弃牌者已投入的筹码仍留在池里，无法争夺。没有人跟上的超额投入会退还，不能把退款当作额外赢得的筹码。": "An all-in player can win only the pots they contributed to. Further betting may create side pots, settled separately. Folded contributions remain in the pot, but folded players are ineligible to win. Uncalled excess is refunded; a refund is not an additional award.",
     "EV 是长期重复一种打法的预期筹码收益，一次赢牌不能证明长期赚钱。复盘根据你行动前可见的信息与假设的对手范围做模拟估算，不用对手暗牌或后来发出的牌评价选择，也不保证最优解或必胜路线。可以切换“对手为什么这样打”，了解本局电脑的实际行动原因。": "EV is the expected chip return when a strategy is repeated over time; winning one hand does not prove positive long-term EV. Reviews use before-action information and assumed opponent ranges. They do not grade choices using hidden opponent cards or future cards, and do not guarantee optimal play or a win. Switch to Opponent reasoning to inspect the computer’s actual decision trace.",
     "“重打这手牌”保留原底牌、庄位、起始筹码和发牌顺序，从翻牌前重新选择。原结算与统计会撤回，采用最新一次结果；电脑会重新响应你的打法。你已经知道部分牌局，适合练习思路，不能用重打后的盈利证明长期收益。“下一手”则开始新的牌局。": "Replay this hand restores the original hole cards, button, starting stacks and deck order. It retracts the previous payouts and statistics and uses the latest result. Computers respond to your new choices. Since you already know some cards, replay is useful for practice but cannot prove long-term EV. Next hand starts a new deal.",
@@ -699,7 +698,9 @@
     "本轮跟注后可以看到下一街公共牌，之后的下注仍需另作决定。": "Calling closes this round and reveals the next street. Any later betting requires a new decision.",
     "{0}结合{1}此前 {2} 手中 {3} 手翻前大额加注的记录，本次估计中保留了更多非顶级起手牌。": "{0} considered {1}'s large preflop raises in {3} of the previous {2} hands, keeping more hands beyond premiums in the estimated range.",
     "{0}结合{1}此前 {2} 手中 {3} 手翻前加注的记录，本次没有把加注范围限于强牌。": "{0} considered {1}'s preflop raises in {3} of the previous {2} hands, allowing more than strong hands in the raising range.",
-    "{0}结合{1}此前频繁的翻后下注与加注，本次估计保留了更多弱牌施压的可能。": "{0} considered {1}'s frequent postflop bets and raises, leaving more room for pressure with weak hands."
+    "{0}结合{1}此前频繁的翻后下注与加注，本次估计保留了更多弱牌施压的可能。": "{0} considered {1}'s frequent postflop bets and raises, leaving more room for pressure with weak hands.",
+    "小盲和大盲按当前牌桌设置先投入筹码，其他人依次决定是否参与。翻牌前、翻牌、转牌、河牌各有一轮下注，行动顺序按照顺时针方向；所有仍可行动的人都完成本轮行动并跟齐当前下注后，才进入下一轮。任何一轮只剩一人，都可以提前结束。": "The small and big blinds post chips according to the table settings, then the other players decide whether to enter. Preflop, flop, turn and river each have a betting round, with action moving clockwise. The next round begins only after every player still able to act has completed their action and matched the current bet. A round can end the hand early if only one player remains.",
+    "BTN 是庄位，多人局中顺时针下一家是 SB（小盲），再下一家是 BB（大盲）。翻牌前从大盲顺时针方向的下一位（一般是枪口 UTG）开始行动；翻牌后的每一轮从庄位顺时针方向的下一位（一般是小盲 SB）开始行动，跳过已弃牌或全下的人。单挑时，庄位兼小盲，翻牌前先行动，翻牌后由大盲先行动。越晚行动，越能先看到对手的选择。每手结束后庄位移动一席。": "BTN is the dealer button. At a table with more than two players, the next clockwise seat is SB (small blind), followed by BB (big blind). Preflop action starts with the next player clockwise from BB, usually UTG. Each postflop round starts with the next player clockwise from BTN, usually SB, skipping anyone who has folded or is all-in. Heads-up, BTN also posts SB and acts first preflop; BB acts first postflop. Later position lets you see more actions first. The button moves one seat after each hand."
   },
   "zh-TW": {
     "设置": "設定",
@@ -1284,7 +1285,9 @@
     "本轮跟注后可以看到下一街公共牌，之后的下注仍需另作决定。": "本輪跟注後可以看到下一街公共牌，之後的下注仍需另作決定。",
     "{0}结合{1}此前 {2} 手中 {3} 手翻前大额加注的记录，本次估计中保留了更多非顶级起手牌。": "{0}結合{1}此前 {2} 手中 {3} 手翻前大額加注的紀錄，本次估計中保留了更多非頂級起手牌。",
     "{0}结合{1}此前 {2} 手中 {3} 手翻前加注的记录，本次没有把加注范围限于强牌。": "{0}結合{1}此前 {2} 手中 {3} 手翻前加注的紀錄，本次沒有把加注範圍限於強牌。",
-    "{0}结合{1}此前频繁的翻后下注与加注，本次估计保留了更多弱牌施压的可能。": "{0}結合{1}此前頻繁的翻後下注與加注，本次估計保留了更多弱牌施壓的可能。"
+    "{0}结合{1}此前频繁的翻后下注与加注，本次估计保留了更多弱牌施压的可能。": "{0}結合{1}此前頻繁的翻後下注與加注，本次估計保留了更多弱牌施壓的可能。",
+    "小盲和大盲按当前牌桌设置先投入筹码，其他人依次决定是否参与。翻牌前、翻牌、转牌、河牌各有一轮下注，行动顺序按照顺时针方向；所有仍可行动的人都完成本轮行动并跟齐当前下注后，才进入下一轮。任何一轮只剩一人，都可以提前结束。": "小盲和大盲按目前牌桌設定先投入籌碼，其他人依序決定是否參與。翻牌前、翻牌、轉牌、河牌各有一輪下注，行動順序按照順時針方向；所有仍可行動的人都完成本輪行動並跟齊目前下注後，才進入下一輪。任何一輪只剩一人，都可以提前結束。",
+    "BTN 是庄位，多人局中顺时针下一家是 SB（小盲），再下一家是 BB（大盲）。翻牌前从大盲顺时针方向的下一位（一般是枪口 UTG）开始行动；翻牌后的每一轮从庄位顺时针方向的下一位（一般是小盲 SB）开始行动，跳过已弃牌或全下的人。单挑时，庄位兼小盲，翻牌前先行动，翻牌后由大盲先行动。越晚行动，越能先看到对手的选择。每手结束后庄位移动一席。": "BTN 是莊位，多人局中順時針下一家是 SB（小盲），再下一家是 BB（大盲）。翻牌前從大盲順時針方向的下一位（一般是槍口 UTG）開始行動；翻牌後的每一輪從莊位順時針方向的下一位（一般是小盲 SB）開始行動，跳過已棄牌或全下的人。單挑時，莊位兼小盲，翻牌前先行動，翻牌後由大盲先行動。越晚行動，越能先看到對手的選擇。每手結束後莊位移動一席。"
   },
   "ja": {
     "设置": "設定",
@@ -1869,7 +1872,9 @@
     "本轮跟注后可以看到下一街公共牌，之后的下注仍需另作决定。": "コールでこのラウンドが終わり、次のストリートのカードを見られます。その後のベットには改めて判断が必要です。",
     "{0}结合{1}此前 {2} 手中 {3} 手翻前大额加注的记录，本次估计中保留了更多非顶级起手牌。": "{0}は、直前の{2}ハンド中{3}ハンドで{1}がプリフロップに大きくレイズした記録を踏まえ、推定レンジにプレミアム以外のハンドもより多く残しました。",
     "{0}结合{1}此前 {2} 手中 {3} 手翻前加注的记录，本次没有把加注范围限于强牌。": "{0}は、直前の{2}ハンド中{3}ハンドで{1}がプリフロップにレイズした記録を踏まえ、レイズレンジを強いハンドだけに絞りませんでした。",
-    "{0}结合{1}此前频繁的翻后下注与加注，本次估计保留了更多弱牌施压的可能。": "{0}は、{1}がポストフロップで頻繁にベットやレイズをした記録を踏まえ、弱いハンドでプレッシャーをかけている可能性もより多く残しました。"
+    "{0}结合{1}此前频繁的翻后下注与加注，本次估计保留了更多弱牌施压的可能。": "{0}は、{1}がポストフロップで頻繁にベットやレイズをした記録を踏まえ、弱いハンドでプレッシャーをかけている可能性もより多く残しました。",
+    "小盲和大盲按当前牌桌设置先投入筹码，其他人依次决定是否参与。翻牌前、翻牌、转牌、河牌各有一轮下注，行动顺序按照顺时针方向；所有仍可行动的人都完成本轮行动并跟齐当前下注后，才进入下一轮。任何一轮只剩一人，都可以提前结束。": "テーブル設定に従ってスモールブラインドとビッグブラインドを先に払い、他のプレイヤーが参加を決めます。プリフロップ、フロップ、ターン、リバーでは、それぞれ時計回りにベットします。行動できる全員がアクションを終えて現在のベット額に揃えると、次のラウンドへ進みます。残りが1人になれば、その時点でハンドが終了します。",
+    "BTN 是庄位，多人局中顺时针下一家是 SB（小盲），再下一家是 BB（大盲）。翻牌前从大盲顺时针方向的下一位（一般是枪口 UTG）开始行动；翻牌后的每一轮从庄位顺时针方向的下一位（一般是小盲 SB）开始行动，跳过已弃牌或全下的人。单挑时，庄位兼小盲，翻牌前先行动，翻牌后由大盲先行动。越晚行动，越能先看到对手的选择。每手结束后庄位移动一席。": "BTNはディーラーボタンです。3人以上では、時計回りにSB（スモールブラインド）、BB（ビッグブラインド）が続きます。プリフロップはBBの次の席（通常UTG）から、フロップ以降の各ラウンドはBTNの次の席（通常SB）から時計回りに行動し、フォールド済みやオールインの人は飛ばします。ヘッズアップではBTNがSBを兼ねてプリフロップで先に行動し、フロップ以降はBBが先です。後のポジションほど相手の行動を先に確認できます。各ハンド後、ボタンは1席移動します。"
   },
   "ko": {
     "设置": "설정",
@@ -2454,7 +2459,9 @@
     "本轮跟注后可以看到下一街公共牌，之后的下注仍需另作决定。": "콜하면 이번 라운드가 끝나고 다음 스트리트의 카드를 볼 수 있습니다. 이후 베팅에는 새로 판단해야 합니다.",
     "{0}结合{1}此前 {2} 手中 {3} 手翻前大额加注的记录，本次估计中保留了更多非顶级起手牌。": "{0}은 {1}이 이전 {2}핸드 중 {3}핸드에서 프리플랍에 크게 레이즈한 기록을 고려해 추정 범위에 최상급이 아닌 시작 패도 더 많이 포함했습니다.",
     "{0}结合{1}此前 {2} 手中 {3} 手翻前加注的记录，本次没有把加注范围限于强牌。": "{0}은 {1}이 이전 {2}핸드 중 {3}핸드에서 프리플랍에 레이즈한 기록을 고려해 레이즈 범위를 강한 패로만 한정하지 않았습니다.",
-    "{0}结合{1}此前频繁的翻后下注与加注，本次估计保留了更多弱牌施压的可能。": "{0}은 {1}의 잦은 포스트플랍 베팅과 레이즈를 고려해 약한 패로 압박할 가능성도 더 많이 반영했습니다."
+    "{0}结合{1}此前频繁的翻后下注与加注，本次估计保留了更多弱牌施压的可能。": "{0}은 {1}의 잦은 포스트플랍 베팅과 레이즈를 고려해 약한 패로 압박할 가능성도 더 많이 반영했습니다.",
+    "小盲和大盲按当前牌桌设置先投入筹码，其他人依次决定是否参与。翻牌前、翻牌、转牌、河牌各有一轮下注，行动顺序按照顺时针方向；所有仍可行动的人都完成本轮行动并跟齐当前下注后，才进入下一轮。任何一轮只剩一人，都可以提前结束。": "테이블 설정에 따라 스몰 블라인드와 빅 블라인드를 먼저 내고, 다른 플레이어가 참가 여부를 결정합니다. 프리플랍, 플랍, 턴, 리버마다 시계 방향으로 한 차례씩 베팅합니다. 행동할 수 있는 모두가 이번 라운드의 행동을 마치고 현재 베팅액을 맞춰야 다음 라운드로 넘어갑니다. 한 명만 남으면 어느 라운드에서든 핸드가 끝납니다.",
+    "BTN 是庄位，多人局中顺时针下一家是 SB（小盲），再下一家是 BB（大盲）。翻牌前从大盲顺时针方向的下一位（一般是枪口 UTG）开始行动；翻牌后的每一轮从庄位顺时针方向的下一位（一般是小盲 SB）开始行动，跳过已弃牌或全下的人。单挑时，庄位兼小盲，翻牌前先行动，翻牌后由大盲先行动。越晚行动，越能先看到对手的选择。每手结束后庄位移动一席。": "BTN은 딜러 버튼입니다. 3명 이상일 때 시계 방향 다음 자리는 SB(스몰 블라인드), 그다음은 BB(빅 블라인드)입니다. 프리플랍은 BB의 시계 방향 다음 자리(보통 UTG)부터, 플랍 이후 매 라운드는 BTN의 다음 자리(보통 SB)부터 행동하며 폴드했거나 올인한 사람은 건너뜁니다. 헤즈업에서는 BTN이 SB를 겸해 프리플랍에 먼저 행동하고, 플랍 이후에는 BB가 먼저 행동합니다. 늦은 포지션일수록 상대의 행동을 더 많이 볼 수 있습니다. 매 핸드 후 버튼은 한 자리 이동합니다."
   },
   "es": {
     "设置": "Ajustes",
@@ -3039,7 +3046,9 @@
     "本轮跟注后可以看到下一街公共牌，之后的下注仍需另作决定。": "Pagar cierra esta ronda y permite ver las cartas de la siguiente calle. Las apuestas posteriores requieren una nueva decisión.",
     "{0}结合{1}此前 {2} 手中 {3} 手翻前大额加注的记录，本次估计中保留了更多非顶级起手牌。": "{0} tuvo en cuenta que {1} hizo subidas grandes preflop en {3} de las {2} manos anteriores e incluyó más manos no prémium en el rango estimado.",
     "{0}结合{1}此前 {2} 手中 {3} 手翻前加注的记录，本次没有把加注范围限于强牌。": "{0} tuvo en cuenta que {1} subió preflop en {3} de las {2} manos anteriores y no limitó su rango de subida a manos fuertes.",
-    "{0}结合{1}此前频繁的翻后下注与加注，本次估计保留了更多弱牌施压的可能。": "{0} tuvo en cuenta las frecuentes apuestas y subidas postflop de {1}, dando más peso a la posibilidad de que presione con manos débiles."
+    "{0}结合{1}此前频繁的翻后下注与加注，本次估计保留了更多弱牌施压的可能。": "{0} tuvo en cuenta las frecuentes apuestas y subidas postflop de {1}, dando más peso a la posibilidad de que presione con manos débiles.",
+    "小盲和大盲按当前牌桌设置先投入筹码，其他人依次决定是否参与。翻牌前、翻牌、转牌、河牌各有一轮下注，行动顺序按照顺时针方向；所有仍可行动的人都完成本轮行动并跟齐当前下注后，才进入下一轮。任何一轮只剩一人，都可以提前结束。": "Las ciegas pequeña y grande se pagan según los ajustes de la mesa; después, los demás jugadores deciden si entran. Preflop, flop, turn y river tienen una ronda de apuestas en sentido horario. La siguiente ronda empieza cuando todos los jugadores que aún pueden actuar han completado su acción e igualado la apuesta actual. Si solo queda un jugador, la mano termina de inmediato.",
+    "BTN 是庄位，多人局中顺时针下一家是 SB（小盲），再下一家是 BB（大盲）。翻牌前从大盲顺时针方向的下一位（一般是枪口 UTG）开始行动；翻牌后的每一轮从庄位顺时针方向的下一位（一般是小盲 SB）开始行动，跳过已弃牌或全下的人。单挑时，庄位兼小盲，翻牌前先行动，翻牌后由大盲先行动。越晚行动，越能先看到对手的选择。每手结束后庄位移动一席。": "BTN es el botón. Con más de dos jugadores, le siguen en sentido horario SB (ciega pequeña) y BB (ciega grande). Preflop empieza el siguiente jugador después de BB, normalmente UTG. Cada ronda posterior al flop empieza en el siguiente jugador después de BTN, normalmente SB, omitiendo a quienes se retiraron o están all-in. En mano a mano, BTN también paga SB y actúa primero preflop; BB actúa primero después del flop. Una posición tardía permite ver más acciones rivales. El botón avanza un asiento tras cada mano."
   },
   "it": {
     "设置": "Impostazioni",
@@ -3624,7 +3633,9 @@
     "本轮跟注后可以看到下一街公共牌，之后的下注仍需另作决定。": "Il call chiude questo giro e permette di vedere le carte della street successiva. Le puntate successive richiedono una nuova decisione.",
     "{0}结合{1}此前 {2} 手中 {3} 手翻前大额加注的记录，本次估计中保留了更多非顶级起手牌。": "{0} ha considerato che {1} ha effettuato rilanci elevati preflop in {3} delle {2} mani precedenti, includendo più mani non premium nel range stimato.",
     "{0}结合{1}此前 {2} 手中 {3} 手翻前加注的记录，本次没有把加注范围限于强牌。": "{0} ha considerato che {1} ha rilanciato preflop in {3} delle {2} mani precedenti, senza limitare il range di rilancio alle mani forti.",
-    "{0}结合{1}此前频繁的翻后下注与加注，本次估计保留了更多弱牌施压的可能。": "{0} ha considerato le frequenti puntate e i rilanci postflop di {1}, dando più peso alla possibilità di pressione con mani deboli."
+    "{0}结合{1}此前频繁的翻后下注与加注，本次估计保留了更多弱牌施压的可能。": "{0} ha considerato le frequenti puntate e i rilanci postflop di {1}, dando più peso alla possibilità di pressione con mani deboli.",
+    "小盲和大盲按当前牌桌设置先投入筹码，其他人依次决定是否参与。翻牌前、翻牌、转牌、河牌各有一轮下注，行动顺序按照顺时针方向；所有仍可行动的人都完成本轮行动并跟齐当前下注后，才进入下一轮。任何一轮只剩一人，都可以提前结束。": "Small blind e big blind versano le fiches secondo le impostazioni del tavolo, poi gli altri decidono se entrare. Preflop, flop, turn e river hanno ciascuno un giro di puntate in senso orario. Il giro successivo inizia quando tutti i giocatori ancora in grado di agire hanno completato la propria azione e pareggiato la puntata corrente. Se rimane un solo giocatore, la mano termina subito.",
+    "BTN 是庄位，多人局中顺时针下一家是 SB（小盲），再下一家是 BB（大盲）。翻牌前从大盲顺时针方向的下一位（一般是枪口 UTG）开始行动；翻牌后的每一轮从庄位顺时针方向的下一位（一般是小盲 SB）开始行动，跳过已弃牌或全下的人。单挑时，庄位兼小盲，翻牌前先行动，翻牌后由大盲先行动。越晚行动，越能先看到对手的选择。每手结束后庄位移动一席。": "BTN è il bottone. Con più di due giocatori, seguono in senso orario SB (small blind) e BB (big blind). Preflop inizia il giocatore successivo al BB, di solito UTG. Dopo il flop, ogni giro inizia dal giocatore successivo al BTN, di solito SB, saltando chi ha passato o è all-in. Nel testa a testa, BTN paga anche SB e agisce per primo preflop; BB agisce per primo dopo il flop. Una posizione tardiva permette di osservare più azioni avversarie. Il bottone avanza di un posto dopo ogni mano."
   },
   "pt": {
     "设置": "Definições",
@@ -4209,7 +4220,9 @@
     "本轮跟注后可以看到下一街公共牌，之后的下注仍需另作决定。": "Pagar encerra esta rodada e revela as cartas da próxima street. Apostas posteriores exigem uma nova decisão.",
     "{0}结合{1}此前 {2} 手中 {3} 手翻前大额加注的记录，本次估计中保留了更多非顶级起手牌。": "{0} considerou os aumentos grandes pré-flop de {1} em {3} das {2} mãos anteriores e incluiu mais mãos que não são premium no range estimado.",
     "{0}结合{1}此前 {2} 手中 {3} 手翻前加注的记录，本次没有把加注范围限于强牌。": "{0} considerou os aumentos pré-flop de {1} em {3} das {2} mãos anteriores, sem limitar o range de aumento a mãos fortes.",
-    "{0}结合{1}此前频繁的翻后下注与加注，本次估计保留了更多弱牌施压的可能。": "{0} considerou as apostas e os aumentos frequentes de {1} no pós-flop, dando mais peso à possibilidade de pressão com mãos fracas."
+    "{0}结合{1}此前频繁的翻后下注与加注，本次估计保留了更多弱牌施压的可能。": "{0} considerou as apostas e os aumentos frequentes de {1} no pós-flop, dando mais peso à possibilidade de pressão com mãos fracas.",
+    "小盲和大盲按当前牌桌设置先投入筹码，其他人依次决定是否参与。翻牌前、翻牌、转牌、河牌各有一轮下注，行动顺序按照顺时针方向；所有仍可行动的人都完成本轮行动并跟齐当前下注后，才进入下一轮。任何一轮只剩一人，都可以提前结束。": "Os blinds pequeno e grande são pagos conforme as configurações da mesa; depois, os demais jogadores decidem se entram. Pré-flop, flop, turn e river têm uma rodada de apostas no sentido horário. A próxima rodada começa quando todos que ainda podem agir concluíram sua ação e igualaram a aposta atual. Se restar apenas um jogador, a mão termina imediatamente.",
+    "BTN 是庄位，多人局中顺时针下一家是 SB（小盲），再下一家是 BB（大盲）。翻牌前从大盲顺时针方向的下一位（一般是枪口 UTG）开始行动；翻牌后的每一轮从庄位顺时针方向的下一位（一般是小盲 SB）开始行动，跳过已弃牌或全下的人。单挑时，庄位兼小盲，翻牌前先行动，翻牌后由大盲先行动。越晚行动，越能先看到对手的选择。每手结束后庄位移动一席。": "BTN é o botão. Com mais de dois jogadores, seguem no sentido horário SB (small blind) e BB (big blind). No pré-flop, começa o jogador seguinte ao BB, normalmente UTG. Após o flop, cada rodada começa no jogador seguinte ao BTN, normalmente SB, pulando quem desistiu ou está all-in. No heads-up, BTN também paga SB e age primeiro no pré-flop; BB age primeiro após o flop. Posições finais permitem observar mais ações adversárias. O botão avança um assento após cada mão."
   },
   "de": {
     "设置": "Einstellungen",
@@ -4794,7 +4807,9 @@
     "本轮跟注后可以看到下一街公共牌，之后的下注仍需另作决定。": "Der Call beendet diese Runde und deckt die nächste Street auf. Spätere Einsätze erfordern eine neue Entscheidung.",
     "{0}结合{1}此前 {2} 手中 {3} 手翻前大额加注的记录，本次估计中保留了更多非顶级起手牌。": "{0} berücksichtigte, dass {1} in {3} der letzten {2} Hände vor dem Flop groß erhöht hatte, und ließ mehr Hände außerhalb der Premiumhände in der geschätzten Range.",
     "{0}结合{1}此前 {2} 手中 {3} 手翻前加注的记录，本次没有把加注范围限于强牌。": "{0} berücksichtigte, dass {1} in {3} der letzten {2} Hände vor dem Flop erhöht hatte, und beschränkte die Erhöhungsrange nicht auf starke Hände.",
-    "{0}结合{1}此前频繁的翻后下注与加注，本次估计保留了更多弱牌施压的可能。": "{0} berücksichtigte die häufigen Einsätze und Erhöhungen von {1} nach dem Flop und gab Druck mit schwachen Händen mehr Gewicht."
+    "{0}结合{1}此前频繁的翻后下注与加注，本次估计保留了更多弱牌施压的可能。": "{0} berücksichtigte die häufigen Einsätze und Erhöhungen von {1} nach dem Flop und gab Druck mit schwachen Händen mehr Gewicht.",
+    "小盲和大盲按当前牌桌设置先投入筹码，其他人依次决定是否参与。翻牌前、翻牌、转牌、河牌各有一轮下注，行动顺序按照顺时针方向；所有仍可行动的人都完成本轮行动并跟齐当前下注后，才进入下一轮。任何一轮只剩一人，都可以提前结束。": "Small und Big Blind setzen gemäß den Tischeinstellungen zuerst Chips ein; die anderen entscheiden anschließend über ihren Einstieg. Preflop, Flop, Turn und River haben jeweils eine Setzrunde im Uhrzeigersinn. Erst wenn alle noch handlungsfähigen Spieler ihre Aktion abgeschlossen und den aktuellen Einsatz ausgeglichen haben, beginnt die nächste Runde. Bleibt nur ein Spieler übrig, endet die Hand sofort.",
+    "BTN 是庄位，多人局中顺时针下一家是 SB（小盲），再下一家是 BB（大盲）。翻牌前从大盲顺时针方向的下一位（一般是枪口 UTG）开始行动；翻牌后的每一轮从庄位顺时针方向的下一位（一般是小盲 SB）开始行动，跳过已弃牌或全下的人。单挑时，庄位兼小盲，翻牌前先行动，翻牌后由大盲先行动。越晚行动，越能先看到对手的选择。每手结束后庄位移动一席。": "BTN ist der Dealerbutton. Bei mehr als zwei Spielern folgen im Uhrzeigersinn SB (Small Blind) und BB (Big Blind). Preflop beginnt der nächste Spieler im Uhrzeigersinn nach BB, meist UTG. Nach dem Flop beginnt jede Runde beim nächsten Spieler nach BTN, meist SB; Spieler, die gefoldet haben oder all-in sind, werden übersprungen. Heads-up ist BTN zugleich SB und handelt preflop zuerst; danach handelt BB zuerst. Späte Positionen sehen mehr gegnerische Aktionen. Der Button wandert nach jeder Hand einen Platz weiter."
   },
   "fr": {
     "设置": "Paramètres",
@@ -5379,7 +5394,9 @@
     "本轮跟注后可以看到下一街公共牌，之后的下注仍需另作决定。": "Payer clôt ce tour et permet de voir les cartes de la prochaine street. Les mises ultérieures nécessitent une nouvelle décision.",
     "{0}结合{1}此前 {2} 手中 {3} 手翻前大额加注的记录，本次估计中保留了更多非顶级起手牌。": "{0} a tenu compte des grosses relances préflop de {1} dans {3} des {2} mains précédentes et a conservé davantage de mains non premium dans l’éventail estimé.",
     "{0}结合{1}此前 {2} 手中 {3} 手翻前加注的记录，本次没有把加注范围限于强牌。": "{0} a tenu compte des relances préflop de {1} dans {3} des {2} mains précédentes, sans limiter son éventail de relance aux mains fortes.",
-    "{0}结合{1}此前频繁的翻后下注与加注，本次估计保留了更多弱牌施压的可能。": "{0} a tenu compte des mises et relances fréquentes de {1} après le flop, accordant plus de poids à une pression avec des mains faibles."
+    "{0}结合{1}此前频繁的翻后下注与加注，本次估计保留了更多弱牌施压的可能。": "{0} a tenu compte des mises et relances fréquentes de {1} après le flop, accordant plus de poids à une pression avec des mains faibles.",
+    "小盲和大盲按当前牌桌设置先投入筹码，其他人依次决定是否参与。翻牌前、翻牌、转牌、河牌各有一轮下注，行动顺序按照顺时针方向；所有仍可行动的人都完成本轮行动并跟齐当前下注后，才进入下一轮。任何一轮只剩一人，都可以提前结束。": "Les petites et grosses blindes sont payées selon les réglages de la table, puis les autres joueurs décident de participer. Préflop, flop, turn et river ont chacun un tour de mises dans le sens horaire. Le tour suivant commence lorsque tous les joueurs pouvant encore agir ont terminé leur action et égalisé la mise. Si un seul joueur reste, la main se termine immédiatement.",
+    "BTN 是庄位，多人局中顺时针下一家是 SB（小盲），再下一家是 BB（大盲）。翻牌前从大盲顺时针方向的下一位（一般是枪口 UTG）开始行动；翻牌后的每一轮从庄位顺时针方向的下一位（一般是小盲 SB）开始行动，跳过已弃牌或全下的人。单挑时，庄位兼小盲，翻牌前先行动，翻牌后由大盲先行动。越晚行动，越能先看到对手的选择。每手结束后庄位移动一席。": "BTN désigne le bouton. À plus de deux joueurs, SB (petite blinde) puis BB (grosse blinde) suivent dans le sens horaire. Préflop, le premier à agir est le joueur suivant BB, généralement UTG. Après le flop, chaque tour commence au joueur suivant BTN, généralement SB, en sautant les joueurs couchés ou à tapis. En tête-à-tête, BTN paie aussi SB et agit en premier préflop ; BB agit en premier ensuite. Une position tardive permet de voir davantage de décisions adverses. Le bouton avance d’une place après chaque main."
   },
   "ru": {
     "设置": "Настройки",
@@ -5964,6 +5981,8 @@
     "本轮跟注后可以看到下一街公共牌，之后的下注仍需另作决定。": "Колл завершает этот раунд и открывает карты следующей улицы. Последующие ставки требуют нового решения.",
     "{0}结合{1}此前 {2} 手中 {3} 手翻前大额加注的记录，本次估计中保留了更多非顶级起手牌。": "{0} учёл крупные префлоп-рейзы {1} в {3} из предыдущих {2} раздач и включил в предполагаемый диапазон больше непремиальных стартовых рук.",
     "{0}结合{1}此前 {2} 手中 {3} 手翻前加注的记录，本次没有把加注范围限于强牌。": "{0} учёл префлоп-рейзы {1} в {3} из предыдущих {2} раздач и не ограничил диапазон рейза только сильными руками.",
-    "{0}结合{1}此前频繁的翻后下注与加注，本次估计保留了更多弱牌施压的可能。": "{0} учёл частые ставки и рейзы {1} после флопа и придал больше веса возможности давления со слабыми руками."
+    "{0}结合{1}此前频繁的翻后下注与加注，本次估计保留了更多弱牌施压的可能。": "{0} учёл частые ставки и рейзы {1} после флопа и придал больше веса возможности давления со слабыми руками.",
+    "小盲和大盲按当前牌桌设置先投入筹码，其他人依次决定是否参与。翻牌前、翻牌、转牌、河牌各有一轮下注，行动顺序按照顺时针方向；所有仍可行动的人都完成本轮行动并跟齐当前下注后，才进入下一轮。任何一轮只剩一人，都可以提前结束。": "Малый и большой блайнды вносят фишки по настройкам стола, затем остальные решают, входить ли в игру. Префлоп, флоп, тёрн и ривер имеют по одному кругу торговли, действия идут по часовой стрелке. Следующий круг начинается, когда все способные действовать игроки завершили своё действие и уравняли текущую ставку. Если остаётся один игрок, раздача сразу заканчивается.",
+    "BTN 是庄位，多人局中顺时针下一家是 SB（小盲），再下一家是 BB（大盲）。翻牌前从大盲顺时针方向的下一位（一般是枪口 UTG）开始行动；翻牌后的每一轮从庄位顺时针方向的下一位（一般是小盲 SB）开始行动，跳过已弃牌或全下的人。单挑时，庄位兼小盲，翻牌前先行动，翻牌后由大盲先行动。越晚行动，越能先看到对手的选择。每手结束后庄位移动一席。": "BTN — баттон. При игре более чем вдвоём за ним по часовой стрелке идут SB (малый блайнд) и BB (большой блайнд). На префлопе первым действует следующий за BB игрок, обычно UTG. После флопа каждый круг начинает следующий за BTN игрок, обычно SB; сбросивших карты и пошедших олл-ин пропускают. В хедз-апе BTN также ставит SB и действует первым на префлопе, а после флопа первым действует BB. Поздняя позиция позволяет увидеть больше действий соперников. После каждой раздачи баттон сдвигается на одно место."
   }
 }

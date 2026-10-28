@@ -243,8 +243,15 @@ test('hero action and activity amount labels consistently show K/M while the eng
     { configured: stakes(50000), amount: 10000000, displayed: '10M' },
   ]) {
     await page.evaluate((configured) => window.qa.configuredTurn(configured), scenario.configured);
-    await page.locator('#bet-slider').evaluate((el, amount) => {
-      el.value = String(amount);
+    await page.locator('#bet-slider').evaluate(async (el, amount) => {
+      const { raiseSliderPosition } = await import('/src/ui/bet-sizing.js');
+      const state = window.noir.getState();
+      el.value = String(
+        raiseSliderPosition(
+          { currentBet: window.qa.snapshot().currentBet, pot: state.pot, legal: state.legal },
+          amount,
+        ),
+      );
       el.dispatchEvent(new Event('input', { bubbles: true }));
     }, scenario.amount);
     await page.locator('#raise-button').click();

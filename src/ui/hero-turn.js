@@ -2,6 +2,9 @@
 export function createHeroTurnCue(notify) {
   let notified = null;
   return {
+    acknowledge(key) {
+      notified = key;
+    },
     reset() {
       notified = null;
     },

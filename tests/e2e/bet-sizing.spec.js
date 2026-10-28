@@ -11,7 +11,7 @@ test('pot presets use the pot after calling and apply the exact screenshot amoun
   await expect(page.locator('#pot-value')).toHaveText('3.075K');
   await expect(page.locator('#bet-sizing-note')).toHaveCount(0);
   await page.locator('[data-preset="half"]').click();
-  await expect(page.locator('#bet-slider')).toHaveAttribute('step', '25');
+  await expect(page.locator('#bet-slider')).toHaveAttribute('step', '1');
   await expect(page.locator('#bet-value')).toHaveText('2.75K');
   await expect(page.locator('#raise-button')).toHaveAttribute('aria-label', '2-bet 加注至 2.75K');
   await page.locator('[data-preset="pot"]').click();
@@ -60,7 +60,7 @@ test('checkable streets and existing contributions size correctly without overfl
         ),
       );
       await page.locator(`[data-preset="${preset}"]`).click();
-      await expect(page.locator('#bet-slider')).toHaveValue(String(target));
+      await expect(page.locator('#bet-slider')).toHaveAttribute('data-raise-to', String(target));
     }
     await expect(page.locator('#bet-sizing-note')).toHaveCount(0);
   }
@@ -81,7 +81,9 @@ test('checkable streets and existing contributions size correctly without overfl
     expect(fits).toBe(true);
   }
   // Custom raises, slider steps and shortcut targets all use whole 25 chips.
-  await page.locator('#bet-slider').fill('1625');
+  await page.locator('#bet-slider').focus();
+  await page.locator('#bet-slider').press('Home');
+  await page.locator('#bet-slider').press('ArrowRight');
   await expect(page.locator('#bet-value')).toHaveText('1.625K');
   await page.locator('#raise-button').click();
   const custom = await page.evaluate(() => {
@@ -94,13 +96,39 @@ test('checkable streets and existing contributions size correctly without overfl
   );
   expect(odd.pot).toBe(3225);
   await page.locator('[data-preset="pot"]').click();
-  await expect(page.locator('#bet-slider')).toHaveValue('4875');
+  await expect(page.locator('#bet-slider')).toHaveAttribute('data-raise-to', '4875');
   await page.locator('[data-preset="half"]').click();
-  await expect(page.locator('#bet-slider')).toHaveValue('2850');
+  await expect(page.locator('#bet-slider')).toHaveAttribute('data-raise-to', '2850');
   await page.evaluate(() => window.qa.bettingTurn(3, 0, true));
   const short = await page.evaluate(() => window.noir.getState());
   for (const preset of ['half', 'pot']) {
     await page.locator(`[data-preset="${preset}"]`).click();
-    await expect(page.locator('#bet-slider')).toHaveValue(String(short.legal.maxRaiseTo));
+    await expect(page.locator('#bet-slider')).toHaveAttribute(
+      'data-raise-to',
+      String(short.legal.maxRaiseTo),
+    );
   }
+});
+
+test('dragging from the rail reaches pot at halfway and all-in at the right edge', async ({
+  page,
+}) => {
+  await page.goto('/');
+  await page.waitForFunction(() => !!window.qa);
+  await page.evaluate(() => window.qa.potSizing({ stack: 20000 }));
+  const slider = page.locator('#bet-slider');
+  await page.locator('[data-preset="pot"]').click();
+  const pot = await slider.getAttribute('data-raise-to');
+  await expect(slider).toHaveValue('500000');
+  const box = await slider.boundingBox();
+  // Begin on the rail away from its thumb, then drag both directions.
+  await page.mouse.move(box.x + box.width * 0.25, box.y + box.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2, { steps: 8 });
+  await page.mouse.up();
+  await expect(slider).toHaveAttribute('data-raise-to', pot);
+  await slider.press('End');
+  await expect(slider).toHaveValue('1000000');
+  const state = await page.evaluate(() => window.noir.getState());
+  await expect(slider).toHaveAttribute('data-raise-to', String(state.legal.maxRaiseTo));
 });
