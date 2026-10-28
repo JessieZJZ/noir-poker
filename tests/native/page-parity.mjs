@@ -209,6 +209,75 @@ export function localReferenceHead(head) {
   });
 }
 
+// A DOM replay compares painted content, not the cloned audio element's media
+// buffer. Keep the original 30s load budget, but require the actual visual
+// assets instead of waiting for the unrelated window load event.
+export async function loadNativeReferencePage(page, html, { timeout = 30000 } = {}) {
+  const deadline = Date.now() + timeout;
+  const remaining = () => Math.max(1, deadline - Date.now());
+  const pending = new Set();
+  const failed = [];
+  const started = (request) => pending.add(request);
+  const finished = (request) => pending.delete(request);
+  const rejected = (request) => {
+    pending.delete(request);
+    failed.push({
+      url: request.url(),
+      type: request.resourceType(),
+      error: request.failure()?.errorText,
+    });
+  };
+  const response = (response) => {
+    if (response.status() >= 400)
+      failed.push({
+        url: response.url(),
+        type: response.request().resourceType(),
+        status: response.status(),
+      });
+  };
+  page.on('request', started);
+  page.on('requestfinished', finished);
+  page.on('requestfailed', rejected);
+  page.on('response', response);
+  try {
+    await page.setContent(html, { waitUntil: 'domcontentloaded', timeout: remaining() });
+    await page.waitForFunction(
+      () => {
+        if (![...document.querySelectorAll('link[rel="stylesheet"]')].every((link) => link.sheet))
+          return false;
+        // Flush styles so fonts used by the rendered text start loading before
+        // checking their status. Visible lazy images must also finish loading.
+        document.body.getBoundingClientRect();
+        const images = [...document.images].filter((image) => image.getClientRects().length);
+        for (const image of images) image.loading = 'eager';
+        return (
+          document.fonts.status === 'loaded' &&
+          [...document.fonts].every((face) => face.status !== 'error') &&
+          images.every((image) => image.complete && image.naturalWidth > 0)
+        );
+      },
+      null,
+      { timeout: remaining() },
+    );
+    if (failed.some((request) => ['stylesheet', 'font', 'image'].includes(request.type)))
+      throw Error('Native reference visual asset failed to load');
+  } catch (error) {
+    error.referenceLoad = {
+      pending: [...pending].map((request) => ({
+        url: request.url(),
+        type: request.resourceType(),
+      })),
+      failed,
+    };
+    throw error;
+  } finally {
+    page.off('request', started);
+    page.off('requestfinished', finished);
+    page.off('requestfailed', rejected);
+    page.off('response', response);
+  }
+}
+
 const privacyOptions = [
   ['zh-CN', '简体中文'],
   ['en', 'English'],
@@ -362,9 +431,9 @@ export async function compareNativePage({ root, output, evaluate, screenshot }, 
       locale: snapshot.lang,
     });
     await writeFile(path.join(output, 'parity-' + name + '-head.html'), snapshot.head);
-    await page.setContent(
-      `<!doctype html><html lang="${snapshot.lang}"><head><base href="http://127.0.0.1:${server.address().port}/">${localReferenceHead(snapshot.head)}</head>${snapshot.body}</html>`,
-    );
+    const html = `<!doctype html><html lang="${snapshot.lang}"><head><base href="http://127.0.0.1:${server.address().port}/">${localReferenceHead(snapshot.head)}</head>${snapshot.body}</html>`;
+    await writeFile(path.join(output, 'parity-' + name + '-reference.html'), html);
+    await loadNativeReferencePage(page, html);
     await page.evaluate(
       async ({ snapshot, scroll }) => {
         document.documentElement.dataset.appReady = 'true';
@@ -498,6 +567,12 @@ export async function compareNativePage({ root, output, evaluate, screenshot }, 
       intrinsicControlWidths,
       paint,
     };
+  } catch (error) {
+    await writeFile(
+      path.join(output, 'parity-' + name + '-failure.json'),
+      JSON.stringify({ error: error.message, referenceLoad: error.referenceLoad }, null, 2),
+    );
+    throw error;
   } finally {
     await browser?.close();
     await new Promise((resolve) => server.close(resolve));
