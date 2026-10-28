@@ -310,7 +310,8 @@ async function nativeTouch(selector, duration) {
   }
 }
 async function nativeTap(selector) {
-  assert.equal(platform, 'ios');
+  // The shared touch path already selects the platform's real WebView class
+  // and maps its measured native frame, as used by long presses on both OSes.
   return nativeTouch(selector, 80);
 }
 async function nativeHold(selector) {
