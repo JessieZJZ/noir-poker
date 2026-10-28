@@ -104,11 +104,18 @@ test('localized styles fit one line completely and holding a label never opens a
       .poll(() =>
         page
           .locator('#seats .seat-style-label')
-          .evaluateAll((labels) =>
-            labels.every(
-              (el) =>
-                el.scrollWidth <= el.clientWidth + 1 && el.scrollHeight <= el.clientHeight + 1,
-            ),
+          .evaluateAll(
+            (labels, count) =>
+              labels.length === count &&
+              labels.every(
+                (el) =>
+                  el.textContent === el.dataset.fullName &&
+                  getComputedStyle(el).textOverflow !== 'ellipsis' &&
+                  getComputedStyle(el).whiteSpace === 'nowrap' &&
+                  el.scrollWidth <= el.clientWidth + 1 &&
+                  el.scrollHeight <= el.clientHeight + 1,
+              ),
+            profiles.length,
           ),
       )
       .toBe(true);

@@ -152,7 +152,13 @@ for (const locale of ['zh-CN', 'en']) {
                 below: stack.top >= t.bottom,
                 contained:
                   t.left >= p.left && t.right <= p.right && t.top >= p.top && t.bottom <= p.bottom,
-                ellipsis: getComputedStyle(tag).textOverflow === 'ellipsis',
+                complete:
+                  tag.textContent === tag.dataset.fullName &&
+                  tag.textContent.trim().length > 0 &&
+                  getComputedStyle(tag).textOverflow !== 'ellipsis' &&
+                  getComputedStyle(tag).whiteSpace === 'nowrap' &&
+                  tag.scrollWidth <= tag.clientWidth + 1 &&
+                  tag.scrollHeight <= tag.clientHeight + 1,
               };
             });
             return { straddles: crown.top < felt.top && crown.bottom > felt.top, seats };
@@ -160,9 +166,9 @@ for (const locale of ['zh-CN', 'en']) {
         const before = await measure();
         expect(before.straddles).toBe(true);
         expect(before.seats.every((seat) => seat.below)).toBe(true);
-        // Long researched names intentionally truncate with an ellipsis as
-        // type grows; keep every tag inside its stable profile footprint.
-        expect(before.seats.every((seat) => seat.contained && seat.ellipsis)).toBe(true);
+        // Every complete localized style name stays on one line in its
+        // original profile column, including after settlement.
+        expect(before.seats.every((seat) => seat.contained && seat.complete)).toBe(true);
         await page.evaluate(
           (count) => window.qa.scene('Kh Ts', '9s 7d 6h 3c 2s', { count, folded: [0, 1] }),
           count,

@@ -78,6 +78,16 @@ html .game-surface .arena[data-player-count] .seat .seat-profile .seat-style-lab
   text-align: center;
 }
 
+/* Narrow Latin letterforms retain complete names in the original right column. */
+html:not([lang^='zh'])
+  .game-surface
+  .arena[data-player-count]
+  .seat
+  .seat-profile
+  .seat-style-label {
+  font-family: 'Barlow Condensed', Manrope, sans-serif;
+}
+
 .game-surface .arena[data-player-count] .seat .position-badge {
   font-size: var(--player-position, 12px);
 }
