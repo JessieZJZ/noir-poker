@@ -899,6 +899,80 @@ export async function nativeScenarios(app) {
     assert.equal(portrait.hand, before.hand);
     return { before, request, landscape, portrait };
   });
+  await check('tablet-interface-readability', async () => {
+    const tablet = await app.evaluate(() => document.documentElement.dataset.tablet === 'true');
+    if (!tablet) return { scope: 'Tablet-only readability checks; this is a phone' };
+    const readings = [];
+    try {
+      for (const orientation of ['PORTRAIT', 'LANDSCAPE']) {
+        await app.rotate(orientation);
+        await app.waitFor(
+          () =>
+            app.evaluate(
+              (portrait) => (portrait ? innerHeight > innerWidth : innerWidth > innerHeight),
+              orientation === 'PORTRAIT',
+            ),
+          5000,
+          'Tablet rotation must settle',
+        );
+        await app.waitHero();
+        const controls = await app.evaluate(() => {
+          const font = (s) => parseFloat(getComputedStyle(document.querySelector(s)).fontSize);
+          return {
+            width: innerWidth,
+            height: innerHeight,
+            nav: font('#opponents-button'),
+            action: font('.action-buttons .action span'),
+            preset: font('.bet-presets button'),
+            stats: font('.session-stats span'),
+            buttons: [...document.querySelectorAll('.action-buttons button')].map(
+              (el) => el.getBoundingClientRect().height,
+            ),
+          };
+        });
+        assert.ok(controls.nav >= 16);
+        assert.ok(controls.action >= 18);
+        assert.ok(controls.preset >= 15);
+        assert.ok(controls.stats >= 15);
+        assert.ok(controls.buttons.every((height) => height >= 48));
+        assertTableLayout(await app.evaluate(readTableLayout));
+        await app.screenshot(`tablet-${orientation.toLowerCase()}-play`);
+        await app.click('#opponents-button');
+        const settings = await app.evaluate(() => ({
+          width: document.querySelector('#opponents-dialog').getBoundingClientRect().width,
+          viewport: innerWidth,
+          label: parseFloat(
+            getComputedStyle(document.querySelector('.settings-dialog .settings-row > label'))
+              .fontSize,
+          ),
+          description: parseFloat(
+            getComputedStyle(document.querySelector('.settings-dialog .setting-description'))
+              .fontSize,
+          ),
+        }));
+        assert.ok(settings.width > settings.viewport * (orientation === 'PORTRAIT' ? 0.94 : 0.78));
+        assert.ok(settings.label >= 17);
+        assert.ok(settings.description >= 15);
+        await app.screenshot(`tablet-${orientation.toLowerCase()}-settings`);
+        await app.click('#opponents-dialog .dialog-header .close-dialog');
+        await app.click('#rules-button');
+        await app.click('#guide-menu-item');
+        const guide = await app.evaluate(() => ({
+          width: document.querySelector('#rules-dialog').getBoundingClientRect().width,
+          viewport: innerWidth,
+          font: parseFloat(getComputedStyle(document.querySelector('#rules-dialog p')).fontSize),
+        }));
+        assert.ok(guide.width > guide.viewport * (orientation === 'PORTRAIT' ? 0.94 : 0.78));
+        assert.ok(guide.font >= 16);
+        await app.screenshot(`tablet-${orientation.toLowerCase()}-guide`);
+        await app.click('#rules-dialog .dialog-header .close-dialog');
+        readings.push({ orientation, controls, settings, guide });
+      }
+    } finally {
+      await app.rotate('PORTRAIT');
+    }
+    return readings;
+  });
   await check('crown-seat-and-style-row', async () => {
     const tables = [];
     for (const count of [6, 8]) {

@@ -3,6 +3,7 @@ const { presentCard, presentationPatch } = require('../table/presentation.js');
 const { recordResult, sessionStanding } = require('../../shared/engine/game-records.js');
 const navigation = require('../../record-navigation.js');
 const { recordStartTime } = require('../../record-time.js');
+const { pageOrientation } = require('../../device-orientation.js');
 const HAND_BATCH_SIZE = 24;
 const SESSION_BATCH_SIZE = 20;
 // A game's hands are rendered only while its list is within one screen of the
@@ -28,10 +29,12 @@ Page({
     topInset: 24,
     bottomInset: 0,
     hasMoreSessions: false,
+    pageOrientation: 'portrait',
   },
   onLoad() {
     const info = wx.getWindowInfo ? wx.getWindowInfo() : wx.getSystemInfoSync();
     this.setData({
+      pageOrientation: pageOrientation(wx, info, getApp()),
       topInset: info.statusBarHeight || 24,
       bottomInset: Math.max(0, info.windowHeight - (info.safeArea?.bottom || info.windowHeight)),
     });
@@ -44,7 +47,26 @@ Page({
   },
   onShow() {
     this._hidden = false;
+    this.updateWindow();
     this.refreshRecords();
+  },
+  onResize() {
+    this.updateWindow();
+    // Rotating changes wrapped row heights and the observer's screen margin.
+    // Keep expansion and pagination, but remeasure the visible lists.
+    this._heights = {};
+    this._observedLists = null;
+    this.refreshRecords(true);
+  },
+  updateWindow() {
+    const info = wx.getWindowInfo ? wx.getWindowInfo() : wx.getSystemInfoSync();
+    this._screen = info.windowHeight || 640;
+    this._rowEstimate = Math.min(info.windowWidth, info.windowHeight) >= 601 ? 89 : ROW_ESTIMATE;
+    this.setData({
+      pageOrientation: pageOrientation(wx, info, getApp()),
+      topInset: info.statusBarHeight || 24,
+      bottomInset: Math.max(0, info.windowHeight - (info.safeArea?.bottom || info.windowHeight)),
+    });
   },
   refreshRecords(force = false) {
     clearTimeout(this._recordsTimer);
@@ -73,7 +95,7 @@ Page({
         for (const session of listed) {
           if (top > this._screen * 2) break;
           if (!this.data.collapsed[session.id]) this._near.add(session.id);
-          top += HEADING_ESTIMATE + shownCount(session) * ROW_ESTIMATE;
+          top += HEADING_ESTIMATE + shownCount(session) * (this._rowEstimate || ROW_ESTIMATE);
         }
       }
       const art = {};
@@ -99,7 +121,7 @@ Page({
           filled,
           listStyle:
             open && !filled
-              ? `height:${measured?.shown === shown ? measured.height : shown * ROW_ESTIMATE + LIST_PADDING}px`
+              ? `height:${measured?.shown === shown ? measured.height : shown * (this._rowEstimate || ROW_ESTIMATE) + LIST_PADDING}px`
               : '',
           hasMoreHands: open && session.attempts.length > shown,
           attempts: filled

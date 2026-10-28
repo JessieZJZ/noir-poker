@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
+import vm from 'node:vm';
 import { isIPad, isTablet, shouldBlockLandscape } from '../../src/platform/orientation.js';
 
 const landscapePhone = {
@@ -79,4 +80,87 @@ test('native and WeChat declarations restrict phones while retaining tablet rota
   assert.equal(app.window.pageOrientation, 'portrait');
   assert.equal(page.pageOrientation, 'portrait');
   assert.equal(app.resizable, true);
+  for (const route of ['table/table', 'records/records', 'source/source'])
+    assert.match(
+      read(`miniprogram/pages/${route}.wxml`),
+      /<page-meta\s[^>]*page-orientation="\{\{pageOrientation\}\}"/,
+    );
+  assert.match(
+    read('miniprogram/pages/history/history.wxml'),
+    /include src="..\/table\/table.wxml"/,
+  );
+});
+
+test('WeChat tablet orientation uses the full screen and remains stable through split screen and keyboards', () => {
+  const module = { exports: {} };
+  vm.runInNewContext(
+    readFileSync(new URL('../../miniprogram/device-orientation.js', import.meta.url), 'utf8'),
+    { module },
+  );
+  const { pageOrientation } = module.exports;
+  for (const [short, expected] of [
+    [599, 'portrait'],
+    [600, 'auto'],
+    [820, 'auto'],
+  ]) {
+    const app = {};
+    assert.equal(
+      pageOrientation(
+        {},
+        {
+          screenWidth: short,
+          screenHeight: 1180,
+          windowWidth: 390,
+          windowHeight: 500,
+        },
+        app,
+      ),
+      expected,
+    );
+    assert.equal(
+      pageOrientation(
+        {},
+        {
+          screenWidth: 1180,
+          screenHeight: short,
+          windowWidth: 500,
+          windowHeight: 390,
+        },
+        app,
+      ),
+      expected,
+    );
+  }
+  assert.equal(
+    pageOrientation(
+      { getDeviceInfo: () => ({ model: 'iPad Pro' }) },
+      {
+        windowWidth: 375,
+        windowHeight: 700,
+      },
+      {},
+    ),
+    'auto',
+  );
+  const app = {};
+  assert.equal(pageOrientation({}, { windowWidth: 390, windowHeight: 844 }, app), 'portrait');
+  // The legacy-runtime fallback may change after a genuine device resize.
+  assert.equal(pageOrientation({}, { windowWidth: 820, windowHeight: 1180 }, app), 'auto');
+  assert.equal(
+    pageOrientation(
+      {
+        getDeviceInfo() {
+          throw Error('unavailable');
+        },
+      },
+      {
+        screenWidth: 844,
+        screenHeight: 390,
+        windowWidth: 844,
+        windowHeight: 390,
+      },
+      {},
+    ),
+    'portrait',
+  );
 });

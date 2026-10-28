@@ -1725,6 +1725,7 @@
 @import './entry.wxss';
 
 @import './game-info.wxss';
+@import './tablet.wxss';
 @import './style-detail.wxss';
 @import './preflop-table.wxss';
 

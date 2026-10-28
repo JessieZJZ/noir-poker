@@ -82,6 +82,7 @@ test('entry stakes stay in the game info card and the hero label has no reserved
     ),
   );
   await page.goto('/');
+  await page.waitForFunction(() => !!window.qa);
   await expect(page.locator('html')).toHaveAttribute('data-app-ready', 'true');
   await expect(page.locator('#info-blinds')).toHaveText('10K / 20K');
   for (const width of [320, 390, 768, 1024, 1280, 1700, 2256]) {
@@ -150,6 +151,10 @@ for (const count of [5, 6, 7, 8, 9]) {
   test(`${count} seats wait for entry, preserve chips and deal once before actions`, async ({
     page,
   }, testInfo) => {
+    // The deal gate captures its timer functions during startup. Install the
+    // controlled clock before importing the application, not after that gate
+    // has already kept references to the real wall clock.
+    await page.clock.install({ time: new Date('2026-01-01T00:00:00Z') });
     await page.addInitScript(
       (count) => localStorage.setItem('noir-table-v1', JSON.stringify({ playerCount: count })),
       count,
@@ -200,7 +205,6 @@ for (const count of [5, 6, 7, 8, 9]) {
     });
     // Start from a known clock and pause well ahead of installation. Using the
     // host's current time can already be in the past when a busy runner applies it.
-    await page.clock.install({ time: new Date('2026-01-01T00:00:00Z') });
     await page.clock.pauseAt(new Date('2026-01-01T01:00:00Z'));
     await page.locator('#join-table-button').click();
     await expect(page.locator('.game-surface')).toHaveAttribute('data-entry-state', 'dealing');

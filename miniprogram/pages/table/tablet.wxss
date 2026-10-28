@@ -1,0 +1,189 @@
+/* Tablet touch sizing uses the same reserved chrome as the fitted arena.
+   The landscape dock puts sizing beside actions, as on desktop. */
+@media (min-width: 601px) and (min-height: 601px) {
+  .nav {
+    flex-basis: 76px;
+    height: 76px;
+  }
+  .brand {
+    font-size: 30px;
+  }
+  .brand-sub {
+    font-size: 16px;
+  }
+  .nav-actions .guide-button,
+  .nav-actions .settings-button {
+    font-size: 18px;
+    min-height: 44px;
+  }
+  .nav-actions .guide-button {
+    width: 112px;
+    max-width: 112px;
+  }
+  .resource-label-window {
+    width: 88px;
+    height: 26px;
+    line-height: 26px;
+  }
+  .resource-menu button {
+    min-height: 48px;
+    font-size: 17px;
+  }
+  .game-header {
+    flex-basis: 42px;
+    height: 42px;
+    font-size: 18px;
+  }
+  .entry-waiting .game-header {
+    flex-basis: 64px;
+    height: 64px;
+  }
+  .hint-slot {
+    flex-basis: 22px;
+    height: 22px;
+  }
+  .hint-mask {
+    height: 22px;
+    line-height: 22px;
+    font-size: 16px;
+  }
+  .entry-welcome {
+    gap: 14px;
+  }
+  .entry-title {
+    font-size: 28px;
+  }
+  .entry-eyebrow,
+  .entry-footnote {
+    font-size: 14px;
+  }
+  .entry-welcome .entry-join {
+    min-width: 190px;
+    min-height: 54px;
+    font-size: 19px;
+  }
+  .action-dock {
+    flex-basis: 208px;
+    height: 208px;
+    gap: 8px;
+    padding: 10px 20px 16px;
+  }
+  .action-dock.compact-actions {
+    flex-basis: 76px;
+    height: 76px;
+    padding: 12px 20px;
+  }
+  .action-notice {
+    font-size: 17px;
+    line-height: 26px;
+  }
+  .presets {
+    height: 40px;
+  }
+  .presets button {
+    font-size: 16px;
+  }
+  .action-buttons,
+  .settled-buttons {
+    height: 52px;
+  }
+  .action-buttons button,
+  .settled-buttons button {
+    min-height: 52px;
+    height: 52px;
+    font-size: 18px;
+  }
+  .modal-header {
+    flex-basis: 64px;
+    font-size: 24px;
+  }
+  .modal-body {
+    padding: 24px;
+  }
+  .modal-header .close {
+    width: 44px;
+    max-width: 44px;
+    height: 44px;
+  }
+  .settings-module {
+    padding: 20px;
+  }
+  .setting-row {
+    min-height: 54px;
+    font-size: 18px;
+  }
+  .settings-modal .setting-row .picker-value {
+    min-height: 44px;
+    font-size: 17px;
+  }
+  .module-title {
+    font-size: 20px;
+  }
+  .setting-description,
+  .settings-module .subtle,
+  .mood-legend-item,
+  .profile-tag,
+  .info-module > text {
+    font-size: 15px;
+    line-height: 1.8;
+  }
+  .profile-name,
+  .difficulty button {
+    font-size: 18px;
+  }
+  .guide-copy > text,
+  .guide-p {
+    font-size: 17px;
+    line-height: 1.8;
+  }
+  .guide-card {
+    width: 46px;
+    height: 66px;
+    font-size: 19px;
+  }
+  .guide-card > text:last-child {
+    font-size: 25px;
+  }
+  .practice-panel .session-title {
+    font-size: 20px;
+  }
+  .session-caption,
+  .session-change,
+  .session-stats > view > text:last-child,
+  .activity-panel {
+    font-size: 16px;
+  }
+  .session-stack {
+    font-size: 40px;
+  }
+  .session-stats > view > text:first-child {
+    font-size: 25px;
+  }
+}
+
+@media (min-width: 901px) and (min-height: 601px) and (orientation: landscape) {
+  .action-dock:not(.compact-actions) {
+    display: grid;
+    grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+    grid-template-rows: 28px 1fr;
+    align-items: center;
+    column-gap: 16px;
+    height: 152px;
+    flex-basis: 152px;
+  }
+  .action-dock:not(.compact-actions) > .action-notice {
+    grid-column: 1 / -1;
+    top: 0;
+  }
+  .action-dock .raise-controls {
+    min-width: 0;
+    width: 100%;
+  }
+  .action-dock .action-buttons {
+    min-width: 0;
+    width: 100%;
+  }
+  .presets {
+    height: 36px;
+  }
+}

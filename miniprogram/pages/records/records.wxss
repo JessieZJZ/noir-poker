@@ -226,3 +226,41 @@ page {
   letter-spacing: 1px;
   color: #6b7a87;
 }
+@media (min-width: 601px) and (min-height: 601px) {
+  .records-screen {
+    padding-inline: 20px;
+  }
+  .records-nav {
+    font-size: 24px;
+  }
+  .session-number,
+  .hand-profit {
+    font-size: 20px;
+  }
+  .session-time,
+  .hand-outcome {
+    font-size: 15px;
+  }
+  .session-stats view text:first-child,
+  .records-empty {
+    font-size: 16px;
+  }
+  .session-stats view text:last-child {
+    font-size: 22px;
+  }
+  .record-card {
+    width: 42px;
+    height: 60px;
+  }
+  .hand-title {
+    font-size: 18px;
+  }
+  .hand-tag {
+    font-size: 13px;
+  }
+}
+@media (min-width: 901px) and (min-height: 601px) and (orientation: landscape) {
+  .session-stats {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}

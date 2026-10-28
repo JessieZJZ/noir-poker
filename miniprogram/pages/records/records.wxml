@@ -1,3 +1,4 @@
+<page-meta page-orientation="{{pageOrientation}}" />
 <view class="records-chrome" style="height: {{topInset + 36}}px;" />
 <view
   class="records-screen"

@@ -162,6 +162,7 @@ export function collectNativePageSnapshot(selectors) {
     head: document.head.innerHTML.replace(/<script\b[^>]*>[\s\S]*?<\/script>/g, ''),
     body: clone.outerHTML,
     lang: root.lang,
+    touch: matchMedia('(any-pointer: coarse)').matches,
     pixelRatio: devicePixelRatio,
     layoutScale,
     viewport: { width: innerWidth, height: innerHeight - top - bottom },
@@ -428,6 +429,9 @@ export async function compareNativePage({ root, output, evaluate, screenshot }, 
       // Android commonly uses fractional densities (for example 2.625).
       // Matching them avoids accumulating different 1px border rounding.
       deviceScaleFactor: snapshot.pixelRatio,
+      // Tablet touch sizing must also apply to the browser reference. A mouse
+      // context would compare the installed tablet with desktop controls.
+      hasTouch: snapshot.touch,
       locale: snapshot.lang,
     });
     await writeFile(path.join(output, 'parity-' + name + '-head.html'), snapshot.head);

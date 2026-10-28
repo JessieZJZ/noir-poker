@@ -10,6 +10,7 @@ const {
 } = require('./presentation.js');
 const { completeBoardForPractice, rankText } = require('../../shared/engine/poker.js');
 const navigation = require('../../record-navigation.js');
+const { pageOrientation } = require('../../device-orientation.js');
 const {
   entryWelcomeCorridor,
   entryWelcomeScale,
@@ -24,8 +25,21 @@ const {
   PREMIUM_SPARKS,
   CONFETTI_PIECES,
 } = require('./game-effects.js');
-// Capsule 36 + nav 48 + gap 8 + header 48 + live dock 134 + end gap 8 + border 2.
-const VIEWPORT_CHROME_HEIGHT = 284;
+// Match responsive chrome to the pixels reserved around the fitted arena.
+// Phones retain their original budget; tablet touch controls need more room.
+function viewportChrome(width, height) {
+  const tablet = width >= 601 && height >= 601;
+  const navHeight = tablet ? 76 : 48;
+  const tableHeaderHeight = tablet ? 66 : 50;
+  const liveDockHeight = tablet ? (width > height ? 152 : 208) : 134;
+  return {
+    navHeight,
+    tableHeaderHeight,
+    liveDockHeight,
+    compactDockHeight: tablet ? 76 : 64,
+    chromeHeight: 36 + navHeight + 8 + tableHeaderHeight + liveDockHeight + 8,
+  };
+}
 const PROFILE_AXES = [
   ['vpip', '入池宽度'],
   ['aggression', '进攻倾向'],
@@ -45,8 +59,10 @@ module.exports = {
     arenaWidth: 364,
     arenaScale: 1,
     windowWidth: 390,
+    pageOrientation: 'portrait',
     navRightInset: 104,
     compactNav: false,
+    ...viewportChrome(390, 800),
     resourceMenuOpen: false,
     resourceLabel: '玩法指南',
     resourcePreviousLabel: '对局记录',
@@ -419,7 +435,10 @@ module.exports = {
     const app = getApp();
     // Scrolling/keyboard chrome must not refit the table. Live and archive pages
     // reuse one window budget until an actual width/orientation change.
-    const valid = measured.windowWidth > 0 && measured.windowHeight > VIEWPORT_CHROME_HEIGHT;
+    const valid =
+      measured.windowWidth > 0 &&
+      measured.windowHeight >
+        viewportChrome(measured.windowWidth, measured.windowHeight).chromeHeight;
     if (valid && (!app.noirViewport || app.noirViewport.windowWidth !== measured.windowWidth))
       app.noirViewport = {
         ...measured,
@@ -457,14 +476,17 @@ module.exports = {
       /* Menu measurement can be unavailable while an older client initializes. */
     }
     // The table budget stays identical through fold, settlement and retry.
+    const chrome = viewportChrome(info.windowWidth, info.windowHeight);
     const viewport = {
+      ...chrome,
+      pageOrientation: pageOrientation(wx, measured, app),
       topInset,
       bottomInset,
       windowHeight: info.windowHeight,
       navRightInset,
       compactNav: false,
       windowWidth: info.windowWidth,
-      tableHeight: Math.max(0, info.windowHeight - topInset - bottomInset - VIEWPORT_CHROME_HEIGHT),
+      tableHeight: Math.max(0, info.windowHeight - topInset - bottomInset - chrome.chromeHeight),
     };
     if (Object.entries(viewport).every(([key, value]) => this.data[key] === value)) return false;
     const arenaHeight = Math.max(300, viewport.tableHeight);
@@ -482,9 +504,10 @@ module.exports = {
   },
   publicLayout(board = [], view = this.data, viewport = this.data) {
     if (view.seats?.length) {
+      const chrome = viewportChrome(viewport.windowWidth, viewport.windowHeight);
       const tableHeight = Math.max(
         0,
-        viewport.windowHeight - viewport.topInset - viewport.bottomInset - VIEWPORT_CHROME_HEIGHT,
+        viewport.windowHeight - viewport.topInset - viewport.bottomInset - chrome.chromeHeight,
       );
       const fitted = phoneLayout({
         width: viewport.windowWidth,
@@ -498,7 +521,8 @@ module.exports = {
       const { positioned, ...geometry } = fitted;
       // As on Web, the waiting message keeps its size unless the players beside
       // it would crowd it; it sits centred at 44% of the arena height.
-      const halfHeight = ENTRY_WELCOME_SIZE.height / fitted.arenaScale / 2;
+      const entrySize = chrome.navHeight > 48 ? { width: 230, height: 168 } : ENTRY_WELCOME_SIZE;
+      const halfHeight = entrySize.height / fitted.arenaScale / 2;
       const corridor = entryWelcomeCorridor(
         positioned.map((seat) => {
           const profile = seat.parts?.[1] ?? {
@@ -524,7 +548,7 @@ module.exports = {
         ...geometry,
         entryScale: entryWelcomeScale({
           arenaScale: fitted.arenaScale,
-          contentWidth: ENTRY_WELCOME_SIZE.width,
+          contentWidth: entrySize.width,
           corridorWidth: corridor * fitted.arenaScale,
         }),
         tableHeight,

@@ -52,6 +52,11 @@ const template = readFileSync(
   'utf8',
 );
 const copy = (value) => JSON.parse(JSON.stringify(value));
+const orientationModule = { exports: {} };
+vm.runInNewContext(
+  readFileSync(new URL('../../miniprogram/device-orientation.js', import.meta.url), 'utf8'),
+  { module: orientationModule },
+);
 const presentationModule = { exports: {} };
 const recordTimeModule = { exports: {} };
 vm.runInNewContext(
@@ -121,6 +126,7 @@ function setup(
     getCurrentPages: () => stack,
     require(name) {
       if (name === '../../record-navigation.js') return navigationModule.exports;
+      if (name === '../../device-orientation.js') return orientationModule.exports;
       if (name === '../../assets/portraits/credits.js')
         return Object.fromEntries(
           Object.entries(PROFILE_PORTRAITS).map(([id, image]) => [
@@ -606,7 +612,13 @@ test('public flips stagger only newly dealt cards and details preserve their slo
 
 test('WeChat tablet rotation preserves the deal, settings dialog and pending actions', (t) => {
   const { page, info, jobs } = setup(t, {
-    info: { windowWidth: 820, windowHeight: 1180, statusBarHeight: 24 },
+    info: {
+      screenWidth: 820,
+      screenHeight: 1180,
+      windowWidth: 820,
+      windowHeight: 1180,
+      statusBarHeight: 24,
+    },
   });
   page.openSettings();
   const hand = page.data.hand;
@@ -623,9 +635,40 @@ test('WeChat tablet rotation preserves the deal, settings dialog and pending act
     assert.equal(page.data.hand, hand);
     assert.deepEqual(copy(page.data.heroCards), cards);
     assert.equal(page.data.settingsOpen, true);
+    assert.equal(page.data.pageOrientation, 'auto');
+    assert.equal(page.data.liveDockHeight, size.windowWidth > size.windowHeight ? 152 : 208);
     assert.deepEqual([...jobs.keys()], pending);
     assert.ok(page.data.tableHeight > 0);
   }
+});
+
+test('WeChat records and source pages keep tablet rotation when resized or reopened', (t) => {
+  const fixture = setup(t, {
+    info: {
+      screenWidth: 820,
+      screenHeight: 1180,
+      windowWidth: 820,
+      windowHeight: 1180,
+      statusBarHeight: 24,
+    },
+  });
+  const records = secondaryPage(t, 'records/records.js', fixture);
+  records.onLoad();
+  records.onShow();
+  records.data.collapsed = { kept: true };
+  const before = JSON.stringify(fixture.page._controller.getGame());
+  Object.assign(fixture.info, { windowWidth: 1180, windowHeight: 820 });
+  records.onResize();
+  assert.equal(records.data.pageOrientation, 'auto');
+  assert.equal(records._screen, 820);
+  assert.equal(records.data.collapsed.kept, true);
+  assert.equal(JSON.stringify(fixture.page._controller.getGame()), before);
+  const source = secondaryPage(t, 'source/source.js', fixture);
+  source.onLoad({ url: encodeURIComponent('https://example.com') });
+  source.onShow();
+  source.onResize();
+  assert.equal(source.data.pageOrientation, 'auto');
+  assert.equal(source.data.url, 'https://example.com');
 });
 function reachHero(page) {
   const game = page._controller.getGame();
@@ -709,7 +752,7 @@ test('WeChat turn, fold, settlement and retry keep the table fixed while compact
   assert.match(template, /class="raise-controls" wx:if="\{\{!compactActions\}\}"/);
   assert.match(
     template,
-    /height: {{tableHeight \+ 50 \+ \(waitingForSeat \? 0 : historyReadOnly \|\| compactActions \? 64 : 134\)}}px/,
+    /height: {{tableHeight \+ tableHeaderHeight \+ \(waitingForSeat \? 0 : historyReadOnly \|\| compactActions \? compactDockHeight : liveDockHeight\)}}px/,
   );
   assert.equal(cssNumber('.action-dock.compact-actions', 'height'), 64);
   assert.equal(
@@ -1782,6 +1825,7 @@ function secondaryPage(t, file, fixture) {
       require(name) {
         if (name === '../../record-time.js') return recordTimeModule.exports;
         if (name === '../../record-navigation.js') return fixture.navigation;
+        if (name === '../../device-orientation.js') return orientationModule.exports;
         if (name === '../../shared/engine/game-records.js')
           return { recordResult, sessionStanding };
         if (name === '../table/page-definition.js') return fixture.definition;
@@ -1792,7 +1836,7 @@ function secondaryPage(t, file, fixture) {
     },
   );
   const page = { ...definition, data: copy(definition.data), setData: fixture.page.setData };
-  t.after(() => page.onUnload());
+  t.after(() => page.onUnload?.());
   return page;
 }
 
@@ -2153,7 +2197,7 @@ test('WeChat record lists send bounded summary patches and remain idle without r
 test('WeChat history uses a compact review dock and records rely on native Back', () => {
   assert.match(
     template,
-    /tableHeight \+ 50 \+ \(waitingForSeat \? 0 : historyReadOnly \|\| compactActions \? 64 : 134\)/,
+    /tableHeight \+ tableHeaderHeight \+ \(waitingForSeat \? 0 : historyReadOnly \|\| compactActions \? compactDockHeight : liveDockHeight\)/,
   );
   assert.match(stylesheet, /\.history-shell \.action-dock\s*\{[^}]*height: 64px/);
   assert.doesNotMatch(stylesheet, /\.history-practice-heading/);
@@ -2504,7 +2548,10 @@ test('WeChat final cards retain readable phone dimensions within the unchanged f
       metrics['player-back-width'] * 2 + 3 <= slotWidth,
       'The pair fits its original fixed slot',
     );
-    assert.equal(page.data.tableHeight + statusBarHeight + bottomInset + 284, windowHeight);
+    assert.equal(
+      page.data.tableHeight + statusBarHeight + bottomInset + page.data.chromeHeight,
+      windowHeight,
+    );
   }
   assert.match(
     stylesheet,
@@ -2558,7 +2605,7 @@ test('WeChat practice heading owns reset; game info replaces it only while waiti
   // As on Web, a 本局信息 title heads the card; the stats share its edges.
   assert.match(
     template,
-    /class="game-info" aria-label="本局信息"\s*><text class="game-info-title">本局信息<\/text\s*><view class="game-info-stats"/,
+    /class="game-info"\s+aria-label="本局信息"\s+style="min-height: {{liveDockHeight - 8}}px;"\s*><text class="game-info-title">本局信息<\/text\s*><view class="game-info-stats"/,
   );
   assert.match(info, /\.game-info-stats\s*\{[^}]*justify-content: space-between;/s);
   assert.match(info, /\.game-info-stats > view:first-child\s*\{\s*text-align: left;/);
@@ -2919,6 +2966,36 @@ test('WeChat waiting table matches play and its message keeps clear of players',
   const { page } = setup(t, { waiting: true });
   assert.ok(page.data.entryScale > 0);
   assert.ok(page.data.entryScale <= 1 / page.data.arenaScale + 1e-9);
+});
+
+test('WeChat tablet touch chrome reserves its real height and crossing the breakpoint preserves the hand', (t) => {
+  for (const width of [600, 601, 744, 768, 820, 1032]) {
+    const info = {
+      windowWidth: width,
+      windowHeight: 1376,
+      statusBarHeight: 24,
+      safeArea: { bottom: 1352 },
+    };
+    const { page } = setup(t, { waiting: true, info });
+    const tablet = width >= 601;
+    assert.equal(page.data.navHeight, tablet ? 76 : 48);
+    assert.equal(page.data.tableHeaderHeight, tablet ? 66 : 50);
+    assert.equal(page.data.liveDockHeight, tablet ? 208 : 134);
+    assert.equal(page.data.compactDockHeight, tablet ? 76 : 64);
+    assert.equal(
+      page.data.tableHeight + page.data.topInset + page.data.bottomInset + page.data.chromeHeight,
+      info.windowHeight,
+    );
+    const before = JSON.stringify(page._controller.getGame());
+    Object.assign(info, { windowWidth: tablet ? 600 : 601 });
+    page.onResize();
+    assert.equal(page.data.liveDockHeight, tablet ? 134 : 208);
+    assert.equal(JSON.stringify(page._controller.getGame()), before);
+    assert.equal(
+      page.data.tableHeight + page.data.topInset + page.data.bottomInset + page.data.chromeHeight,
+      info.windowHeight,
+    );
+  }
 });
 
 test('WeChat seat cards stay two per row down to 340px, as on Web', () => {

@@ -1,4 +1,7 @@
-<page-meta page-style="{{homeLocked ? 'overflow: hidden;' : ''}}" />
+<page-meta
+  page-orientation="{{pageOrientation}}"
+  page-style="{{homeLocked ? 'overflow: hidden;' : ''}}"
+/>
 <view class="safe-chrome top-chrome" style="height: {{topInset + 36}}px;" aria-hidden="true" />
 <view class="safe-chrome bottom-chrome" style="height: {{bottomInset}}px;" aria-hidden="true" />
 <template name="activity-content">
@@ -66,7 +69,7 @@
   <view class="table-panel {{historyReadOnly ? 'history-panel' : ''}}">
     <view
       class="game-shell entry-{{entryState}} {{historyReadOnly ? 'history-shell' : ''}}"
-      style="height: {{tableHeight + 50 + (waitingForSeat ? 0 : historyReadOnly || compactActions ? 64 : 134)}}px;"
+      style="height: {{tableHeight + tableHeaderHeight + (waitingForSeat ? 0 : historyReadOnly || compactActions ? compactDockHeight : liveDockHeight)}}px;"
     >
       <view class="game-header">
         <view class="hand-label"
@@ -480,7 +483,11 @@
       </view>
     </view>
   </view>
-  <view wx:if="{{!historyReadOnly && waitingForSeat}}" class="game-info" aria-label="本局信息"
+  <view
+    wx:if="{{!historyReadOnly && waitingForSeat}}"
+    class="game-info"
+    aria-label="本局信息"
+    style="min-height: {{liveDockHeight - 8}}px;"
     ><text class="game-info-title">本局信息</text
     ><view class="game-info-stats"
       ><view class="game-info-chips"
