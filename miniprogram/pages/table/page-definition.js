@@ -877,7 +877,7 @@ module.exports = {
   },
   cancelRaise() {
     this._raiseGesture = null;
-    if (this.data.canRaise) this._controller?.show();
+    if (this.data.canRaise && !this._hidden && !this._destroyed) this._controller?.show();
   },
   updateRaiseGesture() {
     const gesture = this._raiseGesture;

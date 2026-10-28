@@ -1522,6 +1522,14 @@ test('WeChat cancels pending rail measurement on hide, retry and disabled turns'
   page.startRaise({ touches: [{ identifier: 2, clientX: 400 }] });
   const amount = page.data.raiseTo;
   page.onHide();
+  const show = page._controller.show;
+  let wakes = 0;
+  page._controller.show = () => {
+    wakes++;
+  };
+  page.cancelRaise(); // A system touchcancel can arrive after the hide event.
+  assert.equal(wakes, 0, 'A late touch cancellation cannot reactivate a hidden controller');
+  page._controller.show = show;
   measure([{ left: 0, width: 400 }]);
   assert.equal(page.data.raiseTo, amount);
   assert.equal(page._raiseGesture, null);
