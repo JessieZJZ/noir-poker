@@ -1,6 +1,29 @@
 import { newGame, startHand, act, advanceStreet, deckOfCards } from '../../src/engine/poker.js';
 import { cards } from './deceptive-decisions.js';
 
+export function unopenedShoveDecision() {
+  const game = newGame(9, {
+    smallBlind: 100,
+    bigBlind: 200,
+    startingStack: 20000,
+    chipUnit: 100,
+  });
+  game.dealer = 2;
+  startHand(game);
+  const hole = cards('Jd Td');
+  const used = new Set(hole.map((card) => card.key));
+  const rest = deckOfCards().filter((card) => !used.has(card.key));
+  game.players[0].hole = hole;
+  for (const player of game.players.slice(1)) player.hole = [rest.pop(), rest.pop()];
+  game.deck = rest;
+  const wealth = game.players.reduce((sum, player) => sum + player.stack + player.total, 0);
+  for (const id of [6, 7, 8]) act(game, id, 'fold');
+  act(game, 0, 'raise', 20000);
+  if (wealth !== game.players.reduce((sum, player) => sum + player.stack + player.total, 0))
+    throw Error('Preflop review setup must conserve chips');
+  return game.decisions.at(-1);
+}
+
 // Reconstructed public ledger, not the user's unavailable saved deal. All
 // setup actions are legal; only an engine before-action snapshot is returned.
 // No other hole card, river card or result is an input to review assertions.

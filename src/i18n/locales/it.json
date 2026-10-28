@@ -2604,5 +2604,12 @@
   "这组底牌成花后仍可能落后于更高同花。": "Anche dopo aver completato colore, queste carte private possono perdere contro un colore superiore.",
   "{0}，{1}。跟完手里还留 {2}。": "{0}, {1}. Dopo il call restano {2} in mano.",
   "多人底池里，这手成牌并不是坚果。": "In questo piatto multiway, questa mano fatta non è il nuts.",
-  "{0}担心后面 {1} 位尚未回应这次全下的玩家会用强牌跟入，因此收紧了继续范围。": "{0} ha ristretto il range con cui continuare, temendo che i {1} giocatori ancora in attesa di rispondere a questo all-in potessero entrare con mani forti."
+  "{0}担心后面 {1} 位尚未回应这次全下的玩家会用强牌跟入，因此收紧了继续范围。": "{0} ha ristretto il range con cui continuare, temendo che i {1} giocatori ancora in attesa di rispondere a questo all-in potessero entrare con mani forti.",
+  "只有对手范围中包含足够较弱牌，才能支持这笔全下跟注；面对以更强起手牌为主的范围，应比较弃牌。": "Questo call all’all-in è giustificato solo se il range avversario contiene abbastanza mani più deboli; contro un range composto soprattutto da mani iniziali più forti, valuta il fold.",
+  "若改为再补 {0} 跟注，会留下 {1} 筹码。": "Se invece chiamassi aggiungendo {0}, ti resterebbero {1} fiches.",
+  "前面尚无人加注，也应比较常规开池与弃牌，不能只凭改善潜力默认跟注。": "Anche se nessuno ha ancora rilanciato, confronta un normale rilancio di apertura con il fold; il solo potenziale di miglioramento non giustifica il call come scelta predefinita.",
+  "按当前范围估计，跟注 {0} 还需要{1}后从较弱牌收取筹码；这笔钱只应对眼前这笔下注，下一街再被下注仍要另算成本。": "Secondo la stima attuale dei range, chiamare {0} richiede ancora di ricavare fiches aggiuntive da mani più deboli dopo {1}; questo call copre solo la puntata che affronti ora, e un’altra puntata nella strada successiva richiederà un calcolo separato dei costi.",
+  "补中后的额外收入取决于较弱牌是否愿意付费，当前跟注只应对眼前这笔下注。": "I guadagni aggiuntivi dopo aver migliorato dipendono dalla disponibilità delle mani più deboli a pagare; questo call copre solo la puntata che affronti ora.",
+  "跟注 {0} 先按当前底池的价格判断，{1}后的额外收入取决于较弱牌是否愿意付费；这笔钱只应对眼前这笔下注，下一街再被下注仍要另算成本。": "Valuta prima il call di {0} in base al prezzo offerto dal piatto attuale. I guadagni aggiuntivi dopo {1} dipendono dalla disponibilità delle mani più deboli a pagare; questo call copre solo la puntata che affronti ora, e un’altra puntata nella strada successiva richiederà un calcolo separato dei costi.",
+  "较小跟注仍需对手范围、价格与位置支持，不能只因全下过大就肯定跟注。": "Anche un call più piccolo richiede il sostegno del range avversario, del prezzo e della posizione; il fatto che l’all-in sia troppo grande non basta a giustificare il call."
 }

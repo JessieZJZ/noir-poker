@@ -92,7 +92,8 @@ test('a call needing future income names the current price and additional street
   assert.equal(notes.length, 2);
   const implied = notes.find((n) => n.topic === 'implied-odds');
   assert.match(implied.text, /跟注 200.*还需要补中后从较弱牌收取筹码/);
-  assert.match(implied.text, /只补齐本轮.*下一街.*另算成本/);
+  assert.match(implied.text, /只应对眼前这笔下注.*下一街.*另算成本/);
+  assert.doesNotMatch(implied.text, /补齐本轮|本轮结束|保证.*翻牌/);
   assert.doesNotMatch(prose(notes), forbidden);
 });
 

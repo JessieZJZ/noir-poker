@@ -1,7 +1,31 @@
 import { test, expect } from '@playwright/test';
 import { mkdir } from 'node:fs/promises';
 import { heroValueGame } from '../fixtures/review-spots.js';
-import { semanticDrawCall, reviewSemanticTopics } from '../fixtures/review-semantic-topics.js';
+import {
+  semanticDrawCall,
+  unopenedShoveDecision,
+  reviewSemanticTopics,
+} from '../fixtures/review-semantic-topics.js';
+
+test('an alternative preflop call shows its price and does not promise that the betting round is closed', async ({
+  page,
+}) => {
+  const game = heroValueGame('overpair');
+  game.decisions = [unopenedShoveDecision()];
+  game.botDecisions = [];
+  await page.goto('/');
+  await page.waitForFunction(() => window.qa);
+  await page.evaluate((value) => window.qa.loadRecordedGame(value), game);
+  await page.locator('#review-hand-button').click();
+  const summary = page.locator('#review-coach-explanation');
+  await summary.locator('.review-analysis-heading').waitFor();
+  await expect(summary).toContainText('再补 200 跟注');
+  await expect(summary).toContainText('19.8K');
+  await expect(summary).toContainText('常规开池与弃牌');
+  await expect(summary).toContainText('你身后还有 5 人等待行动');
+  await expect(summary).toContainText('重新决定是否继续');
+  await expect(summary).not.toContainText('这手建议跟注，保留当前牌力');
+});
 
 test('a live third player retains both current-round repricing and later-street cost in review', async ({
   page,

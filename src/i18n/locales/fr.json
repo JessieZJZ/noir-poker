@@ -2607,5 +2607,12 @@
   "这组底牌成花后仍可能落后于更高同花。": "Même après avoir formé une couleur, ces cartes privatives peuvent encore perdre contre une couleur supérieure.",
   "{0}，{1}。跟完手里还留 {2}。": "{0}, {1}. Après le call, il reste {2} en main.",
   "多人底池里，这手成牌并不是坚果。": "Dans ce pot multiway, cette main faite n’est pas les nuts.",
-  "{0}担心后面 {1} 位尚未回应这次全下的玩家会用强牌跟入，因此收紧了继续范围。": "{0} a resserré sa range de continuation, craignant que les {1} joueurs qui devaient encore répondre à ce tapis entrent avec des mains fortes."
+  "{0}担心后面 {1} 位尚未回应这次全下的玩家会用强牌跟入，因此收紧了继续范围。": "{0} a resserré sa range de continuation, craignant que les {1} joueurs qui devaient encore répondre à ce tapis entrent avec des mains fortes.",
+  "只有对手范围中包含足够较弱牌，才能支持这笔全下跟注；面对以更强起手牌为主的范围，应比较弃牌。": "Ce call face à un all-in ne se justifie que si la range adverse contient suffisamment de mains plus faibles ; face à une range composée surtout de mains de départ plus fortes, envisage de te coucher.",
+  "若改为再补 {0} 跟注，会留下 {1} 筹码。": "Si tu suivais plutôt en ajoutant {0}, il te resterait {1} jetons.",
+  "前面尚无人加注，也应比较常规开池与弃牌，不能只凭改善潜力默认跟注。": "Même si personne n’a encore relancé, compare une relance d’ouverture standard avec le fait de te coucher ; le seul potentiel d’amélioration ne justifie pas de suivre par défaut.",
+  "按当前范围估计，跟注 {0} 还需要{1}后从较弱牌收取筹码；这笔钱只应对眼前这笔下注，下一街再被下注仍要另算成本。": "Selon l’estimation actuelle des ranges, payer {0} exige encore de gagner des jetons supplémentaires contre des mains plus faibles après {1} ; ce call égalise seulement la mise à laquelle tu fais face maintenant, et une mise à la street suivante devra être chiffrée séparément.",
+  "补中后的额外收入取决于较弱牌是否愿意付费，当前跟注只应对眼前这笔下注。": "Les gains supplémentaires après amélioration dépendent de la volonté des mains plus faibles de payer ; ce call égalise seulement la mise à laquelle tu fais face maintenant.",
+  "跟注 {0} 先按当前底池的价格判断，{1}后的额外收入取决于较弱牌是否愿意付费；这笔钱只应对眼前这笔下注，下一街再被下注仍要另算成本。": "Évalue d’abord le call de {0} selon le prix offert par le pot actuel. Les gains supplémentaires après {1} dépendent de la volonté des mains plus faibles de payer ; ce call égalise seulement la mise à laquelle tu fais face maintenant, et une mise à la street suivante devra être chiffrée séparément.",
+  "较小跟注仍需对手范围、价格与位置支持，不能只因全下过大就肯定跟注。": "Un call plus petit doit aussi être justifié par la range adverse, le prix et ta position ; un all-in trop gros ne suffit pas à justifier de suivre."
 }

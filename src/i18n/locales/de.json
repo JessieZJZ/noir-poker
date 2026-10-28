@@ -2610,5 +2610,12 @@
   "这组底牌成花后仍可能落后于更高同花。": "Auch nach einem getroffenen Flush können diese Handkarten gegen einen höheren Flush verlieren.",
   "{0}，{1}。跟完手里还留 {2}。": "{0}, {1}. Nach dem Call bleiben {2} im Stack.",
   "多人底池里，这手成牌并不是坚果。": "In diesem Multiway-Pot ist diese fertige Hand nicht die Nuts.",
-  "{0}担心后面 {1} 位尚未回应这次全下的玩家会用强牌跟入，因此收紧了继续范围。": "{0} engte die Range zum Weiterspielen ein, weil die {1} Spieler, die noch auf dieses All-in reagieren mussten, mit starken Händen einsteigen könnten."
+  "{0}担心后面 {1} 位尚未回应这次全下的玩家会用强牌跟入，因此收紧了继续范围。": "{0} engte die Range zum Weiterspielen ein, weil die {1} Spieler, die noch auf dieses All-in reagieren mussten, mit starken Händen einsteigen könnten.",
+  "只有对手范围中包含足够较弱牌，才能支持这笔全下跟注；面对以更强起手牌为主的范围，应比较弃牌。": "Dieser All-in-Call lässt sich nur rechtfertigen, wenn die gegnerische Range genügend schwächere Hände enthält. Gegen eine Range, die überwiegend aus stärkeren Starthänden besteht, solltest du einen Fold erwägen.",
+  "若改为再补 {0} 跟注，会留下 {1} 筹码。": "Wenn du stattdessen weitere {0} callst, bleiben dir {1} Chips.",
+  "前面尚无人加注，也应比较常规开池与弃牌，不能只凭改善潜力默认跟注。": "Auch wenn bisher niemand erhöht hat, solltest du einen üblichen Eröffnungsraise mit einem Fold vergleichen. Verbesserungspotenzial allein rechtfertigt keinen automatischen Call.",
+  "按当前范围估计，跟注 {0} 还需要{1}后从较弱牌收取筹码；这笔钱只应对眼前这笔下注，下一街再被下注仍要另算成本。": "Laut aktueller Range-Schätzung erfordert ein Call von {0} nach {1} zusätzliche Chips von schwächeren Händen. Dieser Call gleicht nur die Bet aus, vor der du jetzt stehst; eine Bet auf der nächsten Street muss gesondert eingepreist werden.",
+  "补中后的额外收入取决于较弱牌是否愿意付费，当前跟注只应对眼前这笔下注。": "Zusätzlicher Gewinn nach einer Verbesserung hängt davon ab, ob schwächere Hände bezahlen. Dieser Call gleicht nur die Bet aus, vor der du jetzt stehst.",
+  "跟注 {0} 先按当前底池的价格判断，{1}后的额外收入取决于较弱牌是否愿意付费；这笔钱只应对眼前这笔下注，下一街再被下注仍要另算成本。": "Bewerte den Call von {0} zuerst anhand des Preises im aktuellen Pot. Zusätzlicher Gewinn nach {1} hängt davon ab, ob schwächere Hände bezahlen. Dieser Call gleicht nur die Bet aus, vor der du jetzt stehst; eine Bet auf der nächsten Street muss gesondert eingepreist werden.",
+  "较小跟注仍需对手范围、价格与位置支持，不能只因全下过大就肯定跟注。": "Auch ein kleinerer Call braucht eine Grundlage in der gegnerischen Range, im Preis und in deiner Position. Ein zu großes All-in allein rechtfertigt keinen Call."
 }

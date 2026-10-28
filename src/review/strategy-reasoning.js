@@ -214,10 +214,10 @@ function impliedNote(assessment, f) {
   return note(
     'implied-odds',
     !f.includeAction && !short
-      ? '补中后的额外收入取决于较弱牌是否愿意付费，当前跟注只补齐本轮。'
+      ? '补中后的额外收入取决于较弱牌是否愿意付费，当前跟注只应对眼前这笔下注。'
       : short
-        ? `按当前范围估计，跟注 ${compactChips(f.cost)} 还需要${improvement}后从较弱牌收取筹码；这笔钱只补齐本轮，下一街再被下注仍要另算成本。`
-        : `跟注 ${compactChips(f.cost)} 先按当前底池的价格判断，${improvement}后的额外收入取决于较弱牌是否愿意付费；这笔钱只补齐本轮，下一街再被下注仍要另算成本。`,
+        ? `按当前范围估计，跟注 ${compactChips(f.cost)} 还需要${improvement}后从较弱牌收取筹码；这笔钱只应对眼前这笔下注，下一街再被下注仍要另算成本。`
+        : `跟注 ${compactChips(f.cost)} 先按当前底池的价格判断，${improvement}后的额外收入取决于较弱牌是否愿意付费；这笔钱只应对眼前这笔下注，下一街再被下注仍要另算成本。`,
   );
 }
 

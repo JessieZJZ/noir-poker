@@ -285,7 +285,9 @@ function explanation(s, r, evKind, suggested, kind, { comparisonOwned = false } 
               : '这次全下跟注值得保留的依据是当前价格和摊牌机会，但依赖对手范围中包含足够较弱牌或未成对高牌。'
             : suggested.action === 'fold'
               ? '按当前对手范围估计，这些获胜机会不足以支持这次全下跟注。'
-              : '这次全下跟注仍需核对对手的范围，不能只用补牌机会判断是否划算。',
+              : !s.street && suggested.action === 'call'
+                ? '只有对手范围中包含足够较弱牌，才能支持这笔全下跟注；面对以更强起手牌为主的范围，应比较弃牌。'
+                : '这次全下跟注仍需核对对手的范围，不能只用补牌机会判断是否划算。',
         c.pendingOthers ? '其余玩家尚可行动，他们是否继续会改变你能争夺的底池和对抗人数。' : '',
       ]
         .flat()
@@ -797,9 +799,18 @@ export function coachDecision(s, r) {
     r.context.made?.score[0] === 0 &&
     evKind !== 'positive' &&
     r.metrics.equityLow - r.metrics.uncertainty <= r.metrics.required;
+  // A sound heuristic alone cannot endorse risking the whole preflop stack
+  // when the public-range estimates do not clear the actual call price.
+  const unprovenAllInCall =
+    s.street === 0 &&
+    s.action === 'call' &&
+    exhaustsStack(s) &&
+    evKind !== 'positive' &&
+    r.metrics.equityLow <= r.metrics.required;
   const supported =
     !confirmed &&
     !unprovenDraw &&
+    !unprovenAllInCall &&
     !reviewedBoundaryCodes.has(r.code) &&
     (r.status === 'sound' || evKind === 'positive');
   let action = freeFold
@@ -817,11 +828,14 @@ export function coachDecision(s, r) {
     ? improved && evKind === 'positive'
       ? 'value'
       : 'improve'
-    : valueCodes.has(r.code)
-      ? 'value'
-      : supported
-        ? 'keep'
-        : 'compare';
+    : unprovenAllInCall
+      ? 'compare'
+      : valueCodes.has(r.code)
+        ? 'value'
+        : supported
+          ? 'keep'
+          : 'compare';
+  if (kind === 'compare' && action.action === 'call') action = { ...action, summary: '需要比较' };
   const reason = unpackProseReason(
     explanation(s, r, evKind, action, kind, { comparisonOwned: unprovenDraw && !confirmed }),
   );
@@ -858,6 +872,22 @@ export function coachDecision(s, r) {
                     : r.code === 'positioned-entry'
                       ? `这手建议${suggested}，先用较小成本保留翻后位置和改善机会。`
                       : '这手建议跟注，保留当前牌力和改善后的获池机会。';
+      if (
+        s.street === 0 &&
+        s.action === 'raise' &&
+        action.action === 'call' &&
+        s.legal.callAmount < s.stack &&
+        r.code !== 'positioned-entry'
+      )
+        recommendation = [
+          `若改为再补 ${fmt(s.legal.callAmount)} 跟注，会留下 ${fmt(s.stack - s.legal.callAmount)} 筹码。`,
+          !r.context.preflopRaises
+            ? '前面尚无人加注，也应比较常规开池与弃牌，不能只凭改善潜力默认跟注。'
+            : '较小跟注仍需对手范围、价格与位置支持，不能只因全下过大就肯定跟注。',
+          reason.coveredTopics.includes(TOPIC.CURRENT_RESPONSE) ? '' : waitingNote(s, r.context),
+        ]
+          .filter(Boolean)
+          .join('');
     }
     const completedFlush = flushCompletionNote(s, r.context);
     const risks = checkRisks(s, r.context);
