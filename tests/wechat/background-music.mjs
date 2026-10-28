@@ -188,6 +188,13 @@ try {
         wx.createWebAudioContext = p.original;
         wx.createInnerAudioContext = p.inner;
       }
+      let originalMusic = true;
+      try {
+        originalMusic = JSON.parse(saved || 'null')?.music !== false;
+      } catch {}
+      // Restore the live controller too: its next render must not undo the
+      // saved preference when it updates the App's music transport.
+      getCurrentPages().at(-1)?._controller?.setPreference('music', originalMusic);
       if (saved) wx.setStorageSync('noir-wechat-settings-v1', saved);
       else wx.removeStorageSync('noir-wechat-settings-v1');
       delete app.__bgmProbe;
