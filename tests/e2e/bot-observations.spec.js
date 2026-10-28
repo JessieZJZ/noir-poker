@@ -68,8 +68,8 @@ test('an observed wide squeeze produces a real affordable AJ defense and actor-c
   await page.locator('#review-opponents-tab').click();
   const text = page.locator('#review-opponent-detail .review-explanation');
   await expect(text).toContainText('A♠ J♣');
-  await expect(text).toContainText(/此前 32 手中 32 手翻前加注/);
-  await expect(text).toContainText('没有把加注范围限于强牌');
+  await expect(text).toContainText(/此前 32 手中 32 手翻前大额加注/);
+  await expect(text).toContainText('保留了更多非顶级起手牌');
   await expect(text).not.toContainText(/9♦ 8♣|机器人|EV|模型|抽样|建议/);
 });
 

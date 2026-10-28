@@ -2,10 +2,24 @@ import { publicPostflopLine } from '../engine/public-story.js';
 import { actorAtPosition, actorName } from '../engine/player-identity.js';
 import { compactChips } from '../engine/chip-format.js';
 import { preparePublicRanges } from '../engine/public-ranges.js';
-import { PUBLIC_READ_MODEL, observedAggressiveLikelihood } from '../engine/public-observations.js';
+import {
+  PUBLIC_READ_MODEL,
+  observedAggressiveLikelihood,
+  observedRangeModel,
+} from '../engine/public-observations.js';
 
 export function publicObservationNotes(s) {
+  // Older sampled records could omit public tendency/style inputs inside the
+  // sampler. Only the corrected producer or a known full-descriptor path can
+  // support attributing an observation-based motive to the recorded decision.
+  const completeRangeInputs =
+    s.publicEquity?.rangeInputsVersion === 'complete-public-weight-inputs-v1' ||
+    ((s.publicEquity?.exact || s.allIn) &&
+      ['public-action-ranges', 'public-all-in-ranges', 'public-commitment-ranges'].includes(
+        s.publicEquity?.model,
+      ));
   if (
+    !completeRangeInputs ||
     s.publicReadModel !== PUBLIC_READ_MODEL ||
     !s.reviewSubject ||
     !['call', 'fold', 'raise'].includes(s.action)
@@ -16,7 +30,19 @@ export function publicObservationNotes(s) {
   );
   if (!last) return [];
   const range = preparePublicRanges(s).find((r) => r.id === last.id);
-  const observation = range?.rangeObservation;
+  // Historical records used the current all-in flag to select this bucket.
+  // New records carry the earlier-wager sizing contract after the action was
+  // selected. Do not reinterpret an old motive with today's grouping rule.
+  const sizing = s.observationSizing;
+  const actualWagerSizing =
+    sizing?.version === 1 && Number.isFinite(sizing.largePreflopBB) && sizing.largePreflopBB > 0;
+  if (sizing && !actualWagerSizing) return [];
+  const observation = range
+    ? observedRangeModel(range.publicRead, {
+        action: range.preflop.action,
+        allIn: actualWagerSizing ? range.preflop.amountBB >= sizing.largePreflopBB : range.allIn,
+      })
+    : null;
   if (!observation || observation.hands < 8) return [];
   const other = actorName(s, last.id),
     subject = s.reviewSubject;

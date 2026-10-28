@@ -12,6 +12,7 @@ import {
 } from '../../src/engine/poker.js';
 import { observedPreflopDefense } from '../../src/engine/bot-style.js';
 import { explainOpponent } from '../../src/review/opponents.js';
+import { preparePublicRanges } from '../../src/engine/public-ranges.js';
 
 test('an affordable strong squeeze defense uses observed range evidence instead of a fixed entry veto', () => {
   for (const difficulty of ['normal', 'hard'])
@@ -24,6 +25,9 @@ test('an affordable strong squeeze defense uses observed range evidence instead 
       assert.notEqual(second.action, 'fold');
       assert.ok(second.trace.observedDefense);
       assert.equal(second.trace.observedDefense.hands, 32);
+      const aggressor = preparePublicRanges(second.trace.view).find((range) => range.id === 0);
+      assert.equal(aggressor.preflop.amountBB, 18);
+      assert.equal(aggressor.rangeObservation.kind, 'largeRaiseHands');
       assert.ok(second.trace.observedDefense.realizedEquity >= second.trace.requiredEquity + 0.04);
       const money = known.players.reduce((n, p) => n + p.stack + p.total, 0);
       executeBotTurn(known, planBotTurn(known, allInRandom(73), { timingRandom: allInRandom(2) }), {
@@ -39,7 +43,7 @@ test('an affordable strong squeeze defense uses observed range evidence instead 
       );
       for (const p of known.players) assert.equal(p.stack % smallBlind, 0);
       const text = explainOpponent(known.botDecisions[0], known.players).detail;
-      assert.match(text, /此前 32 手中 32 手翻前加注.*没有把加注范围限于强牌/);
+      assert.match(text, /此前 32 手中 32 手翻前大额加注.*保留了更多非顶级起手牌/);
     }
 });
 

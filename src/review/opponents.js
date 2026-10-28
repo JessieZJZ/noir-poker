@@ -234,6 +234,7 @@ export function explainOpponent(record, identities = []) {
     reviewSubject: plainName,
     reviewAudience: 'observer',
     publicReadModel: usePolicyReason && basisMatches ? v.publicReadModel : null,
+    observationSizing: usePolicyReason && basisMatches ? t.observationSizing : null,
     action: record.action,
     amount: record.amount,
     players: [

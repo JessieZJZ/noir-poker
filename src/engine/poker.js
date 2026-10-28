@@ -26,6 +26,7 @@ import {
   summarizePublicRead,
   PUBLIC_READ_WINDOW,
   PUBLIC_READ_MODEL,
+  PUBLIC_LARGE_PREFLOP_BB,
 } from './public-observations.js';
 export const SUITS = ['♠', '♥', '♣', '♦'];
 export const RANK_NAMES = [
@@ -1142,7 +1143,14 @@ export function botDecision(g, random = Math.random, { trials, allInCache } = {}
     g.emotionMode,
     random,
   );
-  return { ...decision, trace: { ...decision.trace, view } };
+  return {
+    ...decision,
+    trace: {
+      ...decision.trace,
+      view,
+      observationSizing: { version: 1, largePreflopBB: PUBLIC_LARGE_PREFLOP_BB },
+    },
+  };
 }
 
 // Opaque plans keep preselected actions and private timing factors off the UI.

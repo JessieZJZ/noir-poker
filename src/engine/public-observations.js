@@ -1,6 +1,7 @@
 // Only completed hands and visible actions enter this bounded table memory.
 // Cards, winners, bankroll changes and test-opponent identities are not inputs.
 export const PUBLIC_READ_WINDOW = 64;
+export const PUBLIC_LARGE_PREFLOP_BB = 8;
 export const PUBLIC_READ_MODEL = 'observed-public-actions-v1';
 const fields = [
   'hands',
@@ -62,8 +63,10 @@ export function publicHandObservations({ dealtIds, history, bigBlind }) {
     if (event.street === 0) {
       if (['call', 'raise'].includes(event.action) && event.amount > 0) row.voluntaryHands = 1;
       if (event.action === 'raise') row.raisingHands = 1;
-      if (event.action === 'raise' && event.amount >= 8 * bigBlind) row.largeRaiseHands = 1;
-      if (event.action === 'call' && event.amount >= 8 * bigBlind) row.largeCallHands = 1;
+      if (event.action === 'raise' && event.amount >= PUBLIC_LARGE_PREFLOP_BB * bigBlind)
+        row.largeRaiseHands = 1;
+      if (event.action === 'call' && event.amount >= PUBLIC_LARGE_PREFLOP_BB * bigBlind)
+        row.largeCallHands = 1;
       continue;
     }
     if (event.street !== street) {

@@ -194,6 +194,14 @@ export function createPublicPairSampler(
     depthBB: descriptor.depthBB,
     position: descriptor.position,
     aggressionRatio: descriptor.aggressionRatio,
+    publicStyle: descriptor.publicStyle,
+    publicAxes: descriptor.publicAxes ? [...descriptor.publicAxes] : undefined,
+    publicRead: descriptor.publicRead ? { ...descriptor.publicRead } : undefined,
+    rangeObservation: descriptor.rangeObservation ? { ...descriptor.rangeObservation } : undefined,
+    committedCount: descriptor.committedCount,
+    seatedCount: descriptor.seatedCount,
+    opponentCount: descriptor.opponentCount,
+    waitingCount: descriptor.waitingCount,
     preflop: descriptor.preflop ? { ...descriptor.preflop } : undefined,
     postflop: descriptor.postflop ? { ...descriptor.postflop } : undefined,
     postflopLine: descriptor.postflopLine?.map((a) => ({
@@ -372,6 +380,7 @@ export function estimatePublicEquity(
   if (exact)
     return {
       ...exact,
+      rangeInputsVersion: 'complete-public-weight-inputs-v1',
       potEquity: exact.equity,
       model: 'public-action-ranges',
       assumedOpponentIds: [...assumed],
@@ -440,6 +449,7 @@ export function estimatePublicEquity(
   const equity = contestable ? share / trials / contestable : 0;
   return {
     equity,
+    rangeInputsVersion: 'complete-public-weight-inputs-v1',
     potEquity: equity,
     ...(priceContestable ? { priceEquity: priceShare / trials / priceContestable } : {}),
     winProbability: wins / trials,

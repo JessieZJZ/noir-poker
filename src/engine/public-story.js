@@ -78,6 +78,8 @@ export function publicPostflopLine(view, id, throughStreet = view.street) {
 // rejection sampler. Normalising candidate masses gives the inferred range.
 export function publicStoryWeight(hole, line, handData, publicRead = null) {
   let weight = 1,
+    passiveWeight = 1,
+    aggressiveActions = 0,
     earlierDraw = false;
   const observedFloor = observedAggressiveLikelihood(publicRead);
   for (const event of line) {
@@ -122,8 +124,8 @@ export function publicStoryWeight(hole, line, handData, publicRead = null) {
     } else {
       factor = raising ? 0.015 : large ? 0.025 : 0.1;
     }
-    if (['bet', 'raise', 'check-raise'].includes(event.action))
-      factor = Math.max(factor, observedFloor);
+    if (['bet', 'raise', 'check-raise'].includes(event.action)) aggressiveActions++;
+    else passiveWeight *= factor;
     weight *= factor;
     if (
       event.street < 3 &&
@@ -132,5 +134,9 @@ export function publicStoryWeight(hole, line, handData, publicRead = null) {
     )
       earlierDraw = true;
   }
-  return weight;
+  // A recurring range-independent aggression tendency is one latent cause,
+  // not a fresh independent strength signal on every street. Check/call
+  // evidence remains in both mixture components. Unknown histories match
+  // the original authored likelihoods exactly.
+  return aggressiveActions ? (1 - observedFloor) * weight + observedFloor * passiveWeight : weight;
 }

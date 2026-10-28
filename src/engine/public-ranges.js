@@ -7,6 +7,7 @@ import {
   observedRangeModel,
   observedRangeWeight,
   observedAggressiveLikelihood,
+  PUBLIC_LARGE_PREFLOP_BB,
 } from './public-observations.js';
 
 const clamp = (value) => Math.max(0, Math.min(1, value));
@@ -132,7 +133,9 @@ export function preparePublicRanges(view) {
       descriptor.publicRead = read;
       descriptor.rangeObservation = observedRangeModel(read, {
         action: descriptor.preflop.action,
-        allIn: descriptor.allIn,
+        // Historical size buckets describe the wager actually made preflop.
+        // A later shove must not turn an earlier small call/open into a large one.
+        allIn: descriptor.preflop.amountBB >= PUBLIC_LARGE_PREFLOP_BB,
         role: descriptor.role,
       });
     }
