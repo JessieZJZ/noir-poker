@@ -1,4 +1,4 @@
-<page-meta page-orientation="{{pageOrientation}}" />
+<page-meta page-orientation="{{pageOrientation}}" bindresize="onResize" />
 <view class="records-chrome" style="height: {{topInset + 36}}px;" />
 <view
   class="records-screen"

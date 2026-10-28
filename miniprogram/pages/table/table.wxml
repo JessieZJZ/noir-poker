@@ -1,5 +1,6 @@
 <page-meta
   page-orientation="{{pageOrientation}}"
+  bindresize="onResize"
   page-style="{{homeLocked ? 'overflow: hidden;' : ''}}"
 />
 <view class="safe-chrome top-chrome" style="height: {{topInset + 36}}px;" aria-hidden="true" />

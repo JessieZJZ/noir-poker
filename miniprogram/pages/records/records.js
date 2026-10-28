@@ -3,7 +3,12 @@ const { presentCard, presentationPatch } = require('../table/presentation.js');
 const { recordResult, sessionStanding } = require('../../shared/engine/game-records.js');
 const navigation = require('../../record-navigation.js');
 const { recordStartTime } = require('../../record-time.js');
-const { pageOrientation } = require('../../device-orientation.js');
+const {
+  pageOrientation,
+  windowInfo,
+  watchWindow,
+  stopWindowWatch,
+} = require('../../device-orientation.js');
 const HAND_BATCH_SIZE = 24;
 const SESSION_BATCH_SIZE = 20;
 // A game's hands are rendered only while its list is within one screen of the
@@ -48,18 +53,22 @@ Page({
   onShow() {
     this._hidden = false;
     this.updateWindow();
+    watchWindow(this);
     this.refreshRecords();
   },
-  onResize() {
-    this.updateWindow();
+  onResize(event) {
+    this.updateWindow(event);
     // Rotating changes wrapped row heights and the observer's screen margin.
     // Keep expansion and pagination, but remeasure the visible lists.
     this._heights = {};
     this._observedLists = null;
     this.refreshRecords(true);
   },
-  updateWindow() {
-    const info = wx.getWindowInfo ? wx.getWindowInfo() : wx.getSystemInfoSync();
+  onReady() {
+    watchWindow(this);
+  },
+  updateWindow(event) {
+    const info = windowInfo(wx, event, getApp());
     this._screen = info.windowHeight || 640;
     this._rowEstimate = Math.min(info.windowWidth, info.windowHeight) >= 601 ? 89 : ROW_ESTIMATE;
     this.setData({
@@ -257,10 +266,12 @@ Page({
       });
   },
   onHide() {
+    stopWindowWatch(this);
     this._hidden = true;
     clearTimeout(this._recordsTimer);
   },
   onUnload() {
+    stopWindowWatch(this);
     this._destroyed = true;
     clearTimeout(this._recordsTimer);
     clearTimeout(this._nearTimer);

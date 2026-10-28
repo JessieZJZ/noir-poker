@@ -10,7 +10,12 @@ const {
 } = require('./presentation.js');
 const { completeBoardForPractice, rankText } = require('../../shared/engine/poker.js');
 const navigation = require('../../record-navigation.js');
-const { pageOrientation } = require('../../device-orientation.js');
+const {
+  pageOrientation,
+  windowInfo,
+  watchWindow,
+  stopWindowWatch,
+} = require('../../device-orientation.js');
 const {
   entryWelcomeCorridor,
   entryWelcomeScale,
@@ -313,6 +318,7 @@ module.exports = {
     this._hidden = false;
     this._browsingRecords = false;
     const resized = this.updateWindow();
+    watchWindow(this);
     this.readResourceMotionPreference();
     this.startResourceRotation();
     if (!this._readOnlyAttempt && !this._audio?.length) this.preloadSounds();
@@ -337,6 +343,7 @@ module.exports = {
       this.call('review', (reviewData) => this.updateReview(reviewData));
   },
   onHide() {
+    stopWindowWatch(this);
     this._hidden = true;
     clearTimeout(this._resourceTimer);
     clearTimeout(this._resourceMotionTimer);
@@ -363,6 +370,7 @@ module.exports = {
     this.stopSounds();
   },
   onUnload() {
+    stopWindowWatch(this);
     this._destroyed = true;
     clearTimeout(this._resourceTimer);
     clearTimeout(this._resourceMotionTimer);
@@ -373,8 +381,11 @@ module.exports = {
     this._controller?.destroy();
     this.stopSounds();
   },
-  onResize() {
-    this.updateWindow();
+  onResize(event) {
+    this.updateWindow(event);
+  },
+  onReady() {
+    watchWindow(this);
   },
   setPresentationData(patch, callback) {
     this.setData(coalesceArrayPatch(this.data, patch), callback);
@@ -430,9 +441,9 @@ module.exports = {
       onReady?.();
     });
   },
-  updateWindow() {
-    const measured = wx.getWindowInfo ? wx.getWindowInfo() : wx.getSystemInfoSync();
+  updateWindow(event) {
     const app = getApp();
+    const measured = windowInfo(wx, event, app);
     // Scrolling/keyboard chrome must not refit the table. Live and archive pages
     // reuse one window budget until an actual width/orientation change.
     const valid =
@@ -464,6 +475,7 @@ module.exports = {
         rect.height > 0 &&
         rect.left >= 0 &&
         rect.right <= info.windowWidth &&
+        rect.right >= info.windowWidth - 120 &&
         rect.right > rect.left &&
         rect.bottom > rect.top &&
         Math.abs(rect.right - rect.left - rect.width) <= 1 &&

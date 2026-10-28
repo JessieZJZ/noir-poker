@@ -164,3 +164,60 @@ test('WeChat tablet orientation uses the full screen and remains stable through 
     'portrait',
   );
 });
+
+test('rendered viewport watching remeasures changed widths and cancels hidden-page callbacks', () => {
+  const module = { exports: {} };
+  vm.runInNewContext(
+    readFileSync(new URL('../../miniprogram/device-orientation.js', import.meta.url), 'utf8'),
+    { module },
+  );
+  const { watchWindow, stopWindowWatch } = module.exports;
+  const measurements = [],
+    observers = [],
+    sizes = [];
+  const page = {
+    createSelectorQuery() {
+      return {
+        selectViewport() {
+          return this;
+        },
+        boundingClientRect(callback) {
+          measurements.push(callback);
+          return this;
+        },
+        exec() {},
+      };
+    },
+    createMediaQueryObserver() {
+      const observer = {
+        disconnect() {
+          this.disconnected = true;
+        },
+        observe(query, callback) {
+          this.query = query;
+          this.callback = callback;
+        },
+      };
+      observers.push(observer);
+      return observer;
+    },
+    onResize(event) {
+      sizes.push(event.detail.size);
+    },
+  };
+  watchWindow(page);
+  measurements[0]({ width: 834.25, height: 1112 });
+  assert.deepEqual({ ...observers[0].query }, { minWidth: 834, maxWidth: 835 });
+  observers[0].callback({ matches: true });
+  assert.equal(measurements.length, 1);
+  observers[0].callback({ matches: false });
+  assert.equal(observers[0].disconnected, true);
+  measurements[1]({ width: 1112, height: 834 });
+  assert.equal(sizes.length, 2);
+  assert.equal(sizes[1].windowWidth, 1112);
+  watchWindow(page);
+  stopWindowWatch(page);
+  measurements[2]({ width: 834, height: 1112 });
+  assert.equal(sizes.length, 2, 'late measurements from hidden pages cannot resize the game');
+  assert.equal(observers[1].disconnected, true);
+});

@@ -642,6 +642,36 @@ test('WeChat tablet rotation preserves the deal, settings dialog and pending act
   }
 });
 
+test('WeChat rendered resize events override a stale window API through records and return', (t) => {
+  const fixture = setup(t, {
+    info: {
+      screenWidth: 834,
+      screenHeight: 1112,
+      windowWidth: 834,
+      windowHeight: 1112,
+      statusBarHeight: 20,
+    },
+  });
+  const { page } = fixture;
+  page.openSettings();
+  const before = JSON.stringify(page._controller.getGame());
+  page.onResize({ detail: { size: { windowWidth: 1112, windowHeight: 834 } } });
+  assert.equal(page.data.windowWidth, 1112);
+  assert.equal(page.data.windowHeight, 834);
+  assert.equal(page.data.liveDockHeight, 152);
+  const records = secondaryPage(t, 'records/records.js', fixture);
+  records.onLoad();
+  records.onShow();
+  assert.equal(records._screen, 834);
+  records.onResize({ size: { windowWidth: 834, windowHeight: 1112 } });
+  page.onShow();
+  assert.equal(page.data.windowWidth, 834);
+  assert.equal(page.data.windowHeight, 1112);
+  assert.equal(page.data.liveDockHeight, 208);
+  assert.equal(page.data.settingsOpen, true);
+  assert.equal(JSON.stringify(page._controller.getGame()), before);
+});
+
 test('WeChat records and source pages keep tablet rotation when resized or reopened', (t) => {
   const fixture = setup(t, {
     info: {
