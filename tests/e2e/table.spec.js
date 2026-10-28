@@ -1296,8 +1296,8 @@ test('bots wait for their contextual deadline, reuse it on scheduling and replan
     document.querySelector('#call-button').click();
     return window.qa.thinking();
   });
-  expect(waiting.delayMs).toBeGreaterThanOrEqual(1200);
-  expect(waiting.delayMs).toBeLessThanOrEqual(8000);
+  expect(waiting.delayMs).toBeGreaterThanOrEqual(1000);
+  expect(waiting.delayMs).toBeLessThanOrEqual(3000);
   await expect(page.locator(`.seat-${waiting.actor}`)).toHaveClass(/thinking/);
   expect(await page.evaluate(() => window.qa.resumeBots())).toEqual(waiting);
   const live = await page.evaluate(() => window.noir.getState());

@@ -2,6 +2,7 @@ import { assessPublicStrategy } from '../engine/public-strategy.js';
 import { deckOfCards, evaluate, compare } from '../engine/poker.js';
 import { handFeatures } from '../engine/hand-features.js';
 import { strategyNotes } from './strategy-reasoning.js';
+import { proseCoverage } from './prose-topics.js';
 
 export function reviewStrategy(s, c, price) {
   return assessPublicStrategy(
@@ -26,17 +27,23 @@ export function reviewStrategy(s, c, price) {
 // more specific size-dependent explanation is available; preserve card facts,
 // actual action, and any proven rule/rollout verdict.
 export function enrichStrategy(coaching, s, assessment, options) {
-  const notes = strategyNotes(s, assessment, { ...options, includeAction: false });
+  const action = options?.action ?? s.action;
+  const covered = proseCoverage(coaching.coveredTopics);
+  const existingTopics = new Set(coaching.strategyTopics || []);
+  const notes = strategyNotes(s, assessment, {
+    ...options,
+    includeAction: false,
+    coveredTopics: covered,
+  });
   let parts = (coaching.paragraphParts || coaching.paragraphs.map((p) => [p])).map((p) => [...p]);
   const flat = parts.flat().join('');
   const accepted = notes
     .filter(
       (n) =>
+        !existingTopics.has(n.topic) &&
         !(n.topic === 'range' && /整体范围|范围优势/.test(flat)) &&
         !(n.topic === 'bluff-catch' && /听牌仍可能转成诈唬|听牌可能转成诈唬/.test(flat)) &&
-        !(n.topic === 'draw-plan' && s.action === 'fold' && /补成.*不保证|改善机会/.test(flat)) &&
-        !(n.topic === 'draw-plan' && s.legal.callAmount >= s.stack && /全下跟注/.test(flat)) &&
-        !(n.topic === 'implied-odds' && s.legal.callAmount >= s.stack && /全下跟注/.test(flat)) &&
+        !(n.topic === 'draw-plan' && action === 'fold' && /补成.*不保证|改善机会/.test(flat)) &&
         !(
           n.topic === 'implied-odds' &&
           assessment?.call?.equity >= assessment?.call?.price &&
@@ -52,10 +59,11 @@ export function enrichStrategy(coaching, s, assessment, options) {
       if (n.topic !== 'draw-plan') return n;
       let pieces = [...n.parts];
       if (
+        n.headingPrefix &&
         !assessment?.draw?.nutFlushDraw &&
         /(?:当前有|主要依靠|带|保留)(?:同花听牌|顺子听牌|两头顺听牌|卡顺听牌)/.test(flat)
       )
-        pieces = pieces.slice(1);
+        pieces = pieces.filter((text) => text !== n.headingPrefix);
       if (
         /补中也未必|补中也不保证|补成也不保证|不等于.*获胜机会/.test(flat) &&
         !assessment?.draw?.pairedBoard &&
@@ -66,16 +74,23 @@ export function enrichStrategy(coaching, s, assessment, options) {
       // and its card facts. Retain any new draw detail without restating pot control.
       if (
         options?.audience === 'observer' &&
-        s.action === 'check' &&
+        action === 'check' &&
         /过牌[^。]*(?:扩大|做大|控制投入)/.test(flat)
       )
         pieces = pieces.filter((text) => text !== '过牌保留改善机会，也没有主动扩大底池。');
       if (
         options?.audience === 'observer' &&
-        s.action === 'call' &&
-        /(?:当前|目前)主要依靠听牌改善|这次跟注[^。]*(?:补牌|改善机会)/u.test(flat)
+        action === 'call' &&
+        (/(?:当前|目前)主要依靠听牌改善|听牌提供额外改善|这次跟注[^。]*(?:补牌|改善机会)/u.test(
+          flat,
+        ) ||
+          notes.some((entry) => entry.topic === 'implied-odds'))
       )
         pieces = pieces.filter((text) => text !== '这次跟注保留了听牌的改善机会。');
+      // The route may already be explained by the action paragraph. Keep a
+      // distinct nut-draw fact as a complete sentence, never a dangling label.
+      if (pieces.length === 1 && pieces[0] === n.headingPrefix && n.standaloneHeading)
+        pieces = [n.standaloneHeading];
       return { ...n, parts: pieces, text: pieces.join('') };
     })
     .filter((n) => n.parts.length);
@@ -109,7 +124,7 @@ export function enrichStrategy(coaching, s, assessment, options) {
           .replace(/这次属于半诈唬，对手弃牌可直接拿池，被跟注后仍能补牌。/gu, '')
           .replace(
             /目前仍有 \d+ 张牌可能补成(?:同花或顺子|同花|顺子)，但这些是成牌补牌，不保证补中后领先对手。/gu,
-            '',
+            (text) => (options?.audience === 'observer' ? text : ''),
           )
           .replace(/后面仍有玩家可以下注，过牌不保证本轮无需再付筹码。/gu, '')
           .replace(
@@ -139,6 +154,6 @@ export function enrichStrategy(coaching, s, assessment, options) {
     paragraphParts: parts,
     paragraphs,
     explanation: paragraphs.join(''),
-    strategyTopics: accepted.map((n) => n.topic),
+    strategyTopics: [...new Set([...existingTopics, ...accepted.map((n) => n.topic)])],
   };
 }

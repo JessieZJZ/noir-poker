@@ -15,8 +15,8 @@ async function open(page, record) {
   await page.waitForFunction(() => window.qa);
   await page.evaluate((g) => window.qa.loadRecordedGame(g), game);
   await page.locator('#review-hand-button').click();
-  await expect(page.locator('#review-coach-explanation')).toContainText(
-    '河牌若再面对下注，仍需另作决定',
+  await page.waitForFunction(
+    () => document.querySelector('#review-dialog')?.dataset.analysisStatus === 'done',
   );
   await page.locator('#review-opponents-tab').click();
   return page.locator('#review-opponent-detail .review-explanation');

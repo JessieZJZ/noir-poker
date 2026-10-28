@@ -62,7 +62,7 @@ test('the observation exemption is bounded by price, evidence, hand quality and 
     { ...v, opponents: v.opponents.map((p) => ({ ...p, publicRead: null })) },
     {
       ...v,
-      opponents: v.opponents.map((p) => ({ ...p, publicRead: { hands: 7, raisingHands: 7 } })),
+      opponents: v.opponents.map((p) => ({ ...p, publicRead: { hands: 1, raisingHands: 1 } })),
     },
     {
       ...v,

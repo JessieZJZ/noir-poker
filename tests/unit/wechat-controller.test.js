@@ -550,7 +550,10 @@ test('WeChat retry restores original private deal and retracts awards/statistics
   controller.setSeatProfile(1, 'rook');
   controller.setPreference('emotionMode', 'lively');
   assert.equal(controller.retry(), true);
-  assert.deepEqual(originalState(game), baseline);
+  const { playerObservationRevision: previousRevision, ...beforeRetry } = baseline;
+  const { playerObservationRevision: currentRevision, ...afterRetry } = originalState(game);
+  assert.deepEqual(afterRetry, beforeRetry);
+  assert.ok(currentRevision > previousRevision, 'Rollback advances the persisted write revision');
   assert.equal(game.replayAttempt, 1);
   assert.equal(game.stats.hands, 0);
   verifyChips(game, 30000);

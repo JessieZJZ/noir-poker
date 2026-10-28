@@ -83,7 +83,7 @@ export function publicCallsAfter(s, index, actorId = 0) {
 
 // This module reads only the actor's before-action cards and public history.
 // The opponent panel supplies that bot's own view after settlement.
-export function situationNotes(s, c, actorId = 0) {
+export function situationEntries(s, c, actorId = 0) {
   const notes = [],
     f = spotFacts(s, c, actorId),
     who =
@@ -96,51 +96,80 @@ export function situationNotes(s, c, actorId = 0) {
     const recentLine = aggression.line.filter((action) => action.street > lastCheckStreet);
     const recentStreets = new Set(recentLine.map((action) => action.street));
     if (recentStreets.has(s.street) && recentStreets.has(s.street - 1))
-      notes.push(
-        `${aggression.name}的下注线是${recentLine.map((a) => streets[a.street] + ' ' + a.label).join(' → ')}，${who}这次面对的是连续施压，需要结合这条下注线判断对手的价值牌和诈唬。`,
-      );
+      notes.push({
+        kind: 'action-line',
+        parts: [
+          `${aggression.name}的下注线是${recentLine.map((a) => streets[a.street] + ' ' + a.label).join(' → ')}，${who}这次面对的是连续施压，需要结合这条下注线判断对手的价值牌和诈唬。`,
+        ],
+      });
     else if (aggression.priorChecks.length)
-      notes.push(
-        `${aggression.name}此前在${aggression.priorChecks.map((street) => streets[street]).join('、')}过牌，这次在${streets[aggression.street]}的行动是${aggression.label}，之前的过牌不能排除慢打的强牌，现在也可能是新公共牌带来的取值或诈唬，因此要重新判断这笔下注。`,
-      );
+      notes.push({
+        kind: 'action-line',
+        parts: [
+          `${aggression.name}此前在${aggression.priorChecks.map((street) => streets[street]).join('、')}过牌，这次在${streets[aggression.street]}的行动是${aggression.label}，之前的过牌不能排除慢打的强牌，现在也可能是新公共牌带来的取值或诈唬，因此要重新判断这笔下注。`,
+        ],
+      });
   }
   if (s.board.length >= 4) {
     const before = boardTexture(s.board.slice(0, -1)),
       last = s.board.at(-1);
     if (c.texture.maxSuit > before.maxSuit && c.texture.maxSuit >= 3)
-      notes.push(
-        `${streets[s.street]}的 ${f.lastCardText} 让牌面出现 ${c.texture.maxSuit} 张同花色，${who}当前是${c.handLabel}${c.draw.flush ? '，也有同花听牌' : ''}。`,
-      );
+      notes.push({
+        kind: 'board-change',
+        parts: [
+          `${streets[s.street]}的 ${f.lastCardText} 让牌面出现 ${c.texture.maxSuit} 张同花色，${who}当前是${c.handLabel}${c.draw.flush ? '，也有同花听牌' : ''}。`,
+        ],
+      });
     else if (c.texture.connected > before.connected && c.texture.connected >= 3)
-      notes.push(
-        c.draw.straight
-          ? `${streets[s.street]}的 ${f.lastCardText} 加强了顺子连接，牌面现在是 ${f.boardText}，${who}当前是${c.handLabel}，另有${drawLabel(c.draw)}。`
-          : `${streets[s.street]}的 ${f.lastCardText} 加强了顺子连接，牌面现在是 ${f.boardText}，${who}当前是${c.handLabel}。`,
-      );
+      notes.push({
+        kind: 'board-change',
+        parts: [
+          c.draw.straight
+            ? `${streets[s.street]}的 ${f.lastCardText} 加强了顺子连接，牌面现在是 ${f.boardText}，${who}当前是${c.handLabel}，另有${drawLabel(c.draw)}。`
+            : `${streets[s.street]}的 ${f.lastCardText} 加强了顺子连接，牌面现在是 ${f.boardText}，${who}当前是${c.handLabel}。`,
+        ],
+      });
     else if (s.board.slice(0, -1).some((card) => card.rank === last.rank))
-      notes.push(
-        `${streets[s.street]}的 ${f.lastCardText} 让公共牌配对，${who}当前是${c.handLabel}，牌面上的对子也给对手留下三条或葫芦组合。`,
-      );
+      notes.push({
+        kind: 'board-change',
+        parts: [
+          `${streets[s.street]}的 ${f.lastCardText} 让公共牌配对，${who}当前是${c.handLabel}，牌面上的对子也给对手留下三条或葫芦组合。`,
+        ],
+      });
     else if (s.hole.some((card) => card.rank === last.rank))
-      notes.push(
-        `${streets[s.street]}的 ${f.lastCardText} 击中了${who}的底牌，现在是${c.handLabel}。`,
-      );
+      notes.push({
+        kind: 'board-change',
+        parts: [
+          `${streets[s.street]}的 ${f.lastCardText} 击中了${who}的底牌，现在是${c.handLabel}。`,
+        ],
+      });
   }
   if (f.allOpponentsAllIn)
-    notes.push(
-      `剩下的 ${f.activeOpponents.length} 位对手都已全下，没有后手可再弃牌，也没有对他们继续诈唬的空间。`,
-    );
+    notes.push({
+      kind: 'closure',
+      parts: [
+        `剩下的 ${f.activeOpponents.length} 位对手都已全下，没有后手可再弃牌，也没有对他们继续诈唬的空间。`,
+      ],
+    });
   else if (s.street > 0 && c.pendingOthers > 0 && s.action === 'call')
-    notes.push(
-      exhaustsStack(s)
-        ? '本人跟注后已全下，其余玩家仍可回应，但不再需要本人补筹码或弃牌。'
-        : pendingRaiseOpportunity(s) === false
-          ? '其余玩家仍需回应，但当前不能再加注，只能补跟或弃牌。'
-          : pendingRaiseOpportunity(s) === null
-            ? '其余玩家仍需回应，继续后应根据后续公开行动判断。'
-            : `${who}在 ${s.position} 跟注 ${n(s.legal.callAmount)} 时，本轮尚未封口，后面的玩家若再加注，${who}还要重新决定是否补筹码。`,
-    );
+    notes.push({
+      kind: 'pending-response',
+      parts: [
+        exhaustsStack(s)
+          ? '本人跟注后已全下，其余玩家仍可回应，但不再需要本人补筹码或弃牌。'
+          : pendingRaiseOpportunity(s) === false
+            ? '其余玩家仍需回应，但当前不能再加注，只能补跟或弃牌。'
+            : pendingRaiseOpportunity(s) === null
+              ? '其余玩家仍需回应，继续后应根据后续公开行动判断。'
+              : `${who}在 ${s.position} 跟注 ${n(s.legal.callAmount)} 时，本轮尚未封口，后面的玩家若再加注，${who}还要重新决定是否补筹码。`,
+      ],
+    });
   return notes;
+}
+
+// Preserve the public list-of-strings API for existing detail panels and tools.
+export function situationNotes(s, c, actorId = 0) {
+  return situationEntries(s, c, actorId).flatMap((entry) => entry.parts);
 }
 
 export function callOddsText(metrics, action = 'call') {

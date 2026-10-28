@@ -12,6 +12,7 @@ import { foldPressure, foldWinNote } from './presentation.js';
 import { checkReasoning, checkRisks, madeRedrawReasoning } from './check-reasoning.js';
 import { defenseReason, straightSplitReason } from './defense-reason.js';
 import { enrichStrategy } from './strategy-context.js';
+import { REVIEW_TOPICS as TOPIC } from './prose-topics.js';
 
 const pct = (v) => (v * 100).toFixed(1) + '%';
 const n = compactChips;
@@ -431,7 +432,25 @@ export function explainOpponent(record, identities = []) {
             : `${subject}接下这笔下注，需要再补 ${n(cost)}，可以争夺 ${n(t.allIn.contestable)} 的底池，这次底池赔率支持用${hand}的摊牌价值继续。${continuation}`;
       } else if (widePreflopCall)
         logic = `${subject}选择较宽地补 ${n(cost)}，继续争夺 ${n(v.contestable)} 的底池，这笔投入占行动前剩余筹码的 ${pct(cost / Math.max(1, v.stack))}。这手牌击中一对后仍可能被更好的踢脚或更大对子压住。`;
-      else
+      else if (v.street > 0 && !draw.outs) {
+        const current = v.history.filter((a) => a.street === v.street);
+        const raiseIndex = current.findLastIndex((a) => a.action === 'raise');
+        const callers = new Set(
+          current
+            .slice(raiseIndex + 1)
+            .filter((a) => a.action === 'call' && a.id !== actorId)
+            .map((a) => a.id),
+        );
+        logicParts = [
+          callers.size
+            ? `这笔下注已有 ${callers.size} 位对手跟注，${subject}面对的是多人付费继续的范围。`
+            : '',
+          defenseReason(snapshot, c, matchups)[0],
+          `${subject}按当前价格用${hand}保留摊牌机会。`,
+          !c.pendingOthers ? `${subject}在本轮最后行动，跟注不会再遭到本轮加注。` : '',
+        ].filter(Boolean);
+        logic = logicParts.join('');
+      } else
         logic = draw.outs
           ? `${v.features?.ownMade ? '当前成牌已有摊牌机会，听牌提供额外改善' : '当前主要依靠听牌改善争取获胜'}，${drawText}。跟完手里还留 ${n(v.stack - cost)}。`
           : `${v.street === 0 && v.hole[0].rank === v.hole[1].rank ? pocketComparison(v, subject) : subject + '认为当前的' + hand + '仍有摊牌机会'}，所以选择补 ${n(cost)}，继续争夺 ${n(v.contestable)} 的底池。`;
@@ -675,7 +694,24 @@ export function explainOpponent(record, identities = []) {
     ].filter((parts) => parts[0]),
     paragraphs = paragraphParts.map((parts) => parts.join(''));
   const enriched = enrichStrategy(
-    { paragraphParts, paragraphs, explanation: paragraphs.join('') },
+    {
+      paragraphParts,
+      paragraphs,
+      explanation: paragraphs.join(''),
+      coveredTopics: [
+        ...(record.action === 'call' && (allinCall || f.allOpponentsAllIn)
+          ? [TOPIC.CLOSURE, TOPIC.FOLD_AVAILABILITY]
+          : []),
+        ...(record.action === 'call' &&
+        draw.outs &&
+        (allinCall ||
+          f.allOpponentsAllIn ||
+          !usePolicyReason ||
+          ['story-continue', 'price-continue'].includes(t.reason))
+          ? [TOPIC.DRAW, TOPIC.DRAW_CEILING]
+          : []),
+      ],
+    },
     snapshot,
     v.publicStrategy,
     {

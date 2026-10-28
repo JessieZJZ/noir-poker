@@ -88,6 +88,7 @@ export function checkReasoning(s, c, { trap = false, closingExplained = false } 
   if (!s.street || c.handClass === 'board') return [];
   const risks = checkRisks(s, c);
   const strong = c.made.score[0] >= 3;
+  const valueHolding = strong || c.handClass === 'overpair';
   const parts = [...risks];
   if (c.draw.outs)
     parts.push(
@@ -99,13 +100,16 @@ export function checkReasoning(s, c, { trap = false, closingExplained = false } 
     if (risks.length) parts.push('过牌避免主动扩大当前底池。');
     else if (trap && c.pendingOthers > 0)
       parts.push('后面还有玩家可以下注，过牌为诱导其弱牌或诈唬继续投入留下机会。');
-    else if (strong) parts.push('这手强成牌仍有向较弱成牌收取跟注的空间，过牌可能少收一轮价值。');
+    else if (valueHolding)
+      parts.push(
+        '过牌避免主动扩大当前底池。',
+        '这手强成牌仍有向较弱成牌收取跟注的空间，过牌可能少收一轮价值。',
+      );
     else if (c.made.score[0] === 0 && !c.draw.outs)
       parts.push('目前只有高牌，较难让更弱成牌付费，过牌避免用薄弱牌力主动做大底池。');
-    else if (!c.draw.outs)
-      parts.push('当前成牌保留了摊牌机会，过牌控制投入，也避免下注后只留下更强的继续范围。');
+    else if (!c.draw.outs) parts.push('过牌避免主动扩大当前底池。');
     if (risks.length) parts.push(...madeRedrawReasoning(s, c));
-    if (s.street < 3 && (strong || c.handClass === 'top-pair'))
+    if (s.street < 3 && (valueHolding || c.handClass === 'top-pair'))
       parts.push('过牌的代价是对手也可能免费见到下一张，补成更强的牌。');
     if (!c.pendingOthers && !closingExplained)
       parts.push(
@@ -121,7 +125,7 @@ export function checkReasoning(s, c, { trap = false, closingExplained = false } 
         ? '过牌先不主动做大底池，保留遇到下注后再判断的空间。'
         : '过牌避免主动扩大当前底池。',
     );
-  else if (strong)
+  else if (valueHolding)
     parts.push(
       c.pendingOthers > 0 && s.street < 3
         ? '若后位会继续下注，可以过牌诱导后再取值；若其常过回，主动下注更容易向较弱成牌或听牌收费。'
@@ -129,10 +133,9 @@ export function checkReasoning(s, c, { trap = false, closingExplained = false } 
     );
   else if (c.made.score[0] === 0 && !c.draw.outs)
     parts.push('目前只有高牌，较难让更弱成牌付费，过牌避免用薄弱牌力主动做大底池。');
-  else if (!c.draw.outs)
-    parts.push('当前成牌保留了摊牌机会，过牌控制投入，也避免下注后只留下更强的继续范围。');
+  else if (!c.draw.outs) parts.push('过牌避免主动扩大当前底池。');
   if (risks.length) parts.push(...madeRedrawReasoning(s, c));
-  if (s.street < 3 && (strong || c.handClass === 'top-pair'))
+  if (s.street < 3 && (valueHolding || c.handClass === 'top-pair'))
     parts.push('过牌的代价是对手也可能免费见到下一张，补成更强的牌。');
   if (c.pendingOthers > 0)
     parts.push(

@@ -1,4 +1,4 @@
-import { newGame } from './poker.js';
+import { newGame, exportPlayerObservations, importPlayerObservations } from './poker.js';
 import { migrateCharacterState } from './character-state.js';
 import { sameStakes, validateStakes } from './stakes.js';
 
@@ -415,6 +415,7 @@ function checkpoint(game, beforeAttempt = false) {
       botHand: { vpip: false, pfr: false, pressureRecorded: false },
     };
   }
+  importPlayerObservations(restored, exportPlayerObservations(game));
   delete restored.deck;
   return restored;
 }

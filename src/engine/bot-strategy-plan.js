@@ -121,20 +121,109 @@ export function publicStrategyPlan(
       );
     }
   }
+  const boardHigh = Math.max(0, ...view.board.map((c) => c.rank));
+  const topPair = f.ownPair && view.hole.some((c) => c.rank === boardHigh);
+  const kicker = Math.max(0, ...view.hole.filter((c) => c.rank !== boardHigh).map((c) => c.rank));
+  const checkedTo =
+    active.length > 0 &&
+    active.length === view.opponents.length &&
+    active.every((p) => current.some((e) => e.id === p.id && e.action === 'check')) &&
+    !current.some((e) => e.action === 'raise');
+  if (
+    !value &&
+    legal.canCheck &&
+    view.street < 3 &&
+    !t.paired &&
+    t.maxSuit < 3 &&
+    t.connected < 4 &&
+    (t.maxSuit === 2 || t.connected === 3) &&
+    (f.overpair || (topPair && kicker >= 9)) &&
+    view.rivals <= 3 &&
+    checkedTo
+  ) {
+    const protection = best(
+      choices.filter(
+        (o) =>
+          o.fraction >= 0.25 &&
+          o.fraction <= (view.rivals > 1 ? 0.5 : 0.75) &&
+          // Field share falls with several callers even when each caller's
+          // paying range is individually behind. Keep a field-share floor,
+          // but require both per-caller advantage and incremental value.
+          o.calledEquity >= (view.rivals > 2 ? 0.4 : view.rivals > 1 ? 0.48 : 0.54) &&
+          o.opponents?.length === active.length &&
+          o.opponents.every((opponent) => opponent.calledEquity >= 0.55) &&
+          paid(o) >= (view.rivals > 1 ? 0.18 : 0.12) &&
+          o.raiseProbability <= 0.15 &&
+          o.estimatedValue > Math.max(0, a.call.directCallValue) + view.pot * 0.02,
+      ),
+    );
+    if (protection)
+      return select(
+        wrap(
+          'checked-value-protection',
+          'raise',
+          'value',
+          Math.min(
+            0.9,
+            Math.max(
+              0.4,
+              0.42 +
+                profile.axes[1] / 250 +
+                (style.valueAttack || 0) * 0.12 -
+                (style.topPairTrap ? 0.18 : 0),
+            ),
+          ),
+          protection,
+        ),
+      );
+  }
   const draw = view.street < 3 && (a.draw.nutFlushDraw || a.draw.comboDraw || f.drawOuts >= 8);
+  const safeReadBoard = !t.paired && t.maxSuit < 3 && t.connected < 4;
+  const weakCheckedRange = (reading) =>
+    reading.strongMadeMass <= 0.22 && reading.marginalMadeMass + reading.unmadeMass >= 0.45;
+  const completeRead = a.range.opponentEvidence?.length === active.length;
+  const checkedRange =
+    checkedTo &&
+    safeReadBoard &&
+    completeRead &&
+    a.range.opponentEvidence.every(
+      (reading) => reading.currentStreetCheck && weakCheckedRange(reading),
+    );
+  const previousStreet = history.filter((event) => event.street === view.street - 1);
+  const priorCheckedRange =
+    view.street === 2 &&
+    legal.canCheck &&
+    !view.inPosition &&
+    safeReadBoard &&
+    completeRead &&
+    !current.some((event) => event.action === 'raise' || event.id === view.id) &&
+    previousStreet.every((event) => ['check', 'fold'].includes(event.action)) &&
+    [view.id, ...active.map((opponent) => opponent.id)].every((id) =>
+      previousStreet.some((event) => event.id === id && event.action === 'check'),
+    ) &&
+    a.range.opponentEvidence.every(
+      (reading) =>
+        reading.checkedThroughStreets?.includes(view.street - 1) && weakCheckedRange(reading),
+    );
   const pressure = best(
     choices.filter(
       (o) =>
         o.estimatedValue > Math.max(0, a.call.directCallValue) + view.pot * 0.015 &&
         o.raiseProbability <= 0.25 &&
-        o.fraction <= (draw ? 0.9 : 0.6),
+        o.fraction <= (draw ? (view.rivals > 2 ? 0.5 : 0.9) : 0.6),
     ),
   );
+  const checkedDrawPressure =
+    (checkedRange || priorCheckedRange) &&
+    pressure &&
+    pressure.foldProbability >= (view.rivals > 2 ? 0.04 : view.rivals > 1 ? 0.12 : 0.25) &&
+    pressure.calledEquity >= (view.rivals > 2 ? 0.4 : a.draw.comboDraw ? 0.3 : 0.25) &&
+    pressure.raiseProbability <= 0.15;
   if (
     draw &&
     pressure &&
     hasBotSkill(view.difficulty, 'semi-bluff') &&
-    view.rivals <= 2 &&
+    (view.rivals <= 2 || (view.rivals === 3 && checkedDrawPressure)) &&
     (legal.canCheck || pressure.calledEquity >= 0.25 || a.call.price <= 0.28) &&
     !t.trips
   ) {
@@ -144,18 +233,23 @@ export function publicStrategyPlan(
         : raisedPrior
           ? 'draw-barrel'
           : 'nut-draw-pressure';
-    return select(
-      wrap(
-        kind,
-        'raise',
-        'semi-bluff',
-        Math.min(
-          0.95,
-          (style.semiBluff ?? 0.3 + profile.axes[2] / 200) + (a.draw.nutFlushDraw ? 0.1 : 0),
-        ),
-        pressure,
+    const candidate = wrap(
+      kind,
+      'raise',
+      'semi-bluff',
+      Math.min(
+        0.95,
+        (style.semiBluff ?? 0.3 + profile.axes[2] / 200) +
+          (a.draw.nutFlushDraw ? 0.1 : 0) +
+          (checkedDrawPressure ? 0.14 : 0),
       ),
+      pressure,
     );
+    if (checkedDrawPressure)
+      candidate.rangeRead = checkedRange
+        ? 'checked-marginal-or-unmade'
+        : 'prior-checkthrough-marginal-or-unmade';
+    return select(candidate);
   }
   const rangeEdge =
     a.range.advantage > Math.max(0.06, a.range.uncertainty * 0.6) &&

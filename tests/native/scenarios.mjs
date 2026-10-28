@@ -23,6 +23,56 @@ async function enterNativeTable(app) {
   );
 }
 
+export async function readNativePlayerObservations(app) {
+  const token = `player-observations-${Date.now()}-${Math.random()}`;
+  try {
+    await app.evaluate((token) => {
+      const key = 'noir-player-observations-v1';
+      const probe = { token, status: 'pending', web: localStorage.getItem(key) };
+      window.__nativePlayerObservationsProbe = probe;
+      // execute/sync does not await WKWebView Promises. Keep the native
+      // Preferences request in the page and poll only a serialized result.
+      window.Capacitor.nativePromise('Preferences', 'get', { key }).then(
+        (result) => {
+          probe.native = result.value;
+          probe.status = 'resolved';
+        },
+        (error) => {
+          probe.status = 'rejected';
+          probe.error = String(error);
+        },
+      );
+    }, token);
+    const serialized = await app.waitFor(
+      () =>
+        app.evaluate((token) => {
+          const probe = window.__nativePlayerObservationsProbe;
+          return probe?.token === token && probe.status !== 'pending'
+            ? JSON.stringify(probe)
+            : null;
+        }, token),
+      5000,
+      'Read the real native player-observations Preferences value',
+    );
+    const probe = JSON.parse(serialized);
+    assert.equal(probe.status, 'resolved', probe.error);
+    assert.ok(probe.native === null || typeof probe.native === 'string');
+    return {
+      web: probe.web === null ? null : JSON.parse(probe.web),
+      native: probe.native === null ? null : JSON.parse(probe.native),
+    };
+  } finally {
+    try {
+      await app.evaluate((token) => {
+        if (window.__nativePlayerObservationsProbe?.token === token)
+          delete window.__nativePlayerObservationsProbe;
+      }, token);
+    } catch {
+      // Retain the original bridge/read failure if the page was lost.
+    }
+  }
+}
+
 async function waitForNativeGuidePaint(app) {
   // DOM geometry can precede UIKit's composited dialog and scroll frame.
   await app.evaluate(() => {
@@ -1701,6 +1751,17 @@ export async function nativeScenarios(app) {
   });
   await check('settings-autosave-and-local-portraits', async () => {
     await app.waitHero();
+    // This scenario also runs alone after a clean install. Include long
+    // localized styles instead of depending on a preceding lineup scenario.
+    await app.click('#opponents-button');
+    await app.select('#player-count', '9');
+    await app.select('[data-bot-seat="1"]', 'jett');
+    await app.select('[data-bot-seat="2"]', 'nico');
+    await app.click('#opponents-dialog .close-dialog');
+    await app.click('#reset-button');
+    await app.click('#confirm-reset');
+    await app.waitFor(async () => (await app.state()).playerCount === 9, 15000);
+    await waitForNativeHeroTurn(app, { advanceSettled: true });
     await app.click('#opponents-button');
     const languageChanges = [];
     const changeLanguage = async (target) => {
@@ -1749,20 +1810,30 @@ export async function nativeScenarios(app) {
     // this exercises the same live catalog path as an English CI simulator.
     await changeLanguage(initialLanguage === 'en' ? 'zh-CN' : 'en');
     await changeLanguage('zh-CN');
+    // Closing settings unlocks and refits the live viewport. Measure the
+    // visible table, not the frozen background beneath the modal dialog.
+    await app.click('#opponents-dialog .close-dialog');
     const chineseTags = await readNativePersonaTags(app);
     const completeTags = () =>
-      app.evaluate(() =>
-        [...document.querySelectorAll('#seats .seat-style-label')].every(
-          (tag) =>
-            tag.textContent === tag.dataset.fullName &&
-            getComputedStyle(tag).whiteSpace === 'nowrap' &&
-            getComputedStyle(tag).textOverflow !== 'ellipsis' &&
-            tag.scrollWidth <= tag.clientWidth + 1 &&
-            tag.scrollHeight <= tag.clientHeight + 1,
-        ),
-      );
+      app.evaluate(() => {
+        const tags = [...document.querySelectorAll('#seats .seat-style-label')];
+        return (
+          !document.querySelector('dialog[open]') &&
+          tags.length === window.noir.getState().playerCount - 1 &&
+          tags.every(
+            (tag) =>
+              tag.textContent === tag.dataset.fullName &&
+              getComputedStyle(tag).whiteSpace === 'nowrap' &&
+              getComputedStyle(tag).textOverflow !== 'ellipsis' &&
+              tag.scrollWidth <= tag.clientWidth + 1 &&
+              tag.scrollHeight <= tag.clientHeight + 1,
+          )
+        );
+      });
     assert.equal(await completeTags(), true, 'Complete Chinese styles fit their reserved badges');
+    await app.click('#opponents-button');
     await changeLanguage('ko');
+    await app.click('#opponents-dialog .close-dialog');
     const koreanTags = await readNativePersonaTags(app);
     assert.equal(await completeTags(), true, 'Complete Korean styles fit their reserved badges');
     assert.ok(chineseTags.tags.length > 0);
@@ -1779,6 +1850,7 @@ export async function nativeScenarios(app) {
       [chineseTags.hand, chineseTags.stack, chineseTags.hole, chineseTags.completedHands],
     );
     await app.screenshot('korean-persona-tag-height');
+    await app.click('#opponents-button');
     await changeLanguage('zh-CN');
     await app.select('#player-count', '5');
     await app.select('#emotion-mode', 'lively');
@@ -2155,6 +2227,142 @@ export async function nativeScenarios(app) {
     assert.equal(saved, 'owen');
     await app.click('#opponents-dialog .close-dialog');
     return { details, saved, applied: applied.players[1].botProfile };
+  });
+  await check('player-observations-persistence', async () => {
+    const styles = () =>
+      app.evaluate(() =>
+        window.noir
+          .getState()
+          .players.slice(1)
+          .map((player) => player.botProfile),
+      );
+    const settings = () =>
+      app.evaluate(() => ({
+        table: localStorage.getItem('noir-table-v1'),
+        opponents: localStorage.getItem('noir-opponents-v1'),
+      }));
+    const savedProfile = async (expected) =>
+      app.waitFor(
+        async () => {
+          const stored = await readNativePlayerObservations(app);
+          if (JSON.stringify(stored.web) !== JSON.stringify(stored.native)) return null;
+          if (expected && JSON.stringify(stored.native) !== JSON.stringify(expected)) return null;
+          return stored.native;
+        },
+        5000,
+        'The real native Preferences write must match the completed public observations',
+      );
+    const observeClick = async (selector) => {
+      await app.evaluate((selector) => {
+        window.__nativeObservationClick = null;
+        document.querySelector(selector).addEventListener(
+          'click',
+          () => {
+            window.__nativeObservationClick = {
+              profile: JSON.parse(localStorage.getItem('noir-player-observations-v1')),
+              attempt: window.noir.getState().replayAttempt,
+            };
+          },
+          { once: true },
+        );
+      }, selector);
+      await app.click(selector);
+      return app.evaluate(() => {
+        const result = window.__nativeObservationClick;
+        delete window.__nativeObservationClick;
+        return result;
+      });
+    };
+    const finishRealHand = async () => {
+      const ready = await waitForNativeHeroTurn(app, { acceptSettled: true });
+      if (!ready.settledBeforeHero) {
+        await app.click('#fold-button');
+        if (await app.visible('#continue-deal-button')) await app.click('#continue-deal-button');
+      }
+      await app.waitFor(
+        async () => (await app.state()).phase === 'done',
+        60000,
+        'The real persistence hand must settle through visible controls',
+      );
+      return app.evaluate(() => {
+        const state = window.noir.getState();
+        const session = window.noir.getRecords().find((row) => row.number === state.sessionNumber);
+        const attempt = session?.attempts
+          .filter((row) => row.hand === state.hand && row.status === 'completed' && !row.superseded)
+          .at(-1);
+        const game = attempt?.snapshot;
+        if (!game) throw Error('The real completed hand must have its saved snapshot');
+        return {
+          revision: game.playerObservationRevision,
+          totalHands: game.playerObservationHands,
+          samples: game.players[0].publicReads,
+        };
+      });
+    };
+    // A new game preserves any profile inherited from earlier selected tests.
+    // Assertions use that baseline instead of clearing or forging observations.
+    await app.click('#reset-button');
+    const reset = await observeClick('#confirm-reset');
+    const before = reset.profile;
+    assert.ok(before && Number.isSafeInteger(before.totalHands));
+    const originalSettings = await settings();
+    const originalStyles = await styles();
+    const settled = await finishRealHand();
+    const first = await savedProfile();
+    assert.equal(first.totalHands, before.totalHands + 1);
+    assert.ok(first.revision > before.revision);
+    assert.equal(first.samples.length, Math.min(64, before.samples.length + 1));
+    assert.deepEqual(Object.keys(first), ['version', 'revision', 'totalHands', 'samples']);
+    assert.doesNotMatch(JSON.stringify(first), /hole|deck|winner|payout|stack|botProfile/);
+    assert.deepEqual(settled, {
+      revision: first.revision,
+      totalHands: first.totalHands,
+      samples: first.samples,
+    });
+    assert.deepEqual(await styles(), originalStyles);
+    const retried = await observeClick('#restart-hand-button');
+    assert.equal(retried.attempt, 1);
+    assert.equal(retried.profile.totalHands, before.totalHands);
+    assert.deepEqual(retried.profile.samples, before.samples);
+    assert.ok(retried.profile.revision > first.revision);
+    await finishRealHand();
+    const replacement = await savedProfile();
+    assert.equal(replacement.totalHands, before.totalHands + 1);
+    assert.ok(replacement.revision > retried.profile.revision);
+    assert.deepEqual(await styles(), originalStyles);
+    // Relaunch from the stable settlement, so a genuine walk cannot finish a
+    // newly started hand while the driver is restarting the application.
+    await app.relaunch();
+    const reloaded = await savedProfile(replacement);
+    assert.deepEqual(await settings(), originalSettings);
+    // A process restart intentionally returns to the entry lobby. Enter via
+    // the real button before the in-game practice controls are available.
+    await enterNativeTable(app);
+    const entered = await savedProfile();
+    // A genuine walk can complete during entry without any Hero action.
+    assert.ok(entered.totalHands >= replacement.totalHands);
+    assert.ok(entered.totalHands <= replacement.totalHands + 1);
+    await app.click('#reset-button');
+    const newGame = await observeClick('#confirm-reset');
+    assert.deepEqual(newGame.profile, entered);
+    // A completed snapshot after relaunch proves the persisted counters were
+    // imported into the next actual game, not merely left as unused bytes.
+    const resumed = await finishRealHand();
+    const afterRelaunch = await savedProfile();
+    assert.equal(afterRelaunch.totalHands, entered.totalHands + 1);
+    assert.deepEqual(resumed.samples.slice(0, -1), entered.samples.slice(-63));
+    assert.equal(resumed.totalHands, afterRelaunch.totalHands);
+    return {
+      baseline: { revision: before.revision, totalHands: before.totalHands },
+      first: { revision: first.revision, totalHands: first.totalHands },
+      retracted: { revision: retried.profile.revision, totalHands: retried.profile.totalHands },
+      replacement: { revision: replacement.revision, totalHands: replacement.totalHands },
+      reloaded: { revision: reloaded.revision, totalHands: reloaded.totalHands },
+      afterRelaunch: { revision: afterRelaunch.revision, totalHands: afterRelaunch.totalHands },
+      stylesPreserved: true,
+      scope:
+        'Installed production UI: real visible controls and random deals; three settlements including one retry, native Preferences readback and real process relaunch; no injected observations, cards or fixture mode',
+    };
   });
   await check('public-observation-memory-and-retry', async () => {
     await app.click('#opponents-button');

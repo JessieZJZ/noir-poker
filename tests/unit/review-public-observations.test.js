@@ -63,7 +63,7 @@ test('postflop observation copy remains a possible range interpretation and requ
     /River结合.*频繁的翻后下注与加注.*弱牌施压的可能/,
   );
   assert.doesNotMatch(publicObservationNotes(s).join(''), /确定|必然|应该|建议/);
-  s.opponents[0].publicRead = { ...read, hands: 7 };
+  s.opponents[0].publicRead = { ...read, hands: 1, postActions: 1, postRaises: 1 };
   assert.deepEqual(publicObservationNotes(s), []);
 });
 

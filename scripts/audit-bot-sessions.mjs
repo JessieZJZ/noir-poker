@@ -110,9 +110,11 @@ for (const name of readdirSync(folder)
         assert.equal(v.stack, g.players[event.id].stack);
         assert.ok(!('deck' in v));
         const known = (id) =>
-          result.difficulty === 'easy'
-            ? null
-            : observations.summarizePublicRead(g.players[id].publicReads);
+          engine.publicReadForPlayer
+            ? engine.publicReadForPlayer(g, id)
+            : result.difficulty === 'easy'
+              ? null
+              : observations.summarizePublicRead(g.players[id].publicReads);
         if (observations) assert.deepEqual(v.publicRead, known(event.id));
         for (const opponent of v.opponents) {
           assert.ok(!('hole' in opponent));

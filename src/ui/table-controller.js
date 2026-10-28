@@ -47,7 +47,10 @@ import {
   rebuyHero,
   heroRebuysLeft,
   needsHeroRebuy,
+  importPlayerObservations,
+  exportPlayerObservations,
 } from '../engine/poker.js';
+import { sanitizePlayerObservationProfile } from '../engine/public-observations.js';
 import { isPremiumStart } from '../engine/starting-hands.js';
 import { standingLabel, standingClass } from '../engine/game-records.js';
 import { recordSnapshots } from '../platform/record-snapshots.js';
@@ -71,6 +74,7 @@ import { createHintNotification } from './hint-notification.js';
 import { tableHint } from '../review/table-hint.js';
 import { createHintMarquee } from './hint-marquee.js';
 import { preferenceStorage } from '../platform/storage.js';
+import { createPlayerObservationStore } from '../platform/player-observations-store.js';
 import { createGameRecords } from '../engine/game-records.js';
 import { createGameRecordsView } from './game-records.js';
 import { createActivityClock } from '../platform/activity-clock.js';
@@ -132,6 +136,12 @@ function isSeatHandVisible(player) {
 }
 const tablePreferences = loadTablePreferences();
 const gameRecords = createGameRecords({ storage: preferenceStorage, snapshots: recordSnapshots });
+const playerObservations = createPlayerObservationStore({
+  storage: preferenceStorage,
+  sanitizeProfile: sanitizePlayerObservationProfile,
+  importProfile: importPlayerObservations,
+  exportProfile: exportPlayerObservations,
+});
 const effects = createGameEffects();
 // Each game end is celebrated once; the crown then stays on the champion.
 let ceremonyKey = '',
@@ -153,7 +163,9 @@ let requestedCount = tablePreferences.playerCount;
 let requestedStakes = tablePreferences.stakes;
 let stakesError = '',
   editingSmallBlind = false;
-let game = gameRecords.resume() || newGame(requestedCount, requestedStakes),
+let game = playerObservations.restore(
+    gameRecords.resume() || newGame(requestedCount, requestedStakes),
+  ),
   timer = null,
   botWait = null,
   epoch = 0,
@@ -382,6 +394,7 @@ function celebrate() {
   });
 }
 function render() {
+  playerObservations.capture(game);
   gameRecords.capture(game);
   recordsView.refresh();
   renderStakesSettings();
@@ -899,6 +912,7 @@ async function continueDeal() {
   }
 }
 function nextHand() {
+  playerObservations.capture(game);
   dealGate.cancel();
   heroTurnAttention.reset();
   cancelSoundEffects();
@@ -924,7 +938,7 @@ function nextHand() {
     gameRecords.abandon(game);
     if (game.over) newRecordSession = true;
     const difficulty = game.difficulty;
-    game = newGame(requestedCount, requestedStakes);
+    game = playerObservations.restore(newGame(requestedCount, requestedStakes));
     game.difficulty = difficulty;
     handReview.reset();
     lastHand = 0;
@@ -1115,7 +1129,8 @@ function refreshWaitingTable() {
   if (game.phase !== 'idle') return false;
   if (requestedCount !== game.players.length || !sameStakes(requestedStakes, game.stakes)) {
     const difficulty = game.difficulty;
-    game = newGame(requestedCount, requestedStakes);
+    playerObservations.capture(game);
+    game = playerObservations.restore(newGame(requestedCount, requestedStakes));
     game.history = [];
     game.difficulty = difficulty;
   }
@@ -1314,12 +1329,13 @@ document.querySelectorAll('dialog').forEach((d) =>
   }),
 );
 $('#confirm-reset').onclick = () => {
+  playerObservations.capture(game);
   gameRecords.abandon(game);
   newRecordSession = true;
   handReview.reset();
   const difficulty = game.difficulty;
   clearTimeout(timer);
-  game = newGame(requestedCount, requestedStakes);
+  game = playerObservations.restore(newGame(requestedCount, requestedStakes));
   game.difficulty = difficulty;
   lastHand = 0;
   $('#reset-dialog').close();
@@ -1527,16 +1543,26 @@ function syncActivity() {
 document.addEventListener('noir:app-state', ({ detail }) => {
   if (typeof detail?.active !== 'boolean') return;
   appActive = detail.active;
+  if (!appActive) {
+    playerObservations.capture(game);
+    void playerObservations.flush();
+  }
   syncActivity();
 });
 document.addEventListener('noir:orientation-state', syncActivity);
 document.addEventListener('visibilitychange', () => {
+  if (document.hidden) {
+    playerObservations.capture(game);
+    void playerObservations.flush();
+  }
   dealGate.setActive(activityClock.active && !document.hidden);
   backgroundMusic.setActive(activityClock.active && !document.hidden);
   syncTurnAttention();
   hintNotification.setActive(activityClock.active && !document.hidden);
 });
 window.addEventListener('pagehide', (event) => {
+  playerObservations.capture(game);
+  void playerObservations.flush();
   backgroundMusic.setActive(false);
   heroTurnAttention.reset();
   if (event.persisted) return;

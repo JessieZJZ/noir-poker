@@ -1,5 +1,5 @@
 import { publicComboWeight } from './public-ranges.js';
-import { hasPublicStory } from './public-story.js';
+import { hasPublicActionLine, hasPublicStory } from './public-story.js';
 
 // Exact only for a genuine heads-up river with multi-street public evidence.
 // It cannot learn which candidate is the actual hidden hand.
@@ -267,7 +267,13 @@ export function createPublicPairSampler(
       if (!picked) throw Error('公开范围没有可用底牌组合。');
       return picked.pair;
     }
-    for (let attempt = 0; attempt < 24; attempt++) {
+    // A single-street posterior can reject many otherwise plausible preflop
+    // proposals (for example AK missing a low flop after a large bet). Up to
+    // 64 cheap, cached proposals are still much less work than prematurely
+    // enumerating ~1,000 physical pairs. The exact CDF remains the bounded
+    // fallback and targets the same priorWeight * likelihood distribution.
+    const proposalLimit = !range.allIn && hasPublicActionLine(range.postflopLine) ? 64 : 24;
+    for (let attempt = 0; attempt < proposalLimit; attempt++) {
       stats.proposals = (stats.proposals || 0) + 1;
       const { pair, weight: priorWeight } = drawPrior(random),
         conditional = weightOf(pair) / priorWeight;

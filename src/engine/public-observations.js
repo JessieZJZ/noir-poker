@@ -1,8 +1,12 @@
-// Only completed hands and visible actions enter this bounded table memory.
+// Cross-hand memory contains completed public actions from the first hand.
+// Current actions are conditioned separately by the public action-line model,
+// rather than counting that same evidence again in the frequency prior.
 // Cards, winners, bankroll changes and test-opponent identities are not inputs.
 export const PUBLIC_READ_WINDOW = 64;
 export const PUBLIC_LARGE_PREFLOP_BB = 8;
-export const PUBLIC_READ_MODEL = 'observed-public-actions-v1';
+export const PUBLIC_READ_MODEL = 'observed-public-actions-v2';
+export const LEGACY_PUBLIC_READ_MODEL = 'observed-public-actions-v1';
+export const PLAYER_OBSERVATION_VERSION = 1;
 const fields = [
   'hands',
   'voluntaryHands',
@@ -42,6 +46,37 @@ export function summarizePublicRead(samples = []) {
     if (safe) for (const key of fields) total[key] += safe[key];
   }
   return sanitizePublicRead(total);
+}
+
+// A shared player profile is deliberately smaller than a hand record: no
+// identities, cards, action transcript or result can survive this whitelist.
+export function sanitizePlayerObservationProfile(value) {
+  if (
+    !value ||
+    value.version !== PLAYER_OBSERVATION_VERSION ||
+    !Array.isArray(value.samples) ||
+    !Number.isSafeInteger(value.revision) ||
+    value.revision < 0 ||
+    !Number.isSafeInteger(value.totalHands) ||
+    value.totalHands < 0
+  )
+    return null;
+  const samples = value.samples
+    .slice(-PUBLIC_READ_WINDOW)
+    .filter((sample) => sample?.hands === 1)
+    .map(sanitizePublicRead)
+    .filter(Boolean);
+  const totalHands = Math.max(value.totalHands, samples.length);
+  return {
+    version: PLAYER_OBSERVATION_VERSION,
+    revision: Math.max(value.revision, totalHands),
+    totalHands,
+    samples,
+  };
+}
+
+export function publicReadForPlayer(game, id) {
+  return summarizePublicRead(game.players?.[id]?.publicReads || []);
 }
 
 export function publicHandObservations({ dealtIds, history, bigBlind }) {
@@ -90,9 +125,9 @@ export function publicHandObservations({ dealtIds, history, bigBlind }) {
   return result;
 }
 
-export function observedRangeModel(value, { action, allIn = false } = {}) {
+export function observedRangeModel(value, { action, allIn = false, legacy = false } = {}) {
   const read = sanitizePublicRead(value);
-  if (!read || read.hands < 8 || !action) return null;
+  if (!read || !action || (legacy && read.hands < 8)) return null;
   const raising = action === 'raise';
   const key = allIn
     ? raising
@@ -102,12 +137,13 @@ export function observedRangeModel(value, { action, allIn = false } = {}) {
       ? 'raisingHands'
       : 'voluntaryHands';
   const prior = allIn ? 0.04 : raising ? 0.22 : 0.4;
+  const priorHands = legacy ? 24 : 8;
   return {
     hands: read.hands,
     events: read[key],
     kind: key,
-    width: clamp((read[key] + prior * 24) / (read.hands + 24), 0.025, 0.9),
-    confidence: read.hands / (read.hands + 24),
+    width: clamp((read[key] + prior * priorHands) / (read.hands + priorHands), 0.025, 0.9),
+    confidence: read.hands / (read.hands + priorHands),
   };
 }
 
@@ -120,22 +156,28 @@ export function observedRangeWeight(percentile, baseWeight, model) {
   return clamp((1 - model.confidence) * baseWeight + model.confidence * learned);
 }
 
-export function observedAggressiveLikelihood(value) {
+export function observedAggressiveLikelihood(value, { legacy = false } = {}) {
   const read = sanitizePublicRead(value);
-  if (!read || read.hands < 8 || read.postActions < 16) return 0;
-  const frequency = (read.postRaises + 0.32 * 32) / (read.postActions + 32);
+  if (!read || !read.postActions) return 0;
+  if (legacy) {
+    if (read.hands < 8 || read.postActions < 16) return 0;
+    const frequency = (read.postRaises + 0.32 * 32) / (read.postActions + 32);
+    return clamp((frequency - 0.4) * 1.25, 0, 0.65);
+  }
+  const frequency = (read.postRaises + 0.32 * 8) / (read.postActions + 8);
   // Frequent visible aggression broadens a prior; it does not prove a bluff.
-  return clamp((frequency - 0.4) * 1.25, 0, 0.65);
+  const confidence = read.postActions / (read.postActions + 12);
+  return clamp((frequency - 0.35) * 1.25 * confidence, 0, 0.65);
 }
 
 export function observedResponseShift(value) {
   const read = sanitizePublicRead(value);
-  if (!read || read.hands < 8 || read.facedPostBet < 12) return 0;
+  if (!read || !read.facedPostBet) return 0;
   // A modest log-odds adjustment to the size/hand-conditioned prior, not a
   // claim that an aggregate call rate predicts any specific wager. Raises
   // also continue; free checks are never counted as calling evidence.
   const n = read.facedPostBet;
-  const continueRate = (n - read.foldedPostBet + 12) / (n + 24);
-  const confidence = Math.min(0.65, n / (n + 48));
+  const continueRate = (n - read.foldedPostBet + 3) / (n + 6);
+  const confidence = Math.min(0.65, n / (n + 12));
   return clamp(Math.log(continueRate / (1 - continueRate)), -2, 2) * confidence;
 }

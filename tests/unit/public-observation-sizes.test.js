@@ -90,7 +90,16 @@ test('preflop call observations and event counting use the same inclusive size b
   }
 });
 
-test('size classification still requires sufficient completed public observations', () => {
-  for (const size of [7.5, 8, 20])
-    assert.equal(openView(size, false, { ...read, hands: 7 }).rangeObservation, null);
+test('size classification uses the first completed observation with bounded confidence', () => {
+  for (const size of [7.5, 8, 20]) {
+    const first = openView(size, false, {
+      hands: 1,
+      voluntaryHands: 1,
+      raisingHands: 1,
+      largeRaiseHands: Number(size >= 8),
+    }).rangeObservation;
+    assert.equal(first.hands, 1);
+    assert.equal(first.kind, size < 8 ? 'raisingHands' : 'largeRaiseHands');
+    assert.ok(first.confidence > 0 && first.confidence < 0.2);
+  }
 });

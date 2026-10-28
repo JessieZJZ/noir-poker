@@ -1,6 +1,7 @@
 import { compactChips } from '../engine/chip-format.js';
 import { publicPostflopLine } from '../engine/public-story.js';
 import { cardText } from './spot-facts.js';
+import { REVIEW_TOPICS as TOPIC, proseCoverage } from './prose-topics.js';
 
 const finite = (value) => Number.isFinite(value);
 const mass = (value) => (finite(value) ? Math.max(0, value) : 0);
@@ -61,7 +62,10 @@ function publicFacts(s, assessment, action, amount, plan, subject, includeAction
     checkRaise,
     action,
     amount,
-    plan: plan?.action === action ? { kind: plan.kind, motive: plan.motive } : null,
+    plan:
+      plan?.action === action
+        ? { kind: plan.kind, motive: plan.motive, rangeRead: plan.rangeRead }
+        : null,
     label: checkRaise ? '过牌加注至' : call > 0 ? '加注至' : '下注至',
   };
 }
@@ -135,10 +139,54 @@ function payingNote(assessment, f) {
   return note('paying-range', parts.join(''), parts);
 }
 
+function checkedReadingNote(assessment, f) {
+  if (f.action !== 'raise' || !f.plan || !f.live.length) return null;
+  const selected = assessment.options?.find((option) => option.amount === f.amount);
+  if (!selected) return null;
+  const current = f.history.filter((event) => event.street === f.street);
+  const checkedTo =
+    !current.some((event) => event.action === 'raise') &&
+    f.live.every((player) =>
+      current.some((event) => event.id === player.id && event.action === 'check'),
+    );
+  if (f.plan.kind === 'checked-value-protection' && checkedTo) {
+    const draw = f.street < 3 && mass(selected.drawCallMass) >= 0.04;
+    const made = mass(selected.worseMadeCallMass) >= 0.04;
+    if (!draw && !made) return null;
+    const targets = draw && made ? '较弱成牌和听牌' : draw ? '听牌' : '较弱成牌';
+    return note(
+      'checked-range',
+      `对手本轮均已过牌，${f.subject}估计${targets}仍可能付费，因此主动下注取值${draw ? '并收取看下一张的成本' : ''}。`,
+    );
+  }
+  const previous = f.history.filter((event) => event.street === f.street - 1);
+  const prior =
+    f.plan.rangeRead === 'prior-checkthrough-marginal-or-unmade' &&
+    !previous.some((event) => event.action === 'raise') &&
+    !current.some((event) => event.action === 'raise') &&
+    f.live.every((player) =>
+      previous.some((event) => event.id === player.id && event.action === 'check'),
+    );
+  if (
+    !f.hasDraw ||
+    (!checkedTo && !prior) ||
+    !['checked-marginal-or-unmade', 'prior-checkthrough-marginal-or-unmade'].includes(
+      f.plan.rangeRead,
+    )
+  )
+    return null;
+  const prefix = prior ? '对手上一街均未下注，本轮也尚未加压' : '对手本轮均已过牌';
+  return note(
+    'checked-range',
+    `${prefix}，${f.subject}按这些行动估计对手仍有较多中等成牌和未成牌，带听牌主动施压，争取直接收池或补牌改善。`,
+  );
+}
+
 function impliedNote(assessment, f) {
   if (!['call', 'fold'].includes(f.action) || !f.call || f.street >= 3) return null;
   const call = assessment.call || {};
   if (!f.hasDraw && !call.pairMining) return null;
+  if (f.closed && f.covered.has(TOPIC.CLOSURE)) return null;
   if (f.closed)
     return note(
       'implied-odds',
@@ -156,6 +204,13 @@ function impliedNote(assessment, f) {
           `按当前范围估计，跟注 ${compactChips(f.cost)} 还依赖${improvement}后有人付费；弃牌避免把这笔不确定的未来收入当作已经到手的筹码。`,
         )
       : null;
+  if (f.covered.has(TOPIC.FUTURE_COST))
+    return note(
+      'implied-odds',
+      short
+        ? `按当前范围估计，这次跟注还需要${improvement}后从较弱牌收取筹码。`
+        : `${improvement}后的额外收入取决于较弱牌是否愿意付费。`,
+    );
   return note(
     'implied-odds',
     !f.includeAction && !short
@@ -183,6 +238,18 @@ function drawNote(s, f) {
     : f.draw.nutFlushDraw
       ? '补中时能争取最大同花，仍要随新牌面判断。'
       : '补成目标牌型后，仍要确认有没有更强的牌。';
+  const standaloneHeading = `${cardText(s.hole)} 带${name}。`;
+  // The primary reason already gave the actual outs and improvement chances.
+  // Add only genuinely new draw quality or paired-board risk in this layer.
+  if (f.covered.has(TOPIC.DRAW)) {
+    const parts = [
+      f.draw.nutFlushDraw && !f.covered.has(TOPIC.NUT_DRAW) ? standaloneHeading : '',
+      f.draw.pairedBoard && !f.covered.has(TOPIC.PAIRED_DRAW_RISK) ? risk : '',
+    ].filter(Boolean);
+    // These are complete facts, not a heading waiting for a route. In
+    // particular, a paired-board risk must never be replaced by a draw label.
+    return parts.length ? { ...note('draw-plan', parts.join(''), parts), drawRisk: risk } : null;
+  }
   let route;
   if (f.action === 'raise')
     route = f.live.length
@@ -208,16 +275,27 @@ function drawNote(s, f) {
             ? '先过牌；若对手下注，再按价格与弃牌空间比较过牌加注，对手过牌则在下一张后重估。'
             : '先过牌保留改善机会；对手随后下注时，再按金额和继续范围比较跟注、加注或弃牌。';
   else route = '弃牌保留尚未投入的筹码，不因听牌潜力承诺继续付费。';
+  if (
+    f.action === 'call' &&
+    ((f.closed && f.covered.has(TOPIC.CLOSURE)) || (!f.closed && f.covered.has(TOPIC.FUTURE_COST)))
+  )
+    route = '';
   if (!f.includeAction && f.action === 'raise' && f.opponents.every((p) => !p.allin))
     route = f.allInAction
       ? '对手全部弃牌可直接拿池；被跟注后就按最终摊牌结果分池。'
       : '对手全部弃牌可直接拿池；被跟注后，下一张没改善或再遭加注时要重新比较价格。';
   const heading = `${cardText(s.hole)} 带${name}，`;
-  return note('draw-plan', heading + route + risk, [heading, route, risk]);
+  const parts = route ? [heading, route, risk] : [standaloneHeading, risk];
+  return {
+    ...note('draw-plan', parts.join(''), parts),
+    headingPrefix: parts[0],
+    standaloneHeading,
+    drawRisk: risk,
+  };
 }
 
 function continuationNote(f) {
-  if (f.hasDraw || f.closed || f.allInAction) return null;
+  if (f.hasDraw || f.closed || f.allInAction || f.covered.has(TOPIC.FUTURE_COST)) return null;
   if (f.action === 'check' && f.canFaceCurrentBet && f.plan?.kind === 'check-for-raise')
     return note(
       'continuation',
@@ -239,6 +317,7 @@ function continuationNote(f) {
 }
 
 function bluffCatchNote(s, assessment, f, observer = false) {
+  if (f.covered.has(TOPIC.RIVER_RANGE)) return null;
   if (f.street !== 3 || !f.call || !['call', 'fold'].includes(f.action)) return null;
   const category = assessment.draw?.madeCategory;
   if (!finite(category) || category < 1 || category > 3) return null;
@@ -278,6 +357,7 @@ function bluffCatchNote(s, assessment, f, observer = false) {
 // An observer gets the recorded action's support and tradeoffs, never a list
 // of instructions for what that opponent should do on the next card.
 function observerNotes(s, assessment, f) {
+  const reading = checkedReadingNote(assessment, f);
   const paying = payingNote(assessment, f);
   const range = rangeNote(s, assessment, f);
   const rangeFact = range && note('range', range.parts[0] + '。', [range.parts[0], '。']);
@@ -305,12 +385,16 @@ function observerNotes(s, assessment, f) {
         : f.action === 'check'
           ? '过牌保留改善机会，也没有主动扩大底池。'
           : '这次弃牌放弃了听牌的改善机会。';
-  const drawParts = sourceDraw && [
-    sourceDraw.parts[0],
-    drawRoute,
-    f.draw.pairedBoard ? sourceDraw.parts[2] : '',
-  ];
-  const draw = drawParts && note('draw-plan', drawParts.join(''), drawParts.filter(Boolean));
+  const drawParts =
+    sourceDraw &&
+    (f.covered.has(TOPIC.DRAW)
+      ? sourceDraw.parts
+      : [sourceDraw.headingPrefix, drawRoute, f.draw.pairedBoard ? sourceDraw.drawRisk : '']);
+  const draw = drawParts && {
+    ...note('draw-plan', drawParts.join(''), drawParts.filter(Boolean)),
+    headingPrefix: sourceDraw.headingPrefix,
+    standaloneHeading: sourceDraw.standaloneHeading,
+  };
   const continuation =
     !f.closed &&
     !f.allInAction &&
@@ -324,7 +408,7 @@ function observerNotes(s, assessment, f) {
   const bluffCatch = bluffCatchNote(s, assessment, f, true);
   const ordered =
     f.action === 'raise'
-      ? [draw, paying, continuation, rangeFact]
+      ? [reading || draw, paying, continuation, rangeFact]
       : f.action === 'check'
         ? [continuation, draw, rangeFact]
         : f.action === 'fold'
@@ -349,20 +433,27 @@ export function strategyNotes(
     subject = '你',
     includeAction = true,
     audience = 'decision',
+    coveredTopics = [],
   } = {},
 ) {
   if (!assessment || !['check', 'call', 'fold', 'raise'].includes(action)) return [];
   const f = publicFacts(s, assessment, action, amount, plan, subject, includeAction);
+  f.covered = proseCoverage(coveredTopics);
   if (audience === 'observer') return observerNotes(s, assessment, f);
+  const reading = checkedReadingNote(assessment, f);
   const paying = payingNote(assessment, f);
-  const draw = drawNote(s, f);
   const implied = impliedNote(assessment, f);
+  // Standalone callers also get the closing fact only once. The host coaching
+  // paragraph normally owns it, but an implied-odds warning can own it here.
+  if (implied && f.closed) f.covered.add(TOPIC.CLOSURE);
+  if (implied && !f.closed && includeAction) f.covered.add(TOPIC.FUTURE_COST);
+  const draw = drawNote(s, f);
   const bluffCatch = bluffCatchNote(s, assessment, f);
   const continuation = continuationNote(f);
   const range = rangeNote(s, assessment, f);
   const ordered =
     action === 'raise'
-      ? [draw, paying, continuation, range]
+      ? [reading || draw, paying, continuation, range]
       : action === 'check'
         ? [draw, continuation, range]
         : action === 'fold'

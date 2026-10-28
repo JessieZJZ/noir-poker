@@ -23,11 +23,14 @@ import { estimatePublicEquity } from './public-equity.js';
 import { assessPublicStrategy } from './public-strategy.js';
 import {
   publicHandObservations,
-  summarizePublicRead,
   PUBLIC_READ_WINDOW,
   PUBLIC_READ_MODEL,
   PUBLIC_LARGE_PREFLOP_BB,
+  PLAYER_OBSERVATION_VERSION,
+  sanitizePlayerObservationProfile,
+  publicReadForPlayer,
 } from './public-observations.js';
+export { publicReadForPlayer } from './public-observations.js';
 export const SUITS = ['♠', '♥', '♣', '♦'];
 export const RANK_NAMES = [
   '高牌',
@@ -250,6 +253,8 @@ export function newGame(playerCount = 6, configuration = DEFAULT_STAKES) {
     payouts: [],
     stats: { hands: 0, wins: 0, buyin: stakes.startingStack },
     rebuys: 0,
+    playerObservationRevision: 0,
+    playerObservationHands: 0,
     over: null,
     difficulty: 'normal',
     emotionMode: 'subtle',
@@ -259,7 +264,9 @@ export function newGame(playerCount = 6, configuration = DEFAULT_STAKES) {
 export function configureStakes(g, configuration) {
   const stakes = validateStakes(configuration);
   if (sameStakes(g.stakes, stakes)) return false;
+  const playerProfile = exportPlayerObservations(g);
   const next = newGame(g.players.length, stakes);
+  importPlayerObservations(next, playerProfile);
   next.difficulty = g.difficulty;
   next.emotionMode = g.emotionMode;
   next.players.forEach((player, id) => {
@@ -442,6 +449,26 @@ function rememberAction(g, p) {
 // Keep the original deal private to the engine, outside public table and review data.
 const handStarts = new WeakMap();
 const cloneHand = (value) => JSON.parse(JSON.stringify(value));
+const observationCounter = (value) => (Number.isSafeInteger(value) && value >= 0 ? value : 0);
+export function exportPlayerObservations(g) {
+  const reads = g.players?.[0]?.publicReads;
+  const samples = Array.isArray(reads) ? reads.slice(-PUBLIC_READ_WINDOW) : [];
+  return sanitizePlayerObservationProfile({
+    version: PLAYER_OBSERVATION_VERSION,
+    revision: observationCounter(g.playerObservationRevision),
+    totalHands: observationCounter(g.playerObservationHands),
+    samples,
+  });
+}
+export function importPlayerObservations(g, value) {
+  const profile = sanitizePlayerObservationProfile(value);
+  if (!profile || !g.players?.[0]) return false;
+  if (observationCounter(g.playerObservationRevision) > profile.revision) return false;
+  g.players[0].publicReads = profile.samples;
+  g.playerObservationHands = profile.totalHands;
+  g.playerObservationRevision = profile.revision;
+  return true;
+}
 export const canRestartHand = (g) => g.phase === 'done' && handStarts.has(g);
 export function startHand(g) {
   if (g.phase !== 'idle' && g.phase !== 'done') throw Error('当前牌局尚未结束。');
@@ -519,12 +546,17 @@ export function restartHand(g) {
   if (!canRestartHand(g)) throw Error('请在本手结束后重打；需要本手的原始发牌记录。');
   const original = handStarts.get(g),
     attempt = (g.replayAttempt || 0) + 1,
-    difficulty = g.difficulty;
+    difficulty = g.difficulty,
+    observationRevision = exportPlayerObservations(g).revision;
   // Restore the state after one blind posting, before any player action. This
   // also rolls back this attempt's awards, refunds, decisions and session stats.
   const restored = cloneHand(original);
   for (const key of Object.keys(g)) delete g[key];
-  Object.assign(g, restored, { difficulty, replayAttempt: attempt });
+  Object.assign(g, restored, {
+    difficulty,
+    replayAttempt: attempt,
+    playerObservationRevision: Math.min(Number.MAX_SAFE_INTEGER, observationRevision + 1),
+  });
   log(g, `第 ${g.hand} 手 · 第 ${attempt} 次重打，原结算已撤回`, null, 'info');
   return g;
 }
@@ -654,7 +686,7 @@ export function act(g, id, action, amount) {
         allin: o.allin,
         action: o.action,
         botProfile: o.id ? o.botProfile : null,
-        publicRead: summarizePublicRead(o.publicReads),
+        publicRead: publicReadForPlayer(g, o.id),
         publicAxes: o.id
           ? effectiveBotAxes(getBotProfile(o.botProfile), o.botMood, g.emotionMode)
           : null,
@@ -916,8 +948,14 @@ export function settle(g, showdown = true) {
   });
   for (const p of g.players) {
     const observation = observations.get(p.id);
-    if (observation)
+    if (observation) {
+      if (p.id === 0) {
+        const profile = exportPlayerObservations(g);
+        g.playerObservationHands = Math.min(Number.MAX_SAFE_INTEGER, profile.totalHands + 1);
+        g.playerObservationRevision = Math.min(Number.MAX_SAFE_INTEGER, profile.revision + 1);
+      }
       p.publicReads = [...(p.publicReads || []), observation].slice(-PUBLIC_READ_WINDOW);
+    }
   }
   return g;
 }
@@ -992,8 +1030,8 @@ export function botDecision(g, random = Math.random, { trials, allInCache } = {}
     street: g.street,
     position: seatPosition(g, p.id),
     botProfile: p.id ? p.botProfile : null,
-    publicRead: g.difficulty === 'easy' ? null : summarizePublicRead(p.publicReads),
-    publicReadModel: g.difficulty === 'easy' ? null : PUBLIC_READ_MODEL,
+    publicRead: publicReadForPlayer(g, p.id),
+    publicReadModel: PUBLIC_READ_MODEL,
     publicAxes: p.id
       ? effectiveBotAxes(getBotProfile(p.botProfile), p.botMood, g.emotionMode)
       : null,
@@ -1022,7 +1060,7 @@ export function botDecision(g, random = Math.random, { trials, allInCache } = {}
         id: o.id,
         position: seatPosition(g, o.id),
         botProfile: o.id ? o.botProfile : null,
-        publicRead: g.difficulty === 'easy' ? null : summarizePublicRead(o.publicReads),
+        publicRead: publicReadForPlayer(g, o.id),
         publicAxes: o.id
           ? effectiveBotAxes(getBotProfile(o.botProfile), o.botMood, g.emotionMode)
           : null,
