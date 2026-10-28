@@ -98,6 +98,49 @@
     font-size: 14px;
   }
 }
+/* Match the full-width Web/App tablet card without changing phone density. */
+@media (min-width: 601px) {
+  .game-info {
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+  .game-info-title {
+    font-size: 18px;
+    line-height: 1.25;
+  }
+  .game-info-stats {
+    gap: 12px;
+  }
+  .info-term {
+    font-size: 15px;
+    line-height: 1.25;
+  }
+  .info-value {
+    font-size: 22px;
+    line-height: 1.3;
+  }
+  .game-info .session-change {
+    font-size: 14px;
+  }
+}
+@media (min-width: 901px) {
+  .game-info {
+    padding-left: 24px;
+    padding-right: 24px;
+  }
+  .game-info-title {
+    font-size: 20px;
+  }
+  .info-term {
+    font-size: 17px;
+  }
+  .info-value {
+    font-size: 25px;
+  }
+  .game-info .session-change {
+    font-size: 16px;
+  }
+}
 /* Emotion legend in Settings, as on Web. */
 .mood-legend {
   display: flex;
