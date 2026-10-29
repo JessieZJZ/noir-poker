@@ -48,6 +48,7 @@ try {
   }
   const before = await page.data();
   assert.equal(before.canRaise, true);
+  report.viewport = { width: before.windowWidth, height: before.windowHeight };
   const view = {
     currentBet: before.currentBet,
     pot: before.potAmount,

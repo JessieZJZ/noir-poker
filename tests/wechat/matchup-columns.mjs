@@ -42,9 +42,20 @@ try {
     console.log('Waiting for DevTools viewport: ' + process.env.NOIR_WECHAT_ORIENTATION);
     while (data.windowWidth > data.windowHeight !== landscape && Date.now() < deadline) {
       await new Promise((resolve) => setTimeout(resolve, 100));
-      data = await page.data();
+      // DevTools rotation can replace the Page instance. Observe the current
+      // service page until its real viewport settles, then reacquire its handle.
+      data = await mini.evaluate(() => {
+        const current = getCurrentPages().at(-1);
+        return {
+          windowWidth: current?.data.windowWidth || 0,
+          windowHeight: current?.data.windowHeight || 0,
+        };
+      });
     }
+    assert.ok(data.windowWidth > 0 && data.windowHeight > 0);
     assert.equal(data.windowWidth > data.windowHeight, landscape);
+    page = await mini.currentPage();
+    data = await page.data();
   }
   report.viewport = { width: data.windowWidth, height: data.windowHeight };
   saved = Object.fromEntries(keys.map((key) => [key, data[key]]));
@@ -114,12 +125,18 @@ try {
   report.error = error.stack || String(error);
   process.exitCode = 1;
 } finally {
-  if (saved) {
-    await page.setData(saved);
-    await mini.evaluate(
-      (reviewOpen) => getCurrentPages().at(-1).setOverlay({ reviewOpen }),
-      saved.reviewOpen,
-    );
+  try {
+    if (saved) {
+      await page.setData(saved);
+      await mini.evaluate(
+        (reviewOpen) => getCurrentPages().at(-1).setOverlay({ reviewOpen }),
+        saved.reviewOpen,
+      );
+    }
+  } catch (error) {
+    report.status = 'failed';
+    report.cleanupError = String(error);
+    process.exitCode = 1;
   }
   await writeFile(path.join(output, 'report.json'), JSON.stringify(report, null, 2));
   await mini.disconnect();

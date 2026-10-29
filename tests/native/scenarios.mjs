@@ -2735,7 +2735,14 @@ export async function nativeScenarios(app) {
         }
         if (items.length > 2) assert.ok(items[2].y >= items[0].y + items[0].height);
       }
-      await app.screenshot('review-hand-groups-two-columns');
+      await app.evaluate(() =>
+        document
+          .querySelector('#review-coach-explanation .review-matchup-examples')
+          .scrollIntoView({ block: 'center' }),
+      );
+      // The runner captures the scenario name again after finally closes the
+      // dialog. Keep this open-dialog evidence under a distinct filename.
+      await app.screenshot('review-hand-groups-two-columns-open');
       return { groups, scope: 'Installed production review of a real hand; no injected fixture' };
     } finally {
       await app.click('#review-dialog .icon-button.close-dialog');
