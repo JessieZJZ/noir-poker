@@ -2735,15 +2735,39 @@ export async function nativeScenarios(app) {
         }
         if (items.length > 2) assert.ok(items[2].y >= items[0].y + items[0].height);
       }
-      await app.evaluate(() =>
-        document
-          .querySelector('#review-coach-explanation .review-matchup-examples')
-          .scrollIntoView({ block: 'center' }),
+      await app.evaluate(() => {
+        const dialog = document.querySelector('#review-dialog');
+        const target = document.querySelector('#review-coach-explanation .review-matchup-examples');
+        dialog.scrollTop +=
+          target.getBoundingClientRect().top - dialog.getBoundingClientRect().top - 80;
+      });
+      const visibleGroup = await app.waitFor(
+        () =>
+          app.evaluate(() => {
+            const dialog = document.querySelector('#review-dialog').getBoundingClientRect();
+            const target = document
+              .querySelector('#review-coach-explanation .review-matchup-examples')
+              .getBoundingClientRect();
+            return target.top >= dialog.top && target.bottom <= dialog.bottom
+              ? {
+                  top: target.top,
+                  bottom: target.bottom,
+                  dialogTop: dialog.top,
+                  dialogBottom: dialog.bottom,
+                }
+              : false;
+          }),
+        5000,
+        'The two-column hand examples must be visible before capturing the native screen',
       );
       // The runner captures the scenario name again after finally closes the
       // dialog. Keep this open-dialog evidence under a distinct filename.
       await app.screenshot('review-hand-groups-two-columns-open');
-      return { groups, scope: 'Installed production review of a real hand; no injected fixture' };
+      return {
+        groups,
+        visibleGroup,
+        scope: 'Installed production review of a real hand; no injected fixture',
+      };
     } finally {
       await app.click('#review-dialog .icon-button.close-dialog');
     }
