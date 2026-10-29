@@ -48,3 +48,30 @@ for (const count of [5, 9]) {
     }
   });
 }
+
+test('late native safe-area insets preserve the table across entry without a resize event', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 402, height: 874 });
+  await page.goto('/');
+  await expect(page.locator('html')).toHaveAttribute('data-app-ready', 'true');
+  await page.evaluate(() => {
+    const root = document.documentElement;
+    root.classList.add('native-app', 'native-ios');
+    root.style.setProperty('--safe-area-inset-top', '62px');
+    root.style.setProperty('--safe-area-inset-bottom', '34px');
+  });
+  await page.evaluate(
+    () => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))),
+  );
+  const read = () =>
+    page.evaluate(() => {
+      const box = document.querySelector('.table-viewport').getBoundingClientRect();
+      return [box.x, box.y, box.width, box.height];
+    });
+  const waiting = await read();
+  await page.locator('#join-table-button').click();
+  await expect(page.locator('.game-surface')).toHaveAttribute('data-entry-state', 'playing');
+  const playing = await read();
+  for (let i = 0; i < 4; i++) expect(Math.abs(waiting[i] - playing[i])).toBeLessThanOrEqual(1.1);
+});

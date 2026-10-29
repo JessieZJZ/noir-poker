@@ -69,7 +69,15 @@ try {
   // Native-component event contract; real-device gestures are a separate
   // acceptance layer (DevTools touch injection cannot prove phone input).
   await track.trigger('changing', { value: 318725 });
-  const preview = await page.data();
+  // The simulator dispatches native component events over the view/service
+  // bridge; trigger() returning does not mean the logic layer has received it.
+  let preview;
+  const previewDeadline = Date.now() + 5000;
+  do {
+    preview = await page.data();
+    if (preview.raisePreviewPosition === 318725 && preview.raiseDragging) break;
+    await new Promise((resolve) => setTimeout(resolve, 50));
+  } while (Date.now() < previewDeadline);
   assert.equal(preview.raiseTo, before.minRaise);
   assert.equal(preview.raisePreviewPosition, 318725);
   await track.trigger('change', { value: 318725 });

@@ -82,10 +82,7 @@ export function createPlayViewport(surface, { layout = () => {} } = {}) {
     const screen = readPlayViewport(),
       screenHeight = screen.height,
       waiting = surface.dataset.entryState === 'waiting',
-      reservedDock = waiting
-        ? parseFloat(getComputedStyle(surface).getPropertyValue('--live-dock-height')) || 152
-        : 0,
-      height = Math.max(160, screenHeight - playSurfaceTop(surface) - 8 - reservedDock);
+      height = Math.max(160, screenHeight - playSurfaceTop(surface) - 8);
     const large = screen.width > 900 && screen.width <= 1100 && screenHeight >= 1100;
     surface.style.setProperty(
       '--table-header-font',
@@ -95,7 +92,14 @@ export function createPlayViewport(surface, { layout = () => {} } = {}) {
       '--table-hint-font',
       `${large ? 18 : screen.width > 600 ? 14 : 13}px`,
     );
-    surface.style.setProperty('--play-height', `${height}px`);
+    // The hidden waiting dock still reserves the exact live dock footprint,
+    // including the resolved native bottom inset (which may be a CSS max()).
+    surface.style.setProperty(
+      '--play-height',
+      waiting
+        ? `max(160px, calc(${height}px - var(--live-dock-height) - var(--dock-bottom-inset)))`
+        : `${height}px`,
+    );
     // Hidden or rotating WebViews can briefly report a zero-sized viewport.
     // Wait for its resize notification instead of dividing by zero below.
     if (viewport.clientWidth === 0 || viewport.clientHeight === 0) return;
@@ -161,12 +165,21 @@ export function createPlayViewport(surface, { layout = () => {} } = {}) {
   }
   const observer = new ResizeObserver(schedule);
   for (const el of [
+    document.body,
+    document.querySelector('.header'),
     surface,
     viewport,
     surface.querySelector('.surface-top'),
     surface.querySelector('.action-dock'),
   ])
     if (el) observer.observe(el);
+  // Native safe-area values can arrive after the initial document layout
+  // without changing innerWidth/innerHeight or emitting a resize event.
+  const insetsObserver = new MutationObserver(schedule);
+  insetsObserver.observe(document.documentElement, {
+    attributes: true,
+    attributeFilter: ['style', 'class'],
+  });
   window.addEventListener('resize', schedule);
   window.addEventListener('pageshow', schedule);
   window.visualViewport?.addEventListener('resize', schedule);
@@ -175,6 +188,7 @@ export function createPlayViewport(surface, { layout = () => {} } = {}) {
     destroy() {
       destroyed = true;
       observer.disconnect();
+      insetsObserver.disconnect();
       if (frame !== null) cancelAnimationFrame(frame);
       window.removeEventListener('resize', schedule);
       window.removeEventListener('pageshow', schedule);

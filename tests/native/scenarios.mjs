@@ -395,8 +395,29 @@ export async function nativeScenarios(app) {
           return [r.x, r.y, r.width, r.height];
         });
       };
+      const meta = () => {
+        const surface = document.querySelector('.game-surface');
+        const css = getComputedStyle(surface);
+        const rect = (s) => {
+          const r = document.querySelector(s).getBoundingClientRect();
+          return [r.x, r.y, r.width, r.height];
+        };
+        return {
+          scrollY,
+          innerHeight,
+          visualHeight: visualViewport.height,
+          state: surface.dataset.entryState,
+          playHeight: css.getPropertyValue('--play-height'),
+          liveDock: css.getPropertyValue('--live-dock-height'),
+          bottomInset: css.getPropertyValue('--dock-bottom-inset'),
+          header: rect('.surface-top'),
+          viewport: rect('.table-viewport'),
+          dock: rect('.action-dock-slot'),
+        };
+      };
       const monitor = (window.__entryStability = {
         baseline: read(),
+        before: meta(),
         maxDelta: 0,
         minOpacity: 1,
         frames: 0,
@@ -404,10 +425,12 @@ export async function nativeScenarios(app) {
       });
       const sample = () => {
         const values = read();
-        monitor.maxDelta = Math.max(
-          monitor.maxDelta,
-          ...values.map((v, i) => Math.abs(v - monitor.baseline[i])),
-        );
+        const delta = Math.max(...values.map((v, i) => Math.abs(v - monitor.baseline[i])));
+        if (delta > monitor.maxDelta) {
+          monitor.peak = { values, meta: meta() };
+          monitor.maxDelta = delta;
+        }
+        monitor.last = { values, meta: meta() };
         monitor.minOpacity = Math.min(
           monitor.minOpacity,
           Number(getComputedStyle(document.querySelector('.game-surface')).opacity),
@@ -417,7 +440,9 @@ export async function nativeScenarios(app) {
       };
       sample();
     });
-    await app.click('#join-table-button');
+    // The button is already visible. Use a real coordinate tap; WebDriver's
+    // element click may scroll the page before tapping on iOS.
+    await app.nativeTap('#join-table-button');
     const during = await app.state();
     assert.equal(during.hand, before.hand + 1);
     assert.equal(during.hole.length, 2);
