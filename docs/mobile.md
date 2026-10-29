@@ -103,7 +103,7 @@ NOIR_NATIVE_SCENARIOS=real-background-cancels-pending-action,every-player-count-
 
 `.github/workflows/mobile-build.yml` 在 GitHub PR、main 更新及手动运行时构建 Android debug APK、未签名 AAB 和 iOS 模拟器 `.app`，产物在 Actions 的 Artifacts 下载。CI 的未签名 AAB 用于验证发行编译，模拟器 `.app` 用于开发验证；两者都不能直接上架。CI 不保存商店签名凭据。
 
-独立 `quality` job 检查格式、语言资源、全部单元测试及生产构建，不依赖 Android SDK 或浏览器布局。公共区定位、固定操作区、牌面可读性、首屏、结算布局与提示横幅测试，以及桌面和移动端的其余交互测试，分别并行执行；布局失败不会跳过其余交互测试。两组覆盖完整的 `npm run test:e2e`；失败轨迹与验收截图保存在 `table-geometry-results`、`browser-ui-results-desktop` 和 `browser-ui-results-mobile`。
+独立 `quality` job 检查格式、语言资源、全部单元测试及生产构建，不依赖 Android SDK 或浏览器布局。公共区定位、固定操作区、牌面可读性、首屏、结算布局与提示横幅测试，以及桌面和移动端的其余交互测试，分别并行执行；布局失败不会跳过其余交互测试。桌面交互用 Playwright `--shard=1/2`、`--shard=2/2` 分配完整用例，保留每片 30 分钟时限和所有断言，避免单个任务到时取消。`browser-ui (desktop)` 汇总检查只有两片都成功才通过，任何失败、取消或跳过都不通过；`browser-ui (mobile)` 保持独立。单元回归用实际 `--list` 清单核对两片不重复、不漏项，合起来与原完整桌面套件一致。所有任务合计覆盖完整的 `npm run test:e2e`；失败轨迹与验收截图保存在 `table-geometry-results`、`browser-ui-results-desktop-1`、`browser-ui-results-desktop-2` 和 `browser-ui-results-mobile`。
 
 原生包编译并通过资源检查后立即上传，随后仍执行完整的安装后 E2E。即使安装运行失败，已上传包也能用于复现；下载到包不代表 E2E 通过。所有 job 都有显式时限，原生运行步骤另设较短时限，为失败证据上传留出时间。原生包与原生报告保留 7 天。账户启动阻塞与近期历史失败见 [CI 排错](ci.md)。
 

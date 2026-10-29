@@ -45,6 +45,8 @@ npm run preview       # 本地检查生产构建，先停止同端口开发服�
 
 首次运行浏览器测试若提示缺少浏览器，执行 `npx playwright install chromium`。测试会自动在 **4175** 端口启动自己的服务，不占用日常开发的 4173，也不复用其他检出的服务。并行 worktree 可用 `NOIR_E2E_PORT=4189 npm run test:e2e` 指定独立端口；端口已占用时直接失败。
 
+CI 将桌面交互套件用 `--shard=1/2`、`--shard=2/2` 分片执行，`browser-ui (desktop)` 要求两片全部通过；用例与断言保持完整，单元回归核对无漏项和重复。移动交互与牌桌几何独立运行，报告下载位置见[移动端 CI](docs/mobile.md)。
+
 ## 项目结构
 
 ```text

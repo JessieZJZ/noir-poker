@@ -70,12 +70,11 @@ jobs:
 
   browser-ui:
     runs-on: ubuntu-24.04
-    # The suite has grown past 20 minutes per project on hosted runners.
     timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
-        project: [desktop, mobile]
+        project: [mobile]
     steps:
       - uses: actions/checkout@v7.0.1
       - uses: actions/setup-node@v7.1.0
@@ -92,6 +91,44 @@ jobs:
           name: browser-ui-results-${{ matrix.project }}
           path: test-results/
           retention-days: 7
+
+  desktop-ui-shard:
+    name: browser-ui desktop shard ${{ matrix.shard }}/2
+    runs-on: ubuntu-24.04
+    # Split the complete suite instead of increasing the job deadline.
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2]
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-node@v7.1.0
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium webkit
+      - run: npm run test:e2e -- --project=desktop --shard=${{ matrix.shard }}/2 --grep-invert '(public-area|stable-actions|readability-hints|play-viewport|settlement-layout|hint-banner|platform-parity)\.spec\.js'
+      - uses: actions/upload-artifact@v7.0.2
+        if: always()
+        with:
+          name: browser-ui-results-desktop-${{ matrix.shard }}
+          path: test-results/
+          retention-days: 7
+
+  desktop-ui:
+    # Preserve the existing check name and fail on a failed/cancelled shard.
+    name: browser-ui (desktop)
+    needs: desktop-ui-shard
+    if: always()
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Require every desktop shard to pass
+        env:
+          SHARD_RESULT: ${{ needs.desktop-ui-shard.result }}
+        run: test "$SHARD_RESULT" = success
 
   android:
     runs-on: ubuntu-24.04
