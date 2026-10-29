@@ -37,7 +37,7 @@ function viewportChrome(width, height) {
   const tablet = width >= 601 && height >= 601;
   const navHeight = tablet ? 76 : 48;
   const tableHeaderHeight = tablet ? 66 : 50;
-  const liveDockHeight = tablet ? (width > height ? 152 : 208) : 134;
+  const liveDockHeight = tablet ? (width > height ? 152 : 208) : 154;
   return {
     navHeight,
     tableHeaderHeight,
@@ -219,6 +219,7 @@ module.exports = {
         });
         const update = {
           ...view,
+          raiseDragging: Boolean(this._raiseGesture),
           tableReady:
             (view.waitingForSeat || view.heroCards.length === 2) && view.seats.length >= 4,
           finishing:
@@ -842,64 +843,31 @@ module.exports = {
     };
   },
   changeRaise(event) {
-    this.call('setRaisePosition', event.detail.value);
-  },
-  startRaise(event) {
     if (!this.data.canRaise || this._hidden || this._destroyed) return;
-    const touch = event.touches?.[0];
-    if (!touch || !wx.createSelectorQuery) return;
-    this.unlockAudio();
-    this._controller?.engageTurn();
-    const gesture = (this._raiseGesture = { id: touch.identifier, x: touch.clientX, ended: false });
-    const query = wx.createSelectorQuery();
-    query.select('#raise-track').boundingClientRect();
-    query.exec(([rect]) => {
-      if (this._raiseGesture !== gesture || !rect?.width || this._hidden || this._destroyed) return;
-      gesture.rect = rect;
-      this.updateRaiseGesture();
-    });
-  },
-  moveRaise(event) {
-    const gesture = this._raiseGesture;
-    const touch = event.touches?.find((value) => value.identifier === gesture?.id);
-    if (!gesture || !touch) return;
-    gesture.x = touch.clientX;
-    this.updateRaiseGesture();
-  },
-  endRaise(event) {
-    const gesture = this._raiseGesture;
-    if (!gesture) return;
-    const touch = event.changedTouches?.find((value) => value.identifier === gesture.id);
-    if (!touch) return;
-    gesture.x = touch.clientX;
-    gesture.ended = true;
-    this.updateRaiseGesture();
+    this._raiseGesture = null;
+    this.call('setRaisePosition', event.detail.value);
   },
   cancelRaise() {
     this._raiseGesture = null;
     if (this.data.canRaise && !this._hidden && !this._destroyed) this._controller?.show();
   },
-  updateRaiseGesture() {
-    const gesture = this._raiseGesture;
-    if (!gesture?.rect || !this.data.canRaise) return;
-    const position = Math.round(
-      Math.max(0, Math.min(1, (gesture.x - gesture.rect.left) / gesture.rect.width)) *
-        this.data.sliderLimit,
-    );
-    this.previewRaise({ detail: { value: position } });
-    if (gesture.ended) {
-      this._raiseGesture = null;
-      this.changeRaise({ detail: { value: position } });
-    }
-  },
   previewRaise(event) {
-    if (!this.data.canRaise) return;
+    if (!this.data.canRaise || this._hidden || this._destroyed) return;
+    this.unlockAudio();
     this._controller?.engageTurn();
     const value = sliderRaiseTo(this.raiseView(), event.detail.value);
     if (value === null) return;
-    const text = compactChips(value);
-    const position = Math.max(0, Math.min(this.data.sliderLimit, Number(event.detail.value) || 0));
-    this.setData({ raiseText: text, sliderValue: position });
+    this._raiseGesture = { position: event.detail.value };
+    // The native component owns the moving thumb. Only update the caption;
+    // feeding its position back through setData during a drag fights touch input.
+    this.setData({
+      raiseText: compactChips(value),
+      raiseDragging: true,
+      raisePreviewPosition: Math.max(
+        0,
+        Math.min(this.data.sliderLimit, Number(event.detail.value) || 0),
+      ),
+    });
   },
   flyChips(id) {
     if (!wx.createSelectorQuery || this._hidden || this._destroyed) return;

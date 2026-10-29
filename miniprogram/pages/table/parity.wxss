@@ -41,8 +41,8 @@
   flex-basis: 22px;
 }
 .action-dock {
-  height: 146px;
-  flex-basis: 146px;
+  height: 154px;
+  flex-basis: 154px;
   padding: 6px 12px 8px;
   gap: 8px;
 }

@@ -66,29 +66,32 @@ try {
   assert.ok(track);
   const offset = await track.offset(),
     size = await track.size();
-  const touch = (fraction) => ({
-    identifier: 1,
-    clientX: offset.left + size.width * fraction,
-    clientY: offset.top + size.height / 2,
-    pageX: offset.left + size.width * fraction,
-    pageY: offset.top + size.height / 2,
-  });
-  await track.touchstart({ touches: [touch(0.25)] });
-  await track.touchmove({ touches: [touch(0.5)] });
+  // Native-component event contract; real-device gestures are a separate
+  // acceptance layer (DevTools touch injection cannot prove phone input).
+  await track.trigger('changing', { value: 318725 });
   const preview = await page.data();
   assert.equal(preview.raiseTo, before.minRaise);
-  // Current DevTools expects changedTouches; the SDK type's changeTouches
-  // spelling silently emits a touch ending at (0, 0).
-  await track.touchend({ touches: [], changedTouches: [touch(0.5)] });
+  assert.equal(preview.raisePreviewPosition, 318725);
+  await track.trigger('change', { value: 318725 });
+  const selected = await waitForRaise(page, sliderRaiseTo(view, 318725));
+  assert.equal(selected.sliderValue, 318725);
+  await invoke('cancelRaise');
+  assert.equal((await page.data()).sliderValue, 318725);
+  await track.trigger('change', { value: RAISE_SLIDER_MAX / 2 });
   const middle = await waitForRaise(page, sliderRaiseTo(view, RAISE_SLIDER_MAX / 2));
-  assert.equal(middle.raiseTo, sliderRaiseTo(view, RAISE_SLIDER_MAX / 2));
-  await track.touchstart({ touches: [touch(0.75)] });
-  await track.touchmove({ touches: [touch(1)] });
-  await track.touchend({ touches: [], changedTouches: [touch(1)] });
+  await track.trigger('change', { value: RAISE_SLIDER_MAX });
   await waitForRaise(page, before.maxRaise);
   report.checks.push({
-    name: 'whole-track-touch-drag-midpoint-and-all-in',
-    evidence: { offset, size, min: before.minRaise, mid: middle.raiseTo, max: before.maxRaise },
+    name: 'native-component-preview-commit-and-stable-release',
+    scope: 'DevTools component events; physical phone drag is not verified here',
+    evidence: {
+      offset,
+      size,
+      min: before.minRaise,
+      mid: middle.raiseTo,
+      max: before.maxRaise,
+      selectedPosition: selected.sliderValue,
+    },
   });
   await mini.screenshot({ path: path.join(output, 'rail-all-in.png') });
   await mini.evaluate(() => {

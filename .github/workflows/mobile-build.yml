@@ -219,7 +219,16 @@ jobs:
           path: .artifacts/native-e2e/android/
           retention-days: 7
 
-  ios:
+  ios-smoke:
+    name: ios smoke (${{ matrix.group }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - group: entry
+            scenarios: entry-waiting-music-and-first-deal,entry-high-stakes-layout,practice-reset-in-card-heading
+          - group: interaction
+            scenarios: local-launch-and-no-login,raise-rail-and-vibration-preview,review-hand-groups-two-columns
     runs-on: macos-26
     timeout-minutes: 45
     env:
@@ -236,22 +245,33 @@ jobs:
         run: ditto -c -k --sequesterRsrc --keepParent .artifacts/mobile/ios/Build/Products/Debug-iphonesimulator/App.app .artifacts/mobile/noir-poker-ios-simulator.zip
       - uses: actions/upload-artifact@v7.0.2
         with:
-          name: ios-simulator-app
+          name: ios-simulator-app-${{ matrix.group }}
           path: .artifacts/mobile/noir-poker-ios-simulator.zip
           if-no-files-found: error
           retention-days: 7
       - run: npm run mobile:test:setup -- ios
       # Installed-app parity scenarios replay the WebView DOM in Chromium.
       - run: npx playwright install chromium
-      # The hosted macOS simulator runs about one scenario every few minutes,
-      # so CI checks an installed-app smoke set; the full suite runs locally.
+      # Keep the same six installed scenarios, split across two independent
+      # simulators so slow hosted hardware does not starve the last review case.
       - run: npm run mobile:test:ios
         timeout-minutes: 30
         env:
-          NOIR_NATIVE_SCENARIOS: local-launch-and-no-login,entry-waiting-music-and-first-deal,entry-high-stakes-layout,practice-reset-in-card-heading,raise-rail-and-vibration-preview,review-hand-groups-two-columns
+          NOIR_NATIVE_SCENARIOS: ${{ matrix.scenarios }}
       - uses: actions/upload-artifact@v7.0.2
         if: always()
         with:
-          name: ios-native-e2e-results
+          name: ios-native-e2e-results-${{ matrix.group }}
           path: .artifacts/native-e2e/ios/
           retention-days: 7
+
+  ios:
+    if: always()
+    needs: ios-smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Require every iOS smoke group to pass
+        env:
+          RESULT: ${{ needs.ios-smoke.result }}
+        run: test "$RESULT" = success

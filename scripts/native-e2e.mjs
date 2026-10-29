@@ -265,16 +265,27 @@ async function select(selector, value) {
     `Selection did not apply: ${selector}`,
   );
 }
-async function nativeTouch(selector, duration) {
-  const target = await evaluate((selector) => {
-    const element = document.querySelector(selector),
-      r = element.getBoundingClientRect(),
-      x = r.x + r.width / 2,
-      y = r.y + r.height / 2,
-      hit = document.elementFromPoint(x, y);
-    if (!hit || !element.contains(hit)) throw Error('Native touch target is covered');
-    return { x, y, width: innerWidth, height: innerHeight };
-  }, selector);
+async function nativeTouch(selector, duration, from = 0.5, to = null) {
+  const target = await evaluate(
+    (selector, from, to) => {
+      const element = document.querySelector(selector),
+        r = element.getBoundingClientRect(),
+        x = r.x + r.width * from,
+        y = r.y + r.height / 2,
+        hit = document.elementFromPoint(x, y);
+      if (!hit || !element.contains(hit)) throw Error('Native touch target is covered');
+      return {
+        x,
+        y,
+        endX: to === null ? null : r.x + r.width * to,
+        width: innerWidth,
+        height: innerHeight,
+      };
+    },
+    selector,
+    from,
+    to,
+  );
   const { nativePoint } = await import('./native-pointer.mjs');
   await command('POST', '/context', { name: 'NATIVE_APP' });
   try {
@@ -299,7 +310,16 @@ async function nativeTouch(selector, duration) {
           actions: [
             { type: 'pointerMove', duration: 0, origin: 'viewport', ...point },
             { type: 'pointerDown', button: 0 },
-            { type: 'pause', duration },
+            ...(target.endX === null
+              ? [{ type: 'pause', duration }]
+              : [
+                  {
+                    type: 'pointerMove',
+                    duration,
+                    origin: 'viewport',
+                    ...nativePoint({ ...target, x: target.endX }, target, frame),
+                  },
+                ]),
             { type: 'pointerUp', button: 0 },
           ],
         },
@@ -720,6 +740,7 @@ try {
     state,
     click,
     nativeTap,
+    nativeDrag: (selector, from, to) => nativeTouch(selector, 600, from, to),
     nativeHold,
     select,
     visible,

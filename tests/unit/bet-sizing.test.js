@@ -1,6 +1,11 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { presetRaiseTo } from '../../src/ui/bet-sizing.js';
+import {
+  presetRaiseTo,
+  createRaiseSliderSelection,
+  raiseSliderPosition,
+  sliderRaiseTo,
+} from '../../src/ui/bet-sizing.js';
 import { isChipAmount, legalRaiseTo, roundChips } from '../../src/engine/bet-sizing.js';
 import {
   newGame,
@@ -202,4 +207,31 @@ test('short-stack or minimum-sized pots use the full rail with no dead half', as
     assert.equal(sliderRaiseTo(v, end), max);
     assert.equal(raiseSliderPosition(v, min), 0);
   }
+});
+
+test('rail position survives denomination rounding, but never leaks across decisions or presets', () => {
+  const selection = createRaiseSliderSelection();
+  const game = { hand: 1, street: 'preflop', history: [] };
+  const v = view();
+  const finger = 318725;
+  const amount = selection.select(v, finger, game);
+  assert.notEqual(raiseSliderPosition(v, amount), finger);
+  assert.equal(selection.position(v, amount, game), finger);
+  assert.equal(selection.position(v, amount, game), finger);
+  game.history.push({ action: 'call' });
+  assert.equal(selection.position(v, amount, game), raiseSliderPosition(v, amount));
+  selection.select(v, finger, game);
+  selection.reset();
+  assert.equal(selection.position(v, amount, game), raiseSliderPosition(v, amount));
+  selection.select(v, finger, game);
+  assert.equal(selection.position(v, amount, { ...game }), raiseSliderPosition(v, amount));
+  selection.select(v, finger, game);
+  assert.equal(
+    selection.position(view({ pot: 10000 }), amount, game),
+    raiseSliderPosition(view({ pot: 10000 }), amount),
+  );
+  selection.select(v, finger, game);
+  assert.equal(selection.position(view({}, { enabled: false }), amount, game), 0);
+  for (const position of [0, 250000, 500000, 750000, 1000000])
+    assert.equal(selection.select(v, position, game), sliderRaiseTo(v, position));
 });

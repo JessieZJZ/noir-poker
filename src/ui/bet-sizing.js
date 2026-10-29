@@ -50,3 +50,46 @@ export function raiseSliderPosition(view, amount) {
           : 0.5 + (0.5 * (value - pivot)) / (max - pivot);
   return Math.round(fraction * RAISE_SLIDER_MAX);
 }
+
+// Whole-chip amounts cover intervals of rail positions. Keep the finger's
+// position within that interval instead of snapping back to its inverse.
+export function createRaiseSliderSelection() {
+  let selected = null;
+  const context = (view, game) =>
+    [
+      game.hand,
+      game.replayAttempt,
+      game.street,
+      game.history?.length,
+      view.currentBet,
+      view.pot,
+      view.legal.minRaiseTo,
+      view.legal.maxRaiseTo,
+      view.legal.callAmount,
+      view.legal.chipUnit,
+    ].join(':');
+  return {
+    reset() {
+      selected = null;
+    },
+    select(view, position, game) {
+      const value = Math.round(Math.max(0, Math.min(RAISE_SLIDER_MAX, Number(position) || 0)));
+      const amount = sliderRaiseTo(view, value);
+      selected = amount === null ? null : { game, key: context(view, game), value, amount };
+      return amount;
+    },
+    position(view, amount, game) {
+      if (
+        view.legal.enabled &&
+        view.legal.canRaise &&
+        selected?.game === game &&
+        selected.key === context(view, game) &&
+        selected.amount === amount &&
+        sliderRaiseTo(view, selected.value) === amount
+      )
+        return selected.value;
+      selected = null;
+      return raiseSliderPosition(view, amount);
+    },
+  };
+}

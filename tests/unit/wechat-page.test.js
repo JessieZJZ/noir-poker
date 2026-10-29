@@ -834,7 +834,7 @@ for (const playerCount of [5, 9]) {
       assert.equal(page.data.seats.length, playerCount - 1);
       assert.equal(page.data.windowHeight, info.windowHeight);
       assert.equal(
-        page.data.tableHeight + page.data.topInset + page.data.bottomInset + 284,
+        page.data.tableHeight + page.data.topInset + page.data.bottomInset + 304,
         info.windowHeight,
       );
       const height = page.data.tableHeight;
@@ -847,7 +847,7 @@ for (const playerCount of [5, 9]) {
       page.retryHand();
       assert.equal(page.data.done, false);
       assert.equal(page.data.tableHeight, height, 'retry cannot resize the table');
-      assert.match(stylesheet, /\.action-dock\s*\{[^}]*flex:\s*0 0 134px/s);
+      assert.match(stylesheet, /\.action-dock\s*\{[^}]*flex:\s*0 0 154px/s);
     });
   }
 }
@@ -1126,7 +1126,7 @@ test('WeChat capsule measurement falls back safely when absent, invalid or throw
   ]) {
     const { page } = setup(t, { menuRect });
     assert.equal(page.data.navRightInset, 104);
-    assert.equal(page.data.tableHeight + page.data.topInset + page.data.bottomInset + 284, 844);
+    assert.equal(page.data.tableHeight + page.data.topInset + page.data.bottomInset + 304, 844);
   }
 });
 
@@ -1465,82 +1465,52 @@ test('dropdown data anchors the options below the original control and settings 
   assert.match(template, /top: 0; bottom: 0;/);
 });
 
-test('WeChat can drag from anywhere on the compact rail and commits only on release', (t) => {
-  const { page, wx } = setup(t);
+test('WeChat native rail previews without echoing thumb position and retains release position', (t) => {
+  const { page } = setup(t);
   reachHero(page);
   page._controller.show();
   const before = copy(page.data),
     hand = copy(page._controller.getGame());
-  let measure;
-  wx.createSelectorQuery = () => ({
-    select() {
-      return this;
-    },
-    boundingClientRect() {
-      return this;
-    },
-    exec(callback) {
-      measure = callback;
-    },
-  });
-  page.startRaise({ touches: [{ identifier: 1, clientX: 150 }] });
-  // Finger starts at mid-track, then moves before the asynchronous measure.
-  page.moveRaise({ touches: [{ identifier: 1, clientX: 250 }] });
-  measure([{ left: 50, width: 400 }]);
+  const position = 318725;
+  page.previewRaise({ detail: { value: position } });
   assert.equal(page._audioUnlocked, true);
-  assert.equal(page.data.sliderValue, betSizing.RAISE_SLIDER_MAX / 2);
-  const target = betSizing.presetRaiseTo(page.raiseView(), 'pot');
-  assert.equal(page.data.raiseText, compactChips(target));
+  assert.equal(
+    page.data.raiseText,
+    compactChips(betSizing.sliderRaiseTo(page.raiseView(), position)),
+  );
+  assert.equal(page.data.sliderValue, before.sliderValue, 'native thumb owns its moving position');
   assert.equal(page.data.raiseTo, before.raiseTo);
   assert.deepEqual(copy(page._controller.getGame()), hand);
-  for (const key of ['phoneSeats', 'boardSlots', 'heroCards', 'arenaHeight', 'publicTop'])
-    assert.deepEqual(copy(page.data[key]), before[key]);
-  page.endRaise({ changedTouches: [{ identifier: 1, clientX: 450 }] });
-  assert.equal(page.data.raiseTo, before.maxRaise);
+  page.changeRaise({ detail: { value: position } });
+  assert.equal(page.data.sliderValue, position);
   assert.equal(page.data.raiseTo % page.data.chipUnit, 0);
-  assert.match(template, /catchtouchmove="moveRaise"/);
-  assert.doesNotMatch(template, /<slider|block-size="28"/);
-  assert.match(stylesheet, /\.raise-track\s*\{[^}]*height: 19px/);
+  page._controller.show();
+  assert.equal(page.data.sliderValue, position, 'unrelated render cannot snap the thumb');
+  assert.match(
+    template,
+    /<slider[\s\S]*?bindchanging="previewRaise"[\s\S]*?bindchange="changeRaise"/,
+  );
+  assert.doesNotMatch(template, /catchtouchmove="moveRaise"/);
+  assert.equal(page.data.raiseDragging, false);
+  assert.match(template, /class="raise-thumb"/);
+  assert.match(stylesheet, /\.raise-thumb\s*\{[^}]*width: 15px;[^}]*height: 15px;/s);
+  assert.match(stylesheet, /\.raise-native-input\s*\{[^}]*opacity: 0;/s);
 });
 
-test('WeChat cancels pending rail measurement on hide, retry and disabled turns', (t) => {
-  const { page, wx } = setup(t);
+test('WeChat ignores late slider events after hide and cancels a preview without committing it', (t) => {
+  const { page } = setup(t);
   reachHero(page);
   page._controller.show();
-  let measure;
-  wx.createSelectorQuery = () => ({
-    select() {
-      return this;
-    },
-    boundingClientRect() {
-      return this;
-    },
-    exec(callback) {
-      measure = callback;
-    },
-  });
-  page.startRaise({ touches: [{ identifier: 2, clientX: 400 }] });
   const amount = page.data.raiseTo;
+  page.previewRaise({ detail: { value: betSizing.RAISE_SLIDER_MAX } });
+  page.cancelRaise();
+  assert.equal(page.data.raiseTo, amount);
+  assert.equal(page.data.raiseText, compactChips(amount));
   page.onHide();
-  const show = page._controller.show;
-  let wakes = 0;
-  page._controller.show = () => {
-    wakes++;
-  };
-  page.cancelRaise(); // A system touchcancel can arrive after the hide event.
-  assert.equal(wakes, 0, 'A late touch cancellation cannot reactivate a hidden controller');
-  page._controller.show = show;
-  measure([{ left: 0, width: 400 }]);
+  page.previewRaise({ detail: { value: betSizing.RAISE_SLIDER_MAX } });
+  page.changeRaise({ detail: { value: betSizing.RAISE_SLIDER_MAX } });
   assert.equal(page.data.raiseTo, amount);
   assert.equal(page._raiseGesture, null);
-  page.onShow();
-  page.startRaise({ touches: [{ identifier: 3, clientX: 200 }] });
-  page.retryHand();
-  measure([{ left: 0, width: 400 }]);
-  assert.equal(page._raiseGesture, null);
-  const before = page.data.raiseTo;
-  page.previewRaise({ detail: { value: betSizing.RAISE_SLIDER_MAX } });
-  assert.equal(page.data.raiseTo, before);
 });
 
 test('WeChat entry gesture unlocks the first full deal cue using the short-audio backend', (t) => {
@@ -2491,7 +2461,7 @@ test('WeChat larger table text uses shared profile and hero footprints without o
     assert.ok(m['hero-action-height'] >= m['hero-action'] * 1.2);
     assert.equal(m['hero-info-height'], m['hero-identity-height'] + m['hero-action-height'] + 2);
     assert.ok(
-      page.data.tableHeight + page.data.topInset + page.data.bottomInset + 284 <= windowHeight,
+      page.data.tableHeight + page.data.topInset + page.data.bottomInset + 304 <= windowHeight,
     );
   }
   for (const key of [
@@ -2555,7 +2525,7 @@ test('WeChat long seat names shrink visually while position and inspection slots
     /\.seat-body > \.avatar\s*\{[^}]*align-self: end;[^}]*width: var\(--player-avatar\);[^}]*height: var\(--player-avatar\)/s,
   );
   assert.match(template, /class="position[^>]*>{{item.position}}<\/text\s*>/s);
-  assert.match(template, /class="seat-eye"[^>]*bindtap="peekSeat"/s);
+  assert.match(template, /class="seat-peek-hit"[^>]*catchtap="peekSeat"/s);
 });
 
 test('WeChat final cards retain readable phone dimensions within the unchanged first-screen budget', (t) => {
@@ -3068,7 +3038,7 @@ test('WeChat tablet touch chrome reserves its real height and crossing the break
     const tablet = width >= 601;
     assert.equal(page.data.navHeight, tablet ? 76 : 48);
     assert.equal(page.data.tableHeaderHeight, tablet ? 66 : 50);
-    assert.equal(page.data.liveDockHeight, tablet ? 208 : 134);
+    assert.equal(page.data.liveDockHeight, tablet ? 208 : 154);
     assert.equal(page.data.compactDockHeight, tablet ? 76 : 64);
     assert.equal(
       page.data.tableHeight + page.data.topInset + page.data.bottomInset + page.data.chromeHeight,
@@ -3077,7 +3047,7 @@ test('WeChat tablet touch chrome reserves its real height and crossing the break
     const before = JSON.stringify(page._controller.getGame());
     Object.assign(info, { windowWidth: tablet ? 600 : 601 });
     page.onResize();
-    assert.equal(page.data.liveDockHeight, tablet ? 134 : 208);
+    assert.equal(page.data.liveDockHeight, tablet ? 154 : 208);
     assert.equal(JSON.stringify(page._controller.getGame()), before);
     assert.equal(
       page.data.tableHeight + page.data.topInset + page.data.bottomInset + page.data.chromeHeight,

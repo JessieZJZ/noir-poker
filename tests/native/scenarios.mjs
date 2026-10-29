@@ -387,6 +387,36 @@ export async function nativeScenarios(app) {
     assert.equal(chrome.activityHidden, true);
     assert.ok(!chrome.entryCopy.includes('第一手'));
     await app.screenshot('waiting-before-first-touch');
+    await app.evaluate(() => {
+      const read = () => {
+        const selectors = ['.poker-table', '.seat-profile'];
+        return selectors.flatMap((selector) => {
+          const r = document.querySelector(selector).getBoundingClientRect();
+          return [r.x, r.y, r.width, r.height];
+        });
+      };
+      const monitor = (window.__entryStability = {
+        baseline: read(),
+        maxDelta: 0,
+        minOpacity: 1,
+        frames: 0,
+        running: true,
+      });
+      const sample = () => {
+        const values = read();
+        monitor.maxDelta = Math.max(
+          monitor.maxDelta,
+          ...values.map((v, i) => Math.abs(v - monitor.baseline[i])),
+        );
+        monitor.minOpacity = Math.min(
+          monitor.minOpacity,
+          Number(getComputedStyle(document.querySelector('.game-surface')).opacity),
+        );
+        monitor.frames++;
+        if (monitor.running) requestAnimationFrame(sample);
+      };
+      sample();
+    });
     await app.click('#join-table-button');
     const during = await app.state();
     assert.equal(during.hand, before.hand + 1);
@@ -400,6 +430,15 @@ export async function nativeScenarios(app) {
       10000,
       'Visible entry deal must finish',
     );
+    const stability = await app.evaluate(() => {
+      const monitor = window.__entryStability;
+      monitor.running = false;
+      delete window.__entryStability;
+      return monitor;
+    });
+    assert.ok(stability.frames > 2);
+    assert.equal(stability.minOpacity, 1);
+    assert.ok(stability.maxDelta <= 1.1, JSON.stringify(stability));
     assert.equal((await app.state()).hand, during.hand);
     const continued = await progress();
     assert.ok(continued.time > music.time || continued.naturalLoop);
@@ -1099,6 +1138,22 @@ export async function nativeScenarios(app) {
     assert.ok(Math.abs(trackTap.position - 500000) < 10000, JSON.stringify(trackTap));
     assert.equal(trackTap.amount % before.chipUnit, 0);
     assert.equal((await app.state()).pot, before.pot, 'Selecting an amount does not place a wager');
+    await app.evaluate(() => {
+      const el = document.querySelector('#bet-slider');
+      el.addEventListener('change', () => (window.__railReleasePosition = el.value), {
+        once: true,
+      });
+    });
+    await app.nativeDrag('#bet-slider', 0.2, 0.73);
+    const drag = await app.evaluate(() => ({
+      release: window.__railReleasePosition,
+      value: document.querySelector('#bet-slider').value,
+      amount: Number(document.querySelector('#bet-slider').dataset.raiseTo),
+    }));
+    assert.ok(Number(drag.value) > 600000 && Number(drag.value) < 850000, JSON.stringify(drag));
+    assert.equal(drag.release, drag.value);
+    assert.equal(drag.amount % before.chipUnit, 0);
+
     await app.click('#opponents-button');
     const wasEnabled = await app.evaluate(
       () => document.querySelector('#vibration-button').getAttribute('aria-checked') === 'true',
@@ -1145,6 +1200,7 @@ export async function nativeScenarios(app) {
     return {
       shortcut,
       trackTap,
+      drag,
       scope: 'Installed native touch and Haptics completion; physical motor feel is separate',
     };
   });

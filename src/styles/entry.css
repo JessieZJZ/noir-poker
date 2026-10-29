@@ -47,9 +47,6 @@
 .header-actions .settings-button:hover {
   background: #17232d;
 }
-.game-surface[data-entry-state='waiting'] {
-  animation: table-arrive 650ms ease-out both;
-}
 .game-surface[data-entry-state='waiting'] .table-center > :not(.entry-welcome),
 .game-surface[data-entry-state='waiting'] .hero-position,
 .game-surface[data-entry-state='waiting'] #hero-position,
@@ -72,13 +69,16 @@
 .game-surface[data-entry-state='waiting'] .hand-label > :not(#street-label) {
   display: none;
 }
+.game-surface .surface-top .hand-label {
+  line-height: 1.2;
+}
 /* The waiting message sits where the hand label sits in play, centred in
    the same first row; a wrapped message grows the row instead of clipping. */
 .game-surface[data-entry-state='waiting'] .surface-top .hand-label {
   grid-column: 1;
   align-self: center;
   white-space: normal;
-  line-height: normal;
+  line-height: 1.2;
 }
 .main .game-surface[data-entry-state='waiting'] > .surface-top {
   grid-template-rows: minmax(var(--hand-row), auto) var(--hint-row);
@@ -86,7 +86,7 @@
 .game-surface[data-entry-state='waiting'] .surface-top .blind-info {
   grid-row: 1;
   align-self: start;
-  line-height: 1.45;
+  line-height: 1.4;
 }
 .game-surface[data-entry-state='waiting'] #hero-position {
   display: none;
@@ -130,16 +130,6 @@
 .entry-footnote {
   color: #78978e;
   font-size: 10px;
-}
-@keyframes table-arrive {
-  from {
-    opacity: 0;
-    translate: 0 5px;
-  }
-  to {
-    opacity: 1;
-    translate: 0 0;
-  }
 }
 @media (max-width: 600px) {
   .header .brand,

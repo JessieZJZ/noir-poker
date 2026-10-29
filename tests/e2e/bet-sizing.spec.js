@@ -132,3 +132,25 @@ test('dragging from the rail reaches pot at halfway and all-in at the right edge
   const state = await page.evaluate(() => window.noir.getState());
   await expect(slider).toHaveAttribute('data-raise-to', String(state.legal.maxRaiseTo));
 });
+
+test('rounded raise amounts do not pull the rail thumb away from the finger after rerender', async ({
+  page,
+}) => {
+  await page.goto('/');
+  await page.waitForFunction(() => !!window.qa);
+  await page.evaluate(() => window.qa.potSizing({ stack: 20000 }));
+  const slider = page.locator('#bet-slider');
+  await slider.evaluate((el) => {
+    el.value = '318725';
+    el.dispatchEvent(new Event('input', { bubbles: true }));
+  });
+  const before = await slider.getAttribute('data-raise-to');
+  await expect(slider).toHaveValue('318725');
+  await page.locator('#opponents-button').click();
+  await page.locator('#hint-toggle').click();
+  await page.locator('#opponents-dialog .close-dialog').first().click();
+  await expect(slider).toHaveValue('318725');
+  await expect(slider).toHaveAttribute('data-raise-to', before);
+  await page.locator('[data-preset="pot"]').click();
+  await expect(slider).toHaveValue('500000');
+});

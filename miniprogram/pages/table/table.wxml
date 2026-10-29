@@ -160,12 +160,13 @@
                   data-id="{{item.id}}"
                   >{{item.position}}</text
                 ><view wx:if="{{done && !item.out}}" class="seat-eye-slot"
-                  ><button
+                  ><view class="seat-eye" aria-hidden="true" />
+                  <button
                     hover-class="none"
-                    wx:if="{{done}}"
-                    class="seat-eye"
+                    class="seat-peek-hit"
+                    style="width: {{44 / arenaScale}}px; height: {{44 / arenaScale}}px;"
                     data-id="{{item.id}}"
-                    bindtap="peekSeat"
+                    catchtap="peekSeat"
                     aria-label="查看底牌" /></view
               ></view>
               <view
@@ -364,25 +365,27 @@
               牌力表
             </button></view
           ><view class="raise-controls" wx:if="{{!compactActions}}"
-            ><view
-              id="raise-track"
-              class="raise-track {{!canRaise ? 'disabled' : ''}}"
-              aria-role="slider"
-              aria-label="加注筹码"
-              aria-valuemin="{{minRaise}}"
-              aria-valuemax="{{maxRaise}}"
-              aria-valuenow="{{raiseTo}}"
-              aria-valuetext="{{raiseText}}"
-              aria-disabled="{{!canRaise}}"
-              catchtouchstart="startRaise"
-              catchtouchmove="moveRaise"
-              catchtouchend="endRaise"
-              catchtouchcancel="cancelRaise"
-              ><view class="raise-rail"></view
-              ><view
+            ><view class="raise-track {{!canRaise ? 'disabled' : ''}}">
+              <view class="raise-rail" aria-hidden="true" />
+              <view
                 class="raise-thumb"
-                style="left: {{sliderValue / sliderLimit * 100}}%;"
-              ></view></view
+                aria-hidden="true"
+                style="left: {{(raiseDragging ? raisePreviewPosition : sliderValue) / sliderLimit * 100}}%;"
+              />
+              <slider
+                id="raise-track"
+                class="raise-native-input"
+                min="0"
+                max="{{sliderLimit}}"
+                step="1"
+                value="{{sliderValue}}"
+                disabled="{{!canRaise}}"
+                block-size="12"
+                aria-label="加注筹码"
+                bindchanging="previewRaise"
+                bindchange="changeRaise"
+                bindtouchcancel="cancelRaise"
+              /> </view
             ><view class="presets"
               ><button
                 hover-class="none"

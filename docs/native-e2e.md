@@ -168,3 +168,5 @@ Web/iOS/Android 的 13 种牌点改用固定 Manrope 700 矢量轮廓，保留�
 早期环境问题均保留原始证据：Android 16 测试 AVD 首次冷启动超过 120 秒，之后出现 System UI ANR；软件 GPU 重试仍未在 240 秒内就绪且系统进程重启。干净 Android 15 软件 GPU 的首次驱动安装也超过 20 秒，预装驱动并使用预热后的 host GPU 测试设备后恢复。Appium 首次载入驱动超过 30 秒，改用独立预热服务。iOS 一轮在驱动连接后停留于系统桌面，首屏附着失败；保留失败截图，前台状态探针与预热后完整重跑通过。新增像素测试还发现 iOS 截图未保存原生坐标 XML，已修正采集器并增加单元回归、重新编译两端。
 
 失败报告位于 `.artifacts/card-native/android/`、`android-final/`、`android-api35/`、`android-api35-final/`、`ios/`、`ios-final/`、`ios-verified/`；启动和驱动日志为 `.artifacts/card-android-*.log`、`card-native-*.log`。整个验证使用独立测试设备，未清除用户正在使用的 Android 模拟器牌局或其他任务设备的数据。
+
+CI 的 iOS 六项安装冒烟场景分为 entry、interaction 两组，各自使用独立模拟器与完整的原超时上限；`ios` 汇总检查要求两组全部通过。分组不缩减场景或降低断言。

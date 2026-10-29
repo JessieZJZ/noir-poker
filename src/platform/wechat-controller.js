@@ -1,9 +1,4 @@
-import {
-  presetRaiseTo,
-  sliderRaiseTo,
-  raiseSliderPosition,
-  RAISE_SLIDER_MAX,
-} from '../ui/bet-sizing.js';
+import { presetRaiseTo, createRaiseSliderSelection, RAISE_SLIDER_MAX } from '../ui/bet-sizing.js';
 import { createDealGate } from '../ui/deal-gate.js';
 import { difficultyPolicy } from '../engine/bot-difficulty.js';
 import { createGameRecords, standingLabel, standingClass } from '../engine/game-records.js';
@@ -150,6 +145,7 @@ export function createWechatController({
       vibration: false,
     });
   const peeked = new Map();
+  const raiseSelection = createRaiseSliderSelection();
   const profiles = BOT_PROFILES.map((p) => ({
     ...p,
     portrait: p.id === 'balanced' ? '' : `/assets/portraits/${p.id}.jpg`,
@@ -543,9 +539,10 @@ export function createWechatController({
       canAct: !!legal.enabled,
       minRaise: sliderMin,
       // Off turn the disabled slider rests at its minimum, as on Web.
-      sliderValue: raiseSliderPosition(
+      sliderValue: raiseSelection.position(
         { currentBet: game.currentBet, pot: potSize(game), legal },
         raiseTo,
+        game,
       ),
       sliderLimit: RAISE_SLIDER_MAX,
       sliderPot: presetRaiseTo({ currentBet: game.currentBet, pot: potSize(game), legal }, 'pot'),
@@ -859,6 +856,7 @@ export function createWechatController({
       driveBots();
     },
     hide() {
+      raiseSelection.reset();
       active = false;
       dealGate.setActive(false);
       cancelBots();
@@ -900,6 +898,7 @@ export function createWechatController({
       );
       if (target === null) return;
       attention.engage();
+      raiseSelection.reset();
       raiseTo = legalRaiseTo(target, legal);
       render();
     },
@@ -909,9 +908,10 @@ export function createWechatController({
     setRaisePosition(position) {
       if (readOnlyAttempt || !active || dealGate.pending) return;
       const legal = legalActions(game, 0);
-      const amount = sliderRaiseTo(
+      const amount = raiseSelection.select(
         { currentBet: game.currentBet, pot: potSize(game), legal },
         position,
+        game,
       );
       if (amount === null) return;
       attention.engage();
@@ -923,6 +923,7 @@ export function createWechatController({
       const legal = legalActions(game, 0);
       if (legal.enabled && legal.canRaise) {
         attention.engage();
+        raiseSelection.reset();
         raiseTo = legalRaiseTo(Number(value), legal);
         render();
       }

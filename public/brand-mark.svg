@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" fill="none">
+  <defs>
+    <linearGradient id="rim" x1="30" y1="16" x2="214" y2="245" gradientUnits="userSpaceOnUse"><stop stop-color="#66f5dc"/><stop offset=".45" stop-color="#168e82"/><stop offset="1" stop-color="#063c3a"/></linearGradient>
+    <radialGradient id="tile" cx="0" cy="0" r="1" gradientTransform="translate(112 98) rotate(65) scale(165)" gradientUnits="userSpaceOnUse"><stop stop-color="#0c4541"/><stop offset="1" stop-color="#031317"/></radialGradient>
+    <linearGradient id="spade" x1="81" y1="63" x2="167" y2="199" gradientUnits="userSpaceOnUse"><stop stop-color="#bdfff0"/><stop offset=".47" stop-color="#39f4cc"/><stop offset="1" stop-color="#00bfa9"/></linearGradient>
+  </defs>
+  <rect x="15" y="15" width="226" height="226" rx="47" fill="url(#tile)" stroke="url(#rim)" stroke-width="2"/>
+  <path d="M128 53C113 72 67 106 65 132C62 163 91 179 117 161C115 177 106 187 96 198H160C150 187 141 177 139 161C165 179 194 163 191 132C189 106 143 72 128 53Z" fill="url(#spade)" stroke="#89ffe8" stroke-width=".8" stroke-linejoin="round"/>
+</svg>

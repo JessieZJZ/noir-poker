@@ -64,7 +64,7 @@ import { createActivityFormatter } from './activity.js';
 import { preparePortraits } from './portraits.js';
 import {
   presetRaiseTo,
-  sliderRaiseTo,
+  createRaiseSliderSelection,
   raiseSliderPosition,
   RAISE_SLIDER_MAX,
 } from './bet-sizing.js';
@@ -172,6 +172,7 @@ let game = gameRecords.resume() || newGame(requestedCount, requestedStakes),
   vibration = true,
   audio = null,
   audioOutput = null;
+const raiseSelection = createRaiseSliderSelection();
 let newRecordSession = false;
 game.history ||= [];
 game.difficulty = tablePreferences.difficulty;
@@ -673,9 +674,10 @@ function render() {
     slider.min = 0;
     slider.max = RAISE_SLIDER_MAX;
     slider.step = 1;
-    slider.value = raiseSliderPosition(
+    slider.value = raiseSelection.position(
       { currentBet: game.currentBet, pot: potSize(game), legal },
       bet,
+      game,
     );
     setLocalizedHTML(
       $('#call-button'),
@@ -1090,7 +1092,11 @@ $('#bet-slider').oninput = (e) => {
   const legal = legalActions(game, 0);
   if (!legal.enabled || !legal.canRaise) return;
   heroTurnAttention.engage();
-  bet = sliderRaiseTo({ currentBet: game.currentBet, pot: potSize(game), legal }, e.target.value);
+  bet = raiseSelection.select(
+    { currentBet: game.currentBet, pot: potSize(game), legal },
+    e.target.value,
+    game,
+  );
   updateBet();
 };
 // Keyboard arrows keep their whole-chip precision on the nonlinear rail.
@@ -1106,6 +1112,7 @@ $('#bet-slider').onkeydown = (event) => {
       : event.key === 'End'
         ? legal.maxRaiseTo
         : bet + (['ArrowRight', 'ArrowUp'].includes(event.key) ? 1 : -1) * chipUnitOf(game);
+  raiseSelection.reset();
   bet = legalRaiseTo(amount, legal);
   event.currentTarget.value = raiseSliderPosition(
     { currentBet: game.currentBet, pot: potSize(game), legal },
@@ -1124,6 +1131,7 @@ document.querySelectorAll('[data-preset]').forEach(
       );
       if (target === null) return;
       heroTurnAttention.engage();
+      raiseSelection.reset();
       bet = target;
       $('#bet-slider').value = raiseSliderPosition(
         { currentBet: game.currentBet, pot: potSize(game), legal },

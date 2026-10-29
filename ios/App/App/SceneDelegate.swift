@@ -32,7 +32,11 @@ class NoirBridgeViewController: CAPBridgeViewController, UIGestureRecognizerDele
               function ready() {
                 if (document.documentElement?.dataset.appReady !== 'true') return;
                 observer.disconnect();
-                window.webkit.messageHandlers.noirLaunchReady.postMessage('ready');
+                // Leave the matching cover in place until WebKit has rendered
+                // the styled table behind it, rather than the mutation alone.
+                requestAnimationFrame(() => requestAnimationFrame(() => {
+                  window.webkit.messageHandlers.noirLaunchReady.postMessage('ready');
+                }));
               }
               observer.observe(document, {
                 childList: true, subtree: true, attributes: true,

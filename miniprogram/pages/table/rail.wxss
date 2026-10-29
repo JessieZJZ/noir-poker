@@ -1407,8 +1407,8 @@
   font-size: 11px;
 }
 .action-dock {
-  height: 134px;
-  flex-basis: 134px;
+  height: 154px;
+  flex-basis: 154px;
 }
 .action-buttons,
 .continue-buttons {
@@ -1437,4 +1437,28 @@
 .game-header {
   height: 26px;
   flex-basis: 26px;
+}
+
+/* Keep the visual eye in its existing slot; the real button is 44 screen px
+   even when the fitted table is scaled down. No touch-only pseudo hit area. */
+.seat-eye-slot {
+  position: relative;
+  overflow: visible;
+}
+.seat-eye-slot > .seat-peek-hit {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 6;
+  min-width: 0;
+  min-height: 0;
+  max-width: none;
+  padding: 0;
+  margin: 0;
+  border: 0;
+  background: transparent;
+}
+.seat-peek-hit::after {
+  border: 0;
 }
