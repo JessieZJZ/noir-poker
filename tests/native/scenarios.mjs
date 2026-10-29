@@ -903,8 +903,15 @@ export async function nativeScenarios(app) {
     const tablet = await app.evaluate(() => document.documentElement.dataset.tablet === 'true');
     if (!tablet) return { scope: 'Tablet-only readability checks; this is a phone' };
     const readings = [];
+    await app.waitHero();
+    const before = await app.state();
     try {
-      for (const orientation of ['PORTRAIT', 'LANDSCAPE']) {
+      for (const [cycle, orientation] of [
+        'PORTRAIT',
+        'LANDSCAPE',
+        'PORTRAIT',
+        'LANDSCAPE',
+      ].entries()) {
         await app.rotate(orientation);
         await app.waitFor(
           () =>
@@ -916,8 +923,22 @@ export async function nativeScenarios(app) {
           'Tablet rotation must settle',
         );
         await app.waitHero();
-        const controls = await app.evaluate(() => {
+        assert.deepEqual(
+          await app.state(),
+          before,
+          'Tablet rotation must retain the same decision',
+        );
+        const measureControls = () => {
           const font = (s) => parseFloat(getComputedStyle(document.querySelector(s)).fontSize);
+          const box = (s) => document.querySelector(s).getBoundingClientRect();
+          const table = box('.table-viewport'),
+            bet = box('.bet-controls'),
+            label = box('.bet-controls > label'),
+            rail = box('.bet-controls input'),
+            presets = box('.bet-presets'),
+            actions = box('.action-buttons');
+          const portrait = innerWidth < innerHeight;
+          const smallLandscape = !portrait && innerWidth >= 901 && innerWidth <= 1150;
           return {
             width: innerWidth,
             height: innerHeight,
@@ -928,15 +949,32 @@ export async function nativeScenarios(app) {
             buttons: [...document.querySelectorAll('.action-buttons button')].map(
               (el) => el.getBoundingClientRect().height,
             ),
+            layout: {
+              tableNotCollapsed: table.height > innerHeight * (portrait ? 0.55 : 0.4),
+              arranged: portrait ? bet.bottom <= actions.top + 1 : bet.right <= actions.left + 1,
+              labelAboveRail:
+                !smallLandscape || (label.width >= bet.width * 0.9 && label.bottom <= rail.top + 1),
+              railAbovePresets: rail.bottom <= presets.top + 1,
+              fullWidthRail: Math.abs(rail.width - presets.width) <= 1,
+              alignedBottom: !smallLandscape || Math.abs(presets.bottom - actions.bottom) <= 1,
+            },
           };
-        });
+        };
+        const controls = await app.waitFor(
+          async () => {
+            const value = await app.evaluate(measureControls);
+            return Object.values(value.layout).every(Boolean) ? value : null;
+          },
+          5000,
+          'Tablet dock rows and table height must settle after rotation',
+        );
         assert.ok(controls.nav >= 16);
         assert.ok(controls.action >= 18);
         assert.ok(controls.preset >= 15);
         assert.ok(controls.stats >= 15);
         assert.ok(controls.buttons.every((height) => height >= 48));
         assertTableLayout(await app.evaluate(readTableLayout));
-        await app.screenshot(`tablet-${orientation.toLowerCase()}-play`);
+        await app.screenshot(`tablet-${cycle + 1}-${orientation.toLowerCase()}-play`);
         await app.click('#opponents-button');
         const settings = await app.evaluate(() => ({
           width: document.querySelector('#opponents-dialog').getBoundingClientRect().width,
@@ -953,7 +991,7 @@ export async function nativeScenarios(app) {
         assert.ok(settings.width > settings.viewport * (orientation === 'PORTRAIT' ? 0.94 : 0.78));
         assert.ok(settings.label >= 17);
         assert.ok(settings.description >= 15);
-        await app.screenshot(`tablet-${orientation.toLowerCase()}-settings`);
+        await app.screenshot(`tablet-${cycle + 1}-${orientation.toLowerCase()}-settings`);
         await app.click('#opponents-dialog .dialog-header .close-dialog');
         await app.click('#rules-button');
         await app.click('#guide-menu-item');
@@ -964,7 +1002,7 @@ export async function nativeScenarios(app) {
         }));
         assert.ok(guide.width > guide.viewport * (orientation === 'PORTRAIT' ? 0.94 : 0.78));
         assert.ok(guide.font >= 16);
-        await app.screenshot(`tablet-${orientation.toLowerCase()}-guide`);
+        await app.screenshot(`tablet-${cycle + 1}-${orientation.toLowerCase()}-guide`);
         await app.click('#rules-dialog .dialog-header .close-dialog');
         readings.push({ orientation, controls, settings, guide });
       }

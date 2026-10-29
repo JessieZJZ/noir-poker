@@ -367,3 +367,46 @@
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
+
+/* The old <=1150px wager grid put the amount beside the rail. On a small
+   landscape tablet it also survived inside the desktop-style horizontal
+   dock, narrowing the rail and misaligning the action buttons. Give the
+   amount, rail and shortcuts one full-width row each, for mouse and touch. */
+@media (min-width: 901px) and (max-width: 1150px) and (orientation: landscape) {
+  .main .game-surface .action-panel:not(.settled-actions):not(.folded-actions) {
+    flex-direction: row;
+    gap: 16px;
+  }
+  .main .game-surface .action-panel .bet-controls {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+    width: 40%;
+    min-width: 0;
+    align-self: flex-end;
+  }
+  .main .game-surface .bet-controls > label {
+    flex-direction: row;
+    grid-column: 1;
+    grid-row: auto;
+  }
+  .main .game-surface .bet-controls > label strong {
+    font-size: inherit;
+    line-height: inherit;
+  }
+  .main .game-surface .bet-controls input {
+    grid-column: 1;
+    grid-row: auto;
+    margin: 4px 0 0;
+  }
+  .main .game-surface .bet-presets {
+    grid-column: 1;
+    grid-row: auto;
+  }
+  .main .game-surface .action-buttons {
+    flex: 1;
+    width: auto;
+    min-width: 0;
+    align-self: flex-end;
+  }
+}

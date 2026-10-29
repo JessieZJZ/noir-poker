@@ -30,3 +30,33 @@ test('desktop window height resizing remains responsive', () => {
       height,
     );
 });
+
+test('tablet rotation never keeps an intermediate height at the final portrait width', () => {
+  const viewport = createStableViewport();
+  viewport.read({ width: 1440, height: 960, orientation: 'landscape-primary', compact: false });
+  // DevTools and split-screen rotation can report the new width before the
+  // final height, without changing screen.orientation.type.
+  for (const height of [600, 1000, 1440]) {
+    assert.equal(
+      viewport.read({ width: 960, height, orientation: 'landscape-primary', compact: height > 960 })
+        .height,
+      height,
+    );
+  }
+  for (const height of [500, 850, 1024]) {
+    assert.equal(
+      viewport.read({ width: 768, height, orientation: 'portrait-primary', compact: true }).height,
+      height,
+    );
+  }
+});
+
+test('height stabilization stops at the phone boundary, including same-width tablet resizing', () => {
+  const viewport = createStableViewport();
+  const read = (width, height) =>
+    viewport.read({ width, height, orientation: 'portrait-primary', compact: true }).height;
+  assert.equal(read(600, 900), 900);
+  assert.equal(read(600, 700), 900);
+  assert.equal(read(601, 900), 900);
+  assert.equal(read(601, 1200), 1200);
+});

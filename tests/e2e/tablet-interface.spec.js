@@ -10,6 +10,8 @@ const sizes = [
   [800, 1280],
   [820, 1180],
   [834, 1194],
+  [912, 1368],
+  [960, 1440],
   [1024, 1366],
   [1032, 1376],
 ];
@@ -46,7 +48,10 @@ for (const size of sizes) {
       await page.locator('#rules-button').click();
       await openSettings(page);
       const settings = await page.locator('#opponents-dialog').boundingBox();
-      expect(settings.width).toBeGreaterThan(width * (portrait ? 0.94 : 0.78));
+      // Wide Surface windows reach the intentionally bounded 1120px dialog.
+      expect(settings.width).toBeGreaterThanOrEqual(
+        Math.min(1120, width * (portrait ? 0.94 : 0.78)),
+      );
       expect(await font('.settings-dialog .setting-description')).toBeGreaterThanOrEqual(15);
       expect(await font('.settings-dialog .settings-row > label')).toBeGreaterThanOrEqual(17);
       expect(
@@ -63,7 +68,7 @@ for (const size of sizes) {
       await page.locator('#rules-button').click();
       await page.locator('#guide-menu-item').click();
       const guide = await page.locator('#rules-dialog').boundingBox();
-      expect(guide.width).toBeGreaterThan(width * (portrait ? 0.94 : 0.78));
+      expect(guide.width).toBeGreaterThanOrEqual(Math.min(1120, width * (portrait ? 0.94 : 0.78)));
       expect(await font('#rules-dialog p')).toBeGreaterThanOrEqual(16);
       const cards = await page.locator('#rules-dialog .guide-card').first().boundingBox();
       expect(cards.width).toBeGreaterThanOrEqual(44);

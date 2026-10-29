@@ -1,13 +1,21 @@
 import { COMPACT_PLAY_QUERY } from './play-geometry.js';
 
 // Browser bars and keyboards change the visible height while scrolling. A
-// compact table keeps its first layout budget until its width or orientation
-// changes; live and saved tables share the same budget in this document.
+// phone keeps its first layout budget until its width or orientation changes.
+// Tablets must follow same-width height changes: rotation/split-screen can
+// report the new width before its final height or screen orientation arrives.
+// Live and saved tables share the same budget in this document.
 export function createStableViewport() {
   let baseline = null;
   return {
     read({ width, height, orientation, compact }) {
-      if (!baseline || width !== baseline.width || orientation !== baseline.orientation || !compact)
+      if (
+        !baseline ||
+        width !== baseline.width ||
+        orientation !== baseline.orientation ||
+        !compact ||
+        width > 600
+      )
         baseline = { width, height, orientation };
       return { ...baseline };
     },
