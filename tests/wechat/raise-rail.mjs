@@ -48,6 +48,12 @@ try {
   }
   const before = await page.data();
   assert.equal(before.canRaise, true);
+  const expectedThumb = before.windowWidth >= 601 && before.windowHeight >= 601 ? 23 : 15;
+  assert.equal(
+    before.raiseThumbSize,
+    expectedThumb,
+    'DevTools must run the current native-thumb build',
+  );
   report.viewport = { width: before.windowWidth, height: before.windowHeight };
   const view = {
     currentBet: before.currentBet,
@@ -66,6 +72,9 @@ try {
   assert.ok(track);
   const offset = await track.offset(),
     size = await track.size();
+  assert.equal(Number(await track.attribute('block-size')), expectedThumb);
+  assert.notEqual(await track.style('opacity'), '0', 'the thumb must render on the native side');
+  assert.ok(size.height >= 31, 'the transparent input hit area extends beyond the visible rail');
   // Native-component event contract; real-device gestures are a separate
   // acceptance layer (DevTools touch injection cannot prove phone input).
   await track.trigger('changing', { value: 318725 });
@@ -80,6 +89,10 @@ try {
   } while (Date.now() < previewDeadline);
   assert.equal(preview.raiseTo, before.minRaise);
   assert.equal(preview.raisePreviewPosition, 318725);
+  await mini.evaluate(() => getCurrentPages().at(-1)._controller.show());
+  const redrawn = await page.data();
+  assert.equal(redrawn.raiseText, preview.raiseText, 'a redraw keeps the in-progress caption');
+  assert.equal(redrawn.sliderValue, before.sliderValue, 'a redraw does not echo a slider value');
   await track.trigger('change', { value: 318725 });
   const selected = await waitForRaise(page, sliderRaiseTo(view, 318725));
   assert.equal(selected.sliderValue, 318725);

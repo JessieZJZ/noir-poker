@@ -19,12 +19,12 @@
     <text wx:else>{{part.text}}</text>
   </block>
 </template>
-<view wx:if="{{!tableReady}}" class="launch-screen" aria-label="NOIR Poker">
+<view wx:if="{{!tableReady && !historyReadOnly}}" class="launch-screen" aria-label="NOIR Poker">
   <image src="/assets/launch-icon.png" mode="aspectFit" />
   <view class="launch-progress" />
 </view>
 <view
-  wx:else
+  wx:elif="{{tableReady}}"
   class="screen {{homeLocked ? 'home-locked' : ''}}"
   style="padding-top: {{topInset + 36}}px; padding-bottom: {{bottomInset}}px; {{homeLocked ? 'top: ' + homeOffset + 'px;' : ''}}"
 >
@@ -367,20 +367,19 @@
           ><view class="raise-controls" wx:if="{{!compactActions}}"
             ><view class="raise-track {{!canRaise ? 'disabled' : ''}}">
               <view class="raise-rail" aria-hidden="true" />
-              <view
-                class="raise-thumb"
-                aria-hidden="true"
-                style="left: {{(raiseDragging ? raisePreviewPosition : sliderValue) / sliderLimit * 100}}%;"
-              />
               <slider
                 id="raise-track"
                 class="raise-native-input"
+                style="left: -{{raiseThumbSize / 2}}px; right: -{{raiseThumbSize / 2}}px;"
                 min="0"
                 max="{{sliderLimit}}"
                 step="1"
                 value="{{sliderValue}}"
                 disabled="{{!canRaise}}"
-                block-size="12"
+                block-size="{{raiseThumbSize}}"
+                block-color="#6ee7c5"
+                activeColor="#354650"
+                backgroundColor="#354650"
                 aria-label="加注筹码"
                 bindchanging="previewRaise"
                 bindchange="changeRaise"

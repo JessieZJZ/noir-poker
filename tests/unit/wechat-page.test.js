@@ -291,8 +291,8 @@ test('WeChat publishes the waiting table atomically after the launch artwork', (
   assert.equal(page.data.heroPosition, '');
   assert.equal(page.data.waitingForSeat, true);
   assert.equal(page.data.seats.length, page.data.settings.playerCount - 1);
-  assert.match(template, /wx:if="\{\{!tableReady\}\}" class="launch-screen"/);
-  assert.match(template, /<view\s+wx:else\s+class="screen /);
+  assert.match(template, /wx:if="\{\{!tableReady && !historyReadOnly\}\}" class="launch-screen"/);
+  assert.match(template, /<view\s+wx:elif="\{\{tableReady\}\}"\s+class="screen /);
   assert.match(
     template,
     /<text\s+wx:if="\{\{!waitingForSeat\}\}"\s+class="position"\s*>\s*\{\{heroPosition\}\}\s*<\/text\s*>/,
@@ -1481,6 +1481,18 @@ test('WeChat native rail previews without echoing thumb position and retains rel
   assert.equal(page.data.sliderValue, before.sliderValue, 'native thumb owns its moving position');
   assert.equal(page.data.raiseTo, before.raiseTo);
   assert.deepEqual(copy(page._controller.getGame()), hand);
+  const caption = page.data.raiseText;
+  page._controller.show();
+  assert.equal(
+    page.data.raiseText,
+    caption,
+    'a public redraw must not overwrite an active preview',
+  );
+  assert.equal(
+    page.data.sliderValue,
+    before.sliderValue,
+    'do not echo a bound value during a drag',
+  );
   page.changeRaise({ detail: { value: position } });
   assert.equal(page.data.sliderValue, position);
   assert.equal(page.data.raiseTo % page.data.chipUnit, 0);
@@ -1492,9 +1504,15 @@ test('WeChat native rail previews without echoing thumb position and retains rel
   );
   assert.doesNotMatch(template, /catchtouchmove="moveRaise"/);
   assert.equal(page.data.raiseDragging, false);
-  assert.match(template, /class="raise-thumb"/);
-  assert.match(stylesheet, /\.raise-thumb\s*\{[^}]*width: 15px;[^}]*height: 15px;/s);
-  assert.match(stylesheet, /\.raise-native-input\s*\{[^}]*opacity: 0;/s);
+  assert.doesNotMatch(template, /class="raise-thumb"/);
+  assert.equal(page.data.raiseThumbSize, 15);
+  assert.match(template, /block-size="\{\{raiseThumbSize\}\}"/);
+  assert.match(template, /block-color="#6ee7c5"/);
+  assert.match(
+    stylesheet,
+    /\.raise-native-input\s*\{[^}]*top: -6px;[^}]*height: calc\(100% \+ 12px\);/s,
+  );
+  assert.doesNotMatch(stylesheet, /\.raise-native-input\s*\{[^}]*opacity: 0;/s);
 });
 
 test('WeChat ignores late slider events after hide and cancels a preview without committing it', (t) => {
@@ -2295,6 +2313,12 @@ for (const playerCount of [5, 9]) {
       fixture.page._controller.show();
       const attempt = fixture.page._controller.getRecords()[0].attempts[0];
       const history = secondaryPage(t, 'history/history.js', fixture);
+      assert.equal(history.data.historyReadOnly, true);
+      assert.equal(
+        history.data.tableReady,
+        false,
+        'history must skip the launch cover before load',
+      );
       history.onLoad({ id: attempt.id });
       history.onShow();
       const fields = [
@@ -2341,6 +2365,10 @@ for (const playerCount of [5, 9]) {
         copy(fixture.page.data.heroCards.map((card) => card.key)),
       );
       assert.equal(history.data.historyReadOnly, true);
+      assert.equal(history.data.tableReady, true);
+      assert.ok(history.data.heroCards.every((card) => !card.arriving));
+      assert.ok(history.data.board.every((card) => !card.arriving));
+      assert.ok(history.data.seats.every((seat) => seat.cards.every((card) => !card.arriving)));
       assert.equal(
         history.data.historyAttemptLabel,
         undefined,

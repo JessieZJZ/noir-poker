@@ -512,28 +512,18 @@
   border-radius: 3px;
   background: #354650;
 }
-.raise-thumb {
-  position: absolute;
-  top: 2px;
-  width: 15px;
-  height: 15px;
-  margin-left: -7.5px;
-  border-radius: 50%;
-  background: #6ee7c5;
-  pointer-events: none;
-}
 .raise-track.disabled {
   opacity: 0.45;
 }
-/* Native slider handles gestures; the existing rail and thumb above retain
-   the visual design. Its own artwork is transparent, not a second skin. */
+/* Use the native mint thumb at the original size, without a delayed JS copy.
+   The static 5px rail retains its existing outline. The extra touch height
+   stops above the presets and does not change the visual row or spacing. */
 .raise-native-input {
   position: absolute;
-  inset: 0 -6px;
-  height: 100%;
+  top: -6px;
+  height: calc(100% + 12px);
   margin: 0;
   padding: 0;
-  opacity: 0;
   z-index: 2;
 }
 .presets {

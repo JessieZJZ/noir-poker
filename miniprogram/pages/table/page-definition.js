@@ -42,6 +42,7 @@ function viewportChrome(width, height) {
     navHeight,
     tableHeaderHeight,
     liveDockHeight,
+    raiseThumbSize: tablet ? 23 : 15,
     compactDockHeight: tablet ? 76 : 64,
     chromeHeight: 36 + navHeight + 8 + tableHeaderHeight + liveDockHeight + 8,
   };
@@ -248,6 +249,14 @@ module.exports = {
           countIndex: view.settings.playerCount - 5,
           emotionIndex: ['off', 'subtle', 'lively'].indexOf(view.settings.emotionMode),
         };
+        // A native drag owns its thumb and current caption until change/cancel.
+        // An unrelated public redraw must not restore the last committed amount
+        // or send a controlled value back into the moving native component.
+        if (this._raiseGesture) {
+          delete update.sliderValue;
+          delete update.raiseText;
+          delete update.raiseTo;
+        }
         // Large research catalogs and card artwork need not cross the service/
         // view bridge on every bot turn. Preserve existing card nodes and motion.
         const startsCeremony = !!view.ceremony && view.ceremony.key !== this.data.ceremony?.key;
@@ -858,7 +867,8 @@ module.exports = {
     const value = sliderRaiseTo(this.raiseView(), event.detail.value);
     if (value === null) return;
     this._raiseGesture = { position: event.detail.value };
-    // The native component owns the moving thumb. Only update the caption;
+    // The visible native thumb moves without a logic/view bridge round trip.
+    // Only update the caption;
     // feeding its position back through setData during a drag fights touch input.
     this.setData({
       raiseText: compactChips(value),
