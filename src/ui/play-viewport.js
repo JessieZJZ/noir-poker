@@ -84,6 +84,12 @@ export function createPlayViewport(surface, { layout = () => {} } = {}) {
       waiting = surface.dataset.entryState === 'waiting',
       height = Math.max(160, screenHeight - playSurfaceTop(surface) - 8);
     const large = screen.width > 900 && screen.width <= 1100 && screenHeight >= 1100;
+    // Tablet/desktop CSS follows the final viewport even if WebKit delays a
+    // resize or animation callback. Phones retain their stable browser-bar budget.
+    const budget =
+      screen.width > 600
+        ? `max(160px, calc(var(--play-window-height, 100vh) - ${playSurfaceTop(surface) + 8}px))`
+        : `${height}px`;
     surface.style.setProperty(
       '--table-header-font',
       `${large ? 20 : screen.width > 600 && mobile.matches ? 17 : 14}px`,
@@ -97,8 +103,8 @@ export function createPlayViewport(surface, { layout = () => {} } = {}) {
     surface.style.setProperty(
       '--play-height',
       waiting
-        ? `max(160px, calc(${height}px - var(--live-dock-height) - var(--dock-bottom-inset)))`
-        : `${height}px`,
+        ? `max(160px, calc(${budget} - var(--live-dock-height) - var(--dock-bottom-inset)))`
+        : budget,
     );
     // A translated or long session label may wrap in the waiting header.
     // Retain its footprint when the shorter live label replaces it, so joining
@@ -176,7 +182,9 @@ export function createPlayViewport(surface, { layout = () => {} } = {}) {
     fit();
     schedule();
   }
-  const observer = new ResizeObserver(schedule);
+  // The viewport's own CSS can settle after the resize event. Do not depend
+  // on another paint-frame callback to fit its final dimensions.
+  const observer = new ResizeObserver(fit);
   for (const el of [
     document.body,
     document.querySelector('.header'),

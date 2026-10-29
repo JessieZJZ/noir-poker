@@ -1,1 +1,3 @@
-<include src="../table/table.wxml" />
+<import src="../table/table-templates.wxml" />
+<wxs module="rail" src="../table/raise-rail.wxs" />
+<include src="../table/table-surface.wxml" />

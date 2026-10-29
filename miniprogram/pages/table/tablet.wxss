@@ -7,6 +7,12 @@
   .raise-rail {
     top: 12.5px;
   }
+  .raise-thumb {
+    top: 3.5px;
+    width: 23px;
+    height: 23px;
+    margin-left: -11.5px;
+  }
   .nav {
     flex-basis: 76px;
     height: 76px;

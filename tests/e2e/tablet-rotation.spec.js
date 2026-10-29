@@ -152,3 +152,36 @@ test('tablet rotation updates geometry even when paint-frame callbacks are postp
     });
   }
 });
+
+test('tablet CSS viewport recovery does not depend on a resize callback or paint-frame callback', async ({
+  page,
+}, info) => {
+  test.skip(info.project.name === 'mobile', 'Explicit tablet matrix runs once');
+  await page.addInitScript(() => {
+    const raf = window.requestAnimationFrame.bind(window);
+    window.requestAnimationFrame = (callback) =>
+      raf((time) => {
+        if (!window.deferViewportSignals) callback(time);
+      });
+    const block = (event) => {
+      if (window.deferViewportSignals) event.stopImmediatePropagation();
+    };
+    window.addEventListener('resize', block, { capture: true });
+    window.visualViewport?.addEventListener('resize', block, { capture: true });
+  });
+  await prepare(page, { width: 768, height: 600 });
+  await page.evaluate(() => {
+    window.qa.heroTurn(5);
+    window.qa.stop();
+  });
+  await page.evaluate(
+    () => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))),
+  );
+  const before = await page.evaluate(() => window.noir.getState());
+  await page.evaluate(() => {
+    window.deferViewportSignals = true;
+  });
+  await page.setViewportSize({ width: 768, height: 1024 });
+  await assertTabletFrame(page, true);
+  expect(await page.evaluate(() => window.noir.getState())).toEqual(before);
+});

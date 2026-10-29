@@ -1027,3 +1027,11 @@
     animation: none;
   }
 }
+:root {
+  --play-window-height: 100vh;
+}
+@supports (height: 100dvh) {
+  :root {
+    --play-window-height: 100dvh;
+  }
+}

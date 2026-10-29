@@ -1,0 +1,14 @@
+<template name="activity-content">
+  <block wx:for="{{parts}}" wx:for-item="part" wx:key="index">
+    <block wx:if="{{part.actor}}"
+      ><text
+        >{{part.name}}<text wx:if="{{part.profile}}" class="activity-persona"
+          >（{{part.profile}}）</text
+        ></text
+      ><text wx:if="{{part.position}}" class="position activity-position"
+        >{{part.position}}</text
+      ></block
+    >
+    <text wx:else>{{part.text}}</text>
+  </block>
+</template>

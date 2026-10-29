@@ -515,15 +515,24 @@
 .raise-track.disabled {
   opacity: 0.45;
 }
-/* Use the native mint thumb at the original size, without a delayed JS copy.
-   The static 5px rail retains its existing outline. The extra touch height
-   stops above the presets and does not change the visual row or spacing. */
-.raise-native-input {
+/* One visible rail/thumb. WXS moves the thumb in this render layer;
+   the larger transparent hit target never overlaps the preset buttons. */
+.raise-thumb {
+  position: absolute;
+  top: 2px;
+  width: 15px;
+  height: 15px;
+  margin-left: -7.5px;
+  border-radius: 50%;
+  background: #6ee7c5;
+  pointer-events: none;
+}
+.raise-hit {
   position: absolute;
   top: -6px;
-  height: calc(100% + 12px);
-  margin: 0;
-  padding: 0;
+  bottom: -6px;
+  left: -8px;
+  right: -8px;
   z-index: 2;
 }
 .presets {

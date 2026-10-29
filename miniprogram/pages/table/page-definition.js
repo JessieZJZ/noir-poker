@@ -42,7 +42,6 @@ function viewportChrome(width, height) {
     navHeight,
     tableHeaderHeight,
     liveDockHeight,
-    raiseThumbSize: tablet ? 23 : 15,
     compactDockHeight: tablet ? 76 : 64,
     chromeHeight: 36 + navHeight + 8 + tableHeaderHeight + liveDockHeight + 8,
   };
@@ -134,6 +133,7 @@ module.exports = {
     homeLocked: false,
     homeOffset: 0,
     finishing: false,
+    raiseControl: { enabled: false, position: 0, key: 'initial' },
     flyingChips: [],
     premiumSparks: PREMIUM_SPARKS,
     confettiPieces: CONFETTI_PIECES,
@@ -220,6 +220,7 @@ module.exports = {
         });
         const update = {
           ...view,
+          raiseControl: this.controlForRaise(view),
           raiseDragging: Boolean(this._raiseGesture),
           tableReady:
             (view.waitingForSeat || view.heroCards.length === 2) && view.seats.length >= 4,
@@ -363,7 +364,7 @@ module.exports = {
   onHide() {
     stopWindowWatch(this);
     this._hidden = true;
-    this._raiseGesture = null;
+    this.cancelRaise();
     clearTimeout(this._resourceTimer);
     clearTimeout(this._resourceMotionTimer);
     this.setData({ resourceRolling: false });
@@ -402,7 +403,6 @@ module.exports = {
     this.stopSounds();
   },
   onResize(event) {
-    if (this._raiseGesture) this.cancelRaise();
     this.updateWindow(event);
   },
   onReady() {
@@ -530,8 +530,17 @@ module.exports = {
       arenaWidth: (info.windowWidth - 18) / (arenaScale || 1),
     });
     const layout = this.publicLayout(this.data.board, this.data, { ...this.data, ...viewport });
+    const wasDragging = !!this._raiseGesture;
+    this._raiseGesture = null;
+    this._raiseEpoch = (this._raiseEpoch || 0) + 1;
     // A single atomic update avoids a frame with the new window but old seats.
-    const patch = presentationPatch(this.data, { ...viewport, ...layout });
+    const patch = presentationPatch(this.data, {
+      ...viewport,
+      ...layout,
+      raiseDragging: false,
+      raiseControl: this.controlForRaise({ ...this.data, ...viewport }),
+      ...(wasDragging ? { raiseText: compactChips(this.data.raiseTo) } : {}),
+    });
     if (Object.keys(patch).length) this.setPresentationData(patch);
     return true;
   },
@@ -830,11 +839,11 @@ module.exports = {
     this._soundAfterCheck = null;
   },
   act(event) {
-    this._raiseGesture = null;
+    this.cancelRaise();
     this.call('action', event.currentTarget.dataset.action);
   },
   preset(event) {
-    this._raiseGesture = null;
+    this.cancelRaise();
     this.call('preset', event.currentTarget.dataset.preset);
   },
   raiseView() {
@@ -851,6 +860,47 @@ module.exports = {
       },
     };
   },
+  controlForRaise(view = this.data) {
+    return {
+      enabled: !!view.canRaise && !this._hidden && !this._destroyed,
+      position: view.sliderValue || 0,
+      key: [
+        this._raiseEpoch || 0,
+        view.sessionNumber,
+        view.hand,
+        view.replay,
+        view.street,
+        view.currentBet,
+        view.potAmount,
+        view.minRaise,
+        view.maxRaise,
+      ].join(':'),
+    };
+  },
+  acceptsRail(message) {
+    return (
+      this.data.canRaise &&
+      !this._hidden &&
+      !this._destroyed &&
+      message.key === this.data.raiseControl.key &&
+      !(this._endedRaise?.key === message.key && message.id <= this._endedRaise.id)
+    );
+  },
+  railPreview(message) {
+    if (!this.acceptsRail(message)) return;
+    this.previewRaise({ detail: { value: message.position } });
+    this._raiseGesture = { ...this._raiseGesture, key: message.key, id: message.id };
+  },
+  railCommit(message) {
+    if (!this.acceptsRail(message)) return;
+    this._endedRaise = { key: message.key, id: message.id };
+    this.changeRaise({ detail: { value: message.position } });
+  },
+  railCancel(message) {
+    if (!this.acceptsRail(message)) return;
+    this._endedRaise = { key: message.key, id: message.id };
+    this.cancelRaise();
+  },
   changeRaise(event) {
     if (!this.data.canRaise || this._hidden || this._destroyed) return;
     this._raiseGesture = null;
@@ -858,6 +908,8 @@ module.exports = {
   },
   cancelRaise() {
     this._raiseGesture = null;
+    this._raiseEpoch = (this._raiseEpoch || 0) + 1;
+    this.setData({ raiseDragging: false, raiseControl: this.controlForRaise() });
     if (this.data.canRaise && !this._hidden && !this._destroyed) this._controller?.show();
   },
   previewRaise(event) {
@@ -867,7 +919,7 @@ module.exports = {
     const value = sliderRaiseTo(this.raiseView(), event.detail.value);
     if (value === null) return;
     this._raiseGesture = { position: event.detail.value };
-    // The visible native thumb moves without a logic/view bridge round trip.
+    // WXS moves the visible thumb without a logic/view bridge round trip.
     // Only update the caption;
     // feeding its position back through setData during a drag fights touch input.
     this.setData({

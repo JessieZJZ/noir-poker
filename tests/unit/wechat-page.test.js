@@ -48,10 +48,11 @@ const railStylesheet = readFileSync(
   new URL('../../miniprogram/pages/table/rail.wxss', import.meta.url),
   'utf8',
 );
-const template = readFileSync(
-  new URL('../../miniprogram/pages/table/table.wxml', import.meta.url),
-  'utf8',
-);
+const template = ['table.wxml', 'table-surface.wxml', 'table-templates.wxml']
+  .map((name) =>
+    readFileSync(new URL('../../miniprogram/pages/table/' + name, import.meta.url), 'utf8'),
+  )
+  .join('\n');
 const copy = (value) => JSON.parse(JSON.stringify(value));
 const orientationModule = { exports: {} };
 vm.runInNewContext(
@@ -291,8 +292,8 @@ test('WeChat publishes the waiting table atomically after the launch artwork', (
   assert.equal(page.data.heroPosition, '');
   assert.equal(page.data.waitingForSeat, true);
   assert.equal(page.data.seats.length, page.data.settings.playerCount - 1);
-  assert.match(template, /wx:if="\{\{!tableReady && !historyReadOnly\}\}" class="launch-screen"/);
-  assert.match(template, /<view\s+wx:elif="\{\{tableReady\}\}"\s+class="screen /);
+  assert.match(template, /wx:if="\{\{!tableReady\}\}" class="launch-screen"/);
+  assert.match(template, /<view\s+wx:if="\{\{tableReady\}\}"\s+class="screen /);
   assert.match(
     template,
     /<text\s+wx:if="\{\{!waitingForSeat\}\}"\s+class="position"\s*>\s*\{\{heroPosition\}\}\s*<\/text\s*>/,
@@ -1465,7 +1466,7 @@ test('dropdown data anchors the options below the original control and settings 
   assert.match(template, /top: 0; bottom: 0;/);
 });
 
-test('WeChat native rail previews without echoing thumb position and retains release position', (t) => {
+test('WeChat render-layer rail previews survive public redraws and retain release position', (t) => {
   const { page } = setup(t);
   reachHero(page);
   page._controller.show();
@@ -1498,21 +1499,36 @@ test('WeChat native rail previews without echoing thumb position and retains rel
   assert.equal(page.data.raiseTo % page.data.chipUnit, 0);
   page._controller.show();
   assert.equal(page.data.sliderValue, position, 'unrelated render cannot snap the thumb');
-  assert.match(
-    template,
-    /<slider[\s\S]*?bindchanging="previewRaise"[\s\S]*?bindchange="changeRaise"/,
-  );
-  assert.doesNotMatch(template, /catchtouchmove="moveRaise"/);
+  assert.match(template, /catchtouchmove="\{\{rail.move\}\}"/);
+  assert.match(template, /change:control="\{\{rail.sync\}\}"/);
   assert.equal(page.data.raiseDragging, false);
-  assert.doesNotMatch(template, /class="raise-thumb"/);
-  assert.equal(page.data.raiseThumbSize, 15);
-  assert.match(template, /block-size="\{\{raiseThumbSize\}\}"/);
-  assert.match(template, /block-color="#6ee7c5"/);
-  assert.match(
-    stylesheet,
-    /\.raise-native-input\s*\{[^}]*top: -6px;[^}]*height: calc\(100% \+ 12px\);/s,
-  );
-  assert.doesNotMatch(stylesheet, /\.raise-native-input\s*\{[^}]*opacity: 0;/s);
+  assert.doesNotMatch(template, /<slider\b/);
+  assert.match(template, /class="raise-thumb"/);
+  assert.match(stylesheet, /\.raise-thumb\s*\{[^}]*width: 15px;[^}]*height: 15px;/s);
+});
+
+test('WeChat rejects late render-layer messages after commit, resize, hide and preset', (t) => {
+  const { page } = setup(t);
+  reachHero(page);
+  const key = page.data.raiseControl.key;
+  const message = { key, id: 1, position: 731234 };
+  page.railPreview(message);
+  page.railCommit(message);
+  assert.equal(page.data.sliderValue, 731234);
+  page.railPreview({ ...message, position: 1000000 });
+  assert.equal(page._raiseGesture, null);
+  assert.equal(page.data.sliderValue, 731234);
+  page.railPreview({ key, id: 2, position: 100000 });
+  page.preset({ currentTarget: { dataset: { preset: 'pot' } } });
+  const selected = page.data.sliderValue;
+  page.railCommit({ key, id: 2, position: 100000 });
+  assert.equal(page.data.sliderValue, selected);
+  const current = { key: page.data.raiseControl.key, id: 3, position: 900000 };
+  page.railPreview(current);
+  page.onHide();
+  page.railCommit(current);
+  assert.equal(page.data.sliderValue, selected);
+  assert.equal(page.data.raiseControl.enabled, false);
 });
 
 test('WeChat ignores late slider events after hide and cancels a preview without committing it', (t) => {
@@ -2384,7 +2400,16 @@ for (const playerCount of [5, 9]) {
         new URL('../../miniprogram/pages/history/history.wxml', import.meta.url),
         'utf8',
       );
-      assert.equal(markup.trim(), '<include src="../table/table.wxml" />');
+      assert.match(markup, /<include src="\.\.\/table\/table-surface.wxml" \/>/);
+      assert.doesNotMatch(
+        markup,
+        /launch-screen|launch-icon|include src="\.\.\/table\/table.wxml"/,
+      );
+      const surface = readFileSync(
+        new URL('../../miniprogram/pages/table/table-surface.wxml', import.meta.url),
+        'utf8',
+      );
+      assert.doesNotMatch(surface, /launch-screen|launch-icon|launch-progress/);
       const css = readFileSync(
         new URL('../../miniprogram/pages/history/history.wxss', import.meta.url),
         'utf8',
