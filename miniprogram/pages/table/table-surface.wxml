@@ -1,3 +1,4 @@
+<import src="./table-templates.wxml" />
 <page-meta
   page-orientation="{{pageOrientation}}"
   bindresize="onResize"

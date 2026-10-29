@@ -567,6 +567,9 @@ try {
     (view) => view.done && view.historyReadOnly,
   );
   const historyView = await page.data();
+  assert.equal(await page.$('.launch-screen'), null);
+  assert.ok([...historyView.heroCards, ...historyView.board].every((card) => !card.arriving));
+  assert.ok((await (await waitElement('.activity-list')).text()).includes('庄家'));
   assert.equal(historyView.hand, 1);
   assert.equal(historyView.sessionNumber, initialSession.number);
   assert.equal(historyView.replay, 0);

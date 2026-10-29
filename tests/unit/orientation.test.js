@@ -80,14 +80,15 @@ test('native and WeChat declarations restrict phones while retaining tablet rota
   assert.equal(app.window.pageOrientation, 'portrait');
   assert.equal(page.pageOrientation, 'portrait');
   assert.equal(app.resizable, true);
-  for (const route of ['table/table', 'records/records', 'source/source'])
+  for (const route of ['table/table-surface', 'records/records', 'source/source'])
     assert.match(
       read(`miniprogram/pages/${route}.wxml`),
       /<page-meta\s[^>]*page-orientation="\{\{pageOrientation\}\}"/,
     );
+  assert.match(read('miniprogram/pages/table/table.wxml'), /include src=".\/table-surface.wxml"/);
   assert.match(
     read('miniprogram/pages/history/history.wxml'),
-    /include src="..\/table\/table.wxml"/,
+    /include src="..\/table\/table-surface.wxml"/,
   );
 });
 
