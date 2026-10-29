@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { createStableViewport } from '../../src/ui/stable-viewport.js';
+import { createStableViewport, readPlayViewport } from '../../src/ui/stable-viewport.js';
 
 test('compact height ignores browser bar, keyboard and page-flow height changes', () => {
   const viewport = createStableViewport();
@@ -59,4 +59,33 @@ test('height stabilization stops at the phone boundary, including same-width tab
   assert.equal(read(600, 700), 900);
   assert.equal(read(601, 900), 900);
   assert.equal(read(601, 1200), 1200);
+});
+
+test('tablets read the actual layout height even when the small-viewport probe is stale', (t) => {
+  const previous = {
+    window: globalThis.window,
+    document: globalThis.document,
+    matchMedia: globalThis.matchMedia,
+  };
+  t.after(() => Object.assign(globalThis, previous));
+  const probe = { style: {}, getBoundingClientRect: () => ({ height: 600 }) };
+  globalThis.document = { createElement: () => probe, body: { append() {} } };
+  globalThis.matchMedia = () => ({ matches: true });
+  globalThis.window = {
+    innerWidth: 768,
+    innerHeight: 1024,
+    screen: { orientation: { type: 'portrait-primary' } },
+  };
+  assert.equal(readPlayViewport().height, 1024);
+  window.innerHeight = 1200;
+  assert.equal(readPlayViewport().height, 1200);
+  window.innerWidth = 390;
+  window.innerHeight = 844;
+  assert.equal(readPlayViewport().height, 600);
+  window.innerHeight = 740;
+  assert.equal(
+    readPlayViewport().height,
+    600,
+    'phone browser bars still retain the small-viewport budget',
+  );
 });

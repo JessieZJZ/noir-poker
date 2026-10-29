@@ -81,7 +81,7 @@
   line-height: 1.2;
 }
 .main .game-surface[data-entry-state='waiting'] > .surface-top {
-  grid-template-rows: minmax(var(--hand-row), auto) var(--hint-row);
+  grid-template-rows: minmax(max(var(--hand-row), var(--entry-hand-row, 0px)), auto) var(--hint-row);
 }
 .game-surface[data-entry-state='waiting'] .surface-top .blind-info {
   grid-row: 1;

@@ -200,6 +200,7 @@
     font-size: 16px;
   }
   .game-surface .bet-controls input[type='range'] {
+    --raise-thumb-size: 23px;
     margin-block: 0;
     height: 30px;
     background: linear-gradient(#354650, #354650) center / 100% 5px no-repeat;

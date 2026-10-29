@@ -100,6 +100,13 @@ export function createPlayViewport(surface, { layout = () => {} } = {}) {
         ? `max(160px, calc(${height}px - var(--live-dock-height) - var(--dock-bottom-inset)))`
         : `${height}px`,
     );
+    // A translated or long session label may wrap in the waiting header.
+    // Retain its footprint when the shorter live label replaces it, so joining
+    // cannot move the felt. Re-measure while waiting after width/font changes.
+    if (waiting) {
+      const labelHeight = surface.querySelector('.hand-label').getBoundingClientRect().height;
+      surface.style.setProperty('--entry-hand-row', `${Math.ceil(labelHeight)}px`);
+    }
     // Hidden or rotating WebViews can briefly report a zero-sized viewport.
     // Wait for its resize notification instead of dividing by zero below.
     if (viewport.clientWidth === 0 || viewport.clientHeight === 0) return;
@@ -163,6 +170,12 @@ export function createPlayViewport(surface, { layout = () => {} } = {}) {
       fit();
     });
   }
+  function resize() {
+    // WebKit can postpone paint-frame callbacks across a viewport rotation.
+    // Apply its new geometry in the resize/media event, then refine next frame.
+    fit();
+    schedule();
+  }
   const observer = new ResizeObserver(schedule);
   for (const el of [
     document.body,
@@ -180,9 +193,10 @@ export function createPlayViewport(surface, { layout = () => {} } = {}) {
     attributes: true,
     attributeFilter: ['style', 'class'],
   });
-  window.addEventListener('resize', schedule);
-  window.addEventListener('pageshow', schedule);
-  window.visualViewport?.addEventListener('resize', schedule);
+  window.addEventListener('resize', resize);
+  window.addEventListener('pageshow', resize);
+  window.visualViewport?.addEventListener('resize', resize);
+  mobile.addEventListener('change', resize);
   document.fonts.ready.then(schedule);
   return {
     destroy() {
@@ -190,9 +204,10 @@ export function createPlayViewport(surface, { layout = () => {} } = {}) {
       observer.disconnect();
       insetsObserver.disconnect();
       if (frame !== null) cancelAnimationFrame(frame);
-      window.removeEventListener('resize', schedule);
-      window.removeEventListener('pageshow', schedule);
-      window.visualViewport?.removeEventListener('resize', schedule);
+      window.removeEventListener('resize', resize);
+      window.removeEventListener('pageshow', resize);
+      window.visualViewport?.removeEventListener('resize', resize);
+      mobile.removeEventListener('change', resize);
     },
     update(nextTable, done) {
       surface.classList.toggle('has-live-hand', !done);

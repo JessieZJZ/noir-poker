@@ -1,5 +1,7 @@
 /* Controls keep their labels and amounts on the same baseline at every size. */
 .bet-controls input[type='range'] {
+  --raise-thumb-size: 15px;
+  touch-action: none;
   -webkit-appearance: none;
   appearance: none;
   background: #354650;
@@ -111,7 +113,7 @@ html.native-ios .game-surface {
 .main .game-surface > .surface-top {
   --hand-row: 28px;
   --hint-row: 22px;
-  grid-template-rows: var(--hand-row) var(--hint-row);
+  grid-template-rows: max(var(--hand-row), var(--entry-hand-row, 0px)) var(--hint-row);
 }
 @media (min-width: 1101px), (min-width: 901px) and (orientation: landscape) {
   .main .game-surface > .surface-top {

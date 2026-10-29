@@ -71,6 +71,7 @@ import {
 import { chipUnitOf, legalRaiseTo } from '../engine/bet-sizing.js';
 import { createSettlementLayout } from './settlement-layout.js';
 import { createPlayViewport } from './play-viewport.js';
+import { attachRaisePointer } from './raise-pointer.js';
 import { readPlayViewport } from './stable-viewport.js';
 import { createHintNotification } from './hint-notification.js';
 import { tableHint } from '../review/table-hint.js';
@@ -1099,6 +1100,11 @@ $('#bet-slider').oninput = (e) => {
   );
   updateBet();
 };
+attachRaisePointer($('#bet-slider'), {
+  context: () =>
+    `${epoch}:${game.hand}:${game.replayAttempt || 0}:${game.street}:${game.history.length}`,
+  limit: RAISE_SLIDER_MAX,
+});
 // Keyboard arrows keep their whole-chip precision on the nonlinear rail.
 $('#bet-slider').onkeydown = (event) => {
   if (!['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End'].includes(event.key))

@@ -29,7 +29,8 @@ const stable = createStableViewport();
 let probe;
 export function readPlayViewport() {
   const compact = matchMedia(COMPACT_PLAY_QUERY).matches;
-  if (!probe) {
+  const phone = compact && window.innerWidth <= 600;
+  if (phone && !probe) {
     probe = document.createElement('div');
     probe.style.cssText =
       'position:fixed;left:0;top:0;width:0;height:100svh;visibility:hidden;pointer-events:none;contain:strict';
@@ -37,9 +38,7 @@ export function readPlayViewport() {
   }
   return stable.read({
     width: window.innerWidth,
-    height: compact
-      ? probe.getBoundingClientRect().height || window.innerHeight
-      : window.innerHeight,
+    height: phone ? probe.getBoundingClientRect().height || window.innerHeight : window.innerHeight,
     orientation: window.screen.orientation?.type ?? '',
     compact,
   });

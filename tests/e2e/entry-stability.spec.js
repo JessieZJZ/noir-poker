@@ -75,3 +75,27 @@ test('late native safe-area insets preserve the table across entry without a res
   const playing = await read();
   for (let i = 0; i < 4; i++) expect(Math.abs(waiting[i] - playing[i])).toBeLessThanOrEqual(1.1);
 });
+
+test('a wrapped waiting label retains its header footprint after joining', async ({ page }) => {
+  await page.setViewportSize({ width: 402, height: 874 });
+  await page.goto('/');
+  await expect(page.locator('html')).toHaveAttribute('data-app-ready', 'true');
+  await page.evaluate(() => {
+    document.querySelector('#street-label').textContent =
+      '等待入座，即将开始第 100000 局第 100000 手';
+    window.dispatchEvent(new Event('resize'));
+  });
+  await expect
+    .poll(() => page.locator('.hand-label').evaluate((el) => el.getBoundingClientRect().height))
+    .toBeGreaterThan(28);
+  const read = () =>
+    page.locator('.table-viewport').evaluate((el) => {
+      const box = el.getBoundingClientRect();
+      return [box.x, box.y, box.width, box.height];
+    });
+  const waiting = await read();
+  await page.locator('#join-table-button').click();
+  await expect(page.locator('.game-surface')).toHaveAttribute('data-entry-state', 'playing');
+  const playing = await read();
+  for (let i = 0; i < 4; i++) expect(Math.abs(waiting[i] - playing[i])).toBeLessThanOrEqual(1.1);
+});

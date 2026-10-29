@@ -154,3 +154,39 @@ test('rounded raise amounts do not pull the rail thumb away from the finger afte
   await page.locator('[data-preset="pot"]').click();
   await expect(slider).toHaveValue('500000');
 });
+
+test('a real touch gesture can start on the empty rail and keeps the final position', async ({
+  page,
+}) => {
+  await page.goto('/');
+  await page.waitForFunction(() => !!window.qa);
+  await page.evaluate(() => window.qa.potSizing({ stack: 20000 }));
+  const slider = page.locator('#bet-slider'),
+    box = await slider.boundingBox();
+  const thumb = await slider.evaluate((el) =>
+    parseFloat(getComputedStyle(el).getPropertyValue('--raise-thumb-size')),
+  );
+  const point = (f) => ({
+    x: box.x + thumb / 2 + (box.width - thumb) * f,
+    y: box.y + box.height / 2,
+  });
+  const session = await page.context().newCDPSession(page);
+  try {
+    await session.send('Input.dispatchTouchEvent', {
+      type: 'touchStart',
+      touchPoints: [point(0.2)],
+    });
+    for (const f of [0.3, 0.45, 0.6, 0.73])
+      await session.send('Input.dispatchTouchEvent', {
+        type: 'touchMove',
+        touchPoints: [point(f)],
+      });
+    const preview = await slider.inputValue();
+    await session.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+    await expect(slider).toHaveValue(preview);
+    expect(Math.abs(Number(preview) - 730000)).toBeLessThan(4000);
+    expect(Number(await slider.getAttribute('data-raise-to')) % 25).toBe(0);
+  } finally {
+    await session.detach();
+  }
+});

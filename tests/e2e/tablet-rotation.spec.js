@@ -123,3 +123,32 @@ for (const browserName of ['chromium', 'webkit']) {
     }
   });
 }
+
+test('tablet rotation updates geometry even when paint-frame callbacks are postponed', async ({
+  page,
+}, info) => {
+  test.skip(info.project.name === 'mobile', 'Explicit tablet matrix runs once');
+  await prepare(page, { width: 1440, height: 960 });
+  await page.evaluate(() => {
+    window.qa.heroTurn(5);
+    window.qa.stop();
+  });
+  await page.evaluate(
+    () => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))),
+  );
+  const before = await page.evaluate(() => window.noir.getState());
+  try {
+    await page.evaluate(() => {
+      window.originalViewportRaf = window.requestAnimationFrame;
+      window.requestAnimationFrame = () => 0;
+    });
+    await page.setViewportSize({ width: 960, height: 1440 });
+    await assertTabletFrame(page, true);
+    expect(await page.evaluate(() => window.noir.getState())).toEqual(before);
+  } finally {
+    await page.evaluate(() => {
+      window.requestAnimationFrame = window.originalViewportRaf;
+      delete window.originalViewportRaf;
+    });
+  }
+});
