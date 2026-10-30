@@ -146,6 +146,117 @@ test('settlement that hides continue during geometry stabilization stops positio
   assert.deepEqual(h.taps, []);
 });
 
+async function coverContinue({ done = true, cover = 'action-panel', changedHand = false } = {}) {
+  return page.evaluate(
+    ({ done, cover, changedHand }) => {
+      const target = document.querySelector('#continue-deal-button');
+      target.hidden = false;
+      const rect = target.getBoundingClientRect();
+      const panel = document.createElement('div');
+      panel.id = cover;
+      panel.className = 'action-panel settled-actions';
+      Object.assign(panel.style, {
+        position: 'fixed',
+        left: `${rect.x}px`,
+        top: `${rect.y}px`,
+        width: `${rect.width}px`,
+        height: `${rect.height}px`,
+        zIndex: '99999',
+      });
+      document.body.append(panel);
+      window.current.phase = done ? 'done' : 'playing';
+      if (changedHand) window.current.hand++;
+      return document.elementFromPoint(rect.x + rect.width / 2, rect.y + rect.height / 2)?.id;
+    },
+    { done, cover, changedHand },
+  );
+}
+
+test('a visible continue covered by the settled action panel is skipped before positioning when the same hand is done', async () => {
+  const h = await harness();
+  await page.locator('#continue-deal-button').scrollIntoViewIfNeeded();
+  assert.equal(await coverContinue(), 'action-panel');
+  assert.equal(await h.app.visible('#continue-deal-button'), true);
+  const result = await tapObservedAction(h.app, '#continue-deal-button', intended);
+  assert.equal(result.skippedSettled, true);
+  assert.deepEqual(h.taps, []);
+});
+
+test('the exact native hit-test cover error skips only the same-hand settled panel before any input', async () => {
+  const h = await harness();
+  await page.evaluate(() => (window.current.canContinue = true));
+  let attempts = 0;
+  const app = {
+    ...h.app,
+    async nativeTap() {
+      attempts++;
+      assert.equal(await coverContinue(), 'action-panel');
+      throw Error('Native touch target is covered');
+    },
+  };
+  const result = await tapObservedAction(app, '#continue-deal-button', intended);
+  assert.equal(result.outcome, 'settled-before-covered-touch');
+  assert.equal(result.frameCoverage.hit.id, 'action-panel');
+  assert.deepEqual(result.events, []);
+  assert.equal(attempts, 1);
+  assert.deepEqual(h.taps, [], 'The preflight never emits a pointer gesture');
+});
+
+test('settled-cover recovery preserves wrong-frame, changed-hand, playing-state, fold and actual driver errors', async () => {
+  for (const options of [
+    { cover: 'next-button' },
+    { cover: 'unrelated-overlay' },
+    { changedHand: true },
+    { done: false },
+    { selector: '#fold-button' },
+    { error: 'UiAutomator2 disconnected' },
+    { error: 'WebView script timed out' },
+    { error: 'element click intercepted by an unrelated element' },
+  ]) {
+    const h = await harness();
+    await page.evaluate(() => (window.current.canContinue = true));
+    let attempts = 0;
+    const error = Error(options.error || 'Native touch target is covered');
+    const app = {
+      ...h.app,
+      async nativeTap() {
+        attempts++;
+        await coverContinue(options);
+        throw error;
+      },
+    };
+    await assert.rejects(
+      tapObservedAction(app, options.selector || '#continue-deal-button', intended),
+      (received) => received === error,
+    );
+    assert.equal(attempts, 1);
+    assert.deepEqual(h.taps, []);
+  }
+});
+
+test('a covered-frame error after an actual input is never mistaken for a preflight skip', async () => {
+  const h = await harness();
+  await page.evaluate(() => (window.current.canContinue = true));
+  const error = Error('Native touch target is covered');
+  const app = {
+    ...h.app,
+    async nativeTap(selector) {
+      await h.app.nativeTap(selector);
+      await coverContinue();
+      throw error;
+    },
+  };
+  await assert.rejects(tapObservedAction(app, '#continue-deal-button', intended), (received) => {
+    assert.equal(received, error);
+    assert.equal(
+      received.settlementDiagnostics.events.filter((event) => event.type === 'click').length,
+      1,
+    );
+    return true;
+  });
+  assert.deepEqual(h.taps, ['#continue-deal-button']);
+});
+
 test('a hidden continue from a different hand fails instead of being accepted as a settled skip', async () => {
   const h = await harness({ done: true });
   await page.evaluate(() => window.current.hand++);
@@ -237,6 +348,65 @@ test('only a production-prevented obsolete next click on the original settled ha
     (r) => r.events.push({ ...r.events.at(-1) }),
     (r) => r.events.splice(0, 1),
     (r) => r.events.splice(1, 1),
+  ];
+  for (const change of cases) {
+    const invalid = structuredClone(result);
+    change(invalid);
+    assert.throws(() => assertObservedAction(invalid, '#continue-deal-button', intended));
+  }
+  assert.throws(() => assertObservedAction(result, '#fold-button', intended));
+});
+
+test('only the exact observed continue gesture cancelled by same-hand settlement is recorded as cancellation', () => {
+  // The installed iOS report has these two trusted events and no click.
+  // This fixture checks classification; it is not fabricated native proof.
+  const same = {
+    ...intended,
+    trusted: true,
+    target: 'continue-deal-button',
+    pointerId: 7,
+    pointerType: 'touch',
+  };
+  const result = {
+    armed: {
+      state: { ...intended, replayAttempt: intended.attempt, phase: 'playing', canContinue: true },
+    },
+    state: {
+      ...intended,
+      replayAttempt: intended.attempt,
+      phase: 'done',
+      players: [{ folded: true }],
+    },
+    events: [
+      { ...same, type: 'pointerdown', phase: 'playing' },
+      { ...same, type: 'pointerup', phase: 'done' },
+    ],
+  };
+  assert.equal(
+    assertObservedAction(result, '#continue-deal-button', intended),
+    'settled-during-cancelled-touch',
+  );
+  const cases = [
+    (r) => (r.events[0].target = null),
+    (r) => (r.events[1].target = 'next-button'),
+    (r) => (r.events[0].phase = 'done'),
+    (r) => (r.events[1].phase = 'playing'),
+    (r) => (r.state.phase = 'playing'),
+    (r) => (r.armed.state.phase = 'done'),
+    (r) => (r.armed.state.canContinue = false),
+    (r) => r.armed.state.replayAttempt++,
+    (r) => r.state.hand++,
+    (r) => r.events[0].sessionNumber++,
+    (r) => r.events[1].attempt++,
+    (r) => (r.events[0].trusted = false),
+    (r) => (r.events[1].trusted = false),
+    (r) => r.events[1].pointerId++,
+    (r) => (r.events[1].pointerType = 'mouse'),
+    (r) => r.events.reverse(),
+    (r) => r.events.push({ ...r.events[0] }),
+    (r) => r.events.splice(0, 1),
+    (r) => (r.events[1].type = 'pointercancel'),
+    (r) => r.events.push({ ...same, type: 'click', target: 'next-button', phase: 'done' }),
   ];
   for (const change of cases) {
     const invalid = structuredClone(result);

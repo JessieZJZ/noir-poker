@@ -3171,14 +3171,8 @@ export async function nativeScenarios(app) {
     }
   });
   await check('review-hand-groups-two-columns', async () => {
-    await waitForNativeHeroTurn(app, { advanceSettled: true });
-    await app.click('#fold-button');
-    if (await app.visible('#continue-deal-button')) await app.click('#continue-deal-button');
-    await app.waitFor(
-      async () => (await app.state()).phase === 'done',
-      60000,
-      'Real hand must settle before checking its review layout',
-    );
+    const ready = await waitForNativeHeroTurn(app, { advanceSettled: true });
+    const settlement = await settleObservedNativeHand(app, ready);
     await app.click('#review-hand-button');
     try {
       await waitForNativeReview(app);
@@ -3238,6 +3232,7 @@ export async function nativeScenarios(app) {
       return {
         groups,
         visibleGroup,
+        settlement,
         scope: 'Installed production review of a real hand; no injected fixture',
       };
     } finally {

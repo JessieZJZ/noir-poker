@@ -28,8 +28,24 @@ function armObservedAction({ selector, intended }) {
     events.push({
       event,
       type: event.type,
-      target: event.target.closest('button')?.id,
+      target: event.target?.closest?.('button')?.id || null,
+      rawTarget: {
+        tag: event.target?.tagName,
+        id: event.target?.id,
+        className: typeof event.target?.className === 'string' ? event.target.className : null,
+      },
       trusted: event.isTrusted,
+      timeStamp: event.timeStamp,
+      pointerId: event.pointerId,
+      pointerType: event.pointerType,
+      isPrimary: event.isPrimary,
+      button: event.button,
+      buttons: event.buttons,
+      detail: event.detail,
+      clientX: event.clientX,
+      clientY: event.clientY,
+      screenX: event.screenX,
+      screenY: event.screenY,
       sessionNumber: current.sessionNumber,
       hand: current.hand,
       attempt: current.replayAttempt,
@@ -48,7 +64,8 @@ function armObservedAction({ selector, intended }) {
   return { state, rect: [rect.x, rect.y, rect.width, rect.height], scroll: [scrollX, scrollY] };
 }
 
-function readObservedAction(release = false) {
+function readObservedAction(options = false) {
+  const release = typeof options === 'boolean' ? options : options.release;
   const probe = window.__nativeObservedAction;
   const result = {
     // Keep the standard Event until after dispatch. Production onclick runs
@@ -59,6 +76,22 @@ function readObservedAction(release = false) {
     })),
     state: window.noir.getState(),
   };
+  if (options.selector) {
+    const target = document.querySelector(options.selector),
+      rect = target?.getBoundingClientRect(),
+      hit = rect && document.elementFromPoint(rect.x + rect.width / 2, rect.y + rect.height / 2);
+    result.frameCoverage = {
+      target: target?.id,
+      rect: rect && [rect.x, rect.y, rect.width, rect.height],
+      hit: hit && { id: hit.id, className: hit.className },
+      settledPanelCover:
+        !!rect &&
+        rect.width > 0 &&
+        rect.height > 0 &&
+        hit?.id === 'action-panel' &&
+        hit.classList.contains('settled-actions'),
+    };
+  }
   if (release) {
     probe?.release();
     delete window.__nativeObservedAction;
@@ -69,7 +102,6 @@ function readObservedAction(release = false) {
 export function assertObservedAction(result, selector, intended) {
   assert.deepEqual(identity(result.state), intended, 'A native action must not open another hand');
   const clicks = result.events.filter((event) => event.type === 'click');
-  assert.equal(clicks.length, 1, 'One native tap must produce exactly one real control click');
   for (const event of result.events) {
     assert.equal(event.trusted, true, 'The action must come from real native touch');
     assert.deepEqual(
@@ -78,18 +110,37 @@ export function assertObservedAction(result, selector, intended) {
       'The button event belongs to the intended hand',
     );
   }
-  const click = clicks[0],
-    downs = result.events.filter((event) => event.type === 'pointerdown'),
-    ups = result.events.filter((event) => event.type === 'pointerup');
+  const downs = result.events.filter((event) => event.type === 'pointerdown'),
+    ups = result.events.filter((event) => event.type === 'pointerup'),
+    settledContinue =
+      selector === '#continue-deal-button' &&
+      result.armed?.state.phase === 'playing' &&
+      JSON.stringify(identity(result.armed.state)) === JSON.stringify(intended) &&
+      result.armed.state.canContinue === true &&
+      result.state.phase === 'done';
   if (
-    selector === '#continue-deal-button' &&
-    result.armed?.state.phase === 'playing' &&
-    JSON.stringify(identity(result.armed.state)) === JSON.stringify(intended) &&
-    result.armed.state.canContinue === true &&
+    settledContinue &&
+    clicks.length === 0 &&
+    result.events.length === 2 &&
+    downs.length === 1 &&
+    ups.length === 1 &&
+    result.events[0] === downs[0] &&
+    result.events[1] === ups[0] &&
+    downs[0].pointerId === ups[0].pointerId &&
+    downs[0].pointerType === ups[0].pointerType &&
+    downs[0].target === 'continue-deal-button' &&
+    ups[0].target === 'continue-deal-button' &&
+    downs[0].phase === 'playing' &&
+    ups[0].phase === 'done'
+  )
+    return 'settled-during-cancelled-touch';
+  assert.equal(clicks.length, 1, 'One native tap must produce exactly one real control click');
+  const click = clicks[0];
+  if (
+    settledContinue &&
     click.target === 'next-button' &&
     click.defaultPrevented === true &&
     click.phase === 'done' &&
-    result.state.phase === 'done' &&
     downs.length === 1 &&
     ups.length === 1 &&
     downs[0].target !== 'next-button'
@@ -150,17 +201,53 @@ export async function tapObservedAction(app, selector, intended, deadline = Date
       if (armed.skippedSettled) return armed;
       // Use the existing measured WebView frame and a single native touch,
       // rather than the driver's potentially stale accessibility rectangle.
-      await app.nativeTap(target);
-      await app.waitFor(
-        async () => {
-          const observed = await app.evaluate(readObservedAction);
-          return observed.events.some((event) => event.type === 'click') ? observed : null;
-        },
-        Math.max(1, Math.min(5000, deadline - Date.now())),
-        'The one native tap must reach its actual control',
-      );
+      try {
+        await app.nativeTap(target);
+      } catch (error) {
+        // This exact error comes from nativeTouch's DOM hit-test, before it
+        // switches to native context or emits an input request. Preserve all
+        // driver errors and every other cover/identity instead of retrying.
+        if (
+          target === '#continue-deal-button' &&
+          error.message.includes('Native touch target is covered')
+        ) {
+          observed = await app.evaluate(readObservedAction, { release: true, selector: target });
+          if (
+            armed.state.phase === 'playing' &&
+            armed.state.canContinue === true &&
+            JSON.stringify(identity(observed.state)) === JSON.stringify(intended) &&
+            observed.state.phase === 'done' &&
+            observed.events.length === 0 &&
+            observed.frameCoverage.target === 'continue-deal-button' &&
+            observed.frameCoverage.settledPanelCover
+          )
+            return {
+              armed,
+              ...observed,
+              outcome: 'settled-before-covered-touch',
+              coverError: error.message,
+            };
+        }
+        throw error;
+      }
+      let clickError;
+      try {
+        await app.waitFor(
+          async () => {
+            const observed = await app.evaluate(readObservedAction);
+            return observed.events.some((event) => event.type === 'click') ? observed : null;
+          },
+          Math.max(1, Math.min(5000, deadline - Date.now())),
+          'The one native tap must reach its actual control',
+        );
+      } catch (error) {
+        clickError = error;
+      }
       observed = await app.evaluate(readObservedAction, true);
       const outcome = assertObservedAction({ armed, ...observed }, target, intended);
+      // Observe the entire existing click window before classifying a zero-
+      // click cancellation, so a delayed compatibility click cannot be missed.
+      if (clickError && outcome !== 'settled-during-cancelled-touch') throw clickError;
       return { armed, ...observed, outcome };
     },
   });
