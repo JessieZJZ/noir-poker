@@ -1723,10 +1723,21 @@ export async function nativeScenarios(app) {
       const steady = await app.evaluate(() => {
         const probe = window.__steadyMusic;
         clearInterval(probe.timer);
-        return { started: probe.started, ended: probe.audio.currentTime, samples: probe.samples };
+        return {
+          started: probe.started,
+          ended: probe.audio.currentTime,
+          duration: probe.audio.duration,
+          samples: probe.samples,
+        };
       });
       assert.ok(steady.samples.length >= 20);
-      assert.ok(steady.ended > steady.started);
+      // The track loops, so a slow runner can cross its end during this probe.
+      // Progress around the loop still proves it played; a stall leaves it at 0.
+      const played = (steady.ended - steady.started + steady.duration) % steady.duration;
+      assert.ok(
+        played > 0,
+        `Music must keep playing: ${steady.started}s to ${steady.ended}s of ${steady.duration}s`,
+      );
       assert.ok(
         steady.samples.every((sample) => sample.gain === 1 && !sample.paused && sample.samePlayer),
       );
@@ -2130,7 +2141,8 @@ export async function nativeScenarios(app) {
             hand: window.noir?.getState().hand,
           }));
           return loaded.language === target &&
-            loaded.title === { en: 'Settings', ko: '설정', 'zh-CN': '设置' }[target] &&
+            loaded.title ===
+              { en: 'Settings', ko: '설정', ru: 'Настройки', 'zh-CN': '设置' }[target] &&
             loaded.ready &&
             loaded.initialized
             ? loaded
@@ -2158,28 +2170,46 @@ export async function nativeScenarios(app) {
     // visible table, not the frozen background beneath the modal dialog.
     await app.click('#opponents-dialog .close-dialog');
     const chineseTags = await readNativePersonaTags(app);
-    const completeTags = () =>
-      app.evaluate(() => {
+    const expectCompleteTags = async (language) => {
+      const fit = await app.evaluate(() => {
         const tags = [...document.querySelectorAll('#seats .seat-style-label')];
-        return (
-          !document.querySelector('dialog[open]') &&
-          tags.length === window.noir.getState().playerCount - 1 &&
-          tags.every(
-            (tag) =>
-              tag.textContent === tag.dataset.fullName &&
-              getComputedStyle(tag).whiteSpace === 'nowrap' &&
-              getComputedStyle(tag).textOverflow !== 'ellipsis' &&
-              tag.scrollWidth <= tag.clientWidth + 1 &&
-              tag.scrollHeight <= tag.clientHeight + 1,
-          )
-        );
+        return {
+          dialogOpen: Boolean(document.querySelector('dialog[open]')),
+          tags: tags.length,
+          expected: window.noir.getState().playerCount - 1,
+          misfits: tags
+            .map((tag) => ({
+              text: tag.textContent,
+              fullName: tag.dataset.fullName,
+              whiteSpace: getComputedStyle(tag).whiteSpace,
+              textOverflow: getComputedStyle(tag).textOverflow,
+              fontSize: getComputedStyle(tag).fontSize,
+              scrollWidth: tag.scrollWidth,
+              clientWidth: tag.clientWidth,
+              scrollHeight: tag.scrollHeight,
+              clientHeight: tag.clientHeight,
+            }))
+            .filter(
+              (tag) =>
+                tag.text !== tag.fullName ||
+                tag.whiteSpace !== 'nowrap' ||
+                tag.textOverflow === 'ellipsis' ||
+                tag.scrollWidth > tag.clientWidth + 1 ||
+                tag.scrollHeight > tag.clientHeight + 1,
+            ),
+        };
       });
-    assert.equal(await completeTags(), true, 'Complete Chinese styles fit their reserved badges');
+      assert.ok(
+        !fit.dialogOpen && fit.tags === fit.expected && fit.misfits.length === 0,
+        `Complete ${language} styles fit their reserved badges: ${JSON.stringify(fit)}`,
+      );
+    };
+    await expectCompleteTags('Chinese');
     await app.click('#opponents-button');
     await changeLanguage('ko');
     await app.click('#opponents-dialog .close-dialog');
     const koreanTags = await readNativePersonaTags(app);
-    assert.equal(await completeTags(), true, 'Complete Korean styles fit their reserved badges');
+    await expectCompleteTags('Korean');
     assert.ok(chineseTags.tags.length > 0);
     assert.equal(koreanTags.tags.length, chineseTags.tags.length);
     for (let index = 0; index < chineseTags.tags.length; index++) {
@@ -2194,6 +2224,12 @@ export async function nativeScenarios(app) {
       [chineseTags.hand, chineseTags.stack, chineseTags.hole, chineseTags.completedHands],
     );
     await app.screenshot('korean-persona-tag-height');
+    // Russian has the longest style names, well past any font floor.
+    await app.click('#opponents-button');
+    await changeLanguage('ru');
+    await app.click('#opponents-dialog .close-dialog');
+    await readNativePersonaTags(app);
+    await expectCompleteTags('Russian');
     await app.click('#opponents-button');
     await changeLanguage('zh-CN');
     await app.select('#player-count', '5');
@@ -3539,48 +3575,71 @@ export async function nativeScenarios(app) {
         });
       });
     });
-    // Prepare realm identity before observing the short real opponent window.
-    // HOME then freezes the app before slow context discovery can miss it.
-    await app.preserveForegroundPage?.();
-    await waitForPendingOpponent(app);
-    const immediateHome = pressSelectedAndroidHome({ platform: app.platform });
-    const nativeBackground = await app.background();
-    await app.sleep(6000);
-    const stillBackgrounded = await app.nativeState();
-    const backgroundMs = performance.now() - nativeBackground.startedAt;
-    assert.ok([2, 3].includes(stillBackgrounded), 'App must still be natively backgrounded');
-    assert.ok(backgroundMs >= 6000, 'Native app must remain in the background for six seconds');
-    await app.activate();
-    const boundaries = await app.evaluate(() => window.__nativeLifecycleObservations);
-    const hiddenIndex = boundaries.findIndex((entry) => !entry.active);
-    const paused = boundaries[hiddenIndex];
-    const resumed = boundaries.slice(hiddenIndex + 1).find((entry) => entry.active);
-    assert.ok(paused && resumed, 'Native inactive and active events must both arrive');
-    assert.equal(paused.state.phase, 'playing');
-    assert.ok(paused.state.actor && paused.state.actor !== '你');
-    assert.deepEqual(
-      resumed.state,
-      paused.state,
-      'Game must not advance while the native app is in the background',
-    );
-    await app.waitFor(
-      async () => {
-        const current = await app.state();
-        return !isDeepStrictEqual(current, paused.state);
-      },
-      45000,
-      'Game should resume after native foreground event',
+    const backgroundOnce = async () => {
+      await app.evaluate(() => {
+        window.__nativeLifecycleObservations = [];
+      });
+      // Prepare realm identity before observing the short real opponent window.
+      // HOME then freezes the app before slow context discovery can miss it.
+      await app.preserveForegroundPage?.();
+      await waitForPendingOpponent(app);
+      const immediateHome = pressSelectedAndroidHome({ platform: app.platform });
+      const nativeBackground = await app.background();
+      await app.sleep(6000);
+      const stillBackgrounded = await app.nativeState();
+      const backgroundMs = performance.now() - nativeBackground.startedAt;
+      assert.ok([2, 3].includes(stillBackgrounded), 'App must still be natively backgrounded');
+      assert.ok(backgroundMs >= 6000, 'Native app must remain in the background for six seconds');
+      await app.activate();
+      const boundaries = await app.evaluate(() => window.__nativeLifecycleObservations);
+      const hiddenIndex = boundaries.findIndex((entry) => !entry.active);
+      const paused = boundaries[hiddenIndex];
+      const resumed = boundaries.slice(hiddenIndex + 1).find((entry) => entry.active);
+      assert.ok(paused && resumed, 'Native inactive and active events must both arrive');
+      assert.deepEqual(
+        resumed.state,
+        paused.state,
+        'Game must not advance while the native app is in the background',
+      );
+      await app.waitFor(
+        async () => {
+          const current = await app.state();
+          return !isDeepStrictEqual(current, paused.state);
+        },
+        45000,
+        'Game should resume after native foreground event',
+      );
+      return {
+        backgroundMs: Math.round(backgroundMs),
+        nativeStateBefore: nativeBackground.nativeState,
+        nativeStateAfter: stillBackgrounded,
+        jsLifecycleIntervalMs: resumed.at - paused.at,
+        paused: paused.state,
+        immediateHome,
+      };
+    };
+    // A quick opponent can finish during HOME's real latency, leaving a street
+    // deal or the hero's turn. Every landing must freeze; only one on a pending
+    // opponent proves that action was cancelled, so keep trying for that.
+    const pendingOpponent = ({ paused }) =>
+      paused.phase === 'playing' && paused.actor && paused.actor !== '你';
+    const landings = [];
+    do landings.push(await backgroundOnce());
+    while (landings.length < 6 && !pendingOpponent(landings.at(-1)));
+    const { paused, ...landing } = landings.at(-1);
+    assert.ok(
+      pendingOpponent(landings.at(-1)),
+      `Background must land on a pending opponent: ${JSON.stringify(
+        landings.map(({ paused }) => [paused.phase, paused.actor]),
+      )}`,
     );
     return {
       heroTurn,
-      backgroundMs: Math.round(backgroundMs),
-      nativeStateBefore: nativeBackground.nativeState,
-      nativeStateAfter: stillBackgrounded,
-      jsLifecycleIntervalMs: resumed.at - paused.at,
-      pausedActor: paused.state.actor,
-      pausedHand: paused.state.hand,
-      pausedPhase: paused.state.phase,
-      immediateHome,
+      ...landing,
+      attempts: landings.length,
+      pausedActor: paused.actor,
+      pausedHand: paused.hand,
+      pausedPhase: paused.phase,
     };
   });
   if (app.comparePage)

@@ -75,6 +75,8 @@ test('native and WeChat declarations restrict phones while retaining tablet rota
   assert.match(activity, /smallestScreenWidthDp >= 600/);
   assert.match(activity, /SCREEN_ORIENTATION_USER/);
   assert.match(activity, /SCREEN_ORIENTATION_PORTRAIT/);
+  // The shared style-tag fitting needs text below WebView's default 8px floor.
+  assert.match(activity, /getSettings\(\)\.setMinimumFontSize\(1\)/);
   const app = JSON.parse(read('miniprogram/app.json'));
   const page = JSON.parse(read('miniprogram/pages/table/table.json'));
   assert.equal(app.window.pageOrientation, 'portrait');

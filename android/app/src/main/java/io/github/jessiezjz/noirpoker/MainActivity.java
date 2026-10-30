@@ -33,6 +33,9 @@ public class MainActivity extends BridgeActivity {
             }
         });
         super.onCreate(savedInstanceState);
+        // WebView alone stops text at 8px, which leaves long localized style
+        // tags overflowing their badges. Let the shared fitting shrink them.
+        if (getBridge() != null) getBridge().getWebView().getSettings().setMinimumFontSize(1);
         // The emulator compositor can repeat WebView raster tiles. Use a
         // software layer on virtual hardware; phones keep hardware acceleration.
         if (getBridge() != null && ("ranchu".equals(Build.HARDWARE) || "goldfish".equals(Build.HARDWARE))) {
