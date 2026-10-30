@@ -109,6 +109,8 @@ NOIR_NATIVE_SCENARIOS=real-background-cancels-pending-action,every-player-count-
 
 CI 在完成编译后，安装并启动真正的模拟器/仿真器 App，用 Appium 驱动 WKWebView、Android WebView 和系统前后台。验证无登录本地启动、头像加载、设置重启持久保存、下注/跟注/弃牌、结算、重打撤奖统计、下一手和后台暂停恢复；报告与完整设备截图分别放入 `ios-native-e2e-results`、`android-native-e2e-results`。安装及运行步骤见 [原生端到端验证](native-e2e.md)。真机声音听感、实际设备安全区域与商店签名仍单独验收。
 
+Android 安装测试的短点击在量取真实 WebView 坐标后使用 UiAutomator2 `mobile: clickGesture`，保持设备原生触摸；长按与拖动仍使用 W3C 触摸序列。繁忙仿真器曾把指定 80ms 的 down/pause/up 延迟成长按，导致按钮文字被选中而没有开局。测试保留必须成功开局的断言，不以 JavaScript click 或重复点击掩盖失败。接口见 [UiAutomator2 手势说明](https://appium.github.io/appium-uiautomator2-driver/latest/reference/execute-methods/#mobile-clickgesture)。
+
 ## 原生国际化与发行展示
 
 原生构建支持 11 种语言，iOS 在 `Info.plist` 声明语言，Android 使用 `res/xml/locales_config.xml`。应用内语言设置在本机持久保存；实际系统单 App 语言选择与 WebView 字体需真机验收。

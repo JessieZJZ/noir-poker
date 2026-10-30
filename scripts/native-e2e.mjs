@@ -265,7 +265,7 @@ async function select(selector, value) {
     `Selection did not apply: ${selector}`,
   );
 }
-async function nativeTouch(selector, duration, from = 0.5, to = null) {
+async function nativeTouch(selector, duration, from = 0.5, to = null, { tap = false } = {}) {
   const target = await evaluate(
     (selector, from, to) => {
       const element = document.querySelector(selector),
@@ -301,6 +301,15 @@ async function nativeTouch(selector, duration, from = 0.5, to = null) {
     const frame = frames.sort((a, b) => b.width * b.height - a.width * a.height)[0];
     assert.ok(frame, 'The installed app must expose its actual WebView frame');
     const point = nativePoint(target, target, frame);
+    if (tap && platform === 'android') {
+      // A loaded emulator can stretch W3C down/pause/up into a long press.
+      // Keep this a real device tap, issued atomically by UiAutomator2.
+      await command('POST', '/execute/sync', {
+        script: 'mobile: clickGesture',
+        args: [point],
+      });
+      return;
+    }
     await command('POST', '/actions', {
       actions: [
         {
@@ -332,7 +341,7 @@ async function nativeTouch(selector, duration, from = 0.5, to = null) {
 async function nativeTap(selector) {
   // The shared touch path already selects the platform's real WebView class
   // and maps its measured native frame, as used by long presses on both OSes.
-  return nativeTouch(selector, 80);
+  return nativeTouch(selector, 80, 0.5, null, { tap: true });
 }
 async function nativeHold(selector) {
   return nativeTouch(selector, 650);
