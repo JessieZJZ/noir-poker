@@ -1,13 +1,15 @@
-import { handFeatures } from './hand-features.js';
+import { boardTexture, handFeatures } from './hand-features.js';
 import { observedAggressiveLikelihood } from './public-observations.js';
 
-export const hasPublicStory = (line) =>
+export const hasPublicActionLine = (line) =>
   Array.isArray(line) &&
-  new Set(line.map((a) => a.street)).size >= 2 &&
+  line.length > 0 &&
   line.every(
     (a) =>
       a.street >= 1 && a.street <= 3 && Array.isArray(a.board) && a.board.length === a.street + 2,
   );
+export const hasPublicStory = (line) =>
+  hasPublicActionLine(line) && new Set(line.map((a) => a.street)).size >= 2;
 
 // Authored action-likelihood heuristics, not measured frequencies or a solver.
 // A candidate hand is tested against each board as it was visible at that time.
@@ -49,6 +51,10 @@ export function publicPostflopLine(view, id, throughStreet = view.street) {
       a.street < view.street &&
       !entries.slice(index + 1).some((b) => b.street === a.street) &&
       !previous.some((b) => b.action === 'raise');
+    const checkedThrough =
+      a.action === 'check' &&
+      a.street < view.street &&
+      !entries.some((b) => b.street === a.street && b.action === 'raise');
     const potBefore = openingPot + a.contributed;
     return [
       {
@@ -68,6 +74,7 @@ export function publicPostflopLine(view, id, throughStreet = view.street) {
             ? Math.max(0, a.amount - a.current) / Math.max(1, potBefore + a.facing)
             : a.amount / Math.max(1, potBefore),
         closedCheck,
+        checkedThrough,
         board: view.board.slice(0, a.street + 2).map((c) => ({ ...c })),
       },
     ];
@@ -92,7 +99,32 @@ export function publicStoryWeight(hole, line, handData, publicRead = null) {
     const raising = event.action === 'raise' || event.action === 'check-raise';
     let factor;
     if (event.action === 'check') {
-      factor = f.strongMade ? (event.closedCheck ? 0.65 : 0.95) : pair ? 0.95 : 1;
+      const texture = boardTexture(event.board);
+      const unfinishedDraws =
+        event.street < 3 &&
+        !texture.paired &&
+        texture.maxSuit < 3 &&
+        texture.connected < 4 &&
+        (texture.maxSuit === 2 || texture.connected === 3);
+      // Checking an exposed strong hand on a draw-heavy board is less
+      // likely than checking a draw or a middling made hand. It remains
+      // possible: an early check can still be a check/raise or a slowplay.
+      // Once the whole street checked through, that missed value/protection
+      // opportunity is evidence for every checker, not just the last seat.
+      const passed = event.checkedThrough || event.closedCheck;
+      factor = f.strongMade
+        ? unfinishedDraws
+          ? passed
+            ? 0.7
+            : 0.85
+          : passed
+            ? 0.65
+            : 0.95
+        : pair
+          ? unfinishedDraws
+            ? 0.88
+            : 0.95
+          : 1;
     } else if (event.action === 'call') {
       factor = f.strongMade
         ? 0.9

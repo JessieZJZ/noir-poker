@@ -51,7 +51,11 @@ import {
   currentPots,
   rankText,
   evaluate,
+  importPlayerObservations,
+  exportPlayerObservations,
 } from '../engine/poker.js';
+import { sanitizePlayerObservationProfile } from '../engine/public-observations.js';
+import { createPlayerObservationStore } from './player-observations-store.js';
 import {
   BOT_PROFILES,
   EMOTION_MODES,
@@ -123,6 +127,14 @@ export function createWechatController({
   readOnlySessionNumber = null,
 }) {
   const reviewCache = createReviewCache({ storage });
+  const playerObservations = readOnlyAttempt
+    ? null
+    : createPlayerObservationStore({
+        storage,
+        sanitizeProfile: sanitizePlayerObservationProfile,
+        importProfile: importPlayerObservations,
+        exportProfile: exportPlayerObservations,
+      });
   let settings;
   let stakesError = '';
   try {
@@ -174,6 +186,7 @@ export function createWechatController({
     hintText = '',
     reviewEpoch = 0,
     newSession = false;
+  playerObservations?.restore(game);
   game.history ||= [];
   const dealGate = createDealGate({
     schedule,
@@ -327,6 +340,7 @@ export function createWechatController({
   }
   function render() {
     if (disposed) return;
+    playerObservations?.capture(game);
     records?.capture(game);
     const notice = records?.takeNotice();
     if (notice) toast(notice);
@@ -676,6 +690,7 @@ export function createWechatController({
   }
   function freshHand({ refilled = false } = {}) {
     if (readOnlyAttempt || disposed) return;
+    playerObservations?.capture(game);
     dealGate.cancel();
     attention.reset();
     turnCue.reset();
@@ -691,7 +706,7 @@ export function createWechatController({
       !sameStakes(settings.stakes, game.stakes)
     ) {
       records?.abandon(game);
-      game = newGame(settings.playerCount, settings.stakes);
+      game = playerObservations.restore(newGame(settings.playerCount, settings.stakes));
       newSession = true;
     }
     // A refill left pending when the app closed is completed before dealing.
@@ -801,7 +816,8 @@ export function createWechatController({
   function refreshWaitingTable() {
     if (game.phase !== 'idle') return;
     if (game.players.length !== settings.playerCount || !sameStakes(game.stakes, settings.stakes)) {
-      game = newGame(settings.playerCount, settings.stakes);
+      playerObservations?.capture(game);
+      game = playerObservations.restore(newGame(settings.playerCount, settings.stakes));
       game.history = [];
     }
     game.difficulty = settings.difficulty;
@@ -864,8 +880,11 @@ export function createWechatController({
       cancelHint();
       cancelEffects();
       render();
+      void playerObservations?.flush();
     },
     destroy() {
+      playerObservations?.capture(game);
+      void playerObservations?.flush();
       disposed = true;
       active = false;
       dealGate.cancel();
@@ -964,11 +983,12 @@ export function createWechatController({
     },
     reset() {
       if (readOnlyAttempt) return;
+      playerObservations?.capture(game);
       records?.abandon(game);
       newSession = true;
       cancelBots();
       cancelReview();
-      game = newGame(settings.playerCount, settings.stakes);
+      game = playerObservations.restore(newGame(settings.playerCount, settings.stakes));
       freshHand();
     },
     setStakes,

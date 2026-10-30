@@ -25,7 +25,7 @@ test('reported turn call merges action and motive, names only its real straight 
   assert.match(text, /帮对手成更大的牌/);
   assert.match(text, /还留 7K/);
   assert.doesNotMatch(text, /下一街.*要看|需要重新决定|仍需另作决定/);
-  assert.doesNotMatch(text, /补成.*同花|顺子／同花/);
+  assert.doesNotMatch(text, /8 张牌可能补成(?:同花|顺子或同花)|顺子／同花/);
   assert.equal(text.match(/6.3K/g).length, 1);
   assert.equal(text.match(/Kai/g).length, 1);
   const flush = structuredClone(record);
@@ -114,7 +114,7 @@ test('range notes preserve caller families while keeping an actual fold focused 
   // fold must not remove the public range explanation from a live defense.
   assert.match(
     range({ ...s, action: 'call' }),
-    /小对子、同花牌或连接牌.*同时考虑加注者和这些跟入者的继续范围/,
+    /小对子、同花牌或连接牌.*同时考虑加注范围和跟注入池的范围/,
   );
   for (const spot of [turnBluffReview(), pocketNinesCheckedBoard(), suitedBroadwayFiveBetFold()]) {
     const c = decisionContext(spot),

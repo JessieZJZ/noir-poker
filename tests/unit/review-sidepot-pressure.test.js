@@ -156,7 +156,7 @@ test('short-stack small-pair flats and weak late limps need independent continua
   const flat = analyzeDecision(expensive, options);
   assert.equal(flat.code, 'costly-small-pair-flat');
   assert.equal(flat.alternative.action, 'fold');
-  assert.notEqual(flat.coaching.label, '值得保留');
+  assert.notEqual(flat.coaching.assessmentLabel, '值得保留');
 
   const limp = cases.weakLateLimp.snapshot;
   const weak = analyzeDecision(limp, options);
@@ -165,5 +165,5 @@ test('short-stack small-pair flats and weak late limps need independent continua
   assert.equal(weak.routes.secondary.action, 'raise');
   assert.equal(weak.routes.secondary.amount, 50000);
   assert.match(weak.routes.secondary.condition, /只有已有公开行动显示盲位过度弃牌/);
-  assert.notEqual(weak.coaching.label, '值得保留');
+  assert.notEqual(weak.coaching.assessmentLabel, '值得保留');
 });

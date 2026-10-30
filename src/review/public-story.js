@@ -4,6 +4,7 @@ import { compactChips } from '../engine/chip-format.js';
 import { preparePublicRanges } from '../engine/public-ranges.js';
 import {
   PUBLIC_READ_MODEL,
+  LEGACY_PUBLIC_READ_MODEL,
   observedAggressiveLikelihood,
   observedRangeModel,
 } from '../engine/public-observations.js';
@@ -20,7 +21,7 @@ export function publicObservationNotes(s) {
       ));
   if (
     !completeRangeInputs ||
-    s.publicReadModel !== PUBLIC_READ_MODEL ||
+    ![PUBLIC_READ_MODEL, LEGACY_PUBLIC_READ_MODEL].includes(s.publicReadModel) ||
     !s.reviewSubject ||
     !['call', 'fold', 'raise'].includes(s.action)
   )
@@ -37,13 +38,15 @@ export function publicObservationNotes(s) {
   const actualWagerSizing =
     sizing?.version === 1 && Number.isFinite(sizing.largePreflopBB) && sizing.largePreflopBB > 0;
   if (sizing && !actualWagerSizing) return [];
+  const legacy = s.publicReadModel === LEGACY_PUBLIC_READ_MODEL;
   const observation = range
     ? observedRangeModel(range.publicRead, {
         action: range.preflop.action,
         allIn: actualWagerSizing ? range.preflop.amountBB >= sizing.largePreflopBB : range.allIn,
+        legacy,
       })
     : null;
-  if (!observation || observation.hands < 8) return [];
+  if (!observation || (legacy && observation.hands < 8)) return [];
   const other = actorName(s, last.id),
     subject = s.reviewSubject;
   if (s.street === 0 && observation.events / observation.hands >= 0.5) {
@@ -56,7 +59,8 @@ export function publicObservationNotes(s) {
         `${subject}结合${other}此前 ${observation.hands} 手中 ${observation.events} 手翻前加注的记录，本次没有把加注范围限于强牌。`,
       ];
   }
-  if (s.street > 0 && observedAggressiveLikelihood(range.publicRead) > 0.1)
+  const aggression = observedAggressiveLikelihood(range.publicRead, { legacy });
+  if (s.street > 0 && aggression > 0.1)
     return [`${subject}结合${other}此前频繁的翻后下注与加注，本次估计保留了更多弱牌施压的可能。`];
   return [];
 }
@@ -71,7 +75,12 @@ export function publicStoryNotes(s) {
   if (!last) return observations;
   const line = publicPostflopLine(s, last.id);
   if (new Set(line.map((a) => a.street)).size < 2) return observations;
+  const callThenLead =
+    s.reviewAudience === 'observer' &&
+    line.some((a) => a.action === 'call' && a.street < s.street) &&
+    line.some((a) => ['bet', 'raise'].includes(a.action) && a.street === s.street);
   if (
+    !callThenLead &&
     !line.some((a) => a.action === 'check-raise') &&
     line.filter((a) => ['bet', 'raise'].includes(a.action)).length < 2
   )

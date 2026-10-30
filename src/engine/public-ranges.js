@@ -1,6 +1,11 @@
 import { bigBlindOf } from './stakes.js';
 import { allInContext } from './public-action-context.js';
-import { publicPostflopLine, publicStoryWeight, hasPublicStory } from './public-story.js';
+import {
+  publicPostflopLine,
+  publicStoryWeight,
+  hasPublicActionLine,
+  hasPublicStory,
+} from './public-story.js';
 import { startingPercentile } from './starting-range.js';
 import {
   sanitizePublicRead,
@@ -376,7 +381,11 @@ export function publicComboWeight(
   if (preflop.action === 'raise' && preflop.amountBB > 4 && handTier < 3) weight *= 0.75;
   weight = observedRangeWeight(startingPercentile(pair), weight, descriptor.rangeObservation);
   if (board.length < 3 || !score) return clamp(weight);
-  if (handData && hasPublicStory(descriptor.postflopLine))
+  if (
+    handData &&
+    (hasPublicStory(descriptor.postflopLine) ||
+      (!descriptor.allIn && hasPublicActionLine(descriptor.postflopLine)))
+  )
     return clamp(
       weight * publicStoryWeight(pair, descriptor.postflopLine, handData, descriptor.publicRead),
     );

@@ -554,7 +554,10 @@ test('WeChat retry restores original private deal and retracts awards/statistics
   controller.setSeatProfile(1, 'rook');
   controller.setPreference('emotionMode', 'lively');
   assert.equal(controller.retry(), true);
-  assert.deepEqual(originalState(game), baseline);
+  const { playerObservationRevision: previousRevision, ...beforeRetry } = baseline;
+  const { playerObservationRevision: currentRevision, ...afterRetry } = originalState(game);
+  assert.deepEqual(afterRetry, beforeRetry);
+  assert.ok(currentRevision > previousRevision, 'Rollback advances the persisted write revision');
   assert.equal(game.replayAttempt, 1);
   assert.equal(game.stats.hands, 0);
   verifyChips(game, 30000);
@@ -649,7 +652,8 @@ test('WeChat review grades only the public before-action snapshot and keeps it d
   );
   assert.equal('title' in report, false);
   assert.equal('summary' in report, false);
-  assert.ok(report.steps[0].suggestion);
+  assert.match(report.steps[0].label, /^建议(?:弃牌|过牌|跟注|全下|短全下|加注|下注)/);
+  assert.equal(report.steps[0].suggestion, report.steps[0].label);
 });
 
 test('fresh WeChat settings use five players and publish disabled controls before the hero turn', (t) => {

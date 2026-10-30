@@ -202,6 +202,10 @@ test('generated WeChat JavaScript loads the controller and complete player resea
   assertSuccess(await build(workspace).result);
   assert.equal(existsSync(path.join(workspace.output, 'shared/engine/store-profiles.js')), false);
   assert.equal(existsSync(path.join(workspace.output, 'shared/ui/bet-sizing.js')), true);
+  assert.ok(
+    existsSync(path.join(workspace.output, 'shared/platform/player-observations-store.js')),
+    'WeChat retains its platform-neutral player-observation persistence dependency',
+  );
   // The same rules as Web and native, compacted like every shipped stylesheet.
   const { compactWxss } = await import('../../scripts/wechat.mjs');
   for (const name of ['hero-turn', 'game-effects', 'emotion-effects'])

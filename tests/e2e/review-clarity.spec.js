@@ -22,7 +22,10 @@ test('deep button suited connectors receive a concrete call and conditional sque
     timeout: 120000,
   });
   const detail = page.locator('#review-detail');
-  await expect(detail).toContainText('这手建议跟注 500');
+  await expect(page.locator('#review-selected-status')).toHaveText('建议跟注 500');
+  await expect(page.locator('#review-timeline .review-status')).toHaveText(['建议跟注 500']);
+  await expect(detail).toContainText('先比较跟注 500 与有条件的3-bet 加注至 2K');
+  await expect(detail).toContainText('若开池者范围较宽、平跟者有足够弃牌空间');
   await expect(detail).toContainText('3-bet 加注至 2K');
   await expect(detail).toContainText('不代表天然拥有范围优势');
   await expect(detail).toContainText('免费过牌则保留机会');
@@ -90,7 +93,7 @@ test('review prices, actor references and draw verdicts stay coherent in the exi
   await expect(evidence.locator('li')).toHaveCount(6);
   await expect(evidence).toContainText('跟注前底池 460K，底池赔率约 3.29:1');
   await expect(evidence).toContainText('需要至少 23.3% 的胜率，风险和收益才能持平。');
-  await expect(summary).toContainText('你若再加注，需要同时考虑加注者和这些跟入者的继续范围');
+  await expect(summary).toContainText('你若再加注，需要同时考虑加注范围和跟注入池的范围');
   await expect(summary).toContainText(/坚果同花听牌.*击中 A.*较弱 Ax/);
   await expect(summary).not.toContainText('；');
   await evidence.scrollIntoViewIfNeeded();
@@ -112,8 +115,10 @@ test('review prices, actor references and draw verdicts stay coherent in the exi
   // The bettor's full public line (check flop, bet turn) keeps bluffs in range:
   // both range estimates clear the 30.1% price, so the gutshot call is kept.
   await select(6);
-  await expect(page.locator('#review-selected-status')).toHaveText('值得保留');
-  await expect(summary).toContainText(/卡顺听牌.*4 张直接成牌候选.*最终摊牌机会/);
+  await expect(page.locator('#review-selected-status')).toHaveText('建议跟注 520K');
+  await expect(page.locator('#review-selected-status')).toHaveClass(/sound/);
+  await expect(summary).toContainText(/卡顺听牌.*4 张直接成牌候选.*约 9%.*不等于你的全部获胜机会/);
+  await expect(summary).toContainText('这次跟注后已没有后续下注');
   await expect(summary).not.toContainText(/这手建议跟注|；/);
   await summary.scrollIntoViewIfNeeded();
   await info.attach('gutshot-comparison', {
@@ -123,17 +128,17 @@ test('review prices, actor references and draw verdicts stay coherent in the exi
   await select(7);
   await expect(evidence).toContainText('4 / 5 同花连接牌');
   await expect(summary).toContainText(
-    /同花连接牌.*37.0%.*点数仍偏低.*更高同花.*他们如果加注或者再加注.*建议弃牌/,
+    /同花连接牌.*37.0%.*点数仍偏低.*更高同花.*若出现加注或者再加注.*建议弃牌/,
   );
-  await expect(summary).not.toContainText(/被强 A.*压制|；/);
+  await expect(summary).not.toContainText(/被强 A.*压制|[。；，]{2}/);
   await summary.scrollIntoViewIfNeeded();
   await info.attach('low-connector-fold-rationale', {
     body: await page.screenshot(),
     contentType: 'image/png',
   });
   await select(8);
-  await expect(page.locator('#review-selected-status')).toHaveText('值得保留');
-  await expect(summary).toContainText(/全下跟注.*27.0%.*看完剩余公共牌.*值得保留的依据/);
+  await expect(page.locator('#review-selected-status')).toHaveText('建议全下跟注 1.62M');
+  await expect(summary).toContainText(/全下跟注.*27.0%.*看完剩余公共牌.*足够较弱牌.*比较弃牌/);
   await expect(summary).not.toContainText(/还留.*0|你在翻后有位置|你需要重新决定/);
   const ownParagraph = summary.locator('p').last();
   expect((await ownParagraph.textContent()).match(/1.62M/g)).toHaveLength(1);
@@ -186,9 +191,15 @@ test('new recommendation clauses and key information switch across all locales',
     for (const i of [0, 6, 7, 8, 9]) {
       await page.locator(`[data-review-index="${i}"]`).click();
       const text = await page
-        .locator('#review-coach-explanation, #review-evidence')
+        .locator(
+          '#review-coach-explanation, #review-evidence, #review-selected-status, #review-timeline .review-status',
+        )
         .allTextContents();
       expect(text.join('')).not.toMatch(/\{\d+\}/);
+      if (locale === 'zh-CN')
+        await expect(page.locator('#review-selected-status')).toHaveText(/^建议/);
+      if (locale === 'zh-TW')
+        await expect(page.locator('#review-selected-status')).toHaveText(/^建議/);
       if (!['zh-CN', 'zh-TW', 'ja'].includes(locale))
         expect(text.join('')).not.toMatch(/\p{Script=Han}/u);
       await expect(page.locator('#review-evidence')).toContainText(

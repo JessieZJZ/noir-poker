@@ -91,8 +91,9 @@ test('a call needing future income names the current price and additional street
   const notes = strategyNotes(snapshot(), assessment());
   assert.equal(notes.length, 2);
   const implied = notes.find((n) => n.topic === 'implied-odds');
-  assert.match(implied.text, /跟注 200.*还需要补中后从较弱牌收取筹码/);
-  assert.match(implied.text, /只补齐本轮.*下一街.*另算成本/);
+  assert.match(implied.text, /若跟注 200 主要依赖补中获利.*成牌后哪些较弱牌愿意付费/);
+  assert.match(implied.text, /本次跟注只支付当前所需金额.*下一街.*另算成本/);
+  assert.doesNotMatch(implied.text, /补齐本轮|本轮结束|保证.*翻牌/);
   assert.doesNotMatch(prose(notes), forbidden);
 });
 
@@ -126,7 +127,7 @@ test('size-specific paying ranges only compare assessed sizes and the customer c
   const s = snapshot({ action: 'raise', amount: 400 });
   const a = assessment({ draw: noDraw });
   const text = prose(strategyNotes(s, a));
-  assert.match(text, /加注至 400.*较弱成牌和听牌可能付费/);
+  assert.match(text, /加注至 400.*较弱成牌可能付费，也有听牌可能跟注/);
   assert.match(text, /再加大到 800.*赶走较弱成牌/);
   assert.doesNotMatch(text, forbidden);
   assert.equal(

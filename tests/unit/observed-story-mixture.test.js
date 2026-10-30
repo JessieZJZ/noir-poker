@@ -32,11 +32,11 @@ const line = [1, 2, 3].map((street) => ({
   board: board.slice(0, street + 2),
 }));
 
-test('cold, insufficient and passive observations do not alter candidate action-line weights', () => {
+test('absent betting evidence and passive observations do not alter candidate action-line weights', () => {
   const pool = engine.deckOfCards().filter((c) => !board.some((b) => b.key === c.key));
   for (const observation of [
-    { ...read, hands: 7 },
-    { ...read, postActions: 15, postRaises: 15 },
+    { ...read, hands: 0 },
+    { ...read, postActions: 0, postRaises: 0 },
     { ...read, postRaises: 0 },
   ]) {
     assert.equal(observedAggressiveLikelihood(observation), 0);

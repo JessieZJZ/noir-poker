@@ -141,7 +141,8 @@ test('all-in opponents remove invented river bluff space and expensive call labe
   s.players[1].stack = 0;
   const r = analyzeDecision(s, { trials: 120 });
   assert.doesNotMatch(r.coaching.explanation, /(?:可以|考虑|比较|再|才).{0,12}(?:转诈唬|河牌诈唬)/);
-  assert.match(r.coaching.explanation, /(?:没有.*(?:诈唬.*空间|后手)|都已全下)/);
+  assert.match(r.coaching.explanation, /没有后续下注/);
+  assert.match(r.coaching.explanation, /不能靠后街诈唬/);
   s.legal.callAmount = s.legal.toCall = 3500;
   s.amount = s.currentBet = 3500;
   s.players[1].bet = 3500;
@@ -151,7 +152,7 @@ test('all-in opponents remove invented river bluff space and expensive call labe
   s.board = cards('Qs Jd 9c 8h 2s');
   s.street = 3;
   const costly = analyzeDecision(s, { trials: 120 });
-  assert.equal(costly.coaching.label, '弃牌');
+  assert.equal(costly.coaching.label, '建议弃牌');
   assert.equal(costly.coaching.suggestedAction, '弃牌');
 });
 test('bot explanations separate made hand and draw without a numeric reference module', () => {

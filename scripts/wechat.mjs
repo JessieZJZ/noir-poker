@@ -265,8 +265,10 @@ export async function buildWechat(output = wechatOutput) {
       await compileJs(path.join(root, 'src', directory), path.join(staging, 'shared', directory));
     await compileJs(path.join(root, 'src/platform'), path.join(staging, 'shared/platform'));
     // Platform adapters must not accidentally pull Capacitor or DOM modules in.
+    // The shared observation store is platform-neutral and is used by WeChat.
     for (const file of await fileList(path.join(staging, 'shared/platform')))
-      if (!file.startsWith('wechat-')) await rm(path.join(staging, 'shared/platform', file));
+      if (!file.startsWith('wechat-') && file !== 'player-observations-store.js')
+        await rm(path.join(staging, 'shared/platform', file));
     await mkdir(path.join(staging, 'shared/ui'), { recursive: true });
     await cp(
       path.join(root, 'src/styles/hero-turn.css'),
@@ -295,7 +297,6 @@ export async function buildWechat(output = wechatOutput) {
       'card-rank-glyphs.js',
       'background-music.js',
       'music-fade.js',
-      'bet-sizing.js',
       'deal-gate.js',
       'effect-layouts.js',
       'entry-welcome-scale.js',

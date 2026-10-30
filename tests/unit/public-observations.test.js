@@ -36,10 +36,11 @@ test('a settlement without an original public history does not invent observatio
   assert.equal(publicHandObservations({ dealtIds: [0, 1], history: null, bigBlind: 200 }).size, 0);
 });
 
-test('observed response shifts need paid-bet opportunities and stay bounded under extreme histories', () => {
+test('observed response shifts start with paid-bet evidence and remain cautious for one opportunity', () => {
   const base = { hands: 32, postActions: 128, facedPostBet: 64, foldedPostBet: 0 };
-  assert.equal(observedResponseShift({ ...base, hands: 7 }), 0);
-  assert.equal(observedResponseShift({ ...base, facedPostBet: 11 }), 0);
+  const first = observedResponseShift({ hands: 1, postActions: 1, facedPostBet: 1 });
+  assert.ok(first > 0 && first < 0.1);
+  assert.ok(first < observedResponseShift(base));
   assert.equal(observedResponseShift({ hands: 64, postActions: 500, facedPostBet: 0 }), 0);
   assert.ok(observedResponseShift(base) > 0);
   assert.ok(observedResponseShift({ ...base, foldedPostBet: 64 }) < 0);
@@ -83,10 +84,12 @@ test('visible action counters distinguish free checks, betting, calls and folds 
   );
 });
 test('one unusual hand cannot overwrite the prior; repeated broad aggression changes the inferred range gradually', () => {
-  assert.equal(
-    observedRangeModel(summarizePublicRead([sample()]), { action: 'raise', allIn: true }),
-    null,
-  );
+  const first = observedRangeModel(summarizePublicRead([sample()]), {
+    action: 'raise',
+    allIn: true,
+  });
+  assert.ok(first.confidence > 0 && first.confidence < 0.2);
+  assert.ok(first.width > 0.04 && first.width < 0.2);
   const eight = observedRangeModel(summarizePublicRead(Array.from({ length: 8 }, () => sample())), {
     action: 'raise',
     allIn: true,
@@ -121,7 +124,7 @@ test('memory stays bounded, discards unknown fields and preserves small-sample u
   assert.equal(observedRangeWeight(0.5, 0.2, null), 0.2);
 });
 
-test('completed public evidence rolls back on retry exactly once and clears with a new stakes session', () => {
+test('completed public evidence rolls back once and player learning survives a new stakes session', () => {
   const g = newGame(5);
   const finish = () => {
     let steps = 0;
@@ -146,7 +149,8 @@ test('completed public evidence rolls back on retry exactly once and clears with
   finish();
   assert.ok(g.players.every((p) => p.publicReads.length === 2));
   configureStakes(g, stakesFromSmallBlind(25));
-  assert.ok(g.players.every((p) => p.publicReads.length === 0));
+  assert.equal(g.players[0].publicReads.length, 2);
+  assert.ok(g.players.slice(1).every((p) => p.publicReads.length === 0));
 });
 
 test('public evidence is invariant to chip scale and all hidden cards', () => {
@@ -196,5 +200,5 @@ test('the actual normal/hard policy defends strong hands against repeated shoves
   const easy = coldShoveResponse('As Kd');
   easy.difficulty = 'easy';
   easy.players[0].publicReads = Array.from({ length: 32 }, () => sample());
-  assert.equal(botDecision(easy, allInRandom(73)).trace.view.opponents[0].publicRead, null);
+  assert.equal(botDecision(easy, allInRandom(73)).trace.view.opponents[0].publicRead.hands, 32);
 });

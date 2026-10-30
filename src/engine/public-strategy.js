@@ -292,6 +292,37 @@ function compareRanges(actor, opponents, board, pool, context, samples, random) 
   };
 }
 
+function opponentEvidence({ descriptor, table }, street, board) {
+  const top = Math.max(0, ...board.map((c) => c.rank));
+  const mass = (test) =>
+    table.entries.reduce((sum, entry) => sum + (test(entry) ? entry.weight : 0), 0) / table.total;
+  const topPair = (entry) =>
+    entry.features.overpair || (entry.features.ownPair && entry.pair.some((c) => c.rank === top));
+  const latest = descriptor.postflopLine?.at(-1);
+  return {
+    id: descriptor.id,
+    currentStreetCheck: latest?.street === street && latest.action === 'check',
+    checkedThroughStreets: [
+      ...new Set(
+        (descriptor.postflopLine || [])
+          .filter((event) => event.checkedThrough)
+          .map((event) => event.street),
+      ),
+    ],
+    strongMadeMass: mass((entry) => entry.features.strongMade),
+    topPairMass: mass(topPair),
+    marginalMadeMass: mass(
+      (entry) => entry.features.ownMade && !entry.features.strongMade && !topPair(entry),
+    ),
+    drawMass: mass((entry) => entry.features.draw),
+    unmadeMass: mass((entry) => !entry.features.ownMade && !entry.features.draw),
+    candidateCount: table.entries.length,
+    // Draws may overlap made-hand classes. These masses are a bounded
+    // authored posterior, not sightings of an opponent's private holding.
+    method: 'public-action-candidate-mass',
+  };
+}
+
 function strengthAgainst(entry, actor, compare) {
   return (
     actor.entries.reduce(
@@ -770,6 +801,7 @@ export function assessPublicStrategy(
     samples,
     seededRandom(`${samplingKey}|range`),
   );
+  range.opponentEvidence = tables.map((table) => opponentEvidence(table, view.street, view.board));
   const sampled = responseSamples(
     view,
     tables,

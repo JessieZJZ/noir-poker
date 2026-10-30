@@ -62,7 +62,11 @@ for (const street of [0, 1, 2, 3]) {
     assert.throws(() => advanceStreet(g));
     restartHand(g);
     assert.equal(g.practiceBoard, null);
-    assert.deepEqual(withoutDisplay(g), withoutDisplay(original));
+    const restored = withoutDisplay(g),
+      baseline = withoutDisplay(original);
+    assert.ok(restored.playerObservationRevision > baseline.playerObservationRevision);
+    restored.playerObservationRevision = baseline.playerObservationRevision;
+    assert.deepEqual(restored, baseline);
     finishByCalls(g);
     assert.deepEqual(g.board, river.board);
     startHand(g);

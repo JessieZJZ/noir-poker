@@ -18,7 +18,9 @@ test('a locked royal board proves the closing split-call without an opponent ran
     assert.equal(r.context.guaranteedBoard.minimum, 3100);
     assert.equal(r.context.guaranteedBoard.cost, 1200);
     assert.equal(r.coaching.recommendedAction.action, 'call');
-    assert.equal(r.coaching.label, action === 'call' ? '值得保留' : '跟注');
+    assert.equal(r.coaching.assessmentLabel, action === 'call' ? '值得保留' : '跟注');
+    assert.equal(r.coaching.label, '建议跟注 1.2K');
+    assert.equal(r.coaching.recommendationConditional, false);
     assert.match(text, /至少可分回 3.1K.*成本为 1.2K/);
     assert.doesNotMatch(text, /需要结合这条下注线|需要比较是否值得|对手.*组成更大/);
     assert.equal(r.simulation, null);

@@ -37,9 +37,9 @@ test('a fold recommendation for a low connector explains potential, price and ac
   assert.match(text, /100K（5.0 BB）/);
   assert.match(text, /跟注，继续争夺 270K 的底池.*需要至少 37.0% 的胜率/);
   assert.match(text, /击中一对.*点数仍偏低.*更高同花/);
-  assert.match(text, /身后还有 6 人等待行动.*他们如果加注或者再加注.*需要重新决定/);
+  assert.match(text, /本轮还有 6 位对手等待回应.*若出现加注或者再加注.*需要重新决定/);
   assert.match(text, /后续下注和成牌后的收益还要另算.*不能把连接牌一律当成弃牌.*建议弃牌/);
-  assert.doesNotMatch(text, /被强 A.*压制|踢脚.*压制|；/);
+  assert.doesNotMatch(text, /被强 A.*压制|踢脚.*压制|[。；，]{2}/);
   assert.deepEqual(s, before);
   for (const player of s.players.filter((p) => p.id))
     Object.defineProperty(player, 'hole', {
@@ -61,7 +61,7 @@ test('key information uses the agreed price wording and before-action values', (
   const before = structuredClone(s);
   const r = analyzeDecision(s, options);
   assert.deepEqual(r.evidence.slice(2), [
-    '翻牌前加注 2 次，当前你身后还有 0 人等待行动',
+    '翻牌前加注 2 次，本轮还有 0 位对手等待回应',
     '行动前你手里有 2.65M，这次跟注拿出 140K，跟注前底池 460K，底池赔率约 3.29:1',
     '跟注 140K 后可争夺 600K 底池，需要至少 23.3% 的胜率，风险和收益才能持平。',
     '入池情境：最高 3-bet，跛入 0 人',
@@ -69,9 +69,9 @@ test('key information uses the agreed price wording and before-action values', (
   assert.deepEqual(s, before);
   s.pending.push(1, 2);
   s.players[1].allin = true;
-  assert.match(analyzeDecision(s, options).evidence[2], /身后还有 1 人等待行动/);
+  assert.match(analyzeDecision(s, options).evidence[2], /本轮还有 1 位对手等待回应/);
   s.players[2].folded = true;
-  assert.match(analyzeDecision(s, options).evidence[2], /身后还有 0 人等待行动/);
+  assert.match(analyzeDecision(s, options).evidence[2], /本轮还有 0 位对手等待回应/);
 });
 
 test('fold, check, raise and both kinds of all-in state actual cost without inventing a call', () => {
@@ -105,7 +105,7 @@ test('fold, check, raise and both kinds of all-in state actual cost without inve
 test('suited ace continuation explains nut-flush potential and top-pair value with clear hero subjects', () => {
   const r = analyzeDecision(reportedKeyInfoCall(), options);
   const text = summary(r.coaching);
-  assert.match(text, /你若再加注.*加注者和这些跟入者.*再补 140K 跟注/);
+  assert.match(text, /你若再加注.*加注范围和跟注入池的范围.*再补 140K 跟注/);
   assert.match(text, /你持有 A 同花底牌.*坚果同花听牌/);
   assert.match(text, /你若击中 A.*顶对.*较弱 Ax.*取值/);
   assert.doesNotMatch(text, /因此再加注|只跟入|；/);
@@ -119,11 +119,12 @@ test('gutshot advice and keep/compare/fold labels follow the same evidence, with
   const s = reportedGutshotCall();
   const r = analyzeDecision(s, options);
   assert.equal(r.draw.outs, 4);
-  assert.equal(r.coaching.label, '需要比较');
-  assert.equal(r.coaching.suggestion, '需要比较');
+  assert.equal(r.coaching.assessmentLabel, '需要比较');
+  assert.equal(r.coaching.label, '建议跟注 520K');
+  assert.equal(r.coaching.suggestion, r.coaching.label);
   assert.match(summary(r.coaching), /A 落下.*顶对/);
-  assert.match(summary(r.coaching), /这手需要比较跟注与弃牌/);
-  assert.doesNotMatch(summary(r.coaching), /这手建议跟注|成牌后再赢筹码。|同花听牌|；/);
+  assert.match(summary(r.coaching), /这手建议跟注.*下注范围.*诈唬/);
+  assert.doesNotMatch(summary(r.coaching), /成牌后再赢筹码。|同花听牌/);
   const positive = structuredClone(r);
   positive.status = 'sound';
   positive.simulation = null;
@@ -135,13 +136,14 @@ test('gutshot advice and keep/compare/fold labels follow the same evidence, with
     uncertainty: 0.01,
   };
   const kept = coachDecision(s, positive);
-  assert.equal(kept.label, '值得保留');
+  assert.equal(kept.assessmentLabel, '值得保留');
+  assert.equal(kept.label, '建议跟注 520K');
   assert.match(summary(kept), /综合当前牌力.*跟注有继续依据/);
   assert.doesNotMatch(summary(kept), /还不能确认跟注划算/);
   const negative = structuredClone(positive);
   negative.metrics.randomEV = negative.metrics.weightedEV = -300000;
   const fold = coachDecision(s, negative);
-  assert.equal(fold.label, '弃牌');
+  assert.equal(fold.label, '建议弃牌');
   assert.match(summary(fold), /不足以支持.*建议弃牌/);
   const hidden = structuredClone(s);
   Object.defineProperty(hidden.players[1], 'hole', {

@@ -183,7 +183,12 @@ export function analyzeDecision(
     status = 'consider';
     title = '小对子再加注，不能只凭施压意图肯定这条路线';
     reason =
-      '小对子已有摊牌机会，但面对加注，不能只凭这点牌力就反复再加注。需要有对手会放弃哪些牌的依据，过小的再加注也可能让他低成本继续，未中暗三条时仍要面对高张和后续压力。';
+      '小对子已有摊牌机会，但面对加注，不能只凭这点牌力就反复再加注。需要有对手会放弃哪些牌的依据。' +
+      (s.amount === s.legal.maxRaiseTo
+        ? '这次已把全部筹码投入，被跟注后只能争取摊牌，不能再靠后街施压弥补成本。'
+        : (s.amount < preflopRaiseTarget(s, ctx, pre) * (2 / 3)
+            ? '这次再加注偏小，可能让对手低成本继续。'
+            : '') + '被跟注后，未中暗三条时仍要面对高张和后续压力。');
     alternative = {
       action: price.cost < s.stack * 0.25 && low - uncertainty > price.required ? 'call' : 'fold',
       amount:
@@ -290,7 +295,12 @@ export function analyzeDecision(
   ) {
     code = pre.raises >= 3 ? 'weak-fourbet-defense' : 'weak-threebet-defense';
     status = pre.raises >= 3 || price.cost >= s.stack * 0.1 ? 'attention' : 'consider';
-    title = pre.raises >= 3 ? '多次再加注下，弱牌防守缺少支撑' : '可开池的牌，不等于可以宽接 3-bet';
+    title =
+      pre.raises >= 3
+        ? '多次再加注下，弱牌防守缺少支撑'
+        : pre.ownOpen
+          ? '可开池的牌，不等于可以宽接 3-bet'
+          : '面对开池和再加注，弱牌继续需要更多依据';
     reason = `${handLabel} 在 ${s.position}，${pre.label}，最新总额 ${number(s.currentBet)}，约上一次的 ${pre.ratio.toFixed(1)} 倍。${priced}${estimated}${pre.ownOpen ? '你此前的开池有合理依据，但这一跟注是新的独立决策。' : ''}${pre.weakAce ? '较强 Ax 压制你的踢脚，单靠持有 A 的阻断不够支持大额跟注。' : '弱牌被强范围压制，缺少稳健的翻后实现条件。'}${ctx.pendingOthers ? '后面仍有 ' + ctx.pendingOthers + ' 人可再次行动。' : ''}`;
     alternative = { action: 'fold', amount: 0 };
     lesson =
@@ -650,7 +660,9 @@ export function analyzeDecision(
   } else if (s.action === 'raise') {
     code = valueTarget ? 'value-bet' : draw.outs ? 'draw-bet' : 'pressure-bet';
     title = valueTarget
-      ? '这次下注有价值目标可核对'
+      ? !s.street && pre.raises >= 2 && !(s.hole[0].rank === s.hole[1].rank && s.hole[0].rank >= 13)
+        ? '多次加注后的进攻，需要核对取值与弃牌条件'
+        : '这次下注有价值目标可核对'
       : draw.outs
         ? '带听牌主动下注，要同时考虑被跟注后权益'
         : '主动施压的收益依赖对手退出范围';
@@ -717,7 +729,7 @@ export function analyzeDecision(
     `底牌 ${cardText(s.hole)}，当时牌力：${handLabel}${draw.outs ? '，' + drawLabel(draw) : ''}`,
     s.street
       ? `公共牌 ${cardText(s.board)}，${texture.label}`
-      : `翻牌前加注 ${ctx.preflopRaises} 次，当前你身后还有 ${ctx.pendingOthers} 人等待行动`,
+      : `翻牌前加注 ${ctx.preflopRaises} 次，本轮还有 ${ctx.pendingOthers} 位对手等待回应`,
     investmentText(s, ctx, price),
   ];
   if (draw.outs)

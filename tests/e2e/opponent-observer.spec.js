@@ -15,8 +15,8 @@ async function open(page, record) {
   await page.waitForFunction(() => window.qa);
   await page.evaluate((g) => window.qa.loadRecordedGame(g), game);
   await page.locator('#review-hand-button').click();
-  await expect(page.locator('#review-coach-explanation')).toContainText(
-    '河牌若再面对下注，仍需另作决定',
+  await page.waitForFunction(
+    () => document.querySelector('#review-dialog')?.dataset.analysisStatus === 'done',
   );
   await page.locator('#review-opponents-tab').click();
   return page.locator('#review-opponent-detail .review-explanation');
@@ -30,10 +30,12 @@ test('opponent summary describes the A2 fold and its threats, with no future coa
   await expect(detail).toContainText('选择弃牌');
   await expect(detail).toContainText('三张同花色');
   await expect(detail).not.toContainText(/过牌先|再遇下注|要结合金额|应比较|需要按新的价格/);
-  await mkdir('.artifacts/opponent-observer-2026-10-26/web', { recursive: true });
+  const output =
+    process.env.NOIR_REVIEW_ARTIFACT_DIR || '.artifacts/opponent-observer-2026-10-26/web';
+  await mkdir(output, { recursive: true });
   await detail.locator('.review-analysis-heading').scrollIntoViewIfNeeded();
   await page.screenshot({
-    path: `.artifacts/opponent-observer-2026-10-26/web/${info.project.name}-fold.png`,
+    path: `${output}/${info.project.name}-fold.png`,
   });
   for (const locale of SUPPORTED_LOCALES) {
     await page.locator('#language-select').evaluate((el, value) => {
@@ -87,6 +89,7 @@ test('observer draw calls keep their concrete outs without a repeated improvemen
   await expect(detail).not.toContainText('这次跟注保留了听牌的改善机会');
   await expect(detail).not.toContainText(/建议|再遇下注时|机器人/);
   await detail.locator('.review-analysis-heading').scrollIntoViewIfNeeded();
-  await mkdir('.artifacts/observer-dedup-review-web', { recursive: true });
-  await page.screenshot({ path: `.artifacts/observer-dedup-review-web/${info.project.name}.png` });
+  const output = process.env.NOIR_REVIEW_ARTIFACT_DIR || '.artifacts/observer-dedup-review-web';
+  await mkdir(output, { recursive: true });
+  await page.screenshot({ path: `${output}/${info.project.name}.png` });
 });

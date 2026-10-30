@@ -674,6 +674,6 @@ test('strong-flat support requires the recorded legal call and cannot replace un
   });
   const rejected = analyzeDecision(expensive, { trials: 120, rolloutTrials: 12 });
   assert.equal(rejected.code, 'unbacked-high-card-call');
-  assert.equal(rejected.coaching.label, '弃牌');
+  assert.equal(rejected.coaching.label, '建议弃牌');
   assert.equal(rejected.coaching.evKind, 'negative');
 });

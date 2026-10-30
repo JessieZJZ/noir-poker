@@ -1194,5 +1194,77 @@
     ],
     "method": "Assistant-authored conditional review and punctuation revisions; numeric placeholders preserved.",
     "independentLinguisticReview": "not performed"
+  },
+  "checkedRangeReadingAndLocalObservation": {
+    "locales": ["en", "zh-TW", "ja", "ko", "es", "it", "pt", "de", "fr", "ru"],
+    "sources": [
+      "{0}，{1}按这些行动估计对手仍有较多中等成牌和未成牌，带听牌主动施压，争取直接收池或补牌改善。",
+      "对手上一街均未下注，本轮也尚未加压",
+      "对手本轮均已过牌",
+      "对手本轮均已过牌，{0}估计{1}仍可能付费，因此主动下注取值{2}。",
+      "并收取看下一张的成本",
+      "玩家公开行动的统计观察保存在本机，用于让电脑对手了解你的打法。这份观察不包含底牌、完整牌谱或输赢结果，不会上传。",
+      "设置、对局记录与公开行动观察仅保存在此设备，不上传到本应用服务器；关闭后继续原局的新一手。"
+    ],
+    "method": "Assistant-authored translations of conditional checked-range value/protection and draw pressure explanations, plus local-only public-action observation disclosure. Dynamic actor and hand-category placeholders retained; observer rationale has no next-action instructions.",
+    "independentLinguisticReview": "not performed",
+    "expandedPrefixTemplates": [
+      "对手本轮均已过牌，{0}按这些行动估计对手仍有较多中等成牌和未成牌，带听牌主动施压，争取直接收池或补牌改善。",
+      "对手上一街均未下注，本轮也尚未加压，{0}按这些行动估计对手仍有较多中等成牌和未成牌，带听牌主动施压，争取直接收池或补牌改善。"
+    ],
+    "templateRepair": "Explicit current-street/prior-check-through prefixes disambiguate their internal comma from the observer-subject slot; generic source and model semantics unchanged. Explicit optional preceding-text forms also prevent a generic whole-paragraph template from swallowing the internal prefix comma.",
+    "paragraphPrefixTemplates": [
+      "{0}对手本轮均已过牌，{1}按这些行动估计对手仍有较多中等成牌和未成牌，带听牌主动施压，争取直接收池或补牌改善。",
+      "{0}对手上一街均未下注，本轮也尚未加压，{1}按这些行动估计对手仍有较多中等成牌和未成牌，带听牌主动施压，争取直接收池或补牌改善。"
+    ],
+    "standaloneDrawHeading": {
+      "source": "{0} 带{1}。",
+      "method": "Assistant-authored complete sentence translations for a retained draw fact after a redundant action clause is removed; all ten non-source locales, placeholders preserved.",
+      "independentLinguisticReview": "not performed"
+    }
+  },
+  "multiwayClosingCallReview": {
+    "sources": [
+      "这笔下注已有 {0} 位对手跟注，{1}面对的是多人付费继续的范围。",
+      "{0}按当前价格用{1}保留摊牌机会。",
+      "{0}在本轮最后行动，跟注不会再遭到本轮加注。"
+    ],
+    "locales": ["en", "zh-TW", "ja", "ko", "es", "it", "pt", "de", "fr", "ru"],
+    "method": "Assistant-authored translations of observed multiway callers, current-price showdown continuation and action-closing calls. Dynamic counts, named observer subjects and hand descriptions preserved. The no-further-raise statement is restricted to the current betting round; no future-street guarantee or coaching added.",
+    "independentLinguisticReview": "not performed",
+    "singularCallerTemplate": {
+      "source": "这笔下注已有 1 位对手跟注，{0}面对的是多人付费继续的范围。",
+      "method": "An explicit one-caller form selects singular grammar before the generic count template, while multiway still includes the original bettor. All ten non-source locales preserve the numeral and named actor."
+    }
+  },
+  "deduplicatedFuturePayAndClosedFlop": {
+    "sources": [
+      "按当前范围估计，这次跟注还需要{0}后从较弱牌收取筹码。",
+      "{0}后的额外收入取决于较弱牌是否愿意付费。",
+      "当前有{0}，共 {1} 张直接成牌候选；跟注后可看完转牌和河牌，至少出现一张当前候选牌的机会约 {2}，这不是最终获胜概率。"
+    ],
+    "locales": ["en", "zh-TW", "ja", "ko", "es", "it", "pt", "de", "fr", "ru"],
+    "method": "Assistant-authored translations of two shortened implied-odds clauses and one closed-flop two-card probability clause. Range-estimate dependence, weaker-hand willingness to pay, hitting-a-set versus draw-completion variables, and the distinction between at-least-one current completion candidate and final winning probability are preserved. No extra future-cost warning is added to the short clauses.",
+    "independentLinguisticReview": "not performed"
+  },
+  "pairedBoardHigherPairAndTightRange": {
+    "sources": [
+      "{0} 落下时，底牌有机会组成更高的一对，但这些牌也不能全部算成必胜补牌。",
+      "跟注需要对手范围里有足够较弱牌或诈唬；面对更紧范围应弃牌。",
+      "听牌是主要改善路径，底牌成对或赢过未成牌诈唬也可能获胜。"
+    ],
+    "locales": ["en", "zh-TW", "ja", "ko", "es", "it", "pt", "de", "fr", "ru"],
+    "method": "Assistant-authored concise accuracy revisions: a hole card may make a higher pair on a paired board, without promising top pair or treating every rank candidate as a winning out; calling depends on enough weaker hands or bluffs, with a fold against a tighter range. Dynamic rank text and conditional limits preserved.",
+    "independentLinguisticReview": "not performed",
+    "shortDrawRouteRevision": {
+      "source": "听牌是主要改善路径，底牌成对或赢过未成牌诈唬也可能获胜。",
+      "method": "Retain the existing translated draw/pair/bluff winning-path explanation and remove only the repeated final equity warning; concrete probability and paired-board risks remain in their separate facts. No independent linguistic review performed."
+    }
+  },
+  "turnClosingRiverVisibility": {
+    "source": "本轮跟注后即可看到最后一张河牌。",
+    "locales": ["en", "zh-TW", "ja", "ko", "es", "it", "pt", "de", "fr", "ru"],
+    "method": "Assistant-authored factual turn-closing call sentence, limited to seeing the final community card. It does not claim a free river betting round, automatic showdown or absence of later betting; those conditions remain exclusively in the specific river plan.",
+    "independentLinguisticReview": "not performed"
   }
 }
