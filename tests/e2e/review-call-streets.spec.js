@@ -18,10 +18,11 @@ test('the turn call explains the final river card separately from river betting 
   await expect(summary).toContainText('本轮跟注后即可看到最后一张河牌');
   await expect(summary).toContainText('对手继续下注时，就要按新的金额决定是否放弃');
   await expect(summary).not.toContainText(/不保证免费把剩余公共牌看完|不保证免费见完所有公共牌/);
-  await mkdir('.artifacts/record-detail-2026-10-26/web', { recursive: true });
+  const output = process.env.NOIR_REVIEW_ARTIFACT_DIR || '.artifacts/record-detail-2026-10-26/web';
+  await mkdir(output, { recursive: true });
   await summary.locator('.review-analysis-heading').scrollIntoViewIfNeeded();
   await page.screenshot({
-    path: `.artifacts/record-detail-2026-10-26/web/${info.project.name}-turn-call.png`,
+    path: `${output}/${info.project.name}-turn-call.png`,
   });
   for (const locale of SUPPORTED_LOCALES) {
     await page.locator('#language-select').evaluate((el, value) => {

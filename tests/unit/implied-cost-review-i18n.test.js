@@ -105,7 +105,11 @@ test('short implied-income and closed-flop templates are extracted with every dy
     SUPPORTED_LOCALES.filter((locale) => locale !== 'zh-CN'),
   );
   for (const [index, source] of sources.entries()) {
-    assert.ok(extracted.includes(source), `Source inventory missing: ${source}`);
+    // The former unconditional income template remains translated for saved
+    // content; current analysis uses a conditional improvement premise.
+    const activeSource =
+      index === 0 ? '若这次跟注主要依赖{0}获利，还需估计成牌后哪些较弱牌愿意付费。' : source;
+    assert.ok(extracted.includes(activeSource), `Source inventory missing: ${activeSource}`);
     for (const [locale, expected] of Object.entries(truth)) {
       assert.equal(
         overrides[locale][source],

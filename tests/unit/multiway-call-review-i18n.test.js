@@ -73,7 +73,8 @@ test('new multiway and action-closing observer templates are extracted in all te
   );
   const slots = (text) => [...text.matchAll(/\{\d+\}/g)].map((match) => match[0]).sort();
   for (const source of sources) {
-    assert.ok(extracted.includes(source), `Missing source inventory: ${source}`);
+    const activeSource = source === sources[1] ? '{0}按当前价格用 {1} 保留摊牌机会。' : source;
+    assert.ok(extracted.includes(activeSource), `Missing source inventory: ${activeSource}`);
     for (const locale of SUPPORTED_LOCALES.filter((value) => value !== 'zh-CN')) {
       const translated = overrides[locale][source];
       assert.ok(translated, `${locale}: missing new override`);

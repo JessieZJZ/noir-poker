@@ -1,9 +1,9 @@
 {
   "files": {
-    "manrope.woff2": "894be0269d16e8fbe4558d66dcaaab7b997cd27628d44f965b4dfad9cc873f9c",
-    "noto-sans-sc.woff2": "9d54bde1a91dbf3f9a3263fd9c6f78848c36cbefd2073baa8a1a3575f05bd232",
-    "noto-sans-kr.woff2": "9e6f348760068b91e13ed382f3d8ed4fc19ea93efbc0edcb695f440be5e13248",
-    "barlow-condensed.woff2": "ba36efeedafa206f7b8078980434771e74b743ba1e34a4be2f7c0864c3d6904b"
+    "manrope.woff2": "dfa628ea1d39c851948b7a00728e3389afc7a14d9ab0276e088a04fca2d7a13b",
+    "noto-sans-sc.woff2": "6a98662040349a1ea2c86ae84b0a0244afe037dd569c175d626de28565c9f472",
+    "noto-sans-kr.woff2": "a0f6fe7279e8f73613eddc1d4ce2d2dda803c69c23021f32c91de532232ff178",
+    "barlow-condensed.woff2": "2bef0c38b95e4baf8a2ad994b1c32772c82dc796af30e92b18165b9db844d391"
   },
   "codepoints": [
     0,
@@ -1094,6 +1094,7 @@
     21306,
     21312,
     21313,
+    21319,
     21322,
     21331,
     21332,
@@ -2588,6 +2589,7 @@
     47280,
     47308,
     47336,
+    47344,
     47353,
     47448,
     47456,
@@ -2689,6 +2691,7 @@
     48768,
     49104,
     49240,
+    49244,
     49256,
     49324,
     49325,

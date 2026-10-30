@@ -89,6 +89,13 @@ export function checkReasoning(s, c, { trap = false, closingExplained = false } 
   const risks = checkRisks(s, c);
   const strong = c.made.score[0] >= 3;
   const valueHolding = strong || c.handClass === 'overpair';
+  const freeCardCost = s.street < 3 && (valueHolding || c.handClass === 'top-pair');
+  const closing =
+    s.street === 3
+      ? '这是本轮最后行动，过牌后直接摊牌，已经不能诱导本轮下注。'
+      : freeCardCost
+        ? '这是本轮最后行动，已经不能诱导本轮下注，过牌让双方免费见下一张，也给了对手补成更强牌的机会。'
+        : '这是本轮最后行动，过牌后免费见下一张，已经不能诱导本轮下注。';
   const parts = [...risks];
   if (c.draw.outs)
     parts.push(
@@ -109,14 +116,9 @@ export function checkReasoning(s, c, { trap = false, closingExplained = false } 
       parts.push('目前只有高牌，较难让更弱成牌付费，过牌避免用薄弱牌力主动做大底池。');
     else if (!c.draw.outs) parts.push('过牌避免主动扩大当前底池。');
     if (risks.length) parts.push(...madeRedrawReasoning(s, c));
-    if (s.street < 3 && (valueHolding || c.handClass === 'top-pair'))
+    if (freeCardCost && (c.pendingOthers > 0 || closingExplained))
       parts.push('过牌的代价是对手也可能免费见到下一张，补成更强的牌。');
-    if (!c.pendingOthers && !closingExplained)
-      parts.push(
-        s.street === 3
-          ? '这是本轮最后行动，过牌后直接摊牌，已经不能诱导本轮下注。'
-          : '这是本轮最后行动，过牌后免费见下一张，已经不能诱导本轮下注。',
-      );
+    if (!c.pendingOthers && !closingExplained) parts.push(closing);
     return parts;
   }
   if (risks.length)
@@ -135,7 +137,7 @@ export function checkReasoning(s, c, { trap = false, closingExplained = false } 
     parts.push('目前只有高牌，较难让更弱成牌付费，过牌避免用薄弱牌力主动做大底池。');
   else if (!c.draw.outs) parts.push('过牌避免主动扩大当前底池。');
   if (risks.length) parts.push(...madeRedrawReasoning(s, c));
-  if (s.street < 3 && (valueHolding || c.handClass === 'top-pair'))
+  if (freeCardCost && (c.pendingOthers > 0 || closingExplained))
     parts.push('过牌的代价是对手也可能免费见到下一张，补成更强的牌。');
   if (c.pendingOthers > 0)
     parts.push(
@@ -144,11 +146,6 @@ export function checkReasoning(s, c, { trap = false, closingExplained = false } 
         : '后面仍有玩家可以下注，过牌不保证本轮无需再付筹码。',
       '再遇下注时，要结合金额、人数和此前行动判断，不能只凭当前牌型自动跟注或弃牌。',
     );
-  else if (!closingExplained)
-    parts.push(
-      s.street === 3
-        ? '这是本轮最后行动，过牌后直接摊牌，已经不能诱导本轮下注。'
-        : '这是本轮最后行动，过牌后免费见下一张，已经不能诱导本轮下注。',
-    );
+  else if (!closingExplained) parts.push(closing);
   return parts;
 }

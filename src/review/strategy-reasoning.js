@@ -111,17 +111,9 @@ function payingNote(assessment, f) {
   const options = assessment.options || [];
   const selected = options.find((o) => o.amount === f.amount);
   if (!selected) return null;
-  const made = mass(selected.worseMadeCallMass);
+  const made = assessment.draw?.madeCategory === 0 ? 0 : mass(selected.worseMadeCallMass);
   const draw = f.street < 3 ? mass(selected.drawCallMass) : 0;
-  const targets =
-    made >= 0.04 && draw >= 0.04
-      ? '较弱成牌和听牌'
-      : made >= 0.04
-        ? '较弱成牌'
-        : draw >= 0.04
-          ? '听牌'
-          : '';
-  if (!targets) return null;
+  if (made < 0.04 && draw < 0.04) return null;
   const larger = options
     .filter((o) => o.amount > selected.amount)
     .sort((a, b) => a.amount - b.amount)
@@ -131,12 +123,37 @@ function payingNote(assessment, f) {
         (draw >= 0.04 && draw - mass(o.drawCallMass) > 0.04),
     );
   if (!larger) return null;
-  const lost = larger ? (made - mass(larger.worseMadeCallMass) > 0.04 ? '较弱成牌' : '听牌') : '';
-  const main = `按这个尺度的继续范围估计，仍有${targets}可能付费。`;
-  const comparison = larger ? `再加大到 ${compactChips(larger.amount)}，会更容易赶走${lost}。` : '';
+  const lostMade = made >= 0.04 && made - mass(larger.worseMadeCallMass) > 0.04;
+  const main =
+    made >= 0.04
+      ? draw >= 0.04
+        ? '按这个尺度的继续范围估计，仍有较弱成牌可能付费，也有听牌可能跟注。'
+        : '按这个尺度的继续范围估计，仍有较弱成牌可能付费。'
+      : '按这个尺度的继续范围估计，仍有听牌可能跟注，但这部分跟注并不一定来自更弱的牌。';
+  const moreFolds =
+    finite(selected.foldProbability) &&
+    finite(larger.foldProbability) &&
+    larger.foldProbability > selected.foldProbability;
+  const comparison = lostMade
+    ? `再加大到 ${compactChips(larger.amount)}，会更容易赶走较弱成牌。`
+    : moreFolds
+      ? `再加大到 ${compactChips(larger.amount)}，估计整体弃牌率会上升，继续跟注的听牌会减少。`
+      : `再加大到 ${compactChips(larger.amount)}，估计继续跟注的听牌会减少。`;
   const prefix = f.includeAction ? `${f.label} ${compactChips(f.amount)}，` : '';
   const parts = [prefix, main, comparison].filter(Boolean);
-  return note('paying-range', parts.join(''), parts);
+  return { ...note('paying-range', parts.join(''), parts), comparison };
+}
+
+// Checked-through value and size-dependent payment are one causal reason.
+// Keep the observed checks and the larger-size tradeoff without saying twice
+// that weaker hands may pay the selected size.
+function mergeCheckedPayment(reading, paying, f) {
+  if (!reading || !paying || f.plan?.kind !== 'checked-value-protection')
+    return { reading, paying };
+  const parts = [...reading.parts, paying.comparison].filter(Boolean);
+  // The host already knows how to replace generic value prose with a
+  // paying-range reason. Preserve that contract for this combined clause.
+  return { reading: note(paying.topic, parts.join(''), parts), paying: null };
 }
 
 function checkedReadingNote(assessment, f) {
@@ -175,7 +192,7 @@ function checkedReadingNote(assessment, f) {
     )
   )
     return null;
-  const prefix = prior ? '对手上一街均未下注，本轮也尚未加压' : '对手本轮均已过牌';
+  const prefix = prior ? '对手上一街均已过牌' : '对手本轮均已过牌';
   return note(
     'checked-range',
     `${prefix}，${f.subject}按这些行动估计对手仍有较多中等成牌和未成牌，带听牌主动施压，争取直接收池或补牌改善。`,
@@ -201,23 +218,23 @@ function impliedNote(assessment, f) {
     return short
       ? note(
           'implied-odds',
-          `按当前范围估计，跟注 ${compactChips(f.cost)} 还依赖${improvement}后有人付费；弃牌避免把这笔不确定的未来收入当作已经到手的筹码。`,
+          `若跟注 ${compactChips(f.cost)} 主要依赖${improvement}后的额外收入，还需估计哪些较弱牌愿意付费；弃牌避免预支这笔不确定收入。`,
         )
       : null;
   if (f.covered.has(TOPIC.FUTURE_COST))
     return note(
       'implied-odds',
       short
-        ? `按当前范围估计，这次跟注还需要${improvement}后从较弱牌收取筹码。`
+        ? `若这次跟注主要依赖${improvement}获利，还需估计成牌后哪些较弱牌愿意付费。`
         : `${improvement}后的额外收入取决于较弱牌是否愿意付费。`,
     );
   return note(
     'implied-odds',
     !f.includeAction && !short
-      ? '补中后的额外收入取决于较弱牌是否愿意付费，当前跟注只应对眼前这笔下注。'
+      ? '补中后的额外收入取决于较弱牌是否愿意付费，本次跟注只支付当前所需金额。'
       : short
-        ? `按当前范围估计，跟注 ${compactChips(f.cost)} 还需要${improvement}后从较弱牌收取筹码；这笔钱只应对眼前这笔下注，下一街再被下注仍要另算成本。`
-        : `跟注 ${compactChips(f.cost)} 先按当前底池的价格判断，${improvement}后的额外收入取决于较弱牌是否愿意付费；这笔钱只应对眼前这笔下注，下一街再被下注仍要另算成本。`,
+        ? `若跟注 ${compactChips(f.cost)} 主要依赖${improvement}获利，还需估计成牌后哪些较弱牌愿意付费；本次跟注只支付当前所需金额，下一街再被下注仍要另算成本。`
+        : `跟注 ${compactChips(f.cost)} 先按当前底池的价格判断，${improvement}后的额外收入取决于较弱牌是否愿意付费；本次跟注只支付当前所需金额，下一街再被下注仍要另算成本。`,
   );
 }
 
@@ -357,8 +374,11 @@ function bluffCatchNote(s, assessment, f, observer = false) {
 // An observer gets the recorded action's support and tradeoffs, never a list
 // of instructions for what that opponent should do on the next card.
 function observerNotes(s, assessment, f) {
-  const reading = checkedReadingNote(assessment, f);
-  const paying = payingNote(assessment, f);
+  const { reading, paying } = mergeCheckedPayment(
+    checkedReadingNote(assessment, f),
+    payingNote(assessment, f),
+    f,
+  );
   const range = rangeNote(s, assessment, f);
   const rangeFact = range && note('range', range.parts[0] + '。', [range.parts[0], '。']);
   const call = assessment.call || {};
@@ -440,8 +460,11 @@ export function strategyNotes(
   const f = publicFacts(s, assessment, action, amount, plan, subject, includeAction);
   f.covered = proseCoverage(coveredTopics);
   if (audience === 'observer') return observerNotes(s, assessment, f);
-  const reading = checkedReadingNote(assessment, f);
-  const paying = payingNote(assessment, f);
+  const { reading, paying } = mergeCheckedPayment(
+    checkedReadingNote(assessment, f),
+    payingNote(assessment, f),
+    f,
+  );
   const implied = impliedNote(assessment, f);
   // Standalone callers also get the closing fact only once. The host coaching
   // paragraph normally owns it, but an implied-odds warning can own it here.

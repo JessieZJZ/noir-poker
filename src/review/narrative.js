@@ -184,7 +184,7 @@ export function callOddsText(metrics, action = 'call') {
     : `实际再补 ${n(amount)}，算入弃牌与跟注时退回筹码的差额，本次风险为 ${n(metrics.callCost)}。跟注后可争夺 ${n(metrics.contestable)}，底池赔率约 ${ratio.toFixed(2)} : 1，需要至少 ${pct(metrics.required)} 的胜率，风险和收益才能持平。`;
 }
 
-export function actionReason(s, r) {
+export function actionReason(s, r, { conditionalValue = false } = {}) {
   const c = r.context,
     f = spotFacts(s, c),
     actual = actionLabel(s),
@@ -229,7 +229,7 @@ export function actionReason(s, r) {
       return `你拿 ${hand} 在 ${s.position} ${actual}，把 ${n(f.investment)}（${(f.investment / bigBlindOf(s)).toFixed(0)} BB）投入当时 ${n(s.pot)} 的底池，是底池的 ${f.potRatio.toFixed(1)} 倍。${rationale}`;
     }
     if (s.street === 0)
-      return `你拿 ${hand} 在 ${s.position} ${actual}，这次拿出 ${n(f.investment)} 去争取底池 ${n(s.pot)}。${r.code === 'unbacked-small-pair-reraise' ? '' : c.tier >= 2 ? '这手牌有价值加注的牌力，可以让较弱起手牌付费。' : foldNote ? '这次是再加注诈唬。' + foldNote : f.lastAggression ? '已有加注时，这次是再加注诈唬，需要所有仍在底池里的对手都弃牌，才能直接拿走底池。' : '前面没有开池，这次进攻可以直接争夺盲注，被跟注后再看这手牌的翻后潜力。'}`;
+      return `你拿 ${hand} 在 ${s.position} ${actual}，这次拿出 ${n(f.investment)} 去争取底池 ${n(s.pot)}。${r.code === 'unbacked-small-pair-reraise' ? '' : c.tier >= 2 ? (conditionalValue ? '' : '这手牌有价值加注的牌力，可以让较弱起手牌付费。') : foldNote ? '这次是再加注诈唬。' + foldNote : f.lastAggression ? '已有加注时，这次是再加注诈唬，需要所有仍在底池里的对手都弃牌，才能直接拿走底池。' : '前面没有开池，这次进攻可以直接争夺盲注，被跟注后再看这手牌的翻后潜力。'}`;
     if (
       !draw.outs &&
       ['pressure-bet', 'large-unbacked-bet'].includes(r.code) &&

@@ -1,5 +1,17 @@
 import { compactChips as n } from '../engine/chip-format.js';
 
+export function currentStreetCallers(snapshot) {
+  const actions = (snapshot.history || []).filter((a) => a.street === snapshot.street);
+  const lastRaise = actions.findLastIndex((a) => a.action === 'raise');
+  if (lastRaise < 0) return 0;
+  return new Set(
+    actions
+      .slice(lastRaise + 1)
+      .filter((a) => a.action === 'call' && a.id !== (snapshot.id ?? 0) && a.amount > 0)
+      .map((a) => a.id),
+  ).size;
+}
+
 export function straightSplitReason(snapshot, context, matchups) {
   const stronger = new Set(matchups?.strongerMadeCategories || []);
   return snapshot.street === 3 &&
@@ -39,6 +51,13 @@ export function defenseReason(snapshot, context, matchups) {
   const stronger = new Set(matchups?.strongerMadeCategories || []);
   const split = straightSplitReason(snapshot, context, matchups);
   if (split) clauses.push(split);
+  const streetActions = snapshot.history.filter((a) => a.street === snapshot.street);
+  const lastRaise = streetActions.findLastIndex((a) => a.action === 'raise');
+  const callers = currentStreetCallers(snapshot);
+  if (lastRaise >= 0 && callers)
+    clauses.push(
+      `${subject}看到本街下注后已有 ${callers} 位对手跟注，把这条多人继续路线估得偏强，因此收紧了防守范围。`,
+    );
   const remaining = [
     [5, '同花'],
     [4, '顺子'],
@@ -61,7 +80,23 @@ export function defenseReason(snapshot, context, matchups) {
   );
   if (previous.length && previous.every((a) => a.action === 'check'))
     clauses.push('此前一路过牌，当前下注范围仍可能同时包含慢打强牌、较弱成牌和诈唬。');
+  if (
+    callers &&
+    snapshot.street < 3 &&
+    cost < snapshot.stack &&
+    !snapshot.callPrice?.closing &&
+    (snapshot.players || []).some(
+      (p) => p.id !== (snapshot.id ?? 0) && !p.folded && !p.allin && p.stack > 0,
+    )
+  )
+    clauses.push(
+      `${subject}也把跟注后仍可能面对的后街下注计入了这次收紧的考虑，没有只按眼前的跟注门槛继续。`,
+    );
   if (context.pendingOthers)
-    clauses.push('后面还有玩家可以跟注或加注，当前底池赔率不代表后续投入已经封顶。');
+    clauses.push(
+      cost >= snapshot.stack
+        ? `${subject}若跟注即已全下，其余玩家仍可回应，但本人不再需要补筹码。`
+        : '其余玩家仍可跟注或加注，当前底池赔率不代表后续投入已经封顶。',
+    );
   return clauses;
 }

@@ -7,6 +7,9 @@ import {
   reviewSemanticTopics,
 } from '../fixtures/review-semantic-topics.js';
 
+const artifacts =
+  process.env.NOIR_REVIEW_ARTIFACT_DIR || '.artifacts/review-semantic-dedup-20261028/web';
+
 test('an alternative preflop call shows its price and does not promise that the betting round is closed', async ({
   page,
 }) => {
@@ -22,9 +25,11 @@ test('an alternative preflop call shows its price and does not promise that the 
   await expect(summary).toContainText('再补 200 跟注');
   await expect(summary).toContainText('19.8K');
   await expect(summary).toContainText('常规开池与弃牌');
-  await expect(summary).toContainText('你身后还有 5 人等待行动');
+  await expect(summary).toContainText('本轮还有 5 位对手等待回应');
+  await expect(summary).not.toContainText('你身后还有 5 人等待行动');
   await expect(summary).toContainText('重新决定是否继续');
   await expect(summary).not.toContainText('这手建议跟注，保留当前牌力');
+  await expect(page.locator('#review-selected-status')).toHaveText('需要比较');
 });
 
 test('a live third player retains both current-round repricing and later-street cost in review', async ({
@@ -64,10 +69,10 @@ test('the reported all-in draw review explains closure once while keeping price,
   const text = await summary.innerText();
   expect(reviewSemanticTopics(text).closure).toHaveLength(1);
   expect(text).not.toMatch(/下一街的投入还要另算|下一张没改善且再遇/);
-  await mkdir('.artifacts/review-semantic-dedup-20261028/web', { recursive: true });
+  await mkdir(artifacts, { recursive: true });
   await summary.locator('.review-analysis-heading').scrollIntoViewIfNeeded();
   await page.screenshot({
-    path: `.artifacts/review-semantic-dedup-20261028/web/${info.project.name}-all-in-draw.png`,
+    path: `${artifacts}/${info.project.name}-all-in-draw.png`,
     fullPage: true,
   });
   await page.locator('#review-dialog .close-dialog').first().click();

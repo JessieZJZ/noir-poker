@@ -308,7 +308,8 @@ test('replacing a preflop shove with a call names the real payment and the playe
     const text = review.paragraphs.join('');
     assert.match(text, /若改为再补 .* 跟注，会留下 .* 筹码/);
     assert.match(text, /常规开池与弃牌/);
-    assert.equal((text.match(/你身后还有 2 人等待行动/g) || []).length, 1);
+    assert.equal((text.match(/本轮还有 2 位对手等待回应/g) || []).length, 1);
+    assert.doesNotMatch(text, /你身后还有 2 人/);
     assert.match(text, /加注或者再加注.*重新决定是否继续/);
     assert.doesNotMatch(text, /这手建议跟注，保留当前牌力|跟注后可以免费看翻牌/);
     assert.match(

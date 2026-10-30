@@ -77,9 +77,19 @@ export function preflopRangeNotes(s) {
     name = (id) => actorAtPosition(s, id),
     subject = s.reviewSubject || '你',
     notes = [];
-  if (last)
+  if (last) {
+    const priorRaisers = new Map(
+      raises
+        .slice(0, raises.indexOf(last))
+        .filter((a) => a.id !== 0 && a.id !== last.id && (s.pending || []).includes(a.id))
+        .map((a) => [a.id, a]),
+    );
+    for (const prior of priorRaisers.values())
+      notes.push(
+        `此前${name(prior.id)}${historyActionLabel(s.history, s.history.indexOf(prior))}，仍需回应最新加注。`,
+      );
     notes.push(`${name(last.id)}${historyActionLabel(s.history, s.history.indexOf(last))}。`);
-  else if (
+  } else if (
     !observer &&
     s.legal.canCheck &&
     !(s.pending || []).some(
@@ -109,6 +119,17 @@ export function preflopRangeNotes(s) {
     callers = actions.filter(
       (a, i) =>
         last && a.id !== 0 && live.has(a.id) && a.action === 'call' && i > actions.indexOf(last),
+    ),
+    earlierCallers = actions.filter(
+      (a, i) =>
+        last &&
+        a.id !== 0 &&
+        live.has(a.id) &&
+        a.action === 'call' &&
+        i > firstRaise &&
+        i < actions.indexOf(last) &&
+        (s.pending || []).includes(a.id) &&
+        !raises.some((raise) => raise.id === a.id),
     );
   const groupedCalls = (records, beforeRaise) => {
     const groups = new Map();
@@ -128,6 +149,8 @@ export function preflopRangeNotes(s) {
           : `${names[0]}已跟注这笔加注，补 ${number(amount)}。`,
     );
   };
+  if (earlierCallers.length)
+    notes.push(...groupedCalls(earlierCallers, true), '先前跟注后仍需回应最新加注。');
   const callAllIn = s.stack > 0 && s.legal.callAmount >= s.stack,
     commitment = callAllIn || s.players?.some((p) => p.id !== 0 && !p.folded && p.allin);
   if (last && (limpers.length || callers.length))
@@ -143,7 +166,7 @@ export function preflopRangeNotes(s) {
               ? '本人跟注后就已全下，不能把后街取值或追中后的额外收益当成继续依据。'
               : '已全下者不能再被逼弃牌，其他仍有筹码玩家的后续投入需按边池另行判断。'
             : s.legal.canRaise
-              ? `${subject}若再加注，需要同时考虑加注者和这些跟入者的继续范围。`
+              ? `${subject}若再加注，需要同时考虑加注范围和跟注入池的范围。`
               : '',
       ].join(''),
     );
@@ -385,7 +408,9 @@ export function handMatchups(s, c) {
             : 'weak';
   const text = !s.street
     ? lead && lose
-      ? `翻前牌组对比：${c.handLabel}比 ${lead.text} 的点数或踢脚更好，但面对 ${lose.text} 会处于下风，之后仍要看公共牌。`
+      ? c.handClass === 'pocket' && lead.score[0] === 0
+        ? `翻前牌组对比：${c.handLabel}已经成对，${lead.text}仍未成对，但面对 ${lose.text} 这样的更大对子会处于下风，公共牌仍可能改变强弱。`
+        : `翻前牌组对比：${c.handLabel}按当前牌型与点数高于 ${lead.text}，但低于 ${lose.text}，公共牌仍可能改变强弱。`
       : lead
         ? `翻前牌组对比：${c.handLabel}领先例如 ${lead.text}，这手强起手牌可以向较弱对子或高牌取值。`
         : lose
@@ -703,7 +728,7 @@ export function valuePlan(s, c, matchups = c.matchups || handMatchups(s, c)) {
     reason: !s.street
       ? raise && raise.amount - s.bet >= s.stack
         ? shoveReason()
-        : `这手 ${cardText(s.hole)} 可用普通加注建立底池，给较弱对子和高牌留下继续的机会，当前 ${number(s.stack)} 的筹码不必一次全部推出。`
+        : `这手 ${cardText(s.hole)} 可比较普通加注，核对${s.hole[0].rank === s.hole[1].rank ? '较小对子或未成对高牌' : '较差踢脚的高牌'}是否愿意按这个尺度继续，当前 ${number(s.stack)} 的筹码不必一次全部推出。`
       : c.opponents > 1 && (c.handClass === 'top-pair' || c.handClass === 'overpair')
         ? c.texture.paired
           ? `这张 ${cardText(s.board)} 已经配对，公共牌的一对由所有玩家共享，对手持有相同点数的底牌就可能有三条。取值仍要有较弱牌愿意付费，不能只凭两对的总牌型扩大投入。`

@@ -51,7 +51,7 @@ test('folding a suited connector explains its potential before the expensive ent
   );
   assert.match(text, /有机会在翻后形成顺子、同花听牌/);
   assert.match(text, /8\.0 BB/);
-  assert.match(text, /你身后还有 1 人等待行动/);
+  assert.match(text, /本轮还有 1 位对手等待回应/);
   assert.doesNotMatch(text, /这两张低牌不是对子或强高牌/);
 });
 test('the original opener reraising a bluff needs opponents to fold, not himself', () => {

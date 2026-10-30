@@ -174,7 +174,7 @@ test('a raise over limpers describes isolation rather than uncontested blind ste
     reason: '较弱散牌面对已入池玩家，需要更多继续依据。',
   });
   const text = summary(coachDecision(s, r));
-  assert.match(text, /已有 1 位玩家跟注入池.*隔离这些玩家/);
+  assert.match(text, /已有 1 位玩家跟注入池.*隔离前面的跟入者/);
   assert.doesNotMatch(text, /这次进攻可以直接争夺盲注/);
 });
 
@@ -289,7 +289,9 @@ for (const [code, configuration, candidate] of [
     if (code === 'dangerous-value-shove')
       assert.match(text, /一对或两对.*底池的 2.8 倍.*较小下注.*整笔全下/);
     if (code === 'undersized-value-bet') {
-      assert.deepEqual(result.recommendedAction, candidate);
+      assert.deepEqual(result.recommendedAction, { ...candidate, summary: '需要比较' });
+      assert.equal(result.label, '需要比较');
+      assert.equal(result.suggestion, '需要比较');
       assert.match(text, /保留原下注作为比较基准.*尚未确认它更好/);
     }
     if (code === 'dirty-draw-bet')

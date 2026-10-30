@@ -68,7 +68,8 @@ test('checking back an overpair acknowledges missed value and free-card cost wit
   const text = explainOpponent(r).paragraphs.at(-1);
   assert.match(text, /超对 K.*选择过牌/);
   assert.match(text, /较弱成牌.*少收一轮价值/);
-  assert.match(text, /免费见到下一张.*补成更强/);
+  assert.match(text, /免费见(?:到)?下一张.*补成更强/);
+  assert.equal((text.match(/免费见(?:到)?下一张/g) || []).length, 1);
   assert.doesNotMatch(text, /只留下更强|诱导其弱牌或诈唬|应该|建议/);
 });
 

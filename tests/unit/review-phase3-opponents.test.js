@@ -365,7 +365,7 @@ test('a matching real policy basis keeps its recorded attribution', () => {
   const review = explainOpponent(r);
   assert.equal(review.basisSource, 'recorded');
   assert.equal(review.title, '主动加注争取价值');
-  assert.match(summary(r), /这是用暗三条 5取值/);
+  assert.match(summary(r), /这是用 暗三条 5 取值/);
   assert.deepEqual(r, before);
 });
 

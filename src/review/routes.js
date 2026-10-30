@@ -95,7 +95,10 @@ export function comparisonRoutes(s, ctx, { code, status, alternative, pre }) {
       code === 'weak-limper-isolation'
         ? '缺少底牌潜力与足够弃牌空间时，不因已有跛入者的筹码就用弱散牌扩大底池。'
         : '底牌缺少同花和连接潜力，后面仍有玩家行动时，不因跟注成本低就跛入。';
-    primary.tradeoff = '保留后手，也放弃本次改善与争夺盲注的机会。';
+    primary.tradeoff =
+      primary.action === 'check'
+        ? '免费过牌保留改善与摊牌机会，但仍可能少收价值。'
+        : '保留后手，也放弃本次改善与争夺盲注的机会。';
     secondary = pressure.hasAllInOpponent || pre.limpers ? null : raise(2.5 * bigBlindOf(s));
     if (secondary && secondary.amount <= 3 * bigBlindOf(s) && secondary.amount < s.legal.maxRaiseTo)
       Object.assign(secondary, {
@@ -216,7 +219,11 @@ export function comparisonRoutes(s, ctx, { code, status, alternative, pre }) {
       code,
     )
   ) {
-    primary.condition = '大尺度、多人继续或少诈唬的强范围下，优先减少新增投入。';
+    primary.condition = pre?.unopened
+      ? pre.limpers
+        ? '前面已有玩家跟注入池，边缘底牌仍需位置、价格和后续再加注风险支持。'
+        : '尚未加注的底池中，弱牌需要合适的位置、底牌潜力和可承担的再加注风险才继续。'
+      : '大尺度、多人继续或少诈唬的强范围下，优先减少新增投入。';
     primary.tradeoff = '放弃当前权益，避免弱踢脚与后续压力，已投入筹码不计作继续理由。';
     secondary = s.legal.canCheck
       ? null
@@ -302,7 +309,9 @@ export function comparisonRoutes(s, ctx, { code, status, alternative, pre }) {
       : closing
         ? '对手范围与当前价格有足够余量，这次跟注后不再付后续下注。'
         : '对手范围与价格有足够余量，且后续压力可控。';
-    primary.tradeoff = '保留较宽范围，避免把弱价值牌转成孤立强牌的加注。';
+    primary.tradeoff = callAllIn
+      ? '投入全部剩余筹码，之后只能等发牌或摊牌，不能再靠后街下注获利。'
+      : '保留较宽范围，避免把弱价值牌转成孤立强牌的加注。';
     secondary = {
       action: 'fold',
       amount: 0,
