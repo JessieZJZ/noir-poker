@@ -195,3 +195,80 @@ test('tablet CSS viewport recovery does not depend on a resize callback or paint
   await assertTabletFrame(page, true);
   expect(await page.evaluate(() => window.noir.getState())).toEqual(before);
 });
+
+test('iPad mini webkit refits late public and hero card sizes without another viewport resize', async ({
+  playwright,
+  baseURL,
+}, info) => {
+  test.skip(info.project.name === 'mobile', 'Explicit tablet matrix runs once');
+  const browser = await playwright.webkit.launch();
+  const context = await browser.newContext({
+    baseURL,
+    hasTouch: true,
+    locale: 'zh-CN',
+    timezoneId: 'Asia/Shanghai',
+  });
+  const page = await context.newPage();
+  try {
+    await page.addInitScript(() => {
+      const Observer = window.ResizeObserver;
+      window.layoutResizeDeliveries = 0;
+      window.ResizeObserver = class extends Observer {
+        constructor(callback) {
+          super((entries, observer) => {
+            window.layoutResizeDeliveries++;
+            callback(entries, observer);
+          });
+        }
+      };
+    });
+    const errors = [];
+    page.on('pageerror', (error) => errors.push(error.message));
+    await prepare(page, { width: 1024, height: 768 });
+    await page.evaluate(() => {
+      window.qa.heroTurn(5);
+      window.qa.stop();
+    });
+    await assertTabletFrame(page, false);
+    const before = await page.evaluate(() => window.noir.getState());
+    const initialLayout = await page.evaluate(readTableLayout);
+    // Reproduce the CI rotation's final intrinsic sizes arriving after the
+    // desktop rail was measured: board 426 -> 506px, hero 186 -> 151px.
+    // These absolute children can resize while every observed outer box stays put.
+    await page.addStyleTag({
+      content: `@media (min-width: 901px) and (max-width: 1100px) and (orientation: landscape) {
+        .game-surface .arena[data-player-count] .board { --public-card-width: 98px; }
+        .game-surface .hero-cards { min-height: 104px; gap: 7px; }
+        .game-surface .hero-cards .playing-card { width: 72px; height: 104px; }
+      }`,
+    });
+    await page.evaluate(
+      () => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))),
+    );
+    await info.attach('late-responsive-sizes', {
+      body: JSON.stringify({ before: initialLayout, after: await page.evaluate(readTableLayout) }),
+      contentType: 'application/json',
+    });
+    await assertTabletFrame(page, false);
+    expect(await page.evaluate(() => window.noir.getState())).toEqual(before);
+    const deliveries = await page.evaluate(async () => {
+      const nextFrame = () => new Promise((resolve) => requestAnimationFrame(resolve));
+      await nextFrame();
+      await nextFrame();
+      const samples = [];
+      for (let frame = 0; frame < 6; frame++) {
+        await nextFrame();
+        samples.push(window.layoutResizeDeliveries);
+      }
+      return samples;
+    });
+    expect(
+      new Set(deliveries).size,
+      'Inner size observation must settle without a refit loop',
+    ).toBe(1);
+    expect(errors).toEqual([]);
+  } finally {
+    await context.close();
+    await browser.close();
+  }
+});

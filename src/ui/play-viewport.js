@@ -194,6 +194,11 @@ export function createPlayViewport(surface, { layout = () => {} } = {}) {
     surface.querySelector('.action-dock'),
   ])
     if (el) observer.observe(el);
+  // Responsive card sizes can settle after the outer frame. Refit their
+  // absolute footprints next frame, keeping our own size writes out of the
+  // ResizeObserver delivery and coalescing both changes into one fit.
+  const contentObserver = new ResizeObserver(schedule);
+  for (const el of arena.querySelectorAll('.board, .hero-area')) contentObserver.observe(el);
   // Native safe-area values can arrive after the initial document layout
   // without changing innerWidth/innerHeight or emitting a resize event.
   const insetsObserver = new MutationObserver(schedule);
@@ -210,6 +215,7 @@ export function createPlayViewport(surface, { layout = () => {} } = {}) {
     destroy() {
       destroyed = true;
       observer.disconnect();
+      contentObserver.disconnect();
       insetsObserver.disconnect();
       if (frame !== null) cancelAnimationFrame(frame);
       window.removeEventListener('resize', resize);
