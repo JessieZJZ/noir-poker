@@ -3,6 +3,7 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import assert from 'node:assert/strict';
 import { fileURLToPath } from 'node:url';
+import { createHash } from 'node:crypto';
 
 const root = fileURLToPath(new URL('../../', import.meta.url));
 const require = createRequire(path.join(root, '.artifacts/wechat-tools/package.json'));
@@ -22,6 +23,29 @@ report.build = {
   sourceDigest: build.sourceDigest,
   builtAt: build.builtAt,
   totalBytes: build.totalBytes,
+};
+const personaStylePath = 'pages/table/table.wxss';
+const personaStyleBytes = await readFile(path.join(root, '.artifacts/wechat', personaStylePath));
+const personaStyleManifest = build.files.find((file) => file.path === personaStylePath);
+assert.ok(personaStyleManifest, 'The actual persona stylesheet must be in the generated manifest');
+assert.equal(
+  createHash('sha256').update(personaStyleBytes).digest('hex'),
+  personaStyleManifest.sha256,
+);
+const personaStyleRule = [
+  ...personaStyleBytes
+    .toString('utf8')
+    .matchAll(/\.web-phone-layout \.seat \.persona\s*\{([^}]+)\}/g),
+].at(-1)?.[1];
+assert.ok(personaStyleRule, 'The packaged four-character persona rule must exist');
+assert.match(personaStyleRule, /white-space:\s*nowrap/);
+assert.doesNotMatch(personaStyleRule, /text-overflow:\s*ellipsis/);
+report.personaStylePolicy = {
+  file: personaStylePath,
+  sha256: personaStyleManifest.sha256,
+  whiteSpace: 'nowrap',
+  runtimeObservation:
+    'SDK may omit white-space; manifest-bound rule and real single-line bounds are separate checks',
 };
 let mini;
 try {
@@ -175,6 +199,12 @@ try {
       data.phoneSeats.map((seat) => `seat-body-${seat.id}`),
     );
     const shellBottom = Number(shellOffset.top) + Number(shellSize.height);
+    const chromeSizes = {};
+    for (const selector of ['.nav', '.game-header', '.hint-slot']) {
+      const element = await page.$(selector);
+      assert.ok(element, `${selector} must render in the actual phone chrome`);
+      chromeSizes[selector] = await element.size();
+    }
     return {
       key: geometryKey(data),
       playerIds: data.phoneSeats.map((seat) => seat.id),
@@ -193,6 +223,14 @@ try {
         height: Number(tableSize.height),
       },
       dockHeight: Number(dockSize.height),
+      dock: { ...dockOffset, ...dockSize },
+      chrome: {
+        sizes: chromeSizes,
+        navHeight: data.navHeight,
+        tableHeaderHeight: data.tableHeaderHeight,
+        liveDockHeight: data.liveDockHeight,
+        compactDockHeight: data.compactDockHeight,
+      },
       shellBottom,
       reservedSpace: shellBottom - 1 - Number(dockOffset.top) - Number(dockSize.height),
       elements,
@@ -202,21 +240,35 @@ try {
     const { viewport, tableHeight } = geometry;
     assert.equal(
       tableHeight,
-      Math.max(0, viewport.height - viewport.topInset - viewport.bottomInset - 284),
+      Math.max(0, viewport.height - viewport.topInset - viewport.bottomInset - 304),
       'The table keeps the fixed viewport budget',
     );
     assert.equal(geometry.table.height, tableHeight);
-    assert.equal(Number(geometry.shell.height), tableHeight + 50 + (compact ? 64 : 134));
-    assert.equal(geometry.dockHeight, compact ? 64 : 134);
+    assert.equal(Number(geometry.shell.height), tableHeight + 50 + (compact ? 64 : 154));
+    assert.equal(geometry.dockHeight, compact ? 64 : 154);
+    assert.equal(geometry.chrome.navHeight, 48);
+    assert.equal(geometry.chrome.tableHeaderHeight, 50);
+    assert.equal(geometry.chrome.liveDockHeight, 154);
+    assert.equal(geometry.chrome.compactDockHeight, 64);
+    assert.equal(geometry.chrome.sizes['.nav'].height, 48);
+    assert.equal(geometry.chrome.sizes['.game-header'].height, 26);
+    assert.equal(geometry.chrome.sizes['.hint-slot'].height, 22);
+    assert.ok(
+      geometry.dock.left >= -1 &&
+        geometry.dock.left + geometry.dock.width <= viewport.width + 1 &&
+        geometry.dock.top >= -1 &&
+        geometry.dock.top + geometry.dock.height <= viewport.height - viewport.bottomInset + 1,
+      'The actual action dock stays inside the usable first screen',
+    );
     assert.ok(
       Math.abs(geometry.shell.top - (viewport.topInset + 36 + 48 + 8)) <= 1,
       'The shell keeps its original top position',
     );
     assert.ok(
       Math.abs(
-        geometry.shellBottom - (viewport.height - viewport.bottomInset - 8 - (compact ? 70 : 0)),
+        geometry.shellBottom - (viewport.height - viewport.bottomInset - 8 - (compact ? 90 : 0)),
       ) <= 1,
-      'Settlement releases only the unused 70px of action controls',
+      'Settlement releases only the unused 90px of action controls',
     );
     assert.ok(
       Math.abs(geometry.reservedSpace) <= 1,
@@ -240,6 +292,12 @@ try {
     report.tableGeometry.comparisons.push({ name, key: current.key, baseline, current });
     assert.ok(baseline, `${name} must use the same session, hand and retry's live baseline`);
     assertTableBudget(current, true);
+    const dockRelease = baseline.dockHeight - current.dockHeight;
+    assert.equal(dockRelease, 90);
+    assert.ok(
+      Math.abs(Number(baseline.shell.height) - Number(current.shell.height) - dockRelease) <= 1,
+      'The same hand releases exactly its measured live-to-settled dock height',
+    );
     assert.deepEqual(current.viewport, baseline.viewport);
     assert.deepEqual(current.playerIds, baseline.playerIds);
     const compareBounds = (actual, expected, label) => {
@@ -251,7 +309,7 @@ try {
     };
     compareBounds(
       current.shell,
-      { ...baseline.shell, height: baseline.shell.height - 70 },
+      { ...baseline.shell, height: baseline.shell.height - dockRelease },
       'shell',
     );
     compareBounds(current.table, baseline.table, 'table');
@@ -295,10 +353,73 @@ try {
         if (el) textSizes[selector] = parseFloat(await el.style('font-size'));
       }
       assert.ok(textSizes['.seat-name'] >= 13 && textSizes['.seat-body > .stack'] >= 13);
-      assert.ok(textSizes['.persona'] >= 12 && textSizes['.seat-action'] >= 13);
+      assert.ok(textSizes['.seat-action'] >= 13);
       assert.ok(textSizes['.rank'] >= 12 && textSizes['.pot-detail'] >= 13);
+      const metrics = data.textMetrics;
+      const rightColumn =
+        data.profileWidth - metrics['profile-padding'] * 2 - metrics['player-avatar'] - 6;
+      const personaFit = [];
+      assert.ok(metrics['player-persona-fit'] > 0);
+      assert.ok(metrics['player-persona-fit'] <= metrics['player-persona'] * 0.82);
+      for (const seat of data.phoneSeats) {
+        const tag = await page.$(`#seat-persona-${seat.id}`);
+        assert.ok(tag, `Seat ${seat.id} must show its complete style`);
+        const text = (await tag.text()).trim();
+        const font = parseFloat(await tag.style('font-size'));
+        const expected =
+          metrics[seat.profileId === 'balanced' ? 'player-persona' : 'player-persona-fit'];
+        assert.equal(text, seat.profileName);
+        assert.equal(font, expected, 'Every style uses its exact shared four-character fit budget');
+        const whiteSpace = await tag.style('white-space');
+        if (whiteSpace !== null) assert.equal(whiteSpace, 'nowrap');
+        assert.notEqual(await tag.style('text-overflow'), 'ellipsis');
+        const widths = await Promise.all(
+          ['padding-left', 'padding-right', 'border-left-width', 'border-right-width'].map(
+            async (property) => parseFloat(await tag.style(property)),
+          ),
+        );
+        assert.ok(widths.every(Number.isFinite));
+        const paddingAndBorders = widths.reduce((sum, width) => sum + width, 0);
+        const size = await tag.size();
+        const vertical = await Promise.all(
+          ['padding-top', 'padding-bottom', 'border-top-width', 'border-bottom-width'].map(
+            async (property) => parseFloat(await tag.style(property)),
+          ),
+        );
+        assert.ok(vertical.every(Number.isFinite));
+        const lineHeight = parseFloat(await tag.style('line-height'));
+        assert.ok(Number.isFinite(lineHeight) && lineHeight > 0);
+        const verticalPaddingAndBorders = vertical.reduce((sum, width) => sum + width, 0);
+        const intrinsicActualHeight = size.height / data.arenaScale;
+        const singleLineErrorPx = Math.abs(
+          intrinsicActualHeight - lineHeight - verticalPaddingAndBorders,
+        );
+        assert.ok(singleLineErrorPx <= 1, 'The real complete style occupies exactly one line');
+        assert.ok(
+          font * [...text].length + paddingAndBorders <= rightColumn,
+          `Seat ${seat.id} complete CJK style and padding fit its original right column`,
+        );
+        assert.ok(size.width <= rightColumn * data.arenaScale + 1);
+        personaFit.push({
+          id: seat.id,
+          text,
+          font,
+          expected,
+          rightColumn,
+          paddingAndBorders,
+          whiteSpaceComputed: whiteSpace,
+          whiteSpaceRuleSource: report.personaStylePolicy,
+          lineHeight,
+          verticalPaddingAndBorders,
+          intrinsicActualHeight,
+          singleLineErrorPx,
+          actualBounds: { ...(await tag.offset()), ...size },
+          scaledFontPx: font * data.arenaScale,
+          measurement: 'Rendered capsule bounds and scaled CSS font, not raster glyph ink height',
+        });
+      }
       report.readability ??= {};
-      report.readability[name] = textSizes;
+      report.readability[name] = { ...textSizes, personaFit };
       const gaps = [];
       const words = await Promise.all(
         (await page.$$('.seat-action-word')).map(async (word) => ({
@@ -529,18 +650,25 @@ try {
   assert.equal(await rail.style('animation-name'), 'none');
   assert.equal(await rail.style('box-shadow'), 'none');
   const notice = await page.$('.action-notice');
-  const slider = await page.$('.raise-controls slider');
+  const thumb = await page.$('#raise-thumb');
+  const controlRail = await page.$('#raise-track .raise-rail');
+  assert.ok(thumb, 'The current render-layer raise thumb must be visible');
+  assert.ok(controlRail, 'The current render-layer raise rail must be visible');
+  const thumbSize = await thumb.size();
+  assert.equal(thumbSize.width, 15);
+  assert.equal(thumbSize.height, 15);
+  assert.equal((await controlRail.size()).height, 5);
   const noticeTop = (await notice.offset()).top;
   report.turnAttention.noticeSpacing = {
     topGap: noticeTop - (await rail.offset()).top - (await rail.size()).height,
-    controlGap:
-      (await slider.offset()).top +
-      ((await slider.size()).height - 28) / 2 -
-      noticeTop -
-      (await notice.size()).height,
+    controlGap: (await controlRail.offset()).top - noticeTop - (await notice.size()).height,
+    thumbGap: (await thumb.offset()).top - noticeTop - (await notice.size()).height,
+    thumbSize,
+    controlRailSize: await controlRail.size(),
   };
   assert.ok(report.turnAttention.noticeSpacing.topGap >= 4);
   assert.ok(report.turnAttention.noticeSpacing.controlGap >= 4);
+  assert.ok(report.turnAttention.noticeSpacing.thumbGap >= 4);
   assert.ok(
     Math.abs(
       report.turnAttention.noticeSpacing.topGap - report.turnAttention.noticeSpacing.controlGap,
@@ -594,7 +722,7 @@ try {
     assert.equal(await button.attribute('hover-class'), 'none');
   report.compactChrome = {
     navHeight: 48,
-    liveDockHeight: 134,
+    liveDockHeight: 154,
     primaryButtonHeight: 38,
     tableHeaderHeight: 26,
     buttonHoverClass: 'none',

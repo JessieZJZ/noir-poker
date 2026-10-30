@@ -36,7 +36,11 @@ try {
     const { windowWidth, windowHeight, pixelRatio } = wx.getWindowInfo();
     return { model, platform, windowWidth, windowHeight, pixelRatio };
   });
+  // Another route probe may leave records/history on top. Start from the
+  // real live Page before invoking its handlers or dispatching rail touches.
+  await mini.reLaunch('/pages/table/table');
   let page = await mini.currentPage();
+  assert.equal(page.path, 'pages/table/table');
   await invoke('closeSettings');
   for (let i = 0; i < 150; i++) {
     const state = await page.data();

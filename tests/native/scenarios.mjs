@@ -13,6 +13,11 @@ import { pressSelectedAndroidHome } from './immediate-background.mjs';
 import { readActionNoticeSpacing } from '../fixtures/action-notice-spacing.js';
 import { BOT_THINK_LIMITS } from '../../src/engine/bot-timing.js';
 import { readReviewTagGeometry } from '../fixtures/review-tag-geometry.js';
+import {
+  PUBLIC_READ_MODEL,
+  PUBLIC_READ_WINDOW,
+  sanitizePublicRead,
+} from '../../src/engine/public-observations.js';
 async function enterNativeTable(app) {
   if ((await app.state()).phase !== 'idle') return;
   await app.click('#join-table-button');
@@ -2017,12 +2022,48 @@ export async function nativeScenarios(app) {
       glossary: document.querySelector('#review-glossary')?.textContent,
       glossaryEntries: document.querySelectorAll('#review-glossary .position-glossary > div')
         .length,
+      glossaryTerms: Object.fromEntries(
+        [...document.querySelectorAll('#review-glossary .position-glossary > div')].map((entry) => [
+          entry.querySelector('b').textContent.trim(),
+          entry.querySelector('span').textContent.trim().replace(/\s+/g, ' '),
+        ]),
+      ),
     }));
     assert.equal(guide.hands, 9);
-    assert.equal(guide.glossaryEntries, 29);
+    assert.equal(guide.glossaryEntries, 35);
+    assert.equal(Object.keys(guide.glossaryTerms).length, 35, 'Every glossary term is unique');
     assert.match(guide.glossary, /底池赔率／保本胜率.*全下只会结束自己的下注选择/s);
-    assert.match(guide.glossary, /主动权.*并不改变行动顺序/s);
+    assert.match(guide.glossary, /主动权.*不改变行动顺序/s);
     assert.match(guide.glossary, /权益把获胜和平分计为底池份额/);
+    const term = (name, meaning) => {
+      assert.equal(typeof guide.glossaryTerms[name], 'string', `Glossary includes ${name}`);
+      assert.match(guide.glossaryTerms[name], meaning, name);
+    };
+    term('范围', /根据公开行动推测.*不是已经知道对手拿了什么牌/);
+    term('主动权', /主动下注或加注.*不改变行动顺序.*不保证当前牌更强/);
+    term('底池赔率／保本胜率', /本次新增风险.*跟注后可争夺底池.*平分按份额计算.*边池和退款/);
+    term(
+      '封口',
+      /本轮已没有其他玩家需要回应或能够再加注.*全下只会结束自己的下注选择.*不一定结束其他玩家的行动/,
+    );
+    term('胜率／权益', /权益把获胜和平分计为底池份额.*不等于扣除后续成本的利润/);
+    term(
+      '范围优势',
+      /整组可能底牌.*整体更强.*与这一手底牌的强弱不同.*翻前加注者也可能在新牌面上失去优势/,
+    );
+    term(
+      '弃牌权益／下注尺度',
+      /对手因下注而弃牌带来的收益.*加大下注可能增加弃牌机会.*增加被跟注或加注时的风险.*多人底池要考虑所有对手.*已全下的人不会再弃牌/,
+    );
+    term(
+      '隐含收益',
+      /补中后可能额外赢到的筹码.*取决于双方剩余筹码和对手是否愿意付费.*跟注只补齐本轮.*下一街可能还要再付.*自己或所有对手已全下时.*不能指望后续取值补足当前价格/,
+    );
+    term('反向隐含收益', /后续投入更多筹码后输给更强牌.*筹码越深.*非最大听牌.*更好踢脚压制的一对/);
+    term(
+      '坚果／坚果听牌',
+      /当前公共牌下最强的可能牌.*坚果同花听牌可补成最高同花.*配对牌面仍可能输给葫芦或四条.*强听牌可用来半诈唬.*也可以过牌或按价格跟注/,
+    );
     assert.equal(guide.cards, 45);
     assert.ok(guide.positions.includes('HJ · Hijack') && guide.positions.includes('CO · Cutoff'));
     assert.ok(guide.text.includes('选择加注 1.2K 则补 1K'));
@@ -2652,6 +2693,33 @@ export async function nativeScenarios(app) {
     };
   });
   await check('public-observation-memory-and-retry', async () => {
+    const profileOnClick = async (selector) => {
+      const token = `observation-memory-${Date.now()}-${Math.random()}`;
+      await app.evaluate(
+        ({ selector, token }) => {
+          window.__nativeObservationMemoryClick = { token };
+          document.querySelector(selector).addEventListener(
+            'click',
+            () => {
+              window.__nativeObservationMemoryClick = {
+                token,
+                profile: JSON.parse(localStorage.getItem('noir-player-observations-v1')),
+              };
+            },
+            { once: true },
+          );
+        },
+        { selector, token },
+      );
+      await app.click(selector);
+      return app.evaluate((token) => {
+        const observed = window.__nativeObservationMemoryClick;
+        delete window.__nativeObservationMemoryClick;
+        if (observed?.token !== token || !observed.profile)
+          throw Error('The real control click must expose its persisted public profile');
+        return observed.profile;
+      }, token);
+    };
     await app.click('#opponents-button');
     await app.select('#player-count', '5');
     await app.evaluate(() =>
@@ -2659,7 +2727,13 @@ export async function nativeScenarios(app) {
     );
     await app.click('#opponents-dialog .close-dialog');
     await app.click('#reset-button');
-    await app.click('#confirm-reset');
+    // Reset keeps completed public observations. Observe its actual click,
+    // before a newly dealt natural walk can add another completed sample.
+    const baseline = await profileOnClick('#confirm-reset');
+    assert.ok(Array.isArray(baseline.samples));
+    assert.ok(baseline.samples.length <= PUBLIC_READ_WINDOW);
+    assert.ok(Number.isSafeInteger(baseline.totalHands));
+    assert.ok(Number.isSafeInteger(baseline.revision));
     const observations = [];
     const finishRealHand = async () => {
       const ready = await waitForNativeHeroTurn(app, { acceptSettled: true });
@@ -2672,7 +2746,7 @@ export async function nativeScenarios(app) {
         60000,
         'The real observation hand must settle',
       );
-      return app.evaluate(() => {
+      const observed = await app.evaluate(() => {
         const game = window.noir.getState();
         const session = window.noir.getRecords().find((s) => s.number === game.sessionNumber);
         const attempt = session.attempts
@@ -2691,39 +2765,103 @@ export async function nativeScenarios(app) {
           attempt: game.replayAttempt,
           before: before?.hands || 0,
           after: snapshot.players[0].publicReads.length,
+          samples: snapshot.players[0].publicReads,
+          totalHands: snapshot.playerObservationHands,
+          revision: snapshot.playerObservationRevision,
           model: decision?.publicReadModel ?? firstBot?.publicReadModel,
           heroActed: Boolean(decision),
         };
       });
+      const expected = {
+        version: baseline.version,
+        revision: observed.revision,
+        totalHands: observed.totalHands,
+        samples: observed.samples,
+      };
+      await app.waitFor(
+        async () => {
+          const saved = await readNativePlayerObservations(app);
+          return JSON.stringify(saved.web) === JSON.stringify(expected) &&
+            JSON.stringify(saved.native) === JSON.stringify(expected)
+            ? saved.native
+            : null;
+        },
+        5000,
+        'Every completed public observation must reach both WebView and Native Preferences',
+      );
+      return observed;
     };
+    let previousSamples = baseline.samples,
+      previousRevision = baseline.revision;
     for (let hand = 1; hand <= 9; hand++) {
       const observed = await finishRealHand();
       assert.equal(observed.hand, hand);
       assert.equal(
         observed.before,
-        hand - 1,
+        Math.min(PUBLIC_READ_WINDOW, baseline.samples.length + hand - 1),
         'Before-action memory excludes the current unfinished hand',
       );
-      assert.equal(observed.after, hand, 'Exactly one completed-hand sample is persisted');
-      assert.equal(observed.model, 'observed-public-actions-v1');
+      assert.equal(
+        observed.after,
+        Math.min(PUBLIC_READ_WINDOW, baseline.samples.length + hand),
+        'The bounded sample window advances by one completed hand',
+      );
+      assert.equal(observed.totalHands, baseline.totalHands + hand);
+      assert.deepEqual(
+        observed.samples.slice(0, -1),
+        previousSamples.slice(-(PUBLIC_READ_WINDOW - 1)),
+      );
+      assert.ok(observed.revision > previousRevision, 'Completed profile revisions increase');
+      assert.equal(observed.model, PUBLIC_READ_MODEL);
       observations.push(observed);
+      previousSamples = observed.samples;
+      previousRevision = observed.revision;
       if (hand < 9) await app.click('#next-button');
     }
-    await app.click('#restart-hand-button');
+    const rollback = await profileOnClick('#restart-hand-button');
+    assert.equal(rollback.totalHands, baseline.totalHands + 8);
+    assert.deepEqual(rollback.samples, observations.at(-2).samples);
+    assert.ok(rollback.revision > previousRevision, 'Rollback advances the persisted revision');
     const retried = await finishRealHand();
+    const retrySummary = ({ hand, attempt, before, after, totalHands, model }) => ({
+      hand,
+      attempt,
+      before,
+      after,
+      totalHands,
+      model,
+    });
     assert.deepEqual(
-      { ...retried, heroActed: undefined },
-      { ...observations.at(-1), attempt: 1, heroActed: undefined },
+      retrySummary(retried),
+      { ...retrySummary(observations.at(-1)), attempt: 1 },
       'A natural walk may differ on retry; before/after memory and one retracted sample must not',
     );
+    assert.deepEqual(
+      retried.samples.slice(0, -1),
+      rollback.samples.slice(-(PUBLIC_READ_WINDOW - 1)),
+      'Replacement keeps the restored prior samples and adds its own actual public action sample',
+    );
+    const replacementSample = retried.samples.at(-1);
+    assert.equal(replacementSample.hands, 1);
+    assert.deepEqual(replacementSample, sanitizePublicRead(replacementSample));
+    assert.ok(
+      Object.values(replacementSample).every((value) => Number.isSafeInteger(value) && value >= 0),
+      'The replacement sample contains only valid completed public action counters',
+    );
+    assert.ok(retried.revision > rollback.revision, 'The replacement hand advances revision');
     await app.click('#next-button');
     const next = await finishRealHand();
     assert.equal(next.hand, 10);
-    assert.equal(next.before, 9);
-    assert.equal(next.after, 10);
+    assert.equal(next.before, Math.min(PUBLIC_READ_WINDOW, baseline.samples.length + 9));
+    assert.equal(next.after, Math.min(PUBLIC_READ_WINDOW, baseline.samples.length + 10));
+    assert.equal(next.totalHands, baseline.totalHands + 10);
+    assert.deepEqual(next.samples.slice(0, -1), retried.samples.slice(-(PUBLIC_READ_WINDOW - 1)));
+    assert.ok(next.revision > retried.revision, 'The next hand advances revision');
     await app.screenshot('public-observation-memory-real-session');
     return {
+      baseline,
       observations,
+      rollback,
       retried,
       next,
       scope:
@@ -3473,13 +3611,17 @@ export async function nativeScenarios(app) {
         await app.evaluate(() => window.scrollTo(0, 0));
         assertTableLayout(await app.evaluate(readTableLayout));
         const liveGeometry = await app.evaluate(() => ({
+          touchTablet: matchMedia(
+            '(min-width: 601px) and (max-width: 1600px) and (min-height: 601px) and (any-pointer: coarse)',
+          ).matches,
           tableHeight: document.querySelector('.table-viewport').getBoundingClientRect().height,
           buttons: [...document.querySelectorAll('.action-panel .action')].map(
             (el) => el.getBoundingClientRect().height,
           ),
         }));
         assert.equal(liveGeometry.buttons.length, 3);
-        for (const height of liveGeometry.buttons) assert.equal(height, 38);
+        const expectedActionHeight = liveGeometry.touchTablet ? 52 : 38;
+        for (const height of liveGeometry.buttons) assert.equal(height, expectedActionHeight);
         comparisons.push(
           await app.comparePage(`table-${count}`, [
             '.table-viewport',
@@ -3506,7 +3648,7 @@ export async function nativeScenarios(app) {
         }));
         assert.equal(settledGeometry.tableHeight, liveGeometry.tableHeight);
         assert.ok(settledGeometry.buttons.length >= 3);
-        for (const height of settledGeometry.buttons) assert.equal(height, 38);
+        for (const height of settledGeometry.buttons) assert.equal(height, expectedActionHeight);
         comparisons.push(
           await app.comparePage(`settlement-${count}`, [
             '.table-viewport',
