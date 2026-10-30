@@ -6,6 +6,10 @@ const identity = (state) => ({
   hand: state.hand,
   attempt: state.replayAttempt,
 });
+const sameIdentity = (state, intended) =>
+  state.sessionNumber === intended.sessionNumber &&
+  state.hand === intended.hand &&
+  state.replayAttempt === intended.attempt;
 
 function armObservedAction({ selector, intended }) {
   const state = window.noir.getState();
@@ -14,7 +18,11 @@ function armObservedAction({ selector, intended }) {
     hand: state.hand,
     attempt: state.replayAttempt,
   };
-  if (JSON.stringify(actual) !== JSON.stringify(intended))
+  if (
+    actual.sessionNumber !== intended.sessionNumber ||
+    actual.hand !== intended.hand ||
+    actual.attempt !== intended.attempt
+  )
     throw Error('The intended hand changed before the native action');
   if (selector === '#continue-deal-button' && state.phase === 'done')
     return { skippedSettled: true, state };
@@ -61,7 +69,12 @@ function armObservedAction({ selector, intended }) {
         document.removeEventListener(type, listener, true);
     },
   };
-  return { state, rect: [rect.x, rect.y, rect.width, rect.height], scroll: [scrollX, scrollY] };
+  return {
+    state,
+    identityArgumentKeys: Object.keys(intended),
+    rect: [rect.x, rect.y, rect.width, rect.height],
+    scroll: [scrollX, scrollY],
+  };
 }
 
 function readObservedAction(options = false) {
@@ -115,7 +128,7 @@ export function assertObservedAction(result, selector, intended) {
     settledContinue =
       selector === '#continue-deal-button' &&
       result.armed?.state.phase === 'playing' &&
-      JSON.stringify(identity(result.armed.state)) === JSON.stringify(intended) &&
+      sameIdentity(result.armed.state, intended) &&
       result.armed.state.canContinue === true &&
       result.state.phase === 'done';
   if (
@@ -165,7 +178,7 @@ export async function tapObservedAction(app, selector, intended, deadline = Date
   const positioningState = Symbol('positioningState');
   const positioningGuard = async () => {
     const state = await app.state();
-    return JSON.stringify(identity(state)) !== JSON.stringify(intended) ||
+    return !sameIdentity(state, intended) ||
       (selector === '#continue-deal-button' && state.phase === 'done')
       ? { [positioningState]: state }
       : null;
@@ -215,7 +228,7 @@ export async function tapObservedAction(app, selector, intended, deadline = Date
           if (
             armed.state.phase === 'playing' &&
             armed.state.canContinue === true &&
-            JSON.stringify(identity(observed.state)) === JSON.stringify(intended) &&
+            sameIdentity(observed.state, intended) &&
             observed.state.phase === 'done' &&
             observed.events.length === 0 &&
             observed.frameCoverage.target === 'continue-deal-button' &&
@@ -291,8 +304,7 @@ export async function settleObservedNativeHand(app, ready) {
           };
           if (JSON.stringify(observation) !== JSON.stringify(observations.at(-1)))
             observations.push(observation);
-          if (JSON.stringify(identity(state)) !== JSON.stringify(intended))
-            return { changedHand: true, state };
+          if (!sameIdentity(state, intended)) return { changedHand: true, state };
           // A settled hand needs no optional practice-board tap. Never mistake
           // the replacement next-hand control for the old continue control.
           if (state.phase === 'done') return { settled: true };

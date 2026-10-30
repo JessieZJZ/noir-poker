@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { isDeepStrictEqual } from 'node:util';
 import { readTableLayout, assertTableLayout } from './layout.mjs';
 import { readCardRankState, readNativeRankInk, assertStableRankInk } from './card-ranks.mjs';
 import {
@@ -77,6 +78,20 @@ export async function readNativePlayerObservations(app) {
       // Retain the original bridge/read failure if the page was lost.
     }
   }
+}
+
+export function nativeObservationProfilesMatch({ web, native }, expected) {
+  return (
+    isDeepStrictEqual(web, native) &&
+    (expected === undefined || isDeepStrictEqual(native, expected))
+  );
+}
+
+export function nativeOpponentActionsChanged(before, players) {
+  return !isDeepStrictEqual(
+    players.slice(1).map(({ id, lastAction }) => ({ id, lastAction })),
+    before,
+  );
 }
 
 async function waitForNativeGuidePaint(app) {
@@ -951,18 +966,13 @@ export async function nativeScenarios(app) {
       return {
         hand: state.hand,
         hole: state.hole,
-        opponents: JSON.stringify(
-          state.players.slice(1).map(({ id, lastAction }) => ({ id, lastAction })),
-        ),
+        opponents: state.players.slice(1).map(({ id, lastAction }) => ({ id, lastAction })),
       };
     });
     try {
       await app.click('#call-button');
       await app.waitFor(
-        async () =>
-          JSON.stringify(
-            (await app.state()).players.slice(1).map(({ id, lastAction }) => ({ id, lastAction })),
-          ) !== before.opponents,
+        async () => nativeOpponentActionsChanged(before.opponents, (await app.state()).players),
         30000,
         'A real opponent must act after the hero calls',
       );
@@ -2581,9 +2591,7 @@ export async function nativeScenarios(app) {
       app.waitFor(
         async () => {
           const stored = await readNativePlayerObservations(app);
-          if (JSON.stringify(stored.web) !== JSON.stringify(stored.native)) return null;
-          if (expected && JSON.stringify(stored.native) !== JSON.stringify(expected)) return null;
-          return stored.native;
+          return nativeObservationProfilesMatch(stored, expected) ? stored.native : null;
         },
         5000,
         'The real native Preferences write must match the completed public observations',
@@ -2776,10 +2784,7 @@ export async function nativeScenarios(app) {
       await app.waitFor(
         async () => {
           const saved = await readNativePlayerObservations(app);
-          return JSON.stringify(saved.web) === JSON.stringify(expected) &&
-            JSON.stringify(saved.native) === JSON.stringify(expected)
-            ? saved.native
-            : null;
+          return nativeObservationProfilesMatch(saved, expected) ? saved.native : null;
         },
         5000,
         'Every completed public observation must reach both WebView and Native Preferences',
@@ -3563,7 +3568,7 @@ export async function nativeScenarios(app) {
     await app.waitFor(
       async () => {
         const current = await app.state();
-        return JSON.stringify(current) !== JSON.stringify(paused.state);
+        return !isDeepStrictEqual(current, paused.state);
       },
       45000,
       'Game should resume after native foreground event',

@@ -48,6 +48,27 @@ function app(click = driverClick) {
   };
 }
 
+test('three semantically identical geometry samples remain stable when driver dictionary order alternates', async () => {
+  await page.setContent('<button id="ready">Ready</button>');
+  let samples = 0;
+  let taps = 0;
+  const positioned = withCenteredNativeClicks({
+    ...app(async (selector) => {
+      taps++;
+      return driverClick(selector);
+    }),
+    async evaluate(fn, value) {
+      const measured = await page.evaluate(fn, value);
+      if (fn.name === 'readNativeTargetPosition' && ++samples % 2)
+        return Object.fromEntries(Object.entries(measured).reverse());
+      return measured;
+    },
+  });
+  await positioned.click('#ready');
+  assert.equal(samples, 3);
+  assert.equal(taps, 1);
+});
+
 test('centering a page-tail button keeps the actual pointer above the home area and below a fixed header', async () => {
   await page.setContent(`
     <style>

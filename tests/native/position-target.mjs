@@ -112,10 +112,9 @@ export function withCenteredNativeClicks(app) {
               stable = 0;
               return false;
             }
-            const position = JSON.stringify(measured);
-            if (position === previous) stable++;
+            if (isDeepStrictEqual(measured, previous)) stable++;
             else {
-              previous = position;
+              previous = measured;
               stable = 0;
               // A late modal scroll restore can precede our very first sample.
               // Re-center that sample too, then require three stable readings.
@@ -178,3 +177,4 @@ export function withCenteredNativeClicks(app) {
     },
   };
 }
+import { isDeepStrictEqual } from 'node:util';

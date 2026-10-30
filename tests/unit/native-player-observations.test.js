@@ -1,7 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import vm from 'node:vm';
-import { readNativePlayerObservations } from '../native/scenarios.mjs';
+import {
+  readNativePlayerObservations,
+  nativeObservationProfilesMatch,
+} from '../native/scenarios.mjs';
+import { sanitizePublicRead } from '../../src/engine/public-observations.js';
 
 function bridge({ outcome = 'resolved', nativeValue, webValue } = {}) {
   const profile = { version: 1, revision: 4, totalHands: 2, samples: [] };
@@ -86,4 +90,58 @@ test('native observation reader reports bridge rejection, malformed data and a p
     assert.equal(harness.evidence().returnsPromise, 0);
     assert.equal(harness.window.__nativePlayerObservationsProbe, undefined);
   }
+});
+
+test('native observation profiles compare complete values while ignoring WebDriver dictionary key order', () => {
+  const counter = sanitizePublicRead({ hands: 1, voluntaryHands: 1, raisingHands: 1 });
+  const expected = {
+    version: 1,
+    revision: 8,
+    totalHands: 4,
+    samples: [counter, { ...counter, voluntaryHands: 0, raisingHands: 0 }],
+  };
+  const reorder = (value) =>
+    Array.isArray(value)
+      ? value.map(reorder)
+      : value && typeof value === 'object'
+        ? Object.fromEntries(
+            Object.entries(value)
+              .sort(([a], [b]) => a.localeCompare(b))
+              .map(([key, item]) => [key, reorder(item)]),
+          )
+        : value;
+  const sorted = reorder(expected);
+  assert.notEqual(
+    JSON.stringify(sorted),
+    JSON.stringify(expected),
+    'The fixture reproduces cross-driver dictionary order',
+  );
+  assert.equal(nativeObservationProfilesMatch({ web: expected, native: sorted }, sorted), true);
+  assert.equal(nativeObservationProfilesMatch({ web: sorted, native: expected }, expected), true);
+  const cases = [
+    (p) => p.samples.reverse(),
+    (p) => p.samples[0].raisingHands++,
+    (p) => (p.samples[0].hands = '1'),
+    (p) => delete p.samples[0].facedPostBet,
+    (p) => (p.samples[0].hidden = 1),
+    (p) => p.samples.pop(),
+    (p) => p.revision++,
+    (p) => (p.totalHands = '4'),
+    (p) => delete p.version,
+    (p) => (p.extra = false),
+  ];
+  for (const change of cases) {
+    const invalid = structuredClone(expected);
+    change(invalid);
+    assert.equal(
+      nativeObservationProfilesMatch({ web: expected, native: invalid }, expected),
+      false,
+    );
+    assert.equal(
+      nativeObservationProfilesMatch({ web: invalid, native: invalid }, expected),
+      false,
+    );
+  }
+  assert.equal(nativeObservationProfilesMatch({ web: null, native: null }, null), true);
+  assert.equal(nativeObservationProfilesMatch({ web: null, native: expected }, expected), false);
 });

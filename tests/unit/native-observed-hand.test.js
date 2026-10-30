@@ -1,13 +1,34 @@
-import { after, before, test } from 'node:test';
+import { after, before, test as nodeTest } from 'node:test';
 import assert from 'node:assert/strict';
 import { chromium } from '@playwright/test';
 import {
-  assertObservedAction,
+  assertObservedAction as sourceAssertObservedAction,
   settleObservedNativeHand,
   tapObservedAction,
 } from '../native/observed-hand.mjs';
 
 let browser, page;
+let sortedDriverDictionaries = false;
+function wireValue(value) {
+  if (!sortedDriverDictionaries) return value;
+  if (Array.isArray(value)) return value.map(wireValue);
+  return value && typeof value === 'object'
+    ? Object.fromEntries(
+        Object.entries(value)
+          .sort(([a], [b]) => a.localeCompare(b))
+          .map(([key, item]) => [key, wireValue(item)]),
+      )
+    : value;
+}
+function test(name, run) {
+  for (const driver of ['WebKit order', 'ChromeDriver sorted dictionaries'])
+    nodeTest(`${name} [${driver}]`, async (context) => {
+      sortedDriverDictionaries = driver.startsWith('ChromeDriver');
+      await run(context);
+    });
+}
+const assertObservedAction = (result, ...args) =>
+  sourceAssertObservedAction(wireValue(result), ...args);
 const intended = { sessionNumber: 7, hand: 2, attempt: 1 };
 before(async () => {
   browser = await chromium.launch();
@@ -48,12 +69,13 @@ async function harness({ done = false, immediate = false, hit = null } = {}) {
   );
   const taps = [],
     budgets = [];
+  const evaluate = async (fn, value) => wireValue(await page.evaluate(fn, wireValue(value)));
   return {
     taps,
     budgets,
     app: {
-      evaluate: (fn, value) => page.evaluate(fn, value),
-      state: () => page.evaluate(() => window.noir.getState()),
+      evaluate,
+      state: () => evaluate(() => window.noir.getState()),
       visible: (selector) => page.locator(selector).isVisible(),
       async waitFor(predicate, timeout, message) {
         budgets.push(timeout);
@@ -87,6 +109,45 @@ test('observed fold uses one trusted touch, stays on the same attempt and skips 
   assert.equal(evidence.actions[0].events.at(-1).trusted, true);
   assert.equal(evidence.budgetMs, 60000);
   assert.ok(h.budgets.every((budget) => budget > 0 && budget <= 60000));
+});
+
+test('WebDriver argument key order cannot change a valid hand identity or conceal changed values', async () => {
+  const reordered = (app, change, stringify = false) => ({
+    ...app,
+    async evaluate(fn, value) {
+      if (fn.name === 'armObservedAction') {
+        const before = value.intended;
+        value = {
+          ...value,
+          intended: {
+            attempt: before.attempt,
+            hand: before.hand,
+            sessionNumber: before.sessionNumber,
+          },
+        };
+        if (change)
+          value.intended[change] = stringify
+            ? String(value.intended[change])
+            : value.intended[change] + 1;
+      }
+      return app.evaluate(fn, value);
+    },
+  });
+  const h = await harness({ immediate: true });
+  const result = await tapObservedAction(reordered(h.app), '#fold-button', intended);
+  assert.equal(result.outcome, 'target-clicked');
+  assert.deepEqual(result.armed.identityArgumentKeys, ['attempt', 'hand', 'sessionNumber']);
+  assert.deepEqual(h.taps, ['#fold-button']);
+  for (const field of ['sessionNumber', 'hand', 'attempt']) {
+    for (const stringify of [false, true]) {
+      const changed = await harness({ immediate: true });
+      await assert.rejects(
+        tapObservedAction(reordered(changed.app, field, stringify), '#fold-button', intended),
+        /intended hand changed before the native action/,
+      );
+      assert.deepEqual(changed.taps, []);
+    }
+  }
 });
 
 test('an unfinished folded hand continues once through the real control within the original budget', async () => {
