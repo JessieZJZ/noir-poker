@@ -17,7 +17,9 @@ for (const width of [320, 390, 768, 1280]) {
           Object.defineProperty(worker, 'onmessage', {
             set(handler) {
               worker.addEventListener('message', (event) =>
-                window.heldReviewMessages.push(() => handler(event)),
+                window.releaseReviewMessages
+                  ? handler(event)
+                  : window.heldReviewMessages.push(() => handler(event)),
               );
             },
           });
@@ -59,14 +61,17 @@ for (const width of [320, 390, 768, 1280]) {
       await info.attach(name, { path, contentType: 'image/png' });
     };
     await capture('pending-tags');
-    await page.waitForFunction((count) => window.heldReviewMessages.length >= count + 1, count, {
+    await page.waitForFunction(() => window.heldReviewMessages.length >= 1, null, {
       timeout: 60000,
     });
     await page.evaluate(() => window.heldReviewMessages.shift()());
     await expect(page.locator('#review-analysis-state')).toContainText(`1 / ${count}`);
     await checkTags('#review-timeline');
     await capture('partially-analyzed-tags');
-    await page.evaluate(() => window.heldReviewMessages.splice(0).forEach((deliver) => deliver()));
+    await page.evaluate(() => {
+      window.releaseReviewMessages = true;
+      window.heldReviewMessages.splice(0).forEach((deliver) => deliver());
+    });
     await expect(page.locator('#review-dialog')).toHaveAttribute('data-analysis-status', 'done', {
       timeout: 120000,
     });

@@ -1083,7 +1083,7 @@ export function createWechatController({
         if (done < input.decisions.length) {
           const index = results.findIndex((result) => !result);
           const decision = input.decisions[index];
-          const result = analyzeDecision(decision);
+          const result = analyzeDecision(decision, INTERACTIVE_REVIEW_OPTIONS);
           reviewCache.set('decision', decision, result);
           results[index] = result;
           done++;
@@ -1254,3 +1254,4 @@ export function createWechatController({
     getSettings: () => ({ ...settings, assignments: { ...settings.assignments } }),
   };
 }
+import { INTERACTIVE_REVIEW_OPTIONS } from '../review/budget.js';

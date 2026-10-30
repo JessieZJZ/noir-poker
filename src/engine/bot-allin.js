@@ -3,6 +3,7 @@ import { chipUnitOf } from './bet-sizing.js';
 export { allInContext } from './public-action-context.js';
 import { preparePublicRanges, publicComboWeight } from './public-ranges.js';
 import { exactStoryRiver } from './public-equity.js';
+import { publicWeightMemo } from './public-weight-cache.js';
 
 // Evaluator/rule helpers are supplied by poker.js, avoiding a second evaluator
 // or any dependency on the actual deck, other hole cards or final result.
@@ -45,6 +46,11 @@ export function estimateAllInEquity(
       range.street > 0 && range.street < view.street
         ? { ...view, street: range.street, board: view.board.slice(0, range.street + 2) }
         : view;
+    const weightMemo = publicWeightMemo(cache, descriptor, preflopRange ? [] : rangeView.board, {
+      evaluate,
+      features: botBoardFeatures,
+      compare,
+    });
     for (let a = 0; a < available.length; a++)
       for (let b = a + 1; b < available.length; b++) {
         const hole = [available[a], available[b]];
@@ -56,11 +62,11 @@ export function estimateAllInEquity(
             : null;
         if (ownRiverScore && compare(score, ownRiverScore) > 0) unbeatableRiver = false;
         let weight;
-        if (preflopRange) weight = publicComboWeight(hole, descriptor, { board: [] });
-        else {
+        weight = weightMemo(hole, () => {
+          if (preflopRange) return publicComboWeight(hole, descriptor, { board: [] });
           const data = handData(hole, rangeView.board);
           data.features ??= botBoardFeatures(hole, rangeView.board, data.score);
-          weight = publicComboWeight(hole, descriptor, {
+          return publicComboWeight(hole, descriptor, {
             board: rangeView.board,
             score: data.score,
             features: data.features,
@@ -72,7 +78,7 @@ export function estimateAllInEquity(
               return data;
             },
           });
-        }
+        });
         combos.push({ hole, weight });
       }
     return { id: range.id, combos };

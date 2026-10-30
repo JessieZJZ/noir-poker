@@ -11,6 +11,8 @@ import { selectedActivity } from '../review/activity.js';
 import { renderReviewParagraphs } from './review-matchups.js';
 import { renderActivityParts } from './activity.js';
 import { reviewResultCache } from '../review/result-cache.js';
+import { INTERACTIVE_REVIEW_OPTIONS } from '../review/budget.js';
+import { createReviewPool } from '../review/worker-pool.js';
 const $ = (selector) => document.querySelector(selector),
   format = (n) => formatChips(Math.round(n));
 const statusNames = { attention: '重点改进', consider: '值得讨论', sound: '有合理依据' };
@@ -229,7 +231,7 @@ export function createReviewController({ card }) {
         if (steps[index]) continue;
         await new Promise((resolve) => setTimeout(resolve, 0));
         if (id !== job) return;
-        steps[index] = analyzeDecision(input.decisions[index]);
+        steps[index] = analyzeDecision(input.decisions[index], INTERACTIVE_REVIEW_OPTIONS);
         receive(
           {
             type: 'progress',
@@ -268,22 +270,31 @@ export function createReviewController({ card }) {
       return;
     }
     try {
-      worker = new Worker(new URL('../review/worker.js', import.meta.url), { type: 'module' });
-      worker.onmessage = (e) => receive(e.data, id);
-      worker.onerror = (e) => {
-        e.preventDefault();
-        if (id === job) fallback(id, input);
-      };
       // Opponent private traces belong to their own explanation panel only.
-      worker.postMessage({
+      worker = createReviewPool({
         id,
         input: { hand: input.hand, decisions: input.decisions, outcome: input.outcome },
         completed: last.partial,
+        concurrency: (globalThis.navigator?.hardwareConcurrency || 2) >= 4 ? 2 : 1,
+        createWorker: () =>
+          new Worker(new URL('../review/worker.js', import.meta.url), { type: 'module' }),
+        onMessage: (message) => receive(message, id),
+        onError: () => {
+          if (id === job) fallback(id, input);
+        },
       });
     } catch {
       await fallback(id, input);
     }
   }
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+      worker?.terminate();
+      worker = null;
+      job++;
+      if (last?.status === 'running') last.status = 'idle';
+    } else if (dialog.open) analyze();
+  });
   function open() {
     if (live && last !== live) selectInput(live, false);
     if (!last) return;
@@ -326,10 +337,11 @@ export function createReviewController({ card }) {
     return true;
   }
   dialog.addEventListener('close', () => {
-    if (!historical) return;
     worker?.terminate();
     worker = null;
     job++;
+    if (last?.status === 'running') last.status = 'idle';
+    if (!historical) return;
     historical = false;
     last = live;
     selected = 0;

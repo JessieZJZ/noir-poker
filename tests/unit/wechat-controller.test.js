@@ -4,6 +4,7 @@ import { createWechatController } from '../../src/platform/wechat-controller.js'
 import { compactChips } from '../../src/engine/chip-format.js';
 import { act, advanceStreet, legalActions, potSize } from '../../src/engine/poker.js';
 import { createReviewInput, analyzeDecision } from '../../src/review/analysis.js';
+import { INTERACTIVE_REVIEW_OPTIONS } from '../../src/review/budget.js';
 import { BOT_THINK_LIMITS } from '../../src/engine/bot-timing.js';
 import { checkedSeatGame } from '../fixtures/checked-actions.js';
 import { tableHint } from '../../src/review/table-hint.js';
@@ -233,7 +234,7 @@ test('WeChat review reports each finished decision like Web: 正在分析决策 
     worker.receive({
       type: 'step',
       index,
-      result: analyzeDecision(worker.payload.decisions[index]),
+      result: analyzeDecision(worker.payload.decisions[index], INTERACTIVE_REVIEW_OPTIONS),
     });
     assert.equal(updates.at(-1).loading, true);
     assert.equal(
@@ -247,7 +248,7 @@ test('WeChat review reports each finished decision like Web: 正在分析决策 
   worker.receive({ type: 'complete' });
   assert.equal(updates.at(-1).loading, false);
 });
-test('WeChat worker completion equals full fallback and a killed worker retains full-quality analysis', (t) => {
+test('WeChat worker and an uncached killed-worker fallback produce identical interactive analysis', (t) => {
   const worker = fakeReviewWorker();
   const { controller, timers } = setup(t, {}, { createReviewWorker: () => worker });
   reachHero(controller);
@@ -256,16 +257,19 @@ test('WeChat worker completion equals full fallback and a killed worker retains 
   const updates = [];
   controller.review((value) => updates.push(value));
   const decision = worker.payload.decisions[0];
-  const result = analyzeDecision(decision);
+  const result = analyzeDecision(decision, INTERACTIVE_REVIEW_OPTIONS);
   worker.receive({ type: 'step', index: 0, result });
   worker.receive({ type: 'complete' });
   assert.equal(updates.at(-1).loading, false);
   const expected = copy(updates.at(-1));
-  controller.review((value) => updates.push(value));
-  worker.killed();
+  const killed = fakeReviewWorker();
+  const fallback = setup(t, {}, { createReviewWorker: () => killed });
+  Object.assign(fallback.controller.getGame(), copy(controller.getGame()));
+  fallback.controller.review((value) => updates.push(value));
+  killed.killed();
   for (let i = 0; updates.at(-1).loading; i++) {
     assert.ok(i < 10);
-    assert.ok(timers.runNext());
+    assert.ok(fallback.timers.runNext());
   }
   assert.deepEqual(updates.at(-1), expected);
 });
@@ -293,14 +297,14 @@ test('WeChat cache resumes a cancelled prefix, persists across history controlle
   });
   let updates = [];
   controller.review((view) => updates.push(view));
-  const first = analyzeDecision(workers[0].payload.decisions[0]);
+  const first = analyzeDecision(workers[0].payload.decisions[0], INTERACTIVE_REVIEW_OPTIONS);
   workers[0].receive({ type: 'step', index: 0, result: first });
   controller.cancelReview();
   workers[0].receive({ type: 'complete' });
   controller.review((view) => updates.push(view));
   assert.equal(updates.at(-1).done, 1);
   assert.equal(workers[1].payload.decisions.length, 1);
-  const second = analyzeDecision(workers[1].payload.decisions[0]);
+  const second = analyzeDecision(workers[1].payload.decisions[0], INTERACTIVE_REVIEW_OPTIONS);
   workers[1].receive({ type: 'step', index: 0, result: second });
   workers[1].receive({ type: 'complete' });
   const expected = copy(updates.at(-1));

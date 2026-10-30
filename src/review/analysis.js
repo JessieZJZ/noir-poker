@@ -64,7 +64,11 @@ export function createReviewInput(g) {
 }
 export function analyzeDecision(
   s,
-  { trials = 600, rolloutTrials = Math.max(12, Math.min(64, Math.round(trials / 15))) } = {},
+  {
+    trials = 600,
+    rolloutTrials = Math.max(12, Math.min(64, Math.round(trials / 15))),
+    rollouts = true,
+  } = {},
 ) {
   if (!Number.isInteger(trials) || trials < 1) throw Error('抽样次数必须是正整数。');
   const bigBlind = bigBlindOf(s);
@@ -731,6 +735,7 @@ export function analyzeDecision(
   let routes = comparisonRoutes(s, ctx, { code, status, alternative, pre });
   let simulation = null;
   if (
+    rollouts &&
     !ctx.guaranteedBoard &&
     Number.isInteger(s.dealer) &&
     s.players.every((p) => 'actedTo' in p)
@@ -783,6 +788,7 @@ export function analyzeDecision(
       plan += ' 重打时优先对照模拟候选与原路线，若对手的防守方式明显不同，重新分析。';
     }
   }
+  if (!rollouts && status !== 'attention') confidence = '范围与后续策略敏感，未证明唯一最优';
   const result = {
     index: s.index,
     status,

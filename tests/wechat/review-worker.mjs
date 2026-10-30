@@ -53,7 +53,7 @@ try {
   });
   const started = Date.now();
   while ((await page.data()).reviewData.loading) {
-    assert.ok(Date.now() - started < 90000, 'Full-quality review must finish');
+    assert.ok(Date.now() - started < 90000, 'Interactive review must finish');
     await page.waitFor(100);
   }
   report.elapsedMs = Date.now() - started;

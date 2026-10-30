@@ -27,7 +27,8 @@ import { createHash } from 'node:crypto';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { PROFILE_PORTRAITS } from '../../src/ui/portraits.js';
-import { weakSuitedShove } from '../fixtures/review-spots.js';
+import { heroValueGame } from '../fixtures/review-spots.js';
+import { INTERACTIVE_REVIEW_OPTIONS } from '../../src/review/budget.js';
 import { analyzeDecision } from '../../src/review/analysis.js';
 
 const root = fileURLToPath(new URL('../..', import.meta.url));
@@ -264,7 +265,7 @@ test('generated WeChat JavaScript loads the controller and complete player resea
   assert.equal(typeof load('./record-navigation.js').openRecords, 'function');
 });
 
-test('standalone WeChat worker executes the identical full analysis without main-package imports', async (t) => {
+test('standalone WeChat worker executes the shared interactive analysis without main-package imports', async (t) => {
   const workspace = fixture(t);
   assertSuccess(await build(workspace).result);
   assert.equal(
@@ -286,10 +287,14 @@ test('standalone WeChat worker executes the identical full analysis without main
   const source = readFileSync(path.join(workspace.output, 'workers/review.js'), 'utf8');
   assert.doesNotMatch(source, /\brequire\(/);
   new vm.Script(source).runInContext(context);
-  const decision = weakSuitedShove();
+  const decision = heroValueGame('set-shove').decisions.find((d) => d.street === 1);
   receive({ decisions: [decision] });
   assert.deepEqual(messages, [
-    { type: 'step', index: 0, result: JSON.parse(JSON.stringify(analyzeDecision(decision))) },
+    {
+      type: 'step',
+      index: 0,
+      result: JSON.parse(JSON.stringify(analyzeDecision(decision, INTERACTIVE_REVIEW_OPTIONS))),
+    },
     { type: 'complete' },
   ]);
   receive({ decisions: [null] });

@@ -166,7 +166,8 @@ function visibleStylePrior(pair, descriptor) {
   if (!raising && pre.facedBB > 8) target *= 0.75;
   target = Math.max(0.035, Math.min(0.85, target));
   const percentile = startingPercentile(pair),
-    [high, low] = pair.map((c) => c.rank).sort((a, b) => b - a);
+    high = Math.max(pair[0].rank, pair[1].rank),
+    low = Math.min(pair[0].rank, pair[1].rank);
   const suited = pair[0].suit === pair[1].suit;
   const speculative = high === low || (suited && (high === 14 || high - low <= 2));
   const tail =
@@ -177,7 +178,8 @@ function visibleStylePrior(pair, descriptor) {
 }
 
 function allInPreflopWeight(hole, range) {
-  const [high, low] = hole.map((c) => c.rank).sort((a, b) => b - a),
+  const high = Math.max(hole[0].rank, hole[1].rank),
+    low = Math.min(hole[0].rank, hole[1].rank),
     pair = high === low,
     suited = hole[0].suit === hole[1].suit;
   if (range.role === 'entered') {

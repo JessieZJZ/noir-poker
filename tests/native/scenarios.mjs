@@ -2807,7 +2807,7 @@ export async function nativeScenarios(app) {
         warmMs,
         workersAfterReopen: after.created,
         cacheChars: after.cacheChars,
-        scope: 'Installed production UI; full-quality real hand, no deal fixture',
+        scope: 'Installed production UI; interactive budget on a real hand, no deal fixture',
       };
     } finally {
       await app.evaluate(() => {

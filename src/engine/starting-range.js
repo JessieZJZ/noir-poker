@@ -20,20 +20,29 @@ for (let a = 0; a < 52; a++)
       startingValue([a, b].map((v) => ({ rank: (v % 13) + 2, suit: Math.floor(v / 13) }))),
     );
 combinations.sort((a, b) => a - b);
-const percentiles = new Map();
-export function startingPercentile(hole) {
-  const [high, low] = hole.map((c) => c.rank).sort((a, b) => b - a);
-  const key = `${high}:${low}:${hole[0].suit === hole[1].suit}`;
-  if (!percentiles.has(key)) {
-    const value = startingValue(hole);
-    let lo = 0,
-      hi = combinations.length;
-    while (lo < hi) {
-      const mid = (lo + hi) >>> 1;
-      if (combinations[mid] <= value) lo = mid + 1;
-      else hi = mid;
+// The class depends only on two ranks and suitedness. Build its exact existing
+// heuristic once; rollout policies must not sort/allocate strings per lookup.
+const percentiles = new Float64Array(450);
+for (let high = 2; high <= 14; high++)
+  for (let low = 2; low <= high; low++)
+    for (let suited = 0; suited < 2; suited++) {
+      const value = startingValue([
+        { rank: high, suit: 0 },
+        { rank: low, suit: suited ? 0 : 1 },
+      ]);
+      let lo = 0,
+        hi = combinations.length;
+      while (lo < hi) {
+        const mid = (lo + hi) >>> 1;
+        if (combinations[mid] <= value) lo = mid + 1;
+        else hi = mid;
+      }
+      percentiles[high * 30 + low * 2 + suited] = (combinations.length - lo) / combinations.length;
     }
-    percentiles.set(key, (combinations.length - lo) / combinations.length);
-  }
-  return percentiles.get(key);
+export function startingPercentile(hole) {
+  const a = hole[0].rank,
+    b = hole[1].rank;
+  return percentiles[
+    Math.max(a, b) * 30 + Math.min(a, b) * 2 + (hole[0].suit === hole[1].suit ? 1 : 0)
+  ];
 }
