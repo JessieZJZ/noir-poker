@@ -1,13 +1,13 @@
 import { after, before, test as nodeTest } from 'node:test';
 import assert from 'node:assert/strict';
 import { chromium } from '@playwright/test';
-import { joinObservedNativeTable } from '../native/observed-entry.mjs';
+import { joinObservedNativeTable, decodeEntryTouch } from '../native/observed-entry.mjs';
 
 let browser,
   page,
-  sorted = false;
+  driverMode = 'WebKit order';
 const dictionary = (value) =>
-  !sorted
+  !driverMode.startsWith('ChromeDriver')
     ? value
     : Array.isArray(value)
       ? value.map(dictionary)
@@ -18,10 +18,22 @@ const dictionary = (value) =>
               .map(([key, item]) => [key, dictionary(item)]),
           )
         : value;
+// Replay the relevant appium-remote-debugger17.5.8 execute_script atom rule:
+// an object with a `document` property is wrapped as a Window reference.
+// This handle shape/value was captured in CI run41062417432, not invented
+// as a zero-event response. Strings bypass this legacy object classifier.
+function webkitAtomValue(value) {
+  if (!value || typeof value !== 'object') return value;
+  if ('document' in value) return { WINDOW: ':wdc:1793367599106' };
+  if (Array.isArray(value)) return value.map(webkitAtomValue);
+  return Object.fromEntries(
+    Object.entries(value).map(([key, item]) => [key, webkitAtomValue(item)]),
+  );
+}
 function test(name, run) {
-  for (const driver of ['WebKit order', 'ChromeDriver sorted dictionaries'])
+  for (const driver of ['WebKit order', 'ChromeDriver sorted dictionaries', 'WebKit Selenium atom'])
     nodeTest(`${name} [${driver}]`, async () => {
-      sorted = driver.startsWith('ChromeDriver');
+      driverMode = driver;
       await run();
     });
 }
@@ -69,7 +81,10 @@ async function harness({ delivery = 'real', ignored = false, stalledDeal = false
     },
     { ignored, stalledDeal },
   );
-  const evaluate = async (fn, value) => dictionary(await page.evaluate(fn, dictionary(value)));
+  const evaluate = async (fn, value) => {
+    const result = await page.evaluate(fn, dictionary(value));
+    return driverMode === 'WebKit Selenium atom' ? webkitAtomValue(result) : dictionary(result);
+  };
   const before = await evaluate(() => window.noir.getState());
   let taps = 0,
     pending;
@@ -180,6 +195,26 @@ test('no click remains a strict failure with public state and visibility diagnos
   assert.equal(h.taps(), 1);
 });
 
+test('malformed or captured WINDOW wire data fails as transport data instead of becoming zero click', async () => {
+  for (const wire of [{ WINDOW: ':wdc:1793367599106' }, '{}', 'not JSON']) {
+    const h = await harness();
+    const app = {
+      ...h.app,
+      async evaluate(fn, value) {
+        const actual = await h.app.evaluate(fn, value);
+        return fn.name === 'readEntryTouch' ? wire : actual;
+      },
+    };
+    await assert.rejects(joinObservedNativeTable(app, h.before), (error) => {
+      assert.ok(error.entryDiagnostics.wireFailure);
+      assert.deepEqual(error.entryDiagnostics.wireFailure.wire, wire);
+      assert.equal(Object.hasOwn(error.entryDiagnostics, 'events'), false);
+      return true;
+    });
+    assert.equal(h.taps(), 1);
+  }
+});
+
 test('trusted click delivery does not excuse a join handler that leaves the hand waiting', async () => {
   const h = await harness({ ignored: true });
   await assert.rejects(joinObservedNativeTable(h.app, h.before), (error) => {
@@ -239,5 +274,70 @@ nodeTest(
       page = previousPage;
       await probe.close();
     }
+  },
+);
+
+nodeTest(
+  'serialized entry traces retain nested document and every event field without Window wrapping',
+  () => {
+    const document = { hidden: false, visibilityState: 'visible', hasFocus: true };
+    const state = {
+      hand: 1,
+      phase: 'playing',
+      entryState: 'playing',
+      hole: ['7♦', '7♥'],
+      pot: 300,
+      players: [{ stack: 20000 }],
+      extraPublicValue: 'preserved',
+    };
+    const payload = {
+      state,
+      document,
+      events: [
+        {
+          type: 'click',
+          target: 'join-table-button',
+          trusted: true,
+          defaultPrevented: false,
+          stateAtEvent: { ...state, hand: 0 },
+          documentAtEvent: document,
+          afterDispatch: state,
+          documentAfterDispatch: document,
+          extraEventField: { document: { diagnostic: true } },
+        },
+      ],
+      lifecycle: [{ detail: { active: true }, state, document }],
+    };
+    assert.deepEqual(webkitAtomValue(payload), { WINDOW: ':wdc:1793367599106' });
+    const wire = webkitAtomValue(JSON.stringify(payload));
+    assert.equal(typeof wire, 'string');
+    assert.deepEqual(decodeEntryTouch(wire), payload);
+    const invalid = [
+      undefined,
+      { WINDOW: ':wdc:1793367599106' },
+      JSON.stringify({ WINDOW: ':wdc:1793367599106' }),
+      'not JSON',
+      '{}',
+      'null',
+      '[]',
+    ];
+    for (const change of [
+      (p) => delete p.events,
+      (p) => (p.events = {}),
+      (p) => (p.lifecycle = {}),
+      (p) => (p.document.hidden = 'false'),
+      (p) => (p.state.hand = '1'),
+      (p) => (p.state.hole = '7♦7♥'),
+      (p) => (p.state.players = {}),
+      (p) => (p.events[0].trusted = 'true'),
+      (p) => delete p.events[0].stateAtEvent,
+      (p) => delete p.events[0].documentAtEvent,
+      (p) => (p.lifecycle[0].detail.active = 'true'),
+    ]) {
+      const copy = structuredClone(payload);
+      change(copy);
+      invalid.push(JSON.stringify(copy));
+    }
+    for (const wire of invalid) assert.throws(() => decodeEntryTouch(wire));
   },
 );
