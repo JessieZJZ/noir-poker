@@ -244,6 +244,11 @@
           <view
             class="hero {{heroFolded ? 'hero-folded' : ''}} {{heroOut ? 'hero-out' : ''}} {{heroRank || heroWinner ? 'has-hero-rank' : ''}}"
             style="{{heroStyle}}"
+            ><text
+              wx:if="{{heroPlaced}}"
+              class="standing-tag {{standingClass}} hero-place-tag"
+              style="{{heroPlaceStyle}}"
+              >{{standingText}}</text
             ><view
               class="hero-cards-wrap {{turnPhase ? 'turn-attention' : ''}} turn-{{turnPhase}} {{premium ? 'premium-start' : ''}}"
               style="width: calc({{heroWidth * 2}}px + var(--hero-card-gap, 7px));"
@@ -259,8 +264,7 @@
                 id="hero-trophy"
                 class="champion-trophy hero-champion-trophy {{crownPending ? 'trophy-pending' : 'trophy-arrive'}}"
                 style="{{heroTrophyStyle}}"
-                ><template is="trophy"
-              /></view
+                ><template is="trophy" /></view
               ><view wx:if="{{premium}}" class="premium-sparks"
                 ><view
                   wx:for="{{premiumSparks}}"
@@ -551,8 +555,7 @@
 /></view>
 <view wx:if="{{ceremony}}" class="trophy-stage" aria-hidden="true"
   ><view class="trophy-stage-rays" /><view class="trophy-flight" style="{{crownStyle}}"
-    ><template is="trophy"
-  /></view
+    ><template is="trophy" /></view
   ><text class="trophy-caption">{{ceremony.caption}}</text></view
 >
 <view wx:if="{{resourceMenuOpen}}" class="resource-dismiss" bindtap="closeResourceMenu" />

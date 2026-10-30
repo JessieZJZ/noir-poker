@@ -1086,6 +1086,7 @@ for (const heroWins of [true, false]) {
     assert.equal(view.ceremony.heroWon, heroWins);
     assert.equal(view.confetti, heroWins, 'Confetti celebrates only the hero');
     assert.equal(view.crownPending, true);
+    assert.equal(view.heroPlaced, false, 'A place waits for the trophy to land');
     assert.equal(sounds.filter((s) => s === (heroWins ? 'champion' : 'crowned')).length, 1);
     assert.equal(view.nextLabel, '下一局');
     assert.equal(view.street, '本局结束');
@@ -1093,6 +1094,7 @@ for (const heroWins of [true, false]) {
     assert.equal(view.standingText, heroWins ? '冠军' : '第2名');
     while (latest().ceremony) assert.ok(timers.runNext());
     assert.equal(latest().crownPending, false);
+    assert.equal(latest().heroPlaced, !heroWins, 'Only a beaten hero shows a place');
     assert.equal(heroWins ? latest().heroCrowned : latest().seats[0].crowned, true);
     controller.show();
     assert.equal(sounds.filter((s) => s === (heroWins ? 'champion' : 'crowned')).length, 1);
@@ -1149,6 +1151,7 @@ test('WeChat ends the game without a champion when the hero busts with bots left
   assert.equal(latest().standingText, `第${latest().over.heroPlace}名`);
   // The grey farewell card tells the place once, with its own cue, then leaves.
   assert.deepEqual(latest().farewell.place, `第${latest().over.heroPlace}名`);
+  assert.equal(latest().heroPlaced, true, 'No champion: the place shows at once');
   assert.equal(sounds.filter((s) => s === 'farewell').length, 1);
   controller.show();
   assert.equal(sounds.filter((s) => s === 'farewell').length, 1);

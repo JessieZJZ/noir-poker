@@ -47,6 +47,9 @@
   position: relative;
   display: inline-block;
 }
+.hero-place-tag[hidden] {
+  display: none;
+}
 /* The hero's trophy stands centred above the hole cards (layout lowers it
    onto them only when the board leaves too little room). */
 .hero-trophy-slot {

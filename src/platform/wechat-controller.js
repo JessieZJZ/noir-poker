@@ -468,6 +468,11 @@ export function createWechatController({
       sessionTitle: game.over ? '本局结束' : '本局练习',
       standingText: game.over ? standingLabel(game.over.heroPlace) : '',
       standingClass: game.over ? standingClass(game.over.heroPlace) : '',
+      // With a champion, the hero's place follows the trophy's landing.
+      heroPlaced:
+        !!game.over &&
+        game.over.championId !== 0 &&
+        (game.over.championId === null || crownedKey === endKey),
       needsRebuy: needsHeroRebuy(game) && !game.over,
       rebuysLeft: heroRebuysLeft(game),
       rebuying: !!rebuying,

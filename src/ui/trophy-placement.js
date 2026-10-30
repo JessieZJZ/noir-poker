@@ -40,3 +40,22 @@ export function heroTrophy(cards, { above }) {
     width = height * TROPHY_ASPECT;
   return { width, height, gap: TROPHY_GAP, drop: Math.max(0, height + 2 * TROPHY_GAP - room) };
 }
+
+// A hero who ends the game without the title sees their final place where a
+// champion's trophy would stand. Sizes are on-screen, then converted to arena
+// units, so a scaled-down table keeps a readable tag; `room` is on-screen too.
+// Past that room it sinks onto the (dimmed) cards rather than over the board.
+export const HERO_PLACE_HEIGHT = 30;
+export function heroPlaceStyle({ room, scale = 1 }) {
+  const drop = Math.max(0, HERO_PLACE_HEIGHT + 2 * TROPHY_GAP - room),
+    px = (value) => `${value / scale}px`;
+  return [
+    `height:${px(HERO_PLACE_HEIGHT)}`,
+    `line-height:${px(HERO_PLACE_HEIGHT - 2)}`,
+    `font-size:${px(16)}`,
+    `padding:0 ${px(14)}`,
+    `border-width:${px(1)}`,
+    `border-radius:${px(8)}`,
+    `bottom:calc(100% + ${px(TROPHY_GAP - drop)})`,
+  ].join(';');
+}

@@ -7,6 +7,7 @@ import {
   setLocalizedHTML,
   setLocalizedAttribute,
 } from '../i18n/index.js';
+import { standingClass, standingLabel } from '../engine/game-records.js';
 import { renderCard } from './cards.js';
 import { portraitContent } from './portraits.js';
 import { SEAT_ANCHORS } from './seat-geometry.js';
@@ -39,6 +40,13 @@ const positionNames = {
 // and twinkling stars. WeChat renders the same class names as views.
 export const TROPHY_MARKUP =
   '<span class="trophy-shape" aria-hidden="true"><span class="trophy-rays"></span><span class="trophy-glow"></span><span class="trophy-handle handle-left"></span><span class="trophy-handle handle-right"></span><span class="trophy-cup"></span><span class="trophy-stem"></span><span class="trophy-base"></span><span class="trophy-spark spark-1"></span><span class="trophy-spark spark-2"></span><span class="trophy-spark spark-3"></span><span class="trophy-spark spark-4"></span></span>';
+// The hero's final place above the hole cards, for a game they did not win.
+export function renderHeroPlace(tag, g, shown) {
+  tag.hidden = !shown;
+  if (!shown) return;
+  tag.className = `standing-tag ${standingClass(g.over.heroPlace)} hero-place-tag`;
+  setLocalizedText(tag, standingLabel(g.over.heroPlace));
+}
 function positionBadge(g, id) {
   if (g.phase === 'idle') return '';
   const role = seatPosition(g, id);
@@ -234,6 +242,7 @@ export function createSnapshotSurface(template, g, { sessionNumber, visible, pee
     g.over?.championId === 0
       ? `<span class="champion-trophy hero-champion-trophy">${TROPHY_MARKUP}</span>`
       : '';
+  renderHeroPlace(query('#hero-place'), g, !!g.over && g.over.championId !== 0);
   query('.hero-name').classList.toggle('is-active', g.actor === 0);
   setLocalizedText(query('#hero-stack'), format(hero.stack));
   const position = seatPosition(g, 0);

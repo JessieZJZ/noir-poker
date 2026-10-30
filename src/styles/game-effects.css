@@ -694,6 +694,17 @@
   background: #173c33;
   color: #8ff0c9;
 }
+/* The hero's final place, above the hole cards, when another player or nobody
+   takes the title. Each platform sets its on-screen size and height above. */
+.hero-place-tag {
+  position: absolute;
+  left: 50%;
+  z-index: 6;
+  box-sizing: border-box;
+  justify-content: center;
+  white-space: nowrap;
+  transform: translateX(-50%);
+}
 
 @media (prefers-reduced-motion: reduce) {
   .premium-spark,

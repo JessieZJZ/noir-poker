@@ -2,9 +2,11 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { compactTableLayout } from '../../src/ui/compact-table-layout.js';
 import {
+  HERO_PLACE_HEIGHT,
   HERO_TROPHY_MIN_SHARE,
   HERO_TROPHY_SHARE,
   TROPHY_ASPECT,
+  heroPlaceStyle,
   heroTrophy,
   seatTrophy,
 } from '../../src/ui/trophy-placement.js';
@@ -90,4 +92,22 @@ test("the hero's trophy shrinks to the room above the hole cards before it sinks
   const tight = heroTrophy(cards, { above: 460 });
   assert.equal(tight.height, 100 * HERO_TROPHY_MIN_SHARE);
   assert.equal(tight.drop, 50 + 12 - 40);
+});
+
+test("the hero's place tag keeps its on-screen size and sinks instead of covering the board", () => {
+  const style = (options) =>
+    Object.fromEntries(
+      heroPlaceStyle(options)
+        .split(';')
+        .map((rule) => rule.split(/:(.*)/s).slice(0, 2)),
+    );
+  // A table scaled to 0.5 doubles every arena size, so the screen size holds.
+  const half = style({ room: 100, scale: 0.5 });
+  assert.equal(half.height, `${HERO_PLACE_HEIGHT * 2}px`);
+  assert.equal(half['font-size'], '32px');
+  assert.equal(half.bottom, 'calc(100% + 12px)');
+  // Exactly enough room: the tag and both gaps fit with no sinking.
+  assert.equal(style({ room: 42 }).bottom, 'calc(100% + 6px)');
+  // 20 too little: it sinks 22 past its gap, onto the cards.
+  assert.equal(style({ room: 22 }).bottom, 'calc(100% + -14px)');
 });

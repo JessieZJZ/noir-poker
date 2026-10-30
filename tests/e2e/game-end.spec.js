@@ -22,6 +22,35 @@ const finishAnimations = () =>
     .getAnimations()
     .filter((animation) => animation.effect?.getComputedTiming().endTime !== Infinity)
     .forEach((animation) => animation.finish());
+// The hero's final place stands undimmed, centred above the hole cards, and
+// never covers the board.
+async function expectHeroPlace(page, label, standing) {
+  const place = page.locator('#hero-place');
+  await expect(place).toBeVisible();
+  await expect(place).toHaveText(label);
+  await expect(place).toHaveClass(standing);
+  const geometry = await place.evaluate((tag) => {
+    const box = (el) => el.getBoundingClientRect(),
+      t = box(tag),
+      cards = box(document.querySelector('#hero-cards')),
+      board = box(document.querySelector('.table-center .board'));
+    let opacity = 1;
+    for (let el = tag; el; el = el.parentElement) opacity *= Number(getComputedStyle(el).opacity);
+    return {
+      centred: Math.abs(t.left + t.width / 2 - (cards.left + cards.width / 2)) < 2,
+      clearOfBoard: t.top >= board.bottom - 1,
+      onCards: t.bottom - cards.top,
+      cardHeight: cards.height,
+      height: t.height,
+      opacity,
+    };
+  });
+  expect(geometry.centred).toBe(true);
+  expect(geometry.clearOfBoard).toBe(true);
+  expect(geometry.onCards).toBeLessThan(geometry.cardHeight * 0.3);
+  expect(geometry.height).toBeCloseTo(30, 0);
+  expect(geometry.opacity).toBe(1);
+}
 test.beforeEach(async ({ page }) => {
   await page.goto('/');
   await page.waitForFunction(() => !!window.qa);
@@ -138,6 +167,8 @@ for (const heroWins of [true, false]) {
     if (heroWins) await expect(page.locator('.confetti-piece')).toHaveCount(112);
     const resting = heroWins ? '.hero-champion-trophy' : '.seat-1 .champion-trophy';
     await expect(page.locator(resting)).toHaveClass(/trophy-pending/);
+    // A beaten hero's place waits for the trophy to land.
+    await expect(page.locator('#hero-place')).toBeHidden();
     await seek(page, '.trophy-stage', 1000);
     await page.screenshot({ path: test.info().outputPath(`trophy-flight-${heroWins}.png`) });
     await page.evaluate(finishAnimations);
@@ -176,6 +207,8 @@ for (const heroWins of [true, false]) {
       clear: true,
       shimmer: ['trophy-glow', 'trophy-rays', 'trophy-spark'],
     });
+    if (heroWins) await expect(page.locator('#hero-place')).toBeHidden();
+    else await expectHeroPlace(page, '第2名', /standing-2/);
     await expect(page.locator('#street-label')).toHaveText('本局结束');
     await expect(page.locator('#next-button')).toHaveText('下一局');
     await expect(page.locator('#reset-button')).toBeHidden();
@@ -193,6 +226,7 @@ for (const heroWins of [true, false]) {
     expect(next.sessionNumber).toBe(session + 1);
     expect(next.hand).toBe(1);
     await expect(page.locator('.champion-trophy')).toHaveCount(0);
+    await expect(page.locator('#hero-place')).toBeHidden();
     await expect(page.locator('#reset-button')).toBeVisible();
     await expect(page.locator('#session-title')).toHaveText('本局练习');
     await page.goto('/#records');
@@ -289,6 +323,7 @@ test('busting after the last refill ends the game with a place and no champion',
   const view = await state(page);
   expect(view.over.championId).toBeNull();
   await expect(page.locator('.trophy-stage, .confetti-layer, .champion-trophy')).toHaveCount(0);
+  await expectHeroPlace(page, `第${view.over.heroPlace}名`, /standing-/);
   // A grey card at the table's centre tells the final place, then leaves.
   const farewell = page.locator('.table-viewport > .farewell-stage');
   await expect(farewell).toHaveCount(1);

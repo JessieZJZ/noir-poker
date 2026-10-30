@@ -12,7 +12,7 @@ import { createWechatController } from '../../src/platform/wechat-controller.js'
 import { recordResult, sessionStanding } from '../../src/engine/game-records.js';
 import { numericWidthScale, numericColumnWidth } from '../../src/ui/numeric-width.js';
 import { entryWelcomeCorridor, entryWelcomeScale } from '../../src/ui/entry-welcome-scale.js';
-import { heroTrophy, seatTrophy } from '../../src/ui/trophy-placement.js';
+import { heroPlaceStyle, heroTrophy, seatTrophy } from '../../src/ui/trophy-placement.js';
 import * as effectLayouts from '../../src/ui/effect-layouts.js';
 import * as ceremonySounds from '../../src/ui/ceremony-sounds.js';
 import { createMusicController } from '../../src/ui/background-music.js';
@@ -145,7 +145,7 @@ function setup(
       if (name.endsWith('/numeric-width.js')) return { numericWidthScale, numericColumnWidth };
       if (name.endsWith('/entry-welcome-scale.js'))
         return { entryWelcomeCorridor, entryWelcomeScale };
-      if (name.endsWith('/trophy-placement.js')) return { heroTrophy, seatTrophy };
+      if (name.endsWith('/trophy-placement.js')) return { heroPlaceStyle, heroTrophy, seatTrophy };
       if (name === './game-effects.js') return loadPageEffects(context.wx);
       if (name === '../../shared/engine/poker.js')
         return { completeBoardForPractice, rankText, evaluate };

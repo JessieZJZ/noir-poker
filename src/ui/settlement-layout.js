@@ -4,7 +4,7 @@ import { railLayout } from './rail-layout.js';
 import { readPlayViewport } from './stable-viewport.js';
 import { numericWidthScale } from './numeric-width.js';
 import { styleFontSize } from './style-font.js';
-import { heroTrophy, seatTrophy } from './trophy-placement.js';
+import { heroPlaceStyle, heroTrophy, seatTrophy } from './trophy-placement.js';
 // Select the closest collision-free position to the upper felt center. Using each
 // public part separately leaves usable space beside a narrow pot or caption.
 export function nearestClearTop(ideal, min, max, blocked) {
@@ -340,12 +340,22 @@ export function createSettlementLayout(arena, { observe = true } = {}) {
   // Rest the champion's trophy where the shared rules choose. Rectangles are
   // read on screen, then sizes are written back in the arena's own units.
   function placeTrophy() {
-    const trophy = arena.querySelector('.champion-trophy');
-    if (!trophy) return;
     const box = arena.getBoundingClientRect(),
       scale = box.width / arena.offsetWidth || 1,
       rect = (el) => el.getBoundingClientRect(),
       visible = (el) => el && !el.hidden && el.offsetWidth > 0 && el.offsetHeight > 0;
+    const standing = arena.querySelector('#hero-place');
+    if (visible(standing)) {
+      const board = arena.querySelector('.table-center .board');
+      standing.style.cssText = heroPlaceStyle({
+        room:
+          rect(arena.querySelector('.hero-area')).top -
+          (visible(board) ? rect(board).bottom : box.top),
+        scale,
+      });
+    }
+    const trophy = arena.querySelector('.champion-trophy');
+    if (!trophy) return;
     if (trophy.matches('.hero-champion-trophy')) {
       const cards = rect(arena.querySelector('.hero-cards')),
         board = arena.querySelector('.table-center .board'),

@@ -21,7 +21,7 @@ const {
   entryWelcomeCorridor,
   entryWelcomeScale,
 } = require('../../shared/ui/entry-welcome-scale.js');
-const { heroTrophy, seatTrophy } = require('../../shared/ui/trophy-placement.js');
+const { heroPlaceStyle, heroTrophy, seatTrophy } = require('../../shared/ui/trophy-placement.js');
 // The waiting message's natural size, measured in DevTools: its button (150px
 // plus padding) and four stacked lines.
 const ENTRY_WELCOME_SIZE = { width: 184, height: 132 };
@@ -617,6 +617,12 @@ module.exports = {
       };
       return {
         ...geometry,
+        heroPlaceStyle: view.heroPlaced
+          ? heroPlaceStyle({
+              room: (hero.top - boardBox.bottom) * fitted.arenaScale,
+              scale: fitted.arenaScale,
+            })
+          : '',
         heroTrophyStyle: heroPlace
           ? `width:${heroPlace.width}px;height:${heroPlace.height}px;left:calc(50% - ${heroPlace.width / 2}px);bottom:calc(100% + ${heroPlace.gap - heroPlace.drop}px);`
           : '',

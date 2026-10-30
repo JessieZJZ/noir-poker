@@ -56,7 +56,7 @@ import { isPremiumStart } from '../engine/starting-hands.js';
 import { standingLabel, standingClass } from '../engine/game-records.js';
 import { recordSnapshots } from '../platform/record-snapshots.js';
 import { createGameEffects } from './game-effects.js';
-import { TROPHY_MARKUP } from './table-scene.js';
+import { TROPHY_MARKUP, renderHeroPlace } from './table-scene.js';
 import {
   ceremonySamples,
   CEREMONY_SAMPLE_RATE,
@@ -107,6 +107,7 @@ const playViewport = createPlayViewport($('.game-surface'), {
     settlementLayout.update();
     fillWaitingInfo();
   },
+  settled: () => settlementLayout.placeTrophy(),
 });
 // While waiting for the seat the action dock is hidden but its height stays
 // reserved, so the table never resizes on joining. The game info card takes
@@ -548,6 +549,15 @@ function render() {
     crowned === 0
       ? `<span class="champion-trophy hero-champion-trophy ${crownPending ? 'trophy-pending' : ''}">${TROPHY_MARKUP}</span>`
       : '';
+  // With a champion, the hero's place follows the trophy's landing.
+  renderHeroPlace(
+    $('#hero-place'),
+    game,
+    !!game.over &&
+      game.over.championId !== 0 &&
+      (game.over.championId === null || crownedKey === endKey),
+  );
+  if (!$('#hero-place').hidden) settlementLayout.placeTrophy();
   $('.hero-area').classList.toggle('hero-out', !!hero.out);
   const heroRank = $('#hero-hand-rank'),
     heroWinner = game.winners.find((w) => w.id === 0),

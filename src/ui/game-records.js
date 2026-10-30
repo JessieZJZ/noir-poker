@@ -272,6 +272,7 @@ export function createGameRecordsView({ records, openReview, openPots, onReturnG
     const layout = createSettlementLayout(surface.querySelector('.arena'), { observe: false });
     historyViewport = createPlayViewport(surface, {
       layout: layout.update,
+      settled: layout.placeTrophy,
     });
     historyViewport.update(snapshot, true);
     preparePortraits(content);

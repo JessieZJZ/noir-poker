@@ -3,7 +3,7 @@ import { playSurfaceTop, readPlayViewport } from './stable-viewport.js';
 import { entryWelcomeCorridor, entryWelcomeScale } from './entry-welcome-scale.js';
 // Keep the whole table in the first screen. Measurements are made at
 // scale 1 before fitting, so collision coordinates never mix CSS/visual pixels.
-export function createPlayViewport(surface, { layout = () => {} } = {}) {
+export function createPlayViewport(surface, { layout = () => {}, settled = () => {} } = {}) {
   const viewport = surface.querySelector('.table-viewport'),
     arena = surface.querySelector('.arena'),
     mobile = matchMedia(COMPACT_PLAY_QUERY);
@@ -167,6 +167,8 @@ export function createPlayViewport(surface, { layout = () => {} } = {}) {
     arena.style.transform = `translate(${x}px, ${y}px) scale(${scale})`;
     arena.style.setProperty('--entry-scale', String(entryScale));
     viewport.scrollTop = 0;
+    // Sizes kept constant on screen need the arena's final scale.
+    settled();
   }
   function schedule() {
     if (destroyed) return;
