@@ -14,6 +14,7 @@ import { numericWidthScale, numericColumnWidth } from '../../src/ui/numeric-widt
 import { entryWelcomeCorridor, entryWelcomeScale } from '../../src/ui/entry-welcome-scale.js';
 import * as effectLayouts from '../../src/ui/effect-layouts.js';
 import * as ceremonySounds from '../../src/ui/ceremony-sounds.js';
+import { createMusicController } from '../../src/ui/background-music.js';
 const pageEffectsSource = readFileSync(
   new URL('../../miniprogram/pages/table/game-effects.js', import.meta.url),
   'utf8',
@@ -283,6 +284,95 @@ function setup(
     wx: context.wx,
   };
 }
+
+function musicNavigationFixture(t) {
+  const fixture = setup(t, { waiting: true });
+  const { page, app, wx } = fixture;
+  const transport = {
+    playing: false,
+    starts: 0,
+    pauses: 0,
+    play() {
+      if (!this.playing) this.starts++;
+      this.playing = true;
+    },
+    pause() {
+      if (this.playing) this.pauses++;
+      this.playing = false;
+    },
+    dispose() {
+      this.playing = false;
+    },
+  };
+  let lifecycle;
+  vm.runInNewContext(readFileSync(new URL('../../miniprogram/app.js', import.meta.url), 'utf8'), {
+    wx,
+    App: (definition) => (lifecycle = definition),
+    require: (name) =>
+      name.endsWith('/wechat-background-music.js')
+        ? {
+            createWechatBackgroundMusic: (_, options) =>
+              createMusicController({ ...options, createPlayer: () => transport }),
+          }
+        : { WECHAT_SETTINGS_KEY: 'noir-wechat-settings-v1' },
+  });
+  lifecycle.onLaunch.call(app);
+  t.after(() => app.noirMusic.dispose());
+  const callbacks = [];
+  const setData = page.setData;
+  page.setData = function (patch, callback) {
+    setData.call(this, patch);
+    if (callback) callbacks.push(callback);
+  };
+  const paint = () => {
+    while (callbacks.length) callbacks.shift()();
+  };
+  return { ...fixture, lifecycle, transport, callbacks, paint };
+}
+
+test('WeChat queued and hidden table paints cannot pause music while browsing records', (t) => {
+  const { page, app, callbacks, transport, paint } = musicNavigationFixture(t);
+  page._controller.setPreference('hints', true);
+  assert.ok(callbacks.length > 0, 'A real table render is still awaiting its paint callback');
+  page.openRecords();
+  page.onHide();
+  paint();
+  assert.equal(app.noirMusic.getState().active, true);
+  assert.equal(transport.playing, true);
+  page._controller.setPreference('hints', false);
+  paint();
+  assert.equal(transport.playing, true, 'Live updates behind a detail page keep music playing');
+  page.onShow();
+  paint();
+  assert.equal(transport.starts, 1, 'Navigating back must not restart the track');
+  assert.equal(transport.pauses, 0);
+  page._controller.setPreference('music', false);
+  paint();
+  page.openRecords();
+  page.onHide();
+  paint();
+  assert.equal(app.noirMusic.getState().enabled, false);
+  assert.equal(transport.playing, false, 'Browsing records must preserve an explicit mute');
+});
+
+test('WeChat delayed page paints cannot override the actual App background lifecycle', (t) => {
+  const { page, app, lifecycle, callbacks, transport, paint } = musicNavigationFixture(t);
+  page._controller.setPreference('hints', true);
+  assert.ok(callbacks.length > 0);
+  // App.onHide may arrive before Page.onHide and before its queued paint.
+  lifecycle.onHide.call(app);
+  paint();
+  assert.equal(app.noirMusic.getState().active, false);
+  assert.equal(transport.playing, false);
+  page._browsingRecords = true;
+  page.onHide();
+  lifecycle.onShow.call(app);
+  paint();
+  assert.equal(app.noirMusic.getState().active, true);
+  assert.equal(transport.playing, true);
+  assert.equal(transport.starts, 2, 'Only foreground return resumes the paused transport');
+  assert.equal(transport.pauses, 1);
+});
 
 test('WeChat publishes the waiting table atomically after the launch artwork', (t) => {
   const { page, definition } = setup(t, { waiting: true });

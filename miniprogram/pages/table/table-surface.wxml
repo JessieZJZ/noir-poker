@@ -1,9 +1,4 @@
 <import src="./table-templates.wxml" />
-<page-meta
-  page-orientation="{{pageOrientation}}"
-  bindresize="onResize"
-  page-style="{{homeLocked ? 'overflow: hidden;' : ''}}"
-/>
 <view class="safe-chrome top-chrome" style="height: {{topInset + 36}}px;" aria-hidden="true" />
 <view class="safe-chrome bottom-chrome" style="height: {{bottomInset}}px;" aria-hidden="true" />
 

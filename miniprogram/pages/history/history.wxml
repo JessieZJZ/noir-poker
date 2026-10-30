@@ -1,3 +1,9 @@
+<page-meta
+  page-orientation="{{pageOrientation}}"
+  bindresize="onResize"
+  page-style="{{homeLocked ? 'overflow: hidden;' : ''}}"
+/>
 <import src="../table/table-templates.wxml" />
 <wxs module="rail" src="../table/raise-rail.wxs" />
+
 <include src="../table/table-surface.wxml" />

@@ -250,9 +250,9 @@ module.exports = {
           countIndex: view.settings.playerCount - 5,
           emotionIndex: ['off', 'subtle', 'lively'].indexOf(view.settings.emotionMode),
         };
-        // A native drag owns its thumb and current caption until change/cancel.
+        // A render-layer drag owns its thumb and caption until commit/cancel.
         // An unrelated public redraw must not restore the last committed amount
-        // or send a controlled value back into the moving native component.
+        // or send a committed value back into the moving render-layer thumb.
         if (this._raiseGesture) {
           delete update.sliderValue;
           delete update.raiseText;
@@ -266,9 +266,10 @@ module.exports = {
         if (Object.keys(patch).length)
           this.setPresentationData(patch, () => {
             this.tightenSeatRanks();
+            // Readiness marks only the UI. App foreground owns music: delayed
+            // table paints behind records must not pause or resume that player.
             if (update.tableReady && !this._readOnlyAttempt && typeof getApp === 'function') {
               getApp().noirTableReady = true;
-              getApp().noirMusic?.setActive?.(!this._hidden && !this._destroyed);
             }
             if (startsCeremony) this.aimCrown(view.ceremony);
           });
