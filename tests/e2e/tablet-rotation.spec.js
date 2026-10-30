@@ -10,9 +10,12 @@ async function prepare(page, size) {
 }
 
 async function assertTabletFrame(page, portrait) {
+  // CSS viewport sizing can settle before the ResizeObserver has refitted
+  // the inner rail. Wait for the complete geometry in the same readiness
+  // check, rather than accepting the outer frame then sampling an interim rail.
   await expect
-    .poll(() =>
-      page.evaluate((portrait) => {
+    .poll(async () => {
+      const frame = await page.evaluate((portrait) => {
         const box = (s) => document.querySelector(s).getBoundingClientRect();
         const surface = box('.game-surface'),
           table = box('.table-viewport'),
@@ -34,8 +37,15 @@ async function assertTabletFrame(page, portrait) {
           fullWidthRail: Math.abs(range.width - presets.width) <= 1,
           alignedBottom: portrait || Math.abs(presets.bottom - actions.bottom) <= 1,
         };
-      }, portrait),
-    )
+      }, portrait);
+      const layout = await page.evaluate(readTableLayout);
+      try {
+        assertTableLayout(layout);
+        return { ...frame, completeRail: true };
+      } catch (error) {
+        return { ...frame, completeRail: false, geometryError: error.message, rail: layout.rail };
+      }
+    })
     .toEqual({
       fillsScreen: true,
       tableNotCollapsed: true,
@@ -45,8 +55,8 @@ async function assertTabletFrame(page, portrait) {
       railAbovePresets: true,
       fullWidthRail: true,
       alignedBottom: true,
+      completeRail: true,
     });
-  assertTableLayout(await page.evaluate(readTableLayout));
 }
 
 for (const hasTouch of [false, true]) {
