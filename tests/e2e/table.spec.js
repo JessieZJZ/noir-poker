@@ -31,12 +31,13 @@ test('review separates lucky bad-price wins from reasonable losses with concise 
       0,
     );
     if (win) {
-      await expect(page.locator('#review-selected-status')).toHaveText('弃牌');
+      await expect(page.locator('#review-selected-status')).toHaveText('建议弃牌');
       await expect(page.locator('#review-practice-focus')).toBeVisible();
       await expect(page.locator('#review-selected-status')).toHaveClass(/consider/);
     } else {
       await page.locator('#review-timeline [data-review-index="3"]').click();
-      await expect(page.locator('#review-selected-status')).toContainText('值得保留');
+      await expect(page.locator('#review-selected-status')).toHaveText(/^建议跟注 /);
+      await expect(page.locator('#review-selected-status')).toHaveClass(/sound/);
       await expect(page.locator('#review-practice-focus')).toBeHidden();
     }
     await expect(page.locator('#review-evidence')).toBeVisible();
@@ -1124,7 +1125,11 @@ test('review completes through real worker with facts and a conditional follow-u
     timeout: 120000,
   });
   expect(await page.locator('#review-evidence li').count()).toBeGreaterThanOrEqual(4);
-  if ((await page.locator('#review-selected-status').textContent()) !== '值得保留') {
+  if (
+    !(await page
+      .locator('#review-selected-status')
+      .evaluate((el) => el.classList.contains('sound')))
+  ) {
     await expect(page.locator('#review-practice-focus')).toBeVisible();
     await expect(page.locator('#review-coach-followup')).not.toBeEmpty();
   }

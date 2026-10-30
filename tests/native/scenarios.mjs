@@ -1165,12 +1165,23 @@ export async function nativeScenarios(app) {
       );
       assert.ok(
         await app.evaluate(() =>
-          [...document.querySelectorAll('.seat-style-label')].every(
-            (tag) =>
-              tag.textContent.trim() &&
-              tag.title &&
-              getComputedStyle(tag).textOverflow === 'ellipsis',
-          ),
+          [...document.querySelectorAll('.seat-style-label')].every((tag) => {
+            const fullName = tag.dataset.fullName,
+              style = getComputedStyle(tag),
+              rect = tag.getBoundingClientRect(),
+              profile = tag.closest('.seat-profile').getBoundingClientRect();
+            return (
+              fullName &&
+              tag.textContent === fullName &&
+              tag.getAttribute('aria-label')?.includes(fullName) &&
+              style.textOverflow !== 'ellipsis' &&
+              style.whiteSpace === 'nowrap' &&
+              tag.scrollWidth <= tag.clientWidth + 1 &&
+              tag.scrollHeight <= tag.clientHeight + 1 &&
+              rect.left >= profile.left - 1 &&
+              rect.right <= profile.right + 1
+            );
+          }),
         ),
         'Named style labels preserve their complete accessible identity',
       );
@@ -3240,7 +3251,7 @@ export async function nativeScenarios(app) {
         '#review-advanced, #review-your-action, #review-suggestion, #review-simulation',
       ).length,
       evidence: document.querySelectorAll('#review-evidence li').length,
-      keep: document.querySelector('#review-selected-status').textContent === '值得保留',
+      keep: document.querySelector('#review-selected-status').classList.contains('sound'),
       focusHidden: document.querySelector('#review-practice-focus').hidden,
       reason: document.querySelector('#review-coach-explanation').textContent,
       keyInfo: document.querySelector('#review-evidence').textContent,
