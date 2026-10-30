@@ -13,6 +13,7 @@ import { pressSelectedAndroidHome } from './immediate-background.mjs';
 import { readActionNoticeSpacing } from '../fixtures/action-notice-spacing.js';
 import { BOT_THINK_LIMITS } from '../../src/engine/bot-timing.js';
 import { readReviewTagGeometry } from '../fixtures/review-tag-geometry.js';
+import { settleObservedNativeHand } from './observed-hand.mjs';
 import {
   PUBLIC_READ_MODEL,
   PUBLIC_READ_WINDOW,
@@ -352,6 +353,9 @@ export async function nativeScenarios(app) {
         ...(error.reviewDiagnostics ? { reviewDiagnostics: error.reviewDiagnostics } : {}),
         ...(error.turnDiagnostics ? { turnDiagnostics: error.turnDiagnostics } : {}),
         ...(error.tooltipDiagnostics ? { tooltipDiagnostics: error.tooltipDiagnostics } : {}),
+        ...(error.settlementDiagnostics
+          ? { settlementDiagnostics: error.settlementDiagnostics }
+          : {}),
       });
       throw error;
     }
@@ -672,14 +676,18 @@ export async function nativeScenarios(app) {
         fits: rect.right <= card.getBoundingClientRect().right,
         height: rect.height,
         oldFooter: Boolean(document.querySelector('.practice-info')),
+        touchTablet: matchMedia(
+          '(min-width: 601px) and (max-width: 1600px) and (min-height: 601px) and (any-pointer: coarse)',
+        ).matches,
       };
     });
-    assert.deepEqual(layout, {
+    const { touchTablet, ...geometry } = layout;
+    assert.deepEqual(geometry, {
       inHeading: true,
       aligned: true,
       rightOfTitle: true,
       fits: true,
-      height: 32,
+      height: touchTablet ? 40 : 32,
       oldFooter: false,
     });
     const before = await app.state();
@@ -2601,17 +2609,10 @@ export async function nativeScenarios(app) {
         return result;
       });
     };
+    const settlementActions = [];
     const finishRealHand = async () => {
       const ready = await waitForNativeHeroTurn(app, { acceptSettled: true });
-      if (!ready.settledBeforeHero) {
-        await app.click('#fold-button');
-        if (await app.visible('#continue-deal-button')) await app.click('#continue-deal-button');
-      }
-      await app.waitFor(
-        async () => (await app.state()).phase === 'done',
-        60000,
-        'The real persistence hand must settle through visible controls',
-      );
+      settlementActions.push(await settleObservedNativeHand(app, ready));
       return app.evaluate(() => {
         const state = window.noir.getState();
         const session = window.noir.getRecords().find((row) => row.number === state.sessionNumber);
@@ -2688,6 +2689,7 @@ export async function nativeScenarios(app) {
       reloaded: { revision: reloaded.revision, totalHands: reloaded.totalHands },
       afterRelaunch: { revision: afterRelaunch.revision, totalHands: afterRelaunch.totalHands },
       stylesPreserved: true,
+      settlementActions,
       scope:
         'Installed production UI: real visible controls and random deals; three settlements including one retry, native Preferences readback and real process relaunch; no injected observations, cards or fixture mode',
     };
@@ -2734,18 +2736,11 @@ export async function nativeScenarios(app) {
     assert.ok(baseline.samples.length <= PUBLIC_READ_WINDOW);
     assert.ok(Number.isSafeInteger(baseline.totalHands));
     assert.ok(Number.isSafeInteger(baseline.revision));
-    const observations = [];
+    const observations = [],
+      settlementActions = [];
     const finishRealHand = async () => {
       const ready = await waitForNativeHeroTurn(app, { acceptSettled: true });
-      if (!ready.settledBeforeHero) {
-        await app.click('#fold-button');
-        if (await app.visible('#continue-deal-button')) await app.click('#continue-deal-button');
-      }
-      await app.waitFor(
-        async () => (await app.state()).phase === 'done',
-        60000,
-        'The real observation hand must settle',
-      );
+      settlementActions.push(await settleObservedNativeHand(app, ready));
       const observed = await app.evaluate(() => {
         const game = window.noir.getState();
         const session = window.noir.getRecords().find((s) => s.number === game.sessionNumber);
@@ -2864,6 +2859,7 @@ export async function nativeScenarios(app) {
       rollback,
       retried,
       next,
+      settlementActions,
       scope:
         'Eleven actual settled UI hands including one retry; natural walks retained; no injected cards, actions, histories or decision snapshots',
     };

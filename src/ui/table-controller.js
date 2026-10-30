@@ -12,6 +12,7 @@ import { soundSamples, SOUND_SAMPLE_RATE, createSoundOutput } from './sound-cues
 import { loadFeedbackPreferences } from './feedback-preferences.js';
 import { createWebBackgroundMusic } from '../platform/web-background-music.js';
 import { createDealGate } from './deal-gate.js';
+import { createHandAdvanceGuard } from './hand-advance.js';
 import {
   renderOpponentSeats,
   renderSeatAction,
@@ -1101,7 +1102,13 @@ function renderPotDetails(details, potGame = game) {
 $('#fold-button').onclick = () => heroAction('fold');
 $('#call-button').onclick = () => heroAction('call');
 $('#raise-button').onclick = () => heroAction('raise', bet);
-$('#next-button').onclick = advanceGame;
+const handAdvance = createHandAdvanceGuard({
+  button: $('#next-button'),
+  token: () => `${epoch}:${game.hand}:${game.replayAttempt || 0}`,
+});
+$('#next-button').onclick = (event) => {
+  if (handAdvance.allow(event)) advanceGame();
+};
 $('#restart-hand-button').onclick = retryHand;
 $('#bet-slider').oninput = (e) => {
   const legal = legalActions(game, 0);
@@ -1619,7 +1626,9 @@ window.addEventListener('pagehide', (event) => {
   void playerObservations.flush();
   backgroundMusic.setActive(false);
   heroTurnAttention.reset();
+  handAdvance.reset();
   if (event.persisted) return;
+  handAdvance.destroy();
   dealGate.cancel();
   backgroundMusic.dispose();
   hintNotification.destroy();
