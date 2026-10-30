@@ -104,6 +104,21 @@ async function harness({ delivery = 'real', ignored = false, stalledDeal = false
         taps++;
         assert.equal(selector, '#join-table-button');
         if (delivery === 'none') return;
+        if (delivery === 'down-only' || delivery === 'cancelled') {
+          const box = await page.locator(selector).boundingBox();
+          const cdp = await page.context().newCDPSession(page);
+          try {
+            await cdp.send('Input.dispatchTouchEvent', {
+              type: 'touchStart',
+              touchPoints: [{ x: box.x + box.width / 2, y: box.y + box.height / 2 }],
+            });
+            if (delivery === 'cancelled')
+              await cdp.send('Input.dispatchTouchEvent', { type: 'touchCancel', touchPoints: [] });
+          } finally {
+            await cdp.detach();
+          }
+          return;
+        }
         if (delivery === 'delayed') {
           pending = new Promise((resolve, reject) =>
             setTimeout(() => realClick().then(resolve, reject), 30),
@@ -133,6 +148,41 @@ async function harness({ delivery = 'real', ignored = false, stalledDeal = false
     },
   };
 }
+
+test('CI63 partial input with only a trusted down remains a failure without a second tap', async () => {
+  const h = await harness({ delivery: 'down-only' });
+  await assert.rejects(joinObservedNativeTable(h.app, h.before), (error) => {
+    const diagnostics = error.entryDiagnostics;
+    assert.match(error.message, /single real join touch/);
+    assert.equal(h.taps(), 1);
+    assert.equal(diagnostics.nativeTapCalls, 1);
+    assert.equal(diagnostics.state.hand, 0);
+    assert.equal(diagnostics.state.phase, 'idle');
+    assert.deepEqual(
+      diagnostics.events.map((event) => [event.type, event.target, event.trusted]),
+      [['pointerdown', 'join-table-button', true]],
+    );
+    return true;
+  });
+});
+
+test('a cancelled real touch is retained in diagnostics and cannot stand in for a join click', async () => {
+  const h = await harness({ delivery: 'cancelled' });
+  await assert.rejects(joinObservedNativeTable(h.app, h.before), (error) => {
+    const diagnostics = error.entryDiagnostics;
+    assert.match(error.message, /single real join touch/);
+    assert.equal(h.taps(), 1);
+    assert.equal(diagnostics.state.hand, 0);
+    assert.deepEqual(
+      diagnostics.events.map((event) => [event.type, event.target, event.trusted]),
+      [
+        ['pointerdown', 'join-table-button', true],
+        ['pointercancel', 'join-table-button', true],
+      ],
+    );
+    return true;
+  });
+});
 
 test('one real join records its click after the handler and waits for the original deal budget', async () => {
   const h = await harness();

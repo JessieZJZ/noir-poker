@@ -48,11 +48,11 @@ function armEntryTouch() {
       state: snapshot(),
       document: documentState(),
     });
-  for (const type of ['pointerdown', 'pointerup', 'click'])
+  for (const type of ['pointerdown', 'pointerup', 'pointercancel', 'click'])
     document.addEventListener(type, input, true);
   document.addEventListener('noir:app-state', lifecycle);
   probe.release = () => {
-    for (const type of ['pointerdown', 'pointerup', 'click'])
+    for (const type of ['pointerdown', 'pointerup', 'pointercancel', 'click'])
       document.removeEventListener(type, input, true);
     document.removeEventListener('noir:app-state', lifecycle);
     for (const timer of timers) clearTimeout(timer);
@@ -133,7 +133,7 @@ export function decodeEntryTouch(wire) {
   for (const event of result.events) {
     record(event, 'event');
     assert.ok(
-      ['pointerdown', 'pointerup', 'click'].includes(event.type),
+      ['pointerdown', 'pointerup', 'pointercancel', 'click'].includes(event.type),
       'Entry trace event.type must be an observed input type',
     );
     assert.ok(

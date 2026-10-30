@@ -15,7 +15,7 @@ import { compareNativePage } from '../tests/native/page-parity.mjs';
 import { createNativeCommand } from './native-transport.mjs';
 import { webDriverRequest } from './native-http.mjs';
 import { nativeBackPage, nativePageReady } from './native-back.mjs';
-import { prepareNativeTouch } from './native-touch.mjs';
+import { prepareNativeTouch, performNativeTouch } from './native-touch.mjs';
 import { nativeAppTarget, assertAndroidTestPackage } from './native-app-target.mjs';
 import { nativeServerArguments } from './native-server.mjs';
 import { iosLaunchProcessId, iosInitialScreenReady } from './native-startup.mjs';
@@ -265,79 +265,8 @@ async function select(selector, value) {
     `Selection did not apply: ${selector}`,
   );
 }
-async function nativeTouch(selector, duration, from = 0.5, to = null, { tap = false } = {}) {
-  const target = await evaluate(
-    (selector, from, to) => {
-      const element = document.querySelector(selector),
-        r = element.getBoundingClientRect(),
-        x = r.x + r.width * from,
-        y = r.y + r.height / 2,
-        hit = document.elementFromPoint(x, y);
-      if (!hit || !element.contains(hit)) throw Error('Native touch target is covered');
-      return {
-        x,
-        y,
-        endX: to === null ? null : r.x + r.width * to,
-        width: innerWidth,
-        height: innerHeight,
-      };
-    },
-    selector,
-    from,
-    to,
-  );
-  const { nativePoint } = await import('./native-pointer.mjs');
-  await command('POST', '/context', { name: 'NATIVE_APP' });
-  try {
-    const elements = await command('POST', '/elements', {
-      using: 'class name',
-      value: platform === 'ios' ? 'XCUIElementTypeWebView' : 'android.webkit.WebView',
-    });
-    const frames = [];
-    for (const element of elements) {
-      const id = element['element-6066-11e4-a52e-4f735466cecf'] ?? element.ELEMENT;
-      frames.push(await command('GET', `/element/${id}/rect`));
-    }
-    const frame = frames.sort((a, b) => b.width * b.height - a.width * a.height)[0];
-    assert.ok(frame, 'The installed app must expose its actual WebView frame');
-    const point = nativePoint(target, target, frame);
-    if (tap && platform === 'android') {
-      // A loaded emulator can stretch W3C down/pause/up into a long press.
-      // Keep this a real device tap, issued atomically by UiAutomator2.
-      await command('POST', '/execute/sync', {
-        script: 'mobile: clickGesture',
-        args: [point],
-      });
-      return;
-    }
-    await command('POST', '/actions', {
-      actions: [
-        {
-          type: 'pointer',
-          id: 'native-summary-touch',
-          parameters: { pointerType: 'touch' },
-          actions: [
-            { type: 'pointerMove', duration: 0, origin: 'viewport', ...point },
-            { type: 'pointerDown', button: 0 },
-            ...(target.endX === null
-              ? [{ type: 'pause', duration }]
-              : [
-                  {
-                    type: 'pointerMove',
-                    duration,
-                    origin: 'viewport',
-                    ...nativePoint({ ...target, x: target.endX }, target, frame),
-                  },
-                ]),
-            { type: 'pointerUp', button: 0 },
-          ],
-        },
-      ],
-    });
-  } finally {
-    await command('POST', '/context', { name: webContext });
-  }
-}
+const nativeTouch = (...args) =>
+  performNativeTouch({ command, evaluate, platform, webContext }, ...args);
 async function nativeTap(selector) {
   // The shared touch path already selects the platform's real WebView class
   // and maps its measured native frame, as used by long presses on both OSes.
