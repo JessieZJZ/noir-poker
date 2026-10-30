@@ -2707,5 +2707,9 @@
   "{0}若再加注，需要同时考虑加注范围和跟注入池的范围。": "Se {0} controrilancia, occorre considerare sia i range di rilancio sia quelli di call.",
   "2-bet 隔离加注至 {0}": "2-bet di isolamento a {0}",
   "2-bet 开池至": "Apertura 2-bet a",
-  "2-bet 隔离加注至": "2-bet di isolamento a"
+  "2-bet 隔离加注至": "2-bet di isolamento a",
+  "建议{0}": "Consiglio: {0}",
+  "这手建议{0}，额外投入 {1}；取值需要{2}愿意支付这个尺度，若它们退出而强牌继续，就不能仅凭底牌级别肯定加注，遇到再次加注也须按新的价格与范围重新决定。": "Si consiglia {0}, investendo altri {1}. Il valore richiede che {2} paghino questa size. Se passano e continuano mani più forti, la forza iniziale da sola non giustifica il rilancio; contro un nuovo rilancio, rivaluta prezzo e range.",
+  "这手建议{0}，额外投入 {1}；只有仍有筹码的已入池对手和其他待回应玩家共同留下足够弃牌空间时，才有施压依据，被继续后仍须按牌力与价格判断。": "Si consiglia {0}, investendo altri {1}. La pressione richiede sufficiente possibilità di fold congiunto da chi è già entrato e da chi deve ancora rispondere; se continuano, rivaluta mano e prezzo.",
+  "这手建议{0}；继续投入需要对手的下注范围里保留足够较弱牌或未成牌诈唬，不能只因有听牌就继续。": "Si consiglia {0}. Per continuare servono abbastanza mani più deboli o bluff senza mano fatta nel range di puntata; un progetto da solo non giustifica ulteriore investimento."
 }

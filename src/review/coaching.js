@@ -27,6 +27,7 @@ import { checkReasoning, checkRisks, madeRedrawReasoning } from './check-reasoni
 import { guaranteedBoardCoaching, closedDrawChance, riverRangeReason } from './strategy-facts.js';
 import { valueDrawNote, flushCompletionNote } from './value-targets.js';
 import { REVIEW_TOPICS as TOPIC, proseReason, unpackProseReason } from './prose-topics.js';
+import { recommendationLabel } from './recommendation-label.js';
 
 // Keep the engine's bet ordinal and legal-action semantics. In coaching,
 // distinguish a first raise over limpers from opening an untouched pot.
@@ -878,11 +879,6 @@ export function coachDecision(s, r) {
   const candidateLabel = actionLabel(s, action.action, action.amount);
   if (candidateLabel.startsWith('2-bet 隔离加注至 ')) action = { ...action, label: candidateLabel };
   const unchanged = same(action, actual);
-  const noFurtherDecision =
-    exhaustsStack(s) ||
-    s.action === 'fold' ||
-    (s.action === 'raise' && s.amount === s.legal.maxRaiseTo) ||
-    (r.metrics.closing && ['call', 'check'].includes(s.action));
   const kind = confirmed
     ? improved && evKind === 'positive'
       ? 'value'
@@ -908,7 +904,6 @@ export function coachDecision(s, r) {
   if (needsComparison)
     action = {
       ...action,
-      summary: '需要比较',
       ...(conditionalCandidate
         ? {
             condition:
@@ -918,6 +913,8 @@ export function coachDecision(s, r) {
           }
         : {}),
     };
+  const guidance = recommendationLabel(s, action, actionLabel(s, action.action, action.amount));
+  action = { ...action, summary: guidance.label };
   const reason = unpackProseReason(
     explanation(s, r, evKind, action, needsComparison ? 'compare' : kind, {
       comparisonOwned: unprovenDraw && !confirmed,
@@ -940,28 +937,26 @@ export function coachDecision(s, r) {
       const suggested = actionLabel(s, action.action, action.amount);
       recommendation =
         unprovenDraw && !confirmed
-          ? '这手需要比较跟注与弃牌，关键是对手的下注范围里有多少未成牌的诈唬，不能只因有听牌就保留跟注。'
-          : kind === 'compare' && ['raise', 'call'].includes(action.action)
-            ? ''
-            : action.action === 'fold'
-              ? `这手建议弃牌，保住行动前剩下的 ${fmt(s.stack)}，不再付出筹码。`
-              : action.action === 'raise'
-                ? conditionalCandidate
-                  ? r.context.tier < 2
-                    ? `可比较${suggested}，额外投入 ${fmt(action.amount - s.bet)}；只有仍有筹码的已入池对手和其他待回应玩家共同留下足够弃牌空间时，才有施压依据，被继续后仍须按牌力与价格判断。`
-                    : `可比较${suggested}，额外投入 ${fmt(action.amount - s.bet)}；取值需要${preflopPayTargets(s)}愿意支付这个尺度，若它们退出而强牌继续，就不能仅凭底牌级别肯定加注，遇到再次加注也须按新的价格与范围重新决定。`
-                  : `这手建议${suggested}，额外投入 ${fmt(action.amount - s.bet)}，${r.context.valuePlan?.primary?.action === 'raise' ? (s.street ? '让较弱成牌付费，并控制这次投入的尺度' : '让较弱起手牌付费，并控制这次投入的尺度') : r.context.draw.outs ? (foldPressure(s).hasAllInOpponent ? '保留补牌机会，施压对象限于仍有筹码的对手' : '保留补牌机会，同时给对手弃牌的压力') : ['pressure-bet', 'large-unbacked-bet'].includes(r.code) ? (foldPressure(s).hasAllInOpponent ? '这次只能争取仍有筹码的对手弃牌，要控制为这个底池付出的后手' : '这次主要争取对手弃牌，要控制为这个底池付出的后手') : s.street ? '让较弱成牌付费，并控制这次投入的尺度' : '让较弱起手牌付费，并控制这次投入的尺度'}。`
-                : action.action === 'check'
-                  ? `这手建议直接过牌，不必下注，${r.context.handClass === 'board' ? '你的底牌没有提高公共牌，先保留平分底池的机会' : '先保留 ' + fmt(s.stack) + ' 后手，不主动放大 ' + fmt(s.pot) + ' 的底池'}。`
-                  : s.legal.callAmount >= s.stack
-                    ? s.action === 'fold'
-                      ? ''
-                      : '这手保留全下跟注，依据是当前价格下的摊牌机会。'
-                    : s.street === 3
-                      ? '这手建议跟注，依据是当前牌力对这条下注范围的摊牌机会。'
-                      : r.code === 'positioned-entry'
-                        ? `这手建议${suggested}，先用较小成本保留翻后位置和改善机会。`
-                        : '这手建议跟注，保留当前牌力和改善后的获池机会。';
+          ? `这手建议${suggested}；继续投入需要对手的下注范围里保留足够较弱牌或未成牌诈唬，不能只因有听牌就继续。`
+          : action.action === 'fold'
+            ? `这手建议弃牌，保住行动前剩下的 ${fmt(s.stack)}，不再付出筹码。`
+            : action.action === 'raise'
+              ? conditionalCandidate
+                ? r.context.tier < 2
+                  ? `这手建议${suggested}，额外投入 ${fmt(action.amount - s.bet)}；只有仍有筹码的已入池对手和其他待回应玩家共同留下足够弃牌空间时，才有施压依据，被继续后仍须按牌力与价格判断。`
+                  : `这手建议${suggested}，额外投入 ${fmt(action.amount - s.bet)}；取值需要${preflopPayTargets(s)}愿意支付这个尺度，若它们退出而强牌继续，就不能仅凭底牌级别肯定加注，遇到再次加注也须按新的价格与范围重新决定。`
+                : `这手建议${suggested}，额外投入 ${fmt(action.amount - s.bet)}，${r.context.valuePlan?.primary?.action === 'raise' ? (s.street ? '让较弱成牌付费，并控制这次投入的尺度' : '让较弱起手牌付费，并控制这次投入的尺度') : r.context.draw.outs ? (foldPressure(s).hasAllInOpponent ? '保留补牌机会，施压对象限于仍有筹码的对手' : '保留补牌机会，同时给对手弃牌的压力') : ['pressure-bet', 'large-unbacked-bet'].includes(r.code) ? (foldPressure(s).hasAllInOpponent ? '这次只能争取仍有筹码的对手弃牌，要控制为这个底池付出的后手' : '这次主要争取对手弃牌，要控制为这个底池付出的后手') : s.street ? '让较弱成牌付费，并控制这次投入的尺度' : '让较弱起手牌付费，并控制这次投入的尺度'}。`
+              : action.action === 'check'
+                ? `这手建议直接过牌，不必下注，${r.context.handClass === 'board' ? '你的底牌没有提高公共牌，先保留平分底池的机会' : '先保留 ' + fmt(s.stack) + ' 后手，不主动放大 ' + fmt(s.pot) + ' 的底池'}。`
+                : s.legal.callAmount >= s.stack
+                  ? s.action === 'fold'
+                    ? ''
+                    : '这手保留全下跟注，依据是当前价格下的摊牌机会。'
+                  : s.street === 3
+                    ? '这手建议跟注，依据是当前牌力对这条下注范围的摊牌机会。'
+                    : r.code === 'positioned-entry'
+                      ? `这手建议${suggested}，先用较小成本保留翻后位置和改善机会。`
+                      : '这手建议跟注，保留当前牌力和改善后的获池机会。';
       if (
         s.street === 0 &&
         s.action === 'raise' &&
@@ -1071,27 +1066,20 @@ export function coachDecision(s, r) {
   return {
     kind,
     recommendedAction: { ...action },
-    label:
+    assessmentLabel:
       kind === 'keep'
         ? '值得保留'
         : needsComparison
           ? '需要比较'
           : actionLabel(s, action.action, action.amount),
+    label: guidance.label,
+    recommendationConditional: needsComparison,
     explanation: conciseReason,
     paragraphs,
     paragraphParts: paragraphParts || paragraphs.map((text) => [text]),
     coveredTopics: [...coveredTopics],
-    suggestedAction:
-      needsComparison && action.action !== 'fold'
-        ? `比较${actionLabel(s, action.action, action.amount)}`
-        : actionLabel(s, action.action, action.amount),
-    suggestion: needsComparison
-      ? '需要比较'
-      : unchanged
-        ? s.street === 3 || noFurtherDecision
-          ? '保留这步，未确认更好的选择'
-          : '保留这步，重点调整后续打法'
-        : actionLabel(s, action.action, action.amount),
+    suggestedAction: guidance.actionText,
+    suggestion: guidance.label,
     followUp,
     evKind,
     evText,

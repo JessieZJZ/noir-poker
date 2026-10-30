@@ -1,5 +1,6 @@
 import { compactChips } from '../engine/chip-format.js';
 import { chipUnitOf } from '../engine/bet-sizing.js';
+import { recommendationLabel } from './recommendation-label.js';
 
 // The engine already partitioned eligible pots and refunds. Flooring each
 // split gives a conservative bound, without duplicating odd-chip settlement.
@@ -40,16 +41,18 @@ export function guaranteedBoardCoaching(s, r) {
       ? '可以免费过牌，保留确定的分池份额。'
       : '因此应保留跟注，不必再猜对手是价值下注还是诈唬。',
   ];
-  const label = kept ? '值得保留' : action.action === 'check' ? '过牌' : '跟注';
+  const recommendation = recommendationLabel(s, action);
   return {
     kind: kept ? 'keep' : 'improve',
-    recommendedAction: action,
-    label,
+    recommendedAction: { ...action, summary: recommendation.label },
+    label: recommendation.label,
+    assessmentLabel: kept ? '值得保留' : action.action === 'check' ? '过牌' : '跟注',
+    recommendationConditional: false,
     paragraphs: [r.context.matchups.text, '复盘分析总结', facts.join('')],
     paragraphParts: [[r.context.matchups.text], ['复盘分析总结'], facts],
     explanation: facts.join(''),
-    suggestedAction: action.action === 'check' ? '过牌' : '跟注',
-    suggestion: label,
+    suggestedAction: recommendation.actionText,
+    suggestion: recommendation.label,
     followUp: '按有资格分池的份额和新增成本判断，不能把确定分池误当作独赢整个底池。',
     evKind: g.minimum > g.cost ? 'positive' : 'uncertain',
     evText: '确定可分回的筹码不少于本次跟注成本。',

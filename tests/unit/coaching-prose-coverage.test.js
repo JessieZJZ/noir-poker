@@ -165,11 +165,12 @@ test('actual all-in call states the remaining-card entitlement without restating
   assert.ok(r.coveredTopics.includes(TOPIC.CLOSURE));
 });
 
-test('an uncertain draw has one explicit call-versus-fold comparison owner', () => {
+test('an uncertain draw names the call and its range premise once', () => {
   const s = scene({ board: 'Ts 3c 2c' });
   const r = review(s, true, { metrics: { equityLow: 0.1 } }),
     text = summary(r);
-  assert.match(text, /这手需要比较跟注与弃牌/);
+  assert.match(text, /这手建议跟注.*下注范围里保留足够较弱牌或未成牌诈唬/);
+  assert.equal(text.match(/不能只因有听牌就继续/g)?.length, 1);
   assert.doesNotMatch(text, /仅凭这些补牌还不能确认跟注划算，需要重新比较跟注与弃牌/);
 });
 

@@ -152,7 +152,7 @@ test('all-in opponents remove invented river bluff space and expensive call labe
   s.board = cards('Qs Jd 9c 8h 2s');
   s.street = 3;
   const costly = analyzeDecision(s, { trials: 120 });
-  assert.equal(costly.coaching.label, '弃牌');
+  assert.equal(costly.coaching.label, '建议弃牌');
   assert.equal(costly.coaching.suggestedAction, '弃牌');
 });
 test('bot explanations separate made hand and draw without a numeric reference module', () => {

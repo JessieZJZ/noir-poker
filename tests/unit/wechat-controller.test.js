@@ -648,7 +648,8 @@ test('WeChat review grades only the public before-action snapshot and keeps it d
   );
   assert.equal('title' in report, false);
   assert.equal('summary' in report, false);
-  assert.ok(report.steps[0].suggestion);
+  assert.match(report.steps[0].label, /^建议(?:弃牌|过牌|跟注|全下|短全下|加注|下注)/);
+  assert.equal(report.steps[0].suggestion, report.steps[0].label);
 });
 
 test('fresh WeChat settings use five players and publish disabled controls before the hero turn', (t) => {

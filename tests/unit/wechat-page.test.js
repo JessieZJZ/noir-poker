@@ -796,6 +796,8 @@ test('WeChat Page presents completed shared review copy and per-decision advice'
   assert.equal(report.steps.length, 1);
   for (const field of ['street', 'actual', 'label', 'suggestion', 'reason', 'followUp'])
     text(report.steps[0][field]);
+  assert.match(report.steps[0].label, /^建议(?:弃牌|过牌|跟注|全下|短全下|加注|下注)/);
+  assert.equal(report.steps[0].suggestion, report.steps[0].label);
   assert.equal(report.steps[0].ev, undefined);
   assert.ok(Array.isArray(report.activity));
   // The hand activity opens by default and still folds.

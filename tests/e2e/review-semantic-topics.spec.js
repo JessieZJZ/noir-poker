@@ -29,7 +29,7 @@ test('an alternative preflop call shows its price and does not promise that the 
   await expect(summary).not.toContainText('你身后还有 5 人等待行动');
   await expect(summary).toContainText('重新决定是否继续');
   await expect(summary).not.toContainText('这手建议跟注，保留当前牌力');
-  await expect(page.locator('#review-selected-status')).toHaveText('需要比较');
+  await expect(page.locator('#review-selected-status')).toHaveText('建议跟注 200');
 });
 
 test('a live third player retains both current-round repricing and later-street cost in review', async ({

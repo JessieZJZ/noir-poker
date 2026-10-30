@@ -77,7 +77,11 @@ test('a value-bet recommendation explains checking as a tradeoff, rather than fi
   const r = review(s, { code: 'value-check', action: { action: 'raise', amount: 1300 } });
   const c = coachDecision(s, r),
     text = summary(c);
-  assert.deepEqual(c.recommendedAction, { action: 'raise', amount: 1300 });
+  assert.deepEqual(c.recommendedAction, {
+    action: 'raise',
+    amount: 1300,
+    summary: '建议下注至 1.3K',
+  });
   assert.match(text, /过牌.*但也可能少收.*较弱成牌/);
   assert.match(text, /这些风险不等于必须放弃取值/);
   assert.match(text, /这手建议下注至 1.3K/);
@@ -289,9 +293,10 @@ for (const [code, configuration, candidate] of [
     if (code === 'dangerous-value-shove')
       assert.match(text, /一对或两对.*底池的 2.8 倍.*较小下注.*整笔全下/);
     if (code === 'undersized-value-bet') {
-      assert.deepEqual(result.recommendedAction, { ...candidate, summary: '需要比较' });
-      assert.equal(result.label, '需要比较');
-      assert.equal(result.suggestion, '需要比较');
+      assert.deepEqual(result.recommendedAction, { ...candidate, summary: '建议下注至 200' });
+      assert.equal(result.assessmentLabel, '需要比较');
+      assert.equal(result.label, '建议下注至 200');
+      assert.equal(result.suggestion, result.label);
       assert.match(text, /保留原下注作为比较基准.*尚未确认它更好/);
     }
     if (code === 'dirty-draw-bet')

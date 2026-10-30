@@ -31,8 +31,13 @@ test('draw review connects the full public line and keeps only the requested mod
       '#review-public-actions, #review-step-prev, #review-step-next, [data-opponent-nav]',
     ),
   ).toHaveCount(0);
-  const kept = await page.locator('#review-selected-status').textContent();
-  if (kept === '值得保留') await expect(page.locator('#review-practice-focus')).toBeHidden();
+  const kept = await page
+    .locator('#review-selected-status')
+    .evaluate((el) => el.classList.contains('sound'));
+  await expect(page.locator('#review-selected-status')).toHaveText(
+    /^建议(?:弃牌|过牌|跟注|全下|加注|下注)/,
+  );
+  if (kept) await expect(page.locator('#review-practice-focus')).toBeHidden();
   else await expect(page.locator('#review-practice-focus')).toBeVisible();
   expect(
     await page.locator('#review-dialog').evaluate((el) => el.scrollWidth - el.clientWidth),
@@ -84,7 +89,8 @@ test('reported 52s shove and TT call explain actual cards, size and facing actio
     /一对|非坚果听牌|先前跟注|单看一张高牌|依据仍受对手继续范围限制/,
   );
   await expect(page.locator('#review-evidence')).not.toContainText(/40(?:\.0)?%/);
-  await expect(page.locator('#review-selected-status')).toHaveText('需要比较');
+  await expect(page.locator('#review-selected-status')).toHaveText(/^建议(?:弃牌|跟注|加注)/);
+  await expect(page.locator('#review-selected-status')).toHaveClass(/consider/);
   await expect(page.locator('#review-practice-focus')).toBeVisible();
   await info.attach('reported-52s-shove', {
     body: await page.screenshot(),

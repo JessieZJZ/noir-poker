@@ -119,11 +119,12 @@ test('gutshot advice and keep/compare/fold labels follow the same evidence, with
   const s = reportedGutshotCall();
   const r = analyzeDecision(s, options);
   assert.equal(r.draw.outs, 4);
-  assert.equal(r.coaching.label, '需要比较');
-  assert.equal(r.coaching.suggestion, '需要比较');
+  assert.equal(r.coaching.assessmentLabel, '需要比较');
+  assert.equal(r.coaching.label, '建议跟注 520K');
+  assert.equal(r.coaching.suggestion, r.coaching.label);
   assert.match(summary(r.coaching), /A 落下.*顶对/);
-  assert.match(summary(r.coaching), /这手需要比较跟注与弃牌/);
-  assert.doesNotMatch(summary(r.coaching), /这手建议跟注|成牌后再赢筹码。|同花听牌|；/);
+  assert.match(summary(r.coaching), /这手建议跟注.*下注范围.*诈唬/);
+  assert.doesNotMatch(summary(r.coaching), /成牌后再赢筹码。|同花听牌/);
   const positive = structuredClone(r);
   positive.status = 'sound';
   positive.simulation = null;
@@ -135,13 +136,14 @@ test('gutshot advice and keep/compare/fold labels follow the same evidence, with
     uncertainty: 0.01,
   };
   const kept = coachDecision(s, positive);
-  assert.equal(kept.label, '值得保留');
+  assert.equal(kept.assessmentLabel, '值得保留');
+  assert.equal(kept.label, '建议跟注 520K');
   assert.match(summary(kept), /综合当前牌力.*跟注有继续依据/);
   assert.doesNotMatch(summary(kept), /还不能确认跟注划算/);
   const negative = structuredClone(positive);
   negative.metrics.randomEV = negative.metrics.weightedEV = -300000;
   const fold = coachDecision(s, negative);
-  assert.equal(fold.label, '弃牌');
+  assert.equal(fold.label, '建议弃牌');
   assert.match(summary(fold), /不足以支持.*建议弃牌/);
   const hidden = structuredClone(s);
   Object.defineProperty(hidden.players[1], 'hole', {

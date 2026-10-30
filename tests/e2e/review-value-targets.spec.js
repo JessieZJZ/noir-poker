@@ -6,7 +6,8 @@ import {
   shortFlushShove,
   finishValueGame,
 } from '../fixtures/review-value-targets.js';
-const output = '.artifacts/review-value-targets-2026-10-25/web';
+const output =
+  process.env.NOIR_REVIEW_ARTIFACT_DIR || '.artifacts/review-value-targets-2026-10-25/web';
 async function open(page, make, key) {
   const row = make(),
     snapshot = row[key],
@@ -39,7 +40,8 @@ test('the turn review explains the completed diamond draw and compares a smaller
     summary = body.locator('.review-analysis-heading ~ p').first();
   await expect(summary).toContainText(/第三张方块.*两张方块.*已成同花/);
   await expect(summary).toContainText('过牌或较小下注');
-  await expect(page.locator('#review-selected-status')).not.toHaveText('值得保留');
+  await expect(page.locator('#review-selected-status')).toHaveClass(/consider/);
+  await expect(page.locator('#review-selected-status')).toHaveText(/^建议(?:过牌|下注)/);
   await expect(summary).not.toContainText(/这次拿出 1.21M|强牌可比较价值全下|只有更强/);
   await summary.scrollIntoViewIfNeeded();
   await mkdir(output, { recursive: true });

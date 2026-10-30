@@ -2710,5 +2710,9 @@
   "{0}若再加注，需要同时考虑加注范围和跟注入池的范围。": "Si {0} resube, debe considerar tanto el rango de subida como el de quienes pagaron.",
   "2-bet 隔离加注至 {0}": "2-bet de aislamiento hasta {0}",
   "2-bet 开池至": "2-bet de apertura hasta",
-  "2-bet 隔离加注至": "2-bet de aislamiento hasta"
+  "2-bet 隔离加注至": "2-bet de aislamiento hasta",
+  "建议{0}": "Consejo: {0}",
+  "这手建议{0}，额外投入 {1}；取值需要{2}愿意支付这个尺度，若它们退出而强牌继续，就不能仅凭底牌级别肯定加注，遇到再次加注也须按新的价格与范围重新决定。": "Se recomienda {0}, invirtiendo {1} más. El valor requiere que {2} paguen este tamaño. Si se retiran y continúan manos más fuertes, la fuerza inicial no basta para justificar la subida; ante otra resubida, reevalúa precio y rango.",
+  "这手建议{0}，额外投入 {1}；只有仍有筹码的已入池对手和其他待回应玩家共同留下足够弃牌空间时，才有施压依据，被继续后仍须按牌力与价格判断。": "Se recomienda {0}, invirtiendo {1} más. La presión requiere suficiente probabilidad conjunta de abandono de quienes ya entraron y de los que aún deben responder; si continúan, vuelve a valorar la mano y el precio.",
+  "这手建议{0}；继续投入需要对手的下注范围里保留足够较弱牌或未成牌诈唬，不能只因有听牌就继续。": "Se recomienda {0}. Continuar requiere suficientes manos más débiles o faroles no completados en el rango de apuestas; tener un proyecto no basta para invertir más."
 }
