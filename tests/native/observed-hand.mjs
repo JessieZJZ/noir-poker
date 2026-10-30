@@ -281,7 +281,11 @@ export async function tapObservedAction(app, selector, intended, deadline = Date
   }
 }
 
-export async function settleObservedNativeHand(app, ready) {
+export async function settleObservedNativeHand(app, ready, { mode = 'accelerated' } = {}) {
+  assert.ok(
+    ['natural', 'accelerated'].includes(mode),
+    'Settlement mode must be explicit and supported',
+  );
   const initial = await app.state(),
     intended = identity(initial),
     deadline = Date.now() + 60000,
@@ -308,7 +312,12 @@ export async function settleObservedNativeHand(app, ready) {
           // A settled hand needs no optional practice-board tap. Never mistake
           // the replacement next-hand control for the old continue control.
           if (state.phase === 'done') return { settled: true };
-          if (!continued && state.canContinue && (await app.visible('#continue-deal-button')))
+          if (
+            mode === 'accelerated' &&
+            !continued &&
+            state.canContinue &&
+            (await app.visible('#continue-deal-button'))
+          )
             return { continue: true };
           return false;
         },
@@ -325,13 +334,14 @@ export async function settleObservedNativeHand(app, ready) {
       continued = true;
       actions.push(await tapObservedAction(app, '#continue-deal-button', intended, deadline));
     }
-    return { intended, actions, observations, budgetMs: 60000 };
+    return { intended, mode, actions, observations, budgetMs: 60000 };
   } catch (error) {
     error.settlementDiagnostics = {
       ...error.settlementDiagnostics,
       intended,
       actions,
       observations,
+      mode,
       budgetMs: 60000,
     };
     throw error;

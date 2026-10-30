@@ -15,6 +15,7 @@ import { readActionNoticeSpacing } from '../fixtures/action-notice-spacing.js';
 import { BOT_THINK_LIMITS } from '../../src/engine/bot-timing.js';
 import { readReviewTagGeometry } from '../fixtures/review-tag-geometry.js';
 import { settleObservedNativeHand } from './observed-hand.mjs';
+import { joinObservedNativeTable } from './observed-entry.mjs';
 import {
   PUBLIC_READ_MODEL,
   PUBLIC_READ_WINDOW,
@@ -371,6 +372,7 @@ export async function nativeScenarios(app) {
         ...(error.settlementDiagnostics
           ? { settlementDiagnostics: error.settlementDiagnostics }
           : {}),
+        ...(error.entryDiagnostics ? { entryDiagnostics: error.entryDiagnostics } : {}),
       });
       throw error;
     }
@@ -516,18 +518,13 @@ export async function nativeScenarios(app) {
     });
     // The button is already visible. Use a real coordinate tap; WebDriver's
     // element click may scroll the page before tapping on iOS.
-    await app.nativeTap('#join-table-button');
-    const during = await app.state();
+    const entryTouch = await joinObservedNativeTable(app, before);
+    const during = entryTouch.during;
     assert.equal(during.hand, before.hand + 1);
     assert.equal(during.hole.length, 2);
     assert.equal(
       during.players.reduce((sum, player) => sum + player.stack, 0) + during.pot,
       before.players.reduce((sum, player) => sum + player.stack, 0),
-    );
-    await app.waitFor(
-      async () => (await app.state()).entryState === 'playing',
-      10000,
-      'Visible entry deal must finish',
     );
     const stability = await app.evaluate(() => {
       const monitor = window.__entryStability;
@@ -626,6 +623,7 @@ export async function nativeScenarios(app) {
       musicBeforeFirstTouch: music,
       chrome,
       during,
+      entryTouch,
       continued,
       paused,
       foreground,
@@ -2620,7 +2618,7 @@ export async function nativeScenarios(app) {
     const settlementActions = [];
     const finishRealHand = async () => {
       const ready = await waitForNativeHeroTurn(app, { acceptSettled: true });
-      settlementActions.push(await settleObservedNativeHand(app, ready));
+      settlementActions.push(await settleObservedNativeHand(app, ready, { mode: 'natural' }));
       return app.evaluate(() => {
         const state = window.noir.getState();
         const session = window.noir.getRecords().find((row) => row.number === state.sessionNumber);
@@ -2748,7 +2746,7 @@ export async function nativeScenarios(app) {
       settlementActions = [];
     const finishRealHand = async () => {
       const ready = await waitForNativeHeroTurn(app, { acceptSettled: true });
-      settlementActions.push(await settleObservedNativeHand(app, ready));
+      settlementActions.push(await settleObservedNativeHand(app, ready, { mode: 'natural' }));
       const observed = await app.evaluate(() => {
         const game = window.noir.getState();
         const session = window.noir.getRecords().find((s) => s.number === game.sessionNumber);
@@ -3177,7 +3175,7 @@ export async function nativeScenarios(app) {
   });
   await check('review-hand-groups-two-columns', async () => {
     const ready = await waitForNativeHeroTurn(app, { advanceSettled: true });
-    const settlement = await settleObservedNativeHand(app, ready);
+    const settlement = await settleObservedNativeHand(app, ready, { mode: 'natural' });
     await app.click('#review-hand-button');
     try {
       await waitForNativeReview(app);

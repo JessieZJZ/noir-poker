@@ -159,6 +159,64 @@ test('an unfinished folded hand continues once through the real control within t
   assert.deepEqual(await h.app.state(), evidence.actions.at(-1).state);
 });
 
+test('natural mode folds once and waits for real same-hand settlement without reading or tapping continue', async () => {
+  const h = await harness();
+  await page.evaluate(() => {
+    const fold = document.querySelector('#fold-button');
+    const original = fold.onclick;
+    fold.onclick = (event) => {
+      original(event);
+      setTimeout(() => (window.current.phase = 'done'), 30);
+    };
+  });
+  const app = {
+    ...h.app,
+    visible() {
+      throw Error('Natural mode must not inspect an optional continue control');
+    },
+  };
+  const evidence = await settleObservedNativeHand(
+    app,
+    { settledBeforeHero: false },
+    { mode: 'natural' },
+  );
+  assert.equal(evidence.mode, 'natural');
+  assert.equal(evidence.budgetMs, 60000);
+  assert.deepEqual(h.taps, ['#fold-button']);
+  assert.equal(evidence.actions[0].events.find((event) => event.type === 'click').trusted, true);
+  assert.equal(evidence.observations.at(-1).phase, 'done');
+  assert.deepEqual(evidence.intended, intended);
+});
+
+test('natural mode preserves the original finite budget and never accelerates or retaps a stalled hand', async () => {
+  const h = await harness();
+  let settlementBudget;
+  const app = {
+    ...h.app,
+    async waitFor(predicate, budget, message) {
+      if (!message.includes('original 60-second budget'))
+        return h.app.waitFor(predicate, budget, message);
+      settlementBudget = budget;
+      for (let tick = 0; tick < 3; tick++) assert.equal(await predicate(), false);
+      throw Error(message);
+    },
+    visible() {
+      throw Error('Natural mode must not inspect an optional continue control');
+    },
+  };
+  await assert.rejects(
+    settleObservedNativeHand(app, { settledBeforeHero: false }, { mode: 'natural' }),
+    (error) => {
+      assert.match(error.message, /original 60-second budget/);
+      assert.equal(error.settlementDiagnostics.budgetMs, 60000);
+      assert.equal(error.settlementDiagnostics.mode, 'natural');
+      return true;
+    },
+  );
+  assert.ok(settlementBudget > 0 && settlementBudget <= 60000);
+  assert.deepEqual(h.taps, ['#fold-button']);
+});
+
 test('the passive capture probe reads the standard event prevention after the real onclick handler', async () => {
   const h = await harness();
   await page.evaluate(() => {
@@ -489,7 +547,7 @@ test('settlement never accepts a newly opened hand as the original completed sna
     },
   };
   await assert.rejects(
-    settleObservedNativeHand(app, { settledBeforeHero: true }),
+    settleObservedNativeHand(app, { settledBeforeHero: true }, { mode: 'natural' }),
     /Settlement must stay on the intended hand/,
   );
   assert.deepEqual(h.taps, []);
