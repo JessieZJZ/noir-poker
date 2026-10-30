@@ -31,6 +31,9 @@ before(async () => {
 });
 after(async () => browser?.close());
 async function harness({ delivery = 'real', ignored = false, stalledDeal = false } = {}) {
+  // setContent retains the Window and its pending timers. Navigation gives
+  // every fake game a fresh document before installing its own state/handler.
+  await page.goto('about:blank');
   await page.setContent(
     '<button id="join-table-button" style="margin:40px;width:160px;height:44px">Join</button><button id="other">Other</button>',
   );
@@ -204,3 +207,37 @@ test('a stalled deal fails within the same total budget without another native t
   assert.equal(h.budgets.length, 2);
   assert.ok(h.budgets[1] <= h.budgets[0]);
 });
+
+nodeTest(
+  'fresh fixture documents prevent a prior30ms timer from falsely completing a stalled deal',
+  async () => {
+    const previousPage = page;
+    const probe = await browser.newPage();
+    page = probe;
+    try {
+      await probe.clock.install({ time: new Date('2026-10-30T00:00:00Z') });
+      await probe.clock.pauseAt(new Date('2026-10-30T00:00:01Z'));
+      await probe.setContent('<button>Previous fixture</button>');
+      await probe.evaluate(() => {
+        window.current = { entryState: 'dealing' };
+        setTimeout(() => (window.current.entryState = 'playing'), 30);
+      });
+      const h = await harness({ stalledDeal: true });
+      const app = {
+        ...h.app,
+        async nativeTap(selector) {
+          await h.app.nativeTap(selector);
+          // Precisely fire any old fixture timer after the new stalled handler,
+          // without changing its real timeout or letting timing luck hide a leak.
+          await probe.clock.runFor(31);
+        },
+      };
+      await assert.rejects(joinObservedNativeTable(app, h.before), /original10-second budget/);
+      assert.equal(await probe.evaluate(() => window.current.entryState), 'dealing');
+      assert.equal(h.taps(), 1);
+    } finally {
+      page = previousPage;
+      await probe.close();
+    }
+  },
+);
