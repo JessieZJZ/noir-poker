@@ -177,7 +177,9 @@ for (const heroWins of [true, false]) {
     await expect(page.locator('.champion-trophy')).toHaveCount(1);
     // The trophy rests clear of its champion: centred above the hero's hole
     // cards, or beside the bot's profile on its roomier side, and it shimmers.
-    const placement = await page.locator(resting).evaluate((trophy) => {
+    const placement = await page.locator(resting).evaluate(async (trophy) => {
+      // Measure the resting size, not the landing's oversized first frames.
+      await Promise.all(trophy.getAnimations().map((animation) => animation.finished));
       const box = (el) => el.getBoundingClientRect();
       const t = box(trophy);
       const animations = trophy
