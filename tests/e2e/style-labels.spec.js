@@ -87,6 +87,50 @@ for (const [width, height] of sizes) {
     }
   });
 }
+test('every style stays readable on nine-seat phone tables in every locale', async ({
+  page,
+}, info) => {
+  test.skip(info.project.name === 'mobile', 'Viewport matrix is explicit; do not duplicate it');
+  for (const [width, height] of [
+    [360, 800],
+    [390, 844],
+    [412, 924],
+  ]) {
+    await page.setViewportSize({ width, height });
+    await page.goto('/');
+    await page.waitForFunction(() => !!window.qa);
+    await page.evaluate(() => document.fonts.ready);
+    for (let offset = 0; offset < profiles.length; offset += 8) {
+      await page.evaluate(
+        (styles) => {
+          window.qa.recordsStart({ count: 9, styles });
+          window.qa.stop();
+        },
+        Array.from({ length: 8 }, (_, i) => profiles[(offset + i) % profiles.length]),
+      );
+      for (const locale of [
+        'en',
+        'de',
+        'fr',
+        'ru',
+        'ja',
+        'ko',
+        'es',
+        'it',
+        'pt',
+        'zh-TW',
+        'zh-CN',
+      ]) {
+        await page.locator('#language-select').evaluate((el, value) => {
+          el.value = value;
+          el.dispatchEvent(new Event('change'));
+        }, locale);
+        await expect(page.locator('html')).toHaveAttribute('lang', locale);
+        await expect.poll(() => page.evaluate(styleTagFailures, { minimumFont: 8 })).toEqual([]);
+      }
+    }
+  }
+});
 test('localized styles fit one line completely and holding a label never opens an overlay', async ({
   page,
 }) => {
