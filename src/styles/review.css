@@ -75,6 +75,8 @@
 }
 .review-dialog {
   width: min(980px, calc(100% - 32px));
+  /* Keep the centered tabs still while fast worker results replace content. */
+  height: 90dvh;
   max-height: 90dvh;
   overflow-y: auto;
   padding: 28px;
@@ -517,8 +519,11 @@
   }
   .review-dialog {
     padding: 20px 18px;
+    height: 92dvh;
     max-height: 92dvh;
     width: calc(100% - 20px);
+    /* The modal dialog's default max-width would cap it 18px narrower. */
+    max-width: none;
     border-radius: 14px;
   }
   .review-title-row {
@@ -909,6 +914,24 @@
 }
 
 /* Analysis headings share the gold treatment in both perspectives. */
+.review-dialog .review-matchup-examples {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 16px;
+}
+.review-dialog .review-matchup-examples .review-matchup-example {
+  display: flex;
+  flex-wrap: wrap;
+  align-content: start;
+  align-items: baseline;
+  column-gap: 5px;
+  min-width: 0;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.review-matchup-example > span {
+  white-space: nowrap;
+}
 .review-dialog .review-matchups strong,
 .review-dialog .review-coaching strong {
   color: #e4cea0;

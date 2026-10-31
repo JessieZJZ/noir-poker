@@ -1,0 +1,23 @@
+<!-- The champion's trophy; shares src/ui/table-scene.js TROPHY_MARKUP classes. -->
+<template name="trophy"
+  ><view class="trophy-shape"
+    ><view class="trophy-rays" /><view class="trophy-glow" /><view
+      class="trophy-handle handle-left" /><view class="trophy-handle handle-right" /><view
+      class="trophy-cup" /><view class="trophy-stem" /><view class="trophy-base" /><view
+      class="trophy-spark spark-1" /><view class="trophy-spark spark-2" /><view
+      class="trophy-spark spark-3" /><view class="trophy-spark spark-4" /></view
+></template>
+<template name="activity-content">
+  <block wx:for="{{parts}}" wx:for-item="part" wx:key="index">
+    <block wx:if="{{part.actor}}"
+      ><text
+        >{{part.name}}<text wx:if="{{part.profile}}" class="activity-persona"
+          >（{{part.profile}}）</text
+        ></text
+      ><text wx:if="{{part.position}}" class="position activity-position"
+        >{{part.position}}</text
+      ></block
+    >
+    <text wx:else>{{part.text}}</text>
+  </block>
+</template>

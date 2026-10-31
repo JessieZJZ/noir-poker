@@ -1,4 +1,6 @@
 @import '../../shared/ui/hero-turn.wxss';
+@import '../../shared/ui/game-effects.wxss';
+@import '../../shared/ui/emotion-effects.wxss';
 .screen {
   display: flex;
   flex-direction: column;
@@ -477,8 +479,8 @@
   font-size: 9px;
 }
 .action-dock {
-  flex: 0 0 134px;
-  height: 134px;
+  flex: 0 0 154px;
+  height: 154px;
   border-top: 1px solid #293f47;
   padding: 7px 8px;
   display: flex;
@@ -495,9 +497,43 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.raise-controls slider {
-  margin: 0 2px;
+.raise-track {
+  position: relative;
+  margin: 0 2px 8px;
   height: 19px;
+  overflow: visible;
+}
+.raise-rail {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 7px;
+  height: 5px;
+  border-radius: 3px;
+  background: #354650;
+}
+.raise-track.disabled {
+  opacity: 0.45;
+}
+/* One visible rail/thumb. WXS moves the thumb in this render layer;
+   the larger transparent hit target never overlaps the preset buttons. */
+.raise-thumb {
+  position: absolute;
+  top: 2px;
+  width: 15px;
+  height: 15px;
+  margin-left: -7.5px;
+  border-radius: 50%;
+  background: #6ee7c5;
+  pointer-events: none;
+}
+.raise-hit {
+  position: absolute;
+  top: -6px;
+  bottom: -6px;
+  left: -8px;
+  right: -8px;
+  z-index: 2;
 }
 .presets {
   display: flex;
@@ -587,19 +623,6 @@
   background: #2c283f;
   color: #dfcef2;
   border: 1px solid #726186;
-}
-.bottom-links {
-  flex: 0 0 22px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0 8px;
-  font-size: 9px;
-  color: #73939f;
-}
-.bottom-links button {
-  color: #a4bcc8;
-  font-size: 10px;
 }
 .modal {
   position: fixed;
@@ -821,11 +844,37 @@
   justify-content: flex-end;
   gap: 8px;
   flex: none;
+  /* As on Web: the pickers' 124px column, so the small blind starts where
+     they do, and at the right edge also when the row wraps. */
+  box-sizing: border-box;
+  width: 124px;
+  margin-left: auto;
   color: #d9e9e5;
+  font-size: 15px;
 }
+/* As on Web, settings values read at the labels' 15px and the pickers share
+   the blind field's 36px height in the same control column. */
+.settings-modal .setting-row .picker-value {
+  box-sizing: border-box;
+  width: 124px;
+  min-width: 124px;
+  max-width: 124px;
+  height: 36px;
+  min-height: 36px;
+  padding: 0 12px;
+  font-size: 15px;
+}
+.settings-modal .setting-row .picker-value > text {
+  transform: none;
+}
+/* As on Web, the label matches the other settings (15px), and so do the
+   separator and the big blind. */
 .settings-modal .stakes-setting-row {
-  font-size: 16px;
+  font-size: 15px;
   line-height: 1.5;
+}
+#big-blind-value {
+  font-size: 15px;
 }
 .stakes-setting-row > view:first-child {
   min-width: 0;
@@ -838,20 +887,20 @@
 .stakes-setting-row .small-blind-value,
 .stakes-setting-row .small-blind-input {
   box-sizing: border-box;
-  flex: none;
-  min-width: 82px;
-  max-width: 82px;
-  width: 82px;
-  height: 40px;
+  flex: 1;
+  min-width: 0;
+  max-width: none;
+  width: auto;
+  height: 36px;
   border: 1px solid #45635a;
   border-radius: 8px;
   background: #1b302a;
   color: #b5efdb;
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 400;
-  line-height: 38px;
+  line-height: 34px;
   text-align: center;
-  padding: 0 8px;
+  padding: 0 2px;
   margin: 0;
 }
 .stakes-setting-row .small-blind-value {
@@ -1415,6 +1464,7 @@
 
 @import 'parity.wxss';
 @import 'rail.wxss';
+@import 'game-end.wxss';
 
 .app-icon {
   width: 28px;
@@ -1522,36 +1572,10 @@
     display: block;
   }
 }
-.history-return-game {
-  margin: 0;
-  width: auto;
-  min-width: 0;
-  max-width: none;
-  justify-self: end;
-  padding: 8px 10px;
-  color: #d8e7ec;
-  background: #16232c;
-  border: 1px solid #31434e;
-  border-radius: 10px;
-  font-size: 14px;
-}
-.history-practice-heading {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 8px 16px;
-  margin: 12px 8px 8px;
-  flex: none;
-}
-.history-practice-label {
-  color: #83a9a1;
-  font-size: 13px;
-}
 .history-start-time {
-  grid-column: 1 / -1;
   color: #9cafb7;
-  font-size: 13px;
-  line-height: 1.5;
+  font-size: 12px;
+  line-height: 22px;
 }
 .session-label {
   white-space: nowrap;
@@ -1562,7 +1586,16 @@
   flex-wrap: wrap;
 }
 .blind-info {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  line-height: 1.4;
+  gap: 6px;
   font-size: 13px;
+}
+.blind-info text {
+  line-height: inherit;
 }
 .hint-mask {
   font-size: 12px;
@@ -1585,6 +1618,7 @@
 }
 .web-phone-layout .hero-identity .position {
   font-size: var(--hero-position);
+  padding: 1px 6px;
 }
 .web-phone-layout .position {
   padding: 1px 5px;
@@ -1626,7 +1660,7 @@
   transform-origin: left center;
 }
 .web-phone-layout .seat .seat-body {
-  grid-template-rows: var(--player-name) auto var(--player-stack);
+  grid-template-rows: auto auto auto;
   padding: var(--profile-padding);
   padding-top: calc(var(--profile-padding) + 1px);
 }
@@ -1717,58 +1751,85 @@
   background: #101b22;
 }
 
-.persona-name-measure {
-  position: absolute;
-  width: max-content;
-  visibility: hidden;
-  pointer-events: none;
-  white-space: nowrap;
-  font-size: var(--player-persona);
-  font-weight: 400;
-}
-.name-tooltip-dismiss {
-  position: fixed;
-  inset: 0;
-  z-index: 90;
-}
-.seat-name-tooltip {
-  position: fixed;
-  z-index: 91;
-  width: max-content;
-  max-width: 240px;
-  padding: 9px 12px;
-  border: 1px solid #4b8675;
-  border-radius: 9px;
-  background: #18332e;
-  box-shadow: 0 6px 24px #0008;
-  color: #e1fff2;
-  font-size: 14px;
-  font-weight: 500;
-  line-height: 1.5;
-  overflow-wrap: anywhere;
-  opacity: 0;
-}
-.seat-name-tooltip.is-visible {
-  opacity: 1;
-}
-.name-tooltip-arrow {
-  position: absolute;
-  left: var(--tooltip-arrow);
-  bottom: -5px;
-  width: 7px;
-  height: 7px;
-  border-right: 1px solid #4b8675;
-  border-bottom: 1px solid #4b8675;
-  background: #18332e;
-  transform: translateX(-50%) rotate(45deg);
-}
-.seat-name-tooltip.below .name-tooltip-arrow {
-  bottom: auto;
-  top: -5px;
-  transform: translateX(-50%) rotate(225deg);
-}
-
 /* Avoid adding the normal 8px shell margin to the detail heading's own gap. */
 .history-shell {
   margin-top: 0;
+}
+
+.character-section + .character-section {
+  margin-top: 22px;
+}
+.character-section > text {
+  display: block;
+  margin: 10px 0;
+  line-height: 1.65;
+}
+
+@import './entry.wxss';
+
+@import './game-info.wxss';
+@import './tablet.wxss';
+@import './style-detail.wxss';
+@import './preflop-table.wxss';
+
+/* A single frame owns the table and showdown; no flex gap or doubled edge. */
+.table-panel {
+  flex: none;
+  margin-top: 8px;
+  border: 1px solid #283943;
+  border-radius: 14px;
+  overflow: hidden;
+  background: #101b22;
+}
+.table-panel.history-panel {
+  margin-top: 0;
+}
+.table-panel .game-shell {
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+}
+.table-panel .showdown-stage {
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+}
+
+/* Preserve the original avatar at left, complete style and chips at right. */
+.web-phone-layout .seat .seat-body > .avatar {
+  grid-column: 1;
+  grid-row: 2 / 4;
+  align-self: end;
+}
+.web-phone-layout .seat .seat-body > .stack {
+  grid-column: 2;
+  grid-row: 3;
+  align-self: start;
+}
+.web-phone-layout .seat .persona {
+  grid-column: 2;
+  grid-row: 2;
+  align-self: end;
+  box-sizing: border-box;
+  min-width: 0;
+  max-width: 100%;
+  font-size: var(--player-persona-fit);
+  line-height: calc(var(--player-persona) * 1.15);
+  padding: 1px 3px;
+  white-space: nowrap;
+  overflow: visible;
+  text-overflow: clip;
+  overflow-wrap: anywhere;
+  height: calc(var(--player-persona) * 1.15 + 4px);
+  min-height: 0;
+  max-height: none;
+  text-align: center;
+}
+
+.web-phone-layout .seat .seat-body > .mood-badge {
+  grid-row: 2 / 4;
+}
+
+.web-phone-layout .seat .persona-balanced {
+  font-size: var(--player-persona);
 }

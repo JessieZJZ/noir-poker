@@ -19,6 +19,8 @@ import {
   freshBotMood,
   freshBotStats,
   recordPressureFold,
+  decayBotMood,
+  MOOD_TIMING,
   finishBotHand,
   effectiveBotAxes,
   chooseBotAction,
@@ -68,23 +70,23 @@ function finish(g, random = seeded(42)) {
 test('saved settings reject unknown profiles and malformed modes', () => {
   const result = sanitizeBotSettings({
     emotionMode: 'hack',
-    assignments: { 1: 'tan', 2: 'nope', 9: 'peter' },
+    assignments: { 1: 'rook', 2: 'nope', 9: 'jett' },
   });
   assert.equal(result.emotionMode, 'subtle');
-  assert.equal(result.assignments[1], 'tan');
+  assert.equal(result.assignments[1], 'rook');
   assert.equal(result.assignments[2], 'balanced');
   assert.equal(Object.keys(result.assignments).length, 8);
 });
 test('all eight mixed 9-max assignments reach the executed policy with the corresponding parameter vector', () => {
   const assignments = {
-    1: 'tan',
-    2: 'st',
-    3: 'zang',
-    4: 'peter',
-    5: 'abao',
-    6: 'viktor',
-    7: 'jungleman',
-    8: 'dwan',
+    1: 'rook',
+    2: 'owen',
+    3: 'vale',
+    4: 'jett',
+    5: 'mira',
+    6: 'nico',
+    7: 'iris',
+    8: 'balanced',
   };
   for (let id = 1; id <= 8; id++) {
     const g = newGame(9, { smallBlind: 25, bigBlind: 50, startingStack: 5000, chipUnit: 25 });
@@ -175,12 +177,70 @@ test('loss, win and pressure triggers are bounded, cooled down and can be disabl
   const winner = { id: 1, botMood: freshBotMood() };
   assert.equal(finishBotHand(winner, 500, 'subtle', 50), null);
   assert.equal(finishBotHand(winner, 500, 'subtle', 50).kind, 'confident');
-  const mood = freshBotMood();
-  recordPressureFold(mood, 2, 'subtle');
-  recordPressureFold(mood, 3, 'subtle');
-  assert.equal(recordPressureFold(mood, 2, 'subtle'), null);
-  assert.equal(recordPressureFold(mood, 2, 'subtle'), null);
-  assert.equal(recordPressureFold(mood, 2, 'subtle').kind, 'reactive');
+});
+test('folding to one raiser in 3 of 4 hands triggers, with window, raiser and cooldown bounds', () => {
+  // Hands 1, 2 and 4 fall within one four-hand window; raiser 2 in hand 3
+  // does not reset raiser 1's count.
+  const inside = freshBotMood();
+  assert.equal(recordPressureFold(inside, 1, 1, 'subtle'), null);
+  assert.equal(recordPressureFold(inside, 1, 2, 'subtle'), null);
+  assert.equal(recordPressureFold(inside, 2, 3, 'subtle'), null);
+  assert.equal(recordPressureFold(inside, 1, 4, 'subtle').kind, 'reactive');
+  assert.deepEqual(inside.pressureFolds, {});
+  // Hands 1, 2 and 5 span five hands: hand 1 has left the window.
+  const spread = freshBotMood();
+  recordPressureFold(spread, 1, 1, 'subtle');
+  recordPressureFold(spread, 1, 2, 'subtle');
+  assert.equal(recordPressureFold(spread, 1, 5, 'subtle'), null);
+  assert.deepEqual(spread.pressureFolds, { 2: 1, 5: 1 });
+  // Different raisers never add up.
+  const mixed = freshBotMood();
+  recordPressureFold(mixed, 1, 1, 'subtle');
+  recordPressureFold(mixed, 2, 2, 'subtle');
+  assert.equal(recordPressureFold(mixed, 3, 3, 'subtle'), null);
+  // A hand counts once, and cooldown or the off mode block the trigger.
+  const repeated = freshBotMood();
+  for (let i = 0; i < 3; i++) recordPressureFold(repeated, 1, 7, 'subtle');
+  assert.deepEqual(repeated.pressureFolds, { 7: 1 });
+  const cooled = { ...freshBotMood(), cooldown: 1 };
+  for (const hand of [1, 2]) recordPressureFold(cooled, 1, hand, 'subtle');
+  assert.equal(recordPressureFold(cooled, 1, 3, 'subtle'), null);
+  const off = freshBotMood();
+  for (const hand of [1, 2, 3]) assert.equal(recordPressureFold(off, 1, hand, 'off'), null);
+  assert.deepEqual(off.pressureFolds, {});
+});
+test('lively emotions last longer and renew sooner than subtle ones', () => {
+  assert.deepEqual(MOOD_TIMING, {
+    subtle: { duration: 3, cooldown: 4 },
+    lively: { duration: 4, cooldown: 2 },
+  });
+  for (const [mode, duration, cooldown] of [
+    ['subtle', 3, 4],
+    ['lively', 4, 2],
+  ]) {
+    const p = { id: 1, botMood: freshBotMood() };
+    finishBotHand(p, -1250, mode, 50);
+    assert.deepEqual([p.botMood.remaining, p.botMood.cooldown], [duration, cooldown]);
+    for (let hand = 1; hand < duration; hand++) {
+      decayBotMood(p.botMood);
+      assert.equal(p.botMood.kind, 'frustrated', `${mode} hand ${hand}`);
+    }
+    decayBotMood(p.botMood);
+    assert.equal(p.botMood.kind, 'steady', `${mode} ends after ${duration} hands`);
+  }
+  // A lively emotion can renew while it still shows; a subtle one cannot.
+  const lively = { id: 1, botMood: freshBotMood() };
+  finishBotHand(lively, -1250, 'lively', 50);
+  decayBotMood(lively.botMood);
+  decayBotMood(lively.botMood);
+  assert.equal(lively.botMood.kind, 'frustrated');
+  assert.equal(finishBotHand(lively, -1250, 'lively', 50).kind, 'frustrated');
+  assert.equal(lively.botMood.remaining, 4);
+  const subtle = { id: 1, botMood: freshBotMood() };
+  finishBotHand(subtle, -1250, 'subtle', 50);
+  decayBotMood(subtle.botMood);
+  decayBotMood(subtle.botMood);
+  assert.equal(finishBotHand(subtle, -1250, 'subtle', 50), null);
 });
 test('emotions adjust actual policy controls with a smaller subtle effect', () => {
   const profile = BOT_PROFILES[1],
@@ -192,16 +252,27 @@ test('emotions adjust actual policy controls with a smaller subtle effect', () =
   assert.ok(strong[0] > mild[0]);
   assert.ok(strong[4] < mild[4]);
 });
-test('an intervening hand without pressure breaks the consecutive-fold trigger', () => {
-  const g = newGame(undefined, { smallBlind: 25, bigBlind: 50, startingStack: 5000, chipUnit: 25 });
-  for (let hand = 0; hand < 5; hand++) {
-    g.dealer = 2;
-    startHand(g);
-    assert.equal(g.actor, 0);
-    act(g, 0, hand % 2 ? 'fold' : 'raise', 100);
-    while (g.phase !== 'done') act(g, g.actor, 'fold');
-  }
-  assert.equal(g.players[1].botMood.kind, 'steady');
+test('folding to the same raiser in three of four hands makes a bot react; a wider spread does not', () => {
+  const play = (raiseHands, total) => {
+    const g = newGame(undefined, {
+      smallBlind: 25,
+      bigBlind: 50,
+      startingStack: 5000,
+      chipUnit: 25,
+    });
+    for (let hand = 0; hand < total; hand++) {
+      g.dealer = 2;
+      startHand(g);
+      assert.equal(g.actor, 0);
+      act(g, 0, raiseHands.includes(hand) ? 'raise' : 'fold', 100);
+      while (g.phase !== 'done') act(g, g.actor, 'fold');
+    }
+    return g.players[1].botMood.kind;
+  };
+  // The hero raises in hands 1, 2 and 4; hand 3 brings no pressure.
+  assert.equal(play([0, 1, 3], 4), 'reactive');
+  // Raises in hands 1, 3 and 5 never put three inside a four-hand window.
+  assert.equal(play([0, 2, 4], 5), 'steady');
 });
 test('style differences change entry and value-trap behavior over common decision samples', () => {
   const view = {
@@ -210,7 +281,7 @@ test('style differences change entry and value-trap behavior over common decisio
     id: 1,
     hole: [
       { rank: 9, suit: 0 },
-      { rank: 7, suit: 0 },
+      { rank: 4, suit: 0 },
     ],
     board: [],
     street: 0,
@@ -242,11 +313,11 @@ test('style differences change entry and value-trap behavior over common decisio
     Array.from({ length: 300 }, (_, seed) =>
       chooseBotAction(input, profile, freshBotMood(), 'off', seeded(seed + 100)),
     );
-  const peter = BOT_PROFILES.find((p) => p.id === 'peter'),
-    st = BOT_PROFILES.find((p) => p.id === 'st');
+  const peter = BOT_PROFILES.find((p) => p.id === 'jett'),
+    st = BOT_PROFILES.find((p) => p.id === 'owen');
   assert.ok(
-    decisions(peter, view).filter((d) => d.action === 'raise').length >
-      decisions(st, view).filter((d) => d.action === 'raise').length,
+    decisions(peter, view).filter((d) => d.action !== 'fold').length >
+      decisions(st, view).filter((d) => d.action !== 'fold').length,
   );
   const value = {
     ...view,
@@ -258,7 +329,7 @@ test('style differences change entry and value-trap behavior over common decisio
       { rank: 9, suit: 3 },
       { rank: 13, suit: 2 },
       { rank: 2, suit: 1 },
-      { rank: 6, suit: 2 },
+      { rank: 6, suit: 0 },
     ],
     street: 2,
     equity: 0.9,
@@ -276,6 +347,7 @@ test('style differences change entry and value-trap behavior over common decisio
     evaluate([...value.hole, ...value.board]).score,
   );
   assert.equal(value.features.strongMade, true);
+  assert.equal(value.features.wet, false);
   assert.ok(
     decisions(st, value).filter((d) => d.action === 'check').length >
       decisions(peter, value).filter((d) => d.action === 'check').length,
@@ -299,13 +371,13 @@ test('uncalled shove refunds are not losses; blind-only hands are not VPIP', () 
 test('post-flop bot fractions use the after-call pot with whole 25 chips', () => {
   const hole = [
       { rank: 14, suit: 0 },
-      { rank: 13, suit: 0 },
+      { rank: 14, suit: 3 },
     ],
     board = [
       { rank: 14, suit: 1 },
       { rank: 9, suit: 2 },
       { rank: 6, suit: 3 },
-      { rank: 2, suit: 1 },
+      { rank: 2, suit: 0 },
     ];
   const view = {
     bigBlind: 50,
@@ -345,7 +417,7 @@ test('post-flop bot fractions use the after-call pot with whole 25 chips', () =>
     'off',
     () => 0.5,
   );
-  assert.equal(view.features.ownMade, true, 'The sizing probe uses an actual made top pair');
+  assert.equal(view.features.ownMade, true, 'The sizing probe uses an actual made set');
   assert.equal(decision.action, 'raise');
   assert.equal(decision.trace.sizing.fraction, 0.625);
   assert.equal(decision.trace.sizing.desired, 625); // 225 + round-to-25(625 × .625)
@@ -353,7 +425,7 @@ test('post-flop bot fractions use the after-call pot with whole 25 chips', () =>
 });
 test('retry restores frozen profile, emotion and simulation statistics exactly once', () => {
   const g = newGame(undefined, { smallBlind: 25, bigBlind: 50, startingStack: 5000, chipUnit: 25 });
-  applyBotSettings(g, { assignments: { 1: 'tan', 2: 'st' }, emotionMode: 'lively' });
+  applyBotSettings(g, { assignments: { 1: 'rook', 2: 'owen' }, emotionMode: 'lively' });
   g.players[1].botMood = {
     ...freshBotMood(),
     kind: 'frustrated',
@@ -367,7 +439,7 @@ test('retry restores frozen profile, emotion and simulation statistics exactly o
   );
   for (let attempt = 0; attempt < 4; attempt++) {
     finish(g, seeded(attempt + 5));
-    applyBotSettings(g, { assignments: { 1: 'peter' }, emotionMode: 'off' });
+    applyBotSettings(g, { assignments: { 1: 'jett' }, emotionMode: 'off' });
     restartHand(g);
     assert.equal(g.emotionMode, 'lively');
     assert.deepEqual(
@@ -381,6 +453,6 @@ test('retry restores frozen profile, emotion and simulation statistics exactly o
 test('a reassigned profile starts a separate observed sample', () => {
   const g = newGame(undefined, { smallBlind: 25, bigBlind: 50, startingStack: 5000, chipUnit: 25 });
   g.players[1].botStats = { ...freshBotStats(), hands: 20, vpip: 10 };
-  applyBotSettings(g, { assignments: { 1: 'peter' } });
+  applyBotSettings(g, { assignments: { 1: 'jett' } });
   assert.equal(g.players[1].botStats.hands, 0);
 });

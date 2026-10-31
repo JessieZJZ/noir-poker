@@ -69,22 +69,23 @@ function view(hole = '5s 4s', board = '', overrides = {}) {
 const decide = (input, random = () => 0.1, profile = 'balanced') =>
   chooseBotAction(input, getBotProfile(profile), freshBotMood(), 'off', random);
 
-test('late unopened speculative hands mix calls and steals without a mandatory raise', () => {
+test('styles without first-in discipline retain speculative calls and steals without a mandatory raise', () => {
+  const mixed = (input, random = () => 0.1) => decide(input, random, 'nico');
   for (const hole of ['5s 4s', '8s 6s', '6s 6h', 'As 4s']) {
     const input = view(hole);
-    assert.equal(decide(input).action, 'raise', hole);
-    const passive = decide(input, () => 0.9);
+    assert.equal(mixed(input).action, 'raise', hole);
+    const passive = mixed(input, () => 0.9);
     assert.equal(passive.action, 'call', hole);
     assert.equal(passive.trace.affordableRangePassed, true);
   }
-  const sample = Array.from({ length: 500 }, (_, seed) => decide(view(), seeded(seed + 100)));
+  const sample = Array.from({ length: 500 }, (_, seed) => mixed(view(), seeded(seed + 100)));
   const raises = sample.filter((d) => d.action === 'raise').length;
   assert.ok(raises > 30 && raises < 250, `Actual sampled late steals: ${raises}/500`);
   assert.equal(sample.filter((d) => d.action === 'fold').length, 0);
-  assert.equal(decide(view('7s 2h'), () => 0.9).action, 'fold');
-  assert.equal(decide(view('5s 4s', '', { position: 'UTG' }), () => 0.9).action, 'fold');
+  assert.equal(mixed(view('7s 2h'), () => 0.9).action, 'fold');
+  assert.equal(mixed(view('5s 4s', '', { position: 'UTG' }), () => 0.9).action, 'fold');
   assert.equal(
-    decide(view('5s 4s', '', { history: [{ id: 0, street: 0, action: 'call', amount: 50 }] })).trace
+    mixed(view('5s 4s', '', { history: [{ id: 0, street: 0, action: 'call', amount: 50 }] })).trace
       .lateSteal,
     false,
   );
@@ -146,7 +147,7 @@ test('all styles retain legal whole-chip bets, conservation and no hidden-card p
       assignments: Object.fromEntries(
         Array.from({ length: count - 1 }, (_, i) => [
           i + 1,
-          ['balanced', 'viktor', 'peter', 'st'][i % 4],
+          ['balanced', 'rook', 'jett', 'owen', 'vale', 'nico', 'mira', 'iris'][i % 8],
         ]),
       ),
     });

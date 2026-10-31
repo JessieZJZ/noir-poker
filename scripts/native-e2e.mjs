@@ -13,9 +13,12 @@ import { restartNativeApplication } from './native-lifecycle.mjs';
 import { requestNativeOrientation } from './native-orientation.mjs';
 import { compareNativePage } from '../tests/native/page-parity.mjs';
 import { createNativeCommand } from './native-transport.mjs';
+import { webDriverRequest } from './native-http.mjs';
 import { nativeBackPage, nativePageReady } from './native-back.mjs';
-import { prepareNativeTouch } from './native-touch.mjs';
+import { prepareNativeTouch, performNativeTouch } from './native-touch.mjs';
 import { nativeAppTarget, assertAndroidTestPackage } from './native-app-target.mjs';
+import { nativeServerArguments } from './native-server.mjs';
+import { iosLaunchProcessId, iosInitialScreenReady } from './native-startup.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const args = process.argv.slice(2);
@@ -58,11 +61,11 @@ const output = path.resolve(root, options.output ?? `.artifacts/native-e2e/${pla
 mkdirSync(output, { recursive: true });
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 const adbArgs = (args) => (options['adb-port'] ? ['-P', options['adb-port'], ...args] : args);
-const run = (binary, argv) => {
+const run = (binary, argv, { timeout = 120000 } = {}) => {
   const value = spawnSync(binary, binary === adb ? adbArgs(argv) : argv, {
     encoding: 'utf8',
     cwd: root,
-    timeout: 120000,
+    timeout,
   });
   if (value.status !== 0)
     throw Error(
@@ -89,6 +92,7 @@ const log = (message) => console.log(`[native-e2e:${platform}] ${message}`);
 let server;
 let serverStream;
 let session;
+let sessionCapabilities;
 let airplaneMode;
 const sdk = process.env.ANDROID_HOME ?? process.env.ANDROID_SDK_ROOT;
 const adb = sdk ? path.join(sdk, 'platform-tools/adb') : 'adb';
@@ -98,17 +102,11 @@ const adb = sdk ? path.join(sdk, 'platform-tools/adb') : 'adb';
 const androidDevtoolsPort = Math.min(64000, Number(options['driver-port'] ?? 9200) + 10000);
 const serverUrl =
   options.server ?? `http://127.0.0.1:${options.port ?? (platform === 'ios' ? 4725 : 4727)}`;
+// A fresh hosted runner builds WebDriverAgent during session creation, which
+// has taken over six minutes; the WDA launch itself may take up to ten.
+const SESSION_TIMEOUT_MS = 900000;
 async function request(method, endpoint, body, timeout = 120000) {
-  const response = await fetch(`${serverUrl}${endpoint}`, {
-    method,
-    headers: { 'content-type': 'application/json' },
-    ...(body ? { body: JSON.stringify(body) } : {}),
-    signal: AbortSignal.timeout(timeout),
-  });
-  const payload = await response.json();
-  if (!response.ok || payload.value?.error)
-    throw Error(`${method} ${endpoint}: ${payload.value?.message || response.statusText}`);
-  return payload.value;
+  return webDriverRequest(`${serverUrl}${endpoint}`, method, body, timeout);
 }
 async function waitFor(test, timeout = 30000, message = 'Condition did not become true') {
   const deadline = Date.now() + timeout;
@@ -152,18 +150,21 @@ const command = createNativeCommand({
 let webContext;
 async function attachWebview({ expectedPage = 'game' } = {}) {
   nativeBackPage(expectedPage);
-  // Wait for the real document before attaching WebKit. Attaching during the
-  // initial blank-page navigation can pause WebKit before the game loads.
-  await waitFor(
-    async () => {
-      const source = await command('GET', '/source');
-      return expectedPage === 'privacy'
-        ? /XCUIElementTypeButton|XCUIElementTypeLink|android\.widget\.Button/.test(source)
-        : /XCUIElementTypeButton|android\.widget\.Button/.test(source);
-    },
-    45000,
-    'Native app must render an actionable screen before WebView attachment',
-  );
+  // Attaching during initial WebKit navigation can pause the iOS document.
+  // Android accessibility can omit HTML children even when the screen is
+  // painted. Its ensureWebviewsHavePages capability requires an inspectable
+  // page below, then nativePageReady verifies the real initialized DOM.
+  if (platform === 'ios')
+    await waitFor(
+      async () => {
+        const source = await command('GET', '/source');
+        return expectedPage === 'privacy'
+          ? /XCUIElementTypeButton|XCUIElementTypeLink/.test(source)
+          : /XCUIElementTypeButton/.test(source);
+      },
+      45000,
+      'Native app must render an actionable screen before WebView attachment',
+    );
   const contexts = await waitFor(
     async () => {
       const available = await command('GET', '/contexts');
@@ -264,50 +265,15 @@ async function select(selector, value) {
     `Selection did not apply: ${selector}`,
   );
 }
+const nativeTouch = (...args) =>
+  performNativeTouch({ command, evaluate, platform, webContext }, ...args);
 async function nativeTap(selector) {
-  assert.equal(platform, 'ios');
-  const target = await evaluate((selector) => {
-    const element = document.querySelector(selector),
-      r = element.getBoundingClientRect(),
-      x = r.x + r.width / 2,
-      y = r.y + r.height / 2,
-      hit = document.elementFromPoint(x, y);
-    if (!hit || !element.contains(hit)) throw Error('Native touch target is covered');
-    return { x, y, width: innerWidth, height: innerHeight };
-  }, selector);
-  const { nativePoint } = await import('./native-pointer.mjs');
-  await command('POST', '/context', { name: 'NATIVE_APP' });
-  try {
-    const elements = await command('POST', '/elements', {
-      using: 'class name',
-      value: 'XCUIElementTypeWebView',
-    });
-    const frames = [];
-    for (const element of elements) {
-      const id = element['element-6066-11e4-a52e-4f735466cecf'] ?? element.ELEMENT;
-      frames.push(await command('GET', `/element/${id}/rect`));
-    }
-    const frame = frames.sort((a, b) => b.width * b.height - a.width * a.height)[0];
-    assert.ok(frame, 'The installed app must expose its actual WebView frame');
-    const point = nativePoint(target, target, frame);
-    await command('POST', '/actions', {
-      actions: [
-        {
-          type: 'pointer',
-          id: 'native-summary-touch',
-          parameters: { pointerType: 'touch' },
-          actions: [
-            { type: 'pointerMove', duration: 0, origin: 'viewport', ...point },
-            { type: 'pointerDown', button: 0 },
-            { type: 'pause', duration: 80 },
-            { type: 'pointerUp', button: 0 },
-          ],
-        },
-      ],
-    });
-  } finally {
-    await command('POST', '/context', { name: webContext });
-  }
+  // The shared touch path already selects the platform's real WebView class
+  // and maps its measured native frame, as used by long presses on both OSes.
+  return nativeTouch(selector, 80, 0.5, null, { tap: true });
+}
+async function nativeHold(selector) {
+  return nativeTouch(selector, 650);
 }
 async function screenshot(name) {
   const imagePath = path.join(output, `${name}.png`);
@@ -340,7 +306,9 @@ async function back({ expectedPage = 'game' } = {}) {
         id: 'records-edge-back',
         parameters: { pointerType: 'touch' },
         actions: [
-          { type: 'pointerMove', duration: 0, origin: 'viewport', x: 2, y },
+          // Inside the app's 24 pt edge zone but clear of the system's own
+          // 4 pt edge gesture, which can swallow a touch that starts there.
+          { type: 'pointerMove', duration: 0, origin: 'viewport', x: 8, y },
           { type: 'pointerDown', button: 0 },
           { type: 'pause', duration: 100 },
           {
@@ -363,8 +331,33 @@ async function activate() {
   await attachWebview();
 }
 async function relaunch() {
-  await restartNativeApplication(command, appId);
+  await restartNativeApplication(command, appId, {
+    resetDriver: platform === 'ios' ? resetIOSDriver : undefined,
+  });
   await attachWebview();
+}
+async function resetIOSDriver() {
+  await request('DELETE', `/session/${session}`);
+  session = null;
+  webContext = undefined;
+  const caps = {
+    ...sessionCapabilities,
+    'appium:bundleId': appId,
+    'appium:noReset': true,
+    'appium:fullReset': false,
+    'appium:autoLaunch': false,
+  };
+  // The verified app remains installed. A fresh automation session must not
+  // reinstall it or clear the preferences that this restart is checking.
+  delete caps['appium:app'];
+  const created = await request(
+    'POST',
+    '/session',
+    { capabilities: { alwaysMatch: caps, firstMatch: [{}] } },
+    SESSION_TIMEOUT_MS,
+  );
+  session = created.sessionId;
+  report.driverSessionResets = (report.driverSessionResets || 0) + 1;
 }
 async function background() {
   await command('POST', '/context', { name: 'NATIVE_APP' });
@@ -379,7 +372,18 @@ async function background() {
   );
   return { startedAt: performance.now(), nativeState };
 }
-const queryAppState = () => command('POST', '/appium/device/app_state', { appId });
+// A busy CI emulator can briefly fail `adb shell dumpsys` (exit 255) while the
+// app is fine; retry that transient driver error before reporting a failure.
+const queryAppState = async () => {
+  for (let attempt = 0; ; attempt++) {
+    try {
+      return await command('POST', '/appium/device/app_state', { appId });
+    } catch (error) {
+      if (attempt >= 2 || !/adbExec|exited with code 255/.test(error.message)) throw error;
+      await sleep(1000);
+    }
+  }
+};
 async function rotate(orientation, { allowPortraitLock = false } = {}) {
   const result = await requestNativeOrientation(command, platform, orientation, allowPortraitLock);
   await attachWebview();
@@ -427,7 +431,8 @@ try {
     ) {
       run('xcrun', ['simctl', 'boot', udid]);
       ownedSimulator = true;
-      run('xcrun', ['simctl', 'bootstatus', udid, '-b']);
+      // A freshly created simulator's first boot on a CI runner can take minutes.
+      run('xcrun', ['simctl', 'bootstatus', udid, '-b'], { timeout: 600000 });
     }
   }
   if (platform === 'android' && !udid) {
@@ -465,41 +470,6 @@ try {
       baseAppId,
       isEmulator: report.deviceKind === 'emulator',
     });
-  }
-  report.phase = 'appium-start';
-  if (!options.server) {
-    const binary = path.join(root, '.artifacts/native-tools/node_modules/appium/build/lib/main.js');
-    if (!existsSync(binary))
-      throw Error('Install native E2E tools first: node scripts/native-e2e-setup.mjs');
-    const { createWriteStream } = await import('node:fs');
-    serverStream = createWriteStream(path.join(output, 'appium.log'));
-    server = spawn(
-      process.execPath,
-      [
-        binary,
-        '--address',
-        '127.0.0.1',
-        '--port',
-        new URL(serverUrl).port,
-        '--allow-insecure',
-        'uiautomator2:chromedriver_autodownload',
-      ],
-      {
-        cwd: root,
-        env: {
-          ...process.env,
-          APPIUM_HOME: path.join(root, '.artifacts/native-tools/appium-home'),
-        },
-        stdio: ['ignore', 'pipe', 'pipe'],
-      },
-    );
-    server.stdout.pipe(serverStream);
-    server.stderr.pipe(serverStream);
-    await waitFor(
-      () => request('GET', '/status', undefined, 1000),
-      30000,
-      'Appium server did not start',
-    );
   }
   report.phase = 'install-launch';
   if (platform === 'android') {
@@ -549,15 +519,80 @@ try {
   if (platform === 'ios') {
     // Launch the clean installed app independently before XCUITest attaches.
     // Later application restarts stay within WDA so it tracks the current PID.
-    run('xcrun', ['simctl', 'install', udid, appPath]);
-    run('xcrun', ['simctl', 'launch', udid, appId]);
+    // A fresh CI simulator can take minutes to install and first launch an app.
+    run('xcrun', ['simctl', 'install', udid, appPath], { timeout: 600000 });
+    const launchStarted = performance.now();
+    const stderrPath = path.join(output, 'ios.stderr.log');
+    const launched = run(
+      'xcrun',
+      [
+        'simctl',
+        'launch',
+        `--stdout=${path.join(output, 'ios.stdout.log')}`,
+        `--stderr=${stderrPath}`,
+        udid,
+        appId,
+      ],
+      { timeout: 600000 },
+    );
+    const processId = iosLaunchProcessId(launched);
+    report.phase = 'independent-startup';
+    report.initialLaunch = { processId, stderrPath, ready: false };
+    await waitFor(
+      () =>
+        existsSync(stderrPath) &&
+        iosInitialScreenReady(readFileSync(stderrPath, 'utf8'), processId),
+      // A fresh CI simulator's first WebView load alone can take ~40s.
+      120000,
+      'iOS must finish its independent first screen before XCUITest attaches',
+    );
+    Object.assign(report.initialLaunch, {
+      ready: true,
+      readyAt: new Date().toISOString(),
+      waitMs: Math.round(performance.now() - launchStarted),
+    });
+    log(`Independent iOS first screen ready for PID ${processId}`);
+    report.phase = 'install-launch';
   }
+  report.phase = 'appium-start';
+  if (!options.server) {
+    const binary = path.join(root, '.artifacts/native-tools/node_modules/appium/build/lib/main.js');
+    if (!existsSync(binary))
+      throw Error('Install native E2E tools first: node scripts/native-e2e-setup.mjs');
+    const { createWriteStream } = await import('node:fs');
+    serverStream = createWriteStream(path.join(output, 'appium.log'));
+    server = spawn(
+      process.execPath,
+      [binary, ...nativeServerArguments(platform, new URL(serverUrl).port)],
+      {
+        cwd: root,
+        env: {
+          ...process.env,
+          APPIUM_HOME: path.join(root, '.artifacts/native-tools/appium-home'),
+        },
+        stdio: ['ignore', 'pipe', 'pipe'],
+      },
+    );
+    server.stdout.pipe(serverStream);
+    server.stderr.pipe(serverStream);
+    // A first start after a fresh driver install builds Appium's driver cache;
+    // a loaded hosted runner has needed more than two minutes.
+    await waitFor(
+      () => request('GET', '/status', undefined, 1000),
+      300000,
+      'Appium server did not start',
+    );
+    report.testServiceReadyAt = new Date().toISOString();
+  }
+  report.phase = 'install-launch';
   const caps = {
     platformName: platform === 'ios' ? 'iOS' : 'Android',
     'appium:automationName': platform === 'ios' ? 'XCUITest' : 'UiAutomator2',
     'appium:udid': udid,
     'appium:app': appPath,
-    'appium:newCommandTimeout': 180,
+    // Page parity replays the app's DOM in Chromium between native commands;
+    // a GPU-less hosted runner has taken over three minutes to rasterize it.
+    'appium:newCommandTimeout': 600,
     'appium:fullReset': platform === 'android',
     ...(platform === 'ios'
       ? {
@@ -571,7 +606,10 @@ try {
                 'appium:wdaRemotePort': Number(options['driver-port']),
               }
             : {}),
-          'appium:wdaLaunchTimeout': 240000,
+          'appium:wdaLaunchTimeout': 600000,
+          // Hosted CI simulators can take minutes to report boot completion to
+          // the driver, beyond its 120 s default, after simctl already booted.
+          'appium:simulatorStartupTimeout': 600000,
           'appium:waitForQuiescence': false,
           'appium:waitForIdleTimeout': 0,
           'appium:webviewConnectTimeout': 30000,
@@ -595,11 +633,12 @@ try {
           'appium:chromedriverAutodownload': true,
         }),
   };
+  sessionCapabilities = caps;
   const created = await request(
     'POST',
     '/session',
     { capabilities: { alwaysMatch: caps, firstMatch: [{}] } },
-    360000,
+    SESSION_TIMEOUT_MS,
   );
   session = created.sessionId;
   report.capabilities = created.capabilities;
@@ -612,8 +651,8 @@ try {
   // Restore the tested app before looking for an actionable native screen.
   if (platform === 'ios') await command('POST', '/appium/device/activate_app', { appId });
   await attachWebview();
-  // Keep Android's default startup settling until Accessibility and the
-  // actionable WebView exist; only then shorten the animated-screen idle wait.
+  // Keep Android's default settling until the actual document has initialized
+  // and exposes a visible enabled control, then shorten the animated idle wait.
   if (platform === 'android') report.nativeTouch = await prepareNativeTouch(command, platform);
   await command('POST', '/timeouts', { script: 30000 });
   // XCUITest does not resolve Promise results from execute/sync. The standard
@@ -639,6 +678,8 @@ try {
     state,
     click,
     nativeTap,
+    nativeDrag: (selector, from, to) => nativeTouch(selector, 600, from, to),
+    nativeHold,
     select,
     visible,
     waitFor,
@@ -686,6 +727,11 @@ try {
     report.serverCleanup = stopOwnedServer(server);
     await sleep(300);
   }
+  // Appium can still write while it exits; stop piping before closing the
+  // log so a late line cannot crash the runner after the tests passed.
+  server?.stdout?.unpipe(serverStream);
+  server?.stderr?.unpipe(serverStream);
+  serverStream?.on('error', () => {});
   serverStream?.end();
   if (platform === 'android' && airplaneMode !== undefined) {
     try {

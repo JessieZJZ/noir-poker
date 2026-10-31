@@ -1,14 +1,52 @@
+const { sliderRaiseTo } = require('../../shared/ui/bet-sizing.js');
 const { compactChips, compactActionAmounts } = require('../../shared/engine/chip-format.js');
 const { createWechatController } = require('../../shared/platform/wechat-controller.js');
 const { phoneLayout } = require('./phone-layout.js');
 const { numericWidthScale, numericColumnWidth } = require('../../shared/ui/numeric-width.js');
-const { presentCard, showdownPresentation, presentationPatch } = require('./presentation.js');
-const PORTRAIT_CREDITS = require('../../assets/portraits/credits.js');
+const {
+  presentCard,
+  showdownPresentation,
+  presentationPatch,
+  coalesceArrayPatch,
+} = require('./presentation.js');
 const { completeBoardForPractice, rankText } = require('../../shared/engine/poker.js');
 const navigation = require('../../record-navigation.js');
-const { nameTooltipPosition } = require('../../shared/ui/name-tooltip-position.js');
-// Capsule 36 + nav 48 + gap 8 + header 48 + live dock 134 + end gap 8 + border 2.
-const VIEWPORT_CHROME_HEIGHT = 284;
+const {
+  pageOrientation,
+  windowInfo,
+  watchWindow,
+  stopWindowWatch,
+} = require('../../device-orientation.js');
+const {
+  entryWelcomeCorridor,
+  entryWelcomeScale,
+} = require('../../shared/ui/entry-welcome-scale.js');
+const { heroPlaceStyle, heroTrophy, seatTrophy } = require('../../shared/ui/trophy-placement.js');
+// The waiting message's natural size, measured in DevTools: its button (150px
+// plus padding) and four stacked lines.
+const ENTRY_WELCOME_SIZE = { width: 184, height: 132 };
+const {
+  WECHAT_RECORDS_BUDGET,
+  createSnapshotFiles,
+  ceremonySoundFiles,
+  PREMIUM_SPARKS,
+  CONFETTI_PIECES,
+} = require('./game-effects.js');
+// Match responsive chrome to the pixels reserved around the fitted arena.
+// Phones retain their original budget; tablet touch controls need more room.
+function viewportChrome(width, height) {
+  const tablet = width >= 601 && height >= 601;
+  const navHeight = tablet ? 76 : 48;
+  const tableHeaderHeight = tablet ? 66 : 50;
+  const liveDockHeight = tablet ? (width > height ? 152 : 208) : 154;
+  return {
+    navHeight,
+    tableHeaderHeight,
+    liveDockHeight,
+    compactDockHeight: tablet ? 76 : 64,
+    chromeHeight: 36 + navHeight + 8 + tableHeaderHeight + liveDockHeight + 8,
+  };
+}
 const PROFILE_AXES = [
   ['vpip', '入池宽度'],
   ['aggression', '进攻倾向'],
@@ -28,8 +66,10 @@ module.exports = {
     arenaWidth: 364,
     arenaScale: 1,
     windowWidth: 390,
+    pageOrientation: 'portrait',
     navRightInset: 104,
     compactNav: false,
+    ...viewportChrome(390, 800),
     resourceMenuOpen: false,
     resourceLabel: '玩法指南',
     resourcePreviousLabel: '对局记录',
@@ -44,8 +84,7 @@ module.exports = {
     activityOpen: false,
     potOpen: false,
     resetOpen: false,
-    guideExpanded: [false, true],
-    noticeExpanded: true,
+    guideExpanded: [false, false, true],
     potExpanded: {},
     potSheetHeight: 580,
     reviewPerspective: 'hero',
@@ -55,10 +94,29 @@ module.exports = {
     selectedReviewStep: null,
     countOptions: [5, 6, 7, 8, 9],
     emotionOptions: ['关闭', '轻微波动', '明显波动'],
+    // Kept in data: a WXML <text> renders wrapped source lines as line breaks.
+    emotionIntro:
+      '情绪只调整当前难度内的入池、进攻与跟注倾向，不增加策略能力。轻微波动的情绪持续 3 手；明显波动影响更大，持续 4 手，也更容易再次触发。',
+    moodLegend: [
+      { kind: 'frustrated', name: '急于追回', text: '· 橙色火焰：大额亏损后入池更宽、更常跟到底' },
+      {
+        kind: 'cautious',
+        name: '收紧避险',
+        text: '· 蓝色盾牌：大额亏损后入池更紧，少进攻、少跟注',
+      },
+      { kind: 'confident', name: '连胜自信', text: '· 金色星星：连续盈利后入池与进攻略增' },
+      {
+        kind: 'reactive',
+        name: '受压反击',
+        text: '· 红色闪电：4 手内三次被同一对手加注弃牌后更多加注与诈唬',
+      },
+    ],
     profiles: [],
-    settings: { sound: true, vibration: true, hints: true },
+    settings: { sound: true, music: true, vibration: true, hints: true },
     seats: [],
     board: [],
+    showdown: [],
+    hasShowdown: false,
     boardTop: [],
     boardBottom: [],
     boardSlots: [],
@@ -75,20 +133,30 @@ module.exports = {
     comparisonOpen: false,
     homeLocked: false,
     homeOffset: 0,
-    nameTooltip: null,
     finishing: false,
+    raiseControl: { enabled: false, position: 0, key: 'initial' },
     flyingChips: [],
+    premiumSparks: PREMIUM_SPARKS,
+    confettiPieces: CONFETTI_PIECES,
+    crownStyle: '',
   },
   onLoad() {
     this.updateWindow();
     this._audio = [];
-    this.preloadSounds();
+    if (!this._readOnlyAttempt) this.preloadSounds();
     this._controller = createWechatController({
       createReviewWorker:
         typeof wx.createWorker === 'function' ? () => wx.createWorker('workers/review.js') : null,
       publish: (view) => {
+        if (
+          !view.canRaise ||
+          view.hand !== this.data.hand ||
+          view.replay !== this.data.replay ||
+          view.street !== this.data.street
+        )
+          this._raiseGesture = null;
         if (!this._readOnlyAttempt && typeof getApp === 'function')
-          getApp().noirMusic?.setEnabled(view.settings.sound);
+          getApp().noirMusic?.setEnabled(view.settings.music);
         if (view.done || view.hand !== this.data.hand || view.replay !== this.data.replay)
           this._finishRequested = false;
         const game = this._controller?.getGame();
@@ -97,16 +165,17 @@ module.exports = {
         const dealKey = `${view.sessionNumber}:${view.hand}:${view.replay}`;
         const changedDeal = dealKey !== this._dealKey;
         if (changedDeal) {
-          this.closeNameTooltip();
           this._motionEpoch = (this._motionEpoch || 0) + 1;
           this.cancelCardMotion();
           this._seatFaces = new Map();
         }
-        if (changedDeal || !view.settings.sound)
+        if (changedDeal || !view.settings.sound) {
+          this.cancelSoundTail();
           for (const audio of this._audio || []) audio.stop();
+        }
         // Records keep the live hand running offscreen. Its new cards must
         // settle immediately; there is no visible animation timer while hidden.
-        const animate = !this._hidden;
+        const animate = !this._hidden && (!this._readOnlyAttempt || Number.isInteger(this._peekId));
         const previousCards = dealKey === this._dealKey ? this._boardCount || 0 : 0;
         this._dealKey = dealKey;
         const presentedBoard = board.map((card, index) => ({
@@ -140,7 +209,7 @@ module.exports = {
               arriving:
                 animate && (arriving || (!changedDeal && Boolean(before?.cards[index]?.arriving))),
             })),
-            backCards: [0, 1].map((index) => ({
+            backCards: (view.waitingForSeat ? [] : [0, 1]).map((index) => ({
               key: `${dealKey}:${index}`,
               delay: seat.id * 65 + index * 140,
               arriving:
@@ -152,7 +221,10 @@ module.exports = {
         });
         const update = {
           ...view,
-          tableReady: view.heroCards.length === 2 && view.seats.length >= 4,
+          raiseControl: this.controlForRaise(view),
+          raiseDragging: Boolean(this._raiseGesture),
+          tableReady:
+            (view.waitingForSeat || view.heroCards.length === 2) && view.seats.length >= 4,
           finishing:
             view.done || view.hand !== this.data.hand || view.replay !== this.data.replay
               ? false
@@ -165,6 +237,7 @@ module.exports = {
             arriving: animate && (changedDeal || Boolean(this.data.heroCards[index]?.arriving)),
           })),
           showdown,
+          hasShowdown: showdown.length > 0,
           showdownContext: `${showdown.length} 人参与摊牌${game?.pots.length > 1 ? ' · 主池与边池分别结算' : ''}`,
           activePlayerCount: view.seats.length + 1,
           logs: view.logs,
@@ -178,11 +251,30 @@ module.exports = {
           countIndex: view.settings.playerCount - 5,
           emotionIndex: ['off', 'subtle', 'lively'].indexOf(view.settings.emotionMode),
         };
+        // A render-layer drag owns its thumb and caption until commit/cancel.
+        // An unrelated public redraw must not restore the last committed amount
+        // or send a committed value back into the moving render-layer thumb.
+        if (this._raiseGesture) {
+          delete update.sliderValue;
+          delete update.raiseText;
+          delete update.raiseTo;
+        }
         // Large research catalogs and card artwork need not cross the service/
         // view bridge on every bot turn. Preserve existing card nodes and motion.
+        const startsCeremony = !!view.ceremony && view.ceremony.key !== this.data.ceremony?.key;
+        if (startsCeremony) update.crownStyle = '';
         const patch = presentationPatch(this.data, update);
-        if (Object.keys(patch).length) this.setData(patch, () => this.tightenSeatRanks());
-        if (changedDeal)
+        if (Object.keys(patch).length)
+          this.setPresentationData(patch, () => {
+            this.tightenSeatRanks();
+            // Readiness marks only the UI. App foreground owns music: delayed
+            // table paints behind records must not pause or resume that player.
+            if (update.tableReady && !this._readOnlyAttempt && typeof getApp === 'function') {
+              getApp().noirTableReady = true;
+            }
+            if (startsCeremony) this.aimCrown(view.ceremony);
+          });
+        if (changedDeal && animate)
           this.scheduleCardMotion('deal', 1300, () => {
             const patch = {};
             this.data.heroCards.forEach((_, i) => (patch[`heroCards[${i}].arriving`] = false));
@@ -214,6 +306,9 @@ module.exports = {
       },
       readOnlyAttempt: this._readOnlyAttempt || null,
       readOnlySessionNumber: this._readOnlySessionNumber || null,
+      snapshots: this._readOnlyAttempt ? undefined : createSnapshotFiles() || undefined,
+      recordsBudget: WECHAT_RECORDS_BUDGET,
+      toast: (title) => wx.showToast?.({ title, icon: 'none', duration: 3000 }),
       storage: {
         getItem: (key) => wx.getStorageSync(key) || null,
         setItem: (key, value) => wx.setStorageSync(key, value),
@@ -236,14 +331,18 @@ module.exports = {
       this._initialHistoryShown = true;
     }
   },
+  joinTable() {
+    this.call('join');
+  },
   onShow() {
     const returningFromRecords = Boolean(this._browsingRecords);
     this._hidden = false;
     this._browsingRecords = false;
     const resized = this.updateWindow();
+    watchWindow(this);
     this.readResourceMotionPreference();
     this.startResourceRotation();
-    if (!this._audio?.length) this.preloadSounds();
+    if (!this._readOnlyAttempt && !this._audio?.length) this.preloadSounds();
     // The same controller has kept publishing while records were visible.
     // Re-showing it would repaint an already-current page during native Back.
     if (!this._initialHistoryShown && !returningFromRecords) this._controller?.show();
@@ -265,8 +364,9 @@ module.exports = {
       this.call('review', (reviewData) => this.updateReview(reviewData));
   },
   onHide() {
-    this.closeNameTooltip();
+    stopWindowWatch(this);
     this._hidden = true;
+    this.cancelRaise();
     clearTimeout(this._resourceTimer);
     clearTimeout(this._resourceMotionTimer);
     this.setData({ resourceRolling: false });
@@ -285,14 +385,16 @@ module.exports = {
             if (card.arriving) stopped[`${list}[${i}].${cards}[${j}].arriving`] = false;
           });
       });
-    this.setData(stopped);
+    this.setPresentationData(stopped);
     this.setData({ finishing: false, flyingChips: [] });
     this._rankEpoch = (this._rankEpoch || 0) + 1;
     if (!this._browsingRecords) this._controller?.hide();
     this.stopSounds();
   },
   onUnload() {
+    stopWindowWatch(this);
     this._destroyed = true;
+    this._raiseGesture = null;
     clearTimeout(this._resourceTimer);
     clearTimeout(this._resourceMotionTimer);
     if (typeof getApp === 'function' && getApp().noirController === this._controller)
@@ -302,9 +404,14 @@ module.exports = {
     this._controller?.destroy();
     this.stopSounds();
   },
-  onResize() {
-    this.closeNameTooltip();
-    this.updateWindow();
+  onResize(event) {
+    this.updateWindow(event);
+  },
+  onReady() {
+    watchWindow(this);
+  },
+  setPresentationData(patch, callback) {
+    this.setData(coalesceArrayPatch(this.data, patch), callback);
   },
   scheduleCardMotion(key, delay, readPatch) {
     if (this._hidden || this._destroyed) return;
@@ -315,7 +422,7 @@ module.exports = {
       if (this._cardTimers.get(key) !== timer) return;
       this._cardTimers.delete(key);
       if (this._hidden || this._destroyed || deal !== this._dealKey) return;
-      this.setData(readPatch());
+      this.setPresentationData(readPatch());
     }, delay);
     this._cardTimers.set(key, timer);
   },
@@ -337,7 +444,6 @@ module.exports = {
     return patch;
   },
   onPageScroll(event) {
-    this.closeNameTooltip();
     if (!this.data.homeLocked) this._homeScroll = event.scrollTop;
   },
   setOverlay(patch, onReady) {
@@ -358,12 +464,15 @@ module.exports = {
       onReady?.();
     });
   },
-  updateWindow() {
-    const measured = wx.getWindowInfo ? wx.getWindowInfo() : wx.getSystemInfoSync();
+  updateWindow(event) {
     const app = getApp();
+    const measured = windowInfo(wx, event, app);
     // Scrolling/keyboard chrome must not refit the table. Live and archive pages
     // reuse one window budget until an actual width/orientation change.
-    const valid = measured.windowWidth > 0 && measured.windowHeight > VIEWPORT_CHROME_HEIGHT;
+    const valid =
+      measured.windowWidth > 0 &&
+      measured.windowHeight >
+        viewportChrome(measured.windowWidth, measured.windowHeight).chromeHeight;
     if (valid && (!app.noirViewport || app.noirViewport.windowWidth !== measured.windowWidth))
       app.noirViewport = {
         ...measured,
@@ -389,6 +498,7 @@ module.exports = {
         rect.height > 0 &&
         rect.left >= 0 &&
         rect.right <= info.windowWidth &&
+        rect.right >= info.windowWidth - 120 &&
         rect.right > rect.left &&
         rect.bottom > rect.top &&
         Math.abs(rect.right - rect.left - rect.width) <= 1 &&
@@ -401,14 +511,17 @@ module.exports = {
       /* Menu measurement can be unavailable while an older client initializes. */
     }
     // The table budget stays identical through fold, settlement and retry.
+    const chrome = viewportChrome(info.windowWidth, info.windowHeight);
     const viewport = {
+      ...chrome,
+      pageOrientation: pageOrientation(wx, measured, app),
       topInset,
       bottomInset,
       windowHeight: info.windowHeight,
       navRightInset,
       compactNav: false,
       windowWidth: info.windowWidth,
-      tableHeight: Math.max(0, info.windowHeight - topInset - bottomInset - VIEWPORT_CHROME_HEIGHT),
+      tableHeight: Math.max(0, info.windowHeight - topInset - bottomInset - chrome.chromeHeight),
     };
     if (Object.entries(viewport).every(([key, value]) => this.data[key] === value)) return false;
     const arenaHeight = Math.max(300, viewport.tableHeight);
@@ -419,16 +532,26 @@ module.exports = {
       arenaWidth: (info.windowWidth - 18) / (arenaScale || 1),
     });
     const layout = this.publicLayout(this.data.board, this.data, { ...this.data, ...viewport });
+    const wasDragging = !!this._raiseGesture;
+    this._raiseGesture = null;
+    this._raiseEpoch = (this._raiseEpoch || 0) + 1;
     // A single atomic update avoids a frame with the new window but old seats.
-    const patch = presentationPatch(this.data, { ...viewport, ...layout });
-    if (Object.keys(patch).length) this.setData(patch);
+    const patch = presentationPatch(this.data, {
+      ...viewport,
+      ...layout,
+      raiseDragging: false,
+      raiseControl: this.controlForRaise({ ...this.data, ...viewport }),
+      ...(wasDragging ? { raiseText: compactChips(this.data.raiseTo) } : {}),
+    });
+    if (Object.keys(patch).length) this.setPresentationData(patch);
     return true;
   },
   publicLayout(board = [], view = this.data, viewport = this.data) {
     if (view.seats?.length) {
+      const chrome = viewportChrome(viewport.windowWidth, viewport.windowHeight);
       const tableHeight = Math.max(
         0,
-        viewport.windowHeight - viewport.topInset - viewport.bottomInset - VIEWPORT_CHROME_HEIGHT,
+        viewport.windowHeight - viewport.topInset - viewport.bottomInset - chrome.chromeHeight,
       );
       const fitted = phoneLayout({
         width: viewport.windowWidth,
@@ -437,14 +560,84 @@ module.exports = {
         seats: view.seats,
         displayHeight: viewport.windowHeight - viewport.topInset - viewport.bottomInset - 36,
       });
+      // The positioned rows are rendered as phoneSeats. Do not send a third,
+      // unused copy of every profile and card over the service/view bridge.
+      const { positioned, ...geometry } = fitted;
+      // As on Web, the waiting message keeps its size unless the players beside
+      // it would crowd it; it sits centred at 44% of the arena height.
+      const entrySize = chrome.navHeight > 48 ? { width: 230, height: 168 } : ENTRY_WELCOME_SIZE;
+      const halfHeight = entrySize.height / fitted.arenaScale / 2;
+      const corridor = entryWelcomeCorridor(
+        positioned.map((seat) => {
+          const profile = seat.parts?.[1] ?? {
+            left: 0,
+            top: 0,
+            width: seat.width,
+            height: seat.height,
+          };
+          return {
+            left: seat.left + profile.left,
+            top: seat.top + profile.top,
+            width: profile.width,
+            height: profile.height,
+          };
+        }),
+        {
+          centerX: fitted.arenaWidth / 2,
+          top: fitted.arenaHeight * 0.44 - halfHeight,
+          bottom: fitted.arenaHeight * 0.44 + halfHeight,
+        },
+      );
+      // The champion's trophy follows the shared rules on the same layout boxes
+      // Web measures, so it rests in the same spot on every platform.
+      const box = ({ left, top, width, height }) => ({
+          left,
+          top,
+          right: left + width,
+          bottom: top + height,
+        }),
+        seatParts = fitted.positioned.map((seat) =>
+          (seat.parts || [{ left: 0, top: 0, width: seat.width, height: seat.height }]).map(
+            (part) => box({ ...part, left: seat.left + part.left, top: seat.top + part.top }),
+          ),
+        ),
+        boardBox = box(fitted.public),
+        hero = box(fitted.hero),
+        heroCards = { ...hero, bottom: hero.top + fitted.heroHeight },
+        heroPlace = view.heroCrowned ? heroTrophy(heroCards, { above: boardBox.bottom }) : null;
+      const trophyFor = (index) => {
+        const place = seatTrophy(seatParts[index][1] || seatParts[index][0], {
+          bounds: { left: 0, right: fitted.arenaWidth },
+          obstacles: [...seatParts.filter((_, j) => j !== index).flat(), boardBox, hero],
+        });
+        return {
+          trophySide: place.side,
+          trophyStyle: `width:${place.width}px;height:${place.height}px;--trophy-gap:${place.gap}px;`,
+        };
+      };
       return {
-        ...fitted,
+        ...geometry,
+        heroPlaceStyle: view.heroPlaced
+          ? heroPlaceStyle({
+              room: (hero.top - boardBox.bottom) * fitted.arenaScale,
+              scale: fitted.arenaScale,
+            })
+          : '',
+        heroTrophyStyle: heroPlace
+          ? `width:${heroPlace.width}px;height:${heroPlace.height}px;left:calc(50% - ${heroPlace.width / 2}px);bottom:calc(100% + ${heroPlace.gap - heroPlace.drop}px);`
+          : '',
+        entryScale: entryWelcomeScale({
+          arenaScale: fitted.arenaScale,
+          contentWidth: entrySize.width,
+          corridorWidth: corridor * fitted.arenaScale,
+        }),
         tableHeight,
         phoneLayout: true,
-        phoneSeats: fitted.positioned.map((seat) => {
+        phoneSeats: positioned.map((seat, index) => {
           const before = this.data.phoneSeats?.find((previous) => previous.id === seat.id);
           return {
             ...seat,
+            ...(seat.crowned ? trophyFor(index) : {}),
             rankLift: view.hand === this.data.hand ? before?.rankLift || 0 : 0,
             stackWidthScale: before?.stack === seat.stack ? before.stackWidthScale || 1 : 1,
             nameFit: !view.done && before?.name === seat.name ? before.nameFit || false : false,
@@ -460,55 +653,6 @@ module.exports = {
       };
     }
     return {};
-  },
-  closeNameTooltip() {
-    this._nameTipEpoch = (this._nameTipEpoch || 0) + 1;
-    if (this.data.nameTooltip) this.setData({ nameTooltip: null });
-  },
-  showNameTooltip(event) {
-    const id = Number(event.currentTarget.dataset.id);
-    const kind = event.currentTarget.dataset.kind === 'persona' ? 'persona' : 'name';
-    const seat = this.data.phoneSeats.find((seat) => seat.id === id);
-    if (!seat || (kind === 'name' && seat.nameFit && !this.data.done) || !wx.createSelectorQuery)
-      return;
-    this.closeNameTooltip();
-    const ticket = this._nameTipEpoch;
-    const query = wx.createSelectorQuery();
-    query.select(`#seat-${kind}-${id}`).fields({
-      rect: true,
-      size: true,
-      computedStyle: ['padding-left', 'padding-right', 'border-left-width', 'border-right-width'],
-    });
-    query.select(`#seat-${kind}-measure-${id}`).boundingClientRect();
-    query.exec(([label, natural]) => {
-      if (ticket !== this._nameTipEpoch || this._hidden || this._destroyed || !label || !natural)
-        return;
-      const inset =
-        ['padding-left', 'padding-right', 'border-left-width', 'border-right-width'].reduce(
-          (sum, key) => sum + (parseFloat(label[key]) || 0),
-          0,
-        ) * (this.data.arenaScale || 1);
-      if (natural.width <= label.width - inset + 1) return;
-      this.setData(
-        {
-          nameTooltip: { text: kind === 'persona' ? seat.profileName : seat.name, visible: false },
-        },
-        () => {
-          const measure = wx.createSelectorQuery();
-          measure.select('.seat-name-tooltip').boundingClientRect();
-          measure.exec(([size]) => {
-            if (ticket !== this._nameTipEpoch || this._hidden || this._destroyed || !size) return;
-            const position = nameTooltipPosition(label, size, {
-              width: this.data.windowWidth,
-              height: this.data.windowHeight,
-              top: this.data.topInset + 36,
-              bottom: this.data.bottomInset,
-            });
-            this.setData({ 'nameTooltip.visible': true, 'nameTooltip.position': position });
-          });
-        },
-      );
-    });
   },
   tightenSeatRanks() {
     if (!wx.createSelectorQuery || this._hidden || this._destroyed) return;
@@ -545,6 +689,11 @@ module.exports = {
         if (Math.abs(lift - current) > 0.1) patch[`phoneSeats[${index}].rankLift`] = lift;
       }
       const metrics = this.data.textMetrics;
+      // Seats (and their text metrics) may not be laid out yet.
+      if (!metrics) {
+        if (Object.keys(patch).length) this.setPresentationData(patch);
+        return;
+      }
       const available = numericColumnWidth({
         profileWidth: this.data.profileWidth,
         padding: metrics['profile-padding'],
@@ -594,17 +743,37 @@ module.exports = {
             patch[`phoneSeats[${index}].nameWidthScale`] = actual;
         }
       }
-      if (Object.keys(patch).length) this.setData(patch);
+      if (Object.keys(patch).length) this.setPresentationData(patch);
     });
   },
   call(method, ...args) {
-    this._audioUnlocked = true;
-    if (typeof getApp === 'function') getApp().noirMusic?.unlock();
+    this.unlockAudio();
     try {
       return this._controller[method](...args);
     } catch (error) {
       wx.showToast({ title: error.message || '请重试', icon: 'none' });
     }
+  },
+  unlockAudio() {
+    this._audioUnlocked = true;
+    if (!this._readOnlyAttempt && typeof getApp === 'function') getApp().noirMusic?.unlock();
+  },
+  // The flying trophy lands on the champion's hidden resting trophy.
+  aimCrown(ceremony) {
+    if (!wx.createSelectorQuery) return;
+    const target = ceremony.heroWon ? '#hero-trophy' : `#seat-trophy-${ceremony.championId}`;
+    wx.createSelectorQuery()
+      .in(this)
+      .select(target)
+      .boundingClientRect()
+      .exec(([rect] = []) => {
+        if (!rect || this._destroyed || this.data.ceremony?.key !== ceremony.key) return;
+        const x = rect.left + rect.width / 2 - this.data.windowWidth / 2,
+          y = rect.top + rect.height / 2 - this.data.windowHeight * 0.45;
+        this.setData({
+          crownStyle: `--trophy-x:${Math.round(x)}px;--trophy-y:${Math.round(y)}px;--trophy-scale:${(rect.height / 100).toFixed(3)}`,
+        });
+      });
   },
   playSound(name) {
     if (this._hidden || !wx.createInnerAudioContext || !this._audioUnlocked) return;
@@ -615,8 +784,17 @@ module.exports = {
       call: 'chip',
       deal: 'deal',
       win: 'win',
+      champion: 'champion',
+      crowned: 'crowned',
+      farewell: 'farewell',
     };
     if (!names[name]) return;
+    // Finish both knocks before a following result cue. Keep only the latest
+    // pending cue, and discard it on hide, mute, retry or a new deal.
+    if (this._checkTail) {
+      this._soundAfterCheck = name;
+      return;
+    }
     try {
       const audio = this._soundPool?.[names[name]];
       if (!audio) return;
@@ -625,18 +803,56 @@ module.exports = {
       for (const other of this._audio || []) if (other !== audio) other.stop();
       audio.stop();
       audio.seek?.(0);
-      if (typeof getApp === 'function') getApp().noirMusic?.duck?.();
+      this._activeSound = audio;
+      if (name === 'check') this.holdCheck(1000);
       audio.play();
     } catch {
       /* A device can block audio until the first user gesture. */
     }
   },
+  holdCheck(delay) {
+    clearTimeout(this._soundTailTimer);
+    const epoch = this._soundEpoch || 0;
+    this._checkTail = true;
+    this._soundTailTimer = setTimeout(() => {
+      if (epoch !== (this._soundEpoch || 0)) return;
+      this._soundTailTimer = null;
+      this._checkTail = false;
+      const next = this._soundAfterCheck;
+      this._soundAfterCheck = null;
+      if (next && !this._hidden && !this._destroyed && this.data.settings.sound)
+        this.playSound(next);
+    }, delay);
+  },
   preloadSounds() {
-    this._soundPool = {};
+    if (this._audio?.length && this._soundPool) return;
+    // DevTools hot reload can run onShow without replaying onLoad's fields.
+    // Dispose any orphaned contexts before rebuilding a complete sound pool.
+    this.stopSounds();
     if (!wx.createInnerAudioContext) return;
     for (const name of ['fold', 'check', 'chip', 'deal', 'win']) {
-      const audio = wx.createInnerAudioContext();
+      const audio = wx.createInnerAudioContext({ useWebAudioImplement: true });
       audio.src = `/assets/sounds/${name}.wav`;
+      audio.volume = 1;
+      audio.obeyMuteSwitch = false;
+      if (name === 'check')
+        audio.onPlay?.(() => {
+          // Count the two knocks from actual playback, not a potentially slow
+          // first decode. The request-time timeout only bounds a failed player.
+          if (this._activeSound === audio && this._checkTail && !this._hidden && !this._destroyed)
+            this.holdCheck(240);
+        });
+      audio.onError((error) => {
+        this._audioErrors ||= [];
+        this._audioErrors.push({ name, code: error.errCode, message: error.errMsg });
+        if (this._audioErrors.length > 8) this._audioErrors.shift();
+      });
+      this._audio.push(audio);
+      this._soundPool[name] = audio;
+    }
+    for (const [name, path] of Object.entries(ceremonySoundFiles())) {
+      const audio = wx.createInnerAudioContext();
+      audio.src = path;
       audio.volume = 1;
       audio.obeyMuteSwitch = false;
       audio.onError(() => {});
@@ -645,35 +861,114 @@ module.exports = {
     }
   },
   stopSounds() {
+    this.cancelSoundTail();
     (this._audio || []).forEach((audio) => {
       audio.stop();
       audio.destroy();
     });
     this._audio = [];
     this._soundPool = {};
+    this._activeSound = null;
+  },
+  cancelSoundTail() {
+    this._soundEpoch = (this._soundEpoch || 0) + 1;
+    clearTimeout(this._soundTailTimer);
+    this._soundTailTimer = null;
+    this._checkTail = false;
+    this._soundAfterCheck = null;
   },
   act(event) {
+    this.cancelRaise();
     this.call('action', event.currentTarget.dataset.action);
   },
   preset(event) {
+    this.cancelRaise();
     this.call('preset', event.currentTarget.dataset.preset);
   },
+  raiseView() {
+    return {
+      currentBet: this.data.currentBet,
+      pot: this.data.potAmount,
+      legal: {
+        enabled: this.data.canAct,
+        canRaise: this.data.canRaise,
+        chipUnit: this.data.chipUnit,
+        minRaiseTo: this.data.minRaise,
+        maxRaiseTo: this.data.maxRaise,
+        callAmount: this.data.callAmount || 0,
+      },
+    };
+  },
+  controlForRaise(view = this.data) {
+    return {
+      enabled: !!view.canRaise && !this._hidden && !this._destroyed,
+      position: view.sliderValue || 0,
+      key: [
+        this._raiseEpoch || 0,
+        view.sessionNumber,
+        view.hand,
+        view.replay,
+        view.street,
+        view.currentBet,
+        view.potAmount,
+        view.minRaise,
+        view.maxRaise,
+      ].join(':'),
+    };
+  },
+  acceptsRail(message) {
+    return (
+      this.data.canRaise &&
+      !this._hidden &&
+      !this._destroyed &&
+      message.key === this.data.raiseControl.key &&
+      !(this._endedRaise?.key === message.key && message.id <= this._endedRaise.id)
+    );
+  },
+  railPreview(message) {
+    if (!this.acceptsRail(message)) return;
+    this.previewRaise({ detail: { value: message.position } });
+    this._raiseGesture = { ...this._raiseGesture, key: message.key, id: message.id };
+  },
+  railCommit(message) {
+    if (!this.acceptsRail(message)) return;
+    this._endedRaise = { key: message.key, id: message.id };
+    this.changeRaise({ detail: { value: message.position } });
+  },
+  railCancel(message) {
+    if (!this.acceptsRail(message)) return;
+    this._endedRaise = { key: message.key, id: message.id };
+    this.cancelRaise();
+  },
   changeRaise(event) {
-    this.call('setRaise', event.detail.value);
+    if (!this.data.canRaise || this._hidden || this._destroyed) return;
+    this._raiseGesture = null;
+    this.call('setRaisePosition', event.detail.value);
+  },
+  cancelRaise() {
+    this._raiseGesture = null;
+    this._raiseEpoch = (this._raiseEpoch || 0) + 1;
+    this.setData({ raiseDragging: false, raiseControl: this.controlForRaise() });
+    if (this.data.canRaise && !this._hidden && !this._destroyed) this._controller?.show();
   },
   previewRaise(event) {
+    if (!this.data.canRaise || this._hidden || this._destroyed) return;
+    this.unlockAudio();
     this._controller?.engageTurn();
-    // Do not write the native slider's controlled value back during dragging.
-    // Only its caption changes; the final change commits once to the engine.
-    const value = Math.max(
-      this.data.minRaise,
-      Math.min(
-        this.data.maxRaise,
-        Math.round(Number(event.detail.value) / this.data.chipUnit) * this.data.chipUnit,
+    const value = sliderRaiseTo(this.raiseView(), event.detail.value);
+    if (value === null) return;
+    this._raiseGesture = { position: event.detail.value };
+    // WXS moves the visible thumb without a logic/view bridge round trip.
+    // Only update the caption;
+    // feeding its position back through setData during a drag fights touch input.
+    this.setData({
+      raiseText: compactChips(value),
+      raiseDragging: true,
+      raisePreviewPosition: Math.max(
+        0,
+        Math.min(this.data.sliderLimit, Number(event.detail.value) || 0),
       ),
-    );
-    const text = compactChips(value);
-    if (text !== this.data.raiseText) this.setData({ raiseText: text });
+    });
   },
   flyChips(id) {
     if (!wx.createSelectorQuery || this._hidden || this._destroyed) return;
@@ -705,11 +1000,13 @@ module.exports = {
     });
   },
   nextHand() {
+    this._raiseGesture = null;
     this._finishRequested = false;
     this.setData({ finishing: false });
     this.call('nextHand');
   },
   retryHand() {
+    if (this._raiseGesture) this.cancelRaise();
     this._finishRequested = false;
     this.setData({ finishing: false });
     this.call('retry');
@@ -862,29 +1159,8 @@ module.exports = {
     const detailProfile = profile
       ? {
           ...profile,
-          portraitCredit: PORTRAIT_CREDITS[profile.id] || null,
           sizingLow: Math.round(profile.sizing[0] * 100),
           sizingHigh: Math.round(profile.sizing[1] * 100),
-          research: profile.research
-            ? {
-                ...profile.research,
-                formatsText: profile.research.formats.join(' · '),
-                career: profile.research.career.map((item) => ({
-                  ...item,
-                  references: item.sourceIds.map((id) => ({
-                    label: `[${profile.sources.findIndex((s) => s.id === id) + 1}]`,
-                    url: profile.sources.find((s) => s.id === id)?.url,
-                  })),
-                })),
-                observations: profile.research.observations.map((item) => ({
-                  ...item,
-                  references: item.sourceIds.map((id) => ({
-                    label: `[${profile.sources.findIndex((s) => s.id === id) + 1}]`,
-                    url: profile.sources.find((s) => s.id === id)?.url,
-                  })),
-                })),
-              }
-            : null,
           axisRows: PROFILE_AXES.map(([id, label], index) => ({
             id,
             label,
@@ -936,9 +1212,6 @@ module.exports = {
   settingsScrolled(event) {
     this._settingsScroll = event.detail.scrollTop;
     this.closeSelect();
-  },
-  togglePersonaNotice() {
-    this.setData({ noticeExpanded: !this.data.noticeExpanded });
   },
   toggleComparison() {
     this.setData({ comparisonOpen: !this.data.comparisonOpen });
@@ -1025,9 +1298,6 @@ module.exports = {
       },
     });
   },
-  returnToGame() {
-    navigation.returnToGame();
-  },
   openGuide() {
     this.showGuide();
   },
@@ -1085,7 +1355,12 @@ module.exports = {
       this.data.reviewPerspective === 'hero'
         ? reviewData.steps
         : opponents.filter((step) => !filter || step.name === names[filter - 1]);
-    const reviewIndex = Math.min(this.data.reviewIndex, Math.max(0, steps.length - 1));
+    const selectedIndex = this.data.reviewSteps?.[this.data.reviewIndex]?.index;
+    const retainedIndex = steps.findIndex((step) => step.index === selectedIndex);
+    const reviewIndex =
+      retainedIndex >= 0
+        ? retainedIndex
+        : Math.min(this.data.reviewIndex, Math.max(0, steps.length - 1));
     const selectedStep = steps[reviewIndex];
     if (this.data.reviewPerspective !== 'hero' && selectedStep && !selectedStep.analyzed) {
       Object.assign(selectedStep, this.call('reviewOpponent', selectedStep.index) || {});
@@ -1132,7 +1407,7 @@ module.exports = {
   openReview() {
     this.setOverlay({
       reviewOpen: true,
-      reviewActivityOpen: false,
+      reviewActivityOpen: true,
       reviewPerspective: 'hero',
       reviewIndex: 0,
       opponentFilter: 0,

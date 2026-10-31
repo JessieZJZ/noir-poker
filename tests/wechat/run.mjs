@@ -3,6 +3,7 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import assert from 'node:assert/strict';
 import { fileURLToPath } from 'node:url';
+import { createHash } from 'node:crypto';
 
 const root = fileURLToPath(new URL('../../', import.meta.url));
 const require = createRequire(path.join(root, '.artifacts/wechat-tools/package.json'));
@@ -22,6 +23,29 @@ report.build = {
   sourceDigest: build.sourceDigest,
   builtAt: build.builtAt,
   totalBytes: build.totalBytes,
+};
+const personaStylePath = 'pages/table/table.wxss';
+const personaStyleBytes = await readFile(path.join(root, '.artifacts/wechat', personaStylePath));
+const personaStyleManifest = build.files.find((file) => file.path === personaStylePath);
+assert.ok(personaStyleManifest, 'The actual persona stylesheet must be in the generated manifest');
+assert.equal(
+  createHash('sha256').update(personaStyleBytes).digest('hex'),
+  personaStyleManifest.sha256,
+);
+const personaStyleRule = [
+  ...personaStyleBytes
+    .toString('utf8')
+    .matchAll(/\.web-phone-layout \.seat \.persona\s*\{([^}]+)\}/g),
+].at(-1)?.[1];
+assert.ok(personaStyleRule, 'The packaged four-character persona rule must exist');
+assert.match(personaStyleRule, /white-space:\s*nowrap/);
+assert.doesNotMatch(personaStyleRule, /text-overflow:\s*ellipsis/);
+report.personaStylePolicy = {
+  file: personaStylePath,
+  sha256: personaStyleManifest.sha256,
+  whiteSpace: 'nowrap',
+  runtimeObservation:
+    'SDK may omit white-space; manifest-bound rule and real single-line bounds are separate checks',
 };
 let mini;
 try {
@@ -74,6 +98,10 @@ try {
     }
     throw Error('Mini-program page did not reach the expected state');
   };
+  await wait((data) => data.tableReady && data.waitingForSeat);
+  await mini.screenshot({ path: path.join(output, 'waiting-before-entry.png') });
+  await (await page.$('#join-table-button')).tap();
+  await wait((data) => !data.dealing && !data.waitingForSeat);
   const scrollHomeTop = async () => {
     // Native page scrolling and the Page's onPageScroll event are asynchronous.
     // Finish any overlay restoration before opening the next modal at the top.
@@ -171,6 +199,12 @@ try {
       data.phoneSeats.map((seat) => `seat-body-${seat.id}`),
     );
     const shellBottom = Number(shellOffset.top) + Number(shellSize.height);
+    const chromeSizes = {};
+    for (const selector of ['.nav', '.game-header', '.hint-slot']) {
+      const element = await page.$(selector);
+      assert.ok(element, `${selector} must render in the actual phone chrome`);
+      chromeSizes[selector] = await element.size();
+    }
     return {
       key: geometryKey(data),
       playerIds: data.phoneSeats.map((seat) => seat.id),
@@ -189,6 +223,14 @@ try {
         height: Number(tableSize.height),
       },
       dockHeight: Number(dockSize.height),
+      dock: { ...dockOffset, ...dockSize },
+      chrome: {
+        sizes: chromeSizes,
+        navHeight: data.navHeight,
+        tableHeaderHeight: data.tableHeaderHeight,
+        liveDockHeight: data.liveDockHeight,
+        compactDockHeight: data.compactDockHeight,
+      },
       shellBottom,
       reservedSpace: shellBottom - 1 - Number(dockOffset.top) - Number(dockSize.height),
       elements,
@@ -198,21 +240,35 @@ try {
     const { viewport, tableHeight } = geometry;
     assert.equal(
       tableHeight,
-      Math.max(0, viewport.height - viewport.topInset - viewport.bottomInset - 284),
+      Math.max(0, viewport.height - viewport.topInset - viewport.bottomInset - 304),
       'The table keeps the fixed viewport budget',
     );
     assert.equal(geometry.table.height, tableHeight);
-    assert.equal(Number(geometry.shell.height), tableHeight + 50 + (compact ? 64 : 134));
-    assert.equal(geometry.dockHeight, compact ? 64 : 134);
+    assert.equal(Number(geometry.shell.height), tableHeight + 50 + (compact ? 64 : 154));
+    assert.equal(geometry.dockHeight, compact ? 64 : 154);
+    assert.equal(geometry.chrome.navHeight, 48);
+    assert.equal(geometry.chrome.tableHeaderHeight, 50);
+    assert.equal(geometry.chrome.liveDockHeight, 154);
+    assert.equal(geometry.chrome.compactDockHeight, 64);
+    assert.equal(geometry.chrome.sizes['.nav'].height, 48);
+    assert.equal(geometry.chrome.sizes['.game-header'].height, 26);
+    assert.equal(geometry.chrome.sizes['.hint-slot'].height, 22);
+    assert.ok(
+      geometry.dock.left >= -1 &&
+        geometry.dock.left + geometry.dock.width <= viewport.width + 1 &&
+        geometry.dock.top >= -1 &&
+        geometry.dock.top + geometry.dock.height <= viewport.height - viewport.bottomInset + 1,
+      'The actual action dock stays inside the usable first screen',
+    );
     assert.ok(
       Math.abs(geometry.shell.top - (viewport.topInset + 36 + 48 + 8)) <= 1,
       'The shell keeps its original top position',
     );
     assert.ok(
       Math.abs(
-        geometry.shellBottom - (viewport.height - viewport.bottomInset - 8 - (compact ? 70 : 0)),
+        geometry.shellBottom - (viewport.height - viewport.bottomInset - 8 - (compact ? 90 : 0)),
       ) <= 1,
-      'Settlement releases only the unused 70px of action controls',
+      'Settlement releases only the unused 90px of action controls',
     );
     assert.ok(
       Math.abs(geometry.reservedSpace) <= 1,
@@ -236,6 +292,12 @@ try {
     report.tableGeometry.comparisons.push({ name, key: current.key, baseline, current });
     assert.ok(baseline, `${name} must use the same session, hand and retry's live baseline`);
     assertTableBudget(current, true);
+    const dockRelease = baseline.dockHeight - current.dockHeight;
+    assert.equal(dockRelease, 90);
+    assert.ok(
+      Math.abs(Number(baseline.shell.height) - Number(current.shell.height) - dockRelease) <= 1,
+      'The same hand releases exactly its measured live-to-settled dock height',
+    );
     assert.deepEqual(current.viewport, baseline.viewport);
     assert.deepEqual(current.playerIds, baseline.playerIds);
     const compareBounds = (actual, expected, label) => {
@@ -247,7 +309,7 @@ try {
     };
     compareBounds(
       current.shell,
-      { ...baseline.shell, height: baseline.shell.height - 70 },
+      { ...baseline.shell, height: baseline.shell.height - dockRelease },
       'shell',
     );
     compareBounds(current.table, baseline.table, 'table');
@@ -291,10 +353,73 @@ try {
         if (el) textSizes[selector] = parseFloat(await el.style('font-size'));
       }
       assert.ok(textSizes['.seat-name'] >= 13 && textSizes['.seat-body > .stack'] >= 13);
-      assert.ok(textSizes['.persona'] >= 12 && textSizes['.seat-action'] >= 13);
+      assert.ok(textSizes['.seat-action'] >= 13);
       assert.ok(textSizes['.rank'] >= 12 && textSizes['.pot-detail'] >= 13);
+      const metrics = data.textMetrics;
+      const rightColumn =
+        data.profileWidth - metrics['profile-padding'] * 2 - metrics['player-avatar'] - 6;
+      const personaFit = [];
+      assert.ok(metrics['player-persona-fit'] > 0);
+      assert.ok(metrics['player-persona-fit'] <= metrics['player-persona'] * 0.82);
+      for (const seat of data.phoneSeats) {
+        const tag = await page.$(`#seat-persona-${seat.id}`);
+        assert.ok(tag, `Seat ${seat.id} must show its complete style`);
+        const text = (await tag.text()).trim();
+        const font = parseFloat(await tag.style('font-size'));
+        const expected =
+          metrics[seat.profileId === 'balanced' ? 'player-persona' : 'player-persona-fit'];
+        assert.equal(text, seat.profileName);
+        assert.equal(font, expected, 'Every style uses its exact shared four-character fit budget');
+        const whiteSpace = await tag.style('white-space');
+        if (whiteSpace !== null) assert.equal(whiteSpace, 'nowrap');
+        assert.notEqual(await tag.style('text-overflow'), 'ellipsis');
+        const widths = await Promise.all(
+          ['padding-left', 'padding-right', 'border-left-width', 'border-right-width'].map(
+            async (property) => parseFloat(await tag.style(property)),
+          ),
+        );
+        assert.ok(widths.every(Number.isFinite));
+        const paddingAndBorders = widths.reduce((sum, width) => sum + width, 0);
+        const size = await tag.size();
+        const vertical = await Promise.all(
+          ['padding-top', 'padding-bottom', 'border-top-width', 'border-bottom-width'].map(
+            async (property) => parseFloat(await tag.style(property)),
+          ),
+        );
+        assert.ok(vertical.every(Number.isFinite));
+        const lineHeight = parseFloat(await tag.style('line-height'));
+        assert.ok(Number.isFinite(lineHeight) && lineHeight > 0);
+        const verticalPaddingAndBorders = vertical.reduce((sum, width) => sum + width, 0);
+        const intrinsicActualHeight = size.height / data.arenaScale;
+        const singleLineErrorPx = Math.abs(
+          intrinsicActualHeight - lineHeight - verticalPaddingAndBorders,
+        );
+        assert.ok(singleLineErrorPx <= 1, 'The real complete style occupies exactly one line');
+        assert.ok(
+          font * [...text].length + paddingAndBorders <= rightColumn,
+          `Seat ${seat.id} complete CJK style and padding fit its original right column`,
+        );
+        assert.ok(size.width <= rightColumn * data.arenaScale + 1);
+        personaFit.push({
+          id: seat.id,
+          text,
+          font,
+          expected,
+          rightColumn,
+          paddingAndBorders,
+          whiteSpaceComputed: whiteSpace,
+          whiteSpaceRuleSource: report.personaStylePolicy,
+          lineHeight,
+          verticalPaddingAndBorders,
+          intrinsicActualHeight,
+          singleLineErrorPx,
+          actualBounds: { ...(await tag.offset()), ...size },
+          scaledFontPx: font * data.arenaScale,
+          measurement: 'Rendered capsule bounds and scaled CSS font, not raster glyph ink height',
+        });
+      }
       report.readability ??= {};
-      report.readability[name] = textSizes;
+      report.readability[name] = { ...textSizes, personaFit };
       const gaps = [];
       const words = await Promise.all(
         (await page.$$('.seat-action-word')).map(async (word) => ({
@@ -525,16 +650,31 @@ try {
   assert.equal(await rail.style('animation-name'), 'none');
   assert.equal(await rail.style('box-shadow'), 'none');
   const notice = await page.$('.action-notice');
-  const slider = await page.$('.raise-controls slider');
+  const thumb = await page.$('#raise-thumb');
+  const controlRail = await page.$('#raise-track .raise-rail');
+  assert.ok(thumb, 'The current render-layer raise thumb must be visible');
+  assert.ok(controlRail, 'The current render-layer raise rail must be visible');
+  const thumbSize = await thumb.size();
+  assert.equal(thumbSize.width, 15);
+  assert.equal(thumbSize.height, 15);
+  assert.equal((await controlRail.size()).height, 5);
   const noticeTop = (await notice.offset()).top;
   report.turnAttention.noticeSpacing = {
-    topGap: noticeTop - (await (await page.$('.action-dock')).offset()).top,
-    sliderGap: (await slider.offset()).top - noticeTop - (await notice.size()).height,
+    topGap: noticeTop - (await rail.offset()).top - (await rail.size()).height,
+    controlGap: (await controlRail.offset()).top - noticeTop - (await notice.size()).height,
+    thumbGap: (await thumb.offset()).top - noticeTop - (await notice.size()).height,
+    thumbSize,
+    controlRailSize: await controlRail.size(),
   };
-  // WeChat's 24px notice sits in its own compact dock, whose original gap is 2.5px.
-  assert.equal(await notice.style('top'), '6px');
-  assert.ok(report.turnAttention.noticeSpacing.topGap >= 8);
-  assert.ok(report.turnAttention.noticeSpacing.sliderGap >= 0);
+  assert.ok(report.turnAttention.noticeSpacing.topGap >= 4);
+  assert.ok(report.turnAttention.noticeSpacing.controlGap >= 4);
+  assert.ok(report.turnAttention.noticeSpacing.thumbGap >= 4);
+  assert.ok(
+    Math.abs(
+      report.turnAttention.noticeSpacing.topGap - report.turnAttention.noticeSpacing.controlGap,
+    ) <= 1,
+    JSON.stringify(report.turnAttention.noticeSpacing),
+  );
   // The host stays still; shared CSS animates two pseudo-element light fronts.
   // Web/native frame sampling covers their direction; DevTools retains a capture.
   await page.waitFor(850);
@@ -550,7 +690,7 @@ try {
   await wait((data) => data.turnPhase === 'reminder', 10000);
   await wait((data) => data.turnPhase === 'waiting');
   assert.deepEqual(await turnGeometry(), beforeAttention);
-  await invoke('previewRaise', { detail: { value: (await page.data()).minRaise } });
+  await invoke('previewRaise', { detail: { value: 0 } });
   await invoke('onHide');
   assert.equal((await page.data()).turnPhase, '');
   await page.waitFor(9000);
@@ -568,6 +708,13 @@ try {
     sizingCancelled: true,
   };
   await capture('table', ['.nav', '.game-shell', '.board-row', '.hero-cards', '.action-buttons']);
+  const styleSeat = (await page.data()).phoneSeats[0];
+  assert.equal(await (await page.$(`#seat-persona-${styleSeat.id}`)).text(), styleSeat.profileName);
+  assert.equal(await page.$('.seat-name-tooltip'), null);
+  report.styleFullName = {
+    text: styleSeat.profileName,
+    scope: 'Full style always displayed, no long-press overlay',
+  };
   assert.equal((await (await page.$('.nav')).size()).height, 48);
   for (const button of await page.$$('.action-buttons button'))
     assert.equal((await button.size()).height, 38);
@@ -575,7 +722,7 @@ try {
     assert.equal(await button.attribute('hover-class'), 'none');
   report.compactChrome = {
     navHeight: 48,
-    liveDockHeight: 134,
+    liveDockHeight: 154,
     primaryButtonHeight: 38,
     tableHeaderHeight: 26,
     buttonHoverClass: 'none',
@@ -619,11 +766,15 @@ try {
   const menu = await page.$('.selection-sheet');
   const t = await trigger.offset(),
     ts = await trigger.size(),
-    m = await menu.offset();
-  assert.ok(
-    Math.abs(m.top - t.top - ts.height - 4) <= 1,
-    'Count dropdown opens immediately below its trigger',
-  );
+    m = await menu.offset(),
+    ms = await menu.size();
+  // It opens 4px below its trigger, or 4px above it when a short screen
+  // leaves too little room below (e.g. a 375x667 simulator).
+  const opensBelow = Math.abs(m.top - t.top - ts.height - 4) <= 1;
+  const placed = (await page.data()).selection;
+  const opensAbove =
+    Math.abs(m.top + placed.height + 4 - t.top) <= 1 && ms.height - placed.height <= 2;
+  assert.ok(opensBelow || opensAbove, 'Count dropdown opens immediately beside its trigger');
   assert.equal(
     await (await page.$('.selection-backdrop')).style('background-color'),
     'rgba(0, 0, 0, 0)',
@@ -693,13 +844,6 @@ try {
         c.left >= a.left && c.left + cs.width <= a.left + a.width + 0.5,
         'Profile text stays inside its own column',
       );
-      if (
-        selector === '.profile-name' &&
-        ['Daniel Negreanu', 'Patrik Antonius', 'Stephen Chidwick'].includes(
-          (await page.data()).profiles[i].short,
-        )
-      )
-        assert.ok(cs.height >= 40, 'Long proper names wrap into multiple lines');
     }
   }
   await capture('settings-profiles', [
@@ -720,19 +864,26 @@ try {
   };
   if ((await page.data()).settings.mixed) await invoke('mixProfiles');
   assert.equal(await (await page.$('.small-button')).style('background-color'), 'rgba(0, 0, 0, 0)');
-  await chooseSeat(1, 'tan');
+  await chooseSeat(1, 'rook');
   await chooseSeat(2, 'balanced');
   await invoke('mixProfiles');
-  assert.equal((await page.data()).settings.mixed, true);
-  assert.equal((await page.data()).settings.assignments[1], 'tan');
-  await chooseSeat(3, 'ivey');
+  const mixedOn = (await page.data()).settings;
+  assert.equal(mixedOn.mixed, true);
+  // Every seated opponent, manual choices included, gets a distinct
+  // non-balanced style.
+  const seatedStyles = Array.from(
+    { length: mixedOn.playerCount - 1 },
+    (_, i) => mixedOn.assignments[i + 1],
+  );
+  assert.equal(new Set(seatedStyles).size, Math.min(seatedStyles.length, 7));
+  assert.ok(seatedStyles.every((id) => id !== 'balanced'));
+  await chooseSeat(3, 'owen');
   await invoke('mixProfiles');
   const mixedSettings = (await page.data()).settings;
   assert.equal(mixedSettings.mixed, false);
-  assert.equal(mixedSettings.assignments[1], 'tan');
-  assert.equal(mixedSettings.assignments[2], 'balanced');
-  assert.equal(mixedSettings.assignments[3], 'ivey');
-  report.mixedToggle = mixedSettings;
+  // Cancelling returns every seat to balanced.
+  assert.ok(Object.values(mixedSettings.assignments).every((id) => id === 'balanced'));
+  report.mixedToggle = { on: mixedOn, off: mixedSettings };
   await capture('settings-roster', [
     '.settings-modal',
     '.seat-roster',
@@ -750,8 +901,8 @@ try {
     'Settings background covers system/capsule areas as well',
   );
   await capture('settings-bottom', ['.settings-modal', '.info-module', '.settings-save-row']);
-  await scrollToSetting('.profile-card[data-id="haxton"]', 80);
-  await (await page.$('.profile-card[data-id="haxton"]')).tap();
+  await scrollToSetting('.profile-card[data-id="owen"]', 80);
+  await (await page.$('.profile-card[data-id="owen"]')).tap();
   await wait((data) => !!data.detailProfile);
   const profileDetail = await page.$('.profile-detail');
   report.motion = {
@@ -769,43 +920,20 @@ try {
     '.axis',
     '.profile-sizing',
   ]);
-  assert.match((await page.data()).detailProfile.research.identity, /\S/);
-  const sourceUrl = (await page.data()).detailProfile.sources[0].url;
-  const sourceLink = await page.$('.research-source .research-link');
-  const sourceScroll = await page.$('.profile-detail .modal-scroll');
-  const linkOffset = await sourceLink.offset(),
-    scrollOffset = await sourceScroll.offset();
-  await sourceScroll.scrollTo(
-    0,
-    Math.max(
-      0,
-      (await sourceScroll.property('scrollTop')) + linkOffset.top - scrollOffset.top - 20,
-    ),
-  );
-  await page.waitFor(250);
-  // web-view pages are outside miniprogram-automator's inspectable WXML view.
-  // Verify the real link tap and URL handoff separately from the live page suite.
-  await mini.evaluate(() => {
-    getApp().__noirSourceNavigation = null;
-  });
-  await mini.mockWxMethod('navigateTo', function (options) {
-    getApp().__noirSourceNavigation = options.url;
-    return { errMsg: 'navigateTo:ok' };
-  });
-  try {
-    await sourceLink.tap();
-    await wait(async () => !!(await mini.evaluate(() => getApp().__noirSourceNavigation)), 5000);
-    const requested = await mini.evaluate(() => getApp().__noirSourceNavigation);
-    assert.equal(requested, `/pages/source/source?url=${encodeURIComponent(sourceUrl)}`);
-    report.sourceNavigation = {
-      url: sourceUrl,
-      requested,
-      mode: 'Real link tap; platform navigation mocked. External web-view requires separate GUI/device validation.',
-    };
-  } finally {
-    await mini.restoreWxMethod('navigateTo');
-    await mini.evaluate(() => {
-      delete getApp().__noirSourceNavigation;
+  assert.equal((await page.data()).detailProfile.character.sections.length, 5);
+  assert.equal((await page.$$('.profile-detail .research-link')).length, 0);
+  report.originalCharacters = [];
+  for (const profile of (await page.data()).profiles) {
+    await invoke('viewProfile', { currentTarget: { dataset: { id: profile.id } } });
+    await wait((data) => data.detailProfile?.id === profile.id);
+    const detail = (await page.data()).detailProfile;
+    assert.equal(detail.character.sections.length, 5);
+    assert.equal(detail.sources.length, 0);
+    report.originalCharacters.push({
+      id: detail.id,
+      name: detail.name,
+      sections: detail.character.sections.length,
+      portrait: detail.portrait,
     });
   }
 
@@ -828,8 +956,15 @@ try {
   const actionExample = await readGuideAmounts();
   assert.ok(actionExample.includes('选择加注 1.2K 则补 1K'));
   assert.ok(!/\b(?:1200|1000)\b/.test(actionExample), 'Guide chip examples must use K');
+  // The preflop win-rate table is collapsed until opened, like Web.
+  assert.equal((await page.$$('.preflop-row')).length, 0);
   await invoke('toggleGuide', { currentTarget: { dataset: { index: 0 } } });
   assert.equal((await page.data()).guideExpanded[0], true);
+  assert.equal((await page.$$('.preflop-row')).length, 39);
+  assert.ok((await (await page.$('.preflop-table')).text()).includes('85%'));
+  await capture('guide-preflop', ['.guide-sheet', '.preflop-table']);
+  await invoke('toggleGuide', { currentTarget: { dataset: { index: 1 } } });
+  assert.equal((await page.data()).guideExpanded[1], true);
   const raiseExample = await readGuideAmounts();
   assert.ok(raiseExample.includes('至少要加到 1K'));
   report.visualGuide = {
@@ -914,11 +1049,11 @@ try {
   const vibrationsBefore = await mini.evaluate(() => getApp().__noirTurnVibrations.length);
   assert.ok(vibrationsBefore > 0, 'Real controller turns must dispatch short vibrations');
   const sliderBefore = await page.data();
-  await invoke('previewRaise', { detail: { value: sliderBefore.minRaise + 100 } });
+  await invoke('previewRaise', { detail: { value: sliderBefore.sliderLimit / 2 } });
   const sliderPreview = await page.data();
   assert.equal(sliderPreview.raiseTo, sliderBefore.raiseTo);
   assert.deepEqual(sliderPreview.boardSlots, sliderBefore.boardSlots);
-  await invoke('changeRaise', { detail: { value: sliderBefore.minRaise } });
+  await invoke('changeRaise', { detail: { value: 0 } });
   assert.equal(
     await mini.evaluate(() => getApp().__noirTurnVibrations.length),
     vibrationsBefore,
@@ -954,7 +1089,8 @@ try {
   await settle('settlement');
   await capture('settlement', ['.settled-buttons', '.hero', '.board-row']);
   const beforePeek = await page.data();
-  const target = beforePeek.phoneSeats.find((seat) => seat.cards.length === 0);
+  // A folded opponent: an unrevealed winner would swap "获胜" for its hand.
+  const target = beforePeek.phoneSeats.find((seat) => seat.cards.length === 0 && seat.folded);
   assert.ok(target, 'A folded opponent must be available for the peek regression');
   const targetCardIndex = beforePeek.phoneSeats
     .slice(0, beforePeek.phoneSeats.indexOf(target))
@@ -1057,8 +1193,8 @@ try {
   await capture('session-activity', [
     '.practice-panel',
     '.activity-panel',
-    '.bottom-links',
-    '.bottom-links button',
+    '.practice-panel .session-title',
+    '.practice-reset',
   ]);
   for (let attempt = 0; attempt < 3; attempt++) {
     await mini.pageScrollTo(100000);
@@ -1089,10 +1225,10 @@ try {
     /^第 \d+ 手开始/,
     'Display the real hand start before later activity',
   );
-  const resetSize = await (await page.$('.bottom-links button')).size();
+  const resetSize = await (await page.$('.practice-reset')).size();
   assert.ok(
-    resetSize.width >= 74 && resetSize.width <= 82,
-    'The footer reset control keeps the Web text-button width, not WeChat’s 184px default',
+    resetSize.width > 0 && resetSize.height === 32,
+    'The reset control in the practice heading has a real touch target',
   );
   await scrollHomeTop();
   for (const count of [5, 6, 7, 8, 9]) {
@@ -1129,6 +1265,26 @@ try {
     ]);
     await invoke('closeReview');
   }
+  // The count/layout passes deliberately fold Hero. They cannot guarantee a
+  // showdown between bots, so exercise actual legal check/calls separately.
+  report.showdownCoverage = { additionalHands: 0, heroCheckCalls: 0 };
+  for (
+    let hand = 0;
+    hand < 10 && !report.pages.some((entry) => entry.name === 'showdown');
+    hand++
+  ) {
+    await scrollHomeTop();
+    await invoke('nextHand');
+    report.showdownCoverage.additionalHands++;
+    for (let decision = 0; decision < 30; decision++) {
+      await wait((data) => data.done || data.canAct);
+      if ((await page.data()).done) break;
+      await (await page.$('[data-action="call"]')).tap();
+      report.showdownCoverage.heroCheckCalls++;
+    }
+    await wait((data) => data.done);
+    await captureShowdown();
+  }
   assert.ok(
     report.pages.some((entry) => entry.name === 'showdown'),
     'At least one real showdown must be captured',
@@ -1156,7 +1312,11 @@ try {
     await mini.screenshot({ path: path.join(output, `motion-${method}-early.png`) });
     await page.waitFor(1450);
     assert.equal(await face.style('opacity'), '1');
-    assert.equal(await face.style('animation-name'), 'none');
+    // A random premium hand then plays its 2.6 s glow on the same faces.
+    assert.equal(
+      await face.style('animation-name'),
+      (await page.data()).premium ? 'premium-glow' : 'none',
+    );
     await mini.screenshot({ path: path.join(output, `motion-${method}-complete.png`) });
     report.dealTransitions.push({
       method,

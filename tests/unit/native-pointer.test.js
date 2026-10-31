@@ -34,3 +34,23 @@ test('native touch rejects clipped, invalid and mismatched surfaces instead of s
     /aspect ratio/,
   );
 });
+
+test('Android density-scaled WebView maps the rail midpoint including its native frame origin', () => {
+  assert.deepEqual(
+    nativePoint(
+      { x: 180, y: 620 },
+      { width: 360, height: 720 },
+      { x: 0, y: 72, width: 1080, height: 2160 },
+    ),
+    { x: 540, y: 1932 },
+  );
+  assert.throws(
+    () =>
+      nativePoint(
+        { x: 180, y: 620 },
+        { width: 360, height: 720 },
+        { x: 0, y: 72, width: 1080, height: 1920 },
+      ),
+    /aspect ratio/,
+  );
+});

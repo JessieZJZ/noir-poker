@@ -10,6 +10,9 @@ import { createOpponentReview } from './opponent-review.js';
 import { selectedActivity } from '../review/activity.js';
 import { renderReviewParagraphs } from './review-matchups.js';
 import { renderActivityParts } from './activity.js';
+import { reviewResultCache } from '../review/result-cache.js';
+import { INTERACTIVE_REVIEW_OPTIONS } from '../review/budget.js';
+import { createReviewPool } from '../review/worker-pool.js';
 const $ = (selector) => document.querySelector(selector),
   format = (n) => formatChips(Math.round(n));
 const statusNames = { attention: '重点改进', consider: '值得讨论', sound: '有合理依据' };
@@ -51,6 +54,7 @@ export function createReviewController({ card }) {
   });
   function perspective(opponent) {
     opponentPerspective = opponent;
+    opponents.setActive(opponent);
     renderActivity();
     $('#review-hero-tab').setAttribute('aria-selected', String(!opponent));
     $('#review-opponents-tab').setAttribute('aria-selected', String(opponent));
@@ -194,7 +198,9 @@ export function createReviewController({ card }) {
     if (message.type === 'progress') {
       last.progress = message.done;
       if (message.result) {
-        (last.partial ||= [])[message.done - 1] = message.result;
+        const index = message.index ?? message.done - 1;
+        (last.partial ||= [])[index] = message.result;
+        reviewResultCache.set('decision', last.input.decisions[index], message.result);
         renderDialog();
       }
       setLocalizedText(
@@ -220,17 +226,19 @@ export function createReviewController({ card }) {
     worker?.terminate();
     worker = null;
     try {
-      const steps = [];
-      for (const s of input.decisions) {
+      const steps = [...(last.partial || [])];
+      for (let index = 0; index < input.decisions.length; index++) {
+        if (steps[index]) continue;
         await new Promise((resolve) => setTimeout(resolve, 0));
         if (id !== job) return;
-        steps.push(analyzeDecision(s));
+        steps[index] = analyzeDecision(input.decisions[index], INTERACTIVE_REVIEW_OPTIONS);
         receive(
           {
             type: 'progress',
-            done: steps.length,
+            done: steps.filter(Boolean).length,
+            index,
             total: input.decisions.length,
-            result: steps.at(-1),
+            result: steps[index],
           },
           id,
         );
@@ -242,35 +250,55 @@ export function createReviewController({ card }) {
   }
   async function analyze() {
     if (!last || last.status === 'running' || last.analysis) return;
+    last.partial = last.input.decisions.map((decision) =>
+      reviewResultCache.get('decision', decision),
+    );
+    if (last.partial.every(Boolean)) {
+      last.analysis = summarizeReview(last.input, last.partial);
+      last.status = 'done';
+      if (!selectionTouched) selected = last.analysis.priorityIndex;
+      renderDialog();
+      return;
+    }
     const id = ++job,
       input = last.input;
     last.status = 'running';
-    last.progress = 0;
+    last.progress = last.partial.filter(Boolean).length;
     renderDialog();
     if (typeof Worker === 'undefined') {
       await fallback(id, input);
       return;
     }
     try {
-      worker = new Worker(new URL('../review/worker.js', import.meta.url), { type: 'module' });
-      worker.onmessage = (e) => receive(e.data, id);
-      worker.onerror = (e) => {
-        e.preventDefault();
-        if (id === job) fallback(id, input);
-      };
       // Opponent private traces belong to their own explanation panel only.
-      worker.postMessage({
+      worker = createReviewPool({
         id,
         input: { hand: input.hand, decisions: input.decisions, outcome: input.outcome },
+        completed: last.partial,
+        concurrency: (globalThis.navigator?.hardwareConcurrency || 2) >= 4 ? 2 : 1,
+        createWorker: () =>
+          new Worker(new URL('../review/worker.js', import.meta.url), { type: 'module' }),
+        onMessage: (message) => receive(message, id),
+        onError: () => {
+          if (id === job) fallback(id, input);
+        },
       });
     } catch {
       await fallback(id, input);
     }
   }
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+      worker?.terminate();
+      worker = null;
+      job++;
+      if (last?.status === 'running') last.status = 'idle';
+    } else if (dialog.open) analyze();
+  });
   function open() {
     if (live && last !== live) selectInput(live, false);
     if (!last) return;
-    $('#review-activity').open = false;
+    $('#review-activity').open = true;
     opponents.update(last.input);
     renderDialog();
     if (!dialog.open) dialog.showModal();
@@ -285,7 +313,7 @@ export function createReviewController({ card }) {
     historical = archive;
     selected = 0;
     selectionTouched = false;
-    $('#review-activity').open = false;
+    $('#review-activity').open = true;
     perspective(false);
     opponents.update(entry.input);
   }
@@ -309,10 +337,11 @@ export function createReviewController({ card }) {
     return true;
   }
   dialog.addEventListener('close', () => {
-    if (!historical) return;
     worker?.terminate();
     worker = null;
     job++;
+    if (last?.status === 'running') last.status = 'idle';
+    if (!historical) return;
     historical = false;
     last = live;
     selected = 0;

@@ -286,6 +286,9 @@
 }
 .blind-info {
   display: flex;
+  justify-content: center;
+  text-align: center;
+  line-height: 1.4;
   align-items: center;
   gap: 6px;
   font-size: 13px;
@@ -293,6 +296,7 @@
   color: #98aeb9;
 }
 .blind-info b {
+  line-height: inherit;
   color: #d2dbe3;
   font-weight: 600;
 }
@@ -311,39 +315,34 @@
   padding: 4px 0 12px;
   font-size: 13px;
 }
-.practice-info {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-.practice-info > span {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  white-space: nowrap;
-}
-.practice-info .live-dot {
-  flex: none;
-  margin: 0;
+.main > .site-footer:empty {
+  display: none;
 }
 .main > .site-footer button {
   font-size: 14px;
   line-height: 1.5;
 }
-.site-footer #reset-button {
+.session-card .section-title {
+  gap: 12px;
+}
+.session-card .section-title h2 {
+  min-width: 0;
+}
+.practice-reset {
+  flex: none;
+  max-width: 62%;
+  min-height: 32px;
   padding: 5px 10px;
   border: 1px solid #354750;
   border-radius: 6px;
   background: #18252d;
   color: #bfd3d9;
-  white-space: nowrap;
+  font-size: 12px;
+  line-height: 1.5;
 }
-.site-footer #reset-button:hover {
+.practice-reset:hover {
   border-color: #6ba18f;
   color: #c0f4df;
-}
-.site-footer #native-about-button {
-  margin-left: auto;
 }
 /* Keep the total pot visible alongside seat-level winner indicators. */
 .pot {
@@ -963,6 +962,17 @@
 }
 .hero-identity strong {
   font-size: inherit;
+}
+/* "你", its position badge and the stack are centred flex items sharing the
+   row's one gap: equal spacing, the badge on the text's centre line, and no
+   stray whitespace pushing the row off the hole cards' centre. */
+.game-surface .hero-name .hero-identity strong {
+  display: inline-flex;
+  align-items: center;
+  gap: inherit;
+}
+.game-surface .hero-name .hero-identity strong .position-badge {
+  margin-left: 0;
 }
 .hero-action-slot {
   grid-column: 1;

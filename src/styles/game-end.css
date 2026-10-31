@@ -1,0 +1,138 @@
+/* Web/native placement for eliminations, refills, the champion's crown,
+   the session standing, toasts and the compliance footer. WeChat places the
+   same shared effect classes in its own page stylesheet. */
+.seat.seat-out {
+  opacity: 0.4;
+  filter: grayscale(0.85);
+}
+.seat.seat-out .seat-action-label {
+  color: #8897a6;
+}
+.hero-area.hero-out .hero-name,
+.hero-area.hero-out .hero-cards-wrap {
+  opacity: 0.45;
+  filter: grayscale(0.85);
+}
+.seat-profile {
+  position: relative;
+}
+/* A bot champion's trophy stands beside its profile, vertically centred, on
+   the side layout chose; its size comes from the shared placement rules. */
+.seat-champion-trophy {
+  top: 0;
+  bottom: 0;
+  margin: auto 0;
+}
+.seat-champion-trophy.trophy-left {
+  right: calc(100% + var(--trophy-gap, 6px));
+}
+.seat-champion-trophy.trophy-right {
+  left: calc(100% + var(--trophy-gap, 6px));
+}
+.seat.is-champion .seat-profile {
+  border-color: #d9b45a;
+  box-shadow: 0 0 18px #d9b45a40;
+}
+/* `.hero-name strong span` styles the position badge; the "你" span must not
+   inherit its size, colour, padding or margin. */
+.hero-name strong .hero-you {
+  margin: 0;
+  padding: 0;
+  border-radius: 0;
+  background: none;
+  font-size: inherit;
+  color: inherit;
+}
+.hero-you {
+  position: relative;
+  display: inline-block;
+}
+.hero-place-tag[hidden] {
+  display: none;
+}
+/* The hero's trophy stands centred above the hole cards (layout lowers it
+   onto them only when the board leaves too little room). */
+.hero-trophy-slot {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  width: 0;
+}
+.hero-champion-trophy {
+  left: 0;
+}
+.hero-name.is-champion .hero-identity {
+  text-shadow: 0 0 10px #f4c95d66;
+}
+.hero-identity {
+  position: relative;
+}
+/* Remaining refills sit as a badge on the button's right edge. */
+.next-button.rebuy-button {
+  position: relative;
+  overflow: visible;
+}
+.rebuy-count {
+  position: absolute;
+  top: -9px;
+  right: 6px;
+  padding: 0 6px;
+  border: 1px solid #6ee7c5;
+  border-radius: 999px;
+  background: #0b2a22;
+  color: #8ff0c9;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 17px;
+  white-space: nowrap;
+}
+.session-heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.compliance-footer {
+  margin: 0;
+  padding: 8px 16px calc(14px + env(safe-area-inset-bottom));
+  text-align: center;
+  font-size: 11px;
+  letter-spacing: 1px;
+  color: #6b7a87;
+}
+.app-toast {
+  position: fixed;
+  left: 50%;
+  bottom: calc(28px + env(safe-area-inset-bottom));
+  z-index: 70;
+  max-width: min(420px, calc(100vw - 32px));
+  padding: 10px 16px;
+  border: 1px solid #8b633a;
+  border-radius: 10px;
+  background: #1d1710f2;
+  color: #f2c792;
+  font-size: 13px;
+  line-height: 1.5;
+  box-shadow: 0 10px 28px #0009;
+  translate: -50% 0;
+  animation: toast-in 0.24s ease-out both;
+}
+.app-toast.is-leaving {
+  animation: toast-out 0.3s ease-in both;
+}
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    translate: -50% 12px;
+  }
+}
+@keyframes toast-out {
+  to {
+    opacity: 0;
+    translate: -50% 12px;
+  }
+}
+/* The rising amount sits above the stack, clear of the hand-rank tag. */
+.hero-identity > .rebuy-burst {
+  left: 78%;
+}

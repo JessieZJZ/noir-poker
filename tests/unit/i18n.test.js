@@ -4,6 +4,21 @@ import { resolveLocale, loadLocale, localizeText, formatChips } from '../../src/
 import { createPreferenceStorage } from '../../src/platform/storage.js';
 import { newGame, startHand } from '../../src/engine/poker.js';
 
+test('pending all-in callers remain a possible risk rather than known strong cards in every locale', async () => {
+  const source = 'Alex担心后面 5 位尚未回应这次全下的玩家会用强牌跟入，因此收紧了继续范围。';
+  for (const locale of ['en', 'zh-TW', 'ja', 'ko', 'es', 'it', 'pt', 'de', 'fr', 'ru']) {
+    await loadLocale(locale);
+    const value = localizeText(source);
+    assert.ok(value.includes('Alex'), `${locale}: actor missing`);
+    assert.ok(value.includes('5'), `${locale}: pending count missing`);
+    assert.doesNotMatch(value, /\{\d+\}/, locale);
+    if (!['zh-TW', 'ja'].includes(locale)) assert.doesNotMatch(value, /\p{Script=Han}/u, locale);
+  }
+  await loadLocale('en');
+  assert.match(localizeText(source), /yet to respond to this all-in could enter with strong hands/);
+  await loadLocale('zh-CN');
+});
+
 test('saved choice wins; system variants map to available catalogs; unsupported languages use English', () => {
   assert.equal(resolveLocale('ko', ['ja-JP']), 'ko');
   assert.equal(resolveLocale('invalid', ['zh-Hant-HK']), 'zh-TW');
@@ -52,6 +67,39 @@ test('locale preference hydrates and preserves ordered writes through native sto
   store.setItem('noir-locale', 'en');
   await store.flush();
   assert.equal(native.get('noir-locale'), 'en');
+});
+
+test('practice comparisons translate complete trailing sentences after adjacent optional values', async () => {
+  const cases = [
+    '重打 Q♦ 10♥ 这手，面对当前 50 的下注，先比较跟注 50与弃牌。本轮还没封口，后面的玩家再加注时，你需要重新决定要不要跟。',
+    '重打 Q♦ 10♥ 这手，面对当前 50 的下注，先比较弃牌与再补 50。若改为跟注，跟注后只能等摊牌，不能再靠后街下注赶走更好的牌。',
+    '重打 Q♦ 10♥ 这手，面对当前 50 的下注，先比较跟注 50与弃牌。这一轮已经轮到你最后回应，继续后，下一街还要面对新的牌面与下注。',
+    '重打 Q♦ 10♥ 这手，面对当前 50 的下注，先比较弃牌与再补 50。若改为跟注，本轮还没封口，后面的玩家再加注时，你需要重新决定要不要跟。',
+    '重打 Q♦ 10♥ 这手，面对当前 50 的下注，先比较弃牌与再补 50。若改为跟注，这一轮已经轮到你最后回应，继续后，下一街还要面对新的牌面与下注。',
+    '重打 Q♦ 10♥ 这手，面对当前 50 的下注，先比较跟注 50与弃牌。跟注后只能等摊牌，不能再靠后街下注赶走更好的牌。',
+  ];
+  for (const locale of ['en', 'zh-TW', 'ja', 'ko', 'es', 'it', 'pt', 'de', 'fr', 'ru']) {
+    await loadLocale(locale);
+    for (const source of cases) {
+      const value = localizeText(source);
+      assert.doesNotMatch(value, /\{\d+\}/, `${locale}: ${value}`);
+      assert.ok(value.includes('Q♦ 10♥'), `${locale}: ${value}`);
+      assert.equal(value.match(/50/g)?.length, 2, `${locale}: ${value}`);
+      if (!['zh-TW', 'ja'].includes(locale))
+        assert.doesNotMatch(value, /\p{Script=Han}/u, `${locale}: ${value}`);
+    }
+  }
+  await loadLocale('en');
+  assert.match(localizeText(cases[0]), /first compare Call 50 with Fold/);
+  assert.match(localizeText(cases[0]), /Betting is not closed this round/);
+  assert.match(localizeText(cases[1]), /If you call instead/);
+  assert.match(localizeText(cases[2]), /last player responding this round/);
+  assert.match(localizeText(cases[2]), /next street brings a new board/);
+  for (const source of [cases[1], cases[5]]) {
+    assert.match(localizeText(source), /only showdown/);
+    assert.doesNotMatch(localizeText(source), /next street/);
+  }
+  await loadLocale('zh-CN');
 });
 
 test('the practice heading describes the current session in every supported locale', async () => {
@@ -112,8 +160,11 @@ test('Japanese and Korean catalogs contain no damaged repetition or replacement 
     }
     await loadLocale(locale);
     assert.equal(localizeText('60–100% 池'), locale === 'ja' ? 'ポットの 60–100%' : '팟의 60–100%');
-    assert.equal(localizeText('谭老板'), locale === 'ja' ? 'タン・シュアン' : '탄 쉬안');
-    assert.equal(localizeText('臧书奴'), locale === 'ja' ? 'アーロン・ザン' : '아론 장');
+    assert.equal(
+      localizeText('多街施压'),
+      locale === 'ja' ? '複数ストリートで圧力' : '여러 스트리트 압박',
+    );
+    assert.equal(localizeText('河牌争夺'), locale === 'ja' ? 'リバーでの攻防' : '리버 공방');
   }
   await loadLocale('zh-CN');
 });

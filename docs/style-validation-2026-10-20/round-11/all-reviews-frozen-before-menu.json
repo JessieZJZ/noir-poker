@@ -1,0 +1,41 @@
+{
+  "frozenBeforeMenuAt": "2026-10-23T03:49:16.581724+00:00",
+  "questionnaireSha256": "83131b52a8e8681b99aff6b6d8715e8fa719ad27002c867ad15a79617dd4fb97",
+  "reviews": [
+    {
+      "reviewer": 1,
+      "freezeFile": "freeze-all.json",
+      "freezeSha256": "27f1a9186c60b655927a6522fde28bdce60f4892bf8034333e4558262bf6c9b1",
+      "freeReviewSha256": "f7b65a4f214decc77d3e110ca46e87b0d8931bc4c1b44bf990e943dc2317b093",
+      "rawSha256": "34b1cad4e6f182efa3eb427a5e7dc5f492e4d7d69c9727a5b712d1c875687edd",
+      "transcriptSha256": "ce3feb6e15d74ae1e2b5f0f9b4d976118c855923e6f1eb05b66c8b0bca67bbaf",
+      "postCount": 630,
+      "allPostStatesExactlyMatchServerExport": true
+    },
+    {
+      "reviewer": 2,
+      "freezeFile": "freeze-all.json",
+      "freezeSha256": "863bc639a86c5939b52bdfbc5c8981833d42631d9454f6c6652a2263fbb15ac8",
+      "freeReviewSha256": "454eaae82357afea8a67794c224ad636231122f24897fdd443f60a47821f3664",
+      "rawSha256": "6bb7fcf5b0085d91daa045c8ad0ea730bb7a861dda4f5c91bf7da406b10b2bd1",
+      "transcriptSha256": "dcc87a1501c1ca563c444d537c6c621c0822eca61ec8b5beefa534e246719aef",
+      "postCount": 563,
+      "allPostStatesExactlyMatchServerExport": true
+    },
+    {
+      "reviewer": 3,
+      "freezeFile": "freeze-interactive.json",
+      "freezeSha256": "9ba147c653a043934f449ff9e94174acec3208785c9a1f3b8d51074f931f1050",
+      "freeReviewSha256": "9d5641dffcd07353ff8c407091b4619e45d9c7f8afcc90468b6af006de640fcc",
+      "rawSha256": "96d11822fb551a9c932ca58273dc8d6d57136e847b6ef848f6c9b1ac99fa3cb9",
+      "transcriptSha256": "25a515175d0334031d0e558489344cbf76535dd03b02ec59307c907607a4f2a4",
+      "postCount": 643,
+      "allPostStatesExactlyMatchServerExport": true
+    }
+  ],
+  "totalPosts": 1836,
+  "completeHands": 600,
+  "manualHeroActions": 1236,
+  "finalIndependentAuditSha256": "56b51df86ffd5c3e81f342ce036734e08f4b0d63a0793f2f29aad4042e75009a",
+  "menusDeliveredAfterThisFile": true
+}

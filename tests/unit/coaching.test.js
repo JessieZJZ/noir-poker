@@ -196,7 +196,7 @@ test('river checks and closing all-in calls have no invented future betting or d
   r.routes.primary = { action: 'raise', amount: 300 };
   const c = coachDecision(river, r);
   assert.doesNotMatch(c.explanation, /听牌付费/);
-  assert.match(c.explanation, /直接摊牌/);
+  assert.match(c.explanation, /不能诱导后面的下注/);
   assert.doesNotMatch(c.followUp, /下一轮/);
   const pre = decision('call', 0),
     positive = result();
@@ -247,7 +247,77 @@ test('closing-call wording follows the protected EV verdict on both sides of the
   r.metrics = { ...r.metrics, randomEV: -23, weightedEV: -23 };
   const outsideError = coachDecision(s, r);
   assert.equal(outsideError.evKind, 'negative');
-  assert.equal(outsideError.label, '弃牌');
+  assert.equal(outsideError.label, '建议弃牌');
   assert.match(outsideError.explanation, /不适合接下这笔投入|建议保住剩余筹码/);
   assert.doesNotMatch(outsideError.explanation, /EV|模型|模拟器|抽样/);
+});
+
+test('an uncertain full-stack preflop call is compared rather than endorsed by a sound heuristic', () => {
+  const s = decision('call', 0);
+  s.hole = cards('Qd Th');
+  s.stack = s.amount = s.currentBet = 20000;
+  s.legal = { ...s.legal, callAmount: 20000, maxRaiseTo: 20000 };
+  const r = result();
+  r.context = { ...r.context, handClass: 'high', pendingOthers: 4 };
+  r.routes.primary = { action: 'call', amount: 20000 };
+  r.metrics = {
+    ...r.metrics,
+    closing: false,
+    randomEV: 2615,
+    weightedEV: -7836,
+    required: 20000 / 40300,
+    equityLow: 0.302,
+    equityHigh: 0.561,
+    uncertainty: 0.06,
+    contestable: 40300,
+    callCost: 20000,
+  };
+  const uncertain = coachDecision(s, r);
+  assert.equal(uncertain.evKind, 'uncertain');
+  assert.equal(uncertain.kind, 'compare');
+  assert.equal(uncertain.assessmentLabel, '需要比较');
+  assert.equal(uncertain.recommendedAction.summary, '建议全下跟注 20K');
+  assert.equal(uncertain.recommendationConditional, true);
+  assert.match(uncertain.explanation, /足够较弱牌.*更强起手牌.*比较弃牌/);
+  assert.doesNotMatch(uncertain.explanation, /值得保留|有正收益/);
+  assert.match(uncertain.explanation, /其余玩家尚可行动/);
+
+  r.metrics = { ...r.metrics, equityLow: 0.54, uncertainty: 0.06 };
+  assert.equal(coachDecision(s, r).kind, 'keep', 'A supported price must not be tightened blindly');
+});
+
+test('replacing a preflop shove with a call names the real payment and the players still able to raise', () => {
+  for (const bigBlind of [50, 4000]) {
+    const s = decision('raise', 0);
+    s.bigBlind = bigBlind;
+    s.amount = s.stack = 100 * bigBlind;
+    s.currentBet = bigBlind;
+    s.pot = 1.5 * bigBlind;
+    s.legal = { ...s.legal, callAmount: bigBlind, maxRaiseTo: s.stack };
+    const r = result({ code: 'large-unbacked-bet', status: 'consider' });
+    r.context = {
+      ...r.context,
+      texture: {},
+      made: { score: [1, 7] },
+      preflopRaises: 0,
+      pendingOthers: 2,
+    };
+    r.routes.primary = { action: 'call', amount: bigBlind };
+    r.metrics = { ...r.metrics, closing: false };
+    const review = coachDecision(s, r);
+    assert.equal(review.kind, 'compare');
+    assert.equal(review.assessmentLabel, '需要比较');
+    assert.equal(review.recommendedAction.summary, bigBlind === 50 ? '建议跟注 50' : '建议跟注 4K');
+    const text = review.paragraphs.join('');
+    assert.match(text, /若改为再补 .* 跟注，会留下 .* 筹码/);
+    assert.match(text, /常规开池与弃牌/);
+    assert.equal((text.match(/本轮还有 2 位对手等待回应/g) || []).length, 1);
+    assert.doesNotMatch(text, /你身后还有 2 人/);
+    assert.match(text, /加注或者再加注.*重新决定是否继续/);
+    assert.doesNotMatch(text, /这手建议跟注，保留当前牌力|跟注后可以免费看翻牌/);
+    assert.match(
+      text,
+      bigBlind === 50 ? /再补 50 跟注，会留下 4.95K/ : /再补 4K 跟注，会留下 396K/,
+    );
+  }
 });

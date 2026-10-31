@@ -112,10 +112,9 @@ export function withCenteredNativeClicks(app) {
               stable = 0;
               return false;
             }
-            const position = JSON.stringify(measured);
-            if (position === previous) stable++;
+            if (isDeepStrictEqual(measured, previous)) stable++;
             else {
-              previous = position;
+              previous = measured;
               stable = 0;
               // A late modal scroll restore can precede our very first sample.
               // Re-center that sample too, then require three stable readings.
@@ -129,8 +128,8 @@ export function withCenteredNativeClicks(app) {
       }
       const token = app.platform === 'ios' ? `native-label-${++labelToken}` : null;
       // Safari exposes summary through nested AX buttons. The calibration
-      // iframe also cannot calibrate through a modal, and page-tail controls
-      // sit next to the home inset. Use the actual WebView frame for these
+      // iframe cannot calibrate a relaid-out modal dropdown, and page-tail
+      // controls sit next to the home inset. Use the actual WebView frame for these
       // native taps; never dispatch a DOM click.
       if (
         app.platform === 'ios' &&
@@ -138,12 +137,25 @@ export function withCenteredNativeClicks(app) {
         (await app.evaluate((selector) => {
           const target = document.querySelector(selector);
           return (
-            (target.matches('summary, a') && !!target.closest('dialog[open]')) ||
+            (target.matches('summary, a, .dropdown-trigger, .dropdown-option') &&
+              !!target.closest('dialog[open]')) ||
             ['reset-button', 'hand-rankings-button'].includes(target.id)
           );
         }, selector))
-      )
+      ) {
+        // nativeTap has no raw driver's menu-positioning prelude. Reveal the
+        // option inside its clipped popup before checking its native hit point.
+        await app.evaluate((selector) => {
+          const element = document.querySelector(selector),
+            menu = element.closest('.dropdown-menu');
+          if (!menu) return;
+          const row = element.getBoundingClientRect(),
+            box = menu.getBoundingClientRect();
+          if (row.top < box.top) menu.scrollTop -= box.top - row.top;
+          if (row.bottom > box.bottom) menu.scrollTop += row.bottom - box.bottom;
+        }, selector);
         return app.nativeTap(selector);
+      }
       let failed = false;
       try {
         // Appium marks aria-label with a UUID for native AX lookup. A
@@ -165,3 +177,4 @@ export function withCenteredNativeClicks(app) {
     },
   };
 }
+import { isDeepStrictEqual } from 'node:util';

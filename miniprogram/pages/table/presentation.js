@@ -131,7 +131,9 @@ function presentationPatch(previous, next) {
     if (
       Array.isArray(before) &&
       Array.isArray(after) &&
-      before.length <= after.length &&
+      // A leaf append does not invalidate WXML's array.length dependencies.
+      // Replace structural changes so wx:if, classes and wx:for all update.
+      before.length === after.length &&
       before.every(
         (item, i) =>
           (item?.dealKey ?? item?.id ?? item?.key) ===
@@ -155,4 +157,29 @@ function presentationPatch(previous, next) {
   for (const [key, value] of Object.entries(next)) visit(previous[key], value, key);
   return patch;
 }
-module.exports = { presentCard, showdownPresentation, presentationPatch };
+// DevTools can batch a resized array and a following leaf update against the
+// old render-tree shape, discarding untouched row fields. Send a full value
+// for touched array roots; a preceding paint callback is not a reliable fence.
+// Copy only the modified paths; never mutate page.data while preparing a patch.
+function coalesceArrayPatch(data, patch) {
+  const result = { ...patch };
+  const copied = new Set();
+  for (const [path, value] of Object.entries(patch)) {
+    const parts = path.replace(/\[(\d+)\]/g, '.$1').split('.');
+    const root = parts.shift();
+    if (!parts.length || !Array.isArray(patch[root] ?? data[root])) continue;
+    if (!copied.has(root)) {
+      result[root] = (patch[root] ?? data[root]).slice();
+      copied.add(root);
+    }
+    let target = result[root];
+    for (const part of parts.slice(0, -1)) {
+      target[part] = Array.isArray(target[part]) ? target[part].slice() : { ...target[part] };
+      target = target[part];
+    }
+    target[parts.at(-1)] = value;
+    delete result[path];
+  }
+  return result;
+}
+module.exports = { presentCard, showdownPresentation, presentationPatch, coalesceArrayPatch };

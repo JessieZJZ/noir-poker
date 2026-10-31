@@ -1,0 +1,35 @@
+{
+  "limitation": "Server exported shared mutable event arrays after later appends. Original HTTP logs are primary before-action evidence. Other fields match and HTTP event histories are exact prefixes; no future events were sent in actual responses. Preserve exported original unchanged. Fix cloning before round 10.",
+  "reviewers": [
+    {
+      "reviewer": 1,
+      "responses": 590,
+      "doneHands": 200,
+      "serverEventArraysAppendedAfterResponse": 390,
+      "immutableHttpPrefixAndOtherFieldsMatched": true,
+      "noFutureStreetOrHiddenHolesInActualResponse": true,
+      "primaryEvidence": "interactive-log.jsonl",
+      "sha256": "be7b66e21d3334c04408f2f87b742e072707b2f51345a72a90d2e32d1b0b1f81"
+    },
+    {
+      "reviewer": 2,
+      "responses": 620,
+      "doneHands": 200,
+      "serverEventArraysAppendedAfterResponse": 420,
+      "immutableHttpPrefixAndOtherFieldsMatched": true,
+      "noFutureStreetOrHiddenHolesInActualResponse": true,
+      "primaryEvidence": "http-log.jsonl",
+      "sha256": "70249f07f02ccb6d420d32c4c19a86cdc63ce609c52a30a8d9060165dce0b0e4"
+    },
+    {
+      "reviewer": 3,
+      "responses": 603,
+      "doneHands": 200,
+      "serverEventArraysAppendedAfterResponse": 403,
+      "immutableHttpPrefixAndOtherFieldsMatched": true,
+      "noFutureStreetOrHiddenHolesInActualResponse": true,
+      "primaryEvidence": "http-log.jsonl",
+      "sha256": "d4450476aa94f27f39033240cc579444f68848857a2f424a25795032ee412837"
+    }
+  ]
+}

@@ -3,6 +3,8 @@ import { COMPACT_PLAY_QUERY } from './play-geometry.js';
 import { railLayout } from './rail-layout.js';
 import { readPlayViewport } from './stable-viewport.js';
 import { numericWidthScale } from './numeric-width.js';
+import { styleFontSize } from './style-font.js';
+import { heroPlaceStyle, heroTrophy, seatTrophy } from './trophy-placement.js';
 // Select the closest collision-free position to the upper felt center. Using each
 // public part separately leaves usable space beside a narrow pot or caption.
 export function nearestClearTop(ideal, min, max, blocked) {
@@ -86,9 +88,61 @@ export function createSettlementLayout(arena, { observe = true } = {}) {
       label.style.setProperty('--name-width-scale', scale);
     }
   };
+  const fitStyles = () => {
+    const labels = [...arena.querySelectorAll('.seat-style-label')];
+    // Start from the intended font each time: a resize or locale switch can
+    // make room for larger text again. Batch writes before measuring glyphs.
+    for (const label of labels) label.style.removeProperty('--style-font');
+    const arenaScale = arena.getBoundingClientRect().width / arena.offsetWidth || 1;
+    const entries = labels.map((label) => {
+      const style = getComputedStyle(label);
+      const profileStyle = getComputedStyle(label.closest('.seat-profile'));
+      // Use the stable grid track, not the badge's rounded, intrinsic width.
+      // A short badge must not shrink itself further on each layout pass.
+      const column = parseFloat(profileStyle.gridTemplateColumns.split(' ').at(-1));
+      const available =
+        column -
+        parseFloat(style.paddingLeft) -
+        parseFloat(style.paddingRight) -
+        parseFloat(style.borderLeftWidth) -
+        parseFloat(style.borderRightWidth) -
+        0.5;
+      const range = document.createRange();
+      range.selectNodeContents(label);
+      return {
+        label,
+        range,
+        available,
+        spacing: (parseFloat(style.letterSpacing) || 0) * [...label.textContent].length,
+        font: parseFloat(style.fontSize),
+      };
+    });
+    // Fonts need not scale exactly proportionally at small sizes. Verify real
+    // rendered glyphs after each correction, batching reads before writes.
+    let pending = entries;
+    for (let pass = 0; pass < 4 && pending.length; pass++) {
+      pending = pending.filter((entry) => {
+        const width = entry.range.getBoundingClientRect().width / arenaScale;
+        const height = entry.label.scrollHeight;
+        const rowHeight = entry.label.clientHeight;
+        if (width <= entry.available && height <= rowHeight) return false;
+        // A fallback font's baseline can overflow the fixed row even when a
+        // short name fits horizontally. Keep the row, and fit those glyphs too.
+        entry.font = Math.min(
+          styleFontSize(entry.font, width, entry.available, entry.spacing),
+          styleFontSize(entry.font, height, rowHeight),
+        );
+        return true;
+      });
+      for (const { label, font } of pending) label.style.setProperty('--style-font', `${font}px`);
+    }
+  };
   const center = arena.querySelector('.table-center');
   let frame = null;
   function update() {
+    // Locale refresh also reaches the live table while a records page hides
+    // it. Keep its geometry until the visible viewport can be measured again.
+    if (!arena.clientWidth || !arena.clientHeight) return;
     const heroRank = arena.querySelector('.hero-hand-rank');
     arena
       .querySelector('.hero-area')
@@ -278,8 +332,67 @@ export function createSettlementLayout(arena, { observe = true } = {}) {
       bottom: 'auto',
       transform: 'none',
     });
+    fitStyles();
     fitNumbers();
     fitNames();
+    placeTrophy();
+  }
+  // Rest the champion's trophy where the shared rules choose. Rectangles are
+  // read on screen, then sizes are written back in the arena's own units.
+  function placeTrophy() {
+    const box = arena.getBoundingClientRect(),
+      scale = box.width / arena.offsetWidth || 1,
+      rect = (el) => el.getBoundingClientRect(),
+      visible = (el) => el && !el.hidden && el.offsetWidth > 0 && el.offsetHeight > 0;
+    const standing = arena.querySelector('#hero-place');
+    if (visible(standing)) {
+      const board = arena.querySelector('.table-center .board');
+      standing.style.cssText = heroPlaceStyle({
+        room:
+          rect(arena.querySelector('.hero-area')).top -
+          (visible(board) ? rect(board).bottom : box.top),
+        scale,
+      });
+    }
+    const trophy = arena.querySelector('.champion-trophy');
+    if (!trophy) return;
+    if (trophy.matches('.hero-champion-trophy')) {
+      const cards = rect(arena.querySelector('.hero-cards')),
+        board = arena.querySelector('.table-center .board'),
+        place = heroTrophy(cards, { above: visible(board) ? rect(board).bottom : box.top });
+      Object.assign(trophy.style, {
+        width: `${place.width / scale}px`,
+        height: `${place.height / scale}px`,
+        left: `${-place.width / scale / 2}px`,
+        bottom: `calc(100% + ${(place.gap - place.drop) / scale}px)`,
+      });
+      return;
+    }
+    const seat = trophy.closest('.seat'),
+      profile = seat.querySelector('.seat-profile'),
+      obstacles = [
+        ...[...arena.querySelectorAll('.seat')]
+          .filter((other) => other !== seat)
+          .flatMap((other) => [
+            ...other.querySelectorAll('.seat-profile, .mini-cards, .seat-action'),
+          ]),
+        arena.querySelector('.table-center'),
+        arena.querySelector('.hero-cards-wrap'),
+        arena.querySelector('.hero-name'),
+      ]
+        .filter(visible)
+        .map(rect);
+    const place = seatTrophy(rect(profile), {
+      bounds: { left: box.left, right: box.right },
+      obstacles,
+    });
+    trophy.classList.toggle('trophy-left', place.side === 'left');
+    trophy.classList.toggle('trophy-right', place.side === 'right');
+    Object.assign(trophy.style, {
+      width: `${place.width / scale}px`,
+      height: `${place.height / scale}px`,
+    });
+    trophy.style.setProperty('--trophy-gap', `${place.gap / scale}px`);
   }
   if (observe) {
     const observer = new ResizeObserver(() => {
@@ -292,5 +405,5 @@ export function createSettlementLayout(arena, { observe = true } = {}) {
     observer.observe(arena.closest('.table-viewport') || arena);
     document.fonts.ready.then(update);
   }
-  return { update };
+  return { update, placeTrophy };
 }

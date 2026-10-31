@@ -107,3 +107,20 @@
 html[data-orientation-blocked='true'] {
   overflow: hidden;
 }
+
+/* The app body already reserves the bottom safe area; the footer must not add
+   it a second time. */
+.native-app .compliance-footer {
+  padding-bottom: 14px;
+}
+/* About & privacy sits centred under the compliance line, in its type. */
+.compliance-footer #native-about-button {
+  display: block;
+  margin: 4px auto 0;
+  padding: 4px 8px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+}

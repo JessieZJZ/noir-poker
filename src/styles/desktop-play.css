@@ -31,7 +31,8 @@
     flex: none;
   }
   .main .game-surface > .surface-top {
-    grid-template-rows: 28px 22px;
+    --hand-row: 28px;
+    --hint-row: 22px;
   }
   .game-surface > .table-viewport {
     flex: 1 1 0;

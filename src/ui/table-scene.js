@@ -7,6 +7,7 @@ import {
   setLocalizedHTML,
   setLocalizedAttribute,
 } from '../i18n/index.js';
+import { standingClass, standingLabel } from '../engine/game-records.js';
 import { renderCard } from './cards.js';
 import { portraitContent } from './portraits.js';
 import { SEAT_ANCHORS } from './seat-geometry.js';
@@ -35,13 +36,29 @@ const positionNames = {
   HJ: '劫位',
   CO: '关煞位',
 };
+// The champion's trophy: a gold cup that shimmers with a halo, turning rays
+// and twinkling stars. WeChat renders the same class names as views.
+export const TROPHY_MARKUP =
+  '<span class="trophy-shape" aria-hidden="true"><span class="trophy-rays"></span><span class="trophy-glow"></span><span class="trophy-handle handle-left"></span><span class="trophy-handle handle-right"></span><span class="trophy-cup"></span><span class="trophy-stem"></span><span class="trophy-base"></span><span class="trophy-spark spark-1"></span><span class="trophy-spark spark-2"></span><span class="trophy-spark spark-3"></span><span class="trophy-spark spark-4"></span></span>';
+// The hero's final place above the hole cards, for a game they did not win.
+export function renderHeroPlace(tag, g, shown) {
+  tag.hidden = !shown;
+  if (!shown) return;
+  tag.className = `standing-tag ${standingClass(g.over.heroPlace)} hero-place-tag`;
+  setLocalizedText(tag, standingLabel(g.over.heroPlace));
+}
 function positionBadge(g, id) {
+  if (g.phase === 'idle') return '';
   const role = seatPosition(g, id);
+  if (!role) return '';
   return `<span class="position-badge" data-position="${role}" title="${positionNames[role]}">${role}</span>`;
 }
 
-export function renderSeatAction(g, p, { recent = false } = {}) {
-  if (!recent && g.actor === p.id)
+export function renderSeatAction(g, p, { recent = false, dealing = false } = {}) {
+  if (g.phase === 'idle') return '<span class="seat-action-label">已就位</span>';
+  if (p.out && !p.hole.length)
+    return `<span class="seat-action-label">出局 · 第${p.place}名</span>`;
+  if (!recent && g.actor === p.id && !dealing)
     return '<span class="seat-action-label thinking-dots">思考中</span>';
   const retained = visibleRecentAction(g, p);
   const action = retained?.text ?? p.action;
@@ -79,9 +96,12 @@ export function renderOpponentSeats(
   {
     card = renderCard,
     newHand = false,
+    dealing = false,
     isSeatHandVisible = (player) => (g.showdown || g.revealed) && !player.folded,
     isSeatHandAnimated = () => true,
     seatFaceSignatures = new Map(),
+    crownedId = g.over?.championId ?? null,
+    crownPending = false,
   } = {},
 ) {
   const count = g.players.length;
@@ -100,12 +120,19 @@ export function renderOpponentSeats(
           : '';
       const profile = getBotProfile(p.botProfile),
         mood = g.emotionMode === 'off' ? 'steady' : p.botMood.kind,
-        title = `${p.name} · ${profile.short}（训练原型） · 模拟状态：${MOOD_LABELS[mood]}`;
+        title = `${p.name} · ${profile.short}（电脑角色） · 模拟状态：${MOOD_LABELS[mood]}`;
+      // Emotions show on the avatar while they last; steady and eliminated seats show none.
+      const moodShown = mood !== 'steady' && !(p.out && !p.hole.length);
       const faceSignature = `${g.hand}:${g.replayAttempt || 0}:${reveal ? p.hole.map((c) => c.key).join(',') : 'hidden'}`;
       const arriving =
         reveal && isSeatHandAnimated(p) && seatFaceSignatures.get(p.id) !== faceSignature;
       seatFaceSignatures.set(p.id, faceSignature);
-      return `<div class="seat seat-${p.id} ${y === 0 ? 'seat-crown' : ''} ${x < 25 ? 'seat-left' : x > 75 ? 'seat-right' : ''} ${p.folded ? 'folded' : ''} ${g.actor === p.id ? 'thinking' : ''} ${isWinner ? 'winner' : ''}" data-player="${p.id}" data-profile="${escape(p.botProfile)}" data-mood="${escape(mood)}" style="left:${x}%;top:${y}%"><div id="seat-hand-${p.id}" class="mini-cards ${reveal ? 'revealed-cards' : ''}">${reveal ? p.hole.map((c, i) => card(c, { small: true, animate: arriving, delay: i * 140, best: !!rank && rank.cards.some((best) => best.key === c.key) })).join('') : p.hole.map((c, i) => `<span class="card-back ${newHand ? 'card-deal' : ''}" style="--delay:${p.id * 65 + i * 140}ms" aria-label="对手底牌"></span>`).join('')}</div><div class="seat-profile"><span class="avatar avatar-${p.id - 1}" title="${escape(title)}" aria-label="${escape(title)}">${portraitContent(profile.id, profiles[p.id])}</span><div><strong><span class="seat-name-label">${escape(p.name)}</span>${positionBadge(g, p.id)}<span class="seat-inspect-slot">${g.phase === 'done' ? `<button class="seat-peek" data-peek-player="${p.id}" title="${reveal ? '收起底牌' : '查看底牌'}" aria-label="${reveal ? '收起' : '查看'} ${escape(p.name)} 的底牌" aria-pressed="${!!reveal}" aria-controls="seat-hand-${p.id}"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M2 10C4 6 7 5 10 5C13 5 16 6 18 10C16 14 13 15 10 15C7 15 4 14 2 10Z"/><circle cx="10" cy="10" r="2.5"/></svg></button>` : ''}</span></strong><span class="seat-style-label" data-style-profile="${profile.id}" title="${profile.name} · ${profile.tag}" aria-label="${escape(p.name)} 本手风格：${profile.name}">${profile.short}</span><span class="seat-bankroll"><span class="seat-stack">${format(p.stack)}</span></span></div></div><div class="seat-rank-slot">${rankMarkup}</div><div class="seat-action" aria-label="${escape(p.name)} 的最近行动">${renderSeatAction(g, p)}</div></div>`;
+      // Layout picks the trophy's side; until then it faces the table centre.
+      const trophy =
+        crownedId === p.id
+          ? `<span class="champion-trophy seat-champion-trophy ${x < 50 ? 'trophy-right' : 'trophy-left'} ${crownPending ? 'trophy-pending' : ''}" title="冠军">${TROPHY_MARKUP}</span>`
+          : '';
+      return `<div class="seat seat-${p.id} ${y === 0 ? 'seat-crown' : ''} ${x < 25 ? 'seat-left' : x > 75 ? 'seat-right' : ''} ${p.folded ? 'folded' : ''} ${p.out && !p.hole.length ? 'seat-out' : ''} ${crownedId === p.id ? 'is-champion' : ''} ${g.actor === p.id && !dealing ? 'thinking' : ''} ${isWinner ? 'winner' : ''}" data-player="${p.id}" data-profile="${escape(p.botProfile)}" data-mood="${escape(mood)}" style="left:${x}%;top:${y}%"><div id="seat-hand-${p.id}" class="mini-cards ${reveal ? 'revealed-cards' : ''}">${reveal ? p.hole.map((c, i) => card(c, { small: true, animate: arriving, delay: i * 140, best: !!rank && rank.cards.some((best) => best.key === c.key) })).join('') : p.hole.map((c, i) => `<span class="card-back ${newHand ? 'card-deal' : ''}" style="--delay:${p.id * 65 + i * 140}ms" aria-label="对手底牌"></span>`).join('')}</div><div class="seat-profile">${trophy}<span class="avatar avatar-${p.id - 1} ${moodShown ? `has-mood mood-${mood}` : ''}" title="${escape(title)}" aria-label="${escape(title)}">${portraitContent(profile.id, profiles[p.id])}${moodShown ? `<i class="mood-badge mood-live mood-${mood}" aria-hidden="true"></i>` : ''}</span><div><strong><span class="seat-name-label">${escape(p.name)}</span>${positionBadge(g, p.id)}<span class="seat-inspect-slot">${g.phase === 'done' && p.hole.length ? `<button class="seat-peek" data-peek-player="${p.id}" title="${reveal ? '收起底牌' : '查看底牌'}" aria-label="${reveal ? '收起' : '查看'} ${escape(p.name)} 的底牌" aria-pressed="${!!reveal}" aria-controls="seat-hand-${p.id}"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M2 10C4 6 7 5 10 5C13 5 16 6 18 10C16 14 13 15 10 15C7 15 4 14 2 10Z"/><circle cx="10" cy="10" r="2.5"/></svg></button>` : ''}</span></strong><span class="seat-style-label" data-style-profile="${profile.id}" data-full-name="${escape(profile.name)}" aria-label="${escape(p.name)} 本手风格：${profile.name}">${profile.short}</span><span class="seat-bankroll"><span class="seat-stack">${format(p.stack)}</span></span></div></div><div class="seat-rank-slot">${rankMarkup}</div><div class="seat-action" aria-label="${escape(p.name)} 的最近行动">${renderSeatAction(g, p, { dealing })}</div></div>`;
     })
     .join('');
 }
@@ -124,6 +151,8 @@ export function createSnapshotSurface(template, g, { sessionNumber, visible, pee
         : new Set();
   surface.classList.add('records-game-surface');
   surface.classList.remove('has-live-hand');
+  delete surface.dataset.entryState;
+  query('#entry-welcome')?.remove();
   for (const element of surface.querySelectorAll('.hero-cards-wrap, .action-dock')) {
     element.classList.remove('turn-attention', 'turn-enter', 'turn-reminder');
     delete element.dataset.turnPhase;
@@ -134,7 +163,7 @@ export function createSnapshotSurface(template, g, { sessionNumber, visible, pee
   arena.dataset.playerCount = g.players.length;
   arena.classList.toggle(
     'has-full-player-names',
-    g.players.slice(1).some((p) => ['viktor', 'jungleman', 'dwan'].includes(p.botProfile)),
+    g.players.slice(1).some((p) => ['knox', 'theo', 'finn'].includes(p.botProfile)),
   );
   setLocalizedText(query('#session-number-label'), `第 ${sessionNumber} 局`);
   setLocalizedText(query('#hand-number'), String(g.hand).padStart(2, '0'));
@@ -143,7 +172,6 @@ export function createSnapshotSurface(template, g, { sessionNumber, visible, pee
   setLocalizedText(query('#blind-values'), `${format(g.smallBlind)} / ${format(g.bigBlind)}`);
   query('#replay-label').hidden = !g.replayAttempt;
   setLocalizedText(query('#replay-label'), '重打 ' + (g.replayAttempt || 0));
-  query('#replay-note').hidden = !g.replayAttempt;
   if (query('#coach-content')) query('#coach-content').hidden = true;
   setLocalizedHTML(
     query('.seats'),
@@ -209,6 +237,12 @@ export function createSnapshotSurface(template, g, { sessionNumber, visible, pee
   }
   query('.hero-area').classList.toggle('hero-folded', hero.folded);
   query('.hero-area').removeAttribute('style');
+  query('.hero-name').classList.toggle('is-champion', g.over?.championId === 0);
+  query('#hero-trophy-slot').innerHTML =
+    g.over?.championId === 0
+      ? `<span class="champion-trophy hero-champion-trophy">${TROPHY_MARKUP}</span>`
+      : '';
+  renderHeroPlace(query('#hero-place'), g, !!g.over && g.over.championId !== 0);
   query('.hero-name').classList.toggle('is-active', g.actor === 0);
   setLocalizedText(query('#hero-stack'), format(hero.stack));
   const position = seatPosition(g, 0);

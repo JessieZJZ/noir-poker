@@ -1,0 +1,439 @@
+import { test, expect, chromium } from '@playwright/test';
+
+test('all entry locales fit 320px and 390px touch viewports with labelled settings', async ({
+  browser,
+  baseURL,
+}) => {
+  test.setTimeout(120000);
+  const context = await browser.newContext({ baseURL, isMobile: true, hasTouch: true });
+  const page = await context.newPage();
+  try {
+    await page.goto('/');
+    for (const width of [320, 390]) {
+      await page.setViewportSize({ width, height: 844 });
+      for (const locale of [
+        'zh-CN',
+        'en',
+        'zh-TW',
+        'ja',
+        'ko',
+        'es',
+        'it',
+        'pt',
+        'de',
+        'fr',
+        'ru',
+      ]) {
+        await page.evaluate((value) => localStorage.setItem('noir-locale', value), locale);
+        await page.reload();
+        await expect(page.locator('html')).toHaveAttribute('data-app-ready', 'true');
+        await expect
+          .poll(() =>
+            page.evaluate(() => {
+              const nav = document.querySelector('.header-actions').getBoundingClientRect();
+              return {
+                width: innerWidth,
+                scroll: document.documentElement.scrollWidth,
+                navFits: nav.left >= 0 && nav.right <= document.documentElement.clientWidth,
+                settingsHeight: document.querySelector('#opponents-button').getBoundingClientRect()
+                  .height,
+                // Waiting for the seat, the game info card holds only the
+                // wrapped waiting message; the restart control appears later.
+                resetFits: (() => {
+                  const card = document.querySelector('.game-info').getBoundingClientRect();
+                  // The waiting message stays in the table header.
+                  const label = document
+                    .querySelector('.game-surface .surface-top .hand-label')
+                    .getBoundingClientRect();
+                  return (
+                    document.querySelector('.session-card').hidden &&
+                    label.left >= card.left &&
+                    label.right <= card.right &&
+                    label.bottom <= card.top
+                  );
+                })(),
+                settingsOnRight:
+                  document.querySelector('#rules-button').getBoundingClientRect().right <=
+                  document.querySelector('#opponents-button').getBoundingClientRect().left,
+              };
+            }),
+          )
+          .toEqual({
+            width,
+            scroll: width,
+            navFits: true,
+            settingsHeight: 44,
+            resetFits: true,
+            settingsOnRight: true,
+          });
+      }
+    }
+  } finally {
+    await context.close();
+  }
+});
+test('entry stakes stay in the game info card and the hero label has no reserved badge gap', async ({
+  page,
+}) => {
+  await page.addInitScript(() =>
+    localStorage.setItem(
+      'noir-table-v1',
+      JSON.stringify({ playerCount: 9, stakes: { smallBlind: 10000, bigBlind: 20000 } }),
+    ),
+  );
+  await page.goto('/');
+  await page.waitForFunction(() => !!window.qa);
+  await expect(page.locator('html')).toHaveAttribute('data-app-ready', 'true');
+  await expect(page.locator('#info-blinds')).toHaveText('10K / 20K');
+  for (const width of [320, 390, 768, 1024, 1280, 1700, 2256]) {
+    await page.setViewportSize({ width, height: 1000 });
+    await expect
+      .poll(() =>
+        page.evaluate(() => {
+          const box = (s) => document.querySelector(s).getBoundingClientRect();
+          const hand = box('.game-surface .surface-top .hand-label'),
+            blinds = box('#info-blinds'),
+            surface = box('.game-surface'),
+            card = box('.game-info');
+          const name = box('.hero-identity strong'),
+            stack = box('#hero-stack');
+          return {
+            // The waiting message heads the table; the blinds sit in the card.
+            sameTop: hand.bottom <= blinds.top,
+            headerFits: hand.right <= box('.surface-top').right && blinds.right <= card.right,
+            heroGap: stack.left - name.right >= 0 && stack.left - name.right <= 7,
+            noPositionSlot: box('#hero-position').width === 0,
+            practiceBelow: card.top >= surface.bottom && card.top - surface.bottom <= 20,
+            sameWidth: Math.abs(card.width - surface.width) <= 1,
+            noOverflow: document.documentElement.scrollWidth <= innerWidth,
+            // The titled card shares its edges: the title and first stat start
+            // together, the last stat ends with them, and the values share one
+            // line without clipping.
+            titled: (() => {
+              const title = box('#game-info-title'),
+                columns = [...document.querySelectorAll('.game-info-stats > div')].map((c) =>
+                  c.getBoundingClientRect(),
+                ),
+                values = [...document.querySelectorAll('.game-info-stats dd')];
+              const tops = values.map((value) => value.getBoundingClientRect().top);
+              return (
+                document.querySelector('#game-info-title').textContent === '本局信息' &&
+                Math.abs(columns[0].left - title.left) < 1 &&
+                Math.abs(columns.at(-1).right - box('.game-info .section-title').right) < 1 &&
+                title.bottom <= Math.min(...columns.map((c) => c.top)) &&
+                Math.max(...tops) - Math.min(...tops) < 1 &&
+                values.every((value) => value.scrollWidth <= value.clientWidth)
+              );
+            })(),
+          };
+        }),
+      )
+      .toEqual({
+        sameTop: true,
+        headerFits: true,
+        heroGap: true,
+        noPositionSlot: true,
+        practiceBelow: true,
+        sameWidth: true,
+        noOverflow: true,
+        titled: true,
+      });
+    if ([390, 1700].includes(width))
+      await page.screenshot({
+        path: test.info().outputPath(`waiting-layout-${width}.png`),
+        fullPage: true,
+      });
+  }
+});
+import { openSettings, closeSettings } from './settings-helpers.js';
+
+for (const count of [5, 6, 7, 8, 9]) {
+  test(`${count} seats wait for entry, preserve chips and deal once before actions`, async ({
+    page,
+  }, testInfo) => {
+    // The deal gate captures its timer functions during startup. Install the
+    // controlled clock before importing the application, not after that gate
+    // has already kept references to the real wall clock.
+    await page.clock.install({ time: new Date('2026-01-01T00:00:00Z') });
+    await page.addInitScript(
+      (count) => localStorage.setItem('noir-table-v1', JSON.stringify({ playerCount: count })),
+      count,
+    );
+    await page.goto('/');
+    await expect(page.locator('html')).toHaveAttribute('data-app-ready', 'true');
+    await expect(page.locator('#join-table-button')).toBeVisible();
+    await expect(page.locator('#seats .seat')).toHaveCount(count - 1);
+    await expect(page.locator('#hero-cards .playing-card, #seats .card-back')).toHaveCount(0);
+    await expect(page.locator('.activity-card')).toBeHidden();
+    const before = await page.evaluate(() => window.noir.getState());
+    expect(before.phase).toBe('idle');
+    await expect(page.locator('#street-label')).toHaveText('等待入座，即将开始第 1 局第 1 手');
+    expect(before.pot).toBe(0);
+    expect(before.hole).toEqual([]);
+    expect(before.players.every((player) => player.bet === 0)).toBe(true);
+    await page.waitForTimeout(1400);
+    expect(await page.evaluate(() => window.noir.getState())).toEqual(before);
+    const chrome = await page.evaluate(() => {
+      const settings = document.querySelector('#opponents-button');
+      const menu = document.querySelector('#rules-button');
+      const a = getComputedStyle(settings),
+        b = getComputedStyle(menu);
+      const ar = settings.getBoundingClientRect(),
+        br = menu.getBoundingClientRect();
+      return {
+        border: a.borderWidth,
+        font: a.fontSize,
+        menuFont: b.fontSize,
+        weight: a.fontWeight,
+        menuWeight: b.fontWeight,
+        gap: ar.left - br.right,
+        height: ar.height,
+        icon: settings.querySelector('svg').getBoundingClientRect().width,
+        dock: document.querySelector('.action-dock-slot').getBoundingClientRect().height,
+      };
+    });
+    expect(chrome.border).toBe('0px');
+    expect(chrome.font).toBe(chrome.menuFont);
+    expect(chrome.weight).toBe(chrome.menuWeight);
+    expect(chrome.height).toBeGreaterThanOrEqual(44);
+    expect(chrome.icon).toBeLessThanOrEqual(20);
+    expect(chrome.gap).toBeGreaterThanOrEqual(10);
+    expect(chrome.dock).toBe(0);
+    await page.screenshot({
+      path: testInfo.outputPath(`entry-${count}-seats.png`),
+      fullPage: true,
+    });
+    // Start from a known clock and pause well ahead of installation. Using the
+    // host's current time can already be in the past when a busy runner applies it.
+    await page.clock.pauseAt(new Date('2026-01-01T01:00:00Z'));
+    await page.locator('#join-table-button').click();
+    await expect(page.locator('.game-surface')).toHaveAttribute('data-entry-state', 'dealing');
+    const dealt = await page.evaluate(() => window.noir.getState());
+    expect(dealt.hand).toBe(before.hand + 1);
+    expect(dealt.hole).toHaveLength(2);
+    expect(dealt.players.reduce((sum, player) => sum + player.stack, 0) + dealt.pot).toBe(
+      before.players.reduce((sum, player) => sum + player.stack, 0),
+    );
+    for (const control of await page.locator('.action-buttons button').all())
+      await expect(control).toBeDisabled();
+    await page.clock.runFor(1000);
+    expect(await page.evaluate(() => window.noir.getState())).toEqual(dealt);
+    await page.clock.runFor(400);
+    await expect(page.locator('.game-surface')).toHaveAttribute('data-entry-state', 'playing');
+    await expect(page.locator('.activity-card')).toBeVisible();
+    expect((await page.evaluate(() => window.noir.getState())).hand).toBe(dealt.hand);
+  });
+}
+
+test('the waiting message sits where the hand label sits once play starts', async ({ browser }) => {
+  for (const [width, height] of [
+    [360, 740],
+    [393, 759],
+    [768, 1024],
+    [1280, 800],
+  ]) {
+    const page = await browser.newPage({ viewport: { width, height } });
+    await page.goto('/');
+    await expect(page.locator('html')).toHaveAttribute('data-app-ready', 'true');
+    // The first visible label text, measured from the table card's top edge.
+    const textTop = () =>
+      page.evaluate(() => {
+        const label = document.querySelector('.game-surface .surface-top .hand-label');
+        const text = [...label.querySelectorAll('*')].find(
+          (element) =>
+            element.offsetWidth && element.textContent.trim() && !element.children.length,
+        );
+        const range = document.createRange();
+        range.selectNodeContents(text);
+        return (
+          range.getBoundingClientRect().top -
+          document.querySelector('.game-surface').getBoundingClientRect().top
+        );
+      });
+    await expect(page.locator('.game-surface')).toHaveAttribute('data-entry-state', 'waiting');
+    const waiting = await textTop();
+    await page.locator('#join-table-button').click();
+    await expect(page.locator('.game-surface')).toHaveAttribute('data-entry-state', 'playing');
+    expect(Math.abs((await textTop()) - waiting), `${width}px`).toBeLessThanOrEqual(1);
+    await page.close();
+  }
+});
+test('the waiting message keeps clear of the players beside it on short phones', async ({
+  browser,
+}) => {
+  for (const [width, height, count] of [
+    [375, 667, 5],
+    [360, 740, 5],
+    [390, 844, 5],
+    [375, 667, 9],
+  ]) {
+    const page = await browser.newPage({ viewport: { width, height } });
+    await page.addInitScript(
+      (c) => localStorage.setItem('noir-table-v1', JSON.stringify({ playerCount: c })),
+      count,
+    );
+    await page.goto('/');
+    await expect(page.locator('html')).toHaveAttribute('data-app-ready', 'true');
+    await expect(page.locator('.game-surface')).toHaveAttribute('data-entry-state', 'waiting');
+    const gaps = await page.evaluate(() => {
+      const parts = [...document.querySelector('.entry-welcome').children].map((e) =>
+        e.getBoundingClientRect(),
+      );
+      const content = {
+        left: Math.min(...parts.map((b) => b.left)),
+        right: Math.max(...parts.map((b) => b.right)),
+        top: Math.min(...parts.map((b) => b.top)),
+        bottom: Math.max(...parts.map((b) => b.bottom)),
+      };
+      const middle = (content.left + content.right) / 2;
+      const beside = [...document.querySelectorAll('.arena .seat-profile')]
+        .map((e) => e.getBoundingClientRect())
+        .filter((b) => b.bottom > content.top && b.top < content.bottom);
+      return {
+        left:
+          content.left - Math.max(...beside.filter((b) => b.right <= middle).map((b) => b.right)),
+        right:
+          Math.min(...beside.filter((b) => b.left >= middle).map((b) => b.left)) - content.right,
+      };
+    });
+    expect(gaps.left, `${width}x${height} ${count}`).toBeGreaterThanOrEqual(31);
+    expect(gaps.right, `${width}x${height} ${count}`).toBeGreaterThanOrEqual(31);
+    await page.close();
+  }
+});
+
+test('waiting settings update the undealt table and a reload waits for the next hand in the same session', async ({
+  page,
+}) => {
+  await page.goto('/');
+  await expect(page.locator('#join-table-button')).toBeVisible();
+  await openSettings(page);
+  await page.locator('#player-count').selectOption('9');
+  await page.evaluate(() => window.noir.requestSmallBlind('250'));
+  await closeSettings(page);
+  const waiting = await page.evaluate(() => window.noir.getState());
+  expect(waiting.playerCount).toBe(9);
+  expect(waiting.smallBlind).toBe(250);
+  expect(waiting.pot).toBe(0);
+  expect(waiting.hand).toBe(0);
+  await page.locator('#join-table-button').click();
+  await expect(page.locator('.game-surface')).toHaveAttribute('data-entry-state', 'playing');
+  await page.evaluate(() => {
+    window.qa.stop();
+    window.qa.recordsFinish();
+  });
+  const completed = await page.evaluate(() => window.noir.getState());
+  await page.reload();
+  await expect(page.locator('#join-table-button')).toBeVisible();
+  const resumed = await page.evaluate(() => window.noir.getState());
+  expect(resumed.sessionNumber).toBe(completed.sessionNumber);
+  await expect(page.locator('#street-label')).toHaveText(
+    `等待入座，即将开始第 ${completed.sessionNumber} 局第 ${completed.hand + 1} 手`,
+  );
+  expect(resumed.hand).toBe(completed.hand);
+  expect(resumed.players.map((player) => player.stack)).toEqual(
+    completed.players.map((player) => player.stack),
+  );
+  await expect(page.locator('#entry-welcome')).not.toContainText('第一手');
+  await page.locator('#join-table-button').click();
+  expect((await page.evaluate(() => window.noir.getState())).hand).toBe(completed.hand + 1);
+  await page.evaluate(() => window.noir.requestSmallBlind('500'));
+  await page.reload();
+  await expect(page.locator('#join-table-button')).toBeVisible();
+  const changed = await page.evaluate(() => window.noir.getState());
+  expect(changed.phase).toBe('idle');
+  expect(changed.smallBlind).toBe(500);
+  expect(changed.hand).toBe(0);
+  await expect(page.locator('#street-label')).toHaveText(
+    `等待入座，即将开始第 ${completed.sessionNumber + 1} 局第 1 手`,
+  );
+});
+
+test('a pending deal pauses in background and cannot advance a replacement hand', async ({
+  page,
+}) => {
+  await page.goto('/');
+  await expect(page.locator('#join-table-button')).toBeVisible();
+  await page.waitForTimeout(700);
+  await page.clock.install();
+  await page.locator('#join-table-button').click();
+  await page.clock.runFor(300);
+  await page.evaluate(() =>
+    document.dispatchEvent(new CustomEvent('noir:app-state', { detail: { active: false } })),
+  );
+  const paused = await page.evaluate(() => window.noir.getState());
+  await page.clock.runFor(10000);
+  expect(await page.evaluate(() => window.noir.getState())).toEqual(paused);
+  await page.evaluate(() =>
+    document.dispatchEvent(new CustomEvent('noir:app-state', { detail: { active: true } })),
+  );
+  await page.clock.runFor(700);
+  await expect(page.locator('.game-surface')).toHaveAttribute('data-entry-state', 'dealing');
+  await page.clock.runFor(400);
+  await expect(page.locator('.game-surface')).toHaveAttribute('data-entry-state', 'playing');
+});
+
+test('autoplay-capable entry fades real local music from its start before joining and resumes in place', async ({
+  baseURL,
+}) => {
+  const browser = await chromium.launch({ args: ['--autoplay-policy=no-user-gesture-required'] });
+  try {
+    const page = await browser.newPage({ viewport: { width: 390, height: 844 }, hasTouch: true });
+    await page.addInitScript(() => {
+      window.musicStarts = [];
+      document.addEventListener(
+        'playing',
+        ({ target }) => {
+          if (target.matches?.('audio[data-background-music]'))
+            window.musicStarts.push({
+              time: target.currentTime,
+              gain: Number(target.dataset.musicGain),
+            });
+        },
+        true,
+      );
+    });
+    await page.goto(baseURL);
+    const read = () =>
+      page.evaluate(() => {
+        const audio = document.querySelector('audio[data-background-music]');
+        return (
+          audio && {
+            time: audio.currentTime,
+            paused: audio.paused,
+            gain: Number(audio.dataset.musicGain),
+            count: document.querySelectorAll('audio[data-background-music]').length,
+          }
+        );
+      });
+    await expect.poll(read).toMatchObject({ paused: false, count: 1 });
+    // Observe the actual playback event, even if a busy host delays the next driver round trip.
+    // play() clears paused before the asynchronous playing event is delivered.
+    await expect.poll(() => page.evaluate(() => window.musicStarts.length)).toBeGreaterThan(0);
+    const initial = await page.evaluate(() => window.musicStarts[0]);
+    expect(initial.time).toBeLessThan(0.8);
+    expect(initial.gain).toBeLessThan(0.3);
+    expect((await page.evaluate(() => window.noir.getState())).phase).toBe('idle');
+    await expect.poll(async () => (await read()).gain).toBe(1);
+    await page.locator('#join-table-button').click();
+    const joined = await read();
+    expect(joined.time).toBeGreaterThan(initial.time);
+    expect(joined.count).toBe(1);
+    await page.evaluate(() =>
+      document.dispatchEvent(new CustomEvent('noir:app-state', { detail: { active: false } })),
+    );
+    const paused = await read();
+    expect(paused.paused).toBe(true);
+    expect(paused.gain).toBe(0);
+    await page.evaluate(() =>
+      document.dispatchEvent(new CustomEvent('noir:app-state', { detail: { active: true } })),
+    );
+    await expect.poll(async () => (await read()).paused).toBe(false);
+    const resumed = await read();
+    expect(resumed.time).toBeGreaterThanOrEqual(paused.time);
+    expect(resumed.time - paused.time).toBeLessThan(0.8);
+    await expect.poll(async () => (await read()).gain).toBe(1);
+  } finally {
+    await browser.close();
+  }
+});

@@ -2,6 +2,8 @@
 
 这套测试通过 Appium 安装并启动实际 iOS `.app` / Android `.apk`，在应用自己的 WebView 中点击操作，再切换到原生上下文验证后台和恢复。它不打开桌面浏览器，不使用 Vite 测试模式，也不注入牌局、隐藏牌或 QA fixtures。规则测试、浏览器测试、原生编译和原生 E2E 是四种独立证据。
 
+附着前的就绪条件按平台区分：iOS 先等待原生可访问性树中的实际按钮，避免在初始 WebKit 导航期间附着。Android 的可访问性树可能没有已绘制的 HTML 子按钮，因此通过 UiAutomator2 的 `ensureWebviewsHavePages` 确认可检查页面，再附着并检查实际 DOM。游戏页必须完成文档加载、初始化游戏并出现可见且未禁用的按钮；隐私页则核对当前语言的标题及返回链接。空白页面或仅暴露一个游戏 API 都不能通过，原有超时上限保持不变。该 Android 能力的含义见 [Appium 官方说明](https://appium.github.io/appium-uiautomator2-driver/latest/reference/capabilities/#ensurewebviewshavepages)。
+
 ## 准备工具
 
 需要 Node.js 22.12 或更新版本。iOS 需要 macOS、完整 Xcode 和一个已安装的 iOS Simulator runtime；Android 需要 JDK 21、Android SDK 36、platform-tools、emulator 和对应 system image。
@@ -18,8 +20,10 @@ Android 示例（Apple Silicon 使用 arm64-v8a；Linux CI 使用 x86_64）：
 ```sh
 sdkmanager 'emulator' 'system-images;android-36;google_apis;arm64-v8a'
 avdmanager create avd -n Noir_Poker_E2E -k 'system-images;android-36;google_apis;arm64-v8a' --device pixel_9
-emulator -avd Noir_Poker_E2E -no-window -no-audio -no-snapshot -gpu swiftshader
+emulator -avd Noir_Poker_E2E -no-window -no-audio -no-snapshot -gpu host -memory 4096 -cores 4
 ```
+
+Apple Silicon Mac 上无界面模拟器也能用 `-gpu host`：经 MoltenVK/Metal 走硬件渲染，`dumpsys SurfaceFlinger` 的 GLES 一行应显示 Apple 芯片，而不是 SwiftShader。纯软件渲染每条 WebView 指令约 2–3 秒，整套场景要一小时以上，所以本机默认用 GPU。给模拟器 4 核、4GB：2 核、2GB 的 AVD 在后台／回前台场景里曾整机无响应，`adb shell` 也卡住。若 host 模式出现 QEMU HangDetector 崩溃，或 PackageManager/ADB 无响应，只重启该 AVD 并改用 `-gpu swiftshader_indirect` 补验，保留失败记录。Linux CI 无 GPU，继续使用 `-gpu swiftshader`。
 
 ## 构建并运行
 
@@ -32,7 +36,7 @@ node scripts/native-e2e.mjs android
 node tests/native/system-bars.mjs .artifacts/native-e2e/android/local-launch-and-no-login.png
 ```
 
-iOS 先对指定测试设备干净安装，用 Simulator 服务独立启动应用，再以 `autoLaunch: false` 接入 XCUITest。首启不在 WDA 附着后额外替换应用进程。后续设置持久化场景的重启通过 WDA 执行，不用外部 simctl 替换正在跟踪的进程。指定 `--udid` 的关闭状态设备也会先启动；仅关闭脚本本次启动的设备。
+iOS 先对指定测试设备干净安装，用 Simulator 服务独立启动应用，等待当前应用 PID 的原生“首屏就绪、封面移除”标记，才以 `autoLaunch: false` 接入 XCUITest。等待仍限时 45 秒，旧进程的日志不能放行新启动。首屏就绪前不调用 JavaScript 状态查询或附着 Web Inspector，也不在 WDA 附着后额外替换应用进程。后续设置持久化场景的重启通过 WDA 执行，不用外部 simctl 替换正在跟踪的进程。指定 `--udid` 的关闭状态设备也会先启动；仅关闭脚本本次启动的设备。
 
 iOS 自动选择最新可用 runtime 中兼容的标准尺寸 iPhone，仅复用同一 runtime、同一设备类型的专用模拟器。可用 `NOIR_IOS_RUNTIME` 和 `NOIR_IOS_DEVICE_TYPE` 指定 `simctl list runtimes -j` / `simctl list devicetypes -j` 返回的完整 identifier；选择不可用或不兼容时直接失败，不自动换设备。指定 UDID 时使用该设备。报告记录自动选择的 runtime 和设备类型。
 
@@ -87,6 +91,7 @@ iOS 页面底部的“重新练习”和操作区“牌力表”在完成三次�
 - 测试滚动之前检查操作按钮全部位于首屏；开始前核对包内源码指纹和所有图片，旧包会被拒绝。
 - 在安装后的 WebView 检查公共牌优先单排和空间不足时的 3+2 排列、玩家信息居中、筹码在位置标签右侧、行动提示在最下行及重复回合标签移除；弃牌到结算时牌桌位置和高度不变，结算操作缩为不侵入底部安全区域的一排。
 - 同时测量玩家卡片和风格标签的四侧内边距；浏览器平板回归复用相同读数，检查实际缩放后的名称、筹码和风格字号，避免用整桌缩小抵消字体放大。
+- `tablet-interface-readability` 在真实平板上连续执行两次横竖屏切换，核对同一决策没有变化、牌桌没有压扁；小平板横屏还检查金额在完整滑轨上方、快捷金额与操作按钮底部对齐。每次旋转保留带序号的牌桌、设置和指南截图，避免后一轮覆盖前一轮。手机报告中的 tablet-only 分支不能代替这项平板运行证据。
 - 仅在控件超出可见区域时滚动；结算牌面排列在正常发牌动画结束后测量，避免把测试强制滚动或动画中途的牌面旋转误判为布局位移。
 - 打开设置，更改人数、情绪、对手风格和声音；原生终止并重启后检查自动保存。
 - 在已安装 App 内切换英文与中文，检查文案更新、文档不重载、设置保持打开且手数不变；重启后检查语言持久保存。
@@ -106,11 +111,13 @@ Android 测试期间打开飞行模式，结束后恢复原设置。iOS Simulato
 
 结算用例还会点击顶部座位的查看按钮，验证眼睛位于位置标签右侧、亮牌的数字和花色完整可见且不贴提示栏；牌底少量藏在玩家卡片后。测试同时检查两行行动文案没有截断，并记录查看前后的牌桌与公共区位置。
 
-结果保存在 `.artifacts/native-e2e/<platform>/report.json`、每个流程的全设备截图以及 `appium.log` 中。报告包含设备、产物、打包源码指纹、各项实际耗时和失败原因；失败不能视为已验证。CI 需先编译产物，再执行脚本，上传这些证据；只验证 `mobile:sync` 或成功编译不能替代此流程。
+结果保存在 `.artifacts/native-e2e/<platform>/report.json`、每个流程的全设备截图以及 `appium.log` 中。报告包含设备、产物、打包源码指纹、各项实际耗时和失败原因；失败不能视为已验证。CI 需先编译产物，再执行脚本，上传这些证据；只验证 `mobile:sync` 或成功编译不能替代此流程。GitHub 托管的 macOS 模拟器和无 GPU 的 Android 模拟器都要几分钟才跑完一个场景，所以 CI 的 iOS 与 Android 任务用 `NOIR_NATIVE_SCENARIOS` 只跑已安装应用的冒烟场景（本地启动、入座音乐、高额盲注布局、标题中的重新练习）；完整 31 个场景仍在本机模拟器上运行并单独报告，CI 冒烟通过不能当作完整原生通过。两个原生 CI 任务都安装 Playwright Chromium，供本地启动等场景把已安装应用的 DOM 回放为 Web 对照；对照浏览器启动失败时也会关闭本地资源服务器，避免进程挂到任务超时。WebDriver 请求使用 Node `http` 并只受调用方超时约束，CI 首次构建 WebDriverAgent 超过 5 分钟时不会被 `fetch` 默认的响应头超时提前中断。
+
+iOS 独立首启还将应用输出写入结果目录的 `ios.stdout.log` 和 `ios.stderr.log`。Debug 外壳通过 `[NOIR startup]` 记录共享页面的启动阶段及原始错误，便于区分平台设置、语言、样式、牌桌初始化和启动封面消息。日志只观察现有就绪流程，不跳过初始化或提前显示牌桌；进入就绪或失败状态后停止观察页面变化，Release 不安装此日志桥接。
 
 缺少包、资源过期、设备选择或启动失败也会写入失败报告，`phase` 区分预检、设备准备、Appium 启动、安装、WebView 连接与场景运行。脚本自行启动的模拟器即使在 `bootstatus` 失败后也会尝试关闭。已通过场景和当前失败场景同时保留；复盘保留 30 秒完成要求，并记录公开分析进度、每步耗时及 WebView 读取错误，便于区分计算耗时与驱动故障。
 
-脚本自行启动的 Appium 退出前，会终止它当前仍存活的子进程，包括分离启动的 WDA `xcodebuild`；仅按该 Appium PID 的父子关系清理，不扫描或终止其他测试服务。外部 `--server` 由调用方管理生命周期。报告的 `serverCleanup` 保留清理进程和错误。
+脚本自行启动的 Appium 只加载目标平台的驱动，避免另一平台驱动的初始化占用服务启动时间。iOS 先完成独立首屏，Android 先确认系统与包管理服务就绪，然后才启动本任务的服务；报告记录独立首屏与服务就绪时间。退出前，会终止它当前仍存活的子进程，包括分离启动的 WDA `xcodebuild`；仅按该 Appium PID 的父子关系清理，不扫描或终止其他测试服务。外部 `--server` 由调用方管理生命周期。报告的 `serverCleanup` 保留清理进程和错误。
 
 Android 每次保存设备截图时还读取原生 UI 层级，遇到系统 ANR/崩溃对话框就失败并保留 `.native.xml` 和截图。WebView 内断言通过不能覆盖系统弹窗；测试不会自动关闭弹窗继续当作通过。
 
@@ -161,3 +168,5 @@ Web/iOS/Android 的 13 种牌点改用固定 Manrope 700 矢量轮廓，保留�
 早期环境问题均保留原始证据：Android 16 测试 AVD 首次冷启动超过 120 秒，之后出现 System UI ANR；软件 GPU 重试仍未在 240 秒内就绪且系统进程重启。干净 Android 15 软件 GPU 的首次驱动安装也超过 20 秒，预装驱动并使用预热后的 host GPU 测试设备后恢复。Appium 首次载入驱动超过 30 秒，改用独立预热服务。iOS 一轮在驱动连接后停留于系统桌面，首屏附着失败；保留失败截图，前台状态探针与预热后完整重跑通过。新增像素测试还发现 iOS 截图未保存原生坐标 XML，已修正采集器并增加单元回归、重新编译两端。
 
 失败报告位于 `.artifacts/card-native/android/`、`android-final/`、`android-api35/`、`android-api35-final/`、`ios/`、`ios-final/`、`ios-verified/`；启动和驱动日志为 `.artifacts/card-android-*.log`、`card-native-*.log`。整个验证使用独立测试设备，未清除用户正在使用的 Android 模拟器牌局或其他任务设备的数据。
+
+CI 的 iOS 六项安装冒烟场景分为 entry、interaction 两组，各自使用独立模拟器与完整的原超时上限；`ios` 汇总检查要求两组全部通过。分组不缩减场景或降低断言。

@@ -1,50 +1,24 @@
-# 人物头像来源
+# 原创风格插画
 
-核对日期：2026-10-11。所有图片保留原图或来源站缩略图的下载响应字节，页面仅通过 CSS 显示裁切。文件名使用稳定风格 ID，头像不改变机器人策略或保存配置。
+这十六张成熟插画头像于 2026-10-19 使用内置 imagegen 逐张生成，未使用真人照片或要求模仿真实人物。均衡保留文字头像。所有运行资源均为本地文件。
 
-| 风格                | 本地文件      | 来源与署名                                                                                                                                                     | 来源声明                                                        |
-| ------------------- | ------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------- |
-| 谭老板 · Tan Xuan   | tan.jpeg      | [Triton 官方参赛名单](https://cash-game-invitational-1.triton-series.com/)，Triton Poker Series                                                                | 未发现开放复用许可证；页面声明 All rights reserved              |
-| ST 王 · ST Wang     | st.jpeg       | [同一官方名单](https://cash-game-invitational-1.triton-series.com/)，人物卡标为 Esti Wang；Triton Poker Series                                                 | 同上                                                            |
-| 臧书奴 · Aaron Zang | zang.jpeg     | [同一官方名单](https://cash-game-invitational-1.triton-series.com/)，Triton Poker Series                                                                       | 同上                                                            |
-| Peter（HCL）        | peter.webp    | [Top Poker Streamers 的 Peter HCL 专页](https://toppokerstreamers.com/player/peter-entrepreneur/)，未标注单人照摄影者                                          | 未发现开放复用许可证                                            |
-| 阿宝 · A Bao（KPC） | abao.png      | [Pokerati 的 KPC 牌局报道](https://pokerati.com/2026/08/top-streamed-hands-of-the-week-malinowski-and-dwan-take-on-the-kpc-high-rollers/)，KPC Live / Pokerati | 未发现开放复用许可证                                            |
-| Viktor Blom         | viktor.jpg    | [Wikimedia Commons 来源页](https://commons.wikimedia.org/wiki/File:Viktor_Blom_at_a_poker_event.jpg)，Danny Maxwell Photography                                | [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/) |
-| Daniel Cates        | jungleman.jpg | [Wikimedia Commons 来源页](https://commons.wikimedia.org/wiki/File:Daniel_Cates_2018.jpg)，888poker Spain                                                      | [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/)       |
-| Tom Dwan            | dwan.jpg      | [Wikimedia Commons 来源页](https://commons.wikimedia.org/wiki/File:Tom_Dwan_2021.jpg)，World Poker Tour                                                        | [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/)       |
+| 风格 | 文件 |
+| --- | --- |
+| 多街施压 | rook.jpg |
+| 强牌诱导 | vale.jpg |
+| 河牌争夺 | slate.jpg |
+| 宽松取值 | jett.jpg |
+| 听牌施压 | mira.jpg |
+| 松凶强攻 | knox.jpg |
+| 计算进攻 | theo.jpg |
+| 多线进攻 | finn.jpg |
+| 观察调整 | sage.jpg |
+| 小注控池 | nico.jpg |
+| 耐心防守 | bram.jpg |
+| 稳健进攻 | leon.jpg |
+| 范围纪律 | owen.jpg |
+| 分街调整 | ezra.jpg |
+| 小注持续 | luka.jpg |
+| 延迟进攻 | iris.jpg |
 
-## 原始图片地址
-
-- 谭老板：https://cash-game-invitational-1.triton-series.com/_next/static/media/player3.ea38d948.jpeg
-- ST 王：https://cash-game-invitational-1.triton-series.com/_next/static/media/player7.22f1d7d5.jpeg
-- 臧书奴：https://cash-game-invitational-1.triton-series.com/_next/static/media/player11.fc9807d1.jpeg
-- Peter：https://toppokerstreamers.com/wp-content/uploads/2023/11/Peter-2-600x400.webp
-- 阿宝：https://pokerati.com/wp-content/uploads/2026/08/KPC-Live-Wiktor-Malinowski-Tan-Xuan.png
-- Viktor：https://upload.wikimedia.org/wikipedia/commons/c/ca/Viktor_Blom_at_a_poker_event.jpg
-- Daniel：https://upload.wikimedia.org/wikipedia/commons/0/03/Daniel_Cates_2018.jpg
-- Tom：https://upload.wikimedia.org/wikipedia/commons/f/f1/Tom_Dwan_2021.jpg
-
-## 身份核对与显示裁切
-
-Triton 名单将前三张照片逐一对应人物姓名。Peter 与 [WPT 报道](https://cms.worldpokertour.com/article/the-winners-and-losers-of-hcls-2024-million-dollar-game/)中明确标注的 HCL Peter 交叉核对，合照署名为 Hustler Casino Live / John Villarama。
-
-阿宝使用原始直播画面左侧明确标注 **A BAO** 的内嵌头像，只显示人物头部，并以[另一场 KPC 报道](https://pokerati.com/2026/08/top-streamed-hands-of-the-week-winston-sets-the-perfect-trap-a-bao-bluffs-big/)的具名头像交叉核对。显示窗口约为原图 x=94–217、y=473–597；不推断本名，也不依赖直播特写人物与信息面板的空间位置。
-
-Daniel Cates 的 Commons 照片另与 Triton 官方人物卡和 [WSOP 个人页](https://www.wsop.com/players/607411890/daniel-cates/)核对。Viktor 原文件 EXIF 保留旧的 All rights reserved 文本；上表许可依据 Commons 来源页明确的 Licensing 声明。
-
-风格详情中的“头像”链接提供对应来源及署名；均衡风格不对应真人，保留文字头像。加载失败时退回文字头像，保持已选风格与控制项可用。
-
-## 2026-10-11 新增职业牌手
-
-通过 Wikimedia Commons 文件页与 imageinfo 元数据核对人物、作者和许可。本地保留原图或 Commons 缩略图响应字节，显示通过 CSS 裁切；CC BY-SA 图像的衍生裁切沿用对应许可。
-
-| 风格 ID  | 本地文件       | 作者和文件页                                                                                        | 照片许可                                                       |
-| -------- | -------------- | --------------------------------------------------------------------------------------------------- | -------------------------------------------------------------- |
-| negreanu | `negreanu.jpg` | [Captain Q Farf](https://commons.wikimedia.org/wiki/File:DNegs_at_2022_WSOP.jpg)                    | [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0) |
-| holz     | `holz.jpg`     | [888poker Spain](https://commons.wikimedia.org/wiki/File:Fedor_Holz_2018.jpg)                       | [CC BY 3.0](https://creativecommons.org/licenses/by/3.0)       |
-| haxton   | `haxton.jpg`   | [888poker Spain](https://commons.wikimedia.org/wiki/File:Isaac_Haxton_2018.jpg)                     | [CC BY 3.0](https://creativecommons.org/licenses/by/3.0)       |
-| koon     | `koon.jpg`     | [World Poker Tour](https://commons.wikimedia.org/wiki/File:Jason_Koon_partypoker_Millions_2018.jpg) | [CC BY 3.0](https://creativecommons.org/licenses/by/3.0)       |
-| antonius | `antonius.jpg` | [Equipo Unibet](https://commons.wikimedia.org/wiki/File:Patrik_Antonius_2008.jpg)                   | [CC BY 2.0](https://creativecommons.org/licenses/by/2.0)       |
-| hellmuth | `hellmuth.jpg` | [World Poker Tour](https://commons.wikimedia.org/wiki/File:Phil_Hellmuth_2021.jpg)                  | [CC BY 3.0](https://creativecommons.org/licenses/by/3.0)       |
-| ivey     | `ivey.jpg`     | [www.LasVegasVegas.com](<https://commons.wikimedia.org/wiki/File:Phil_Ivey_(2009_WSOP).jpg>)        | [CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0) |
-| chidwick | `chidwick.jpg` | [World Poker Tour](https://commons.wikimedia.org/wiki/File:Stephen_Chidwick_2018.jpg)               | [CC BY 3.0](https://creativecommons.org/licenses/by/3.0)       |
+生成提示词和资源处理记录见 docs/character-artwork.md。第三方字体、组件和音频的许可另见各自记录。

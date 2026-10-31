@@ -1,0 +1,91 @@
+{
+  "checkedAt": "2026-10-23T06:13:28.638445+00:00",
+  "sourceDigest": "08ae9259e31b51169dd3655fc29e43e6255de13bd3051fbb78fd59c3490fa3e6",
+  "sourceCommitDelivered": "8138071",
+  "isolatedVerificationBase": "verification-candidate-9-source plus owned metadata/UI/test changes",
+  "concurrentStartupChangesIncluded": false,
+  "fullCheck": {
+    "tests": 880,
+    "passed": 880,
+    "failed": 0,
+    "productionBuild": true,
+    "wechatGenerated": true
+  },
+  "focusedTests": {
+    "passed": 139,
+    "failed": 0
+  },
+  "i18n": {
+    "locales": 11,
+    "messages": 1290
+  },
+  "formatCheck": true,
+  "wechat": {
+    "sourceDigest": "64f7549b90074494848102f1cfc4cc26a362e374662d9c98cbd300396cf632ec",
+    "officialCompiledFiles": 17,
+    "sourceAndBundledAssetsVerified": true,
+    "devToolsRuntime": {
+      "pageStates": 37,
+      "exceptions": 0,
+      "reviewChecks": 20,
+      "reviewExceptions": 0,
+      "longNameTooltip": "大注强攻",
+      "expandedHitCssPixels": {
+        "width": 73.50382995605469,
+        "height": 53.290252685546875
+      },
+      "physicalPhone": false,
+      "storageRestoredAndAfterRelaunchDeepEqual": true,
+      "initialSimulatorTimeoutPreserved": true,
+      "reviewFirstAttemptEntryPreconditionFailurePreserved": true,
+      "reviewTestOnlyFix": "Use real join-table button before active-hand assertions; all assertions/timeouts unchanged",
+      "runtimeReports": {
+        "candidate10-wechat-runtime/report.json": {
+          "sha256": "2fc274403c687ec3197e29c9baa8dee119b0d45cee17cda5cfc04cb04f374990",
+          "localPath": "candidate10-wechat-runtime/report.json"
+        },
+        "candidate10-wechat-review-runtime/report.json": {
+          "sha256": "05e2e739561415da7759e067462b6ad58422275deabc6dc88f373294bbf24454",
+          "localPath": "candidate10-wechat-review-runtime/report.json"
+        },
+        "candidate10-wechat-review-entry-runtime/report.json": {
+          "sha256": "00618514f6d237bbb3d492d2ec4d186a6dd79c8b2824858f19727917cafc6ba0",
+          "localPath": "candidate10-wechat-review-entry-runtime/report.json"
+        },
+        "candidate10-wechat-long-name-runtime/report.json": {
+          "sha256": "f259e0bb9c6a02aa835fd28eb108c34b373c4131b637c801813ebdef9bd9646e",
+          "localPath": "candidate10-wechat-long-name-runtime/report.json"
+        }
+      }
+    }
+  },
+  "initialCopyErrorPreserved": true,
+  "webFull": {
+    "total": 588,
+    "passed": 584,
+    "skipped": 1,
+    "failed": 3,
+    "focusedFollowupPassed": 4,
+    "uniquePassedAcrossAttempts": 587,
+    "oneUninterruptedGreen": false,
+    "allOriginalFailuresCovered": true,
+    "rawReportsPreserved": true
+  },
+  "native": "not run for candidate10; candidate9 failures retained",
+  "actualChrome": {
+    "checkedAt": "2026-10-23T05:18:28.373441+00:00",
+    "sourceDigest": "08ae9259e31b51169dd3655fc29e43e6255de13bd3051fbb78fd59c3490fa3e6",
+    "url": "http://127.0.0.1:4322/",
+    "browser": "actual Chrome extension CUA",
+    "styleCount": 8,
+    "rookName": "大注强攻",
+    "balancedTextAvatarPreserved": true,
+    "matureIllustrationVisible": true,
+    "rookDetailAndAssignment": true,
+    "realMouseHoldMs": 700,
+    "visibleTooltip": "大注强攻",
+    "screenshot": "candidate10-actual-tooltip.png",
+    "physicalPhone": false,
+    "testCreatedTabClosed": true
+  }
+}

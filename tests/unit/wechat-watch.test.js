@@ -112,26 +112,26 @@ test(
     const manifest = async () =>
       JSON.parse(await readFile(path.join(output, 'build-info.json'), 'utf8'));
     const initial = await manifest();
-    const originalPortrait = digest(await readFile(path.join(output, 'assets/portraits/tan.jpg')));
+    const originalPortrait = digest(await readFile(path.join(output, 'assets/portraits/rook.jpg')));
     assert.equal(initial.appId, 'touristappid');
     assert.ok(initial.files.some((file) => file.path === 'shared/platform/wechat-controller.js'));
 
     const portraitsPath = path.join(directory, 'src/ui/portraits.js');
     const portraits = await readFile(portraitsPath, 'utf8');
-    assert.ok(portraits.includes("src: '/portraits/tan.jpeg',"));
+    assert.ok(portraits.includes("src: '/portraits/rook.jpg',"));
     const portraitBuild = watch.buildCount();
     await writeFile(
       portraitsPath,
       portraits.replace(
-        "src: '/portraits/tan.jpeg',",
-        "src: '/portraits/tan.jpeg', zoom: 2, origin: 'left top', position: 'left top',",
+        "src: '/portraits/rook.jpg',",
+        "src: '/portraits/rook.jpg', zoom: 2, origin: 'left top', position: 'left top',",
       ),
     );
     await watch.waitForBuild(portraitBuild);
     const changedPortrait = await manifest();
     assert.notEqual(changedPortrait.sourceDigest, initial.sourceDigest);
     assert.notEqual(
-      digest(await readFile(path.join(output, 'assets/portraits/tan.jpg'))),
+      digest(await readFile(path.join(output, 'assets/portraits/rook.jpg'))),
       originalPortrait,
       'a live watch iteration must load the new crop metadata, not the startup module cache',
     );

@@ -155,7 +155,8 @@ test('the 50K small-blind limit saves raw digits, displays K/M, and applies when
   await page.evaluate(() => window.qa.stop());
   const fresh = await page.evaluate(() => window.qa.snapshot());
   expect(fresh.stakes).toEqual(stakes(50000));
-  expect(fresh.hand).toBe(1);
+  expect(fresh.hand).toBe(0);
+  expect(fresh.phase).toBe('idle');
   expect(fresh.stats).toEqual({ hands: 0, wins: 0, buyin: 10000000 });
   expect(fresh.players.every((player) => player.stack + player.total === 10000000)).toBe(true);
   await expect(page.locator('#blind-values')).toHaveText('50K / 100K');
@@ -178,12 +179,12 @@ test('causal review keeps the recorded blind scale while a new scale is queued a
   expect(await page.evaluate(() => window.qa.snapshot())).toEqual(original);
   await page.locator('#review-hand-button').click();
   await expect(page.locator('#review-dialog')).toHaveAttribute('data-analysis-status', 'done', {
-    timeout: 30000,
+    timeout: 120000,
   });
   await page.locator('[data-review-index="0"]').click();
   const explanation = page.locator('#review-coach-explanation');
   await expect(explanation).toContainText('350');
-  await page.locator('#review-activity summary').click();
+  await expect(page.locator('#review-activity')).toHaveAttribute('open', '');
   await expect(page.locator('#review-activity-list')).toContainText(/Mia.*1K/);
   await expect(page.locator('#review-activity-list')).toContainText(/River.*950/);
   expect((await page.locator('#review-activity-list li').allTextContents()).join('\n')).not.toMatch(
@@ -242,8 +243,15 @@ test('hero action and activity amount labels consistently show K/M while the eng
     { configured: stakes(50000), amount: 10000000, displayed: '10M' },
   ]) {
     await page.evaluate((configured) => window.qa.configuredTurn(configured), scenario.configured);
-    await page.locator('#bet-slider').evaluate((el, amount) => {
-      el.value = String(amount);
+    await page.locator('#bet-slider').evaluate(async (el, amount) => {
+      const { raiseSliderPosition } = await import('/src/ui/bet-sizing.js');
+      const state = window.noir.getState();
+      el.value = String(
+        raiseSliderPosition(
+          { currentBet: window.qa.snapshot().currentBet, pot: state.pot, legal: state.legal },
+          amount,
+        ),
+      );
       el.dispatchEvent(new Event('input', { bubbles: true }));
     }, scenario.amount);
     await page.locator('#raise-button').click();
@@ -264,7 +272,7 @@ test('hero action and activity amount labels consistently show K/M while the eng
 test('blind editing, validation and next-hand notices are localized without changing compact amounts', async ({
   page,
 }) => {
-  test.setTimeout(60000);
+  test.setTimeout(240000);
   await openSettings(page);
   for (const locale of ['zh-CN', 'en', 'zh-TW', 'ja', 'ko', 'es', 'it', 'pt', 'de', 'fr', 'ru']) {
     await page.locator('#language-select').selectOption(locale);

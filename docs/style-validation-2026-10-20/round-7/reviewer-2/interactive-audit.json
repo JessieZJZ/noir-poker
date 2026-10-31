@@ -1,0 +1,909 @@
+{
+  "reviewer": 2,
+  "kind": "independent AI strategy audit",
+  "freeReviewSha256": "066d5034ae9281d94e9a5e8b75d6286450de3a5c40059009df47389c57ca08d3",
+  "heroPlanSha256": "3fe9077fad5e6314943a0aa2981801c5e6f5010d30f749d85b893486211ae591",
+  "selectedOpponents": [
+    "B",
+    "C"
+  ],
+  "plannedHandsPerOpponent": 80,
+  "plannedPositionsPerOpponent": {
+    "UTG": 16,
+    "CO": 16,
+    "BTN": 16,
+    "SB": 16,
+    "BB": 16
+  },
+  "totalCompletedHands": 160,
+  "requestCount": 378,
+  "startRequests": 160,
+  "heroDecisionCount": 217,
+  "integrityErrors": [],
+  "stoppedAfterHand": 160,
+  "opponents": {
+    "B": {
+      "hands": 80,
+      "globalHandRange": [
+        1,
+        80
+      ],
+      "heroPositions": {
+        "CO": 16,
+        "UTG": 16,
+        "BB": 16,
+        "SB": 16,
+        "BTN": 16
+      },
+      "metrics": {
+        "Hero": {
+          "vpipHands": 10,
+          "vpipPct": 12.5,
+          "pfrHands": 8,
+          "pfrPct": 10.0,
+          "vpipHandIds": [
+            18,
+            24,
+            31,
+            33,
+            37,
+            43,
+            44,
+            59,
+            62,
+            66
+          ],
+          "pfrHandIds": [
+            18,
+            24,
+            33,
+            43,
+            44,
+            59,
+            62,
+            66
+          ]
+        },
+        "B": {
+          "vpipHands": 68,
+          "vpipPct": 85.0,
+          "pfrHands": 27,
+          "pfrPct": 33.75,
+          "vpipHandIds": [
+            1,
+            2,
+            3,
+            4,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            13,
+            14,
+            16,
+            17,
+            18,
+            20,
+            21,
+            22,
+            23,
+            24,
+            25,
+            26,
+            28,
+            29,
+            31,
+            32,
+            34,
+            35,
+            36,
+            37,
+            38,
+            40,
+            41,
+            42,
+            43,
+            44,
+            45,
+            46,
+            47,
+            48,
+            49,
+            50,
+            51,
+            52,
+            55,
+            56,
+            57,
+            58,
+            59,
+            60,
+            61,
+            62,
+            63,
+            64,
+            65,
+            66,
+            67,
+            69,
+            70,
+            71,
+            72,
+            73,
+            74,
+            75,
+            76,
+            78,
+            79,
+            80
+          ],
+          "pfrHandIds": [
+            1,
+            4,
+            6,
+            11,
+            13,
+            17,
+            20,
+            21,
+            28,
+            32,
+            34,
+            36,
+            40,
+            44,
+            45,
+            50,
+            55,
+            61,
+            64,
+            65,
+            67,
+            69,
+            72,
+            73,
+            74,
+            75,
+            78
+          ]
+        }
+      },
+      "opportunities": {
+        "heroFacesTarget": 16,
+        "heroFacesTargetPreflop": 15,
+        "sharedFlop": 7,
+        "targetFacesHero": 11,
+        "targetFacesHeroPreflop": 8,
+        "heroFacesTargetPostflop": 1,
+        "targetFacesHeroPostflop": 3
+      },
+      "opportunityHandIds": {
+        "heroFacesTarget": [
+          4,
+          11,
+          18,
+          20,
+          32,
+          34,
+          36,
+          40,
+          44,
+          50,
+          55,
+          64,
+          69,
+          72,
+          74,
+          75
+        ],
+        "targetFacesHero": [
+          18,
+          24,
+          33,
+          43,
+          44,
+          59,
+          62,
+          66
+        ],
+        "sharedFlop": [
+          10,
+          18,
+          31,
+          37,
+          43,
+          62,
+          66
+        ]
+      },
+      "opportunityUniqueHands": {
+        "heroFacesTarget": 16,
+        "targetFacesHero": 8,
+        "sharedFlop": 7
+      },
+      "opportunityDetails": [
+        {
+          "kind": "heroFacesTarget",
+          "hand": 4,
+          "street": 0,
+          "action": "fold",
+          "betTo": null,
+          "toCall": 600,
+          "potBefore": 900
+        },
+        {
+          "kind": "heroFacesTarget",
+          "hand": 11,
+          "street": 0,
+          "action": "fold",
+          "betTo": null,
+          "toCall": 2300,
+          "potBefore": 3800
+        },
+        {
+          "kind": "targetFacesHero",
+          "hand": 18,
+          "street": 0,
+          "action": "call",
+          "betTo": null,
+          "toCall": 500,
+          "potBefore": 1800
+        },
+        {
+          "kind": "heroFacesTarget",
+          "hand": 18,
+          "street": 2,
+          "action": "fold",
+          "betTo": null,
+          "toCall": 1400,
+          "potBefore": 4200
+        },
+        {
+          "kind": "heroFacesTarget",
+          "hand": 20,
+          "street": 0,
+          "action": "fold",
+          "betTo": null,
+          "toCall": 800,
+          "potBefore": 1300
+        },
+        {
+          "kind": "targetFacesHero",
+          "hand": 24,
+          "street": 0,
+          "action": "fold",
+          "betTo": null,
+          "toCall": 500,
+          "potBefore": 2500
+        },
+        {
+          "kind": "heroFacesTarget",
+          "hand": 32,
+          "street": 0,
+          "action": "fold",
+          "betTo": null,
+          "toCall": 3800,
+          "potBefore": 6000
+        },
+        {
+          "kind": "targetFacesHero",
+          "hand": 33,
+          "street": 0,
+          "action": "fold",
+          "betTo": null,
+          "toCall": 1500,
+          "potBefore": 2900
+        },
+        {
+          "kind": "heroFacesTarget",
+          "hand": 34,
+          "street": 0,
+          "action": "fold",
+          "betTo": null,
+          "toCall": 500,
+          "potBefore": 1500
+        },
+        {
+          "kind": "heroFacesTarget",
+          "hand": 36,
+          "street": 0,
+          "action": "fold",
+          "betTo": null,
+          "toCall": 2900,
+          "potBefore": 4500
+        },
+        {
+          "kind": "heroFacesTarget",
+          "hand": 40,
+          "street": 0,
+          "action": "fold",
+          "betTo": null,
+          "toCall": 500,
+          "potBefore": 800
+        },
+        {
+          "kind": "targetFacesHero",
+          "hand": 43,
+          "street": 0,
+          "action": "call",
+          "betTo": null,
+          "toCall": 500,
+          "potBefore": 1900
+        },
+        {
+          "kind": "targetFacesHero",
+          "hand": 43,
+          "street": 1,
+          "action": "call",
+          "betTo": null,
+          "toCall": 1300,
+          "potBefore": 4200
+        },
+        {
+          "kind": "targetFacesHero",
+          "hand": 43,
+          "street": 2,
+          "action": "call",
+          "betTo": null,
+          "toCall": 3200,
+          "potBefore": 10000
+        },
+        {
+          "kind": "heroFacesTarget",
+          "hand": 44,
+          "street": 0,
+          "action": "raise",
+          "betTo": 1800,
+          "toCall": 600,
+          "potBefore": 900
+        },
+        {
+          "kind": "targetFacesHero",
+          "hand": 44,
+          "street": 0,
+          "action": "fold",
+          "betTo": null,
+          "toCall": 1200,
+          "potBefore": 2700
+        },
+        {
+          "kind": "heroFacesTarget",
+          "hand": 50,
+          "street": 0,
+          "action": "fold",
+          "betTo": null,
+          "toCall": 400,
+          "potBefore": 1400
+        },
+        {
+          "kind": "heroFacesTarget",
+          "hand": 55,
+          "street": 0,
+          "action": "fold",
+          "betTo": null,
+          "toCall": 500,
+          "potBefore": 1500
+        },
+        {
+          "kind": "targetFacesHero",
+          "hand": 59,
+          "street": 0,
+          "action": "fold",
+          "betTo": null,
+          "toCall": 700,
+          "potBefore": 2300
+        },
+        {
+          "kind": "targetFacesHero",
+          "hand": 62,
+          "street": 0,
+          "action": "call",
+          "betTo": null,
+          "toCall": 600,
+          "potBefore": 1900
+        },
+        {
+          "kind": "targetFacesHero",
+          "hand": 62,
+          "street": 1,
+          "action": "fold",
+          "betTo": null,
+          "toCall": 1500,
+          "potBefore": 6500
+        },
+        {
+          "kind": "heroFacesTarget",
+          "hand": 64,
+          "street": 0,
+          "action": "fold",
+          "betTo": null,
+          "toCall": 600,
+          "potBefore": 900
+        },
+        {
+          "kind": "targetFacesHero",
+          "hand": 66,
+          "street": 0,
+          "action": "call",
+          "betTo": null,
+          "toCall": 500,
+          "potBefore": 1300
+        },
+        {
+          "kind": "heroFacesTarget",
+          "hand": 69,
+          "street": 0,
+          "action": "fold",
+          "betTo": null,
+          "toCall": 400,
+          "potBefore": 2600
+        },
+        {
+          "kind": "heroFacesTarget",
+          "hand": 72,
+          "street": 0,
+          "action": "fold",
+          "betTo": null,
+          "toCall": 2400,
+          "potBefore": 4100
+        },
+        {
+          "kind": "heroFacesTarget",
+          "hand": 74,
+          "street": 0,
+          "action": "fold",
+          "betTo": null,
+          "toCall": 500,
+          "potBefore": 900
+        },
+        {
+          "kind": "heroFacesTarget",
+          "hand": 75,
+          "street": 0,
+          "action": "fold",
+          "betTo": null,
+          "toCall": 700,
+          "potBefore": 2100
+        }
+      ],
+      "heroActionCounts": {
+        "fold": 72,
+        "check": 13,
+        "raise": 17,
+        "call": 4
+      },
+      "heroPostflopActionCounts": {
+        "check": 11,
+        "fold": 4,
+        "raise": 9,
+        "call": 2
+      },
+      "targetPostflopActions": {
+        "check": 84,
+        "raise": 31,
+        "fold": 18,
+        "call": 14
+      }
+    },
+    "C": {
+      "hands": 80,
+      "globalHandRange": [
+        81,
+        160
+      ],
+      "heroPositions": {
+        "CO": 16,
+        "UTG": 16,
+        "BB": 16,
+        "SB": 16,
+        "BTN": 16
+      },
+      "metrics": {
+        "Hero": {
+          "vpipHands": 11,
+          "vpipPct": 13.750000000000002,
+          "pfrHands": 5,
+          "pfrPct": 6.25,
+          "vpipHandIds": [
+            92,
+            95,
+            99,
+            109,
+            110,
+            118,
+            125,
+            127,
+            144,
+            152,
+            158
+          ],
+          "pfrHandIds": [
+            99,
+            118,
+            125,
+            127,
+            144
+          ]
+        },
+        "C": {
+          "vpipHands": 65,
+          "vpipPct": 81.25,
+          "pfrHands": 21,
+          "pfrPct": 26.25,
+          "vpipHandIds": [
+            81,
+            82,
+            84,
+            85,
+            86,
+            87,
+            88,
+            89,
+            90,
+            91,
+            92,
+            94,
+            95,
+            96,
+            97,
+            98,
+            99,
+            100,
+            101,
+            102,
+            104,
+            105,
+            107,
+            108,
+            109,
+            110,
+            111,
+            113,
+            115,
+            116,
+            117,
+            118,
+            119,
+            120,
+            121,
+            122,
+            125,
+            126,
+            127,
+            128,
+            129,
+            130,
+            131,
+            135,
+            136,
+            137,
+            140,
+            141,
+            142,
+            143,
+            144,
+            145,
+            146,
+            147,
+            149,
+            150,
+            151,
+            153,
+            154,
+            155,
+            156,
+            157,
+            158,
+            159,
+            160
+          ],
+          "pfrHandIds": [
+            84,
+            85,
+            88,
+            91,
+            97,
+            100,
+            101,
+            104,
+            108,
+            119,
+            122,
+            126,
+            129,
+            135,
+            141,
+            142,
+            145,
+            147,
+            150,
+            154,
+            155
+          ]
+        }
+      },
+      "opportunities": {
+        "heroFacesTarget": 10,
+        "heroFacesTargetPreflop": 9,
+        "sharedFlop": 9,
+        "targetFacesHero": 10,
+        "targetFacesHeroPostflop": 6,
+        "targetFacesHeroPreflop": 4,
+        "heroFacesTargetPostflop": 1
+      },
+      "opportunityHandIds": {
+        "heroFacesTarget": [
+          84,
+          91,
+          100,
+          104,
+          119,
+          129,
+          135,
+          150,
+          155,
+          158
+        ],
+        "targetFacesHero": [
+          95,
+          109,
+          118,
+          125,
+          127,
+          144
+        ],
+        "sharedFlop": [
+          90,
+          92,
+          95,
+          109,
+          110,
+          118,
+          127,
+          144,
+          158
+        ]
+      },
+      "opportunityUniqueHands": {
+        "heroFacesTarget": 10,
+        "targetFacesHero": 6,
+        "sharedFlop": 9
+      },
+      "opportunityDetails": [
+        {
+          "kind": "heroFacesTarget",
+          "hand": 84,
+          "street": 0,
+          "action": "fold",
+          "betTo": null,
+          "toCall": 500,
+          "potBefore": 800
+        },
+        {
+          "kind": "heroFacesTarget",
+          "hand": 91,
+          "street": 0,
+          "action": "fold",
+          "betTo": null,
+          "toCall": 700,
+          "potBefore": 1600
+        },
+        {
+          "kind": "targetFacesHero",
+          "hand": 95,
+          "street": 2,
+          "action": "fold",
+          "betTo": null,
+          "toCall": 1100,
+          "potBefore": 4100
+        },
+        {
+          "kind": "heroFacesTarget",
+          "hand": 100,
+          "street": 0,
+          "action": "fold",
+          "betTo": null,
+          "toCall": 500,
+          "potBefore": 800
+        },
+        {
+          "kind": "heroFacesTarget",
+          "hand": 104,
+          "street": 0,
+          "action": "fold",
+          "betTo": null,
+          "toCall": 500,
+          "potBefore": 800
+        },
+        {
+          "kind": "targetFacesHero",
+          "hand": 109,
+          "street": 1,
+          "action": "call",
+          "betTo": null,
+          "toCall": 2600,
+          "potBefore": 6600
+        },
+        {
+          "kind": "targetFacesHero",
+          "hand": 109,
+          "street": 2,
+          "action": "call",
+          "betTo": null,
+          "toCall": 6200,
+          "potBefore": 18000
+        },
+        {
+          "kind": "targetFacesHero",
+          "hand": 109,
+          "street": 3,
+          "action": "fold",
+          "betTo": null,
+          "toCall": 6000,
+          "potBefore": 30200
+        },
+        {
+          "kind": "targetFacesHero",
+          "hand": 118,
+          "street": 0,
+          "action": "call",
+          "betTo": null,
+          "toCall": 500,
+          "potBefore": 1200
+        },
+        {
+          "kind": "targetFacesHero",
+          "hand": 118,
+          "street": 1,
+          "action": "fold",
+          "betTo": null,
+          "toCall": 900,
+          "potBefore": 3100
+        },
+        {
+          "kind": "heroFacesTarget",
+          "hand": 119,
+          "street": 0,
+          "action": "fold",
+          "betTo": null,
+          "toCall": 500,
+          "potBefore": 1300
+        },
+        {
+          "kind": "targetFacesHero",
+          "hand": 125,
+          "street": 0,
+          "action": "call",
+          "betTo": null,
+          "toCall": 500,
+          "potBefore": 800
+        },
+        {
+          "kind": "targetFacesHero",
+          "hand": 127,
+          "street": 0,
+          "action": "call",
+          "betTo": null,
+          "toCall": 400,
+          "potBefore": 1800
+        },
+        {
+          "kind": "heroFacesTarget",
+          "hand": 129,
+          "street": 0,
+          "action": "fold",
+          "betTo": null,
+          "toCall": 300,
+          "potBefore": 1700
+        },
+        {
+          "kind": "heroFacesTarget",
+          "hand": 135,
+          "street": 0,
+          "action": "fold",
+          "betTo": null,
+          "toCall": 2000,
+          "potBefore": 3000
+        },
+        {
+          "kind": "targetFacesHero",
+          "hand": 144,
+          "street": 0,
+          "action": "call",
+          "betTo": null,
+          "toCall": 500,
+          "potBefore": 2500
+        },
+        {
+          "kind": "targetFacesHero",
+          "hand": 144,
+          "street": 2,
+          "action": "call",
+          "betTo": null,
+          "toCall": 1300,
+          "potBefore": 5600
+        },
+        {
+          "kind": "heroFacesTarget",
+          "hand": 150,
+          "street": 0,
+          "action": "fold",
+          "betTo": null,
+          "toCall": 500,
+          "potBefore": 2500
+        },
+        {
+          "kind": "heroFacesTarget",
+          "hand": 155,
+          "street": 0,
+          "action": "fold",
+          "betTo": null,
+          "toCall": 600,
+          "potBefore": 1200
+        },
+        {
+          "kind": "heroFacesTarget",
+          "hand": 158,
+          "street": 3,
+          "action": "fold",
+          "betTo": null,
+          "toCall": 1000,
+          "potBefore": 3000
+        }
+      ],
+      "heroActionCounts": {
+        "fold": 73,
+        "check": 17,
+        "call": 6,
+        "raise": 15
+      },
+      "heroPostflopActionCounts": {
+        "check": 16,
+        "fold": 3,
+        "raise": 10
+      },
+      "targetPostflopActions": {
+        "check": 114,
+        "raise": 10,
+        "fold": 22,
+        "call": 11
+      }
+    }
+  },
+  "method": {
+    "vpip": "Hands with at least one preflop voluntary Hero call or raise / all completed hands; blinds and BB checks excluded.",
+    "pfr": "Hands with at least one Hero preflop raise / all completed hands.",
+    "facing": "Replay public events. A decision faces an aggressor only when actor owes chips and the most recent street aggressor is the other named participant. Multiway calls may intervene. Counts split preflop/postflop.",
+    "sharedFlop": "Flop revealed and neither Hero nor target folded preflop.",
+    "limits": [
+      "Hero is an AI participant, not a human subject or UI test.",
+      "No hidden opponent cards or default bot used for decisions.",
+      "Preflop helper implements the previously fixed Hero ranges; every postflop state received an individual public-information judgment.",
+      "Unshown cards and motives remain unknown.",
+      "Positions are balanced, cards and action opportunities are not matched across opponents."
+    ]
+  },
+  "heroOverall": {
+    "vpipHands": 21,
+    "vpipPct": 13.125,
+    "pfrHands": 13,
+    "pfrPct": 8.125,
+    "hands": 160
+  },
+  "limitations": [
+    "Hero realized VPIP/PFR are low. The fixed preflop helper conservatively folded some plausible continues such as KQo on BTN in global hand 117. No minimum interaction rate was imposed and no policy was changed after observations.",
+    "Only 7/9 shared flops and 1 Hero-facing-target postflop decision per target. Most contrast is supported by public table observation, not deep direct interaction."
+  ],
+  "files": {
+    "hero-plan.md": "3fe9077fad5e6314943a0aa2981801c5e6f5010d30f749d85b893486211ae591",
+    "free-review.md": "066d5034ae9281d94e9a5e8b75d6286450de3a5c40059009df47389c57ca08d3",
+    "requests.jsonl": "18b788437bcbf85e4f3540a8e39f719e9c1a186760cfd0f56b076b8909191cd6",
+    "hero-decisions.jsonl": "79c1e58c59c90f981471e3c4fbac548bf9c511c2b3f13d5312b5d4d8775bc32e",
+    "completed-hands.jsonl": "fc5e084e058dba0ef8c6dfdda6274f4cf44357e3dbfaaee1124787997a30299f",
+    "interactive-review.md": "2e54c8e3773e0ca95f4b09930eb1a0dfa6340a8675ce11460bdf962902b1dfc6"
+  },
+  "classification": "pending separate menu",
+  "scoring": "pending separate menu"
+}

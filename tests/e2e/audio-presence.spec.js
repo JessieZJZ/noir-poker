@@ -5,7 +5,7 @@ test('actual actions use enhanced phone cues and music enters the shared output 
   page,
 }) => {
   await page.addInitScript(() => {
-    window.audioPresence = { connections: [], cues: [] };
+    window.audioPresence = { connections: [], cues: [], musicGains: [] };
     const connect = AudioNode.prototype.connect;
     AudioNode.prototype.connect = function (target, ...args) {
       window.audioPresence.connections.push({
@@ -13,6 +13,8 @@ test('actual actions use enhanced phone cues and music enters the shared output 
         to: target.constructor.name,
         gain: this.gain?.value,
       });
+      if (this instanceof MediaElementAudioSourceNode)
+        window.audioPresence.musicGains.push(target.gain);
       return connect.call(this, target, ...args);
     };
     const start = AudioBufferSourceNode.prototype.start;
@@ -22,6 +24,7 @@ test('actual actions use enhanced phone cues and music enters the shared output 
         samples: samples.length,
         rms: Math.sqrt(samples.reduce((sum, value) => sum + value * value, 0) / samples.length),
         peak: samples.reduce((peak, value) => Math.max(peak, Math.abs(value)), 0),
+        musicGains: window.audioPresence.musicGains.map((gain) => gain.value),
       });
       return start.apply(this, args);
     };
@@ -29,11 +32,48 @@ test('actual actions use enhanced phone cues and music enters the shared output 
   await page.goto('/');
   await page.waitForFunction(() => !!window.qa);
   await page.evaluate(() => window.qa.heroTurn(7));
+  await page.locator('#opponents-button').click();
+  await page.waitForFunction(
+    () => Number(document.querySelector('audio[data-background-music]')?.dataset.musicGain) === 1,
+  );
+  await page.locator('#opponents-dialog .close-dialog').click();
+  await page.evaluate(() => {
+    const music = document.querySelector('audio[data-background-music]');
+    window.steadyMusic = { music, started: music.currentTime, samples: [] };
+    window.steadyMusic.timer = setInterval(
+      () =>
+        window.steadyMusic.samples.push({
+          gains: window.audioPresence.musicGains.map((gain) => gain.value),
+          paused: music.paused,
+          samePlayer: document.querySelector('audio[data-background-music]') === music,
+        }),
+      20,
+    );
+  });
   await page.locator('#raise-button').click();
   await page.evaluate(() => window.qa.heroTurn(7));
   await page.locator('#fold-button').click();
   await page.evaluate(() => window.qa.stop());
-  const actual = await page.evaluate(() => window.audioPresence);
+  await page.waitForTimeout(900);
+  const steady = await page.evaluate(() => {
+    clearInterval(window.steadyMusic.timer);
+    return {
+      started: window.steadyMusic.started,
+      ended: window.steadyMusic.music.currentTime,
+      samples: window.steadyMusic.samples,
+    };
+  });
+  expect(steady.samples.length).toBeGreaterThan(20);
+  expect(steady.ended).toBeGreaterThan(steady.started);
+  for (const sample of steady.samples) {
+    expect(sample.gains).toEqual([BACKGROUND_MUSIC_VOLUME]);
+    expect(sample.paused).toBe(false);
+    expect(sample.samePlayer).toBe(true);
+  }
+  const actual = await page.evaluate(() => ({
+    connections: window.audioPresence.connections,
+    cues: window.audioPresence.cues,
+  }));
   const musicGain = actual.connections.find(
     ({ from, to }) => from === 'GainNode' && to === 'WaveShaperNode',
   );
@@ -42,6 +82,11 @@ test('actual actions use enhanced phone cues and music enters the shared output 
   expect(
     actual.connections.some(
       ({ from, to }) => from === 'WaveShaperNode' && to === 'AudioDestinationNode',
+    ),
+  ).toBe(true);
+  expect(
+    actual.cues.every(
+      (cue) => cue.musicGains.length === 1 && cue.musicGains[0] === BACKGROUND_MUSIC_VOLUME,
     ),
   ).toBe(true);
   for (const length of [7938, 22491]) {
@@ -58,8 +103,7 @@ test('the shipped AAC reserves phone-mix headroom and Web Audio bounds coinciden
   await page.goto('/');
   const result = await page.evaluate(async () => {
     const { soundSamples, createSoundOutput } = await import('/src/ui/sound-cues.js');
-    const { BACKGROUND_MUSIC_VOLUME, BACKGROUND_MUSIC_DUCK_VOLUME } =
-      await import('/src/ui/background-music.js');
+    const { BACKGROUND_MUSIC_VOLUME } = await import('/src/ui/background-music.js');
     const context = new OfflineAudioContext(2, 44100, 44100);
     const bytes = await (await fetch('/audio/background-music-mobile.m4a')).arrayBuffer();
     const music = await context.decodeAudioData(bytes);
@@ -105,13 +149,12 @@ test('the shipped AAC reserves phone-mix headroom and Web Audio bounds coinciden
       cuePeak,
       seam,
       gain: BACKGROUND_MUSIC_VOLUME,
-      duck: BACKGROUND_MUSIC_DUCK_VOLUME,
       loudnessIncreaseDB: 20 * Math.log10(rms(music) / rms(desktop)),
     };
   });
   expect(result.duration).toBeGreaterThan(93.6);
   expect(result.duration).toBeLessThan(93.8);
-  expect(result.musicPeak * result.duck + result.cuePeak).toBeLessThan(0.99);
+  expect(result.gain).toBe(1);
   expect(result.loudnessIncreaseDB).toBeGreaterThan(4.8);
   expect(result.musicPeak).toBeLessThan(0.58);
   expect(result.mixPeak).toBeGreaterThan(0.7);

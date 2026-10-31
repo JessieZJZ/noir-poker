@@ -1,0 +1,1252 @@
+<import src="./table-templates.wxml" />
+<view class="safe-chrome top-chrome" style="height: {{topInset + 36}}px;" aria-hidden="true" />
+<view class="safe-chrome bottom-chrome" style="height: {{bottomInset}}px;" aria-hidden="true" />
+
+<view
+  wx:if="{{tableReady}}"
+  class="screen {{homeLocked ? 'home-locked' : ''}}"
+  style="padding-top: {{topInset + 36}}px; padding-bottom: {{bottomInset}}px; {{homeLocked ? 'top: ' + homeOffset + 'px;' : ''}}"
+>
+  <view
+    class="nav {{compactNav ? 'nav-compact' : ''}} {{resourceMenuOpen ? 'resource-menu-active' : ''}}"
+    style="top: {{topInset + 36}}px;"
+  >
+    <view class="brand"
+      ><image
+        class="app-icon"
+        src="/assets/app-icon.png"
+        mode="aspectFit"
+        aria-hidden="true"
+      /><text>NOIR</text><text wx:if="{{!compactNav}}" class="brand-sub">POKER</text></view
+    >
+    <view wx:if="{{!historyReadOnly}}" class="nav-actions"
+      ><button
+        hover-class="none"
+        class="guide-button"
+        id="resource-menu-button"
+        bindtap="toggleResourceMenu"
+        aria-label="玩法指南和对局记录"
+      >
+        <view class="resource-label-window {{resourceRolling ? 'is-rolling' : ''}}">
+          <text class="resource-label-previous">{{resourcePreviousLabel}}</text>
+          <text class="resource-label-current">{{resourceLabel}}</text>
+          <text class="resource-label-static">玩法指南</text> </view
+        ><text class="resource-chevron">▾</text></button
+      ><button
+        hover-class="none"
+        class="icon-button settings-button"
+        aria-label="设置"
+        bindtap="openSettings"
+      >
+        <view class="gear-icon" /><text>设置</text>
+      </button>
+      <view wx:if="{{resourceMenuOpen}}" class="resource-menu">
+        <button id="resource-guide" bindtap="openGuide">玩法指南</button>
+        <button id="resource-records" bindtap="openRecords">对局记录</button>
+      </view></view
+    >
+  </view>
+  <view class="table-panel {{historyReadOnly ? 'history-panel' : ''}}">
+    <view
+      class="game-shell entry-{{entryState}} {{historyReadOnly ? 'history-shell' : ''}}"
+      style="height: {{tableHeight + tableHeaderHeight + (waitingForSeat ? 0 : historyReadOnly || compactActions ? compactDockHeight : liveDockHeight)}}px;"
+    >
+      <view class="game-header">
+        <view class="hand-label"
+          ><text wx:if="{{waitingForSeat}}">{{street}}</text
+          ><block wx:else
+            ><text class="session-label">第 {{sessionNumber}} 局</text
+            ><text class="hand-divider">·</text
+            ><text>第 <text class="hand-number">{{hand < 10 ? '0' : ''}}{{hand}}</text> 手</text
+            ><block wx:if="{{!historyReadOnly}}"
+              ><text class="hand-divider">·</text><text>{{street}}</text></block
+            ><text wx:if="{{replay}}" class="replay">重打 {{replay}}</text></block
+          ></view
+        >
+        <view class="blind-info"><text>盲注</text><text class="bright">{{blindText}}</text></view>
+      </view>
+      <view class="hint-slot">
+        <text wx:if="{{historyReadOnly}}" class="history-start-time">{{historyStartedAt}}</text>
+        <view wx:if="{{hintText}}" class="hint-mask"
+          ><view class="hint-track"
+            ><text>{{hintText}}　　</text><text aria-hidden="true">{{hintText}}　　</text></view
+          ></view
+        >
+      </view>
+      <view
+        class="table-area {{done ? 'is-done' : ''}} web-phone-layout {{roomy ? 'roomy-layout' : ''}} {{tablet ? 'tablet-layout' : ''}} {{large ? 'large-layout' : ''}}"
+        style="height: {{tableHeight}}px;"
+      >
+        <view
+          class="table-arena"
+          style="height: {{arenaHeight}}px; width: {{arenaWidth}}px; transform: scale({{arenaScale}}); {{textStyle}}"
+        >
+          <view class="felt" style="{{feltStyle}}"
+            ><view class="felt-inner"
+              ><view class="felt-brand">N O I R<text>POKER CLUB</text></view></view
+            ></view
+          >
+          <view
+            wx:for="{{phoneSeats}}"
+            wx:key="id"
+            class="seat {{item.y === 0 ? 'seat-crown' : ''}} {{item.thinking ? 'thinking' : ''}} {{item.folded ? 'folded' : ''}} {{item.winner ? 'winner' : ''}} {{item.out ? 'seat-out' : ''}} {{item.crowned ? 'is-champion' : ''}}"
+            style="left: {{item.left}}px; top: {{item.top}}px; width: {{seatWidth}}px; height: {{seatHeight}}px; transform: none;"
+          >
+            <view
+              class="seat-hole {{item.cards.length ? 'revealed-hole' : ''}} {{item.peekArriving ? 'peek-arrive' : ''}}"
+            >
+              <block wx:if="{{item.cards.length}}"
+                ><view
+                  wx:for="{{item.cards}}"
+                  wx:for-item="card"
+                  wx:key="key"
+                  class="card mini-card {{card.red ? 'red' : ''}} {{card.best ? 'best-card' : ''}} {{card.arriving ? 'face-arrive' : ''}}"
+                  style="--card-delay: {{card.dealDelay}}ms;"
+                  ><view class="card-art" style="{{card.smallArtStyle}}"
+                /></view>
+              </block>
+              <block wx:else
+                ><view
+                  wx:for="{{item.backCards}}"
+                  wx:for-item="back"
+                  wx:key="key"
+                  class="card-back {{back.arriving ? 'back-deal' : ''}}"
+                  style="--card-delay: {{back.delay}}ms;"
+              /></block>
+            </view>
+            <view
+              id="seat-body-{{item.id}}"
+              class="seat-body"
+              data-id="{{item.id}}"
+              data-kind="persona"
+              style="width: {{profileWidth}}px; height: {{profileHeight}}px;"
+              ><view class="seat-name"
+                ><text
+                  id="seat-name-{{item.id}}"
+                  data-id="{{item.id}}"
+                  data-kind="name"
+                  class="seat-name-label {{item.nameFit && !done ? 'is-name-fitted' : ''}}"
+                  style="--name-width-scale: {{item.nameWidthScale || 1}};"
+                  >{{item.name}}</text
+                ><text
+                  id="seat-name-measure-{{item.id}}"
+                  class="seat-name-measure"
+                  data-id="{{item.id}}"
+                  aria-hidden="true"
+                  >{{item.name}}</text
+                ><text
+                  class="position {{item.position === 'SB' ? 'position-sb' : item.position === 'BB' ? 'position-bb' : ''}}"
+                  data-id="{{item.id}}"
+                  >{{item.position}}</text
+                ><view wx:if="{{done && !item.out}}" class="seat-eye-slot"
+                  ><view class="seat-eye" aria-hidden="true" />
+                  <button
+                    hover-class="none"
+                    class="seat-peek-hit"
+                    style="width: {{44 / arenaScale}}px; height: {{44 / arenaScale}}px;"
+                    data-id="{{item.id}}"
+                    catchtap="peekSeat"
+                    aria-label="查看底牌" /></view
+              ></view>
+              <view
+                wx:if="{{item.crowned}}"
+                id="seat-trophy-{{item.id}}"
+                class="champion-trophy seat-champion-trophy trophy-{{item.trophySide}} {{crownPending ? 'trophy-pending' : 'trophy-arrive'}}"
+                style="{{item.trophyStyle}}"
+                ><template is="trophy"
+              /></view>
+              <image
+                wx:if="{{item.portrait}}"
+                class="avatar {{item.mood ? 'mood-' + item.mood : ''}}"
+                src="{{item.portrait}}"
+                mode="aspectFill"
+              /><view
+                wx:else
+                class="avatar initials avatar-{{item.id}} {{item.mood ? 'mood-' + item.mood : ''}}"
+                >{{item.initial}}</view
+              ><view
+                wx:if="{{item.mood}}"
+                class="mood-badge mood-live mood-{{item.mood}}"
+                aria-hidden="true"
+              /><text
+                id="seat-persona-{{item.id}}"
+                data-id="{{item.id}}"
+                data-kind="persona"
+                class="persona {{item.profileId === 'balanced' ? 'persona-balanced' : ''}}"
+                >{{item.profileName}}</text
+              ><text
+                class="stack"
+                data-id="{{item.id}}"
+                data-number="{{item.stack}}"
+                data-width-scale="{{item.stackWidthScale || 1}}"
+                style="--stack-width-scale: {{item.stackWidthScale || 1}};"
+                >{{item.stack}}</text
+              ></view
+            >
+            <view class="seat-caption">
+              <view class="seat-action {{item.thinking ? 'thinking-dots' : ''}}"
+                ><text class="seat-action-word" data-id="{{item.id}}">{{item.actionLabel}}</text
+                ><text
+                  wx:if="{{item.actionAmount}}"
+                  class="seat-action-word seat-action-amount"
+                  data-id="{{item.id}}"
+                  >{{item.actionAmount}}</text
+                ></view
+              >
+              <view class="seat-rank-slot"
+                ><view
+                  wx:if="{{item.rank}}"
+                  class="rank {{item.winner ? 'won' : ''}}"
+                  data-id="{{item.id}}"
+                  style="transform: translateY({{item.rankLift || 0}}px);"
+                  ><view wx:if="{{item.winner}}" class="winner-icon" /><text
+                    >{{item.rank}}</text
+                  ></view
+                ></view
+              >
+            </view>
+          </view>
+          <view
+            class="community"
+            style="width: {{boardWidth}}px; top: {{publicTop}}px; left: {{publicLeft}}px;"
+            ><view class="pot-row" style="height: {{potHeight}}px;"
+              ><view class="chip" aria-hidden="true" /><text class="pot-number">{{pot}}</text
+              ><button hover-class="none" class="pot-detail" bindtap="openPots">明细</button></view
+            >
+            <view class="board-row {{boardTwoRows ? 'board-two-rows' : ''}}"
+              ><view
+                wx:for="{{boardSlots}}"
+                wx:key="key"
+                class="{{item.empty ? 'card-placeholder' : 'card community-card'}} {{item.red ? 'red' : ''}} {{item.best ? 'best-card' : ''}} {{item.arriving ? 'flip-new' : ''}}"
+                style="width: {{cardWidth}}px;height: {{cardHeight}}px; --card-delay: {{item.dealDelay || 0}}ms;"
+                ><text wx:if="{{item.empty}}">{{item.suit}}</text
+                ><view wx:else class="card-art" style="{{item.artStyle}}"
+              /></view>
+            </view>
+          </view>
+          <view
+            wx:if="{{waitingForSeat}}"
+            class="entry-welcome"
+            style="left: {{arenaWidth / 2}}px; top: {{arenaHeight * 0.44}}px; --entry-scale: {{entryScale || 1 / arenaScale}};"
+          >
+            <text class="entry-eyebrow">NOIR POKER</text>
+            <text class="entry-title">牌桌已就绪</text>
+            <button
+              id="join-table-button"
+              class="entry-join"
+              hover-class="none"
+              bindtap="joinTable"
+            >
+              入座开练
+            </button>
+            <text class="entry-footnote">虚拟筹码 · 本地练习</text>
+          </view>
+          <view
+            class="hero {{heroFolded ? 'hero-folded' : ''}} {{heroOut ? 'hero-out' : ''}} {{heroRank || heroWinner ? 'has-hero-rank' : ''}}"
+            style="{{heroStyle}}"
+            ><text
+              wx:if="{{heroPlaced}}"
+              class="standing-tag {{standingClass}} hero-place-tag"
+              style="{{heroPlaceStyle}}"
+              >{{standingText}}</text
+            ><view
+              class="hero-cards-wrap {{turnPhase ? 'turn-attention' : ''}} turn-{{turnPhase}} {{premium ? 'premium-start' : ''}}"
+              style="width: calc({{heroWidth * 2}}px + var(--hero-card-gap, 7px));"
+              ><view class="hero-cards"
+                ><view
+                  wx:for="{{heroCards}}"
+                  wx:key="dealKey"
+                  class="card hero-card {{item.red ? 'red' : ''}} {{item.best ? 'best-card' : ''}} {{item.arriving ? 'hero-arrive' : ''}}"
+                  style="width: {{heroWidth}}px;height: {{heroHeight}}px; --card-delay: {{420 + index * 130}}ms;"
+                  ><view class="card-art" style="{{item.artStyle}}" /></view></view
+              ><view
+                wx:if="{{heroCrowned}}"
+                id="hero-trophy"
+                class="champion-trophy hero-champion-trophy {{crownPending ? 'trophy-pending' : 'trophy-arrive'}}"
+                style="{{heroTrophyStyle}}"
+                ><template is="trophy" /></view
+              ><view wx:if="{{premium}}" class="premium-sparks"
+                ><view
+                  wx:for="{{premiumSparks}}"
+                  wx:for-item="spark"
+                  wx:key="key"
+                  class="premium-spark"
+                  style="{{spark.style}}"
+              /></view> </view
+            ><view class="hero-rank"
+              ><view wx:if="{{heroRank || heroWinner}}" class="rank {{heroWinner ? 'won' : ''}}"
+                ><view wx:if="{{heroWinner}}" class="winner-icon" /><text
+                  >{{heroRank ? (heroFolded ? '已弃牌 · ' : '') + heroRank : '获胜'}}</text
+                ></view
+              ></view
+            ><view class="hero-info"
+              ><view class="hero-identity"
+                ><view class="hero-name-text"
+                  ><text>你</text
+                  ><text wx:if="{{!waitingForSeat}}" class="position">{{heroPosition}}</text></view
+                ><view wx:if="{{rebuying}}" class="stack stack-refill refill-hold"
+                  ><text class="refill-final">{{heroStackFinal}}</text
+                  ><text class="refill-count">{{heroStack}}</text></view
+                ><text wx:else class="stack">{{heroStack}}</text
+                ><text wx:if="{{rebuyBurst}}" class="rebuy-burst">{{rebuyBurst}}</text></view
+              ><view class="hero-action">{{heroAction}}</view></view
+            ></view
+          >
+        </view>
+        <view wx:if="{{farewell}}" class="farewell-stage" aria-role="status"
+          ><view class="farewell-card"
+            ><view class="farewell-ring" /><text class="farewell-title">很遗憾，本局结束</text
+            ><text class="farewell-place">{{farewell.place}}</text
+            ><text class="farewell-note">补码次数已用完</text></view
+          ></view
+        >
+      </view>
+      <view
+        class="action-dock {{compactActions ? 'compact-actions' : ''}} {{canAct ? 'is-enabled' : ''}} {{turnPhase ? 'turn-attention' : ''}} turn-{{turnPhase}}"
+      >
+        <view class="turn-line" aria-hidden="true" />
+        <block wx:if="{{done}}"
+          ><view class="settled-buttons"
+            ><button
+              hover-class="none"
+              wx:if="{{canPracticeRunout && !historyReadOnly}}"
+              class="primary practice-runout-button"
+              bindtap="finishHand"
+            >
+              立刻发完</button
+            ><button
+              wx:if="{{!historyReadOnly}}"
+              hover-class="none"
+              class="primary {{needsRebuy ? 'rebuy-button' : ''}}"
+              disabled="{{rebuying}}"
+              bindtap="nextHand"
+            >
+              {{nextLabel}}<text wx:if="{{needsRebuy}}" class="rebuy-count"
+                >剩 {{rebuysLeft}} 次</text
+              ></button
+            ><button
+              hover-class="none"
+              wx:if="{{canRetry && !historyReadOnly}}"
+              class="retry-button"
+              disabled="{{!canRetry}}"
+              bindtap="retryHand"
+            >
+              重打本手</button
+            ><button hover-class="none" class="review-button" bindtap="openReview">
+              复盘
+            </button></view
+          ></block
+        >
+        <block wx:else
+          ><view class="action-notice" wx:if="{{!compactActions}}"
+            ><view class="decision-copy" aria-role="status" aria-live="polite"
+              ><text wx:if="{{canAct}}" class="turn-prompt">轮到你行动，</text
+              ><text class="decision-detail">{{actionNotice}}</text></view
+            ><button
+              id="hand-rankings-button"
+              class="hand-rankings-button"
+              hover-class="none"
+              bindtap="openHandRankings"
+            >
+              牌力表
+            </button></view
+          ><view class="raise-controls" wx:if="{{!compactActions}}"
+            ><view id="raise-track" class="raise-track {{!canRaise ? 'disabled' : ''}}">
+              <view class="raise-rail" aria-hidden="true" />
+              <view
+                id="raise-thumb"
+                class="raise-thumb"
+                aria-hidden="true"
+                style="left: {{sliderValue / sliderLimit * 100}}%;"
+              />
+              <view
+                id="raise-hit"
+                class="raise-hit"
+                aria-label="加注筹码，{{raiseText}}"
+                aria-role="slider"
+                control="{{raiseControl}}"
+                change:control="{{rail.sync}}"
+                catchtouchstart="{{rail.start}}"
+                catchtouchmove="{{rail.move}}"
+                catchtouchend="{{rail.end}}"
+                catchtouchcancel="{{rail.cancel}}"
+                catchtap="{{rail.tap}}"
+              /> </view
+            ><view class="presets"
+              ><button
+                hover-class="none"
+                data-preset="min"
+                bindtap="preset"
+                disabled="{{!canRaise}}"
+              >
+                最小</button
+              ><button
+                hover-class="none"
+                data-preset="half"
+                bindtap="preset"
+                disabled="{{!canRaise}}"
+              >
+                ½ 底池</button
+              ><button
+                hover-class="none"
+                data-preset="pot"
+                bindtap="preset"
+                disabled="{{!canRaise}}"
+              >
+                底池</button
+              ><button
+                hover-class="none"
+                data-preset="all"
+                bindtap="preset"
+                disabled="{{!canRaise}}"
+              >
+                全下
+              </button></view
+            ></view
+          ><view class="action-buttons" wx:if="{{!heroFolded}}"
+            ><button
+              hover-class="none"
+              class="primary"
+              data-action="raise"
+              bindtap="act"
+              disabled="{{!canRaise}}"
+            >
+              加注 {{raiseText}}</button
+            ><button
+              hover-class="none"
+              class="fold-button"
+              data-action="fold"
+              bindtap="act"
+              disabled="{{!canAct}}"
+            >
+              弃牌</button
+            ><button
+              hover-class="none"
+              class="call-button"
+              data-action="call"
+              bindtap="act"
+              disabled="{{!canAct}}"
+            >
+              {{callLabel}} {{callText}}
+            </button></view
+          ><view wx:else class="continue-buttons"
+            ><button
+              hover-class="none"
+              class="call-button"
+              bindtap="finishHand"
+              disabled="{{finishing}}"
+            >
+              立刻发完
+            </button></view
+          ></block
+        >
+      </view>
+    </view>
+    <view wx:if="{{hasShowdown}}" class="showdown-stage">
+      <view class="showdown-heading"
+        ><text class="eyebrow">SHOWDOWN</text
+        ><text class="showdown-context">{{showdownContext}}</text></view
+      >
+      <view class="showdown-scene">
+        <view
+          wx:for="{{showdown}}"
+          wx:key="id"
+          class="showdown-player {{item.winner ? 'showdown-winner' : ''}}"
+        >
+          <view class="showdown-player-heading"
+            ><text>{{item.name}}</text><text>{{item.result}}</text></view
+          >
+          <view class="winning-title"
+            ><text>{{item.label}}</text><text>{{item.explanation}}</text></view
+          >
+          <view class="winning-cards">
+            <view
+              wx:for="{{item.cards}}"
+              wx:for-item="card"
+              wx:key="key"
+              class="winning-card {{card.highlight ? 'rank-match' : 'kicker'}}"
+            >
+              <view class="card showdown-card {{card.red ? 'red' : ''}}"
+                ><text class="card-rank">{{card.rank}}</text
+                ><view class="card-suit" style="{{card.suitStyle}}" /><text class="card-corner"
+                  >{{card.rank}}</text
+                ></view
+              >
+            </view>
+          </view>
+          <text class="showdown-awards">{{item.awards}}</text>
+        </view>
+      </view>
+    </view>
+  </view>
+  <view
+    wx:if="{{!historyReadOnly && waitingForSeat}}"
+    class="game-info"
+    aria-label="本局信息"
+    style="min-height: {{liveDockHeight - 8}}px;"
+    ><text class="game-info-title">本局信息</text
+    ><view class="game-info-stats"
+      ><view class="game-info-chips"
+        ><text class="info-term">当前筹码</text
+        ><text class="info-value"
+          >{{heroStack}}<text class="session-change {{stats.profitTone}}"
+            >{{stats.profitSigned}}</text
+          ></text
+        ></view
+      ><view><text class="info-term">盲注</text><text class="info-value">{{blindText}}</text></view
+      ><view
+        ><text class="info-term">已完成</text><text class="info-value">{{stats.hands}}</text></view
+      ><view
+        ><text class="info-term">获胜手数</text><text class="info-value">{{stats.wins}}</text></view
+      ><view
+        ><text class="info-term">胜率</text
+        ><text class="info-value">{{stats.hands ? winrate + '%' : '—'}}</text></view
+      ></view
+    ></view
+  >
+  <view wx:if="{{!historyReadOnly && !waitingForSeat}}" class="practice-panel"
+    ><view class="session-title"
+      ><view class="session-heading"
+        ><text>{{sessionTitle}}</text
+        ><text wx:if="{{standingText}}" class="standing-tag {{standingClass}}"
+          >{{standingText}}</text
+        ></view
+      ><button wx:if="{{!over}}" class="practice-reset" hover-class="none" bindtap="resetPractice">
+        重新开局
+      </button></view
+    ><view class="session-balance"
+      ><text class="session-caption">当前筹码</text
+      ><text class="session-stack">{{heroStack}}<text class="session-unit">CHIPS</text></text
+      ><text class="session-change"
+        >{{stats.profit === '0' ? '+0' : stats.profit}} 筹码 · 本次练习净变化</text
+      ></view
+    ><view class="session-stats"
+      ><view><text>{{stats.hands}}</text><text>已完成</text></view
+      ><view><text>{{stats.wins}}</text><text>获胜手数</text></view
+      ><view><text>{{winrate}}%</text><text>胜率</text></view></view
+    ></view
+  >
+  <view wx:if="{{!waitingForSeat}}" class="activity-panel"
+    ><view class="session-title"
+      ><text>本手动态</text><text>{{done ? 'FINISHED' : 'LIVE'}}</text></view
+    ><view class="activity-list"
+      ><view wx:for="{{logs}}" wx:key="key" class="activity-item"
+        ><text class="log-number">{{index + 1}}.</text
+        ><view class="log-{{item.type}} {{item.hero ? 'log-hero' : ''}}"
+          ><template
+            wx:if="{{item.parts}}"
+            is="activity-content"
+            data="{{parts: item.parts}}"
+          /><text wx:else>{{item.text}}</text></view
+        ></view
+      ></view
+    ></view
+  >
+  <text class="compliance-footer">单机练习·虚拟筹码·禁止赌博</text>
+</view>
+
+<view wx:if="{{confetti}}" class="confetti-layer" aria-hidden="true"
+  ><view
+    wx:for="{{confettiPieces}}"
+    wx:for-item="piece"
+    wx:key="key"
+    class="confetti-piece"
+    style="{{piece.style}}"
+/></view>
+<view wx:if="{{ceremony}}" class="trophy-stage" aria-hidden="true"
+  ><view class="trophy-stage-rays" /><view class="trophy-flight" style="{{crownStyle}}"
+    ><template is="trophy" /></view
+  ><text class="trophy-caption">{{ceremony.caption}}</text></view
+>
+<view wx:if="{{resourceMenuOpen}}" class="resource-dismiss" bindtap="closeResourceMenu" />
+
+<view
+  wx:if="{{settingsOpen}}"
+  class="modal settings-modal"
+  style="top: 0; bottom: 0; padding-top: {{52 + topInset}}px; padding-bottom: {{16 + bottomInset}}px;"
+>
+  <view class="modal-header"
+    ><text class="eyebrow">SETTINGS</text
+    ><button hover-class="none" class="close" bindtap="closeSettings" aria-label="关闭设置">
+      <view class="close-icon" /></button
+  ></view>
+  <view class="settings-title">设置</view>
+  <scroll-view
+    scroll-y
+    class="modal-scroll"
+    bindscroll="settingsScrolled"
+    scroll-top="{{settingsScrollTop}}"
+    ><view class="modal-body">
+      <view class="settings-module general-settings" aria-label="通用设置">
+        <text class="module-title">通用</text>
+        <view class="setting-row"
+          ><text>音效</text
+          ><button
+            hover-class="none"
+            class="settings-switch {{settings.sound ? 'on' : ''}}"
+            id="sound-button"
+            data-key="sound"
+            bindtap="togglePreference"
+            aria-role="switch"
+            aria-checked="{{settings.sound}}"
+            aria-label="音效"
+          >
+            <view class="switch-track" /><view class="switch-thumb" /></button
+        ></view>
+        <view class="setting-row"
+          ><text>背景音乐</text
+          ><button
+            hover-class="none"
+            class="settings-switch {{settings.music ? 'on' : ''}}"
+            id="music-button"
+            data-key="music"
+            bindtap="togglePreference"
+            aria-role="switch"
+            aria-checked="{{settings.music}}"
+            aria-label="背景音乐"
+          >
+            <view class="switch-track" /><view class="switch-thumb" /></button
+        ></view>
+        <view class="setting-row">
+          <text>振动</text>
+          <button
+            hover-class="none"
+            class="settings-switch {{settings.vibration ? 'on' : ''}}"
+            id="vibration-button"
+            data-key="vibration"
+            bindtap="togglePreference"
+            aria-role="switch"
+            aria-checked="{{settings.vibration}}"
+            aria-label="振动"
+          >
+            <view class="switch-track" /><view class="switch-thumb" />
+          </button>
+        </view>
+      </view>
+      <view class="settings-module table-preferences" aria-label="牌桌设置">
+        <text class="module-title">牌桌</text>
+        <view class="setting-row"
+          ><text>牌桌人数</text
+          ><button
+            hover-class="none"
+            class="picker-value"
+            id="select-count"
+            data-field="count"
+            bindtap="openSelect"
+          >
+            <text>{{settings.playerCount}} 人</text><view class="select-chevron" /></button
+        ></view>
+        <text wx:if="{{settings.playerCount !== activePlayerCount}}" class="table-change-note"
+          >下一手将切为 {{settings.playerCount}} 人桌 · 筹码恢复
+          {{startingStackText}}，统计重新开始</text
+        >
+        <view class="setting-row stakes-setting-row">
+          <view>
+            <text>起始盲注</text>
+            <text class="setting-description">点击小盲修改，大盲为小盲的两倍。</text>
+          </view>
+          <view class="stakes-values">
+            <input
+              wx:if="{{smallBlindEditing}}"
+              id="small-blind-input"
+              class="small-blind-input {{stakesError ? 'invalid' : ''}}"
+              type="text"
+              value="{{smallBlindDraft}}"
+              focus="{{smallBlindEditing}}"
+              confirm-type="done"
+              bindinput="changeSmallBlind"
+              bindblur="finishSmallBlindEdit"
+              bindconfirm="finishSmallBlindEdit"
+              aria-label="起始小盲"
+            />
+            <button
+              wx:else
+              id="small-blind-button"
+              class="small-blind-value"
+              hover-class="none"
+              bindtap="editSmallBlind"
+              aria-label="修改起始小盲"
+            >
+              {{configuredSmallBlindText}}
+            </button>
+            <text>/</text>
+            <text id="big-blind-value">{{configuredBigBlindText}}</text>
+          </view>
+        </view>
+        <text wx:if="{{stakesError}}" id="stakes-error" class="stakes-error">{{stakesError}}</text>
+        <text
+          wx:if="{{pendingStakes}}"
+          id="stakes-change-note"
+          class="table-change-note stakes-change-note"
+          >{{stakesNotice}}</text
+        >
+        <view class="setting-row"
+          ><view
+            ><text>牌桌提示</text
+            ><text class="setting-description">必要时显示；长文自动循环滚动，阅读后收起</text></view
+          ><button
+            hover-class="none"
+            class="settings-switch {{settings.hints ? 'on' : ''}}"
+            data-key="hints"
+            bindtap="togglePreference"
+            aria-label="牌桌提示"
+          >
+            <view class="switch-track" /><view class="switch-thumb" /></button
+        ></view>
+      </view>
+      <view class="settings-module"
+        ><text class="module-title">对手难度</text
+        ><view class="difficulty"
+          ><button
+            hover-class="none"
+            class="{{settings.difficulty === 'easy' ? 'selected' : ''}}"
+            data-value="easy"
+            bindtap="changeDifficulty"
+          >
+            轻松</button
+          ><button
+            hover-class="none"
+            class="{{settings.difficulty === 'normal' ? 'selected' : ''}}"
+            data-value="normal"
+            bindtap="changeDifficulty"
+          >
+            标准</button
+          ><button
+            hover-class="none"
+            class="{{settings.difficulty === 'hard' ? 'selected' : ''}}"
+            data-value="hard"
+            bindtap="changeDifficulty"
+          >
+            进阶
+          </button></view
+        >
+        <text class="setting-description">{{difficultyDescription}}</text>
+        <text class="setting-description"
+          >同一难度保留牌手风格差异；进阶不代表每手更松或更激进。</text
+        >
+      </view>
+      <view class="settings-module emotion-module"
+        ><view class="setting-row mood"
+          ><text>情绪模拟</text
+          ><button
+            hover-class="none"
+            class="picker-value"
+            id="select-emotion"
+            data-field="emotion"
+            bindtap="openSelect"
+          >
+            <text>{{emotionOptions[emotionIndex]}}</text
+            ><view class="select-chevron" /></button></view
+        ><text class="setting-description">{{emotionIntro}}</text
+        ><text class="setting-description mood-legend-intro"
+          >处于情绪中的对手，头像会亮起对应颜色的光环和图标，直到恢复平稳；平稳时不显示。</text
+        ><view class="mood-legend" aria-label="情绪标识"
+          ><view wx:for="{{moodLegend}}" wx:key="kind" class="mood-legend-item"
+            ><view class="mood-badge mood-{{item.kind}}" aria-hidden="true" /><text
+              ><text class="mood-legend-name">{{item.name}}</text
+              ><text>{{' ' + item.text}}</text></text
+            ></view
+          ></view
+        ></view
+      >
+      <view class="settings-module"
+        ><text class="module-title">风格介绍</text
+        ><view class="profile-grid"
+          ><button
+            hover-class="none"
+            wx:for="{{profiles}}"
+            wx:key="id"
+            id="profile-{{item.id}}"
+            class="profile-card {{selectedProfile === item.id ? 'selected' : ''}}"
+            data-id="{{item.id}}"
+            bindtap="viewProfile"
+          >
+            <image
+              wx:if="{{item.portrait}}"
+              src="{{item.portrait}}"
+              class="profile-avatar"
+              mode="aspectFill"
+            /><view wx:else class="profile-avatar initials">均</view
+            ><text class="profile-name">{{item.short}}</text
+            ><text class="profile-tag">{{item.tag}}</text>
+          </button></view
+        ></view
+      >
+      <view class="settings-module"
+        ><view class="module-heading"
+          ><text class="module-title">分配座位</text
+          ><button
+            hover-class="none"
+            class="small-button {{settings.mixed ? 'selected' : ''}}"
+            aria-pressed="{{settings.mixed}}"
+            bindtap="mixProfiles"
+          >
+            混合风格
+          </button></view
+        ><view class="seat-roster"
+          ><view
+            class="seat-setting {{item.offTable ? 'off-table' : ''}}"
+            wx:for="{{seatSettings}}"
+            wx:key="id"
+          >
+            <view class="roster-person"
+              ><image
+                wx:if="{{item.portrait}}"
+                src="{{item.portrait}}"
+                class="roster-avatar"
+                mode="aspectFill"
+              /><view wx:else class="roster-avatar initials">{{item.initial}}</view
+              ><text class="roster-name">{{item.name}}</text></view
+            >
+            <text class="roster-label">{{item.offTable ? '暂不在桌' : '座位 ' + item.id}}</text>
+            <button
+              hover-class="none"
+              class="picker-value"
+              id="select-seat-{{item.id}}"
+              data-field="seat"
+              data-id="{{item.id}}"
+              bindtap="openSelect"
+            >
+              <text>{{item.profileName}}</text><view class="select-chevron" />
+            </button> </view></view
+      ></view>
+      <view class="profile-comparison"
+        ><button hover-class="none" class="comparison-toggle" bindtap="toggleComparison">
+          {{comparisonOpen ? '▾' : '▸'}} 查看训练参数对比
+        </button>
+        <scroll-view wx:if="{{comparisonOpen}}" scroll-x class="comparison-scroll"
+          ><view class="comparison-table"
+            ><view class="comparison-row"
+              ><text>风格</text><text>入池宽度</text><text>进攻倾向</text><text>诈唬倾向</text
+              ><text>跟到底倾向</text><text>强牌诱导</text><text>下注 / 池</text></view
+            ><view class="comparison-row" wx:for="{{profiles}}" wx:key="id"
+              ><text>{{item.short}}</text
+              ><text wx:for="{{item.axes}}" wx:for-item="axis" wx:key="index">{{axis}}</text
+              ><text>{{item.sizing[0] * 100}}–{{item.sizing[1] * 100}}%</text></view
+            ></view
+          ></scroll-view
+        >
+      </view>
+      <view class="info-module"
+        ><text class="module-title">使用说明</text
+        ><text>设置自动保存。难度立即生效；风格与情绪下一手生效，当前手与重打保持原设置。</text
+        ><text>0–100 表示游戏内策略倾向。位置、人数、牌力、跟注价格和合法动作优先于所选风格。</text
+        ><text class="notice-title">关于训练风格</text
+        ><text
+          >电脑角色的策略和情绪均为游戏设定，介绍描述常见倾向，不保证每次采用相同操作。</text
+        ></view
+      >
+    </view></scroll-view
+  ><view class="settings-save-row"><text>设置自动保存在此设备。</text></view>
+  <view
+    wx:if="{{detailProfile}}"
+    class="profile-detail is-revealing"
+    style="top: {{detailBounds ? detailBounds.top : topInset + 155.5}}px; left: {{detailBounds ? detailBounds.left : 34}}px; width: {{detailBounds ? detailBounds.width : windowWidth - 68}}px; height: {{detailBounds ? detailBounds.height : windowHeight - topInset - bottomInset - 216}}px; bottom: auto; right: auto; --profile-reveal-x: {{detailBounds ? detailBounds.x : 30}}px; --profile-reveal-y: {{detailBounds ? detailBounds.y : 30}}px; --profile-reveal-radius: {{detailBounds ? detailBounds.radius : windowHeight}}px;"
+    ><view class="modal-header"
+      ><view class="detail-identity"
+        ><image
+          wx:if="{{detailProfile.portrait}}"
+          src="{{detailProfile.portrait}}"
+          class="detail-avatar"
+          mode="aspectFill"
+        /><view wx:else class="detail-avatar initials">均</view
+        ><text>{{detailProfile.name}}</text></view
+      >
+      <button hover-class="none" class="close" bindtap="closeProfile" aria-label="关闭风格介绍">
+        <view class="close-icon" /></button></view
+    ><scroll-view scroll-y class="modal-scroll"
+      ><view class="modal-body"
+        ><text class="detail-description">{{detailProfile.description}}</text
+        ><view class="profile-axes"
+          ><view class="axis" wx:for="{{detailProfile.axisRows}}" wx:key="id"
+            ><text>{{item.label}}</text
+            ><view class="axis-track"><view style="width: {{item.value}}%;" /></view
+            ><text>{{item.value}}</text></view
+          ></view
+        ><text class="profile-sizing"
+          >常用翻后下注：<text class="profile-sizing-value"
+            >{{detailProfile.sizingLow}}–{{detailProfile.sizingHigh}}% 池</text
+          ></text
+        ><view class="research-copy"
+          ><view
+            class="character-section"
+            wx:for="{{detailProfile.character.sections}}"
+            wx:key="title"
+            wx:for-item="section"
+            ><text class="module-title">{{section.title}}</text
+            ><text wx:for="{{section.paragraphs}}" wx:key="*this">{{item}}</text></view
+          ></view
+        ></view
+      ></scroll-view
+    ></view
+  >
+</view>
+
+<view
+  wx:for="{{flyingChips}}"
+  wx:key="key"
+  class="flying-chip"
+  style="{{item.style}}"
+  aria-hidden="true"
+/>
+<view wx:if="{{guideOpen || reviewOpen || potOpen || resetOpen}}" class="modal-backdrop" />
+<view
+  wx:if="{{guideOpen}}"
+  class="sheet guide-sheet"
+  style="top: {{topInset + (windowHeight - topInset - bottomInset) * 0.075}}px; height: {{(windowHeight - topInset - bottomInset) * 0.85}}px;"
+>
+  <view class="dialog-heading guide-heading"
+    ><text class="eyebrow">QUICK GUIDE</text
+    ><button hover-class="none" class="close" bindtap="closeGuide" aria-label="关闭玩法指南">
+      <view class="close-icon" /></button
+  ></view>
+  <scroll-view
+    scroll-y
+    class="sheet-scroll guide-scroll"
+    scroll-into-view="{{guideScrollTarget}}"
+    scroll-top="{{guideScrollTop}}"
+    ><view class="sheet-body"><include src="guide.wxml" /></view
+  ></scroll-view>
+</view>
+<view
+  wx:if="{{reviewOpen}}"
+  class="sheet review-sheet"
+  style="top: {{topInset + (windowHeight - topInset - bottomInset) * 0.04}}px; height: {{(windowHeight - topInset - bottomInset) * 0.92}}px;"
+>
+  <scroll-view scroll-y class="sheet-scroll"
+    ><view class="sheet-body">
+      <view class="dialog-heading"
+        ><text class="eyebrow">HAND REVIEW</text
+        ><button hover-class="none" class="close" bindtap="closeReview" aria-label="关闭复盘">
+          <view class="close-icon" /></button
+      ></view>
+      <view class="review-title-row"
+        ><view
+          ><text class="dialog-title">第 {{reviewData.hand}} 手，决策复盘</text
+          ><text class="review-context">{{reviewData.resultContext}}</text></view
+        ><text class="review-profit">{{reviewData.profit}} 筹码</text></view
+      >
+      <view class="review-tabs"
+        ><button
+          hover-class="none"
+          class="{{reviewPerspective === 'hero' ? 'selected' : ''}}"
+          data-value="hero"
+          bindtap="changeReviewPerspective"
+        >
+          我的决策</button
+        ><button
+          hover-class="none"
+          class="{{reviewPerspective === 'opponent' ? 'selected' : ''}}"
+          data-value="opponent"
+          bindtap="changeReviewPerspective"
+        >
+          对手为什么这样打
+        </button></view
+      >
+      <text wx:if="{{reviewData.loading}}" class="review-progress"
+        >{{reviewData.progressText}}</text
+      >
+      <view wx:if="{{reviewPerspective === 'opponent'}}" class="opponent-filter"
+        ><text>查看对手</text
+        ><button
+          hover-class="none"
+          class="picker-value"
+          id="select-opponent"
+          data-field="opponent"
+          bindtap="openSelect"
+        >
+          <text>{{opponentOptions[opponentFilter]}}</text><view class="select-chevron" /></button
+      ></view>
+      <view class="review-timeline-title"
+        ><text>{{reviewPerspective === 'hero' ? '你的决策' : '对手的实际行动'}}</text
+        ><text>{{reviewSteps.length}} 次行动</text></view
+      >
+      <scroll-view
+        scroll-x
+        class="review-timeline {{reviewPerspective === 'opponent' ? 'opponent' : ''}} {{reviewSteps.length > 2 ? 'has-overflow' : ''}}"
+        ><view class="review-timeline-inner"
+          ><button
+            hover-class="none"
+            wx:for="{{reviewSteps}}"
+            wx:key="index"
+            class="review-step {{reviewIndex === index ? 'selected' : ''}}"
+            data-index="{{index}}"
+            bindtap="selectReviewStep"
+          >
+            <text class="review-step-number">{{index + 1}}</text
+            ><view
+              ><text wx:if="{{reviewPerspective === 'hero'}}" class="review-step-meta"
+                >{{item.street}}，{{item.position}}</text
+              ><text wx:else class="review-step-meta">{{item.name}}，{{item.street}}</text
+              ><text class="review-step-action">{{item.actual}}</text></view
+            ><text
+              wx:if="{{reviewPerspective === 'hero' && !item.keep}}"
+              class="review-label {{reviewPerspective === 'hero' ? 'consider' : ''}}"
+              >{{item.label}}</text
+            >
+          </button></view
+        ></scroll-view
+      >
+      <view wx:if="{{selectedReviewStep}}" class="review-detail">
+        <view class="review-detail-header"
+          ><text
+            >{{reviewPerspective === 'hero' ? '第 ' + (reviewIndex + 1) + ' 步' :
+            selectedReviewStep.name}}，{{selectedReviewStep.street}}</text
+          ><text
+            wx:if="{{reviewPerspective === 'hero'}}"
+            class="review-label {{selectedReviewStep.keep ? 'sound' : 'consider'}}"
+            >{{selectedReviewStep.label}}</text
+          ></view
+        >
+        <view class="review-scene">
+          <view class="review-card-rows"
+            ><view
+              ><text wx:if="{{reviewPerspective === 'hero'}}" class="review-card-label"
+                >你的底牌</text
+              ><text wx:else class="review-card-label">{{selectedReviewStep.name}} 当时的底牌</text
+              ><view class="review-cards"
+                ><view
+                  wx:for="{{selectedReviewStep.cards}}"
+                  wx:key="key"
+                  class="card review-card-face {{item.red ? 'red' : ''}}"
+                  ><text class="card-rank">{{item.rank}}</text
+                  ><text class="card-suit">{{item.suit}}</text
+                  ><text class="card-corner">{{item.rank}}</text></view
+                ></view
+              ></view
+            ><view
+              ><text class="review-card-label">当时的公共牌</text
+              ><view class="review-cards"
+                ><view
+                  wx:for="{{selectedReviewStep.board}}"
+                  wx:key="key"
+                  class="card review-card-face {{item.red ? 'red' : ''}}"
+                  ><text class="card-rank">{{item.rank}}</text
+                  ><text class="card-suit">{{item.suit}}</text
+                  ><text class="card-corner">{{item.rank}}</text></view
+                ><text wx:if="{{!selectedReviewStep.board.length}}" class="review-no-board"
+                  >公共牌尚未发出</text
+                ></view
+              ></view
+            ></view
+          >
+          <view class="review-scene-meta"
+            ><view><text>位置</text><text>{{selectedReviewStep.position}}</text></view
+            ><view><text>当时底池</text><text>{{selectedReviewStep.pot}}</text></view
+            ><view><text>剩余筹码</text><text>{{selectedReviewStep.stack}}</text></view></view
+          >
+        </view>
+        <view class="review-coaching {{reviewPerspective === 'opponent' ? 'opponent-reason' : ''}}">
+          <text wx:if="{{!selectedReviewStep.paragraphs.length}}"
+            >{{selectedReviewStep.reason}}</text
+          >
+          <block wx:if="{{selectedReviewStep.commentary.length}}">
+            <block wx:for="{{selectedReviewStep.commentary}}" wx:key="index">
+              <text
+                wx:if="{{item.text}}"
+                class="{{item.text === '复盘分析总结' ? 'review-analysis-heading' : ''}}"
+                >{{item.text}}</text
+              >
+              <view wx:else class="review-matchups">
+                <text class="module-title">{{item.matchups.title}}</text>
+                <text class="review-board-summary">{{item.matchups.boardSummary}}</text>
+                <text class="module-title">{{item.matchups.strengthTitle}}</text>
+                <text class="review-matchup-hand">{{item.matchups.handLabel}}</text>
+                <text wx:if="{{item.matchups.note}}" class="review-matchup-note"
+                  >{{item.matchups.note}}</text
+                >
+                <view
+                  wx:for="{{item.matchups.groups}}"
+                  wx:for-item="group"
+                  wx:key="direction"
+                  data-matchup-direction="{{group.direction}}"
+                >
+                  <text class="module-title">{{group.label}}</text>
+                  <text wx:if="{{!group.examples.length}}" class="muted">{{group.empty}}</text>
+                  <view wx:if="{{group.examples.length}}" class="review-matchup-examples">
+                    <view
+                      wx:for="{{group.examples}}"
+                      wx:for-item="example"
+                      wx:key="group"
+                      class="review-matchup-example"
+                    >
+                      <text class="review-matchup-cards">{{example.text}}</text>
+                      <text class="review-matchup-caption">{{example.label}}</text>
+                    </view>
+                  </view>
+                </view>
+                <text
+                  wx:for="{{item.matchups.rangeNotes}}"
+                  wx:for-item="note"
+                  wx:key="*this"
+                  class="review-range-note"
+                  >{{note}}</text
+                >
+                <text wx:if="{{item.matchups.nutsNote}}" class="review-matchup-nuts"
+                  >{{item.matchups.nutsNote}}</text
+                >
+              </view>
+            </block>
+          </block>
+          <block wx:else>
+            <text wx:for="{{selectedReviewStep.paragraphs}}" wx:key="index">{{item}}</text>
+          </block>
+          <text wx:for="{{selectedReviewStep.reasons}}" wx:key="*this">{{item}}</text>
+          <text wx:if="{{selectedReviewStep.warning}}" class="muted"
+            >{{selectedReviewStep.warning}}</text
+          >
+          <view
+            wx:if="{{reviewPerspective === 'hero' && !selectedReviewStep.keep}}"
+            class="review-practice-focus"
+          >
+            <text class="module-title">下次练习重点</text
+            ><text>{{selectedReviewStep.followUp}}</text>
+          </view>
+        </view>
+        <view wx:if="{{reviewPerspective === 'hero'}}" class="review-evidence">
+          <text class="module-title">当时的关键信息</text>
+          <view class="review-evidence-facts"
+            ><view
+              wx:for="{{selectedReviewStep.evidence}}"
+              wx:key="*this"
+              class="review-evidence-fact"
+              ><text>•</text><text>{{item}}</text></view
+            ></view
+          >
+        </view>
+      </view>
+      <text wx:elif="{{!reviewData.loading}}" class="muted"
+        >本手没有主动决策，无法评价选择。盲注是强制投入，不会被归为操作失误。</text
+      >
+      <view class="review-activity">
+        <button
+          class="review-activity-toggle"
+          bindtap="toggleReviewActivity"
+          aria-expanded="{{reviewActivityOpen}}"
+        >
+          {{reviewActivityOpen ? '▾' : '▸'}} 本手动态
+        </button>
+        <view wx:if="{{reviewActivityOpen}}">
+          <view
+            wx:for="{{reviewActivity}}"
+            wx:key="key"
+            class="review-activity-event {{item.emphasized ? 'review-activity-emphasis' : ''}} {{item.current ? 'review-activity-current' : ''}}"
+            ><text>{{index + 1}}. </text
+            ><template
+              wx:if="{{item.parts}}"
+              is="activity-content"
+              data="{{parts: item.parts}}"
+            /><text wx:else>{{item.text}}</text></view
+          >
+        </view>
+      </view>
+      <text class="review-scope muted">按当时信息判断，单手输赢不直接决定操作好坏。</text>
+      <button class="primary return-button" bindtap="closeReview">回到牌桌</button>
+    </view></scroll-view
+  >
+</view>
+<view
+  wx:if="{{potOpen}}"
+  class="sheet pot-sheet"
+  style="top: {{topInset + (windowHeight - topInset - bottomInset - potSheetHeight) / 2}}px; height: {{potSheetHeight}}px;"
+>
+  <scroll-view scroll-y class="sheet-scroll"
+    ><view class="sheet-body">
+      <view class="dialog-heading"
+        ><text class="eyebrow">POT BREAKDOWN</text
+        ><button hover-class="none" class="close" bindtap="closePots" aria-label="关闭底池明细">
+          <view class="close-icon" /></button
+      ></view>
+      <text class="dialog-title">{{done ? '本手结算' : '主池与边池'}}</text>
+      <text wx:if="{{!done}}" class="pot-note"
+        >金额按当前投入显示；尚未行动的玩家需跟注才能保留相应资格。仅全下额度形成边池，未被跟注的部分待跟注或退还。</text
+      >
+      <view wx:for="{{pots}}" wx:key="index" class="pot-detail-card">
+        <view class="pot-detail-heading"
+          ><text>{{item.label}}</text
+          ><text wx:if="{{!done}}">{{item.amount}}<text class="unit">筹码</text></text></view
+        >
+        <block wx:if="{{done}}"
+          ><view wx:for="{{item.awards}}" wx:key="name" wx:for-item="award" class="pot-award"
+            ><view
+              ><text class="winner-crown">♛</text
+              ><view
+                ><text>{{award.name}} 获胜</text><text class="muted">{{award.label}}</text></view
+              ></view
+            ><text>+{{award.amount}}<text class="unit">筹码</text></text></view
+          ></block
+        >
+        <block wx:else
+          ><text class="pot-eligibility {{item.heroEligible ? 'hero-eligible' : ''}}"
+            >{{item.eligibility}} · {{item.count}} 人</text
+          ><text class="pot-player-list">可争夺：{{item.eligible}}</text></block
+        >
+        <button
+          hover-class="none"
+          class="pot-distribution"
+          data-index="{{index}}"
+          bindtap="togglePot"
+        >
+          <text class="disclosure-marker">{{potExpanded[index] ? '▾' : '▸'}}</text
+          ><text>{{done ? '查看分配详情' : '查看本池投入'}}</text>
+        </button>
+        <view wx:if="{{potExpanded[index]}}"
+          ><view
+            wx:for="{{item.contributions}}"
+            wx:key="name"
+            wx:for-item="contribution"
+            class="pot-contribution"
+            ><text>{{contribution.name}}</text><text>{{contribution.amount}}</text></view
+          ></view
+        >
+      </view>
+      <view wx:for="{{refunds}}" wx:key="name" class="pot-refund {{done ? 'compact-refund' : ''}}"
+        ><view
+          ><text>{{done ? '未跟注退还' : '待跟注或退还'}}</text
+          ><text class="refund-name">{{item.name}}</text></view
+        ><text class="refund-amount">{{item.amount}}</text></view
+      >
+      <button hover-class="none" class="primary return-button" bindtap="closePots">回到牌桌</button>
+    </view></scroll-view
+  >
+</view>
+<view
+  wx:if="{{resetOpen}}"
+  class="sheet reset-sheet"
+  style="top: {{topInset + (windowHeight - topInset - bottomInset) / 2}}px;"
+>
+  <view class="sheet-body"
+    ><view class="dialog-heading"
+      ><text class="eyebrow">FRESH START</text
+      ><button hover-class="none" class="close" bindtap="closeReset" aria-label="关闭重新开局">
+        <view class="close-icon" /></button></view
+    ><text class="dialog-title">重新开始练习？</text
+    ><text class="dialog-copy"
+      >本局将结束，所有玩家恢复到当前牌桌的起始筹码（100 BB），练习统计归零。</text
+    ><view class="dialog-actions"
+      ><button hover-class="none" bindtap="closeReset">继续练习</button
+      ><button hover-class="none" class="primary" bindtap="confirmReset">重新开始</button></view
+    ></view
+  >
+</view>
+
+<view wx:if="{{selection}}" class="selection-backdrop" bindtap="closeSelect">
+  <view
+    class="selection-sheet"
+    catchtap="noop"
+    style="left: {{selection.left}}px; top: {{selection.top}}px; width: {{selection.width}}px;"
+  >
+    <scroll-view scroll-y class="selection-options" style="height: {{selection.height}}px;">
+      <button
+        hover-class="none"
+        wx:for="{{selection.options}}"
+        wx:key="index"
+        data-index="{{index}}"
+        class="selection-option {{index === selection.index ? 'selected' : ''}}"
+        bindtap="chooseSelect"
+      >
+        <text>{{item}}</text>
+      </button>
+    </scroll-view>
+  </view>
+</view>

@@ -60,17 +60,35 @@
   height: var(--player-back-height, 38px);
   translate: 0 var(--player-back-shift, 18px);
 }
+/* Keep the original avatar / style / stack columns; the badge owns its text. */
 html .game-surface .arena[data-player-count] .seat .seat-profile .seat-style-label {
-  font-size: var(--player-persona, 14px);
+  box-sizing: border-box;
+  min-width: 0;
+  max-width: 100%;
+  padding: 1px 3px;
+  font-size: var(--style-font, var(--player-persona, 14px));
+  /* Fit glyphs horizontally without changing the badge's reserved row. */
   line-height: calc(var(--player-persona, 14px) * 1.15);
   height: calc(var(--player-persona, 14px) * 1.15 + 4px);
-  min-height: calc(var(--player-persona, 14px) * 1.15 + 4px);
-  max-height: calc(var(--player-persona, 14px) * 1.15 + 4px);
-  padding-block: 1px;
+  min-height: 0;
+  max-height: none;
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  overflow: visible;
+  overflow-wrap: anywhere;
+  text-overflow: clip;
+  text-align: center;
 }
+
+/* Narrow Latin letterforms retain complete names in the original right column. */
+html:not([lang^='zh'])
+  .game-surface
+  .arena[data-player-count]
+  .seat
+  .seat-profile
+  .seat-style-label {
+  font-family: 'Barlow Condensed', Manrope, sans-serif;
+}
+
 .game-surface .arena[data-player-count] .seat .position-badge {
   font-size: var(--player-position, 12px);
 }

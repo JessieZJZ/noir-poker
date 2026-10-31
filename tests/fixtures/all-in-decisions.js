@@ -45,6 +45,19 @@ export function coldShoveResponse(hole = 'As Ah', stakes = LEGACY_STAKES) {
   act(game, 0, 'raise', scaleAmount(game, 5000));
   return game;
 }
+// Reproduce a recorded nine-seat decision with five pending responses. This
+// tests the explanation of the executed fold, not whether folding QQ is optimal.
+export function pendingShoveResponse(stakes = LEGACY_STAKES) {
+  const game = table(9, 2, {}, stakes);
+  game.difficulty = 'normal';
+  game.players[1].botProfile = 'owen';
+  deal(game, { 0: '9d 8c', 1: 'Qc Qs' });
+  act(game, 6, 'raise', scaleAmount(game, 225));
+  act(game, 7, 'fold');
+  act(game, 8, 'fold');
+  act(game, 0, 'raise', scaleAmount(game, 5000));
+  return game;
+}
 export function openerShoveResponse(
   hole = 'As Ah',
   heroStack = 5000,
@@ -187,7 +200,7 @@ export function reviewedAllInGame(kind = 'flop-qq') {
   const game =
     kind === 'multi-qq'
       ? multiRaiseShoveResponse()
-      : kind === 'deep-nonallin'
+      : ['deep-nonallin', 'deep-value-jam'].includes(kind)
         ? openerShoveResponse('As Ah', 5000, 4000)
         : kind === 'made-redraw'
           ? headsUpShoveResponse()
@@ -196,7 +209,11 @@ export function reviewedAllInGame(kind = 'flop-qq') {
             : kind === 'shared-royal'
               ? riverShoveResponse()
               : flopShoveResponse();
-  const plan = planBotTurn(game, allInRandom(1), { timingRandom: allInRandom(2) });
+  // Preserve the deliberately sampled flat-call copy check separately from
+  // the new, more common AA value shove over the same non-all-in 80BB bet.
+  const plan = planBotTurn(game, allInRandom(kind === 'deep-nonallin' ? 2 : 1), {
+    timingRandom: allInRandom(2),
+  });
   executeBotTurn(game, plan, { expedited: true });
   return finishScriptedHand(game);
 }

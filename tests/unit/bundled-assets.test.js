@@ -35,7 +35,8 @@ function fixture(t) {
 test('every collected portrait renders a local image and retains its attribution', () => {
   for (const [id, photo] of Object.entries(PROFILE_PORTRAITS)) {
     assert.ok(portraitContent(id, 'fallback').includes(`src="${photo.src}"`));
-    assert.ok(portraitCredit(id).includes(photo.source));
+    assert.equal(portraitCredit(id), '');
+    assert.equal(photo.source, undefined);
   }
   assert.doesNotMatch(portraitContent('balanced', '均'), /<img/);
 });

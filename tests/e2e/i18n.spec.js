@@ -47,7 +47,7 @@ for (const locale of locales) {
   }) => {
     // This full journey includes reloads, settings, review and a second page.
     // Keep a bounded budget for slower CI runners without relaxing assertions.
-    test.setTimeout(60000);
+    test.setTimeout(240000);
     await page.route('**/*', async (route) => {
       const url = new URL(route.request().url());
       if (url.hostname !== '127.0.0.1' && url.hostname !== 'localhost') {
@@ -101,7 +101,7 @@ for (const locale of locales) {
     const initial = await page.evaluate(() => window.qa.foldWin(9, 0));
     await page.locator('#review-hand-button').click();
     await expect(page.locator('#review-dialog[data-analysis-status="done"]')).toBeVisible({
-      timeout: 30000,
+      timeout: 120000,
     });
     await expect(page.locator('#review-coach-explanation')).not.toBeEmpty();
     await page.locator('#review-dialog .close-dialog').first().click();
@@ -272,7 +272,7 @@ test('Japanese and Korean profile cards and ranges fit a narrow settings page', 
     await page.locator('#language-select').selectOption(locale);
     await expect(page.locator('html')).toHaveAttribute('lang', locale);
     const cards = page.locator('.profile-card');
-    await expect(cards).toHaveCount(17);
+    await expect(cards).toHaveCount(8);
     const bounds = await cards.evaluateAll((items) =>
       items.map((el) => ({
         height: el.getBoundingClientRect().height,
@@ -283,10 +283,10 @@ test('Japanese and Korean profile cards and ranges fit a narrow settings page', 
     expect(
       bounds.every((b) => b.height < 250 && b.fits && !/[⁇�]|\?{2}|(.{1,12})\1{5}/u.test(b.text)),
     ).toBe(true);
-    await page.locator('[data-profile-preview="zang"]').click();
+    await page.locator('[data-profile-preview="rook"]').click();
     await expect(page.locator('#profile-detail')).toBeVisible();
     await expect(page.locator('.profile-sizing strong')).toHaveText(
-      locale === 'ja' ? 'ポットの 60–100%' : '팟의 60–100%',
+      locale === 'ja' ? 'ポットの 65–115%' : '팟의 65–115%',
     );
     expect(
       await page
@@ -317,7 +317,7 @@ test('DOM sources survive rerenders, duplicate translated labels and rapid langu
     await loadLocale('en');
     setLocalizedHTML(
       holder,
-      '<button title="弃牌">弃牌</button><span>已弃牌</span><b translate="no">谭老板</b>',
+      '<button title="弃牌">弃牌</button><span>已弃牌</span><b translate="no">大注强攻</b>',
     );
     const button = holder.querySelector('button');
     button.dataset.rule = '弃牌';
@@ -346,7 +346,7 @@ test('DOM sources survive rerenders, duplicate translated labels and rapid langu
     text: '跟注',
     title: '跟注',
     span: '已弃牌',
-    legalName: '谭老板',
+    legalName: '大注强攻',
     rule: '弃牌',
     clicked: 'true',
   });

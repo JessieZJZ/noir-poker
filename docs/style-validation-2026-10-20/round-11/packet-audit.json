@@ -1,0 +1,208 @@
+{
+  "sourceDigest": "5932c97a6ef366aa3d3b3b0a539690d2d897ab9409d02e34a7edc438b0582156",
+  "packets": 24,
+  "totalObservationHands": 2400,
+  "inspection": "completed only; packet rows are all completed games",
+  "companions": [
+    "balanced"
+  ],
+  "completeHands": true,
+  "wholeChipsAndConservation": true,
+  "publicPricesMatchRawActions": true,
+  "inspectionMatchesActualDealtCards": true,
+  "noStyleIdsOrPrivateTraceInPackets": true,
+  "files": [
+    {
+      "reviewer": 1,
+      "code": "A",
+      "hands": 100,
+      "sha256": "ccc119379d9cc7ac97d0df7e88769b075199d2719fc1528ff28159da651769dd",
+      "rawPublicSha256": "ec086bc671995a9565324b58e14781842b72cbde5dd4c717eb0f2b2a70d33f3a",
+      "rawSummarySha256": "25a5e5c931f52007b6602aea37004068e3235fa33487b3e97d330108a79077c9"
+    },
+    {
+      "reviewer": 1,
+      "code": "B",
+      "hands": 100,
+      "sha256": "e948dbd52057ad0e47de82b9eee17b838d8468f5690ca5c1813341bcd3c70037",
+      "rawPublicSha256": "658d246787cd5b5cec666aa895a458756d9dd880618f1b91bc105b7190d5135e",
+      "rawSummarySha256": "0395fe572157dd854be790f2e69f21bca01aeafc9ec29953e0cb73aaf2f8aa69"
+    },
+    {
+      "reviewer": 1,
+      "code": "C",
+      "hands": 100,
+      "sha256": "23f3578c0b4b2496719cc9686945d7a79e5b01f4e82bd036ba6488132eaf4562",
+      "rawPublicSha256": "617cdaf42780526ed73cb26c5c2e2ce520d270d1f95a1a4e6dd9e20500657a3a",
+      "rawSummarySha256": "f0c7d69c2eb378680ca155417dbacf7566c0129944a874c8feeb1bf2c3901152"
+    },
+    {
+      "reviewer": 1,
+      "code": "D",
+      "hands": 100,
+      "sha256": "43cf3288747d33234eed45d29119994e93712576d93f5014ca96e8e21ca9e352",
+      "rawPublicSha256": "ced51481c163b34e4ed5049defbc01f49901255c365b9a1ebc6f95177229a85a",
+      "rawSummarySha256": "f43523644a3447278f63ffaa242010e326392b7c2d5ec7a203306112a424e4dd"
+    },
+    {
+      "reviewer": 1,
+      "code": "E",
+      "hands": 100,
+      "sha256": "4bc65350b84cda8aa2ca64d22bf409fa8d8a43d5903dc13016394d1b1c8ef989",
+      "rawPublicSha256": "f6c570733dc351fa2cb4cf7a967655b770031c0bb4733ac0925963e76ad6a663",
+      "rawSummarySha256": "e003c236c4ce53b058c1c7afb8aa4c3a3fad16664304bfcf4fe3a7eccb064871"
+    },
+    {
+      "reviewer": 1,
+      "code": "F",
+      "hands": 100,
+      "sha256": "bbcfe8f1701d5f05eec9d14d855989ff60bced9502c9fbe7a031e286a6e8f221",
+      "rawPublicSha256": "99e49a11d1b00a7bf14f34ecea411718a6e10d2560d8ad85ffba625e709a008b",
+      "rawSummarySha256": "0f07b80e36c30457febe87201663cc29f3e3c5795599b801c6c6a34ed77ad370"
+    },
+    {
+      "reviewer": 1,
+      "code": "G",
+      "hands": 100,
+      "sha256": "3921fb51b2bbc5be4dc2e74b0e23f6a93a31ae1bc4cb9466dfbff5f2474439d6",
+      "rawPublicSha256": "e5f2b516213fbd722c570e5f124ba1b17aaf0db65e425e2479599478eba26739",
+      "rawSummarySha256": "343f6034fce35938551913c9d958b378f5144b43f5190a0709186aa5244eac5a"
+    },
+    {
+      "reviewer": 1,
+      "code": "H",
+      "hands": 100,
+      "sha256": "30713145d62834a1b0998658f9b905dc1d45d8344af147e1e6c16a1943359914",
+      "rawPublicSha256": "9138ce6a5a979511ffe23159211fef21750a305a3319fc970c10ac4d8a32b5b9",
+      "rawSummarySha256": "5e49940d71767aefa6124ec67e22d37e175e81de7c281c519ad8369b851ae191"
+    },
+    {
+      "reviewer": 2,
+      "code": "A",
+      "hands": 100,
+      "sha256": "aeaa75c556cb965bdb3726bd2353f3d725066a8e1dee9f8946d8cdd6175c67fc",
+      "rawPublicSha256": "dafca7c8cf990aa3ceab05ab86bf877eaf0ca066c52ca0c1d1c6ae6e489821eb",
+      "rawSummarySha256": "005fdc38a2daa121347101d62ae42563aa70be00b3ad1230efd3f2bcbc98130c"
+    },
+    {
+      "reviewer": 2,
+      "code": "B",
+      "hands": 100,
+      "sha256": "3cec0c86816ddc183a6bf7b93c4871804464cb73311f532c3d0ffcfe2b30489c",
+      "rawPublicSha256": "fdac6cf99cc71e967bc3e04584a592156a163d14f93828120d8d7218c93cb41e",
+      "rawSummarySha256": "cb8c8912d177605f8fdbe5202df4071fa5fa3ba7bcf1881a28e97bf57cb05252"
+    },
+    {
+      "reviewer": 2,
+      "code": "C",
+      "hands": 100,
+      "sha256": "589ef7f9d90aed856bc0eedc1d489ef5a3946731e4f47f0713506b582a700f10",
+      "rawPublicSha256": "9b69193c283416fb6d54d100ff1bb9c12688b2f688df24873d945388de7af53d",
+      "rawSummarySha256": "657d477dbdf416457067b9718a6eb9057e3b1f2d881ea1b4961a6e6c1a2d8de2"
+    },
+    {
+      "reviewer": 2,
+      "code": "D",
+      "hands": 100,
+      "sha256": "6a1470c2c76185037ca7ece7cbfab02ee0a6741b1e9a00eafe5805e28c263889",
+      "rawPublicSha256": "c3bf728c5b077ba36815d2855760c819b8f6b9f4bf47c84527a286ea6c1eddc1",
+      "rawSummarySha256": "28d56cf7a5b07c7002ce3f28f4a310315acce196555ff7134738f0e8caf2cb68"
+    },
+    {
+      "reviewer": 2,
+      "code": "E",
+      "hands": 100,
+      "sha256": "93497640fdcd196cc4e4cb97b8285519e7cadfcfca70caa0ce9987abb5adad29",
+      "rawPublicSha256": "40ddd4dc04539cf523372c3ede8d30befc30433c4abfd9e5a1dca644de212c48",
+      "rawSummarySha256": "432b7a6d5f6a3bf15d69a14b0b048a390d5a39a565a6160e9d48f261e0c5091f"
+    },
+    {
+      "reviewer": 2,
+      "code": "F",
+      "hands": 100,
+      "sha256": "760c5df851218aa1bf99308c9c368ea379c3851347ab74c42f7e2dc4cdc4630d",
+      "rawPublicSha256": "fd894ea70f3ec77c4af92a2c0d51dd88eb3864df784df801041112e6952c973a",
+      "rawSummarySha256": "b6eca59fa96f70f97dea4c804a8427cb644facc047083a4ef0480eb04e10aa0d"
+    },
+    {
+      "reviewer": 2,
+      "code": "G",
+      "hands": 100,
+      "sha256": "2deee6adb5d951132e8c6c49f41fcca6d0e970f0245cf1218d871af5a04669ca",
+      "rawPublicSha256": "de7b69b40eb444256f8abeba10343b5297d63148b9f10c8930751df4a7a73ff3",
+      "rawSummarySha256": "b14da7aaf480f4982498557718ae267bfe40fb0ca6618329398dceaf731e7364"
+    },
+    {
+      "reviewer": 2,
+      "code": "H",
+      "hands": 100,
+      "sha256": "b24030dddcce9005be1b867f9723fa1d1b13a69d98540d4a52b217ea7ff69604",
+      "rawPublicSha256": "d43c8d5fe71d0f193924942516a921b365d5b95d38987b08e7b83927aef831e3",
+      "rawSummarySha256": "78aa4d2968af71602907ef8f16220c6f80829d78e3662fab4a1d831f7a770c00"
+    },
+    {
+      "reviewer": 3,
+      "code": "A",
+      "hands": 100,
+      "sha256": "5e1aada4be2cbc037199edc7dc90c18c03139e9c9e95086db5b69328c1490acd",
+      "rawPublicSha256": "7ddb3bb9f497b4ff079cb39ef86230f22f576d5cb8ca72883e6f9ee719e406a1",
+      "rawSummarySha256": "bc7b3e3af26219d2062671323fa474aa0c900567d087fec3f58ca882d2c7d27c"
+    },
+    {
+      "reviewer": 3,
+      "code": "B",
+      "hands": 100,
+      "sha256": "028d1ec226129d6addc3709f12252e081067b4c897da53afe8eb1053d361ebc9",
+      "rawPublicSha256": "e6bc0461881a092bd3fa96872dd56b6a86ed453a65d271a35a7f9b1c45fb18b1",
+      "rawSummarySha256": "fcbab7e55af5ac23d6289a7c502ad7a6f77a6aeff9614796d286d0fba33d77df"
+    },
+    {
+      "reviewer": 3,
+      "code": "C",
+      "hands": 100,
+      "sha256": "8ff8adb92edc029c625e93680345ef2e5c36d922e1bba43ff8a9e46cfb91712d",
+      "rawPublicSha256": "48da8d51099ec360e925e6a09670690cf4d3451ac17cc21d15bb37326e3f04d6",
+      "rawSummarySha256": "3a39e157ef89b0f957f1c18bfffae6699903118447c2e2ca89a073bc690d8a60"
+    },
+    {
+      "reviewer": 3,
+      "code": "D",
+      "hands": 100,
+      "sha256": "6a194cff76fb8461d5a7c5f744a06f116ce66ec85ddb64cae0c0e8348505b910",
+      "rawPublicSha256": "50af944ef481ea6fafa2bcb70a9196ec05676f3f5890b72f460e7cae20be2789",
+      "rawSummarySha256": "9b83c96342a946b537e81acd5d7052bc9647ed84bd34d07a455f3da4d63fe80c"
+    },
+    {
+      "reviewer": 3,
+      "code": "E",
+      "hands": 100,
+      "sha256": "d0cb0df7ca5db4cf99659d8f334e939a3753c939df1ae0ebefb530131c6dd902",
+      "rawPublicSha256": "627eb1ebcf5d1ce5e5499b157f9831ab9d3a66c0232faae08185c883088c980c",
+      "rawSummarySha256": "b412357c84798e8694b9a6bf6c5397633530d31c8b85d7a8f9f9462ce76e271b"
+    },
+    {
+      "reviewer": 3,
+      "code": "F",
+      "hands": 100,
+      "sha256": "b6799d23c552265080b078899cff01db399a3ff57483df92fa0dc81be085bedb",
+      "rawPublicSha256": "04e67a3a45df0a1e5867075474edb737d0e8623115fa7c6a9821a7c713132113",
+      "rawSummarySha256": "785339b7baa202ecf2c4e4f79bdf828b2654f737da45831a5912580c17d6c6a5"
+    },
+    {
+      "reviewer": 3,
+      "code": "G",
+      "hands": 100,
+      "sha256": "a49b6cf4070482cd3008c58fd98de4d764933416b956a70fac4bcf6394cbf50d",
+      "rawPublicSha256": "f5cdfe144a15d6d40d1c372ac941fcbcc7dbdfcdf896b8741341b10f63ba19e3",
+      "rawSummarySha256": "6bca67b8c9fb63ab50af1a1439e502eb9c14e012e94a274cd630ffa966bacd6d"
+    },
+    {
+      "reviewer": 3,
+      "code": "H",
+      "hands": 100,
+      "sha256": "f0436416f90ed0501315ed6c38f5011c15f4cd1596a529f11b0a8cb1046127fd",
+      "rawPublicSha256": "80c832b5f4c351c066e9c545f36d5feb4a2daf251e170d751ed133e169272b42",
+      "rawSummarySha256": "6b4d4fad0f27f658133c667735008d4d424bb488bd2e360ba8058a0ae6e1a21b"
+    }
+  ]
+}

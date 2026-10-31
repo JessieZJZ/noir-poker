@@ -9,7 +9,10 @@ import {
   topPairCheckReview,
   aceFourPreflopReview,
 } from '../fixtures/bottom-pair-review.js';
-import { deckOfCards } from '../../src/engine/poker.js';
+import { deckOfCards, evaluate, compare } from '../../src/engine/poker.js';
+import { seatAtTable } from './seat.mjs';
+import { getBotProfile } from '../../src/engine/bot-profiles.js';
+import { phase3CheckSpot } from '../fixtures/review-phase3.js';
 import {
   causalReraiseGame,
   heroValueGame,
@@ -21,11 +24,16 @@ import {
   turnStraightCallRecord,
   suitedBroadwayFiveBetFold,
   pocketNinesCheckedBoard,
+  reportedKeyInfoCall,
+  reportedGutshotCall,
+  reportedLowConnectorCall,
+  reportedFivesAllIn,
 } from '../fixtures/review-summary.js';
 const root = new URL('../../', import.meta.url).pathname;
 const require = createRequire(path.join(root, '.artifacts/wechat-tools/package.json'));
 const automator = require('miniprogram-automator');
 const output = path.resolve(process.argv[3] || path.join(root, '.artifacts/wechat-review'));
+const assignedProfileName = getBotProfile('rook').name;
 fs.mkdirSync(output, { recursive: true });
 const report = {
   status: 'running',
@@ -45,8 +53,7 @@ mini.connection.send = async (method, params) => {
     throw error;
   }
 };
-await mini.reLaunch('/pages/table/table');
-const page = await mini.currentPage();
+let page;
 const stage = (name) => {
   report.stage = name;
   console.log('[wechat-review]', name);
@@ -84,9 +91,21 @@ let savedBotDecisions;
 let savedHistory;
 let savedLogs;
 try {
+  stage('initial-page-ready');
+  const initialDeadline = Date.now() + 45000;
+  // CLI auto can expose its socket before the first page is registered.
+  // reLaunch reads that page's metadata, so require a real controller first.
+  // An earlier suite may leave another page on top; any registered page is
+  // enough before relaunching the table.
+  while (!(await mini.evaluate(() => getCurrentPages().length > 0))) {
+    if (Date.now() >= initialDeadline) throw Error('Initial table controller did not become ready');
+    await new Promise((resolve) => setTimeout(resolve, 100));
+  }
+  await mini.reLaunch('/pages/table/table');
+  page = await mini.currentPage();
   report.build = JSON.parse(fs.readFileSync(path.join(root, '.artifacts/wechat/build-info.json')));
-  assert.equal((await page.data()).noticeExpanded, true);
-  assert.equal((await page.data()).guideExpanded[1], true);
+  assert.equal((await page.data()).guideExpanded[2], true);
+  page = await seatAtTable(mini);
   await invoke('closeReview');
   // Settings apply to the next hand; never try to replace an active deal.
   while (!(await page.data()).done) {
@@ -102,7 +121,7 @@ try {
   const profiles = (await page.data()).profiles;
   await invoke('changeSeat', {
     currentTarget: { dataset: { id: 1 } },
-    detail: { value: profiles.findIndex((p) => p.id === 'tan') },
+    detail: { value: profiles.findIndex((p) => p.id === 'rook') },
   });
   await invoke('nextHand');
   const start = Date.now();
@@ -123,7 +142,11 @@ try {
   await tap('[data-value="opponent"]');
   await wait((data) => data.reviewPerspective === 'opponent' && data.selectedReviewStep?.reason);
   let data = await page.data();
-  assert.ok(data.opponentOptions.some((name) => /Mia.*Tan Xuan/.test(name)));
+  assert.ok(
+    data.opponentOptions.some(
+      (name) => name.startsWith('Mia') && name.includes(assignedProfileName),
+    ),
+  );
   report.checks.push({ name: 'real-assigned-player-name', options: data.opponentOptions });
   for (const index of [
     ...new Set([0, Math.floor(data.reviewSteps.length / 2), data.reviewSteps.length - 1]),
@@ -141,7 +164,11 @@ try {
   }
   await tap('#select-opponent');
   await wait((data) => data.selection?.field === 'opponent');
-  assert.ok((await page.data()).selection.options.some((name) => /Mia.*Tan Xuan/.test(name)));
+  assert.ok(
+    (await page.data()).selection.options.some(
+      (name) => name.startsWith('Mia') && name.includes(assignedProfileName),
+    ),
+  );
   await capture('assigned-player-options');
   await invoke('closeSelect');
   await invoke('changeOpponentFilter', { detail: { value: '1' } });
@@ -274,7 +301,7 @@ try {
   ];
   await fixture('yellow-fold-advice', weak, (step) => {
     assert.equal(step.keep, false);
-    assert.equal(step.label, '弃牌');
+    assert.equal(step.label, '建议弃牌');
   });
   const focus = await page.$('.review-practice-focus');
   report.yellowStyle = {
@@ -299,6 +326,51 @@ try {
   );
   await capture('practice-focus-and-evidence-style');
 
+  await fixture('clear-call-information-and-suited-ace', reportedKeyInfoCall(), (step) => {
+    assert.match(step.evidence.join(''), /跟注前底池 460K.*底池赔率约 3.29:1/);
+    assert.match(step.evidence.join(''), /23.3% 的胜率，风险和收益才能持平/);
+    assert.match(step.reason, /你若再加注，需要同时考虑加注范围和跟注入池的范围/);
+    assert.match(step.reason, /这次跟注后还留有 2.51M 筹码/);
+    assert.match(step.reason, /翻后通常先行动.*过牌、取值或退出/);
+    assert.match(step.reason, /坚果同花听牌.*击中 A.*较弱 Ax/);
+    assert.doesNotMatch(step.reason + step.evidence.join(''), /；/);
+  });
+  await fixture('gutshot-label-and-reason-agree', reportedGutshotCall(), (step) => {
+    assert.equal(step.keep, true);
+    assert.equal(step.label, '建议跟注 520K');
+    assert.match(step.reason, /综合当前牌力、补牌机会和对手可能的诈唬/);
+    assert.match(step.reason, /这次跟注后已没有后续下注/);
+    assert.match(step.reason, /不能靠后街诈唬或成牌后再赢筹码弥补成本/);
+    assert.doesNotMatch(step.reason, /；/);
+  });
+  await fixture('reported-low-connector', reportedLowConnectorCall(), (step) => {
+    assert.match(step.reason, /同花连接牌.*37.0%.*点数仍偏低.*更高同花/);
+    const pendingActions =
+      '本轮还有 6 位对手等待回应；若出现加注或者再加注，你需要重新决定是否继续。';
+    assert.ok(step.reason.includes(pendingActions));
+    assert.match(step.reason, /若跟注价格更低、翻后有位置且成牌后能赢到足够筹码/);
+    assert.match(step.reason, /不能把连接牌一律当成弃牌/);
+    assert.match(step.reason, /建议弃牌.*保住行动前剩下的 6.27M/);
+    assert.doesNotMatch(step.reason, /被强 A.*压制/);
+    assert.doesNotMatch(step.reason.replace(pendingActions, ''), /；/);
+  });
+  await fixture('reported-fives-all-in', reportedFivesAllIn(), (step) => {
+    assert.equal(step.keep, false);
+    assert.equal(step.label, '建议全下跟注 1.62M');
+    assert.match(step.reason, /全下跟注.*27.0%.*看完剩余公共牌/);
+    assert.match(step.reason, /AK 等未成对高牌.*面对更大对子会明显落后/);
+    assert.match(
+      step.reason,
+      /只有对手范围中包含足够较弱牌.*面对以更强起手牌为主的范围，应比较弃牌/,
+    );
+    assert.match(step.reason, /其余玩家尚可行动.*改变你能争夺的底池和对抗人数/);
+    assert.doesNotMatch(step.reason, /还留.*0|你在翻后有位置|你需要重新决定/);
+    const own = step.commentary.filter((part) => part.text).at(-1).text;
+    assert.equal((own.match(/1.62M/g) || []).length, 1);
+    const matchup = step.commentary.find((part) => part.matchups).matchups;
+    assert.equal(matchup.title, '当前牌面');
+    assert.equal(matchup.strengthTitle, '当前牌力');
+  });
   await fixture('summary-turn-bluff', turnBluffReview(), (step) => {
     assert.match(step.reason, /尝试诈唬.*更好的牌弃掉/);
     assert.doesNotMatch(step.reason, /不能只按成牌标签|此前在翻牌前|相同牌力/);
@@ -321,7 +393,7 @@ try {
   await tap('[data-value="opponent"]');
   await wait((data) => data.reviewPerspective === 'opponent' && data.selectedReviewStep?.reason);
   const straightCall = (await page.data()).selectedReviewStep;
-  assert.match(straightCall.reason, /选择跟注 6.3K，目的不是只靠高牌摊牌，而是在追两头顺听牌/);
+  assert.match(straightCall.reason, /选择跟注 6.3K，当前主要依靠听牌改善争取获胜/);
   assert.match(straightCall.reason, /8 张牌可能补成顺子/);
   assert.doesNotMatch(straightCall.reason, /补成顺子[／或]同花|相同牌力/);
   report.checks.push({ name: 'summary-straight-call', selected: straightCall });
@@ -329,7 +401,7 @@ try {
 
   await fixture('reported-52s-shove', weakSuitedShove(), (step) => {
     assert.equal(step.keep, false);
-    assert.equal(step.label, '弃牌');
+    assert.equal(step.label, '建议弃牌');
     assert.match(step.reason, /100\s*BB/);
     assert.match(step.reason, /5K/);
     assert.match(step.reason, /225/);
@@ -342,9 +414,9 @@ try {
     assert.equal(section.groups.length, 1);
     assert.equal(section.groups[0].label, '对手可能牌组');
     assert.deepEqual(section.rangeNotes, []);
-    assert.match(step.reason, /Luna在 UTG\+1 位开池到 4K/);
+    assert.match(step.reason, /Luna在 UTG\+1 位2-bet 开池至 4K/);
     assert.deepEqual(section.rangeNotes, []);
-    assert.match(step.reason, /Jade在 LJ 位跟住了这笔加注/);
+    assert.match(step.reason, /Jade在 LJ 位已跟注这笔加注，补 4K/);
     assert.doesNotMatch(step.reason, /结构上较|不代表获胜概率|依据当时记录|旧记录/);
   });
   await fixture('reported-bottom-pair', bottomPairReview(), (step) => {
@@ -417,15 +489,56 @@ try {
   assert.match(hero.reason, /350/);
   assert.match(hero.reason, /200/);
   assert.match(hero.reason, /Luna|CO/);
-  assert.doesNotMatch(hero.reason, /A[♦♥♣♠]|Q[♦♥♣♠]|EV|模型|模拟器|抽样|新增投入/);
+  const causalText = hero.commentary
+    .filter((part) => part.text)
+    .map((part) => part.text)
+    .join('');
+  assert.doesNotMatch(causalText, /A[♦♥♣♠]|Q[♦♥♣♠]/);
+  assert.doesNotMatch(hero.reason, /EV|模型|模拟器|抽样|新增投入/);
+  const decision = causal.decisions[0];
+  const knownCards = new Set([...decision.hole, ...decision.board].map((card) => card.key));
+  const anonymous = hero.commentary.filter((part) => part.matchups);
+  assert.ok(anonymous.length > 0);
+  for (const part of anonymous)
+    for (const group of part.matchups.groups) {
+      assert.equal(group.direction, 'possible');
+      assert.equal(group.label, '对手可能牌组');
+      assert.ok(group.examples.length > 0);
+      for (const example of group.examples) {
+        assert.equal(example.cards.length, 2);
+        assert.equal(new Set(example.cards.map((card) => card.key)).size, 2);
+        assert.ok(example.cards.every((card) => !knownCards.has(card.key)));
+        assert.deepEqual(example.score, evaluate([...example.cards, ...decision.board]).score);
+      }
+    }
+  const comparison = hero.reason.match(
+    /按当前牌型与点数高于 ([^，]+)，但低于 ([^，]+)，公共牌仍可能改变强弱/,
+  );
+  assert.ok(comparison, 'Anonymous examples must explicitly describe current hand strength');
+  const exampleCards = (text) => {
+    const parsed = cards(
+      text.replace(/10/g, 'T').replace(/[♠♥♣♦]/g, (symbol) => 'shcd'['♠♥♣♦'.indexOf(symbol)]),
+    );
+    assert.equal(parsed.length, 2);
+    assert.ok(parsed.every((card) => card && !knownCards.has(card.key)));
+    assert.equal(new Set(parsed.map((card) => card.key)).size, 2);
+    return parsed;
+  };
+  const ownScore = evaluate([...decision.hole, ...decision.board]).score;
+  assert.ok(
+    compare(ownScore, evaluate([...exampleCards(comparison[1]), ...decision.board]).score) > 0,
+  );
+  assert.ok(
+    compare(ownScore, evaluate([...exampleCards(comparison[2]), ...decision.board]).score) < 0,
+  );
   const responses = (await page.data()).reviewActivity.map((event) => event.text).join('');
   assert.match(responses, /Mia.*1K/);
   assert.match(responses, /Alex.*弃牌/);
   assert.match(responses, /River.*950/);
   assert.match(responses, /Luna.*800/);
   assert.equal(hero.publicResponses, undefined);
-  assert.equal((await page.data()).reviewActivityOpen, false);
-  await invoke('toggleReviewActivity');
+  // The hand activity opens by default.
+  assert.equal((await page.data()).reviewActivityOpen, true);
   assert.ok((await page.data()).reviewActivity.some((event) => event.emphasized && event.current));
   const currentActivity = await painted('.review-activity-current');
   assert.match(await currentActivity.style('background-color'), /102,\s*203,\s*177/);
@@ -520,6 +633,80 @@ try {
     });
     await capture('common-hero-' + kind);
   }
+  await invoke('closeReview');
+  const underpair = turnStraightCallRecord();
+  underpair.action = 'fold';
+  underpair.amount = 0;
+  underpair.trace.reason = 'outside-range';
+  underpair.trace.view.hole = cards('5c 5s');
+  underpair.trace.view.board = cards('Ad Kc 7h 2s');
+  await mini.evaluate((record) => {
+    getCurrentPages().at(-1)._controller.getGame().botDecisions = [record];
+  }, underpair);
+  await invoke('openReview');
+  await wait((data) => !data.reviewData.loading);
+  await tap('[data-value="opponent"]');
+  await wait((data) => data.reviewPerspective === 'opponent' && data.selectedReviewStep?.reason);
+  const noun = (await page.data()).selectedReviewStep.reason;
+  assert.match(noun, /口袋 5，公共牌有更高点数/);
+  assert.doesNotMatch(noun, /用口袋 5，公共牌/);
+  report.checks.push({ name: 'underpair-noun-and-full-board-description', reason: noun });
+  await capture('underpair-clear-noun');
+  for (const [name, record, verify] of [
+    [
+      'phase3-set-three-flush',
+      phase3CheckSpot().record,
+      (reason) => {
+        assert.match(reason, /三张同花色.*两张该花色.*组成同花/);
+        assert.match(reason, /葫芦或四条/);
+        assert.match(reason, /免费见到下一张/);
+      },
+    ],
+    [
+      'phase3-trips-block-quads',
+      phase3CheckSpot('8c Kh', '5h 8h 8d 6s Qd', { reason: 'free-check' }).record,
+      (reason) => {
+        assert.match(reason, /仍可能组成葫芦/);
+        assert.doesNotMatch(reason, /可能组成葫芦或四条|下一张/);
+      },
+    ],
+  ]) {
+    await invoke('closeReview');
+    await mini.evaluate((record) => {
+      getCurrentPages().at(-1)._controller.getGame().botDecisions = [record];
+    }, record);
+    await invoke('openReview');
+    await wait((data) => !data.reviewData.loading);
+    await tap('[data-value="opponent"]');
+    await wait((data) => data.reviewPerspective === 'opponent' && data.selectedReviewStep?.reason);
+    const selected = (await page.data()).selectedReviewStep;
+    verify(selected.reason);
+    assert.doesNotMatch(selected.reason, /；/);
+    report.checks.push({ name, scope: 'external public-snapshot display probe', selected });
+    await capture(name);
+  }
+  await invoke('closeReview');
+  await invoke('showGuide', 'review-glossary');
+  const glossary = await painted('#review-glossary');
+  const glossaryTerms = await Promise.all(
+    (await page.$$('#review-glossary .guide-b')).map(async (element) =>
+      (await element.text()).trim(),
+    ),
+  );
+  assert.equal(glossaryTerms.length, 35);
+  for (const term of ['主动权', '范围优势', '胜率／权益', '弃牌权益／下注尺度'])
+    assert.ok(glossaryTerms.includes(term), `${term} must have its own glossary entry`);
+  const glossaryText = await glossary.text();
+  assert.match(glossaryText, /底池赔率／保本胜率/);
+  assert.match(glossaryText, /全下只会结束自己的下注选择/);
+  assert.match(glossaryText, /主动下注或加注带动下注节奏，不改变行动顺序，也不保证当前牌更强/);
+  assert.match(glossaryText, /整组可能底牌.*整体更强.*与这一手底牌的强弱不同/);
+  assert.match(glossaryText, /翻前加注者也可能在新牌面上失去优势/);
+  assert.match(glossaryText, /权益把获胜和平分计为底池份额，仍不等于扣除后续成本的利润/);
+  assert.match(glossaryText, /多人底池要考虑所有对手，已全下的人不会再弃牌/);
+  report.checks.push({ name: 'guide-review-glossary', entries: 35, terms: glossaryTerms });
+  await capture('guide-review-glossary');
+  await invoke('closeGuide');
   assert.equal(report.exceptions.length, 0);
   report.status = 'passed';
 } catch (error) {

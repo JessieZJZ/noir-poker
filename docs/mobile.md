@@ -47,14 +47,16 @@ npm run mobile:sync
 ## 原生差异
 
 - iPhone 仅支持正常手持的正向竖屏；iPad 保留系统支持的横竖屏方向。Android 启动默认竖屏，最小屏幕宽度达到 600dp 的平板改用系统用户方向，设备配置变化时重新判断；手机保持正向竖屏。系统在多窗口或兼容模式下调整手机窗口时，共享 Web 层仍以旋转提示阻止横屏操作；平板允许两种方向。Android 返回键不能关闭旋转提示。
+- Android WebView 默认把文字限制在 8px 以上，会让长的外语风格标签溢出徽标；`MainActivity` 把下限设为 1，使共享的字号适配与 iOS、Web 一致。
 
 - 人数、难度、风格、提示和声音设置通过 Capacitor Preferences 保存；启动时先读设置，再初始化牌桌。Web 仍使用浏览器存储，两端数据彼此独立。
-- 启动时先展示 `public/launch-icon.png` 的透明外边缘图标；共享 CSS 通过 `src/styles/app.js` 异步加载并等待完成，平台设置、语言、首手与布局就绪后一次显示牌桌。首屏隐藏规则覆盖全部子元素，滚动指南标题不能提前穿透。Android 使用独立透明 `launch_artwork`，iOS 启动图也从相同透明素材合成；桌面 App 图标继续使用原来的 `app-icon.png`。
+- 玩家公开行动观察使用本地键 `noir-player-observations-v1`，由 Web、原生和微信各自的存储适配器保存，上限为 64 KiB。内容仅有版本、累计手数及最近至多 64 手的公开行动计数，不含底牌、完整牌谱或输赢结果；全体电脑对手读取同一份玩家观察，不改写各自的风格参数。重打会撤回该手的旧样本并以新版本替换，未完成手不会计入持久化统计。各客户端的数据彼此独立，不上传或跨设备同步。
+- 启动时先展示 `public/launch-icon.png` 的透明外边缘图标；共享 CSS 通过 `src/styles/app.js` 异步加载并等待完成，平台设置、语言、待入座牌桌与布局就绪后一次显示牌桌。入座后才发牌和启动电脑行动，编号与音乐渐入见[入座体验](entry-experience.md)。首屏隐藏规则覆盖全部子元素，滚动指南标题不能提前穿透。图标从 `public/brand-mark.svg` 矢量母版生成；Android 保留系统启动屏直至 WebView 已提交首屏，iOS 系统启动图与加载遮罩均使用居中 180pt 图标，并在 WebKit 完成绘制帧后撤掉遮罩。
 - App 设置中的“音效与音乐”统一控制操作音效及本地循环背景音乐，“振动”独立控制 Haptics 回合提示。新设备均默认开启；旧组合静音保留为两项关闭，之后各自持久保存。安装运行回归分别检查声音、音乐与真实 Haptics 桥接请求，并验证音乐循环、前后台和重启保存；模拟器请求通过不等于实体手机震感或听感验收。详见[背景音乐与独立振动](background-music.md)。
 - 切到后台时暂停机器人和发牌等待，回到前台后从剩余思考时间继续。重打、换手或重新练习仍会取消旧任务。对局记录与筹码恢复点保存到本机 Preferences；进程被系统杀死后继续原局的新一手，未完成手的所有下注撤回且不计入统计。浏览记录和历史结算页不暂停练习，真正切到系统后台仍暂停计时。
 - Android 返回键依次关闭当前对话框、下拉菜单，再按历史详情→记录列表→游戏回退；在游戏页才回到后台。iOS 的 WKWebView 开启系统边缘回退手势，记录浏览使用同一组父页面关系。“返回游戏”退出整次记录浏览，重新打开不会叠加列表。
-- 处理刘海、状态栏和底部手势区域；增加包内“关于与隐私”入口，显示实际原生版本和构建号。
-- Web 与原生包使用同一组本地字体，人物名称、头像、来源署名和已有说明与 Web 保持一致。全部本地图片随包提供，无需远程字体请求。构建生成图片 SHA-256 清单，同步副本以及实际 `.app`、APK、AAB 均检查图片内容，缺失或过期会阻止交付。
+- 处理刘海、状态栏和底部手势区域；增加包内“关于与隐私”入口，显示实际原生版本和构建号。入口位于底部“单机练习·虚拟筹码·禁止赌博”下方居中，使用相同字号与颜色。
+- Web 与原生包使用同一组本地字体，风格名称、成熟插画（均衡使用文字头像）和风格说明与 Web 保持一致。全部本地图片随包提供，无需远程字体请求。构建生成图片 SHA-256 清单，同步副本以及实际 `.app`、APK、AAB 均检查图片内容，缺失或过期会阻止交付。
 
 ## 版本与包名
 
@@ -103,11 +105,13 @@ NOIR_NATIVE_SCENARIOS=real-background-cancels-pending-action,every-player-count-
 
 `.github/workflows/mobile-build.yml` 在 GitHub PR、main 更新及手动运行时构建 Android debug APK、未签名 AAB 和 iOS 模拟器 `.app`，产物在 Actions 的 Artifacts 下载。CI 的未签名 AAB 用于验证发行编译，模拟器 `.app` 用于开发验证；两者都不能直接上架。CI 不保存商店签名凭据。
 
-独立 `quality` job 检查格式、语言资源、全部单元测试及生产构建，不依赖 Android SDK 或浏览器布局。公共区定位、固定操作区、牌面可读性、首屏、结算布局与提示横幅测试，以及桌面和移动端的其余交互测试，分别并行执行；布局失败不会跳过其余交互测试。两组覆盖完整的 `npm run test:e2e`；失败轨迹与验收截图保存在 `table-geometry-results`、`browser-ui-results-desktop` 和 `browser-ui-results-mobile`。
+独立 `quality` job 检查格式、语言资源、全部单元测试及生产构建，不依赖 Android SDK 或浏览器布局。公共区定位、固定操作区、牌面可读性、首屏、结算布局与提示横幅测试，以及桌面和移动端的其余交互测试，分别并行执行；布局失败不会跳过其余交互测试。桌面交互用 Playwright `--shard=1/2`、`--shard=2/2` 分配完整用例，保留每片 30 分钟时限和所有断言，避免单个任务到时取消。`browser-ui (desktop)` 汇总检查只有两片都成功才通过，任何失败、取消或跳过都不通过；`browser-ui (mobile)` 保持独立。单元回归用实际 `--list` 清单核对两片不重复、不漏项，合起来与原完整桌面套件一致。所有任务合计覆盖完整的 `npm run test:e2e`；失败轨迹与验收截图保存在 `table-geometry-results`、`browser-ui-results-desktop-1`、`browser-ui-results-desktop-2` 和 `browser-ui-results-mobile`。
 
 原生包编译并通过资源检查后立即上传，随后仍执行完整的安装后 E2E。即使安装运行失败，已上传包也能用于复现；下载到包不代表 E2E 通过。所有 job 都有显式时限，原生运行步骤另设较短时限，为失败证据上传留出时间。原生包与原生报告保留 7 天。账户启动阻塞与近期历史失败见 [CI 排错](ci.md)。
 
 CI 在完成编译后，安装并启动真正的模拟器/仿真器 App，用 Appium 驱动 WKWebView、Android WebView 和系统前后台。验证无登录本地启动、头像加载、设置重启持久保存、下注/跟注/弃牌、结算、重打撤奖统计、下一手和后台暂停恢复；报告与完整设备截图分别放入 `ios-native-e2e-results`、`android-native-e2e-results`。安装及运行步骤见 [原生端到端验证](native-e2e.md)。真机声音听感、实际设备安全区域与商店签名仍单独验收。
+
+Android 安装测试的短点击在量取真实 WebView 坐标后使用 UiAutomator2 `mobile: clickGesture`，保持设备原生触摸；长按与拖动仍使用 W3C 触摸序列。繁忙仿真器曾把指定 80ms 的 down/pause/up 延迟成长按，导致按钮文字被选中而没有开局。测试保留必须成功开局的断言，不以 JavaScript click 或重复点击掩盖失败。接口见 [UiAutomator2 手势说明](https://appium.github.io/appium-uiautomator2-driver/latest/reference/execute-methods/#mobile-clickgesture)。
 
 ## 原生国际化与发行展示
 

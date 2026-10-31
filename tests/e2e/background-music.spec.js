@@ -11,9 +11,7 @@ const musicState = (page) =>
     source: audio.currentSrc,
   }));
 
-test('a touch browser plays the phone master and preserves the combined sound switch', async ({
-  browser,
-}) => {
+test('a touch browser plays the phone master and its own music switch', async ({ browser }) => {
   const context = await browser.newContext({
     hasTouch: true,
     viewport: { width: 390, height: 844 },
@@ -28,7 +26,10 @@ test('a touch browser plays the phone master and preserves the combined sound sw
     expect(new URL((await musicState(page)).source).pathname).toBe(
       '/audio/background-music-mobile.m4a',
     );
+    // Sound effects and background music are separate switches.
     await page.locator('#sound-button').click();
+    expect((await musicState(page)).paused).toBe(false);
+    await page.locator('#music-button').click();
     expect((await musicState(page)).paused).toBe(true);
     await expect(page.locator('#vibration-button')).toHaveAttribute('aria-checked', 'true');
   } finally {
@@ -36,14 +37,15 @@ test('a touch browser plays the phone master and preserves the combined sound sw
   }
 });
 
-test('music loops locally with sound, vibration is independent, and both preferences survive reload', async ({
+test('music loops locally, sound, music and vibration are independent and survive reload', async ({
   page,
 }) => {
   await page.goto('/');
   await page.waitForFunction(() => !!window.qa);
   await page.evaluate(() => window.qa.stop());
   await openSettings(page);
-  await expect(page.locator('#sound-button')).toHaveAccessibleName('音效与音乐');
+  await expect(page.locator('#sound-button')).toHaveAccessibleName('音效');
+  await expect(page.locator('#music-button')).toHaveAccessibleName('背景音乐');
   await expect(page.locator('#vibration-button')).toHaveAccessibleName('振动');
   await expect(page.locator('#vibration-button')).toHaveAttribute('aria-checked', 'true');
   await expect.poll(async () => (await musicState(page)).ready).toBeGreaterThanOrEqual(2);
@@ -57,28 +59,36 @@ test('music loops locally with sound, vibration is independent, and both prefere
   });
   await expect.poll(async () => (await musicState(page)).time).toBeLessThan(3);
   await expect.poll(async () => (await musicState(page)).paused).toBe(false);
+  // Muting sound effects leaves the music playing; the music switch pauses it.
   await page.locator('#sound-button').click();
+  expect((await musicState(page)).paused).toBe(false);
+  await page.locator('#music-button').click();
   expect((await musicState(page)).paused).toBe(true);
   await expect(page.locator('#vibration-button')).toHaveAttribute('aria-checked', 'true');
   await page.reload();
   await page.waitForFunction(() => !!window.qa);
   await openSettings(page);
+  await expect(page.locator('#sound-button')).toHaveAttribute('aria-checked', 'false');
+  await expect(page.locator('#music-button')).toHaveAttribute('aria-checked', 'false');
   await expect(page.locator('#vibration-button')).toHaveAttribute('aria-checked', 'true');
   await expect(page.locator('audio[data-background-music]')).toHaveCount(0);
   await page.locator('#vibration-button').click();
-  await page.locator('#sound-button').click();
+  await page.locator('#music-button').click();
   await expect.poll(async () => (await musicState(page)).paused).toBe(false);
   await expect(page.locator('#vibration-button')).toHaveAttribute('aria-checked', 'false');
   await page.reload();
   await page.waitForFunction(() => !!window.qa);
   await openSettings(page);
-  await expect(page.locator('#sound-button')).toHaveAttribute('aria-checked', 'true');
+  await expect(page.locator('#sound-button')).toHaveAttribute('aria-checked', 'false');
+  await expect(page.locator('#music-button')).toHaveAttribute('aria-checked', 'true');
   await expect(page.locator('#vibration-button')).toHaveAttribute('aria-checked', 'false');
+  await page.locator('#music-button').click();
   await page.locator('#sound-button').click();
   await page.reload();
   await page.waitForFunction(() => !!window.qa);
   await openSettings(page);
-  await expect(page.locator('#sound-button')).toHaveAttribute('aria-checked', 'false');
+  await expect(page.locator('#sound-button')).toHaveAttribute('aria-checked', 'true');
+  await expect(page.locator('#music-button')).toHaveAttribute('aria-checked', 'false');
   await expect(page.locator('audio[data-background-music]')).toHaveCount(0);
 });
 
@@ -110,4 +120,25 @@ test('background pauses music, foreground resumes it, and hands/retry/reset do n
   });
   await expect(page.locator('audio[data-background-music]')).toHaveCount(1);
   await expect.poll(async () => (await musicState(page)).paused).toBe(false);
+});
+
+test('enabling vibration gives one immediate supported-device feedback pulse', async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('noir-vibration', 'false');
+    window.__vibrationPreviews = [];
+    Object.defineProperty(navigator, 'vibrate', {
+      configurable: true,
+      value: (duration) => {
+        window.__vibrationPreviews.push(duration);
+        return true;
+      },
+    });
+  });
+  await page.goto('/');
+  await page.waitForFunction(() => !!window.qa);
+  await openSettings(page);
+  await page.locator('#vibration-button').click();
+  await expect.poll(() => page.evaluate(() => window.__vibrationPreviews)).toEqual([50]);
+  await page.locator('#vibration-button').click();
+  expect(await page.evaluate(() => window.__vibrationPreviews)).toEqual([50]);
 });

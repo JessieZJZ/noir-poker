@@ -85,7 +85,7 @@ test('cold navigation and reload show only the initialized table, even when modu
           ready: true,
           background: 'rgb(11, 16, 23)',
           seats: 4,
-          cards: 2,
+          cards: 0,
           inert: false,
           actionsDisabled: true,
         },
@@ -98,8 +98,8 @@ test('cold navigation and reload show only the initialized table, even when modu
         expect(await page.locator('#arena').evaluate((el) => el.style.transform)).toContain(
           'scale(',
         );
-        const actions = await page.locator('.action-buttons').boundingBox();
-        expect(actions.y + actions.height).toBeLessThanOrEqual(page.viewportSize().height);
+        const join = await page.locator('#join-table-button').boundingBox();
+        expect(join.y + join.height).toBeLessThanOrEqual(page.viewportSize().height);
       }
       await page.screenshot({ path: testInfo.outputPath(`${navigation}-ready.png`) });
       await page.locator('#rules-button').click();

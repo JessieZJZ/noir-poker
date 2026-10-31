@@ -11,12 +11,13 @@ import { createDialogScrollLock } from './dialog-scroll-lock.js';
 import { soundSamples, SOUND_SAMPLE_RATE, createSoundOutput } from './sound-cues.js';
 import { loadFeedbackPreferences } from './feedback-preferences.js';
 import { createWebBackgroundMusic } from '../platform/web-background-music.js';
+import { createDealGate } from './deal-gate.js';
+import { createHandAdvanceGuard } from './hand-advance.js';
 import {
   renderOpponentSeats,
   renderSeatAction,
   visibleRecentAction as sceneRecentAction,
 } from './table-scene.js';
-import { COMPACT_PLAY_QUERY } from './play-geometry.js';
 import {
   localizeText,
   formatChips,
@@ -34,7 +35,6 @@ import {
   legalActions,
   potSize,
   currentPots,
-  contestableAfterCall,
   playBotTurn,
   planBotTurn,
   executeBotTurn,
@@ -45,7 +45,24 @@ import {
   restartHand,
   canRestartHand,
   applyBotSettings,
+  rebuyHero,
+  heroRebuysLeft,
+  needsHeroRebuy,
+  importPlayerObservations,
+  exportPlayerObservations,
 } from '../engine/poker.js';
+import { sanitizePlayerObservationProfile } from '../engine/public-observations.js';
+import { isPremiumStart } from '../engine/starting-hands.js';
+import { standingLabel, standingClass } from '../engine/game-records.js';
+import { recordSnapshots } from '../platform/record-snapshots.js';
+import { createGameEffects } from './game-effects.js';
+import { TROPHY_MARKUP, renderHeroPlace } from './table-scene.js';
+import {
+  ceremonySamples,
+  CEREMONY_SAMPLE_RATE,
+  CEREMONY_CUES,
+  CHEER_FILES,
+} from './ceremony-sounds.js';
 import { raiseCaption } from '../engine/action-labels.js';
 import { loadBotSettings, createOpponentsController } from './opponents-controller.js';
 import { loadTablePreferences, saveTablePreferences } from './preferences.js';
@@ -54,13 +71,22 @@ import { renderCard } from './cards.js';
 import { createShowdownController } from './showdown.js';
 import { createActivityFormatter } from './activity.js';
 import { preparePortraits } from './portraits.js';
-import { presetRaiseTo } from './bet-sizing.js';
+import {
+  presetRaiseTo,
+  createRaiseSliderSelection,
+  raiseSliderPosition,
+  RAISE_SLIDER_MAX,
+} from './bet-sizing.js';
 import { chipUnitOf, legalRaiseTo } from '../engine/bet-sizing.js';
 import { createSettlementLayout } from './settlement-layout.js';
 import { createPlayViewport } from './play-viewport.js';
+import { attachRaisePointer } from './raise-pointer.js';
+import { readPlayViewport } from './stable-viewport.js';
 import { createHintNotification } from './hint-notification.js';
+import { tableHint } from '../review/table-hint.js';
 import { createHintMarquee } from './hint-marquee.js';
 import { preferenceStorage } from '../platform/storage.js';
+import { createPlayerObservationStore } from '../platform/player-observations-store.js';
 import { createGameRecords } from '../engine/game-records.js';
 import { createGameRecordsView } from './game-records.js';
 import { createActivityClock } from '../platform/activity-clock.js';
@@ -71,19 +97,30 @@ let appActive = isAppActive();
 activityClock.setActive(appActive && !isOrientationBlocked());
 let dealWait = null;
 const $ = (s) => document.querySelector(s);
-const compactCoach = window.matchMedia(COMPACT_PLAY_QUERY);
 const coachContent = $('#coach-content');
-function positionCoach() {
-  const compact = compactCoach.matches;
-  (compact ? $('.surface-top') : $('#coach-desktop-body')).append(coachContent);
-  (compact ? $('#hint-setting-row') : $('#coach-toggle-slot')).append($('#hint-toggle'));
-  $('#hint-setting-row').hidden = !compact;
-  $('#coach-desktop-card').hidden = compact;
-  $('#hint-toggle').setAttribute('aria-labelledby', compact ? 'hint-label' : 'coach-card-title');
-}
 const settlementLayout = createSettlementLayout($('#arena'), { observe: false });
-const playViewport = createPlayViewport($('.game-surface'), { layout: settlementLayout.update });
-const hintMarquee = createHintMarquee(coachContent, $('#coach-tip'), () => compactCoach.matches);
+document.addEventListener('noir:locale-changed', () =>
+  playViewport.update(game, game.phase === 'done'),
+);
+const playViewport = createPlayViewport($('.game-surface'), {
+  layout() {
+    settlementLayout.update();
+    fillWaitingInfo();
+  },
+  settled: () => settlementLayout.placeTrophy(),
+});
+// While waiting for the seat the action dock is hidden but its height stays
+// reserved, so the table never resizes on joining. The game info card takes
+// that space: the top bar, table and game info fill the first screen.
+function fillWaitingInfo() {
+  const info = $('.main > .sidebar > .game-info');
+  info.style.removeProperty('min-height');
+  if (info.hidden) return;
+  const bottom = info.getBoundingClientRect().bottom + window.scrollY;
+  const spare = readPlayViewport().height - 8 - bottom;
+  if (spare > 0) info.style.minHeight = `${info.offsetHeight + spare}px`;
+}
+const hintMarquee = createHintMarquee(coachContent, $('#coach-tip'), () => true);
 const hintNotification = createHintNotification({
   publish({ visible, text, stage }) {
     $('#coach-content').hidden = !visible;
@@ -111,12 +148,37 @@ function isSeatHandVisible(player) {
   return (game.showdown || game.revealed) && !player.folded;
 }
 const tablePreferences = loadTablePreferences();
-const gameRecords = createGameRecords({ storage: preferenceStorage });
+const gameRecords = createGameRecords({ storage: preferenceStorage, snapshots: recordSnapshots });
+const playerObservations = createPlayerObservationStore({
+  storage: preferenceStorage,
+  sanitizeProfile: sanitizePlayerObservationProfile,
+  importProfile: importPlayerObservations,
+  exportProfile: exportPlayerObservations,
+});
+const effects = createGameEffects();
+// Each game end is celebrated once; the crown then stays on the champion.
+let ceremonyKey = '',
+  crownedKey = '',
+  rebuying = false,
+  toastTimer = null;
+function showToast(message) {
+  const toast = $('#app-toast');
+  setLocalizedText(toast, message);
+  toast.hidden = false;
+  toast.classList.remove('is-leaving');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => {
+    toast.classList.add('is-leaving');
+    toastTimer = setTimeout(() => (toast.hidden = true), 320);
+  }, 3200);
+}
 let requestedCount = tablePreferences.playerCount;
 let requestedStakes = tablePreferences.stakes;
 let stakesError = '',
   editingSmallBlind = false;
-let game = gameRecords.resume() || newGame(requestedCount, requestedStakes),
+let game = playerObservations.restore(
+    gameRecords.resume() || newGame(requestedCount, requestedStakes),
+  ),
   timer = null,
   botWait = null,
   epoch = 0,
@@ -126,19 +188,22 @@ let game = gameRecords.resume() || newGame(requestedCount, requestedStakes),
   finishing = false,
   hints = true,
   sound = true,
+  music = true,
   vibration = true,
   audio = null,
   audioOutput = null;
+const raiseSelection = createRaiseSliderSelection();
 let newRecordSession = false;
+game.history ||= [];
 game.difficulty = tablePreferences.difficulty;
 $('#player-count').value = String(requestedCount);
 try {
-  ({ sound, vibration } = loadFeedbackPreferences(preferenceStorage));
+  ({ sound, music, vibration } = loadFeedbackPreferences(preferenceStorage));
   hints = preferenceStorage.getItem('noir-hints') !== 'false';
 } catch {}
 const backgroundMusic = createWebBackgroundMusic({
-  enabled: sound,
-  active: activityClock.active && !document.hidden,
+  enabled: music,
+  active: false,
   createContext: () => {
     prepareAudio();
     return audio;
@@ -147,6 +212,13 @@ const backgroundMusic = createWebBackgroundMusic({
   getOutput: () => audioOutput,
 });
 let pendingBotSettings = loadBotSettings();
+const dealGate = createDealGate({
+  active: activityClock.active,
+  complete() {
+    render();
+    schedule();
+  },
+});
 const opponents = createOpponentsController({
   getGame: () => game,
   getCount: () => requestedCount,
@@ -154,13 +226,17 @@ const opponents = createOpponentsController({
   onSave: (settings) => {
     pendingBotSettings = settings;
     setLocalizedText($('#difficulty-description'), difficultyPolicy(game.difficulty).description);
-    opponents.refresh();
+    if (game.phase === 'idle') {
+      applyBotSettings(game, pendingBotSettings);
+      render();
+    } else opponents.refresh();
   },
 });
 let selectedPotSnapshot = null;
 const recordsView = createGameRecordsView({
   records: gameRecords,
   openReview: (input, key) => handReview.openInput(input, key),
+  toast: showToast,
   onReturnGame: () => playViewport.update(game, game.phase === 'done'),
   openPots: (snapshot) => {
     selectedPotSnapshot = snapshot;
@@ -198,7 +274,32 @@ function prepareAudio() {
   try {
     audio = new (window.AudioContext || window.webkitAudioContext)();
     audioOutput = createSoundOutput(audio);
+    for (const kind of Object.keys(CHEER_FILES)) void loadCheer(kind);
   } catch {}
+}
+// The champions' crowd cheers are local recordings, decoded once ahead of the
+// game's end. A failed read is retried on the next request, never fetched remotely.
+const cheerLoads = new Map();
+function loadCheer(kind) {
+  if (!cheerLoads.has(kind))
+    cheerLoads.set(
+      kind,
+      fetch(new URL(CHEER_FILES[kind], document.baseURI))
+        .then((response) => {
+          if (!response.ok) throw Error(`Missing ${CHEER_FILES[kind]}`);
+          return response.arrayBuffer();
+        })
+        .then((bytes) => audio.decodeAudioData(bytes))
+        .then((buffer) => {
+          soundBuffers.set(kind, buffer);
+          return buffer;
+        })
+        .catch(() => {
+          cheerLoads.delete(kind);
+          return null;
+        }),
+    );
+  return cheerLoads.get(kind);
 }
 // Allocate the graph on entry. Resume on the first trusted gesture when the
 // browser requires one; never replay effects from earlier turns.
@@ -229,9 +330,22 @@ function soundEffect(kind = 'chip') {
   if (!activityClock.active || !sound || audio?.state !== 'running') return;
   try {
     let buffer = soundBuffers.get(kind);
+    if (!buffer && CHEER_FILES[kind]) {
+      // Still decoding: play it if it is ready while the ceremony is fresh.
+      const requested = performance.now();
+      void loadCheer(kind).then((loaded) => {
+        if (loaded && performance.now() - requested < 1500) soundEffect(kind);
+      });
+      return;
+    }
     if (!buffer) {
-      const samples = soundSamples(kind);
-      buffer = audio.createBuffer(1, samples.length, SOUND_SAMPLE_RATE);
+      const ceremony = CEREMONY_CUES.includes(kind),
+        samples = ceremony ? ceremonySamples(kind) : soundSamples(kind);
+      buffer = audio.createBuffer(
+        1,
+        samples.length,
+        ceremony ? CEREMONY_SAMPLE_RATE : SOUND_SAMPLE_RATE,
+      );
       buffer.getChannelData(0).set(samples);
       soundBuffers.set(kind, buffer);
     }
@@ -289,25 +403,67 @@ const heroTurnAttention = createHeroTurnAttention({
 });
 function syncTurnAttention() {
   heroTurnAttention.update({
-    key: `${epoch}:${game.hand}:${game.replayAttempt || 0}:${game.street}:${game.history.length}`,
-    enabled: legalActions(game, 0).enabled,
+    key: `${epoch}:${game.hand}:${game.replayAttempt || 0}:${game.street}:${game.history?.length || 0}`,
+    enabled: !dealGate.pending && legalActions(game, 0).enabled,
     active: activityClock.active && !document.hidden,
   });
 }
+const overKey = () =>
+  game.over ? `${gameRecords.sessionNumber()}:${game.hand}:${game.replayAttempt || 0}` : '';
+const gameEndKey = () => (game.over && game.over.championId !== null ? overKey() : '');
+// The coronation runs once per decided game, after the settlement paints; a
+// game the hero leaves without a champion gets the farewell card instead.
+function celebrate() {
+  const key = overKey();
+  if (!key || ceremonyKey === key) return;
+  ceremonyKey = key;
+  if (game.over.championId === null) {
+    soundEffect('farewell');
+    effects.farewell($('.table-viewport'), game.over.heroPlace);
+    return;
+  }
+  // Paint and place the hidden resting trophy first; the flight lands exactly on it.
+  render();
+  settlementLayout.placeTrophy();
+  const champion = game.over.championId,
+    heroWon = champion === 0,
+    trophy = () =>
+      $(champion === 0 ? '.hero-champion-trophy' : `.seat-${champion} .champion-trophy`);
+  soundEffect(heroWon ? 'champion' : 'crowned');
+  effects.coronation({
+    target: trophy(),
+    caption: heroWon ? '你获得冠军' : `${game.players[champion].name} 获得冠军`,
+    confetti: heroWon,
+    done: () => {
+      if (gameEndKey() !== key) return;
+      crownedKey = key;
+      render();
+      trophy()?.classList.add('trophy-arrive');
+    },
+  });
+}
 function render() {
+  playerObservations.capture(game);
   gameRecords.capture(game);
   recordsView.refresh();
   renderStakesSettings();
-  const activityList = $('#activity-list'),
-    activityScrollTop = activityList.scrollTop,
-    followActivity =
-      game.hand !== lastHand ||
-      activityList.scrollHeight - activityList.clientHeight - activityScrollTop <= 24;
+  const activityList = $('#activity-list');
+  const waiting = game.phase === 'idle';
+  const dealing = dealGate.pending;
+  const nextEntryHand = gameRecords.nextHandIdentity(game, { newSession: newRecordSession });
+  const entryState = waiting ? 'waiting' : dealing ? 'dealing' : 'playing';
+  $('.game-surface').dataset.entryState = entryState;
+  // The game info card replaces the practice card only before the seat is taken.
+  $('.game-info').hidden = !waiting;
+  $('.session-card').hidden = waiting;
+  $('.activity-card').hidden = waiting;
+  $('#entry-welcome').hidden = !waiting;
+  $('#join-table-button').disabled = !waiting;
   const count = game.players.length;
   $('#arena').dataset.playerCount = count;
   $('#arena').classList.toggle(
     'has-full-player-names',
-    game.players.slice(1).some((p) => ['viktor', 'jungleman', 'dwan'].includes(p.botProfile)),
+    game.players.slice(1).some((p) => ['knox', 'theo', 'finn'].includes(p.botProfile)),
   );
   setLocalizedText($('#table-size-label'), count + ' 人无限注');
   setLocalizedText($('#blind-values'), `${format(game.smallBlind)} / ${format(game.bigBlind)}`);
@@ -319,14 +475,21 @@ function render() {
     game.showdown && !hero.folded
       ? new Set(evaluate([...hero.hole, ...game.board]).cards.map((c) => c.key))
       : new Set();
-  setLocalizedText($('#hand-number'), String(game.hand).padStart(2, '0'));
+  setLocalizedText($('#hand-number'), waiting ? '—' : String(game.hand).padStart(2, '0'));
   setLocalizedText($('#session-number-label'), `第 ${gameRecords.sessionNumber()} 局`);
   $('#replay-label').hidden = !game.replayAttempt;
   setLocalizedText($('#replay-label'), '重打 ' + game.replayAttempt);
-  $('#replay-note').hidden = !game.replayAttempt;
   setLocalizedText(
     $('#street-label'),
-    game.phase === 'done' ? '本手结束' : streets[game.street] || '准备发牌',
+    waiting
+      ? `等待入座，即将开始第 ${nextEntryHand.sessionNumber} 局第 ${nextEntryHand.hand} 手`
+      : game.over
+        ? '本局结束'
+        : dealing
+          ? '正在发牌…'
+          : game.phase === 'done'
+            ? '本手结束'
+            : streets[game.street] || '准备发牌',
   );
   setLocalizedText(
     $('#pot-value'),
@@ -345,17 +508,57 @@ function render() {
         : `<div class="board-slot" aria-label="未发出的公共牌">${['♠', '♣', '♥', '♦', '♠'][i]}</div>`,
     ).join(''),
   );
+  const endKey = gameEndKey(),
+    crowned = endKey && ceremonyKey === endKey ? game.over.championId : null,
+    crownPending = crowned !== null && crownedKey !== endKey;
   setLocalizedHTML(
     $('#seats'),
-    renderOpponentSeats(game, { card, newHand, isSeatHandVisible, seatFaceSignatures }),
+    renderOpponentSeats(game, {
+      card,
+      newHand,
+      dealing,
+      isSeatHandVisible,
+      seatFaceSignatures,
+      crownedId: crowned,
+      crownPending,
+    }),
   );
   preparePortraits($('#seats'));
-  setLocalizedHTML(
-    $('#hero-cards'),
-    hero.hole
-      .map((c, i) => card(c, { animate: newHand, delay: 420 + i * 130, best: heroBest.has(c.key) }))
-      .join(''),
+  const heroCards = $('#hero-cards'),
+    holeKey = hero.hole.map((c) => c.key).join(',');
+  // An opponent action must not recreate the same faces: that would restart
+  // the premium ::after glow and the turn highlight attached to those cards.
+  if (newHand || heroCards.dataset.holeKey !== holeKey) {
+    setLocalizedHTML(
+      heroCards,
+      hero.hole
+        .map((c, i) =>
+          card(c, { animate: newHand, delay: 420 + i * 130, best: heroBest.has(c.key) }),
+        )
+        .join(''),
+    );
+    heroCards.dataset.holeKey = holeKey;
+  } else
+    [...heroCards.children].forEach((node, i) =>
+      node.classList.toggle('best-card', heroBest.has(hero.hole[i].key)),
+    );
+  if (newHand && game.phase !== 'done' && isPremiumStart(hero.hole))
+    effects.premiumStart($('.hero-cards-wrap'));
+  $('.hero-name').classList.toggle('is-champion', crowned === 0);
+  $('#hero-trophy-slot').innerHTML =
+    crowned === 0
+      ? `<span class="champion-trophy hero-champion-trophy ${crownPending ? 'trophy-pending' : ''}">${TROPHY_MARKUP}</span>`
+      : '';
+  // With a champion, the hero's place follows the trophy's landing.
+  renderHeroPlace(
+    $('#hero-place'),
+    game,
+    !!game.over &&
+      game.over.championId !== 0 &&
+      (game.over.championId === null || crownedKey === endKey),
   );
+  if (!$('#hero-place').hidden) settlementLayout.placeTrophy();
+  $('.hero-area').classList.toggle('hero-out', !!hero.out);
   const heroRank = $('#hero-hand-rank'),
     heroWinner = game.winners.find((w) => w.id === 0),
     showHeroRank = game.board.length === 5 && (game.revealed || game.showdown);
@@ -382,7 +585,7 @@ function render() {
   }
   $('.hero-area').classList.toggle('hero-folded', hero.folded);
   $('.hero-name').classList.toggle('is-active', game.actor === 0);
-  setLocalizedText($('#hero-stack'), format(hero.stack));
+  if (!rebuying) setLocalizedText($('#hero-stack'), format(hero.stack));
   const heroPosition = seatPosition(game, 0);
   setLocalizedText($('#hero-position'), heroPosition);
   $('#hero-position').dataset.position = heroPosition;
@@ -394,6 +597,11 @@ function render() {
     heroRecentAction ? seatAction(hero, { recent: true }) : '',
   );
   setLocalizedHTML($('#session-stack'), `${format(hero.stack)}<span>CHIPS</span>`);
+  setLocalizedText($('#session-title'), game.over ? '本局结束' : '本局练习');
+  const standing = $('#session-standing');
+  standing.hidden = !game.over;
+  standing.className = `standing-tag ${game.over ? standingClass(game.over.heroPlace) : ''}`;
+  if (game.over) setLocalizedText(standing, standingLabel(game.over.heroPlace));
   const diff = hero.stack - game.stats.buyin;
   setLocalizedText(
     $('#session-change'),
@@ -402,12 +610,22 @@ function render() {
       : '从这一手开始积累经验',
   );
   $('#session-change').classList.toggle('negative', diff < 0);
+  const winrate = game.stats.hands
+    ? Math.round((game.stats.wins / game.stats.hands) * 100) + '%'
+    : '—';
   setLocalizedText($('#stat-hands'), game.stats.hands);
   setLocalizedText($('#stat-wins'), game.stats.wins);
-  setLocalizedText(
-    $('#stat-winrate'),
-    game.stats.hands ? Math.round((game.stats.wins / game.stats.hands) * 100) + '%' : '—',
-  );
+  setLocalizedText($('#stat-winrate'), winrate);
+  if (waiting) {
+    setLocalizedText($('#info-stack'), format(hero.stack));
+    setLocalizedText($('#info-change'), `${diff >= 0 ? '+' : ''}${format(diff)}`);
+    $('#info-change').classList.toggle('negative', diff < 0);
+    $('#info-change').classList.toggle('positive', diff > 0);
+    setLocalizedText($('#info-blinds'), `${format(game.smallBlind)} / ${format(game.bigBlind)}`);
+    setLocalizedText($('#info-hands'), game.stats.hands);
+    setLocalizedText($('#info-wins'), game.stats.wins);
+    setLocalizedText($('#info-winrate'), winrate);
+  }
   const activityText = createActivityFormatter(game);
   setLocalizedHTML(
     activityList,
@@ -423,7 +641,7 @@ function render() {
   setLocalizedText($('#activity-count'), game.phase === 'done' ? 'FINISHED' : 'LIVE');
   const done = game.phase === 'done';
   $('#arena').classList.toggle('is-done', done);
-  $('.decision-strip').hidden = done;
+  $('.decision-strip').hidden = done || waiting;
   document
     .querySelectorAll('input[name="difficulty"]')
     .forEach((input) => (input.checked = input.value === game.difficulty));
@@ -467,47 +685,65 @@ function render() {
     );
   if (!selectedPotSnapshot) renderPotDetails(details);
   const legal = legalActions(game, 0);
-  $('.bet-controls').hidden = done || hero.folded;
-  $('.action-buttons').hidden = done || hero.folded;
+  const canAct = legal.enabled && !dealing && !waiting;
+  $('.bet-controls').hidden = done || hero.folded || waiting;
+  $('.action-buttons').hidden = done || hero.folded || waiting;
   $('#next-button').hidden = !done;
   $('#continue-deal-button').hidden = !canFastFinish() && !finishing;
   $('#continue-deal-button').disabled = finishing;
   setLocalizedText($('#continue-deal-button'), finishing ? '正在发牌…' : '立刻发完');
   $('#action-panel').classList.toggle('folded-actions', hero.folded && !done);
   $('#restart-hand-button').hidden = !canRestartHand(game);
+  // "下一局" replaces a reset once the game has ended; before taking the seat
+  // there is nothing to restart yet.
+  $('#reset-button').hidden = !!game.over || waiting;
   $('#action-panel').classList.toggle('settled-actions', done);
   $('.action-dock').classList.toggle('compact-actions', done || hero.folded);
-  $('.action-dock').classList.toggle('is-enabled', legal.enabled);
-  setLocalizedText($('#next-button'), hero.stack === 0 ? '补充筹码，继续练习' : '下一手');
-  $('#next-button').classList.toggle('has-mobile-label', hero.stack === 0);
-  setLocalizedAttribute($('#next-button'), 'data-mobile-label', '补充筹码');
+  $('.action-dock').classList.toggle('is-enabled', canAct);
+  // Next game after the game ends; a mandatory refill after losing every chip.
+  const refill = needsHeroRebuy(game);
+  $('#next-button').classList.toggle('rebuy-button', refill);
+  setLocalizedHTML(
+    $('#next-button'),
+    game.over
+      ? '下一局'
+      : refill
+        ? `<span>补充筹码</span><span class="rebuy-count">剩 ${heroRebuysLeft(game)} 次</span>`
+        : '下一手',
+  );
   setLocalizedAttribute(
     $('#next-button'),
     'aria-label',
-    hero.stack === 0 ? '补充筹码，继续练习' : '下一手',
+    game.over ? '下一局' : refill ? `补充筹码，剩余 ${heroRebuysLeft(game)} 次` : '下一手',
   );
   heroTurnCue.update({
-    key: `${game.hand}:${game.replayAttempt || 0}:${game.street}:${game.history.length}`,
-    enabled: legal.enabled,
+    key: `${game.hand}:${game.replayAttempt || 0}:${game.street}:${game.history?.length || 0}`,
+    enabled: canAct,
     active: activityClock.active && vibration,
   });
   syncTurnAttention();
-  $('#turn-prompt').hidden = !legal.enabled;
-  for (const b of [$('#fold-button'), $('#call-button')]) b.disabled = !legal.enabled;
-  $('#raise-button').disabled = !legal.enabled || !legal.canRaise;
-  $('#bet-slider').disabled = !legal.enabled || !legal.canRaise;
+  $('#turn-prompt').hidden = !canAct;
+  for (const b of [$('#fold-button'), $('#call-button')]) b.disabled = !canAct;
+  $('#raise-button').disabled = !canAct || !legal.canRaise;
+  $('#bet-slider').disabled = !canAct || !legal.canRaise;
   document
     .querySelectorAll('[data-preset]')
-    .forEach((b) => (b.disabled = !legal.enabled || !legal.canRaise));
-  if (legal.enabled) {
-    const min = legal.minRaiseTo,
-      max = legal.maxRaiseTo;
+    .forEach((b) => (b.disabled = !canAct || !legal.canRaise));
+  // Off turn the disabled slider rests at its minimum; its range is only
+  // known on the hero's turn, so a stale range must not pin it to the right.
+  if (!canAct) $('#bet-slider').value = $('#bet-slider').min;
+  if (waiting || dealing) setLocalizedText($('#decision-text'), waiting ? '' : '正在发牌…');
+  else if (legal.enabled) {
     bet = legalRaiseTo(bet, legal);
     const slider = $('#bet-slider');
-    slider.min = min;
-    slider.max = max;
-    slider.step = chipUnitOf(game);
-    slider.value = bet;
+    slider.min = 0;
+    slider.max = RAISE_SLIDER_MAX;
+    slider.step = 1;
+    slider.value = raiseSelection.position(
+      { currentBet: game.currentBet, pot: potSize(game), legal },
+      bet,
+      game,
+    );
     setLocalizedHTML(
       $('#call-button'),
       legal.canCheck
@@ -544,19 +780,18 @@ function render() {
         ? `${game.players[game.actor]?.name || '对手'} 正在行动，你可以观察这一手。`
         : `${game.players[game.actor]?.name || '对手'} 正在思考，请稍候。`,
     );
-  updateBet();
+  if (!waiting) updateBet();
   updateCoach();
   handReview.update(game, epoch);
   showdown.update(game, epoch);
   lastHand = game.hand;
   lastBoard = displayBoard.length;
   playViewport.update(game, done);
-  // Desktop history is bounded by the table. Keep following new actions only
-  // while the reader is at the bottom; reviewing earlier actions keeps its place.
-  if (!compactCoach.matches)
-    activityList.scrollTop = followActivity ? activityList.scrollHeight : activityScrollTop;
+  celebrate();
 }
 function updateBet() {
+  $('#bet-slider').dataset.raiseTo = String(bet);
+  $('#bet-slider').setAttribute('aria-valuetext', format(bet));
   const legal = legalActions(game, 0);
   setLocalizedText($('#bet-value'), format(bet));
   const action = raiseCaption(
@@ -575,52 +810,29 @@ function updateCoach(force = false) {
   toggle.setAttribute('aria-pressed', String(hints));
   toggle.setAttribute('aria-checked', String(hints));
   setLocalizedAttribute(toggle, 'title', hints ? '牌桌提示已开启' : '牌桌提示已关闭');
-  $('#coach-disabled').hidden = hints || compactCoach.matches;
+  if (game.phase === 'idle' || dealGate.pending) {
+    hintNotification.update({ enabled: false });
+    return;
+  }
   const p = game.players[0],
-    e = evaluate([...p.hole, ...game.board]);
-  let tip = '';
-  if (game.phase === 'done')
-    tip = p.folded
-      ? '回看弃牌时的价格与对手范围，判断是否值得继续。'
-      : game.showdown
-        ? `你以${e.label}摊牌。复盘关键下注，区分决策质量与发牌运气。`
-        : '复盘本手加注，判断对手弃牌能否让这条路线长期盈利。';
-  else if (game.street === 0) {
-    const [a, b] = p.hole;
-    if (a?.rank === b?.rank) tip = '口袋对子有成三条的潜力；面对大额加注，先考虑跟注成本。';
-    else if (a?.rank >= 11 && b?.rank >= 11)
-      tip = '两张高牌可主动争夺底池；面对大额加注，仍要判断对手范围。';
-    else if (a?.suit === b?.suit) tip = '同花底牌有成牌潜力，仍需结合位置和跟注价格。';
-    else tip = '前位谨慎选牌，后位利用更多信息；结合价格决定是否入池。';
-  } else if (e.score[0] >= 3) tip = `你已形成${e.label}，可考虑价值下注，并留意牌面上更强的组合。`;
-  else if (e.score[0] >= 1) tip = `目前是${e.label}；多人底池或持续大额加注时，谨慎判断。`;
-  else tip = '尚未成对，结合成牌机会、跟注价格与对手范围决定。';
-  const legal = legalActions(game, 0);
-  if (legal.enabled && legal.toCall > 0)
-    tip += ` 跟注占可争夺底池约 ${Math.round((legal.callAmount / contestableAfterCall(game, 0, legal.callAmount)) * 100)}%。`;
+    legal = legalActions(game, 0),
+    tip = tableHint(game, legal);
   const stage = game.phase === 'done' ? '本手复盘' : streets[game.street] + '策略';
   hintNotification.update({
     enabled: hints,
-    key: `${compactCoach.matches ? 'banner' : 'card'}:${epoch}:${game.hand}:${game.street}:${game.phase === 'done' ? 'done' : legal.enabled ? `turn:${game.currentBet}:${p.bet}` : 'waiting'}`,
+    key: `banner:${epoch}:${game.hand}:${game.street}:${game.phase === 'done' ? 'done' : legal.enabled ? `turn:${game.currentBet}:${p.bet}` : 'waiting'}`,
     text: tip,
     stage,
     force,
-    persistent: !compactCoach.matches,
     notify:
-      !compactCoach.matches ||
       force ||
       game.phase === 'done' ||
       (!p.folded && (legal.enabled || game.hand !== lastHand || game.board.length !== lastBoard)),
   });
 }
-function changeCoachLayout() {
-  positionCoach();
-  updateCoach(true);
-}
-compactCoach.addEventListener('change', changeCoachLayout);
 function schedule() {
   clearTimeout(timer);
-  if (!activityClock.active) return;
+  if (!activityClock.active || game.phase === 'idle' || dealGate.pending) return;
   const ticket = epoch;
   if (game.phase === 'done' || finishing) {
     botWait = null;
@@ -650,8 +862,8 @@ function schedule() {
   } else if (game.actor !== 0) {
     dealWait = null;
     if (!botWait || !isBotTurnCurrent(game, botWait.plan)) {
-      const plan = planBotTurn(game),
-        startedAt = activityClock.now();
+      const startedAt = activityClock.now(),
+        plan = planBotTurn(game);
       botWait = { plan, startedAt, deadline: startedAt + plan.delayMs };
     }
     const waiting = botWait;
@@ -685,7 +897,7 @@ function schedule() {
   } else botWait = null;
 }
 function heroAction(action, amount) {
-  if (!activityClock.active) return false;
+  if (!activityClock.active || dealGate.pending) return false;
   if (!legalActions(game, 0).enabled) return false;
   const legal = legalActions(game, 0);
   act(game, 0, action, amount);
@@ -707,6 +919,16 @@ function canFastFinish() {
     (game.phase !== 'done' || (game.board.length < 5 && !game.practiceBoard))
   );
 }
+// Resolve after the browser has painted a frame (or shortly, when frames are
+// paused); a zero timeout alone can run before any paint.
+const nextFrame = () =>
+  new Promise((resolve) => {
+    const fallback = setTimeout(resolve, 50);
+    requestAnimationFrame(() => {
+      clearTimeout(fallback);
+      setTimeout(resolve, 0);
+    });
+  });
 async function continueDeal() {
   if (!canFastFinish()) return false;
   clearTimeout(timer);
@@ -715,9 +937,18 @@ async function continueDeal() {
   const ticket = ++epoch;
   finishing = true;
   render();
+  // Show "正在发牌…" before the remaining bot work starts. A settled fold-win
+  // only completes its practice board and needs no wait.
+  if (game.phase !== 'done') await nextFrame();
   try {
+    let slice = performance.now();
     while (ticket === epoch && game.phase !== 'done') {
-      await new Promise((resolve) => setTimeout(resolve, 0));
+      // Bot decisions run in short slices so the page keeps painting. Streets
+      // are not laid out one by one; the settled table renders once at the end.
+      if (performance.now() - slice > 12) {
+        await nextFrame();
+        slice = performance.now();
+      }
       await activityClock.waitUntilActive();
       if (ticket !== epoch) return false;
       if (game.phase === 'between') advanceStreet(game);
@@ -729,7 +960,6 @@ async function continueDeal() {
           });
         else playBotTurn(game);
       }
-      if (game.phase === 'between') render();
     }
     await activityClock.waitUntilActive();
     if (ticket === epoch) completeBoardForPractice(game);
@@ -744,6 +974,8 @@ async function continueDeal() {
   }
 }
 function nextHand() {
+  playerObservations.capture(game);
+  dealGate.cancel();
   heroTurnAttention.reset();
   cancelSoundEffects();
   heroTurnCue.reset();
@@ -758,17 +990,27 @@ function nextHand() {
   stakesError = '';
   editingSmallBlind = false;
   $('#pot-dialog').close();
-  if (requestedCount !== game.players.length || !sameStakes(requestedStakes, game.stakes)) {
+  effects.cancel();
+  rebuying = false;
+  if (
+    game.over ||
+    requestedCount !== game.players.length ||
+    !sameStakes(requestedStakes, game.stakes)
+  ) {
     gameRecords.abandon(game);
+    if (game.over) newRecordSession = true;
     const difficulty = game.difficulty;
-    game = newGame(requestedCount, requestedStakes);
+    game = playerObservations.restore(newGame(requestedCount, requestedStakes));
     game.difficulty = difficulty;
     handReview.reset();
     lastHand = 0;
   }
+  // A refill left pending when the app closed is completed before dealing.
+  if (needsHeroRebuy(game) && heroRebuysLeft(game)) rebuyHero(game);
   $('#table-change-note').hidden = true;
   applyBotSettings(game, pendingBotSettings);
   startHand(game);
+  dealGate.begin();
   gameRecords.begin(game, { newSession: newRecordSession });
   newRecordSession = false;
   const legal = legalActions(game, 0);
@@ -777,8 +1019,36 @@ function nextHand() {
   soundEffect('deal');
   schedule();
 }
+// Refill and deal the next hand at once; the stack counts up during it.
+function refillAndDeal() {
+  if (!needsHeroRebuy(game) || !heroRebuysLeft(game)) return false;
+  rebuyHero(game);
+  nextHand();
+  rebuying = true;
+  const ticket = epoch;
+  effects.rebuy(
+    $('.hero-identity'),
+    $('#hero-stack'),
+    { added: game.stakes.startingStack, target: game.players[0].stack },
+    () => {
+      if (ticket !== epoch) return;
+      rebuying = false;
+      render();
+    },
+  );
+  return true;
+}
+function advanceGame() {
+  if (game.phase !== 'done' && game.phase !== 'idle') return false;
+  if (!game.over && needsHeroRebuy(game)) return refillAndDeal();
+  nextHand();
+  return true;
+}
 function retryHand() {
   if (!canRestartHand(game)) return false;
+  dealGate.cancel();
+  effects.cancel();
+  rebuying = false;
   heroTurnAttention.reset();
   heroTurnCue.reset();
   cancelSoundEffects();
@@ -795,6 +1065,7 @@ function retryHand() {
     e.remove();
   });
   restartHand(game);
+  dealGate.begin();
   gameRecords.begin(game);
   lastHand = 0;
   lastBoard = 0;
@@ -881,13 +1152,50 @@ function renderPotDetails(details, potGame = game) {
 $('#fold-button').onclick = () => heroAction('fold');
 $('#call-button').onclick = () => heroAction('call');
 $('#raise-button').onclick = () => heroAction('raise', bet);
-$('#next-button').onclick = nextHand;
+const handAdvance = createHandAdvanceGuard({
+  button: $('#next-button'),
+  token: () => `${epoch}:${game.hand}:${game.replayAttempt || 0}`,
+});
+$('#next-button').onclick = (event) => {
+  if (handAdvance.allow(event)) advanceGame();
+};
 $('#restart-hand-button').onclick = retryHand;
 $('#bet-slider').oninput = (e) => {
   const legal = legalActions(game, 0);
   if (!legal.enabled || !legal.canRaise) return;
   heroTurnAttention.engage();
-  bet = legalRaiseTo(Number(e.target.value), legal);
+  bet = raiseSelection.select(
+    { currentBet: game.currentBet, pot: potSize(game), legal },
+    e.target.value,
+    game,
+  );
+  updateBet();
+};
+attachRaisePointer($('#bet-slider'), {
+  context: () =>
+    `${epoch}:${game.hand}:${game.replayAttempt || 0}:${game.street}:${game.history.length}`,
+  limit: RAISE_SLIDER_MAX,
+});
+// Keyboard arrows keep their whole-chip precision on the nonlinear rail.
+$('#bet-slider').onkeydown = (event) => {
+  if (!['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End'].includes(event.key))
+    return;
+  const legal = legalActions(game, 0);
+  if (!legal.enabled || !legal.canRaise) return;
+  event.preventDefault();
+  const amount =
+    event.key === 'Home'
+      ? legal.minRaiseTo
+      : event.key === 'End'
+        ? legal.maxRaiseTo
+        : bet + (['ArrowRight', 'ArrowUp'].includes(event.key) ? 1 : -1) * chipUnitOf(game);
+  raiseSelection.reset();
+  bet = legalRaiseTo(amount, legal);
+  event.currentTarget.value = raiseSliderPosition(
+    { currentBet: game.currentBet, pot: potSize(game), legal },
+    bet,
+  );
+  heroTurnAttention.engage();
   updateBet();
 };
 document.querySelectorAll('[data-preset]').forEach(
@@ -900,8 +1208,12 @@ document.querySelectorAll('[data-preset]').forEach(
       );
       if (target === null) return;
       heroTurnAttention.engage();
+      raiseSelection.reset();
       bet = target;
-      $('#bet-slider').value = bet;
+      $('#bet-slider').value = raiseSliderPosition(
+        { currentBet: game.currentBet, pot: potSize(game), legal },
+        bet,
+      );
       updateBet();
     }),
 );
@@ -914,8 +1226,21 @@ $('#player-count').onchange = (e) => {
     difficulty: game.difficulty,
     stakes: requestedStakes,
   });
-  renderStakesSettings();
+  if (!refreshWaitingTable()) renderStakesSettings();
 };
+function refreshWaitingTable() {
+  if (game.phase !== 'idle') return false;
+  if (requestedCount !== game.players.length || !sameStakes(requestedStakes, game.stakes)) {
+    const difficulty = game.difficulty;
+    playerObservations.capture(game);
+    game = playerObservations.restore(newGame(requestedCount, requestedStakes));
+    game.history = [];
+    game.difficulty = difficulty;
+  }
+  applyBotSettings(game, pendingBotSettings);
+  render();
+  return true;
+}
 function renderStakesSettings() {
   const input = $('#small-blind-input');
   $('#small-blind-button').textContent = format(requestedStakes.smallBlind);
@@ -955,7 +1280,7 @@ function requestStakes(value) {
   stakesError = '';
   if (changed)
     saveTablePreferences({ playerCount: requestedCount, difficulty: game.difficulty, stakes });
-  renderStakesSettings();
+  if (!refreshWaitingTable()) renderStakesSettings();
   return changed;
 }
 function requestSmallBlind(value) {
@@ -1034,21 +1359,33 @@ $('#difficulty').onchange = (e) => {
   }
 };
 function updateSound() {
-  const b = $('#sound-button');
-  setLocalizedText($('#sound-label'), '音效与音乐');
-  b.setAttribute('aria-pressed', String(sound));
-  b.setAttribute('aria-checked', String(sound));
-  setLocalizedAttribute(b, 'title', sound ? '音效与音乐已开启' : '音效与音乐已关闭');
+  for (const [id, on, title] of [
+    ['#sound-button', sound, sound ? '音效已开启' : '音效已关闭'],
+    ['#music-button', music, music ? '背景音乐已开启' : '背景音乐已关闭'],
+  ]) {
+    const b = $(id);
+    b.setAttribute('aria-pressed', String(on));
+    b.setAttribute('aria-checked', String(on));
+    setLocalizedAttribute(b, 'title', title);
+  }
 }
 $('#sound-button').onclick = () => {
   sound = !sound;
-  backgroundMusic.setEnabled(sound);
   if (!sound) cancelSoundEffects();
   try {
     preferenceStorage.setItem('noir-sound', String(sound));
   } catch {}
   updateSound();
   if (sound) void unlockAudio().then(() => soundEffect('deal'));
+};
+$('#music-button').onclick = () => {
+  music = !music;
+  backgroundMusic.setEnabled(music);
+  try {
+    preferenceStorage.setItem('noir-music', String(music));
+  } catch {}
+  updateSound();
+  if (music) void unlockAudio();
 };
 function updateVibration() {
   const b = $('#vibration-button');
@@ -1062,6 +1399,14 @@ $('#vibration-button').onclick = () => {
     preferenceStorage.setItem('noir-vibration', String(vibration));
   } catch {}
   updateVibration();
+  if (vibration)
+    heroTurnCue.acknowledge(
+      `${game.hand}:${game.replayAttempt || 0}:${game.street}:${game.history?.length || 0}`,
+    );
+  if (vibration)
+    Promise.resolve()
+      .then(() => notifyHeroTurn())
+      .catch(() => {});
   syncTurnAttention();
 };
 $('#hint-toggle').onclick = () => {
@@ -1095,12 +1440,13 @@ document.querySelectorAll('dialog').forEach((d) =>
   }),
 );
 $('#confirm-reset').onclick = () => {
+  playerObservations.capture(game);
   gameRecords.abandon(game);
   newRecordSession = true;
   handReview.reset();
   const difficulty = game.difficulty;
   clearTimeout(timer);
-  game = newGame(requestedCount, requestedStakes);
+  game = playerObservations.restore(newGame(requestedCount, requestedStakes));
   game.difficulty = difficulty;
   lastHand = 0;
   $('#reset-dialog').close();
@@ -1109,6 +1455,7 @@ $('#confirm-reset').onclick = () => {
 function publicState() {
   const details = potDetails();
   return {
+    entryState: game.phase === 'idle' ? 'waiting' : dealGate.pending ? 'dealing' : 'playing',
     playerCount: game.players.length,
     stakes: { ...game.stakes },
     requestedStakes: { ...requestedStakes },
@@ -1120,6 +1467,9 @@ function publicState() {
     canContinue: canFastFinish(),
     replayAttempt: game.replayAttempt || 0,
     canRestart: canRestartHand(game),
+    rebuysLeft: heroRebuysLeft(game),
+    needsRebuy: needsHeroRebuy(game),
+    over: game.over ? { ...game.over } : null,
     hand: game.hand,
     sessionNumber: gameRecords.sessionNumber(),
     recordsRoute: recordsView.route(),
@@ -1158,6 +1508,8 @@ function publicState() {
       folded: p.folded,
       allin: p.allin,
       bet: p.bet,
+      out: !!p.out,
+      place: p.place ?? null,
       action: p.action,
       lastAction: p.lastAction ? { ...p.lastAction } : null,
       ...(p.id
@@ -1271,27 +1623,26 @@ function registerTools() {
     name: 'start_next_poker_hand',
     title: '开始下一手',
     description:
-      'Deal the next hand after the current hand has ended. Refills any empty virtual chip stack.',
+      'Deal the next hand after the current hand has ended. If you lost every chip, use one of your three refills first; after the game ends, start the next game.',
     inputSchema: { type: 'object', properties: {}, additionalProperties: false },
     annotations: { readOnlyHint: false },
     execute: (input) => {
       if (!input || typeof input !== 'object' || Object.keys(input).length)
         throw Error('请传入空对象。');
       if (game.phase !== 'done') throw Error('当前牌局尚未结束。');
-      nextHand();
+      advanceGame();
       return publicState();
     },
   });
 }
 updateSound();
 updateVibration();
-positionCoach();
 function syncActivity() {
   const active = appActive && !isOrientationBlocked();
   backgroundMusic.setActive(active && !document.hidden);
   hintNotification.setActive(active && !document.hidden);
-  if (active && !document.hidden && !compactCoach.matches) updateCoach(true);
   const changed = activityClock.setActive(active);
+  dealGate.setActive(active && !document.hidden);
   syncTurnAttention();
   if (!changed) return;
   if (!active) {
@@ -1303,21 +1654,33 @@ function syncActivity() {
 document.addEventListener('noir:app-state', ({ detail }) => {
   if (typeof detail?.active !== 'boolean') return;
   appActive = detail.active;
+  if (!appActive) {
+    playerObservations.capture(game);
+    void playerObservations.flush();
+  }
   syncActivity();
 });
 document.addEventListener('noir:orientation-state', syncActivity);
 document.addEventListener('visibilitychange', () => {
+  if (document.hidden) {
+    playerObservations.capture(game);
+    void playerObservations.flush();
+  }
+  dealGate.setActive(activityClock.active && !document.hidden);
   backgroundMusic.setActive(activityClock.active && !document.hidden);
   syncTurnAttention();
   hintNotification.setActive(activityClock.active && !document.hidden);
-  if (activityClock.active && !document.hidden && !compactCoach.matches) updateCoach(true);
 });
 window.addEventListener('pagehide', (event) => {
+  playerObservations.capture(game);
+  void playerObservations.flush();
   backgroundMusic.setActive(false);
   heroTurnAttention.reset();
+  handAdvance.reset();
   if (event.persisted) return;
+  handAdvance.destroy();
+  dealGate.cancel();
   backgroundMusic.dispose();
-  compactCoach.removeEventListener('change', changeCoachLayout);
   hintNotification.destroy();
   hintMarquee.destroy();
 });
@@ -1328,6 +1691,17 @@ window.addEventListener('pageshow', (event) => {
     updateCoach(true);
   }
 });
-nextHand();
+$('#join-table-button').onclick = () => {
+  if (game.phase !== 'idle' || !activityClock.active) return;
+  nextHand();
+};
+document.addEventListener(
+  'noir:ready',
+  () => {
+    backgroundMusic.setActive(activityClock.active && !document.hidden);
+  },
+  { once: true },
+);
+refreshWaitingTable();
 recordsView.initialize();
 registerTools();

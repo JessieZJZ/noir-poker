@@ -1,0 +1,110 @@
+// Gesture coordinates and the moving thumb stay in the render layer.
+// The service only receives caption previews and one final legal selection.
+var LIMIT = 1000000;
+function hit(owner) {
+  return owner.selectComponent('#raise-hit');
+}
+function paint(owner, position) {
+  var thumb = owner.selectComponent('#raise-thumb');
+  if (thumb) thumb.setStyle({ left: (position / LIMIT) * 100 + '%' });
+}
+function touch(list, id) {
+  for (var i = 0; list && i < list.length; i++) {
+    if (id === undefined || list[i].identifier === id) return list[i];
+  }
+}
+function position(point, rect) {
+  return Math.round(Math.max(0, Math.min(1, (point.clientX - rect.left) / rect.width)) * LIMIT);
+}
+function sync(value, previous, owner, instance) {
+  var state = instance.getState();
+  state.control = value;
+  if (!value) return;
+  if (state.active && value.enabled && state.key === value.key) return;
+  state.active = false;
+  state.position = value.position;
+  paint(owner, value.position);
+}
+function start(event, owner) {
+  var target = hit(owner);
+  var state = target.getState();
+  var control = state.control;
+  if (!control || !control.enabled || state.active) return false;
+  var point = touch(event.touches);
+  var track = owner.selectComponent('#raise-track');
+  var rect = track.getBoundingClientRect();
+  if (!point || !rect || !(rect.width > 0)) return false;
+  state.active = true;
+  state.id = point.identifier;
+  state.serial = (state.serial || 0) + 1;
+  state.key = control.key;
+  state.rect = rect;
+  state.position = position(point, rect);
+  state.reported = event.timeStamp;
+  paint(owner, state.position);
+  owner.callMethod('railPreview', { key: state.key, id: state.serial, position: state.position });
+  return false;
+}
+function move(event, owner) {
+  var state = hit(owner).getState();
+  if (!state.active) return false;
+  var point = touch(event.touches, state.id);
+  if (!point) return false;
+  state.position = position(point, state.rect);
+  paint(owner, state.position);
+  if (event.timeStamp - state.reported >= 50) {
+    state.reported = event.timeStamp;
+    owner.callMethod('railPreview', { key: state.key, id: state.serial, position: state.position });
+  }
+  return false;
+}
+function end(event, owner) {
+  var state = hit(owner).getState();
+  if (!state.active) return false;
+  var point = touch(event.changedTouches, state.id);
+  if (point) state.position = position(point, state.rect);
+  paint(owner, state.position);
+  state.active = false;
+  state.endedAt = event.timeStamp;
+  owner.callMethod('railCommit', { key: state.key, id: state.serial, position: state.position });
+  return false;
+}
+function cancel(event, owner) {
+  var state = hit(owner).getState();
+  if (!state.active) return false;
+  state.active = false;
+  paint(owner, state.control.position);
+  owner.callMethod('railCancel', { key: state.key, id: state.serial });
+  return false;
+}
+function tap(event, owner) {
+  var state = hit(owner).getState();
+  if (!state.control || !state.control.enabled) return false;
+  var rect = owner.selectComponent('#raise-track').getBoundingClientRect();
+  if (!rect || !(rect.width > 0)) return false;
+  var x = event.detail && event.detail.x;
+  if (typeof x !== 'number') {
+    var point = touch(event.changedTouches) || touch(event.touches);
+    // Accessibility activation has no touch coordinate; activate its centre.
+    x = point ? point.clientX : rect.left + rect.width / 2;
+  }
+  var next = position({ clientX: x }, rect);
+  // Suppress only the duplicate tap at the just-released finger position.
+  // A quick independent click elsewhere on the rail must still work.
+  if (
+    state.endedAt !== undefined &&
+    event.timeStamp - state.endedAt < 500 &&
+    Math.abs(next - state.position) <= LIMIT / rect.width
+  )
+    return false;
+  state.serial = (state.serial || 0) + 1;
+  state.position = next;
+  paint(owner, state.position);
+  owner.callMethod('railCommit', {
+    key: state.control.key,
+    id: state.serial,
+    position: state.position,
+  });
+  return false;
+}
+module.exports = { sync: sync, start: start, move: move, end: end, cancel: cancel, tap: tap };
