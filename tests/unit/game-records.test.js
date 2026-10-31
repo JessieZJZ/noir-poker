@@ -333,6 +333,35 @@ test('short all-ins, refunds and side pots keep settled whole-chip conservation'
   );
 });
 
+test('a finished game starts the next session on reload and keeps its own result', () => {
+  for (const over of [
+    { heroPlace: 1, championId: 0 },
+    { heroPlace: 2, championId: 1 },
+    { heroPlace: 5, championId: null },
+  ]) {
+    const storage = memory(),
+      store = records(storage),
+      game = newGame(5, stakes);
+    startHand(game);
+    store.begin(game);
+    finish(game);
+    game.over = over;
+    store.capture(game);
+    const reloaded = records(storage);
+    assert.equal(reloaded.resume(), null);
+    assert.equal(records(storage).resume(), null, 'Reloading again changes nothing');
+    const fresh = newGame(5, stakes);
+    assert.deepEqual(reloaded.nextHandIdentity(fresh), { sessionNumber: 2, hand: 1 });
+    startHand(fresh);
+    reloaded.begin(fresh);
+    assert.equal(reloaded.sessionNumber(), 2);
+    assert.equal(fresh.over, null);
+    const sessions = reloaded.sessions();
+    assert.equal(sessions.length, 2);
+    assert.equal(sessions[1].result.place, over.heroPlace);
+  }
+});
+
 test('completed reload starts the next hand in the same session and uses latest real statistics', () => {
   const storage = memory(),
     store = records(storage),

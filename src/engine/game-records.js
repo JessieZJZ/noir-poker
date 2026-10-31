@@ -588,7 +588,10 @@ export function createGameRecords({
     resume() {
       finishUnfinished();
       write();
-      return state.checkpoint ? { ...copy(state.checkpoint), deck: [] } : null;
+      // A decided game stays in the records; returning starts the next one.
+      return state.checkpoint && !state.checkpoint.over
+        ? { ...copy(state.checkpoint), deck: [] }
+        : null;
     },
     begin(game, { newSession = false } = {}) {
       if (!['playing', 'between'].includes(game.phase)) throw Error('发牌后才能开始记录本手。');

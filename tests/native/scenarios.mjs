@@ -2195,7 +2195,8 @@ export async function nativeScenarios(app) {
                 tag.whiteSpace !== 'nowrap' ||
                 tag.textOverflow === 'ellipsis' ||
                 tag.scrollWidth > tag.clientWidth + 1 ||
-                tag.scrollHeight > tag.clientHeight + 1,
+                tag.scrollHeight > tag.clientHeight + 1 ||
+                parseFloat(tag.fontSize) < 8,
             ),
         };
       });
@@ -3601,14 +3602,17 @@ export async function nativeScenarios(app) {
         paused.state,
         'Game must not advance while the native app is in the background',
       );
-      await app.waitFor(
-        async () => {
-          const current = await app.state();
-          return !isDeepStrictEqual(current, paused.state);
-        },
-        45000,
-        'Game should resume after native foreground event',
-      );
+      // A landing on the hero's decision has nothing to resume on its own.
+      const awaitsHero = paused.state.actor === '你' && paused.state.legal.enabled;
+      if (!awaitsHero)
+        await app.waitFor(
+          async () => {
+            const current = await app.state();
+            return !isDeepStrictEqual(current, paused.state);
+          },
+          45000,
+          'Game should resume after native foreground event',
+        );
       return {
         backgroundMs: Math.round(backgroundMs),
         nativeStateBefore: nativeBackground.nativeState,
@@ -3822,6 +3826,59 @@ export async function nativeScenarios(app) {
       );
       return comparisons;
     });
+  await check('finished-game-starts-fresh-after-relaunch', async () => {
+    await waitForNativeHeroTurn(app, { advanceSettled: true });
+    const before = await app.state();
+    // The installed bundle has no way to force a final hand, so mark the saved
+    // game as decided through the same Preferences the app reads on launch.
+    await app.evaluate(() => {
+      const preferences = window.Capacitor.Plugins.Preferences,
+        key = 'noir-game-records-v1';
+      window.__finishedGameSaved = null;
+      void preferences
+        .get({ key })
+        .then(({ value }) => {
+          const records = JSON.parse(value),
+            over = { heroPlace: 2, championId: 1 };
+          records.checkpoint.over = over;
+          if (records.active) records.active.baseline.over = over;
+          return preferences.set({ key, value: JSON.stringify(records) });
+        })
+        .then(
+          () => (window.__finishedGameSaved = 'saved'),
+          (error) => (window.__finishedGameSaved = String(error)),
+        );
+      return true;
+    });
+    assert.equal(
+      await app.waitFor(() => app.evaluate(() => window.__finishedGameSaved), 10000),
+      'saved',
+    );
+    await app.relaunch();
+    const fresh = await app.waitFor(
+      async () => {
+        const state = await app.state();
+        return state?.phase ? state : null;
+      },
+      30000,
+      'The relaunched app must publish its table',
+    );
+    assert.equal(fresh.over, null);
+    assert.equal(fresh.hand, 0);
+    assert.equal(fresh.phase, 'idle');
+    const screen = await app.evaluate(() => ({
+      label: document.querySelector('#street-label').textContent,
+      endings: document.querySelectorAll(
+        '.trophy-stage, .farewell-stage, .confetti-layer, .champion-trophy',
+      ).length,
+      placeHidden: document.querySelector('#hero-place').hidden,
+    }));
+    assert.match(screen.label, new RegExp(`${before.sessionNumber + 1}.*1`));
+    assert.equal(screen.endings, 0);
+    assert.equal(screen.placeHidden, true);
+    await app.screenshot('finished-game-starts-fresh');
+    return { sessionBefore: before.sessionNumber, ...screen };
+  });
   await check('records-history-pot-dialog-and-return', async () => {
     await app.waitFor(
       async () => {

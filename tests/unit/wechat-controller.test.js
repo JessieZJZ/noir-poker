@@ -40,17 +40,19 @@ function scheduler() {
 }
 function setup(t, initial = {}, options = {}) {
   const timers = scheduler();
-  const preferences = new Map([
-    [
-      'noir-wechat-settings-v1',
-      JSON.stringify({
-        playerCount: 6,
-        hints: false,
-        stakes: { smallBlind: 25, bigBlind: 50, startingStack: 5000, chipUnit: 25 },
-        ...initial,
-      }),
-    ],
-  ]);
+  const preferences =
+    options.preferences ??
+    new Map([
+      [
+        'noir-wechat-settings-v1',
+        JSON.stringify({
+          playerCount: 6,
+          hints: false,
+          stakes: { smallBlind: 25, bigBlind: 50, startingStack: 5000, chipUnit: 25 },
+          ...initial,
+        }),
+      ],
+    ]);
   const snapshots = [];
   const sounds = [];
   const controller = createWechatController({
@@ -1068,6 +1070,37 @@ test('WeChat refill deals the next hand at once and counts the stack up during i
 });
 
 for (const heroWins of [true, false]) {
+  test(`WeChat reopening after a ${heroWins ? 'won' : 'lost'} game starts the next one with no ending replay`, (t) => {
+    const preferences = new Map();
+    const { controller, latest } = setup(t, {}, { preferences });
+    const game = controller.getGame();
+    game.rebuys = 3;
+    finish(game);
+    controller.show();
+    for (const p of game.players.slice(2)) Object.assign(p, { out: true, stack: 0, place: 6 });
+    game.players[0].stack = heroWins ? 20000 : 5000;
+    game.players[1].stack = heroWins ? 5000 : 20000;
+    controller.nextHand();
+    shoveFinale(game, heroWins);
+    controller.show();
+    assert.ok(latest().ceremony);
+    const finished = controller.getRecordSummaries()[0].number;
+    const reopened = setup(t, {}, { preferences });
+    const view = reopened.latest(),
+      next = reopened.controller.getGame(),
+      hero = next.players[0],
+      [latestSession, finishedSession] = reopened.controller.getRecordSummaries();
+    assert.equal(next.over, null);
+    assert.equal(next.hand, 1);
+    assert.equal(hero.stack + hero.total, next.stakes.startingStack);
+    assert.equal(view.ceremony, null);
+    assert.equal(view.farewell, null);
+    assert.equal(view.heroPlaced, false);
+    assert.ok(!reopened.sounds.some((s) => ['champion', 'crowned', 'farewell'].includes(s)));
+    assert.equal(latestSession.number, finished + 1);
+    assert.equal(finishedSession.result.place, heroWins ? 1 : 2);
+  });
+
   test(`WeChat ${heroWins ? 'hero' : 'bot'} championship crowns the winner once and starts a new game`, (t) => {
     const { controller, timers, latest, sounds } = setup(t);
     const game = controller.getGame();
