@@ -198,8 +198,8 @@ test('4-bets count only callers of the latest raise and preserve shallow-stack s
   assert.equal(botReraiseSize({ ...view, street: 1 }), null);
 });
 
-test('larger ordinary opens retain bounded strong-hand defense without giving weak hands a cheap-entry exemption', () => {
-  for (const bb of [5, 5.5, 6, 7, 8, 8.5]) {
+test('opens up to 8BB keep strong-hand defense and hand weaker hands a narrowing range', () => {
+  for (const bb of [5, 5.5, 6, 7, 7.5, 8, 8.5]) {
     const make = (hole) =>
       deceptiveView(hole, '', {
         equity: 0.3,
@@ -221,7 +221,7 @@ test('larger ordinary opens retain bounded strong-hand defense without giving we
     for (const hand of ['As Kh', 'Qs Qh', 'Ts Th', 'Ks Qs'])
       assert.equal(decide(make(hand)).trace.affordableOpen, bb <= 8);
     for (const hand of ['As 3h', '6s 6h', '8s 7s'])
-      assert.equal(decide(make(hand)).trace.affordableOpen, bb <= 5);
+      assert.equal(decide(make(hand)).trace.affordableOpen, bb < 8);
     const jam = make('As Kh');
     jam.opponents[0].allin = true;
     assert.equal(decide(jam).trace.affordableOpen, false);

@@ -512,12 +512,17 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
     lowCommitment &&
     !allInPressure;
   // Single cash-table opens are priced separately from 3-bets and shoves.
-  // Above 5BB only the stronger playable group gets this bounded exemption
-  // from treating every unfurled seat as already committed to a showdown.
+  // Above 5BB the playable range narrows with the size until, at 8BB, only
+  // the stronger group is exempt from treating every unfurled seat as already
+  // committed to a showdown. A larger open never becomes easier to call.
   const openPriceBB = view.currentBet / bigBlind;
   const largeOpen = openPriceBB > 5;
+  const openTightening = Math.min(1, Math.max(0, (openPriceBB - 5) / 3));
   const strongOpenDefense =
     (pair && high >= 9) || (high === 14 && low >= 12) || (suited && high === 13 && low === 12);
+  const openStackNeed = strongOpenDefense
+    ? legal.callAmount * 10
+    : Math.max(Math.min(legal.callAmount * 15, 75 * bigBlind), legal.callAmount * 10);
   const affordableOpen =
     view.street === 0 &&
     Boolean(lastRaiser) &&
@@ -526,10 +531,10 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
     legal.toCall > 0 &&
     view.currentBet <= 8 * bigBlind &&
     legal.callAmount <= 8 * bigBlind &&
-    (!largeOpen || strongOpenDefense) &&
+    (openTightening < 1 || strongOpenDefense) &&
     lowCommitment &&
     !allInPressure &&
-    effectiveBehind >= Math.max(20 * bigBlind, legal.callAmount * (largeOpen ? 10 : 15));
+    effectiveBehind >= Math.max(20 * bigBlind, openStackNeed);
   // Normal/hard opponents distinguish a cheap 3-bet from a large re-raise.
   // A random showdown against every unfurled seat undervalues a priced call:
   // players still to act have not all committed to this pot. This range gate
@@ -572,12 +577,13 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
     const blindDiscount = view.position === 'BB' ? 0.08 : 0;
     const dominatedAce = !suited && high === 14 && low <= 8 ? 0.08 : 0;
     range =
-      baseRange * priceScale +
-      (0.12 + width * 0.18) * entryScale +
-      playability +
-      callerBonus +
-      blindDiscount -
-      dominatedAce;
+      (baseRange * priceScale +
+        (0.12 + width * 0.18) * entryScale +
+        playability +
+        callerBonus +
+        blindDiscount -
+        dominatedAce) *
+      (strongOpenDefense ? 1 : 1 - openTightening);
   }
   if (affordableThreeBet) {
     const priceScale = Math.max(0.55, 1.15 - view.currentBet / (20 * bigBlind));
@@ -1046,7 +1052,9 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
             : cheapEntry && admitted
               ? 'affordable-entry'
               : affordableOpen && admitted
-                ? 'affordable-open'
+                ? largeOpen
+                  ? 'price-continue'
+                  : 'affordable-open'
                 : affordableThreeBet && admitted
                   ? 'small-reraise-continue'
                   : premium && view.street === 0
@@ -1356,7 +1364,9 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
           : cheapEntry && admitted
             ? 'affordable-entry'
             : affordableOpen && admitted
-              ? 'affordable-open'
+              ? largeOpen
+                ? 'price-continue'
+                : 'affordable-open'
               : affordableThreeBet && admitted
                 ? 'small-reraise-continue'
                 : premium && view.street === 0
