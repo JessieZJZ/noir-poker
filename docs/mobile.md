@@ -109,7 +109,7 @@ NOIR_NATIVE_SCENARIOS=real-background-cancels-pending-action,every-player-count-
 
 原生包编译并通过资源检查后立即上传，随后仍执行完整的安装后 E2E。即使安装运行失败，已上传包也能用于复现；下载到包不代表 E2E 通过。所有 job 都有显式时限，原生运行步骤另设较短时限，为失败证据上传留出时间。原生包与原生报告保留 7 天。账户启动阻塞与近期历史失败见 [CI 排错](ci.md)。
 
-CI 在完成编译后，安装并启动真正的模拟器/仿真器 App，用 Appium 驱动 WKWebView、Android WebView 和系统前后台。验证无登录本地启动、头像加载、设置重启持久保存、下注/跟注/弃牌、结算、重打撤奖统计、下一手和后台暂停恢复；报告与完整设备截图分别放入 `ios-native-e2e-results`、`android-native-e2e-results`。安装及运行步骤见 [原生端到端验证](native-e2e.md)。真机声音听感、实际设备安全区域与商店签名仍单独验收。
+CI 在完成编译后，安装并启动真正的模拟器/仿真器 App，用 Appium 驱动 WKWebView、Android WebView 和系统前后台。验证无登录本地启动、头像加载、设置重启持久保存、下注/跟注/弃牌、结算、重打撤奖统计、下一手和后台暂停恢复；报告与完整设备截图分别放入 `ios-native-e2e-results`、`android-native-e2e-results`。安装及运行步骤见 [原生端到端验证](native-e2e.md)。真机声音听感、实际设备安全区域与商店签名仍单独验收。 Android 仿真器运行期间把系统长按阈值调到 3 秒、结束后恢复，避免慢机器把一次点击判成长按而丢失 click；真机不改。
 
 Android 安装测试的短点击在量取真实 WebView 坐标后使用 UiAutomator2 `mobile: clickGesture`，保持设备原生触摸；长按与拖动仍使用 W3C 触摸序列。繁忙仿真器曾把指定 80ms 的 down/pause/up 延迟成长按，导致按钮文字被选中而没有开局。测试保留必须成功开局的断言，不以 JavaScript click 或重复点击掩盖失败。接口见 [UiAutomator2 手势说明](https://appium.github.io/appium-uiautomator2-driver/latest/reference/execute-methods/#mobile-clickgesture)。
 

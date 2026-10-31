@@ -35,6 +35,10 @@ select {
 }
 button {
   cursor: pointer;
+  /* A held touch must not select the label or open the system text menu. */
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
 }
 button:disabled {
   cursor: default;

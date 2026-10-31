@@ -94,6 +94,7 @@ let serverStream;
 let session;
 let sessionCapabilities;
 let airplaneMode;
+let longPressTimeout;
 const sdk = process.env.ANDROID_HOME ?? process.env.ANDROID_SDK_ROOT;
 const adb = sdk ? path.join(sdk, 'platform-tools/adb') : 'adb';
 // Keep the CDP discovery range and Chromedriver listener separate from other
@@ -493,6 +494,19 @@ try {
         'airplane_mode_on',
       ]);
       run(adb, ['-s', udid, 'shell', 'cmd', 'connectivity', 'airplane-mode', 'enable']);
+      // A busy emulator can hold one tap past Android's 400ms long press, which
+      // drops its click. These checks are about delivery, not that threshold.
+      longPressTimeout = run(adb, [
+        '-s',
+        udid,
+        'shell',
+        'settings',
+        'get',
+        'secure',
+        'long_press_timeout',
+      ]);
+      run(adb, ['-s', udid, 'shell', 'settings', 'put', 'secure', 'long_press_timeout', '3000']);
+      report.longPressTimeoutMs = 3000;
       report.offline = {
         airplaneMode: true,
         note: 'Installed application launches and plays with Android airplane mode enabled',
@@ -743,6 +757,19 @@ try {
         'connectivity',
         'airplane-mode',
         airplaneMode === '1' ? 'enable' : 'disable',
+      ]);
+    } catch {}
+  }
+  if (platform === 'android' && longPressTimeout !== undefined) {
+    try {
+      run(adb, [
+        '-s',
+        udid,
+        'shell',
+        'settings',
+        ...(longPressTimeout === 'null'
+          ? ['delete', 'secure', 'long_press_timeout']
+          : ['put', 'secure', 'long_press_timeout', longPressTimeout]),
       ]);
     } catch {}
   }
