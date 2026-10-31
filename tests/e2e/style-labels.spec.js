@@ -88,7 +88,7 @@ for (const [width, height] of sizes) {
   });
 }
 test.describe('at phone pixel density', () => {
-  // Phones draw at 2-3x; desktop 1x text measures wider on Linux CI.
+  // Phones draw at 2-3x.
   test.use({ deviceScaleFactor: 3 });
   test('every style stays readable on nine-seat phone tables in every locale', async ({
     page,
