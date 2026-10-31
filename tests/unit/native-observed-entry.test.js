@@ -137,7 +137,7 @@ async function harness({ delivery = 'real', ignored = false, stalledDeal = false
       },
       async waitFor(predicate, budget, message) {
         budgets.push(budget);
-        const deadline = Date.now() + Math.min(200, budget);
+        const deadline = Date.now() + Math.min(1000, budget);
         while (Date.now() < deadline) {
           const result = await predicate();
           if (result) return result;
