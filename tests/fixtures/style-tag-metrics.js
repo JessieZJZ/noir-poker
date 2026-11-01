@@ -1,5 +1,9 @@
 // Report the actual overflowing glyph/box measurements, not just a boolean.
-export function styleTagFailures({ selector = '#seats .seat-style-label', count = 8 } = {}) {
+export function styleTagFailures({
+  selector = '#seats .seat-style-label',
+  count = 8,
+  minimumFont = 0,
+} = {}) {
   const labels = [...document.querySelectorAll(selector)];
   const failures = [];
   if (labels.length !== count) failures.push(`Expected ${count} style tags, got ${labels.length}`);
@@ -10,7 +14,8 @@ export function styleTagFailures({ selector = '#seats .seat-style-label', count 
       style.whiteSpace !== 'nowrap' ||
       style.textOverflow === 'ellipsis' ||
       label.scrollWidth > label.clientWidth + 1 ||
-      label.scrollHeight > label.clientHeight + 1
+      label.scrollHeight > label.clientHeight + 1 ||
+      parseFloat(style.fontSize) < minimumFont
     )
       failures.push(
         `${document.documentElement.lang}: ${label.textContent}; expected=${label.dataset.fullName}; ` +

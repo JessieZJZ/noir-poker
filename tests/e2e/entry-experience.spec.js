@@ -1,5 +1,17 @@
 import { test, expect, chromium } from '@playwright/test';
 
+test('holding a button never selects its label', async ({ page }) => {
+  await page.goto('/');
+  await page.waitForFunction(() => !!window.qa);
+  await expect(page.locator('#join-table-button')).toBeVisible();
+  const selectable = await page.evaluate(() =>
+    [...document.querySelectorAll('button')]
+      .filter((button) => getComputedStyle(button).userSelect !== 'none')
+      .map((button) => button.id || button.className),
+  );
+  expect(selectable).toEqual([]);
+});
+
 test('all entry locales fit 320px and 390px touch viewports with labelled settings', async ({
   browser,
   baseURL,

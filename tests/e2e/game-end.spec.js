@@ -317,6 +317,40 @@ test('a bot taking the last refill and every other seat in one hand gets the tro
   await expect(page.locator('#session-standing')).toHaveText(`第${view.over.heroPlace}名`);
 });
 
+for (const [ending, finale] of [
+  ['a won game', { heroWins: true }],
+  ['a lost game', { heroWins: false }],
+  ['an out-of-refills game', { heroWins: false, rivals: 3, rebuysUsed: 3 }],
+])
+  test(`reloading after ${ending} waits for the next game with no ending replay`, async ({
+    page,
+  }) => {
+    await page.evaluate((finale) => window.qa.finale(finale), finale);
+    await page.evaluate(() => window.qa.finaleShowdown());
+    const finished = await state(page);
+    expect(finished.over).toBeTruthy();
+    await page.evaluate(finishAnimations);
+    await page.reload();
+    await page.waitForFunction(() => !!window.noir?.getState());
+    const fresh = await state(page);
+    expect(fresh.over).toBeNull();
+    expect(fresh.hand).toBe(0);
+    expect(fresh.phase).toBe('idle');
+    await expect(page.locator('#street-label')).toHaveText(
+      `等待入座，即将开始第 ${finished.sessionNumber + 1} 局第 1 手`,
+    );
+    await expect(page.locator('#session-standing')).toBeHidden();
+    await expect(page.locator('#hero-place')).toBeHidden();
+    await page.waitForTimeout(1200);
+    await expect(
+      page.locator('.trophy-stage, .farewell-stage, .confetti-layer, .champion-trophy'),
+    ).toHaveCount(0);
+    await page.screenshot({ path: test.info().outputPath('reloaded-after-game.png') });
+    // The finished game stays in the records with its result.
+    const records = await page.evaluate(() => JSON.parse(localStorage['noir-game-records-v1']));
+    expect(records.sessions.at(-1).attempts.at(-1).over).toEqual(finished.over);
+  });
+
 test('busting after the last refill ends the game with a place and no champion', async ({
   page,
 }) => {
