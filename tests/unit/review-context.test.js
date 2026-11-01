@@ -124,6 +124,16 @@ test('made straight is not mislabeled as a straight draw; river has no next card
   assert.equal(drawInfo(cards('As Ks'), cards('Qs Js 2h 4d 5c')).outs, 0);
 });
 
+test('the ace is a valid lower end of a 2345 open-ended draw', () => {
+  const draw = drawInfo(cards('5c 2h'), cards('Ts 4s 3s'));
+  assert.equal(draw.straightType, 'open-ended');
+  assert.deepEqual(draw.straightRanks, [6, 14]);
+  assert.equal(draw.outs, 8);
+  const aceEdge = drawInfo(cards('As 2h'), cards('3c 4d Kh'));
+  assert.equal(aceEdge.straightType, 'gutshot');
+  assert.deepEqual(aceEdge.straightRanks, [5]);
+});
+
 test('overpair, top pair kicker and a public pair get different factual descriptions', () => {
   assert.equal(decisionContext(decision()).handClass, 'overpair');
   const top = decisionContext(decision({ hole: 'As Jh' }));
@@ -193,4 +203,65 @@ test('sampling keeps a nonzero protection band even for an observed all-win samp
   });
   assert.equal(r.metrics.method, 'sampling');
   assert.ok(r.metrics.uncertainty > 0);
+});
+
+test('late-position strong folds in an unraised deep pot get a legal conditional active candidate', () => {
+  for (const [hole, limpers] of [
+    ['8s 8h', 1],
+    ['As Jh', 0],
+  ]) {
+    const s = decision({
+      hole,
+      street: 0,
+      board: '',
+      action: 'fold',
+      currentBet: 50,
+      pot: 75 + limpers * 50,
+    });
+    s.players.push({
+      id: 2,
+      name: 'Alex',
+      position: 'UTG',
+      stack: 5000,
+      bet: limpers * 50,
+      total: limpers * 50,
+      folded: false,
+      allin: false,
+    });
+    s.history = limpers ? [{ id: 2, street: 0, action: 'call', amount: 50 }] : [];
+    s.pending = [0, 1];
+    const r = analyzeDecision(s, { trials: 120, rollouts: false });
+    assert.equal(r.code, 'late-unopened-fold');
+    assert.equal(r.status, 'consider');
+    assert.equal(r.alternative.action, 'raise');
+    assert.equal(r.alternative.amount, limpers ? 300 : 250);
+    assert.match(r.coaching.label, /^建议.*(?:开池|加注)至/);
+    assert.equal(r.coaching.assessmentLabel, '需要比较');
+    assert.match(r.coaching.recommendedAction.condition, /较弱起手牌.*弃牌空间/);
+    assert.doesNotMatch(r.coaching.label, /建议弃牌/);
+    const scaled = structuredClone(s);
+    for (const p of scaled.players) for (const key of ['stack', 'bet', 'total']) p[key] *= 4;
+    for (const key of [
+      'stack',
+      'bet',
+      'total',
+      'pot',
+      'currentBet',
+      'minRaise',
+      'bigBlind',
+      'chipUnit',
+    ])
+      scaled[key] *= 4;
+    for (const key of ['chipUnit', 'toCall', 'callAmount', 'minRaiseTo', 'maxRaiseTo'])
+      scaled.legal[key] *= 4;
+    for (const a of scaled.history) a.amount *= 4;
+    const raised = analyzeDecision(scaled, { trials: 120, rollouts: false });
+    assert.equal(raised.alternative.amount, r.alternative.amount * 4);
+  }
+  const early = decision({ hole: 'As Th', street: 0, board: '', action: 'fold', currentBet: 50 });
+  early.position = early.players[0].position = 'UTG';
+  assert.notEqual(
+    analyzeDecision(early, { trials: 120, rollouts: false }).code,
+    'late-unopened-fold',
+  );
 });

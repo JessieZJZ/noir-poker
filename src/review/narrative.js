@@ -12,6 +12,9 @@ import {
   foldPressure,
   foldWinNote,
   pendingRaiseOpportunity,
+  guaranteedUncalledRaise,
+  raiseExposureNote,
+  coversOpponentStacks,
 } from './presentation.js';
 
 const n = compactChips;
@@ -65,8 +68,10 @@ export function investmentText(s, c, price) {
   if (s.action === 'fold')
     return `${before}，这次弃牌不再投入，保留 ${n(s.stack)}，行动前底池 ${n(s.pot)}${price.cost ? '，底池赔率约 ' + ratio.toFixed(2) + ':1' : ''}${price.contestable - price.cost !== s.pot && price.cost ? '（赔率只计算你可争夺的部分）' : ''}`;
   if (s.action === 'check') return `${before}，这次过牌无需投入，当前底池 ${n(s.pot)}`;
-  if (s.action === 'raise')
-    return `${before}，这次${c.extra === s.stack ? '全下' : '加注'}拿出 ${n(c.extra)}，${actionLabel(s)}，行动前底池 ${n(s.pot)}`;
+  if (s.action === 'raise') {
+    const uncalled = guaranteedUncalledRaise(s, s.amount);
+    return `${before}，${actionLabel(s)}${c.extra !== s.amount ? '，本次追加 ' + n(c.extra) : ''}，行动前底池 ${n(s.pot)}${uncalled ? '；其中至少 ' + n(uncalled) + ' 无法被匹配，会退回，可被匹配的新增投入最多 ' + n(c.extra - uncalled) : ''}`;
+  }
   return `${before}，这次${s.legal.callAmount === s.stack ? '跟注全下' : '跟注'}拿出 ${n(c.extra)}，跟注前底池 ${n(s.pot)}${price.cost ? '，底池赔率约 ' + ratio.toFixed(2) + ':1' : ''}${price.contestable - price.cost !== s.pot ? '（赔率只计算你可争夺的部分）' : ''}`;
 }
 
@@ -107,6 +112,30 @@ export function situationEntries(s, c, actorId = 0) {
         kind: 'action-line',
         parts: [
           `${aggression.name}此前在${aggression.priorChecks.map((street) => streets[street]).join('、')}过牌，这次在${streets[aggression.street]}的行动是${aggression.label}，之前的过牌不能排除慢打的强牌，现在也可能是新公共牌带来的取值或诈唬，因此要重新判断这笔下注。`,
+        ],
+      });
+    const callers = (s.history || [])
+      .slice(aggression.index + 1)
+      .filter(
+        (a) => a.street === s.street && a.action === 'call' && a.id !== actorId && a.amount > 0,
+      );
+    const groups = new Map();
+    for (const call of callers) {
+      const names = groups.get(call.amount) || [];
+      names.push(actorAtPosition(s, call.id));
+      groups.set(call.amount, names);
+    }
+    if (groups.size)
+      notes.push({
+        kind: 'callers',
+        parts: [
+          [...groups]
+            .map(
+              ([amount, names]) =>
+                `${names.join('、')}${names.length > 1 ? '均' : ''}跟注 ${n(amount)}`,
+            )
+            .join('；') + '。',
+          '这些跟注者的范围也会影响获池机会，不能只判断下注者是否在诈唬。',
         ],
       });
   }
@@ -180,11 +209,11 @@ export function callOddsText(metrics, action = 'call') {
       : '可以直接过牌，不必再投入筹码。';
   const ratio = (metrics.contestable - metrics.callCost) / metrics.callCost;
   return amount === metrics.callCost
-    ? `${action === 'fold' ? '若跟注' : '跟注'} ${n(amount)} 后可争夺 ${n(metrics.contestable)} 底池，需要至少 ${pct(metrics.required)} 的胜率，风险和收益才能持平。`
-    : `实际再补 ${n(amount)}，算入弃牌与跟注时退回筹码的差额，本次风险为 ${n(metrics.callCost)}。跟注后可争夺 ${n(metrics.contestable)}，底池赔率约 ${ratio.toFixed(2)} : 1，需要至少 ${pct(metrics.required)} 的胜率，风险和收益才能持平。`;
+    ? `${action === 'fold' ? '若跟注' : '跟注'} ${n(amount)} 后可争夺 ${n(metrics.contestable)} 底池。不计后续新增投入，需要至少 ${pct(metrics.required)} 的胜率覆盖这次成本。`
+    : `实际再补 ${n(amount)}，算入弃牌与跟注时退回筹码的差额，本次风险为 ${n(metrics.callCost)}。跟注后可争夺 ${n(metrics.contestable)}，底池赔率约 ${ratio.toFixed(2)} : 1。不计后续新增投入，需要至少 ${pct(metrics.required)} 的胜率覆盖这次成本。`;
 }
 
-export function actionReason(s, r, { conditionalValue = false } = {}) {
+function actionReasonDetail(s, r, { conditionalValue = false } = {}) {
   const c = r.context,
     f = spotFacts(s, c),
     actual = actionLabel(s),
@@ -201,7 +230,7 @@ export function actionReason(s, r, { conditionalValue = false } = {}) {
       return `你拿 ${hand} 在 ${s.position} ${actual}，这次拿出 ${n(f.investment)} 争取 ${n(s.pot)} 的底池。${r.code === 'unbacked-small-pair-reraise' ? '' : foldNote || '面对多次再加注，不能只凭起手牌较强就当作价值加注，继续进攻需要对手有足够会弃牌的组合，被大对子或 AK 等强牌跟注时要承担明显风险。'}`;
     if (plannedValueShove(s, c) && f.shove)
       return `你拿 ${hand} 在 ${s.position} ${actual}，这次拿出 ${n(f.investment)}。${c.valuePlan.reason}`;
-    if (f.shove && f.potRatio > 4) {
+    if (f.shove && f.matchedPotRatio > 4) {
       let rationale;
       if (
         s.street > 0 &&
@@ -217,8 +246,8 @@ export function actionReason(s, r, { conditionalValue = false } = {}) {
         (c.made.score[0] === 0 || ['board', 'board-pair'].includes(c.handClass))
       )
         rationale = foldNote
-          ? `当前缺少能独占底池的强成牌和直接听牌。${foldNote}被跟注时要承担整笔筹码的风险。`
-          : '当前缺少能独占底池的强成牌和直接听牌，这次全下主要依赖对手弃掉更好的牌，被跟注时要承担整笔筹码的风险。';
+          ? `当前缺少能独占底池的强成牌和直接听牌。${foldNote}被跟注时，可被匹配的新增投入仍可能损失。`
+          : '当前缺少能独占底池的强成牌和直接听牌，这次全下主要依赖对手弃掉更好的牌，被跟注时，可被匹配的新增投入仍可能损失。';
       else if (!s.street && c.tier < 2)
         rationale = foldNote
           ? `${foldNote}被强牌跟注后，这手起手牌的胜算会明显下降。`
@@ -226,7 +255,9 @@ export function actionReason(s, r, { conditionalValue = false } = {}) {
       else
         rationale =
           '如此大的尺度会让对手的继续范围更集中于强牌，需要比较较小加注能留下哪些跟注牌。';
-      return `你拿 ${hand} 在 ${s.position} ${actual}，把 ${n(f.investment)}（${(f.investment / bigBlindOf(s)).toFixed(0)} BB）投入当时 ${n(s.pot)} 的底池，是底池的 ${f.potRatio.toFixed(1)} 倍。${rationale}`;
+      return f.guaranteedUncalledInvestment
+        ? `你拿 ${hand} 在 ${s.position} ${actual}。可被匹配的新增投入最多约为行动前底池的 ${f.matchedPotRatio.toFixed(1)} 倍。${rationale}`
+        : `你拿 ${hand} 在 ${s.position} ${actual}，把 ${n(f.investment)}（${(f.investment / bigBlindOf(s)).toFixed(0)} BB）投入当时 ${n(s.pot)} 的底池，是底池的 ${f.potRatio.toFixed(1)} 倍。${rationale}`;
     }
     if (s.street === 0)
       return `你拿 ${hand} 在 ${s.position} ${actual}，这次拿出 ${n(f.investment)} 去争取底池 ${n(s.pot)}。${r.code === 'unbacked-small-pair-reraise' ? '' : c.tier >= 2 ? (conditionalValue ? '' : '这手牌有价值加注的牌力，可以让较弱起手牌付费。') : foldNote ? '这次是再加注诈唬。' + foldNote : f.lastAggression ? '已有加注时，这次是再加注诈唬，需要所有仍在底池里的对手都弃牌，才能直接拿走底池。' : '前面没有开池，这次进攻可以直接争夺盲注，被跟注后再看这手牌的翻后潜力。'}`;
@@ -238,8 +269,8 @@ export function actionReason(s, r, { conditionalValue = false } = {}) {
         c.texture.maxSuit >= 4)
     )
       return foldNote
-        ? `你拿 ${hand}，在 ${f.boardText} 上${actual}，当前${c.handLabel}，牌面${c.texture.label}${c.texture.maxSuit >= 4 && c.made.score[0] < 5 ? '，你没有同花' : ''}。这次拿出 ${n(f.investment)} 是在尝试诈唬。${foldNote}被跟注后，当前牌力很难赢到摊牌。`
-        : `你拿 ${hand}，在 ${f.boardText} 上${actual}，当前${c.handLabel}，牌面${c.texture.label}${c.texture.maxSuit >= 4 && c.made.score[0] < 5 ? '，你没有同花' : ''}。这次拿出 ${n(f.investment)} 是在尝试诈唬，想让更好的牌弃掉，被跟注后，当前牌力很难赢到摊牌。`;
+        ? `你拿 ${hand}，在 ${f.boardText} 上${actual}，当前${c.handLabel}，牌面${c.texture.label}${c.texture.maxSuit >= 4 && c.made.score[0] < 5 ? '，你没有同花' : ''}。这次拿出 ${n(f.investment)} 是在尝试诈唬。${foldNote}被跟注后，当前牌力很难在摊牌时获胜。`
+        : `你拿 ${hand}，在 ${f.boardText} 上${actual}，当前${c.handLabel}，牌面${c.texture.label}${c.texture.maxSuit >= 4 && c.made.score[0] < 5 ? '，你没有同花' : ''}。这次拿出 ${n(f.investment)} 是在尝试诈唬，想让更好的牌弃掉。被跟注后，当前牌力很难在摊牌时获胜。`;
     if (
       s.street < 3 &&
       !draw.outs &&
@@ -273,10 +304,16 @@ export function actionReason(s, r, { conditionalValue = false } = {}) {
     : `你拿 ${hand} 在 ${f.boardText} 上是${c.handLabel}，这次过牌没有增加投入。${s.street === 3 && r.metrics.closing ? '你是河牌最后行动者，过牌后直接摊牌。' : c.pendingOthers ? '本轮还有 ' + c.pendingOthers + ' 人能行动，过牌保留了面对他们下注再决定的机会。' : '对手本轮已行动，你选择保留当前底池大小。'}`;
 }
 
+export function actionReason(s, r, { conditionalValue = false, includeExposure = true } = {}) {
+  const detail = actionReasonDetail(s, r, { conditionalValue });
+  return detail + (includeExposure ? raiseExposureNote(s, r.context.extra) : '');
+}
+
 export function continuationNote(s, c, closing) {
   if (
     s.action === 'fold' ||
     exhaustsStack(s) ||
+    (s.action === 'raise' && coversOpponentStacks(s, s.amount)) ||
     (s.action === 'raise' && s.amount === s.legal.maxRaiseTo) ||
     s.street !== 2 ||
     closing ||
@@ -287,7 +324,7 @@ export function continuationNote(s, c, closing) {
     c.effective <= s.legal.callAmount
   )
     return '';
-  return `你在 ${s.position} 有位置，本次投入后还留 ${n(s.stack - c.extra)}，河牌没补成${drawLabel(c.draw)}时，若对手过牌，且河牌支持你代表更强的成牌，可以考虑转诈唬。对手继续下注时，就要按新的金额决定是否放弃。`;
+  return `你在 ${s.position} 有位置，本次投入后还留 ${n(s.stack - c.extra)}。若河牌未补成${drawCompletion(c.draw)}，且对手过牌、牌面支持你代表更强的成牌，可以考虑转诈唬。若对手继续下注，则按新的金额决定是否放弃。`;
 }
 
 export function publicHistory(s) {

@@ -1,6 +1,7 @@
 import { boardTexture, handFeatures } from '../engine/hand-features.js';
 export { boardTexture } from '../engine/hand-features.js';
 import { deckOfCards, evaluate, compare, rankText } from '../engine/poker.js';
+import { guaranteedUncalledRaise } from './presentation.js';
 
 export function startingTier(hole) {
   if (hole.length !== 2) return 0;
@@ -64,7 +65,7 @@ export function drawInfo(hole, board) {
   const openEnded = Array.from({ length: 9 }, (_, i) => i + 2).some(
     (low) =>
       [0, 1, 2, 3].every((offset) => ranks.has(low + offset)) &&
-      straightRanks.includes(low - 1) &&
+      straightRanks.includes(low === 2 ? 14 : low - 1) &&
       straightRanks.includes(low + 4),
   );
   return {
@@ -131,22 +132,22 @@ export function handContext(s) {
       (rank) => s.board.filter((card) => card.rank === rank).length >= 2,
     );
     const shared = made.score.slice(1, 3).every((rank) => boardPairs.includes(rank));
+    const sharedPair = made.score.slice(1, 3).find((rank) => boardPairs.includes(rank));
     const privatePair = made.score.slice(1, 3).find((rank) => !boardPairs.includes(rank));
     handClass = shared
       ? 'board-pair'
-      : boardPairs.length > 0
+      : sharedPair
         ? pocket
           ? 'underpair'
           : privatePair === high
             ? 'top-pair'
             : 'middle-pair'
         : 'two-pair';
-    const sharedPair = made.score.slice(1, 3).find((rank) => boardPairs.includes(rank));
     handLabel = shared
       ? `两对来自公共牌，${rankText(made.score[3])} 踢脚`
       : sharedPair
         ? `两对：底牌组成 ${rankText(privatePair)} 对，加公共牌 ${rankText(sharedPair)} 对，${rankText(made.score[3])} 踢脚`
-        : made.label;
+        : `两对：${rankText(made.score[1])} 对和 ${rankText(made.score[2])} 对，${rankText(made.score[3])} 踢脚`;
   } else if (made.score[0] === 1) {
     if (pocket) {
       handClass = 'underpair';
@@ -187,7 +188,9 @@ export function decisionContext(s) {
     ).length;
   const effective = Math.min(s.stack, Math.max(0, ...opponents.map((p) => p.stack))),
     spr = s.pot ? effective / s.pot : 0,
-    extra = s.action === 'raise' ? s.amount - s.bet : s.action === 'call' ? s.legal.callAmount : 0;
+    extra = s.action === 'raise' ? s.amount - s.bet : s.action === 'call' ? s.legal.callAmount : 0,
+    guaranteedUncalled = s.action === 'raise' ? guaranteedUncalledRaise(s, s.amount) : 0,
+    matchedExtra = Math.max(0, extra - guaranteedUncalled);
   const raises = s.history.filter((a) => a.action === 'raise'),
     preflopRaises = raises.filter((a) => a.street === 0),
     facingRaise = raises.filter((a) => a.street === s.street).at(-1),
@@ -215,6 +218,9 @@ export function decisionContext(s) {
     spr,
     extra,
     betRatio: s.pot ? extra / s.pot : 0,
+    guaranteedUncalledRaise: guaranteedUncalled,
+    matchedExtra,
+    matchedBetRatio: s.pot ? matchedExtra / s.pot : 0,
     preflopRaises: preflopRaises.length,
     facingRaise,
     pastCalls,

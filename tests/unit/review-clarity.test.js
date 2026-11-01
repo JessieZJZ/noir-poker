@@ -63,7 +63,7 @@ test('key information uses the agreed price wording and before-action values', (
   assert.deepEqual(r.evidence.slice(2), [
     '翻牌前加注 2 次，本轮还有 0 位对手等待回应',
     '行动前你手里有 2.65M，这次跟注拿出 140K，跟注前底池 460K，底池赔率约 3.29:1',
-    '跟注 140K 后可争夺 600K 底池，需要至少 23.3% 的胜率，风险和收益才能持平。',
+    '跟注 140K 后可争夺 600K 底池。不计后续新增投入，需要至少 23.3% 的胜率覆盖这次成本。',
     '入池情境：最高 3-bet，跛入 0 人',
   ]);
   assert.deepEqual(s, before);
@@ -78,8 +78,8 @@ test('fold, check, raise and both kinds of all-in state actual cost without inve
   const variants = [
     ['fold', 0, /弃牌不再投入.*保留 2.65M/, /若跟注 140K 后/],
     ['check', 0, /过牌无需投入.*460K/, null],
-    ['raise', 400000, /加注拿出 340K.*4-bet 加注至 400K/, null],
-    ['raise', 2710000, /全下拿出 2.65M.*全下至 2.71M/, null],
+    ['raise', 400000, /4-bet 加注至 400K.*本次追加 340K/, null],
+    ['raise', 2710000, /全下至 2.71M.*本次追加 2.65M/, null],
   ];
   for (const [action, amount, expected, price] of variants) {
     const s = reportedKeyInfoCall();
@@ -89,7 +89,7 @@ test('fold, check, raise and both kinds of all-in state actual cost without inve
     const r = analyzeDecision(s, options);
     assert.match(r.evidence[3], expected);
     if (price) assert.match(r.evidence.join(' '), price);
-    else assert.doesNotMatch(r.evidence.join(' '), /风险和收益才能持平/);
+    else assert.doesNotMatch(r.evidence.join(' '), /风险和收益才能持平|覆盖这次成本/);
   }
   const call = reportedKeyInfoCall();
   call.stack = call.players[0].stack = 140000;

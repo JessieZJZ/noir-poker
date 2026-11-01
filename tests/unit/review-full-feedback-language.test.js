@@ -23,8 +23,10 @@ test('a final-action strong check combines free-card cost and closing instead of
   });
   const text = summary(explainOpponent(record));
   assert.equal((text.match(/免费见(?:到)?下一张/g) || []).length, 1);
-  assert.match(text, /最后行动.*不能诱导本轮下注.*免费见下一张.*补成更强牌/);
-  assert.match(text, /较弱成牌.*价值/);
+  assert.match(text, /最后行动.*免费见下一张.*补成更强牌/);
+  assert.doesNotMatch(text, /不能诱导本轮下注/);
+  assert.match(text, /保留后手和摊牌竞争力/);
+  assert.doesNotMatch(text, /少收一轮价值/);
 });
 
 function preflop(hole) {

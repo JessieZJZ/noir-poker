@@ -1,5 +1,6 @@
 import { compactChips } from '../engine/chip-format.js';
 import { publicPostflopLine } from '../engine/public-story.js';
+import { historyActionLabel } from '../engine/action-labels.js';
 import { cardText } from './spot-facts.js';
 import { REVIEW_TOPICS as TOPIC, proseCoverage } from './prose-topics.js';
 
@@ -83,12 +84,33 @@ function rangeNote(s, assessment, f) {
     return null;
   const preflop = f.history.filter((a) => a.street === 0);
   const own = preflop.findLast((a) => a.id === f.id && ['call', 'raise'].includes(a.action));
-  const other = preflop.findLast((a) => a.id !== f.id && ['call', 'raise'].includes(a.action));
+  const other = preflop.findLast(
+    (a) => a.id === f.opponents[0].id && ['call', 'raise'].includes(a.action),
+  );
   if (!own || !other) return null;
-  const ownLine = own.action === 'raise' ? '翻前加注' : '翻前跟注';
-  const otherLine = other.action === 'raise' ? '加注' : '跟注';
+  const preLine = (id, last) => {
+    const raises = preflop.filter((a) => a.id === id && a.action === 'raise');
+    if (!raises.length) return '跟注';
+    const active = raises.length > 1 ? '多次加注' : '加注';
+    return last.action === 'call' ? `${active}后又跟注` : active;
+  };
+  const ownLine = preLine(f.id, own);
+  const otherLine = preLine(f.opponents[0].id, other);
+  const later = f.history.flatMap((a, index) => {
+    if (a.street < 1 || a.action !== 'raise' || ![f.id, f.opponents[0].id].includes(a.id))
+      return [];
+    if (
+      f.history.some(
+        (b, next) => next > index && b.street === a.street && b.id === a.id && b.action === 'raise',
+      )
+    )
+      return [];
+    return `${['', '翻牌', '转牌', '河牌'][a.street]}${a.id === f.id ? f.subject : '对手'}${historyActionLabel(f.history, index)}`;
+  });
   const ahead = range.advantage > 0;
-  const context = `此前${f.subject}${ownLine}、对手${otherLine}，在 ${cardText(f.board)} 上，按这两条行动线估计，${f.subject}可能持有的整组牌整体${ahead ? '更强' : '较弱'}`;
+  const opening = `此前${f.subject}翻前${ownLine}、对手${otherLine}。`;
+  const followup = later.length ? `后续公开加注包括${later.join('、')}。` : '';
+  const context = `${opening}${followup}在 ${cardText(f.board)} 上，结合双方截至当前的公开行动估计，${f.subject}可能持有的整组牌整体${ahead ? '更强' : '较弱'}`;
   const consequence =
     f.action === 'raise'
       ? ahead
@@ -250,8 +272,18 @@ function drawNote(s, f) {
         ? '同花听牌'
         : '顺子听牌';
   const target = f.draw.comboDraw ? '同花或顺子' : f.draw.flushDraw ? '同花' : '顺子';
+  const quadBlocked =
+    !f.draw.flushDraw &&
+    !f.draw.comboDraw &&
+    ![...new Set(s.board.map((c) => c.rank))].some((rank) => {
+      const publicCount = s.board.filter((c) => c.rank === rank).length;
+      const privateCount = s.hole.filter((c) => c.rank === rank).length;
+      return publicCount >= 2 && privateCount === 0;
+    });
   const risk = f.draw.pairedBoard
-    ? `公共牌已配对，补成${target}仍可能输给葫芦、四条。`
+    ? quadBlocked
+      ? `公共牌已配对，补成${target}仍可能输给葫芦。`
+      : `公共牌已配对，补成${target}仍可能输给葫芦、四条。`
     : f.draw.nutFlushDraw
       ? '补中时能争取最大同花，仍要随新牌面判断。'
       : '补成目标牌型后，仍要确认有没有更强的牌。';

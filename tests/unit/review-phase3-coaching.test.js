@@ -169,6 +169,65 @@ test('a small middle-pair bet admits conditional thin value and protection witho
   assert.doesNotMatch(text, /这次下注主要需要更好的牌弃掉/);
 });
 
+test('a small river middle-pair bet never charges draws or denies a future card', () => {
+  const s = spot({ hole: '8h Tc', board: 'Ks 6h 3d 8s Qh', action: 'raise', amount: 200 });
+  const r = review(s, { code: 'value-check', action: { action: 'check', amount: 0 } });
+  const text = summary(coachDecision(s, r));
+  assert.match(text, /河牌已发完，听牌没有继续补牌的机会/);
+  assert.doesNotMatch(text, /听牌付费|高张放弃免费改善|免费见下一张/);
+});
+
+test('an overpot high-card draw raise keeps a concrete action but carries its fold-equity assumption', () => {
+  const s = spot({
+    hole: '6c Kd',
+    board: 'Td 7s 5d 9c',
+    action: 'raise',
+    amount: 850,
+    stack: 850,
+    pot: 525,
+  });
+  const r = review(s, {
+    code: 'semi-bluff',
+    status: 'sound',
+    action: { action: 'raise', amount: 850 },
+  });
+  const c = coachDecision(s, r);
+  assert.deepEqual(
+    { action: c.recommendedAction.action, amount: c.recommendedAction.amount },
+    { action: 'raise', amount: 850 },
+  );
+  assert.equal(c.recommendationConditional, true);
+  assert.notEqual(c.assessmentLabel, '值得保留');
+  assert.match(c.label, /建议全下至 850/);
+  assert.match(c.recommendedAction.condition, /共同弃牌空间/);
+  assert.match(summary(c), /强牌跟注.*补牌较难弥补投入/);
+});
+
+test('a costly non-premium preflop call preserves its action and states the wide-range assumption', () => {
+  const s = spot({
+    hole: 'Ks Qs',
+    board: '',
+    action: 'call',
+    amount: 1950,
+    cost: 1950,
+    stack: 5000,
+  });
+  Object.assign(s, { smallBlind: 25, bigBlind: 50, chipUnit: 25, bet: 50, total: 50 });
+  s.legal.maxRaiseTo = 5050;
+  s.history = [{ id: 1, street: 0, action: 'raise', amount: 2000 }];
+  const r = review(s, {
+    code: 'priced-call',
+    status: 'sound',
+    action: { action: 'call', amount: 1950 },
+  });
+  const c = coachDecision(s, r);
+  assert.equal(c.recommendedAction.action, 'call');
+  assert.match(c.label, /建议跟注/);
+  assert.equal(c.recommendationConditional, true);
+  assert.match(c.recommendedAction.condition, /这个大尺度.*较弱牌/);
+  assert.match(summary(c), /大额翻前跟注依赖对手/);
+});
+
 test('a raise over limpers describes isolation rather than uncontested blind stealing', () => {
   const s = spot({ hole: 'Jc 4d', board: '', action: 'raise', amount: 400 });
   s.history = [{ id: 1, street: 0, action: 'call', amount: 200 }];
@@ -386,6 +445,126 @@ test('folding a low flush draw explains why formal completion chance above the p
   const text = summary(coachDecision(s, r));
   assert.match(text, /18.8%.*不是最大同花听牌.*更高的同花/);
   assert.match(text, /多位对手.*连续多街下注/);
+});
+
+for (const [line, history] of [
+  [
+    'preflop raise followed by a delayed turn bet',
+    [
+      { id: 1, street: 0, action: 'raise', amount: 200 },
+      { id: 1, street: 1, action: 'check', amount: 0 },
+      { id: 1, street: 2, action: 'raise', amount: 150 },
+    ],
+  ],
+  [
+    'different opponents betting on adjacent streets',
+    [
+      { id: 2, street: 1, action: 'raise', amount: 50 },
+      { id: 1, street: 1, action: 'call', amount: 50 },
+      { id: 1, street: 2, action: 'raise', amount: 150 },
+    ],
+  ],
+]) {
+  test(`a draw-fold review does not invent consecutive pressure from ${line}`, () => {
+    const s = spot({ hole: 'Qs Td', board: 'Kc As 9d 6d', action: 'fold', cost: 150 });
+    s.history = history;
+    const r = review(s, { code: 'draw-fold', action: { action: 'fold', amount: 0 } });
+    const text = summary(coachDecision(s, r));
+    assert.doesNotMatch(text, /连续多街下注/);
+    assert.match(text, /补成目标牌型不等于一定赢/);
+  });
+}
+
+test('folding suited connectors does not leave the actor a later response in the hand', () => {
+  const s = spot({ hole: 'Js Ts', board: '', action: 'fold', cost: 500, pending: [0, 2] });
+  s.history = [{ id: 1, street: 0, action: 'raise', amount: 500 }];
+  s.players.push({ id: 2, name: '后位', position: 'BTN', stack: 20000, bet: 0, total: 0 });
+  const r = review(s, { code: 'tight-fold', action: { action: 'fold', amount: 0 } });
+  const text = summary(coachDecision(s, r));
+  assert.doesNotMatch(text, /你需要重新决定是否继续|后面的玩家若再加注.*你还要/);
+});
+
+test('not being last to act does not imply acting first in a multiway preflop call', () => {
+  const s = spot({ hole: 'As Jh', board: '', action: 'call', amount: 200, cost: 200 });
+  s.position = 'CO';
+  s.players[0].position = 'CO';
+  s.players[1].position = 'SB';
+  s.players.push({ id: 2, name: '后位', position: 'BTN', stack: 20000, bet: 0, total: 0 });
+  const r = review(s, { code: 'value-call', action: { action: 'call', amount: 200 } });
+  assert.equal(r.context.inPosition, false);
+  const text = summary(coachDecision(s, r));
+  assert.match(text, /对手在你后面行动.*实际入池阵容/);
+  assert.doesNotMatch(text, /通常先行动/);
+});
+
+test('facing a bet and two calls includes both callers in one public-line clause', () => {
+  const s = spot({ hole: 'Qs 7d', board: 'Kc Td 2c 2h', action: 'call', amount: 75, cost: 75 });
+  s.players[1].name = 'Mia';
+  s.players.push(
+    { id: 2, name: 'Alex', position: 'UTG', stack: 2000, bet: 75, total: 100 },
+    { id: 3, name: 'River', position: 'CO', stack: 2000, bet: 75, total: 100 },
+  );
+  s.history = [
+    { id: 1, street: 2, action: 'raise', amount: 75 },
+    { id: 2, street: 2, action: 'call', amount: 75 },
+    { id: 3, street: 2, action: 'call', amount: 75 },
+  ];
+  const r = review(s, { code: 'weak-call', action: { action: 'fold', amount: 0 } });
+  const text = summary(coachDecision(s, r));
+  assert.match(text, /Alex在 UTG 位、River在 CO 位均跟注 75/);
+  assert.match(text, /跟注者的范围也会影响获池机会/);
+  assert.equal((text.match(/均跟注 75/g) || []).length, 1);
+});
+
+test('a preflop raise covering every opponent does not invent a later re-raise', () => {
+  const s = spot({ hole: 'As Ks', board: '', action: 'raise', amount: 800, cost: 200 });
+  s.players[1].bet = 200;
+  s.players[1].total = 200;
+  s.players[1].stack = 600;
+  s.history = [{ id: 1, street: 0, action: 'raise', amount: 200 }];
+  const r = review(s, {
+    code: 'unbacked-high-card-reraise',
+    action: { action: 'raise', amount: 800 },
+  });
+  const text = summary(coachDecision(s, r));
+  assert.match(text, /覆盖所有未弃牌对手.*跟注就会全下.*不再有后续下注/);
+  assert.doesNotMatch(text, /若再被加注|判断后续投入/);
+});
+
+test('a recommended all-in replacing an actual call has an all-in practice plan', () => {
+  const s = spot({
+    hole: 'Qs Qd',
+    board: '',
+    action: 'call',
+    amount: 1350,
+    cost: 1350,
+    stack: 6750,
+  });
+  s.bet = 1150;
+  s.legal.maxRaiseTo = 7900;
+  s.history = [
+    { id: 0, street: 0, action: 'raise', amount: 1150 },
+    { id: 1, street: 0, action: 'raise', amount: 2500 },
+  ];
+  const r = review(s, {
+    code: 'value-reraise',
+    status: 'consider',
+    action: { action: 'raise', amount: 7900 },
+  });
+  const c = coachDecision(s, r);
+  assert.equal(c.recommendedAction.amount, 7900);
+  assert.match(c.followUp, /全下会用完剩余 6.75K.*不再参与下注或弃牌决策/);
+  assert.doesNotMatch(c.followUp + summary(c), /遇到再次加注也须|下一街还要面对/);
+});
+
+test('the lowest bottom pair does not invent weaker made hands it can beat', () => {
+  const s = spot({ hole: '2h 4s', board: 'Ts 9h 8h 2d', action: 'call', amount: 100, cost: 100 });
+  const r = review(s, { code: 'pair-call', action: { action: 'call', amount: 100 } });
+  r.context.matchups = handMatchups(s, r.context);
+  assert.deepEqual(r.context.matchups.weakerMadeCategories, [0]);
+  const text = summary(coachDecision(s, r));
+  assert.match(text, /当前成牌能争取赢过未成牌的诈唬/);
+  assert.doesNotMatch(text, /赢过较弱成牌/);
 });
 
 test('a pending response after a short all-in does not invent a reopened raise', () => {

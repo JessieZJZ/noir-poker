@@ -306,7 +306,9 @@ test('69o BTN three-bet and Mia AQo four-bet explain the actual limper, opener a
   assert.match(hero, /Luna|CO/);
   assert.match(hero, /200/);
   assert.match(hero, /River|跛入|跟注 50/);
-  assert.doesNotMatch(hero, /EV|模型|模拟器|随机范围|有效剩余|新增投入|尚(?:可)?行动 0|0 人尚/);
+  assert.doesNotMatch(hero, /EV|模型|模拟器|随机范围|有效剩余|尚(?:可)?行动 0|0 人尚/);
+  assert.match(hero, /为 325 的底池承担最多 350 的可匹配新增投入/);
+  assert.doesNotMatch(hero, /ctx\.|matchedExtra|matchedBetRatio/);
   assert.doesNotMatch(result.evidence.join(''), /权益.*%|跟注.*赔率|盈亏平衡/);
   assert.match(result.evidence.join(''), /5K/);
   assert.match(result.evidence.join(''), /350/);

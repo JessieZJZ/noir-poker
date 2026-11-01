@@ -16,7 +16,14 @@ function computeBoardTexture(board) {
     paired = [...counts.values()].some((n) => n >= 2),
     trips = [...counts.values()].some((n) => n >= 3);
   const tags = [];
-  if (paired) tags.push(trips ? '公共牌三条' : '公共牌有对子');
+  if (paired)
+    tags.push(
+      [...counts.values()].some((n) => n === 4)
+        ? '公共牌四条'
+        : trips
+          ? '公共牌三条'
+          : '公共牌有对子',
+    );
   if (maxSuit === 5) tags.push('五张同花色');
   else if (maxSuit === 4) tags.push('四张同花色');
   else if (maxSuit === 3) tags.push('三张同花色');

@@ -6,13 +6,15 @@ import { decisionContext } from './context.js';
 import { drawLabel, drawCompletion, publicHistory, preflopPotential } from './narrative.js';
 import { spotFacts } from './spot-facts.js';
 import { rangeNoteClauses, handMatchups } from './matchups.js';
-import { publicStoryNotes } from './public-story.js';
+import { publicStoryNotes, priorCallingLeadNotes } from './public-story.js';
 import { actorAtPosition, actorName } from '../engine/player-identity.js';
 import { foldPressure, foldWinNote } from './presentation.js';
 import { checkReasoning, checkRisks, madeRedrawReasoning } from './check-reasoning.js';
 import { currentStreetCallers, defenseReason, straightSplitReason } from './defense-reason.js';
 import { enrichStrategy } from './strategy-context.js';
 import { REVIEW_TOPICS as TOPIC } from './prose-topics.js';
+import { showdownTargets } from './value-targets.js';
+import { raiseExposureNote } from './presentation.js';
 
 const pct = (v) => (v * 100).toFixed(1) + '%';
 const n = compactChips;
@@ -317,10 +319,7 @@ export function explainOpponent(record, identities = []) {
         : c.handClass === 'board-pair'
           ? '公共牌组成的牌型与底牌踢脚'
           : c.handLabel.split(/[，：]/)[0],
-    summaryMade =
-      c.handClass === 'board-pair'
-        ? `公共对子 ${rankText(c.made.score[1])}，底牌参与踢脚比较`
-        : c.handLabel,
+    summaryMade = c.handLabel,
     summaryHand = draw.outs ? `${summaryMade}，带${drawLabel(draw)}` : summaryMade,
     cost = v.legal.callAmount,
     allinCall = record.action === 'call' && cost === v.stack,
@@ -347,7 +346,7 @@ export function explainOpponent(record, identities = []) {
         ? '跟注'
         : actionLabel(snapshot),
     aggression = f.lastAggression?.street === v.street ? f.lastAggression : null,
-    story = publicStoryNotes(snapshot),
+    story = [...publicStoryNotes(snapshot), ...priorCallingLeadNotes(snapshot, plainName)],
     actionEnd =
       usePolicyReason && t.reason === 'price-continue' && draw.outs && !t.allIn ? '，' : '。',
     prefix = v.street
@@ -383,6 +382,12 @@ export function explainOpponent(record, identities = []) {
       break;
     case 'outside-range':
     case 'insufficient-equity':
+      if (!v.street && !c.preflopRaises) {
+        logic = cost
+          ? `${subject}拿${hand}继续要补 ${n(cost)} 才能跟齐大盲，这手牌未进入当时的入池范围，因此选择弃牌。`
+          : `${subject}没有用${hand}继续参与这手牌，选择弃牌。`;
+        break;
+      }
       if (draw.outs) {
         const ownMade = c.made.score[0] >= 1 && !['board', 'board-pair'].includes(c.handClass);
         const callers = currentStreetCallers(snapshot);
@@ -406,7 +411,7 @@ export function explainOpponent(record, identities = []) {
       }
       logic = !v.street
         ? `${subject}拿${hand}继续要补 ${n(cost)}，按当时对加注范围的估计选择退出，没有支付这笔跟注。`
-        : `继续要补 ${n(cost)}，${subject}没有用${hand}接住这笔下注。${v.street === 3 ? '河牌已发完，当前只有高牌，主要需要对手的未成牌诈唬才能赢到摊牌，这次放弃继续投入。' : '当前没有对子，也没有直接顺子或同花听牌托底，因此放弃继续投入。'}`;
+        : `继续要补 ${n(cost)}，${subject}没有用${hand}接住这笔下注。${v.street === 3 ? '河牌已发完，当前只有高牌，主要能赢过对手未成牌的诈唬，因此放弃继续投入。' : '当前没有对子，也没有直接顺子或同花听牌托底，因此放弃继续投入。'}`;
       break;
     case 'stack-pressure':
       logic = `补 ${n(cost)} 会用掉${subject}剩余 ${n(v.stack)} 的 ${pct(cost / Math.max(1, v.stack))}，${subject}选择保住后手，没有接这笔大额投入。`;
@@ -523,7 +528,7 @@ export function explainOpponent(record, identities = []) {
           logic = logicParts.join('');
         }
       } else if (c.made.score[0] >= 1 && !['board', 'board-pair'].includes(c.handClass))
-        logic = `这是用 ${hand} 取值：这次拿出 ${n(f.investment)}，希望更弱成牌${v.street < 3 && (draw.outs || wet) ? '或听牌' : ''}付费。${v.street === 3 ? '河牌已经发完，价值来自较弱成牌愿意跟注。' : v.hole[0].rank === v.hole[1].rank && c.made.score[0] <= 2 ? '愿意继续的高张也需要付出筹码，不能免费观察下一张。' : wet ? '牌面有同花或顺子连接，下注也让追牌的人付出成本。' : '牌面较干燥，价值主要来自更弱成牌的跟注。'}`;
+        logic = `这是用 ${hand} 取值：这次拿出 ${n(f.investment)}，希望更弱成牌${v.street < 3 && (draw.outs || wet) ? '或听牌' : ''}付费。${v.street === 3 ? '' : v.hole[0].rank === v.hole[1].rank && c.made.score[0] <= 2 ? '愿意继续的高张也需要付出筹码，不能免费观察下一张。' : wet ? '牌面有同花或顺子连接，下注也让追牌的人付出成本。' : '牌面较干燥，价值主要来自更弱成牌的跟注。'}`;
       else
         logic = `${subject}只有${hand}，却按价值牌进攻了 ${n(f.investment)}，没有明确的弱成牌付费依据，这次把牌力看得过于乐观。`;
       if (v.street > 0 && checkRisks(snapshot, c).length) {
@@ -572,7 +577,14 @@ export function explainOpponent(record, identities = []) {
         if (c.pendingOthers > 0)
           checkNotes.push('过牌也可能是在等后位先下注，给对手继续投入的机会。');
         if (c.opponents > 1) checkNotes.push('多人底池里，这手成牌并不是坚果。');
-        if (wet) checkNotes.push('湿润面过牌的代价，是可能让顺子或同花听牌免费看下一张。');
+        if (wet) {
+          const draws = [
+            c.texture.connected >= 2 ? '顺子听牌' : '',
+            c.texture.maxSuit >= 2 ? '同花听牌' : '',
+          ].filter(Boolean);
+          if (draws.length)
+            checkNotes.push(`湿润面过牌的代价，是可能让${draws.join('或')}免费看下一张。`);
+        }
       } else
         logic = draw.outs
           ? `可以直接过牌，不必再投入筹码，先过牌保留${drawLabel(draw)}的补牌机会，${drawText}。`
@@ -656,7 +668,7 @@ export function explainOpponent(record, identities = []) {
           ? '底牌没有提高公共牌的牌力，这次主要争取平分底池'
           : draw.outs
             ? ownMade
-              ? `当前已有${c.handLabel}，仍可能赢过较弱成牌或未成牌的诈唬，另外还有${drawLabel(draw)}，成牌和补牌共同提供摊牌机会`
+              ? `当前已有${c.handLabel}，仍可能赢过${showdownTargets(c)}，另外还有${drawLabel(draw)}，成牌和补牌共同提供摊牌机会`
               : `当前主要依靠${drawLabel(draw)}改善，而不是只靠${hand}取胜`
             : `${subject}用当前${hand}争取摊牌获胜`;
     logicParts = [
@@ -698,19 +710,27 @@ export function explainOpponent(record, identities = []) {
       logic = logicParts.join('');
     }
   }
+  const exposure = raiseExposureNote(snapshot, c.extra);
+  if (exposure) {
+    logicParts = [...(logicParts || [logic]), exposure];
+    logic = logicParts.join('');
+  }
   const reasons = [];
-  if (record.action === 'raise' && f.shove && v.legal.isShortAllin)
-    checkNotes.push('这是不足完整加注的全下，对已经行动的玩家不一定重新开放加注权。');
-  if (usePolicyReason && t.exceptions?.length && t.reason !== 'loose-exception')
+  if (
+    usePolicyReason &&
+    ['call', 'raise'].includes(record.action) &&
+    t.exceptions?.length &&
+    t.reason !== 'loose-exception'
+  )
     reasons.push(
-      `面对这笔加注，${name}选择较宽地继续，这手${hand}被更强的牌跟注后，仍会承受牌力不足的风险。`,
+      `${name}这次放宽了继续范围，这手${hand}被更强的牌继续时，仍会承受牌力不足的风险。`,
     );
   if (usePolicyReason && t.mode && t.mode !== 'off' && t.mood && t.mood.kind !== 'steady') {
     if (t.mood.kind === 'cautious')
-      reasons.push(`${name}这次带有收紧避险倾向，选择时更看重控制投入。`);
+      reasons.push(`${name}本手处于收紧避险的模拟情绪状态，选择时更看重控制投入。`);
     else if (record.action === 'call' || record.action === 'raise')
       reasons.push(
-        `${name}这次带有${MOOD_LABELS[t.mood.kind]}倾向，因此更愿意继续跟注或主动进攻。`,
+        `${name}本手处于${MOOD_LABELS[t.mood.kind]}的模拟情绪状态，因此更愿意继续跟注或主动进攻。`,
       );
   }
   const recorded = usePolicyReason && basisMatches,

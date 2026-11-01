@@ -55,6 +55,55 @@ function record(hole, board, reason, options = {}) {
 
 const summary = (r) => explainOpponent(r).paragraphs.at(-1);
 
+test('a paired ace-seven-seven flop can offer flush draws but not direct straight draws', () => {
+  const r = record('As 6h', 'Ah 7s 7h', 'free-check', { action: 'check', cost: 0, pending: [0] });
+  const text = summary(r);
+  assert.match(text, /同花听牌免费看下一张/);
+  assert.doesNotMatch(text, /顺子.*听牌免费/);
+});
+
+for (const [board, expected] of [
+  ['6s 8d 6c 8c 9s', /两对来自公共牌，A 踢脚/],
+  ['6d 3c 8d 6s 6h', /三条来自公共牌，A \/ Q 踢脚/],
+  ['3h 9d 3c 3s 3d', /四条来自公共牌，A 踢脚/],
+]) {
+  test(`an opponent summary preserves the actual shared hand on ${board}`, () => {
+    const r = record('Qc Ah', board, 'free-check', { action: 'check', cost: 0 });
+    const text = summary(r);
+    assert.match(text, expected);
+    assert.doesNotMatch(text, /公共对子/);
+    if (board === '3h 9d 3c 3s 3d') {
+      const texture = explainOpponent(r).matchups.boardParts.join('');
+      assert.match(texture, /公共牌四条/);
+      assert.doesNotMatch(texture, /公共牌三条/);
+    }
+  });
+}
+
+for (const hole of ['Ks 9c', 'Tc Td']) {
+  test(`an unraised preflop fold with ${hole} does not invent an opponent raising range`, () => {
+    const r = record(hole, '', 'outside-range', {
+      action: 'fold',
+      cost: 50,
+      stack: 5000,
+      pot: 75,
+      position: 'UTG',
+      bigBlind: 50,
+      history: [],
+      opponents: [{ id: 0, position: 'BB', stack: 4950, bet: 50, total: 50, allin: false }],
+    });
+    const text = summary(r);
+    assert.match(text, /补 50 才能跟齐大盲.*当时的入池范围/);
+    assert.doesNotMatch(text, /加注范围|面对.*加注|接.*下注/);
+    r.trace.exceptions = ['outside-range'];
+    const withEarlierException = explainOpponent(r);
+    assert.doesNotMatch(
+      withEarlierException.reasons.join('') + withEarlierException.detail,
+      /放宽了继续范围|选择较宽地继续|面对这笔加注/,
+    );
+  });
+}
+
 test('an opponent closing the turn call keeps its draw and price without coaching the river', () => {
   const r = record('8s 7c', 'Tc 6c Kd 4d', 'legacy-unknown', {
     cost: 400,

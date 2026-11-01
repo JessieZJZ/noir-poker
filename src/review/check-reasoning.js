@@ -1,4 +1,5 @@
 import { compare, deckOfCards, evaluate, rankText } from '../engine/poker.js';
+import { showdownTargets } from './value-targets.js';
 
 // Card facts and before-action order only. No rival private cards or runout.
 export function checkRisks(s, c) {
@@ -49,6 +50,22 @@ export function checkRisks(s, c) {
         `公共牌的连接也让对手同时持有 ${rankText(candidates[0][0] === 1 ? 14 : candidates[0][0])} 和 ${rankText(candidates[0][1] === 1 ? 14 : candidates[0][1])} 时可以组成顺子，领先当前成牌。`,
       );
   }
+  if (score === 6) {
+    const pairs = [...new Set(s.board.map((card) => card.rank))].filter(
+      (rank) => s.board.filter((card) => card.rank === rank).length >= 2,
+    );
+    const higher = pairs.find(
+      (rank) =>
+        rank > c.made.score[1] &&
+        [...s.board, ...s.hole].filter((card) => card.rank === rank).length < 4,
+    );
+    if (pairs.length >= 2 && higher)
+      clauses.push(
+        `公共牌的 ${rankText(higher)} 对配合对手底牌中的 ${rankText(higher)}，能组成三张 ${rankText(higher)} 的更大葫芦，领先当前三张 ${rankText(c.made.score[1])} 的葫芦。`,
+      );
+    if (c.matchups?.strongerMadeCategories?.includes(7))
+      clauses.push('对手仍可能组成四条，领先当前葫芦。');
+  }
   if (c.texture.paired && score >= 3 && score < 6) {
     const quadPossible = [...new Set(s.board.map((card) => card.rank))].some((rank) => {
       const publicCount = s.board.filter((card) => card.rank === rank).length;
@@ -88,19 +105,22 @@ export function checkReasoning(s, c, { trap = false, closingExplained = false } 
   if (!s.street || c.handClass === 'board') return [];
   const risks = checkRisks(s, c);
   const strong = c.made.score[0] >= 3;
-  const valueHolding = strong || c.handClass === 'overpair';
+  const valueHolding = strong || ['overpair', 'two-pair'].includes(c.handClass);
   const freeCardCost = s.street < 3 && (valueHolding || c.handClass === 'top-pair');
   const closing =
     s.street === 3
-      ? '这是本轮最后行动，过牌后直接摊牌，已经不能诱导本轮下注。'
+      ? '这是本轮最后行动，过牌后直接摊牌。'
       : freeCardCost
-        ? '这是本轮最后行动，已经不能诱导本轮下注，过牌让双方免费见下一张，也给了对手补成更强牌的机会。'
-        : '这是本轮最后行动，过牌后免费见下一张，已经不能诱导本轮下注。';
+        ? '这是本轮最后行动，过牌让双方免费见下一张，也给了对手补成更强牌的机会。'
+        : '这是本轮最后行动，过牌后免费见下一张。';
   const parts = [...risks];
-  if (c.draw.outs)
+  if (c.draw.outs) {
+    if (c.made.score[0] === 0 || ['board', 'board-pair'].includes(c.handClass))
+      parts.push('当前主要依靠听牌改善，过牌让本轮不增加投入。');
     parts.push(
       `目前仍有 ${c.draw.outs} 张牌可能补成${c.draw.flush && c.draw.straight ? '同花或顺子' : c.draw.flush ? '同花' : '顺子'}，但这些是成牌补牌，不保证补中后领先对手。`,
     );
+  }
   // The observer panel explains this check; it does not coach the actor's
   // next decision. Keep board facts, the cost of checking and recorded traps.
   if (s.reviewAudience === 'observer') {
@@ -109,12 +129,16 @@ export function checkReasoning(s, c, { trap = false, closingExplained = false } 
       parts.push('后面还有玩家可以下注，过牌为诱导其弱牌或诈唬继续投入留下机会。');
     else if (valueHolding)
       parts.push(
-        '过牌避免主动扩大当前底池。',
-        '这手强成牌仍有向较弱成牌收取跟注的空间，过牌可能少收一轮价值。',
+        c.pendingOthers > 0
+          ? '强成牌随过牌保留在局中，也给后面的玩家主动投入较弱牌或诈唬的机会。'
+          : '这次选择让本轮下注结束，以当前强成牌保留后手和摊牌竞争力。',
       );
     else if (c.made.score[0] === 0 && !c.draw.outs)
       parts.push('目前只有高牌，较难让更弱成牌付费，过牌避免用薄弱牌力主动做大底池。');
-    else if (!c.draw.outs) parts.push('过牌避免主动扩大当前底池。');
+    else if (!c.draw.outs)
+      parts.push(
+        `当前成牌主要争取赢过${showdownTargets(c)}，过牌保留摊牌机会，而不现在要求对手付费。`,
+      );
     if (risks.length) parts.push(...madeRedrawReasoning(s, c));
     if (freeCardCost && (c.pendingOthers > 0 || closingExplained))
       parts.push('过牌的代价是对手也可能免费见到下一张，补成更强的牌。');
@@ -135,17 +159,19 @@ export function checkReasoning(s, c, { trap = false, closingExplained = false } 
     );
   else if (c.made.score[0] === 0 && !c.draw.outs)
     parts.push('目前只有高牌，较难让更弱成牌付费，过牌避免用薄弱牌力主动做大底池。');
-  else if (!c.draw.outs) parts.push('过牌避免主动扩大当前底池。');
+  else if (!c.draw.outs)
+    parts.push(
+      c.handClass === 'board-pair'
+        ? '主要牌型来自公共牌，过牌保留踢脚争取摊牌的机会，不单凭这个公共对子主动扩大底池。'
+        : `当前成牌仍可能被更大对子或更好踢脚压制，过牌保留赢过${showdownTargets(c)}的摊牌机会，避免主要被较强范围跟注。`,
+    );
   if (risks.length) parts.push(...madeRedrawReasoning(s, c));
   if (freeCardCost && (c.pendingOthers > 0 || closingExplained))
     parts.push('过牌的代价是对手也可能免费见到下一张，补成更强的牌。');
-  if (c.pendingOthers > 0)
-    parts.push(
-      trap && !risks.length
-        ? '后面还有玩家可以下注，过牌为诱导其弱牌或诈唬继续投入留下机会。'
-        : '后面仍有玩家可以下注，过牌不保证本轮无需再付筹码。',
-      '再遇下注时，要结合金额、人数和此前行动判断，不能只凭当前牌型自动跟注或弃牌。',
-    );
-  else if (!closingExplained) parts.push(closing);
+  if (c.pendingOthers > 0) {
+    if (trap && !risks.length)
+      parts.push('后面还有玩家可以下注，过牌为诱导其弱牌或诈唬继续投入留下机会。');
+    parts.push('再遇下注时，要结合金额、人数和此前行动判断，不能只凭当前牌型自动跟注或弃牌。');
+  } else if (!closingExplained) parts.push(closing);
   return parts;
 }

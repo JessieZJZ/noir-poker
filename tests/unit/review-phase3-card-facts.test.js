@@ -24,7 +24,9 @@ test('the actor third card of a paired rank excludes rival quads without excludi
     assert.doesNotMatch(f.risk, /可能组成葫芦或四条/);
   }
   assert.match(facts('Ah Kh', 'Qh Qd 8h 2h').risk, /可能组成葫芦或四条/);
-  assert.equal(facts('8c Kh', '8h 8d Qc Qd').risk, '');
+  const lowerBoat = facts('8c Kh', '8h 8d Qc Qd').risk;
+  assert.match(lowerBoat, /Q 对.*底牌中的 Q.*三张 Q.*领先当前三张 8/);
+  assert.doesNotMatch(lowerBoat, /四条|同花.*领先/);
   assert.match(facts('As Kd', '8h 8d 8c').risk, /可能组成葫芦或四条/);
 });
 test('set and trips redraw descriptions stop on the river and do not label a lone pair a redraw', () => {

@@ -85,6 +85,23 @@ test('observer strategy notes describe draws and a recorded check-raise intentio
   );
 });
 
+test('a double-gutshot check explanation does not append a second generic draw label', () => {
+  const r = observerRecord({
+    action: 'check',
+    reason: 'free-check',
+    hole: 'Tc Ks',
+    board: '9h Jc 7h As',
+    cost: 0,
+  });
+  r.trace.view.publicStrategy = {
+    draw: { straightDraw: true, nutFlushDraw: false, pairedBoard: false },
+    options: [],
+  };
+  const text = summary(explainOpponent(r));
+  assert.match(text, /双卡顺听牌/);
+  assert.doesNotMatch(text, /10♣ K♠ 带顺子听牌。/);
+});
+
 test('a stale or mismatching policy reason never overrides the action; summaries are stable under secret changes', () => {
   const r = observerRecord();
   r.trace.basis = { version: 1, action: 'fold', reason: 'pot-control' };

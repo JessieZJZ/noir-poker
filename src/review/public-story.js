@@ -68,7 +68,7 @@ export function publicObservationNotes(s) {
 // Public facts, not a claim that an archived bot had the current range model.
 export function publicStoryNotes(s) {
   const observations = publicObservationNotes(s);
-  if (!s.street || !['call', 'fold'].includes(s.action)) return observations;
+  if (!s.street || !['call', 'fold', 'raise'].includes(s.action)) return observations;
   const last = (s.history || []).findLast(
     (a) => a.street === s.street && a.action === 'raise' && a.id !== 0,
   );
@@ -76,7 +76,6 @@ export function publicStoryNotes(s) {
   const line = publicPostflopLine(s, last.id);
   if (new Set(line.map((a) => a.street)).size < 2) return observations;
   const callThenLead =
-    s.reviewAudience === 'observer' &&
     line.some((a) => a.action === 'call' && a.street < s.street) &&
     line.some((a) => ['bet', 'raise'].includes(a.action) && a.street === s.street);
   if (
@@ -122,5 +121,25 @@ export function publicStoryNotes(s) {
       )
         parts.push(`河牌没有补出第三张${suits[suit]}，此前的同花听牌仍可能转成诈唬。`);
   }
+  return parts;
+}
+
+// A later lead after passive streets is a real observed route, not proof that
+// the bettor is weak or bluffing. No private hand or future board enters here.
+export function priorCallingLeadNotes(s, subject = '你') {
+  if (s.street < 2 || s.action !== 'raise' || s.currentBet !== 0) return [];
+  const prior = publicPostflopLine(s, s.id ?? 0, s.street - 1);
+  if (
+    !prior.some((a) => a.action === 'call') ||
+    prior.some((a) => ['bet', 'raise', 'check-raise'].includes(a.action))
+  )
+    return [];
+  const parts = [`${subject}此前的公开行动：`, ' '];
+  prior.forEach((a, index) => {
+    if (index) parts.push(' → ');
+    parts.push(['', '翻牌', '转牌', '河牌'][a.street], ' ');
+    parts.push(a.action === 'check' ? '过牌' : `跟注 ${compactChips(a.amount)}`);
+  });
+  parts.push('，本轮转为主动下注。');
   return parts;
 }

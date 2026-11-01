@@ -41,9 +41,10 @@ test('a four-connected board does not turn a set check into an unconditional val
   assert.doesNotMatch(r.coaching.paragraphs.at(-1), /这手建议.*(?:加注|下注)/);
 });
 
-test('dry strong checks explain the missed value while quads do not fear a flush', () => {
+test('dry strong checks explain keeping a strong range while quads do not fear a flush', () => {
   const dry = phase3CheckSpot('5c 5d', 'Kh 9d 5s 2c', { reason: 'free-check' });
-  assert.match(text(dry.record), /强成牌仍有向较弱成牌收取跟注的空间.*过牌可能少收一轮价值/);
+  assert.match(text(dry.record), /强成牌随过牌保留在局中.*后面的玩家.*较弱牌或诈唬/);
+  assert.doesNotMatch(text(dry.record), /过牌可能少收一轮价值/);
   assert.doesNotMatch(text(dry.record), /若其常过回|再遇下注时/);
   assert.doesNotMatch(text(dry.record), /对手若持两张该花色/);
   const quads = phase3CheckSpot('5c 5d', '5s Qh Ah 5h', { reason: 'free-check' });
@@ -56,7 +57,9 @@ test('slowplay distinguishes an unacted opponent from a closing turn or river ch
     const closing = phase3CheckSpot('5c 5d', board, { pending: false, reason: 'strong-trap' });
     const review = explainOpponent(closing.record);
     assert.equal(review.title, '强牌选择过牌');
-    assert.match(text(closing.record), /最后行动.*不能诱导本轮下注/);
+    assert.match(text(closing.record), /最后行动.*(?:免费见下一张|直接摊牌)/);
+    if (board.split(' ').length === 4) assert.match(text(closing.record), /本轮下注结束/);
+    assert.doesNotMatch(text(closing.record), /不能诱导本轮下注/);
     assert.doesNotMatch(text(closing.record), /选择过牌，诱导对手主动下注/);
     if (board.split(' ').length === 5) assert.doesNotMatch(text(closing.record), /下一张/);
   }

@@ -105,6 +105,26 @@ test('an observer call with no existing draw explanation still gets its own draw
   assert.match(result.explanation, /这次跟注保留了听牌的改善机会/);
 });
 
+test('a blocked public pair cannot become opponent quads on a new-rank straight completion', () => {
+  const { flop } = topPairFlushTurn();
+  const s = {
+    ...flop,
+    hole: cards('As 5h'),
+    board: cards('5s 5d 3c 4h'),
+    street: 2,
+    action: 'raise',
+  };
+  const base = { paragraphs: ['Alex选择下注。'], paragraphParts: [['Alex选择下注。']] };
+  const result = enrichStrategy(
+    base,
+    s,
+    { draw: { straightDraw: true, pairedBoard: true }, options: [] },
+    { action: 'raise', subject: 'Alex', audience: 'observer' },
+  );
+  assert.match(result.explanation, /补成顺子仍可能输给葫芦/);
+  assert.doesNotMatch(result.explanation, /四条/);
+});
+
 test('specific observer payment evidence replaces generic value filler while keeping the hand, action and risk', () => {
   const { flop: s } = topPairFlushTurn();
   const text =

@@ -1,6 +1,41 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { strategyNotes } from '../../src/review/strategy-reasoning.js';
+
+test('range narration follows the remaining opponent rather than a folded late caller', () => {
+  const s = {
+    id: 0,
+    street: 2,
+    position: 'BB',
+    hole: cards('8s 4d'),
+    board: cards('3s Jh Jd 2c'),
+    stack: 5000,
+    bet: 0,
+    pot: 2000,
+    legal: { callAmount: 0 },
+    players: [
+      { id: 0, stack: 5000 },
+      { id: 1, stack: 5000 },
+      { id: 2, stack: 0, folded: true },
+    ],
+    history: [
+      { id: 1, street: 0, action: 'raise', amount: 175 },
+      { id: 2, street: 0, action: 'call', amount: 175 },
+      { id: 0, street: 0, action: 'call', amount: 125 },
+      { id: 1, street: 1, action: 'raise', amount: 625 },
+      { id: 2, street: 1, action: 'fold', amount: 0 },
+      { id: 0, street: 1, action: 'call', amount: 625 },
+    ],
+  };
+  const notes = strategyNotes(
+    s,
+    { range: { advantage: -0.25, uncertainty: 0.02 }, draw: {}, options: [] },
+    { action: 'check' },
+  );
+  const range = notes.find((n) => n.topic === 'range');
+  assert.match(range.text, /你翻前跟注、对手加注/);
+  assert.doesNotMatch(range.text, /对手跟注/);
+});
 import { deckOfCards, evaluate, compare } from '../../src/engine/poker.js';
 import { assessPublicStrategy } from '../../src/engine/public-strategy.js';
 
@@ -312,4 +347,31 @@ test('real public assessments produce at most two notes without exposing model p
   assert.ok(notes.length <= 2);
   assert.ok(notes.every((n) => typeof n.topic === 'string' && typeof n.text === 'string'));
   assert.doesNotMatch(prose(notes), forbidden);
+});
+
+test('range narration retains a three-bettor who called a four-bet and the live opener re-raise', () => {
+  const s = snapshot({
+    action: 'check',
+    street: 2,
+    board: cards('Kd 8d 2c 4s'),
+    history: [
+      { id: 1, street: 0, action: 'raise', amount: 300 },
+      { id: 0, street: 0, action: 'raise', amount: 1200 },
+      { id: 1, street: 0, action: 'raise', amount: 3000 },
+      { id: 0, street: 0, action: 'call', amount: 1800 },
+      { id: 1, street: 1, action: 'raise', amount: 500 },
+      { id: 0, street: 1, action: 'call', amount: 500 },
+      { id: 1, street: 2, action: 'raise', amount: 900 },
+      { id: 0, street: 2, action: 'raise', amount: 2200 },
+    ],
+  });
+  const range = strategyNotes(s, assessment({ range: { advantage: -0.3, uncertainty: 0.1 } })).find(
+    (n) => n.topic === 'range',
+  );
+  assert.match(range.text, /你翻前加注后又跟注、对手多次加注/);
+  assert.match(range.text, /翻牌对手下注至 500/);
+  assert.match(range.text, /转牌你2-bet 加注至 2.2K/);
+  assert.match(range.text, /转牌对手下注至 900/);
+  assert.match(range.text, /截至当前的公开行动/);
+  assert.doesNotMatch(range.text, /你翻前跟注、对手跟注/);
 });

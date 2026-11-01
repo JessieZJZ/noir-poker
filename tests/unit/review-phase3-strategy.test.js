@@ -221,7 +221,19 @@ test('phase3: dangerous deep value shoves are conditional and strong tiny bets c
     amount: 13800,
     legal: freeBet(13800),
   });
+  const capped = analyzeDecision(risky, quick);
+  assert.equal(capped.context.extra, 13800);
+  assert.equal(capped.context.guaranteedUncalledRaise, 9300);
+  assert.equal(capped.context.matchedExtra, 4500);
+  assert.equal(capped.context.matchedBetRatio, 0.9);
+  assert.notEqual(capped.code, 'dangerous-value-shove');
+  assert.match(capped.evidence.join(' '), /9.3K.*无法被匹配.*4.5K/);
+  // The overbet branch needs a genuinely deep opponent, not a nominal offer
+  // whose unmatched top layer the engine must return.
+  risky.players[1].stack = 15000;
   const r = analyzeDecision(risky, quick);
+  assert.equal(r.context.guaranteedUncalledRaise, 0);
+  assert.equal(r.context.matchedExtra, 13800);
   assert.equal(r.code, 'dangerous-value-shove');
   assert.equal(r.status, 'consider');
   assert.equal(r.routes.primary.action, 'check');

@@ -1,6 +1,7 @@
 import { rankText, partitionPots, legalActions } from '../engine/poker.js';
 import { chipUnitOf, isChipAmount } from '../engine/bet-sizing.js';
 import { bigBlindOf } from '../engine/stakes.js';
+import { compactChips } from '../engine/chip-format.js';
 
 // Ask the rules engine about waiting seats. A pending response does not itself
 // mean that a short all-in reopened a player's right to raise.
@@ -46,6 +47,40 @@ export function coversOpponentStacks(s, raiseTo) {
         (p) => Number.isFinite(p.bet) && Number.isFinite(p.stack) && p.bet + p.stack <= raiseTo,
       )
   );
+}
+
+// A conservative, public-only refund bound: even every live opponent's
+// maximum contribution cannot match this layer. The rules engine still owns
+// contribution partitioning and refunds; no hypothetical call is an observed action.
+export function guaranteedUncalledRaise(s, raiseTo) {
+  const actorId = s.id ?? 0;
+  if (
+    !Array.isArray(s.players) ||
+    !s.players.every((p) => Number.isFinite(p.total) && Number.isFinite(p.stack)) ||
+    !Number.isFinite(raiseTo)
+  )
+    return 0;
+  const own = s.players.find((p) => p.id === actorId);
+  if (!own) return 0;
+  const investment = Math.max(0, raiseTo - (s.bet ?? own.bet ?? 0));
+  const total = own.total + investment;
+  const upper = s.players.map((p) => ({
+    id: p.id,
+    folded: !!p.folded,
+    total: p.id === actorId ? total : p.folded ? p.total : Math.min(total, p.total + p.stack),
+  }));
+  const refund = partitionPots({ players: upper }).refunds.find((p) => p.id === actorId);
+  return Math.min(investment, refund?.amount || 0);
+}
+
+export function raiseExposureNote(s, extra = s.amount - s.bet) {
+  if (s.action !== 'raise') return '';
+  const uncalled = guaranteedUncalledRaise(s, s.amount);
+  const matched = Math.max(0, extra - uncalled),
+    matchedBB = (matched / bigBlindOf(s)).toFixed(1).replace(/\.0$/, '');
+  return uncalled
+    ? `本次追加 ${compactChips(extra)}，其中至少 ${compactChips(uncalled)} 无法被匹配，会退回。新增投入最多 ${compactChips(matched)}（${matchedBB} BB）可被匹配。`
+    : '';
 }
 
 // Pressure can remove only players who still have chips. An existing side pot
@@ -118,7 +153,9 @@ export function strengthParts(s, c) {
     );
     if (sharedPair.length === 2 && c.made.score.slice(1, 3).every((rank) => counts.get(rank) >= 2))
       return [`两对来自公共牌，${rankText(c.made.score[3])} 踢脚`];
-    if (sharedPair.length === 1 && ownPair) {
+    const sharedPairPlays =
+      sharedPair.length === 1 && c.made.score.slice(1, 3).includes(sharedPair[0][0]);
+    if (sharedPairPlays && ownPair) {
       const rank = rankText(ownPair.rank),
         shared = rankText(sharedPair[0][0]),
         kicker = rankText(c.made.score[3]);
@@ -131,7 +168,7 @@ export function strengthParts(s, c) {
       ];
     }
     if (
-      sharedPair.length === 1 &&
+      sharedPairPlays &&
       s.hole[0].rank === s.hole[1].rank &&
       c.made.score.slice(1, 3).includes(s.hole[0].rank)
     )

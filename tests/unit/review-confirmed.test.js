@@ -61,6 +61,18 @@ test('paired board explains private top pair, shared two pairs, and actual effec
   assert.doesNotMatch(decisionContext(s).handLabel, /4 踢脚/);
 });
 
+test('two private pairs can outrank the pair on the board', () => {
+  const s = reportedGutshotCall();
+  s.hole = cards('Ah 8c');
+  s.board = cards('6s Ac 4d 8h 4c');
+  s.street = 3;
+  const c = decisionContext(s);
+  assert.deepEqual(c.made.score, [2, 14, 8, 6]);
+  assert.equal(c.handClass, 'two-pair');
+  assert.match(c.handLabel, /A 对和 8 对，6 踢脚/);
+  assert.doesNotMatch(strengthParts(s, c).join(''), /公共牌的一对 4/);
+});
+
 test('limp-reraise updates the current actor role instead of repeating a stale limp range', () => {
   const s = reportedLowConnectorCall();
   s.history.push({ id: 2, street: 0, action: 'raise', amount: 400000 });

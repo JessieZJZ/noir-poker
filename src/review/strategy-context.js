@@ -2,7 +2,7 @@ import { assessPublicStrategy } from '../engine/public-strategy.js';
 import { deckOfCards, evaluate, compare } from '../engine/poker.js';
 import { handFeatures } from '../engine/hand-features.js';
 import { strategyNotes } from './strategy-reasoning.js';
-import { proseCoverage } from './prose-topics.js';
+import { proseCoverage, REVIEW_TOPICS as TOPIC } from './prose-topics.js';
 
 export function reviewStrategy(s, c, price) {
   return assessPublicStrategy(
@@ -61,7 +61,7 @@ export function enrichStrategy(coaching, s, assessment, options) {
       if (
         n.headingPrefix &&
         !assessment?.draw?.nutFlushDraw &&
-        /(?:当前有|主要依靠|带|保留)(?:同花听牌|顺子听牌|两头顺听牌|卡顺听牌)/.test(flat)
+        /(?:当前有|主要依靠|带|保留)(?:同花听牌|顺子听牌|两头顺听牌|双卡顺听牌|卡顺听牌)/.test(flat)
       )
         pieces = pieces.filter((text) => text !== n.headingPrefix);
       if (
@@ -124,12 +124,12 @@ export function enrichStrategy(coaching, s, assessment, options) {
           .replace(/这次属于半诈唬，对手弃牌可直接拿池，被跟注后仍能补牌。/gu, '')
           .replace(
             /目前仍有 \d+ 张牌可能补成(?:同花或顺子|同花|顺子)，但这些是成牌补牌，不保证补中后领先对手。/gu,
-            (text) => (options?.audience === 'observer' ? text : ''),
+            (text) => (options?.audience === 'observer' || covered.has(TOPIC.DRAW) ? text : ''),
           )
           .replace(/后面仍有玩家可以下注，过牌不保证本轮无需再付筹码。/gu, '')
           .replace(
             /再遇下注时，要结合金额、人数和此前行动判断，不能只凭当前牌型自动跟注或弃牌。/gu,
-            '',
+            (text) => (covered.has(TOPIC.CURRENT_RESPONSE) ? text : ''),
           )
           .replace(/当前主要依靠.*?改善，不能只靠高牌判断这笔跟注。/gu, '')
           .replace(

@@ -1,5 +1,12 @@
 // Public card facts and conditional teaching prompts, never a claim that an
 // unseen opponent will call, or that a textured board proves a shove loses EV.
+export function showdownTargets(context) {
+  const categories = context.matchups?.weakerMadeCategories;
+  return !Array.isArray(categories) || categories.some((category) => category >= 1)
+    ? '较弱成牌或未成牌的诈唬'
+    : '未成牌的诈唬';
+}
+
 export function valueDrawNote(s, c) {
   if (
     s.street < 1 ||
