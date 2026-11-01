@@ -2763,6 +2763,70 @@ export async function nativeScenarios(app) {
       nativeBack: { reviewBeforeBack, reviewBack, returnGameBack },
     };
   });
+  await check('beginner-tutorial-guided-hand', async () => {
+    const before = await app.state();
+    const records = await app.evaluate(() => JSON.stringify(window.noir.getRecords()));
+    await app.click('#rules-button');
+    await app.click('#tutorial-menu-item');
+    await app.waitFor(
+      () => app.visible('#tutorial-dialog'),
+      10000,
+      'The tutorial intro must open from the guide menu',
+    );
+    await app.screenshot('tutorial-intro');
+    await app.click('#tutorial-dialog-primary');
+    await app.waitFor(
+      () => app.visible('#tutorial-coach'),
+      10000,
+      'The coach must appear on the real table',
+    );
+    assert.deepEqual((await app.state()).hole, ['10♥', '9♥']);
+    let coached = false;
+    for (let step = 0; step < 300; step++) {
+      const view = (await app.state()).tutorial;
+      if (view.stage === 'summary') break;
+      if (view.allowed?.action === 'call' && !coached) {
+        coached = true;
+        await app.screenshot('tutorial-guided-turn');
+        assert.equal(
+          await app.evaluate(() => document.querySelector('#fold-button').disabled),
+          true,
+        );
+      }
+      if (view.options.length) {
+        await app.click('[data-tutorial-answer="1"]');
+        await app.click('#tutorial-next');
+      } else if (view.canContinue) await app.click('#tutorial-next');
+      else if (view.allowed?.action === 'call' || view.allowed?.action === 'check')
+        await app.click('#call-button');
+      else if (view.allowed?.action === 'raise') {
+        await app.click('[data-preset="half"]');
+        await app.click('#raise-button');
+      } else await new Promise((resolve) => setTimeout(resolve, 150));
+    }
+    const finished = await app.state();
+    assert.equal(finished.tutorial.stage, 'summary');
+    assert.equal(finished.phase, 'done');
+    assert.ok(finished.result.includes('同花'));
+    await app.screenshot('tutorial-lesson-complete');
+    await app.back();
+    if (await app.visible('#tutorial-dialog')) await app.click('#tutorial-dialog-close');
+    await app.waitFor(
+      async () => (await app.state()).tutorial === null,
+      10000,
+      'Leaving the tutorial must restore the live table',
+    );
+    const after = await app.state();
+    assert.equal(after.hand, before.hand);
+    assert.deepEqual(after.hole, before.hole);
+    assert.equal(after.pot, before.pot);
+    assert.deepEqual(
+      after.players.map((player) => player.stack),
+      before.players.map((player) => player.stack),
+    );
+    assert.equal(await app.evaluate(() => JSON.stringify(window.noir.getRecords())), records);
+    return { hole: finished.hole, result: finished.result, resumedHand: after.hand };
+  });
   const unknown = selectedScenarios?.filter((name) => !seenScenarios.has(name));
   if (unknown?.length)
     throw Error(`Unknown NOIR_NATIVE_SCENARIOS selection: ${unknown.join(', ')}`);

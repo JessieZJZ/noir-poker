@@ -62,6 +62,8 @@ import { createHintNotification } from './hint-notification.js';
 import { createHintMarquee } from './hint-marquee.js';
 import { preferenceStorage } from '../platform/storage.js';
 import { createGameRecords } from '../engine/game-records.js';
+import { createTutorial } from '../engine/tutorial.js';
+import { createTutorialCoach } from './tutorial-coach.js';
 import { createGameRecordsView } from './game-records.js';
 import { createActivityClock } from '../platform/activity-clock.js';
 import { isAppActive } from '../platform/native.js';
@@ -130,6 +132,8 @@ let game = gameRecords.resume() || newGame(requestedCount, requestedStakes),
   audio = null,
   audioOutput = null;
 let newRecordSession = false;
+let tutorial = null,
+  tutorialReturn = null;
 game.difficulty = tablePreferences.difficulty;
 $('#player-count').value = String(requestedCount);
 try {
@@ -162,6 +166,7 @@ const recordsView = createGameRecordsView({
   records: gameRecords,
   openReview: (input, key) => handReview.openInput(input, key),
   onReturnGame: () => playViewport.update(game, game.phase === 'done'),
+  onTutorial: enterTutorial,
   openPots: (snapshot) => {
     selectedPotSnapshot = snapshot;
     renderPotDetails(currentPots(snapshot), snapshot);
@@ -295,7 +300,7 @@ function syncTurnAttention() {
   });
 }
 function render() {
-  gameRecords.capture(game);
+  if (!tutorial) gameRecords.capture(game);
   recordsView.refresh();
   renderStakesSettings();
   const activityList = $('#activity-list'),
@@ -546,8 +551,10 @@ function render() {
     );
   updateBet();
   updateCoach();
-  handReview.update(game, epoch);
+  if (tutorial) $('#review-hand-button').hidden = true;
+  else handReview.update(game, epoch);
   showdown.update(game, epoch);
+  syncTutorial();
   lastHand = game.hand;
   lastBoard = displayBoard.length;
   playViewport.update(game, done);
@@ -600,7 +607,7 @@ function updateCoach(force = false) {
     tip += ` 跟注占可争夺底池约 ${Math.round((legal.callAmount / contestableAfterCall(game, 0, legal.callAmount)) * 100)}%。`;
   const stage = game.phase === 'done' ? '本手复盘' : streets[game.street] + '策略';
   hintNotification.update({
-    enabled: hints,
+    enabled: hints && !tutorial,
     key: `${compactCoach.matches ? 'banner' : 'card'}:${epoch}:${game.hand}:${game.street}:${game.phase === 'done' ? 'done' : legal.enabled ? `turn:${game.currentBet}:${p.bet}` : 'waiting'}`,
     text: tip,
     stage,
@@ -622,6 +629,27 @@ function schedule() {
   clearTimeout(timer);
   if (!activityClock.active) return;
   const ticket = epoch;
+  if (tutorial?.guided()) {
+    const delay = tutorial.autoDelay();
+    if (delay === null) return;
+    timer = setTimeout(() => {
+      if (!activityClock.active || ticket !== epoch || !tutorial?.guided()) return;
+      const beat = tutorial.runAuto();
+      if (beat.kind === 'bot') {
+        if (beat.action === 'fold') soundEffect('fold');
+        else if (beat.action === 'check') soundEffect('check');
+        else {
+          flyChips(beat.id);
+          soundEffect();
+        }
+        if (beat.win) soundEffect('win');
+      } else soundEffect(beat.kind);
+      render();
+      schedule();
+    }, delay);
+    return;
+  }
+  if (tutorial && !tutorial.playing()) return;
   if (game.phase === 'done' || finishing) {
     botWait = null;
     dealWait = null;
@@ -687,8 +715,10 @@ function schedule() {
 function heroAction(action, amount) {
   if (!activityClock.active) return false;
   if (!legalActions(game, 0).enabled) return false;
+  if (tutorial && !tutorial.allows(action, amount)) return false;
   const legal = legalActions(game, 0);
   act(game, 0, action, amount);
+  tutorial?.heroActed();
   if (action === 'raise' || (action === 'call' && legal.toCall > 0)) {
     flyChips(0);
     soundEffect();
@@ -709,6 +739,13 @@ function canFastFinish() {
 }
 async function continueDeal() {
   if (!canFastFinish()) return false;
+  if (tutorial?.guided()) {
+    if (!tutorial.finishHand()) return false;
+    render();
+    soundEffect('win');
+    schedule();
+    return true;
+  }
   clearTimeout(timer);
   const waiting = botWait;
   botWait = null;
@@ -744,6 +781,7 @@ async function continueDeal() {
   }
 }
 function nextHand() {
+  if (tutorial) return;
   heroTurnAttention.reset();
   cancelSoundEffects();
   heroTurnCue.reset();
@@ -778,7 +816,7 @@ function nextHand() {
   schedule();
 }
 function retryHand() {
-  if (!canRestartHand(game)) return false;
+  if (tutorial || !canRestartHand(game)) return false;
   heroTurnAttention.reset();
   heroTurnCue.reset();
   cancelSoundEffects();
@@ -903,6 +941,7 @@ document.querySelectorAll('[data-preset]').forEach(
       bet = target;
       $('#bet-slider').value = bet;
       updateBet();
+      syncTutorial();
     }),
 );
 $('#player-count').onchange = (e) => {
@@ -1087,7 +1126,8 @@ document
   .forEach((b) => (b.onclick = () => b.closest('dialog').close()));
 document.querySelectorAll('dialog').forEach((d) =>
   d.addEventListener('click', (e) => {
-    if (e.target === d) {
+    // A stray tap beside a lesson card must not throw away the tutorial.
+    if (e.target === d && d.id !== 'tutorial-dialog') {
       const r = d.getBoundingClientRect();
       if (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom)
         d.close();
@@ -1106,9 +1146,110 @@ $('#confirm-reset').onclick = () => {
   $('#reset-dialog').close();
   nextHand();
 };
+// The tutorial borrows the real table: `game` points at a scripted hand while
+// the live hand waits untouched, so rendering, chips and motion are the real ones.
+function clearTableMotion() {
+  clearTimeout(timer);
+  epoch++;
+  botWait = null;
+  dealWait = null;
+  finishing = false;
+  heroTurnAttention.reset();
+  heroTurnCue.reset();
+  cancelSoundEffects();
+  seatHandVisibility.clear();
+  showdown.reset();
+  $('#pot-dialog').close();
+  document.querySelectorAll('.flying-chip').forEach((e) => {
+    e.getAnimations().forEach((a) => a.cancel());
+    e.remove();
+  });
+}
+function enterTutorial() {
+  if (tutorial) return;
+  const remaining = botWait ? Math.max(0, botWait.deadline - activityClock.now()) : null;
+  tutorialReturn = {
+    game,
+    bet,
+    botWait,
+    remaining,
+    visibility: new Map(seatHandVisibility),
+  };
+  clearTableMotion();
+  tutorial = createTutorial(game.stakes);
+  document.querySelectorAll('dialog[open]').forEach((dialog) => {
+    if (dialog.id !== 'orientation-dialog') dialog.close();
+  });
+  window.scrollTo(0, 0);
+  syncTutorial();
+}
+function exitTutorial() {
+  if (!tutorial) return false;
+  clearTableMotion();
+  tutorial = null;
+  tutorialCoach.hide();
+  const saved = tutorialReturn;
+  tutorialReturn = null;
+  game = saved.game;
+  bet = saved.bet;
+  if (saved.botWait && isBotTurnCurrent(game, saved.botWait.plan))
+    botWait = { ...saved.botWait, deadline: activityClock.now() + saved.remaining };
+  for (const [id, visible] of saved.visibility) seatHandVisibility.set(id, visible);
+  lastHand = game.hand;
+  lastBoard = (game.practiceBoard || game.board).length;
+  render();
+  schedule();
+  return true;
+}
+function tutorialDeal() {
+  clearTableMotion();
+  game = tutorial.game;
+  lastHand = 0;
+  lastBoard = 0;
+  window.scrollTo(0, 0);
+  const legal = legalActions(game, 0);
+  bet = legal.enabled ? legalRaiseTo(game.bigBlind * 3, legal) : game.bigBlind * 3;
+  render();
+  soundEffect('deal');
+  schedule();
+}
+function runTutorialCommand(command) {
+  if (!tutorial) return;
+  if (command === 'exit') exitTutorial();
+  else if (command === 'deal') tutorialDeal();
+  else {
+    render();
+    schedule();
+  }
+}
+const tutorialCoach = createTutorialCoach({
+  onNext() {
+    if (tutorial?.next()) runTutorialCommand('continue');
+  },
+  onAnswer(index) {
+    tutorial?.answer(index);
+    syncTutorial();
+  },
+  onPrimary: () => runTutorialCommand(tutorial?.primary()),
+  onSecondary: () => runTutorialCommand(tutorial?.secondary()),
+  onExit: exitTutorial,
+});
+function syncTutorial() {
+  if (!tutorial) return;
+  const view = tutorial.view(format);
+  if (view.raiseTarget !== null && !view.allowed.preset && bet !== view.raiseTarget) {
+    bet = view.raiseTarget;
+    $('#bet-slider').value = bet;
+    updateBet();
+  }
+  tutorialCoach.update(view, bet);
+}
+document.addEventListener('noir:tutorial-exit', exitTutorial);
+document.addEventListener('noir:locale-changed', syncTutorial);
 function publicState() {
   const details = potDetails();
   return {
+    tutorial: tutorial ? tutorial.view() : null,
     playerCount: game.players.length,
     stakes: { ...game.stakes },
     requestedStakes: { ...requestedStakes },
@@ -1173,6 +1314,7 @@ function publicState() {
   };
 }
 function setStakes(value) {
+  if (tutorial) return false;
   const stakes = validateStakes(value);
   if (!sameStakes(game.stakes, stakes)) gameRecords.abandon(game);
   const changed = configureStakes(game, stakes);
@@ -1263,6 +1405,7 @@ function registerTools() {
     execute: (input) => {
       if (!input || typeof input !== 'object' || Object.keys(input).length)
         throw Error('请传入空对象。');
+      if (tutorial) throw Error('新手引导进行中。');
       if (!retryHand()) throw Error('本手尚未结束，或缺少原始发牌记录。');
       return publicState();
     },
@@ -1277,6 +1420,7 @@ function registerTools() {
     execute: (input) => {
       if (!input || typeof input !== 'object' || Object.keys(input).length)
         throw Error('请传入空对象。');
+      if (tutorial) throw Error('新手引导进行中。');
       if (game.phase !== 'done') throw Error('当前牌局尚未结束。');
       nextHand();
       return publicState();

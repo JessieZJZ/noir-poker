@@ -80,6 +80,9 @@ async function compileJs(sourceDirectory, destination) {
       external: ['*.js'],
       format: 'cjs',
       target: 'es2019',
+      // Only whitespace goes: names stay readable while the main package keeps
+      // room below WeChat's limit. DevTools still minifies again on upload.
+      minifyWhitespace: true,
       write: false,
     });
     const target = path.join(destination, file);
@@ -229,6 +232,7 @@ export async function buildWechat(output = wechatOutput) {
       const compiled = await transform(await readFile(path.join(root, 'src/ui', name), 'utf8'), {
         format: 'cjs',
         target: 'es2019',
+        minifyWhitespace: true,
       });
       await writeFile(path.join(staging, 'shared/ui', name), compiled.code);
     }

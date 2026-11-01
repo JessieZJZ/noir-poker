@@ -1,5 +1,6 @@
 import { difficultyPolicy } from '../engine/bot-difficulty.js';
 import { createGameRecords } from '../engine/game-records.js';
+import { createTutorial } from '../engine/tutorial.js';
 import { compactChips, compactActionAmounts } from '../engine/chip-format.js';
 import {
   sanitizeStakes,
@@ -146,7 +147,10 @@ export function createWechatController({
     hintKey = '',
     hintText = '',
     reviewEpoch = 0,
-    newSession = false;
+    newSession = false,
+    tutorial = null,
+    tutorialReturn = null,
+    tutorialDeals = 0;
   let sliderMin = game.bigBlind * 2,
     sliderMax = game.stakes.startingStack,
     callCaption = '跟注',
@@ -186,7 +190,7 @@ export function createWechatController({
   }
   function updateHint() {
     const legal = legalActions(game, 0);
-    if (!settings.hints || !active || (!legal.enabled && game.phase !== 'done')) {
+    if (tutorial || !settings.hints || !active || (!legal.enabled && game.phase !== 'done')) {
       cancelHint();
       return;
     }
@@ -232,8 +236,9 @@ export function createWechatController({
   }
   function render() {
     if (disposed) return;
-    records?.capture(game);
+    if (!tutorial) records?.capture(game);
     updateHint();
+    const coach = tutorial ? presentTutorial(tutorial.view(format)) : null;
     const hero = game.players[0],
       legal = legalActions(game, 0),
       done = game.phase === 'done';
@@ -281,6 +286,7 @@ export function createWechatController({
         : compactActionAmounts(rawAction);
       return {
         id: player.id,
+        tutorialFocus: !!coach?.focus.includes(`seat:${player.id}`),
         name: player.name,
         position: seatPosition(game, player.id),
         profileId: profile.id,
@@ -326,6 +332,15 @@ export function createWechatController({
     });
     publish({
       turnPhase: attention.phase,
+      tutorial: coach,
+      tutorialPlaying: !!tutorial?.playing(),
+      tutorialDeal: tutorialDeals,
+      tutorialFocus: coach?.focusMap || {},
+      lockFold: !!coach?.gate.fold,
+      lockCall: !!coach?.gate.call,
+      lockRaise: !!coach?.gate.raise,
+      lockSizing: !!coach?.gate.sizing,
+      lockHalf: !!coach?.gate.half,
       hand: game.hand,
       sessionNumber: readOnlySessionNumber || records?.sessionNumber() || 1,
       recordsError: records?.error() || '',
@@ -387,7 +402,7 @@ export function createWechatController({
         amount: format(r.amount),
       })),
       done,
-      canRetry: canRestartHand(game),
+      canRetry: !tutorial && canRestartHand(game),
       waiting: !done && !legal.enabled,
       canRaise: !!(legal.enabled && legal.canRaise),
       canAct: !!legal.enabled,
@@ -456,9 +471,78 @@ export function createWechatController({
       },
     });
   }
+  // Web gates the same choices directly on its DOM controls.
+  function presentTutorial(view) {
+    if (view.raiseTarget !== null && !view.allowed.preset) raiseTo = view.raiseTarget;
+    const action = view.allowed?.action;
+    return {
+      ...view,
+      detail: view.detail || '',
+      progressPercent: Math.round(view.progress * 100),
+      focusMap: Object.fromEntries(
+        view.focus.map((key) => [key.replace(/-(\w)/g, (_, c) => c.toUpperCase()), true]),
+      ),
+      gate: view.allowed
+        ? {
+            fold: action !== 'fold',
+            call: action !== 'call' && action !== 'check',
+            raise: action !== 'raise' || raiseTo !== view.raiseTarget,
+            sizing: true,
+            half: view.allowed.preset !== 'half',
+          }
+        : {},
+    };
+  }
+  function stopTable() {
+    attention.reset();
+    turnCue.reset();
+    peeked.clear();
+    cancelBots();
+    cancelReview();
+    cancelHint();
+    hintKey = '';
+  }
+  function tutorialCommand(command) {
+    if (command === 'exit') return exitTutorial();
+    stopTable();
+    game = tutorial.game;
+    tutorialDeals++;
+    raiseTo = game.bigBlind * 3;
+    render();
+    effect('deal');
+    driveBots();
+    return true;
+  }
+  function exitTutorial() {
+    if (!tutorial) return false;
+    stopTable();
+    tutorial = null;
+    ({ game, raiseTo } = tutorialReturn);
+    for (const [id, visible] of tutorialReturn.peeked) peeked.set(id, visible);
+    tutorialReturn = null;
+    render();
+    driveBots();
+    return true;
+  }
   function driveBots() {
-    if (disposed || !active || game.phase === 'done' || timer !== null) return;
+    if (disposed || !active || timer !== null) return;
     const ticket = epoch;
+    if (tutorial?.guided()) {
+      const delay = tutorial.autoDelay();
+      if (delay === null) return;
+      timer = schedule(() => {
+        timer = null;
+        if (disposed || !active || ticket !== epoch || !tutorial?.guided()) return;
+        const beat = tutorial.runAuto();
+        effect(beat.kind === 'bot' ? beat.action : beat.kind);
+        if (beat.win) effect('win');
+        render();
+        if (beat.kind === 'bot' && !['fold', 'check'].includes(beat.action)) wager(beat.id);
+        driveBots();
+      }, delay);
+      return;
+    }
+    if (game.phase === 'done' || (tutorial && !tutorial.playing())) return;
     if (game.phase === 'between') {
       timer = schedule(() => {
         timer = null;
@@ -495,7 +579,7 @@ export function createWechatController({
     }, 0);
   }
   function freshHand() {
-    if (readOnlyAttempt || disposed) return;
+    if (readOnlyAttempt || disposed || tutorial) return;
     attention.reset();
     turnCue.reset();
     peeked.clear();
@@ -519,7 +603,7 @@ export function createWechatController({
     driveBots();
   }
   function setStakes(value) {
-    if (readOnlyAttempt) return false;
+    if (readOnlyAttempt || tutorial) return false;
     try {
       const stakes = validateStakes(value);
       if (!sameStakes(game.stakes, stakes)) records?.abandon(game);
@@ -622,9 +706,12 @@ export function createWechatController({
     action(action) {
       const legal = legalActions(game, 0);
       if (readOnlyAttempt || !active || !legal.enabled) return false;
+      if (tutorial && !tutorial.allows(action, action === 'raise' ? raiseTo : undefined))
+        return false;
       cancelBots();
       const contribution = game.players[0].total;
       act(game, 0, action, action === 'raise' ? raiseTo : undefined);
+      tutorial?.heroActed();
       effect(action === 'call' && legal.canCheck ? 'check' : action);
       if (game.phase === 'done') effect('win');
       render();
@@ -636,6 +723,7 @@ export function createWechatController({
       if (readOnlyAttempt) return;
       const legal = legalActions(game, 0);
       if (!legal.enabled || !legal.canRaise) return;
+      if (tutorial?.guided() && tutorial.allowedAction()?.preset !== name) return;
       const target =
         name === 'min'
           ? legal.minRaiseTo
@@ -661,7 +749,7 @@ export function createWechatController({
       attention.engage();
     },
     setRaise(value) {
-      if (readOnlyAttempt) return;
+      if (readOnlyAttempt || tutorial?.guided()) return;
       const legal = legalActions(game, 0);
       if (legal.enabled && legal.canRaise) {
         attention.engage();
@@ -679,6 +767,7 @@ export function createWechatController({
       return true;
     },
     retry() {
+      if (tutorial) return false;
       peeked.clear();
       if (readOnlyAttempt || !canRestartHand(game)) return false;
       attention.reset();
@@ -697,7 +786,7 @@ export function createWechatController({
       return true;
     },
     reset() {
-      if (readOnlyAttempt) return;
+      if (readOnlyAttempt || tutorial) return;
       records?.abandon(game);
       newSession = true;
       cancelBots();
@@ -752,6 +841,13 @@ export function createWechatController({
         (!game.players[0].folded && !game.players[0].allin)
       )
         return false;
+      if (tutorial?.guided()) {
+        if (!tutorial.finishHand()) return false;
+        render();
+        effect('win');
+        driveBots();
+        return true;
+      }
       let waiting = pendingBot;
       cancelBots();
       const ticket = epoch;
@@ -935,6 +1031,34 @@ export function createWechatController({
       return opponentReviews.get(index);
     },
     cancelReview,
+    // The tutorial borrows the real table; the live hand waits untouched.
+    startTutorial() {
+      if (readOnlyAttempt || disposed || tutorial) return false;
+      tutorialReturn = { game, raiseTo, peeked: new Map(peeked) };
+      stopTable();
+      tutorial = createTutorial(game.stakes);
+      render();
+      return true;
+    },
+    tutorialNext() {
+      if (!tutorial?.next()) return false;
+      render();
+      driveBots();
+      return true;
+    },
+    tutorialAnswer(index) {
+      if (!tutorial) return false;
+      const solved = tutorial.answer(index);
+      render();
+      return solved;
+    },
+    tutorialPrimary() {
+      return tutorial ? tutorialCommand(tutorial.primary()) : false;
+    },
+    tutorialSecondary() {
+      return tutorial ? tutorialCommand(tutorial.secondary()) : false;
+    },
+    exitTutorial,
     getRecords: () => records?.sessions() || [],
     getRecordSummaries: () => records?.summaries() || [],
     getRecordsRevision: () => records?.revision() || 0,

@@ -631,7 +631,7 @@ test('WeChat turn, fold, settlement and retry keep the table fixed while compact
   assert.match(template, /class="raise-controls" wx:if="\{\{!compactActions\}\}"/);
   assert.match(
     template,
-    /height: {{tableHeight \+ 50 \+ \(historyReadOnly \|\| compactActions \? 64 : 134\)}}px/,
+    /height: {{tableHeight \+ 50 \+ tutorialCoachHeight \+ \(historyReadOnly \|\| compactActions \? 64 : 134\)}}px/,
   );
   assert.equal(cssNumber('.action-dock.compact-actions', 'height'), 64);
   assert.equal(
@@ -1849,7 +1849,7 @@ test('WeChat record lists send bounded summary patches and remain idle without r
 test('WeChat history uses a compact review dock and the records header keeps its return button intrinsic', () => {
   assert.match(
     template,
-    /tableHeight \+ 50 \+ \(historyReadOnly \|\| compactActions \? 64 : 134\)/,
+    /tableHeight \+ 50 \+ tutorialCoachHeight \+ \(historyReadOnly \|\| compactActions \? 64 : 134\)/,
   );
   assert.match(stylesheet, /\.history-shell \.action-dock\s*\{[^}]*height: 64px/);
   assert.match(stylesheet, /\.history-practice-heading\s*\{[^}]*margin: 12px 8px 8px/);
@@ -1990,7 +1990,7 @@ test('WeChat history removes the extra navigation heading while preserving repla
   );
   assert.doesNotMatch(template, /历史结算|历史记录/);
   assert.match(template, /wx:if="{{replay}}" class="replay"/);
-  assert.match(template, /wx:if="{{!historyReadOnly}}"[^>]*bindtap="nextHand"/);
+  assert.match(template, /wx:if="{{!historyReadOnly && !tutorialPlaying}}"[^>]*bindtap="nextHand"/);
 });
 
 test('WeChat larger table text uses shared profile and hero footprints without overflowing their slots', (t) => {

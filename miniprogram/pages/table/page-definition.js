@@ -9,6 +9,8 @@ const navigation = require('../../record-navigation.js');
 const { nameTooltipPosition } = require('../../shared/ui/name-tooltip-position.js');
 // Capsule 36 + nav 48 + gap 8 + header 48 + live dock 134 + end gap 8 + border 2.
 const VIEWPORT_CHROME_HEIGHT = 284;
+// The tutorial's coach panel sits between the table and the dock.
+const TUTORIAL_COACH_HEIGHT = 186;
 const PROFILE_AXES = [
   ['vpip', '入池宽度'],
   ['aggression', '进攻倾向'],
@@ -78,6 +80,10 @@ module.exports = {
     nameTooltip: null,
     finishing: false,
     flyingChips: [],
+    tutorial: null,
+    tutorialPlaying: false,
+    tutorialCoachHeight: 0,
+    tutorialFocus: {},
   },
   onLoad() {
     this.updateWindow();
@@ -94,7 +100,9 @@ module.exports = {
         const game = this._controller?.getGame();
         const board = view.board;
         const showdown = game ? showdownPresentation(game, view.profiles) : [];
-        const dealKey = `${view.sessionNumber}:${view.hand}:${view.replay}`;
+        const dealKey =
+          `${view.sessionNumber}:${view.hand}:${view.replay}` +
+          (view.tutorialPlaying ? `:${view.tutorialDeal}` : '');
         const changedDeal = dealKey !== this._dealKey;
         if (changedDeal) {
           this.closeNameTooltip();
@@ -106,7 +114,8 @@ module.exports = {
           for (const audio of this._audio || []) audio.stop();
         // Records keep the live hand running offscreen. Its new cards must
         // settle immediately; there is no visible animation timer while hidden.
-        const animate = !this._hidden;
+        // Leaving the tutorial restores a table that was already dealt.
+        const animate = !this._hidden && !(this.data.tutorialPlaying && !view.tutorialPlaying);
         const previousCards = dealKey === this._dealKey ? this._boardCount || 0 : 0;
         this._dealKey = dealKey;
         const presentedBoard = board.map((card, index) => ({
@@ -152,6 +161,7 @@ module.exports = {
         });
         const update = {
           ...view,
+          tutorialCoachHeight: view.tutorialPlaying ? TUTORIAL_COACH_HEIGHT : 0,
           tableReady: view.heroCards.length === 2 && view.seats.length >= 4,
           finishing:
             view.done || view.hand !== this.data.hand || view.replay !== this.data.replay
@@ -428,7 +438,11 @@ module.exports = {
     if (view.seats?.length) {
       const tableHeight = Math.max(
         0,
-        viewport.windowHeight - viewport.topInset - viewport.bottomInset - VIEWPORT_CHROME_HEIGHT,
+        viewport.windowHeight -
+          viewport.topInset -
+          viewport.bottomInset -
+          VIEWPORT_CHROME_HEIGHT -
+          (view.tutorialPlaying ? TUTORIAL_COACH_HEIGHT : 0),
       );
       const fitted = phoneLayout({
         width: viewport.windowWidth,
@@ -1027,6 +1041,29 @@ module.exports = {
   },
   returnToGame() {
     navigation.returnToGame();
+  },
+  openTutorial() {
+    this.closeResourceMenu();
+    this.closeNameTooltip();
+    this.call('startTutorial');
+    wx.pageScrollTo?.({ scrollTop: 0, duration: 0 });
+  },
+  exitTutorial() {
+    this.call('exitTutorial');
+  },
+  tutorialNext() {
+    this.call('tutorialNext');
+  },
+  tutorialAnswer(event) {
+    this.call('tutorialAnswer', Number(event.currentTarget.dataset.index));
+  },
+  tutorialPrimary() {
+    this.call('tutorialPrimary');
+    wx.pageScrollTo?.({ scrollTop: 0, duration: 0 });
+  },
+  tutorialSecondary() {
+    this.call('tutorialSecondary');
+    wx.pageScrollTo?.({ scrollTop: 0, duration: 0 });
   },
   openGuide() {
     this.showGuide();

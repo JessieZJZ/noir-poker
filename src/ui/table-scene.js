@@ -122,6 +122,7 @@ export function createSnapshotSurface(template, g, { sessionNumber, visible, pee
       g.showdown && !hero.folded
         ? new Set(evaluate([...hero.hole, ...g.board]).cards.map((card) => card.key))
         : new Set();
+  query('.tutorial-coach')?.remove();
   surface.classList.add('records-game-surface');
   surface.classList.remove('has-live-hand');
   for (const element of surface.querySelectorAll('.hero-cards-wrap, .action-dock')) {
