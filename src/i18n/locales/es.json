@@ -2877,5 +2877,6 @@
   "5-bet 加注至 {0}。": "5-bet: subida a {0}. ",
   "这组高牌即使击中一对，也可能被大对子或更好踢脚压制。": "Incluso después de formar un par, estas cartas altas pueden perder ante un par grande o un mejor pateador.. ",
   "你拿 {0}，在 {1} 上{2}，当前{3}，牌面{4}{5}。这次拿出 {6} 是在尝试诈唬，想让更好的牌弃掉。被跟注后，当前牌力很难在摊牌时获胜。{7}": "Con {0} en {1}, eliges «{2}». Actualmente tienes {3}, y la mesa es {4} {5}. Esta inversión de {6} es un farol que busca hacer que se retiren manos mejores. Si te pagan, será difícil ganar en el showdown con tu mano actual. {7}",
-  "你在 {0} 拿 {1}，在 {2} 上是{3}，再补 {4} 跟注，继续争夺 {5} 的底池。{6}": "Tienes {1} en {0}, formando {3} en el board {2}, y pagas {4} más para seguir disputando el bote de {5}. {6}"
+  "你在 {0} 拿 {1}，在 {2} 上是{3}，再补 {4} 跟注，继续争夺 {5} 的底池。{6}": "Tienes {1} en {0}, formando {3} en el board {2}, y pagas {4} más para seguir disputando el bote de {5}. {6}",
+  "AK 击中 A 或 K 时有顶对顶踢脚潜力，但翻前面对 AA、KK 仍明显落后。再加注要判断较弱牌是否付费、更好的牌是否弃牌。": "AK puede formar pareja máxima con el mejor kicker si sale un A o un K, pero preflop sigue muy por detrás de AA y KK. Antes de resubir, valora si pagarán manos más débiles y si se retirarán manos mejores. "
 }

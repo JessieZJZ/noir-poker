@@ -2877,5 +2877,6 @@
   "5-bet 加注至 {0}。": "5-bet : relance à {0}. ",
   "这组高牌即使击中一对，也可能被大对子或更好踢脚压制。": "Même après avoir formé une paire, ces cartes hautes peuvent perdre face à une grosse paire ou à un meilleur kicker.. ",
   "你拿 {0}，在 {1} 上{2}，当前{3}，牌面{4}{5}。这次拿出 {6} 是在尝试诈唬，想让更好的牌弃掉。被跟注后，当前牌力很难在摊牌时获胜。{7}": "Avec {0} sur {1}, vous choisissez «{2}». Vous avez actuellement {3}, et le tableau est {4} {5}. Cet investissement de {6} est un bluff destiné à faire coucher de meilleures mains. En cas de call, votre main actuelle aura du mal à gagner à l’abattage. {7}",
-  "你在 {0} 拿 {1}，在 {2} 上是{3}，再补 {4} 跟注，继续争夺 {5} 的底池。{6}": "Tu as {1} en {0}, soit {3} sur le board {2}, et paies {4} de plus pour continuer à disputer le pot de {5}. {6}"
+  "你在 {0} 拿 {1}，在 {2} 上是{3}，再补 {4} 跟注，继续争夺 {5} 的底池。{6}": "Tu as {1} en {0}, soit {3} sur le board {2}, et paies {4} de plus pour continuer à disputer le pot de {5}. {6}",
+  "AK 击中 A 或 K 时有顶对顶踢脚潜力，但翻前面对 AA、KK 仍明显落后。再加注要判断较弱牌是否付费、更好的牌是否弃牌。": "AK peut former la meilleure paire avec le meilleur kicker si un A ou un K tombe, mais reste nettement derrière AA et KK préflop. Avant de surrelancer, évaluez si des mains plus faibles paieront et si de meilleures mains se coucheront. "
 }

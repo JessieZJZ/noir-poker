@@ -225,7 +225,7 @@ test('a costly non-premium preflop call preserves its action and states the wide
   assert.match(c.label, /建议跟注/);
   assert.equal(c.recommendationConditional, true);
   assert.match(c.recommendedAction.condition, /这个大尺度.*较弱牌/);
-  assert.match(summary(c), /大额翻前跟注依赖对手/);
+  assert.match(summary(c), /大额翻前跟注需要对手.*且你能在翻后兑现/);
 });
 
 test('a raise over limpers describes isolation rather than uncontested blind stealing', () => {
@@ -690,7 +690,7 @@ for (const hole of ['Qs Qd', '5s 5d', 'As Kd']) {
     const result = coachDecision(s, r);
     const purpose =
       hole === 'As Kd'
-        ? /分别判断较弱牌会不会付费，以及更好的牌会不会弃掉/
+        ? /再加注要判断较弱牌是否付费、更好的牌是否弃牌/
         : /分别判断较弱牌是否会跟注、更强牌是否可能弃牌/;
     assert.match(summary(result), purpose);
     assert.match(result.followUp, purpose);

@@ -195,6 +195,13 @@ test('preflop reraise explanations state the hand risk once and separate it from
     assert.equal((text.match(anchor) || []).length, 1);
     assert.match(text, /明显落后。/);
     assert.match(text, /较弱牌.*(?:付费|跟注).*更(?:好|强).*弃牌/);
+    s.amount = s.legal.maxRaiseTo;
+    const allinText = summary(analyzeDecision(s, options).coaching);
+    assert.match(allinText, /实际已经全下.*不能再靠后街/);
+    assert.doesNotMatch(
+      allinText,
+      /根据实际公共牌和价格决定后续投入|若被跟注，按位置与实际公共牌判断后续投入/,
+    );
   }
 });
 

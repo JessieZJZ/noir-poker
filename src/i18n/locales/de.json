@@ -2880,5 +2880,6 @@
   "5-bet 加注至 {0}。": "5-bet: Raise auf {0}. ",
   "这组高牌即使击中一对，也可能被大对子或更好踢脚压制。": "Selbst nachdem ein Paar gebildet wurde, können diese hohen Karten gegen ein großes Paar oder einen besseren Kicker verlieren. ",
   "你拿 {0}，在 {1} 上{2}，当前{3}，牌面{4}{5}。这次拿出 {6} 是在尝试诈唬，想让更好的牌弃掉。被跟注后，当前牌力很难在摊牌时获胜。{7}": "Mit {0} auf {1} lautet deine Aktion „{2}“. Aktuell hältst du {3}, das Board ist {4} {5}. Dieser Einsatz von {6} ist ein Bluff, der bessere Hände zum Folden bringen soll. Nach einem Call wird deine aktuelle Hand beim Showdown nur schwer gewinnen. {7}",
-  "你在 {0} 拿 {1}，在 {2} 上是{3}，再补 {4} 跟注，继续争夺 {5} 的底池。{6}": "Du hältst auf {0} {1}, hast auf {2} {3}, callst weitere {4} und spielst weiter um den Pot von {5}. {6}"
+  "你在 {0} 拿 {1}，在 {2} 上是{3}，再补 {4} 跟注，继续争夺 {5} 的底池。{6}": "Du hältst auf {0} {1}, hast auf {2} {3}, callst weitere {4} und spielst weiter um den Pot von {5}. {6}",
+  "AK 击中 A 或 K 时有顶对顶踢脚潜力，但翻前面对 AA、KK 仍明显落后。再加注要判断较弱牌是否付费、更好的牌是否弃牌。": "AK kann mit einem A oder K Top Pair mit Top Kicker treffen, liegt preflop aber deutlich hinter AA und KK. Prüfe vor einem Reraise, ob schwächere Hände zahlen und bessere Hände folden. "
 }
