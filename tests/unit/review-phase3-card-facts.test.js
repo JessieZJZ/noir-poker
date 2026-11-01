@@ -40,7 +40,7 @@ test('public pair composition stays distinct from two independent private pairs'
   const river = facts('Qh Ad', '6c 2d 6d Qs 2c').context;
   for (const c of [turn, river]) {
     assert.equal(c.handClass, 'top-pair');
-    assert.match(c.handLabel, /底牌组成 Q 对，加公共牌 6 对/);
+    assert.match(c.handLabel, /一张底牌与公共牌组成一对 Q，再加公共牌一对 6，A 踢脚/);
   }
   assert.equal(facts('Qh Ad', 'Qc 2d 6d As 3c').context.handClass, 'two-pair');
   assert.match(facts('4h 4s', '8c 4c Qd 8h').context.handLabel, /葫芦：三张 4 加两张 8/);

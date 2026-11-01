@@ -76,7 +76,7 @@ export function checkRisks(s, c) {
     clauses.push(
       quadPossible
         ? '公共牌已配对，对手可能组成葫芦或四条，这些牌会领先当前成牌。'
-        : '公共牌已配对，对手仍可能组成葫芦，领先当前成牌。本人底牌已排除该公共对子组成四条的可能。',
+        : '公共牌已配对，对手仍可能组成葫芦，领先当前成牌。这手底牌已排除该公共对子组成四条的可能。',
     );
   }
   return clauses;
@@ -162,11 +162,11 @@ export function checkReasoning(s, c, { trap = false, closingExplained = false } 
   if (s.reviewAudience === 'observer') {
     if (risks.length && !c.draw.outs) parts.push('过牌避免主动扩大当前底池。');
     else if (trap && c.pendingOthers > 0)
-      parts.push('后面还有玩家可以下注，过牌为诱导其弱牌或诈唬继续投入留下机会。');
+      parts.push('后面还有玩家可以下注，过牌保留了诱导其拿较弱牌继续下注或尝试诈唬的机会。');
     else if (valueHolding)
       parts.push(
         c.pendingOthers > 0
-          ? '强成牌随过牌保留在局中，也给后面的玩家主动投入较弱牌或诈唬的机会。'
+          ? '强成牌随过牌保留在局中，也给后面的玩家用较弱成牌下注或用未成牌诈唬的机会。'
           : '这次选择让本轮下注结束，以当前强成牌保留后手和摊牌竞争力。',
       );
     else if (c.made.score[0] === 0 && !c.draw.outs)
@@ -202,7 +202,7 @@ export function checkReasoning(s, c, { trap = false, closingExplained = false } 
     parts.push('过牌的代价是对手也可能免费见到下一张，补成更强的牌。');
   if (c.pendingOthers > 0) {
     if (trap && !risks.length)
-      parts.push('后面还有玩家可以下注，过牌为诱导其弱牌或诈唬继续投入留下机会。');
+      parts.push('后面还有玩家可以下注，过牌保留了诱导其拿较弱牌继续下注或尝试诈唬的机会。');
     parts.push('再遇下注时，要结合金额、人数和此前行动判断，不能只凭当前牌型自动跟注或弃牌。');
   } else if (!closingExplained) parts.push(closing);
   return parts;

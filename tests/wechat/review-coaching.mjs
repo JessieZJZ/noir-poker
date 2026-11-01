@@ -258,8 +258,13 @@ try {
     assert.equal(await page.$('.review-comparison'), null);
     assert.ok(step.evidence.length >= 4 && (await page.data()).reviewActivity.length > 0);
     assert.equal(Boolean(await page.$('.review-practice-focus')), !step.keep);
-    assert.doesNotMatch(step.reason, /EV|模型|模拟器|抽样|新增投入/);
-    assert.doesNotMatch(step.evidence.join(''), /有效剩余|新增投入/);
+    // Additional chips and later-street costs are player-facing facts;
+    // raw calculation fields and diagnostic labels must remain hidden.
+    assert.doesNotMatch(step.reason, /EV|模型|模拟器|抽样|matchedExtra|matchedInvestment/);
+    assert.doesNotMatch(
+      step.evidence.join(''),
+      /有效剩余|matchedExtra|matchedInvestment|matchedBetRatio|requiredEquity|weightedEV/,
+    );
     assert.equal(step.publicResponses, undefined);
     report.checks.push({
       name,
@@ -271,6 +276,7 @@ try {
   await fixture('draw-context', snapshot, (step) => {
     assert.equal(step.keep, true);
     assert.match(step.reason, /两头顺听牌/);
+    assert.match(step.evidence.join(''), /跟注 125 后可争夺 1.125K.*不计后续新增投入.*11.1%/);
     assert.match(step.reason, /125/);
     assert.match(step.reason, /翻牌.*过牌/);
     assert.match(step.reason, /河牌.*诈唬/);
@@ -328,7 +334,7 @@ try {
 
   await fixture('clear-call-information-and-suited-ace', reportedKeyInfoCall(), (step) => {
     assert.match(step.evidence.join(''), /跟注前底池 460K.*底池赔率约 3.29:1/);
-    assert.match(step.evidence.join(''), /23.3% 的胜率，风险和收益才能持平/);
+    assert.match(step.evidence.join(''), /跟注 140K 后可争夺 600K.*23.3% 的胜率覆盖这次成本/);
     assert.match(step.reason, /你若再加注，需要同时考虑加注范围和跟注入池的范围/);
     assert.match(step.reason, /这次跟注后还留有 2.51M 筹码/);
     assert.match(step.reason, /翻后通常先行动.*过牌、取值或退出/);
@@ -376,7 +382,7 @@ try {
     assert.doesNotMatch(step.reason, /不能只按成牌标签|此前在翻牌前|相同牌力/);
   });
   await fixture('summary-KQs-five-bet-fold', suitedBroadwayFiveBetFold(), (step) => {
-    assert.match(step.reason, /再补 8.3K.*弃牌可以保留.*19K/);
+    assert.match(step.reason, /再补 8.3K.*弃牌值得保留.*19K/);
     assert.doesNotMatch(step.reason, /不必只因|是在回应|是在决定/);
     assert.equal(step.commentary.find((part) => part.matchups).matchups.rangeNotes.length, 0);
   });
@@ -494,7 +500,7 @@ try {
     .map((part) => part.text)
     .join('');
   assert.doesNotMatch(causalText, /A[♦♥♣♠]|Q[♦♥♣♠]/);
-  assert.doesNotMatch(hero.reason, /EV|模型|模拟器|抽样|新增投入/);
+  assert.doesNotMatch(hero.reason, /EV|模型|模拟器|抽样|matchedExtra|matchedInvestment/);
   const decision = causal.decisions[0];
   const knownCards = new Set([...decision.hole, ...decision.board].map((card) => card.key));
   const anonymous = hero.commentary.filter((part) => part.matchups);

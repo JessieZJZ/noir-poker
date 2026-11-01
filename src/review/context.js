@@ -146,7 +146,9 @@ export function handContext(s) {
     handLabel = shared
       ? `两对（公共牌组成，${rankText(made.score[3])} 踢脚）`
       : sharedPair
-        ? `两对：底牌组成 ${rankText(privatePair)} 对，加公共牌 ${rankText(sharedPair)} 对，${rankText(made.score[3])} 踢脚`
+        ? pocket
+          ? `两对：底牌已有一对 ${rankText(privatePair)}，加公共牌一对 ${rankText(sharedPair)}，${rankText(made.score[3])} 踢脚`
+          : `两对：一张底牌与公共牌组成一对 ${rankText(privatePair)}，再加公共牌一对 ${rankText(sharedPair)}，${rankText(made.score[3])} 踢脚`
         : `两对：${rankText(made.score[1])} 对和 ${rankText(made.score[2])} 对，${rankText(made.score[3])} 踢脚`;
   } else if (made.score[0] === 1) {
     if (pocket) {

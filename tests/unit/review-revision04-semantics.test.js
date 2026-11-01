@@ -508,11 +508,18 @@ test('an all-in compared with a call does not treat that call as a smaller value
   assert.match(call.followUp, /全下.*跟注 400/);
   assert.doesNotMatch(call.followUp, /较小下注能否收到更多弱牌跟注/);
   assert.match(call.followUp, /实际全下后已没有继续下注或弃牌/);
+  assert.match(call.explanation, /比较跟注以保留当前成牌的摊牌机会.*不主动抬高/);
   const raise = coachDecision(
     s,
     estimate(s, { primary: { action: 'raise', amount: 1200 }, code: 'dangerous-value-shove' }),
   );
   assert.match(raise.followUp, /较小下注能否收到更多弱牌跟注/);
+  const retained = coachDecision(
+    s,
+    estimate(s, { primary: { action: 'raise', amount: 4900 }, code: 'dangerous-value-shove' }),
+  );
+  assert.match(retained.followUp, /本次.*全下.*与跟注 400/);
+  assert.doesNotMatch(retained.followUp, /较小下注能否收到更多弱牌跟注/);
 });
 
 test('an initial strong-hand isolation raise is not described as a re-raise in replay coaching', () => {
@@ -544,6 +551,10 @@ test('initial-raise and all-in-versus-call practice text localizes with actions 
       shove,
       estimate(shove, { primary: { action: 'call', amount: 400 }, code: 'dangerous-value-shove' }),
     ).followUp,
+    coachDecision(
+      shove,
+      estimate(shove, { primary: { action: 'call', amount: 400 }, code: 'dangerous-value-shove' }),
+    ).paragraphs.at(-1),
   ];
   try {
     for (const locale of SUPPORTED_LOCALES) {
@@ -554,9 +565,59 @@ test('initial-raise and all-in-versus-call practice text localizes with actions 
         assert.doesNotMatch(value, /\{\d+\}/);
         if (!['zh-CN', 'zh-TW', 'ja'].includes(locale))
           assert.doesNotMatch(value, /\p{Script=Han}/u, `${locale}: ${value}`);
+        if (!['zh-CN', 'zh-TW', 'ja'].includes(locale))
+          assert.doesNotMatch(value, /[.!?][A-Za-zÀ-ÖØ-öø-ÿА-Яа-яЁё가-힣]/u, `${locale}: ${value}`);
       }
     }
   } finally {
     await loadLocale('zh-CN');
   }
+});
+
+test('a minimum value bet compares checking rather than an illegal smaller bet', () => {
+  for (const amount of [200, 400]) {
+    const s = spot({ hole: '6c Jd', board: '4h 4s 6s 8s 4c', action: 'raise', amount });
+    s.legal.minRaiseTo = 200;
+    const r = estimate(s, {
+      primary: { action: 'check', amount: 0 },
+      code: 'conditional-value-bet',
+    });
+    assert.equal(r.context.made.score[0], 6);
+    const c = coachDecision(s, r);
+    if (amount === 200) {
+      assert.doesNotMatch(c.explanation, /更小下注或过牌/);
+      assert.match(c.explanation, /比较过牌.*最小下注/);
+    } else assert.match(c.explanation, /更小下注或过牌/);
+  }
+});
+
+test('public-pair two-pair descriptions distinguish a pocket pair from one hole card pairing', () => {
+  const paired = spot({ hole: 'Ac 2d', board: 'Ad Ts 8h 7s 8d' });
+  assert.match(context(paired).handLabel, /一张底牌与公共牌组成一对 A.*公共牌一对 8.*10 踢脚/);
+  const pocket = spot({ hole: '7d 7c', board: 'Qs 5d As Qh' });
+  assert.match(context(pocket).handLabel, /底牌已有一对 7.*公共牌一对 Q.*A 踢脚/);
+  const shared = spot({ hole: 'Ac Kd', board: 'Qs Qh 8c 8h 2d' });
+  assert.match(context(shared).handLabel, /两对（公共牌组成，A 踢脚）/);
+});
+
+test('observer check language keeps the actor in third person and bets chips rather than cards', () => {
+  const blocked = spot({ hole: '5c Qd', board: '5h 5s 2d 9h', pending: [0, 1] });
+  const risk = checkReasoning({ ...blocked, reviewAudience: 'observer' }, context(blocked)).join(
+    '',
+  );
+  assert.doesNotMatch(risk, /本人底牌/);
+  assert.match(risk, /这手底牌已排除/);
+  const strong = spot({ hole: '8c 8d', board: '8h Ks 3s', pending: [0, 1] });
+  const text = checkReasoning({ ...strong, reviewAudience: 'observer' }, context(strong)).join('');
+  assert.doesNotMatch(text, /投入较弱牌/);
+  assert.match(text, /较弱成牌下注.*未成牌诈唬/);
+});
+
+test('a covering raise kept as the candidate compares with a different legal action', () => {
+  const s = spot({ hole: 'Jc 7d', board: '', action: 'raise', amount: 800, cost: 200 });
+  s.players[1].stack = 400;
+  const c = coachDecision(s, estimate(s));
+  assert.match(c.followUp, /实际下注已覆盖/);
+  assert.match(c.followUp, /与跟注 200/);
+  assert.doesNotMatch(c.followUp, /至 800与本次[^。]*至 800/);
 });

@@ -401,9 +401,11 @@ function explanation(s, r, evKind, suggested, kind, { comparisonOwned = false } 
       }[c.made.score[0]] || '较弱成牌';
     return [
       `你仍可能领先${weaker}，但本次可被匹配的新增投入最多 ${fmt(f.matchedInvestment)}，约为底池的 ${f.matchedPotRatio.toFixed(1)} 倍，愿意接下如此大下注的牌往往更强。`,
-      f.guaranteedUncalledInvestment
-        ? '强成牌不代表任何全下尺度都有价值，应比较较小下注能留下哪些较弱跟注牌，不能只凭目前能赢哪些牌，就认定它们也愿意支付全部可匹配的投入。'
-        : '强成牌不代表任何全下尺度都有价值，应比较较小下注能留下哪些较弱跟注牌，不能只凭目前能赢哪些牌，就认定它们也愿意支付整笔全下。',
+      suggested.action === 'call'
+        ? '比较跟注以保留当前成牌的摊牌机会，不主动抬高其他玩家继续的价格。'
+        : f.guaranteedUncalledInvestment
+          ? '强成牌不代表任何全下尺度都有价值，应比较较小下注能留下哪些较弱跟注牌，不能只凭目前能赢哪些牌，就认定它们也愿意支付全部可匹配的投入。'
+          : '强成牌不代表任何全下尺度都有价值，应比较较小下注能留下哪些较弱跟注牌，不能只凭目前能赢哪些牌，就认定它们也愿意支付整笔全下。',
     ];
   }
   if (r.code === 'flush-board-shove') return [r.reason];
@@ -446,10 +448,12 @@ function explanation(s, r, evKind, suggested, kind, { comparisonOwned = false } 
     }[c.made.score[0]];
     return [
       `你当前的${currentHand(s, c)}仍能领先${weaker}，下注的价值来自这些较弱牌愿意跟注，而不是只看自己已经成牌。`,
-      f.matchedPotRatio > 1.25
+      f.matchedPotRatio > 1.25 && s.amount > s.legal.minRaiseTo
         ? '这次投入明显超过底池，需要比较较小下注能否留下更多弱牌，当前牌型本身不能证明这个大尺度划算。'
         : s.legal.canCheck
-          ? '若这些较弱牌很少愿意继续，就应比较更小下注或过牌，不把取值当作必然收益。'
+          ? s.amount > s.legal.minRaiseTo
+            ? '若这些较弱牌很少愿意继续，就应比较更小下注或过牌，不把取值当作必然收益。'
+            : '若这些较弱牌很少愿意继续，就应比较过牌，不把最小下注的取值当作必然收益。'
           : s.amount > s.legal.minRaiseTo
             ? '若这些较弱牌很少愿意继续，就应比较较小的合法加注或跟注，不把取值当作必然收益。'
             : '若这些较弱牌很少愿意继续，就应比较跟注，不把最小加注的取值当作必然收益。',
@@ -806,13 +810,17 @@ function practiceFocus(s, r, action, conditional = false) {
       ? `先比较跟注 ${fmt(s.legal.callAmount)} 与弃牌`
       : action.action === 'fold' && s.legal.callAmount > 0
         ? `先比较弃牌与再补 ${fmt(s.legal.callAmount)} 跟注`
-        : `重点比较${suggestion}与本次${actual}`;
+        : same(action, { action: s.action, amount: s.amount })
+          ? `先比较${replayComparison}`
+          : `重点比较${suggestion}与本次${actual}`;
   if (s.street && c.handClass === 'board')
     return `重打 ${f.boardText} 这手时，先看 ${f.holeText || c.handLabel} 是否提高了公共牌，本次没有提高，平分机会不能算成独占底池。${c.matchups?.nut ? (s.legal.callAmount > 0 ? '公共牌已是最大成牌，对手不能组成更大的牌，重点比较分池份额与跟注成本。' : '') : '对手仍可能用底牌提高公共牌，需要同时判断落后与平分的机会。'}${exhaustsStack(s) ? '你已全下，之后不再参与下注或弃牌决策。' : ''}`;
   if (s.action === 'raise' && !exhaustsStack(s) && s.players && coversOpponentStacks(s, s.amount))
     return `重打 ${f.holeText} 这手，${comparison}。本次实际下注已覆盖所有未弃牌对手的剩余筹码，他们即使全部跟注，也没有更多筹码继续加注或后街下注，应在投入前核对价格与继续范围。`;
   if (exhaustsStack(s))
-    return r.code === 'dangerous-value-shove' && action.action === 'raise'
+    return r.code === 'dangerous-value-shove' &&
+      action.action === 'raise' &&
+      !same(action, { action: s.action, amount: s.amount })
       ? `重打 ${f.holeText} 这手，先对照本次全下与${suggestion}，重点比较较小下注能否收到更多弱牌跟注，不能只凭强成牌支持全部可匹配的投入。你实际全下后已没有继续下注或弃牌的选择。`
       : `重打 ${f.holeText} 这手，先比较${replayComparison}，再结合全下前的价格与对手范围判断。你实际全下后已没有继续下注或弃牌的选择。`;
   if (s.legal.callAmount >= s.stack && s.stack > 0 && !s.legal.canCheck)

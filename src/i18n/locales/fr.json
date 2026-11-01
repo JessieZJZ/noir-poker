@@ -2836,7 +2836,7 @@
   "河牌已发完，这条进攻需要对手放弃更好的牌，不能依赖下一张改善。": "La river est déjà sortie. Cette attaque exige que les adversaires couchent de meilleures mains et ne peut pas compter sur une carte supplémentaire pour améliorer.",
   "较小跟注仍需对手范围、价格与位置支持，不能只因这次加注缺少依据就肯定跟注。": "Un call plus petit doit toujours être soutenu par les ranges adverses, le prix et la position. L’absence de justification pour cette relance ne suffit pas à valider le call.",
   "过牌可以保留当前成牌的摊牌机会，但也可能少收较弱成牌的跟注。": "Checker conserve les chances de la main faite à l’abattage, mais peut manquer des calls de mains faites plus faibles.",
-  "这手建议补 {0} 跟注，前提是对手会用{1}下注，当前成牌才能以这个价格争取摊牌。": "La recommandation est d’ajouter {0} pour suivre, à condition que l’adversaire mise avec {1}, afin que la main faite actuelle puisse disputer l’abattage à ce prix.",
+  "这手建议补 {0} 跟注，前提是对手会用{1}下注，当前成牌才能以这个价格争取摊牌。": " La recommandation est d’ajouter {0} pour suivre, à condition que l’adversaire mise avec {1}, afin que la main faite actuelle puisse disputer l’abattage à ce prix. ",
   "这是本轮最后行动，过牌后免费见下一张。": "C’est la dernière action du tour ; checker permet de voir gratuitement la carte suivante. ",
   "这是本轮最后行动，过牌后直接摊牌。": "C’est la dernière action du tour ; checker mène directement à l’abattage.",
   "这是本轮最后行动，过牌让双方免费见下一张，也给了对手补成更强牌的机会。": "C’est la dernière action du tour. Checker donne une carte gratuite aux deux joueurs et permet aussi à l’adversaire d’améliorer vers une main plus forte.",
@@ -2978,5 +2978,13 @@
   "本次{0}与弃牌": "cette action réelle {0} face au fold",
   "重打 {0} 这手，{1}：底池 {2}，你原本还有 {3}，实际这次可被匹配的新增投入最多 {4}。{5}": "Rejouez {0}. {1}. Le pot était de {2} et il vous restait {3}. Au maximum {4} de l’investissement supplémentaire réel peuvent être égalés. {5}",
   "本次{0}": "cette action réelle {0}",
-  "重打 {0} 这手，{1}，比较{2}与较小投入，核对{3}是否愿意支付这个尺度；若它们退出而更强牌继续，就不能仅凭强起手牌把加注当作取值。": "Rejouez {0} : {1}. Comparez {2} à un investissement plus faible et vérifiez si {3} paieraient ce montant. Si ces mains se couchent alors que les plus fortes continuent, une forte main de départ ne suffit pas à faire de la relance une relance de valeur."
+  "重打 {0} 这手，{1}，比较{2}与较小投入，核对{3}是否愿意支付这个尺度；若它们退出而更强牌继续，就不能仅凭强起手牌把加注当作取值。": "Rejouez {0} : {1}. Comparez {2} à un investissement plus faible et vérifiez si {3} paieraient ce montant. Si ces mains se couchent alors que les plus fortes continuent, une forte main de départ ne suffit pas à faire de la relance une relance de valeur.",
+  "若这些较弱牌很少愿意继续，就应比较过牌，不把最小下注的取值当作必然收益。": " Si ces mains plus faibles continuent rarement, comparez le check. Même la mise minimale ne garantit pas de valeur. ",
+  "公共牌已配对，对手仍可能组成葫芦，领先当前成牌。这手底牌已排除该公共对子组成四条的可能。": " Le tableau est pairé. Un adversaire peut encore avoir un full qui bat la main actuelle. Ces cartes privatives excluent un carré du rang pairé au tableau. ",
+  "强成牌随过牌保留在局中，也给后面的玩家用较弱成牌下注或用未成牌诈唬的机会。": " Le check garde la main forte en jeu et laisse aux joueurs suivants l’occasion de miser avec une main faite plus faible ou de bluffer avec une main non faite. ",
+  "后面还有玩家可以下注，过牌保留了诱导其拿较弱牌继续下注或尝试诈唬的机会。": " Les joueurs suivants peuvent encore miser. Le check laisse la possibilité de les inciter à miser avec une main plus faible ou à tenter un bluff. ",
+  "两对：底牌已有一对 {0}，加公共牌一对 {1}，{2} 踢脚": "Deux paires : une paire servie de {0} plus la paire de {1} du tableau, kicker {2}",
+  "两对：一张底牌与公共牌组成一对 {0}，再加公共牌一对 {1}，{2} 踢脚": "Deux paires : une carte privative forme une paire de {0} avec le tableau, plus la paire de {1} du tableau, kicker {2}",
+  "过牌的代价是对手也可能免费见到下一张，补成更强的牌。": " Le coût de la parole est qu’un adversaire peut aussi voir gratuitement la prochaine carte et améliorer sa main. ",
+  "比较跟注以保留当前成牌的摊牌机会，不主动抬高其他玩家继续的价格。": " Comparez le call pour conserver la chance d’aller à l’abattage avec la main actuelle sans augmenter le prix pour les autres joueurs. "
 }
