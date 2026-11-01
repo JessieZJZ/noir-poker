@@ -1109,6 +1109,71 @@ export async function nativeScenarios(app) {
     assert.equal(await app.evaluate(() => document.querySelector('#rules-dialog').open), false);
     return { before, after, scope: 'Installed app guide scrolling and fixed header geometry' };
   });
+  await check('win-rate-calculator', async () => {
+    const before = await app.state();
+    const pick = async (...keys) => {
+      for (const key of keys) await app.click(`[data-pick="${key}"]`);
+    };
+    const odds = () =>
+      app.evaluate(() =>
+        [...document.querySelectorAll('.win-rate-odds-values strong')].map(
+          (value) => value.textContent,
+        ),
+      );
+    await app.click('#rules-button');
+    await app.click('#win-rate-menu-item');
+    await app.screenshot('win-rate-empty');
+    await app.click('[data-player="0"][data-card="0"]');
+    await pick('0-14', '0-13');
+    await app.click('[data-player="1"][data-card="0"]');
+    await pick('0-8');
+    await app.screenshot('win-rate-picker');
+    await pick('0-7');
+    const preflop = await app.waitFor(
+      async () => {
+        const values = await odds();
+        return values.length === 2 ? values : null;
+      },
+      20000,
+      'Preflop odds must finish',
+    );
+    await app.click('#win-rate-add');
+    const third = await app.evaluate(
+      () => document.querySelector('.win-rate-seat:last-child [data-player]').dataset.player,
+    );
+    await app.click(`[data-player="${third}"][data-card="0"]`);
+    await pick('2-10', '1-10');
+    await app.click('[data-board="0"]');
+    await pick('0-6', '0-11', '2-11');
+    const flop = await app.waitFor(
+      async () => {
+        const values = await odds();
+        return values.length === 3 ? values : null;
+      },
+      5000,
+      'Flop odds must finish',
+    );
+    assert.deepEqual(flop, ['44.85%', '2.99%', '51.83%']);
+    const layout = await app.evaluate(() => {
+      const dialog = document.querySelector('#win-rate-dialog');
+      const header = dialog.querySelector('.win-rate-header').getBoundingClientRect();
+      const clear = document.querySelector('#win-rate-clear').getBoundingClientRect();
+      return {
+        overflow: dialog.scrollWidth > dialog.clientWidth,
+        headerTop: header.top,
+        clearBottom: clear.bottom,
+        height: window.innerHeight,
+        outs: document.querySelector('.win-rate-outs-heading b').textContent,
+      };
+    });
+    assert.equal(layout.overflow, false);
+    assert.ok(layout.clearBottom <= layout.height);
+    assert.equal(layout.outs, '12');
+    await app.screenshot('win-rate-flop');
+    await app.click('#win-rate-dialog .close-dialog');
+    assert.equal((await app.state()).hand, before.hand);
+    return { preflop, flop, layout, sameHand: true };
+  });
   await check('mixed-toggle-and-visual-guide', async () => {
     await app.click('#opponents-button');
     if (

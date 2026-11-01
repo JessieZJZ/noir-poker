@@ -1,0 +1,476 @@
+/* Values mirror src/styles/win-rate.css so the page matches Web and the apps. */
+page {
+  background: #0b1017;
+  color: #edf3f6;
+}
+/* Scoped so these outrank WeChat's default 184px button width. */
+.win-rate-screen button,
+.win-rate-actions button,
+.win-rate-picker button {
+  width: auto;
+  min-width: 0;
+  max-width: none;
+  margin: 0;
+  padding: 0;
+  font-weight: 400;
+  line-height: 1.4;
+}
+.win-rate-screen button::after,
+.win-rate-actions button::after,
+.win-rate-picker button::after {
+  border: 0;
+}
+.win-rate-chrome {
+  position: fixed;
+  inset: 0 0 auto;
+  z-index: 20;
+  background: #101d1e;
+}
+.win-rate-heading {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 48px;
+  padding: 0 16px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 19px;
+  font-weight: 600;
+}
+.win-rate-close {
+  position: relative;
+  width: 32px;
+  height: 32px;
+  border: 1px solid #2c3e4a;
+  border-radius: 50%;
+  box-sizing: border-box;
+}
+.win-rate-cross {
+  position: absolute;
+  inset: 0;
+}
+.win-rate-cross::before,
+.win-rate-cross::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 14px;
+  height: 2px;
+  margin: -1px 0 0 -7px;
+  border-radius: 1px;
+  background: currentColor;
+  transform: rotate(45deg);
+}
+.win-rate-cross::after {
+  transform: rotate(-45deg);
+}
+.win-rate-screen {
+  min-height: 100vh;
+  box-sizing: border-box;
+  padding-left: 16px;
+  padding-right: 16px;
+  background: radial-gradient(120% 420px at 50% 0, #17332d 0, transparent 70%);
+}
+.win-rate-felt {
+  padding: 14px 12px 8px;
+  border: 1px solid #4d7a6d66;
+  border-radius: 26px;
+  background: radial-gradient(90% 120% at 50% 30%, #1f4a40 0, #122f2b 62%, #0d2221 100%);
+  box-shadow:
+    inset 0 0 0 5px #0a1a1a66,
+    inset 0 0 26px #0006,
+    0 10px 26px #0005;
+}
+.win-rate-board {
+  display: flex;
+  justify-content: center;
+  gap: 14px;
+}
+.win-rate-street {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+}
+.win-rate-street-label {
+  color: #9cc2b5;
+  font-size: 11px;
+}
+.win-rate-street-cards,
+.win-rate-hole {
+  display: flex;
+  gap: 5px;
+}
+.win-rate-slot {
+  position: relative;
+  flex: none;
+  width: 44px;
+  height: 62px;
+  border-radius: 7px;
+}
+.win-rate-slot.is-active {
+  outline: 2px solid #6ee7c5;
+  outline-offset: 2px;
+}
+.win-rate-card,
+.win-rate-out,
+.win-rate-pick-face {
+  background-color: #eef5f6;
+  background-image: linear-gradient(125deg, #fff, #dbe6ea);
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+}
+.win-rate-card {
+  width: 100%;
+  height: 100%;
+  border: 1px solid #eef7fa;
+  border-radius: 7px;
+  box-sizing: border-box;
+  box-shadow: 0 3px 8px #0006;
+}
+.win-rate-board-mark {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  color: #81b9a433;
+  font-size: 24px;
+  background: #0e262433;
+  border: 1px dashed #73a99866;
+  border-radius: 7px;
+  box-sizing: border-box;
+}
+.win-rate-back {
+  width: 100%;
+  height: 100%;
+  border: 2px solid #7da8ad;
+  border-radius: 7px;
+  box-sizing: border-box;
+  background:
+    repeating-linear-gradient(45deg, transparent 0 3px, #568c9540 3px 4px),
+    repeating-linear-gradient(-45deg, #1b3947 0 3px, #60939850 3px 4px);
+  box-shadow: 0 2px 5px #0005;
+}
+.win-rate-seats {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 14px;
+}
+.win-rate-seat {
+  padding: 10px 12px;
+  background: #121c26;
+  border: 1px solid #2c3e4a;
+  border-radius: 14px;
+}
+.win-rate-seat.is-hero {
+  background: #13241f;
+  border-color: #3f7a68;
+}
+.win-rate-seat-main {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.win-rate-hand {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  gap: 5px;
+}
+.win-rate-name {
+  color: #cfdde2;
+  font-size: 12px;
+  font-weight: 500;
+}
+.is-hero .win-rate-name {
+  color: #6ee7c5;
+}
+.win-rate-odds {
+  flex: 1;
+  min-width: 0;
+  min-height: 62px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+}
+.win-rate-odds-values {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+.win-rate-odds-label {
+  color: #9db1bb;
+  font-size: 12px;
+}
+.win-rate-odds-value {
+  color: #edf3f6;
+  font-size: 22px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  line-height: 1.2;
+}
+.win-rate-odds-tie {
+  color: #8ea3ae;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+.win-rate-bar {
+  height: 4px;
+  overflow: hidden;
+  background: #22323d;
+  border-radius: 999px;
+}
+.win-rate-bar-fill {
+  height: 100%;
+  background: #7da8ad;
+  border-radius: 999px;
+  transition: width 0.24s;
+}
+.is-hero .win-rate-bar-fill {
+  background: #6ee7c5;
+}
+.win-rate-waiting {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #8ea3ae;
+  font-size: 14px;
+}
+.win-rate-spinner {
+  width: 16px;
+  height: 16px;
+  box-sizing: border-box;
+  border: 2px solid #3b5a55;
+  border-top-color: #6ee7c5;
+  border-radius: 50%;
+  animation: win-rate-spin 0.8s linear infinite;
+}
+.win-rate-waiting.is-computing {
+  opacity: 0;
+  animation: win-rate-appear 0.16s 0.12s forwards;
+}
+@keyframes win-rate-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes win-rate-appear {
+  to {
+    opacity: 1;
+  }
+}
+.win-rate-remove {
+  position: relative;
+  flex: none;
+  width: 30px;
+  height: 30px;
+  box-sizing: border-box;
+  color: #d9929d;
+  background: #321c24;
+  border: 1px solid #6a3a46;
+  border-radius: 50%;
+}
+.win-rate-outs {
+  margin-top: 9px;
+  padding-top: 8px;
+  border-top: 1px solid #2a3b46;
+}
+.win-rate-outs-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 24px;
+  color: #9db1bb;
+  font-size: 12px;
+}
+.win-rate-outs-count {
+  color: #6ee7c5;
+  font-weight: 600;
+}
+.win-rate-outs-heading .win-rate-outs-toggle {
+  padding: 3px 8px;
+  color: #adc2ca;
+  font-size: 12px;
+  background: #1a2833;
+  border: 1px solid #32454f;
+  border-radius: 8px;
+}
+.win-rate-outs-cards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 6px;
+}
+.win-rate-out {
+  width: 30px;
+  height: 42px;
+  border-radius: 5px;
+}
+.win-rate-screen .win-rate-add {
+  display: block;
+  width: 100%;
+  height: 46px;
+  margin-top: 10px;
+  color: #6ee7c5;
+  font-size: 14px;
+  line-height: 44px;
+  background: #13241f;
+  border: 1px dashed #3f7a68;
+  border-radius: 12px;
+  box-sizing: border-box;
+}
+.win-rate-screen .win-rate-add[disabled] {
+  color: #6ee7c5;
+  background: #13241f;
+  opacity: 0.38;
+}
+.win-rate-note {
+  display: block;
+  margin: 10px 2px 0;
+  color: #8ea3ae;
+  font-size: 12px;
+  line-height: 1.6;
+}
+.win-rate-outs-note {
+  margin-top: 2px;
+}
+.win-rate-actions {
+  position: fixed;
+  inset: auto 0 0;
+  z-index: 20;
+  display: flex;
+  justify-content: flex-end;
+  padding: 10px 16px;
+  background: #0b1017;
+  border-top: 1px solid #1e2c36;
+}
+.win-rate-actions #win-rate-clear {
+  min-width: 96px;
+  height: 44px;
+  padding: 0 18px;
+  color: #eeb5bf;
+  font-size: 14px;
+  line-height: 42px;
+  background: #2a1a20;
+  border: 1px solid #6a3a46;
+  border-radius: 12px;
+  box-sizing: border-box;
+}
+.win-rate-mask {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  background: #05090ed9;
+  backdrop-filter: blur(8px);
+}
+.win-rate-picker {
+  position: fixed;
+  inset: auto 0 0;
+  z-index: 31;
+  display: flex;
+  flex-direction: column;
+  max-width: 740px;
+  max-height: 92vh;
+  margin: 0 auto;
+  background: #14202a;
+  border: 1px solid #3b504f;
+  border-bottom: 0;
+  border-radius: 18px 18px 0 0;
+  box-sizing: border-box;
+  animation: win-rate-sheet 0.2s ease-out;
+}
+@keyframes win-rate-sheet {
+  from {
+    transform: translateY(24px);
+    opacity: 0;
+  }
+}
+.win-rate-picker-title {
+  flex: none;
+  padding: 14px 16px 10px;
+  font-size: 15px;
+  font-weight: 700;
+}
+.win-rate-picker-grid {
+  flex: 1;
+  min-height: 0;
+  padding: 2px 16px 2px;
+  box-sizing: border-box;
+}
+.win-rate-suit {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 6px;
+  margin-bottom: 10px;
+}
+.win-rate-pick {
+  position: relative;
+  height: 0;
+  padding-bottom: 138.9%;
+  border-radius: 6px;
+}
+.win-rate-pick-face {
+  position: absolute;
+  inset: 0;
+  border-radius: 6px;
+}
+.win-rate-pick.is-used .win-rate-pick-face {
+  filter: grayscale(1) brightness(0.45);
+}
+.win-rate-pick.is-selected {
+  outline: 2px solid #6ee7c5;
+  outline-offset: -2px;
+}
+.win-rate-picker-actions {
+  display: grid;
+  flex: none;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  padding: 10px 16px;
+  border-top: 1px solid #263541;
+}
+.win-rate-picker .win-rate-picker-actions button {
+  width: 100%;
+  height: 44px;
+  color: #edf3f6;
+  font-size: 14px;
+  line-height: 42px;
+  background: #1c2c37;
+  border: 1px solid #3a4f5b;
+  border-radius: 12px;
+  box-sizing: border-box;
+}
+@media (min-width: 701px) {
+  .win-rate-suit {
+    grid-template-columns: repeat(13, minmax(0, 1fr));
+  }
+}
+@media (max-width: 340px) {
+  .win-rate-slot {
+    width: 38px;
+    height: 54px;
+  }
+  .win-rate-board {
+    gap: 8px;
+  }
+  .win-rate-street-cards {
+    gap: 3px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .win-rate-spinner,
+  .win-rate-picker {
+    animation: none;
+  }
+  .win-rate-waiting.is-computing {
+    opacity: 1;
+    animation: none;
+  }
+}

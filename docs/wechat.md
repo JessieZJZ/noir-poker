@@ -30,7 +30,7 @@ NOIR_WECHAT_APP_ID=wx你的AppID npm run wechat:open
 
 微信开发者工具里的“编译”只编译已导入的 `.artifacts/wechat`，不会执行仓库的源码生成步骤。只修改 `src/` 或 `miniprogram/` 而未重新生成，该按钮仍会读取旧版本。多工作目录并行开发时，监听器必须从当前工程对应的 checkout 启动；另一个 worktree 的监听器不会更新此目录。暂停测试验收时仍可单独生成预览资源，不需要运行 E2E。若重建后工具仍显示旧文件，只清理该工程的编译缓存并重新打开，保留存储与本机 IDE 偏好。
 
-每次生成都从当前共享源码转译 CommonJS/ES2019，把引用的 JSON 数据内嵌到 JavaScript 模块，保留共享 JavaScript 模块之间的引用，压缩并裁切全部本地头像，生成本地声音，写入文件清单和源码 SHA-256。小程序运行时无需 Node 的 JSON 模块加载器。`wechat:verify` 拒绝过期源码、损坏文件、缺失头像或不一致的 AppID。主包与每个分包分别采用 2 MiB 的保守预算，总包预算 20 MiB。音乐在本地 `music` 分包，声音开启时通过 `require.async` 加载本地资源入口后用独立循环上下文播放；不占用主包预算，也不使用远程音频 URL。清单记录各包大小，超出就阻止构建。
+每次生成都从当前共享源码转译 CommonJS/ES2019，把引用的 JSON 数据内嵌到 JavaScript 模块，保留共享 JavaScript 模块之间的引用，压缩并裁切全部本地头像，生成本地声音，写入文件清单和源码 SHA-256。小程序运行时无需 Node 的 JSON 模块加载器。`wechat:verify` 拒绝过期源码、损坏文件、缺失头像或不一致的 AppID。主包与每个分包分别采用 2 MiB 的保守预算，总包预算 20 MiB。[胜率计算器](win-rate-calculator.md)在本地 `calculator` 分包。音乐在本地 `music` 分包，声音开启时通过 `require.async` 加载本地资源入口后用独立循环上下文播放；不占用主包预算，也不使用远程音频 URL。清单记录各包大小，超出就阻止构建。
 
 `miniprogram/project.config.json` 与 `project.private.config.json` 是本机 IDE 状态，忽略 Git 跟踪及模板源码指纹；项目配置由构建器生成，私有偏好从目标工程保留，不进入运行文件清单。调整 IDE 偏好不会让共享源码或运行资源被误判为过期。
 
@@ -97,12 +97,13 @@ CLI 工程路径使用绝对路径。清理的仅是编译缓存，保留设置�
 
 顶部设置按钮与菜单的布局间隔为 4px，菜单宽度为 88px，文字与齿轮视觉距离保持在 12px 内；设置按钮仍为 34px。两种轮换文案使用同一固定文字窗口，切换时不改变间距。
 
-顶部菜单提供玩法指南和对局记录，菜单关闭时轮换文字。`pages/records/records` 按局倒序、局内按手和重打次数正序展示图形底牌、输赢、净变化及“补码”标记；局项不显示完成手数。`pages/history/history` 是独立的历史结算页面，复用 `pages/table/page-definition.js` 的结算视图与复盘，只允许查看。关闭后继续同局下一手，未完成手的所有下注撤回、不计统计；待生效人数或盲注变化才会开启新局。更多统计口径见 [本机对局记录](game-records.md)。
+顶部菜单提供玩法指南、对局记录和胜率计算器，菜单关闭时轮换前两项文字。`pages/records/records` 按局倒序、局内按手和重打次数正序展示图形底牌、输赢、净变化及“补码”标记；局项不显示完成手数。`pages/history/history` 是独立的历史结算页面，复用 `pages/table/page-definition.js` 的结算视图与复盘，只允许查看。关闭后继续同局下一手，未完成手的所有下注撤回、不计统计；待生效人数或盲注变化才会开启新局。更多统计口径见 [本机对局记录](game-records.md)。
 
 实际 DevTools 专项（端口按本机实际值替换）：
 
 ```sh
 node tests/wechat/game-records.mjs ws://127.0.0.1:9483 .artifacts/wechat-records/local
+node tests/wechat/win-rate.mjs ws://127.0.0.1:9483 .artifacts/wechat-win-rate
 ```
 
 该套需当前源码生成的包及真实页面导航，保留图形底牌、历史结算／复盘、不中止实时对局、重打与刷新退款的报告和截图。静态编译与 mock 不代表此运行级别通过。Web E2E 使用单独的 Vite 测试服务，不启动小程序监听器，避免覆盖正在验收的微信包。

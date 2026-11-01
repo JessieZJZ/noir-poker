@@ -26,6 +26,12 @@ function createRecordNavigation({ api, pages }) {
       }
       return transition('navigateTo', { url: '/pages/records/records', fail });
     },
+    openWinRate({ fail } = {}) {
+      if (pending) return false;
+      const game = pages().find((page) => route(page) === 'pages/table/table');
+      if (game) game._browsingRecords = true;
+      return transition('navigateTo', { url: '/calculator/win-rate', fail });
+    },
     openHand(id) {
       const stack = pages();
       return transition(

@@ -44,7 +44,7 @@
         class="guide-button"
         id="resource-menu-button"
         bindtap="toggleResourceMenu"
-        aria-label="玩法指南和对局记录"
+        aria-label="玩法指南、对局记录和胜率计算器"
       >
         <view class="resource-label-window {{resourceRolling ? 'is-rolling' : ''}}">
           <text class="resource-label-previous">{{resourcePreviousLabel}}</text>
@@ -55,6 +55,7 @@
       <view wx:if="{{resourceMenuOpen}}" class="resource-menu">
         <button id="resource-guide" bindtap="openGuide">玩法指南</button>
         <button id="resource-records" bindtap="openRecords">对局记录</button>
+        <button id="resource-win-rate" bindtap="openWinRate">胜率计算器</button>
       </view></view
     >
   </view>

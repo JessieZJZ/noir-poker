@@ -1025,6 +1025,14 @@ module.exports = {
       },
     });
   },
+  openWinRate() {
+    this.closeResourceMenu();
+    navigation.openWinRate({
+      fail: () => {
+        this._browsingRecords = false;
+      },
+    });
+  },
   returnToGame() {
     navigation.returnToGame();
   },

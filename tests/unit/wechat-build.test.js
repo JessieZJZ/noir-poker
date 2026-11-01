@@ -264,7 +264,11 @@ test('concurrent WeChat builders serialize and preserve DevTools private prefere
   );
   assert.ok(manifest.packageBytes.main < 2 * 1024 * 1024);
   assert.ok(manifest.packageBytes.music < 2 * 1024 * 1024);
-  assert.equal(manifest.totalBytes, manifest.packageBytes.main + manifest.packageBytes.music);
+  assert.ok(manifest.packageBytes.calculator < 2 * 1024 * 1024);
+  assert.equal(
+    manifest.totalBytes,
+    manifest.packageBytes.main + manifest.packageBytes.music + manifest.packageBytes.calculator,
+  );
   assert.deepEqual(
     readFileSync(path.join(workspace.output, 'music/background-music.m4a')),
     readFileSync(path.join(workspace.directory, 'public/audio/background-music-mobile.m4a')),
