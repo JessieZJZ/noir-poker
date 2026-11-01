@@ -2986,5 +2986,9 @@
   "两对：底牌已有一对 {0}，加公共牌一对 {1}，{2} 踢脚": "Dois pares: um par de mão de {0} mais o par de {1} do bordo, kicker {2}",
   "两对：一张底牌与公共牌组成一对 {0}，再加公共牌一对 {1}，{2} 踢脚": "Dois pares: uma carta própria forma um par de {0} com o bordo, mais o par de {1} do bordo, kicker {2}",
   "过牌的代价是对手也可能免费见到下一张，补成更强的牌。": " O custo de passar é que um adversário também pode ver a próxima carta de graça e melhorar para uma mão mais forte. ",
-  "比较跟注以保留当前成牌的摊牌机会，不主动抬高其他玩家继续的价格。": " Compare o call para manter a chance de showdown da mão atual sem aumentar o preço para os outros jogadores. "
+  "比较跟注以保留当前成牌的摊牌机会，不主动抬高其他玩家继续的价格。": " Compare o call para manter a chance de showdown da mão atual sem aumentar o preço para os outros jogadores. ",
+  "目前只有高牌，尚未成对，过牌保留在摊牌时击败较弱高牌的机会，避免主动做大底池。": " Você tem apenas carta alta, sem par. O check mantém a chance de vencer cartas altas mais fracas no showdown sem aumentar ativamente o pote. ",
+  "过牌不增加投入，本轮仍需等待后面玩家行动。": " O check não acrescenta fichas; os jogadores seguintes ainda precisam agir nesta rodada. ",
+  "重打 {0} 这手，{1}。{2}{3}底池为 {4}，{5}。加注路线要核对对手是否有足够弃牌空间，以及被跟注后的摊牌机会是否与投入相称。{6}": " Repita {0}: {1}. {2}{3} O pote é {4}; {5}. Na linha de aumento, avalie se os adversários desistem com frequência suficiente e se as chances no showdown após um call justificam o investimento. {6} ",
+  "底池为 {0}，{1}。加注路线要核对对手是否有足够弃牌空间，以及被跟注后的摊牌机会是否与投入相称。": " O pote é {0}; {1}. Na linha de aumento, avalie se os adversários desistem com frequência suficiente e se as chances no showdown após um call justificam o investimento. "
 }

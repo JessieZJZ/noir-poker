@@ -2986,5 +2986,9 @@
   "两对：底牌已有一对 {0}，加公共牌一对 {1}，{2} 踢脚": "Doble pareja: una pareja de mano de {0} más la pareja de {1} del board, kicker {2}",
   "两对：一张底牌与公共牌组成一对 {0}，再加公共牌一对 {1}，{2} 踢脚": "Doble pareja: una carta propia forma con el board una pareja de {0}, más la pareja de {1} del board, kicker {2}",
   "过牌的代价是对手也可能免费见到下一张，补成更强的牌。": " El coste de pasar es que un rival también puede ver gratis la siguiente carta y mejorar a una mano más fuerte. ",
-  "比较跟注以保留当前成牌的摊牌机会，不主动抬高其他玩家继续的价格。": " Compara pagar para conservar la opción de llegar al showdown con la mano actual sin subir el precio a los demás jugadores. "
+  "比较跟注以保留当前成牌的摊牌机会，不主动抬高其他玩家继续的价格。": " Compara pagar para conservar la opción de llegar al showdown con la mano actual sin subir el precio a los demás jugadores. ",
+  "目前只有高牌，尚未成对，过牌保留在摊牌时击败较弱高牌的机会，避免主动做大底池。": " Solo tienes carta alta, sin pareja. Pasar conserva la oportunidad de ganar a cartas altas más débiles en el showdown sin aumentar activamente el bote. ",
+  "过牌不增加投入，本轮仍需等待后面玩家行动。": " Pasar no añade fichas; aún deben actuar los jugadores que quedan detrás en esta ronda. ",
+  "重打 {0} 这手，{1}。{2}{3}底池为 {4}，{5}。加注路线要核对对手是否有足够弃牌空间，以及被跟注后的摊牌机会是否与投入相称。{6}": " Repite {0}: {1}. {2}{3} El bote es {4}; {5}. Para la línea de subida, valora si los rivales se retiran lo bastante y si las posibilidades al showdown cuando pagan justifican la inversión. {6} ",
+  "底池为 {0}，{1}。加注路线要核对对手是否有足够弃牌空间，以及被跟注后的摊牌机会是否与投入相称。": " El bote es {0}; {1}. Para la línea de subida, valora si los rivales se retiran lo bastante y si las posibilidades al showdown cuando pagan justifican la inversión. "
 }

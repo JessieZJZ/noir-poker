@@ -89,7 +89,7 @@ test('unpaired hero and observer checks discuss high-card showdown rather than w
   for (const audience of ['hero', 'observer']) {
     const text = checkReasoning({ ...s, reviewAudience: audience }, context(s)).join('');
     assert.match(text, /只有高牌.*尚未成对/);
-    assert.match(text, /较弱高牌.*摊牌/);
+    assert.match(text, /摊牌时击败较弱高牌/);
     assert.doesNotMatch(text, /更弱成牌付费/);
   }
   const strong = spot({ hole: '8c 8d', board: '8h Ks 3s' });
@@ -620,4 +620,44 @@ test('a covering raise kept as the candidate compares with a different legal act
   assert.match(c.followUp, /实际下注已覆盖/);
   assert.match(c.followUp, /与跟注 200/);
   assert.doesNotMatch(c.followUp, /至 800与本次[^。]*至 800/);
+});
+
+test('preflop comparisons scope fold equity and being called to the raising route', () => {
+  for (const primary of [
+    { action: 'fold', amount: 0 },
+    { action: 'call', amount: 200 },
+  ]) {
+    const s = spot({ hole: 'Qh 7d', board: '', action: 'raise', amount: 800, cost: 200 });
+    const c = coachDecision(s, estimate(s, { primary, code: 'pressure-bet' }));
+    assert.doesNotMatch(c.followUp, /各自的投入能否争取足够弃牌/);
+    assert.match(c.followUp, /加注路线.*弃牌空间.*被跟注后的摊牌机会/);
+    assert.match(c.followUp, /800/);
+    assert.match(c.followUp, primary.action === 'fold' ? /弃牌.*20K/ : /跟注 200/);
+  }
+});
+
+test('a river range explanation waits for pending opponents before claiming showdown', () => {
+  for (const pending of [[0, 1], [0]]) {
+    const s = spot({ hole: 'Ac 6d', board: 'Ah Js 9s Ks 8d', pending });
+    s.history = [
+      { id: 1, street: 0, action: 'raise', amount: 600 },
+      { id: 0, street: 0, action: 'call', amount: 600 },
+    ];
+    const n = strategyNotes(s, { range: { advantage: -0.2, uncertainty: 0.01 } });
+    const text = n.find((part) => part.topic === 'range').text;
+    if (pending.includes(1)) {
+      assert.match(text, /仍需等待后面玩家行动/);
+      assert.doesNotMatch(text, /之后按最终摊牌结果分配/);
+    } else assert.match(text, /最终摊牌结果分配/);
+  }
+});
+
+test('high-card checks explain beating weaker high cards at showdown', () => {
+  const s = spot({ hole: 'Kh 2d', board: 'Jh 9s 5c', pending: [0, 1] });
+  for (const audience of ['decision', 'observer']) {
+    const text = checkReasoning({ ...s, reviewAudience: audience }, context(s)).join('');
+    assert.match(text, /摊牌时击败较弱高牌的机会/);
+    assert.doesNotMatch(text, /与较弱高牌争取摊牌/);
+    assert.doesNotMatch(text, /较弱成牌.*取值/);
+  }
 });

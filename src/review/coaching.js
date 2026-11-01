@@ -866,7 +866,7 @@ function practiceFocus(s, r, action, conditional = false) {
     if (c.tier >= 2)
       return `重打 ${f.holeText} 这手，${facing}，比较${suggestion}与较小投入，核对${preflopPayTargets(s)}是否愿意支付这个尺度；若它们退出而更强牌继续，就不能仅凭强起手牌把加注当作取值。`;
     const entry = hasCaller ? `${facing}，此前也有其他玩家跟注入池` : facing;
-    return `重打 ${f.holeText} 这手，${entry}。${actualCost}${suggestedCost}底池为 ${fmt(s.pot)}，${same(action, { action: s.action, amount: s.amount }) ? '先比较' + replayComparison : '重点比较这两条路线'}，判断各自的投入能否争取足够弃牌，以及被跟注后的摊牌机会是否与投入相称。${s.hole[0].rank === s.hole[1].rank ? '这手小对子未中暗三条时，面对高张牌面和持续下注不容易继续。' : Math.max(...s.hole.map((card) => card.rank)) >= 11 ? '这组高牌击中一对后，仍要提防更好的踢脚和大对子。' : '这组底牌击中一对后仍可能落后于更大对子；对手未成对的高张也可能在后续公共牌中反超。'}`;
+    return `重打 ${f.holeText} 这手，${entry}。${actualCost}${suggestedCost}底池为 ${fmt(s.pot)}，${same(action, { action: s.action, amount: s.amount }) ? '先比较' + replayComparison : '重点比较这两条路线'}。加注路线要核对对手是否有足够弃牌空间，以及被跟注后的摊牌机会是否与投入相称。${s.hole[0].rank === s.hole[1].rank ? '这手小对子未中暗三条时，面对高张牌面和持续下注不容易继续。' : Math.max(...s.hole.map((card) => card.rank)) >= 11 ? '这组高牌击中一对后，仍要提防更好的踢脚和大对子。' : '这组底牌击中一对后仍可能落后于更大对子；对手未成对的高张也可能在后续公共牌中反超。'}`;
   }
   if (s.action === 'raise' && !cautiousReraise) {
     const redraw = c.made ? madeRedrawReasoning(s, c).join('') : '';

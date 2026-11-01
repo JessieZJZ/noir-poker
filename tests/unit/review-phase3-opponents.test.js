@@ -219,7 +219,7 @@ test('a dry high-card check explains why it avoids a bluff investment', () => {
     stack: 2000,
     opponents: [{ id: 0, name: '你', position: 'SB', stack: 2000, bet: 0, allin: false }],
   });
-  assert.match(summary(r), /目前只有高牌.*尚未成对.*较弱高牌.*摊牌/);
+  assert.match(summary(r), /目前只有高牌.*尚未成对.*摊牌时击败较弱高牌/);
   assert.doesNotMatch(summary(r), /他用高牌控池，保留摊牌机会/);
 });
 

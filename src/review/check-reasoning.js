@@ -170,7 +170,7 @@ export function checkReasoning(s, c, { trap = false, closingExplained = false } 
           : '这次选择让本轮下注结束，以当前强成牌保留后手和摊牌竞争力。',
       );
     else if (c.made.score[0] === 0 && !c.draw.outs)
-      parts.push('目前只有高牌，尚未成对，过牌保留与较弱高牌争取摊牌的机会，避免主动做大底池。');
+      parts.push('目前只有高牌，尚未成对，过牌保留在摊牌时击败较弱高牌的机会，避免主动做大底池。');
     else if (!c.draw.outs)
       parts.push(
         `当前成牌仍可能赢过${showdownTargets(c)}。过牌保留摊牌机会，暂不主动下注要求对手付费。`,
@@ -190,7 +190,7 @@ export function checkReasoning(s, c, { trap = false, closingExplained = false } 
         : '这手强成牌仍有向较弱成牌收取跟注的空间，过牌可能少收一轮价值。',
     );
   else if (c.made.score[0] === 0 && !c.draw.outs)
-    parts.push('目前只有高牌，尚未成对，过牌保留与较弱高牌争取摊牌的机会，避免主动做大底池。');
+    parts.push('目前只有高牌，尚未成对，过牌保留在摊牌时击败较弱高牌的机会，避免主动做大底池。');
   else if (!c.draw.outs)
     parts.push(
       c.handClass === 'board-pair'

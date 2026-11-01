@@ -337,7 +337,7 @@ try {
     assert.match(step.evidence.join(''), /跟注 140K 后可争夺 600K.*23.3% 的胜率覆盖这次成本/);
     assert.match(step.reason, /你若再加注，需要同时考虑加注范围和跟注入池的范围/);
     assert.match(step.reason, /这次跟注后还留有 2.51M 筹码/);
-    assert.match(step.reason, /翻后通常先行动.*过牌、取值或退出/);
+    assert.match(step.reason, /翻后要先于仍在局中的非盲位对手行动.*较难直接实现全部摊牌机会/);
     assert.match(step.reason, /坚果同花听牌.*击中 A.*较弱 Ax/);
     assert.doesNotMatch(step.reason + step.evidence.join(''), /；/);
   });
@@ -369,7 +369,7 @@ try {
       step.reason,
       /只有对手范围中包含足够较弱牌.*面对以更强起手牌为主的范围，应比较弃牌/,
     );
-    assert.match(step.reason, /其余玩家尚可行动.*改变你能争夺的底池和对抗人数/);
+    assert.match(step.reason, /其余一位玩家尚可行动.*该玩家是否继续会改变你能争夺的底池和对抗人数/);
     assert.doesNotMatch(step.reason, /还留.*0|你在翻后有位置|你需要重新决定/);
     const own = step.commentary.filter((part) => part.text).at(-1).text;
     assert.equal((own.match(/1.62M/g) || []).length, 1);
@@ -674,6 +674,14 @@ try {
       (reason) => {
         assert.match(reason, /仍可能组成葫芦/);
         assert.doesNotMatch(reason, /可能组成葫芦或四条|下一张/);
+      },
+    ],
+    [
+      'public-pair-private-contribution',
+      phase3CheckSpot('Ac 2d', 'Ad Ts 8h 7s 8d', { reason: 'free-check' }).record,
+      (reason) => {
+        assert.match(reason, /一张底牌与公共牌组成一对 A，再加公共牌一对 8，10 踢脚/);
+        assert.doesNotMatch(reason, /底牌 2 参与踢脚|本人底牌/);
       },
     ],
   ]) {

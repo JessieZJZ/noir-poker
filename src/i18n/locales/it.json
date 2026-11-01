@@ -2983,5 +2983,9 @@
   "两对：底牌已有一对 {0}，加公共牌一对 {1}，{2} 踢脚": "Doppia coppia: una coppia servita di {0} più la coppia di {1} sul board, kicker {2}",
   "两对：一张底牌与公共牌组成一对 {0}，再加公共牌一对 {1}，{2} 踢脚": "Doppia coppia: una carta privata forma una coppia di {0} con il board, più la coppia di {1} sul board, kicker {2}",
   "过牌的代价是对手也可能免费见到下一张，补成更强的牌。": " Il costo del check è che un avversario può vedere gratis la prossima carta e migliorare in una mano più forte. ",
-  "比较跟注以保留当前成牌的摊牌机会，不主动抬高其他玩家继续的价格。": " Valuta il call per conservare la possibilità di arrivare allo showdown con la mano attuale senza alzare il prezzo per gli altri giocatori. "
+  "比较跟注以保留当前成牌的摊牌机会，不主动抬高其他玩家继续的价格。": " Valuta il call per conservare la possibilità di arrivare allo showdown con la mano attuale senza alzare il prezzo per gli altri giocatori. ",
+  "目前只有高牌，尚未成对，过牌保留在摊牌时击败较弱高牌的机会，避免主动做大底池。": " Hai solo carta alta, senza coppia. Il check conserva la possibilità di battere carte alte più deboli allo showdown senza ingrossare attivamente il piatto. ",
+  "过牌不增加投入，本轮仍需等待后面玩家行动。": " Il check non aggiunge fiches; i giocatori successivi devono ancora agire in questo giro. ",
+  "重打 {0} 这手，{1}。{2}{3}底池为 {4}，{5}。加注路线要核对对手是否有足够弃牌空间，以及被跟注后的摊牌机会是否与投入相称。{6}": " Rigioca {0}: {1}. {2}{3} Il piatto è {4}; {5}. Per la linea di rilancio, valuta se gli avversari passano abbastanza spesso e se le possibilità allo showdown dopo un call giustificano l’investimento. {6} ",
+  "底池为 {0}，{1}。加注路线要核对对手是否有足够弃牌空间，以及被跟注后的摊牌机会是否与投入相称。": " Il piatto è {0}; {1}. Per la linea di rilancio, valuta se gli avversari passano abbastanza spesso e se le possibilità allo showdown dopo un call giustificano l’investimento. "
 }

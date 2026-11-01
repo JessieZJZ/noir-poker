@@ -125,7 +125,9 @@ function rangeNote(s, assessment, f) {
             ? '跟注后只按最终摊牌结果分配底池。'
             : '跟注先限制这次投入，后续若再加压仍要重新比较价格。'
           : f.closed
-            ? '过牌不增加投入，之后按最终摊牌结果分配底池。'
+            ? f.canFaceCurrentBet && f.live.length > 0
+              ? '过牌不增加投入，本轮仍需等待后面玩家行动。'
+              : '过牌不增加投入，之后按最终摊牌结果分配底池。'
             : '过牌保留后手，后续按新的牌面和下注决定是否继续。';
   return note('range', `${context}；${consequence}`, [context, '；', consequence]);
 }
