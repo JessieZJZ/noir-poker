@@ -76,7 +76,8 @@ test('hero draw checks state outs and the pending-action reminder only once', ()
   assert.equal((text.match(/9 张牌可能补成同花/g) || []).length, 1);
   assert.equal((text.match(/再遇下注时/g) || []).length, 1);
   assert.doesNotMatch(text, /本轮还有 1 人能行动|后面仍有玩家可以下注|已经不能诱导/);
-  assert.match(text, /过牌.*不增加投入/);
+  assert.match(text, /这次过牌没有增加投入/);
+  assert.doesNotMatch(text, /本轮不增加投入/);
 });
 
 test('a completed turn flush is one concrete warning rather than two equivalent warnings', () => {

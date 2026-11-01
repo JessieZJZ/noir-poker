@@ -101,6 +101,38 @@ export function madeRedrawReasoning(s, c) {
   ];
 }
 
+// Use the existing public matchup scores, never a new hidden-card search.
+// A category alone cannot establish a better kicker on the same pair(s).
+function madeHandRisk(c) {
+  const own = c.made.score;
+  const stronger = c.matchups?.strongerMadeCategories;
+  if (!Array.isArray(stronger)) return '当前成牌是否领先，仍需结合对手可能的牌组判断。';
+  const samePairs = own[0] === 2 ? 3 : 2;
+  const betterKicker =
+    c.matchups.strongerKickerPossible ??
+    (c.matchups.behind || []).some(
+      ({ score }) =>
+        score[0] === own[0] &&
+        score.slice(1, samePairs).every((rank, i) => rank === own[i + 1]) &&
+        compare(score, own) > 0,
+    );
+  const threats = [];
+  const higherPair =
+    c.matchups.higherPairPossible ??
+    (c.matchups.behind || []).some(
+      ({ score }) => score[0] === 1 && own[0] === 1 && score[1] > own[1],
+    );
+  if (own[0] === 2 && stronger.includes(2)) threats.push('更强的两对');
+  if (higherPair) threats.push('更大的对子');
+  if (betterKicker)
+    threats.push(own[0] === 1 && own[1] === 14 ? '踢脚更好的 Ax' : '同牌型中更好的踢脚');
+  if (own[0] === 1 && stronger.includes(1) && !higherPair && !betterKicker)
+    threats.push('更强的一对');
+  if (stronger.includes(3) && own[0] < 3) threats.push('三条');
+  if (stronger.some((category) => category > Math.max(3, own[0]))) threats.push('更强牌型');
+  return threats.length ? `当前成牌仍可能落后于${threats.join('、')}。` : '';
+}
+
 export function checkReasoning(s, c, { trap = false, closingExplained = false } = {}) {
   if (!s.street || c.handClass === 'board') return [];
   const risks = checkRisks(s, c);
@@ -111,12 +143,16 @@ export function checkReasoning(s, c, { trap = false, closingExplained = false } 
     s.street === 3
       ? '这是本轮最后行动，过牌后直接摊牌。'
       : freeCardCost
-        ? '这是本轮最后行动，过牌让双方免费见下一张，也给了对手补成更强牌的机会。'
+        ? '这是本轮最后行动，过牌让仍在局中的玩家免费见下一张，也给了对手补成更强牌的机会。'
         : '这是本轮最后行动，过牌后免费见下一张。';
   const parts = [...risks];
   if (c.draw.outs) {
     if (c.made.score[0] === 0 || ['board', 'board-pair'].includes(c.handClass))
-      parts.push('当前主要依靠听牌改善，过牌让本轮不增加投入。');
+      parts.push(
+        s.reviewAudience === 'observer'
+          ? '当前主要依靠听牌改善，这次过牌无需投入。'
+          : '当前主要依靠听牌改善。',
+      );
     parts.push(
       `目前仍有 ${c.draw.outs} 张牌可能补成${c.draw.flush && c.draw.straight ? '同花或顺子' : c.draw.flush ? '同花' : '顺子'}，但这些是成牌补牌，不保证补中后领先对手。`,
     );
@@ -124,7 +160,7 @@ export function checkReasoning(s, c, { trap = false, closingExplained = false } 
   // The observer panel explains this check; it does not coach the actor's
   // next decision. Keep board facts, the cost of checking and recorded traps.
   if (s.reviewAudience === 'observer') {
-    if (risks.length) parts.push('过牌避免主动扩大当前底池。');
+    if (risks.length && !c.draw.outs) parts.push('过牌避免主动扩大当前底池。');
     else if (trap && c.pendingOthers > 0)
       parts.push('后面还有玩家可以下注，过牌为诱导其弱牌或诈唬继续投入留下机会。');
     else if (valueHolding)
@@ -134,10 +170,10 @@ export function checkReasoning(s, c, { trap = false, closingExplained = false } 
           : '这次选择让本轮下注结束，以当前强成牌保留后手和摊牌竞争力。',
       );
     else if (c.made.score[0] === 0 && !c.draw.outs)
-      parts.push('目前只有高牌，较难让更弱成牌付费，过牌避免用薄弱牌力主动做大底池。');
+      parts.push('目前只有高牌，尚未成对，过牌保留与较弱高牌争取摊牌的机会，避免主动做大底池。');
     else if (!c.draw.outs)
       parts.push(
-        `当前成牌主要争取赢过${showdownTargets(c)}，过牌保留摊牌机会，而不现在要求对手付费。`,
+        `当前成牌仍可能赢过${showdownTargets(c)}。过牌保留摊牌机会，暂不主动下注要求对手付费。`,
       );
     if (risks.length) parts.push(...madeRedrawReasoning(s, c));
     if (freeCardCost && (c.pendingOthers > 0 || closingExplained))
@@ -145,12 +181,8 @@ export function checkReasoning(s, c, { trap = false, closingExplained = false } 
     if (!c.pendingOthers && !closingExplained) parts.push(closing);
     return parts;
   }
-  if (risks.length)
-    parts.push(
-      c.pendingOthers > 0
-        ? '过牌先不主动做大底池，保留遇到下注后再判断的空间。'
-        : '过牌避免主动扩大当前底池。',
-    );
+  if (risks.length && !c.draw.outs)
+    parts.push(c.pendingOthers > 0 ? '过牌先不主动做大底池。' : '过牌避免主动扩大当前底池。');
   else if (valueHolding)
     parts.push(
       c.pendingOthers > 0 && s.street < 3
@@ -158,12 +190,12 @@ export function checkReasoning(s, c, { trap = false, closingExplained = false } 
         : '这手强成牌仍有向较弱成牌收取跟注的空间，过牌可能少收一轮价值。',
     );
   else if (c.made.score[0] === 0 && !c.draw.outs)
-    parts.push('目前只有高牌，较难让更弱成牌付费，过牌避免用薄弱牌力主动做大底池。');
+    parts.push('目前只有高牌，尚未成对，过牌保留与较弱高牌争取摊牌的机会，避免主动做大底池。');
   else if (!c.draw.outs)
     parts.push(
       c.handClass === 'board-pair'
-        ? '主要牌型来自公共牌，过牌保留踢脚争取摊牌的机会，不单凭这个公共对子主动扩大底池。'
-        : `当前成牌仍可能被更大对子或更好踢脚压制，过牌保留赢过${showdownTargets(c)}的摊牌机会，避免主要被较强范围跟注。`,
+        ? '主要牌型来自公共牌，过牌保留凭踢脚争取摊牌的机会，不单凭公共牌组成的牌型主动扩大底池。'
+        : `${madeHandRisk(c)}当前成牌仍可能赢过${showdownTargets(c)}。过牌保留摊牌机会，避免主动下注后主要被较强范围跟注。`,
     );
   if (risks.length) parts.push(...madeRedrawReasoning(s, c));
   if (freeCardCost && (c.pendingOthers > 0 || closingExplained))

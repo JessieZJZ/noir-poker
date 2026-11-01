@@ -108,7 +108,7 @@ export function handContext(s) {
     s.board.filter((card) => card.rank === made.score[1]).length === 4
   ) {
     handClass = 'board-pair';
-    handLabel = `四条来自公共牌，${rankText(made.score[2])} 踢脚`;
+    handLabel = `四条（公共牌组成，${rankText(made.score[2])} 踢脚）`;
   } else if (made.score[0] >= 4) {
     handClass = 'strong';
     handLabel =
@@ -122,7 +122,7 @@ export function handContext(s) {
     const shared = s.board.filter((card) => card.rank === made.score[1]).length === 3;
     handClass = shared ? 'board-pair' : 'trips';
     handLabel = shared
-      ? `三条来自公共牌，${made.score.slice(2).map(rankText).join(' / ')} 踢脚`
+      ? `三条（公共牌组成，${made.score.slice(2).map(rankText).join(' / ')} 踢脚）`
       : made.label;
   } else if (pocket && holeRank > high) {
     handClass = 'overpair';
@@ -144,7 +144,7 @@ export function handContext(s) {
             : 'middle-pair'
         : 'two-pair';
     handLabel = shared
-      ? `两对来自公共牌，${rankText(made.score[3])} 踢脚`
+      ? `两对（公共牌组成，${rankText(made.score[3])} 踢脚）`
       : sharedPair
         ? `两对：底牌组成 ${rankText(privatePair)} 对，加公共牌 ${rankText(sharedPair)} 对，${rankText(made.score[3])} 踢脚`
         : `两对：${rankText(made.score[1])} 对和 ${rankText(made.score[2])} 对，${rankText(made.score[3])} 踢脚`;
@@ -159,7 +159,7 @@ export function handContext(s) {
           .find((rank) => s.hole.some((card) => card.rank !== paired?.rank && card.rank === rank));
       handClass = !paired ? 'board-pair' : paired.rank === high ? 'top-pair' : 'middle-pair';
       handLabel = !paired
-        ? `对子 ${rankText(made.score[1])} 来自公共牌，底牌提供踢脚`
+        ? `对子 ${rankText(made.score[1])}（公共牌成对，底牌提供踢脚）`
         : kicker
           ? `${handClass === 'top-pair' ? '顶对' : '非顶对'} ${rankText(made.score[1])}，底牌 ${rankText(kicker)} 参与踢脚比较`
           : `${handClass === 'top-pair' ? '顶对' : '非顶对'} ${rankText(made.score[1])}，踢脚来自公共牌 ${made.score.slice(2).map(rankText).join(' / ')}`;

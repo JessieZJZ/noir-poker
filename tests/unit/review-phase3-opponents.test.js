@@ -63,9 +63,9 @@ test('a paired ace-seven-seven flop can offer flush draws but not direct straigh
 });
 
 for (const [board, expected] of [
-  ['6s 8d 6c 8c 9s', /两对来自公共牌，A 踢脚/],
-  ['6d 3c 8d 6s 6h', /三条来自公共牌，A \/ Q 踢脚/],
-  ['3h 9d 3c 3s 3d', /四条来自公共牌，A 踢脚/],
+  ['6s 8d 6c 8c 9s', /两对（公共牌组成，A 踢脚）/],
+  ['6d 3c 8d 6s 6h', /三条（公共牌组成，A \/ Q 踢脚）/],
+  ['3h 9d 3c 3s 3d', /四条（公共牌组成，A 踢脚）/],
 ]) {
   test(`an opponent summary preserves the actual shared hand on ${board}`, () => {
     const r = record('Qc Ah', board, 'free-check', { action: 'check', cost: 0 });
@@ -133,7 +133,7 @@ test('a no-pair all-in call keeps its real open-ended improvement rather than re
 test('a pair plus flush draw all-in call keeps both sources of showdown support and the flush risk', () => {
   const r = record('Qc 5d', '7c 5c 6d 2c', 'price-continue', { cost: 800, stack: 800, pot: 2650 });
   const text = summary(r);
-  assert.match(text, /当前已有非顶对 5.*较弱成牌或未成牌的诈唬/);
+  assert.match(text, /当前已有非顶对 5.*较弱成牌或未成牌/);
   assert.match(text, /另外还有同花听牌/);
   assert.match(text, /9 张牌可能补成同花/);
   assert.match(text, /补中也不保证获胜/);
@@ -219,7 +219,7 @@ test('a dry high-card check explains why it avoids a bluff investment', () => {
     stack: 2000,
     opponents: [{ id: 0, name: '你', position: 'SB', stack: 2000, bet: 0, allin: false }],
   });
-  assert.match(summary(r), /目前只有高牌.*较难让更弱成牌付费/);
+  assert.match(summary(r), /目前只有高牌.*尚未成对.*较弱高牌.*摊牌/);
   assert.doesNotMatch(summary(r), /他用高牌控池，保留摊牌机会/);
 });
 

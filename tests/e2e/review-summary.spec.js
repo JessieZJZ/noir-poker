@@ -34,7 +34,7 @@ test('reported reviews render coherent causal summaries and preserve them across
     'Jade（范围纪律）在 MP 位5-bet 加注至 9.3K',
   );
   await expect(hero).not.toContainText('再加注通常比普通开池更集中');
-  await expect(hero).toContainText(/再补 8.3K.*弃牌可以保留.*19K/);
+  await expect(hero).toContainText(/再补 8.3K.*弃牌值得保留.*19K/);
   await expect(hero).not.toContainText('不必只因遇到加注就自动弃牌');
   await hero.locator('.review-analysis-heading').scrollIntoViewIfNeeded();
   await page.screenshot({ path: `${screenshots}/${info.project.name}-KQs-fold.png` });

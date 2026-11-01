@@ -51,7 +51,9 @@ test('a reraise keeps the flush-completion warning and distinguishes raise-to fr
   page,
 }, info) => {
   const body = await open(page, () => topPairFlushTurn({ reraise: true }), 'turn');
-  const summary = body.locator('.review-analysis-heading ~ p').first();
+  await expect(body).toContainText(/Mia.*翻牌.*跟注 810K.*转牌.*加注至 600K/);
+  const summary = body.locator('.review-analysis-heading ~ p').filter({ hasText: /^你拿/ });
+  await expect(summary).toHaveCount(1);
   await expect(summary).toContainText(/第三张方块.*两张方块.*已成同花/);
   const text = await summary.innerText();
   expect(text.match(/1.21M/g)).toHaveLength(1);

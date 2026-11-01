@@ -70,7 +70,7 @@ export function investmentText(s, c, price) {
   if (s.action === 'check') return `${before}，这次过牌无需投入，当前底池 ${n(s.pot)}`;
   if (s.action === 'raise') {
     const uncalled = guaranteedUncalledRaise(s, s.amount);
-    return `${before}，${actionLabel(s)}${c.extra !== s.amount ? '，本次追加 ' + n(c.extra) : ''}，行动前底池 ${n(s.pot)}${uncalled ? '；其中至少 ' + n(uncalled) + ' 无法被匹配，会退回，可被匹配的新增投入最多 ' + n(c.extra - uncalled) : ''}`;
+    return `${before}，${actionLabel(s)}${c.extra !== s.amount ? '，本次追加 ' + n(c.extra) : ''}，行动前底池 ${n(s.pot)}${uncalled ? '。其中至少 ' + n(uncalled) + ' 无法被匹配，会退回。可被匹配的新增投入最多 ' + n(c.extra - uncalled) : ''}`;
   }
   return `${before}，这次${s.legal.callAmount === s.stack ? '跟注全下' : '跟注'}拿出 ${n(c.extra)}，跟注前底池 ${n(s.pot)}${price.cost ? '，底池赔率约 ' + ratio.toFixed(2) + ':1' : ''}${price.contestable - price.cost !== s.pot ? '（赔率只计算你可争夺的部分）' : ''}`;
 }
@@ -301,7 +301,7 @@ function actionReasonDetail(s, r, { conditionalValue = false } = {}) {
   if (!s.street) return `你在 ${s.position} 拿 ${hand}，这次可以免费过牌，保留看翻牌的机会。`;
   return draw.outs
     ? `你拿 ${hand}，在 ${f.boardText} 上是${c.handLabel}，过牌保留${drawLabel(draw)}的 ${draw.outs} 张改善候选，本次投入 0。${c.pendingOthers ? '本轮还有 ' + c.pendingOthers + ' 人能行动，因此不保证免费见下一张。' : '本轮没有待行动的对手，可以免费见下一张牌。'}`
-    : `你拿 ${hand} 在 ${f.boardText} 上是${c.handLabel}，这次过牌没有增加投入。${s.street === 3 && r.metrics.closing ? '你是河牌最后行动者，过牌后直接摊牌。' : c.pendingOthers ? '本轮还有 ' + c.pendingOthers + ' 人能行动，过牌保留了面对他们下注再决定的机会。' : '对手本轮已行动，你选择保留当前底池大小。'}`;
+    : `你拿 ${hand} 在 ${f.boardText} 上是${c.handLabel}，这次过牌没有增加投入。${s.street === 3 && r.metrics.closing ? '你是河牌最后行动者，过牌后直接摊牌。' : c.pendingOthers ? '本轮还有 ' + c.pendingOthers + ' 人能行动，过牌保留了面对' + (c.pendingOthers === 1 ? '该玩家' : '这些玩家') + '下注再决定的机会。' : '对手本轮已行动，你选择保留当前底池大小。'}`;
 }
 
 export function actionReason(s, r, { conditionalValue = false, includeExposure = true } = {}) {
@@ -324,7 +324,7 @@ export function continuationNote(s, c, closing) {
     c.effective <= s.legal.callAmount
   )
     return '';
-  return `你在 ${s.position} 有位置，本次投入后还留 ${n(s.stack - c.extra)}。若河牌未补成${drawCompletion(c.draw)}，且对手过牌、牌面支持你代表更强的成牌，可以考虑转诈唬。若对手继续下注，则按新的金额决定是否放弃。`;
+  return `你在 ${s.position} 有位置，${s.action === 'check' ? '这次过牌没有增加投入，仍留 ' : '本次投入后还留 '}${n(s.stack - c.extra)}。若河牌未补成${drawCompletion(c.draw)}，且对手过牌、牌面支持你代表更强的成牌，可以考虑转诈唬。若对手继续下注，则按新的金额决定是否放弃。`;
 }
 
 export function publicHistory(s) {

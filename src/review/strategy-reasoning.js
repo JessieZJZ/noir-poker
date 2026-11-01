@@ -60,6 +60,8 @@ function publicFacts(s, assessment, action, amount, plan, subject, includeAction
         : action === 'raise' && finite(amount) && amount - (s.bet ?? 0) >= stack,
     draw,
     hasDraw: !!(draw.flushDraw || draw.straightDraw || draw.comboDraw),
+    premiumPocket:
+      s.hole?.length === 2 && s.hole[0].rank === s.hole[1].rank && s.hole[0].rank >= 13,
     checkRaise,
     action,
     amount,
@@ -109,7 +111,7 @@ function rangeNote(s, assessment, f) {
   });
   const ahead = range.advantage > 0;
   const opening = `此前${f.subject}翻前${ownLine}、对手${otherLine}。`;
-  const followup = later.length ? `后续公开加注包括${later.join('、')}。` : '';
+  const followup = later.length ? `后续公开下注与加注包括${later.join('、')}。` : '';
   const context = `${opening}${followup}在 ${cardText(f.board)} 上，结合双方截至当前的公开行动估计，${f.subject}可能持有的整组牌整体${ahead ? '更强' : '较弱'}`;
   const consequence =
     f.action === 'raise'
@@ -224,7 +226,7 @@ function checkedReadingNote(assessment, f) {
 function impliedNote(assessment, f) {
   if (!['call', 'fold'].includes(f.action) || !f.call || f.street >= 3) return null;
   const call = assessment.call || {};
-  if (!f.hasDraw && !call.pairMining) return null;
+  if (!f.hasDraw && (!call.pairMining || f.premiumPocket)) return null;
   if (f.closed && f.covered.has(TOPIC.CLOSURE)) return null;
   if (f.closed)
     return note(
@@ -420,7 +422,7 @@ function observerNotes(s, assessment, f) {
     call.eligible &&
     call.futurePayBound > 0 &&
     call.impliedValue > 0 &&
-    (f.hasDraw || call.pairMining)
+    (f.hasDraw || (call.pairMining && !f.premiumPocket))
       ? note(
           'implied-odds',
           `${f.subject}这次跟注还保留了${call.pairMining ? '中暗三条' : '补中'}后向较弱牌取值的机会。`,

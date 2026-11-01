@@ -52,7 +52,7 @@ test('paired board explains private top pair, shared two pairs, and actual effec
   s.board = cards('2s 2c 4c 4s 5h');
   c = decisionContext(s);
   assert.equal(c.handClass, 'board-pair');
-  assert.match(strengthParts(s, c).join(''), /两对来自公共牌，J 踢脚/);
+  assert.match(strengthParts(s, c).join(''), /两对（公共牌组成，J 踢脚）/);
   const r = analyzeDecision(s, options);
   assert.notEqual(r.code, 'value-check');
   s.hole = cards('5c 4c');

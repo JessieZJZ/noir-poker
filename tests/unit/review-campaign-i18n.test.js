@@ -24,7 +24,7 @@ function currentTexts() {
     (entry) => entry.topic === 'range',
   ).text;
   assert.match(range, /加注后又跟注/);
-  assert.match(range, /后续公开加注包括/);
+  assert.match(range, /后续公开下注与加注包括/);
   const covering = structuredClone(s);
   covering.action = 'raise';
   covering.stack = covering.amount = 1000000;

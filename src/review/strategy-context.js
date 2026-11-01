@@ -44,6 +44,7 @@ export function enrichStrategy(coaching, s, assessment, options) {
         !(n.topic === 'range' && /整体范围|范围优势/.test(flat)) &&
         !(n.topic === 'bluff-catch' && /听牌仍可能转成诈唬|听牌可能转成诈唬/.test(flat)) &&
         !(n.topic === 'draw-plan' && action === 'fold' && /补成.*不保证|改善机会/.test(flat)) &&
+        !(n.topic === 'implied-odds' && /暗三条/.test(flat) && /暗三条/.test(n.text)) &&
         !(
           n.topic === 'implied-odds' &&
           assessment?.call?.equity >= assessment?.call?.price &&
@@ -75,7 +76,7 @@ export function enrichStrategy(coaching, s, assessment, options) {
       if (
         options?.audience === 'observer' &&
         action === 'check' &&
-        /过牌[^。]*(?:扩大|做大|控制投入)/.test(flat)
+        /过牌[^。]*(?:扩大|做大|控制投入|无需投入|没有增加投入)/.test(flat)
       )
         pieces = pieces.filter((text) => text !== '过牌保留改善机会，也没有主动扩大底池。');
       if (
@@ -87,6 +88,14 @@ export function enrichStrategy(coaching, s, assessment, options) {
           notes.some((entry) => entry.topic === 'implied-odds'))
       )
         pieces = pieces.filter((text) => text !== '这次跟注保留了听牌的改善机会。');
+      if (
+        options?.audience === 'observer' &&
+        action === 'raise' &&
+        /半诈唬/.test(flat) &&
+        /对手弃牌/.test(flat) &&
+        /被跟注后仍有.*改善候选/.test(flat)
+      )
+        pieces = pieces.filter((text) => text !== '这次进攻同时争取对手弃牌和补牌改善。');
       // The route may already be explained by the action paragraph. Keep a
       // distinct nut-draw fact as a complete sentence, never a dangling label.
       if (pieces.length === 1 && pieces[0] === n.headingPrefix && n.standaloneHeading)

@@ -63,7 +63,8 @@ test('a real high-card pot-control trace describes its current showdown value wi
   assert.equal(record.trace.reason, 'pot-control');
   assert.equal(record.trace.view.features.madeCategory, 0);
   assert.equal(record.trace.view.features.ownMade, false);
-  assert.match(review.detail, /目前只有高牌.*较难让更弱成牌付费.*避免.*做大底池/);
+  assert.match(review.detail, /目前只有高牌.*尚未成对.*较弱高牌.*摊牌.*避免.*做大底池/);
+  assert.doesNotMatch(review.detail, /更弱成牌付费/);
   assert.equal(record.trace.view.pot, 800);
   assert.doesNotMatch(review.detail, /中等成牌|已经成牌|EV|模拟器/);
 });

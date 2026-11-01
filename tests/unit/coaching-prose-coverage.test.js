@@ -150,7 +150,7 @@ test('structured situation entries preserve legacy detail text but never label b
   assert.ok(!entries.some((entry) => entry.kind === 'action-line'));
   const text = summary(review(s, true));
   assert.doesNotMatch(text, /转牌的.*让公共牌配对/);
-  assert.match(text, /对子 2 来自公共牌/);
+  assert.match(text, /对子 2（公共牌成对/);
 });
 
 test('actual all-in call states the remaining-card entitlement without restating the action closure', () => {

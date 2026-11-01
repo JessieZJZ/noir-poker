@@ -104,8 +104,8 @@ test('review prices, actor references and draw verdicts stay coherent in the exi
   for (const [i, expected] of [
     [1, /弃牌不再投入.*若跟注/],
     [2, /过牌无需投入/],
-    [3, /加注拿出 340K/],
-    [4, /全下拿出 2.65M/],
+    [3, /加注至 400K，本次追加 340K/],
+    [4, /全下至 2.71M，本次追加 2.65M/],
     [5, /跟注全下拿出 140K/],
   ]) {
     await select(i);

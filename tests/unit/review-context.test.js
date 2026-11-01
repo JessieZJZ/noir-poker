@@ -141,7 +141,7 @@ test('overpair, top pair kicker and a public pair get different factual descript
   assert.match(top.handLabel, /底牌 A 参与踢脚比较/);
   const publicPair = decisionContext(decision({ hole: 'As Kh', board: '7s 7h 2c' }));
   assert.equal(publicPair.handClass, 'board-pair');
-  assert.match(publicPair.handLabel, /来自公共牌/);
+  assert.match(publicPair.handLabel, /公共牌成对/);
   assert.notEqual(
     analyzeDecision(decision({ hole: 'As Kh', board: '7s 7h 2c' }), options).code,
     'value-check',

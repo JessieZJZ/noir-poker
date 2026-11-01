@@ -152,7 +152,7 @@ export function strengthParts(s, c) {
       (card) => counts.get(card.rank) === 1 && c.made.score.slice(1, 3).includes(card.rank),
     );
     if (sharedPair.length === 2 && c.made.score.slice(1, 3).every((rank) => counts.get(rank) >= 2))
-      return [`两对来自公共牌，${rankText(c.made.score[3])} 踢脚`];
+      return [c.handLabel];
     const sharedPairPlays =
       sharedPair.length === 1 && c.made.score.slice(1, 3).includes(sharedPair[0][0]);
     if (sharedPairPlays && ownPair) {

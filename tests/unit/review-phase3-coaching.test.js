@@ -112,7 +112,7 @@ test('a called all-in keeps made-hand and draw reasons, without equating draw ch
   });
   const c = coachDecision(s, r),
     text = summary(c);
-  assert.match(text, /你已有非顶对 5.*未补成听牌.*较弱成牌或未成牌的诈唬/);
+  assert.match(text, /你已有非顶对 5.*未补成听牌.*较弱成牌或未成牌/);
   assert.match(text, /同花听牌.*9 张改善候选.*不等于全部获胜机会/);
   assert.match(text, /无需再支付筹码/);
   assert.match(text, /第三张梅花.*两张梅花.*已成同花/);
@@ -563,7 +563,7 @@ test('the lowest bottom pair does not invent weaker made hands it can beat', () 
   r.context.matchups = handMatchups(s, r.context);
   assert.deepEqual(r.context.matchups.weakerMadeCategories, [0]);
   const text = summary(coachDecision(s, r));
-  assert.match(text, /当前成牌能争取赢过未成牌的诈唬/);
+  assert.match(text, /当前成牌仍可能赢过未成牌/);
   assert.doesNotMatch(text, /赢过较弱成牌/);
 });
 

@@ -525,6 +525,21 @@ export function handMatchups(s, c) {
         candidates.filter((hand) => hand.direction === 'behind').map((hand) => hand.score[0]),
       ),
     ].sort((a, b) => a - b),
+    // Derived from the existing legal public card pool. Compare the entire
+    // kicker vector, not merely the first kicker or the hand category.
+    strongerKickerPossible:
+      [1, 2].includes(own[0]) &&
+      candidates.some(
+        (hand) =>
+          hand.direction === 'behind' &&
+          hand.score[0] === own[0] &&
+          hand.score.slice(1, own[0] === 2 ? 3 : 2).every((rank, i) => rank === own[i + 1]),
+      ),
+    higherPairPossible:
+      own[0] === 1 &&
+      candidates.some(
+        (hand) => hand.direction === 'behind' && hand.score[0] === 1 && hand.score[1] > own[1],
+      ),
     behind,
     tied,
     possible,

@@ -3,8 +3,8 @@
 export function showdownTargets(context) {
   const categories = context.matchups?.weakerMadeCategories;
   return !Array.isArray(categories) || categories.some((category) => category >= 1)
-    ? '较弱成牌或未成牌的诈唬'
-    : '未成牌的诈唬';
+    ? '较弱成牌或未成牌'
+    : '未成牌';
 }
 
 export function valueDrawNote(s, c) {
