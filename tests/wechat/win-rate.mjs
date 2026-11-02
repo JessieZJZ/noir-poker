@@ -72,12 +72,14 @@ try {
     await page.waitFor(300);
     const data = await page.data();
     assert.equal(data.players.length, 2);
-    assert.equal(data.statusText, '选满两位玩家的底牌后自动计算。');
+    assert.equal(data.statusText, '');
     await capture('win-rate-empty');
     return { route: page.path };
   });
   await check('reference-preflop-is-exact-or-labelled', async () => {
     await tap('#win-rate-player-0-0');
+    await waitData('Picker open', (data) => data.pickerOpen);
+    assert.equal(await page.$('#win-rate-delete'), null);
     await pick('0-14', '0-13');
     await tap('#win-rate-player-1-0');
     await pick('0-8');
@@ -107,10 +109,14 @@ try {
     assert.equal(data.players[0].outs.count, 12);
     assert.equal(data.players[1].outs.count, 0);
     assert.equal(data.players[2].outs, null);
+    assert.equal(data.players[0].outs.cards.length, 12);
     await capture('win-rate-flop');
-    await tap('#win-rate-outs-0');
-    await waitData('Expanded outs', (value) => value.players[0].outs.cards.length === 12);
-    await capture('win-rate-outs-expanded');
+    await tap('#win-rate-board-1');
+    await waitData('Flop edit', (value) => value.selected === '0-11');
+    assert.ok(await page.$('#win-rate-delete'));
+    await capture('win-rate-picker-edit');
+    await pick('0-11');
+    await waitData('Edit closes the picker', (value) => !value.pickerOpen);
     return { statusText: data.statusText };
   });
   await check('remove-and-clear', async () => {

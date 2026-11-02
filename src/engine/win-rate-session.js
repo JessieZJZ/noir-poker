@@ -10,7 +10,7 @@ const EXACT_BUDGET_MS = 3000;
 const SAMPLE_BUDGET_MS = 1500;
 const SAMPLE_TRIALS = 400000;
 
-const emptyPlayer = (id) => ({ id, cards: [null, null], expanded: false });
+const emptyPlayer = (id) => ({ id, cards: [null, null] });
 
 // Web and WeChat render this one model, so selection, auto-advance and the
 // cancellation of a stale calculation cannot drift between platforms.
@@ -110,9 +110,9 @@ export function createWinRateSession({
   }
   function nextTarget() {
     if (target.type === 'board') {
-      if (target.index >= FLOP_SLOTS) return null;
+      if (!target.deal || target.index >= FLOP_SLOTS) return null;
       const index = board.findIndex((card, i) => !card && i < FLOP_SLOTS);
-      return index >= 0 ? { type: 'board', index } : null;
+      return index >= 0 ? { ...target, index } : null;
     }
     const index = targetPlayer().cards.findIndex((card) => !card);
     return index >= 0 ? { ...target, index } : null;
@@ -123,9 +123,11 @@ export function createWinRateSession({
   }
   return {
     openBoard(index) {
-      // A filled card is edited in place; an empty street deals in order.
-      const first = board.findIndex((card) => !card);
-      target = { type: 'board', index: board[index] ? index : first };
+      // A filled card is edited in place; an empty street deals in order. Only
+      // an untouched flop stays open between picks, later taps are likely edits.
+      const first = board.findIndex((card) => !card),
+        deal = !board.slice(0, FLOP_SLOTS).some(Boolean);
+      target = { type: 'board', index: board[index] ? index : first, deal };
       onChange();
     },
     openPlayer(id, index) {
@@ -145,7 +147,7 @@ export function createWinRateSession({
       target = nextTarget();
       changed();
     },
-    // 不选 empties the slot and hands the page back, matching 返回 afterwards.
+    // 删除 empties the slot and hands the page back, matching 返回 afterwards.
     clearTarget() {
       if (!target) return;
       assign(null);
@@ -161,12 +163,6 @@ export function createWinRateSession({
       if (players.length <= 2 || id === players[0].id) return;
       players = players.filter((player) => player.id !== id);
       changed();
-    },
-    toggleOuts(id) {
-      const player = players.find((entry) => entry.id === id);
-      if (!player) return;
-      player.expanded = !player.expanded;
-      onChange();
     },
     clear() {
       nextId = 2;
@@ -203,7 +199,6 @@ export function createWinRateSession({
           cards: [...player.cards],
           complete: complete(player),
           removable: index > 0 && players.length > 2,
-          expanded: player.expanded,
           result: calculated?.players.get(player.id) ?? null,
         })),
       };

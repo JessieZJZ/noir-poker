@@ -213,7 +213,7 @@ test('session auto-advances within a hand and the flop, then returns to the tabl
   session.openBoard(4);
   assert.deepEqual(
     session.view().target,
-    { type: 'board', index: 0 },
+    { type: 'board', index: 0, deal: true },
     'empty streets deal in order',
   );
   pickAll(session, '6s', 'Js', 'Jc');
@@ -228,6 +228,39 @@ test('session auto-advances within a hand and the flop, then returns to the tabl
   session.clearTarget();
   assert.equal(session.view().board[0], null);
   assert.equal(session.view().used.includes('1-6'), false);
+});
+
+test('only an untouched flop stays open between picks', () => {
+  const session = createWinRateSession();
+  session.openBoard(1);
+  assert.equal(session.view().selected, null, 'an empty slot has nothing to delete');
+  session.pick(card('6s'));
+  assert.equal(session.view().target.index, 1, 'the first flop deal keeps going');
+  session.pick(card('Js'));
+  assert.equal(session.view().target.index, 2);
+  session.closePicker();
+  session.openBoard(2);
+  assert.equal(session.view().target.index, 2);
+  session.pick(card('Jc'));
+  assert.equal(session.view().target, null, 'a partly filled flop closes after one card');
+  session.openBoard(0);
+  assert.equal(session.view().selected, card('6s').key, 'a filled slot can be deleted');
+  session.clearTarget();
+  session.openBoard(3);
+  assert.equal(session.view().target.index, 0, 'a gap is refilled first');
+  session.pick(card('5s'));
+  assert.equal(session.view().target, null);
+  session.openBoard(1);
+  session.pick(card('4s'));
+  assert.equal(session.view().target, null, 'replacing a flop card closes at once');
+  for (const index of [0, 1, 2]) {
+    session.openBoard(index);
+    session.clearTarget();
+  }
+  session.openBoard(2);
+  assert.equal(session.view().target.index, 0, 'an emptied flop deals from the start again');
+  session.pick(card('6s'));
+  assert.equal(session.view().target.index, 1);
 });
 
 test('session keeps at least one opponent, caps the table and clears cleanly', () => {

@@ -10,7 +10,6 @@ const STREETS = [
   { label: '河牌', slots: [4] },
 ];
 const BOARD_MARKS = ['♠', '♣', '♥', '♦', '♠'];
-const OUTS_PREVIEW = 8;
 const SUIT_ORDER = [0, 1, 2, 3];
 const PICKER_RANKS = [14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2];
 const deck = deckOfCards();
@@ -54,14 +53,9 @@ function oddsMarkup(player, view, ready) {
 function outsMarkup(player) {
   const outs = player.result?.outs;
   if (!outs) return '';
-  const visible = player.expanded ? outs : outs.slice(0, OUTS_PREVIEW);
-  return `<div class="win-rate-outs"><div class="win-rate-outs-heading"><span>Outs <b>${outs.length}</b></span>${
-    outs.length > OUTS_PREVIEW
-      ? `<button type="button" data-outs="${player.id}" aria-expanded="${player.expanded}">${player.expanded ? '收起' : '展开'}</button>`
-      : ''
-  }</div>${
+  return `<div class="win-rate-outs"><div class="win-rate-outs-heading"><span>Outs <b>${outs.length}</b></span></div>${
     outs.length
-      ? `<div class="win-rate-outs-cards">${visible.map((card) => renderCard(card, { small: true })).join('')}</div>`
+      ? `<div class="win-rate-outs-cards">${outs.map((card) => renderCard(card, { small: true })).join('')}</div>`
       : ''
   }</div>`;
 }
@@ -91,7 +85,7 @@ function playersMarkup(view) {
 }
 function statusMarkup(view) {
   if (view.status === 'computing') return '正在计算全部公共牌组合…';
-  if (view.status === 'idle') return '选满两位玩家的底牌后自动计算。';
+  if (view.status === 'idle') return '';
   const samples = new Intl.NumberFormat(getLocale()).format(view.samples);
   return view.method === 'exact'
     ? `已精确计算全部 ${samples} 种公共牌组合。`
@@ -130,7 +124,8 @@ export function createWinRatePage() {
     outsNote = document.querySelector('#win-rate-outs-note'),
     add = document.querySelector('#win-rate-add'),
     title = document.querySelector('#win-rate-picker-title'),
-    grid = document.querySelector('#win-rate-picker-grid');
+    grid = document.querySelector('#win-rate-picker-grid'),
+    remove = document.querySelector('#win-rate-delete');
   const scrollLock = createDialogScrollLock(dialog);
   const session = createWinRateSession({ onChange: render });
 
@@ -138,7 +133,7 @@ export function createWinRatePage() {
   function focusKey() {
     const element = document.activeElement;
     if (!element?.closest?.('#win-rate-dialog, #win-rate-picker')) return null;
-    return ['board', 'player', 'card', 'pick', 'remove', 'outs']
+    return ['board', 'player', 'card', 'pick', 'remove']
       .filter((name) => name in element.dataset)
       .map((name) => `[data-${name}="${element.dataset[name]}"]`)
       .join('');
@@ -150,12 +145,14 @@ export function createWinRatePage() {
     setLocalizedHTML(board, boardMarkup(view));
     setLocalizedHTML(players, playersMarkup(view));
     setLocalizedHTML(status, statusMarkup(view));
+    status.hidden = view.status === 'idle';
     outsNote.hidden = !view.players.some((player) => player.result?.outs);
     add.disabled = !view.canAdd;
     dialog.dataset.status = view.status;
     if (view.target) {
       setLocalizedHTML(title, pickerTitle(view));
       setLocalizedHTML(grid, pickerMarkup(view));
+      remove.hidden = !view.selected;
       if (!picker.open) picker.showModal();
       if (focus) grid.querySelector(`${focus}:not(:disabled)`)?.focus();
       if (!grid.contains(document.activeElement))
@@ -175,7 +172,6 @@ export function createWinRatePage() {
     if ('board' in dataset) session.openBoard(Number(dataset.board));
     else if ('player' in dataset) session.openPlayer(Number(dataset.player), Number(dataset.card));
     else if ('remove' in dataset) session.removeOpponent(Number(dataset.remove));
-    else if ('outs' in dataset) session.toggleOuts(Number(dataset.outs));
   });
   add.addEventListener('click', () => session.addOpponent());
   document.querySelector('#win-rate-clear').addEventListener('click', () => session.clear());
@@ -183,7 +179,7 @@ export function createWinRatePage() {
     const key = event.target.closest('[data-pick]')?.dataset.pick;
     if (key) session.pick(deck.find((card) => card.key === key));
   });
-  document.querySelector('#win-rate-unset').addEventListener('click', () => session.clearTarget());
+  remove.addEventListener('click', () => session.clearTarget());
   document
     .querySelector('#win-rate-picker-back')
     .addEventListener('click', () => session.closePicker());

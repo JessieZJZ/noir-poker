@@ -1120,10 +1120,13 @@ export async function nativeScenarios(app) {
           (value) => value.textContent,
         ),
       );
+    const deleteHidden = () =>
+      app.evaluate(() => document.querySelector('#win-rate-delete').hidden);
     await app.click('#rules-button');
     await app.click('#win-rate-menu-item');
     await app.screenshot('win-rate-empty');
     await app.click('[data-player="0"][data-card="0"]');
+    assert.equal(await deleteHidden(), true);
     await pick('0-14', '0-13');
     await app.click('[data-player="1"][data-card="0"]');
     await pick('0-8');
@@ -1170,6 +1173,11 @@ export async function nativeScenarios(app) {
     assert.ok(layout.clearBottom <= layout.height);
     assert.equal(layout.outs, '12');
     await app.screenshot('win-rate-flop');
+    await app.click('[data-board="1"]');
+    assert.equal(await deleteHidden(), false);
+    await app.screenshot('win-rate-picker-edit');
+    await pick('0-11');
+    assert.equal(await app.evaluate(() => document.querySelector('#win-rate-picker').open), false);
     await app.click('#win-rate-dialog .close-dialog');
     assert.equal((await app.state()).hand, before.hand);
     return { preflop, flop, layout, sameHand: true };

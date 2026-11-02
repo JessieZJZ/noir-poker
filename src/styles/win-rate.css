@@ -271,14 +271,6 @@
   color: var(--mint);
   font-weight: 600;
 }
-.win-rate-outs-heading button {
-  padding: 3px 8px;
-  color: #adc2ca;
-  font-size: 12px;
-  background: #1a2833;
-  border: 1px solid #32454f;
-  border-radius: 8px;
-}
 .win-rate-outs-cards {
   display: flex;
   flex-wrap: wrap;
@@ -339,6 +331,10 @@
   border-width: 1px 1px 0;
   border-radius: 18px 18px 0 0;
 }
+#win-rate-picker::backdrop {
+  background: #05090e66;
+  backdrop-filter: none;
+}
 #win-rate-picker[open] {
   display: flex;
   flex-direction: column;
@@ -394,14 +390,14 @@
   outline-offset: -2px;
 }
 .win-rate-picker-actions {
-  display: grid;
+  display: flex;
   flex: none;
-  grid-template-columns: 1fr 1fr;
   gap: 10px;
   padding: 10px 16px calc(14px + env(safe-area-inset-bottom, 0px));
   border-top: 1px solid #263541;
 }
 .win-rate-picker-actions button {
+  flex: 1;
   min-height: 44px;
   color: var(--text);
   font-size: 14px;

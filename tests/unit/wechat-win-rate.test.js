@@ -77,7 +77,7 @@ test('WeChat win rate page reproduces the shared session and reference flop', ()
     [13, 13, 13, 13],
   );
   assert.equal(page.data.deck[0].cards[0].key, '0-14');
-  assert.equal(page.data.statusText, '选满两位玩家的底牌后自动计算。');
+  assert.equal(page.data.statusText, '');
   tap(page, 'openBoardCard', { index: 0 });
   assert.equal(page.data.pickerOpen, true);
   assert.equal(page.data.pickerTitle, '翻牌第 1 张');
@@ -104,18 +104,15 @@ test('WeChat win rate page reproduces the shared session and reference flop', ()
   assert.equal(weak.odds.win, '2.99%');
   assert.equal(leader.odds.win, '51.83%');
   assert.equal(hero.outs.count, 12);
-  assert.equal(hero.outs.cards.length, 8);
-  assert.equal(hero.outs.toggle, true);
+  assert.equal(hero.outs.cards.length, 12);
   assert.equal(weak.outs.count, 0);
   assert.equal(leader.outs, null);
   assert.equal(page.data.hasOuts, true);
   assert.match(page.data.statusText, /903 种/);
-  tap(page, 'toggleOuts', { id: 0 });
-  assert.equal(page.data.players[0].outs.cards.length, 12);
   assert.match(hero.slots[0].card.artStyle, /^background-image/);
 });
 
-test('WeChat win rate page clears, unsets and shows the used state', () => {
+test('WeChat win rate page clears, deletes and shows the used state', () => {
   const { page } = openPage();
   tap(page, 'openPlayerCard', { id: 0, index: 0 });
   picks(page, '0-14');
@@ -125,7 +122,7 @@ test('WeChat win rate page clears, unsets and shows the used state', () => {
   page.closePicker();
   tap(page, 'openPlayerCard', { id: 0, index: 0 });
   assert.equal(page.data.selected, '0-14');
-  page.unsetCard();
+  page.deleteCard();
   assert.equal(page.data.players[0].slots[0].card, null);
   assert.equal(page.data.pickerOpen, false);
   tap(page, 'addOpponent');
@@ -168,7 +165,7 @@ test('WeChat win rate entry and template keep the Web controls', () => {
     app = JSON.parse(read('app.json'));
   assert.match(table, /id="resource-win-rate" bindtap="openWinRate">胜率计算器</);
   assert.deepEqual(app.subpackages.find(({ root }) => root === 'calculator')?.pages, ['win-rate']);
-  for (const id of ['win-rate-add', 'win-rate-clear', 'win-rate-unset', 'win-rate-picker-back'])
+  for (const id of ['win-rate-add', 'win-rate-clear', 'win-rate-delete', 'win-rate-picker-back'])
     assert.match(page, new RegExp(`id="${id}"`));
   assert.doesNotMatch(page, /计算<\/button>|分享|收藏/);
   assert.match(style, /win-rate-sheet 0\.2s ease-out/);

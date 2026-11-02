@@ -10,7 +10,6 @@ const STREETS = [
   { label: '河牌', slots: [4] },
 ];
 const BOARD_MARKS = ['♠', '♣', '♥', '♦', '♠'];
-const OUTS_PREVIEW = 8;
 const deck = deckOfCards();
 const percent = (value) => `${(value * 100).toFixed(2)}%`;
 const grouped = (value) => String(value).replace(/\B(?=(\d{3})+$)/g, ',');
@@ -74,12 +73,7 @@ function oddsView(player, view, ready) {
 function outsView(player) {
   const outs = player.result?.outs;
   if (!outs) return null;
-  return {
-    count: outs.length,
-    toggle: outs.length > OUTS_PREVIEW,
-    expanded: player.expanded,
-    cards: (player.expanded ? outs : outs.slice(0, OUTS_PREVIEW)).map(artwork),
-  };
+  return { count: outs.length, cards: outs.map(artwork) };
 }
 function playersView(view) {
   const ready = view.players.filter((player) => player.complete).length;
@@ -102,7 +96,7 @@ function playersView(view) {
 }
 function statusText(view) {
   if (view.status === 'computing') return '正在计算全部公共牌组合…';
-  if (view.status === 'idle') return '选满两位玩家的底牌后自动计算。';
+  if (view.status === 'idle') return '';
   const samples = grouped(view.samples);
   return view.method === 'exact'
     ? `已精确计算全部 ${samples} 种公共牌组合。`
@@ -182,7 +176,7 @@ Page({
     const { key } = event.currentTarget.dataset;
     this._session.pick(deck.find((card) => card.key === key));
   },
-  unsetCard() {
+  deleteCard() {
     this._session.clearTarget();
   },
   closePicker() {
@@ -193,9 +187,6 @@ Page({
   },
   removeOpponent(event) {
     this._session.removeOpponent(event.currentTarget.dataset.id);
-  },
-  toggleOuts(event) {
-    this._session.toggleOuts(event.currentTarget.dataset.id);
   },
   clearAll() {
     this._session.clear();

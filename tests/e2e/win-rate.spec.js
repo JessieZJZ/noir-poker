@@ -61,9 +61,16 @@ test('guide menu opens the calculator and leaves the live hand untouched', async
 
 test('cards auto-advance, block duplicates and calculate live with outs', async ({ page }) => {
   await openCalculator(page);
-  await expect(page.locator('#win-rate-status')).toHaveText('选满两位玩家的底牌后自动计算。');
+  await expect(page.locator('#win-rate-status')).toBeHidden();
   await hole(page, 0).click();
+  await expect(page.locator('#win-rate-delete')).toBeHidden();
   await expect(page.locator('#win-rate-picker-title')).toHaveText('你的第 1 张底牌');
+  const backdrop = await page.evaluate(() => {
+    const style = getComputedStyle(document.querySelector('#win-rate-picker'), '::backdrop');
+    return { filter: style.backdropFilter, color: style.backgroundColor };
+  });
+  expect(backdrop.filter).toBe('none');
+  expect(Number(backdrop.color.match(/[\d.]+/g)[3])).toBeLessThanOrEqual(0.4);
   await pick(page, '0-14');
   await expect(page.locator('#win-rate-picker-title')).toHaveText('你的第 2 张底牌');
   await expect(page.locator('[data-pick="0-14"]')).toBeDisabled();
@@ -90,17 +97,14 @@ test('cards auto-advance, block duplicates and calculate live with outs', async 
 
   const seats = page.locator('.win-rate-seat');
   await expect(seats.nth(0).locator('.win-rate-outs-heading b')).toHaveText('12');
-  await expect(seats.nth(0).locator('.win-rate-outs-cards .playing-card')).toHaveCount(8);
-  await seats.nth(0).getByRole('button', { name: '展开' }).click();
   await expect(seats.nth(0).locator('.win-rate-outs-cards .playing-card')).toHaveCount(12);
-  await seats.nth(0).getByRole('button', { name: '收起' }).click();
-  await expect(seats.nth(0).locator('.win-rate-outs-cards .playing-card')).toHaveCount(8);
+  await expect(page.locator('.win-rate-outs button')).toHaveCount(0);
   await expect(seats.nth(1).locator('.win-rate-outs-heading b')).toHaveText('0');
   await expect(seats.nth(2).locator('.win-rate-outs')).toHaveCount(0);
   await expect(page.locator('#win-rate-outs-note')).toBeVisible();
 });
 
-test('opponents can be removed and every card can be unset or cleared', async ({ page }) => {
+test('opponents can be removed and every card can be deleted or cleared', async ({ page }) => {
   await openCalculator(page);
   await expect(page.locator('.win-rate-remove')).toHaveCount(0);
   await dealReferenceHand(page);
@@ -111,10 +115,26 @@ test('opponents can be removed and every card can be unset or cleared', async ({
   await expect(page.locator('#win-rate-status')).toContainText('990');
   await page.locator('[data-board="1"]').click();
   await expect(page.locator('[data-pick="0-11"]')).toHaveAttribute('aria-pressed', 'true');
-  await page.locator('#win-rate-unset').click();
+  const remove = page.locator('#win-rate-delete');
+  await expect(remove).toHaveText('删除');
+  const widths = await page.evaluate(() =>
+    ['#win-rate-delete', '#win-rate-picker-back'].map(
+      (selector) => document.querySelector(selector).getBoundingClientRect().width,
+    ),
+  );
+  expect(Math.abs(widths[0] - widths[1])).toBeLessThan(1);
+  await remove.click();
   await expect(page.locator('[data-board="1"] .playing-card')).toHaveCount(0);
   await expect(page.locator('#win-rate-picker')).toBeHidden();
   await expect(page.locator('.win-rate-outs')).toHaveCount(0);
+  await page.locator('[data-board="4"]').click();
+  await expect(page.locator('#win-rate-picker-title')).toHaveText('翻牌第 2 张');
+  await expect(remove).toBeHidden();
+  const back = await page.locator('#win-rate-picker-back').boundingBox();
+  const grid = await page.locator('#win-rate-picker-grid').boundingBox();
+  expect(back.width).toBeGreaterThan(grid.width - 40);
+  await pick(page, '0-11');
+  await expect(page.locator('#win-rate-picker')).toBeHidden();
   await page.locator('#win-rate-clear').click();
   await expect(page.locator('.win-rate-seat')).toHaveCount(2);
   await expect(page.locator('.win-rate-slot .playing-card')).toHaveCount(0);
@@ -183,7 +203,7 @@ for (const [width, height] of [
       height,
     );
     await page.locator('.win-rate-seat').first().locator('[data-card="0"]').click();
-    await expect(page.locator('#win-rate-unset')).toBeInViewport();
+    await expect(page.locator('#win-rate-picker-back')).toBeInViewport();
     await pickerSettled(page);
     const box = await page.locator('#win-rate-picker').boundingBox();
     expect(box.y + box.height).toBeLessThanOrEqual(height + 1);
@@ -207,8 +227,8 @@ test('native safe areas keep the calculator controls clear of system bars', asyn
   expect(clear.y + clear.height).toBeLessThanOrEqual(viewport.height - 34);
   await hole(page, 0).click();
   await pickerSettled(page);
-  const unset = await page.locator('#win-rate-unset').boundingBox();
-  expect(unset.y + unset.height).toBeLessThanOrEqual(viewport.height - 34);
+  const back = await page.locator('#win-rate-picker-back').boundingBox();
+  expect(back.y + back.height).toBeLessThanOrEqual(viewport.height - 34);
 });
 
 for (const locale of ['en', 'ko', 'es', 'it', 'pt', 'de', 'fr', 'ru']) {

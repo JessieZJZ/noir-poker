@@ -294,14 +294,6 @@ page {
   color: #6ee7c5;
   font-weight: 600;
 }
-.win-rate-outs-heading .win-rate-outs-toggle {
-  padding: 3px 8px;
-  color: #adc2ca;
-  font-size: 12px;
-  background: #1a2833;
-  border: 1px solid #32454f;
-  border-radius: 8px;
-}
 .win-rate-outs-cards {
   display: flex;
   flex-wrap: wrap;
@@ -367,8 +359,7 @@ page {
   position: fixed;
   inset: 0;
   z-index: 30;
-  background: #05090ed9;
-  backdrop-filter: blur(8px);
+  background: #05090e66;
 }
 .win-rate-picker {
   position: fixed;
@@ -429,15 +420,14 @@ page {
   outline-offset: -2px;
 }
 .win-rate-picker-actions {
-  display: grid;
+  display: flex;
   flex: none;
-  grid-template-columns: 1fr 1fr;
   gap: 10px;
   padding: 10px 16px;
   border-top: 1px solid #263541;
 }
 .win-rate-picker .win-rate-picker-actions button {
-  width: 100%;
+  flex: 1;
   height: 44px;
   color: #edf3f6;
   font-size: 14px;
