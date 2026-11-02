@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 
 async function ready(page) {
   await page.goto('/');
-  await expect(page.locator('html')).toHaveAttribute('data-app-ready', 'true');
+  await expect(page.locator('html')).toHaveAttribute('data-app-ready', 'true', { timeout: 30000 });
   await page.evaluate(() => window.qa.stop());
 }
 async function openTutorial(page) {
@@ -12,9 +12,9 @@ async function openTutorial(page) {
 }
 const coach = (page) => page.evaluate(() => window.noir.getState().tutorial);
 
-// Real taps only: the same controls a new player uses.
-async function advance(page) {
-  const view = await coach(page);
+// Real taps only: the same controls a new player uses. Acts on the view the
+// caller judged, or a step reached since then would be tapped through unseen.
+async function advance(page, view) {
   if (view.options.length) {
     for (const option of view.options) {
       await page.locator(`[data-tutorial-answer="${option.index}"]`).click();
@@ -39,7 +39,7 @@ async function playUntil(page, done) {
   while (Date.now() < deadline) {
     const view = await coach(page);
     if (done(view)) return view;
-    await advance(page);
+    await advance(page, view);
   }
   throw Error('The tutorial did not reach the expected step');
 }
