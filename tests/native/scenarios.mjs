@@ -126,8 +126,8 @@ export async function waitForNativeHeroTurn(
   const timeoutMs = (playerCount - 1) * BOT_THINK_LIMITS.maximum + 10000;
   const observations = [];
   let advancedSettlement = false;
-  try {
-    await app.waitFor(
+  const reachTurn = () =>
+    app.waitFor(
       async () => {
         const snapshot = await app.evaluate(() => {
           const game = window.noir.getState();
@@ -144,11 +144,7 @@ export async function waitForNativeHeroTurn(
         // A real walk is a completed hand even though the hero never acts.
         // Lifecycle audits retain it instead of advancing into another hand.
         if (acceptSettled && snapshot.phase === 'done') return true;
-        if (advanceSettled && !advancedSettlement && snapshot.phase === 'done') {
-          advancedSettlement = true;
-          await app.click('#next-button');
-          return false;
-        }
+        if (advanceSettled && !advancedSettlement && snapshot.phase === 'done') return 'settled';
         return (
           snapshot.phase === 'playing' &&
           snapshot.actor === '你' &&
@@ -159,6 +155,14 @@ export async function waitForNativeHeroTurn(
       timeoutMs,
       'The reset hand must reach the real hero turn',
     );
+  try {
+    // One emulator click can outlast the budget, so the budget covers only the
+    // app's waits: the next hand gets its own bot pauses in full.
+    if ((await reachTurn()) === 'settled') {
+      advancedSettlement = true;
+      await app.click('#next-button');
+      await reachTurn();
+    }
     return {
       timeoutMs,
       elapsedMs: now() - started,

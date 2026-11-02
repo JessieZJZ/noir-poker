@@ -148,14 +148,20 @@ test('rotating a tablet moves the panel without losing the lesson or the table',
   await reachHeroTurn(page);
   const portrait = await coach(page);
   const portraitPanel = await page.locator('#tutorial-coach').boundingBox();
+  // A rotation keeps the old offset unless the tutorial clears it; a player who
+  // scrolled to the hand log would otherwise lose the panel's text.
+  await page.evaluate(() => window.scrollTo(0, 240));
   await rotate(true);
   await expect(page.locator('#orientation-dialog')).toBeHidden();
+  await expect.poll(() => page.evaluate(() => scrollY)).toBe(0);
   await expect
     .poll(async () => (await page.locator('#tutorial-coach').boundingBox()).x)
     .toBeGreaterThan(600);
   await expectLessonOnScreen(page);
   expect(await coach(page)).toEqual(portrait);
+  await page.evaluate(() => window.scrollTo(0, 240));
   await rotate(false);
+  await expect.poll(() => page.evaluate(() => scrollY)).toBe(0);
   await expect
     .poll(async () => (await page.locator('#tutorial-coach').boundingBox()).width)
     .toBe(portraitPanel.width);

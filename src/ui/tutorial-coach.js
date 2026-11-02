@@ -30,6 +30,7 @@ export function createTutorialCoach({ onNext, onAnswer, onPrimary, onSecondary, 
   const panel = $('#tutorial-coach'),
     dialog = $('#tutorial-dialog'),
     compact = matchMedia(COMPACT_PLAY_QUERY),
+    portrait = matchMedia('(orientation: portrait)'),
     surfaceHome = $('.main .action-dock-slot');
   let dialogKey = null,
     optionsKey = null,
@@ -137,6 +138,11 @@ export function createTutorialCoach({ onNext, onAnswer, onPrimary, onSecondary, 
     dialogKey = null;
   });
   compact.addEventListener('change', place);
+  // Rotation keeps the old scroll offset, which would leave the panel's text
+  // behind the header and only half of the table on the first screen.
+  portrait.addEventListener('change', () => {
+    if (!panel.hidden) window.scrollTo(0, 0);
+  });
   place();
 
   return {

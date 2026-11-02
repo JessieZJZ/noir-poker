@@ -101,6 +101,27 @@ test('closing the intro leaves the live table exactly as it was', async ({ page 
   await expect(page.locator('#tutorial-coach')).toBeHidden();
 });
 
+test('the tutorial opens from the waiting table and returns to it unseated', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.locator('html')).toHaveAttribute('data-app-ready', 'true');
+  const surface = page.locator('.game-surface');
+  await expect(surface).toHaveAttribute('data-entry-state', 'waiting');
+  const before = await page.evaluate(() => window.noir.getState());
+  expect(before.phase).toBe('idle');
+  await openTutorial(page);
+  await page.locator('#tutorial-dialog-primary').click();
+  await expect(page.locator('#tutorial-coach')).toBeVisible();
+  await expect.poll(() => page.evaluate(() => window.noir.getState().hole)).toEqual(['10♥', '9♥']);
+  await expect(page.locator('#join-table-button')).toBeHidden();
+  await page.locator('#tutorial-exit').click();
+  await expect(page.locator('#tutorial-coach')).toBeHidden();
+  await expect(surface).toHaveAttribute('data-entry-state', 'waiting');
+  await expect(page.locator('#join-table-button')).toBeVisible();
+  expect(await page.evaluate(() => window.noir.getState())).toEqual(before);
+  await page.locator('#join-table-button').click();
+  await expect(surface).toHaveAttribute('data-entry-state', 'playing');
+});
+
 test('a guided turn leaves only the taught control live', async ({ page }) => {
   await ready(page);
   await openTutorial(page);

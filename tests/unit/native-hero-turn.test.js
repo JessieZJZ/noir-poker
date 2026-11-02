@@ -7,12 +7,15 @@ function harness(read) {
   let elapsed = 0;
   return {
     now: () => elapsed,
+    advance: (ms) => (elapsed += ms),
     app: {
       state: async () => ({ playerCount: 8 }),
       evaluate: async () => read(elapsed),
-      waitFor: async (predicate, deadline, message) => {
+      waitFor: async (predicate, timeout, message) => {
+        const deadline = elapsed + timeout;
         while (elapsed < deadline) {
-          if (await predicate()) return true;
+          const result = await predicate();
+          if (result) return result;
           elapsed += 1000;
         }
         throw Error(message);
@@ -99,6 +102,39 @@ test('review and background checks advance once when the preceding real hand has
   assert.deepEqual(
     result.observations.map(({ state }) => state.phase),
     ['done', 'playing'],
+  );
+});
+
+test('a slow next-hand click leaves the following hand its full bot budget', async () => {
+  const budget = 7 * BOT_THINK_LIMITS.maximum + 10000;
+  let clickedAt = null;
+  const fake = harness((elapsed) => {
+    if (clickedAt === null) return { ...waiting(null), phase: 'done' };
+    return elapsed < clickedAt + 20000
+      ? waiting('River')
+      : { ...waiting('你'), hand: 2, enabled: true, controlEnabled: true };
+  });
+  fake.app.click = async () => {
+    clickedAt = fake.advance(budget);
+  };
+  const result = await waitForNativeHeroTurn(fake.app, { now: fake.now, advanceSettled: true });
+  assert.equal(result.elapsedMs, budget + 20000);
+});
+
+test('a stalled hand after a slow click still fails within one budget', async () => {
+  const budget = 7 * BOT_THINK_LIMITS.maximum + 10000;
+  let clicked = false;
+  const fake = harness(() => (clicked ? waiting('River') : { ...waiting(null), phase: 'done' }));
+  fake.app.click = async () => {
+    fake.advance(budget);
+    clicked = true;
+  };
+  await assert.rejects(
+    waitForNativeHeroTurn(fake.app, { now: fake.now, advanceSettled: true }),
+    (error) => {
+      assert.equal(error.turnDiagnostics.elapsedMs, budget * 2);
+      return true;
+    },
   );
 });
 
