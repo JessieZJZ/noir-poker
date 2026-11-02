@@ -2058,12 +2058,22 @@ export async function nativeScenarios(app) {
     if (portraitSheet.tablet) {
       try {
         await app.rotate('LANDSCAPE');
+        await app.waitFor(
+          () => app.evaluate(() => innerWidth > innerHeight),
+          5000,
+          'Tablet rotation must settle',
+        );
         landscapeSheet = await sheetClear('Rotated picker must leave the slot in view');
         assert.ok(landscapeSheet.width > landscapeSheet.height, 'Tablet must rotate the picker');
         await app.screenshot('win-rate-picker-landscape');
       } finally {
         await app.rotate('PORTRAIT');
       }
+      await app.waitFor(
+        () => app.evaluate(() => innerHeight > innerWidth),
+        5000,
+        'Tablet must return to portrait',
+      );
       await sheetClear('Picker must follow the return to portrait');
     }
     await pick('0-7');
