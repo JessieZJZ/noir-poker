@@ -1306,9 +1306,6 @@ module.exports = {
       },
     });
   },
-  returnToGame() {
-    navigation.returnToGame();
-  },
   openGuide() {
     this.showGuide();
   },
