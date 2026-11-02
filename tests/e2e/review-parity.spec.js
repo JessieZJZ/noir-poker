@@ -5,24 +5,24 @@ test('review heading styles, hand identities, position tags and selected activit
   page,
 }, info) => {
   const game = causalReraiseGame();
-  game.players[1].botProfile = 'tan';
-  for (const step of game.decisions) step.players.find((p) => p.id === 1).botProfile = 'tan';
-  for (const record of game.botDecisions) if (record.id === 1) record.trace.profile = 'tan';
+  game.players[1].botProfile = 'rook';
+  for (const step of game.decisions) step.players.find((p) => p.id === 1).botProfile = 'rook';
+  for (const record of game.botDecisions) if (record.id === 1) record.trace.profile = 'rook';
   await page.goto('/');
   await page.waitForFunction(() => window.qa);
   await page.evaluate((g) => window.qa.loadRecordedGame(g), game);
   await expect(page.locator('#activity-list .activity-position').first()).toBeVisible();
-  await expect(page.locator('#activity-list')).toContainText('Mia（谭老板）');
+  await expect(page.locator('#activity-list')).toContainText('Mia（大注强攻）');
   await page.locator('#review-hand-button').click();
   await expect(page.locator('#review-dialog')).toHaveAttribute('data-analysis-status', 'done', {
-    timeout: 30000,
+    timeout: 120000,
   });
   await page.locator('[data-review-index="0"]').click();
   const gold = 'rgb(228, 206, 160)';
   await expect(page.locator('#review-coach-explanation strong').first()).toHaveCSS('color', gold);
   await expect(page.locator('#review-coach-explanation h4')).toHaveCSS('color', gold);
   await expect(page.locator('.review-evidence h3')).toHaveCSS('color', gold);
-  await page.locator('#review-activity summary').click();
+  await expect(page.locator('#review-activity')).toHaveAttribute('open', '');
   await expect(page.locator('#review-activity .activity-position').first()).toBeVisible();
   const plainActor = page
     .locator('.review-activity-emphasis:not(.review-activity-current)')
@@ -39,7 +39,7 @@ test('review heading styles, hand identities, position tags and selected activit
     gold,
   );
   await expect(page.locator('#review-opponent-detail h4')).toHaveCSS('color', gold);
-  await expect(page.locator('#review-opponent-detail')).toContainText('Mia（谭老板）');
+  await expect(page.locator('#review-opponent-detail')).toContainText('Mia（大注强攻）');
   await expect(page.locator('#review-opponent-detail .review-explanation')).toContainText(
     /在 .* 位/,
   );

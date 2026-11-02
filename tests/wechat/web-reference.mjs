@@ -89,7 +89,6 @@ try {
     `,
     });
     await page.evaluate(() => {
-      document.querySelector('#sound-label').textContent = '音效与音乐';
       window.dispatchEvent(new Event('resize'));
     });
     await page.evaluate(
@@ -115,7 +114,7 @@ try {
         .evaluate((el, top) => (el.scrollTop = top), settingsScroll);
       if (name === 'settings-bottom')
         await page.locator('.opponents-body').evaluate((el) => (el.scrollTop = el.scrollHeight));
-      if (screen === 'player') await page.locator('[data-profile-preview="haxton"]').click();
+      if (screen === 'player') await page.locator('[data-profile-preview="owen"]').click();
     } else if (screen === 'guide') {
       await page.locator('#rules-button').click();
       await page.locator('#guide-menu-item').click();

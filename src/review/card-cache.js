@@ -9,3 +9,29 @@ class BoardCache extends Map {
 const cache = new BoardCache();
 export const reviewCardCache = () => cache;
 export const clearReviewCardCache = () => cache.clear();
+
+// Every sampled deal of one snapshot repeats its visible flop/turn. Those
+// boards' pure pair facts live in `fixed`, shared across the snapshot's
+// deals; every other (sampled) board stays in this per-deal map.
+export class SnapshotBoardCache extends Map {
+  constructor(fixed, board) {
+    super();
+    this.fixed = fixed;
+    this.fixedKeys = new Set(
+      board.slice(2).map((_, i) =>
+        board
+          .slice(0, i + 3)
+          .map((c) => c.key)
+          .join('|'),
+      ),
+    );
+  }
+  get(key) {
+    return this.fixedKeys.has(key) ? this.fixed.get(key) : super.get(key);
+  }
+  set(key, value) {
+    if (this.fixedKeys.has(key)) this.fixed.set(key, value);
+    else super.set(key, value);
+    return this;
+  }
+}

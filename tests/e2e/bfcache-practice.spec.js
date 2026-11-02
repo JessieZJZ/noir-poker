@@ -24,7 +24,7 @@ test('cached page restore keeps coaching and tool listeners on the same decision
     window.qa.stop();
     return document.fonts.ready;
   });
-  await expect(page.locator('#coach-desktop-body #coach-content')).toBeVisible();
+  await expect(page.locator('.surface-top #coach-content')).toBeVisible();
   const before = await page.evaluate(() => window.qa.snapshot());
   await page.evaluate(() => {
     window.dispatchEvent(new PageTransitionEvent('pagehide', { persisted: true }));

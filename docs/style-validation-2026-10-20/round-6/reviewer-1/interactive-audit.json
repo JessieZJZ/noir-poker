@@ -1,0 +1,162 @@
+{
+  "totalStarts": 80,
+  "totalCompleted": 80,
+  "responses": 191,
+  "statuses": {
+    "200": 191
+  },
+  "lastPhase": "done",
+  "freeReviewSHA256": "c09c439d66a33d7c74ca384323d02ef8820da78597cad0b9da765d1e8e996f26",
+  "opponents": {
+    "A": {
+      "startCount": 40,
+      "doneCount": 40,
+      "serverHands": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40
+      ],
+      "targetPositions": {
+        "BTN": 8,
+        "SB": 8,
+        "BB": 8,
+        "UTG": 8,
+        "CO": 8
+      },
+      "heroPositions": {
+        "CO": 8,
+        "UTG": 8,
+        "BB": 8,
+        "SB": 8,
+        "BTN": 8
+      },
+      "targetVoluntaryHands": 32,
+      "targetPreflopRaiseHands": 18,
+      "heroVoluntaryHands": 5,
+      "heroFlopHands": [
+        7,
+        17,
+        18,
+        22
+      ],
+      "genuineJointFlops": [
+        7,
+        18
+      ]
+    },
+    "B": {
+      "startCount": 40,
+      "doneCount": 40,
+      "serverHands": [
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        54,
+        55,
+        56,
+        57,
+        58,
+        59,
+        60,
+        61,
+        62,
+        63,
+        64,
+        65,
+        66,
+        67,
+        68,
+        69,
+        70,
+        71,
+        72,
+        73,
+        74,
+        75,
+        76,
+        77,
+        78,
+        79,
+        80
+      ],
+      "targetPositions": {
+        "BTN": 8,
+        "SB": 8,
+        "BB": 8,
+        "UTG": 8,
+        "CO": 8
+      },
+      "heroPositions": {
+        "CO": 8,
+        "UTG": 8,
+        "BB": 8,
+        "SB": 8,
+        "BTN": 8
+      },
+      "targetVoluntaryHands": 23,
+      "targetPreflopRaiseHands": 8,
+      "heroVoluntaryHands": 7,
+      "heroFlopHands": [
+        44,
+        69,
+        70,
+        71,
+        73,
+        80
+      ],
+      "genuineJointFlops": [
+        69,
+        73
+      ]
+    }
+  },
+  "requestLegalityChecked": true,
+  "allStartsFollowDone": true
+}

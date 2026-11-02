@@ -4,6 +4,7 @@ import {
   MOBILE_BACKGROUND_MUSIC_PATH,
   BACKGROUND_MUSIC_VOLUME,
 } from '../ui/background-music.js';
+import { createMusicFade } from '../ui/music-fade.js';
 
 export function createWebBackgroundMusic({
   enabled = true,
@@ -45,6 +46,21 @@ export function createWebBackgroundMusic({
         audio.volume = BACKGROUND_MUSIC_VOLUME;
         context = null;
       }
+      const fade = createMusicFade({
+        setVolume(value) {
+          if (output) output.gain.value = value * BACKGROUND_MUSIC_VOLUME;
+          else audio.volume = value * BACKGROUND_MUSIC_VOLUME;
+          audio.dataset.musicGain = String(value);
+        },
+      });
+      function start() {
+        if (!wanted || disposed || (context && context.state !== 'running')) return;
+        if (!audio.paused) return;
+        return Promise.resolve(audio.play()).then(() => {
+          if (!wanted || disposed) audio.pause();
+          else fade.start();
+        });
+      }
       return {
         get playing() {
           return wanted && !audio.paused && (!context || context.state === 'running');
@@ -54,14 +70,14 @@ export function createWebBackgroundMusic({
           wanted = true;
           // Call both APIs synchronously in a trusted gesture, before awaiting.
           if (context && context.state !== 'running' && context.state !== 'closed')
-            void context.resume().catch(() => {});
-          if (!audio.paused) return;
-          return Promise.resolve(audio.play()).then(() => {
-            if (!wanted || disposed) audio.pause();
-          });
+            return Promise.resolve(context.resume())
+              .then(start)
+              .catch(() => {});
+          return start();
         },
         pause() {
           wanted = false;
+          fade.pause();
           audio.pause();
           if (!sharedContext && context?.state === 'running')
             void context.suspend().catch(() => {});
@@ -69,6 +85,7 @@ export function createWebBackgroundMusic({
         dispose() {
           disposed = true;
           wanted = false;
+          fade.pause();
           audio.pause();
           audio.removeAttribute('src');
           audio.load();

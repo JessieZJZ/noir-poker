@@ -256,6 +256,14 @@ body[data-tutorial] .continue-deal-button.tutorial-locked {
   }
 }
 @media (max-height: 700px) and (max-width: 900px) {
+  /* Scripted hands lock the slider, so its row goes back to the table here. */
+  body[data-tutorial='lesson'] .bet-controls > label,
+  body[data-tutorial='lesson'] #bet-slider {
+    display: none;
+  }
+  body[data-tutorial='lesson'] .game-surface {
+    --live-dock-height: 116px;
+  }
   .tutorial-coach {
     height: 148px;
   }
@@ -263,6 +271,50 @@ body[data-tutorial] .continue-deal-button.tutorial-locked {
   .tutorial-copy strong {
     font-size: 13px;
     line-height: 1.42;
+  }
+}
+/* Wide windows keep the whole lesson beside the table, inside the first screen. */
+@media (min-width: 1101px), (min-width: 901px) and (orientation: landscape) {
+  body[data-tutorial] .main {
+    grid-template-columns: minmax(0, 1fr) clamp(264px, 28vw, 340px);
+    column-gap: 12px;
+  }
+  body[data-tutorial] .main > .sidebar {
+    grid-column: 1 / -1;
+  }
+  /* The panel fills the table's row and scrolls; it must never set that row. */
+  .main > .tutorial-coach {
+    align-self: stretch;
+    contain: size;
+  }
+  .main > .tutorial-coach .tutorial-message {
+    flex: 1 1 0;
+  }
+  .main > .tutorial-coach .tutorial-options {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+/* Matches tablet.css: readable touch sizing on the same panel geometry. */
+@media (min-width: 601px) and (max-width: 1600px) and (min-height: 601px) and (any-pointer: coarse) {
+  .tutorial-lesson,
+  .tutorial-exit {
+    font-size: 14px;
+  }
+  .tutorial-exit {
+    min-height: 44px;
+  }
+  .tutorial-copy strong,
+  html:not([lang^='zh'], [lang='ja'], [lang='ko']) .tutorial-copy strong {
+    font-size: 17px;
+  }
+  .tutorial-copy p,
+  html:not([lang^='zh'], [lang='ja'], [lang='ko']) .tutorial-copy p {
+    font-size: 16px;
+  }
+  .tutorial-next,
+  .tutorial-options button {
+    min-height: 44px;
+    font-size: 16px;
   }
 }
 @media (prefers-reduced-motion: reduce) {

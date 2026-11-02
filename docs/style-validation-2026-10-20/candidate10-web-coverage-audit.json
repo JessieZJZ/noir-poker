@@ -1,0 +1,107 @@
+{
+  "createdAt": "2026-10-23T05:50:02.558232+00:00",
+  "sourceDigest": "08ae9259e31b51169dd3655fc29e43e6255de13bd3051fbb78fd59c3490fa3e6",
+  "deliveredProductionCommit": "8138071",
+  "productionFilesUnchangedBetweenRuns": true,
+  "full": {
+    "total": 588,
+    "passed": 584,
+    "failed": 3,
+    "skipped": 1,
+    "flaky": 0,
+    "durationMs": 2618972.793
+  },
+  "focused": {
+    "total": 4,
+    "passed": 4,
+    "failed": 0,
+    "durationMs": 24171.039
+  },
+  "originalFailures": [
+    {
+      "specId": "79f1d3bdb812f5b6bb68-1d9e875a7fe34752e258",
+      "file": "entry-experience.spec.js",
+      "line": 269,
+      "title": "autoplay-capable entry fades real local music from its start before joining and resumes in place",
+      "project": "desktop",
+      "status": "unexpected",
+      "results": ["failed"],
+      "errors": [
+        "TypeError: Cannot read properties of undefined (reading 'time')\n\n  303 |     // Observe the actual playback event, even if a busy host delays the next driver round trip.\n  304 |     const initial = await page.evaluate(() => window.musicStarts[0]);\n> 305 |     expect(initial.time).toBeLessThan(0.8);\n      |                    ^\n  306 |     expect(initial.gain).toBeLessThan(0.3);\n  307 |     expect((await page.evaluate(() => window.noir.getState())).phase).toBe('idle');\n  308 |     await expect.poll(async () => (await read()).gain).toBe(1);\n    at /Users/zjz/code/noir-poker/.artifacts/style-audi"
+      ]
+    },
+    {
+      "specId": "61bd3fb62604d894d29d-a99c58264d35adf0006b",
+      "file": "table.spec.js",
+      "line": 1810,
+      "title": "a failed portrait keeps its initial and selection controls intact, and another style still loads",
+      "project": "desktop",
+      "status": "unexpected",
+      "results": ["failed"],
+      "errors": [
+        "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoHaveText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator:  locator('[data-profile-preview=\"rook\"]').locator('.portrait-fallback')\nExpected: \u001b[32m\"多\"\u001b[39m\nReceived: \u001b[31m\"大\"\u001b[39m\nTimeout:  5000ms\n\nCall log:\n\u001b[2m  - Expect \"toHaveText\" locator('[data-profile-preview=\"rook\"]').locator('.portrait-fallback') with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('[data-profile-preview=\"rook\"]').locator('.portrait-fallback')\u001b[22m\n\u001b[2m    14 × locator resolved to <span aria-hidden=\"true\" data-i18n-initial=\"大注强攻\" class=\"portrait-fallback\">大</spa"
+      ]
+    },
+    {
+      "specId": "61bd3fb62604d894d29d-b274eac3de2353f79b8f",
+      "file": "table.spec.js",
+      "line": 1810,
+      "title": "a failed portrait keeps its initial and selection controls intact, and another style still loads",
+      "project": "mobile",
+      "status": "unexpected",
+      "results": ["failed"],
+      "errors": [
+        "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoHaveText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator:  locator('[data-profile-preview=\"rook\"]').locator('.portrait-fallback')\nExpected: \u001b[32m\"多\"\u001b[39m\nReceived: \u001b[31m\"大\"\u001b[39m\nTimeout:  5000ms\n\nCall log:\n\u001b[2m  - Expect \"toHaveText\" locator('[data-profile-preview=\"rook\"]').locator('.portrait-fallback') with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('[data-profile-preview=\"rook\"]').locator('.portrait-fallback')\u001b[22m\n\u001b[2m    14 × locator resolved to <span aria-hidden=\"true\" data-i18n-initial=\"大注强攻\" class=\"portrait-fallback\">大</spa"
+      ]
+    }
+  ],
+  "followups": [
+    {
+      "specId": "79f1d3bdb812f5b6bb68-1d9e875a7fe34752e258",
+      "file": "entry-experience.spec.js",
+      "line": 269,
+      "title": "autoplay-capable entry fades real local music from its start before joining and resumes in place",
+      "project": "desktop",
+      "status": "expected",
+      "results": ["passed"],
+      "errors": []
+    },
+    {
+      "specId": "79f1d3bdb812f5b6bb68-e6d0e88abaec3b3861e2",
+      "file": "entry-experience.spec.js",
+      "line": 269,
+      "title": "autoplay-capable entry fades real local music from its start before joining and resumes in place",
+      "project": "mobile",
+      "status": "expected",
+      "results": ["passed"],
+      "errors": []
+    },
+    {
+      "specId": "61bd3fb62604d894d29d-a99c58264d35adf0006b",
+      "file": "table.spec.js",
+      "line": 1810,
+      "title": "a failed portrait keeps its initial and selection controls intact, and another style still loads",
+      "project": "desktop",
+      "status": "expected",
+      "results": ["passed"],
+      "errors": []
+    },
+    {
+      "specId": "61bd3fb62604d894d29d-b274eac3de2353f79b8f",
+      "file": "table.spec.js",
+      "line": 1810,
+      "title": "a failed portrait keeps its initial and selection controls intact, and another style still loads",
+      "project": "mobile",
+      "status": "expected",
+      "results": ["passed"],
+      "errors": []
+    }
+  ],
+  "originalFailuresCoveredByFollowups": true,
+  "uniqueCoveredPassedCases": 587,
+  "remainingPlatformSkip": 1,
+  "oneUninterruptedFullGreen": false,
+  "note": "Original full failure reports retained. Only two test definitions changed: await captured playing event before reading first event; update renamed portrait initial 多 to 大. Playback time/gain and geometry assertions unchanged. Four follow-ups cover all three original failures, with one already-passing mobile audio case rerun.",
+  "rawFullSha256": "42914caa599c63402537357138a939415923ffb07843a89447ee90b7d508edf7",
+  "rawFocusedSha256": "29796fc3f994b683bfa05ee6cfb73a1456da44443236b757185e0353e82884cc"
+}

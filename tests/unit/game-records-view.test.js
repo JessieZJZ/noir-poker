@@ -46,6 +46,10 @@ test('record changes always retain a sign and all whole-chip digits', () => {
     '+25',
     '+1.025K',
   ]);
+  // A lost hand with no net change keeps the loss sign.
+  assert.equal(formatRecordChange(0, { loss: true }), '-0');
+  assert.equal(formatRecordChange(-25, { loss: true }), '-25');
+  assert.equal(formatRecordChange(0, { loss: false }), '+0');
 });
 
 test('unfinished and active attempts do not present an outcome from a prior attempt', () => {

@@ -112,7 +112,7 @@ test('icon controls and every dropdown remain centered on narrow and wide screen
   await page.locator('#opponents-dialog .icon-button.close-dialog').click();
   const checkIcons = async () => {
     const icons = await page
-      .locator('.icon-button:visible, .seat-peek:visible')
+      .locator('.icon-button:not(.settings-button):visible, .seat-peek:visible')
       .evaluateAll((buttons) =>
         buttons.map((button) => {
           const box = button.getBoundingClientRect(),

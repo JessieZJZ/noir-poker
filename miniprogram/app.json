@@ -6,7 +6,18 @@
     "pages/source/source"
   ],
   "resizable": true,
-  "subpackages": [{ "root": "music", "name": "music", "pages": ["loader"] }],
+  "subpackages": [
+    {
+      "root": "music",
+      "name": "music",
+      "pages": ["loader"]
+    },
+    {
+      "root": "tutorial",
+      "name": "tutorial",
+      "pages": ["loader"]
+    }
+  ],
   "workers": "workers",
   "window": {
     "pageOrientation": "portrait",
@@ -15,5 +26,11 @@
     "backgroundTextStyle": "light"
   },
   "style": "v2",
-  "lazyCodeLoading": "requiredComponents"
+  "lazyCodeLoading": "requiredComponents",
+  "preloadRule": {
+    "pages/table/table": {
+      "network": "all",
+      "packages": ["tutorial"]
+    }
+  }
 }

@@ -50,7 +50,7 @@ for (const width of [320, 390, 768, 1280]) {
           });
       }
       await page.locator('#review-hero-tab').click();
-      await page.locator('#review-activity summary').click();
+      await expect(page.locator('#review-activity')).toHaveAttribute('open', '');
       await expect(page.locator('#review-activity-list li').first()).toHaveCSS('font-size', '13px');
       await page.locator('#review-dialog .icon-button.close-dialog').click();
     }

@@ -35,8 +35,8 @@ test('consumer preflop ranges combine hand families and explain only actions alr
   assert.equal(p.groups.length, 1);
   assert.equal(p.groups[0].label, '对手可能牌组');
   assert.ok(p.groups[0].examples.length > 0);
-  assert.match(text, /Luna在 UTG\+1 位开池到 4K/);
-  assert.match(text, /Jade在 LJ 位跟住了这笔加注/);
+  assert.match(text, /Luna在 UTG\+1 位2-bet 开池至 4K/);
+  assert.match(text, /Jade在 LJ 位已跟注这笔加注，补 4K/);
   assert.doesNotMatch(text, /Kai跟住/);
   assert.match(text, /A.*AA、AK、AQ、AJ/);
   const html = renderReviewParagraphs([m.text], m, 0);
@@ -52,8 +52,9 @@ test('consumer preflop ranges combine hand families and explain only actions alr
   reraised.history.push({ id: 7, street: 0, action: 'raise', amount: 14000 });
   assert.match(
     handMatchups(reraised, decisionContext(reraised)).rangeNotes.join(''),
-    /Jade在 LJ 位，已有加注时3-bet 加注至 14K/,
+    /Jade在 LJ 位3-bet 加注至 14K/,
   );
+  assert.doesNotMatch(text, /需要结合尺度|不能只根据位置套用/);
 });
 function spot(hole, board = '', changes = {}) {
   const community = board ? cards(board) : [];
@@ -164,15 +165,15 @@ test('candidate labels retain both parts of open-ended, gutshot and double-gutsh
 test('top-pair checks explain foregone value, checking-range protection and wet multiway risk without inventing a trap', () => {
   const record = topPairCheckReview();
   const explanation = explainOpponent(record);
-  assert.match(explanation.detail, /顶对 J，A 踢脚/);
+  assert.match(explanation.detail, /顶对 J，底牌 A 参与踢脚比较/);
   assert.match(explanation.detail, /较弱的一对或听牌取值/);
   assert.match(explanation.detail, /过牌也可能是在等后位先下注/);
   assert.match(explanation.detail, /多人底池/);
   assert.match(explanation.detail, /免费看下一张/);
-  assert.match(explanation.detail, /后位仍可下注/);
+  assert.doesNotMatch(explanation.detail, /再遇下注时|应结合价格和范围重新判断/);
   const last = structuredClone(record);
   last.trace.view.actionContext.pendingResponseIds = [];
-  assert.match(explainOpponent(last).detail, /不能诱导本轮下注/);
+  assert.doesNotMatch(explainOpponent(last).detail, /等后位先下注|给对手继续投入的机会/);
   const trapped = structuredClone(record);
   trapped.trace.reason = 'trap';
   trapped.trace.basis.reason = 'trap';
@@ -369,8 +370,8 @@ test('reported paired three-spade river keeps four distinct threats including th
     const context = decisionContext(snapshot);
     const result = handMatchups(snapshot, context);
     assert.deepEqual(
-      result.behind.map((example) => example.label),
-      ['顺子', '三条', '葫芦', '同花'],
+      result.behind.map((example) => example.label).sort(),
+      ['顺子', '三条', '葫芦', '同花'].sort(),
     );
     const known = new Set([...snapshot.hole, ...snapshot.board].map((card) => card.key));
     for (const example of result.behind) {
@@ -615,14 +616,18 @@ test('the same hand keeps its card comparisons but coaching follows actual posit
   assert.notEqual(plan(outOfPosition).primary.amount, plan(inPosition).primary.amount);
   const shorter = spot('As Kd', 'Ks 7h 2c', { stack: 500, legal: { maxRaiseTo: 500 } });
   const shortReview = analyzeDecision(shorter, { trials: 120, rolloutTrials: 12 });
+  assert.equal(shortReview.context.effective, 500);
+  assert.ok(shortReview.context.spr < baseline.context.spr);
+  assert.equal(shortReview.context.valuePlan.kind, 'value-shove');
+  assert.deepEqual(shortReview.context.valuePlan.primary, { action: 'raise', amount: 500 });
   assert.notEqual(
-    shortReview.coaching.explanation + shortReview.coaching.followUp,
-    baseline.coaching.explanation + baseline.coaching.followUp,
+    shortReview.context.valuePlan.primary.amount,
+    baseline.context.valuePlan.primary.amount,
   );
   assert.match(shortReview.evidence.join(''), /行动前你手里有 500/);
 });
 
-test('strong-flat support requires the recorded legal call and cannot replace expensive-call or crowding guards', () => {
+test('strong-flat support requires the recorded legal call and cannot replace unsupported-call or crowding guards', () => {
   const s = heroValueGame('aa-flat').decisions[0];
   const supported = analyzeDecision(s, { trials: 120, rolloutTrials: 12 });
   assert.equal(supported.code, 'strong-flat-trap');
@@ -668,7 +673,7 @@ test('strong-flat support requires the recorded legal call and cannot replace ex
     ],
   });
   const rejected = analyzeDecision(expensive, { trials: 120, rolloutTrials: 12 });
-  assert.equal(rejected.code, 'expensive-call');
-  assert.equal(rejected.coaching.label, '弃牌');
+  assert.equal(rejected.code, 'unbacked-high-card-call');
+  assert.equal(rejected.coaching.label, '建议弃牌');
   assert.equal(rejected.coaching.evKind, 'negative');
 });

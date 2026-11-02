@@ -3,9 +3,16 @@ import assert from 'node:assert/strict';
 import { analyzeDecision } from '../../src/review/analysis.js';
 import { decisionContext } from '../../src/review/context.js';
 import { handMatchups } from '../../src/review/matchups.js';
-import { reviewCardCache, clearReviewCardCache } from '../../src/review/card-cache.js';
+import {
+  SnapshotBoardCache,
+  reviewCardCache,
+  clearReviewCardCache,
+} from '../../src/review/card-cache.js';
 import { heroValueGame } from '../fixtures/review-spots.js';
 import { cards } from '../fixtures/deceptive-decisions.js';
+import { publicHandData } from '../../src/engine/public-equity.js';
+import { evaluate } from '../../src/engine/poker.js';
+import { handFeatures } from '../../src/engine/hand-features.js';
 
 test('cold and warm pure-card caches preserve every metric, verdict, candidate and explanation', () => {
   const game = heroValueGame('overpair');
@@ -40,5 +47,47 @@ test('reviewing many boards keeps at most four evaluation boards and never trust
     const result = handMatchups(s, decisionContext(s));
     assert.ok(result.summary);
     assert.ok(reviewCardCache().size <= 4);
+  }
+});
+
+test('rollout deals share only the visible boards of their snapshot', () => {
+  const visible = new Map(),
+    board = cards('Qs Jd 9c 8h'),
+    keys = (text) =>
+      cards(text)
+        .map((c) => c.key)
+        .join('|');
+  const first = new SnapshotBoardCache(visible, board);
+  first.set(keys('Qs Jd 9c'), 'flop facts');
+  first.set(keys('Qs Jd 9c 8h'), 'turn facts');
+  first.set(keys('Qs Jd 9c 8h 2s'), 'sampled river');
+  first.set('', 'board only');
+  assert.equal(first.size, 2);
+  assert.deepEqual([...visible.keys()], [keys('Qs Jd 9c'), keys('Qs Jd 9c 8h')]);
+  const next = new SnapshotBoardCache(visible, board);
+  assert.equal(next.get(keys('Qs Jd 9c')), 'flop facts');
+  assert.equal(next.get(keys('Qs Jd 9c 8h')), 'turn facts');
+  assert.equal(next.get(keys('Qs Jd 9c 8h 2s')), undefined);
+  assert.equal(next.get(''), undefined);
+  // A preflop snapshot has no visible board, so every deal keeps its own facts.
+  const preflop = new SnapshotBoardCache(new Map(), []);
+  preflop.set(keys('Qs Jd 9c'), 'sampled flop');
+  assert.equal(new SnapshotBoardCache(preflop.fixed, []).get(keys('Qs Jd 9c')), undefined);
+});
+
+test('reversing two hole cards shares only identical score and feature facts', () => {
+  for (const board of ['2h 7h Qd', '5s 6c Td 9h', 'Ah Kh Qh Jh Th']) {
+    const cache = new Map(),
+      hole = cards('8s 7c'),
+      publicBoard = cards(board);
+    const a = publicHandData(hole, publicBoard, { evaluate, features: handFeatures, cache });
+    const b = publicHandData([...hole].reverse(), publicBoard, {
+      evaluate,
+      features: handFeatures,
+      cache,
+    });
+    assert.equal(a, b);
+    assert.deepEqual(a.features, handFeatures([...hole].reverse(), publicBoard, b.score));
+    assert.equal(cache.values().next().value.size, 1);
   }
 });

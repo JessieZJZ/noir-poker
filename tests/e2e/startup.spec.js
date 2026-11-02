@@ -34,7 +34,8 @@ async function expectReadyTable(page) {
   await expect(page.locator('body')).toBeVisible();
   await expect(page.locator('.header')).toHaveCSS('display', 'flex');
   await expect(page.locator('body')).toHaveCSS('background-color', 'rgb(11, 16, 23)');
-  await expect(page.locator('#hero-cards .playing-card')).toHaveCount(2);
+  await expect(page.locator('#hero-cards .playing-card')).toHaveCount(0);
+  await expect(page.locator('#join-table-button')).toBeVisible();
   expect(await page.evaluate(() => document.body.inert)).toBe(false);
   const frames = await page.evaluate(() => window.startupFrames);
   expect(frames.length).toBeGreaterThan(0);

@@ -33,13 +33,6 @@ function createRecordNavigation({ api, pages }) {
         { url: `/pages/history/history?id=${encodeURIComponent(id)}` },
       );
     },
-    returnToGame() {
-      const stack = pages();
-      const index = stack.findIndex((page) => route(page) === 'pages/table/table');
-      if (index < 0) return transition('reLaunch', { url: '/pages/table/table' });
-      const delta = stack.length - index - 1;
-      return delta ? transition('navigateBack', { delta }) : false;
-    },
   };
 }
 

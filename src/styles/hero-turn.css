@@ -133,11 +133,31 @@
 .action-dock {
   position: relative;
 }
-/* Lower the notice without shifting the wager controls or the table budget. */
-.action-dock:not(.compact-actions) > .decision-strip,
-.action-dock:not(.compact-actions) > .action-notice {
+/* Center the notice between the rail and the first visible wager control,
+   without changing the table or action-button height. */
+.game-surface .action-dock:not(.compact-actions) > .decision-strip {
   position: relative;
-  top: 6px;
+  height: 40px;
+  padding: 8px 20px;
+}
+.game-surface .decision-strip > .decision-copy {
+  line-height: 24px;
+}
+@media (min-width: 1101px), (min-width: 901px) and (orientation: landscape) {
+  .game-surface .bet-controls > label {
+    height: 20px;
+    line-height: 20px;
+  }
+  .main .game-surface .action-panel .bet-controls {
+    align-self: flex-start;
+  }
+}
+@media (max-width: 900px), (max-width: 1100px) and (orientation: portrait) {
+  .game-surface .action-dock:not(.compact-actions) > .decision-strip {
+    height: 30px;
+    padding: 0 12px;
+    top: 2.5px;
+  }
 }
 .turn-prompt,
 .decision-detail {

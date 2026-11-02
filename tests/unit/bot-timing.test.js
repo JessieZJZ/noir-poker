@@ -155,7 +155,7 @@ test('public-range entry timing follows the executed price gate and response ris
   const easy = botThinkingTime(far, () => 0.5);
   assert.equal(easy.factors.priceCloseness, 0);
   assert.equal(easy.factors.routine, true);
-  assert.ok(close.durationMs > easy.durationMs + 1000);
+  assert.ok(close.durationMs > easy.durationMs + 250);
   assert.ok(close.factors.responses > easy.factors.responses);
 });
 test('priced draws use the actual outs gate and clear range folds ignore unrelated equity', () => {
@@ -179,7 +179,7 @@ test('current bot decisions supply the same required equity and remain scale inv
   startHand(game);
   const decision = botDecision(game, seeded(178));
   const pacing = botThinkingTime(decision, seeded(44));
-  assert.equal(pacing.model, 'policy-pacing-v2');
+  assert.equal(pacing.model, 'policy-pacing-v3');
   assert.equal(pacing.factors.requiredEquity, decision.trace.requiredEquity);
   const scaled = copy(decision),
     v = scaled.trace.view;
@@ -217,7 +217,8 @@ test('all-in pacing uses effective risk while remaining-stack planning still acc
   assert.equal(fullRisk.factors.effectiveStack, 4500);
   assert.equal(noRisk.factors.effectiveStack, 4500);
 });
-test('pacing is bounded and varied, with overlapping value, bluff, trap and fold pauses', () => {
+test('pacing is bounded to 1–3 seconds and varied, with overlapping value, bluff, trap and fold pauses', () => {
+  assert.deepEqual(BOT_THINK_LIMITS, { minimum: 1000, maximum: 3000 });
   const estimates = [];
   for (const reason of ['value-raise', 'pure-bluff', 'trap', 'outside-range']) {
     const times = [],

@@ -1,0 +1,102 @@
+{
+  "time": "2026-10-22T21:26:33.048828+00:00",
+  "reviewer": 1,
+  "phase": "all_observation_interactive_reports_and_audit_frozen_waiting_neutral_menu",
+  "APIStoppedAtDoneHand": 200,
+  "classificationOrScoresMade": false,
+  "freeReviewSHA256": "f7b65a4f214decc77d3e110ca46e87b0d8931bc4c1b44bf990e943dc2317b093",
+  "freeReviewUnchanged": true,
+  "sourceHands": 800,
+  "interactiveHands": 200,
+  "manualDecisions": 430,
+  "files": {
+    "A.jsonl": {
+      "bytes": 120974,
+      "sha256": "ccc119379d9cc7ac97d0df7e88769b075199d2719fc1528ff28159da651769dd"
+    },
+    "API.md": {
+      "bytes": 1602,
+      "sha256": "c50ead9552a14a43284e7b839568b6fbde01466dc5771ad25b3727af3ff5ca9d"
+    },
+    "B.jsonl": {
+      "bytes": 116185,
+      "sha256": "e948dbd52057ad0e47de82b9eee17b838d8468f5690ca5c1813341bcd3c70037"
+    },
+    "C.jsonl": {
+      "bytes": 117847,
+      "sha256": "23f3578c0b4b2496719cc9686945d7a79e5b01f4e82bd036ba6488132eaf4562"
+    },
+    "D.jsonl": {
+      "bytes": 123630,
+      "sha256": "43cf3288747d33234eed45d29119994e93712576d93f5014ca96e8e21ca9e352"
+    },
+    "E.jsonl": {
+      "bytes": 123532,
+      "sha256": "4bc65350b84cda8aa2ca64d22bf409fa8d8a43d5903dc13016394d1b1c8ef989"
+    },
+    "F.jsonl": {
+      "bytes": 125300,
+      "sha256": "bbcfe8f1701d5f05eec9d14d855989ff60bced9502c9fbe7a031e286a6e8f221"
+    },
+    "G.jsonl": {
+      "bytes": 125714,
+      "sha256": "3921fb51b2bbc5be4dc2e74b0e23f6a93a31ae1bc4cb9466dfbff5f2474439d6"
+    },
+    "H.jsonl": {
+      "bytes": 125120,
+      "sha256": "30713145d62834a1b0998658f9b905dc1d45d8344af147e1e6c16a1943359914"
+    },
+    "README.txt": {
+      "bytes": 1017,
+      "sha256": "4fcb02a6a8ed2059a0832544014f91f0994e77cee2db52c3917fb8ba36dbb715"
+    },
+    "audit.py": {
+      "bytes": 6469,
+      "sha256": "add317b5ebc637d8e742d74e87ea72b7a549873e516b83bbdfa832f5e2fb4fe6"
+    },
+    "current-state.json": {
+      "bytes": 1896,
+      "sha256": "f4eeb1f228f07efd313924ef07d917ad5bca08bb26fdc672c8fb44dd6f7d470a"
+    },
+    "free-review.md": {
+      "bytes": 12427,
+      "sha256": "f7b65a4f214decc77d3e110ca46e87b0d8931bc4c1b44bf990e943dc2317b093"
+    },
+    "freeze-free.json": {
+      "bytes": 1472,
+      "sha256": "2f31b97fc3c25809298334ea0adab7866985c71feb4ff3489a30f8d381b0af4a"
+    },
+    "initial-state-note.json": {
+      "bytes": 598,
+      "sha256": "93de85abcf4a4386f1cf806ce00db617dd8758bb4d6f7a52743543ca49780183"
+    },
+    "interact.py": {
+      "bytes": 3476,
+      "sha256": "b1843b89b8ac7c05fa1b3146f33802cbcb7fd0cfe24f59c6868bde67d576d7aa"
+    },
+    "interactive-audit.json": {
+      "bytes": 25883,
+      "sha256": "501bd38a30e5201677675e30c1c1be6c9faea94f20b537f59fc6da78597fa995"
+    },
+    "interactive-hand-ledger.json": {
+      "bytes": 35482,
+      "sha256": "b0f6514ac0a99b68c9f90e1243e06e5377009da8379c829e11fd2098a59a01f7"
+    },
+    "interactive-raw.jsonl": {
+      "bytes": 2047633,
+      "sha256": "34b1cad4e6f182efa3eb427a5e7dc5f492e4d7d69c9727a5b712d1c875687edd"
+    },
+    "interactive-review.md": {
+      "bytes": 7584,
+      "sha256": "9cf95d4bbd6fca67ffe6f7baa951ad0375a09f675a32c837ad6989d5fe5e10ec"
+    },
+    "observation-statistics.json": {
+      "bytes": 8176,
+      "sha256": "0a946457bcfa640b58adb1d21f37b25770a1fcb4929c97ab136e2cb2fe711bef"
+    },
+    "self-corrections.md": {
+      "bytes": 2403,
+      "sha256": "8911363daaf7f09e9f74d2f7e48312f01c4f37f99cb8ef78cc1335c3886e6060"
+    }
+  }
+}

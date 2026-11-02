@@ -1,0 +1,2153 @@
+{
+  "candidate": 9,
+  "cohort": "development; exploratory pair selection, not locked held-out acceptance",
+  "sourceDigest": "5932c97a6ef366aa3d3b3b0a539690d2d897ab9409d02e34a7edc438b0582156",
+  "harnessDigest": "0fe2802ef54f224fbaf5f0fe89fc580f07e2b8a33cc0715314d5c12246c4c68b",
+  "completeExecutions": 38400,
+  "initialShuffleClusters": 480,
+  "sharedInitialShufflesAcrossProfilesCountsAndDifficulties": true,
+  "profiles": ["balanced", "rook", "jett", "owen", "vale", "nico", "mira", "iris"],
+  "playerCounts": [5, 6, 7, 8, 9],
+  "difficulties": ["normal", "hard"],
+  "seeds": [314159, 271828, 161803, 914159, 871828, 761803],
+  "handsPerCell": 80,
+  "cells": 480,
+  "eachCellWholeChipsAndConservationVerified": true,
+  "mainSignatures": {
+    "sourceDigest": "5932c97a6ef366aa3d3b3b0a539690d2d897ab9409d02e34a7edc438b0582156",
+    "cohort": "development",
+    "specification": "/Users/zjz/code/noir-poker/docs/style-validation-2026-10-20/eight-signature-spec.json",
+    "denominator": "All eligible conditional decisions, including checks and folds; not completed hands or bets only.",
+    "signatures": [
+      {
+        "profile": "rook",
+        "metric": "turn-barrel",
+        "field": "large",
+        "direction": 1,
+        "firstRate": 0.22107186358099878,
+        "balancedRate": 0,
+        "differencePP": 22.107186358099877,
+        "ci95PP": [14.636363636363637, 31.024368231046935],
+        "snapshots": 821,
+        "handClusters": 145,
+        "conditionalDecisions": 13136,
+        "strata": {
+          "normal": {
+            "n": 6288,
+            "differencePP": 19.322519083969468
+          },
+          "hard": {
+            "n": 6848,
+            "differencePP": 24.664135514018692
+          }
+        },
+        "byPlayers": {
+          "5": {
+            "firstRate": 0.19146825396825398,
+            "secondRate": 0,
+            "differencePP": 19.1468253968254,
+            "snapshots": 252,
+            "conditionalDecisionsPerStyle": 4032
+          },
+          "6": {
+            "firstRate": 0.09450301204819277,
+            "secondRate": 0,
+            "differencePP": 9.450301204819276,
+            "snapshots": 166,
+            "conditionalDecisionsPerStyle": 2656
+          },
+          "7": {
+            "firstRate": 0.40728476821192056,
+            "secondRate": 0,
+            "differencePP": 40.728476821192054,
+            "snapshots": 151,
+            "conditionalDecisionsPerStyle": 2416
+          },
+          "8": {
+            "firstRate": 0.19736842105263158,
+            "secondRate": 0,
+            "differencePP": 19.736842105263158,
+            "snapshots": 171,
+            "conditionalDecisionsPerStyle": 2736
+          },
+          "9": {
+            "firstRate": 0.27546296296296297,
+            "secondRate": 0,
+            "differencePP": 27.546296296296298,
+            "snapshots": 81,
+            "conditionalDecisionsPerStyle": 1296
+          }
+        },
+        "passed": false
+      },
+      {
+        "profile": "jett",
+        "metric": "river-value",
+        "field": "large",
+        "direction": 1,
+        "firstRate": 0.2817784667418264,
+        "balancedRate": 0,
+        "differencePP": 28.17784667418264,
+        "ci95PP": [21.04946524064171, 35.540380047505934],
+        "snapshots": 887,
+        "handClusters": 151,
+        "conditionalDecisions": 14192,
+        "strata": {
+          "normal": {
+            "n": 7072,
+            "differencePP": 32.04185520361991
+          },
+          "hard": {
+            "n": 7120,
+            "differencePP": 24.339887640449437
+          }
+        },
+        "byPlayers": {
+          "5": {
+            "firstRate": 0.25,
+            "secondRate": 0,
+            "differencePP": 25,
+            "snapshots": 315,
+            "conditionalDecisionsPerStyle": 5040
+          },
+          "6": {
+            "firstRate": 0.2675359712230216,
+            "secondRate": 0,
+            "differencePP": 26.753597122302157,
+            "snapshots": 139,
+            "conditionalDecisionsPerStyle": 2224
+          },
+          "7": {
+            "firstRate": 0.41875,
+            "secondRate": 0,
+            "differencePP": 41.875,
+            "snapshots": 170,
+            "conditionalDecisionsPerStyle": 2720
+          },
+          "8": {
+            "firstRate": 0.27472527472527475,
+            "secondRate": 0,
+            "differencePP": 27.472527472527474,
+            "snapshots": 182,
+            "conditionalDecisionsPerStyle": 2912
+          },
+          "9": {
+            "firstRate": 0.15817901234567902,
+            "secondRate": 0,
+            "differencePP": 15.817901234567902,
+            "snapshots": 81,
+            "conditionalDecisionsPerStyle": 1296
+          }
+        },
+        "passed": true
+      },
+      {
+        "profile": "owen",
+        "metric": "small-open-defense",
+        "field": "continue",
+        "direction": -1,
+        "firstRate": 0.24840494791666667,
+        "balancedRate": 0.5366861979166666,
+        "differencePP": -28.828124999999993,
+        "ci95PP": [-31.538929440389296, -26.049566630552544],
+        "snapshots": 3840,
+        "handClusters": 450,
+        "conditionalDecisions": 61440,
+        "strata": {
+          "normal": {
+            "n": 30720,
+            "differencePP": -29.00390625
+          },
+          "hard": {
+            "n": 30720,
+            "differencePP": -28.652343749999996
+          }
+        },
+        "byPlayers": {
+          "5": {
+            "firstRate": 0.23600260416666666,
+            "secondRate": 0.5585123697916666,
+            "differencePP": -32.2509765625,
+            "snapshots": 768,
+            "conditionalDecisionsPerStyle": 12288
+          },
+          "6": {
+            "firstRate": 0.3206380208333333,
+            "secondRate": 0.56982421875,
+            "differencePP": -24.918619791666664,
+            "snapshots": 768,
+            "conditionalDecisionsPerStyle": 12288
+          },
+          "7": {
+            "firstRate": 0.24348958333333334,
+            "secondRate": 0.5681966145833334,
+            "differencePP": -32.470703125,
+            "snapshots": 768,
+            "conditionalDecisionsPerStyle": 12288
+          },
+          "8": {
+            "firstRate": 0.21956380208333334,
+            "secondRate": 0.4842122395833333,
+            "differencePP": -26.46484375,
+            "snapshots": 768,
+            "conditionalDecisionsPerStyle": 12288
+          },
+          "9": {
+            "firstRate": 0.22233072916666666,
+            "secondRate": 0.502685546875,
+            "differencePP": -28.035481770833332,
+            "snapshots": 768,
+            "conditionalDecisionsPerStyle": 12288
+          }
+        },
+        "passed": true
+      },
+      {
+        "profile": "vale",
+        "metric": "cheap-entry",
+        "field": "call",
+        "direction": 1,
+        "firstRate": 0.5861165364583333,
+        "balancedRate": 0.31564127604166664,
+        "differencePP": 27.047526041666664,
+        "ci95PP": [24.642723414877686, 29.557597081052904],
+        "snapshots": 3840,
+        "handClusters": 448,
+        "conditionalDecisions": 61440,
+        "strata": {
+          "normal": {
+            "n": 30720,
+            "differencePP": 26.972656250000004
+          },
+          "hard": {
+            "n": 30720,
+            "differencePP": 27.12239583333333
+          }
+        },
+        "byPlayers": {
+          "5": {
+            "firstRate": 0.6725260416666666,
+            "secondRate": 0.3472493489583333,
+            "differencePP": 32.52766927083333,
+            "snapshots": 768,
+            "conditionalDecisionsPerStyle": 12288
+          },
+          "6": {
+            "firstRate": 0.5665690104166666,
+            "secondRate": 0.27294921875,
+            "differencePP": 29.361979166666668,
+            "snapshots": 768,
+            "conditionalDecisionsPerStyle": 12288
+          },
+          "7": {
+            "firstRate": 0.5935872395833334,
+            "secondRate": 0.3053385416666667,
+            "differencePP": 28.824869791666668,
+            "snapshots": 768,
+            "conditionalDecisionsPerStyle": 12288
+          },
+          "8": {
+            "firstRate": 0.529296875,
+            "secondRate": 0.3177083333333333,
+            "differencePP": 21.158854166666664,
+            "snapshots": 768,
+            "conditionalDecisionsPerStyle": 12288
+          },
+          "9": {
+            "firstRate": 0.568603515625,
+            "secondRate": 0.3349609375,
+            "differencePP": 23.3642578125,
+            "snapshots": 768,
+            "conditionalDecisionsPerStyle": 12288
+          }
+        },
+        "passed": true
+      },
+      {
+        "profile": "nico",
+        "metric": "turn-barrel",
+        "field": "small",
+        "direction": 1,
+        "firstRate": 0.6438032886723508,
+        "balancedRate": 0.14456455542021923,
+        "differencePP": 49.92387332521316,
+        "ci95PP": [43.330882352941174, 56.523487773487766],
+        "snapshots": 821,
+        "handClusters": 145,
+        "conditionalDecisions": 13136,
+        "strata": {
+          "normal": {
+            "n": 6288,
+            "differencePP": 45.65839694656489
+          },
+          "hard": {
+            "n": 6848,
+            "differencePP": 53.840537383177576
+          }
+        },
+        "byPlayers": {
+          "5": {
+            "firstRate": 0.6150793650793651,
+            "secondRate": 0.15302579365079366,
+            "differencePP": 46.205357142857146,
+            "snapshots": 252,
+            "conditionalDecisionsPerStyle": 4032
+          },
+          "6": {
+            "firstRate": 0.634789156626506,
+            "secondRate": 0.22213855421686746,
+            "differencePP": 41.265060240963855,
+            "snapshots": 166,
+            "conditionalDecisionsPerStyle": 2656
+          },
+          "7": {
+            "firstRate": 0.7698675496688742,
+            "secondRate": 0.19039735099337748,
+            "differencePP": 57.94701986754966,
+            "snapshots": 151,
+            "conditionalDecisionsPerStyle": 2416
+          },
+          "8": {
+            "firstRate": 0.6151315789473685,
+            "secondRate": 0.04861111111111111,
+            "differencePP": 56.65204678362573,
+            "snapshots": 171,
+            "conditionalDecisionsPerStyle": 2736
+          },
+          "9": {
+            "firstRate": 0.5771604938271605,
+            "secondRate": 0.0763888888888889,
+            "differencePP": 50.07716049382716,
+            "snapshots": 81,
+            "conditionalDecisionsPerStyle": 1296
+          }
+        },
+        "passed": true
+      },
+      {
+        "profile": "mira",
+        "metric": "draw-pressure",
+        "field": "raise",
+        "direction": 1,
+        "firstRate": 0.6052662582469368,
+        "balancedRate": 0.3135014137606032,
+        "differencePP": 29.17648444863336,
+        "ci95PP": [23.774509803921568, 34.79054054054054],
+        "snapshots": 1061,
+        "handClusters": 105,
+        "conditionalDecisions": 16976,
+        "strata": {
+          "normal": {
+            "n": 8944,
+            "differencePP": 25.279516994633266
+          },
+          "hard": {
+            "n": 8032,
+            "differencePP": 33.51593625498007
+          }
+        },
+        "byPlayers": {
+          "5": {
+            "firstRate": 0.6673669467787114,
+            "secondRate": 0.3158263305322129,
+            "differencePP": 35.154061624649856,
+            "snapshots": 357,
+            "conditionalDecisionsPerStyle": 5712
+          },
+          "6": {
+            "firstRate": 0.5851063829787234,
+            "secondRate": 0.34773936170212766,
+            "differencePP": 23.736702127659576,
+            "snapshots": 188,
+            "conditionalDecisionsPerStyle": 3008
+          },
+          "7": {
+            "firstRate": 0.6067934782608696,
+            "secondRate": 0.36766304347826084,
+            "differencePP": 23.91304347826087,
+            "snapshots": 230,
+            "conditionalDecisionsPerStyle": 3680
+          },
+          "8": {
+            "firstRate": 0.5486111111111112,
+            "secondRate": 0.2585227272727273,
+            "differencePP": 29.00883838383838,
+            "snapshots": 198,
+            "conditionalDecisionsPerStyle": 3168
+          },
+          "9": {
+            "firstRate": 0.5198863636363636,
+            "secondRate": 0.21306818181818182,
+            "differencePP": 30.681818181818183,
+            "snapshots": 88,
+            "conditionalDecisionsPerStyle": 1408
+          }
+        },
+        "passed": true
+      },
+      {
+        "profile": "iris",
+        "metric": "late-open",
+        "field": "raise",
+        "direction": 1,
+        "firstRate": 0.6887175324675324,
+        "balancedRate": 0.3495332792207792,
+        "differencePP": 33.91842532467532,
+        "ci95PP": [26.898340248962654, 41.47817460317461],
+        "snapshots": 1232,
+        "handClusters": 94,
+        "conditionalDecisions": 19712,
+        "strata": {
+          "normal": {
+            "n": 9728,
+            "differencePP": 36.112253289473685
+          },
+          "hard": {
+            "n": 9984,
+            "differencePP": 31.78084935897437
+          }
+        },
+        "byPlayers": {
+          "5": {
+            "firstRate": 0.7169596354166666,
+            "secondRate": 0.34423828125,
+            "differencePP": 37.27213541666667,
+            "snapshots": 768,
+            "conditionalDecisionsPerStyle": 12288
+          },
+          "6": {
+            "firstRate": 0.539453125,
+            "secondRate": 0.2921875,
+            "differencePP": 24.7265625,
+            "snapshots": 320,
+            "conditionalDecisionsPerStyle": 5120
+          },
+          "7": {
+            "firstRate": 0.85693359375,
+            "secondRate": 0.568359375,
+            "differencePP": 28.857421875,
+            "snapshots": 128,
+            "conditionalDecisionsPerStyle": 2048
+          },
+          "8": {
+            "firstRate": 0.97265625,
+            "secondRate": 0,
+            "differencePP": 97.265625,
+            "snapshots": 16,
+            "conditionalDecisionsPerStyle": 256
+          },
+          "9": null
+        },
+        "passed": true
+      }
+    ],
+    "passedStyles": 6,
+    "totalStyles": 7
+  },
+  "clearPairs": 28,
+  "allPairs": 28,
+  "pairs": [
+    {
+      "first": "balanced",
+      "second": "rook",
+      "clearlyDifferent": true,
+      "best": {
+        "metric": "river-value",
+        "field": "large",
+        "firstRate": 0,
+        "secondRate": 0.2967869222096956,
+        "differencePP": -29.67869222096956,
+        "ci95PP": [-37.50742280285036, -22.09893048128342],
+        "snapshots": 887,
+        "handClusters": 151,
+        "conditionalDecisions": 14192,
+        "byPlayers": {
+          "5": {
+            "firstRate": 0,
+            "secondRate": 0.2656746031746032,
+            "differencePP": -26.567460317460316,
+            "snapshots": 315,
+            "conditionalDecisionsPerStyle": 5040
+          },
+          "6": {
+            "firstRate": 0,
+            "secondRate": 0.2783273381294964,
+            "differencePP": -27.83273381294964,
+            "snapshots": 139,
+            "conditionalDecisionsPerStyle": 2224
+          },
+          "7": {
+            "firstRate": 0,
+            "secondRate": 0.44191176470588234,
+            "differencePP": -44.19117647058823,
+            "snapshots": 170,
+            "conditionalDecisionsPerStyle": 2720
+          },
+          "8": {
+            "firstRate": 0,
+            "secondRate": 0.28811813186813184,
+            "differencePP": -28.811813186813183,
+            "snapshots": 182,
+            "conditionalDecisionsPerStyle": 2912
+          },
+          "9": {
+            "firstRate": 0,
+            "secondRate": 0.16435185185185186,
+            "differencePP": -16.435185185185187,
+            "snapshots": 81,
+            "conditionalDecisionsPerStyle": 1296
+          }
+        },
+        "byDifficultyDifferencePP": {
+          "normal": -32.76300904977376,
+          "hard": -26.615168539325847
+        }
+      },
+      "normalHardDirectionAgree": true
+    },
+    {
+      "first": "balanced",
+      "second": "jett",
+      "clearlyDifferent": true,
+      "best": {
+        "metric": "small-open-defense",
+        "field": "call",
+        "firstRate": 0.4817708333333333,
+        "secondRate": 0.8499837239583333,
+        "differencePP": -36.8212890625,
+        "ci95PP": [-40.13273228149261, -33.79129812695109],
+        "snapshots": 3840,
+        "handClusters": 450,
+        "conditionalDecisions": 61440,
+        "byPlayers": {
+          "5": {
+            "firstRate": 0.5029296875,
+            "secondRate": 0.880615234375,
+            "differencePP": -37.7685546875,
+            "snapshots": 768,
+            "conditionalDecisionsPerStyle": 12288
+          },
+          "6": {
+            "firstRate": 0.5077311197916666,
+            "secondRate": 0.8924967447916666,
+            "differencePP": -38.4765625,
+            "snapshots": 768,
+            "conditionalDecisionsPerStyle": 12288
+          },
+          "7": {
+            "firstRate": 0.5074055989583334,
+            "secondRate": 0.8452962239583334,
+            "differencePP": -33.7890625,
+            "snapshots": 768,
+            "conditionalDecisionsPerStyle": 12288
+          },
+          "8": {
+            "firstRate": 0.4456380208333333,
+            "secondRate": 0.8245442708333334,
+            "differencePP": -37.890625,
+            "snapshots": 768,
+            "conditionalDecisionsPerStyle": 12288
+          },
+          "9": {
+            "firstRate": 0.4451497395833333,
+            "secondRate": 0.8069661458333334,
+            "differencePP": -36.181640625,
+            "snapshots": 768,
+            "conditionalDecisionsPerStyle": 12288
+          }
+        },
+        "byDifficultyDifferencePP": {
+          "normal": -35.856119791666664,
+          "hard": -37.786458333333336
+        }
+      },
+      "normalHardDirectionAgree": true
+    },
+    {
+      "first": "balanced",
+      "second": "owen",
+      "clearlyDifferent": true,
+      "best": {
+        "metric": "late-open",
+        "field": "continue",
+        "firstRate": 0.716010551948052,
+        "secondRate": 0.3589184253246753,
+        "differencePP": 35.70921266233766,
+        "ci95PP": [26.35366344605475, 45.071342443729904],
+        "snapshots": 1232,
+        "handClusters": 94,
+        "conditionalDecisions": 19712,
+        "byPlayers": {
+          "5": {
+            "firstRate": 0.7464192708333334,
+            "secondRate": 0.3426920572916667,
+            "differencePP": 40.37272135416667,
+            "snapshots": 768,
+            "conditionalDecisionsPerStyle": 12288
+          },
+          "6": {
+            "firstRate": 0.563671875,
+            "secondRate": 0.30703125,
+            "differencePP": 25.6640625,
+            "snapshots": 320,
+            "conditionalDecisionsPerStyle": 5120
+          },
+          "7": {
+            "firstRate": 0.87890625,
+            "secondRate": 0.6279296875,
+            "differencePP": 25.09765625,
+            "snapshots": 128,
+            "conditionalDecisionsPerStyle": 2048
+          },
+          "8": {
+            "firstRate": 1,
+            "secondRate": 0.0234375,
+            "differencePP": 97.65625,
+            "snapshots": 16,
+            "conditionalDecisionsPerStyle": 256
+          },
+          "9": null
+        },
+        "byDifficultyDifferencePP": {
+          "normal": 36.85238486842105,
+          "hard": 34.59535256410257
+        }
+      },
+      "normalHardDirectionAgree": true
+    },
+    {
+      "first": "balanced",
+      "second": "vale",
+      "clearlyDifferent": true,
+      "best": {
+        "metric": "late-open",
+        "field": "call",
+        "firstRate": 0.3664772727272727,
+        "secondRate": 0.7599431818181818,
+        "differencePP": -39.34659090909091,
+        "ci95PP": [-46.327160493827165, -31.31659836065574],
+        "snapshots": 1232,
+        "handClusters": 94,
+        "conditionalDecisions": 19712,
+        "byPlayers": {
+          "5": {
+            "firstRate": 0.4021809895833333,
+            "secondRate": 0.7964680989583334,
+            "differencePP": -39.4287109375,
+            "snapshots": 768,
+            "conditionalDecisionsPerStyle": 12288
+          },
+          "6": {
+            "firstRate": 0.271484375,
+            "secondRate": 0.62265625,
+            "differencePP": -35.1171875,
+            "snapshots": 320,
+            "conditionalDecisionsPerStyle": 5120
+          },
+          "7": {
+            "firstRate": 0.310546875,
+            "secondRate": 0.85400390625,
+            "differencePP": -54.345703125,
+            "snapshots": 128,
+            "conditionalDecisionsPerStyle": 2048
+          },
+          "8": {
+            "firstRate": 1,
+            "secondRate": 1,
+            "differencePP": 0,
+            "snapshots": 16,
+            "conditionalDecisionsPerStyle": 256
+          },
+          "9": null
+        },
+        "byDifficultyDifferencePP": {
+          "normal": -39.237253289473685,
+          "hard": -39.45312499999999
+        }
+      },
+      "normalHardDirectionAgree": true
+    },
+    {
+      "first": "balanced",
+      "second": "nico",
+      "clearlyDifferent": true,
+      "best": {
+        "metric": "turn-barrel",
+        "field": "small",
+        "firstRate": 0.14456455542021923,
+        "secondRate": 0.6438032886723508,
+        "differencePP": -49.92387332521316,
+        "ci95PP": [-56.523487773487766, -43.330882352941174],
+        "snapshots": 821,
+        "handClusters": 145,
+        "conditionalDecisions": 13136,
+        "byPlayers": {
+          "5": {
+            "firstRate": 0.15302579365079366,
+            "secondRate": 0.6150793650793651,
+            "differencePP": -46.205357142857146,
+            "snapshots": 252,
+            "conditionalDecisionsPerStyle": 4032
+          },
+          "6": {
+            "firstRate": 0.22213855421686746,
+            "secondRate": 0.634789156626506,
+            "differencePP": -41.265060240963855,
+            "snapshots": 166,
+            "conditionalDecisionsPerStyle": 2656
+          },
+          "7": {
+            "firstRate": 0.19039735099337748,
+            "secondRate": 0.7698675496688742,
+            "differencePP": -57.94701986754966,
+            "snapshots": 151,
+            "conditionalDecisionsPerStyle": 2416
+          },
+          "8": {
+            "firstRate": 0.04861111111111111,
+            "secondRate": 0.6151315789473685,
+            "differencePP": -56.65204678362573,
+            "snapshots": 171,
+            "conditionalDecisionsPerStyle": 2736
+          },
+          "9": {
+            "firstRate": 0.0763888888888889,
+            "secondRate": 0.5771604938271605,
+            "differencePP": -50.07716049382716,
+            "snapshots": 81,
+            "conditionalDecisionsPerStyle": 1296
+          }
+        },
+        "byDifficultyDifferencePP": {
+          "normal": -45.65839694656489,
+          "hard": -53.840537383177576
+        }
+      },
+      "normalHardDirectionAgree": true
+    },
+    {
+      "first": "balanced",
+      "second": "mira",
+      "clearlyDifferent": true,
+      "best": {
+        "metric": "draw-pressure",
+        "field": "raise",
+        "firstRate": 0.3135014137606032,
+        "secondRate": 0.6052662582469368,
+        "differencePP": -29.17648444863336,
+        "ci95PP": [-34.79054054054054, -23.774509803921568],
+        "snapshots": 1061,
+        "handClusters": 105,
+        "conditionalDecisions": 16976,
+        "byPlayers": {
+          "5": {
+            "firstRate": 0.3158263305322129,
+            "secondRate": 0.6673669467787114,
+            "differencePP": -35.154061624649856,
+            "snapshots": 357,
+            "conditionalDecisionsPerStyle": 5712
+          },
+          "6": {
+            "firstRate": 0.34773936170212766,
+            "secondRate": 0.5851063829787234,
+            "differencePP": -23.736702127659576,
+            "snapshots": 188,
+            "conditionalDecisionsPerStyle": 3008
+          },
+          "7": {
+            "firstRate": 0.36766304347826084,
+            "secondRate": 0.6067934782608696,
+            "differencePP": -23.91304347826087,
+            "snapshots": 230,
+            "conditionalDecisionsPerStyle": 3680
+          },
+          "8": {
+            "firstRate": 0.2585227272727273,
+            "secondRate": 0.5486111111111112,
+            "differencePP": -29.00883838383838,
+            "snapshots": 198,
+            "conditionalDecisionsPerStyle": 3168
+          },
+          "9": {
+            "firstRate": 0.21306818181818182,
+            "secondRate": 0.5198863636363636,
+            "differencePP": -30.681818181818183,
+            "snapshots": 88,
+            "conditionalDecisionsPerStyle": 1408
+          }
+        },
+        "byDifficultyDifferencePP": {
+          "normal": -25.279516994633266,
+          "hard": -33.51593625498007
+        }
+      },
+      "normalHardDirectionAgree": true
+    },
+    {
+      "first": "balanced",
+      "second": "iris",
+      "clearlyDifferent": true,
+      "best": {
+        "metric": "late-open",
+        "field": "raise",
+        "firstRate": 0.3495332792207792,
+        "secondRate": 0.6887175324675324,
+        "differencePP": -33.91842532467532,
+        "ci95PP": [-41.47817460317461, -26.898340248962654],
+        "snapshots": 1232,
+        "handClusters": 94,
+        "conditionalDecisions": 19712,
+        "byPlayers": {
+          "5": {
+            "firstRate": 0.34423828125,
+            "secondRate": 0.7169596354166666,
+            "differencePP": -37.27213541666667,
+            "snapshots": 768,
+            "conditionalDecisionsPerStyle": 12288
+          },
+          "6": {
+            "firstRate": 0.2921875,
+            "secondRate": 0.539453125,
+            "differencePP": -24.7265625,
+            "snapshots": 320,
+            "conditionalDecisionsPerStyle": 5120
+          },
+          "7": {
+            "firstRate": 0.568359375,
+            "secondRate": 0.85693359375,
+            "differencePP": -28.857421875,
+            "snapshots": 128,
+            "conditionalDecisionsPerStyle": 2048
+          },
+          "8": {
+            "firstRate": 0,
+            "secondRate": 0.97265625,
+            "differencePP": -97.265625,
+            "snapshots": 16,
+            "conditionalDecisionsPerStyle": 256
+          },
+          "9": null
+        },
+        "byDifficultyDifferencePP": {
+          "normal": -36.112253289473685,
+          "hard": -31.78084935897437
+        }
+      },
+      "normalHardDirectionAgree": true
+    },
+    {
+      "first": "rook",
+      "second": "jett",
+      "clearlyDifferent": true,
+      "best": {
+        "metric": "late-open",
+        "field": "call",
+        "firstRate": 0.33502435064935066,
+        "secondRate": 0.6133319805194806,
+        "differencePP": -27.830762987012992,
+        "ci95PP": [-34.867850953206236, -19.80218855218855],
+        "snapshots": 1232,
+        "handClusters": 94,
+        "conditionalDecisions": 19712,
+        "byPlayers": {
+          "5": {
+            "firstRate": 0.2992350260416667,
+            "secondRate": 0.6087239583333334,
+            "differencePP": -30.948893229166668,
+            "snapshots": 768,
+            "conditionalDecisionsPerStyle": 12288
+          },
+          "6": {
+            "firstRate": 0.4939453125,
+            "secondRate": 0.648828125,
+            "differencePP": -15.48828125,
+            "snapshots": 320,
+            "conditionalDecisionsPerStyle": 5120
+          },
+          "7": {
+            "firstRate": 0.1845703125,
+            "secondRate": 0.56201171875,
+            "differencePP": -37.744140625,
+            "snapshots": 128,
+            "conditionalDecisionsPerStyle": 2048
+          },
+          "8": {
+            "firstRate": 0.078125,
+            "secondRate": 0.53515625,
+            "differencePP": -45.703125,
+            "snapshots": 16,
+            "conditionalDecisionsPerStyle": 256
+          },
+          "9": null
+        },
+        "byDifficultyDifferencePP": {
+          "normal": -24.640213815789476,
+          "hard": -30.9395032051282
+        }
+      },
+      "normalHardDirectionAgree": true
+    },
+    {
+      "first": "rook",
+      "second": "owen",
+      "clearlyDifferent": true,
+      "best": {
+        "metric": "late-open",
+        "field": "continue",
+        "firstRate": 0.9413555194805194,
+        "secondRate": 0.3589184253246753,
+        "differencePP": 58.24370941558441,
+        "ci95PP": [48.657187993680886, 68.44296419650291],
+        "snapshots": 1232,
+        "handClusters": 94,
+        "conditionalDecisions": 19712,
+        "byPlayers": {
+          "5": {
+            "firstRate": 0.9369303385416666,
+            "secondRate": 0.3426920572916667,
+            "differencePP": 59.423828125,
+            "snapshots": 768,
+            "conditionalDecisionsPerStyle": 12288
+          },
+          "6": {
+            "firstRate": 0.9255859375,
+            "secondRate": 0.30703125,
+            "differencePP": 61.85546875,
+            "snapshots": 320,
+            "conditionalDecisionsPerStyle": 5120
+          },
+          "7": {
+            "firstRate": 1,
+            "secondRate": 0.6279296875,
+            "differencePP": 37.20703125,
+            "snapshots": 128,
+            "conditionalDecisionsPerStyle": 2048
+          },
+          "8": {
+            "firstRate": 1,
+            "secondRate": 0.0234375,
+            "differencePP": 97.65625,
+            "snapshots": 16,
+            "conditionalDecisionsPerStyle": 256
+          },
+          "9": null
+        },
+        "byDifficultyDifferencePP": {
+          "normal": 58.7890625,
+          "hard": 57.712339743589745
+        }
+      },
+      "normalHardDirectionAgree": true
+    },
+    {
+      "first": "rook",
+      "second": "vale",
+      "clearlyDifferent": true,
+      "best": {
+        "metric": "late-open",
+        "field": "raise",
+        "firstRate": 0.6063311688311688,
+        "secondRate": 0.025923295454545456,
+        "differencePP": 58.04078733766234,
+        "ci95PP": [48.68340163934427, 66.22576736672052],
+        "snapshots": 1232,
+        "handClusters": 94,
+        "conditionalDecisions": 19712,
+        "byPlayers": {
+          "5": {
+            "firstRate": 0.6376953125,
+            "secondRate": 0.01513671875,
+            "differencePP": 62.255859375,
+            "snapshots": 768,
+            "conditionalDecisionsPerStyle": 12288
+          },
+          "6": {
+            "firstRate": 0.431640625,
+            "secondRate": 0.0548828125,
+            "differencePP": 37.67578125,
+            "snapshots": 320,
+            "conditionalDecisionsPerStyle": 5120
+          },
+          "7": {
+            "firstRate": 0.8154296875,
+            "secondRate": 0.021484375,
+            "differencePP": 79.39453125,
+            "snapshots": 128,
+            "conditionalDecisionsPerStyle": 2048
+          },
+          "8": {
+            "firstRate": 0.921875,
+            "secondRate": 0,
+            "differencePP": 92.1875,
+            "snapshots": 16,
+            "conditionalDecisionsPerStyle": 256
+          },
+          "9": null
+        },
+        "byDifficultyDifferencePP": {
+          "normal": 56.45559210526315,
+          "hard": 59.58533653846154
+        }
+      },
+      "normalHardDirectionAgree": true
+    },
+    {
+      "first": "rook",
+      "second": "nico",
+      "clearlyDifferent": true,
+      "best": {
+        "metric": "turn-barrel",
+        "field": "small",
+        "firstRate": 0.15895249695493302,
+        "secondRate": 0.6438032886723508,
+        "differencePP": -48.48507917174178,
+        "ci95PP": [-55.92824967824968, -41.09578884934757],
+        "snapshots": 821,
+        "handClusters": 145,
+        "conditionalDecisions": 13136,
+        "byPlayers": {
+          "5": {
+            "firstRate": 0.17336309523809523,
+            "secondRate": 0.6150793650793651,
+            "differencePP": -44.17162698412698,
+            "snapshots": 252,
+            "conditionalDecisionsPerStyle": 4032
+          },
+          "6": {
+            "firstRate": 0.2477409638554217,
+            "secondRate": 0.634789156626506,
+            "differencePP": -38.704819277108435,
+            "snapshots": 166,
+            "conditionalDecisionsPerStyle": 2656
+          },
+          "7": {
+            "firstRate": 0.2081953642384106,
+            "secondRate": 0.7698675496688742,
+            "differencePP": -56.16721854304636,
+            "snapshots": 151,
+            "conditionalDecisionsPerStyle": 2416
+          },
+          "8": {
+            "firstRate": 0.04641812865497076,
+            "secondRate": 0.6151315789473685,
+            "differencePP": -56.87134502923976,
+            "snapshots": 171,
+            "conditionalDecisionsPerStyle": 2736
+          },
+          "9": {
+            "firstRate": 0.0779320987654321,
+            "secondRate": 0.5771604938271605,
+            "differencePP": -49.92283950617284,
+            "snapshots": 81,
+            "conditionalDecisionsPerStyle": 1296
+          }
+        },
+        "byDifficultyDifferencePP": {
+          "normal": -44.30661577608143,
+          "hard": -52.321845794392516
+        }
+      },
+      "normalHardDirectionAgree": true
+    },
+    {
+      "first": "rook",
+      "second": "mira",
+      "clearlyDifferent": true,
+      "best": {
+        "metric": "river-value",
+        "field": "large",
+        "firstRate": 0.2967869222096956,
+        "secondRate": 0.04720969560315671,
+        "differencePP": 24.95772266065389,
+        "ci95PP": [18.620360262008735, 31.472392638036812],
+        "snapshots": 887,
+        "handClusters": 151,
+        "conditionalDecisions": 14192,
+        "byPlayers": {
+          "5": {
+            "firstRate": 0.2656746031746032,
+            "secondRate": 0.04265873015873016,
+            "differencePP": 22.301587301587304,
+            "snapshots": 315,
+            "conditionalDecisionsPerStyle": 5040
+          },
+          "6": {
+            "firstRate": 0.2783273381294964,
+            "secondRate": 0.040467625899280574,
+            "differencePP": 23.785971223021583,
+            "snapshots": 139,
+            "conditionalDecisionsPerStyle": 2224
+          },
+          "7": {
+            "firstRate": 0.44191176470588234,
+            "secondRate": 0.07389705882352941,
+            "differencePP": 36.8014705882353,
+            "snapshots": 170,
+            "conditionalDecisionsPerStyle": 2720
+          },
+          "8": {
+            "firstRate": 0.28811813186813184,
+            "secondRate": 0.046703296703296704,
+            "differencePP": 24.141483516483518,
+            "snapshots": 182,
+            "conditionalDecisionsPerStyle": 2912
+          },
+          "9": {
+            "firstRate": 0.16435185185185186,
+            "secondRate": 0.021604938271604937,
+            "differencePP": 14.274691358024691,
+            "snapshots": 81,
+            "conditionalDecisionsPerStyle": 1296
+          }
+        },
+        "byDifficultyDifferencePP": {
+          "normal": 27.559389140271495,
+          "hard": 22.37359550561798
+        }
+      },
+      "normalHardDirectionAgree": true
+    },
+    {
+      "first": "rook",
+      "second": "iris",
+      "clearlyDifferent": true,
+      "best": {
+        "metric": "river-value",
+        "field": "large",
+        "firstRate": 0.2967869222096956,
+        "secondRate": 0,
+        "differencePP": 29.67869222096956,
+        "ci95PP": [22.09893048128342, 37.50742280285036],
+        "snapshots": 887,
+        "handClusters": 151,
+        "conditionalDecisions": 14192,
+        "byPlayers": {
+          "5": {
+            "firstRate": 0.2656746031746032,
+            "secondRate": 0,
+            "differencePP": 26.567460317460316,
+            "snapshots": 315,
+            "conditionalDecisionsPerStyle": 5040
+          },
+          "6": {
+            "firstRate": 0.2783273381294964,
+            "secondRate": 0,
+            "differencePP": 27.83273381294964,
+            "snapshots": 139,
+            "conditionalDecisionsPerStyle": 2224
+          },
+          "7": {
+            "firstRate": 0.44191176470588234,
+            "secondRate": 0,
+            "differencePP": 44.19117647058823,
+            "snapshots": 170,
+            "conditionalDecisionsPerStyle": 2720
+          },
+          "8": {
+            "firstRate": 0.28811813186813184,
+            "secondRate": 0,
+            "differencePP": 28.811813186813183,
+            "snapshots": 182,
+            "conditionalDecisionsPerStyle": 2912
+          },
+          "9": {
+            "firstRate": 0.16435185185185186,
+            "secondRate": 0,
+            "differencePP": 16.435185185185187,
+            "snapshots": 81,
+            "conditionalDecisionsPerStyle": 1296
+          }
+        },
+        "byDifficultyDifferencePP": {
+          "normal": 32.76300904977376,
+          "hard": 26.615168539325847
+        }
+      },
+      "normalHardDirectionAgree": true
+    },
+    {
+      "first": "jett",
+      "second": "owen",
+      "clearlyDifferent": true,
+      "best": {
+        "metric": "small-open-defense",
+        "field": "call",
+        "firstRate": 0.8499837239583333,
+        "secondRate": 0.19000651041666666,
+        "differencePP": 65.99772135416666,
+        "ci95PP": [62.745842133051745, 69.10814786390381],
+        "snapshots": 3840,
+        "handClusters": 450,
+        "conditionalDecisions": 61440,
+        "byPlayers": {
+          "5": {
+            "firstRate": 0.880615234375,
+            "secondRate": 0.18025716145833334,
+            "differencePP": 70.03580729166666,
+            "snapshots": 768,
+            "conditionalDecisionsPerStyle": 12288
+          },
+          "6": {
+            "firstRate": 0.8924967447916666,
+            "secondRate": 0.2516276041666667,
+            "differencePP": 64.0869140625,
+            "snapshots": 768,
+            "conditionalDecisionsPerStyle": 12288
+          },
+          "7": {
+            "firstRate": 0.8452962239583334,
+            "secondRate": 0.17350260416666666,
+            "differencePP": 67.17936197916666,
+            "snapshots": 768,
+            "conditionalDecisionsPerStyle": 12288
+          },
+          "8": {
+            "firstRate": 0.8245442708333334,
+            "secondRate": 0.179443359375,
+            "differencePP": 64.51009114583334,
+            "snapshots": 768,
+            "conditionalDecisionsPerStyle": 12288
+          },
+          "9": {
+            "firstRate": 0.8069661458333334,
+            "secondRate": 0.16520182291666666,
+            "differencePP": 64.17643229166666,
+            "snapshots": 768,
+            "conditionalDecisionsPerStyle": 12288
+          }
+        },
+        "byDifficultyDifferencePP": {
+          "normal": 65.263671875,
+          "hard": 66.73177083333334
+        }
+      },
+      "normalHardDirectionAgree": true
+    },
+    {
+      "first": "jett",
+      "second": "vale",
+      "clearlyDifferent": true,
+      "best": {
+        "metric": "late-open",
+        "field": "raise",
+        "firstRate": 0.3866680194805195,
+        "secondRate": 0.025923295454545456,
+        "differencePP": 36.0744724025974,
+        "ci95PP": [32.381370826010546, 39.21973270440252],
+        "snapshots": 1232,
+        "handClusters": 94,
+        "conditionalDecisions": 19712,
+        "byPlayers": {
+          "5": {
+            "firstRate": 0.3912760416666667,
+            "secondRate": 0.01513671875,
+            "differencePP": 37.61393229166667,
+            "snapshots": 768,
+            "conditionalDecisionsPerStyle": 12288
+          },
+          "6": {
+            "firstRate": 0.351171875,
+            "secondRate": 0.0548828125,
+            "differencePP": 29.628906249999996,
+            "snapshots": 320,
+            "conditionalDecisionsPerStyle": 5120
+          },
+          "7": {
+            "firstRate": 0.43798828125,
+            "secondRate": 0.021484375,
+            "differencePP": 41.650390625,
+            "snapshots": 128,
+            "conditionalDecisionsPerStyle": 2048
+          },
+          "8": {
+            "firstRate": 0.46484375,
+            "secondRate": 0,
+            "differencePP": 46.484375,
+            "snapshots": 16,
+            "conditionalDecisionsPerStyle": 256
+          },
+          "9": null
+        },
+        "byDifficultyDifferencePP": {
+          "normal": 36.554276315789465,
+          "hard": 35.60697115384615
+        }
+      },
+      "normalHardDirectionAgree": true
+    },
+    {
+      "first": "jett",
+      "second": "nico",
+      "clearlyDifferent": true,
+      "best": {
+        "metric": "turn-barrel",
+        "field": "small",
+        "firstRate": 0.139768574908648,
+        "secondRate": 0.6438032886723508,
+        "differencePP": -50.40347137637028,
+        "ci95PP": [-57.096104725415074, -43.641573729863694],
+        "snapshots": 821,
+        "handClusters": 145,
+        "conditionalDecisions": 13136,
+        "byPlayers": {
+          "5": {
+            "firstRate": 0.14856150793650794,
+            "secondRate": 0.6150793650793651,
+            "differencePP": -46.651785714285715,
+            "snapshots": 252,
+            "conditionalDecisionsPerStyle": 4032
+          },
+          "6": {
+            "firstRate": 0.22025602409638553,
+            "secondRate": 0.634789156626506,
+            "differencePP": -41.45331325301205,
+            "snapshots": 166,
+            "conditionalDecisionsPerStyle": 2656
+          },
+          "7": {
+            "firstRate": 0.18170529801324503,
+            "secondRate": 0.7698675496688742,
+            "differencePP": -58.81622516556292,
+            "snapshots": 151,
+            "conditionalDecisionsPerStyle": 2416
+          },
+          "8": {
+            "firstRate": 0.04422514619883041,
+            "secondRate": 0.6151315789473685,
+            "differencePP": -57.090643274853804,
+            "snapshots": 171,
+            "conditionalDecisionsPerStyle": 2736
+          },
+          "9": {
+            "firstRate": 0.07098765432098765,
+            "secondRate": 0.5771604938271605,
+            "differencePP": -50.617283950617285,
+            "snapshots": 81,
+            "conditionalDecisionsPerStyle": 1296
+          }
+        },
+        "byDifficultyDifferencePP": {
+          "normal": -46.16730279898219,
+          "hard": -54.29322429906542
+        }
+      },
+      "normalHardDirectionAgree": true
+    },
+    {
+      "first": "jett",
+      "second": "mira",
+      "clearlyDifferent": true,
+      "best": {
+        "metric": "small-open-defense",
+        "field": "call",
+        "firstRate": 0.8499837239583333,
+        "secondRate": 0.46261393229166664,
+        "differencePP": 38.73697916666667,
+        "ci95PP": [35.85266377772113, 41.86535989717224],
+        "snapshots": 3840,
+        "handClusters": 450,
+        "conditionalDecisions": 61440,
+        "byPlayers": {
+          "5": {
+            "firstRate": 0.880615234375,
+            "secondRate": 0.48876953125,
+            "differencePP": 39.1845703125,
+            "snapshots": 768,
+            "conditionalDecisionsPerStyle": 12288
+          },
+          "6": {
+            "firstRate": 0.8924967447916666,
+            "secondRate": 0.488525390625,
+            "differencePP": 40.39713541666667,
+            "snapshots": 768,
+            "conditionalDecisionsPerStyle": 12288
+          },
+          "7": {
+            "firstRate": 0.8452962239583334,
+            "secondRate": 0.4850260416666667,
+            "differencePP": 36.02701822916667,
+            "snapshots": 768,
+            "conditionalDecisionsPerStyle": 12288
+          },
+          "8": {
+            "firstRate": 0.8245442708333334,
+            "secondRate": 0.4300944010416667,
+            "differencePP": 39.44498697916667,
+            "snapshots": 768,
+            "conditionalDecisionsPerStyle": 12288
+          },
+          "9": {
+            "firstRate": 0.8069661458333334,
+            "secondRate": 0.420654296875,
+            "differencePP": 38.63118489583333,
+            "snapshots": 768,
+            "conditionalDecisionsPerStyle": 12288
+          }
+        },
+        "byDifficultyDifferencePP": {
+          "normal": 37.565104166666664,
+          "hard": 39.90885416666667
+        }
+      },
+      "normalHardDirectionAgree": true
+    },
+    {
+      "first": "jett",
+      "second": "iris",
+      "clearlyDifferent": true,
+      "best": {
+        "metric": "cheap-entry",
+        "field": "continue",
+        "firstRate": 0.8782063802083333,
+        "secondRate": 0.5472005208333333,
+        "differencePP": 33.10058593750001,
+        "ci95PP": [30.181052912880812, 35.899973607812086],
+        "snapshots": 3840,
+        "handClusters": 448,
+        "conditionalDecisions": 61440,
+        "byPlayers": {
+          "5": {
+            "firstRate": 0.93505859375,
+            "secondRate": 0.7020670572916666,
+            "differencePP": 23.299153645833336,
+            "snapshots": 768,
+            "conditionalDecisionsPerStyle": 12288
+          },
+          "6": {
+            "firstRate": 0.9295247395833334,
+            "secondRate": 0.5459798177083334,
+            "differencePP": 38.3544921875,
+            "snapshots": 768,
+            "conditionalDecisionsPerStyle": 12288
+          },
+          "7": {
+            "firstRate": 0.8606770833333334,
+            "secondRate": 0.5645345052083334,
+            "differencePP": 29.6142578125,
+            "snapshots": 768,
+            "conditionalDecisionsPerStyle": 12288
+          },
+          "8": {
+            "firstRate": 0.8340657552083334,
+            "secondRate": 0.4210611979166667,
+            "differencePP": 41.30045572916667,
+            "snapshots": 768,
+            "conditionalDecisionsPerStyle": 12288
+          },
+          "9": {
+            "firstRate": 0.8317057291666666,
+            "secondRate": 0.5023600260416666,
+            "differencePP": 32.9345703125,
+            "snapshots": 768,
+            "conditionalDecisionsPerStyle": 12288
+          }
+        },
+        "byDifficultyDifferencePP": {
+          "normal": 34.03971354166667,
+          "hard": 32.161458333333336
+        }
+      },
+      "normalHardDirectionAgree": true
+    },
+    {
+      "first": "owen",
+      "second": "vale",
+      "clearlyDifferent": true,
+      "best": {
+        "metric": "late-open",
+        "field": "call",
+        "firstRate": 0.16426542207792208,
+        "secondRate": 0.7599431818181818,
+        "differencePP": -59.56777597402597,
+        "ci95PP": [-67.70662006578947, -50.81608280254777],
+        "snapshots": 1232,
+        "handClusters": 94,
+        "conditionalDecisions": 19712,
+        "byPlayers": {
+          "5": {
+            "firstRate": 0.17716471354166666,
+            "secondRate": 0.7964680989583334,
+            "differencePP": -61.930338541666664,
+            "snapshots": 768,
+            "conditionalDecisionsPerStyle": 12288
+          },
+          "6": {
+            "firstRate": 0.0810546875,
+            "secondRate": 0.62265625,
+            "differencePP": -54.16015625,
+            "snapshots": 320,
+            "conditionalDecisionsPerStyle": 5120
+          },
+          "7": {
+            "firstRate": 0.3125,
+            "secondRate": 0.85400390625,
+            "differencePP": -54.150390625,
+            "snapshots": 128,
+            "conditionalDecisionsPerStyle": 2048
+          },
+          "8": {
+            "firstRate": 0.0234375,
+            "secondRate": 1,
+            "differencePP": -97.65625,
+            "snapshots": 16,
+            "conditionalDecisionsPerStyle": 256
+          },
+          "9": null
+        },
+        "byDifficultyDifferencePP": {
+          "normal": -61.03001644736843,
+          "hard": -58.14302884615385
+        }
+      },
+      "normalHardDirectionAgree": true
+    },
+    {
+      "first": "owen",
+      "second": "nico",
+      "clearlyDifferent": true,
+      "best": {
+        "metric": "turn-barrel",
+        "field": "small",
+        "firstRate": 0.15499390986601705,
+        "secondRate": 0.6438032886723508,
+        "differencePP": -48.88093788063338,
+        "ci95PP": [-56.22786304604487, -41.65194346289753],
+        "snapshots": 821,
+        "handClusters": 145,
+        "conditionalDecisions": 13136,
+        "byPlayers": {
+          "5": {
+            "firstRate": 0.16865079365079366,
+            "secondRate": 0.6150793650793651,
+            "differencePP": -44.642857142857146,
+            "snapshots": 252,
+            "conditionalDecisionsPerStyle": 4032
+          },
+          "6": {
+            "firstRate": 0.24134036144578314,
+            "secondRate": 0.634789156626506,
+            "differencePP": -39.34487951807229,
+            "snapshots": 166,
+            "conditionalDecisionsPerStyle": 2656
+          },
+          "7": {
+            "firstRate": 0.2015728476821192,
+            "secondRate": 0.7698675496688742,
+            "differencePP": -56.829470198675494,
+            "snapshots": 151,
+            "conditionalDecisionsPerStyle": 2416
+          },
+          "8": {
+            "firstRate": 0.04678362573099415,
+            "secondRate": 0.6151315789473685,
+            "differencePP": -56.83479532163743,
+            "snapshots": 171,
+            "conditionalDecisionsPerStyle": 2736
+          },
+          "9": {
+            "firstRate": 0.07716049382716049,
+            "secondRate": 0.5771604938271605,
+            "differencePP": -50,
+            "snapshots": 81,
+            "conditionalDecisionsPerStyle": 1296
+          }
+        },
+        "byDifficultyDifferencePP": {
+          "normal": -44.30661577608143,
+          "hard": -53.081191588785046
+        }
+      },
+      "normalHardDirectionAgree": true
+    },
+    {
+      "first": "owen",
+      "second": "mira",
+      "clearlyDifferent": true,
+      "best": {
+        "metric": "late-open",
+        "field": "continue",
+        "firstRate": 0.3589184253246753,
+        "secondRate": 0.7087053571428572,
+        "differencePP": -34.97869318181819,
+        "ci95PP": [-44.33406549520767, -25.564853556485357],
+        "snapshots": 1232,
+        "handClusters": 94,
+        "conditionalDecisions": 19712,
+        "byPlayers": {
+          "5": {
+            "firstRate": 0.3426920572916667,
+            "secondRate": 0.738037109375,
+            "differencePP": -39.53450520833333,
+            "snapshots": 768,
+            "conditionalDecisionsPerStyle": 12288
+          },
+          "6": {
+            "firstRate": 0.30703125,
+            "secondRate": 0.5568359375,
+            "differencePP": -24.98046875,
+            "snapshots": 320,
+            "conditionalDecisionsPerStyle": 5120
+          },
+          "7": {
+            "firstRate": 0.6279296875,
+            "secondRate": 0.8759765625,
+            "differencePP": -24.8046875,
+            "snapshots": 128,
+            "conditionalDecisionsPerStyle": 2048
+          },
+          "8": {
+            "firstRate": 0.0234375,
+            "secondRate": 1,
+            "differencePP": -97.65625,
+            "snapshots": 16,
+            "conditionalDecisionsPerStyle": 256
+          },
+          "9": null
+        },
+        "byDifficultyDifferencePP": {
+          "normal": -36.122532894736835,
+          "hard": -33.8641826923077
+        }
+      },
+      "normalHardDirectionAgree": true
+    },
+    {
+      "first": "owen",
+      "second": "iris",
+      "clearlyDifferent": true,
+      "best": {
+        "metric": "late-open",
+        "field": "continue",
+        "firstRate": 0.3589184253246753,
+        "secondRate": 1,
+        "differencePP": -64.10815746753246,
+        "ci95PP": [-74.37035507844756, -54.4845166163142],
+        "snapshots": 1232,
+        "handClusters": 94,
+        "conditionalDecisions": 19712,
+        "byPlayers": {
+          "5": {
+            "firstRate": 0.3426920572916667,
+            "secondRate": 1,
+            "differencePP": -65.73079427083334,
+            "snapshots": 768,
+            "conditionalDecisionsPerStyle": 12288
+          },
+          "6": {
+            "firstRate": 0.30703125,
+            "secondRate": 1,
+            "differencePP": -69.296875,
+            "snapshots": 320,
+            "conditionalDecisionsPerStyle": 5120
+          },
+          "7": {
+            "firstRate": 0.6279296875,
+            "secondRate": 1,
+            "differencePP": -37.20703125,
+            "snapshots": 128,
+            "conditionalDecisionsPerStyle": 2048
+          },
+          "8": {
+            "firstRate": 0.0234375,
+            "secondRate": 1,
+            "differencePP": -97.65625,
+            "snapshots": 16,
+            "conditionalDecisionsPerStyle": 256
+          },
+          "9": null
+        },
+        "byDifficultyDifferencePP": {
+          "normal": -63.52796052631579,
+          "hard": -64.67347756410257
+        }
+      },
+      "normalHardDirectionAgree": true
+    },
+    {
+      "first": "vale",
+      "second": "nico",
+      "clearlyDifferent": true,
+      "best": {
+        "metric": "turn-barrel",
+        "field": "small",
+        "firstRate": 0.14342265529841655,
+        "secondRate": 0.6438032886723508,
+        "differencePP": -50.038063337393424,
+        "ci95PP": [-56.64414414414415, -43.419117647058826],
+        "snapshots": 821,
+        "handClusters": 145,
+        "conditionalDecisions": 13136,
+        "byPlayers": {
+          "5": {
+            "firstRate": 0.1515376984126984,
+            "secondRate": 0.6150793650793651,
+            "differencePP": -46.35416666666667,
+            "snapshots": 252,
+            "conditionalDecisionsPerStyle": 4032
+          },
+          "6": {
+            "firstRate": 0.2210090361445783,
+            "secondRate": 0.634789156626506,
+            "differencePP": -41.37801204819277,
+            "snapshots": 166,
+            "conditionalDecisionsPerStyle": 2656
+          },
+          "7": {
+            "firstRate": 0.18832781456953643,
+            "secondRate": 0.7698675496688742,
+            "differencePP": -58.15397350993378,
+            "snapshots": 151,
+            "conditionalDecisionsPerStyle": 2416
+          },
+          "8": {
+            "firstRate": 0.0489766081871345,
+            "secondRate": 0.6151315789473685,
+            "differencePP": -56.61549707602339,
+            "snapshots": 171,
+            "conditionalDecisionsPerStyle": 2736
+          },
+          "9": {
+            "firstRate": 0.07484567901234568,
+            "secondRate": 0.5771604938271605,
+            "differencePP": -50.231481481481474,
+            "snapshots": 81,
+            "conditionalDecisionsPerStyle": 1296
+          }
+        },
+        "byDifficultyDifferencePP": {
+          "normal": -45.75381679389313,
+          "hard": -53.97196261682243
+        }
+      },
+      "normalHardDirectionAgree": true
+    },
+    {
+      "first": "vale",
+      "second": "mira",
+      "clearlyDifferent": true,
+      "best": {
+        "metric": "late-open",
+        "field": "call",
+        "firstRate": 0.7599431818181818,
+        "secondRate": 0.303317775974026,
+        "differencePP": 45.66254058441558,
+        "ci95PP": [36.17408485856905, 53.29356846473029],
+        "snapshots": 1232,
+        "handClusters": 94,
+        "conditionalDecisions": 19712,
+        "byPlayers": {
+          "5": {
+            "firstRate": 0.7964680989583334,
+            "secondRate": 0.333251953125,
+            "differencePP": 46.32161458333333,
+            "snapshots": 768,
+            "conditionalDecisionsPerStyle": 12288
+          },
+          "6": {
+            "firstRate": 0.62265625,
+            "secondRate": 0.2271484375,
+            "differencePP": 39.55078125,
+            "snapshots": 320,
+            "conditionalDecisionsPerStyle": 5120
+          },
+          "7": {
+            "firstRate": 0.85400390625,
+            "secondRate": 0.22705078125,
+            "differencePP": 62.6953125,
+            "snapshots": 128,
+            "conditionalDecisionsPerStyle": 2048
+          },
+          "8": {
+            "firstRate": 1,
+            "secondRate": 1,
+            "differencePP": 0,
+            "snapshots": 16,
+            "conditionalDecisionsPerStyle": 256
+          },
+          "9": null
+        },
+        "byDifficultyDifferencePP": {
+          "normal": 44.50041118421053,
+          "hard": 46.79487179487179
+        }
+      },
+      "normalHardDirectionAgree": true
+    },
+    {
+      "first": "vale",
+      "second": "iris",
+      "clearlyDifferent": true,
+      "best": {
+        "metric": "late-open",
+        "field": "raise",
+        "firstRate": 0.025923295454545456,
+        "secondRate": 0.6887175324675324,
+        "differencePP": -66.2794237012987,
+        "ci95PP": [-75.1701361088871, -56.34685970636215],
+        "snapshots": 1232,
+        "handClusters": 94,
+        "conditionalDecisions": 19712,
+        "byPlayers": {
+          "5": {
+            "firstRate": 0.01513671875,
+            "secondRate": 0.7169596354166666,
+            "differencePP": -70.18229166666666,
+            "snapshots": 768,
+            "conditionalDecisionsPerStyle": 12288
+          },
+          "6": {
+            "firstRate": 0.0548828125,
+            "secondRate": 0.539453125,
+            "differencePP": -48.45703125,
+            "snapshots": 320,
+            "conditionalDecisionsPerStyle": 5120
+          },
+          "7": {
+            "firstRate": 0.021484375,
+            "secondRate": 0.85693359375,
+            "differencePP": -83.544921875,
+            "snapshots": 128,
+            "conditionalDecisionsPerStyle": 2048
+          },
+          "8": {
+            "firstRate": 0,
+            "secondRate": 0.97265625,
+            "differencePP": -97.265625,
+            "snapshots": 16,
+            "conditionalDecisionsPerStyle": 256
+          },
+          "9": null
+        },
+        "byDifficultyDifferencePP": {
+          "normal": -68.25657894736842,
+          "hard": -64.35296474358975
+        }
+      },
+      "normalHardDirectionAgree": true
+    },
+    {
+      "first": "nico",
+      "second": "mira",
+      "clearlyDifferent": true,
+      "best": {
+        "metric": "turn-barrel",
+        "field": "small",
+        "firstRate": 0.6438032886723508,
+        "secondRate": 0.14814250913520097,
+        "differencePP": 49.56607795371498,
+        "ci95PP": [42.49264705882353, 56.61193502824858],
+        "snapshots": 821,
+        "handClusters": 145,
+        "conditionalDecisions": 13136,
+        "byPlayers": {
+          "5": {
+            "firstRate": 0.6150793650793651,
+            "secondRate": 0.16021825396825398,
+            "differencePP": 45.48611111111111,
+            "snapshots": 252,
+            "conditionalDecisionsPerStyle": 4032
+          },
+          "6": {
+            "firstRate": 0.634789156626506,
+            "secondRate": 0.2341867469879518,
+            "differencePP": 40.06024096385542,
+            "snapshots": 166,
+            "conditionalDecisionsPerStyle": 2656
+          },
+          "7": {
+            "firstRate": 0.7698675496688742,
+            "secondRate": 0.18998344370860928,
+            "differencePP": 57.98841059602648,
+            "snapshots": 151,
+            "conditionalDecisionsPerStyle": 2416
+          },
+          "8": {
+            "firstRate": 0.6151315789473685,
+            "secondRate": 0.0445906432748538,
+            "differencePP": 57.05409356725146,
+            "snapshots": 171,
+            "conditionalDecisionsPerStyle": 2736
+          },
+          "9": {
+            "firstRate": 0.5771604938271605,
+            "secondRate": 0.07484567901234568,
+            "differencePP": 50.231481481481474,
+            "snapshots": 81,
+            "conditionalDecisionsPerStyle": 1296
+          }
+        },
+        "byDifficultyDifferencePP": {
+          "normal": 45.72201017811706,
+          "hard": 53.095794392523366
+        }
+      },
+      "normalHardDirectionAgree": true
+    },
+    {
+      "first": "nico",
+      "second": "iris",
+      "clearlyDifferent": true,
+      "best": {
+        "metric": "turn-barrel",
+        "field": "small",
+        "firstRate": 0.6438032886723508,
+        "secondRate": 0.14821863580998781,
+        "differencePP": 49.5584652862363,
+        "ci95PP": [43.023428232502965, 56.17797695262484],
+        "snapshots": 821,
+        "handClusters": 145,
+        "conditionalDecisions": 13136,
+        "byPlayers": {
+          "5": {
+            "firstRate": 0.6150793650793651,
+            "secondRate": 0.15773809523809523,
+            "differencePP": 45.73412698412698,
+            "snapshots": 252,
+            "conditionalDecisionsPerStyle": 4032
+          },
+          "6": {
+            "firstRate": 0.634789156626506,
+            "secondRate": 0.2240210843373494,
+            "differencePP": 41.07680722891566,
+            "snapshots": 166,
+            "conditionalDecisionsPerStyle": 2656
+          },
+          "7": {
+            "firstRate": 0.7698675496688742,
+            "secondRate": 0.1941225165562914,
+            "differencePP": 57.574503311258276,
+            "snapshots": 151,
+            "conditionalDecisionsPerStyle": 2416
+          },
+          "8": {
+            "firstRate": 0.6151315789473685,
+            "secondRate": 0.0537280701754386,
+            "differencePP": 56.14035087719298,
+            "snapshots": 171,
+            "conditionalDecisionsPerStyle": 2736
+          },
+          "9": {
+            "firstRate": 0.5771604938271605,
+            "secondRate": 0.07716049382716049,
+            "differencePP": 50,
+            "snapshots": 81,
+            "conditionalDecisionsPerStyle": 1296
+          }
+        },
+        "byDifficultyDifferencePP": {
+          "normal": 45.37213740458016,
+          "hard": 53.40245327102804
+        }
+      },
+      "normalHardDirectionAgree": true
+    },
+    {
+      "first": "mira",
+      "second": "iris",
+      "clearlyDifferent": true,
+      "best": {
+        "metric": "late-open",
+        "field": "continue",
+        "firstRate": 0.7087053571428572,
+        "secondRate": 1,
+        "differencePP": -29.129464285714278,
+        "ci95PP": [-39.17112299465241, -20.603281853281853],
+        "snapshots": 1232,
+        "handClusters": 94,
+        "conditionalDecisions": 19712,
+        "byPlayers": {
+          "5": {
+            "firstRate": 0.738037109375,
+            "secondRate": 1,
+            "differencePP": -26.1962890625,
+            "snapshots": 768,
+            "conditionalDecisionsPerStyle": 12288
+          },
+          "6": {
+            "firstRate": 0.5568359375,
+            "secondRate": 1,
+            "differencePP": -44.31640625,
+            "snapshots": 320,
+            "conditionalDecisionsPerStyle": 5120
+          },
+          "7": {
+            "firstRate": 0.8759765625,
+            "secondRate": 1,
+            "differencePP": -12.40234375,
+            "snapshots": 128,
+            "conditionalDecisionsPerStyle": 2048
+          },
+          "8": {
+            "firstRate": 1,
+            "secondRate": 1,
+            "differencePP": 0,
+            "snapshots": 16,
+            "conditionalDecisionsPerStyle": 256
+          },
+          "9": null
+        },
+        "byDifficultyDifferencePP": {
+          "normal": -27.40542763157895,
+          "hard": -30.80929487179487
+        }
+      },
+      "normalHardDirectionAgree": true
+    }
+  ],
+  "opportunityEvents": {
+    "balanced": {
+      "executionHands": 4800,
+      "events": {
+        "small-open-defense": 1910,
+        "river-value": 108,
+        "cheap-entry": 2386,
+        "draw-pressure": 136,
+        "turn-barrel": 97,
+        "late-open": 189,
+        "dry-high-cbet": 11,
+        "medium-pot-control": 10,
+        "safe-value-induction": 15,
+        "river-probe": 2,
+        "float-price": 1
+      }
+    },
+    "iris": {
+      "executionHands": 4800,
+      "events": {
+        "small-open-defense": 1859,
+        "river-value": 117,
+        "cheap-entry": 2386,
+        "draw-pressure": 133,
+        "turn-barrel": 115,
+        "late-open": 189,
+        "medium-pot-control": 16,
+        "safe-value-induction": 20,
+        "dry-high-cbet": 16,
+        "river-probe": 3,
+        "float-price": 1
+      }
+    },
+    "jett": {
+      "executionHands": 4800,
+      "events": {
+        "small-open-defense": 2086,
+        "river-value": 130,
+        "cheap-entry": 2386,
+        "draw-pressure": 181,
+        "turn-barrel": 102,
+        "late-open": 189,
+        "dry-high-cbet": 18,
+        "medium-pot-control": 21,
+        "safe-value-induction": 21,
+        "river-probe": 3,
+        "float-price": 1
+      }
+    },
+    "mira": {
+      "executionHands": 4800,
+      "events": {
+        "small-open-defense": 1884,
+        "river-value": 112,
+        "cheap-entry": 2386,
+        "draw-pressure": 132,
+        "turn-barrel": 124,
+        "late-open": 189,
+        "dry-high-cbet": 14,
+        "medium-pot-control": 11,
+        "safe-value-induction": 13,
+        "river-probe": 3,
+        "float-price": 1,
+        "delayed-probe": 1
+      }
+    },
+    "nico": {
+      "executionHands": 4800,
+      "events": {
+        "small-open-defense": 1928,
+        "river-value": 130,
+        "cheap-entry": 2386,
+        "turn-barrel": 98,
+        "late-open": 189,
+        "dry-high-cbet": 9,
+        "draw-pressure": 114,
+        "safe-value-induction": 18,
+        "river-probe": 3,
+        "medium-pot-control": 7,
+        "float-price": 1
+      }
+    },
+    "owen": {
+      "executionHands": 4800,
+      "events": {
+        "small-open-defense": 1827,
+        "cheap-entry": 2386,
+        "draw-pressure": 68,
+        "river-value": 49,
+        "turn-barrel": 63,
+        "late-open": 189,
+        "safe-value-induction": 9,
+        "medium-pot-control": 6,
+        "float-price": 1,
+        "dry-high-cbet": 5,
+        "river-probe": 1
+      }
+    },
+    "rook": {
+      "executionHands": 4800,
+      "events": {
+        "small-open-defense": 1931,
+        "river-value": 117,
+        "cheap-entry": 2386,
+        "turn-barrel": 134,
+        "late-open": 189,
+        "dry-high-cbet": 25,
+        "draw-pressure": 169,
+        "medium-pot-control": 22,
+        "safe-value-induction": 16,
+        "river-probe": 4,
+        "float-price": 1,
+        "delayed-probe": 1
+      }
+    },
+    "vale": {
+      "executionHands": 4800,
+      "events": {
+        "small-open-defense": 2043,
+        "river-value": 125,
+        "cheap-entry": 2386,
+        "turn-barrel": 88,
+        "late-open": 189,
+        "draw-pressure": 129,
+        "safe-value-induction": 23,
+        "river-probe": 4,
+        "medium-pot-control": 10,
+        "float-price": 1,
+        "dry-high-cbet": 8
+      }
+    }
+  },
+  "rawFiles": {
+    "eight-candidate-9-probes/probes.json": {
+      "sha256": "1ef681d5ea9409b024a79e472f9c37c440db858aaa44ed563a42036b79fe3ea9",
+      "bytes": 29157643
+    },
+    "eight-candidate-9-probes/comparison.json": {
+      "sha256": "37039de7e53fca4c34bd403c52a85877f377fbfa16ca2652111b6a657ff50e74",
+      "bytes": 529659
+    },
+    "eight-candidate-9-probes/signature-validation.json": {
+      "sha256": "81b5670366037193a6a382846447f01c51085dc27e5da7764ee941836ca50e08",
+      "bytes": 12744
+    },
+    "eight-candidate-9/manifest.json": {
+      "sha256": "742f03ece064cccbb20a543501e9b673017a571fc342f9fd494598af8a9022e7",
+      "bytes": 840
+    },
+    "eight-candidate-9/summary.json": {
+      "sha256": "8d307467c54ba579a2bfe9f58726a87c775ae84cac357d4b3adba45192b5c8f4",
+      "bytes": 1141799
+    }
+  },
+  "note": "Independent shuffle clusters, full executions, conditional snapshots, repeated strategy draws, and AI interactive hands are separate denominators. Pair conditions remain to be locked before any reserved seed is read.",
+  "clearPairsWithDifficultyDirectionAgreement": 28
+}

@@ -12,6 +12,31 @@ before(async () => {
 });
 after(async () => browser?.close());
 
+test('native page snapshots preserve touch media for tablet reference replay', async () => {
+  for (const hasTouch of [false, true]) {
+    const tablet = await browser.newPage({ viewport: { width: 820, height: 1180 }, hasTouch });
+    try {
+      await tablet.setContent('<main>Tablet</main>');
+      const snapshot = await tablet.evaluate(collectNativePageSnapshot, ['main']);
+      assert.equal(snapshot.touch, hasTouch);
+      const replay = await browser.newPage({
+        viewport: snapshot.viewport,
+        hasTouch: snapshot.touch,
+      });
+      try {
+        assert.equal(
+          await replay.evaluate(() => matchMedia('(any-pointer: coarse)').matches),
+          hasTouch,
+        );
+      } finally {
+        await replay.close();
+      }
+    } finally {
+      await tablet.close();
+    }
+  }
+});
+
 async function boxes(change) {
   await page.setContent(source);
   await page.evaluate(async () => document.fonts.ready);

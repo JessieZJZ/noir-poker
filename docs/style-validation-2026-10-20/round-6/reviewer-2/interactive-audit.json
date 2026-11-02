@@ -1,0 +1,412 @@
+{
+  "B": {
+    "hands": 40,
+    "numbers": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20,
+      21,
+      22,
+      23,
+      24,
+      25,
+      26,
+      27,
+      28,
+      29,
+      30,
+      31,
+      32,
+      33,
+      34,
+      35,
+      36,
+      37,
+      38,
+      39,
+      40
+    ],
+    "positions": {
+      "BTN": 8,
+      "SB": 8,
+      "BB": 8,
+      "UTG": 8,
+      "CO": 8
+    },
+    "heroPositions": {
+      "CO": 8,
+      "UTG": 8,
+      "BB": 8,
+      "SB": 8,
+      "BTN": 8
+    },
+    "pre": {
+      "vpip": 29,
+      "pfr": 12,
+      "posthands": 20
+    },
+    "post": {
+      "s1:check": 15,
+      "s2:check": 14,
+      "s3:raise": 5,
+      "s1:raise": 4,
+      "s2:raise": 4,
+      "s3:check": 10,
+      "s3:fold": 4,
+      "s1:fold": 2,
+      "s2:call": 1,
+      "s3:call": 3
+    },
+    "jointFlopHands": [
+      11,
+      14,
+      22,
+      23,
+      34,
+      39
+    ],
+    "targetFacingHeroPostflop": [
+      {
+        "hand": 22,
+        "street": 1,
+        "responder": "B",
+        "action": "fold",
+        "aggressor": "Hero",
+        "betTo": null,
+        "facingTo": 700,
+        "potBefore": 3100
+      },
+      {
+        "hand": 23,
+        "street": 3,
+        "responder": "B",
+        "action": "fold",
+        "aggressor": "Hero",
+        "betTo": null,
+        "facingTo": 700,
+        "potBefore": 2800
+      }
+    ],
+    "heroFacingTargetPostflop": [],
+    "targetShowdowns": [
+      {
+        "hand": 14,
+        "hole": "Qs 2h",
+        "board": "8c 8s Jd Js Qh"
+      },
+      {
+        "hand": 25,
+        "hole": "Kc 4h",
+        "board": "8c 6c Ad 3h 6h"
+      },
+      {
+        "hand": 27,
+        "hole": "8d Ts",
+        "board": "2h Tc 3c 9d Qh"
+      },
+      {
+        "hand": 28,
+        "hole": "Ah 2c",
+        "board": "9d Qc As 7s Kd"
+      },
+      {
+        "hand": 31,
+        "hole": "7c Jd",
+        "board": "5h 5s 8s 9c Qc"
+      },
+      {
+        "hand": 34,
+        "hole": "5d Ad",
+        "board": "Js 3d 2s Kh 8s"
+      },
+      {
+        "hand": 37,
+        "hole": "Jh Ad",
+        "board": "3s 5d Tc 4h 7d"
+      },
+      {
+        "hand": 38,
+        "hole": "Qd Ah",
+        "board": "As Kd 8h 3d 5d"
+      },
+      {
+        "hand": 39,
+        "hole": "As 7h",
+        "board": "Qh 9h 6s Js 2d"
+      },
+      {
+        "hand": 40,
+        "hole": "Td 4d",
+        "board": "Tc 9d 4c Qd 2d"
+      }
+    ]
+  },
+  "D": {
+    "hands": 40,
+    "numbers": [
+      41,
+      42,
+      43,
+      44,
+      45,
+      46,
+      47,
+      48,
+      49,
+      50,
+      51,
+      52,
+      53,
+      54,
+      55,
+      56,
+      57,
+      58,
+      59,
+      60,
+      61,
+      62,
+      63,
+      64,
+      65,
+      66,
+      67,
+      68,
+      69,
+      70,
+      71,
+      72,
+      73,
+      74,
+      75,
+      76,
+      77,
+      78,
+      79,
+      80
+    ],
+    "positions": {
+      "BTN": 8,
+      "SB": 8,
+      "BB": 8,
+      "UTG": 8,
+      "CO": 8
+    },
+    "heroPositions": {
+      "CO": 8,
+      "UTG": 8,
+      "BB": 8,
+      "SB": 8,
+      "BTN": 8
+    },
+    "pre": {
+      "vpip": 38,
+      "pfr": 8,
+      "posthands": 30
+    },
+    "post": {
+      "s1:check": 24,
+      "s1:call": 2,
+      "s2:check": 20,
+      "s3:check": 19,
+      "s3:fold": 7,
+      "s1:fold": 3,
+      "s2:raise": 3,
+      "s3:call": 2,
+      "s2:call": 2,
+      "s1:raise": 3,
+      "s2:fold": 2
+    },
+    "jointFlopHands": [
+      48,
+      49,
+      51,
+      54,
+      58,
+      61,
+      65,
+      70,
+      72,
+      78
+    ],
+    "targetFacingHeroPostflop": [
+      {
+        "hand": 48,
+        "street": 1,
+        "responder": "D",
+        "action": "call",
+        "aggressor": "Hero",
+        "betTo": null,
+        "facingTo": 500,
+        "potBefore": 2100
+      },
+      {
+        "hand": 51,
+        "street": 1,
+        "responder": "D",
+        "action": "fold",
+        "aggressor": "Hero",
+        "betTo": null,
+        "facingTo": 600,
+        "potBefore": 1600
+      },
+      {
+        "hand": 61,
+        "street": 1,
+        "responder": "D",
+        "action": "fold",
+        "aggressor": "Hero",
+        "betTo": null,
+        "facingTo": 1400,
+        "potBefore": 4900
+      },
+      {
+        "hand": 65,
+        "street": 1,
+        "responder": "D",
+        "action": "fold",
+        "aggressor": "Hero",
+        "betTo": null,
+        "facingTo": 800,
+        "potBefore": 2800
+      },
+      {
+        "hand": 70,
+        "street": 2,
+        "responder": "D",
+        "action": "fold",
+        "aggressor": "Hero",
+        "betTo": null,
+        "facingTo": 1400,
+        "potBefore": 4200
+      },
+      {
+        "hand": 78,
+        "street": 2,
+        "responder": "D",
+        "action": "call",
+        "aggressor": "Hero",
+        "betTo": null,
+        "facingTo": 1100,
+        "potBefore": 3900
+      }
+    ],
+    "heroFacingTargetPostflop": [
+      {
+        "hand": 58,
+        "street": 1,
+        "responder": "Hero",
+        "action": "fold",
+        "aggressor": "D",
+        "betTo": null,
+        "facingTo": 2600,
+        "potBefore": 7700
+      }
+    ],
+    "targetShowdowns": [
+      {
+        "hand": 45,
+        "hole": "Tc 8s",
+        "board": "Ts 9c 7c 5c 3s"
+      },
+      {
+        "hand": 46,
+        "hole": "3s Ah",
+        "board": "8h Jc 6h 2c 6s"
+      },
+      {
+        "hand": 47,
+        "hole": "2s Qc",
+        "board": "6c Ac 4s 8d 8s"
+      },
+      {
+        "hand": 48,
+        "hole": "Qh Kd",
+        "board": "2s 3d 2c 9h Js"
+      },
+      {
+        "hand": 49,
+        "hole": "5s Ac",
+        "board": "As 4s Ks 6h 3d"
+      },
+      {
+        "hand": 53,
+        "hole": "Qc Jh",
+        "board": "4h Ks Qd 7s 8d"
+      },
+      {
+        "hand": 54,
+        "hole": "Qh 5s",
+        "board": "2c 2h 3h 4s Ah"
+      },
+      {
+        "hand": 56,
+        "hole": "2h Tc",
+        "board": "7d 6h Qh Ad 6c"
+      },
+      {
+        "hand": 63,
+        "hole": "Js Qd",
+        "board": "5s 8c Qc 2h 3h"
+      },
+      {
+        "hand": 69,
+        "hole": "Tc Ad",
+        "board": "5c 7s Ah 8c 6c"
+      },
+      {
+        "hand": 72,
+        "hole": "Td Kd",
+        "board": "4d As 8d Kh 5s"
+      },
+      {
+        "hand": 74,
+        "hole": "6s 6d",
+        "board": "5s Kd 4c 7h Js"
+      },
+      {
+        "hand": 78,
+        "hole": "Td Jd",
+        "board": "7d Ah 9s 3d 9h"
+      },
+      {
+        "hand": 79,
+        "hole": "Ah Ts",
+        "board": "6h 3c Td Kc Jh"
+      },
+      {
+        "hand": 80,
+        "hole": "5d Qh",
+        "board": "5c 3d 6h 2s Ah"
+      }
+    ]
+  },
+  "validation": {
+    "completedHands": 80,
+    "uniqueSequentialHandNumbers": true,
+    "starts": 80,
+    "actions": 139,
+    "httpErrors": 0,
+    "allEnded": true,
+    "legalActionsChecked": true,
+    "frozenSHA256Unchanged": true,
+    "apiStoppedAt": 80
+  }
+}

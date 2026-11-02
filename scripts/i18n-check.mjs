@@ -10,7 +10,7 @@ execFileSync(process.execPath, [new URL('scripts/i18n-extract.mjs', root).pathna
 const messages = JSON.parse(readFileSync(new URL('src/i18n/messages.json', root), 'utf8'));
 const overrides = JSON.parse(readFileSync(new URL('src/i18n/overrides.json', root), 'utf8'));
 const slots = (s) => [...s.matchAll(/\{\d+\}/g)].map((m) => m[0]).sort();
-const research = JSON.parse(readFileSync(new URL('src/data/player-research.json', root), 'utf8'));
+const research = JSON.parse(readFileSync(new URL('src/data/characters.json', root), 'utf8'));
 const researchMessages = new Set();
 function collectResearch(value) {
   if (typeof value === 'string') {
@@ -29,7 +29,7 @@ for (const profile of BOT_PROFILES)
     profile.description,
     profile.evidence,
   ]);
-collectResearch([...PROFILE_AXES, '训练原型', '常用翻后下注：', '{4}–{5}% 池']);
+collectResearch([...PROFILE_AXES, '训练风格', '常用翻后下注：', '{4}–{5}% 池']);
 const facts = (value) => value.match(/\d+(?:[.,]\d+)*/g) ?? [];
 const terms = (value) =>
   value.match(

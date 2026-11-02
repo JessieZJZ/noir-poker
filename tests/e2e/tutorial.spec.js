@@ -240,6 +240,8 @@ test('the coach, table and controls share the first screen without overlapping',
     expect(await page.locator('#arena').boundingBox()).toEqual(table);
   } else {
     expect(coachBox.x).toBeGreaterThanOrEqual(dock.x + dock.width);
+    expect(coachBox.y + coachBox.height).toBeLessThanOrEqual(viewport.height);
+    expect(coachBox.height).toBeGreaterThan(300);
   }
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(viewport.width);
 });

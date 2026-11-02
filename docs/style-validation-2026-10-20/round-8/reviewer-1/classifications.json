@@ -1,0 +1,271 @@
+{
+  "reviewer": 1,
+  "reviewType": "AI public-information strategy review; not human or UI acceptance",
+  "menuReceivedAfterFreeze": true,
+  "independentPerCode": true,
+  "oneToOneEliminationUsed": false,
+  "additionalHandsAfterFreeze": 0,
+  "confidenceScale": "0–1 subjective confidence, not calibrated probability",
+  "classifications": [
+    {
+      "code": "A",
+      "label": "宽松取值",
+      "subjectiveConfidence": 0.78,
+      "evidence": [
+        {
+          "source": "packet",
+          "hands": [
+            4,
+            13
+          ],
+          "observation": "95o/K8s跟加注，多人池后续多过牌，支持便宜参与与较低翻后主动性。"
+        },
+        {
+          "source": "packet",
+          "hands": [
+            53,
+            91
+          ],
+          "observation": "KT在KKQ真实三条后大额过牌加注和转牌投入；KhJh转牌真实同花后大下注，支持强牌大尺度取值。"
+        },
+        {
+          "source": "interactive",
+          "hands": [
+            13,
+            25,
+            56
+          ],
+          "observation": "A以53o在K549A跟转牌半池后河牌过牌；AK在55384三加注池过到底；A4在J7643转中对子后仍过到底。"
+        }
+      ],
+      "contraryEvidence": [
+        {
+          "source": "packet",
+          "hands": [
+            18,
+            100
+          ],
+          "observation": "无摊牌连枪或河牌超池，不能排除主动施压成分。"
+        },
+        {
+          "source": "interactive",
+          "hands": [
+            71,
+            78
+          ],
+          "observation": "会主动下注令Hero承压，但两手未知底牌，不能判断价值或诈唬。"
+        }
+      ],
+      "limitations": "Hero仅20手共同翻牌，直接面对A翻后下注3次/2手；强压力范围证据不足。"
+    },
+    {
+      "code": "B",
+      "label": "多街施压",
+      "subjectiveConfidence": 0.76,
+      "evidence": [
+        {
+          "source": "packet",
+          "hands": [
+            6
+          ],
+          "observation": "99挤压后在低牌配对面连续两街下注，河牌停下，有主动下注和控池的条件变化。"
+        },
+        {
+          "source": "packet",
+          "hands": [
+            19,
+            28,
+            56
+          ],
+          "observation": "数手呈现小些翻牌下注、较大转河施压；底牌未知，不能据此称诈唬。"
+        },
+        {
+          "source": "interactive",
+          "hands": [
+            101,
+            148
+          ],
+          "observation": "连续三街主动下注，后街尺寸显著扩大，底牌未知。"
+        },
+        {
+          "source": "interactive",
+          "hands": [
+            181
+          ],
+          "observation": "JT顶对在T4472连续三街小注取值，Hero实际各跟一枪，直接承压体验明确。"
+        }
+      ],
+      "contraryEvidence": [
+        {
+          "source": "interactive",
+          "hands": [
+            115,
+            133,
+            167
+          ],
+          "observation": "AT顶对、98与97未形成独立牌力时分别有过到底路径，主动性并非每手出现。"
+        }
+      ],
+      "limitations": "Hero与B共同翻牌23手，面对B翻后下注7次/5手；B面对Hero翻后价格只有5次且均弃，不能概括为总弃。"
+    },
+    {
+      "code": "C",
+      "label": "均衡",
+      "subjectiveConfidence": 0.52,
+      "evidence": [
+        {
+          "source": "packet",
+          "hands": [
+            36,
+            38,
+            79
+          ],
+          "observation": "K3o顶对过到底，A9o在多人AQ769中转成两对仍控池，Q6o由底对转三条后才下注，显示成牌改善与控池并存。"
+        },
+        {
+          "source": "packet",
+          "hands": [
+            45,
+            55
+          ],
+          "observation": "77再加注后在48499多人池控池；AJ跛入再加注后在连张面过到底，既有翻前主动也有后续控制。"
+        },
+        {
+          "source": "packet",
+          "hands": [
+            10,
+            11,
+            42
+          ],
+          "observation": "存在跟翻前再加注后转牌接管的路线，底牌未知，只证明动作变化。"
+        }
+      ],
+      "contraryEvidence": [
+        {
+          "source": "packet",
+          "hands": [
+            15,
+            95
+          ],
+          "observation": "JJ在Q高面领打，J7在J434T连续承压并河牌大领打，部分防守和尺寸并不稳健。"
+        }
+      ],
+      "limitations": "只有100手旁观牌谱，无C直接互动。56%样本主动付费并不低；均衡只是菜单中暂时最接近的描述，对其与范围纪律之间区分把握低，不能理解为已证明接近理论均衡。"
+    },
+    {
+      "code": "D",
+      "label": "范围纪律",
+      "subjectiveConfidence": 0.71,
+      "evidence": [
+        {
+          "source": "packet",
+          "hands": [
+            1,
+            2,
+            4,
+            8,
+            9,
+            11,
+            12
+          ],
+          "observation": "开局样本多个位置选择弃牌；完整100手主动付费34手、翻前加注14手，选择性较强。"
+        },
+        {
+          "source": "packet",
+          "hands": [
+            7,
+            26,
+            54
+          ],
+          "observation": "88再加注后低牌面取值、JT隔离后顶对延迟取值、AQ顶对翻牌下注后危险转河控池，入池后不是只等坚果。"
+        },
+        {
+          "source": "packet",
+          "hands": [
+            46
+          ],
+          "observation": "QQ在KJJ66多人池控制，符合对高张/多人压力有所约束。"
+        }
+      ],
+      "contraryEvidence": [
+        {
+          "source": "packet",
+          "hands": [
+            21,
+            67
+          ],
+          "observation": "66冷跟再加注后989领打、QJ在KJ973河牌一对J下注，不能把较少入池等同始终严格。"
+        }
+      ],
+      "limitations": "只有100手旁观，无D互动；安全强牌诱导的证据不足。D47的Js8s是河牌真实J高同花，已撤销初评中错称未成听牌诈唬的句子。"
+    }
+  ],
+  "ratings": {
+    "globalStyleDistinctiveness": {
+      "score": 3,
+      "outOf": 5,
+      "rationale": "参与频率和部分下注路线能形成可辨轮廓，D的选择性最明显；A/B初读容易混淆，互动后B持续下注体感更强，C仍只有低把握的暂定判断。并非每手都鲜明，也没有四种规则均被充分验证。"
+    },
+    "naturalContinuousStrategicInteraction": {
+      "score": 3,
+      "outOf": 5,
+      "rationale": "固定连续牌局允许正常开池、防守、价值下注和权益施压，对手会响应，具备策略互动；但大量多人池过到底、陪测座位推动大池及目标直接翻后交手稀少，降低了持续针对调整的清晰度。Hero自己的读牌与边缘防守错误也限制体验判断。"
+    }
+  },
+  "coverage": {
+    "packetHands": {
+      "A": 100,
+      "B": 100,
+      "C": 100,
+      "D": 100
+    },
+    "interactiveHands": {
+      "A": 100,
+      "B": 100,
+      "C": 0,
+      "D": 0
+    },
+    "heroActualVPIPPFR": {
+      "A": [
+        37,
+        24
+      ],
+      "B": [
+        38,
+        20
+      ]
+    },
+    "sharedActualFlopHands": {
+      "A": 20,
+      "B": 23
+    },
+    "heroFacesTargetPostflopDecisionsAndHands": {
+      "A": [
+        3,
+        2
+      ],
+      "B": [
+        7,
+        5
+      ]
+    },
+    "targetFacesHeroPostflopDecisionsAndHands": {
+      "A": [
+        9,
+        9
+      ],
+      "B": [
+        5,
+        5
+      ]
+    },
+    "scopeNote": "互动A手号1–100，B手号101–200；packet手号独立，各代码1–100。旁观不冒充实际交手。"
+  },
+  "errorsAndCautions": [
+    "冻结初评D47误读已撤销：三张公共黑桃加Js8s为J高同花，不是错过听牌诈唬。",
+    "Hero互动B106、B151漏算已有顺听，B175错称坚果顺听，纠正保留在互动审计；未改原理由。",
+    "Hero B181低对子三街防守缺少足够诈唬密度证据，可能过松。",
+    "A/B发牌不同、Hero路径不同，净输赢和裸动作频率都不是控制实验。",
+    "没有读取源码、private、人物映射或其他评审；没有推断真实人物。"
+  ]
+}

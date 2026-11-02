@@ -2,7 +2,7 @@ import { bigBlindOf } from './stakes.js';
 // Synthetic table pacing, not measured timings or tells of named players.
 // Accept only the actor's decision view; no full game, hidden rival cards or deck.
 const clamp = (n, lo = 0, hi = 1) => Math.max(lo, Math.min(hi, n));
-export const BOT_THINK_LIMITS = { minimum: 1200, maximum: 8000 };
+export const BOT_THINK_LIMITS = { minimum: 1000, maximum: 3000 };
 
 export function botThinkingTime(decision, random = Math.random) {
   const t = decision.trace,
@@ -143,16 +143,17 @@ export function botThinkingTime(decision, random = Math.random) {
     responses * 500 +
     planning * 500 +
     (v.street >= 2 ? 300 : v.street === 1 ? 150 : 0);
+  // Preserve the policy's relative complexity and overlapping tells inside a
+  // shorter 1–3 second window instead of clamping most hard spots to 3 seconds.
+  const pace = clamp(
+    ((base + complexity - (routine ? 600 : 0)) * styleTempo + mood + actingMs - 1200) / 6800,
+  );
   const durationMs = Math.round(
-    clamp(
-      (base + complexity - (routine ? 600 : 0)) * styleTempo + mood + actingMs,
-      BOT_THINK_LIMITS.minimum,
-      BOT_THINK_LIMITS.maximum,
-    ),
+    BOT_THINK_LIMITS.minimum + pace * (BOT_THINK_LIMITS.maximum - BOT_THINK_LIMITS.minimum),
   );
   return {
     durationMs,
-    model: 'policy-pacing-v2',
+    model: 'policy-pacing-v3',
     acting,
     factors: {
       closeness,

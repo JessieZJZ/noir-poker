@@ -12,6 +12,7 @@ function setup() {
   let nextTimer = 1;
   const store = new Map();
   const controller = createWechatController({
+    loadTutorial: () => import('../../src/engine/tutorial.js'),
     publish: (view) => views.push(view),
     storage: {
       getItem: (key) => store.get(key) ?? null,
@@ -51,7 +52,7 @@ function step({ controller, drain, last }) {
   }
 }
 
-test('the WeChat table enters the tutorial, plays it and returns the live hand unchanged', () => {
+test('the WeChat table enters the tutorial, plays it and returns the live hand unchanged', async () => {
   const page = setup(),
     { controller, last } = page;
   controller.start();
@@ -59,7 +60,7 @@ test('the WeChat table enters the tutorial, plays it and returns the live hand u
     before = JSON.stringify(live),
     sessions = JSON.stringify(controller.getRecords());
 
-  assert.equal(controller.startTutorial(), true);
+  assert.equal(await controller.startTutorial(), true);
   assert.equal(controller.getGame(), live, 'The intro still shows the paused live table');
   assert.equal(page.timers.size, 0, 'Entering cancels the live table timers');
   assert.equal(last().tutorial.stage, 'intro');
@@ -100,11 +101,11 @@ test('the WeChat table enters the tutorial, plays it and returns the live hand u
   assert.equal(last().tutorialPlaying, false);
 });
 
-test('guided turns lock every control except the taught one', () => {
+test('guided turns lock every control except the taught one', async () => {
   const page = setup(),
     { controller, last } = page;
   controller.start();
-  controller.startTutorial();
+  await controller.startTutorial();
   controller.tutorialPrimary();
   while (last().tutorial.allowed?.action !== 'call') {
     if (last().tutorial.canContinue) controller.tutorialNext();
@@ -123,11 +124,11 @@ test('guided turns lock every control except the taught one', () => {
   assert.equal(controller.action('call'), true);
 });
 
-test('a half-pot lesson unlocks the bet only after its preset is chosen', () => {
+test('a half-pot lesson unlocks the bet only after its preset is chosen', async () => {
   const page = setup(),
     { controller, last } = page;
   controller.start();
-  controller.startTutorial();
+  await controller.startTutorial();
   controller.tutorialPrimary();
   while (last().tutorial.allowed?.action !== 'raise') step(page);
   const { raiseTarget, allowed } = last().tutorial;
@@ -143,11 +144,11 @@ test('a half-pot lesson unlocks the bet only after its preset is chosen', () => 
   assert.equal(controller.action('raise'), true);
 });
 
-test('tutorial bots stop on hide, resume on show and never reach the next hand after exit', () => {
+test('tutorial bots stop on hide, resume on show and never reach the next hand after exit', async () => {
   const page = setup(),
     { controller, last } = page;
   controller.start();
-  controller.startTutorial();
+  await controller.startTutorial();
   controller.tutorialPrimary();
   while (!page.timers.size) step(page);
   const game = controller.getGame(),
@@ -164,11 +165,11 @@ test('tutorial bots stop on hide, resume on show and never reach the next hand a
   assert.equal(last().tutorialPlaying, false);
 });
 
-test('reset, retry and next hand cannot touch the table during the tutorial', () => {
+test('reset, retry and next hand cannot touch the table during the tutorial', async () => {
   const page = setup(),
     { controller } = page;
   controller.start();
-  controller.startTutorial();
+  await controller.startTutorial();
   controller.tutorialPrimary();
   const game = controller.getGame();
   for (const blocked of ['retry', 'reset', 'nextHand']) controller[blocked]();
@@ -178,10 +179,65 @@ test('reset, retry and next hand cannot touch the table during the tutorial', ()
   assert.throws(() => act(game, 0, 'call'));
 });
 
-test('WXML keeps the hero label on one line because text nodes render their whitespace', () => {
+test('WXML keeps the hero label on one line because text nodes render their whitespace', async () => {
   const template = readFileSync(
-    new URL('../../miniprogram/pages/table/table.wxml', import.meta.url),
+    new URL('../../miniprogram/pages/table/table-surface.wxml', import.meta.url),
     'utf8',
   );
-  assert.match(template, /<text>你 <text class="position">{{heroPosition}}<\/text><\/text/);
+  assert.match(
+    template,
+    /><text>你<\/text\s*><text wx:if="{{!waitingForSeat}}" class="position">{{heroPosition}}<\/text>/,
+  );
+});
+
+test('a missing tutorial subpackage leaves the live table playable and can be retried', async () => {
+  let attempts = 0;
+  const views = [];
+  const controller = createWechatController({
+    loadTutorial: async () => {
+      if (++attempts === 1) throw Error('offline');
+      return import('../../src/engine/tutorial.js');
+    },
+    publish: (view) => views.push(view),
+    storage: { getItem: () => null, setItem() {} },
+    schedule: () => 1,
+    unschedule() {},
+  });
+  await assert.rejects(controller.startTutorial(), /offline/);
+  assert.equal(views.at(-1)?.tutorial ?? null, null);
+  assert.equal(await controller.startTutorial(), true);
+  assert.equal(attempts, 2);
+  assert.ok(views.at(-1).tutorial.dialog);
+});
+
+test('the mini-program panel follows Web: short phones, a side column on landscape tablets', () => {
+  const template = readFileSync(
+    new URL('../../miniprogram/pages/table/page-definition.js', import.meta.url),
+    'utf8',
+  );
+  const [start, end] = [
+    template.indexOf('const TUTORIAL_SIDE_WIDTH'),
+    template.indexOf('// Match responsive chrome'),
+  ];
+  const coach = new Function(`${template.slice(start, end)}; return tutorialCoach;`)();
+  const lesson = { tutorialPlaying: true, tutorial: { stage: 'lesson' } };
+  const free = { tutorialPlaying: true, tutorial: { stage: 'free' } };
+  assert.deepEqual(coach(390, 844, { tutorialPlaying: false }), {
+    side: false,
+    height: 0,
+    width: 0,
+    dockSaving: 0,
+  });
+  assert.equal(coach(390, 844, lesson).height, 186);
+  assert.deepEqual(coach(360, 640, lesson), { side: false, height: 158, width: 0, dockSaving: 27 });
+  assert.equal(coach(360, 640, free).dockSaving, 0);
+  assert.equal(coach(820, 1180, lesson).side, false);
+  assert.deepEqual(coach(1180, 820, lesson), {
+    side: true,
+    height: 0,
+    width: 312,
+    dockSaving: 0,
+  });
+  // A phone never takes the tablet layout, however its keyboard resizes it.
+  assert.equal(coach(844, 390, lesson).side, false);
 });

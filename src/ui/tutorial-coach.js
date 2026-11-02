@@ -36,9 +36,11 @@ export function createTutorialCoach({ onNext, onAnswer, onPrimary, onSecondary, 
     shownText = null,
     closing = false;
 
+  // Phones spend height on the panel; wide windows have width to spare, and the
+  // practice column now starts below the first screen.
   function place() {
     if (compact.matches) surfaceHome.before(panel);
-    else $('.main > .sidebar').prepend(panel);
+    else $('.main > .game-column').after(panel);
   }
   function clearFocus() {
     for (const element of document.querySelectorAll('[data-tutorial-focus]'))

@@ -39,7 +39,7 @@ function researchStrings(value) {
     if (han.test(value)) candidates.add(value);
   } else if (value && typeof value === 'object') Object.values(value).forEach(researchStrings);
 }
-researchStrings(JSON.parse(readFileSync(new URL('src/data/player-research.json', root), 'utf8')));
+researchStrings(JSON.parse(readFileSync(new URL('src/data/characters.json', root), 'utf8')));
 for (const directory of ['ui', 'review', 'engine', 'platform'])
   for (const file of readdirSync(new URL(`src/${directory}/`, root)).filter(
     (p) => p.endsWith('.js') && !p.startsWith('wechat-'),

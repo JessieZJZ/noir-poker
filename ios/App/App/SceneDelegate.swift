@@ -6,6 +6,19 @@ class NoirBridgeViewController: CAPBridgeViewController, UIGestureRecognizerDele
     private var edgeBackPending = false
     private let launchHandler = NoirLaunchReadyHandler()
     private var launchCover: UIView?
+    #if DEBUG
+    private var startupNavigationObservers: [NSKeyValueObservation] = []
+    #endif
+
+    override func viewDidLoad() {
+        #if DEBUG
+        NSLog("[NOIR startup] viewDidLoad before bridge=%@", String(bridge != nil))
+        #endif
+        super.viewDidLoad()
+        #if DEBUG
+        NSLog("[NOIR startup] viewDidLoad after url=%@", webView?.url?.absoluteString ?? "nil")
+        #endif
+    }
 
     private func installLaunchReadiness(in webView: WKWebView) {
         // Capacitor replaces the configuration's initial content controller.
@@ -19,7 +32,11 @@ class NoirBridgeViewController: CAPBridgeViewController, UIGestureRecognizerDele
               function ready() {
                 if (document.documentElement?.dataset.appReady !== 'true') return;
                 observer.disconnect();
-                window.webkit.messageHandlers.noirLaunchReady.postMessage('ready');
+                // Leave the matching cover in place until WebKit has rendered
+                // the styled table behind it, rather than the mutation alone.
+                requestAnimationFrame(() => requestAnimationFrame(() => {
+                  window.webkit.messageHandlers.noirLaunchReady.postMessage('ready');
+                }));
               }
               observer.observe(document, {
                 childList: true, subtree: true, attributes: true,
@@ -28,6 +45,35 @@ class NoirBridgeViewController: CAPBridgeViewController, UIGestureRecognizerDele
               ready();
             })();
             """, injectionTime: .atDocumentStart, forMainFrameOnly: true))
+        #if DEBUG
+        controller.add(NoirStartupDiagnosticHandler(), name: "noirStartupDiagnostic")
+        controller.addUserScript(WKUserScript(source: """
+            (() => {
+              let previous = '';
+              const report = (error) => {
+                const state = {
+                  stage: document.documentElement?.dataset.startupStage || 'document',
+                  ready: document.documentElement?.dataset.appReady === 'true',
+                  error: error || window.__noirStartup?.error || null
+                };
+                const serialized = JSON.stringify(state);
+                if (serialized !== previous) {
+                  previous = serialized;
+                  window.webkit.messageHandlers.noirStartupDiagnostic.postMessage(state);
+                }
+                if (state.ready || state.stage === 'failed') observer.disconnect();
+              };
+              const observer = new MutationObserver(() => report());
+              observer.observe(document, {
+                childList: true, subtree: true, attributes: true,
+                attributeFilter: ['data-startup-stage', 'data-app-ready']
+              });
+              window.addEventListener('error', (event) => report({ message: event.message, source: event.filename, line: event.lineno }));
+              window.addEventListener('unhandledrejection', (event) => report({ message: String(event.reason?.message || event.reason), stack: String(event.reason?.stack || '') }));
+              report();
+            })();
+            """, injectionTime: .atDocumentStart, forMainFrameOnly: true))
+        #endif
     }
 
     override func capacitorDidLoad() {
@@ -57,6 +103,19 @@ class NoirBridgeViewController: CAPBridgeViewController, UIGestureRecognizerDele
         ])
         launchCover = cover
         installLaunchReadiness(in: webView)
+        #if DEBUG
+        NSLog("[NOIR startup] launch cover installed url=%@", webView.url?.absoluteString ?? "nil")
+        startupNavigationObservers = [
+            webView.observe(\.url, options: [.initial, .new]) { webView, _ in
+                NSLog("[NOIR startup] navigation url=%@ loading=%@ progress=%f",
+                      webView.url?.absoluteString ?? "nil", String(webView.isLoading), webView.estimatedProgress)
+            },
+            webView.observe(\.estimatedProgress, options: [.new]) { webView, _ in
+                NSLog("[NOIR startup] navigation progress=%f url=%@",
+                      webView.estimatedProgress, webView.url?.absoluteString ?? "nil")
+            }
+        ]
+        #endif
         // Records are same-document pages. Let their managed navigation own
         // each Back, rather than WKWebView's automatic history-item skipping.
         webView.allowsBackForwardNavigationGestures = false
@@ -68,14 +127,25 @@ class NoirBridgeViewController: CAPBridgeViewController, UIGestureRecognizerDele
     }
 
     fileprivate func finishLaunch(_ message: WKScriptMessage) {
+        #if DEBUG
+        NSLog("[NOIR startup] ready message mainFrame=%@ sameWebView=%@ url=%@",
+              String(message.frameInfo.isMainFrame), String(message.webView === webView),
+              webView?.url?.absoluteString ?? "nil")
+        #endif
         guard message.frameInfo.isMainFrame,
               message.webView === webView,
               webView?.url?.scheme == "capacitor",
               webView?.url?.host == "localhost",
-              message.body as? String == "ready" else { return }
+              message.body as? String == "ready",
+              launchCover != nil else { return }
         launchCover?.removeFromSuperview()
         launchCover = nil
-        webView?.configuration.userContentController.removeScriptMessageHandler(forName: "noirLaunchReady")
+        #if DEBUG
+        NSLog("[NOIR startup] launch cover removed")
+        startupNavigationObservers.removeAll()
+        #endif
+        // User scripts also run after returning from the local privacy page.
+        // Keep their weak-owner handler valid for this controller's lifetime.
     }
 
     func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
@@ -112,7 +182,10 @@ class NoirBridgeViewController: CAPBridgeViewController, UIGestureRecognizerDele
             self?.edgeBackPending = false
             guard error == nil else { return }
             if (result as? Bool) != true, let webView = webView, webView.canGoBack {
-                webView.goBack()
+                // Step back exactly one page, as Android's Back and the page's
+                // own history do. WKWebView's goBack may skip a page WebKit
+                // considers uninteracted, such as the local privacy page.
+                webView.evaluateJavaScript("history.back()")
             }
         }
     }
@@ -125,6 +198,19 @@ private final class NoirLaunchReadyHandler: NSObject, WKScriptMessageHandler {
         owner?.finishLaunch(message)
     }
 }
+
+#if DEBUG
+private final class NoirStartupDiagnosticHandler: NSObject, WKScriptMessageHandler {
+    func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
+        guard message.frameInfo.isMainFrame,
+              message.webView?.url?.scheme == "capacitor",
+              message.webView?.url?.host == "localhost",
+              let data = try? JSONSerialization.data(withJSONObject: message.body, options: [.sortedKeys]),
+              let text = String(data: data, encoding: .utf8) else { return }
+        NSLog("[NOIR startup] %@", text)
+    }
+}
+#endif
 
 class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     var window: UIWindow?

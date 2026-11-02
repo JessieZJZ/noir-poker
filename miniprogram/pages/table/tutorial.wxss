@@ -116,6 +116,50 @@
   font-weight: 800;
   line-height: 32px;
 }
+.action-dock.tutorial-short-dock {
+  height: 127px;
+  flex-basis: 127px;
+}
+.action-dock.tutorial-short-dock .raise-track {
+  display: none;
+}
+/* Landscape tablets: the panel leaves the shell, whose overflow would clip it. */
+.game-shell.tutorial-side {
+  margin-right: 312px;
+}
+.tutorial-side .tutorial-coach {
+  position: fixed;
+  right: 9px;
+  z-index: 3;
+  width: 300px;
+  height: auto;
+  margin: 0;
+}
+.tutorial-side .tutorial-options {
+  grid-template-columns: minmax(0, 1fr);
+}
+@media (min-width: 601px) and (min-height: 601px) {
+  .tutorial-lesson,
+  .tutorial-coach .tutorial-exit {
+    font-size: 14px;
+  }
+  .tutorial-title {
+    font-size: 17px;
+  }
+  .tutorial-text,
+  .tutorial-detail {
+    font-size: 16px;
+  }
+  .tutorial-options button {
+    min-height: 44px;
+    font-size: 16px;
+  }
+  .tutorial-coach .tutorial-next {
+    height: 44px;
+    font-size: 16px;
+    line-height: 44px;
+  }
+}
 .tutorial-focus {
   box-shadow: 0 0 0 2px #6ee7c5;
   border-radius: 8px;

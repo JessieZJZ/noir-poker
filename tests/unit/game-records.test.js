@@ -10,9 +10,11 @@ import {
   potSize,
   completeBoardForPractice,
   playBotTurn,
+  rebuyHero,
 } from '../../src/engine/poker.js';
 import {
   createGameRecords,
+  createMemorySnapshots,
   GAME_RECORDS_KEY,
   recordResult,
 } from '../../src/engine/game-records.js';
@@ -24,14 +26,30 @@ function memory() {
   const values = new Map();
   return {
     values,
+    snapshots: createMemorySnapshots(),
     getItem: (key) => values.get(key) ?? null,
     setItem: (key, value) => values.set(key, value),
   };
 }
-function records(storage = memory()) {
+function records(storage = memory(), options = {}) {
   let time = 1000,
     identity = 0;
-  return createGameRecords({ storage, now: () => time++, id: () => `test-${++identity}` });
+  return createGameRecords({
+    storage,
+    snapshots: storage.snapshots,
+    now: () => time++,
+    id: () => `test-${++identity}`,
+    ...options,
+  });
+}
+// Edit the stored snapshot of the first settled hand.
+function tamperSnapshot(storage, mutate) {
+  const index = JSON.parse(storage.getItem(GAME_RECORDS_KEY)),
+    id = index.sessions[0].attempts.find((attempt) => attempt.status === 'completed').id,
+    snapshot = JSON.parse(storage.snapshots.get(id));
+  mutate(snapshot);
+  storage.snapshots.set(id, JSON.stringify(snapshot));
+  return id;
 }
 function finish(game, action = 'call') {
   let steps = 0;
@@ -42,6 +60,33 @@ function finish(game, action = 'call') {
   }
 }
 const stakes = { smallBlind: 125, bigBlind: 250 };
+
+test('entry previews the actual next session and hand without creating records or moving chips', () => {
+  const storage = memory(),
+    store = records(storage),
+    game = newGame(5, stakes);
+  const before = JSON.stringify(game);
+  const saved = storage.getItem(GAME_RECORDS_KEY);
+  assert.deepEqual(store.nextHandIdentity(game), { sessionNumber: 1, hand: 1 });
+  assert.equal(storage.getItem(GAME_RECORDS_KEY), saved);
+  assert.equal(JSON.stringify(game), before);
+  startHand(game);
+  store.begin(game);
+  finish(game, 'fold');
+  store.capture(game);
+  const continued = store.resume();
+  assert.deepEqual(store.nextHandIdentity(continued), { sessionNumber: 1, hand: 2 });
+  const changed = newGame(9, { smallBlind: 250, bigBlind: 500 });
+  assert.deepEqual(store.nextHandIdentity(changed), { sessionNumber: 2, hand: 1 });
+  assert.deepEqual(store.nextHandIdentity(continued, { newSession: true }), {
+    sessionNumber: 2,
+    hand: 2,
+  });
+  startHand(continued);
+  store.begin(continued);
+  assert.equal(store.sessionNumber(), 1);
+  assert.equal(continued.hand, 2);
+});
 
 test('zero-investment folds are settled losses while zero-net pot winners remain wins', () => {
   const store = records(),
@@ -86,7 +131,7 @@ test('settled records retain immutable cards, public decisions and pots without 
   store.sessions()[0].attempts[0].snapshot.board[0].rank = 4;
   assert.deepEqual(store.getAttempt(first.id), original);
   const reloaded = records(storage);
-  assert.equal(reloaded.error(), null);
+  assert.equal(reloaded.takeNotice(), null);
   assert.deepEqual(reloaded.getAttempt(first.id), original);
 });
 
@@ -106,13 +151,14 @@ test('completed actor-perspective bot traces reopen and corrupted trace arrays a
   store.capture(game);
   assert.ok(game.botDecisions.length > 0);
   const reloaded = records(storage);
-  assert.equal(reloaded.error(), null);
+  assert.equal(reloaded.takeNotice(), null);
   const saved = reloaded.sessions()[0].attempts[0];
   assert.deepEqual(createReviewInput(saved.snapshot), createReviewInput(game));
-  const raw = JSON.parse(storage.getItem(GAME_RECORDS_KEY));
-  raw.sessions[0].attempts[0].snapshot.botDecisions[0].trace.view.history = null;
-  storage.setItem(GAME_RECORDS_KEY, JSON.stringify(raw));
-  assert.match(records(storage).error(), /读取失败/);
+  const id = tamperSnapshot(storage, (snapshot) => {
+    snapshot.botDecisions[0].trace.view.history = null;
+  });
+  // A corrupted hand stays listed but can no longer be opened.
+  assert.equal(records(storage).getAttempt(id).snapshot, null);
 });
 
 test('practice runout updates only settled presentation while awards and review remain immutable', () => {
@@ -138,7 +184,7 @@ test('practice runout updates only settled presentation while awards and review 
   assert.deepEqual(createReviewInput(updated.snapshot), originalReview);
   assert.equal(first.snapshot.practiceBoard, null);
   assert.equal(store.capture(game), null);
-  assert.equal(records(storage).error(), null);
+  assert.equal(records(storage).takeNotice(), null);
 });
 
 test('each retry is retained in order and its old settlement leaves statistics immediately', () => {
@@ -217,6 +263,7 @@ test('crash recovery returns all wagers in a custom denomination and counts refi
   game.players.forEach((player, index) => (player.stack = index === 0 ? 0 : 1000 + index * 125));
   const totalBefore = game.players.reduce((sum, player) => sum + player.stack, 0);
   game.stats = { hands: 7, wins: 4, buyin: 25000 };
+  rebuyHero(game);
   startHand(game);
   const beforeBlindStacks = game.players.map((player) => player.stack + player.total);
   const statsBefore = clone(game.stats),
@@ -284,6 +331,35 @@ test('short all-ins, refunds and side pots keep settled whole-chip conservation'
     recovered.players.reduce((sum, player) => sum + player.stack, 0),
     total,
   );
+});
+
+test('a finished game starts the next session on reload and keeps its own result', () => {
+  for (const over of [
+    { heroPlace: 1, championId: 0 },
+    { heroPlace: 2, championId: 1 },
+    { heroPlace: 5, championId: null },
+  ]) {
+    const storage = memory(),
+      store = records(storage),
+      game = newGame(5, stakes);
+    startHand(game);
+    store.begin(game);
+    finish(game);
+    game.over = over;
+    store.capture(game);
+    const reloaded = records(storage);
+    assert.equal(reloaded.resume(), null);
+    assert.equal(records(storage).resume(), null, 'Reloading again changes nothing');
+    const fresh = newGame(5, stakes);
+    assert.deepEqual(reloaded.nextHandIdentity(fresh), { sessionNumber: 2, hand: 1 });
+    startHand(fresh);
+    reloaded.begin(fresh);
+    assert.equal(reloaded.sessionNumber(), 2);
+    assert.equal(fresh.over, null);
+    const sessions = reloaded.sessions();
+    assert.equal(sessions.length, 2);
+    assert.equal(sessions[1].result.place, over.heroPlace);
+  }
 });
 
 test('completed reload starts the next hand in the same session and uses latest real statistics', () => {
@@ -402,29 +478,46 @@ test('corrupt or incompatible saved records never enter the engine or record vie
       (value) => (value.sessions[0].endedAt = 9e15),
       (value) => (value.sessions[0].attempts[0].startedAt = 9e15),
       (value) => (value.sessions[0].attempts[0].endedAt = 9e15),
-      (value) => (value.sessions[0].attempts[0].snapshot.decisions[0].hole = []),
-      (value) => (value.sessions[0].attempts[0].snapshot.deck = []),
-      (value) => (value.sessions[0].attempts[0].snapshot.payouts[0] += 125),
-      (value) => (value.sessions[0].attempts[0].snapshot.decisions[0].players[1].hole = []),
-      (value) => (value.sessions[0].attempts[0].profit += 125),
-      (value) => (value.sessions[0].attempts[0].snapshot.decisions[0].legal = null),
-      (value) => (value.sessions[0].attempts[0].snapshot.decisions[0].pending = null),
-      (value) => (value.sessions[0].attempts[0].snapshot.pots[0].awards = null),
-      (value) => (value.sessions[0].attempts[0].snapshot.pots[0].contributions = null),
-      (value) => (value.sessions[0].attempts[0].snapshot.pots[0].contributions[0].amount = 1),
+      (value) => (value.sessions[0].attempts[0].bytes = -1),
+      (value) => (value.sessions[0].attempts[0].over = { heroPlace: 0 }),
+      (value) => (value.sessions[0].attempts[0].snapshot = {}),
     ].map((mutate) => {
       const value = clone(completed);
       mutate(value);
       return JSON.stringify(value);
     }),
   ];
+  const original = storage.snapshots.get(completed.sessions[0].attempts[0].id);
   for (const invalid of broken) {
     storage.setItem(GAME_RECORDS_KEY, invalid);
     const restored = records(storage);
-    assert.match(restored.error(), /读取失败/);
+    assert.match(restored.takeNotice(), /读取失败/);
+    assert.equal(restored.takeNotice(), null, 'A failure is announced once');
     assert.deepEqual(restored.sessions(), []);
     assert.equal(restored.resume(), null);
   }
+  // A snapshot that does not match its index row never reaches the record view.
+  for (const mutate of [
+    (snapshot) => (snapshot.decisions[0].hole = []),
+    (snapshot) => (snapshot.deck = []),
+    (snapshot) => (snapshot.payouts[0] += 125),
+    (snapshot) => (snapshot.decisions[0].players[1].hole = []),
+    (snapshot) => (snapshot.decisions[0].legal = null),
+    (snapshot) => (snapshot.decisions[0].pending = null),
+    (snapshot) => (snapshot.pots[0].awards = null),
+    (snapshot) => (snapshot.pots[0].contributions = null),
+    (snapshot) => (snapshot.pots[0].contributions[0].amount = 1),
+  ]) {
+    storage.setItem(GAME_RECORDS_KEY, JSON.stringify(completed));
+    storage.snapshots.set(completed.sessions[0].attempts[0].id, original);
+    const id = tamperSnapshot(storage, mutate);
+    assert.equal(records(storage).getAttempt(id).snapshot, null);
+  }
+  const profit = clone(completed);
+  profit.sessions[0].attempts[0].profit += 125;
+  storage.setItem(GAME_RECORDS_KEY, JSON.stringify(profit));
+  storage.snapshots.set(completed.sessions[0].attempts[0].id, original);
+  assert.equal(records(storage).getAttempt(profit.sessions[0].attempts[0].id).snapshot, null);
 });
 
 test('blocked storage reports errors while local practice and in-memory records continue', () => {
@@ -438,14 +531,17 @@ test('blocked storage reports errors while local practice and in-memory records 
   };
   const store = records(storage),
     game = newGame();
-  assert.match(store.error(), /读取失败/);
+  assert.match(store.takeNotice(), /读取失败/);
   assert.equal(store.resume(), null);
   startHand(game);
   store.begin(game);
   finish(game);
   store.capture(game);
   assert.equal(store.sessions()[0].completed, 1);
-  assert.match(store.error(), /保存失败/);
+  assert.match(store.takeNotice(), /保存失败/);
+  store.capture(game);
+  store.begin((startHand(game), game));
+  assert.equal(store.takeNotice(), null, 'Persistent failure is not repeated');
 });
 
 test('native hydration includes records and exposes failed asynchronous writes', async () => {
@@ -469,7 +565,9 @@ test('native hydration includes records and exposes failed asynchronous writes',
   fail = true;
   store.resume();
   await storage.flush();
-  assert.match(store.error(), /保存失败/);
+  // The next write reports the earlier asynchronous failure without pruning.
+  store.resume();
+  assert.match(store.takeNotice(), /保存失败/);
   fail = false;
   store.resume();
   await storage.flush();
@@ -522,7 +620,7 @@ test('record list summaries omit snapshots, stay isolated and invalidate only fo
     summaries,
     full.map((session) => ({
       ...session,
-      attempts: session.attempts.map(({ snapshot, ...attempt }) => attempt),
+      attempts: session.attempts.map(({ snapshot, bytes, ...attempt }) => attempt),
     })),
   );
   assert.ok(JSON.stringify(summaries).length < JSON.stringify(full).length / 5);
@@ -544,4 +642,20 @@ test('record list summaries omit snapshots, stay isolated and invalidate only fo
   finish(game);
   store.capture(game);
   assert.equal(store.summaries()[0].completed, 1);
+});
+
+test('an empty or unreadable index never deletes files that may belong to another project', () => {
+  const first = memory(),
+    snapshots = first.snapshots;
+  const raw = JSON.stringify({ preserved: 'complete hand from another index' });
+  snapshots.set('other-project-hand', raw);
+  const second = memory();
+  second.snapshots = snapshots;
+  records(second);
+  assert.equal(snapshots.get('other-project-hand'), raw);
+  first.setItem(GAME_RECORDS_KEY, '{interrupted index');
+  const unreadable = records(first);
+  assert.match(unreadable.takeNotice(), /读取失败/);
+  assert.equal(snapshots.get('other-project-hand'), raw);
+  assert.deepEqual(snapshots.keys(), ['other-project-hand']);
 });

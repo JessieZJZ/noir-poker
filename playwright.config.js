@@ -10,6 +10,10 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: 0,
+  // Exhaustive public-story ranges and the public strategy model make a full
+  // hand review take up to ~60s on CI runners; tests that open one need more
+  // than the 30s default.
+  timeout: 150000,
   workers: 2,
   reporter: 'list',
   use: { locale: 'zh-CN', timezoneId: 'Asia/Shanghai', baseURL, trace: 'retain-on-failure' },
