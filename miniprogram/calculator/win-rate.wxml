@@ -1,3 +1,4 @@
+<page-meta page-orientation="{{pageOrientation}}" bindresize="onResize" />
 <view class="win-rate-chrome" style="height: {{topInset + 84}}px;">
   <view class="win-rate-heading" style="top: {{topInset + 36}}px;">
     <text>胜率计算器</text>
@@ -13,7 +14,7 @@
   </view>
 </view>
 <view
-  class="win-rate-screen"
+  class="win-rate-screen {{pickerOpen ? 'is-picking' : ''}}"
   style="padding-top: {{topInset + 86}}px; padding-bottom: {{pickerOpen ? '60vh' : bottomInset + 82 + 'px'}};"
 >
   <view class="win-rate-felt" aria-label="公共牌">

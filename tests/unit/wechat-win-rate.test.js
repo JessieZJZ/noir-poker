@@ -18,15 +18,26 @@ vm.runInNewContext(read('pages/table/presentation.js'), {
         ? { renderCardArtwork }
         : { evaluate, rankText },
 });
+const orientation = { exports: {} };
+vm.runInNewContext(read('device-orientation.js'), { module: orientation });
 function openPage({ query = {} } = {}) {
   let definition;
   const calls = [];
   const scrolls = [];
-  let info = { statusBarHeight: 47, windowHeight: 844, safeArea: { bottom: 810 } };
+  const app = {};
+  let info = {
+    screenWidth: 390,
+    screenHeight: 844,
+    statusBarHeight: 47,
+    windowWidth: 390,
+    windowHeight: 844,
+    safeArea: { bottom: 810 },
+  };
   const timers = new Map();
   let serial = 0;
   vm.runInNewContext(read('calculator/win-rate.js'), {
     Page: (value) => (definition = value),
+    getApp: () => app,
     wx: {
       getWindowInfo: () => info,
       pageScrollTo: (options) => scrolls.push(options),
@@ -54,6 +65,7 @@ function openPage({ query = {} } = {}) {
             }),
         };
       if (name === '../pages/table/presentation.js') return presentation.exports;
+      if (name === '../device-orientation.js') return orientation.exports;
       assert.equal(name, '../record-navigation.js');
       return { returnToGame: () => calls.push('return') };
     },
@@ -72,7 +84,7 @@ function openPage({ query = {} } = {}) {
   };
   page.onLoad();
   page.onShow();
-  return { page, calls, timers, scrolls, resize: (next) => (info = next) };
+  return { page, app, calls, timers, scrolls, resize: (next) => (info = next) };
 }
 const tap = (page, method, dataset = {}) => page[method]({ currentTarget: { dataset } });
 const picks = (page, ...keys) => keys.forEach((key) => tap(page, 'pickCard', { key }));
@@ -175,41 +187,52 @@ test('WeChat win rate page cancels its slices when hidden and returns to the liv
 
 test('WeChat win rate page lifts a covered slot above the half-height sheet', () => {
   const covered = openPage({
-    query: { slot: { right: 80, bottom: 500 }, sheet: { left: 0, height: 422 }, scrollTop: 40 },
+    query: { slot: { bottom: 500 }, sheet: { height: 422 }, scrollTop: 40 },
   });
   tap(covered.page, 'openBoardCard', { index: 0 });
   assert.deepEqual({ ...covered.scrolls.at(-1) }, { scrollTop: 130, duration: 0 });
 
   const clear = openPage({
-    query: { slot: { right: 80, bottom: 300 }, sheet: { left: 0, height: 422 } },
+    query: { slot: { bottom: 300 }, sheet: { height: 422 } },
   });
   tap(clear.page, 'openBoardCard', { index: 0 });
   assert.equal(clear.scrolls.length, 0);
 
   const beside = openPage({
-    query: { slot: { right: 80, bottom: 500 }, sheet: { left: 660, height: 544 } },
+    query: { slot: { bottom: 500 }, sheet: { height: 844 } },
   });
   tap(beside.page, 'openBoardCard', { index: 0 });
   assert.equal(beside.scrolls.length, 0);
 });
 
 test('WeChat win rate page follows rotation and resizing', () => {
-  const { page, resize, scrolls } = openPage({
-    query: { slot: { right: 80, bottom: 500 }, sheet: { left: 0, height: 384 } },
+  const { page, app, resize, scrolls } = openPage({
+    query: { slot: { bottom: 500 }, sheet: { height: 384 } },
   });
   assert.deepEqual([page.data.topInset, page.data.bottomInset], [47, 34]);
+  assert.equal(page.data.pageOrientation, 'portrait');
   tap(page, 'openBoardCard', { index: 0 });
   scrolls.length = 0;
-  resize({ statusBarHeight: 24, windowHeight: 768, safeArea: { bottom: 748 } });
-  page.onResize();
-  assert.deepEqual([page.data.topInset, page.data.bottomInset], [24, 20]);
+  delete app.noirPageOrientation;
+  resize({
+    screenWidth: 820,
+    screenHeight: 1180,
+    statusBarHeight: 24,
+    windowWidth: 1180,
+    windowHeight: 820,
+    safeArea: { bottom: 800 },
+  });
+  // The rendered viewport can arrive before the synchronous window API.
+  page.onResize({ detail: { size: { windowWidth: 1024, windowHeight: 768 } } });
+  assert.equal(page.data.pageOrientation, 'auto');
+  assert.deepEqual([page.data.topInset, page.data.bottomInset], [24, 0]);
   assert.equal(page.data.pickerOpen, true);
   assert.deepEqual({ ...scrolls[0] }, { scrollTop: 128, duration: 0 });
   assert.equal(scrolls.length, 1);
 });
 
 test('WeChat win rate entry and template keep the Web controls', () => {
-  const table = read('pages/table/table.wxml'),
+  const table = read('pages/table/table-surface.wxml'),
     page = read('calculator/win-rate.wxml'),
     style = read('calculator/win-rate.wxss'),
     app = JSON.parse(read('app.json'));
@@ -220,6 +243,10 @@ test('WeChat win rate entry and template keep the Web controls', () => {
   assert.doesNotMatch(page, /计算<\/button>|分享|收藏/);
   assert.match(style, /win-rate-sheet 0\.2s ease-out/);
   assert.match(style, /win-rate-spin 0\.8s linear infinite/);
+  assert.match(
+    page,
+    /^<page-meta page-orientation="\{\{pageOrientation\}\}" bindresize="onResize"/,
+  );
   assert.match(style, /height: 50vh/);
   assert.match(style, /@media \(orientation: landscape\) and \(max-height: 700px\)/);
 });

@@ -1,6 +1,6 @@
 # 微信小程序工程
 
-手机在 `app.json` 和牌桌页面默认声明 `pageOrientation: portrait`，保持竖屏；启用 `resizable: true`，允许 iPad 和大屏客户端旋转、调整窗口。牌桌、记录列表、记录详情和资料来源页通过 `page-meta` 统一应用方向策略：按设备完整屏幕的短边识别平板（至少 600 逻辑像素，或 iPad 型号），平板使用 `auto`，手机使用 `portrait`；不依据键盘弹出或分屏后的临时窗口大小改变设备分类。方向变化只重算布局，不重新发牌或关闭当前弹窗。相关声明及 `onResize` 状态保留有单元回归；编译器和适配器检查不能代替微信开发者工具或实际平板验收。配置依据：[微信大屏适配指南](https://developers.weixin.qq.com/miniprogram/dev/framework/view/resizable.html)、[page-meta](https://developers.weixin.qq.com/miniprogram/dev/component/page-meta.html)。
+手机在 `app.json` 和牌桌页面默认声明 `pageOrientation: portrait`，保持竖屏；启用 `resizable: true`，允许 iPad 和大屏客户端旋转、调整窗口。牌桌、记录列表、记录详情、资料来源和胜率计算器页通过 `page-meta` 统一应用方向策略：按设备完整屏幕的短边识别平板（至少 600 逻辑像素，或 iPad 型号），平板使用 `auto`，手机使用 `portrait`；不依据键盘弹出或分屏后的临时窗口大小改变设备分类。方向变化只重算布局，不重新发牌或关闭当前弹窗。相关声明及 `onResize` 状态保留有单元回归；编译器和适配器检查不能代替微信开发者工具或实际平板验收。配置依据：[微信大屏适配指南](https://developers.weixin.qq.com/miniprogram/dev/framework/view/resizable.html)、[page-meta](https://developers.weixin.qq.com/miniprogram/dev/component/page-meta.html)。
 
 牌桌和记录列表还读取渲染视口，并监听实际宽度变化；尺寸事件比同步窗口接口优先，以兼容开发工具旋转后仍返回旧尺寸的情况。离开页面时断开监听，返回后重新测量；键盘或滚动造成的同宽高度变化仍不重新分配牌桌空间。开发工具更新模板后可能保留旧服务层脚本，验收前应只清理目标工程的编译缓存、重新打开并核对构建摘要，不能把旧脚本运行结果归给新产物。
 

@@ -311,6 +311,56 @@ test('the phone deck scrolls from the top and stays put between picks', async ({
   await expect(page.locator('[data-pick="3-2"]')).toBeInViewport();
 });
 
+// tablet.css only applies with a touch pointer, so these run on an emulated tablet.
+for (const [width, height, layout] of [
+  [768, 1024, 'bottom'],
+  [820, 1180, 'bottom'],
+  [1024, 768, 'bottom'],
+  [1180, 820, 'bottom'],
+  [960, 700, 'side'],
+]) {
+  test(`touch tablet sizing fits the calculator at ${width}x${height}`, async ({
+    browser,
+    baseURL,
+  }) => {
+    const context = await browser.newContext({
+      baseURL,
+      locale: 'zh-CN',
+      hasTouch: true,
+      isMobile: true,
+      viewport: { width, height },
+      screen: { width, height },
+    });
+    const page = await context.newPage();
+    try {
+      await openCalculator(page);
+      const readings = await page.evaluate(() => ({
+        title: parseFloat(getComputedStyle(document.querySelector('#win-rate-title')).fontSize),
+        slot: document.querySelector('.win-rate-slot').getBoundingClientRect().width,
+        overflow: document.documentElement.scrollWidth > innerWidth,
+      }));
+      expect(readings).toEqual({ title: 24, slot: 52, overflow: false });
+      await hole(page, 0).click();
+      await pick(page, '0-14', '0-13');
+      await hole(page, 1).click();
+      await pick(page, '0-8', '0-7');
+      await page.locator('#win-rate-add').click();
+      await hole(page, 2).click();
+      await pickerSettled(page);
+      const clear = await sheetClear(page);
+      expect(clear).toMatchObject({ fits: true, scrolls: false });
+      if (layout === 'side') {
+        expect(clear.beside).toBe(true);
+        const sheet = await page.locator('#win-rate-picker').boundingBox();
+        const river = await page.locator('[data-board="4"]').boundingBox();
+        expect(river.x + river.width).toBeLessThanOrEqual(sheet.x);
+      } else expect(clear).toMatchObject({ above: true, half: true });
+    } finally {
+      await context.close();
+    }
+  });
+}
+
 test('native safe areas keep the calculator controls clear of system bars', async ({ page }) => {
   await openCalculator(page);
   await page.evaluate(() => {

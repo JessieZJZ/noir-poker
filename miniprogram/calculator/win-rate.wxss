@@ -461,6 +461,10 @@ page {
 }
 /* Half of a rotated tablet is too short for the deck, so the sheet moves beside the table. */
 @media (orientation: landscape) and (max-height: 700px) {
+  /* The table narrows beside the sheet so the river stays in view. */
+  .win-rate-screen.is-picking {
+    padding-right: calc(max(280px, (100vh - 190px) * 0.63 + 70px) + 16px);
+  }
   .win-rate-picker {
     inset: 0 0 0 auto;
     width: max(

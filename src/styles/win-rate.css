@@ -321,10 +321,23 @@
   border-radius: 12px;
 }
 
+#win-rate-dialog,
 #win-rate-picker {
   --win-rate-picker-top: 0px;
   --win-rate-picker-bottom: env(safe-area-inset-bottom, 0px);
   --win-rate-picker-chrome: 164px;
+  --win-rate-picker-side: max(
+    280px,
+    calc(
+      (
+          100dvh - var(--win-rate-picker-top) - var(--win-rate-picker-bottom) -
+            var(--win-rate-picker-chrome) - 26px
+        ) *
+        0.63 + 70px
+    )
+  );
+}
+#win-rate-picker {
   /* Four card rows always fit the half screen, so a short wide screen narrows the sheet. */
   width: min(
     740px,
@@ -424,16 +437,7 @@
 /* Half of a rotated tablet is too short for the deck, so the sheet moves beside the table. */
 @media (orientation: landscape) and (max-height: 700px) {
   #win-rate-picker {
-    width: max(
-      280px,
-      calc(
-        (
-            100dvh - var(--win-rate-picker-top) - var(--win-rate-picker-bottom) -
-              var(--win-rate-picker-chrome) - 26px
-          ) *
-          0.63 + 70px
-      )
-    );
+    width: var(--win-rate-picker-side);
     height: 100dvh;
     max-height: none;
     margin: 0 0 0 auto;
@@ -496,6 +500,7 @@
     width: 36px;
     height: 50px;
   }
+  #win-rate-dialog,
   #win-rate-picker {
     --win-rate-picker-chrome: 176px;
   }
@@ -527,14 +532,23 @@
 .native-app .win-rate-actions {
   padding-bottom: calc(12px + var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)));
 }
+.native-app #win-rate-dialog,
 .native-app #win-rate-picker {
   --win-rate-picker-top: var(--safe-area-inset-top, env(safe-area-inset-top, 0px));
   --win-rate-picker-bottom: var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px));
+}
+.native-app #win-rate-picker {
   inset: auto 0 0;
 }
 @media (orientation: landscape) and (max-height: 700px) {
   .native-app #win-rate-picker {
     inset: 0 0 0 auto;
     padding-right: var(--safe-area-inset-right, env(safe-area-inset-right, 0px));
+  }
+}
+/* The table narrows beside the sheet so the river stays in view. */
+@media (orientation: landscape) and (max-height: 700px) {
+  #win-rate-dialog[data-picking] {
+    padding-right: var(--win-rate-picker-side);
   }
 }

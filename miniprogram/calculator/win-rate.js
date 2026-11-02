@@ -2,6 +2,12 @@ const { deckOfCards } = require('../shared/engine/poker.js');
 const { createWinRateSession } = require('./engine/win-rate-session.js');
 const { presentCard, presentationPatch } = require('../pages/table/presentation.js');
 const navigation = require('../record-navigation.js');
+const {
+  pageOrientation,
+  windowInfo,
+  watchWindow,
+  stopWindowWatch,
+} = require('../device-orientation.js');
 
 // Text, order and thresholds mirror src/ui/win-rate.js; the session is shared.
 const STREETS = [
@@ -118,6 +124,7 @@ Page({
   data: {
     topInset: 24,
     bottomInset: 0,
+    pageOrientation: 'portrait',
     streets: [],
     players: [],
     deck: [],
@@ -136,23 +143,31 @@ Page({
     this.setData({ deck: pickerDeck() });
     this.sync();
   },
-  onResize() {
-    this.updateWindow();
+  onResize(event) {
+    this.updateWindow(event);
     this.revealTarget();
   },
+  onReady() {
+    watchWindow(this);
+  },
   onShow() {
+    this.updateWindow();
+    watchWindow(this);
     this._session.resume();
   },
   onHide() {
+    stopWindowWatch(this);
     this._session.pause();
   },
   onUnload() {
+    stopWindowWatch(this);
     this._session.pause();
   },
-  updateWindow() {
-    const info = wx.getWindowInfo ? wx.getWindowInfo() : wx.getSystemInfoSync();
+  updateWindow(event) {
+    const info = windowInfo(wx, event, getApp());
     this._windowHeight = info.windowHeight;
     this.setData({
+      pageOrientation: pageOrientation(wx, info, getApp()),
       topInset: info.statusBarHeight || 24,
       bottomInset: Math.max(0, info.windowHeight - (info.safeArea?.bottom || info.windowHeight)),
     });
@@ -167,7 +182,8 @@ Page({
       .selectViewport()
       .scrollOffset()
       .exec(([slot, sheet, page]) => {
-        if (!slot || !sheet || slot.right <= sheet.left) return;
+        // Beside the table, at its full height, the sheet covers nothing.
+        if (!slot || !sheet || sheet.height >= this._windowHeight) return;
         const hidden = slot.bottom + 12 - (this._windowHeight - sheet.height);
         if (hidden > 0) wx.pageScrollTo({ scrollTop: page.scrollTop + hidden, duration: 0 });
       });

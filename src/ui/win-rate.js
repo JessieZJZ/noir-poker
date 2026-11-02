@@ -142,7 +142,8 @@ export function createWinRatePage() {
   // The sheet covers the lower page, so the slot being filled moves above it.
   function revealTarget() {
     const active = dialog.querySelector('.win-rate-slot.is-active')?.getBoundingClientRect();
-    if (!active || active.right <= picker.offsetLeft) return;
+    // Beside the table, at its full height, the sheet covers nothing.
+    if (!active || picker.offsetTop <= 0) return;
     const hidden = active.bottom + 12 - picker.offsetTop;
     if (hidden <= 0) return;
     body.style.paddingBottom = `${picker.offsetHeight}px`;
@@ -159,6 +160,7 @@ export function createWinRatePage() {
     outsNote.hidden = !view.players.some((player) => player.result?.outs);
     add.disabled = !view.canAdd;
     dialog.dataset.status = view.status;
+    dialog.toggleAttribute('data-picking', Boolean(view.target));
     if (view.target) {
       setLocalizedHTML(title, pickerTitle(view));
       setLocalizedHTML(grid, pickerMarkup(view));
