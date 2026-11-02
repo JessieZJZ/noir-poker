@@ -79,23 +79,31 @@ export async function waitForNativeHeroTurn(app, { now = Date.now, advanceSettle
 }
 
 export async function waitForPendingOpponent(app) {
+  const message = 'Background test needs a pending opponent action';
+  const pending = (game) => game.phase === 'playing' && game.actor && game.actor !== '你';
   // A real opponent can answer before Android's next HTTP state read. Follow
-  // the normal UI to the next decision instead of waiting on a hero turn.
-  return app.waitFor(
-    async () => {
-      const game = await app.state();
-      if (game.phase === 'playing' && game.actor && game.actor !== '你') return game;
-      if (game.phase === 'playing' && game.legal.enabled) await app.click('#call-button');
-      else if (game.phase === 'done') await app.click('#next-button');
-      else return null;
-      // A real native click can finish near the polling deadline. Check the
-      // resulting public state now rather than discarding the opponent turn.
-      const next = await app.state();
-      return next.phase === 'playing' && next.actor && next.actor !== '你' ? next : null;
-    },
-    15000,
-    'Background test needs a pending opponent action',
-  );
+  // the normal UI to the next decision instead of waiting on a hero turn. One
+  // emulator click can outlast the window, so it covers only the app's waits:
+  // the hero's check may close the street, leaving a deal before any opponent.
+  for (let decisions = 0; decisions < 12; decisions++) {
+    const game = await app.waitFor(
+      async () => {
+        const current = await app.state();
+        const decision =
+          current.phase === 'done' || (current.phase === 'playing' && current.legal.enabled);
+        return pending(current) || decision ? current : null;
+      },
+      15000,
+      message,
+    );
+    if (pending(game)) return game;
+    await app.click(game.phase === 'done' ? '#next-button' : '#call-button');
+    // Check the resulting public state now rather than discarding the
+    // opponent turn while the next window starts.
+    const next = await app.state();
+    if (pending(next)) return next;
+  }
+  throw Error(message);
 }
 
 // Keep the installed-app completion assertion and its existing deadline. The
@@ -446,7 +454,8 @@ export async function nativeScenarios(app) {
     return { stakes: state.stakes, artwork };
   });
   await check('card-ranks-stay-stable-after-native-repaint', async () => {
-    await app.waitHero();
+    // Everyone can fold to the big blind, ending the hand before a hero turn.
+    await waitForNativeHeroTurn(app, { advanceSettled: true });
     const before = await app.evaluate(readCardRankState);
     assert.equal(before.textCount, 0);
     assert.equal(before.ranks.length, 2);
@@ -2809,8 +2818,9 @@ export async function nativeScenarios(app) {
     assert.equal(finished.phase, 'done');
     assert.ok(finished.result.includes('同花'));
     await app.screenshot('tutorial-lesson-complete');
-    await app.back();
-    if (await app.visible('#tutorial-dialog')) await app.click('#tutorial-dialog-close');
+    // Only Android has a system Back; on iOS it would leave the WebView page.
+    if (app.platform === 'android') await app.back();
+    else await app.click('#tutorial-dialog-close');
     await app.waitFor(
       async () => (await app.state()).tutorial === null,
       10000,
