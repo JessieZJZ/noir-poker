@@ -125,7 +125,7 @@ export async function waitForNativeHeroTurn(
   // This changes no application timers or analysis workload.
   const timeoutMs = (playerCount - 1) * BOT_THINK_LIMITS.maximum + 10000;
   const observations = [];
-  let advancedSettlement = false;
+  let advancedHand = null;
   const reachTurn = () =>
     app.waitFor(
       async () => {
@@ -144,7 +144,10 @@ export async function waitForNativeHeroTurn(
         // A real walk is a completed hand even though the hero never acts.
         // Lifecycle audits retain it instead of advancing into another hand.
         if (acceptSettled && snapshot.phase === 'done') return true;
-        if (advanceSettled && !advancedSettlement && snapshot.phase === 'done') return 'settled';
+        if (advanceSettled && snapshot.phase === 'done' && snapshot.hand !== advancedHand) {
+          advancedHand = snapshot.hand;
+          return 'settled';
+        }
         return (
           snapshot.phase === 'playing' &&
           snapshot.actor === '你' &&
@@ -157,17 +160,18 @@ export async function waitForNativeHeroTurn(
     );
   try {
     // One emulator click can outlast the budget, so the budget covers only the
-    // app's waits: the next hand gets its own bot pauses in full.
-    if ((await reachTurn()) === 'settled') {
-      advancedSettlement = true;
+    // app's waits: the next hand gets its own bot pauses in full. That hand can
+    // settle too, because a big blind wins a walk without acting. Walks reach
+    // the hero once per orbit, so more hands than seats means it never acts.
+    for (let hands = 0; (await reachTurn()) === 'settled'; hands++) {
+      if (hands === playerCount) throw Error('The hero never received a turn');
       await app.click('#next-button');
-      await reachTurn();
     }
     return {
       timeoutMs,
       elapsedMs: now() - started,
       observations,
-      advancedSettlement,
+      advancedSettlement: advancedHand !== null,
       ...(acceptSettled ? { settledBeforeHero: observations.at(-1)?.state.phase === 'done' } : {}),
     };
   } catch (error) {

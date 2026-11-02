@@ -26,7 +26,18 @@
 - 引导步骤只放开当前要教的按钮和金额；“继续”不能跳过必须的操作。第五手不做限制。
 - 退出、后台、下一步都走既有的 `epoch` 取消，过期计时器不能写入新牌局。
 
-Web 的界面在 `src/ui/tutorial-coach.js` 和 `src/styles/tutorial.css`。教练面板在窄屏固定高度，位于牌桌和操作区之间，换步时牌桌不动；宽屏放在右栏。小程序在 `src/platform/wechat-controller.js` 接同一内核，界面在 `miniprogram/pages/table/table.wxml` 和 `tutorial.wxss`，只提供简体中文。
+Web 的界面在 `src/ui/tutorial-coach.js` 和 `src/styles/tutorial.css`。小程序在 `src/platform/wechat-controller.js` 接同一内核，界面在 `miniprogram/pages/table/table-surface.wxml` 和 `tutorial.wxss`，只提供简体中文；课程脚本放在 `tutorial` 分包，点击入口时用 `require.async` 加载，失败时提示重试。
+
+## 屏幕与旋转
+
+| 屏幕                    | 教练面板                               | 说明                                     |
+| ----------------------- | -------------------------------------- | ---------------------------------------- |
+| 手机、竖屏平板          | 固定高度，在牌桌和操作区之间           | 换步时牌桌不动，长文案在面板内滚动       |
+| 高度不超过 700px 的手机 | 同上，教学步骤收起滑杆                 | 省下的高度留给牌桌                       |
+| 横屏平板、宽窗口        | 牌桌右侧独立一栏，高度随牌桌，选项单列 | 练习侧栏仍在第一屏下方，面板不能撑高牌桌 |
+| 平板竖屏和横屏（触屏）  | 字号 14/16/17px，触控目标 44px         | 比手机更远的观看距离                     |
+
+手机横屏沿用全局的方向提示，引导随之冻结，转回后停在同一步。平板可以旋转：面板换位，课程进度和牌局都不变，页面回到顶部，否则旋转会保留原来的滚动位置，把面板文字留在顶栏下面。小程序的横屏平板用固定定位的右栏，引导期间没有练习面板，页面不滚动。
 
 Android 返回键先关闭弹层；在教练面板状态下退出引导，不会最小化应用。
 
@@ -35,6 +46,6 @@ Android 返回键先关闭弹层；在教练面板状态下退出引导，不会
 - 脚本改动后运行 `tests/unit/tutorial.test.js`，它在多种盲注下打完每手牌并检查筹码守恒。
 - 文案变化运行 `npm run i18n:extract`，补齐 `src/i18n/overrides.json` 的十种语言，再运行 `npm run i18n:check`。按钮名称要和牌桌实际译名一致。
 - 新增汉字、日文或韩文时按 [界面一致性](interface-parity.md) 重新生成字体子集。
-- 小程序主包有 2 MiB 预算，构建时会检查。
+- 小程序主包和每个分包各有 2 MiB 预算，构建时会检查；主包余量很小，见 [微信小程序](wechat.md)。
 
-实际验证：`tests/e2e/tutorial.spec.js`（浏览器）、安装 App 的 `beginner-tutorial-guided-hand` 场景、`tests/wechat/tutorial.mjs`（微信 DevTools）。三者分别记录，互不代替。
+实际验证：`tests/e2e/tutorial.spec.js` 和 `tests/e2e/tutorial-viewports.spec.js`（浏览器，后者覆盖 17 种屏幕和旋转）、安装 App 的 `beginner-tutorial-guided-hand` 场景、`tests/wechat/tutorial.mjs`（微信 DevTools）。三者分别记录，互不代替。

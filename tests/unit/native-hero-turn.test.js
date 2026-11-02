@@ -138,6 +138,37 @@ test('a stalled hand after a slow click still fails within one budget', async ()
   );
 });
 
+test('a walk straight after the settled hand advances again', async () => {
+  const clicks = [];
+  let hand = 13;
+  const fake = harness(() =>
+    hand < 15
+      ? { ...waiting(null), hand, phase: 'done' }
+      : { ...waiting('你'), hand, enabled: true, controlEnabled: true },
+  );
+  fake.app.click = async (selector) => {
+    clicks.push(selector);
+    hand++;
+  };
+  await waitForNativeHeroTurn(fake.app, { now: fake.now, advanceSettled: true });
+  assert.deepEqual(clicks, ['#next-button', '#next-button']);
+});
+
+test('a hero who never receives a turn fails instead of advancing forever', async () => {
+  let hand = 1;
+  const fake = harness(() => ({ ...waiting(null), hand, phase: 'done' }));
+  let clicks = 0;
+  fake.app.click = async () => {
+    clicks++;
+    hand++;
+  };
+  await assert.rejects(
+    waitForNativeHeroTurn(fake.app, { now: fake.now, advanceSettled: true }),
+    /never received a turn/,
+  );
+  assert.equal(clicks, 8);
+});
+
 test('public-memory checks retain a natural walk without advancing or increasing the turn budget', async () => {
   const fake = harness((elapsed) =>
     elapsed < 2000 ? waiting('River') : { ...waiting(null), phase: 'done' },
