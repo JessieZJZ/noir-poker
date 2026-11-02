@@ -1,5 +1,7 @@
 /* Values mirror src/styles/win-rate.css so the page matches Web and the apps. */
 page {
+  /* Keeps the 640px content column Web uses on tablets. */
+  --win-rate-gutter: max(16px, calc(50vw - 304px));
   background: #0b1017;
   color: #edf3f6;
 }
@@ -31,7 +33,7 @@ page {
   left: 0;
   right: 0;
   height: 48px;
-  padding: 0 16px;
+  padding: 0 var(--win-rate-gutter);
   box-sizing: border-box;
   display: flex;
   align-items: center;
@@ -70,8 +72,8 @@ page {
 .win-rate-screen {
   min-height: 100vh;
   box-sizing: border-box;
-  padding-left: 16px;
-  padding-right: 16px;
+  padding-left: var(--win-rate-gutter);
+  padding-right: var(--win-rate-gutter);
   background: radial-gradient(120% 420px at 50% 0, #17332d 0, transparent 70%);
 }
 .win-rate-felt {
@@ -339,7 +341,7 @@ page {
   z-index: 20;
   display: flex;
   justify-content: flex-end;
-  padding: 10px 16px;
+  padding: 10px var(--win-rate-gutter);
   background: #0b1017;
   border-top: 1px solid #1e2c36;
 }
@@ -367,8 +369,9 @@ page {
   z-index: 31;
   display: flex;
   flex-direction: column;
-  max-width: 740px;
-  max-height: 92vh;
+  width: 100%;
+  /* A scroll-view only clips inside a definite height. */
+  height: 50vh;
   margin: 0 auto;
   background: #14202a;
   border: 1px solid #3b504f;
@@ -391,6 +394,7 @@ page {
 }
 .win-rate-picker-grid {
   flex: 1;
+  height: 0;
   min-height: 0;
   padding: 2px 16px 2px;
   box-sizing: border-box;
@@ -437,9 +441,37 @@ page {
   border-radius: 12px;
   box-sizing: border-box;
 }
-@media (min-width: 701px) {
+@media (min-width: 561px) {
+  /* Four card rows always fit the half screen, so a short wide screen narrows the sheet. */
+  .win-rate-picker {
+    --win-rate-sheet: min(
+      740px,
+      100vw,
+      calc((50vh - var(--win-rate-bottom) - 164px) * 2.34 + 106px)
+    );
+    width: var(--win-rate-sheet);
+    height: calc((var(--win-rate-sheet) - 106px) / 2.34 + var(--win-rate-bottom) + 164px);
+  }
   .win-rate-suit {
     grid-template-columns: repeat(13, minmax(0, 1fr));
+  }
+}
+/* Half of a rotated tablet is too short for the deck, so the sheet moves beside the table. */
+@media (orientation: landscape) and (max-height: 640px) {
+  .win-rate-picker {
+    inset: 0 0 0 auto;
+    width: max(
+      280px,
+      calc((100vh - var(--win-rate-top) - var(--win-rate-bottom) - 190px) * 0.63 + 70px)
+    );
+    height: 100vh;
+    margin: 0;
+    padding-top: var(--win-rate-top);
+    border-width: 0 0 0 1px;
+    border-radius: 18px 0 0 18px;
+  }
+  .win-rate-suit {
+    grid-template-columns: repeat(7, minmax(0, 1fr));
   }
 }
 @media (max-width: 340px) {

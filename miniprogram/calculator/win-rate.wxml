@@ -14,7 +14,7 @@
 </view>
 <view
   class="win-rate-screen"
-  style="padding-top: {{topInset + 86}}px; padding-bottom: {{bottomInset + 82}}px;"
+  style="padding-top: {{topInset + 86}}px; padding-bottom: {{pickerOpen ? '60vh' : bottomInset + 82 + 'px'}};"
 >
   <view class="win-rate-felt" aria-label="公共牌">
     <view class="win-rate-board">
@@ -133,9 +133,18 @@
   catchtouchmove="keepPageStill"
   bindtap="closePicker"
 />
-<view wx:if="{{pickerOpen}}" id="win-rate-picker" class="win-rate-picker">
+<view
+  wx:if="{{pickerOpen}}"
+  id="win-rate-picker"
+  class="win-rate-picker"
+  style="--win-rate-top: {{topInset}}px; --win-rate-bottom: {{bottomInset}}px;"
+>
   <text class="win-rate-picker-title">{{pickerTitle}}</text>
-  <scroll-view scroll-y class="win-rate-picker-grid">
+  <scroll-view
+    scroll-y
+    class="win-rate-picker-grid"
+    scroll-into-view="{{selected ? 'win-rate-pick-' + selected : ''}}"
+  >
     <view wx:for="{{deck}}" wx:for-item="suit" wx:key="id" class="win-rate-suit">
       <view
         wx:for="{{suit.cards}}"

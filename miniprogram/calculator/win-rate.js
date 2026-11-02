@@ -131,14 +131,14 @@ Page({
     statusText: '',
   },
   onLoad() {
-    const info = wx.getWindowInfo ? wx.getWindowInfo() : wx.getSystemInfoSync();
     this._session = createWinRateSession({ onChange: () => this.sync() });
-    this.setData({
-      topInset: info.statusBarHeight || 24,
-      bottomInset: Math.max(0, info.windowHeight - (info.safeArea?.bottom || info.windowHeight)),
-      deck: pickerDeck(),
-    });
+    this.updateWindow();
+    this.setData({ deck: pickerDeck() });
     this.sync();
+  },
+  onResize() {
+    this.updateWindow();
+    this.revealTarget();
   },
   onShow() {
     this._session.resume();
@@ -148,6 +148,29 @@ Page({
   },
   onUnload() {
     this._session.pause();
+  },
+  updateWindow() {
+    const info = wx.getWindowInfo ? wx.getWindowInfo() : wx.getSystemInfoSync();
+    this._windowHeight = info.windowHeight;
+    this.setData({
+      topInset: info.statusBarHeight || 24,
+      bottomInset: Math.max(0, info.windowHeight - (info.safeArea?.bottom || info.windowHeight)),
+    });
+  },
+  // The sheet covers the lower page, so the slot being filled moves above it.
+  revealTarget() {
+    wx.createSelectorQuery()
+      .select('.win-rate-slot.is-active')
+      .boundingClientRect()
+      .select('#win-rate-picker')
+      .boundingClientRect()
+      .selectViewport()
+      .scrollOffset()
+      .exec(([slot, sheet, page]) => {
+        if (!slot || !sheet || slot.right <= sheet.left) return;
+        const hidden = slot.bottom + 12 - (this._windowHeight - sheet.height);
+        if (hidden > 0) wx.pageScrollTo({ scrollTop: page.scrollTop + hidden, duration: 0 });
+      });
   },
   sync() {
     const view = this._session.view();
@@ -163,7 +186,8 @@ Page({
       status: view.status,
       statusText: statusText(view),
     });
-    if (Object.keys(patch).length) this.setData(patch);
+    if (Object.keys(patch).length)
+      this.setData(patch, view.target ? () => this.revealTarget() : undefined);
   },
   openBoardCard(event) {
     this._session.openBoard(event.currentTarget.dataset.index);

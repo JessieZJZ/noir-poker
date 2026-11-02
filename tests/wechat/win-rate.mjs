@@ -95,6 +95,27 @@ try {
     await waitData('Third row', (data) => data.players.length === 3);
     const third = (await page.data()).players[2].id;
     await tap(`#win-rate-player-${third}-0`);
+    await waitData('Picker open', (data) => data.pickerOpen);
+    await capture('win-rate-picker-half');
+    const [slot, sheet] = await mini.evaluate(
+      () =>
+        new Promise((resolve) =>
+          wx
+            .createSelectorQuery()
+            .select('.win-rate-slot.is-active')
+            .boundingClientRect()
+            .select('#win-rate-picker')
+            .boundingClientRect()
+            .exec(resolve),
+        ),
+    );
+    const { windowHeight } = await mini.evaluate(() => wx.getWindowInfo());
+    assert.ok(sheet.height <= windowHeight / 2 + 1, 'The sheet must stay within half the screen');
+    assert.ok(slot.bottom <= sheet.top, 'The slot being filled must stay above the sheet');
+    const grid = await page.$('.win-rate-picker-grid');
+    const { height: gridHeight } = await grid.size();
+    assert.ok((await grid.scrollHeight()) > gridHeight, 'The deck must scroll');
+    assert.ok(gridHeight <= sheet.height - 100, 'The deck must stay clear of the sheet actions');
     await pick('2-10', '1-10');
     await tap('#win-rate-board-0');
     await pick('0-6', '0-11', '2-11');

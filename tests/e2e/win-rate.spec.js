@@ -214,6 +214,103 @@ for (const [width, height] of [
   });
 }
 
+// Phone portrait, tablets in both orientations and the short 600dp Android tablet.
+const sheetClear = (page) =>
+  page.evaluate(() => {
+    const sheet = document.querySelector('#win-rate-picker').getBoundingClientRect(),
+      slot = document.querySelector('.win-rate-slot.is-active').getBoundingClientRect(),
+      grid = document.querySelector('#win-rate-picker-grid');
+    return {
+      beside: sheet.left >= slot.right,
+      above: sheet.top >= slot.bottom,
+      half: sheet.height <= innerHeight / 2 + 1,
+      fits: sheet.right <= innerWidth + 1 && sheet.bottom <= innerHeight + 1,
+      scrolls: grid.scrollHeight - grid.clientHeight > 1,
+    };
+  });
+for (const [width, height, layout] of [
+  [320, 568, 'bottom'],
+  [390, 844, 'bottom'],
+  [600, 904, 'bottom'],
+  [768, 1024, 'bottom'],
+  [820, 1180, 'bottom'],
+  [1024, 768, 'bottom'],
+  [1180, 820, 'bottom'],
+  [960, 544, 'side'],
+]) {
+  test(`picker leaves the slot being filled in view at ${width}x${height}`, async ({ page }) => {
+    await page.setViewportSize({ width, height });
+    await openCalculator(page);
+    await hole(page, 0).click();
+    await pick(page, '0-14', '0-13');
+    await hole(page, 1).click();
+    await pick(page, '0-8', '0-7');
+    await page.locator('#win-rate-add').click();
+    await hole(page, 2).click();
+    await pickerSettled(page);
+    const clear = await sheetClear(page);
+    expect(clear.fits).toBe(true);
+    if (layout === 'side') expect(clear.beside).toBe(true);
+    else expect(clear).toMatchObject({ above: true, half: true });
+    // Only a phone has to scroll the deck; wider sheets show all four suits.
+    expect(clear.scrolls).toBe(width <= 560);
+  });
+}
+
+test('rotating with the picker open keeps the slot in view and restores the page', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 768, height: 1024 });
+  await openCalculator(page);
+  await hole(page, 0).click();
+  await pick(page, '0-14', '0-13');
+  await hole(page, 1).click();
+  await pick(page, '0-8', '0-7');
+  await page.locator('#win-rate-add').click();
+  await page.locator('#win-rate-add').click();
+  await hole(page, 3).click();
+  await pickerSettled(page);
+  for (const [width, height, place] of [
+    [1024, 768, 'above'],
+    [960, 544, 'beside'],
+    [600, 904, 'above'],
+  ]) {
+    await page.setViewportSize({ width, height });
+    await expect(page.locator('#win-rate-picker')).toBeVisible();
+    await expect.poll(async () => (await sheetClear(page))[place]).toBe(true);
+    expect((await page.locator('#win-rate-picker').boundingBox()).x).toBeGreaterThanOrEqual(0);
+  }
+  await pick(page, '2-10');
+  await expect(page.locator('#win-rate-picker-title')).toHaveText('对手 3 的第 2 张底牌');
+  await page.locator('#win-rate-picker-back').click();
+  await expect(page.locator('#win-rate-picker')).not.toBeVisible();
+  expect(await page.locator('.win-rate-body').evaluate((body) => body.style.paddingBottom)).toBe(
+    '',
+  );
+});
+
+test('the phone deck scrolls from the top and stays put between picks', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await openCalculator(page);
+  const grid = page.locator('#win-rate-picker-grid');
+  const top = () => grid.evaluate((element) => element.scrollTop);
+  await hole(page, 0).click();
+  await pickerSettled(page);
+  expect(await top()).toBe(0);
+  await pick(page, '3-2');
+  const kept = await top();
+  expect(kept).toBeGreaterThan(0);
+  await page.locator('#win-rate-picker-back').click();
+  await hole(page, 1).click();
+  await pickerSettled(page);
+  expect(await top()).toBe(0);
+  // Editing a filled slot brings its current card back into view.
+  await page.locator('#win-rate-picker-back').click();
+  await hole(page, 0).click();
+  await pickerSettled(page);
+  await expect(page.locator('[data-pick="3-2"]')).toBeInViewport();
+});
+
 test('native safe areas keep the calculator controls clear of system bars', async ({ page }) => {
   await openCalculator(page);
   await page.evaluate(() => {

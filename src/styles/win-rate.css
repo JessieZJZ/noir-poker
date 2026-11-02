@@ -322,9 +322,12 @@
 }
 
 #win-rate-picker {
-  width: min(740px, 100%);
+  --win-rate-picker-top: 0px;
+  --win-rate-picker-bottom: env(safe-area-inset-bottom, 0px);
+  /* Four card rows always fit the half screen, so a short wide screen narrows the sheet. */
+  width: min(740px, 100%, calc((50dvh - var(--win-rate-picker-bottom) - 164px) * 2.34 + 106px));
   max-width: none;
-  max-height: 92dvh;
+  max-height: 50dvh;
   margin: auto auto 0;
   padding: 0;
   overflow: hidden;
@@ -393,7 +396,7 @@
   display: flex;
   flex: none;
   gap: 10px;
-  padding: 10px 16px calc(14px + env(safe-area-inset-bottom, 0px));
+  padding: 10px 16px calc(14px + var(--win-rate-picker-bottom));
   border-top: 1px solid #263541;
 }
 .win-rate-picker-actions button {
@@ -405,7 +408,30 @@
   border: 1px solid #3a4f5b;
   border-radius: 12px;
 }
-@media (max-width: 700px) {
+@media (max-width: 560px) {
+  #win-rate-picker {
+    width: 100%;
+  }
+  .win-rate-suit {
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+  }
+}
+/* Half of a rotated tablet is too short for the deck, so the sheet moves beside the table. */
+@media (orientation: landscape) and (max-height: 640px) {
+  #win-rate-picker {
+    width: max(
+      280px,
+      calc(
+        (100dvh - var(--win-rate-picker-top) - var(--win-rate-picker-bottom) - 190px) * 0.63 + 70px
+      )
+    );
+    height: 100dvh;
+    max-height: none;
+    margin: 0 0 0 auto;
+    padding-top: var(--win-rate-picker-top);
+    border-width: 0 0 0 1px;
+    border-radius: 18px 0 0 18px;
+  }
   .win-rate-suit {
     grid-template-columns: repeat(7, minmax(0, 1fr));
   }
@@ -443,9 +469,13 @@
   padding-bottom: calc(12px + var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)));
 }
 .native-app #win-rate-picker {
+  --win-rate-picker-top: var(--safe-area-inset-top, env(safe-area-inset-top, 0px));
+  --win-rate-picker-bottom: var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px));
   inset: auto 0 0;
-  max-height: calc(100dvh - var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) - 12px);
 }
-.native-app .win-rate-picker-actions {
-  padding-bottom: calc(14px + var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)));
+@media (orientation: landscape) and (max-height: 640px) {
+  .native-app #win-rate-picker {
+    inset: 0 0 0 auto;
+    padding-right: var(--safe-area-inset-right, env(safe-area-inset-right, 0px));
+  }
 }

@@ -1130,7 +1130,41 @@ export async function nativeScenarios(app) {
     await pick('0-14', '0-13');
     await app.click('[data-player="1"][data-card="0"]');
     await pick('0-8');
+    const sheetClear = (message) =>
+      app.waitFor(
+        () =>
+          app.evaluate(() => {
+            const sheet = document.querySelector('#win-rate-picker').getBoundingClientRect();
+            const slot = document.querySelector('.win-rate-slot.is-active').getBoundingClientRect();
+            const beside = sheet.left >= slot.right;
+            const above = sheet.top >= slot.bottom && sheet.height <= window.innerHeight / 2 + 1;
+            if (!beside && !above) return null;
+            return {
+              beside,
+              above,
+              width: window.innerWidth,
+              height: window.innerHeight,
+              sheetHeight: sheet.height,
+              tablet: document.documentElement.dataset.tablet === 'true',
+            };
+          }),
+        5000,
+        message,
+      );
+    const portraitSheet = await sheetClear('Picker must leave the slot in view');
     await app.screenshot('win-rate-picker');
+    let landscapeSheet;
+    if (portraitSheet.tablet) {
+      try {
+        await app.rotate('LANDSCAPE');
+        landscapeSheet = await sheetClear('Rotated picker must leave the slot in view');
+        assert.ok(landscapeSheet.width > landscapeSheet.height, 'Tablet must rotate the picker');
+        await app.screenshot('win-rate-picker-landscape');
+      } finally {
+        await app.rotate('PORTRAIT');
+      }
+      await sheetClear('Picker must follow the return to portrait');
+    }
     await pick('0-7');
     const preflop = await app.waitFor(
       async () => {
@@ -1180,7 +1214,7 @@ export async function nativeScenarios(app) {
     assert.equal(await app.evaluate(() => document.querySelector('#win-rate-picker').open), false);
     await app.click('#win-rate-dialog .close-dialog');
     assert.equal((await app.state()).hand, before.hand);
-    return { preflop, flop, layout, sameHand: true };
+    return { preflop, flop, layout, portraitSheet, landscapeSheet, sameHand: true };
   });
   await check('mixed-toggle-and-visual-guide', async () => {
     await app.click('#opponents-button');

@@ -120,6 +120,7 @@ export function createWinRatePage() {
     picker = document.querySelector('#win-rate-picker'),
     board = document.querySelector('#win-rate-board'),
     players = document.querySelector('#win-rate-players'),
+    body = document.querySelector('.win-rate-body'),
     status = document.querySelector('#win-rate-status'),
     outsNote = document.querySelector('#win-rate-outs-note'),
     add = document.querySelector('#win-rate-add'),
@@ -138,6 +139,15 @@ export function createWinRatePage() {
       .map((name) => `[data-${name}="${element.dataset[name]}"]`)
       .join('');
   }
+  // The sheet covers the lower page, so the slot being filled moves above it.
+  function revealTarget() {
+    const active = dialog.querySelector('.win-rate-slot.is-active')?.getBoundingClientRect();
+    if (!active || active.right <= picker.offsetLeft) return;
+    const hidden = active.bottom + 12 - picker.offsetTop;
+    if (hidden <= 0) return;
+    body.style.paddingBottom = `${picker.offsetHeight}px`;
+    body.scrollTop += hidden;
+  }
   function render() {
     if (!dialog.open) return;
     const view = session.view(),
@@ -153,15 +163,23 @@ export function createWinRatePage() {
       setLocalizedHTML(title, pickerTitle(view));
       setLocalizedHTML(grid, pickerMarkup(view));
       remove.hidden = !view.selected;
-      if (!picker.open) picker.showModal();
+      const opening = !picker.open;
+      if (opening) {
+        picker.showModal();
+        grid.scrollTop = 0;
+      }
+      revealTarget();
       if (focus) grid.querySelector(`${focus}:not(:disabled)`)?.focus();
-      if (!grid.contains(document.activeElement))
-        (
-          grid.querySelector('.win-rate-pick.is-selected') ??
-          grid.querySelector('.win-rate-pick:not(:disabled)')
-        )?.focus();
+      // showModal() focuses the first focusable, which may be the scrolling grid itself.
+      const selected = grid.querySelector('.win-rate-pick.is-selected');
+      if (opening) selected?.focus();
+      if (!grid.querySelector('.win-rate-pick:focus'))
+        (selected ?? grid.querySelector('.win-rate-pick:not(:disabled)'))?.focus({
+          preventScroll: !selected,
+        });
     } else {
       if (picker.open) picker.close();
+      body.style.paddingBottom = '';
       if (focus) dialog.querySelector(focus)?.focus();
     }
   }
@@ -192,6 +210,7 @@ export function createWinRatePage() {
     session.pause();
   });
   document.addEventListener('noir:locale-changed', render);
+  window.addEventListener('resize', revealTarget);
   return {
     open() {
       if (dialog.open) return;

@@ -18,15 +18,29 @@ vm.runInNewContext(read('pages/table/presentation.js'), {
         ? { renderCardArtwork }
         : { evaluate, rankText },
 });
-function openPage() {
+function openPage({ query = {} } = {}) {
   let definition;
   const calls = [];
+  const scrolls = [];
+  let info = { statusBarHeight: 47, windowHeight: 844, safeArea: { bottom: 810 } };
   const timers = new Map();
   let serial = 0;
   vm.runInNewContext(read('calculator/win-rate.js'), {
     Page: (value) => (definition = value),
     wx: {
-      getWindowInfo: () => ({ statusBarHeight: 47, windowHeight: 844, safeArea: { bottom: 810 } }),
+      getWindowInfo: () => info,
+      pageScrollTo: (options) => scrolls.push(options),
+      createSelectorQuery() {
+        const results = [query.slot, query.sheet, { scrollTop: query.scrollTop ?? 0 }];
+        const chain = {
+          select: () => chain,
+          selectViewport: () => chain,
+          boundingClientRect: () => chain,
+          scrollOffset: () => chain,
+          exec: (callback) => callback(results),
+        };
+        return chain;
+      },
     },
     require(name) {
       if (name === '../shared/engine/poker.js') return { deckOfCards };
@@ -47,17 +61,18 @@ function openPage() {
   const page = {
     ...definition,
     data: JSON.parse(JSON.stringify(definition.data)),
-    setData(patch) {
+    setData(patch, done) {
       for (const [path, value] of Object.entries(patch)) {
         const keys = path.replace(/\[(\d+)\]/g, '.$1').split('.'),
           last = keys.pop();
         keys.reduce((node, key) => node[key], this.data)[last] = value;
       }
+      done?.();
     },
   };
   page.onLoad();
   page.onShow();
-  return { page, calls, timers };
+  return { page, calls, timers, scrolls, resize: (next) => (info = next) };
 }
 const tap = (page, method, dataset = {}) => page[method]({ currentTarget: { dataset } });
 const picks = (page, ...keys) => keys.forEach((key) => tap(page, 'pickCard', { key }));
@@ -158,6 +173,41 @@ test('WeChat win rate page cancels its slices when hidden and returns to the liv
   assert.deepEqual(calls, ['return']);
 });
 
+test('WeChat win rate page lifts a covered slot above the half-height sheet', () => {
+  const covered = openPage({
+    query: { slot: { right: 80, bottom: 500 }, sheet: { left: 0, height: 422 }, scrollTop: 40 },
+  });
+  tap(covered.page, 'openBoardCard', { index: 0 });
+  assert.deepEqual({ ...covered.scrolls.at(-1) }, { scrollTop: 130, duration: 0 });
+
+  const clear = openPage({
+    query: { slot: { right: 80, bottom: 300 }, sheet: { left: 0, height: 422 } },
+  });
+  tap(clear.page, 'openBoardCard', { index: 0 });
+  assert.equal(clear.scrolls.length, 0);
+
+  const beside = openPage({
+    query: { slot: { right: 80, bottom: 500 }, sheet: { left: 660, height: 544 } },
+  });
+  tap(beside.page, 'openBoardCard', { index: 0 });
+  assert.equal(beside.scrolls.length, 0);
+});
+
+test('WeChat win rate page follows rotation and resizing', () => {
+  const { page, resize, scrolls } = openPage({
+    query: { slot: { right: 80, bottom: 500 }, sheet: { left: 0, height: 384 } },
+  });
+  assert.deepEqual([page.data.topInset, page.data.bottomInset], [47, 34]);
+  tap(page, 'openBoardCard', { index: 0 });
+  scrolls.length = 0;
+  resize({ statusBarHeight: 24, windowHeight: 768, safeArea: { bottom: 748 } });
+  page.onResize();
+  assert.deepEqual([page.data.topInset, page.data.bottomInset], [24, 20]);
+  assert.equal(page.data.pickerOpen, true);
+  assert.deepEqual({ ...scrolls[0] }, { scrollTop: 128, duration: 0 });
+  assert.equal(scrolls.length, 1);
+});
+
 test('WeChat win rate entry and template keep the Web controls', () => {
   const table = read('pages/table/table.wxml'),
     page = read('calculator/win-rate.wxml'),
@@ -170,4 +220,6 @@ test('WeChat win rate entry and template keep the Web controls', () => {
   assert.doesNotMatch(page, /计算<\/button>|分享|收藏/);
   assert.match(style, /win-rate-sheet 0\.2s ease-out/);
   assert.match(style, /win-rate-spin 0\.8s linear infinite/);
+  assert.match(style, /height: 50vh/);
+  assert.match(style, /@media \(orientation: landscape\) and \(max-height: 640px\)/);
 });
