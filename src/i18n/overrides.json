@@ -723,7 +723,14 @@
     "{0} 落下时，底牌有机会组成更高的一对，但这些牌也不能全部算成必胜补牌。": "If {0} falls, one of the hole cards may make a higher pair, but these cards cannot all be counted as guaranteed winning outs.",
     "跟注需要对手范围里有足够较弱牌或诈唬；面对更紧范围应弃牌。": "Calling requires enough weaker hands or bluffs in the opponent’s range; fold against a tighter range.",
     "听牌是主要改善路径，底牌成对或赢过未成牌诈唬也可能获胜。": "The draw is the main path to improvement, but pairing a hole card or beating an unmade bluff may also win.",
-    "本轮跟注后即可看到最后一张河牌。": "Calling this round lets you see the river, the last community card."
+    "本轮跟注后即可看到最后一张河牌。": "Calling this round lets you see the river, the last community card.",
+    "继续要补 {0}，可争夺跟注后的 {1} 底池，需要至少{2}的胜率。": "Calling costs another {0} to contest a pot of {1} after the call, requiring at least a {2} chance of winning. ",
+    "继续要补 {0}，可争夺跟注后的 {1} 底池，需要至少{2}%的胜率。": "Calling costs another {0} to contest a pot of {1} after the call, requiring at least a {2}% chance of winning. ",
+    "之后不再参与下注决策，可以看完剩余公共牌，无需再支付筹码。": "No further betting decisions remain for this player, who can see the remaining community cards without paying more chips. ",
+    "所有对手都已全下，这次跟注后不再有后续下注，可以看完剩余公共牌，无需再支付筹码。": "All opponents are already all-in, so this call ends further betting and allows the remaining community cards to be seen without paying more chips. ",
+    "湿润面过牌可能让顺子听牌或同花听牌免费看下一张。": "Checking this wet board may let straight or flush draws see the next card for free. ",
+    "湿润面过牌可能让{0}免费看下一张。": "Checking this wet board may let {0} see the next card for free. ",
+    "这手牌的 {0} 踢脚偏弱，遇到同样击中顶对但踢脚更好的牌时会落后，{1}过牌先控制底池，保留摊牌机会。": "With a weak {0} kicker, this hand can lose to the same top pair with a better kicker. {1} checks to control the pot while keeping a chance to reach showdown. "
   },
   "zh-TW": {
     "设置": "設定",
@@ -1333,7 +1340,14 @@
     "{0} 落下时，底牌有机会组成更高的一对，但这些牌也不能全部算成必胜补牌。": "當 {0} 發出時，底牌有機會組成更高的一對，但這些牌也不能全部算成必勝補牌。",
     "跟注需要对手范围里有足够较弱牌或诈唬；面对更紧范围应弃牌。": "跟注需要對手範圍裡有足夠較弱牌或詐唬；面對更緊範圍應棄牌。",
     "听牌是主要改善路径，底牌成对或赢过未成牌诈唬也可能获胜。": "聽牌是主要改善路徑，底牌成對或贏過未成牌詐唬也可能獲勝。",
-    "本轮跟注后即可看到最后一张河牌。": "本輪跟注後即可看到最後一張河牌。"
+    "本轮跟注后即可看到最后一张河牌。": "本輪跟注後即可看到最後一張河牌。",
+    "继续要补 {0}，可争夺跟注后的 {1} 底池，需要至少{2}的胜率。": "繼續要補 {0}，可爭奪跟注後的 {1} 底池，需要至少{2}的勝率。",
+    "继续要补 {0}，可争夺跟注后的 {1} 底池，需要至少{2}%的胜率。": "繼續要補 {0}，可爭奪跟注後的 {1} 底池，需要至少{2}%的勝率。",
+    "之后不再参与下注决策，可以看完剩余公共牌，无需再支付筹码。": "之後不再參與下注決策，可以看完剩餘公共牌，無需再支付籌碼。",
+    "所有对手都已全下，这次跟注后不再有后续下注，可以看完剩余公共牌，无需再支付筹码。": "所有對手都已全下，這次跟注後不再有後續下注，可以看完剩餘公共牌，無需再支付籌碼。",
+    "湿润面过牌可能让顺子听牌或同花听牌免费看下一张。": "濕潤面過牌可能讓順子聽牌或同花聽牌免費看下一張。",
+    "湿润面过牌可能让{0}免费看下一张。": "濕潤面過牌可能讓{0}免費看下一張。",
+    "这手牌的 {0} 踢脚偏弱，遇到同样击中顶对但踢脚更好的牌时会落后，{1}过牌先控制底池，保留摊牌机会。": "這手牌的 {0} 踢腳偏弱，遇到同樣擊中頂對但踢腳更好的牌時會落後，{1}過牌先控制底池，保留攤牌機會。"
   },
   "ja": {
     "设置": "設定",
@@ -1943,7 +1957,14 @@
     "{0} 落下时，底牌有机会组成更高的一对，但这些牌也不能全部算成必胜补牌。": "{0}が出ると、ホールカードがより高いワンペアになる可能性があります。ただし、これらすべてを確実に勝てるアウツとは数えられません。",
     "跟注需要对手范围里有足够较弱牌或诈唬；面对更紧范围应弃牌。": "コールするには、相手のレンジに弱いハンドやブラフが十分含まれている必要があります。よりタイトなレンジが相手ならフォールドすべきです。",
     "听牌是主要改善路径，底牌成对或赢过未成牌诈唬也可能获胜。": "主な改善手段はドローですが、ホールカードがペアになったり、未完成のブラフに勝ったりする可能性もあります。",
-    "本轮跟注后即可看到最后一张河牌。": "このラウンドでコールすれば、最後のコミュニティカードであるリバーを見ることができます。"
+    "本轮跟注后即可看到最后一张河牌。": "このラウンドでコールすれば、最後のコミュニティカードであるリバーを見ることができます。",
+    "继续要补 {0}，可争夺跟注后的 {1} 底池，需要至少{2}的胜率。": "続行にはあと {0} のコールが必要で、コール後に争えるポットは {1}。必要な勝率は少なくとも {2}。",
+    "继续要补 {0}，可争夺跟注后的 {1} 底池，需要至少{2}%的胜率。": "続行にはあと {0} のコールが必要で、コール後に争えるポットは {1}。必要な勝率は少なくとも {2}%。",
+    "之后不再参与下注决策，可以看完剩余公共牌，无需再支付筹码。": "以後このプレイヤーのベット判断はなく、追加のチップを払わずに残りのコミュニティカードを見られる。",
+    "所有对手都已全下，这次跟注后不再有后续下注，可以看完剩余公共牌，无需再支付筹码。": "相手は全員すでにオールインしているため、このコール後にベットはなく、追加のチップを払わずに残りのコミュニティカードを見られる。",
+    "湿润面过牌可能让顺子听牌或同花听牌免费看下一张。": "このウェットなボードでチェックすると、ストレートやフラッシュのドローに無料で次のカードを見せる可能性がある。",
+    "湿润面过牌可能让{0}免费看下一张。": "このウェットなボードでチェックすると、{0}に無料で次のカードを見せる可能性がある。",
+    "这手牌的 {0} 踢脚偏弱，遇到同样击中顶对但踢脚更好的牌时会落后，{1}过牌先控制底池，保留摊牌机会。": "この手のキッカー {0} は弱く、同じトップペアでもより強いキッカーに負ける可能性がある。{1}はチェックでポットを抑え、ショーダウンの機会を残す。"
   },
   "ko": {
     "设置": "설정",
@@ -2553,7 +2574,14 @@
     "{0} 落下时，底牌有机会组成更高的一对，但这些牌也不能全部算成必胜补牌。": "{0} 카드가 나오면 홀 카드가 더 높은 원페어를 만들 가능성이 있지만, 이 카드들을 모두 승리가 확실한 아웃으로 셀 수는 없습니다.",
     "跟注需要对手范围里有足够较弱牌或诈唬；面对更紧范围应弃牌。": "콜하려면 상대 범위에 더 약한 패나 블러프가 충분히 있어야 합니다. 더 타이트한 범위에는 폴드해야 합니다.",
     "听牌是主要改善路径，底牌成对或赢过未成牌诈唬也可能获胜。": "드로가 주된 개선 경로이지만 홀 카드가 페어를 이루거나 미완성 패의 블러프를 이겨 승리할 수도 있습니다.",
-    "本轮跟注后即可看到最后一张河牌。": "이번 라운드에 콜하면 마지막 공용 카드인 리버를 볼 수 있습니다."
+    "本轮跟注后即可看到最后一张河牌。": "이번 라운드에 콜하면 마지막 공용 카드인 리버를 볼 수 있습니다.",
+    "继续要补 {0}，可争夺跟注后的 {1} 底池，需要至少{2}的胜率。": "계속하려면 {0}을 더 콜해야 하며, 콜 후 다툴 수 있는 팟은 {1}이다. 필요한 승률은 최소 {2}다. ",
+    "继续要补 {0}，可争夺跟注后的 {1} 底池，需要至少{2}%的胜率。": "계속하려면 {0}을 더 콜해야 하며, 콜 후 다툴 수 있는 팟은 {1}이다. 필요한 승률은 최소 {2}%다. ",
+    "之后不再参与下注决策，可以看完剩余公共牌，无需再支付筹码。": "이후 이 플레이어의 베팅 결정은 없으며, 칩을 더 내지 않고 남은 커뮤니티 카드를 볼 수 있다. ",
+    "所有对手都已全下，这次跟注后不再有后续下注，可以看完剩余公共牌，无需再支付筹码。": "상대가 모두 이미 올인했으므로 이 콜 이후 추가 베팅은 없으며, 칩을 더 내지 않고 남은 커뮤니티 카드를 볼 수 있다. ",
+    "湿润面过牌可能让顺子听牌或同花听牌免费看下一张。": "이 웨트 보드에서 체크하면 스트레이트나 플러시 드로가 다음 카드를 공짜로 볼 수 있다. ",
+    "湿润面过牌可能让{0}免费看下一张。": "이 웨트 보드에서 체크하면 {0}가 다음 카드를 공짜로 볼 수 있다. ",
+    "这手牌的 {0} 踢脚偏弱，遇到同样击中顶对但踢脚更好的牌时会落后，{1}过牌先控制底池，保留摊牌机会。": "이 핸드의 키커 {0}은 약해 같은 탑 페어라도 더 좋은 키커에 질 수 있다. {1}은 체크로 팟을 조절하면서 쇼다운 기회를 남긴다. "
   },
   "es": {
     "设置": "Ajustes",
@@ -3163,7 +3191,14 @@
     "{0} 落下时，底牌有机会组成更高的一对，但这些牌也不能全部算成必胜补牌。": "Si sale {0}, las cartas de mano pueden formar una pareja más alta, pero no todas estas cartas se pueden contar como outs que aseguren ganar.",
     "跟注需要对手范围里有足够较弱牌或诈唬；面对更紧范围应弃牌。": "Para pagar, el rango rival debe incluir suficientes manos más débiles o faroles; frente a un rango más cerrado, se debe abandonar la mano.",
     "听牌是主要改善路径，底牌成对或赢过未成牌诈唬也可能获胜。": "El proyecto es la principal vía de mejora, pero también se puede ganar formando una pareja con una carta propia o superando faroles sin mano hecha.",
-    "本轮跟注后即可看到最后一张河牌。": "Al pagar en esta ronda, puedes ver la última carta comunitaria, el river."
+    "本轮跟注后即可看到最后一张河牌。": "Al pagar en esta ronda, puedes ver la última carta comunitaria, el river.",
+    "继续要补 {0}，可争夺跟注后的 {1} 底池，需要至少{2}的胜率。": "Pagar cuesta {0} más para disputar un bote de {1} tras el call; se necesita al menos un {2} de probabilidad de ganar. ",
+    "继续要补 {0}，可争夺跟注后的 {1} 底池，需要至少{2}%的胜率。": "Pagar cuesta {0} más para disputar un bote de {1} tras el call; se necesita al menos un {2}% de probabilidad de ganar. ",
+    "之后不再参与下注决策，可以看完剩余公共牌，无需再支付筹码。": "Este jugador ya no tomará decisiones de apuesta y podrá ver las comunitarias restantes sin pagar más fichas. ",
+    "所有对手都已全下，这次跟注后不再有后续下注，可以看完剩余公共牌，无需再支付筹码。": "Todos los rivales ya están all-in, así que este call termina las apuestas y permite ver las comunitarias restantes sin pagar más fichas. ",
+    "湿润面过牌可能让顺子听牌或同花听牌免费看下一张。": "Pasar en este board con proyectos puede dejar que los proyectos de escalera o color vean gratis la siguiente carta. ",
+    "湿润面过牌可能让{0}免费看下一张。": "Pasar en este board con proyectos puede dejar que {0} vea gratis la siguiente carta. ",
+    "这手牌的 {0} 踢脚偏弱，遇到同样击中顶对但踢脚更好的牌时会落后，{1}过牌先控制底池，保留摊牌机会。": "Con un kicker {0} débil, esta mano puede perder frente a la misma pareja máxima con un kicker mejor. {1} pasa para controlar el bote y conservar la posibilidad de llegar al showdown. "
   },
   "it": {
     "设置": "Impostazioni",
@@ -3773,7 +3808,14 @@
     "{0} 落下时，底牌有机会组成更高的一对，但这些牌也不能全部算成必胜补牌。": "Se esce {0}, le carte in mano possono formare una coppia più alta, ma queste carte non sono tutte out che garantiscono la vittoria.",
     "跟注需要对手范围里有足够较弱牌或诈唬；面对更紧范围应弃牌。": "Il call richiede che il range avversario contenga abbastanza mani più deboli o bluff; contro un range più stretto bisogna foldare.",
     "听牌是主要改善路径，底牌成对或赢过未成牌诈唬也可能获胜。": "Il progetto è la via principale per migliorare, ma si può vincere anche formando una coppia con una carta privata o battendo bluff senza una mano formata.",
-    "本轮跟注后即可看到最后一张河牌。": "Chiamando in questo giro, puoi vedere l’ultima carta comune, il river."
+    "本轮跟注后即可看到最后一张河牌。": "Chiamando in questo giro, puoi vedere l’ultima carta comune, il river.",
+    "继续要补 {0}，可争夺跟注后的 {1} 底池，需要至少{2}的胜率。": "Il call costa altri {0} per contendersi un piatto di {1} dopo il call; serve almeno una probabilità di vittoria del {2}. ",
+    "继续要补 {0}，可争夺跟注后的 {1} 底池，需要至少{2}%的胜率。": "Il call costa altri {0} per contendersi un piatto di {1} dopo il call; serve almeno una probabilità di vittoria del {2}%. ",
+    "之后不再参与下注决策，可以看完剩余公共牌，无需再支付筹码。": "Questo giocatore non avrà altre decisioni di puntata e potrà vedere le comunitarie rimanenti senza pagare altre chip. ",
+    "所有对手都已全下，这次跟注后不再有后续下注，可以看完剩余公共牌，无需再支付筹码。": "Tutti gli avversari sono già all-in, quindi questo call conclude le puntate e permette di vedere le comunitarie rimanenti senza pagare altre chip. ",
+    "湿润面过牌可能让顺子听牌或同花听牌免费看下一张。": "Fare check su questo board ricco di progetti può lasciare ai progetti di scala o colore una carta gratuita. ",
+    "湿润面过牌可能让{0}免费看下一张。": "Fare check su questo board ricco di progetti può lasciare a {0} una carta gratuita. ",
+    "这手牌的 {0} 踢脚偏弱，遇到同样击中顶对但踢脚更好的牌时会落后，{1}过牌先控制底池，保留摊牌机会。": "Con un kicker {0} debole, questa mano può perdere contro la stessa top pair con un kicker migliore. {1} fa check per controllare il piatto e conservare la possibilità di arrivare allo showdown. "
   },
   "pt": {
     "设置": "Definições",
@@ -4383,7 +4425,14 @@
     "{0} 落下时，底牌有机会组成更高的一对，但这些牌也不能全部算成必胜补牌。": "Se vier {0}, as cartas da mão podem formar um par mais alto, mas nem todas essas cartas podem ser contadas como outs que garantem a vitória.",
     "跟注需要对手范围里有足够较弱牌或诈唬；面对更紧范围应弃牌。": "Para pagar, o range do adversário precisa ter mãos mais fracas ou blefes em quantidade suficiente; contra um range mais fechado, deve-se desistir.",
     "听牌是主要改善路径，底牌成对或赢过未成牌诈唬也可能获胜。": "O projeto é o principal caminho de melhora, mas também é possível vencer formando um par com uma carta da mão ou superando blefes sem mão formada.",
-    "本轮跟注后即可看到最后一张河牌。": "Ao pagar nesta rodada, você pode ver a última carta comunitária, o river."
+    "本轮跟注后即可看到最后一张河牌。": "Ao pagar nesta rodada, você pode ver a última carta comunitária, o river.",
+    "继续要补 {0}，可争夺跟注后的 {1} 底池，需要至少{2}的胜率。": "O call custa mais {0} para disputar um pote de {1} após pagar; é necessária uma chance de vitória de pelo menos {2}. ",
+    "继续要补 {0}，可争夺跟注后的 {1} 底池，需要至少{2}%的胜率。": "O call custa mais {0} para disputar um pote de {1} após pagar; é necessária uma chance de vitória de pelo menos {2}%. ",
+    "之后不再参与下注决策，可以看完剩余公共牌，无需再支付筹码。": "Este jogador não terá mais decisões de aposta e poderá ver as comunitárias restantes sem pagar mais fichas. ",
+    "所有对手都已全下，这次跟注后不再有后续下注，可以看完剩余公共牌，无需再支付筹码。": "Todos os adversários já estão all-in, então este call encerra as apostas e permite ver as comunitárias restantes sem pagar mais fichas. ",
+    "湿润面过牌可能让顺子听牌或同花听牌免费看下一张。": "Dar check neste bordo com projetos pode deixar que projetos de sequência ou flush vejam a próxima carta de graça. ",
+    "湿润面过牌可能让{0}免费看下一张。": "Dar check neste bordo com projetos pode deixar que {0} veja a próxima carta de graça. ",
+    "这手牌的 {0} 踢脚偏弱，遇到同样击中顶对但踢脚更好的牌时会落后，{1}过牌先控制底池，保留摊牌机会。": "Com um kicker {0} fraco, esta mão pode perder para o mesmo top pair com um kicker melhor. {1} dá check para controlar o pote e preservar a chance de chegar ao showdown. "
   },
   "de": {
     "设置": "Einstellungen",
@@ -4993,7 +5042,14 @@
     "{0} 落下时，底牌有机会组成更高的一对，但这些牌也不能全部算成必胜补牌。": "Wenn {0} fällt, können die Hole Cards ein höheres Paar bilden. Diese Karten zählen aber nicht alle als sichere Gewinn-Outs.",
     "跟注需要对手范围里有足够较弱牌或诈唬；面对更紧范围应弃牌。": "Ein Call setzt genügend schwächere Hände oder Bluffs in der gegnerischen Range voraus; gegen eine engere Range sollte man folden.",
     "听牌是主要改善路径，底牌成对或赢过未成牌诈唬也可能获胜。": "Der Draw ist der wichtigste Weg zur Verbesserung. Die Hand kann aber auch durch ein Paar mit einer Holecard oder gegen einen Bluff ohne fertige Hand gewinnen.",
-    "本轮跟注后即可看到最后一张河牌。": "Mit einem Call in dieser Runde siehst du die letzte Gemeinschaftskarte, den River."
+    "本轮跟注后即可看到最后一张河牌。": "Mit einem Call in dieser Runde siehst du die letzte Gemeinschaftskarte, den River.",
+    "继续要补 {0}，可争夺跟注后的 {1} 底池，需要至少{2}的胜率。": "Der Call kostet weitere {0}, um nach dem Call um einen Pot von {1} zu spielen; dafür ist eine Gewinnchance von mindestens {2} nötig. ",
+    "继续要补 {0}，可争夺跟注后的 {1} 底池，需要至少{2}%的胜率。": "Der Call kostet weitere {0}, um nach dem Call um einen Pot von {1} zu spielen; dafür ist eine Gewinnchance von mindestens {2}% nötig. ",
+    "之后不再参与下注决策，可以看完剩余公共牌，无需再支付筹码。": "Dieser Spieler trifft danach keine weiteren Einsatzentscheidungen und sieht die restlichen Gemeinschaftskarten ohne zusätzliche Chips. ",
+    "所有对手都已全下，这次跟注后不再有后续下注，可以看完剩余公共牌，无需再支付筹码。": "Alle Gegner sind bereits all-in. Nach diesem Call gibt es keine weiteren Einsätze, und die restlichen Gemeinschaftskarten werden ohne zusätzliche Chips aufgedeckt. ",
+    "湿润面过牌可能让顺子听牌或同花听牌免费看下一张。": "Ein Check auf diesem drawlastigen Board kann Straight- oder Flushdraws die nächste Karte kostenlos geben. ",
+    "湿润面过牌可能让{0}免费看下一张。": "Ein Check auf diesem drawlastigen Board kann {0} die nächste Karte kostenlos geben. ",
+    "这手牌的 {0} 踢脚偏弱，遇到同样击中顶对但踢脚更好的牌时会落后，{1}过牌先控制底池，保留摊牌机会。": "Mit dem schwachen Kicker {0} kann diese Hand gegen dasselbe Top Pair mit besserem Kicker verlieren. {1} checkt, hält so den Pot klein und bewahrt die Chance auf einen Showdown. "
   },
   "fr": {
     "设置": "Paramètres",
@@ -5603,7 +5659,14 @@
     "{0} 落下时，底牌有机会组成更高的一对，但这些牌也不能全部算成必胜补牌。": "Si {0} tombe, les cartes privatives peuvent former une paire plus haute, mais ces cartes ne sont pas toutes des outs garantissant la victoire.",
     "跟注需要对手范围里有足够较弱牌或诈唬；面对更紧范围应弃牌。": "Pour suivre, le range adverse doit contenir assez de mains plus faibles ou de bluffs ; face à un range plus serré, il faut se coucher.",
     "听牌是主要改善路径，底牌成对或赢过未成牌诈唬也可能获胜。": "Le tirage est la principale voie d’amélioration, mais former une paire avec une carte privative ou battre un bluff sans main faite peut aussi permettre de gagner.",
-    "本轮跟注后即可看到最后一张河牌。": "Suivre dans ce tour permet de voir la dernière carte commune, la river."
+    "本轮跟注后即可看到最后一张河牌。": "Suivre dans ce tour permet de voir la dernière carte commune, la river.",
+    "继续要补 {0}，可争夺跟注后的 {1} 底池，需要至少{2}的胜率。": "Le call coûte {0} de plus pour disputer un pot de {1} après le call ; il faut au moins {2} de chances de gagner. ",
+    "继续要补 {0}，可争夺跟注后的 {1} 底池，需要至少{2}%的胜率。": "Le call coûte {0} de plus pour disputer un pot de {1} après le call ; il faut au moins {2}% de chances de gagner. ",
+    "之后不再参与下注决策，可以看完剩余公共牌，无需再支付筹码。": "Ce joueur n’aura plus de décision de mise et pourra voir les cartes communes restantes sans engager de jetons supplémentaires. ",
+    "所有对手都已全下，这次跟注后不再有后续下注，可以看完剩余公共牌，无需再支付筹码。": "Tous les adversaires sont déjà à tapis : ce call met fin aux mises et permet de voir les cartes communes restantes sans engager de jetons supplémentaires. ",
+    "湿润面过牌可能让顺子听牌或同花听牌免费看下一张。": "Checker ce tableau riche en tirages peut laisser les tirages quinte ou couleur voir gratuitement la carte suivante. ",
+    "湿润面过牌可能让{0}免费看下一张。": "Checker ce tableau riche en tirages peut laisser {0} voir gratuitement la carte suivante. ",
+    "这手牌的 {0} 踢脚偏弱，遇到同样击中顶对但踢脚更好的牌时会落后，{1}过牌先控制底池，保留摊牌机会。": "Avec un kicker {0} faible, cette main peut perdre contre la même top paire avec un meilleur kicker. {1} checke pour contrôler le pot tout en conservant une chance d’aller à l’abattage. "
   },
   "ru": {
     "设置": "Настройки",
@@ -6213,6 +6276,13 @@
     "{0} 落下时，底牌有机会组成更高的一对，但这些牌也不能全部算成必胜补牌。": "Если выйдет {0}, карманные карты могут образовать более высокую пару, но не все эти карты можно считать гарантированно победными аутами.",
     "跟注需要对手范围里有足够较弱牌或诈唬；面对更紧范围应弃牌。": "Для колла в диапазоне соперника должно быть достаточно более слабых рук или блефов; против более тайтового диапазона следует сбросить.",
     "听牌是主要改善路径，底牌成对或赢过未成牌诈唬也可能获胜。": "Дро — основной путь к усилению, но можно также выиграть, собрав пару с карманной картой или обыграв блеф без готовой руки.",
-    "本轮跟注后即可看到最后一张河牌。": "После колла в этом круге можно увидеть последнюю общую карту — ривер."
+    "本轮跟注后即可看到最后一张河牌。": "После колла в этом круге можно увидеть последнюю общую карту — ривер.",
+    "继续要补 {0}，可争夺跟注后的 {1} 底池，需要至少{2}的胜率。": "Нужно доплатить {0}, чтобы после колла бороться за банк {1}; необходима вероятность победы не ниже {2}. ",
+    "继续要补 {0}，可争夺跟注后的 {1} 底池，需要至少{2}%的胜率。": "Нужно доплатить {0}, чтобы после колла бороться за банк {1}; необходима вероятность победы не ниже {2}%. ",
+    "之后不再参与下注决策，可以看完剩余公共牌，无需再支付筹码。": "У этого игрока больше не будет решений о ставках, и оставшиеся общие карты можно увидеть без дополнительных фишек. ",
+    "所有对手都已全下，这次跟注后不再有后续下注，可以看完剩余公共牌，无需再支付筹码。": "Все соперники уже пошли олл-ин, поэтому после этого колла ставок больше не будет, а оставшиеся общие карты можно увидеть без дополнительных фишек. ",
+    "湿润面过牌可能让顺子听牌或同花听牌免费看下一张。": "Чек на этой скоординированной доске может дать стрит-дро или флеш-дро бесплатную следующую карту. ",
+    "湿润面过牌可能让{0}免费看下一张。": "Чек на этой скоординированной доске может дать {0} бесплатную следующую карту. ",
+    "这手牌的 {0} 踢脚偏弱，遇到同样击中顶对但踢脚更好的牌时会落后，{1}过牌先控制底池，保留摊牌机会。": "Слабый кикер {0} может привести к проигрышу против такой же топ-пары с лучшим кикером. {1} чекает, контролируя банк и сохраняя шанс дойти до вскрытия. "
   }
 }

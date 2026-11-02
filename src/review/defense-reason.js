@@ -29,7 +29,7 @@ export function defenseReason(snapshot, context, matchups) {
   const cost = snapshot.callPrice?.cost ?? snapshot.legal.callAmount;
   const pot = snapshot.callPrice?.contestable ?? snapshot.contestable;
   const clauses = [
-    `继续要补 ${n(cost)}，可争夺跟注后的 ${n(pot)} 底池，当前保本门槛为 ${((cost / Math.max(1, pot)) * 100).toFixed(1)}%。`,
+    `继续要补 ${n(cost)}，可争夺跟注后的 ${n(pot)} 底池，需要至少${((cost / Math.max(1, pot)) * 100).toFixed(1)}%的胜率。`,
   ];
   if (!snapshot.street) {
     if (

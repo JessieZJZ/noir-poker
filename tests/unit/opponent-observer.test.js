@@ -156,7 +156,7 @@ test('a recorded QQ multiway shove fold explains the pending callers rather than
   assert.equal(e.basisSource, 'recorded');
   const text = summary(e);
   assert.match(text, /Alex.*Q♣ Q♠.*选择弃牌/);
-  assert.match(text, /当前保本门槛为 48\.5%/);
+  assert.match(text, /需要至少48\.5%的胜率/);
   assert.match(text, /Alex担心后面 5 位尚未回应这次全下的玩家会用强牌跟入，因此收紧了继续范围/);
   assert.doesNotMatch(text, /这次没有用当前起手牌|玩家持有强牌|模型|机器人/);
   assert.doesNotMatch(text, advice);

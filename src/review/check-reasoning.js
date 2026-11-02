@@ -133,6 +133,16 @@ function madeHandRisk(c) {
   return threats.length ? `当前成牌仍可能落后于${threats.join('、')}。` : '';
 }
 
+export function weakTopPairCheckReason(s, c) {
+  if (c.handClass !== 'top-pair' || c.made.score[0] !== 1 || c.draw.outs) return '';
+  const paired = c.made.score[1];
+  const kicker = s.hole.find((card) => card.rank !== paired)?.rank;
+  // Only a private kicker still present in the best five can support this
+  // explanation. A later high board card may already have replaced it.
+  if (!kicker || kicker >= 10 || !c.made.score.slice(2).includes(kicker)) return '';
+  return `这手牌的 ${rankText(kicker)} 踢脚偏弱，遇到同样击中顶对但踢脚更好的牌时会落后，${s.reviewSubject || '这位玩家'}过牌先控制底池，保留摊牌机会。`;
+}
+
 export function checkReasoning(s, c, { trap = false, closingExplained = false } = {}) {
   if (!s.street || c.handClass === 'board') return [];
   const risks = checkRisks(s, c);
@@ -160,9 +170,11 @@ export function checkReasoning(s, c, { trap = false, closingExplained = false } 
   // The observer panel explains this check; it does not coach the actor's
   // next decision. Keep board facts, the cost of checking and recorded traps.
   if (s.reviewAudience === 'observer') {
+    const kickerControl = trap ? '' : weakTopPairCheckReason(s, c);
     if (risks.length && !c.draw.outs) parts.push('过牌避免主动扩大当前底池。');
     else if (trap && c.pendingOthers > 0)
       parts.push('后面还有玩家可以下注，过牌保留了诱导其拿较弱牌继续下注或尝试诈唬的机会。');
+    else if (kickerControl) parts.push(kickerControl);
     else if (valueHolding)
       parts.push(
         c.pendingOthers > 0

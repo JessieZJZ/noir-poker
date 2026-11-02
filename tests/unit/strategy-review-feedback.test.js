@@ -108,7 +108,7 @@ test('opponent review keeps folded blinds in the engine call price at both stake
       amount: 0,
       trace: { ...d.trace, reasonSource: 'scripted-action-only' },
     });
-    assert.match(r.detail, /当前保本门槛为 19.0%/);
-    assert.doesNotMatch(r.detail, /当前保本门槛为 20.0%/);
+    assert.match(r.detail, /需要至少19.0%的胜率/);
+    assert.doesNotMatch(r.detail, /需要至少20.0%的胜率/);
   }
 });

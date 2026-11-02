@@ -162,7 +162,7 @@ test('review prices, actor references and draw verdicts stay coherent in the exi
   const bot = page.locator('#review-opponent-detail .review-explanation');
   // The opponent tab explains his own draw and price, not player coaching.
   await expect(bot).toContainText('当前主要依靠两头顺听牌改善');
-  await expect(bot).toContainText('当前保本门槛为 24.3%');
+  await expect(bot).toContainText('需要至少24.3%的胜率');
   const paragraphs = await bot.locator('.review-analysis-heading ~ p').allTextContents();
   expect(paragraphs.join('').match(/Kai/g)).toHaveLength(1);
   await expect(bot).not.toContainText('；');

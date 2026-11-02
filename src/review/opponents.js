@@ -9,7 +9,12 @@ import { rangeNoteClauses, handMatchups } from './matchups.js';
 import { publicStoryNotes, priorCallingLeadNotes } from './public-story.js';
 import { actorAtPosition, actorName } from '../engine/player-identity.js';
 import { foldPressure, foldWinNote } from './presentation.js';
-import { checkReasoning, checkRisks, madeRedrawReasoning } from './check-reasoning.js';
+import {
+  checkReasoning,
+  checkRisks,
+  madeRedrawReasoning,
+  weakTopPairCheckReason,
+} from './check-reasoning.js';
 import { currentStreetCallers, defenseReason, straightSplitReason } from './defense-reason.js';
 import { enrichStrategy } from './strategy-context.js';
 import { REVIEW_TOPICS as TOPIC } from './prose-topics.js';
@@ -131,7 +136,7 @@ function objectiveActionReason(s, c, f, hand, drawText, foldNote) {
           : `这次弃牌不再补 ${n(s.legal.callAmount)}，保留行动前剩余的 ${n(s.stack)}。`,
       ...(c.reviewPrice && s.legal.callAmount > 0
         ? [
-            `继续要补 ${n(c.reviewPrice.cost)}，可争夺跟注后的 ${n(c.reviewPrice.contestable)} 底池，当前保本门槛为 ${pct(c.reviewPrice.required)}。`,
+            `继续要补 ${n(c.reviewPrice.cost)}，可争夺跟注后的 ${n(c.reviewPrice.contestable)} 底池，需要至少${pct(c.reviewPrice.required)}的胜率。`,
           ]
         : []),
       straightSplitReason(s, c, c.matchups),
@@ -168,7 +173,7 @@ function objectiveActionReason(s, c, f, hand, drawText, foldNote) {
       ...improvement,
       ...(!s.street ? preflopPotential(s, '这位玩家', true) : []),
       c.reviewPrice
-        ? `继续要补 ${n(c.reviewPrice.cost)}，可争夺跟注后的 ${n(c.reviewPrice.contestable)} 底池，当前保本门槛为 ${pct(c.reviewPrice.required)}。`
+        ? `继续要补 ${n(c.reviewPrice.cost)}，可争夺跟注后的 ${n(c.reviewPrice.contestable)} 底池，需要至少${pct(c.reviewPrice.required)}的胜率。`
         : `这次补 ${n(s.legal.callAmount)}，继续争夺 ${n(s.contestable)} 的底池。`,
     ].filter(Boolean);
   if (s.action === 'raise') {
@@ -573,17 +578,24 @@ export function explainOpponent(record, identities = []) {
         logicParts = checkReasoning(snapshot, c);
         logic = logicParts.join('');
       } else if (v.street > 0 && v.street < 3 && c.handClass === 'top-pair') {
-        logic = `${subject}的${hand}仍可向较弱的一对或听牌取值，过牌暂时少收这部分价值，并把较强牌保留在过牌范围中。`;
-        if (c.pendingOthers > 0)
+        const kickerControl = weakTopPairCheckReason(snapshot, c);
+        logic =
+          kickerControl ||
+          `${subject}的${hand}仍可向较弱的一对或听牌取值，过牌暂时少收这部分价值，并把较强牌保留在过牌范围中。`;
+        if (!kickerControl && c.pendingOthers > 0)
           checkNotes.push('过牌也可能是在等后位先下注，给对手继续投入的机会。');
-        if (c.opponents > 1) checkNotes.push('多人底池里，这手成牌并不是坚果。');
+        if (!kickerControl && c.opponents > 1) checkNotes.push('多人底池里，这手成牌并不是坚果。');
         if (wet) {
           const draws = [
             c.texture.connected >= 2 ? '顺子听牌' : '',
             c.texture.maxSuit >= 2 ? '同花听牌' : '',
           ].filter(Boolean);
           if (draws.length)
-            checkNotes.push(`湿润面过牌的代价，是可能让${draws.join('或')}免费看下一张。`);
+            checkNotes.push(
+              draws.length === 2
+                ? '湿润面过牌可能让顺子听牌或同花听牌免费看下一张。'
+                : `湿润面过牌可能让${draws[0]}免费看下一张。`,
+            );
         }
       } else
         logic = draw.outs
@@ -687,8 +699,13 @@ export function explainOpponent(record, identities = []) {
         ? `${draw.straightRanks.map(rankText).join(' / ')} 落下时可以补成顺子。`
         : '',
       `这次补 ${n(cost)}，可争夺 ${n((usePolicyReason && t.allIn?.contestable) || v.contestable)} 的底池。`,
-      allinCall ? '之后不再参与下注决策。' : '所有对手都已全下，这次跟注后不再有后续下注。',
-      v.street < 3 ? '可以看完剩余公共牌，无需再支付筹码。' : '',
+      allinCall
+        ? v.street < 3
+          ? '之后不再参与下注决策，可以看完剩余公共牌，无需再支付筹码。'
+          : '之后不再参与下注决策。'
+        : v.street < 3
+          ? '所有对手都已全下，这次跟注后不再有后续下注，可以看完剩余公共牌，无需再支付筹码。'
+          : '所有对手都已全下，这次跟注后不再有后续下注。',
     ].filter(Boolean);
     logic = logicParts.join('');
     checkNotes.length = 0;
