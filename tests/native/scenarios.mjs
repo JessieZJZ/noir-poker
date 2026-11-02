@@ -4415,6 +4415,30 @@ export async function nativeScenarios(app) {
           await app.evaluate(() => document.querySelector('#fold-button').disabled),
           true,
         );
+        if (await app.evaluate(() => document.documentElement.dataset.tablet === 'true'))
+          for (const orientation of ['LANDSCAPE', 'PORTRAIT']) {
+            await app.rotate(orientation);
+            const landscape = orientation === 'LANDSCAPE';
+            await app.waitFor(
+              () =>
+                app.evaluate((wide) => {
+                  const panel = document.querySelector('#tutorial-coach').getBoundingClientRect();
+                  const table = document.querySelector('#arena').getBoundingClientRect();
+                  const dock = document.querySelector('.action-dock').getBoundingClientRect();
+                  return (
+                    innerWidth > innerHeight === wide &&
+                    panel.top >= 0 &&
+                    panel.bottom <= innerHeight &&
+                    dock.bottom <= innerHeight &&
+                    (wide ? panel.left >= table.right : panel.top >= table.bottom)
+                  );
+                }, landscape),
+              10000,
+              `The coach must stay on screen in ${orientation}`,
+            );
+            await app.screenshot(`tutorial-tablet-${orientation.toLowerCase()}`);
+            assert.deepEqual((await app.state()).tutorial, view);
+          }
       }
       if (view.options.length) {
         await app.click('[data-tutorial-answer="1"]');

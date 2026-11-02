@@ -2790,7 +2790,10 @@ test('WeChat practice heading owns reset; game info replaces it only while waiti
     template,
     /class="practice-panel"\s*><view class="session-title"\s*><view class="session-heading"\s*><text>{{sessionTitle}}<\/text\s*><text wx:if="{{standingText}}" class="standing-tag {{standingClass}}"\s*>{{standingText}}<\/text\s*><\/view\s*><button wx:if="{{!over}}" class="practice-reset"[^>]*bindtap="resetPractice">\s*重新开局\s*<\/button\s*>/,
   );
-  assert.match(template, /wx:if="{{!historyReadOnly && !waitingForSeat && !tutorialPlaying}}" class="practice-panel"/);
+  assert.match(
+    template,
+    /wx:if="{{!historyReadOnly && !waitingForSeat && !tutorialPlaying}}" class="practice-panel"/,
+  );
   // The waiting card carries the waiting message, chips, blinds and results.
   assert.match(template, /wx:if="{{!historyReadOnly && waitingForSeat}}"\s+class="game-info"/);
   for (const label of ['当前筹码', '盲注', '已完成', '获胜手数', '胜率'])
