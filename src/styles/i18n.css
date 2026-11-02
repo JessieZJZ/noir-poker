@@ -11,13 +11,8 @@ html:not([lang^='zh']) .game-surface {
 html:not([lang^='zh']) .surface-top .hand-label {
   overflow: hidden;
 }
-html:not([lang^='zh']) .site-footer,
-html:not([lang^='zh']) .practice-info {
+html:not([lang^='zh']) .site-footer {
   flex-wrap: wrap;
-}
-html:not([lang^='zh']) .practice-info > span {
-  white-space: normal;
-  overflow-wrap: anywhere;
 }
 html:not([lang^='zh']) .game-surface .arena[data-player-count] .seat-profile .seat-style-label {
   font-size: var(--seat-style-font-size, 10px);

@@ -1,0 +1,232 @@
+/* Simulated bot emotions: a coloured, animated halo around the avatar and an
+   animated badge icon, shown for as long as the emotion lasts. Steady shows
+   nothing. Each emotion moves differently: a flickering flame, a breathing
+   shield, a spinning star and flashing lightning. Sizes are in the arena's
+   units, which are scaled down on phones, so halos are drawn generously.
+   Copied verbatim to WeChat as shared/ui/emotion-effects.wxss, so selectors
+   stay class-only; each platform sizes and places .mood-badge on its avatar
+   and marks seat badges .mood-live (the Settings legend stays still). */
+.avatar.mood-frustrated,
+.avatar.mood-cautious,
+.avatar.mood-confident,
+.avatar.mood-reactive {
+  box-shadow:
+    0 0 0 3px var(--mood-color),
+    0 0 14px 4px var(--mood-glow);
+}
+.avatar.mood-frustrated {
+  animation: mood-halo-flame 1.3s linear infinite;
+}
+.avatar.mood-cautious {
+  animation: mood-halo-breathe 2.2s ease-in-out infinite;
+}
+.avatar.mood-confident {
+  animation: mood-halo-shimmer 1.6s ease-in-out infinite;
+}
+.avatar.mood-reactive {
+  animation: mood-halo-flash 1.1s linear infinite;
+}
+.mood-badge {
+  display: block;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  pointer-events: none;
+}
+.mood-badge.mood-live {
+  box-shadow: 0 0 8px 1px var(--mood-glow);
+}
+.mood-badge.mood-live.mood-frustrated {
+  animation: mood-icon-flame 0.7s ease-in-out infinite alternate;
+}
+.mood-badge.mood-live.mood-cautious {
+  animation: mood-icon-breathe 2.2s ease-in-out infinite;
+}
+.mood-badge.mood-live.mood-confident {
+  animation: mood-icon-star 2.4s linear infinite;
+}
+.mood-badge.mood-live.mood-reactive {
+  animation: mood-icon-jolt 1.1s linear infinite;
+}
+.mood-frustrated {
+  --mood-color: #ff8a3d;
+  --mood-glow: rgba(255, 138, 61, 0.55);
+}
+.mood-badge.mood-frustrated {
+  background-image: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxNiAxNiI+PGNpcmNsZSBjeD0iOCIgY3k9IjgiIHI9IjcuMyIgZmlsbD0iIzBiMTQxYiIgc3Ryb2tlPSIjZmY4YTNkIiBzdHJva2Utd2lkdGg9IjEuMiIvPjxwYXRoIGQ9Ik04IDIuNEM5LjcgNC4zIDExLjYgNS44IDExLjYgOC43QTMuNiAzLjYgMCAwIDEgNC40IDguN0M0LjQgNy4xIDUuMiA2IDYuMiA1LjNDNi4zIDYuNiA2LjggNy40IDcuNiA3LjdDNy4yIDUuOSA3LjMgNC4xIDggMi40WiIgZmlsbD0iI2ZmOGEzZCIvPjwvc3ZnPg==');
+}
+.mood-cautious {
+  --mood-color: #5aa9ff;
+  --mood-glow: rgba(90, 169, 255, 0.55);
+}
+.mood-badge.mood-cautious {
+  background-image: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxNiAxNiI+PGNpcmNsZSBjeD0iOCIgY3k9IjgiIHI9IjcuMyIgZmlsbD0iIzBiMTQxYiIgc3Ryb2tlPSIjNWFhOWZmIiBzdHJva2Utd2lkdGg9IjEuMiIvPjxwYXRoIGQ9Ik04IDIuOEwxMi4yIDQuNFY4QzEyLjIgMTAuNSAxMC40IDEyLjMgOCAxMy4yQzUuNiAxMi4zIDMuOCAxMC41IDMuOCA4VjQuNFoiIGZpbGw9IiM1YWE5ZmYiLz48L3N2Zz4=');
+}
+.mood-confident {
+  --mood-color: #f2c54b;
+  --mood-glow: rgba(242, 197, 75, 0.55);
+}
+.mood-badge.mood-confident {
+  background-image: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxNiAxNiI+PGNpcmNsZSBjeD0iOCIgY3k9IjgiIHI9IjcuMyIgZmlsbD0iIzBiMTQxYiIgc3Ryb2tlPSIjZjJjNTRiIiBzdHJva2Utd2lkdGg9IjEuMiIvPjxwYXRoIGQ9Ik04LjAwIDMuNDAgTDkuMjMgNi42MCBMMTIuNjYgNi43OSBMMTAuMDAgOC45NSBMMTAuODggMTIuMjYgTDguMDAgMTAuNDAgTDUuMTIgMTIuMjYgTDYuMDAgOC45NSBMMy4zNCA2Ljc5IEw2Ljc3IDYuNjBaIiBmaWxsPSIjZjJjNTRiIi8+PC9zdmc+');
+}
+.mood-reactive {
+  --mood-color: #ff5a5f;
+  --mood-glow: rgba(255, 90, 95, 0.55);
+}
+.mood-badge.mood-reactive {
+  background-image: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxNiAxNiI+PGNpcmNsZSBjeD0iOCIgY3k9IjgiIHI9IjcuMyIgZmlsbD0iIzBiMTQxYiIgc3Ryb2tlPSIjZmY1YTVmIiBzdHJva2Utd2lkdGg9IjEuMiIvPjxwYXRoIGQ9Ik05LjIgMi42TDQuOSA4LjlINy44TDYuOSAxMy40TDExLjIgNy4xSDguM1oiIGZpbGw9IiNmZjVhNWYiLz48L3N2Zz4=');
+}
+@keyframes mood-halo-flame {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 3px var(--mood-color),
+      0 0 10px 2px var(--mood-glow);
+  }
+  18% {
+    box-shadow:
+      0 0 0 4px var(--mood-color),
+      0 -4px 26px 8px var(--mood-glow);
+  }
+  34% {
+    box-shadow:
+      0 0 0 3px var(--mood-color),
+      0 0 14px 3px var(--mood-glow);
+  }
+  58% {
+    box-shadow:
+      0 0 0 5px var(--mood-color),
+      0 -6px 30px 10px var(--mood-glow);
+  }
+  78% {
+    box-shadow:
+      0 0 0 3px var(--mood-color),
+      0 -2px 18px 5px var(--mood-glow);
+  }
+}
+@keyframes mood-halo-breathe {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 2px var(--mood-color),
+      0 0 6px 1px var(--mood-glow);
+  }
+  50% {
+    box-shadow:
+      0 0 0 5px var(--mood-color),
+      0 0 26px 9px var(--mood-glow);
+  }
+}
+@keyframes mood-halo-shimmer {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 3px var(--mood-color),
+      0 0 12px 3px var(--mood-glow);
+  }
+  50% {
+    box-shadow:
+      0 0 0 4px var(--mood-color),
+      0 0 28px 10px var(--mood-glow),
+      0 0 0 9px rgba(255, 255, 255, 0.12);
+  }
+}
+@keyframes mood-halo-flash {
+  0%,
+  44%,
+  100% {
+    box-shadow:
+      0 0 0 3px var(--mood-color),
+      0 0 10px 2px var(--mood-glow);
+  }
+  50% {
+    box-shadow:
+      0 0 0 6px var(--mood-color),
+      0 0 34px 12px var(--mood-glow);
+  }
+  58% {
+    box-shadow:
+      0 0 0 3px var(--mood-color),
+      0 0 10px 2px var(--mood-glow);
+  }
+  66% {
+    box-shadow:
+      0 0 0 5px var(--mood-color),
+      0 0 28px 10px var(--mood-glow);
+  }
+  74% {
+    box-shadow:
+      0 0 0 3px var(--mood-color),
+      0 0 10px 2px var(--mood-glow);
+  }
+}
+@keyframes mood-icon-flame {
+  0% {
+    transform: translateY(0) scale(1) rotate(-6deg);
+  }
+  50% {
+    transform: translateY(-12%) scale(1.18) rotate(4deg);
+  }
+  100% {
+    transform: translateY(-4%) scale(1.06) rotate(8deg);
+  }
+}
+@keyframes mood-icon-breathe {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.22);
+  }
+}
+@keyframes mood-icon-star {
+  0% {
+    transform: rotate(0deg) scale(1);
+  }
+  25% {
+    transform: rotate(90deg) scale(1.25);
+  }
+  50% {
+    transform: rotate(180deg) scale(1);
+  }
+  75% {
+    transform: rotate(270deg) scale(1.25);
+  }
+  100% {
+    transform: rotate(360deg) scale(1);
+  }
+}
+@keyframes mood-icon-jolt {
+  0%,
+  44%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+  48% {
+    transform: translate(-10%, 4%) scale(1.25);
+  }
+  52% {
+    transform: translate(10%, -4%) scale(1.25);
+  }
+  56% {
+    transform: translate(-6%, 0) scale(1.1);
+  }
+  66% {
+    transform: translate(6%, 2%) scale(1.2);
+  }
+  72% {
+    transform: translate(0, 0) scale(1);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .avatar.mood-frustrated,
+  .avatar.mood-cautious,
+  .avatar.mood-confident,
+  .avatar.mood-reactive,
+  .mood-badge.mood-live {
+    animation: none;
+  }
+}

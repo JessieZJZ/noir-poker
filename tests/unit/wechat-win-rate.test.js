@@ -221,5 +221,5 @@ test('WeChat win rate entry and template keep the Web controls', () => {
   assert.match(style, /win-rate-sheet 0\.2s ease-out/);
   assert.match(style, /win-rate-spin 0\.8s linear infinite/);
   assert.match(style, /height: 50vh/);
-  assert.match(style, /@media \(orientation: landscape\) and \(max-height: 640px\)/);
+  assert.match(style, /@media \(orientation: landscape\) and \(max-height: 700px\)/);
 });

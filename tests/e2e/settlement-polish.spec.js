@@ -45,23 +45,19 @@ for (const locale of ['zh-CN', 'en']) {
         const details = await page.evaluate(() => {
           const surface = getComputedStyle(document.querySelector('.game-surface')),
             stage = getComputedStyle(document.querySelector('#showdown-stage')),
-            dock = getComputedStyle(document.querySelector('.action-dock')),
-            status = document.querySelector('.practice-info > span').getBoundingClientRect(),
-            dot = document.querySelector('.practice-info .live-dot').getBoundingClientRect();
+            dock = getComputedStyle(document.querySelector('.action-dock'));
           return {
             bottom: surface.borderBottomColor,
             radius: surface.borderBottomLeftRadius,
             top: stage.borderTopWidth,
             background: stage.backgroundColor,
             dockBackground: dock.backgroundColor,
-            dotOffset: (dot.top + dot.bottom - status.top - status.bottom) / 2,
           };
         });
         expect(details.bottom).toBe(details.dockBackground);
         expect(details.radius).toBe('0px');
         expect(details.top).toBe('0px');
         expect(details.background).toBe(details.dockBackground);
-        expect(Math.abs(details.dotOffset)).toBeLessThanOrEqual(0.5);
       }
       await page.evaluate(() => window.qa.scene('Kh 6s', 'Kc 7d Tc 3s 2h', { count: 5 }));
       const rank = await page.evaluate(() => {

@@ -35,6 +35,21 @@ for (const [input, category] of [
   ['As Kh Qc Jd 9s 2h 3h', 0],
 ])
   check('rank ' + category, () => assert.equal(evaluate(cards(input)).score[0], category));
+// Full score arrays guard the five-card grouping: category, then the exact
+// tie-break ranks every comparison and settlement relies on.
+for (const [input, score] of [
+  ['5s 4s 3s 2s As 9h 9c', [8, 5]],
+  ['Ac Ah As Ad 2h 3s Kd', [7, 14, 13]],
+  ['2c 2h 2s Kd Kh Ks 9c', [6, 13, 2]],
+  ['As Js 9s 5s 3s 2s Kh', [5, 14, 11, 9, 5, 3]],
+  ['As 2h 3c 4d 5s 9h Jc', [4, 5]],
+  ['Ts Jh Qc Kd As 2h 3c', [4, 14]],
+  ['7s 7h 7c Ad 2s 3h 9c', [3, 7, 14, 9]],
+  ['9s 9h 4c 4d Qs Qh 2c', [2, 12, 9, 4]],
+  ['8s 8h Ac Qd 9s 2h 3c', [1, 8, 14, 12, 9]],
+  ['As Kh Qc Jd 9s 2h 3c', [0, 14, 13, 12, 11, 9]],
+])
+  check('exact score ' + input, () => assert.deepEqual(evaluate(cards(input)).score, score));
 check('wheel loses to six high', () =>
   assert.equal(
     compare(evaluate(cards('As 2h 3c 4d 5s')).score, evaluate(cards('2s 3h 4c 5d 6s')).score),

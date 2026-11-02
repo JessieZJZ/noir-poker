@@ -36,6 +36,7 @@ const sections = SUPPORTED_LOCALES.map((locale) => {
 <h2>${text('publisher')}</h2><p>${text('identity')}</p><a href="mailto:958182284@qq.com">958182284@qq.com</a>
 ${[
   ['localHeading', 'local'],
+  [null, 'observations'],
   ['dataHeading', 'data'],
   ['purchaseHeading', 'purchase'],
   ['supportHeading', 'support'],

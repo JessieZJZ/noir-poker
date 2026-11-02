@@ -34,7 +34,17 @@ test('Web and native use identical local fonts without a remote font request', (
       /@import\s+url\(['"]https?:/,
     );
   }
-  assert.deepEqual(config({ mode: 'native' }).plugins, config({ mode: 'production' }).plugins);
+  const native = config({ mode: 'native' }),
+    web = config({ mode: 'production' });
+  const pluginShape = (plugins) => plugins.map(({ name, enforce }) => ({ name, enforce }));
+  assert.deepEqual(pluginShape(native.plugins), pluginShape(web.plugins));
+  const cacheModule = new URL('../../src/review/result-cache.js', import.meta.url).pathname;
+  assert.equal(
+    native.plugins[0].transform('__NOIR_REVIEW_REVISION__', cacheModule),
+    web.plugins[0].transform('__NOIR_REVIEW_REVISION__', cacheModule),
+    'Web and native must build the same review cache revision',
+  );
+  assert.ok(!pluginShape(native.plugins).some(({ name }) => name === 'poker-test-fixtures'));
   const fonts = readFileSync(new URL('../../src/styles/fonts.css', import.meta.url), 'utf8');
   const paths = [...fonts.matchAll(/url\('\/fonts\/([^']+)'\)/g)];
   assert.equal(paths.length, 4);

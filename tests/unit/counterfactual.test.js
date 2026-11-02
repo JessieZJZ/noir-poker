@@ -227,7 +227,7 @@ function assertReferenceChips() {
 function publicMultiwayDecisions() {
   const g = newGame(5, { smallBlind: 25, bigBlind: 50, startingStack: 5000, chipUnit: 25 });
   g.emotionMode = 'lively';
-  g.players[1].botProfile = 'tan';
+  g.players[1].botProfile = 'rook';
   startHand(g);
   g.players[0].hole = cards('6d 5h');
   for (const [id, action, amount] of [
@@ -296,8 +296,8 @@ test('folded unmatched chips still settle, including a 25-chip odd award', () =>
   const continuation = JSON.parse(JSON.stringify(s));
   continuation.board = cards('8c Jd 3c 7h Kc');
   continuation.hole = cards('6d 5h');
-  continuation.players[1].botProfile = 'tan';
-  continuation.players[2].botProfile = 'peter';
+  continuation.players[1].botProfile = 'rook';
+  continuation.players[2].botProfile = 'jett';
   const changingRefund = compareCandidateActions(continuation, [], { trials: 30 });
   assert.deepEqual(
     changingRefund,

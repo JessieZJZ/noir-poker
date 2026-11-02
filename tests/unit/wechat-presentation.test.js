@@ -21,7 +21,7 @@ vm.runInNewContext(
           : { evaluate, rankText },
   },
 );
-const { presentCard, showdownPresentation, presentationPatch } = module.exports;
+const { presentCard, showdownPresentation, presentationPatch, coalesceArrayPatch } = module.exports;
 const deck = deckOfCards();
 test('presentation updates only changed seat leaves and never reset peer caption offsets', () => {
   const before = {
@@ -33,19 +33,50 @@ test('presentation updates only changed seat leaves and never reset peer caption
   const after = structuredClone(before);
   after.phoneSeats[1].cards = [{ key: 'As', arriving: true }];
   const patch = JSON.parse(JSON.stringify(presentationPatch(before, after)));
-  assert.deepEqual(patch, { 'phoneSeats[1].cards[0]': after.phoneSeats[1].cards[0] });
+  assert.deepEqual(patch, { 'phoneSeats[1].cards': after.phoneSeats[1].cards });
   assert.deepEqual(
     before.phoneSeats.map((s) => s.rankLift),
     [-12, -8],
   );
   after.phoneSeats.push({ id: 3, rankLift: 0, cards: [], actionLabel: '跟注' });
-  assert.deepEqual(JSON.parse(JSON.stringify(presentationPatch(before, after))), {
-    'phoneSeats[1].cards[0]': after.phoneSeats[1].cards[0],
-    'phoneSeats[2]': after.phoneSeats[2],
-  });
+  assert.deepEqual(JSON.parse(JSON.stringify(presentationPatch(before, after))), after);
   const reordered = { phoneSeats: after.phoneSeats.toReversed() };
   assert.deepEqual(JSON.parse(JSON.stringify(presentationPatch(after, reordered))), reordered);
   assert.deepEqual(JSON.parse(JSON.stringify(presentationPatch(after, before))), before);
+});
+test('showdown array growth invalidates WXML length conditions while equal-length rows remain granular', () => {
+  const first = { showdown: [{ id: 0, label: '一对' }] };
+  assert.deepEqual(JSON.parse(JSON.stringify(presentationPatch({ showdown: [] }, first))), first);
+  assert.deepEqual(
+    JSON.parse(JSON.stringify(presentationPatch(first, { showdown: [{ id: 0, label: '两对' }] }))),
+    { 'showdown[0].label': '两对' },
+  );
+});
+test('an unacknowledged array update retains row identity and cards during rapid leaf patches', () => {
+  const data = {
+    seats: [{ id: 1, name: 'Alex', backCards: [{ key: 'back', arriving: true }], stack: '20K' }],
+  };
+  const before = structuredClone(data);
+  const leaves = { 'seats[0].stack': '19K', 'seats[0].backCards[0].arriving': false, done: false };
+  const result = coalesceArrayPatch(data, leaves);
+  assert.deepEqual(JSON.parse(JSON.stringify(result)), {
+    seats: [{ id: 1, name: 'Alex', backCards: [{ key: 'back', arriving: false }], stack: '19K' }],
+    done: false,
+  });
+  assert.deepEqual(data, before);
+  assert.deepEqual(leaves, {
+    'seats[0].stack': '19K',
+    'seats[0].backCards[0].arriving': false,
+    done: false,
+  });
+  // A supplied replacement takes precedence over the old shape, regardless of
+  // key order, and is itself left unchanged.
+  const replacement = [...before.seats, { id: 2, name: 'Kai' }];
+  const mixed = { 'seats[1].stack': '18K', seats: replacement };
+  assert.deepEqual(JSON.parse(JSON.stringify(coalesceArrayPatch(data, mixed))), {
+    seats: [...before.seats, { id: 2, name: 'Kai', stack: '18K' }],
+  });
+  assert.equal(replacement[1].stack, undefined);
 });
 const cards = (text) =>
   text

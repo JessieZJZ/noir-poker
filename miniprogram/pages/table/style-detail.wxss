@@ -1,0 +1,49 @@
+/* The style detail matches Web's #profile-detail: a bordered 44px initials
+   avatar, green section titles and muted 13px research paragraphs. */
+.profile-detail .detail-identity > text {
+  font-weight: 500;
+}
+.profile-detail .detail-avatar.initials {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #537f71;
+  background: #24443c;
+  color: #b9e6d7;
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1;
+}
+.profile-detail .detail-description,
+.profile-detail .profile-sizing {
+  color: #a8bdc7;
+  line-height: 1.8;
+}
+.profile-detail .axis > text:last-child {
+  color: #d2eee4;
+  font-size: 14px;
+  font-weight: 700;
+}
+.profile-detail .character-section + .character-section {
+  margin-top: 0;
+}
+.profile-detail .character-section .module-title {
+  display: block;
+  margin: 18px 0 7px;
+  color: #a8dacb;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.5;
+}
+.profile-detail .character-section > text + text,
+.profile-detail .character-section > .module-title + text {
+  display: block;
+  margin: 10px 0;
+  color: #a8bdc7;
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.75;
+}
+.profile-detail .modal-scroll .modal-body {
+  padding: 4px 14px 16px;
+}

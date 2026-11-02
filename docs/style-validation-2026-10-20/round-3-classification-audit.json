@@ -1,0 +1,132 @@
+{
+  "correct": 13,
+  "total": 18,
+  "rows": [
+    {
+      "reviewer": 1,
+      "code": "A",
+      "id": "rook",
+      "label": "多街施压",
+      "correct": true
+    },
+    {
+      "reviewer": 1,
+      "code": "B",
+      "id": "balanced",
+      "label": "小注控池",
+      "correct": false
+    },
+    {
+      "reviewer": 1,
+      "code": "C",
+      "id": "nico",
+      "label": "小注控池",
+      "correct": true
+    },
+    {
+      "reviewer": 1,
+      "code": "D",
+      "id": "owen",
+      "label": "范围纪律",
+      "correct": true
+    },
+    {
+      "reviewer": 1,
+      "code": "E",
+      "id": "luka",
+      "label": "多街施压",
+      "correct": false
+    },
+    {
+      "reviewer": 1,
+      "code": "F",
+      "id": "jett",
+      "label": "宽松取值",
+      "correct": true
+    },
+    {
+      "reviewer": 2,
+      "code": "A",
+      "id": "rook",
+      "label": "多街施压",
+      "correct": true
+    },
+    {
+      "reviewer": 2,
+      "code": "B",
+      "id": "luka",
+      "label": "小注持续",
+      "correct": true
+    },
+    {
+      "reviewer": 2,
+      "code": "C",
+      "id": "balanced",
+      "label": "不确定",
+      "correct": false
+    },
+    {
+      "reviewer": 2,
+      "code": "D",
+      "id": "nico",
+      "label": "小注控池",
+      "correct": true
+    },
+    {
+      "reviewer": 2,
+      "code": "E",
+      "id": "owen",
+      "label": "范围纪律",
+      "correct": true
+    },
+    {
+      "reviewer": 2,
+      "code": "F",
+      "id": "jett",
+      "label": "宽松取值",
+      "correct": true
+    },
+    {
+      "reviewer": 3,
+      "code": "A",
+      "id": "owen",
+      "label": "范围纪律",
+      "correct": true
+    },
+    {
+      "reviewer": 3,
+      "code": "B",
+      "id": "luka",
+      "label": "小注持续",
+      "correct": true
+    },
+    {
+      "reviewer": 3,
+      "code": "C",
+      "id": "jett",
+      "label": "宽松取值",
+      "correct": true
+    },
+    {
+      "reviewer": 3,
+      "code": "D",
+      "id": "rook",
+      "label": "多街施压",
+      "correct": true
+    },
+    {
+      "reviewer": 3,
+      "code": "E",
+      "id": "balanced",
+      "label": "不确定",
+      "correct": false
+    },
+    {
+      "reviewer": 3,
+      "code": "F",
+      "id": "nico",
+      "label": "小注持续",
+      "correct": false
+    }
+  ]
+}

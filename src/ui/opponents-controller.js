@@ -10,8 +10,8 @@ import {
   assignBotSeat,
   toggleMixedLineup,
 } from '../engine/bot-profiles.js';
-import { portraitContent, portraitCredit, preparePortraits } from './portraits.js';
-import { playerResearchMarkup, playerSourcesMarkup } from './player-research.js';
+import { portraitContent, preparePortraits } from './portraits.js';
+import { playerResearchMarkup } from './player-research.js';
 import { preferenceStorage } from '../platform/storage.js';
 const STORAGE_KEY = 'noir-opponents-v1';
 export function loadBotSettings() {
@@ -61,13 +61,13 @@ export function createOpponentsController({ getGame, getCount, getSettings, onSa
     panel.dataset.profileId = profile.id;
     setLocalizedHTML(
       panel,
-      `<div class="profile-detail-heading"><div class="profile-identity"><span class="profile-portrait" aria-hidden="true">${portraitContent(profile.id, profile.short.slice(0, 1), profile.short)}</span><h3>${profile.name}</h3></div><span class="profile-detail-kind">训练原型</span><button type="button" class="profile-detail-close icon-button" data-close-profile-detail aria-label="关闭牌手详细介绍"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" /></svg></button></div><div class="profile-detail-content"><p>${profile.description}</p><div class="profile-axes">${PROFILE_AXES.map((label, i) => `<div><span>${label}</span><span class="profile-axis-meter" role="meter" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${profile.axes[i]}" aria-label="${label}" style="--axis-value:${profile.axes[i]}%"></span><strong>${profile.axes[i]}</strong></div>`).join('')}</div><p class="profile-sizing">常用翻后下注：<strong>${Math.round(profile.sizing[0] * 100)}–${Math.round(profile.sizing[1] * 100)}% 池</strong></p>${playerResearchMarkup(profile) || `<p class="profile-evidence">${profile.evidence}</p>`}<div class="profile-sources">${playerSourcesMarkup(profile)}${portraitCredit(profile.id)}</div></div>`,
+      `<div class="profile-detail-heading"><div class="profile-identity"><span class="profile-portrait" aria-hidden="true">${portraitContent(profile.id, profile.short.slice(0, 1), profile.short)}</span><h3>${profile.name}</h3></div><span class="profile-detail-kind">训练风格</span><button type="button" class="profile-detail-close icon-button" data-close-profile-detail aria-label="关闭风格详细介绍"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" /></svg></button></div><div class="profile-detail-content"><p>${profile.description}</p><div class="profile-axes">${PROFILE_AXES.map((label, i) => `<div><span>${label}</span><span class="profile-axis-meter" role="meter" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${profile.axes[i]}" aria-label="${label}" style="--axis-value:${profile.axes[i]}%"></span><strong>${profile.axes[i]}</strong></div>`).join('')}</div><p class="profile-sizing">常用翻后下注：<strong>${Math.round(profile.sizing[0] * 100)}–${Math.round(profile.sizing[1] * 100)}% 池</strong></p>${playerResearchMarkup(profile) || `<p class="profile-evidence">${profile.evidence}</p>`}</div>`,
     );
     const comparison = document.querySelector('#profile-comparison');
     if (comparison)
       setLocalizedHTML(
         comparison,
-        `<table><caption>所有原型的训练参数（0–100）</caption><thead><tr><th scope="col">原型</th>${PROFILE_AXES.map((l) => `<th scope="col">${l}</th>`).join('')}<th scope="col">下注 / 池</th></tr></thead><tbody>${BOT_PROFILES.map((p) => `<tr><th scope="row">${p.short}</th>${p.axes.map((v) => `<td>${v}</td>`).join('')}<td>${Math.round(p.sizing[0] * 100)}–${Math.round(p.sizing[1] * 100)}%</td></tr>`).join('')}</tbody></table>`,
+        `<table><caption>所有风格的训练参数（0–100）</caption><thead><tr><th scope="col">风格</th>${PROFILE_AXES.map((l) => `<th scope="col">${l}</th>`).join('')}<th scope="col">下注 / 池</th></tr></thead><tbody>${BOT_PROFILES.map((p) => `<tr><th scope="row">${p.short}</th>${p.axes.map((v) => `<td>${v}</td>`).join('')}<td>${Math.round(p.sizing[0] * 100)}–${Math.round(p.sizing[1] * 100)}%</td></tr>`).join('')}</tbody></table>`,
       );
     preparePortraits(panel);
   }

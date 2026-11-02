@@ -2,6 +2,7 @@ import { test, expect } from '@playwright/test';
 import { writeFile } from 'node:fs/promises';
 import { openSettings, closeSettings } from './settings-helpers.js';
 import { readTableLayout, assertTableLayout } from '../native/layout.mjs';
+import { styleTagFailures } from '../fixtures/style-tag-metrics.js';
 import {
   readRecordTableGeometry,
   recordGeometryDifferences,
@@ -180,20 +181,24 @@ test('Chinese, Korean and long locale persona tags keep the same height without 
   ]) {
     await prepare(page, size);
     await page.locator('#opponents-button').click();
-    await page.locator('[data-bot-seat="3"]').selectOption('viktor');
-    await page.locator('[data-bot-seat="4"]').selectOption('haxton');
+    await page.locator('[data-bot-seat="3"]').selectOption('rook');
+    await page.locator('[data-bot-seat="4"]').selectOption('owen');
     await closeSettings(page);
     await page.evaluate(() => window.qa.heroTurn(9));
     const read = () =>
       page.evaluate(() => {
-        const arena = document.querySelector('#arena'),
-          scale = new DOMMatrix(getComputedStyle(arena).transform).a;
+        const arena = document.querySelector('#arena');
         const rows = [...arena.querySelectorAll('.seat-profile')].map((profile) => {
           const label = profile.querySelector('.seat-style-label');
           return {
             profile: profile.getBoundingClientRect().height,
             tag: label.getBoundingClientRect().height,
-            font: parseFloat(getComputedStyle(label).fontSize) * scale,
+            // Full localized names can use different font sizes, but must
+            // fit the same reserved badge without changing table geometry.
+            fits:
+              label.scrollWidth <= label.clientWidth + 1 &&
+              label.scrollHeight <= label.clientHeight + 1 &&
+              label.textContent === label.dataset.fullName,
             whiteSpace: getComputedStyle(label).whiteSpace,
             overflow: getComputedStyle(label).textOverflow,
           };
@@ -206,6 +211,7 @@ test('Chinese, Korean and long locale persona tags keep the same height without 
         };
       });
     const before = await read();
+    expect(before.rows.every((row) => row.fits)).toBe(true);
     for (const locale of ['ko', 'de', 'en', 'fr', 'ru', 'ja', 'es', 'it', 'pt', 'zh-TW', 'zh-CN']) {
       await openSettings(page);
       await page.locator('#language-select').selectOption(locale);
@@ -215,7 +221,10 @@ test('Chinese, Korean and long locale persona tags keep the same height without 
       await expect
         .poll(async () => {
           const current = await read();
-          return recordGeometryDifferences(current, before, 0.5);
+          return [
+            ...recordGeometryDifferences(current, before, 0.5),
+            ...(await page.evaluate(styleTagFailures)),
+          ];
         })
         .toEqual([]);
       assertTableLayout(await page.evaluate(readTableLayout));
@@ -486,7 +495,7 @@ test('an empty hero rank moves the identity close to the cards without changing 
       measurements.at(-1).historicalEmpty = archivedEmpty;
       if (size.width === 390 && count === 9)
         await page.screenshot({ path: test.info().outputPath('close-history-identity-390-9.png') });
-      await page.locator('#records-back-button').click();
+      await backToGame(page);
     }
   }
   await writeFile(
@@ -494,3 +503,8 @@ test('an empty hero rank moves the identity close to the cards without changing 
     JSON.stringify(measurements, null, 2),
   );
 });
+
+// Records rely on system Back: unwind the detail and list pages to the game.
+async function backToGame(page) {
+  while (/#records/.test(page.url())) await page.goBack();
+}

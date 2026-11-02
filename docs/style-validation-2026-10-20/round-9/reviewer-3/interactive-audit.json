@@ -1,0 +1,1025 @@
+{
+  "reviewer": 3,
+  "identity": "AI public-information strategy experience reviewer; not human or UI acceptance",
+  "selectedCodes": [
+    "C",
+    "D"
+  ],
+  "completedHands": 200,
+  "startRequests": 200,
+  "actionRequests": 403,
+  "heroActions": {
+    "fold": 150,
+    "raise": 88,
+    "check": 117,
+    "call": 48
+  },
+  "responseStates": {
+    "playing": 403,
+    "done": 200
+  },
+  "summary": {
+    "C": {
+      "completed": 100,
+      "handRange": [
+        1,
+        100
+      ],
+      "heroPositions": {
+        "CO": 20,
+        "UTG": 20,
+        "BB": 20,
+        "SB": 20,
+        "BTN": 20
+      },
+      "ratesPer100Hands": {
+        "hero_vpip": 34,
+        "hero_pfr": 22,
+        "target_vpip": 55,
+        "target_pfr": 22
+      },
+      "heroFlops": 32,
+      "targetFlops": 46,
+      "sharedFlops": 15,
+      "sharedFlopHands": [
+        7,
+        29,
+        35,
+        39,
+        43,
+        49,
+        50,
+        57,
+        58,
+        60,
+        68,
+        78,
+        89,
+        91,
+        93
+      ],
+      "facing": {
+        "Hero_faces_target": {
+          "preflop": 10,
+          "postflop": 4,
+          "preflopHands": [
+            11,
+            20,
+            24,
+            30,
+            57,
+            60,
+            73,
+            74,
+            76,
+            89
+          ],
+          "postflopHands": [
+            35,
+            58,
+            68,
+            89
+          ],
+          "decisions": [
+            {
+              "hand": 11,
+              "street": 0,
+              "eventIndex": 4,
+              "action": "fold",
+              "callCost": 300,
+              "currentPriceOwner": "C",
+              "currentBetTo": 500,
+              "actorBet": 200
+            },
+            {
+              "hand": 20,
+              "street": 0,
+              "eventIndex": 2,
+              "action": "fold",
+              "callCost": 500,
+              "currentPriceOwner": "C",
+              "currentBetTo": 500,
+              "actorBet": 0
+            },
+            {
+              "hand": 24,
+              "street": 0,
+              "eventIndex": 1,
+              "action": "fold",
+              "callCost": 500,
+              "currentPriceOwner": "C",
+              "currentBetTo": 500,
+              "actorBet": 0
+            },
+            {
+              "hand": 30,
+              "street": 0,
+              "eventIndex": 4,
+              "action": "fold",
+              "callCost": 500,
+              "currentPriceOwner": "C",
+              "currentBetTo": 700,
+              "actorBet": 200
+            },
+            {
+              "hand": 57,
+              "street": 0,
+              "eventIndex": 6,
+              "action": "call",
+              "callCost": 700,
+              "currentPriceOwner": "C",
+              "currentBetTo": 900,
+              "actorBet": 200
+            },
+            {
+              "hand": 60,
+              "street": 0,
+              "eventIndex": 2,
+              "action": "raise",
+              "callCost": 500,
+              "currentPriceOwner": "C",
+              "currentBetTo": 500,
+              "actorBet": 0
+            },
+            {
+              "hand": 73,
+              "street": 0,
+              "eventIndex": 6,
+              "action": "fold",
+              "callCost": 700,
+              "currentPriceOwner": "C",
+              "currentBetTo": 900,
+              "actorBet": 200
+            },
+            {
+              "hand": 74,
+              "street": 0,
+              "eventIndex": 3,
+              "action": "fold",
+              "callCost": 400,
+              "currentPriceOwner": "C",
+              "currentBetTo": 500,
+              "actorBet": 100
+            },
+            {
+              "hand": 76,
+              "street": 0,
+              "eventIndex": 3,
+              "action": "fold",
+              "callCost": 600,
+              "currentPriceOwner": "C",
+              "currentBetTo": 700,
+              "actorBet": 100
+            },
+            {
+              "hand": 89,
+              "street": 0,
+              "eventIndex": 4,
+              "action": "call",
+              "callCost": 300,
+              "currentPriceOwner": "C",
+              "currentBetTo": 500,
+              "actorBet": 200
+            },
+            {
+              "hand": 35,
+              "street": 2,
+              "eventIndex": 11,
+              "action": "call",
+              "callCost": 2400,
+              "currentPriceOwner": "C",
+              "currentBetTo": 3600,
+              "actorBet": 1200
+            },
+            {
+              "hand": 58,
+              "street": 1,
+              "eventIndex": 6,
+              "action": "call",
+              "callCost": 400,
+              "currentPriceOwner": "C",
+              "currentBetTo": 400,
+              "actorBet": 0
+            },
+            {
+              "hand": 68,
+              "street": 1,
+              "eventIndex": 6,
+              "action": "call",
+              "callCost": 1100,
+              "currentPriceOwner": "C",
+              "currentBetTo": 1100,
+              "actorBet": 0
+            },
+            {
+              "hand": 89,
+              "street": 2,
+              "eventIndex": 16,
+              "action": "fold",
+              "callCost": 1300,
+              "currentPriceOwner": "C",
+              "currentBetTo": 1300,
+              "actorBet": 0
+            }
+          ]
+        },
+        "target_faces_Hero": {
+          "preflop": 14,
+          "postflop": 8,
+          "preflopHands": [
+            5,
+            7,
+            28,
+            39,
+            43,
+            51,
+            55,
+            58,
+            60,
+            62,
+            68,
+            77,
+            78,
+            93
+          ],
+          "postflopHands": [
+            35,
+            39,
+            49,
+            57,
+            60,
+            78
+          ],
+          "decisions": [
+            {
+              "hand": 5,
+              "street": 0,
+              "eventIndex": 1,
+              "action": "call",
+              "callCost": 500,
+              "currentPriceOwner": "Hero",
+              "currentBetTo": 500,
+              "actorBet": 0
+            },
+            {
+              "hand": 7,
+              "street": 0,
+              "eventIndex": 3,
+              "action": "call",
+              "callCost": 400,
+              "currentPriceOwner": "Hero",
+              "currentBetTo": 500,
+              "actorBet": 100
+            },
+            {
+              "hand": 28,
+              "street": 0,
+              "eventIndex": 4,
+              "action": "fold",
+              "callCost": 300,
+              "currentPriceOwner": "Hero",
+              "currentBetTo": 500,
+              "actorBet": 200
+            },
+            {
+              "hand": 39,
+              "street": 0,
+              "eventIndex": 5,
+              "action": "call",
+              "callCost": 500,
+              "currentPriceOwner": "Hero",
+              "currentBetTo": 700,
+              "actorBet": 200
+            },
+            {
+              "hand": 43,
+              "street": 0,
+              "eventIndex": 4,
+              "action": "call",
+              "callCost": 300,
+              "currentPriceOwner": "Hero",
+              "currentBetTo": 500,
+              "actorBet": 200
+            },
+            {
+              "hand": 51,
+              "street": 0,
+              "eventIndex": 6,
+              "action": "fold",
+              "callCost": 1200,
+              "currentPriceOwner": "Hero",
+              "currentBetTo": 1400,
+              "actorBet": 200
+            },
+            {
+              "hand": 55,
+              "street": 0,
+              "eventIndex": 6,
+              "action": "fold",
+              "callCost": 1200,
+              "currentPriceOwner": "Hero",
+              "currentBetTo": 1400,
+              "actorBet": 200
+            },
+            {
+              "hand": 58,
+              "street": 0,
+              "eventIndex": 4,
+              "action": "call",
+              "callCost": 200,
+              "currentPriceOwner": "Hero",
+              "currentBetTo": 400,
+              "actorBet": 200
+            },
+            {
+              "hand": 60,
+              "street": 0,
+              "eventIndex": 5,
+              "action": "call",
+              "callCost": 1000,
+              "currentPriceOwner": "Hero",
+              "currentBetTo": 1500,
+              "actorBet": 500
+            },
+            {
+              "hand": 62,
+              "street": 0,
+              "eventIndex": 3,
+              "action": "fold",
+              "callCost": 600,
+              "currentPriceOwner": "Hero",
+              "currentBetTo": 700,
+              "actorBet": 100
+            },
+            {
+              "hand": 68,
+              "street": 0,
+              "eventIndex": 4,
+              "action": "call",
+              "callCost": 300,
+              "currentPriceOwner": "Hero",
+              "currentBetTo": 500,
+              "actorBet": 200
+            },
+            {
+              "hand": 77,
+              "street": 0,
+              "eventIndex": 3,
+              "action": "fold",
+              "callCost": 400,
+              "currentPriceOwner": "Hero",
+              "currentBetTo": 500,
+              "actorBet": 100
+            },
+            {
+              "hand": 78,
+              "street": 0,
+              "eventIndex": 4,
+              "action": "call",
+              "callCost": 1800,
+              "currentPriceOwner": "Hero",
+              "currentBetTo": 2000,
+              "actorBet": 200
+            },
+            {
+              "hand": 93,
+              "street": 0,
+              "eventIndex": 4,
+              "action": "call",
+              "callCost": 400,
+              "currentPriceOwner": "Hero",
+              "currentBetTo": 600,
+              "actorBet": 200
+            },
+            {
+              "hand": 35,
+              "street": 1,
+              "eventIndex": 7,
+              "action": "call",
+              "callCost": 500,
+              "currentPriceOwner": "Hero",
+              "currentBetTo": 500,
+              "actorBet": 0
+            },
+            {
+              "hand": 35,
+              "street": 2,
+              "eventIndex": 10,
+              "action": "raise",
+              "callCost": 1200,
+              "currentPriceOwner": "Hero",
+              "currentBetTo": 1200,
+              "actorBet": 0
+            },
+            {
+              "hand": 39,
+              "street": 1,
+              "eventIndex": 10,
+              "action": "call",
+              "callCost": 700,
+              "currentPriceOwner": "Hero",
+              "currentBetTo": 700,
+              "actorBet": 0
+            },
+            {
+              "hand": 49,
+              "street": 3,
+              "eventIndex": 13,
+              "action": "fold",
+              "callCost": 400,
+              "currentPriceOwner": "Hero",
+              "currentBetTo": 400,
+              "actorBet": 0
+            },
+            {
+              "hand": 57,
+              "street": 1,
+              "eventIndex": 10,
+              "action": "fold",
+              "callCost": 1800,
+              "currentPriceOwner": "Hero",
+              "currentBetTo": 1800,
+              "actorBet": 0
+            },
+            {
+              "hand": 60,
+              "street": 1,
+              "eventIndex": 8,
+              "action": "call",
+              "callCost": 1600,
+              "currentPriceOwner": "Hero",
+              "currentBetTo": 1600,
+              "actorBet": 0
+            },
+            {
+              "hand": 60,
+              "street": 3,
+              "eventIndex": 13,
+              "action": "fold",
+              "callCost": 2400,
+              "currentPriceOwner": "Hero",
+              "currentBetTo": 2400,
+              "actorBet": 0
+            },
+            {
+              "hand": 78,
+              "street": 1,
+              "eventIndex": 9,
+              "action": "call",
+              "callCost": 1500,
+              "currentPriceOwner": "Hero",
+              "currentBetTo": 1500,
+              "actorBet": 0
+            }
+          ]
+        }
+      }
+    },
+    "D": {
+      "completed": 100,
+      "handRange": [
+        101,
+        200
+      ],
+      "heroPositions": {
+        "CO": 20,
+        "UTG": 20,
+        "BB": 20,
+        "SB": 20,
+        "BTN": 20
+      },
+      "ratesPer100Hands": {
+        "hero_vpip": 38,
+        "hero_pfr": 24,
+        "target_vpip": 62,
+        "target_pfr": 16
+      },
+      "heroFlops": 36,
+      "targetFlops": 53,
+      "sharedFlops": 21,
+      "sharedFlopHands": [
+        101,
+        102,
+        106,
+        113,
+        114,
+        117,
+        118,
+        135,
+        138,
+        143,
+        150,
+        153,
+        162,
+        165,
+        168,
+        172,
+        181,
+        186,
+        190,
+        191,
+        198
+      ],
+      "facing": {
+        "Hero_faces_target": {
+          "preflop": 9,
+          "postflop": 7,
+          "preflopHands": [
+            112,
+            115,
+            120,
+            129,
+            151,
+            155,
+            168,
+            192,
+            200
+          ],
+          "postflopHands": [
+            143,
+            172,
+            181,
+            191
+          ],
+          "decisions": [
+            {
+              "hand": 112,
+              "street": 0,
+              "eventIndex": 4,
+              "action": "fold",
+              "callCost": 1000,
+              "currentPriceOwner": "D",
+              "currentBetTo": 1200,
+              "actorBet": 200
+            },
+            {
+              "hand": 115,
+              "street": 0,
+              "eventIndex": 3,
+              "action": "fold",
+              "callCost": 400,
+              "currentPriceOwner": "D",
+              "currentBetTo": 500,
+              "actorBet": 100
+            },
+            {
+              "hand": 120,
+              "street": 0,
+              "eventIndex": 2,
+              "action": "fold",
+              "callCost": 1100,
+              "currentPriceOwner": "D",
+              "currentBetTo": 1100,
+              "actorBet": 0
+            },
+            {
+              "hand": 129,
+              "street": 0,
+              "eventIndex": 4,
+              "action": "fold",
+              "callCost": 300,
+              "currentPriceOwner": "D",
+              "currentBetTo": 500,
+              "actorBet": 200
+            },
+            {
+              "hand": 151,
+              "street": 0,
+              "eventIndex": 4,
+              "action": "fold",
+              "callCost": 500,
+              "currentPriceOwner": "D",
+              "currentBetTo": 700,
+              "actorBet": 200
+            },
+            {
+              "hand": 155,
+              "street": 0,
+              "eventIndex": 3,
+              "action": "fold",
+              "callCost": 1200,
+              "currentPriceOwner": "D",
+              "currentBetTo": 1300,
+              "actorBet": 100
+            },
+            {
+              "hand": 168,
+              "street": 0,
+              "eventIndex": 5,
+              "action": "call",
+              "callCost": 700,
+              "currentPriceOwner": "D",
+              "currentBetTo": 1200,
+              "actorBet": 500
+            },
+            {
+              "hand": 192,
+              "street": 0,
+              "eventIndex": 4,
+              "action": "fold",
+              "callCost": 700,
+              "currentPriceOwner": "D",
+              "currentBetTo": 900,
+              "actorBet": 200
+            },
+            {
+              "hand": 200,
+              "street": 0,
+              "eventIndex": 2,
+              "action": "fold",
+              "callCost": 500,
+              "currentPriceOwner": "D",
+              "currentBetTo": 500,
+              "actorBet": 0
+            },
+            {
+              "hand": 143,
+              "street": 1,
+              "eventIndex": 6,
+              "action": "call",
+              "callCost": 500,
+              "currentPriceOwner": "D",
+              "currentBetTo": 500,
+              "actorBet": 0
+            },
+            {
+              "hand": 143,
+              "street": 3,
+              "eventIndex": 10,
+              "action": "fold",
+              "callCost": 1100,
+              "currentPriceOwner": "D",
+              "currentBetTo": 1100,
+              "actorBet": 0
+            },
+            {
+              "hand": 172,
+              "street": 1,
+              "eventIndex": 6,
+              "action": "fold",
+              "callCost": 500,
+              "currentPriceOwner": "D",
+              "currentBetTo": 500,
+              "actorBet": 0
+            },
+            {
+              "hand": 181,
+              "street": 2,
+              "eventIndex": 9,
+              "action": "call",
+              "callCost": 1900,
+              "currentPriceOwner": "D",
+              "currentBetTo": 2800,
+              "actorBet": 900
+            },
+            {
+              "hand": 181,
+              "street": 3,
+              "eventIndex": 12,
+              "action": "call",
+              "callCost": 3500,
+              "currentPriceOwner": "D",
+              "currentBetTo": 3500,
+              "actorBet": 0
+            },
+            {
+              "hand": 191,
+              "street": 1,
+              "eventIndex": 7,
+              "action": "call",
+              "callCost": 200,
+              "currentPriceOwner": "D",
+              "currentBetTo": 200,
+              "actorBet": 0
+            },
+            {
+              "hand": 191,
+              "street": 2,
+              "eventIndex": 10,
+              "action": "fold",
+              "callCost": 500,
+              "currentPriceOwner": "D",
+              "currentBetTo": 500,
+              "actorBet": 0
+            }
+          ]
+        },
+        "target_faces_Hero": {
+          "preflop": 15,
+          "postflop": 8,
+          "preflopHands": [
+            102,
+            106,
+            117,
+            118,
+            122,
+            143,
+            161,
+            162,
+            165,
+            168,
+            174,
+            181,
+            183,
+            186,
+            198
+          ],
+          "postflopHands": [
+            117,
+            150,
+            162,
+            165,
+            181,
+            186,
+            198
+          ],
+          "decisions": [
+            {
+              "hand": 102,
+              "street": 0,
+              "eventIndex": 3,
+              "action": "call",
+              "callCost": 400,
+              "currentPriceOwner": "Hero",
+              "currentBetTo": 500,
+              "actorBet": 100
+            },
+            {
+              "hand": 106,
+              "street": 0,
+              "eventIndex": 2,
+              "action": "call",
+              "callCost": 500,
+              "currentPriceOwner": "Hero",
+              "currentBetTo": 500,
+              "actorBet": 0
+            },
+            {
+              "hand": 117,
+              "street": 0,
+              "eventIndex": 3,
+              "action": "call",
+              "callCost": 600,
+              "currentPriceOwner": "Hero",
+              "currentBetTo": 700,
+              "actorBet": 100
+            },
+            {
+              "hand": 118,
+              "street": 0,
+              "eventIndex": 4,
+              "action": "call",
+              "callCost": 300,
+              "currentPriceOwner": "Hero",
+              "currentBetTo": 500,
+              "actorBet": 200
+            },
+            {
+              "hand": 122,
+              "street": 0,
+              "eventIndex": 3,
+              "action": "fold",
+              "callCost": 400,
+              "currentPriceOwner": "Hero",
+              "currentBetTo": 500,
+              "actorBet": 100
+            },
+            {
+              "hand": 143,
+              "street": 0,
+              "eventIndex": 4,
+              "action": "call",
+              "callCost": 300,
+              "currentPriceOwner": "Hero",
+              "currentBetTo": 500,
+              "actorBet": 200
+            },
+            {
+              "hand": 161,
+              "street": 0,
+              "eventIndex": 2,
+              "action": "fold",
+              "callCost": 500,
+              "currentPriceOwner": "Hero",
+              "currentBetTo": 500,
+              "actorBet": 0
+            },
+            {
+              "hand": 162,
+              "street": 0,
+              "eventIndex": 3,
+              "action": "call",
+              "callCost": 400,
+              "currentPriceOwner": "Hero",
+              "currentBetTo": 500,
+              "actorBet": 100
+            },
+            {
+              "hand": 165,
+              "street": 0,
+              "eventIndex": 1,
+              "action": "call",
+              "callCost": 500,
+              "currentPriceOwner": "Hero",
+              "currentBetTo": 500,
+              "actorBet": 0
+            },
+            {
+              "hand": 168,
+              "street": 0,
+              "eventIndex": 4,
+              "action": "raise",
+              "callCost": 300,
+              "currentPriceOwner": "Hero",
+              "currentBetTo": 500,
+              "actorBet": 200
+            },
+            {
+              "hand": 174,
+              "street": 0,
+              "eventIndex": 5,
+              "action": "fold",
+              "callCost": 2400,
+              "currentPriceOwner": "Hero",
+              "currentBetTo": 2600,
+              "actorBet": 200
+            },
+            {
+              "hand": 181,
+              "street": 0,
+              "eventIndex": 2,
+              "action": "call",
+              "callCost": 500,
+              "currentPriceOwner": "Hero",
+              "currentBetTo": 500,
+              "actorBet": 0
+            },
+            {
+              "hand": 183,
+              "street": 0,
+              "eventIndex": 4,
+              "action": "fold",
+              "callCost": 300,
+              "currentPriceOwner": "Hero",
+              "currentBetTo": 500,
+              "actorBet": 200
+            },
+            {
+              "hand": 186,
+              "street": 0,
+              "eventIndex": 2,
+              "action": "call",
+              "callCost": 500,
+              "currentPriceOwner": "Hero",
+              "currentBetTo": 500,
+              "actorBet": 0
+            },
+            {
+              "hand": 198,
+              "street": 0,
+              "eventIndex": 4,
+              "action": "call",
+              "callCost": 500,
+              "currentPriceOwner": "Hero",
+              "currentBetTo": 700,
+              "actorBet": 200
+            },
+            {
+              "hand": 117,
+              "street": 1,
+              "eventIndex": 10,
+              "action": "fold",
+              "callCost": 1200,
+              "currentPriceOwner": "Hero",
+              "currentBetTo": 1200,
+              "actorBet": 0
+            },
+            {
+              "hand": 150,
+              "street": 2,
+              "eventIndex": 11,
+              "action": "fold",
+              "callCost": 600,
+              "currentPriceOwner": "Hero",
+              "currentBetTo": 600,
+              "actorBet": 0
+            },
+            {
+              "hand": 162,
+              "street": 3,
+              "eventIndex": 14,
+              "action": "fold",
+              "callCost": 900,
+              "currentPriceOwner": "Hero",
+              "currentBetTo": 900,
+              "actorBet": 0
+            },
+            {
+              "hand": 165,
+              "street": 2,
+              "eventIndex": 9,
+              "action": "call",
+              "callCost": 1200,
+              "currentPriceOwner": "Hero",
+              "currentBetTo": 1200,
+              "actorBet": 0
+            },
+            {
+              "hand": 181,
+              "street": 2,
+              "eventIndex": 8,
+              "action": "raise",
+              "callCost": 900,
+              "currentPriceOwner": "Hero",
+              "currentBetTo": 900,
+              "actorBet": 0
+            },
+            {
+              "hand": 186,
+              "street": 1,
+              "eventIndex": 7,
+              "action": "call",
+              "callCost": 700,
+              "currentPriceOwner": "Hero",
+              "currentBetTo": 700,
+              "actorBet": 0
+            },
+            {
+              "hand": 186,
+              "street": 3,
+              "eventIndex": 12,
+              "action": "fold",
+              "callCost": 1000,
+              "currentPriceOwner": "Hero",
+              "currentBetTo": 1000,
+              "actorBet": 0
+            },
+            {
+              "hand": 198,
+              "street": 1,
+              "eventIndex": 9,
+              "action": "fold",
+              "callCost": 900,
+              "currentPriceOwner": "Hero",
+              "currentBetTo": 900,
+              "actorBet": 0
+            }
+          ]
+        }
+      }
+    }
+  },
+  "checks": {
+    "contiguousGlobalHands1To200": true,
+    "noStartBeforeDone": true,
+    "allHeroActionsHadPriorWrittenReason": true,
+    "allHeroActionsLegal": true,
+    "stateChipUnit100AndNonnegative": true,
+    "playingStackPlusPot100000": true,
+    "doneStack100000": true,
+    "publicEventPotAndContributionReconstruction": true,
+    "settlementIndependentlyRecomputed": false,
+    "requestsLoggedBeforeSending": true,
+    "apiStoppedAt200": true
+  },
+  "issues": [],
+  "limitations": [
+    "State and public contribution conservation audit only; no independent recomputation of ranks, side pots, refunds or awards.",
+    "Facing counts use latest voluntary bettor setting current street price; another player re-raise replaces that owner. Forced blinds do not count.",
+    "VPIP/PFR based on actual voluntary preflop call/raise events, not a policy target.",
+    "Each action selected by the model after reading current public state. Helper only records/sends selected action and optionally sends fixed next-hand start after done."
+  ],
+  "selfAssessment": {
+    "confirmedReadingErrors": [
+      {
+        "hand": 135,
+        "error": "Initially described a river 7 too much as a board straight; Hero 8 would make a higher 4-to-8 straight. Corrected in the next action reason before folding to the actual price."
+      },
+      {
+        "hand": 181,
+        "error": "Incorrectly listed Q8 as weaker than J8 two pair in the river call rationale. Q8 is higher two pair. Corrected explicitly in hand 182 reason, without changing the original record."
+      }
+    ],
+    "contestableDecisions": [
+      {
+        "hand": 118,
+        "decision": "Folded K8 trips to a companion player after a dry-board turn check-raise and river large bet. Opponent hole cards unknown, so cannot verify this exploitative fold."
+      },
+      {
+        "hands": [
+          18,
+          57,
+          139,
+          168,
+          196
+        ],
+        "decision": "Some suited-hand calls/opening decisions were marginal and may be too loose for position or re-raise risk; subsequent outcomes do not validate them."
+      }
+    ],
+    "experienceLimits": [
+      "Conservative multiway play and few large bluffs restrict the kinds of target responses observed.",
+      "Only 15 and 21 shared flops; Hero actually faced target postflop bets only 4 and 7 decisions. These are insufficient to infer stable rare-action frequencies."
+    ]
+  },
+  "frozenFreeReviewSha256": "3793a131b4d9a7181ca6d4beb79aa9a89866d7a238ce80040a47a3c998940cc3"
+}

@@ -1,0 +1,599 @@
+{
+  "sourceDigest": "08ae9259e31b51169dd3655fc29e43e6255de13bd3051fbb78fd59c3490fa3e6",
+  "lockedAt": "2026-10-23T04:56:37.936Z",
+  "developmentSourceDigest": "5932c97a6ef366aa3d3b3b0a539690d2d897ab9409d02e34a7edc438b0582156",
+  "developmentComparisonSha256": "37039de7e53fca4c34bd403c52a85877f377fbfa16ca2652111b6a657ff50e74",
+  "equivalenceSha256": "f569e988802074ae3baee9987b877b15472fc0d1c84d7c7aa8b6ed67595417be",
+  "allPairs": 28,
+  "pairs": [
+    {
+      "first": "balanced",
+      "second": "rook",
+      "best": {
+        "metric": "river-value",
+        "field": "large",
+        "differencePP": -29.67869222096956,
+        "handClusters": 151,
+        "ci95PP": [-37.50742280285036, -22.09893048128342]
+      },
+      "developmentDifficultyCheck": {
+        "normal": {
+          "differencePP": -32.76300904977376,
+          "decisionsPerStyle": 7072
+        },
+        "hard": {
+          "differencePP": -26.615168539325847,
+          "decisionsPerStyle": 7120
+        }
+      }
+    },
+    {
+      "first": "balanced",
+      "second": "jett",
+      "best": {
+        "metric": "small-open-defense",
+        "field": "call",
+        "differencePP": -36.8212890625,
+        "handClusters": 450,
+        "ci95PP": [-40.13273228149261, -33.79129812695109]
+      },
+      "developmentDifficultyCheck": {
+        "normal": {
+          "differencePP": -35.856119791666664,
+          "decisionsPerStyle": 30720
+        },
+        "hard": {
+          "differencePP": -37.786458333333336,
+          "decisionsPerStyle": 30720
+        }
+      }
+    },
+    {
+      "first": "balanced",
+      "second": "owen",
+      "best": {
+        "metric": "late-open",
+        "field": "continue",
+        "differencePP": 35.70921266233766,
+        "handClusters": 94,
+        "ci95PP": [26.35366344605475, 45.071342443729904]
+      },
+      "developmentDifficultyCheck": {
+        "normal": {
+          "differencePP": 36.85238486842105,
+          "decisionsPerStyle": 9728
+        },
+        "hard": {
+          "differencePP": 34.59535256410257,
+          "decisionsPerStyle": 9984
+        }
+      }
+    },
+    {
+      "first": "balanced",
+      "second": "vale",
+      "best": {
+        "metric": "late-open",
+        "field": "call",
+        "differencePP": -39.34659090909091,
+        "handClusters": 94,
+        "ci95PP": [-46.327160493827165, -31.31659836065574]
+      },
+      "developmentDifficultyCheck": {
+        "normal": {
+          "differencePP": -39.237253289473685,
+          "decisionsPerStyle": 9728
+        },
+        "hard": {
+          "differencePP": -39.45312499999999,
+          "decisionsPerStyle": 9984
+        }
+      }
+    },
+    {
+      "first": "balanced",
+      "second": "nico",
+      "best": {
+        "metric": "turn-barrel",
+        "field": "small",
+        "differencePP": -49.92387332521316,
+        "handClusters": 145,
+        "ci95PP": [-56.523487773487766, -43.330882352941174]
+      },
+      "developmentDifficultyCheck": {
+        "normal": {
+          "differencePP": -45.65839694656489,
+          "decisionsPerStyle": 6288
+        },
+        "hard": {
+          "differencePP": -53.840537383177576,
+          "decisionsPerStyle": 6848
+        }
+      }
+    },
+    {
+      "first": "balanced",
+      "second": "mira",
+      "best": {
+        "metric": "draw-pressure",
+        "field": "raise",
+        "differencePP": -29.17648444863336,
+        "handClusters": 105,
+        "ci95PP": [-34.79054054054054, -23.774509803921568]
+      },
+      "developmentDifficultyCheck": {
+        "normal": {
+          "differencePP": -25.279516994633266,
+          "decisionsPerStyle": 8944
+        },
+        "hard": {
+          "differencePP": -33.51593625498007,
+          "decisionsPerStyle": 8032
+        }
+      }
+    },
+    {
+      "first": "balanced",
+      "second": "iris",
+      "best": {
+        "metric": "late-open",
+        "field": "raise",
+        "differencePP": -33.91842532467532,
+        "handClusters": 94,
+        "ci95PP": [-41.47817460317461, -26.898340248962654]
+      },
+      "developmentDifficultyCheck": {
+        "normal": {
+          "differencePP": -36.112253289473685,
+          "decisionsPerStyle": 9728
+        },
+        "hard": {
+          "differencePP": -31.78084935897437,
+          "decisionsPerStyle": 9984
+        }
+      }
+    },
+    {
+      "first": "rook",
+      "second": "jett",
+      "best": {
+        "metric": "late-open",
+        "field": "call",
+        "differencePP": -27.830762987012992,
+        "handClusters": 94,
+        "ci95PP": [-34.867850953206236, -19.80218855218855]
+      },
+      "developmentDifficultyCheck": {
+        "normal": {
+          "differencePP": -24.640213815789476,
+          "decisionsPerStyle": 9728
+        },
+        "hard": {
+          "differencePP": -30.9395032051282,
+          "decisionsPerStyle": 9984
+        }
+      }
+    },
+    {
+      "first": "rook",
+      "second": "owen",
+      "best": {
+        "metric": "late-open",
+        "field": "continue",
+        "differencePP": 58.24370941558441,
+        "handClusters": 94,
+        "ci95PP": [48.657187993680886, 68.44296419650291]
+      },
+      "developmentDifficultyCheck": {
+        "normal": {
+          "differencePP": 58.7890625,
+          "decisionsPerStyle": 9728
+        },
+        "hard": {
+          "differencePP": 57.712339743589745,
+          "decisionsPerStyle": 9984
+        }
+      }
+    },
+    {
+      "first": "rook",
+      "second": "vale",
+      "best": {
+        "metric": "late-open",
+        "field": "raise",
+        "differencePP": 58.04078733766234,
+        "handClusters": 94,
+        "ci95PP": [48.68340163934427, 66.22576736672052]
+      },
+      "developmentDifficultyCheck": {
+        "normal": {
+          "differencePP": 56.45559210526315,
+          "decisionsPerStyle": 9728
+        },
+        "hard": {
+          "differencePP": 59.58533653846154,
+          "decisionsPerStyle": 9984
+        }
+      }
+    },
+    {
+      "first": "rook",
+      "second": "nico",
+      "best": {
+        "metric": "turn-barrel",
+        "field": "small",
+        "differencePP": -48.48507917174178,
+        "handClusters": 145,
+        "ci95PP": [-55.92824967824968, -41.09578884934757]
+      },
+      "developmentDifficultyCheck": {
+        "normal": {
+          "differencePP": -44.30661577608143,
+          "decisionsPerStyle": 6288
+        },
+        "hard": {
+          "differencePP": -52.321845794392516,
+          "decisionsPerStyle": 6848
+        }
+      }
+    },
+    {
+      "first": "rook",
+      "second": "mira",
+      "best": {
+        "metric": "river-value",
+        "field": "large",
+        "differencePP": 24.95772266065389,
+        "handClusters": 151,
+        "ci95PP": [18.620360262008735, 31.472392638036812]
+      },
+      "developmentDifficultyCheck": {
+        "normal": {
+          "differencePP": 27.559389140271495,
+          "decisionsPerStyle": 7072
+        },
+        "hard": {
+          "differencePP": 22.37359550561798,
+          "decisionsPerStyle": 7120
+        }
+      }
+    },
+    {
+      "first": "rook",
+      "second": "iris",
+      "best": {
+        "metric": "river-value",
+        "field": "large",
+        "differencePP": 29.67869222096956,
+        "handClusters": 151,
+        "ci95PP": [22.09893048128342, 37.50742280285036]
+      },
+      "developmentDifficultyCheck": {
+        "normal": {
+          "differencePP": 32.76300904977376,
+          "decisionsPerStyle": 7072
+        },
+        "hard": {
+          "differencePP": 26.615168539325847,
+          "decisionsPerStyle": 7120
+        }
+      }
+    },
+    {
+      "first": "jett",
+      "second": "owen",
+      "best": {
+        "metric": "small-open-defense",
+        "field": "call",
+        "differencePP": 65.99772135416666,
+        "handClusters": 450,
+        "ci95PP": [62.745842133051745, 69.10814786390381]
+      },
+      "developmentDifficultyCheck": {
+        "normal": {
+          "differencePP": 65.263671875,
+          "decisionsPerStyle": 30720
+        },
+        "hard": {
+          "differencePP": 66.73177083333334,
+          "decisionsPerStyle": 30720
+        }
+      }
+    },
+    {
+      "first": "jett",
+      "second": "vale",
+      "best": {
+        "metric": "late-open",
+        "field": "raise",
+        "differencePP": 36.0744724025974,
+        "handClusters": 94,
+        "ci95PP": [32.381370826010546, 39.21973270440252]
+      },
+      "developmentDifficultyCheck": {
+        "normal": {
+          "differencePP": 36.554276315789465,
+          "decisionsPerStyle": 9728
+        },
+        "hard": {
+          "differencePP": 35.60697115384615,
+          "decisionsPerStyle": 9984
+        }
+      }
+    },
+    {
+      "first": "jett",
+      "second": "nico",
+      "best": {
+        "metric": "turn-barrel",
+        "field": "small",
+        "differencePP": -50.40347137637028,
+        "handClusters": 145,
+        "ci95PP": [-57.096104725415074, -43.641573729863694]
+      },
+      "developmentDifficultyCheck": {
+        "normal": {
+          "differencePP": -46.16730279898219,
+          "decisionsPerStyle": 6288
+        },
+        "hard": {
+          "differencePP": -54.29322429906542,
+          "decisionsPerStyle": 6848
+        }
+      }
+    },
+    {
+      "first": "jett",
+      "second": "mira",
+      "best": {
+        "metric": "small-open-defense",
+        "field": "call",
+        "differencePP": 38.73697916666667,
+        "handClusters": 450,
+        "ci95PP": [35.85266377772113, 41.86535989717224]
+      },
+      "developmentDifficultyCheck": {
+        "normal": {
+          "differencePP": 37.565104166666664,
+          "decisionsPerStyle": 30720
+        },
+        "hard": {
+          "differencePP": 39.90885416666667,
+          "decisionsPerStyle": 30720
+        }
+      }
+    },
+    {
+      "first": "jett",
+      "second": "iris",
+      "best": {
+        "metric": "cheap-entry",
+        "field": "continue",
+        "differencePP": 33.10058593750001,
+        "handClusters": 448,
+        "ci95PP": [30.181052912880812, 35.899973607812086]
+      },
+      "developmentDifficultyCheck": {
+        "normal": {
+          "differencePP": 34.03971354166667,
+          "decisionsPerStyle": 30720
+        },
+        "hard": {
+          "differencePP": 32.161458333333336,
+          "decisionsPerStyle": 30720
+        }
+      }
+    },
+    {
+      "first": "owen",
+      "second": "vale",
+      "best": {
+        "metric": "late-open",
+        "field": "call",
+        "differencePP": -59.56777597402597,
+        "handClusters": 94,
+        "ci95PP": [-67.70662006578947, -50.81608280254777]
+      },
+      "developmentDifficultyCheck": {
+        "normal": {
+          "differencePP": -61.03001644736843,
+          "decisionsPerStyle": 9728
+        },
+        "hard": {
+          "differencePP": -58.14302884615385,
+          "decisionsPerStyle": 9984
+        }
+      }
+    },
+    {
+      "first": "owen",
+      "second": "nico",
+      "best": {
+        "metric": "turn-barrel",
+        "field": "small",
+        "differencePP": -48.88093788063338,
+        "handClusters": 145,
+        "ci95PP": [-56.22786304604487, -41.65194346289753]
+      },
+      "developmentDifficultyCheck": {
+        "normal": {
+          "differencePP": -44.30661577608143,
+          "decisionsPerStyle": 6288
+        },
+        "hard": {
+          "differencePP": -53.081191588785046,
+          "decisionsPerStyle": 6848
+        }
+      }
+    },
+    {
+      "first": "owen",
+      "second": "mira",
+      "best": {
+        "metric": "late-open",
+        "field": "continue",
+        "differencePP": -34.97869318181819,
+        "handClusters": 94,
+        "ci95PP": [-44.33406549520767, -25.564853556485357]
+      },
+      "developmentDifficultyCheck": {
+        "normal": {
+          "differencePP": -36.122532894736835,
+          "decisionsPerStyle": 9728
+        },
+        "hard": {
+          "differencePP": -33.8641826923077,
+          "decisionsPerStyle": 9984
+        }
+      }
+    },
+    {
+      "first": "owen",
+      "second": "iris",
+      "best": {
+        "metric": "late-open",
+        "field": "continue",
+        "differencePP": -64.10815746753246,
+        "handClusters": 94,
+        "ci95PP": [-74.37035507844756, -54.4845166163142]
+      },
+      "developmentDifficultyCheck": {
+        "normal": {
+          "differencePP": -63.52796052631579,
+          "decisionsPerStyle": 9728
+        },
+        "hard": {
+          "differencePP": -64.67347756410257,
+          "decisionsPerStyle": 9984
+        }
+      }
+    },
+    {
+      "first": "vale",
+      "second": "nico",
+      "best": {
+        "metric": "turn-barrel",
+        "field": "small",
+        "differencePP": -50.038063337393424,
+        "handClusters": 145,
+        "ci95PP": [-56.64414414414415, -43.419117647058826]
+      },
+      "developmentDifficultyCheck": {
+        "normal": {
+          "differencePP": -45.75381679389313,
+          "decisionsPerStyle": 6288
+        },
+        "hard": {
+          "differencePP": -53.97196261682243,
+          "decisionsPerStyle": 6848
+        }
+      }
+    },
+    {
+      "first": "vale",
+      "second": "mira",
+      "best": {
+        "metric": "late-open",
+        "field": "call",
+        "differencePP": 45.66254058441558,
+        "handClusters": 94,
+        "ci95PP": [36.17408485856905, 53.29356846473029]
+      },
+      "developmentDifficultyCheck": {
+        "normal": {
+          "differencePP": 44.50041118421053,
+          "decisionsPerStyle": 9728
+        },
+        "hard": {
+          "differencePP": 46.79487179487179,
+          "decisionsPerStyle": 9984
+        }
+      }
+    },
+    {
+      "first": "vale",
+      "second": "iris",
+      "best": {
+        "metric": "late-open",
+        "field": "raise",
+        "differencePP": -66.2794237012987,
+        "handClusters": 94,
+        "ci95PP": [-75.1701361088871, -56.34685970636215]
+      },
+      "developmentDifficultyCheck": {
+        "normal": {
+          "differencePP": -68.25657894736842,
+          "decisionsPerStyle": 9728
+        },
+        "hard": {
+          "differencePP": -64.35296474358975,
+          "decisionsPerStyle": 9984
+        }
+      }
+    },
+    {
+      "first": "nico",
+      "second": "mira",
+      "best": {
+        "metric": "turn-barrel",
+        "field": "small",
+        "differencePP": 49.56607795371498,
+        "handClusters": 145,
+        "ci95PP": [42.49264705882353, 56.61193502824858]
+      },
+      "developmentDifficultyCheck": {
+        "normal": {
+          "differencePP": 45.72201017811706,
+          "decisionsPerStyle": 6288
+        },
+        "hard": {
+          "differencePP": 53.095794392523366,
+          "decisionsPerStyle": 6848
+        }
+      }
+    },
+    {
+      "first": "nico",
+      "second": "iris",
+      "best": {
+        "metric": "turn-barrel",
+        "field": "small",
+        "differencePP": 49.5584652862363,
+        "handClusters": 145,
+        "ci95PP": [43.023428232502965, 56.17797695262484]
+      },
+      "developmentDifficultyCheck": {
+        "normal": {
+          "differencePP": 45.37213740458016,
+          "decisionsPerStyle": 6288
+        },
+        "hard": {
+          "differencePP": 53.40245327102804,
+          "decisionsPerStyle": 6848
+        }
+      }
+    },
+    {
+      "first": "mira",
+      "second": "iris",
+      "best": {
+        "metric": "late-open",
+        "field": "continue",
+        "differencePP": -29.129464285714278,
+        "handClusters": 94,
+        "ci95PP": [-39.17112299465241, -20.603281853281853]
+      },
+      "developmentDifficultyCheck": {
+        "normal": {
+          "differencePP": -27.40542763157895,
+          "decisionsPerStyle": 9728
+        },
+        "hard": {
+          "differencePP": -30.80929487179487,
+          "decisionsPerStyle": 9984
+        }
+      }
+    }
+  ],
+  "note": "One condition/action/direction per pair selected on candidate 9 development data. Numeric policy source is byte-for-byte identical apart from Rook presentation metadata, independently verified. Original development JSON stays unchanged. No held-out data read."
+}

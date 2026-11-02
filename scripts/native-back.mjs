@@ -7,7 +7,15 @@ export function nativeBackPage(value = 'game') {
 // This function is serialized into the installed WebView. Keep it independent
 // of module bindings so the driver checks the actual destination document.
 export function nativePageReady(expectedPage = 'game') {
-  if (expectedPage === 'game') return Boolean(window.noir?.getState());
+  if (expectedPage === 'game')
+    return Boolean(
+      document.readyState !== 'loading' &&
+      !window.location.pathname.endsWith('/app-privacy.html') &&
+      window.noir?.getState() &&
+      Array.from(document.querySelectorAll('button')).some(
+        (button) => !button.disabled && button.getClientRects().length,
+      ),
+    );
   if (expectedPage !== 'privacy')
     throw new RangeError('Native Back expectedPage must be game or privacy');
   const heading = document.querySelector('article:not([hidden]) h1'),

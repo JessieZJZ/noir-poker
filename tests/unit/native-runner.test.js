@@ -149,6 +149,9 @@ test('a native scenario failure is recorded without turning it into a partial pa
   const error = Error('WebView layout read failed');
   await assert.rejects(
     nativeScenarios({
+      state: async () => {
+        throw error;
+      },
       waitFor: async (read) => read(),
       evaluate: async () => {
         throw error;
@@ -158,7 +161,7 @@ test('a native scenario failure is recorded without turning it into a partial pa
     (value) => value === error,
   );
   assert.equal(entries.length, 1);
-  assert.equal(entries[0].name, 'local-launch-and-no-login');
+  assert.equal(entries[0].name, 'entry-waiting-music-and-first-deal');
   assert.equal(entries[0].status, 'failed');
   assert.match(entries[0].error, /WebView layout read failed/);
 });

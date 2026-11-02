@@ -10,6 +10,7 @@ import {
   canRestartHand,
   potSize,
   deckOfCards,
+  rebuyHero,
 } from '../../src/engine/poker.js';
 import { createReviewInput } from '../../src/review/analysis.js';
 let passed = 0;
@@ -21,6 +22,15 @@ const copy = (g) => JSON.parse(JSON.stringify(g)),
     delete clone.replayAttempt;
     return clone;
   };
+function assertRestored(game, original) {
+  const actual = withoutRetry(game),
+    expected = withoutRetry(original);
+  assert.ok(actual.playerObservationRevision > expected.playerObservationRevision);
+  // The write version retracts the durable observation; the original cards,
+  // chips, public samples, lifetime count and all poker state still match.
+  actual.playerObservationRevision = expected.playerObservationRevision;
+  assert.deepEqual(actual, expected);
+}
 function finish(g, action = 'call') {
   let limit = 0;
   while (g.phase !== 'done') {
@@ -84,7 +94,7 @@ check('pocket queens all-in folds: same deal, button, stacks and pre-hand statis
   } finally {
     Math.random = rand;
   }
-  assert.deepEqual(withoutRetry(g), withoutRetry(baseline));
+  assertRestored(g, baseline);
   assert.equal(g.replayAttempt, 1);
   assert.equal(g.players[0].total, 0);
   assert.equal(potSize(g), 75);
@@ -113,7 +123,7 @@ for (let n = 5; n <= 9; n++)
       finish(g, 'fold');
       assert.equal(canRestartHand(g), true);
       restartHand(g);
-      assert.deepEqual(withoutRetry(g), withoutRetry(baseline));
+      assertRestored(g, baseline);
       assert.equal(g.dealer, d);
       assert.equal(g.hand, 1);
       assert.equal(
@@ -167,7 +177,7 @@ check('nine unequal all-ins retract eight contested pots and one refund', () => 
     4500,
   );
   restartHand(g);
-  assert.deepEqual(withoutRetry(g), withoutRetry(baseline));
+  assertRestored(g, baseline);
   assert.equal(g.players.reduce((s, p) => s + p.stack, 0) + potSize(g), 4500);
 });
 check('rebuy and short blind restore once with original actual blind amounts', () => {
@@ -175,6 +185,7 @@ check('rebuy and short blind restore once with original actual blind amounts', (
   g.players[0].stack = 0;
   g.players[1].stack = 25;
   g.players[2].stack = 25;
+  rebuyHero(g);
   startHand(g);
   const baseline = copy(g);
   assert.equal(g.stats.buyin, 10000);
@@ -183,7 +194,7 @@ check('rebuy and short blind restore once with original actual blind amounts', (
   assert.equal(g.currentBet, 50);
   finish(g);
   restartHand(g);
-  assert.deepEqual(withoutRetry(g), withoutRetry(baseline));
+  assertRestored(g, baseline);
   assert.equal(g.stats.buyin, 10000);
   assert.equal(g.players[1].allin, true);
   assert.equal(potSize(g), 50);
@@ -197,7 +208,7 @@ check('repeated retries keep baseline immutable and count only latest final atte
     assert.equal(g.stats.hands, 1);
     restartHand(g);
     assert.equal(g.replayAttempt, attempt);
-    assert.deepEqual(withoutRetry(g), withoutRetry(baseline));
+    assertRestored(g, baseline);
     if (attempt === 1) {
       g.players[0].hole[0].symbol = 'mutated';
       g.deck[0].symbol = 'mutated';
@@ -226,7 +237,7 @@ check('next hand replaces replay baseline and resets retry counter', () => {
   assert.equal(g.replayAttempt, 0);
   finish(g);
   restartHand(g);
-  assert.deepEqual(withoutRetry(g), withoutRetry(second));
+  assertRestored(g, second);
   assert.equal(g.hand, 2);
   assert.equal(g.stats.hands, 1);
   assert.ok(JSON.stringify(g).length < 12000);

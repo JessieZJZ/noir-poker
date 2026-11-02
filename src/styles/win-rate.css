@@ -324,8 +324,13 @@
 #win-rate-picker {
   --win-rate-picker-top: 0px;
   --win-rate-picker-bottom: env(safe-area-inset-bottom, 0px);
+  --win-rate-picker-chrome: 164px;
   /* Four card rows always fit the half screen, so a short wide screen narrows the sheet. */
-  width: min(740px, 100%, calc((50dvh - var(--win-rate-picker-bottom) - 164px) * 2.34 + 106px));
+  width: min(
+    740px,
+    100%,
+    calc((50dvh - var(--win-rate-picker-bottom) - var(--win-rate-picker-chrome)) * 2.34 + 106px)
+  );
   max-width: none;
   max-height: 50dvh;
   margin: auto auto 0;
@@ -417,12 +422,16 @@
   }
 }
 /* Half of a rotated tablet is too short for the deck, so the sheet moves beside the table. */
-@media (orientation: landscape) and (max-height: 640px) {
+@media (orientation: landscape) and (max-height: 700px) {
   #win-rate-picker {
     width: max(
       280px,
       calc(
-        (100dvh - var(--win-rate-picker-top) - var(--win-rate-picker-bottom) - 190px) * 0.63 + 70px
+        (
+            100dvh - var(--win-rate-picker-top) - var(--win-rate-picker-bottom) -
+              var(--win-rate-picker-chrome) - 26px
+          ) *
+          0.63 + 70px
       )
     );
     height: 100dvh;
@@ -446,6 +455,56 @@
   }
   .win-rate-street-cards {
     gap: 3px;
+  }
+}
+/* Same tablet boundary as tablet.css: readable touch sizing, phones keep their density. */
+@media (min-width: 601px) and (max-width: 1600px) and (min-height: 601px) and (any-pointer: coarse) {
+  #win-rate-dialog {
+    --win-rate-card-width: 52px;
+    --win-rate-card-height: 73px;
+  }
+  .win-rate-header,
+  .win-rate-body,
+  .win-rate-actions {
+    width: min(760px, 100%);
+  }
+  .win-rate-header h2 {
+    font-size: 24px;
+  }
+  .win-rate-street > span,
+  .win-rate-hand > strong,
+  .win-rate-odds-values span,
+  .win-rate-odds-tie,
+  .win-rate-outs-heading {
+    font-size: 15px;
+  }
+  .win-rate-odds-values strong {
+    font-size: 26px;
+  }
+  .win-rate-waiting,
+  .win-rate-add,
+  .win-rate-actions button,
+  #win-rate-status,
+  #win-rate-outs-note {
+    font-size: 16px;
+  }
+  .win-rate-add,
+  .win-rate-actions button {
+    min-height: 52px;
+  }
+  .win-rate-outs-cards .playing-card.small {
+    width: 36px;
+    height: 50px;
+  }
+  #win-rate-picker {
+    --win-rate-picker-chrome: 176px;
+  }
+  #win-rate-picker h3 {
+    font-size: 18px;
+  }
+  .win-rate-picker-actions button {
+    min-height: 52px;
+    font-size: 16px;
   }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -473,7 +532,7 @@
   --win-rate-picker-bottom: var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px));
   inset: auto 0 0;
 }
-@media (orientation: landscape) and (max-height: 640px) {
+@media (orientation: landscape) and (max-height: 700px) {
   .native-app #win-rate-picker {
     inset: 0 0 0 auto;
     padding-right: var(--safe-area-inset-right, env(safe-area-inset-right, 0px));

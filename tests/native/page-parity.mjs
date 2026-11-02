@@ -28,11 +28,29 @@ export function collectNativePageSnapshot(selectors) {
   });
   clone.querySelectorAll('script').forEach((script) => script.remove());
   // Web's content viewport excludes the native gesture area. The fitted
-  // surface stores the full native height; remove that inset in the replay.
+  // surface stores the full native height and its dock keeps part of that
+  // area (--dock-bottom-inset): the whole inset on Android, a small clearance
+  // on iOS. The replay has no inset, so remove that clearance; the rest of the
+  // dock then extends below the viewport exactly as natively. The settled
+  // single-row dock drops its padding but keeps the same table height, so the
+  // variable itself is resolved rather than the dock's current padding.
   const surface = clone.querySelector('.game-surface');
   const playHeight = parseFloat(surface?.style.getPropertyValue('--play-height'));
+  const live = document.querySelector('.game-surface');
+  let dockInset = NaN;
+  if (live) {
+    const probe = document.createElement('span');
+    probe.style.cssText =
+      'position:absolute;visibility:hidden;width:0;height:var(--dock-bottom-inset);pointer-events:none';
+    live.append(probe);
+    dockInset = probe.getBoundingClientRect().height;
+    probe.remove();
+  }
   if (Number.isFinite(playHeight))
-    surface.style.setProperty('--play-height', playHeight - bottom + 'px');
+    surface.style.setProperty(
+      '--play-height',
+      playHeight - (Number.isFinite(dockInset) ? dockInset : bottom) + 'px',
+    );
   const boxes = Object.fromEntries(
     selectors.map((selector) => {
       const element = document.querySelector(selector),
@@ -144,6 +162,7 @@ export function collectNativePageSnapshot(selectors) {
     head: document.head.innerHTML.replace(/<script\b[^>]*>[\s\S]*?<\/script>/g, ''),
     body: clone.outerHTML,
     lang: root.lang,
+    touch: matchMedia('(any-pointer: coarse)').matches,
     pixelRatio: devicePixelRatio,
     layoutScale,
     viewport: { width: innerWidth, height: innerHeight - top - bottom },
@@ -189,6 +208,75 @@ export function localReferenceHead(head) {
     } catch {}
     return attribute;
   });
+}
+
+// A DOM replay compares painted content, not the cloned audio element's media
+// buffer. Keep the original 30s load budget, but require the actual visual
+// assets instead of waiting for the unrelated window load event.
+export async function loadNativeReferencePage(page, html, { timeout = 30000 } = {}) {
+  const deadline = Date.now() + timeout;
+  const remaining = () => Math.max(1, deadline - Date.now());
+  const pending = new Set();
+  const failed = [];
+  const started = (request) => pending.add(request);
+  const finished = (request) => pending.delete(request);
+  const rejected = (request) => {
+    pending.delete(request);
+    failed.push({
+      url: request.url(),
+      type: request.resourceType(),
+      error: request.failure()?.errorText,
+    });
+  };
+  const response = (response) => {
+    if (response.status() >= 400)
+      failed.push({
+        url: response.url(),
+        type: response.request().resourceType(),
+        status: response.status(),
+      });
+  };
+  page.on('request', started);
+  page.on('requestfinished', finished);
+  page.on('requestfailed', rejected);
+  page.on('response', response);
+  try {
+    await page.setContent(html, { waitUntil: 'domcontentloaded', timeout: remaining() });
+    await page.waitForFunction(
+      () => {
+        if (![...document.querySelectorAll('link[rel="stylesheet"]')].every((link) => link.sheet))
+          return false;
+        // Flush styles so fonts used by the rendered text start loading before
+        // checking their status. Visible lazy images must also finish loading.
+        document.body.getBoundingClientRect();
+        const images = [...document.images].filter((image) => image.getClientRects().length);
+        for (const image of images) image.loading = 'eager';
+        return (
+          document.fonts.status === 'loaded' &&
+          [...document.fonts].every((face) => face.status !== 'error') &&
+          images.every((image) => image.complete && image.naturalWidth > 0)
+        );
+      },
+      null,
+      { timeout: remaining() },
+    );
+    if (failed.some((request) => ['stylesheet', 'font', 'image'].includes(request.type)))
+      throw Error('Native reference visual asset failed to load');
+  } catch (error) {
+    error.referenceLoad = {
+      pending: [...pending].map((request) => ({
+        url: request.url(),
+        type: request.resourceType(),
+      })),
+      failed,
+    };
+    throw error;
+  } finally {
+    page.off('request', started);
+    page.off('requestfinished', finished);
+    page.off('requestfailed', rejected);
+    page.off('response', response);
+  }
 }
 
 const privacyOptions = [
@@ -297,7 +385,7 @@ export async function compareNativePage({ root, output, evaluate, screenshot }, 
   // Give the device compositor time to present dialog and scrolling changes.
   await new Promise((resolve) => setTimeout(resolve, 750));
   const snapshot = await evaluate(collectNativePageSnapshot, selectors);
-  const nativeCapture = await screenshot('parity-' + name + '-native');
+  let nativeCapture = await screenshot('parity-' + name + '-native');
   const directory = path.join(root, '.artifacts/mobile/web');
   const server = createServer(async (request, response) => {
     try {
@@ -327,21 +415,29 @@ export async function compareNativePage({ root, output, evaluate, screenshot }, 
   await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
   // WebView applies Android's display scale during CSS layout, including
   // fractional border widths. DPR emulation alone only changes raster density.
-  const browser = await chromium.launch({
-    args: [`--force-device-scale-factor=${snapshot.layoutScale}`],
-  });
+  let browser;
   try {
+    // Launch inside the try: a missing browser must still close the server,
+    // or its open socket keeps the test process alive until the CI timeout.
+    browser = await chromium.launch({
+      args: [`--force-device-scale-factor=${snapshot.layoutScale}`],
+      // A loaded hosted macOS runner has needed more than the default 180s.
+      timeout: 600000,
+    });
     const page = await browser.newPage({
       viewport: snapshot.viewport,
       // Android commonly uses fractional densities (for example 2.625).
       // Matching them avoids accumulating different 1px border rounding.
       deviceScaleFactor: snapshot.pixelRatio,
+      // Tablet touch sizing must also apply to the browser reference. A mouse
+      // context would compare the installed tablet with desktop controls.
+      hasTouch: snapshot.touch,
       locale: snapshot.lang,
     });
     await writeFile(path.join(output, 'parity-' + name + '-head.html'), snapshot.head);
-    await page.setContent(
-      `<!doctype html><html lang="${snapshot.lang}"><head><base href="http://127.0.0.1:${server.address().port}/">${localReferenceHead(snapshot.head)}</head>${snapshot.body}</html>`,
-    );
+    const html = `<!doctype html><html lang="${snapshot.lang}"><head><base href="http://127.0.0.1:${server.address().port}/">${localReferenceHead(snapshot.head)}</head>${snapshot.body}</html>`;
+    await writeFile(path.join(output, 'parity-' + name + '-reference.html'), html);
+    await loadNativeReferencePage(page, html);
     await page.evaluate(
       async ({ snapshot, scroll }) => {
         document.documentElement.dataset.appReady = 'true';
@@ -391,10 +487,21 @@ export async function compareNativePage({ root, output, evaluate, screenshot }, 
       }, profileDetailBounds(profileGeometry));
     const { boxes } = await page.evaluate(collectNativePageSnapshot, selectors);
     const webImage = path.join(output, 'parity-' + name + '-web.png');
-    await page.screenshot({ path: webImage });
-    const paint = /^(?:table|settlement)(?:-[5-9])?$/.test(name)
+    // A GPU-less hosted macOS runner can take over 30 s to rasterize the page.
+    await page.screenshot({ path: webImage, timeout: 90000 });
+    let paint = /^(?:table|settlement)(?:-[5-9])?$/.test(name)
       ? await compareNativePaint(nativeCapture, webImage, snapshot)
       : undefined;
+    // A GPU-less hosted simulator can keep presenting a stale frame, such as a
+    // dialog the page already closed, for several seconds. Recapture the same
+    // unchanged page before judging; a real paint difference persists.
+    let paintRecaptures = 0;
+    while (paint && paint.meanChannelError > paint.limit && paintRecaptures < 4) {
+      await new Promise((resolve) => setTimeout(resolve, 3000));
+      paintRecaptures++;
+      nativeCapture = await screenshot('parity-' + name + '-native');
+      paint = await compareNativePaint(nativeCapture, webImage, snapshot);
+    }
     const comparison = {
       name,
       mode: 'Installed app DOM replay in Chromium; same content, usable viewport and local CSS',
@@ -414,6 +521,7 @@ export async function compareNativePage({ root, output, evaluate, screenshot }, 
             }
           : undefined,
       paint,
+      paintRecaptures,
     };
     await writeFile(
       path.join(output, 'parity-' + name + '.json'),
@@ -463,8 +571,14 @@ export async function compareNativePage({ root, output, evaluate, screenshot }, 
       intrinsicControlWidths,
       paint,
     };
+  } catch (error) {
+    await writeFile(
+      path.join(output, 'parity-' + name + '-failure.json'),
+      JSON.stringify({ error: error.message, referenceLoad: error.referenceLoad }, null, 2),
+    );
+    throw error;
   } finally {
-    await browser.close();
+    await browser?.close();
     await new Promise((resolve) => server.close(resolve));
   }
 }

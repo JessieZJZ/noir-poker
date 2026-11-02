@@ -370,6 +370,7 @@ page {
   display: flex;
   flex-direction: column;
   width: 100%;
+  --win-rate-chrome: 164px;
   /* A scroll-view only clips inside a definite height. */
   height: 50vh;
   margin: 0 auto;
@@ -447,22 +448,27 @@ page {
     --win-rate-sheet: min(
       740px,
       100vw,
-      calc((50vh - var(--win-rate-bottom) - 164px) * 2.34 + 106px)
+      calc((50vh - var(--win-rate-bottom) - var(--win-rate-chrome)) * 2.34 + 106px)
     );
     width: var(--win-rate-sheet);
-    height: calc((var(--win-rate-sheet) - 106px) / 2.34 + var(--win-rate-bottom) + 164px);
+    height: calc(
+      (var(--win-rate-sheet) - 106px) / 2.34 + var(--win-rate-bottom) + var(--win-rate-chrome)
+    );
   }
   .win-rate-suit {
     grid-template-columns: repeat(13, minmax(0, 1fr));
   }
 }
 /* Half of a rotated tablet is too short for the deck, so the sheet moves beside the table. */
-@media (orientation: landscape) and (max-height: 640px) {
+@media (orientation: landscape) and (max-height: 700px) {
   .win-rate-picker {
     inset: 0 0 0 auto;
     width: max(
       280px,
-      calc((100vh - var(--win-rate-top) - var(--win-rate-bottom) - 190px) * 0.63 + 70px)
+      calc(
+        (100vh - var(--win-rate-top) - var(--win-rate-bottom) - var(--win-rate-chrome) - 26px) *
+          0.63 + 70px
+      )
     );
     height: 100vh;
     margin: 0;
@@ -472,6 +478,58 @@ page {
   }
   .win-rate-suit {
     grid-template-columns: repeat(7, minmax(0, 1fr));
+  }
+}
+/* Same tablet boundary as tablet.wxss: readable touch sizing, phones keep their density. */
+@media (min-width: 601px) and (min-height: 601px) {
+  page {
+    --win-rate-gutter: max(16px, calc(50vw - 364px));
+  }
+  .win-rate-heading {
+    font-size: 24px;
+  }
+  .win-rate-slot {
+    width: 52px;
+    height: 73px;
+  }
+  .win-rate-street-label,
+  .win-rate-name,
+  .win-rate-odds-label,
+  .win-rate-odds-tie,
+  .win-rate-outs-heading {
+    font-size: 15px;
+  }
+  .win-rate-odds-value {
+    font-size: 26px;
+  }
+  .win-rate-waiting,
+  .win-rate-note {
+    font-size: 16px;
+  }
+  .win-rate-screen .win-rate-add {
+    height: 52px;
+    font-size: 16px;
+    line-height: 50px;
+  }
+  .win-rate-actions #win-rate-clear {
+    height: 52px;
+    font-size: 16px;
+    line-height: 50px;
+  }
+  .win-rate-out {
+    width: 36px;
+    height: 50px;
+  }
+  .win-rate-picker {
+    --win-rate-chrome: 176px;
+  }
+  .win-rate-picker-title {
+    font-size: 18px;
+  }
+  .win-rate-picker .win-rate-picker-actions button {
+    height: 52px;
+    font-size: 16px;
+    line-height: 50px;
   }
 }
 @media (max-width: 340px) {

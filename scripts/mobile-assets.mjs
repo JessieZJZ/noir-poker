@@ -3,24 +3,40 @@ import { readFileSync, mkdirSync, readdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { root } from './mobile-lib.mjs';
 
-const icon = readFileSync(path.join(root, 'public/app-icon.png'));
+// One vector master avoids enlarging a low-resolution launch bitmap.
+const master = readFileSync(path.join(root, 'public/brand-mark.svg'));
+const vectorPng = (size) => sharp(master, { density: 384 }).resize(size, size).png().toBuffer();
+const launchIcon = await vectorPng(1024);
+const icon = await sharp(launchIcon).flatten({ background: '#0b1017' }).png().toBuffer();
+writeFileSync(path.join(root, 'public/launch-icon.png'), launchIcon);
+writeFileSync(path.join(root, 'public/app-icon.png'), icon);
+writeFileSync(path.join(root, 'public/favicon.png'), await vectorPng(64));
+writeFileSync(
+  path.join(root, 'public/apple-touch-icon.png'),
+  await sharp(icon).resize(180, 180).png().toBuffer(),
+);
 const png = (size) => sharp(icon).resize(size, size).png().toBuffer();
-const launchIcon = readFileSync(path.join(root, 'public/launch-icon.png'));
-const launchPng = (size) => sharp(launchIcon).resize(size, size).png().toBuffer();
+const launchPng = vectorPng;
 const ios = path.join(root, 'ios/App/App/Assets.xcassets');
 await sharp(icon)
   .resize(1024, 1024)
   .removeAlpha()
   .png()
   .toFile(path.join(ios, 'AppIcon.appiconset/AppIcon-512@2x.png'));
-const splash = await sharp({
-  create: { width: 2732, height: 2732, channels: 3, background: '#0b1017' },
-})
-  .composite([{ input: await launchPng(640), gravity: 'center' }])
-  .png()
-  .toBuffer();
-for (const name of ['splash-2732x2732.png', 'splash-2732x2732-1.png', 'splash-2732x2732-2.png'])
-  writeFileSync(path.join(ios, 'Splash.imageset', name), splash);
+const launchAssets = path.join(ios, 'LaunchMark.imageset');
+mkdirSync(launchAssets, { recursive: true });
+writeFileSync(path.join(launchAssets, 'launch-mark.png'), await vectorPng(720));
+writeFileSync(
+  path.join(launchAssets, 'Contents.json'),
+  JSON.stringify(
+    {
+      images: [{ idiom: 'universal', filename: 'launch-mark.png' }],
+      info: { version: 1, author: 'xcode' },
+    },
+    null,
+    2,
+  ) + '\n',
+);
 
 const res = path.join(root, 'android/app/src/main/res');
 for (const [density, size] of [
@@ -80,4 +96,4 @@ for (const directory of readdirSync(res)) {
     if (!String(error.message).includes('Input file is missing')) throw error;
   }
 }
-console.log('Generated NOIR app icons and launch artwork from public/app-icon.png');
+console.log('Generated NOIR icons and launch artwork from public/brand-mark.svg');

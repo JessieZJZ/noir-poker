@@ -1,6 +1,7 @@
 import { rankText } from '../engine/poker.js';
 import { historyActionLabel } from '../engine/action-labels.js';
 import { actorAtPosition } from '../engine/player-identity.js';
+import { guaranteedUncalledRaise } from './presentation.js';
 
 const suits = ['♠', '♥', '♣', '♦'];
 export const cardText = (cards = []) =>
@@ -32,21 +33,40 @@ export function spotFacts(s, c, actorId = 0) {
           ...new Set(
             history
               .slice(0, last.index)
-              .filter((a) => a.id === last.id && a.action === 'check' && a.street < last.street)
+              .filter(
+                (a) =>
+                  a.id === last.id &&
+                  a.action === 'check' &&
+                  a.street < last.street &&
+                  !history.some(
+                    (b) =>
+                      b.id === last.id &&
+                      b.street === a.street &&
+                      ['raise', 'call'].includes(b.action),
+                  ),
+              )
               .map((a) => a.street),
           ),
         ],
         line: aggression.filter((a) => a.id === last.id),
       }
     : null;
-  const investment = c.extra ?? 0;
+  const investment = c.extra ?? 0,
+    guaranteedUncalledInvestment =
+      s.action === 'raise'
+        ? (c.guaranteedUncalledRaise ?? guaranteedUncalledRaise({ ...s, id: actorId }, s.amount))
+        : 0,
+    matchedInvestment = Math.max(0, investment - guaranteedUncalledInvestment);
   return {
     holeText: cardText(s.hole),
     boardText: cardText(s.board),
     lastCardText: cardText(s.board?.slice(-1)),
     investment,
+    guaranteedUncalledInvestment,
+    matchedInvestment,
     shove: s.action === 'raise' && s.amount === s.legal.maxRaiseTo,
     potRatio: s.pot ? investment / s.pot : 0,
+    matchedPotRatio: s.pot ? matchedInvestment / s.pot : 0,
     activeOpponents,
     pendingOpponents,
     allOpponentsAllIn: activeOpponents.length > 0 && activeOpponents.every((p) => p.allin),

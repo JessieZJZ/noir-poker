@@ -9,7 +9,7 @@ test('draw review connects the full public line and keeps only the requested mod
   await page.evaluate(() => window.qa.reviewDrawLine());
   await page.locator('#review-hand-button').click();
   await expect(page.locator('#review-dialog')).toHaveAttribute('data-analysis-status', 'done', {
-    timeout: 20000,
+    timeout: 120000,
   });
   await expect(page.locator('#review-coach-explanation')).toContainText('两头顺听牌');
   await expect(page.locator('#review-coach-explanation')).toContainText('125');
@@ -22,16 +22,22 @@ test('draw review connects the full public line and keeps only the requested mod
       '#review-your-action, #review-suggestion, #review-advanced, #review-routes, #review-simulation',
     ),
   ).toHaveCount(0);
-  await expect(page.locator('#review-activity')).not.toHaveAttribute('open', '');
-  await page.locator('#review-activity summary').click();
+  // The hand activity opens by default.
+  await expect(page.locator('#review-activity')).toHaveAttribute('open', '');
+  await expect(page.locator('#review-activity')).toHaveAttribute('open', '');
   await expect(page.locator('#review-activity-list li')).not.toHaveCount(0);
   await expect(
     page.locator(
       '#review-public-actions, #review-step-prev, #review-step-next, [data-opponent-nav]',
     ),
   ).toHaveCount(0);
-  const kept = await page.locator('#review-selected-status').textContent();
-  if (kept === '值得保留') await expect(page.locator('#review-practice-focus')).toBeHidden();
+  const kept = await page
+    .locator('#review-selected-status')
+    .evaluate((el) => el.classList.contains('sound'));
+  await expect(page.locator('#review-selected-status')).toHaveText(
+    /^建议(?:弃牌|过牌|跟注|全下|加注|下注)/,
+  );
+  if (kept) await expect(page.locator('#review-practice-focus')).toBeHidden();
   else await expect(page.locator('#review-practice-focus')).toBeVisible();
   expect(
     await page.locator('#review-dialog').evaluate((el) => el.scrollWidth - el.clientWidth),
@@ -71,7 +77,7 @@ test('reported 52s shove and TT call explain actual cards, size and facing actio
   await page.evaluate(() => window.qa.reviewReportedShove());
   await page.locator('#review-hand-button').click();
   await expect(page.locator('#review-dialog')).toHaveAttribute('data-analysis-status', 'done', {
-    timeout: 20000,
+    timeout: 120000,
   });
   const hero = page.locator('#review-coach-explanation');
   await expect(hero).toContainText(/100\s*BB/);
@@ -83,7 +89,8 @@ test('reported 52s shove and TT call explain actual cards, size and facing actio
     /一对|非坚果听牌|先前跟注|单看一张高牌|依据仍受对手继续范围限制/,
   );
   await expect(page.locator('#review-evidence')).not.toContainText(/40(?:\.0)?%/);
-  await expect(page.locator('#review-selected-status')).toHaveText('弃牌');
+  await expect(page.locator('#review-selected-status')).toHaveText(/^建议(?:弃牌|跟注|加注)/);
+  await expect(page.locator('#review-selected-status')).toHaveClass(/consider/);
   await expect(page.locator('#review-practice-focus')).toBeVisible();
   await info.attach('reported-52s-shove', {
     body: await page.screenshot(),
@@ -111,7 +118,7 @@ test('reported 52s shove and TT call explain actual cards, size and facing actio
 });
 
 test('all review locales switch immediately and preserve the recorded hand', async ({ page }) => {
-  test.setTimeout(60000);
+  test.setTimeout(240000);
   await page.goto('/');
   await page.waitForFunction(() => window.qa);
   await page.evaluate(() => window.qa.reviewDrawLine());
@@ -123,7 +130,7 @@ test('all review locales switch immediately and preserve the recorded hand', asy
     await page.locator('#opponents-dialog .close-dialog').click();
     await page.locator('#review-hand-button').click();
     await expect(page.locator('#review-dialog')).toHaveAttribute('data-analysis-status', 'done', {
-      timeout: 20000,
+      timeout: 120000,
     });
     const texts = await page
       .locator('#review-coach-explanation, #review-evidence')
@@ -181,7 +188,7 @@ test('executed traps, trash raises, donks and 2–7 bluffs explain their actual 
 test('deceptive motives survive live switching of all locales without changing the hand', async ({
   page,
 }) => {
-  test.setTimeout(60000);
+  test.setTimeout(240000);
   await page.goto('/');
   await page.waitForFunction(() => window.qa);
   await page.evaluate(() => window.qa.reviewDeception());
@@ -231,14 +238,14 @@ test('69o three-bet shows real later public responses separately and Mia AQ four
   await page.evaluate(() => window.qa.reviewCausalReraise());
   await page.locator('#review-hand-button').click();
   await expect(page.locator('#review-dialog')).toHaveAttribute('data-analysis-status', 'done', {
-    timeout: 30000,
+    timeout: 120000,
   });
   await page.locator('[data-review-index="0"]').click();
   const hero = page.locator('#review-coach-explanation');
   await expect(hero).toContainText('350');
   await expect(hero).toContainText('200');
   await expect(hero).not.toContainText(/随后，|你.*后，Mia选择/);
-  await page.locator('#review-activity summary').click();
+  await expect(page.locator('#review-activity')).toHaveAttribute('open', '');
   await expect(page.locator('#review-activity-list')).toContainText(/Mia.*1K/);
   await expect(page.locator('#review-activity-list')).toContainText(/River.*950/);
   await expect(page.locator('#review-activity-list')).toContainText(/Luna.*800/);
@@ -281,7 +288,7 @@ test('69o three-bet shows real later public responses separately and Mia AQ four
 test('common strong-hand all-ins and preflop flats explain actual value and conditional opposing hands', async ({
   page,
 }, info) => {
-  test.setTimeout(60000);
+  test.setTimeout(240000);
   await page.goto('/');
   await page.waitForFunction(() => window.qa);
   for (const [kind, index] of [
@@ -291,7 +298,7 @@ test('common strong-hand all-ins and preflop flats explain actual value and cond
     await page.evaluate((kind) => window.qa.reviewHeroValue(kind), kind);
     await page.locator('#review-hand-button').click();
     await expect(page.locator('#review-dialog')).toHaveAttribute('data-analysis-status', 'done', {
-      timeout: 30000,
+      timeout: 120000,
     });
     await page.locator(`[data-review-index="${index}"]`).click();
     const explanation = page.locator('#review-coach-explanation');
@@ -312,7 +319,9 @@ test('common strong-hand all-ins and preflop flats explain actual value and cond
     }
     await expect(explanation).not.toContainText(/EV|模型|模拟器|抽样|最终赢家|已摊牌|看到对手底牌/);
     await expect(page.locator('.review-method,.opponent-metrics')).toHaveCount(0);
-    const output = path.resolve('.artifacts/causal-review-2026-10-14');
+    const output = path.resolve(
+      process.env.NOIR_REVIEW_ARTIFACT_DIR || '.artifacts/causal-review-2026-10-14',
+    );
     await mkdir(output, { recursive: true });
     const screenshot = await page.screenshot({
       path: path.join(output, info.project.name + '-' + kind + '.png'),

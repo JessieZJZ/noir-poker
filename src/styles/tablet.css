@@ -1,0 +1,413 @@
+/* Tablet chrome uses readable touch sizing; card and seat geometry still
+   comes from the shared table fitter. Phones and large desktop screens keep
+   their existing density. */
+@media (min-width: 601px) and (max-width: 1600px) and (min-height: 601px) and (any-pointer: coarse) {
+  .header {
+    height: 76px;
+    gap: 18px;
+    padding-inline: 24px;
+  }
+  .header .brand {
+    font-size: 30px;
+    gap: 12px;
+  }
+  .header .brand-mark img {
+    width: 36px;
+    height: 36px;
+  }
+  .header .brand-light {
+    font-size: 16px;
+  }
+  .header-center {
+    font-size: 14px;
+  }
+  .header-actions .settings-button,
+  .header-actions #rules-button {
+    min-height: 44px;
+    font-size: 18px;
+  }
+  .header-actions .settings-button svg {
+    width: 23px;
+    height: 23px;
+  }
+  .guide-menu-options {
+    min-width: 220px;
+  }
+  .guide-menu-options button {
+    min-height: 48px;
+    font-size: 17px;
+  }
+  .entry-welcome {
+    gap: 14px;
+  }
+  .entry-eyebrow,
+  .entry-footnote {
+    font-size: 14px;
+  }
+  .entry-welcome h1 {
+    font-size: 28px;
+  }
+  .entry-welcome .entry-join {
+    min-width: 190px;
+    min-height: 54px;
+    font-size: 19px;
+  }
+
+  dialog.settings-dialog,
+  #rules-dialog,
+  dialog.review-dialog {
+    width: min(1120px, calc(100% - 40px));
+    max-height: calc(100dvh - 40px);
+  }
+  .native-app #rules-dialog,
+  .native-app dialog.review-dialog {
+    max-height: calc(
+      100dvh - var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) -
+        var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)) - 40px
+    );
+  }
+  .dialog-header .icon-button {
+    width: 44px;
+    height: 44px;
+    flex: none;
+  }
+  .settings-dialog h2,
+  #rules-dialog h2 {
+    font-size: 27px;
+  }
+  .settings-dialog .eyebrow,
+  #rules-dialog .eyebrow {
+    font-size: 14px;
+  }
+  .settings-module {
+    padding: 20px;
+  }
+  .settings-module > h3,
+  .settings-module .settings-row > h3 {
+    font-size: 20px;
+  }
+  .settings-dialog .settings-row {
+    min-height: 54px;
+  }
+  .settings-dialog .settings-row > label,
+  .settings-dialog .settings-row > h3,
+  .settings-dialog .settings-row > span:first-child,
+  .settings-dialog .settings-row > div > span:first-child {
+    font-size: 18px;
+  }
+  .settings-dialog .setting-description,
+  .settings-dialog .difficulty-note,
+  .settings-dialog .settings-info :is(p, a, h4),
+  .settings-dialog .mood-legend li,
+  .settings-dialog .profile-card-tag,
+  .settings-dialog .opponents-save-row p {
+    font-size: 15px;
+    line-height: 1.8;
+  }
+  .settings-dialog {
+    --settings-control-width: 152px;
+  }
+  .settings-dialog .settings-row select,
+  .settings-dialog .settings-row .dropdown-trigger,
+  .settings-dialog .small-blind-button,
+  .settings-dialog .small-blind-input {
+    min-height: 44px;
+    font-size: 17px;
+  }
+  .dropdown-option {
+    font-size: 16px;
+    line-height: 20px;
+    padding-block: 8px;
+  }
+  .settings-dialog .difficulty-option > span {
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    padding-inline: 18px;
+    font-size: 17px;
+  }
+  .settings-dialog .profile-card strong {
+    font-size: 18px;
+  }
+  .settings-dialog .profile-card .profile-portrait {
+    width: 54px;
+    height: 54px;
+  }
+  .settings-dialog .profile-card {
+    padding: 16px;
+  }
+  .settings-dialog .opponent-row-person strong,
+  .settings-dialog .opponent-row select,
+  .settings-dialog .opponent-row .dropdown-trigger {
+    font-size: 16px;
+  }
+  .settings-dialog .opponent-row-title .opponent-seat-label {
+    font-size: 14px;
+  }
+  .settings-dialog .opponents-mix-button {
+    min-height: 44px;
+    font-size: 16px;
+  }
+
+  #rules-dialog {
+    --guide-padding: 24px;
+  }
+  #rules-dialog :is(p, li, .rules-flow, .rank-list, .rules-note) {
+    font-size: 17px !important;
+    line-height: 1.8 !important;
+  }
+  #rules-dialog h3,
+  #rules-dialog .hand-example > strong {
+    font-size: 20px;
+  }
+  #rules-dialog .position-glossary > div {
+    font-size: 16px;
+  }
+  #rules-dialog .hand-examples {
+    gap: 16px;
+  }
+  #rules-dialog .hand-example {
+    padding: 16px;
+  }
+  #rules-dialog .hand-example > p {
+    font-size: 16px !important;
+  }
+  #rules-dialog .guide-card {
+    width: 46px;
+    height: 66px;
+    font-size: 19px;
+  }
+  #rules-dialog .guide-card > span:last-child {
+    font-size: 25px;
+  }
+
+  .game-surface {
+    --compact-dock-height: 76px;
+  }
+  .game-surface .decision-strip {
+    min-height: 36px;
+    font-size: 17px;
+    line-height: 24px;
+  }
+  .game-surface .hand-rankings-button {
+    height: 30px;
+    min-height: 30px;
+    font-size: 15px;
+    line-height: 28px;
+  }
+  .game-surface .bet-controls > label,
+  .game-surface .bet-presets button {
+    font-size: 16px;
+  }
+  .game-surface .bet-controls input[type='range'] {
+    --raise-thumb-size: 23px;
+    margin-block: 0;
+    height: 30px;
+    background: linear-gradient(#354650, #354650) center / 100% 5px no-repeat;
+  }
+  .game-surface .bet-controls input[type='range']::-webkit-slider-thumb {
+    width: 23px;
+    height: 23px;
+  }
+  .game-surface .bet-controls input[type='range']::-moz-range-thumb {
+    width: 23px;
+    height: 23px;
+  }
+  .game-surface .bet-presets button {
+    min-height: 36px;
+  }
+  .game-surface .action-panel .action,
+  .game-surface .action-panel.settled-actions > button,
+  .game-surface .action-panel.folded-actions > button {
+    height: 52px;
+    min-height: 52px;
+    max-height: 52px;
+    font-size: 18px;
+  }
+  .game-surface .action-panel .action span {
+    font-size: 18px;
+  }
+  .game-surface .action-panel .action strong {
+    font-size: 21px;
+  }
+  .game-surface .next-button.has-mobile-label::after {
+    font-size: 18px;
+  }
+  .game-surface .action-panel.settled-actions,
+  .game-surface .action-panel.folded-actions {
+    padding: 12px 20px;
+  }
+  .sidebar .section-title h2 {
+    font-size: 20px;
+  }
+  .sidebar .practice-reset {
+    min-height: 40px;
+    font-size: 15px;
+  }
+  .session-balance > span:first-child,
+  .session-change,
+  .session-stats span {
+    font-size: 16px;
+    overflow-wrap: anywhere;
+  }
+  .session-balance > strong {
+    font-size: 40px;
+  }
+  .session-stats strong {
+    font-size: 25px;
+  }
+  .activity-list {
+    font-size: 16px;
+    line-height: 1.9;
+  }
+  .activity-list .position-badge {
+    font-size: 14px;
+  }
+  .subtle-label,
+  .compliance-footer {
+    font-size: 14px;
+  }
+  .records-page-heading h1 {
+    font-size: 28px;
+  }
+  .record-session-title > strong,
+  .record-session-stats strong,
+  .record-hand {
+    font-size: 20px;
+  }
+  .record-session-title > time,
+  .record-session-stats small {
+    font-size: 16px;
+  }
+  .review-dialog :is(p, li, .review-coaching) {
+    font-size: 17px;
+    line-height: 1.8;
+  }
+}
+
+@media (min-width: 601px) and (max-width: 1100px) and (orientation: portrait) and (any-pointer: coarse) {
+  .header .header-center {
+    display: none;
+  }
+  .main,
+  .records-page {
+    padding-inline: 12px;
+  }
+  dialog.settings-dialog,
+  #rules-dialog,
+  dialog.review-dialog {
+    width: calc(100% - 24px);
+    max-width: none;
+    max-height: calc(100dvh - 24px);
+  }
+  /* Portrait settings retain the phone's full-screen presentation on every
+     client; guides and reviews keep a small outside margin. */
+  dialog.settings-dialog {
+    width: 100%;
+    max-height: 100dvh;
+  }
+  .settings-dialog .opponents-layout,
+  .review-dialog .review-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .game-surface {
+    --live-dock-height: 208px;
+  }
+  .game-surface .action-panel {
+    flex-direction: column;
+    gap: 12px;
+    padding: 0 20px 16px;
+  }
+  .game-surface .action-panel .bet-controls {
+    width: 100%;
+    min-width: 0;
+  }
+  .game-surface .bet-controls > label {
+    display: none;
+  }
+  .game-surface .bet-presets button {
+    min-height: 40px;
+  }
+  .game-surface .action-buttons {
+    width: 100%;
+  }
+}
+
+@media (min-width: 901px) and (max-width: 1600px) and (min-height: 601px) and (orientation: landscape) and (any-pointer: coarse) {
+  .game-surface {
+    --live-dock-height: 152px;
+  }
+  .game-surface .action-panel {
+    flex-direction: row;
+    gap: 16px;
+  }
+  .game-surface .action-panel .bet-controls {
+    width: 40%;
+    min-width: 0;
+  }
+  .game-surface .action-buttons {
+    flex: 1;
+    min-width: 0;
+  }
+  .main:has(.game-surface[data-entry-state='playing']) > .sidebar {
+    display: grid;
+    grid-template-columns: minmax(280px, 0.8fr) minmax(0, 1.2fr);
+    align-items: start;
+  }
+  .main > .sidebar > .game-info {
+    grid-column: 1 / -1;
+  }
+  .sidebar > .session-card {
+    grid-column: 1;
+  }
+  .sidebar > .activity-card {
+    grid-column: 2;
+    grid-row: 1;
+  }
+  #rules-dialog .hand-examples {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+/* The old <=1150px wager grid put the amount beside the rail. On a small
+   landscape tablet it also survived inside the desktop-style horizontal
+   dock, narrowing the rail and misaligning the action buttons. Give the
+   amount, rail and shortcuts one full-width row each, for mouse and touch. */
+@media (min-width: 901px) and (max-width: 1150px) and (orientation: landscape) {
+  .main .game-surface .action-panel:not(.settled-actions):not(.folded-actions) {
+    flex-direction: row;
+    gap: 16px;
+  }
+  .main .game-surface .action-panel .bet-controls {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+    width: 40%;
+    min-width: 0;
+    align-self: flex-end;
+  }
+  .main .game-surface .bet-controls > label {
+    flex-direction: row;
+    grid-column: 1;
+    grid-row: auto;
+  }
+  .main .game-surface .bet-controls > label strong {
+    font-size: inherit;
+    line-height: inherit;
+  }
+  .main .game-surface .bet-controls input {
+    grid-column: 1;
+    grid-row: auto;
+    margin: 4px 0 0;
+  }
+  .main .game-surface .bet-presets {
+    grid-column: 1;
+    grid-row: auto;
+  }
+  .main .game-surface .action-buttons {
+    flex: 1;
+    width: auto;
+    min-width: 0;
+    align-self: flex-end;
+  }
+}

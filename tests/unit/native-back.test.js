@@ -26,17 +26,19 @@ function fixture(locale = 'zh-CN') {
       ['article:not([hidden]) h1', heading],
       ['article:not([hidden]) a[href="./"]', link],
     ]),
+    buttons = [{ disabled: false, getClientRects: () => [{}] }],
     document = {
       readyState: 'complete',
       // The real privacy show() assigns the active article's h1 to title.
       title: heading.textContent,
       querySelector: (selector) => elements.get(selector) ?? null,
+      querySelectorAll: (selector) => (selector === 'button' ? buttons : []),
     },
     window = { location: { pathname: '/app-privacy.html' } };
   // Execute the same serialized predicate sent to the installed WebView.
   // Its readiness cannot accidentally depend on a local module binding.
   const ready = vm.runInNewContext(`(${nativePageReady.toString()})`, { window, document });
-  return { ready, window, document, heading, link, elements };
+  return { ready, window, document, heading, link, elements, buttons };
 }
 
 test('native Back accepts only explicit game/privacy destinations', () => {
@@ -57,7 +59,33 @@ test('normal native attachment still requires the initialized game, never a priv
   page.window.noir = { getState: () => null };
   assert.equal(page.ready('game'), false);
   page.window.noir.getState = () => ({ hand: 1 });
+  assert.equal(page.ready(), false, 'A privacy document cannot become the game via a stale API');
+  page.window.location.pathname = '/';
   assert.equal(page.ready(), true);
+});
+
+test('game attachment requires a painted enabled control after initialization', () => {
+  for (const damage of [
+    (page) => {
+      page.document.readyState = 'loading';
+    },
+    (page) => {
+      page.buttons[0].disabled = true;
+    },
+    (page) => {
+      page.buttons[0].getClientRects = () => [];
+    },
+    (page) => {
+      page.buttons.length = 0;
+    },
+  ]) {
+    const page = fixture();
+    page.window.location.pathname = '/';
+    page.window.noir = { getState: () => ({ hand: 1 }) };
+    assert.equal(page.ready('game'), true);
+    damage(page);
+    assert.equal(page.ready('game'), false);
+  }
 });
 
 test('privacy attachment requires its actual ready document, visible title and return link', () => {

@@ -11,7 +11,8 @@
   color: #dce7e9;
   font-size: 16px;
 }
-.settings-dialog .general-settings {
+.settings-dialog .general-settings,
+.settings-dialog .table-preferences {
   margin-bottom: 16px;
 }
 .settings-module .settings-row {
@@ -28,21 +29,30 @@
   display: flex;
   align-items: center;
   flex: none;
+  /* Stays at the right edge with the other controls, also when it wraps, and
+     takes the selects' column width so the small blind starts where they do. */
+  box-sizing: border-box;
+  width: var(--settings-control-width);
+  margin-left: auto;
   gap: 8px;
   color: #d9e9e5;
   font-variant-numeric: tabular-nums;
 }
 .small-blind-button,
 .small-blind-input {
-  width: 82px;
-  min-height: 40px;
-  padding: 7px 8px;
+  flex: 1;
+  width: auto;
+  min-width: 0;
+  min-height: 36px;
+  font-size: 15px;
+  /* Narrow side padding keeps a five-digit small blind visible while typing. */
+  padding: 4px 2px;
   border: 1px solid #45635a;
   border-radius: 8px;
   background: #1b302a;
   color: #b5efdb;
   font: inherit;
-  font-size: 16px;
+  font-size: 15px;
   text-align: center;
 }
 .small-blind-button:hover,
@@ -192,4 +202,54 @@
   .settings-dialog .profile-comparison {
     margin-top: 16px;
   }
+}
+/* Emotion legend: each badge as it appears on an opponent's avatar. */
+.mood-legend {
+  display: grid;
+  gap: 8px;
+  margin: 10px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.mood-legend li {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  color: #95a8b0;
+  font-size: 12px;
+  line-height: 1.6;
+}
+.mood-legend .mood-badge {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  margin-top: 2px;
+}
+.mood-legend b {
+  color: #d6dfe2;
+  font-weight: 600;
+}
+
+/* Settings values read at the labels' 15px, and selects share the blind
+   field's 36px height, so one row never mixes small and large values. Every
+   select and the blind group form one control column, wide enough for the
+   longest translated player count, so their left edges line up. */
+.settings-dialog {
+  --settings-control-width: 124px;
+}
+.settings-dialog .settings-row select {
+  min-width: var(--settings-control-width);
+  min-height: 36px;
+  font-size: 15px;
+}
+.settings-dialog .settings-row .dropdown-trigger {
+  font-size: 15px;
+}
+/* A long translated label wraps instead of pushing its control off the row. */
+.settings-dialog .settings-row > label {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.settings-dialog .settings-row > .dropdown-control {
+  flex-shrink: 0;
 }

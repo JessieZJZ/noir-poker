@@ -33,7 +33,7 @@ test('background pauses the same bot plan and restores only its remaining thinki
   await page.clock.runFor(2);
   const records = await page.evaluate(() => window.qa.timingRecords());
   expect(records).toHaveLength(1);
-  expect(records[0].thinking.model).toBe('policy-pacing-v2');
+  expect(records[0].thinking.model).toBe('policy-pacing-v3');
   expect(records[0].thinking.waitedMs).toBeGreaterThanOrEqual(waiting.delayMs);
   expect(records[0].thinking.waitedMs).toBeLessThan(waiting.delayMs + 20);
   await page.evaluate(() => window.qa.stop());

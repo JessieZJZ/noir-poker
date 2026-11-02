@@ -42,3 +42,32 @@ test('persistent offline transports and app failures remain failures', async () 
     assert.equal(attempts, expected);
   }
 });
+
+test('read-only Android requests retry a dropped driver proxy twice; writes do not', async () => {
+  const run = async (method, failures, platform = 'android') => {
+    let attempts = 0;
+    const command = createNativeCommand({
+      platform,
+      request: async () => {
+        if (++attempts <= failures)
+          throw Error(
+            'Could not proxy command to the remote server. Original error: socket hang up',
+          );
+        return 'ok';
+      },
+      reconnect: async () => {},
+      waitReady: async () => {},
+      onRecovery: () => {},
+      pause: async () => {},
+    });
+    try {
+      return { value: await command(method, '/screenshot'), attempts };
+    } catch {
+      return { value: 'failed', attempts };
+    }
+  };
+  assert.deepEqual(await run('GET', 2), { value: 'ok', attempts: 3 });
+  assert.deepEqual(await run('GET', 3), { value: 'failed', attempts: 3 });
+  assert.deepEqual(await run('POST', 1), { value: 'failed', attempts: 1 });
+  assert.deepEqual(await run('GET', 1, 'ios'), { value: 'failed', attempts: 1 });
+});

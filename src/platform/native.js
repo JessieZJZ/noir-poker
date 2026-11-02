@@ -18,6 +18,7 @@ export function handleAndroidBack(document, app) {
 export async function preparePlatform() {
   if (!Capacitor.isNativePlatform()) return;
   document.documentElement.classList.add('native-app');
+  if (Capacitor.getPlatform() === 'ios') document.documentElement.classList.add('native-ios');
   const [{ App }, { Preferences }] = await Promise.all([
     import('@capacitor/app'),
     import('@capacitor/preferences'),
@@ -63,7 +64,7 @@ function installNativeAbout(info) {
   for (const text of [
     '本地德州扑克练习。所有筹码均为虚拟筹码，无现金兑换、奖金或真人赌注。',
     '牌局和复盘在设备上计算；本应用没有账号、广告、追踪或分析服务。',
-    '设置与对局记录仅保存在此设备，不上传到本应用服务器；关闭后继续原局的新一手。',
+    '设置、对局记录与公开行动观察仅保存在此设备，不上传到本应用服务器；关闭后继续原局的新一手。',
     '仅当你主动打开资料来源或帮助链接时，系统浏览器会访问对应网站，第三方按其自身隐私政策处理该次访问。',
   ]) {
     const paragraph = document.createElement('p');
@@ -82,6 +83,7 @@ function installNativeAbout(info) {
   policy.textContent = localizeText('隐私政策');
   dialog.append(publisher, policy, document.createElement('br'), link);
   document.body.append(dialog);
-  document.querySelector('.table-footer').append(button);
+  // A second, centred line of the compliance footer, in the same type.
+  document.querySelector('.compliance-footer').append(button);
   button.onclick = () => dialog.showModal();
 }

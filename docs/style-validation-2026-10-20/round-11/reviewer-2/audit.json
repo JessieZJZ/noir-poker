@@ -1,0 +1,901 @@
+{
+  "reviewer": 2,
+  "observationHands": 800,
+  "interactionHands": 200,
+  "apiStoppedAfterGlobalHand": 200,
+  "allActionsPersonallyDecided": true,
+  "transportHasNoDecisionPolicy": true,
+  "codes": {
+    "A": {
+      "hands": 100,
+      "globalHandNumbers": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        54,
+        55,
+        56,
+        57,
+        58,
+        59,
+        60,
+        61,
+        62,
+        63,
+        64,
+        65,
+        66,
+        67,
+        68,
+        69,
+        70,
+        71,
+        72,
+        73,
+        74,
+        75,
+        76,
+        77,
+        78,
+        79,
+        80,
+        81,
+        82,
+        83,
+        84,
+        85,
+        86,
+        87,
+        88,
+        89,
+        90,
+        91,
+        92,
+        93,
+        94,
+        95,
+        96,
+        97,
+        98,
+        99,
+        100
+      ],
+      "heroPositions": {
+        "CO": 20,
+        "UTG": 20,
+        "BB": 20,
+        "SB": 20,
+        "BTN": 20
+      },
+      "heroActions": {
+        "fold": 88,
+        "raise": 31,
+        "check": 46,
+        "call": 16
+      },
+      "heroVPIPHands": 31,
+      "heroVPIPPercent": 31,
+      "heroPFRHands": 19,
+      "heroPFRPercent": 19,
+      "heroNetBB": -16.5,
+      "targetVPIPHands": 58,
+      "targetPFRHands": 16,
+      "heroAndTargetCommonStreets": {
+        "0": 100,
+        "1": 15,
+        "2": 12,
+        "3": 9
+      },
+      "targetDirectPressureDecisions": [
+        {
+          "hand": 9,
+          "street": 0,
+          "toCall": 400,
+          "heroAction": {
+            "action": "fold"
+          },
+          "reason": "BB的K7杂色对目标UTG3BB开池，反向隐含赔率差，放弃防守。"
+        },
+        {
+          "hand": 15,
+          "street": 0,
+          "toCall": 500,
+          "heroAction": {
+            "action": "fold"
+          },
+          "reason": "65杂色SB面对A开600和BTN跟注，低连张无位置且不同花，弃牌。"
+        },
+        {
+          "hand": 18,
+          "street": 0,
+          "toCall": 1500,
+          "heroAction": {
+            "action": "fold"
+          },
+          "reason": "A从BB再加到2200，T8杂色不足以继续，弃牌并记录目标直接翻前反加压力。"
+        },
+        {
+          "hand": 30,
+          "street": 0,
+          "toCall": 600,
+          "heroAction": {
+            "action": "fold"
+          },
+          "reason": "73同花BB对A800隔离与BTN跟注，跨度大价格不佳，弃牌。"
+        },
+        {
+          "hand": 31,
+          "street": 0,
+          "toCall": 600,
+          "heroAction": {
+            "action": "fold"
+          },
+          "reason": "32杂色BB面对A隔离800明显不足，弃牌。"
+        },
+        {
+          "hand": 39,
+          "street": 0,
+          "toCall": 600,
+          "heroAction": {
+            "action": "fold"
+          },
+          "reason": "A4杂色BTN面对A的UTG600与一跟，容易被更好Ax压制，弃牌。"
+        },
+        {
+          "hand": 57,
+          "street": 2,
+          "toCall": 1100,
+          "heroAction": {
+            "action": "fold"
+          },
+          "reason": "A在AK7Q转牌下注1100，44几无改善机会，弃牌记录目标直接转牌压力。"
+        },
+        {
+          "hand": 72,
+          "street": 0,
+          "toCall": 600,
+          "heroAction": {
+            "action": "fold"
+          },
+          "reason": "96杂色BB对A从SB隔离800且BTN未决，弃牌。"
+        },
+        {
+          "hand": 76,
+          "street": 0,
+          "toCall": 1700,
+          "heroAction": {
+            "action": "fold"
+          },
+          "reason": "SB的KQ杂色面对CO开和A到1800的再加，冷跟9BB无位置风险高，弃牌。"
+        },
+        {
+          "hand": 90,
+          "street": 0,
+          "toCall": 600,
+          "heroAction": {
+            "action": "fold"
+          },
+          "reason": "63杂色BB面对A隔离800，弃牌。"
+        },
+        {
+          "hand": 93,
+          "street": 3,
+          "toCall": 1500,
+          "heroAction": {
+            "action": "fold"
+          },
+          "reason": "A河牌1500，65只用公对且踢脚低，无跟注价值；记录目标直接河牌压力。"
+        },
+        {
+          "hand": 95,
+          "street": 0,
+          "toCall": 500,
+          "heroAction": {
+            "action": "fold"
+          },
+          "reason": "J5同花SB对A600开和BTN跟，踢脚弱且无位置，弃牌。"
+        }
+      ],
+      "targetReraisesOfHero": [
+        {
+          "hand": 18,
+          "street": 0,
+          "betTo": 2200
+        }
+      ],
+      "targetResponsesToHeroAggression": [
+        {
+          "hand": 5,
+          "street": 0,
+          "action": "call",
+          "betTo": null
+        },
+        {
+          "hand": 18,
+          "street": 0,
+          "action": "raise",
+          "betTo": 2200
+        },
+        {
+          "hand": 21,
+          "street": 0,
+          "action": "call",
+          "betTo": null
+        },
+        {
+          "hand": 23,
+          "street": 0,
+          "action": "fold",
+          "betTo": null
+        },
+        {
+          "hand": 37,
+          "street": 0,
+          "action": "call",
+          "betTo": null
+        },
+        {
+          "hand": 43,
+          "street": 0,
+          "action": "call",
+          "betTo": null
+        },
+        {
+          "hand": 46,
+          "street": 0,
+          "action": "call",
+          "betTo": null
+        },
+        {
+          "hand": 57,
+          "street": 0,
+          "action": "call",
+          "betTo": null
+        },
+        {
+          "hand": 63,
+          "street": 0,
+          "action": "fold",
+          "betTo": null
+        },
+        {
+          "hand": 67,
+          "street": 0,
+          "action": "call",
+          "betTo": null
+        },
+        {
+          "hand": 73,
+          "street": 2,
+          "action": "fold",
+          "betTo": null
+        },
+        {
+          "hand": 81,
+          "street": 0,
+          "action": "call",
+          "betTo": null
+        },
+        {
+          "hand": 81,
+          "street": 3,
+          "action": "fold",
+          "betTo": null
+        },
+        {
+          "hand": 82,
+          "street": 0,
+          "action": "call",
+          "betTo": null
+        },
+        {
+          "hand": 82,
+          "street": 3,
+          "action": "fold",
+          "betTo": null
+        }
+      ],
+      "targetDirectPressureDecisionCount": 12,
+      "targetDirectPressureHandCount": 12,
+      "targetDirectPostflopPressureDecisionCount": 2,
+      "targetDirectPostflopPressureHandCount": 2
+    },
+    "H": {
+      "hands": 100,
+      "globalHandNumbers": [
+        101,
+        102,
+        103,
+        104,
+        105,
+        106,
+        107,
+        108,
+        109,
+        110,
+        111,
+        112,
+        113,
+        114,
+        115,
+        116,
+        117,
+        118,
+        119,
+        120,
+        121,
+        122,
+        123,
+        124,
+        125,
+        126,
+        127,
+        128,
+        129,
+        130,
+        131,
+        132,
+        133,
+        134,
+        135,
+        136,
+        137,
+        138,
+        139,
+        140,
+        141,
+        142,
+        143,
+        144,
+        145,
+        146,
+        147,
+        148,
+        149,
+        150,
+        151,
+        152,
+        153,
+        154,
+        155,
+        156,
+        157,
+        158,
+        159,
+        160,
+        161,
+        162,
+        163,
+        164,
+        165,
+        166,
+        167,
+        168,
+        169,
+        170,
+        171,
+        172,
+        173,
+        174,
+        175,
+        176,
+        177,
+        178,
+        179,
+        180,
+        181,
+        182,
+        183,
+        184,
+        185,
+        186,
+        187,
+        188,
+        189,
+        190,
+        191,
+        192,
+        193,
+        194,
+        195,
+        196,
+        197,
+        198,
+        199,
+        200
+      ],
+      "heroPositions": {
+        "CO": 20,
+        "UTG": 20,
+        "BB": 20,
+        "SB": 20,
+        "BTN": 20
+      },
+      "heroActions": {
+        "fold": 78,
+        "raise": 41,
+        "check": 41,
+        "call": 22
+      },
+      "heroVPIPHands": 35,
+      "heroVPIPPercent": 35,
+      "heroPFRHands": 22,
+      "heroPFRPercent": 22,
+      "heroNetBB": 221.5,
+      "targetVPIPHands": 73,
+      "targetPFRHands": 26,
+      "heroAndTargetCommonStreets": {
+        "0": 100,
+        "1": 18,
+        "2": 12,
+        "3": 8
+      },
+      "targetDirectPressureDecisions": [
+        {
+          "hand": 103,
+          "street": 1,
+          "toCall": 500,
+          "heroAction": {
+            "action": "fold"
+          },
+          "reason": "J43两梅花K2黑桃完全错过，对H近半池主动500，弃牌。"
+        },
+        {
+          "hand": 110,
+          "street": 0,
+          "toCall": 300,
+          "heroAction": {
+            "action": "call"
+          },
+          "reason": "A3同花BB对H500开及两跟仅补300，强同花与小顺潜力合适跟入。"
+        },
+        {
+          "hand": 111,
+          "street": 0,
+          "toCall": 700,
+          "heroAction": {
+            "action": "fold"
+          },
+          "reason": "93杂色BB面对H在两跛入后隔离900，弃牌。"
+        },
+        {
+          "hand": 119,
+          "street": 0,
+          "toCall": 500,
+          "heroAction": {
+            "action": "fold"
+          },
+          "reason": "62杂色BTN面对H的UTG开500，弃牌。"
+        },
+        {
+          "hand": 121,
+          "street": 2,
+          "toCall": 1200,
+          "heroAction": {
+            "action": "fold"
+          },
+          "reason": "H转牌1200且K9仅K高，弃牌记录目标直接转牌压力。"
+        },
+        {
+          "hand": 128,
+          "street": 1,
+          "toCall": 600,
+          "heroAction": {
+            "action": "call"
+          },
+          "reason": "H在852两黑桃面下注600，KQ有两高张及Q黑桃后门，价格合理跟一次。"
+        },
+        {
+          "hand": 128,
+          "street": 2,
+          "toCall": 1800,
+          "heroAction": {
+            "action": "call"
+          },
+          "reason": "转第三黑桃取得Q高花听，需约28%含高张及隐含赔率，跟1800一次，注意更高黑桃。"
+        },
+        {
+          "hand": 128,
+          "street": 3,
+          "toCall": 3200,
+          "heroAction": {
+            "action": "fold"
+          },
+          "reason": "河T没成花或对子，KQ仅K高面对H第三枪3200，弃牌。"
+        },
+        {
+          "hand": 129,
+          "street": 0,
+          "toCall": 300,
+          "heroAction": {
+            "action": "fold"
+          },
+          "reason": "Q5杂色BB对H的UTG开和BTN跟，弃牌。"
+        },
+        {
+          "hand": 131,
+          "street": 0,
+          "toCall": 700,
+          "heroAction": {
+            "action": "call"
+          },
+          "reason": "Q8同花BB对H按钮隔离900，目标隔离可较宽，100BB下补700防守。"
+        },
+        {
+          "hand": 133,
+          "street": 0,
+          "toCall": 700,
+          "heroAction": {
+            "action": "fold"
+          },
+          "reason": "H从BB隔离900，52同花SB无位置不足继续，弃牌记录直接翻前隔离压力。"
+        },
+        {
+          "hand": 135,
+          "street": 0,
+          "toCall": 1200,
+          "heroAction": {
+            "action": "fold"
+          },
+          "reason": "76同花SB面对UTG开及H到1300再加，不冷跟6.5BB无位置，弃牌。"
+        },
+        {
+          "hand": 136,
+          "street": 0,
+          "toCall": 400,
+          "heroAction": {
+            "action": "fold"
+          },
+          "reason": "62杂色SB面对H按钮开500，弃牌。"
+        },
+        {
+          "hand": 150,
+          "street": 0,
+          "toCall": 300,
+          "heroAction": {
+            "action": "call"
+          },
+          "reason": "Q9杂色BB对H的CO500及BTN跟只补300，价格合适跟入。"
+        },
+        {
+          "hand": 156,
+          "street": 0,
+          "toCall": 400,
+          "heroAction": {
+            "action": "raise",
+            "amount": 1900
+          },
+          "reason": "KJ杂色SB对H按钮较宽开池，以1900再加争取主动和弃牌。"
+        },
+        {
+          "hand": 160,
+          "street": 0,
+          "toCall": 500,
+          "heroAction": {
+            "action": "raise",
+            "amount": 1600
+          },
+          "reason": "AT同花BTN对H的CO开池有价值，位置再加1600争取隔离。"
+        },
+        {
+          "hand": 169,
+          "street": 0,
+          "toCall": 300,
+          "heroAction": {
+            "action": "fold"
+          },
+          "reason": "62杂色BB面对H的UTG开与CO跟，弃牌。"
+        },
+        {
+          "hand": 170,
+          "street": 0,
+          "toCall": 300,
+          "heroAction": {
+            "action": "fold"
+          },
+          "reason": "T6杂色BB即使多人价格好，连接性差易受压制，弃牌。"
+        },
+        {
+          "hand": 171,
+          "street": 0,
+          "toCall": 700,
+          "heroAction": {
+            "action": "raise",
+            "amount": 4000
+          },
+          "reason": "AJ同花BB面对H按钮隔离900及SB跟，价值挤压4000减少多人。"
+        },
+        {
+          "hand": 174,
+          "street": 0,
+          "toCall": 400,
+          "heroAction": {
+            "action": "fold"
+          },
+          "reason": "A6杂色SB面对H的UTG开及BTN跟，反向隐含赔率差，弃牌。"
+        },
+        {
+          "hand": 175,
+          "street": 0,
+          "toCall": 400,
+          "heroAction": {
+            "action": "call"
+          },
+          "reason": "86同花SB对H的CO500有同花连通潜力，100BB深度补400看牌。"
+        },
+        {
+          "hand": 180,
+          "street": 0,
+          "toCall": 500,
+          "heroAction": {
+            "action": "fold"
+          },
+          "reason": "K3杂色BTN对H的CO开500，弱踢脚弃牌。"
+        },
+        {
+          "hand": 187,
+          "street": 3,
+          "toCall": 1000,
+          "heroAction": {
+            "action": "call"
+          },
+          "reason": "KK66河牌AJ用A最高踢脚，H1000可能是诈唬或同A分池，跟一次保留抓诈唬价值。"
+        },
+        {
+          "hand": 200,
+          "street": 0,
+          "toCall": 500,
+          "heroAction": {
+            "action": "fold"
+          },
+          "reason": "J7杂色BTN对H的CO500开池，弃牌完成固定第200手。"
+        }
+      ],
+      "targetReraisesOfHero": [],
+      "targetResponsesToHeroAggression": [
+        {
+          "hand": 103,
+          "street": 0,
+          "action": "call",
+          "betTo": null
+        },
+        {
+          "hand": 107,
+          "street": 0,
+          "action": "call",
+          "betTo": null
+        },
+        {
+          "hand": 107,
+          "street": 1,
+          "action": "call",
+          "betTo": null
+        },
+        {
+          "hand": 107,
+          "street": 3,
+          "action": "fold",
+          "betTo": null
+        },
+        {
+          "hand": 117,
+          "street": 1,
+          "action": "fold",
+          "betTo": null
+        },
+        {
+          "hand": 121,
+          "street": 0,
+          "action": "call",
+          "betTo": null
+        },
+        {
+          "hand": 122,
+          "street": 0,
+          "action": "call",
+          "betTo": null
+        },
+        {
+          "hand": 122,
+          "street": 1,
+          "action": "fold",
+          "betTo": null
+        },
+        {
+          "hand": 128,
+          "street": 0,
+          "action": "call",
+          "betTo": null
+        },
+        {
+          "hand": 130,
+          "street": 0,
+          "action": "fold",
+          "betTo": null
+        },
+        {
+          "hand": 131,
+          "street": 2,
+          "action": "call",
+          "betTo": null
+        },
+        {
+          "hand": 131,
+          "street": 3,
+          "action": "fold",
+          "betTo": null
+        },
+        {
+          "hand": 134,
+          "street": 2,
+          "action": "fold",
+          "betTo": null
+        },
+        {
+          "hand": 141,
+          "street": 1,
+          "action": "fold",
+          "betTo": null
+        },
+        {
+          "hand": 152,
+          "street": 0,
+          "action": "fold",
+          "betTo": null
+        },
+        {
+          "hand": 155,
+          "street": 0,
+          "action": "fold",
+          "betTo": null
+        },
+        {
+          "hand": 156,
+          "street": 0,
+          "action": "fold",
+          "betTo": null
+        },
+        {
+          "hand": 160,
+          "street": 0,
+          "action": "fold",
+          "betTo": null
+        },
+        {
+          "hand": 161,
+          "street": 0,
+          "action": "fold",
+          "betTo": null
+        },
+        {
+          "hand": 163,
+          "street": 0,
+          "action": "call",
+          "betTo": null
+        },
+        {
+          "hand": 163,
+          "street": 1,
+          "action": "call",
+          "betTo": null
+        },
+        {
+          "hand": 163,
+          "street": 2,
+          "action": "fold",
+          "betTo": null
+        },
+        {
+          "hand": 171,
+          "street": 0,
+          "action": "fold",
+          "betTo": null
+        },
+        {
+          "hand": 175,
+          "street": 2,
+          "action": "fold",
+          "betTo": null
+        },
+        {
+          "hand": 183,
+          "street": 0,
+          "action": "call",
+          "betTo": null
+        },
+        {
+          "hand": 187,
+          "street": 0,
+          "action": "call",
+          "betTo": null
+        }
+      ],
+      "targetDirectPressureDecisionCount": 24,
+      "targetDirectPressureHandCount": 22,
+      "targetDirectPostflopPressureDecisionCount": 6,
+      "targetDirectPostflopPressureHandCount": 4
+    }
+  },
+  "legalityErrors": [],
+  "conservationErrors": [],
+  "hiddenOpponentCardsInPlayingState": [],
+  "startBeforeDoneErrors": [],
+  "httpRequestsLogged": 563,
+  "heroDecisions": 363,
+  "conservationFormula": {
+    "playing": "sum(players.stack)+pot=100000",
+    "done": "sum(players.stack)=100000; displayed pot excluded"
+  },
+  "commonStreetDefinition": "Both Hero and target have not folded before that street and at least one public event occurs on that street. Counts are hands, not events.",
+  "directPressureDefinition": "Hero decision has toCall>0 and the latest raise in current street is by target; third-party latest raises excluded.",
+  "reraiseHeroDefinition": "Target raise occurs while Hero has not folded, and immediately previous raise in that street was by Hero; calls may intervene.",
+  "freeReviewChecksumUnchanged": true,
+  "createdAt": "2026-10-22T21:23:16.938071+00:00",
+  "adjacentStateMismatchLogRows": [],
+  "perCodeStartRequests": {
+    "A": 100,
+    "H": 100
+  },
+  "httpStatusCounts": {
+    "200": 563
+  },
+  "freeObservationFilesVerified": true,
+  "heroActionTotals": {
+    "fold": 166,
+    "raise": 72,
+    "check": 87,
+    "call": 38
+  },
+  "heroVPIPPercentOverall": 33.0,
+  "heroPFRPercentOverall": 20.5
+}

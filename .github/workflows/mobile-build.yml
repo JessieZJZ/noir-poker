@@ -70,11 +70,11 @@ jobs:
 
   browser-ui:
     runs-on: ubuntu-24.04
-    timeout-minutes: 20
+    timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
-        project: [desktop, mobile]
+        project: [mobile]
     steps:
       - uses: actions/checkout@v7.0.1
       - uses: actions/setup-node@v7.1.0
@@ -82,7 +82,8 @@ jobs:
           node-version: '22'
           cache: npm
       - run: npm ci
-      - run: npx playwright install --with-deps chromium
+      # WebKit-specific dropdown and long-press checks run in this job too.
+      - run: npx playwright install --with-deps chromium webkit
       - run: npm run test:e2e -- --project=${{ matrix.project }} --grep-invert '(public-area|stable-actions|readability-hints|play-viewport|settlement-layout|hint-banner|platform-parity)\.spec\.js'
       - uses: actions/upload-artifact@v7.0.2
         if: always()
@@ -90,6 +91,44 @@ jobs:
           name: browser-ui-results-${{ matrix.project }}
           path: test-results/
           retention-days: 7
+
+  desktop-ui-shard:
+    name: browser-ui desktop shard ${{ matrix.shard }}/2
+    runs-on: ubuntu-24.04
+    # Split the complete suite instead of increasing the job deadline.
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2]
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-node@v7.1.0
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium webkit
+      - run: npm run test:e2e -- --project=desktop --shard=${{ matrix.shard }}/2 --grep-invert '(public-area|stable-actions|readability-hints|play-viewport|settlement-layout|hint-banner|platform-parity)\.spec\.js'
+      - uses: actions/upload-artifact@v7.0.2
+        if: always()
+        with:
+          name: browser-ui-results-desktop-${{ matrix.shard }}
+          path: test-results/
+          retention-days: 7
+
+  desktop-ui:
+    # Preserve the existing check name and fail on a failed/cancelled shard.
+    name: browser-ui (desktop)
+    needs: desktop-ui-shard
+    if: always()
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Require every desktop shard to pass
+        env:
+          SHARD_RESULT: ${{ needs.desktop-ui-shard.result }}
+        run: test "$SHARD_RESULT" = success
 
   android:
     runs-on: ubuntu-24.04
@@ -138,6 +177,8 @@ jobs:
           if-no-files-found: error
           retention-days: 7
       - run: npm run mobile:test:setup -- android
+      # Installed-app parity scenarios replay the WebView DOM in Chromium.
+      - run: npx playwright install --with-deps chromium
       - name: Enable KVM for the Android test emulator
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
@@ -149,8 +190,12 @@ jobs:
           test -r /dev/kvm
           test -w /dev/kvm
           df -h "$HOME"
+      # The GPU-less CI emulator completes only a few scenarios in this budget,
+      # so CI checks the installed-app smoke set; the full suite runs locally.
       - name: Installed Android App end-to-end tests
-        timeout-minutes: 25
+        timeout-minutes: 30
+        env:
+          NOIR_NATIVE_SCENARIOS: local-launch-and-no-login,entry-waiting-music-and-first-deal,entry-high-stakes-layout,practice-reset-in-card-heading,raise-rail-and-vibration-preview,review-hand-groups-two-columns
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 36
@@ -174,7 +219,16 @@ jobs:
           path: .artifacts/native-e2e/android/
           retention-days: 7
 
-  ios:
+  ios-smoke:
+    name: ios smoke (${{ matrix.group }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - group: entry
+            scenarios: entry-waiting-music-and-first-deal,entry-high-stakes-layout,practice-reset-in-card-heading
+          - group: interaction
+            scenarios: local-launch-and-no-login,raise-rail-and-vibration-preview,review-hand-groups-two-columns
     runs-on: macos-26
     timeout-minutes: 45
     env:
@@ -191,16 +245,33 @@ jobs:
         run: ditto -c -k --sequesterRsrc --keepParent .artifacts/mobile/ios/Build/Products/Debug-iphonesimulator/App.app .artifacts/mobile/noir-poker-ios-simulator.zip
       - uses: actions/upload-artifact@v7.0.2
         with:
-          name: ios-simulator-app
+          name: ios-simulator-app-${{ matrix.group }}
           path: .artifacts/mobile/noir-poker-ios-simulator.zip
           if-no-files-found: error
           retention-days: 7
       - run: npm run mobile:test:setup -- ios
+      # Installed-app parity scenarios replay the WebView DOM in Chromium.
+      - run: npx playwright install chromium
+      # Keep the same six installed scenarios, split across two independent
+      # simulators so slow hosted hardware does not starve the last review case.
       - run: npm run mobile:test:ios
-        timeout-minutes: 20
+        timeout-minutes: 30
+        env:
+          NOIR_NATIVE_SCENARIOS: ${{ matrix.scenarios }}
       - uses: actions/upload-artifact@v7.0.2
         if: always()
         with:
-          name: ios-native-e2e-results
+          name: ios-native-e2e-results-${{ matrix.group }}
           path: .artifacts/native-e2e/ios/
           retention-days: 7
+
+  ios:
+    if: always()
+    needs: ios-smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Require every iOS smoke group to pass
+        env:
+          RESULT: ${{ needs.ios-smoke.result }}
+        run: test "$RESULT" = success
