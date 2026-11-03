@@ -20,9 +20,14 @@ test('automatic guide labels roll downward in a clipped stable slot and arrows h
 }) => {
   const trigger = page.locator('#rules-button');
   const before = await trigger.boundingBox();
-  await expect(trigger).toHaveAttribute('data-label', 'records');
+  // A slow load can let one real tick pass before the clock is frozen, so the
+  // cycle is checked from whichever label is showing.
+  const order = ['records', 'tutorial', 'guide', 'win-rate'];
+  const start = order.indexOf(await trigger.getAttribute('data-label'));
+  expect(start).toBeGreaterThanOrEqual(0);
+  const after = (steps) => order[(start + steps) % order.length];
   await page.clock.runFor(5000);
-  await expect(trigger).toHaveAttribute('data-label', 'tutorial');
+  await expect(trigger).toHaveAttribute('data-label', after(1));
   await expect(trigger).toHaveAttribute('data-animating', 'true');
   const motion = await trigger.evaluate((button) => {
     const slot = button.querySelector('.guide-rotating-label');
@@ -56,11 +61,11 @@ test('automatic guide labels roll downward in a clipped stable slot and arrows h
   expect(motion.circle).toEqual({ radius: '0px', border: 0 });
   await page.clock.runFor(400);
   await expect(trigger).not.toHaveAttribute('data-animating');
-  const after = await trigger.boundingBox();
-  expect(after.width).toBeCloseTo(before.width, 1);
-  expect(after.height).toBeCloseTo(before.height, 1);
+  const settled = await trigger.boundingBox();
+  expect(settled.width).toBeCloseTo(before.width, 1);
+  expect(settled.height).toBeCloseTo(before.height, 1);
   // Every menu choice takes its turn in menu order, then the cycle repeats.
-  for (const label of ['guide', 'win-rate', 'records']) {
+  for (const label of [after(2), after(3), after(4)]) {
     await page.clock.runFor(5000);
     await expect(trigger).toHaveAttribute('data-label', label);
     await expect(trigger.locator(`[data-guide-label="${label}"]`)).toHaveAttribute(

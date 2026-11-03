@@ -57,6 +57,8 @@ export function createGuideMenu({ onRecords, onTutorial }) {
       return;
     }
     interval = setInterval(() => {
+      // The media query's change event can arrive after a tick is due.
+      if (motion.matches) return updateRotation();
       const index = order.indexOf(trigger.dataset.label || order[0]);
       setLabel(order[(index + 1) % order.length], true);
     }, 5000);
