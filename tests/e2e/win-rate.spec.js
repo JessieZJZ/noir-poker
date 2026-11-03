@@ -41,6 +41,7 @@ test('guide menu opens the calculator and leaves the live hand untouched', async
   await page.locator('#rules-button').click();
   await expect(page.locator('#guide-menu [role="menuitem"]')).toHaveText([
     '玩法指南',
+    '新手引导',
     '对局记录',
     '胜率计算器',
   ]);

@@ -53,6 +53,7 @@ test('the guide menu opens a tutorial that pauses the live hand and restores it 
     '玩法指南',
     '新手引导',
     '对局记录',
+    '胜率计算器',
   ]);
   await page.locator('#tutorial-menu-item').click();
   const dialog = page.locator('#tutorial-dialog');
