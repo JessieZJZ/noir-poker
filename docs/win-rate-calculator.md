@@ -1,6 +1,6 @@
 # 胜率计算器
 
-顶部“玩法指南”下拉菜单的第三项。Web、原生 App 和微信小程序共用 `src/engine/win-rate.js` 与 `src/engine/win-rate-session.js`；界面分别在 `src/ui/win-rate.js` 与 `miniprogram/calculator/`。它只读取手动选择的牌，不读取、不修改当前牌局，浏览时牌局继续进行。
+顶部资源下拉菜单的最后一项。Web、原生 App 和微信小程序共用 `src/engine/win-rate.js` 与 `src/engine/win-rate-session.js`；界面分别在 `src/ui/win-rate.js` 与 `miniprogram/calculator/`。它只读取手动选择的牌，不读取、不修改当前牌局，浏览时牌局继续进行。
 
 ## 交互
 
@@ -32,6 +32,8 @@
 每次换牌都取消旧计算。关闭页面、小程序隐藏或卸载时取消待执行的时间片，重新显示时继续当前选牌并重算。切片定时器归计算器所有，不影响下一手、重打和重置的取消逻辑。
 
 ## 平台
+
+微信页面按牌缓存牌面图，但每次交给 `setData` 的都是副本：`setData` 会把传入对象留在 `page.data` 里，原地换牌时的叶子补丁（例如把 5♠ 改成 5♥）会写进这个对象。共用缓存对象会把其他底牌、outs 和选牌面板里的同一张牌一起改成新牌，而胜率仍按真实选牌计算。`tests/unit/wechat-win-rate.test.js` 按引用保存 `setData` 的值，逐次换牌后核对每个牌位、outs 和选牌面板的牌面。Web 与 App 每次从会话重新生成牌面，没有这个缓存。
 
 微信主包接近 2 MiB 预算，因此页面与两个引擎模块放在 `calculator` 分包，构建时把引擎模块移入分包并继续引用主包的 `shared/engine/poker.js`。规则仍只有一份。
 

@@ -25,13 +25,16 @@ const boardSlotName = ({ label, slots }, index) =>
 const holeSlotName = (player, index) =>
   player.hero ? `你的第 ${index + 1} 张底牌` : `对手 ${player.number} 的第 ${index + 1} 张底牌`;
 const cardArtwork = new Map();
+// setData keeps the objects it is given in page.data, and a later leaf patch
+// (editing a slot from 5♠ to 5♥) writes into them. Hand out copies so a
+// patch can never rewrite the cached face another slot or out still shows.
 function artwork(card) {
   if (!card) return null;
   if (!cardArtwork.has(card.key)) {
     const { key, rank, suit, red, smallArtStyle } = presentCard(card);
     cardArtwork.set(card.key, { key, rank, suit, red, artStyle: smallArtStyle });
   }
-  return cardArtwork.get(card.key);
+  return { ...cardArtwork.get(card.key) };
 }
 const pickerDeck = () =>
   [0, 1, 2, 3].map((suit) => ({

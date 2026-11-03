@@ -154,7 +154,8 @@ Page({
                     }
                     if (!this.data.cardArt[artwork.face.art])
                       art[`cardArt.${artwork.face.art}`] = artwork.artStyle;
-                    return artwork.face;
+                    // A copy: setData keeps the object, and leaf patches write into it.
+                    return { ...artwork.face };
                   }),
                   attemptText: attempt.attempt ? `重打${attempt.attempt}` : '',
                   profitText:
