@@ -137,6 +137,9 @@ async function compileJs(sourceDirectory, destination) {
       format: 'cjs',
       target: 'es2019',
       minify: true,
+      // UTF-8 keeps each Chinese character at 3 bytes instead of a 6-byte
+      // \uXXXX escape; the main package budget depends on it.
+      charset: 'utf8',
       write: false,
     });
     const target = path.join(destination, file);
@@ -332,6 +335,7 @@ export async function buildWechat(output = wechatOutput) {
         format: 'cjs',
         target: 'es2019',
         minify: true,
+        charset: 'utf8',
       });
       await writeFile(path.join(staging, 'shared/ui', name), compiled.code);
     }
@@ -364,6 +368,7 @@ export async function buildWechat(output = wechatOutput) {
         format: 'cjs',
         target: 'es2019',
         minify: true,
+        charset: 'utf8',
       });
       await writeFile(path.join(staging, file), result.code);
     }
@@ -371,6 +376,7 @@ export async function buildWechat(output = wechatOutput) {
       entryPoints: [path.join(template, 'workers/review.js')],
       bundle: true,
       minify: true,
+      charset: 'utf8',
       format: 'iife',
       target: 'es2019',
       outfile: path.join(staging, 'workers/review.js'),

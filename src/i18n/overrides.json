@@ -883,7 +883,9 @@
     "面对下注": "Facing a bet",
     "筹码单位": "Chip units",
     "换算记一下：{0} = 1000，{1} = 1000K = 1000000。不带 K 或 M 的整数就是实际筹码数，所以 {2} 和 {3} 一样多。带小数也照算，{4} 就是 {5}。": "Remember the conversions: {0} = 1000, {1} = 1000K = 1000000. A whole number without K or M is the actual chip count, so {2} and {3} are the same amount. Decimals work the same way: {4} is {5}.",
-    "这手{0}的前提是对手的下注范围里保留足够较弱牌或未成牌诈唬，不能只因有听牌就继续。": "{0} here only holds up if the betting range keeps enough weaker hands or unmade bluffs; a draw alone does not justify continuing."
+    "这手{0}的前提是对手的下注范围里保留足够较弱牌或未成牌诈唬，不能只因有听牌就继续。": "{0} here only holds up if the betting range keeps enough weaker hands or unmade bluffs; a draw alone does not justify continuing.",
+    "还有 {0} 位对手没弃牌。人越多，越可能有人已经领先或正在听牌；一对这时下注，愿意跟的多是更强的牌或听牌，所以先过牌控制底池。": "{0} opponents are still in the hand. The more players there are, the likelier someone is already ahead or drawing; a one-pair bet here is mostly called by stronger hands or draws, so checking controls the pot.",
+    "还有 {0} 位对手没弃牌。人越多，越可能有人已经领先；一对这时下注，愿意跟的多是更强的牌，所以先过牌控制底池。": "{0} opponents are still in the hand. The more players there are, the likelier someone is already ahead; a one-pair bet here is mostly called by stronger hands, so checking controls the pot."
   },
   "zh-TW": {
     "设置": "設定",
@@ -1653,7 +1655,9 @@
     "面对下注": "面對下注",
     "筹码单位": "籌碼單位",
     "换算记一下：{0} = 1000，{1} = 1000K = 1000000。不带 K 或 M 的整数就是实际筹码数，所以 {2} 和 {3} 一样多。带小数也照算，{4} 就是 {5}。": "換算記一下：{0} = 1000，{1} = 1000K = 1000000。不帶 K 或 M 的整數就是實際籌碼數，所以 {2} 和 {3} 一樣多。帶小數也照算，{4} 就是 {5}。",
-    "这手{0}的前提是对手的下注范围里保留足够较弱牌或未成牌诈唬，不能只因有听牌就继续。": "這手{0}的前提是對手的下注範圍裡保留足夠較弱牌或未成牌詐唬，不能只因有聽牌就繼續。"
+    "这手{0}的前提是对手的下注范围里保留足够较弱牌或未成牌诈唬，不能只因有听牌就继续。": "這手{0}的前提是對手的下注範圍裡保留足夠較弱牌或未成牌詐唬，不能只因有聽牌就繼續。",
+    "还有 {0} 位对手没弃牌。人越多，越可能有人已经领先或正在听牌；一对这时下注，愿意跟的多是更强的牌或听牌，所以先过牌控制底池。": "還有 {0} 位對手沒棄牌。人越多，越可能有人已經領先或正在聽牌；一對這時下注，願意跟的多是更強的牌或聽牌，所以先過牌控制底池。",
+    "还有 {0} 位对手没弃牌。人越多，越可能有人已经领先；一对这时下注，愿意跟的多是更强的牌，所以先过牌控制底池。": "還有 {0} 位對手沒棄牌。人越多，越可能有人已經領先；一對這時下注，願意跟的多是更強的牌，所以先過牌控制底池。"
   },
   "ja": {
     "设置": "設定",
@@ -2426,7 +2430,9 @@
     "复盘这一手": "この手を振り返る",
     "筹码单位": "チップの単位",
     "换算记一下：{0} = 1000，{1} = 1000K = 1000000。不带 K 或 M 的整数就是实际筹码数，所以 {2} 和 {3} 一样多。带小数也照算，{4} 就是 {5}。": "換算を覚えておきましょう：{0} = 1000、{1} = 1000K = 1000000。K や M の付かない整数は実際のチップ数なので、{2} と {3} は同じ量です。小数も同じで、{4} は {5} です。",
-    "这手{0}的前提是对手的下注范围里保留足够较弱牌或未成牌诈唬，不能只因有听牌就继续。": "このハンドで{0}するには、相手のベットレンジに十分な弱いハンドや未完成のブラフが残っていることが前提で、ドローだけでは続行できません。"
+    "这手{0}的前提是对手的下注范围里保留足够较弱牌或未成牌诈唬，不能只因有听牌就继续。": "このハンドで{0}するには、相手のベットレンジに十分な弱いハンドや未完成のブラフが残っていることが前提で、ドローだけでは続行できません。",
+    "还有 {0} 位对手没弃牌。人越多，越可能有人已经领先或正在听牌；一对这时下注，愿意跟的多是更强的牌或听牌，所以先过牌控制底池。": "まだ {0} 人の相手が降りていない。人数が多いほど、すでに誰かが先行しているか、ドローを持っている可能性が高い。ここでワンペアでベットしても、コールしてくるのは主に強い手かドローなので、チェックでポットを抑える。",
+    "还有 {0} 位对手没弃牌。人越多，越可能有人已经领先；一对这时下注，愿意跟的多是更强的牌，所以先过牌控制底池。": "まだ {0} 人の相手が降りていない。人数が多いほど、すでに誰かが先行している可能性が高い。ここでワンペアでベットしても、コールしてくるのは主に強い手なので、チェックでポットを抑える。"
   },
   "ko": {
     "设置": "설정",
@@ -3199,7 +3205,9 @@
     "复盘这一手": "이 핸드 복기",
     "筹码单位": "칩 단위",
     "换算记一下：{0} = 1000，{1} = 1000K = 1000000。不带 K 或 M 的整数就是实际筹码数，所以 {2} 和 {3} 一样多。带小数也照算，{4} 就是 {5}。": "환산을 기억해 두세요: {0} = 1000, {1} = 1000K = 1000000. K나 M이 붙지 않은 정수는 실제 칩 수이므로 {2}와 {3}은 같은 양입니다. 소수도 똑같이 계산해서 {4}는 {5}입니다.",
-    "这手{0}的前提是对手的下注范围里保留足够较弱牌或未成牌诈唬，不能只因有听牌就继续。": "이 핸드에서 {0}하려면 상대 베팅 범위에 충분한 약한 패나 미완성 블러프가 남아 있어야 하며, 드로가 있다는 이유만으로 계속할 수는 없습니다."
+    "这手{0}的前提是对手的下注范围里保留足够较弱牌或未成牌诈唬，不能只因有听牌就继续。": "이 핸드에서 {0}하려면 상대 베팅 범위에 충분한 약한 패나 미완성 블러프가 남아 있어야 하며, 드로가 있다는 이유만으로 계속할 수는 없습니다.",
+    "还有 {0} 位对手没弃牌。人越多，越可能有人已经领先或正在听牌；一对这时下注，愿意跟的多是更强的牌或听牌，所以先过牌控制底池。": "아직 {0}명의 상대가 폴드하지 않았다. 인원이 많을수록 누군가 이미 앞서 있거나 드로를 들고 있을 가능성이 크다. 여기서 원 페어로 베팅하면 콜하는 쪽은 대부분 더 강한 핸드나 드로라서, 체크로 팟을 조절한다.",
+    "还有 {0} 位对手没弃牌。人越多，越可能有人已经领先；一对这时下注，愿意跟的多是更强的牌，所以先过牌控制底池。": "아직 {0}명의 상대가 폴드하지 않았다. 인원이 많을수록 누군가 이미 앞서 있을 가능성이 크다. 여기서 원 페어로 베팅하면 콜하는 쪽은 대부분 더 강한 핸드라서, 체크로 팟을 조절한다."
   },
   "es": {
     "设置": "Ajustes",
@@ -3972,7 +3980,9 @@
     "立刻发完": "Terminar de repartir",
     "筹码单位": "Unidades de fichas",
     "换算记一下：{0} = 1000，{1} = 1000K = 1000000。不带 K 或 M 的整数就是实际筹码数，所以 {2} 和 {3} 一样多。带小数也照算，{4} 就是 {5}。": "Recuerda la conversión: {0} = 1000, {1} = 1000K = 1000000. Un número entero sin K ni M es la cantidad real de fichas, así que {2} y {3} son lo mismo. Con decimales es igual: {4} son {5}.",
-    "这手{0}的前提是对手的下注范围里保留足够较弱牌或未成牌诈唬，不能只因有听牌就继续。": "{0} aquí solo se sostiene si el rango de apuestas conserva suficientes manos más débiles o faroles no completados; tener un proyecto no basta para continuar."
+    "这手{0}的前提是对手的下注范围里保留足够较弱牌或未成牌诈唬，不能只因有听牌就继续。": "{0} aquí solo se sostiene si el rango de apuestas conserva suficientes manos más débiles o faroles no completados; tener un proyecto no basta para continuar.",
+    "还有 {0} 位对手没弃牌。人越多，越可能有人已经领先或正在听牌；一对这时下注，愿意跟的多是更强的牌或听牌，所以先过牌控制底池。": "Aún quedan {0} rivales sin retirarse. Cuantos más jugadores, más probable es que alguien ya vaya por delante o tenga un proyecto; una apuesta con una pareja aquí la pagan sobre todo manos más fuertes o proyectos, así que pasar sirve para controlar el bote.",
+    "还有 {0} 位对手没弃牌。人越多，越可能有人已经领先；一对这时下注，愿意跟的多是更强的牌，所以先过牌控制底池。": "Aún quedan {0} rivales sin retirarse. Cuantos más jugadores, más probable es que alguien ya vaya por delante; una apuesta con una pareja aquí la pagan sobre todo manos más fuertes, así que pasar sirve para controlar el bote."
   },
   "it": {
     "设置": "Impostazioni",
@@ -4746,7 +4756,9 @@
     "复盘这一手": "Rivedi questa mano",
     "筹码单位": "Unità delle chip",
     "换算记一下：{0} = 1000，{1} = 1000K = 1000000。不带 K 或 M 的整数就是实际筹码数，所以 {2} 和 {3} 一样多。带小数也照算，{4} 就是 {5}。": "Ricorda le conversioni: {0} = 1000, {1} = 1000K = 1000000. Un numero intero senza K o M è il numero reale di chip, quindi {2} e {3} sono la stessa quantità. Con i decimali vale lo stesso: {4} sono {5}.",
-    "这手{0}的前提是对手的下注范围里保留足够较弱牌或未成牌诈唬，不能只因有听牌就继续。": "{0} qui regge solo se il range di puntata conserva abbastanza mani più deboli o bluff senza mano fatta; un progetto da solo non basta per continuare."
+    "这手{0}的前提是对手的下注范围里保留足够较弱牌或未成牌诈唬，不能只因有听牌就继续。": "{0} qui regge solo se il range di puntata conserva abbastanza mani più deboli o bluff senza mano fatta; un progetto da solo non basta per continuare.",
+    "还有 {0} 位对手没弃牌。人越多，越可能有人已经领先或正在听牌；一对这时下注，愿意跟的多是更强的牌或听牌，所以先过牌控制底池。": "Restano ancora {0} avversari in mano. Più giocatori ci sono, più è probabile che qualcuno sia già avanti o abbia un progetto; una puntata con una coppia qui viene pagata soprattutto da mani più forti o progetti, quindi il check serve a controllare il piatto.",
+    "还有 {0} 位对手没弃牌。人越多，越可能有人已经领先；一对这时下注，愿意跟的多是更强的牌，所以先过牌控制底池。": "Restano ancora {0} avversari in mano. Più giocatori ci sono, più è probabile che qualcuno sia già avanti; una puntata con una coppia qui viene pagata soprattutto da mani più forti, quindi il check serve a controllare il piatto."
   },
   "pt": {
     "设置": "Definições",
@@ -5518,7 +5530,9 @@
     "立刻发完": "Terminar a mão",
     "筹码单位": "Unidades de fichas",
     "换算记一下：{0} = 1000，{1} = 1000K = 1000000。不带 K 或 M 的整数就是实际筹码数，所以 {2} 和 {3} 一样多。带小数也照算，{4} 就是 {5}。": "Lembre a conversão: {0} = 1000, {1} = 1000K = 1000000. Um número inteiro sem K ou M é a quantidade real de fichas, então {2} e {3} são a mesma quantia. Com decimais é igual: {4} são {5}.",
-    "这手{0}的前提是对手的下注范围里保留足够较弱牌或未成牌诈唬，不能只因有听牌就继续。": "{0} aqui só se sustenta se o range de aposta mantiver mãos mais fracas ou blefes sem mão formada em quantidade suficiente; ter um draw não basta para continuar."
+    "这手{0}的前提是对手的下注范围里保留足够较弱牌或未成牌诈唬，不能只因有听牌就继续。": "{0} aqui só se sustenta se o range de aposta mantiver mãos mais fracas ou blefes sem mão formada em quantidade suficiente; ter um draw não basta para continuar.",
+    "还有 {0} 位对手没弃牌。人越多，越可能有人已经领先或正在听牌；一对这时下注，愿意跟的多是更强的牌或听牌，所以先过牌控制底池。": "Ainda há {0} adversários na mão. Quanto mais jogadores, maior a chance de alguém já estar na frente ou ter um projeto; uma aposta com um par aqui é paga principalmente por mãos mais fortes ou projetos, então o check serve para controlar o pote.",
+    "还有 {0} 位对手没弃牌。人越多，越可能有人已经领先；一对这时下注，愿意跟的多是更强的牌，所以先过牌控制底池。": "Ainda há {0} adversários na mão. Quanto mais jogadores, maior a chance de alguém já estar na frente; uma aposta com um par aqui é paga principalmente por mãos mais fortes, então o check serve para controlar o pote."
   },
   "de": {
     "设置": "Einstellungen",
@@ -6291,7 +6305,9 @@
     "复盘这一手": "Diese Hand analysieren",
     "筹码单位": "Chip-Einheiten",
     "换算记一下：{0} = 1000，{1} = 1000K = 1000000。不带 K 或 M 的整数就是实际筹码数，所以 {2} 和 {3} 一样多。带小数也照算，{4} 就是 {5}。": "Merke dir die Umrechnung: {0} = 1000, {1} = 1000K = 1000000. Eine ganze Zahl ohne K oder M ist die tatsächliche Chipzahl, also sind {2} und {3} gleich viel. Dezimalzahlen gehen genauso: {4} sind {5}.",
-    "这手{0}的前提是对手的下注范围里保留足够较弱牌或未成牌诈唬，不能只因有听牌就继续。": "{0} hält hier nur, wenn die Setzrange genügend schwächere Hände oder nicht getroffene Bluffs enthält; ein Draw allein rechtfertigt kein Weiterspielen."
+    "这手{0}的前提是对手的下注范围里保留足够较弱牌或未成牌诈唬，不能只因有听牌就继续。": "{0} hält hier nur, wenn die Setzrange genügend schwächere Hände oder nicht getroffene Bluffs enthält; ein Draw allein rechtfertigt kein Weiterspielen.",
+    "还有 {0} 位对手没弃牌。人越多，越可能有人已经领先或正在听牌；一对这时下注，愿意跟的多是更强的牌或听牌，所以先过牌控制底池。": "Noch {0} Gegner sind in der Hand. Je mehr Spieler, desto wahrscheinlicher liegt schon jemand vorn oder hat einen Draw; eine Bet mit einem Paar wird hier meist von stärkeren Händen oder Draws gecallt, daher hält ein Check den Pot klein.",
+    "还有 {0} 位对手没弃牌。人越多，越可能有人已经领先；一对这时下注，愿意跟的多是更强的牌，所以先过牌控制底池。": "Noch {0} Gegner sind in der Hand. Je mehr Spieler, desto wahrscheinlicher liegt schon jemand vorn; eine Bet mit einem Paar wird hier meist von stärkeren Händen gecallt, daher hält ein Check den Pot klein."
   },
   "fr": {
     "设置": "Paramètres",
@@ -7065,7 +7081,9 @@
     "复盘这一手": "Revoir cette main",
     "筹码单位": "Unités de jetons",
     "换算记一下：{0} = 1000，{1} = 1000K = 1000000。不带 K 或 M 的整数就是实际筹码数，所以 {2} 和 {3} 一样多。带小数也照算，{4} 就是 {5}。": "Retenez la conversion : {0} = 1000, {1} = 1000K = 1000000. Un nombre entier sans K ni M est le nombre réel de jetons, donc {2} et {3} représentent la même quantité. Les décimales se lisent pareil : {4} font {5}.",
-    "这手{0}的前提是对手的下注范围里保留足够较弱牌或未成牌诈唬，不能只因有听牌就继续。": "{0} ici ne tient que si le range de mise garde assez de mains plus faibles ou de bluffs sans main faite ; un tirage seul ne justifie pas de continuer."
+    "这手{0}的前提是对手的下注范围里保留足够较弱牌或未成牌诈唬，不能只因有听牌就继续。": "{0} ici ne tient que si le range de mise garde assez de mains plus faibles ou de bluffs sans main faite ; un tirage seul ne justifie pas de continuer.",
+    "还有 {0} 位对手没弃牌。人越多，越可能有人已经领先或正在听牌；一对这时下注，愿意跟的多是更强的牌或听牌，所以先过牌控制底池。": "Il reste encore {0} adversaires dans le coup. Plus il y a de joueurs, plus il est probable que quelqu’un soit déjà devant ou ait un tirage ; une mise avec une paire est ici surtout payée par des mains plus fortes ou des tirages, donc faire parole permet de contrôler le pot.",
+    "还有 {0} 位对手没弃牌。人越多，越可能有人已经领先；一对这时下注，愿意跟的多是更强的牌，所以先过牌控制底池。": "Il reste encore {0} adversaires dans le coup. Plus il y a de joueurs, plus il est probable que quelqu’un soit déjà devant ; une mise avec une paire est ici surtout payée par des mains plus fortes, donc faire parole permet de contrôler le pot."
   },
   "ru": {
     "设置": "Настройки",
@@ -7837,6 +7855,8 @@
     "立刻发完": "Доиграть руку",
     "筹码单位": "Единицы фишек",
     "换算记一下：{0} = 1000，{1} = 1000K = 1000000。不带 K 或 M 的整数就是实际筹码数，所以 {2} 和 {3} 一样多。带小数也照算，{4} 就是 {5}。": "Запомните пересчёт: {0} = 1000, {1} = 1000K = 1000000. Целое число без K или M — это реальное количество фишек, поэтому {2} и {3} — одно и то же. С дробями так же: {4} — это {5}.",
-    "这手{0}的前提是对手的下注范围里保留足够较弱牌或未成牌诈唬，不能只因有听牌就继续。": "{0} здесь оправдано, только если в диапазоне ставки остаётся достаточно более слабых рук или блефов без готовой руки; одно дро не оправдывает продолжение."
+    "这手{0}的前提是对手的下注范围里保留足够较弱牌或未成牌诈唬，不能只因有听牌就继续。": "{0} здесь оправдано, только если в диапазоне ставки остаётся достаточно более слабых рук или блефов без готовой руки; одно дро не оправдывает продолжение.",
+    "还有 {0} 位对手没弃牌。人越多，越可能有人已经领先或正在听牌；一对这时下注，愿意跟的多是更强的牌或听牌，所以先过牌控制底池。": "Соперников, ещё не сбросивших карты: {0}. Чем больше игроков, тем вероятнее, что кто-то уже впереди или тянет дро; ставку с одной парой здесь в основном оплатят более сильные руки или дро, поэтому чек помогает контролировать банк.",
+    "还有 {0} 位对手没弃牌。人越多，越可能有人已经领先；一对这时下注，愿意跟的多是更强的牌，所以先过牌控制底池。": "Соперников, ещё не сбросивших карты: {0}. Чем больше игроков, тем вероятнее, что кто-то уже впереди; ставку с одной парой здесь в основном оплатят более сильные руки, поэтому чек помогает контролировать банк."
   }
 }

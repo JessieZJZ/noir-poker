@@ -13,6 +13,7 @@ import {
   checkReasoning,
   checkRisks,
   madeRedrawReasoning,
+  multiwayPairCheckReason,
   weakTopPairCheckReason,
 } from './check-reasoning.js';
 import { currentStreetCallers, defenseReason, straightSplitReason } from './defense-reason.js';
@@ -584,7 +585,10 @@ export function explainOpponent(record, identities = []) {
           `${subject}的${hand}仍可向较弱的一对或听牌取值，过牌暂时少收这部分价值，并把较强牌保留在过牌范围中。`;
         if (!kickerControl && c.pendingOthers > 0)
           checkNotes.push('过牌也可能是在等后位先下注，给对手继续投入的机会。');
-        if (!kickerControl && c.opponents > 1) checkNotes.push('多人底池里，这手成牌并不是坚果。');
+        const crowd = kickerControl ? '' : multiwayPairCheckReason(snapshot, c);
+        if (crowd) checkNotes.push(crowd);
+        else if (!kickerControl && c.opponents > 1)
+          checkNotes.push('多人底池里，这手成牌并不是坚果。');
         if (wet) {
           const draws = [
             c.texture.connected >= 2 ? '顺子听牌' : '',

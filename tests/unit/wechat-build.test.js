@@ -116,7 +116,7 @@ function assertWechatGlyphCoverage(output) {
       const child = path.join(directory, entry.name);
       if (entry.isDirectory()) visit(child);
       else if (/\.(js|json|wxml|wxss)$/.test(entry.name) && entry.name !== 'fonts.wxss') {
-        // esbuild writes non-ASCII JavaScript strings as escapes.
+        // Builds write UTF-8; decode any remaining JavaScript escapes too.
         const text = readFileSync(child, 'utf8')
           .replace(/\\u\{([0-9a-f]+)\}/gi, (_, hex) => String.fromCodePoint(parseInt(hex, 16)))
           .replace(/\\u([0-9a-f]{4})/gi, (_, hex) => String.fromCodePoint(parseInt(hex, 16)));

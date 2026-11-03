@@ -7,7 +7,11 @@ import {
   freshBotMood,
   getBotProfile,
 } from '../../src/engine/bot-profiles.js';
-import { aggressionSupport, decisionBasis } from '../../src/engine/decision-basis.js';
+import {
+  aggressionSupport,
+  decisionBasis,
+  valueEquityThreshold,
+} from '../../src/engine/decision-basis.js';
 import { deceptiveView, deceptionCases } from '../fixtures/deceptive-decisions.js';
 import { newGame, startHand, act, restartHand, advanceStreet } from '../../src/engine/poker.js';
 import { explainOpponent } from '../../src/review/opponents.js';
@@ -50,6 +54,69 @@ test('medium made hands with showdown value are not classified as pure bluffs; m
       assert.notEqual(d.trace.reason, 'pure-bluff');
       assert.equal(d.trace.basis.version, 1);
     }
+});
+
+test('a multiway first bet scales with the fair share; heads-up and raises over a bet keep their bars', () => {
+  assert.equal(valueEquityThreshold(1, true), 0.53);
+  assert.equal(valueEquityThreshold(1, false), 0.53);
+  let previous = 1;
+  for (const rivals of [2, 3, 4, 5, 6, 9]) {
+    const first = valueEquityThreshold(rivals, true);
+    // Well above a fair share, never above the old fixed bar, never rising with more players.
+    assert.ok(
+      first >= 1 / (rivals + 1) + 0.2 && first < 0.62 && first >= 0.42 && first <= previous,
+    );
+    assert.equal(valueEquityThreshold(rivals, false), 0.62);
+    previous = first;
+  }
+  assert.ok(valueEquityThreshold(2, true) > valueEquityThreshold(1, true));
+});
+
+// River's reported hand: Q♦ A♥ under the gun on K♣ J♦ A♠, four opponents left.
+// The old fixed 62% bar made this top pair check every flop and turn.
+function fiveWayTopPair(equity, legal = {}) {
+  const opponents = [0, 2, 3, 4].map((id) => ({ id, stack: 5000, bet: 0, allin: false }));
+  return deceptiveView('Qd Ah', 'Kc Jd As', {
+    equity,
+    rivals: 4,
+    inPosition: false,
+    position: 'UTG',
+    opponents,
+    publicEquity: { assumedOpponentIds: opponents.map((p) => p.id) },
+    difficulty: 'normal',
+    legal: { ...deceptiveView('Qd Ah', 'Kc Jd As').legal, ...legal },
+  });
+}
+
+test('a five-way top pair above the multiway bar can value bet small; below it, or facing a bet, it does not', () => {
+  const draws = Array.from({ length: 50 }, (_, i) => i / 50);
+  for (const profile of BOT_PROFILES) {
+    const view = fiveWayTopPair(0.5);
+    const decisions = draws.map((value) =>
+      chooseBotAction(view, profile, freshBotMood(), 'off', () => value),
+    );
+    const bets = decisions.filter((d) => d.action === 'raise');
+    assert.ok(bets.length > 0, profile.id);
+    for (const d of bets) {
+      assert.equal(d.trace.reason, 'value-raise', profile.id);
+      assert.equal(d.amount % view.chipUnit, 0);
+      // Small multiway one-pair sizing: a third of the pot, rounded to whole chips.
+      assert.ok(d.amount <= view.pot * 0.35 + view.chipUnit, `${profile.id} ${d.amount}`);
+    }
+    for (const value of draws) {
+      // Standard difficulty adds up to ±4% noise; 40% stays under the 46% five-way bar.
+      const low = chooseBotAction(fiveWayTopPair(0.4), profile, freshBotMood(), 'off', () => value);
+      assert.notEqual(low.trace.reason, 'value-raise', profile.id);
+      const facing = chooseBotAction(
+        fiveWayTopPair(0.5, { canCheck: false, toCall: 200, callAmount: 200, minRaiseTo: 400 }),
+        profile,
+        freshBotMood(),
+        'off',
+        () => value,
+      );
+      assert.notEqual(facing.trace.reason, 'value-raise', profile.id);
+    }
+  }
 });
 
 test('recorded reasons stay distinct from inferred old records and cannot be relabeled by stale trace data', () => {

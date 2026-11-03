@@ -1075,8 +1075,7 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
       ? (raises.length < 2 || (pair && high >= 12) || (high === 14 && low === 13)) &&
         (premium || percentile <= raiseRange)
       : valueRaiseSupported(view, equity) &&
-        ((support.valueCandidate &&
-          equity > (headsUp ? 0.53 : Math.max(0.62, 1 / (view.rivals + 1) + 0.23))) ||
+        (support.valueCandidate ||
           safeStrongValue(view, equity) ||
           checkedToPairValue(view, equity) ||
           checkedThroughPairValue(view, equity));
@@ -1271,7 +1270,10 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
     if (mode !== 'off' && ['frustrated', 'confident', 'reactive'].includes(mood.kind))
       fraction *= mode === 'lively' ? 1.2 : 1.1;
     if (view.street > 0 && value) fraction = Math.min(fraction, valueBetCap(view));
-    if (pairValue) fraction = Math.min(fraction, view.rivals >= 3 ? 0.35 : 0.4);
+    // A multiway one-pair value bet stays small, so better hands cannot
+    // turn it into a large loss and worse pairs can still call.
+    if (pairValue || (value && view.street > 0 && !headsUp && !features.strongMade))
+      fraction = Math.min(fraction, view.rivals >= 3 ? 0.35 : 0.4);
     let desired = fractionRaiseTo(
       {
         currentBet: view.currentBet,

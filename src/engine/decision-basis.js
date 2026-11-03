@@ -1,5 +1,14 @@
 import { handFeatures, boardTexture } from './hand-features.js';
 
+// Equity needed for a discretionary value bet. A fair share shrinks as players
+// join, so a fixed multiway bar made good top pairs check through every street
+// in four- and five-way pots. The first bet scales with that share and stays
+// above the heads-up bar for three players; raising over a bet keeps 62%.
+export function valueEquityThreshold(rivals, firstBet) {
+  if (rivals <= 1) return 0.53;
+  return firstBet ? Math.max(0.42, 1 / (rivals + 1) + 0.26) : 0.62;
+}
+
 // Facts and policy gates, not a solver or an invented account of intention.
 // The caller supplies only the actor's own cards and before-action public state.
 export function aggressionSupport(view) {
@@ -10,13 +19,13 @@ export function aggressionSupport(view) {
   const raises = (view.history || []).filter(
     (a) => a.street === view.street && a.action === 'raise',
   );
-  const multiway =
-    (view.publicEquity?.assumedOpponentIds.length ?? view.rivals ?? opponents.length) > 1;
+  const rivals = view.publicEquity?.assumedOpponentIds.length ?? view.rivals ?? opponents.length;
+  const multiway = rivals > 1;
   // A medium made hand with substantial showdown equity need not become a
   // bluff that folds worse hands and gets called by better ones. Stronger
   // hands still enter the separate value branch; draws enter semi-bluffs.
   const bluffCandidate = !features.ownMade && !features.draw && (view.equity ?? 0) < 0.45;
-  const valueThreshold = multiway ? 0.62 : 0.53;
+  const valueThreshold = valueEquityThreshold(rivals, !!view.legal?.canCheck);
   const equity = view.equity ?? 0;
   const valueCandidate = features.ownMade && !view.playsBoard && equity > valueThreshold;
   return {
