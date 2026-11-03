@@ -1509,8 +1509,8 @@
   gap: 4px;
 }
 .guide-button {
-  width: 88px;
-  max-width: 88px;
+  width: 92px;
+  max-width: 92px;
   font-size: 13px;
   white-space: nowrap;
   display: flex;
@@ -1522,7 +1522,7 @@
 .resource-label-window {
   position: relative;
   height: 20px;
-  width: 64px;
+  width: 68px;
   line-height: 20px;
   overflow: hidden;
 }

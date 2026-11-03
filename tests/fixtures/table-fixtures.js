@@ -236,6 +236,10 @@ window.qa = {
     clearTimeout(timer);
     botWait = null;
   },
+  // Scripted walkthroughs tap instantly; only the reading-hold test keeps the wait.
+  skipTutorialReading() {
+    tutorialHold = () => 0;
+  },
   thinking() {
     return botWait
       ? { actor: game.actor, delayMs: botWait.plan.delayMs, startedAt: botWait.startedAt }

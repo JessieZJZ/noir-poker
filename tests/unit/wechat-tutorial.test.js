@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { createWechatController } from '../../src/platform/wechat-controller.js';
 import { act, legalActions } from '../../src/engine/poker.js';
+import { readingTime } from '../../src/engine/tutorial.js';
 
 function setup() {
   const views = [],
@@ -240,4 +241,40 @@ test('the mini-program panel follows Web: short phones, a side column on landsca
   });
   // A phone never takes the tablet layout, however its keyboard resizes it.
   assert.equal(coach(844, 390, lesson).side, false);
+});
+
+test('mini-program bots wait for a fresh coach message, and a settled hand puts Continue in the dock', async () => {
+  const page = setup(),
+    { controller, last, timers } = page;
+  controller.start();
+  await controller.startTutorial();
+  controller.tutorialPrimary();
+  while (last().tutorial.allowed?.action !== 'call') step(page);
+  const turn = last().tutorial;
+  assert.equal(controller.action('call'), true);
+  const [{ delay }] = timers.values();
+  assert.ok(
+    delay > 950 && delay <= readingTime(turn),
+    'A quick tap still leaves the call explanation on screen before the bots act',
+  );
+  while (last().tutorial.stage === 'lesson' && !last().tutorial.settled) step(page);
+  assert.equal(last().done, true);
+  assert.equal(last().tutorial.canContinue, true);
+  const template = readFileSync(
+    new URL('../../miniprogram/pages/table/table-surface.wxml', import.meta.url),
+    'utf8',
+  );
+  assert.match(template, /wx:if="{{tutorial.canContinue && !tutorial.settled}}"/);
+  assert.match(
+    template,
+    /class="settled-buttons"\s*><button\s+wx:if="{{tutorialPlaying && tutorial.canContinue && tutorial.settled}}"[^>]*bindtap="tutorialNext"/,
+  );
+  const actions = template.slice(template.indexOf('class="action-buttons"'));
+  assert.ok(
+    actions.indexOf('data-action="fold"') < actions.indexOf('data-action="raise"') &&
+      actions.indexOf('data-action="raise"') < actions.indexOf('data-action="call"'),
+    'Fold sits left of raise, as on Web',
+  );
+  const menu = template.slice(template.indexOf('class="resource-menu"'));
+  assert.ok(menu.indexOf('openRecords') < menu.indexOf('openGuide'), 'Records lead the menu');
 });

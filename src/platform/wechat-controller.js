@@ -355,6 +355,7 @@ export function createWechatController({
     }
     updateHint();
     const coach = tutorial ? presentTutorial(tutorial.view(format)) : null;
+    tutorial?.markShown(coach, Date.now());
     const endKey = gameEndKey(),
       crowned =
         endKey && (ceremony?.key === endKey || crownedKey === endKey) ? game.over.championId : null;
@@ -724,28 +725,34 @@ export function createWechatController({
     if (tutorial?.guided()) {
       const delay = tutorial.autoDelay();
       if (delay === null) return;
-      timer = schedule(() => {
-        timer = null;
-        if (disposed || !active || ticket !== epoch || !tutorial?.guided()) return;
-        const beat = tutorial.runAuto();
-        effect(beat.kind === 'bot' ? beat.action : beat.kind);
-        if (beat.win) effect('win');
-        render();
-        if (beat.kind === 'bot' && !['fold', 'check'].includes(beat.action)) wager(beat.id);
-        driveBots();
-      }, delay);
+      timer = schedule(
+        () => {
+          timer = null;
+          if (disposed || !active || ticket !== epoch || !tutorial?.guided()) return;
+          const beat = tutorial.runAuto();
+          effect(beat.kind === 'bot' ? beat.action : beat.kind);
+          if (beat.win) effect('win');
+          render();
+          if (beat.kind === 'bot' && !['fold', 'check'].includes(beat.action)) wager(beat.id);
+          driveBots();
+        },
+        Math.max(delay, readingHold()),
+      );
       return;
     }
     if (game.phase === 'idle' || game.phase === 'done' || (tutorial && !tutorial.playing())) return;
     if (game.phase === 'between') {
-      timer = schedule(() => {
-        timer = null;
-        if (disposed || !active || ticket !== epoch || game.phase !== 'between') return;
-        advanceStreet(game);
-        effect(game.phase === 'done' ? 'win' : 'deal');
-        render();
-        driveBots();
-      }, 850);
+      timer = schedule(
+        () => {
+          timer = null;
+          if (disposed || !active || ticket !== epoch || game.phase !== 'between') return;
+          advanceStreet(game);
+          effect(game.phase === 'done' ? 'win' : 'deal');
+          render();
+          driveBots();
+        },
+        Math.max(850, readingHold()),
+      );
       return;
     }
     if (game.phase !== 'playing' || game.actor <= 0) return;
@@ -771,9 +778,13 @@ export function createWechatController({
           if (game.players[id].total > contribution) wager(id);
           driveBots();
         },
-        Math.max(0, plan.delayMs - (Date.now() - started)),
+        Math.max(0, plan.delayMs - (Date.now() - started), readingHold()),
       );
     }, 0);
+  }
+  // Web holds the same way: a fresh coach message is read before the table moves.
+  function readingHold() {
+    return tutorial ? tutorial.readingHold(Date.now()) : 0;
   }
   function freshHand({ refilled = false } = {}) {
     if (readOnlyAttempt || disposed || tutorial) return;

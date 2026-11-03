@@ -25,12 +25,12 @@
         class="guide-button"
         id="resource-menu-button"
         bindtap="toggleResourceMenu"
-        aria-label="玩法指南、对局记录和胜率计算器"
+        aria-label="对局记录、新手引导、玩法指南和胜率计算器"
       >
         <view class="resource-label-window {{resourceRolling ? 'is-rolling' : ''}}">
           <text class="resource-label-previous">{{resourcePreviousLabel}}</text>
           <text class="resource-label-current">{{resourceLabel}}</text>
-          <text class="resource-label-static">玩法指南</text> </view
+          <text class="resource-label-static">对局记录</text> </view
         ><text class="resource-chevron">▾</text></button
       ><button
         hover-class="none"
@@ -41,9 +41,9 @@
         <view class="gear-icon" /><text>设置</text>
       </button>
       <view wx:if="{{resourceMenuOpen}}" class="resource-menu">
-        <button id="resource-guide" bindtap="openGuide">玩法指南</button>
-        <button id="resource-tutorial" bindtap="openTutorial">新手引导</button>
         <button id="resource-records" bindtap="openRecords">对局记录</button>
+        <button id="resource-tutorial" bindtap="openTutorial">新手引导</button>
+        <button id="resource-guide" bindtap="openGuide">玩法指南</button>
         <button id="resource-win-rate" bindtap="openWinRate">胜率计算器</button>
       </view></view
     >
@@ -328,7 +328,7 @@
         /></view>
         <scroll-view scroll-y class="tutorial-message">
           <button
-            wx:if="{{tutorial.canContinue}}"
+            wx:if="{{tutorial.canContinue && !tutorial.settled}}"
             hover-class="none"
             class="tutorial-next"
             bindtap="tutorialNext"
@@ -360,6 +360,13 @@
         <view class="turn-line" aria-hidden="true" />
         <block wx:if="{{done}}"
           ><view class="settled-buttons"
+            ><button
+              wx:if="{{tutorialPlaying && tutorial.canContinue && tutorial.settled}}"
+              hover-class="none"
+              class="primary tutorial-dock-next"
+              bindtap="tutorialNext"
+            >
+              {{tutorial.continueLabel}}</button
             ><button
               hover-class="none"
               wx:if="{{canPracticeRunout && !historyReadOnly}}"
@@ -468,20 +475,20 @@
           ><view class="action-buttons" wx:if="{{!heroFolded}}"
             ><button
               hover-class="none"
-              class="primary {{tutorialFocus.raise ? 'tutorial-focus' : ''}}"
-              data-action="raise"
-              bindtap="act"
-              disabled="{{!canRaise || lockRaise}}"
-            >
-              加注 {{raiseText}}</button
-            ><button
-              hover-class="none"
               class="fold-button {{tutorialFocus.fold ? 'tutorial-focus' : ''}}"
               data-action="fold"
               bindtap="act"
               disabled="{{!canAct || lockFold}}"
             >
               弃牌</button
+            ><button
+              hover-class="none"
+              class="primary {{tutorialFocus.raise ? 'tutorial-focus' : ''}}"
+              data-action="raise"
+              bindtap="act"
+              disabled="{{!canRaise || lockRaise}}"
+            >
+              加注 {{raiseText}}</button
             ><button
               hover-class="none"
               class="call-button {{tutorialFocus.call ? 'tutorial-focus' : ''}}"

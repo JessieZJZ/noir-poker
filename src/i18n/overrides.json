@@ -772,6 +772,7 @@
     "上桌时记住这几件事：": "Remember these points at the table:",
     "不摊牌也能赢": "Winning without a showdown",
     "中间的数字是底池，所有人投入的筹码都在这里。赢下它有两种办法：让其他人全部弃牌，或者打到最后亮牌比大小。你面前的 {0} 是虚拟筹码，K 表示千，也就是 {1}。": "The number in the middle is the pot, which holds everything players have put in. There are two ways to win it: everyone else folds, or you show down the best hand at the end. The {0} in front of you is virtual chips. K means thousand, so that's {1}.",
+    "中间的数字是底池，所有人投入的筹码都在这里。赢下它有两种办法：让其他人全部弃牌，或者打到最后亮牌比大小。你面前的 {0} 是虚拟筹码，M 表示百万，也就是 {1}。": "The number in the middle is the pot, which holds everything players have put in. There are two ways to win it: everyone else folds, or you show down the best hand at the end. The {0} in front of you is virtual chips. M means million, so that's {1}.",
     "主动加注": "Raise with purpose",
     "亮牌": "Show hands",
     "什么都赢不到": "Nothing",
@@ -866,7 +867,8 @@
     "轮到你决定": "Your move",
     "轮到你时看清数字：跟注是这次补多少，加注是这一轮累计多少。": "On your turn, read the numbers: a call is what you add now, a raise is your total for the round.",
     "返回牌桌": "Back to the table",
-    "还没看牌就有人先投钱，这叫盲注，是强制的。Mia 是 SB（小盲），投 {0}；Alex 是 BB（大盲），投 {1}。有了盲注，每手牌才有东西可争。": "Some players put chips in before seeing their cards. These forced bets are the blinds. Mia is SB (small blind) and posts {0}; Alex is BB (big blind) and posts {1}. Blinds give every hand something to fight for.",
+    "还没看牌就有人先投钱，这叫盲注，是强制的。Mia 是 SB（小盲），投 {0}；Alex 是 BB（大盲），投 {1}。数字后面没有字母，就是实际的筹码数。有了盲注，每手牌才有东西可争。": "Some players put chips in before seeing their cards. These forced bets are the blinds. Mia is SB (small blind) and posts {0}; Alex is BB (big blind) and posts {1}. A number with no letter after it is the actual chip count. Blinds give every hand something to fight for.",
+    "还没看牌就有人先投钱，这叫盲注，是强制的。Mia 是 SB（小盲），投 {0}；Alex 是 BB（大盲），投 {1}。这里的 K 表示千，{2} 就是 {3}。有了盲注，每手牌才有东西可争。": "Some players put chips in before seeing their cards. These forced bets are the blinds. Mia is SB (small blind) and posts {0}; Alex is BB (big blind) and posts {1}. Here K means thousand, so {2} is {3}. Blinds give every hand something to fight for.",
     "这一手学到的：": "What this hand taught you:",
     "这三张是翻牌，所有人都能用。你现在有四张红桃，再来一张红桃就是同花。这叫听牌：还没成，但有希望。": "These three cards are the flop, and everyone can use them. You now have four hearts, so one more makes a flush. That's called a draw: not made yet, but it could be.",
     "这两张是你的底牌，只有你看得见。桌子中央之后会发出五张公共牌，大家共用。目标只有一个：用这七张牌里最好的五张去赢。": "These two cards are your hole cards, and only you can see them. Five board cards will be dealt in the middle for everyone to share. The goal is simple: win with the best five of these seven cards.",
@@ -878,7 +880,9 @@
     "这手你没投钱，所以弃牌没有损失。如果弃牌前已经投了筹码，比如盲注或跟注，那些筹码会留在底池里拿不回来。别因为舍不得已投入的钱，就继续往里加。": "You put nothing in this hand, so folding cost you nothing. Any chips you've already put in, such as a blind or a call, stay in the pot when you fold. Don't keep adding chips just because you hate to give up what's already in.",
     "退出引导": "Exit tutorial",
     "退出新手引导": "Exit the beginner tutorial",
-    "面对下注": "Facing a bet"
+    "面对下注": "Facing a bet",
+    "筹码单位": "Chip units",
+    "换算记一下：{0} = 1000，{1} = 1000K = 1000000。不带 K 或 M 的整数就是实际筹码数，所以 {2} 和 {3} 一样多。带小数也照算，{4} 就是 {5}。": "Remember the conversions: {0} = 1000, {1} = 1000K = 1000000. A whole number without K or M is the actual chip count, so {2} and {3} are the same amount. Decimals work the same way: {4} is {5}."
   },
   "zh-TW": {
     "设置": "設定",
@@ -1537,6 +1541,7 @@
     "上桌时记住这几件事：": "上桌時記住這幾件事：",
     "不摊牌也能赢": "不攤牌也能贏",
     "中间的数字是底池，所有人投入的筹码都在这里。赢下它有两种办法：让其他人全部弃牌，或者打到最后亮牌比大小。你面前的 {0} 是虚拟筹码，K 表示千，也就是 {1}。": "中間的數字是底池，所有人投入的籌碼都在這裡。贏下它有兩種辦法：讓其他人全部棄牌，或者打到最後亮牌比大小。你面前的 {0} 是虛擬籌碼，K 表示千，也就是 {1}。",
+    "中间的数字是底池，所有人投入的筹码都在这里。赢下它有两种办法：让其他人全部弃牌，或者打到最后亮牌比大小。你面前的 {0} 是虚拟筹码，M 表示百万，也就是 {1}。": "中間的數字是底池，所有人投入的籌碼都在這裡。贏下它有兩種辦法：讓其他人全部棄牌，或者打到最後亮牌比大小。你面前的 {0} 是虛擬籌碼，M 表示百萬，也就是 {1}。",
     "主动加注": "主動加注",
     "亮牌": "亮牌",
     "什么都赢不到": "什麼都贏不到",
@@ -1631,7 +1636,8 @@
     "轮到你决定": "輪到你決定",
     "轮到你时看清数字：跟注是这次补多少，加注是这一轮累计多少。": "輪到你時看清數字：跟注是這次補多少，加注是這一輪累計多少。",
     "返回牌桌": "返回牌桌",
-    "还没看牌就有人先投钱，这叫盲注，是强制的。Mia 是 SB（小盲），投 {0}；Alex 是 BB（大盲），投 {1}。有了盲注，每手牌才有东西可争。": "還沒看牌就有人先投錢，這叫盲注，是強制的。Mia 是 SB（小盲），投 {0}；Alex 是 BB（大盲），投 {1}。有了盲注，每手牌才有東西可爭。",
+    "还没看牌就有人先投钱，这叫盲注，是强制的。Mia 是 SB（小盲），投 {0}；Alex 是 BB（大盲），投 {1}。数字后面没有字母，就是实际的筹码数。有了盲注，每手牌才有东西可争。": "還沒看牌就有人先投錢，這叫盲注，是強制的。Mia 是 SB（小盲），投 {0}；Alex 是 BB（大盲），投 {1}。數字後面沒有字母，就是實際的籌碼數。有了盲注，每手牌才有東西可爭。",
+    "还没看牌就有人先投钱，这叫盲注，是强制的。Mia 是 SB（小盲），投 {0}；Alex 是 BB（大盲），投 {1}。这里的 K 表示千，{2} 就是 {3}。有了盲注，每手牌才有东西可争。": "還沒看牌就有人先投錢，這叫盲注，是強制的。Mia 是 SB（小盲），投 {0}；Alex 是 BB（大盲），投 {1}。這裡的 K 表示千，{2} 就是 {3}。有了盲注，每手牌才有東西可爭。",
     "这一手学到的：": "這一手學到的：",
     "这三张是翻牌，所有人都能用。你现在有四张红桃，再来一张红桃就是同花。这叫听牌：还没成，但有希望。": "這三張是翻牌，所有人都能用。你現在有四張紅心，再來一張紅心就是同花。這叫聽牌：還沒成，但有希望。",
     "这两张是你的底牌，只有你看得见。桌子中央之后会发出五张公共牌，大家共用。目标只有一个：用这七张牌里最好的五张去赢。": "這兩張是你的底牌，只有你看得見。桌子中央之後會發出五張公共牌，大家共用。目標只有一個：用這七張牌裡最好的五張去贏。",
@@ -1643,7 +1649,9 @@
     "这手你没投钱，所以弃牌没有损失。如果弃牌前已经投了筹码，比如盲注或跟注，那些筹码会留在底池里拿不回来。别因为舍不得已投入的钱，就继续往里加。": "這手你沒投錢，所以棄牌沒有損失。如果棄牌前已經投了籌碼，比如盲注或跟注，那些籌碼會留在底池裡拿不回來。別因為捨不得已投入的錢，就繼續往裡加。",
     "退出引导": "退出引導",
     "退出新手引导": "退出新手引導",
-    "面对下注": "面對下注"
+    "面对下注": "面對下注",
+    "筹码单位": "籌碼單位",
+    "换算记一下：{0} = 1000，{1} = 1000K = 1000000。不带 K 或 M 的整数就是实际筹码数，所以 {2} 和 {3} 一样多。带小数也照算，{4} 就是 {5}。": "換算記一下：{0} = 1000，{1} = 1000K = 1000000。不帶 K 或 M 的整數就是實際籌碼數，所以 {2} 和 {3} 一樣多。帶小數也照算，{4} 就是 {5}。"
   },
   "ja": {
     "设置": "設定",
@@ -2302,6 +2310,7 @@
     "上桌时记住这几件事：": "テーブルでは次のことを覚えておきましょう：",
     "不摊牌也能赢": "ショーダウンなしで勝つ",
     "中间的数字是底池，所有人投入的筹码都在这里。赢下它有两种办法：让其他人全部弃牌，或者打到最后亮牌比大小。你面前的 {0} 是虚拟筹码，K 表示千，也就是 {1}。": "中央の数字がポットで、全員が入れたチップがここに集まります。勝つ方法は 2 つです。他の全員を降ろすか、最後に手札を見せて強さを比べるかです。あなたの前の {0} は仮想チップで、K は千を表すので {1} です。",
+    "中间的数字是底池，所有人投入的筹码都在这里。赢下它有两种办法：让其他人全部弃牌，或者打到最后亮牌比大小。你面前的 {0} 是虚拟筹码，M 表示百万，也就是 {1}。": "中央の数字がポットで、全員が入れたチップがここに集まります。勝つ方法は 2 つです。他の全員を降ろすか、最後に手札を見せて強さを比べるかです。あなたの前の {0} は仮想チップで、M は百万を表すので {1} です。",
     "主动加注": "自分からレイズ",
     "亮牌": "手札を公開",
     "什么都赢不到": "何も獲得できない",
@@ -2396,7 +2405,8 @@
     "轮到你决定": "あなたの判断です",
     "轮到你时看清数字：跟注是这次补多少，加注是这一轮累计多少。": "自分の番では数字を確認：コールは今回足す額、レイズはこのラウンドの累計額です。",
     "返回牌桌": "テーブルに戻る",
-    "还没看牌就有人先投钱，这叫盲注，是强制的。Mia 是 SB（小盲），投 {0}；Alex 是 BB（大盲），投 {1}。有了盲注，每手牌才有东西可争。": "カードを見る前にチップを入れる人がいます。これがブラインドで、強制です。Mia は SB（スモールブラインド）で {0}、Alex は BB（ビッグブラインド）で {1} を入れます。ブラインドがあるから、毎ハンド争うものがあります。",
+    "还没看牌就有人先投钱，这叫盲注，是强制的。Mia 是 SB（小盲），投 {0}；Alex 是 BB（大盲），投 {1}。数字后面没有字母，就是实际的筹码数。有了盲注，每手牌才有东西可争。": "カードを見る前にチップを入れる人がいます。これがブラインドで、強制です。Mia は SB（スモールブラインド）で {0}、Alex は BB（ビッグブラインド）で {1} を入れます。数字の後ろに文字がなければ、それが実際のチップ数です。ブラインドがあるから、毎ハンド争うものがあります。",
+    "还没看牌就有人先投钱，这叫盲注，是强制的。Mia 是 SB（小盲），投 {0}；Alex 是 BB（大盲），投 {1}。这里的 K 表示千，{2} 就是 {3}。有了盲注，每手牌才有东西可争。": "カードを見る前にチップを入れる人がいます。これがブラインドで、強制です。Mia は SB（スモールブラインド）で {0}、Alex は BB（ビッグブラインド）で {1} を入れます。ここの K は千を表すので、{2} は {3} です。ブラインドがあるから、毎ハンド争うものがあります。",
     "这一手学到的：": "このハンドで学んだこと：",
     "这三张是翻牌，所有人都能用。你现在有四张红桃，再来一张红桃就是同花。这叫听牌：还没成，但有希望。": "この 3 枚がフロップで、全員が使えます。あなたはハートが 4 枚あり、もう 1 枚来ればフラッシュです。これをドローと呼びます。まだ完成していませんが、見込みはあります。",
     "这两张是你的底牌，只有你看得见。桌子中央之后会发出五张公共牌，大家共用。目标只有一个：用这七张牌里最好的五张去赢。": "この 2 枚があなたの手札で、あなたにしか見えません。このあと中央に 5 枚のボードカードが配られ、全員で共有します。目標は 1 つ、この 7 枚のうち最も強い 5 枚で勝つことです。",
@@ -2411,7 +2421,9 @@
     "面对下注": "ベットを受けたとき",
     "½ 底池": "½ ポット",
     "立刻发完": "すぐに配り切る",
-    "复盘这一手": "この手を振り返る"
+    "复盘这一手": "この手を振り返る",
+    "筹码单位": "チップの単位",
+    "换算记一下：{0} = 1000，{1} = 1000K = 1000000。不带 K 或 M 的整数就是实际筹码数，所以 {2} 和 {3} 一样多。带小数也照算，{4} 就是 {5}。": "換算を覚えておきましょう：{0} = 1000、{1} = 1000K = 1000000。K や M の付かない整数は実際のチップ数なので、{2} と {3} は同じ量です。小数も同じで、{4} は {5} です。"
   },
   "ko": {
     "设置": "설정",
@@ -3070,6 +3082,7 @@
     "上桌时记住这几件事：": "테이블에서 다음을 기억하세요:",
     "不摊牌也能赢": "쇼다운 없이 이기기",
     "中间的数字是底池，所有人投入的筹码都在这里。赢下它有两种办法：让其他人全部弃牌，或者打到最后亮牌比大小。你面前的 {0} 是虚拟筹码，K 表示千，也就是 {1}。": "가운데 숫자가 팟이며, 모두가 넣은 칩이 여기 모입니다. 이기는 방법은 두 가지입니다. 다른 사람을 모두 폴드시키거나, 끝까지 가서 패를 비교하는 것입니다. 앞에 있는 {0}은 가상 칩이고, K는 천을 뜻하므로 {1}입니다.",
+    "中间的数字是底池，所有人投入的筹码都在这里。赢下它有两种办法：让其他人全部弃牌，或者打到最后亮牌比大小。你面前的 {0} 是虚拟筹码，M 表示百万，也就是 {1}。": "가운데 숫자가 팟이며, 모두가 넣은 칩이 여기 모입니다. 이기는 방법은 두 가지입니다. 다른 사람을 모두 폴드시키거나, 끝까지 가서 패를 비교하는 것입니다. 앞에 있는 {0}은 가상 칩이고, M은 백만을 뜻하므로 {1}입니다.",
     "主动加注": "먼저 레이즈",
     "亮牌": "패 공개",
     "什么都赢不到": "아무것도 못 가져감",
@@ -3164,7 +3177,8 @@
     "轮到你决定": "당신의 결정",
     "轮到你时看清数字：跟注是这次补多少，加注是这一轮累计多少。": "차례가 오면 숫자를 확인하세요. 콜은 이번에 더 낼 금액, 레이즈는 이번 라운드 누적 금액입니다.",
     "返回牌桌": "테이블로 돌아가기",
-    "还没看牌就有人先投钱，这叫盲注，是强制的。Mia 是 SB（小盲），投 {0}；Alex 是 BB（大盲），投 {1}。有了盲注，每手牌才有东西可争。": "카드를 보기도 전에 칩을 내는 사람이 있습니다. 이것이 강제로 내는 블라인드입니다. Mia는 SB(스몰 블라인드)로 {0}, Alex는 BB(빅 블라인드)로 {1}을 냅니다. 블라인드 덕분에 매 핸드 겨룰 것이 생깁니다.",
+    "还没看牌就有人先投钱，这叫盲注，是强制的。Mia 是 SB（小盲），投 {0}；Alex 是 BB（大盲），投 {1}。数字后面没有字母，就是实际的筹码数。有了盲注，每手牌才有东西可争。": "카드를 보기도 전에 칩을 내는 사람이 있습니다. 이것이 강제로 내는 블라인드입니다. Mia는 SB(스몰 블라인드)로 {0}, Alex는 BB(빅 블라인드)로 {1}을 냅니다. 숫자 뒤에 글자가 없으면 실제 칩 수입니다. 블라인드 덕분에 매 핸드 겨룰 것이 생깁니다.",
+    "还没看牌就有人先投钱，这叫盲注，是强制的。Mia 是 SB（小盲），投 {0}；Alex 是 BB（大盲），投 {1}。这里的 K 表示千，{2} 就是 {3}。有了盲注，每手牌才有东西可争。": "카드를 보기도 전에 칩을 내는 사람이 있습니다. 이것이 강제로 내는 블라인드입니다. Mia는 SB(스몰 블라인드)로 {0}, Alex는 BB(빅 블라인드)로 {1}을 냅니다. 여기서 K는 천을 뜻하므로 {2}는 {3}입니다. 블라인드 덕분에 매 핸드 겨룰 것이 생깁니다.",
     "这一手学到的：": "이번 핸드에서 배운 것:",
     "这三张是翻牌，所有人都能用。你现在有四张红桃，再来一张红桃就是同花。这叫听牌：还没成，但有希望。": "이 세 장이 플랍이며 모두가 쓸 수 있습니다. 하트가 네 장이니 한 장만 더 오면 플러시입니다. 이것을 드로우라고 합니다. 아직 완성되지 않았지만 가능성이 있습니다.",
     "这两张是你的底牌，只有你看得见。桌子中央之后会发出五张公共牌，大家共用。目标只有一个：用这七张牌里最好的五张去赢。": "이 두 장은 당신의 홀 카드이며 당신만 볼 수 있습니다. 앞으로 가운데에 보드 카드 다섯 장이 깔리고 모두가 함께 씁니다. 목표는 하나, 이 일곱 장 중 가장 좋은 다섯 장으로 이기는 것입니다.",
@@ -3179,7 +3193,9 @@
     "面对下注": "베팅을 받았을 때",
     "½ 底池": "½ 팟",
     "立刻发完": "마무리 처리",
-    "复盘这一手": "이 핸드 복기"
+    "复盘这一手": "이 핸드 복기",
+    "筹码单位": "칩 단위",
+    "换算记一下：{0} = 1000，{1} = 1000K = 1000000。不带 K 或 M 的整数就是实际筹码数，所以 {2} 和 {3} 一样多。带小数也照算，{4} 就是 {5}。": "환산을 기억해 두세요: {0} = 1000, {1} = 1000K = 1000000. K나 M이 붙지 않은 정수는 실제 칩 수이므로 {2}와 {3}은 같은 양입니다. 소수도 똑같이 계산해서 {4}는 {5}입니다."
   },
   "es": {
     "设置": "Ajustes",
@@ -3839,6 +3855,7 @@
     "上桌时记住这几件事：": "Recuerda esto en la mesa:",
     "不摊牌也能赢": "Ganar sin enfrentamiento",
     "中间的数字是底池，所有人投入的筹码都在这里。赢下它有两种办法：让其他人全部弃牌，或者打到最后亮牌比大小。你面前的 {0} 是虚拟筹码，K 表示千，也就是 {1}。": "El número central es el bote, con todo lo que han puesto los jugadores. Hay dos formas de ganarlo: que todos los demás se retiren o enseñar la mejor mano al final. Los {0} que tienes delante son fichas virtuales. K significa mil, o sea {1}.",
+    "中间的数字是底池，所有人投入的筹码都在这里。赢下它有两种办法：让其他人全部弃牌，或者打到最后亮牌比大小。你面前的 {0} 是虚拟筹码，M 表示百万，也就是 {1}。": "El número central es el bote, con todo lo que han puesto los jugadores. Hay dos formas de ganarlo: que todos los demás se retiren o enseñar la mejor mano al final. Los {0} que tienes delante son fichas virtuales. M significa millón, o sea {1}.",
     "主动加注": "Sube con intención",
     "亮牌": "Mostrar manos",
     "什么都赢不到": "Nada",
@@ -3933,7 +3950,8 @@
     "轮到你决定": "Decides tú",
     "轮到你时看清数字：跟注是这次补多少，加注是这一轮累计多少。": "En tu turno lee los números: igualar es lo que añades ahora y subir es tu total de la ronda.",
     "返回牌桌": "Volver a la mesa",
-    "还没看牌就有人先投钱，这叫盲注，是强制的。Mia 是 SB（小盲），投 {0}；Alex 是 BB（大盲），投 {1}。有了盲注，每手牌才有东西可争。": "Algunos ponen fichas antes de ver sus cartas: son las ciegas, obligatorias. Mia es SB (ciega pequeña) y pone {0}; Alex es BB (ciega grande) y pone {1}. Gracias a las ciegas, cada mano tiene algo por lo que luchar.",
+    "还没看牌就有人先投钱，这叫盲注，是强制的。Mia 是 SB（小盲），投 {0}；Alex 是 BB（大盲），投 {1}。数字后面没有字母，就是实际的筹码数。有了盲注，每手牌才有东西可争。": "Algunos ponen fichas antes de ver sus cartas: son las ciegas, obligatorias. Mia es SB (ciega pequeña) y pone {0}; Alex es BB (ciega grande) y pone {1}. Un número sin letra detrás es la cantidad real de fichas. Gracias a las ciegas, cada mano tiene algo por lo que luchar.",
+    "还没看牌就有人先投钱，这叫盲注，是强制的。Mia 是 SB（小盲），投 {0}；Alex 是 BB（大盲），投 {1}。这里的 K 表示千，{2} 就是 {3}。有了盲注，每手牌才有东西可争。": "Algunos ponen fichas antes de ver sus cartas: son las ciegas, obligatorias. Mia es SB (ciega pequeña) y pone {0}; Alex es BB (ciega grande) y pone {1}. Aquí K significa mil, así que {2} son {3}. Gracias a las ciegas, cada mano tiene algo por lo que luchar.",
     "这一手学到的：": "Lo que te ha enseñado esta mano:",
     "这三张是翻牌，所有人都能用。你现在有四张红桃，再来一张红桃就是同花。这叫听牌：还没成，但有希望。": "Estas tres cartas son el flop y todos pueden usarlas. Ya tienes cuatro corazones: uno más y harás color. Eso es un proyecto: aún no está hecho, pero puede llegar.",
     "这两张是你的底牌，只有你看得见。桌子中央之后会发出五张公共牌，大家共用。目标只有一个：用这七张牌里最好的五张去赢。": "Estas dos cartas son tus cartas propias y solo tú las ves. Después saldrán en el centro cinco cartas comunitarias para todos. El objetivo es uno: ganar con las cinco mejores de estas siete.",
@@ -3947,7 +3965,9 @@
     "退出新手引导": "Salir del tutorial para principiantes",
     "面对下注": "Ante una apuesta",
     "½ 底池": "½ bote",
-    "立刻发完": "Terminar de repartir"
+    "立刻发完": "Terminar de repartir",
+    "筹码单位": "Unidades de fichas",
+    "换算记一下：{0} = 1000，{1} = 1000K = 1000000。不带 K 或 M 的整数就是实际筹码数，所以 {2} 和 {3} 一样多。带小数也照算，{4} 就是 {5}。": "Recuerda la conversión: {0} = 1000, {1} = 1000K = 1000000. Un número entero sin K ni M es la cantidad real de fichas, así que {2} y {3} son lo mismo. Con decimales es igual: {4} son {5}."
   },
   "it": {
     "设置": "Impostazioni",
@@ -4607,6 +4627,7 @@
     "上桌时记住这几件事：": "Al tavolo ricorda queste cose:",
     "不摊牌也能赢": "Vincere senza showdown",
     "中间的数字是底池，所有人投入的筹码都在这里。赢下它有两种办法：让其他人全部弃牌，或者打到最后亮牌比大小。你面前的 {0} 是虚拟筹码，K 表示千，也就是 {1}。": "Il numero al centro è il piatto, con tutto ciò che i giocatori hanno messo. Si vince in due modi: tutti gli altri fanno fold, oppure mostri la mano migliore alla fine. I {0} davanti a te sono chip virtuali. K significa mille, quindi {1}.",
+    "中间的数字是底池，所有人投入的筹码都在这里。赢下它有两种办法：让其他人全部弃牌，或者打到最后亮牌比大小。你面前的 {0} 是虚拟筹码，M 表示百万，也就是 {1}。": "Il numero al centro è il piatto, con tutto ciò che i giocatori hanno messo. Si vince in due modi: tutti gli altri fanno fold, oppure mostri la mano migliore alla fine. I {0} davanti a te sono chip virtuali. M significa milione, quindi {1}.",
     "主动加注": "Rilancia con decisione",
     "亮牌": "Mostrare le mani",
     "什么都赢不到": "Niente",
@@ -4701,7 +4722,8 @@
     "轮到你决定": "Tocca a te decidere",
     "轮到你时看清数字：跟注是这次补多少，加注是这一轮累计多少。": "Al tuo turno leggi i numeri: il call è quanto aggiungi ora, il rilancio è il totale del giro.",
     "返回牌桌": "Torna al tavolo",
-    "还没看牌就有人先投钱，这叫盲注，是强制的。Mia 是 SB（小盲），投 {0}；Alex 是 BB（大盲），投 {1}。有了盲注，每手牌才有东西可争。": "Alcuni mettono chip prima di vedere le carte: sono i buii, obbligatori. Mia è SB (piccolo buio) e mette {0}; Alex è BB (grande buio) e mette {1}. Grazie ai buii ogni mano ha qualcosa da contendere.",
+    "还没看牌就有人先投钱，这叫盲注，是强制的。Mia 是 SB（小盲），投 {0}；Alex 是 BB（大盲），投 {1}。数字后面没有字母，就是实际的筹码数。有了盲注，每手牌才有东西可争。": "Alcuni mettono chip prima di vedere le carte: sono i buii, obbligatori. Mia è SB (piccolo buio) e mette {0}; Alex è BB (grande buio) e mette {1}. Un numero senza lettera dopo è il numero reale di chip. Grazie ai buii ogni mano ha qualcosa da contendere.",
+    "还没看牌就有人先投钱，这叫盲注，是强制的。Mia 是 SB（小盲），投 {0}；Alex 是 BB（大盲），投 {1}。这里的 K 表示千，{2} 就是 {3}。有了盲注，每手牌才有东西可争。": "Alcuni mettono chip prima di vedere le carte: sono i buii, obbligatori. Mia è SB (piccolo buio) e mette {0}; Alex è BB (grande buio) e mette {1}. Qui K significa mille, quindi {2} sono {3}. Grazie ai buii ogni mano ha qualcosa da contendere.",
     "这一手学到的：": "Cosa ti ha insegnato questa mano:",
     "这三张是翻牌，所有人都能用。你现在有四张红桃，再来一张红桃就是同花。这叫听牌：还没成，但有希望。": "Queste tre carte sono il flop e tutti possono usarle. Ora hai quattro cuori: con uno in più fai colore. Si chiama progetto: non è ancora fatto, ma può arrivare.",
     "这两张是你的底牌，只有你看得见。桌子中央之后会发出五张公共牌，大家共用。目标只有一个：用这七张牌里最好的五张去赢。": "Queste due carte sono le tue carte coperte e le vedi solo tu. Al centro usciranno cinque carte comuni per tutti. L'obiettivo è uno: vincere con le cinque migliori di queste sette.",
@@ -4716,7 +4738,9 @@
     "面对下注": "Davanti a una puntata",
     "½ 底池": "½ piatto",
     "立刻发完": "Completa la mano",
-    "复盘这一手": "Rivedi questa mano"
+    "复盘这一手": "Rivedi questa mano",
+    "筹码单位": "Unità delle chip",
+    "换算记一下：{0} = 1000，{1} = 1000K = 1000000。不带 K 或 M 的整数就是实际筹码数，所以 {2} 和 {3} 一样多。带小数也照算，{4} 就是 {5}。": "Ricorda le conversioni: {0} = 1000, {1} = 1000K = 1000000. Un numero intero senza K o M è il numero reale di chip, quindi {2} e {3} sono la stessa quantità. Con i decimali vale lo stesso: {4} sono {5}."
   },
   "pt": {
     "设置": "Definições",
@@ -5375,6 +5399,7 @@
     "上桌时记住这几件事：": "Lembre-se disto na mesa:",
     "不摊牌也能赢": "Ganhar sem showdown",
     "中间的数字是底池，所有人投入的筹码都在这里。赢下它有两种办法：让其他人全部弃牌，或者打到最后亮牌比大小。你面前的 {0} 是虚拟筹码，K 表示千，也就是 {1}。": "O número no centro é o pote, com tudo o que os jogadores colocaram. Há duas formas de ganhar: todos os outros desistem, ou você mostra a melhor mão no final. Os {0} à sua frente são fichas virtuais. K significa mil, ou seja, {1}.",
+    "中间的数字是底池，所有人投入的筹码都在这里。赢下它有两种办法：让其他人全部弃牌，或者打到最后亮牌比大小。你面前的 {0} 是虚拟筹码，M 表示百万，也就是 {1}。": "O número no centro é o pote, com tudo o que os jogadores colocaram. Há duas formas de ganhar: todos os outros desistem, ou você mostra a melhor mão no final. Os {0} à sua frente são fichas virtuais. M significa milhão, ou seja, {1}.",
     "主动加注": "Aumente com propósito",
     "亮牌": "Mostrar as mãos",
     "什么都赢不到": "Nada",
@@ -5469,7 +5494,8 @@
     "轮到你决定": "Sua decisão",
     "轮到你时看清数字：跟注是这次补多少，加注是这一轮累计多少。": "Na sua vez, leia os números: pagar é o que você adiciona agora, aumentar é o total da rodada.",
     "返回牌桌": "Voltar à mesa",
-    "还没看牌就有人先投钱，这叫盲注，是强制的。Mia 是 SB（小盲），投 {0}；Alex 是 BB（大盲），投 {1}。有了盲注，每手牌才有东西可争。": "Alguns colocam fichas antes de ver as cartas: são os blinds, obrigatórios. Mia é SB (small blind) e coloca {0}; Alex é BB (big blind) e coloca {1}. Com os blinds, toda mão tem algo a disputar.",
+    "还没看牌就有人先投钱，这叫盲注，是强制的。Mia 是 SB（小盲），投 {0}；Alex 是 BB（大盲），投 {1}。数字后面没有字母，就是实际的筹码数。有了盲注，每手牌才有东西可争。": "Alguns colocam fichas antes de ver as cartas: são os blinds, obrigatórios. Mia é SB (small blind) e coloca {0}; Alex é BB (big blind) e coloca {1}. Um número sem letra depois é a quantidade real de fichas. Com os blinds, toda mão tem algo a disputar.",
+    "还没看牌就有人先投钱，这叫盲注，是强制的。Mia 是 SB（小盲），投 {0}；Alex 是 BB（大盲），投 {1}。这里的 K 表示千，{2} 就是 {3}。有了盲注，每手牌才有东西可争。": "Alguns colocam fichas antes de ver as cartas: são os blinds, obrigatórios. Mia é SB (small blind) e coloca {0}; Alex é BB (big blind) e coloca {1}. Aqui K significa mil, então {2} são {3}. Com os blinds, toda mão tem algo a disputar.",
     "这一手学到的：": "O que esta mão ensinou:",
     "这三张是翻牌，所有人都能用。你现在有四张红桃，再来一张红桃就是同花。这叫听牌：还没成，但有希望。": "Estas três cartas são o flop e todos podem usá-las. Você agora tem quatro copas: mais uma forma uma cor. Isso se chama projeto: ainda não fechou, mas pode fechar.",
     "这两张是你的底牌，只有你看得见。桌子中央之后会发出五张公共牌，大家共用。目标只有一个：用这七张牌里最好的五张去赢。": "Estas duas cartas são suas cartas fechadas, e só você as vê. Depois sairão no centro cinco cartas comunitárias para todos. O objetivo é um só: vencer com as cinco melhores destas sete.",
@@ -5483,7 +5509,9 @@
     "退出新手引导": "Sair do tutorial para iniciantes",
     "面对下注": "Diante de uma aposta",
     "½ 底池": "½ pote",
-    "立刻发完": "Terminar a mão"
+    "立刻发完": "Terminar a mão",
+    "筹码单位": "Unidades de fichas",
+    "换算记一下：{0} = 1000，{1} = 1000K = 1000000。不带 K 或 M 的整数就是实际筹码数，所以 {2} 和 {3} 一样多。带小数也照算，{4} 就是 {5}。": "Lembre a conversão: {0} = 1000, {1} = 1000K = 1000000. Um número inteiro sem K ou M é a quantidade real de fichas, então {2} e {3} são a mesma quantia. Com decimais é igual: {4} são {5}."
   },
   "de": {
     "设置": "Einstellungen",
@@ -6142,6 +6170,7 @@
     "上桌时记住这几件事：": "Merke dir das für den Tisch:",
     "不摊牌也能赢": "Gewinnen ohne Showdown",
     "中间的数字是底池，所有人投入的筹码都在这里。赢下它有两种办法：让其他人全部弃牌，或者打到最后亮牌比大小。你面前的 {0} 是虚拟筹码，K 表示千，也就是 {1}。": "Die Zahl in der Mitte ist der Pot mit allen gesetzten Chips. Du gewinnst ihn auf zwei Arten: Alle anderen passen, oder du zeigst am Ende die beste Hand. Die {0} vor dir sind virtuelle Chips. K steht für tausend, also {1}.",
+    "中间的数字是底池，所有人投入的筹码都在这里。赢下它有两种办法：让其他人全部弃牌，或者打到最后亮牌比大小。你面前的 {0} 是虚拟筹码，M 表示百万，也就是 {1}。": "Die Zahl in der Mitte ist der Pot mit allen gesetzten Chips. Du gewinnst ihn auf zwei Arten: Alle anderen passen, oder du zeigst am Ende die beste Hand. Die {0} vor dir sind virtuelle Chips. M steht für Million, also {1}.",
     "主动加注": "Gezielt erhöhen",
     "亮牌": "Karten zeigen",
     "什么都赢不到": "Nichts",
@@ -6236,7 +6265,8 @@
     "轮到你决定": "Deine Entscheidung",
     "轮到你时看清数字：跟注是这次补多少，加注是这一轮累计多少。": "Lies in deinem Zug die Zahlen: Mitgehen ist dein Betrag jetzt, Erhöhen ist deine Rundensumme.",
     "返回牌桌": "Zurück zum Tisch",
-    "还没看牌就有人先投钱，这叫盲注，是强制的。Mia 是 SB（小盲），投 {0}；Alex 是 BB（大盲），投 {1}。有了盲注，每手牌才有东西可争。": "Manche zahlen schon, bevor sie Karten sehen: Das sind die Blinds, und sie sind Pflicht. Mia ist SB (Small Blind) und zahlt {0}; Alex ist BB (Big Blind) und zahlt {1}. Durch die Blinds gibt es in jeder Hand etwas zu gewinnen.",
+    "还没看牌就有人先投钱，这叫盲注，是强制的。Mia 是 SB（小盲），投 {0}；Alex 是 BB（大盲），投 {1}。数字后面没有字母，就是实际的筹码数。有了盲注，每手牌才有东西可争。": "Manche zahlen schon, bevor sie Karten sehen: Das sind die Blinds, und sie sind Pflicht. Mia ist SB (Small Blind) und zahlt {0}; Alex ist BB (Big Blind) und zahlt {1}. Eine Zahl ohne Buchstaben dahinter ist die tatsächliche Chipzahl. Durch die Blinds gibt es in jeder Hand etwas zu gewinnen.",
+    "还没看牌就有人先投钱，这叫盲注，是强制的。Mia 是 SB（小盲），投 {0}；Alex 是 BB（大盲），投 {1}。这里的 K 表示千，{2} 就是 {3}。有了盲注，每手牌才有东西可争。": "Manche zahlen schon, bevor sie Karten sehen: Das sind die Blinds, und sie sind Pflicht. Mia ist SB (Small Blind) und zahlt {0}; Alex ist BB (Big Blind) und zahlt {1}. Hier steht K für tausend, also sind {2} genau {3}. Durch die Blinds gibt es in jeder Hand etwas zu gewinnen.",
     "这一手学到的：": "Das hat dir diese Hand gezeigt:",
     "这三张是翻牌，所有人都能用。你现在有四张红桃，再来一张红桃就是同花。这叫听牌：还没成，但有希望。": "Diese drei Karten sind der Flop, und alle können sie nutzen. Du hast jetzt vier Herz, ein weiteres ergibt einen Flush. Das nennt man Draw: noch nicht fertig, aber möglich.",
     "这两张是你的底牌，只有你看得见。桌子中央之后会发出五张公共牌，大家共用。目标只有一个：用这七张牌里最好的五张去赢。": "Diese zwei Karten sind deine Hole Cards, nur du siehst sie. In der Mitte kommen später fünf Gemeinschaftskarten für alle. Das Ziel ist einfach: mit den besten fünf dieser sieben Karten gewinnen.",
@@ -6251,7 +6281,9 @@
     "面对下注": "Einen Einsatz vor dir",
     "½ 底池": "½ Pot",
     "立刻发完": "Hand beenden",
-    "复盘这一手": "Diese Hand analysieren"
+    "复盘这一手": "Diese Hand analysieren",
+    "筹码单位": "Chip-Einheiten",
+    "换算记一下：{0} = 1000，{1} = 1000K = 1000000。不带 K 或 M 的整数就是实际筹码数，所以 {2} 和 {3} 一样多。带小数也照算，{4} 就是 {5}。": "Merke dir die Umrechnung: {0} = 1000, {1} = 1000K = 1000000. Eine ganze Zahl ohne K oder M ist die tatsächliche Chipzahl, also sind {2} und {3} gleich viel. Dezimalzahlen gehen genauso: {4} sind {5}."
   },
   "fr": {
     "设置": "Paramètres",
@@ -6911,6 +6943,7 @@
     "上桌时记住这几件事：": "Retenez ceci à la table :",
     "不摊牌也能赢": "Gagner sans abattage",
     "中间的数字是底池，所有人投入的筹码都在这里。赢下它有两种办法：让其他人全部弃牌，或者打到最后亮牌比大小。你面前的 {0} 是虚拟筹码，K 表示千，也就是 {1}。": "Le nombre au centre est le pot, qui réunit tout ce qui a été misé. On le gagne de deux façons : tous les autres se couchent, ou vous montrez la meilleure main à la fin. Les {0} devant vous sont des jetons virtuels. K signifie mille, soit {1}.",
+    "中间的数字是底池，所有人投入的筹码都在这里。赢下它有两种办法：让其他人全部弃牌，或者打到最后亮牌比大小。你面前的 {0} 是虚拟筹码，M 表示百万，也就是 {1}。": "Le nombre au centre est le pot, qui réunit tout ce qui a été misé. On le gagne de deux façons : tous les autres se couchent, ou vous montrez la meilleure main à la fin. Les {0} devant vous sont des jetons virtuels. M signifie million, soit {1}.",
     "主动加注": "Relancer avec intention",
     "亮牌": "Montrer les mains",
     "什么都赢不到": "Rien",
@@ -7005,7 +7038,8 @@
     "轮到你决定": "À vous de décider",
     "轮到你时看清数字：跟注是这次补多少，加注是这一轮累计多少。": "À votre tour, lisez les nombres : suivre, c'est ce que vous ajoutez maintenant ; relancer, c'est votre total du tour.",
     "返回牌桌": "Retour à la table",
-    "还没看牌就有人先投钱，这叫盲注，是强制的。Mia 是 SB（小盲），投 {0}；Alex 是 BB（大盲），投 {1}。有了盲注，每手牌才有东西可争。": "Certains misent avant de voir leurs cartes : ce sont les blinds, obligatoires. Mia est SB (petite blind) et met {0} ; Alex est BB (grosse blind) et met {1}. Grâce aux blinds, chaque main a un enjeu.",
+    "还没看牌就有人先投钱，这叫盲注，是强制的。Mia 是 SB（小盲），投 {0}；Alex 是 BB（大盲），投 {1}。数字后面没有字母，就是实际的筹码数。有了盲注，每手牌才有东西可争。": "Certains misent avant de voir leurs cartes : ce sont les blinds, obligatoires. Mia est SB (petite blind) et met {0} ; Alex est BB (grosse blind) et met {1}. Un nombre sans lettre derrière est le nombre réel de jetons. Grâce aux blinds, chaque main a un enjeu.",
+    "还没看牌就有人先投钱，这叫盲注，是强制的。Mia 是 SB（小盲），投 {0}；Alex 是 BB（大盲），投 {1}。这里的 K 表示千，{2} 就是 {3}。有了盲注，每手牌才有东西可争。": "Certains misent avant de voir leurs cartes : ce sont les blinds, obligatoires. Mia est SB (petite blind) et met {0} ; Alex est BB (grosse blind) et met {1}. Ici, K signifie mille : {2} font {3}. Grâce aux blinds, chaque main a un enjeu.",
     "这一手学到的：": "Ce que cette main vous a appris :",
     "这三张是翻牌，所有人都能用。你现在有四张红桃，再来一张红桃就是同花。这叫听牌：还没成，但有希望。": "Ces trois cartes sont le flop et tout le monde peut les utiliser. Vous avez maintenant quatre cœurs : un de plus fait une couleur. C'est un tirage : pas encore fait, mais possible.",
     "这两张是你的底牌，只有你看得见。桌子中央之后会发出五张公共牌，大家共用。目标只有一个：用这七张牌里最好的五张去赢。": "Ces deux cartes sont vos cartes fermées, vous seul les voyez. Cinq cartes communes seront ensuite posées au centre pour tous. Le but est simple : gagner avec les cinq meilleures de ces sept cartes.",
@@ -7020,7 +7054,9 @@
     "面对下注": "Face à une mise",
     "½ 底池": "½ pot",
     "立刻发完": "Terminer la main",
-    "复盘这一手": "Revoir cette main"
+    "复盘这一手": "Revoir cette main",
+    "筹码单位": "Unités de jetons",
+    "换算记一下：{0} = 1000，{1} = 1000K = 1000000。不带 K 或 M 的整数就是实际筹码数，所以 {2} 和 {3} 一样多。带小数也照算，{4} 就是 {5}。": "Retenez la conversion : {0} = 1000, {1} = 1000K = 1000000. Un nombre entier sans K ni M est le nombre réel de jetons, donc {2} et {3} représentent la même quantité. Les décimales se lisent pareil : {4} font {5}."
   },
   "ru": {
     "设置": "Настройки",
@@ -7679,6 +7715,7 @@
     "上桌时记住这几件事：": "Запомните за столом:",
     "不摊牌也能赢": "Победа без вскрытия",
     "中间的数字是底池，所有人投入的筹码都在这里。赢下它有两种办法：让其他人全部弃牌，或者打到最后亮牌比大小。你面前的 {0} 是虚拟筹码，K 表示千，也就是 {1}。": "Число в центре — банк, в нём всё, что внесли игроки. Выиграть его можно двумя способами: все остальные сбросят, или вы покажете лучшую руку в конце. {0} перед вами — виртуальные фишки. K значит тысяча, то есть {1}.",
+    "中间的数字是底池，所有人投入的筹码都在这里。赢下它有两种办法：让其他人全部弃牌，或者打到最后亮牌比大小。你面前的 {0} 是虚拟筹码，M 表示百万，也就是 {1}。": "Число в центре — банк, в нём всё, что внесли игроки. Выиграть его можно двумя способами: все остальные сбросят, или вы покажете лучшую руку в конце. {0} перед вами — виртуальные фишки. M значит миллион, то есть {1}.",
     "主动加注": "Рейз с умом",
     "亮牌": "Открыть карты",
     "什么都赢不到": "Ничего",
@@ -7773,7 +7810,8 @@
     "轮到你决定": "Решение за вами",
     "轮到你时看清数字：跟注是这次补多少，加注是这一轮累计多少。": "В свой ход читайте числа: колл — сколько добавляете сейчас, рейз — ваш итог за раунд.",
     "返回牌桌": "Вернуться за стол",
-    "还没看牌就有人先投钱，这叫盲注，是强制的。Mia 是 SB（小盲），投 {0}；Alex 是 BB（大盲），投 {1}。有了盲注，每手牌才有东西可争。": "Некоторые вносят фишки, ещё не видя карт. Это блайнды, они обязательны. Mia — SB (малый блайнд) и вносит {0}; Alex — BB (большой блайнд) и вносит {1}. Благодаря блайндам в каждой раздаче есть за что бороться.",
+    "还没看牌就有人先投钱，这叫盲注，是强制的。Mia 是 SB（小盲），投 {0}；Alex 是 BB（大盲），投 {1}。数字后面没有字母，就是实际的筹码数。有了盲注，每手牌才有东西可争。": "Некоторые вносят фишки, ещё не видя карт. Это блайнды, они обязательны. Mia — SB (малый блайнд) и вносит {0}; Alex — BB (большой блайнд) и вносит {1}. Число без буквы после него — это реальное количество фишек. Благодаря блайндам в каждой раздаче есть за что бороться.",
+    "还没看牌就有人先投钱，这叫盲注，是强制的。Mia 是 SB（小盲），投 {0}；Alex 是 BB（大盲），投 {1}。这里的 K 表示千，{2} 就是 {3}。有了盲注，每手牌才有东西可争。": "Некоторые вносят фишки, ещё не видя карт. Это блайнды, они обязательны. Mia — SB (малый блайнд) и вносит {0}; Alex — BB (большой блайнд) и вносит {1}. Здесь K значит тысяча, поэтому {2} — это {3}. Благодаря блайндам в каждой раздаче есть за что бороться.",
     "这一手学到的：": "Чему научила эта рука:",
     "这三张是翻牌，所有人都能用。你现在有四张红桃，再来一张红桃就是同花。这叫听牌：还没成，但有希望。": "Эти три карты — флоп, ими могут пользоваться все. У вас теперь четыре червы, ещё одна даст флеш. Это называется дро: ещё не собрано, но может собраться.",
     "这两张是你的底牌，只有你看得见。桌子中央之后会发出五张公共牌，大家共用。目标只有一个：用这七张牌里最好的五张去赢。": "Эти две карты — ваши карманные, их видите только вы. Затем в центре выйдут пять общих карт для всех. Цель одна: выиграть лучшими пятью из этих семи карт.",
@@ -7787,6 +7825,8 @@
     "退出新手引导": "Выйти из обучения для новичков",
     "面对下注": "Перед ставкой",
     "½ 底池": "½ банка",
-    "立刻发完": "Доиграть руку"
+    "立刻发完": "Доиграть руку",
+    "筹码单位": "Единицы фишек",
+    "换算记一下：{0} = 1000，{1} = 1000K = 1000000。不带 K 或 M 的整数就是实际筹码数，所以 {2} 和 {3} 一样多。带小数也照算，{4} 就是 {5}。": "Запомните пересчёт: {0} = 1000, {1} = 1000K = 1000000. Целое число без K или M — это реальное количество фишек, поэтому {2} и {3} — одно и то же. С дробями так же: {4} — это {5}."
   }
 }

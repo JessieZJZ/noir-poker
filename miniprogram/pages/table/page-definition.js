@@ -34,6 +34,8 @@ const {
 } = require('./game-effects.js');
 // The tutorial's panel sits above the dock; landscape tablets have width to
 // spare instead, so the panel moves beside the table as on Web.
+// The header label rolls through every resource choice in menu order.
+const RESOURCE_LABELS = ['对局记录', '新手引导', '玩法指南', '胜率计算器'];
 const TUTORIAL_SIDE_WIDTH = 312;
 // Scripted hands lock the slider, so short phones give its row to the table.
 const TUTORIAL_SLIDER_HEIGHT = 27;
@@ -88,8 +90,8 @@ module.exports = {
     compactNav: false,
     ...viewportChrome(390, 800),
     resourceMenuOpen: false,
-    resourceLabel: '玩法指南',
-    resourcePreviousLabel: '对局记录',
+    resourceLabel: RESOURCE_LABELS[0],
+    resourcePreviousLabel: RESOURCE_LABELS.at(-1),
     resourceRolling: false,
     resourceReducedMotion: false,
     historyReadOnly: false,
@@ -1296,7 +1298,10 @@ module.exports = {
     clearTimeout(this._resourceMotionTimer);
     this.setData({
       resourcePreviousLabel: this.data.resourceLabel,
-      resourceLabel: this.data.resourceLabel === '玩法指南' ? '对局记录' : '玩法指南',
+      resourceLabel:
+        RESOURCE_LABELS[
+          (RESOURCE_LABELS.indexOf(this.data.resourceLabel) + 1) % RESOURCE_LABELS.length
+        ],
       resourceRolling: true,
     });
     this._resourceMotionTimer = setTimeout(() => {
@@ -1315,7 +1320,7 @@ module.exports = {
       this.setData({
         resourceReducedMotion: reduced,
         resourceRolling: false,
-        resourceLabel: '玩法指南',
+        resourceLabel: RESOURCE_LABELS[0],
       });
       clearTimeout(this._resourceMotionTimer);
       this.startResourceRotation();

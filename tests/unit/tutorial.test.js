@@ -1,7 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { createTutorial, TUTORIAL_LESSONS, TUTORIAL_TOTAL } from '../../src/engine/tutorial.js';
+import {
+  createTutorial,
+  readingTime,
+  TUTORIAL_LESSONS,
+  TUTORIAL_TOTAL,
+} from '../../src/engine/tutorial.js';
 import { act, legalActions, potSize } from '../../src/engine/poker.js';
 import { stakesFromSmallBlind } from '../../src/engine/stakes.js';
 
@@ -109,6 +114,62 @@ test('a coach message keeps its amounts while automatic beats run', () => {
   act(tutorial.game, 0, 'call');
   tutorial.heroActed();
   assert.equal(tutorial.view().text, message);
+});
+
+test('the chip-unit steps explain the K or M actually on screen', () => {
+  const lines = (smallBlind) => {
+    const tutorial = createTutorial(stakesFromSmallBlind(smallBlind)),
+      text = [];
+    tutorial.primary();
+    while (tutorial.view().canContinue && text.length < 4) {
+      text.push(tutorial.view().text);
+      tutorial.next();
+    }
+    return text;
+  };
+  const [, millions, kiloBlinds, units] = lines(10000);
+  assert.match(millions, /你面前的 2M 是虚拟筹码，M 表示百万，也就是 2000000。/);
+  assert.match(kiloBlinds, /投 10K；.*投 20K。这里的 K 表示千，20K 就是 20000。/);
+  assert.match(units, /1K = 1000，1M = 1000K = 1000000。/);
+  assert.match(units, /所以 2M 和 2000000 一样多。带小数也照算，1.5K 就是 1500。/);
+  const [, thousands, plainBlinds, plainUnits] = lines(100);
+  assert.match(thousands, /20K 是虚拟筹码，K 表示千，也就是 20000。/);
+  assert.match(plainBlinds, /投 200。数字后面没有字母，就是实际的筹码数。/);
+  assert.match(plainUnits, /所以 20K 和 20000 一样多/);
+  assert.match(lines(500)[2], /投 1K。这里的 K 表示千，1K 就是 1000。/);
+});
+
+test('automatic beats wait until a fresh coach message has had time to be read', () => {
+  const tutorial = createTutorial(stakesFromSmallBlind(100));
+  tutorial.primary();
+  const first = tutorial.view();
+  tutorial.markShown(first, 1000);
+  assert.equal(tutorial.readingHold(1000), readingTime(first));
+  tutorial.markShown(first, 4000);
+  assert.equal(
+    tutorial.readingHold(4000),
+    readingTime(first) - 3000,
+    'Repainting the same message keeps its start time',
+  );
+  assert.equal(tutorial.next(), true);
+  assert.equal(tutorial.readingHold(4000), 0, 'Continue means the message was read');
+  while (tutorial.view().allowed.action !== 'call') {
+    if (tutorial.autoDelay() !== null) tutorial.runAuto();
+    else tutorial.next();
+  }
+  const turn = tutorial.view();
+  tutorial.markShown(turn, 10000);
+  act(tutorial.game, 0, 'call');
+  tutorial.heroActed();
+  tutorial.markShown(tutorial.view(), 11000);
+  assert.notEqual(tutorial.autoDelay(), null);
+  assert.equal(
+    tutorial.readingHold(11000),
+    readingTime(turn) - 1000,
+    'A quick tap leaves the rest of the message on screen before the bots act',
+  );
+  assert.ok(readingTime({ title: '', text: '长'.repeat(500) }) <= 8000, 'Long copy is capped');
+  assert.ok(readingTime({ title: '等待对手', text: '对手正在行动。' }) >= 1000);
 });
 
 test('only the taught action and amount stay live during a guided turn', () => {

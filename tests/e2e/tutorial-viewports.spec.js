@@ -50,7 +50,10 @@ async function device(browser, baseURL, width, height) {
   await page.goto('/');
   // Several fresh contexts can share the dev server's first compile.
   await expect(page.locator('html')).toHaveAttribute('data-app-ready', 'true', { timeout: 30000 });
-  await page.evaluate(() => window.qa.stop());
+  await page.evaluate(() => {
+    window.qa.stop();
+    window.qa.skipTutorialReading();
+  });
   await page.locator('#rules-button').click();
   await page.locator('#tutorial-menu-item').click();
   await page.locator('#tutorial-dialog-primary').click();

@@ -846,21 +846,24 @@ function schedule() {
   if (tutorial?.guided()) {
     const delay = tutorial.autoDelay();
     if (delay === null) return;
-    timer = setTimeout(() => {
-      if (!activityClock.active || ticket !== epoch || !tutorial?.guided()) return;
-      const beat = tutorial.runAuto();
-      if (beat.kind === 'bot') {
-        if (beat.action === 'fold') soundEffect('fold');
-        else if (beat.action === 'check') soundEffect('check');
-        else {
-          flyChips(beat.id);
-          soundEffect();
-        }
-        if (beat.win) soundEffect('win');
-      } else soundEffect(beat.kind);
-      render();
-      schedule();
-    }, delay);
+    timer = setTimeout(
+      () => {
+        if (!activityClock.active || ticket !== epoch || !tutorial?.guided()) return;
+        const beat = tutorial.runAuto();
+        if (beat.kind === 'bot') {
+          if (beat.action === 'fold') soundEffect('fold');
+          else if (beat.action === 'check') soundEffect('check');
+          else {
+            flyChips(beat.id);
+            soundEffect();
+          }
+          if (beat.win) soundEffect('win');
+        } else soundEffect(beat.kind);
+        render();
+        schedule();
+      },
+      Math.max(delay, tutorialHold()),
+    );
     return;
   }
   if (tutorial && !tutorial.playing()) return;
@@ -887,7 +890,7 @@ function schedule() {
         render();
         schedule();
       },
-      Math.max(0, dealWait.deadline - activityClock.now()),
+      Math.max(0, dealWait.deadline - activityClock.now(), tutorialHold()),
     );
   } else if (game.actor !== 0) {
     dealWait = null;
@@ -922,9 +925,13 @@ function schedule() {
         render();
         schedule();
       },
-      Math.max(0, waiting.deadline - activityClock.now()),
+      Math.max(0, waiting.deadline - activityClock.now(), tutorialHold()),
     );
   } else botWait = null;
+}
+// The tutorial's table waits until a fresh coach message has had time to be read.
+function tutorialHold() {
+  return tutorial ? tutorial.readingHold(activityClock.now()) : 0;
 }
 function heroAction(action, amount) {
   if (!activityClock.active || dealGate.pending) return false;
@@ -1588,6 +1595,7 @@ const tutorialCoach = createTutorialCoach({
 function syncTutorial() {
   if (!tutorial) return;
   const view = tutorial.view(format);
+  tutorial.markShown(view, activityClock.now());
   if (view.raiseTarget !== null && !view.allowed.preset && bet !== view.raiseTarget) {
     bet = view.raiseTarget;
     $('#bet-slider').value = bet;

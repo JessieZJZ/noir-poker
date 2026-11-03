@@ -1906,16 +1906,27 @@ test('WeChat combined resources menu keeps both choices and rotates only while c
     jobs.delete(page._resourceTimer);
     timer.fn();
   };
-  tick();
   assert.equal(page.data.resourceLabel, '对局记录');
-  assert.equal(page.data.resourcePreviousLabel, '玩法指南');
-  assert.equal(page.data.resourceRolling, true);
-  jobs.get(page._resourceMotionTimer).fn();
-  assert.equal(page.data.resourceRolling, false);
+  const seen = [];
+  for (let i = 0; i < 4; i++) {
+    const previous = page.data.resourceLabel;
+    tick();
+    assert.equal(page.data.resourcePreviousLabel, previous);
+    assert.equal(page.data.resourceRolling, true);
+    jobs.get(page._resourceMotionTimer).fn();
+    assert.equal(page.data.resourceRolling, false);
+    seen.push(page.data.resourceLabel);
+  }
+  assert.deepEqual(seen, ['新手引导', '玩法指南', '胜率计算器', '对局记录']);
   page.toggleResourceMenu();
   assert.equal(page.data.resourceRolling, false);
   tick();
-  assert.equal(page.data.resourceLabel, '对局记录');
+  assert.equal(page.data.resourceLabel, '对局记录', 'An open menu stops the rotation');
+  const menu = template.slice(template.indexOf('class="resource-menu"'));
+  assert.deepEqual(
+    [...menu.matchAll(/bindtap="(open\w+)"/g)].slice(0, 4).map((match) => match[1]),
+    ['openRecords', 'openTutorial', 'openGuide', 'openWinRate'],
+  );
   page.openGuide();
   assert.equal(page.data.resourceMenuOpen, false);
   assert.equal(page.data.guideOpen, true);
@@ -1956,7 +1967,8 @@ test('WeChat reduced motion keeps resource labels static and schedules no auto r
   });
   page.readResourceMotionPreference();
   assert.equal(page.data.resourceReducedMotion, true);
-  assert.equal(page.data.resourceLabel, '玩法指南');
+  assert.equal(page.data.resourceLabel, '对局记录');
+  assert.match(template, /<text class="resource-label-static">对局记录<\/text>/);
   assert.equal(page.data.resourceRolling, false);
   assert.equal(jobs.has(page._resourceTimer), false);
   assert.match(stylesheet, /prefers-reduced-motion: reduce/);

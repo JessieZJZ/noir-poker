@@ -136,6 +136,28 @@
   .header .brand > span:last-child {
     min-width: 0;
   }
+  /* Four rotating resource labels can outgrow a phone header in long locales.
+     The wordmark gives way first, the logo keeps its 28px, then a label that
+     still does not fit ends in an ellipsis; the menu shows every full name. */
+  .header .brand {
+    min-width: 28px;
+    flex-shrink: 100;
+  }
+  .header-actions .guide-menu,
+  .header-actions #rules-button,
+  .header-actions #rules-button .guide-rotating-label {
+    min-width: 0;
+  }
+  .header-actions #rules-button .guide-rotating-label {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .header-actions #rules-button .guide-rotating-label > span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .header-actions .settings-button {
+    flex-shrink: 0;
+  }
   .header .brand-mark {
     flex-shrink: 0;
   }
@@ -149,7 +171,7 @@
   }
   .header-actions {
     left: 0;
-    flex-shrink: 0;
+    min-width: 0;
     gap: 10px;
   }
   .entry-welcome {

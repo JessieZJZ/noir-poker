@@ -3,7 +3,10 @@ import { test, expect } from '@playwright/test';
 async function ready(page) {
   await page.goto('/');
   await expect(page.locator('html')).toHaveAttribute('data-app-ready', 'true', { timeout: 30000 });
-  await page.evaluate(() => window.qa.stop());
+  await page.evaluate(() => {
+    window.qa.stop();
+    window.qa.skipTutorialReading();
+  });
 }
 async function openTutorial(page) {
   await page.locator('#rules-button').click();
@@ -50,9 +53,9 @@ test('the guide menu opens a tutorial that pauses the live hand and restores it 
   await ready(page);
   await page.locator('#rules-button').click();
   await expect(page.locator('#guide-menu [role="menuitem"]')).toHaveText([
-    '玩法指南',
-    '新手引导',
     '对局记录',
+    '新手引导',
+    '玩法指南',
     '胜率计算器',
   ]);
   await page.locator('#tutorial-menu-item').click();
@@ -295,3 +298,77 @@ for (const [locale, title, button, primary] of [
     await expect(text).toContainText('200');
   });
 }
+
+test('fold sits left of raise and call stays on the right', async ({ page }) => {
+  await ready(page);
+  await page.evaluate(() => window.qa.heroTurn());
+  const x = async (selector) => (await page.locator(selector).boundingBox()).x;
+  expect(await x('#fold-button')).toBeLessThan(await x('#raise-button'));
+  expect(await x('#raise-button')).toBeLessThan(await x('#call-button'));
+});
+
+test('the focus ring is amber so it stands out from the mint buttons', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await ready(page);
+  await openTutorial(page);
+  await page.locator('#tutorial-dialog-primary').click();
+  await expect(page.locator('.hero-cards-wrap')).toHaveCSS('outline-color', 'rgb(255, 200, 87)');
+});
+
+test('a settled guided hand puts Continue in the empty dock row', async ({ page }) => {
+  test.setTimeout(150000);
+  await ready(page);
+  await openTutorial(page);
+  await page.locator('#tutorial-dialog-primary').click();
+  const next = page.locator('#tutorial-next');
+  await expect(page.locator('#tutorial-coach #tutorial-next')).toBeVisible();
+  await playUntil(page, (v) => v.title === '摊牌');
+  await expect(page.locator('#action-panel > #tutorial-next')).toBeVisible();
+  await expect(page.locator('#tutorial-coach #tutorial-next')).toHaveCount(0);
+  await expect(next).toHaveClass(/next-button/);
+  const [button, panel] = await Promise.all([
+    next.boundingBox(),
+    page.locator('#action-panel').boundingBox(),
+  ]);
+  expect(button.y).toBeGreaterThanOrEqual(panel.y);
+  expect(button.y + button.height).toBeLessThanOrEqual(panel.y + panel.height + 1);
+  expect(button.width).toBeGreaterThan(panel.width * 0.8);
+  await next.click();
+  await expect(page.locator('#tutorial-dialog h2')).toHaveText('第一手完成');
+  await page.locator('#tutorial-dialog-secondary').click();
+  await expect(page.locator('#tutorial-coach #tutorial-next')).toBeVisible();
+  await expect(next).toHaveClass(/tutorial-next/);
+});
+
+test('a quick tap leaves the coach message on screen before the bots move', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.locator('html')).toHaveAttribute('data-app-ready', 'true', { timeout: 30000 });
+  await page.evaluate(() => window.qa.stop());
+  await openTutorial(page);
+  await page.locator('#tutorial-dialog-primary').click();
+  const view = await playUntil(page, (v) => v.allowed?.action === 'call');
+  const state = () => page.evaluate(() => window.noir.getState());
+  const actions = (await state()).players.map((p) => p.action);
+  await page.locator('#call-button').click();
+  await page.waitForTimeout(2500);
+  await expect(page.locator('#tutorial-text')).toHaveText(view.text);
+  expect((await state()).players.slice(1).map((p) => p.action)).toEqual(actions.slice(1));
+  await expect(page.locator('#tutorial-title')).toHaveText('一轮结束', { timeout: 12000 });
+});
+
+test('large stakes explain M on the stack, K on the blinds and how they convert', async ({
+  page,
+}) => {
+  await ready(page);
+  await page.evaluate(() => window.qa.configuredTurn({ smallBlind: 10000, bigBlind: 20000 }));
+  await openTutorial(page);
+  await page.locator('#tutorial-dialog-primary').click();
+  const text = page.locator('#tutorial-text');
+  await page.locator('#tutorial-next').click();
+  await expect(text).toContainText('2M 是虚拟筹码，M 表示百万，也就是 2000000');
+  await page.locator('#tutorial-next').click();
+  await expect(text).toContainText('这里的 K 表示千，20K 就是 20000');
+  await page.locator('#tutorial-next').click();
+  await expect(page.locator('#tutorial-title')).toHaveText('筹码单位');
+  await expect(text).toContainText('1K = 1000，1M = 1000K = 1000000');
+});

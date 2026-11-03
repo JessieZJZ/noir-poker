@@ -28,8 +28,11 @@
   white-space: nowrap;
   visibility: hidden;
 }
-#rules-button:not([data-label='records']) [data-guide-label='guide'],
-#rules-button[data-label='records'] [data-guide-label='records'] {
+#rules-button:not([data-label]) [data-guide-label='records'],
+#rules-button[data-label='records'] [data-guide-label='records'],
+#rules-button[data-label='tutorial'] [data-guide-label='tutorial'],
+#rules-button[data-label='guide'] [data-guide-label='guide'],
+#rules-button[data-label='win-rate'] [data-guide-label='win-rate'] {
   visibility: visible;
 }
 #rules-button .guide-label-leave {

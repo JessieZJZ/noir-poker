@@ -1,12 +1,14 @@
 import { createWinRatePage } from './win-rate.js';
 
-// The two choices keep their width while the automatic label rolls downward.
-// Hover, keyboard focus, an open menu and reduced motion stop the rotation.
+// Every menu choice takes a turn in the label, in menu order, and the slot keeps
+// the widest one's width while it rolls downward. Hover, keyboard focus, an open
+// menu and reduced motion stop the rotation.
 export function createGuideMenu({ onRecords, onTutorial }) {
   const trigger = document.querySelector('#rules-button');
   const menu = document.querySelector('#guide-menu');
   const wrapper = trigger.closest('.guide-menu');
   const labels = [...trigger.querySelectorAll('[data-guide-label]')];
+  const order = labels.map((label) => label.dataset.guideLabel);
   const choices = [...menu.querySelectorAll('[role="menuitem"]')];
   const motion = matchMedia('(prefers-reduced-motion: reduce)');
   const events = new AbortController();
@@ -27,7 +29,7 @@ export function createGuideMenu({ onRecords, onTutorial }) {
   }
   function setLabel(next, animate = false) {
     finishAnimation();
-    const previous = trigger.dataset.label || 'guide';
+    const previous = trigger.dataset.label || order[0];
     trigger.dataset.label = next;
     for (const label of labels)
       label.setAttribute('aria-hidden', String(label.dataset.guideLabel !== next));
@@ -55,7 +57,8 @@ export function createGuideMenu({ onRecords, onTutorial }) {
       return;
     }
     interval = setInterval(() => {
-      setLabel(trigger.dataset.label === 'records' ? 'guide' : 'records', true);
+      const index = order.indexOf(trigger.dataset.label || order[0]);
+      setLabel(order[(index + 1) % order.length], true);
     }, 5000);
   }
   function close(restoreFocus = false) {
@@ -149,7 +152,7 @@ export function createGuideMenu({ onRecords, onTutorial }) {
     suspended = false;
     updateRotation();
   });
-  setLabel(trigger.dataset.label || 'guide');
+  setLabel(trigger.dataset.label || order[0]);
   updateRotation();
   return {
     close,

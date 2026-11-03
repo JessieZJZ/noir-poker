@@ -93,8 +93,10 @@
             aria-controls="guide-menu"
           >
             <span class="guide-rotating-label">
-              <span data-guide-label="guide">玩法指南</span>
-              <span data-guide-label="records" aria-hidden="true">对局记录</span>
+              <span data-guide-label="records">对局记录</span>
+              <span data-guide-label="tutorial" aria-hidden="true">新手引导</span>
+              <span data-guide-label="guide" aria-hidden="true">玩法指南</span>
+              <span data-guide-label="win-rate" aria-hidden="true">胜率计算器</span>
             </span>
             <span class="guide-menu-arrow" aria-hidden="true">
               <svg class="guide-chevron" viewBox="0 0 16 16">
@@ -103,9 +105,9 @@
             </span>
           </button>
           <div id="guide-menu" class="guide-menu-options" role="menu" hidden>
-            <button id="guide-menu-item" role="menuitem">玩法指南</button>
-            <button id="tutorial-menu-item" role="menuitem">新手引导</button>
             <button id="records-menu-item" role="menuitem">对局记录</button>
+            <button id="tutorial-menu-item" role="menuitem">新手引导</button>
+            <button id="guide-menu-item" role="menuitem">玩法指南</button>
             <button id="win-rate-menu-item" role="menuitem">胜率计算器</button>
           </div>
         </div>
@@ -293,9 +295,9 @@
                   </div>
                 </div>
                 <div class="action-buttons">
-                  <button id="raise-button" disabled class="action raise">
+                  <button id="fold-button" disabled class="action fold"><span>弃牌</span></button
+                  ><button id="raise-button" disabled class="action raise">
                     <span>加注至</span><strong id="raise-number">600</strong></button
-                  ><button id="fold-button" disabled class="action fold"><span>弃牌</span></button
                   ><button id="call-button" disabled class="action call"><span>过牌</span></button>
                 </div>
                 <button

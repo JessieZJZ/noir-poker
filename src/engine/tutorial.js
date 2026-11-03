@@ -40,6 +40,8 @@ const hero = (action, title, text, focus, details = {}) => ({
   ...details,
 });
 const blinds = (count) => (game) => count * game.bigBlind;
+// Matches compactChips: the letter the table shows for this amount.
+const unitOf = (amount) => (amount >= 1000000 ? 'M' : amount >= 1000 ? 'K' : '');
 const allIn = (game) => legalActions(game).maxRaiseTo;
 const halfPot = (game) => {
   const legal = legalActions(game, 0);
@@ -78,17 +80,29 @@ export const TUTORIAL_LESSONS = [
           '这两张是你的底牌，只有你看得见。桌子中央之后会发出五张公共牌，大家共用。目标只有一个：用这七张牌里最好的五张去赢。',
         ['hero-cards'],
       ),
+      // Stakes decide whether the stack reads in K or M and whether the blinds
+      // carry a unit at all, so each beat explains the unit actually on screen.
       read(
         '底池',
         (c) =>
-          `中间的数字是底池，所有人投入的筹码都在这里。赢下它有两种办法：让其他人全部弃牌，或者打到最后亮牌比大小。你面前的 ${c.stack} 是虚拟筹码，K 表示千，也就是 ${c.stackPlain}。`,
+          c.stackUnit === 'M'
+            ? `中间的数字是底池，所有人投入的筹码都在这里。赢下它有两种办法：让其他人全部弃牌，或者打到最后亮牌比大小。你面前的 ${c.stack} 是虚拟筹码，M 表示百万，也就是 ${c.stackPlain}。`
+            : `中间的数字是底池，所有人投入的筹码都在这里。赢下它有两种办法：让其他人全部弃牌，或者打到最后亮牌比大小。你面前的 ${c.stack} 是虚拟筹码，K 表示千，也就是 ${c.stackPlain}。`,
         ['pot', 'stack'],
       ),
       read(
         '盲注',
         (c) =>
-          `还没看牌就有人先投钱，这叫盲注，是强制的。Mia 是 SB（小盲），投 ${c.sb}；Alex 是 BB（大盲），投 ${c.bb}。有了盲注，每手牌才有东西可争。`,
+          c.bbUnit === 'K'
+            ? `还没看牌就有人先投钱，这叫盲注，是强制的。Mia 是 SB（小盲），投 ${c.sb}；Alex 是 BB（大盲），投 ${c.bb}。这里的 K 表示千，${c.bb} 就是 ${c.bbPlain}。有了盲注，每手牌才有东西可争。`
+            : `还没看牌就有人先投钱，这叫盲注，是强制的。Mia 是 SB（小盲），投 ${c.sb}；Alex 是 BB（大盲），投 ${c.bb}。数字后面没有字母，就是实际的筹码数。有了盲注，每手牌才有东西可争。`,
         ['seat:1', 'seat:2', 'pot'],
+      ),
+      read(
+        '筹码单位',
+        (c) =>
+          `换算记一下：${c.oneK} = 1000，${c.oneM} = 1000K = 1000000。不带 K 或 M 的整数就是实际筹码数，所以 ${c.stack} 和 ${c.stackPlain} 一样多。带小数也照算，${c.sample} 就是 ${c.samplePlain}。`,
+        ['stack', 'seat:2'],
       ),
       read(
         '位置',
@@ -396,6 +410,16 @@ export const TUTORIAL_LESSONS = [
   },
 ];
 
+// A beginner reads about ten Chinese characters a second. Automatic beats wait
+// that long after a message appears, capped so a quick tap never stalls the table.
+const READING_BASE_MS = 500,
+  READING_CHARS_PER_SECOND = 10,
+  READING_MAX_MS = 8000;
+export function readingTime({ title = '', text = '', detail = '' }) {
+  const length = (title + text + (detail || '')).replace(/\s/g, '').length;
+  return Math.min(READING_MAX_MS, READING_BASE_MS + (length * 1000) / READING_CHARS_PER_SECOND);
+}
+
 const FREE_TITLE = '自己打一手';
 const FREE_GOAL = '没有剧本，教练只讲局面';
 export const TUTORIAL_TOTAL = TUTORIAL_LESSONS.length + 1;
@@ -434,7 +458,8 @@ export function createTutorial(stakes) {
     wrongAnswer = null,
     solved = false,
     freeHands = 0,
-    lastCoach = { title: '', text: '' };
+    lastCoach = { title: '', text: '' },
+    shown = { key: null, at: 0, ms: 0 };
 
   const lesson = () => TUTORIAL_LESSONS[lessonIndex];
   const beat = () => (stage === 'lesson' ? lesson().beats[beatIndex] : null);
@@ -479,6 +504,13 @@ export function createTutorial(stakes) {
       bb: format(game.bigBlind),
       stack: format(game.stakes.startingStack),
       stackPlain: String(game.stakes.startingStack),
+      stackUnit: unitOf(game.stakes.startingStack),
+      bbPlain: String(game.bigBlind),
+      bbUnit: unitOf(game.bigBlind),
+      oneK: format(1000),
+      oneM: format(1000000),
+      sample: format(1500),
+      samplePlain: '1500',
       miaStack: format(game.players[1].stack + game.players[1].total),
       pot: format(game.phase === 'done' ? game.potAtShowdown : potSize(game)),
       toCall: format(legal.callAmount ?? 0),
@@ -677,6 +709,15 @@ export function createTutorial(stakes) {
       wrongAnswer = solved ? null : index;
       return solved;
     },
+    // Platforms report each coach paint; a new message starts its reading time.
+    markShown(view, now) {
+      const key = [view.stage, view.title, view.text, view.detail || ''].join('\n');
+      if (key !== shown.key) shown = { key, at: now, ms: readingTime(view) };
+    },
+    // How much longer automatic beats and bots wait so the message can be read.
+    readingHold(now) {
+      return Math.max(0, shown.at + shown.ms - now);
+    },
     // Continue on a read beat, a solved quiz or the end of the free hand.
     next() {
       const current = beat();
@@ -687,6 +728,8 @@ export function createTutorial(stakes) {
       }
       if (current?.type === 'read' || (current?.type === 'quiz' && solved)) {
         advanceBeat();
+        // Tapping Continue says the message has been read.
+        shown.ms = 0;
         return true;
       }
       return false;
@@ -744,6 +787,8 @@ export function createTutorial(stakes) {
             : [],
         canContinue: done || current?.type === 'read' || (current?.type === 'quiz' && solved),
         continueLabel: done ? '看看学到了什么' : '继续',
+        // A settled hand moves Continue into the empty action dock.
+        settled: ['lesson', 'free'].includes(stage) && game.phase === 'done',
         allowed: allowedAction(),
         raiseTarget: raiseTarget(),
       };

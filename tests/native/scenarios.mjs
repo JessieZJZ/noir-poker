@@ -4530,7 +4530,8 @@ export async function nativeScenarios(app) {
     );
     assert.deepEqual((await app.state()).hole, ['10♥', '9♥']);
     let coached = false;
-    for (let step = 0; step < 300; step++) {
+    // Bots wait for each fresh coach message to be read, so waiting steps repeat.
+    for (let step = 0; step < 600; step++) {
       const view = (await app.state()).tutorial;
       if (view.stage === 'summary') break;
       if (view.allowed?.action === 'call' && !coached) {
