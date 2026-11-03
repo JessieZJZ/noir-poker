@@ -252,6 +252,8 @@ test('the rotating entry always opens both choices and keyboard focus keeps its 
   await expect(page.locator('#guide-menu')).toBeVisible();
   await expect(page.locator('#guide-menu-item')).toBeFocused();
   await page.keyboard.press('ArrowDown');
+  await expect(page.locator('#tutorial-menu-item')).toBeFocused();
+  await page.keyboard.press('ArrowDown');
   await expect(page.locator('#records-menu-item')).toBeFocused();
   await page.keyboard.press('Escape');
   await expect(page.locator('#guide-menu')).toBeHidden();

@@ -1,0 +1,327 @@
+/* The tutorial plays on the live table, so only practice chrome leaves the page. */
+body[data-tutorial] .header-actions,
+body[data-tutorial] .header-center,
+body[data-tutorial] .sidebar > .session-card,
+body[data-tutorial] .sidebar > .coach-card,
+body[data-tutorial] .site-footer,
+body[data-tutorial] #session-number-label,
+body[data-tutorial] #session-number-label + span,
+body[data-tutorial] #next-button,
+body[data-tutorial] #restart-hand-button,
+body[data-tutorial] #review-hand-button,
+body[data-tutorial] .continue-deal-button.tutorial-locked {
+  display: none;
+}
+.tutorial-coach {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 14px 12px;
+  background: #101c23;
+  border: 1px solid rgba(110, 231, 197, 0.34);
+  border-radius: 14px;
+}
+.tutorial-coach[hidden] {
+  display: none;
+}
+.tutorial-coach-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-width: 0;
+}
+.tutorial-lesson {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--mint);
+  font-size: 12px;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tutorial-exit {
+  flex: none;
+  min-height: 28px;
+  padding: 0 2px;
+  background: none;
+  border: 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+.tutorial-exit:hover {
+  color: var(--text);
+}
+.tutorial-progress {
+  flex: none;
+  height: 3px;
+  overflow: hidden;
+  background: var(--line);
+  border-radius: 2px;
+}
+.tutorial-progress i {
+  display: block;
+  width: 0;
+  height: 100%;
+  background: var(--mint);
+  transition: width 0.3s ease;
+}
+.tutorial-message {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.tutorial-copy strong {
+  display: block;
+  margin-bottom: 2px;
+  font-size: 15px;
+}
+.tutorial-copy p {
+  margin: 0;
+  color: #cfdbe2;
+  font-size: 14px;
+  line-height: 1.5;
+}
+.tutorial-copy p + p {
+  margin-top: 4px;
+}
+.tutorial-options {
+  display: grid;
+  flex: none;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+.tutorial-options[hidden] {
+  display: none;
+}
+.tutorial-options button {
+  min-height: 38px;
+  padding: 4px 6px;
+  background: #1a2732;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+.tutorial-options button:hover:not(:disabled) {
+  border-color: var(--mint);
+}
+.tutorial-options button.is-wrong {
+  border-color: var(--red);
+  color: var(--red);
+}
+.tutorial-next {
+  flex: none;
+  order: 1;
+  align-self: flex-end;
+  min-width: 96px;
+  min-height: 38px;
+  margin-top: 10px;
+  padding: 0 16px;
+  background: var(--mint);
+  border: 0;
+  border-radius: 9px;
+  color: #06231c;
+  font-size: 14px;
+  font-weight: 800;
+}
+.tutorial-next[hidden] {
+  display: none;
+}
+[data-tutorial-focus] {
+  outline: 2px solid var(--mint);
+  outline-offset: 3px;
+  border-radius: 8px;
+  animation: tutorial-focus 1.6s ease-in-out infinite;
+}
+@keyframes tutorial-focus {
+  50% {
+    outline-color: rgba(110, 231, 197, 0.25);
+  }
+}
+.tutorial-dialog {
+  max-width: 460px;
+}
+.tutorial-steps,
+.tutorial-points {
+  display: grid;
+  gap: 10px;
+  margin: 14px 0;
+  padding: 0;
+  list-style: none;
+}
+.tutorial-steps[hidden],
+.tutorial-points[hidden] {
+  display: none;
+}
+.tutorial-steps {
+  counter-reset: lesson;
+}
+.tutorial-steps li {
+  display: grid;
+  grid-template-columns: 26px minmax(0, 1fr);
+  column-gap: 10px;
+  counter-increment: lesson;
+}
+.tutorial-steps li::before {
+  grid-row: 1 / 3;
+  width: 26px;
+  height: 26px;
+  background: var(--mint-dark);
+  border-radius: 50%;
+  color: var(--mint);
+  content: counter(lesson);
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 26px;
+  text-align: center;
+}
+.tutorial-steps strong {
+  font-size: 15px;
+}
+.tutorial-steps span {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.45;
+}
+.tutorial-points li {
+  position: relative;
+  padding-left: 18px;
+  color: #cfdbe2;
+  font-size: 14px;
+  line-height: 1.5;
+}
+.tutorial-points li::before {
+  position: absolute;
+  top: 8px;
+  left: 2px;
+  width: 7px;
+  height: 7px;
+  background: var(--mint);
+  border-radius: 50%;
+  content: '';
+}
+.tutorial-dialog .tutorial-note {
+  color: var(--muted);
+  font-size: 13px;
+}
+@media (max-width: 900px), (max-width: 1100px) and (orientation: portrait) {
+  /* A fixed height keeps the table still between steps; longer copy scrolls,
+     and the title runs into the text so a phone loses no line to it. */
+  .tutorial-coach {
+    height: 176px;
+    margin: 4px 0 6px;
+    padding: 8px 12px 10px;
+    gap: 4px;
+  }
+  .tutorial-message {
+    display: block;
+    flex: 1 1 0;
+  }
+  .tutorial-message.has-more {
+    mask-image: linear-gradient(#000 calc(100% - 18px), transparent);
+  }
+  .tutorial-copy strong {
+    display: inline;
+    margin: 0 6px 0 0;
+    color: var(--mint);
+    font-size: 14px;
+  }
+  .tutorial-copy p {
+    display: inline;
+  }
+  .tutorial-copy p + p {
+    display: block;
+  }
+  .tutorial-next {
+    float: right;
+    min-width: 84px;
+    min-height: 32px;
+    margin: 0 0 4px 10px;
+    padding: 0 12px;
+  }
+  .tutorial-options button {
+    min-height: 34px;
+  }
+  html:not([lang^='zh'], [lang='ja'], [lang='ko']) .tutorial-copy p,
+  html:not([lang^='zh'], [lang='ja'], [lang='ko']) .tutorial-copy strong {
+    font-size: 13px;
+    line-height: 1.4;
+  }
+}
+@media (max-height: 700px) and (max-width: 900px) {
+  /* Scripted hands lock the slider, so its row goes back to the table here. */
+  body[data-tutorial='lesson'] .bet-controls > label,
+  body[data-tutorial='lesson'] #bet-slider {
+    display: none;
+  }
+  body[data-tutorial='lesson'] .game-surface {
+    --live-dock-height: 116px;
+  }
+  .tutorial-coach {
+    height: 148px;
+  }
+  .tutorial-copy p,
+  .tutorial-copy strong {
+    font-size: 13px;
+    line-height: 1.42;
+  }
+}
+/* Wide windows keep the whole lesson beside the table, inside the first screen. */
+@media (min-width: 1101px), (min-width: 901px) and (orientation: landscape) {
+  body[data-tutorial] .main {
+    grid-template-columns: minmax(0, 1fr) clamp(264px, 28vw, 340px);
+    column-gap: 12px;
+  }
+  body[data-tutorial] .main > .sidebar {
+    grid-column: 1 / -1;
+  }
+  /* The panel fills the table's row and scrolls; it must never set that row. */
+  .main > .tutorial-coach {
+    align-self: stretch;
+    contain: size;
+  }
+  .main > .tutorial-coach .tutorial-message {
+    flex: 1 1 0;
+  }
+  .main > .tutorial-coach .tutorial-options {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+/* Matches tablet.css: readable touch sizing on the same panel geometry. */
+@media (min-width: 601px) and (max-width: 1600px) and (min-height: 601px) and (any-pointer: coarse) {
+  .tutorial-lesson,
+  .tutorial-exit {
+    font-size: 14px;
+  }
+  .tutorial-exit {
+    min-height: 44px;
+  }
+  .tutorial-copy strong,
+  html:not([lang^='zh'], [lang='ja'], [lang='ko']) .tutorial-copy strong {
+    font-size: 17px;
+  }
+  .tutorial-copy p,
+  html:not([lang^='zh'], [lang='ja'], [lang='ko']) .tutorial-copy p {
+    font-size: 16px;
+  }
+  .tutorial-next,
+  .tutorial-options button {
+    min-height: 44px;
+    font-size: 16px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-tutorial-focus] {
+    animation: none;
+  }
+  .tutorial-progress i {
+    transition: none;
+  }
+}

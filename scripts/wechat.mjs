@@ -32,6 +32,20 @@ export function compactWxss(text) {
     .filter(Boolean)
     .join('\n');
 }
+// Line edges in WXML are only formatting: a <text> body never spans lines, as
+// a line break there would render (tests/unit/wechat-build.test.js holds this).
+export function compactWxml(text) {
+  return text
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .join('\n');
+}
+// Lessons are read rarely, so they leave the main package for their own
+// subpackage. Their engine imports stay in main, where every package can reach.
+export function tutorialSubpackageModule(compiled) {
+  return compiled.replace(/require\((['"])\.\/([^'"]+)\1\)/g, 'require($1../shared/engine/$2$1)');
+}
 export function wechatPackageBytes(files, app) {
   const roots = (app.subpackages || []).map((entry) => entry.root.replace(/\/$/, '') + '/');
   const sizes = Object.fromEntries(
@@ -399,12 +413,22 @@ export async function buildWechat(output = wechatOutput) {
     };
     await writeFile(path.join(staging, 'project.config.json'), JSON.stringify(project, null, 2));
     await writeFile(path.join(staging, 'package.json'), '{"type":"commonjs","private":true}\n');
+    await writeFile(
+      path.join(staging, 'tutorial/lessons.js'),
+      tutorialSubpackageModule(
+        await readFile(path.join(staging, 'shared/engine/tutorial.js'), 'utf8'),
+      ),
+    );
+    await rm(path.join(staging, 'shared/engine/tutorial.js'));
     await pruneUnusedSharedModules(staging);
     await verifyLocalWechatModules(staging);
     for (const name of await fileList(staging))
       if (name.endsWith('.wxss') && name !== 'fonts.wxss') {
         const file = path.join(staging, name);
         await writeFile(file, compactWxss(await readFile(file, 'utf8')));
+      } else if (name.endsWith('.wxml')) {
+        const file = path.join(staging, name);
+        await writeFile(file, compactWxml(await readFile(file, 'utf8')));
       }
     const files = [];
     // Local IDE preferences are preserved below, outside the runtime manifest.

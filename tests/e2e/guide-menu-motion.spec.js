@@ -82,6 +82,8 @@ test('reduced motion and focused menus keep labels still, with working keyboard 
   await trigger.press('ArrowDown');
   await expect(page.locator('#guide-menu-item')).toBeFocused();
   await page.keyboard.press('ArrowDown');
+  await expect(page.locator('#tutorial-menu-item')).toBeFocused();
+  await page.keyboard.press('ArrowDown');
   await expect(page.locator('#records-menu-item')).toBeFocused();
   await page.keyboard.press('Escape');
   await expect(page.locator('#guide-menu')).toBeHidden();

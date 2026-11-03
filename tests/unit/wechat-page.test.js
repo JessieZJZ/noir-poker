@@ -886,7 +886,7 @@ test('WeChat turn, fold, settlement and retry keep the table fixed while compact
   assert.match(template, /class="raise-controls" wx:if="\{\{!compactActions\}\}"/);
   assert.match(
     template,
-    /height: {{tableHeight \+ tableHeaderHeight \+ \(waitingForSeat \? 0 : historyReadOnly \|\| compactActions \? compactDockHeight : liveDockHeight\)}}px/,
+    /height: {{tableHeight \+ tableHeaderHeight \+ tutorialCoachHeight \+ \(waitingForSeat \? 0 : historyReadOnly \|\| compactActions \? compactDockHeight : liveDockHeight\)}}px/,
   );
   assert.equal(cssNumber('.action-dock.compact-actions', 'height'), 64);
   assert.equal(
@@ -2392,7 +2392,7 @@ test('WeChat record lists send bounded summary patches and remain idle without r
 test('WeChat history uses a compact review dock and records rely on native Back', () => {
   assert.match(
     template,
-    /tableHeight \+ tableHeaderHeight \+ \(waitingForSeat \? 0 : historyReadOnly \|\| compactActions \? compactDockHeight : liveDockHeight\)/,
+    /tableHeight \+ tableHeaderHeight \+ tutorialCoachHeight \+ \(waitingForSeat \? 0 : historyReadOnly \|\| compactActions \? compactDockHeight : liveDockHeight\)/,
   );
   assert.match(stylesheet, /\.history-shell \.action-dock\s*\{[^}]*height: 64px/);
   assert.doesNotMatch(stylesheet, /\.history-practice-heading/);
@@ -2558,7 +2558,7 @@ test('WeChat history removes the extra navigation heading while preserving repla
   );
   assert.doesNotMatch(template, /历史结算|历史记录/);
   assert.match(template, /wx:if="{{replay}}" class="replay"/);
-  assert.match(template, /wx:if="{{!historyReadOnly}}"[^>]*bindtap="nextHand"/);
+  assert.match(template, /wx:if="{{!historyReadOnly && !tutorialPlaying}}"[^>]*bindtap="nextHand"/);
 });
 
 test('WeChat larger table text uses shared profile and hero footprints without overflowing their slots', (t) => {
@@ -2790,7 +2790,10 @@ test('WeChat practice heading owns reset; game info replaces it only while waiti
     template,
     /class="practice-panel"\s*><view class="session-title"\s*><view class="session-heading"\s*><text>{{sessionTitle}}<\/text\s*><text wx:if="{{standingText}}" class="standing-tag {{standingClass}}"\s*>{{standingText}}<\/text\s*><\/view\s*><button wx:if="{{!over}}" class="practice-reset"[^>]*bindtap="resetPractice">\s*重新开局\s*<\/button\s*>/,
   );
-  assert.match(template, /wx:if="{{!historyReadOnly && !waitingForSeat}}" class="practice-panel"/);
+  assert.match(
+    template,
+    /wx:if="{{!historyReadOnly && !waitingForSeat && !tutorialPlaying}}" class="practice-panel"/,
+  );
   // The waiting card carries the waiting message, chips, blinds and results.
   assert.match(template, /wx:if="{{!historyReadOnly && waitingForSeat}}"\s+class="game-info"/);
   for (const label of ['当前筹码', '盲注', '已完成', '获胜手数', '胜率'])

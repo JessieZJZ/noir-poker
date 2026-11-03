@@ -2,7 +2,7 @@ import { createWinRatePage } from './win-rate.js';
 
 // The two choices keep their width while the automatic label rolls downward.
 // Hover, keyboard focus, an open menu and reduced motion stop the rotation.
-export function createGuideMenu({ onRecords }) {
+export function createGuideMenu({ onRecords, onTutorial }) {
   const trigger = document.querySelector('#rules-button');
   const menu = document.querySelector('#guide-menu');
   const wrapper = trigger.closest('.guide-menu');
@@ -130,6 +130,10 @@ export function createGuideMenu({ onRecords }) {
   }
   on(document.querySelector('#guide-menu-item'), 'click', () => openGuide());
   on(document.querySelector('#hand-rankings-button'), 'click', () => openGuide('hand-rankings'));
+  on(document.querySelector('#tutorial-menu-item'), 'click', () => {
+    close();
+    onTutorial();
+  });
   on(document.querySelector('#records-menu-item'), 'click', () => {
     close();
     onRecords();

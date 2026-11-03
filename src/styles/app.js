@@ -19,6 +19,7 @@ import './desktop-play.css';
 import './table-density.css';
 import './game-records.css';
 import './hero-turn.css';
+import './tutorial.css';
 import './entry.css';
 import './game-effects.css';
 import './game-end.css';

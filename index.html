@@ -104,6 +104,7 @@
           </button>
           <div id="guide-menu" class="guide-menu-options" role="menu" hidden>
             <button id="guide-menu-item" role="menuitem">玩法指南</button>
+            <button id="tutorial-menu-item" role="menuitem">新手引导</button>
             <button id="records-menu-item" role="menuitem">对局记录</button>
             <button id="win-rate-menu-item" role="menuitem">胜率计算器</button>
           </div>
@@ -238,6 +239,24 @@
               </div>
             </div>
           </div>
+          <section id="tutorial-coach" class="tutorial-coach" aria-label="新手引导" hidden>
+            <div class="tutorial-coach-top">
+              <span id="tutorial-lesson" class="tutorial-lesson"></span>
+              <button id="tutorial-exit" class="tutorial-exit">退出引导</button>
+            </div>
+            <div class="tutorial-progress" aria-hidden="true">
+              <i id="tutorial-progress-bar"></i>
+            </div>
+            <div class="tutorial-message">
+              <button id="tutorial-next" class="tutorial-next" hidden>继续</button>
+              <div class="tutorial-copy" role="status" aria-live="polite">
+                <strong id="tutorial-title"></strong>
+                <p id="tutorial-text"></p>
+                <p id="tutorial-detail" hidden></p>
+              </div>
+            </div>
+            <div id="tutorial-options" class="tutorial-options" hidden></div>
+          </section>
           <div class="action-dock-slot">
             <div class="action-dock">
               <span class="turn-line" aria-hidden="true"></span>
@@ -1249,6 +1268,23 @@
       <div class="win-rate-picker-actions">
         <button id="win-rate-delete" type="button" hidden>删除</button>
         <button id="win-rate-picker-back" type="button">返回</button>
+      </div>
+    </dialog>
+    <dialog id="tutorial-dialog" class="tutorial-dialog" aria-labelledby="tutorial-dialog-title">
+      <div class="dialog-header">
+        <span id="tutorial-dialog-eyebrow" class="eyebrow" translate="no"></span
+        ><button id="tutorial-dialog-close" class="icon-button" aria-label="退出新手引导">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" /></svg>
+        </button>
+      </div>
+      <h2 id="tutorial-dialog-title"></h2>
+      <p id="tutorial-dialog-lead"></p>
+      <ol id="tutorial-dialog-steps" class="tutorial-steps" hidden></ol>
+      <ul id="tutorial-dialog-points" class="tutorial-points" hidden></ul>
+      <p id="tutorial-dialog-note" class="tutorial-note" hidden></p>
+      <div class="dialog-actions">
+        <button id="tutorial-dialog-secondary" class="quiet-button"></button
+        ><button id="tutorial-dialog-primary" class="primary-button"></button>
       </div>
     </dialog>
     <dialog id="reset-dialog">

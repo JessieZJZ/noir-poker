@@ -7,8 +7,21 @@
   ],
   "resizable": true,
   "subpackages": [
-    { "root": "music", "name": "music", "pages": ["loader"] },
-    { "root": "calculator", "name": "calculator", "pages": ["win-rate"] }
+    {
+      "root": "music",
+      "name": "music",
+      "pages": ["loader"]
+    },
+    {
+      "root": "tutorial",
+      "name": "tutorial",
+      "pages": ["loader"]
+    },
+    {
+      "root": "calculator",
+      "name": "calculator",
+      "pages": ["win-rate"]
+    }
   ],
   "workers": "workers",
   "window": {
@@ -18,5 +31,11 @@
     "backgroundTextStyle": "light"
   },
   "style": "v2",
-  "lazyCodeLoading": "requiredComponents"
+  "lazyCodeLoading": "requiredComponents",
+  "preloadRule": {
+    "pages/table/table": {
+      "network": "all",
+      "packages": ["tutorial"]
+    }
+  }
 }
