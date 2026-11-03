@@ -325,13 +325,25 @@ export const MAX_HERO_REBUYS = 3;
 export const heroRebuysLeft = (g) => Math.max(0, MAX_HERO_REBUYS - (g.rebuys || 0));
 export const needsHeroRebuy = (g) =>
   ['idle', 'done'].includes(g.phase) && !g.over && !g.players[0].out && g.players[0].stack === 0;
+// A refill tops the hero up to half the chip leader (CL): the largest stack
+// among seats still in the game, rounded down to whole chips. The leader
+// holds at least the average stack, so a refill is never below half of it.
+export function heroRebuyAmount(g) {
+  const unit = chipUnitOf(g),
+    leader = Math.max(0, ...g.players.filter((p) => p.id !== 0 && !p.out).map((p) => p.stack));
+  return Math.max(bigBlindOf(g), Math.floor(leader / 2 / unit) * unit);
+}
+// Hands saved before refills followed the chip leader keep this log line;
+// listing it keeps those stored records translated.
+export const LEGACY_REFILL_LOG = '{0} 补充 {1} 虚拟筹码 · 第 {2} 次补码';
 // Only the hero can refill, and only between hands after losing every chip.
 export function rebuyHero(g) {
   if (!needsHeroRebuy(g)) throw Error('只有筹码输光后才能补充筹码。');
   if (!heroRebuysLeft(g)) throw Error('本局补码次数已用完。');
-  g.players[0].stack = g.stakes.startingStack;
+  const amount = heroRebuyAmount(g);
+  g.players[0].stack = amount;
   g.rebuys = (g.rebuys || 0) + 1;
-  g.stats.buyin += g.stakes.startingStack;
+  g.stats.buyin += amount;
   g.refilled = true;
   return g;
 }
@@ -506,7 +518,7 @@ export function startHand(g) {
     if (p.id === 0 && g.refilled)
       log(
         g,
-        `${p.name} 补充 ${compactChips(g.stakes.startingStack)} 虚拟筹码 · 第 ${g.rebuys} 次补码`,
+        `${p.name} 补充 ${compactChips(p.stack)} 虚拟筹码（筹码领先者 CL 的一半）· 第 ${g.rebuys} 次补码`,
         p.id,
         'info',
       );

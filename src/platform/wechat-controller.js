@@ -37,6 +37,7 @@ import {
   canRestartHand,
   applyBotSettings,
   rebuyHero,
+  heroRebuyAmount,
   heroRebuysLeft,
   needsHeroRebuy,
   advanceStreet,
@@ -495,9 +496,13 @@ export function createWechatController({
         (game.over.championId === null || crownedKey === endKey),
       needsRebuy: needsHeroRebuy(game) && !game.over,
       rebuysLeft: heroRebuysLeft(game),
+      rebuyRule:
+        needsHeroRebuy(game) && !game.over
+          ? `补充筹码，补充至 ${format(heroRebuyAmount(game))}，即当前筹码领先者（CL）的一半，剩余 ${heroRebuysLeft(game)} 次`
+          : '',
       rebuying: !!rebuying,
       heroStackFinal: format(hero.stack),
-      rebuyBurst: rebuying ? `+${format(game.stakes.startingStack)}` : '',
+      rebuyBurst: rebuying ? `+${format(rebuying.added)}` : '',
       nextLabel: game.over ? '下一局' : needsHeroRebuy(game) ? '补充筹码' : '下一手',
       premium,
       ceremony: ceremony ? { ...ceremony } : null,
@@ -786,7 +791,7 @@ export function createWechatController({
   function readingHold() {
     return tutorial ? tutorial.readingHold(Date.now()) : 0;
   }
-  function freshHand({ refilled = false } = {}) {
+  function freshHand({ refilled = false, added = 0 } = {}) {
     if (readOnlyAttempt || disposed || tutorial) return;
     playerObservations?.capture(game);
     dealGate.cancel();
@@ -817,7 +822,7 @@ export function createWechatController({
     newSession = false;
     raiseTo = game.bigBlind * 3;
     // The first paint of a refilled hand already starts the count from zero.
-    if (refilled) countRefill();
+    if (refilled) countRefill(added);
     render();
     effect('deal');
     premiumDeal();
@@ -826,9 +831,9 @@ export function createWechatController({
   // Count the refilled stack up from zero while the new hand is played, with
   // the same ten values and timing as Web. The page lays out the final value
   // and draws the count over it, so the row beside it stays still.
-  function countRefill() {
+  function countRefill(added) {
     const values = refillCountValues(game.players[0].stack);
-    rebuying = { shown: 0 };
+    rebuying = { shown: 0, added };
     values.forEach((value, index) =>
       later(
         () => {
@@ -848,7 +853,8 @@ export function createWechatController({
   function refillAndDeal() {
     if (!needsHeroRebuy(game) || !heroRebuysLeft(game)) return false;
     rebuyHero(game);
-    freshHand({ refilled: true });
+    // Half the chip leader, measured before this hand's blinds are posted.
+    freshHand({ refilled: true, added: game.players[0].stack });
     return true;
   }
   function setStakes(value) {

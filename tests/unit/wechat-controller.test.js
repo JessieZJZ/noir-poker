@@ -348,6 +348,11 @@ function originalState(game) {
   delete result.replayAttempt;
   return result;
 }
+// A refill is half the largest stack still in the game, in whole chips.
+function halfLeader(game) {
+  const leader = Math.max(...game.players.filter((p) => p.id && !p.out).map((p) => p.stack));
+  return Math.floor(leader / 2 / game.chipUnit) * game.chipUnit;
+}
 function verifyChips(game, total) {
   const amounts = [
     game.currentBet,
@@ -1003,17 +1008,19 @@ test('WeChat records mark the first post-refill hand and exclude the virtual buy
   controller.show();
   game.players[1].stack += game.players[0].stack;
   game.players[0].stack = 0;
+  const refill = halfLeader(game);
   const hand = game.hand;
   assert.equal(controller.nextHand(), true);
   // The refill counts up first; the next hand is dealt when it finishes.
   while (game.hand === hand) assert.ok(timers.runNext());
   assert.equal(controller.getRecords()[0].attempts.at(-1).refill, true);
-  assert.equal(game.stats.buyin, 10000);
+  assert.equal(game.stats.buyin, 5000 + refill);
   finish(game);
   controller.show();
   const attempt = controller.getRecords()[0].attempts.at(-1);
   assert.equal(attempt.profit, game.payouts[0] - game.players[0].total);
-  verifyChips(game, 7 * 5000);
+  // Six seats' original chips plus the refill.
+  verifyChips(game, 6 * 5000 + refill);
 });
 
 // Settle the current hand with the hero (AA) shoving into seat 1, everyone
@@ -1056,24 +1063,29 @@ test('WeChat refill deals the next hand at once and counts the stack up during i
   game.players[1].stack += game.players[0].stack;
   game.players[0].stack = 0;
   controller.show();
+  const refill = halfLeader(game);
   assert.equal(latest().needsRebuy, true);
   assert.equal(latest().nextLabel, '补充筹码');
   assert.equal(latest().rebuysLeft, 3);
+  assert.equal(
+    latest().rebuyRule,
+    `补充筹码，补充至 ${compactChips(refill)}，即当前筹码领先者（CL）的一半，剩余 3 次`,
+  );
   const hand = game.hand;
   assert.equal(controller.nextHand(), true);
   assert.equal(game.hand, hand + 1, 'The next hand is dealt immediately');
   assert.notEqual(game.phase, 'done');
   assert.equal(latest().rebuying, true);
   assert.equal(latest().heroStack, '0', 'The stack counts up from zero in the new hand');
-  assert.equal(latest().rebuyBurst, '+5K');
+  assert.equal(latest().rebuyBurst, `+${compactChips(refill)}`);
   assert.equal(latest().needsRebuy, false);
   assert.equal(game.rebuys, 1);
   assert.equal(latest().rebuysLeft, 2);
-  assert.equal(game.stats.buyin, 10000);
+  assert.equal(game.stats.buyin, 5000 + refill);
   while (latest().rebuying) assert.ok(timers.runNext());
   const hero = game.players[0];
   assert.equal(latest().heroStack, compactChips(hero.stack));
-  assert.equal(hero.stack + hero.total, 5000);
+  assert.equal(hero.stack + hero.total, refill);
   assert.equal(game.hand, hand + 1, 'Exactly one hand was dealt');
 });
 

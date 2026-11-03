@@ -47,6 +47,7 @@ import {
   applyBotSettings,
   rebuyHero,
   heroRebuysLeft,
+  heroRebuyAmount,
   needsHeroRebuy,
   importPlayerObservations,
   exportPlayerObservations,
@@ -718,11 +719,25 @@ function render() {
         ? `<span>补充筹码</span><span class="rebuy-count">剩 ${heroRebuysLeft(game)} 次</span>`
         : '下一手',
   );
+  // The refill is half the current chip leader, so name the amount and rule.
+  const refillAmount = refill ? format(heroRebuyAmount(game)) : '',
+    refillsLeft = heroRebuysLeft(game);
   setLocalizedAttribute(
     $('#next-button'),
     'aria-label',
-    game.over ? '下一局' : refill ? `补充筹码，剩余 ${heroRebuysLeft(game)} 次` : '下一手',
+    game.over
+      ? '下一局'
+      : refill
+        ? `补充筹码，补充至 ${refillAmount}，即当前筹码领先者（CL）的一半，剩余 ${refillsLeft} 次`
+        : '下一手',
   );
+  if (refill)
+    setLocalizedAttribute(
+      $('#next-button'),
+      'title',
+      `补充至 ${refillAmount}，即当前筹码领先者（CL）的一半，剩余 ${refillsLeft} 次`,
+    );
+  else $('#next-button').removeAttribute('title');
   heroTurnCue.update({
     key: `${game.hand}:${game.replayAttempt || 0}:${game.street}:${game.history?.length || 0}`,
     enabled: canAct,
@@ -1070,13 +1085,15 @@ function nextHand() {
 function refillAndDeal() {
   if (!needsHeroRebuy(game) || !heroRebuysLeft(game)) return false;
   rebuyHero(game);
+  // Half the chip leader, measured before this hand's blinds are posted.
+  const added = game.players[0].stack;
   nextHand();
   rebuying = true;
   const ticket = epoch;
   effects.rebuy(
     $('.hero-identity'),
     $('#hero-stack'),
-    { added: game.stakes.startingStack, target: game.players[0].stack },
+    { added, target: game.players[0].stack },
     () => {
       if (ticket !== epoch) return;
       rebuying = false;

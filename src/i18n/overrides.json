@@ -886,7 +886,13 @@
     "这手{0}的前提是对手的下注范围里保留足够较弱牌或未成牌诈唬，不能只因有听牌就继续。": "{0} here only holds up if the betting range keeps enough weaker hands or unmade bluffs; a draw alone does not justify continuing.",
     "还有 {0} 位对手没弃牌。人越多，越可能有人已经领先或正在听牌；一对这时下注，愿意跟的多是更强的牌或听牌，所以先过牌控制底池。": "{0} opponents are still in the hand. The more players there are, the likelier someone is already ahead or drawing; a one-pair bet here is mostly called by stronger hands or draws, so checking controls the pot.",
     "还有 {0} 位对手没弃牌。人越多，越可能有人已经领先；一对这时下注，愿意跟的多是更强的牌，所以先过牌控制底池。": "{0} opponents are still in the hand. The more players there are, the likelier someone is already ahead; a one-pair bet here is mostly called by stronger hands, so checking controls the pot.",
-    "前一街的进攻者还没行动，{0}没有抢先下注，而是过牌把行动留给进攻者，等对方下注后再决定跟注或加注。": "The previous street's aggressor has not acted yet. Rather than betting first, {0} checks and leaves the action to that player, then decides whether to call or raise after a bet."
+    "前一街的进攻者还没行动，{0}没有抢先下注，而是过牌把行动留给进攻者，等对方下注后再决定跟注或加注。": "The previous street's aggressor has not acted yet. Rather than betting first, {0} checks and leaves the action to that player, then decides whether to call or raise after a bet.",
+    "CL（筹码领先者）": "CL (chip leader)",
+    "chip leader 的缩写，指当前仍在桌上、筹码最多的玩家。CL 会随每手结算变化；你输光后补码，补到 CL 筹码的一半。": "Short for chip leader: the player still at the table with the most chips. The CL can change after every hand; when you lose every chip, a refill brings you to half of the CL’s stack.",
+    "{0} 补充 {1} 虚拟筹码（筹码领先者 CL 的一半）· 第 {2} 次补码": "{0} refills {1} virtual chips (half the chip leader, CL) · refill {2}",
+    "你输光全部筹码后，“下一手”变为“补充筹码”，每局最多补 3 次。每次补到当前筹码领先者（CL）筹码的一半，按整枚筹码向下取整，计入本局买入、不算盈利。电脑输光即出局，不能补码；次数用完后输光，本局结束。": "When you lose every chip, “Next hand” becomes “Refill chips”, up to 3 times per game. Each refill brings you to half of the current chip leader’s (CL) stack, rounded down to whole chips. It counts toward this game’s buy-in, not as profit. A bot that loses every chip is out and cannot refill; if you bust after your last refill, the game ends.",
+    "补充筹码，补充至 {0}，即当前筹码领先者（CL）的一半，剩余 {1} 次": "Refill chips to {0}, half of the current chip leader (CL), {1} left",
+    "补充至 {0}，即当前筹码领先者（CL）的一半，剩余 {1} 次": "Refill to {0}, half of the current chip leader (CL), {1} left"
   },
   "zh-TW": {
     "设置": "設定",
@@ -1659,7 +1665,14 @@
     "这手{0}的前提是对手的下注范围里保留足够较弱牌或未成牌诈唬，不能只因有听牌就继续。": "這手{0}的前提是對手的下注範圍裡保留足夠較弱牌或未成牌詐唬，不能只因有聽牌就繼續。",
     "还有 {0} 位对手没弃牌。人越多，越可能有人已经领先或正在听牌；一对这时下注，愿意跟的多是更强的牌或听牌，所以先过牌控制底池。": "還有 {0} 位對手沒棄牌。人越多，越可能有人已經領先或正在聽牌；一對這時下注，願意跟的多是更強的牌或聽牌，所以先過牌控制底池。",
     "还有 {0} 位对手没弃牌。人越多，越可能有人已经领先；一对这时下注，愿意跟的多是更强的牌，所以先过牌控制底池。": "還有 {0} 位對手沒棄牌。人越多，越可能有人已經領先；一對這時下注，願意跟的多是更強的牌，所以先過牌控制底池。",
-    "前一街的进攻者还没行动，{0}没有抢先下注，而是过牌把行动留给进攻者，等对方下注后再决定跟注或加注。": "前一街的進攻者還沒行動，{0}沒有搶先下注，而是過牌把行動留給進攻者，等對方下注後再決定跟注或加注。"
+    "前一街的进攻者还没行动，{0}没有抢先下注，而是过牌把行动留给进攻者，等对方下注后再决定跟注或加注。": "前一街的進攻者還沒行動，{0}沒有搶先下注，而是過牌把行動留給進攻者，等對方下注後再決定跟注或加注。",
+    "CL（筹码领先者）": "CL（籌碼領先者）",
+    "chip leader 的缩写，指当前仍在桌上、筹码最多的玩家。CL 会随每手结算变化；你输光后补码，补到 CL 筹码的一半。": "chip leader 的縮寫，指目前仍在桌上、籌碼最多的玩家。CL 會隨每手結算變化；你輸光後補碼，補到 CL 籌碼的一半。",
+    "{0} 补充 {1} 虚拟筹码（筹码领先者 CL 的一半）· 第 {2} 次补码": "{0} 補充 {1} 虛擬籌碼（籌碼領先者 CL 的一半）· 第 {2} 次補碼",
+    "你输光全部筹码后，“下一手”变为“补充筹码”，每局最多补 3 次。每次补到当前筹码领先者（CL）筹码的一半，按整枚筹码向下取整，计入本局买入、不算盈利。电脑输光即出局，不能补码；次数用完后输光，本局结束。": "你輸光全部籌碼後，「下一手」變為「補充籌碼」，每局最多補 3 次。每次補到目前籌碼領先者（CL）籌碼的一半，按整枚籌碼向下取整，計入本局買入、不算盈利。電腦輸光即出局，不能補碼；次數用完後輸光，本局結束。",
+    "补充筹码，补充至 {0}，即当前筹码领先者（CL）的一半，剩余 {1} 次": "補充籌碼，補充至 {0}，即目前籌碼領先者（CL）的一半，剩餘 {1} 次",
+    "补充至 {0}，即当前筹码领先者（CL）的一半，剩余 {1} 次": "補充至 {0}，即目前籌碼領先者（CL）的一半，剩餘 {1} 次",
+    "补充筹码": "補充籌碼"
   },
   "ja": {
     "设置": "設定",
@@ -2435,7 +2448,14 @@
     "这手{0}的前提是对手的下注范围里保留足够较弱牌或未成牌诈唬，不能只因有听牌就继续。": "このハンドで{0}するには、相手のベットレンジに十分な弱いハンドや未完成のブラフが残っていることが前提で、ドローだけでは続行できません。",
     "还有 {0} 位对手没弃牌。人越多，越可能有人已经领先或正在听牌；一对这时下注，愿意跟的多是更强的牌或听牌，所以先过牌控制底池。": "まだ {0} 人の相手が降りていない。人数が多いほど、すでに誰かが先行しているか、ドローを持っている可能性が高い。ここでワンペアでベットしても、コールしてくるのは主に強い手かドローなので、チェックでポットを抑える。",
     "还有 {0} 位对手没弃牌。人越多，越可能有人已经领先；一对这时下注，愿意跟的多是更强的牌，所以先过牌控制底池。": "まだ {0} 人の相手が降りていない。人数が多いほど、すでに誰かが先行している可能性が高い。ここでワンペアでベットしても、コールしてくるのは主に強い手なので、チェックでポットを抑える。",
-    "前一街的进攻者还没行动，{0}没有抢先下注，而是过牌把行动留给进攻者，等对方下注后再决定跟注或加注。": "前のストリートのアグレッサーはまだアクションしていない。{0}は先にベットせず、チェックしてアクションをアグレッサーに回し、ベットを受けてからコールかレイズかを決める。"
+    "前一街的进攻者还没行动，{0}没有抢先下注，而是过牌把行动留给进攻者，等对方下注后再决定跟注或加注。": "前のストリートのアグレッサーはまだアクションしていない。{0}は先にベットせず、チェックしてアクションをアグレッサーに回し、ベットを受けてからコールかレイズかを決める。",
+    "CL（筹码领先者）": "CL（チップリーダー）",
+    "chip leader 的缩写，指当前仍在桌上、筹码最多的玩家。CL 会随每手结算变化；你输光后补码，补到 CL 筹码的一半。": "chip leader の略で、まだ卓に残っている中で最もチップが多いプレイヤー。CL は毎ハンドの精算で変わる。チップを全部失って補充すると、CL のチップの半分になる。",
+    "{0} 补充 {1} 虚拟筹码（筹码领先者 CL 的一半）· 第 {2} 次补码": "{0} が仮想チップ {1} を補充（チップリーダー CL の半分）· {2} 回目",
+    "你输光全部筹码后，“下一手”变为“补充筹码”，每局最多补 3 次。每次补到当前筹码领先者（CL）筹码的一半，按整枚筹码向下取整，计入本局买入、不算盈利。电脑输光即出局，不能补码；次数用完后输光，本局结束。": "チップを全部失うと「次のハンド」が「チップを補充」に変わり、1 ゲームに最大 3 回補充できる。毎回、現在のチップリーダー（CL）のチップの半分まで補充し、チップ単位で切り捨てる。このゲームのバイインに含まれ、利益には数えない。ボットはチップを失うと退場し、補充できない。補充回数を使い切った後にチップを失うと、ゲームは終了する。",
+    "补充筹码，补充至 {0}，即当前筹码领先者（CL）的一半，剩余 {1} 次": "チップを補充：{0} まで、現在のチップリーダー（CL）の半分、残り {1} 回",
+    "补充至 {0}，即当前筹码领先者（CL）的一半，剩余 {1} 次": "{0} まで補充、現在のチップリーダー（CL）の半分、残り {1} 回",
+    "补充筹码": "チップを補充"
   },
   "ko": {
     "设置": "설정",
@@ -3211,7 +3231,14 @@
     "这手{0}的前提是对手的下注范围里保留足够较弱牌或未成牌诈唬，不能只因有听牌就继续。": "이 핸드에서 {0}하려면 상대 베팅 범위에 충분한 약한 패나 미완성 블러프가 남아 있어야 하며, 드로가 있다는 이유만으로 계속할 수는 없습니다.",
     "还有 {0} 位对手没弃牌。人越多，越可能有人已经领先或正在听牌；一对这时下注，愿意跟的多是更强的牌或听牌，所以先过牌控制底池。": "아직 {0}명의 상대가 폴드하지 않았다. 인원이 많을수록 누군가 이미 앞서 있거나 드로를 들고 있을 가능성이 크다. 여기서 원 페어로 베팅하면 콜하는 쪽은 대부분 더 강한 핸드나 드로라서, 체크로 팟을 조절한다.",
     "还有 {0} 位对手没弃牌。人越多，越可能有人已经领先；一对这时下注，愿意跟的多是更强的牌，所以先过牌控制底池。": "아직 {0}명의 상대가 폴드하지 않았다. 인원이 많을수록 누군가 이미 앞서 있을 가능성이 크다. 여기서 원 페어로 베팅하면 콜하는 쪽은 대부분 더 강한 핸드라서, 체크로 팟을 조절한다.",
-    "前一街的进攻者还没行动，{0}没有抢先下注，而是过牌把行动留给进攻者，等对方下注后再决定跟注或加注。": "이전 스트리트의 공격자는 아직 행동하지 않았다. {0}은 먼저 베팅하지 않고 체크로 공격자에게 행동을 넘긴 뒤, 베팅이 나오면 콜할지 레이즈할지 정한다."
+    "前一街的进攻者还没行动，{0}没有抢先下注，而是过牌把行动留给进攻者，等对方下注后再决定跟注或加注。": "이전 스트리트의 공격자는 아직 행동하지 않았다. {0}은 먼저 베팅하지 않고 체크로 공격자에게 행동을 넘긴 뒤, 베팅이 나오면 콜할지 레이즈할지 정한다.",
+    "CL（筹码领先者）": "CL(칩 리더)",
+    "chip leader 的缩写，指当前仍在桌上、筹码最多的玩家。CL 会随每手结算变化；你输光后补码，补到 CL 筹码的一半。": "chip leader의 약자로, 아직 테이블에 남은 플레이어 중 칩이 가장 많은 사람이다. CL은 핸드가 정산될 때마다 바뀔 수 있다. 칩을 모두 잃고 보충하면 CL 칩의 절반이 된다.",
+    "{0} 补充 {1} 虚拟筹码（筹码领先者 CL 的一半）· 第 {2} 次补码": "{0} 가상 칩 {1} 보충(칩 리더 CL의 절반) · {2}번째 보충",
+    "你输光全部筹码后，“下一手”变为“补充筹码”，每局最多补 3 次。每次补到当前筹码领先者（CL）筹码的一半，按整枚筹码向下取整，计入本局买入、不算盈利。电脑输光即出局，不能补码；次数用完后输光，本局结束。": "칩을 모두 잃으면 “다음 핸드”가 “칩 보충”으로 바뀌며, 한 게임에 최대 3번 보충할 수 있다. 매번 현재 칩 리더(CL) 칩의 절반까지 보충하고, 칩 단위로 내림한다. 이 게임의 바이인에 포함되며 수익으로 계산하지 않는다. 봇은 칩을 모두 잃으면 탈락하고 보충할 수 없다. 보충 횟수를 다 쓴 뒤 칩을 모두 잃으면 게임이 끝난다.",
+    "补充筹码，补充至 {0}，即当前筹码领先者（CL）的一半，剩余 {1} 次": "칩 보충: {0}까지, 현재 칩 리더(CL)의 절반, {1}회 남음",
+    "补充至 {0}，即当前筹码领先者（CL）的一半，剩余 {1} 次": "{0}까지 보충, 현재 칩 리더(CL)의 절반, {1}회 남음",
+    "补充筹码": "칩 보충"
   },
   "es": {
     "设置": "Ajustes",
@@ -3987,7 +4014,14 @@
     "这手{0}的前提是对手的下注范围里保留足够较弱牌或未成牌诈唬，不能只因有听牌就继续。": "{0} aquí solo se sostiene si el rango de apuestas conserva suficientes manos más débiles o faroles no completados; tener un proyecto no basta para continuar.",
     "还有 {0} 位对手没弃牌。人越多，越可能有人已经领先或正在听牌；一对这时下注，愿意跟的多是更强的牌或听牌，所以先过牌控制底池。": "Aún quedan {0} rivales sin retirarse. Cuantos más jugadores, más probable es que alguien ya vaya por delante o tenga un proyecto; una apuesta con una pareja aquí la pagan sobre todo manos más fuertes o proyectos, así que pasar sirve para controlar el bote.",
     "还有 {0} 位对手没弃牌。人越多，越可能有人已经领先；一对这时下注，愿意跟的多是更强的牌，所以先过牌控制底池。": "Aún quedan {0} rivales sin retirarse. Cuantos más jugadores, más probable es que alguien ya vaya por delante; una apuesta con una pareja aquí la pagan sobre todo manos más fuertes, así que pasar sirve para controlar el bote.",
-    "前一街的进攻者还没行动，{0}没有抢先下注，而是过牌把行动留给进攻者，等对方下注后再决定跟注或加注。": "El agresor de la calle anterior todavía no ha actuado. En lugar de apostar primero, {0} pasa y le deja la acción, y decide si iguala o sube cuando llegue la apuesta."
+    "前一街的进攻者还没行动，{0}没有抢先下注，而是过牌把行动留给进攻者，等对方下注后再决定跟注或加注。": "El agresor de la calle anterior todavía no ha actuado. En lugar de apostar primero, {0} pasa y le deja la acción, y decide si iguala o sube cuando llegue la apuesta.",
+    "CL（筹码领先者）": "CL (chip leader)",
+    "chip leader 的缩写，指当前仍在桌上、筹码最多的玩家。CL 会随每手结算变化；你输光后补码，补到 CL 筹码的一半。": "Abreviatura de chip leader: el jugador que sigue en la mesa con más fichas. El CL puede cambiar tras cada mano; si pierdes todas tus fichas, la recarga te deja con la mitad de las fichas del CL.",
+    "{0} 补充 {1} 虚拟筹码（筹码领先者 CL 的一半）· 第 {2} 次补码": "{0} recarga {1} fichas virtuales (la mitad del chip leader, CL) · recarga {2}",
+    "你输光全部筹码后，“下一手”变为“补充筹码”，每局最多补 3 次。每次补到当前筹码领先者（CL）筹码的一半，按整枚筹码向下取整，计入本局买入、不算盈利。电脑输光即出局，不能补码；次数用完后输光，本局结束。": "Si pierdes todas tus fichas, “Siguiente mano” pasa a ser “Recargar fichas”, hasta 3 veces por partida. Cada recarga te lleva a la mitad de las fichas del chip leader actual (CL), redondeada hacia abajo a fichas enteras. Cuenta como compra de esta partida, no como ganancia. Un bot que pierde todas sus fichas queda eliminado y no puede recargar; si te quedas sin fichas tras tu última recarga, la partida termina.",
+    "补充筹码，补充至 {0}，即当前筹码领先者（CL）的一半，剩余 {1} 次": "Recargar fichas hasta {0}, la mitad del chip leader actual (CL), quedan {1}",
+    "补充至 {0}，即当前筹码领先者（CL）的一半，剩余 {1} 次": "Recargar hasta {0}, la mitad del chip leader actual (CL), quedan {1}",
+    "补充筹码": "Recargar fichas"
   },
   "it": {
     "设置": "Impostazioni",
@@ -4764,7 +4798,14 @@
     "这手{0}的前提是对手的下注范围里保留足够较弱牌或未成牌诈唬，不能只因有听牌就继续。": "{0} qui regge solo se il range di puntata conserva abbastanza mani più deboli o bluff senza mano fatta; un progetto da solo non basta per continuare.",
     "还有 {0} 位对手没弃牌。人越多，越可能有人已经领先或正在听牌；一对这时下注，愿意跟的多是更强的牌或听牌，所以先过牌控制底池。": "Restano ancora {0} avversari in mano. Più giocatori ci sono, più è probabile che qualcuno sia già avanti o abbia un progetto; una puntata con una coppia qui viene pagata soprattutto da mani più forti o progetti, quindi il check serve a controllare il piatto.",
     "还有 {0} 位对手没弃牌。人越多，越可能有人已经领先；一对这时下注，愿意跟的多是更强的牌，所以先过牌控制底池。": "Restano ancora {0} avversari in mano. Più giocatori ci sono, più è probabile che qualcuno sia già avanti; una puntata con una coppia qui viene pagata soprattutto da mani più forti, quindi il check serve a controllare il piatto.",
-    "前一街的进攻者还没行动，{0}没有抢先下注，而是过牌把行动留给进攻者，等对方下注后再决定跟注或加注。": "L'aggressore della strada precedente non ha ancora agito. Invece di puntare per primo, {0} fa check e gli lascia l'azione, poi decide se chiamare o rilanciare dopo la puntata."
+    "前一街的进攻者还没行动，{0}没有抢先下注，而是过牌把行动留给进攻者，等对方下注后再决定跟注或加注。": "L'aggressore della strada precedente non ha ancora agito. Invece di puntare per primo, {0} fa check e gli lascia l'azione, poi decide se chiamare o rilanciare dopo la puntata.",
+    "CL（筹码领先者）": "CL (chip leader)",
+    "chip leader 的缩写，指当前仍在桌上、筹码最多的玩家。CL 会随每手结算变化；你输光后补码，补到 CL 筹码的一半。": "Abbreviazione di chip leader: il giocatore ancora al tavolo con più fiches. Il CL può cambiare dopo ogni mano; se perdi tutte le fiches, la ricarica ti porta a metà delle fiches del CL.",
+    "{0} 补充 {1} 虚拟筹码（筹码领先者 CL 的一半）· 第 {2} 次补码": "{0} ricarica {1} fiches virtuali (metà del chip leader, CL) · ricarica {2}",
+    "你输光全部筹码后，“下一手”变为“补充筹码”，每局最多补 3 次。每次补到当前筹码领先者（CL）筹码的一半，按整枚筹码向下取整，计入本局买入、不算盈利。电脑输光即出局，不能补码；次数用完后输光，本局结束。": "Se perdi tutte le fiches, “Mano successiva” diventa “Ricarica fiches”, fino a 3 volte per partita. Ogni ricarica ti porta a metà delle fiches del chip leader attuale (CL), arrotondata per difetto a fiches intere. Conta nel buy-in di questa partita, non come profitto. Un bot che perde tutte le fiches è eliminato e non può ricaricare; se resti senza fiches dopo l’ultima ricarica, la partita finisce.",
+    "补充筹码，补充至 {0}，即当前筹码领先者（CL）的一半，剩余 {1} 次": "Ricarica fiches fino a {0}, metà del chip leader attuale (CL), ne restano {1}",
+    "补充至 {0}，即当前筹码领先者（CL）的一半，剩余 {1} 次": "Ricarica fino a {0}, metà del chip leader attuale (CL), ne restano {1}",
+    "补充筹码": "Ricarica fiches"
   },
   "pt": {
     "设置": "Definições",
@@ -5539,7 +5580,14 @@
     "这手{0}的前提是对手的下注范围里保留足够较弱牌或未成牌诈唬，不能只因有听牌就继续。": "{0} aqui só se sustenta se o range de aposta mantiver mãos mais fracas ou blefes sem mão formada em quantidade suficiente; ter um draw não basta para continuar.",
     "还有 {0} 位对手没弃牌。人越多，越可能有人已经领先或正在听牌；一对这时下注，愿意跟的多是更强的牌或听牌，所以先过牌控制底池。": "Ainda há {0} adversários na mão. Quanto mais jogadores, maior a chance de alguém já estar na frente ou ter um projeto; uma aposta com um par aqui é paga principalmente por mãos mais fortes ou projetos, então o check serve para controlar o pote.",
     "还有 {0} 位对手没弃牌。人越多，越可能有人已经领先；一对这时下注，愿意跟的多是更强的牌，所以先过牌控制底池。": "Ainda há {0} adversários na mão. Quanto mais jogadores, maior a chance de alguém já estar na frente; uma aposta com um par aqui é paga principalmente por mãos mais fortes, então o check serve para controlar o pote.",
-    "前一街的进攻者还没行动，{0}没有抢先下注，而是过牌把行动留给进攻者，等对方下注后再决定跟注或加注。": "O agressor da rua anterior ainda não agiu. Em vez de apostar primeiro, {0} dá check e deixa a ação para ele, e decide se paga ou aumenta depois da aposta."
+    "前一街的进攻者还没行动，{0}没有抢先下注，而是过牌把行动留给进攻者，等对方下注后再决定跟注或加注。": "O agressor da rua anterior ainda não agiu. Em vez de apostar primeiro, {0} dá check e deixa a ação para ele, e decide se paga ou aumenta depois da aposta.",
+    "CL（筹码领先者）": "CL (chip leader)",
+    "chip leader 的缩写，指当前仍在桌上、筹码最多的玩家。CL 会随每手结算变化；你输光后补码，补到 CL 筹码的一半。": "Abreviação de chip leader: o jogador ainda na mesa com mais fichas. O CL pode mudar após cada mão; se você perder todas as fichas, a reposição leva você à metade das fichas do CL.",
+    "{0} 补充 {1} 虚拟筹码（筹码领先者 CL 的一半）· 第 {2} 次补码": "{0} repõe {1} fichas virtuais (metade do chip leader, CL) · reposição {2}",
+    "你输光全部筹码后，“下一手”变为“补充筹码”，每局最多补 3 次。每次补到当前筹码领先者（CL）筹码的一半，按整枚筹码向下取整，计入本局买入、不算盈利。电脑输光即出局，不能补码；次数用完后输光，本局结束。": "Se você perder todas as fichas, “Próxima mão” vira “Repor fichas”, até 3 vezes por partida. Cada reposição leva você à metade das fichas do chip leader atual (CL), arredondada para baixo em fichas inteiras. Conta no buy-in desta partida, não como lucro. Um bot que perde todas as fichas é eliminado e não pode repor; se você zerar depois da última reposição, a partida termina.",
+    "补充筹码，补充至 {0}，即当前筹码领先者（CL）的一半，剩余 {1} 次": "Repor fichas até {0}, metade do chip leader atual (CL), restam {1}",
+    "补充至 {0}，即当前筹码领先者（CL）的一半，剩余 {1} 次": "Repor até {0}, metade do chip leader atual (CL), restam {1}",
+    "补充筹码": "Repor fichas"
   },
   "de": {
     "设置": "Einstellungen",
@@ -6315,7 +6363,14 @@
     "这手{0}的前提是对手的下注范围里保留足够较弱牌或未成牌诈唬，不能只因有听牌就继续。": "{0} hält hier nur, wenn die Setzrange genügend schwächere Hände oder nicht getroffene Bluffs enthält; ein Draw allein rechtfertigt kein Weiterspielen.",
     "还有 {0} 位对手没弃牌。人越多，越可能有人已经领先或正在听牌；一对这时下注，愿意跟的多是更强的牌或听牌，所以先过牌控制底池。": "Noch {0} Gegner sind in der Hand. Je mehr Spieler, desto wahrscheinlicher liegt schon jemand vorn oder hat einen Draw; eine Bet mit einem Paar wird hier meist von stärkeren Händen oder Draws gecallt, daher hält ein Check den Pot klein.",
     "还有 {0} 位对手没弃牌。人越多，越可能有人已经领先；一对这时下注，愿意跟的多是更强的牌，所以先过牌控制底池。": "Noch {0} Gegner sind in der Hand. Je mehr Spieler, desto wahrscheinlicher liegt schon jemand vorn; eine Bet mit einem Paar wird hier meist von stärkeren Händen gecallt, daher hält ein Check den Pot klein.",
-    "前一街的进攻者还没行动，{0}没有抢先下注，而是过牌把行动留给进攻者，等对方下注后再决定跟注或加注。": "Der Aggressor der vorigen Straße hat noch nicht gehandelt. Statt zuerst zu setzen, checkt {0} zu ihm und entscheidet nach einer Bet, ob gecallt oder geraist wird."
+    "前一街的进攻者还没行动，{0}没有抢先下注，而是过牌把行动留给进攻者，等对方下注后再决定跟注或加注。": "Der Aggressor der vorigen Straße hat noch nicht gehandelt. Statt zuerst zu setzen, checkt {0} zu ihm und entscheidet nach einer Bet, ob gecallt oder geraist wird.",
+    "CL（筹码领先者）": "CL (Chip Leader)",
+    "chip leader 的缩写，指当前仍在桌上、筹码最多的玩家。CL 会随每手结算变化；你输光后补码，补到 CL 筹码的一半。": "Kurz für Chip Leader: der Spieler am Tisch mit den meisten Chips. Der CL kann sich nach jeder Hand ändern; verlierst du alle Chips, füllt die Auffüllung dich auf die Hälfte der Chips des CL auf.",
+    "{0} 补充 {1} 虚拟筹码（筹码领先者 CL 的一半）· 第 {2} 次补码": "{0} füllt {1} virtuelle Chips auf (Hälfte des Chip Leaders, CL) · Auffüllung {2}",
+    "你输光全部筹码后，“下一手”变为“补充筹码”，每局最多补 3 次。每次补到当前筹码领先者（CL）筹码的一半，按整枚筹码向下取整，计入本局买入、不算盈利。电脑输光即出局，不能补码；次数用完后输光，本局结束。": "Verlierst du alle Chips, wird „Nächste Hand“ zu „Chips auffüllen“, bis zu 3-mal pro Partie. Jede Auffüllung bringt dich auf die Hälfte der Chips des aktuellen Chip Leaders (CL), abgerundet auf ganze Chips. Sie zählt zum Buy-in dieser Partie, nicht als Gewinn. Ein Bot ohne Chips scheidet aus und kann nicht auffüllen; verlierst du nach der letzten Auffüllung alles, endet die Partie.",
+    "补充筹码，补充至 {0}，即当前筹码领先者（CL）的一半，剩余 {1} 次": "Chips auffüllen auf {0}, die Hälfte des aktuellen Chip Leaders (CL), noch {1}",
+    "补充至 {0}，即当前筹码领先者（CL）的一半，剩余 {1} 次": "Auffüllen auf {0}, die Hälfte des aktuellen Chip Leaders (CL), noch {1}",
+    "补充筹码": "Chips auffüllen"
   },
   "fr": {
     "设置": "Paramètres",
@@ -7092,7 +7147,14 @@
     "这手{0}的前提是对手的下注范围里保留足够较弱牌或未成牌诈唬，不能只因有听牌就继续。": "{0} ici ne tient que si le range de mise garde assez de mains plus faibles ou de bluffs sans main faite ; un tirage seul ne justifie pas de continuer.",
     "还有 {0} 位对手没弃牌。人越多，越可能有人已经领先或正在听牌；一对这时下注，愿意跟的多是更强的牌或听牌，所以先过牌控制底池。": "Il reste encore {0} adversaires dans le coup. Plus il y a de joueurs, plus il est probable que quelqu’un soit déjà devant ou ait un tirage ; une mise avec une paire est ici surtout payée par des mains plus fortes ou des tirages, donc faire parole permet de contrôler le pot.",
     "还有 {0} 位对手没弃牌。人越多，越可能有人已经领先；一对这时下注，愿意跟的多是更强的牌，所以先过牌控制底池。": "Il reste encore {0} adversaires dans le coup. Plus il y a de joueurs, plus il est probable que quelqu’un soit déjà devant ; une mise avec une paire est ici surtout payée par des mains plus fortes, donc faire parole permet de contrôler le pot.",
-    "前一街的进攻者还没行动，{0}没有抢先下注，而是过牌把行动留给进攻者，等对方下注后再决定跟注或加注。": "L’agresseur de la rue précédente n’a pas encore agi. Plutôt que de miser en premier, {0} fait parole pour lui laisser l’action, puis décide de suivre ou de relancer après sa mise."
+    "前一街的进攻者还没行动，{0}没有抢先下注，而是过牌把行动留给进攻者，等对方下注后再决定跟注或加注。": "L’agresseur de la rue précédente n’a pas encore agi. Plutôt que de miser en premier, {0} fait parole pour lui laisser l’action, puis décide de suivre ou de relancer après sa mise.",
+    "CL（筹码领先者）": "CL (chip leader)",
+    "chip leader 的缩写，指当前仍在桌上、筹码最多的玩家。CL 会随每手结算变化；你输光后补码，补到 CL 筹码的一半。": "Abréviation de chip leader : le joueur encore à la table qui a le plus de jetons. Le CL peut changer après chaque main ; si vous perdez tous vos jetons, la recharge vous ramène à la moitié des jetons du CL.",
+    "{0} 补充 {1} 虚拟筹码（筹码领先者 CL 的一半）· 第 {2} 次补码": "{0} recharge {1} jetons virtuels (la moitié du chip leader, CL) · recharge {2}",
+    "你输光全部筹码后，“下一手”变为“补充筹码”，每局最多补 3 次。每次补到当前筹码领先者（CL）筹码的一半，按整枚筹码向下取整，计入本局买入、不算盈利。电脑输光即出局，不能补码；次数用完后输光，本局结束。": "Si vous perdez tous vos jetons, « Main suivante » devient « Recharger les jetons », jusqu’à 3 fois par partie. Chaque recharge vous ramène à la moitié des jetons du chip leader actuel (CL), arrondie à l’inférieur en jetons entiers. Elle compte dans le buy-in de cette partie, pas comme un gain. Un bot qui perd tous ses jetons est éliminé et ne peut pas recharger ; si vous êtes à court après votre dernière recharge, la partie se termine.",
+    "补充筹码，补充至 {0}，即当前筹码领先者（CL）的一半，剩余 {1} 次": "Recharger les jetons jusqu’à {0}, la moitié du chip leader actuel (CL), reste {1}",
+    "补充至 {0}，即当前筹码领先者（CL）的一半，剩余 {1} 次": "Recharger jusqu’à {0}, la moitié du chip leader actuel (CL), reste {1}",
+    "补充筹码": "Recharger les jetons"
   },
   "ru": {
     "设置": "Настройки",
@@ -7867,6 +7929,13 @@
     "这手{0}的前提是对手的下注范围里保留足够较弱牌或未成牌诈唬，不能只因有听牌就继续。": "{0} здесь оправдано, только если в диапазоне ставки остаётся достаточно более слабых рук или блефов без готовой руки; одно дро не оправдывает продолжение.",
     "还有 {0} 位对手没弃牌。人越多，越可能有人已经领先或正在听牌；一对这时下注，愿意跟的多是更强的牌或听牌，所以先过牌控制底池。": "Соперников, ещё не сбросивших карты: {0}. Чем больше игроков, тем вероятнее, что кто-то уже впереди или тянет дро; ставку с одной парой здесь в основном оплатят более сильные руки или дро, поэтому чек помогает контролировать банк.",
     "还有 {0} 位对手没弃牌。人越多，越可能有人已经领先；一对这时下注，愿意跟的多是更强的牌，所以先过牌控制底池。": "Соперников, ещё не сбросивших карты: {0}. Чем больше игроков, тем вероятнее, что кто-то уже впереди; ставку с одной парой здесь в основном оплатят более сильные руки, поэтому чек помогает контролировать банк.",
-    "前一街的进攻者还没行动，{0}没有抢先下注，而是过牌把行动留给进攻者，等对方下注后再决定跟注或加注。": "Агрессор предыдущей улицы ещё не действовал. Вместо того чтобы ставить первым, {0} чекает и оставляет ход агрессору, а после ставки решает, коллировать или рейзить."
+    "前一街的进攻者还没行动，{0}没有抢先下注，而是过牌把行动留给进攻者，等对方下注后再决定跟注或加注。": "Агрессор предыдущей улицы ещё не действовал. Вместо того чтобы ставить первым, {0} чекает и оставляет ход агрессору, а после ставки решает, коллировать или рейзить.",
+    "CL（筹码领先者）": "CL (чип-лидер)",
+    "chip leader 的缩写，指当前仍在桌上、筹码最多的玩家。CL 会随每手结算变化；你输光后补码，补到 CL 筹码的一半。": "Сокращение от chip leader: игрок, оставшийся за столом с наибольшим количеством фишек. CL может меняться после каждой раздачи; если вы потеряли все фишки, пополнение даёт половину стека CL.",
+    "{0} 补充 {1} 虚拟筹码（筹码领先者 CL 的一半）· 第 {2} 次补码": "{0} пополняет {1} виртуальных фишек (половина стека чип-лидера, CL) · пополнение {2}",
+    "你输光全部筹码后，“下一手”变为“补充筹码”，每局最多补 3 次。每次补到当前筹码领先者（CL）筹码的一半，按整枚筹码向下取整，计入本局买入、不算盈利。电脑输光即出局，不能补码；次数用完后输光，本局结束。": "Если вы потеряли все фишки, «Следующая раздача» превращается в «Пополнить фишки» — до 3 раз за игру. Каждое пополнение доводит ваш стек до половины стека текущего чип-лидера (CL) с округлением вниз до целых фишек. Оно входит в бай-ин этой игры и не считается прибылью. Бот, потерявший все фишки, выбывает и не может пополниться; если вы проиграете всё после последнего пополнения, игра закончится.",
+    "补充筹码，补充至 {0}，即当前筹码领先者（CL）的一半，剩余 {1} 次": "Пополнить фишки до {0} — половины стека текущего чип-лидера (CL), осталось: {1}",
+    "补充至 {0}，即当前筹码领先者（CL）的一半，剩余 {1} 次": "Пополнить до {0} — половины стека текущего чип-лидера (CL), осталось: {1}",
+    "补充筹码": "Пополнить фишки"
   }
 }

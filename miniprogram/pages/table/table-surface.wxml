@@ -379,6 +379,7 @@
               hover-class="none"
               class="primary {{needsRebuy ? 'rebuy-button' : ''}}"
               disabled="{{rebuying}}"
+              aria-label="{{needsRebuy ? rebuyRule : ''}}"
               bindtap="nextHand"
             >
               {{nextLabel}}<text wx:if="{{needsRebuy}}" class="rebuy-count"

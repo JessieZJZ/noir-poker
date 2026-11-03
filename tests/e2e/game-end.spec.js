@@ -265,6 +265,19 @@ test('busting with refills left shows the refill count, deals at once and counts
   const next = page.locator('#next-button');
   await expect(next).toContainText('补充筹码');
   await expect(next.locator('.rebuy-count')).toHaveText('剩 2 次');
+  // The refill is half the chip leader still at the table, named on the button.
+  const leader = Math.max(
+      ...view.players
+        .slice(1)
+        .filter((p) => !p.out)
+        .map((p) => p.stack),
+    ),
+    refill = Math.floor(leader / 2 / view.chipUnit) * view.chipUnit;
+  expect(refill).toBeGreaterThan(0);
+  const rule = await next.getAttribute('title');
+  expect(rule).toMatch(/^补充至 [^，]+，即当前筹码领先者（CL）的一半，剩余 2 次$/);
+  await expect(next).toHaveAttribute('aria-label', `补充筹码，${rule}`);
+  const amount = rule.match(/^补充至 ([^，]+)，/)[1];
   const hand = view.hand;
   await next.click();
   // The next hand is dealt immediately; the refill effect plays during it.
@@ -274,7 +287,10 @@ test('busting with refills left shows the refill count, deals at once and counts
   expect(dealt.rebuysLeft).toBe(1);
   expect(dealt.needsRebuy).toBe(false);
   await expect(next).toBeHidden();
-  await expect(page.locator('.rebuy-burst')).toHaveText('+20K');
+  await expect(page.locator('.rebuy-burst')).toHaveText(`+${amount}`);
+  // Blinds may already be posted; the hand's starting stack is the refill.
+  const refilled = (await state(page)).players[0];
+  expect(refilled.stack + refilled.bet).toBe(refill);
   await expect(page.locator('#hero-stack')).toHaveClass(/stack-refill/);
   // The name row stays still while the stack counts up.
   const samples = [];
