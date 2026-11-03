@@ -106,6 +106,7 @@
             <button id="guide-menu-item" role="menuitem">玩法指南</button>
             <button id="tutorial-menu-item" role="menuitem">新手引导</button>
             <button id="records-menu-item" role="menuitem">对局记录</button>
+            <button id="win-rate-menu-item" role="menuitem">胜率计算器</button>
           </div>
         </div>
         <button
@@ -1237,6 +1238,36 @@
           </div>
         </section>
         <button class="primary-button close-dialog">回到牌桌</button>
+      </div>
+    </dialog>
+    <dialog id="win-rate-dialog" aria-labelledby="win-rate-title">
+      <div class="dialog-header win-rate-header">
+        <h2 id="win-rate-title">胜率计算器</h2>
+        <button class="icon-button close-dialog" aria-label="关闭对话框">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" /></svg>
+        </button>
+      </div>
+      <div class="win-rate-body">
+        <section class="win-rate-felt" aria-label="公共牌">
+          <div id="win-rate-board"></div>
+        </section>
+        <section class="win-rate-seats" aria-label="玩家底牌">
+          <div id="win-rate-players"></div>
+        </section>
+        <button id="win-rate-add" class="win-rate-add" type="button">添加对手</button>
+        <p id="win-rate-status" role="status"></p>
+        <p id="win-rate-outs-note" hidden>Outs：下一张牌能让这手牌单独领先的牌。</p>
+      </div>
+      <div class="win-rate-actions">
+        <button id="win-rate-clear" type="button">清空</button>
+      </div>
+    </dialog>
+    <dialog id="win-rate-picker" aria-labelledby="win-rate-picker-title">
+      <h3 id="win-rate-picker-title"></h3>
+      <div id="win-rate-picker-grid"></div>
+      <div class="win-rate-picker-actions">
+        <button id="win-rate-delete" type="button" hidden>删除</button>
+        <button id="win-rate-picker-back" type="button">返回</button>
       </div>
     </dialog>
     <dialog id="tutorial-dialog" class="tutorial-dialog" aria-labelledby="tutorial-dialog-title">

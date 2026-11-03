@@ -16,6 +16,11 @@
       "root": "tutorial",
       "name": "tutorial",
       "pages": ["loader"]
+    },
+    {
+      "root": "calculator",
+      "name": "calculator",
+      "pages": ["win-rate"]
     }
   ],
   "workers": "workers",

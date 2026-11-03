@@ -1,0 +1,170 @@
+<page-meta page-orientation="{{pageOrientation}}" bindresize="onResize" />
+<view class="win-rate-chrome" style="height: {{topInset + 84}}px;">
+  <view class="win-rate-heading" style="top: {{topInset + 36}}px;">
+    <text>胜率计算器</text>
+    <view
+      id="win-rate-close"
+      class="win-rate-close"
+      aria-role="button"
+      aria-label="关闭胜率计算器"
+      bindtap="returnToGame"
+    >
+      <view class="win-rate-cross" />
+    </view>
+  </view>
+</view>
+<view
+  class="win-rate-screen {{pickerOpen ? 'is-picking' : ''}}"
+  style="padding-top: {{topInset + 86}}px; padding-bottom: {{pickerOpen ? '60vh' : bottomInset + 82 + 'px'}};"
+>
+  <view class="win-rate-felt" aria-label="公共牌">
+    <view class="win-rate-board">
+      <view wx:for="{{streets}}" wx:for-item="street" wx:key="id" class="win-rate-street">
+        <view class="win-rate-street-cards">
+          <view
+            wx:for="{{street.slots}}"
+            wx:key="id"
+            id="win-rate-board-{{item.index}}"
+            class="win-rate-slot {{item.active ? 'is-active' : ''}}"
+            data-index="{{item.index}}"
+            aria-role="button"
+            aria-label="{{item.label}}{{item.card ? '：' + item.card.rank + item.card.suit : ''}}"
+            bindtap="openBoardCard"
+          >
+            <view wx:if="{{item.card}}" class="win-rate-card" style="{{item.card.artStyle}}" />
+            <text wx:else class="win-rate-board-mark">{{item.mark}}</text>
+          </view>
+        </view>
+        <text class="win-rate-street-label">{{street.label}}</text>
+      </view>
+    </view>
+  </view>
+  <view class="win-rate-seats" aria-label="玩家底牌">
+    <view
+      wx:for="{{players}}"
+      wx:for-item="player"
+      wx:key="id"
+      id="win-rate-player-{{player.id}}"
+      class="win-rate-seat {{player.hero ? 'is-hero' : ''}}"
+    >
+      <view class="win-rate-seat-main">
+        <view class="win-rate-hand">
+          <text class="win-rate-name">{{player.name}}</text>
+          <view class="win-rate-hole">
+            <view
+              wx:for="{{player.slots}}"
+              wx:key="id"
+              id="win-rate-player-{{player.id}}-{{item.index}}"
+              class="win-rate-slot {{item.active ? 'is-active' : ''}}"
+              data-id="{{player.id}}"
+              data-index="{{item.index}}"
+              aria-role="button"
+              aria-label="{{item.label}}{{item.card ? '：' + item.card.rank + item.card.suit : ''}}"
+              bindtap="openPlayerCard"
+            >
+              <view wx:if="{{item.card}}" class="win-rate-card" style="{{item.card.artStyle}}" />
+              <view wx:else class="win-rate-back" />
+            </view>
+          </view>
+        </view>
+        <view class="win-rate-odds">
+          <block wx:if="{{player.odds.win}}">
+            <view class="win-rate-odds-values"
+              ><text class="win-rate-odds-label">胜率：</text
+              ><text class="win-rate-odds-value">{{player.odds.win}}</text></view
+            >
+            <text class="win-rate-odds-tie">{{player.odds.tie}}</text>
+            <view class="win-rate-bar" aria-hidden="true"
+              ><view class="win-rate-bar-fill" style="{{player.odds.bar}}"
+            /></view>
+          </block>
+          <view wx:else class="win-rate-waiting {{player.odds.computing ? 'is-computing' : ''}}">
+            <view wx:if="{{player.odds.computing}}" class="win-rate-spinner" />
+            <text>{{player.odds.waiting}}</text>
+          </view>
+        </view>
+        <view
+          wx:if="{{player.removable}}"
+          id="win-rate-remove-{{player.id}}"
+          class="win-rate-remove"
+          data-id="{{player.id}}"
+          aria-role="button"
+          aria-label="{{player.removeLabel}}"
+          bindtap="removeOpponent"
+        >
+          <view class="win-rate-cross" />
+        </view>
+      </view>
+      <view wx:if="{{player.outs}}" class="win-rate-outs">
+        <view class="win-rate-outs-heading">
+          <text>Outs <text class="win-rate-outs-count">{{player.outs.count}}</text></text>
+        </view>
+        <view wx:if="{{player.outs.count}}" class="win-rate-outs-cards">
+          <view
+            wx:for="{{player.outs.cards}}"
+            wx:key="key"
+            class="win-rate-out"
+            style="{{item.artStyle}}"
+            aria-label="{{item.rank}}{{item.suit}}"
+          />
+        </view>
+      </view>
+    </view>
+  </view>
+  <button
+    id="win-rate-add"
+    hover-class="none"
+    class="win-rate-add"
+    disabled="{{!canAdd}}"
+    bindtap="addOpponent"
+  >
+    添加对手
+  </button>
+  <text wx:if="{{statusText}}" class="win-rate-note">{{statusText}}</text>
+  <text wx:if="{{hasOuts}}" class="win-rate-note win-rate-outs-note"
+    >Outs：下一张牌能让这手牌单独领先的牌。</text
+  >
+</view>
+<view class="win-rate-actions" style="padding-bottom: {{bottomInset + 12}}px;">
+  <button id="win-rate-clear" hover-class="none" bindtap="clearAll">清空</button>
+</view>
+<view
+  wx:if="{{pickerOpen}}"
+  class="win-rate-mask"
+  catchtouchmove="keepPageStill"
+  bindtap="closePicker"
+/>
+<view
+  wx:if="{{pickerOpen}}"
+  id="win-rate-picker"
+  class="win-rate-picker"
+  style="--win-rate-top: {{topInset}}px; --win-rate-bottom: {{bottomInset}}px;"
+>
+  <text class="win-rate-picker-title">{{pickerTitle}}</text>
+  <scroll-view
+    scroll-y
+    class="win-rate-picker-grid"
+    scroll-into-view="{{selected ? 'win-rate-pick-' + selected : ''}}"
+  >
+    <view wx:for="{{deck}}" wx:for-item="suit" wx:key="id" class="win-rate-suit">
+      <view
+        wx:for="{{suit.cards}}"
+        wx:key="key"
+        id="win-rate-pick-{{item.key}}"
+        class="win-rate-pick {{selected === item.key ? 'is-selected' : used[item.key] ? 'is-used' : ''}}"
+        data-key="{{item.key}}"
+        aria-role="button"
+        aria-label="{{item.rank}}{{item.suit}}"
+        aria-disabled="{{used[item.key] && selected !== item.key ? 'true' : 'false'}}"
+        bindtap="pickCard"
+        ><view class="win-rate-pick-face" style="{{item.artStyle}}"
+      /></view>
+    </view>
+  </scroll-view>
+  <view class="win-rate-picker-actions" style="padding-bottom: {{bottomInset + 14}}px;">
+    <button wx:if="{{selected}}" id="win-rate-delete" hover-class="none" bindtap="deleteCard">
+      删除
+    </button>
+    <button id="win-rate-picker-back" hover-class="none" bindtap="closePicker">返回</button>
+  </view>
+</view>

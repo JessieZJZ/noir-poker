@@ -1,0 +1,554 @@
+#win-rate-dialog {
+  --win-rate-card-width: 44px;
+  --win-rate-card-height: 62px;
+  width: 100%;
+  max-width: none;
+  height: 100dvh;
+  max-height: none;
+  margin: 0;
+  inset: 0;
+  padding: 0;
+  overflow: hidden;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  background: radial-gradient(120% 60% at 50% 0, #17332d 0, transparent 70%), var(--bg);
+}
+#win-rate-dialog[open] {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.win-rate-header,
+.win-rate-body,
+.win-rate-actions {
+  width: min(640px, 100%);
+}
+#win-rate-dialog > .win-rate-header {
+  flex: none;
+  gap: 12px;
+  padding: 14px 16px 10px;
+}
+.win-rate-header h2 {
+  margin: 0;
+  font-size: 19px;
+  font-weight: 600;
+}
+.win-rate-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 2px 16px 14px;
+  scrollbar-width: thin;
+  scrollbar-color: #406459 transparent;
+}
+.win-rate-felt {
+  padding: 14px 12px 8px;
+  border: 1px solid #4d7a6d66;
+  border-radius: 26px;
+  background: radial-gradient(90% 120% at 50% 30%, #1f4a40 0, #122f2b 62%, #0d2221 100%);
+  box-shadow:
+    inset 0 0 0 5px #0a1a1a66,
+    inset 0 0 26px #0006,
+    0 10px 26px #0005;
+}
+#win-rate-board {
+  display: flex;
+  justify-content: center;
+  gap: 14px;
+}
+.win-rate-street {
+  display: grid;
+  justify-items: center;
+  gap: 5px;
+}
+.win-rate-street > span {
+  color: #9cc2b5;
+  font-size: 11px;
+  text-transform: capitalize;
+}
+.win-rate-street-cards,
+.win-rate-hole {
+  display: flex;
+  gap: 5px;
+}
+.win-rate-slot {
+  position: relative;
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: var(--win-rate-card-width);
+  height: var(--win-rate-card-height);
+  padding: 0;
+  overflow: visible;
+  color: inherit;
+  background: transparent;
+  border: 0;
+  border-radius: 7px;
+  transition: transform 0.16s;
+}
+.win-rate-slot:hover {
+  transform: translateY(-2px);
+}
+.win-rate-slot:focus-visible,
+.win-rate-slot.is-active {
+  outline: 2px solid var(--mint);
+  outline-offset: 2px;
+}
+.win-rate-slot .playing-card.small {
+  width: 100%;
+  height: 100%;
+  box-shadow: 0 3px 8px #0006;
+}
+.win-rate-board-mark {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  color: #81b9a433;
+  font-size: 24px;
+  background: #0e262433;
+  border: 1px dashed #73a99866;
+  border-radius: 7px;
+}
+.win-rate-back.card-back {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 7px;
+}
+.win-rate-seats {
+  display: grid;
+  gap: 10px;
+  margin-top: 14px;
+}
+#win-rate-players {
+  display: contents;
+}
+.win-rate-seat {
+  padding: 10px 12px;
+  background: #121c26;
+  border: 1px solid #2c3e4a;
+  border-radius: 14px;
+}
+.win-rate-seat.is-hero {
+  background: #13241f;
+  border-color: #3f7a68;
+}
+.win-rate-seat-main {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.win-rate-hand {
+  display: grid;
+  flex: none;
+  gap: 5px;
+}
+.win-rate-hand > strong {
+  color: #cfdde2;
+  font-size: 12px;
+  font-weight: 500;
+}
+.is-hero .win-rate-hand > strong {
+  color: var(--mint);
+}
+.win-rate-odds {
+  flex: 1;
+  min-width: 0;
+  min-height: 62px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+}
+.win-rate-odds-values {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+.win-rate-odds-values span {
+  color: #9db1bb;
+  font-size: 12px;
+}
+.win-rate-odds-values strong {
+  color: var(--text);
+  font-size: 22px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  line-height: 1.2;
+}
+.win-rate-odds-tie {
+  color: #8ea3ae;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+.win-rate-bar {
+  height: 4px;
+  overflow: hidden;
+  background: #22323d;
+  border-radius: 999px;
+}
+.win-rate-bar i {
+  display: block;
+  height: 100%;
+  background: #7da8ad;
+  border-radius: inherit;
+  transition: width 0.24s;
+}
+.is-hero .win-rate-bar i {
+  background: var(--mint);
+}
+.win-rate-waiting {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #8ea3ae;
+  font-size: 14px;
+}
+.win-rate-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid #3b5a55;
+  border-top-color: var(--mint);
+  border-radius: 50%;
+  animation: win-rate-spin 0.8s linear infinite;
+}
+.win-rate-waiting.is-computing {
+  opacity: 0;
+  animation: win-rate-appear 0.16s 0.12s forwards;
+}
+@keyframes win-rate-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes win-rate-appear {
+  to {
+    opacity: 1;
+  }
+}
+.win-rate-remove {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  color: #d9929d;
+  background: #321c24;
+  border: 1px solid #6a3a46;
+  border-radius: 50%;
+}
+.win-rate-remove svg {
+  width: 15px;
+  height: 15px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-width: 2.4;
+}
+.win-rate-remove:hover,
+.win-rate-remove:focus-visible {
+  color: #fff;
+  background: #7a3341;
+}
+.win-rate-outs {
+  margin-top: 9px;
+  padding-top: 8px;
+  border-top: 1px solid #2a3b46;
+}
+.win-rate-outs-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 24px;
+  color: #9db1bb;
+  font-size: 12px;
+}
+.win-rate-outs-heading b {
+  color: var(--mint);
+  font-weight: 600;
+}
+.win-rate-outs-cards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 6px;
+}
+.win-rate-outs-cards .playing-card.small {
+  width: 30px;
+  height: 42px;
+  border-radius: 5px;
+  box-shadow: none;
+}
+.win-rate-add {
+  width: 100%;
+  min-height: 46px;
+  margin-top: 10px;
+  color: var(--mint);
+  font-size: 14px;
+  background: #13241f;
+  border: 1px dashed #3f7a68;
+  border-radius: 12px;
+}
+#win-rate-status,
+#win-rate-outs-note {
+  margin: 10px 2px 0;
+  color: #8ea3ae;
+  font-size: 12px;
+  line-height: 1.6;
+}
+#win-rate-outs-note {
+  margin-top: 2px;
+}
+.win-rate-actions {
+  display: flex;
+  flex: none;
+  justify-content: flex-end;
+  padding: 10px 16px calc(12px + env(safe-area-inset-bottom, 0px));
+  border-top: 1px solid #1e2c36;
+}
+.win-rate-actions button {
+  min-width: 96px;
+  min-height: 44px;
+  padding: 0 18px;
+  color: #eeb5bf;
+  font-size: 14px;
+  background: #2a1a20;
+  border: 1px solid #6a3a46;
+  border-radius: 12px;
+}
+
+#win-rate-dialog,
+#win-rate-picker {
+  --win-rate-picker-top: 0px;
+  --win-rate-picker-bottom: env(safe-area-inset-bottom, 0px);
+  --win-rate-picker-chrome: 164px;
+  --win-rate-picker-side: max(
+    280px,
+    calc(
+      (
+          100dvh - var(--win-rate-picker-top) - var(--win-rate-picker-bottom) -
+            var(--win-rate-picker-chrome) - 26px
+        ) *
+        0.63 + 70px
+    )
+  );
+}
+#win-rate-picker {
+  /* Four card rows always fit the half screen, so a short wide screen narrows the sheet. */
+  width: min(
+    740px,
+    100%,
+    calc((50dvh - var(--win-rate-picker-bottom) - var(--win-rate-picker-chrome)) * 2.34 + 106px)
+  );
+  max-width: none;
+  max-height: 50dvh;
+  margin: auto auto 0;
+  padding: 0;
+  overflow: hidden;
+  border-width: 1px 1px 0;
+  border-radius: 18px 18px 0 0;
+}
+#win-rate-picker::backdrop {
+  background: #05090e66;
+  backdrop-filter: none;
+}
+#win-rate-picker[open] {
+  display: flex;
+  flex-direction: column;
+  animation: win-rate-sheet 0.2s ease-out;
+}
+@keyframes win-rate-sheet {
+  from {
+    transform: translateY(24px);
+    opacity: 0;
+  }
+}
+#win-rate-picker h3 {
+  flex: none;
+  margin: 0;
+  padding: 14px 16px 10px;
+  color: var(--text);
+  font-size: 15px;
+}
+#win-rate-picker-grid {
+  display: grid;
+  gap: 10px;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 2px 16px 12px;
+}
+.win-rate-suit {
+  display: grid;
+  grid-template-columns: repeat(13, minmax(0, 1fr));
+  gap: 6px;
+}
+.win-rate-pick {
+  aspect-ratio: 36 / 50;
+  padding: 0;
+  overflow: hidden;
+  background: transparent;
+  border: 0;
+  border-radius: 6px;
+}
+.win-rate-pick .playing-card.small {
+  width: 100%;
+  height: 100%;
+  border-radius: 6px;
+  box-shadow: none;
+}
+.win-rate-pick:disabled {
+  opacity: 1;
+  filter: grayscale(1) brightness(0.45);
+}
+.win-rate-pick:focus-visible,
+.win-rate-pick.is-selected {
+  outline: 2px solid var(--mint);
+  outline-offset: -2px;
+}
+.win-rate-picker-actions {
+  display: flex;
+  flex: none;
+  gap: 10px;
+  padding: 10px 16px calc(14px + var(--win-rate-picker-bottom));
+  border-top: 1px solid #263541;
+}
+.win-rate-picker-actions button {
+  flex: 1;
+  min-height: 44px;
+  color: var(--text);
+  font-size: 14px;
+  background: #1c2c37;
+  border: 1px solid #3a4f5b;
+  border-radius: 12px;
+}
+@media (max-width: 560px) {
+  #win-rate-picker {
+    width: 100%;
+  }
+  .win-rate-suit {
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+  }
+}
+/* Half of a rotated tablet is too short for the deck, so the sheet moves beside the table. */
+@media (orientation: landscape) and (max-height: 700px) {
+  #win-rate-picker {
+    width: var(--win-rate-picker-side);
+    height: 100dvh;
+    max-height: none;
+    margin: 0 0 0 auto;
+    padding-top: var(--win-rate-picker-top);
+    border-width: 0 0 0 1px;
+    border-radius: 18px 0 0 18px;
+  }
+  .win-rate-suit {
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+  }
+}
+@media (max-width: 340px) {
+  #win-rate-dialog {
+    --win-rate-card-width: 38px;
+    --win-rate-card-height: 54px;
+  }
+  #win-rate-board {
+    gap: 8px;
+  }
+  .win-rate-street-cards {
+    gap: 3px;
+  }
+}
+/* Same tablet boundary as tablet.css: readable touch sizing, phones keep their density. */
+@media (min-width: 601px) and (max-width: 1600px) and (min-height: 601px) and (any-pointer: coarse) {
+  #win-rate-dialog {
+    --win-rate-card-width: 52px;
+    --win-rate-card-height: 73px;
+  }
+  .win-rate-header,
+  .win-rate-body,
+  .win-rate-actions {
+    width: min(760px, 100%);
+  }
+  .win-rate-header h2 {
+    font-size: 24px;
+  }
+  .win-rate-street > span,
+  .win-rate-hand > strong,
+  .win-rate-odds-values span,
+  .win-rate-odds-tie,
+  .win-rate-outs-heading {
+    font-size: 15px;
+  }
+  .win-rate-odds-values strong {
+    font-size: 26px;
+  }
+  .win-rate-waiting,
+  .win-rate-add,
+  .win-rate-actions button,
+  #win-rate-status,
+  #win-rate-outs-note {
+    font-size: 16px;
+  }
+  .win-rate-add,
+  .win-rate-actions button {
+    min-height: 52px;
+  }
+  .win-rate-outs-cards .playing-card.small {
+    width: 36px;
+    height: 50px;
+  }
+  #win-rate-dialog,
+  #win-rate-picker {
+    --win-rate-picker-chrome: 176px;
+  }
+  #win-rate-picker h3 {
+    font-size: 18px;
+  }
+  .win-rate-picker-actions button {
+    min-height: 52px;
+    font-size: 16px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .win-rate-spinner,
+  #win-rate-picker[open] {
+    animation: none;
+  }
+  .win-rate-waiting.is-computing {
+    opacity: 1;
+    animation: none;
+  }
+}
+.native-app #win-rate-dialog {
+  inset: 0;
+  max-height: none;
+  padding-top: var(--safe-area-inset-top, env(safe-area-inset-top, 0px));
+  padding-left: var(--safe-area-inset-left, env(safe-area-inset-left, 0px));
+  padding-right: var(--safe-area-inset-right, env(safe-area-inset-right, 0px));
+}
+.native-app .win-rate-actions {
+  padding-bottom: calc(12px + var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)));
+}
+.native-app #win-rate-dialog,
+.native-app #win-rate-picker {
+  --win-rate-picker-top: var(--safe-area-inset-top, env(safe-area-inset-top, 0px));
+  --win-rate-picker-bottom: var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px));
+}
+.native-app #win-rate-picker {
+  inset: auto 0 0;
+}
+@media (orientation: landscape) and (max-height: 700px) {
+  .native-app #win-rate-picker {
+    inset: 0 0 0 auto;
+    padding-right: var(--safe-area-inset-right, env(safe-area-inset-right, 0px));
+  }
+}
+/* The table narrows beside the sheet so the river stays in view. */
+@media (orientation: landscape) and (max-height: 700px) {
+  #win-rate-dialog[data-picking] {
+    padding-right: var(--win-rate-picker-side);
+  }
+}

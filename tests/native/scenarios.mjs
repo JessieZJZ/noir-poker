@@ -2027,6 +2027,123 @@ export async function nativeScenarios(app) {
         'Installed app actual settings, 5/9 seats, eight distinct complete style names, no long-press overlay',
     };
   });
+  await check('win-rate-calculator', async () => {
+    const before = await app.state();
+    const pick = async (...keys) => {
+      for (const key of keys) await app.click(`[data-pick="${key}"]`);
+    };
+    const odds = () =>
+      app.evaluate(() =>
+        [...document.querySelectorAll('.win-rate-odds-values strong')].map(
+          (value) => value.textContent,
+        ),
+      );
+    const deleteHidden = () =>
+      app.evaluate(() => document.querySelector('#win-rate-delete').hidden);
+    await app.click('#rules-button');
+    await app.click('#win-rate-menu-item');
+    await app.screenshot('win-rate-empty');
+    await app.click('[data-player="0"][data-card="0"]');
+    assert.equal(await deleteHidden(), true);
+    await pick('0-14', '0-13');
+    await app.click('[data-player="1"][data-card="0"]');
+    await pick('0-8');
+    const sheetClear = (message) =>
+      app.waitFor(
+        () =>
+          app.evaluate(() => {
+            const sheet = document.querySelector('#win-rate-picker').getBoundingClientRect();
+            const slot = document.querySelector('.win-rate-slot.is-active').getBoundingClientRect();
+            const beside = sheet.left >= slot.right;
+            const above = sheet.top >= slot.bottom && sheet.height <= window.innerHeight / 2 + 1;
+            if (!beside && !above) return null;
+            return {
+              beside,
+              above,
+              width: window.innerWidth,
+              height: window.innerHeight,
+              sheetHeight: sheet.height,
+              tablet: document.documentElement.dataset.tablet === 'true',
+            };
+          }),
+        5000,
+        message,
+      );
+    const portraitSheet = await sheetClear('Picker must leave the slot in view');
+    await app.screenshot('win-rate-picker');
+    let landscapeSheet;
+    if (portraitSheet.tablet) {
+      try {
+        await app.rotate('LANDSCAPE');
+        await app.waitFor(
+          () => app.evaluate(() => innerWidth > innerHeight),
+          5000,
+          'Tablet rotation must settle',
+        );
+        landscapeSheet = await sheetClear('Rotated picker must leave the slot in view');
+        assert.ok(landscapeSheet.width > landscapeSheet.height, 'Tablet must rotate the picker');
+        await app.screenshot('win-rate-picker-landscape');
+      } finally {
+        await app.rotate('PORTRAIT');
+      }
+      await app.waitFor(
+        () => app.evaluate(() => innerHeight > innerWidth),
+        5000,
+        'Tablet must return to portrait',
+      );
+      await sheetClear('Picker must follow the return to portrait');
+    }
+    await pick('0-7');
+    const preflop = await app.waitFor(
+      async () => {
+        const values = await odds();
+        return values.length === 2 ? values : null;
+      },
+      20000,
+      'Preflop odds must finish',
+    );
+    await app.click('#win-rate-add');
+    const third = await app.evaluate(
+      () => document.querySelector('.win-rate-seat:last-child [data-player]').dataset.player,
+    );
+    await app.click(`[data-player="${third}"][data-card="0"]`);
+    await pick('2-10', '1-10');
+    await app.click('[data-board="0"]');
+    await pick('0-6', '0-11', '2-11');
+    const flop = await app.waitFor(
+      async () => {
+        const values = await odds();
+        return values.length === 3 ? values : null;
+      },
+      5000,
+      'Flop odds must finish',
+    );
+    assert.deepEqual(flop, ['44.85%', '2.99%', '51.83%']);
+    const layout = await app.evaluate(() => {
+      const dialog = document.querySelector('#win-rate-dialog');
+      const header = dialog.querySelector('.win-rate-header').getBoundingClientRect();
+      const clear = document.querySelector('#win-rate-clear').getBoundingClientRect();
+      return {
+        overflow: dialog.scrollWidth > dialog.clientWidth,
+        headerTop: header.top,
+        clearBottom: clear.bottom,
+        height: window.innerHeight,
+        outs: document.querySelector('.win-rate-outs-heading b').textContent,
+      };
+    });
+    assert.equal(layout.overflow, false);
+    assert.ok(layout.clearBottom <= layout.height);
+    assert.equal(layout.outs, '12');
+    await app.screenshot('win-rate-flop');
+    await app.click('[data-board="1"]');
+    assert.equal(await deleteHidden(), false);
+    await app.screenshot('win-rate-picker-edit');
+    await pick('0-11');
+    assert.equal(await app.evaluate(() => document.querySelector('#win-rate-picker').open), false);
+    await app.click('#win-rate-dialog .close-dialog');
+    assert.equal((await app.state()).hand, before.hand);
+    return { preflop, flop, layout, portraitSheet, landscapeSheet, sameHand: true };
+  });
   await check('mixed-toggle-and-visual-guide', async () => {
     await app.click('#opponents-button');
     if (

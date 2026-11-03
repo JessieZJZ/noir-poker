@@ -27,3 +27,4 @@ import './game-info.css';
 import './emotion-effects.css';
 import './preflop-table.css';
 import './tablet.css';
+import './win-rate.css';

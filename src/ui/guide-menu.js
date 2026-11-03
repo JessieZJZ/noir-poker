@@ -1,3 +1,5 @@
+import { createWinRatePage } from './win-rate.js';
+
 // The two choices keep their width while the automatic label rolls downward.
 // Hover, keyboard focus, an open menu and reduced motion stop the rotation.
 export function createGuideMenu({ onRecords, onTutorial }) {
@@ -8,6 +10,7 @@ export function createGuideMenu({ onRecords, onTutorial }) {
   const choices = [...menu.querySelectorAll('[role="menuitem"]')];
   const motion = matchMedia('(prefers-reduced-motion: reduce)');
   const events = new AbortController();
+  const winRate = createWinRatePage();
   let interval, animationEnd;
   let suspended = false,
     hovered = false,
@@ -134,6 +137,10 @@ export function createGuideMenu({ onRecords, onTutorial }) {
   on(document.querySelector('#records-menu-item'), 'click', () => {
     close();
     onRecords();
+  });
+  on(document.querySelector('#win-rate-menu-item'), 'click', () => {
+    close();
+    winRate.open();
   });
   on(document, 'visibilitychange', updateRotation);
   on(document, 'noir:locale-changed', finishAnimation);

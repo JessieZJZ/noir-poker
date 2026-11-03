@@ -39,6 +39,22 @@ function setup() {
   };
 }
 
+test('WeChat win rate route keeps the live game and survives a double tap', () => {
+  const { nav, stack, calls, game, finish } = setup();
+  let failed = 0;
+  assert.equal(nav.openWinRate({ fail: () => failed++ }), true);
+  assert.equal(game._browsingRecords, true, 'The bot timers stay alive behind the calculator');
+  assert.equal(nav.openWinRate(), false);
+  assert.equal(calls.at(-1)[1].url, '/calculator/win-rate');
+  finish();
+  assert.equal(stack.length, 2);
+  assert.equal(failed, 0);
+  assert.equal(nav.returnToGame(), true);
+  assert.equal(calls.at(-1)[0], 'navigateBack');
+  finish();
+  assert.equal(stack.length, 1);
+});
+
 test('WeChat records routes have one game, one list and one replaceable detail despite double taps', () => {
   const { nav, stack, calls, game, finish } = setup();
   assert.equal(nav.openRecords(), true);

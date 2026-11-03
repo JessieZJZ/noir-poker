@@ -380,6 +380,7 @@ test('concurrent WeChat builders serialize and preserve DevTools private prefere
   );
   assert.ok(manifest.packageBytes.main < 2 * 1024 * 1024);
   assert.ok(manifest.packageBytes.music < 2 * 1024 * 1024);
+  assert.ok(manifest.packageBytes.calculator < 2 * 1024 * 1024);
   assert.ok(manifest.packageBytes.tutorial < 2 * 1024 * 1024);
   assert.equal(
     manifest.totalBytes,

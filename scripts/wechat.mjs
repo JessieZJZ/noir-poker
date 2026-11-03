@@ -278,6 +278,16 @@ export async function buildWechat(output = wechatOutput) {
     });
     for (const directory of ['engine', 'review'])
       await compileJs(path.join(root, 'src', directory), path.join(staging, 'shared', directory));
+    // The calculator ships in its own subpackage but keeps one shared rule engine.
+    await mkdir(path.join(staging, 'calculator/engine'), { recursive: true });
+    for (const name of ['win-rate.js', 'win-rate-session.js']) {
+      const compiled = path.join(staging, 'shared/engine', name);
+      await writeFile(
+        path.join(staging, 'calculator/engine', name),
+        (await readFile(compiled, 'utf8')).replaceAll('./poker.js', '../../shared/engine/poker.js'),
+      );
+      await rm(compiled);
+    }
     await compileJs(path.join(root, 'src/platform'), path.join(staging, 'shared/platform'));
     // Platform adapters must not accidentally pull Capacitor or DOM modules in.
     // The shared observation store is platform-neutral and is used by WeChat.

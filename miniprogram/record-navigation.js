@@ -26,6 +26,19 @@ function createRecordNavigation({ api, pages }) {
       }
       return transition('navigateTo', { url: '/pages/records/records', fail });
     },
+    openWinRate({ fail } = {}) {
+      if (pending) return false;
+      const game = pages().find((page) => route(page) === 'pages/table/table');
+      if (game) game._browsingRecords = true;
+      return transition('navigateTo', { url: '/calculator/win-rate', fail });
+    },
+    returnToGame() {
+      const stack = pages();
+      const index = stack.findIndex((page) => route(page) === 'pages/table/table');
+      if (index < 0) return transition('reLaunch', { url: '/pages/table/table' });
+      const delta = stack.length - index - 1;
+      return delta ? transition('navigateBack', { delta }) : false;
+    },
     openHand(id) {
       const stack = pages();
       return transition(
