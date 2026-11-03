@@ -97,7 +97,7 @@ try {
     await tap(`#win-rate-player-${third}-0`);
     await waitData('Picker open', (data) => data.pickerOpen);
     await capture('win-rate-picker-half');
-    const [slot, sheet] = await mini.evaluate(
+    const [slot, sheet, deck, lastCard, actions, viewport] = await mini.evaluate(
       () =>
         new Promise((resolve) =>
           wx
@@ -106,16 +106,31 @@ try {
             .boundingClientRect()
             .select('#win-rate-picker')
             .boundingClientRect()
+            .select('.win-rate-picker-grid')
+            .boundingClientRect()
+            .select('#win-rate-pick-3-2')
+            .boundingClientRect()
+            .select('.win-rate-picker-actions')
+            .boundingClientRect()
+            .selectViewport()
+            .boundingClientRect()
             .exec(resolve),
         ),
     );
-    const { windowHeight } = await mini.evaluate(() => wx.getWindowInfo());
-    assert.ok(sheet.height <= windowHeight / 2 + 1, 'The sheet must stay within half the screen');
+    assert.ok(
+      sheet.height <= viewport.height / 2 + 1,
+      'The sheet must stay within half the screen',
+    );
     assert.ok(slot.bottom <= sheet.top, 'The slot being filled must stay above the sheet');
+    assert.ok(actions.bottom <= viewport.height + 1, 'The sheet actions must stay on screen');
     const grid = await page.$('.win-rate-picker-grid');
     const { height: gridHeight } = await grid.size();
-    assert.ok((await grid.scrollHeight()) > gridHeight, 'The deck must scroll');
-    assert.ok(gridHeight <= sheet.height - 100, 'The deck must stay clear of the sheet actions');
+    // Phones scroll the deck; tablets show all 52 cards inside the half-height sheet.
+    assert.ok(
+      (await grid.scrollHeight()) > gridHeight || lastCard.bottom <= deck.bottom + 1,
+      'The deck must scroll or show every card',
+    );
+    assert.ok(deck.bottom <= actions.top + 1, 'The deck must stay clear of the sheet actions');
     await pick('2-10', '1-10');
     await tap('#win-rate-board-0');
     await pick('0-6', '0-11', '2-11');
@@ -138,7 +153,11 @@ try {
     await capture('win-rate-picker-edit');
     await pick('0-11');
     await waitData('Edit closes the picker', (value) => !value.pickerOpen);
-    return { statusText: data.statusText };
+    return {
+      statusText: data.statusText,
+      viewport: { width: viewport.width, height: viewport.height },
+      sheetHeight: sheet.height,
+    };
   });
   await check('remove-and-clear', async () => {
     const third = (await page.data()).players[2].id;
