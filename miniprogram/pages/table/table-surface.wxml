@@ -19,7 +19,7 @@
         aria-hidden="true"
       /><text>NOIR</text><text wx:if="{{!compactNav}}" class="brand-sub">POKER</text></view
     >
-    <view wx:if="{{!historyReadOnly}}" class="nav-actions"
+    <view wx:if="{{!historyReadOnly && !tutorialPlaying}}" class="nav-actions"
       ><button
         hover-class="none"
         class="guide-button"
@@ -42,21 +42,23 @@
       </button>
       <view wx:if="{{resourceMenuOpen}}" class="resource-menu">
         <button id="resource-guide" bindtap="openGuide">玩法指南</button>
+        <button id="resource-tutorial" bindtap="openTutorial">新手引导</button>
         <button id="resource-records" bindtap="openRecords">对局记录</button>
       </view></view
     >
   </view>
   <view class="table-panel {{historyReadOnly ? 'history-panel' : ''}}">
     <view
-      class="game-shell entry-{{entryState}} {{historyReadOnly ? 'history-shell' : ''}}"
-      style="height: {{tableHeight + tableHeaderHeight + (waitingForSeat ? 0 : historyReadOnly || compactActions ? compactDockHeight : liveDockHeight)}}px;"
+      class="game-shell entry-{{entryState}} {{historyReadOnly ? 'history-shell' : ''}} {{tutorialSide ? 'tutorial-side' : ''}}"
+      style="height: {{tableHeight + tableHeaderHeight + tutorialCoachHeight + (waitingForSeat ? 0 : historyReadOnly || compactActions ? compactDockHeight : liveDockHeight)}}px;"
     >
       <view class="game-header">
         <view class="hand-label"
           ><text wx:if="{{waitingForSeat}}">{{street}}</text
           ><block wx:else
-            ><text class="session-label">第 {{sessionNumber}} 局</text
-            ><text class="hand-divider">·</text
+            ><block wx:if="{{!tutorialPlaying}}"
+              ><text class="session-label">第 {{sessionNumber}} 局</text
+              ><text class="hand-divider">·</text></block
             ><text>第 <text class="hand-number">{{hand < 10 ? '0' : ''}}{{hand}}</text> 手</text
             ><block wx:if="{{!historyReadOnly}}"
               ><text class="hand-divider">·</text><text>{{street}}</text></block
@@ -89,7 +91,7 @@
           <view
             wx:for="{{phoneSeats}}"
             wx:key="id"
-            class="seat {{item.y === 0 ? 'seat-crown' : ''}} {{item.thinking ? 'thinking' : ''}} {{item.folded ? 'folded' : ''}} {{item.winner ? 'winner' : ''}} {{item.out ? 'seat-out' : ''}} {{item.crowned ? 'is-champion' : ''}}"
+            class="seat {{item.y === 0 ? 'seat-crown' : ''}} {{item.thinking ? 'thinking' : ''}} {{item.folded ? 'folded' : ''}} {{item.winner ? 'winner' : ''}} {{item.tutorialFocus ? 'tutorial-focus' : ''}} {{item.out ? 'seat-out' : ''}} {{item.crowned ? 'is-champion' : ''}}"
             style="left: {{item.left}}px; top: {{item.top}}px; width: {{seatWidth}}px; height: {{seatHeight}}px; transform: none;"
           >
             <view
@@ -209,11 +211,20 @@
           <view
             class="community"
             style="width: {{boardWidth}}px; top: {{publicTop}}px; left: {{publicLeft}}px;"
-            ><view class="pot-row" style="height: {{potHeight}}px;"
+            ><view
+              class="pot-row {{tutorialFocus.pot ? 'tutorial-focus' : ''}}"
+              style="height: {{potHeight}}px;"
               ><view class="chip" aria-hidden="true" /><text class="pot-number">{{pot}}</text
-              ><button hover-class="none" class="pot-detail" bindtap="openPots">明细</button></view
+              ><button
+                hover-class="none"
+                class="pot-detail {{tutorialFocus.details ? 'tutorial-focus' : ''}}"
+                bindtap="openPots"
+              >
+                明细
+              </button></view
             >
-            <view class="board-row {{boardTwoRows ? 'board-two-rows' : ''}}"
+            <view
+              class="board-row {{boardTwoRows ? 'board-two-rows' : ''}} {{tutorialFocus.board ? 'tutorial-focus' : ''}}"
               ><view
                 wx:for="{{boardSlots}}"
                 wx:key="key"
@@ -250,7 +261,7 @@
               style="{{heroPlaceStyle}}"
               >{{standingText}}</text
             ><view
-              class="hero-cards-wrap {{turnPhase ? 'turn-attention' : ''}} turn-{{turnPhase}} {{premium ? 'premium-start' : ''}}"
+              class="hero-cards-wrap {{turnPhase ? 'turn-attention' : ''}} turn-{{turnPhase}} {{premium ? 'premium-start' : ''}} {{tutorialFocus.heroCards ? 'tutorial-focus' : ''}}"
               style="width: calc({{heroWidth * 2}}px + var(--hero-card-gap, 7px));"
               ><view class="hero-cards"
                 ><view
@@ -280,7 +291,8 @@
                 ></view
               ></view
             ><view class="hero-info"
-              ><view class="hero-identity"
+              ><view
+                class="hero-identity {{tutorialFocus.position || tutorialFocus.stack ? 'tutorial-focus' : ''}}"
                 ><view class="hero-name-text"
                   ><text>你</text
                   ><text wx:if="{{!waitingForSeat}}" class="position">{{heroPosition}}</text></view
@@ -302,7 +314,47 @@
         >
       </view>
       <view
-        class="action-dock {{compactActions ? 'compact-actions' : ''}} {{canAct ? 'is-enabled' : ''}} {{turnPhase ? 'turn-attention' : ''}} turn-{{turnPhase}}"
+        wx:if="{{tutorialPlaying}}"
+        class="tutorial-coach"
+        style="{{tutorialSide ? 'top: ' + (topInset + 36 + navHeight + 8) + 'px; bottom: ' + (bottomInset + 8) + 'px;' : 'height: ' + (tutorialCoachHeight - 10) + 'px;'}}"
+      >
+        <view class="tutorial-coach-top">
+          <text class="tutorial-lesson">{{tutorial.lessonLabel}}</text>
+          <button hover-class="none" class="tutorial-exit" bindtap="exitTutorial">退出引导</button>
+        </view>
+        <view class="tutorial-progress" aria-hidden="true"
+          ><view style="width: {{tutorial.progressPercent}}%;"
+        /></view>
+        <scroll-view scroll-y class="tutorial-message">
+          <button
+            wx:if="{{tutorial.canContinue}}"
+            hover-class="none"
+            class="tutorial-next"
+            bindtap="tutorialNext"
+          >
+            {{tutorial.continueLabel}}
+          </button>
+          <view aria-role="status" aria-live="polite"
+            ><text class="tutorial-title">{{tutorial.title}}</text
+            ><text class="tutorial-text">{{tutorial.text}}</text></view
+          >
+          <text wx:if="{{tutorial.detail}}" class="tutorial-detail">{{tutorial.detail}}</text>
+        </scroll-view>
+        <view wx:if="{{tutorial.options.length}}" class="tutorial-options">
+          <button
+            wx:for="{{tutorial.options}}"
+            wx:key="index"
+            hover-class="none"
+            class="{{item.wrong ? 'is-wrong' : ''}}"
+            data-index="{{item.index}}"
+            bindtap="tutorialAnswer"
+          >
+            {{item.text}}
+          </button>
+        </view>
+      </view>
+      <view
+        class="action-dock {{tutorialShortDock ? 'tutorial-short-dock' : ''}} {{compactActions ? 'compact-actions' : ''}} {{canAct ? 'is-enabled' : ''}} {{turnPhase ? 'turn-attention' : ''}} turn-{{turnPhase}}"
       >
         <view class="turn-line" aria-hidden="true" />
         <block wx:if="{{done}}"
@@ -315,7 +367,7 @@
             >
               立刻发完</button
             ><button
-              wx:if="{{!historyReadOnly}}"
+              wx:if="{{!historyReadOnly && !tutorialPlaying}}"
               hover-class="none"
               class="primary {{needsRebuy ? 'rebuy-button' : ''}}"
               disabled="{{rebuying}}"
@@ -332,7 +384,12 @@
               bindtap="retryHand"
             >
               重打本手</button
-            ><button hover-class="none" class="review-button" bindtap="openReview">
+            ><button
+              wx:if="{{!tutorialPlaying}}"
+              hover-class="none"
+              class="review-button"
+              bindtap="openReview"
+            >
               复盘
             </button></view
           ></block
@@ -344,14 +401,17 @@
               ><text class="decision-detail">{{actionNotice}}</text></view
             ><button
               id="hand-rankings-button"
-              class="hand-rankings-button"
+              class="hand-rankings-button {{tutorialFocus.rankings ? 'tutorial-focus' : ''}}"
               hover-class="none"
               bindtap="openHandRankings"
             >
               牌力表
             </button></view
           ><view class="raise-controls" wx:if="{{!compactActions}}"
-            ><view id="raise-track" class="raise-track {{!canRaise ? 'disabled' : ''}}">
+            ><view
+              id="raise-track"
+              class="raise-track {{!canRaise || lockSizing ? 'disabled' : ''}}"
+            >
               <view class="raise-rail" aria-hidden="true" />
               <view
                 id="raise-thumb"
@@ -377,28 +437,29 @@
                 hover-class="none"
                 data-preset="min"
                 bindtap="preset"
-                disabled="{{!canRaise}}"
+                disabled="{{!canRaise || lockSizing}}"
               >
                 最小</button
               ><button
                 hover-class="none"
+                class="{{tutorialFocus.half ? 'tutorial-focus' : ''}}"
                 data-preset="half"
                 bindtap="preset"
-                disabled="{{!canRaise}}"
+                disabled="{{!canRaise || lockHalf}}"
               >
                 ½ 底池</button
               ><button
                 hover-class="none"
                 data-preset="pot"
                 bindtap="preset"
-                disabled="{{!canRaise}}"
+                disabled="{{!canRaise || lockSizing}}"
               >
                 底池</button
               ><button
                 hover-class="none"
                 data-preset="all"
                 bindtap="preset"
-                disabled="{{!canRaise}}"
+                disabled="{{!canRaise || lockSizing}}"
               >
                 全下
               </button></view
@@ -406,33 +467,33 @@
           ><view class="action-buttons" wx:if="{{!heroFolded}}"
             ><button
               hover-class="none"
-              class="primary"
+              class="primary {{tutorialFocus.raise ? 'tutorial-focus' : ''}}"
               data-action="raise"
               bindtap="act"
-              disabled="{{!canRaise}}"
+              disabled="{{!canRaise || lockRaise}}"
             >
               加注 {{raiseText}}</button
             ><button
               hover-class="none"
-              class="fold-button"
+              class="fold-button {{tutorialFocus.fold ? 'tutorial-focus' : ''}}"
               data-action="fold"
               bindtap="act"
-              disabled="{{!canAct}}"
+              disabled="{{!canAct || lockFold}}"
             >
               弃牌</button
             ><button
               hover-class="none"
-              class="call-button"
+              class="call-button {{tutorialFocus.call ? 'tutorial-focus' : ''}}"
               data-action="call"
               bindtap="act"
-              disabled="{{!canAct}}"
+              disabled="{{!canAct || lockCall}}"
             >
               {{callLabel}} {{callText}}
             </button></view
           ><view wx:else class="continue-buttons"
             ><button
               hover-class="none"
-              class="call-button"
+              class="call-button {{tutorialFocus.finish ? 'tutorial-focus' : ''}}"
               bindtap="finishHand"
               disabled="{{finishing}}"
             >
@@ -504,7 +565,7 @@
       ></view
     ></view
   >
-  <view wx:if="{{!historyReadOnly && !waitingForSeat}}" class="practice-panel"
+  <view wx:if="{{!historyReadOnly && !waitingForSeat && !tutorialPlaying}}" class="practice-panel"
     ><view class="session-title"
       ><view class="session-heading"
         ><text>{{sessionTitle}}</text
@@ -889,7 +950,46 @@
   style="{{item.style}}"
   aria-hidden="true"
 />
-<view wx:if="{{guideOpen || reviewOpen || potOpen || resetOpen}}" class="modal-backdrop" />
+<view
+  wx:if="{{guideOpen || reviewOpen || potOpen || resetOpen || tutorial.dialog}}"
+  class="modal-backdrop"
+/>
+<view
+  wx:if="{{tutorial.dialog}}"
+  class="sheet tutorial-sheet"
+  style="top: {{topInset + (windowHeight - topInset - bottomInset) * 0.075}}px; max-height: {{(windowHeight - topInset - bottomInset) * 0.85}}px;"
+>
+  <view class="dialog-heading"
+    ><text class="eyebrow">{{tutorial.dialog.eyebrow}}</text
+    ><button hover-class="none" class="close" bindtap="exitTutorial" aria-label="退出新手引导">
+      <view class="close-icon" /></button
+  ></view>
+  <scroll-view scroll-y class="tutorial-sheet-scroll">
+    <view class="tutorial-sheet-title">{{tutorial.dialog.title}}</view>
+    <view class="tutorial-sheet-lead">{{tutorial.dialog.lead}}</view>
+    <view wx:for="{{tutorial.dialog.steps}}" wx:key="title" class="tutorial-step">
+      <text class="tutorial-step-number">{{index + 1}}</text>
+      <view class="tutorial-step-copy">
+        <text class="tutorial-step-title">{{item.title}}</text>
+        <text class="tutorial-step-text">{{item.text}}</text>
+      </view>
+    </view>
+    <view wx:for="{{tutorial.dialog.points}}" wx:key="*this" class="tutorial-point"
+      ><view class="tutorial-point-dot" /><text>{{item}}</text></view
+    >
+    <view wx:if="{{tutorial.dialog.note}}" class="tutorial-sheet-note"
+      >{{tutorial.dialog.note}}</view
+    >
+  </scroll-view>
+  <view class="tutorial-sheet-actions">
+    <button hover-class="none" class="quiet" bindtap="tutorialSecondary">
+      {{tutorial.dialog.secondary}}
+    </button>
+    <button hover-class="none" class="primary" bindtap="tutorialPrimary">
+      {{tutorial.dialog.primary}}
+    </button>
+  </view>
+</view>
 <view
   wx:if="{{guideOpen}}"
   class="sheet guide-sheet"

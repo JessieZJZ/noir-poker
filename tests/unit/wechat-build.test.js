@@ -1,5 +1,7 @@
 import { soundSamples, SOUND_SAMPLE_RATE } from '../../src/ui/sound-cues.js';
 import {
+  compactWxml,
+  tutorialSubpackageModule,
   verifyLocalWechatModules,
   wechatPackageBytes,
   pruneUnusedSharedModules,
@@ -378,7 +380,11 @@ test('concurrent WeChat builders serialize and preserve DevTools private prefere
   );
   assert.ok(manifest.packageBytes.main < 2 * 1024 * 1024);
   assert.ok(manifest.packageBytes.music < 2 * 1024 * 1024);
-  assert.equal(manifest.totalBytes, manifest.packageBytes.main + manifest.packageBytes.music);
+  assert.ok(manifest.packageBytes.tutorial < 2 * 1024 * 1024);
+  assert.equal(
+    manifest.totalBytes,
+    Object.values(manifest.packageBytes).reduce((sum, bytes) => sum + bytes, 0),
+  );
   assert.deepEqual(
     readFileSync(path.join(workspace.output, 'music/background-music.m4a')),
     readFileSync(path.join(workspace.directory, 'public/audio/background-music-mobile.m4a')),
@@ -507,5 +513,24 @@ background: url('data:image/svg+xml;base64,PHN2Zy8+');
 padding: 0;
 }
 }`,
+  );
+});
+
+test('WXML compaction drops indentation only, and no text node relies on a line edge', () => {
+  assert.equal(
+    compactWxml('<view\n  class="a"\n>\n\n  <text>你 好</text>\n</view>\n'),
+    '<view\nclass="a"\n>\n<text>你 好</text>\n</view>',
+  );
+  const directory = new URL('../../miniprogram/pages/table/', import.meta.url);
+  for (const name of readdirSync(directory).filter((file) => file.endsWith('.wxml'))) {
+    const template = readFileSync(new URL(name, directory), 'utf8');
+    assert.doesNotMatch(template, /<text\b(?:[^>]|\{\{.*?\}\})*>[^<{]*\n[^<]*<\/text/);
+  }
+});
+
+test('tutorial lessons move to their subpackage and still reach the main engine', () => {
+  assert.equal(
+    tutorialSubpackageModule('var a=require("./poker.js"),b=require(\'./chip-format.js\');'),
+    'var a=require("../shared/engine/poker.js"),b=require(\'../shared/engine/chip-format.js\');',
   );
 });

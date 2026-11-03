@@ -77,7 +77,14 @@ const CHUNK_SIZE = 20;
 const chunkAttempts = (attempts, chunk) =>
   attempts.slice(chunk * CHUNK_SIZE, chunk * CHUNK_SIZE + CHUNK_SIZE);
 
-export function createGameRecordsView({ records, openReview, openPots, onReturnGame, toast }) {
+export function createGameRecordsView({
+  records,
+  openReview,
+  openPots,
+  onReturnGame,
+  onTutorial,
+  toast,
+}) {
   const liveMain = document.querySelector('main.main'),
     page = document.querySelector('#records-page'),
     content = document.querySelector('#records-content'),
@@ -93,6 +100,7 @@ export function createGameRecordsView({ records, openReview, openPots, onReturnG
     listSessions = new Map(),
     listOrder = '',
     listSignatures = new Map(),
+    afterReturn = null,
     rowHeight = 78;
   const filledChunks = new Set(),
     chunkHeights = new Map();
@@ -184,7 +192,15 @@ export function createGameRecordsView({ records, openReview, openPots, onReturnG
   }
 
   const navigation = createRecordsNavigation({ window, show: showRoute }),
-    guideMenu = createGuideMenu({ onRecords: () => navigate({ page: 'list' }) });
+    guideMenu = createGuideMenu({
+      onRecords: () => navigate({ page: 'list' }),
+      // The tutorial plays on the live table, so a records visit ends first.
+      onTutorial() {
+        if (route.page === 'game') return onTutorial();
+        afterReturn = onTutorial;
+        navigate({ page: 'game' });
+      },
+    });
   function navigate(next) {
     navigation.navigate(next);
   }
@@ -294,6 +310,9 @@ export function createGameRecordsView({ records, openReview, openPots, onReturnG
       archive = null;
       window.scrollTo(0, 0);
       onReturnGame?.();
+      const pending = afterReturn;
+      afterReturn = null;
+      pending?.();
       return;
     }
     if (route.page === 'hand') {

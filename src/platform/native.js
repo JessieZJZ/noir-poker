@@ -10,6 +10,8 @@ export function handleAndroidBack(document, app) {
   if (dialogs.length) dialogs.at(-1).close();
   else if (document.querySelector?.('#guide-menu:not([hidden])'))
     document.querySelector('#rules-button')?.click();
+  else if (document.body?.dataset.tutorial)
+    document.dispatchEvent(new CustomEvent('noir:tutorial-exit'));
   else if (['hand', 'list'].includes(document.body?.dataset.recordsPage))
     document.defaultView.dispatchEvent(new Event('noir:records-back'));
   else return app.minimizeApp();

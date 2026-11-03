@@ -125,9 +125,9 @@ export async function waitForNativeHeroTurn(
   // This changes no application timers or analysis workload.
   const timeoutMs = (playerCount - 1) * BOT_THINK_LIMITS.maximum + 10000;
   const observations = [];
-  let advancedSettlement = false;
-  try {
-    await app.waitFor(
+  let advancedHand = null;
+  const reachTurn = () =>
+    app.waitFor(
       async () => {
         const snapshot = await app.evaluate(() => {
           const game = window.noir.getState();
@@ -144,10 +144,9 @@ export async function waitForNativeHeroTurn(
         // A real walk is a completed hand even though the hero never acts.
         // Lifecycle audits retain it instead of advancing into another hand.
         if (acceptSettled && snapshot.phase === 'done') return true;
-        if (advanceSettled && !advancedSettlement && snapshot.phase === 'done') {
-          advancedSettlement = true;
-          await app.click('#next-button');
-          return false;
+        if (advanceSettled && snapshot.phase === 'done' && snapshot.hand !== advancedHand) {
+          advancedHand = snapshot.hand;
+          return 'settled';
         }
         return (
           snapshot.phase === 'playing' &&
@@ -159,11 +158,20 @@ export async function waitForNativeHeroTurn(
       timeoutMs,
       'The reset hand must reach the real hero turn',
     );
+  try {
+    // One emulator click can outlast the budget, so the budget covers only the
+    // app's waits: the next hand gets its own bot pauses in full. That hand can
+    // settle too, because a big blind wins a walk without acting. Walks reach
+    // the hero once per orbit, so more hands than seats means it never acts.
+    for (let hands = 0; (await reachTurn()) === 'settled'; hands++) {
+      if (hands === playerCount) throw Error('The hero never received a turn');
+      await app.click('#next-button');
+    }
     return {
       timeoutMs,
       elapsedMs: now() - started,
       observations,
-      advancedSettlement,
+      advancedSettlement: advancedHand !== null,
       ...(acceptSettled ? { settledBeforeHero: observations.at(-1)?.state.phase === 'done' } : {}),
     };
   } catch (error) {
@@ -173,23 +181,31 @@ export async function waitForNativeHeroTurn(
 }
 
 export async function waitForPendingOpponent(app) {
+  const message = 'Background test needs a pending opponent action';
+  const pending = (game) => game.phase === 'playing' && game.actor && game.actor !== '你';
   // A real opponent can answer before Android's next HTTP state read. Follow
-  // the normal UI to the next decision instead of waiting on a hero turn.
-  return app.waitFor(
-    async () => {
-      const game = await app.state();
-      if (game.phase === 'playing' && game.actor && game.actor !== '你') return game;
-      if (game.phase === 'playing' && game.legal.enabled) await app.click('#call-button');
-      else if (game.phase === 'done') await app.click('#next-button');
-      else return null;
-      // A real native click can finish near the polling deadline. Check the
-      // resulting public state now rather than discarding the opponent turn.
-      const next = await app.state();
-      return next.phase === 'playing' && next.actor && next.actor !== '你' ? next : null;
-    },
-    15000,
-    'Background test needs a pending opponent action',
-  );
+  // the normal UI to the next decision instead of waiting on a hero turn. One
+  // emulator click can outlast the window, so it covers only the app's waits:
+  // the hero's check may close the street, leaving a deal before any opponent.
+  for (let decisions = 0; decisions < 12; decisions++) {
+    const game = await app.waitFor(
+      async () => {
+        const current = await app.state();
+        const decision =
+          current.phase === 'done' || (current.phase === 'playing' && current.legal.enabled);
+        return pending(current) || decision ? current : null;
+      },
+      15000,
+      message,
+    );
+    if (pending(game)) return game;
+    await app.click(game.phase === 'done' ? '#next-button' : '#call-button');
+    // Check the resulting public state now rather than discarding the
+    // opponent turn while the next window starts.
+    const next = await app.state();
+    if (pending(next)) return next;
+  }
+  throw Error(message);
 }
 
 // Keep the installed-app completion assertion and its existing deadline. The
@@ -922,7 +938,8 @@ export async function nativeScenarios(app) {
     return { stakes: state.stakes, artwork };
   });
   await check('card-ranks-stay-stable-after-native-repaint', async () => {
-    await app.waitHero();
+    // Everyone can fold to the big blind, ending the hand before a hero turn.
+    await waitForNativeHeroTurn(app, { advanceSettled: true });
     const before = await app.evaluate(readCardRankState);
     assert.equal(before.textCount, 0);
     assert.equal(before.ranks.length, 2);
@@ -4376,6 +4393,95 @@ export async function nativeScenarios(app) {
       resumed: { session: resumed.sessionNumber, hand: resumed.hand, wealth },
       nativeBack: { reviewBeforeBack, reviewBack, returnGameBack },
     };
+  });
+  await check('beginner-tutorial-guided-hand', async () => {
+    const before = await app.state();
+    const records = await app.evaluate(() => JSON.stringify(window.noir.getRecords()));
+    await app.click('#rules-button');
+    await app.click('#tutorial-menu-item');
+    await app.waitFor(
+      () => app.visible('#tutorial-dialog'),
+      10000,
+      'The tutorial intro must open from the guide menu',
+    );
+    await app.screenshot('tutorial-intro');
+    await app.click('#tutorial-dialog-primary');
+    await app.waitFor(
+      () => app.visible('#tutorial-coach'),
+      10000,
+      'The coach must appear on the real table',
+    );
+    assert.deepEqual((await app.state()).hole, ['10♥', '9♥']);
+    let coached = false;
+    for (let step = 0; step < 300; step++) {
+      const view = (await app.state()).tutorial;
+      if (view.stage === 'summary') break;
+      if (view.allowed?.action === 'call' && !coached) {
+        coached = true;
+        await app.screenshot('tutorial-guided-turn');
+        assert.equal(
+          await app.evaluate(() => document.querySelector('#fold-button').disabled),
+          true,
+        );
+        if (await app.evaluate(() => document.documentElement.dataset.tablet === 'true'))
+          for (const orientation of ['LANDSCAPE', 'PORTRAIT']) {
+            await app.rotate(orientation);
+            const landscape = orientation === 'LANDSCAPE';
+            await app.waitFor(
+              () =>
+                app.evaluate((wide) => {
+                  const panel = document.querySelector('#tutorial-coach').getBoundingClientRect();
+                  const table = document.querySelector('#arena').getBoundingClientRect();
+                  const dock = document.querySelector('.action-dock').getBoundingClientRect();
+                  return (
+                    innerWidth > innerHeight === wide &&
+                    panel.top >= 0 &&
+                    panel.bottom <= innerHeight &&
+                    dock.bottom <= innerHeight &&
+                    (wide ? panel.left >= table.right : panel.top >= table.bottom)
+                  );
+                }, landscape),
+              10000,
+              `The coach must stay on screen in ${orientation}`,
+            );
+            await app.screenshot(`tutorial-tablet-${orientation.toLowerCase()}`);
+            assert.deepEqual((await app.state()).tutorial, view);
+          }
+      }
+      if (view.options.length) {
+        await app.click('[data-tutorial-answer="1"]');
+        await app.click('#tutorial-next');
+      } else if (view.canContinue) await app.click('#tutorial-next');
+      else if (view.allowed?.action === 'call' || view.allowed?.action === 'check')
+        await app.click('#call-button');
+      else if (view.allowed?.action === 'raise') {
+        await app.click('[data-preset="half"]');
+        await app.click('#raise-button');
+      } else await new Promise((resolve) => setTimeout(resolve, 150));
+    }
+    const finished = await app.state();
+    assert.equal(finished.tutorial.stage, 'summary');
+    assert.equal(finished.phase, 'done');
+    assert.ok(finished.result.includes('同花'));
+    await app.screenshot('tutorial-lesson-complete');
+    // Only Android has a system Back; on iOS it would leave the WebView page.
+    if (app.platform === 'android') await app.back();
+    else await app.click('#tutorial-dialog-close');
+    await app.waitFor(
+      async () => (await app.state()).tutorial === null,
+      10000,
+      'Leaving the tutorial must restore the live table',
+    );
+    const after = await app.state();
+    assert.equal(after.hand, before.hand);
+    assert.deepEqual(after.hole, before.hole);
+    assert.equal(after.pot, before.pot);
+    assert.deepEqual(
+      after.players.map((player) => player.stack),
+      before.players.map((player) => player.stack),
+    );
+    assert.equal(await app.evaluate(() => JSON.stringify(window.noir.getRecords())), records);
+    return { hole: finished.hole, result: finished.result, resumedHand: after.hand };
   });
   const unknown = selectedScenarios?.filter((name) => !seenScenarios.has(name));
   if (unknown?.length)

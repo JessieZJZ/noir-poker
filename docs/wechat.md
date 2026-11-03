@@ -32,7 +32,7 @@ NOIR_WECHAT_APP_ID=wx你的AppID npm run wechat:open
 
 微信开发者工具里的“编译”只编译已导入的 `.artifacts/wechat`，不会执行仓库的源码生成步骤。只修改 `src/` 或 `miniprogram/` 而未重新生成，该按钮仍会读取旧版本。多工作目录并行开发时，监听器必须从当前工程对应的 checkout 启动；另一个 worktree 的监听器不会更新此目录。暂停测试验收时仍可单独生成预览资源，不需要运行 E2E。若重建后工具仍显示旧文件，只清理该工程的编译缓存并重新打开，保留存储与本机 IDE 偏好。
 
-每次生成都从当前共享源码转译 CommonJS/ES2019，把引用的 JSON 数据内嵌到 JavaScript 模块，保留共享 JavaScript 模块之间的引用，压缩生成模块的空白、语法与局部标识符以控制包体，保留公共导出与属性名，压缩并裁切全部本地头像，生成本地声音，写入文件清单和源码 SHA-256。小程序运行时无需 Node 的 JSON 模块加载器。`wechat:verify` 拒绝过期源码、损坏文件、缺失头像或不一致的 AppID。主包与每个分包分别采用 2 MiB 的保守预算，总包预算 20 MiB。音乐在本地 `music` 分包，声音开启时通过 `require.async` 加载本地资源入口后用独立循环上下文播放；不占用主包预算，也不使用远程音频 URL。清单记录各包大小，超出就阻止构建。
+每次生成都从当前共享源码转译 CommonJS/ES2019，把引用的 JSON 数据内嵌到 JavaScript 模块，保留共享 JavaScript 模块之间的引用，压缩生成模块的空白、语法与局部标识符以控制包体，保留公共导出与属性名，压缩并裁切全部本地头像，生成本地声音，写入文件清单和源码 SHA-256。小程序运行时无需 Node 的 JSON 模块加载器。`wechat:verify` 拒绝过期源码、损坏文件、缺失头像或不一致的 AppID。主包与每个分包分别采用 2 MiB 的保守预算，总包预算 20 MiB。音乐在本地 `music` 分包，声音开启时通过 `require.async` 加载本地资源入口后用独立循环上下文播放；不占用主包预算，也不使用远程音频 URL。新手引导的课程脚本 `shared/engine/tutorial.js` 由构建移到 `tutorial/lessons.js`，同样按需加载，并由 `preloadRule` 在牌桌页预下载。清单记录各包大小，超出就阻止构建。
 
 `miniprogram/project.config.json` 与 `project.private.config.json` 是本机 IDE 状态，忽略 Git 跟踪及模板源码指纹；项目配置由构建器生成，私有偏好从目标工程保留，不进入运行文件清单。调整 IDE 偏好不会让共享源码或运行资源被误判为过期。
 
@@ -71,7 +71,7 @@ npx vite --host 127.0.0.1 --port 4192 --mode test
 node tests/wechat/web-reference.mjs .artifacts/wechat-e2e http://127.0.0.1:4192
 ```
 
-构建会去掉 WXSS 的注释、缩进和空行（字体样式除外），规则与声明保持不变；共享样式仍与 Web 源文件逐条一致。主包限额 2 MiB。中文字体使用只覆盖小程序文案的专用子集（见 [界面一致性](interface-parity.md)），主包约 1.65 MiB；新增样式或文案后仍需确认 `wechat:build` 输出的主包体积。新增汉字需要重新生成字体子集，构建回归会列出缺失字形。
+构建会去掉 WXSS 的注释、缩进和空行（字体样式除外），规则与声明保持不变；共享样式仍与 Web 源文件逐条一致。WXML 去掉每行首尾空白和空行，文本节点不变。主包限额 2 MiB。中文字体使用只覆盖小程序文案的专用子集（见 [界面一致性](interface-parity.md)），主包约 2045 KiB，余量只有几 KiB；新增样式或文案后必须确认 `wechat:build` 输出的主包体积，放不下的内容优先移到按需加载的分包。新增汉字需要重新生成字体子集，构建回归会列出缺失字形。
 
 CLI 工程路径使用绝对路径。清理的仅是编译缓存，保留设置与登录；脚本会检查最新 Page 方法已经加载，并通过真实重新练习入口开始验证，避免上一次完成的牌局或旧代码被误认为当前运行结果。
 
@@ -105,7 +105,7 @@ CLI 工程路径使用绝对路径。清理的仅是编译缓存，保留设置�
 
 历史详情与实时牌桌共用 `pages/table/table-surface.wxml`；活动模板放在 `table-templates.wxml`。应用启动封面仅存在于实时页入口 `table.wxml`，历史入口不包含它，避免初始数据到达前闪现封面。滑轨触摸由 `raise-rail.wxs` 在渲染层处理，逻辑层只接收金额预览和最终选择，见 [加注滑轨](raise-slider.md)。
 
-顶部菜单提供玩法指南和对局记录，菜单关闭时轮换文字。`pages/records/records` 按局倒序、局内按手和重打次数正序展示图形底牌、输赢、净变化及“补码”标记；局项不显示完成手数。`pages/history/history` 是独立的历史结算页面，复用 `pages/table/page-definition.js` 的结算视图与复盘，只允许查看。关闭后继续同局下一手，未完成手的所有下注撤回、不计统计；待生效人数或盲注变化才会开启新局。更多统计口径见 [本机对局记录](game-records.md)。
+顶部菜单提供玩法指南、[新手引导](tutorial.md)和对局记录，菜单关闭时轮换文字。`pages/records/records` 按局倒序、局内按手和重打次数正序展示图形底牌、输赢、净变化及“补码”标记；局项不显示完成手数。`pages/history/history` 是独立的历史结算页面，复用 `pages/table/page-definition.js` 的结算视图与复盘，只允许查看。关闭后继续同局下一手，未完成手的所有下注撤回、不计统计；待生效人数或盲注变化才会开启新局。更多统计口径见 [本机对局记录](game-records.md)。
 
 实际 DevTools 专项（端口按本机实际值替换）：
 
@@ -117,6 +117,7 @@ node tests/wechat/game-records.mjs ws://127.0.0.1:9483 .artifacts/wechat-records
 
 ```sh
 node tests/wechat/records-music.mjs ws://127.0.0.1:9483 .artifacts/wechat-records-music/local
+node tests/wechat/tutorial.mjs ws://127.0.0.1:9512 .artifacts/wechat-tutorial/local
 ```
 
 该套需当前源码生成的包及真实页面导航，保留图形底牌、历史结算／复盘、不中止实时对局、重打与刷新退款的报告和截图。静态编译与 mock 不代表此运行级别通过。Web E2E 使用单独的 Vite 测试服务，不启动小程序监听器，避免覆盖正在验收的微信包。

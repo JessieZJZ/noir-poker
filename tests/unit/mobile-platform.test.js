@@ -111,6 +111,18 @@ test('Android back closes the top dialog first and minimizes only at the table',
     ['list', 'noir:records-back'],
   ]);
   assert.equal(minimized, 1);
+  const tutorialEvents = [];
+  await handleAndroidBack(
+    {
+      querySelectorAll: () => [],
+      body: { dataset: { tutorial: 'lesson' } },
+      querySelector: () => null,
+      dispatchEvent: (event) => tutorialEvents.push(event.type),
+    },
+    app,
+  );
+  assert.deepEqual(tutorialEvents, ['noir:tutorial-exit']);
+  assert.equal(minimized, 1, 'Back leaves the tutorial instead of minimizing the app');
   await handleAndroidBack(
     {
       querySelectorAll: () => [],

@@ -32,6 +32,23 @@ const {
   PREMIUM_SPARKS,
   CONFETTI_PIECES,
 } = require('./game-effects.js');
+// The tutorial's panel sits above the dock; landscape tablets have width to
+// spare instead, so the panel moves beside the table as on Web.
+const TUTORIAL_SIDE_WIDTH = 312;
+// Scripted hands lock the slider, so short phones give its row to the table.
+const TUTORIAL_SLIDER_HEIGHT = 27;
+function tutorialCoach(width, height, view) {
+  const none = { side: false, height: 0, width: 0, dockSaving: 0 };
+  if (!view.tutorialPlaying) return none;
+  if (width >= 901 && height >= 601 && width > height)
+    return { ...none, side: true, width: TUTORIAL_SIDE_WIDTH };
+  const short = height <= 700;
+  return {
+    ...none,
+    height: short ? 158 : 186,
+    dockSaving: short && view.tutorial?.stage === 'lesson' ? TUTORIAL_SLIDER_HEIGHT : 0,
+  };
+}
 // Match responsive chrome to the pixels reserved around the fitted arena.
 // Phones retain their original budget; tablet touch controls need more room.
 function viewportChrome(width, height) {
@@ -136,6 +153,12 @@ module.exports = {
     finishing: false,
     raiseControl: { enabled: false, position: 0, key: 'initial' },
     flyingChips: [],
+    tutorial: null,
+    tutorialPlaying: false,
+    tutorialCoachHeight: 0,
+    tutorialSide: false,
+    tutorialShortDock: false,
+    tutorialFocus: {},
     premiumSparks: PREMIUM_SPARKS,
     confettiPieces: CONFETTI_PIECES,
     crownStyle: '',
@@ -147,6 +170,7 @@ module.exports = {
     this._controller = createWechatController({
       createReviewWorker:
         typeof wx.createWorker === 'function' ? () => wx.createWorker('workers/review.js') : null,
+      loadTutorial: () => require.async('../../tutorial/lessons.js'),
       publish: (view) => {
         if (
           !view.canRaise ||
@@ -162,7 +186,9 @@ module.exports = {
         const game = this._controller?.getGame();
         const board = view.board;
         const showdown = game ? showdownPresentation(game, view.profiles) : [];
-        const dealKey = `${view.sessionNumber}:${view.hand}:${view.replay}`;
+        const dealKey =
+          `${view.sessionNumber}:${view.hand}:${view.replay}` +
+          (view.tutorialPlaying ? `:${view.tutorialDeal}` : '');
         const changedDeal = dealKey !== this._dealKey;
         if (changedDeal) {
           this._motionEpoch = (this._motionEpoch || 0) + 1;
@@ -175,7 +201,11 @@ module.exports = {
         }
         // Records keep the live hand running offscreen. Its new cards must
         // settle immediately; there is no visible animation timer while hidden.
-        const animate = !this._hidden && (!this._readOnlyAttempt || Number.isInteger(this._peekId));
+        // Leaving the tutorial restores a table that was already dealt.
+        const animate =
+          !this._hidden &&
+          (!this._readOnlyAttempt || Number.isInteger(this._peekId)) &&
+          !(this.data.tutorialPlaying && !view.tutorialPlaying);
         const previousCards = dealKey === this._dealKey ? this._boardCount || 0 : 0;
         this._dealKey = dealKey;
         const presentedBoard = board.map((card, index) => ({
@@ -549,13 +579,19 @@ module.exports = {
   publicLayout(board = [], view = this.data, viewport = this.data) {
     if (view.seats?.length) {
       const chrome = viewportChrome(viewport.windowWidth, viewport.windowHeight);
+      const coach = tutorialCoach(viewport.windowWidth, viewport.windowHeight, view);
       const tableHeight = Math.max(
         0,
-        viewport.windowHeight - viewport.topInset - viewport.bottomInset - chrome.chromeHeight,
+        viewport.windowHeight -
+          viewport.topInset -
+          viewport.bottomInset -
+          chrome.chromeHeight -
+          coach.height +
+          coach.dockSaving,
       );
       const fitted = phoneLayout({
-        width: viewport.windowWidth,
-        availableWidth: viewport.windowWidth - 18,
+        width: viewport.windowWidth - coach.width,
+        availableWidth: viewport.windowWidth - coach.width - 18,
         height: tableHeight,
         seats: view.seats,
         displayHeight: viewport.windowHeight - viewport.topInset - viewport.bottomInset - 36,
@@ -632,6 +668,10 @@ module.exports = {
           corridorWidth: corridor * fitted.arenaScale,
         }),
         tableHeight,
+        liveDockHeight: chrome.liveDockHeight - coach.dockSaving,
+        tutorialCoachHeight: coach.height,
+        tutorialSide: coach.side,
+        tutorialShortDock: coach.dockSaving > 0,
         phoneLayout: true,
         phoneSeats: positioned.map((seat, index) => {
           const before = this.data.phoneSeats?.find((previous) => previous.id === seat.id);
@@ -901,7 +941,7 @@ module.exports = {
   },
   controlForRaise(view = this.data) {
     return {
-      enabled: !!view.canRaise && !this._hidden && !this._destroyed,
+      enabled: !!view.canRaise && !view.lockSizing && !this._hidden && !this._destroyed,
       position: view.sliderValue || 0,
       key: [
         this._raiseEpoch || 0,
@@ -919,6 +959,7 @@ module.exports = {
   acceptsRail(message) {
     return (
       this.data.canRaise &&
+      !this.data.lockSizing &&
       !this._hidden &&
       !this._destroyed &&
       message.key === this.data.raiseControl.key &&
@@ -1297,6 +1338,31 @@ module.exports = {
         this._browsingRecords = false;
       },
     });
+  },
+  async openTutorial() {
+    this.closeResourceMenu();
+    try {
+      if (await this.call('startTutorial')) wx.pageScrollTo?.({ scrollTop: 0, duration: 0 });
+    } catch {
+      wx.showToast?.({ title: '新手引导加载失败，请重试', icon: 'none' });
+    }
+  },
+  exitTutorial() {
+    this.call('exitTutorial');
+  },
+  tutorialNext() {
+    this.call('tutorialNext');
+  },
+  tutorialAnswer(event) {
+    this.call('tutorialAnswer', Number(event.currentTarget.dataset.index));
+  },
+  tutorialPrimary() {
+    this.call('tutorialPrimary');
+    wx.pageScrollTo?.({ scrollTop: 0, duration: 0 });
+  },
+  tutorialSecondary() {
+    this.call('tutorialSecondary');
+    wx.pageScrollTo?.({ scrollTop: 0, duration: 0 });
   },
   openGuide() {
     this.showGuide();
