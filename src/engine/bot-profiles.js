@@ -1252,8 +1252,12 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
     ['BTN', 'CO'].includes(view.position)
   )
     attackRate = Math.max(attackRate, style.lateOpenAttack ?? 0);
+  // Leading into the last street's aggressor is an advanced skill. Below
+  // that level only a genuinely strong own hand that passed the value gate
+  // may lead; one pair, draws and bluffs still check to the aggressor.
+  const strongValueLead = value && features.strongMade && !view.playsBoard;
   if (
-    (!isDonkLead(view) || hasBotSkill(view.difficulty, 'donk')) &&
+    (!isDonkLead(view) || hasBotSkill(view.difficulty, 'donk') || strongValueLead) &&
     (value || semiBluff || pureBluff || smallCbet || thinValue) &&
     roll('attack', attackRate) < attackRate
   ) {

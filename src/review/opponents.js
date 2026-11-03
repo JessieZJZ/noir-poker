@@ -2,6 +2,8 @@ import { compactChips } from '../engine/chip-format.js';
 import { deckOfCards, evaluate, rankText } from '../engine/poker.js';
 import { actionLabel } from '../engine/action-labels.js';
 import { MOOD_LABELS } from '../engine/bot-profiles.js';
+import { isDonkLead } from '../engine/bot-deception.js';
+import { hasBotSkill } from '../engine/bot-difficulty.js';
 import { decisionContext } from './context.js';
 import { drawLabel, drawCompletion, publicHistory, preflopPotential } from './narrative.js';
 import { spotFacts } from './spot-facts.js';
@@ -730,6 +732,25 @@ export function explainOpponent(record, identities = []) {
       logicParts = [...(logicParts || [logic]), ...risks, ...madeRedrawReasoning(snapshot, c)];
       logic = logicParts.join('');
     }
+  }
+  // Below advanced difficulty a made hand that is not a strong value lead
+  // checks to the last street's aggressor; say so instead of only listing
+  // board facts, which read as if the check were a deliberate trap.
+  if (
+    usePolicyReason &&
+    record.action === 'check' &&
+    ['free-check', 'pot-control'].includes(t.reason) &&
+    v.legal &&
+    isDonkLead(v) &&
+    !hasBotSkill(t.difficulty ?? v.difficulty, 'donk') &&
+    c.made.score[0] >= 1 &&
+    !['board', 'board-pair'].includes(c.handClass)
+  ) {
+    logicParts = [
+      `前一街的进攻者还没行动，${subject}没有抢先下注，而是过牌把行动留给进攻者，等对方下注后再决定跟注或加注。`,
+      ...(logicParts || [logic]),
+    ];
+    logic = logicParts.join('');
   }
   const exposure = raiseExposureNote(snapshot, c.extra);
   if (exposure) {
