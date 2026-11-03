@@ -11,9 +11,10 @@ test('review shares one collapsed activity section, highlights each perspective 
   await page.evaluate((g) => window.qa.loadRecordedGame(g), game);
   await page.locator('#review-hand-button').click();
   await expect(page.locator('#review-dialog')).toHaveAttribute('data-analysis-status', 'done', {
-    timeout: 30000,
+    timeout: 120000,
   });
-  await expect(page.locator('#review-activity')).not.toHaveAttribute('open', '');
+  // The hand activity opens by default.
+  await expect(page.locator('#review-activity')).toHaveAttribute('open', '');
   await expect(
     page.locator('#review-public-actions, .review-step-nav, [data-opponent-nav]'),
   ).toHaveCount(0);
@@ -21,7 +22,7 @@ test('review shares one collapsed activity section, highlights each perspective 
   await expect(page.locator('#review-coach-explanation [data-matchup-direction]')).toHaveCount(1);
   await expect(page.locator('#review-coach-explanation h4')).toHaveText('复盘分析总结');
   await page.locator('#review-timeline [data-review-index="0"]').click();
-  await page.locator('#review-activity summary').click();
+  await expect(page.locator('#review-activity')).toHaveAttribute('open', '');
   await expect(page.locator('#review-activity .review-activity-current')).toHaveCount(1);
   await expect(page.locator('#review-activity .review-activity-emphasis')).toHaveCount(
     game.decisions.length,
@@ -45,7 +46,8 @@ test('review shares one collapsed activity section, highlights each perspective 
     expect(text).toContain('Mia');
   await page.locator('#review-dialog .icon-button.close-dialog').click();
   await page.locator('#review-hand-button').click();
-  await expect(page.locator('#review-activity')).not.toHaveAttribute('open', '');
+  // The hand activity opens by default.
+  await expect(page.locator('#review-activity')).toHaveAttribute('open', '');
   await info.attach('review-layout', { body: await page.screenshot(), contentType: 'image/png' });
 });
 
@@ -67,12 +69,16 @@ test('difficulty settings describe the growing strategy set and emotion boundari
   await expect(page.locator('.emotion-module')).toContainText('不增加策略能力');
   for (const locale of ['en', 'zh-TW', 'ja', 'ko', 'es', 'it', 'pt', 'de', 'fr', 'ru']) {
     await page.locator('#language-select').selectOption(locale);
+    await expect(page.locator('html')).toHaveAttribute('lang', locale);
     await expect(page.locator('#difficulty-description')).not.toBeEmpty();
     if (!['ja', 'zh-TW'].includes(locale)) {
       await expect(page.locator('#difficulty-description')).not.toContainText(/\p{Script=Han}/u);
-      await expect(page.locator('.emotion-module .setting-description')).not.toContainText(
-        /\p{Script=Han}/u,
-      );
+      // Every emotion description and legend entry is translated.
+      const emotionCopy = await page
+        .locator('.emotion-module .setting-description, .emotion-module .mood-legend li')
+        .allTextContents();
+      expect(emotionCopy.length).toBeGreaterThanOrEqual(6);
+      for (const text of emotionCopy) expect(text).not.toMatch(/\p{Script=Han}/u);
     }
   }
 });

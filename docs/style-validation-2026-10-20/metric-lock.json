@@ -1,0 +1,220 @@
+{
+  "sourceDigest": "2715b2208e52449929de6feebb631d3221d6be190dc2c93b96299d48cb19dd64",
+  "repetitions": 16,
+  "note": "Development selection, each pair fixes one metric, field and direction before held-out probes. At least 100 independent source-hand clusters and 25pp development effect. Not a human perception threshold.",
+  "allPairs": 15,
+  "clearPairs": 15,
+  "pairs": [
+    {
+      "first": "balanced",
+      "second": "rook",
+      "clearlyDifferent": true,
+      "best": {
+        "metric": "turn-barrel",
+        "field": "large",
+        "differencePP": -65.17053973013493,
+        "ci95PP": [-68.32833583208395, -61.98463268365817],
+        "snapshots": 667,
+        "handClusters": 667,
+        "conditionalDecisions": 10672
+      }
+    },
+    {
+      "first": "balanced",
+      "second": "jett",
+      "clearlyDifferent": true,
+      "best": {
+        "metric": "cheap-entry",
+        "field": "continue",
+        "differencePP": -32.25490196078431,
+        "ci95PP": [-34.3014705882353, -30.31862745098039],
+        "snapshots": 2040,
+        "handClusters": 2040,
+        "conditionalDecisions": 32640
+      }
+    },
+    {
+      "first": "balanced",
+      "second": "nico",
+      "clearlyDifferent": true,
+      "best": {
+        "metric": "turn-barrel",
+        "field": "small",
+        "differencePP": -33.44265367316342,
+        "ci95PP": [-35.08245877061469, -32.027736131934034],
+        "snapshots": 667,
+        "handClusters": 667,
+        "conditionalDecisions": 10672
+      }
+    },
+    {
+      "first": "balanced",
+      "second": "owen",
+      "clearlyDifferent": true,
+      "best": {
+        "metric": "small-open-defense",
+        "field": "continue",
+        "differencePP": 31.32659313725491,
+        "ci95PP": [29.30453431372549, 33.33946078431372],
+        "snapshots": 2040,
+        "handClusters": 2040,
+        "conditionalDecisions": 32640
+      }
+    },
+    {
+      "first": "balanced",
+      "second": "luka",
+      "clearlyDifferent": true,
+      "best": {
+        "metric": "dry-high-cbet",
+        "field": "small",
+        "differencePP": -72.93632075471697,
+        "ci95PP": [-78.24292452830188, -67.62971698113208],
+        "snapshots": 106,
+        "handClusters": 106,
+        "conditionalDecisions": 1696
+      }
+    },
+    {
+      "first": "rook",
+      "second": "jett",
+      "clearlyDifferent": true,
+      "best": {
+        "metric": "turn-barrel",
+        "field": "raise",
+        "differencePP": 36.70352323838081,
+        "ci95PP": [35.288605697151425, 38.10907046476761],
+        "snapshots": 667,
+        "handClusters": 667,
+        "conditionalDecisions": 10672
+      }
+    },
+    {
+      "first": "rook",
+      "second": "nico",
+      "clearlyDifferent": true,
+      "best": {
+        "metric": "turn-barrel",
+        "field": "large",
+        "differencePP": 65.17053973013493,
+        "ci95PP": [61.98463268365817, 68.32833583208395],
+        "snapshots": 667,
+        "handClusters": 667,
+        "conditionalDecisions": 10672
+      }
+    },
+    {
+      "first": "rook",
+      "second": "owen",
+      "clearlyDifferent": true,
+      "best": {
+        "metric": "small-open-defense",
+        "field": "continue",
+        "differencePP": 56.47977941176471,
+        "ci95PP": [54.19730392156863, 58.60600490196079],
+        "snapshots": 2040,
+        "handClusters": 2040,
+        "conditionalDecisions": 32640
+      }
+    },
+    {
+      "first": "rook",
+      "second": "luka",
+      "clearlyDifferent": true,
+      "best": {
+        "metric": "turn-barrel",
+        "field": "large",
+        "differencePP": 45.57721139430285,
+        "ci95PP": [43.29085457271364, 47.854197901049474],
+        "snapshots": 667,
+        "handClusters": 667,
+        "conditionalDecisions": 10672
+      }
+    },
+    {
+      "first": "jett",
+      "second": "nico",
+      "clearlyDifferent": true,
+      "best": {
+        "metric": "cheap-entry",
+        "field": "continue",
+        "differencePP": 32.000612745098046,
+        "ci95PP": [30.067401960784313, 34.05024509803922],
+        "snapshots": 2040,
+        "handClusters": 2040,
+        "conditionalDecisions": 32640
+      }
+    },
+    {
+      "first": "jett",
+      "second": "owen",
+      "clearlyDifferent": true,
+      "best": {
+        "metric": "cheap-entry",
+        "field": "continue",
+        "differencePP": 61.95772058823529,
+        "ci95PP": [59.877450980392155, 64.09313725490196],
+        "snapshots": 2040,
+        "handClusters": 2040,
+        "conditionalDecisions": 32640
+      }
+    },
+    {
+      "first": "jett",
+      "second": "luka",
+      "clearlyDifferent": true,
+      "best": {
+        "metric": "dry-high-cbet",
+        "field": "raise",
+        "differencePP": -50.117924528301884,
+        "ci95PP": [-55.42452830188679, -44.81132075471698],
+        "snapshots": 106,
+        "handClusters": 106,
+        "conditionalDecisions": 1696
+      }
+    },
+    {
+      "first": "nico",
+      "second": "owen",
+      "clearlyDifferent": true,
+      "best": {
+        "metric": "small-open-defense",
+        "field": "continue",
+        "differencePP": 36.629901960784316,
+        "ci95PP": [34.650735294117645, 38.76531862745098],
+        "snapshots": 2040,
+        "handClusters": 2040,
+        "conditionalDecisions": 32640
+      }
+    },
+    {
+      "first": "nico",
+      "second": "luka",
+      "clearlyDifferent": true,
+      "best": {
+        "metric": "dry-high-cbet",
+        "field": "small",
+        "differencePP": -40.80188679245283,
+        "ci95PP": [-46.81603773584906, -34.846698113207545],
+        "snapshots": 106,
+        "handClusters": 106,
+        "conditionalDecisions": 1696
+      }
+    },
+    {
+      "first": "owen",
+      "second": "luka",
+      "clearlyDifferent": true,
+      "best": {
+        "metric": "small-open-defense",
+        "field": "continue",
+        "differencePP": -31.397058823529413,
+        "ci95PP": [-33.39154411764706, -29.384191176470587],
+        "snapshots": 2040,
+        "handClusters": 2040,
+        "conditionalDecisions": 32640
+      }
+    }
+  ],
+  "lockedAt": "2026-10-20T11:43:09.524Z"
+}

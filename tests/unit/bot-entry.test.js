@@ -115,7 +115,7 @@ test('small-open continuation keeps style and position differences and rejects g
   assert.equal(decision({ ...v, position: 'CO' }).action, 'call');
   assert.equal(decision({ ...v, position: 'UTG' }).action, 'fold');
   assert.equal(decision(smallOpen('7s 2h')).action, 'fold');
-  const totals = ['st', 'balanced', 'peter'].map((profile) => {
+  const totals = ['owen', 'balanced', 'jett'].map((profile) => {
     let continues = 0;
     for (let a = 0; a < deck.length; a++)
       for (let b = a + 1; b < deck.length; b++) {
@@ -125,10 +125,78 @@ test('small-open continuation keeps style and position differences and rejects g
   });
   assert.ok(totals[0] < totals[1] && totals[1] < totals[2], `ST / balanced / Peter: ${totals}`);
 });
-test('the small-open branch stops at size, effective-stack, all-in and re-raise boundaries', () => {
+// A deep or short open at a given size in BB, with the chips it really costs.
+const sizedOpen = (hole, bb, { stackBB = 100, position = 'CO', bigBlind = 50 } = {}) => {
+  const open = bb * bigBlind,
+    stack = stackBB * bigBlind,
+    v = smallOpen(hole, { position, stack, bigBlind, chipUnit: bigBlind / 2 });
+  return {
+    ...v,
+    currentBet: open,
+    pot: 1.5 * bigBlind + open,
+    contestable: 1.5 * bigBlind + 2 * open,
+    history: [{ id: 0, street: 0, action: 'raise', amount: open }],
+    opponents: v.opponents.map((p) =>
+      p.id === 0 ? { ...p, stack: stack - open, bet: open } : { ...p, stack },
+    ),
+    legal: { ...v.legal, toCall: open, callAmount: open, maxRaiseTo: stack },
+  };
+};
+const everyHand = () => {
+  const hands = [];
+  for (let a = 0; a < deck.length; a++)
+    for (let b = a + 1; b < deck.length; b++) hands.push([deck[a], deck[b]]);
+  return hands;
+};
+const continues = (hole, bb, options, profile) =>
+  decision({ ...sizedOpen('7s 6s', bb, options), hole }, profile).action !== 'fold';
+test('calling ranges narrow steadily from 5BB, and only strong hands reach 8BB', () => {
+  for (const [profile, position] of [
+    ['balanced', 'CO'],
+    ['nico', 'CO'],
+    ['owen', 'SB'],
+    ['iris', 'BTN'],
+  ]) {
+    const hands = everyHand(),
+      totals = [5, 5.5, 6, 6.5, 7, 7.5, 8].map(
+        (bb) => hands.filter((hole) => continues(hole, bb, { position }, profile)).length,
+      );
+    for (let i = 1; i < totals.length; i++)
+      assert.ok(totals[i] < totals[i - 1], `${profile} ${position}: ${totals}`);
+    assert.ok(totals.at(-1) >= 60 && totals.at(-1) <= 90, `${profile} at 8BB: ${totals}`);
+  }
+});
+test('a larger open never turns a fold into a call at any stack depth', () => {
+  const hands = everyHand();
+  for (const stackBB of [40, 60, 70, 80, 100, 130, 200])
+    for (const position of ['CO', 'BTN', 'SB', 'BB'])
+      for (const hole of hands) {
+        let foldedSmaller = false;
+        for (const bb of [3, 4, 5, 5.5, 6, 6.5, 7, 7.5, 8, 8.5, 9]) {
+          const called = continues(hole, bb, { stackBB, position });
+          assert.ok(!(called && foldedSmaller), `${stackBB}BB ${position} at ${bb}BB`);
+          foldedSmaller ||= !called;
+        }
+      }
+});
+test('large-open defense keeps the same choices at every supported stake', () => {
+  for (const bb of [5, 5.5, 6.5, 7.5, 8, 8.5])
+    for (const hole of ['8s 7s', 'Ks 9s', 'Ts Td', 'As Qd'])
+      for (const stackBB of [60, 100, 150]) {
+        const expected = decision(sizedOpen(hole, bb, { stackBB, bigBlind: 50 })).action;
+        for (const bigBlind of [200, 100000])
+          assert.equal(decision(sizedOpen(hole, bb, { stackBB, bigBlind })).action, expected);
+      }
+});
+test('the ordinary-open branch stops above eight BB and at stack, all-in and re-raise boundaries', () => {
   const v = smallOpen();
-  const atLimit = { ...v, currentBet: 200, legal: { ...v.legal, toCall: 200, callAmount: 200 } };
+  const atLimit = { ...v, currentBet: 250, legal: { ...v.legal, toCall: 250, callAmount: 250 } };
   assert.equal(decision(atLimit).trace.affordableOpen, true);
+  const atCeiling = sizedOpen('7s 6s', 8);
+  assert.equal(decision(atCeiling).trace.affordableOpen, false);
+  assert.equal(decision(sizedOpen('Ts Td', 8)).trace.affordableOpen, true);
+  assert.equal(decision(sizedOpen('Ts Td', 8)).trace.reason, 'price-continue');
+  assert.equal(decision(sizedOpen('Ts Td', 8.02)).trace.affordableOpen, false);
   const shortRaiser = {
     ...v,
     opponents: v.opponents.map((p) => (p.id === 0 ? { ...p, stack: 2249 } : p)),
@@ -141,7 +209,7 @@ test('the small-open branch stops at size, effective-stack, all-in and re-raise 
   const unsafe = [
     { ...v, opponents: undefined },
     { ...v, opponents: v.opponents.filter((p) => p.id !== 0) },
-    { ...atLimit, currentBet: 201, legal: { ...v.legal, toCall: 201, callAmount: 201 } },
+    atCeiling,
     { ...v, stack: 1000 },
     shortRaiser,
     { ...v, opponents: v.opponents.map((p) => (p.id === 0 ? { ...p, allin: true, stack: 0 } : p)) },
@@ -183,7 +251,7 @@ test('opponent review explains the exact small-open call and separate re-raising
   const v = smallOpen();
   const d = decision(v);
   const explanation = explainOpponent({ ...d, trace: { ...d.trace, view: v } });
-  assert.match(explanation.detail, /跟注 150/);
+  assert.match(explanation.detail, /只补 150/);
   assert.match(explanation.detail, /还留 4\.85K/);
   assert.match(explanation.detail, /同花/);
   assert.match(explanation.detail, /开池(?:至|到) 150/);

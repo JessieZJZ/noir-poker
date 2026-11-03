@@ -1,3 +1,4 @@
+<page-meta page-orientation="{{pageOrientation}}" bindresize="onResize" />
 <web-view wx:if="{{url && !failed}}" src="{{url}}" binderror="failed" />
 <view wx:else class="source-unavailable">
   <text>网页暂时无法打开，可复制链接到浏览器查看。</text>

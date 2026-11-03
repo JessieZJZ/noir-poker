@@ -1,13 +1,12 @@
+// Sound effects, background music and vibration are independent switches,
+// each on until turned off.
 export function loadFeedbackPreferences(storage) {
-  let sound = true;
-  let vibration = true;
-  try {
-    sound = storage.getItem('noir-sound') !== 'false';
-    const saved = storage.getItem('noir-vibration');
-    // An old combined mute also disabled vibration. Preserve that choice once;
-    // an explicit new vibration preference is independent of subsequent mutes.
-    vibration = saved === null ? sound : saved !== 'false';
-    if (saved === null) storage.setItem?.('noir-vibration', String(vibration));
-  } catch {}
-  return { sound, vibration };
+  const on = (key) => {
+    try {
+      return storage.getItem(key) !== 'false';
+    } catch {
+      return true;
+    }
+  };
+  return { sound: on('noir-sound'), music: on('noir-music'), vibration: on('noir-vibration') };
 }

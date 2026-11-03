@@ -21,8 +21,8 @@ test('settings group useful information and keep difficulty, emotion, personas a
     await expect(info).toContainText('难度立即生效');
     await expect(info).toContainText('下一手生效');
     await expect(info).toContainText('策略倾向');
-    await expect(info).toContainText('VPIP');
-    await expect(info).toContainText('PFR');
+    await expect(info).toContainText('合法动作优先于所选风格');
+    await expect(info).not.toContainText('真人');
     await expect(page.locator('.difficulty-module #difficulty')).toHaveCount(1);
     await expect(page.locator('.emotion-module #emotion-mode')).toHaveCount(1);
     await expect(page.locator('.personas-module #profile-stage')).toHaveCount(1);
@@ -77,6 +77,109 @@ test('settings group useful information and keep difficulty, emotion, personas a
   }
 });
 
+test('general and table settings stack titled full-width rows with right-aligned controls', async ({
+  page,
+}) => {
+  for (const [width, height] of [
+    [320, 640],
+    [393, 759],
+    [768, 1024],
+    [1280, 800],
+  ]) {
+    await page.setViewportSize({ width, height });
+    await openSettings(page);
+    for (const module of ['.general-settings', '.table-preferences']) {
+      const layout = await page.evaluate((selector) => {
+        const section = document.querySelector(`#opponents-dialog ${selector}`);
+        const box = (element) => element.getBoundingClientRect();
+        const style = getComputedStyle(section);
+        const content = {
+          left:
+            box(section).left + parseFloat(style.borderLeftWidth) + parseFloat(style.paddingLeft),
+          right:
+            box(section).right -
+            parseFloat(style.borderRightWidth) -
+            parseFloat(style.paddingRight),
+        };
+        const title = box(section.querySelector(':scope > h3'));
+        const rows = [...section.querySelectorAll(':scope > .settings-row')].filter(
+          (row) => box(row).height > 0,
+        );
+        const issues = [];
+        rows.forEach((row, index) => {
+          const rect = box(row);
+          const name = row.textContent.trim().slice(0, 8);
+          if (rect.top < title.bottom) issues.push(`${name}: beside or above the title`);
+          if (Math.abs(rect.left - content.left) > 1 || Math.abs(rect.right - content.right) > 1)
+            issues.push(`${name}: does not span the module`);
+          if (Math.abs(rect.left - title.left) > 1) issues.push(`${name}: not under the title`);
+          if (index && rect.top < box(rows[index - 1]).bottom - 0.5)
+            issues.push(`${name}: not below the previous row`);
+          const control = box(row.lastElementChild);
+          if (Math.abs(control.right - rect.right) > 1)
+            issues.push(`${name}: control not at the right`);
+        });
+        const labels = rows.map((row) => {
+          const label = row.firstElementChild;
+          return getComputedStyle(label.matches('div') ? label.firstElementChild : label).fontSize;
+        });
+        if (new Set(labels).size !== 1) issues.push(`labels differ in size: ${labels.join(', ')}`);
+        // The small blind field starts where the player-count select does and
+        // shares its height, as do every value's 15px text sizes.
+        const blinds = section.querySelector('.blind-setting-values');
+        if (blinds) {
+          const select = box(section.querySelector('#player-count'));
+          const field = box(section.querySelector('#small-blind-button'));
+          if (Math.abs(field.left - select.left) > 1)
+            issues.push('small blind not under the select');
+          if (Math.abs(field.height - select.height) > 0.5)
+            issues.push('small blind field and select heights differ');
+          const sizes = [
+            section.querySelector('#small-blind-button'),
+            section.querySelector('.dropdown-control:has(#player-count) .dropdown-trigger') ??
+              section.querySelector('#player-count'),
+          ].map((el) => getComputedStyle(el).fontSize);
+          if (sizes[0] !== sizes[1]) issues.push(`value text sizes differ: ${sizes.join(', ')}`);
+        }
+        return { rows: rows.length, issues };
+      }, module);
+      expect(layout.rows, `${module} at ${width}px`).toBeGreaterThan(1);
+      expect(layout.issues, `${module} at ${width}px`).toEqual([]);
+    }
+    await closeSettings(page);
+  }
+});
+
+test('seat cards stay two per row down to 340px phones and stack only at 320px', async ({
+  page,
+}) => {
+  for (const [width, columns] of [
+    [320, 1],
+    [340, 2],
+    [375, 2],
+    [414, 2],
+  ]) {
+    await page.setViewportSize({ width, height: 800 });
+    await openSettings(page);
+    const layout = await page.evaluate(() => {
+      const roster = document.querySelector('#opponent-roster');
+      const overflow = [...roster.children].some((row) =>
+        [...row.querySelectorAll('*')].some((element) => {
+          const box = element.getBoundingClientRect(),
+            card = row.getBoundingClientRect();
+          return box.width && (box.right > card.right + 0.5 || box.left < card.left - 0.5);
+        }),
+      );
+      return {
+        columns: getComputedStyle(roster).gridTemplateColumns.split(' ').length,
+        overflow,
+      };
+    });
+    expect(layout, `${width}px`).toEqual({ columns, overflow: false });
+    await closeSettings(page);
+  }
+});
+
 test('settings usage information follows the parameter comparison and remains readable without expanding anything', async ({
   page,
 }) => {
@@ -93,10 +196,9 @@ test('settings usage information follows the parameter comparison and remains re
     await expect(info).toContainText('设置自动保存');
     await expect(info).toContainText('当前手与重打保持原设置');
     await info.locator('.persona-notice h4').scrollIntoViewIfNeeded();
-    await expect(info.locator('.persona-notice h4')).toHaveText('关于具名牌手的模拟');
+    await expect(info.locator('.persona-notice h4')).toHaveText('关于训练风格');
     await expect(info.locator('.persona-notice p')).toBeVisible();
-    await expect(info.locator('a[href="https://www.kpclive.com/"]')).toBeVisible();
-    await expect(info.locator('a[href="https://tritonpokerseries.com/en-US/home"]')).toBeVisible();
+    await expect(info.locator('a[href^="https://"]')).toHaveCount(0);
     await expect(page.locator('#save-opponents')).toHaveCount(0);
     await closeSettings(page);
   }
@@ -109,8 +211,8 @@ test('style assignments, mixed lineups and emotions automatically persist while 
   const original = await page.evaluate(() => window.qa.foldWin(6));
   const saved = () => page.evaluate(() => JSON.parse(localStorage.getItem('noir-opponents-v1')));
   await openSettings(page);
-  await page.locator('[data-bot-seat="1"]').selectOption('dwan');
-  expect((await saved()).assignments['1']).toBe('dwan');
+  await page.locator('[data-bot-seat="1"]').selectOption('rook');
+  expect((await saved()).assignments['1']).toBe('rook');
   await expect(page.locator('#opponents-dialog')).toBeVisible();
   await page.locator('#emotion-mode').selectOption('lively');
   expect((await saved()).emotionMode).toBe('lively');
@@ -118,20 +220,24 @@ test('style assignments, mixed lineups and emotions automatically persist while 
   await page.locator('#mix-opponents').click();
   const mixed = await saved();
   expect(mixed.mixed).toBe(true);
-  expect(mixed.mixedSeats).toEqual([2, 3, 4, 5]);
-  expect(mixed.assignments['1']).toBe('dwan');
-  expect(mixed.mixedSeats.every((id) => mixed.assignments[id] !== 'balanced')).toBe(true);
+  // Every seated opponent, including a manual choice, gets a distinct style.
+  expect(mixed.mixedSeats).toEqual([1, 2, 3, 4, 5]);
+  const automatic = mixed.mixedSeats.map((id) => mixed.assignments[id]);
+  expect(new Set(automatic).size).toBe(5);
+  expect(
+    automatic.every((id) => ['rook', 'jett', 'owen', 'vale', 'nico', 'mira', 'iris'].includes(id)),
+  ).toBe(true);
   await expect(page.locator('#mix-opponents')).toHaveAttribute('aria-pressed', 'true');
   // The settings cover all future seats, including those currently off table.
   await page.locator('[data-bot-seat="8"]').selectOption('balanced');
   const persisted = await saved();
-  await page.locator('[data-profile-preview="st"]').click();
-  await expect(page.locator('#profile-detail h3')).toHaveText('ST Wang');
+  await page.locator('[data-profile-preview="owen"]').click();
+  await expect(page.locator('#profile-detail h3')).toHaveText('范围纪律');
   expect(await saved()).toEqual(persisted);
   await page.locator('[data-close-profile-detail]').click();
   await closeSettings(page);
   await openSettings(page);
-  await expect(page.locator('[data-bot-seat="1"]')).toHaveValue('dwan');
+  await expect(page.locator('[data-bot-seat="1"]')).toHaveValue(mixed.assignments['1']);
   await expect(page.locator('[data-bot-seat="8"]')).toHaveValue('balanced');
   await expect(page.locator('#emotion-mode')).toHaveValue('lively');
   await closeSettings(page);
@@ -162,7 +268,7 @@ test('style assignments, mixed lineups and emotions automatically persist while 
   await page.waitForFunction(() => !!window.qa);
   await page.evaluate(() => window.qa.stop());
   await openSettings(page);
-  await expect(page.locator('[data-bot-seat="1"]')).toHaveValue('dwan');
+  await expect(page.locator('[data-bot-seat="1"]')).toHaveValue(mixed.assignments['1']);
   await expect(page.locator('[data-bot-seat="8"]')).toHaveValue('balanced');
   await expect(page.locator('#emotion-mode')).toHaveValue('lively');
   expect(await saved()).toEqual(persisted);
@@ -182,15 +288,15 @@ test('mobile persona details cover the selector in place and closing restores it
   for (const width of [320, 390, 700]) {
     await page.setViewportSize({ width, height: 844 });
     await openSettings(page);
-    const card = page.locator('[data-profile-preview="haxton"]');
+    const card = page.locator('[data-profile-preview="owen"]');
     await card.scrollIntoViewIfNeeded();
     const before = await page.locator('.opponents-body').evaluate((el) => el.scrollTop);
     await card.click();
     const stage = page.locator('#profile-stage');
     await expect(stage).toHaveAttribute('data-detail-open', 'true');
-    await expect(page.locator('#profile-detail')).toHaveAttribute('data-profile-id', 'haxton');
+    await expect(page.locator('#profile-detail')).toHaveAttribute('data-profile-id', 'owen');
     await expect(page.locator('#profile-detail')).toBeVisible();
-    await expect(page.locator('#profile-detail h3')).toHaveText('Isaac Haxton');
+    await expect(page.locator('#profile-detail h3')).toHaveText('范围纪律');
     await expect(page.locator('[data-close-profile-detail]')).toBeFocused();
     const reveal = await page.evaluate(() => window.profileReveals.at(-1));
     expect(reveal.keyframes[0].clipPath).toMatch(/^circle\(0px at /);
@@ -225,11 +331,13 @@ test('mobile persona details cover the selector in place and closing restores it
           close = detail.querySelector('[data-close-profile-detail]'),
           closeBounds = close.getBoundingClientRect(),
           footer = document.querySelector('.opponents-save-row').getBoundingClientRect();
-        const covered = [...document.querySelectorAll('.opponent-portrait')]
+        const covered = [...document.querySelectorAll('.opponent-portrait, .profile-card')]
           .map((portrait) => {
             const r = portrait.getBoundingClientRect();
             return {
-              name: portrait.closest('.opponent-row').querySelector('strong').textContent,
+              name:
+                portrait.closest('.opponent-row')?.querySelector('strong')?.textContent ||
+                portrait.textContent.trim(),
               x: r.left + r.width / 2,
               y: r.top + r.height / 2,
             };
@@ -256,8 +364,8 @@ test('mobile persona details cover the selector in place and closing restores it
           ),
         };
       });
-    // Geometry alone missed avatars from the following seat-assignment module
-    // painting above the overlay. Check the actual hit layer at those avatars.
+    // Check the actual hit layer over selector cards and assignment avatars.
+    // A shorter merged style list need not overlap the later roster.
     await expect.poll(checkDetailLayer).toMatchObject({
       blocked: [],
       closeVisible: true,
@@ -308,7 +416,7 @@ test('reduced motion preserves usable details and Escape closes only the detail 
   await page.setViewportSize({ width: 390, height: 844 });
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await openSettings(page);
-  const card = page.locator('[data-profile-preview="tan"]');
+  const card = page.locator('[data-profile-preview="rook"]');
   await card.click();
   await expect(page.locator('#profile-detail')).toBeVisible();
   await expect(page.locator('[data-close-profile-detail]')).toBeFocused();
@@ -332,9 +440,9 @@ test('desktop persona detail stays below the available selector while a mobile r
 }) => {
   await page.setViewportSize({ width: 1280, height: 900 });
   await openSettings(page);
-  const choice = page.locator('[data-profile-preview="st"]');
+  const choice = page.locator('[data-profile-preview="owen"]');
   await choice.click();
-  await expect(page.locator('#profile-detail h3')).toHaveText('ST Wang');
+  await expect(page.locator('#profile-detail h3')).toHaveText('范围纪律');
   const layout = await page.evaluate(() => ({
     gridBottom: document.querySelector('#profile-cards').getBoundingClientRect().bottom,
     detailTop: document.querySelector('#profile-detail').getBoundingClientRect().top,
@@ -352,8 +460,9 @@ test('desktop persona detail stays below the available selector while a mobile r
   await expect(page.locator('#profile-detail')).toBeVisible();
   await page.setViewportSize({ width: 1280, height: 900 });
   await expect(page.locator('#profile-detail')).toBeVisible();
-  expect(await page.locator('#profile-cards').evaluate((el) => el.inert)).toBe(false);
-  await expect(page.locator('[data-profile-preview="dwan"]')).toBeEnabled();
+  // The media query change arrives asynchronously after the resize.
+  await expect.poll(() => page.locator('#profile-cards').evaluate((el) => el.inert)).toBe(false);
+  await expect(page.locator('[data-profile-preview="rook"]')).toBeEnabled();
 });
 
 test('the guide teaches winning, streets, actions and position before introducing review and table settings', async ({
@@ -364,7 +473,8 @@ test('the guide teaches winning, streets, actions and position before introducin
   const guide = page.locator('#rules-dialog');
   await expect(guide).toHaveAttribute('aria-labelledby', 'rules-dialog-title');
   const headings = await guide.locator('h3').allTextContents();
-  expect(headings).toHaveLength(6);
+  // Six teaching sections, then the review terms glossary.
+  expect(headings).toHaveLength(7);
   expect(headings.slice(0, 4)).toEqual([
     expect.stringContaining('赢'),
     expect.stringContaining('一手牌'),
@@ -373,6 +483,7 @@ test('the guide teaches winning, streets, actions and position before introducin
   ]);
   expect(headings[4]).toContain('复盘');
   expect(headings[5]).toContain('设置');
+  expect(headings[6]).toContain('术语解释');
   await expect(guide).toContainText('复盘这一手');
   await expect(guide).toContainText('一次赢牌不能证明长期赚钱');
   await expect(guide).toContainText('不用对手暗牌或后来发出的牌评价');
@@ -381,38 +492,38 @@ test('the guide teaches winning, streets, actions and position before introducin
   await expect(guide).toContainText('各座位分配风格');
   await expect(guide).toContainText('难度');
   await expect(guide).toContainText('轻松、标准到进阶');
-  await expect(
-    guide.locator('details').filter({ hasText: '关于具名牌手与训练原型' }),
-  ).toHaveAttribute('open', '');
-  await expect(guide.locator('a[href="https://www.kpclive.com/"]')).toBeVisible();
-  await expect(guide.locator('a[href="https://tritonpokerseries.com/en-US/home"]')).toBeVisible();
-  await expect(guide).toContainText('不代表本人真实或完整的打法');
-  await expect(guide).toContainText('不表示本人或赛事方');
-  await expect(guide.locator('a[href="./app-privacy.html#persona-notice"]')).toBeVisible();
+  await expect(guide.locator('details').filter({ hasText: '认识训练风格' })).toHaveAttribute(
+    'open',
+    '',
+  );
+  await expect(guide.locator('a[href^="https://"]')).toHaveCount(0);
+  await expect(guide).toContainText('每种风格都有独立的入池范围');
   await guide.evaluate((el) => {
     el.scrollTop = 0;
   });
   await guide.screenshot({ path: test.info().outputPath('guide-basics.png') });
 });
 
-test('all sixteen researched players show linked facts and new assignments survive next hand, retry and reload', async ({
+test('all retained illustrated styles show behavior guidance and assignments survive next hand, retry and reload', async ({
   page,
 }) => {
   test.setTimeout(90000);
   await page.evaluate(() => window.qa.foldWin(9));
   await openSettings(page);
   await page.locator('#player-count').selectOption('9');
-  await expect(page.locator('.profile-card')).toHaveCount(17);
-  await expect(page.locator('#profile-cards img')).toHaveCount(16);
+  await expect(page.locator('.profile-card')).toHaveCount(8);
+  await expect(page.locator('#profile-cards img')).toHaveCount(7);
   const profiles = await page.evaluate(async () =>
-    (await import('/src/engine/bot-profiles.js')).BOT_PROFILES.filter((p) => p.research),
+    (await import('/src/engine/bot-profiles.js')).BOT_PROFILES.filter((p) => p.id !== 'balanced'),
   );
   for (const profile of profiles) {
     await page.locator(`[data-profile-preview="${profile.id}"]`).click();
     const detail = page.locator('#profile-detail');
-    await expect(detail.locator('.profile-research')).toContainText('2026-10-11');
-    await expect(detail.locator('.profile-research')).toContainText(profile.research.identity);
-    await expect(detail.locator('.profile-source-records a')).toHaveCount(profile.sources.length);
+    await expect(detail.locator('.profile-research .character-section')).toHaveCount(5);
+    await expect(detail.locator('.profile-research')).toContainText(
+      profile.character.sections[0].title,
+    );
+    await expect(detail.locator('.profile-source-records a, .profile-photo-credit')).toHaveCount(0);
     expect(await detail.evaluate((el) => el.scrollWidth <= el.clientWidth + 1)).toBe(true);
     await expect
       .poll(() =>
@@ -422,13 +533,13 @@ test('all sixteen researched players show linked facts and new assignments survi
     if (await page.locator('[data-close-profile-detail]').isVisible())
       await page.locator('[data-close-profile-detail]').click();
   }
-  const ids = ['ivey', 'negreanu', 'hellmuth', 'antonius', 'koon', 'chidwick', 'holz', 'haxton'];
+  const ids = ['rook', 'owen', 'jett', 'rook', 'owen', 'owen', 'rook', 'owen'];
   for (const [i, id] of ids.entries())
     await page.locator(`[data-bot-seat="${i + 1}"]`).selectOption(id);
-  await page.locator('[data-profile-preview="haxton"]').click();
+  await page.locator('[data-profile-preview="owen"]').click();
   await page
     .locator('#profile-detail')
-    .screenshot({ path: test.info().outputPath('researched-haxton.png') });
+    .screenshot({ path: test.info().outputPath('original-iris.png') });
   if (await page.locator('[data-close-profile-detail]').isVisible())
     await page.locator('[data-close-profile-detail]').click();
   await closeSettings(page);

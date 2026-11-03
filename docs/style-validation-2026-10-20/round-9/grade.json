@@ -1,0 +1,217 @@
+{
+  "candidate": 7,
+  "sourceDigest": "d992485f2ffd5851cda12831841645221142c51586a3229238629f81bbbf37db",
+  "observedHands": 2400,
+  "interactiveHands": 600,
+  "manualHeroActions": 1213,
+  "correct": 18,
+  "total": 24,
+  "scoresPassed": false,
+  "results": [
+    {
+      "reviewer": 1,
+      "correct": 6,
+      "total": 8,
+      "scores": {
+        "recognizability": 3,
+        "naturalExperience": 3,
+        "trainingValue": 3
+      },
+      "rows": [
+        {
+          "code": "A",
+          "actual": "多街施压",
+          "guess": "多街施压",
+          "correct": true,
+          "confidence": 0.88
+        },
+        {
+          "code": "B",
+          "actual": "强牌诱导",
+          "guess": "均衡",
+          "correct": false,
+          "confidence": 0.43
+        },
+        {
+          "code": "C",
+          "actual": "听牌施压",
+          "guess": "延迟进攻",
+          "correct": false,
+          "confidence": 0.5
+        },
+        {
+          "code": "D",
+          "actual": "范围纪律",
+          "guess": "范围纪律",
+          "correct": true,
+          "confidence": 0.92
+        },
+        {
+          "code": "E",
+          "actual": "均衡",
+          "guess": "均衡",
+          "correct": true,
+          "confidence": 0.42
+        },
+        {
+          "code": "F",
+          "actual": "延迟进攻",
+          "guess": "延迟进攻",
+          "correct": true,
+          "confidence": 0.53
+        },
+        {
+          "code": "G",
+          "actual": "小注控池",
+          "guess": "小注控池",
+          "correct": true,
+          "confidence": 0.77
+        },
+        {
+          "code": "H",
+          "actual": "宽松取值",
+          "guess": "宽松取值",
+          "correct": true,
+          "confidence": 0.85
+        }
+      ]
+    },
+    {
+      "reviewer": 2,
+      "correct": 5,
+      "total": 8,
+      "scores": {
+        "recognizability": 3,
+        "naturalExperience": 3,
+        "trainingValue": 3
+      },
+      "rows": [
+        {
+          "code": "A",
+          "actual": "强牌诱导",
+          "guess": "延迟进攻",
+          "correct": false,
+          "confidence": 0.4
+        },
+        {
+          "code": "B",
+          "actual": "宽松取值",
+          "guess": "宽松取值",
+          "correct": true,
+          "confidence": 0.8
+        },
+        {
+          "code": "C",
+          "actual": "多街施压",
+          "guess": "多街施压",
+          "correct": true,
+          "confidence": 0.65
+        },
+        {
+          "code": "D",
+          "actual": "范围纪律",
+          "guess": "范围纪律",
+          "correct": true,
+          "confidence": 0.9
+        },
+        {
+          "code": "E",
+          "actual": "听牌施压",
+          "guess": "均衡",
+          "correct": false,
+          "confidence": 0.45
+        },
+        {
+          "code": "F",
+          "actual": "小注控池",
+          "guess": "小注控池",
+          "correct": true,
+          "confidence": 0.7
+        },
+        {
+          "code": "G",
+          "actual": "均衡",
+          "guess": "延迟进攻",
+          "correct": false,
+          "confidence": 0.55
+        },
+        {
+          "code": "H",
+          "actual": "延迟进攻",
+          "guess": "延迟进攻",
+          "correct": true,
+          "confidence": 0.55
+        }
+      ]
+    },
+    {
+      "reviewer": 3,
+      "correct": 7,
+      "total": 8,
+      "scores": {
+        "recognizability": 3,
+        "naturalExperience": 3,
+        "trainingValue": 3
+      },
+      "rows": [
+        {
+          "code": "A",
+          "actual": "小注控池",
+          "guess": "小注控池",
+          "correct": true,
+          "confidence": 0.8
+        },
+        {
+          "code": "B",
+          "actual": "宽松取值",
+          "guess": "宽松取值",
+          "correct": true,
+          "confidence": 0.74
+        },
+        {
+          "code": "C",
+          "actual": "均衡",
+          "guess": "均衡",
+          "correct": true,
+          "confidence": 0.38
+        },
+        {
+          "code": "D",
+          "actual": "延迟进攻",
+          "guess": "小注控池",
+          "correct": false,
+          "confidence": 0.48
+        },
+        {
+          "code": "E",
+          "actual": "范围纪律",
+          "guess": "范围纪律",
+          "correct": true,
+          "confidence": 0.67
+        },
+        {
+          "code": "F",
+          "actual": "强牌诱导",
+          "guess": "强牌诱导",
+          "correct": true,
+          "confidence": 0.56
+        },
+        {
+          "code": "G",
+          "actual": "听牌施压",
+          "guess": "听牌施压",
+          "correct": true,
+          "confidence": 0.69
+        },
+        {
+          "code": "H",
+          "actual": "多街施压",
+          "guess": "多街施压",
+          "correct": true,
+          "confidence": 0.75
+        }
+      ]
+    }
+  ],
+  "note": "All three free and interaction manuscripts frozen before neutral menu; repeated labels allowed. Scores are AI feedback, not human or UI validation."
+}

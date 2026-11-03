@@ -1,0 +1,758 @@
+{
+  "beforeSourceDigest": "6ad7ff933e6badf7f2939cdfc8a915982462f5d83a256da2ed3cb18539488c0c",
+  "afterSourceDigest": "5932c97a6ef366aa3d3b3b0a539690d2d897ab9409d02e34a7edc438b0582156",
+  "harnessDigest": "0fe2802ef54f224fbaf5f0fe89fc580f07e2b8a33cc0715314d5c12246c4c68b",
+  "completeExecutionsEach": 38400,
+  "independentInitialShuffleClustersEach": 480,
+  "identicalConfiguration": true,
+  "scope": "Matched development trajectories. Multiple simultaneous policy changes; not causal attribution to one parameter or human perception proof.",
+  "denominators": {
+    "vpip": "complete hands",
+    "pfr": "complete hands",
+    "postAggressive": "all postflop actor decisions including folds and checks"
+  },
+  "inputs": {
+    ".artifacts/style-audit-2026-10-20/eight-before-v23/manifest.json": "8e825c42cceeeafc88b9e25d6f70746e142e983959e241a2f1d6a3cf2d7f38c8",
+    ".artifacts/style-audit-2026-10-20/eight-candidate-9/manifest.json": "742f03ece064cccbb20a543501e9b673017a571fc342f9fd494598af8a9022e7",
+    ".artifacts/style-audit-2026-10-20/eight-before-v23/summary.json": "c4c49e970fefc11f5457ef7791a34840853f816072d9bea0219e33fe837d67ff",
+    ".artifacts/style-audit-2026-10-20/eight-candidate-9/summary.json": "8d307467c54ba579a2bfe9f58726a87c775ae84cac357d4b3adba45192b5c8f4"
+  },
+  "rows": [
+    {
+      "profile": "balanced",
+      "before": {
+        "hands": 4800,
+        "vpip": 0.49395833333333333,
+        "pfr": 0.1225,
+        "postAggressive": 0.09591134887275506
+      },
+      "after": {
+        "hands": 4800,
+        "vpip": 0.49333333333333335,
+        "pfr": 0.14895833333333333,
+        "postAggressive": 0.12803793716656786
+      },
+      "byPlayers": [
+        {
+          "players": 5,
+          "before": {
+            "hands": 960,
+            "vpip": 0.5708333333333333,
+            "pfr": 0.13958333333333334,
+            "postAggressive": 0.11917916337805841
+          },
+          "after": {
+            "hands": 960,
+            "vpip": 0.5729166666666666,
+            "pfr": 0.18229166666666666,
+            "postAggressive": 0.15390813859790492
+          }
+        },
+        {
+          "players": 6,
+          "before": {
+            "hands": 960,
+            "vpip": 0.4979166666666667,
+            "pfr": 0.14583333333333334,
+            "postAggressive": 0.08736059479553904
+          },
+          "after": {
+            "hands": 960,
+            "vpip": 0.49895833333333334,
+            "pfr": 0.16770833333333332,
+            "postAggressive": 0.13001912045889102
+          }
+        },
+        {
+          "players": 7,
+          "before": {
+            "hands": 960,
+            "vpip": 0.5260416666666666,
+            "pfr": 0.14895833333333333,
+            "postAggressive": 0.10560146923783287
+          },
+          "after": {
+            "hands": 960,
+            "vpip": 0.525,
+            "pfr": 0.17604166666666668,
+            "postAggressive": 0.13264346190028223
+          }
+        },
+        {
+          "players": 8,
+          "before": {
+            "hands": 960,
+            "vpip": 0.4354166666666667,
+            "pfr": 0.096875,
+            "postAggressive": 0.0972972972972973
+          },
+          "after": {
+            "hands": 960,
+            "vpip": 0.434375,
+            "pfr": 0.12395833333333334,
+            "postAggressive": 0.13769751693002258
+          }
+        },
+        {
+          "players": 9,
+          "before": {
+            "hands": 960,
+            "vpip": 0.4395833333333333,
+            "pfr": 0.08125,
+            "postAggressive": 0.059293044469783354
+          },
+          "after": {
+            "hands": 960,
+            "vpip": 0.4354166666666667,
+            "pfr": 0.09479166666666666,
+            "postAggressive": 0.0703030303030303
+          }
+        }
+      ]
+    },
+    {
+      "profile": "rook",
+      "before": {
+        "hands": 4800,
+        "vpip": 0.7004166666666667,
+        "pfr": 0.27625,
+        "postAggressive": 0.13694551949985115
+      },
+      "after": {
+        "hands": 4800,
+        "vpip": 0.69875,
+        "pfr": 0.27520833333333333,
+        "postAggressive": 0.12729948491537896
+      },
+      "byPlayers": [
+        {
+          "players": 5,
+          "before": {
+            "hands": 960,
+            "vpip": 0.7979166666666667,
+            "pfr": 0.3416666666666667,
+            "postAggressive": 0.15615615615615616
+          },
+          "after": {
+            "hands": 960,
+            "vpip": 0.7979166666666667,
+            "pfr": 0.3416666666666667,
+            "postAggressive": 0.14009378663540445
+          }
+        },
+        {
+          "players": 6,
+          "before": {
+            "hands": 960,
+            "vpip": 0.7395833333333334,
+            "pfr": 0.27291666666666664,
+            "postAggressive": 0.11527581329561527
+          },
+          "after": {
+            "hands": 960,
+            "vpip": 0.7395833333333334,
+            "pfr": 0.2708333333333333,
+            "postAggressive": 0.1156794425087108
+          }
+        },
+        {
+          "players": 7,
+          "before": {
+            "hands": 960,
+            "vpip": 0.7145833333333333,
+            "pfr": 0.3177083333333333,
+            "postAggressive": 0.13680297397769517
+          },
+          "after": {
+            "hands": 960,
+            "vpip": 0.7125,
+            "pfr": 0.3177083333333333,
+            "postAggressive": 0.1253731343283582
+          }
+        },
+        {
+          "players": 8,
+          "before": {
+            "hands": 960,
+            "vpip": 0.6291666666666667,
+            "pfr": 0.21770833333333334,
+            "postAggressive": 0.15642915642915642
+          },
+          "after": {
+            "hands": 960,
+            "vpip": 0.6270833333333333,
+            "pfr": 0.21770833333333334,
+            "postAggressive": 0.14331983805668017
+          }
+        },
+        {
+          "players": 9,
+          "before": {
+            "hands": 960,
+            "vpip": 0.6208333333333333,
+            "pfr": 0.23125,
+            "postAggressive": 0.11369990680335508
+          },
+          "after": {
+            "hands": 960,
+            "vpip": 0.6166666666666667,
+            "pfr": 0.228125,
+            "postAggressive": 0.10658016682113068
+          }
+        }
+      ]
+    },
+    {
+      "profile": "jett",
+      "before": {
+        "hands": 4800,
+        "vpip": 0.8010416666666667,
+        "pfr": 0.16,
+        "postAggressive": 0.06755222524977293
+      },
+      "after": {
+        "hands": 4800,
+        "vpip": 0.8,
+        "pfr": 0.16875,
+        "postAggressive": 0.09798610293251678
+      },
+      "byPlayers": [
+        {
+          "players": 5,
+          "before": {
+            "hands": 960,
+            "vpip": 0.8833333333333333,
+            "pfr": 0.19479166666666667,
+            "postAggressive": 0.08126195028680688
+          },
+          "after": {
+            "hands": 960,
+            "vpip": 0.8854166666666666,
+            "pfr": 0.20729166666666668,
+            "postAggressive": 0.10609037328094302
+          }
+        },
+        {
+          "players": 6,
+          "before": {
+            "hands": 960,
+            "vpip": 0.8614583333333333,
+            "pfr": 0.16875,
+            "postAggressive": 0.060442525634106854
+          },
+          "after": {
+            "hands": 960,
+            "vpip": 0.8614583333333333,
+            "pfr": 0.178125,
+            "postAggressive": 0.10249307479224377
+          }
+        },
+        {
+          "players": 7,
+          "before": {
+            "hands": 960,
+            "vpip": 0.7989583333333333,
+            "pfr": 0.18020833333333333,
+            "postAggressive": 0.0722755505364201
+          },
+          "after": {
+            "hands": 960,
+            "vpip": 0.7958333333333333,
+            "pfr": 0.190625,
+            "postAggressive": 0.09469922572960095
+          }
+        },
+        {
+          "players": 8,
+          "before": {
+            "hands": 960,
+            "vpip": 0.734375,
+            "pfr": 0.125,
+            "postAggressive": 0.06375
+          },
+          "after": {
+            "hands": 960,
+            "vpip": 0.7322916666666667,
+            "pfr": 0.13333333333333333,
+            "postAggressive": 0.10697977821265492
+          }
+        },
+        {
+          "players": 9,
+          "before": {
+            "hands": 960,
+            "vpip": 0.7270833333333333,
+            "pfr": 0.13125,
+            "postAggressive": 0.05563002680965148
+          },
+          "after": {
+            "hands": 960,
+            "vpip": 0.725,
+            "pfr": 0.134375,
+            "postAggressive": 0.07510431154381085
+          }
+        }
+      ]
+    },
+    {
+      "profile": "owen",
+      "before": {
+        "hands": 4800,
+        "vpip": 0.25333333333333335,
+        "pfr": 0.095625,
+        "postAggressive": 0.1460415065334358
+      },
+      "after": {
+        "hands": 4800,
+        "vpip": 0.2522916666666667,
+        "pfr": 0.08958333333333333,
+        "postAggressive": 0.1493282149712092
+      },
+      "byPlayers": [
+        {
+          "players": 5,
+          "before": {
+            "hands": 960,
+            "vpip": 0.27395833333333336,
+            "pfr": 0.09791666666666667,
+            "postAggressive": 0.18314424635332252
+          },
+          "after": {
+            "hands": 960,
+            "vpip": 0.27395833333333336,
+            "pfr": 0.09479166666666666,
+            "postAggressive": 0.19381107491856678
+          }
+        },
+        {
+          "players": 6,
+          "before": {
+            "hands": 960,
+            "vpip": 0.26875,
+            "pfr": 0.103125,
+            "postAggressive": 0.12406015037593984
+          },
+          "after": {
+            "hands": 960,
+            "vpip": 0.26875,
+            "pfr": 0.09895833333333333,
+            "postAggressive": 0.13011152416356878
+          }
+        },
+        {
+          "players": 7,
+          "before": {
+            "hands": 960,
+            "vpip": 0.28125,
+            "pfr": 0.11666666666666667,
+            "postAggressive": 0.16322701688555347
+          },
+          "after": {
+            "hands": 960,
+            "vpip": 0.2791666666666667,
+            "pfr": 0.10520833333333333,
+            "postAggressive": 0.15441176470588236
+          }
+        },
+        {
+          "players": 8,
+          "before": {
+            "hands": 960,
+            "vpip": 0.21770833333333334,
+            "pfr": 0.075,
+            "postAggressive": 0.16122004357298475
+          },
+          "after": {
+            "hands": 960,
+            "vpip": 0.21770833333333334,
+            "pfr": 0.075,
+            "postAggressive": 0.16186252771618626
+          }
+        },
+        {
+          "players": 9,
+          "before": {
+            "hands": 960,
+            "vpip": 0.225,
+            "pfr": 0.08541666666666667,
+            "postAggressive": 0.08676789587852494
+          },
+          "after": {
+            "hands": 960,
+            "vpip": 0.221875,
+            "pfr": 0.07395833333333333,
+            "postAggressive": 0.09388646288209607
+          }
+        }
+      ]
+    },
+    {
+      "profile": "vale",
+      "before": {
+        "hands": 4800,
+        "vpip": 0.38125,
+        "pfr": 0.11229166666666666,
+        "postAggressive": 0.12424547283702213
+      },
+      "after": {
+        "hands": 4800,
+        "vpip": 0.5666666666666667,
+        "pfr": 0.05354166666666667,
+        "postAggressive": 0.11245321537938074
+      },
+      "byPlayers": [
+        {
+          "players": 5,
+          "before": {
+            "hands": 960,
+            "vpip": 0.4322916666666667,
+            "pfr": 0.12708333333333333,
+            "postAggressive": 0.1562189054726368
+          },
+          "after": {
+            "hands": 960,
+            "vpip": 0.6510416666666666,
+            "pfr": 0.059375,
+            "postAggressive": 0.1309840425531915
+          }
+        },
+        {
+          "players": 6,
+          "before": {
+            "hands": 960,
+            "vpip": 0.40208333333333335,
+            "pfr": 0.12916666666666668,
+            "postAggressive": 0.1144578313253012
+          },
+          "after": {
+            "hands": 960,
+            "vpip": 0.5854166666666667,
+            "pfr": 0.05625,
+            "postAggressive": 0.12203389830508475
+          }
+        },
+        {
+          "players": 7,
+          "before": {
+            "hands": 960,
+            "vpip": 0.4,
+            "pfr": 0.125,
+            "postAggressive": 0.13965744400527008
+          },
+          "after": {
+            "hands": 960,
+            "vpip": 0.5885416666666666,
+            "pfr": 0.05416666666666667,
+            "postAggressive": 0.11101694915254237
+          }
+        },
+        {
+          "players": 8,
+          "before": {
+            "hands": 960,
+            "vpip": 0.33229166666666665,
+            "pfr": 0.09895833333333333,
+            "postAggressive": 0.12693935119887165
+          },
+          "after": {
+            "hands": 960,
+            "vpip": 0.5083333333333333,
+            "pfr": 0.051041666666666666,
+            "postAggressive": 0.11753554502369669
+          }
+        },
+        {
+          "players": 9,
+          "before": {
+            "hands": 960,
+            "vpip": 0.33958333333333335,
+            "pfr": 0.08125,
+            "postAggressive": 0.06835066864784546
+          },
+          "after": {
+            "hands": 960,
+            "vpip": 0.5,
+            "pfr": 0.046875,
+            "postAggressive": 0.06777893639207508
+          }
+        }
+      ]
+    },
+    {
+      "profile": "nico",
+      "before": {
+        "hands": 4800,
+        "vpip": 0.52,
+        "pfr": 0.14208333333333334,
+        "postAggressive": 0.11267605633802817
+      },
+      "after": {
+        "hands": 4800,
+        "vpip": 0.5175,
+        "pfr": 0.14020833333333332,
+        "postAggressive": 0.1225656601750938
+      },
+      "byPlayers": [
+        {
+          "players": 5,
+          "before": {
+            "hands": 960,
+            "vpip": 0.603125,
+            "pfr": 0.18125,
+            "postAggressive": 0.1366906474820144
+          },
+          "after": {
+            "hands": 960,
+            "vpip": 0.6041666666666666,
+            "pfr": 0.17708333333333334,
+            "postAggressive": 0.14201618837380428
+          }
+        },
+        {
+          "players": 6,
+          "before": {
+            "hands": 960,
+            "vpip": 0.5260416666666666,
+            "pfr": 0.15520833333333334,
+            "postAggressive": 0.09982935153583618
+          },
+          "after": {
+            "hands": 960,
+            "vpip": 0.525,
+            "pfr": 0.15833333333333333,
+            "postAggressive": 0.13088109495295125
+          }
+        },
+        {
+          "players": 7,
+          "before": {
+            "hands": 960,
+            "vpip": 0.5489583333333333,
+            "pfr": 0.15833333333333333,
+            "postAggressive": 0.12903225806451613
+          },
+          "after": {
+            "hands": 960,
+            "vpip": 0.5489583333333333,
+            "pfr": 0.15208333333333332,
+            "postAggressive": 0.1327659574468085
+          }
+        },
+        {
+          "players": 8,
+          "before": {
+            "hands": 960,
+            "vpip": 0.4552083333333333,
+            "pfr": 0.11979166666666667,
+            "postAggressive": 0.10725229826353422
+          },
+          "after": {
+            "hands": 960,
+            "vpip": 0.45208333333333334,
+            "pfr": 0.12291666666666666,
+            "postAggressive": 0.11494252873563218
+          }
+        },
+        {
+          "players": 9,
+          "before": {
+            "hands": 960,
+            "vpip": 0.4666666666666667,
+            "pfr": 0.09583333333333334,
+            "postAggressive": 0.07908428720083246
+          },
+          "after": {
+            "hands": 960,
+            "vpip": 0.45729166666666665,
+            "pfr": 0.090625,
+            "postAggressive": 0.07897545357524013
+          }
+        }
+      ]
+    },
+    {
+      "profile": "mira",
+      "before": {
+        "hands": 4800,
+        "vpip": 0.495625,
+        "pfr": 0.18645833333333334,
+        "postAggressive": 0.1754636233951498
+      },
+      "after": {
+        "hands": 4800,
+        "vpip": 0.49166666666666664,
+        "pfr": 0.17708333333333334,
+        "postAggressive": 0.1514967637540453
+      },
+      "byPlayers": [
+        {
+          "players": 5,
+          "before": {
+            "hands": 960,
+            "vpip": 0.5708333333333333,
+            "pfr": 0.22916666666666666,
+            "postAggressive": 0.22035323801513879
+          },
+          "after": {
+            "hands": 960,
+            "vpip": 0.5666666666666667,
+            "pfr": 0.21875,
+            "postAggressive": 0.18822553897180763
+          }
+        },
+        {
+          "players": 6,
+          "before": {
+            "hands": 960,
+            "vpip": 0.5010416666666667,
+            "pfr": 0.196875,
+            "postAggressive": 0.15583173996175909
+          },
+          "after": {
+            "hands": 960,
+            "vpip": 0.5010416666666667,
+            "pfr": 0.18958333333333333,
+            "postAggressive": 0.14068441064638784
+          }
+        },
+        {
+          "players": 7,
+          "before": {
+            "hands": 960,
+            "vpip": 0.5260416666666666,
+            "pfr": 0.21979166666666666,
+            "postAggressive": 0.1808300395256917
+          },
+          "after": {
+            "hands": 960,
+            "vpip": 0.5229166666666667,
+            "pfr": 0.21041666666666667,
+            "postAggressive": 0.15676728334956183
+          }
+        },
+        {
+          "players": 8,
+          "before": {
+            "hands": 960,
+            "vpip": 0.43854166666666666,
+            "pfr": 0.14583333333333334,
+            "postAggressive": 0.1883720930232558
+          },
+          "after": {
+            "hands": 960,
+            "vpip": 0.43333333333333335,
+            "pfr": 0.13645833333333332,
+            "postAggressive": 0.16009280742459397
+          }
+        },
+        {
+          "players": 9,
+          "before": {
+            "hands": 960,
+            "vpip": 0.44166666666666665,
+            "pfr": 0.140625,
+            "postAggressive": 0.11375
+          },
+          "after": {
+            "hands": 960,
+            "vpip": 0.434375,
+            "pfr": 0.13020833333333334,
+            "postAggressive": 0.09410288582183186
+          }
+        }
+      ]
+    },
+    {
+      "profile": "iris",
+      "before": {
+        "hands": 4800,
+        "vpip": 0.56,
+        "pfr": 0.19583333333333333,
+        "postAggressive": 0.13657325292656972
+      },
+      "after": {
+        "hands": 4800,
+        "vpip": 0.5310416666666666,
+        "pfr": 0.176875,
+        "postAggressive": 0.1278328611898017
+      },
+      "byPlayers": [
+        {
+          "players": 5,
+          "before": {
+            "hands": 960,
+            "vpip": 0.640625,
+            "pfr": 0.23854166666666668,
+            "postAggressive": 0.15703069236259815
+          },
+          "after": {
+            "hands": 960,
+            "vpip": 0.6625,
+            "pfr": 0.26458333333333334,
+            "postAggressive": 0.13876221498371336
+          }
+        },
+        {
+          "players": 6,
+          "before": {
+            "hands": 960,
+            "vpip": 0.5739583333333333,
+            "pfr": 0.20104166666666667,
+            "postAggressive": 0.11886304909560723
+          },
+          "after": {
+            "hands": 960,
+            "vpip": 0.5625,
+            "pfr": 0.190625,
+            "postAggressive": 0.1318864774624374
+          }
+        },
+        {
+          "players": 7,
+          "before": {
+            "hands": 960,
+            "vpip": 0.5854166666666667,
+            "pfr": 0.22916666666666666,
+            "postAggressive": 0.14602903501280956
+          },
+          "after": {
+            "hands": 960,
+            "vpip": 0.565625,
+            "pfr": 0.18541666666666667,
+            "postAggressive": 0.1254355400696864
+          }
+        },
+        {
+          "players": 8,
+          "before": {
+            "hands": 960,
+            "vpip": 0.503125,
+            "pfr": 0.153125,
+            "postAggressive": 0.1444114737883284
+          },
+          "after": {
+            "hands": 960,
+            "vpip": 0.43333333333333335,
+            "pfr": 0.13020833333333334,
+            "postAggressive": 0.1398527865404837
+          }
+        },
+        {
+          "players": 9,
+          "before": {
+            "hands": 960,
+            "vpip": 0.496875,
+            "pfr": 0.15729166666666666,
+            "postAggressive": 0.10626398210290827
+          },
+          "after": {
+            "hands": 960,
+            "vpip": 0.43125,
+            "pfr": 0.11354166666666667,
+            "postAggressive": 0.09068627450980392
+          }
+        }
+      ]
+    }
+  ]
+}

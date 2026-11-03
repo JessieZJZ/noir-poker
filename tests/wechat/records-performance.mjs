@@ -61,9 +61,19 @@ async function readReturnMeasurement() {
   return metrics;
 }
 async function rect(selector) {
+  // The measured bridge re-renders the list; let it settle before measuring.
+  await page.waitFor(selector);
   const element = await page.$(selector);
   assert.ok(element, selector);
   return { ...(await element.offset()), ...(await element.size()) };
+}
+async function revealHand({ sessionId, id }) {
+  const session = await page.$(`.records-session[data-id="${sessionId}"]`);
+  assert.ok(session, sessionId);
+  await mini.pageScrollTo(Math.max(0, (await session.offset()).top - 120));
+  await page.waitFor(`.hand-item[data-id="${id}"]`);
+  // Let the observer's refill settle so the tap reaches the final row.
+  await page.waitFor(1500);
 }
 async function tap(selector) {
   await page.waitFor(selector);
@@ -75,13 +85,20 @@ try {
   mini.on('exception', (value) => report.exceptions.push(value));
   page = await mini.currentPage();
   report.stage = 'return-existing-visit';
-  if (page.path === 'pages/records/records') await tap('#records-back');
-  else if (page.path === 'pages/history/history') await tap('#history-return-game');
+  // Return any earlier visit to the table with native Back.
+  while (['pages/records/records', 'pages/history/history'].includes(page.path)) {
+    await mini.navigateBack();
+    page = await mini.currentPage();
+  }
   await route('pages/table/table');
   const liveHeight = await page.data('tableHeight');
   const selected = await mini.evaluate(() => {
-    for (const session of getApp().noirController.getRecordSummaries().slice(0, 20)) {
-      const attempt = session.attempts.find((row) => row.status === 'completed');
+    // Only a hand whose snapshot file is still present opens its history.
+    const controller = getApp().noirController;
+    for (const session of controller.getRecordSummaries().slice(0, 20)) {
+      const attempt = session.attempts.find(
+        (row) => row.status === 'completed' && controller.getRecord(row.id)?.snapshot,
+      );
       if (attempt) return { id: attempt.id, sessionId: session.id };
     }
     return null;
@@ -123,33 +140,55 @@ try {
     'no snapshots or unchanged polling transfers; individual patches below 256 KiB',
   );
   const title = await rect('.records-nav');
-  const note = await rect('.records-intro');
   const firstSession = await rect('.records-session');
-  assert.ok(note.top - title.top - title.height <= 5);
-  assert.equal(firstSession.top - note.top - note.height, 12);
-  const back = await rect('#records-back');
-  assert.ok(title.left < back.left);
-  assert.ok(back.width < 130);
-  report.recordsHeader = { title, back };
+  // The browsing note is gone; the first game follows the title directly.
+  const titleGap = firstSession.top - title.top - title.height;
+  assert.ok(titleGap >= 8 && titleGap <= 24, `Title to first game: ${titleGap}px`);
+  // No return button: records rely on the native Back button or gesture.
+  assert.equal(await page.$('#records-back'), null);
+  report.recordsHeader = { title };
   await mini.screenshot({ path: path.join(output, 'records-header.png') });
-  const expanded = await page.data('expanded');
-  if (!expanded[selected.sessionId]) await tap(`.session-item[data-id="${selected.sessionId}"]`);
+  // Games start expanded; rows exist only near the viewport, so scroll there.
+  const collapsed = await page.data('collapsed');
+  if (collapsed[selected.sessionId]) await tap(`.session-item[data-id="${selected.sessionId}"]`);
   report.stage = 'open-history';
-  await tap(`.hand-item[data-id="${selected.id}"]`);
+  await revealHand(selected);
+  // A tap that lands while the list refills its rows is retried. If the
+  // automator's taps still miss the re-rendered row, invoke that row's own
+  // bound handler and record that the fallback was used.
+  for (let attempt = 0; attempt < 3; attempt++) {
+    await tap(`.hand-item[data-id="${selected.id}"]`);
+    await page.waitFor(3000);
+    if ((await mini.currentPage())?.path === 'pages/history/history') break;
+  }
+  if ((await mini.currentPage())?.path !== 'pages/history/history') {
+    report.openHandFallback = 'automator taps missed the row; invoked its bindtap handler';
+    await mini.evaluate(
+      (id) =>
+        getCurrentPages()
+          .at(-1)
+          .openHand({ currentTarget: { dataset: { id } } }),
+      selected.id,
+    );
+  }
   await route('pages/history/history');
   await page.waitFor(1500);
   assert.equal(await page.data('tableHeight'), liveHeight);
+  // The start time sits inside the table card, under the game and hand label.
   const time = await rect('.history-start-time');
-  const shell = await rect('.game-shell');
+  const label = await rect('.game-header .hand-label');
   const dock = await rect('.action-dock');
   const review = await rect('.review-button');
   report.spacing = {
-    headingGap: shell.top - time.top - time.height,
+    headingGap: time.top - label.top - label.height,
+    timeIndent: Math.abs(time.left - label.left),
     dockHeight: dock.height,
     belowReview: dock.top + dock.height - review.top - review.height,
   };
-  assert.ok(report.spacing.headingGap >= 4 && report.spacing.headingGap <= 12);
-  assert.ok(Math.abs(report.spacing.dockHeight - 58) < 2);
+  assert.ok(report.spacing.headingGap >= 0 && report.spacing.headingGap <= 12);
+  assert.ok(report.spacing.timeIndent <= 1);
+  // The read-only history dock is the single 64px settled row on every branch.
+  assert.ok(Math.abs(report.spacing.dockHeight - 64) < 2);
   assert.ok(report.spacing.belowReview >= 6 && report.spacing.belowReview <= 14);
   report.checks.push(
     'compact heading and review spacing, unchanged table geometry, narrow return button',
@@ -158,33 +197,20 @@ try {
   await mini.pageScrollTo(Math.max(0, dock.top - 350));
   await page.waitFor(200);
   await mini.screenshot({ path: path.join(output, 'history-review.png') });
-  report.stage = 'full-name-tooltip';
-  const candidates = await page.$$('.persona');
-  for (const [i, label] of candidates.entries()) {
-    const seat = (await page.data('phoneSeats'))[i];
-    const natural = await rect(`#seat-persona-measure-${seat.id}`);
-    const bounds = await rect(`#seat-persona-${seat.id}`);
-    if (natural.width <= bounds.width + 1) continue;
-    await label.longpress();
-    await page.waitFor('.seat-name-tooltip.is-visible');
-    report.fullName = {
-      text: await (await page.$('.seat-name-tooltip')).text(),
-      bounds: await rect('.seat-name-tooltip'),
-    };
-    assert.equal(report.fullName.text, seat.profileName);
-    assert.ok(report.fullName.bounds.left >= 12);
-    assert.ok(
-      report.fullName.bounds.left + report.fullName.bounds.width <=
-        (await page.data('windowWidth')) - 12,
-    );
-    await mini.screenshot({ path: path.join(output, 'full-name.png') });
-    await tap('.name-tooltip-dismiss');
-    break;
+  report.stage = 'complete-style-names';
+  report.fullNames = [];
+  for (const seat of await page.data('phoneSeats')) {
+    const text = await (await page.$(`#seat-persona-${seat.id}`)).text();
+    assert.equal(text, seat.profileName);
+    report.fullNames.push(text);
   }
-  assert.ok(report.fullName, 'A saved real named opponent must exercise truncation');
+  assert.equal(await page.$('.seat-name-tooltip'), null);
   report.stage = 'return-game';
   await armReturnMeasurement();
-  await tap('#history-return-game');
+  // Native Back unwinds the saved hand, then the list, to the live table.
+  await mini.navigateBack();
+  await route('pages/records/records');
+  await mini.navigateBack();
   await route('pages/table/table');
   assert.equal((await mini.pageStack()).length, 1);
   report.returnButton = await readReturnMeasurement();

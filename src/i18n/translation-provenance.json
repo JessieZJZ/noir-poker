@@ -989,5 +989,282 @@
   "reviewSummary20261017": {
     "method": "Authored Simplified Chinese and English; other locale drafts translated from these messages with Google Translate, preserving interpolation slots. Live switching and card, amount and identity preservation are regression checked.",
     "linguisticReview": "pending"
+  },
+  "reviewClarity20261025": {
+    "method": "assistant-authored targeted translations",
+    "locales": ["en", "zh-TW", "ja", "ko", "es", "it", "pt", "de", "fr", "ru"],
+    "messages": [
+      "{0}先跟注 {1} 入池。",
+      "{0}已跟注这笔加注，补 {1}。",
+      "{0}持有 A 同花底牌，翻牌出现两张与底牌同花色的公共牌时可形成坚果同花听牌，补成同花后能领先更低的同花。",
+      "{0}没有只补 {1} 跟注，而是再拿出 {2} 把下注抬到 {3}。",
+      "{0}若再加注，需要同时考虑加注者和这些跟入者的继续范围。",
+      "{0}补 {1} 跟注后还留 {2}，先用小额投入争取看翻牌。",
+      "{0}都先跟注 {1} 入池。",
+      "{0}都已跟注这笔加注，各补 {1}。",
+      "你身后还有 {0} 人等待行动，他们如果加注或者再加注，你需要重新决定是否继续。",
+      "击中一对后仍可能被更好的踢脚压住。",
+      "后面仍有玩家可以行动，若有人加注或再加注，需要按新的价格重新决定。",
+      "成花后也要留意更高同花。",
+      "手里的 A 减少了对手部分强 A 组合，加注也提高了其他玩家继续入池的成本。",
+      "本轮还没封口，后面的玩家如果加注或者再加注，你需要重新决定要不要跟。",
+      "这类平跟可能是小对子、同花牌或连接牌，也可能藏着强牌。",
+      "，较高踢脚有机会领先较弱 Ax，并从较弱 Ax 取值"
+    ],
+    "independentLinguisticReview": "not performed; rendering and placeholder checks reported separately"
+  },
+  "publicStory20261025": {
+    "messages": [
+      "{0}此前的公开行动：",
+      "方块",
+      "梅花",
+      "河牌没有补出第三张{0}，此前的同花听牌仍可能转成诈唬。",
+      "红桃",
+      "过牌加注也可能来自强牌，不能仅凭前面的过牌排除价值牌。",
+      "过牌后加注至 {0}",
+      "黑桃"
+    ],
+    "locales": ["en", "zh-TW", "ja", "ko", "es", "it", "pt", "de", "fr", "ru"],
+    "method": "Assistant-authored targeted public-action and missed-draw explanations; same interpolation values in all locales.",
+    "independentLinguisticReview": "not performed"
+  },
+  "reviewValueTargets20261025": {
+    "messages": [
+      "你拿 {0}，在 {1} 上{2}。{3}",
+      "你拿 {0}，在 {1} 上是{2}，{3}。",
+      "取值也可能来自同花听牌的跟注，前提是对手愿意支付这个尺度。",
+      "取值也可能来自顺子听牌或同花听牌的跟注，前提是对手愿意支付这个尺度。",
+      "取值也可能来自顺子听牌的跟注，前提是对手愿意支付这个尺度。",
+      "同花牌面直接全下，先核对较弱牌会不会跟注",
+      "对手继续范围可能变强，应比较过牌或较小下注；只有较弱对子或尚未完成的听牌仍愿意支付时，再考虑全下取值。",
+      "当时底池 {0}，全下约占底池的 {1}%，这手强牌可比较价值全下，让{2}付费。",
+      "本次追加 {0}。",
+      "虽然已经成同花，对手仍可能用更高的同花领先。",
+      "转牌补出了第三张{0}，原本持两张{1}的听牌现在已成同花。"
+    ],
+    "locales": ["en", "zh-TW", "ja", "ko", "es", "it", "pt", "de", "fr", "ru"],
+    "method": "Assistant-authored public-card value/draw explanations and concise action labels. Numeric/card/suit placeholders preserved; examples remain possible hands, not measured frequencies.",
+    "independentLinguisticReview": "not performed"
+  },
+  "limpedDefense20261025": {
+    "messages": [
+      "前两街无人下注，河牌改善成对后用小注尝试向较弱对子取值；遇到加注仍需重新判断。",
+      "前面已有玩家过牌，用小注向较弱对子和听牌收费，避免让对手免费见到下一张。",
+      "可能领先当前手牌的组合有 {0}（{1}）。",
+      "后面还有玩家可以跟注或加注，当前底池赔率不代表后续投入已经封顶。",
+      "机器人按公开行动估算后选择弃牌；这些只是可能的牌组，并非已经看到了对手底牌。",
+      "此前一路过牌，仍可能有慢打强牌，也保留了较弱牌和诈唬，不能仅凭这次下注认定对手有大牌。",
+      "继续要补 {0}，可争夺跟注后的 {1} 底池，当前保本门槛为 {2}%。",
+      "继续还是弃牌，需要结合对手范围与当前价格；强起手牌也不代表任何尺度都必须跟注。",
+      "若这条加注线主要来自较大对子和 AK，当前价格下应谨慎；若全下范围很宽，则应重新判断。"
+    ],
+    "locales": ["en", "zh-TW", "ja", "ko", "es", "it", "pt", "de", "fr", "ru"],
+    "method": "Assistant-authored price and conditional range explanations; card/amount placeholders preserved. Authored training mixes are not solver frequencies.",
+    "independentLinguisticReview": "not performed"
+  },
+  "publicStrategy20261026": {
+    "messages": [
+      "AA 是翻前最强起手牌，面对这次普通开池应继续，优先比较再加注，而不是因保留筹码直接弃牌。",
+      "{0} {1}，可向仍有筹码的对手争取弃牌；被跟注后就按最终摊牌结果分池。",
+      "{0} {1}，底牌 {2} 参与踢脚比较",
+      "{0} {1}，按这个尺度的继续范围估计，仍有{2}可能付费{3}",
+      "{0} {1}，踢脚来自公共牌 {2}",
+      "{0} 带{1}，",
+      "{0} 带{1}，{2}{3}",
+      "{0}判断自己可能落后于 {1}{2}。",
+      "{0}，既保留改善机会，也向仍有筹码的对手施压；被跟注后，下一张没改善或再遭加注时要重新比较价格。",
+      "下一张出现补牌候选约 {0}，高于当前价格门槛；应比较跟注，但补中后可能落后，下一街也可能还要付费。",
+      "中暗三条",
+      "主动权",
+      "你拿 {0}，在 {1} 上是",
+      "先过牌保留改善机会；对手随后下注时，再按金额决定跟注或加注。",
+      "先过牌给对手下注的机会；只有他下注后仍有较弱牌会继续，且价格合适，再比较过牌加注，若他过牌就在下一张后重估。",
+      "先过牌，等同一轮有人下注后再加注，可用于强牌取值或听牌半诈唬。若无人下注，这一轮便不会发生过牌加注；被跟注后按新牌面和价格重估，不自动连打多街。",
+      "先过牌；若对手下注，再按价格与弃牌空间比较过牌加注，对手过牌则在下一张后重估。",
+      "公共牌已是无法被超过的最大牌型，所有仍在局中的玩家只能组成同样的最佳五张。",
+      "公共牌已配对，补成{0}仍可能输给葫芦、四条。",
+      "公共牌已锁定分池，按确定份额与成本判断",
+      "公共牌无法被超过，跟注后的保守分回金额不低于新增成本。",
+      "再加大到 {0}，会更容易赶走{1}。",
+      "前一街的进攻者在下一街继续下注。被跟注后，对手留下的范围可能更强；下一街要重新比较牌面、人数和下注成本，不自动连续下注。",
+      "前面的过牌加注也可能来自强成牌",
+      "反向隐含收益",
+      "可以免费过牌，保留确定的分池份额。",
+      "可向仍有筹码的对手争取弃牌；被跟注后就按最终摊牌结果分池。",
+      "同一条下注线也保留强成牌",
+      "向愿意继续的较弱牌取值；被跟注后若新牌补出明显听牌，或再遇大额加注，要重新判断牌力与价格。",
+      "听牌",
+      "听牌是主要改善路径，底牌成对或赢过未成牌诈唬也可能获胜，补牌率不等于全部权益。",
+      "因此应保留跟注，不必再猜对手是价值下注还是诈唬。",
+      "坚果是当前公共牌下最强的可能牌。坚果同花听牌可补成最高同花，但配对牌面仍可能输给葫芦或四条。强听牌可用来半诈唬，也可以过牌或按价格跟注。",
+      "坚果／坚果听牌",
+      "对手仍可能组成同花顺，领先当前的普通同花。",
+      "对手全部弃牌可直接拿池；被跟注后就按最终摊牌结果分池。",
+      "对手全部弃牌可直接拿池；被跟注后，下一张没改善或再遭加注时要重新比较价格。",
+      "对手可能用 {0} 取值，也可能用 {1} 等落空听牌诈唬；跟注需要后者或较弱取值的比例足够。",
+      "对手面对某个下注尺度，仍可能跟注或加注的一组牌。取值要找其中愿意付费的较弱牌；下注更大，可能赶走这些牌，留下更强的范围。",
+      "小尺度可能让较弱的一对或听牌付费，也可能让高张放弃免费改善，但要看对手是否会这样继续，不能仅凭不是顶对就把这次下注定为诈唬。",
+      "弃牌保留尚未投入的筹码，不因听牌潜力承诺继续付费。",
+      "弃牌保留还未投入的筹码，不为前面的投入继续付费。",
+      "弃牌放弃抓诈唬，保留还需支付的 {0}。",
+      "弃牌权益是对手因下注而弃牌带来的收益。加大下注可能增加弃牌机会，也增加被跟注或加注时的风险。多人底池要考虑所有对手，已全下的人不会再弃牌。",
+      "弃牌权益／下注尺度",
+      "当前{0}保留摊牌机会，河牌已无改善机会，跟注能否划算要结合对手范围与价格。",
+      "当前看似领先，或补中后看似很强，却可能在后续投入更多筹码后输给更强牌。筹码越深，非最大听牌和容易被更好踢脚压制的一对越要小心。",
+      "当前跟注门槛 {0}，下一张出现补牌候选约 {1}；可以比较跟注，但补中后可能落后且后续下注还要另算。",
+      "抓诈唬",
+      "投入已达到或超过当前底池，愿意继续的牌更容易包含更强对子或强听牌，不能只用保护对子说明这次大额进攻。",
+      "按当前范围估计，跟注 {0} 还依赖{1}后有人付费；弃牌避免把这笔不确定的未来收入当作已经到手的筹码。",
+      "按当前范围估计，跟注 {0} 还需要{1}后从较弱牌收取筹码；这笔钱只补齐本轮，下一街再被下注仍要另算成本。",
+      "按有资格分池的份额和新增成本判断，不能把确定分池误当作独赢整个底池。",
+      "按这个尺度的继续范围估计，仍有{0}可能付费{1}",
+      "按这个尺度的继续范围估计，仍有{0}可能付费。",
+      "无需追加筹码，等待后续公共牌与摊牌。",
+      "既保留改善机会，也向仍有筹码的对手施压；被跟注后，下一张没改善或再遭加注时要重新比较价格。",
+      "更低同花",
+      "更强",
+      "最大同花听牌",
+      "最大同花听牌兼顺子听牌",
+      "本轮已无人再行动，过牌可免费见下一张；进入下一街后再按牌面与下注判断。",
+      "根据此前公开行动，一方整组可能底牌在当前公共牌上整体更强，叫范围优势。它与这一手底牌的强弱不同，翻前加注者也可能在新牌面上失去优势。",
+      "此前{0}{1}、对手{2}，在 {3} 上，按这两条行动线估计，{4}可能持有的整组牌整体{5}",
+      "河牌没有补出第三张{0}，对手这条线仍可能有落空同花听牌转成的诈唬",
+      "河牌补出第三张{0}，此前的同花听牌可成为价值牌",
+      "用主要靠赢过对手诈唬来获胜的牌跟注。要看当前价格、此前行动和听牌是否补中；听牌落空不等于对手必然诈唬，跟过一街也不必跟到底。",
+      "看完转牌与河牌，至少出现一张当前补牌候选的机会约 {0}，这不是最终获胜概率，补中仍可能落后。",
+      "确定可分回的筹码不少于本次跟注成本。",
+      "策略抽样次数必须为正整数。",
+      "策略模型需要完整的52张牌目录，不能使用实际剩余牌堆。",
+      "结合完整行动线跟注防守",
+      "结合成牌后的付费机会跟注",
+      "继续范围／付费范围",
+      "继续要补 {0}，可争夺跟注后的 {1} 底池，当前保本门槛为 {2}。",
+      "翻前加注",
+      "翻前跟注",
+      "胜率通常指赢牌的概率，平分机会需单独考虑。权益把获胜和平分计为底池份额，仍不等于扣除后续成本的利润。",
+      "胜率／权益",
+      "若对手仍有足够较弱取值或诈唬，应比较跟注；只有这条线明显集中于更强成牌时，才收紧弃牌。",
+      "范围优势",
+      "补中",
+      "补中后可能额外赢到的筹码，取决于双方剩余筹码和对手是否愿意付费。跟注只补齐本轮，下一街可能还要再付；自己或所有对手已全下时，不能指望后续取值补足当前价格。",
+      "补中时能争取最大同花，仍要随新牌面判断。",
+      "补成目标牌型后，仍要确认有没有更强的牌。",
+      "跟注 {0} 先按当前底池的价格判断，{1}后的额外收入取决于较弱牌是否愿意付费；这笔钱只补齐本轮，下一街再被下注仍要另算成本。",
+      "跟注 {0} 后已没有后续下注，必须靠当前底池的最终获胜机会支持，不能指望补中后再收筹码。",
+      "跟注 {0} 是抓这些诈唬，仍会输给其中的强成牌。",
+      "跟注 {0} 需要其余诈唬或较弱取值支撑，不能再把这些同花当作落空牌。",
+      "跟注保留改善机会，下一张没改善且再遇大额下注时，可重新比较弃牌。",
+      "跟注先限制这次投入，后续若再加压仍要重新比较价格。",
+      "跟注后只按最终摊牌结果分配底池。",
+      "跟注后可争夺 {0}，按有资格分池的人数和整筹码计算，至少可分回 {1}，本次成本为 {2}。",
+      "跟注后直接比较最终摊牌机会。",
+      "较弱",
+      "较弱成牌和听牌",
+      "过牌不增加投入，之后按最终摊牌结果分配底池。",
+      "过牌保留后手，后续按新的牌面和下注决定是否继续。",
+      "过牌加注",
+      "过牌加注至",
+      "过牌加注至 {0}，向愿意继续的较弱牌取值；被跟注后若新牌补出明显听牌，或再遇大额加注，要重新判断牌力与价格。",
+      "这次下注尝试让更好的牌弃掉；若被跟注，下一张必须重新判断对手留下的范围，不自动继续下注。",
+      "这次下注有整组牌的优势支持，仍要给较弱牌留下继续空间。",
+      "这次加注无法让已全下的对手弃牌，仍要靠最终摊牌获胜。",
+      "这次加注需要当前手牌的取值或弃牌空间支持，不能只靠前面的主动权。",
+      "这次跟注依赖对手范围里有足够较弱牌或诈唬；若主要是更强成牌，即使价格不高也应弃牌。",
+      "这次跟注要付 {0}，之后已没有额外筹码可赚；弃牌保留这笔钱，不把补中后的取值当作继续理由。",
+      "通过主动下注或加注带动下注节奏，不改变行动顺序，也不保证当前牌更强。",
+      "顺子和同花双听牌",
+      "，还需防范{0}",
+      "；再加大到 {0}，会更容易赶走{1}。"
+    ],
+    "locales": ["en", "zh-TW", "ja", "ko", "es", "it", "pt", "de", "fr", "ru"],
+    "method": "Assistant-authored public range, size-response, nut-draw, implied-odds and conditional continuation text; all-in and future-cost limits preserved. Existing poker terminology and numeric placeholders checked. Authored model assumptions are not empirical opponent frequencies.",
+    "independentLinguisticReview": "not performed"
+  },
+  "strategyFeedbackFinal": {
+    "locales": ["en", "zh-TW", "ja", "ko", "es", "it", "pt", "de", "fr", "ru"],
+    "sources": [
+      "{0}的顺子可与 {1} 平分，只输给更高顺子；弃牌需要对手范围明显偏向后者。",
+      "先过牌保留改善机会；对手随后下注时，再按金额和继续范围比较跟注、加注或弃牌。",
+      "当前成牌对比：{0}，会输给例如 {1}（{2}），继续更需要补牌或对手弃牌。",
+      "当前成牌对比：{0}，能赢例如 {1}（{2}），但会输给 {3}（{4}）。",
+      "当前成牌对比：{0}，能赢例如 {1}（{2}），当前是最大成牌（坚果牌），后面新发的牌仍可能改变强弱。",
+      "当前成牌对比：{0}，能赢例如 {1}（{2}），河牌已发完，是当前最大成牌。",
+      "若后位会继续下注，可以过牌诱导后再取值；若其常过回，主动下注更容易向较弱成牌或听牌收费。",
+      "补中后的额外收入取决于较弱牌是否愿意付费，当前跟注只补齐本轮。"
+    ],
+    "method": "Assistant-authored conditional review and punctuation revisions; numeric placeholders preserved.",
+    "independentLinguisticReview": "not performed"
+  },
+  "checkedRangeReadingAndLocalObservation": {
+    "locales": ["en", "zh-TW", "ja", "ko", "es", "it", "pt", "de", "fr", "ru"],
+    "sources": [
+      "{0}，{1}按这些行动估计对手仍有较多中等成牌和未成牌，带听牌主动施压，争取直接收池或补牌改善。",
+      "对手上一街均未下注，本轮也尚未加压",
+      "对手本轮均已过牌",
+      "对手本轮均已过牌，{0}估计{1}仍可能付费，因此主动下注取值{2}。",
+      "并收取看下一张的成本",
+      "玩家公开行动的统计观察保存在本机，用于让电脑对手了解你的打法。这份观察不包含底牌、完整牌谱或输赢结果，不会上传。",
+      "设置、对局记录与公开行动观察仅保存在此设备，不上传到本应用服务器；关闭后继续原局的新一手。"
+    ],
+    "method": "Assistant-authored translations of conditional checked-range value/protection and draw pressure explanations, plus local-only public-action observation disclosure. Dynamic actor and hand-category placeholders retained; observer rationale has no next-action instructions.",
+    "independentLinguisticReview": "not performed",
+    "expandedPrefixTemplates": [
+      "对手本轮均已过牌，{0}按这些行动估计对手仍有较多中等成牌和未成牌，带听牌主动施压，争取直接收池或补牌改善。",
+      "对手上一街均未下注，本轮也尚未加压，{0}按这些行动估计对手仍有较多中等成牌和未成牌，带听牌主动施压，争取直接收池或补牌改善。"
+    ],
+    "templateRepair": "Explicit current-street/prior-check-through prefixes disambiguate their internal comma from the observer-subject slot; generic source and model semantics unchanged. Explicit optional preceding-text forms also prevent a generic whole-paragraph template from swallowing the internal prefix comma.",
+    "paragraphPrefixTemplates": [
+      "{0}对手本轮均已过牌，{1}按这些行动估计对手仍有较多中等成牌和未成牌，带听牌主动施压，争取直接收池或补牌改善。",
+      "{0}对手上一街均未下注，本轮也尚未加压，{1}按这些行动估计对手仍有较多中等成牌和未成牌，带听牌主动施压，争取直接收池或补牌改善。"
+    ],
+    "standaloneDrawHeading": {
+      "source": "{0} 带{1}。",
+      "method": "Assistant-authored complete sentence translations for a retained draw fact after a redundant action clause is removed; all ten non-source locales, placeholders preserved.",
+      "independentLinguisticReview": "not performed"
+    }
+  },
+  "multiwayClosingCallReview": {
+    "sources": [
+      "这笔下注已有 {0} 位对手跟注，{1}面对的是多人付费继续的范围。",
+      "{0}按当前价格用{1}保留摊牌机会。",
+      "{0}在本轮最后行动，跟注不会再遭到本轮加注。"
+    ],
+    "locales": ["en", "zh-TW", "ja", "ko", "es", "it", "pt", "de", "fr", "ru"],
+    "method": "Assistant-authored translations of observed multiway callers, current-price showdown continuation and action-closing calls. Dynamic counts, named observer subjects and hand descriptions preserved. The no-further-raise statement is restricted to the current betting round; no future-street guarantee or coaching added.",
+    "independentLinguisticReview": "not performed",
+    "singularCallerTemplate": {
+      "source": "这笔下注已有 1 位对手跟注，{0}面对的是多人付费继续的范围。",
+      "method": "An explicit one-caller form selects singular grammar before the generic count template, while multiway still includes the original bettor. All ten non-source locales preserve the numeral and named actor."
+    }
+  },
+  "deduplicatedFuturePayAndClosedFlop": {
+    "sources": [
+      "按当前范围估计，这次跟注还需要{0}后从较弱牌收取筹码。",
+      "{0}后的额外收入取决于较弱牌是否愿意付费。",
+      "当前有{0}，共 {1} 张直接成牌候选；跟注后可看完转牌和河牌，至少出现一张当前候选牌的机会约 {2}，这不是最终获胜概率。"
+    ],
+    "locales": ["en", "zh-TW", "ja", "ko", "es", "it", "pt", "de", "fr", "ru"],
+    "method": "Assistant-authored translations of two shortened implied-odds clauses and one closed-flop two-card probability clause. Range-estimate dependence, weaker-hand willingness to pay, hitting-a-set versus draw-completion variables, and the distinction between at-least-one current completion candidate and final winning probability are preserved. No extra future-cost warning is added to the short clauses.",
+    "independentLinguisticReview": "not performed"
+  },
+  "pairedBoardHigherPairAndTightRange": {
+    "sources": [
+      "{0} 落下时，底牌有机会组成更高的一对，但这些牌也不能全部算成必胜补牌。",
+      "跟注需要对手范围里有足够较弱牌或诈唬；面对更紧范围应弃牌。",
+      "听牌是主要改善路径，底牌成对或赢过未成牌诈唬也可能获胜。"
+    ],
+    "locales": ["en", "zh-TW", "ja", "ko", "es", "it", "pt", "de", "fr", "ru"],
+    "method": "Assistant-authored concise accuracy revisions: a hole card may make a higher pair on a paired board, without promising top pair or treating every rank candidate as a winning out; calling depends on enough weaker hands or bluffs, with a fold against a tighter range. Dynamic rank text and conditional limits preserved.",
+    "independentLinguisticReview": "not performed",
+    "shortDrawRouteRevision": {
+      "source": "听牌是主要改善路径，底牌成对或赢过未成牌诈唬也可能获胜。",
+      "method": "Retain the existing translated draw/pair/bluff winning-path explanation and remove only the repeated final equity warning; concrete probability and paired-board risks remain in their separate facts. No independent linguistic review performed."
+    }
+  },
+  "turnClosingRiverVisibility": {
+    "source": "本轮跟注后即可看到最后一张河牌。",
+    "locales": ["en", "zh-TW", "ja", "ko", "es", "it", "pt", "de", "fr", "ru"],
+    "method": "Assistant-authored factual turn-closing call sentence, limited to seeing the final community card. It does not claim a free river betting round, automatic showdown or absence of later betting; those conditions remain exclusively in the specific river plan.",
+    "independentLinguisticReview": "not performed"
   }
 }

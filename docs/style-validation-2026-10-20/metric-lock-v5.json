@@ -1,0 +1,94 @@
+{
+  "sourceDigest": "733de8028fdf5d0469944de62562ad3584a1b71aaf3d225564905ac852872aa1",
+  "repetitions": 16,
+  "note": "Version 5: one metric/field/direction fixed per final pair before held-out inspection. Cluster shared initial shuffle seed and hand index across all style/count/difficulty trajectories. Raw completed-hand executions are not independent shuffles.",
+  "allPairs": 6,
+  "clearPairs": 6,
+  "pairs": [
+    {
+      "first": "balanced",
+      "second": "rook",
+      "clearlyDifferent": true,
+      "best": {
+        "metric": "draw-pressure",
+        "field": "raise",
+        "differencePP": -30.235239852398525,
+        "ci95PP": [-36.53242677824268, -23.39891975308642],
+        "snapshots": 813,
+        "handClusters": 47,
+        "conditionalDecisions": 13008
+      }
+    },
+    {
+      "first": "balanced",
+      "second": "jett",
+      "clearlyDifferent": true,
+      "best": {
+        "metric": "cheap-entry",
+        "field": "continue",
+        "differencePP": -32.25490196078431,
+        "ci95PP": [-43.9605614973262, -20.675381263616558],
+        "snapshots": 2040,
+        "handClusters": 44,
+        "conditionalDecisions": 32640
+      }
+    },
+    {
+      "first": "balanced",
+      "second": "owen",
+      "clearlyDifferent": true,
+      "best": {
+        "metric": "small-open-defense",
+        "field": "continue",
+        "differencePP": 31.32659313725491,
+        "ci95PP": [23.498283752860413, 37.64671361502347],
+        "snapshots": 2040,
+        "handClusters": 78,
+        "conditionalDecisions": 32640
+      }
+    },
+    {
+      "first": "rook",
+      "second": "jett",
+      "clearlyDifferent": true,
+      "best": {
+        "metric": "draw-pressure",
+        "field": "raise",
+        "differencePP": 37.27706027060271,
+        "ci95PP": [29.50564133016627, 44.20052424639581],
+        "snapshots": 813,
+        "handClusters": 47,
+        "conditionalDecisions": 13008
+      }
+    },
+    {
+      "first": "rook",
+      "second": "owen",
+      "clearlyDifferent": true,
+      "best": {
+        "metric": "small-open-defense",
+        "field": "continue",
+        "differencePP": 56.47977941176471,
+        "ci95PP": [46.650955921402016, 64.80459770114942],
+        "snapshots": 2040,
+        "handClusters": 78,
+        "conditionalDecisions": 32640
+      }
+    },
+    {
+      "first": "jett",
+      "second": "owen",
+      "clearlyDifferent": true,
+      "best": {
+        "metric": "cheap-entry",
+        "field": "continue",
+        "differencePP": 61.95772058823529,
+        "ci95PP": [51.322180248246084, 71.34763741562199],
+        "snapshots": 2040,
+        "handClusters": 44,
+        "conditionalDecisions": 32640
+      }
+    }
+  ],
+  "lockedAt": "2026-10-20T12:49:27.139Z"
+}

@@ -43,6 +43,8 @@ test('all choices open the anchored dark list and preserve the hand', async ({ p
 test('WebKit choices remain anchored after settings scrolling and option focus', async ({
   baseURL,
 }) => {
+  // Four table sizes in a separate WebKit launch exceed 30 s on hosted runners.
+  test.setTimeout(90000);
   const browser = await webkit.launch();
   try {
     const page = await browser.newPage({ viewport: { width: 393, height: 759 }, locale: 'zh-CN' });

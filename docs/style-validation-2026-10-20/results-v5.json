@@ -1,0 +1,1255 @@
+{
+  "summary": {
+    "before-matched": {
+      "hands": 9600,
+      "cells": 120,
+      "sourceDigests": ["d0de76d659cb5145d8a37af0e7cc24b2135c9102bce391c5c60d2ac35505857b"],
+      "harnessDigests": ["e2697703b638dca90bf0a70cace5cdfb140053703f6801d61f84e05954de75b3"],
+      "profiles": {
+        "balanced": {
+          "hands": 2400,
+          "vpip": 0.49291666666666667,
+          "pfr": 0.12083333333333333,
+          "postActions": 2675,
+          "postRaises": 250,
+          "postCalls": 218,
+          "byCount": {
+            "5": {
+              "hands": 480,
+              "vpip": 0.5854166666666667,
+              "pfr": 0.17291666666666666,
+              "postActions": 707,
+              "postRaises": 89,
+              "postCalls": 65
+            },
+            "6": {
+              "hands": 480,
+              "vpip": 0.5541666666666667,
+              "pfr": 0.125,
+              "postActions": 582,
+              "postRaises": 39,
+              "postCalls": 39
+            },
+            "7": {
+              "hands": 480,
+              "vpip": 0.49166666666666664,
+              "pfr": 0.10416666666666667,
+              "postActions": 513,
+              "postRaises": 54,
+              "postCalls": 39
+            },
+            "8": {
+              "hands": 480,
+              "vpip": 0.4125,
+              "pfr": 0.07708333333333334,
+              "postActions": 442,
+              "postRaises": 30,
+              "postCalls": 31
+            },
+            "9": {
+              "hands": 480,
+              "vpip": 0.42083333333333334,
+              "pfr": 0.125,
+              "postActions": 431,
+              "postRaises": 38,
+              "postCalls": 44
+            }
+          },
+          "byDifficulty": {
+            "normal": {
+              "hands": 1200,
+              "vpip": 0.505,
+              "pfr": 0.11916666666666667,
+              "postActions": 1403,
+              "postRaises": 122,
+              "postCalls": 110
+            },
+            "hard": {
+              "hands": 1200,
+              "vpip": 0.48083333333333333,
+              "pfr": 0.1225,
+              "postActions": 1272,
+              "postRaises": 128,
+              "postCalls": 108
+            }
+          }
+        },
+        "rook": {
+          "hands": 2400,
+          "vpip": 0.695,
+          "pfr": 0.24666666666666667,
+          "postActions": 3520,
+          "postRaises": 454,
+          "postCalls": 240,
+          "byCount": {
+            "5": {
+              "hands": 480,
+              "vpip": 0.8,
+              "pfr": 0.30416666666666664,
+              "postActions": 903,
+              "postRaises": 160,
+              "postCalls": 67
+            },
+            "6": {
+              "hands": 480,
+              "vpip": 0.7583333333333333,
+              "pfr": 0.3229166666666667,
+              "postActions": 783,
+              "postRaises": 94,
+              "postCalls": 60
+            },
+            "7": {
+              "hands": 480,
+              "vpip": 0.7041666666666667,
+              "pfr": 0.22083333333333333,
+              "postActions": 715,
+              "postRaises": 92,
+              "postCalls": 43
+            },
+            "8": {
+              "hands": 480,
+              "vpip": 0.63125,
+              "pfr": 0.17708333333333334,
+              "postActions": 610,
+              "postRaises": 54,
+              "postCalls": 32
+            },
+            "9": {
+              "hands": 480,
+              "vpip": 0.58125,
+              "pfr": 0.20833333333333334,
+              "postActions": 509,
+              "postRaises": 54,
+              "postCalls": 38
+            }
+          },
+          "byDifficulty": {
+            "normal": {
+              "hands": 1200,
+              "vpip": 0.7066666666666667,
+              "pfr": 0.2375,
+              "postActions": 1852,
+              "postRaises": 210,
+              "postCalls": 118
+            },
+            "hard": {
+              "hands": 1200,
+              "vpip": 0.6833333333333333,
+              "pfr": 0.25583333333333336,
+              "postActions": 1668,
+              "postRaises": 244,
+              "postCalls": 122
+            }
+          }
+        },
+        "jett": {
+          "hands": 2400,
+          "vpip": 0.7491666666666666,
+          "pfr": 0.25125,
+          "postActions": 3847,
+          "postRaises": 451,
+          "postCalls": 290,
+          "byCount": {
+            "5": {
+              "hands": 480,
+              "vpip": 0.8520833333333333,
+              "pfr": 0.31875,
+              "postActions": 975,
+              "postRaises": 152,
+              "postCalls": 76
+            },
+            "6": {
+              "hands": 480,
+              "vpip": 0.79375,
+              "pfr": 0.325,
+              "postActions": 851,
+              "postRaises": 90,
+              "postCalls": 75
+            },
+            "7": {
+              "hands": 480,
+              "vpip": 0.7541666666666667,
+              "pfr": 0.22083333333333333,
+              "postActions": 783,
+              "postRaises": 97,
+              "postCalls": 53
+            },
+            "8": {
+              "hands": 480,
+              "vpip": 0.6979166666666666,
+              "pfr": 0.17916666666666667,
+              "postActions": 663,
+              "postRaises": 54,
+              "postCalls": 38
+            },
+            "9": {
+              "hands": 480,
+              "vpip": 0.6479166666666667,
+              "pfr": 0.2125,
+              "postActions": 575,
+              "postRaises": 58,
+              "postCalls": 48
+            }
+          },
+          "byDifficulty": {
+            "normal": {
+              "hands": 1200,
+              "vpip": 0.7625,
+              "pfr": 0.24083333333333334,
+              "postActions": 2032,
+              "postRaises": 218,
+              "postCalls": 145
+            },
+            "hard": {
+              "hands": 1200,
+              "vpip": 0.7358333333333333,
+              "pfr": 0.26166666666666666,
+              "postActions": 1815,
+              "postRaises": 233,
+              "postCalls": 145
+            }
+          }
+        },
+        "owen": {
+          "hands": 2400,
+          "vpip": 0.4583333333333333,
+          "pfr": 0.15666666666666668,
+          "postActions": 2448,
+          "postRaises": 287,
+          "postCalls": 199,
+          "byCount": {
+            "5": {
+              "hands": 480,
+              "vpip": 0.5270833333333333,
+              "pfr": 0.18958333333333333,
+              "postActions": 644,
+              "postRaises": 92,
+              "postCalls": 59
+            },
+            "6": {
+              "hands": 480,
+              "vpip": 0.5229166666666667,
+              "pfr": 0.18125,
+              "postActions": 531,
+              "postRaises": 50,
+              "postCalls": 41
+            },
+            "7": {
+              "hands": 480,
+              "vpip": 0.46041666666666664,
+              "pfr": 0.1375,
+              "postActions": 482,
+              "postRaises": 66,
+              "postCalls": 39
+            },
+            "8": {
+              "hands": 480,
+              "vpip": 0.38333333333333336,
+              "pfr": 0.10833333333333334,
+              "postActions": 414,
+              "postRaises": 41,
+              "postCalls": 26
+            },
+            "9": {
+              "hands": 480,
+              "vpip": 0.39791666666666664,
+              "pfr": 0.16666666666666666,
+              "postActions": 377,
+              "postRaises": 38,
+              "postCalls": 34
+            }
+          },
+          "byDifficulty": {
+            "normal": {
+              "hands": 1200,
+              "vpip": 0.4675,
+              "pfr": 0.14583333333333334,
+              "postActions": 1288,
+              "postRaises": 138,
+              "postCalls": 93
+            },
+            "hard": {
+              "hands": 1200,
+              "vpip": 0.44916666666666666,
+              "pfr": 0.1675,
+              "postActions": 1160,
+              "postRaises": 149,
+              "postCalls": 106
+            }
+          }
+        }
+      }
+    },
+    "final": {
+      "hands": 9600,
+      "cells": 120,
+      "sourceDigests": ["733de8028fdf5d0469944de62562ad3584a1b71aaf3d225564905ac852872aa1"],
+      "harnessDigests": ["17c9a4a27ba2448f479fd9c0efe3aa43d74de47f596861e9b9c2db2678d279e5"],
+      "profiles": {
+        "balanced": {
+          "hands": 2400,
+          "vpip": 0.49166666666666664,
+          "pfr": 0.12,
+          "postActions": 2637,
+          "postRaises": 244,
+          "postCalls": 202,
+          "byCount": {
+            "5": {
+              "hands": 480,
+              "vpip": 0.5854166666666667,
+              "pfr": 0.17291666666666666,
+              "postActions": 692,
+              "postRaises": 81,
+              "postCalls": 59
+            },
+            "6": {
+              "hands": 480,
+              "vpip": 0.5541666666666667,
+              "pfr": 0.12083333333333333,
+              "postActions": 586,
+              "postRaises": 38,
+              "postCalls": 41
+            },
+            "7": {
+              "hands": 480,
+              "vpip": 0.48541666666666666,
+              "pfr": 0.10416666666666667,
+              "postActions": 496,
+              "postRaises": 55,
+              "postCalls": 35
+            },
+            "8": {
+              "hands": 480,
+              "vpip": 0.4125,
+              "pfr": 0.07708333333333334,
+              "postActions": 443,
+              "postRaises": 33,
+              "postCalls": 28
+            },
+            "9": {
+              "hands": 480,
+              "vpip": 0.42083333333333334,
+              "pfr": 0.125,
+              "postActions": 420,
+              "postRaises": 37,
+              "postCalls": 39
+            }
+          },
+          "byDifficulty": {
+            "normal": {
+              "hands": 1200,
+              "vpip": 0.5033333333333333,
+              "pfr": 0.11833333333333333,
+              "postActions": 1378,
+              "postRaises": 120,
+              "postCalls": 97
+            },
+            "hard": {
+              "hands": 1200,
+              "vpip": 0.48,
+              "pfr": 0.12166666666666667,
+              "postActions": 1259,
+              "postRaises": 124,
+              "postCalls": 105
+            }
+          }
+        },
+        "rook": {
+          "hands": 2400,
+          "vpip": 0.6933333333333334,
+          "pfr": 0.25666666666666665,
+          "postActions": 3496,
+          "postRaises": 471,
+          "postCalls": 240,
+          "byCount": {
+            "5": {
+              "hands": 480,
+              "vpip": 0.8020833333333334,
+              "pfr": 0.32083333333333336,
+              "postActions": 890,
+              "postRaises": 159,
+              "postCalls": 69
+            },
+            "6": {
+              "hands": 480,
+              "vpip": 0.7604166666666666,
+              "pfr": 0.32916666666666666,
+              "postActions": 789,
+              "postRaises": 101,
+              "postCalls": 57
+            },
+            "7": {
+              "hands": 480,
+              "vpip": 0.6979166666666666,
+              "pfr": 0.23125,
+              "postActions": 701,
+              "postRaises": 98,
+              "postCalls": 42
+            },
+            "8": {
+              "hands": 480,
+              "vpip": 0.63125,
+              "pfr": 0.18958333333333333,
+              "postActions": 610,
+              "postRaises": 56,
+              "postCalls": 33
+            },
+            "9": {
+              "hands": 480,
+              "vpip": 0.575,
+              "pfr": 0.2125,
+              "postActions": 506,
+              "postRaises": 57,
+              "postCalls": 39
+            }
+          },
+          "byDifficulty": {
+            "normal": {
+              "hands": 1200,
+              "vpip": 0.7041666666666667,
+              "pfr": 0.24666666666666667,
+              "postActions": 1830,
+              "postRaises": 216,
+              "postCalls": 117
+            },
+            "hard": {
+              "hands": 1200,
+              "vpip": 0.6825,
+              "pfr": 0.26666666666666666,
+              "postActions": 1666,
+              "postRaises": 255,
+              "postCalls": 123
+            }
+          }
+        },
+        "jett": {
+          "hands": 2400,
+          "vpip": 0.8041666666666667,
+          "pfr": 0.165,
+          "postActions": 4261,
+          "postRaises": 312,
+          "postCalls": 339,
+          "byCount": {
+            "5": {
+              "hands": 480,
+              "vpip": 0.875,
+              "pfr": 0.24166666666666667,
+              "postActions": 1048,
+              "postRaises": 103,
+              "postCalls": 93
+            },
+            "6": {
+              "hands": 480,
+              "vpip": 0.85,
+              "pfr": 0.20416666666666666,
+              "postActions": 923,
+              "postRaises": 45,
+              "postCalls": 90
+            },
+            "7": {
+              "hands": 480,
+              "vpip": 0.81875,
+              "pfr": 0.14791666666666667,
+              "postActions": 881,
+              "postRaises": 72,
+              "postCalls": 61
+            },
+            "8": {
+              "hands": 480,
+              "vpip": 0.7541666666666667,
+              "pfr": 0.10416666666666667,
+              "postActions": 758,
+              "postRaises": 43,
+              "postCalls": 47
+            },
+            "9": {
+              "hands": 480,
+              "vpip": 0.7229166666666667,
+              "pfr": 0.12708333333333333,
+              "postActions": 651,
+              "postRaises": 49,
+              "postCalls": 48
+            }
+          },
+          "byDifficulty": {
+            "normal": {
+              "hands": 1200,
+              "vpip": 0.8125,
+              "pfr": 0.15666666666666668,
+              "postActions": 2205,
+              "postRaises": 146,
+              "postCalls": 167
+            },
+            "hard": {
+              "hands": 1200,
+              "vpip": 0.7958333333333333,
+              "pfr": 0.17333333333333334,
+              "postActions": 2056,
+              "postRaises": 166,
+              "postCalls": 172
+            }
+          }
+        },
+        "owen": {
+          "hands": 2400,
+          "vpip": 0.2375,
+          "pfr": 0.0825,
+          "postActions": 1272,
+          "postRaises": 160,
+          "postCalls": 111,
+          "byCount": {
+            "5": {
+              "hands": 480,
+              "vpip": 0.2520833333333333,
+              "pfr": 0.10416666666666667,
+              "postActions": 324,
+              "postRaises": 45,
+              "postCalls": 29
+            },
+            "6": {
+              "hands": 480,
+              "vpip": 0.26458333333333334,
+              "pfr": 0.07916666666666666,
+              "postActions": 251,
+              "postRaises": 27,
+              "postCalls": 26
+            },
+            "7": {
+              "hands": 480,
+              "vpip": 0.225,
+              "pfr": 0.08541666666666667,
+              "postActions": 243,
+              "postRaises": 28,
+              "postCalls": 12
+            },
+            "8": {
+              "hands": 480,
+              "vpip": 0.20625,
+              "pfr": 0.06041666666666667,
+              "postActions": 233,
+              "postRaises": 28,
+              "postCalls": 17
+            },
+            "9": {
+              "hands": 480,
+              "vpip": 0.23958333333333334,
+              "pfr": 0.08333333333333333,
+              "postActions": 221,
+              "postRaises": 32,
+              "postCalls": 27
+            }
+          },
+          "byDifficulty": {
+            "normal": {
+              "hands": 1200,
+              "vpip": 0.23833333333333334,
+              "pfr": 0.08166666666666667,
+              "postActions": 658,
+              "postRaises": 82,
+              "postCalls": 50
+            },
+            "hard": {
+              "hands": 1200,
+              "vpip": 0.23666666666666666,
+              "pfr": 0.08333333333333333,
+              "postActions": 614,
+              "postRaises": 78,
+              "postCalls": 61
+            }
+          }
+        }
+      }
+    },
+    "heldout": {
+      "hands": 19200,
+      "cells": 120,
+      "sourceDigests": ["733de8028fdf5d0469944de62562ad3584a1b71aaf3d225564905ac852872aa1"],
+      "harnessDigests": ["17c9a4a27ba2448f479fd9c0efe3aa43d74de47f596861e9b9c2db2678d279e5"],
+      "profiles": {
+        "balanced": {
+          "hands": 4800,
+          "vpip": 0.4839583333333333,
+          "pfr": 0.119375,
+          "postActions": 5199,
+          "postRaises": 547,
+          "postCalls": 424,
+          "byCount": {
+            "5": {
+              "hands": 960,
+              "vpip": 0.5177083333333333,
+              "pfr": 0.11979166666666667,
+              "postActions": 1177,
+              "postRaises": 119,
+              "postCalls": 116
+            },
+            "6": {
+              "hands": 960,
+              "vpip": 0.5395833333333333,
+              "pfr": 0.15729166666666666,
+              "postActions": 1288,
+              "postRaises": 157,
+              "postCalls": 115
+            },
+            "7": {
+              "hands": 960,
+              "vpip": 0.5083333333333333,
+              "pfr": 0.128125,
+              "postActions": 1060,
+              "postRaises": 100,
+              "postCalls": 50
+            },
+            "8": {
+              "hands": 960,
+              "vpip": 0.44375,
+              "pfr": 0.09375,
+              "postActions": 878,
+              "postRaises": 102,
+              "postCalls": 76
+            },
+            "9": {
+              "hands": 960,
+              "vpip": 0.41041666666666665,
+              "pfr": 0.09791666666666667,
+              "postActions": 796,
+              "postRaises": 69,
+              "postCalls": 67
+            }
+          },
+          "byDifficulty": {
+            "normal": {
+              "hands": 2400,
+              "vpip": 0.49083333333333334,
+              "pfr": 0.11791666666666667,
+              "postActions": 2678,
+              "postRaises": 256,
+              "postCalls": 200
+            },
+            "hard": {
+              "hands": 2400,
+              "vpip": 0.47708333333333336,
+              "pfr": 0.12083333333333333,
+              "postActions": 2521,
+              "postRaises": 291,
+              "postCalls": 224
+            }
+          }
+        },
+        "rook": {
+          "hands": 4800,
+          "vpip": 0.6883333333333334,
+          "pfr": 0.2529166666666667,
+          "postActions": 7143,
+          "postRaises": 976,
+          "postCalls": 507,
+          "byCount": {
+            "5": {
+              "hands": 960,
+              "vpip": 0.7458333333333333,
+              "pfr": 0.28125,
+              "postActions": 1660,
+              "postRaises": 261,
+              "postCalls": 129
+            },
+            "6": {
+              "hands": 960,
+              "vpip": 0.7729166666666667,
+              "pfr": 0.29270833333333335,
+              "postActions": 1725,
+              "postRaises": 265,
+              "postCalls": 130
+            },
+            "7": {
+              "hands": 960,
+              "vpip": 0.7260416666666667,
+              "pfr": 0.26979166666666665,
+              "postActions": 1502,
+              "postRaises": 183,
+              "postCalls": 90
+            },
+            "8": {
+              "hands": 960,
+              "vpip": 0.6239583333333333,
+              "pfr": 0.23229166666666667,
+              "postActions": 1217,
+              "postRaises": 147,
+              "postCalls": 88
+            },
+            "9": {
+              "hands": 960,
+              "vpip": 0.5729166666666666,
+              "pfr": 0.18854166666666666,
+              "postActions": 1039,
+              "postRaises": 120,
+              "postCalls": 70
+            }
+          },
+          "byDifficulty": {
+            "normal": {
+              "hands": 2400,
+              "vpip": 0.6954166666666667,
+              "pfr": 0.2525,
+              "postActions": 3684,
+              "postRaises": 449,
+              "postCalls": 242
+            },
+            "hard": {
+              "hands": 2400,
+              "vpip": 0.68125,
+              "pfr": 0.25333333333333335,
+              "postActions": 3459,
+              "postRaises": 527,
+              "postCalls": 265
+            }
+          }
+        },
+        "jett": {
+          "hands": 4800,
+          "vpip": 0.7983333333333333,
+          "pfr": 0.15916666666666668,
+          "postActions": 8834,
+          "postRaises": 714,
+          "postCalls": 728,
+          "byCount": {
+            "5": {
+              "hands": 960,
+              "vpip": 0.834375,
+              "pfr": 0.1625,
+              "postActions": 2008,
+              "postRaises": 157,
+              "postCalls": 184
+            },
+            "6": {
+              "hands": 960,
+              "vpip": 0.8552083333333333,
+              "pfr": 0.190625,
+              "postActions": 2051,
+              "postRaises": 175,
+              "postCalls": 189
+            },
+            "7": {
+              "hands": 960,
+              "vpip": 0.8364583333333333,
+              "pfr": 0.17916666666666667,
+              "postActions": 1811,
+              "postRaises": 156,
+              "postCalls": 117
+            },
+            "8": {
+              "hands": 960,
+              "vpip": 0.7708333333333334,
+              "pfr": 0.14895833333333333,
+              "postActions": 1638,
+              "postRaises": 134,
+              "postCalls": 152
+            },
+            "9": {
+              "hands": 960,
+              "vpip": 0.6947916666666667,
+              "pfr": 0.11458333333333333,
+              "postActions": 1326,
+              "postRaises": 92,
+              "postCalls": 86
+            }
+          },
+          "byDifficulty": {
+            "normal": {
+              "hands": 2400,
+              "vpip": 0.8041666666666667,
+              "pfr": 0.155,
+              "postActions": 4510,
+              "postRaises": 327,
+              "postCalls": 331
+            },
+            "hard": {
+              "hands": 2400,
+              "vpip": 0.7925,
+              "pfr": 0.16333333333333333,
+              "postActions": 4324,
+              "postRaises": 387,
+              "postCalls": 397
+            }
+          }
+        },
+        "owen": {
+          "hands": 4800,
+          "vpip": 0.23854166666666668,
+          "pfr": 0.09270833333333334,
+          "postActions": 2591,
+          "postRaises": 367,
+          "postCalls": 231,
+          "byCount": {
+            "5": {
+              "hands": 960,
+              "vpip": 0.225,
+              "pfr": 0.08229166666666667,
+              "postActions": 577,
+              "postRaises": 72,
+              "postCalls": 72
+            },
+            "6": {
+              "hands": 960,
+              "vpip": 0.30416666666666664,
+              "pfr": 0.12604166666666666,
+              "postActions": 695,
+              "postRaises": 125,
+              "postCalls": 58
+            },
+            "7": {
+              "hands": 960,
+              "vpip": 0.22916666666666666,
+              "pfr": 0.09270833333333334,
+              "postActions": 479,
+              "postRaises": 64,
+              "postCalls": 28
+            },
+            "8": {
+              "hands": 960,
+              "vpip": 0.21770833333333334,
+              "pfr": 0.08645833333333333,
+              "postActions": 441,
+              "postRaises": 68,
+              "postCalls": 36
+            },
+            "9": {
+              "hands": 960,
+              "vpip": 0.21666666666666667,
+              "pfr": 0.07604166666666666,
+              "postActions": 399,
+              "postRaises": 38,
+              "postCalls": 37
+            }
+          },
+          "byDifficulty": {
+            "normal": {
+              "hands": 2400,
+              "vpip": 0.24333333333333335,
+              "pfr": 0.09083333333333334,
+              "postActions": 1364,
+              "postRaises": 174,
+              "postCalls": 113
+            },
+            "hard": {
+              "hands": 2400,
+              "vpip": 0.23375,
+              "pfr": 0.09458333333333334,
+              "postActions": 1227,
+              "postRaises": 193,
+              "postCalls": 118
+            }
+          }
+        }
+      }
+    }
+  },
+  "lockedValidation": {
+    "sourceDigest": "733de8028fdf5d0469944de62562ad3584a1b71aaf3d225564905ac852872aa1",
+    "lock": "/Users/zjz/code/noir-poker/docs/style-validation-2026-10-20/metric-lock-v5.json",
+    "corpusDirectory": "/Users/zjz/code/noir-poker/.artifacts/style-audit-2026-10-20/heldout",
+    "description": "One metric/field/direction fixed per pair on development corpus before held-out measurement; paired initial-shuffle-cluster bootstrap 600 resamples. No human perception claim.",
+    "allPairs": 6,
+    "passedPairs": 6,
+    "pairs": [
+      {
+        "first": "balanced",
+        "second": "rook",
+        "metric": "draw-pressure",
+        "field": "raise",
+        "developmentDifferencePP": -30.235239852398525,
+        "firstRate": 0.19990808823529413,
+        "secondRate": 0.48483455882352944,
+        "differencePP": -28.49264705882353,
+        "ci95PP": [-34.13345410628019, -23.265418502202643],
+        "snapshots": 408,
+        "handClusters": 103,
+        "conditionalDecisions": 6528,
+        "strata": {
+          "normal": {
+            "n": 3280,
+            "differencePP": -21.676829268292682
+          },
+          "hard": {
+            "n": 3248,
+            "differencePP": -35.375615763546804
+          }
+        },
+        "passed": true,
+        "byCount": {
+          "5": {
+            "snapshots": 91,
+            "conditionalDecisions": 1456,
+            "firstRate": 0.19230769230769232,
+            "secondRate": 0.5714285714285714,
+            "differencePP": -37.91208791208791
+          },
+          "6": {
+            "snapshots": 96,
+            "conditionalDecisions": 1536,
+            "firstRate": 0.234375,
+            "secondRate": 0.48046875,
+            "differencePP": -24.609375
+          },
+          "7": {
+            "snapshots": 74,
+            "conditionalDecisions": 1184,
+            "firstRate": 0.19763513513513514,
+            "secondRate": 0.46621621621621623,
+            "differencePP": -26.85810810810811
+          },
+          "8": {
+            "snapshots": 71,
+            "conditionalDecisions": 1136,
+            "firstRate": 0.2130281690140845,
+            "secondRate": 0.5669014084507042,
+            "differencePP": -35.387323943661976
+          },
+          "9": {
+            "snapshots": 76,
+            "conditionalDecisions": 1216,
+            "firstRate": 0.15542763157894737,
+            "secondRate": 0.328125,
+            "differencePP": -17.269736842105264
+          }
+        }
+      },
+      {
+        "first": "balanced",
+        "second": "jett",
+        "metric": "cheap-entry",
+        "field": "continue",
+        "developmentDifferencePP": -32.25490196078431,
+        "firstRate": 0.4243489583333333,
+        "secondRate": 0.8451822916666667,
+        "differencePP": -42.08333333333334,
+        "ci95PP": [-55.69783834586466, -29.15711009174312],
+        "snapshots": 480,
+        "handClusters": 39,
+        "conditionalDecisions": 7680,
+        "strata": {
+          "normal": {
+            "n": 3840,
+            "differencePP": -44.375
+          },
+          "hard": {
+            "n": 3840,
+            "differencePP": -39.79166666666666
+          }
+        },
+        "passed": true,
+        "byCount": {
+          "5": {
+            "snapshots": 96,
+            "conditionalDecisions": 1536,
+            "firstRate": 0.42317708333333337,
+            "secondRate": 0.755859375,
+            "differencePP": -33.268229166666664
+          },
+          "6": {
+            "snapshots": 96,
+            "conditionalDecisions": 1536,
+            "firstRate": 0.38151041666666663,
+            "secondRate": 0.875,
+            "differencePP": -49.348958333333336
+          },
+          "7": {
+            "snapshots": 96,
+            "conditionalDecisions": 1536,
+            "firstRate": 0.5091145833333333,
+            "secondRate": 1,
+            "differencePP": -49.08854166666667
+          },
+          "8": {
+            "snapshots": 96,
+            "conditionalDecisions": 1536,
+            "firstRate": 0.5475260416666667,
+            "secondRate": 0.87890625,
+            "differencePP": -33.13802083333333
+          },
+          "9": {
+            "snapshots": 96,
+            "conditionalDecisions": 1536,
+            "firstRate": 0.26041666666666663,
+            "secondRate": 0.7161458333333333,
+            "differencePP": -45.572916666666664
+          }
+        }
+      },
+      {
+        "first": "balanced",
+        "second": "owen",
+        "metric": "small-open-defense",
+        "field": "continue",
+        "developmentDifferencePP": 31.32659313725491,
+        "firstRate": 0.46315104166666665,
+        "secondRate": 0.22473958333333333,
+        "differencePP": 23.841145833333332,
+        "ci95PP": [16.327092511013216, 31.72002032520325],
+        "snapshots": 480,
+        "handClusters": 69,
+        "conditionalDecisions": 7680,
+        "strata": {
+          "normal": {
+            "n": 3840,
+            "differencePP": 23.203125000000004
+          },
+          "hard": {
+            "n": 3840,
+            "differencePP": 24.479166666666664
+          }
+        },
+        "passed": true,
+        "byCount": {
+          "5": {
+            "snapshots": 96,
+            "conditionalDecisions": 1536,
+            "firstRate": 0.6184895833333333,
+            "secondRate": 0.24869791666666663,
+            "differencePP": 36.979166666666664
+          },
+          "6": {
+            "snapshots": 96,
+            "conditionalDecisions": 1536,
+            "firstRate": 0.41015625,
+            "secondRate": 0.21223958333333337,
+            "differencePP": 19.791666666666664
+          },
+          "7": {
+            "snapshots": 96,
+            "conditionalDecisions": 1536,
+            "firstRate": 0.5859375,
+            "secondRate": 0.25651041666666663,
+            "differencePP": 32.942708333333336
+          },
+          "8": {
+            "snapshots": 96,
+            "conditionalDecisions": 1536,
+            "firstRate": 0.283203125,
+            "secondRate": 0.248046875,
+            "differencePP": 3.515625
+          },
+          "9": {
+            "snapshots": 96,
+            "conditionalDecisions": 1536,
+            "firstRate": 0.41796875,
+            "secondRate": 0.158203125,
+            "differencePP": 25.9765625
+          }
+        }
+      },
+      {
+        "first": "rook",
+        "second": "jett",
+        "metric": "draw-pressure",
+        "field": "raise",
+        "developmentDifferencePP": 37.27706027060271,
+        "firstRate": 0.48483455882352944,
+        "secondRate": 0.13480392156862744,
+        "differencePP": 35.0030637254902,
+        "ci95PP": [29.48924731182796, 41.035202863961814],
+        "snapshots": 408,
+        "handClusters": 103,
+        "conditionalDecisions": 6528,
+        "strata": {
+          "normal": {
+            "n": 3280,
+            "differencePP": 26.34146341463415
+          },
+          "hard": {
+            "n": 3248,
+            "differencePP": 43.75000000000001
+          }
+        },
+        "passed": true,
+        "byCount": {
+          "5": {
+            "snapshots": 91,
+            "conditionalDecisions": 1456,
+            "firstRate": 0.5714285714285714,
+            "secondRate": 0.11950549450549451,
+            "differencePP": 45.192307692307686
+          },
+          "6": {
+            "snapshots": 96,
+            "conditionalDecisions": 1536,
+            "firstRate": 0.48046875,
+            "secondRate": 0.16666666666666666,
+            "differencePP": 31.380208333333336
+          },
+          "7": {
+            "snapshots": 74,
+            "conditionalDecisions": 1184,
+            "firstRate": 0.46621621621621623,
+            "secondRate": 0.14104729729729729,
+            "differencePP": 32.516891891891895
+          },
+          "8": {
+            "snapshots": 71,
+            "conditionalDecisions": 1136,
+            "firstRate": 0.5669014084507042,
+            "secondRate": 0.1505281690140845,
+            "differencePP": 41.637323943661976
+          },
+          "9": {
+            "snapshots": 76,
+            "conditionalDecisions": 1216,
+            "firstRate": 0.328125,
+            "secondRate": 0.09210526315789473,
+            "differencePP": 23.601973684210524
+          }
+        }
+      },
+      {
+        "first": "rook",
+        "second": "owen",
+        "metric": "small-open-defense",
+        "field": "continue",
+        "developmentDifferencePP": 56.47977941176471,
+        "firstRate": 0.7772135416666667,
+        "secondRate": 0.22473958333333333,
+        "differencePP": 55.247395833333336,
+        "ci95PP": [46.104910714285715, 65.89395491803278],
+        "snapshots": 480,
+        "handClusters": 69,
+        "conditionalDecisions": 7680,
+        "strata": {
+          "normal": {
+            "n": 3840,
+            "differencePP": 56.69270833333333
+          },
+          "hard": {
+            "n": 3840,
+            "differencePP": 53.80208333333333
+          }
+        },
+        "passed": true,
+        "byCount": {
+          "5": {
+            "snapshots": 96,
+            "conditionalDecisions": 1536,
+            "firstRate": 0.8763020833333334,
+            "secondRate": 0.24869791666666663,
+            "differencePP": 62.76041666666667
+          },
+          "6": {
+            "snapshots": 96,
+            "conditionalDecisions": 1536,
+            "firstRate": 0.732421875,
+            "secondRate": 0.21223958333333337,
+            "differencePP": 52.018229166666664
+          },
+          "7": {
+            "snapshots": 96,
+            "conditionalDecisions": 1536,
+            "firstRate": 0.8561197916666666,
+            "secondRate": 0.25651041666666663,
+            "differencePP": 59.9609375
+          },
+          "8": {
+            "snapshots": 96,
+            "conditionalDecisions": 1536,
+            "firstRate": 0.6608072916666667,
+            "secondRate": 0.248046875,
+            "differencePP": 41.27604166666667
+          },
+          "9": {
+            "snapshots": 96,
+            "conditionalDecisions": 1536,
+            "firstRate": 0.7604166666666666,
+            "secondRate": 0.158203125,
+            "differencePP": 60.221354166666664
+          }
+        }
+      },
+      {
+        "first": "jett",
+        "second": "owen",
+        "metric": "cheap-entry",
+        "field": "continue",
+        "developmentDifferencePP": 61.95772058823529,
+        "firstRate": 0.8451822916666667,
+        "secondRate": 0.21002604166666672,
+        "differencePP": 63.515625,
+        "ci95PP": [50.52556818181818, 76.67871900826447],
+        "snapshots": 480,
+        "handClusters": 39,
+        "conditionalDecisions": 7680,
+        "strata": {
+          "normal": {
+            "n": 3840,
+            "differencePP": 65.78125
+          },
+          "hard": {
+            "n": 3840,
+            "differencePP": 61.24999999999999
+          }
+        },
+        "passed": true,
+        "byCount": {
+          "5": {
+            "snapshots": 96,
+            "conditionalDecisions": 1536,
+            "firstRate": 0.755859375,
+            "secondRate": 0.17643229166666663,
+            "differencePP": 57.942708333333336
+          },
+          "6": {
+            "snapshots": 96,
+            "conditionalDecisions": 1536,
+            "firstRate": 0.875,
+            "secondRate": 0.17578125,
+            "differencePP": 69.921875
+          },
+          "7": {
+            "snapshots": 96,
+            "conditionalDecisions": 1536,
+            "firstRate": 1,
+            "secondRate": 0.34244791666666663,
+            "differencePP": 65.75520833333334
+          },
+          "8": {
+            "snapshots": 96,
+            "conditionalDecisions": 1536,
+            "firstRate": 0.87890625,
+            "secondRate": 0.17838541666666663,
+            "differencePP": 70.05208333333334
+          },
+          "9": {
+            "snapshots": 96,
+            "conditionalDecisions": 1536,
+            "firstRate": 0.7161458333333333,
+            "secondRate": 0.17708333333333337,
+            "differencePP": 53.906249999999986
+          }
+        }
+      }
+    ]
+  },
+  "sourceChecksums": {
+    "src/engine/action-labels.js": "0418bd1390c423ca42d3b0090baabeeee95458d30dac3f78b508ea05f563c8b2",
+    "src/engine/bet-sizing.js": "b41939af678a7570dd5c68d212945be4ba46b7621787a3b5296388df6ac96d32",
+    "src/engine/bot-allin.js": "cffb9dd723987113110c5979412765fd3d59d543db0e6648d6d110aaf261470a",
+    "src/engine/bot-deception.js": "ef64898f76abe99a9cf55017c859862c733d4b07fe7757c8787fee1b48338383",
+    "src/engine/bot-difficulty.js": "85668fe013d1ea9734fd3351fbea6ccb002bc3d57e0d7bfeab66110fe94f1831",
+    "src/engine/bot-profiles.js": "e1bb2bb2cdcd1a8720e01036cba562131d05e50517f4ca3e6fb3ac3ed29dd7f9",
+    "src/engine/bot-style.js": "129cb937561cb83e098f3566a042dfe0bf19d2ba5c174f20834bbc81d2523a6c",
+    "src/engine/bot-timing.js": "71d3bf6d924790bf12d6a2ab929e31ae856d9b5051dbc6575b48526984b1b3d1",
+    "src/engine/character-state.js": "6168ceb8ffdf3cf5306dd939919086e8eb7cffe343400a3089d2eba4fd60ab49",
+    "src/engine/chip-format.js": "1571738850e08b7c8fde6672588e907e7982e429a598778dbcc6dae25ed67482",
+    "src/engine/decision-basis.js": "da067625d2c912595ce26db17a142725de3e3fb8614dc9d3d2db7a3db5ac0f5b",
+    "src/engine/game-records.js": "76fc11ee03c4b5e333f4dbd057b129adcc23b13949ea0d80b0f6307dffcaf7c8",
+    "src/engine/hand-features.js": "2c661dc0274abef1dcb58e9bf4fc8bcb3e1496cb13955f7a9095b13781fabf6d",
+    "src/engine/player-identity.js": "8928efaf2681da2fb7f14ac70faa257906454fd7aa9a9bcbf45c5f278a39e0d1",
+    "src/engine/poker.js": "22cb461f45f7104f2b79fa05af37d30148cff64750e6cd29041cef6b92b2da91",
+    "src/engine/profile-id.js": "8bffca8efae72251fb23a5767f1f53a9f3e31d6675353cc66653c29736545b79",
+    "src/engine/public-action-context.js": "6abdbe26f3baf7ea27e8ad2d4ad8ca208a6298e36c435dff2f2b4e08454c7fa2",
+    "src/engine/public-equity.js": "4ab8ba1e21aee69b6617081d642ae2d638bd472c0dd2b1d3d3c8bcfc46f84e4b",
+    "src/engine/public-ranges.js": "13fdd0622d2a9744bfccb43cc2bf14e4d9ffc3698d76c202cd4b9cd6cc10defb",
+    "src/engine/stakes.js": "2707a84d5af499760efb33a0e979287d44a3f7d3e7b82536a0ba0c21a0821f0e",
+    "src/engine/store-profiles.js": "f4054ce44b9cc4e51ddb4f27b48856d6eeddfe943a13debad4174118bdb5d54e",
+    "src/data/characters.json": "7ae33cccdbdf504042ff4fafbd1a54b967fcaf48c0fd0d151d6f4edab0a96f6e"
+  },
+  "notes": [
+    "Executed complete hands reuse initial shuffle keys across style/count/difficulty. These are not independent deals.",
+    "Paired conditional probes use 16 policy random draws per public snapshot, clustered by initial shuffle seed and hand index.",
+    "By-count strata are descriptive; pooled significance does not imply every count has an independently significant result."
+  ]
+}

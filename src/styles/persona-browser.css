@@ -45,6 +45,9 @@
   .opponent-row-title .opponent-seat-label {
     justify-self: start;
     margin-left: 39px;
+    /* A narrow two-per-row card wraps a long translation instead of
+       overflowing it. */
+    white-space: normal;
   }
 }
 @media (max-width: 900px), (min-width: 901px) and (max-width: 1100px) and (orientation: portrait) {
@@ -193,4 +196,11 @@
   font-size: 12px;
   line-height: 1.65;
   margin: 4px 0;
+}
+
+.character-section + .character-section {
+  margin-top: 22px;
+}
+.character-section p {
+  overflow-wrap: anywhere;
 }

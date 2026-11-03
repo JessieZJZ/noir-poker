@@ -45,7 +45,7 @@ NOIR_APPLE_TEAM_ID=你的10位TeamID npm run mobile:ios:archive
 
 ## 审核前要处理的内容
 
-**人物展示。** 当前原生包按产品要求保留与 Web 一致的具名头像、风格名称、来源署名及已有说明，不再自动替换为字母头像或原创名称。资源源文件在 `public/portraits/`，打包清单与最终 App 图片验证见 [移动端工程](mobile.md)。本次工程变更不展开人物合规评估。
+**风格展示。** 原生包与 Web 使用同一组以打法命名的训练风格与本地策略介绍。均衡保留文字头像，其余使用十六张原创成熟插画，不展示真人照片、姓名、履历或来源链接。图片生成记录见 [插画记录](character-artwork.md)，资源与最终安装包验证见 [移动端工程](mobile.md)。这次修改降低了既有人物素材带来的风险，不构成完整商业权利清查或上架批准。
 
 **隐私。** 当前包无账号、广告、追踪、分析和联网复盘，设置留在设备，牌局留在进程内存。包内有“关于与隐私”，`public/app-privacy.html` 提供公开政策页面模板。正式发行者郑建宙与支持邮箱 958182284@qq.com 已填入政策；首次提交前部署长期有效的公开政策 URL，确认政策与最终包及所有 SDK 的实际行为一致，再填写 [Apple App Privacy](https://developer.apple.com/app-store/app-privacy-details/) 与 [Google Data safety](https://support.google.com/googleplay/android-developer/answer/10144311?hl=en)。iOS `PrivacyInfo.xcprivacy` 已声明 Preferences 使用的 UserDefaults 原因 `CA92.1`；增加新 SDK 后需重新核对清单。
 

@@ -1,9 +1,12 @@
 import { test, expect } from '@playwright/test';
+import { readActionNoticeSpacing } from '../fixtures/action-notice-spacing.js';
 
 test.beforeEach(async ({ page }) => {
   await page.clock.install({ time: 0 });
   await page.goto('/');
-  await page.waitForFunction(() => !!window.qa);
+  await page.waitForFunction(
+    () => !!window.qa && document.documentElement.dataset.appReady === 'true',
+  );
   await page.clock.pauseAt(60000);
   await page.evaluate(() => {
     window.qa.foldWin(6);
@@ -67,23 +70,39 @@ for (const [width, height] of [
   [820, 1180],
   [1024, 1366],
   [1280, 900],
+  [1920, 1080],
 ]) {
   test(`action notice clears the top edge and wager controls at ${width}x${height}`, async ({
     page,
   }) => {
     await page.setViewportSize({ width, height });
-    const spacing = await page.locator('.action-dock').evaluate((dock) => {
-      const top = dock.getBoundingClientRect().top;
-      const notice = dock.querySelector('.decision-copy').getBoundingClientRect();
-      const rankings = dock.querySelector('#hand-rankings-button').getBoundingClientRect();
-      const slider = dock.querySelector('#bet-slider').getBoundingClientRect();
-      return {
-        topGap: Math.min(notice.top, rankings.top) - top,
-        sliderGap: slider.top - Math.max(notice.bottom, rankings.bottom),
-      };
+    await page.evaluate(() => document.fonts.ready);
+    // The frozen clock must advance through the resize and fitting frames.
+    await page.clock.runFor(100);
+    const spacing = await page.evaluate(readActionNoticeSpacing);
+    await test.info().attach('action-notice-spacing', {
+      body: JSON.stringify(spacing),
+      contentType: 'application/json',
     });
-    expect(spacing.topGap).toBeGreaterThanOrEqual(10);
-    expect(spacing.sliderGap).toBeGreaterThanOrEqual(4);
+    const animatedGeometry = await page.locator('.bet-presets button').evaluateAll((buttons) =>
+      buttons.flatMap((button) =>
+        button
+          .getAnimations()
+          .filter(
+            (animation) =>
+              animation instanceof CSSTransition &&
+              /^(font-size|padding-|height|width|min-|max-)/.test(animation.transitionProperty),
+          )
+          .map((animation) => animation.transitionProperty),
+      ),
+    );
+    expect(animatedGeometry).toEqual([]);
+    expect(spacing.topGap).toBeGreaterThanOrEqual(4);
+    expect(spacing.controlGap).toBeGreaterThanOrEqual(4);
+    expect(
+      Math.abs(spacing.topGap - spacing.controlGap),
+      JSON.stringify(spacing),
+    ).toBeLessThanOrEqual(1);
   });
 }
 
@@ -159,6 +178,7 @@ test('sizing, background, settlement and retry do not leak old reminders', async
   await page.clock.fastForward(9000);
   await expect(phase(page)).toHaveAttribute('data-turn-phase', '');
   await page.locator('#restart-hand-button').click();
+  await page.clock.runFor(1300);
   await expect(phase(page)).toHaveAttribute('data-turn-phase', /enter|waiting/);
 });
 

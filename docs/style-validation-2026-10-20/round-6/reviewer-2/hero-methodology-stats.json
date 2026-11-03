@@ -1,0 +1,224 @@
+{
+  "B": {
+    "hands": 40,
+    "heroVPIPHands": [
+      5,
+      14,
+      16,
+      17,
+      22,
+      23,
+      33,
+      34,
+      35,
+      39
+    ],
+    "heroVPIP": 10,
+    "heroVPIPPercent": 25.0,
+    "heroPFRHands": [
+      5,
+      22,
+      35
+    ],
+    "heroPFR": 3,
+    "heroPFRPercent": 7.5,
+    "byPosition": {
+      "CO": {
+        "hands": 8,
+        "vpip": 2,
+        "pfr": 1
+      },
+      "UTG": {
+        "hands": 8,
+        "vpip": 1,
+        "pfr": 1
+      },
+      "BB": {
+        "hands": 8,
+        "vpip": 0,
+        "pfr": 0
+      },
+      "SB": {
+        "hands": 8,
+        "vpip": 5,
+        "pfr": 1
+      },
+      "BTN": {
+        "hands": 8,
+        "vpip": 2,
+        "pfr": 0
+      }
+    },
+    "heroSawFlop": [
+      11,
+      14,
+      16,
+      17,
+      22,
+      23,
+      34,
+      39
+    ],
+    "jointFlop": [
+      11,
+      14,
+      22,
+      23,
+      34,
+      39
+    ],
+    "headsUpJointFlop": [],
+    "heroPostflopBetActions": [
+      {
+        "hand": 22,
+        "street": 1,
+        "amount": 700,
+        "pot": 1700
+      },
+      {
+        "hand": 22,
+        "street": 2,
+        "amount": 1700,
+        "pot": 3100
+      },
+      {
+        "hand": 23,
+        "street": 3,
+        "amount": 700,
+        "pot": 2100
+      }
+    ]
+  },
+  "D": {
+    "hands": 40,
+    "heroVPIPHands": [
+      41,
+      43,
+      48,
+      49,
+      50,
+      54,
+      58,
+      60,
+      61,
+      64,
+      65,
+      70,
+      78
+    ],
+    "heroVPIP": 13,
+    "heroVPIPPercent": 32.5,
+    "heroPFRHands": [
+      41,
+      48,
+      50,
+      58,
+      60,
+      61,
+      65,
+      78
+    ],
+    "heroPFR": 8,
+    "heroPFRPercent": 20.0,
+    "byPosition": {
+      "CO": {
+        "hands": 8,
+        "vpip": 4,
+        "pfr": 2
+      },
+      "UTG": {
+        "hands": 8,
+        "vpip": 2,
+        "pfr": 2
+      },
+      "BB": {
+        "hands": 8,
+        "vpip": 3,
+        "pfr": 1
+      },
+      "SB": {
+        "hands": 8,
+        "vpip": 1,
+        "pfr": 0
+      },
+      "BTN": {
+        "hands": 8,
+        "vpip": 3,
+        "pfr": 3
+      }
+    },
+    "heroSawFlop": [
+      48,
+      49,
+      51,
+      54,
+      58,
+      60,
+      61,
+      65,
+      70,
+      72,
+      78
+    ],
+    "jointFlop": [
+      48,
+      49,
+      51,
+      54,
+      58,
+      61,
+      65,
+      70,
+      72,
+      78
+    ],
+    "headsUpJointFlop": [
+      58
+    ],
+    "heroPostflopBetActions": [
+      {
+        "hand": 48,
+        "street": 1,
+        "amount": 500,
+        "pot": 1600
+      },
+      {
+        "hand": 51,
+        "street": 1,
+        "amount": 600,
+        "pot": 1000
+      },
+      {
+        "hand": 61,
+        "street": 1,
+        "amount": 1400,
+        "pot": 3500
+      },
+      {
+        "hand": 65,
+        "street": 1,
+        "amount": 800,
+        "pot": 2000
+      },
+      {
+        "hand": 70,
+        "street": 2,
+        "amount": 1400,
+        "pot": 2800
+      },
+      {
+        "hand": 78,
+        "street": 2,
+        "amount": 1100,
+        "pot": 2800
+      }
+    ]
+  },
+  "total": {
+    "hands": 80,
+    "heroVPIP": 23,
+    "heroPFR": 11,
+    "heroSawFlop": 19,
+    "jointFlop": 16
+  }
+}

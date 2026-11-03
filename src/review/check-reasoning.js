@@ -1,0 +1,221 @@
+import { compare, deckOfCards, evaluate, rankText } from '../engine/poker.js';
+import { showdownTargets } from './value-targets.js';
+
+// Card facts and before-action order only. No rival private cards or runout.
+export function checkRisks(s, c) {
+  const clauses = [];
+  const score = c.made.score[0];
+  if (!s.street || c.handClass === 'board') return clauses;
+  if (c.texture.maxSuit >= 3 && score < 5)
+    clauses.push(
+      c.texture.maxSuit === 3
+        ? '公共牌已有三张同花色，对手若持两张该花色的底牌，就能组成同花，领先当前成牌。'
+        : '公共牌已有至少四张同花色，对手只需一张该花色的底牌，就能组成同花，领先当前成牌。',
+    );
+  if (c.texture.maxSuit >= 3 && score === 5) {
+    const known = new Set([...s.hole, ...s.board].map((card) => card.key));
+    const suit = [0, 1, 2, 3].find(
+      (value) => s.board.filter((card) => card.suit === value).length >= 3,
+    );
+    const possible = deckOfCards().filter((card) => card.suit === suit && !known.has(card.key));
+    let higherFlush = false,
+      straightFlush = false;
+    for (let a = 0; a < possible.length; a++)
+      for (let b = a + 1; b < possible.length; b++) {
+        const other = evaluate([...s.board, possible[a], possible[b]]).score;
+        if (compare(other, c.made.score) > 0) {
+          if (other[0] === 5) higherFlush = true;
+          if (other[0] === 8) straightFlush = true;
+        }
+      }
+    if (higherFlush) clauses.push('虽然已经成同花，对手仍可能用更高的同花领先。');
+    if (straightFlush) clauses.push('对手仍可能组成同花顺，领先当前的普通同花。');
+  }
+  if (score < 4 && c.texture.connected >= 3) {
+    const ranks = new Set(s.board.map((card) => card.rank));
+    if (ranks.has(14)) ranks.add(1);
+    const candidates = Array.from({ length: 10 }, (_, i) =>
+      Array.from({ length: 5 }, (_, j) => i + j + 1).filter((rank) => !ranks.has(rank)),
+    ).filter((values) => values.length > 0 && values.length <= 2);
+    const single = candidates.filter((values) => values.length === 1).flat();
+    if (single.length) {
+      const distinct = [...new Set(single)].map((rank) => rankText(rank === 1 ? 14 : rank));
+      clauses.push(
+        distinct.length === 1
+          ? `对手底牌中有一张 ${distinct[0]}，就能在这张牌面上组成顺子，领先当前成牌。`
+          : `对手只需持有 ${distinct.join(' / ')} 中任意一张，就能在这张牌面上组成顺子，领先当前成牌。`,
+      );
+    } else if (candidates.length)
+      clauses.push(
+        `公共牌的连接也让对手同时持有 ${rankText(candidates[0][0] === 1 ? 14 : candidates[0][0])} 和 ${rankText(candidates[0][1] === 1 ? 14 : candidates[0][1])} 时可以组成顺子，领先当前成牌。`,
+      );
+  }
+  if (score === 6) {
+    const pairs = [...new Set(s.board.map((card) => card.rank))].filter(
+      (rank) => s.board.filter((card) => card.rank === rank).length >= 2,
+    );
+    const higher = pairs.find(
+      (rank) =>
+        rank > c.made.score[1] &&
+        [...s.board, ...s.hole].filter((card) => card.rank === rank).length < 4,
+    );
+    if (pairs.length >= 2 && higher)
+      clauses.push(
+        `公共牌的 ${rankText(higher)} 对配合对手底牌中的 ${rankText(higher)}，能组成三张 ${rankText(higher)} 的更大葫芦，领先当前三张 ${rankText(c.made.score[1])} 的葫芦。`,
+      );
+    if (c.matchups?.strongerMadeCategories?.includes(7))
+      clauses.push('对手仍可能组成四条，领先当前葫芦。');
+  }
+  if (c.texture.paired && score >= 3 && score < 6) {
+    const quadPossible = [...new Set(s.board.map((card) => card.rank))].some((rank) => {
+      const publicCount = s.board.filter((card) => card.rank === rank).length;
+      const privateCount = s.hole.filter((card) => card.rank === rank).length;
+      const needed = 4 - publicCount;
+      return needed >= 0 && needed <= 2 && 4 - publicCount - privateCount >= needed;
+    });
+    clauses.push(
+      quadPossible
+        ? '公共牌已配对，对手可能组成葫芦或四条，这些牌会领先当前成牌。'
+        : '公共牌已配对，对手仍可能组成葫芦，领先当前成牌。这手底牌已排除该公共对子组成四条的可能。',
+    );
+  }
+  return clauses;
+}
+
+export function madeRedrawReasoning(s, c) {
+  if (!s.street || s.street >= 3 || c.made.score[0] !== 3 || c.handClass === 'board') return [];
+  const known = new Set([...s.hole, ...s.board].map((card) => card.key));
+  const categories = new Set(
+    deckOfCards()
+      .filter((card) => !known.has(card.key))
+      .map((card) => evaluate([...s.hole, ...s.board, card]).score[0])
+      .filter((category) => category === 6 || category === 7),
+  );
+  if (!categories.size) return [];
+  return [
+    categories.has(6) && categories.has(7)
+      ? '后续公共牌再配对时，这手三条还有改善为葫芦或四条的机会。'
+      : categories.has(6)
+        ? '后续公共牌仍可能让这手三条改善为葫芦。'
+        : '后续公共牌仍可能让这手三条改善为四条。',
+  ];
+}
+
+// Use the existing public matchup scores, never a new hidden-card search.
+// A category alone cannot establish a better kicker on the same pair(s).
+function madeHandRisk(c) {
+  const own = c.made.score;
+  const stronger = c.matchups?.strongerMadeCategories;
+  if (!Array.isArray(stronger)) return '当前成牌是否领先，仍需结合对手可能的牌组判断。';
+  const samePairs = own[0] === 2 ? 3 : 2;
+  const betterKicker =
+    c.matchups.strongerKickerPossible ??
+    (c.matchups.behind || []).some(
+      ({ score }) =>
+        score[0] === own[0] &&
+        score.slice(1, samePairs).every((rank, i) => rank === own[i + 1]) &&
+        compare(score, own) > 0,
+    );
+  const threats = [];
+  const higherPair =
+    c.matchups.higherPairPossible ??
+    (c.matchups.behind || []).some(
+      ({ score }) => score[0] === 1 && own[0] === 1 && score[1] > own[1],
+    );
+  if (own[0] === 2 && stronger.includes(2)) threats.push('更强的两对');
+  if (higherPair) threats.push('更大的对子');
+  if (betterKicker)
+    threats.push(own[0] === 1 && own[1] === 14 ? '踢脚更好的 Ax' : '同牌型中更好的踢脚');
+  if (own[0] === 1 && stronger.includes(1) && !higherPair && !betterKicker)
+    threats.push('更强的一对');
+  if (stronger.includes(3) && own[0] < 3) threats.push('三条');
+  if (stronger.some((category) => category > Math.max(3, own[0]))) threats.push('更强牌型');
+  return threats.length ? `当前成牌仍可能落后于${threats.join('、')}。` : '';
+}
+
+export function weakTopPairCheckReason(s, c) {
+  if (c.handClass !== 'top-pair' || c.made.score[0] !== 1 || c.draw.outs) return '';
+  const paired = c.made.score[1];
+  const kicker = s.hole.find((card) => card.rank !== paired)?.rank;
+  // Only a private kicker still present in the best five can support this
+  // explanation. A later high board card may already have replaced it.
+  if (!kicker || kicker >= 10 || !c.made.score.slice(2).includes(kicker)) return '';
+  return `这手牌的 ${rankText(kicker)} 踢脚偏弱，遇到同样击中顶对但踢脚更好的牌时会落后，${s.reviewSubject || '这位玩家'}过牌先控制底池，保留摊牌机会。`;
+}
+
+export function checkReasoning(s, c, { trap = false, closingExplained = false } = {}) {
+  if (!s.street || c.handClass === 'board') return [];
+  const risks = checkRisks(s, c);
+  const strong = c.made.score[0] >= 3;
+  const valueHolding = strong || ['overpair', 'two-pair'].includes(c.handClass);
+  const freeCardCost = s.street < 3 && (valueHolding || c.handClass === 'top-pair');
+  const closing =
+    s.street === 3
+      ? '这是本轮最后行动，过牌后直接摊牌。'
+      : freeCardCost
+        ? '这是本轮最后行动，过牌让仍在局中的玩家免费见下一张，也给了对手补成更强牌的机会。'
+        : '这是本轮最后行动，过牌后免费见下一张。';
+  const parts = [...risks];
+  if (c.draw.outs) {
+    if (c.made.score[0] === 0 || ['board', 'board-pair'].includes(c.handClass))
+      parts.push(
+        s.reviewAudience === 'observer'
+          ? '当前主要依靠听牌改善，这次过牌无需投入。'
+          : '当前主要依靠听牌改善。',
+      );
+    parts.push(
+      `目前仍有 ${c.draw.outs} 张牌可能补成${c.draw.flush && c.draw.straight ? '同花或顺子' : c.draw.flush ? '同花' : '顺子'}，但这些是成牌补牌，不保证补中后领先对手。`,
+    );
+  }
+  // The observer panel explains this check; it does not coach the actor's
+  // next decision. Keep board facts, the cost of checking and recorded traps.
+  if (s.reviewAudience === 'observer') {
+    const kickerControl = trap ? '' : weakTopPairCheckReason(s, c);
+    if (risks.length && !c.draw.outs) parts.push('过牌避免主动扩大当前底池。');
+    else if (trap && c.pendingOthers > 0)
+      parts.push('后面还有玩家可以下注，过牌保留了诱导其拿较弱牌继续下注或尝试诈唬的机会。');
+    else if (kickerControl) parts.push(kickerControl);
+    else if (valueHolding)
+      parts.push(
+        c.pendingOthers > 0
+          ? '强成牌随过牌保留在局中，也给后面的玩家用较弱成牌下注或用未成牌诈唬的机会。'
+          : '这次选择让本轮下注结束，以当前强成牌保留后手和摊牌竞争力。',
+      );
+    else if (c.made.score[0] === 0 && !c.draw.outs)
+      parts.push('目前只有高牌，尚未成对，过牌保留在摊牌时击败较弱高牌的机会，避免主动做大底池。');
+    else if (!c.draw.outs)
+      parts.push(
+        `当前成牌仍可能赢过${showdownTargets(c)}。过牌保留摊牌机会，暂不主动下注要求对手付费。`,
+      );
+    if (risks.length) parts.push(...madeRedrawReasoning(s, c));
+    if (freeCardCost && (c.pendingOthers > 0 || closingExplained))
+      parts.push('过牌的代价是对手也可能免费见到下一张，补成更强的牌。');
+    if (!c.pendingOthers && !closingExplained) parts.push(closing);
+    return parts;
+  }
+  if (risks.length && !c.draw.outs)
+    parts.push(c.pendingOthers > 0 ? '过牌先不主动做大底池。' : '过牌避免主动扩大当前底池。');
+  else if (valueHolding)
+    parts.push(
+      c.pendingOthers > 0 && s.street < 3
+        ? '若后位会继续下注，可以过牌诱导后再取值；若其常过回，主动下注更容易向较弱成牌或听牌收费。'
+        : '这手强成牌仍有向较弱成牌收取跟注的空间，过牌可能少收一轮价值。',
+    );
+  else if (c.made.score[0] === 0 && !c.draw.outs)
+    parts.push('目前只有高牌，尚未成对，过牌保留在摊牌时击败较弱高牌的机会，避免主动做大底池。');
+  else if (!c.draw.outs)
+    parts.push(
+      c.handClass === 'board-pair'
+        ? '主要牌型来自公共牌，过牌保留凭踢脚争取摊牌的机会，不单凭公共牌组成的牌型主动扩大底池。'
+        : `${madeHandRisk(c)}当前成牌仍可能赢过${showdownTargets(c)}。过牌保留摊牌机会，避免主动下注后主要被较强范围跟注。`,
+    );
+  if (risks.length) parts.push(...madeRedrawReasoning(s, c));
+  if (freeCardCost && (c.pendingOthers > 0 || closingExplained))
+    parts.push('过牌的代价是对手也可能免费见到下一张，补成更强的牌。');
+  if (c.pendingOthers > 0) {
+    if (trap && !risks.length)
+      parts.push('后面还有玩家可以下注，过牌保留了诱导其拿较弱牌继续下注或尝试诈唬的机会。');
+    parts.push('再遇下注时，要结合金额、人数和此前行动判断，不能只凭当前牌型自动跟注或弃牌。');
+  } else if (!closingExplained) parts.push(closing);
+  return parts;
+}

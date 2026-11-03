@@ -1,0 +1,485 @@
+{
+  "C": {
+    "positions": {
+      "BTN": 8,
+      "SB": 8,
+      "BB": 8,
+      "UTG": 8,
+      "CO": 8
+    },
+    "stats": {
+      "vpip": 36,
+      "pfr": 9,
+      "target_flop": 28,
+      "hero_vpip": 19,
+      "s0_call": 29,
+      "s0_fold": 10,
+      "s1_check": 27,
+      "s2_check": 19,
+      "s3_check": 12,
+      "s0_raise": 9,
+      "s2_fold": 3,
+      "s3_call": 4,
+      "s1_call": 3,
+      "s2_call": 3,
+      "s1_fold": 4,
+      "s0_check": 2,
+      "s3_raise": 3,
+      "s3_fold": 2,
+      "s2_raise": 2,
+      "s1_raise": 1
+    },
+    "sharedFlops": [
+      4,
+      5,
+      6,
+      8,
+      10,
+      12,
+      13,
+      20,
+      22,
+      29,
+      30,
+      31,
+      32,
+      35,
+      38,
+      40
+    ],
+    "targetFacingHero": [
+      {
+        "hand": 5,
+        "street": 0,
+        "toCall": 500,
+        "action": "call",
+        "board": "3h 8h Ah Ks Qc",
+        "hero": "7s 8s",
+        "targetHole": "9h Kc"
+      },
+      {
+        "hand": 6,
+        "street": 0,
+        "toCall": 500,
+        "action": "call",
+        "board": "Ah Jh Td 7d 3h",
+        "hero": "Qd Jd",
+        "targetHole": "Qs Th"
+      },
+      {
+        "hand": 8,
+        "street": 0,
+        "toCall": 400,
+        "action": "call",
+        "board": "8s 2c Kd Ad Ac",
+        "hero": "Kc As",
+        "targetHole": "8h 9c"
+      },
+      {
+        "hand": 8,
+        "street": 1,
+        "toCall": 1200,
+        "action": "call",
+        "board": "8s 2c Kd Ad Ac",
+        "hero": "Kc As",
+        "targetHole": "8h 9c"
+      },
+      {
+        "hand": 8,
+        "street": 2,
+        "toCall": 3200,
+        "action": "call",
+        "board": "8s 2c Kd Ad Ac",
+        "hero": "Kc As",
+        "targetHole": "8h 9c"
+      },
+      {
+        "hand": 8,
+        "street": 3,
+        "toCall": 7500,
+        "action": "call",
+        "board": "8s 2c Kd Ad Ac",
+        "hero": "Kc As",
+        "targetHole": "8h 9c"
+      },
+      {
+        "hand": 12,
+        "street": 1,
+        "toCall": 1400,
+        "action": "fold",
+        "board": "Qs Jc Ac",
+        "hero": "Qd Jd",
+        "targetHole": null
+      },
+      {
+        "hand": 14,
+        "street": 0,
+        "toCall": 1000,
+        "action": "fold",
+        "board": "8d 2d 6d Th 2s",
+        "hero": "Jh Qd",
+        "targetHole": null
+      },
+      {
+        "hand": 18,
+        "street": 0,
+        "toCall": 600,
+        "action": "raise",
+        "board": "",
+        "hero": "Tc Kd",
+        "targetHole": null
+      },
+      {
+        "hand": 20,
+        "street": 0,
+        "toCall": 600,
+        "action": "call",
+        "board": "6h As Jc 6s 3d",
+        "hero": "9d Tc",
+        "targetHole": "7c 8h"
+      },
+      {
+        "hand": 22,
+        "street": 0,
+        "toCall": 400,
+        "action": "call",
+        "board": "2d 5h Jd Jc 6d",
+        "hero": "8s Jh",
+        "targetHole": null
+      },
+      {
+        "hand": 22,
+        "street": 1,
+        "toCall": 800,
+        "action": "fold",
+        "board": "2d 5h Jd Jc 6d",
+        "hero": "8s Jh",
+        "targetHole": null
+      },
+      {
+        "hand": 38,
+        "street": 0,
+        "toCall": 600,
+        "action": "call",
+        "board": "As Td 3s Ah Ad",
+        "hero": "Ks 9s",
+        "targetHole": "5d 4c"
+      },
+      {
+        "hand": 38,
+        "street": 1,
+        "toCall": 1600,
+        "action": "call",
+        "board": "As Td 3s Ah Ad",
+        "hero": "Ks 9s",
+        "targetHole": "5d 4c"
+      }
+    ],
+    "heroFacingTarget": [
+      {
+        "hand": 4,
+        "street": 0,
+        "toCall": 500,
+        "action": "call",
+        "board": "4d 6h 3s 3h",
+        "hero": "8c Jc",
+        "targetHole": null
+      },
+      {
+        "hand": 12,
+        "street": 0,
+        "toCall": 700,
+        "action": "call",
+        "board": "Qs Jc Ac",
+        "hero": "Qd Jd",
+        "targetHole": null
+      },
+      {
+        "hand": 15,
+        "street": 0,
+        "toCall": 600,
+        "action": "fold",
+        "board": "4s 3s 8d 7h 5s",
+        "hero": "Js 5h",
+        "targetHole": "6d Qs"
+      },
+      {
+        "hand": 18,
+        "street": 0,
+        "toCall": 2000,
+        "action": "fold",
+        "board": "",
+        "hero": "Tc Kd",
+        "targetHole": null
+      },
+      {
+        "hand": 31,
+        "street": 1,
+        "toCall": 2100,
+        "action": "fold",
+        "board": "5h Qc 3c Ts",
+        "hero": "Ad 9d",
+        "targetHole": null
+      },
+      {
+        "hand": 39,
+        "street": 0,
+        "toCall": 500,
+        "action": "fold",
+        "board": "Qh 2h Ah Jh 9c",
+        "hero": "Jd 6d",
+        "targetHole": null
+      },
+      {
+        "hand": 40,
+        "street": 0,
+        "toCall": 500,
+        "action": "call",
+        "board": "Tc 4h 6d 8h 2s",
+        "hero": "Qh Js",
+        "targetHole": "4c Qs"
+      }
+    ]
+  },
+  "D": {
+    "positions": {
+      "BTN": 8,
+      "SB": 8,
+      "BB": 8,
+      "UTG": 8,
+      "CO": 8
+    },
+    "stats": {
+      "vpip": 33,
+      "pfr": 11,
+      "target_flop": 22,
+      "hero_vpip": 16,
+      "s0_raise": 11,
+      "s1_call": 3,
+      "s2_fold": 1,
+      "s0_call": 27,
+      "s1_check": 14,
+      "s2_check": 14,
+      "s3_check": 10,
+      "s2_raise": 4,
+      "s0_fold": 18,
+      "s1_fold": 3,
+      "s3_fold": 2,
+      "s3_raise": 5,
+      "s1_raise": 3,
+      "s2_call": 2,
+      "s3_call": 1
+    },
+    "sharedFlops": [
+      46,
+      51,
+      64,
+      65,
+      66,
+      69,
+      80
+    ],
+    "targetFacingHero": [
+      {
+        "hand": 46,
+        "street": 0,
+        "toCall": 500,
+        "action": "call",
+        "board": "8h 4c Ac Kd",
+        "hero": "As 6d",
+        "targetHole": null
+      },
+      {
+        "hand": 46,
+        "street": 1,
+        "toCall": 800,
+        "action": "call",
+        "board": "8h 4c Ac Kd",
+        "hero": "As 6d",
+        "targetHole": null
+      },
+      {
+        "hand": 54,
+        "street": 0,
+        "toCall": 800,
+        "action": "fold",
+        "board": "2c 8s Ad 4h",
+        "hero": "Jc Qs",
+        "targetHole": null
+      },
+      {
+        "hand": 55,
+        "street": 0,
+        "toCall": 1900,
+        "action": "fold",
+        "board": "Kc Qd Th As 8s",
+        "hero": "Qh Ah",
+        "targetHole": null
+      },
+      {
+        "hand": 57,
+        "street": 0,
+        "toCall": 700,
+        "action": "call",
+        "board": "7h As 6c 4d Ks",
+        "hero": "7s 8d",
+        "targetHole": null
+      },
+      {
+        "hand": 64,
+        "street": 0,
+        "toCall": 600,
+        "action": "call",
+        "board": "3h 4c 5s Jh 6c",
+        "hero": "Ah 9s",
+        "targetHole": "7s Tc"
+      },
+      {
+        "hand": 65,
+        "street": 0,
+        "toCall": 600,
+        "action": "call",
+        "board": "Ah 6c 3c 9h 8c",
+        "hero": "Qd Qc",
+        "targetHole": "2h Js"
+      },
+      {
+        "hand": 66,
+        "street": 0,
+        "toCall": 500,
+        "action": "call",
+        "board": "Kc 8c 2h 6h Kd",
+        "hero": "6d Ac",
+        "targetHole": null
+      },
+      {
+        "hand": 71,
+        "street": 0,
+        "toCall": 2800,
+        "action": "fold",
+        "board": "Qs 7d 5h 4s 3h",
+        "hero": "As Jh",
+        "targetHole": null
+      },
+      {
+        "hand": 80,
+        "street": 0,
+        "toCall": 1700,
+        "action": "call",
+        "board": "4c 7d Ac 2h 5s",
+        "hero": "Qh Kd",
+        "targetHole": "Kh Jc"
+      },
+      {
+        "hand": 80,
+        "street": 1,
+        "toCall": 1700,
+        "action": "call",
+        "board": "4c 7d Ac 2h 5s",
+        "hero": "Qh Kd",
+        "targetHole": "Kh Jc"
+      }
+    ],
+    "heroFacingTarget": [
+      {
+        "hand": 46,
+        "street": 2,
+        "toCall": 4300,
+        "action": "fold",
+        "board": "8h 4c Ac Kd",
+        "hero": "As 6d",
+        "targetHole": null
+      },
+      {
+        "hand": 51,
+        "street": 0,
+        "toCall": 600,
+        "action": "call",
+        "board": "Tc Jd 4s Kh 6c",
+        "hero": "2h 2c",
+        "targetHole": "6h 9h"
+      },
+      {
+        "hand": 55,
+        "street": 0,
+        "toCall": 400,
+        "action": "raise",
+        "board": "Kc Qd Th As 8s",
+        "hero": "Qh Ah",
+        "targetHole": null
+      },
+      {
+        "hand": 56,
+        "street": 0,
+        "toCall": 900,
+        "action": "fold",
+        "board": "9s Ad 8s",
+        "hero": "Qs 4d",
+        "targetHole": null
+      },
+      {
+        "hand": 59,
+        "street": 0,
+        "toCall": 600,
+        "action": "fold",
+        "board": "4d Td 9d Jd 5h",
+        "hero": "6h 3c",
+        "targetHole": "Jc Ad"
+      },
+      {
+        "hand": 60,
+        "street": 0,
+        "toCall": 600,
+        "action": "fold",
+        "board": "Ad 8h 8d Tc 4d",
+        "hero": "Td 4c",
+        "targetHole": "2c 2s"
+      },
+      {
+        "hand": 64,
+        "street": 3,
+        "toCall": 5000,
+        "action": "fold",
+        "board": "3h 4c 5s Jh 6c",
+        "hero": "Ah 9s",
+        "targetHole": "7s Tc"
+      },
+      {
+        "hand": 69,
+        "street": 0,
+        "toCall": 400,
+        "action": "call",
+        "board": "Td Ac 9d Ts 5d",
+        "hero": "Jd Qh",
+        "targetHole": "Ah 7d"
+      },
+      {
+        "hand": 69,
+        "street": 3,
+        "toCall": 1200,
+        "action": "fold",
+        "board": "Td Ac 9d Ts 5d",
+        "hero": "Jd Qh",
+        "targetHole": "Ah 7d"
+      },
+      {
+        "hand": 71,
+        "street": 0,
+        "toCall": 600,
+        "action": "raise",
+        "board": "Qs 7d 5h 4s 3h",
+        "hero": "As Jh",
+        "targetHole": null
+      },
+      {
+        "hand": 74,
+        "street": 0,
+        "toCall": 500,
+        "action": "fold",
+        "board": "",
+        "hero": "5d Ac",
+        "targetHole": null
+      }
+    ]
+  }
+}

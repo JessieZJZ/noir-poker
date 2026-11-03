@@ -1,0 +1,157 @@
+{
+  "sourceDigest": "d992485f2ffd5851cda12831841645221142c51586a3229238629f81bbbf37db",
+  "packets": 24,
+  "totalObservationHands": 2400,
+  "companions": [
+    "balanced"
+  ],
+  "completeHands": true,
+  "wholeChipsAndConservation": true,
+  "noStyleIdsOrPrivateTraceInPackets": true,
+  "files": [
+    {
+      "reviewer": 1,
+      "code": "A",
+      "hands": 100,
+      "sha256": "bb753e9ad52121245920fc58d4c2de0f76039419767ca99ab5139d1b80d7dafb"
+    },
+    {
+      "reviewer": 1,
+      "code": "B",
+      "hands": 100,
+      "sha256": "091930b5d49c0f8c1a1cbfcd3c3d071c5682cd861d97e4c802547aa536352ad8"
+    },
+    {
+      "reviewer": 1,
+      "code": "C",
+      "hands": 100,
+      "sha256": "9647149c43542b597cb90ae149c30ffc7960ae17bd4bd559e57016ba2d7d67fd"
+    },
+    {
+      "reviewer": 1,
+      "code": "D",
+      "hands": 100,
+      "sha256": "bb967a6648c2ef4958ac0a90cedd318e35d3383011b7af43964b7e28e6831192"
+    },
+    {
+      "reviewer": 1,
+      "code": "E",
+      "hands": 100,
+      "sha256": "80b9c527af351a00d61d04fd69eb110f37a81d5252a64f0a9e39902f5b1513c1"
+    },
+    {
+      "reviewer": 1,
+      "code": "F",
+      "hands": 100,
+      "sha256": "6fcdac323db0c76da361f0abb2058c3390e3f9f6864c95e029bf2a834d26f730"
+    },
+    {
+      "reviewer": 1,
+      "code": "G",
+      "hands": 100,
+      "sha256": "d1ef910029ccef22410c151f1f418a6ee82ed880adaa86a81f4467c1777350fc"
+    },
+    {
+      "reviewer": 1,
+      "code": "H",
+      "hands": 100,
+      "sha256": "17b055d914a44c6bd66882e8132a9d834857a664ddfd6c161960bc4cab4c47e2"
+    },
+    {
+      "reviewer": 2,
+      "code": "A",
+      "hands": 100,
+      "sha256": "1d598fb12dff81a75c7fa2dc2b6b29aff7405c54af13748872060bf049ca5f9d"
+    },
+    {
+      "reviewer": 2,
+      "code": "B",
+      "hands": 100,
+      "sha256": "ef4139b1de28b0889f5e5f5621520b40931c58b91f3f1d9b06bda6c673202b8b"
+    },
+    {
+      "reviewer": 2,
+      "code": "C",
+      "hands": 100,
+      "sha256": "b0b54e2e09b68b3f078bc898c167b46d8e34b2491a2fcde24086ea9ab2bde60b"
+    },
+    {
+      "reviewer": 2,
+      "code": "D",
+      "hands": 100,
+      "sha256": "07ca104bdccf0db15cfe62add0ed91f9ad66a53227a18163bcfadc45a8541d85"
+    },
+    {
+      "reviewer": 2,
+      "code": "E",
+      "hands": 100,
+      "sha256": "7a5c5a448c0dcf2134ec7d09a7dace45cfb827a1a57dbb1ee823c00c12fcbe99"
+    },
+    {
+      "reviewer": 2,
+      "code": "F",
+      "hands": 100,
+      "sha256": "893abc6cb5a9e615ce47e8d517a4a36ee310a5a65e009d66ea870a2f8514df85"
+    },
+    {
+      "reviewer": 2,
+      "code": "G",
+      "hands": 100,
+      "sha256": "8eaa3376b520d1ccad62d7050e05d2c22afcb05b279951aa843c47d3535f5970"
+    },
+    {
+      "reviewer": 2,
+      "code": "H",
+      "hands": 100,
+      "sha256": "06ff51a4e1d21c12f0453fbfb379af65b2e67722887530c571a44dfc2339afaa"
+    },
+    {
+      "reviewer": 3,
+      "code": "A",
+      "hands": 100,
+      "sha256": "d3c7d113b5697e578e51bfe3b117f57813401c3909983ce48fa41632f994d77b"
+    },
+    {
+      "reviewer": 3,
+      "code": "B",
+      "hands": 100,
+      "sha256": "904367b8f5222cc7a0a7682a07e14ed38977d135afa4ab29a19f42813de93504"
+    },
+    {
+      "reviewer": 3,
+      "code": "C",
+      "hands": 100,
+      "sha256": "af124a59c75a368dfc3e0bc7971dbde2ce1c0514b1ba7ef08ee371794ad85ae3"
+    },
+    {
+      "reviewer": 3,
+      "code": "D",
+      "hands": 100,
+      "sha256": "470c6ec7ab7b8cbcf0d3ccede2dce0c26d6450566c9b364ee3c36164beb61aa2"
+    },
+    {
+      "reviewer": 3,
+      "code": "E",
+      "hands": 100,
+      "sha256": "d2dcfd7b98f827ad1bcd4c7ed55a6afd82ac57ac50a451b2c55ab220b4ac3148"
+    },
+    {
+      "reviewer": 3,
+      "code": "F",
+      "hands": 100,
+      "sha256": "1046e4e70b610b68fa70d8ce9a9b3600b89fbb4c0befae3c3cb6426796636b6c"
+    },
+    {
+      "reviewer": 3,
+      "code": "G",
+      "hands": 100,
+      "sha256": "40aba946c022652a8364833599caef0ec22094cf1e27c58636101dc9ddf78e05"
+    },
+    {
+      "reviewer": 3,
+      "code": "H",
+      "hands": 100,
+      "sha256": "f616ca213013309be007e29ffbb5a76397791b5d7d307414f63585494da432ca"
+    }
+  ]
+}

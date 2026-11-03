@@ -1,0 +1,12 @@
+{
+  "fromSourceDigest": "5932c97a6ef366aa3d3b3b0a539690d2d897ab9409d02e34a7edc438b0582156",
+  "toSourceDigest": "08ae9259e31b51169dd3655fc29e43e6255de13bd3051fbb78fd59c3490fa3e6",
+  "checkedAt": "2026-10-23T04:56:37.936Z",
+  "engineFiles": 21,
+  "unchangedEngineFiles": 20,
+  "onlyEngineDifference": "Four Rook display metadata values: name, short, tag, description",
+  "characterDifference": "Four Rook display fields including signature paragraph",
+  "exactNonMetadataSourceEquality": true,
+  "allActionsParametersRangesSizingAndRandomPathsUnchanged": true,
+  "note": "Candidate 9 development results remain labelled candidate 9. Reused only to choose prospective candidate 10 measures; no raw source digests or outcomes rewritten. This does not assert UX improvement."
+}

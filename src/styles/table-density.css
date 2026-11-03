@@ -1,5 +1,6 @@
 .game-surface {
-  --live-dock-height: 138px;
+  /* Include the top rail so desktop wager controls fit without overflowing. */
+  --live-dock-height: 139px;
   --compact-dock-height: 58px;
 }
 .game-surface .action-panel .action,
@@ -13,7 +14,7 @@
 .game-surface:has(.compact-actions) {
   height: calc(
     var(--play-height) - var(--live-dock-height) + var(--compact-dock-height) -
-      var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px))
+      var(--dock-bottom-inset)
   );
 }
 .game-surface > .action-dock-slot:has(.compact-actions),
@@ -25,13 +26,11 @@
     --live-dock-height: 140px;
   }
   .main .game-surface > .surface-top {
-    grid-template-rows: 24px 22px;
+    --hand-row: 24px;
+    --hint-row: 22px;
     row-gap: 2px;
     padding-top: 0;
     padding-bottom: 0;
-  }
-  .surface-top .replay-note {
-    line-height: 20px;
   }
 }
 @media (min-width: 1101px), (min-width: 901px) and (orientation: landscape) {
@@ -113,7 +112,8 @@
     --live-dock-height: 168px;
   }
   .main .game-surface > .surface-top {
-    grid-template-rows: 30px 24px;
+    --hand-row: 30px;
+    --hint-row: 24px;
     padding-top: 6px;
     padding-bottom: 6px;
   }

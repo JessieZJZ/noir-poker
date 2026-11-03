@@ -1,0 +1,11 @@
+{
+  "recordedAt": "2026-10-22T21:25:50.320984+00:00",
+  "kind": "after_the_fact_transcription_not_original_transport_log",
+  "request": "GET own /state",
+  "beforeFreeFreeze": true,
+  "beforeAnyHandStart": true,
+  "originalRequestTime": "not captured in file; see conversation tool event",
+  "HTTPStatus": "not captured",
+  "responseBodyAsDisplayed": "{\"message\":\"POST /start with {opponent:\\\"A\\\"}\"}",
+  "note": "读取API.md之前做过此一次探测，响应仅为未开始提示。不能把本文件当作当时实时写入的请求记录。后续631个请求均实时逐条保留。"
+}
