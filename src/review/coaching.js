@@ -1090,7 +1090,9 @@ export function coachDecision(s, r) {
       const suggested = actionLabel(s, action.action, action.amount);
       recommendation =
         unprovenDraw && !confirmed
-          ? `这手建议${suggested}；继续投入需要对手的下注范围里保留足够较弱牌或未成牌诈唬，不能只因有听牌就继续。`
+          ? unchanged
+            ? `这手${suggested}的前提是对手的下注范围里保留足够较弱牌或未成牌诈唬，不能只因有听牌就继续。`
+            : `这手建议${suggested}；继续投入需要对手的下注范围里保留足够较弱牌或未成牌诈唬，不能只因有听牌就继续。`
           : action.action === 'fold'
             ? `这手建议弃牌，保住行动前剩下的 ${fmt(s.stack)}，不再付出筹码。`
             : action.action === 'raise'
@@ -1254,7 +1256,9 @@ export function coachDecision(s, r) {
         : needsComparison
           ? '需要比较'
           : actionLabel(s, action.action, action.amount),
-    label: guidance.label,
+    // A recommendation identical to the action taken adds nothing; the badge
+    // states the assessment instead: kept, or still needing a comparison.
+    label: unchanged ? (kind === 'compare' ? '需要比较' : '值得保留') : guidance.label,
     recommendationConditional: needsComparison,
     explanation: conciseReason,
     paragraphs,

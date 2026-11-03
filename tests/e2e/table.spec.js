@@ -36,7 +36,8 @@ test('review separates lucky bad-price wins from reasonable losses with concise 
       await expect(page.locator('#review-selected-status')).toHaveClass(/consider/);
     } else {
       await page.locator('#review-timeline [data-review-index="3"]').click();
-      await expect(page.locator('#review-selected-status')).toHaveText(/^建议跟注 /);
+      // The kept call is not repeated back as advice.
+      await expect(page.locator('#review-selected-status')).toHaveText('值得保留');
       await expect(page.locator('#review-selected-status')).toHaveClass(/sound/);
       await expect(page.locator('#review-practice-focus')).toBeHidden();
     }

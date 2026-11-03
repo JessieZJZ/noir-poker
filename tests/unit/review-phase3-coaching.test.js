@@ -198,7 +198,8 @@ test('an overpot high-card draw raise keeps a concrete action but carries its fo
   );
   assert.equal(c.recommendationConditional, true);
   assert.notEqual(c.assessmentLabel, '值得保留');
-  assert.match(c.label, /建议全下至 850/);
+  assert.equal(c.label, '需要比较');
+  assert.match(c.suggestion, /建议全下至 850/);
   assert.match(c.recommendedAction.condition, /共同弃牌空间/);
   assert.match(summary(c), /强牌跟注.*补牌较难弥补投入/);
 });
@@ -222,7 +223,8 @@ test('a costly non-premium preflop call preserves its action and states the wide
   });
   const c = coachDecision(s, r);
   assert.equal(c.recommendedAction.action, 'call');
-  assert.match(c.label, /建议跟注/);
+  assert.equal(c.label, '需要比较');
+  assert.match(c.suggestion, /建议跟注/);
   assert.equal(c.recommendationConditional, true);
   assert.match(c.recommendedAction.condition, /这个大尺度.*较弱牌/);
   assert.match(summary(c), /大额翻前跟注需要对手.*且你能在翻后兑现/);
@@ -354,8 +356,8 @@ for (const [code, configuration, candidate] of [
     if (code === 'undersized-value-bet') {
       assert.deepEqual(result.recommendedAction, { ...candidate, summary: '建议下注至 200' });
       assert.equal(result.assessmentLabel, '需要比较');
-      assert.equal(result.label, '建议下注至 200');
-      assert.equal(result.suggestion, result.label);
+      assert.equal(result.label, '需要比较');
+      assert.equal(result.suggestion, '建议下注至 200');
       assert.match(text, /保留原下注作为比较基准.*尚未确认它更好/);
     }
     if (code === 'dirty-draw-bet')

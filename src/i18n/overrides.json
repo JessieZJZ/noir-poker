@@ -882,7 +882,8 @@
     "退出新手引导": "Exit the beginner tutorial",
     "面对下注": "Facing a bet",
     "筹码单位": "Chip units",
-    "换算记一下：{0} = 1000，{1} = 1000K = 1000000。不带 K 或 M 的整数就是实际筹码数，所以 {2} 和 {3} 一样多。带小数也照算，{4} 就是 {5}。": "Remember the conversions: {0} = 1000, {1} = 1000K = 1000000. A whole number without K or M is the actual chip count, so {2} and {3} are the same amount. Decimals work the same way: {4} is {5}."
+    "换算记一下：{0} = 1000，{1} = 1000K = 1000000。不带 K 或 M 的整数就是实际筹码数，所以 {2} 和 {3} 一样多。带小数也照算，{4} 就是 {5}。": "Remember the conversions: {0} = 1000, {1} = 1000K = 1000000. A whole number without K or M is the actual chip count, so {2} and {3} are the same amount. Decimals work the same way: {4} is {5}.",
+    "这手{0}的前提是对手的下注范围里保留足够较弱牌或未成牌诈唬，不能只因有听牌就继续。": "{0} here only holds up if the betting range keeps enough weaker hands or unmade bluffs; a draw alone does not justify continuing."
   },
   "zh-TW": {
     "设置": "設定",
@@ -1651,7 +1652,8 @@
     "退出新手引导": "退出新手引導",
     "面对下注": "面對下注",
     "筹码单位": "籌碼單位",
-    "换算记一下：{0} = 1000，{1} = 1000K = 1000000。不带 K 或 M 的整数就是实际筹码数，所以 {2} 和 {3} 一样多。带小数也照算，{4} 就是 {5}。": "換算記一下：{0} = 1000，{1} = 1000K = 1000000。不帶 K 或 M 的整數就是實際籌碼數，所以 {2} 和 {3} 一樣多。帶小數也照算，{4} 就是 {5}。"
+    "换算记一下：{0} = 1000，{1} = 1000K = 1000000。不带 K 或 M 的整数就是实际筹码数，所以 {2} 和 {3} 一样多。带小数也照算，{4} 就是 {5}。": "換算記一下：{0} = 1000，{1} = 1000K = 1000000。不帶 K 或 M 的整數就是實際籌碼數，所以 {2} 和 {3} 一樣多。帶小數也照算，{4} 就是 {5}。",
+    "这手{0}的前提是对手的下注范围里保留足够较弱牌或未成牌诈唬，不能只因有听牌就继续。": "這手{0}的前提是對手的下注範圍裡保留足夠較弱牌或未成牌詐唬，不能只因有聽牌就繼續。"
   },
   "ja": {
     "设置": "設定",
@@ -2423,7 +2425,8 @@
     "立刻发完": "すぐに配り切る",
     "复盘这一手": "この手を振り返る",
     "筹码单位": "チップの単位",
-    "换算记一下：{0} = 1000，{1} = 1000K = 1000000。不带 K 或 M 的整数就是实际筹码数，所以 {2} 和 {3} 一样多。带小数也照算，{4} 就是 {5}。": "換算を覚えておきましょう：{0} = 1000、{1} = 1000K = 1000000。K や M の付かない整数は実際のチップ数なので、{2} と {3} は同じ量です。小数も同じで、{4} は {5} です。"
+    "换算记一下：{0} = 1000，{1} = 1000K = 1000000。不带 K 或 M 的整数就是实际筹码数，所以 {2} 和 {3} 一样多。带小数也照算，{4} 就是 {5}。": "換算を覚えておきましょう：{0} = 1000、{1} = 1000K = 1000000。K や M の付かない整数は実際のチップ数なので、{2} と {3} は同じ量です。小数も同じで、{4} は {5} です。",
+    "这手{0}的前提是对手的下注范围里保留足够较弱牌或未成牌诈唬，不能只因有听牌就继续。": "このハンドで{0}するには、相手のベットレンジに十分な弱いハンドや未完成のブラフが残っていることが前提で、ドローだけでは続行できません。"
   },
   "ko": {
     "设置": "설정",
@@ -3195,7 +3198,8 @@
     "立刻发完": "마무리 처리",
     "复盘这一手": "이 핸드 복기",
     "筹码单位": "칩 단위",
-    "换算记一下：{0} = 1000，{1} = 1000K = 1000000。不带 K 或 M 的整数就是实际筹码数，所以 {2} 和 {3} 一样多。带小数也照算，{4} 就是 {5}。": "환산을 기억해 두세요: {0} = 1000, {1} = 1000K = 1000000. K나 M이 붙지 않은 정수는 실제 칩 수이므로 {2}와 {3}은 같은 양입니다. 소수도 똑같이 계산해서 {4}는 {5}입니다."
+    "换算记一下：{0} = 1000，{1} = 1000K = 1000000。不带 K 或 M 的整数就是实际筹码数，所以 {2} 和 {3} 一样多。带小数也照算，{4} 就是 {5}。": "환산을 기억해 두세요: {0} = 1000, {1} = 1000K = 1000000. K나 M이 붙지 않은 정수는 실제 칩 수이므로 {2}와 {3}은 같은 양입니다. 소수도 똑같이 계산해서 {4}는 {5}입니다.",
+    "这手{0}的前提是对手的下注范围里保留足够较弱牌或未成牌诈唬，不能只因有听牌就继续。": "이 핸드에서 {0}하려면 상대 베팅 범위에 충분한 약한 패나 미완성 블러프가 남아 있어야 하며, 드로가 있다는 이유만으로 계속할 수는 없습니다."
   },
   "es": {
     "设置": "Ajustes",
@@ -3967,7 +3971,8 @@
     "½ 底池": "½ bote",
     "立刻发完": "Terminar de repartir",
     "筹码单位": "Unidades de fichas",
-    "换算记一下：{0} = 1000，{1} = 1000K = 1000000。不带 K 或 M 的整数就是实际筹码数，所以 {2} 和 {3} 一样多。带小数也照算，{4} 就是 {5}。": "Recuerda la conversión: {0} = 1000, {1} = 1000K = 1000000. Un número entero sin K ni M es la cantidad real de fichas, así que {2} y {3} son lo mismo. Con decimales es igual: {4} son {5}."
+    "换算记一下：{0} = 1000，{1} = 1000K = 1000000。不带 K 或 M 的整数就是实际筹码数，所以 {2} 和 {3} 一样多。带小数也照算，{4} 就是 {5}。": "Recuerda la conversión: {0} = 1000, {1} = 1000K = 1000000. Un número entero sin K ni M es la cantidad real de fichas, así que {2} y {3} son lo mismo. Con decimales es igual: {4} son {5}.",
+    "这手{0}的前提是对手的下注范围里保留足够较弱牌或未成牌诈唬，不能只因有听牌就继续。": "{0} aquí solo se sostiene si el rango de apuestas conserva suficientes manos más débiles o faroles no completados; tener un proyecto no basta para continuar."
   },
   "it": {
     "设置": "Impostazioni",
@@ -4740,7 +4745,8 @@
     "立刻发完": "Completa la mano",
     "复盘这一手": "Rivedi questa mano",
     "筹码单位": "Unità delle chip",
-    "换算记一下：{0} = 1000，{1} = 1000K = 1000000。不带 K 或 M 的整数就是实际筹码数，所以 {2} 和 {3} 一样多。带小数也照算，{4} 就是 {5}。": "Ricorda le conversioni: {0} = 1000, {1} = 1000K = 1000000. Un numero intero senza K o M è il numero reale di chip, quindi {2} e {3} sono la stessa quantità. Con i decimali vale lo stesso: {4} sono {5}."
+    "换算记一下：{0} = 1000，{1} = 1000K = 1000000。不带 K 或 M 的整数就是实际筹码数，所以 {2} 和 {3} 一样多。带小数也照算，{4} 就是 {5}。": "Ricorda le conversioni: {0} = 1000, {1} = 1000K = 1000000. Un numero intero senza K o M è il numero reale di chip, quindi {2} e {3} sono la stessa quantità. Con i decimali vale lo stesso: {4} sono {5}.",
+    "这手{0}的前提是对手的下注范围里保留足够较弱牌或未成牌诈唬，不能只因有听牌就继续。": "{0} qui regge solo se il range di puntata conserva abbastanza mani più deboli o bluff senza mano fatta; un progetto da solo non basta per continuare."
   },
   "pt": {
     "设置": "Definições",
@@ -5511,7 +5517,8 @@
     "½ 底池": "½ pote",
     "立刻发完": "Terminar a mão",
     "筹码单位": "Unidades de fichas",
-    "换算记一下：{0} = 1000，{1} = 1000K = 1000000。不带 K 或 M 的整数就是实际筹码数，所以 {2} 和 {3} 一样多。带小数也照算，{4} 就是 {5}。": "Lembre a conversão: {0} = 1000, {1} = 1000K = 1000000. Um número inteiro sem K ou M é a quantidade real de fichas, então {2} e {3} são a mesma quantia. Com decimais é igual: {4} são {5}."
+    "换算记一下：{0} = 1000，{1} = 1000K = 1000000。不带 K 或 M 的整数就是实际筹码数，所以 {2} 和 {3} 一样多。带小数也照算，{4} 就是 {5}。": "Lembre a conversão: {0} = 1000, {1} = 1000K = 1000000. Um número inteiro sem K ou M é a quantidade real de fichas, então {2} e {3} são a mesma quantia. Com decimais é igual: {4} são {5}.",
+    "这手{0}的前提是对手的下注范围里保留足够较弱牌或未成牌诈唬，不能只因有听牌就继续。": "{0} aqui só se sustenta se o range de aposta mantiver mãos mais fracas ou blefes sem mão formada em quantidade suficiente; ter um draw não basta para continuar."
   },
   "de": {
     "设置": "Einstellungen",
@@ -6283,7 +6290,8 @@
     "立刻发完": "Hand beenden",
     "复盘这一手": "Diese Hand analysieren",
     "筹码单位": "Chip-Einheiten",
-    "换算记一下：{0} = 1000，{1} = 1000K = 1000000。不带 K 或 M 的整数就是实际筹码数，所以 {2} 和 {3} 一样多。带小数也照算，{4} 就是 {5}。": "Merke dir die Umrechnung: {0} = 1000, {1} = 1000K = 1000000. Eine ganze Zahl ohne K oder M ist die tatsächliche Chipzahl, also sind {2} und {3} gleich viel. Dezimalzahlen gehen genauso: {4} sind {5}."
+    "换算记一下：{0} = 1000，{1} = 1000K = 1000000。不带 K 或 M 的整数就是实际筹码数，所以 {2} 和 {3} 一样多。带小数也照算，{4} 就是 {5}。": "Merke dir die Umrechnung: {0} = 1000, {1} = 1000K = 1000000. Eine ganze Zahl ohne K oder M ist die tatsächliche Chipzahl, also sind {2} und {3} gleich viel. Dezimalzahlen gehen genauso: {4} sind {5}.",
+    "这手{0}的前提是对手的下注范围里保留足够较弱牌或未成牌诈唬，不能只因有听牌就继续。": "{0} hält hier nur, wenn die Setzrange genügend schwächere Hände oder nicht getroffene Bluffs enthält; ein Draw allein rechtfertigt kein Weiterspielen."
   },
   "fr": {
     "设置": "Paramètres",
@@ -7056,7 +7064,8 @@
     "立刻发完": "Terminer la main",
     "复盘这一手": "Revoir cette main",
     "筹码单位": "Unités de jetons",
-    "换算记一下：{0} = 1000，{1} = 1000K = 1000000。不带 K 或 M 的整数就是实际筹码数，所以 {2} 和 {3} 一样多。带小数也照算，{4} 就是 {5}。": "Retenez la conversion : {0} = 1000, {1} = 1000K = 1000000. Un nombre entier sans K ni M est le nombre réel de jetons, donc {2} et {3} représentent la même quantité. Les décimales se lisent pareil : {4} font {5}."
+    "换算记一下：{0} = 1000，{1} = 1000K = 1000000。不带 K 或 M 的整数就是实际筹码数，所以 {2} 和 {3} 一样多。带小数也照算，{4} 就是 {5}。": "Retenez la conversion : {0} = 1000, {1} = 1000K = 1000000. Un nombre entier sans K ni M est le nombre réel de jetons, donc {2} et {3} représentent la même quantité. Les décimales se lisent pareil : {4} font {5}.",
+    "这手{0}的前提是对手的下注范围里保留足够较弱牌或未成牌诈唬，不能只因有听牌就继续。": "{0} ici ne tient que si le range de mise garde assez de mains plus faibles ou de bluffs sans main faite ; un tirage seul ne justifie pas de continuer."
   },
   "ru": {
     "设置": "Настройки",
@@ -7827,6 +7836,7 @@
     "½ 底池": "½ банка",
     "立刻发完": "Доиграть руку",
     "筹码单位": "Единицы фишек",
-    "换算记一下：{0} = 1000，{1} = 1000K = 1000000。不带 K 或 M 的整数就是实际筹码数，所以 {2} 和 {3} 一样多。带小数也照算，{4} 就是 {5}。": "Запомните пересчёт: {0} = 1000, {1} = 1000K = 1000000. Целое число без K или M — это реальное количество фишек, поэтому {2} и {3} — одно и то же. С дробями так же: {4} — это {5}."
+    "换算记一下：{0} = 1000，{1} = 1000K = 1000000。不带 K 或 M 的整数就是实际筹码数，所以 {2} 和 {3} 一样多。带小数也照算，{4} 就是 {5}。": "Запомните пересчёт: {0} = 1000, {1} = 1000K = 1000000. Целое число без K или M — это реальное количество фишек, поэтому {2} и {3} — одно и то же. С дробями так же: {4} — это {5}.",
+    "这手{0}的前提是对手的下注范围里保留足够较弱牌或未成牌诈唬，不能只因有听牌就继续。": "{0} здесь оправдано, только если в диапазоне ставки остаётся достаточно более слабых рук или блефов без готовой руки; одно дро не оправдывает продолжение."
   }
 }

@@ -120,10 +120,11 @@ test('gutshot advice and keep/compare/fold labels follow the same evidence, with
   const r = analyzeDecision(s, options);
   assert.equal(r.draw.outs, 4);
   assert.equal(r.coaching.assessmentLabel, '需要比较');
-  assert.equal(r.coaching.label, '建议跟注 520K');
-  assert.equal(r.coaching.suggestion, r.coaching.label);
+  assert.equal(r.coaching.label, '需要比较', 'The call taken is not repeated as advice');
+  assert.equal(r.coaching.suggestion, '建议跟注 520K');
   assert.match(summary(r.coaching), /A 落下.*顶对/);
-  assert.match(summary(r.coaching), /这手建议跟注.*下注范围.*诈唬/);
+  assert.match(summary(r.coaching), /这手跟注 520K的前提是对手的下注范围.*诈唬/);
+  assert.doesNotMatch(summary(r.coaching), /这手建议跟注/);
   assert.doesNotMatch(summary(r.coaching), /成牌后再赢筹码。|同花听牌/);
   const positive = structuredClone(r);
   positive.status = 'sound';
@@ -137,7 +138,7 @@ test('gutshot advice and keep/compare/fold labels follow the same evidence, with
   };
   const kept = coachDecision(s, positive);
   assert.equal(kept.assessmentLabel, '值得保留');
-  assert.equal(kept.label, '建议跟注 520K');
+  assert.equal(kept.label, '值得保留');
   assert.match(summary(kept), /综合当前牌力.*跟注有继续依据/);
   assert.doesNotMatch(summary(kept), /还不能确认跟注划算/);
   const negative = structuredClone(positive);

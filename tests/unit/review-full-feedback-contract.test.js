@@ -76,11 +76,15 @@ function conditionalSurface(c) {
   assert.equal(c.kind, 'compare');
   assert.equal(c.assessmentLabel, '需要比较');
   assert.equal(c.recommendationConditional, true);
-  assert.match(c.label, /^建议(?:弃牌|过牌|跟注|全下|短全下|加注|下注)/);
-  assert.equal(c.recommendedAction.summary, c.label);
-  assert.equal(c.suggestion, c.label);
-  assert.equal(c.suggestedAction, c.label.slice(2));
-  assert.doesNotMatch(c.label, /比较/);
+  assert.match(c.suggestion, /^建议(?:弃牌|过牌|跟注|全下|短全下|加注|下注)/);
+  assert.equal(c.recommendedAction.summary, c.suggestion);
+  assert.equal(c.suggestedAction, c.suggestion.slice(2));
+  // Advice that repeats the action taken is not shown; the label keeps the verdict.
+  if (c.unchanged) assert.equal(c.label, '需要比较');
+  else {
+    assert.equal(c.label, c.suggestion);
+    assert.doesNotMatch(c.label, /比较/);
+  }
   assert.doesNotMatch(c.suggestion + c.followUp, /保留这步|优先选择/);
 }
 
@@ -172,7 +176,8 @@ test('positive retained comparison evidence is not downgraded merely because a r
   assert.equal(c.evKind, 'positive');
   assert.equal(c.kind, 'keep');
   assert.equal(c.assessmentLabel, '值得保留');
-  assert.equal(c.label, '建议全下至 20K');
+  assert.equal(c.label, '值得保留');
+  assert.equal(c.suggestion, '建议全下至 20K');
   assert.equal(c.confirmed, false);
 });
 

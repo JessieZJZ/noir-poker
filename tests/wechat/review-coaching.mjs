@@ -54,6 +54,14 @@ mini.connection.send = async (method, params) => {
   }
 };
 let page;
+// The badge shows advice only when it differs from the action taken.
+const shownLabel = (step, suggestion) =>
+  suggestion ===
+  '建议' + step.actual.replace(/^\d+-bet\s+/, '').replace(/^(?:开池至|隔离加注至)/, '加注至')
+    ? step.keep
+      ? '值得保留'
+      : '需要比较'
+    : suggestion;
 const stage = (name) => {
   report.stage = name;
   console.log('[wechat-review]', name);
@@ -307,7 +315,8 @@ try {
   ];
   await fixture('yellow-fold-advice', weak, (step) => {
     assert.equal(step.keep, false);
-    assert.equal(step.label, '建议弃牌');
+    assert.equal(step.suggestion, '建议弃牌');
+    assert.equal(step.label, shownLabel(step, '建议弃牌'));
   });
   const focus = await page.$('.review-practice-focus');
   report.yellowStyle = {
@@ -343,7 +352,8 @@ try {
   });
   await fixture('gutshot-label-and-reason-agree', reportedGutshotCall(), (step) => {
     assert.equal(step.keep, true);
-    assert.equal(step.label, '建议跟注 520K');
+    assert.equal(step.suggestion, '建议跟注 520K');
+    assert.equal(step.label, shownLabel(step, '建议跟注 520K'));
     assert.match(step.reason, /综合当前牌力、补牌机会和对手可能的诈唬/);
     assert.match(step.reason, /这次跟注后已没有后续下注/);
     assert.match(step.reason, /不能靠后街诈唬或成牌后再赢筹码弥补成本/);
@@ -362,7 +372,8 @@ try {
   });
   await fixture('reported-fives-all-in', reportedFivesAllIn(), (step) => {
     assert.equal(step.keep, false);
-    assert.equal(step.label, '建议全下跟注 1.62M');
+    assert.equal(step.suggestion, '建议全下跟注 1.62M');
+    assert.equal(step.label, shownLabel(step, '建议全下跟注 1.62M'));
     assert.match(step.reason, /全下跟注.*27.0%.*看完剩余公共牌/);
     assert.match(step.reason, /AK 等未成对高牌.*面对更大对子会明显落后/);
     assert.match(
@@ -407,7 +418,8 @@ try {
 
   await fixture('reported-52s-shove', weakSuitedShove(), (step) => {
     assert.equal(step.keep, false);
-    assert.equal(step.label, '建议弃牌');
+    assert.equal(step.suggestion, '建议弃牌');
+    assert.equal(step.label, shownLabel(step, '建议弃牌'));
     assert.match(step.reason, /100\s*BB/);
     assert.match(step.reason, /5K/);
     assert.match(step.reason, /225/);
