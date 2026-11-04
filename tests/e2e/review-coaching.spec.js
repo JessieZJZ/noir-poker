@@ -35,7 +35,7 @@ test('draw review connects the full public line and keeps only the requested mod
     .locator('#review-selected-status')
     .evaluate((el) => el.classList.contains('sound'));
   await expect(page.locator('#review-selected-status')).toHaveText(
-    /^(?:建议(?:弃牌|过牌|跟注|全下|加注|下注)|值得保留$|需要比较$)/,
+    /^(?:建议(?:弃牌|过牌|跟注|全下|加注|下注)|值得保留$)/,
   );
   // No step badge repeats the action the player took as a recommendation.
   for (const step of await page.locator('#review-timeline .review-step').all()) {

@@ -138,8 +138,8 @@ test('review prices, actor references and draw verdicts stay coherent in the exi
     contentType: 'image/png',
   });
   await select(8);
-  // The all-in call taken still needs comparing; it is not repeated as advice.
-  await expect(page.locator('#review-selected-status')).toHaveText('需要比较');
+  // The unproven all-in call taken is neither endorsed nor repeated as advice.
+  await expect(page.locator('#review-selected-status')).toBeHidden();
   await expect(summary).toContainText(/全下跟注.*27.0%.*看完剩余公共牌.*足够较弱牌.*比较弃牌/);
   await expect(summary).not.toContainText(/还留.*0|你在翻后有位置|你需要重新决定/);
   const ownParagraph = summary.locator('p').last();
@@ -199,13 +199,9 @@ test('new recommendation clauses and key information switch across all locales',
         .allTextContents();
       expect(text.join('')).not.toMatch(/\{\d+\}/);
       if (locale === 'zh-CN')
-        await expect(page.locator('#review-selected-status')).toHaveText(
-          /^(?:建议|值得保留$|需要比较$)/,
-        );
+        await expect(page.locator('#review-selected-status')).toHaveText(/^(?:$|建议|值得保留$)/);
       if (locale === 'zh-TW')
-        await expect(page.locator('#review-selected-status')).toHaveText(
-          /^(?:建議|值得保留$|需要比較$)/,
-        );
+        await expect(page.locator('#review-selected-status')).toHaveText(/^(?:$|建議|值得保留$)/);
       if (!['zh-CN', 'zh-TW', 'ja'].includes(locale))
         expect(text.join('')).not.toMatch(/\p{Script=Han}/u);
       await expect(page.locator('#review-evidence')).toContainText(

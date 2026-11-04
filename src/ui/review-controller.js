@@ -137,7 +137,7 @@ export function createReviewController({ card }) {
         .map((s, i) => {
           const r = analysis?.steps[i] || last.partial?.[i],
             status = coachingStatus(r);
-          return `<button class="review-step ${selected === i ? 'selected' : ''}" data-review-index="${i}" aria-current="${selected === i ? 'step' : 'false'}"><span class="review-step-number">${i + 1}</span><span><small>${STREET_NAMES[s.street]}，${s.position}</small><strong>${actionLabel(s)}</strong></span>${r?.coaching.kind === 'keep' ? '' : `<span class="review-status ${status || 'pending'}">${r?.coaching.label || (status ? statusNames[status] : '待分析')}</span>`}</button>`;
+          return `<button class="review-step ${selected === i ? 'selected' : ''}" data-review-index="${i}" aria-current="${selected === i ? 'step' : 'false'}"><span class="review-step-number">${i + 1}</span><span><small>${STREET_NAMES[s.street]}，${s.position}</small><strong>${actionLabel(s)}</strong></span>${r?.coaching.kind === 'keep' || r?.coaching.label === '' ? '' : `<span class="review-status ${status || 'pending'}">${r?.coaching.label || (status ? statusNames[status] : '待分析')}</span>`}</button>`;
         })
         .join(''),
     );
@@ -158,9 +158,12 @@ export function createReviewController({ card }) {
       $('#review-detail-title'),
       '第 ' + (selected + 1) + ' 步，' + STREET_NAMES[decision.street],
     );
+    // An unproven action kept as the candidate has no badge: no advice repeats it.
+    const noBadge = result?.coaching.label === '';
+    $('#review-selected-status').hidden = noBadge;
     setLocalizedText(
       $('#review-selected-status'),
-      result?.coaching.label || (result ? statusNames[result.status] : '分析中'),
+      noBadge ? '' : result?.coaching.label || (result ? statusNames[result.status] : '分析中'),
     );
     $('#review-selected-status').className =
       'review-status ' + (coachingStatus(result) || 'pending');

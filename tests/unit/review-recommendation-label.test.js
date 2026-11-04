@@ -60,9 +60,14 @@ test('an uncertain public-range recommendation remains actionable and conditiona
   const result = analyzeDecision(s, { trials: 120, rolloutTrials: 12 });
   const c = result.coaching;
   assert.equal(c.kind, 'compare');
-  assert.equal(c.assessmentLabel, '需要比较');
+  assert.equal(c.assessmentLabel, c.unchanged ? '' : c.assessmentLabel || 'missing');
+  assert.notEqual(c.assessmentLabel, '需要比较');
   assert.equal(c.recommendationConditional, true);
-  assert.equal(c.label, '需要比较', 'The call taken is not repeated as advice');
+  assert.equal(
+    c.label,
+    c.unchanged ? '' : c.suggestion,
+    'The call taken is not repeated as advice',
+  );
   assert.equal(c.recommendedAction.action, 'call');
   assert.equal(c.recommendedAction.amount, 520000);
   assert.equal(c.recommendedAction.summary, '建议跟注 520K');
@@ -99,7 +104,7 @@ test('a step never recommends the action the player already took', () => {
       const c = analyzeDecision(s, { trials: 40, rollouts: false }).coaching;
       if (c.unchanged) {
         repeated++;
-        assert.ok(['值得保留', '需要比较'].includes(c.label), `${actionLabel(s)}: ${c.label}`);
+        assert.ok(['值得保留', ''].includes(c.label), `${actionLabel(s)}: ${c.label}`);
       } else assert.equal(c.label, c.suggestion);
     }
   }

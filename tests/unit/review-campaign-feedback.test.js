@@ -150,8 +150,16 @@ test('a small multiway gutshot bet is a conditional candidate, not automatically
   s.pending = s.players.map((p) => p.id);
   const r = analyzeDecision(s, options);
   assert.equal(r.draw.outs, 4);
-  assert.equal(r.coaching.assessmentLabel, '需要比较');
-  assert.equal(r.coaching.label, '需要比较', 'The action taken is not repeated as advice');
+  assert.equal(
+    r.coaching.assessmentLabel,
+    r.coaching.unchanged ? '' : r.coaching.assessmentLabel || 'missing',
+  );
+  assert.notEqual(r.coaching.assessmentLabel, '需要比较');
+  assert.equal(
+    r.coaching.label,
+    r.coaching.unchanged ? '' : r.coaching.suggestion,
+    'The action taken is not repeated as advice',
+  );
   assert.match(r.coaching.suggestion, /^建议下注至 200$/);
   assert.match(r.coaching.recommendedAction.condition, /共同弃牌空间.*补牌/);
 });
@@ -159,9 +167,17 @@ test('a small multiway gutshot bet is a conditional candidate, not automatically
 test('a competitive early-position unraised fold is compared instead of endorsed without its range condition', () => {
   const s = spot('As Jh', '', { action: 'fold', position: 'UTG', currentBet: 50, pot: 75 });
   const r = analyzeDecision(s, options);
-  assert.equal(r.coaching.label, '需要比较', 'The fold taken is not repeated as advice');
+  assert.equal(
+    r.coaching.label,
+    r.coaching.unchanged ? '' : r.coaching.suggestion,
+    'The fold taken is not repeated as advice',
+  );
   assert.equal(r.coaching.suggestion, '建议弃牌');
-  assert.equal(r.coaching.assessmentLabel, '需要比较');
+  assert.equal(
+    r.coaching.assessmentLabel,
+    r.coaching.unchanged ? '' : r.coaching.assessmentLabel || 'missing',
+  );
+  assert.notEqual(r.coaching.assessmentLabel, '需要比较');
   assert.equal(r.coaching.recommendationConditional, true);
 });
 

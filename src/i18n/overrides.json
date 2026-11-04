@@ -899,7 +899,10 @@
     "已出局": "Out",
     "换算记一下：1K = 1000，1M = 1000K = 1000000，1.5M = 1500K = 1500000。": "Remember the conversions: 1K = 1000, 1M = 1000K = 1000000, 1.5M = 1500K = 1500000.",
     "{29} 本手风格：{30}": "{29}’s style this hand: {30}",
-    "{34} 的最近行动": "{34}’s latest action"
+    "{34} 的最近行动": "{34}’s latest action",
+    "{0}要补 {1} 去争 {2} 的底池，至少需要约 {3} 的胜率才能持平。{4}估计{5}对这次加注的范围仍够这个价格，所以较宽地跟注，这笔投入占行动前剩余筹码的 {6}。": "{0} has to put in {1} to contest {2}, which needs at least about {3} equity to break even. {4} judges {5} still good enough at that price against the raising range, so makes a wide call, committing {6} of the stack before acting.",
+    "跟完只剩 {0}，还不到翻牌时的底池，之后再遇下注很难弃牌，相当于被底池套住。": "After the call only {0} is left, less than the flop pot, so folding to a later bet is hard: the stack is effectively committed to the pot.",
+    "代价是击中一对后仍可能被更好的踢脚或更大对子压住。": "The cost is that even after making a pair, this hand can trail a better kicker or a higher pair."
   },
   "zh-TW": {
     "设置": "設定",
@@ -1686,7 +1689,10 @@
     "已出局": "已出局",
     "换算记一下：1K = 1000，1M = 1000K = 1000000，1.5M = 1500K = 1500000。": "換算記一下：1K = 1000，1M = 1000K = 1000000，1.5M = 1500K = 1500000。",
     "{29} 本手风格：{30}": "{29} 本手風格：{30}",
-    "{34} 的最近行动": "{34} 的最近行動"
+    "{34} 的最近行动": "{34} 的最近行動",
+    "{0}要补 {1} 去争 {2} 的底池，至少需要约 {3} 的胜率才能持平。{4}估计{5}对这次加注的范围仍够这个价格，所以较宽地跟注，这笔投入占行动前剩余筹码的 {6}。": "{0}要補 {1} 去爭 {2} 的底池，至少需要約 {3} 的勝率才能持平。{4}估計{5}對這次加注的範圍仍夠這個價格，所以較寬地跟注，這筆投入占行動前剩餘籌碼的 {6}。",
+    "跟完只剩 {0}，还不到翻牌时的底池，之后再遇下注很难弃牌，相当于被底池套住。": "跟完只剩 {0}，還不到翻牌時的底池，之後再遇下注很難棄牌，相當於被底池套住。",
+    "代价是击中一对后仍可能被更好的踢脚或更大对子压住。": "代價是擊中一對後仍可能被更好的踢腳或更大對子壓住。"
   },
   "ja": {
     "设置": "設定",
@@ -2476,7 +2482,10 @@
     "已出局": "脱落",
     "换算记一下：1K = 1000，1M = 1000K = 1000000，1.5M = 1500K = 1500000。": "換算を覚えておきましょう：1K = 1000、1M = 1000K = 1000000、1.5M = 1500K = 1500000。",
     "{29} 本手风格：{30}": "{29} のこのハンドのスタイル：{30}",
-    "{34} 的最近行动": "{34} の直近のアクション"
+    "{34} 的最近行动": "{34} の直近のアクション",
+    "{0}要补 {1} 去争 {2} 的底池，至少需要约 {3} 的胜率才能持平。{4}估计{5}对这次加注的范围仍够这个价格，所以较宽地跟注，这笔投入占行动前剩余筹码的 {6}。": "{0}は {1} を払って {2} のポットを争う。損益分岐には少なくとも約 {3} の勝率が必要だ。{4}は{5}がこのレイズのレンジに対してもこの価格に見合うと判断し、広くコールした。投入額は行動前スタックの {6}。",
+    "跟完只剩 {0}，还不到翻牌时的底池，之后再遇下注很难弃牌，相当于被底池套住。": "コール後の残りは {0} で、フロップのポットより少ない。この後ベットされても降りにくく、事実上ポットに縛られる。",
+    "代价是击中一对后仍可能被更好的踢脚或更大对子压住。": "代わりに、ペアになってもより良いキッカーや上のペアに負ける可能性がある。"
   },
   "ko": {
     "设置": "설정",
@@ -3266,7 +3275,10 @@
     "已出局": "탈락",
     "换算记一下：1K = 1000，1M = 1000K = 1000000，1.5M = 1500K = 1500000。": "환산을 기억해 두세요: 1K = 1000, 1M = 1000K = 1000000, 1.5M = 1500K = 1500000.",
     "{29} 本手风格：{30}": "{29}의 이번 핸드 스타일: {30}",
-    "{34} 的最近行动": "{34}의 최근 액션"
+    "{34} 的最近行动": "{34}의 최근 액션",
+    "{0}要补 {1} 去争 {2} 的底池，至少需要约 {3} 的胜率才能持平。{4}估计{5}对这次加注的范围仍够这个价格，所以较宽地跟注，这笔投入占行动前剩余筹码的 {6}。": "{0}은 {1}를 넣어 {2} 팟을 다툰다. 본전을 맞추려면 최소 약 {3}의 승률이 필요하다. {4}은 {5}가 이 레이즈 범위에 대해 이 가격을 감당할 만하다고 보고 넓게 콜했다. 투입액은 행동 전 스택의 {6}다.",
+    "跟完只剩 {0}，还不到翻牌时的底池，之后再遇下注很难弃牌，相当于被底池套住。": "콜 후 남은 칩은 {0}로 플롭 팟보다 적어, 이후 베팅에 폴드하기 어렵다. 사실상 팟에 묶인 셈이다.",
+    "代价是击中一对后仍可能被更好的踢脚或更大对子压住。": "대가로, 페어를 맞혀도 더 좋은 키커나 높은 페어에 밀릴 수 있다."
   },
   "es": {
     "设置": "Ajustes",
@@ -4056,7 +4068,10 @@
     "已出局": "Eliminado",
     "换算记一下：1K = 1000，1M = 1000K = 1000000，1.5M = 1500K = 1500000。": "Recuerda la conversión: 1K = 1000, 1M = 1000K = 1000000, 1.5M = 1500K = 1500000.",
     "{29} 本手风格：{30}": "Estilo de {29} en esta mano: {30}",
-    "{34} 的最近行动": "Última acción de {34}"
+    "{34} 的最近行动": "Última acción de {34}",
+    "{0}要补 {1} 去争 {2} 的底池，至少需要约 {3} 的胜率才能持平。{4}估计{5}对这次加注的范围仍够这个价格，所以较宽地跟注，这笔投入占行动前剩余筹码的 {6}。": "{0} tiene que poner {1} para disputar {2}, y necesita al menos un {3} de equity para no perder. {4} considera que {5} sigue valiendo ese precio contra el rango de la subida, así que paga de forma amplia, invirtiendo {6} del stack anterior a la acción.",
+    "跟完只剩 {0}，还不到翻牌时的底池，之后再遇下注很难弃牌，相当于被底池套住。": "Tras pagar solo le quedan {0}, menos que el bote del flop, así que retirarse ante otra apuesta es difícil: el stack queda prácticamente comprometido con el bote.",
+    "代价是击中一对后仍可能被更好的踢脚或更大对子压住。": "El coste es que, incluso al ligar pareja, esta mano puede quedar por detrás de un mejor kicker o de una pareja superior."
   },
   "it": {
     "设置": "Impostazioni",
@@ -4847,7 +4862,10 @@
     "已出局": "Eliminato",
     "换算记一下：1K = 1000，1M = 1000K = 1000000，1.5M = 1500K = 1500000。": "Ricorda le conversioni: 1K = 1000, 1M = 1000K = 1000000, 1.5M = 1500K = 1500000.",
     "{29} 本手风格：{30}": "Stile di {29} in questa mano: {30}",
-    "{34} 的最近行动": "Ultima azione di {34}"
+    "{34} 的最近行动": "Ultima azione di {34}",
+    "{0}要补 {1} 去争 {2} 的底池，至少需要约 {3} 的胜率才能持平。{4}估计{5}对这次加注的范围仍够这个价格，所以较宽地跟注，这笔投入占行动前剩余筹码的 {6}。": "{0} deve mettere {1} per disputare {2} e gli serve almeno circa il {3} di equity per andare in pari. {4} ritiene che {5} valga ancora quel prezzo contro il range del rilancio, quindi chiama largo, investendo il {6} dello stack precedente all’azione.",
+    "跟完只剩 {0}，还不到翻牌时的底池，之后再遇下注很难弃牌，相当于被底池套住。": "Dopo la chiamata restano solo {0}, meno del piatto al flop, quindi foldare a una puntata successiva è difficile: lo stack è di fatto impegnato nel piatto.",
+    "代价是击中一对后仍可能被更好的踢脚或更大对子压住。": "Il costo è che, anche centrando una coppia, la mano può restare dietro a un kicker migliore o a una coppia superiore."
   },
   "pt": {
     "设置": "Definições",
@@ -5636,7 +5654,10 @@
     "已出局": "Fora",
     "换算记一下：1K = 1000，1M = 1000K = 1000000，1.5M = 1500K = 1500000。": "Lembre a conversão: 1K = 1000, 1M = 1000K = 1000000, 1.5M = 1500K = 1500000.",
     "{29} 本手风格：{30}": "Estilo de {29} nesta mão: {30}",
-    "{34} 的最近行动": "Última ação de {34}"
+    "{34} 的最近行动": "Última ação de {34}",
+    "{0}要补 {1} 去争 {2} 的底池，至少需要约 {3} 的胜率才能持平。{4}估计{5}对这次加注的范围仍够这个价格，所以较宽地跟注，这笔投入占行动前剩余筹码的 {6}。": "{0} precisa colocar {1} para disputar {2}, e precisa de pelo menos cerca de {3} de equity para empatar. {4} avalia que {5} ainda vale esse preço contra o range do aumento, então paga de forma ampla, investindo {6} do stack anterior à ação.",
+    "跟完只剩 {0}，还不到翻牌时的底池，之后再遇下注很难弃牌，相当于被底池套住。": "Depois de pagar restam só {0}, menos que o pote do flop, então desistir diante de outra aposta fica difícil: o stack fica praticamente comprometido com o pote.",
+    "代价是击中一对后仍可能被更好的踢脚或更大对子压住。": "O custo é que, mesmo formando um par, a mão pode perder para um kicker melhor ou um par maior."
   },
   "de": {
     "设置": "Einstellungen",
@@ -6426,7 +6447,10 @@
     "已出局": "Ausgeschieden",
     "换算记一下：1K = 1000，1M = 1000K = 1000000，1.5M = 1500K = 1500000。": "Merke dir die Umrechnung: 1K = 1000, 1M = 1000K = 1000000, 1.5M = 1500K = 1500000.",
     "{29} 本手风格：{30}": "Stil von {29} in dieser Hand: {30}",
-    "{34} 的最近行动": "Letzte Aktion von {34}"
+    "{34} 的最近行动": "Letzte Aktion von {34}",
+    "{0}要补 {1} 去争 {2} 的底池，至少需要约 {3} 的胜率才能持平。{4}估计{5}对这次加注的范围仍够这个价格，所以较宽地跟注，这笔投入占行动前剩余筹码的 {6}。": "{0} muss {1} zahlen, um {2} zu spielen, und braucht mindestens etwa {3} Equity für den Break-even. {4} hält {5} gegen die Raise-Range für diesen Preis noch gut genug und callt deshalb weit, mit {6} des Stacks vor der Aktion.",
+    "跟完只剩 {0}，还不到翻牌时的底池，之后再遇下注很难弃牌，相当于被底池套住。": "Nach dem Call bleiben nur {0}, weniger als der Pot am Flop. Einen späteren Einsatz zu folden fällt schwer: Der Stack ist praktisch an den Pot gebunden.",
+    "代价是击中一对后仍可能被更好的踢脚或更大对子压住。": "Der Preis dafür: Auch ein getroffenes Paar kann gegen einen besseren Kicker oder ein höheres Paar zurückliegen."
   },
   "fr": {
     "设置": "Paramètres",
@@ -7217,7 +7241,10 @@
     "已出局": "Éliminé",
     "换算记一下：1K = 1000，1M = 1000K = 1000000，1.5M = 1500K = 1500000。": "Retenez la conversion : 1K = 1000, 1M = 1000K = 1000000, 1.5M = 1500K = 1500000.",
     "{29} 本手风格：{30}": "Style de {29} pour cette main : {30}",
-    "{34} 的最近行动": "Dernière action de {34}"
+    "{34} 的最近行动": "Dernière action de {34}",
+    "{0}要补 {1} 去争 {2} 的底池，至少需要约 {3} 的胜率才能持平。{4}估计{5}对这次加注的范围仍够这个价格，所以较宽地跟注，这笔投入占行动前剩余筹码的 {6}。": "{0} doit mettre {1} pour disputer {2}, ce qui demande au moins environ {3} d’équité pour être à l’équilibre. {4} juge que {5} vaut encore ce prix contre la range de la relance, et paie donc largement, soit {6} de son tapis avant l’action.",
+    "跟完只剩 {0}，还不到翻牌时的底池，之后再遇下注很难弃牌，相当于被底池套住。": "Après le call il ne reste que {0}, moins que le pot au flop : coucher sa main face à une mise ultérieure devient difficile, le tapis est pratiquement engagé dans le pot.",
+    "代价是击中一对后仍可能被更好的踢脚或更大对子压住。": "Le coût : même après avoir trouvé une paire, cette main peut être dominée par un meilleur kicker ou une paire supérieure."
   },
   "ru": {
     "设置": "Настройки",
@@ -8006,6 +8033,9 @@
     "已出局": "Выбыл",
     "换算记一下：1K = 1000，1M = 1000K = 1000000，1.5M = 1500K = 1500000。": "Запомните пересчёт: 1K = 1000, 1M = 1000K = 1000000, 1.5M = 1500K = 1500000.",
     "{29} 本手风格：{30}": "Стиль {29} в этой раздаче: {30}",
-    "{34} 的最近行动": "Последнее действие {34}"
+    "{34} 的最近行动": "Последнее действие {34}",
+    "{0}要补 {1} 去争 {2} 的底池，至少需要约 {3} 的胜率才能持平。{4}估计{5}对这次加注的范围仍够这个价格，所以较宽地跟注，这笔投入占行动前剩余筹码的 {6}。": "{0} нужно доложить {1}, чтобы бороться за банк {2}; для безубыточности нужно не меньше примерно {3} эквити. {4} считает, что {5} всё ещё стоит этой цены против диапазона рейза, поэтому широко коллирует, вкладывая {6} стека до действия.",
+    "跟完只剩 {0}，还不到翻牌时的底池，之后再遇下注很难弃牌，相当于被底池套住。": "После колла остаётся только {0} — меньше банка на флопе, так что сбросить карты на следующую ставку трудно: стек фактически привязан к банку.",
+    "代价是击中一对后仍可能被更好的踢脚或更大对子压住。": "Цена этого — даже после попадания в пару рука может уступать лучшему кикеру или более высокой паре."
   }
 }

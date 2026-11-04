@@ -1089,7 +1089,7 @@
               ><text wx:else class="review-step-meta">{{item.name}}，{{item.street}}</text
               ><text class="review-step-action">{{item.actual}}</text></view
             ><text
-              wx:if="{{reviewPerspective === 'hero' && !item.keep}}"
+              wx:if="{{reviewPerspective === 'hero' && !item.keep && item.label}}"
               class="review-label {{reviewPerspective === 'hero' ? 'consider' : ''}}"
               >{{item.label}}</text
             >
@@ -1102,7 +1102,7 @@
             >{{reviewPerspective === 'hero' ? '第 ' + (reviewIndex + 1) + ' 步' :
             selectedReviewStep.name}}，{{selectedReviewStep.street}}</text
           ><text
-            wx:if="{{reviewPerspective === 'hero'}}"
+            wx:if="{{reviewPerspective === 'hero' && selectedReviewStep.label}}"
             class="review-label {{selectedReviewStep.keep ? 'sound' : 'consider'}}"
             >{{selectedReviewStep.label}}</text
           ></view

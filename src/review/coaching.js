@@ -1250,15 +1250,14 @@ export function coachDecision(s, r) {
   return {
     kind,
     recommendedAction: { ...action },
+    // A badge is either an endorsement of the action taken or one concrete
+    // different action (弃牌／过牌／跟注／全下／加注至某金额). Advice that
+    // repeats the action taken, or a vague "compare", answers nothing, so an
+    // unproven action kept as the candidate gets no badge; its paragraph
+    // states the conditions instead.
     assessmentLabel:
-      kind === 'keep'
-        ? '值得保留'
-        : needsComparison
-          ? '需要比较'
-          : actionLabel(s, action.action, action.amount),
-    // A recommendation identical to the action taken adds nothing; the badge
-    // states the assessment instead: kept, or still needing a comparison.
-    label: unchanged ? (kind === 'compare' ? '需要比较' : '值得保留') : guidance.label,
+      kind === 'keep' ? '值得保留' : unchanged ? '' : actionLabel(s, action.action, action.amount),
+    label: kind === 'keep' ? '值得保留' : unchanged ? '' : guidance.label,
     recommendationConditional: needsComparison,
     explanation: conciseReason,
     paragraphs,

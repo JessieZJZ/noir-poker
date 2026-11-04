@@ -60,7 +60,7 @@ const shownLabel = (step, suggestion) =>
   '建议' + step.actual.replace(/^\d+-bet\s+/, '').replace(/^(?:开池至|隔离加注至)/, '加注至')
     ? step.keep
       ? '值得保留'
-      : '需要比较'
+      : ''
     : suggestion;
 const stage = (name) => {
   report.stage = name;

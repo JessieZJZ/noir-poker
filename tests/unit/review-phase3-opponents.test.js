@@ -164,6 +164,27 @@ test('calling the sole all-in opponent closes betting even when the actor has ch
   assert.doesNotMatch(text, /可以等翻牌中暗三条|准备继续争取后街价值|下一街是否继续/);
 });
 
+// The reported Leo spot: K♦6♠ in the BB calling 290K of a 3-bet into 580K
+// with 690K behind. The call is explained by its price first; the stack it
+// commits and the kicker risk follow as consequences, not as the reason.
+test('a priced wide 3-bet call names the break-even share, the committed stack, then its risk', () => {
+  const r = record('Kd 6s', '', 'price-continue', {
+    cost: 2900,
+    stack: 6900,
+    pot: 5800,
+    opponents: [{ id: 0, name: '你', position: 'UTG', stack: 20000, bet: 4200, allin: false }],
+  });
+  const text = summary(r);
+  assert.match(text, /要补 2.9K 去争 8.7K 的底池，至少需要约 33.3% 的胜率才能持平/);
+  assert.match(text, /估计K \/ 6 不同花底牌对这次加注的范围仍够这个价格，所以较宽地跟注/);
+  assert.match(text, /剩余筹码的 42.0%/);
+  assert.match(text, /跟完只剩 4K，还不到翻牌时的底池，之后再遇下注很难弃牌，相当于被底池套住/);
+  assert.match(text, /代价是击中一对后仍可能被更好的踢脚或更大对子压住/);
+  assert.ok(
+    text.indexOf('持平') < text.indexOf('套住') && text.indexOf('套住') < text.indexOf('代价'),
+  );
+});
+
 test('weak preflop calls describe a wide choice and its price without treating cheapness as proof', () => {
   for (const reason of ['affordable-entry', 'affordable-open', 'price-continue']) {
     const r = record('9s 2d', '', reason, {
@@ -184,6 +205,8 @@ test('weak preflop calls describe a wide choice and its price without treating c
     assert.match(summary(r), /击中一对.*(?:踢脚|对子).*可能落后|击中一对.*可能被更好的踢脚/);
     assert.doesNotMatch(summary(r), /不能只因|通用建议|需要.*重新决定/);
     assert.doesNotMatch(summary(r), /因此选择跟注入池/);
+    // A small call leaves plenty behind; it does not commit the stack.
+    assert.doesNotMatch(summary(r), /套住/);
   }
   const premium = record('As Ah', '', 'affordable-entry', {
     cost: 50,

@@ -469,9 +469,20 @@ export function explainOpponent(record, identities = []) {
           draw.outs && !v.features?.ownMade
             ? `${subject}接下这笔下注，需要再补 ${n(cost)}，可以争夺 ${n(t.allIn.contestable)} 的底池，这次底池赔率支持继续追${drawLabel(draw)}。${continuation}`
             : `${subject}接下这笔下注，需要再补 ${n(cost)}，可以争夺 ${n(t.allIn.contestable)} 的底池，这次底池赔率支持用${hand}的摊牌价值继续。${continuation}`;
-      } else if (widePreflopCall)
-        logic = `${subject}选择较宽地补 ${n(cost)}，继续争夺 ${n(v.contestable)} 的底池，这笔投入占行动前剩余筹码的 ${pct(cost / Math.max(1, v.stack))}。这手牌击中一对后仍可能被更好的踢脚或更大对子压住。`;
-      else if (v.street > 0 && !draw.outs) {
+      } else if (widePreflopCall) {
+        // The recorded reason is the price: the bot's own range estimate
+        // cleared the break-even share. Name that first, then what the call
+        // commits, and only then the kicker risk, which is its cost.
+        const left = v.stack - cost;
+        logicParts = [
+          `${subject}要补 ${n(cost)} 去争 ${n(v.contestable)} 的底池，至少需要约 ${pct(cost / Math.max(1, v.contestable))} 的胜率才能持平。${subject}估计${hand}对这次加注的范围仍够这个价格，所以较宽地跟注，这笔投入占行动前剩余筹码的 ${pct(cost / Math.max(1, v.stack))}。`,
+          left > 0 && left < v.contestable
+            ? `跟完只剩 ${n(left)}，还不到翻牌时的底池，之后再遇下注很难弃牌，相当于被底池套住。`
+            : '',
+          '代价是击中一对后仍可能被更好的踢脚或更大对子压住。',
+        ].filter(Boolean);
+        logic = logicParts.join('');
+      } else if (v.street > 0 && !draw.outs) {
         const current = v.history.filter((a) => a.street === v.street);
         const raiseIndex = current.findLastIndex((a) => a.action === 'raise');
         const callers = new Set(

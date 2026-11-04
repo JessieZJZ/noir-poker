@@ -661,13 +661,13 @@ test('WeChat review grades only the public before-action snapshot and keeps it d
   assert.equal('title' in report, false);
   assert.equal('summary' in report, false);
   assert.match(report.steps[0].suggestion, /^建议(?:弃牌|过牌|跟注|全下|短全下|加注|下注)/);
-  // A suggestion equal to the action taken shows the verdict instead.
+  // A suggestion equal to the action taken is not repeated: kept, or no badge.
   assert.equal(
     report.steps[0].label,
     report.steps[0].suggestion === '建议' + report.steps[0].actual
       ? report.steps[0].keep
         ? '值得保留'
-        : '需要比较'
+        : ''
       : report.steps[0].suggestion,
   );
 });

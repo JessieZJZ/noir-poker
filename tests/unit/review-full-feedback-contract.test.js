@@ -74,13 +74,14 @@ function estimate(s, changes = {}) {
 
 function conditionalSurface(c) {
   assert.equal(c.kind, 'compare');
-  assert.equal(c.assessmentLabel, '需要比较');
+  assert.equal(c.assessmentLabel, c.unchanged ? '' : c.assessmentLabel || 'missing');
+  assert.notEqual(c.assessmentLabel, '需要比较');
   assert.equal(c.recommendationConditional, true);
   assert.match(c.suggestion, /^建议(?:弃牌|过牌|跟注|全下|短全下|加注|下注)/);
   assert.equal(c.recommendedAction.summary, c.suggestion);
   assert.equal(c.suggestedAction, c.suggestion.slice(2));
   // Advice that repeats the action taken is not shown; the label keeps the verdict.
-  if (c.unchanged) assert.equal(c.label, '需要比较');
+  if (c.unchanged) assert.equal(c.label, c.unchanged ? '' : c.suggestion);
   else {
     assert.equal(c.label, c.suggestion);
     assert.doesNotMatch(c.label, /比较/);
@@ -264,7 +265,8 @@ test('a better candidate than a bad shove still carries the bluff and payment pr
       'Keep evidence that the actual oversized shove can be improved',
     );
     assert.equal(c.confirmed, true);
-    assert.equal(c.assessmentLabel, '需要比较');
+    assert.equal(c.assessmentLabel, c.unchanged ? '' : c.assessmentLabel || 'missing');
+    assert.notEqual(c.assessmentLabel, '需要比较');
     assert.equal(c.recommendationConditional, true);
     assert.equal(c.label, '建议加注至 3.5K');
     assert.equal(c.suggestion, c.label);
