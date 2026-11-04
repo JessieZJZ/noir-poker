@@ -11,3 +11,11 @@
   <view class="launch-progress" />
 </view>
 <include src="./table-surface.wxml" />
+<page-container
+  show="{{tutorialActive}}"
+  overlay="{{false}}"
+  duration="{{0}}"
+  z-index="{{0}}"
+  custom-style="height: 0; overflow: hidden; background: transparent;"
+  bind:beforeleave="tutorialBack"
+/>

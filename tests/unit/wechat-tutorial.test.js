@@ -65,6 +65,7 @@ test('the WeChat table enters the tutorial, plays it and returns the live hand u
   assert.equal(page.timers.size, 0, 'Entering cancels the live table timers');
   assert.equal(last().tutorial.stage, 'intro');
   assert.equal(last().tutorialPlaying, false);
+  assert.equal(last().tutorialActive, true, 'Back is taken from the intro card on');
 
   controller.tutorialPrimary();
   const lesson = controller.getGame();
@@ -90,6 +91,7 @@ test('the WeChat table enters the tutorial, plays it and returns the live hand u
   );
 
   assert.equal(controller.exitTutorial(), true);
+  assert.equal(last().tutorialActive, false, 'Back belongs to the mini program again');
   assert.equal(controller.getGame(), live);
   assert.equal(JSON.stringify(live), before);
   assert.equal(

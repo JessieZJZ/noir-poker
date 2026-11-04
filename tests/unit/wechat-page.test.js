@@ -3312,3 +3312,20 @@ test('WeChat plays packaged champion cheers and replaces stale cached cues', () 
     ceremonySounds.ceremonyWav('farewell').byteLength,
   );
 });
+
+test('WeChat Back during the tutorial returns to the table instead of closing the mini program', (t) => {
+  const { page } = setup(t);
+  // The table is the first page; an empty page container takes Back while
+  // the tutorial (intro card included) is open, and only then.
+  assert.match(
+    template,
+    /<page-container\s+show="\{\{tutorialActive\}\}"\s+overlay="\{\{false\}\}"\s+duration="\{\{0\}\}"[^>]*custom-style="height: 0;[^"]*"\s+bind:beforeleave="tutorialBack"/,
+  );
+  assert.equal(page.data.tutorialActive, false);
+  const controller = page._controller;
+  let exits = 0;
+  page._controller = { ...controller, exitTutorial: () => ++exits };
+  page.tutorialBack();
+  page._controller = controller;
+  assert.equal(exits, 1);
+});

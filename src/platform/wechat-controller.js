@@ -479,6 +479,8 @@ export function createWechatController({
       turnPhase: attention.phase,
       tutorial: coach,
       tutorialPlaying: !!tutorial?.playing(),
+      // Includes the intro card: Back anywhere in the tutorial leaves it.
+      tutorialActive: !!tutorial,
       tutorialDeal: tutorialDeals,
       tutorialFocus: coach?.focusMap || {},
       lockFold: !!coach?.gate.fold,

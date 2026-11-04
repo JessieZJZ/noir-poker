@@ -157,6 +157,7 @@ module.exports = {
     flyingChips: [],
     tutorial: null,
     tutorialPlaying: false,
+    tutorialActive: false,
     tutorialCoachHeight: 0,
     tutorialSide: false,
     tutorialShortDock: false,
@@ -1361,6 +1362,12 @@ module.exports = {
     }
   },
   exitTutorial() {
+    this.call('exitTutorial');
+  },
+  // The table is the first page, so the system Back would close the mini
+  // program. While the tutorial is open an empty page container takes that
+  // Back and returns to the paused table, as the Web history entry does.
+  tutorialBack() {
     this.call('exitTutorial');
   },
   tutorialNext() {
