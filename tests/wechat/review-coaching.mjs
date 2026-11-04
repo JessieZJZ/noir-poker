@@ -54,13 +54,13 @@ mini.connection.send = async (method, params) => {
   }
 };
 let page;
-// The badge shows advice only when it differs from the action taken.
+// The badge shows advice only when it differs from the action taken; an
+// affirmed step stays silent.
 const shownLabel = (step, suggestion) =>
+  step.keep ||
   suggestion ===
-  '建议' + step.actual.replace(/^\d+-bet\s+/, '').replace(/^(?:开池至|隔离加注至)/, '加注至')
-    ? step.keep
-      ? '值得保留'
-      : ''
+    '建议' + step.actual.replace(/^\d+-bet\s+/, '').replace(/^(?:开池至|隔离加注至)/, '加注至')
+    ? ''
     : suggestion;
 const stage = (name) => {
   report.stage = name;

@@ -176,8 +176,10 @@ test('positive retained comparison evidence is not downgraded merely because a r
   const c = coachDecision(s, r);
   assert.equal(c.evKind, 'positive');
   assert.equal(c.kind, 'keep');
-  assert.equal(c.assessmentLabel, '值得保留');
-  assert.equal(c.label, '值得保留');
+  // An affirmed action keeps its verdict but shows no badge.
+  assert.equal(c.kind, 'keep');
+  assert.equal(c.assessmentLabel, '');
+  assert.equal(c.label, '');
   assert.equal(c.suggestion, '建议全下至 20K');
   assert.equal(c.confirmed, false);
 });

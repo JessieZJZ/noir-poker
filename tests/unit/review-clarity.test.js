@@ -145,8 +145,10 @@ test('gutshot advice and keep/compare/fold labels follow the same evidence, with
     uncertainty: 0.01,
   };
   const kept = coachDecision(s, positive);
-  assert.equal(kept.assessmentLabel, '值得保留');
-  assert.equal(kept.label, '值得保留');
+  // An affirmed action keeps its verdict but shows no badge.
+  assert.equal(kept.kind, 'keep');
+  assert.equal(kept.assessmentLabel, '');
+  assert.equal(kept.label, '');
   assert.match(summary(kept), /综合当前牌力.*跟注有继续依据/);
   assert.doesNotMatch(summary(kept), /还不能确认跟注划算/);
   const negative = structuredClone(positive);

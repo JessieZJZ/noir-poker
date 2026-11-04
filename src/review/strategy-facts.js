@@ -45,8 +45,8 @@ export function guaranteedBoardCoaching(s, r) {
   return {
     kind: kept ? 'keep' : 'improve',
     recommendedAction: { ...action, summary: recommendation.label },
-    label: kept ? '值得保留' : recommendation.label,
-    assessmentLabel: kept ? '值得保留' : action.action === 'check' ? '过牌' : '跟注',
+    label: kept ? '' : recommendation.label,
+    assessmentLabel: kept ? '' : action.action === 'check' ? '过牌' : '跟注',
     recommendationConditional: false,
     paragraphs: [r.context.matchups.text, '复盘分析总结', facts.join('')],
     paragraphParts: [[r.context.matchups.text], ['复盘分析总结'], facts],

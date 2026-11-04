@@ -115,8 +115,9 @@ test('review prices, actor references and draw verdicts stay coherent in the exi
   // The bettor's full public line (check flop, bet turn) keeps bluffs in range:
   // both range estimates clear the 30.1% price, so the gutshot call is kept.
   await select(6);
-  // The kept call is not repeated back as advice.
-  await expect(page.locator('#review-selected-status')).toHaveText('值得保留');
+  // The kept call is affirmed silently: no badge repeats or praises it.
+  await expect(page.locator('#review-selected-status')).toBeHidden();
+  await expect(page.locator('#review-selected-status')).toHaveText('');
   await expect(page.locator('#review-selected-status')).toHaveClass(/sound/);
   await expect(summary).toContainText(/卡顺听牌.*4 张直接成牌候选.*约 9%.*不等于你的全部获胜机会/);
   await expect(summary).toContainText('这次跟注后已没有后续下注');
@@ -199,9 +200,9 @@ test('new recommendation clauses and key information switch across all locales',
         .allTextContents();
       expect(text.join('')).not.toMatch(/\{\d+\}/);
       if (locale === 'zh-CN')
-        await expect(page.locator('#review-selected-status')).toHaveText(/^(?:$|建议|值得保留$)/);
+        await expect(page.locator('#review-selected-status')).toHaveText(/^(?:$|建议)/);
       if (locale === 'zh-TW')
-        await expect(page.locator('#review-selected-status')).toHaveText(/^(?:$|建議|值得保留$)/);
+        await expect(page.locator('#review-selected-status')).toHaveText(/^(?:$|建議)/);
       if (!['zh-CN', 'zh-TW', 'ja'].includes(locale))
         expect(text.join('')).not.toMatch(/\p{Script=Han}/u);
       await expect(page.locator('#review-evidence')).toContainText(

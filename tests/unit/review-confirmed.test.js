@@ -21,8 +21,10 @@ test('55 all-in keeps its verdict, states its basis once, and never invents late
     r = analyzeDecision(s, options),
     text = summary(r.coaching);
   assert.equal(r.metrics.closing, false);
-  assert.equal(r.coaching.assessmentLabel, '值得保留');
-  assert.equal(r.coaching.label, '值得保留');
+  // An affirmed action keeps its verdict but shows no badge.
+  assert.equal(r.coaching.kind, 'keep');
+  assert.equal(r.coaching.assessmentLabel, '');
+  assert.equal(r.coaching.label, '');
   assert.match(r.coaching.suggestion, /^建议全下跟注/);
   assert.equal(r.metrics.contestable, 6010000);
   assert.match(text, /全下跟注.*27.0%.*看完剩余公共牌.*AK.*获胜不只依赖.*值得保留的依据/);
