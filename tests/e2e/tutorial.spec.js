@@ -340,7 +340,7 @@ test('a settled guided hand puts Continue in the empty dock row', async ({ page 
   await expect(next).toHaveClass(/tutorial-next/);
 });
 
-test('after a quick tap the coach message stays until Continue, and only then do the bots move', async ({
+test('after the taught action the bots move on at once, with no Continue stop', async ({
   page,
 }) => {
   await page.goto('/');
@@ -351,17 +351,18 @@ test('after a quick tap the coach message stays until Continue, and only then do
   const view = await playUntil(page, (v) => v.allowed?.action === 'call');
   const state = () => page.evaluate(() => window.noir.getState());
   const actions = (await state()).players.map((p) => p.action);
+  const started = Date.now();
   await page.locator('#call-button').click();
-  const next = page.locator('#tutorial-coach #tutorial-next');
-  await expect(next).toBeVisible();
-  await expect(next).toHaveText('继续');
-  // Well past the old reading time: nothing moves until the player taps.
-  await page.waitForTimeout(9000);
+  // The message was read before the tap: no Continue appears, the table stays
+  // locked, and the opponents act at their scripted pace.
+  await expect(page.locator('#tutorial-coach #tutorial-next')).toBeHidden();
   await expect(page.locator('#tutorial-text')).toHaveText(view.text);
-  expect((await state()).players.slice(1).map((p) => p.action)).toEqual(actions.slice(1));
   await expect(page.locator('#call-button')).toBeDisabled();
-  await next.click();
+  await expect
+    .poll(async () => (await state()).players.slice(1).map((p) => p.action), { timeout: 3000 })
+    .not.toEqual(actions.slice(1));
   await expect(page.locator('#tutorial-title')).toHaveText('一轮结束', { timeout: 5000 });
+  expect(Date.now() - started).toBeLessThan(6000);
 });
 
 test('large stakes explain M on the stack, K on the blinds and how they convert', async ({

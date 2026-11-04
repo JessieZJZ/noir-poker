@@ -140,7 +140,7 @@ test('the chip-unit steps explain the K or M actually on screen', () => {
   assert.match(lines(500)[2], /投 1K。这里的 K 表示千，1K 就是 1000。/);
 });
 
-test('after the player acts, opponents and new cards wait for Continue on the same message', () => {
+test('after the player acts, opponents and new cards move on without a Continue stop', () => {
   const tutorial = createTutorial(stakesFromSmallBlind(100));
   tutorial.primary();
   const first = tutorial.view();
@@ -163,23 +163,43 @@ test('after the player acts, opponents and new cards wait for Continue on the sa
   tutorial.markShown(turn, 10000);
   act(tutorial.game, 0, 'call');
   tutorial.heroActed();
-  // The next beats are the opponents'; they wait however long the reader takes.
-  const held = tutorial.view();
-  assert.equal(tutorial.autoDelay(), null);
-  assert.equal(held.canContinue, true);
-  assert.equal(held.continueLabel, '继续');
-  assert.deepEqual([held.title, held.text], [turn.title, turn.text]);
-  assert.equal(held.allowed.action, 'none', 'Table controls stay locked while it waits');
-  const actor = tutorial.game.actor;
-  assert.equal(tutorial.next(), true);
-  assert.equal(tutorial.game.actor, actor, 'Continue itself moves no chips');
-  assert.notEqual(tutorial.autoDelay(), null);
+  // The instruction was read before its button was tapped: the opponents play
+  // on at their usual pace, with no Continue and no leftover reading time.
+  const after = tutorial.view();
+  assert.equal(after.canContinue, false);
+  assert.equal(tutorial.autoDelay(), 950);
   assert.equal(tutorial.readingHold(10000), 0);
-  // The opponents then play on without stopping again until new copy appears.
+  assert.deepEqual([after.title, after.text], [turn.title, turn.text]);
+  assert.equal(after.allowed.action, 'none', 'Table controls stay locked while they act');
   tutorial.runAuto();
   assert.equal(tutorial.view().canContinue, tutorial.view().text !== turn.text);
   assert.ok(readingTime({ title: '', text: '长'.repeat(500) }) <= 8000, 'Long copy is capped');
   assert.ok(readingTime({ title: '等待对手', text: '对手正在行动。' }) >= 1000);
+});
+
+test('in every lesson a taught action moves straight on until the next message, never to Continue', () => {
+  const tutorial = createTutorial(stakesFromSmallBlind(100));
+  tutorial.primary();
+  for (const lesson of TUTORIAL_LESSONS) {
+    let acted = null,
+      actions = 0;
+    playLesson(tutorial, (view) => {
+      // Between the tap and the next message only bots and the dealer move.
+      if (acted && view.text === acted.text && view.title === acted.title) {
+        assert.equal(view.canContinue, false, `${lesson.title}: ${acted.title} stops for Continue`);
+        assert.ok(
+          tutorial.autoDelay() !== null || view.allowed.action !== 'none',
+          `${lesson.title}: ${acted.title} must move on by itself`,
+        );
+      } else acted = null;
+      if (view.allowed.action !== 'none' && !view.canContinue && !view.options.length) {
+        acted = view;
+        actions++;
+      }
+    });
+    assert.ok(actions > 0, `${lesson.title} teaches at least one action`);
+    tutorial.primary();
+  }
 });
 
 test('only the taught action and amount stay live during a guided turn', () => {

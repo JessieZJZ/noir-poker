@@ -458,10 +458,7 @@ export function createTutorial(stakes) {
     solved = false,
     freeHands = 0,
     lastCoach = { title: '', text: '' },
-    shown = { key: null, at: 0, ms: 0 },
-    // After the player acts, the message stays with Continue until it is
-    // tapped; only then do the scripted opponents or the dealer move on.
-    holding = false;
+    shown = { key: null, at: 0, ms: 0 };
 
   const lesson = () => TUTORIAL_LESSONS[lessonIndex];
   const beat = () => (stage === 'lesson' ? lesson().beats[beatIndex] : null);
@@ -473,7 +470,6 @@ export function createTutorial(stakes) {
     wrongAnswer = null;
     solved = false;
     lastCoach = { title: '', text: '' };
-    holding = false;
     stage = 'lesson';
     game = tableFor(stakes, index);
     game.dealer = (script.dealer + game.players.length - 1) % game.players.length;
@@ -494,7 +490,6 @@ export function createTutorial(stakes) {
     beatIndex++;
     wrongAnswer = null;
     solved = false;
-    holding = false;
     if (beatIndex >= lesson().beats.length) stage = 'summary';
   }
   function context(format) {
@@ -630,7 +625,6 @@ export function createTutorial(stakes) {
     return lastCoach;
   }
   function autoDelay() {
-    if (holding) return null;
     const current = beat();
     if (current?.type === 'bot') return 950;
     if (current?.type === 'deal') return 1100;
@@ -692,12 +686,13 @@ export function createTutorial(stakes) {
       if (normalized !== current.action) return false;
       return action !== 'raise' || amount === current.amount(game);
     },
-    // Following "点【跟注】" can take a tap before the explanation is read, so
-    // an opponent or a new card waits for Continue instead of replacing it.
+    // The instruction is read before its button is tapped, so acting moves
+    // straight on: scripted opponents and the dealer keep their usual pace
+    // without a Continue stop or any leftover reading time.
     heroActed() {
       if (stage !== 'lesson') return;
       advanceBeat();
-      holding = ['bot', 'deal'].includes(beat()?.type);
+      shown.ms = 0;
     },
     // The script's remaining bets finish instantly, like the table's fast finish.
     finishHand() {
@@ -729,11 +724,6 @@ export function createTutorial(stakes) {
       if (stage === 'free') {
         if (game.phase !== 'done') return false;
         stage = 'finish';
-        return true;
-      }
-      if (holding) {
-        holding = false;
-        shown.ms = 0;
         return true;
       }
       if (current?.type === 'read' || (current?.type === 'quiz' && solved)) {
@@ -795,8 +785,7 @@ export function createTutorial(stakes) {
                 wrong: wrongAnswer === index,
               }))
             : [],
-        canContinue:
-          done || holding || current?.type === 'read' || (current?.type === 'quiz' && solved),
+        canContinue: done || current?.type === 'read' || (current?.type === 'quiz' && solved),
         continueLabel: done ? '看看学到了什么' : '继续',
         // A settled hand moves Continue into the empty action dock.
         settled: ['lesson', 'free'].includes(stage) && game.phase === 'done',

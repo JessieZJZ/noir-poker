@@ -244,7 +244,7 @@ test('the mini-program panel follows Web: short phones, a side column on landsca
   assert.equal(coach(844, 390, lesson).side, false);
 });
 
-test('mini-program bots wait for Continue after the player acts, and a settled hand puts Continue in the dock', async () => {
+test('mini-program bots move on right after the player acts, and a settled hand puts Continue in the dock', async () => {
   const page = setup(),
     { controller, last, timers } = page;
   controller.start();
@@ -253,13 +253,13 @@ test('mini-program bots wait for Continue after the player acts, and a settled h
   while (last().tutorial.allowed?.action !== 'call') step(page);
   const turn = last().tutorial;
   assert.equal(controller.action('call'), true);
-  // No timer: the call explanation stays until the player taps Continue.
-  assert.equal(timers.size, 0);
-  assert.equal(last().tutorial.canContinue, true);
+  // The call was the reply to a read message: no Continue stop, and the
+  // opponents move at the scripted pace without leftover reading time.
+  assert.equal(last().tutorial.canContinue, false);
   assert.equal(last().tutorial.text, turn.text);
-  assert.equal(controller.tutorialNext(), true);
+  assert.equal(timers.size, 1);
   const [{ delay }] = timers.values();
-  assert.equal(delay, 950, 'After Continue the opponents move at the scripted pace');
+  assert.equal(delay, 950, 'The opponents move at the scripted pace');
   while (last().tutorial.stage === 'lesson' && !last().tutorial.settled) step(page);
   assert.equal(last().done, true);
   assert.equal(last().tutorial.canContinue, true);
