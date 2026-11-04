@@ -1928,7 +1928,7 @@ export async function nativeScenarios(app) {
         (entry) => entry.textContent,
       ),
     );
-    assert.equal(terms.length, 35);
+    assert.equal(terms.length, 36);
     for (const term of ['范围优势', '弃牌权益', '隐含收益', '坚果听牌', '继续范围'])
       assert.ok(
         terms.some((entry) => entry.includes(term)),
@@ -2192,8 +2192,8 @@ export async function nativeScenarios(app) {
       ),
     }));
     assert.equal(guide.hands, 9);
-    assert.equal(guide.glossaryEntries, 35);
-    assert.equal(Object.keys(guide.glossaryTerms).length, 35, 'Every glossary term is unique');
+    assert.equal(guide.glossaryEntries, 36);
+    assert.equal(Object.keys(guide.glossaryTerms).length, 36, 'Every glossary term is unique');
     assert.match(guide.glossary, /底池赔率／保本胜率.*全下只会结束自己的下注选择/s);
     assert.match(guide.glossary, /主动权.*不改变行动顺序/s);
     assert.match(guide.glossary, /权益把获胜和平分计为底池份额/);

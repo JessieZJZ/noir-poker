@@ -121,8 +121,10 @@ try {
       const g = getCurrentPages().at(-1)._controller.getGame();
       return { phase: g.phase, actor: g.actor };
     });
-    if (phase.phase === 'playing' && phase.actor === 0)
+    if (phase.phase === 'playing' && phase.actor === 0) {
+      await wait((data) => data.canAct);
       await invoke('act', { currentTarget: { dataset: { action: 'fold' } } });
+    }
     await invoke('finishHand');
     await wait((data) => data.done || data.canAct);
   }
@@ -137,6 +139,9 @@ try {
     if (Date.now() - start > 45000) throw Error('Real hand did not reach hero');
     await page.waitFor(100);
   }
+  // The engine reaches the hero before the deal animation releases the
+  // controls; a fold sent earlier is ignored, as a tap on the real page is.
+  await wait((data) => data.canAct);
   await invoke('act', { currentTarget: { dataset: { action: 'fold' } } });
   await invoke('finishHand');
   await wait((data) => data.done);
@@ -719,8 +724,8 @@ try {
       (await element.text()).trim(),
     ),
   );
-  assert.equal(glossaryTerms.length, 35);
-  for (const term of ['主动权', '范围优势', '胜率／权益', '弃牌权益／下注尺度'])
+  assert.equal(glossaryTerms.length, 36);
+  for (const term of ['主动权', '范围优势', '胜率／权益', '弃牌权益／下注尺度', 'CL（筹码领先者）'])
     assert.ok(glossaryTerms.includes(term), `${term} must have its own glossary entry`);
   const glossaryText = await glossary.text();
   assert.match(glossaryText, /底池赔率／保本胜率/);
@@ -730,7 +735,7 @@ try {
   assert.match(glossaryText, /翻前加注者也可能在新牌面上失去优势/);
   assert.match(glossaryText, /权益把获胜和平分计为底池份额，仍不等于扣除后续成本的利润/);
   assert.match(glossaryText, /多人底池要考虑所有对手，已全下的人不会再弃牌/);
-  report.checks.push({ name: 'guide-review-glossary', entries: 35, terms: glossaryTerms });
+  report.checks.push({ name: 'guide-review-glossary', entries: 36, terms: glossaryTerms });
   await capture('guide-review-glossary');
   await invoke('closeGuide');
   assert.equal(report.exceptions.length, 0);
