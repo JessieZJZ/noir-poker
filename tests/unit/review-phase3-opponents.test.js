@@ -493,3 +493,32 @@ test('scripted checks with a known action reason do not inherit an unused propos
     assert.deepEqual(r, saved);
   }
 });
+
+test('a pair released after repeated bets names the discounted price, not only its stack share', async () => {
+  const { turnStraightCallRecord } = await import('../fixtures/review-summary.js');
+  const record = turnStraightCallRecord();
+  record.action = 'fold';
+  record.amount = 0;
+  record.trace.reason = 'stack-pressure';
+  const v = record.trace.view;
+  v.features = { ...v.features, ownMade: true, strongMade: false };
+  // The hero bets the flop and the turn into this player.
+  v.history = [
+    ...v.history.filter((a) => !(a.street > 0 && a.action === 'raise')),
+    { id: 0, street: 1, action: 'raise', amount: 3000 },
+    { id: 0, street: 2, action: 'raise', amount: 6300 },
+  ];
+  const barrels = v.history.filter((a) => a.id !== v.id && a.street > 0 && a.action === 'raise');
+  assert.ok(barrels.length >= 2);
+  const text = summary(record);
+  assert.match(
+    text,
+    new RegExp(
+      `翻牌后已面对 ${barrels.length} 次下注.*按连续下注打了折扣.*约 24\\.3%.*选择保住后手`,
+    ),
+  );
+  // A single big bet keeps the plain stack-share reason.
+  v.history = v.history.filter((a) => a !== barrels[0]);
+  assert.doesNotMatch(summary(record), /打了折扣/);
+  assert.match(summary(record), /选择保住后手，没有接这笔大额投入/);
+});

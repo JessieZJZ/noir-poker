@@ -421,9 +421,22 @@ export function explainOpponent(record, identities = []) {
         ? `${subject}拿${hand}继续要补 ${n(cost)}，按当时对加注范围的估计选择退出，没有支付这笔跟注。`
         : `继续要补 ${n(cost)}，${subject}没有用${hand}接住这笔下注。${v.street === 3 ? '河牌已发完，当前只有高牌，主要能赢过对手未成牌的诈唬，因此放弃继续投入。' : '当前没有对子，也没有直接顺子或同花听牌托底，因此放弃继续投入。'}`;
       break;
-    case 'stack-pressure':
-      logic = `补 ${n(cost)} 会用掉${subject}剩余 ${n(v.stack)} 的 ${pct(cost / Math.max(1, v.stack))}，${subject}选择保住后手，没有接这笔大额投入。`;
+    case 'stack-pressure': {
+      const barrels = v.history.filter(
+        (a) => a.id !== v.id && a.street > 0 && a.action === 'raise',
+      ).length;
+      // The repeated-barrel release folds one pair only when its discounted
+      // estimate misses the price, so the price is part of the reason.
+      logic =
+        v.street > 0 &&
+        barrels >= 2 &&
+        v.features?.ownMade &&
+        !v.features?.strongMade &&
+        v.contestable > 0
+          ? `翻牌后已面对 ${barrels} 次下注，${subject}把${hand}的估计胜率按连续下注打了折扣，仍不到跟注至少需要的约 ${pct(cost / v.contestable)}。补 ${n(cost)} 会用掉${subject}剩余 ${n(v.stack)} 的 ${pct(cost / Math.max(1, v.stack))}，${subject}选择保住后手。`
+          : `补 ${n(cost)} 会用掉${subject}剩余 ${n(v.stack)} 的 ${pct(cost / Math.max(1, v.stack))}，${subject}选择保住后手，没有接这笔大额投入。`;
       break;
+    }
     case 'loose-exception':
       logicParts = objectiveActionReason(snapshot, c, f, hand, drawText, foldNote);
       if (!draw.outs) logicParts.push(`${subject}这次放宽了当时的继续范围，接下这笔跟注。`);
