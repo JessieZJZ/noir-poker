@@ -134,6 +134,9 @@ test('rotating a phone blocks and freezes the lesson, then resumes the same step
   await rotate(false);
   await expect(page.locator('#orientation-dialog')).toBeHidden();
   await expect(page.locator('#tutorial-coach')).toBeVisible();
+  // The call explanation still waits for Continue; the bots resume after it.
+  expect(await page.evaluate(() => window.noir.getState())).toEqual(frozen);
+  await page.locator('#tutorial-coach #tutorial-next').click();
   await expect
     .poll(() => page.evaluate(() => JSON.stringify(window.noir.getState())), { timeout: 8000 })
     .not.toBe(JSON.stringify(frozen));

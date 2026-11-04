@@ -1019,10 +1019,6 @@
           </p>
           <p>电脑角色的策略和情绪均为游戏设定，介绍描述常见倾向，不保证每次采用相同操作。</p>
         </details>
-        <p>
-          <b>补充筹码</b>你输光全部筹码后，“下一手”变为“补充筹码”，每局最多补 3
-          次。每次补到当前筹码领先者（CL）筹码的一半，按整枚筹码向下取整，计入本局买入、不算盈利。电脑输光即出局，不能补码；次数用完后输光，本局结束。
-        </p>
         <p class="rules-note">
           电脑仅根据自己的底牌和公共信息决策。全部筹码为虚拟筹码，没有现金兑换、奖金或真人赌注。“重新开局”会结束当前局，并把筹码与练习统计重置。
         </p>
@@ -1260,10 +1256,12 @@
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" /></svg>
         </button>
       </div>
-      <div class="win-rate-body">
+      <div class="win-rate-dock">
         <section class="win-rate-felt" aria-label="公共牌">
           <div id="win-rate-board"></div>
         </section>
+      </div>
+      <div class="win-rate-body">
         <section class="win-rate-seats" aria-label="玩家底牌">
           <div id="win-rate-players"></div>
         </section>

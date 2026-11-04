@@ -3,7 +3,6 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { createWechatController } from '../../src/platform/wechat-controller.js';
 import { act, legalActions } from '../../src/engine/poker.js';
-import { readingTime } from '../../src/engine/tutorial.js';
 
 function setup() {
   const views = [],
@@ -243,7 +242,7 @@ test('the mini-program panel follows Web: short phones, a side column on landsca
   assert.equal(coach(844, 390, lesson).side, false);
 });
 
-test('mini-program bots wait for a fresh coach message, and a settled hand puts Continue in the dock', async () => {
+test('mini-program bots wait for Continue after the player acts, and a settled hand puts Continue in the dock', async () => {
   const page = setup(),
     { controller, last, timers } = page;
   controller.start();
@@ -252,11 +251,13 @@ test('mini-program bots wait for a fresh coach message, and a settled hand puts 
   while (last().tutorial.allowed?.action !== 'call') step(page);
   const turn = last().tutorial;
   assert.equal(controller.action('call'), true);
+  // No timer: the call explanation stays until the player taps Continue.
+  assert.equal(timers.size, 0);
+  assert.equal(last().tutorial.canContinue, true);
+  assert.equal(last().tutorial.text, turn.text);
+  assert.equal(controller.tutorialNext(), true);
   const [{ delay }] = timers.values();
-  assert.ok(
-    delay > 950 && delay <= readingTime(turn),
-    'A quick tap still leaves the call explanation on screen before the bots act',
-  );
+  assert.equal(delay, 950, 'After Continue the opponents move at the scripted pace');
   while (last().tutorial.stage === 'lesson' && !last().tutorial.settled) step(page);
   assert.equal(last().done, true);
   assert.equal(last().tutorial.canContinue, true);

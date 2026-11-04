@@ -1572,16 +1572,8 @@ test('nine-seat style assignment shows every persona at all sizes and executes t
     7: 'iris',
     8: 'balanced',
   };
-  const labels = [
-    '大注强攻',
-    '范围纪律',
-    '跟注诱导',
-    '宽松取值',
-    '听牌施压',
-    '小注控池',
-    '后位争夺',
-    '均衡',
-  ];
+  // Seat tags are the two-character Chinese short names.
+  const labels = ['强攻', '纪律', '诱导', '宽松', '施压', '控池', '后位', '均衡'];
   await page.evaluate(() => window.qa.foldWin(9));
   await page.locator('#opponents-button').click();
   await assignNamedLineup(page);

@@ -340,7 +340,9 @@ test('a settled guided hand puts Continue in the empty dock row', async ({ page 
   await expect(next).toHaveClass(/tutorial-next/);
 });
 
-test('a quick tap leaves the coach message on screen before the bots move', async ({ page }) => {
+test('after a quick tap the coach message stays until Continue, and only then do the bots move', async ({
+  page,
+}) => {
   await page.goto('/');
   await expect(page.locator('html')).toHaveAttribute('data-app-ready', 'true', { timeout: 30000 });
   await page.evaluate(() => window.qa.stop());
@@ -350,10 +352,16 @@ test('a quick tap leaves the coach message on screen before the bots move', asyn
   const state = () => page.evaluate(() => window.noir.getState());
   const actions = (await state()).players.map((p) => p.action);
   await page.locator('#call-button').click();
-  await page.waitForTimeout(2500);
+  const next = page.locator('#tutorial-coach #tutorial-next');
+  await expect(next).toBeVisible();
+  await expect(next).toHaveText('继续');
+  // Well past the old reading time: nothing moves until the player taps.
+  await page.waitForTimeout(9000);
   await expect(page.locator('#tutorial-text')).toHaveText(view.text);
   expect((await state()).players.slice(1).map((p) => p.action)).toEqual(actions.slice(1));
-  await expect(page.locator('#tutorial-title')).toHaveText('一轮结束', { timeout: 12000 });
+  await expect(page.locator('#call-button')).toBeDisabled();
+  await next.click();
+  await expect(page.locator('#tutorial-title')).toHaveText('一轮结束', { timeout: 5000 });
 });
 
 test('large stakes explain M on the stack, K on the blinds and how they convert', async ({
@@ -370,5 +378,29 @@ test('large stakes explain M on the stack, K on the blinds and how they convert'
   await expect(text).toContainText('这里的 K 表示千，20K 就是 20000');
   await page.locator('#tutorial-next').click();
   await expect(page.locator('#tutorial-title')).toHaveText('筹码单位');
-  await expect(text).toContainText('1K = 1000，1M = 1000K = 1000000');
+  await expect(text).toHaveText(
+    '换算记一下：1K = 1000，1M = 1000K = 1000000，1.5M = 1500K = 1500000。',
+  );
+});
+
+test('Back leaves the tutorial for the paused table instead of leaving the page', async ({
+  page,
+}) => {
+  await ready(page);
+  const before = await page.evaluate(() => window.noir.getState().hand);
+  const url = page.url();
+  await openTutorial(page);
+  await page.goBack();
+  await expect(page.locator('#tutorial-dialog')).toBeHidden();
+  expect(page.url()).toBe(url);
+  expect(await coach(page)).toBeNull();
+  // A lesson in progress also returns to the same live hand.
+  await openTutorial(page);
+  await page.locator('#tutorial-dialog-primary').click();
+  await expect(page.locator('#tutorial-coach')).toBeVisible();
+  await page.goBack();
+  await expect(page.locator('#tutorial-coach')).toBeHidden();
+  expect(await coach(page)).toBeNull();
+  expect(await page.evaluate(() => window.noir.getState().hand)).toBe(before);
+  await expect.poll(() => page.evaluate(() => history.state?.noirLayer ?? null)).toBeNull();
 });

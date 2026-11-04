@@ -1,17 +1,11 @@
 import { test, expect } from '@playwright/test';
 
-// The guide states the chip-leader refill rule and defines CL, in every locale.
-for (const [locale, rule, term] of [
-  ['zh-CN', /每次补到当前筹码领先者（CL）筹码的一半，按整枚筹码向下取整/, 'CL（筹码领先者）'],
-  [
-    'en',
-    /Each refill brings you to half of the current chip leader’s \(CL\) stack/,
-    'CL (chip leader)',
-  ],
+// The guide defines CL, the chip leader a refill is measured against, in every locale.
+for (const [locale, term] of [
+  ['zh-CN', 'CL（筹码领先者）'],
+  ['en', 'CL (chip leader)'],
 ]) {
-  test(`the guide explains refills to half the chip leader and defines CL in ${locale}`, async ({
-    page,
-  }) => {
+  test(`the guide defines CL in ${locale}`, async ({ page }) => {
     await page.addInitScript((value) => localStorage.setItem('noir-locale', value), locale);
     await page.goto('/');
     await expect(page.locator('html')).toHaveAttribute('data-app-ready', 'true');
@@ -19,7 +13,9 @@ for (const [locale, rule, term] of [
     await page.locator('#rules-button').click();
     await page.locator('#guide-menu-item').click();
     const dialog = page.locator('#rules-dialog');
-    await expect(dialog.locator('p', { hasText: rule })).toHaveCount(1);
+    await expect(dialog).not.toContainText(
+      locale === 'en' ? 'Each refill brings you' : '每次补到当前筹码领先者',
+    );
     const entry = dialog.locator('#review-glossary .position-glossary > div', { hasText: term });
     await expect(entry).toHaveCount(1);
     await expect(entry.locator('span')).toContainText(

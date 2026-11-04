@@ -6,6 +6,7 @@ import { act, advanceStreet, legalActions, potSize } from '../../src/engine/poke
 import { createReviewInput, analyzeDecision } from '../../src/review/analysis.js';
 import { INTERACTIVE_REVIEW_OPTIONS } from '../../src/review/budget.js';
 import { BOT_THINK_LIMITS } from '../../src/engine/bot-timing.js';
+import { BOT_PROFILES } from '../../src/engine/bot-profiles.js';
 import { checkedSeatGame } from '../fixtures/checked-actions.js';
 import { tableHint } from '../../src/review/table-hint.js';
 import { observerRecord } from '../fixtures/opponent-observer.js';
@@ -1230,4 +1231,28 @@ test('enabling vibration gives exactly one immediate preview, disabling and repe
   assert.equal(pulses, before + 1);
   controller.setPreference('vibration', true);
   assert.equal(pulses, before + 2);
+});
+
+test('WeChat waiting seats show players who left the game as out, matching Web', (t) => {
+  const { controller, latest } = setup(t);
+  const game = controller.getGame();
+  // The ready table before a game's first deal: no hole cards yet.
+  game.phase = 'idle';
+  for (const player of game.players)
+    Object.assign(player, { hole: [], action: '', lastAction: null });
+  Object.assign(game.players[2], { out: true, stack: 0, place: 7 });
+  controller.show();
+  assert.equal(latest().seats.find((seat) => seat.id === 2).action, '已出局');
+  assert.equal(latest().seats.find((seat) => seat.id === 1).action, '已就位');
+});
+
+test('WeChat seats show two-character style tags and keep the full name for settings', (t) => {
+  const { controller, latest } = setup(t);
+  controller.show();
+  for (const seat of latest().seats) {
+    const profile = BOT_PROFILES.find((p) => p.id === seat.profileId);
+    assert.equal(seat.profileTag, profile.abbr);
+    assert.equal([...seat.profileTag].length, 2);
+    assert.equal(seat.profileName, profile.short);
+  }
 });

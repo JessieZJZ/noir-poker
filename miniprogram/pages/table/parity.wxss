@@ -267,7 +267,7 @@
   white-space: nowrap;
   font-size: 9px;
 }
-.web-phone-layout .persona-balanced {
+.web-phone-layout .persona-abbr {
   font-size: 10px;
 }
 .web-phone-layout .seat-body > .stack {

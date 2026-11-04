@@ -56,6 +56,7 @@ import { sanitizePlayerObservationProfile } from '../engine/public-observations.
 import { isPremiumStart } from '../engine/starting-hands.js';
 import { standingLabel, standingClass } from '../engine/game-records.js';
 import { recordSnapshots } from '../platform/record-snapshots.js';
+import { historyLayers } from './history-layer.js';
 import { createGameEffects } from './game-effects.js';
 import { TROPHY_MARKUP, renderHeroPlace } from './table-scene.js';
 import {
@@ -1540,6 +1541,8 @@ function clearTableMotion() {
     e.remove();
   });
 }
+// Back leaves the tutorial and returns to the paused table, like its exit button.
+const tutorialHistory = historyLayers.register('tutorial', () => exitTutorial());
 function enterTutorial() {
   if (tutorial) return;
   const remaining = botWait ? Math.max(0, botWait.deadline - activityClock.now()) : null;
@@ -1556,10 +1559,12 @@ function enterTutorial() {
     if (dialog.id !== 'orientation-dialog') dialog.close();
   });
   window.scrollTo(0, 0);
+  tutorialHistory.open();
   syncTutorial();
 }
 function exitTutorial() {
   if (!tutorial) return false;
+  tutorialHistory.close();
   clearTableMotion();
   tutorial = null;
   tutorialCoach.hide();

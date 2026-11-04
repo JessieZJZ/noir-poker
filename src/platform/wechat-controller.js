@@ -397,7 +397,9 @@ export function createWechatController({
       const retained = visibleRecentAction(game, player);
       const rawAction =
         player.out && !player.hole.length
-          ? `出局 · 第${player.place}名`
+          ? waitingForSeat
+            ? '已出局'
+            : `出局 · 第${player.place}名`
           : game.actor === player.id && !done && !dealing
             ? '思考中'
             : retained?.text ||
@@ -425,6 +427,7 @@ export function createWechatController({
         position: waitingForSeat ? '' : seatPosition(game, player.id),
         profileId: profile.id,
         profileName: profile.short,
+        profileTag: profile.abbr,
         portrait: profile.id === 'balanced' ? '' : `/assets/portraits/${profile.id}.jpg`,
         initial: player.name.slice(0, 1),
         // As on Web, a non-steady emotion shows on the avatar while it lasts.

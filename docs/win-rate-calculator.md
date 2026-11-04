@@ -46,3 +46,8 @@ NOIR_NATIVE_SCENARIOS=win-rate-calculator npm run mobile:test:ios
 NOIR_NATIVE_SCENARIOS=win-rate-calculator npm run mobile:test:android
 node tests/wechat/win-rate.mjs ws://127.0.0.1:9432 .artifacts/wechat-win-rate
 ```
+
+## 顶部与返回
+
+- 标题栏和公共牌区一起固定在顶部，只有玩家列表在下方滚动。Web/App 把公共牌区放在滚动区域之外；微信把它吸附在固定标题下方，背景与标题栏相同，滚过的玩家不会透出。
+- Web/App 打开计算器时写入一条浏览历史（地址不变，对局记录的路由不受影响），浏览器或手势返回、Android 返回键都只关闭计算器、回到牌桌；用关闭按钮退出时这条记录同时撤回。微信计算器本来就是独立页面，返回同样回到牌桌。

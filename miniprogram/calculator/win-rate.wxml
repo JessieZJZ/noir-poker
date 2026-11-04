@@ -15,27 +15,29 @@
 </view>
 <view
   class="win-rate-screen {{pickerOpen ? 'is-picking' : ''}}"
-  style="padding-top: {{topInset + 86}}px; padding-bottom: {{pickerOpen ? '60vh' : bottomInset + 82 + 'px'}};"
+  style="padding-top: {{topInset + 84}}px; padding-bottom: {{pickerOpen ? '60vh' : bottomInset + 82 + 'px'}};"
 >
-  <view class="win-rate-felt" aria-label="公共牌">
-    <view class="win-rate-board">
-      <view wx:for="{{streets}}" wx:for-item="street" wx:key="id" class="win-rate-street">
-        <view class="win-rate-street-cards">
-          <view
-            wx:for="{{street.slots}}"
-            wx:key="id"
-            id="win-rate-board-{{item.index}}"
-            class="win-rate-slot {{item.active ? 'is-active' : ''}}"
-            data-index="{{item.index}}"
-            aria-role="button"
-            aria-label="{{item.label}}{{item.card ? '：' + item.card.rank + item.card.suit : ''}}"
-            bindtap="openBoardCard"
-          >
-            <view wx:if="{{item.card}}" class="win-rate-card" style="{{item.card.artStyle}}" />
-            <text wx:else class="win-rate-board-mark">{{item.mark}}</text>
+  <view class="win-rate-dock" style="top: {{topInset + 84}}px;">
+    <view class="win-rate-felt" aria-label="公共牌">
+      <view class="win-rate-board">
+        <view wx:for="{{streets}}" wx:for-item="street" wx:key="id" class="win-rate-street">
+          <view class="win-rate-street-cards">
+            <view
+              wx:for="{{street.slots}}"
+              wx:key="id"
+              id="win-rate-board-{{item.index}}"
+              class="win-rate-slot {{item.active ? 'is-active' : ''}}"
+              data-index="{{item.index}}"
+              aria-role="button"
+              aria-label="{{item.label}}{{item.card ? '：' + item.card.rank + item.card.suit : ''}}"
+              bindtap="openBoardCard"
+            >
+              <view wx:if="{{item.card}}" class="win-rate-card" style="{{item.card.artStyle}}" />
+              <text wx:else class="win-rate-board-mark">{{item.mark}}</text>
+            </view>
           </view>
+          <text class="win-rate-street-label">{{street.label}}</text>
         </view>
-        <text class="win-rate-street-label">{{street.label}}</text>
       </view>
     </view>
   </view>

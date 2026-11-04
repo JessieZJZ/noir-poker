@@ -3,6 +3,7 @@ import { createWinRateSession } from '../engine/win-rate-session.js';
 import { getLocale, setLocalizedHTML } from '../i18n/index.js';
 import { renderCard } from './cards.js';
 import { createDialogScrollLock } from './dialog-scroll-lock.js';
+import { historyLayers } from './history-layer.js';
 
 const STREETS = [
   { label: '翻牌', slots: [0, 1, 2] },
@@ -128,6 +129,8 @@ export function createWinRatePage() {
     grid = document.querySelector('#win-rate-picker-grid'),
     remove = document.querySelector('#win-rate-delete');
   const scrollLock = createDialogScrollLock(dialog);
+  // Back closes the calculator and returns to the table, as its close button does.
+  const historyEntry = historyLayers.register('win-rate', () => dialog.close());
   const session = createWinRateSession({ onChange: render });
 
   // Each change rebuilds these rows, so keyboard focus follows its data key.
@@ -208,6 +211,7 @@ export function createWinRatePage() {
     if (!picker.open) session.closePicker();
   });
   dialog.addEventListener('close', () => {
+    historyEntry.close();
     session.closePicker();
     session.pause();
   });
@@ -217,6 +221,7 @@ export function createWinRatePage() {
     open() {
       if (dialog.open) return;
       scrollLock.open();
+      historyEntry.open();
       session.resume();
     },
   };

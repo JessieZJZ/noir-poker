@@ -10,7 +10,7 @@ export function styleTagFailures({
   for (const label of labels) {
     const style = getComputedStyle(label);
     if (
-      label.textContent !== label.dataset.fullName ||
+      label.textContent !== label.dataset.styleTag ||
       style.whiteSpace !== 'nowrap' ||
       style.textOverflow === 'ellipsis' ||
       label.scrollWidth > label.clientWidth + 1 ||
@@ -18,7 +18,7 @@ export function styleTagFailures({
       parseFloat(style.fontSize) < minimumFont
     )
       failures.push(
-        `${document.documentElement.lang}: ${label.textContent}; expected=${label.dataset.fullName}; ` +
+        `${document.documentElement.lang}: ${label.textContent}; expected=${label.dataset.styleTag}; ` +
           `width=${label.scrollWidth}/${label.clientWidth}; height=${label.scrollHeight}/${label.clientHeight}; ` +
           `font=${style.font}; spacing=${style.letterSpacing}; white-space=${style.whiteSpace}; overflow=${style.textOverflow}`,
       );

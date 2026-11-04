@@ -130,16 +130,17 @@ test('the chip-unit steps explain the K or M actually on screen', () => {
   const [, millions, kiloBlinds, units] = lines(10000);
   assert.match(millions, /你面前的 2M 是虚拟筹码，M 表示百万，也就是 2000000。/);
   assert.match(kiloBlinds, /投 10K；.*投 20K。这里的 K 表示千，20K 就是 20000。/);
-  assert.match(units, /1K = 1000，1M = 1000K = 1000000。/);
-  assert.match(units, /所以 2M 和 2000000 一样多。带小数也照算，1.5K 就是 1500。/);
+  // The conversion line is fixed text, whatever the stakes.
+  const conversion = '换算记一下：1K = 1000，1M = 1000K = 1000000，1.5M = 1500K = 1500000。';
+  assert.equal(units, conversion);
   const [, thousands, plainBlinds, plainUnits] = lines(100);
   assert.match(thousands, /20K 是虚拟筹码，K 表示千，也就是 20000。/);
   assert.match(plainBlinds, /投 200。数字后面没有字母，就是实际的筹码数。/);
-  assert.match(plainUnits, /所以 20K 和 20000 一样多/);
+  assert.equal(plainUnits, conversion);
   assert.match(lines(500)[2], /投 1K。这里的 K 表示千，1K 就是 1000。/);
 });
 
-test('automatic beats wait until a fresh coach message has had time to be read', () => {
+test('after the player acts, opponents and new cards wait for Continue on the same message', () => {
   const tutorial = createTutorial(stakesFromSmallBlind(100));
   tutorial.primary();
   const first = tutorial.view();
@@ -158,16 +159,25 @@ test('automatic beats wait until a fresh coach message has had time to be read',
     else tutorial.next();
   }
   const turn = tutorial.view();
+  assert.equal(turn.canContinue, false, 'The taught action, not Continue, moves this step');
   tutorial.markShown(turn, 10000);
   act(tutorial.game, 0, 'call');
   tutorial.heroActed();
-  tutorial.markShown(tutorial.view(), 11000);
+  // The next beats are the opponents'; they wait however long the reader takes.
+  const held = tutorial.view();
+  assert.equal(tutorial.autoDelay(), null);
+  assert.equal(held.canContinue, true);
+  assert.equal(held.continueLabel, '继续');
+  assert.deepEqual([held.title, held.text], [turn.title, turn.text]);
+  assert.equal(held.allowed.action, 'none', 'Table controls stay locked while it waits');
+  const actor = tutorial.game.actor;
+  assert.equal(tutorial.next(), true);
+  assert.equal(tutorial.game.actor, actor, 'Continue itself moves no chips');
   assert.notEqual(tutorial.autoDelay(), null);
-  assert.equal(
-    tutorial.readingHold(11000),
-    readingTime(turn) - 1000,
-    'A quick tap leaves the rest of the message on screen before the bots act',
-  );
+  assert.equal(tutorial.readingHold(10000), 0);
+  // The opponents then play on without stopping again until new copy appears.
+  tutorial.runAuto();
+  assert.equal(tutorial.view().canContinue, tutorial.view().text !== turn.text);
   assert.ok(readingTime({ title: '', text: '长'.repeat(500) }) <= 8000, 'Long copy is capped');
   assert.ok(readingTime({ title: '等待对手', text: '对手正在行动。' }) >= 1000);
 });

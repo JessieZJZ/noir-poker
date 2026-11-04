@@ -236,7 +236,7 @@
   max-width: 62px;
   line-height: 12px;
 }
-.persona-balanced {
+.persona-abbr {
   min-width: 30px;
   font-size: 11px;
   line-height: 14px;
@@ -1212,7 +1212,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.table-short .persona-balanced {
+.table-short .persona-abbr {
   min-width: 24px;
   font-size: 8px;
   line-height: 9px;
@@ -1831,6 +1831,6 @@
   grid-row: 2 / 4;
 }
 
-.web-phone-layout .seat .persona-balanced {
+.web-phone-layout .seat .persona-abbr {
   font-size: var(--player-persona);
 }

@@ -1205,12 +1205,13 @@ export async function nativeScenarios(app) {
         await app.evaluate(() =>
           [...document.querySelectorAll('.seat-style-label')].every((tag) => {
             const fullName = tag.dataset.fullName,
+              shown = tag.dataset.styleTag,
               style = getComputedStyle(tag),
               rect = tag.getBoundingClientRect(),
               profile = tag.closest('.seat-profile').getBoundingClientRect();
             return (
               fullName &&
-              tag.textContent === fullName &&
+              tag.textContent === shown &&
               tag.getAttribute('aria-label')?.includes(fullName) &&
               style.textOverflow !== 'ellipsis' &&
               style.whiteSpace === 'nowrap' &&
@@ -1994,7 +1995,7 @@ export async function nativeScenarios(app) {
             p = el.closest('.seat-profile').getBoundingClientRect();
           return {
             text: el.textContent,
-            expected: el.dataset.fullName,
+            expected: el.dataset.styleTag,
             visible:
               r.top >= document.querySelector('.header').getBoundingClientRect().bottom - 1 &&
               r.bottom <= innerHeight,
@@ -2314,7 +2315,7 @@ export async function nativeScenarios(app) {
           misfits: tags
             .map((tag) => ({
               text: tag.textContent,
-              fullName: tag.dataset.fullName,
+              styleTag: tag.dataset.styleTag,
               whiteSpace: getComputedStyle(tag).whiteSpace,
               textOverflow: getComputedStyle(tag).textOverflow,
               fontSize: getComputedStyle(tag).fontSize,
@@ -2325,7 +2326,7 @@ export async function nativeScenarios(app) {
             }))
             .filter(
               (tag) =>
-                tag.text !== tag.fullName ||
+                tag.text !== tag.styleTag ||
                 tag.whiteSpace !== 'nowrap' ||
                 tag.textOverflow === 'ellipsis' ||
                 tag.scrollWidth > tag.clientWidth + 1 ||

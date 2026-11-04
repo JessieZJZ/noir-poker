@@ -175,8 +175,8 @@
                 id="seat-persona-{{item.id}}"
                 data-id="{{item.id}}"
                 data-kind="persona"
-                class="persona {{item.profileId === 'balanced' ? 'persona-balanced' : ''}}"
-                >{{item.profileName}}</text
+                class="persona persona-abbr"
+                >{{item.profileTag}}</text
               ><text
                 class="stack"
                 data-id="{{item.id}}"
