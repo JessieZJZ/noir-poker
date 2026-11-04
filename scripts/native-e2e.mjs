@@ -535,6 +535,35 @@ try {
     // Later application restarts stay within WDA so it tracks the current PID.
     // A fresh CI simulator can take minutes to install and first launch an app.
     run('xcrun', ['simctl', 'install', udid, appPath], { timeout: 600000 });
+    // The app follows the device language first. The scenarios are written for
+    // the Simplified Chinese UI, so pin this app's own language, as Settings →
+    // App → Language does, instead of relying on the simulator's system list.
+    const container = run('xcrun', ['simctl', 'get_app_container', udid, appId, 'data']).trim();
+    const preferences = path.join(container, 'Library/Preferences', appId);
+    // Write through the simulator's own preferences daemon; a file written by
+    // the host is not seen by the launched app.
+    run('xcrun', [
+      'simctl',
+      'spawn',
+      udid,
+      'defaults',
+      'write',
+      preferences,
+      'AppleLanguages',
+      '-array',
+      'zh-Hans-CN',
+    ]);
+    run('xcrun', [
+      'simctl',
+      'spawn',
+      udid,
+      'defaults',
+      'write',
+      preferences,
+      'AppleLocale',
+      'zh_CN',
+    ]);
+    report.appLanguage = { platform: 'ios', languages: ['zh-Hans-CN'], scope: 'test app only' };
     const launchStarted = performance.now();
     const stderrPath = path.join(output, 'ios.stderr.log');
     const launched = run(
