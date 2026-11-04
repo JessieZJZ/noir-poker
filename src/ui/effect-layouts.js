@@ -4,8 +4,10 @@
 export const PREMIUM_DELAY_MS = 1150;
 export const PREMIUM_DURATION_MS = 2600;
 export const REBUY_DURATION_MS = 1300;
-export const CROWN_FLIGHT_MS = 2300;
-export const CONFETTI_DURATION_MS = 3800;
+// The trophy holds at the centre for about 2.3 s before its flight, and the
+// confetti keeps falling for most of the 5.7 s championship cheer.
+export const CROWN_FLIGHT_MS = 4200;
+export const CONFETTI_DURATION_MS = 5800;
 export const FAREWELL_DURATION_MS = 2800;
 
 function sequence(seed) {
@@ -76,7 +78,7 @@ export function confettiPieces(perSide = 56) {
         `--confetti-end-x:${round(direction * drift)}vw`,
         `--confetti-end-y:${round(8 + random() * 20)}vh`,
         `--confetti-spin:${Math.round((random() - 0.5) * 1440)}deg`,
-        `--confetti-delay:${Math.round(random() * 700)}ms`,
+        `--confetti-delay:${Math.round(random() * 1200)}ms`,
         `--confetti-width:${round(5 + random() * 5)}px`,
         `--confetti-height:${round(8 + random() * 8)}px`,
       ].join(';'),

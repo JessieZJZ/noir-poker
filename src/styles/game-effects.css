@@ -397,15 +397,16 @@
   left: 0;
   z-index: 60;
   pointer-events: none;
-  animation: trophy-stage 2.3s ease both;
+  animation: trophy-stage 4.2s ease both;
   background: radial-gradient(circle at 50% 45%, #1b120088 0%, #00000066 55%, #00000000 80%);
 }
+/* 4.2 s: rise in about 0.5 s, hold at the centre until 2.9 s, then fly. */
 @keyframes trophy-stage {
   0% {
     opacity: 0;
   }
-  15%,
-  55% {
+  8%,
+  70% {
     opacity: 1;
   }
   100% {
@@ -421,25 +422,25 @@
   margin: -160px 0 0 -160px;
   border-radius: 50%;
   background: repeating-conic-gradient(#f4c95d33 0deg 8deg, #f4c95d00 8deg 22deg);
-  animation: trophy-stage-rays 2.3s linear both;
+  animation: trophy-stage-rays 4.2s linear both;
 }
 @keyframes trophy-stage-rays {
   0% {
     opacity: 0;
     transform: rotate(0deg) scale(0.4);
   }
-  20% {
+  11% {
     opacity: 1;
     transform: rotate(30deg) scale(1);
   }
-  55% {
+  70% {
     opacity: 0.9;
-    transform: rotate(80deg) scale(1.05);
+    transform: rotate(160deg) scale(1.05);
   }
-  70%,
+  80%,
   100% {
     opacity: 0;
-    transform: rotate(110deg) scale(1.2);
+    transform: rotate(185deg) scale(1.2);
   }
 }
 .trophy-caption {
@@ -455,20 +456,20 @@
   text-shadow:
     0 2px 0 #6b4310,
     0 0 16px #f4c95d;
-  animation: trophy-caption 2.3s ease both;
+  animation: trophy-caption 4.2s ease both;
 }
 @keyframes trophy-caption {
   0%,
-  12% {
+  7% {
     opacity: 0;
     transform: translateY(10px);
   }
-  24%,
-  52% {
+  14%,
+  68% {
     opacity: 1;
     transform: translateY(0);
   }
-  64%,
+  75%,
   100% {
     opacity: 0;
     transform: translateY(-6px);
@@ -481,24 +482,27 @@
   width: 82px;
   height: 100px;
   margin: -50px 0 0 -41px;
-  animation: trophy-flight 2.3s cubic-bezier(0.45, 0, 0.25, 1) both;
+  animation: trophy-flight 4.2s cubic-bezier(0.45, 0, 0.25, 1) both;
 }
 @keyframes trophy-flight {
   0% {
     opacity: 0;
     transform: translate(0, 30px) scale(0.2) rotate(-18deg);
   }
-  20% {
+  11% {
     opacity: 1;
     transform: translate(0, 0) scale(1.15) rotate(5deg);
   }
-  30% {
+  16% {
     transform: translate(0, 0) scale(1) rotate(0deg);
   }
-  55% {
+  43% {
     transform: translate(0, -8px) scale(1.04) rotate(0deg);
   }
-  92% {
+  70% {
+    transform: translate(0, 0) scale(1) rotate(0deg);
+  }
+  95% {
     opacity: 1;
     transform: translate(var(--trophy-x, 0), var(--trophy-y, 0)) scale(var(--trophy-scale, 0.4));
   }
@@ -527,7 +531,7 @@
   border-radius: 1px;
   background: var(--confetti-color, #f4d06f);
   opacity: 0;
-  animation: confetti-flight 3.1s linear var(--confetti-delay, 0ms) both;
+  animation: confetti-flight 4.4s linear var(--confetti-delay, 0ms) both;
 }
 @keyframes confetti-flight {
   0% {

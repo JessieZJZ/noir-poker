@@ -172,7 +172,7 @@ for (const heroWins of [true, false]) {
     await seek(page, '.trophy-stage', 1000);
     await page.screenshot({ path: test.info().outputPath(`trophy-flight-${heroWins}.png`) });
     await page.evaluate(finishAnimations);
-    await expect(page.locator('.trophy-stage')).toHaveCount(0, { timeout: 4000 });
+    await expect(page.locator('.trophy-stage')).toHaveCount(0, { timeout: 7000 });
     await expect(page.locator(resting)).not.toHaveClass(/trophy-pending/);
     await expect(page.locator('.champion-trophy')).toHaveCount(1);
     // The trophy rests clear of its champion: centred above the hero's hole
@@ -327,7 +327,7 @@ test('a bot taking the last refill and every other seat in one hand gets the tro
   await expect(page.locator('.trophy-caption')).toHaveText('Mia 获得冠军');
   await expect(page.locator('.confetti-layer')).toHaveCount(0);
   await page.evaluate(finishAnimations);
-  await expect(page.locator('.trophy-stage')).toHaveCount(0, { timeout: 4000 });
+  await expect(page.locator('.trophy-stage')).toHaveCount(0, { timeout: 7000 });
   await expect(page.locator('.seat-1 .champion-trophy')).not.toHaveClass(/trophy-pending/);
   await expect(page.locator('#next-button')).toHaveText('下一局');
   await expect(page.locator('#session-standing')).toHaveText(`第${view.over.heroPlace}名`);
