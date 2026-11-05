@@ -4,9 +4,30 @@ import { preferenceStorage } from './storage.js';
 let appActive = true;
 export const isAppActive = () => appActive;
 
-export function handleAndroidBack(document, app) {
+// Back at the table leaves the app only when pressed twice: the first press
+// shows "再按一次退出" for this long, a second press within it minimizes.
+export const EXIT_CONFIRM_MS = 2000;
+let exitPromptAt = -Infinity;
+export function handleAndroidBack(document, app, now = Date.now()) {
   const dialogs = [...document.querySelectorAll('dialog[open]')];
   if (dialogs.some((dialog) => dialog.id === 'orientation-dialog')) return;
+  const atTable =
+    !dialogs.length &&
+    !document.querySelector?.('#guide-menu:not([hidden])') &&
+    !document.body?.dataset.tutorial &&
+    !['hand', 'list'].includes(document.body?.dataset.recordsPage);
+  if (atTable) {
+    if (now - exitPromptAt <= EXIT_CONFIRM_MS) {
+      exitPromptAt = -Infinity;
+      return app.minimizeApp();
+    }
+    exitPromptAt = now;
+    document.dispatchEvent?.(
+      new CustomEvent('noir:exit-prompt', { detail: { duration: EXIT_CONFIRM_MS } }),
+    );
+    return;
+  }
+  exitPromptAt = -Infinity;
   if (dialogs.length) dialogs.at(-1).close();
   else if (document.querySelector?.('#guide-menu:not([hidden])'))
     document.querySelector('#rules-button')?.click();
@@ -14,7 +35,6 @@ export function handleAndroidBack(document, app) {
     document.dispatchEvent(new CustomEvent('noir:tutorial-exit'));
   else if (['hand', 'list'].includes(document.body?.dataset.recordsPage))
     document.defaultView.dispatchEvent(new Event('noir:records-back'));
-  else return app.minimizeApp();
 }
 
 export async function preparePlatform() {

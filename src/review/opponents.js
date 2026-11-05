@@ -29,7 +29,7 @@ const n = compactChips;
 // Legacy or inconsistent traces cannot turn an executed fold into an account
 // of checking. A matching action is required even without a versioned basis.
 const reasonActions = {
-  fold: ['outside-range', 'insufficient-equity', 'stack-pressure'],
+  fold: ['outside-range', 'insufficient-equity', 'stack-pressure', 'short-fold', 'survival-fold'],
   call: [
     'implied-continue',
     'story-continue',
@@ -43,7 +43,7 @@ const reasonActions = {
     'strong-trap',
     'float-continue',
   ],
-  check: ['trap', 'strong-trap', 'free-check', 'pot-control'],
+  check: ['trap', 'strong-trap', 'free-check', 'pot-control', 'short-check'],
   raise: [
     'value-raise',
     'semi-bluff',
@@ -54,6 +54,8 @@ const reasonActions = {
     'dirty-reraise',
     'donk-lead',
     'seven-two-bluff',
+    'short-push',
+    'short-reshove',
   ],
 };
 export const BOT_REASON_NAMES = {
@@ -82,6 +84,11 @@ export const BOT_REASON_NAMES = {
   'dirty-reraise': '高牌阻断的脏牌再加注',
   'donk-lead': '向前一街进攻者主动领打（donk）',
   'seven-two-bluff': '2–7 低频诈唬',
+  'short-push': '短码全下抢盲',
+  'short-reshove': '短码再全下',
+  'short-fold': '短码等待更好的全下机会',
+  'short-check': '短码在大盲免费看牌',
+  'survival-fold': '接近决赛圈，谨慎弃牌',
 };
 function pocketComparison(v, name) {
   const rank = v.hole[0].rank;
@@ -203,6 +210,43 @@ function objectiveActionReason(s, c, f, hand, drawText, foldNote) {
     ].filter(Boolean);
   }
   return [];
+}
+
+// Plain-language tournament notes: no placement-value jargon, only what a
+// short or covering stack risks near the final table.
+function survivalNote(stage, subject) {
+  return stage === 'bubble'
+    ? `再淘汰一人就进入决赛圈，跟注全下输了${subject}就会出局。`
+    : `决赛圈每多撑过一人名次就会提高，跟注全下输了${subject}就会出局。`;
+}
+function shortStackReason(t, subject, hand) {
+  const plan = t.pushFold || {},
+    depth = Math.max(1, Math.round(plan.depthBB ?? 0)),
+    behind = plan.behind ?? 0,
+    stage = t.view.tournament?.stage,
+    stacks = t.view.tournament?.stacks || [],
+    own = stacks.find((row) => row.id === t.view.id)?.chips ?? 0,
+    leader = stacks.length > 1 && stacks.every((row) => row.id === t.view.id || row.chips < own),
+    pressure = ['bubble', 'final'].includes(stage);
+  const parts = [
+    `有效筹码只剩约 ${depth} 个大盲，加注后很难再弃牌，所以${subject}只在全下和弃牌之间选择。`,
+  ];
+  if (t.reason === 'short-fold')
+    parts.push(`${hand}不够这个位置的全下标准，${subject}选择弃牌，留着筹码等更好的机会。`);
+  else if (t.reason === 'short-check')
+    parts.push(`${subject}在大盲可以免费看牌，${hand}不够全下的标准，所以先过牌。`);
+  else {
+    parts.push(
+      t.reason === 'short-reshove'
+        ? `面对加注，${subject}用${hand}直接全下，对手要跟注就得拿出更多筹码。`
+        : behind
+          ? `身后还有 ${behind} 位没行动，${subject}用${hand}先全下，对手不愿冒险就会把盲注让出来。`
+          : `${subject}用${hand}先全下，对手不愿冒险就会把盲注让出来。`,
+    );
+    if (pressure && leader)
+      parts.push(`${subject}筹码最多，对手跟注输了会出局，所以可以更多地施压抢盲。`);
+  }
+  return parts;
 }
 
 export function explainOpponent(record, identities = []) {
@@ -437,6 +481,20 @@ export function explainOpponent(record, identities = []) {
           : `补 ${n(cost)} 会用掉${subject}剩余 ${n(v.stack)} 的 ${pct(cost / Math.max(1, v.stack))}，${subject}选择保住后手，没有接这笔大额投入。`;
       break;
     }
+    case 'short-push':
+    case 'short-reshove':
+    case 'short-fold':
+    case 'short-check':
+      logicParts = shortStackReason(t, subject, hand);
+      logic = logicParts.join('');
+      break;
+    case 'survival-fold':
+      logicParts = [
+        survivalNote(v.tournament?.stage, subject),
+        `${subject}拿${hand}跟注要补 ${n(cost)}，这次比平时更谨慎，选择弃牌。`,
+      ];
+      logic = logicParts.join('');
+      break;
     case 'loose-exception':
       logicParts = objectiveActionReason(snapshot, c, f, hand, drawText, foldNote);
       if (!draw.outs) logicParts.push(`${subject}这次放宽了当时的继续范围，接下这笔跟注。`);

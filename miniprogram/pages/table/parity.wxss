@@ -1813,9 +1813,22 @@
   width: 180px;
   height: 180px;
 }
+.launch-wordmark {
+  position: absolute;
+  top: calc(50% + 102px);
+  left: 0;
+  right: 0;
+  text-align: center;
+  color: #e9f2ef;
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 24px;
+  letter-spacing: 6px;
+  text-indent: 6px;
+}
 .launch-progress {
   position: absolute;
-  top: calc(50% + 118px);
+  top: calc(50% + 148px);
   width: 48px;
   height: 2px;
   background: #6ee7c5;

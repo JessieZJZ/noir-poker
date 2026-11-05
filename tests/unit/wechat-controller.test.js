@@ -1203,6 +1203,7 @@ test('WeChat ends the game without a champion when the hero busts with bots left
   assert.equal(latest().standingText, `第${latest().over.heroPlace}名`);
   // The grey farewell card tells the place once, with its own cue, then leaves.
   assert.deepEqual(latest().farewell.place, `第${latest().over.heroPlace}名`);
+  assert.equal(latest().farewell.note, '补码次数已用完');
   assert.equal(latest().heroPlaced, true, 'No champion: the place shows at once');
   assert.equal(sounds.filter((s) => s === 'farewell').length, 1);
   controller.show();
@@ -1253,4 +1254,77 @@ test('WeChat seats show two-character style tags and keep the full name for sett
     assert.equal([...seat.profileTag].length, 2);
     assert.equal(seat.profileName, profile.short);
   }
+});
+
+test('WeChat announces the final table and a new level before dealing, and replays them on retry', (t) => {
+  const { controller, latest, sounds, timers } = setup(t, { playerCount: 7 });
+  const game = controller.getGame();
+  finish(game, 'fold');
+  controller.show();
+  for (const p of game.players.slice(3)) Object.assign(p, { out: true, stack: 0, place: 4 });
+  game.levelHands = game.levelLength;
+  const deals = sounds.filter((s) => s === 'deal').length;
+  controller.nextHand();
+  // The deal waits: cards stay hidden and no bot acts until both notices end.
+  assert.equal(latest().noticeHold, true);
+  assert.equal(latest().dealing, true);
+  assert.equal(sounds.filter((s) => s === 'deal').length, deals);
+  timers.runNext();
+  assert.deepEqual(
+    latest().tableNotices.map((n) => [n.title, n.caption, n.sound]),
+    [['进入决赛圈', '剩余 3 人争夺冠军 · 不能再补码', 'finaltable']],
+  );
+  const steps = [latest().tableNotices[0].title];
+  while (latest().noticeHold) {
+    timers.runNext();
+    const shown = latest().tableNotices[0];
+    if (shown && steps.at(-1) !== shown.title) steps.push(shown.title);
+  }
+  assert.deepEqual(steps, ['进入决赛圈', '盲注升至 50 / 100']);
+  assert.ok(sounds.includes('finaltable') && sounds.includes('levelup'));
+  assert.equal(sounds.at(-1), 'deal');
+  assert.equal(latest().rebuysLeft, 0);
+  assert.equal(latest().blindText, '50 / 100');
+  finish(game, 'fold');
+  controller.show();
+  assert.equal(controller.retry(), true);
+  assert.equal(latest().noticeHold, true);
+  while (latest().noticeHold) timers.runNext();
+  assert.equal(sounds.filter((s) => s === 'levelup').length, 2);
+});
+
+test('WeChat shows the blind structure on the ready table and in settings', (t) => {
+  const { latest } = setup(t, { playerCount: 9 });
+  assert.deepEqual(latest().entryStructure, {
+    levels: '每 10 手涨盲，最高 375 / 750',
+    final: '剩 3 人进入决赛圈',
+    settings: '每 10 手升一级，最高 375 / 750，剩 3 人进入决赛圈。',
+  });
+  assert.equal(latest().stakesStructure, '每 10 手升一级，最高 375 / 750，剩 3 人进入决赛圈。');
+});
+
+test('WeChat shows the called all-in hands as the runout starts, before the board is dealt', (t) => {
+  const { controller, latest } = setup(t);
+  const game = reachHero(controller);
+  act(game, 0, 'raise', legalActions(game, 0).maxRaiseTo);
+  let caller = null;
+  while (game.phase === 'playing') {
+    const id = game.actor;
+    if (caller === null) caller = id;
+    act(game, id, id === caller ? 'call' : 'fold');
+  }
+  assert.equal(game.revealed, true);
+  assert.notEqual(game.phase, 'done');
+  controller.show();
+  const seat = latest().seats.find((s) => s.id === caller);
+  assert.deepEqual(
+    seat.cards.map((c) => c.key),
+    game.players[caller].hole.map((c) => c.key),
+  );
+  // Folded seats stay hidden.
+  assert.ok(
+    latest()
+      .seats.filter((s) => s.id !== caller)
+      .every((s) => !s.cards.length),
+  );
 });

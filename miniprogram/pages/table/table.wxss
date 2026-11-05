@@ -872,6 +872,11 @@
 .settings-modal .stakes-setting-row {
   font-size: 15px;
   line-height: 1.5;
+  /* The blind values sit level with the 起始盲注 title, as on Web. */
+  align-items: flex-start;
+}
+.settings-modal .stakes-setting-row .stakes-values {
+  margin-top: -6px;
 }
 #big-blind-value {
   font-size: 15px;
@@ -1515,16 +1520,19 @@
   white-space: nowrap;
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 5px;
+  justify-content: flex-end;
+  gap: 2px;
   animation-duration: 0.4s;
 }
+/* The window keeps the widest label's width so the header never moves; each
+   label hugs the arrow, so the text-to-arrow gap is the same for all four. */
 .resource-label-window {
   position: relative;
   height: 20px;
   width: 68px;
   line-height: 20px;
   overflow: hidden;
+  text-align: right;
 }
 .resource-label-current,
 .resource-label-previous,

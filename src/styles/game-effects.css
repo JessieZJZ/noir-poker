@@ -710,7 +710,99 @@
   transform: translateX(-50%);
 }
 
+/* Table notices: a band slides in from the right across the screen centre,
+   holds, then leaves to the left before the hand is dealt. */
+.table-notice-stage {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 55;
+  display: flex;
+  align-items: center;
+  pointer-events: none;
+  overflow: hidden;
+  background: linear-gradient(180deg, #00000000 30%, #0000004d 50%, #00000000 70%);
+  animation: table-notice-stage 1.8s ease both;
+}
+@keyframes table-notice-stage {
+  0% {
+    opacity: 0;
+  }
+  10%,
+  84% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+.table-notice-band {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  margin-top: -6vh;
+  padding: 14px 16px 12px;
+  border-top: 1px solid #ffc85799;
+  border-bottom: 1px solid #ffc85799;
+  background: linear-gradient(
+    90deg,
+    #120d03e6 0%,
+    #2a1d06f2 22%,
+    #3a2808f7 50%,
+    #2a1d06f2 78%,
+    #120d03e6 100%
+  );
+  box-shadow:
+    0 0 24px #ffc85733,
+    0 12px 30px #000000aa;
+  text-align: center;
+  animation: table-notice-band 1.8s cubic-bezier(0.2, 0.75, 0.25, 1) both;
+}
+.table-notice-final-table {
+  border-color: #ffe08a;
+  box-shadow:
+    0 0 34px #ffc85766,
+    0 12px 30px #000000aa;
+}
+@keyframes table-notice-band {
+  0% {
+    transform: translateX(100%);
+  }
+  16%,
+  80% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-100%);
+  }
+}
+.table-notice-title {
+  display: block;
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: 2px;
+  line-height: 32px;
+  color: #ffe6a6;
+  text-shadow:
+    0 2px 0 #1a1203,
+    0 0 16px #ffc85766;
+}
+.table-notice-caption {
+  display: block;
+  margin-top: 2px;
+  font-size: 13px;
+  line-height: 18px;
+  color: #d9c79c;
+}
+
 @media (prefers-reduced-motion: reduce) {
+  .table-notice-band {
+    animation: none;
+  }
   .premium-spark,
   .confetti-piece,
   .trophy-stage-rays,
@@ -728,4 +820,24 @@
   .trophy-glow {
     animation: none;
   }
+}
+@media (min-width: 768px) {
+  .table-notice-band {
+    padding: 18px 24px 16px;
+  }
+  .table-notice-title {
+    font-size: 32px;
+    line-height: 42px;
+  }
+  .table-notice-caption {
+    font-size: 16px;
+    line-height: 22px;
+  }
+}
+
+/* While a table notice plays, the new hand's cards wait to be dealt. */
+.notice-hold .mini-cards,
+.notice-hold .seat-hole,
+.notice-hold .hero-cards-wrap {
+  visibility: hidden;
 }

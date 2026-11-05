@@ -152,6 +152,28 @@ window.qa = {
     this.stop();
     return publicState();
   },
+  // Deal the next hand through the real flow with a new blind level due and,
+  // with `final`, only the final table left: its notices play first.
+  noticeHand({ count = 7, final = false, level = true } = {}) {
+    gameRecords.abandon(game);
+    fixtureGame(count, true);
+    requestedStakes = stakesFromSmallBlind(100);
+    game = newGame(count, requestedStakes);
+    applyBotSettings(game, pendingBotSettings);
+    saveTablePreferences({
+      playerCount: count,
+      difficulty: game.difficulty,
+      stakes: requestedStakes,
+    });
+    if (level) game.levelHands = game.levelLength;
+    if (final) {
+      const seats = count <= 6 ? 2 : 3;
+      for (const p of game.players.slice(seats))
+        Object.assign(p, { out: true, stack: 0, place: count - (p.id - seats) });
+    }
+    nextHand();
+    return publicState();
+  },
   // Hero shoves, seat 1 calls, everyone else folds (or calls with `allIn`),
   // and the board runs out.
   finaleShowdown({ allIn = false } = {}) {

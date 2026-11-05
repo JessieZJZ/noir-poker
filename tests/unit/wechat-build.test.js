@@ -1,9 +1,10 @@
-import { soundSamples, SOUND_SAMPLE_RATE } from '../../src/ui/sound-cues.js';
+import { soundSamples, SOUND_SAMPLE_RATE, soundWav } from '../../src/ui/sound-cues.js';
 import {
   compactWxml,
   tutorialSubpackageModule,
   verifyLocalWechatModules,
   wechatPackageBytes,
+  WECHAT_MAIN_BUDGET,
   pruneUnusedSharedModules,
 } from '../../scripts/wechat.mjs';
 import { test } from 'node:test';
@@ -71,15 +72,29 @@ test('shared-module pruning keeps page, worker, asynchronous and transitive impo
 });
 test('music is budgeted separately while main and subpackage retain exact size limits', () => {
   const limit = 2 * 1024 * 1024;
-  const app = { subpackages: [{ root: 'music', pages: ['loader'] }] };
+  const app = {
+    subpackages: [{ root: 'music', pages: ['loader'] }],
+    workers: { path: 'workers', isSubpackage: true },
+  };
   const files = [
-    { path: 'app.js', bytes: limit },
+    { path: 'app.js', bytes: WECHAT_MAIN_BUDGET },
     { path: 'music/background-music.m4a', bytes: limit },
+    { path: 'workers/review.js', bytes: limit },
   ];
-  assert.deepEqual(wechatPackageBytes(files, app), { main: limit, music: limit });
+  assert.deepEqual(wechatPackageBytes(files, app), {
+    main: WECHAT_MAIN_BUDGET,
+    music: limit,
+    workers: limit,
+  });
+  // The main package keeps headroom below DevTools' 1.5 MB quality line.
+  assert.ok(WECHAT_MAIN_BUDGET < 1.5 * 1024 * 1024);
   assert.throws(
-    () => wechatPackageBytes([{ ...files[0], bytes: limit + 1 }, files[1]], app),
+    () => wechatPackageBytes([{ ...files[0], bytes: WECHAT_MAIN_BUDGET + 1 }, files[1]], app),
     /main package exceeds/,
+  );
+  assert.throws(
+    () => wechatPackageBytes([files[0], files[1], { ...files[2], bytes: limit + 1 }], app),
+    /workers package exceeds/,
   );
   assert.throws(
     () => wechatPackageBytes([files[0], { ...files[1], bytes: limit + 1 }], app),
@@ -274,10 +289,11 @@ test('generated WeChat JavaScript loads the controller and complete player resea
 test('standalone WeChat worker executes the shared interactive analysis without main-package imports', async (t) => {
   const workspace = fixture(t);
   assertSuccess(await build(workspace).result);
-  assert.equal(
-    JSON.parse(readFileSync(path.join(workspace.output, 'app.json'))).workers,
-    'workers',
-  );
+  // The worker is its own subpackage, downloaded before it starts.
+  assert.deepEqual(JSON.parse(readFileSync(path.join(workspace.output, 'app.json'))).workers, {
+    path: 'workers',
+    isSubpackage: true,
+  });
   const messages = [];
   let receive;
   const context = vm.createContext({
@@ -390,8 +406,25 @@ test('concurrent WeChat builders serialize and preserve DevTools private prefere
     readFileSync(path.join(workspace.output, 'music/background-music.m4a')),
     readFileSync(path.join(workspace.directory, 'public/audio/background-music-mobile.m4a')),
   );
+  // Recordings sit in the preloaded sounds subpackage; the main package has no audio.
+  const app = JSON.parse(readFileSync(path.join(workspace.output, 'app.json')));
+  assert.ok(app.subpackages.some((entry) => entry.root === 'sounds'));
+  assert.ok(app.preloadRule['pages/table/table'].packages.includes('sounds'));
+  for (const file of ['chip.wav', 'champion-cheer.m4a', 'crowned-cheer.m4a'])
+    assert.ok(
+      manifest.files.some((entry) => entry.path === `sounds/${file}`),
+      file,
+    );
+  assert.ok(!manifest.files.some((entry) => /^assets\/sounds\//.test(entry.path)));
+  assert.ok(manifest.packageBytes.main < WECHAT_MAIN_BUDGET);
+  // Only the recorded chip stack is packaged; the page synthesizes the rest.
+  for (const name of ['fold', 'check', 'deal', 'win'])
+    assert.ok(!manifest.files.some((file) => file.path === `assets/sounds/${name}.wav`), name);
   for (const name of ['fold', 'check', 'chip', 'deal', 'win']) {
-    const wave = readFileSync(path.join(workspace.output, `assets/sounds/${name}.wav`));
+    const wave =
+      name === 'chip'
+        ? readFileSync(path.join(workspace.output, `sounds/${name}.wav`))
+        : Buffer.from(soundWav(soundSamples(name)));
     let peak = 0,
       saturated = 0;
     for (let i = 44; i < wave.length; i += 2) {

@@ -66,8 +66,37 @@
   white-space: nowrap;
   transform: scale(var(--entry-scale, 1));
 }
-.game-surface[data-entry-state='waiting'] .hand-label > :not(#street-label) {
+.game-surface[data-entry-state='waiting'] .hand-label > :not(#street-label, #entry-structure) {
   display: none;
+}
+/* This game's blind structure sits under the waiting message, only before
+   the hero takes the seat. */
+.entry-structure {
+  display: none;
+}
+/* It hangs below the label in the hint row, which is empty before the seat is
+   taken, so the header row and the table keep their exact size. It may use
+   the whole header width; the blind column beside the label is empty then. */
+.game-surface .surface-top {
+  container-type: inline-size;
+}
+.game-surface[data-entry-state='waiting'] .surface-top .hand-label {
+  position: relative;
+}
+.game-surface[data-entry-state='waiting'] .hand-label > #entry-structure {
+  display: block;
+  position: absolute;
+  top: calc(100% + 2px);
+  left: 0;
+  width: max-content;
+  max-width: calc(100vw - 48px);
+  max-width: 100cqw;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #c9b98f;
+  font-size: 11px;
+  line-height: 1.4;
 }
 .game-surface .surface-top .hand-label {
   line-height: 1.2;
@@ -76,17 +105,27 @@
    the same first row; a wrapped message grows the row instead of clipping. */
 .game-surface[data-entry-state='waiting'] .surface-top .hand-label {
   grid-column: 1;
-  align-self: center;
   white-space: normal;
   line-height: 1.2;
+}
+/* The waiting row may hold a second line (this game's blind structure) and
+   keeps its height after joining, so the felt never moves. Both labels sit
+   at the top of the row, where a single centred line would be, so the first
+   line does not move when play starts. */
+.game-surface .surface-top .hand-label {
+  align-self: start;
+  padding-top: max(0px, calc((var(--hand-row) - 1.2em) / 2));
+}
+.game-surface .surface-top .blind-info {
+  align-self: start;
+  line-height: 1.4;
+  padding-top: max(0px, calc((var(--hand-row) - 1.4em) / 2));
 }
 .main .game-surface[data-entry-state='waiting'] > .surface-top {
   grid-template-rows: minmax(max(var(--hand-row), var(--entry-hand-row, 0px)), auto) var(--hint-row);
 }
 .game-surface[data-entry-state='waiting'] .surface-top .blind-info {
   grid-row: 1;
-  align-self: start;
-  line-height: 1.4;
 }
 .game-surface[data-entry-state='waiting'] #hero-position {
   display: none;

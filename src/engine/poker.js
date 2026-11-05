@@ -1,4 +1,11 @@
 import { DEFAULT_STAKES, validateStakes, bigBlindOf, sameStakes } from './stakes.js';
+import {
+  advanceTournament,
+  finalTableSeats,
+  levelLengthFor,
+  tournamentStage,
+} from './blind-levels.js';
+import { POSITION_ROLES } from './positions.js';
 import { compactChips } from './chip-format.js';
 import {
   getBotProfile,
@@ -202,7 +209,12 @@ export function evaluate(cards) {
     cards: bestCards,
   };
 }
-export function newGame(playerCount = 6, configuration = DEFAULT_STAKES) {
+// Practice games rise their blinds; scripted lessons pass `risingBlinds: false`.
+export function newGame(
+  playerCount = 6,
+  configuration = DEFAULT_STAKES,
+  { risingBlinds = true } = {},
+) {
   if (!Number.isInteger(playerCount) || playerCount < 5 || playerCount > 9)
     throw Error('牌桌人数须为 5–9 人。');
   const stakes = validateStakes(configuration);
@@ -253,6 +265,12 @@ export function newGame(playerCount = 6, configuration = DEFAULT_STAKES) {
     payouts: [],
     stats: { hands: 0, wins: 0, buyin: stakes.startingStack },
     rebuys: 0,
+    risingBlinds,
+    levelIndex: 0,
+    levelHands: 0,
+    levelLength: levelLengthFor(playerCount),
+    finalTable: false,
+    notices: [],
     playerObservationRevision: 0,
     playerObservationHands: 0,
     over: null,
@@ -291,18 +309,7 @@ export function applyBotSettings(g, value) {
   }
   g.emotionMode = settings.emotionMode;
 }
-// Seat IDs follow the physical table clockwise, starting at the hero.
-// Eliminated seats leave the ring, so a game may finish short-handed.
-export const POSITION_ROLES = {
-  2: ['BTN', 'BB'],
-  3: ['BTN', 'SB', 'BB'],
-  4: ['BTN', 'SB', 'BB', 'CO'],
-  5: ['BTN', 'SB', 'BB', 'UTG', 'CO'],
-  6: ['BTN', 'SB', 'BB', 'UTG', 'HJ', 'CO'],
-  7: ['BTN', 'SB', 'BB', 'UTG', 'LJ', 'HJ', 'CO'],
-  8: ['BTN', 'SB', 'BB', 'UTG', 'UTG+1', 'LJ', 'HJ', 'CO'],
-  9: ['BTN', 'SB', 'BB', 'UTG', 'UTG+1', 'MP', 'LJ', 'HJ', 'CO'],
-};
+export { POSITION_ROLES } from './positions.js';
 // Seats still in the game, clockwise from the seat after `from`.
 export function seatedRing(g, from = g.dealer) {
   const n = g.players.length;
@@ -322,7 +329,9 @@ function assignPositions(g) {
   ring.forEach((p, i) => (g.positions[p.id] = roles[(i + 1) % ring.length]));
 }
 export const MAX_HERO_REBUYS = 3;
-export const heroRebuysLeft = (g) => Math.max(0, MAX_HERO_REBUYS - (g.rebuys || 0));
+// Refills close once the final table is reached, whatever is left.
+export const heroRebuysLeft = (g) =>
+  g.finalTable ? 0 : Math.max(0, MAX_HERO_REBUYS - (g.rebuys || 0));
 export const needsHeroRebuy = (g) =>
   ['idle', 'done'].includes(g.phase) && !g.over && !g.players[0].out && g.players[0].stack === 0;
 // A refill tops the hero up to half the chip leader (CL): the largest stack
@@ -338,6 +347,7 @@ export function heroRebuyAmount(g) {
 export const LEGACY_REFILL_LOG = '{0} 补充 {1} 虚拟筹码 · 第 {2} 次补码';
 // Only the hero can refill, and only between hands after losing every chip.
 export function rebuyHero(g) {
+  if (g.finalTable) throw Error('已进入决赛圈，不能再补充筹码。');
   if (!needsHeroRebuy(g)) throw Error('只有筹码输光后才能补充筹码。');
   if (!heroRebuysLeft(g)) throw Error('本局补码次数已用完。');
   const amount = heroRebuyAmount(g);
@@ -481,6 +491,21 @@ export function importPlayerObservations(g, value) {
   g.playerObservationRevision = profile.revision;
   return true;
 }
+// Public tournament state: seats left, the final-table size and each seat's
+// chips at the start of this hand. Bots and the review read only this.
+export function tournamentView(g) {
+  const seated = g.players.filter((p) => !p.out);
+  return {
+    stage:
+      g.risingBlinds === false
+        ? 'early'
+        : tournamentStage(seated.length, g.players.length, !!g.finalTable),
+    seatsLeft: seated.length,
+    finalSeats: finalTableSeats(g.players.length),
+    finalTable: !!g.finalTable,
+    stacks: seated.map((p) => ({ id: p.id, chips: p.stack + p.total })),
+  };
+}
 export const canRestartHand = (g) => g.phase === 'done' && handStarts.has(g);
 export function startHand(g) {
   if (g.phase !== 'idle' && g.phase !== 'done') throw Error('当前牌局尚未结束。');
@@ -493,6 +518,7 @@ export function startHand(g) {
   g.hand++;
   g.dealer = seatedRing(g)[0].id;
   assignPositions(g);
+  g.notices = advanceTournament(g, seatedRing(g).length);
   g.board = [];
   g.practiceBoard = null;
   g.deck = shuffle(deckOfCards());
@@ -679,6 +705,8 @@ export function act(g, id, action, amount) {
       smallBlind: g.smallBlind,
       bigBlind: bigBlindOf(g),
       dealer: g.dealer,
+      tournament: tournamentView(g),
+      refillsLeft: heroRebuysLeft(g),
       emotionMode: g.emotionMode,
       difficulty: g.difficulty,
       publicReadModel: PUBLIC_READ_MODEL,
@@ -1051,6 +1079,7 @@ export function botDecision(g, random = Math.random, { trials, allInCache } = {}
     count: seatedRing(g).length,
     chipUnit: chipUnitOf(g),
     bigBlind: bigBlindOf(g),
+    tournament: tournamentView(g),
     inPosition:
       Array.from(
         { length: g.players.length },

@@ -8,14 +8,15 @@
 
 <view wx:if="{{!tableReady}}" class="launch-screen" aria-label="NOIR Poker">
   <image src="/assets/launch-icon.png" mode="aspectFit" />
+  <text class="launch-wordmark">NOIR POKER</text>
   <view class="launch-progress" />
 </view>
 <include src="./table-surface.wxml" />
 <page-container
-  show="{{tutorialActive}}"
+  show="{{tutorialActive || exitGuard}}"
   overlay="{{false}}"
   duration="{{0}}"
   z-index="{{0}}"
   custom-style="height: 0; overflow: hidden; background: transparent;"
-  bind:beforeleave="tutorialBack"
+  bind:beforeleave="pageBack"
 />

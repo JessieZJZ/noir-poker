@@ -21,7 +21,8 @@ import {
 import { chipUnitOf, fractionRaiseTo, legalRaiseTo } from './bet-sizing.js';
 import { deceptiveAction, isDonkLead } from './bot-deception.js';
 import { publicResponseRisk } from './public-action-context.js';
-import { preflopJamPlan } from './bot-preflop-commitment.js';
+import { preflopJamPlan, shortStackPlan } from './bot-preflop-commitment.js';
+import { survivalPremium } from './push-fold.js';
 import { postflopStyleLine, balancedPriceDefense, limpedPairValueLine } from './bot-style-lines.js';
 import { botOpeningSize, botReraiseSize } from './bot-opening-size.js';
 import { publicStrategyPlan } from './bot-strategy-plan.js';
@@ -663,7 +664,9 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
     smallCbet = false,
     thinValue = false,
     positionProbe = false,
-    linePlan = null;
+    linePlan = null,
+    pushFold = null,
+    survival = 0;
   const floatContinue = context.floatCandidate && roll('float', style.float) < style.float;
   const headsUp = assumedOpponents === 1,
     features = view.features,
@@ -883,6 +886,8 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
       premium,
       admitted,
       callTolerance,
+      pushFold,
+      survivalPremium: survival,
       checks,
       exceptions,
       sizing,
@@ -911,6 +916,23 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
     },
   });
   if (suitedLimp) return finish('call', 'affordable-entry');
+  // Short stacks only move all-in or fold preflop.
+  const short = shortStackPlan(view, profile);
+  if (short) {
+    pushFold = short;
+    if (short.action === 'raise') {
+      value = short.percentile <= short.width * 0.5;
+      sizing = {
+        desired: short.amount,
+        actual: short.amount,
+        minimum: legal.minRaiseTo,
+        maximum: legal.maxRaiseTo,
+        opening: !raises.length,
+        executed: true,
+      };
+    }
+    return finish(short.action, short.reason, short.amount);
+  }
   const jamPlan = preflopJamPlan(view, profile);
   const valueJam = () => {
     if (!jamPlan || equity + callTolerance < requiredEquity) return null;
@@ -947,14 +969,21 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
     // The sampled range already prices the exposed money. Pending responses
     // have their own buffer; adding another fixed margin systematically folds
     // profitable but close strong-hand calls, especially against open shoves.
-    const required = requiredEquity;
+    // Near the final table a call that can end the game needs more.
+    survival = survivalPremium(view);
+    const required = requiredEquity + survival;
     const lockedRiver =
       view.allIn.unbeatableRiver && view.allIn.guaranteedReturn >= view.allIn.cost;
     if (!lockedRiver && equity + callTolerance < required) {
       const close = required - equity - callTolerance <= 0.12;
       const mistake = view.difficulty === 'easy' && close ? 0.025 + callDown * 0.04 : 0;
       if (!mistake || roll('insufficient-equity', mistake) > mistake)
-        return finish('fold', 'insufficient-equity');
+        return finish(
+          'fold',
+          survival && equity + callTolerance >= requiredEquity
+            ? 'survival-fold'
+            : 'insufficient-equity',
+        );
       exceptions.push('insufficient-equity');
     }
     // A large non-all-in raise still leaves an opponent able to pay a value

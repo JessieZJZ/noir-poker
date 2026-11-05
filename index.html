@@ -28,11 +28,31 @@
         z-index: 2147483646;
         background: #0b1017 url('/launch-icon.png') center / 180px 180px no-repeat;
       }
+      /* The wordmark under the icon; body itself stays hidden until ready. */
+      html:not([data-app-ready='true']) body::before {
+        content: 'NOIR POKER';
+        visibility: visible !important;
+        position: fixed;
+        z-index: 2147483647;
+        top: calc(50% + 102px);
+        left: 0;
+        right: 0;
+        text-align: center;
+        color: #e9f2ef;
+        font:
+          700 18px/24px Manrope,
+          system-ui,
+          -apple-system,
+          'Segoe UI',
+          sans-serif;
+        letter-spacing: 6px;
+        text-indent: 6px;
+      }
       html:not([data-app-ready='true'])::after {
         content: '';
         position: fixed;
         z-index: 2147483647;
-        top: calc(50% + 118px);
+        top: calc(50% + 148px);
         left: calc(50% - 24px);
         width: 48px;
         height: 2px;
@@ -139,7 +159,12 @@
               <span class="session-label" id="session-number-label">第 1 局</span><span>·</span>
               <i class="hand-prefix">第</i> <b id="hand-number">01</b> <i class="hand-suffix">手</i>
               <span id="street-divider">·</span> <span id="street-label">准备发牌</span
-              ><span id="replay-label" class="replay-label" hidden></span>
+              ><span id="replay-label" class="replay-label" hidden></span
+              ><span id="entry-structure" class="entry-structure"
+                ><span id="entry-structure-levels">每 10 手涨盲，最高 1.5K / 3K</span
+                ><span aria-hidden="true"> · </span
+                ><span id="entry-structure-final">剩 3 人进入决赛圈</span></span
+              >
             </div>
             <div class="blind-info">盲注 <b id="blind-values">100 / 200</b></div>
             <section
@@ -295,9 +320,9 @@
                   </div>
                 </div>
                 <div class="action-buttons">
-                  <button id="fold-button" disabled class="action fold"><span>弃牌</span></button
-                  ><button id="raise-button" disabled class="action raise">
+                  <button id="raise-button" disabled class="action raise">
                     <span>加注至</span><strong id="raise-number">600</strong></button
+                  ><button id="fold-button" disabled class="action fold"><span>弃牌</span></button
                   ><button id="call-button" disabled class="action call"><span>过牌</span></button>
                 </div>
                 <button
@@ -508,7 +533,9 @@
             <div>
               <span id="stakes-label">起始盲注</span>
               <p id="stakes-description" class="setting-description">
-                点击小盲修改，大盲为小盲的两倍。
+                点击小盲修改，大盲为小盲的两倍。<span id="stakes-structure"
+                  >每 10 手升一级，最高 1.5K / 3K，剩 3 人进入决赛圈。</span
+                >
               </p>
             </div>
             <div class="blind-setting-values" aria-labelledby="stakes-label">

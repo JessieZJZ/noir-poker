@@ -280,6 +280,7 @@ function explanation(s, r, evKind, suggested, kind, { comparisonOwned = false } 
         : [],
     );
   if (r.code === 'weak-late-limp') return [r.reason, waitingNote(s, c)].filter(Boolean);
+  if (['short-stack-push-fold', 'survival-call'].includes(r.code)) return [r.reason];
   if (['unbacked-small-pair-reraise', 'unbacked-pair-reraise'].includes(r.code))
     return proseReason(
       [
@@ -958,6 +959,11 @@ export function coachDecision(s, r) {
       evKind = 'positive';
       evText = '两种模拟范围下，这条路线都比弃牌收益更高，但仍依赖后续打法。';
     }
+  }
+  // A small chip edge does not cover the cost of being knocked out.
+  if (r.code === 'survival-call' && evKind === 'positive') {
+    evKind = 'uncertain';
+    evText = '按筹码估计这次跟注略有收益，但跟注输了就会出局，这点收益不足以抵消出局的代价。';
   }
   const freeFold = r.code === 'free-fold';
   const confirmed = freeFold || evKind === 'negative' || !!improved;

@@ -274,9 +274,9 @@ test('mini-program bots move on right after the player acts, and a settled hand 
   );
   const actions = template.slice(template.indexOf('class="action-buttons"'));
   assert.ok(
-    actions.indexOf('data-action="fold"') < actions.indexOf('data-action="raise"') &&
-      actions.indexOf('data-action="raise"') < actions.indexOf('data-action="call"'),
-    'Fold sits left of raise, as on Web',
+    actions.indexOf('data-action="raise"') < actions.indexOf('data-action="fold"') &&
+      actions.indexOf('data-action="fold"') < actions.indexOf('data-action="call"'),
+    'Raise sits left of fold, as on Web',
   );
   const menu = template.slice(template.indexOf('class="resource-menu"'));
   assert.ok(menu.indexOf('openRecords') < menu.indexOf('openGuide'), 'Records lead the menu');

@@ -144,6 +144,8 @@ Page({
                   status: attempt.status,
                   superseded: attempt.superseded,
                   refill: attempt.refill,
+                  // The blinds this hand was dealt at; older hands used the start.
+                  blindText: `盲注 ${compactChips((attempt.blinds || session.stakes).smallBlind)} / ${compactChips((attempt.blinds || session.stakes).bigBlind)}`,
                   profit: attempt.profit,
                   cards: attempt.hole.map((card) => {
                     let artwork = this._cardArtwork.get(card.key);

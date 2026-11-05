@@ -29,12 +29,15 @@ const {
   WECHAT_RECORDS_BUDGET,
   createSnapshotFiles,
   ceremonySoundFiles,
+  tableSoundFiles,
   PREMIUM_SPARKS,
   CONFETTI_PIECES,
 } = require('./game-effects.js');
 // The tutorial's panel sits above the dock; landscape tablets have width to
 // spare instead, so the panel moves beside the table as on Web.
 // The header label rolls through every resource choice in menu order.
+// A second Back within this window leaves the mini program.
+const EXIT_CONFIRM_MS = 2000;
 const RESOURCE_LABELS = ['对局记录', '新手引导', '玩法指南', '胜率计算器'];
 const TUTORIAL_SIDE_WIDTH = 312;
 // Scripted hands lock the slider, so short phones give its row to the table.
@@ -158,6 +161,10 @@ module.exports = {
     tutorial: null,
     tutorialPlaying: false,
     tutorialActive: false,
+    // The live table's page-container takes Back: one press asks for a
+    // second (再按一次退出), which then leaves the mini program.
+    exitGuard: false,
+    containedScroll: false,
     tutorialCoachHeight: 0,
     tutorialSide: false,
     tutorialShortDock: false,
@@ -168,11 +175,28 @@ module.exports = {
   },
   onLoad() {
     this.updateWindow();
+    this.armExitGuard();
+    this._workerReady = typeof wx.preDownloadSubpackage !== 'function';
+    if (!this._workerReady)
+      try {
+        wx.preDownloadSubpackage({
+          packageType: 'workers',
+          success: () => (this._workerReady = true),
+          fail: () => {},
+        });
+      } catch {}
     this._audio = [];
     if (!this._readOnlyAttempt) this.preloadSounds();
     this._controller = createWechatController({
+      // The worker is its own subpackage. Until it has downloaded, a review
+      // runs the same analysis on the page thread.
       createReviewWorker:
-        typeof wx.createWorker === 'function' ? () => wx.createWorker('workers/review.js') : null,
+        typeof wx.createWorker === 'function'
+          ? () => {
+              if (!this._workerReady) throw Error('Review worker not downloaded yet');
+              return wx.createWorker('workers/review.js');
+            }
+          : null,
       loadTutorial: () => require.async('../../tutorial/lessons.js'),
       publish: (view) => {
         if (
@@ -189,9 +213,11 @@ module.exports = {
         const game = this._controller?.getGame();
         const board = view.board;
         const showdown = game ? showdownPresentation(game, view.profiles) : [];
+        // A table notice holds the deal; its end deals the cards afresh.
         const dealKey =
           `${view.sessionNumber}:${view.hand}:${view.replay}` +
-          (view.tutorialPlaying ? `:${view.tutorialDeal}` : '');
+          (view.tutorialPlaying ? `:${view.tutorialDeal}` : '') +
+          (view.noticeHold ? ':notice' : '');
         const changedDeal = dealKey !== this._dealKey;
         if (changedDeal) {
           this._motionEpoch = (this._motionEpoch || 0) + 1;
@@ -370,6 +396,7 @@ module.exports = {
   onShow() {
     const returningFromRecords = Boolean(this._browsingRecords);
     this._hidden = false;
+    this.armExitGuard();
     this._browsingRecords = false;
     const resized = this.updateWindow();
     watchWindow(this);
@@ -399,6 +426,7 @@ module.exports = {
   onHide() {
     stopWindowWatch(this);
     this._hidden = true;
+    clearTimeout(this._exitTimer);
     this.cancelRaise();
     clearTimeout(this._resourceTimer);
     clearTimeout(this._resourceMotionTimer);
@@ -427,6 +455,7 @@ module.exports = {
   onUnload() {
     stopWindowWatch(this);
     this._destroyed = true;
+    clearTimeout(this._exitTimer);
     this._raiseGesture = null;
     clearTimeout(this._resourceTimer);
     clearTimeout(this._resourceMotionTimer);
@@ -830,6 +859,8 @@ module.exports = {
       champion: 'champion',
       crowned: 'crowned',
       farewell: 'farewell',
+      levelup: 'levelup',
+      finaltable: 'finaltable',
     };
     if (!names[name]) return;
     // Finish both knocks before a following result cue. Keep only the latest
@@ -873,9 +904,9 @@ module.exports = {
     // Dispose any orphaned contexts before rebuilding a complete sound pool.
     this.stopSounds();
     if (!wx.createInnerAudioContext) return;
-    for (const name of ['fold', 'check', 'chip', 'deal', 'win']) {
+    const shortCue = (name, path) => {
       const audio = wx.createInnerAudioContext({ useWebAudioImplement: true });
-      audio.src = `/assets/sounds/${name}.wav`;
+      audio.src = path;
       audio.volume = 1;
       audio.obeyMuteSwitch = false;
       if (name === 'check')
@@ -892,8 +923,8 @@ module.exports = {
       });
       this._audio.push(audio);
       this._soundPool[name] = audio;
-    }
-    for (const [name, path] of Object.entries(ceremonySoundFiles())) {
+    };
+    const longCue = (name, path) => {
       const audio = wx.createInnerAudioContext();
       audio.src = path;
       audio.volume = 1;
@@ -901,7 +932,22 @@ module.exports = {
       audio.onError(() => {});
       this._audio.push(audio);
       this._soundPool[name] = audio;
-    }
+    };
+    for (const [name, path] of Object.entries(tableSoundFiles())) shortCue(name, path);
+    for (const [name, path] of Object.entries(ceremonySoundFiles())) longCue(name, path);
+    // Recordings come from the preloaded sounds subpackage. A pool rebuilt or
+    // stopped while it downloads ignores the late result.
+    const pool = this._soundPool;
+    if (typeof require.async === 'function')
+      require
+        .async('../../sounds/source.js')
+        .then((files) => {
+          if (this._soundPool !== pool || this._destroyed) return;
+          shortCue('chip', files.chip);
+          longCue('champion', files.champion);
+          longCue('crowned', files.crowned);
+        })
+        .catch(() => {});
   },
   stopSounds() {
     this.cancelSoundTail();
@@ -1367,6 +1413,31 @@ module.exports = {
   // The table is the first page, so the system Back would close the mini
   // program. While the tutorial is open an empty page container takes that
   // Back and returns to the paused table, as the Web history entry does.
+  // Saved hands (the history page) leave normally; only the live table guards.
+  armExitGuard() {
+    if (this._readOnlyAttempt || this.data.historyReadOnly) return;
+    clearTimeout(this._exitTimer);
+    if (!this.data.exitGuard || !this.data.containedScroll)
+      this.setData({ exitGuard: true, containedScroll: true });
+  },
+  // Back from the page-container: the tutorial closes, otherwise the first
+  // press asks for a second one within EXIT_CONFIRM_MS before the mini
+  // program may leave.
+  pageBack() {
+    // Back closed the page-container; reopen it (false, then true) so the
+    // table guards the next Back once the tutorial has closed.
+    if (this.data.tutorialActive) {
+      this.tutorialBack();
+      this.setData({ exitGuard: false }, () => this.armExitGuard());
+      return;
+    }
+    wx.showToast?.({ title: '再按一次退出', icon: 'none', duration: EXIT_CONFIRM_MS });
+    this.setData({ exitGuard: false });
+    clearTimeout(this._exitTimer);
+    this._exitTimer = setTimeout(() => {
+      if (!this._destroyed && !this._hidden) this.armExitGuard();
+    }, EXIT_CONFIRM_MS);
+  },
   tutorialBack() {
     this.call('exitTutorial');
   },

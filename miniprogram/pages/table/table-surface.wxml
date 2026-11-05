@@ -4,8 +4,8 @@
 
 <view
   wx:if="{{tableReady}}"
-  class="screen {{homeLocked ? 'home-locked' : ''}}"
-  style="padding-top: {{topInset + 36}}px; padding-bottom: {{bottomInset}}px; {{homeLocked ? 'top: ' + homeOffset + 'px;' : ''}}"
+  class="screen {{homeLocked ? 'home-locked' : ''}} {{(tutorialActive || containedScroll) && !historyReadOnly ? 'tutorial-scroll' : ''}}"
+  style="padding-top: {{topInset + 36}}px; padding-bottom: {{bottomInset}}px; {{homeLocked ? 'top: ' + homeOffset + 'px;' : ''}} {{(tutorialActive || containedScroll) && !historyReadOnly ? 'height: ' + windowHeight + 'px;' : ''}}"
 >
   <view
     class="nav {{compactNav ? 'nav-compact' : ''}} {{resourceMenuOpen ? 'resource-menu-active' : ''}}"
@@ -50,12 +50,16 @@
   </view>
   <view class="table-panel {{historyReadOnly ? 'history-panel' : ''}}">
     <view
-      class="game-shell entry-{{entryState}} {{historyReadOnly ? 'history-shell' : ''}} {{tutorialSide ? 'tutorial-side' : ''}}"
+      class="game-shell entry-{{entryState}} {{historyReadOnly ? 'history-shell' : ''}} {{tutorialSide ? 'tutorial-side' : ''}} {{noticeHold ? 'notice-hold' : ''}}"
       style="height: {{tableHeight + tableHeaderHeight + tutorialCoachHeight + (waitingForSeat ? 0 : historyReadOnly || compactActions ? compactDockHeight : liveDockHeight)}}px;"
     >
       <view class="game-header">
         <view class="hand-label"
-          ><text wx:if="{{waitingForSeat}}">{{street}}</text
+          ><block wx:if="{{waitingForSeat}}"
+            ><text>{{street}}</text
+            ><text class="entry-structure"
+              >{{entryStructure.levels}} · {{entryStructure.final}}</text
+            ></block
           ><block wx:else
             ><block wx:if="{{!tutorialPlaying}}"
               ><text class="session-label">第 {{sessionNumber}} 局</text
@@ -310,7 +314,13 @@
           ><view class="farewell-card"
             ><view class="farewell-ring" /><text class="farewell-title">很遗憾，本局结束</text
             ><text class="farewell-place">{{farewell.place}}</text
-            ><text class="farewell-note">补码次数已用完</text></view
+            ><text class="farewell-note">{{farewell.note}}</text></view
+          ></view
+        >
+        <view wx:for="{{tableNotices}}" wx:key="key" class="table-notice-stage" aria-role="status"
+          ><view class="table-notice-band table-notice-{{item.kind}}"
+            ><text class="table-notice-title">{{item.title}}</text
+            ><text class="table-notice-caption">{{item.caption}}</text></view
           ></view
         >
       </view>
@@ -476,20 +486,20 @@
           ><view class="action-buttons" wx:if="{{!heroFolded}}"
             ><button
               hover-class="none"
-              class="fold-button {{tutorialFocus.fold ? 'tutorial-focus' : ''}}"
-              data-action="fold"
-              bindtap="act"
-              disabled="{{!canAct || lockFold}}"
-            >
-              弃牌</button
-            ><button
-              hover-class="none"
               class="primary {{tutorialFocus.raise ? 'tutorial-focus' : ''}}"
               data-action="raise"
               bindtap="act"
               disabled="{{!canRaise || lockRaise}}"
             >
               加注 {{raiseText}}</button
+            ><button
+              hover-class="none"
+              class="fold-button {{tutorialFocus.fold ? 'tutorial-focus' : ''}}"
+              data-action="fold"
+              bindtap="act"
+              disabled="{{!canAct || lockFold}}"
+            >
+              弃牌</button
             ><button
               hover-class="none"
               class="call-button {{tutorialFocus.call ? 'tutorial-focus' : ''}}"
@@ -713,7 +723,9 @@
         <view class="setting-row stakes-setting-row">
           <view>
             <text>起始盲注</text>
-            <text class="setting-description">点击小盲修改，大盲为小盲的两倍。</text>
+            <text class="setting-description"
+              >点击小盲修改，大盲为小盲的两倍。{{stakesStructure}}</text
+            >
           </view>
           <view class="stakes-values">
             <input
@@ -966,7 +978,7 @@
 <view
   wx:if="{{tutorial.dialog}}"
   class="sheet tutorial-sheet"
-  style="top: {{topInset + (windowHeight - topInset - bottomInset) * 0.075}}px; max-height: {{(windowHeight - topInset - bottomInset) * 0.85}}px;"
+  style="top: {{topInset + (windowHeight - topInset - bottomInset) / 2}}px; max-height: {{(windowHeight - topInset - bottomInset) * 0.85}}px;"
 >
   <view class="dialog-heading"
     ><text class="eyebrow">{{tutorial.dialog.eyebrow}}</text

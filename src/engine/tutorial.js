@@ -440,7 +440,7 @@ function rigDeck(game, lesson) {
 }
 
 function tableFor(stakes, index) {
-  const game = newGame(5, stakes);
+  const game = newGame(5, stakes, { risingBlinds: false });
   game.difficulty = 'easy';
   game.emotionMode = 'off';
   game.hand = index;

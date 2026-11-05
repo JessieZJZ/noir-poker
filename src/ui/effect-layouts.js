@@ -1,3 +1,4 @@
+import { blindCap, finalTableSeats, HANDS_PER_LEVEL } from '../engine/blind-levels.js';
 // Deterministic particle layouts and timings shared by Web, native and WeChat.
 // Every platform renders the same elements with the same CSS custom
 // properties, so the motion is identical without platform-specific physics.
@@ -9,6 +10,38 @@ export const REBUY_DURATION_MS = 1300;
 export const CROWN_FLIGHT_MS = 4200;
 export const CONFETTI_DURATION_MS = 5800;
 export const FAREWELL_DURATION_MS = 2800;
+// Each table notice (final table, new blind level) holds about 1.2 s at the
+// centre before the hand is dealt; two notices play one after another.
+export const TABLE_NOTICE_MS = 1800;
+
+// The blind structure of a game before it starts, for the ready table and
+// settings: levels rise every ten hands up to a cap; the final table size.
+export function blindStructureText(stakes, playerCount, format) {
+  const cap = blindCap(stakes, playerCount),
+    seats = finalTableSeats(playerCount),
+    top = `${format(cap.smallBlind)} / ${format(cap.bigBlind)}`;
+  return {
+    levels: `每 ${HANDS_PER_LEVEL} 手涨盲，最高 ${top}`,
+    final: `剩 ${seats} 人进入决赛圈`,
+    settings: `每 ${HANDS_PER_LEVEL} 手升一级，最高 ${top}，剩 ${seats} 人进入决赛圈。`,
+  };
+}
+// Text of a hand's table notices, in display order. Callers localize it.
+export function tableNoticeText(notice, format) {
+  if (notice.kind === 'final-table')
+    return {
+      kind: notice.kind,
+      sound: 'finaltable',
+      title: '进入决赛圈',
+      caption: `剩余 ${notice.seats} 人争夺冠军 · 不能再补码`,
+    };
+  return {
+    kind: notice.kind,
+    sound: 'levelup',
+    title: `盲注升至 ${format(notice.smallBlind)} / ${format(notice.bigBlind)}`,
+    caption: notice.last ? '已到最高级别，不再上涨' : `每 ${HANDS_PER_LEVEL} 手升一级`,
+  };
+}
 
 function sequence(seed) {
   let state = seed >>> 0;

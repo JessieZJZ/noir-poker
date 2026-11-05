@@ -81,6 +81,7 @@ import {
 } from './bet-sizing.js';
 import { chipUnitOf, legalRaiseTo } from '../engine/bet-sizing.js';
 import { createSettlementLayout } from './settlement-layout.js';
+import { TABLE_NOTICE_MS, tableNoticeText, blindStructureText } from './effect-layouts.js';
 import { createPlayViewport } from './play-viewport.js';
 import { attachRaisePointer } from './raise-pointer.js';
 import { readPlayViewport } from './stable-viewport.js';
@@ -165,7 +166,7 @@ let ceremonyKey = '',
   crownedKey = '',
   rebuying = false,
   toastTimer = null;
-function showToast(message) {
+function showToast(message, duration = 3200) {
   const toast = $('#app-toast');
   setLocalizedText(toast, message);
   toast.hidden = false;
@@ -174,8 +175,12 @@ function showToast(message) {
   toastTimer = setTimeout(() => {
     toast.classList.add('is-leaving');
     toastTimer = setTimeout(() => (toast.hidden = true), 320);
-  }, 3200);
+  }, duration);
 }
+// Android Back at the table asks for a second press before leaving the app.
+document.addEventListener('noir:exit-prompt', (event) =>
+  showToast('再按一次退出', event.detail?.duration),
+);
 let requestedCount = tablePreferences.playerCount;
 let requestedStakes = tablePreferences.stakes;
 let stakesError = '',
@@ -426,7 +431,7 @@ function celebrate() {
   ceremonyKey = key;
   if (game.over.championId === null) {
     soundEffect('farewell');
-    effects.farewell($('.table-viewport'), game.over.heroPlace);
+    effects.farewell($('.table-viewport'), game.over.heroPlace, !!game.finalTable);
     return;
   }
   // Paint and place the hidden resting trophy first; the flight lands exactly on it.
@@ -476,6 +481,11 @@ function render() {
   );
   setLocalizedText($('#table-size-label'), count + ' 人无限注');
   setLocalizedText($('#blind-values'), `${format(game.smallBlind)} / ${format(game.bigBlind)}`);
+  if (waiting) {
+    const structure = blindStructureText(game.stakes, count, format);
+    setLocalizedText($('#entry-structure-levels'), structure.levels);
+    setLocalizedText($('#entry-structure-final'), structure.final);
+  }
   const displayBoard = game.practiceBoard || game.board;
   const hero = game.players[0],
     newHand = game.hand !== lastHand,
@@ -551,7 +561,7 @@ function render() {
     [...heroCards.children].forEach((node, i) =>
       node.classList.toggle('best-card', heroBest.has(hero.hole[i].key)),
     );
-  if (newHand && !tutorial && game.phase !== 'done' && isPremiumStart(hero.hole))
+  if (newHand && !noticeHolding && !tutorial && game.phase !== 'done' && isPremiumStart(hero.hole))
     effects.premiumStart($('.hero-cards-wrap'));
   $('.hero-name').classList.toggle('is-champion', crowned === 0);
   $('#hero-trophy-slot').innerHTML =
@@ -1035,6 +1045,29 @@ async function continueDeal() {
     }
   }
 }
+// A hand that reaches the final table or a new blind level announces it at
+// the screen centre first; the cards are dealt once the notices finish.
+let noticeHolding = false;
+function playTableNotices() {
+  noticeHolding = false;
+  const notices = (game.notices || []).map((notice) => tableNoticeText(notice, format));
+  if (tutorial || !notices.length) return 0;
+  const ticket = epoch;
+  noticeHolding = true;
+  $('.game-surface').classList.add('notice-hold');
+  effects.tableNotices(notices, {
+    shown: (notice) => soundEffect(notice.sound),
+    done() {
+      if (ticket !== epoch) return;
+      noticeHolding = false;
+      $('.game-surface').classList.remove('notice-hold');
+      lastHand = 0;
+      render();
+      soundEffect('deal');
+    },
+  });
+  return notices.length * TABLE_NOTICE_MS;
+}
 function nextHand() {
   if (tutorial) return;
   playerObservations.capture(game);
@@ -1073,13 +1106,13 @@ function nextHand() {
   $('#table-change-note').hidden = true;
   applyBotSettings(game, pendingBotSettings);
   startHand(game);
-  dealGate.begin();
+  dealGate.begin(playTableNotices());
   gameRecords.begin(game, { newSession: newRecordSession });
   newRecordSession = false;
   const legal = legalActions(game, 0);
   bet = legal.enabled ? legalRaiseTo(game.bigBlind * 3, legal) : game.bigBlind * 3;
   render();
-  soundEffect('deal');
+  if (!noticeHolding) soundEffect('deal');
   schedule();
 }
 // Refill and deal the next hand at once; the stack counts up during it.
@@ -1130,13 +1163,13 @@ function retryHand() {
     e.remove();
   });
   restartHand(game);
-  dealGate.begin();
+  dealGate.begin(playTableNotices());
   gameRecords.begin(game);
   lastHand = 0;
   lastBoard = 0;
   bet = game.bigBlind * 3;
   render();
-  soundEffect('deal');
+  if (!noticeHolding) soundEffect('deal');
   schedule();
   return true;
 }
@@ -1315,6 +1348,8 @@ function renderStakesSettings() {
   if (!editingSmallBlind) input.value = String(requestedStakes.smallBlind);
   input.setAttribute('aria-invalid', String(Boolean(stakesError)));
   $('#big-blind-value').textContent = format(requestedStakes.bigBlind);
+  const structure = blindStructureText(requestedStakes, requestedCount, format);
+  setLocalizedText($('#stakes-structure'), structure.settings);
   $('#stakes-error').hidden = !stakesError;
   setLocalizedText($('#stakes-error'), stakesError);
   const note = $('#stakes-change-note');
@@ -1638,6 +1673,8 @@ function publicState() {
     pendingStakes: !sameStakes(requestedStakes, game.stakes),
     smallBlind: game.smallBlind,
     bigBlind: game.bigBlind,
+    blindLevel: game.levelIndex ?? 0,
+    finalTable: !!game.finalTable,
     chipUnit: chipUnitOf(game),
     emotionMode: game.emotionMode,
     canContinue: canFastFinish(),

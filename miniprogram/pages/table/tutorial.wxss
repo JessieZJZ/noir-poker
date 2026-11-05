@@ -83,6 +83,10 @@
   margin-top: 4px;
 }
 .tutorial-options button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
   width: auto;
   min-width: 0;
   min-height: 34px;
@@ -170,11 +174,13 @@
     box-shadow: 0 0 0 2px rgba(255, 200, 87, 0.3);
   }
 }
+/* Centred in the area between the safe insets, like Web's modal dialog. */
 .tutorial-sheet {
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
   padding: 16px 20px 18px;
+  transform: translateY(-50%);
 }
 .tutorial-sheet-scroll {
   flex: 1 1 auto;
@@ -253,6 +259,11 @@
   margin-top: 14px;
 }
 .tutorial-sheet-actions button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 12px;
+  text-align: center;
   width: auto;
   min-width: 0;
   height: 48px;
@@ -272,4 +283,20 @@
   flex: 1;
   background: #6ee7c5;
   color: #06231c;
+}
+
+/* The live table's zero-height page-container takes Back (the tutorial exit,
+   or 再按一次退出), but WeChat stops the page itself from scrolling while it
+   is shown. The table scrolls inside its own box instead, one window high;
+   the sticky header sticks within it. */
+.screen.tutorial-scroll {
+  box-sizing: border-box;
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+/* Inside the padded scroll box the header's sticky offset starts below the
+   safe-area padding already, so it sticks at 0 there. */
+.screen.tutorial-scroll .nav {
+  top: 0 !important;
 }

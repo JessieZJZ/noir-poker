@@ -299,12 +299,12 @@ for (const [locale, title, button, primary] of [
   });
 }
 
-test('fold sits left of raise and call stays on the right', async ({ page }) => {
+test('raise sits left of fold and call stays on the right', async ({ page }) => {
   await ready(page);
   await page.evaluate(() => window.qa.heroTurn());
   const x = async (selector) => (await page.locator(selector).boundingBox()).x;
-  expect(await x('#fold-button')).toBeLessThan(await x('#raise-button'));
-  expect(await x('#raise-button')).toBeLessThan(await x('#call-button'));
+  expect(await x('#raise-button')).toBeLessThan(await x('#fold-button'));
+  expect(await x('#fold-button')).toBeLessThan(await x('#call-button'));
 });
 
 test('the focus ring is amber so it stands out from the mint buttons', async ({ page }) => {
