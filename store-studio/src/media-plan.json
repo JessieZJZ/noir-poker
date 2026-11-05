@@ -1,0 +1,77 @@
+{
+  "ready": true,
+  "ios": {
+    "zh-CN": {
+      "01-practice": "media/ios/zh-CN/01-practice.png",
+      "02-tutorial": "media/ios/zh-CN/02-tutorial.png",
+      "03-review": "media/ios/zh-CN/03-review.png",
+      "04-result": "media/ios/zh-CN/04-result.png",
+      "05-calculator": "media/ios/zh-CN/05-calculator.png",
+      "06-styles": "media/ios/zh-CN/06-styles.png",
+      "practice": "media/ios/zh-CN/practice.mp4",
+      "tutorial": "media/ios/zh-CN/tutorial.mp4",
+      "review": "media/ios/zh-CN/review.mp4",
+      "retry": "media/ios/zh-CN/retry.mp4",
+      "calculator": "media/ios/zh-CN/calculator.mp4"
+    },
+    "en": {
+      "01-practice": "media/ios/en/01-practice.png",
+      "02-tutorial": "media/ios/en/02-tutorial.png",
+      "03-review": "media/ios/en/03-review.png",
+      "04-result": "media/ios/en/04-result.png",
+      "05-calculator": "media/ios/en/05-calculator.png",
+      "06-styles": "media/ios/en/06-styles.png",
+      "practice": "media/ios/en/practice.mp4",
+      "tutorial": "media/ios/en/tutorial.mp4",
+      "review": "media/ios/en/review.mp4",
+      "retry": "media/ios/en/retry.mp4",
+      "calculator": "media/ios/en/calculator.mp4"
+    }
+  },
+  "android": {
+    "zh-CN": {
+      "01-practice": "media/android/zh-CN/01-practice.png",
+      "02-tutorial": "media/android/zh-CN/02-tutorial.png",
+      "03-review": "media/android/zh-CN/03-review.png",
+      "04-result": "media/android/zh-CN/04-result.png",
+      "05-calculator": "media/android/zh-CN/05-calculator.png",
+      "06-styles": "media/android/zh-CN/06-styles.png",
+      "practice": "media/android/zh-CN/practice.mp4",
+      "tutorial": "media/android/zh-CN/tutorial.mp4",
+      "review": "media/android/zh-CN/review.mp4",
+      "retry": "media/android/zh-CN/retry.mp4",
+      "calculator": "media/android/zh-CN/calculator.mp4"
+    },
+    "en": {
+      "01-practice": "media/android/en/01-practice.png",
+      "02-tutorial": "media/android/en/02-tutorial.png",
+      "03-review": "media/android/en/03-review.png",
+      "04-result": "media/android/en/04-result.png",
+      "05-calculator": "media/android/en/05-calculator.png",
+      "06-styles": "media/android/en/06-styles.png",
+      "practice": "media/android/en/practice.mp4",
+      "tutorial": "media/android/en/tutorial.mp4",
+      "review": "media/android/en/review.mp4",
+      "retry": "media/android/en/retry.mp4",
+      "calculator": "media/android/en/calculator.mp4"
+    }
+  },
+  "ipad": {
+    "zh-CN": {
+      "01-practice": "media/ipad/zh-CN/01-practice.png",
+      "02-tutorial": "media/ipad/zh-CN/02-tutorial.png",
+      "03-review": "media/ipad/zh-CN/03-review.png",
+      "04-result": "media/ipad/zh-CN/04-result.png",
+      "05-calculator": "media/ipad/zh-CN/05-calculator.png",
+      "06-styles": "media/ipad/zh-CN/06-styles.png"
+    },
+    "en": {
+      "01-practice": "media/ipad/en/01-practice.png",
+      "02-tutorial": "media/ipad/en/02-tutorial.png",
+      "03-review": "media/ipad/en/03-review.png",
+      "04-result": "media/ipad/en/04-result.png",
+      "05-calculator": "media/ipad/en/05-calculator.png",
+      "06-styles": "media/ipad/en/06-styles.png"
+    }
+  }
+}

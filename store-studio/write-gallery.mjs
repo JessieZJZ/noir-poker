@@ -1,0 +1,35 @@
+import { readFileSync, writeFileSync } from "node:fs";
+import path from "node:path";
+const output = path.resolve(process.argv[2]);
+const listing = JSON.parse(
+  readFileSync(path.join(output, "listings.json"), "utf8"),
+);
+const escape = (s) =>
+  String(s)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;");
+let languages = "";
+for (const [language, locale, title] of [
+  ["en", "en-US", "English"],
+  ["zh-CN", "zh-Hans", "简体中文"],
+]) {
+  const a = listing[locale].apple,
+    g = listing[locale].google;
+  const field = (name, value) =>
+    `<label>${name}<span>${[...value].length} 字符</span><textarea readonly rows="${value.length > 300 ? 13 : 2}">${escape(value)}</textarea></label>`;
+  languages += `<section id="${language}"><div class="section-head"><span>LOCALIZATION</span><h2>${title}</h2><p>${escape(a.subtitle)}</p></div>
+  <div class="films"><article><h3>App Store · 29 秒竖屏预览</h3><video class="portrait" controls preload="metadata" poster="${language}/apple/preview-narrated-poster.png"><source src="${language}/apple/preview-narrated.mp4" type="video/mp4"></video><p><a href="${language}/apple/preview-narrated.mp4">旁白版</a> · <a href="${language}/apple/preview-music.mp4">音乐版</a> · <a href="${language}/subtitles/captions.srt">SRT 字幕</a></p></article>
+  <article><h3>Google Play · 横屏功能介绍</h3><video controls preload="metadata" poster="${language}/google/preview-narrated-poster.png"><source src="${language}/google/preview-narrated.mp4" type="video/mp4"></video><p><a href="${language}/google/preview-narrated.mp4">旁白版</a> · <a href="${language}/google/preview-music.mp4">音乐版</a></p><h3>Feature Graphic · 1024 × 500</h3><img src="${language}/google/feature-graphic.png" alt="${title} Google Play feature graphic"></article></div>
+  <h3>六个核心体验</h3><div class="strip">${Array.from({ length: 6 }, (_, i) => `<a href="${language}/apple/iphone-large/${String(i + 1).padStart(2, "0")}.png"><img src="${language}/apple/iphone-large/${String(i + 1).padStart(2, "0")}.png" alt="功能截图 ${i + 1}"></a>`).join("")}</div>
+  <details><summary>iPad 与 Android 截图</summary><h3>iPad</h3><div class="strip tablet">${Array.from({ length: 6 }, (_, i) => `<a href="${language}/apple/ipad-13/${String(i + 1).padStart(2, "0")}.png"><img src="${language}/apple/ipad-13/${String(i + 1).padStart(2, "0")}.png" alt="iPad 功能截图 ${i + 1}"></a>`).join("")}</div><h3>Android</h3><div class="strip">${Array.from({ length: 6 }, (_, i) => `<a href="${language}/google/phone/${String(i + 1).padStart(2, "0")}.png"><img src="${language}/google/phone/${String(i + 1).padStart(2, "0")}.png" alt="Android 功能截图 ${i + 1}"></a>`).join("")}</div></details>
+  <details><summary>可复制的应用介绍字段</summary><div class="fields">${field("Apple 名称", a.name)}${field("Apple 副标题", a.subtitle)}${field("Apple 宣传文本", a.promotionalText)}${field("Apple 关键词", a.keywords)}${field("Google 简短描述", g.shortDescription)}${field("完整描述", a.description)}${field("审核说明", listing[locale].reviewNotes)}</div></details></section>`;
+}
+writeFileSync(
+  path.join(output, "index.html"),
+  `<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>NOIR Poker · Store Collection</title><style>
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:#080e15;color:#f2f4ea;font-family:system-ui,-apple-system,"PingFang SC",sans-serif;line-height:1.7}a{color:#9de7cd;text-decoration:none}a:hover{text-decoration:underline}nav{display:flex;justify-content:space-between;gap:20px;max-width:1380px;margin:auto;padding:32px 36px;letter-spacing:3px;font-size:13px}nav span{color:#a8c5b8;letter-spacing:0}header{max-width:1380px;margin:auto;padding:75px 36px 90px;position:relative}header:before{content:"";position:absolute;inset:0;background:radial-gradient(ellipse at 80% 30%,#2d725544,transparent 60%);pointer-events:none}.eyebrow,.section-head>span{color:#dfbd79;letter-spacing:4px;font-size:12px}h1{font-size:clamp(50px,6vw,88px);letter-spacing:-3px;line-height:1.15;max-width:950px;margin:26px 0}header p{font-size:19px;color:#b1c6bd;max-width:720px}header .links{display:flex;gap:24px;margin-top:35px;flex-wrap:wrap}.links a{border:1px solid #45695b;padding:10px 23px;border-radius:8px}main{max-width:1380px;margin:auto;padding:0 36px}section{border-top:1px solid #284338;padding:65px 0}h2{font-size:46px;line-height:1.2;margin:12px 0}h3{font-size:18px;font-weight:550;margin:30px 0 18px}.section-head p{color:#b1c6bd}.films{display:grid;grid-template-columns:.72fr 1fr;gap:42px;margin-top:45px}.films article{background:#101c23;padding:24px;border:1px solid #314b41;border-radius:20px}.films h3{margin-top:0}.films video{width:100%;display:block;border-radius:12px;background:#060a0d}.films .portrait{max-height:650px;object-fit:contain}.films img{width:100%;display:block;border-radius:12px}.films p{font-size:13px}.strip{display:flex;gap:16px;overflow-x:auto;padding:10px 0 24px;scroll-snap-type:x mandatory}.strip a{flex:0 0 218px;scroll-snap-align:start}.strip img{width:100%;border:1px solid #38594d;border-radius:12px;display:block}.strip.tablet a{flex-basis:430px}details{border-top:1px solid #284338;padding:22px 0}summary{cursor:pointer;color:#bce1d1}.fields{display:grid;grid-template-columns:1fr 1fr;gap:25px;margin-top:24px}label{font-size:14px;color:#c0d8cc}label span{float:right;color:#739989;font-size:12px}textarea{width:100%;display:block;resize:vertical;background:#101c23;color:#e5eee7;border:1px solid #365246;border-radius:8px;padding:14px;margin-top:7px;font:14px/1.8 system-ui}footer{max-width:1380px;margin:auto;padding:25px 36px 60px;color:#90b09f;font-size:13px}footer p{max-width:980px}@media(max-width:800px){nav,main,header,footer{padding-left:20px;padding-right:20px}.films,.fields{grid-template-columns:1fr}.films .portrait{max-height:620px}.strip a{flex-basis:180px}.strip.tablet a{flex-basis:330px}h1{letter-spacing:-1px;font-size:clamp(32px,9vw,50px)}nav{gap:10px;letter-spacing:2px}nav>a{white-space:nowrap}nav span{font-size:10px}}
+</style></head><body><nav><a href="#">NOIR POKER</a><span>STORE COLLECTION · 2026</span><a href="#en">EN / 中文</a></nav><header><div class="eyebrow">PRACTICE WITH PURPOSE</div><h1>每一手，<br>练习更好的判断。</h1><p>中英文核心体验素材：29 秒功能介绍、真实 App 截图、商店介绍文案与可编辑 Remotion 源文件。</p><div class="links"><a href="#zh-CN">查看中文素材</a><a href="#en">Explore English</a><a href="使用说明.txt">后台填写指南</a><a href="体验与验收报告.txt">体验与验收报告</a><a href="editable-remotion-source.zip">Remotion 源文件</a><a href="verification.json">技术校验结果</a></div></header><main>${languages}</main><footer><p>依据 <a href="${listing.source.pullRequest}">PR #70</a> · 源码 ${listing.source.commit.slice(0, 7)}。实际安装包录制于专用模拟器/仿真器；未宣称实体设备或商店审核通过。旁白为 macOS 系统合成语音，另附音乐版本。</p><p>公开隐私政策 URL 与 YouTube 视频 URL 尚待填写。视频未上传至 YouTube；没有提交商店或修改上架后台。素材与最终签名发行包需再次核对。</p></footer></body></html>`,
+);
+console.log("Created local review gallery");
