@@ -4426,6 +4426,19 @@ export async function nativeScenarios(app) {
     if (app.platform === 'android') {
       const beforeMinimize = await app.state();
       await app.preserveForegroundPage();
+      // The first Back at the table only shows the exit prompt; a second Back
+      // inside its two-second window leaves. Record the prompt in the page and
+      // press twice without slow driver reads in between.
+      await app.evaluate(() => {
+        window.__nativeExitPrompts = [];
+        document.addEventListener('noir:exit-prompt', () =>
+          window.__nativeExitPrompts.push({
+            at: performance.now(),
+            records: document.body.dataset.recordsPage || '',
+          }),
+        );
+      });
+      await app.back();
       await app.back();
       const nativeState = await app.waitFor(
         async () => {
@@ -4437,11 +4450,19 @@ export async function nativeScenarios(app) {
       );
       await app.activate();
       await waitGamePage();
+      const exitPrompt = await app.evaluate(() => ({
+        prompts: window.__nativeExitPrompts,
+        toast: document.querySelector('#app-toast').textContent.trim(),
+      }));
+      assert.equal(exitPrompt.prompts.length, 1, 'Only the first Back may show the exit prompt');
+      assert.ok(!['hand', 'list'].includes(exitPrompt.prompts[0].records));
+      assert.equal(exitPrompt.toast, '再按一次退出');
       const afterActivate = await app.state();
       assert.equal(afterActivate.sessionNumber, beforeMinimize.sessionNumber);
       assert.equal(afterActivate.hand, beforeMinimize.hand);
       assert.equal(await app.visible('#records-page'), false);
       returnGameBack = {
+        exitPrompt,
         nativeState,
         session: afterActivate.sessionNumber,
         hand: afterActivate.hand,

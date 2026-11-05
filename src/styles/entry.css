@@ -116,8 +116,11 @@
   align-self: start;
   padding-top: max(0px, calc((var(--hand-row) - 1.2em) / 2));
 }
+/* The blinds box still fills the row, so a retained taller row leaves no gap
+   above the hint line; its text stays at the top. */
 .game-surface .surface-top .blind-info {
-  align-self: start;
+  align-self: stretch;
+  align-items: flex-start;
   line-height: 1.4;
   padding-top: max(0px, calc((var(--hand-row) - 1.4em) / 2));
 }

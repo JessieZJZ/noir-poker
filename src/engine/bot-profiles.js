@@ -26,6 +26,7 @@ import { survivalPremium } from './push-fold.js';
 import { postflopStyleLine, balancedPriceDefense, limpedPairValueLine } from './bot-style-lines.js';
 import { botOpeningSize, botReraiseSize } from './bot-opening-size.js';
 import { publicStrategyPlan } from './bot-strategy-plan.js';
+import { evActionPlan } from './bot-ev.js';
 
 // Evidence-informed fictional training styles; numeric controls are authored.
 export const BOT_PROFILES = [
@@ -820,7 +821,24 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
     pureBluff = true;
     positionProbe = true;
   }
-  const finish = (action, reason, amount) => ({
+  let evCallOnly = false;
+  const finish = (action, reason, amount) => {
+    if (evCallOnly && action === 'raise') {
+      // The estimated-value step preferred calling to every raise size.
+      sizing = null;
+      deception = null;
+      const continues =
+        value ||
+        drawContinue ||
+        pairContinue ||
+        structuredPriceContinue ||
+        equity + callTolerance >= requiredEquity;
+      value = semiBluff = pureBluff = false;
+      return continues ? record('call', 'price-continue') : record('fold', 'insufficient-equity');
+    }
+    return record(action, reason, amount);
+  };
+  const record = (action, reason, amount) => ({
     action,
     ...(amount === undefined ? {} : { amount }),
     trace: {
@@ -992,6 +1010,43 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
     if (jam) return jam;
     return finish('call', exceptions.length ? 'loose-exception' : 'price-continue');
   }
+  // Postflop, the response model's estimated value chooses between checking
+  // or calling and each bet or raise size; fixed rules remain safety limits.
+  const evPlan = evActionPlan(view, profile, axes, () => roll('ev-choice', 1));
+  if (evPlan && evPlan.action !== 'call') {
+    linePlan = { ...evPlan, selected: true, executed: true };
+    if (evPlan.action === 'check') return finish('check', evPlan.reason);
+    // A small value bet in an unraised pot keeps the limped-pot line, so the
+    // review explains it as charging weaker pairs after the checks. The value
+    // judgement is already made; only the public situation is matched here.
+    const limped =
+      evPlan.motive === 'value' && legal.canCheck && limpedPairValueLine(view, style, 1);
+    if (limped) {
+      linePlan.kind = limped.kind;
+      evPlan.reason = 'value-raise';
+    }
+    value = evPlan.motive === 'value';
+    semiBluff = evPlan.motive === 'semi-bluff';
+    pureBluff = evPlan.motive === 'bluff';
+    sizing = {
+      actual: evPlan.amount,
+      executed: true,
+      fraction: evPlan.option.fraction,
+      minimum: legal.minRaiseTo,
+      maximum: legal.maxRaiseTo,
+      opening: false,
+    };
+    if (evPlan.reason === 'donk-lead')
+      deception = {
+        strategy: 'donk-lead',
+        source: 'public-response-model',
+        kind: value ? 'value' : semiBluff ? 'semi-bluff' : 'bluff',
+      };
+    return finish('raise', evPlan.reason, evPlan.amount);
+  }
+  // Calling was worth more than every raise: later steps may still fold on
+  // price, but no longer raise.
+  evCallOnly = !!evPlan;
   const strategic = publicStrategyPlan(view, style, profile, {
     equity,
     required: requiredEquity,
