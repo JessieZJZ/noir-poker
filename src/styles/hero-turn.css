@@ -148,6 +148,11 @@
     height: 20px;
     line-height: 20px;
   }
+  .game-surface .bet-presets button {
+    /* Preserve the original wager-block height when translated labels use a
+       tighter line height. Taller touch controls can still override this. */
+    min-height: 32px;
+  }
   .main .game-surface .action-panel .bet-controls {
     align-self: flex-end;
   }
