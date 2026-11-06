@@ -120,7 +120,7 @@ function translateCore(text, depth = 0) {
       const values = new Map(
         entry.slots.map((slot, i) => [slot, translate(match[i + 1], depth + 1)]),
       );
-      return entry.translation.replace(/\{\d+\}/g, (slot) => values.get(slot) ?? slot);
+      return interpolate(entry.translation, values);
     }
   let output = text;
   if (depth < 3)
@@ -130,12 +130,43 @@ function translateCore(text, depth = 0) {
         const values = new Map(
           entry.slots.map((slot, i) => [slot, translate(args[i + 1], depth + 1)]),
         );
-        return entry.translation.replace(/\{\d+\}/g, (slot) => values.get(slot) ?? slot);
+        return fragmentSpacing(
+          interpolate(entry.translation, values),
+          args.at(-2),
+          args.at(-1),
+          args[0].length,
+        );
       });
     }
   return phrases
-    ? output.replace(phrases, (match) => messages[normalized(match)] ?? match)
+    ? output.replace(phrases, (match, offset, source) => {
+        const value = messages[normalized(match)] ?? match;
+        return fragmentSpacing(value, offset, source, match.length);
+      })
     : output;
+}
+function fragmentSpacing(value, offset, source, length) {
+  if (locale.startsWith('zh') || locale === 'ja') return value;
+  // Only add spacing at translated fragment boundaries. Do not rewrite dots
+  // inside decimal amounts, proper names or source URLs.
+  const before = /[.!?]$/.test(source.slice(0, offset)) && /^[\p{L}\p{N}]/u.test(value);
+  const after = /[.!?]$/.test(value) && /^[\p{L}\p{N}]/u.test(source.slice(offset + length));
+  return (before ? ' ' : '') + value + (after ? ' ' : '');
+}
+function interpolate(template, values) {
+  const parts = template.split(/(\{\d+\})/).map((part) => values.get(part) ?? part);
+  return parts.reduce(
+    (text, part) =>
+      text +
+      (!locale.startsWith('zh') &&
+      locale !== 'ja' &&
+      /[.!?]$/.test(text) &&
+      /^[\p{L}\p{N}]/u.test(part)
+        ? ' '
+        : '') +
+      part,
+    '',
+  );
 }
 function translate(text, depth = 0) {
   // A public actor label is one value. Its "在 ... 位" must not be mistaken
@@ -168,6 +199,13 @@ export function localizeText(value) {
 }
 export function formatChips(value) {
   return compactChips(value, locale === 'en' ? 'en-US' : locale);
+}
+export function formatDecimal(value, digits = 2) {
+  return new Intl.NumberFormat(locale, {
+    useGrouping: false,
+    minimumFractionDigits: digits,
+    maximumFractionDigits: digits,
+  }).format(value);
 }
 const attributes = [
   'aria-label',

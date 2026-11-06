@@ -12,6 +12,7 @@ import { renderCard } from './cards.js';
 import { portraitContent } from './portraits.js';
 import { SEAT_ANCHORS } from './seat-geometry.js';
 import { visibleRecentAction } from './recent-action.js';
+import { blindProgressText } from './effect-layouts.js';
 export { visibleRecentAction } from './recent-action.js';
 const escape = (value) =>
   String(value)
@@ -174,7 +175,11 @@ export function createSnapshotSurface(template, g, { sessionNumber, visible, pee
   query('#street-divider').remove();
   setLocalizedText(query('#blind-values'), `${format(g.smallBlind)} / ${format(g.bigBlind)}`);
   query('#replay-label').hidden = !g.replayAttempt;
-  setLocalizedText(query('#replay-label'), '重打 ' + (g.replayAttempt || 0));
+  setLocalizedText(query('#replay-attempt'), '重打 ' + (g.replayAttempt || 0));
+  query('#dismiss-replay')?.remove();
+  const progress = blindProgressText(g);
+  query('#blind-progress').hidden = !progress;
+  setLocalizedText(query('#blind-progress'), progress);
   if (query('#coach-content')) query('#coach-content').hidden = true;
   setLocalizedHTML(
     query('.seats'),

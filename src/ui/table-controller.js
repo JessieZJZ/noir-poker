@@ -20,6 +20,7 @@ import {
 } from './table-scene.js';
 import {
   localizeText,
+  getLocale,
   formatChips,
   setLocalizedText,
   setLocalizedHTML,
@@ -81,7 +82,12 @@ import {
 } from './bet-sizing.js';
 import { chipUnitOf, legalRaiseTo } from '../engine/bet-sizing.js';
 import { createSettlementLayout } from './settlement-layout.js';
-import { TABLE_NOTICE_MS, tableNoticeText, blindStructureText } from './effect-layouts.js';
+import {
+  TABLE_NOTICE_MS,
+  tableNoticeText,
+  blindStructureText,
+  blindProgressText,
+} from './effect-layouts.js';
 import { createPlayViewport } from './play-viewport.js';
 import { attachRaisePointer } from './raise-pointer.js';
 import { readPlayViewport } from './stable-viewport.js';
@@ -104,9 +110,13 @@ let dealWait = null;
 const $ = (s) => document.querySelector(s);
 const coachContent = $('#coach-content');
 const settlementLayout = createSettlementLayout($('#arena'), { observe: false });
-document.addEventListener('noir:locale-changed', () =>
-  playViewport.update(game, game.phase === 'done'),
-);
+document.addEventListener('noir:locale-changed', () => {
+  // Format the current numeric values again; translated DOM strings retain
+  // the punctuation of the previous locale. No hand/timer/job is restarted.
+  render({ presentationOnly: true });
+  handReview.refreshLocale();
+  if (selectedPotSnapshot) renderPotDetails(currentPots(selectedPotSnapshot), selectedPotSnapshot);
+});
 const playViewport = createPlayViewport($('.game-surface'), {
   layout() {
     settlementLayout.update();
@@ -454,8 +464,14 @@ function celebrate() {
     },
   });
 }
-function render() {
-  if (!tutorial) {
+let dismissedReplay = '';
+const replayIdentity = () => `${epoch}:${game.hand}:${game.replayAttempt || 0}`;
+$('#dismiss-replay').onclick = () => {
+  dismissedReplay = replayIdentity();
+  $('#replay-label').hidden = true;
+};
+function render({ presentationOnly = false } = {}) {
+  if (!tutorial && !presentationOnly) {
     playerObservations.capture(game);
     gameRecords.capture(game);
   }
@@ -481,6 +497,9 @@ function render() {
   );
   setLocalizedText($('#table-size-label'), count + ' 人无限注');
   setLocalizedText($('#blind-values'), `${format(game.smallBlind)} / ${format(game.bigBlind)}`);
+  const progress = blindProgressText(game);
+  $('#blind-progress').hidden = !progress;
+  setLocalizedText($('#blind-progress'), progress);
   if (waiting) {
     const structure = blindStructureText(game.stakes, count, format);
     setLocalizedText($('#entry-structure-levels'), structure.levels);
@@ -496,8 +515,8 @@ function render() {
       : new Set();
   setLocalizedText($('#hand-number'), waiting ? '—' : String(game.hand).padStart(2, '0'));
   setLocalizedText($('#session-number-label'), `第 ${gameRecords.sessionNumber()} 局`);
-  $('#replay-label').hidden = !game.replayAttempt;
-  setLocalizedText($('#replay-label'), '重打 ' + game.replayAttempt);
+  $('#replay-label').hidden = !game.replayAttempt || dismissedReplay === replayIdentity();
+  setLocalizedText($('#replay-attempt'), '重打 ' + game.replayAttempt);
   setLocalizedText(
     $('#street-label'),
     waiting
@@ -749,11 +768,16 @@ function render() {
       `补充至 ${refillAmount}，即当前筹码领先者（CL）的一半，剩余 ${refillsLeft} 次`,
     );
   else $('#next-button').removeAttribute('title');
-  heroTurnCue.update({
-    key: `${game.hand}:${game.replayAttempt || 0}:${game.street}:${game.history?.length || 0}`,
-    enabled: canAct,
-    active: activityClock.active && vibration,
-  });
+  // A short mobile label fits translated actions while the accessible name
+  // still says which hand/game will start. Refills retain their count label.
+  $('#next-button').classList.toggle('has-mobile-label', !refill && !getLocale().startsWith('zh'));
+  setLocalizedAttribute($('#next-button'), 'data-mobile-label', '下一步');
+  if (!presentationOnly)
+    heroTurnCue.update({
+      key: `${game.hand}:${game.replayAttempt || 0}:${game.street}:${game.history?.length || 0}`,
+      enabled: canAct,
+      active: activityClock.active && vibration,
+    });
   syncTurnAttention();
   $('#turn-prompt').hidden = !canAct;
   for (const b of [$('#fold-button'), $('#call-button')]) b.disabled = !canAct;
@@ -822,7 +846,7 @@ function render() {
   lastHand = game.hand;
   lastBoard = displayBoard.length;
   playViewport.update(game, done);
-  celebrate();
+  if (!presentationOnly) celebrate();
 }
 function updateBet() {
   $('#bet-slider').dataset.raiseTo = String(bet);

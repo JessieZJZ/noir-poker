@@ -93,6 +93,8 @@ export function createReviewController({ card }) {
       decision = steps[selected],
       result = analysis?.steps[selected] || last.partial?.[selected];
     setLocalizedText($('#review-dialog-title'), '第 ' + input.hand + ' 手，决策复盘');
+    $('#review-result-change').classList.toggle('positive', input.outcome.profit > 0);
+    $('#review-result-change').classList.toggle('negative', input.outcome.profit < 0);
     setLocalizedText(
       $('#review-result-change'),
       input.outcome.profit < 0
@@ -368,6 +370,9 @@ export function createReviewController({ card }) {
   });
   return {
     openInput,
+    refreshLocale() {
+      if (dialog.open) renderDialog();
+    },
     update(g, token) {
       const key = token + ':' + g.hand;
       if (g.phase === 'done' && key !== seen) {

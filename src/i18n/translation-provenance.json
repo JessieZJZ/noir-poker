@@ -1266,5 +1266,31 @@
     "locales": ["en", "zh-TW", "ja", "ko", "es", "it", "pt", "de", "fr", "ru"],
     "method": "Assistant-authored factual turn-closing call sentence, limited to seeing the final community card. It does not claim a free river betting round, automatic showdown or absence of later betting; those conditions remain exclusively in the specific river plan.",
     "independentLinguisticReview": "not performed"
-  }
+  },
+  "targetedReviews": [
+    {
+      "date": "2026-11-06",
+      "baseline": "38337032eacf30eae24fdeb00da07451b1e7a099",
+      "scope": "PR70 language-review issue cards and approved UI copy; not a full-catalog linguistic certification",
+      "method": "AI language review against first-party poker rules and glossaries; repository behavior checked separately; no machine-translation API used",
+      "effectiveChangedKeys": {
+        "en": 69,
+        "zh-TW": 17,
+        "ja": 140,
+        "ko": 135,
+        "es": 85,
+        "it": 81,
+        "pt": 86,
+        "de": 137,
+        "fr": 87,
+        "ru": 93
+      },
+      "referenceDocuments": [
+        "docs/pr70-language-fixes-en-es-it-pt.md",
+        "docs/pr70-language-fixes-ja-ko-de.md",
+        "docs/pr70-language-fixes-zh-fr-ru.md"
+      ],
+      "nativeSpeakerCertification": false
+    }
+  ]
 }

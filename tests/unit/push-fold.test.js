@@ -153,6 +153,8 @@ test('the hero review recommends push or fold over a short min-raise or limp', (
   assert.equal(result.code, 'short-stack-push-fold');
   assert.equal(result.alternative.action, 'raise');
   assert.equal(result.alternative.amount, legal.maxRaiseTo);
+  assert.equal(result.title, '短筹码优先比较全下与弃牌');
+  assert.match(result.lesson, /可能.*位置、价格和合法动作/);
   assert.match(result.reason, /全下和弃牌之间选择/);
   assert.doesNotMatch(result.reason, /ICM|名次价值/);
 });

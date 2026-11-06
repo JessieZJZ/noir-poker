@@ -47,7 +47,7 @@ test('English templates preserve and reorder dynamic values, while rule state re
   );
   assert.equal(
     localizeText('跟注占可争夺底池约 40%。随机范围与行动加权范围下，底池权益分别约 50% / 47%。'),
-    'Calling costs about 40% of the eligible pot.Pot equity against random and action-weighted ranges is approximately 50% / 47%, respectively.',
+    'Calling costs about 40% of the eligible pot. Pot equity against random and action-weighted ranges is approximately 50% / 47%, respectively.',
   );
   assert.equal(JSON.stringify(game), before);
   assert.equal(formatChips(5000), '5K');
