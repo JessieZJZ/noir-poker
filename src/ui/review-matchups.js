@@ -25,7 +25,10 @@ function inlineParts(parts, separator = '') {
             ? ' '
             : '';
       if (text) previous = text;
-      return boundary + `<span>${esc(text)}</span>`;
+      // The caller localizes this markup. Only use the translated value to
+      // choose spacing; keep source text here so Japanese kanji are not
+      // mistaken for Chinese source phrases on a second translation pass.
+      return boundary + `<span>${esc(source)}</span>`;
     })
     .join('');
 }

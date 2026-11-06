@@ -42,7 +42,8 @@ test('review sentence spacing survives separate fact spans', async () => {
   ];
   await loadLocale('en');
   const html = renderReviewParagraphs([parts.join('')], null, 0, [parts]);
-  assert.match(html, /pot\.<\/span> <span>Pot equity/);
+  // Rendering preserves the source for the caller's one translation pass.
+  assert.match(html, /40%。<\/span> <span>随机范围/);
   assert.match(html, /40%/);
   assert.match(html, /50% \/ 47%/);
   await loadLocale('zh-CN');

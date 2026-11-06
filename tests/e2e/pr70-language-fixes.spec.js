@@ -165,3 +165,34 @@ for (const locale of ['es', 'it', 'pt', 'ru', 'ja'])
       );
     expect(overflow).toEqual([]);
   });
+
+for (const locale of ['en', 'ja'])
+  test(`${locale} review facts are translated once through the rendered DOM`, async ({ page }) => {
+    await page.goto('/');
+    await page.waitForFunction(() => !!window.qa);
+    await switchLocale(page, locale);
+    const result = await page.evaluate(async (locale) => {
+      const { renderReviewParagraphs } = await import('/src/ui/review-matchups.js');
+      const { localizeText, setLocalizedHTML } = await import('/src/i18n/index.js');
+      const parts =
+        locale === 'ja'
+          ? [
+              'River用A♠ 8♣主动开池，拿出 1K 建立底池，希望较弱起手牌跟入；后面的玩家若不愿付这笔筹码，就会直接弃牌。',
+              '其余一位玩家尚可行动，该玩家是否继续会改变你能争夺的底池和对抗人数。',
+            ]
+          : ['跟注占可争夺底池约 40%。', '随机范围与行动加权范围下，底池权益分别约 50% / 47%。'];
+      const element = document.createElement('div');
+      setLocalizedHTML(element, renderReviewParagraphs([parts.join('')], null, 0, [parts]));
+      return {
+        text: element.textContent,
+        once: parts.map(localizeText).join(locale === 'ja' ? '' : ' '),
+      };
+    }, locale);
+    expect(result.text).toBe(result.once);
+    if (locale === 'ja') {
+      expect(result.text).toContain('参加');
+      expect(result.text).toContain('次第');
+      expect(result.text).not.toContain('参と');
+      expect(result.text).not.toContain('次ハンド');
+    } else expect(result.text).toContain('pot. Pot equity');
+  });

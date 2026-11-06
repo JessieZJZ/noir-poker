@@ -665,17 +665,16 @@ function render({ presentationOnly = false } = {}) {
     setLocalizedText($('#info-winrate'), winrate);
   }
   const activityText = createActivityFormatter(game);
-  setLocalizedHTML(
-    activityList,
-    game.logs
-      .slice()
-      .reverse()
-      .map(
-        (l, i) =>
-          `<li value="${i + 1}" class="log-${l.type} ${l.player === 0 ? 'log-hero' : ''}">${activityText(l.text)}</li>`,
-      )
-      .join(''),
-  );
+  // The formatter translates each complete log before inserting actor badges.
+  // Its escaped output is already localized; do not translate it a second time.
+  activityList.innerHTML = game.logs
+    .slice()
+    .reverse()
+    .map(
+      (l, i) =>
+        `<li value="${i + 1}" class="log-${l.type} ${l.player === 0 ? 'log-hero' : ''}">${activityText(l.text)}</li>`,
+    )
+    .join('');
   setLocalizedText($('#activity-count'), game.phase === 'done' ? 'FINISHED' : 'LIVE');
   const done = game.phase === 'done';
   $('#arena').classList.toggle('is-done', done);

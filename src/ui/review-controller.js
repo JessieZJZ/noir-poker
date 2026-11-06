@@ -1,4 +1,4 @@
-import { formatChips, setLocalizedText, setLocalizedHTML } from '../i18n/index.js';
+import { formatChips, localizeText, setLocalizedText, setLocalizedHTML } from '../i18n/index.js';
 import {
   createReviewInput,
   actionLabel,
@@ -35,15 +35,17 @@ export function createReviewController({ card }) {
     const selection = opponentPerspective
       ? opponentSelection
       : { actorId: 0, sequence: last.input.decisions[selected]?.history.length + 1 };
-    setLocalizedHTML(
-      $('#review-activity-list'),
-      selectedActivity(last.input, selection.actorId, selection.sequence)
-        .map(
-          (event) =>
-            `<li class="${event.emphasized ? 'review-activity-emphasis' : ''} ${event.current ? 'review-activity-current' : ''}" ${event.current ? 'aria-current="step"' : ''}>${event.parts ? renderActivityParts(event.parts) : esc(event.text)}</li>`,
-        )
-        .join(''),
-    );
+    // Actor-aware logs are escaped and translated as complete sentences.
+    $('#review-activity-list').innerHTML = selectedActivity(
+      last.input,
+      selection.actorId,
+      selection.sequence,
+    )
+      .map(
+        (event) =>
+          `<li class="${event.emphasized ? 'review-activity-emphasis' : ''} ${event.current ? 'review-activity-current' : ''}" ${event.current ? 'aria-current="step"' : ''}>${event.parts ? renderActivityParts(event.parts) : esc(localizeText(event.text))}</li>`,
+      )
+      .join('');
   }
   const opponents = createOpponentReview({
     card,
