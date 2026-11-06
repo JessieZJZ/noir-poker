@@ -179,8 +179,7 @@ export function createSnapshotSurface(template, g, { sessionNumber, visible, pee
   setLocalizedText(query('#blind-values'), `${format(g.smallBlind)} / ${format(g.bigBlind)}`);
   query('#replay-label').hidden = !g.replayAttempt;
   setLocalizedText(query('#replay-attempt'), '重打 ' + (g.replayAttempt || 0));
-  query('#dismiss-replay')?.remove();
-  const progress = blindProgressText(g);
+  const progress = blindProgressText(g, format);
   query('#blind-progress').hidden = !progress;
   setLocalizedText(query('#blind-progress'), progress);
   if (query('#coach-content')) query('#coach-content').hidden = true;

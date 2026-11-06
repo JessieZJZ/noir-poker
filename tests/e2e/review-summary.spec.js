@@ -67,7 +67,7 @@ test('reported reviews render coherent causal summaries and preserve them across
       await expect(bot).not.toContainText(/\p{Script=Han}/u);
       await expect(hero).not.toContainText(/\p{Script=Han}/u);
     }
-    const callAmount = ['es', 'it', 'pt', 'de', 'fr', 'ru'].includes(locale) ? '6,3K' : '6.3K';
+    const callAmount = '6.3K';
     await expect(bot).toContainText(callAmount);
     await expect(bot).toContainText('7K');
     await expect(bot).not.toContainText(/\{\d+\}/);

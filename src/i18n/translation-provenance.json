@@ -1294,6 +1294,20 @@
       "followupSource": "对手最近一次翻前加注：{0}。",
       "gameAmountPresentation": "Generated game prose formats compact chips, decimal percentages and BB ratios after translation; residual sentence terminators use locale punctuation; actor labels and URLs preserved; no engine settlement changes",
       "observedNativeCopyFollowup": "A bounded review of the same 13 observed source keys across all 11 locales repairs definite dealing/hand terminology, action counters, waiting-count grammar and raise-right subjects, check/call grammar, showdown result and next-focus labels. Original UI/source facts and placeholders preserved. No shared runtime or layout changes."
+    },
+    {
+      "date": "2026-11-07",
+      "baseline": "679f44c2fbd60df834af46fc7ffeb29d9845225f",
+      "scope": "User follow-up: next-level blind countdown in 11 languages, short Japanese/Russian replay badges and German retry label, six static decimal examples; not a full-catalog linguistic certification",
+      "method": "AI targeted language review using existing first-party poker terminology references; no machine-translation API output adopted",
+      "numericPresentation": "All locales use decimal points and ungrouped dynamic digits; chip precision, signs, percentages, BB ratios, facts, identities and URLs preserved",
+      "referenceDocuments": [
+        "docs/pr70-language-fixes.md",
+        "docs/pr70-language-fixes-en-es-it-pt.md",
+        "docs/pr70-language-fixes-ja-ko-de.md",
+        "docs/pr70-language-fixes-zh-fr-ru.md"
+      ],
+      "nativeSpeakerCertification": false
     }
   ]
 }

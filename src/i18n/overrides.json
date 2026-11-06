@@ -965,7 +965,9 @@
     "{1} 次": "Actions: {1}",
     "本轮还有 {0} 位对手等待回应；若出现加注或者再加注，你需要重新决定是否继续。": "Opponents still to respond this round: {0}. If a raise or reraise occurs, you must decide again whether to continue. ",
     "本轮还有 {0} 位对手等待回应，但当前没有再次加注权，只能补跟或弃牌。": "Opponents still to respond this round: {0}. At present, raising again is not allowed; the only options are Call or Fold.",
-    "本手通过摊牌获得底池。": "You won a pot at showdown in this hand."
+    "本手通过摊牌获得底池。": "You won a pot at showdown in this hand.",
+    "再打 {0} 手后涨盲到 {1} / {2}": "Hands until blinds rise: {0} · {1} / {2}",
+    "下一手涨盲到 {0} / {1}": "Next hand: {0} / {1}"
   },
   "zh-TW": {
     "设置": "設定",
@@ -1821,7 +1823,9 @@
     "牌桌提示提供当前阶段的简短练习提醒。宽屏在右侧提示卡上开关；窄屏在设置中开关，提醒出现在牌桌左上方，可左右滑动阅读，几秒后收起。声音也可在设置中开关。所有设置保存在此设备，重打保留原来的对手风格与情绪。": "牌桌提示提供目前階段的簡短練習提醒。寬螢幕可在右側提示卡開關；窄螢幕可在設定中開關。提醒出現在牌桌左上方，可左右滑動閱讀，幾秒後收起。聲音也可在設定中開關。所有設定儲存在此裝置，重打保留原來的對手風格與情緒。",
     "短筹码优先比较全下与弃牌": "短籌碼優先比較全下與棄牌",
     "短筹码时，小额加注或平跟可能让后续难以弃牌；仍需结合位置、价格和合法动作比较。": "短籌碼時，小額加注或平跟可能讓後續難以棄牌；仍需結合位置、價格和合法動作比較。",
-    "对手最近一次翻前加注：{0}。": "對手最近一次翻前加注：{0}。"
+    "对手最近一次翻前加注：{0}。": "對手最近一次翻前加注：{0}。",
+    "再打 {0} 手后涨盲到 {1} / {2}": "再打 {0} 手後升盲至 {1} / {2}",
+    "下一手涨盲到 {0} / {1}": "下一手升盲至 {0} / {1}"
   },
   "ja": {
     "设置": "設定",
@@ -2674,7 +2678,10 @@
     "chip leader 的缩写，指当前仍在桌上、筹码最多的玩家。CL 会随每手结算变化；决赛圈前，输光后每局最多可补码三次，每次补到当时 CL 筹码的一半；决赛圈不可补码。": "chip leader（チップリーダー）の略で、現在テーブルに残っている中で最も多くのチップを持つプレイヤーです。CL は各ハンドの精算後に変わることがあります。ファイナルテーブルに入る前は、すべてのチップを失ったときに 1 ゲームにつき最大 3 回まで、その時点の CL の半分のスタックに補充できます。ファイナルテーブルでは補充できません。",
     "牌桌提示提供当前阶段的简短练习提醒。宽屏在右侧提示卡上开关；窄屏在设置中开关，提醒出现在牌桌左上方，可左右滑动阅读，几秒后收起。声音也可在设置中开关。所有设置保存在此设备，重打保留原来的对手风格与情绪。": "テーブルのヒントは、現在の段階に合った短い練習のアドバイスです。広い画面では右側のヒントカードで、狭い画面では設定からオン／オフにできます。ヒントはテーブルの左上に表示され、左右にスワイプして読めます。数秒後に折りたたまれます。サウンドも設定から切り替えられます。すべての設定はこの端末に保存され、やり直しでは元の相手のスタイルと気分が維持されます。",
     "对手最近一次翻前加注：{0}。": "対戦相手の直近のプリフロップレイズ：{0}。",
-    "次行动": "回のアクション"
+    "次行动": "回のアクション",
+    "再打 {0} 手后涨盲到 {1} / {2}": "あと {0} ハンドで {1} / {2} に上昇",
+    "下一手涨盲到 {0} / {1}": "次のハンドから {0} / {1}",
+    "重打 {0}": "やり直し {0}"
   },
   "ko": {
     "设置": "설정",
@@ -3530,7 +3537,9 @@
     "本手动态": "이번 핸드 기록",
     "次行动": "회의 액션",
     "{0}此前在{1}过牌，这次在{2}的行动是{3}；之前的过牌不能排除慢打的强牌，现在也可能是新公共牌带来的取值或诈唬，因此要重新判断这笔下注。": "{0}: {1}에서 체크했고, 이번 {2}의 액션은 {3}입니다. 이전에 체크했다고 해서 강한 핸드의 슬로플레이를 배제할 수는 없습니다. 새 커뮤니티 카드로 밸류 베팅이나 블러프 기회가 생겼을 수도 있으므로, 이번 베팅을 다시 판단해야 합니다.",
-    "{0}此前在{1}过牌，这次在{2}的行动是{3}，之前的过牌不能排除慢打的强牌，现在也可能是新公共牌带来的取值或诈唬，因此要重新判断这笔下注。": "{0}: {1}에서 체크했고, 이번 {2}의 액션은 {3}입니다. 이전에 체크했다고 해서 강한 핸드의 슬로플레이를 배제할 수는 없습니다. 새 커뮤니티 카드로 밸류 베팅이나 블러프 기회가 생겼을 수도 있으므로, 이번 베팅을 다시 판단해야 합니다."
+    "{0}此前在{1}过牌，这次在{2}的行动是{3}，之前的过牌不能排除慢打的强牌，现在也可能是新公共牌带来的取值或诈唬，因此要重新判断这笔下注。": "{0}: {1}에서 체크했고, 이번 {2}의 액션은 {3}입니다. 이전에 체크했다고 해서 강한 핸드의 슬로플레이를 배제할 수는 없습니다. 새 커뮤니티 카드로 밸류 베팅이나 블러프 기회가 생겼을 수도 있으므로, 이번 베팅을 다시 판단해야 합니다.",
+    "再打 {0} 手后涨盲到 {1} / {2}": "{0}핸드 후 블라인드 {1} / {2}",
+    "下一手涨盲到 {0} / {1}": "다음 핸드: {0} / {1}"
   },
   "es": {
     "设置": "Ajustes",
@@ -4389,7 +4398,10 @@
     "本手通过摊牌获得底池。": "Ganaste un bote en el showdown de esta mano.",
     "下次练习重点": "Enfoque de la próxima práctica",
     "{0}此前在{1}过牌，这次在{2}的行动是{3}；之前的过牌不能排除慢打的强牌，现在也可能是新公共牌带来的取值或诈唬，因此要重新判断这笔下注。": "{0} pasó en {1}. La acción en {2} es {3}. El check anterior no descarta una mano fuerte jugada de forma pasiva (slowplay). Con la nueva carta comunitaria, esta apuesta también podría ser por valor o un farol. Por eso, vuelve a evaluar esta apuesta.",
-    "{0}此前在{1}过牌，这次在{2}的行动是{3}，之前的过牌不能排除慢打的强牌，现在也可能是新公共牌带来的取值或诈唬，因此要重新判断这笔下注。": "{0} pasó en {1}. La acción en {2} es {3}. El check anterior no descarta una mano fuerte jugada de forma pasiva (slowplay). Con la nueva carta comunitaria, esta apuesta también podría ser por valor o un farol. Por eso, vuelve a evaluar esta apuesta."
+    "{0}此前在{1}过牌，这次在{2}的行动是{3}，之前的过牌不能排除慢打的强牌，现在也可能是新公共牌带来的取值或诈唬，因此要重新判断这笔下注。": "{0} pasó en {1}. La acción en {2} es {3}. El check anterior no descarta una mano fuerte jugada de forma pasiva (slowplay). Con la nueva carta comunitaria, esta apuesta también podría ser por valor o un farol. Por eso, vuelve a evaluar esta apuesta.",
+    "再打 {0} 手后涨盲到 {1} / {2}": "Manos hasta la subida: {0} · {1} / {2}",
+    "下一手涨盲到 {0} / {1}": "Próxima mano: {0} / {1}",
+    "跟注旁的数字是这次要补的筹码；加注旁的数字是这一轮累计投入的总额。例如你已投 200，对手加到 600：跟注要补 400，选择加注 1.2K 则补 1K。所有筹码金额都是当前筹码面额的倍数。": "El número junto a igualar indica las fichas adicionales que debes poner; el de subir indica tu apuesta total de esta ronda. Si ya has puesto 200 y un rival sube a 600, igualar añade 400. Subir a 1.2K añade 1K. Todos los importes de fichas son múltiplos de la denominación actual."
   },
   "it": {
     "设置": "Impostazioni",
@@ -5249,7 +5261,10 @@
     "本手通过摊牌获得底池。": "Hai vinto un piatto allo showdown in questa mano.",
     "下次练习重点": "Focus per la prossima pratica",
     "{0}此前在{1}过牌，这次在{2}的行动是{3}；之前的过牌不能排除慢打的强牌，现在也可能是新公共牌带来的取值或诈唬，因此要重新判断这笔下注。": "{0} ha fatto check al {1}. L'azione al {2} è {3}. Il check precedente non esclude una mano forte giocata in slowplay. Con la nuova carta comune, questa puntata potrebbe essere per valore o in bluff. Rivaluta quindi questa puntata.",
-    "{0}此前在{1}过牌，这次在{2}的行动是{3}，之前的过牌不能排除慢打的强牌，现在也可能是新公共牌带来的取值或诈唬，因此要重新判断这笔下注。": "{0} ha fatto check al {1}. L'azione al {2} è {3}. Il check precedente non esclude una mano forte giocata in slowplay. Con la nuova carta comune, questa puntata potrebbe essere per valore o in bluff. Rivaluta quindi questa puntata."
+    "{0}此前在{1}过牌，这次在{2}的行动是{3}，之前的过牌不能排除慢打的强牌，现在也可能是新公共牌带来的取值或诈唬，因此要重新判断这笔下注。": "{0} ha fatto check al {1}. L'azione al {2} è {3}. Il check precedente non esclude una mano forte giocata in slowplay. Con la nuova carta comune, questa puntata potrebbe essere per valore o in bluff. Rivaluta quindi questa puntata.",
+    "再打 {0} 手后涨盲到 {1} / {2}": "Mani al prossimo aumento: {0} · {1} / {2}",
+    "下一手涨盲到 {0} / {1}": "Prossima mano: {0} / {1}",
+    "跟注旁的数字是这次要补的筹码；加注旁的数字是这一轮累计投入的总额。例如你已投 200，对手加到 600：跟注要补 400，选择加注 1.2K 则补 1K。所有筹码金额都是当前筹码面额的倍数。": "Il numero accanto al call indica le fiches da aggiungere; quello accanto al rilancio indica la puntata totale di questo giro. Se hai già puntato 200 e un avversario rilancia a 600, il call aggiunge 400. Rilanciare a 1.2K aggiunge 1K. Tutti gli importi sono multipli del taglio attuale delle fiches."
   },
   "pt": {
     "设置": "Definições",
@@ -6107,7 +6122,10 @@
     "下次练习重点": "Foco da próxima prática",
     "{1} 次": "Ações: {1}",
     "{0}此前在{1}过牌，这次在{2}的行动是{3}；之前的过牌不能排除慢打的强牌，现在也可能是新公共牌带来的取值或诈唬，因此要重新判断这笔下注。": "{0} deu check no {1}. A ação no {2} é {3}. O check anterior não descarta uma mão forte jogada em slowplay. A nova carta comunitária também pode dar origem a uma aposta por valor ou a um blefe. Por isso, reavalie esta aposta.",
-    "{0}此前在{1}过牌，这次在{2}的行动是{3}，之前的过牌不能排除慢打的强牌，现在也可能是新公共牌带来的取值或诈唬，因此要重新判断这笔下注。": "{0} deu check no {1}. A ação no {2} é {3}. O check anterior não descarta uma mão forte jogada em slowplay. A nova carta comunitária também pode dar origem a uma aposta por valor ou a um blefe. Por isso, reavalie esta aposta."
+    "{0}此前在{1}过牌，这次在{2}的行动是{3}，之前的过牌不能排除慢打的强牌，现在也可能是新公共牌带来的取值或诈唬，因此要重新判断这笔下注。": "{0} deu check no {1}. A ação no {2} é {3}. O check anterior não descarta uma mão forte jogada em slowplay. A nova carta comunitária também pode dar origem a uma aposta por valor ou a um blefe. Por isso, reavalie esta aposta.",
+    "再打 {0} 手后涨盲到 {1} / {2}": "Mãos até subir os blinds: {0} · {1} / {2}",
+    "下一手涨盲到 {0} / {1}": "Próxima mão: {0} / {1}",
+    "跟注旁的数字是这次要补的筹码；加注旁的数字是这一轮累计投入的总额。例如你已投 200，对手加到 600：跟注要补 400，选择加注 1.2K 则补 1K。所有筹码金额都是当前筹码面额的倍数。": "O número ao lado do call indica as fichas adicionais a colocar; o número ao lado do raise indica a aposta total desta rodada. Se já colocou 200 e um adversário aumenta para 600, o call acrescenta 400. Aumentar para 1.2K acrescenta 1K. Todos os valores são múltiplos da denominação atual das fichas."
   },
   "de": {
     "设置": "Einstellungen",
@@ -6966,7 +6984,11 @@
     "{0}{1}跟注 {2}": "{0}{1}: Call {2}",
     "次行动": "Aktionen",
     "本轮还有 {0} 位对手等待回应；若出现加注或者再加注，你需要重新决定是否继续。": "Gegner mit ausstehender Aktion in dieser Setzrunde: {0}. Bei einer Erhöhung oder erneuten Erhöhung musst du neu entscheiden, ob du weiterspielst.",
-    "本轮还有 {0} 位对手等待回应，但当前没有再次加注权，只能补跟或弃牌。": "Gegner mit ausstehender Aktion in dieser Setzrunde: {0}. Du darfst derzeit nicht erneut erhöhen; du kannst nur callen oder folden."
+    "本轮还有 {0} 位对手等待回应，但当前没有再次加注权，只能补跟或弃牌。": "Gegner mit ausstehender Aktion in dieser Setzrunde: {0}. Du darfst derzeit nicht erneut erhöhen; du kannst nur callen oder folden.",
+    "再打 {0} 手后涨盲到 {1} / {2}": "Hände bis zur Erhöhung: {0} · {1} / {2}",
+    "下一手涨盲到 {0} / {1}": "Nächste Hand: {0} / {1}",
+    "跟注旁的数字是这次要补的筹码；加注旁的数字是这一轮累计投入的总额。例如你已投 200，对手加到 600：跟注要补 400，选择加注 1.2K 则补 1K。所有筹码金额都是当前筹码面额的倍数。": "Die Zahl neben Call ist der jetzt nachzuzahlende Betrag. Die Zahl neben Raise ist dein gesamter Einsatz in dieser Runde. Hast du schon 200 gesetzt und der Gegner erhöht auf 600, kostet der Call weitere 400. Ein Raise auf 1.2K kostet weitere 1K. Alle Beträge sind Vielfache des aktuellen Chipwerts.",
+    "重打本手": "Wiederholen"
   },
   "fr": {
     "设置": "Paramètres",
@@ -7905,7 +7927,10 @@
     "下次练习重点": "Priorité pour le prochain entraînement",
     "{0}此前在{1}过牌，这次在{2}的行动是{3}；之前的过牌不能排除慢打的强牌，现在也可能是新公共牌带来的取值或诈唬，因此要重新判断这笔下注。": "{0} : check précédent ({1}) ; action actuelle ({2}) : {3}. Le check précédent n’exclut pas une main forte jouée en slowplay. La nouvelle carte du board peut aussi expliquer une mise de value ou un bluff ; réévaluez donc cette mise.",
     "{0}此前在{1}过牌，这次在{2}的行动是{3}，之前的过牌不能排除慢打的强牌，现在也可能是新公共牌带来的取值或诈唬，因此要重新判断这笔下注。": "{0} : check précédent ({1}) ; action actuelle ({2}) : {3}. Le check précédent n’exclut pas une main forte jouée en slowplay. La nouvelle carte du board peut aussi expliquer une mise de value ou un bluff ; réévaluez donc cette mise.",
-    "{0}{1}跟注 {2}": "{0}{1} · Suivre {2}"
+    "{0}{1}跟注 {2}": "{0}{1} · Suivre {2}",
+    "再打 {0} 手后涨盲到 {1} / {2}": "Mains avant la hausse : {0} · {1} / {2}",
+    "下一手涨盲到 {0} / {1}": "Main suivante : {0} / {1}",
+    "跟注旁的数字是这次要补的筹码；加注旁的数字是这一轮累计投入的总额。例如你已投 200，对手加到 600：跟注要补 400，选择加注 1.2K 则补 1K。所有筹码金额都是当前筹码面额的倍数。": "Le nombre à côté de suivre indique les jetons à ajouter ; celui à côté de relancer indique votre mise totale pour ce tour. Si vous avez déjà misé 200 et qu’un adversaire relance à 600, suivre ajoute 400. Relancer à 1.2K ajoute 1K. Tous les montants sont des multiples de la valeur unitaire actuelle des jetons."
   },
   "ru": {
     "设置": "Настройки",
@@ -8785,7 +8810,7 @@
     "重打本手": "Переиграть",
     "重打这手牌": "Переиграть раздачу",
     "↺ 重打这手牌": "↺ Переиграть раздачу",
-    "重打 {0}": "Переигрывание № {0}",
+    "重打 {0}": "Повтор {0}",
     "恢复本手起始筹码、底牌和发牌顺序，撤回原结算": "Восстановить начальные стеки, карманные карты и порядок колоды; отменить предыдущий результат раздачи",
     "重打本手 · 底牌与发牌顺序不变，原结算已撤回。": "Переигрывание: карманные карты и порядок колоды прежние; предыдущий результат отменён.",
     "第 {0} 手 · 第 {1} 次重打，原结算已撤回": "Раздача {0} · Переигрывание № {1}; предыдущий результат отменён",
@@ -8849,6 +8874,9 @@
     "本手动态": "Действия в этой раздаче",
     "{0}此前在{1}过牌，这次在{2}的行动是{3}；之前的过牌不能排除慢打的强牌，现在也可能是新公共牌带来的取值或诈唬，因此要重新判断这笔下注。": "{0}: ранее — чек ({1}); текущее действие ({2}) — {3}. Предыдущий чек не исключает сильную руку, разыгранную слоуплеем. Новая общая карта также может объяснять ставку на вэлью или блеф, поэтому эту ставку нужно оценить заново.",
     "{0}此前在{1}过牌，这次在{2}的行动是{3}，之前的过牌不能排除慢打的强牌，现在也可能是新公共牌带来的取值或诈唬，因此要重新判断这笔下注。": "{0}: ранее — чек ({1}); текущее действие ({2}) — {3}. Предыдущий чек не исключает сильную руку, разыгранную слоуплеем. Новая общая карта также может объяснять ставку на вэлью или блеф, поэтому эту ставку нужно оценить заново.",
-    "{0}{1}跟注 {2}": "{0}{1}: колл {2}"
+    "{0}{1}跟注 {2}": "{0}{1}: колл {2}",
+    "再打 {0} 手后涨盲到 {1} / {2}": "Раздач до повышения: {0} · {1} / {2}",
+    "下一手涨盲到 {0} / {1}": "Следующая раздача: {0} / {1}",
+    "跟注旁的数字是这次要补的筹码；加注旁的数字是这一轮累计投入的总额。例如你已投 200，对手加到 600：跟注要补 400，选择加注 1.2K 则补 1K。所有筹码金额都是当前筹码面额的倍数。": "Число рядом с коллом показывает, сколько фишек нужно добавить; число рядом с рейзом — общий размер вашей ставки в этом круге. Если вы уже поставили 200, а соперник повысил до 600, колл добавит 400. Рейз до 1.2K добавит 1K. Все суммы фишек кратны текущему номиналу фишки."
   }
 }

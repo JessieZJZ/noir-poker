@@ -1627,7 +1627,7 @@
   "这是{0}控池：底池已经有 {1}，{2}过牌不再加大投入，保留当前牌力的摊牌机会。": "É controlo do pote com ({0}): o pote já contém {1}. O jogador ({2}) deu check sem investir mais, preservando a possibilidade de chegar ao showdown com a mão atual.",
   "当前牌力是{0}，另外还有{1}。": "A mão atual é ({0}), com também ({1}). ",
   "玩家筹码必须是筹码面额的倍数。": "O chip do jogador deve ser a denominação atual das fichas vezes.",
-  "跟注旁的数字是这次要补的筹码；加注旁的数字是这一轮累计投入的总额。例如你已投 200，对手加到 600：跟注要补 400，选择加注 1.2K 则补 1K。所有筹码金额都是当前筹码面额的倍数。": "O número ao lado do call indica as fichas adicionais a colocar; o número ao lado do raise indica a aposta total desta rodada. Se já colocou 200 e um adversário aumenta para 600, o call acrescenta 400. Aumentar para 1,2K acrescenta 1K. Todos os valores são múltiplos da denominação atual das fichas.",
+  "跟注旁的数字是这次要补的筹码；加注旁的数字是这一轮累计投入的总额。例如你已投 200，对手加到 600：跟注要补 400，选择加注 1.2K 则补 1K。所有筹码金额都是当前筹码面额的倍数。": "O número ao lado do call indica as fichas adicionais a colocar; o número ao lado do raise indica a aposta total desta rodada. Se já colocou 200 e um adversário aumenta para 600, o call acrescenta 400. Aumentar para 1.2K acrescenta 1K. Todos os valores são múltiplos da denominação atual das fichas.",
   "请输入正整数筹码面额；盲注和起始筹码须为面额的倍数，小盲小于大盲，起始筹码不少于大盲。": "Insira uma denominação inteira positiva. Blinds e stack inicial devem ser múltiplos dela; o small blind deve ser menor que o big blind e o stack inicial deve cobrir o big blind.",
   "牌桌筹码必须是筹码面额的倍数。": "Os chips de mesa devem ser a denominação atual das fichas vezes.",
   "投入筹码必须是筹码面额的倍数。": "Os chips de entrada devem ser a denominação atual das fichas vezes.",
@@ -3008,5 +3008,7 @@
   "全下跟注 {0}": "Pagar all-in {0}",
   "{0} 获得底池 {1} 筹码": "{0} ganha {1} fichas do pote",
   "{0} · 本次补入 {1}，本轮累计投入 {2}": "{0} · Acrescentado agora: {1}; total apostado nesta rodada: {2}",
-  "对手最近一次翻前加注：{0}。": "Último aumento pré-flop de um adversário: {0}."
+  "对手最近一次翻前加注：{0}。": "Último aumento pré-flop de um adversário: {0}.",
+  "再打 {0} 手后涨盲到 {1} / {2}": "Mãos até subir os blinds: {0} · {1} / {2}",
+  "下一手涨盲到 {0} / {1}": "Próxima mão: {0} / {1}"
 }

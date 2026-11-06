@@ -159,6 +159,8 @@
               <span class="session-label" id="session-number-label">第 1 局</span><span>·</span>
               <i class="hand-prefix">第</i> <b id="hand-number">01</b> <i class="hand-suffix">手</i>
               <span id="street-divider">·</span> <span id="street-label">准备发牌</span
+              ><span id="replay-label" class="replay-label" hidden
+                ><span id="replay-attempt"></span></span
               ><span id="entry-structure" class="entry-structure"
                 ><span id="entry-structure-levels">每 10 手涨盲，最高 1.5K / 3K</span
                 ><span aria-hidden="true"> · </span
@@ -168,10 +170,6 @@
             <div class="blind-info">盲注 <b id="blind-values">100 / 200</b></div>
             <div class="surface-bottom">
               <div class="table-notices">
-                <span id="replay-label" class="replay-label" hidden>
-                  <span id="replay-attempt"></span>
-                  <button id="dismiss-replay" type="button" aria-label="关闭本手重打提示">×</button>
-                </span>
                 <section
                   class="hint-banner"
                   id="coach-content"

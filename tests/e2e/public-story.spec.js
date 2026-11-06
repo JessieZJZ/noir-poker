@@ -66,7 +66,7 @@ for (const [group, locales] of [
       const body = await open(page, game);
       await expect(page.locator('html')).toHaveAttribute('lang', locale);
       const text = await body.innerText();
-      const riverBet = ['es', 'it', 'pt', 'de', 'fr', 'ru'].includes(locale) ? '1,37M' : '1.37M';
+      const riverBet = '1.37M';
       for (const amount of ['500K', riverBet]) expect(text, locale).toContain(amount);
       if (!['zh-CN', 'zh-TW', 'ja'].includes(locale))
         expect(text, locale).not.toMatch(/\p{Script=Han}/u);

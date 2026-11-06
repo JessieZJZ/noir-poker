@@ -1617,7 +1617,7 @@
   "这是{0}控池：底池已经有 {1}，{2}过牌不再加大投入，保留当前牌力的摊牌机会。": "È controllo del piatto con ({0}): nel piatto ci sono già {1}. Il giocatore ({2}) ha fatto check senza investire di più, conservando la possibilità di arrivare allo showdown con la mano attuale.",
   "当前牌力是{0}，另外还有{1}。": "La mano attuale è ({0}), con anche ({1}). ",
   "玩家筹码必须是筹码面额的倍数。": "Il chip del giocatore deve essere il taglio attuale delle fiches volte.",
-  "跟注旁的数字是这次要补的筹码；加注旁的数字是这一轮累计投入的总额。例如你已投 200，对手加到 600：跟注要补 400，选择加注 1.2K 则补 1K。所有筹码金额都是当前筹码面额的倍数。": "Il numero accanto al call indica le fiches da aggiungere; quello accanto al rilancio indica la puntata totale di questo giro. Se hai già puntato 200 e un avversario rilancia a 600, il call aggiunge 400. Rilanciare a 1,2K aggiunge 1K. Tutti gli importi sono multipli del taglio attuale delle fiches.",
+  "跟注旁的数字是这次要补的筹码；加注旁的数字是这一轮累计投入的总额。例如你已投 200，对手加到 600：跟注要补 400，选择加注 1.2K 则补 1K。所有筹码金额都是当前筹码面额的倍数。": "Il numero accanto al call indica le fiches da aggiungere; quello accanto al rilancio indica la puntata totale di questo giro. Se hai già puntato 200 e un avversario rilancia a 600, il call aggiunge 400. Rilanciare a 1.2K aggiunge 1K. Tutti gli importi sono multipli del taglio attuale delle fiches.",
   "请输入正整数筹码面额；盲注和起始筹码须为面额的倍数，小盲小于大盲，起始筹码不少于大盲。": "Inserisci un taglio intero positivo. Blind e stack iniziale devono esserne multipli; lo small blind deve essere inferiore al big blind e lo stack iniziale deve coprire il big blind.",
   "牌桌筹码必须是筹码面额的倍数。": "Le chips da tavolo devono essere il taglio attuale delle fiches volte.",
   "投入筹码必须是筹码面额的倍数。": "Il chip di ingresso deve essere il taglio attuale delle fiches volte.",
@@ -3006,5 +3006,7 @@
   "全下跟注 {0}": "Call all-in {0}",
   "{0} 获得底池 {1} 筹码": "{0} vince {1} chip dal piatto",
   "{0} · 本次补入 {1}，本轮累计投入 {2}": "{0} · Aggiunto ora: {1}; totale puntato in questo giro: {2}",
-  "对手最近一次翻前加注：{0}。": "Ultimo rilancio preflop di un avversario: {0}."
+  "对手最近一次翻前加注：{0}。": "Ultimo rilancio preflop di un avversario: {0}.",
+  "再打 {0} 手后涨盲到 {1} / {2}": "Mani al prossimo aumento: {0} · {1} / {2}",
+  "下一手涨盲到 {0} / {1}": "Prossima mano: {0} / {1}"
 }

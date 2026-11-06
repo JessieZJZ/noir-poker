@@ -1627,7 +1627,7 @@
   "这是{0}控池：底池已经有 {1}，{2}过牌不再加大投入，保留当前牌力的摊牌机会。": "Es control del bote con ({0}): el bote ya contiene {1}. El jugador ({2}) pasó para no invertir más y conservar la posibilidad de llegar al showdown con la mano actual.",
   "当前牌力是{0}，另外还有{1}。": "La mano actual es ({0}), y también tiene ({1}). ",
   "玩家筹码必须是筹码面额的倍数。": "Los chips de jugador deben ser la denominación actual de fichas veces.",
-  "跟注旁的数字是这次要补的筹码；加注旁的数字是这一轮累计投入的总额。例如你已投 200，对手加到 600：跟注要补 400，选择加注 1.2K 则补 1K。所有筹码金额都是当前筹码面额的倍数。": "El número junto a igualar indica las fichas adicionales que debes poner; el de subir indica tu apuesta total de esta ronda. Si ya has puesto 200 y un rival sube a 600, igualar añade 400. Subir a 1,2K añade 1K. Todos los importes de fichas son múltiplos de la denominación actual.",
+  "跟注旁的数字是这次要补的筹码；加注旁的数字是这一轮累计投入的总额。例如你已投 200，对手加到 600：跟注要补 400，选择加注 1.2K 则补 1K。所有筹码金额都是当前筹码面额的倍数。": "El número junto a igualar indica las fichas adicionales que debes poner; el de subir indica tu apuesta total de esta ronda. Si ya has puesto 200 y un rival sube a 600, igualar añade 400. Subir a 1.2K añade 1K. Todos los importes de fichas son múltiplos de la denominación actual.",
   "请输入正整数筹码面额；盲注和起始筹码须为面额的倍数，小盲小于大盲，起始筹码不少于大盲。": "Introduce una denominación entera positiva. Las ciegas y la pila inicial deben ser múltiplos de ella; la ciega pequeña debe ser menor que la grande y la pila inicial debe cubrir la grande.",
   "牌桌筹码必须是筹码面额的倍数。": "Las chips de mesa deben ser la denominación actual de fichas veces.",
   "投入筹码必须是筹码面额的倍数。": "Los chips de entrada deben ser la denominación actual de fichas veces.",
@@ -3008,5 +3008,7 @@
   "全下跟注 {0}": "Igualar all-in {0}",
   "{0} 获得底池 {1} 筹码": "{0} gana {1} fichas del bote",
   "{0} · 本次补入 {1}，本轮累计投入 {2}": "{0} · Añadido ahora: {1}; total apostado en esta ronda: {2}",
-  "对手最近一次翻前加注：{0}。": "Última subida preflop de un rival: {0}."
+  "对手最近一次翻前加注：{0}。": "Última subida preflop de un rival: {0}.",
+  "再打 {0} 手后涨盲到 {1} / {2}": "Manos hasta la subida: {0} · {1} / {2}",
+  "下一手涨盲到 {0} / {1}": "Próxima mano: {0} / {1}"
 }

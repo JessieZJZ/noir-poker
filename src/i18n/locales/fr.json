@@ -1627,7 +1627,7 @@
   "这是{0}控池：底池已经有 {1}，{2}过牌不再加大投入，保留当前牌力的摊牌机会。": "C’est un contrôle du pot avec ({0}) : le pot contient déjà {1}. Le joueur ({2}) a checké sans investir davantage, en préservant la possibilité d’aller à l’abattage avec sa main actuelle.",
   "当前牌力是{0}，另外还有{1}。": "La main actuelle est ({0}), avec également ({1}). ",
   "玩家筹码必须是筹码面额的倍数。": "Les chips de joueur doivent être la valeur actuelle des jetons fois.",
-  "跟注旁的数字是这次要补的筹码；加注旁的数字是这一轮累计投入的总额。例如你已投 200，对手加到 600：跟注要补 400，选择加注 1.2K 则补 1K。所有筹码金额都是当前筹码面额的倍数。": "Le nombre à côté de suivre indique les jetons à ajouter ; celui à côté de relancer indique votre mise totale pour ce tour. Si vous avez déjà misé 200 et qu’un adversaire relance à 600, suivre ajoute 400. Relancer à 1,2K ajoute 1K. Tous les montants sont des multiples de la valeur unitaire actuelle des jetons.",
+  "跟注旁的数字是这次要补的筹码；加注旁的数字是这一轮累计投入的总额。例如你已投 200，对手加到 600：跟注要补 400，选择加注 1.2K 则补 1K。所有筹码金额都是当前筹码面额的倍数。": "Le nombre à côté de suivre indique les jetons à ajouter ; celui à côté de relancer indique votre mise totale pour ce tour. Si vous avez déjà misé 200 et qu’un adversaire relance à 600, suivre ajoute 400. Relancer à 1.2K ajoute 1K. Tous les montants sont des multiples de la valeur unitaire actuelle des jetons.",
   "请输入正整数筹码面额；盲注和起始筹码须为面额的倍数，小盲小于大盲，起始筹码不少于大盲。": "Saisissez une valeur entière positive pour les jetons. Les blinds et le tapis initial doivent en être des multiples ; la petite blind doit être inférieure à la grosse blind et le tapis initial doit couvrir celle-ci.",
   "牌桌筹码必须是筹码面额的倍数。": "Les chips de table doivent être la valeur actuelle des jetons fois.",
   "投入筹码必须是筹码面额的倍数。": "Les chips d’entrée doivent être la valeur actuelle des jetons fois.",
@@ -3026,5 +3026,7 @@
   "{0} 获得底池 {1} 筹码": "{0} · Pot remporté : {1} jetons",
   "查看 {0} 的底牌": "Voir les cartes privatives de {0}",
   "收起 {0} 的底牌": "Masquer les cartes privatives de {0}",
-  "对手最近一次翻前加注：{0}。": "Dernière relance adverse préflop enregistrée : {0}."
+  "对手最近一次翻前加注：{0}。": "Dernière relance adverse préflop enregistrée : {0}.",
+  "再打 {0} 手后涨盲到 {1} / {2}": "Mains avant la hausse : {0} · {1} / {2}",
+  "下一手涨盲到 {0} / {1}": "Main suivante : {0} / {1}"
 }

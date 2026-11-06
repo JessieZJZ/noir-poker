@@ -943,7 +943,7 @@
   "重打时可以比较另一条路线，但后面发出的好牌不能反过来证明这一步应当跟注。": "Die Rückkehr kann mit einer anderen Route vergleichbar sein, aber die hinter ihnen ausgegebenen guten Karten können nicht gezeigt werden, dass der Schritt angerufen werden sollte.",
   "重打时比较另一开池尺度，记录盲位继续频率；隔离较黏的跛入者可用较大尺度。": "Bei der Rückführung, vergleichen Sie eine andere Open-Rise-Skala, erfasst Sie die Blind-Bit-Frekvens; Isolieren Sie mehr eingerichtete Eingänge sind in größeren Skalien verfügbar.",
   "重打时比较能否向更弱成牌取值；公共牌单独成牌时，先考虑平分权益。": "Wenn Retry mit schwacherer Kartewert vergleicht; wenn Board ein Einzelkarte ist, dann prüfen Sie zunächst die Aktienqualität.",
-  "重打本手": "Hand erneut spielen",
+  "重打本手": "Wiederholen",
   "重打本手 · 底牌与发牌顺序不变，原结算已撤回。": "Hand erneut spielen · Hole Cards und Kartenreihenfolge bleiben gleich. Die bisherige Abrechnung wurde zurückgenommen.",
   "重打这手牌": "Hand erneut spielen",
   "重新分析": "Erneut analysieren",
@@ -1630,7 +1630,7 @@
   "这是{0}控池：底池已经有 {1}，{2}过牌不再加大投入，保留当前牌力的摊牌机会。": "Das ist Potkontrolle mit der Hand ({0}): Im Pot liegen bereits {1}. Spieler ({2}) checkte, ohne mehr zu investieren, und behielt die Showdown-Chance der aktuellen Hand.",
   "当前牌力是{0}，另外还有{1}。": "Die aktuelle Hand ist ({0}); dazu kommt ({1}). ",
   "玩家筹码必须是筹码面额的倍数。": "Die Spielerchips müssen die aktuelle Chip-Stückelung mal sein.",
-  "跟注旁的数字是这次要补的筹码；加注旁的数字是这一轮累计投入的总额。例如你已投 200，对手加到 600：跟注要补 400，选择加注 1.2K 则补 1K。所有筹码金额都是当前筹码面额的倍数。": "Die Zahl neben Call ist der jetzt nachzuzahlende Betrag. Die Zahl neben Raise ist dein gesamter Einsatz in dieser Runde. Hast du schon 200 gesetzt und der Gegner erhöht auf 600, kostet der Call weitere 400. Ein Raise auf 1,2K kostet weitere 1K. Alle Beträge sind Vielfache des aktuellen Chipwerts.",
+  "跟注旁的数字是这次要补的筹码；加注旁的数字是这一轮累计投入的总额。例如你已投 200，对手加到 600：跟注要补 400，选择加注 1.2K 则补 1K。所有筹码金额都是当前筹码面额的倍数。": "Die Zahl neben Call ist der jetzt nachzuzahlende Betrag. Die Zahl neben Raise ist dein gesamter Einsatz in dieser Runde. Hast du schon 200 gesetzt und der Gegner erhöht auf 600, kostet der Call weitere 400. Ein Raise auf 1.2K kostet weitere 1K. Alle Beträge sind Vielfache des aktuellen Chipwerts.",
   "请输入正整数筹码面额；盲注和起始筹码须为面额的倍数，小盲小于大盲，起始筹码不少于大盲。": "Gib eine positive ganzzahlige Chip-Stückelung ein. Blinds und Startstack müssen Vielfache davon sein; der Small Blind muss kleiner als der Big Blind sein und der Startstack den Big Blind decken.",
   "牌桌筹码必须是筹码面额的倍数。": "Die Tischchips müssen die aktuelle Chip-Stückelung mal sein.",
   "投入筹码必须是筹码面额的倍数。": "Die Eintrittschiffe müssen die aktuelle Chip-Stückelung mal sein.",
@@ -3012,5 +3012,7 @@
   "可争夺：{5}": "Gewinnberechtigt: {5}",
   "{0} 获得底池 {1} 筹码": "{0} hat {1} Chips aus dem Pot gewonnen",
   "{0} · 本次补入 {1}，本轮累计投入 {2}": "{0} · Jetzt hinzugefügt: {1} · Gesamteinsatz dieser Runde: {2}",
-  "对手最近一次翻前加注：{0}。": "Letzte gegnerische Preflop-Erhöhung: {0}."
+  "对手最近一次翻前加注：{0}。": "Letzte gegnerische Preflop-Erhöhung: {0}.",
+  "再打 {0} 手后涨盲到 {1} / {2}": "Hände bis zur Erhöhung: {0} · {1} / {2}",
+  "下一手涨盲到 {0} / {1}": "Nächste Hand: {0} / {1}"
 }

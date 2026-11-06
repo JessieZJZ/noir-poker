@@ -464,12 +464,6 @@ function celebrate() {
     },
   });
 }
-let dismissedReplay = '';
-const replayIdentity = () => `${epoch}:${game.hand}:${game.replayAttempt || 0}`;
-$('#dismiss-replay').onclick = () => {
-  dismissedReplay = replayIdentity();
-  $('#replay-label').hidden = true;
-};
 function render({ presentationOnly = false } = {}) {
   if (!tutorial && !presentationOnly) {
     playerObservations.capture(game);
@@ -497,7 +491,7 @@ function render({ presentationOnly = false } = {}) {
   );
   setLocalizedText($('#table-size-label'), count + ' 人无限注');
   setLocalizedText($('#blind-values'), `${format(game.smallBlind)} / ${format(game.bigBlind)}`);
-  const progress = blindProgressText(game);
+  const progress = blindProgressText(game, format);
   $('#blind-progress').hidden = !progress;
   setLocalizedText($('#blind-progress'), progress);
   if (waiting) {
@@ -515,7 +509,7 @@ function render({ presentationOnly = false } = {}) {
       : new Set();
   setLocalizedText($('#hand-number'), waiting ? '—' : String(game.hand).padStart(2, '0'));
   setLocalizedText($('#session-number-label'), `第 ${gameRecords.sessionNumber()} 局`);
-  $('#replay-label').hidden = !game.replayAttempt || dismissedReplay === replayIdentity();
+  $('#replay-label').hidden = !game.replayAttempt;
   setLocalizedText($('#replay-attempt'), '重打 ' + game.replayAttempt);
   setLocalizedText(
     $('#street-label'),

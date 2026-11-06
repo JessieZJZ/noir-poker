@@ -191,7 +191,7 @@ test('new recommendation clauses and key information switch across all locales',
       el.dispatchEvent(new Event('change'));
     }, locale);
     await expect(page.locator('html')).toHaveAttribute('lang', locale);
-    const allInAmount = ['es', 'it', 'pt', 'de', 'fr', 'ru'].includes(locale) ? '1,62M' : '1.62M';
+    const allInAmount = '1.62M';
     for (const i of [0, 6, 7, 8, 9]) {
       await page.locator(`[data-review-index="${i}"]`).click();
       const text = await page

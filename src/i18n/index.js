@@ -208,7 +208,7 @@ export function localizeText(value) {
   return output;
 }
 export function formatChips(value) {
-  return compactChips(value, locale === 'en' ? 'en-US' : locale);
+  return compactChips(value);
 }
 // Generated game prose carries numeric facts and sentence fragments from the
 // engine. Format them after translation, preserving URLs and identifiers.
@@ -221,20 +221,9 @@ export function localizeGameText(value) {
         if (locale.startsWith('zh') || locale === 'ja') return token;
         return '.' + (/^[\p{L}\p{N}]/u.test(text.slice(offset + 1)) ? ' ' : '');
       }
-      const ratio = /^([+-]?\d+\.(\d+))(%| ?BB)$/.exec(token);
-      if (ratio) {
-        const digits = ratio[2].length;
-        if (digits > 20 || !Number.isFinite(Number(ratio[1]))) return token;
-        return (
-          (token.startsWith('+') ? '+' : '') +
-          new Intl.NumberFormat(locale, {
-            useGrouping: false,
-            minimumFractionDigits: digits,
-            maximumFractionDigits: digits,
-          }).format(Number(ratio[1])) +
-          ratio[3]
-        );
-      }
+      // Engine percentages and BB amounts already use a decimal point. Keep
+      // their exact precision and signs when the surrounding language changes.
+      if (/%$|BB$/.test(token)) return token;
       const unit = token.endsWith('M') ? 1000000 : 1000;
       const amount = Number(token.slice(0, -1)) * unit;
       const chips = Math.round(amount);
@@ -244,7 +233,9 @@ export function localizeGameText(value) {
   );
 }
 export function formatDecimal(value, digits = 2) {
-  return new Intl.NumberFormat(locale, {
+  // The game's numeric notation is shared by every language: decimal points
+  // and no digit grouping, so a language change never changes a number's form.
+  return new Intl.NumberFormat('en-US', {
     useGrouping: false,
     minimumFractionDigits: digits,
     maximumFractionDigits: digits,

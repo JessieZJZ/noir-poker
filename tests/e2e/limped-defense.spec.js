@@ -74,9 +74,8 @@ for (const [group, locales] of [
       await page.evaluate((l) => localStorage.setItem('noir-locale', l), locale);
       const body = await open(page, g),
         text = await body.innerText();
-      const commaDecimal = ['es', 'it', 'pt', 'de', 'fr', 'ru'].includes(locale);
-      expect(text, locale).toContain(commaDecimal ? '42,4%' : '42.4%');
-      expect(text, locale).toContain(commaDecimal ? '4,27M' : '4.27M');
+      expect(text, locale).toContain('42.4%');
+      expect(text, locale).toContain('4.27M');
       if (!['zh-CN', 'zh-TW', 'ja'].includes(locale))
         expect(text, locale).not.toMatch(/\p{Script=Han}/u);
       if (locale !== 'zh-CN') expect(text, locale).not.toContain('强起手牌也不代表任何尺度');

@@ -79,7 +79,7 @@ test('cards auto-advance, block duplicates and calculate live with outs', async 
   await expect(page.locator('#win-rate-picker')).toBeHidden();
   await hole(page, 1).click();
   await pick(page, '0-8', '0-7');
-  await expect(page.locator('#win-rate-status')).toContainText('1,712,304');
+  await expect(page.locator('#win-rate-status')).toContainText('1712304');
   await expect.poll(() => odds(page)).toEqual(['63.25%', '36.21%']);
   await expect(page.locator('.win-rate-odds-tie').first()).toHaveText('平局 0.54%');
   await expect(page.locator('.win-rate-outs')).toHaveCount(0);

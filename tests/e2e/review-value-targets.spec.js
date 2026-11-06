@@ -95,9 +95,7 @@ for (const locale of ['en', 'zh-TW', 'ja', 'ko', 'es', 'it', 'pt', 'de', 'fr', '
     const body = await open(page, topPairFlushTurn, 'turn');
     await expect(page.locator('html')).toHaveAttribute('lang', locale);
     const text = await body.innerText();
-    const amounts = ['es', 'it', 'pt', 'de', 'fr', 'ru'].includes(locale)
-      ? ['1,21M', '2,43M']
-      : ['1.21M', '2.43M'];
+    const amounts = ['1.21M', '2.43M'];
     for (const amount of amounts) expect(text, locale).toContain(amount);
     expect(text).not.toMatch(/\{\d+\}/);
     if (!['zh-TW', 'ja'].includes(locale)) expect(text).not.toMatch(/\p{Script=Han}/u);

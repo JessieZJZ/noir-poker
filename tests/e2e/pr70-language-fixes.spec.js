@@ -19,7 +19,7 @@ test('switching Russian to Chinese redraws current amounts without changing the 
   });
   const before = await page.evaluate(() => window.noir.getState());
   await switchLocale(page, 'ru');
-  await expect(page.locator('#stakes-structure')).toContainText('1,5K');
+  await expect(page.locator('#stakes-structure')).toContainText('1.5K');
   await switchLocale(page, 'zh-CN');
   await expect(page.locator('#stakes-structure')).toContainText('1.5K');
   await expect(page.locator('#hero-stack')).not.toContainText(',');
@@ -38,7 +38,7 @@ test('switching Russian to Chinese redraws current amounts without changing the 
     expect(after[key], key).toEqual(before[key]);
 });
 
-test('blind progress sits below blinds, retry can be dismissed without changing the hand', async ({
+test('blind progress names the next level while the original replay badge persists above it', async ({
   page,
 }) => {
   await page.goto('/');
@@ -51,19 +51,28 @@ test('blind progress sits below blinds, retry can be dismissed without changing 
   await page.evaluate(() => window.qa.stop());
   await expect(page.locator('#blind-progress')).toBeVisible();
   await expect(page.locator('#replay-label')).toBeVisible();
+  await expect(page.locator('#blind-progress')).toHaveText('再打 9 手后涨盲到 50 / 100');
+  await expect(page.locator('#dismiss-replay')).toHaveCount(0);
   const geometry = await page.evaluate(() => {
     const rect = (s) => document.querySelector(s).getBoundingClientRect();
     const blinds = rect('.blind-info'),
       progress = rect('#blind-progress'),
       retry = rect('#replay-label');
-    return { under: progress.top >= blinds.bottom - 1, left: retry.right <= progress.left };
+    return {
+      under: progress.top >= blinds.bottom - 1,
+      upper: retry.bottom <= progress.top + 1,
+      beforeBlinds: retry.right <= blinds.left,
+      inHand: document
+        .querySelector('.hand-label')
+        .contains(document.querySelector('#replay-label')),
+    };
   });
-  expect(geometry).toEqual({ under: true, left: true });
+  expect(geometry).toEqual({ under: true, upper: true, beforeBlinds: true, inHand: true });
   const before = await page.evaluate(() => window.noir.getState());
-  await page.locator('#dismiss-replay').click();
-  await expect(page.locator('#replay-label')).toBeHidden();
   await switchLocale(page, 'en');
-  await expect(page.locator('#replay-label')).toBeHidden();
+  await expect(page.locator('#replay-label')).toBeVisible();
+  await expect(page.locator('#replay-label')).toHaveText('Replay 1');
+  await expect(page.locator('#blind-progress')).toHaveText('Hands until blinds rise: 9 · 50 / 100');
   const after = await page.evaluate(() => window.noir.getState());
   expect(after.hand).toBe(before.hand);
   expect(after.replayAttempt).toBe(before.replayAttempt);
@@ -198,53 +207,111 @@ for (const locale of ['en', 'ja'])
   });
 
 for (const locale of ['zh-CN', 'zh-TW', 'en', 'ja', 'ko', 'es', 'it', 'pt', 'de', 'fr', 'ru'])
-  for (const width of [320, 390])
-    test(`${locale} blind progress leaves replay close reachable at ${width}px`, async ({
-      page,
-    }) => {
-      await page.setViewportSize({ width, height: 844 });
-      await page.goto('/');
-      await page.waitForFunction(() => !!window.qa);
-      await switchLocale(page, locale);
-      await page.evaluate(() => document.fonts.ready);
-      const waiting = await page.locator('.poker-table').boundingBox();
-      await page.locator('#join-table-button').click();
-      await expect(page.locator('.game-surface')).toHaveAttribute('data-entry-state', 'playing');
-      const playing = await page.locator('.poker-table').boundingBox();
-      for (const key of ['x', 'y', 'width', 'height'])
-        expect(Math.abs(waiting[key] - playing[key])).toBeLessThanOrEqual(1.1);
-      await page.evaluate(() => {
-        window.qa.foldWin(9);
-        window.qa.stop();
-      });
-      await page.locator('#restart-hand-button').click();
-      await page.evaluate(() => window.qa.stop());
-      await switchLocale(page, locale);
-      await page.evaluate(() => document.fonts.ready);
-      const result = await page.evaluate(() => {
-        const close = document.querySelector('#dismiss-replay'),
-          progress = document.querySelector('#blind-progress');
-        const a = close.getBoundingClientRect(),
-          b = progress.getBoundingClientRect(),
-          row = document.querySelector('.surface-bottom').getBoundingClientRect();
-        const hit = document.elementFromPoint(a.x + a.width / 2, a.y + a.height / 2);
-        return {
-          reachable: close.contains(hit),
-          separate: a.right <= b.left + 1,
-          contained:
-            b.left >= row.left - 1 &&
-            b.right <= row.right + 1 &&
-            b.top >= row.top - 1 &&
-            b.bottom <= row.bottom + 1 &&
-            row.bottom <= document.querySelector('#arena').getBoundingClientRect().top + 1 &&
-            a.left >= row.left - 1 &&
-            a.right <= row.right + 1,
-        };
-      });
-      expect(result).toEqual({ reachable: true, separate: true, contained: true });
-      await page.locator('#dismiss-replay').click();
-      await expect(page.locator('#replay-label')).toBeHidden();
+  test(`${locale} header preserves the replay row and maximizes the hint through phone tablet PC rotation`, async ({
+    page,
+  }, testInfo) => {
+    test.skip(testInfo.project.name !== 'desktop', 'Explicit responsive matrix runs once.');
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto('/');
+    await page.waitForFunction(() => !!window.qa);
+    await switchLocale(page, locale);
+    await page.evaluate(() => document.fonts.ready);
+    const waiting = await page.locator('.poker-table').boundingBox();
+    await page.locator('#join-table-button').click();
+    await expect(page.locator('.game-surface')).toHaveAttribute('data-entry-state', 'playing');
+    const playing = await page.locator('.poker-table').boundingBox();
+    for (const key of ['x', 'y', 'width', 'height'])
+      expect(Math.abs(waiting[key] - playing[key])).toBeLessThanOrEqual(1.1);
+    await page.evaluate(() => {
+      window.qa.foldWin(9);
+      window.qa.stop();
     });
+    await page.locator('#restart-hand-button').click();
+    await page.evaluate(() => window.qa.stop());
+    await switchLocale(page, locale);
+    await page.evaluate(() => document.fonts.ready);
+    const before = await page.evaluate(() => window.qa.snapshot());
+    for (const size of [
+      { width: 320, height: 667 },
+      { width: 390, height: 844 },
+      { width: 430, height: 932 },
+      { width: 768, height: 1024 },
+      { width: 1024, height: 768 },
+      { width: 1024, height: 1366 },
+      { width: 1366, height: 1024 },
+      { width: 1280, height: 900 },
+      { width: 1700, height: 1000 },
+      { width: 390, height: 844 },
+    ]) {
+      await page.setViewportSize(size);
+      await expect
+        .poll(
+          () =>
+            page.evaluate(() => {
+              const rect = (s) => document.querySelector(s).getBoundingClientRect();
+              const hand = rect('.hand-label'),
+                tag = rect('#replay-label'),
+                blinds = rect('.blind-info'),
+                row = rect('.surface-bottom'),
+                hint = rect('.table-notices'),
+                progress = rect('#blind-progress'),
+                arena = rect('#arena'),
+                felt = rect('.poker-table');
+              const issues = [];
+              if (document.querySelector('#dismiss-replay'))
+                issues.push('unrequested close button');
+              if (
+                tag.width <= 0 ||
+                tag.left < hand.left - 1 ||
+                tag.right > hand.right + 1 ||
+                tag.right > blinds.left - 1
+              )
+                issues.push(
+                  'upper replay badge clipped or overlaps blinds: ' +
+                    JSON.stringify({
+                      hand: hand.toJSON(),
+                      tag: tag.toJSON(),
+                      blinds: blinds.toJSON(),
+                    }),
+                );
+              if (
+                tag.top < hand.top - 1 ||
+                tag.bottom > hand.bottom + 1 ||
+                tag.bottom > row.top + 1
+              )
+                issues.push('replay leaves original upper hand row');
+              if (
+                progress.top < blinds.bottom - 1 ||
+                progress.bottom > row.bottom + 1 ||
+                progress.right > row.right + 1
+              )
+                issues.push('countdown leaves row below blinds');
+              const gap = progress.left - hint.right;
+              if (hint.width <= 0 || gap < 4 || gap > 7 || hint.left > row.left + 1)
+                issues.push('hint does not use available left width');
+              if (
+                row.bottom > arena.top + 1 ||
+                felt.height < 100 ||
+                arena.width <= 0 ||
+                arena.height <= 0
+              )
+                issues.push('header intrudes into table budget');
+              if (document.documentElement.scrollWidth > innerWidth + 1)
+                issues.push('page overflows');
+              const range = document.createRange();
+              range.selectNodeContents(document.querySelector('#replay-attempt'));
+              const ink = range.getBoundingClientRect();
+              if (ink.left < tag.left || ink.right > tag.right + 1)
+                issues.push('replay text does not fit original badge');
+              return issues;
+            }),
+          `${locale} ${size.width}x${size.height}`,
+        )
+        .toEqual([]);
+      await expect(page.locator('#replay-label')).toBeVisible();
+      expect(await page.evaluate(() => window.qa.snapshot())).toEqual(before);
+    }
+  });
 
 test('review game prose formats chips and punctuation in its rendered locale', async ({ page }) => {
   await page.goto('/');
@@ -265,9 +332,9 @@ test('review game prose formats chips and punctuation in its rendered locale', a
     return { text, facts, repeated: node.textContent };
   });
   expect(result.text).toContain('Kai');
-  expect(result.text).toContain('1,1K.');
+  expect(result.text).toContain('1.1K.');
   expect(result.text).not.toContain('。');
-  expect(result.facts).toContain('. 42,4% / 4,0 BB');
+  expect(result.facts).toContain('. 42.4% / 4.0 BB');
   expect(result.repeated).toBe(result.text + result.facts);
   await switchLocale(page, 'zh-CN');
   await page.evaluate(() => {
