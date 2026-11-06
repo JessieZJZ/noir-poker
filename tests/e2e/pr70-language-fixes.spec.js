@@ -196,3 +196,52 @@ for (const locale of ['en', 'ja'])
       expect(result.text).not.toContain('次ハンド');
     } else expect(result.text).toContain('pot. Pot equity');
   });
+
+for (const locale of ['zh-CN', 'zh-TW', 'en', 'ja', 'ko', 'es', 'it', 'pt', 'de', 'fr', 'ru'])
+  for (const width of [320, 390])
+    test(`${locale} blind progress leaves replay close reachable at ${width}px`, async ({
+      page,
+    }) => {
+      await page.setViewportSize({ width, height: 844 });
+      await page.goto('/');
+      await page.waitForFunction(() => !!window.qa);
+      await switchLocale(page, locale);
+      await page.evaluate(() => document.fonts.ready);
+      const waiting = await page.locator('.poker-table').boundingBox();
+      await page.locator('#join-table-button').click();
+      await expect(page.locator('.game-surface')).toHaveAttribute('data-entry-state', 'playing');
+      const playing = await page.locator('.poker-table').boundingBox();
+      for (const key of ['x', 'y', 'width', 'height'])
+        expect(Math.abs(waiting[key] - playing[key])).toBeLessThanOrEqual(1.1);
+      await page.evaluate(() => {
+        window.qa.foldWin(9);
+        window.qa.stop();
+      });
+      await page.locator('#restart-hand-button').click();
+      await page.evaluate(() => window.qa.stop());
+      await switchLocale(page, locale);
+      await page.evaluate(() => document.fonts.ready);
+      const result = await page.evaluate(() => {
+        const close = document.querySelector('#dismiss-replay'),
+          progress = document.querySelector('#blind-progress');
+        const a = close.getBoundingClientRect(),
+          b = progress.getBoundingClientRect(),
+          row = document.querySelector('.surface-bottom').getBoundingClientRect();
+        const hit = document.elementFromPoint(a.x + a.width / 2, a.y + a.height / 2);
+        return {
+          reachable: close.contains(hit),
+          separate: a.right <= b.left + 1,
+          contained:
+            b.left >= row.left - 1 &&
+            b.right <= row.right + 1 &&
+            b.top >= row.top - 1 &&
+            b.bottom <= row.bottom + 1 &&
+            row.bottom <= document.querySelector('#arena').getBoundingClientRect().top + 1 &&
+            a.left >= row.left - 1 &&
+            a.right <= row.right + 1,
+        };
+      });
+      expect(result).toEqual({ reachable: true, separate: true, contained: true });
+      await page.locator('#dismiss-replay').click();
+      await expect(page.locator('#replay-label')).toBeHidden();
+    });

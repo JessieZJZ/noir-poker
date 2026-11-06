@@ -1,25 +1,39 @@
-/* Keep the blind countdown under its amount; tips and dismissible retry
-   notices share the left column without changing the table's height. */
+/* Keep the countdown under the blinds. Long translations wrap in their own
+   column, while retry text and its close button retain their minimum width. */
+.main .game-surface > .surface-top {
+  grid-template-rows:
+    max(var(--hand-row), var(--entry-hand-row, 0px))
+    minmax(var(--hint-row), max-content);
+}
+.main .game-surface[data-entry-state='waiting'] > .surface-top {
+  grid-template-rows:
+    minmax(max(var(--hand-row), var(--entry-hand-row, 0px)), auto)
+    minmax(var(--hint-row), max-content);
+}
 .surface-bottom {
+  --blind-progress-line-height: 14.3px;
   grid-area: 2 / 1 / 3 / -1;
   display: flex;
+  min-height: 24px;
   min-width: 0;
   align-items: center;
   gap: 12px;
 }
 .game-surface > .surface-top .blind-progress {
-  flex: none;
+  flex: 0 1 60%;
+  min-width: 0;
+  max-width: 60%;
   font-size: 11px;
-  line-height: 1.3;
+  line-height: var(--blind-progress-line-height);
   color: #bca77c;
   text-align: right;
-  white-space: nowrap;
+  white-space: normal;
 }
 .table-notices {
   flex: 1 1 0;
   display: flex;
   gap: 8px;
-  min-width: 0;
+  min-width: min-content;
   align-items: center;
 }
 .table-notices .hint-banner {
@@ -49,6 +63,18 @@
 }
 .table-notices #dismiss-replay:focus-visible {
   outline: 2px solid var(--mint);
+}
+/* Reserve translated countdown lines before the first hand as well, so a
+   wrapped countdown cannot move the felt when joining or replaying. */
+@media (max-width: 600px) {
+  html:not([lang^='zh']) .surface-bottom {
+    min-height: calc(var(--blind-progress-line-height) * 2);
+  }
+}
+@media (max-width: 350px) {
+  html:not([lang^='zh']) .surface-bottom {
+    min-height: calc(var(--blind-progress-line-height) * 3);
+  }
 }
 /* Prefer whole words over cramped translated headings. The table advertises
    horizontal scrolling by keeping a readable minimum column width. */
