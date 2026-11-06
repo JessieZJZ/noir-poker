@@ -222,94 +222,111 @@ for (const locale of ['zh-CN', 'zh-TW', 'en', 'ja', 'ko', 'es', 'it', 'pt', 'de'
     const playing = await page.locator('.poker-table').boundingBox();
     for (const key of ['x', 'y', 'width', 'height'])
       expect(Math.abs(waiting[key] - playing[key])).toBeLessThanOrEqual(1.1);
-    await page.evaluate(() => {
-      window.qa.foldWin(9);
-      window.qa.stop();
-    });
-    await page.locator('#restart-hand-button').click();
-    await page.evaluate(() => window.qa.stop());
-    await switchLocale(page, locale);
-    await page.evaluate(() => document.fonts.ready);
-    const before = await page.evaluate(() => window.qa.snapshot());
-    for (const size of [
-      { width: 320, height: 667 },
-      { width: 390, height: 844 },
-      { width: 430, height: 932 },
-      { width: 768, height: 1024 },
-      { width: 1024, height: 768 },
-      { width: 1024, height: 1366 },
-      { width: 1366, height: 1024 },
-      { width: 1280, height: 900 },
-      { width: 1700, height: 1000 },
-      { width: 390, height: 844 },
-    ]) {
-      await page.setViewportSize(size);
-      await expect
-        .poll(
-          () =>
-            page.evaluate(() => {
-              const rect = (s) => document.querySelector(s).getBoundingClientRect();
-              const hand = rect('.hand-label'),
-                tag = rect('#replay-label'),
-                blinds = rect('.blind-info'),
-                row = rect('.surface-bottom'),
-                hint = rect('.table-notices'),
-                progress = rect('#blind-progress'),
-                arena = rect('#arena'),
-                felt = rect('.poker-table');
-              const issues = [];
-              if (document.querySelector('#dismiss-replay'))
-                issues.push('unrequested close button');
-              if (
-                tag.width <= 0 ||
-                tag.left < hand.left - 1 ||
-                tag.right > hand.right + 1 ||
-                tag.right > blinds.left - 1
-              )
-                issues.push(
-                  'upper replay badge clipped or overlaps blinds: ' +
-                    JSON.stringify({
-                      hand: hand.toJSON(),
-                      tag: tag.toJSON(),
-                      blinds: blinds.toJSON(),
-                    }),
-                );
-              if (
-                tag.top < hand.top - 1 ||
-                tag.bottom > hand.bottom + 1 ||
-                tag.bottom > row.top + 1
-              )
-                issues.push('replay leaves original upper hand row');
-              if (
-                progress.top < blinds.bottom - 1 ||
-                progress.bottom > row.bottom + 1 ||
-                progress.right > row.right + 1
-              )
-                issues.push('countdown leaves row below blinds');
-              const gap = progress.left - hint.right;
-              if (hint.width <= 0 || gap < 4 || gap > 7 || hint.left > row.left + 1)
-                issues.push('hint does not use available left width');
-              if (
-                row.bottom > arena.top + 1 ||
-                felt.height < 100 ||
-                arena.width <= 0 ||
-                arena.height <= 0
-              )
-                issues.push('header intrudes into table budget');
-              if (document.documentElement.scrollWidth > innerWidth + 1)
-                issues.push('page overflows');
-              const range = document.createRange();
-              range.selectNodeContents(document.querySelector('#replay-attempt'));
-              const ink = range.getBoundingClientRect();
-              if (ink.left < tag.left || ink.right > tag.right + 1)
-                issues.push('replay text does not fit original badge');
-              return issues;
-            }),
-          `${locale} ${size.width}x${size.height}`,
-        )
-        .toEqual([]);
-      await expect(page.locator('#replay-label')).toBeVisible();
-      expect(await page.evaluate(() => window.qa.snapshot())).toEqual(before);
+    for (const smallBlind of [100, 250, 50000]) {
+      await page.evaluate((smallBlind) => {
+        // Match the normal production header: 100 / 200 is wider than the
+        // generic foldWin fixture's 25 / 50, especially beside Japanese labels.
+        window.qa.recordsStart({ count: 9, smallBlind });
+        window.qa.recordsFinish();
+        window.qa.stop();
+      }, smallBlind);
+      await page.locator('#restart-hand-button').click();
+      await page.evaluate(() => window.qa.stop());
+      await switchLocale(page, locale);
+      await page.evaluate(() => document.fonts.ready);
+      const before = await page.evaluate(() => window.qa.snapshot());
+      const publicBefore = await page.evaluate(() => window.noir.getState());
+      expect([publicBefore.smallBlind, publicBefore.bigBlind]).toEqual([
+        smallBlind,
+        smallBlind * 2,
+      ]);
+      for (const size of [
+        { width: 320, height: 568 },
+        { width: 320, height: 667 },
+        { width: 390, height: 844 },
+        { width: 430, height: 932 },
+        { width: 768, height: 1024 },
+        { width: 1024, height: 768 },
+        { width: 1024, height: 1366 },
+        { width: 1366, height: 1024 },
+        { width: 1280, height: 900 },
+        { width: 1700, height: 1000 },
+        { width: 390, height: 844 },
+      ]) {
+        await page.setViewportSize(size);
+        await expect
+          .poll(
+            () =>
+              page.evaluate(() => {
+                const rect = (s) => document.querySelector(s).getBoundingClientRect();
+                const hand = rect('.hand-label'),
+                  tag = rect('#replay-label'),
+                  blinds = rect('.blind-info'),
+                  row = rect('.surface-bottom'),
+                  hint = rect('.table-notices'),
+                  progress = rect('#blind-progress'),
+                  arena = rect('#arena'),
+                  felt = rect('.poker-table');
+                const issues = [];
+                if (document.querySelector('#dismiss-replay'))
+                  issues.push('unrequested close button');
+                if (
+                  tag.width <= 0 ||
+                  tag.left < hand.left - 1 ||
+                  tag.right > hand.right + 1 ||
+                  tag.right > blinds.left - 1
+                )
+                  issues.push(
+                    'upper replay badge clipped or overlaps blinds: ' +
+                      JSON.stringify({
+                        hand: hand.toJSON(),
+                        tag: tag.toJSON(),
+                        blinds: blinds.toJSON(),
+                      }),
+                  );
+                if (
+                  tag.top < hand.top - 1 ||
+                  tag.bottom > hand.bottom + 1 ||
+                  tag.bottom > row.top + 1
+                )
+                  issues.push('replay leaves original upper hand row');
+                if (
+                  progress.top < blinds.bottom - 1 ||
+                  progress.bottom > row.bottom + 1 ||
+                  progress.right > row.right + 1
+                )
+                  issues.push('countdown leaves row below blinds');
+                const gap = progress.left - hint.right;
+                if (hint.width <= 0 || gap < 4 || gap > 7 || hint.left > row.left + 1)
+                  issues.push('hint does not use available left width');
+                if (
+                  row.bottom > arena.top + 1 ||
+                  felt.height < 100 ||
+                  arena.width <= 0 ||
+                  arena.height <= 0
+                )
+                  issues.push('header intrudes into table budget');
+                if (document.documentElement.scrollWidth > innerWidth + 1)
+                  issues.push('page overflows');
+                const blindRange = document.createRange();
+                blindRange.selectNodeContents(document.querySelector('#blind-values'));
+                const blindInk = blindRange.getBoundingClientRect();
+                if (blindInk.left < blinds.left || blindInk.right > blinds.right + 1)
+                  issues.push('current blind amounts are clipped');
+                const range = document.createRange();
+                range.selectNodeContents(document.querySelector('#replay-attempt'));
+                const ink = range.getBoundingClientRect();
+                if (ink.left < tag.left || ink.right > tag.right + 1)
+                  issues.push('replay text does not fit original badge');
+                return issues;
+              }),
+            `${locale} ${smallBlind}/${smallBlind * 2} ${size.width}x${size.height}`,
+          )
+          .toEqual([]);
+        await expect(page.locator('#replay-label')).toBeVisible();
+        expect(await page.evaluate(() => window.qa.snapshot())).toEqual(before);
+        expect(await page.evaluate(() => window.noir.getState())).toEqual(publicBefore);
+      }
     }
   });
 
