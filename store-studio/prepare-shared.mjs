@@ -1,6 +1,7 @@
 import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { execFileSync } from "node:child_process";
 import path from "node:path";
+import { encodeFrames } from "./lossless-frames.mjs";
 import { fileURLToPath } from "node:url";
 
 const studio = path.dirname(fileURLToPath(import.meta.url));
@@ -8,6 +9,8 @@ const base = path.resolve(
   process.argv[2] || path.join(studio, "../.artifacts/store-media-v2/raw"),
 );
 const plan = {};
+const lossless = process.argv.includes("--lossless-frames"),
+  framePlan = {};
 // Actual screen changes, measured from the decoded variable-frame-rate recording.
 // Driver completion timestamps can lag the first changed pixels by many frames.
 const timings = {
@@ -53,6 +56,18 @@ for (const lang of ["zh-CN", "en"]) {
     readFileSync(path.join(dir, lang + "--edit-events.json")),
   );
   const t = timings[lang];
+  if (lossless) {
+    framePlan[lang] = {};
+    const tutorial = await encodeFrames(
+      path.join(studio, "public/media/ios", lang, "tutorial.mp4"),
+      ["[0:v]fps=30,trim=end_frame=138,setpts=PTS-STARTPTS[out]"],
+      path.join(studio, "public/sharp-frames", lang, "tutorial"),
+      138,
+    );
+    framePlan[lang].tutorial = tutorial;
+    console.log(lang + " tutorial lossless " + tutorial.uniqueFrames);
+  }
+
   const edits = {
     practice: [
       [t.feed - 1.65, 2.2],
@@ -133,6 +148,18 @@ for (const lang of ["zh-CN", "en"]) {
         cuts.length +
         ":v=1:a=0[out]",
     );
+    if (lossless) {
+      framePlan[lang][scene] = await encodeFrames(
+        src,
+        filters,
+        path.join(studio, "public/sharp-frames", lang, scene),
+        lens.reduce((a, b) => a + b, 0),
+      );
+      console.log(
+        lang + " " + scene + " lossless " + framePlan[lang][scene].uniqueFrames,
+      );
+      continue;
+    }
     execFileSync("ffmpeg", [
       "-v",
       "error",
@@ -164,3 +191,9 @@ writeFileSync(
   path.join(studio, "src/shared-taps.json"),
   JSON.stringify(plan, null, 2) + "\n",
 );
+
+if (lossless)
+  writeFileSync(
+    path.join(studio, "src/sharp-frames.json"),
+    JSON.stringify(framePlan, null, 2) + "\n",
+  );

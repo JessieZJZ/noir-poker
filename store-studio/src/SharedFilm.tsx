@@ -1,18 +1,20 @@
 import React from "react";
 import {
   AbsoluteFill,
+  Img,
   Sequence,
   staticFile,
   useCurrentFrame,
   interpolate,
   Easing,
 } from "remotion";
-import { Video, Audio } from "@remotion/media";
+import { Audio } from "@remotion/media";
 import { TransitionSeries, linearTiming } from "@remotion/transitions";
 import { fade } from "@remotion/transitions/fade";
 import { Backdrop, useFonts } from "./StoreFilm";
 import { typography } from "./assets";
 import { IPhoneFrame } from "./IPhoneFrame";
+import sharpFrames from "./sharp-frames.json";
 import taps from "./shared-taps.json";
 import board from "../storyboard.json";
 
@@ -137,7 +139,7 @@ const Src = ({
   size: number;
 }) => (
   <AbsoluteFill>
-    <Video src={staticFile(src)} muted objectFit="contain" style={videoStyle} />
+    <Img src={staticFile(src)} style={videoStyle} />
     {cues.map((c) => (
       <Pointer key={c.name} cue={c} f={f} size={size} />
     ))}
@@ -154,10 +156,8 @@ const Shot = ({ i, language }: { i: number; language: Lang }) => {
     id === "review" || id === "retry" || id === "records"
       ? taps[language][id]
       : [];
-  const src =
-    i === 0
-      ? `media/ios/${language}/tutorial.mp4`
-      : `shared/${language}/${id}.mp4`;
+  const frames = sharpFrames[language][id].frames;
+  const src = `sharp-frames/${language}/${id}/${frames[Math.max(0, Math.min(f, frames.length - 1))]}`;
   const voice = `${i === 5 ? "voice-v3" : "voice-v2"}/${language}/${id}.wav`;
   return (
     <AbsoluteFill style={{ fontFamily: typography, color: "#f2f4ea" }}>

@@ -44,7 +44,9 @@
     "voice:shared": "node prepare-voice.mjs --shared",
     "export:shared": "node export-shared.mjs",
     "export:shared-stills": "node export-shared-stills.mjs",
-    "verify:shared": "node finish-shared.mjs"
+    "verify:shared": "node finish-shared.mjs",
+    "prepare:clarity": "node prepare-shared.mjs",
+    "export:clarity": "node export-clarity.mjs"
   },
   "allowScripts": {
     "esbuild": false

@@ -18,7 +18,7 @@ const checks = {
   productCommit: listings.source.commit,
   sources:
     "iOS simulator film; iOS, iPadOS and Android installed app screenshots",
-  oneFilePerLanguage: true,
+  oneCommonStoreFilePerLanguage: true,
   layout:
     "Reference layout: left copy and captions; one full iPhone at right; contain; no crop or duplicated UI",
   languages: {},
@@ -149,6 +149,53 @@ for (const lang of langs) {
     .composite(tiles)
     .jpeg({ quality: 87 })
     .toFile(path.join(dir, lang, "tap-checks.jpg"));
+  const master = path.join(dir, lang, "master-3840.mp4");
+  const masterProbe = JSON.parse(
+    execFileSync("ffprobe", [
+      "-v",
+      "error",
+      "-show_streams",
+      "-show_format",
+      "-of",
+      "json",
+      master,
+    ]),
+  );
+  const mv = masterProbe.streams.find((s) => s.codec_type === "video");
+  assert.deepEqual(
+    [mv.width, mv.height, mv.r_frame_rate, mv.nb_frames, mv.pix_fmt],
+    [3840, 1772, "30/1", "894", "yuv420p"],
+  );
+  execFileSync("ffmpeg", ["-v", "error", "-i", master, "-f", "null", "-"], {
+    stdio: "pipe",
+  });
+  const audioHash = (file) =>
+    createHash("sha256")
+      .update(
+        execFileSync(
+          "ffmpeg",
+          [
+            "-v",
+            "error",
+            "-i",
+            file,
+            "-map",
+            "0:a:0",
+            "-c:a",
+            "copy",
+            "-f",
+            "adts",
+            "-",
+          ],
+          { maxBuffer: 3e6 },
+        ),
+      )
+      .digest("hex");
+  const locked = audioHash(
+    path.join(studio, "public/locked-audio", lang + ".m4a"),
+  );
+  assert.equal(audioHash(video), locked);
+  assert.equal(audioHash(master), locked);
   const id = lang === "en" ? "en-US" : "zh-Hans",
     t = listings[id],
     copy = (x) =>
@@ -186,6 +233,17 @@ for (const lang of langs) {
     truePeakDb: peak,
     touchFramePairs: samples,
     deviceScreenshots: 32,
+    master: {
+      file: lang + "/master-3840.mp4",
+      width: 3840,
+      height: 1772,
+      frames: 894,
+      sha256: createHash("sha256")
+        .update(fs.readFileSync(master))
+        .digest("hex"),
+    },
+    audioUnchangedFromV4: true,
+    aacSha256: locked,
   };
 }
 const zh = checks.languages["zh-CN"],
@@ -195,28 +253,28 @@ put("verification.json", JSON.stringify(checks, null, 2) + "\n");
 put(
   "listings.json",
   JSON.stringify(
-    { ...listings, source: { ...listings.source, revision: 4 } },
+    { ...listings, source: { ...listings.source, revision: 5 } },
     null,
     2,
   ) + "\n",
 );
 const intro =
-  "V4 按参考图排版，左侧介绍、右侧完整 iPhone。每种语言仅一条横屏成片，两家商店共用同一个文件。";
+  "V5 清晰度增强版。高清母版用于放大观看，商店通用版由同一母版生成；排版、分镜和声音沿用 V4。";
 const usage =
   "iPhone 风格外框属于创意叠层。Apple 要求以 App 内画面为主，允许用于讲解操作的触点；外框是否接受由审核决定。Google 使用可嵌入、公开或不公开列出的无广告 YouTube 视频。";
 put(
   "使用说明.txt",
-  "NOIR Poker · V4\n\n" +
+  "NOIR Poker · V5\n\n" +
     intro +
     "\n" +
     usage +
-    "\n\n中英文目录分别包含 shared-preview.mp4、预览封面、SRT、原生界面截图、商店文案与点击前后对照。手机截图共用外框，但保留各平台的实际画面；iPad 使用独立平板截图。每种语言只提交对应的一条视频。\n这是制作交付，未上传商店或 YouTube。\n",
+    "\n\n中英文目录分别包含 master-3840.mp4（3840×1772 高清母版）、shared-preview.mp4（1920×886 商店共用版）、预览封面、SRT、原生界面截图、商店文案与点击前后对照。手机截图共用外框，但保留各平台的实际画面；iPad 使用独立平板截图。每种语言只提交对应的一条视频。\n这是制作交付，未上传商店或 YouTube。\n",
 );
 const strings = { "zh-CN": "简体中文", en: "English" };
 const parts = langs
   .map(
     (l) =>
-      `<section><h2>${strings[l]}</h2><video controls playsinline preload="metadata" poster="${l}/poster.png" src="${l}/shared-preview.mp4"></video><nav><a href="${l}/shared-preview.mp4" download>下载共用 MP4</a><a href="${l}/captions.srt" download>SRT 字幕</a><a href="${l}/tap-checks.jpg">点按前后逐帧对照</a></nav><details><summary>查看八张 iPhone 截图</summary><div class="grid">${Array.from(
+      `<section><h2>${strings[l]}</h2><video controls playsinline preload="metadata" poster="${l}/poster.png" src="${l}/master-3840.mp4"></video><nav><a href="${l}/master-3840.mp4" download>下载高清母版</a><a href="${l}/shared-preview.mp4" download>下载商店通用 MP4</a><a href="${l}/captions.srt" download>SRT 字幕</a><a href="${l}/tap-checks.jpg">点按前后逐帧对照</a></nav><details><summary>查看八张 iPhone 截图</summary><div class="grid">${Array.from(
         { length: 8 },
         (_, i) => {
           const src =
@@ -239,7 +297,7 @@ const parts = langs
   .join("");
 put(
   "index.html",
-  '<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>NOIR Poker · V4</title><style>*{box-sizing:border-box}body{margin:auto;max-width:1100px;padding:42px 20px 90px;background:#091b19;color:#f2f0e5;font:17px/1.65 system-ui}small,a{color:#a5e5c5}h1{font-size:clamp(34px,5vw,60px);line-height:1.12;margin:8px 0}section{margin:38px 0}video{width:100%;border-radius:14px;background:#071412}nav{display:flex;gap:22px;flex-wrap:wrap}summary{cursor:pointer;margin:12px 0}.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.grid img{width:100%}p{max-width:900px}</style><small>NOIR POKER / STORE EDITION 04</small><h1>一手牌的练习旅程</h1><p>' +
+  '<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>NOIR Poker · V5</title><style>*{box-sizing:border-box}body{margin:auto;max-width:1100px;padding:42px 20px 90px;background:#091b19;color:#f2f0e5;font:17px/1.65 system-ui}small,a{color:#a5e5c5}h1{font-size:clamp(34px,5vw,60px);line-height:1.12;margin:8px 0}section{margin:38px 0}video{width:100%;border-radius:14px;background:#071412}nav{display:flex;gap:22px;flex-wrap:wrap}summary{cursor:pointer;margin:12px 0}.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.grid img{width:100%}p{max-width:900px}</style><small>NOIR POKER / STORE EDITION 05</small><h1>一手牌的练习旅程</h1><p>' +
     intro +
     "</p>" +
     parts +

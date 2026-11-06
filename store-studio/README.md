@@ -1,12 +1,14 @@
-# NOIR Poker 商店素材工作室 · V4
+# NOIR Poker 商店素材工作室 · V5
 
 独立 Remotion 4.0.541 工程，依据 PR #70 的 `94e56b1ef009f0729508491e5f2155fd37d2bf99`。英文与简体中文使用真实安装的 iPhone、iPad、Android App 素材。普通对局、教程、计算器和记录通过可见控件操作，没有注入牌局或测试 fixtures。
 
-![V4 · 左侧介绍与右侧完整手机](previews/shared-zh-CN.jpg)
+![V5 · 保持排版并提升清晰度](previews/shared-zh-CN.jpg)
 
-## V4 两家商店共用成片
+## V5 清晰度增强导出
 
-每种语言只导出一个 `shared-preview.mp4`（1920 × 886、894 帧、29.8 秒）。Apple 使用 iPhone 预览槽位，Google 用相同文件上传至 YouTube 后填写链接。排版按用户提供的参考图调整，左侧放大标题、介绍和字幕，右侧只有一台完整 iPhone。录屏按原始比例完整装入屏幕，采用 contain 显示；没有局部裁切、额外放大画面或重复播放窗口。自绘 iPhone 正面外框保留原录屏中的灵动岛，点按图标只用于指明真实控件。装饰外框是否被 Apple 接受仍由实际审核决定，V2 无外框 Apple 视频另存，可作备选。
+V5 保留 V4 的所有排版、文案、分镜、时序、点按和声音。每语言增加 `master-3840.mp4`（3840 × 1772）以保留手机放大观看所需像素。两家商店继续共用 `shared-preview.mp4`（1920 × 886、894 帧、29.8 秒）。这是同一版内容的两个输出尺寸。iPhone 商店预览规格仍为 1920 × 886，高清母版用于编辑和放大观看。
+
+清晰度处理采用原始帧的无损 WebP 序列、PNG 渲染帧、2 倍密度渲染及无损 PNG 中间序列；每个交付文件只做最后一次有损编码。商店文件由高密度无损中间片经 Lanczos 缩小，不经过 JPEG 或已压缩高清成片再压缩。录屏本身保持原样，不用生成式方法重画字或牌面。音轨从 V4 直接复制 AAC，检查两种输出与锁定音轨的哈希一致。
 
 `src/SharedFilm.tsx` 控制两种语言共用的六镜时间线。`prepare-shared.mjs` 对原始 VFR 全片先转 30 fps，再按真实画面切换位置剪辑，避免静止画面使触点提前或滞后。坐标取自可见按钮边界，点按位置按完整屏幕的同一坐标系换算。复盘、重打、改选弃牌、下拉菜单、对局记录、选中一手都有点按提示。最后保留该翻牌面的实际计算画面，胜率 56.06%、Outs 16，与后续转牌结果区分。
 
@@ -17,16 +19,16 @@
 ```sh
 npm run dev -- --no-open --port=4390
 # Studio: /Shared-ZH 或 /Shared-EN
-npm run export:shared -- /absolute/path/store-kit-v4
-npm run export:shared-stills -- /absolute/path/store-kit-v4
-npm run verify:shared -- /absolute/path/store-kit-v4
+npm run export:clarity -- /absolute/path/store-kit-v5
+npm run export:shared-stills -- /absolute/path/store-kit-v5
+npm run verify:shared -- /absolute/path/store-kit-v5
 ```
 
-如需重新剪原片，将原始采集目录解压后运行 `npm run prepare:shared -- /path/to/raw`；索引使用 `ios/`、`ios-en-correction/`。仅重做末镜旁白可用 `npm run voice:shared`。验证程序检查单一成片的完整解码、平均视频码率、帧数、双声道、响度、峰值、图片尺寸和双语字段，并从交付 MP4 导出点击前后对照。
+如需重新剪原片，将原始采集目录解压后运行 `npm run prepare:clarity -- /path/to/raw --lossless-frames`；索引使用 `ios/`、`ios-en-correction/`。`public/locked-audio/` 为此次直接复制的 V4 音轨；如未来改声音，需要更新该音轨。仅重做末镜旁白可用 `npm run voice:shared`。验证程序检查单一成片的完整解码、平均视频码率、帧数、双声道、响度、峰值、图片尺寸和双语字段，并从交付 MP4 导出点击前后对照。
 
 ## V2 原生采集与旧版成片
 
-以下为 V2 的原始采集与分平台剪辑说明。新版请使用上面的 V4 命令。
+以下为 V2 的原始采集与分平台剪辑说明。新版请使用上面的 V5 命令。
 
 ![简体中文截图概览](previews/zh-CN.png)
 
