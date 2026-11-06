@@ -73,3 +73,10 @@ html[lang='ko'] .profile-comparison th {
   overflow-wrap: normal;
   word-break: normal;
 }
+/* Android WebView's software paint path can reuse a vertically compressed
+   raster for this translated, repositioned row. An independent identity
+   layer preserves its glyphs and badge proportions without changing layout. */
+.native-android .hero-identity {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
