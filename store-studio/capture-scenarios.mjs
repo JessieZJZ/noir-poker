@@ -151,6 +151,10 @@ export async function calculator(app, locale) {
     "Calculator must display completed odds and outs",
   );
   await photo(app, `${locale}/05-calculator`);
+  if (process.env.NOIR_STORE_STILLS_ONLY === "1") {
+    await close(app, "#win-rate-dialog");
+    return;
+  }
   await film(
     app,
     `${locale}/calculator`,

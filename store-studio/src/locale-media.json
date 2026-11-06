@@ -1,0 +1,684 @@
+{
+  "zh-CN": {
+    "ios": {
+      "01-practice": "locales/zh-CN/ios/01-practice.png",
+      "02-tutorial": "locales/zh-CN/ios/02-tutorial.png",
+      "03-review-top": "locales/zh-CN/ios/03-review-top.png",
+      "04-result": "locales/zh-CN/ios/04-result.png",
+      "05-calculator": "locales/zh-CN/ios/05-calculator.png",
+      "06-styles": "locales/zh-CN/ios/06-styles.png",
+      "07-records": "locales/zh-CN/ios/07-records.png",
+      "07-record-detail": "locales/zh-CN/ios/07-record-detail.png"
+    },
+    "phone": {
+      "01-practice": "locales/zh-CN/phone/01-practice.png",
+      "02-tutorial": "locales/zh-CN/phone/02-tutorial.png",
+      "03-review-top": "locales/zh-CN/phone/03-review-top.png",
+      "04-result": "locales/zh-CN/phone/04-result.png",
+      "05-calculator": "locales/zh-CN/phone/05-calculator.png",
+      "06-styles": "locales/zh-CN/phone/06-styles.png",
+      "07-records": "locales/zh-CN/phone/07-records.png",
+      "07-record-detail": "locales/zh-CN/phone/07-record-detail.png"
+    },
+    "tablet7": {
+      "01-practice": "locales/zh-CN/tablet7/01-practice.png",
+      "02-tutorial": "locales/zh-CN/tablet7/02-tutorial.png",
+      "03-review-top": "locales/zh-CN/tablet7/03-review-top.png",
+      "04-result": "locales/zh-CN/tablet7/04-result.png",
+      "05-calculator": "locales/zh-CN/tablet7/05-calculator.png",
+      "06-styles": "locales/zh-CN/tablet7/06-styles.png",
+      "07-records": "locales/zh-CN/tablet7/07-records.png",
+      "07-record-detail": "locales/zh-CN/tablet7/07-record-detail.png"
+    },
+    "tablet10": {
+      "01-practice": "locales/zh-CN/tablet10/01-practice.png",
+      "02-tutorial": "locales/zh-CN/tablet10/02-tutorial.png",
+      "03-review-top": "locales/zh-CN/tablet10/03-review-top.png",
+      "04-result": "locales/zh-CN/tablet10/04-result.png",
+      "05-calculator": "locales/zh-CN/tablet10/05-calculator.png",
+      "06-styles": "locales/zh-CN/tablet10/06-styles.png",
+      "07-records": "locales/zh-CN/tablet10/07-records.png",
+      "07-record-detail": "locales/zh-CN/tablet10/07-record-detail.png"
+    },
+    "desktop": {
+      "01-practice": "locales/zh-CN/desktop/01-practice.png",
+      "02-tutorial": "locales/zh-CN/desktop/02-tutorial.png",
+      "03-review-top": "locales/zh-CN/desktop/03-review-top.png",
+      "04-result": "locales/zh-CN/desktop/04-result.png",
+      "05-calculator": "locales/zh-CN/desktop/05-calculator.png",
+      "06-styles": "locales/zh-CN/desktop/06-styles.png",
+      "07-records": "locales/zh-CN/desktop/07-records.png",
+      "07-record-detail": "locales/zh-CN/desktop/07-record-detail.png"
+    },
+    "ipad": {
+      "01-practice": "locales/zh-CN/ipad/01-practice.png",
+      "02-tutorial": "locales/zh-CN/ipad/02-tutorial.png",
+      "03-review-top": "locales/zh-CN/ipad/03-review-top.png",
+      "04-result": "locales/zh-CN/ipad/04-result.png",
+      "05-calculator": "locales/zh-CN/ipad/05-calculator.png",
+      "06-styles": "locales/zh-CN/ipad/06-styles.png",
+      "07-records": "locales/zh-CN/ipad/07-records.png",
+      "07-record-detail": "locales/zh-CN/ipad/07-record-detail.png"
+    }
+  },
+  "en": {
+    "ios": {
+      "01-practice": "locales/en/ios/01-practice.png",
+      "02-tutorial": "locales/en/ios/02-tutorial.png",
+      "03-review-top": "locales/en/ios/03-review-top.png",
+      "04-result": "locales/en/ios/04-result.png",
+      "05-calculator": "locales/en/ios/05-calculator.png",
+      "06-styles": "locales/en/ios/06-styles.png",
+      "07-records": "locales/en/ios/07-records.png",
+      "07-record-detail": "locales/en/ios/07-record-detail.png"
+    },
+    "phone": {
+      "01-practice": "locales/en/phone/01-practice.png",
+      "02-tutorial": "locales/en/phone/02-tutorial.png",
+      "03-review-top": "locales/en/phone/03-review-top.png",
+      "04-result": "locales/en/phone/04-result.png",
+      "05-calculator": "locales/en/phone/05-calculator.png",
+      "06-styles": "locales/en/phone/06-styles.png",
+      "07-records": "locales/en/phone/07-records.png",
+      "07-record-detail": "locales/en/phone/07-record-detail.png"
+    },
+    "tablet7": {
+      "01-practice": "locales/en/tablet7/01-practice.png",
+      "02-tutorial": "locales/en/tablet7/02-tutorial.png",
+      "03-review-top": "locales/en/tablet7/03-review-top.png",
+      "04-result": "locales/en/tablet7/04-result.png",
+      "05-calculator": "locales/en/tablet7/05-calculator.png",
+      "06-styles": "locales/en/tablet7/06-styles.png",
+      "07-records": "locales/en/tablet7/07-records.png",
+      "07-record-detail": "locales/en/tablet7/07-record-detail.png"
+    },
+    "tablet10": {
+      "01-practice": "locales/en/tablet10/01-practice.png",
+      "02-tutorial": "locales/en/tablet10/02-tutorial.png",
+      "03-review-top": "locales/en/tablet10/03-review-top.png",
+      "04-result": "locales/en/tablet10/04-result.png",
+      "05-calculator": "locales/en/tablet10/05-calculator.png",
+      "06-styles": "locales/en/tablet10/06-styles.png",
+      "07-records": "locales/en/tablet10/07-records.png",
+      "07-record-detail": "locales/en/tablet10/07-record-detail.png"
+    },
+    "desktop": {
+      "01-practice": "locales/en/desktop/01-practice.png",
+      "02-tutorial": "locales/en/desktop/02-tutorial.png",
+      "03-review-top": "locales/en/desktop/03-review-top.png",
+      "04-result": "locales/en/desktop/04-result.png",
+      "05-calculator": "locales/en/desktop/05-calculator.png",
+      "06-styles": "locales/en/desktop/06-styles.png",
+      "07-records": "locales/en/desktop/07-records.png",
+      "07-record-detail": "locales/en/desktop/07-record-detail.png"
+    },
+    "ipad": {
+      "01-practice": "locales/en/ipad/01-practice.png",
+      "02-tutorial": "locales/en/ipad/02-tutorial.png",
+      "03-review-top": "locales/en/ipad/03-review-top.png",
+      "04-result": "locales/en/ipad/04-result.png",
+      "05-calculator": "locales/en/ipad/05-calculator.png",
+      "06-styles": "locales/en/ipad/06-styles.png",
+      "07-records": "locales/en/ipad/07-records.png",
+      "07-record-detail": "locales/en/ipad/07-record-detail.png"
+    }
+  },
+  "zh-TW": {
+    "ios": {
+      "01-practice": "locales/zh-TW/ios/01-practice.png",
+      "02-tutorial": "locales/zh-TW/ios/02-tutorial.png",
+      "03-review-top": "locales/zh-TW/ios/03-review-top.png",
+      "04-result": "locales/zh-TW/ios/04-result.png",
+      "05-calculator": "locales/zh-TW/ios/05-calculator.png",
+      "06-styles": "locales/zh-TW/ios/06-styles.png",
+      "07-records": "locales/zh-TW/ios/07-records.png",
+      "07-record-detail": "locales/zh-TW/ios/07-record-detail.png"
+    },
+    "phone": {
+      "01-practice": "locales/zh-TW/phone/01-practice.png",
+      "02-tutorial": "locales/zh-TW/phone/02-tutorial.png",
+      "03-review-top": "locales/zh-TW/phone/03-review-top.png",
+      "04-result": "locales/zh-TW/phone/04-result.png",
+      "05-calculator": "locales/zh-TW/phone/05-calculator.png",
+      "06-styles": "locales/zh-TW/phone/06-styles.png",
+      "07-records": "locales/zh-TW/phone/07-records.png",
+      "07-record-detail": "locales/zh-TW/phone/07-record-detail.png"
+    },
+    "tablet7": {
+      "01-practice": "locales/zh-TW/tablet7/01-practice.png",
+      "02-tutorial": "locales/zh-TW/tablet7/02-tutorial.png",
+      "03-review-top": "locales/zh-TW/tablet7/03-review-top.png",
+      "04-result": "locales/zh-TW/tablet7/04-result.png",
+      "05-calculator": "locales/zh-TW/tablet7/05-calculator.png",
+      "06-styles": "locales/zh-TW/tablet7/06-styles.png",
+      "07-records": "locales/zh-TW/tablet7/07-records.png",
+      "07-record-detail": "locales/zh-TW/tablet7/07-record-detail.png"
+    },
+    "tablet10": {
+      "01-practice": "locales/zh-TW/tablet10/01-practice.png",
+      "02-tutorial": "locales/zh-TW/tablet10/02-tutorial.png",
+      "03-review-top": "locales/zh-TW/tablet10/03-review-top.png",
+      "04-result": "locales/zh-TW/tablet10/04-result.png",
+      "05-calculator": "locales/zh-TW/tablet10/05-calculator.png",
+      "06-styles": "locales/zh-TW/tablet10/06-styles.png",
+      "07-records": "locales/zh-TW/tablet10/07-records.png",
+      "07-record-detail": "locales/zh-TW/tablet10/07-record-detail.png"
+    },
+    "desktop": {
+      "01-practice": "locales/zh-TW/desktop/01-practice.png",
+      "02-tutorial": "locales/zh-TW/desktop/02-tutorial.png",
+      "03-review-top": "locales/zh-TW/desktop/03-review-top.png",
+      "04-result": "locales/zh-TW/desktop/04-result.png",
+      "05-calculator": "locales/zh-TW/desktop/05-calculator.png",
+      "06-styles": "locales/zh-TW/desktop/06-styles.png",
+      "07-records": "locales/zh-TW/desktop/07-records.png",
+      "07-record-detail": "locales/zh-TW/desktop/07-record-detail.png"
+    },
+    "ipad": {
+      "01-practice": "locales/zh-TW/ipad/01-practice.png",
+      "02-tutorial": "locales/zh-TW/ipad/02-tutorial.png",
+      "03-review-top": "locales/zh-TW/ipad/03-review-top.png",
+      "04-result": "locales/zh-TW/ipad/04-result.png",
+      "05-calculator": "locales/zh-TW/ipad/05-calculator.png",
+      "06-styles": "locales/zh-TW/ipad/06-styles.png",
+      "07-records": "locales/zh-TW/ipad/07-records.png",
+      "07-record-detail": "locales/zh-TW/ipad/07-record-detail.png"
+    }
+  },
+  "ja": {
+    "ios": {
+      "01-practice": "locales/ja/ios/01-practice.png",
+      "02-tutorial": "locales/ja/ios/02-tutorial.png",
+      "03-review-top": "locales/ja/ios/03-review-top.png",
+      "04-result": "locales/ja/ios/04-result.png",
+      "05-calculator": "locales/ja/ios/05-calculator.png",
+      "06-styles": "locales/ja/ios/06-styles.png",
+      "07-records": "locales/ja/ios/07-records.png",
+      "07-record-detail": "locales/ja/ios/07-record-detail.png"
+    },
+    "phone": {
+      "01-practice": "locales/ja/phone/01-practice.png",
+      "02-tutorial": "locales/ja/phone/02-tutorial.png",
+      "03-review-top": "locales/ja/phone/03-review-top.png",
+      "04-result": "locales/ja/phone/04-result.png",
+      "05-calculator": "locales/ja/phone/05-calculator.png",
+      "06-styles": "locales/ja/phone/06-styles.png",
+      "07-records": "locales/ja/phone/07-records.png",
+      "07-record-detail": "locales/ja/phone/07-record-detail.png"
+    },
+    "tablet7": {
+      "01-practice": "locales/ja/tablet7/01-practice.png",
+      "02-tutorial": "locales/ja/tablet7/02-tutorial.png",
+      "03-review-top": "locales/ja/tablet7/03-review-top.png",
+      "04-result": "locales/ja/tablet7/04-result.png",
+      "05-calculator": "locales/ja/tablet7/05-calculator.png",
+      "06-styles": "locales/ja/tablet7/06-styles.png",
+      "07-records": "locales/ja/tablet7/07-records.png",
+      "07-record-detail": "locales/ja/tablet7/07-record-detail.png"
+    },
+    "tablet10": {
+      "01-practice": "locales/ja/tablet10/01-practice.png",
+      "02-tutorial": "locales/ja/tablet10/02-tutorial.png",
+      "03-review-top": "locales/ja/tablet10/03-review-top.png",
+      "04-result": "locales/ja/tablet10/04-result.png",
+      "05-calculator": "locales/ja/tablet10/05-calculator.png",
+      "06-styles": "locales/ja/tablet10/06-styles.png",
+      "07-records": "locales/ja/tablet10/07-records.png",
+      "07-record-detail": "locales/ja/tablet10/07-record-detail.png"
+    },
+    "desktop": {
+      "01-practice": "locales/ja/desktop/01-practice.png",
+      "02-tutorial": "locales/ja/desktop/02-tutorial.png",
+      "03-review-top": "locales/ja/desktop/03-review-top.png",
+      "04-result": "locales/ja/desktop/04-result.png",
+      "05-calculator": "locales/ja/desktop/05-calculator.png",
+      "06-styles": "locales/ja/desktop/06-styles.png",
+      "07-records": "locales/ja/desktop/07-records.png",
+      "07-record-detail": "locales/ja/desktop/07-record-detail.png"
+    },
+    "ipad": {
+      "01-practice": "locales/ja/ipad/01-practice.png",
+      "02-tutorial": "locales/ja/ipad/02-tutorial.png",
+      "03-review-top": "locales/ja/ipad/03-review-top.png",
+      "04-result": "locales/ja/ipad/04-result.png",
+      "05-calculator": "locales/ja/ipad/05-calculator.png",
+      "06-styles": "locales/ja/ipad/06-styles.png",
+      "07-records": "locales/ja/ipad/07-records.png",
+      "07-record-detail": "locales/ja/ipad/07-record-detail.png"
+    }
+  },
+  "ko": {
+    "ios": {
+      "01-practice": "locales/ko/ios/01-practice.png",
+      "02-tutorial": "locales/ko/ios/02-tutorial.png",
+      "03-review-top": "locales/ko/ios/03-review-top.png",
+      "04-result": "locales/ko/ios/04-result.png",
+      "05-calculator": "locales/ko/ios/05-calculator.png",
+      "06-styles": "locales/ko/ios/06-styles.png",
+      "07-records": "locales/ko/ios/07-records.png",
+      "07-record-detail": "locales/ko/ios/07-record-detail.png"
+    },
+    "phone": {
+      "01-practice": "locales/ko/phone/01-practice.png",
+      "02-tutorial": "locales/ko/phone/02-tutorial.png",
+      "03-review-top": "locales/ko/phone/03-review-top.png",
+      "04-result": "locales/ko/phone/04-result.png",
+      "05-calculator": "locales/ko/phone/05-calculator.png",
+      "06-styles": "locales/ko/phone/06-styles.png",
+      "07-records": "locales/ko/phone/07-records.png",
+      "07-record-detail": "locales/ko/phone/07-record-detail.png"
+    },
+    "tablet7": {
+      "01-practice": "locales/ko/tablet7/01-practice.png",
+      "02-tutorial": "locales/ko/tablet7/02-tutorial.png",
+      "03-review-top": "locales/ko/tablet7/03-review-top.png",
+      "04-result": "locales/ko/tablet7/04-result.png",
+      "05-calculator": "locales/ko/tablet7/05-calculator.png",
+      "06-styles": "locales/ko/tablet7/06-styles.png",
+      "07-records": "locales/ko/tablet7/07-records.png",
+      "07-record-detail": "locales/ko/tablet7/07-record-detail.png"
+    },
+    "tablet10": {
+      "01-practice": "locales/ko/tablet10/01-practice.png",
+      "02-tutorial": "locales/ko/tablet10/02-tutorial.png",
+      "03-review-top": "locales/ko/tablet10/03-review-top.png",
+      "04-result": "locales/ko/tablet10/04-result.png",
+      "05-calculator": "locales/ko/tablet10/05-calculator.png",
+      "06-styles": "locales/ko/tablet10/06-styles.png",
+      "07-records": "locales/ko/tablet10/07-records.png",
+      "07-record-detail": "locales/ko/tablet10/07-record-detail.png"
+    },
+    "desktop": {
+      "01-practice": "locales/ko/desktop/01-practice.png",
+      "02-tutorial": "locales/ko/desktop/02-tutorial.png",
+      "03-review-top": "locales/ko/desktop/03-review-top.png",
+      "04-result": "locales/ko/desktop/04-result.png",
+      "05-calculator": "locales/ko/desktop/05-calculator.png",
+      "06-styles": "locales/ko/desktop/06-styles.png",
+      "07-records": "locales/ko/desktop/07-records.png",
+      "07-record-detail": "locales/ko/desktop/07-record-detail.png"
+    },
+    "ipad": {
+      "01-practice": "locales/ko/ipad/01-practice.png",
+      "02-tutorial": "locales/ko/ipad/02-tutorial.png",
+      "03-review-top": "locales/ko/ipad/03-review-top.png",
+      "04-result": "locales/ko/ipad/04-result.png",
+      "05-calculator": "locales/ko/ipad/05-calculator.png",
+      "06-styles": "locales/ko/ipad/06-styles.png",
+      "07-records": "locales/ko/ipad/07-records.png",
+      "07-record-detail": "locales/ko/ipad/07-record-detail.png"
+    }
+  },
+  "es": {
+    "ios": {
+      "01-practice": "locales/es/ios/01-practice.png",
+      "02-tutorial": "locales/es/ios/02-tutorial.png",
+      "03-review-top": "locales/es/ios/03-review-top.png",
+      "04-result": "locales/es/ios/04-result.png",
+      "05-calculator": "locales/es/ios/05-calculator.png",
+      "06-styles": "locales/es/ios/06-styles.png",
+      "07-records": "locales/es/ios/07-records.png",
+      "07-record-detail": "locales/es/ios/07-record-detail.png"
+    },
+    "phone": {
+      "01-practice": "locales/es/phone/01-practice.png",
+      "02-tutorial": "locales/es/phone/02-tutorial.png",
+      "03-review-top": "locales/es/phone/03-review-top.png",
+      "04-result": "locales/es/phone/04-result.png",
+      "05-calculator": "locales/es/phone/05-calculator.png",
+      "06-styles": "locales/es/phone/06-styles.png",
+      "07-records": "locales/es/phone/07-records.png",
+      "07-record-detail": "locales/es/phone/07-record-detail.png"
+    },
+    "tablet7": {
+      "01-practice": "locales/es/tablet7/01-practice.png",
+      "02-tutorial": "locales/es/tablet7/02-tutorial.png",
+      "03-review-top": "locales/es/tablet7/03-review-top.png",
+      "04-result": "locales/es/tablet7/04-result.png",
+      "05-calculator": "locales/es/tablet7/05-calculator.png",
+      "06-styles": "locales/es/tablet7/06-styles.png",
+      "07-records": "locales/es/tablet7/07-records.png",
+      "07-record-detail": "locales/es/tablet7/07-record-detail.png"
+    },
+    "tablet10": {
+      "01-practice": "locales/es/tablet10/01-practice.png",
+      "02-tutorial": "locales/es/tablet10/02-tutorial.png",
+      "03-review-top": "locales/es/tablet10/03-review-top.png",
+      "04-result": "locales/es/tablet10/04-result.png",
+      "05-calculator": "locales/es/tablet10/05-calculator.png",
+      "06-styles": "locales/es/tablet10/06-styles.png",
+      "07-records": "locales/es/tablet10/07-records.png",
+      "07-record-detail": "locales/es/tablet10/07-record-detail.png"
+    },
+    "desktop": {
+      "01-practice": "locales/es/desktop/01-practice.png",
+      "02-tutorial": "locales/es/desktop/02-tutorial.png",
+      "03-review-top": "locales/es/desktop/03-review-top.png",
+      "04-result": "locales/es/desktop/04-result.png",
+      "05-calculator": "locales/es/desktop/05-calculator.png",
+      "06-styles": "locales/es/desktop/06-styles.png",
+      "07-records": "locales/es/desktop/07-records.png",
+      "07-record-detail": "locales/es/desktop/07-record-detail.png"
+    },
+    "ipad": {
+      "01-practice": "locales/es/ipad/01-practice.png",
+      "02-tutorial": "locales/es/ipad/02-tutorial.png",
+      "03-review-top": "locales/es/ipad/03-review-top.png",
+      "04-result": "locales/es/ipad/04-result.png",
+      "05-calculator": "locales/es/ipad/05-calculator.png",
+      "06-styles": "locales/es/ipad/06-styles.png",
+      "07-records": "locales/es/ipad/07-records.png",
+      "07-record-detail": "locales/es/ipad/07-record-detail.png"
+    }
+  },
+  "it": {
+    "ios": {
+      "01-practice": "locales/it/ios/01-practice.png",
+      "02-tutorial": "locales/it/ios/02-tutorial.png",
+      "03-review-top": "locales/it/ios/03-review-top.png",
+      "04-result": "locales/it/ios/04-result.png",
+      "05-calculator": "locales/it/ios/05-calculator.png",
+      "06-styles": "locales/it/ios/06-styles.png",
+      "07-records": "locales/it/ios/07-records.png",
+      "07-record-detail": "locales/it/ios/07-record-detail.png"
+    },
+    "phone": {
+      "01-practice": "locales/it/phone/01-practice.png",
+      "02-tutorial": "locales/it/phone/02-tutorial.png",
+      "03-review-top": "locales/it/phone/03-review-top.png",
+      "04-result": "locales/it/phone/04-result.png",
+      "05-calculator": "locales/it/phone/05-calculator.png",
+      "06-styles": "locales/it/phone/06-styles.png",
+      "07-records": "locales/it/phone/07-records.png",
+      "07-record-detail": "locales/it/phone/07-record-detail.png"
+    },
+    "tablet7": {
+      "01-practice": "locales/it/tablet7/01-practice.png",
+      "02-tutorial": "locales/it/tablet7/02-tutorial.png",
+      "03-review-top": "locales/it/tablet7/03-review-top.png",
+      "04-result": "locales/it/tablet7/04-result.png",
+      "05-calculator": "locales/it/tablet7/05-calculator.png",
+      "06-styles": "locales/it/tablet7/06-styles.png",
+      "07-records": "locales/it/tablet7/07-records.png",
+      "07-record-detail": "locales/it/tablet7/07-record-detail.png"
+    },
+    "tablet10": {
+      "01-practice": "locales/it/tablet10/01-practice.png",
+      "02-tutorial": "locales/it/tablet10/02-tutorial.png",
+      "03-review-top": "locales/it/tablet10/03-review-top.png",
+      "04-result": "locales/it/tablet10/04-result.png",
+      "05-calculator": "locales/it/tablet10/05-calculator.png",
+      "06-styles": "locales/it/tablet10/06-styles.png",
+      "07-records": "locales/it/tablet10/07-records.png",
+      "07-record-detail": "locales/it/tablet10/07-record-detail.png"
+    },
+    "desktop": {
+      "01-practice": "locales/it/desktop/01-practice.png",
+      "02-tutorial": "locales/it/desktop/02-tutorial.png",
+      "03-review-top": "locales/it/desktop/03-review-top.png",
+      "04-result": "locales/it/desktop/04-result.png",
+      "05-calculator": "locales/it/desktop/05-calculator.png",
+      "06-styles": "locales/it/desktop/06-styles.png",
+      "07-records": "locales/it/desktop/07-records.png",
+      "07-record-detail": "locales/it/desktop/07-record-detail.png"
+    },
+    "ipad": {
+      "01-practice": "locales/it/ipad/01-practice.png",
+      "02-tutorial": "locales/it/ipad/02-tutorial.png",
+      "03-review-top": "locales/it/ipad/03-review-top.png",
+      "04-result": "locales/it/ipad/04-result.png",
+      "05-calculator": "locales/it/ipad/05-calculator.png",
+      "06-styles": "locales/it/ipad/06-styles.png",
+      "07-records": "locales/it/ipad/07-records.png",
+      "07-record-detail": "locales/it/ipad/07-record-detail.png"
+    }
+  },
+  "pt": {
+    "ios": {
+      "01-practice": "locales/pt/ios/01-practice.png",
+      "02-tutorial": "locales/pt/ios/02-tutorial.png",
+      "03-review-top": "locales/pt/ios/03-review-top.png",
+      "04-result": "locales/pt/ios/04-result.png",
+      "05-calculator": "locales/pt/ios/05-calculator.png",
+      "06-styles": "locales/pt/ios/06-styles.png",
+      "07-records": "locales/pt/ios/07-records.png",
+      "07-record-detail": "locales/pt/ios/07-record-detail.png"
+    },
+    "phone": {
+      "01-practice": "locales/pt/phone/01-practice.png",
+      "02-tutorial": "locales/pt/phone/02-tutorial.png",
+      "03-review-top": "locales/pt/phone/03-review-top.png",
+      "04-result": "locales/pt/phone/04-result.png",
+      "05-calculator": "locales/pt/phone/05-calculator.png",
+      "06-styles": "locales/pt/phone/06-styles.png",
+      "07-records": "locales/pt/phone/07-records.png",
+      "07-record-detail": "locales/pt/phone/07-record-detail.png"
+    },
+    "tablet7": {
+      "01-practice": "locales/pt/tablet7/01-practice.png",
+      "02-tutorial": "locales/pt/tablet7/02-tutorial.png",
+      "03-review-top": "locales/pt/tablet7/03-review-top.png",
+      "04-result": "locales/pt/tablet7/04-result.png",
+      "05-calculator": "locales/pt/tablet7/05-calculator.png",
+      "06-styles": "locales/pt/tablet7/06-styles.png",
+      "07-records": "locales/pt/tablet7/07-records.png",
+      "07-record-detail": "locales/pt/tablet7/07-record-detail.png"
+    },
+    "tablet10": {
+      "01-practice": "locales/pt/tablet10/01-practice.png",
+      "02-tutorial": "locales/pt/tablet10/02-tutorial.png",
+      "03-review-top": "locales/pt/tablet10/03-review-top.png",
+      "04-result": "locales/pt/tablet10/04-result.png",
+      "05-calculator": "locales/pt/tablet10/05-calculator.png",
+      "06-styles": "locales/pt/tablet10/06-styles.png",
+      "07-records": "locales/pt/tablet10/07-records.png",
+      "07-record-detail": "locales/pt/tablet10/07-record-detail.png"
+    },
+    "desktop": {
+      "01-practice": "locales/pt/desktop/01-practice.png",
+      "02-tutorial": "locales/pt/desktop/02-tutorial.png",
+      "03-review-top": "locales/pt/desktop/03-review-top.png",
+      "04-result": "locales/pt/desktop/04-result.png",
+      "05-calculator": "locales/pt/desktop/05-calculator.png",
+      "06-styles": "locales/pt/desktop/06-styles.png",
+      "07-records": "locales/pt/desktop/07-records.png",
+      "07-record-detail": "locales/pt/desktop/07-record-detail.png"
+    },
+    "ipad": {
+      "01-practice": "locales/pt/ipad/01-practice.png",
+      "02-tutorial": "locales/pt/ipad/02-tutorial.png",
+      "03-review-top": "locales/pt/ipad/03-review-top.png",
+      "04-result": "locales/pt/ipad/04-result.png",
+      "05-calculator": "locales/pt/ipad/05-calculator.png",
+      "06-styles": "locales/pt/ipad/06-styles.png",
+      "07-records": "locales/pt/ipad/07-records.png",
+      "07-record-detail": "locales/pt/ipad/07-record-detail.png"
+    }
+  },
+  "de": {
+    "ios": {
+      "01-practice": "locales/de/ios/01-practice.png",
+      "02-tutorial": "locales/de/ios/02-tutorial.png",
+      "03-review-top": "locales/de/ios/03-review-top.png",
+      "04-result": "locales/de/ios/04-result.png",
+      "05-calculator": "locales/de/ios/05-calculator.png",
+      "06-styles": "locales/de/ios/06-styles.png",
+      "07-records": "locales/de/ios/07-records.png",
+      "07-record-detail": "locales/de/ios/07-record-detail.png"
+    },
+    "phone": {
+      "01-practice": "locales/de/phone/01-practice.png",
+      "02-tutorial": "locales/de/phone/02-tutorial.png",
+      "03-review-top": "locales/de/phone/03-review-top.png",
+      "04-result": "locales/de/phone/04-result.png",
+      "05-calculator": "locales/de/phone/05-calculator.png",
+      "06-styles": "locales/de/phone/06-styles.png",
+      "07-records": "locales/de/phone/07-records.png",
+      "07-record-detail": "locales/de/phone/07-record-detail.png"
+    },
+    "tablet7": {
+      "01-practice": "locales/de/tablet7/01-practice.png",
+      "02-tutorial": "locales/de/tablet7/02-tutorial.png",
+      "03-review-top": "locales/de/tablet7/03-review-top.png",
+      "04-result": "locales/de/tablet7/04-result.png",
+      "05-calculator": "locales/de/tablet7/05-calculator.png",
+      "06-styles": "locales/de/tablet7/06-styles.png",
+      "07-records": "locales/de/tablet7/07-records.png",
+      "07-record-detail": "locales/de/tablet7/07-record-detail.png"
+    },
+    "tablet10": {
+      "01-practice": "locales/de/tablet10/01-practice.png",
+      "02-tutorial": "locales/de/tablet10/02-tutorial.png",
+      "03-review-top": "locales/de/tablet10/03-review-top.png",
+      "04-result": "locales/de/tablet10/04-result.png",
+      "05-calculator": "locales/de/tablet10/05-calculator.png",
+      "06-styles": "locales/de/tablet10/06-styles.png",
+      "07-records": "locales/de/tablet10/07-records.png",
+      "07-record-detail": "locales/de/tablet10/07-record-detail.png"
+    },
+    "desktop": {
+      "01-practice": "locales/de/desktop/01-practice.png",
+      "02-tutorial": "locales/de/desktop/02-tutorial.png",
+      "03-review-top": "locales/de/desktop/03-review-top.png",
+      "04-result": "locales/de/desktop/04-result.png",
+      "05-calculator": "locales/de/desktop/05-calculator.png",
+      "06-styles": "locales/de/desktop/06-styles.png",
+      "07-records": "locales/de/desktop/07-records.png",
+      "07-record-detail": "locales/de/desktop/07-record-detail.png"
+    },
+    "ipad": {
+      "01-practice": "locales/de/ipad/01-practice.png",
+      "02-tutorial": "locales/de/ipad/02-tutorial.png",
+      "03-review-top": "locales/de/ipad/03-review-top.png",
+      "04-result": "locales/de/ipad/04-result.png",
+      "05-calculator": "locales/de/ipad/05-calculator.png",
+      "06-styles": "locales/de/ipad/06-styles.png",
+      "07-records": "locales/de/ipad/07-records.png",
+      "07-record-detail": "locales/de/ipad/07-record-detail.png"
+    }
+  },
+  "fr": {
+    "ios": {
+      "01-practice": "locales/fr/ios/01-practice.png",
+      "02-tutorial": "locales/fr/ios/02-tutorial.png",
+      "03-review-top": "locales/fr/ios/03-review-top.png",
+      "04-result": "locales/fr/ios/04-result.png",
+      "05-calculator": "locales/fr/ios/05-calculator.png",
+      "06-styles": "locales/fr/ios/06-styles.png",
+      "07-records": "locales/fr/ios/07-records.png",
+      "07-record-detail": "locales/fr/ios/07-record-detail.png"
+    },
+    "phone": {
+      "01-practice": "locales/fr/phone/01-practice.png",
+      "02-tutorial": "locales/fr/phone/02-tutorial.png",
+      "03-review-top": "locales/fr/phone/03-review-top.png",
+      "04-result": "locales/fr/phone/04-result.png",
+      "05-calculator": "locales/fr/phone/05-calculator.png",
+      "06-styles": "locales/fr/phone/06-styles.png",
+      "07-records": "locales/fr/phone/07-records.png",
+      "07-record-detail": "locales/fr/phone/07-record-detail.png"
+    },
+    "tablet7": {
+      "01-practice": "locales/fr/tablet7/01-practice.png",
+      "02-tutorial": "locales/fr/tablet7/02-tutorial.png",
+      "03-review-top": "locales/fr/tablet7/03-review-top.png",
+      "04-result": "locales/fr/tablet7/04-result.png",
+      "05-calculator": "locales/fr/tablet7/05-calculator.png",
+      "06-styles": "locales/fr/tablet7/06-styles.png",
+      "07-records": "locales/fr/tablet7/07-records.png",
+      "07-record-detail": "locales/fr/tablet7/07-record-detail.png"
+    },
+    "tablet10": {
+      "01-practice": "locales/fr/tablet10/01-practice.png",
+      "02-tutorial": "locales/fr/tablet10/02-tutorial.png",
+      "03-review-top": "locales/fr/tablet10/03-review-top.png",
+      "04-result": "locales/fr/tablet10/04-result.png",
+      "05-calculator": "locales/fr/tablet10/05-calculator.png",
+      "06-styles": "locales/fr/tablet10/06-styles.png",
+      "07-records": "locales/fr/tablet10/07-records.png",
+      "07-record-detail": "locales/fr/tablet10/07-record-detail.png"
+    },
+    "desktop": {
+      "01-practice": "locales/fr/desktop/01-practice.png",
+      "02-tutorial": "locales/fr/desktop/02-tutorial.png",
+      "03-review-top": "locales/fr/desktop/03-review-top.png",
+      "04-result": "locales/fr/desktop/04-result.png",
+      "05-calculator": "locales/fr/desktop/05-calculator.png",
+      "06-styles": "locales/fr/desktop/06-styles.png",
+      "07-records": "locales/fr/desktop/07-records.png",
+      "07-record-detail": "locales/fr/desktop/07-record-detail.png"
+    },
+    "ipad": {
+      "01-practice": "locales/fr/ipad/01-practice.png",
+      "02-tutorial": "locales/fr/ipad/02-tutorial.png",
+      "03-review-top": "locales/fr/ipad/03-review-top.png",
+      "04-result": "locales/fr/ipad/04-result.png",
+      "05-calculator": "locales/fr/ipad/05-calculator.png",
+      "06-styles": "locales/fr/ipad/06-styles.png",
+      "07-records": "locales/fr/ipad/07-records.png",
+      "07-record-detail": "locales/fr/ipad/07-record-detail.png"
+    }
+  },
+  "ru": {
+    "ios": {
+      "01-practice": "locales/ru/ios/01-practice.png",
+      "02-tutorial": "locales/ru/ios/02-tutorial.png",
+      "03-review-top": "locales/ru/ios/03-review-top.png",
+      "04-result": "locales/ru/ios/04-result.png",
+      "05-calculator": "locales/ru/ios/05-calculator.png",
+      "06-styles": "locales/ru/ios/06-styles.png",
+      "07-records": "locales/ru/ios/07-records.png",
+      "07-record-detail": "locales/ru/ios/07-record-detail.png"
+    },
+    "phone": {
+      "01-practice": "locales/ru/phone/01-practice.png",
+      "02-tutorial": "locales/ru/phone/02-tutorial.png",
+      "03-review-top": "locales/ru/phone/03-review-top.png",
+      "04-result": "locales/ru/phone/04-result.png",
+      "05-calculator": "locales/ru/phone/05-calculator.png",
+      "06-styles": "locales/ru/phone/06-styles.png",
+      "07-records": "locales/ru/phone/07-records.png",
+      "07-record-detail": "locales/ru/phone/07-record-detail.png"
+    },
+    "tablet7": {
+      "01-practice": "locales/ru/tablet7/01-practice.png",
+      "02-tutorial": "locales/ru/tablet7/02-tutorial.png",
+      "03-review-top": "locales/ru/tablet7/03-review-top.png",
+      "04-result": "locales/ru/tablet7/04-result.png",
+      "05-calculator": "locales/ru/tablet7/05-calculator.png",
+      "06-styles": "locales/ru/tablet7/06-styles.png",
+      "07-records": "locales/ru/tablet7/07-records.png",
+      "07-record-detail": "locales/ru/tablet7/07-record-detail.png"
+    },
+    "tablet10": {
+      "01-practice": "locales/ru/tablet10/01-practice.png",
+      "02-tutorial": "locales/ru/tablet10/02-tutorial.png",
+      "03-review-top": "locales/ru/tablet10/03-review-top.png",
+      "04-result": "locales/ru/tablet10/04-result.png",
+      "05-calculator": "locales/ru/tablet10/05-calculator.png",
+      "06-styles": "locales/ru/tablet10/06-styles.png",
+      "07-records": "locales/ru/tablet10/07-records.png",
+      "07-record-detail": "locales/ru/tablet10/07-record-detail.png"
+    },
+    "desktop": {
+      "01-practice": "locales/ru/desktop/01-practice.png",
+      "02-tutorial": "locales/ru/desktop/02-tutorial.png",
+      "03-review-top": "locales/ru/desktop/03-review-top.png",
+      "04-result": "locales/ru/desktop/04-result.png",
+      "05-calculator": "locales/ru/desktop/05-calculator.png",
+      "06-styles": "locales/ru/desktop/06-styles.png",
+      "07-records": "locales/ru/desktop/07-records.png",
+      "07-record-detail": "locales/ru/desktop/07-record-detail.png"
+    },
+    "ipad": {
+      "01-practice": "locales/ru/ipad/01-practice.png",
+      "02-tutorial": "locales/ru/ipad/02-tutorial.png",
+      "03-review-top": "locales/ru/ipad/03-review-top.png",
+      "04-result": "locales/ru/ipad/04-result.png",
+      "05-calculator": "locales/ru/ipad/05-calculator.png",
+      "06-styles": "locales/ru/ipad/06-styles.png",
+      "07-records": "locales/ru/ipad/07-records.png",
+      "07-record-detail": "locales/ru/ipad/07-record-detail.png"
+    }
+  }
+}

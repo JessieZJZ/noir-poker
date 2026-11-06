@@ -37,7 +37,7 @@ if (platform === "android") {
 let runner = readFileSync(path.join(root, "scripts/native-e2e.mjs"), "utf8");
 runner = runner.replace(
   "from '../tests/native/scenarios.mjs'",
-  `from ${JSON.stringify(pathToFileURL(path.join(studio, process.env.NOIR_STORE_MODE === "v2" ? "capture-v2.mjs" : process.env.NOIR_STORE_MODE === "repair" ? "capture-repair.mjs" : "capture-scenarios.mjs")).href)}`,
+  `from ${JSON.stringify(pathToFileURL(path.join(studio, process.env.NOIR_STORE_MODE === "stills-locales" ? "capture-stills-locales.mjs" : process.env.NOIR_STORE_MODE === "locales" ? "capture-locales.mjs" : process.env.NOIR_STORE_MODE === "v2" ? "capture-v2.mjs" : process.env.NOIR_STORE_MODE === "repair" ? "capture-repair.mjs" : "capture-scenarios.mjs")).href)}`,
 );
 runner = runner.replaceAll(
   /from '(\.\.?\/[^']+)'/g,
@@ -58,6 +58,20 @@ if (process.env.NOIR_STORE_RESUME === "1")
       "run('xcrun', ['simctl', 'install', udid, appPath], { timeout: 600000 });",
       "spawnSync('xcrun', ['simctl', 'terminate', udid, appId], { encoding: 'utf8' });",
     );
+runner = runner.replace(
+  "// A fresh CI simulator's first WebView load alone can take ~40s.\n      120000,",
+  "// Dedicated marketing capture may wait for a busy simulator to finish loading.\n      300000,",
+);
+if (platform === "ios" && process.env.NOIR_STORE_RESUME === "1") {
+  runner = runner.replace(
+    "'appium:app': appPath,",
+    "'appium:bundleId': appId,",
+  );
+  runner = runner.replaceAll(
+    "'appium:autoLaunch': false,",
+    "'appium:autoLaunch': false, 'appium:forceAppLaunch': false,",
+  );
+}
 const adapter = path.join(
   root,
   ".artifacts",

@@ -1,3 +1,38 @@
+# 11 种语言上架素材包
+
+![11 种语言置顶图概览](previews/v6-locales.jpg)
+
+`locales/catalog.mjs` 保存 11 种语言的商店介绍、视频标题、短字幕、旁白和八张截图的文案；其中葡萄牙语为巴西地区、西班牙语为西班牙地区、繁中面向台湾地区。`locales/editorial.json` 记录术语与审校边界。原有 App 界面按 PR70 真实版本采集，本工程不在截图上替换界面文字，也不将整个产品词库宣称为已完成母语审校。
+
+`src/International.tsx` 提供共用版式、语言字体和按实际字宽适配的文字。六镜继续使用左文右机身；两家商店共用 29.8 秒横屏剪辑，另交付 3840×1772 母版。新增语言从实际原生原片剪辑，点按时间以画面变化校准，采用无损 FFV1 手机层及无损 RGB 场景中间片，每个交付尺寸独立做最终编码。中英文直接保留 V5 已确认成片和声音。
+
+每个语言文件夹含 Google Play 的名称、80 字简短说明、4000 字以内完整说明、512 图标、1024×500 置顶大图、手机/7 英寸平板/10 英寸平板/桌面各 8 张；Apple 的名称、副标题、推广文本、描述、关键词、审核说明、1024 图标、两档 iPhone 和 iPad 截图；以及视频、字幕和填写指南。桌面图为实际生产 Web 界面，不能据此声称 Google Play Games on PC 已通过原生验证。
+
+在仓库根目录运行采集脚本；仅使用指定的专用设备。所有采集都通过普通页面控件操作牌局与计算器，不注入测试牌局。Android 通过专用安装 App 的 WebView 调试连接控制可见页面，画面来自系统截图。手机和两档平板分别采集；不拉伸手机图伪造平板。
+
+```sh
+node store-studio/prepare-brand.mjs
+node store-studio/locales/catalog.mjs
+node store-studio/locales/voice.mjs
+NOIR_STORE_MODE=locales NOIR_STORE_LOCALES=ja,ko node store-studio/capture-native.mjs ios --udid DEDICATED_IOS_UDID --port 4784 --driver-port 8894 --output .artifacts/store-media-v6/raw/ios
+NOIR_STORE_MODE=stills-locales NOIR_STORE_STILLS_ONLY=1 node store-studio/capture-native.mjs ios --udid DEDICATED_IPAD_UDID --port 4788 --driver-port 8898 --output .artifacts/store-media-v6/raw/ipad
+node store-studio/capture-android-formats.mjs
+node store-studio/capture-desktop-locales.mjs
+node store-studio/locales/stage.mjs
+node store-studio/locales/render.mjs panels .artifacts/store-media-v6/render
+node store-studio/locales/edit-plan.mjs
+node store-studio/locales/video.mjs .artifacts/store-media-v6/delivery
+node store-studio/locales/render.mjs stills .artifacts/store-media-v6/delivery
+node store-studio/locales/package.mjs .artifacts/store-media-v6/delivery
+node store-studio/locales/gallery.mjs .artifacts/store-media-v6/delivery
+node store-studio/locales/verify.mjs .artifacts/store-media-v6/delivery
+python3 store-studio/locales/archive.py .artifacts/store-media-v6/delivery '/absolute/path/11-language-store-kits'
+```
+
+少量新增宣传文字用字保存在 `font-supplements/`，由 `prepare-brand.mjs` 一并准备。未来增加未覆盖的用字时，运行 `node store-studio/locales/prepare-fonts.mjs`，从官方字库按已记录的版本哈希补齐；OFL 许可随源文件保留。
+
+采集脚本对当前 Mac 的专用设备路径有显式设置；换机器时先更新对应设备、输出路径和端口。`NOIR_STORE_LOCALES` 可单独重做一种语言，截图另支持 `NOIR_STORE_FORMATS`。`NOIR_RENDER_OVERWRITE=1`、`NOIR_VIDEO_OVERWRITE=1` 用于在文案改动后明确重做已有结果。未通过完成检查的成片不会被当作完成缓存。字段、图片、帧数和解码的最终检查与语言归档另见交付报告。
+
 # NOIR Poker 商店素材工作室 · V5
 
 独立 Remotion 4.0.541 工程，依据 PR #70 的 `94e56b1ef009f0729508491e5f2155fd37d2bf99`。英文与简体中文使用真实安装的 iPhone、iPad、Android App 素材。普通对局、教程、计算器和记录通过可见控件操作，没有注入牌局或测试 fixtures。

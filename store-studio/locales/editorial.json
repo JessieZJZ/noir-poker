@@ -1,0 +1,87 @@
+{
+  "approach": "Transcreated feature-led store copy and short spoken sentences; regional poker terminology and natural syntax, rather than sentence-by-sentence translation. AI editorial review, not an external human native-speaker certification.",
+  "sourceBoundary": "App interface text comes from the actual PR70 build. Existing product translations are not silently redrawn in footage or declared fully copy-edited by this media project.",
+  "terms": {
+    "zh-CN": ["离线练习", "复盘", "重打", "对局记录", "胜率", "补牌 / Outs"],
+    "en": [
+      "offline practice",
+      "hand review",
+      "replay the same deal",
+      "game records",
+      "win rate",
+      "outs"
+    ],
+    "zh-TW": [
+      "離線練習",
+      "復盤",
+      "重打這手牌",
+      "對局紀錄",
+      "勝率",
+      "補牌 / Outs"
+    ],
+    "ja": [
+      "オフライン練習",
+      "ハンドレビュー",
+      "同じ配りをやり直す",
+      "プレイ履歴",
+      "勝率",
+      "アウツ"
+    ],
+    "ko": [
+      "오프라인 연습",
+      "핸드 복기",
+      "다시 플레이",
+      "핸드 기록",
+      "승률",
+      "아웃츠"
+    ],
+    "es": [
+      "práctica sin conexión",
+      "revisión de la mano",
+      "repetir el reparto",
+      "historial",
+      "probabilidad de victoria",
+      "outs"
+    ],
+    "it": [
+      "allenamento offline",
+      "analisi della mano",
+      "rigiocare la mano",
+      "storico",
+      "probabilità di vittoria",
+      "outs"
+    ],
+    "pt": [
+      "treino offline",
+      "análise da mão",
+      "jogar a mão de novo",
+      "histórico",
+      "chances de vitória",
+      "outs"
+    ],
+    "de": [
+      "Offline-Training",
+      "Handanalyse",
+      "dieselbe Hand erneut spielen",
+      "Spielverlauf",
+      "Gewinnchance",
+      "Outs"
+    ],
+    "fr": [
+      "entraînement hors ligne",
+      "analyse de la main",
+      "rejouer la même donne",
+      "historique",
+      "chances de victoire",
+      "outs"
+    ],
+    "ru": [
+      "офлайн-тренировка",
+      "разбор раздачи",
+      "переиграть ту же раздачу",
+      "история",
+      "шансы на победу",
+      "ауты"
+    ]
+  }
+}

@@ -1,11 +1,48 @@
 import React from "react";
 import { Composition, Folder, Still } from "remotion";
+import { PosterSheet, Feature, FilmPanel, formats } from "./International";
+import catalog from "../locales/catalog.json";
 import { SharedFilm } from "./SharedFilm";
 import { StoreFilm } from "./StoreFilm";
 import { StoreStill } from "./StoreStill";
 
 export const RemotionRoot: React.FC = () => (
   <>
+    <Folder name="International-Kits">
+      {Object.keys(catalog).flatMap((language) => [
+        ...Object.entries(formats).map(([format, [w, h]]) => (
+          <Still
+            key={language + format}
+            id={"Sheet-" + language + "-" + format}
+            component={PosterSheet}
+            width={w * 2}
+            height={h * 4}
+            defaultProps={{
+              locale: language as keyof typeof catalog,
+              format: format as keyof typeof formats,
+            }}
+          />
+        )),
+        <Still
+          key={language + "feature"}
+          id={"Intl-Feature-" + language}
+          component={Feature}
+          width={1024}
+          height={500}
+          defaultProps={{ locale: language as keyof typeof catalog }}
+        />,
+        ...Array.from({ length: 6 }, (_, scene) => (
+          <Still
+            key={language + scene}
+            id={"Panel-" + language + "-" + scene}
+            component={FilmPanel}
+            width={1920}
+            height={886}
+            defaultProps={{ locale: language as keyof typeof catalog, scene }}
+          />
+        )),
+      ])}
+    </Folder>
     <Folder name="Shared-Store-Master">
       <Composition
         id="Shared-ZH"

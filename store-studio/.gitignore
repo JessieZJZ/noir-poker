@@ -13,3 +13,6 @@ public/voice-v3/
 public/shared/
 public/sharp-frames/
 public/locked-audio/
+public/voice-locales/
+public/locales/
+__pycache__/

@@ -1,0 +1,19 @@
+{
+  "allRenderedMarketingCharactersCovered": true,
+  "sources": [
+    {
+      "family": "sc",
+      "source": "https://github.com/google/fonts/tree/main/ofl/notosanssc",
+      "sourceSha256": "a3041811a78c361b1de50f953c805e0244951c21c5bd412f7232ef0d899af0da",
+      "outputSha256": "a2d0bdaa9840c115313722c181356f3ab56e70bbf748df4a16e02800dd5ef14f",
+      "addedCharacters": "八副呈掌磨穫菜覺"
+    },
+    {
+      "family": "kr",
+      "source": "https://github.com/google/fonts/tree/main/ofl/notosanskr",
+      "sourceSha256": "194018e6b2b293a7964f037b25c0249ce1418bc9ab3c971060a03aa57861e252",
+      "outputSha256": "ce0538f921c70569f45d8a8b8a2bdd1f8466c48562c5040ad29a6a8d179d7df2",
+      "addedCharacters": "꿔"
+    }
+  ]
+}
