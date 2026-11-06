@@ -10,7 +10,7 @@ import path from "node:path";
 import os from "node:os";
 import { fileURLToPath } from "node:url";
 const studio = path.dirname(fileURLToPath(import.meta.url));
-if (!process.argv[2]) throw Error("Pass the V3 output directory.");
+if (!process.argv[2]) throw Error("Pass the shared video output directory.");
 const dir = path.resolve(process.argv[2]);
 const tmp = mkdtempSync(path.join(os.tmpdir(), "noir-shared-film-"));
 const board = JSON.parse(readFileSync(path.join(studio, "storyboard.json")));
@@ -91,7 +91,7 @@ try {
       "error",
       "-y",
       "-ss",
-      "5.13",
+      "1.3",
       "-i",
       final,
       "-frames:v",

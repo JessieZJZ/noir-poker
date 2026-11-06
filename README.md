@@ -173,7 +173,7 @@ npm run mobile:ios           # 模拟器 App，需要 macOS / Xcode 26
 
 买断制发行需要开发者账号、签名、付费协议及商店资料。具体命令、版本管理、CI 产物、真机验证与商用人物素材处理见上述两份指南。
 
-PR #70 的中英文商店文案、截图与两家商店共用的 Remotion 横屏视频（V3）见 [商店素材说明](docs/store-media.md) 和 [素材工作室](store-studio/README.md)。素材导出与商店提交分别验收。
+PR #70 的中英文商店文案、截图与两家商店共用的 Remotion 横屏视频（V4）见 [商店素材说明](docs/store-media.md) 和 [素材工作室](store-studio/README.md)。素材导出与商店提交分别验收。
 
 ## 国际化与全球上架
 

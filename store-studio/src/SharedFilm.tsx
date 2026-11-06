@@ -10,7 +10,7 @@ import {
 import { Video, Audio } from "@remotion/media";
 import { TransitionSeries, linearTiming } from "@remotion/transitions";
 import { fade } from "@remotion/transitions/fade";
-import { useFonts } from "./StoreFilm";
+import { Backdrop, useFonts } from "./StoreFilm";
 import { typography } from "./assets";
 import { IPhoneFrame } from "./IPhoneFrame";
 import taps from "./shared-taps.json";
@@ -27,38 +27,40 @@ const ids = [
   "records",
   "calculator",
 ] as const;
-const zh = [
-  "跟着引导，打出第一手",
-  "牌桌上的每一步，都有迹可循",
-  "打完一手，点开复盘",
-  "同一手牌，换个选择",
-  "从对局记录，回到那一手",
-  "看清胜率，数清补牌",
-];
-const en = [
-  "Learn one hand at a time",
-  "Follow the hand as it unfolds",
-  "Tap Review after the hand",
-  "Same cards. A different choice.",
-  "Find a hand in your history",
-  "See your win rate and outs",
-];
-const section = {
-  en: [
-    "Guided hands",
-    "Live hand activity",
-    "Hand review",
-    "Replay",
-    "Game records",
-    "Odds calculator",
-  ],
+const headlines = {
   "zh-CN": [
-    "新手引导",
-    "本手动态",
-    "决策复盘",
-    "重打本手",
-    "对局记录",
-    "胜率计算器",
+    "跟着实战，\n学会规则。",
+    "每步行动，\n实时看清。",
+    "点开复盘，\n看懂理由。",
+    "重打原牌，\n换种决策。",
+    "对局记录，\n随时回看。",
+    "胜率与 Outs，\n一眼看清。",
+  ],
+  en: [
+    "Learn at\nthe table.",
+    "Every action.\nAs it happens.",
+    "Tap Review.\nFind the reason.",
+    "Same deal.\nA new decision.",
+    "Your hands.\nWorth revisiting.",
+    "Win rate.\nAnd your outs.",
+  ],
+};
+const details = {
+  "zh-CN": [
+    "从互动引导\n到自己完成一手牌",
+    "正常对局，随时下滑\n查看本手动态实时更新",
+    "一手结束，点击复盘\n连接当时信息与行动理由",
+    "结算后点击“重打本手”\n用原牌尝试另一种选择",
+    "打开菜单里的对局记录\n再进入这一手的记录详情",
+    "胜率 56.06% · Outs 16\n看清哪些补牌能让这手牌领先",
+  ],
+  en: [
+    "Guided hands.\nLearn by making real choices.",
+    "Play your hand.\nFollow its live action history.",
+    "Finish the hand. Tap Review.\nConnect choices with their reasons.",
+    "Tap Replay hand.\nSame cards. A different decision.",
+    "Menu → Game records → Hand details.\nReturn to the moments that matter.",
+    "Win rate 56.06% · 16 outs\nSee which cards can take the lead.",
   ],
 };
 const sub = (lang: Lang, i: number) =>
@@ -71,9 +73,6 @@ const ease = (f: number, a: number, b: number, x: number, y: number) =>
     extrapolateRight: "clamp",
     easing: Easing.bezier(0.25, 0.78, 0.32, 1),
   });
-const bounded = (a: number, lo: number, hi: number) =>
-  Math.min(hi, Math.max(lo, a));
-
 const Pointer = ({ cue, f, size }: { cue: Cue; f: number; size: number }) => {
   const d = f - cue.frame;
   if (d < -17 || d > 7) return null;
@@ -124,7 +123,7 @@ const videoStyle: React.CSSProperties = {
   position: "absolute",
   width: "100%",
   height: "100%",
-  objectFit: "fill",
+  objectFit: "contain",
 };
 const Src = ({
   src,
@@ -138,43 +137,15 @@ const Src = ({
   size: number;
 }) => (
   <AbsoluteFill>
-    <Video src={staticFile(src)} muted objectFit="fill" style={videoStyle} />
+    <Video src={staticFile(src)} muted objectFit="contain" style={videoStyle} />
     {cues.map((c) => (
       <Pointer key={c.name} cue={c} f={f} size={size} />
     ))}
   </AbsoluteFill>
 );
 
-// Focus windows are in the original 402-by-874 viewport's coordinates.
-// Cut the focus along with a navigation change; never point at a new page as
-// if it were the control that opened it.
-const focusY = (i: number, f: number, lang: Lang) => {
-  if (i === 0) return lang === "en" ? 595 : 596;
-  if (i === 1)
-    return f < 50
-      ? bounded(638 + ease(f, 3, 46, 0, 75), 45, 780)
-      : lang === "en"
-        ? 652
-        : 657;
-  if (i === 2) return f < 39 ? 720 : f < 90 ? 198 : 492;
-  if (i === 3)
-    return f < 39
-      ? 720
-      : f < 73
-        ? 539
-        : f < 102
-          ? 635
-          : f < 129
-            ? 773
-            : ease(f, 129, 146, 773, 653);
-  if (i === 4)
-    return f < taps[lang].records[1].frame
-      ? 126
-      : f < 105
-        ? 408
-        : ease(f, 118, 145, 163, 318);
-  return ease(f, 8, 48, 313, 359);
-};
+// One complete portrait recording inside one phone. Layout is based on the
+// supplied reference: copy on the left, a full phone on the right.
 const Shot = ({ i, language }: { i: number; language: Lang }) => {
   const f = useCurrentFrame(),
     id = ids[i],
@@ -187,211 +158,110 @@ const Shot = ({ i, language }: { i: number; language: Lang }) => {
     i === 0
       ? `media/ios/${language}/tutorial.mp4`
       : `shared/${language}/${id}.mp4`;
-  const y = focusY(i, f, language),
-    calc = i === 5;
-  const cx = calc ? 650 : 554,
-    cy = calc ? 252 : 258,
-    cw = calc ? 865 : 1264,
-    ch = calc ? 493 : 457;
-  const scale = cw / 402,
-    top = bounded(y * scale - ch / 2, 0, 874 * scale - ch);
-  const voice = `${calc ? "voice-v3" : "voice-v2"}/${language}/${id}.wav`;
+  const voice = `${i === 5 ? "voice-v3" : "voice-v2"}/${language}/${id}.wav`;
   return (
-    <AbsoluteFill
-      style={{
-        background:
-          "radial-gradient(ellipse at 20% 40%,#20463c 0%,#122c28 24%,#0b1d1d 53%,#071415 88%)",
-        color: "#f6f3e9",
-        fontFamily: typography,
-      }}
-    >
+    <AbsoluteFill style={{ fontFamily: typography, color: "#f2f4ea" }}>
+      <Backdrop />
       <div
         style={{
           position: "absolute",
-          top: 0,
-          bottom: 0,
-          left: 522,
-          width: 1,
-          background:
-            "linear-gradient(transparent,#90b4a248 23%,#90b4a248 83%,transparent)",
-        }}
-      />
-      <div
-        style={{
-          position: "absolute",
-          top: 65,
-          left: 558,
-          right: 94,
-          display: "flex",
-          alignItems: "center",
-          gap: 20,
-          fontSize: 26,
-          color: "#b5d0bc",
-          letterSpacing: 1.5,
+          left: 118,
+          top: 74,
+          fontSize: 23,
+          letterSpacing: 6,
+          color: "#9de7cd",
         }}
       >
-        <b
-          style={{
-            fontFamily: "Barlow",
-            letterSpacing: 4,
-            fontSize: 33,
-            color: "#efdeb1",
-          }}
-        >
-          NOIR POKER
-        </b>
-        <span style={{ width: 39, height: 1, background: "#a5bca3" }} />
-        <span>{section[language][i]}</span>
-        <span
-          style={{
-            marginLeft: "auto",
-            fontFamily: "Barlow",
-            fontSize: 29,
-            letterSpacing: 4,
-            color: "#9ab3a8",
-          }}
-        >
-          {String(i + 1).padStart(2, "0")} / 06
-        </span>
+        NOIR POKER
       </div>
       <div
         style={{
           position: "absolute",
-          top: 132,
-          left: 553,
-          right: 75,
-          fontSize: zhCN ? 78 : 67,
-          fontWeight: 720,
-          letterSpacing: zhCN ? -2 : -2.3,
-          lineHeight: 1.15,
-          transform: `translateY(${ease(f, 0, 12, 5, 0)}px)`,
+          left: 118,
+          top: 199,
+          width: 1060,
+          transform: `translateY(${ease(f, 0, 14, 10, 0)}px)`,
+          opacity: ease(f, 0, 9, 0, 1),
         }}
       >
-        {(zhCN ? zh : en)[i]}
+        <div
+          style={{
+            fontSize: 27,
+            fontWeight: 650,
+            letterSpacing: 2.6,
+            color: "#dfbd79",
+            marginBottom: 29,
+          }}
+        >
+          {String(i + 1).padStart(2, "0")} /{" "}
+          {zhCN ? "让每次练习都有收获" : "PRACTICE WITH PURPOSE"}
+        </div>
+        <h1
+          style={{
+            fontSize: zhCN ? 94 : 96,
+            lineHeight: 1.14,
+            letterSpacing: -2.5,
+            fontWeight: 700,
+            whiteSpace: "pre-line",
+            margin: 0,
+          }}
+        >
+          {headlines[language][i]}
+        </h1>
+        <div
+          style={{
+            width: 72,
+            height: 3,
+            background: "#9de7cd",
+            margin: "32px 0",
+          }}
+        />
+        <div
+          style={{
+            fontSize: 34,
+            lineHeight: 1.65,
+            whiteSpace: "pre-line",
+            color: "#b1c6bd",
+          }}
+        >
+          {details[language][i]}
+        </div>
       </div>
-      <div style={{ position: "absolute", left: 97, top: 28 }}>
-        <IPhoneFrame width={394} height={830}>
-          <Src src={src} cues={cues} f={f} size={47} />
+      <div style={{ position: "absolute", left: 1285, top: 32 }}>
+        <IPhoneFrame width={390} height={822}>
+          <Src src={src} cues={cues} f={f} size={58} />
         </IPhoneFrame>
       </div>
       <div
         style={{
           position: "absolute",
-          left: cx,
-          top: cy,
-          width: cw,
-          height: ch,
-          overflow: "hidden",
-          borderRadius: 22,
-          boxShadow: "0 0 0 1px #789b8b69,0 12px 36px #04100f75",
-          background: "#0b1219",
-        }}
-      >
-        <div
-          style={{
-            position: "absolute",
-            left: 0,
-            top: -top,
-            width: cw,
-            height: 874 * scale,
-          }}
-        >
-          <Src src={src} cues={cues} f={f} size={86} />
-        </div>
-      </div>
-      {calc && (
-        <div
-          style={{
-            position: "absolute",
-            left: 1552,
-            top: 342,
-            width: 300,
-            color: "#c9ddd0",
-            fontSize: 27,
-            opacity: ease(f, 9, 23, 0, 1),
-            lineHeight: 1.4,
-          }}
-        >
-          <div
-            style={{
-              color: "#96eac3",
-              fontFamily: "Barlow",
-              fontSize: 66,
-              fontWeight: 600,
-              lineHeight: 1.08,
-            }}
-          >
-            56.06<span style={{ fontSize: 38 }}>%</span>
-          </div>
-          <div>{zhCN ? "获胜概率" : "Win rate"}</div>
-          <div
-            style={{
-              width: 136,
-              height: 1,
-              background: "#708b7d",
-              margin: "23px 0 18px",
-            }}
-          />
-          <div
-            style={{
-              color: "#f4dda3",
-              fontFamily: "Barlow",
-              fontSize: 66,
-              fontWeight: 600,
-              lineHeight: 1.08,
-            }}
-          >
-            16
-          </div>
-          <div>{zhCN ? "张补牌 · Outs" : "Outs"}</div>
-        </div>
-      )}
-      <div
-        style={{
-          position: "absolute",
-          left: 556,
-          top: calc ? 774 : 757,
-          right: 65,
-          color: "#e8eee5",
-          fontSize: zhCN ? 36 : 35,
+          left: 118,
+          top: 737,
+          width: 1050,
+          color: "#e7efe7",
+          fontSize: zhCN ? 31 : 30,
           lineHeight: 1.45,
           display: "flex",
           alignItems: "center",
-          gap: 23,
+          gap: 20,
         }}
       >
         <span
-          style={{
-            width: 5,
-            height: 33,
-            borderRadius: 3,
-            background: "#8be6ba",
-            flexShrink: 0,
-          }}
+          style={{ width: 3, height: 30, flexShrink: 0, background: "#9de7cd" }}
         />
-        {sub(language, i)}
+        <span>{sub(language, i)}</span>
       </div>
       <div
         style={{
           position: "absolute",
+          left: 118,
           bottom: 32,
-          left: 556,
-          right: 105,
-          display: "flex",
-          gap: 8,
+          fontSize: 17,
+          letterSpacing: 2,
+          color: "#91b2a5",
         }}
       >
-        {ids.map((s, n) => (
-          <div
-            key={s}
-            style={{
-              height: 3,
-              borderRadius: 2,
-              flex: 1,
-              background: n <= i ? "#90c8a5" : "#29413c",
-            }}
-          />
-        ))}
+        {zhCN ? "离线练习 · 虚拟筹码" : "OFFLINE PRACTICE · VIRTUAL CHIPS"}
       </div>
       <Sequence from={9} name={id + " voice"}>
         <Audio src={staticFile(voice)} />

@@ -6,7 +6,7 @@ import { execFileSync, spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import sharp from "sharp";
 const studio = path.dirname(fileURLToPath(import.meta.url));
-if (!process.argv[2]) throw Error("Pass V3 output directory");
+if (!process.argv[2]) throw Error("Pass shared output directory");
 const dir = path.resolve(process.argv[2]);
 const getJSON = (p) => JSON.parse(fs.readFileSync(p, "utf8"));
 const put = (p, s) => fs.writeFileSync(path.join(dir, p), s);
@@ -19,6 +19,8 @@ const checks = {
   sources:
     "iOS simulator film; iOS, iPadOS and Android installed app screenshots",
   oneFilePerLanguage: true,
+  layout:
+    "Reference layout: left copy and captions; one full iPhone at right; contain; no crop or duplicated UI",
   languages: {},
   created: new Date().toISOString(),
 };
@@ -193,18 +195,18 @@ put("verification.json", JSON.stringify(checks, null, 2) + "\n");
 put(
   "listings.json",
   JSON.stringify(
-    { ...listings, source: { ...listings.source, revision: 3 } },
+    { ...listings, source: { ...listings.source, revision: 4 } },
     null,
     2,
   ) + "\n",
 );
 const intro =
-  "每种语言仅一条横屏成片。上传至 Apple iPhone 预览槽位，用同一个文件上传 YouTube，再把链接填写到 Google Play。";
+  "V4 按参考图排版，左侧介绍、右侧完整 iPhone。每种语言仅一条横屏成片，两家商店共用同一个文件。";
 const usage =
   "iPhone 风格外框属于创意叠层。Apple 要求以 App 内画面为主，允许用于讲解操作的触点；外框是否接受由审核决定。Google 使用可嵌入、公开或不公开列出的无广告 YouTube 视频。";
 put(
   "使用说明.txt",
-  "NOIR Poker · V3\n\n" +
+  "NOIR Poker · V4\n\n" +
     intro +
     "\n" +
     usage +
@@ -237,7 +239,7 @@ const parts = langs
   .join("");
 put(
   "index.html",
-  '<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>NOIR Poker · V3</title><style>*{box-sizing:border-box}body{margin:auto;max-width:1100px;padding:42px 20px 90px;background:#091b19;color:#f2f0e5;font:17px/1.65 system-ui}small,a{color:#a5e5c5}h1{font-size:clamp(34px,5vw,60px);line-height:1.12;margin:8px 0}section{margin:38px 0}video{width:100%;border-radius:14px;background:#071412}nav{display:flex;gap:22px;flex-wrap:wrap}summary{cursor:pointer;margin:12px 0}.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.grid img{width:100%}p{max-width:900px}</style><small>NOIR POKER / STORE EDITION 03</small><h1>一手牌的练习旅程</h1><p>' +
+  '<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>NOIR Poker · V4</title><style>*{box-sizing:border-box}body{margin:auto;max-width:1100px;padding:42px 20px 90px;background:#091b19;color:#f2f0e5;font:17px/1.65 system-ui}small,a{color:#a5e5c5}h1{font-size:clamp(34px,5vw,60px);line-height:1.12;margin:8px 0}section{margin:38px 0}video{width:100%;border-radius:14px;background:#071412}nav{display:flex;gap:22px;flex-wrap:wrap}summary{cursor:pointer;margin:12px 0}.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.grid img{width:100%}p{max-width:900px}</style><small>NOIR POKER / STORE EDITION 04</small><h1>一手牌的练习旅程</h1><p>' +
     intro +
     "</p>" +
     parts +
