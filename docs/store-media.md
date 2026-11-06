@@ -1,6 +1,8 @@
 # PR #70 商店介绍素材
 
-V2 为英文、简体中文准备商店视频、截图和可粘贴文案。依据 PR #70 的 `94e56b1ef009f0729508491e5f2155fd37d2bf99`；这个提交包含新手引导、复盘、胜率计算器、递增盲注和决赛桌等当前功能。素材制作工程位于 `store-studio/`，与应用运行依赖分开。
+V3 为英文、简体中文准备商店视频、截图和可粘贴文案。依据 PR #70 的 `94e56b1ef009f0729508491e5f2155fd37d2bf99`；这个提交包含新手引导、复盘、胜率计算器、递增盲注和决赛桌等当前功能。素材制作工程位于 `store-studio/`，与应用运行依赖分开。
+
+两家商店共用本语言目录中的 `shared-preview.mp4`；不分发 Apple / Google 两份视频。点击提示来自原生控件坐标，带 iPhone 外框；末镜展示胜率和 16 张具体补牌。`index.html` 可以播放两种语言，并查看逐帧对照。
 
 ## 应用信息的填写位置
 
@@ -12,22 +14,22 @@ V2 为英文、简体中文准备商店视频、截图和可粘贴文案。依�
 | Google 名称、简短描述  | `copy/google-name.txt`、`google-short-description.txt` | 分别 30 / 80 字符以内                                                 |
 | Google 完整描述        | `copy/google-full-description.txt`                     | 与本语言长描述一致                                                    |
 | 审核说明               | `copy/review-notes.txt`                                | 无需账号，说明离线与虚拟筹码边界                                      |
-| Apple App Preview      | `apple/preview-narrated.mp4` 或 `preview-music.mp4`    | 每语言选一版上传；29.8 秒、1920 × 886、H.264、30 fps、AAC 立体声      |
-| Apple 视频封面         | 对应 `*-poster.png`                                    | 从视频第 5 秒提取，后台也可再选择                                     |
+| Apple App Preview      | `shared-preview.mp4`                                   | 每语言同一文件；29.8 秒、1920 × 886、H.264、30 fps、AAC 立体声        |
+| Apple 视频封面         | `poster.png`                                           | 从视频第 5 秒提取，后台也可再选择                                     |
 | iPhone 截图            | `apple/iphone-medium/` 与 `iphone-large/`              | 1206 × 2622、1290 × 2796；按 01–08 顺序                               |
 | iPad 截图              | `apple/ipad-13/`                                       | 2752 × 2064；界面来自 iPad 原生安装包                                 |
 | Google 手机截图        | `google/phone/`                                        | 1080 × 1920，RGB PNG，每语言 8 张                                     |
 | Google Feature Graphic | `google/feature-graphic.png`                           | 1024 × 500，无透明通道                                                |
-| Google 预览视频        | `google/preview-narrated.mp4` 或音乐版                 | 上传到你自己的 YouTube 后填写该视频 URL；交付包本身不产生 YouTube URL |
+| Google 预览视频        | 同一 `shared-preview.mp4`                              | 上传到你自己的 YouTube 后填写该视频 URL；交付包本身不产生 YouTube URL |
 | 图标                   | `icons/apple-1024.png`、`google-512.png`               | 沿用应用原有品牌图标                                                  |
 
 交付目录按 `en/` 和 `zh-CN/` 区分。Apple 本地化标识为 `en-US` / `zh-Hans`，Google 可选择对应英文与简体中文条目。`listings.json` 同时保留结构化字段和字符校验来源。
 
 ## 横屏版与设备边框
 
-两家商店都支持横屏视频，本轮不导出竖屏成片。Google 宣传版为 1920 × 1080，手机录屏置于无第三方标识的机身中。Apple iPhone 版为 1920 × 886，依据 2.3.4 采用实际 iOS 界面全景及同段录屏的局部放大，不放外部手机外壳。当前 iPhone App 仍锁定竖屏，这不是横屏 App 布局演示。两家的文件分别按后台使用，不可直接互换；截图则统一增加手机或平板机身边框。
+共用版采用 Apple 所列 iPhone 规格 1920 × 886，不代表竖屏 App 支持横屏操作。Apple 要求预览展示 App 实际运行画面，允许解释性的图形触点，并不承诺装饰机身可过审。Google 建议展现实际体验；同片中使用的是两端共有的功能，视频取自 iPhone，Android 截图仍来自 Android。Apple 直接上传 MP4，Google 接收 YouTube URL。V2 无外框的 Apple 文件仍可另作备选。
 
-旁白使用用户试听选定的温暖神经女声；“重打”读 chóng，语音文本写为“重新打同一副牌”。另有纯音乐版。字幕采用左下固定阅读区域与较轻字重，宣传版避免遮挡手机界面。
+中文采用试听选定的温暖女声，“重打”用“重新打同一副牌”发音。加强后的音乐保留首尾淡入淡出，字幕放在手机和放大录屏以外。
 
 ## 素材表达
 

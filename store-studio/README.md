@@ -1,6 +1,32 @@
-# NOIR Poker 商店素材工作室 · V2
+# NOIR Poker 商店素材工作室 · V3
 
 独立 Remotion 4.0.541 工程，依据 PR #70 的 `94e56b1ef009f0729508491e5f2155fd37d2bf99`。英文与简体中文使用真实安装的 iPhone、iPad、Android App 素材。普通对局、教程、计算器和记录通过可见控件操作，没有注入牌局或测试 fixtures。
+
+![V3 · 点击复盘与胜率计算器](previews/shared-zh-CN.jpg)
+
+## V3 两家商店共用成片
+
+每种语言只导出一个 `shared-preview.mp4`（1920 × 886、894 帧、29.8 秒）。Apple 使用 iPhone 预览槽位，Google 用相同文件上传至 YouTube 后填写链接。画面使用真实 iOS 录屏及同步局部放大。自绘 iPhone 正面外框保留原录屏中的灵动岛，点按图标只用于指明真实控件。装饰外框是否被 Apple 接受仍由实际审核决定，V2 无外框 Apple 视频另存，可作备选。
+
+`src/SharedFilm.tsx` 控制两种语言共用的六镜时间线。`prepare-shared.mjs` 对原始 VFR 全片先转 30 fps，再按真实画面切换位置剪辑，避免静止画面使触点提前或滞后。坐标取自可见按钮边界，位置换算与画面裁剪使用相同坐标系。复盘、重打、改选弃牌、下拉菜单、对局记录、选中一手都有点按提示。最后保留该翻牌面的实际计算画面，胜率 56.06%、Outs 16，与后续转牌结果区分。
+
+`IPhoneFrame.tsx` 供视频和手机截图复用；Android 截图保留 Android 界面，iPad 使用平板外框。原配乐在旁白下面由 0.12 提升为 0.30（约 +8 dB）。沿用两种已选女声，末镜新录中文“看清胜率，也看哪些牌能反超。”和英文对应句。不再为两家各编码一份视频。
+
+在含素材的独立工程中先 `npm ci`，然后运行：
+
+```sh
+npm run dev -- --no-open --port=4390
+# Studio: /Shared-ZH 或 /Shared-EN
+npm run export:shared -- /absolute/path/store-kit-v3
+npm run export:shared-stills -- /absolute/path/store-kit-v3
+npm run verify:shared -- /absolute/path/store-kit-v3
+```
+
+如需重新剪原片，将原始采集目录解压后运行 `npm run prepare:shared -- /path/to/raw`；索引使用 `ios/`、`ios-en-correction/`。仅重做末镜旁白可用 `npm run voice:shared`。验证程序检查单一成片的完整解码、平均视频码率、帧数、双声道、响度、峰值、图片尺寸和双语字段，并从交付 MP4 导出点击前后对照。
+
+## V2 原生采集与旧版成片
+
+以下为 V2 的原始采集与分平台剪辑说明。新版请使用上面的 V3 命令。
 
 ![简体中文截图概览](previews/zh-CN.png)
 

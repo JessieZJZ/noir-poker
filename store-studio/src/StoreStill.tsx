@@ -1,4 +1,5 @@
 import React from "react";
+import { IPhoneFrame } from "./IPhoneFrame";
 import { DeviceFrame } from "./DeviceFrame";
 import { AbsoluteFill, Img, staticFile, useVideoConfig } from "remotion";
 import { Backdrop, useFonts } from "./StoreFilm";
@@ -128,12 +129,12 @@ export const StoreStill: React.FC<StillProps> = ({
           {language === "en" ? "Offline Hold’em practice" : "离线德州扑克练习"}
         </p>
         <div style={{ position: "absolute", left: 690, top: 55 }}>
-          <DeviceFrame width={236} height={510}>
+          <IPhoneFrame width={236} height={510}>
             <Img
               src={staticFile(screenshot(platform, language, 0))}
               style={{ width: "100%", height: "100%", objectFit: "cover" }}
             />
-          </DeviceFrame>
+          </IPhoneFrame>
         </div>
       </AbsoluteFill>
     );
@@ -297,7 +298,7 @@ export const StoreStill: React.FC<StillProps> = ({
           left: (width - ((height - 770 * scale) * 1206) / 2622) / 2,
         }}
       >
-        <DeviceFrame
+        <IPhoneFrame
           width={((height - 770 * scale) * 1206) / 2622}
           height={height - 770 * scale}
         >
@@ -305,7 +306,7 @@ export const StoreStill: React.FC<StillProps> = ({
             src={staticFile(screenshot(platform, language, feature))}
             style={{ width: "100%", height: "100%", objectFit: "contain" }}
           />
-        </DeviceFrame>
+        </IPhoneFrame>
       </div>
       <div
         style={{

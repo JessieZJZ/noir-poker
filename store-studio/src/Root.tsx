@@ -1,10 +1,31 @@
 import React from "react";
 import { Composition, Folder, Still } from "remotion";
+import { SharedFilm } from "./SharedFilm";
 import { StoreFilm } from "./StoreFilm";
 import { StoreStill } from "./StoreStill";
 
 export const RemotionRoot: React.FC = () => (
   <>
+    <Folder name="Shared-Store-Master">
+      <Composition
+        id="Shared-ZH"
+        component={SharedFilm}
+        width={1920}
+        height={886}
+        fps={30}
+        durationInFrames={894}
+        defaultProps={{ language: "zh-CN" as const }}
+      />
+      <Composition
+        id="Shared-EN"
+        component={SharedFilm}
+        width={1920}
+        height={886}
+        fps={30}
+        durationInFrames={894}
+        defaultProps={{ language: "en" as const }}
+      />
+    </Folder>
     <Folder name="Apple-Landscape-Preview">
       <Composition
         id="Apple-EN"

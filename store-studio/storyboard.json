@@ -67,7 +67,9 @@
       "zh": "选好牌，看清胜率。",
       "voiceEn": "Choose your cards. Explore the odds.",
       "voiceZh": "选好底牌和公共牌，看清胜率。",
-      "from": 24.6
+      "from": 24.6,
+      "sharedVoiceEn": "See your win rate and count your outs.",
+      "sharedVoiceZh": "看清胜率，也看哪些牌能反超。"
     }
   ],
   "transitionFrames": 6,

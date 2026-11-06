@@ -20,6 +20,8 @@ const run = (bin, args) =>
         : reject(Error(`${bin} exited ${code}: ${err}`)),
     );
   });
+const shared = process.argv.includes("--shared");
+const voiceDirectory = shared ? "voice-v3" : "voice-v2";
 const evidence = [];
 // Two independent locale tracks; each service request stays sequential.
 await Promise.all(
@@ -27,10 +29,13 @@ await Promise.all(
     ["en", process.env.NOIR_TTS_EN || "en-US-EmmaNeural"],
     ["zh-CN", process.env.NOIR_TTS_ZH || "zh-CN-XiaoxiaoNeural"],
   ].map(async ([language, voice]) => {
-    const folder = path.join(studio, "public/voice-v2", language);
+    const folder = path.join(studio, "public", voiceDirectory, language);
     mkdirSync(folder, { recursive: true });
     for (const scene of board.scenes) {
-      const text = scene[language === "en" ? "voiceEn" : "voiceZh"];
+      if (shared && scene.id !== "calculator") continue;
+      const text = shared
+        ? scene[language === "en" ? "sharedVoiceEn" : "sharedVoiceZh"]
+        : scene[language === "en" ? "voiceEn" : "voiceZh"];
       const raw = path.join(folder, `${scene.id}.mp3`),
         wav = path.join(folder, `${scene.id}.wav`);
       writeFileSync(path.join(folder, `${scene.id}.txt`), text + "\n");
@@ -91,7 +96,7 @@ await Promise.all(
         rate: "-4%",
         tempo: 1,
         seconds: duration,
-        output: `voice-v2/${language}/${scene.id}.wav`,
+        output: `${voiceDirectory}/${language}/${scene.id}.wav`,
         pronunciation:
           scene.id === "retry" && language === "zh-CN"
             ? "Use 重新打 to disambiguate 重 as chóng; displayed copy remains 重打"
@@ -102,6 +107,6 @@ await Promise.all(
   }),
 );
 writeFileSync(
-  path.join(studio, "public/voice-v2/provenance.json"),
+  path.join(studio, "public", voiceDirectory, "provenance.json"),
   JSON.stringify(evidence, null, 2) + "\n",
 );

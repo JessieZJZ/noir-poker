@@ -9,10 +9,12 @@
   },
   "private": true,
   "dependencies": {
+    "@remotion/bundler": "4.0.541",
     "@remotion/captions": "4.0.541",
     "@remotion/cli": "4.0.541",
     "@remotion/fonts": "4.0.541",
     "@remotion/media": "4.0.541",
+    "@remotion/renderer": "4.0.541",
     "@remotion/transitions": "4.0.541",
     "react": "19.3.1",
     "react-dom": "19.3.1",
@@ -37,7 +39,12 @@
     "prepare:brand": "node prepare-brand.mjs",
     "export": "node export-kit.mjs",
     "verify": "node verify-kit.mjs",
-    "prepare:media": "node prepare-media-v2.mjs"
+    "prepare:media": "node prepare-media-v2.mjs",
+    "prepare:shared": "node prepare-shared.mjs",
+    "voice:shared": "node prepare-voice.mjs --shared",
+    "export:shared": "node export-shared.mjs",
+    "export:shared-stills": "node export-shared-stills.mjs",
+    "verify:shared": "node finish-shared.mjs"
   },
   "allowScripts": {
     "esbuild": false
