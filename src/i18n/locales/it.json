@@ -3005,5 +3005,6 @@
   "可争夺：{5}": "Possono vincere: {5}",
   "全下跟注 {0}": "Call all-in {0}",
   "{0} 获得底池 {1} 筹码": "{0} vince {1} chip dal piatto",
-  "{0} · 本次补入 {1}，本轮累计投入 {2}": "{0} · Aggiunto ora: {1}; totale puntato in questo giro: {2}"
+  "{0} · 本次补入 {1}，本轮累计投入 {2}": "{0} · Aggiunto ora: {1}; totale puntato in questo giro: {2}",
+  "对手最近一次翻前加注：{0}。": "Ultimo rilancio preflop di un avversario: {0}."
 }

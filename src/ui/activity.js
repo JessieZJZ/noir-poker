@@ -1,6 +1,6 @@
 import { compactActionAmounts } from '../engine/chip-format.js';
 import { createActivityParts } from './activity-parts.js';
-import { localizeText } from '../i18n/index.js';
+import { localizeGameText, localizeText } from '../i18n/index.js';
 
 const escapeHtml = (value) =>
   compactActionAmounts(value)
@@ -20,7 +20,7 @@ export function renderActivityParts(parts) {
       return `\uE200${actors.length - 1}\uE201`;
     })
     .join('');
-  return escapeHtml(localizeText(source)).replace(/\uE200(\d+)\uE201/g, (_, index) => {
+  return escapeHtml(localizeGameText(source)).replace(/\uE200(\d+)\uE201/g, (_, index) => {
     const part = actors[index];
     return `${escapeHtml(localizeText(part.name))}${part.profile ? `<span class="activity-persona">（${escapeHtml(localizeText(part.profile))}）</span>` : ''}${part.position ? ` <span class="position activity-position">${escapeHtml(part.position)}</span> ` : ''}`;
   });

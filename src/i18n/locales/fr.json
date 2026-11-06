@@ -3025,5 +3025,6 @@
   "可争夺：{5}": "Joueurs éligibles : {5}",
   "{0} 获得底池 {1} 筹码": "{0} · Pot remporté : {1} jetons",
   "查看 {0} 的底牌": "Voir les cartes privatives de {0}",
-  "收起 {0} 的底牌": "Masquer les cartes privatives de {0}"
+  "收起 {0} 的底牌": "Masquer les cartes privatives de {0}",
+  "对手最近一次翻前加注：{0}。": "Dernière relance adverse préflop enregistrée : {0}."
 }

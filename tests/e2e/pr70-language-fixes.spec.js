@@ -245,3 +245,35 @@ for (const locale of ['zh-CN', 'zh-TW', 'en', 'ja', 'ko', 'es', 'it', 'pt', 'de'
       await page.locator('#dismiss-replay').click();
       await expect(page.locator('#replay-label')).toBeHidden();
     });
+
+test('review game prose formats chips and punctuation in its rendered locale', async ({ page }) => {
+  await page.goto('/');
+  await page.waitForFunction(() => !!window.qa);
+  await switchLocale(page, 'pt');
+  const result = await page.evaluate(async () => {
+    const { setLocalizedHTML, localizeDocument } = await import('/src/i18n/index.js');
+    const { renderReviewParagraphs } = await import('/src/ui/review-matchups.js');
+    const node = document.querySelector('#review-coach-explanation');
+    const source = '对手最近一次翻前加注：Kai在 CO 位 2-bet 开池至 1.1K。';
+    setLocalizedHTML(node, renderReviewParagraphs([source], null, 0));
+    const text = node.textContent;
+    localizeDocument(node);
+    return { text, repeated: node.textContent };
+  });
+  expect(result.text).toContain('Kai');
+  expect(result.text).toContain('1,1K.');
+  expect(result.text).not.toContain('。');
+  expect(result.repeated).toBe(result.text);
+  await switchLocale(page, 'zh-CN');
+  await page.evaluate(() => {
+    window.qa.shortAllinSettlement();
+    window.qa.stop();
+  });
+  await switchLocale(page, 'pt');
+  await page.locator('#pot-details-button').click();
+  for (const summary of await page.locator('.pot-distribution > summary').all())
+    await summary.click();
+  const lists = await page.locator('.pot-distribution-body > p:first-child').allTextContents();
+  expect(lists.some((text) => text.includes(', '))).toBe(true);
+  expect(lists.join('')).not.toContain('、');
+});

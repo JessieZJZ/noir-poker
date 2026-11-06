@@ -3007,5 +3007,6 @@
   "可争夺：{5}": "Podem ganhar: {5}",
   "全下跟注 {0}": "Pagar all-in {0}",
   "{0} 获得底池 {1} 筹码": "{0} ganha {1} fichas do pote",
-  "{0} · 本次补入 {1}，本轮累计投入 {2}": "{0} · Acrescentado agora: {1}; total apostado nesta rodada: {2}"
+  "{0} · 本次补入 {1}，本轮累计投入 {2}": "{0} · Acrescentado agora: {1}; total apostado nesta rodada: {2}",
+  "对手最近一次翻前加注：{0}。": "Último aumento pré-flop de um adversário: {0}."
 }

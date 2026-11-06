@@ -4,7 +4,7 @@
 `codex/pr70-language-fixes`。本轮按原问题卡片及当前实际源码逐项核对，修复四语
 locale；不改变发牌、合法动作、底池结算、机器人策略或复盘评级。
 
-这是 AI 语言审校，并非真人母语者认证。原报告的模拟器截图用于确认旧问题，不能作为本次新译文的装机验证。
+这是 AI 语言审校，并非真人母语者认证。原报告的模拟器截图用于确认旧问题；`8087f3c` / `d245…` 及更早包的截图均已归档为候选诊断，不能作为当前修复后验收。`9963cb4` / `b36332aa97c39cfc7c7416d29d94fd04435008be284c8650dc4c064c1625862d` 的 `headerfinal-*` 包也因后续页头几何/Android 绘制问题被主线程标记 superseded；葡语已看原图仅保留为候选诊断。当前等待新的冻结摘要及双端证据。
 
 ## 官方来源与核对范围
 
@@ -17,7 +17,9 @@ locale；不改变发牌、合法动作、底池结算、机器人策略或复�
 | 意大利语 | [PokerStars — Regole del poker](https://www.pokerstars.com/it/poker/games/rules/)；[PokerStars Italia — Regole](https://www.pokerstars.it/poker/regole)；[Glossario](https://www.pokerstars.it/poker/glossario)  | check/call/rilancio/fold、piatto laterale、scala colore/poker/full/colore/scala/tris、私人牌与公共牌的区别             |
 | 葡萄牙语 | [PokerStars Brasil — Regras de Poker](https://www.pokerstars.com/pt-BR/poker/games/rules/?no_redirect=1)                                                                                                         | pagar/aumentar/desistir、small blind/big blind、pote paralelo、straight flush/quadra/full house/flush/sequência/trinca |
 
-部分地区站点的重复抓取返回 403；本次同时保留了成功取得的官方页面内容及官方搜索索引结果，意大利语另以官方 `.com/it` 规则页交叉核对。没有据此声称地区站点始终可访问。
+2026-11-06 最终文档复核时，英语规则、英语 Hold’em、意大利语 `.com/it` 规则和巴西葡语规则页仍可直接读取；西班牙地区页直接抓取返回 403，但[官方规则页](https://www.pokerstars.es/poker/games/rules/)和 [Hold’em 页](https://www.pokerstars.es/poker/games/texas-holdem/)的官方搜索索引内容可读，继续支持现用动作、盲注、私人牌/公共牌和边池术语。没有将索引结果写作成功直接抓取，也不声称地区站点始终可访问。
+
+官方来源用于核对扑克含义；半池快捷项的实际计算、每十手涨盲、盲注封顶、最多三次半 CL 补码、重打回滚和自动提示属于本应用行为，另以现有产品源码核对，不能说是外部规则页定义的产品功能。
 
 这些规则页通常把皇家同花顺单列为第十项。本应用引擎将其作为同花顺的最高形式，因此指南保持引擎的九类结构，不能为迎合外部目录而改成十种结算类别。
 
@@ -48,16 +50,32 @@ CL 新说明保留：当前仍在桌上的筹码领先者、每手可能变化�
 `loadLocale` 先载入 locale，再叠加 `src/i18n/overrides.json`。因此仅改 locale 文件不足以修复已有覆盖键。
 按语言分组的必要覆盖值和新增公共键保存在
 `.artifacts/language-fixes/override-patches-en-es-it-pt.json`，由负责公共文件的 agent 统一合入；本任务没有直接编辑共享覆盖表。
-变更键清单为 `.artifacts/language-fixes/changed-keys-en-es-it-pt.json`。四语相对基线分别修改或新增 69、85、81、86 个键；78 张原卡片的逐 ID 归属和源键映射见 `.artifacts/language-fixes/coverage-en-es-it-pt.json`。
+`.artifacts/language-fixes/changed-keys-en-es-it-pt.json` 保留首轮改动清单（69、85、81、86 键），不是当前完整计数。后续 58 键/语的 `followup-copy-en-es-it-pt.json` 和 16 键/语的 `final-pot-scene-copy-en-es-it-pt.json` 已统一合入；第二份进一步修正了意语退款的 `Fiches` 性数搭配。78 张原卡的逐 ID 映射保留在 `.artifacts/language-fixes/coverage-en-es-it-pt.json`，`final-freeze-audit-en-es-it-pt.json` 是当时待合入清单的历史审计。
+
+在 `9963cb4` 之后的未冻结工作树中，补充“对手最近一次翻前加注：{0}。”完整模板，四语 locale 与必要覆盖值各增加 1 键。相对 PR70 基线的当前计数如下；这是按 key 去重后的词典差异，不是把各轮 sidecar 数字相加。新增计数和有效译文核对保存在 `.artifacts/language-fixes/post-punctuation-copy-audit-en-es-it-pt.json`；此前详细键名和六项排除检查保留在 `current-doc-audit-en-es-it-pt.json`。工作树计数不表示已有新的冻结摘要或 native after。
+
+| 语言 | locale 修改或新增 | overrides 修改或新增 | 合并后有效文案改变 |
+| ---- | ----------------: | -------------------: | -----------------: |
+| en   |               126 |                   28 |                126 |
+| es   |               156 |                   20 |                156 |
+| it   |               151 |                   19 |                151 |
+| pt   |               153 |                   22 |                153 |
+
+这四语没有删除 locale 键。初始必要覆盖 sidecar 和最终 16 键 sidecar 与当前有效值全部一致；58 键 sidecar 只有两条意语退款被更晚的 `Fiches` 文案有意替代，没有意外覆盖回退。当前指南简介、最佳五张/平手段、提示位置、半池说明、参数优先限制、actor 日志、结算资格/弃牌/全下、零头筹码及加注权提示均已纳入文案范围；规则和策略逻辑未因翻译修改。
+
+补充公共呈现修复：底池资格名单仅按当前语言选择连接符，zh/ja 保留顿号，其余使用逗号加空格；姓名仍分别转义。最近翻前加注改为完整源句一次翻译，避免中文句号残留。`localizeGameText` 仅用于生成的局内文案，activity 在还原 actor 徽标之前调用；复盘对话框以 `data-i18n-chips` 标记覆盖时间线、说明、证据、对手说明和动态。真实筹码保留正负号和每枚整数值，网址/标识符保持，未改变规则或评级。WeakMap 保存最终显示值及原源句，以支持重复翻译和语言切换。
+
+这三条已见路径的实际函数与最小内存 DOM API fixture 复核保存在 `.artifacts/language-fixes/game-text-path-review-en-es-it-pt.{mjs,json}`：主段、剩余筹码、事实条目尾部、加注日志和底池分配日志均格式正确；PT→ES→IT→EN→JA→简中→PT 往返及重复呈现通过。这是函数/内存验证，不是真实浏览器 DOM、装机或实体机验证；主线程浏览器与新包检查另行报告。
 
 `tests/unit/pr70-locales-en-es-it-pt.test.js` 使用实际 `loadLocale` / `localizeText`，检查九类排序与独立标签一致、下注计算边界、参数限制、输牌/未发公共牌状态、动态名字和筹码单位、重打语义、无障碍名称、条件复盘和新增公共键。
 这些检查可以捕捉“locale 已改但 overrides 又覆盖回旧词”的问题。
 
-2026-11-06，合入必要覆盖值后的专项测试 **9/9 通过**；四个 locale、本测试和本文档的 Prettier 检查通过，四语 locale 的 `git diff --check` 通过。未运行全套测试或 native 构建。公共合入后需要统一运行项目检查，并重新验收窄屏按钮、横向参数表、动态日志、复盘全文及读屏名称。
+首轮历史验证：2026-11-06，合入必要覆盖值后的本专项测试 **9/9 通过**，当时的格式检查和差异空白检查通过。该记录不代表后续所有公共改动均已通过，也不等于 native 编译或装机运行。当前统一检查、编译与 `headerfinal-*` 证据以 `.artifacts/language-fixes/delivery.json` 及对应报告为准；本次文档核对没有重跑测试或构建。
 
 ## 公共部分与证据边界
 
 - EN-08 的相邻节点空格、计算器百分比本地格式、动态 actor/BTN 日志拆分、提示位置和布局由公共代码任务处理，不能只靠修改词典解决。
 - 旧 Android 模拟器英雄信息行被压扁属于观察项，本任务未归因为语言或字体，未修改图形实现。
-- 未运行新的 iOS/Android 已安装应用、实体机、VoiceOver/TalkBack、长局涨盲或完整重打流程；旧截图不能当作修复后验收。
-- 用户否定的同类指标解释/入口产品设计保持原样；本任务只修复真实文案、术语、可访问名称及已授权的新源文字。
+- 已审过的旧候选安装包原始 PNG 与逐图结果保存在 `.artifacts/language-fixes/diagnostic-visual-qa-d245-en-es-it-pt.json`，共 90 项；由于后续公共页头/重打布局继续修复，全部仅作诊断。不得将其作为任何后续源码的 after 证据。`b363…` 葡语两端另存候选诊断报告，不能成为最终验收。新包每语需完整 8 个 journey、paragraph manifest 和该单语批次 passed 后才纳入最终验收；整页 JSON 不能证明屏外文字可见。
+- 实体机、VoiceOver/TalkBack 朗读及未随机命中的特殊全下/边池/退款/实际零头分配仍不作通过声明；指南静态文字可见不等于这些运行分支都已命中。旧候选中另见名单顿号、部分复盘金额格式/句号、葡语个别 check 分支措辞。主线程已确认名单标点、生成动作句末和真实筹码小数格式属于本轮文案范围；只读定位、最小改法与探针保存在 `.artifacts/language-fixes/pt-punctuation-amount-diagnosis.md`，由主线程统一应用。引文、人名、牌面和网址不得全局替换；未随机触发分支仍不扩大声明。
+- 用户否定的六项为 **CN-03a、CN-03c、CN-04a、CN-05、TW-02a、TW-02b**，不是待修清单。本次核对确认四语“获胜手数／胜率”、翻前表标题、计算器结果标签与原有效词典一致；未把翻前胜率表改为权益表、未给计算器彩条加权益标签、未将轮播父菜单改为固定“学习与工具”。父菜单 DOM/行为及计算器结果卡结构与基线一致。小数本地格式、真实机译错误修正和长译文页头留白属于其他已授权问题，不改变这六项被保留的产品语义。

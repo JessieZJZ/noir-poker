@@ -1248,7 +1248,7 @@ function renderPotDetails(details, potGame = game) {
       .map((pot) => {
         const participants = pot.eligible
           .map((id) => escapePotText(potGame.players[id].name))
-          .join('、');
+          .join(getLocale().startsWith('zh') || getLocale() === 'ja' ? '、' : ', ');
         if (done) {
           const split = pot.awards.length > 1;
           return `<section class="pot-detail-card settled-pot" data-pot-index="${pot.index}">

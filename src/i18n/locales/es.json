@@ -3007,5 +3007,6 @@
   "可争夺：{5}": "Pueden ganarlo: {5}",
   "全下跟注 {0}": "Igualar all-in {0}",
   "{0} 获得底池 {1} 筹码": "{0} gana {1} fichas del bote",
-  "{0} · 本次补入 {1}，本轮累计投入 {2}": "{0} · Añadido ahora: {1}; total apostado en esta ronda: {2}"
+  "{0} · 本次补入 {1}，本轮累计投入 {2}": "{0} · Añadido ahora: {1}; total apostado en esta ronda: {2}",
+  "对手最近一次翻前加注：{0}。": "Última subida preflop de un rival: {0}."
 }

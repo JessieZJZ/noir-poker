@@ -3011,5 +3011,6 @@
   "{0} · 可争夺人数：{1}": "{0} · Gewinnberechtigte Spieler: {1}",
   "可争夺：{5}": "Gewinnberechtigt: {5}",
   "{0} 获得底池 {1} 筹码": "{0} hat {1} Chips aus dem Pot gewonnen",
-  "{0} · 本次补入 {1}，本轮累计投入 {2}": "{0} · Jetzt hinzugefügt: {1} · Gesamteinsatz dieser Runde: {2}"
+  "{0} · 本次补入 {1}，本轮累计投入 {2}": "{0} · Jetzt hinzugefügt: {1} · Gesamteinsatz dieser Runde: {2}",
+  "对手最近一次翻前加注：{0}。": "Letzte gegnerische Preflop-Erhöhung: {0}."
 }

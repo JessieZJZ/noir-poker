@@ -3022,5 +3022,6 @@
   "可争夺：{5}": "Eligible to win: {5}",
   "全下跟注 {0}": "All-in call {0}",
   "{0} 获得底池 {1} 筹码": "{0} wins {1} chips from the pot",
-  "{0} · 本次补入 {1}，本轮累计投入 {2}": "{0} · Added now: {1}; total bet this round: {2}"
+  "{0} · 本次补入 {1}，本轮累计投入 {2}": "{0} · Added now: {1}; total bet this round: {2}",
+  "对手最近一次翻前加注：{0}。": "Most recent preflop raise by an opponent: {0}."
 }

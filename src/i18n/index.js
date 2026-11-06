@@ -210,6 +210,21 @@ export function localizeText(value) {
 export function formatChips(value) {
   return compactChips(value, locale === 'en' ? 'en-US' : locale);
 }
+// Generated game prose carries compact chip amounts from the engine. Format
+// those values after translation, preserving URLs and identifiers verbatim.
+export function localizeGameText(value) {
+  return localizeText(value).replace(
+    /https?:\/\/[^\s<]+|www\.[^\s<]+|(?<![\p{L}\p{N}_+.\-])[+-]?\d+\.\d+[KM](?![\p{L}\p{N}_])/gu,
+    (token) => {
+      if (/^(?:https?:|www\.)/.test(token)) return token;
+      const unit = token.endsWith('M') ? 1000000 : 1000;
+      const amount = Number(token.slice(0, -1)) * unit;
+      const chips = Math.round(amount);
+      if (!Number.isSafeInteger(chips) || Math.abs(amount - chips) > 1e-6) return token;
+      return (token.startsWith('+') ? '+' : '') + formatChips(chips);
+    },
+  );
+}
 export function formatDecimal(value, digits = 2) {
   return new Intl.NumberFormat(locale, {
     useGrouping: false,
@@ -234,7 +249,10 @@ function translatedValue(records, target, key, current) {
   if (!record) records.set(target, (record = new Map()));
   const previous = record.get(key);
   const source = previous?.output === current ? previous.source : current;
-  const output = localizeText(source);
+  const element = target.nodeType === 1 ? target : target.parentElement;
+  const output = element?.closest('[data-i18n-chips]')
+    ? localizeGameText(source)
+    : localizeText(source);
   record.set(key, { source, output });
   return output;
 }

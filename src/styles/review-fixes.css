@@ -1,29 +1,19 @@
 /* Keep the countdown under the blinds. Long translations wrap in their own
    column, while retry text and its close button retain their minimum width. */
-.main .game-surface > .surface-top {
-  grid-template-rows:
-    max(var(--hand-row), var(--entry-hand-row, 0px))
-    minmax(var(--hint-row), max-content);
-}
-.main .game-surface[data-entry-state='waiting'] > .surface-top {
-  grid-template-rows:
-    minmax(max(var(--hand-row), var(--entry-hand-row, 0px)), auto)
-    minmax(var(--hint-row), max-content);
-}
 .surface-bottom {
-  --blind-progress-line-height: 14.3px;
+  --blind-progress-line-height: 11px;
   grid-area: 2 / 1 / 3 / -1;
   display: flex;
-  min-height: 24px;
+  min-height: 22px;
   min-width: 0;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
 }
 .game-surface > .surface-top .blind-progress {
-  flex: 0 1 60%;
+  flex: 0 1 65%;
   min-width: 0;
-  max-width: 60%;
-  font-size: 11px;
+  max-width: 65%;
+  font-size: 10px;
   line-height: var(--blind-progress-line-height);
   color: #bca77c;
   text-align: right;
@@ -42,10 +32,13 @@
 }
 .table-notices .replay-label {
   display: inline-flex;
+  white-space: nowrap;
   flex: none;
   align-items: center;
   gap: 3px;
   margin: 0;
+  border-width: 0;
+  box-shadow: inset 0 0 0 1px #bda36855;
   padding: 0 0 0 5px;
   font-size: 10px;
   line-height: 18px;
@@ -64,18 +57,7 @@
 .table-notices #dismiss-replay:focus-visible {
   outline: 2px solid var(--mint);
 }
-/* Reserve translated countdown lines before the first hand as well, so a
-   wrapped countdown cannot move the felt when joining or replaying. */
-@media (max-width: 600px) {
-  html:not([lang^='zh']) .surface-bottom {
-    min-height: calc(var(--blind-progress-line-height) * 2);
-  }
-}
-@media (max-width: 350px) {
-  html:not([lang^='zh']) .surface-bottom {
-    min-height: calc(var(--blind-progress-line-height) * 3);
-  }
-}
+/* Two compact lines share the existing hint row in every locale. */
 /* Prefer whole words over cramped translated headings. The table advertises
    horizontal scrolling by keeping a readable minimum column width. */
 .profile-comparison table {
@@ -99,10 +81,12 @@ html[lang='ko'] .profile-comparison th {
   overflow-wrap: normal;
   word-break: normal;
 }
-/* Android WebView's software paint path can reuse a vertically compressed
-   raster for this translated, repositioned row. An independent identity
-   layer preserves its glyphs and badge proportions without changing layout. */
-.native-android .hero-identity {
+/* Android WebView can reuse compressed rasters for this repositioned row.
+   Keep the identity layer for live badges, and give its text children their
+   own layers so waiting-table labels retain the same glyph proportions. */
+.native-android .hero-identity,
+.native-android .hero-identity strong,
+.native-android .hero-identity .hero-stack {
   transform: translateZ(0);
   backface-visibility: hidden;
 }
