@@ -13,6 +13,16 @@ test('generated game amounts retain every chip, signs and protected facts in eac
       comma ? '1,025K / +1,000025M / -1,001K' : '1.025K / +1.000025M / -1.001K',
       locale,
     );
+    assert.equal(
+      localizeGameText('42.40% / 4.0 BB'),
+      comma ? '42,40% / 4,0 BB' : '42.40% / 4.0 BB',
+      locale,
+    );
+    assert.equal(
+      localizeGameText('A。B'),
+      locale.startsWith('zh') || locale === 'ja' ? 'A。B' : 'A. B',
+      locale,
+    );
     const facts =
       'https://example.com/1.1K?q=2.5M www.example.com/1.1K Version1.1K Stage-1.1K Q♠ 2026-11-06';
     assert.equal(localizeGameText(facts), facts, locale);

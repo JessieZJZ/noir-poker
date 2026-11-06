@@ -1,5 +1,5 @@
 import { reviewCommentary } from '../review/matchups.js';
-import { getLocale, localizeText } from '../i18n/index.js';
+import { getLocale, localizeGameText } from '../i18n/index.js';
 
 const esc = (value) =>
   String(value ?? '')
@@ -14,7 +14,7 @@ function inlineParts(parts, separator = '') {
   let previous = '';
   return parts
     .map((source, index) => {
-      const text = localizeText(source);
+      const text = localizeGameText(source);
       const boundary =
         separator && index
           ? separator

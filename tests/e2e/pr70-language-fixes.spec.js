@@ -257,13 +257,18 @@ test('review game prose formats chips and punctuation in its rendered locale', a
     const source = '对手最近一次翻前加注：Kai在 CO 位 2-bet 开池至 1.1K。';
     setLocalizedHTML(node, renderReviewParagraphs([source], null, 0));
     const text = node.textContent;
+    const fragment = document.createElement('p');
+    node.append(fragment);
+    setLocalizedHTML(fragment, 'Alex 弃牌。42.4% / 4.0 BB');
+    const facts = fragment.textContent;
     localizeDocument(node);
-    return { text, repeated: node.textContent };
+    return { text, facts, repeated: node.textContent };
   });
   expect(result.text).toContain('Kai');
   expect(result.text).toContain('1,1K.');
   expect(result.text).not.toContain('。');
-  expect(result.repeated).toBe(result.text);
+  expect(result.facts).toContain('. 42,4% / 4,0 BB');
+  expect(result.repeated).toBe(result.text + result.facts);
   await switchLocale(page, 'zh-CN');
   await page.evaluate(() => {
     window.qa.shortAllinSettlement();

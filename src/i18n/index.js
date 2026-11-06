@@ -210,13 +210,31 @@ export function localizeText(value) {
 export function formatChips(value) {
   return compactChips(value, locale === 'en' ? 'en-US' : locale);
 }
-// Generated game prose carries compact chip amounts from the engine. Format
-// those values after translation, preserving URLs and identifiers verbatim.
+// Generated game prose carries numeric facts and sentence fragments from the
+// engine. Format them after translation, preserving URLs and identifiers.
 export function localizeGameText(value) {
   return localizeText(value).replace(
-    /https?:\/\/[^\s<]+|www\.[^\s<]+|(?<![\p{L}\p{N}_+.\-])[+-]?\d+\.\d+[KM](?![\p{L}\p{N}_])/gu,
-    (token) => {
+    /https?:\/\/[^\s<]+|www\.[^\s<]+|(?<![\p{L}\p{N}_+.\-])[+-]?\d+\.\d+(?:[KM%]| ?BB)(?![\p{L}\p{N}_])|。/gu,
+    (token, offset, text) => {
       if (/^(?:https?:|www\.)/.test(token)) return token;
+      if (token === '。') {
+        if (locale.startsWith('zh') || locale === 'ja') return token;
+        return '.' + (/^[\p{L}\p{N}]/u.test(text.slice(offset + 1)) ? ' ' : '');
+      }
+      const ratio = /^([+-]?\d+\.(\d+))(%| ?BB)$/.exec(token);
+      if (ratio) {
+        const digits = ratio[2].length;
+        if (digits > 20 || !Number.isFinite(Number(ratio[1]))) return token;
+        return (
+          (token.startsWith('+') ? '+' : '') +
+          new Intl.NumberFormat(locale, {
+            useGrouping: false,
+            minimumFractionDigits: digits,
+            maximumFractionDigits: digits,
+          }).format(Number(ratio[1])) +
+          ratio[3]
+        );
+      }
       const unit = token.endsWith('M') ? 1000000 : 1000;
       const amount = Number(token.slice(0, -1)) * unit;
       const chips = Math.round(amount);

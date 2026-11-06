@@ -1292,7 +1292,7 @@
       ],
       "nativeSpeakerCertification": false,
       "followupSource": "对手最近一次翻前加注：{0}。",
-      "gameAmountPresentation": "Generated game prose formats compact chips after translation; actor labels and URLs preserved; no engine settlement changes"
+      "gameAmountPresentation": "Generated game prose formats compact chips, decimal percentages and BB ratios after translation; residual sentence terminators use locale punctuation; actor labels and URLs preserved; no engine settlement changes"
     }
   ]
 }
