@@ -1274,16 +1274,16 @@
       "scope": "PR70 language-review issue cards and approved UI copy; not a full-catalog linguistic certification",
       "method": "AI language review against first-party poker rules and glossaries; repository behavior checked separately; no machine-translation API used",
       "effectiveChangedKeys": {
-        "en": 69,
-        "zh-TW": 17,
-        "ja": 140,
-        "ko": 135,
-        "es": 85,
-        "it": 81,
-        "pt": 86,
-        "de": 137,
-        "fr": 87,
-        "ru": 93
+        "en": 111,
+        "zh-TW": 41,
+        "ja": 177,
+        "ko": 175,
+        "es": 142,
+        "it": 136,
+        "pt": 139,
+        "de": 172,
+        "fr": 134,
+        "ru": 140
       },
       "referenceDocuments": [
         "docs/pr70-language-fixes-en-es-it-pt.md",

@@ -67,10 +67,20 @@ export async function loadLocale(value) {
     }
     const parts = key.split(/(\{\d+\})/);
     const slots = [];
+    const actorLog =
+      /^\{\d+\} (?:\{\d+\}-bet )?(?:弃牌|过牌|跟注|全下|下注|加注|开池|小盲|大盲|模拟状态|获得|补充|未被跟注)/.test(
+        key,
+      );
     const expression = parts
       .map((part, index) => {
         if (!/^\{\d+\}$/.test(part)) return escaped(part);
         slots.push(part);
+        // An action-log actor is a name/token, not a whole preceding clause.
+        // Otherwise "...5K，3-bet 全下至..." can be stolen by a short log
+        // template before the complete public-snapshot sentence is translated.
+        if (actorLog && index === 1)
+          return '((?:[\uE000\uE200]\\d+[\uE001\uE201]|[A-Za-z][A-Za-z0-9_-]*|你|对手)(?:（[^（）]+）)?)';
+        if (actorLog) return '([^。，；;：:]*?)';
         // A value cannot consume another complete sentence. Otherwise a short
         // amount template can accidentally swallow the following review text.
         // Adjacent final values can contain an optional lead-in and a complete

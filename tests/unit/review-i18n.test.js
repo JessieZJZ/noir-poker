@@ -163,7 +163,7 @@ test('hand-specific rationale and actual public responses localize without losin
       const result = localizeText(text);
       assert.doesNotMatch(result, /\{\d+\}/, `${locale}: unresolved placeholder`);
       if (!['zh-CN', 'zh-TW', 'ja'].includes(locale))
-        assert.doesNotMatch(result, /\p{Script=Han}/u, `${locale}: ${result}`);
+        assert.doesNotMatch(result, /\p{Script=Han}/u, `${locale}: ${result}\nSource: ${text}`);
       for (const amount of [
         ...compactAmounts(text),
         '1.25K',

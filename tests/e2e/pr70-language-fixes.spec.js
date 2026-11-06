@@ -105,6 +105,14 @@ test('showdown amounts refresh with the locale while winning-card nodes stay ali
   ).toBe(true);
 });
 
+test('settings sentences remain separated across the blind-summary span', async ({ page }) => {
+  await page.goto('/');
+  await page.waitForFunction(() => !!window.qa);
+  await switchLocale(page, 'en');
+  await page.locator('#opponents-button').click();
+  await expect(page.locator('#stakes-description')).toContainText('small blind. Blinds');
+});
+
 for (const locale of ['es', 'it', 'pt', 'ru', 'ja'])
   test(`${locale} settled labels fit their buttons at 320px`, async ({ page }) => {
     await page.setViewportSize({ width: 320, height: 844 });

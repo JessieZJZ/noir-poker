@@ -41,6 +41,8 @@ export async function preparePlatform() {
   if (!Capacitor.isNativePlatform()) return;
   document.documentElement.classList.add('native-app');
   if (Capacitor.getPlatform() === 'ios') document.documentElement.classList.add('native-ios');
+  if (Capacitor.getPlatform() === 'android')
+    document.documentElement.classList.add('native-android');
   const [{ App }, { Preferences }] = await Promise.all([
     import('@capacitor/app'),
     import('@capacitor/preferences'),

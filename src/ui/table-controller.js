@@ -1258,7 +1258,10 @@ function renderPotDetails(details, potGame = game) {
         <details class="pot-distribution" data-pot-index="${pot.index}"${expanded.has(pot.index) ? ' open' : ''}><summary>查看分配详情</summary><div class="pot-distribution-body"><p>${eligibilityLabel(pot)} · 结算资格：${participants}</p><h4>本池投入</h4><ul class="pot-contribution-list">${contributions(pot)}</ul>${split ? '<p class="pot-rounding-note">零头筹码按庄家左侧顺序分配。</p>' : ''}</div></details>
       </section>`;
         }
-        return `<section class="pot-detail-card" data-pot-index="${pot.index}"><div class="pot-detail-heading"><h3>${escapePotText(pot.label)}</h3><strong>${format(pot.amount)}<span>筹码</span></strong></div><div class="pot-eligibility ${pot.eligible.includes(0) ? 'hero-eligible' : ''}">${eligibilityLabel(pot)}<span> · ${pot.eligible.length} 人</span></div><p class="pot-player-list">可争夺：${participants}</p><details class="pot-contributions"><summary>查看本池投入</summary><ul>${contributions(pot)}</ul></details></section>`;
+        const badge = pot.eligible.includes(0)
+          ? `你有资格 · 可争夺人数：${pot.eligible.length}`
+          : `${eligibilityLabel(pot)} · 可争夺人数：${pot.eligible.length}`;
+        return `<section class="pot-detail-card" data-pot-index="${pot.index}"><div class="pot-detail-heading"><h3>${escapePotText(pot.label)}</h3><strong>${format(pot.amount)}<span>筹码</span></strong></div><div class="pot-eligibility ${pot.eligible.includes(0) ? 'hero-eligible' : ''}">${escapePotText(badge)}</div><p class="pot-player-list">可争夺：${participants}</p><details class="pot-contributions"><summary>查看本池投入</summary><ul>${contributions(pot)}</ul></details></section>`;
       })
       .join('') +
       details.refunds

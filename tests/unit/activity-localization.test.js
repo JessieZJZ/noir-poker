@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { renderActivityParts } from '../../src/ui/activity.js';
 import { loadLocale, localizeText } from '../../src/i18n/index.js';
+import { renderReviewParagraphs } from '../../src/ui/review-matchups.js';
 
 test('actor badges do not split the full hand-start and blind translation templates', async () => {
   await loadLocale('en');
@@ -32,4 +33,21 @@ test('adjacent translated sentences have spaces without touching decimals or URL
   assert.match(value, /pot\. Pot equity/);
   assert.equal(localizeText('https://www.pokerstars.com/1.25'), 'https://www.pokerstars.com/1.25');
   await loadLocale('zh-CN');
+});
+
+test('review sentence spacing survives separate fact spans', async () => {
+  const parts = [
+    '跟注占可争夺底池约 40%。',
+    '随机范围与行动加权范围下，底池权益分别约 50% / 47%。',
+  ];
+  await loadLocale('en');
+  const html = renderReviewParagraphs([parts.join('')], null, 0, [parts]);
+  assert.match(html, /pot\.<\/span> <span>Pot equity/);
+  assert.match(html, /40%/);
+  assert.match(html, /50% \/ 47%/);
+  await loadLocale('zh-CN');
+  assert.doesNotMatch(
+    renderReviewParagraphs([parts.join('')], null, 0, [parts]),
+    /。<\/span> <span>/,
+  );
 });
