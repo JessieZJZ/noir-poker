@@ -176,7 +176,7 @@ test('a priced wide 3-bet call names the break-even share, the committed stack, 
   });
   const text = summary(r);
   assert.match(text, /要补 2.9K 去争 8.7K 的底池，至少需要约 33.3% 的胜率才能持平/);
-  assert.match(text, /估计K \/ 6 不同花底牌对这次加注的范围仍够这个价格，所以较宽地跟注/);
+  assert.match(text, /估计 K \/ 6 不同花底牌对这次加注的范围仍够这个价格，所以较宽地跟注/);
   assert.match(text, /剩余筹码的 42.0%/);
   assert.match(text, /跟完只剩 4K，还不到翻牌时的底池，之后再遇下注很难弃牌，相当于被底池套住/);
   assert.match(text, /代价是击中一对后仍可能被更好的踢脚或更大对子压住/);

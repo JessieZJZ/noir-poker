@@ -2,6 +2,7 @@ import { compactChips } from '../engine/chip-format.js';
 import overrides from './overrides.json' with { type: 'json' };
 import timezoneLocales from './timezone-locales.json' with { type: 'json' };
 import { preferenceStorage } from '../platform/storage.js';
+import { HAN } from '../review/typography.js';
 export const SUPPORTED_LOCALES = [
   'zh-CN',
   'en',
@@ -39,12 +40,29 @@ export function resolveLocale(saved, languages = [], timeZone) {
 }
 let locale = 'zh-CN',
   messages = {},
+  spaced = new Map(),
   templates = [],
   phrases = null;
 const cache = new Map();
 export const getLocale = () => locale;
 const normalized = (s) => s.trim().replace(/\s+/g, ' ');
 const escaped = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\s+/g, '\\s+');
+// Review copy puts a space between Chinese and a Latin letter, digit or suit
+// (src/review/typography.js). A catalog key written without that space also
+// accepts it; a key written with a space still requires one, so keys that
+// differ only there keep matching their own text.
+const hanEdge = new RegExp(
+  `(?<=[${HAN}])(?=[A-Za-z0-9♠♥♣♦])|(?<=[A-Za-z0-9♠♥♣♦%])(?=[${HAN}])`,
+  'gu',
+);
+const hanSpace = new RegExp(
+  `(?<=[${HAN}]) (?=[A-Za-z0-9♠♥♣♦])|(?<=[A-Za-z0-9♠♥♣♦%]) (?=[${HAN}])`,
+  'gu',
+);
+const hanStart = new RegExp(`^[${HAN}]`, 'u');
+const hanEnd = new RegExp(`[${HAN}]$`, 'u');
+const unspaced = (s) => normalized(s).replace(hanSpace, '');
+const loose = (s) => s.split(hanEdge).map(escaped).join(' ?');
 export function setLocale(value) {
   if (!SUPPORTED_LOCALES.includes(value)) throw new RangeError('Unsupported locale');
   preferenceStorage.setItem(LOCALE_KEY, value);
@@ -59,6 +77,9 @@ export async function loadLocale(value) {
   messages = { ...next, ...overrides[value] };
   cache.clear();
   templates = [];
+  spaced = new Map();
+  for (const [key, translation] of Object.entries(messages))
+    if (!/\{\d+\}/.test(key) && !spaced.has(unspaced(key))) spaced.set(unspaced(key), translation);
   const literals = [];
   for (const [key, translation] of Object.entries(messages)) {
     if (!/\{\d+\}/.test(key)) {
@@ -69,7 +90,12 @@ export async function loadLocale(value) {
     const slots = [];
     const expression = parts
       .map((part, index) => {
-        if (!/^\{\d+\}$/.test(part)) return escaped(part);
+        if (!/^\{\d+\}$/.test(part)) {
+          // Chinese next to a value may now be followed or preceded by a space.
+          const head = index > 0 && hanStart.test(part) ? ' ?' : '';
+          const tail = index < parts.length - 1 && hanEnd.test(part) ? ' ?' : '';
+          return head + loose(part) + tail;
+        }
         slots.push(part);
         // A value cannot consume another complete sentence. Otherwise a short
         // amount template can accidentally swallow the following review text.
@@ -98,16 +124,17 @@ export async function loadLocale(value) {
           : null,
       slots,
       translation,
-      specificity: key.replace(/\{\d+\}/g, '').length,
+      specificity: key.replace(/\{\d+\}|\s+/g, '').length,
     });
   }
   templates.sort((a, b) => b.specificity - a.specificity);
   literals.sort((a, b) => b.length - a.length);
-  phrases = literals.length ? new RegExp(literals.map(escaped).join('|'), 'gu') : null;
+  phrases = literals.length ? new RegExp(literals.map(loose).join('|'), 'gu') : null;
 }
 function translateCore(text, depth = 0) {
   const source = normalized(text);
   if (Object.hasOwn(messages, source)) return messages[source];
+  if (spaced.has(unspaced(source))) return spaced.get(unspaced(source));
   // Texture labels are lists of exact catalog facts, not sentence templates.
   // Resolve every list item before a broad "公共牌{0}" template can consume it.
   const list = source.split('、');
@@ -118,7 +145,7 @@ function translateCore(text, depth = 0) {
       const match = entry.pattern.exec(source);
       if (!match) continue;
       const values = new Map(
-        entry.slots.map((slot, i) => [slot, translate(match[i + 1], depth + 1)]),
+        entry.slots.map((slot, i) => [slot, translate(match[i + 1].trim(), depth + 1)]),
       );
       return entry.translation.replace(/\{\d+\}/g, (slot) => values.get(slot) ?? slot);
     }
@@ -128,13 +155,16 @@ function translateCore(text, depth = 0) {
       if (!entry.fragment) continue;
       output = output.replace(entry.fragment, (...args) => {
         const values = new Map(
-          entry.slots.map((slot, i) => [slot, translate(args[i + 1], depth + 1)]),
+          entry.slots.map((slot, i) => [slot, translate(args[i + 1].trim(), depth + 1)]),
         );
         return entry.translation.replace(/\{\d+\}/g, (slot) => values.get(slot) ?? slot);
       });
     }
   return phrases
-    ? output.replace(phrases, (match) => messages[normalized(match)] ?? match)
+    ? output.replace(
+        phrases,
+        (match) => messages[normalized(match)] ?? spaced.get(unspaced(match)) ?? match,
+      )
     : output;
 }
 function translate(text, depth = 0) {
@@ -142,7 +172,7 @@ function translate(text, depth = 0) {
   // for the following sentence's board/position delimiter by a parent template.
   const actors = [];
   const masked = text.replace(
-    /(?:你|对手|[A-Za-z][A-Za-z0-9_-]*)(?:（[^（）]+）)?在 (?:BTN|SB|BB|UTG(?:\+\d+)?|MP|LJ|HJ|CO) 位/g,
+    /(?:你|对手|[A-Za-z][A-Za-z0-9_-]*)(?:（[^（）]+）)? ?在 (?:BTN|SB|BB|UTG(?:\+\d+)?|MP|LJ|HJ|CO) 位/g,
     (actor) => {
       actors.push(actor);
       return `\uE000${actors.length - 1}\uE001`;

@@ -36,9 +36,9 @@ test('consumer preflop ranges combine hand families and explain only actions alr
   assert.equal(p.groups.length, 1);
   assert.equal(p.groups[0].label, '对手可能牌组');
   assert.ok(p.groups[0].examples.length > 0);
-  assert.match(text, /Luna在 UTG\+1 位2-bet 开池至 4K/);
-  assert.match(text, /Jade在 LJ 位已跟注这笔加注，补 4K/);
-  assert.doesNotMatch(text, /Kai跟住/);
+  assert.match(text, /Luna 在 UTG\+1 位 2-bet 开池至 4K/);
+  assert.match(text, /Jade 在 LJ 位已跟注这笔加注，补 4K/);
+  assert.doesNotMatch(text, /Kai 跟住/);
   assert.match(text, /A.*AA、AK、AQ、AJ/);
   const html = renderReviewParagraphs([m.text], m, 0);
   assert.doesNotMatch(html, /结构上较|不代表|记录|抽样|获胜概率/);
@@ -167,7 +167,7 @@ test('the multiway check reason names the seat count for one pair only, without 
   const pair = { opponents: 4, made: { score: [1, 14] }, handClass: 'top-pair' };
   assert.match(
     multiwayPairCheckReason({ street: 1 }, pair),
-    /^还有 4 位对手没弃牌。人越多，越可能有人已经领先或正在听牌；.*所以先过牌控制底池。$/,
+    /^还有 4 位对手没弃牌。人越多，越可能有人已经领先或正在听牌。.*所以先过牌控制底池。$/,
   );
   const river = multiwayPairCheckReason({ street: 3 }, pair);
   assert.match(river, /还有 4 位对手没弃牌/);

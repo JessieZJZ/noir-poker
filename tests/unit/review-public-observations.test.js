@@ -28,7 +28,7 @@ test('an actual observed shove response explains the actor public evidence witho
   const record = observation();
   assert.equal(record.action, 'call');
   const text = explainOpponent(record).detail;
-  assert.match(text, /Mia结合.*此前 32 手中 32 手翻前大额加注.*保留了更多非顶级起手牌/);
+  assert.match(text, /Mia 结合.*此前 32 手中 32 手翻前大额加注.*保留了更多非顶级起手牌/);
   assert.doesNotMatch(text, /机器人|应当|建议|需要警惕|不能只凭|并非已经看到/);
   assert.equal(record.trace.view.publicReadModel, PUBLIC_READ_MODEL);
   const contaminated = structuredClone(record);
@@ -69,9 +69,9 @@ test('postflop observation copy remains a possible range interpretation and requ
 
 test('observation explanations translate every supported locale with counts and actor retained', async () => {
   const samples = [
-    'Mia结合River此前 32 手中 20 手翻前大额加注的记录，本次估计中保留了更多非顶级起手牌。',
-    'Mia结合River此前 32 手中 20 手翻前加注的记录，本次没有把加注范围限于强牌。',
-    'Mia结合River此前频繁的翻后下注与加注，本次估计保留了更多弱牌施压的可能。',
+    'Mia 结合 River 此前 32 手中 20 手翻前大额加注的记录，本次估计中保留了更多非顶级起手牌。',
+    'Mia 结合 River 此前 32 手中 20 手翻前加注的记录，本次没有把加注范围限于强牌。',
+    'Mia 结合 River 此前频繁的翻后下注与加注，本次估计保留了更多弱牌施压的可能。',
   ];
   try {
     for (const locale of SUPPORTED_LOCALES) {

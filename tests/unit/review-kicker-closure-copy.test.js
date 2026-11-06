@@ -65,7 +65,7 @@ test('call and fold summaries state the required win probability with the exact 
         contestable: 4300,
       }),
     );
-    assert.match(text, /继续要补 700，可争夺跟注后的 4.3K 底池，需要至少16.3%的胜率/);
+    assert.match(text, /继续要补 700，可争夺跟注后的 4.3K 底池，需要至少 16.3% 的胜率/);
     assert.doesNotMatch(text, /当前保本门槛/);
   }
 });

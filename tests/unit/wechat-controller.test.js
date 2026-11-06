@@ -98,7 +98,7 @@ test('WeChat observer review preserves threats and the actual fold without futur
   assert.equal(report.loading, false);
   const review = controller.reviewOpponent(0);
   assert.equal(review.title, '弃牌');
-  assert.match(review.reason, /Alex在 SB 位.*选择弃牌/);
+  assert.match(review.reason, /Alex 在 SB 位.*选择弃牌/);
   assert.match(review.reason, /三张同花色.*6 和 9/);
   assert.doesNotMatch(review.reason, /过牌先|再遇下注|要结合金额|需要按新的价格/);
   assert.deepEqual(controller.reviewOpponent(0), review);

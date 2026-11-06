@@ -113,11 +113,12 @@
    at the top of the row, where a single centred line would be, so the first
    line does not move when play starts. */
 .game-surface .surface-top .hand-label {
-  align-self: start;
+  align-self: stretch;
   padding-top: max(0px, calc((var(--hand-row) - 1.2em) / 2));
 }
-/* The blinds box still fills the row, so a retained taller row leaves no gap
-   above the hint line; its text stays at the top. */
+/* Both boxes fill the row, so a retained taller row leaves no gap above the
+   hint line and the two stay centred on each other; their text stays at the
+   top through the padding. */
 .game-surface .surface-top .blind-info {
   align-self: stretch;
   align-items: flex-start;

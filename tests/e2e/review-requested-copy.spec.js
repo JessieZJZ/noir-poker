@@ -57,7 +57,7 @@ test('reported opponent summaries explain the weak kicker, required win probabil
       await expect(summary).not.toContainText(/把较强牌保留在过牌范围|等后位先下注/);
     } else if (name === 'call-price') {
       await expect(summary).toContainText(
-        '继续要补 700，可争夺跟注后的 4.3K 底池，需要至少16.3%的胜率。',
+        '继续要补 700，可争夺跟注后的 4.3K 底池，需要至少 16.3% 的胜率。',
       );
       await expect(summary).not.toContainText('当前保本门槛');
     } else {

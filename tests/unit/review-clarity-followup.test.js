@@ -15,9 +15,9 @@ test('four actual equal-price limpers share one sentence and the summary omits g
   const { game, record } = groupedPreflopReview();
   const review = explainOpponent(record, identities(game));
   const text = summary(review);
-  assert.match(text, /你在 UTG 位、Mia在 LJ 位、Alex在 HJ 位、River在 CO 位都先跟注 20K 入池/);
+  assert.match(text, /你在 UTG 位、Mia 在 LJ 位、Alex 在 HJ 位、River 在 CO 位都先跟注 20K 入池/);
   assert.equal(text.match(/先跟注 20K 入池/g)?.length, 1);
-  assert.match(text, /Luna在 BTN 位2-bet 开池至 190K/);
+  assert.match(text, /Luna 在 BTN 位 2-bet 开池至 190K/);
   assert.match(text, /小对子、同花牌或连接牌.*藏着强牌/);
   assert.doesNotMatch(text, /明显大于普通开池|不能只根据位置套用|不能只考虑开池者会不会弃牌/);
 });
@@ -25,9 +25,9 @@ test('four actual equal-price limpers share one sentence and the summary omits g
 test('callers with different actual incremental prices stay in separate groups, with folded seats excluded', () => {
   const { game, record } = groupedPreflopReview({ facingSqueeze: true });
   const text = summary(explainOpponent(record, identities(game)));
-  assert.match(text, /你在 UTG 位、Alex在 HJ 位都已跟注这笔加注，各补 740K/);
-  assert.match(text, /Luna在 BTN 位已跟注这笔加注，补 570K/);
-  assert.doesNotMatch(text, /Mia在 LJ 位|River在 CO 位|各补 760K/);
+  assert.match(text, /你在 UTG 位、Alex 在 HJ 位都已跟注这笔加注，各补 740K/);
+  assert.match(text, /Luna 在 BTN 位已跟注这笔加注，补 570K/);
+  assert.doesNotMatch(text, /Mia 在 LJ 位|River 在 CO 位|各补 760K/);
 });
 
 test('suited AJ pressure explains nut-flush potential for recorded and legacy/scripted reason paths', () => {
@@ -57,7 +57,7 @@ test('legacy set checks retain visible threats and tradeoffs without future resp
     assert.match(text, /暗三条 5.*三张同花色.*两张该花色.*同花.*领先当前成牌/);
     assert.match(text, /避免主动扩大当前底池.*葫芦或四条.*免费见到下一张/);
     assert.doesNotMatch(text, /再遇下注|要结合金额、人数和此前行动/);
-    assert.doesNotMatch(text, /这是暗三条 5过牌|暗三条 5控池，保留摊牌机会/);
+    assert.doesNotMatch(text, /这是暗三条 5 过牌|暗三条 5 控池，保留摊牌机会/);
     if (reason === 'pot-control') assert.equal(review.title, '强牌选择过牌');
   }
 });

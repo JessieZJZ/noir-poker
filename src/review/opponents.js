@@ -23,6 +23,7 @@ import { enrichStrategy } from './strategy-context.js';
 import { REVIEW_TOPICS as TOPIC } from './prose-topics.js';
 import { showdownTargets } from './value-targets.js';
 import { raiseExposureNote } from './presentation.js';
+import { spaceDeep, styleTagOnce, styleTagOnceInReview } from './typography.js';
 
 const pct = (v) => (v * 100).toFixed(1) + '%';
 const n = compactChips;
@@ -606,12 +607,16 @@ export function explainOpponent(record, identities = []) {
         logic = premium
           ? `${support}。这次额外投入 ${n(f.investment)}，希望愿意继续的较小对子、AK 等高牌付出更多筹码，同时提高其他玩家继续入池的成本，争取减少对手人数。即使有人跟注，这手强牌仍足以支持主动争夺底池。`
           : aggression
-            ? `${subject}没有只补 ${n(cost)} 跟注，而是再拿出 ${n(f.investment)} 把下注抬到 ${n(record.amount)}。${support}。${foldNote || '对手若不愿继续付费，就会放弃当前 ' + n(v.pot) + ' 的底池。'}`
+            ? f.investment === record.amount
+              ? `${subject}没有只补 ${n(cost)} 跟注，而是直接加注到 ${n(record.amount)}。${support}。${foldNote || '对手若不愿继续付费，就会放弃当前 ' + n(v.pot) + ' 的底池。'}`
+              : `${subject}没有只补 ${n(cost)} 跟注，而是再拿出 ${n(f.investment)} 把下注抬到 ${n(record.amount)}。${support}。${foldNote || '对手若不愿继续付费，就会放弃当前 ' + n(v.pot) + ' 的底池。'}`
             : `${subject}用${hand}主动开池，拿出 ${n(f.investment)} 建立底池，希望较弱起手牌跟注入池，后面的玩家若不愿付这笔筹码，就会直接弃牌。`;
         if (!paired && v.hole[0].suit === v.hole[1].suit && c.tier >= 2) {
           logicParts = [
             aggression
-              ? `${subject}没有只补 ${n(cost)} 跟注，而是再拿出 ${n(f.investment)} 把下注抬到 ${n(record.amount)}。`
+              ? f.investment === record.amount
+                ? `${subject}没有只补 ${n(cost)} 跟注，而是直接加注到 ${n(record.amount)}。`
+                : `${subject}没有只补 ${n(cost)} 跟注，而是再拿出 ${n(f.investment)} 把下注抬到 ${n(record.amount)}。`
               : `${subject}用${hand}主动开池，拿出 ${n(f.investment)} 建立底池，希望较弱起手牌跟注入池，后面的玩家若不愿付这笔筹码，就会直接弃牌。`,
             ...preflopPotential(snapshot, subject, true),
             v.hole.some((card) => card.rank === 14)
@@ -917,7 +922,25 @@ export function explainOpponent(record, identities = []) {
       audience: 'observer',
     },
   );
-  return {
+  // Each seat's style tag appears with its first mention only.
+  const seatNames = [
+    record.name,
+    ...identities.map((p) => p.name),
+    ...(v.players || []).map((p) => p.name),
+  ];
+  const tagSeen = new Set();
+  const tagged = styleTagOnceInReview(
+    enriched.paragraphs,
+    enriched.paragraphParts,
+    seatNames,
+    tagSeen,
+    matchups?.text ?? null,
+  );
+  enriched.paragraphs = tagged.paragraphs;
+  if (tagged.paragraphParts) enriched.paragraphParts = tagged.paragraphParts;
+  enriched.explanation = enriched.paragraphs.join('');
+  reasons.splice(0, reasons.length, ...styleTagOnce(reasons, seatNames, tagSeen));
+  return spaceDeep({
     basisSource: recorded ? 'recorded' : 'inferred',
     title: !usePolicyReason
       ? actionLabel(snapshot)
@@ -955,5 +978,5 @@ export function explainOpponent(record, identities = []) {
     history: publicHistory(v),
     made: hand,
     warning: '',
-  };
+  });
 }
