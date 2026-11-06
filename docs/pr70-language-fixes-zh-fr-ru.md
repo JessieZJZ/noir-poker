@@ -60,3 +60,23 @@
 RU-09b 原报告没有拍到那次旧局目标句，旧局已清除。本次仅依据当时渲染文本和当前活动 `公共牌有对子` 键修正译文，不补造旧现场。RU-06b/c 是源码级候选转为单元回归，仍不是原报告那次原生已命中的案例。
 
 TW-03 不完整第三位对手属于计算范围与结果状态的产品设计候选，现有双端截图没有实际触发；本组没有通过翻译改写计算模型。FR/RU 的模拟器字形观察、长期会话稳定性，以及全部目录逐句语言认证也不属于本组局部通过的结论。
+
+## 本轮重复退化文案修复（2026-11-07）
+
+本轮仅修正已定位的六个目录值：法语、俄语各两条“避免弱 A 被强继续范围压制”说明（逗号／分号别名），以及俄语两条“{0} 在 {1}，已有开池及 {2} 次平跟，你再加注至 {3}，属于挤压加注”完整说明（逗号／分号别名）。没有扩大到其他旧译文，也没有修改动作、范围评估、下注或结算逻辑。
+
+法语的弱 A 说明保留弱 Ax 被强继续范围支配的风险，结尾明确表达“对手不一定弃牌足够频繁”；俄语同样直接表达对手的弃牌频率，没有把源文案“足够弃牌率”改写为足够的期望价值或 fold equity。两个标点别名使用相同译文。
+
+俄语挤压说明保留四个占位符及其含义：`{0}` 是底牌、`{1}` 是位置、`{2}` 是已有平跟次数、`{3}` 是再加注到的总额；没有将平跟误写成第二次加注。译文完整保留 A 阻断部分强 A 组合、不同花弱 Ax 被跟注后可能受更强 Ax 支配，以及开池范围、平跟者是否退出、面对 4-bet 能否停止三个判断条件。次数采用 `коллы ({2})`，避免用固定单复数误配实际计数。
+
+本轮联网核对以下首方资料，仅用于核对含义与术语，没有复制原文段落：
+
+- [PokerStars FR：Qu’est-ce que les blockers et comment les utiliser](https://www.pokerstars.fr/poker/learn/news/quest-ce-que-les-blockers-et-comment-les-utiliser/)：阻断牌减少部分可能组合；需要结合对手范围与行为，不自动构成诈唬理由。
+- [PokerStars FR：Faire face aux 3-bets](https://www.pokerstars.fr/poker/learn/lesson/faire-face-aux-3-bets/)：核对 range、bloqueurs 与 4-bet 的法语扑克语境。
+- [PokerStars RU：Натсы и блокеры](https://www.pokerstars.com/ru/poker/games/rules/hand-rankings/the-nuts-and-blockers/)：核对 блокер 对可能组合的限制，不推导保证弃牌或保证获利。
+- [PokerStars：The squeeze play in no limit hold’em poker](https://www.pokerstars.com/poker/learn/strategies/the-squeeze-play-in-no-limit-holdem-poker/)：核对已有开池及平跟后再加注的 squeeze 含义。
+- [PokerStrategy RU 原创教学：Руки для сквиза](https://www.pokerstrategy.com/ru/strategy/weekly-no-limit/1704/)：核对 сквиз、колл、опен-рейз、доминирован 等俄语教学表达。此项为教学机构的原文资料，非 PokerStars 官方译文；没有将其策略建议作为 NOIR 的规则或精确 EV 结论。
+
+验证：`node --test tests/unit/i18n-degeneration.test.js` 实际 5/5 通过，覆盖十一语言原始及 effective 目录的连续重复退化、弱 A 语义及其他本轮指定文案边界；六条值的占位符列表与源 key 一致。本组未运行或操作设备，新原生截图尚待主任务冻结版本后重新采集，不沿用旧候选的图审结论。
+
+本轮页标题另精确修正 `NOIR Poker · 德州扑克单机练习` 的法语、俄语两值：品牌统一保留字面 `NOIR Poker`，分别使用 `Entraînement au Hold’em hors ligne` 与 `Офлайн-тренировка по холдему`，明确离线练习，消除“在线”及混写标题；未修改其他标题或功能。Hold’em／холдем 的称呼沿用上述 PokerStars 官方规则资料。

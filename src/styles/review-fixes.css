@@ -113,12 +113,15 @@ html[lang='ko'] .profile-comparison th {
   font-size: var(--button-label-font-size);
   line-height: 1.12;
 }
-/* Android WebView can reuse compressed rasters for this repositioned row.
-   Keep the identity layer for live badges, and give its text children their
-   own layers so waiting-table labels retain the same glyph proportions. */
+/* Android WebView can reuse compressed rasters for repositioned hero text.
+   Keep identity and recent-action text on their own layers so both rows
+   retain the same glyph proportions after the table is scaled or moved. */
 .native-android .hero-identity,
 .native-android .hero-identity strong,
-.native-android .hero-identity .hero-stack {
+.native-android .hero-identity .hero-stack,
+.native-android .hero-action-slot,
+.native-android .hero-last-action,
+.native-android .hero-last-action > * {
   transform: translateZ(0);
   backface-visibility: hidden;
 }

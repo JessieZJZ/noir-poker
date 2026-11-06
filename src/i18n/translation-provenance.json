@@ -1308,6 +1308,42 @@
         "docs/pr70-language-fixes-zh-fr-ru.md"
       ],
       "nativeSpeakerCertification": false
+    },
+    {
+      "date": "2026-11-07",
+      "baseline": "6782b98af926af4e4c20ebb7cc36b033e2a388fe",
+      "scope": "Repair observed pre-existing machine-translation repetition: Spanish fourth-community-card caption; weak-A blocker tradeoff in seven locales and Russian squeeze explanation including compatibility punctuation variants; Italian required-equity formula/pot-eligibility explanation. Not a full-catalog linguistic certification.",
+      "method": "Assistant-authored targeted corrections checked against first-party poker terminology and the exact Chinese source meaning. No machine-translation API output adopted. First-party sources and interpretation boundaries are recorded in the per-language reference documents.",
+      "repairedCatalogValues": {
+        "en": 2,
+        "es": 3,
+        "it": 3,
+        "pt": 2,
+        "de": 2,
+        "fr": 2,
+        "ru": 4
+      },
+      "factsPreserved": "Four squeeze-template placeholders, original position/open/caller/raise context, weak Ax domination risk, blocker versus sufficient opponent fold-frequency distinction, and fourth community-card position. No engine or grading changes. Required equity remains effective call cost divided by the pot the player may contest after calling; eligibility is evaluated per pot and uncalled refunds are not winnings.",
+      "referenceDocuments": [
+        "docs/pr70-language-fixes-en-es-it-pt.md",
+        "docs/pr70-language-fixes-ja-ko-de.md",
+        "docs/pr70-language-fixes-zh-fr-ru.md"
+      ],
+      "nativeSpeakerCertification": false
+    },
+    {
+      "date": "2026-11-07",
+      "baseline": "6782b98af926af4e4c20ebb7cc36b033e2a388fe",
+      "scope": "Correct the effective offline Hold’em practice document title in eight non-source locales; preserve the official NOIR Poker brand. Spanish/French online claims are removed, and mixed-language/mistransliterated titles are corrected.",
+      "source": "NOIR Poker · 德州扑克单机练习",
+      "locales": ["ja", "ko", "es", "it", "pt", "de", "fr", "ru"],
+      "method": "Targeted assistant review against the original Chinese offline-practice meaning and first-party poker naming references. No machine-translation API output adopted.",
+      "referenceDocuments": [
+        "docs/pr70-language-fixes-en-es-it-pt.md",
+        "docs/pr70-language-fixes-ja-ko-de.md",
+        "docs/pr70-language-fixes-zh-fr-ru.md"
+      ],
+      "nativeSpeakerCertification": false
     }
   ]
 }

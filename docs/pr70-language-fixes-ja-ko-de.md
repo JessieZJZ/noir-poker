@@ -81,3 +81,35 @@ PokerStars 的 `/ja/` 规则链接本轮跳转英文，`/ko/` 资源不可用，
 已逐键核对修正键的正式 `loadLocale()` + `localizeText()` 输出与合并后的新译文一致，三语有效输出偏差均为 0。占位符保留检查通过。仅检查此次触及文件的格式；没有在本分工运行全套测试、构建 native、编译或操作模拟器。修正后的 Web 布局和新装 iOS/Android 画面由协调者统一构建/采集，旧审计 PNG 只证明修正前现场。
 
 仍需要公共代码的项目包括：手机参数表列宽/换行与横滑提示显隐、日语状态空间、德语百分比区域格式、动态日志 actor 组合匹配和 Android 英雄行比例。韩语 final table 的额外 heads-up 说明为产品建议，暂未引入新标签。以上不得以“已翻译”代替布局或装机验收。
+
+## 2026-11-07：德语重复退化句的有限修正
+
+本轮只修改 `de.json` 中 `避免弱 A 被强继续范围压制；阻断部分强 A 不等于足够弃牌率。` 及其中文逗号兼容键这两个值。旧值各为 830 字符，几乎全部是循环的 `ein starker`，不传达原意。当前可见分支位于 `src/review/routes.js` 的 `squeeze-candidate` 主路线 `tradeoff`，实际采用逗号键；两键均无 `overrides.json` 覆盖。本轮没有修改路线判定、牌局规则、其他文案或设备状态。
+
+两键统一修为：
+
+> Vermeide es, mit einer schwachen Ax-Hand gegen die starke Range, mit der dein Gegner weiterspielt, dominiert zu werden. Dass du einige starke Ax-Kombinationen blockierst, bedeutet noch nicht, dass dein Gegner oft genug foldet.
+
+本轮实际读取的第一方德语依据：
+
+- [PokerStars 德语 Glossar](https://www.pokerstars.de/poker/learn/strategies/poker-glossar/) 的 Blockers、Dominieren、Range 条目：分别核对持牌减少对手可持组合、相同高牌下较差 kicker 被压制，以及范围而非某张已知底牌的含义。
+- [PokerStars 德语 blocker 组合说明](https://www.pokerstars.de/poker/learn/strategies/einfuehrung-in-block-einsaetze-auf-dem-river/)：核对持 A 会减少对手 Ax 组合，以及 blocker 选择仍需考虑对方会弃掉哪些范围。本轮仅采用术语与组合关系，未把文章的河牌尺度或建议移植进翻前挤压逻辑。
+- [partypoker 德语 Fold Equity 说明](https://www.partypoker.de/de/poker/how-to-play/strategy/poker-odds/fold-equity)：交叉核对弃牌概率与由弃牌获得的额外权益不宜混为同一个定量指标。中文源句为“足够弃牌率”，因此译为 `oft genug foldet`，保留“对方会不会足够频繁弃牌”的判断，没有声称 blocker 本身保证足够 Fold Equity。
+
+日语、韩语仅只读核对这两个对应值：两者保留弱 A、对手继续范围、部分强 A 组合阻断和“不等于足够弃牌率”的否定方向，没有本轮明确的反向语义错误，因此保留原值。两文件字节 SHA 在检查前后一致；这不是对其他旧长句的自然程度或完整语义背书。
+
+有限重复扫描覆盖日语 3742、韩语 3742 个有效键（locale 与 override 合并后），两语均未发现相同 2–80 字符片段连续重复至少 8 次，或重复至少 8 次且占正文 40% 以上的分句。此机械筛查不能证明整库翻译正确。扫描记录为 `.artifacts/language-fixes/round2/repetition-ja-ko-de-before.json`；其中德语恰命中本轮两键。定向 `loadLocale()` / `localizeText()` 断言已确认两键实际生效且两种中文标点输出一致，记录为 `de-blocker-repair-validation.json`。既有三语单元回归 8/8 通过。
+
+本轮属于原报告随机牌局未自然命中的条件分支源码修复，没有追加 native 复现声明。先前 `11b333` 原图保持原始版本身份；新字典需由协调者重新构建、记录新 digest 后验证。
+
+## 2026-11-07：保留字面品牌的页面标题
+
+仅修正三语的同一源键 `NOIR Poker · 德州扑克单机练习`，品牌统一保留字面 `NOIR Poker`，其余部分准确表述离线 Hold’em 练习：
+
+| 语言 | 新页面标题                              |
+| ---- | --------------------------------------- |
+| 日语 | NOIR Poker · オフラインのホールデム練習 |
+| 韩语 | NOIR Poker · 오프라인 홀덤 연습         |
+| 德语 | NOIR Poker · Offline-Hold’em-Training   |
+
+日语 `ホールデム` 与前述 [JOPT 官方托管 TDA 日文规则](https://japanopenpoker.com/wp-content/uploads/2024/11/2024-Poker-TDA-Rules-PDF-Longform-Redlines-Vers-1.0-FINAL_Japanese.pdf) 用词一致；韩语 `오프라인`、`홀덤`、`연습` 与 [PokerTH 第一方韩文玩法页](https://webclient.pokerth.net/how-to-play?lang=ko) 的离线练习说明一致；德语采用 [PokerStars Learn 德语](https://www.pokerstars.de/poker/learn/strategies/how-to-deal-with-downswings/) 使用的 Hold’em、Training 形式，以常规德语复合词表达练习用途。页面标题是本项目的译文，不冒称这些来源对应用的认证。本轮未修改其他标题/规则或设备，三键均无 override 覆盖，另以正式 `loadLocale()` / `localizeText()` 核验实际输出。

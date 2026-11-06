@@ -79,3 +79,39 @@ CL 新说明保留：当前仍在桌上的筹码领先者、每手可能变化�
 - 已审过的旧候选安装包原始 PNG 与逐图结果保存在 `.artifacts/language-fixes/diagnostic-visual-qa-d245-en-es-it-pt.json`，共 90 项；由于后续公共页头/重打布局继续修复，全部仅作诊断。不得将其作为任何后续源码的 after 证据。`b363…` 葡语两端另存候选诊断报告，不能成为最终验收。新包每语需完整 8 个 journey、paragraph manifest 和该单语批次 passed 后才纳入最终验收；整页 JSON 不能证明屏外文字可见。
 - 实体机、VoiceOver/TalkBack 朗读及未随机命中的特殊全下/边池/退款/实际零头分配仍不作通过声明；指南静态文字可见不等于这些运行分支都已命中。旧候选中另见名单顿号、部分复盘金额格式/句号、葡语个别 check 分支措辞。主线程已确认名单标点、生成动作句末和真实筹码小数格式属于本轮文案范围；只读定位、最小改法与探针保存在 `.artifacts/language-fixes/pt-punctuation-amount-diagnosis.md`，由主线程统一应用。引文、人名、牌面和网址不得全局替换；未随机触发分支仍不扩大声明。
 - 用户否定的六项为 **CN-03a、CN-03c、CN-04a、CN-05、TW-02a、TW-02b**，不是待修清单。本次核对确认四语“获胜手数／胜率”、翻前表标题、计算器结果标签与原有效词典一致；未把翻前胜率表改为权益表、未给计算器彩条加权益标签、未将轮播父菜单改为固定“学习与工具”。父菜单 DOM/行为及计算器结果卡结构与基线一致。小数本地格式、真实机译错误修正和长译文页头留白属于其他已授权问题，不改变这六项被保留的产品语义。
+
+## 2026-11-07 原生现场发现的重复退化补修
+
+在 `6782b98` / `11b333…` 候选包的 Android 平板西语横屏原始截图中，公共牌下方实际出现多行重复的 `Cuarto`。
+对应 `TURN · 第四张公共牌` 的 888 字符译文已存在于 PR70 基线；原始采集 JSON 的 `qa: false`、`styleInjection: false`，并非采集压力文本。
+这是一项实际可见的翻译缺陷；该候选的旧图仅作为问题历史，不代表后续新摘要修复后的验收。
+独立问题对照附录为 `.artifacts/language-fixes/round2/es-turn-degeneration-appendix.json`。
+
+本组最小修改共 **10 个 locale 值**：西语 TURN 标题 1 个，英／西／意／葡弱 A 说明的分号版及逗号版各 2 个，以及意语跟注所需权益说明 1 个。没有修改源 key、覆盖表、玩法、公式或策略条件。
+西语标题改为 `TURN · 4.ª carta comunitaria`，保留“第四张公共牌”含义。
+弱 A 文案保留“可能被更强的继续范围压制”，并直接说明阻断部分强 A 不代表对手会足够频繁弃牌；没有把弃牌频率替换为 fold equity 金额或承诺足够的诈唬收益。
+意语公式保留“有效跟注成本 ÷ 跟注后可争夺底池”，各主／边池按可获奖者分别估计，未被跟注的退还不是收益。
+
+本次重新联网核对的第一方来源：
+
+| 范围               | 来源与核对边界                                                                                                                                                                                                                                                                                                  |
+| ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 西语 TURN          | [PokerStars España 官方规则](https://www.pokerstars.es/poker/games/rules/)及[官方术语](https://www.pokerstars.es/poker/terms/)明确 turn 为第四张公共牌。地区规则页直接读取返回 403，官方搜索索引可读；不把索引读取写成直接抓取成功。                                                                            |
+| 英语弱 A／阻断     | [PokerStars Learn — Weak Off-Suit Aces](https://www.pokerstars.com/poker/learn/strategies/when-to-play-bad-off-suit-aces-in-cash-games/)说明弱 A、Ax 组合、阻断以及位置／范围条件；仅用于术语和概念核对，不据此证明本应用某一次诈唬的弃牌率。                                                                   |
+| 西语弱 A／阻断     | [PokerStars España — Apuestas de Bloqueo](https://www.pokerstars.es/poker/news/news/apuestas-de-bloqueo-pros-y-contras-de-esta-estrategia-de-poker/)使用弱 as、Ax 组合与阻断表述；没有把 blocking bet 与手牌 blocker 混为一种动作。                                                                             |
+| 意语弱 A／阻断     | [PokerStars Learn IT — Assi off-suit deboli](https://www.pokerstars.it/poker/learn/strategies/assi-off-suit-deboli-nei-cash-game-moderni/)用于 asso debole、range、blocker 的含义核对；最终译文直接用 foldino abbastanza spesso 表达频率。                                                                      |
+| 葡语弱 A／阻断     | [PokerStars Learn BR — Ases fracos](https://www.pokerstars.com/pt-BR/poker/learn/strategies/ases-fracos-nao-naipados-em-ring-games-modernos/)用于 ás fraco、range、bloqueador 的含义核对；最终译文直接用 desistam com frequência suficiente 表达频率。                                                          |
+| 意语权益／各池资格 | [PokerStars IT 官方规则](https://www.pokerstars.com/it/poker/games/rules/)说明全下可争夺额度与各池获奖资格；[官方跟注分析](https://www.pokerstars.it/poker/learn/blog/analisi-mano-implied-odds/)的所需权益分母为跟注后总池。应用中的有效成本、各池估计及退款处理仍按本项目引擎／复盘实现核对，未更改计算逻辑。 |
+
+新增 `tests/unit/i18n-degeneration.test.js` 检查全部 11 语言的原始 flat 词典及实际覆盖后的 effective 词典，拒绝同一连续文字片段出现至少 8 次，包含无空格文字；只重复数字或标点不作为这一文字退化缺陷。
+同文件验证八次／七次边界、真实四语的弱 A 限定含义、意语公式／资格／退款限制与西语 TURN 标题。
+新增 `tests/e2e/turn-title.spec.js` 使用现有仅测试模式的 `bettingTurn` fixture，经引擎合法跟注／过牌到实际四张公共牌，断言真实可见标题内容、单行及牌桌边界；没有注入替代文案。
+Web 回归与后续新安装包原图必须分别报告，不能把词典或 fixture 测试声称为原生修复验收。
+
+本次定向验证：新增 5 项与既有四语 9 项单元检查共 **14/14 通过**；TURN 标题在 desktop／mobile 两个浏览器项目中均以 1280×800 横屏视口验证，**2/2 通过**。只等待公共牌的有限运行中动画，不等待无限回合光效；实际查看两张原始 Web 截图，均见四张公共牌及单行正确标题。
+日志分别为 `.artifacts/language-fixes/round2/unit-r8-degeneration-final.log` 与 `web-r8-turn-title-ready.log`。本组文件的 Prettier 检查及 `git diff --check` 通过。早期新测试的内部状态类型误断言、过宽动画等待及端口退出竞争记录均保留为测试编写过程，未计为产品失败；最终原生新包仍待主线程另行验收。
+
+随后核对真实 `<head><title>`，发现西语把“单机”写成 `en línea`，意语标题夹杂英文，葡语品牌写为 `Noir Poker`。
+因此仅追加同一个源键 `NOIR Poker · 德州扑克单机练习` 的西／意／葡 3 个值，本组累计 **13 个 locale 值**；统一保留字面品牌 `NOIR Poker`，分别采用 `Práctica de Hold'em sin conexión`、`Allenamento a Hold’em offline`、`Prática de Hold'em offline`。
+术语沿用上列已核对的官方 Hold’em 规则与对应语言练习语境，不将本地离线练习描述为联网对战；没有重译其他文案。新单元检查锁定实际 effective 标题和离线含义，TURN 浏览器回归同时检查真实 document title。
+追加标题后的最终定向结果为 **15/15 单元检查、2/2 浏览器检查通过**；日志为 `unit-r8-degeneration-titles-final.log`、`web-r8-turn-title-document.log`。两张新 Web 原图也已实际查看，TURN 正常；浏览器的 `<title>` 由真实 DOM 断言验证，不能从牌桌 PNG 推断系统朗读或浏览器标签栏的显示。
