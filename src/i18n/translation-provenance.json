@@ -1274,7 +1274,7 @@
       "scope": "PR70 language-review issue cards and approved UI copy; not a full-catalog linguistic certification",
       "method": "AI language review against first-party poker rules and glossaries; repository behavior checked separately; no machine-translation API used",
       "effectiveChangedKeys": {
-        "en": 111,
+        "en": 112,
         "zh-TW": 41,
         "ja": 177,
         "ko": 175,

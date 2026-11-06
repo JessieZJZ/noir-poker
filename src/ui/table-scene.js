@@ -2,6 +2,7 @@ import { evaluate, seatPosition, currentPots } from '../engine/poker.js';
 import { compactActionAmounts } from '../engine/chip-format.js';
 import { getBotProfile, MOOD_LABELS } from '../engine/bot-profiles.js';
 import {
+  getLocale,
   formatChips,
   setLocalizedText,
   setLocalizedHTML,
@@ -90,7 +91,9 @@ export function renderSeatAction(g, p, { recent = false, dealing = false } = {})
     (match[2] === '跟注'
       ? `本次补入 ${format(amount)}，本轮累计投入 ${format(retained?.bet ?? p.bet)}`
       : `${compactActionAmounts(action)} · 本轮累计投入 ${format(amount)}`);
-  return `<span class="seat-action-label">${label}</span><strong class="seat-action-amount" title="${escape(meaning)}">${format(amount)}</strong>`;
+  const compactBlind = getLocale() === 'en' && (label === '小盲' || label === '大盲');
+  const displayLabel = compactBlind ? (label === '小盲' ? 'SB' : 'BB') : label;
+  return `<span class="seat-action-label"${compactBlind ? ` aria-label="${label}" title="${label}"` : ''}>${displayLabel}</span><strong class="seat-action-amount" title="${escape(meaning)}">${format(amount)}</strong>`;
 }
 
 // Live and archived tables share the complete seat structure and action layout.

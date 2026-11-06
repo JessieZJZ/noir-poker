@@ -110,7 +110,42 @@ test('settings sentences remain separated across the blind-summary span', async 
   await page.waitForFunction(() => !!window.qa);
   await switchLocale(page, 'en');
   await page.locator('#opponents-button').click();
+  await expect(page.locator('#stakes-description')).toContainText('Tap the small blind');
   await expect(page.locator('#stakes-description')).toContainText('small blind. Blinds');
+});
+
+test('English blind captions fit one line and retain their full accessible meaning', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 320, height: 844 });
+  await page.goto('/');
+  await page.waitForFunction(() => !!window.qa);
+  await page.evaluate(() => {
+    window.qa.stop();
+    window.qa.skipTutorialReading();
+  });
+  await switchLocale(page, 'en');
+  await page.locator('#rules-button').click();
+  await page.locator('#tutorial-menu-item').click();
+  await page.locator('#tutorial-dialog-primary').click();
+  for (let step = 0; step < 20; step++) {
+    const t = await page.evaluate(() => window.noir.getState().tutorial);
+    if (t.allowed?.action === 'call') break;
+    if (t.canContinue) await page.locator('#tutorial-next').click();
+    else await page.waitForTimeout(60);
+  }
+  const label = page.locator('.seat[data-player="1"] .seat-action-label');
+  await expect(label).toHaveText('SB');
+  await expect(label).toHaveAttribute('aria-label', 'Small blind');
+  const sameLine = await label.evaluate((el) => {
+    const amount = el.nextElementSibling;
+    const a = el.getBoundingClientRect(),
+      b = amount.getBoundingClientRect();
+    return (
+      Math.abs(a.top - b.top) < 3 && b.right <= el.parentElement.getBoundingClientRect().right + 1
+    );
+  });
+  expect(sameLine).toBe(true);
 });
 
 for (const locale of ['es', 'it', 'pt', 'ru', 'ja'])
