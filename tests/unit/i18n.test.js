@@ -39,7 +39,7 @@ test('English templates preserve and reorder dynamic values, while rule state re
   assert.equal(localizeText('第 12 手 · 决策复盘'), 'Hand 12 · Decision review');
   assert.equal(
     localizeText('轮到你了，跟注需要 75 筹码。本轮加注权未重开，仅可跟注或弃牌。'),
-    'Your turn. Calling costs 75 chips. Raising has not reopened. You may only call or fold.',
+    'Your turn. Calling costs 75 chips. Raising has not reopened this round. You may only call or fold.',
   );
   assert.equal(
     localizeText('本次补入 100，本轮累计投入 150'),
