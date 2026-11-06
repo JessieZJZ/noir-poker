@@ -15,7 +15,7 @@ V4 为英文、简体中文准备商店视频、截图和可粘贴文案。依�
 | Google 完整描述        | `copy/google-full-description.txt`                     | 与本语言长描述一致                                                    |
 | 审核说明               | `copy/review-notes.txt`                                | 无需账号，说明离线与虚拟筹码边界                                      |
 | Apple App Preview      | `shared-preview.mp4`                                   | 每语言同一文件；29.8 秒、1920 × 886、H.264、30 fps、AAC 立体声        |
-| Apple 视频封面         | `poster.png`                                           | 从视频第 1.3 秒提取，后台也可再选择                                     |
+| Apple 视频封面         | `poster.png`                                           | 从视频第 1.3 秒提取，后台也可再选择                                   |
 | iPhone 截图            | `apple/iphone-medium/` 与 `iphone-large/`              | 1206 × 2622、1290 × 2796；按 01–08 顺序                               |
 | iPad 截图              | `apple/ipad-13/`                                       | 2752 × 2064；界面来自 iPad 原生安装包                                 |
 | Google 手机截图        | `google/phone/`                                        | 1080 × 1920，RGB PNG，每语言 8 张                                     |
