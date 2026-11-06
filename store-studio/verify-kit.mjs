@@ -47,7 +47,7 @@ for (const language of manifest.languages)
         ? ["apple/iphone-large", "apple/iphone-medium", "apple/ipad-13"]
         : ["google/phone"];
     for (const group of groups)
-      for (let n = 1; n <= 6; n++)
+      for (let n = 1; n <= 8; n++)
         assert.ok(
           listed.has(`${language}/${group}/${String(n).padStart(2, "0")}.png`),
           `Missing screenshot ${language}/${group}/${n}`,
@@ -103,7 +103,7 @@ for (const file of manifest.files) {
       v = data.streams.find((s) => s.codec_type === "video"),
       a = data.streams.find((s) => s.codec_type === "audio");
     assert.ok(
-      Math.abs(Number(data.format.duration) - 29) < 0.05,
+      Math.abs(Number(data.format.duration) - 29.8) < 0.05,
       file.path + " duration",
     );
     assert.equal(v.codec_name, "h264");
@@ -114,7 +114,7 @@ for (const file of manifest.files) {
     assert.equal(a.sample_rate, "48000");
     assert.deepEqual(
       [v.width, v.height],
-      file.path.includes("/apple/") ? [886, 1920] : [1920, 1080],
+      file.path.includes("/apple/") ? [1920, 886] : [1920, 1080],
     );
     if (file.path.includes("/apple/")) {
       assert.equal(v.profile, "High");
@@ -148,7 +148,7 @@ const result = {
   checks,
   limits: [
     "Simulator/emulator captures; no signed physical-device or store acceptance claim",
-    "Voiceover is macOS synthesized speech",
+    "Voiceover is neural synthesized speech; zh-CN voice chosen by user",
     "Public privacy policy URL and YouTube URL remain unset",
   ],
 };

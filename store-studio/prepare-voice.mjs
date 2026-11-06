@@ -1,88 +1,107 @@
 import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
-import { spawnSync } from "node:child_process";
+import { spawn } from "node:child_process";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-
 const studio = path.dirname(fileURLToPath(import.meta.url));
 const board = JSON.parse(
   readFileSync(path.join(studio, "storyboard.json"), "utf8"),
 );
-const run = (bin, args) => {
-  const r = spawnSync(bin, args, { encoding: "utf8", maxBuffer: 2 ** 20 });
-  if (r.status !== 0) throw Error(`${bin}: ${r.stderr}`);
-  return r.stdout;
-};
-const evidence = [];
-for (const [language, voice] of [
-  ["en", "Samantha"],
-  ["zh-CN", "Tingting"],
-]) {
-  const folder = path.join(studio, "public/voice", language);
-  mkdirSync(folder, { recursive: true });
-  for (const scene of board.scenes) {
-    const text = scene[language === "en" ? "voiceEn" : "voiceZh"];
-    const textFile = path.join(folder, `${scene.id}.txt`);
-    const raw = path.join(folder, `${scene.id}.aiff`);
-    const result = path.join(folder, `${scene.id}.wav`);
-    writeFileSync(textFile, text);
-    run("say", [
-      "-v",
-      voice,
-      "-r",
-      language === "en" ? "170" : "205",
-      "-f",
-      textFile,
-      "-o",
-      raw,
-    ]);
-    const duration = Number(
-      run("ffprobe", [
-        "-v",
-        "error",
-        "-show_entries",
-        "format=duration",
-        "-of",
-        "default=nw=1:nk=1",
-        raw,
-      ]).trim(),
+const run = (bin, args) =>
+  new Promise((resolve, reject) => {
+    const child = spawn(bin, args, { stdio: ["ignore", "pipe", "pipe"] });
+    let out = "",
+      err = "";
+    child.stdout.on("data", (d) => (out += d));
+    child.stderr.on("data", (d) => (err += d));
+    child.on("error", reject);
+    child.on("exit", (code) =>
+      code === 0
+        ? resolve(out)
+        : reject(Error(`${bin} exited ${code}: ${err}`)),
     );
-    const available = scene.to - scene.from - 0.65;
-    const tempo = Math.max(1, duration / available);
-    if (tempo > 1.24)
-      throw Error(`Shorten ${language}/${scene.id}: narration is ${duration}s`);
-    run("ffmpeg", [
-      "-hide_banner",
-      "-loglevel",
-      "error",
-      "-y",
-      "-i",
-      raw,
-      "-af",
-      `atempo=${tempo},highpass=f=90,loudnorm=I=-16:TP=-2:LRA=6,afade=t=in:d=0.025,afade=t=out:st=${Math.max(0, duration / tempo - 0.06)}:d=0.06`,
-      "-ar",
-      "48000",
-      "-ac",
-      "2",
-      "-c:a",
-      "pcm_s16le",
-      result,
-    ]);
-    evidence.push({
-      language,
-      scene: scene.id,
-      text,
-      voice,
-      provider: "macOS system speech",
-      sourceDuration: duration,
-      tempo,
-      output: result,
-    });
-  }
-}
-writeFileSync(
-  path.join(studio, "public/voice/provenance.json"),
-  JSON.stringify(evidence, null, 2) + "\n",
+  });
+const evidence = [];
+// Two independent locale tracks; each service request stays sequential.
+await Promise.all(
+  [
+    ["en", process.env.NOIR_TTS_EN || "en-US-EmmaNeural"],
+    ["zh-CN", process.env.NOIR_TTS_ZH || "zh-CN-XiaoxiaoNeural"],
+  ].map(async ([language, voice]) => {
+    const folder = path.join(studio, "public/voice-v2", language);
+    mkdirSync(folder, { recursive: true });
+    for (const scene of board.scenes) {
+      const text = scene[language === "en" ? "voiceEn" : "voiceZh"];
+      const raw = path.join(folder, `${scene.id}.mp3`),
+        wav = path.join(folder, `${scene.id}.wav`);
+      writeFileSync(path.join(folder, `${scene.id}.txt`), text + "\n");
+      await run("uvx", [
+        "--from",
+        "edge-tts==7.3.1",
+        "edge-tts",
+        "--voice",
+        voice,
+        "--rate=-4%",
+        "--text",
+        text,
+        "--write-media",
+        raw,
+        "--write-subtitles",
+        path.join(folder, `${scene.id}.srt`),
+      ]);
+      const duration = Number(
+        (
+          await run("ffprobe", [
+            "-v",
+            "error",
+            "-show_entries",
+            "format=duration",
+            "-of",
+            "csv=p=0",
+            raw,
+          ])
+        ).trim(),
+      );
+      if (duration > scene.to - scene.from - 0.55)
+        throw Error(
+          `Shorten ${language}/${scene.id}, ${duration}s narration cannot be rushed to fit`,
+        );
+      await run("ffmpeg", [
+        "-hide_banner",
+        "-loglevel",
+        "error",
+        "-y",
+        "-i",
+        raw,
+        "-af",
+        "highpass=f=70,loudnorm=I=-16:TP=-2:LRA=9",
+        "-ar",
+        "48000",
+        "-ac",
+        "2",
+        "-c:a",
+        "pcm_s16le",
+        wav,
+      ]);
+      evidence.push({
+        language,
+        scene: scene.id,
+        text,
+        voice,
+        provider: "Microsoft Edge neural TTS via edge-tts 7.3.1",
+        rate: "-4%",
+        tempo: 1,
+        seconds: duration,
+        output: `voice-v2/${language}/${scene.id}.wav`,
+        pronunciation:
+          scene.id === "retry" && language === "zh-CN"
+            ? "Use 重新打 to disambiguate 重 as chóng; displayed copy remains 重打"
+            : undefined,
+      });
+      console.log(`Prepared ${language}/${scene.id}: ${duration}s`);
+    }
+  }),
 );
-console.log(
-  "Prepared bilingual scene narration, 48 kHz stereo, with measured durations",
+writeFileSync(
+  path.join(studio, "public/voice-v2/provenance.json"),
+  JSON.stringify(evidence, null, 2) + "\n",
 );

@@ -5,14 +5,14 @@ import { StoreStill } from "./StoreStill";
 
 export const RemotionRoot: React.FC = () => (
   <>
-    <Folder name="Apple-Preview">
+    <Folder name="Apple-Landscape-Preview">
       <Composition
         id="Apple-EN"
         component={StoreFilm}
-        width={886}
-        height={1920}
+        width={1920}
+        height={886}
         fps={30}
-        durationInFrames={870}
+        durationInFrames={894}
         defaultProps={{
           language: "en",
           platform: "ios",
@@ -23,10 +23,10 @@ export const RemotionRoot: React.FC = () => (
       <Composition
         id="Apple-ZH"
         component={StoreFilm}
-        width={886}
-        height={1920}
+        width={1920}
+        height={886}
         fps={30}
-        durationInFrames={870}
+        durationInFrames={894}
         defaultProps={{
           language: "zh-CN",
           platform: "ios",
@@ -37,10 +37,10 @@ export const RemotionRoot: React.FC = () => (
       <Composition
         id="Apple-EN-Music"
         component={StoreFilm}
-        width={886}
-        height={1920}
+        width={1920}
+        height={886}
         fps={30}
-        durationInFrames={870}
+        durationInFrames={894}
         defaultProps={{
           language: "en",
           platform: "ios",
@@ -51,10 +51,10 @@ export const RemotionRoot: React.FC = () => (
       <Composition
         id="Apple-ZH-Music"
         component={StoreFilm}
-        width={886}
-        height={1920}
+        width={1920}
+        height={886}
         fps={30}
-        durationInFrames={870}
+        durationInFrames={894}
         defaultProps={{
           language: "zh-CN",
           platform: "ios",
@@ -70,7 +70,7 @@ export const RemotionRoot: React.FC = () => (
         width={1920}
         height={1080}
         fps={30}
-        durationInFrames={870}
+        durationInFrames={894}
         defaultProps={{
           language: "en",
           platform: "android",
@@ -84,7 +84,7 @@ export const RemotionRoot: React.FC = () => (
         width={1920}
         height={1080}
         fps={30}
-        durationInFrames={870}
+        durationInFrames={894}
         defaultProps={{
           language: "zh-CN",
           platform: "android",
@@ -98,7 +98,7 @@ export const RemotionRoot: React.FC = () => (
         width={1920}
         height={1080}
         fps={30}
-        durationInFrames={870}
+        durationInFrames={894}
         defaultProps={{
           language: "en",
           platform: "android",
@@ -112,7 +112,7 @@ export const RemotionRoot: React.FC = () => (
         width={1920}
         height={1080}
         fps={30}
-        durationInFrames={870}
+        durationInFrames={894}
         defaultProps={{
           language: "zh-CN",
           platform: "android",
@@ -124,7 +124,7 @@ export const RemotionRoot: React.FC = () => (
     <Folder name="Store-Screenshots">
       {(["en", "zh-CN"] as const).flatMap((language) =>
         (["ios", "android", "ipad"] as const).flatMap((platform) =>
-          Array.from({ length: 6 }, (_, feature) => (
+          Array.from({ length: 8 }, (_, feature) => (
             <Still
               key={`${platform}-${language}-${feature}`}
               id={`Screen-${platform}-${language}-${feature + 1}`}

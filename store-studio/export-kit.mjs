@@ -27,6 +27,8 @@ if (!["all", "apple", "google"].includes(selectedStore))
 const plan = JSON.parse(
   readFileSync(path.join(studio, "src/media-plan.json"), "utf8"),
 );
+if (plan.revision !== 2)
+  throw Error("Prepare the revised real native captures before export");
 const requiredPlatforms =
   selectedStore === "apple"
     ? ["ios", "ipad"]
@@ -34,8 +36,10 @@ const requiredPlatforms =
       ? ["android"]
       : ["ios", "ipad", "android"];
 if (
-  !requiredPlatforms.every((p) =>
-    ["en", "zh-CN"].every((l) => plan[p]?.[l]?.["06-styles"]),
+  !requiredPlatforms.every(
+    (p) =>
+      ["en", "zh-CN"].every((l) => plan[p]?.[l]?.["06-styles"]) &&
+      plan.captureRevisions?.[p]?.actualNative,
   )
 )
   throw Error(
@@ -50,9 +54,18 @@ for (const platform of requiredPlatforms)
       "04-result",
       "05-calculator",
       "06-styles",
+      "07-records",
+      "07-record-detail",
     ];
     if (!stillOnly && platform !== "ipad")
-      ids.push("practice", "tutorial", "review", "retry", "calculator");
+      ids.push(
+        "practice",
+        "tutorial",
+        "review",
+        "retry",
+        "records",
+        "calculator",
+      );
     for (const id of ids) {
       const source = plan[platform]?.[language]?.[id];
       if (
@@ -97,7 +110,7 @@ for (const [language, suffix] of [
   ]) {
     if (selectedStore !== "all" && !folder.startsWith(selectedStore + "/"))
       continue;
-    for (let feature = 1; feature <= 6; feature++) {
+    for (let feature = 1; feature <= 8; feature++) {
       const destination = path.join(
         localFolder,
         folder,
@@ -228,8 +241,8 @@ for (const [language, voiceKey] of [
 ]) {
   const captions = board.scenes.map((s) => ({
     text: s[voiceKey],
-    startMs: Math.round((s.from + 0.35) * 1000),
-    endMs: Math.round(Math.min(s.to - 0.3, s.from + 5.3) * 1000),
+    startMs: Math.round((s.from + 0.3) * 1000),
+    endMs: Math.round(s.to - 0.3 * 1000),
     timestampMs: null,
     confidence: null,
   }));
@@ -250,12 +263,12 @@ for (const [language, voiceKey] of [
   );
 }
 
-// A six-image contact sheet for quick editorial review.
+// An eight-image contact sheet for quick editorial review.
 for (const language of ["en", "zh-CN"]) {
   if (!existsSync(path.join(output, language, "apple/iphone-large/01.png")))
     continue;
   const inputs = [];
-  for (let i = 1; i <= 6; i++)
+  for (let i = 1; i <= 8; i++)
     inputs.push({
       input: await sharp(
         path.join(
@@ -267,11 +280,11 @@ for (const language of ["en", "zh-CN"]) {
       )
         .resize(258, 559)
         .toBuffer(),
-      left: (i - 1) * 278 + 20,
-      top: 20,
+      left: ((i - 1) % 4) * 278 + 20,
+      top: Math.floor((i - 1) / 4) * 579 + 20,
     });
   await sharp({
-    create: { width: 1688, height: 599, channels: 3, background: "#080e15" },
+    create: { width: 1132, height: 1178, channels: 3, background: "#080e15" },
   })
     .composite(inputs)
     .png()
@@ -307,6 +320,11 @@ writeFileSync(
       includesVideo: !stillOnly,
       nativeCapture: true,
       physicalDeviceCapture: false,
+      orientations: ["landscape"],
+      voiceProvider: "Microsoft Edge neural TTS via edge-tts 7.3.1",
+      appleLayout:
+        "Actual app capture with matching enlarged detail; no device shell",
+      googleLayout: "Actual app capture in unbranded phone housing",
       files,
     },
     null,

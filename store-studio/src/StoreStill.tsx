@@ -1,4 +1,5 @@
 import React from "react";
+import { DeviceFrame } from "./DeviceFrame";
 import { AbsoluteFill, Img, staticFile, useVideoConfig } from "remotion";
 import { Backdrop, useFonts } from "./StoreFilm";
 import { palette as c, typography } from "./assets";
@@ -24,6 +25,11 @@ const copy = {
       "Meet a different\nkind of opponent.",
       "Eight styles. Three difficulty levels.",
     ],
+    ["Every hand,\nkept close.", "Browse locally saved game records."],
+    [
+      "Return to\nthe whole hand.",
+      "Revisit the table, result and action history.",
+    ],
   ],
   "zh-CN": [
     ["每一手，\n练习更好的判断。", "离线德州扑克，按自己的节奏开练"],
@@ -32,6 +38,8 @@ const copy = {
     ["同一副牌，\n再试一种选择。", "恢复原始底牌、发牌顺序与起始筹码"],
     ["看清胜率，\n让判断更有依据。", "获胜、平局与 Outs，清楚呈现"],
     ["换一种对手，\n打开新的思路。", "八种训练风格，三个难度级别"],
+    ["练过的每手牌，\n都值得再看。", "按对局浏览本机保存的牌局记录"],
+    ["回到当时，\n看清完整过程。", "回看牌桌、结算与每一步行动"],
   ],
 };
 const keys = [
@@ -41,6 +49,8 @@ const keys = [
   "04-result",
   "05-calculator",
   "06-styles",
+  "07-records",
+  "07-record-detail",
 ];
 const screenshot = (platform: string, language: string, feature: number) => {
   const p = plan as unknown as Record<
@@ -117,23 +127,13 @@ export const StoreStill: React.FC<StillProps> = ({
         >
           {language === "en" ? "Offline Hold’em practice" : "离线德州扑克练习"}
         </p>
-        <div
-          style={{
-            position: "absolute",
-            left: 690,
-            top: 55,
-            width: 236,
-            height: 510,
-            borderRadius: 24,
-            overflow: "hidden",
-            border: "2px solid #5a8c7a66",
-            boxShadow: "0 20px 45px #0008",
-          }}
-        >
-          <Img
-            src={staticFile(screenshot(platform, language, 0))}
-            style={{ width: "100%", height: "100%", objectFit: "cover" }}
-          />
+        <div style={{ position: "absolute", left: 690, top: 55 }}>
+          <DeviceFrame width={236} height={510}>
+            <Img
+              src={staticFile(screenshot(platform, language, 0))}
+              style={{ width: "100%", height: "100%", objectFit: "cover" }}
+            />
+          </DeviceFrame>
         </div>
       </AbsoluteFill>
     );
@@ -165,7 +165,7 @@ export const StoreStill: React.FC<StillProps> = ({
             letterSpacing: 4,
           }}
         >
-          {String(feature + 1).padStart(2, "0")} / 06
+          {String(feature + 1).padStart(2, "0")} / 08
         </div>
         <h1
           style={{
@@ -205,24 +205,13 @@ export const StoreStill: React.FC<StillProps> = ({
         >
           {detail}
         </p>
-        <div
-          style={{
-            position: "absolute",
-            left: 1320,
-            top: 170,
-            width: 1290,
-            height: 1720,
-            borderRadius: 42,
-            border: "3px solid #54877766",
-            overflow: "hidden",
-            boxShadow: "0 50px 130px #0009",
-            background: "#0b1017",
-          }}
-        >
-          <Img
-            src={staticFile(screenshot(platform, language, feature))}
-            style={{ width: "100%", height: "100%", objectFit: "contain" }}
-          />
+        <div style={{ position: "absolute", left: 1320, top: 170 }}>
+          <DeviceFrame width={1290} height={1720} tablet>
+            <Img
+              src={staticFile(screenshot(platform, language, feature))}
+              style={{ width: "100%", height: "100%", objectFit: "contain" }}
+            />
+          </DeviceFrame>
         </div>
         <div
           style={{
@@ -260,7 +249,7 @@ export const StoreStill: React.FC<StillProps> = ({
       >
         <span style={{ color: c.mint }}>NOIR POKER</span>
         <span style={{ fontFamily: "Barlow", color: c.gold }}>
-          {String(feature + 1).padStart(2, "0")} / 06
+          {String(feature + 1).padStart(2, "0")} / 08
         </span>
       </div>
       <h1
@@ -306,19 +295,17 @@ export const StoreStill: React.FC<StillProps> = ({
           position: "absolute",
           top: 640 * scale,
           left: (width - ((height - 770 * scale) * 1206) / 2622) / 2,
-          width: ((height - 770 * scale) * 1206) / 2622,
-          height: height - 770 * scale,
-          borderRadius: 48 * scale,
-          overflow: "hidden",
-          border: `${3 * scale}px solid #54877766`,
-          background: "#0b1017",
-          boxShadow: `0 ${36 * scale}px ${100 * scale}px #000a`,
         }}
       >
-        <Img
-          src={staticFile(screenshot(platform, language, feature))}
-          style={{ width: "100%", height: "100%", objectFit: "contain" }}
-        />
+        <DeviceFrame
+          width={((height - 770 * scale) * 1206) / 2622}
+          height={height - 770 * scale}
+        >
+          <Img
+            src={staticFile(screenshot(platform, language, feature))}
+            style={{ width: "100%", height: "100%", objectFit: "contain" }}
+          />
+        </DeviceFrame>
       </div>
       <div
         style={{

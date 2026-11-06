@@ -1,9 +1,10 @@
 {
   "source": {
     "pullRequest": "https://github.com/JessieZJZ/noir-poker/pull/70",
-    "commit": "38337032eacf30eae24fdeb00da07451b1e7a099",
+    "commit": "94e56b1ef009f0729508491e5f2155fd37d2bf99",
     "preparedOn": "2026-11-06",
-    "status": "Reviewable store assets; not a store submission"
+    "status": "Reviewable store assets; not a store submission",
+    "revision": 2
   },
   "shared": {
     "copyright": "2026 郑建宙",

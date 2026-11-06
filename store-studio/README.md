@@ -1,61 +1,66 @@
-# NOIR Poker 商店素材工作室
+# NOIR Poker 商店素材工作室 · V2
 
-独立的 Remotion 4.0.541 工程。素材以 PR #70 的 `38337032eacf30eae24fdeb00da07451b1e7a099` 为依据，录制正常安装包，不注入牌局、隐藏牌或测试 fixtures。不会进入 Web、App 或微信的正式包。
+独立 Remotion 4.0.541 工程，依据 PR #70 的 `94e56b1ef009f0729508491e5f2155fd37d2bf99`。英文与简体中文使用真实安装的 iPhone、iPad、Android App 素材。普通对局、教程、计算器和记录通过可见控件操作，没有注入牌局或测试 fixtures。
 
 ![简体中文截图概览](previews/zh-CN.png)
 
-[英文截图概览](previews/en.png) · [验收记录](VALIDATION.md)
+[英文概览](previews/en.png) · [体验与验收记录](VALIDATION.md)
 
-## 安装与预览
+## 预览和编辑
 
-需要 Node.js 22.13+（或 24+）和 FFmpeg/ffprobe。在本目录执行 `npm ci`，然后 `npm run dev -- --no-open --port=4390`。交付的源文件包已经包含 `public/assets`、`public/media` 和 `public/voice`；Git 中不保存这些较大的派生文件。仅从 Git 恢复时先在仓库根目录安装依赖、执行 `npm run mobile:sync`、编译两端，然后运行本目录的 `node prepare-brand.mjs` 并重新采集。
+需要 Node.js 22.13+（或 24+）、FFmpeg / ffprobe。在本目录执行 `npm ci`，然后 `npm run dev -- --no-open --port=4390`。交付源文件 ZIP 包含实际媒体、字体、音乐和旁白；Git 只保存代码、小型概览与字段，较大的生成素材不入库。
 
-`src/Root.tsx` 注册苹果竖屏视频、Google Play 横屏视频、两种语言的有旁白和音乐版本、iPhone/iPad/Android 截图与 feature graphic。每支完整视频为 29 秒、30 fps，五段依次为练习、引导、复盘、原牌重打与胜率计算。转场重叠 12 帧，实际起点为 0、5.6、11.2、17、22.6 秒。
+视频均为横屏，取消竖屏成片。每支 29.8 秒、30 fps，顺序为：新手引导 → 实战与本手动态 → 从结算页点击复盘 → 点击重打并改变决策 → 对局记录与详情 → 胜率计算。转场重叠 6 帧，场景起点为 0、4.4、9.2、14.4、19.7、24.6 秒。
 
-`storyboard.json` 保存分镜和旁白稿；`src/StoreFilm.tsx` 控制画面、字幕与音轨；`src/StoreStill.tsx` 控制截图版式。修改旁白文本后同步更新对应字幕文本。音频由 macOS 系统语音 Samantha / Tingting 合成，另交付无旁白版本。字幕 JSON 与 SRT 也会单独导出。
+- `storyboard.json`：分镜、双语字幕和旁白文本。
+- `src/StoreFilm.tsx`：六段独立场景、转场、字幕、界面全景/局部放大、音轨。
+- `src/DeviceFrame.tsx`：无第三方标识的金属手机/平板边框。截图和宣传视频使用；实际界面像素保持原样。
+- `src/StoreStill.tsx`：八项体验截图，包括新增的对局记录、记录详情。
+- `src/media-plan.json`：实际原生素材路径和构建来源。
 
-## 重新采集原生素材
+字幕使用左下固定阅读区、细薄薄荷绿标线与较轻字重，不遮住宣传版手机界面。中文采用用户试听选定的 `zh-CN-XiaoxiaoNeural` 温暖女声，英文采用 `en-US-EmmaNeural`；通过 `edge-tts 7.3.1` 生成，保留原始 MP3、文本、SRT 和 48 kHz 立体声 WAV。重打读 chóng：旁白写成“重新打同一副牌”，画面标题仍为“重打原牌”。不加速语音来硬塞时长，另附音乐版。
 
-先按仓库 `docs/native-e2e.md` 准备本地 Appium 工具与**专用测试设备**。标准采集会卸载/重置所选测试 App，不能指定正在使用的个人设备。所有截图由原生驱动取得，视频由所选 Simulator / Emulator 的系统录屏取得。只读取公开状态判断操作，行动仍使用界面控件。
+## 两家商店的横屏区别
+
+Google 版为 1920 × 1080，有手机机身、品牌排版和真实 Android 录屏。上传至自己的 YouTube 后填写 URL。
+
+Apple iPhone 预览版为 1920 × 886。依据 App Review 2.3.4，该版本只用实际 iOS 录屏及解释性字幕，并保留完整界面与同段画面的局部放大；不放宣传版的手机外壳。当前 iPhone App 锁定竖屏，横屏视频不代表 App 本身支持 iPhone 横屏，也不伪造横屏 UI。两种横屏文件按各自后台使用，不混传；商店最终审核仍独立进行。
+
+## 重新采集
+
+重新录制需要放回 NOIR Poker 仓库，先在根目录按 `docs/native-e2e.md` 准备本地工具、同步并实际编译两端。仅指定专用模拟器；标准入口会重置所选测试 App 数据。
 
 ```sh
-node capture-native.mjs ios --udid DEDICATED_IOS_UDID --port 4764 --driver-port 8864 --output ../.artifacts/store-media/raw/ios
-node capture-native.mjs android --udid DEDICATED_ANDROID_SERIAL --port 4766 --driver-port 8866 --output ../.artifacts/store-media/raw/android
-NOIR_STORE_STILLS_ONLY=1 node capture-native.mjs ios --udid DEDICATED_IPAD_UDID --port 4768 --driver-port 8868 --output ../.artifacts/store-media/raw/ipad
-node prepare-media.mjs ios ../.artifacts/store-media/raw/ios
-node prepare-media.mjs android ../.artifacts/store-media/raw/android
-node prepare-media.mjs ipad ../.artifacts/store-media/raw/ipad
+node prepare-brand.mjs
+NOIR_STORE_MODE=v2 node capture-native.mjs ios --udid DEDICATED_IOS_UDID --port 4774 --driver-port 8874 --output ../.artifacts/store-media-v2/raw/ios
+NOIR_STORE_MODE=v2 node capture-android-cdp.mjs DEDICATED_ANDROID_SERIAL ../.artifacts/store-media-v2/raw/android
+NOIR_STORE_MODE=v2 NOIR_STORE_STILLS_ONLY=1 node capture-native.mjs ios --udid DEDICATED_IPAD_UDID --port 4778 --driver-port 8878 --output ../.artifacts/store-media-v2/raw/ipad
+node prepare-media-v2.mjs ios ../.artifacts/store-media-v2/raw/ios
+node prepare-media-v2.mjs android ../.artifacts/store-media-v2/raw/android
+node prepare-media-v2.mjs ipad ../.artifacts/store-media-v2/raw/ipad
 node prepare-voice.mjs
 ```
 
-Android 若在原生截图后重连 WebView 时阻塞，可使用独立的媒体采集入口：
+可用 `NOIR_STORE_LOCALES=en` 单独补录英文；准备时用 `NOIR_STORE_EN_REPAIR=/absolute/path` 为该语言指定已成功的补录目录。补录报告与旧报告各自保留，不把失败或试剪改写为通过。
+
+Android 使用 Playwright AndroidWebView 附着已安装 APK，系统 `screencap` / `screenrecord` 取得画面；核对原生身份、APK 和源码摘要、正常本地页面与 QA fixture 缺席。不获取会引起上下文重连的原生可访问性快照，系统弹窗和显示质量另行肉眼查看。该采集不是完整原生 E2E 或生命周期验收。
+
+编辑依据事件标记剪去等待，重打还检测公共牌实际清空的画面时间，以保留“点击前 → 重新发牌 → 再行动”。不改变录屏速度，不重画 UI、不更改牌局、筹码和概率。剪辑明细保存在 `edit-provenance-v2.json`。
+
+## 导出和检查
 
 ```sh
-node capture-android-cdp.mjs DEDICATED_ANDROID_SERIAL ../.artifacts/store-media/raw/android-webview
-```
-
-它只附着所选仿真器内已安装 APK 的 WebView，不启动桌面浏览器。使用 Playwright 的 AndroidWebView 接口操作界面，系统 `screencap` / `screenrecord` 保存实际设备画面；核对 APK 指纹、Capacitor 的 Android 原生身份、正常本地包来源和 QA fixture 缺席。该入口不进行原生可访问性树快照，截图中的系统弹窗和显示质量必须逐张肉眼核验。它不替代原有 Appium 全套 E2E、原生生命周期或真机验收。
-
-`capture-native.mjs` 将仓库原生 runner 适配到忽略目录 `.artifacts/`，复用真实安装、源码指纹、首屏等待、原生触摸、系统错误检测和会话清理。不会修改原始 runner 或规则。`NOIR_STORE_MODE=repair` 是本次补录入口；`NOIR_STORE_RESUME=1` 保留专用设备上已安装 App 的数据，仍独立重启并等待首屏，然后才附着 WDA。补录文件可用 `NOIR_STORE_REPAIR=/absolute/path` 传给 `prepare-media.mjs`，原始失败记录应单独保留。
-
-采集只覆盖选定核心功能，不等同于完整原生 E2E。模拟器、实体设备、签名发行包和商店审核是不同的验收范围。
-
-## 导出与检查
-
-```sh
-node export-kit.mjs /absolute/path/NOIR-Poker-Store-Kit
-node verify-kit.mjs /absolute/path/NOIR-Poker-Store-Kit
+node export-kit.mjs /absolute/path/NOIR-Poker-Store-Kit-V2
+node write-gallery.mjs /absolute/path/NOIR-Poker-Store-Kit-V2
+node verify-kit.mjs /absolute/path/NOIR-Poker-Store-Kit-V2
 npx tsc --noEmit
 npx eslint src
 ```
 
-导出会在全部原生素材就绪前拒绝执行。只需图片时可追加 `--stills-only`；分阶段导出可追加 `--store=apple` 或 `--store=google`。输出已存在时默认跳过渲染，修改画面或媒体后用 `NOIR_STORE_OVERWRITE=1` 明确重新渲染。`verify-kit.mjs` 检查字段长度、图片尺寸和 RGB 通道、视频时长/编解码/帧率/音轨、完整解码以及 manifest 的 SHA-256；肉眼审阅和听感审阅须另外记录。
+默认跳过已有成片，修改画面后用新目录或 `NOIR_STORE_OVERWRITE=1` 重渲染。可加 `--stills-only` 或 `--store=apple|google` 分阶段导出。导出前必须准备全部目标原生素材。技术检查覆盖字段、8 张截图/组、RGB/尺寸、横屏视频编码/时长/音轨、完整解码及 SHA-256。画面与听感审阅另外记录。
 
 ## 来源
 
-- 工作流：[Remotion Agent Skills](https://www.remotion.dev/docs/ai/skills)，官方 `remotion-best-practices` v4.0.541 的创建、分镜、媒体、字幕、字体、渲染与 Studio 指南。
-- 字幕基础组件：原样保留 [Basic Captions](https://www.remotion.dev/elements/captions/basic-captions.md) 的代码，通过外部样式匹配 NOIR 品牌。
-- 图标、字体、角色插画、背景音乐：当前仓库已有本地资源；字体许可和音乐来源随源文件包保留。
-- 采用 Remotion 自带的渲染浏览器，不依赖录屏浏览器，不上传素材到第三方生成服务。
+[Remotion Agent Skills](https://www.remotion.dev/docs/ai/skills) 的创建、分镜、媒体、字幕、字体、Studio 与渲染指南。基础字幕组件原样保留 [Basic Captions](https://www.remotion.dev/elements/captions/basic-captions.md)，用外部样式匹配品牌。图标、画面、字体和配乐取自仓库已有本地资源，许可与来源随包保留。[Remotion 许可](https://www.remotion.dev/docs/license)。[edge-tts 项目](https://github.com/rany2/edge-tts)。
 
-素材规范与后台填写位置见仓库的 [商店素材说明](../docs/store-media.md)。Remotion 本身的许可见 [官方许可说明](https://www.remotion.dev/docs/license)。
+商店字段与官方规格链接见 [商店素材说明](../docs/store-media.md)。不提交商店后台，不包含发布凭据、签名材料或生成的原生 Web 副本。

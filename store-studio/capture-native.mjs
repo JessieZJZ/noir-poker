@@ -37,7 +37,7 @@ if (platform === "android") {
 let runner = readFileSync(path.join(root, "scripts/native-e2e.mjs"), "utf8");
 runner = runner.replace(
   "from '../tests/native/scenarios.mjs'",
-  `from ${JSON.stringify(pathToFileURL(path.join(studio, process.env.NOIR_STORE_MODE === "repair" ? "capture-repair.mjs" : "capture-scenarios.mjs")).href)}`,
+  `from ${JSON.stringify(pathToFileURL(path.join(studio, process.env.NOIR_STORE_MODE === "v2" ? "capture-v2.mjs" : process.env.NOIR_STORE_MODE === "repair" ? "capture-repair.mjs" : "capture-scenarios.mjs")).href)}`,
 );
 runner = runner.replaceAll(
   /from '(\.\.?\/[^']+)'/g,

@@ -186,7 +186,11 @@ try {
       ),
     record: (entry) => report.scenarios.push(entry),
   };
-  const { nativeScenarios } = await import("./capture-scenarios.mjs");
+  const { nativeScenarios } = await import(
+    process.env.NOIR_STORE_MODE === "v2"
+      ? "./capture-v2.mjs"
+      : "./capture-scenarios.mjs"
+  );
   await nativeScenarios(app);
   report.status = "captured";
   report.coreFlowChecks = "passed";

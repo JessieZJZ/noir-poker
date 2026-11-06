@@ -37,7 +37,7 @@
     "prepare:brand": "node prepare-brand.mjs",
     "export": "node export-kit.mjs",
     "verify": "node verify-kit.mjs",
-    "prepare:media": "node prepare-media.mjs"
+    "prepare:media": "node prepare-media-v2.mjs"
   },
   "allowScripts": {
     "esbuild": false

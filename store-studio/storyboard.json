@@ -1,6 +1,6 @@
 {
   "fps": 30,
-  "durationSeconds": 29,
+  "durationSeconds": 29.8,
   "palette": {
     "ink": "#080e15",
     "felt": "#123d35",
@@ -10,49 +10,66 @@
   },
   "scenes": [
     {
-      "id": "practice",
-      "from": 0,
-      "to": 5.6,
-      "en": "Your next decision starts here.",
-      "zh": "每一手，练习更好的判断。",
-      "voiceEn": "Your next decision starts here. Practice Hold'em offline.",
-      "voiceZh": "每一手，练习更好的判断。离线德州扑克，随时开练。"
+      "id": "tutorial",
+      "to": 4.6,
+      "durationFrames": 138,
+      "en": "Learn at the table.",
+      "zh": "跟着实战，学会规则。",
+      "voiceEn": "Learn the rules, one guided hand at a time.",
+      "voiceZh": "跟着互动引导，轻松学会规则。",
+      "from": 0
     },
     {
-      "id": "tutorial",
-      "from": 5.6,
-      "to": 11.2,
-      "en": "Learn by playing real hands.",
-      "zh": "跟着实战，学会规则。",
-      "voiceEn": "Learn at the table, one guided hand at a time.",
-      "voiceZh": "跟着互动引导，在一手手实战中，学会规则。"
+      "id": "practice",
+      "to": 9.4,
+      "durationFrames": 150,
+      "en": "Every action. As it happens.",
+      "zh": "每步行动，实时看清。",
+      "voiceEn": "Follow every action as the hand unfolds.",
+      "voiceZh": "每一步行动，本手动态实时记录。",
+      "from": 4.4
     },
     {
       "id": "review",
-      "from": 11.2,
-      "to": 17,
-      "en": "Understand the decision.",
-      "zh": "看懂每次行动的理由。",
-      "voiceEn": "Review the reasoning behind each decision.",
-      "voiceZh": "回看关键决策，理解每次行动背后的理由。"
+      "to": 14.6,
+      "durationFrames": 162,
+      "en": "Tap Review. Find the reason.",
+      "zh": "点开复盘，看懂理由。",
+      "voiceEn": "Finish a hand. Tap Review. Understand the decision.",
+      "voiceZh": "打完一手，点开复盘，理解决策。",
+      "from": 9.2
     },
     {
       "id": "retry",
-      "from": 17,
-      "to": 22.6,
-      "en": "Same deal. Another possibility.",
-      "zh": "同一副牌，再试一种选择。",
-      "voiceEn": "Replay the same deal. Explore another choice.",
-      "voiceZh": "重打同一副牌，探索另一种选择。"
+      "to": 19.9,
+      "durationFrames": 165,
+      "en": "Same deal. A new decision.",
+      "zh": "重打原牌，换种决策。",
+      "voiceEn": "Replay the same deal. Try a different decision.",
+      "voiceZh": "重新打同一副牌，换一种决策。",
+      "from": 14.4
+    },
+    {
+      "id": "records",
+      "to": 24.8,
+      "durationFrames": 153,
+      "en": "Your hands. Worth revisiting.",
+      "zh": "对局记录，随时回看。",
+      "voiceEn": "Open your game records. Revisit every hand.",
+      "voiceZh": "打开对局记录，随时回看每手详情。",
+      "from": 19.7
     },
     {
       "id": "calculator",
-      "from": 22.6,
-      "to": 29,
-      "en": "Explore the odds. Keep learning.",
-      "zh": "看清胜率，让练习继续。",
-      "voiceEn": "Explore the odds. Virtual chips. No account needed.",
-      "voiceZh": "看清胜率，让练习继续。虚拟筹码，无需登录。"
+      "to": 29.8,
+      "durationFrames": 156,
+      "en": "Choose the cards. See the odds.",
+      "zh": "选好牌，看清胜率。",
+      "voiceEn": "Choose your cards. Explore the odds.",
+      "voiceZh": "选好底牌和公共牌，看清胜率。",
+      "from": 24.6
     }
-  ]
+  ],
+  "transitionFrames": 6,
+  "revision": 2
 }

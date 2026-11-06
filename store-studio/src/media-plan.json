@@ -12,7 +12,10 @@
       "tutorial": "media/ios/zh-CN/tutorial.mp4",
       "review": "media/ios/zh-CN/review.mp4",
       "retry": "media/ios/zh-CN/retry.mp4",
-      "calculator": "media/ios/zh-CN/calculator.mp4"
+      "calculator": "media/ios/zh-CN/calculator.mp4",
+      "07-records": "media/ios/zh-CN/07-records.png",
+      "07-record-detail": "media/ios/zh-CN/07-record-detail.png",
+      "records": "media/ios/zh-CN/records.mp4"
     },
     "en": {
       "01-practice": "media/ios/en/01-practice.png",
@@ -25,7 +28,10 @@
       "tutorial": "media/ios/en/tutorial.mp4",
       "review": "media/ios/en/review.mp4",
       "retry": "media/ios/en/retry.mp4",
-      "calculator": "media/ios/en/calculator.mp4"
+      "calculator": "media/ios/en/calculator.mp4",
+      "07-records": "media/ios/en/07-records.png",
+      "07-record-detail": "media/ios/en/07-record-detail.png",
+      "records": "media/ios/en/records.mp4"
     }
   },
   "android": {
@@ -40,7 +46,10 @@
       "tutorial": "media/android/zh-CN/tutorial.mp4",
       "review": "media/android/zh-CN/review.mp4",
       "retry": "media/android/zh-CN/retry.mp4",
-      "calculator": "media/android/zh-CN/calculator.mp4"
+      "calculator": "media/android/zh-CN/calculator.mp4",
+      "07-records": "media/android/zh-CN/07-records.png",
+      "07-record-detail": "media/android/zh-CN/07-record-detail.png",
+      "records": "media/android/zh-CN/records.mp4"
     },
     "en": {
       "01-practice": "media/android/en/01-practice.png",
@@ -53,7 +62,10 @@
       "tutorial": "media/android/en/tutorial.mp4",
       "review": "media/android/en/review.mp4",
       "retry": "media/android/en/retry.mp4",
-      "calculator": "media/android/en/calculator.mp4"
+      "calculator": "media/android/en/calculator.mp4",
+      "07-records": "media/android/en/07-records.png",
+      "07-record-detail": "media/android/en/07-record-detail.png",
+      "records": "media/android/en/records.mp4"
     }
   },
   "ipad": {
@@ -63,7 +75,9 @@
       "03-review": "media/ipad/zh-CN/03-review.png",
       "04-result": "media/ipad/zh-CN/04-result.png",
       "05-calculator": "media/ipad/zh-CN/05-calculator.png",
-      "06-styles": "media/ipad/zh-CN/06-styles.png"
+      "06-styles": "media/ipad/zh-CN/06-styles.png",
+      "07-records": "media/ipad/zh-CN/07-records.png",
+      "07-record-detail": "media/ipad/zh-CN/07-record-detail.png"
     },
     "en": {
       "01-practice": "media/ipad/en/01-practice.png",
@@ -71,7 +85,30 @@
       "03-review": "media/ipad/en/03-review.png",
       "04-result": "media/ipad/en/04-result.png",
       "05-calculator": "media/ipad/en/05-calculator.png",
-      "06-styles": "media/ipad/en/06-styles.png"
+      "06-styles": "media/ipad/en/06-styles.png",
+      "07-records": "media/ipad/en/07-records.png",
+      "07-record-detail": "media/ipad/en/07-record-detail.png"
+    }
+  },
+  "revision": 2,
+  "captureRevisions": {
+    "ios": {
+      "sourceDigest": "392adab3981eccbe478c517af67ba17873a7f24c2ef2ba32262c7d2cdf0a2e81",
+      "sourceCommit": "03e6ac967e43bb1fa6c569acde1ddcafb0af165d",
+      "productCommit": "94e56b1ef009f0729508491e5f2155fd37d2bf99",
+      "actualNative": true
+    },
+    "android": {
+      "sourceDigest": "392adab3981eccbe478c517af67ba17873a7f24c2ef2ba32262c7d2cdf0a2e81",
+      "sourceCommit": "03e6ac967e43bb1fa6c569acde1ddcafb0af165d",
+      "productCommit": "94e56b1ef009f0729508491e5f2155fd37d2bf99",
+      "actualNative": true
+    },
+    "ipad": {
+      "sourceDigest": "392adab3981eccbe478c517af67ba17873a7f24c2ef2ba32262c7d2cdf0a2e81",
+      "sourceCommit": "03e6ac967e43bb1fa6c569acde1ddcafb0af165d",
+      "productCommit": "94e56b1ef009f0729508491e5f2155fd37d2bf99",
+      "actualNative": true
     }
   }
 }
