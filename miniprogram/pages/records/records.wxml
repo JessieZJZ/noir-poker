@@ -74,7 +74,8 @@
         /></view>
         <view class="hand-details"
           ><text class="hand-title">第 {{item.hand}} 手</text
-          ><view wx:if="{{item.attemptText || item.refill}}" class="hand-tags"
+          ><view class="hand-tags"
+            ><text class="hand-blinds">{{item.blindText}}</text
             ><text wx:if="{{item.attemptText}}" class="hand-tag hand-replay"
               >{{item.attemptText}}</text
             ><text wx:if="{{item.refill}}" class="hand-tag hand-refill">补码</text></view

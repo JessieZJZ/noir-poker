@@ -45,12 +45,17 @@ export function recordOutcome(attempt) {
   return result === 'win' ? '赢' : '输';
 }
 
-function handItem(attempt) {
+// Each hand shows the blinds it was dealt at; older hands used the start.
+export const recordBlinds = (attempt, session) => {
+  const blinds = attempt.blinds || session.stakes;
+  return `${formatChips(blinds.smallBlind)} / ${formatChips(blinds.bigBlind)}`;
+};
+function handItem(attempt, session) {
   const complete = attempt.status === 'completed',
     element = complete ? 'button' : 'div';
   return `<${element} class="record-hand record-attempt ${attempt.superseded ? 'record-superseded' : ''}" ${complete ? `data-record-hand="${escape(attempt.id)}"` : ''} data-record-id="${escape(attempt.id)}" data-status="${attempt.status}" data-hand="${attempt.hand}" data-attempt="${attempt.attempt}" data-superseded="${attempt.superseded}">
     <span class="record-hand-cards record-cards" aria-label="你的底牌">${attempt.hole.map((c) => renderCard(c, { small: true })).join('')}</span>
-    <span class="record-hand-info"><strong>第 ${attempt.hand} 手</strong><span class="record-hand-tags">${attempt.attempt ? `<span class="record-tag record-retry">${attemptLabel(attempt.attempt)}</span>` : ''}${attempt.refill ? '<span class="record-tag record-refill">补码</span>' : ''}</span></span>
+    <span class="record-hand-info"><strong>第 ${attempt.hand} 手</strong><span class="record-hand-tags"><span class="record-hand-blinds">盲注 ${recordBlinds(attempt, session)}</span>${attempt.attempt ? `<span class="record-tag record-retry">${attemptLabel(attempt.attempt)}</span>` : ''}${attempt.refill ? '<span class="record-tag record-refill">补码</span>' : ''}</span></span>
     <span class="record-hand-result ${complete && attempt.profit < 0 ? 'negative' : complete && attempt.profit > 0 ? 'positive' : ''}"><strong>${complete ? change(attempt.profit, { loss: recordResult(attempt) === 'loss' }) : '—'}</strong>${recordOutcome(attempt) ? `<span>${recordOutcome(attempt)}</span>` : ''}</span>
     ${complete ? '<span class="record-hand-arrow" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"/></svg></span>' : ''}
   </${element}>`;
@@ -137,7 +142,7 @@ export function createGameRecordsView({
       element,
       chunkAttempts(session.attempts, Number(key.slice(split + 1)))
         .reverse()
-        .map(handItem)
+        .map((attempt) => handItem(attempt, session))
         .join(''),
     );
     element.style.removeProperty('height');

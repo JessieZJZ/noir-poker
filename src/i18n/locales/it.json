@@ -2736,7 +2736,6 @@
   "若这次小注用于取值，需要较弱成牌愿意跟注；河牌已发完，听牌没有继续补牌的机会。": "Se questa piccola puntata è per valore, devono chiamare mani fatte più deboli. Il river è già uscito e i progetti non possono più migliorare. ",
   "较小对子（如 {0}{1}）或部分未成对高牌": "coppie in mano più basse (come {0}{1}) o alcune carte alte non accoppiate",
   "这些跟注者的范围也会影响获池机会，不能只判断下注者是否在诈唬。": "Anche i range di questi caller influenzano le possibilità di vincere il piatto; non basta valutare se chi ha puntato sta bluffando.",
-  "这条跟注路线的依据是当前价格下保留改善与摊牌机会，仍依赖对手范围较宽；未改善且面对不利下注时可弃牌，能免费过牌则保留机会。": "Questa linea di call conserva possibilità di migliorare e vincere allo showdown al prezzo attuale, ma richiede comunque un range avversario abbastanza ampio. Senza miglioramenti, si può foldare davanti a una puntata sfavorevole; un check gratuito mantiene aperte le possibilità.",
   "这笔大注需要还在场的对手有足够共同弃牌空间；若他们只用强牌跟注，单靠这些补牌较难弥补投入。": "Questa puntata grande richiede una probabilità sufficiente che tutti gli avversari ancora in gioco foldino. Se chiamano solo con mani forti, questi out da soli difficilmente compensano l’investimento.",
   "部分尚未成对的起手牌": "alcune mani iniziali non accoppiate",
   "；其中至少": "; di questo importo, almeno",
@@ -2987,5 +2986,6 @@
   "目前只有高牌，尚未成对，过牌保留在摊牌时击败较弱高牌的机会，避免主动做大底池。": " Hai solo carta alta, senza coppia. Il check conserva la possibilità di battere carte alte più deboli allo showdown senza ingrossare attivamente il piatto. ",
   "过牌不增加投入，本轮仍需等待后面玩家行动。": " Il check non aggiunge fiches; i giocatori successivi devono ancora agire in questo giro. ",
   "重打 {0} 这手，{1}。{2}{3}底池为 {4}，{5}。加注路线要核对对手是否有足够弃牌空间，以及被跟注后的摊牌机会是否与投入相称。{6}": " Rigioca {0}: {1}. {2}{3} Il piatto è {4}; {5}. Per la linea di rilancio, valuta se gli avversari passano abbastanza spesso e se le possibilità allo showdown dopo un call giustificano l’investimento. {6} ",
-  "底池为 {0}，{1}。加注路线要核对对手是否有足够弃牌空间，以及被跟注后的摊牌机会是否与投入相称。": " Il piatto è {0}; {1}. Per la linea di rilancio, valuta se gli avversari passano abbastanza spesso e se le possibilità allo showdown dopo un call giustificano l’investimento. "
+  "底池为 {0}，{1}。加注路线要核对对手是否有足够弃牌空间，以及被跟注后的摊牌机会是否与投入相称。": " Il piatto è {0}; {1}. Per la linea di rilancio, valuta se gli avversari passano abbastanza spesso e se le possibilità allo showdown dopo un call giustificano l’investimento. ",
+  "这条跟注路线的依据是当前价格下保留改善与摊牌机会，仍依赖对手范围较宽。未改善且面对不利下注时可弃牌，能免费过牌则保留机会。": "Questa linea di call conserva possibilità di migliorare e vincere allo showdown al prezzo attuale, ma richiede comunque un range avversario abbastanza ampio. Senza miglioramenti, si può foldare davanti a una puntata sfavorevole; un check gratuito mantiene aperte le possibilità."
 }

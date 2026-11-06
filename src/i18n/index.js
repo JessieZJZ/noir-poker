@@ -18,8 +18,16 @@ export const SUPPORTED_LOCALES = [
 export const LOCALE_KEY = 'noir-locale';
 export function resolveLocale(saved, languages = [], timeZone) {
   if (SUPPORTED_LOCALES.includes(saved)) return saved;
-  // Time zones identify a region, not a person's language. Use the regional
-  // default only for a first visit; an explicit saved selection always wins.
+  // The device's own language list says what the person reads; it wins over
+  // where the device happens to be. An explicit saved selection wins over both.
+  for (const language of languages) {
+    if (/^zh(?:-|$)/i.test(language))
+      return !/Hans/i.test(language) && /(?:TW|HK|MO|Hant)/i.test(language) ? 'zh-TW' : 'zh-CN';
+    const base = language.toLowerCase().split('-')[0];
+    if (SUPPORTED_LOCALES.includes(base)) return base;
+  }
+  // No supported device language: a time zone still names a region, so use
+  // its default language before falling back to English.
   let regional = Object.hasOwn(timezoneLocales, timeZone) ? timezoneLocales[timeZone] : null;
   if (!regional && timeZone) {
     try {
@@ -27,14 +35,7 @@ export function resolveLocale(saved, languages = [], timeZone) {
         timezoneLocales[new Intl.DateTimeFormat('en', { timeZone }).resolvedOptions().timeZone];
     } catch {}
   }
-  if (regional) return regional;
-  for (const language of languages) {
-    if (/^zh(?:-|$)/i.test(language))
-      return !/Hans/i.test(language) && /(?:TW|HK|MO|Hant)/i.test(language) ? 'zh-TW' : 'zh-CN';
-    const base = language.toLowerCase().split('-')[0];
-    if (SUPPORTED_LOCALES.includes(base)) return base;
-  }
-  return 'en';
+  return regional || 'en';
 }
 let locale = 'zh-CN',
   messages = {},
@@ -168,7 +169,14 @@ export function localizeText(value) {
 export function formatChips(value) {
   return compactChips(value, locale === 'en' ? 'en-US' : locale);
 }
-const attributes = ['aria-label', 'title', 'data-mobile-label', 'data-full-name', 'placeholder'];
+const attributes = [
+  'aria-label',
+  'title',
+  'data-mobile-label',
+  'data-full-name',
+  'data-style-tag',
+  'placeholder',
+];
 // Remember source text on the actual DOM nodes. Language changes only replace
 // presentation values; controls, listeners, focus and game objects stay alive.
 const textSources = new WeakMap();

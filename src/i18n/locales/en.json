@@ -2754,7 +2754,6 @@
   "若这次小注用于取值，需要较弱成牌愿意跟注；河牌已发完，听牌没有继续补牌的机会。": "If this small bet is for value, weaker made hands must be willing to call. The river is already out, so draws have no further chance to improve. ",
   "较小对子（如 {0}{1}）或部分未成对高牌": "smaller pocket pairs (such as {0}{1}) or some unpaired high cards",
   "这些跟注者的范围也会影响获池机会，不能只判断下注者是否在诈唬。": "These callers’ ranges also affect the chance of winning the pot; assessing only whether the bettor is bluffing is not enough.",
-  "这条跟注路线的依据是当前价格下保留改善与摊牌机会，仍依赖对手范围较宽；未改善且面对不利下注时可弃牌，能免费过牌则保留机会。": "This calling line preserves chances to improve or win at showdown at the current price, but still relies on a sufficiently wide opposing range. If the hand does not improve and faces an unfavorable bet, folding remains an option; a free check preserves those chances.",
   "这笔大注需要还在场的对手有足够共同弃牌空间；若他们只用强牌跟注，单靠这些补牌较难弥补投入。": "This large bet needs enough chance that all opponents still involved will fold. If they call only with strong hands, these outs alone are unlikely to make up for the investment.",
   "部分尚未成对的起手牌": "some unpaired starting hands",
   "；其中至少": "; of this, at least",
@@ -3005,5 +3004,6 @@
   "目前只有高牌，尚未成对，过牌保留在摊牌时击败较弱高牌的机会，避免主动做大底池。": " You have only high card and no pair. Checking keeps a chance to beat weaker high cards at showdown without actively growing the pot. ",
   "过牌不增加投入，本轮仍需等待后面玩家行动。": " Checking adds no chips; players behind must still act this round. ",
   "重打 {0} 这手，{1}。{2}{3}底池为 {4}，{5}。加注路线要核对对手是否有足够弃牌空间，以及被跟注后的摊牌机会是否与投入相称。{6}": " Replay {0}: {1}. {2}{3} The pot is {4}; {5}. For the raising line, assess whether opponents fold often enough and whether the showdown chances when called justify the investment. {6} ",
-  "底池为 {0}，{1}。加注路线要核对对手是否有足够弃牌空间，以及被跟注后的摊牌机会是否与投入相称。": " The pot is {0}; {1}. For the raising line, assess whether opponents fold often enough and whether the showdown chances when called justify the investment. "
+  "底池为 {0}，{1}。加注路线要核对对手是否有足够弃牌空间，以及被跟注后的摊牌机会是否与投入相称。": " The pot is {0}; {1}. For the raising line, assess whether opponents fold often enough and whether the showdown chances when called justify the investment. ",
+  "这条跟注路线的依据是当前价格下保留改善与摊牌机会，仍依赖对手范围较宽。未改善且面对不利下注时可弃牌，能免费过牌则保留机会。": "This calling line preserves chances to improve or win at showdown at the current price, but still relies on a sufficiently wide opposing range. If the hand does not improve and faces an unfavorable bet, folding remains an option; a free check preserves those chances."
 }

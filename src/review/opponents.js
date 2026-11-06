@@ -2,6 +2,8 @@ import { compactChips } from '../engine/chip-format.js';
 import { deckOfCards, evaluate, rankText } from '../engine/poker.js';
 import { actionLabel } from '../engine/action-labels.js';
 import { MOOD_LABELS } from '../engine/bot-profiles.js';
+import { isDonkLead } from '../engine/bot-deception.js';
+import { hasBotSkill } from '../engine/bot-difficulty.js';
 import { decisionContext } from './context.js';
 import { drawLabel, drawCompletion, publicHistory, preflopPotential } from './narrative.js';
 import { spotFacts } from './spot-facts.js';
@@ -13,6 +15,7 @@ import {
   checkReasoning,
   checkRisks,
   madeRedrawReasoning,
+  multiwayPairCheckReason,
   weakTopPairCheckReason,
 } from './check-reasoning.js';
 import { currentStreetCallers, defenseReason, straightSplitReason } from './defense-reason.js';
@@ -26,7 +29,7 @@ const n = compactChips;
 // Legacy or inconsistent traces cannot turn an executed fold into an account
 // of checking. A matching action is required even without a versioned basis.
 const reasonActions = {
-  fold: ['outside-range', 'insufficient-equity', 'stack-pressure'],
+  fold: ['outside-range', 'insufficient-equity', 'stack-pressure', 'short-fold', 'survival-fold'],
   call: [
     'implied-continue',
     'story-continue',
@@ -40,7 +43,7 @@ const reasonActions = {
     'strong-trap',
     'float-continue',
   ],
-  check: ['trap', 'strong-trap', 'free-check', 'pot-control'],
+  check: ['trap', 'strong-trap', 'free-check', 'pot-control', 'short-check'],
   raise: [
     'value-raise',
     'semi-bluff',
@@ -51,6 +54,10 @@ const reasonActions = {
     'dirty-reraise',
     'donk-lead',
     'seven-two-bluff',
+    'short-push',
+    'short-reshove',
+    'probe-bet',
+    'check-raise',
   ],
 };
 export const BOT_REASON_NAMES = {
@@ -79,6 +86,13 @@ export const BOT_REASON_NAMES = {
   'dirty-reraise': '高牌阻断的脏牌再加注',
   'donk-lead': '向前一街进攻者主动领打（donk）',
   'seven-two-bluff': '2–7 低频诈唬',
+  'short-push': '短码全下抢盲',
+  'short-reshove': '短码再全下',
+  'short-fold': '短码等待更好的全下机会',
+  'short-check': '短码在大盲免费看牌',
+  'survival-fold': '接近决赛圈，谨慎弃牌',
+  'probe-bet': '先行动小注试探',
+  'check-raise': '过牌后再加注',
 };
 function pocketComparison(v, name) {
   const rank = v.hole[0].rank;
@@ -200,6 +214,43 @@ function objectiveActionReason(s, c, f, hand, drawText, foldNote) {
     ].filter(Boolean);
   }
   return [];
+}
+
+// Plain-language tournament notes: no placement-value jargon, only what a
+// short or covering stack risks near the final table.
+function survivalNote(stage, subject) {
+  return stage === 'bubble'
+    ? `再淘汰一人就进入决赛圈，跟注全下输了${subject}就会出局。`
+    : `决赛圈每多撑过一人名次就会提高，跟注全下输了${subject}就会出局。`;
+}
+function shortStackReason(t, subject, hand) {
+  const plan = t.pushFold || {},
+    depth = Math.max(1, Math.round(plan.depthBB ?? 0)),
+    behind = plan.behind ?? 0,
+    stage = t.view.tournament?.stage,
+    stacks = t.view.tournament?.stacks || [],
+    own = stacks.find((row) => row.id === t.view.id)?.chips ?? 0,
+    leader = stacks.length > 1 && stacks.every((row) => row.id === t.view.id || row.chips < own),
+    pressure = ['bubble', 'final'].includes(stage);
+  const parts = [
+    `有效筹码只剩约 ${depth} 个大盲，加注后很难再弃牌，所以${subject}只在全下和弃牌之间选择。`,
+  ];
+  if (t.reason === 'short-fold')
+    parts.push(`${hand}不够这个位置的全下标准，${subject}选择弃牌，留着筹码等更好的机会。`);
+  else if (t.reason === 'short-check')
+    parts.push(`${subject}在大盲可以免费看牌，${hand}不够全下的标准，所以先过牌。`);
+  else {
+    parts.push(
+      t.reason === 'short-reshove'
+        ? `面对加注，${subject}用${hand}直接全下，对手要跟注就得拿出更多筹码。`
+        : behind
+          ? `身后还有 ${behind} 位没行动，${subject}用${hand}先全下，对手不愿冒险就会把盲注让出来。`
+          : `${subject}用${hand}先全下，对手不愿冒险就会把盲注让出来。`,
+    );
+    if (pressure && leader)
+      parts.push(`${subject}筹码最多，对手跟注输了会出局，所以可以更多地施压抢盲。`);
+  }
+  return parts;
 }
 
 export function explainOpponent(record, identities = []) {
@@ -418,8 +469,35 @@ export function explainOpponent(record, identities = []) {
         ? `${subject}拿${hand}继续要补 ${n(cost)}，按当时对加注范围的估计选择退出，没有支付这笔跟注。`
         : `继续要补 ${n(cost)}，${subject}没有用${hand}接住这笔下注。${v.street === 3 ? '河牌已发完，当前只有高牌，主要能赢过对手未成牌的诈唬，因此放弃继续投入。' : '当前没有对子，也没有直接顺子或同花听牌托底，因此放弃继续投入。'}`;
       break;
-    case 'stack-pressure':
-      logic = `补 ${n(cost)} 会用掉${subject}剩余 ${n(v.stack)} 的 ${pct(cost / Math.max(1, v.stack))}，${subject}选择保住后手，没有接这笔大额投入。`;
+    case 'stack-pressure': {
+      const barrels = v.history.filter(
+        (a) => a.id !== v.id && a.street > 0 && a.action === 'raise',
+      ).length;
+      // The repeated-barrel release folds one pair only when its discounted
+      // estimate misses the price, so the price is part of the reason.
+      logic =
+        v.street > 0 &&
+        barrels >= 2 &&
+        v.features?.ownMade &&
+        !v.features?.strongMade &&
+        v.contestable > 0
+          ? `翻牌后已面对 ${barrels} 次下注，${subject}把${hand}的估计胜率按连续下注打了折扣，仍不到跟注至少需要的约 ${pct(cost / v.contestable)}。补 ${n(cost)} 会用掉${subject}剩余 ${n(v.stack)} 的 ${pct(cost / Math.max(1, v.stack))}，${subject}选择保住后手。`
+          : `补 ${n(cost)} 会用掉${subject}剩余 ${n(v.stack)} 的 ${pct(cost / Math.max(1, v.stack))}，${subject}选择保住后手，没有接这笔大额投入。`;
+      break;
+    }
+    case 'short-push':
+    case 'short-reshove':
+    case 'short-fold':
+    case 'short-check':
+      logicParts = shortStackReason(t, subject, hand);
+      logic = logicParts.join('');
+      break;
+    case 'survival-fold':
+      logicParts = [
+        survivalNote(v.tournament?.stage, subject),
+        `${subject}拿${hand}跟注要补 ${n(cost)}，这次比平时更谨慎，选择弃牌。`,
+      ];
+      logic = logicParts.join('');
       break;
     case 'loose-exception':
       logicParts = objectiveActionReason(snapshot, c, f, hand, drawText, foldNote);
@@ -466,9 +544,20 @@ export function explainOpponent(record, identities = []) {
           draw.outs && !v.features?.ownMade
             ? `${subject}接下这笔下注，需要再补 ${n(cost)}，可以争夺 ${n(t.allIn.contestable)} 的底池，这次底池赔率支持继续追${drawLabel(draw)}。${continuation}`
             : `${subject}接下这笔下注，需要再补 ${n(cost)}，可以争夺 ${n(t.allIn.contestable)} 的底池，这次底池赔率支持用${hand}的摊牌价值继续。${continuation}`;
-      } else if (widePreflopCall)
-        logic = `${subject}选择较宽地补 ${n(cost)}，继续争夺 ${n(v.contestable)} 的底池，这笔投入占行动前剩余筹码的 ${pct(cost / Math.max(1, v.stack))}。这手牌击中一对后仍可能被更好的踢脚或更大对子压住。`;
-      else if (v.street > 0 && !draw.outs) {
+      } else if (widePreflopCall) {
+        // The recorded reason is the price: the bot's own range estimate
+        // cleared the break-even share. Name that first, then what the call
+        // commits, and only then the kicker risk, which is its cost.
+        const left = v.stack - cost;
+        logicParts = [
+          `${subject}要补 ${n(cost)} 去争 ${n(v.contestable)} 的底池，至少需要约 ${pct(cost / Math.max(1, v.contestable))} 的胜率才能持平。${subject}估计${hand}对这次加注的范围仍够这个价格，所以较宽地跟注，这笔投入占行动前剩余筹码的 ${pct(cost / Math.max(1, v.stack))}。`,
+          left > 0 && left < v.contestable
+            ? `跟完只剩 ${n(left)}，还不到翻牌时的底池，之后再遇下注很难弃牌，相当于被底池套住。`
+            : '',
+          '代价是击中一对后仍可能被更好的踢脚或更大对子压住。',
+        ].filter(Boolean);
+        logic = logicParts.join('');
+      } else if (v.street > 0 && !draw.outs) {
         const current = v.history.filter((a) => a.street === v.street);
         const raiseIndex = current.findLastIndex((a) => a.action === 'raise');
         const callers = new Set(
@@ -584,7 +673,10 @@ export function explainOpponent(record, identities = []) {
           `${subject}的${hand}仍可向较弱的一对或听牌取值，过牌暂时少收这部分价值，并把较强牌保留在过牌范围中。`;
         if (!kickerControl && c.pendingOthers > 0)
           checkNotes.push('过牌也可能是在等后位先下注，给对手继续投入的机会。');
-        if (!kickerControl && c.opponents > 1) checkNotes.push('多人底池里，这手成牌并不是坚果。');
+        const crowd = kickerControl ? '' : multiwayPairCheckReason(snapshot, c);
+        if (crowd) checkNotes.push(crowd);
+        else if (!kickerControl && c.opponents > 1)
+          checkNotes.push('多人底池里，这手成牌并不是坚果。');
         if (wet) {
           const draws = [
             c.texture.connected >= 2 ? '顺子听牌' : '',
@@ -635,6 +727,19 @@ export function explainOpponent(record, identities = []) {
         : t.deception?.stage === 'opening'
           ? `这是 2–7 诈唬偷盲：${plainName}在 ${v.position} 用 ${n(f.investment)} 争取 ${n(v.pot)}，前面无人入池，靠后面的人弃牌获利。`
           : `这是 2–7 诈唬：单挑、有位置，对手本轮已经过牌，${subject}在 ${f.boardText} 上用 ${n(f.investment)} 争取 ${n(v.pot)}，没有成牌或大听牌托底，主要赌对手愿意弃牌。`;
+      break;
+    case 'probe-bet':
+      logic = pressure.hasAllInOpponent
+        ? `${subject}用${hand}小注 ${n(f.investment)} 试探仍有筹码的对手。${foldNote}`
+        : `这是试探注：${subject}先行动，下 ${n(f.investment)} 的小注，让较弱的牌和听牌付费才能继续。后位若加注，${subject}也能更早看清对方的牌力，再决定是否继续投入。`;
+      break;
+    case 'check-raise':
+      logic = t.semiBluff
+        ? `这是过牌加注半诈唬：${subject}先过牌，等对手下注后用${drawLabel(draw)}加到 ${n(record.amount)}。对手弃牌就拿走 ${n(v.pot)}，被跟注后仍有 ${draw.outs} 张改善候选。`
+        : v.street < 3
+          ? `这是过牌加注：${subject}先过牌，等对手下注后再加到 ${n(record.amount)}，让下注者和较弱的成牌或听牌付出更多筹码，也能看清对方的牌力。`
+          : `这是过牌加注：${subject}先过牌，等对手下注后再加到 ${n(record.amount)}，向下注者和较弱的成牌收取更多筹码。`;
+      if (pressure.hasAllInOpponent) logic += foldNote;
       break;
     case 'donk-lead':
       logic =
@@ -726,6 +831,25 @@ export function explainOpponent(record, identities = []) {
       logicParts = [...(logicParts || [logic]), ...risks, ...madeRedrawReasoning(snapshot, c)];
       logic = logicParts.join('');
     }
+  }
+  // Below advanced difficulty a made hand that is not a strong value lead
+  // checks to the last street's aggressor; say so instead of only listing
+  // board facts, which read as if the check were a deliberate trap.
+  if (
+    usePolicyReason &&
+    record.action === 'check' &&
+    ['free-check', 'pot-control'].includes(t.reason) &&
+    v.legal &&
+    isDonkLead(v) &&
+    !hasBotSkill(t.difficulty ?? v.difficulty, 'donk') &&
+    c.made.score[0] >= 1 &&
+    !['board', 'board-pair'].includes(c.handClass)
+  ) {
+    logicParts = [
+      `前一街的进攻者还没行动，${subject}没有抢先下注，而是过牌把行动留给进攻者，等对方下注后再决定跟注或加注。`,
+      ...(logicParts || [logic]),
+    ];
+    logic = logicParts.join('');
   }
   const exposure = raiseExposureNote(snapshot, c.extra);
   if (exposure) {

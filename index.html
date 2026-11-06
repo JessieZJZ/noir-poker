@@ -28,11 +28,31 @@
         z-index: 2147483646;
         background: #0b1017 url('/launch-icon.png') center / 180px 180px no-repeat;
       }
+      /* The wordmark under the icon; body itself stays hidden until ready. */
+      html:not([data-app-ready='true']) body::before {
+        content: 'NOIR POKER';
+        visibility: visible !important;
+        position: fixed;
+        z-index: 2147483647;
+        top: calc(50% + 102px);
+        left: 0;
+        right: 0;
+        text-align: center;
+        color: #e9f2ef;
+        font:
+          700 18px/24px Manrope,
+          system-ui,
+          -apple-system,
+          'Segoe UI',
+          sans-serif;
+        letter-spacing: 6px;
+        text-indent: 6px;
+      }
       html:not([data-app-ready='true'])::after {
         content: '';
         position: fixed;
         z-index: 2147483647;
-        top: calc(50% + 118px);
+        top: calc(50% + 148px);
         left: calc(50% - 24px);
         width: 48px;
         height: 2px;
@@ -93,8 +113,10 @@
             aria-controls="guide-menu"
           >
             <span class="guide-rotating-label">
-              <span data-guide-label="guide">玩法指南</span>
-              <span data-guide-label="records" aria-hidden="true">对局记录</span>
+              <span data-guide-label="records">对局记录</span>
+              <span data-guide-label="tutorial" aria-hidden="true">新手引导</span>
+              <span data-guide-label="guide" aria-hidden="true">玩法指南</span>
+              <span data-guide-label="win-rate" aria-hidden="true">胜率计算器</span>
             </span>
             <span class="guide-menu-arrow" aria-hidden="true">
               <svg class="guide-chevron" viewBox="0 0 16 16">
@@ -103,9 +125,9 @@
             </span>
           </button>
           <div id="guide-menu" class="guide-menu-options" role="menu" hidden>
-            <button id="guide-menu-item" role="menuitem">玩法指南</button>
-            <button id="tutorial-menu-item" role="menuitem">新手引导</button>
             <button id="records-menu-item" role="menuitem">对局记录</button>
+            <button id="tutorial-menu-item" role="menuitem">新手引导</button>
+            <button id="guide-menu-item" role="menuitem">玩法指南</button>
             <button id="win-rate-menu-item" role="menuitem">胜率计算器</button>
           </div>
         </div>
@@ -137,7 +159,12 @@
               <span class="session-label" id="session-number-label">第 1 局</span><span>·</span>
               <i class="hand-prefix">第</i> <b id="hand-number">01</b> <i class="hand-suffix">手</i>
               <span id="street-divider">·</span> <span id="street-label">准备发牌</span
-              ><span id="replay-label" class="replay-label" hidden></span>
+              ><span id="replay-label" class="replay-label" hidden></span
+              ><span id="entry-structure" class="entry-structure"
+                ><span id="entry-structure-levels">每 10 手涨盲，最高 1.5K / 3K</span
+                ><span aria-hidden="true"> · </span
+                ><span id="entry-structure-final">剩 3 人进入决赛圈</span></span
+              >
             </div>
             <div class="blind-info">盲注 <b id="blind-values">100 / 200</b></div>
             <section
@@ -506,7 +533,9 @@
             <div>
               <span id="stakes-label">起始盲注</span>
               <p id="stakes-description" class="setting-description">
-                点击小盲修改，大盲为小盲的两倍。
+                点击小盲修改，大盲为小盲的两倍。<span id="stakes-structure"
+                  >每 10 手升一级，最高 1.5K / 3K，剩 3 人进入决赛圈。</span
+                >
               </p>
             </div>
             <div class="blind-setting-values" aria-labelledby="stakes-label">
@@ -1157,6 +1186,13 @@
               >
             </div>
             <div>
+              <b>CL（筹码领先者）</b
+              ><span
+                >chip leader 的缩写，指当前仍在桌上、筹码最多的玩家。CL
+                会随每手结算变化；你输光后补码，补到 CL 筹码的一半。</span
+              >
+            </div>
+            <div>
               <b>底池赔率／保本胜率</b
               ><span
                 >底池赔率是当前可赢筹码与跟注成本之比。保本胜率用本次新增风险除以跟注后可争夺底池，平分按份额计算，边池和退款也要计入。</span
@@ -1247,10 +1283,12 @@
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" /></svg>
         </button>
       </div>
-      <div class="win-rate-body">
+      <div class="win-rate-dock">
         <section class="win-rate-felt" aria-label="公共牌">
           <div id="win-rate-board"></div>
         </section>
+      </div>
+      <div class="win-rate-body">
         <section class="win-rate-seats" aria-label="玩家底牌">
           <div id="win-rate-players"></div>
         </section>

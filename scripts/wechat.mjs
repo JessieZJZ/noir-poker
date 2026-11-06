@@ -46,8 +46,15 @@ export function compactWxml(text) {
 export function tutorialSubpackageModule(compiled) {
   return compiled.replace(/require\((['"])\.\/([^'"]+)\1\)/g, 'require($1../shared/engine/$2$1)');
 }
+// The main package stays below DevTools' 1.5 MB quality line with headroom.
+export const WECHAT_MAIN_BUDGET = 1.45 * 1024 * 1024;
 export function wechatPackageBytes(files, app) {
-  const roots = (app.subpackages || []).map((entry) => entry.root.replace(/\/$/, '') + '/');
+  // The review worker is its own subpackage, downloaded before it starts.
+  const workers = app.workers?.isSubpackage ? [app.workers.path.replace(/\/$/, '') + '/'] : [];
+  const roots = [
+    ...(app.subpackages || []).map((entry) => entry.root.replace(/\/$/, '') + '/'),
+    ...workers,
+  ];
   const sizes = Object.fromEntries(
     ['main', ...roots.map((root) => root.slice(0, -1))].map((key) => [key, 0]),
   );
@@ -58,6 +65,10 @@ export function wechatPackageBytes(files, app) {
   for (const [name, size] of Object.entries(sizes))
     if (size > 2 * 1024 * 1024)
       throw Error(`WeChat ${name} package exceeds the 2 MiB budget (${size})`);
+  if (sizes.main > WECHAT_MAIN_BUDGET)
+    throw Error(
+      `WeChat main package exceeds its ${WECHAT_MAIN_BUDGET} byte budget (${sizes.main})`,
+    );
   if (files.reduce((sum, file) => sum + file.bytes, 0) > 20 * 1024 * 1024)
     throw Error('WeChat total packages exceed the 20 MiB budget');
   return sizes;
@@ -137,6 +148,9 @@ async function compileJs(sourceDirectory, destination) {
       format: 'cjs',
       target: 'es2019',
       minify: true,
+      // UTF-8 keeps each Chinese character at 3 bytes instead of a 6-byte
+      // \uXXXX escape; the main package budget depends on it.
+      charset: 'utf8',
       write: false,
     });
     const target = path.join(destination, file);
@@ -327,11 +341,13 @@ export async function buildWechat(output = wechatOutput) {
       'entry-welcome-scale.js',
       'trophy-placement.js',
       'ceremony-sounds.js',
+      'sound-synth.js',
     ]) {
       const compiled = await transform(await readFile(path.join(root, 'src/ui', name), 'utf8'), {
         format: 'cjs',
         target: 'es2019',
         minify: true,
+        charset: 'utf8',
       });
       await writeFile(path.join(staging, 'shared/ui', name), compiled.code);
     }
@@ -364,6 +380,7 @@ export async function buildWechat(output = wechatOutput) {
         format: 'cjs',
         target: 'es2019',
         minify: true,
+        charset: 'utf8',
       });
       await writeFile(path.join(staging, file), result.code);
     }
@@ -371,6 +388,7 @@ export async function buildWechat(output = wechatOutput) {
       entryPoints: [path.join(template, 'workers/review.js')],
       bundle: true,
       minify: true,
+      charset: 'utf8',
       format: 'iife',
       target: 'es2019',
       outfile: path.join(staging, 'workers/review.js'),
@@ -384,15 +402,12 @@ export async function buildWechat(output = wechatOutput) {
       .resize(128, 128)
       .png({ compressionLevel: 9 })
       .toFile(path.join(staging, 'assets/launch-icon.png'));
-    await mkdir(path.join(staging, 'assets/sounds'), { recursive: true });
-    for (const sound of ['fold', 'check', 'chip', 'deal', 'win'])
-      await writeFile(path.join(staging, `assets/sounds/${sound}.wav`), soundWave(sound));
-    // The champions' crowd cheers play from the main package, ready at game end.
+    // Recordings live in the preloaded sounds subpackage: the chip stack and
+    // the champions' cheers. Synthesized cues are written to user files at
+    // runtime, so the main package carries no audio.
+    await writeFile(path.join(staging, 'sounds/chip.wav'), soundWave('chip'));
     for (const file of Object.values(CHEER_FILES))
-      await cp(
-        path.join(root, 'public', file),
-        path.join(staging, 'assets/sounds', path.basename(file)),
-      );
+      await cp(path.join(root, 'public', file), path.join(staging, 'sounds', path.basename(file)));
     await cp(
       path.join(root, 'public', MOBILE_BACKGROUND_MUSIC_PATH),
       path.join(staging, 'music/background-music.m4a'),
@@ -514,7 +529,7 @@ export async function verifyWechat(output = wechatOutput) {
   )
     throw Error('WeChat background music differs from source');
   for (const file of Object.values(CHEER_FILES)) {
-    const packaged = `assets/sounds/${path.basename(file)}`;
+    const packaged = `sounds/${path.basename(file)}`;
     if (!expected.includes(packaged)) throw Error(`Missing local ${packaged}`);
     if (
       checksum(await readFile(path.join(output, packaged))) !==

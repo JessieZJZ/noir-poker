@@ -10,12 +10,14 @@ import {
   playBotTurn,
   seatPosition,
   rebuyHero,
+  heroRebuyAmount,
   heroRebuysLeft,
   needsHeroRebuy,
   MAX_HERO_REBUYS,
   deckOfCards,
 } from '../../src/engine/poker.js';
 import { publicActionContext } from '../../src/engine/public-action-context.js';
+import { compactChips } from '../../src/engine/chip-format.js';
 import { isPremiumStart } from '../../src/engine/starting-hands.js';
 import {
   createGameRecords,
@@ -107,8 +109,34 @@ test('busted bots leave the ring, rank by starting stack, and share a place on e
   assert.equal(total(g), chips);
 });
 
+test('a refill is half the chip leader still in the game, in whole chips of the game denomination', () => {
+  for (const config of [
+    stakes,
+    { smallBlind: 100, bigBlind: 200, startingStack: 20000, chipUnit: 100 },
+  ]) {
+    const g = newGame(5, config),
+      unit = config.chipUnit;
+    g.phase = 'done';
+    g.players[0].stack = 0;
+    // An odd number of chips at the leader rounds down to the denomination.
+    g.players[1].stack = config.startingStack * 3 + unit;
+    g.players[2].stack = config.startingStack;
+    // A seat that has left the table is not the chip leader.
+    g.players[3].stack = config.startingStack * 9;
+    g.players[3].out = true;
+    const expected = Math.floor((config.startingStack * 3 + unit) / 2 / unit) * unit;
+    assert.equal(heroRebuyAmount(g), expected);
+    assert.equal(expected % unit, 0);
+    const before = g.stats.buyin;
+    rebuyHero(g);
+    assert.equal(g.players[0].stack, expected);
+    assert.equal(g.stats.buyin, before + expected);
+  }
+});
+
 test('the hero refills at most three times, each refill is explicit and counted once', () => {
   const g = newGame(5, stakes);
+  let bought = stakes.startingStack;
   for (let refill = 1; refill <= MAX_HERO_REBUYS + 1; refill++) {
     g.players[0].stack = 0;
     g.phase = 'done';
@@ -119,12 +147,18 @@ test('the hero refills at most three times, each refill is explicit and counted 
     }
     assert.equal(needsHeroRebuy(g), true);
     assert.throws(() => startHand(g), /补充筹码/);
+    const leader = Math.max(...g.players.slice(1).map((p) => p.stack)),
+      amount = Math.floor(leader / 2 / stakes.chipUnit) * stakes.chipUnit;
     rebuyHero(g);
-    assert.equal(g.players[0].stack, stakes.startingStack);
-    assert.equal(g.stats.buyin, stakes.startingStack * (refill + 1));
+    bought += amount;
+    assert.equal(g.players[0].stack, amount);
+    assert.equal(g.stats.buyin, bought);
     assert.equal(heroRebuysLeft(g), MAX_HERO_REBUYS - refill);
     startHand(g);
-    assert.match(g.logs.find((l) => l.player === 0 && l.type === 'info').text, /补充 5K/);
+    assert.match(
+      g.logs.find((l) => l.player === 0 && l.type === 'info').text,
+      new RegExp(`补充 ${compactChips(amount)} 虚拟筹码（筹码领先者 CL 的一半）`),
+    );
     assert.throws(() => rebuyHero(g), /只有筹码输光/);
     g.players.forEach((p) => {
       p.stack += p.total;
@@ -265,9 +299,18 @@ test('random full games conserve chips plus refills until they end', () => {
   for (let run = 0; run < 10; run++) {
     const g = newGame(5 + (run % 5), stakes),
       start = total(g);
-    let hands = 0;
+    let hands = 0,
+      refilled = 0;
     while (!g.over && hands++ < (run % 2 ? 400 : 60)) {
-      if (needsHeroRebuy(g)) rebuyHero(g);
+      if (needsHeroRebuy(g)) {
+        const leader = Math.max(...g.players.filter((p) => p.id && !p.out).map((p) => p.stack));
+        rebuyHero(g);
+        assert.equal(
+          g.players[0].stack,
+          Math.floor(leader / 2 / stakes.chipUnit) * stakes.chipUnit,
+        );
+        refilled += g.players[0].stack;
+      }
       startHand(g);
       while (g.phase !== 'done') {
         if (g.phase === 'between') advanceStreet(g);
@@ -277,7 +320,7 @@ test('random full games conserve chips plus refills until they end', () => {
           act(g, g.actor, legal.canRaise ? 'raise' : 'call', legal.maxRaiseTo);
         } else playBotTurn(g, Math.random, { trials: 4 });
       }
-      assert.equal(total(g), start + g.rebuys * stakes.startingStack);
+      assert.equal(total(g), start + refilled);
       assert.ok(g.players.every((p) => p.stack % stakes.chipUnit === 0));
     }
     if (run % 2) assert.ok(g.over, 'an all-shove table always ends');

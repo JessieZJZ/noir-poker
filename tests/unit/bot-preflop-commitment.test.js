@@ -85,16 +85,23 @@ test('QQ and AK defend a closed heads-up 4-bet on every table size without openi
         let calls = 0;
         for (const seed of [1, 2, 3, 4]) {
           const d = decision(g, seed);
-          const priced = d.trace.equity + d.trace.callTolerance >= d.trace.requiredEquity;
+          // Three seats left of a five-seat game is the bubble: a call that
+          // can bust also needs the survival premium. Heads-up and full
+          // tables carry none.
+          const priced =
+            d.trace.equity + d.trace.callTolerance >=
+            d.trace.requiredEquity + d.trace.survivalPremium;
           // Borderline AKo can still fall below the price. A starting-hand
           // name must neither force a call nor override a supported one.
           assert.equal(d.action, priced ? 'call' : 'fold');
           assert.equal(d.trace.view.opponents.length, 1);
           assert.equal(d.trace.allIn.line, 'multi-raise-shove');
           assert.equal(d.trace.view.history.filter((a) => a.action === 'raise').length, 3);
+          assert.equal(d.trace.survivalPremium > 0, seats === 3);
           calls += Number(d.action === 'call');
           if (seed === 1) finishPressureCase(engine, g, d);
         }
+        if (seats === 3) continue;
         assert.ok(calls > 0, `${seats}/${difficulty}/${hand} must not systematically fold`);
         if (hand === 'QQ') assert.ok(calls >= 3, 'QQ normally supports the closed-heads-up price');
       }

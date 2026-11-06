@@ -2739,7 +2739,6 @@
   "若这次小注用于取值，需要较弱成牌愿意跟注；河牌已发完，听牌没有继续补牌的机会。": "Si cette petite mise vise la value, des mains faites plus faibles doivent accepter de payer. La river est déjà sortie : les tirages ne peuvent plus s’améliorer. ",
   "较小对子（如 {0}{1}）或部分未成对高牌": "des petites paires servies (comme {0}{1}) ou certaines mains non appariées à cartes hautes",
   "这些跟注者的范围也会影响获池机会，不能只判断下注者是否在诈唬。": "Les ranges de ces joueurs qui ont payé influencent aussi les chances de gagner le pot ; il ne suffit pas de déterminer si le miseur bluffe.",
-  "这条跟注路线的依据是当前价格下保留改善与摊牌机会，仍依赖对手范围较宽；未改善且面对不利下注时可弃牌，能免费过牌则保留机会。": "Cette ligne de call conserve des chances d’amélioration et de gain à l’abattage au prix actuel, mais suppose toujours une range adverse assez large. Sans amélioration, un fold reste possible face à une mise défavorable ; un check gratuit préserve ces chances.",
   "这笔大注需要还在场的对手有足够共同弃牌空间；若他们只用强牌跟注，单靠这些补牌较难弥补投入。": "Cette grosse mise exige une probabilité suffisante de faire coucher tous les adversaires encore dans le coup. S’ils ne paient qu’avec des mains fortes, ces outs seuls auront du mal à compenser l’investissement.",
   "部分尚未成对的起手牌": "certaines mains de départ non appariées",
   "；其中至少": " ; sur ce montant, au moins",
@@ -2990,5 +2989,6 @@
   "目前只有高牌，尚未成对，过牌保留在摊牌时击败较弱高牌的机会，避免主动做大底池。": " Vous n’avez qu’une carte haute, sans paire. Checker conserve la possibilité de battre des cartes hautes plus faibles à l’abattage sans grossir activement le pot. ",
   "过牌不增加投入，本轮仍需等待后面玩家行动。": " Checker n’ajoute pas de jetons ; les joueurs derrière doivent encore agir dans ce tour. ",
   "重打 {0} 这手，{1}。{2}{3}底池为 {4}，{5}。加注路线要核对对手是否有足够弃牌空间，以及被跟注后的摊牌机会是否与投入相称。{6}": " Rejouez {0} : {1}. {2}{3} Le pot est de {4} ; {5}. Pour la ligne de relance, évaluez si les adversaires se couchent assez souvent et si les chances à l’abattage en cas de call justifient la mise. {6} ",
-  "底池为 {0}，{1}。加注路线要核对对手是否有足够弃牌空间，以及被跟注后的摊牌机会是否与投入相称。": " Le pot est de {0} ; {1}. Pour la ligne de relance, évaluez si les adversaires se couchent assez souvent et si les chances à l’abattage en cas de call justifient la mise. "
+  "底池为 {0}，{1}。加注路线要核对对手是否有足够弃牌空间，以及被跟注后的摊牌机会是否与投入相称。": " Le pot est de {0} ; {1}. Pour la ligne de relance, évaluez si les adversaires se couchent assez souvent et si les chances à l’abattage en cas de call justifient la mise. ",
+  "这条跟注路线的依据是当前价格下保留改善与摊牌机会，仍依赖对手范围较宽。未改善且面对不利下注时可弃牌，能免费过牌则保留机会。": "Cette ligne de call conserve des chances d’amélioration et de gain à l’abattage au prix actuel, mais suppose toujours une range adverse assez large. Sans amélioration, un fold reste possible face à une mise défavorable ; un check gratuit préserve ces chances."
 }

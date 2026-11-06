@@ -40,9 +40,9 @@ test('guide menu opens the calculator and leaves the live hand untouched', async
   const before = await page.evaluate(() => window.qa.state());
   await page.locator('#rules-button').click();
   await expect(page.locator('#guide-menu [role="menuitem"]')).toHaveText([
-    '玩法指南',
-    '新手引导',
     '对局记录',
+    '新手引导',
+    '玩法指南',
     '胜率计算器',
   ]);
   await page.locator('#win-rate-menu-item').click();
@@ -407,3 +407,49 @@ for (const locale of ['en', 'ko', 'es', 'it', 'pt', 'de', 'fr', 'ru']) {
     expect(seat.overflow).toBe(true);
   });
 }
+
+test('Back closes the calculator and stays on the table; the close button leaves no extra entry', async ({
+  page,
+}) => {
+  await openCalculator(page);
+  const url = page.url();
+  await page.goBack();
+  await expect(page.locator('#win-rate-dialog')).toBeHidden();
+  expect(page.url()).toBe(url);
+  await expect(page.locator('html')).toHaveAttribute('data-app-ready', 'true');
+  const length = await page.evaluate(() => history.length);
+  await page.locator('#rules-button').click();
+  await page.locator('#win-rate-menu-item').click();
+  await expect(page.locator('#win-rate-dialog')).toBeVisible();
+  await page.locator('#win-rate-dialog .close-dialog').click();
+  await expect(page.locator('#win-rate-dialog')).toBeHidden();
+  // The entry the calculator pushed is popped again when it closes itself.
+  await expect.poll(() => page.evaluate(() => history.state?.noirLayer ?? null)).toBeNull();
+  // Reopening replaced the forward entry left by Back, so the history did not grow.
+  expect(await page.evaluate(() => history.length)).toBe(length);
+});
+
+test('the header and board stay at the top while the seats scroll', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 700 });
+  await openCalculator(page);
+  for (let i = 0; i < 4; i++) await page.locator('#win-rate-add').click();
+  const top = () =>
+    page.evaluate(() => ({
+      header: document.querySelector('.win-rate-header').getBoundingClientRect().top,
+      board: document.querySelector('.win-rate-felt').getBoundingClientRect().top,
+      seats: document.querySelector('.win-rate-seats').getBoundingClientRect().top,
+    }));
+  const before = await top();
+  await page.locator('.win-rate-body').evaluate((body) => (body.scrollTop = body.scrollHeight));
+  const after = await top();
+  expect(await page.locator('.win-rate-body').evaluate((body) => body.scrollTop)).toBeGreaterThan(
+    0,
+  );
+  expect(after.header).toBe(before.header);
+  expect(after.board).toBe(before.board);
+  expect(after.seats).toBeLessThan(before.seats);
+  // Scrolled seats pass under the board, never over it.
+  const felt = await page.locator('.win-rate-felt').boundingBox();
+  const body = await page.locator('.win-rate-body').boundingBox();
+  expect(body.y).toBeGreaterThanOrEqual(felt.y + felt.height);
+});

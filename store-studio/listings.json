@@ -1,0 +1,53 @@
+{
+  "source": {
+    "pullRequest": "https://github.com/JessieZJZ/noir-poker/pull/70",
+    "commit": "94e56b1ef009f0729508491e5f2155fd37d2bf99",
+    "preparedOn": "2026-11-06",
+    "status": "Reviewable store assets; not a store submission",
+    "revision": 2
+  },
+  "shared": {
+    "copyright": "2026 郑建宙",
+    "supportEmail": "958182284@qq.com",
+    "supportUrl": "https://github.com/JessieZJZ/noir-poker/issues",
+    "privacyPolicyUrl": null,
+    "marketingUrl": null,
+    "businessModel": "paid-upfront",
+    "youtubeVideoUrl": null,
+    "primaryCategorySuggestion": "Games",
+    "subcategorySuggestion": "Card",
+    "contentDisclosure": "Simulated poker gambling using virtual chips; complete each store's content rating questionnaire accurately."
+  },
+  "en-US": {
+    "appLocale": "en",
+    "apple": {
+      "name": "NOIR Poker",
+      "subtitle": "Learn, play, review, repeat",
+      "promotionalText": "A quieter place to practice Hold'em. Learn at the table, review the decisions behind each hand, then replay the same deal to explore another line.",
+      "keywords": "texas,holdem,offline,trainer,strategy,odds,equity,cards,practice,tutorial,hand review",
+      "description": "Every hand is a chance to understand your next decision.\n\nNOIR Poker is an offline no-limit Texas Hold'em practice app. Take a seat against computer opponents, learn through guided hands, and return to the moments that mattered. No account is needed.\n\nLEARN AT THE TABLE\nAn interactive beginner tutorial introduces hole cards, position, blinds, betting rounds, raises, folds, all-ins and side pots. Four guided hands lead into a hand you play yourself.\n\nMAKE YOUR OWN DECISIONS\nChoose tables with 5–9 players, three difficulty levels and eight training styles. Practice sizing bets, reading public actions and adjusting to different opponents. Table hints and hand rankings are available as you play.\n\nREVIEW THE REASONING\nAfter a hand, explore your decisions and the opponents' actions. Reviews consider the information available before each decision, the price to continue and assumed opponent ranges. They use heuristics and simulation estimates, rather than knowing the opponents' hidden cards or judging a choice solely by the result.\n\nREPLAY THE SAME DEAL\nRestore the original cards, dealing order and starting stacks. Try a different decision and see how the hand develops. Browse locally saved game records to revisit earlier play.\n\nEXPLORE THE ODDS\nEnter hole cards and a board in the standalone win-rate calculator. Compare win and tie probabilities and see the next cards that can put a hand ahead. Depending on the scenario, results use enumeration or sampling.\n\nPRACTICE ON YOUR TERMS\nPlay offline with locally bundled artwork and music. Adjust table size, starting blinds, difficulty, styles, hints, sound, music and vibration. The app supports 11 interface languages.\n\nAll chips are virtual, have no cash value and cannot be purchased or redeemed. There are no prizes, real-money wagers or human opponents. Reviews and odds are learning aids and do not guarantee optimal play or profit.\n\nOne upfront purchase unlocks the complete app. No ads, subscriptions or in-app purchases."
+    },
+    "google": {
+      "name": "NOIR Poker",
+      "shortDescription": "Offline Hold'em practice with guided hands, decision reviews and poker odds",
+      "fullDescriptionSource": "apple.description"
+    },
+    "reviewNotes": "No login or demo account is required. All practice uses virtual chips with no cash value, chip sales, redemption, prizes or real-money betting. The installed app bundles its code, fonts, artwork, music and review logic locally. On first launch, tap Take a seat. The header menu opens Beginner tutorial, How to play, Game records and Win Rate Calculator. Finish a hand to open its decision review or replay the original deal. Settings includes language, table size, starting blinds, difficulty and computer styles. No remote production server URL is configured. The app is a paid upfront purchase without in-app purchases or subscriptions."
+  },
+  "zh-Hans": {
+    "appLocale": "zh-CN",
+    "apple": {
+      "name": "NOIR Poker",
+      "subtitle": "学会判断，让每一手都有收获",
+      "promotionalText": "从互动引导到独立对局，从决策复盘到原牌重打。在安静的离线牌桌上，理解每次行动的理由，探索另一种选择。",
+      "keywords": "德州扑克,离线,单机,训练,练习,复盘,胜率,概率,新手,教程,策略,虚拟筹码",
+      "description": "每一手牌，都是理解下一次决策的机会。\n\nNOIR Poker 是一款离线无限注德州扑克练习应用。与电脑对手同桌，在引导中熟悉规则，在复盘中理解选择，再用同一副牌探索不同打法。无需注册，打开即可练习。\n\n在牌桌上学会规则\n互动新手引导从底牌、位置、盲注和下注轮次开始，逐步介绍加注、弃牌、全下与边池。四手引导练习之后，再独立完成一手牌。\n\n练习自己的判断\n选择 5–9 人桌、三个难度和八种训练风格，练习下注尺度、观察公开行动，以及应对不同对手。需要时可查看牌桌提示与牌型速查。\n\n复盘行动背后的理由\n牌局结束后，逐步查看自己与对手的行动。复盘结合行动前的公开信息、跟注价格和假设对手范围，使用启发式与模拟估算解释选择，不靠偷看对手底牌或最终输赢评价决策。\n\n同一副牌，试试另一条路线\n重打会恢复原始底牌、发牌顺序和起始筹码。换一种选择，观察牌局如何发展；也可以浏览本机保存的对局记录，回看之前的练习。\n\n把胜率看得更清楚\n在独立胜率计算器中设置底牌与公共牌，比较获胜、平局概率，并查看下一张能让该手牌领先的牌。计算会根据场景采用枚举或抽样，界面说明计算方式。\n\n按自己的节奏练习\n离线使用，画面、字体、音乐和分析逻辑都在本地。可调整人数、起始盲注、难度、风格、提示、音效、音乐与振动。界面支持 11 种语言。\n\n所有筹码均为虚拟筹码，无现金价值，不能购买或兑换。应用没有奖金、真钱下注或真人对赌。复盘与胜率仅供学习参考，不保证最优打法或收益。\n\n商店一次购买即可使用完整应用。无广告、订阅或应用内购买。"
+    },
+    "google": {
+      "name": "NOIR Poker",
+      "shortDescription": "离线德州扑克练习：互动引导、决策复盘、原牌重打与胜率计算，使用虚拟筹码，无需登录",
+      "fullDescriptionSource": "apple.description"
+    },
+    "reviewNotes": "无需登录或审核账号。所有练习使用无现金价值的虚拟筹码，不出售筹码、不能提现、无奖金或真钱下注。安装包包含本地代码、字体、画面、音乐与复盘逻辑。首次启动点击“入座开练”；顶部菜单可进入新手引导、玩法指南、对局记录与胜率计算器。完成一手牌后可复盘或重打原牌。设置中可调整语言、人数、起始盲注、难度及电脑风格。正式包没有远程 server.url。应用采用商店买断制，无应用内购买或订阅。"
+  }
+}

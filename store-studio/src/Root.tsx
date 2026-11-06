@@ -1,0 +1,229 @@
+import React from "react";
+import { Composition, Folder, Still } from "remotion";
+import { PosterSheet, Feature, FilmPanel, formats } from "./International";
+import catalog from "../locales/catalog.json";
+import { SharedFilm } from "./SharedFilm";
+import { StoreFilm } from "./StoreFilm";
+import { StoreStill } from "./StoreStill";
+
+export const RemotionRoot: React.FC = () => (
+  <>
+    <Folder name="International-Kits">
+      {Object.keys(catalog).flatMap((language) => [
+        ...Object.entries(formats).map(([format, [w, h]]) => (
+          <Still
+            key={language + format}
+            id={"Sheet-" + language + "-" + format}
+            component={PosterSheet}
+            width={w * 2}
+            height={h * 4}
+            defaultProps={{
+              locale: language as keyof typeof catalog,
+              format: format as keyof typeof formats,
+            }}
+          />
+        )),
+        <Still
+          key={language + "feature"}
+          id={"Intl-Feature-" + language}
+          component={Feature}
+          width={1024}
+          height={500}
+          defaultProps={{ locale: language as keyof typeof catalog }}
+        />,
+        ...Array.from({ length: 6 }, (_, scene) => (
+          <Still
+            key={language + scene}
+            id={"Panel-" + language + "-" + scene}
+            component={FilmPanel}
+            width={1920}
+            height={886}
+            defaultProps={{ locale: language as keyof typeof catalog, scene }}
+          />
+        )),
+      ])}
+    </Folder>
+    <Folder name="Shared-Store-Master">
+      <Composition
+        id="Shared-ZH"
+        component={SharedFilm}
+        width={1920}
+        height={886}
+        fps={30}
+        durationInFrames={894}
+        defaultProps={{ language: "zh-CN" as const }}
+      />
+      <Composition
+        id="Shared-EN"
+        component={SharedFilm}
+        width={1920}
+        height={886}
+        fps={30}
+        durationInFrames={894}
+        defaultProps={{ language: "en" as const }}
+      />
+    </Folder>
+    <Folder name="Apple-Landscape-Preview">
+      <Composition
+        id="Apple-EN"
+        component={StoreFilm}
+        width={1920}
+        height={886}
+        fps={30}
+        durationInFrames={894}
+        defaultProps={{
+          language: "en",
+          platform: "ios",
+          presentation: "apple",
+          narration: true,
+        }}
+      />
+      <Composition
+        id="Apple-ZH"
+        component={StoreFilm}
+        width={1920}
+        height={886}
+        fps={30}
+        durationInFrames={894}
+        defaultProps={{
+          language: "zh-CN",
+          platform: "ios",
+          presentation: "apple",
+          narration: true,
+        }}
+      />
+      <Composition
+        id="Apple-EN-Music"
+        component={StoreFilm}
+        width={1920}
+        height={886}
+        fps={30}
+        durationInFrames={894}
+        defaultProps={{
+          language: "en",
+          platform: "ios",
+          presentation: "apple",
+          narration: false,
+        }}
+      />
+      <Composition
+        id="Apple-ZH-Music"
+        component={StoreFilm}
+        width={1920}
+        height={886}
+        fps={30}
+        durationInFrames={894}
+        defaultProps={{
+          language: "zh-CN",
+          platform: "ios",
+          presentation: "apple",
+          narration: false,
+        }}
+      />
+    </Folder>
+    <Folder name="Google-Play-Promo">
+      <Composition
+        id="Google-EN"
+        component={StoreFilm}
+        width={1920}
+        height={1080}
+        fps={30}
+        durationInFrames={894}
+        defaultProps={{
+          language: "en",
+          platform: "android",
+          presentation: "google",
+          narration: true,
+        }}
+      />
+      <Composition
+        id="Google-ZH"
+        component={StoreFilm}
+        width={1920}
+        height={1080}
+        fps={30}
+        durationInFrames={894}
+        defaultProps={{
+          language: "zh-CN",
+          platform: "android",
+          presentation: "google",
+          narration: true,
+        }}
+      />
+      <Composition
+        id="Google-EN-Music"
+        component={StoreFilm}
+        width={1920}
+        height={1080}
+        fps={30}
+        durationInFrames={894}
+        defaultProps={{
+          language: "en",
+          platform: "android",
+          presentation: "google",
+          narration: false,
+        }}
+      />
+      <Composition
+        id="Google-ZH-Music"
+        component={StoreFilm}
+        width={1920}
+        height={1080}
+        fps={30}
+        durationInFrames={894}
+        defaultProps={{
+          language: "zh-CN",
+          platform: "android",
+          presentation: "google",
+          narration: false,
+        }}
+      />
+    </Folder>
+    <Folder name="Store-Screenshots">
+      {(["en", "zh-CN"] as const).flatMap((language) =>
+        (["ios", "android", "ipad"] as const).flatMap((platform) =>
+          Array.from({ length: 8 }, (_, feature) => (
+            <Still
+              key={`${platform}-${language}-${feature}`}
+              id={`Screen-${platform}-${language}-${feature + 1}`}
+              component={StoreStill}
+              width={
+                platform === "ipad" ? 2752 : platform === "ios" ? 1290 : 1080
+              }
+              height={
+                platform === "ipad" ? 2064 : platform === "ios" ? 2796 : 1920
+              }
+              defaultProps={{ language, platform, feature, kind: "screenshot" }}
+            />
+          )),
+        ),
+      )}
+    </Folder>
+    <Folder name="Feature-Graphics">
+      <Still
+        id="Feature-EN"
+        component={StoreStill}
+        width={1024}
+        height={500}
+        defaultProps={{
+          language: "en",
+          platform: "android",
+          feature: 0,
+          kind: "feature-graphic",
+        }}
+      />
+      <Still
+        id="Feature-ZH"
+        component={StoreStill}
+        width={1024}
+        height={500}
+        defaultProps={{
+          language: "zh-CN",
+          platform: "android",
+          feature: 0,
+          kind: "feature-graphic",
+        }}
+      />
+    </Folder>
+  </>
+);

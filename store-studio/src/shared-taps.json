@@ -1,0 +1,90 @@
+{
+  "zh-CN": {
+    "review": [
+      {
+        "name": "open-review",
+        "frame": 39,
+        "x": 338.25,
+        "y": 740.5
+      }
+    ],
+    "retry": [
+      {
+        "name": "start-replay",
+        "frame": 39,
+        "x": 246.75,
+        "y": 740.5
+      },
+      {
+        "name": "different-decision",
+        "frame": 128,
+        "x": 200.0078125,
+        "y": 823
+      }
+    ],
+    "records": [
+      {
+        "name": "open-menu",
+        "frame": 26,
+        "x": 268.5,
+        "y": 91.5
+      },
+      {
+        "name": "open-records",
+        "frame": 58,
+        "x": 218,
+        "y": 151.5
+      },
+      {
+        "name": "open-record-detail",
+        "frame": 105,
+        "x": 201,
+        "y": 422.09375
+      }
+    ]
+  },
+  "en": {
+    "review": [
+      {
+        "name": "open-review",
+        "frame": 39,
+        "x": 338.25,
+        "y": 740.5
+      }
+    ],
+    "retry": [
+      {
+        "name": "start-replay",
+        "frame": 39,
+        "x": 246.75,
+        "y": 740.5
+      },
+      {
+        "name": "different-decision",
+        "frame": 128,
+        "x": 200.0078125,
+        "y": 823
+      }
+    ],
+    "records": [
+      {
+        "name": "open-menu",
+        "frame": 26,
+        "x": 223.5078125,
+        "y": 91.5
+      },
+      {
+        "name": "open-records",
+        "frame": 59,
+        "x": 197.359375,
+        "y": 150.5
+      },
+      {
+        "name": "open-record-detail",
+        "frame": 105,
+        "x": 201,
+        "y": 418.09375
+      }
+    ]
+  }
+}

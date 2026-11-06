@@ -22,11 +22,25 @@
                                     <constraint firstAttribute="height" constant="180" id="mark-height"/>
                                 </constraints>
                             </imageView>
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="noir-wordmark">
+                                <attributedString key="attributedText">
+                                    <fragment content="NOIR POKER">
+                                        <attributes>
+                                            <color key="NSColor" red="0.9137254902" green="0.9490196078" blue="0.937254902" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                                            <font key="NSFont" metaFont="systemBold" size="18"/>
+                                            <real key="NSKern" value="6"/>
+                                        </attributes>
+                                    </fragment>
+                                </attributedString>
+                                <nil key="highlightedColor"/>
+                            </label>
                         </subviews>
                         <color key="backgroundColor" red="0.0431372549" green="0.0627450980" blue="0.0901960784" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                         <constraints>
                             <constraint firstItem="noir-mark" firstAttribute="centerX" secondItem="snD-IY-ifK" secondAttribute="centerX" id="mark-center-x"/>
                             <constraint firstItem="noir-mark" firstAttribute="centerY" secondItem="snD-IY-ifK" secondAttribute="centerY" id="mark-center-y"/>
+                            <constraint firstItem="noir-wordmark" firstAttribute="centerX" secondItem="snD-IY-ifK" secondAttribute="centerX" id="wordmark-center-x"/>
+                            <constraint firstItem="noir-wordmark" firstAttribute="top" secondItem="noir-mark" secondAttribute="bottom" constant="12" id="wordmark-top"/>
                         </constraints>
                     </view>
                 </viewController>

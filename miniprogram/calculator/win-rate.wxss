@@ -76,6 +76,18 @@ page {
   padding-right: var(--win-rate-gutter);
   background: radial-gradient(120% 420px at 50% 0, #17332d 0, transparent 70%);
 }
+/* The board sticks under the fixed title, so both stay at the top while the
+   seats scroll; its backing matches the title bar and hides passing seats. */
+.win-rate-dock {
+  position: sticky;
+  z-index: 10;
+  margin: 0 calc(-1 * var(--win-rate-gutter));
+  padding: 2px var(--win-rate-gutter) 12px;
+  background: #101d1e;
+}
+.win-rate-dock + .win-rate-seats {
+  margin-top: 2px;
+}
 .win-rate-felt {
   padding: 14px 12px 8px;
   border: 1px solid #4d7a6d66;
