@@ -43,7 +43,7 @@ test('English templates preserve and reorder dynamic values, while rule state re
   );
   assert.equal(
     localizeText('本次补入 100，本轮累计投入 150'),
-    'Added 100; total bet this round 150',
+    'Added now: 100; total bet this round: 150',
   );
   assert.equal(
     localizeText('跟注占可争夺底池约 40%。随机范围与行动加权范围下，底池权益分别约 50% / 47%。'),
