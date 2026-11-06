@@ -1274,16 +1274,16 @@
       "scope": "PR70 language-review issue cards and approved UI copy; not a full-catalog linguistic certification",
       "method": "AI language review against first-party poker rules and glossaries; repository behavior checked separately; no machine-translation API used",
       "effectiveChangedKeys": {
-        "en": 126,
+        "en": 129,
         "zh-TW": 42,
-        "ja": 189,
-        "ko": 186,
-        "es": 156,
-        "it": 151,
-        "pt": 153,
-        "de": 184,
-        "fr": 157,
-        "ru": 156
+        "ja": 190,
+        "ko": 190,
+        "es": 162,
+        "it": 157,
+        "pt": 159,
+        "de": 189,
+        "fr": 167,
+        "ru": 166
       },
       "referenceDocuments": [
         "docs/pr70-language-fixes-en-es-it-pt.md",
@@ -1292,7 +1292,8 @@
       ],
       "nativeSpeakerCertification": false,
       "followupSource": "对手最近一次翻前加注：{0}。",
-      "gameAmountPresentation": "Generated game prose formats compact chips, decimal percentages and BB ratios after translation; residual sentence terminators use locale punctuation; actor labels and URLs preserved; no engine settlement changes"
+      "gameAmountPresentation": "Generated game prose formats compact chips, decimal percentages and BB ratios after translation; residual sentence terminators use locale punctuation; actor labels and URLs preserved; no engine settlement changes",
+      "observedNativeCopyFollowup": "A bounded review of the same 13 observed source keys across all 11 locales repairs definite dealing/hand terminology, action counters, waiting-count grammar and raise-right subjects, check/call grammar, showdown result and next-focus labels. Original UI/source facts and placeholders preserved. No shared runtime or layout changes."
     }
   ]
 }

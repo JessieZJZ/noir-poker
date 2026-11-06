@@ -961,7 +961,11 @@
     "左右滑动查看完整参数": "Swipe horizontally to see all parameters",
     "短筹码优先比较全下与弃牌": "Short stack: compare all-in and fold first",
     "短筹码时，小额加注或平跟可能让后续难以弃牌；仍需结合位置、价格和合法动作比较。": "With a short stack, a small raise or flat call may make it difficult to fold later. Still compare your options using position, price and the legal actions.",
-    "对手最近一次翻前加注：{0}。": "Most recent preflop raise by an opponent: {0}."
+    "对手最近一次翻前加注：{0}。": "Most recent preflop raise by an opponent: {0}.",
+    "{1} 次": "Actions: {1}",
+    "本轮还有 {0} 位对手等待回应；若出现加注或者再加注，你需要重新决定是否继续。": "Opponents still to respond this round: {0}. If a raise or reraise occurs, you must decide again whether to continue. ",
+    "本轮还有 {0} 位对手等待回应，但当前没有再次加注权，只能补跟或弃牌。": "Opponents still to respond this round: {0}. At present, raising again is not allowed; the only options are Call or Fold.",
+    "本手通过摊牌获得底池。": "You won a pot at showdown in this hand."
   },
   "zh-TW": {
     "设置": "設定",
@@ -2669,7 +2673,8 @@
     "短筹码时，小额加注或平跟可能让后续难以弃牌；仍需结合位置、价格和合法动作比较。": "ショートスタックでは、小さなレイズやコールの後にフォールドしにくくなることがあります。ポジション、必要額、可能なアクションを踏まえて比べましょう。",
     "chip leader 的缩写，指当前仍在桌上、筹码最多的玩家。CL 会随每手结算变化；决赛圈前，输光后每局最多可补码三次，每次补到当时 CL 筹码的一半；决赛圈不可补码。": "chip leader（チップリーダー）の略で、現在テーブルに残っている中で最も多くのチップを持つプレイヤーです。CL は各ハンドの精算後に変わることがあります。ファイナルテーブルに入る前は、すべてのチップを失ったときに 1 ゲームにつき最大 3 回まで、その時点の CL の半分のスタックに補充できます。ファイナルテーブルでは補充できません。",
     "牌桌提示提供当前阶段的简短练习提醒。宽屏在右侧提示卡上开关；窄屏在设置中开关，提醒出现在牌桌左上方，可左右滑动阅读，几秒后收起。声音也可在设置中开关。所有设置保存在此设备，重打保留原来的对手风格与情绪。": "テーブルのヒントは、現在の段階に合った短い練習のアドバイスです。広い画面では右側のヒントカードで、狭い画面では設定からオン／オフにできます。ヒントはテーブルの左上に表示され、左右にスワイプして読めます。数秒後に折りたたまれます。サウンドも設定から切り替えられます。すべての設定はこの端末に保存され、やり直しでは元の相手のスタイルと気分が維持されます。",
-    "对手最近一次翻前加注：{0}。": "対戦相手の直近のプリフロップレイズ：{0}。"
+    "对手最近一次翻前加注：{0}。": "対戦相手の直近のプリフロップレイズ：{0}。",
+    "次行动": "回のアクション"
   },
   "ko": {
     "设置": "설정",
@@ -3521,7 +3526,11 @@
     "短筹码时，小额加注或平跟可能让后续难以弃牌；仍需结合位置、价格和合法动作比较。": "숏 스택에서는 작은 레이즈나 콜을 한 뒤 폴드하기 어려워질 수 있습니다. 포지션, 지불할 금액과 가능한 액션을 함께 고려해 비교해야 합니다.",
     "chip leader 的缩写，指当前仍在桌上、筹码最多的玩家。CL 会随每手结算变化；决赛圈前，输光后每局最多可补码三次，每次补到当时 CL 筹码的一半；决赛圈不可补码。": "chip leader(칩 리더)의 약자로, 현재 테이블에 남아 있는 플레이어 중 칩이 가장 많은 사람입니다. CL은 매 핸드 정산 후 바뀔 수 있습니다. 파이널 테이블 전에는 칩을 모두 잃었을 때 한 게임에서 최대 3번까지, 그때 CL 스택의 절반이 되도록 보충할 수 있습니다. 파이널 테이블에서는 보충할 수 없습니다.",
     "牌桌提示提供当前阶段的简短练习提醒。宽屏在右侧提示卡上开关；窄屏在设置中开关，提醒出现在牌桌左上方，可左右滑动阅读，几秒后收起。声音也可在设置中开关。所有设置保存在此设备，重打保留原来的对手风格与情绪。": "테이블 힌트는 현재 단계에 맞는 짧은 연습 안내입니다. 넓은 화면에서는 오른쪽 힌트 카드에서, 좁은 화면에서는 설정에서 켜고 끕니다. 안내는 테이블 왼쪽 위에 나타나며 좌우로 밀어 읽을 수 있고, 몇 초 후 접힙니다. 소리도 설정에서 켜고 끌 수 있습니다. 모든 설정은 이 기기에 저장되며, 다시 플레이할 때는 원래 상대 스타일과 감정 설정을 유지합니다.",
-    "对手最近一次翻前加注：{0}。": "상대의 최근 프리플랍 레이즈: {0}."
+    "对手最近一次翻前加注：{0}。": "상대의 최근 프리플랍 레이즈: {0}.",
+    "本手动态": "이번 핸드 기록",
+    "次行动": "회의 액션",
+    "{0}此前在{1}过牌，这次在{2}的行动是{3}；之前的过牌不能排除慢打的强牌，现在也可能是新公共牌带来的取值或诈唬，因此要重新判断这笔下注。": "{0}: {1}에서 체크했고, 이번 {2}의 액션은 {3}입니다. 이전에 체크했다고 해서 강한 핸드의 슬로플레이를 배제할 수는 없습니다. 새 커뮤니티 카드로 밸류 베팅이나 블러프 기회가 생겼을 수도 있으므로, 이번 베팅을 다시 판단해야 합니다.",
+    "{0}此前在{1}过牌，这次在{2}的行动是{3}，之前的过牌不能排除慢打的强牌，现在也可能是新公共牌带来的取值或诈唬，因此要重新判断这笔下注。": "{0}: {1}에서 체크했고, 이번 {2}의 액션은 {3}입니다. 이전에 체크했다고 해서 강한 핸드의 슬로플레이를 배제할 수는 없습니다. 새 커뮤니티 카드로 밸류 베팅이나 블러프 기회가 생겼을 수도 있으므로, 이번 베팅을 다시 판단해야 합니다."
   },
   "es": {
     "设置": "Ajustes",
@@ -4373,7 +4382,14 @@
     "左右滑动查看完整参数": "Desliza horizontalmente para ver todos los parámetros",
     "短筹码优先比较全下与弃牌": "Con pocas fichas: compara primero all-in y retirarte",
     "短筹码时，小额加注或平跟可能让后续难以弃牌；仍需结合位置、价格和合法动作比较。": "Con pocas fichas, una subida pequeña o igualar sin subir puede dificultar que abandones la mano más adelante. Compara las opciones teniendo en cuenta la posición, el precio y las acciones legales.",
-    "对手最近一次翻前加注：{0}。": "Última subida preflop de un rival: {0}."
+    "对手最近一次翻前加注：{0}。": "Última subida preflop de un rival: {0}.",
+    "{1} 次": "Acciones: {1}",
+    "本轮还有 {0} 位对手等待回应；若出现加注或者再加注，你需要重新决定是否继续。": "Rivales pendientes de actuar en esta ronda: {0}. Si hay una subida o resubida, tendrás que decidir de nuevo si continúas. ",
+    "本轮还有 {0} 位对手等待回应，但当前没有再次加注权，只能补跟或弃牌。": "Rivales pendientes de actuar en esta ronda: {0}. Por ahora no se puede volver a subir; solo igualar o retirarse.",
+    "本手通过摊牌获得底池。": "Ganaste un bote en el showdown de esta mano.",
+    "下次练习重点": "Enfoque de la próxima práctica",
+    "{0}此前在{1}过牌，这次在{2}的行动是{3}；之前的过牌不能排除慢打的强牌，现在也可能是新公共牌带来的取值或诈唬，因此要重新判断这笔下注。": "{0} pasó en {1}. La acción en {2} es {3}. El check anterior no descarta una mano fuerte jugada de forma pasiva (slowplay). Con la nueva carta comunitaria, esta apuesta también podría ser por valor o un farol. Por eso, vuelve a evaluar esta apuesta.",
+    "{0}此前在{1}过牌，这次在{2}的行动是{3}，之前的过牌不能排除慢打的强牌，现在也可能是新公共牌带来的取值或诈唬，因此要重新判断这笔下注。": "{0} pasó en {1}. La acción en {2} es {3}. El check anterior no descarta una mano fuerte jugada de forma pasiva (slowplay). Con la nueva carta comunitaria, esta apuesta también podría ser por valor o un farol. Por eso, vuelve a evaluar esta apuesta."
   },
   "it": {
     "设置": "Impostazioni",
@@ -5226,7 +5242,14 @@
     "左右滑动查看完整参数": "Scorri in orizzontale per vedere tutti i parametri",
     "短筹码优先比较全下与弃牌": "Stack corto: confronta prima all-in e fold",
     "短筹码时，小额加注或平跟可能让后续难以弃牌；仍需结合位置、价格和合法动作比较。": "Con uno stack corto, un piccolo rilancio o un semplice call possono rendere difficile foldare in seguito. Confronta comunque le opzioni considerando posizione, prezzo e azioni consentite.",
-    "对手最近一次翻前加注：{0}。": "Ultimo rilancio preflop di un avversario: {0}."
+    "对手最近一次翻前加注：{0}。": "Ultimo rilancio preflop di un avversario: {0}.",
+    "{1} 次": "Azioni: {1}",
+    "本轮还有 {0} 位对手等待回应；若出现加注或者再加注，你需要重新决定是否继续。": "Avversari ancora in attesa di agire in questo giro: {0}. In caso di rilancio o controrilancio, devi decidere di nuovo se continuare. ",
+    "本轮还有 {0} 位对手等待回应，但当前没有再次加注权，只能补跟或弃牌。": "Avversari ancora in attesa di agire in questo giro: {0}. Al momento non è possibile rilanciare di nuovo: le uniche opzioni sono call o fold.",
+    "本手通过摊牌获得底池。": "Hai vinto un piatto allo showdown in questa mano.",
+    "下次练习重点": "Focus per la prossima pratica",
+    "{0}此前在{1}过牌，这次在{2}的行动是{3}；之前的过牌不能排除慢打的强牌，现在也可能是新公共牌带来的取值或诈唬，因此要重新判断这笔下注。": "{0} ha fatto check al {1}. L'azione al {2} è {3}. Il check precedente non esclude una mano forte giocata in slowplay. Con la nuova carta comune, questa puntata potrebbe essere per valore o in bluff. Rivaluta quindi questa puntata.",
+    "{0}此前在{1}过牌，这次在{2}的行动是{3}，之前的过牌不能排除慢打的强牌，现在也可能是新公共牌带来的取值或诈唬，因此要重新判断这笔下注。": "{0} ha fatto check al {1}. L'azione al {2} è {3}. Il check precedente non esclude una mano forte giocata in slowplay. Con la nuova carta comune, questa puntata potrebbe essere per valore o in bluff. Rivaluta quindi questa puntata."
   },
   "pt": {
     "设置": "Definições",
@@ -6077,7 +6100,14 @@
     "左右滑动查看完整参数": "Deslize na horizontal para ver todos os parâmetros",
     "短筹码优先比较全下与弃牌": "Stack curto: compare primeiro all-in e desistir",
     "短筹码时，小额加注或平跟可能让后续难以弃牌；仍需结合位置、价格和合法动作比较。": "Com um stack curto, um aumento pequeno ou pagar sem aumentar pode dificultar a desistência depois. Compare as opções considerando posição, preço e ações permitidas.",
-    "对手最近一次翻前加注：{0}。": "Último aumento pré-flop de um adversário: {0}."
+    "对手最近一次翻前加注：{0}。": "Último aumento pré-flop de um adversário: {0}.",
+    "本轮还有 {0} 位对手等待回应；若出现加注或者再加注，你需要重新决定是否继续。": "Adversários ainda por agir nesta rodada: {0}. Se houver aumento ou reaumento, você terá de decidir novamente se continua. ",
+    "本轮还有 {0} 位对手等待回应，但当前没有再次加注权，只能补跟或弃牌。": "Adversários ainda por agir nesta rodada: {0}. No momento, não é possível aumentar novamente; só pagar ou desistir.",
+    "本手通过摊牌获得底池。": "Você ganhou um pote no showdown desta mão.",
+    "下次练习重点": "Foco da próxima prática",
+    "{1} 次": "Ações: {1}",
+    "{0}此前在{1}过牌，这次在{2}的行动是{3}；之前的过牌不能排除慢打的强牌，现在也可能是新公共牌带来的取值或诈唬，因此要重新判断这笔下注。": "{0} deu check no {1}. A ação no {2} é {3}. O check anterior não descarta uma mão forte jogada em slowplay. A nova carta comunitária também pode dar origem a uma aposta por valor ou a um blefe. Por isso, reavalie esta aposta.",
+    "{0}此前在{1}过牌，这次在{2}的行动是{3}，之前的过牌不能排除慢打的强牌，现在也可能是新公共牌带来的取值或诈唬，因此要重新判断这笔下注。": "{0} deu check no {1}. A ação no {2} é {3}. O check anterior não descarta uma mão forte jogada em slowplay. A nova carta comunitária também pode dar origem a uma aposta por valor ou a um blefe. Por isso, reavalie esta aposta."
   },
   "de": {
     "设置": "Einstellungen",
@@ -6929,7 +6959,14 @@
     "短筹码时，小额加注或平跟可能让后续难以弃牌；仍需结合位置、价格和合法动作比较。": "Mit kurzem Stack können kleine Raises oder Calls einen späteren Fold erschweren. Vergleiche weiterhin Position, Preis und legale Aktionen.",
     "chip leader 的缩写，指当前仍在桌上、筹码最多的玩家。CL 会随每手结算变化；决赛圈前，输光后每局最多可补码三次，每次补到当时 CL 筹码的一半；决赛圈不可补码。": "Abkürzung für chip leader: der Spieler mit den meisten Chips unter den noch am Tisch verbliebenen Spielern. Der CL kann sich nach jeder Hand ändern. Vor dem Finaltisch kannst du nach dem Verlust aller Chips pro Spiel höchstens dreimal auf die Hälfte des dann aktuellen CL-Stacks auffüllen. Am Finaltisch ist kein Auffüllen möglich.",
     "牌桌提示提供当前阶段的简短练习提醒。宽屏在右侧提示卡上开关；窄屏在设置中开关，提醒出现在牌桌左上方，可左右滑动阅读，几秒后收起。声音也可在设置中开关。所有设置保存在此设备，重打保留原来的对手风格与情绪。": "Tischhinweise geben kurze Übungstipps für die aktuelle Phase. Auf breiten Bildschirmen schaltest du sie auf der rechten Hinweiskarte ein oder aus, auf schmalen Bildschirmen in den Einstellungen. Sie erscheinen oben links am Tisch. Wische nach links oder rechts, um sie zu lesen; nach einigen Sekunden klappen sie ein. Auch den Ton schaltest du in den Einstellungen ein oder aus. Alle Einstellungen werden auf diesem Gerät gespeichert. Beim erneuten Spielen bleiben der ursprüngliche Gegnerstil und die ursprüngliche Stimmung erhalten.",
-    "对手最近一次翻前加注：{0}。": "Letzte gegnerische Preflop-Erhöhung: {0}."
+    "对手最近一次翻前加注：{0}。": "Letzte gegnerische Preflop-Erhöhung: {0}.",
+    "{0}此前在{1}过牌，这次在{2}的行动是{3}；之前的过牌不能排除慢打的强牌，现在也可能是新公共牌带来的取值或诈唬，因此要重新判断这笔下注。": "{0} hat auf {1} gecheckt. Die aktuelle Aktion auf {2} ist {3}. Der frühere Check schließt eine starke Hand im Slowplay nicht aus. Auch die neue Boardkarte kann eine Value Bet oder einen Bluff ermöglichen. Bewerte diese Bet deshalb neu.",
+    "{0}此前在{1}过牌，这次在{2}的行动是{3}，之前的过牌不能排除慢打的强牌，现在也可能是新公共牌带来的取值或诈唬，因此要重新判断这笔下注。": "{0} hat auf {1} gecheckt. Die aktuelle Aktion auf {2} ist {3}. Der frühere Check schließt eine starke Hand im Slowplay nicht aus. Auch die neue Boardkarte kann eine Value Bet oder einen Bluff ermöglichen. Bewerte diese Bet deshalb neu.",
+    "{0} 过牌": "{0}: Check",
+    "{0}{1}跟注 {2}": "{0}{1}: Call {2}",
+    "次行动": "Aktionen",
+    "本轮还有 {0} 位对手等待回应；若出现加注或者再加注，你需要重新决定是否继续。": "Gegner mit ausstehender Aktion in dieser Setzrunde: {0}. Bei einer Erhöhung oder erneuten Erhöhung musst du neu entscheiden, ob du weiterspielst.",
+    "本轮还有 {0} 位对手等待回应，但当前没有再次加注权，只能补跟或弃牌。": "Gegner mit ausstehender Aktion in dieser Setzrunde: {0}. Du darfst derzeit nicht erneut erhöhen; du kannst nur callen oder folden."
   },
   "fr": {
     "设置": "Paramètres",
@@ -7858,7 +7895,17 @@
     "{0} 在 {1} {2}，加注至 {3}（{4} BB）。{5}加注可让部分弱连张和高牌退出，收益包含弃牌权益；被跟注后，留下的范围可能更强{6}。{7}": "{0} en {1} : {2}. Relance à {3} ({4} BB). {5}Une relance peut faire passer certaines petites cartes connectées et des cartes hautes ; le gain inclut la fold equity. Si elle est suivie, la range restante peut être plus forte{6}. {7}",
     "加注可让部分弱连张和高牌退出，收益包含弃牌权益；被跟注后，留下的范围可能更强": "Une relance peut faire passer certaines petites cartes connectées et des cartes hautes ; le gain inclut la fold equity. Si elle est suivie, la range restante peut être plus forte",
     "{0} 在 {1} 行动弃到你，前面没有开池，加注至 {2}（{3} BB）。A 底牌阻断部分 AA、AK、AQ 组合，后位允许比早位更宽的开池范围。加注可让部分弱连张和高牌退出，收益包含弃牌权益，被跟注后，留下的范围可能更强{4}。这里是开池／偷盲，不是挤压加注。": "{0} en {1} : tous les joueurs avant vous se sont couchés et personne n’a ouvert. Relance à {2} ({3} BB). Un as bloque certaines combinaisons AA, AK et AQ ; une position tardive permet d’ouvrir plus large qu’une position précoce. La relance peut faire passer des petites cartes connectées et des cartes hautes : le gain inclut la fold equity. Si elle est suivie, la range restante peut être plus forte{4}. Il s’agit d’une ouverture ou d’un vol de blindes, pas d’un squeeze.",
-    "对手最近一次翻前加注：{0}。": "Dernière relance adverse préflop enregistrée : {0}."
+    "对手最近一次翻前加注：{0}。": "Dernière relance adverse préflop enregistrée : {0}.",
+    "每人两张底牌，桌上最多发出五张公共牌。从这七张牌中任选五张组成最好的牌，可以用两张、一张或不用自己的底牌。其他人都弃牌时，最后留下的人直接获得底池；多人留到最后时，比较各自最好的五张牌。": "Chaque joueur reçoit deux cartes privatives et jusqu’à cinq cartes communes sont distribuées à la table. Parmi ces sept cartes, formez la meilleure main de cinq cartes possible, en utilisant vos deux cartes privatives, une seule ou aucune. Si tous les autres joueurs se couchent, le dernier joueur en lice remporte directement le pot. Si plusieurs joueurs restent jusqu’à la fin, leurs meilleures mains de cinq cartes sont comparées.",
+    "{0} 次行动": "Actions : {0}",
+    "次行动": "actions",
+    "{1} 次": "Actions : {1}",
+    "本轮还有 {0} 位对手等待回应；若出现加注或者再加注，你需要重新决定是否继续。": "Adversaires devant encore répondre pendant ce tour : {0}. En cas de relance ou de surrelance, vous devez décider à nouveau si vous continuez. ",
+    "本轮还有 {0} 位对手等待回应，但当前没有再次加注权，只能补跟或弃牌。": "Adversaires devant encore répondre pendant ce tour : {0}. Vous ne pouvez pas surrelancer pour le moment ; vous pouvez seulement compléter le call ou vous coucher.",
+    "下次练习重点": "Priorité pour le prochain entraînement",
+    "{0}此前在{1}过牌，这次在{2}的行动是{3}；之前的过牌不能排除慢打的强牌，现在也可能是新公共牌带来的取值或诈唬，因此要重新判断这笔下注。": "{0} : check précédent ({1}) ; action actuelle ({2}) : {3}. Le check précédent n’exclut pas une main forte jouée en slowplay. La nouvelle carte du board peut aussi expliquer une mise de value ou un bluff ; réévaluez donc cette mise.",
+    "{0}此前在{1}过牌，这次在{2}的行动是{3}，之前的过牌不能排除慢打的强牌，现在也可能是新公共牌带来的取值或诈唬，因此要重新判断这笔下注。": "{0} : check précédent ({1}) ; action actuelle ({2}) : {3}. Le check précédent n’exclut pas une main forte jouée en slowplay. La nouvelle carte du board peut aussi expliquer une mise de value ou un bluff ; réévaluez donc cette mise.",
+    "{0}{1}跟注 {2}": "{0}{1} · Suivre {2}"
   },
   "ru": {
     "设置": "Настройки",
@@ -8792,6 +8839,16 @@
     "{0} 在 {1} {2}，加注至 {3}（{4} BB）。{5}加注可让部分弱连张和高牌退出，收益包含弃牌权益；被跟注后，留下的范围可能更强{6}。{7}": "{0}, позиция {1}: {2}. Рейз до {3} ({4} BB). {5}Рейз может выбить часть слабых коннекторов и старших карт; выигрыш включает фолд-эквити. После колла оставшийся диапазон может стать сильнее{6}. {7}",
     "加注可让部分弱连张和高牌退出，收益包含弃牌权益；被跟注后，留下的范围可能更强": "Рейз может выбить часть слабых коннекторов и старших карт; выигрыш включает фолд-эквити. После колла оставшийся диапазон может стать сильнее",
     "{0} 在 {1} 行动弃到你，前面没有开池，加注至 {2}（{3} BB）。A 底牌阻断部分 AA、AK、AQ 组合，后位允许比早位更宽的开池范围。加注可让部分弱连张和高牌退出，收益包含弃牌权益，被跟注后，留下的范围可能更强{4}。这里是开池／偷盲，不是挤压加注。": "{0}, позиция {1}: до вас все сбросили карты, открытия не было. Рейз до {2} ({3} BB). Туз блокирует часть комбинаций AA, AK и AQ; поздняя позиция позволяет открываться шире, чем ранняя. Рейз может выбить слабые коннекторы и старшие карты: выигрыш включает фолд-эквити. После колла оставшийся диапазон может стать сильнее{4}. Это открытие или кража блайндов, а не сквиз.",
-    "对手最近一次翻前加注：{0}。": "Последний рейз соперника на префлопе в истории раздачи: {0}."
+    "对手最近一次翻前加注：{0}。": "Последний рейз соперника на префлопе в истории раздачи: {0}.",
+    "每人两张底牌，桌上最多发出五张公共牌。从这七张牌中任选五张组成最好的牌，可以用两张、一张或不用自己的底牌。其他人都弃牌时，最后留下的人直接获得底池；多人留到最后时，比较各自最好的五张牌。": "Каждый игрок получает две закрытые карты; на стол выкладывается до пяти общих карт. Из этих семи карт нужно составить лучшую комбинацию из пяти, используя обе свои закрытые карты, одну или ни одной. Если все остальные игроки сбросили карты, последний оставшийся игрок сразу забирает банк. Если до конца остаются несколько игроков, сравниваются их лучшие пятикарточные комбинации.",
+    "{0} 次行动": "Действий: {0}",
+    "次行动": "действий",
+    "{1} 次": "Действий: {1}",
+    "本轮还有 {0} 位对手等待回应；若出现加注或者再加注，你需要重新决定是否继续。": "Соперники, которым ещё предстоит ответить в этом раунде: {0}. Если последует рейз или ререйз, вам нужно будет заново решить, продолжать ли игру. ",
+    "本轮还有 {0} 位对手等待回应，但当前没有再次加注权，只能补跟或弃牌。": "Соперники, которым ещё предстоит ответить в этом раунде: {0}. Сейчас у вас нет права повторно повышать ставку; можно только уравнять её или сбросить карты.",
+    "本手动态": "Действия в этой раздаче",
+    "{0}此前在{1}过牌，这次在{2}的行动是{3}；之前的过牌不能排除慢打的强牌，现在也可能是新公共牌带来的取值或诈唬，因此要重新判断这笔下注。": "{0}: ранее — чек ({1}); текущее действие ({2}) — {3}. Предыдущий чек не исключает сильную руку, разыгранную слоуплеем. Новая общая карта также может объяснять ставку на вэлью или блеф, поэтому эту ставку нужно оценить заново.",
+    "{0}此前在{1}过牌，这次在{2}的行动是{3}，之前的过牌不能排除慢打的强牌，现在也可能是新公共牌带来的取值或诈唬，因此要重新判断这笔下注。": "{0}: ранее — чек ({1}); текущее действие ({2}) — {3}. Предыдущий чек не исключает сильную руку, разыгранную слоуплеем. Новая общая карта также может объяснять ставку на вэлью или блеф, поэтому эту ставку нужно оценить заново.",
+    "{0}{1}跟注 {2}": "{0}{1}: колл {2}"
   }
 }
