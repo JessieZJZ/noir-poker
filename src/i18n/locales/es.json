@@ -2739,7 +2739,6 @@
   "若这次小注用于取值，需要较弱成牌愿意跟注；河牌已发完，听牌没有继续补牌的机会。": "Si esta apuesta pequeña busca valor, deben pagar manos hechas más débiles. El river ya ha salido, así que los proyectos no tienen más oportunidades de completarse. ",
   "较小对子（如 {0}{1}）或部分未成对高牌": "parejas de mano menores (como {0}{1}) o algunas cartas altas sin pareja",
   "这些跟注者的范围也会影响获池机会，不能只判断下注者是否在诈唬。": "Los rangos de quienes han pagado también afectan a las posibilidades de ganar el bote; no basta con valorar si quien apostó está faroleando.",
-  "这条跟注路线的依据是当前价格下保留改善与摊牌机会，仍依赖对手范围较宽；未改善且面对不利下注时可弃牌，能免费过牌则保留机会。": "Esta línea de call conserva opciones de mejorar y llegar al showdown al precio actual, pero sigue dependiendo de un rango rival suficientemente amplio. Sin mejorar, se puede abandonar ante una apuesta desfavorable; pasar gratis mantiene esas opciones.",
   "这笔大注需要还在场的对手有足够共同弃牌空间；若他们只用强牌跟注，单靠这些补牌较难弥补投入。": "Esta apuesta grande necesita suficientes posibilidades de que se retiren todos los rivales que siguen en la mano. Si solo pagan con manos fuertes, difícilmente bastarán estos outs para compensar la inversión.",
   "部分尚未成对的起手牌": "algunas manos iniciales sin pareja",
   "；其中至少": "; de esta cantidad, al menos",
@@ -2990,5 +2989,6 @@
   "目前只有高牌，尚未成对，过牌保留在摊牌时击败较弱高牌的机会，避免主动做大底池。": " Solo tienes carta alta, sin pareja. Pasar conserva la oportunidad de ganar a cartas altas más débiles en el showdown sin aumentar activamente el bote. ",
   "过牌不增加投入，本轮仍需等待后面玩家行动。": " Pasar no añade fichas; aún deben actuar los jugadores que quedan detrás en esta ronda. ",
   "重打 {0} 这手，{1}。{2}{3}底池为 {4}，{5}。加注路线要核对对手是否有足够弃牌空间，以及被跟注后的摊牌机会是否与投入相称。{6}": " Repite {0}: {1}. {2}{3} El bote es {4}; {5}. Para la línea de subida, valora si los rivales se retiran lo bastante y si las posibilidades al showdown cuando pagan justifican la inversión. {6} ",
-  "底池为 {0}，{1}。加注路线要核对对手是否有足够弃牌空间，以及被跟注后的摊牌机会是否与投入相称。": " El bote es {0}; {1}. Para la línea de subida, valora si los rivales se retiran lo bastante y si las posibilidades al showdown cuando pagan justifican la inversión. "
+  "底池为 {0}，{1}。加注路线要核对对手是否有足够弃牌空间，以及被跟注后的摊牌机会是否与投入相称。": " El bote es {0}; {1}. Para la línea de subida, valora si los rivales se retiran lo bastante y si las posibilidades al showdown cuando pagan justifican la inversión. ",
+  "这条跟注路线的依据是当前价格下保留改善与摊牌机会，仍依赖对手范围较宽。未改善且面对不利下注时可弃牌，能免费过牌则保留机会。": "Esta línea de call conserva opciones de mejorar y llegar al showdown al precio actual, pero sigue dependiendo de un rango rival suficientemente amplio. Sin mejorar, se puede abandonar ante una apuesta desfavorable; pasar gratis mantiene esas opciones."
 }

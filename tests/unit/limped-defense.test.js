@@ -90,7 +90,7 @@ test('river thin value requires two checked streets, a safe board and the advanc
     assert.equal(limpedPairValueLine({ ...v, ...delta }, style, 0.4), null);
 });
 
-test('value mixes retain checks and one pair does not automatically raise a turn bet', () => {
+test('a checked-to top pair bets small, river value mixes and one pair does not raise a multiway turn bet', () => {
   let flop = 0,
     river = 0,
     calls = 0;
@@ -109,7 +109,9 @@ test('value mixes retain checks and one pair does not automatically raise a turn
     if (t.action === 'call') calls++;
     assert.notEqual(t.action, 'raise');
   }
-  assert.ok(flop >= 5 && flop < 30);
+  // Top pair checked to by two players: the small bet is worth more than
+  // checking, and three players keep it at a quarter of the pot.
+  assert.ok(flop >= 24);
   assert.ok(river >= 5 && river < 30);
   assert.ok(calls >= 20);
 });

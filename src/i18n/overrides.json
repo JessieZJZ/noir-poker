@@ -951,7 +951,14 @@
     "每 {0} 手涨盲，最高 {1}": "Blinds rise every {0} hands, up to {1}",
     "每 {0} 手升一级，最高 {1}，剩 {2} 人进入决赛圈。": "Blinds rise every {0} hands up to {1}; the final table starts at {2} players.",
     "每 10 手涨盲，最高 1.5K / 3K": "Blinds rise every 10 hands, up to 1.5K / 3K",
-    "每 10 手升一级，最高 1.5K / 3K，剩 3 人进入决赛圈。": "Blinds rise every 10 hands up to 1.5K / 3K; the final table starts at 3 players."
+    "每 10 手升一级，最高 1.5K / 3K，剩 3 人进入决赛圈。": "Blinds rise every 10 hands up to 1.5K / 3K; the final table starts at 3 players.",
+    "先行动小注试探": "Leading first with a small probe bet",
+    "过牌后再加注": "Checking, then raising",
+    "{0}用{1}小注 {2} 试探仍有筹码的对手。{3}": "{0} probes the opponents who still have chips with a small {2} bet holding {1}. {3}",
+    "这是试探注：{0}先行动，下 {1} 的小注，让较弱的牌和听牌付费才能继续。后位若加注，{2}也能更早看清对方的牌力，再决定是否继续投入。": "This is a probe bet: acting first, {0} bets a small {1}, so weaker hands and draws must pay to continue. If a later seat raises, {2} also learns earlier how strong that hand is before putting in more.",
+    "这是过牌加注半诈唬：{0}先过牌，等对手下注后用{1}加到 {2}。对手弃牌就拿走 {3}，被跟注后仍有 {4} 张改善候选。": "This is a check-raise semi-bluff: {0} checks first, then raises to {2} with {1} after an opponent bets. A fold wins {3}; if called, {4} cards can still improve the hand.",
+    "这是过牌加注：{0}先过牌，等对手下注后再加到 {1}，让下注者和较弱的成牌或听牌付出更多筹码，也能看清对方的牌力。": "This is a check-raise: {0} checks first, then raises to {1} after an opponent bets, making the bettor and weaker made hands or draws pay more, and learning how strong the bettor is.",
+    "这是过牌加注：{0}先过牌，等对手下注后再加到 {1}，向下注者和较弱的成牌收取更多筹码。": "This is a check-raise: {0} checks first, then raises to {1} after an opponent bets, collecting more chips from the bettor and weaker made hands."
   },
   "zh-TW": {
     "设置": "設定",
@@ -1790,7 +1797,14 @@
     "每 {0} 手涨盲，最高 {1}": "每 {0} 手漲盲，最高 {1}",
     "每 {0} 手升一级，最高 {1}，剩 {2} 人进入决赛圈。": "每 {0} 手升一級，最高 {1}，剩 {2} 人進入決賽圈。",
     "每 10 手涨盲，最高 1.5K / 3K": "每 10 手漲盲，最高 1.5K / 3K",
-    "每 10 手升一级，最高 1.5K / 3K，剩 3 人进入决赛圈。": "每 10 手升一級，最高 1.5K / 3K，剩 3 人進入決賽圈。"
+    "每 10 手升一级，最高 1.5K / 3K，剩 3 人进入决赛圈。": "每 10 手升一級，最高 1.5K / 3K，剩 3 人進入決賽圈。",
+    "先行动小注试探": "先行動小注試探",
+    "过牌后再加注": "過牌後再加注",
+    "{0}用{1}小注 {2} 试探仍有筹码的对手。{3}": "{0}用{1}小注 {2} 試探仍有籌碼的對手。{3}",
+    "这是试探注：{0}先行动，下 {1} 的小注，让较弱的牌和听牌付费才能继续。后位若加注，{2}也能更早看清对方的牌力，再决定是否继续投入。": "這是試探注：{0}先行動，下 {1} 的小注，讓較弱的牌和聽牌付費才能繼續。後位若加注，{2}也能更早看清對方的牌力，再決定是否繼續投入。",
+    "这是过牌加注半诈唬：{0}先过牌，等对手下注后用{1}加到 {2}。对手弃牌就拿走 {3}，被跟注后仍有 {4} 张改善候选。": "這是過牌加注半詐唬：{0}先過牌，等對手下注後用{1}加到 {2}。對手棄牌就拿走 {3}，被跟注後仍有 {4} 張改善候選。",
+    "这是过牌加注：{0}先过牌，等对手下注后再加到 {1}，让下注者和较弱的成牌或听牌付出更多筹码，也能看清对方的牌力。": "這是過牌加注：{0}先過牌，等對手下注後再加到 {1}，讓下注者和較弱的成牌或聽牌付出更多籌碼，也能看清對方的牌力。",
+    "这是过牌加注：{0}先过牌，等对手下注后再加到 {1}，向下注者和较弱的成牌收取更多筹码。": "這是過牌加注：{0}先過牌，等對手下注後再加到 {1}，向下注者和較弱的成牌收取更多籌碼。"
   },
   "ja": {
     "设置": "設定",
@@ -2632,7 +2646,14 @@
     "每 {0} 手涨盲，最高 {1}": "{0} ハンドごとに上昇、最高 {1}",
     "每 {0} 手升一级，最高 {1}，剩 {2} 人进入决赛圈。": "{0} ハンドごとにブラインドが上がり、最高 {1} です。残り {2} 人でファイナルテーブルです。",
     "每 10 手涨盲，最高 1.5K / 3K": "10 ハンドごとに上昇、最高 1.5K / 3K",
-    "每 10 手升一级，最高 1.5K / 3K，剩 3 人进入决赛圈。": "10 ハンドごとにブラインドが上がり、最高 1.5K / 3K です。残り 3 人でファイナルテーブルです。"
+    "每 10 手升一级，最高 1.5K / 3K，剩 3 人进入决赛圈。": "10 ハンドごとにブラインドが上がり、最高 1.5K / 3K です。残り 3 人でファイナルテーブルです。",
+    "先行动小注试探": "先に小さなプローブベット",
+    "过牌后再加注": "チェックしてからレイズ",
+    "{0}用{1}小注 {2} 试探仍有筹码的对手。{3}": "{0} は {1} で {2} の小さなベットを打ち、まだチップのある相手を探ります。{3}",
+    "这是试探注：{0}先行动，下 {1} 的小注，让较弱的牌和听牌付费才能继续。后位若加注，{2}也能更早看清对方的牌力，再决定是否继续投入。": "これはプローブベットです。{0} は先にアクションし、{1} の小さなベットを打ちます。弱いハンドやドローは続けるために支払う必要があります。後ろの席がレイズすれば、{2} は追加投資の前に相手の強さを早めに知ることもできます。",
+    "这是过牌加注半诈唬：{0}先过牌，等对手下注后用{1}加到 {2}。对手弃牌就拿走 {3}，被跟注后仍有 {4} 张改善候选。": "これはチェックレイズのセミブラフです。{0} は先にチェックし、相手がベットした後に {1} で {2} までレイズします。相手が降りれば {3} を獲得し、コールされても改善できるカードが {4} 枚残ります。",
+    "这是过牌加注：{0}先过牌，等对手下注后再加到 {1}，让下注者和较弱的成牌或听牌付出更多筹码，也能看清对方的牌力。": "これはチェックレイズです。{0} は先にチェックし、相手がベットした後に {1} までレイズします。ベッターや弱い完成ハンド、ドローにより多くのチップを払わせ、ベッターの強さも確かめます。",
+    "这是过牌加注：{0}先过牌，等对手下注后再加到 {1}，向下注者和较弱的成牌收取更多筹码。": "これはチェックレイズです。{0} は先にチェックし、相手がベットした後に {1} までレイズして、ベッターや弱い完成ハンドからより多くのチップを得ます。"
   },
   "ko": {
     "设置": "설정",
@@ -3474,7 +3495,14 @@
     "每 {0} 手涨盲，最高 {1}": "{0}핸드마다 블라인드 상승, 최고 {1}",
     "每 {0} 手升一级，最高 {1}，剩 {2} 人进入决赛圈。": "{0}핸드마다 블라인드가 올라 최고 {1}까지 오르며, {2}명이 남으면 파이널 테이블입니다.",
     "每 10 手涨盲，最高 1.5K / 3K": "10핸드마다 블라인드 상승, 최고 1.5K / 3K",
-    "每 10 手升一级，最高 1.5K / 3K，剩 3 人进入决赛圈。": "10핸드마다 블라인드가 올라 최고 1.5K / 3K까지 오르며, 3명이 남으면 파이널 테이블입니다."
+    "每 10 手升一级，最高 1.5K / 3K，剩 3 人进入决赛圈。": "10핸드마다 블라인드가 올라 최고 1.5K / 3K까지 오르며, 3명이 남으면 파이널 테이블입니다.",
+    "先行动小注试探": "먼저 작은 탐색 베팅",
+    "过牌后再加注": "체크 후 레이즈",
+    "{0}用{1}小注 {2} 试探仍有筹码的对手。{3}": "{0}은(는) {1}(으)로 {2}의 작은 베팅을 해 아직 칩이 있는 상대를 탐색합니다. {3}",
+    "这是试探注：{0}先行动，下 {1} 的小注，让较弱的牌和听牌付费才能继续。后位若加注，{2}也能更早看清对方的牌力，再决定是否继续投入。": "이것은 탐색 베팅입니다. {0}은(는) 먼저 행동하며 {1}의 작은 베팅을 해, 더 약한 패와 드로가 계속하려면 비용을 내게 합니다. 뒤 좌석이 레이즈하면 {2}은(는) 더 투자하기 전에 그 패의 강도를 일찍 알 수도 있습니다.",
+    "这是过牌加注半诈唬：{0}先过牌，等对手下注后用{1}加到 {2}。对手弃牌就拿走 {3}，被跟注后仍有 {4} 张改善候选。": "이것은 체크 레이즈 세미 블러프입니다. {0}은(는) 먼저 체크하고, 상대가 베팅한 뒤 {1}(으)로 {2}까지 레이즈합니다. 상대가 폴드하면 {3}을(를) 가져가고, 콜을 받아도 개선 후보 카드가 {4}장 남아 있습니다.",
+    "这是过牌加注：{0}先过牌，等对手下注后再加到 {1}，让下注者和较弱的成牌或听牌付出更多筹码，也能看清对方的牌力。": "이것은 체크 레이즈입니다. {0}은(는) 먼저 체크하고, 상대가 베팅한 뒤 {1}까지 레이즈해 베터와 더 약한 완성 패나 드로가 더 많은 칩을 내게 하고, 베터의 패 강도도 확인합니다.",
+    "这是过牌加注：{0}先过牌，等对手下注后再加到 {1}，向下注者和较弱的成牌收取更多筹码。": "이것은 체크 레이즈입니다. {0}은(는) 먼저 체크하고, 상대가 베팅한 뒤 {1}까지 레이즈해 베터와 더 약한 완성 패에서 더 많은 칩을 받아냅니다."
   },
   "es": {
     "设置": "Ajustes",
@@ -4316,7 +4344,14 @@
     "每 {0} 手涨盲，最高 {1}": "Ciegas cada {0} manos, hasta {1}",
     "每 {0} 手升一级，最高 {1}，剩 {2} 人进入决赛圈。": "Las ciegas suben cada {0} manos hasta {1}; la mesa final empieza con {2} jugadores.",
     "每 10 手涨盲，最高 1.5K / 3K": "Ciegas cada 10 manos, hasta 1.5K / 3K",
-    "每 10 手升一级，最高 1.5K / 3K，剩 3 人进入决赛圈。": "Las ciegas suben cada 10 manos hasta 1.5K / 3K; la mesa final empieza con 3 jugadores."
+    "每 10 手升一级，最高 1.5K / 3K，剩 3 人进入决赛圈。": "Las ciegas suben cada 10 manos hasta 1.5K / 3K; la mesa final empieza con 3 jugadores.",
+    "先行动小注试探": "Salir primero con una apuesta de sondeo pequeña",
+    "过牌后再加注": "Pasar y luego subir",
+    "{0}用{1}小注 {2} 试探仍有筹码的对手。{3}": "{0} sondea con {1} a los rivales que aún tienen fichas con una apuesta pequeña de {2}. {3}",
+    "这是试探注：{0}先行动，下 {1} 的小注，让较弱的牌和听牌付费才能继续。后位若加注，{2}也能更早看清对方的牌力，再决定是否继续投入。": "Esta es una apuesta de sondeo: {0} actúa primero y apuesta {1}, así que las manos más débiles y los proyectos deben pagar para continuar. Si un asiento posterior sube, {2} también sabe antes cuán fuerte es esa mano, antes de invertir más.",
+    "这是过牌加注半诈唬：{0}先过牌，等对手下注后用{1}加到 {2}。对手弃牌就拿走 {3}，被跟注后仍有 {4} 张改善候选。": "Este es un check-raise de semifarol: {0} pasa primero y, cuando un rival apuesta, sube a {2} con {1}. Si el rival se retira, gana {3}; si le pagan, aún quedan {4} cartas que pueden mejorar la mano.",
+    "这是过牌加注：{0}先过牌，等对手下注后再加到 {1}，让下注者和较弱的成牌或听牌付出更多筹码，也能看清对方的牌力。": "Este es un check-raise: {0} pasa primero y, cuando un rival apuesta, sube a {1}. Así el apostador y las manos hechas más débiles o los proyectos pagan más, y además se ve cuán fuerte es el apostador.",
+    "这是过牌加注：{0}先过牌，等对手下注后再加到 {1}，向下注者和较弱的成牌收取更多筹码。": "Este es un check-raise: {0} pasa primero y, cuando un rival apuesta, sube a {1} para cobrar más fichas al apostador y a las manos hechas más débiles."
   },
   "it": {
     "设置": "Impostazioni",
@@ -5159,7 +5194,14 @@
     "每 {0} 手涨盲，最高 {1}": "Bui ogni {0} mani, fino a {1}",
     "每 {0} 手升一级，最高 {1}，剩 {2} 人进入决赛圈。": "I bui salgono ogni {0} mani fino a {1}; il tavolo finale inizia a {2} giocatori.",
     "每 10 手涨盲，最高 1.5K / 3K": "Bui ogni 10 mani, fino a 1.5K / 3K",
-    "每 10 手升一级，最高 1.5K / 3K，剩 3 人进入决赛圈。": "I bui salgono ogni 10 mani fino a 1.5K / 3K; il tavolo finale inizia a 3 giocatori."
+    "每 10 手升一级，最高 1.5K / 3K，剩 3 人进入决赛圈。": "I bui salgono ogni 10 mani fino a 1.5K / 3K; il tavolo finale inizia a 3 giocatori.",
+    "先行动小注试探": "Puntare per primo con una piccola puntata esplorativa",
+    "过牌后再加注": "Fare check e poi rilanciare",
+    "{0}用{1}小注 {2} 试探仍有筹码的对手。{3}": "{0} esplora con {1} gli avversari che hanno ancora chip con una piccola puntata di {2}. {3}",
+    "这是试探注：{0}先行动，下 {1} 的小注，让较弱的牌和听牌付费才能继续。后位若加注，{2}也能更早看清对方的牌力，再决定是否继续投入。": "Questa è una puntata esplorativa: {0} agisce per primo e punta {1}, così le mani più deboli e i progetti devono pagare per continuare. Se un posto successivo rilancia, {2} capisce anche prima quanto è forte quella mano, prima di investire altro.",
+    "这是过牌加注半诈唬：{0}先过牌，等对手下注后用{1}加到 {2}。对手弃牌就拿走 {3}，被跟注后仍有 {4} 张改善候选。": "Questo è un check-raise in semi-bluff: {0} fa check per primo e, dopo la puntata di un avversario, rilancia a {2} con {1}. Se l’avversario folda vince {3}; se riceve call, restano {4} carte che possono migliorare la mano.",
+    "这是过牌加注：{0}先过牌，等对手下注后再加到 {1}，让下注者和较弱的成牌或听牌付出更多筹码，也能看清对方的牌力。": "Questo è un check-raise: {0} fa check per primo e, dopo la puntata di un avversario, rilancia a {1}, facendo pagare di più a chi ha puntato e alle mani già formate più deboli o ai progetti, e capendo quanto è forte chi ha puntato.",
+    "这是过牌加注：{0}先过牌，等对手下注后再加到 {1}，向下注者和较弱的成牌收取更多筹码。": "Questo è un check-raise: {0} fa check per primo e, dopo la puntata di un avversario, rilancia a {1} per incassare più chip da chi ha puntato e dalle mani già formate più deboli."
   },
   "pt": {
     "设置": "Definições",
@@ -6000,7 +6042,14 @@
     "每 {0} 手涨盲，最高 {1}": "Blinds a cada {0} mãos, até {1}",
     "每 {0} 手升一级，最高 {1}，剩 {2} 人进入决赛圈。": "Os blinds sobem a cada {0} mãos até {1}; a mesa final começa com {2} jogadores.",
     "每 10 手涨盲，最高 1.5K / 3K": "Blinds a cada 10 mãos, até 1.5K / 3K",
-    "每 10 手升一级，最高 1.5K / 3K，剩 3 人进入决赛圈。": "Os blinds sobem a cada 10 mãos até 1.5K / 3K; a mesa final começa com 3 jogadores."
+    "每 10 手升一级，最高 1.5K / 3K，剩 3 人进入决赛圈。": "Os blinds sobem a cada 10 mãos até 1.5K / 3K; a mesa final começa com 3 jogadores.",
+    "先行动小注试探": "Apostar primeiro com uma pequena aposta de sondagem",
+    "过牌后再加注": "Dar check e depois aumentar",
+    "{0}用{1}小注 {2} 试探仍有筹码的对手。{3}": "{0} sonda com {1} os adversários que ainda têm fichas com uma pequena aposta de {2}. {3}",
+    "这是试探注：{0}先行动，下 {1} 的小注，让较弱的牌和听牌付费才能继续。后位若加注，{2}也能更早看清对方的牌力，再决定是否继续投入。": "Esta é uma aposta de sondagem: {0} age primeiro e aposta {1}, de modo que mãos mais fracas e projetos precisam pagar para continuar. Se um assento posterior aumentar, {2} também descobre mais cedo a força dessa mão, antes de investir mais.",
+    "这是过牌加注半诈唬：{0}先过牌，等对手下注后用{1}加到 {2}。对手弃牌就拿走 {3}，被跟注后仍有 {4} 张改善候选。": "Este é um check-raise de semiblefe: {0} dá check primeiro e, depois que um adversário aposta, aumenta para {2} com {1}. Se o adversário desistir, ganha {3}; se for pago, ainda restam {4} cartas que podem melhorar a mão.",
+    "这是过牌加注：{0}先过牌，等对手下注后再加到 {1}，让下注者和较弱的成牌或听牌付出更多筹码，也能看清对方的牌力。": "Este é um check-raise: {0} dá check primeiro e, depois que um adversário aposta, aumenta para {1}, fazendo quem apostou e as mãos feitas mais fracas ou projetos pagarem mais, e descobrindo a força de quem apostou.",
+    "这是过牌加注：{0}先过牌，等对手下注后再加到 {1}，向下注者和较弱的成牌收取更多筹码。": "Este é um check-raise: {0} dá check primeiro e, depois que um adversário aposta, aumenta para {1} para cobrar mais fichas de quem apostou e das mãos feitas mais fracas."
   },
   "de": {
     "设置": "Einstellungen",
@@ -6842,7 +6891,14 @@
     "每 {0} 手涨盲，最高 {1}": "Blinds alle {0} Hände, bis {1}",
     "每 {0} 手升一级，最高 {1}，剩 {2} 人进入决赛圈。": "Die Blinds steigen alle {0} Hände bis {1}; der Finaltisch beginnt bei {2} Spielern.",
     "每 10 手涨盲，最高 1.5K / 3K": "Blinds alle 10 Hände, bis 1.5K / 3K",
-    "每 10 手升一级，最高 1.5K / 3K，剩 3 人进入决赛圈。": "Die Blinds steigen alle 10 Hände bis 1.5K / 3K; der Finaltisch beginnt bei 3 Spielern."
+    "每 10 手升一级，最高 1.5K / 3K，剩 3 人进入决赛圈。": "Die Blinds steigen alle 10 Hände bis 1.5K / 3K; der Finaltisch beginnt bei 3 Spielern.",
+    "先行动小注试探": "Zuerst mit einer kleinen Probe-Bet setzen",
+    "过牌后再加注": "Erst checken, dann erhöhen",
+    "{0}用{1}小注 {2} 试探仍有筹码的对手。{3}": "{0} testet mit {1} die Gegner, die noch Chips haben, mit einer kleinen Bet von {2}. {3}",
+    "这是试探注：{0}先行动，下 {1} 的小注，让较弱的牌和听牌付费才能继续。后位若加注，{2}也能更早看清对方的牌力，再决定是否继续投入。": "Das ist eine Probe-Bet: {0} handelt zuerst und setzt klein {1}, sodass schwächere Hände und Draws zahlen müssen, um weiterzuspielen. Erhöht ein späterer Platz, erfährt {2} außerdem früher, wie stark diese Hand ist, bevor mehr investiert wird.",
+    "这是过牌加注半诈唬：{0}先过牌，等对手下注后用{1}加到 {2}。对手弃牌就拿走 {3}，被跟注后仍有 {4} 张改善候选。": "Das ist ein Check-Raise als Semi-Bluff: {0} checkt zuerst und erhöht nach der Bet eines Gegners mit {1} auf {2}. Steigt der Gegner aus, gewinnt das {3}; bei einem Call bleiben noch {4} Karten, die die Hand verbessern können.",
+    "这是过牌加注：{0}先过牌，等对手下注后再加到 {1}，让下注者和较弱的成牌或听牌付出更多筹码，也能看清对方的牌力。": "Das ist ein Check-Raise: {0} checkt zuerst und erhöht nach der Bet eines Gegners auf {1}. So zahlen der Setzende und schwächere fertige Hände oder Draws mehr, und es zeigt sich, wie stark der Setzende ist.",
+    "这是过牌加注：{0}先过牌，等对手下注后再加到 {1}，向下注者和较弱的成牌收取更多筹码。": "Das ist ein Check-Raise: {0} checkt zuerst und erhöht nach der Bet eines Gegners auf {1}, um vom Setzenden und von schwächeren fertigen Händen mehr Chips zu bekommen."
   },
   "fr": {
     "设置": "Paramètres",
@@ -7685,7 +7741,14 @@
     "每 {0} 手涨盲，最高 {1}": "Blindes toutes les {0} mains, jusqu’à {1}",
     "每 {0} 手升一级，最高 {1}，剩 {2} 人进入决赛圈。": "Les blindes montent toutes les {0} mains jusqu’à {1} ; la table finale commence à {2} joueurs.",
     "每 10 手涨盲，最高 1.5K / 3K": "Blindes toutes les 10 mains, jusqu’à 1.5K / 3K",
-    "每 10 手升一级，最高 1.5K / 3K，剩 3 人进入决赛圈。": "Les blindes montent toutes les 10 mains jusqu’à 1.5K / 3K ; la table finale commence à 3 joueurs."
+    "每 10 手升一级，最高 1.5K / 3K，剩 3 人进入决赛圈。": "Les blindes montent toutes les 10 mains jusqu’à 1.5K / 3K ; la table finale commence à 3 joueurs.",
+    "先行动小注试探": "Miser en premier avec une petite mise de sonde",
+    "过牌后再加注": "Checker, puis relancer",
+    "{0}用{1}小注 {2} 试探仍有筹码的对手。{3}": "{0} sonde avec {1} les adversaires qui ont encore des jetons par une petite mise de {2}. {3}",
+    "这是试探注：{0}先行动，下 {1} 的小注，让较弱的牌和听牌付费才能继续。后位若加注，{2}也能更早看清对方的牌力，再决定是否继续投入。": "C’est une mise de sonde : {0} parle en premier et mise {1}, si bien que les mains plus faibles et les tirages doivent payer pour continuer. Si un siège suivant relance, {2} apprend aussi plus tôt la force de cette main, avant d’investir davantage.",
+    "这是过牌加注半诈唬：{0}先过牌，等对手下注后用{1}加到 {2}。对手弃牌就拿走 {3}，被跟注后仍有 {4} 张改善候选。": "C’est un check-raise en semi-bluff : {0} checke d’abord puis, après la mise d’un adversaire, relance à {2} avec {1}. Si l’adversaire se couche, il remporte {3} ; s’il est payé, {4} cartes peuvent encore améliorer la main.",
+    "这是过牌加注：{0}先过牌，等对手下注后再加到 {1}，让下注者和较弱的成牌或听牌付出更多筹码，也能看清对方的牌力。": "C’est un check-raise : {0} checke d’abord puis, après la mise d’un adversaire, relance à {1}, ce qui fait payer davantage le miseur et les mains faites plus faibles ou les tirages, tout en révélant la force du miseur.",
+    "这是过牌加注：{0}先过牌，等对手下注后再加到 {1}，向下注者和较弱的成牌收取更多筹码。": "C’est un check-raise : {0} checke d’abord puis, après la mise d’un adversaire, relance à {1} pour prendre plus de jetons au miseur et aux mains faites plus faibles."
   },
   "ru": {
     "设置": "Настройки",
@@ -8526,6 +8589,13 @@
     "每 {0} 手涨盲，最高 {1}": "Блайнды каждые {0} раздач, до {1}",
     "每 {0} 手升一级，最高 {1}，剩 {2} 人进入决赛圈。": "Блайнды растут каждые {0} раздач до {1}; финальный стол начинается при {2} игроках.",
     "每 10 手涨盲，最高 1.5K / 3K": "Блайнды каждые 10 раздач, до 1.5K / 3K",
-    "每 10 手升一级，最高 1.5K / 3K，剩 3 人进入决赛圈。": "Блайнды растут каждые 10 раздач до 1.5K / 3K; финальный стол начинается при 3 игроках."
+    "每 10 手升一级，最高 1.5K / 3K，剩 3 人进入决赛圈。": "Блайнды растут каждые 10 раздач до 1.5K / 3K; финальный стол начинается при 3 игроках.",
+    "先行动小注试探": "Первым сделать небольшую пробную ставку",
+    "过牌后再加注": "Чек, затем рейз",
+    "{0}用{1}小注 {2} 试探仍有筹码的对手。{3}": "{0} с {1} прощупывает соперников, у которых ещё есть фишки, небольшой ставкой {2}. {3}",
+    "这是试探注：{0}先行动，下 {1} 的小注，让较弱的牌和听牌付费才能继续。后位若加注，{2}也能更早看清对方的牌力，再决定是否继续投入。": "Это пробная ставка: {0} действует первым и ставит небольшие {1}, поэтому более слабым рукам и дро приходится платить, чтобы продолжить. Если игрок позже сделает рейз, {2} раньше узнает силу этой руки, прежде чем вкладывать больше.",
+    "这是过牌加注半诈唬：{0}先过牌，等对手下注后用{1}加到 {2}。对手弃牌就拿走 {3}，被跟注后仍有 {4} 张改善候选。": "Это чек-рейз как полублеф: {0} сначала делает чек, а после ставки соперника с {1} поднимает до {2}. Если соперник сбросит, рейз сразу забирает {3}; при колле ещё остаётся {4} карт, которые могут улучшить руку.",
+    "这是过牌加注：{0}先过牌，等对手下注后再加到 {1}，让下注者和较弱的成牌或听牌付出更多筹码，也能看清对方的牌力。": "Это чек-рейз: {0} сначала делает чек, а после ставки соперника поднимает до {1}. Так ставящий и более слабые готовые руки или дро платят больше, а заодно видно, насколько силён ставящий.",
+    "这是过牌加注：{0}先过牌，等对手下注后再加到 {1}，向下注者和较弱的成牌收取更多筹码。": "Это чек-рейз: {0} сначала делает чек, а после ставки соперника поднимает до {1}, чтобы получить больше фишек от ставящего и более слабых готовых рук."
   }
 }

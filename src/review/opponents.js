@@ -56,6 +56,8 @@ const reasonActions = {
     'seven-two-bluff',
     'short-push',
     'short-reshove',
+    'probe-bet',
+    'check-raise',
   ],
 };
 export const BOT_REASON_NAMES = {
@@ -89,6 +91,8 @@ export const BOT_REASON_NAMES = {
   'short-fold': '短码等待更好的全下机会',
   'short-check': '短码在大盲免费看牌',
   'survival-fold': '接近决赛圈，谨慎弃牌',
+  'probe-bet': '先行动小注试探',
+  'check-raise': '过牌后再加注',
 };
 function pocketComparison(v, name) {
   const rank = v.hole[0].rank;
@@ -723,6 +727,19 @@ export function explainOpponent(record, identities = []) {
         : t.deception?.stage === 'opening'
           ? `这是 2–7 诈唬偷盲：${plainName}在 ${v.position} 用 ${n(f.investment)} 争取 ${n(v.pot)}，前面无人入池，靠后面的人弃牌获利。`
           : `这是 2–7 诈唬：单挑、有位置，对手本轮已经过牌，${subject}在 ${f.boardText} 上用 ${n(f.investment)} 争取 ${n(v.pot)}，没有成牌或大听牌托底，主要赌对手愿意弃牌。`;
+      break;
+    case 'probe-bet':
+      logic = pressure.hasAllInOpponent
+        ? `${subject}用${hand}小注 ${n(f.investment)} 试探仍有筹码的对手。${foldNote}`
+        : `这是试探注：${subject}先行动，下 ${n(f.investment)} 的小注，让较弱的牌和听牌付费才能继续。后位若加注，${subject}也能更早看清对方的牌力，再决定是否继续投入。`;
+      break;
+    case 'check-raise':
+      logic = t.semiBluff
+        ? `这是过牌加注半诈唬：${subject}先过牌，等对手下注后用${drawLabel(draw)}加到 ${n(record.amount)}。对手弃牌就拿走 ${n(v.pot)}，被跟注后仍有 ${draw.outs} 张改善候选。`
+        : v.street < 3
+          ? `这是过牌加注：${subject}先过牌，等对手下注后再加到 ${n(record.amount)}，让下注者和较弱的成牌或听牌付出更多筹码，也能看清对方的牌力。`
+          : `这是过牌加注：${subject}先过牌，等对手下注后再加到 ${n(record.amount)}，向下注者和较弱的成牌收取更多筹码。`;
+      if (pressure.hasAllInOpponent) logic += foldNote;
       break;
     case 'donk-lead':
       logic =
