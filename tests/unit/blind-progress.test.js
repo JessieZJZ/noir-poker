@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { blindProgressText } from '../../src/ui/effect-layouts.js';
 import { stakesFromSmallBlind } from '../../src/engine/stakes.js';
 import { blindLevels } from '../../src/engine/blind-levels.js';
-import { formatDecimal, loadLocale } from '../../src/i18n/index.js';
+import { formatDecimal, loadLocale, localizeText } from '../../src/i18n/index.js';
 
 const game = (patch = {}) => ({
   phase: 'playing',
@@ -38,4 +38,14 @@ test('visible calculator decimals follow the current language without changing t
   }
   await loadLocale('zh-CN');
   assert.equal(formatDecimal(62.47), '62.47');
+});
+
+test('German guide examples use the same decimal separator as live chips', async () => {
+  await loadLocale('de');
+  const text = localizeText(
+    '跟注旁的数字是这次要补的筹码；加注旁的数字是这一轮累计投入的总额。例如你已投 200，对手加到 600：跟注要补 400，选择加注 1.2K 则补 1K。所有筹码金额都是当前筹码面额的倍数。',
+  );
+  assert.ok(text.includes('1,2K'));
+  assert.ok(!text.includes('1.2K'));
+  await loadLocale('zh-CN');
 });
