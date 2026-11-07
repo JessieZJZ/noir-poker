@@ -35,6 +35,7 @@
     "mobile:android:open": "npm run mobile:sync && cap open android",
     "mobile:ios": "node scripts/mobile.mjs ios",
     "mobile:ios:archive": "node scripts/mobile.mjs ios-archive",
+    "mobile:ios:upload": "node scripts/mobile.mjs ios-upload",
     "mobile:android": "node scripts/mobile.mjs android",
     "mobile:android:qa": "node scripts/mobile.mjs android-qa",
     "mobile:android:bundle": "node scripts/mobile.mjs android-bundle",

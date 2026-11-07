@@ -15,6 +15,7 @@ import {
   verifyBundledAssetDirectory,
   verifyBundledArtifact,
 } from './bundled-assets.mjs';
+import { loadReleaseSigning, releaseConfigPath, iosExportOptions } from './release-signing.mjs';
 
 process.chdir(root);
 const command = process.argv[2] ?? 'sync';
@@ -212,8 +213,12 @@ if (command === 'doctor') {
   } finally {
     release();
   }
-} else if (['android', 'android-qa', 'android-bundle', 'ios', 'ios-archive'].includes(command)) {
+} else if (
+  ['android', 'android-qa', 'android-bundle', 'ios', 'ios-archive', 'ios-upload'].includes(command)
+) {
   const ios = command.startsWith('ios');
+  const signed = ['android-bundle', 'ios-archive', 'ios-upload'].includes(command);
+  if (signed) Object.assign(process.env, loadReleaseSigning());
   if (
     command === 'android-bundle' &&
     [
@@ -224,11 +229,11 @@ if (command === 'doctor') {
     ].some((key) => !process.env[key])
   )
     throw Error(
-      'Store AAB requires all four NOIR_ANDROID signing variables; use Gradle bundleRelease only for unsigned CI checks',
+      `Store AAB requires NOIR_ANDROID_KEYSTORE and NOIR_ANDROID_KEY_ALIAS (in ${releaseConfigPath()} or the environment) and the keystore password (Keychain service noir-poker-android-store or NOIR_ANDROID_STORE_PASSWORD); see docs/mobile-release.md`,
     );
-  if (command === 'ios-archive' && !/^[A-Z0-9]{10}$/.test(process.env.NOIR_APPLE_TEAM_ID ?? ''))
+  if (command !== 'ios' && ios && !/^[A-Z0-9]{10}$/.test(process.env.NOIR_APPLE_TEAM_ID ?? ''))
     throw Error(
-      'A signed iOS archive requires NOIR_APPLE_TEAM_ID and an installed signing certificate/profile',
+      `A signed iOS archive requires NOIR_APPLE_TEAM_ID (in ${releaseConfigPath()} or the environment) and an Apple developer account signed in to Xcode; see docs/mobile-release.md`,
     );
   // Entrypoints never consume a previous dist; sync the actual source first.
   run(process.execPath, [path.join(root, 'scripts/mobile.mjs'), 'sync', ios ? 'ios' : 'android']);
@@ -237,7 +242,7 @@ if (command === 'doctor') {
     if (process.platform !== 'darwin' || checkTool('xcodebuild', ['-version']) === 'NOT AVAILABLE')
       throw Error('Install full Xcode 26 and select it with xcode-select before building iOS');
     const args = ['-project', 'ios/App/App.xcodeproj', '-scheme', 'App'];
-    if (command === 'ios-archive')
+    if (command !== 'ios')
       args.push(
         '-configuration',
         'Release',
@@ -247,6 +252,7 @@ if (command === 'doctor') {
         '.artifacts/mobile/NOIR-Poker.xcarchive',
         `DEVELOPMENT_TEAM=${process.env.NOIR_APPLE_TEAM_ID}`,
         'CODE_SIGN_STYLE=Automatic',
+        '-allowProvisioningUpdates',
         'archive',
       );
     else
@@ -265,11 +271,30 @@ if (command === 'doctor') {
     run('xcodebuild', args, { env });
     const artifact = path.join(
       root,
-      command === 'ios-archive'
+      command !== 'ios'
         ? '.artifacts/mobile/NOIR-Poker.xcarchive'
         : '.artifacts/mobile/ios/Build/Products/Debug-iphonesimulator/App.app',
     );
     console.log(JSON.stringify(verifyBundledArtifact(artifact)));
+    if (command === 'ios-upload') {
+      // Signs for App Store Connect and uploads with the Xcode account; the
+      // build then appears in TestFlight after Apple finishes processing.
+      const options = path.join(output, 'ios-export-options.plist');
+      writeFileSync(options, iosExportOptions(process.env.NOIR_APPLE_TEAM_ID));
+      run('xcodebuild', [
+        '-exportArchive',
+        '-archivePath',
+        artifact,
+        '-exportOptionsPlist',
+        options,
+        '-exportPath',
+        path.join(output, 'ios-export'),
+        '-allowProvisioningUpdates',
+      ]);
+      console.log(
+        `Uploaded ${metadata.version} (${metadata.buildNumber}) to App Store Connect; it appears in TestFlight after processing`,
+      );
+    }
   } else {
     const qa = command === 'android-qa';
     const debug = command === 'android';

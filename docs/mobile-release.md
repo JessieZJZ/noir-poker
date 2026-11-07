@@ -10,14 +10,22 @@
 
 使用自己的 upload keystore，并保存可靠备份。采用 Play App Signing 时，upload key 与商店分发给用户的 app signing key 职责不同，参见 [Android 签名说明](https://developer.android.com/studio/publish/app-signing)。
 
-通过本机密钥管理或 CI Secrets 注入四项环境变量，然后构建：
+发行命令需要四项签名设置。环境变量（如 CI Secrets）优先；本机未设置时，从仓库外的 `~/.config/noir-poker/release.env` 读取路径与别名，从 macOS 钥匙串读取密码：
 
 ```text
-NOIR_ANDROID_KEYSTORE       keystore 的绝对路径
-NOIR_ANDROID_KEY_ALIAS      别名
-NOIR_ANDROID_STORE_PASSWORD keystore 密码
-NOIR_ANDROID_KEY_PASSWORD   key 密码
+NOIR_ANDROID_KEYSTORE       keystore 的绝对路径（release.env，可写 ~/ 开头）
+NOIR_ANDROID_KEY_ALIAS      别名（release.env）
+NOIR_ANDROID_STORE_PASSWORD keystore 密码（钥匙串服务 noir-poker-android-store）
+NOIR_ANDROID_KEY_PASSWORD   key 密码（钥匙串服务 noir-poker-android-key；未设置时使用 keystore 密码）
 ```
+
+`release.env` 只接受上述路径、别名和 `NOIR_APPLE_TEAM_ID`，写入密码会报错。`NOIR_RELEASE_CONFIG` 可指向其他位置。在终端运行下面的命令，按提示输入两次 keystore 密码，密码不会出现在命令或文件里：
+
+```sh
+security add-generic-password -U -a noir-poker -s noir-poker-android-store -w
+```
+
+key 密码与 keystore 不同时，再以服务名 `noir-poker-android-key` 保存一次。然后构建：
 
 ```sh
 npm run mobile:android:bundle
@@ -27,13 +35,20 @@ npm run mobile:android:bundle
 
 ### iOS
 
-加入 Apple Developer Program，在 Xcode 登录开发者账号，为 App Target 设置 Team 和最终 Bundle Identifier，配置 Automatic Signing。导入对应证书/描述文件后：
+加入 Apple Developer Program，在 Xcode → Settings → Accounts 登录开发者账号。签名使用 Automatic Signing：归档和导出时 `-allowProvisioningUpdates` 让 Xcode 按账号创建或更新 Apple Distribution 证书与描述文件，私钥保存在登录钥匙串，不需要另设签名密码；导出 `.p12` 备份时才由钥匙串访问提示设置密码。
+
+在 `~/.config/noir-poker/release.env` 写入 10 位 Team ID（developer.apple.com → Membership），也可用环境变量覆盖：
 
 ```sh
-NOIR_APPLE_TEAM_ID=你的10位TeamID npm run mobile:ios:archive
+NOIR_APPLE_TEAM_ID=你的10位TeamID
 ```
 
-输出 `.artifacts/mobile/NOIR-Poker.xcarchive`。用 Xcode Organizer 打开归档，Validate App，再 Distribute App 到 App Store Connect；通过 TestFlight 安装验证。脚本生成 Archive，不自动创建商店条目、填写税务协议或提交审核。模拟器构建不包含发行签名，不能代替此流程。
+```sh
+npm run mobile:ios:archive   # 只生成 .artifacts/mobile/NOIR-Poker.xcarchive
+npm run mobile:ios:upload    # 归档后导出 App Store Connect 包并上传
+```
+
+上传使用 Xcode 已登录的账号；处理完成后构建出现在 App Store Connect 的 TestFlight。构建号取自 `mobile/release.json`，每次上传前递增，导出时不由 Xcode 改写。也可以只归档，再用 Xcode Organizer Validate App、Distribute App。脚本不创建商店条目、不填写税务协议、不提交审核。模拟器构建不包含发行签名，不能代替此流程。
 
 ## 付费与商店资料
 
