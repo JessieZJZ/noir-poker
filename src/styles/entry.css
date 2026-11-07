@@ -66,8 +66,37 @@
   white-space: nowrap;
   transform: scale(var(--entry-scale, 1));
 }
-.game-surface[data-entry-state='waiting'] .hand-label > :not(#street-label) {
+.game-surface[data-entry-state='waiting'] .hand-label > :not(#street-label, #entry-structure) {
   display: none;
+}
+/* This game's blind structure sits under the waiting message, only before
+   the hero takes the seat. */
+.entry-structure {
+  display: none;
+}
+/* It hangs below the label in the hint row, which is empty before the seat is
+   taken, so the header row and the table keep their exact size. It may use
+   the whole header width; the blind column beside the label is empty then. */
+.game-surface .surface-top {
+  container-type: inline-size;
+}
+.game-surface[data-entry-state='waiting'] .surface-top .hand-label {
+  position: relative;
+}
+.game-surface[data-entry-state='waiting'] .hand-label > #entry-structure {
+  display: block;
+  position: absolute;
+  top: calc(100% + 2px);
+  left: 0;
+  width: max-content;
+  max-width: calc(100vw - 48px);
+  max-width: 100cqw;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #c9b98f;
+  font-size: 11px;
+  line-height: 1.4;
 }
 .game-surface .surface-top .hand-label {
   line-height: 1.2;
@@ -76,17 +105,27 @@
    the same first row; a wrapped message grows the row instead of clipping. */
 .game-surface[data-entry-state='waiting'] .surface-top .hand-label {
   grid-column: 1;
-  align-self: center;
   white-space: normal;
   line-height: 1.2;
+}
+/* The waiting row may hold a second line (this game's blind structure) and
+   keeps its height after joining, so the felt never moves. Both labels sit
+   at the top of the row, where a single centred line would be, so the first
+   line does not move when play starts. */
+.game-surface .surface-top .hand-label {
+  align-self: start;
+  padding-top: max(0px, calc((var(--hand-row) - 1.2em) / 2));
+}
+.game-surface .surface-top .blind-info {
+  align-self: start;
+  line-height: 1.4;
+  padding-top: max(0px, calc((var(--hand-row) - 1.4em) / 2));
 }
 .main .game-surface[data-entry-state='waiting'] > .surface-top {
   grid-template-rows: minmax(max(var(--hand-row), var(--entry-hand-row, 0px)), auto) var(--hint-row);
 }
 .game-surface[data-entry-state='waiting'] .surface-top .blind-info {
   grid-row: 1;
-  align-self: start;
-  line-height: 1.4;
 }
 .game-surface[data-entry-state='waiting'] #hero-position {
   display: none;
@@ -132,16 +171,42 @@
   font-size: 10px;
 }
 @media (max-width: 600px) {
-  .header .brand,
-  .header .brand > span:last-child {
+  /* Keep the complete wordmark. The rotating tool label gives up width and
+     may end in an ellipsis; opening its menu still shows every full name. */
+  .header .brand {
+    min-width: max-content;
+    flex-shrink: 0;
+  }
+  .header-actions .guide-menu,
+  .header-actions #rules-button,
+  .header-actions #rules-button .guide-rotating-label {
     min-width: 0;
+  }
+  .header-actions #rules-button .guide-rotating-label {
+    grid-template-columns: minmax(0, 1fr);
+    flex: 1 1 0;
+  }
+  .header-actions .guide-menu {
+    flex: 1 1 0;
+    min-width: 16px;
+  }
+  .header-actions #rules-button {
+    width: 100%;
+  }
+  .header-actions #rules-button .guide-rotating-label > span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .header-actions .settings-button {
+    flex-shrink: 0;
   }
   .header .brand-mark {
     flex-shrink: 0;
   }
   .header .brand > span:last-child {
-    overflow: hidden;
-    text-overflow: ellipsis;
+    min-width: max-content;
+    overflow: visible;
+    text-overflow: clip;
     white-space: nowrap;
   }
   .header-actions .settings-button {
@@ -149,8 +214,10 @@
   }
   .header-actions {
     left: 0;
-    flex-shrink: 0;
+    flex: 1 1 0;
+    min-width: 0;
     gap: 10px;
+    justify-content: flex-end;
   }
   .entry-welcome {
     gap: 8px;
@@ -163,6 +230,17 @@
   .header {
     padding-inline: 12px;
     gap: 6px;
+  }
+  .header .brand {
+    gap: 6px;
+    font-size: 17px;
+    letter-spacing: 1.5px;
+  }
+  .header .brand-light {
+    display: inline;
+    font-size: 10px;
+    letter-spacing: 1px;
+    margin-left: 4px;
   }
 }
 @media (prefers-reduced-motion: reduce) {

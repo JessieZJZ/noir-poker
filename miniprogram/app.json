@@ -21,9 +21,17 @@
       "root": "calculator",
       "name": "calculator",
       "pages": ["win-rate"]
+    },
+    {
+      "root": "sounds",
+      "name": "sounds",
+      "pages": ["loader"]
     }
   ],
-  "workers": "workers",
+  "workers": {
+    "path": "workers",
+    "isSubpackage": true
+  },
   "window": {
     "pageOrientation": "portrait",
     "navigationStyle": "custom",
@@ -35,7 +43,7 @@
   "preloadRule": {
     "pages/table/table": {
       "network": "all",
-      "packages": ["tutorial"]
+      "packages": ["tutorial", "sounds"]
     }
   }
 }

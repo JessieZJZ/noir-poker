@@ -106,8 +106,14 @@
   font-family: Manrope;
   font-size: 24px;
   font-weight: 500;
-  color: #e69bab;
+  color: #c7d5df;
   white-space: nowrap;
+}
+.review-title-row > strong.positive {
+  color: #6ee7c5;
+}
+.review-title-row > strong.negative {
+  color: #e69bab;
 }
 .review-analysis-status {
   display: flex;

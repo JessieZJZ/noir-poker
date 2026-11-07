@@ -280,6 +280,7 @@ function explanation(s, r, evKind, suggested, kind, { comparisonOwned = false } 
         : [],
     );
   if (r.code === 'weak-late-limp') return [r.reason, waitingNote(s, c)].filter(Boolean);
+  if (['short-stack-push-fold', 'survival-call'].includes(r.code)) return [r.reason];
   if (['unbacked-small-pair-reraise', 'unbacked-pair-reraise'].includes(r.code))
     return proseReason(
       [
@@ -959,6 +960,11 @@ export function coachDecision(s, r) {
       evText = '两种模拟范围下，这条路线都比弃牌收益更高，但仍依赖后续打法。';
     }
   }
+  // A small chip edge does not cover the cost of being knocked out.
+  if (r.code === 'survival-call' && evKind === 'positive') {
+    evKind = 'uncertain';
+    evText = '按筹码估计这次跟注略有收益，但跟注输了就会出局，这点收益不足以抵消出局的代价。';
+  }
   const freeFold = r.code === 'free-fold';
   const confirmed = freeFold || evKind === 'negative' || !!improved;
   // A draw alone below the price does not justify a positive label by default.
@@ -1090,7 +1096,9 @@ export function coachDecision(s, r) {
       const suggested = actionLabel(s, action.action, action.amount);
       recommendation =
         unprovenDraw && !confirmed
-          ? `这手建议${suggested}；继续投入需要对手的下注范围里保留足够较弱牌或未成牌诈唬，不能只因有听牌就继续。`
+          ? unchanged
+            ? `这手${suggested}的前提是对手的下注范围里保留足够较弱牌或未成牌诈唬，不能只因有听牌就继续。`
+            : `这手建议${suggested}；继续投入需要对手的下注范围里保留足够较弱牌或未成牌诈唬，不能只因有听牌就继续。`
           : action.action === 'fold'
             ? `这手建议弃牌，保住行动前剩下的 ${fmt(s.stack)}，不再付出筹码。`
             : action.action === 'raise'
@@ -1248,13 +1256,14 @@ export function coachDecision(s, r) {
   return {
     kind,
     recommendedAction: { ...action },
+    // A badge is only ever one concrete different action (弃牌／过牌／跟注／
+    // 全下／加注至某金额). An affirmed action stays silent, and advice that
+    // repeats the action taken, or a vague "compare", answers nothing, so an
+    // action kept as the candidate gets no badge; its paragraph states the
+    // basis or the conditions instead.
     assessmentLabel:
-      kind === 'keep'
-        ? '值得保留'
-        : needsComparison
-          ? '需要比较'
-          : actionLabel(s, action.action, action.amount),
-    label: guidance.label,
+      kind === 'keep' || unchanged ? '' : actionLabel(s, action.action, action.amount),
+    label: kind === 'keep' || unchanged ? '' : guidance.label,
     recommendationConditional: needsComparison,
     explanation: conciseReason,
     paragraphs,

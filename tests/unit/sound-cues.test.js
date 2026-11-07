@@ -151,8 +151,8 @@ test('the final Web mix retains single-cue unity and bounds coincident action cu
 test("champions' crowd cheers are local recordings; the hero's is fuller and louder", async () => {
   const { CEREMONY_CUES, CHEER_FILES, SYNTHESIZED_CEREMONY_CUES } =
     await import('../../src/ui/ceremony-sounds.js');
-  assert.deepEqual(CEREMONY_CUES, ['champion', 'crowned', 'farewell']);
-  assert.deepEqual(SYNTHESIZED_CEREMONY_CUES, ['farewell']);
+  assert.deepEqual(CEREMONY_CUES, ['champion', 'crowned', 'farewell', 'levelup', 'finaltable']);
+  assert.deepEqual(SYNTHESIZED_CEREMONY_CUES, ['farewell', 'levelup', 'finaltable']);
   // Duration from the MP4 movie header, in seconds.
   const seconds = (bytes) => {
     const at = bytes.indexOf('mvhd'),
@@ -175,7 +175,7 @@ test("champions' crowd cheers are local recordings; the hero's is fuller and lou
   assert.ok(files.champion.bytes.length + files.crowned.bytes.length < 120 * 1024);
 });
 
-test('the synthesized game-end cue is bounded and fades to silence on every platform', async () => {
+test('the synthesized game-end and table-notice cues are bounded and fade to silence on every platform', async () => {
   const { ceremonySamples, ceremonyWav, SYNTHESIZED_CEREMONY_CUES } =
     await import('../../src/ui/ceremony-sounds.js');
   for (const cue of SYNTHESIZED_CEREMONY_CUES) {
@@ -193,7 +193,7 @@ test('cached ceremony WAVs change name whenever a synthesized cue changes', asyn
   // Fingerprint of the synthesized cues at this version. A different value
   // means they changed: bump CEREMONY_SOUND_VERSION and record the new value,
   // or WeChat keeps playing its cached copy of the old sound.
-  const fingerprints = { 3: '-933754938' };
+  const fingerprints = { 3: '-933754938', 4: '-687480149' };
   let sum = 0;
   for (const cue of SYNTHESIZED_CEREMONY_CUES) {
     const samples = ceremonySamples(cue);
@@ -201,4 +201,14 @@ test('cached ceremony WAVs change name whenever a synthesized cue changes', asyn
       sum = (sum * 31 + Math.round(samples[i] * 1e4)) % 1e9;
   }
   assert.equal(String(sum), fingerprints[CEREMONY_SOUND_VERSION], 'bump CEREMONY_SOUND_VERSION');
+});
+
+test('table-notice cues end within the notice, before the deal stops them', async () => {
+  const { ceremonySamples, CEREMONY_SAMPLE_RATE } = await import('../../src/ui/ceremony-sounds.js');
+  const { TABLE_NOTICE_MS } = await import('../../src/ui/effect-layouts.js');
+  for (const cue of ['levelup', 'finaltable'])
+    assert.ok(
+      (ceremonySamples(cue).length / CEREMONY_SAMPLE_RATE) * 1000 <= TABLE_NOTICE_MS,
+      `${cue} fits in ${TABLE_NOTICE_MS} ms`,
+    );
 });

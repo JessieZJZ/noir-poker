@@ -72,6 +72,9 @@ export function createOpponentsController({ getGame, getCount, getSettings, onSa
     preparePortraits(panel);
   }
   function positionDetail() {
+    const comparison = document.querySelector('#profile-comparison');
+    document.querySelector('.profile-scroll-note').hidden =
+      !comparison || comparison.scrollWidth <= comparison.clientWidth + 1;
     if (!compact.matches || !detailOpen || !dialog.open) return;
     const region = stage.getBoundingClientRect();
     const viewport = body.getBoundingClientRect();
@@ -221,6 +224,7 @@ export function createOpponentsController({ getGame, getCount, getSettings, onSa
   const resizeObserver = new ResizeObserver(positionDetail);
   resizeObserver.observe(body);
   resizeObserver.observe(stage);
+  resizeObserver.observe(document.querySelector('#profile-comparison'));
   document.querySelector('#opponent-roster').onchange = (event) => {
     if (!event.target.matches('[data-bot-seat]')) return;
     draft = assignBotSeat(draft, Number(event.target.dataset.botSeat), event.target.value);

@@ -4,7 +4,7 @@
 #rules-button {
   display: flex;
   align-items: center;
-  gap: 7px;
+  gap: 3px;
   min-height: 42px;
   padding: 6px 0;
 }
@@ -22,14 +22,21 @@
   line-height: 1.4;
   overflow: hidden;
 }
+/* The slot keeps the widest label's width so the header never moves; each
+   label hugs the arrow, so the text-to-arrow gap is the same for all four. */
 .guide-rotating-label > span {
   display: block;
   grid-area: 1 / 1;
+  justify-self: end;
+  text-align: right;
   white-space: nowrap;
   visibility: hidden;
 }
-#rules-button:not([data-label='records']) [data-guide-label='guide'],
-#rules-button[data-label='records'] [data-guide-label='records'] {
+#rules-button:not([data-label]) [data-guide-label='records'],
+#rules-button[data-label='records'] [data-guide-label='records'],
+#rules-button[data-label='tutorial'] [data-guide-label='tutorial'],
+#rules-button[data-label='guide'] [data-guide-label='guide'],
+#rules-button[data-label='win-rate'] [data-guide-label='win-rate'] {
   visibility: visible;
 }
 #rules-button .guide-label-leave {
@@ -62,9 +69,9 @@
 #rules-button .guide-menu-arrow {
   display: grid;
   place-items: center;
-  width: 24px;
+  width: 16px;
   height: 24px;
-  flex: 0 0 24px;
+  flex: 0 0 16px;
   padding: 0;
   margin: 0;
   border: 0;
@@ -134,9 +141,8 @@ body[data-records-page='hand'] .records-page-heading {
 }
 .history-start-time {
   grid-area: 2 / 1 / 3 / -1;
-  /* Lines up with the game label, which keeps the first header span's 8px
-     inset from base.css. */
-  padding-left: 8px;
+  /* Match the live header's game label, whose inset is reset in review-fixes. */
+  padding-left: 0;
   color: #9cafb7;
   font-size: 12px;
   line-height: 22px;
@@ -290,6 +296,10 @@ button.record-hand:hover {
   color: #a2b6bd;
   font-size: 11px;
   font-weight: 400;
+}
+.record-hand-blinds {
+  color: #91a8b1;
+  white-space: nowrap;
 }
 .record-refill {
   border-color: #326857;

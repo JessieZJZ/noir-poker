@@ -134,16 +134,22 @@ body[data-tutorial] .continue-deal-button.tutorial-locked {
 .tutorial-next[hidden] {
   display: none;
 }
+/* Amber from the table's gold accents: mint is already every primary button,
+   so a mint ring disappeared on 加注 and 继续. */
 [data-tutorial-focus] {
-  outline: 2px solid var(--mint);
+  outline: 2px solid #ffc857;
   outline-offset: 3px;
   border-radius: 8px;
   animation: tutorial-focus 1.6s ease-in-out infinite;
 }
 @keyframes tutorial-focus {
   50% {
-    outline-color: rgba(110, 231, 197, 0.25);
+    outline-color: rgba(255, 200, 87, 0.3);
   }
+}
+/* A settled hand has no table buttons, so Continue fills the dock row. */
+.action-panel.settled-actions > .tutorial-dock-next {
+  grid-column: 1 / -1;
 }
 .tutorial-dialog {
   max-width: 460px;

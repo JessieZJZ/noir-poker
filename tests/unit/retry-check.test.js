@@ -188,14 +188,15 @@ check('rebuy and short blind restore once with original actual blind amounts', (
   rebuyHero(g);
   startHand(g);
   const baseline = copy(g);
-  assert.equal(g.stats.buyin, 10000);
+  // The refill is half the 5000-chip leader.
+  assert.equal(g.stats.buyin, 7500);
   assert.equal(g.players[1].bet, 25);
   assert.equal(g.players[2].bet, 25);
   assert.equal(g.currentBet, 50);
   finish(g);
   restartHand(g);
   assertRestored(g, baseline);
-  assert.equal(g.stats.buyin, 10000);
+  assert.equal(g.stats.buyin, 7500);
   assert.equal(g.players[1].allin, true);
   assert.equal(potSize(g), 50);
 });

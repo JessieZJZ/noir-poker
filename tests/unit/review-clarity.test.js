@@ -119,11 +119,20 @@ test('gutshot advice and keep/compare/fold labels follow the same evidence, with
   const s = reportedGutshotCall();
   const r = analyzeDecision(s, options);
   assert.equal(r.draw.outs, 4);
-  assert.equal(r.coaching.assessmentLabel, '需要比较');
-  assert.equal(r.coaching.label, '建议跟注 520K');
-  assert.equal(r.coaching.suggestion, r.coaching.label);
+  assert.equal(
+    r.coaching.assessmentLabel,
+    r.coaching.unchanged ? '' : r.coaching.assessmentLabel || 'missing',
+  );
+  assert.notEqual(r.coaching.assessmentLabel, '需要比较');
+  assert.equal(
+    r.coaching.label,
+    r.coaching.unchanged ? '' : r.coaching.suggestion,
+    'The call taken is not repeated as advice',
+  );
+  assert.equal(r.coaching.suggestion, '建议跟注 520K');
   assert.match(summary(r.coaching), /A 落下.*顶对/);
-  assert.match(summary(r.coaching), /这手建议跟注.*下注范围.*诈唬/);
+  assert.match(summary(r.coaching), /这手跟注 520K的前提是对手的下注范围.*诈唬/);
+  assert.doesNotMatch(summary(r.coaching), /这手建议跟注/);
   assert.doesNotMatch(summary(r.coaching), /成牌后再赢筹码。|同花听牌/);
   const positive = structuredClone(r);
   positive.status = 'sound';
@@ -136,8 +145,10 @@ test('gutshot advice and keep/compare/fold labels follow the same evidence, with
     uncertainty: 0.01,
   };
   const kept = coachDecision(s, positive);
-  assert.equal(kept.assessmentLabel, '值得保留');
-  assert.equal(kept.label, '建议跟注 520K');
+  // An affirmed action keeps its verdict but shows no badge.
+  assert.equal(kept.kind, 'keep');
+  assert.equal(kept.assessmentLabel, '');
+  assert.equal(kept.label, '');
   assert.match(summary(kept), /综合当前牌力.*跟注有继续依据/);
   assert.doesNotMatch(summary(kept), /还不能确认跟注划算/);
   const negative = structuredClone(positive);

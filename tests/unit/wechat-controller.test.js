@@ -6,6 +6,7 @@ import { act, advanceStreet, legalActions, potSize } from '../../src/engine/poke
 import { createReviewInput, analyzeDecision } from '../../src/review/analysis.js';
 import { INTERACTIVE_REVIEW_OPTIONS } from '../../src/review/budget.js';
 import { BOT_THINK_LIMITS } from '../../src/engine/bot-timing.js';
+import { BOT_PROFILES } from '../../src/engine/bot-profiles.js';
 import { checkedSeatGame } from '../fixtures/checked-actions.js';
 import { tableHint } from '../../src/review/table-hint.js';
 import { observerRecord } from '../fixtures/opponent-observer.js';
@@ -348,6 +349,11 @@ function originalState(game) {
   delete result.replayAttempt;
   return result;
 }
+// A refill is half the largest stack still in the game, in whole chips.
+function halfLeader(game) {
+  const leader = Math.max(...game.players.filter((p) => p.id && !p.out).map((p) => p.stack));
+  return Math.floor(leader / 2 / game.chipUnit) * game.chipUnit;
+}
 function verifyChips(game, total) {
   const amounts = [
     game.currentBet,
@@ -654,8 +660,14 @@ test('WeChat review grades only the public before-action snapshot and keeps it d
   );
   assert.equal('title' in report, false);
   assert.equal('summary' in report, false);
-  assert.match(report.steps[0].label, /^建议(?:弃牌|过牌|跟注|全下|短全下|加注|下注)/);
-  assert.equal(report.steps[0].suggestion, report.steps[0].label);
+  assert.match(report.steps[0].suggestion, /^建议(?:弃牌|过牌|跟注|全下|短全下|加注|下注)/);
+  // A badge names only a different action; an affirmed or repeated one is silent.
+  assert.equal(
+    report.steps[0].label,
+    report.steps[0].keep || report.steps[0].suggestion === '建议' + report.steps[0].actual
+      ? ''
+      : report.steps[0].suggestion,
+  );
 });
 
 test('fresh WeChat settings use five players and publish disabled controls before the hero turn', (t) => {
@@ -995,17 +1007,19 @@ test('WeChat records mark the first post-refill hand and exclude the virtual buy
   controller.show();
   game.players[1].stack += game.players[0].stack;
   game.players[0].stack = 0;
+  const refill = halfLeader(game);
   const hand = game.hand;
   assert.equal(controller.nextHand(), true);
   // The refill counts up first; the next hand is dealt when it finishes.
   while (game.hand === hand) assert.ok(timers.runNext());
   assert.equal(controller.getRecords()[0].attempts.at(-1).refill, true);
-  assert.equal(game.stats.buyin, 10000);
+  assert.equal(game.stats.buyin, 5000 + refill);
   finish(game);
   controller.show();
   const attempt = controller.getRecords()[0].attempts.at(-1);
   assert.equal(attempt.profit, game.payouts[0] - game.players[0].total);
-  verifyChips(game, 7 * 5000);
+  // Six seats' original chips plus the refill.
+  verifyChips(game, 6 * 5000 + refill);
 });
 
 // Settle the current hand with the hero (AA) shoving into seat 1, everyone
@@ -1048,24 +1062,29 @@ test('WeChat refill deals the next hand at once and counts the stack up during i
   game.players[1].stack += game.players[0].stack;
   game.players[0].stack = 0;
   controller.show();
+  const refill = halfLeader(game);
   assert.equal(latest().needsRebuy, true);
   assert.equal(latest().nextLabel, '补充筹码');
   assert.equal(latest().rebuysLeft, 3);
+  assert.equal(
+    latest().rebuyRule,
+    `补充筹码，补充至 ${compactChips(refill)}，即当前筹码领先者（CL）的一半，剩余 3 次`,
+  );
   const hand = game.hand;
   assert.equal(controller.nextHand(), true);
   assert.equal(game.hand, hand + 1, 'The next hand is dealt immediately');
   assert.notEqual(game.phase, 'done');
   assert.equal(latest().rebuying, true);
   assert.equal(latest().heroStack, '0', 'The stack counts up from zero in the new hand');
-  assert.equal(latest().rebuyBurst, '+5K');
+  assert.equal(latest().rebuyBurst, `+${compactChips(refill)}`);
   assert.equal(latest().needsRebuy, false);
   assert.equal(game.rebuys, 1);
   assert.equal(latest().rebuysLeft, 2);
-  assert.equal(game.stats.buyin, 10000);
+  assert.equal(game.stats.buyin, 5000 + refill);
   while (latest().rebuying) assert.ok(timers.runNext());
   const hero = game.players[0];
   assert.equal(latest().heroStack, compactChips(hero.stack));
-  assert.equal(hero.stack + hero.total, 5000);
+  assert.equal(hero.stack + hero.total, refill);
   assert.equal(game.hand, hand + 1, 'Exactly one hand was dealt');
 });
 
@@ -1184,6 +1203,7 @@ test('WeChat ends the game without a champion when the hero busts with bots left
   assert.equal(latest().standingText, `第${latest().over.heroPlace}名`);
   // The grey farewell card tells the place once, with its own cue, then leaves.
   assert.deepEqual(latest().farewell.place, `第${latest().over.heroPlace}名`);
+  assert.equal(latest().farewell.note, '补码次数已用完');
   assert.equal(latest().heroPlaced, true, 'No champion: the place shows at once');
   assert.equal(sounds.filter((s) => s === 'farewell').length, 1);
   controller.show();
@@ -1210,4 +1230,101 @@ test('enabling vibration gives exactly one immediate preview, disabling and repe
   assert.equal(pulses, before + 1);
   controller.setPreference('vibration', true);
   assert.equal(pulses, before + 2);
+});
+
+test('WeChat waiting seats show players who left the game as out, matching Web', (t) => {
+  const { controller, latest } = setup(t);
+  const game = controller.getGame();
+  // The ready table before a game's first deal: no hole cards yet.
+  game.phase = 'idle';
+  for (const player of game.players)
+    Object.assign(player, { hole: [], action: '', lastAction: null });
+  Object.assign(game.players[2], { out: true, stack: 0, place: 7 });
+  controller.show();
+  assert.equal(latest().seats.find((seat) => seat.id === 2).action, '已出局');
+  assert.equal(latest().seats.find((seat) => seat.id === 1).action, '已就位');
+});
+
+test('WeChat seats show two-character style tags and keep the full name for settings', (t) => {
+  const { controller, latest } = setup(t);
+  controller.show();
+  for (const seat of latest().seats) {
+    const profile = BOT_PROFILES.find((p) => p.id === seat.profileId);
+    assert.equal(seat.profileTag, profile.abbr);
+    assert.equal([...seat.profileTag].length, 2);
+    assert.equal(seat.profileName, profile.short);
+  }
+});
+
+test('WeChat announces the final table and a new level before dealing, and replays them on retry', (t) => {
+  const { controller, latest, sounds, timers } = setup(t, { playerCount: 7 });
+  const game = controller.getGame();
+  finish(game, 'fold');
+  controller.show();
+  for (const p of game.players.slice(3)) Object.assign(p, { out: true, stack: 0, place: 4 });
+  game.levelHands = game.levelLength;
+  const deals = sounds.filter((s) => s === 'deal').length;
+  controller.nextHand();
+  // The deal waits: cards stay hidden and no bot acts until both notices end.
+  assert.equal(latest().noticeHold, true);
+  assert.equal(latest().dealing, true);
+  assert.equal(sounds.filter((s) => s === 'deal').length, deals);
+  timers.runNext();
+  assert.deepEqual(
+    latest().tableNotices.map((n) => [n.title, n.caption, n.sound]),
+    [['进入决赛圈', '剩余 3 人争夺冠军 · 不能再补码', 'finaltable']],
+  );
+  const steps = [latest().tableNotices[0].title];
+  while (latest().noticeHold) {
+    timers.runNext();
+    const shown = latest().tableNotices[0];
+    if (shown && steps.at(-1) !== shown.title) steps.push(shown.title);
+  }
+  assert.deepEqual(steps, ['进入决赛圈', '盲注升至 50 / 100']);
+  assert.ok(sounds.includes('finaltable') && sounds.includes('levelup'));
+  assert.equal(sounds.at(-1), 'deal');
+  assert.equal(latest().rebuysLeft, 0);
+  assert.equal(latest().blindText, '50 / 100');
+  finish(game, 'fold');
+  controller.show();
+  assert.equal(controller.retry(), true);
+  assert.equal(latest().noticeHold, true);
+  while (latest().noticeHold) timers.runNext();
+  assert.equal(sounds.filter((s) => s === 'levelup').length, 2);
+});
+
+test('WeChat shows the blind structure on the ready table and in settings', (t) => {
+  const { latest } = setup(t, { playerCount: 9 });
+  assert.deepEqual(latest().entryStructure, {
+    levels: '每 10 手涨盲，最高 375 / 750',
+    final: '剩 3 人进入决赛圈',
+    settings: '每 10 手升一级，最高 375 / 750，剩 3 人进入决赛圈。',
+  });
+  assert.equal(latest().stakesStructure, '每 10 手升一级，最高 375 / 750，剩 3 人进入决赛圈。');
+});
+
+test('WeChat shows the called all-in hands as the runout starts, before the board is dealt', (t) => {
+  const { controller, latest } = setup(t);
+  const game = reachHero(controller);
+  act(game, 0, 'raise', legalActions(game, 0).maxRaiseTo);
+  let caller = null;
+  while (game.phase === 'playing') {
+    const id = game.actor;
+    if (caller === null) caller = id;
+    act(game, id, id === caller ? 'call' : 'fold');
+  }
+  assert.equal(game.revealed, true);
+  assert.notEqual(game.phase, 'done');
+  controller.show();
+  const seat = latest().seats.find((s) => s.id === caller);
+  assert.deepEqual(
+    seat.cards.map((c) => c.key),
+    game.players[caller].hole.map((c) => c.key),
+  );
+  // Folded seats stay hidden.
+  assert.ok(
+    latest()
+      .seats.filter((s) => s.id !== caller)
+      .every((s) => !s.cards.length),
+  );
 });

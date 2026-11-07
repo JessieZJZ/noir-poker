@@ -65,6 +65,7 @@ test('the WeChat table enters the tutorial, plays it and returns the live hand u
   assert.equal(page.timers.size, 0, 'Entering cancels the live table timers');
   assert.equal(last().tutorial.stage, 'intro');
   assert.equal(last().tutorialPlaying, false);
+  assert.equal(last().tutorialActive, true, 'Back is taken from the intro card on');
 
   controller.tutorialPrimary();
   const lesson = controller.getGame();
@@ -90,6 +91,7 @@ test('the WeChat table enters the tutorial, plays it and returns the live hand u
   );
 
   assert.equal(controller.exitTutorial(), true);
+  assert.equal(last().tutorialActive, false, 'Back belongs to the mini program again');
   assert.equal(controller.getGame(), live);
   assert.equal(JSON.stringify(live), before);
   assert.equal(
@@ -240,4 +242,42 @@ test('the mini-program panel follows Web: short phones, a side column on landsca
   });
   // A phone never takes the tablet layout, however its keyboard resizes it.
   assert.equal(coach(844, 390, lesson).side, false);
+});
+
+test('mini-program bots move on right after the player acts, and a settled hand puts Continue in the dock', async () => {
+  const page = setup(),
+    { controller, last, timers } = page;
+  controller.start();
+  await controller.startTutorial();
+  controller.tutorialPrimary();
+  while (last().tutorial.allowed?.action !== 'call') step(page);
+  const turn = last().tutorial;
+  assert.equal(controller.action('call'), true);
+  // The call was the reply to a read message: no Continue stop, and the
+  // opponents move at the scripted pace without leftover reading time.
+  assert.equal(last().tutorial.canContinue, false);
+  assert.equal(last().tutorial.text, turn.text);
+  assert.equal(timers.size, 1);
+  const [{ delay }] = timers.values();
+  assert.equal(delay, 950, 'The opponents move at the scripted pace');
+  while (last().tutorial.stage === 'lesson' && !last().tutorial.settled) step(page);
+  assert.equal(last().done, true);
+  assert.equal(last().tutorial.canContinue, true);
+  const template = readFileSync(
+    new URL('../../miniprogram/pages/table/table-surface.wxml', import.meta.url),
+    'utf8',
+  );
+  assert.match(template, /wx:if="{{tutorial.canContinue && !tutorial.settled}}"/);
+  assert.match(
+    template,
+    /class="settled-buttons"\s*><button\s+wx:if="{{tutorialPlaying && tutorial.canContinue && tutorial.settled}}"[^>]*bindtap="tutorialNext"/,
+  );
+  const actions = template.slice(template.indexOf('class="action-buttons"'));
+  assert.ok(
+    actions.indexOf('data-action="raise"') < actions.indexOf('data-action="fold"') &&
+      actions.indexOf('data-action="fold"') < actions.indexOf('data-action="call"'),
+    'Raise sits left of fold, as on Web',
+  );
+  const menu = template.slice(template.indexOf('class="resource-menu"'));
+  assert.ok(menu.indexOf('openRecords') < menu.indexOf('openGuide'), 'Records lead the menu');
 });

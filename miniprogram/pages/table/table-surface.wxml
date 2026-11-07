@@ -4,8 +4,8 @@
 
 <view
   wx:if="{{tableReady}}"
-  class="screen {{homeLocked ? 'home-locked' : ''}}"
-  style="padding-top: {{topInset + 36}}px; padding-bottom: {{bottomInset}}px; {{homeLocked ? 'top: ' + homeOffset + 'px;' : ''}}"
+  class="screen {{homeLocked ? 'home-locked' : ''}} {{(tutorialActive || containedScroll) && !historyReadOnly ? 'tutorial-scroll' : ''}}"
+  style="padding-top: {{topInset + 36}}px; padding-bottom: {{bottomInset}}px; {{homeLocked ? 'top: ' + homeOffset + 'px;' : ''}} {{(tutorialActive || containedScroll) && !historyReadOnly ? 'height: ' + windowHeight + 'px;' : ''}}"
 >
   <view
     class="nav {{compactNav ? 'nav-compact' : ''}} {{resourceMenuOpen ? 'resource-menu-active' : ''}}"
@@ -25,12 +25,12 @@
         class="guide-button"
         id="resource-menu-button"
         bindtap="toggleResourceMenu"
-        aria-label="玩法指南、对局记录和胜率计算器"
+        aria-label="对局记录、新手引导、玩法指南和胜率计算器"
       >
         <view class="resource-label-window {{resourceRolling ? 'is-rolling' : ''}}">
           <text class="resource-label-previous">{{resourcePreviousLabel}}</text>
           <text class="resource-label-current">{{resourceLabel}}</text>
-          <text class="resource-label-static">玩法指南</text> </view
+          <text class="resource-label-static">对局记录</text> </view
         ><text class="resource-chevron">▾</text></button
       ><button
         hover-class="none"
@@ -41,21 +41,25 @@
         <view class="gear-icon" /><text>设置</text>
       </button>
       <view wx:if="{{resourceMenuOpen}}" class="resource-menu">
-        <button id="resource-guide" bindtap="openGuide">玩法指南</button>
-        <button id="resource-tutorial" bindtap="openTutorial">新手引导</button>
         <button id="resource-records" bindtap="openRecords">对局记录</button>
+        <button id="resource-tutorial" bindtap="openTutorial">新手引导</button>
+        <button id="resource-guide" bindtap="openGuide">玩法指南</button>
         <button id="resource-win-rate" bindtap="openWinRate">胜率计算器</button>
       </view></view
     >
   </view>
   <view class="table-panel {{historyReadOnly ? 'history-panel' : ''}}">
     <view
-      class="game-shell entry-{{entryState}} {{historyReadOnly ? 'history-shell' : ''}} {{tutorialSide ? 'tutorial-side' : ''}}"
+      class="game-shell entry-{{entryState}} {{historyReadOnly ? 'history-shell' : ''}} {{tutorialSide ? 'tutorial-side' : ''}} {{noticeHold ? 'notice-hold' : ''}}"
       style="height: {{tableHeight + tableHeaderHeight + tutorialCoachHeight + (waitingForSeat ? 0 : historyReadOnly || compactActions ? compactDockHeight : liveDockHeight)}}px;"
     >
       <view class="game-header">
         <view class="hand-label"
-          ><text wx:if="{{waitingForSeat}}">{{street}}</text
+          ><block wx:if="{{waitingForSeat}}"
+            ><text>{{street}}</text
+            ><text class="entry-structure"
+              >{{entryStructure.levels}} · {{entryStructure.final}}</text
+            ></block
           ><block wx:else
             ><block wx:if="{{!tutorialPlaying}}"
               ><text class="session-label">第 {{sessionNumber}} 局</text
@@ -175,8 +179,8 @@
                 id="seat-persona-{{item.id}}"
                 data-id="{{item.id}}"
                 data-kind="persona"
-                class="persona {{item.profileId === 'balanced' ? 'persona-balanced' : ''}}"
-                >{{item.profileName}}</text
+                class="persona persona-abbr"
+                >{{item.profileTag}}</text
               ><text
                 class="stack"
                 data-id="{{item.id}}"
@@ -310,7 +314,13 @@
           ><view class="farewell-card"
             ><view class="farewell-ring" /><text class="farewell-title">很遗憾，本局结束</text
             ><text class="farewell-place">{{farewell.place}}</text
-            ><text class="farewell-note">补码次数已用完</text></view
+            ><text class="farewell-note">{{farewell.note}}</text></view
+          ></view
+        >
+        <view wx:for="{{tableNotices}}" wx:key="key" class="table-notice-stage" aria-role="status"
+          ><view class="table-notice-band table-notice-{{item.kind}}"
+            ><text class="table-notice-title">{{item.title}}</text
+            ><text class="table-notice-caption">{{item.caption}}</text></view
           ></view
         >
       </view>
@@ -328,7 +338,7 @@
         /></view>
         <scroll-view scroll-y class="tutorial-message">
           <button
-            wx:if="{{tutorial.canContinue}}"
+            wx:if="{{tutorial.canContinue && !tutorial.settled}}"
             hover-class="none"
             class="tutorial-next"
             bindtap="tutorialNext"
@@ -361,6 +371,13 @@
         <block wx:if="{{done}}"
           ><view class="settled-buttons"
             ><button
+              wx:if="{{tutorialPlaying && tutorial.canContinue && tutorial.settled}}"
+              hover-class="none"
+              class="primary tutorial-dock-next"
+              bindtap="tutorialNext"
+            >
+              {{tutorial.continueLabel}}</button
+            ><button
               hover-class="none"
               wx:if="{{canPracticeRunout && !historyReadOnly}}"
               class="primary practice-runout-button"
@@ -372,6 +389,7 @@
               hover-class="none"
               class="primary {{needsRebuy ? 'rebuy-button' : ''}}"
               disabled="{{rebuying}}"
+              aria-label="{{needsRebuy ? rebuyRule : ''}}"
               bindtap="nextHand"
             >
               {{nextLabel}}<text wx:if="{{needsRebuy}}" class="rebuy-count"
@@ -705,7 +723,9 @@
         <view class="setting-row stakes-setting-row">
           <view>
             <text>起始盲注</text>
-            <text class="setting-description">点击小盲修改，大盲为小盲的两倍。</text>
+            <text class="setting-description"
+              >点击小盲修改，大盲为小盲的两倍。{{stakesStructure}}</text
+            >
           </view>
           <view class="stakes-values">
             <input
@@ -958,7 +978,7 @@
 <view
   wx:if="{{tutorial.dialog}}"
   class="sheet tutorial-sheet"
-  style="top: {{topInset + (windowHeight - topInset - bottomInset) * 0.075}}px; max-height: {{(windowHeight - topInset - bottomInset) * 0.85}}px;"
+  style="top: {{topInset + (windowHeight - topInset - bottomInset) / 2}}px; max-height: {{(windowHeight - topInset - bottomInset) * 0.85}}px;"
 >
   <view class="dialog-heading"
     ><text class="eyebrow">{{tutorial.dialog.eyebrow}}</text
@@ -1081,7 +1101,7 @@
               ><text wx:else class="review-step-meta">{{item.name}}，{{item.street}}</text
               ><text class="review-step-action">{{item.actual}}</text></view
             ><text
-              wx:if="{{reviewPerspective === 'hero' && !item.keep}}"
+              wx:if="{{reviewPerspective === 'hero' && !item.keep && item.label}}"
               class="review-label {{reviewPerspective === 'hero' ? 'consider' : ''}}"
               >{{item.label}}</text
             >
@@ -1094,7 +1114,7 @@
             >{{reviewPerspective === 'hero' ? '第 ' + (reviewIndex + 1) + ' 步' :
             selectedReviewStep.name}}，{{selectedReviewStep.street}}</text
           ><text
-            wx:if="{{reviewPerspective === 'hero'}}"
+            wx:if="{{reviewPerspective === 'hero' && selectedReviewStep.label}}"
             class="review-label {{selectedReviewStep.keep ? 'sound' : 'consider'}}"
             >{{selectedReviewStep.label}}</text
           ></view

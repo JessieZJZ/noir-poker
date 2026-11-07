@@ -152,6 +152,12 @@ page {
   gap: 4px;
   margin-top: 7px;
 }
+.hand-blinds {
+  color: #91a8b1;
+  font-size: 10px;
+  line-height: 1.4;
+  white-space: nowrap;
+}
 .hand-tag {
   padding: 1px 4px;
   border: 1px solid #3b4c53;
@@ -255,7 +261,8 @@ page {
   .hand-title {
     font-size: 18px;
   }
-  .hand-tag {
+  .hand-tag,
+  .hand-blinds {
     font-size: 13px;
   }
 }

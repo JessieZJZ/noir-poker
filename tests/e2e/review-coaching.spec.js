@@ -34,9 +34,21 @@ test('draw review connects the full public line and keeps only the requested mod
   const kept = await page
     .locator('#review-selected-status')
     .evaluate((el) => el.classList.contains('sound'));
-  await expect(page.locator('#review-selected-status')).toHaveText(
-    /^建议(?:弃牌|过牌|跟注|全下|加注|下注)/,
-  );
+  // An affirmed step stays silent; any badge names a concrete different action.
+  if (kept) await expect(page.locator('#review-selected-status')).toBeHidden();
+  else
+    await expect(page.locator('#review-selected-status')).toHaveText(
+      /^(?:$|建议(?:弃牌|过牌|跟注|全下|加注|下注))/,
+    );
+  // No step badge repeats the action the player took as a recommendation.
+  for (const step of await page.locator('#review-timeline .review-step').all()) {
+    const action = await step.locator('strong').textContent();
+    const badge = step.locator('.review-status');
+    if (await badge.count())
+      expect(await badge.textContent()).not.toBe(
+        '建议' + action.replace(/^\d+-bet\s+/, '').replace(/^(?:开池至|隔离加注至)/, '加注至'),
+      );
+  }
   if (kept) await expect(page.locator('#review-practice-focus')).toBeHidden();
   else await expect(page.locator('#review-practice-focus')).toBeVisible();
   expect(

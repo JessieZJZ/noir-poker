@@ -1,5 +1,6 @@
 import { compactActionAmounts } from '../engine/chip-format.js';
 import { createActivityParts } from './activity-parts.js';
+import { localizeGameText, localizeText } from '../i18n/index.js';
 
 const escapeHtml = (value) =>
   compactActionAmounts(value)
@@ -9,13 +10,20 @@ const escapeHtml = (value) =>
     .replaceAll('"', '&quot;')
     .replaceAll("'", '&#39;');
 export function renderActivityParts(parts) {
-  return parts
-    .map((part) =>
-      part.actor
-        ? `${escapeHtml(part.name)}${part.profile ? `<span class="activity-persona">（${escapeHtml(part.profile)}）</span>` : ''}${part.position ? ` <span class="position activity-position">${escapeHtml(part.position)}</span> ` : ''}`
-        : escapeHtml(part.text),
-    )
+  // Translate the complete sentence before adding actor markup. Splitting a
+  // blind/mood log into text nodes hides its whole-sentence catalog template.
+  const actors = [];
+  const source = parts
+    .map((part) => {
+      if (!part.actor) return part.text;
+      actors.push(part);
+      return `\uE200${actors.length - 1}\uE201`;
+    })
     .join('');
+  return escapeHtml(localizeGameText(source)).replace(/\uE200(\d+)\uE201/g, (_, index) => {
+    const part = actors[index];
+    return `${escapeHtml(localizeText(part.name))}${part.profile ? `<span class="activity-persona">（${escapeHtml(localizeText(part.profile))}）</span>` : ''}${part.position ? ` <span class="position activity-position">${escapeHtml(part.position)}</span> ` : ''}`;
+  });
 }
 
 export function createActivityFormatter(game) {

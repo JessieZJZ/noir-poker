@@ -177,7 +177,7 @@ for (const stakes of configurations) {
     );
   });
 }
-test('configuration is copied, validates before mutation, and rebuy uses configured starting stack', () => {
+test('configuration is copied, validates before mutation, and rebuy is half the configured chip leader', () => {
   const value = { ...DEFAULT_STAKES };
   const g = newGame(5, value);
   value.bigBlind = 1000;
@@ -194,8 +194,9 @@ test('configuration is copied, validates before mutation, and rebuy uses configu
   assert.throws(() => startHand(g), /补充筹码/);
   rebuyHero(g);
   startHand(g);
-  assert.equal(g.stats.buyin, 40000);
-  assert.equal(g.players[0].stack, 20000);
+  // Every bot still holds the configured 20000, so the refill is 10000.
+  assert.equal(g.stats.buyin, 30000);
+  assert.equal(g.players[0].stack + g.players[0].total, 10000);
 });
 test('fraction rounding reads the denomination and display preserves every chip at K/M boundaries', () => {
   assert.equal(
@@ -214,7 +215,7 @@ test('fraction rounding reads the denomination and display preserves every chip 
     [-15000, '-15K'],
   ])
     assert.equal(compactChips(n), s);
-  assert.equal(compactChips(1100, 'de'), '1,1K');
+  assert.equal(compactChips(1100, 'de'), '1.1K');
   assert.equal(compactActionAmounts('你 2-bet 全下至 15000'), '你 2-bet 全下至 15K');
   assert.equal(
     compactActionAmounts('Kai 小盲 500000 · River 大盲 1000000'),

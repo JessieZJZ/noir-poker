@@ -65,6 +65,14 @@
   color: #a4b8b2;
   font-size: 12px;
 }
+/* This game's blind structure sits under the waiting message. */
+.entry-waiting .hand-label .entry-structure {
+  display: block;
+  margin-top: 1px;
+  color: #c9b98f;
+  font-size: 11px;
+  line-height: 1.35;
+}
 .entry-welcome .entry-join {
   min-width: 150px;
   min-height: 44px;

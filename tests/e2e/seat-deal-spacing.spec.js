@@ -153,7 +153,7 @@ for (const locale of ['zh-CN', 'en']) {
                 contained:
                   t.left >= p.left && t.right <= p.right && t.top >= p.top && t.bottom <= p.bottom,
                 complete:
-                  tag.textContent === tag.dataset.fullName &&
+                  tag.textContent === tag.dataset.styleTag &&
                   tag.textContent.trim().length > 0 &&
                   getComputedStyle(tag).textOverflow !== 'ellipsis' &&
                   getComputedStyle(tag).whiteSpace === 'nowrap' &&

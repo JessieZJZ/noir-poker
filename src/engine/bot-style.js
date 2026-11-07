@@ -181,7 +181,19 @@ export function expensiveWeakPair(view, equity) {
   const aggression = view.history.filter(
     (a) => a.id !== view.id && a.street > 0 && a.action === 'raise',
   );
-  return view.legal.callAmount > original * 0.2 && aggression.length >= 2 && equity < 0.7;
+  if (view.legal.callAmount <= original * 0.2 || aggression.length < 2 || equity >= 0.7)
+    return false;
+  // Repeated bets make a one-pair estimate optimistic, so it is discounted,
+  // but the release still needs the price: a small second barrel into a big
+  // pot cannot push top pair off for its stack share alone.
+  return equity - WEAK_PAIR_BARREL_DISCOUNT < weakPairPrice(view);
+}
+
+// Equity a one-pair estimate loses to repeated postflop aggression before it
+// is compared with the price of continuing.
+export const WEAK_PAIR_BARREL_DISCOUNT = 0.2;
+export function weakPairPrice(view) {
+  return view.callPrice?.odds ?? view.legal.callAmount / Math.max(1, view.contestable);
 }
 
 // A last-to-act stab follows checks that have actually happened. Do not turn

@@ -1,6 +1,6 @@
 # 胜率计算器
 
-顶部“玩法指南”下拉菜单的第三项。Web、原生 App 和微信小程序共用 `src/engine/win-rate.js` 与 `src/engine/win-rate-session.js`；界面分别在 `src/ui/win-rate.js` 与 `miniprogram/calculator/`。它只读取手动选择的牌，不读取、不修改当前牌局，浏览时牌局继续进行。
+顶部资源下拉菜单的最后一项。Web、原生 App 和微信小程序共用 `src/engine/win-rate.js` 与 `src/engine/win-rate-session.js`；界面分别在 `src/ui/win-rate.js` 与 `miniprogram/calculator/`。它只读取手动选择的牌，不读取、不修改当前牌局，浏览时牌局继续进行。
 
 ## 交互
 
@@ -33,6 +33,8 @@
 
 ## 平台
 
+微信页面按牌缓存牌面图，但每次交给 `setData` 的都是副本：`setData` 会把传入对象留在 `page.data` 里，原地换牌时的叶子补丁（例如把 5♠ 改成 5♥）会写进这个对象。共用缓存对象会把其他底牌、outs 和选牌面板里的同一张牌一起改成新牌，而胜率仍按真实选牌计算。`tests/unit/wechat-win-rate.test.js` 按引用保存 `setData` 的值，逐次换牌后核对每个牌位、outs 和选牌面板的牌面。Web 与 App 每次从会话重新生成牌面，没有这个缓存。
+
 微信主包接近 2 MiB 预算，因此页面与两个引擎模块放在 `calculator` 分包，构建时把引擎模块移入分包并继续引用主包的 `shared/engine/poker.js`。规则仍只有一份。
 
 ## 验证
@@ -44,3 +46,8 @@ NOIR_NATIVE_SCENARIOS=win-rate-calculator npm run mobile:test:ios
 NOIR_NATIVE_SCENARIOS=win-rate-calculator npm run mobile:test:android
 node tests/wechat/win-rate.mjs ws://127.0.0.1:9432 .artifacts/wechat-win-rate
 ```
+
+## 顶部与返回
+
+- 标题栏和公共牌区一起固定在顶部，只有玩家列表在下方滚动。Web/App 把公共牌区放在滚动区域之外；微信把它吸附在固定标题下方，背景与标题栏相同，滚过的玩家不会透出。
+- Web/App 打开计算器时写入一条浏览历史（地址不变，对局记录的路由不受影响），浏览器或手势返回、Android 返回键都只关闭计算器、回到牌桌；用关闭按钮退出时这条记录同时撤回。微信计算器本来就是独立页面，返回同样回到牌桌。
