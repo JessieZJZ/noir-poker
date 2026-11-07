@@ -22,7 +22,7 @@ npm run mobile:sync
 | iOS 模拟器构建       | `npm run mobile:ios`            | Xcode 26；`.artifacts/mobile/ios/Build/Products/Debug-iphonesimulator/App.app`       |
 | Android 调试 APK     | `npm run mobile:android`        | JDK 21、Android SDK 36；`.artifacts/mobile/noir-poker-debug.apk`                     |
 | Android 独立测试 APK | `npm run mobile:android:qa`     | JDK 21、Android SDK 36；`.artifacts/mobile/noir-poker-qa.apk`                        |
-| iOS 签名归档         | `npm run mobile:ios:archive`    | Apple Team、开发者证书；`.artifacts/mobile/NOIR-Poker.xcarchive`                     |
+| iOS 签名归档         | `npm run mobile:ios:archive`    | Team ID、Xcode 账号；归档与已签名 `.artifacts/mobile/ios-export/App.ipa`             |
 | iOS 上传 TestFlight  | `npm run mobile:ios:upload`     | 归档后导出并上传 App Store Connect；Team ID 与 Xcode 账号见发行文档                  |
 | Android 签名 AAB     | `npm run mobile:android:bundle` | release.env 与钥匙串密码，或四项环境变量；`.artifacts/mobile/noir-poker-release.aab` |
 

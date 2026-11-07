@@ -63,7 +63,7 @@ export function loadReleaseSigning({
   return loaded;
 }
 
-export function iosExportOptions(teamID) {
+export function iosExportOptions(teamID, destination = 'upload') {
   return `<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
@@ -71,7 +71,7 @@ export function iosExportOptions(teamID) {
   <key>method</key>
   <string>app-store-connect</string>
   <key>destination</key>
-  <string>upload</string>
+  <string>${destination}</string>
   <key>teamID</key>
   <string>${teamID}</string>
   <key>signingStyle</key>

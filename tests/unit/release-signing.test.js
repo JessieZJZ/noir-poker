@@ -74,4 +74,8 @@ test('the iOS export uploads to App Store Connect with the configured team', () 
   assert.match(plist, /<key>destination<\/key>\s*<string>upload<\/string>/);
   assert.match(plist, /<key>teamID<\/key>\s*<string>ABCDE12345<\/string>/);
   assert.match(plist, /<key>manageAppVersionAndBuildNumber<\/key>\s*<false\/>/);
+  assert.match(
+    iosExportOptions('ABCDE12345', 'export'),
+    /<key>destination<\/key>\s*<string>export<\/string>/,
+  );
 });

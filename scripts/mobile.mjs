@@ -251,8 +251,9 @@ if (command === 'doctor') {
         '-archivePath',
         '.artifacts/mobile/NOIR-Poker.xcarchive',
         `DEVELOPMENT_TEAM=${process.env.NOIR_APPLE_TEAM_ID}`,
-        'CODE_SIGN_STYLE=Automatic',
-        '-allowProvisioningUpdates',
+        // Automatic signing would first sign for development, which needs a
+        // registered device. The export below signs for distribution instead.
+        'CODE_SIGNING_ALLOWED=NO',
         'archive',
       );
     else
@@ -276,11 +277,18 @@ if (command === 'doctor') {
         : '.artifacts/mobile/ios/Build/Products/Debug-iphonesimulator/App.app',
     );
     console.log(JSON.stringify(verifyBundledArtifact(artifact)));
-    if (command === 'ios-upload') {
-      // Signs for App Store Connect and uploads with the Xcode account; the
-      // build then appears in TestFlight after Apple finishes processing.
+    if (command !== 'ios') {
+      // Signs with Apple Distribution and an App Store profile, created by the
+      // Xcode account when missing. Upload sends it to App Store Connect, where
+      // the build appears in TestFlight after processing.
+      const upload = command === 'ios-upload';
       const options = path.join(output, 'ios-export-options.plist');
-      writeFileSync(options, iosExportOptions(process.env.NOIR_APPLE_TEAM_ID));
+      const exported = path.join(output, 'ios-export');
+      writeFileSync(
+        options,
+        iosExportOptions(process.env.NOIR_APPLE_TEAM_ID, upload ? 'upload' : 'export'),
+      );
+      rmSync(exported, { recursive: true, force: true });
       run('xcodebuild', [
         '-exportArchive',
         '-archivePath',
@@ -288,11 +296,13 @@ if (command === 'doctor') {
         '-exportOptionsPlist',
         options,
         '-exportPath',
-        path.join(output, 'ios-export'),
+        exported,
         '-allowProvisioningUpdates',
       ]);
       console.log(
-        `Uploaded ${metadata.version} (${metadata.buildNumber}) to App Store Connect; it appears in TestFlight after processing`,
+        upload
+          ? `Uploaded ${metadata.version} (${metadata.buildNumber}) to App Store Connect; it appears in TestFlight after processing`
+          : `Signed ${path.join(exported, 'App.ipa')} for App Store Connect`,
       );
     }
   } else {

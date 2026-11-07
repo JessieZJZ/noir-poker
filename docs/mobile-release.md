@@ -35,7 +35,7 @@ npm run mobile:android:bundle
 
 ### iOS
 
-加入 Apple Developer Program，在 Xcode → Settings → Accounts 登录开发者账号。签名使用 Automatic Signing：归档和导出时 `-allowProvisioningUpdates` 让 Xcode 按账号创建或更新 Apple Distribution 证书与描述文件，私钥保存在登录钥匙串，不需要另设签名密码；导出 `.p12` 备份时才由钥匙串访问提示设置密码。
+加入 Apple Developer Program，在 Xcode → Settings → Accounts 登录开发者账号。归档本身不签名；导出时 `-allowProvisioningUpdates` 让 Xcode 按账号创建或更新 Apple Distribution 证书与 App Store 描述文件，再签名。这样账号下不需要注册任何设备（自动签名直接归档会先要求开发描述文件，没有设备时失败）。私钥保存在登录钥匙串，不需要另设签名密码；导出 `.p12` 备份时才由钥匙串访问提示设置密码。
 
 在 `~/.config/noir-poker/release.env` 写入 10 位 Team ID（developer.apple.com → Membership），也可用环境变量覆盖：
 
@@ -44,11 +44,11 @@ NOIR_APPLE_TEAM_ID=你的10位TeamID
 ```
 
 ```sh
-npm run mobile:ios:archive   # 只生成 .artifacts/mobile/NOIR-Poker.xcarchive
+npm run mobile:ios:archive   # 归档并导出已签名的 .artifacts/mobile/ios-export/App.ipa，不上传
 npm run mobile:ios:upload    # 归档后导出 App Store Connect 包并上传
 ```
 
-上传使用 Xcode 已登录的账号；处理完成后构建出现在 App Store Connect 的 TestFlight。构建号取自 `mobile/release.json`，每次上传前递增，导出时不由 Xcode 改写。也可以只归档，再用 Xcode Organizer Validate App、Distribute App。脚本不创建商店条目、不填写税务协议、不提交审核。模拟器构建不包含发行签名，不能代替此流程。
+上传使用 Xcode 已登录的账号；处理完成后构建出现在 App Store Connect 的 TestFlight。构建号取自 `mobile/release.json`，每次上传前递增，导出时不由 Xcode 改写。同一构建号上传过后不能再次上传。也可以只运行 `mobile:ios:archive`，再用 Transporter 上传 `App.ipa`。脚本不创建商店条目、不填写税务协议、不提交审核。模拟器构建不包含发行签名，不能代替此流程。
 
 ## 付费与商店资料
 
