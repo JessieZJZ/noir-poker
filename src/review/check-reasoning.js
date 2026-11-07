@@ -143,6 +143,16 @@ export function weakTopPairCheckReason(s, c) {
   return `这手牌的 ${rankText(kicker)} 踢脚偏弱，遇到同样击中顶对但踢脚更好的牌时会落后，${s.reviewSubject || '这位玩家'}过牌先控制底池，保留摊牌机会。`;
 }
 
+// Seat count is public. More players make it likelier that someone is already
+// ahead of one pair or drawing past it, so a bet is mostly called by those.
+export function multiwayPairCheckReason(s, c) {
+  if (!s.street || c.opponents < 2 || c.made.score[0] !== 1) return '';
+  if (['board', 'board-pair'].includes(c.handClass)) return '';
+  return s.street === 3
+    ? `还有 ${c.opponents} 位对手没弃牌。人越多，越可能有人已经领先。一对这时下注，愿意跟的多是更强的牌，所以先过牌控制底池。`
+    : `还有 ${c.opponents} 位对手没弃牌。人越多，越可能有人已经领先或正在听牌。一对这时下注，愿意跟的多是更强的牌或听牌，所以先过牌控制底池。`;
+}
+
 export function checkReasoning(s, c, { trap = false, closingExplained = false } = {}) {
   if (!s.street || c.handClass === 'board') return [];
   const risks = checkRisks(s, c);
@@ -171,7 +181,9 @@ export function checkReasoning(s, c, { trap = false, closingExplained = false } 
   // next decision. Keep board facts, the cost of checking and recorded traps.
   if (s.reviewAudience === 'observer') {
     const kickerControl = trap ? '' : weakTopPairCheckReason(s, c);
-    if (risks.length && !c.draw.outs) parts.push('过牌避免主动扩大当前底池。');
+    const crowd = trap || kickerControl ? '' : multiwayPairCheckReason(s, c);
+    if (crowd) parts.push(crowd);
+    else if (risks.length && !c.draw.outs) parts.push('过牌避免主动扩大当前底池。');
     else if (trap && c.pendingOthers > 0)
       parts.push('后面还有玩家可以下注，过牌保留了诱导其拿较弱牌继续下注或尝试诈唬的机会。');
     else if (kickerControl) parts.push(kickerControl);
@@ -198,7 +210,7 @@ export function checkReasoning(s, c, { trap = false, closingExplained = false } 
   else if (valueHolding)
     parts.push(
       c.pendingOthers > 0 && s.street < 3
-        ? '若后位会继续下注，可以过牌诱导后再取值；若其常过回，主动下注更容易向较弱成牌或听牌收费。'
+        ? '若后位会继续下注，可以过牌诱导后再取值。若其常过回，主动下注更容易向较弱成牌或听牌收费。'
         : '这手强成牌仍有向较弱成牌收取跟注的空间，过牌可能少收一轮价值。',
     );
   else if (c.made.score[0] === 0 && !c.draw.outs)

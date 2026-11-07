@@ -7,6 +7,8 @@ import {
   hasPublicStory,
 } from './public-story.js';
 import { startingPercentile } from './starting-range.js';
+import { preflopSeatsBehind } from './positions.js';
+import { SHORT_SHOVE_BB, PUSH_FOLD_BB, pushWidth } from './push-fold.js';
 import {
   sanitizePublicRead,
   observedRangeModel,
@@ -191,6 +193,20 @@ function allInPreflopWeight(hole, range) {
     if ((pair && high >= 8) || (high >= 13 && low >= 10)) return 1;
     if (pair || (suited && high === 14) || (suited && high - low <= 2 && low >= 5)) return 0.4;
     return 0.08;
+  }
+  // A short first-in shove is a push/fold range: wide from late seats and
+  // short stacks, narrower with more seats behind. Above the push/fold depth
+  // only part of that range shoves rather than opening small.
+  if (
+    range.role === 'shover' &&
+    range.line === 'cold-shove' &&
+    range.committedCount === 1 &&
+    range.depthBB <= SHORT_SHOVE_BB
+  ) {
+    const behind = preflopSeatsBehind(range.position, range.seatedCount) ?? 4,
+      width = pushWidth(range.depthBB, behind) * (range.depthBB > PUSH_FOLD_BB ? 0.75 : 1),
+      percentile = startingPercentile(hole);
+    return percentile <= width ? 1 : Math.max(0.01, Math.exp(-(percentile - width) / 0.05));
   }
   const singleLate =
     range.role === 'shover' &&

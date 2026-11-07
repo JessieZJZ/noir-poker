@@ -13,17 +13,18 @@ npm run mobile:sync
 
 `mobile:sync` 不需要 Xcode 或 Android SDK，执行原始图标生成、原生模式的 Web 构建、版本同步、两端插件和资源同步，再校验源码指纹与两端资源副本。生成文件放在 `.artifacts/mobile/`，不提交到 Git。
 
-| 操作                 | 命令                            | 环境与输出                                                                     |
-| -------------------- | ------------------------------- | ------------------------------------------------------------------------------ |
-| 同步两端工程         | `npm run mobile:sync`           | Node.js 22.12+；重新构建当前 Web 源码                                          |
-| 检查资源是否过期     | `npm run mobile:verify`         | 检查源码指纹及两个资源副本；过期会失败                                         |
-| 打开 iOS 工程        | `npm run mobile:ios:open`       | macOS + Xcode 26；先同步再打开                                                 |
-| 打开 Android 工程    | `npm run mobile:android:open`   | Android Studio；先同步再打开                                                   |
-| iOS 模拟器构建       | `npm run mobile:ios`            | Xcode 26；`.artifacts/mobile/ios/Build/Products/Debug-iphonesimulator/App.app` |
-| Android 调试 APK     | `npm run mobile:android`        | JDK 21、Android SDK 36；`.artifacts/mobile/noir-poker-debug.apk`               |
-| Android 独立测试 APK | `npm run mobile:android:qa`     | JDK 21、Android SDK 36；`.artifacts/mobile/noir-poker-qa.apk`                  |
-| iOS 签名归档         | `npm run mobile:ios:archive`    | Apple Team、开发者证书；`.artifacts/mobile/NOIR-Poker.xcarchive`               |
-| Android 签名 AAB     | `npm run mobile:android:bundle` | 四项签名环境变量；`.artifacts/mobile/noir-poker-release.aab`                   |
+| 操作                 | 命令                            | 环境与输出                                                                           |
+| -------------------- | ------------------------------- | ------------------------------------------------------------------------------------ |
+| 同步两端工程         | `npm run mobile:sync`           | Node.js 22.12+；重新构建当前 Web 源码                                                |
+| 检查资源是否过期     | `npm run mobile:verify`         | 检查源码指纹及两个资源副本；过期会失败                                               |
+| 打开 iOS 工程        | `npm run mobile:ios:open`       | macOS + Xcode 26；先同步再打开                                                       |
+| 打开 Android 工程    | `npm run mobile:android:open`   | Android Studio；先同步再打开                                                         |
+| iOS 模拟器构建       | `npm run mobile:ios`            | Xcode 26；`.artifacts/mobile/ios/Build/Products/Debug-iphonesimulator/App.app`       |
+| Android 调试 APK     | `npm run mobile:android`        | JDK 21、Android SDK 36；`.artifacts/mobile/noir-poker-debug.apk`                     |
+| Android 独立测试 APK | `npm run mobile:android:qa`     | JDK 21、Android SDK 36；`.artifacts/mobile/noir-poker-qa.apk`                        |
+| iOS 签名归档         | `npm run mobile:ios:archive`    | Team ID、Xcode 账号；归档与已签名 `.artifacts/mobile/ios-export/App.ipa`             |
+| iOS 上传 TestFlight  | `npm run mobile:ios:upload`     | 归档后导出并上传 App Store Connect；Team ID 与 Xcode 账号见发行文档                  |
+| Android 签名 AAB     | `npm run mobile:android:bundle` | release.env 与钥匙串密码，或四项环境变量；`.artifacts/mobile/noir-poker-release.aab` |
 
 支持 iOS 15+、Android 7.0/API 24+；Android 编译和目标 SDK 为 36。Xcode 的 Swift Package Manager 管理 Capacitor，无需 CocoaPods。系统要求以 [Capacitor 环境说明](https://capacitorjs.com/docs/getting-started/environment-setup) 与 [v8 升级说明](https://capacitorjs.com/docs/updating/8-0) 为准。
 
@@ -54,7 +55,7 @@ npm run mobile:sync
 - 启动时先展示 `public/launch-icon.png` 的透明外边缘图标；共享 CSS 通过 `src/styles/app.js` 异步加载并等待完成，平台设置、语言、待入座牌桌与布局就绪后一次显示牌桌。入座后才发牌和启动电脑行动，编号与音乐渐入见[入座体验](entry-experience.md)。首屏隐藏规则覆盖全部子元素，滚动指南标题不能提前穿透。图标从 `public/brand-mark.svg` 矢量母版生成；Android 保留系统启动屏直至 WebView 已提交首屏，iOS 系统启动图与加载遮罩均使用居中 180pt 图标，并在 WebKit 完成绘制帧后撤掉遮罩。
 - App 设置中的“音效与音乐”统一控制操作音效及本地循环背景音乐，“振动”独立控制 Haptics 回合提示。新设备均默认开启；旧组合静音保留为两项关闭，之后各自持久保存。安装运行回归分别检查声音、音乐与真实 Haptics 桥接请求，并验证音乐循环、前后台和重启保存；模拟器请求通过不等于实体手机震感或听感验收。详见[背景音乐与独立振动](background-music.md)。
 - 切到后台时暂停机器人和发牌等待，回到前台后从剩余思考时间继续。重打、换手或重新练习仍会取消旧任务。对局记录与筹码恢复点保存到本机 Preferences；进程被系统杀死后继续原局的新一手，未完成手的所有下注撤回且不计入统计。浏览记录和历史结算页不暂停练习，真正切到系统后台仍暂停计时。
-- Android 返回键依次关闭当前对话框、下拉菜单，再按历史详情→记录列表→游戏回退；在游戏页才回到后台。iOS 的 WKWebView 开启系统边缘回退手势，记录浏览使用同一组父页面关系。“返回游戏”退出整次记录浏览，重新打开不会叠加列表。
+- Android 返回键依次关闭当前对话框、下拉菜单，再按历史详情→记录列表→游戏回退；在游戏页先提示“再按一次退出”，2 秒内再按一次才回到后台（`EXIT_CONFIRM_MS`）。iOS 没有退出应用的系统返回，不需要这一提示。iOS 的 WKWebView 开启系统边缘回退手势，记录浏览使用同一组父页面关系。“返回游戏”退出整次记录浏览，重新打开不会叠加列表。
 - 处理刘海、状态栏和底部手势区域；增加包内“关于与隐私”入口，显示实际原生版本和构建号。入口位于底部“单机练习·虚拟筹码·禁止赌博”下方居中，使用相同字号与颜色。
 - Web 与原生包使用同一组本地字体，风格名称、成熟插画（均衡使用文字头像）和风格说明与 Web 保持一致。全部本地图片随包提供，无需远程字体请求。构建生成图片 SHA-256 清单，同步副本以及实际 `.app`、APK、AAB 均检查图片内容，缺失或过期会阻止交付。
 

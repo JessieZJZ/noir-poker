@@ -1205,12 +1205,13 @@ export async function nativeScenarios(app) {
         await app.evaluate(() =>
           [...document.querySelectorAll('.seat-style-label')].every((tag) => {
             const fullName = tag.dataset.fullName,
+              shown = tag.dataset.styleTag,
               style = getComputedStyle(tag),
               rect = tag.getBoundingClientRect(),
               profile = tag.closest('.seat-profile').getBoundingClientRect();
             return (
               fullName &&
-              tag.textContent === fullName &&
+              tag.textContent === shown &&
               tag.getAttribute('aria-label')?.includes(fullName) &&
               style.textOverflow !== 'ellipsis' &&
               style.whiteSpace === 'nowrap' &&
@@ -1927,7 +1928,7 @@ export async function nativeScenarios(app) {
         (entry) => entry.textContent,
       ),
     );
-    assert.equal(terms.length, 35);
+    assert.equal(terms.length, 36);
     for (const term of ['范围优势', '弃牌权益', '隐含收益', '坚果听牌', '继续范围'])
       assert.ok(
         terms.some((entry) => entry.includes(term)),
@@ -1994,7 +1995,7 @@ export async function nativeScenarios(app) {
             p = el.closest('.seat-profile').getBoundingClientRect();
           return {
             text: el.textContent,
-            expected: el.dataset.fullName,
+            expected: el.dataset.styleTag,
             visible:
               r.top >= document.querySelector('.header').getBoundingClientRect().bottom - 1 &&
               r.bottom <= innerHeight,
@@ -2191,8 +2192,8 @@ export async function nativeScenarios(app) {
       ),
     }));
     assert.equal(guide.hands, 9);
-    assert.equal(guide.glossaryEntries, 35);
-    assert.equal(Object.keys(guide.glossaryTerms).length, 35, 'Every glossary term is unique');
+    assert.equal(guide.glossaryEntries, 36);
+    assert.equal(Object.keys(guide.glossaryTerms).length, 36, 'Every glossary term is unique');
     assert.match(guide.glossary, /底池赔率／保本胜率.*全下只会结束自己的下注选择/s);
     assert.match(guide.glossary, /主动权.*不改变行动顺序/s);
     assert.match(guide.glossary, /权益把获胜和平分计为底池份额/);
@@ -2314,7 +2315,7 @@ export async function nativeScenarios(app) {
           misfits: tags
             .map((tag) => ({
               text: tag.textContent,
-              fullName: tag.dataset.fullName,
+              styleTag: tag.dataset.styleTag,
               whiteSpace: getComputedStyle(tag).whiteSpace,
               textOverflow: getComputedStyle(tag).textOverflow,
               fontSize: getComputedStyle(tag).fontSize,
@@ -2325,7 +2326,7 @@ export async function nativeScenarios(app) {
             }))
             .filter(
               (tag) =>
-                tag.text !== tag.fullName ||
+                tag.text !== tag.styleTag ||
                 tag.whiteSpace !== 'nowrap' ||
                 tag.textOverflow === 'ellipsis' ||
                 tag.scrollWidth > tag.clientWidth + 1 ||
@@ -4425,6 +4426,19 @@ export async function nativeScenarios(app) {
     if (app.platform === 'android') {
       const beforeMinimize = await app.state();
       await app.preserveForegroundPage();
+      // The first Back at the table only shows the exit prompt; a second Back
+      // inside its two-second window leaves. Record the prompt in the page and
+      // press twice without slow driver reads in between.
+      await app.evaluate(() => {
+        window.__nativeExitPrompts = [];
+        document.addEventListener('noir:exit-prompt', () =>
+          window.__nativeExitPrompts.push({
+            at: performance.now(),
+            records: document.body.dataset.recordsPage || '',
+          }),
+        );
+      });
+      await app.back();
       await app.back();
       const nativeState = await app.waitFor(
         async () => {
@@ -4436,11 +4450,19 @@ export async function nativeScenarios(app) {
       );
       await app.activate();
       await waitGamePage();
+      const exitPrompt = await app.evaluate(() => ({
+        prompts: window.__nativeExitPrompts,
+        toast: document.querySelector('#app-toast').textContent.trim(),
+      }));
+      assert.equal(exitPrompt.prompts.length, 1, 'Only the first Back may show the exit prompt');
+      assert.ok(!['hand', 'list'].includes(exitPrompt.prompts[0].records));
+      assert.equal(exitPrompt.toast, '再按一次退出');
       const afterActivate = await app.state();
       assert.equal(afterActivate.sessionNumber, beforeMinimize.sessionNumber);
       assert.equal(afterActivate.hand, beforeMinimize.hand);
       assert.equal(await app.visible('#records-page'), false);
       returnGameBack = {
+        exitPrompt,
         nativeState,
         session: afterActivate.sessionNumber,
         hand: afterActivate.hand,
@@ -4530,7 +4552,8 @@ export async function nativeScenarios(app) {
     );
     assert.deepEqual((await app.state()).hole, ['10♥', '9♥']);
     let coached = false;
-    for (let step = 0; step < 300; step++) {
+    // Bots wait for each fresh coach message to be read, so waiting steps repeat.
+    for (let step = 0; step < 600; step++) {
       const view = (await app.state()).tutorial;
       if (view.stage === 'summary') break;
       if (view.allowed?.action === 'call' && !coached) {

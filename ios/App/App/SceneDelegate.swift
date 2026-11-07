@@ -91,7 +91,20 @@ class NoirBridgeViewController: CAPBridgeViewController, UIGestureRecognizerDele
         artwork.contentMode = .scaleAspectFit
         artwork.translatesAutoresizingMaskIntoConstraints = false
         cover.addSubview(artwork)
+        // The same "NOIR POKER" wordmark as the system launch screen.
+        let wordmark = UILabel()
+        wordmark.attributedText = NSAttributedString(
+            string: "NOIR POKER",
+            attributes: [
+                .font: UIFont.systemFont(ofSize: 18, weight: .bold),
+                .foregroundColor: UIColor(red: 233 / 255, green: 242 / 255, blue: 239 / 255, alpha: 1),
+                .kern: 6
+            ])
+        wordmark.translatesAutoresizingMaskIntoConstraints = false
+        cover.addSubview(wordmark)
         NSLayoutConstraint.activate([
+            wordmark.centerXAnchor.constraint(equalTo: cover.centerXAnchor, constant: 3),
+            wordmark.topAnchor.constraint(equalTo: artwork.bottomAnchor, constant: 12),
             cover.leadingAnchor.constraint(equalTo: webView.leadingAnchor),
             cover.trailingAnchor.constraint(equalTo: webView.trailingAnchor),
             cover.topAnchor.constraint(equalTo: webView.topAnchor),

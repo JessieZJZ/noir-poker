@@ -46,8 +46,8 @@ test('consumer preflop review has one possible-hand group with causal ranges and
   await expect(panel.locator('[data-matchup-direction]')).toHaveCount(1);
   await expect(panel.locator('[data-matchup-direction="possible"]')).toContainText('对手可能牌组');
   // The summary opens with the actual opening raise and the caller's real top-up.
-  await expect(panel).toContainText('Luna在 UTG+1 位2-bet 开池至 4K');
-  await expect(panel).toContainText('Jade在 LJ 位已跟注这笔加注，补 4K');
+  await expect(panel).toContainText('Luna 在 UTG+1 位 2-bet 开池至 4K');
+  await expect(panel).toContainText('Jade 在 LJ 位已跟注这笔加注，补 4K');
   await expect(panel).not.toContainText(/结构上较|不代表获胜概率|依据当时记录|旧记录/);
   const below = await panel
     .locator('.review-matchups')

@@ -40,6 +40,8 @@ iOS 先对指定测试设备干净安装，用 Simulator 服务独立启动应�
 
 iOS 自动选择最新可用 runtime 中兼容的标准尺寸 iPhone，仅复用同一 runtime、同一设备类型的专用模拟器。可用 `NOIR_IOS_RUNTIME` 和 `NOIR_IOS_DEVICE_TYPE` 指定 `simctl list runtimes -j` / `simctl list devicetypes -j` 返回的完整 identifier；选择不可用或不兼容时直接失败，不自动换设备。指定 UDID 时使用该设备。报告记录自动选择的 runtime 和设备类型。
 
+应用首次进入时先跟随设备系统语言。场景按简体中文界面编写：iOS 在干净安装后、启动前，只为测试应用写入应用自己的语言偏好（与“设置 → 应用 → 语言”相同，`AppleLanguages` 为 `zh-Hans-CN`），不改模拟器的系统语言；Android 测试 AVD 的系统语言需为简体中文（`persist.sys.locale` 为 `zh-Hans-CN`）。报告的 `appLanguage` 记录 iOS 的设置。
+
 **测试执行干净安装，会清除所选测试应用的数据。** iOS 只卸载这个测试应用，保留模拟器和测试驱动，必须使用测试模拟器；默认专用模拟器在脚本自行启动时，会在完成后关闭。安卓真机强制使用下述独立 QA 包，原有应用的练习数据不受测试重置影响。
 
 Android 要先启动专用 AVD；脚本等待系统启动完成和包管理服务就绪后才安装、连接驱动。只有一个已连接设备时自动选中，否则通过 `--udid emulator-5554` 指定。也支持 `NOIR_IOS_UDID` 和 `NOIR_ANDROID_UDID`。指定 UDID 的 iOS 设备在脚本自行启动时关闭，已启动的设备保持运行。

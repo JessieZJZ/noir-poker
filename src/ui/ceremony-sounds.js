@@ -1,8 +1,10 @@
 // Game-end cues. A championship is greeted by a recorded crowd cheering: the
 // full cheer for the hero's title, a shorter and quieter one for a bot's. A
 // game the hero leaves without a champion keeps a synthesized muted tone.
+// Table notices are synthesized too: a short rising call when the blinds go
+// up, a brighter fanfare when the final table begins.
 export const CEREMONY_SAMPLE_RATE = 22050;
-export const CEREMONY_CUES = ['champion', 'crowned', 'farewell'];
+export const CEREMONY_CUES = ['champion', 'crowned', 'farewell', 'levelup', 'finaltable'];
 // Local recordings under public/audio (WeChat: assets/sounds), never fetched remotely.
 export const CHEER_FILES = {
   champion: 'audio/champion-cheer.m4a',
@@ -11,11 +13,17 @@ export const CHEER_FILES = {
 export const SYNTHESIZED_CEREMONY_CUES = CEREMONY_CUES.filter((cue) => !CHEER_FILES[cue]);
 // Players that cache the synthesized WAVs (WeChat user files) key them by this
 // version; bump it whenever a synthesized cue's samples change.
-export const CEREMONY_SOUND_VERSION = 3;
+export const CEREMONY_SOUND_VERSION = 4;
 const TAU = 2 * Math.PI;
 const note = (semitones) => 261.63 * Math.pow(2, semitones / 12);
 // A muted, almost pure tone that decays smoothly to silence.
 const muted = (phase) => Math.sin(phase) + 0.25 * Math.sin(2 * phase) + 0.08 * Math.sin(3 * phase);
+// A brighter, brassier tone for the table notices.
+const bright = (phase) =>
+  Math.sin(phase) +
+  0.45 * Math.sin(2 * phase) +
+  0.22 * Math.sin(3 * phase) +
+  0.1 * Math.sin(4 * phase);
 function voice(t, start, length, attack, release) {
   const dt = t - start;
   if (dt < 0 || dt > length + release) return 0;
@@ -37,6 +45,36 @@ const SCORES = {
       [-12, 0.6, 1.2],
     ],
     sparkle: [],
+  },
+  // G–C–G rising quickly: the blinds go up.
+  levelup: {
+    duration: 1.3,
+    gain: 0.42,
+    tone: bright,
+    notes: [
+      [7, 0, 0.1],
+      [12, 0.1, 0.1],
+      [19, 0.2, 0.5],
+      [12, 0.2, 0.5],
+    ],
+    sparkle: [],
+  },
+  // C–E–G–C climbing onto a full C-major chord with a light sparkle.
+  // Within the notice's 1.8 s, since the deal that follows stops it.
+  finaltable: {
+    duration: 1.8,
+    gain: 0.4,
+    tone: bright,
+    notes: [
+      [0, 0, 0.14],
+      [4, 0.14, 0.14],
+      [7, 0.28, 0.14],
+      [12, 0.42, 0.85],
+      [7, 0.42, 0.85],
+      [4, 0.42, 0.85],
+      [-12, 0.42, 0.85],
+    ],
+    sparkle: [24, 28, 31, 36],
   },
 };
 export function ceremonySamples(kind) {

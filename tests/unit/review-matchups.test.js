@@ -15,6 +15,7 @@ import {
   aceFourPreflopReview,
 } from '../fixtures/bottom-pair-review.js';
 import { explainOpponent } from '../../src/review/opponents.js';
+import { multiwayPairCheckReason } from '../../src/review/check-reasoning.js';
 import { valuePlan } from '../../src/review/routes.js';
 import { analyzeDecision } from '../../src/review/analysis.js';
 import { cards } from '../fixtures/deceptive-decisions.js';
@@ -35,9 +36,9 @@ test('consumer preflop ranges combine hand families and explain only actions alr
   assert.equal(p.groups.length, 1);
   assert.equal(p.groups[0].label, '对手可能牌组');
   assert.ok(p.groups[0].examples.length > 0);
-  assert.match(text, /Luna在 UTG\+1 位2-bet 开池至 4K/);
-  assert.match(text, /Jade在 LJ 位已跟注这笔加注，补 4K/);
-  assert.doesNotMatch(text, /Kai跟住/);
+  assert.match(text, /Luna 在 UTG\+1 位 2-bet 开池至 4K/);
+  assert.match(text, /Jade 在 LJ 位已跟注这笔加注，补 4K/);
+  assert.doesNotMatch(text, /Kai 跟住/);
   assert.match(text, /A.*AA、AK、AQ、AJ/);
   const html = renderReviewParagraphs([m.text], m, 0);
   assert.doesNotMatch(html, /结构上较|不代表|记录|抽样|获胜概率/);
@@ -162,13 +163,34 @@ test('candidate labels retain both parts of open-ended, gutshot and double-gutsh
   }
 });
 
+test('the multiway check reason names the seat count for one pair only, without draws on the river', () => {
+  const pair = { opponents: 4, made: { score: [1, 14] }, handClass: 'top-pair' };
+  assert.match(
+    multiwayPairCheckReason({ street: 1 }, pair),
+    /^还有 4 位对手没弃牌。人越多，越可能有人已经领先或正在听牌。.*所以先过牌控制底池。$/,
+  );
+  const river = multiwayPairCheckReason({ street: 3 }, pair);
+  assert.match(river, /还有 4 位对手没弃牌/);
+  assert.doesNotMatch(river, /听牌/);
+  assert.equal(multiwayPairCheckReason({ street: 2 }, { ...pair, opponents: 1 }), '');
+  assert.equal(multiwayPairCheckReason({ street: 0 }, pair), '');
+  assert.equal(
+    multiwayPairCheckReason({ street: 2 }, { ...pair, made: { score: [2, 14, 5] } }),
+    '',
+  );
+  assert.equal(multiwayPairCheckReason({ street: 2 }, { ...pair, handClass: 'board-pair' }), '');
+});
+
 test('top-pair checks explain foregone value, checking-range protection and wet multiway risk without inventing a trap', () => {
   const record = topPairCheckReview();
   const explanation = explainOpponent(record);
   assert.match(explanation.detail, /顶对 J，底牌 A 参与踢脚比较/);
   assert.match(explanation.detail, /较弱的一对或听牌取值/);
   assert.match(explanation.detail, /过牌也可能是在等后位先下注/);
-  assert.match(explanation.detail, /多人底池/);
+  // The seat count, not engine thresholds, explains the multiway check.
+  assert.match(explanation.detail, /还有 3 位对手没弃牌。人越多，越可能有人已经领先或正在听牌/);
+  assert.match(explanation.detail, /所以先过牌控制底池/);
+  assert.doesNotMatch(explanation.detail, /这手成牌并不是坚果/);
   assert.match(explanation.detail, /免费看下一张/);
   assert.doesNotMatch(explanation.detail, /再遇下注时|应结合价格和范围重新判断/);
   const last = structuredClone(record);

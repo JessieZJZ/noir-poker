@@ -47,6 +47,7 @@ import {
   applyBotSettings,
   rebuyHero,
   heroRebuysLeft,
+  heroRebuyAmount,
   needsHeroRebuy,
   importPlayerObservations,
   exportPlayerObservations,
@@ -55,6 +56,7 @@ import { sanitizePlayerObservationProfile } from '../engine/public-observations.
 import { isPremiumStart } from '../engine/starting-hands.js';
 import { standingLabel, standingClass } from '../engine/game-records.js';
 import { recordSnapshots } from '../platform/record-snapshots.js';
+import { historyLayers } from './history-layer.js';
 import { createGameEffects } from './game-effects.js';
 import { TROPHY_MARKUP, renderHeroPlace } from './table-scene.js';
 import {
@@ -79,6 +81,7 @@ import {
 } from './bet-sizing.js';
 import { chipUnitOf, legalRaiseTo } from '../engine/bet-sizing.js';
 import { createSettlementLayout } from './settlement-layout.js';
+import { TABLE_NOTICE_MS, tableNoticeText, blindStructureText } from './effect-layouts.js';
 import { createPlayViewport } from './play-viewport.js';
 import { attachRaisePointer } from './raise-pointer.js';
 import { readPlayViewport } from './stable-viewport.js';
@@ -163,7 +166,7 @@ let ceremonyKey = '',
   crownedKey = '',
   rebuying = false,
   toastTimer = null;
-function showToast(message) {
+function showToast(message, duration = 3200) {
   const toast = $('#app-toast');
   setLocalizedText(toast, message);
   toast.hidden = false;
@@ -172,8 +175,12 @@ function showToast(message) {
   toastTimer = setTimeout(() => {
     toast.classList.add('is-leaving');
     toastTimer = setTimeout(() => (toast.hidden = true), 320);
-  }, 3200);
+  }, duration);
 }
+// Android Back at the table asks for a second press before leaving the app.
+document.addEventListener('noir:exit-prompt', (event) =>
+  showToast('再按一次退出', event.detail?.duration),
+);
 let requestedCount = tablePreferences.playerCount;
 let requestedStakes = tablePreferences.stakes;
 let stakesError = '',
@@ -424,7 +431,7 @@ function celebrate() {
   ceremonyKey = key;
   if (game.over.championId === null) {
     soundEffect('farewell');
-    effects.farewell($('.table-viewport'), game.over.heroPlace);
+    effects.farewell($('.table-viewport'), game.over.heroPlace, !!game.finalTable);
     return;
   }
   // Paint and place the hidden resting trophy first; the flight lands exactly on it.
@@ -474,6 +481,11 @@ function render() {
   );
   setLocalizedText($('#table-size-label'), count + ' 人无限注');
   setLocalizedText($('#blind-values'), `${format(game.smallBlind)} / ${format(game.bigBlind)}`);
+  if (waiting) {
+    const structure = blindStructureText(game.stakes, count, format);
+    setLocalizedText($('#entry-structure-levels'), structure.levels);
+    setLocalizedText($('#entry-structure-final'), structure.final);
+  }
   const displayBoard = game.practiceBoard || game.board;
   const hero = game.players[0],
     newHand = game.hand !== lastHand,
@@ -549,7 +561,7 @@ function render() {
     [...heroCards.children].forEach((node, i) =>
       node.classList.toggle('best-card', heroBest.has(hero.hole[i].key)),
     );
-  if (newHand && !tutorial && game.phase !== 'done' && isPremiumStart(hero.hole))
+  if (newHand && !noticeHolding && !tutorial && game.phase !== 'done' && isPremiumStart(hero.hole))
     effects.premiumStart($('.hero-cards-wrap'));
   $('.hero-name').classList.toggle('is-champion', crowned === 0);
   $('#hero-trophy-slot').innerHTML =
@@ -718,11 +730,25 @@ function render() {
         ? `<span>补充筹码</span><span class="rebuy-count">剩 ${heroRebuysLeft(game)} 次</span>`
         : '下一手',
   );
+  // The refill is half the current chip leader, so name the amount and rule.
+  const refillAmount = refill ? format(heroRebuyAmount(game)) : '',
+    refillsLeft = heroRebuysLeft(game);
   setLocalizedAttribute(
     $('#next-button'),
     'aria-label',
-    game.over ? '下一局' : refill ? `补充筹码，剩余 ${heroRebuysLeft(game)} 次` : '下一手',
+    game.over
+      ? '下一局'
+      : refill
+        ? `补充筹码，补充至 ${refillAmount}，即当前筹码领先者（CL）的一半，剩余 ${refillsLeft} 次`
+        : '下一手',
   );
+  if (refill)
+    setLocalizedAttribute(
+      $('#next-button'),
+      'title',
+      `补充至 ${refillAmount}，即当前筹码领先者（CL）的一半，剩余 ${refillsLeft} 次`,
+    );
+  else $('#next-button').removeAttribute('title');
   heroTurnCue.update({
     key: `${game.hand}:${game.replayAttempt || 0}:${game.street}:${game.history?.length || 0}`,
     enabled: canAct,
@@ -846,21 +872,24 @@ function schedule() {
   if (tutorial?.guided()) {
     const delay = tutorial.autoDelay();
     if (delay === null) return;
-    timer = setTimeout(() => {
-      if (!activityClock.active || ticket !== epoch || !tutorial?.guided()) return;
-      const beat = tutorial.runAuto();
-      if (beat.kind === 'bot') {
-        if (beat.action === 'fold') soundEffect('fold');
-        else if (beat.action === 'check') soundEffect('check');
-        else {
-          flyChips(beat.id);
-          soundEffect();
-        }
-        if (beat.win) soundEffect('win');
-      } else soundEffect(beat.kind);
-      render();
-      schedule();
-    }, delay);
+    timer = setTimeout(
+      () => {
+        if (!activityClock.active || ticket !== epoch || !tutorial?.guided()) return;
+        const beat = tutorial.runAuto();
+        if (beat.kind === 'bot') {
+          if (beat.action === 'fold') soundEffect('fold');
+          else if (beat.action === 'check') soundEffect('check');
+          else {
+            flyChips(beat.id);
+            soundEffect();
+          }
+          if (beat.win) soundEffect('win');
+        } else soundEffect(beat.kind);
+        render();
+        schedule();
+      },
+      Math.max(delay, tutorialHold()),
+    );
     return;
   }
   if (tutorial && !tutorial.playing()) return;
@@ -887,7 +916,7 @@ function schedule() {
         render();
         schedule();
       },
-      Math.max(0, dealWait.deadline - activityClock.now()),
+      Math.max(0, dealWait.deadline - activityClock.now(), tutorialHold()),
     );
   } else if (game.actor !== 0) {
     dealWait = null;
@@ -922,9 +951,13 @@ function schedule() {
         render();
         schedule();
       },
-      Math.max(0, waiting.deadline - activityClock.now()),
+      Math.max(0, waiting.deadline - activityClock.now(), tutorialHold()),
     );
   } else botWait = null;
+}
+// The tutorial's table waits until a fresh coach message has had time to be read.
+function tutorialHold() {
+  return tutorial ? tutorial.readingHold(activityClock.now()) : 0;
 }
 function heroAction(action, amount) {
   if (!activityClock.active || dealGate.pending) return false;
@@ -1012,6 +1045,29 @@ async function continueDeal() {
     }
   }
 }
+// A hand that reaches the final table or a new blind level announces it at
+// the screen centre first; the cards are dealt once the notices finish.
+let noticeHolding = false;
+function playTableNotices() {
+  noticeHolding = false;
+  const notices = (game.notices || []).map((notice) => tableNoticeText(notice, format));
+  if (tutorial || !notices.length) return 0;
+  const ticket = epoch;
+  noticeHolding = true;
+  $('.game-surface').classList.add('notice-hold');
+  effects.tableNotices(notices, {
+    shown: (notice) => soundEffect(notice.sound),
+    done() {
+      if (ticket !== epoch) return;
+      noticeHolding = false;
+      $('.game-surface').classList.remove('notice-hold');
+      lastHand = 0;
+      render();
+      soundEffect('deal');
+    },
+  });
+  return notices.length * TABLE_NOTICE_MS;
+}
 function nextHand() {
   if (tutorial) return;
   playerObservations.capture(game);
@@ -1050,26 +1106,28 @@ function nextHand() {
   $('#table-change-note').hidden = true;
   applyBotSettings(game, pendingBotSettings);
   startHand(game);
-  dealGate.begin();
+  dealGate.begin(playTableNotices());
   gameRecords.begin(game, { newSession: newRecordSession });
   newRecordSession = false;
   const legal = legalActions(game, 0);
   bet = legal.enabled ? legalRaiseTo(game.bigBlind * 3, legal) : game.bigBlind * 3;
   render();
-  soundEffect('deal');
+  if (!noticeHolding) soundEffect('deal');
   schedule();
 }
 // Refill and deal the next hand at once; the stack counts up during it.
 function refillAndDeal() {
   if (!needsHeroRebuy(game) || !heroRebuysLeft(game)) return false;
   rebuyHero(game);
+  // Half the chip leader, measured before this hand's blinds are posted.
+  const added = game.players[0].stack;
   nextHand();
   rebuying = true;
   const ticket = epoch;
   effects.rebuy(
     $('.hero-identity'),
     $('#hero-stack'),
-    { added: game.stakes.startingStack, target: game.players[0].stack },
+    { added, target: game.players[0].stack },
     () => {
       if (ticket !== epoch) return;
       rebuying = false;
@@ -1105,13 +1163,13 @@ function retryHand() {
     e.remove();
   });
   restartHand(game);
-  dealGate.begin();
+  dealGate.begin(playTableNotices());
   gameRecords.begin(game);
   lastHand = 0;
   lastBoard = 0;
   bet = game.bigBlind * 3;
   render();
-  soundEffect('deal');
+  if (!noticeHolding) soundEffect('deal');
   schedule();
   return true;
 }
@@ -1290,6 +1348,8 @@ function renderStakesSettings() {
   if (!editingSmallBlind) input.value = String(requestedStakes.smallBlind);
   input.setAttribute('aria-invalid', String(Boolean(stakesError)));
   $('#big-blind-value').textContent = format(requestedStakes.bigBlind);
+  const structure = blindStructureText(requestedStakes, requestedCount, format);
+  setLocalizedText($('#stakes-structure'), structure.settings);
   $('#stakes-error').hidden = !stakesError;
   setLocalizedText($('#stakes-error'), stakesError);
   const note = $('#stakes-change-note');
@@ -1516,6 +1576,8 @@ function clearTableMotion() {
     e.remove();
   });
 }
+// Back leaves the tutorial and returns to the paused table, like its exit button.
+const tutorialHistory = historyLayers.register('tutorial', () => exitTutorial());
 function enterTutorial() {
   if (tutorial) return;
   const remaining = botWait ? Math.max(0, botWait.deadline - activityClock.now()) : null;
@@ -1532,10 +1594,12 @@ function enterTutorial() {
     if (dialog.id !== 'orientation-dialog') dialog.close();
   });
   window.scrollTo(0, 0);
+  tutorialHistory.open();
   syncTutorial();
 }
 function exitTutorial() {
   if (!tutorial) return false;
+  tutorialHistory.close();
   clearTableMotion();
   tutorial = null;
   tutorialCoach.hide();
@@ -1588,6 +1652,7 @@ const tutorialCoach = createTutorialCoach({
 function syncTutorial() {
   if (!tutorial) return;
   const view = tutorial.view(format);
+  tutorial.markShown(view, activityClock.now());
   if (view.raiseTarget !== null && !view.allowed.preset && bet !== view.raiseTarget) {
     bet = view.raiseTarget;
     $('#bet-slider').value = bet;
@@ -1608,6 +1673,8 @@ function publicState() {
     pendingStakes: !sameStakes(requestedStakes, game.stakes),
     smallBlind: game.smallBlind,
     bigBlind: game.bigBlind,
+    blindLevel: game.levelIndex ?? 0,
+    finalTable: !!game.finalTable,
     chipUnit: chipUnitOf(game),
     emotionMode: game.emotionMode,
     canContinue: canFastFinish(),

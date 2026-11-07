@@ -144,6 +144,8 @@ Page({
                   status: attempt.status,
                   superseded: attempt.superseded,
                   refill: attempt.refill,
+                  // The blinds this hand was dealt at; older hands used the start.
+                  blindText: `盲注 ${compactChips((attempt.blinds || session.stakes).smallBlind)} / ${compactChips((attempt.blinds || session.stakes).bigBlind)}`,
                   profit: attempt.profit,
                   cards: attempt.hole.map((card) => {
                     let artwork = this._cardArtwork.get(card.key);
@@ -154,7 +156,8 @@ Page({
                     }
                     if (!this.data.cardArt[artwork.face.art])
                       art[`cardArt.${artwork.face.art}`] = artwork.artStyle;
-                    return artwork.face;
+                    // A copy: setData keeps the object, and leaf patches write into it.
+                    return { ...artwork.face };
                   }),
                   attemptText: attempt.attempt ? `重打${attempt.attempt}` : '',
                   profitText:

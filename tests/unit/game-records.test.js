@@ -264,6 +264,9 @@ test('crash recovery returns all wagers in a custom denomination and counts refi
   const totalBefore = game.players.reduce((sum, player) => sum + player.stack, 0);
   game.stats = { hands: 7, wins: 4, buyin: 25000 };
   rebuyHero(game);
+  // Half the 2000-chip leader, in whole 125 chips.
+  const refill = game.players[0].stack;
+  assert.equal(refill, 1000);
   startHand(game);
   const beforeBlindStacks = game.players.map((player) => player.stack + player.total);
   const statsBefore = clone(game.stats),
@@ -286,7 +289,7 @@ test('crash recovery returns all wagers in a custom denomination and counts refi
   assert.equal(potSize(recovered), 0);
   assert.equal(
     recovered.players.reduce((sum, player) => sum + player.stack, 0),
-    totalBefore + 25000,
+    totalBefore + refill,
   );
   assert.ok(
     recovered.players.every((player) => player.stack % 125 === 0 && player.hole.length === 0),
@@ -300,7 +303,7 @@ test('crash recovery returns all wagers in a custom denomination and counts refi
   startHand(recovered);
   restoredStore.begin(recovered);
   assert.equal(recovered.hand, 2);
-  assert.equal(recovered.stats.buyin, 50000);
+  assert.equal(recovered.stats.buyin, 25000 + refill);
   assert.equal(restoredStore.sessions()[0].attempts[1].refill, false);
 });
 

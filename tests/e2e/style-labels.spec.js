@@ -56,7 +56,7 @@ for (const [width, height] of sizes) {
                 const r = el.getBoundingClientRect(),
                   p = el.closest('.seat-profile').getBoundingClientRect();
                 return (
-                  el.textContent === el.dataset.fullName &&
+                  el.textContent === el.dataset.styleTag &&
                   el.scrollWidth <= el.clientWidth + 1 &&
                   el.scrollHeight <= el.clientHeight + 1 &&
                   r.left >= p.left - 1 &&

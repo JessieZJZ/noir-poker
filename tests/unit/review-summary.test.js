@@ -47,7 +47,7 @@ test('five-bet KQs fold concludes fold with price and domination risk, never enc
     r = analyzeDecision(s, options),
     text = summary(r.coaching);
   assert.equal(r.coaching.suggestedAction, '弃牌');
-  assert.match(text, /Jade（范围纪律）在 MP 位5-bet 加注至 9.3K/);
+  assert.match(text, /Jade（范围纪律）在 MP 位 5-bet 加注至 9.3K/);
   assert.match(text, /当前面对加注至 9.3K，约 46.5 BB/);
   assert.match(text, /击中一对.*踢脚压制/);
   assert.match(text, /再补 8.3K.*弃牌值得保留.*19K/);

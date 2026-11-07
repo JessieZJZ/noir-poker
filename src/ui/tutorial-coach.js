@@ -31,7 +31,10 @@ export function createTutorialCoach({ onNext, onAnswer, onPrimary, onSecondary, 
     dialog = $('#tutorial-dialog'),
     compact = matchMedia(COMPACT_PLAY_QUERY),
     portrait = matchMedia('(orientation: portrait)'),
-    surfaceHome = $('.main .action-dock-slot');
+    surfaceHome = $('.main .action-dock-slot'),
+    next = $('#tutorial-next'),
+    nextHome = next.parentElement,
+    dockPanel = $('.main #action-panel');
   let dialogKey = null,
     optionsKey = null,
     shownText = null,
@@ -42,6 +45,16 @@ export function createTutorialCoach({ onNext, onAnswer, onPrimary, onSecondary, 
   function place() {
     if (compact.matches) surfaceHome.before(panel);
     else $('.main > .game-column').after(panel);
+  }
+  // Once a hand settles the table's own buttons leave the dock, so Continue
+  // takes their place with the same size as the practice table's 下一手.
+  function placeNext(settled) {
+    const home = settled ? dockPanel : nextHome;
+    if (next.parentElement === home) return;
+    home.prepend(next);
+    next.classList.toggle('tutorial-next', !settled);
+    next.classList.toggle('next-button', settled);
+    next.classList.toggle('tutorial-dock-next', settled);
   }
   function clearFocus() {
     for (const element of document.querySelectorAll('[data-tutorial-focus]'))
@@ -121,7 +134,7 @@ export function createTutorialCoach({ onNext, onAnswer, onPrimary, onSecondary, 
     $('#tutorial-dialog-primary').focus({ preventScroll: true });
   }
 
-  $('#tutorial-next').addEventListener('click', () => onNext());
+  next.addEventListener('click', () => onNext());
   $('#tutorial-exit').addEventListener('click', () => onExit());
   $('#tutorial-options').addEventListener('click', (event) => {
     const button = event.target.closest('[data-tutorial-answer]');
@@ -159,8 +172,9 @@ export function createTutorialCoach({ onNext, onAnswer, onPrimary, onSecondary, 
       $('#tutorial-detail').hidden = !view.detail;
       setLocalizedText($('#tutorial-detail'), view.detail || '');
       renderOptions(view.options);
-      $('#tutorial-next').hidden = !view.canContinue;
-      setLocalizedText($('#tutorial-next'), view.continueLabel);
+      placeNext(view.canContinue && view.settled);
+      next.hidden = !view.canContinue;
+      setLocalizedText(next, view.continueLabel);
       const message = panel.querySelector('.tutorial-message');
       if (view.text !== shownText) message.scrollTop = 0;
       shownText = view.text;
@@ -180,6 +194,7 @@ export function createTutorialCoach({ onNext, onAnswer, onPrimary, onSecondary, 
         dialog.close();
       }
       panel.hidden = true;
+      placeNext(false);
       clearFocus();
       delete document.body.dataset.tutorial;
       $('#continue-deal-button').classList.remove('tutorial-locked');

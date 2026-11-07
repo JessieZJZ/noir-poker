@@ -84,7 +84,7 @@ export function publicStoryNotes(s) {
     line.filter((a) => ['bet', 'raise'].includes(a.action)).length < 2
   )
     return observations;
-  const parts = [...observations, `${actorAtPosition(s, last.id)}此前的公开行动：`, ' '];
+  const parts = [...observations, `${actorAtPosition(s, last.id)}此前的公开行动：`];
   const visible = line.filter(
     (a) =>
       a.action !== 'check' ||
@@ -134,7 +134,7 @@ export function priorCallingLeadNotes(s, subject = '你') {
     prior.some((a) => ['bet', 'raise', 'check-raise'].includes(a.action))
   )
     return [];
-  const parts = [`${subject}此前的公开行动：`, ' '];
+  const parts = [`${subject}此前的公开行动：`];
   prior.forEach((a, index) => {
     if (index) parts.push(' → ');
     parts.push(['', '翻牌', '转牌', '河牌'][a.street], ' ');

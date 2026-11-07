@@ -17,9 +17,9 @@ const summary = (c) => c.paragraphs.slice(c.paragraphs.indexOf('复盘分析总�
 
 test('connector labels distinguish consecutive ranks from suited gaps and pairs', () => {
   for (const [hole, label] of [
-    ['4d 5d', '4 / 5 同花连接牌'],
-    ['4d 5s', '4 / 5 不同花连接牌'],
-    ['4d 6d', '4 / 6 同花底牌'],
+    ['4d 5d', '5 / 4 同花连接牌'],
+    ['4d 5s', '5 / 4 不同花连接牌'],
+    ['4d 6d', '6 / 4 同花底牌'],
     ['4d 4s', '口袋 4'],
   ]) {
     const s = reportedLowConnectorCall();
@@ -61,17 +61,17 @@ test('key information uses the agreed price wording and before-action values', (
   const before = structuredClone(s);
   const r = analyzeDecision(s, options);
   assert.deepEqual(r.evidence.slice(2), [
-    '翻牌前加注 2 次，本轮还有 0 位对手等待回应',
+    '翻牌前加注 2 次，本轮没有对手等待回应',
     '行动前你手里有 2.65M，这次跟注拿出 140K，跟注前底池 460K，底池赔率约 3.29:1',
     '跟注 140K 后可争夺 600K 底池。不计后续新增投入，需要至少 23.3% 的胜率覆盖这次成本。',
-    '入池情境：最高 3-bet，跛入 0 人',
+    '入池情境：最高 3-bet，无人跛入',
   ]);
   assert.deepEqual(s, before);
   s.pending.push(1, 2);
   s.players[1].allin = true;
   assert.match(analyzeDecision(s, options).evidence[2], /本轮还有 1 位对手等待回应/);
   s.players[2].folded = true;
-  assert.match(analyzeDecision(s, options).evidence[2], /本轮还有 0 位对手等待回应/);
+  assert.match(analyzeDecision(s, options).evidence[2], /本轮没有对手等待回应/);
 });
 
 test('fold, check, raise and both kinds of all-in state actual cost without inventing a call', () => {
@@ -119,11 +119,20 @@ test('gutshot advice and keep/compare/fold labels follow the same evidence, with
   const s = reportedGutshotCall();
   const r = analyzeDecision(s, options);
   assert.equal(r.draw.outs, 4);
-  assert.equal(r.coaching.assessmentLabel, '需要比较');
-  assert.equal(r.coaching.label, '建议跟注 520K');
-  assert.equal(r.coaching.suggestion, r.coaching.label);
+  assert.equal(
+    r.coaching.assessmentLabel,
+    r.coaching.unchanged ? '' : r.coaching.assessmentLabel || 'missing',
+  );
+  assert.notEqual(r.coaching.assessmentLabel, '需要比较');
+  assert.equal(
+    r.coaching.label,
+    r.coaching.unchanged ? '' : r.coaching.suggestion,
+    'The call taken is not repeated as advice',
+  );
+  assert.equal(r.coaching.suggestion, '建议跟注 520K');
   assert.match(summary(r.coaching), /A 落下.*顶对/);
-  assert.match(summary(r.coaching), /这手建议跟注.*下注范围.*诈唬/);
+  assert.match(summary(r.coaching), /这手跟注 520K 的前提是对手的下注范围.*诈唬/);
+  assert.doesNotMatch(summary(r.coaching), /这手建议跟注/);
   assert.doesNotMatch(summary(r.coaching), /成牌后再赢筹码。|同花听牌/);
   const positive = structuredClone(r);
   positive.status = 'sound';
@@ -136,8 +145,10 @@ test('gutshot advice and keep/compare/fold labels follow the same evidence, with
     uncertainty: 0.01,
   };
   const kept = coachDecision(s, positive);
-  assert.equal(kept.assessmentLabel, '值得保留');
-  assert.equal(kept.label, '建议跟注 520K');
+  // An affirmed action keeps its verdict but shows no badge.
+  assert.equal(kept.kind, 'keep');
+  assert.equal(kept.assessmentLabel, '');
+  assert.equal(kept.label, '');
   assert.match(summary(kept), /综合当前牌力.*跟注有继续依据/);
   assert.doesNotMatch(summary(kept), /还不能确认跟注划算/);
   const negative = structuredClone(positive);

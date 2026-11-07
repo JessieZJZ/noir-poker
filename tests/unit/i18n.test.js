@@ -169,7 +169,7 @@ test('Japanese and Korean catalogs contain no damaged repetition or replacement 
   await loadLocale('zh-CN');
 });
 
-test('first-visit language follows the named timezone, while saved choices and unknown-zone fallbacks remain reliable', () => {
+test('first-visit language follows the device language, then the named timezone, while saved choices win', () => {
   for (const [zone, expected] of Object.entries({
     'Asia/Shanghai': 'zh-CN',
     'Asia/Urumqi': 'zh-CN',
@@ -188,9 +188,19 @@ test('first-visit language follows the named timezone, while saved choices and u
     'Asia/Vladivostok': 'ru',
     'America/New_York': 'en',
   })) {
-    assert.equal(resolveLocale(null, ['en-US'], zone), expected, zone);
+    // A supported device language wins wherever the device is.
+    assert.equal(resolveLocale(null, ['en-US'], zone), 'en', zone);
+    assert.equal(resolveLocale(null, ['zh-Hans-US'], zone), 'zh-CN', zone);
+    // Only without one does the time zone pick the regional default.
+    assert.equal(resolveLocale(null, ['ar-SA'], zone), expected, zone);
+    assert.equal(resolveLocale(null, [], zone), expected, zone);
     assert.equal(resolveLocale('fr', ['ja-JP'], zone), 'fr', zone);
   }
+  // A Chinese phone in New York and an English phone in Shanghai.
+  assert.equal(resolveLocale(null, ['zh-CN'], 'America/New_York'), 'zh-CN');
+  assert.equal(resolveLocale(null, ['en-GB', 'zh-Hans-CN'], 'Asia/Shanghai'), 'en');
+  // The first supported entry in the list decides.
+  assert.equal(resolveLocale(null, ['ar-SA', 'ja-JP', 'en-US'], 'Europe/Paris'), 'ja');
   for (const zone of [undefined, 'UTC', 'Etc/GMT-8', 'unknown', '__proto__', 'toString']) {
     assert.equal(resolveLocale(null, ['ko-KR'], zone), 'ko');
     assert.equal(resolveLocale(null, ['xx'], zone), 'en');
