@@ -1551,7 +1551,10 @@ $('#confirm-reset').onclick = () => {
   game = playerObservations.restore(newGame(requestedCount, requestedStakes));
   game.difficulty = difficulty;
   lastHand = 0;
+  // Closing returns focus to the reset button below the table; the new game
+  // starts from the top of the page.
   $('#reset-dialog').close();
+  window.scrollTo(0, 0);
   nextHand();
 };
 // The tutorial borrows the real table: `game` points at a scripted hand while

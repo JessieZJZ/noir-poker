@@ -1022,6 +1022,22 @@ test('WeChat records mark the first post-refill hand and exclude the virtual buy
   verifyChips(game, 6 * 5000 + refill);
 });
 
+test('WeChat restart with no chips and no refill records the place the hero then had', (t) => {
+  const { controller } = setup(t);
+  const game = reachHero(controller);
+  finish(game);
+  controller.show();
+  game.players[1].stack += game.players[0].stack;
+  game.players[0].stack = 0;
+  assert.equal(controller.getRecords()[0].result, null);
+  controller.reset();
+  const [fresh, ended] = controller.getRecords();
+  // Five seats are still playing, so the hero leaves sixth.
+  assert.deepEqual(ended.result, { place: 6, champion: false });
+  assert.equal(fresh.result, null);
+  assert.equal(controller.getGame().players[0].stack, 5000);
+});
+
 // Settle the current hand with the hero (AA) shoving into seat 1, everyone
 // else folding, so the result is fixed regardless of the shuffled deal.
 // Hero shoves and seat 1 calls; the others fold, or with `allIn` call with

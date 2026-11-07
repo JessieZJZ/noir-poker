@@ -1,4 +1,9 @@
-import { newGame, exportPlayerObservations, importPlayerObservations } from './poker.js';
+import {
+  newGame,
+  exportPlayerObservations,
+  importPlayerObservations,
+  forfeitHero,
+} from './poker.js';
 import { migrateCharacterState } from './character-state.js';
 import { sameStakes, validateStakes } from './stakes.js';
 import { blindLevels } from './blind-levels.js';
@@ -724,8 +729,20 @@ export function createGameRecords({
       write();
       return withSnapshot(attempt);
     },
+    // A busted hero who ends the game without refilling takes their place
+    // then; it is written to the settled hand that cost the last chips.
     abandon(game) {
       if (game?.phase === 'done') this.capture(game);
+      if (game && !state.active && forfeitHero(game)) {
+        const settled = current()?.attempts.find(
+          (row) =>
+            row.hand === game.hand &&
+            row.attempt === (game.replayAttempt || 0) &&
+            row.status === 'completed' &&
+            !row.superseded,
+        );
+        if (settled && !settled.over) settled.over = copy(game.over);
+      }
       finishUnfinished();
       write();
     },

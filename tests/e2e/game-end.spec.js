@@ -367,6 +367,34 @@ for (const [ending, finale] of [
     expect(records.sessions.at(-1).attempts.at(-1).over).toEqual(finished.over);
   });
 
+test('restarting with no chips and no refill records the place, then starts at the top', async ({
+  page,
+}) => {
+  await page.evaluate(() => window.qa.finale({ heroWins: false, rivals: 3, rebuysUsed: 1 }));
+  await page.evaluate(() => window.qa.finaleShowdown());
+  const view = await state(page);
+  expect(view.needsRebuy).toBe(true);
+  expect(view.over).toBeNull();
+  // Seats still playing finish ahead of the hero.
+  const place = view.players.slice(1).filter((p) => !p.out).length + 1;
+  await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+  const scrollable = await page.evaluate(() => window.scrollY > 0);
+  await page.locator('#reset-button').click();
+  await page.locator('#confirm-reset').click();
+  await expect(page.locator('#reset-dialog')).not.toHaveAttribute('open');
+  if (scrollable) await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
+  const [fresh, ended] = await page.evaluate(() => window.noir.getRecords());
+  expect(ended.result).toEqual({ place, champion: false });
+  expect(ended.endedAt).not.toBeNull();
+  expect(fresh.result).toBeNull();
+  const dealt = await state(page);
+  expect(dealt.players[0].stack + dealt.players[0].bet).toBe(dealt.stakes.startingStack);
+  await page.goto('/#records');
+  await expect(
+    page.locator(`.record-session[data-session-number="${ended.number}"]`),
+  ).toContainText(`第${place}名`);
+});
+
 test('busting after the last refill ends the game with a place and no champion', async ({
   page,
 }) => {

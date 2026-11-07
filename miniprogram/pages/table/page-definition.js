@@ -1616,6 +1616,8 @@ module.exports = {
     this._finishRequested = false;
     this.setData({ finishing: false });
     this.call('reset');
+    // The new game starts from the top: unlocking restores this position.
+    this._homeScroll = 0;
     this.closeReset();
     this.closeSettings();
   },

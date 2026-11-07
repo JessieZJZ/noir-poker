@@ -702,6 +702,47 @@ try {
   report.checks.push({
     name: 'full-width-native-record-views-preserve-accessibility-and-disabled-gate',
   });
+  // Restarting after losing every chip without a refill ends the game at the
+  // place the hero then had, and the new game starts at the top of the page.
+  report.stage = 'restart-without-refill-records-place';
+  await finishWithoutFolding();
+  const bustedSession = (await readRecords())[0];
+  await mini.evaluate(() => {
+    const game = getApp().noirController.getGame();
+    game.players[1].stack += game.players[0].stack;
+    game.players[0].stack = 0;
+  });
+  const expectedPlace = (await readLive()).players.slice(1).filter((p) => !p.out).length + 1;
+  await scrollTo(600);
+  await tap('.practice-reset');
+  await tap('.reset-sheet .primary');
+  // Read, without scrolling: the page itself must return to the top.
+  await wait(
+    'Page back at the top after restart',
+    () =>
+      mini.evaluate(
+        () =>
+          new Promise((resolve) =>
+            wx
+              .createSelectorQuery()
+              .selectViewport()
+              .scrollOffset((offset) => resolve(offset.scrollTop))
+              .exec(),
+          ),
+      ),
+    (top) => top <= 1,
+    10000,
+  );
+  await waitHero();
+  const [freshSession, endedSession] = await readRecords();
+  assert.equal(endedSession.id, bustedSession.id);
+  assert.deepEqual(endedSession.result, { place: expectedPlace, champion: false });
+  assert.equal(freshSession.result, null);
+  await capture('08-restart-at-top');
+  report.checks.push({
+    name: 'restart-without-refill-records-the-place-and-returns-to-the-top',
+    place: expectedPlace,
+  });
   assert.equal(report.exceptions.length, 0);
   const currentBuild = JSON.parse(
     await readFile(path.join(root, '.artifacts/wechat/build-info.json'), 'utf8'),

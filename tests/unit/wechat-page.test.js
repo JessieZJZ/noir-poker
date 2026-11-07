@@ -3217,6 +3217,23 @@ test('WeChat displays complete styles without a long-press overlay or handler', 
   }
 });
 
+test('WeChat confirming a restart unlocks the table at the top of the page', (t) => {
+  const { page, scrolls } = setup(t);
+  page._homeScroll = 600;
+  page.resetPractice();
+  assert.equal(page.data.homeLocked, true);
+  assert.equal(page.data.homeOffset, -600);
+  page.confirmReset();
+  assert.equal(page.data.resetOpen, false);
+  assert.equal(page.data.homeLocked, false);
+  assert.equal(scrolls.at(-1), 0);
+  // Cancelling keeps the place the player was reading.
+  page._homeScroll = 600;
+  page.resetPractice();
+  page.closeReset();
+  assert.equal(scrolls.at(-1), 600);
+});
+
 test('WeChat hand rankings shortcut resets the guide anchor on normal open and can jump again', (t) => {
   const { page } = setup(t);
   page._homeScroll = 120;

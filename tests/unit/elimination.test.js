@@ -13,6 +13,7 @@ import {
   heroRebuyAmount,
   heroRebuysLeft,
   needsHeroRebuy,
+  forfeitHero,
   MAX_HERO_REBUYS,
   deckOfCards,
 } from '../../src/engine/poker.js';
@@ -405,6 +406,73 @@ test('records carry the final standing and label games in progress, won and lost
   restartHand(g);
   store.begin(g);
   assert.equal(store.summaries()[0].result, null);
+});
+
+// The hero busts with refills left, against seat 1's aces; seats 2-4 fold.
+function bustWithRefillsLeft(store, sameHand) {
+  const g = newGame(5, stakes);
+  g.dealer = 4;
+  if (sameHand) Object.assign(g.players[1], { stack: 20000 });
+  if (sameHand) g.players[2].stack = sameHand;
+  startHand(g);
+  store.begin(g);
+  rig(g, { 0: weak, 1: aces, 2: weaker });
+  shoveAll(g, sameHand ? [3, 4] : [2, 3, 4]);
+  store.capture(g);
+  assert.equal(needsHeroRebuy(g), true);
+  assert.equal(g.over, null);
+  return g;
+}
+
+test('restarting with no chips and no refill records the place the hero then had', () => {
+  const store = createGameRecords({ storage: storage() });
+  const g = bustWithRefillsLeft(store),
+    chips = total(g);
+  assert.equal(store.summaries()[0].result, null);
+  store.abandon(g);
+  // Ending the game moves no chips.
+  assert.equal(total(g), chips);
+  // Four seats remain, so the hero leaves fifth; nobody is crowned.
+  assert.deepEqual(store.summaries()[0].result, { place: 5, champion: false });
+  assert.deepEqual(g.over, { heroPlace: 5, championId: null });
+  assert.equal(g.players[0].out, true);
+  assert.equal(sessionStanding(store.summaries()[0]).text, '第5名');
+  const settled = store.summaries()[0].attempts.at(-1);
+  assert.deepEqual(settled.over, { heroPlace: 5, championId: null });
+});
+
+test('seats busting in the same hand are ranked again with the hero who restarts', () => {
+  for (const [stack, hero, seat] of [
+    [6000, 5, 4], // seat 2 started bigger, so it leaves before the hero
+    [1000, 4, 5], // seat 2 started smaller, so the hero outlasts it
+    [5000, 4, 4], // equal starting stacks share the place
+  ]) {
+    const store = createGameRecords({ storage: storage() });
+    const g = bustWithRefillsLeft(store, stack);
+    assert.equal(g.players[2].out, true);
+    // Without the hero leaving, seat 2 was ranked below every seat still in.
+    assert.equal(g.players[2].place, 5);
+    store.abandon(g);
+    assert.deepEqual(
+      [g.players[0].place, g.players[2].place, store.summaries()[0].result.place],
+      [hero, seat, hero],
+      `seat 2 started with ${stack}`,
+    );
+  }
+});
+
+test('restarting with chips, or before the hand settles, records no place', () => {
+  const store = createGameRecords({ storage: storage() });
+  const g = newGame(5, stakes);
+  playOne(store, g);
+  store.abandon(g);
+  assert.equal(store.summaries()[0].result, null);
+  assert.equal(g.over, null);
+  // A busted hero facing no settled hand is still only between hands.
+  const live = newGame(5, stakes);
+  startHand(live);
+  assert.equal(forfeitHero(live), false);
+  assert.equal(live.over, null);
 });
 
 test('snapshots beyond the budget drop the oldest games first, then the oldest hands', () => {
