@@ -48,7 +48,7 @@ npm run mobile:ios:archive   # 归档并导出已签名的 .artifacts/mobile/ios
 npm run mobile:ios:upload    # 归档后导出 App Store Connect 包并上传
 ```
 
-上传使用 Xcode 已登录的账号；处理完成后构建出现在 App Store Connect 的 TestFlight。构建号取自 `mobile/release.json`，每次上传前递增，导出时不由 Xcode 改写。同一构建号上传过后不能再次上传。也可以只运行 `mobile:ios:archive`，再用 Transporter 上传 `App.ipa`。脚本不创建商店条目、不填写税务协议、不提交审核。模拟器构建不包含发行签名，不能代替此流程。
+上传使用 Xcode 已登录的账号；处理完成后构建出现在 App Store Connect 的 TestFlight。构建号取自 `mobile/release.json`，每次上传前递增，导出时不由 Xcode 改写。同一构建号上传过后不能再次上传。`Info.plist` 声明 `ITSAppUsesNonExemptEncryption = NO`（离线、不联网，未自带加密算法），TestFlight 不再要求逐个构建填写出口合规；加入网络或加密库后需重新核对。也可以只运行 `mobile:ios:archive`，再用 Transporter 上传 `App.ipa`。脚本不创建商店条目、不填写税务协议、不提交审核。模拟器构建不包含发行签名，不能代替此流程。
 
 ## 付费与商店资料
 
