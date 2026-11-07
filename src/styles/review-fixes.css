@@ -114,14 +114,17 @@ html[lang='ko'] .profile-comparison th {
   line-height: 1.12;
 }
 /* Android WebView can reuse compressed rasters for repositioned hero text.
-   Keep identity and recent-action text on their own layers so both rows
-   retain the same glyph proportions after the table is scaled or moved. */
+   Keep identity, recent action and the settlement rank on their own layers
+   so the glyphs retain their proportions as the table is scaled or moved. */
 .native-android .hero-identity,
 .native-android .hero-identity strong,
 .native-android .hero-identity .hero-stack,
 .native-android .hero-action-slot,
 .native-android .hero-last-action,
-.native-android .hero-last-action > * {
+.native-android .hero-last-action > *,
+.native-android .hero-rank-slot,
+.native-android .hero-hand-rank,
+.native-android .hero-hand-rank > * {
   transform: translateZ(0);
   backface-visibility: hidden;
 }

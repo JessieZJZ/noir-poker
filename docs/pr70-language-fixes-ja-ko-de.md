@@ -113,3 +113,23 @@ PokerStars 的 `/ja/` 规则链接本轮跳转英文，`/ko/` 资源不可用，
 | 德语 | NOIR Poker · Offline-Hold’em-Training   |
 
 日语 `ホールデム` 与前述 [JOPT 官方托管 TDA 日文规则](https://japanopenpoker.com/wp-content/uploads/2024/11/2024-Poker-TDA-Rules-PDF-Longform-Redlines-Vers-1.0-FINAL_Japanese.pdf) 用词一致；韩语 `오프라인`、`홀덤`、`연습` 与 [PokerTH 第一方韩文玩法页](https://webclient.pokerth.net/how-to-play?lang=ko) 的离线练习说明一致；德语采用 [PokerStars Learn 德语](https://www.pokerstars.de/poker/learn/strategies/how-to-deal-with-downswings/) 使用的 Hold’em、Training 形式，以常规德语复合词表达练习用途。页面标题是本项目的译文，不冒称这些来源对应用的认证。本轮未修改其他标题/规则或设备，三键均无 override 覆盖，另以正式 `loadLocale()` / `localizeText()` 核验实际输出。
+
+## 2026-11-07：R9 已弃牌状态与牌型的分隔前缀
+
+源键 `已弃牌 ·` 用于已弃牌英雄的结算牌型标签，完整内容是“已弃牌状态 · 最佳五张牌型”。`table-controller.js` 和 `table-scene.js` 均在五张公共牌已公开后组合这个前缀与真实 evaluator 的牌型名称；展示牌型不会恢复弃牌者的争池资格。
+
+本次有限核对覆盖三语的 `已弃牌 ·`、`· 已弃牌`、`已弃牌` 九个有效值，只修正两项确定错误：
+
+| 语言 | 源键     | 原有效值   | 修正值           | 原因                                                 |
+| ---- | -------- | ---------- | ---------------- | ---------------------------------------------------- |
+| 日语 | 已弃牌 · | フィールド | フォールド済み · | field 误译为“场地”，且丢失状态与牌型间的中点分隔符。 |
+| 德语 | 已弃牌 · | hat Fold.  | Gepasst ·        | 不是正确的已弃牌状态表达，且丢失中点分隔符。         |
+| 韩语 | 已弃牌 · | 폴드 ·     | 保留 폴드 ·      | 原本已准确表达弃牌标签并保留分隔符。                 |
+
+三语的后缀 `· 已弃牌` 与独立状态 `已弃牌` 含义正确，均保留。日语组合示例改为 `フォールド済み · ツーペア`，德语改为 `Gepasst · Zwei Paare`，韩语继续使用 `폴드 · 투페어`。协调者同步维护基础字典与有效 override，避免修正被旧覆盖值遮住。
+
+本次重新实际读取的第一方依据为 [JOPT 托管的 Poker TDA 日文规则](https://japanopenpoker.com/wp-content/uploads/2024/11/2024-Poker-TDA-Rules-PDF-Longform-Redlines-Vers-1.0-FINAL_Japanese.pdf) 第 3 条的 `フォールド` 行动术语、[PokerTH 韩文术语表](https://webclient.pokerth.net/glossary?lang=ko) 的 `Fold (폴드)`，以及 [PokerStars 德文术语表](https://www.pokerstars.com/de/poker/terms/) 的 `Fold / Passen` 和[德文帮助页](https://www.pokerstars.de/help/articles/show-hole-card/149921/) 中表示已完成弃牌的 `gepasst` 用法。`済み` 与 `Gepasst ·` 是本项目的简洁状态标签，不冒称原文逐字引用，也不更改引擎规则。
+
+新增回归使用正式 `loadLocale()` / `localizeText()` 检查十一语有效前缀及九类牌型组合，并在测试模式使用既有 `qa.scene`、真实 evaluator/settlement/renderer 检查已弃牌英雄标签。浏览器检查覆盖 320、390、768、1024 宽度下完整 Range、实际裁剪祖先，以及 Android 专用牌型图层不改变 Web/iOS 标签字号和几何。给 Chromium 添加平台 CSS 标记只能证明选择器和几何，不是 Android 或 iOS 原生字形绘制证明；原生像素验收由协调者对新版本另行采集。旧 R8 的 `a820/3fad` 原图保留原始版本身份，不能用新字典或浏览器回归改写旧图结论。
+
+本轮定向单元 2/2、浏览器 22/22 通过（十一语 × 两个既有项目，各检查四种尺寸）。浏览器初版曾错误要求 iOS 与 Web 的绝对坐标相同；定位到既有 `controls-layout.css` 为 iOS 保留至少 10px 的底部安全间距后，改为核对 Web/iOS 各自基线在 Android 图层切换前后保持一致，同时继续要求三种 CSS 平台的完整文字与 Range 不裁剪。该调整保留平台原有差异，没有修改产品样式或放宽文字可见性检查。失败与最终日志分别保留为 `folded-prefix-e2e-r9.log`、`folded-prefix-e2e-r9-r2.log`，单元日志为 `folded-prefix-unit-r9.log`，均位于本地 `.artifacts/language-fixes/round2/`。本分工未运行完整构建或 native 测试。

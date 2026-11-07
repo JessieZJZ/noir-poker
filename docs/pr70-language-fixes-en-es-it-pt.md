@@ -115,3 +115,22 @@ Web 回归与后续新安装包原图必须分别报告，不能把词典或 fix
 因此仅追加同一个源键 `NOIR Poker · 德州扑克单机练习` 的西／意／葡 3 个值，本组累计 **13 个 locale 值**；统一保留字面品牌 `NOIR Poker`，分别采用 `Práctica de Hold'em sin conexión`、`Allenamento a Hold’em offline`、`Prática de Hold'em offline`。
 术语沿用上列已核对的官方 Hold’em 规则与对应语言练习语境，不将本地离线练习描述为联网对战；没有重译其他文案。新单元检查锁定实际 effective 标题和离线含义，TURN 浏览器回归同时检查真实 document title。
 追加标题后的最终定向结果为 **15/15 单元检查、2/2 浏览器检查通过**；日志为 `unit-r8-degeneration-titles-final.log`、`web-r8-turn-title-document.log`。两张新 Web 原图也已实际查看，TURN 正常；浏览器的 `<title>` 由真实 DOM 断言验证，不能从牌桌 PNG 推断系统朗读或浏览器标签栏的显示。
+
+## 2026-11-07 R9 结果徽标前缀补修与原生绘制诊断
+
+R8 的葡语原生大屏结算图实际显示 `Tem um fold. Um par`。逐一核对四语的三个有效源键 `已弃牌 ·`、`· 已弃牌`、`已弃牌` 后，确认前缀键与此前后缀键不同，不能只修后缀就视为该界面完成。最小修正目标如下；由主线程统一合入，不改牌型、弃牌资格或结算规则。
+
+| 语言 | R8 有效前缀 `已弃牌 ·` | R9 目标前缀       | 边界                                                 |
+| ---- | ---------------------- | ----------------- | ---------------------------------------------------- |
+| 英语 | `has fold.`            | `Folded ·`        | 明确已经弃牌的状态，保留状态与实际牌型之间的中点。   |
+| 西语 | `Ha sido fold.`        | `Se retiró ·`     | 使用玩家已退出本手的完成态，避免不自然的被动拼法。   |
+| 意语 | `Ha fatto fold.`       | `Ha fatto fold ·` | 原有完成态本身可用，仅将句号恢复为原源键的中点分隔。 |
+| 葡语 | `Tem um fold.`         | `Desistiu ·`      | 明确已经弃牌，不能表达为“有一个 fold”。              |
+
+其余八个后缀／独立状态值的扑克含义可用，保留现值，不为风格统一扩改。运行路径是 `src/ui/table-scene.js` 中 `(hero.folded ? '已弃牌 · ' : '') + evaluate([...hero.hole, ...g.board]).label`。应保留单次本地化的空格与分隔：例如 `Desistiu · Um par` 只是“已弃牌＋实际五张牌型”的信息，不表示该玩家仍可赢取底池。
+
+本次再次联网读取 [PokerStars 英语规则](https://www.pokerstars.com/poker/games/rules/)、[意语规则](https://www.pokerstars.com/it/poker/games/rules/)和[巴西葡语规则](https://www.pokerstars.com/pt-BR/poker/games/rules/?no_redirect=1)，分别核对 fold／fold-passare／desistir 表示放弃本手及获池资格。西语[官方规则](https://www.pokerstars.es/poker/games/rules/)直接读取仍为 403；[官方术语表](https://www.pokerstars.es/poker/glosario)的官方搜索索引明确将 fold 解释为 retirarse／no ir 并放弃赢池机会，未冒称直接抓取成功。上述新前缀是针对源意的 AI 辅助措辞修正，不是逐字引用外部文章或真人母语认证。
+
+字形问题与文案问题分开记录。独立查看 R8 同一真实葡语牌局的三张 Android 系统原图后，A（原样）与 C（撤回临时样式）结果徽标及字形偏扁，B（只给 rank-slot／rank／直接子节点增加临时独立层规则）恢复正常。三份公开状态、目标 `Rect`／`Range`、18px 字号、23.4px 行高、已加载字体和无活动目标动画完全相同；临时样式标记为 false／true／false，QA 均为 false。这支持该组合样式与当前模拟器绘制变化的可逆因果联系，不证明某一单独 CSS 属性是唯一原因，也不推广为所有 Android 或实体设备的结论。
+
+原件和独立核验见 `.artifacts/language-fixes/round2/pt-rank-badge-r8-observation.json`、`rank-aba-r8-verification.json` 及 `diagnostics/hero-rank-r8/`。B 是注入诊断样式的原图，**不是最终修后证据**；R9 必须按新冻结源码重新编译、运行并采集真实原图，不能将 R8 或诊断图片冒充新包 after。

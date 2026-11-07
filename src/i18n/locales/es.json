@@ -429,7 +429,7 @@
   "已分别结算": "Está separado .",
   "已完成": "Las manos jugadas",
   "已弃牌": "Retirado",
-  "已弃牌 ·": "Ha sido fold.",
+  "已弃牌 ·": "Se retiró ·",
   "已投入全部筹码，优化应放在全下前的价格、范围与尺度判断。": "Todos los chips han sido introducidos, la optimización debe ser introducida en todo antes de la evaluación del precio, el alcance y la escala.",
   "已投入的开池和跟注不能成为继续接 4-bet 的依据。": "Las llamadas y las llamadas que ya están entradas no pueden ser la base para continuar con 4 bits.",
   "已有开池和平跟，你这次再加注是在挤压。它需要对手愿意弃牌；只有一张 A，并不能证明这次大额施压值得。": "Ya hay una pista de paz abierta, esta vez de nuevo se levanta está en la prensa. requiere que el oponente esté dispuesto a foldar; sólo una A, no es la prueba de que esta gran prensa lo vale.",

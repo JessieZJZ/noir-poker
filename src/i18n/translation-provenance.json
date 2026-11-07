@@ -1344,6 +1344,21 @@
         "docs/pr70-language-fixes-zh-fr-ru.md"
       ],
       "nativeSpeakerCertification": false
+    },
+    {
+      "date": "2026-11-07",
+      "baseline": "a82094987675c6f3a0665e3faff34887f2d795c4",
+      "scope": "Exact folded hand-rank prefix 已弃牌 · in eight locales; standalone 已弃牌 and suffix · 已弃牌 were separately checked and retained. Chinese, traditional Chinese and Korean prefix values remain intact.",
+      "method": "Assistant-authored targeted status-label correction checked against first-party poker terminology. Restore folded status and the middle-dot separator before the independently evaluated hand-rank label; no machine-translation API output adopted.",
+      "locales": ["en", "ja", "es", "it", "pt", "de", "fr", "ru"],
+      "sourceKeys": ["已弃牌 ·"],
+      "referenceDocuments": [
+        "docs/pr70-language-fixes-en-es-it-pt.md",
+        "docs/pr70-language-fixes-ja-ko-de.md",
+        "docs/pr70-language-fixes-zh-fr-ru.md"
+      ],
+      "nativeSpeakerCertification": false,
+      "limits": "This changes presentation of an already-folded hand at settlement, not its eligibility, payout, evaluation, review grading or hidden-card visibility."
     }
   ]
 }
