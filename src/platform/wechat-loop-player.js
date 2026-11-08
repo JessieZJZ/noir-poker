@@ -1,8 +1,9 @@
-import { BACKGROUND_MUSIC_VOLUME } from '../ui/background-music.js';
-import { createMusicFade } from '../ui/music-fade.js';
+import { BACKGROUND_MUSIC_VOLUME, loopFor, loopPosition } from '../ui/background-music.js';
+import { createMusicFade, MUSIC_PAUSE_FADE_MS } from '../ui/music-fade.js';
 
-// Decode the local AAC once. BufferSource loops on the audio clock, without a
-// JS timer, a second player or a fresh decoder at the end of each lap.
+// Decode the local AAC once. BufferSource plays the intro once, then loops the
+// musical period on the audio clock, without a JS timer, a second player or a
+// fresh decoder at the end of each lap.
 export function createWechatLoopPlayer(wx, { loadSource, schedule, unschedule, now, fallback }) {
   let context;
   try {
@@ -11,35 +12,64 @@ export function createWechatLoopPlayer(wx, { loadSource, schedule, unschedule, n
   } catch {
     return fallback();
   }
-  let gain, buffer, node, loading, backup;
+  let gain, buffer, loop, node, loading, backup, suspending;
   let wanted = false,
     disposed = false,
     closed = false,
     offset = 0,
     started = 0;
+  const param = () => gain?.gain;
+  const canRamp = () =>
+    typeof param()?.linearRampToValueAtTime === 'function' &&
+    typeof param()?.setValueAtTime === 'function';
   const fade = createMusicFade({
     schedule,
     unschedule,
     now,
     setVolume(value) {
-      if (gain && !closed) gain.gain.value = value * BACKGROUND_MUSIC_VOLUME;
+      if (!gain || closed) return;
+      gain.gain.cancelScheduledValues?.(0);
+      gain.gain.value = value * BACKGROUND_MUSIC_VOLUME;
     },
   });
-  function stop() {
+  function cancelSuspend() {
+    if (suspending !== undefined) unschedule(suspending);
+    suspending = undefined;
+  }
+  // With `fade`, ramp to silence on the audio clock and stop at its end.
+  function stop(fade = false) {
     if (!node) return;
-    offset = (offset + Math.max(0, context.currentTime - started)) % buffer.duration;
+    offset = loopPosition(offset + Math.max(0, context.currentTime - started), loop);
     const previous = node;
     node = null;
     previous.onended = null;
+    if (fade && canRamp()) {
+      const at = context.currentTime;
+      const value = gain.gain.value;
+      gain.gain.cancelScheduledValues?.(at);
+      gain.gain.setValueAtTime(value, at);
+      gain.gain.linearRampToValueAtTime(0, at + MUSIC_PAUSE_FADE_MS / 1000);
+      try {
+        previous.stop(at + MUSIC_PAUSE_FADE_MS / 1000 + 0.02);
+      } catch {}
+      previous.onended = () => {
+        try {
+          previous.disconnect();
+        } catch {}
+      };
+      return true;
+    }
     try {
       previous.stop();
     } catch {}
     try {
       previous.disconnect();
     } catch {}
+    return false;
   }
   function close() {
     if (closed) return;
+    cancelSuspend();
     stop();
     fade.pause();
     try {
@@ -72,8 +102,8 @@ export function createWechatLoopPlayer(wx, { loadSource, schedule, unschedule, n
       const next = context.createBufferSource();
       next.buffer = buffer;
       next.loop = true;
-      next.loopStart = 0;
-      next.loopEnd = buffer.duration;
+      next.loopStart = loop.start;
+      next.loopEnd = loop.end;
       next.connect(gain);
       next.onended = () => {
         if (node === next && wanted) useFallback();
@@ -101,6 +131,7 @@ export function createWechatLoopPlayer(wx, { loadSource, schedule, unschedule, n
       if (disposed) return;
       wanted = true;
       if (backup) return backup.play();
+      cancelSuspend();
       void start();
       if (!loading)
         loading = Promise.resolve()
@@ -124,6 +155,7 @@ export function createWechatLoopPlayer(wx, { loadSource, schedule, unschedule, n
             if (disposed || closed) return;
             if (!decoded?.duration) throw Error('Empty music buffer');
             buffer = decoded;
+            loop = loopFor(decoded.duration);
             return start();
           })
           .catch(useFallback);
@@ -133,9 +165,17 @@ export function createWechatLoopPlayer(wx, { loadSource, schedule, unschedule, n
       wanted = false;
       if (backup) return backup.pause();
       if (closed) return;
-      stop();
-      fade.pause();
-      Promise.resolve(context.suspend()).catch(() => {});
+      cancelSuspend();
+      if (!stop(true)) {
+        fade.pause();
+        Promise.resolve(context.suspend()).catch(() => {});
+        return;
+      }
+      fade.hold();
+      suspending = schedule(() => {
+        suspending = undefined;
+        if (!wanted && !closed) Promise.resolve(context.suspend()).catch(() => {});
+      }, MUSIC_PAUSE_FADE_MS + 60);
     },
     dispose() {
       disposed = true;

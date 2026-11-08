@@ -1,26 +1,33 @@
 // Runs inside the installed WebView. Keep the evidence between slow driver polls.
+// The intro plays once; afterwards playback must return to the loop start, not 0.
 export function watchNativeMusicLoop() {
-  const audio = document.querySelector('audio[data-background-music]');
-  const probe = { sawTail: false, wrapped: false, tailTime: null, wrapTime: null };
+  const music = document.querySelector('[data-background-music]').backgroundMusic;
+  const probe = {
+    sawTail: false,
+    wrapped: false,
+    tailTime: null,
+    wrapTime: null,
+    loopStart: music.loopStart,
+    loopEnd: music.loopEnd,
+  };
   const observe = () => {
-    if (audio.seeking || audio.paused) return;
-    const time = audio.currentTime;
-    if (time >= audio.duration - 0.6) {
+    if (music.paused) return;
+    const time = music.currentTime;
+    if (time >= music.loopEnd - 0.6) {
       probe.sawTail = true;
       probe.tailTime = time;
-    } else if (probe.sawTail && time < audio.duration / 2) {
+    } else if (probe.sawTail && time >= music.loopStart && time < music.loopStart + 5) {
       probe.wrapped = true;
       probe.wrapTime ??= time;
     }
   };
+  const timer = setInterval(observe, 50);
   window.__nativeMusicLoop = probe;
   window.__stopNativeMusicLoopProbe = () => {
-    audio.removeEventListener('seeked', observe);
-    audio.removeEventListener('timeupdate', observe);
+    clearInterval(timer);
     delete window.__nativeMusicLoop;
     delete window.__stopNativeMusicLoopProbe;
   };
-  audio.addEventListener('seeked', observe);
-  audio.addEventListener('timeupdate', observe);
-  audio.currentTime = audio.duration - 0.2;
+  music.seek(music.loopEnd - 0.2);
+  observe();
 }

@@ -11,6 +11,7 @@ import { createDialogScrollLock } from './dialog-scroll-lock.js';
 import { soundSamples, SOUND_SAMPLE_RATE, createSoundOutput } from './sound-cues.js';
 import { loadFeedbackPreferences } from './feedback-preferences.js';
 import { createWebBackgroundMusic } from '../platform/web-background-music.js';
+import { MUSIC_PAUSE_FADE_MS } from './music-fade.js';
 import { createDealGate } from './deal-gate.js';
 import { createHandAdvanceGuard } from './hand-advance.js';
 import {
@@ -216,7 +217,7 @@ const backgroundMusic = createWebBackgroundMusic({
   enabled: music,
   active: false,
   createContext: () => {
-    prepareAudio();
+    prepareAudio(true);
     return audio;
   },
   sharedContext: true,
@@ -281,8 +282,9 @@ async function unlockAudio() {
     if (audio.state !== 'running' && audio.state !== 'closed') await audio.resume();
   } catch {}
 }
-function prepareAudio() {
-  if (audio || !sound) return;
+// Music needs the context even while sound effects are off.
+function prepareAudio(forMusic = false) {
+  if (audio || (!sound && !forMusic)) return;
   try {
     audio = new (window.AudioContext || window.webkitAudioContext)();
     audioOutput = createSoundOutput(audio);
@@ -1856,6 +1858,7 @@ function registerTools() {
 }
 updateSound();
 updateVibration();
+let audioSuspend = null;
 function syncActivity() {
   const active = appActive && !isOrientationBlocked();
   backgroundMusic.setActive(active && !document.hidden);
@@ -1864,10 +1867,16 @@ function syncActivity() {
   dealGate.setActive(active && !document.hidden);
   syncTurnAttention();
   if (!changed) return;
+  clearTimeout(audioSuspend);
+  audioSuspend = null;
   if (!active) {
     clearTimeout(timer);
     cancelSoundEffects();
-    if (audio?.state === 'running') void audio.suspend().catch(() => {});
+    // Let the music finish its audio-clock fade before the shared context stops.
+    audioSuspend = setTimeout(() => {
+      audioSuspend = null;
+      if (!activityClock.active && audio?.state === 'running') void audio.suspend().catch(() => {});
+    }, MUSIC_PAUSE_FADE_MS + 60);
   } else schedule();
 }
 document.addEventListener('noir:app-state', ({ detail }) => {

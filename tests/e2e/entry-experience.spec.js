@@ -393,38 +393,37 @@ test('autoplay-capable entry fades real local music from its start before joinin
     const page = await browser.newPage({ viewport: { width: 390, height: 844 }, hasTouch: true });
     await page.addInitScript(() => {
       window.musicStarts = [];
-      document.addEventListener(
-        'playing',
-        ({ target }) => {
-          if (target.matches?.('audio[data-background-music]'))
-            window.musicStarts.push({
-              time: target.currentTime,
-              gain: Number(target.dataset.musicGain),
-            });
-        },
-        true,
-      );
+      const start = AudioBufferSourceNode.prototype.start;
+      AudioBufferSourceNode.prototype.start = function (when, offset = 0, ...rest) {
+        // The background music is the one long decoded source.
+        if (this.buffer?.duration > 60)
+          window.musicStarts.push({
+            time: offset,
+            gain: Number(document.querySelector('[data-background-music]')?.dataset.musicGain),
+          });
+        return start.call(this, when, offset, ...rest);
+      };
     });
     await page.goto(baseURL);
     const read = () =>
       page.evaluate(() => {
-        const audio = document.querySelector('audio[data-background-music]');
+        const marker = document.querySelector('[data-background-music]');
+        const music = marker?.backgroundMusic;
         return (
-          audio && {
-            time: audio.currentTime,
-            paused: audio.paused,
-            gain: Number(audio.dataset.musicGain),
-            count: document.querySelectorAll('audio[data-background-music]').length,
+          music && {
+            time: music.currentTime,
+            paused: music.paused,
+            gain: Number(marker.dataset.musicGain),
+            count: document.querySelectorAll('[data-background-music]').length,
           }
         );
       });
     await expect.poll(read).toMatchObject({ paused: false, count: 1 });
-    // Observe the actual playback event, even if a busy host delays the next driver round trip.
-    // play() clears paused before the asynchronous playing event is delivered.
+    // Observe the actual source start, even if a busy host delays the next driver round trip.
     await expect.poll(() => page.evaluate(() => window.musicStarts.length)).toBeGreaterThan(0);
     const initial = await page.evaluate(() => window.musicStarts[0]);
-    expect(initial.time).toBeLessThan(0.8);
-    expect(initial.gain).toBeLessThan(0.3);
+    expect(initial.time).toBe(0);
+    expect(initial.gain).toBe(0);
     expect((await page.evaluate(() => window.noir.getState())).phase).toBe('idle');
     await expect.poll(async () => (await read()).gain).toBe(1);
     await page.locator('#join-table-button').click();
