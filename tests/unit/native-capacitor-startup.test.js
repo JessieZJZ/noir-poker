@@ -6,6 +6,7 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import vm from 'node:vm';
+import { spawnSync } from 'node:child_process';
 
 const swift = readFileSync(
   new URL('../../ios/App/App/SceneDelegate.swift', import.meta.url),
@@ -158,6 +159,56 @@ test('actual Swift replacements run the full bridge for all four native plugin c
       }
     }
 });
+
+test(
+  'the actual Swift snapshot survives WebKit removal and re-addition without live growth',
+  { skip: process.platform !== 'darwin', timeout: 60000 },
+  () => {
+    const construction = swift.match(/let scripts = ([^\n]+)/)?.[1];
+    assert.ok(construction, 'Execute the actual native snapshot construction');
+    const directory = mkdtempSync(path.join(tmpdir(), 'noir-wk-script-snapshot-'));
+    try {
+      const file = path.join(directory, 'snapshot.swift');
+      writeFileSync(
+        file,
+        `import Foundation
+import WebKit
+let controller = WKUserContentController()
+let originals = ContiguousArray((0..<10).map { index in
+  WKUserScript(source: "window.original\\(index)=true;", injectionTime: .atDocumentStart, forMainFrameOnly: true)
+})
+for script in originals { controller.addUserScript(script) }
+let scripts = ${construction}
+controller.removeAllUserScripts()
+let configuration = WKUserScript(source: "window.config=true;", injectionTime: .atDocumentStart, forMainFrameOnly: true)
+controller.addUserScript(configuration)
+var visited = 0
+for script in scripts {
+  precondition(visited < originals.count, "Live-backed scripts grew while re-adding")
+  precondition(script === originals[visited], "Original script identity/world must be retained")
+  visited += 1
+  controller.addUserScript(script)
+}
+precondition(visited == originals.count, "Removing user scripts changed the captured collection")
+let installed = ContiguousArray(controller.userScripts)
+precondition(installed.count == originals.count + 1)
+precondition(installed[0] === configuration)
+for index in originals.indices { precondition(installed[index + 1] === originals[index]) }
+print("snapshot retained 10 original scripts in order without live growth")
+`,
+      );
+      const result = spawnSync('xcrun', ['swift', file], {
+        encoding: 'utf8',
+        timeout: 50000,
+      });
+      assert.equal(result.error, undefined);
+      assert.equal(result.status, 0, result.stderr || result.stdout);
+      assert.match(result.stdout, /snapshot retained 10 original scripts/);
+    } finally {
+      rmSync(directory, { recursive: true, force: true });
+    }
+  },
+);
 
 test('the source fingerprint covers actual Swift fix but excludes generated iOS public copies', async () => {
   const root = mkdtempSync(path.join(tmpdir(), 'noir-native-source-digest-'));

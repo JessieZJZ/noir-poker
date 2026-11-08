@@ -33,6 +33,8 @@ Capacitor 8.5.3 在文档开始时通过两个同步 `prompt()` 读取 Cookies/H
 
 本工程的 SwiftPM 使用预编译 Capacitor 框架，因此不修改 `node_modules`、生成的 SPM 工程或框架副本。`SceneDelegate.swift` 在 `capacitorDidLoad` 中、第一次导航之前，对实际导出的唯一桥脚本核对完整 SHA-256 和两条精确声明，只将静态开关探测改为读取原生 `bridge.config` 注入的布尔值，并保留原有字符串比较。仅重建这个已知的 page-world 桥脚本，其余用户脚本保留原对象及相对顺序；动态 Cookie 读写和普通 `prompt()` 不变。未知桥脚本会明确失败，避免静默应用到未审阅版本。Debug 日志和页面标记 `capacitor-8688-ios-8.5.3-v1` 用于核对实际安装运行，不能替代冷启动验收。
 
+重装脚本前必须用 `ContiguousArray` 保留原对象的独立快照。直接保存 `controller.userScripts` 得到的 Swift `Array` 可能仍桥接 WebKit 的可变数组；清空后再遍历重加会持续增长，直至触发资源异常。macOS 上的单元回归执行实际 WebKit API 和 Swift 构造表达式，检查有界数量、对象身份及顺序；其他平台明确跳过该原生 API 检查，不能算作运行通过。
+
 源码摘要单独包含 `ios/App/App/SceneDelegate.swift`，不包含其旁的生成 `public/`。上游升级后，先确认实际 SwiftPM 框架已包含官方修复，再撤除此回补、精确脚本校验及对应测试；重新同步、编译并验证独立冷启动。单元中的完整桥脚本执行与资源摘要检查不代表 iOS 安装运行已通过。
 
 独立测试 APK 的桌面名称为“NOIR Poker 测试”，包名为 `io.github.jessiezjz.noirpoker.qa`，可与现有应用并存，练习记录和设置分别保存。它使用调试签名，只供安装验收；正常 Debug 和发行包的名称、包名保持原样。测试流程会重置这个独立应用的数据。真机安装回归必须使用 `--variant qa`，并在安装前检查 APK 中的实际包名；无线连接、指定设备和可选独立 ADB 服务见 [原生 E2E](native-e2e.md#安卓真机与无线连接)。

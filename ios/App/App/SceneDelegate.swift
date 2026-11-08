@@ -146,7 +146,10 @@ class NoirBridgeViewController: CAPBridgeViewController, UIGestureRecognizerDele
         // Capacitor 8.5.3 exports these scripts before capacitorDidLoad, but only
         // navigates in viewDidLoad. Do not patch node_modules or generated SPM.
         let controller = webView.configuration.userContentController
-        let scripts = controller.userScripts
+        // Array can retain WebKit's live NSMutableArray bridge. Removing and
+        // re-adding then grows that same collection during enumeration.
+        // ContiguousArray owns a stable snapshot and retains the script objects.
+        let scripts = ContiguousArray(controller.userScripts)
         let bridgeSHA256 = "44ae55c944c91d5ebeb1ca2374e831d7920d1af6464faef8f0001a96252109bc"
         let matches = scripts.indices.filter { index in
             SHA256.hash(data: Data(scripts[index].source.utf8))
