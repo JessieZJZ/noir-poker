@@ -97,7 +97,7 @@ function audioParam(value = 0) {
   };
 }
 
-function webAudioFixture({ duration = 105.866 } = {}) {
+function webAudioFixture({ duration = 115.195 } = {}) {
   const nodes = [],
     gains = [],
     jobs = new Map(),
@@ -272,7 +272,12 @@ test('Web music decoded after mute, hide or disposal never starts on its own', a
 
 test('loop positions run through the intro once and then stay inside the musical period', () => {
   const { start, end } = BACKGROUND_MUSIC_LOOP;
-  assert.ok(start > 11 && start < 12.5, 'Two bars at 82 BPM');
+  // A four-bar intro, then 3 bars and 3/4 beat of settling margin, in 82 BPM bars.
+  assert.equal(
+    start,
+    (4 * 140488 + Math.round(3.1875 * 140488)) / 48000,
+    'Loop start after the intro',
+  );
   assert.ok(Math.abs(end - start - 4495610 / 48000) < 1e-9, 'Exactly one 32-bar period');
   assert.equal(loopPosition(0), 0);
   assert.equal(loopPosition(start - 0.01), start - 0.01);

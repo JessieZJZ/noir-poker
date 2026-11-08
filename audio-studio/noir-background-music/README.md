@@ -75,7 +75,7 @@ python3 -m venv .artifacts/music-tools
 
 验证覆盖：四版输出文件哈希、无损解码、精确音乐周期、非静音首尾、接缝相邻采样差、无非有限数和削波、响度与真峰值，以及压缩文件可解码。若本地 WAV 存在，还逐采样比较 FLAC/WAV。保留压缩编码的额外解码帧数，以免把 AAC 或 Opus 的容器长度直接当作无损循环帧数。
 
-游戏内使用的两份 AAC（前奏只播一次，再循环完整周期）由单独脚本生成，不改动这里的母带与 `render.py`。脚本先确认 `render.py` 能逐采样重现已跟踪的 FLAC，再渲染前奏并写入 `public/audio/` 与 `game-loop.json`：
+游戏内使用的两份 AAC（四小节前奏只播一次，再循环完整周期）由单独脚本生成，不改动这里的母带与 `render.py`。脚本先确认 `render.py` 能逐采样重现已跟踪的 FLAC，再在同一乐谱上加入第 32 小节的结尾转折（镲停两拍、军鼓加花和两音引子），并检查只有这一处及其余音与母带不同；随后渲染由低到高加层的前奏，写入 `public/audio/` 与 `game-loop.json`：
 
 ```sh
 .artifacts/music-tools/bin/python audio-studio/noir-background-music/source/game-loop.py

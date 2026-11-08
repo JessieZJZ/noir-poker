@@ -3,8 +3,8 @@ import assert from 'node:assert/strict';
 import vm from 'node:vm';
 import { watchNativeMusicLoop } from '../native/music-loop-probe.mjs';
 
-const LOOP_START = 561952 / 48000,
-  LOOP_END = 5057562 / 48000;
+const LOOP_START = 1009758 / 48000,
+  LOOP_END = 5505368 / 48000;
 
 function setup() {
   const timers = new Map();

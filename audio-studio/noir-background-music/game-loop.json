@@ -1,37 +1,39 @@
 {
   "sampleRate": 48000,
   "bpm": 82,
-  "introBars": 2,
+  "introBars": 4,
   "crossfadeBars": 1,
   "cycleFrames": 4495610,
-  "frames": 5081562,
-  "loopStartFrame": 561952,
-  "loopEndFrameExclusive": 5057562,
-  "renderResidual": 9.005255241500976e-08,
+  "frames": 5529368,
+  "loopStartFrame": 1009758,
+  "loopEndFrameExclusive": 5505368,
+  "renderResidual": 9.005255241500976e-8,
+  "turnaroundFromCycleFrame": 4421854,
+  "turnaroundTailFrames": 94148,
   "files": {
     "desktop": {
       "path": "public/audio/background-music.m4a",
-      "bytes": 1314698,
-      "sha256": "203f1f8f473fb000cf6e315568fb5f95f26486b7c4481c4390959cdb9fa447bd",
+      "bytes": 1430661,
+      "sha256": "52a743f06b82a8af3a2fc33b3f5e528468928fe0c0cf51074800b9483792ec60",
       "bitrate": "96k",
-      "staticGainDB": 4.64,
-      "integratedLUFS": -18.8,
-      "peakDBFS": -11.55,
+      "staticGainDB": 4.65,
+      "integratedLUFS": -18.81,
+      "peakDBFS": -10.59,
       "processedSeamMaxDiff": 0.0,
-      "encodedSeamMaxDiff": 0.0328369066119194,
-      "firstFrameAbs": 9.662899174145423e-07
+      "encodedSeamMaxDiff": 0.0808359682559967,
+      "firstFrameAbs": 5.245673264653306e-7
     },
     "mobile": {
       "path": "public/audio/background-music-mobile.m4a",
-      "bytes": 1774486,
-      "sha256": "7529ecbcdabdc97fa3fa23818a901555de54f07f7bb4fd3400fbe4618595b41e",
+      "bytes": 1927603,
+      "sha256": "75711bc57724c1898eff78f897fe60bacc254782f4d04beb03445b41c8b86309",
       "bitrate": "128k",
-      "staticGainDB": 4.66,
-      "integratedLUFS": -13.81,
-      "peakDBFS": -7.25,
+      "staticGainDB": 4.69,
+      "integratedLUFS": -13.82,
+      "peakDBFS": -7.49,
       "processedSeamMaxDiff": 0.0,
-      "encodedSeamMaxDiff": 0.04953690618276596,
-      "firstFrameAbs": 2.4947842121036956e-06
+      "encodedSeamMaxDiff": 0.07089785858988762,
+      "firstFrameAbs": 4.818627417080279e-7
     }
   }
 }

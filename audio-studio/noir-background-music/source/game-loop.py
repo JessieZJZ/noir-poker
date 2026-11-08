@@ -1,14 +1,24 @@
 #!/usr/bin/env python3
-"""Build the in-game Midnight Felt files: a two-bar intro, then a sample-exact loop.
+"""Build the in-game Midnight Felt files: a four-bar intro, then a sample-exact loop.
 
 The tracked lossless master is a steady-state cycle: frame 0 already carries
-the reverb and note tails of bar 32, so starting there sounds like joining the
-song halfway. This script renders a short intro from silence (Bbmaj9 and
-A7sus(b9), the cycle's own turnaround, with pads, keys, bass and a brush/hat
-pickup), plays bar 1 onward linearly, then crossfades over one bar into the
-unchanged periodic master. Players start at frame 0 once and afterwards loop
-between `loopStartFrame` and `loopEndFrameExclusive`, which lie inside the
-periodic part, so the jump is between identical continuations.
+the reverb and note tails of bar 32, and bar 1 opens with the full groove and
+the lead motif at once. In the game the music instead builds from low to high
+over four bars on the cycle's own turnaround (Bbmaj9, A7sus(b9)): bass
+groove, a soft kick and a low pad, then the full pad and electric piano, then
+brush and snare, and finally hats for the whole bar, a glass overtone and a
+two-note pickup into the melody. The build is in register and timbre, not in
+level: every intro bar sits within about 1 LU of the groove on the mobile
+mix, so the melody arrives without a step in loudness. The cycle itself gets
+an ending each lap: in bar 32 the hats rest for two beats, and a ghost-snare
+fill and the same pickup lead back to bar 1.
+
+The cycle is rendered by `render.py` with the same notes and draws, plus that
+turnaround. The intro and bar 1 are rendered linearly from silence and
+crossfade over one bar into the periodic cycle. Players start at frame 0 once
+and afterwards loop between `loopStartFrame` and `loopEndFrameExclusive`,
+which lie inside the periodic part, so the jump is between identical
+continuations.
 
 The delivery chains keep the earlier EQ, compression and limiter settings, but
 use one static gain in place of FFmpeg's dynamic loudnorm, so the processed
@@ -39,9 +49,12 @@ render = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(render)
 SR, BARS, filt = render.SR, render.BARS, render.filt
 
-INTRO_BARS = 2
+INTRO_BARS = 4
 CROSSFADE_BARS = 1
-LOOP_START_BARS = 2  # after the intro; half a bar of margin past the crossfade
+# Three bars after the intro the delivery filters have settled bit-exactly; the
+# extra 0.75 beat puts the jump between the kick and the next hat, away from
+# transients that the encoder renders less exactly.
+LOOP_START_BARS = 3 + 0.75 / 4
 TAIL_SECONDS = 0.5
 
 DELIVERY = {
@@ -83,7 +96,37 @@ def integrated(samples):
     return float(json.loads(err[err.rfind("{"):err.rfind("}") + 1])["input_i"])
 
 
-class Linear(render.Session):
+LAST_BEAT = BARS * 4
+PICKUP = [(-1.5, 62, 0.6), (-0.75, 64, 0.6)]  # D4, E4 into the motif's A4
+
+
+class Turnaround:
+    """The cycle's ending: hats rest in the last two beats of bar 32."""
+
+    def hit(self, kind, beat, gain, pan=0):
+        if kind == "hat" and LAST_BEAT - 2 <= beat < LAST_BEAT:
+            # Keep the master's random draws so every other event is unchanged.
+            self.rng.uniform(-0.005, 0.008)
+            self.rng.uniform(0.90, 1.06)
+            return
+        super().hit(kind, beat, gain, pan)
+
+    def lead_in(self, at):
+        # The same fill and pickup end the intro and every lap.
+        for off, gain in [(-0.5, 0.06), (-0.25, 0.085)]:
+            self.hit("snare", at + off, gain, 0.08)
+        for off, midi, length in PICKUP:
+            self.note("ep", midi, at + off, length, 0.035, -0.12, "lead")
+
+
+class Cycle(Turnaround, render.Session):
+    def arrange(self):
+        super().arrange()
+        self.rng = np.random.default_rng(self.score["seed"] + 2)
+        self.lead_in(LAST_BEAT)
+
+
+class Linear(Turnaround, render.Session):
     """The same notes and draws as the cycle, deposited on a linear timeline."""
 
     def __init__(self, score, lead_beats, length):
@@ -100,26 +143,53 @@ class Linear(render.Session):
         if hi > lo:
             self.buses[bus][lo:hi] += v[lo - start:hi - start]
 
+    def bar(self, start, h, activity, bass, kick):
+        for off, strength in [(0.08, 1), (2.65, 0.68)]:
+            for i, midi in enumerate(h["notes"]):
+                self.note("ep", midi, start + off + i * 0.025, 2.5, 0.052 * strength * activity, (i - 1.5) * 0.14)
+        for off, note, length, strength in [(0, h["bass"], 1.5, 1), (1.75, h["bass"] + 7, 0.6, 0.6), (2.65, h["bass"] + 12, 0.9, 0.7)]:
+            self.note("bass", note, start + off, length, 0.18 * strength * bass, bus="bass")
+        for off, gain in [(0, 0.22), (2.5, 0.14)]:
+            self.hit("kick", start + off, gain * kick)
+
     def intro(self):
         # A separate generator, so the body keeps the master's exact draws.
         self.rng = np.random.default_rng(self.score["seed"] + 1)
         harmony = self.score["harmony"]
         first, second = harmony[14], harmony[15]
-        # Bar one: the pad swells from silence, keys roll in, a soft root enters.
+        # The build is in register and timbre, not in level: from the first bar
+        # the intro sits a little under the groove, so the melody arrives
+        # without a jump in loudness.
+        # Bar one, low: bass groove, a soft kick and a low pad on root and fifth.
+        for i, midi in enumerate([first["bass"] + 12, first["notes"][0]]):
+            self.note("pad", midi, -16 + 0.02, 7.5, 0.02, (i - 0.5) * 0.4, "air", human=0)
+        # The first downbeat sits 60 ms late: no timing jitter cuts its attack,
+        # and the encoder's pre-echo stays clear of the first frame.
+        for start, bass, kick in [(-16 + 0.08, 0.85, 0.6), (-12, 0.95, 0.85)]:
+            for off, note, length, strength in [(0, first["bass"], 1.5, 1), (1.75, first["bass"] + 7, 0.6, 0.6), (2.65, first["bass"] + 12, 0.9, 0.7)]:
+                self.note("bass", note, start + off, length, 0.18 * strength * bass, bus="bass")
+            for off, gain in [(0, 0.22), (2.5, 0.14)]:
+                self.hit("kick", start + off, gain * kick)
+        # Bar two, mid: the full pad chord and the electric piano enter.
         for i, midi in enumerate(first["notes"]):
-            self.note("pad", midi, -8, 4.6, 0.012, (i - 1.5) * 0.46, "air", human=0)
-            self.note("ep", midi, -8 + 0.5 + i * 0.14, 3.2, 0.052 * 0.42, (i - 1.5) * 0.14)
-        self.note("bass", first["bass"], -6, 2.0, 0.18 * 0.35, bus="bass")
-        self.note("glass", first["notes"][-1] + 12, -8 + 2.25, 3.0, 0.012, 0.45, "lead")
-        # Bar two: the turnaround with bass, then hats and a brush lead into bar 1.
+            self.note("pad", midi, -12.25, 3.7, 0.010, (i - 1.5) * 0.46, "air", human=0)
+        for off, strength in [(0.08, 1), (2.65, 0.68)]:
+            for i, midi in enumerate(first["notes"]):
+                self.note("ep", midi, -12 + off + i * 0.025, 2.5, 0.052 * strength * 0.75, (i - 1.5) * 0.14)
+        # Bars three and four: the turnaround chord with brush and snare.
         for i, midi in enumerate(second["notes"]):
-            self.note("pad", midi, -4, 4.6, 0.012, (i - 1.5) * 0.46, "air", human=0)
-            self.note("ep", midi, -4 + 0.08 + i * 0.05, 3.2, 0.052 * 0.62, (i - 1.5) * 0.14)
-        self.note("bass", second["bass"], -4, 1.5, 0.18 * 0.65, bus="bass")
-        self.note("bass", second["bass"] + 12, -4 + 2.65, 0.9, 0.18 * 0.45, bus="bass")
-        self.hit("brush", -1.08, 0.07, -0.25)
-        for j, gain in enumerate([0.016, 0.024, 0.032, 0.042]):
-            self.hit("hat", -2 + j * 0.5 + (0.045 if j % 2 else 0), gain, 0.3)
+            self.note("pad", midi, -8.25, 7.7, 0.010, (i - 1.5) * 0.46, "air", human=0)
+        for start, backbeat in [(-8, 0.8), (-4, 1.0)]:
+            self.bar(start, second, 0.88, 1.0, 1.0)
+            for off in [1, 3]:
+                self.hit("snare", start + off + 0.025, 0.16 * backbeat, 0.08)
+                self.hit("brush", start + off - 0.08, 0.12 * backbeat, -0.25)
+        # Bar four, high: the hats join for the whole bar with a glass overtone
+        # above, and the lap's fill and pickup lead into the melody.
+        for j in range(8):
+            self.hit("hat", -4 + j * 0.5 + (0.045 if j % 2 else 0), (0.042 if j % 2 else 0.057) * (0.75 + 0.25 * j / 7), 0.3)
+        self.note("glass", second["notes"][-1] + 12, -4 + 0.25, 3.0, 0.013, 0.45, "lead")
+        self.lead_in(0)
 
     def mix(self):
         keys, bass, drums, air, lead = (self.buses[k] for k in ["keys", "bass", "drums", "air", "lead"])
@@ -148,37 +218,45 @@ def sha(path):
 
 def main():
     score = render.SCORES[0]
-    cycle = render.Session(score)
-    cycle.arrange()
-    steady = cycle.mix().astype(np.float64)
+    original = render.Session(score)
+    original.arrange()
+    steady = original.mix().astype(np.float64)
     master = decode(STUDIO / "masters/01-midnight-felt.flac")
-    n = cycle.n
+    n = original.n
     assert master.shape == (n, 2), master.shape
     gain = float(np.sum(master * steady) / np.sum(steady * steady))
     residual = float(np.max(np.abs(master - steady * gain)))
     # The renderer must reproduce the tracked master before any reuse.
     assert residual < 1e-5, residual
+    cycle = Cycle(score)
+    cycle.arrange()
+    game = cycle.mix().astype(np.float64) * gain
     bar = round(4 * cycle.beat * SR)
     intro = INTRO_BARS * bar
     fade_end = intro + CROSSFADE_BARS * bar
-    loop_start = intro + LOOP_START_BARS * bar
+    loop_start = intro + round(LOOP_START_BARS * bar)
     loop_end = loop_start + n
     frames = loop_end + round(TAIL_SECONDS * SR)
+    # Only the end of bar 32 and its tails into bar 1 may differ from the master.
+    diff = np.max(np.abs(game - master), axis=1)
+    turnaround_from = round((LAST_BEAT - 2.1) * cycle.beat * SR)
+    tails_until = int(np.flatnonzero(diff[:turnaround_from] > 1e-4).max(initial=-1)) + 1
+    assert tails_until < 2 * bar, tails_until
 
     linear = Linear(score, INTRO_BARS * 4, fade_end)
     linear.arrange()
     linear.intro()
     head = linear.mix() * gain
     extended = frames + 2 * SR
-    periodic = master[(np.arange(extended) - intro) % n]
+    periodic = game[(np.arange(extended) - intro) % n]
     timeline = periodic.copy()
     timeline[:intro] = head[:intro]
     w = 0.5 - 0.5 * np.cos(np.pi * np.arange(fade_end - intro) / (fade_end - intro))
     timeline[intro:fade_end] = head[intro:fade_end] * (1 - w[:, None]) + periodic[intro:fade_end] * w[:, None]
 
-    report = {"sampleRate": SR, "bpm": score["bpm"], "introBars": INTRO_BARS, "crossfadeBars": CROSSFADE_BARS, "cycleFrames": n, "frames": frames, "loopStartFrame": loop_start, "loopEndFrameExclusive": loop_end, "renderResidual": residual, "files": {}}
+    report = {"sampleRate": SR, "bpm": score["bpm"], "introBars": INTRO_BARS, "crossfadeBars": CROSSFADE_BARS, "cycleFrames": n, "frames": frames, "loopStartFrame": loop_start, "loopEndFrameExclusive": loop_end, "renderResidual": residual, "turnaroundFromCycleFrame": turnaround_from, "turnaroundTailFrames": tails_until, "files": {}}
     for name, spec_ in DELIVERY.items():
-        cycle_in = np.tile(master, (3, 1))
+        cycle_in = np.tile(game, (3, 1))
         level = integrated(process(cycle_in, spec_["before"])[n:2 * n])
         volume = -14 - level
         for _ in range(4):
