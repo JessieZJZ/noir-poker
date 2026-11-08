@@ -1359,6 +1359,28 @@
       ],
       "nativeSpeakerCertification": false,
       "limits": "This changes presentation of an already-folded hand at settlement, not its eligibility, payout, evaluation, review grading or hidden-card visibility."
+    },
+    {
+      "date": "2026-11-08",
+      "baseline": "3bb44e1a59ae8a2f9964586456e3298918d9609d",
+      "scope": "One observed Portuguese showdown footer: 最佳五张牌. Base locale and override are synchronized for one effective source key; no wider strategy-copy review.",
+      "locales": ["pt"],
+      "sourceKeys": ["最佳五张牌"],
+      "previous": "Os 5 melhores cartões",
+      "replacement": "As 5 melhores cartas",
+      "method": "Targeted assistant terminology review against directly read PokerStars Portugal rules. Use cartas for playing cards and the agreeing feminine plural article As; retain the digit 5 and existing best-five-card meaning. No machine-translation API output adopted.",
+      "references": [
+        "https://www.pokerstars.pt/poker/learn/strategies/regras-do-texas-holdem/",
+        "https://www.pokerstars.pt/poker/games/rules/hand-rankings/"
+      ],
+      "referenceDocuments": [
+        "docs/pr70-language-fixes.md",
+        "docs/pr70-language-fixes-en-es-it-pt.md",
+        "docs/pr70-language-fixes-ja-ko-de.md",
+        "docs/pr70-language-fixes-zh-fr-ru.md"
+      ],
+      "nativeSpeakerCertification": false,
+      "limits": "Official sources support the playing-card term and best-five-card concept, not the exact project footer as a verbatim official UI label. No hand evaluation, payout, eligibility, strategy or other locale value changes. R8/R9 results remain historical and do not validate the new source revision."
     }
   ]
 }

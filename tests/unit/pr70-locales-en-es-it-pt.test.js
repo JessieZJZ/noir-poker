@@ -1,6 +1,8 @@
 import test, { afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { loadLocale, localizeText } from '../../src/i18n/index.js';
+import pt from '../../src/i18n/locales/pt.json' with { type: 'json' };
+import overrides from '../../src/i18n/overrides.json' with { type: 'json' };
 
 const locales = ['en', 'es', 'it', 'pt'];
 afterEach(() => loadLocale('zh-CN'));
@@ -117,6 +119,20 @@ test('PR70 losing at showdown and undealt community cards have accurate states, 
     assert.equal(localizeText('公共牌尚未发出'), states[locale][1], locale);
     assert.doesNotMatch(localizeText('未获底池'), /puente|potato|poço|ponte/, locale);
   }
+});
+
+test('PR70 Portuguese best-five showdown footer uses playing-card terminology after locale switches', async () => {
+  const key = '最佳五张牌';
+  const expected = 'As 5 melhores cartas';
+  assert.equal(pt[key], expected, 'base locale');
+  assert.equal(overrides.pt[key], expected, 'override');
+  await loadLocale('pt');
+  assert.equal(localizeText(key), expected, 'effective Portuguese locale');
+  assert.equal(localizeText('高牌'), 'Carta alta');
+  await loadLocale('en');
+  assert.equal(localizeText(key), 'The Best 5 Cards');
+  await loadLocale('pt');
+  assert.equal(localizeText(key), expected, 'Portuguese after switching back');
 });
 
 test('PR70 dynamic activity and result templates preserve names, units and amounts', async () => {

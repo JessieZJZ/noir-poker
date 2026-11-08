@@ -134,3 +134,11 @@ R8 的葡语原生大屏结算图实际显示 `Tem um fold. Um par`。逐一核�
 字形问题与文案问题分开记录。独立查看 R8 同一真实葡语牌局的三张 Android 系统原图后，A（原样）与 C（撤回临时样式）结果徽标及字形偏扁，B（只给 rank-slot／rank／直接子节点增加临时独立层规则）恢复正常。三份公开状态、目标 `Rect`／`Range`、18px 字号、23.4px 行高、已加载字体和无活动目标动画完全相同；临时样式标记为 false／true／false，QA 均为 false。这支持该组合样式与当前模拟器绘制变化的可逆因果联系，不证明某一单独 CSS 属性是唯一原因，也不推广为所有 Android 或实体设备的结论。
 
 原件和独立核验见 `.artifacts/language-fixes/round2/pt-rank-badge-r8-observation.json`、`rank-aba-r8-verification.json` 及 `diagnostics/hero-rank-r8/`。B 是注入诊断样式的原图，**不是最终修后证据**；R9 必须按新冻结源码重新编译、运行并采集真实原图，不能将 R8 或诊断图片冒充新包 after。
+
+## 2026-11-08 R10 葡语最佳五张牌短标签
+
+R8 的同一张葡语结算原图 `diagnostics/hero-rank-r8/a-original.png` 中，Alex 的未获池页脚实际显示 `Os 5 melhores cartões`，上方牌型为 `Carta alta`。本次仅将精确源键 `最佳五张牌` 的葡语基础值和 override 同步改为 `As 5 melhores cartas`；使用扑克牌术语 `cartas` 及一致的阴性复数冠词 `As`，保留原数字 5 和最佳五张牌的含义。
+
+本次直接读取的 [PokerStars Portugal — Regras do Texas Hold’em](https://www.pokerstars.pt/poker/learn/strategies/regras-do-texas-holdem/) 在目标说明和 Showdown 部分使用 `melhor mão de cinco cartas`；[官方牌型表](https://www.pokerstars.pt/poker/games/rules/hand-rankings/)同时使用 `cinco cartas` 和 `Carta alta`。这些资料支持扑克牌名词和最佳五张牌概念；简短页脚是本项目措辞，不冒称官方界面的逐字引用，也不改变既有葡语语体或构成母语认证。没有扩大扫描长策略句或其它语言。
+
+定向单元检查基础值、override、正式 `loadLocale()` / `localizeText()` 有效值，以及切至英语后再切回葡语的缓存刷新。该单元文件实际 10/10 通过，9 个改动文件格式检查通过。既有摊牌 E2E 追加实际未获池页脚断言，本分工未执行浏览器、构建或原生运行；这些范围由协调者在 R10 冻结后另行验证。旧图及 R9 通过结果不能作为本次新源的修后验收。

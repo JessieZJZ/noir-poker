@@ -133,3 +133,5 @@ PokerStars 的 `/ja/` 规则链接本轮跳转英文，`/ko/` 资源不可用，
 新增回归使用正式 `loadLocale()` / `localizeText()` 检查十一语有效前缀及九类牌型组合，并在测试模式使用既有 `qa.scene`、真实 evaluator/settlement/renderer 检查已弃牌英雄标签。浏览器检查覆盖 320、390、768、1024 宽度下完整 Range、实际裁剪祖先，以及 Android 专用牌型图层不改变 Web/iOS 标签字号和几何。给 Chromium 添加平台 CSS 标记只能证明选择器和几何，不是 Android 或 iOS 原生字形绘制证明；原生像素验收由协调者对新版本另行采集。旧 R8 的 `a820/3fad` 原图保留原始版本身份，不能用新字典或浏览器回归改写旧图结论。
 
 本轮定向单元 2/2、浏览器 22/22 通过（十一语 × 两个既有项目，各检查四种尺寸）。浏览器初版曾错误要求 iOS 与 Web 的绝对坐标相同；定位到既有 `controls-layout.css` 为 iOS 保留至少 10px 的底部安全间距后，改为核对 Web/iOS 各自基线在 Android 图层切换前后保持一致，同时继续要求三种 CSS 平台的完整文字与 Range 不裁剪。该调整保留平台原有差异，没有修改产品样式或放宽文字可见性检查。失败与最终日志分别保留为 `folded-prefix-e2e-r9.log`、`folded-prefix-e2e-r9-r2.log`，单元日志为 `folded-prefix-unit-r9.log`，均位于本地 `.artifacts/language-fixes/round2/`。本分工未运行完整构建或 native 测试。
+
+2026-11-08 的 R10 补修仅涉及葡语未获池页脚 `最佳五张牌`，日／韩／德译文不变。[葡语第一方依据与精确范围](pr70-language-fixes-en-es-it-pt.md#2026-11-08-r10-葡语最佳五张牌短标签)另列；本文件的 R9 通过数保留原版本身份，不能作为 R10 编译或原生验收。

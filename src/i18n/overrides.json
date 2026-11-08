@@ -6130,7 +6130,8 @@
     "再打 {0} 手后涨盲到 {1} / {2}": "Mãos até subir os blinds: {0} · {1} / {2}",
     "下一手涨盲到 {0} / {1}": "Próxima mão: {0} / {1}",
     "跟注旁的数字是这次要补的筹码；加注旁的数字是这一轮累计投入的总额。例如你已投 200，对手加到 600：跟注要补 400，选择加注 1.2K 则补 1K。所有筹码金额都是当前筹码面额的倍数。": "O número ao lado do call indica as fichas adicionais a colocar; o número ao lado do raise indica a aposta total desta rodada. Se já colocou 200 e um adversário aumenta para 600, o call acrescenta 400. Aumentar para 1.2K acrescenta 1K. Todos os valores são múltiplos da denominação atual das fichas.",
-    "已弃牌 ·": "Desistiu ·"
+    "已弃牌 ·": "Desistiu ·",
+    "最佳五张牌": "As 5 melhores cartas"
   },
   "de": {
     "设置": "Einstellungen",

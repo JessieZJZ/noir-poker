@@ -587,7 +587,7 @@
   "更宽地争夺底池，弱牌与强牌共用进攻路线，偏好持续施压。": "Disputa mais potes, usa linhas agressivas com mãos fracas e fortes e prefere manter a pressão.",
   "更积极争夺有位置的底池，在有进攻叙事或听牌时混合多街施压，也能用强牌保留对手范围。": "Disputa ativamente potes em posição, combina pressão em várias streets quando a linha agressiva ou um draw a justificam e pode manter amplos os ranges adversários com mãos fortes.",
   "曾尝试加注总额 {0}，但触及最大值的纯诈唬全下保护条件，最终没有执行该加注；实际动作仍是上方记录的{1}。": "Um tempo tentou aumentar o montante total {0} , mas tocou o valor máximo de bluff puro todas as condições de proteção, no final não realizou essa elevação; a ação real ainda foi registrada acima {1} .",
-  "最佳五张牌": "Os 5 melhores cartões",
+  "最佳五张牌": "As 5 melhores cartas",
   "最小": "Minimo",
   "最小下注为 50。完整加注的增量不能小于本轮上一次完整下注或加注的增量。例如上一位从 50 加到 150，增量是 100，你至少要加到 250。筹码不足时可以全下，但不够一次完整加注的短全下，不一定让已经行动的人重新获得加注权。": "A aposta mínima é 50. Uma aposta completa deve aumentar a aposta pelo menos pela última aposta completa ou aumento. Se um jogador sobe de 50 a 150, o aumento é 100 e a próxima aposta mínima é 250. Com menos chips, você pode ir tudo-em, mas um pequeno tudo-em não pode reabrir aumento para jogadores que já agiram.",
   "有": "Há",

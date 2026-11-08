@@ -109,6 +109,10 @@ test('showdown amounts refresh with the locale while winning-card nodes stay ali
   const chinese = await page.locator('.showdown-awards').allTextContents();
   expect(chinese.join(' ')).not.toMatch(/\d,\d/);
   expect(russian.join(' ')).not.toBe(chinese.join(' '));
+  await switchLocale(page, 'pt');
+  const losingFooter = page.locator('.showdown-player:not(.showdown-winner) .showdown-awards');
+  await expect(losingFooter).toHaveCount(1);
+  await expect(losingFooter).toHaveText('As 5 melhores cartas');
   expect(
     await page.evaluate(() => window.savedWinningCard === document.querySelector('.winning-card')),
   ).toBe(true);
