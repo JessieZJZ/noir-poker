@@ -73,7 +73,7 @@ export function createWebBackgroundMusic({
 }
 
 // Decode the local file once. One BufferSource loops the musical period on the
-// audio clock after the intro, with no JS timer at the loop point.
+// audio clock, with no JS timer at the loop point.
 function bufferPlayer({
   document,
   url,
@@ -100,7 +100,7 @@ function bufferPlayer({
     wanted = false,
     disposed = false,
     entered = false,
-    offset = 0,
+    offset = null,
     suspendTimer = null,
     labelTimer = null;
   const voices = new Set();
@@ -117,7 +117,7 @@ function bufferPlayer({
   const position = () =>
     voice
       ? loopPosition(voice.offset + Math.max(0, context.currentTime - voice.started), loop)
-      : offset;
+      : (offset ?? loop?.start ?? 0);
   function release(item, at) {
     try {
       item.source.stop(at);
@@ -146,6 +146,7 @@ function bufferPlayer({
     level.gain.value = 0;
     source.connect(level);
     level.connect(output);
+    offset ??= loop.start;
     const ms = entered ? MUSIC_RESUME_FADE_MS : MUSIC_ENTRY_FADE_MS;
     entered = true;
     const started = context.currentTime;
@@ -300,6 +301,15 @@ function elementPlayer({ document, url, schedule, unschedule, reason }) {
   document.body.append(audio);
   let wanted = false;
   let disposed = false;
+  let positioned = false;
+  // The first play opens at the loop start once the duration is known.
+  const position = () => {
+    if (positioned || !(audio.duration > 0)) return;
+    positioned = true;
+    const { start } = loopFor(audio.duration);
+    if (audio.currentTime < start) audio.currentTime = start;
+  };
+  audio.addEventListener?.('loadedmetadata', position);
   const fade = createMusicFade({
     schedule,
     unschedule,
@@ -355,6 +365,7 @@ function elementPlayer({ document, url, schedule, unschedule, reason }) {
       if (disposed) return;
       wanted = true;
       if (!audio.paused) return;
+      position();
       return Promise.resolve(audio.play()).then(() => {
         if (!wanted || disposed) audio.pause();
         else fade.start();
@@ -370,6 +381,7 @@ function elementPlayer({ document, url, schedule, unschedule, reason }) {
       wanted = false;
       fade.pause();
       audio.removeEventListener?.('timeupdate', wrap);
+      audio.removeEventListener?.('loadedmetadata', position);
       audio.pause();
       audio.removeAttribute('src');
       audio.load();

@@ -97,7 +97,7 @@ function audioParam(value = 0) {
   };
 }
 
-function webAudioFixture({ duration = 115.195 } = {}) {
+function webAudioFixture({ duration = 94.659 } = {}) {
   const nodes = [],
     gains = [],
     jobs = new Map(),
@@ -191,7 +191,7 @@ function webAudioFixture({ duration = 115.195 } = {}) {
   };
 }
 
-test('Web music decodes once, plays the intro once, loops the period and fades out before stopping', async () => {
+test('Web music decodes once, opens at the loop start, loops the period and fades out before stopping', async () => {
   const f = webAudioFixture();
   const music = createWebBackgroundMusic(f.options);
   await f.flush();
@@ -202,7 +202,11 @@ test('Web music decodes once, plays the intro once, loops the period and fades o
   assert.equal(output.connected, 'mix', 'Music and cues share the final mix limiter');
   assert.equal(output.gain.value, BACKGROUND_MUSIC_VOLUME);
   const first = f.nodes[0];
-  assert.deepEqual(first.started, { when: 0, offset: 0 }, 'Entry starts at the intro');
+  assert.deepEqual(
+    first.started,
+    { when: 0, offset: BACKGROUND_MUSIC_LOOP.start },
+    'Entry starts at the opening position',
+  );
   assert.equal(first.loop, true);
   assert.equal(first.loopStart, BACKGROUND_MUSIC_LOOP.start);
   assert.equal(first.loopEnd, BACKGROUND_MUSIC_LOOP.end);
@@ -212,9 +216,9 @@ test('Web music decodes once, plays the intro once, loops the period and fades o
   ]);
   const api = f.marker().backgroundMusic;
   assert.equal(f.marker().dataset.backgroundMusic, 'midnight-felt');
-  // 120 s of playback: the intro once, then one full period and part of the next.
+  // 120 s of playback: one full period and part of the next.
   f.context.currentTime = 120;
-  const expected = loopPosition(120);
+  const expected = loopPosition(BACKGROUND_MUSIC_LOOP.start + 120);
   assert.ok(expected > BACKGROUND_MUSIC_LOOP.start && expected < 30);
   assert.ok(Math.abs(api.currentTime - expected) < 1e-9);
   firstLevel.gain.value = 1;
@@ -264,23 +268,21 @@ test('Web music decoded after mute, hide or disposal never starts on its own', a
       music.setEnabled(true);
       music.setActive(true);
       assert.equal(f.nodes.length, 1, action);
-      assert.equal(f.nodes[0].started.offset, 0, 'The first start still begins at the intro');
+      assert.equal(
+        f.nodes[0].started.offset,
+        BACKGROUND_MUSIC_LOOP.start,
+        'The first start still begins at the opening position',
+      );
     }
     music.dispose();
   }
 });
 
-test('loop positions run through the intro once and then stay inside the musical period', () => {
+test('loop positions open at the loop start and wrap at one exact 32-bar period', () => {
   const { start, end } = BACKGROUND_MUSIC_LOOP;
-  // A four-bar intro, then 3 bars and 3/4 beat of settling margin, in 82 BPM bars.
-  assert.equal(
-    start,
-    (4 * 140488 + Math.round(3.1875 * 140488)) / 48000,
-    'Loop start after the intro',
-  );
-  assert.ok(Math.abs(end - start - 4495610 / 48000) < 1e-9, 'Exactly one 32-bar period');
-  assert.equal(loopPosition(0), 0);
-  assert.equal(loopPosition(start - 0.01), start - 0.01);
+  assert.equal(start, 0.5, 'Half a second of lead-in before the opening');
+  assert.equal(end - start, 4495610 / 48000, 'Exactly one 32-bar period at 82 BPM');
+  assert.equal(loopPosition(start), start);
   assert.equal(loopPosition(end - 0.01), end - 0.01);
   assert.ok(Math.abs(loopPosition(end) - start) < 1e-9);
   assert.ok(Math.abs(loopPosition(end + 2 * (end - start) + 3) - (start + 3)) < 1e-6);
@@ -798,7 +800,7 @@ test('WeChat starts a running context and resumes synchronous state changes with
   music.dispose();
 });
 
-test('WeChat plays the intro once, loops the period and fades out on the audio clock before suspending', async () => {
+test('WeChat loops the period and fades out on the audio clock before suspending', async () => {
   const f = loopFixture();
   const events = [];
   Object.assign(f.gain.gain, {
@@ -824,7 +826,7 @@ test('WeChat plays the intro once, loops the period and fades out on the audio c
   f.context.decoded({ duration: BACKGROUND_MUSIC_LOOP.end + 0.5 });
   await f.flush();
   f.fadeIn();
-  assert.equal(f.nodes[0].startOffset, 0);
+  assert.equal(f.nodes[0].startOffset, BACKGROUND_MUSIC_LOOP.start, 'Opens at the loop start');
   assert.equal(f.nodes[0].loopStart, BACKGROUND_MUSIC_LOOP.start);
   assert.equal(f.nodes[0].loopEnd, BACKGROUND_MUSIC_LOOP.end);
   f.context.currentTime = 150;
@@ -843,7 +845,9 @@ test('WeChat plays the intro once, loops the period and fades out on the audio c
   assert.equal(f.context.state, 'suspended');
   music.setActive(true);
   await f.flush();
-  assert.ok(Math.abs(f.nodes[1].startOffset - loopPosition(150)) < 1e-9);
+  assert.ok(
+    Math.abs(f.nodes[1].startOffset - loopPosition(BACKGROUND_MUSIC_LOOP.start + 150)) < 1e-9,
+  );
   // Hiding and showing within the fade cancels the pending suspend.
   music.setActive(false);
   music.setActive(true);
@@ -853,7 +857,7 @@ test('WeChat plays the intro once, loops the period and fades out on the audio c
   assert.equal(f.jobs.size, 0);
 });
 
-test('WeChat compatibility audio jumps back one period before the file end, never into the intro', async () => {
+test('WeChat compatibility audio opens at the loop start and jumps back one period at the loop end', async () => {
   const audio = {
     duration: BACKGROUND_MUSIC_LOOP.end + 0.5,
     currentTime: 0,
@@ -878,6 +882,11 @@ test('WeChat compatibility audio jumps back one period before the file end, neve
     { loadSource: () => '/music/background-music.m4a', schedule: () => 0, unschedule() {} },
   );
   await new Promise((resolve) => setTimeout(resolve, 0));
+  assert.equal(
+    audio.currentTime,
+    BACKGROUND_MUSIC_LOOP.start,
+    'The first play seeks to the opening',
+  );
   for (const [time, expected] of [
     [5, 5],
     [BACKGROUND_MUSIC_LOOP.end - 0.1, BACKGROUND_MUSIC_LOOP.end - 0.1],
@@ -899,13 +908,18 @@ test('the shipped music files match the rendered loop points and fingerprints', 
   assert.equal(BACKGROUND_MUSIC_LOOP.start, report.loopStartFrame / report.sampleRate);
   assert.equal(BACKGROUND_MUSIC_LOOP.end, report.loopEndFrameExclusive / report.sampleRate);
   assert.equal(report.loopEndFrameExclusive - report.loopStartFrame, report.cycleFrames);
+  assert.equal(
+    report.openingMasterFrame,
+    Math.round(((5.5 * 60) / 82) * 48000),
+    'Bar 2, beat 2-and',
+  );
   assert.ok(report.frames > report.loopEndFrameExclusive, 'The file continues past the loop end');
   for (const file of Object.values(report.files)) {
     const bytes = readFileSync(new URL(file.path, root));
     assert.equal(bytes.length, file.bytes, file.path);
     assert.equal(createHash('sha256').update(bytes).digest('hex'), file.sha256, file.path);
     assert.equal(file.processedSeamMaxDiff, 0, 'The processed loop is exactly periodic');
-    assert.ok(file.firstFrameAbs < 1e-4, 'The intro starts from silence');
+    assert.ok(file.encodedLoopJump < 0.01, 'The encoded loop jump stays inaudible');
   }
 });
 

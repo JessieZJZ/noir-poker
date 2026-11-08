@@ -1,7 +1,7 @@
 import { BACKGROUND_MUSIC_VOLUME, loopFor, loopPosition } from '../ui/background-music.js';
 import { createMusicFade, MUSIC_PAUSE_FADE_MS } from '../ui/music-fade.js';
 
-// Decode the local AAC once. BufferSource plays the intro once, then loops the
+// Decode the local AAC once. BufferSource plays from the start, then loops the
 // musical period on the audio clock, without a JS timer, a second player or a
 // fresh decoder at the end of each lap.
 export function createWechatLoopPlayer(wx, { loadSource, schedule, unschedule, now, fallback }) {
@@ -16,7 +16,7 @@ export function createWechatLoopPlayer(wx, { loadSource, schedule, unschedule, n
   let wanted = false,
     disposed = false,
     closed = false,
-    offset = 0,
+    offset = null,
     started = 0;
   const param = () => gain?.gain;
   const canRamp = () =>
@@ -110,6 +110,7 @@ export function createWechatLoopPlayer(wx, { loadSource, schedule, unschedule, n
       };
       node = next;
       started = context.currentTime;
+      offset ??= loop.start;
       next.start(0, offset);
       fade.start();
     } catch {

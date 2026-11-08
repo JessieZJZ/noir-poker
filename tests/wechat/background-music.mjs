@@ -129,10 +129,10 @@ try {
       : null;
   }, 'Real local WebAudio music must decode, play and finish entry fade');
   assert.ok(initial.decoded[0].rms > 0.01);
-  // The intro plays once from offset 0; the source then loops one period.
+  // Playback opens at the loop start and the source loops one period.
   assert.ok(initial.decoded[0].duration > BACKGROUND_MUSIC_LOOP.end);
   assert.ok(initial.decoded[0].duration < BACKGROUND_MUSIC_LOOP.end + 1);
-  assert.equal(initial.starts[0].offset, 0);
+  assert.ok(Math.abs(initial.starts[0].offset - BACKGROUND_MUSIC_LOOP.start) < 1e-6);
   assert.equal(initial.nodes[0].loop, true);
   assert.ok(Math.abs(initial.nodes[0].loopStart - BACKGROUND_MUSIC_LOOP.start) < 1e-6);
   assert.ok(Math.abs(initial.nodes[0].loopEnd - BACKGROUND_MUSIC_LOOP.end) < 1e-6);
@@ -169,7 +169,7 @@ try {
   assert.ok(
     resumed.starts[1].offset >= BACKGROUND_MUSIC_LOOP.start &&
       resumed.starts[1].offset < BACKGROUND_MUSIC_LOOP.end,
-    'After a full lap the saved position lies inside the loop, never the intro',
+    'After a full lap the saved position lies inside the loop',
   );
   report.checks.push({ name: 'hide-resume-retains-loop-position', hidden, resumed });
   await mini.evaluate(() => {

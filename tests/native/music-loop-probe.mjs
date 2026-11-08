@@ -1,5 +1,5 @@
 // Runs inside the installed WebView. Keep the evidence between slow driver polls.
-// The intro plays once; afterwards playback must return to the loop start, not 0.
+// After the tail, playback must return to the loop start, not land elsewhere.
 export function watchNativeMusicLoop() {
   const music = document.querySelector('[data-background-music]').backgroundMusic;
   const probe = {

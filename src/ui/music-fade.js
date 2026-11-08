@@ -1,5 +1,4 @@
-// The file's own intro builds from silence; this only softens the first beat.
-export const MUSIC_ENTRY_FADE_MS = 1200;
+export const MUSIC_ENTRY_FADE_MS = 2400;
 export const MUSIC_RESUME_FADE_MS = 700;
 // Pausing ramps to silence first, so stopping never cuts a waveform.
 export const MUSIC_PAUSE_FADE_MS = 180;

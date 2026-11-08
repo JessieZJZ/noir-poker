@@ -3,8 +3,8 @@ import assert from 'node:assert/strict';
 import vm from 'node:vm';
 import { watchNativeMusicLoop } from '../native/music-loop-probe.mjs';
 
-const LOOP_START = 1009758 / 48000,
-  LOOP_END = 5505368 / 48000;
+const LOOP_START = 24000 / 48000,
+  LOOP_END = 4519610 / 48000;
 
 function setup() {
   const timers = new Map();
@@ -40,9 +40,9 @@ test('native loop evidence needs the tail and a return to the loop start, kept b
   assert.equal(window.__nativeMusicLoop.wrapTime, LOOP_START + 0.05);
 });
 
-test('a jump back into the intro is not a loop', () => {
+test('a jump elsewhere in the period is not a loop', () => {
   const { music, window, tick } = setup();
-  music.currentTime = 0.1;
+  music.currentTime = 40;
   tick();
   assert.equal(window.__nativeMusicLoop.wrapped, false);
 });

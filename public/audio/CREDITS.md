@@ -4,21 +4,19 @@
 
 - 原始无损母带：`audio-studio/noir-background-music/masters/01-midnight-felt.flac`
 - 制作脚本与显式乐谱：`audio-studio/noir-background-music/source/`
-- 游戏资源（2026-11-08 起）：四小节前奏 + 一个完整 32 小节循环周期 + 0.5 秒延续，共 5,529,368 帧（115.195 秒）。循环区间为第 1,009,758 帧至第 5,505,368 帧（不含）。由 `audio-studio/noir-background-music/source/game-loop.py` 从上述母带和同一乐谱生成，测量见 `audio-studio/noir-background-music/game-loop.json`。
-  - 桌面 `background-music.m4a`：AAC、48 kHz、双声道、96 kbps，1,430,325 字节，约 −18.8 LUFS，SHA-256 `eb8ab291f82c5bb13af3a285b4a831bcd8a736e5d7d1f1af082330010e86673d`。
-  - 手机 `background-music-mobile.m4a`：AAC 128 kbps，1,925,430 字节，约 −13.8 LUFS，SHA-256 `074ad1599710fb2e34c60a91eb3a6ff0064e76794d867c4b1dbe87019a3610b2`。
+- 游戏资源（2026-11-08 起）：由 `audio-studio/noir-background-music/source/game-loop.py` 从上述母带生成，乐谱、音色与编配不变。文件为起播点（第 2 小节第 2 拍后半）前 0.5 秒 + 从起播点开始的一个完整 32 小节周期 + 0.5 秒延续，共 4,543,610 帧；循环区间为第 24,000 帧至第 4,519,610 帧（不含）。交付链与下文 2026-10-17 的处理相同，只把动态 `loudnorm` 换成匹配原响度的静态增益，并去掉首尾 4 ms 淡变，使处理后的循环严格周期。测量见 `audio-studio/noir-background-music/game-loop.json`。
+  - 桌面 `background-music.m4a`：AAC、48 kHz、双声道、96 kbps，1,172,796 字节，约 −18.8 LUFS，SHA-256 `ddaba3ce45865f1bb3a162b852fd888b3924b750a6cf876f972e097cae39dcfc`。
+  - 手机 `background-music-mobile.m4a`：AAC 128 kbps，1,578,348 字节，约 −13.8 LUFS，SHA-256 `0499bed594b7e8ae8116504cf338aa54f6637fe6aa59321e784988af71a32c66`。
 
-前奏使用同一合成器，按乐段自身的 Bbmaj9、A7sus(b9) 转折由低到高加层（低音律动及其高八度叠音、底鼓、铺底与一记轻电钢琴和弦，电钢琴节奏型，刷鼓与军鼓，镲与玻璃泛音），音量从第一小节起就接近主乐段，层次靠音区与乐器推进，再以 D–E 两个音引入第一小节主旋律。循环周期使用母带的全部音符，只在第 32 小节最后两拍让镲停下，加入一记军鼓轻击与同一引子，使每轮都有一个接回主旋律的结尾。没有新增外部音源。交付链与下文 2026-10-17 的处理相同，只把动态 `loudnorm` 换成匹配原响度的静态增益，并去掉首尾 4 ms 淡变，使处理后的循环严格周期。下文保留之前的版本记录。
+下文保留 2026-10-17 的版本记录。
 
-## 2026-10-17 版本记录
-
-- 游戏资源：AAC、48 kHz、双声道、96 kbps，1162422 字节，完整保留约 93.659 秒循环。
+- 2026-10-17 游戏资源：AAC、48 kHz、双声道、96 kbps，1162422 字节，完整保留约 93.659 秒循环。
 - 母带 SHA-256：`96d878b64a7eddae7e18b46c7eef6f95679f44fcf1d660ab688602a8a1724e2e`
-- 游戏资源 SHA-256：`566a6c8d8d16e72be394fee5202573ad36a48af5f46446c856b42f9dba9ecd18`
+- 2026-10-17 游戏资源 SHA-256：`566a6c8d8d16e72be394fee5202573ad36a48af5f46446c856b42f9dba9ecd18`
 
 2026-10-17 手机外放重混：80 Hz 高通、1.6 kHz 宽带提升、响度压缩与峰值余量；乐谱与原母带不变，没有新增外部音源。处理三个连续循环后取中间一轮，避免滤波器从零状态起步；首尾各 4 ms 去点击，不增加静音或改变长度。本次进一步收紧峰值，编码后测量约 −18.97 LUFS、−10.77 dBTP，以 1.0 增益播放，比前版实际输出约提高 2.36 dB。
 
-旧版重制：
+重制：
 
 ```sh
 ffmpeg -stream_loop 2 -i audio-studio/noir-background-music/masters/01-midnight-felt.flac \

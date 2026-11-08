@@ -1816,7 +1816,7 @@ export async function nativeScenarios(app) {
     );
     assert.equal(initial.loop, true);
     assert.ok(initial.duration > initial.loopEnd && initial.duration < initial.loopEnd + 1);
-    assert.ok(initial.loopStart > 11, 'The intro plays once before the loop');
+    assert.equal(initial.loopStart, 0.5, 'Half a second of lead-in before the loop start');
     assert.equal(
       initial.mode,
       'buffer',

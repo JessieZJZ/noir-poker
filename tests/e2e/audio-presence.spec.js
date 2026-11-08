@@ -119,8 +119,7 @@ test('the shipped AAC reserves phone-mix headroom and Web Audio bounds coinciden
       return Math.sqrt(samples.reduce((sum, value) => sum + value * value, 0) / samples.length);
     };
     let musicPeak = 0,
-      seam = 0,
-      head = 0;
+      seam = 0;
     const loopStart = Math.round(BACKGROUND_MUSIC_LOOP.start * 48000),
       loopEnd = Math.round(BACKGROUND_MUSIC_LOOP.end * 48000);
     for (const buffer of [music, desktop])
@@ -130,7 +129,6 @@ test('the shipped AAC reserves phone-mix headroom and Web Audio bounds coinciden
           for (const sample of pcm) musicPeak = Math.max(musicPeak, Math.abs(sample));
         // The loop jump lands where the file itself continues the music.
         seam = Math.max(seam, Math.abs(pcm[loopStart] - pcm[loopEnd]));
-        for (let i = 0; i < 480; i++) head = Math.max(head, Math.abs(pcm[i]));
       }
     const output = createSoundOutput(context);
     const source = context.createBufferSource(),
@@ -159,19 +157,17 @@ test('the shipped AAC reserves phone-mix headroom and Web Audio bounds coinciden
       mixPeak,
       cuePeak,
       seam,
-      head,
       loopEnd: BACKGROUND_MUSIC_LOOP.end,
       desktopDuration: desktop.duration,
       gain: BACKGROUND_MUSIC_VOLUME,
       loudnessIncreaseDB: 20 * Math.log10(rms(music) / rms(desktop)),
     };
   });
+  // Each decoded file continues the music past the loop end.
   for (const duration of [result.duration, result.desktopDuration]) {
     expect(duration).toBeGreaterThan(result.loopEnd);
     expect(duration).toBeLessThan(result.loopEnd + 1);
   }
-  // The intro starts from silence instead of halfway through the loop.
-  expect(result.head).toBeLessThan(0.002);
   expect(result.gain).toBe(1);
   expect(result.loudnessIncreaseDB).toBeGreaterThan(4.8);
   expect(result.musicPeak).toBeLessThan(0.58);

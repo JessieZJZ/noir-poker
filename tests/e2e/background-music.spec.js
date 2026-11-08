@@ -56,12 +56,13 @@ test('music loops locally, sound, music and vibration are independent and surviv
   const initial = await musicState(page);
   expect(initial.loop).toBe(true);
   expect(initial.mode).toBe('buffer');
-  expect(initial.time).toBeLessThan(initial.loopStart);
-  expect(initial.loopStart).toBeGreaterThan(11);
+  // The file opens half a second before the loop start, which is where play begins.
+  expect(initial.loopStart).toBe(0.5);
+  expect(initial.time).toBeGreaterThanOrEqual(initial.loopStart);
   expect(initial.loopEnd - initial.loopStart).toBeCloseTo(4495610 / 48000, 6);
   expect(initial.duration).toBeGreaterThan(initial.loopEnd);
   expect(new URL(initial.source).pathname).toBe('/audio/background-music.m4a');
-  // Near the loop end, playback returns to the period start, not to the intro.
+  // Near the loop end, playback returns to the period start on the audio clock.
   await page
     .locator('[data-background-music]')
     .evaluate(({ backgroundMusic: music }) => music.seek(music.loopEnd - 0.15));

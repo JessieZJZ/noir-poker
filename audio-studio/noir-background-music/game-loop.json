@@ -1,39 +1,33 @@
 {
   "sampleRate": 48000,
   "bpm": 82,
-  "introBars": 4,
-  "crossfadeBars": 1,
   "cycleFrames": 4495610,
-  "frames": 5529368,
-  "loopStartFrame": 1009758,
-  "loopEndFrameExclusive": 5505368,
-  "renderResidual": 9.005255241500976e-8,
-  "turnaroundFromCycleFrame": 4421854,
-  "turnaroundTailFrames": 98770,
+  "openingMasterFrame": 193171,
+  "frames": 4543610,
+  "loopStartFrame": 24000,
+  "loopEndFrameExclusive": 4519610,
   "files": {
     "desktop": {
       "path": "public/audio/background-music.m4a",
-      "bytes": 1430325,
-      "sha256": "eb8ab291f82c5bb13af3a285b4a831bcd8a736e5d7d1f1af082330010e86673d",
+      "bytes": 1172796,
+      "sha256": "ddaba3ce45865f1bb3a162b852fd888b3924b750a6cf876f972e097cae39dcfc",
       "bitrate": "96k",
-      "staticGainDB": 4.63,
-      "integratedLUFS": -18.81,
-      "peakDBFS": -10.01,
+      "staticGainDB": 4.64,
+      "integratedLUFS": -18.79,
+      "peakDBFS": -11.22,
       "processedSeamMaxDiff": 0.0,
-      "encodedSeamMaxDiff": 0.07544782879995182,
-      "firstFrameAbs": 2.9175978966122784e-7
+      "encodedLoopJump": 0.001751430332660675
     },
     "mobile": {
       "path": "public/audio/background-music-mobile.m4a",
-      "bytes": 1925430,
-      "sha256": "074ad1599710fb2e34c60a91eb3a6ff0064e76794d867c4b1dbe87019a3610b2",
+      "bytes": 1578348,
+      "sha256": "0499bed594b7e8ae8116504cf338aa54f6637fe6aa59321e784988af71a32c66",
       "bitrate": "128k",
-      "staticGainDB": 4.65,
+      "staticGainDB": 4.66,
       "integratedLUFS": -13.82,
-      "peakDBFS": -6.72,
+      "peakDBFS": -7.41,
       "processedSeamMaxDiff": 0.0,
-      "encodedSeamMaxDiff": 0.09009798616170883,
-      "firstFrameAbs": 1.8553147640432144e-7
+      "encodedLoopJump": 0.004744350910186768
     }
   }
 }
