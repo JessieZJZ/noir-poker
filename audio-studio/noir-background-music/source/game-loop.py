@@ -5,13 +5,15 @@ The tracked lossless master is a steady-state cycle: frame 0 already carries
 the reverb and note tails of bar 32, and bar 1 opens with the full groove and
 the lead motif at once. In the game the music instead builds from low to high
 over four bars on the cycle's own turnaround (Bbmaj9, A7sus(b9)): bass
-groove, a soft kick and a low pad, then the full pad and electric piano, then
-brush and snare, and finally hats for the whole bar, a glass overtone and a
-two-note pickup into the melody. The build is in register and timbre, not in
-level: every intro bar sits within about 1 LU of the groove on the mobile
-mix, so the melody arrives without a step in loudness. The cycle itself gets
-an ending each lap: in bar 32 the hats rest for two beats, and a ghost-snare
-fill and the same pickup lead back to bar 1.
+groove doubled an octave up, a soft kick, pad and one soft electric-piano
+chord, then the electric piano's pattern, then brush and snare, and finally
+hats for the whole bar, a glass overtone and a two-note pickup on beat four
+into the melody. The build is in register and timbre, not in level: every
+intro bar sits within about 0.6 LU of the groove, and within about 1.5 LU
+above 250 Hz on the mobile mix, so small speakers hear the opening and the
+melody arrives without a step in loudness. The cycle itself gets
+an ending each lap: in bar 32 the hats rest for two beats, and one ghost
+snare and the same pickup lead back to bar 1.
 
 The cycle is rendered by `render.py` with the same notes and draws, plus that
 turnaround. The intro and bar 1 are rendered linearly from silence and
@@ -97,7 +99,7 @@ def integrated(samples):
 
 
 LAST_BEAT = BARS * 4
-PICKUP = [(-1.5, 62, 0.6), (-0.75, 64, 0.6)]  # D4, E4 into the motif's A4
+PICKUP = [(-1.0, 62, 0.45), (-0.5, 64, 0.45)]  # D4, E4 on beats 4 and 4-and, into the motif's A4
 
 
 class Turnaround:
@@ -111,10 +113,11 @@ class Turnaround:
             return
         super().hit(kind, beat, gain, pan)
 
-    def lead_in(self, at):
-        # The same fill and pickup end the intro and every lap.
-        for off, gain in [(-0.5, 0.06), (-0.25, 0.085)]:
-            self.hit("snare", at + off, gain, 0.08)
+    def lead_in(self, at, fill=True):
+        # The same pickup ends the intro and every lap; a lap also gets one
+        # ghost snare in the hats' rest.
+        if fill:
+            self.hit("snare", at - 0.25, 0.07, 0.08)
         for off, midi, length in PICKUP:
             self.note("ep", midi, at + off, length, 0.035, -0.12, "lead")
 
@@ -160,19 +163,27 @@ class Linear(Turnaround, render.Session):
         # The build is in register and timbre, not in level: from the first bar
         # the intro sits a little under the groove, so the melody arrives
         # without a jump in loudness.
-        # Bar one, low: bass groove, a soft kick and a low pad on root and fifth.
+        # Bar one, low: bass groove, a soft kick and a low pad on root and fifth,
+        # with the full pad chord under it. Phone and tablet speakers barely
+        # reproduce the bass fundamentals, so the bass line is doubled an octave
+        # up in bars one and two and stays audible there.
         for i, midi in enumerate([first["bass"] + 12, first["notes"][0]]):
             self.note("pad", midi, -16 + 0.02, 7.5, 0.02, (i - 0.5) * 0.4, "air", human=0)
+        for i, midi in enumerate(first["notes"]):
+            self.note("pad", midi, -16 + 0.02, 7.5, 0.018, (i - 1.5) * 0.46, "air", human=0)
         # The first downbeat sits 60 ms late: no timing jitter cuts its attack,
         # and the encoder's pre-echo stays clear of the first frame.
-        for start, bass, kick in [(-16 + 0.08, 0.85, 0.6), (-12, 0.95, 0.85)]:
+        for start, bass, kick, octave in [(-16 + 0.08, 0.85, 0.6, 0.75), (-12, 0.95, 0.85, 0.4)]:
             for off, note, length, strength in [(0, first["bass"], 1.5, 1), (1.75, first["bass"] + 7, 0.6, 0.6), (2.65, first["bass"] + 12, 0.9, 0.7)]:
                 self.note("bass", note, start + off, length, 0.18 * strength * bass, bus="bass")
+                self.note("bass", note + 12, start + off, length, 0.18 * strength * octave, bus="bass")
             for off, gain in [(0, 0.22), (2.5, 0.14)]:
                 self.hit("kick", start + off, gain * kick)
-        # Bar two, mid: the full pad chord and the electric piano enter.
+        # A soft electric-piano chord on the first downbeat, lower notes first,
+        # so the opening is heard at once on small speakers.
         for i, midi in enumerate(first["notes"]):
-            self.note("pad", midi, -12.25, 3.7, 0.010, (i - 1.5) * 0.46, "air", human=0)
+            self.note("ep", midi, -16 + 0.08 + i * 0.06, 3.5, 0.052 * 0.55, (i - 1.5) * 0.14)
+        # Bar two, mid: the electric piano's pattern enters.
         for off, strength in [(0.08, 1), (2.65, 0.68)]:
             for i, midi in enumerate(first["notes"]):
                 self.note("ep", midi, -12 + off + i * 0.025, 2.5, 0.052 * strength * 0.75, (i - 1.5) * 0.14)
@@ -185,11 +196,11 @@ class Linear(Turnaround, render.Session):
                 self.hit("snare", start + off + 0.025, 0.16 * backbeat, 0.08)
                 self.hit("brush", start + off - 0.08, 0.12 * backbeat, -0.25)
         # Bar four, high: the hats join for the whole bar with a glass overtone
-        # above, and the lap's fill and pickup lead into the melody.
+        # above, and the lap's pickup leads into the melody.
         for j in range(8):
             self.hit("hat", -4 + j * 0.5 + (0.045 if j % 2 else 0), (0.042 if j % 2 else 0.057) * (0.75 + 0.25 * j / 7), 0.3)
         self.note("glass", second["notes"][-1] + 12, -4 + 0.25, 3.0, 0.013, 0.45, "lead")
-        self.lead_in(0)
+        self.lead_in(0, fill=False)
 
     def mix(self):
         keys, bass, drums, air, lead = (self.buses[k] for k in ["keys", "bass", "drums", "air", "lead"])
