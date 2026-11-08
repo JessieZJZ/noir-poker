@@ -10,7 +10,7 @@ import { notifyHeroTurn } from '../platform/haptics.js';
 import { createDialogScrollLock } from './dialog-scroll-lock.js';
 import { soundSamples, SOUND_SAMPLE_RATE, createSoundOutput } from './sound-cues.js';
 import { loadFeedbackPreferences } from './feedback-preferences.js';
-import { createWebBackgroundMusic } from '../platform/web-background-music.js';
+import { createWebBackgroundMusic, fetchBytes } from '../platform/web-background-music.js';
 import { MUSIC_PAUSE_FADE_MS } from './music-fade.js';
 import { createDealGate } from './deal-gate.js';
 import { createHandAdvanceGuard } from './hand-advance.js';
@@ -298,11 +298,7 @@ function loadCheer(kind) {
   if (!cheerLoads.has(kind))
     cheerLoads.set(
       kind,
-      fetch(new URL(CHEER_FILES[kind], document.baseURI))
-        .then((response) => {
-          if (!response.ok) throw Error(`Missing ${CHEER_FILES[kind]}`);
-          return response.arrayBuffer();
-        })
+      fetchBytes(new URL(CHEER_FILES[kind], document.baseURI).href)
         .then((bytes) => audio.decodeAudioData(bytes))
         .then((buffer) => {
           soundBuffers.set(kind, buffer);

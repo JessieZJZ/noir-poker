@@ -1801,6 +1801,8 @@ export async function nativeScenarios(app) {
               source: audio.source,
               loopStart: audio.loopStart,
               loopEnd: audio.loopEnd,
+              mode: audio.mode,
+              reason: audio.reason,
             }
           : null;
       });
@@ -1815,6 +1817,11 @@ export async function nativeScenarios(app) {
     assert.equal(initial.loop, true);
     assert.ok(initial.duration > initial.loopEnd && initial.duration < initial.loopEnd + 1);
     assert.ok(initial.loopStart > 11, 'The intro plays once before the loop');
+    assert.equal(
+      initial.mode,
+      'buffer',
+      `Music must loop a decoded buffer, not the element fallback (${initial.reason})`,
+    );
     assert.ok(initial.source.endsWith('/audio/background-music-mobile.m4a'));
     await app.evaluate(watchNativeMusicLoop);
     await app.evaluate(() => {

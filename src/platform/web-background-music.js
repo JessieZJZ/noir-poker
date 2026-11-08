@@ -13,10 +13,14 @@ import {
   MUSIC_RESUME_FADE_MS,
 } from '../ui/music-fade.js';
 
-const fetchBytes = (url) =>
-  fetch(url).then((response) => {
-    if (!response.ok) throw Error(`Music ${response.status}`);
-    return response.arrayBuffer();
+// Bundled files only. Capacitor's iOS scheme handler answers local media with
+// status 0, so an empty body, not the status, marks a missing file.
+export const fetchBytes = (url) =>
+  fetch(url).then(async (response) => {
+    if (!response.ok && response.status !== 0) throw Error(`Missing ${url} (${response.status})`);
+    const bytes = await response.arrayBuffer();
+    if (!bytes.byteLength) throw Error(`Empty ${url}`);
+    return bytes;
   });
 
 // Ramp on the audio clock. A JS timer can stall as the app leaves the screen.
@@ -63,7 +67,7 @@ export function createWebBackgroundMusic({
       const options = { document, url, sharedContext, schedule, unschedule };
       return context
         ? bufferPlayer({ ...options, context, getOutput, loadData })
-        : elementPlayer(options);
+        : elementPlayer({ ...options, reason: 'no-web-audio' });
     },
   });
 }
@@ -161,14 +165,22 @@ function bufferPlayer({
     ramp(context, item.level.gain, 0, MUSIC_PAUSE_FADE_MS);
     release(item, context.currentTime + MUSIC_PAUSE_FADE_MS / 1000 + 0.02);
   }
-  function useFallback() {
+  function useFallback(error) {
     if (disposed || backup) return;
     fadeOut();
     marker.remove();
-    backup = elementPlayer({ document, url, sharedContext: true, schedule, unschedule });
+    backup = elementPlayer({
+      document,
+      url,
+      sharedContext: true,
+      schedule,
+      unschedule,
+      reason: String(error?.message || error || 'decode-failed').slice(0, 160),
+    });
     if (wanted) backup.play();
   }
   const api = {
+    mode: 'buffer',
     get paused() {
       return !voice || context.state !== 'running';
     },
@@ -278,7 +290,7 @@ function bufferPlayer({
 // No Web Audio: a media element plays the same file. Its loop jump is not
 // sample exact, but the file continues the period past the loop end, so a late
 // jump back by one period still lands on the same music.
-function elementPlayer({ document, url, schedule, unschedule }) {
+function elementPlayer({ document, url, schedule, unschedule, reason }) {
   const audio = document.createElement('audio');
   audio.hidden = true;
   audio.dataset.backgroundMusic = 'midnight-felt';
@@ -303,6 +315,8 @@ function elementPlayer({ document, url, schedule, unschedule }) {
   };
   audio.addEventListener?.('timeupdate', wrap);
   audio.backgroundMusic = {
+    mode: 'element',
+    reason,
     get paused() {
       return audio.paused;
     },

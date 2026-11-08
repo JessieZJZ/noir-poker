@@ -11,6 +11,7 @@ const musicState = (page) =>
     source: music.source,
     loopStart: music.loopStart,
     loopEnd: music.loopEnd,
+    mode: music.mode,
   }));
 
 test('a touch browser plays the phone master and its own music switch', async ({ browser }) => {
@@ -54,6 +55,7 @@ test('music loops locally, sound, music and vibration are independent and surviv
   await expect.poll(async () => (await musicState(page)).paused).toBe(false);
   const initial = await musicState(page);
   expect(initial.loop).toBe(true);
+  expect(initial.mode).toBe('buffer');
   expect(initial.time).toBeLessThan(initial.loopStart);
   expect(initial.loopStart).toBeGreaterThan(11);
   expect(initial.loopEnd - initial.loopStart).toBeCloseTo(4495610 / 48000, 6);

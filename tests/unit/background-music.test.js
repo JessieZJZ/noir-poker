@@ -12,7 +12,7 @@ import {
   MUSIC_PAUSE_FADE_MS,
   MUSIC_RESUME_FADE_MS,
 } from '../../src/ui/music-fade.js';
-import { createWebBackgroundMusic } from '../../src/platform/web-background-music.js';
+import { createWebBackgroundMusic, fetchBytes } from '../../src/platform/web-background-music.js';
 import { createWechatBackgroundMusic } from '../../src/platform/wechat-background-music.js';
 import vm from 'node:vm';
 import { readFileSync } from 'node:fs';
@@ -901,5 +901,31 @@ test('the shipped music files match the rendered loop points and fingerprints', 
     assert.equal(createHash('sha256').update(bytes).digest('hex'), file.sha256, file.path);
     assert.equal(file.processedSeamMaxDiff, 0, 'The processed loop is exactly periodic');
     assert.ok(file.firstFrameAbs < 1e-4, 'The intro starts from silence');
+  }
+});
+
+test('bundled audio reads accept the iOS scheme handler status 0 but reject missing or empty files', async () => {
+  const original = globalThis.fetch;
+  const respond = (status, size) => async () => ({
+    ok: status >= 200 && status < 300,
+    status,
+    arrayBuffer: async () => new ArrayBuffer(size),
+  });
+  try {
+    for (const [status, size, ok] of [
+      [200, 8, true],
+      [0, 8, true],
+      [0, 0, false],
+      [404, 8, false],
+    ]) {
+      globalThis.fetch = respond(status, size);
+      const result = await fetchBytes('capacitor://localhost/audio/background-music.m4a').then(
+        (bytes) => bytes.byteLength,
+        () => null,
+      );
+      assert.equal(result, ok ? size : null, `${status}/${size}`);
+    }
+  } finally {
+    globalThis.fetch = original;
   }
 });
