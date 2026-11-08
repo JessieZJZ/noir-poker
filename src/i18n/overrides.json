@@ -970,7 +970,8 @@
     "全下跟注的依据是当前价格和摊牌机会，但依赖对手范围中包含足够较弱牌或未成对高牌。": "The price and showdown chances support an all-in call, but only if the opponents' ranges contain enough weaker hands or unpaired high cards.",
     "{0}没有只补 {1} 跟注，而是直接加注到 {2}。": "Rather than just calling {1}, {0} raised straight to {2}.",
     "{0}没有只补 {1} 跟注，而是直接加注到 {2}。{3}。{4}": "{0} does not just call {1}, but raises straight to {2}. {3}. {4}",
-    "这条跟注路线的依据是当前价格下的摊牌机会，仍依赖对手范围较宽。": "This calling line rests on the chance to win at showdown at the current price, but still relies on a sufficiently wide opposing range."
+    "这条跟注路线的依据是当前价格下的摊牌机会，仍依赖对手范围较宽。": "This calling line rests on the chance to win at showdown at the current price, but still relies on a sufficiently wide opposing range.",
+    "公共牌的一对 {0} 是所有玩家共用的，{1}的两对真正比较的是底牌这对 {2} 和 {3} 踢脚：对手只要有一张 {4} 就是三条，同样拿 {5} 的对手另一张只要大于 {6} 也会领先。{7}过牌先控制底池，保留摊牌机会。": "The pair of {0}s on the board belongs to every player, so {1}'s two pair really competes with the private pair of {2}s and the {3} kicker: any opponent holding a {4} has trips, and an opponent who also holds a {5} is ahead whenever the other card is higher than {6}. {7} checks to control the pot while keeping a chance to reach showdown. "
   },
   "zh-TW": {
     "设置": "設定",
@@ -1828,7 +1829,8 @@
     "全下跟注的依据是当前价格和摊牌机会，但依赖对手范围中包含足够较弱牌或未成对高牌。": "全下跟注的依據是目前價格和攤牌機會，但依賴對手範圍中包含足夠較弱牌或未成對高牌。",
     "{0}没有只补 {1} 跟注，而是直接加注到 {2}。": "{0}沒有只補 {1} 跟注，而是直接加注到 {2}。",
     "{0}没有只补 {1} 跟注，而是直接加注到 {2}。{3}。{4}": "{0}沒有只補 {1} 跟注，而是直接加注到 {2}。{3}。{4}",
-    "这条跟注路线的依据是当前价格下的摊牌机会，仍依赖对手范围较宽。": "這條跟注路線的依據是當前價格下的攤牌機會，仍依賴對手範圍較寬。"
+    "这条跟注路线的依据是当前价格下的摊牌机会，仍依赖对手范围较宽。": "這條跟注路線的依據是當前價格下的攤牌機會，仍依賴對手範圍較寬。",
+    "公共牌的一对 {0} 是所有玩家共用的，{1}的两对真正比较的是底牌这对 {2} 和 {3} 踢脚：对手只要有一张 {4} 就是三条，同样拿 {5} 的对手另一张只要大于 {6} 也会领先。{7}过牌先控制底池，保留摊牌机会。": "公共牌的一對 {0} 是所有玩家共用的，{1}的兩對真正比較的是底牌這對 {2} 和 {3} 踢腳：對手只要有一張 {4} 就是三條，同樣拿 {5} 的對手另一張只要大於 {6} 也會領先。{7}過牌先控制底池，保留攤牌機會。"
   },
   "ja": {
     "设置": "設定",
@@ -2689,7 +2691,8 @@
     "全下跟注的依据是当前价格和摊牌机会，但依赖对手范围中包含足够较弱牌或未成对高牌。": "オールインコールの根拠は、現在の価格とショーダウンの可能性です。ただし、相手のレンジに十分な弱いハンドやペアのないハイカードが含まれることが前提です。",
     "{0}没有只补 {1} 跟注，而是直接加注到 {2}。": "{0}は単に {1} をコールせず、そのまま {2} にレイズした。",
     "{0}没有只补 {1} 跟注，而是直接加注到 {2}。{3}。{4}": "{0}は {1} をコールするだけでなく、そのまま {2} にレイズしました。{3}。{4}",
-    "这条跟注路线的依据是当前价格下的摊牌机会，仍依赖对手范围较宽。": "このコールの方針は、現在の価格でのショーダウンの機会に基づきますが、相手のレンジが十分に広いことが前提です。"
+    "这条跟注路线的依据是当前价格下的摊牌机会，仍依赖对手范围较宽。": "このコールの方針は、現在の価格でのショーダウンの機会に基づきますが、相手のレンジが十分に広いことが前提です。",
+    "公共牌的一对 {0} 是所有玩家共用的，{1}的两对真正比较的是底牌这对 {2} 和 {3} 踢脚：对手只要有一张 {4} 就是三条，同样拿 {5} 的对手另一张只要大于 {6} 也会领先。{7}过牌先控制底池，保留摊牌机会。": "ボードの {0} のペアは全員が共有しているため、{1}のツーペアで実際に勝負になるのはハンドの {2} のペアと {3} キッカーだけだ。{4} を1枚持つ相手はスリーカードになり、同じく {5} を持つ相手はもう1枚が {6} より大きければ上回る。{7}はチェックでポットを抑え、ショーダウンの機会を残す。"
   },
   "ko": {
     "设置": "설정",
@@ -3550,7 +3553,8 @@
     "全下跟注的依据是当前价格和摊牌机会，但依赖对手范围中包含足够较弱牌或未成对高牌。": "올인 콜의 근거는 현재 가격과 쇼다운 기회입니다. 다만 상대 범위에 더 약한 패나 페어 없는 하이카드가 충분히 포함되어야 합니다.",
     "{0}没有只补 {1} 跟注，而是直接加注到 {2}。": "{0}은 {1}만 콜하지 않고 바로 {2}까지 레이즈했다.",
     "{0}没有只补 {1} 跟注，而是直接加注到 {2}。{3}。{4}": "{0} 측은 {1}만 콜하는 대신 바로 {2}까지 레이즈했습니다. {3}. {4}",
-    "这条跟注路线的依据是当前价格下的摊牌机会，仍依赖对手范围较宽。": "이 콜 라인은 현재 가격에서의 쇼다운 기회에 근거하지만, 여전히 상대 범위가 충분히 넓다는 전제에 의존합니다."
+    "这条跟注路线的依据是当前价格下的摊牌机会，仍依赖对手范围较宽。": "이 콜 라인은 현재 가격에서의 쇼다운 기회에 근거하지만, 여전히 상대 범위가 충분히 넓다는 전제에 의존합니다.",
+    "公共牌的一对 {0} 是所有玩家共用的，{1}的两对真正比较的是底牌这对 {2} 和 {3} 踢脚：对手只要有一张 {4} 就是三条，同样拿 {5} 的对手另一张只要大于 {6} 也会领先。{7}过牌先控制底池，保留摊牌机会。": "보드의 {0} 페어는 모든 플레이어가 함께 쓰므로 {1}의 투 페어에서 실제로 경쟁하는 것은 핸드의 {2} 페어와 {3} 키커뿐이다. {4}를 한 장 가진 상대는 트립스가 되고, 같은 {5}를 가진 상대도 나머지 한 장이 {6}보다 높으면 앞선다. {7}은 체크로 팟을 조절하면서 쇼다운 기회를 남긴다. "
   },
   "es": {
     "设置": "Ajustes",
@@ -4413,7 +4417,8 @@
     "全下跟注的依据是当前价格和摊牌机会，但依赖对手范围中包含足够较弱牌或未成对高牌。": "El precio actual y las opciones al showdown respaldan un call all-in, siempre que el rango rival incluya suficientes manos peores o cartas altas sin pareja.",
     "{0}没有只补 {1} 跟注，而是直接加注到 {2}。": "En vez de pagar solo {1}, {0} subió directamente a {2}.",
     "{0}没有只补 {1} 跟注，而是直接加注到 {2}。{3}。{4}": "{0} no se limita a pagar {1}, sino que sube directamente a {2}. {3}. {4}",
-    "这条跟注路线的依据是当前价格下的摊牌机会，仍依赖对手范围较宽。": "Esta línea de call se apoya en las opciones de ganar en el showdown al precio actual, pero sigue dependiendo de un rango rival suficientemente amplio."
+    "这条跟注路线的依据是当前价格下的摊牌机会，仍依赖对手范围较宽。": "Esta línea de call se apoya en las opciones de ganar en el showdown al precio actual, pero sigue dependiendo de un rango rival suficientemente amplio.",
+    "公共牌的一对 {0} 是所有玩家共用的，{1}的两对真正比较的是底牌这对 {2} 和 {3} 踢脚：对手只要有一张 {4} 就是三条，同样拿 {5} 的对手另一张只要大于 {6} 也会领先。{7}过牌先控制底池，保留摊牌机会。": "La pareja de {0} de la mesa la comparten todos los jugadores, así que las dobles parejas de {1} compiten en realidad con la pareja privada de {2} y el kicker {3}: cualquier rival con una {4} tiene trío, y un rival que también tenga una {5} va por delante si su otra carta es mayor que {6}. {7} pasa para controlar el bote y conservar la posibilidad de llegar al showdown. "
   },
   "it": {
     "设置": "Impostazioni",
@@ -5277,7 +5282,8 @@
     "全下跟注的依据是当前价格和摊牌机会，但依赖对手范围中包含足够较弱牌或未成对高牌。": "Il prezzo attuale e le possibilità allo showdown giustificano un call all-in, purché il range avversario contenga abbastanza mani peggiori o carte alte spaiate.",
     "{0}没有只补 {1} 跟注，而是直接加注到 {2}。": "Anziché chiamare soltanto {1}, {0} ha rilanciato direttamente a {2}.",
     "{0}没有只补 {1} 跟注，而是直接加注到 {2}。{3}。{4}": "{0} non si limita a chiamare {1}, ma rilancia direttamente a {2}. {3}. {4}",
-    "这条跟注路线的依据是当前价格下的摊牌机会，仍依赖对手范围较宽。": "Questa linea di call si basa sulle possibilità di vincere allo showdown al prezzo attuale, ma richiede comunque un range avversario abbastanza ampio."
+    "这条跟注路线的依据是当前价格下的摊牌机会，仍依赖对手范围较宽。": "Questa linea di call si basa sulle possibilità di vincere allo showdown al prezzo attuale, ma richiede comunque un range avversario abbastanza ampio.",
+    "公共牌的一对 {0} 是所有玩家共用的，{1}的两对真正比较的是底牌这对 {2} 和 {3} 踢脚：对手只要有一张 {4} 就是三条，同样拿 {5} 的对手另一张只要大于 {6} 也会领先。{7}过牌先控制底池，保留摊牌机会。": "La coppia di {0} sul board è comune a tutti i giocatori, quindi la doppia coppia di {1} compete davvero solo con la coppia privata di {2} e il kicker {3}: qualsiasi avversario con un {4} ha un tris, e un avversario che ha anche un {5} è avanti se l'altra carta è più alta di {6}. {7} fa check per controllare il piatto e conservare la possibilità di arrivare allo showdown. "
   },
   "pt": {
     "设置": "Definições",
@@ -6139,7 +6145,8 @@
     "全下跟注的依据是当前价格和摊牌机会，但依赖对手范围中包含足够较弱牌或未成对高牌。": "O preço atual e as chances de showdown sustentam um call all-in, desde que o range adversário contenha mãos piores ou cartas altas sem par em quantidade suficiente.",
     "{0}没有只补 {1} 跟注，而是直接加注到 {2}。": "Em vez de apenas pagar {1}, {0} aumentou direto para {2}.",
     "{0}没有只补 {1} 跟注，而是直接加注到 {2}。{3}。{4}": "{0} não se limita a pagar {1}, mas aumenta direto para {2}. {3}. {4}",
-    "这条跟注路线的依据是当前价格下的摊牌机会，仍依赖对手范围较宽。": "Esta linha de call se apoia nas chances de vencer no showdown ao preço atual, mas ainda depende de uma faixa adversária suficientemente ampla."
+    "这条跟注路线的依据是当前价格下的摊牌机会，仍依赖对手范围较宽。": "Esta linha de call se apoia nas chances de vencer no showdown ao preço atual, mas ainda depende de uma faixa adversária suficientemente ampla.",
+    "公共牌的一对 {0} 是所有玩家共用的，{1}的两对真正比较的是底牌这对 {2} 和 {3} 踢脚：对手只要有一张 {4} 就是三条，同样拿 {5} 的对手另一张只要大于 {6} 也会领先。{7}过牌先控制底池，保留摊牌机会。": "O par de {0} da mesa é compartilhado por todos os jogadores, então os dois pares de {1} disputam de fato com o par privado de {2} e o kicker {3}: qualquer adversário com um {4} tem trinca, e um adversário que também tenha um {5} fica à frente se a outra carta for maior que {6}. {7} dá check para controlar o pote e preservar a chance de chegar ao showdown. "
   },
   "de": {
     "设置": "Einstellungen",
@@ -7000,7 +7007,8 @@
     "全下跟注的依据是当前价格和摊牌机会，但依赖对手范围中包含足够较弱牌或未成对高牌。": "Für einen All-in-Call sprechen Preis und Showdown-Chancen. Dafür muss die gegnerische Range genügend schwächere Hände oder ungepaarte hohe Karten enthalten.",
     "{0}没有只补 {1} 跟注，而是直接加注到 {2}。": "Anstatt nur {1} zu callen, erhöhte {0} direkt auf {2}.",
     "{0}没有只补 {1} 跟注，而是直接加注到 {2}。{3}。{4}": "{0} callt nicht nur {1}, sondern erhöht direkt auf {2}. {3}. {4}",
-    "这条跟注路线的依据是当前价格下的摊牌机会，仍依赖对手范围较宽。": "Diese Call-Linie stützt sich auf die Showdown-Chance zum aktuellen Preis, setzt aber weiterhin eine ausreichend weite gegnerische Range voraus."
+    "这条跟注路线的依据是当前价格下的摊牌机会，仍依赖对手范围较宽。": "Diese Call-Linie stützt sich auf die Showdown-Chance zum aktuellen Preis, setzt aber weiterhin eine ausreichend weite gegnerische Range voraus.",
+    "公共牌的一对 {0} 是所有玩家共用的，{1}的两对真正比较的是底牌这对 {2} 和 {3} 踢脚：对手只要有一张 {4} 就是三条，同样拿 {5} 的对手另一张只要大于 {6} 也会领先。{7}过牌先控制底池，保留摊牌机会。": "Das {0}-Paar auf dem Board gehört allen Spielern, daher konkurrieren die zwei Paare von {1} eigentlich nur mit dem privaten {2}-Paar und dem Kicker {3}: Jeder Gegner mit einer {4} hat Drilling, und ein Gegner, der ebenfalls eine {5} hält, liegt vorne, sobald seine andere Karte höher als {6} ist. {7} checkt, hält so den Pot klein und bewahrt die Chance auf einen Showdown. "
   },
   "fr": {
     "设置": "Paramètres",
@@ -7864,7 +7872,8 @@
     "全下跟注的依据是当前价格和摊牌机会，但依赖对手范围中包含足够较弱牌或未成对高牌。": "Le prix et les chances à l'abattage justifient un call à tapis, à condition que la range adverse comporte suffisamment de mains moins fortes ou de cartes hautes non appariées.",
     "{0}没有只补 {1} 跟注，而是直接加注到 {2}。": "Au lieu de simplement payer {1}, {0} a relancé directement à {2}.",
     "{0}没有只补 {1} 跟注，而是直接加注到 {2}。{3}。{4}": "{0} ne se contente pas de payer {1}, mais relance directement à {2}. {3}. {4}",
-    "这条跟注路线的依据是当前价格下的摊牌机会，仍依赖对手范围较宽。": "Cette ligne de call repose sur les chances de gain à l’abattage au prix actuel, mais suppose toujours une range adverse assez large."
+    "这条跟注路线的依据是当前价格下的摊牌机会，仍依赖对手范围较宽。": "Cette ligne de call repose sur les chances de gain à l’abattage au prix actuel, mais suppose toujours une range adverse assez large.",
+    "公共牌的一对 {0} 是所有玩家共用的，{1}的两对真正比较的是底牌这对 {2} 和 {3} 踢脚：对手只要有一张 {4} 就是三条，同样拿 {5} 的对手另一张只要大于 {6} 也会领先。{7}过牌先控制底池，保留摊牌机会。": "La paire de {0} du board est commune à tous les joueurs, donc la double paire de {1} se joue en réalité sur la paire privée de {2} et le kicker {3} : tout adversaire avec un {4} a un brelan, et un adversaire qui a aussi un {5} passe devant dès que son autre carte dépasse {6}. {7} checke pour contrôler le pot tout en conservant une chance d’aller à l’abattage. "
   },
   "ru": {
     "设置": "Настройки",
@@ -8724,6 +8733,7 @@
     "全下跟注的依据是当前价格和摊牌机会，但依赖对手范围中包含足够较弱牌或未成对高牌。": "Основания для колла олл-ин — текущая цена и шансы на вскрытии. Но в диапазоне соперника должно быть достаточно более слабых рук или непарных высоких карт.",
     "{0}没有只补 {1} 跟注，而是直接加注到 {2}。": "Вместо простого колла {1} игрок {0} сразу повысил до {2}.",
     "{0}没有只补 {1} 跟注，而是直接加注到 {2}。{3}。{4}": "{0} не ограничился коллом {1}, а сразу повысил до {2}. {3}. {4}",
-    "这条跟注路线的依据是当前价格下的摊牌机会，仍依赖对手范围较宽。": "Эта линия колла опирается на шансы выиграть на вскрытии по текущей цене, но всё ещё требует достаточно широкого диапазона соперника."
+    "这条跟注路线的依据是当前价格下的摊牌机会，仍依赖对手范围较宽。": "Эта линия колла опирается на шансы выиграть на вскрытии по текущей цене, но всё ещё требует достаточно широкого диапазона соперника.",
+    "公共牌的一对 {0} 是所有玩家共用的，{1}的两对真正比较的是底牌这对 {2} 和 {3} 踢脚：对手只要有一张 {4} 就是三条，同样拿 {5} 的对手另一张只要大于 {6} 也会领先。{7}过牌先控制底池，保留摊牌机会。": "Пара {0} на борде общая для всех игроков, поэтому две пары {1} на деле соревнуются только карманной парой {2} и кикером {3}: любой соперник с картой {4} собирает сет, а соперник, у которого тоже есть {5}, впереди, если его вторая карта старше {6}. {7} чекает, контролируя банк и сохраняя шанс дойти до вскрытия. "
   }
 }

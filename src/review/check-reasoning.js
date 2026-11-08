@@ -133,8 +133,34 @@ function madeHandRisk(c) {
   return threats.length ? `当前成牌仍可能落后于${threats.join('、')}。` : '';
 }
 
+// Top pair on a board that is already paired reads as two pair, but every
+// player shares the board pair. Only the private pair and its kicker compete.
+function pairedBoardTopPairCheckReason(s, c) {
+  const [, high, low, fifth] = c.made.score;
+  const counts = new Map();
+  for (const card of s.board) counts.set(card.rank, (counts.get(card.rank) || 0) + 1);
+  const boardPairs = [...counts].filter(([, count]) => count >= 2);
+  if (boardPairs.length !== 1 || boardPairs[0][1] !== 2) return '';
+  const shared = boardPairs[0][0];
+  const own = high === shared ? low : high;
+  const kicker = s.hole.find((card) => card.rank !== own)?.rank;
+  if (
+    ![high, low].includes(shared) ||
+    s.hole.filter((card) => card.rank === own).length !== 1 ||
+    s.hole.some((card) => card.rank === shared) ||
+    !kicker ||
+    kicker >= 10 ||
+    kicker !== fifth
+  )
+    return '';
+  const subject = s.reviewSubject || '这位玩家';
+  return `公共牌的一对 ${rankText(shared)} 是所有玩家共用的，${subject}的两对真正比较的是底牌这对 ${rankText(own)} 和 ${rankText(kicker)} 踢脚：对手只要有一张 ${rankText(shared)} 就是三条，同样拿 ${rankText(own)} 的对手另一张只要大于 ${rankText(kicker)} 也会领先。${subject}过牌先控制底池，保留摊牌机会。`;
+}
+
 export function weakTopPairCheckReason(s, c) {
-  if (c.handClass !== 'top-pair' || c.made.score[0] !== 1 || c.draw.outs) return '';
+  if (c.handClass !== 'top-pair' || c.draw.outs) return '';
+  if (c.made.score[0] === 2) return pairedBoardTopPairCheckReason(s, c);
+  if (c.made.score[0] !== 1) return '';
   const paired = c.made.score[1];
   const kicker = s.hole.find((card) => card.rank !== paired)?.rank;
   // Only a private kicker still present in the best five can support this
