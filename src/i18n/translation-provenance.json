@@ -1381,6 +1381,31 @@
       ],
       "nativeSpeakerCertification": false,
       "limits": "Official sources support the playing-card term and best-five-card concept, not the exact project footer as a verbatim official UI label. No hand evaluation, payout, eligibility, strategy or other locale value changes. R8/R9 results remain historical and do not validate the new source revision."
+    },
+    {
+      "date": "2026-11-08",
+      "baseline": "52e86df6774d4156bbfd63f5d98dcd1f2c927fbd",
+      "scope": "One observed player-count/no-limit header field, enumerated for five to nine players across all eleven locales. Repair exactly seven effective keys: Portuguese5/6 literals plus its dynamic template, and the Spanish/Italian/French/Russian dynamic template. Other six locales and correct5/6 literals stay unchanged.",
+      "method": "Targeted assistant review; retain existing correct player nouns from five/six-player labels and replace game nouns, singular player forms or a play verb. Portuguese jogadores directly checked in PokerStars Portugal Texas Hold’em rules. Base catalogs and overrides synchronized; no machine-translation API output adopted.",
+      "repairedEffectiveKeys": {
+        "pt": ["5 人无限注", "6 人无限注", "{0} 人无限注"],
+        "es": ["{0} 人无限注"],
+        "it": ["{0} 人无限注"],
+        "fr": ["{0} 人无限注"],
+        "ru": ["{0} 人无限注"]
+      },
+      "references": [
+        "https://www.pokerstars.pt/poker/learn/strategies/regras-do-texas-holdem/",
+        "https://www.pokerstars.pt/poker/games/texas-holdem/"
+      ],
+      "referenceDocuments": [
+        "docs/pr70-language-fixes.md",
+        "docs/pr70-language-fixes-en-es-it-pt.md",
+        "docs/pr70-language-fixes-ja-ko-de.md",
+        "docs/pr70-language-fixes-zh-fr-ru.md"
+      ],
+      "nativeSpeakerCertification": false,
+      "limits": "Counts5–9, no-limit structure and dynamic placeholder preserved; no rule/settings behavior, strategy, other field or full-catalog language change. R10 remains the historical observed source; R11 requires separate frozen-source validation."
     }
   ]
 }

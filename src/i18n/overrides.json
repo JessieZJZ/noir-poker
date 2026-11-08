@@ -4404,7 +4404,8 @@
     "再打 {0} 手后涨盲到 {1} / {2}": "Manos hasta la subida: {0} · {1} / {2}",
     "下一手涨盲到 {0} / {1}": "Próxima mano: {0} / {1}",
     "跟注旁的数字是这次要补的筹码；加注旁的数字是这一轮累计投入的总额。例如你已投 200，对手加到 600：跟注要补 400，选择加注 1.2K 则补 1K。所有筹码金额都是当前筹码面额的倍数。": "El número junto a igualar indica las fichas adicionales que debes poner; el de subir indica tu apuesta total de esta ronda. Si ya has puesto 200 y un rival sube a 600, igualar añade 400. Subir a 1.2K añade 1K. Todos los importes de fichas son múltiplos de la denominación actual.",
-    "已弃牌 ·": "Se retiró ·"
+    "已弃牌 ·": "Se retiró ·",
+    "{0} 人无限注": "{0} jugadores sin límite"
   },
   "it": {
     "设置": "Impostazioni",
@@ -5268,7 +5269,8 @@
     "再打 {0} 手后涨盲到 {1} / {2}": "Mani al prossimo aumento: {0} · {1} / {2}",
     "下一手涨盲到 {0} / {1}": "Prossima mano: {0} / {1}",
     "跟注旁的数字是这次要补的筹码；加注旁的数字是这一轮累计投入的总额。例如你已投 200，对手加到 600：跟注要补 400，选择加注 1.2K 则补 1K。所有筹码金额都是当前筹码面额的倍数。": "Il numero accanto al call indica le fiches da aggiungere; quello accanto al rilancio indica la puntata totale di questo giro. Se hai già puntato 200 e un avversario rilancia a 600, il call aggiunge 400. Rilanciare a 1.2K aggiunge 1K. Tutti gli importi sono multipli del taglio attuale delle fiches.",
-    "已弃牌 ·": "Ha fatto fold ·"
+    "已弃牌 ·": "Ha fatto fold ·",
+    "{0} 人无限注": "{0} giocatori senza limite"
   },
   "pt": {
     "设置": "Definições",
@@ -6131,7 +6133,10 @@
     "下一手涨盲到 {0} / {1}": "Próxima mão: {0} / {1}",
     "跟注旁的数字是这次要补的筹码；加注旁的数字是这一轮累计投入的总额。例如你已投 200，对手加到 600：跟注要补 400，选择加注 1.2K 则补 1K。所有筹码金额都是当前筹码面额的倍数。": "O número ao lado do call indica as fichas adicionais a colocar; o número ao lado do raise indica a aposta total desta rodada. Se já colocou 200 e um adversário aumenta para 600, o call acrescenta 400. Aumentar para 1.2K acrescenta 1K. Todos os valores são múltiplos da denominação atual das fichas.",
     "已弃牌 ·": "Desistiu ·",
-    "最佳五张牌": "As 5 melhores cartas"
+    "最佳五张牌": "As 5 melhores cartas",
+    "5 人无限注": "5 jogadores sem limite",
+    "6 人无限注": "6 jogadores sem limite",
+    "{0} 人无限注": "{0} jogadores sem limite"
   },
   "de": {
     "设置": "Einstellungen",
@@ -7938,7 +7943,8 @@
     "再打 {0} 手后涨盲到 {1} / {2}": "Mains avant la hausse : {0} · {1} / {2}",
     "下一手涨盲到 {0} / {1}": "Main suivante : {0} / {1}",
     "跟注旁的数字是这次要补的筹码；加注旁的数字是这一轮累计投入的总额。例如你已投 200，对手加到 600：跟注要补 400，选择加注 1.2K 则补 1K。所有筹码金额都是当前筹码面额的倍数。": "Le nombre à côté de suivre indique les jetons à ajouter ; celui à côté de relancer indique votre mise totale pour ce tour. Si vous avez déjà misé 200 et qu’un adversaire relance à 600, suivre ajoute 400. Relancer à 1.2K ajoute 1K. Tous les montants sont des multiples de la valeur unitaire actuelle des jetons.",
-    "已弃牌 ·": "Couché ·"
+    "已弃牌 ·": "Couché ·",
+    "{0} 人无限注": "{0} joueurs sans limite"
   },
   "ru": {
     "设置": "Настройки",
@@ -8886,6 +8892,7 @@
     "再打 {0} 手后涨盲到 {1} / {2}": "Раздач до повышения: {0} · {1} / {2}",
     "下一手涨盲到 {0} / {1}": "Следующая раздача: {0} / {1}",
     "跟注旁的数字是这次要补的筹码；加注旁的数字是这一轮累计投入的总额。例如你已投 200，对手加到 600：跟注要补 400，选择加注 1.2K 则补 1K。所有筹码金额都是当前筹码面额的倍数。": "Число рядом с коллом показывает, сколько фишек нужно добавить; число рядом с рейзом — общий размер вашей ставки в этом круге. Если вы уже поставили 200, а соперник повысил до 600, колл добавит 400. Рейз до 1.2K добавит 1K. Все суммы фишек кратны текущему номиналу фишки.",
-    "已弃牌 ·": "Фолд ·"
+    "已弃牌 ·": "Фолд ·",
+    "{0} 人无限注": "{0} игроков без ограничений"
   }
 }

@@ -142,3 +142,19 @@ R8 的同一张葡语结算原图 `diagnostics/hero-rank-r8/a-original.png` 中�
 本次直接读取的 [PokerStars Portugal — Regras do Texas Hold’em](https://www.pokerstars.pt/poker/learn/strategies/regras-do-texas-holdem/) 在目标说明和 Showdown 部分使用 `melhor mão de cinco cartas`；[官方牌型表](https://www.pokerstars.pt/poker/games/rules/hand-rankings/)同时使用 `cinco cartas` 和 `Carta alta`。这些资料支持扑克牌名词和最佳五张牌概念；简短页脚是本项目措辞，不冒称官方界面的逐字引用，也不改变既有葡语语体或构成母语认证。没有扩大扫描长策略句或其它语言。
 
 定向单元检查基础值、override、正式 `loadLocale()` / `localizeText()` 有效值，以及切至英语后再切回葡语的缓存刷新。该单元文件实际 10/10 通过，9 个改动文件格式检查通过。既有摊牌 E2E 追加实际未获池页脚断言，本分工未执行浏览器、构建或原生运行；这些范围由协调者在 R10 冻结后另行验证。旧图及 R9 通过结果不能作为本次新源的修后验收。
+
+## 2026-11-08 R11 人数／无限注页头字段
+
+R10 实际生产原图 `web-r10/pt-pc-1700-header-r10.png`、`pt-pc-1280-header-r10.png` 和 `pt-tablet-landscape-header-r10.png` 的顶部把五位玩家写成 `5 jogos sem limite`（五个游戏）。本次仅枚举同一字段在十一语、5–9 人下的55个有效结果；没有扫描其它字段或长策略句。
+
+| 语言 | 精确源键       | 原值                         | 修正值                       |
+| ---- | -------------- | ---------------------------- | ---------------------------- |
+| 葡语 | `5 人无限注`   | `5 jogos sem limite`         | `5 jogadores sem limite`     |
+| 葡语 | `6 人无限注`   | `6 jogos sem limite`         | `6 jogadores sem limite`     |
+| 葡语 | `{0} 人无限注` | `{0} Jogo sem limite`        | `{0} jogadores sem limite`   |
+| 西语 | `{0} 人无限注` | `{0} Juegos sin límite`      | `{0} jugadores sin límite`   |
+| 意语 | `{0} 人无限注` | `{0} Giocatore senza limite` | `{0} giocatori senza limite` |
+
+西／意语沿用现有正确 5／6 人标签的玩家名词与复数。英语五个值和简／繁中、日、韩、德均保留。葡语本次直接复读 [PokerStars Portugal — Regras do Texas Hold’em](https://www.pokerstars.pt/poker/learn/strategies/regras-do-texas-holdem/) 中以 `jogadores` 表示桌上玩家的段落和常见六／九人格式说明，并核对[官方 Hold’em 规则](https://www.pokerstars.pt/poker/games/texas-holdem/) 的玩家与 No Limit 语境。资料支持人数名词和下注结构，简短组合标签属于本项目措辞，并非官方 UI 逐字引用或母语认证。
+
+七个有效键均同步基础词典与 override。新增 `pr70-player-count-locales.test.js` 对全十一语、5–9 人的基础及正式有效 locale 结果逐一锁定，并检查七个覆盖键；浏览器单个流程用真实设置控件切换人数及全部语言后检查实际可见页头，共55种组合。执行结果以本轮独立日志为准，R10 采集及已中断运行保持旧源身份。

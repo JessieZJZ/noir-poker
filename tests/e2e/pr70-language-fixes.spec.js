@@ -1,4 +1,8 @@
 import { test, expect } from '@playwright/test';
+import { writeFileSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
+import { sourceDigest } from '../../scripts/mobile-lib.mjs';
+import { playerCountLocaleLabels } from '../fixtures/pr70-player-count-locales.js';
 
 async function switchLocale(page, locale) {
   await page.locator('#language-select').evaluate((select, value) => {
@@ -7,6 +11,72 @@ async function switchLocale(page, locale) {
   }, locale);
   await expect(page.locator('html')).toHaveAttribute('lang', locale);
 }
+
+test('all eleven locale headers follow real five-to-nine player count and language selections', async ({
+  page,
+}) => {
+  const record = {
+    mode: 'vite-test-ui-control-regression',
+    project: test.info().project.name,
+    viewport: [1700, 1000],
+    sourceDigest: sourceDigest(),
+    sourceCommitAtExecution: execFileSync('git', ['rev-parse', 'HEAD'], {
+      encoding: 'utf8',
+    }).trim(),
+    sourceDirtyAtExecution:
+      execFileSync('git', ['status', '--porcelain'], { encoding: 'utf8' }).trim() !== '',
+    status: 'running',
+    qaFixtureUsed: false,
+    cases: [],
+    limit:
+      'Actual Web UI-control and visible-text regression in Vite test mode; not production or native image acceptance. Both projects intentionally use a wide viewport for the header field.',
+  };
+  try {
+    await page.setViewportSize({ width: 1700, height: 1000 });
+    await page.goto('/');
+    await page.waitForFunction(
+      () => document.documentElement.dataset.appReady === 'true' && !!window.noir?.getState,
+    );
+    for (const count of [5, 6, 7, 8, 9]) {
+      await page.locator('#opponents-button').click();
+      await page.locator('#player-count').selectOption(String(count));
+      for (const [locale, expected] of Object.entries(playerCountLocaleLabels)) {
+        await page.locator('#language-select').selectOption(locale);
+        await expect(page.locator('html')).toHaveAttribute('lang', locale);
+        await page.locator('#opponents-dialog .close-dialog').click();
+        const label = page.locator('#table-size-label');
+        await expect(label).toBeVisible();
+        const observation = {
+          locale,
+          playerCount: count,
+          actual: await label.innerText(),
+          expected: expected(count),
+          actualPlayers: await page.evaluate(() => window.noir.getState().players.length),
+          status: 'checking',
+        };
+        record.cases.push(observation);
+        expect(observation.actual).toBe(observation.expected);
+        expect(observation.actualPlayers).toBe(count);
+        observation.status = 'passed';
+        if (locale !== 'ru') await page.locator('#opponents-button').click();
+      }
+    }
+    expect(record.cases).toHaveLength(55);
+    expect(sourceDigest()).toBe(record.sourceDigest);
+    record.status = 'passed';
+  } catch (error) {
+    record.status = 'failed';
+    record.error = String(error);
+    throw error;
+  } finally {
+    record.finishedAt = new Date().toISOString();
+    const file = test.info().outputPath('player-count-locales.json');
+    writeFileSync(file, JSON.stringify(record, null, 2) + '\n');
+    await test
+      .info()
+      .attach('player-count-locales', { path: file, contentType: 'application/json' });
+  }
+});
 
 test('switching Russian to Chinese redraws current amounts without changing the hand', async ({
   page,
