@@ -1579,6 +1579,8 @@ export async function nativeScenarios(app) {
         return nativePromise.call(this, plugin, method, ...args);
       };
       AudioBufferSourceNode.prototype.start = function (...args) {
+        // The background music is the one long decoded source, not a cue.
+        if (this.buffer?.duration > 60) return start.apply(this, args);
         window.__feedbackProbe.audio++;
         const samples = this.buffer?.getChannelData(0);
         if (samples?.length) {

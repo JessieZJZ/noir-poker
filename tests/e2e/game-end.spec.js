@@ -534,8 +534,13 @@ for (const heroWins of [true, false])
     await page.evaluate((heroWins) => window.qa.finale({ heroWins }), heroWins);
     await page.evaluate(() => window.qa.finaleShowdown());
     await expect(page.locator('.trophy-stage')).toHaveCount(1);
-    await page.waitForFunction(() => window.startedCues.some((cue) => cue.seconds > 3));
-    const cheers = await page.evaluate(() => window.startedCues.filter((cue) => cue.seconds > 3));
+    // Cheers last a few seconds; the decoded background music runs over a minute.
+    await page.waitForFunction(() =>
+      window.startedCues.some((cue) => cue.seconds > 3 && cue.seconds < 60),
+    );
+    const cheers = await page.evaluate(() =>
+      window.startedCues.filter((cue) => cue.seconds > 3 && cue.seconds < 60),
+    );
     expect(cheers).toHaveLength(1);
     expect(cheers[0].channels).toBe(2);
     expect(cheers[0].seconds).toBeCloseTo(heroWins ? 5.7 : 3.4, 1);
