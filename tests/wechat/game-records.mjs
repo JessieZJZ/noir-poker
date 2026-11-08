@@ -51,7 +51,22 @@ const waitElement = (selector) =>
     () => page.$(selector),
     (element) => !!element,
   );
+const viewport = () =>
+  mini.evaluate(
+    () =>
+      new Promise((resolve) =>
+        wx
+          .createSelectorQuery()
+          .selectViewport()
+          .scrollOffset((offset) => resolve(offset))
+          .exec(),
+      ),
+  );
+// The table fits phone screens, so the page often has nothing to scroll.
+// Returns -1 when it cannot scroll; otherwise waits for the page's own record.
 const scrollTo = async (top) => {
+  const { scrollHeight } = await viewport();
+  if (top && scrollHeight <= (await mini.systemInfo()).windowHeight + 1) return -1;
   await mini.pageScrollTo(top);
   return wait(
     `Actual page scroll ${top}`,
@@ -713,23 +728,13 @@ try {
     game.players[0].stack = 0;
   });
   const expectedPlace = (await readLive()).players.slice(1).filter((p) => !p.out).length + 1;
-  await scrollTo(600);
+  const scrolledBeforeRestart = (await scrollTo(600)) > 0;
   await tap('.practice-reset');
   await tap('.reset-sheet .primary');
   // Read, without scrolling: the page itself must return to the top.
   await wait(
     'Page back at the top after restart',
-    () =>
-      mini.evaluate(
-        () =>
-          new Promise((resolve) =>
-            wx
-              .createSelectorQuery()
-              .selectViewport()
-              .scrollOffset((offset) => resolve(offset.scrollTop))
-              .exec(),
-          ),
-      ),
+    async () => (await viewport()).scrollTop,
     (top) => top <= 1,
     10000,
   );
@@ -742,6 +747,8 @@ try {
   report.checks.push({
     name: 'restart-without-refill-records-the-place-and-returns-to-the-top',
     place: expectedPlace,
+    // False when the table fits the simulated screen and there was nothing to scroll.
+    scrolledBeforeRestart,
   });
   assert.equal(report.exceptions.length, 0);
   const currentBuild = JSON.parse(
