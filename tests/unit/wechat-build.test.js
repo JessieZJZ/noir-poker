@@ -156,6 +156,7 @@ function assertWechatGlyphCoverage(output) {
 function fixture(t) {
   const directory = mkdtempSync(path.join(tmpdir(), 'noir-wechat-builder-'));
   t.after(() => rmSync(directory, { recursive: true, force: true }));
+  mkdirSync(path.join(directory, 'ios/App/App'), { recursive: true });
   for (const name of [
     'src',
     'public',
@@ -167,6 +168,7 @@ function fixture(t) {
     'package.json',
     'package-lock.json',
     'capacitor.config.json',
+    'ios/App/App/SceneDelegate.swift',
   ])
     cpSync(path.join(root, name), path.join(directory, name), { recursive: true });
   symlinkSync(path.join(root, 'node_modules'), path.join(directory, 'node_modules'), 'dir');
