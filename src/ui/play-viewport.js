@@ -1,14 +1,18 @@
 import { COMPACT_PLAY_QUERY } from './play-geometry.js';
 import { playSurfaceTop, readPlayViewport } from './stable-viewport.js';
 import { entryWelcomeCorridor, entryWelcomeScale } from './entry-welcome-scale.js';
+import { createLayoutBackstop } from './layout-backstop.js';
 // Keep the whole table in the first screen. Measurements are made at
 // scale 1 before fitting, so collision coordinates never mix CSS/visual pixels.
 export function createPlayViewport(surface, { layout = () => {}, settled = () => {} } = {}) {
   const viewport = surface.querySelector('.table-viewport'),
     arena = surface.querySelector('.arena'),
+    board = arena.querySelector('.board'),
+    hero = arena.querySelector('.hero-area'),
     mobile = matchMedia(COMPACT_PLAY_QUERY);
   let frame = null,
-    destroyed = false;
+    destroyed = false,
+    backstop;
 
   function tightenSeatRanks() {
     for (const seat of arena.querySelectorAll('.seat')) {
@@ -62,8 +66,8 @@ export function createPlayViewport(surface, { layout = () => {}, settled = () =>
   }
 
   function fit() {
-    if (destroyed) return;
-    if (document.documentElement.dataset.homeScrollLocked === 'true') return;
+    if (destroyed) return false;
+    if (document.documentElement.dataset.homeScrollLocked === 'true') return false;
     arena.style.removeProperty('transform');
     for (const rank of arena.querySelectorAll('.seat .hand-rank'))
       rank.style.removeProperty('translate');
@@ -115,7 +119,7 @@ export function createPlayViewport(surface, { layout = () => {}, settled = () =>
     }
     // Hidden or rotating WebViews can briefly report a zero-sized viewport.
     // Wait for its resize notification instead of dividing by zero below.
-    if (viewport.clientWidth === 0 || viewport.clientHeight === 0) return;
+    if (viewport.clientWidth === 0 || viewport.clientHeight === 0) return false;
     arena.style.width = `${viewport.clientWidth}px`;
     const landscape = mobile.matches && viewport.clientWidth > 600 && screenHeight < 600;
     arena.classList.toggle('compact-landscape', landscape);
@@ -169,6 +173,8 @@ export function createPlayViewport(surface, { layout = () => {}, settled = () =>
     viewport.scrollTop = 0;
     // Sizes kept constant on screen need the arena's final scale.
     settled();
+    backstop?.record();
+    return true;
   }
   function schedule() {
     if (destroyed) return;
@@ -213,17 +219,49 @@ export function createPlayViewport(surface, { layout = () => {}, settled = () =>
   window.visualViewport?.addEventListener('resize', resize);
   mobile.addEventListener('change', resize);
   document.fonts.ready.then(schedule);
+  backstop = createLayoutBackstop({
+    read: () => [
+      window.innerWidth,
+      window.innerHeight,
+      viewport.clientWidth,
+      viewport.clientHeight,
+      mobile.matches,
+      board.offsetWidth,
+      board.offsetHeight,
+      hero.offsetWidth,
+      hero.offsetHeight,
+    ],
+    repair: fit,
+    canRepair: () =>
+      !document.hidden &&
+      document.documentElement.dataset.homeScrollLocked !== 'true' &&
+      viewport.clientWidth > 0 &&
+      viewport.clientHeight > 0,
+    active: !document.hidden,
+  });
+  let appActive = true;
+  const visibility = () => backstop.setActive(appActive && !document.hidden);
+  const appState = ({ detail }) => {
+    if (typeof detail?.active !== 'boolean') return;
+    appActive = detail.active;
+    visibility();
+  };
+  document.addEventListener('visibilitychange', visibility);
+  document.addEventListener('noir:app-state', appState);
   return {
     destroy() {
       destroyed = true;
       observer.disconnect();
       contentObserver.disconnect();
       insetsObserver.disconnect();
+      backstop.destroy();
       if (frame !== null) cancelAnimationFrame(frame);
       window.removeEventListener('resize', resize);
       window.removeEventListener('pageshow', resize);
       window.visualViewport?.removeEventListener('resize', resize);
       mobile.removeEventListener('change', resize);
+      document.removeEventListener('visibilitychange', visibility);
+      document.removeEventListener('noir:app-state', appState);
     },
     update(nextTable, done) {
       surface.classList.toggle('has-live-hand', !done);
