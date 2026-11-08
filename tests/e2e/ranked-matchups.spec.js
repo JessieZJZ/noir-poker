@@ -67,8 +67,11 @@ test('consumer preflop review has one possible-hand group with causal ranges and
   ]) {
     await page.setViewportSize({ width, height });
     await expectTwoColumns(panel);
-    await panel.locator('.review-matchup-examples').screenshot({
-      path: test.info().outputPath(`possible-hands-${width}.png`),
+    // Retain the actual viewport after the geometry assertions. Element
+    // screenshots add an actionability wait that stalled in CI even after
+    // these four measured cards already passed their layout checks.
+    await page.screenshot({
+      path: test.info().outputPath(`possible-hands-${width}-viewport.png`),
     });
   }
   await page.setViewportSize(original);
