@@ -122,7 +122,7 @@ export function renderOpponentSeats(
         [x, y] = SEAT_ANCHORS[count][p.id - 1];
       const rankMarkup =
         rank || winner
-          ? `<div class="hand-rank ${winner ? 'rank-winner winner-indicator' : ''}"${winner ? ` aria-label="${escape(p.name)} 获得底池 ${format(winner.amount)} 筹码" title="${escape(winner.label)} · 获得 ${format(winner.amount)} 筹码"` : ''}>${winner ? winnerIcon : ''}${rank?.label ?? '获胜'}</div>`
+          ? `<div class="hand-rank ${winner ? 'rank-winner winner-indicator' : ''}"${winner ? ` aria-label="${escape(p.name)} 获得底池 ${format(winner.amount)} 筹码" title="${escape(winner.label)} · 获得 ${format(winner.amount)} 筹码"` : ''}>${winner ? winnerIcon : ''}<span class="seat-rank-label">${rank?.label ?? '获胜'}</span></div>`
           : '';
       const profile = getBotProfile(p.botProfile),
         mood = g.emotionMode === 'off' ? 'steady' : p.botMood.kind,

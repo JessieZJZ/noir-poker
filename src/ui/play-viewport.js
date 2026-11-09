@@ -8,6 +8,8 @@ export function createPlayViewport(surface, { layout = () => {}, settled = () =>
   const viewport = surface.querySelector('.table-viewport'),
     arena = surface.querySelector('.arena'),
     board = arena.querySelector('.board'),
+    handLabel = surface.querySelector('.hand-label'),
+    retryBadge = handLabel.querySelector('.replay-label'),
     hero = arena.querySelector('.hero-area'),
     mobile = matchMedia(COMPACT_PLAY_QUERY);
   let frame = null,
@@ -65,6 +67,20 @@ export function createPlayViewport(surface, { layout = () => {}, settled = () =>
     });
   }
 
+  function fitReplayHeader() {
+    delete handLabel.dataset.replayWrap;
+    handLabel.style.removeProperty('--replay-header-size');
+    if (!retryBadge || retryBadge.hidden || document.documentElement.lang.startsWith('zh')) return;
+    const fits = () => handLabel.scrollWidth <= handLabel.clientWidth;
+    if (fits()) return;
+    const base = parseFloat(getComputedStyle(handLabel).fontSize);
+    for (let size = base - 0.5; size >= 10; size -= 0.5) {
+      handLabel.style.setProperty('--replay-header-size', `${size}px`);
+      if (fits()) return;
+    }
+    handLabel.dataset.replayWrap = '';
+  }
+
   function fit() {
     if (destroyed) return false;
     if (document.documentElement.dataset.homeScrollLocked === 'true') return false;
@@ -110,6 +126,7 @@ export function createPlayViewport(surface, { layout = () => {}, settled = () =>
         ? `max(160px, calc(${budget} - var(--live-dock-height) - var(--dock-bottom-inset)))`
         : budget,
     );
+    fitReplayHeader();
     // A translated or long session label may wrap in the waiting header.
     // Retain its footprint when the shorter live label replaces it, so joining
     // cannot move the felt. Re-measure while waiting after width/font changes.

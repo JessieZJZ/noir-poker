@@ -26,10 +26,37 @@
 .game-surface:not([data-entry-state='waiting']) .hand-label > .hand-prefix {
   flex: 0 1 auto;
 }
+/* Retry keeps all labels readable beside the gold badge. Only the narrowest
+   widths wrap the label group after compact type and spacing are exhausted. */
+html:not([lang^='zh'])
+  .game-surface:not([data-entry-state='waiting'])
+  .hand-label:has(.replay-label:not([hidden])) {
+  font-size: var(--replay-header-size, var(--table-header-font));
+  column-gap: 2px;
+  row-gap: 2px;
+  overflow: visible;
+}
+html:not([lang^='zh'])
+  .game-surface:not([data-entry-state='waiting'])
+  .hand-label:has(.replay-label:not([hidden]))
+  > :is(#street-label, .session-label, .hand-prefix) {
+  flex: none;
+  overflow: visible;
+  text-overflow: clip;
+}
+html:not([lang^='zh']) .game-surface .hand-label[data-replay-wrap] {
+  flex-wrap: wrap;
+}
+html:not([lang^='zh']) .game-surface .hand-label:has(.replay-label:not([hidden])) > .replay-label {
+  margin-inline-start: 4px;
+  font-size: max(10px, 0.75em);
+}
+.main .game-surface > .surface-top:has(.hand-label[data-replay-wrap]) {
+  grid-template-rows: minmax(var(--hand-row), auto) var(--hint-row);
+}
 /* The second row keeps its existing height. Countdown width follows its text;
    the hint gets every remaining pixel, with just one gap between the two. */
 .surface-bottom {
-  --blind-progress-line-height: 11px;
   grid-area: 2 / 1 / 3 / -1;
   display: flex;
   min-height: 22px;
@@ -43,7 +70,7 @@
   width: max-content;
   max-width: 60%;
   font-size: 10px;
-  line-height: var(--blind-progress-line-height);
+  line-height: 1.1;
   color: #bca77c;
   text-align: right;
   white-space: normal;
@@ -127,4 +154,25 @@ html[lang='ko'] .profile-comparison th {
 .native-android .hero-hand-rank > * {
   transform: translateZ(0);
   backface-visibility: hidden;
+}
+
+@media (min-width: 601px) {
+  .game-surface > .surface-top .blind-progress {
+    font-size: clamp(13px, 1.4vw, 16px);
+  }
+  .main .game-surface > .surface-top {
+    --hint-row: 34px;
+  }
+}
+
+/* A transformed seat can be painted with a stale raster scale in Android
+   WebView even when its CSS geometry is current. Folded seats need separate
+   paint for the dimmed profile and the caption below it. */
+.native-android .game-surface .arena .seat {
+  backface-visibility: hidden;
+}
+.native-android .game-surface .arena .seat.folded .seat-profile,
+.native-android .game-surface .arena .seat.folded .seat-action {
+  backface-visibility: hidden;
+  transform: translateZ(0);
 }

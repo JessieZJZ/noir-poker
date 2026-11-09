@@ -440,3 +440,116 @@ test('review game prose formats chips and punctuation in its rendered locale', a
   expect(lists.some((text) => text.includes(', '))).toBe(true);
   expect(lists.join('')).not.toContain('、');
 });
+
+test('translated retry header fits complete words while menus and coaching keep their leading text', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 320, height: 844 });
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.goto('/');
+  await page.waitForFunction(() => !!window.qa);
+  await page.evaluate(() => {
+    window.qa.foldWin(5);
+    window.qa.stop();
+  });
+  await page.locator('#restart-hand-button').click();
+  await page.evaluate(() => window.qa.stop());
+
+  for (const locale of ['en', 'ja', 'ko', 'es', 'it', 'pt', 'de', 'fr', 'ru']) {
+    await switchLocale(page, locale);
+    await page.evaluate(() => {
+      document.querySelector('#rules-button').dataset.label = 'tutorial';
+    });
+    await expect
+      .poll(
+        () =>
+          page.evaluate(() => {
+            const hand = document.querySelector('.hand-label');
+            const handRect = hand.getBoundingClientRect();
+            const visible = [...hand.children].filter((el) => el.getClientRects().length);
+            const guide = document.querySelector('[data-guide-label="tutorial"]');
+            const guideRect = guide.getBoundingClientRect();
+            const slot = guide.parentElement.getBoundingClientRect();
+            const hint = document.querySelector('#coach-tip');
+            const banner = hint.closest('.hint-banner');
+            return {
+              handFits: visible.every((el) => {
+                const r = el.getBoundingClientRect();
+                return (
+                  r.left >= handRect.left - 1 &&
+                  r.right <= handRect.right + 1 &&
+                  r.bottom <=
+                    document.querySelector('.surface-bottom').getBoundingClientRect().top &&
+                  el.scrollWidth <= el.clientWidth + 1
+                );
+              }),
+              guideCentered:
+                Math.abs(guideRect.left + guideRect.right - slot.left - slot.right) <= 2,
+              guideEllipsis: getComputedStyle(guide).textOverflow,
+              guideStart: getComputedStyle(guide).textAlign,
+              hintEllipsis: getComputedStyle(hint).textOverflow,
+              hintAtStart: banner.scrollLeft === 0 && banner.dataset.scrolling === 'false',
+            };
+          }),
+        locale,
+      )
+      .toEqual({
+        handFits: true,
+        guideCentered: true,
+        guideEllipsis: 'ellipsis',
+        guideStart: 'start',
+        hintEllipsis: 'ellipsis',
+        hintAtStart: true,
+      });
+  }
+});
+
+test('medium landscape action rail and settings controls have deliberate vertical gaps', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1068, height: 962 });
+  await page.goto('/');
+  await page.waitForFunction(() => !!window.qa);
+  await switchLocale(page, 'de');
+  await page.evaluate(() => {
+    window.qa.heroTurn(5);
+    window.qa.stop();
+  });
+  for (const width of [901, 1024, 1068, 1150, 1280]) {
+    await page.setViewportSize({ width, height: width === 901 ? 820 : 962 });
+    await expect
+      .poll(
+        () =>
+          page.evaluate(() => {
+            const rect = (sel) => document.querySelector(sel).getBoundingClientRect();
+            const decision = rect('.decision-strip'),
+              bet = rect('.bet-controls'),
+              panel = rect('.action-panel');
+            return (
+              bet.top >= decision.bottom - 1 &&
+              bet.top - decision.bottom <= 25 &&
+              bet.bottom <= panel.bottom
+            );
+          }),
+        String(width),
+      )
+      .toBe(true);
+  }
+  await page.setViewportSize({ width: 960, height: 1440 });
+  await expect(page.locator('#blind-progress')).toBeVisible();
+  await expect
+    .poll(() =>
+      page.locator('#blind-progress').evaluate((el) => parseFloat(getComputedStyle(el).fontSize)),
+    )
+    .toBeGreaterThanOrEqual(13);
+  await page.locator('#opponents-button').click();
+  const gap = await page.evaluate(() => {
+    const count = document.querySelector('#player-count').closest('.settings-row');
+    const box = count.querySelector('.dropdown-trigger') ?? document.querySelector('#player-count');
+    return (
+      document.querySelector('#small-blind-button').getBoundingClientRect().top -
+      box.getBoundingClientRect().bottom
+    );
+  });
+  expect(gap).toBeGreaterThanOrEqual(8);
+});

@@ -135,7 +135,9 @@ function fillWaitingInfo() {
   const spare = readPlayViewport().height - 8 - bottom;
   if (spare > 0) info.style.minHeight = `${info.offsetHeight + spare}px`;
 }
-const hintMarquee = createHintMarquee(coachContent, $('#coach-tip'), () => true);
+const hintMarquee = createHintMarquee(coachContent, $('#coach-tip'), () =>
+  document.documentElement.lang.startsWith('zh'),
+);
 const hintNotification = createHintNotification({
   publish({ visible, text, stage }) {
     $('#coach-content').hidden = !visible;
