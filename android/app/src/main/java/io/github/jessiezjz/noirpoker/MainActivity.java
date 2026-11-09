@@ -36,9 +36,12 @@ public class MainActivity extends BridgeActivity {
         // WebView alone stops text at 8px, which leaves long localized style
         // tags overflowing their badges. Let the shared fitting shrink them.
         if (getBridge() != null) getBridge().getWebView().getSettings().setMinimumFontSize(1);
-        // The emulator compositor can repeat WebView raster tiles. Use a
-        // software layer on virtual hardware; phones keep hardware acceleration.
-        if (getBridge() != null && ("ranchu".equals(Build.HARDWARE) || "goldfish".equals(Build.HARDWARE))) {
+        // The legacy emulator renderer needed a software layer to avoid
+        // repeated tiles. On Android 16+ that layer can paint transformed
+        // seats with stale raster dimensions, even after a layout pass.
+        boolean legacyEmulator = Build.VERSION.SDK_INT < Build.VERSION_CODES.BAKLAVA
+                && ("ranchu".equals(Build.HARDWARE) || "goldfish".equals(Build.HARDWARE));
+        if (getBridge() != null && legacyEmulator) {
             getBridge().getWebView().setLayerType(View.LAYER_TYPE_SOFTWARE, null);
         }
         updateOrientation(getResources().getConfiguration());

@@ -104,23 +104,11 @@ html:not([lang^='zh']) .table-notices #coach-tip {
   overflow: hidden;
   text-overflow: ellipsis;
 }
-html:not([lang^='zh']) .game-surface .arena[data-player-count] .seat .seat-action {
-  display: flex;
-  align-items: baseline;
-  justify-content: center;
-  flex-wrap: nowrap;
-  gap: 4px;
-}
-html:not([lang^='zh']) .game-surface .seat-action-label,
 html:not([lang^='zh']) .game-surface .seat-rank-label {
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-html:not([lang^='zh']) .game-surface .seat-action-amount {
-  flex: none;
-  margin-left: 0;
 }
 html:not([lang^='zh']) .game-surface .seat-rank-slot {
   justify-items: center;

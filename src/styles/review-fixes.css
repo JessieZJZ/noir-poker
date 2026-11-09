@@ -164,15 +164,3 @@ html[lang='ko'] .profile-comparison th {
     --hint-row: 34px;
   }
 }
-
-/* A transformed seat can be painted with a stale raster scale in Android
-   WebView even when its CSS geometry is current. Folded seats need separate
-   paint for the dimmed profile and the caption below it. */
-.native-android .game-surface .arena .seat {
-  backface-visibility: hidden;
-}
-.native-android .game-surface .arena .seat.folded .seat-profile,
-.native-android .game-surface .arena .seat.folded .seat-action {
-  backface-visibility: hidden;
-  transform: translateZ(0);
-}
