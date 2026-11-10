@@ -553,3 +553,44 @@ test('medium landscape action rail and settings controls have deliberate vertica
   });
   expect(gap).toBeGreaterThanOrEqual(8);
 });
+
+test('the dealing frame of a replay shows the complete localized status', async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 844 });
+  await page.clock.install({ time: new Date('2026-01-01T00:00:00Z') });
+  await page.goto('/');
+  await page.waitForFunction(() => !!window.qa);
+  await page.clock.pauseAt(await page.evaluate(() => Date.now() + 60_000));
+  await page.evaluate(() => {
+    window.qa.foldWin(5);
+    window.qa.stop();
+    document.querySelector('#restart-hand-button').click();
+  });
+
+  for (const [locale, status] of Object.entries({
+    ko: '카드 배분 중',
+    en: 'Dealing cards',
+    ja: 'カード配布中',
+    es: 'Repartiendo cartas',
+    it: 'Distribuzione carte',
+    pt: 'Distribuindo cartas',
+    de: 'Karten werden ausgeteilt',
+    fr: 'Distribution des cartes',
+    ru: 'Раздача карт',
+  })) {
+    await switchLocale(page, locale);
+    await expect(page.locator('#replay-label')).toBeVisible();
+    await expect(page.locator('#street-label'), locale).toHaveText(status);
+    await expect(page.locator('#decision-text'), locale).toHaveText(status);
+    await expect
+      .poll(() =>
+        page.locator('#street-label').evaluate((label) => {
+          const bounds = label.getBoundingClientRect();
+          const blind = document.querySelector('.blind-info').getBoundingClientRect();
+          return label.scrollWidth <= label.clientWidth + 1 && bounds.right <= blind.left;
+        }),
+      )
+      .toBe(true);
+    if (locale === 'ko')
+      await page.screenshot({ path: test.info().outputPath('korean-replay-dealing.png') });
+  }
+});
