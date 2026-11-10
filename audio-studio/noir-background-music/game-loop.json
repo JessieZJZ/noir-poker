@@ -2,32 +2,35 @@
   "sampleRate": 48000,
   "bpm": 82,
   "cycleFrames": 4495610,
-  "openingMasterFrame": 193171,
+  "mutedBuses": [
+    "drums"
+  ],
+  "openingMasterFrame": 280016,
   "frames": 4543610,
   "loopStartFrame": 24000,
   "loopEndFrameExclusive": 4519610,
   "files": {
     "desktop": {
       "path": "public/audio/background-music.m4a",
-      "bytes": 1172796,
-      "sha256": "ddaba3ce45865f1bb3a162b852fd888b3924b750a6cf876f972e097cae39dcfc",
+      "bytes": 1168769,
+      "sha256": "dda53a7d2e951e6a9f8ad370c248d650a55facb91c9eb77fa2263c680e9c5bd3",
       "bitrate": "96k",
-      "staticGainDB": 4.64,
-      "integratedLUFS": -18.79,
-      "peakDBFS": -11.22,
+      "staticGainDB": 4.56,
+      "integratedLUFS": -18.78,
+      "peakDBFS": -10.86,
       "processedSeamMaxDiff": 0.0,
-      "encodedLoopJump": 0.001751430332660675
+      "encodedLoopJump": 0.0014637336134910583
     },
     "mobile": {
       "path": "public/audio/background-music-mobile.m4a",
-      "bytes": 1578348,
-      "sha256": "0499bed594b7e8ae8116504cf338aa54f6637fe6aa59321e784988af71a32c66",
+      "bytes": 1550582,
+      "sha256": "66f62a422cdb56605ba9aeb3ea0d08a9534b7dcbcc0ad0891f6e503f7f599ac3",
       "bitrate": "128k",
-      "staticGainDB": 4.66,
-      "integratedLUFS": -13.82,
-      "peakDBFS": -7.41,
+      "staticGainDB": 4.54,
+      "integratedLUFS": -13.78,
+      "peakDBFS": -7.33,
       "processedSeamMaxDiff": 0.0,
-      "encodedLoopJump": 0.004744350910186768
+      "encodedLoopJump": 0.005382522940635681
     }
   }
 }

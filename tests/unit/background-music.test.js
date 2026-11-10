@@ -910,10 +910,11 @@ test('the shipped music files match the rendered loop points and fingerprints', 
   assert.equal(report.loopEndFrameExclusive - report.loopStartFrame, report.cycleFrames);
   assert.equal(
     report.openingMasterFrame,
-    Math.round(((5.5 * 60) / 82) * 48000),
-    'Bar 2, beat 2-and',
+    Math.round(((8 * 60) / 82) * 48000) - 960,
+    '20 ms before the bar 3 downbeat',
   );
   assert.ok(report.frames > report.loopEndFrameExclusive, 'The file continues past the loop end');
+  assert.deepEqual(report.mutedBuses, ['drums'], 'The game plays the track without its drums');
   for (const file of Object.values(report.files)) {
     const bytes = readFileSync(new URL(file.path, root));
     assert.equal(bytes.length, file.bytes, file.path);

@@ -2,8 +2,8 @@ export const BACKGROUND_MUSIC_PATH = 'audio/background-music.m4a';
 export const MOBILE_BACKGROUND_MUSIC_PATH = 'audio/background-music-mobile.m4a';
 // Both masters include their own peak headroom for action cues.
 export const BACKGROUND_MUSIC_VOLUME = 1;
-// Each file holds one exact 32-bar period of the master, starting at bar 2,
-// beat 2-and (just after the snare; the melody enters at bar 5), with half a
+// Each file holds one exact 32-bar period of the master without its drums,
+// starting just before the bar 3 downbeat (the melody enters at bar 5), with half a
 // second of the music before and after it. `audio-studio/.../game-loop.py`
 // renders it, so the loop jump joins two identical continuations.
 export const BACKGROUND_MUSIC_LOOP = Object.freeze({

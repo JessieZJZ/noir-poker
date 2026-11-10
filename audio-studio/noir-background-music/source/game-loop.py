@@ -1,9 +1,15 @@
 #!/usr/bin/env python3
 """Build the in-game Midnight Felt files from the tracked master, loop-ready.
 
-The master is one exact 32-bar period. The game opens it at bar 2, beat
-2-and (just after the snare; bars 2-4 carry the groove before the melody
-enters at bar 5) and afterwards loops whole periods. Each delivery file starts
+The game plays Midnight Felt without its drum bus (kick, snare, brush and
+hats). `render.py` composes the track again from its seed; the full mix must
+match the tracked FLAC master sample for sample, so only the drums differ.
+The drum-free mix keeps the master's static gain, quantized to its 24 bits.
+
+The master is one exact 32-bar period. The game opens it 20 ms before the
+bar 3 downbeat, where bar 2's chord has died away and a fresh chord and bass
+attack together (bars 3-4 carry keys and bass before the melody enters at
+bar 5), and afterwards loops whole periods. Each delivery file starts
 `MARGIN_SECONDS` before that opening, holds one full period from the opening
 onward, and continues the music for `MARGIN_SECONDS` past it, so neither loop
 point lies near the encoder's first or last frame:
@@ -22,6 +28,7 @@ Run with the studio's NumPy/SciPy environment (see README) from any directory:
 """
 
 import hashlib
+import importlib.util
 import json
 import math
 import subprocess
@@ -35,8 +42,10 @@ STUDIO = HERE.parent
 REPO = STUDIO.parents[1]
 SR = 48000
 BPM = 82
-OPENING_BEATS = 5.5  # bar 2, beat 2-and
+OPENING_BEATS = 8  # bar 3 downbeat
+OPENING_LEAD_SECONDS = 0.02  # before the earliest humanized attack
 MARGIN_SECONDS = 0.5
+MUTED_BUSES = ("drums",)
 
 DELIVERY = {
     "desktop": {
@@ -77,19 +86,50 @@ def integrated(samples):
     return float(json.loads(err[err.rfind("{"):err.rfind("}") + 1])["input_i"])
 
 
+def quantize(samples):
+    # The 24-bit integers `render.write_wav` stores in the FLAC master (it
+    # rounds in float32), scaled the way FFmpeg decodes them, as `decode` does.
+    pcm = np.rint(np.clip(samples, -0.999999, 0.999999) * 8388607).astype(np.int32)
+    return pcm / 8388608
+
+
+def drum_free_master():
+    spec = importlib.util.spec_from_file_location("render", HERE / "render.py")
+    render = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(render)
+    session = render.Session(next(s for s in render.SCORES if s["id"] == "01-midnight-felt"))
+    session.arrange()
+    full = session.mix()
+    with tempfile.TemporaryDirectory() as tmp:
+        raw = Path(tmp) / "unmastered.wav"
+        render.write_wav(raw, full)
+        measured = render.loudness(raw)
+    gain = 10 ** (min(-20 - float(measured["input_i"]), -3.2 - float(measured["input_tp"])) / 20)
+
+    def mastered(mix):
+        mix *= gain  # in float32, as render.py does
+        return quantize(mix)
+
+    tracked = decode(STUDIO / "masters/01-midnight-felt.flac")
+    assert np.array_equal(mastered(full), tracked), "render.py no longer reproduces the tracked master"
+    for bus in MUTED_BUSES:
+        session.buses[bus][:] = 0
+    return mastered(session.mix())
+
+
 def sha(path):
     return hashlib.sha256(Path(path).read_bytes()).hexdigest()
 
 
 def main():
-    master = decode(STUDIO / "masters/01-midnight-felt.flac")
+    master = drum_free_master()
     n = len(master)
     assert n == round(32 * 4 * 60 / BPM * SR), n
-    opening = round(OPENING_BEATS * 60 / BPM * SR)
+    opening = round(OPENING_BEATS * 60 / BPM * SR) - round(OPENING_LEAD_SECONDS * SR)
     margin = round(MARGIN_SECONDS * SR)
     loop_start, loop_end = margin, margin + n
     frames = loop_end + margin
-    report = {"sampleRate": SR, "bpm": BPM, "cycleFrames": n, "openingMasterFrame": opening, "frames": frames, "loopStartFrame": loop_start, "loopEndFrameExclusive": loop_end, "files": {}}
+    report = {"sampleRate": SR, "bpm": BPM, "cycleFrames": n, "mutedBuses": list(MUTED_BUSES), "openingMasterFrame": opening, "frames": frames, "loopStartFrame": loop_start, "loopEndFrameExclusive": loop_end, "files": {}}
     # Three periods in, the middle one out: every filter runs from steady state.
     tiled = np.tile(master, (3, 1))
     first = n + opening - margin

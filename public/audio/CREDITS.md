@@ -4,9 +4,9 @@
 
 - 原始无损母带：`audio-studio/noir-background-music/masters/01-midnight-felt.flac`
 - 制作脚本与显式乐谱：`audio-studio/noir-background-music/source/`
-- 游戏资源（2026-11-08 起）：由 `audio-studio/noir-background-music/source/game-loop.py` 从上述母带生成，乐谱、音色与编配不变。文件为起播点（第 2 小节第 2 拍后半）前 0.5 秒 + 从起播点开始的一个完整 32 小节周期 + 0.5 秒延续，共 4,543,610 帧；循环区间为第 24,000 帧至第 4,519,610 帧（不含）。交付链与下文 2026-10-17 的处理相同，只把动态 `loudnorm` 换成匹配原响度的静态增益，并去掉首尾 4 ms 淡变，使处理后的循环严格周期。测量见 `audio-studio/noir-background-music/game-loop.json`。
-  - 桌面 `background-music.m4a`：AAC、48 kHz、双声道、96 kbps，1,172,796 字节，约 −18.8 LUFS，SHA-256 `ddaba3ce45865f1bb3a162b852fd888b3924b750a6cf876f972e097cae39dcfc`。
-  - 手机 `background-music-mobile.m4a`：AAC 128 kbps，1,578,348 字节，约 −13.8 LUFS，SHA-256 `0499bed594b7e8ae8116504cf338aa54f6637fe6aa59321e784988af71a32c66`。
+- 游戏资源（2026-11-10 起）：由 `audio-studio/noir-background-music/source/game-loop.py` 生成。它用 `render.py` 按原种子重新合成，确认完整混音与上述母带逐采样一致后去掉鼓组总线（底鼓、军鼓、刷鼓与踩镲），其余乐谱、音色与编配不变。文件为起播点（第 3 小节强拍前 20 ms）前 0.5 秒 + 从起播点开始的一个完整 32 小节周期 + 0.5 秒延续，共 4,543,610 帧；循环区间为第 24,000 帧至第 4,519,610 帧（不含）。交付链与下文 2026-10-17 的处理相同，只把动态 `loudnorm` 换成匹配原响度的静态增益，并去掉首尾 4 ms 淡变，使处理后的循环严格周期。测量见 `audio-studio/noir-background-music/game-loop.json`。
+  - 桌面 `background-music.m4a`：AAC、48 kHz、双声道、96 kbps，1,168,769 字节，约 −18.8 LUFS，SHA-256 `dda53a7d2e951e6a9f8ad370c248d650a55facb91c9eb77fa2263c680e9c5bd3`。
+  - 手机 `background-music-mobile.m4a`：AAC 128 kbps，1,550,582 字节，约 −13.8 LUFS，SHA-256 `66f62a422cdb56605ba9aeb3ea0d08a9534b7dcbcc0ad0891f6e503f7f599ac3`。
 
 下文保留 2026-10-17 的版本记录。
 

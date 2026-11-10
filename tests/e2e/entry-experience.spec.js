@@ -422,7 +422,7 @@ test('autoplay-capable entry fades real local music from its start before joinin
     // Observe the actual source start, even if a busy host delays the next driver round trip.
     await expect.poll(() => page.evaluate(() => window.musicStarts.length)).toBeGreaterThan(0);
     const initial = await page.evaluate(() => window.musicStarts[0]);
-    // The first play opens at the loop start, bar 2 of the theme.
+    // The first play opens at the loop start, just before bar 3 of the theme.
     expect(initial.time).toBe(0.5);
     expect(initial.gain).toBe(0);
     expect((await page.evaluate(() => window.noir.getState())).phase).toBe('idle');

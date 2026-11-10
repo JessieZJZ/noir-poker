@@ -75,7 +75,7 @@ python3 -m venv .artifacts/music-tools
 
 验证覆盖：四版输出文件哈希、无损解码、精确音乐周期、非静音首尾、接缝相邻采样差、无非有限数和削波、响度与真峰值，以及压缩文件可解码。若本地 WAV 存在，还逐采样比较 FLAC/WAV。保留压缩编码的额外解码帧数，以免把 AAC 或 Opus 的容器长度直接当作无损循环帧数。
 
-游戏内使用的两份 AAC 由单独脚本生成，不改动这里的母带与 `render.py`：从第 2 小节第 2 拍后半开始取一个完整周期，前后各留 0.5 秒，用静态增益代替动态响度归一化，使循环严格周期，参数和测量写入 `game-loop.json`：
+游戏内使用的两份 AAC 由单独脚本生成，不改动这里的母带与 `render.py`：用 `render.py` 重新合成「夜色牌桌」，确认完整混音与母带逐采样一致后去掉鼓组总线，从第 3 小节强拍前 20 ms 开始取一个完整周期，前后各留 0.5 秒，用静态增益代替动态响度归一化，使循环严格周期，参数和测量写入 `game-loop.json`：
 
 ```sh
 .artifacts/music-tools/bin/python audio-studio/noir-background-music/source/game-loop.py
