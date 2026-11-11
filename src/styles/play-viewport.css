@@ -739,7 +739,8 @@
   .game-surface .arena[data-player-count] .seat-style-label[data-style-profile='finn'] {
     font-size: 8.5px;
   }
-  .game-surface .arena[data-player-count] .seat-style-label[data-style-profile='balanced'] {
+  /* Chinese seat tags are all two characters (均衡、强攻…). */
+  html[lang^='zh'] .game-surface .arena[data-player-count] .seat-style-label {
     min-width: 26px;
     padding: 1px 3px;
     font-size: 10px;
@@ -799,9 +800,10 @@
     .seat-stack {
     font-size: 11px;
   }
-  .game-surface
+  html[lang^='zh']
+    .game-surface
     .arena:is([data-player-count='5'], [data-player-count='6'])
-    .seat-style-label[data-style-profile='balanced'] {
+    .seat-style-label {
     min-width: 30px;
     font-size: 11px;
   }

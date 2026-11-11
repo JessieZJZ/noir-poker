@@ -25,6 +25,7 @@ import { checkRisks } from './check-reasoning.js';
 import { flushBoardShove } from './value-targets.js';
 import { guaranteedBoardShare } from './strategy-facts.js';
 import { reviewStrategy, enrichStrategy } from './strategy-context.js';
+import { shortStackSpot, survivalCallSpot } from './tournament.js';
 export { actionLabel } from '../engine/action-labels.js';
 export { callPrice } from './equity.js';
 export { startingTier, drawInfo } from './context.js';
@@ -122,7 +123,8 @@ export function analyzeDecision(
     lesson = '',
     plan = '',
     confidence = '依赖范围假设',
-    alternative = { action: s.legal.canCheck ? 'check' : 'call', amount: s.legal.callAmount };
+    alternative = { action: s.legal.canCheck ? 'check' : 'call', amount: s.legal.callAmount },
+    tournamentSpot = null;
   const raiseTo = () => {
     let target;
     if (s.street === 0) {
@@ -149,6 +151,10 @@ export function analyzeDecision(
     alternative = { action: 'check', amount: 0 };
     lesson = '先免费过牌，面对后续下注再评估价格。';
     plan = '下一步若有人下注，按新的金额和参与人数重新计算，不预先承诺跟到底。';
+  } else if (
+    (tournamentSpot = survivalCallSpot(s, price, low, high, uncertainty) || shortStackSpot(s, ctx))
+  ) {
+    ({ code, status, title, reason, alternative, lesson, plan } = tournamentSpot);
   } else if (ctx.positionedEntry?.eligible && !price.closing) {
     code = 'positioned-entry';
     status = s.action === 'call' ? 'sound' : 'consider';
@@ -826,9 +832,14 @@ export function analyzeDecision(
             v.vsActual.informative &&
             v.vsActual.lower > Math.max(0.2 * bigBlindOf(s), s.pot * 0.01),
         ) &&
-      !['free-fold', 'expensive-call', 'weak-threebet-defense', 'weak-fourbet-defense'].includes(
-        code,
-      ) &&
+      ![
+        'free-fold',
+        'expensive-call',
+        'weak-threebet-defense',
+        'weak-fourbet-defense',
+        'short-stack-push-fold',
+        'survival-call',
+      ].includes(code) &&
       (simulation.best.action !== alternative.action ||
         (simulation.best.action === 'raise' && simulation.best.amount !== alternative.amount))
     ) {

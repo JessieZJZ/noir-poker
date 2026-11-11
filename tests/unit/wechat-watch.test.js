@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { cp, mkdtemp, readFile, rm, symlink, writeFile } from 'node:fs/promises';
+import { cp, mkdir, mkdtemp, readFile, rm, symlink, writeFile } from 'node:fs/promises';
 import { spawn } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import os from 'node:os';
@@ -97,12 +97,14 @@ test(
     });
     for (const name of ['src', 'public', 'scripts', 'miniprogram', 'mobile'])
       await cp(path.join(root, name), path.join(directory, name), { recursive: true });
+    await mkdir(path.join(directory, 'ios/App/App'), { recursive: true });
     for (const name of [
       'index.html',
       'package.json',
       'package-lock.json',
       'vite.config.js',
       'capacitor.config.json',
+      'ios/App/App/SceneDelegate.swift',
     ])
       await cp(path.join(root, name), path.join(directory, name));
     await symlink(path.join(root, 'node_modules'), path.join(directory, 'node_modules'), 'dir');

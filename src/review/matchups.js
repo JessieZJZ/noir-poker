@@ -88,7 +88,8 @@ export function preflopRangeNotes(s) {
       notes.push(
         `此前${name(prior.id)}${historyActionLabel(s.history, s.history.indexOf(prior))}，仍需回应最新加注。`,
       );
-    notes.push(`${name(last.id)}${historyActionLabel(s.history, s.history.indexOf(last))}。`);
+    const lastRaise = `${name(last.id)} ${historyActionLabel(s.history, s.history.indexOf(last))}`;
+    notes.push(`对手最近一次翻前加注：${lastRaise}。`);
   } else if (
     !observer &&
     s.legal.canCheck &&

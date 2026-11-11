@@ -46,7 +46,7 @@ test('consumer preflop review has one possible-hand group with causal ranges and
   await expect(panel.locator('[data-matchup-direction]')).toHaveCount(1);
   await expect(panel.locator('[data-matchup-direction="possible"]')).toContainText('对手可能牌组');
   // The summary opens with the actual opening raise and the caller's real top-up.
-  await expect(panel).toContainText('Luna在 UTG+1 位2-bet 开池至 4K');
+  await expect(panel).toContainText('对手最近一次翻前加注：Luna在 UTG+1 位 2-bet 开池至 4K');
   await expect(panel).toContainText('Jade在 LJ 位已跟注这笔加注，补 4K');
   await expect(panel).not.toContainText(/结构上较|不代表获胜概率|依据当时记录|旧记录/);
   const below = await panel
@@ -67,8 +67,11 @@ test('consumer preflop review has one possible-hand group with causal ranges and
   ]) {
     await page.setViewportSize({ width, height });
     await expectTwoColumns(panel);
-    await panel.locator('.review-matchup-examples').screenshot({
-      path: test.info().outputPath(`possible-hands-${width}.png`),
+    // Retain the actual viewport after the geometry assertions. Element
+    // screenshots add an actionability wait that stalled in CI even after
+    // these four measured cards already passed their layout checks.
+    await page.screenshot({
+      path: test.info().outputPath(`possible-hands-${width}-viewport.png`),
     });
   }
   await page.setViewportSize(original);

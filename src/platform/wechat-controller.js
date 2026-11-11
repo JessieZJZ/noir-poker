@@ -10,6 +10,9 @@ import {
   CROWN_FLIGHT_MS,
   CONFETTI_DURATION_MS,
   FAREWELL_DURATION_MS,
+  TABLE_NOTICE_MS,
+  tableNoticeText,
+  blindStructureText,
   refillCountValues,
   REFILL_COUNT_STEPS,
 } from '../ui/effect-layouts.js';
@@ -37,6 +40,7 @@ import {
   canRestartHand,
   applyBotSettings,
   rebuyHero,
+  heroRebuyAmount,
   heroRebuysLeft,
   needsHeroRebuy,
   advanceStreet,
@@ -210,6 +214,8 @@ export function createWechatController({
     crownedKey = '',
     confetti = false,
     farewell = null,
+    tableNotice = null,
+    noticeHold = false,
     effectEpoch = 0;
   // A callback already handed to the platform cannot outlive its cancellation.
   function later(fn, ms) {
@@ -228,6 +234,8 @@ export function createWechatController({
     rebuying = null;
     confetti = false;
     farewell = null;
+    tableNotice = null;
+    noticeHold = false;
     if (ceremony) crownedKey = ceremony.key;
     ceremony = null;
   }
@@ -245,6 +253,36 @@ export function createWechatController({
       }, PREMIUM_DURATION_MS);
     }, PREMIUM_DELAY_MS);
   }
+  // A hand that reaches the final table or a new blind level announces it at
+  // the screen centre first; the cards are dealt once the notices finish.
+  function playTableNotices() {
+    tableNotice = null;
+    noticeHold = false;
+    const notices = (game.notices || []).map((notice) => tableNoticeText(notice, format));
+    if (tutorial || readOnlyAttempt || !notices.length) return 0;
+    noticeHold = true;
+    const hand = `${game.hand}:${game.replayAttempt || 0}`;
+    notices.forEach((notice, index) =>
+      later(() => {
+        const key = `${hand}:${index}`;
+        tableNotice = { ...notice, key };
+        effect(notice.sound);
+        render();
+        later(() => {
+          if (tableNotice?.key !== key) return;
+          tableNotice = null;
+          render();
+        }, TABLE_NOTICE_MS);
+      }, index * TABLE_NOTICE_MS),
+    );
+    later(() => {
+      noticeHold = false;
+      render();
+      effect('deal');
+      premiumDeal();
+    }, notices.length * TABLE_NOTICE_MS);
+    return notices.length * TABLE_NOTICE_MS;
+  }
   // The coronation starts once per decided game; the crown then stays on. A
   // game the hero leaves without a champion gets the farewell card instead.
   function celebrate() {
@@ -252,7 +290,11 @@ export function createWechatController({
     if (!key || ceremonyKey === key || readOnlyAttempt || !active) return false;
     ceremonyKey = key;
     if (game.over.championId === null) {
-      farewell = { key, place: standingLabel(game.over.heroPlace) };
+      farewell = {
+        key,
+        place: standingLabel(game.over.heroPlace),
+        note: game.finalTable ? '决赛圈不能补码' : '补码次数已用完',
+      };
       effect('farewell');
       later(() => {
         farewell = null;
@@ -355,6 +397,7 @@ export function createWechatController({
     }
     updateHint();
     const coach = tutorial ? presentTutorial(tutorial.view(format)) : null;
+    tutorial?.markShown(coach, Date.now());
     const endKey = gameEndKey(),
       crowned =
         endKey && (ceremony?.key === endKey || crownedKey === endKey) ? game.over.championId : null;
@@ -389,13 +432,19 @@ export function createWechatController({
     }));
     const seats = game.players.slice(1).map((player, index) => {
       const profile = BOT_PROFILES.find((p) => p.id === player.botProfile) || BOT_PROFILES[0];
-      const revealed = done && (peeked.get(player.id) ?? (game.revealed && !player.folded));
+      // An all-in runout shows the live hands as it starts, like Web; peeking
+      // only applies once the hand is settled.
+      const revealed = done
+        ? (peeked.get(player.id) ?? (game.revealed && !player.folded))
+        : !!game.revealed && !player.folded;
       const best =
         revealed && game.board.length === 5 ? evaluate([...player.hole, ...game.board]) : null;
       const retained = visibleRecentAction(game, player);
       const rawAction =
         player.out && !player.hole.length
-          ? `出局 · 第${player.place}名`
+          ? waitingForSeat
+            ? '已出局'
+            : `出局 · 第${player.place}名`
           : game.actor === player.id && !done && !dealing
             ? '思考中'
             : retained?.text ||
@@ -423,6 +472,7 @@ export function createWechatController({
         position: waitingForSeat ? '' : seatPosition(game, player.id),
         profileId: profile.id,
         profileName: profile.short,
+        profileTag: profile.abbr,
         portrait: profile.id === 'balanced' ? '' : `/assets/portraits/${profile.id}.jpg`,
         initial: player.name.slice(0, 1),
         // As on Web, a non-steady emotion shows on the avatar while it lasts.
@@ -474,6 +524,8 @@ export function createWechatController({
       turnPhase: attention.phase,
       tutorial: coach,
       tutorialPlaying: !!tutorial?.playing(),
+      // Includes the intro card: Back anywhere in the tutorial leaves it.
+      tutorialActive: !!tutorial,
       tutorialDeal: tutorialDeals,
       tutorialFocus: coach?.focusMap || {},
       lockFold: !!coach?.gate.fold,
@@ -494,14 +546,20 @@ export function createWechatController({
         (game.over.championId === null || crownedKey === endKey),
       needsRebuy: needsHeroRebuy(game) && !game.over,
       rebuysLeft: heroRebuysLeft(game),
+      rebuyRule:
+        needsHeroRebuy(game) && !game.over
+          ? `补充筹码，补充至 ${format(heroRebuyAmount(game))}，即当前筹码领先者（CL）的一半，剩余 ${heroRebuysLeft(game)} 次`
+          : '',
       rebuying: !!rebuying,
       heroStackFinal: format(hero.stack),
-      rebuyBurst: rebuying ? `+${format(game.stakes.startingStack)}` : '',
+      rebuyBurst: rebuying ? `+${format(rebuying.added)}` : '',
       nextLabel: game.over ? '下一局' : needsHeroRebuy(game) ? '补充筹码' : '下一手',
       premium,
       ceremony: ceremony ? { ...ceremony } : null,
       confetti,
       farewell: farewell ? { ...farewell } : null,
+      tableNotices: tableNotice ? [{ ...tableNotice }] : [],
+      noticeHold,
       crownPending: !!ceremony,
       heroCrowned: crowned === 0,
       heroOut: !!hero.out,
@@ -531,6 +589,8 @@ export function createWechatController({
       })),
       heroStack: rebuying ? format(rebuying.shown) : format(hero.stack),
       startingStackText: format(settings.stakes.startingStack),
+      entryStructure: blindStructureText(game.stakes, game.players.length, format),
+      stakesStructure: blindStructureText(settings.stakes, settings.playerCount, format).settings,
       blindText: `${format(game.smallBlind)} / ${format(game.bigBlind)}`,
       configuredSmallBlindText: format(settings.stakes.smallBlind),
       configuredBigBlindText: format(settings.stakes.bigBlind),
@@ -724,28 +784,34 @@ export function createWechatController({
     if (tutorial?.guided()) {
       const delay = tutorial.autoDelay();
       if (delay === null) return;
-      timer = schedule(() => {
-        timer = null;
-        if (disposed || !active || ticket !== epoch || !tutorial?.guided()) return;
-        const beat = tutorial.runAuto();
-        effect(beat.kind === 'bot' ? beat.action : beat.kind);
-        if (beat.win) effect('win');
-        render();
-        if (beat.kind === 'bot' && !['fold', 'check'].includes(beat.action)) wager(beat.id);
-        driveBots();
-      }, delay);
+      timer = schedule(
+        () => {
+          timer = null;
+          if (disposed || !active || ticket !== epoch || !tutorial?.guided()) return;
+          const beat = tutorial.runAuto();
+          effect(beat.kind === 'bot' ? beat.action : beat.kind);
+          if (beat.win) effect('win');
+          render();
+          if (beat.kind === 'bot' && !['fold', 'check'].includes(beat.action)) wager(beat.id);
+          driveBots();
+        },
+        Math.max(delay, readingHold()),
+      );
       return;
     }
     if (game.phase === 'idle' || game.phase === 'done' || (tutorial && !tutorial.playing())) return;
     if (game.phase === 'between') {
-      timer = schedule(() => {
-        timer = null;
-        if (disposed || !active || ticket !== epoch || game.phase !== 'between') return;
-        advanceStreet(game);
-        effect(game.phase === 'done' ? 'win' : 'deal');
-        render();
-        driveBots();
-      }, 850);
+      timer = schedule(
+        () => {
+          timer = null;
+          if (disposed || !active || ticket !== epoch || game.phase !== 'between') return;
+          advanceStreet(game);
+          effect(game.phase === 'done' ? 'win' : 'deal');
+          render();
+          driveBots();
+        },
+        Math.max(850, readingHold()),
+      );
       return;
     }
     if (game.phase !== 'playing' || game.actor <= 0) return;
@@ -771,11 +837,15 @@ export function createWechatController({
           if (game.players[id].total > contribution) wager(id);
           driveBots();
         },
-        Math.max(0, plan.delayMs - (Date.now() - started)),
+        Math.max(0, plan.delayMs - (Date.now() - started), readingHold()),
       );
     }, 0);
   }
-  function freshHand({ refilled = false } = {}) {
+  // Web holds the same way: a fresh coach message is read before the table moves.
+  function readingHold() {
+    return tutorial ? tutorial.readingHold(Date.now()) : 0;
+  }
+  function freshHand({ refilled = false, added = 0 } = {}) {
     if (readOnlyAttempt || disposed || tutorial) return;
     playerObservations?.capture(game);
     dealGate.cancel();
@@ -801,23 +871,26 @@ export function createWechatController({
     game.difficulty = settings.difficulty;
     applyBotSettings(game, settings);
     startHand(game);
-    dealGate.begin();
+    const hold = playTableNotices();
+    dealGate.begin(hold);
     records?.begin(game, { newSession });
     newSession = false;
     raiseTo = game.bigBlind * 3;
     // The first paint of a refilled hand already starts the count from zero.
-    if (refilled) countRefill();
+    if (refilled) countRefill(added);
     render();
-    effect('deal');
-    premiumDeal();
+    if (!hold) {
+      effect('deal');
+      premiumDeal();
+    }
     driveBots();
   }
   // Count the refilled stack up from zero while the new hand is played, with
   // the same ten values and timing as Web. The page lays out the final value
   // and draws the count over it, so the row beside it stays still.
-  function countRefill() {
+  function countRefill(added) {
     const values = refillCountValues(game.players[0].stack);
-    rebuying = { shown: 0 };
+    rebuying = { shown: 0, added };
     values.forEach((value, index) =>
       later(
         () => {
@@ -837,7 +910,8 @@ export function createWechatController({
   function refillAndDeal() {
     if (!needsHeroRebuy(game) || !heroRebuysLeft(game)) return false;
     rebuyHero(game);
-    freshHand({ refilled: true });
+    // Half the chip leader, measured before this hand's blinds are posted.
+    freshHand({ refilled: true, added: game.players[0].stack });
     return true;
   }
   function setStakes(value) {
@@ -1064,12 +1138,15 @@ export function createWechatController({
       hintKey = '';
       records?.capture(game);
       restartHand(game);
-      dealGate.begin();
+      const hold = playTableNotices();
+      dealGate.begin(hold);
       records?.begin(game);
       raiseTo = game.bigBlind * 3;
       render();
-      effect('deal');
-      premiumDeal();
+      if (!hold) {
+        effect('deal');
+        premiumDeal();
+      }
       driveBots();
       return true;
     },

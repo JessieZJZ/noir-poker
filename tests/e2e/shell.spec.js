@@ -236,7 +236,7 @@ test('desktop actions keep one-line labels and aligned button rows before and af
   }
 });
 
-test('a retry shows no explanation strip, the hint takes its row and practice details follow the table', async ({
+test('retry stays beside the hand above tips while blind progress stays right', async ({
   page,
 }) => {
   for (const width of [1101, 1280, 1700]) {
@@ -244,8 +244,9 @@ test('a retry shows no explanation strip, the hint takes its row and practice de
     await page.evaluate(() => window.qa.foldWin(9));
     await page.locator('#restart-hand-button').click();
     await page.evaluate(() => window.qa.stop());
-    // The retry is named by the hand label's tag; no explanation strip remains.
+    // The original badge stays in the hand row, without a close action.
     await expect(page.locator('#replay-note')).toHaveCount(0);
+    await expect(page.locator('#dismiss-replay')).toHaveCount(0);
     await expect(page.locator('#replay-label')).toBeVisible();
     await expect
       .poll(() =>
@@ -260,14 +261,13 @@ test('a retry shows no explanation strip, the hint takes its row and practice de
           const surface = box('.game-surface');
           const activity = document.querySelector('#activity-list');
           const issues = [];
-          // The hint row below the hand label spans the whole header width.
-          const pad = getComputedStyle(header);
-          const row =
-            header.getBoundingClientRect().width -
-            parseFloat(pad.paddingLeft) -
-            parseFloat(pad.paddingRight);
-          if (hint.width && Math.abs(hint.width - row) > 1)
-            issues.push('hint does not take the full header row');
+          const blinds = box('.blind-info'),
+            retry = box('#replay-label'),
+            progress = box('#blind-progress');
+          if (hint.width && hint.right > progress.left) issues.push('tip overlaps blind progress');
+          if (retry.left < hand.left || retry.right > hand.right || retry.right > blinds.left)
+            issues.push('retry leaves the original hand row');
+          if (hint.width && retry.bottom > hint.top + 1) issues.push('retry overlaps tip');
           if (hint.width && hint.top < hand.bottom) issues.push('hint overlaps the hand label');
           if (hint.bottom > table.top) issues.push('hint covers the table');
           if (sidebar.top < surface.bottom || sidebar.top - surface.bottom > 20)

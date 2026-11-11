@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { act, advanceStreet, potSize } from '../../src/engine/poker.js';
+import { act, advanceStreet, newGame, potSize } from '../../src/engine/poker.js';
 import { visibleRecentAction, renderSeatAction } from '../../src/ui/table-scene.js';
 import { checkedSeatGame } from '../fixtures/checked-actions.js';
 
@@ -48,4 +48,12 @@ test('a check clears only at the next street and cannot replace a later fold', (
   while (game.actor !== 1) act(game, game.actor, 'call');
   act(game, 1, 'fold');
   assert.match(renderSeatAction(game, game.players[1]), />弃牌</);
+});
+
+test('before the first deal, seats that left the game read as out, not seated', () => {
+  const game = newGame(6);
+  Object.assign(game.players[3], { out: true, stack: 0, place: 6 });
+  assert.equal(game.phase, 'idle');
+  assert.match(renderSeatAction(game, game.players[3]), />已出局</);
+  assert.match(renderSeatAction(game, game.players[2]), />已就位</);
 });

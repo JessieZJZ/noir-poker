@@ -35,10 +35,11 @@ export function createDealGate({
     get pending() {
       return pending;
     },
-    begin() {
+    // `holdMs` covers table notices shown before the cards are dealt.
+    begin(holdMs = 0) {
       clear();
       pending = true;
-      remaining = DEAL_PRESENTATION_MS;
+      remaining = DEAL_PRESENTATION_MS + Math.max(0, holdMs);
       arm();
     },
     setActive(value) {

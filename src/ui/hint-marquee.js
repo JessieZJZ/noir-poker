@@ -89,7 +89,7 @@ export function createHintMarquee(element, textElement, compact) {
     onBlur = () => (focused = false),
     onDown = () => (touching = true),
     onUp = () => (touching = false);
-  const onLocale = () => refresh();
+  const onLocale = () => refresh(true);
   document.addEventListener('noir:locale-changed', onLocale);
   motion.addEventListener('change', onMotion);
   element.addEventListener('pointerenter', onEnter);

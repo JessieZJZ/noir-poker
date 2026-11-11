@@ -56,7 +56,7 @@ for (const [width, height] of sizes) {
                 const r = el.getBoundingClientRect(),
                   p = el.closest('.seat-profile').getBoundingClientRect();
                 return (
-                  el.textContent === el.dataset.fullName &&
+                  el.textContent === el.dataset.styleTag &&
                   el.scrollWidth <= el.clientWidth + 1 &&
                   el.scrollHeight <= el.clientHeight + 1 &&
                   r.left >= p.left - 1 &&
@@ -151,6 +151,9 @@ test('localized styles fit one line completely and holding a label never opens a
       el.value = value;
       el.dispatchEvent(new Event('change'));
     }, locale);
+    await expect(page.locator('html')).toHaveAttribute('lang', locale);
+    await page.evaluate(() => document.fonts.ready);
+    await expect(page.locator('#seats .seat-style-label').first()).toBeVisible();
     await expect.poll(() => page.evaluate(styleTagFailures)).toEqual([]);
   }
   const box = await page.locator('#seats .seat-style-label').first().boundingBox();
