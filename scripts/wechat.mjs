@@ -1,7 +1,7 @@
 import { soundSamples, SOUND_SAMPLE_RATE } from '../src/ui/sound-cues.js';
 import { MOBILE_BACKGROUND_MUSIC_PATH } from '../src/ui/background-music.js';
 import { CHEER_FILES } from '../src/ui/ceremony-sounds.js';
-import { watch } from 'node:fs';
+import { statSync, watch } from 'node:fs';
 import { cp, mkdir, open, readFile, readdir, rename, rm, stat, writeFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
@@ -635,8 +635,21 @@ async function watchWechat() {
     'package-lock.json',
     'vite.config.js',
     'capacitor.config.json',
-  ])
-    watchers.push(watch(path.join(root, file), changed));
+  ]) {
+    // macOS reports a single-file watch event when the build merely reads the
+    // file (its access time changes). Rebuild only for a real modification,
+    // otherwise every build would trigger the next one.
+    const target = path.join(root, file);
+    let modified = statSync(target).mtimeMs;
+    watchers.push(
+      watch(target, () => {
+        const now = statSync(target, { throwIfNoEntry: false })?.mtimeMs;
+        if (now === modified) return;
+        modified = now;
+        changed();
+      }),
+    );
+  }
   const close = () => {
     clearTimeout(debounce);
     for (const watcher of watchers) watcher.close();

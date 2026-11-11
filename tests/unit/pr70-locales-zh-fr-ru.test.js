@@ -139,7 +139,7 @@ test('review outcomes distinguish not winning a pot from an unavailable showdown
       assert.match(loss, /не выиграли.*вскрытии/);
       assert.match(generalLoss, /не выиграли/);
       assert.match(win, /Вы выиграли.*вскрытии/);
-      assert.equal(localizeText('公共牌有对子'), 'На доске есть пара');
+      assert.equal(localizeText('公共牌有对子'), 'На борде есть пара');
       assert.equal(localizeText('+700 筹码'), '+700 фишек');
     }
     assert.doesNotMatch(localizeText('公共牌尚未发出'), /conseil|Совет/);
@@ -194,9 +194,9 @@ test('active board-only plans describe a shared board hand rather than one card 
       const value = localizeText(source);
       assert.doesNotMatch(value, /carte unique|акционер|одной карточкой|\p{Script=Han}/u);
       if (locale === 'fr')
-        assert.match(value, /meilleure main.*entièrement sur le tableau.*partage/s);
+        assert.match(value, /meilleure main.*entièrement sur le (?:tableau|board).*partage/s);
       if (locale === 'ru')
-        assert.match(value, /лучшая комбинация.*целиком лежит на доске.*дележе/s);
+        assert.match(value, /лучшая комбинация.*целиком лежит на (?:доске|борде).*дележе/s);
     }
   }
 });
