@@ -159,7 +159,8 @@
               <span class="session-label" id="session-number-label">第 1 局</span><span>·</span>
               <i class="hand-prefix">第</i> <b id="hand-number">01</b> <i class="hand-suffix">手</i>
               <span id="street-divider">·</span> <span id="street-label">准备发牌</span
-              ><span id="replay-label" class="replay-label" hidden></span
+              ><span id="replay-label" class="replay-label" hidden
+                ><span id="replay-attempt"></span></span
               ><span id="entry-structure" class="entry-structure"
                 ><span id="entry-structure-levels">每 10 手涨盲，最高 1.5K / 3K</span
                 ><span aria-hidden="true"> · </span
@@ -167,19 +168,24 @@
               >
             </div>
             <div class="blind-info">盲注 <b id="blind-values">100 / 200</b></div>
-            <section
-              class="hint-banner"
-              id="coach-content"
-              aria-label="牌桌提示"
-              tabindex="0"
-              role="status"
-              aria-live="polite"
-              aria-atomic="true"
-              hidden
-            >
-              <span class="sr-only" id="coach-stage">翻牌前策略</span>
-              <p id="coach-tip"></p>
-            </section>
+            <div class="surface-bottom">
+              <div class="table-notices">
+                <section
+                  class="hint-banner"
+                  id="coach-content"
+                  aria-label="牌桌提示"
+                  tabindex="0"
+                  role="status"
+                  aria-live="polite"
+                  aria-atomic="true"
+                  hidden
+                >
+                  <span class="sr-only" id="coach-stage">翻牌前策略</span>
+                  <p id="coach-tip"></p>
+                </section>
+              </div>
+              <span id="blind-progress" class="blind-progress" hidden></span>
+            </div>
           </div>
           <div class="table-viewport" aria-label="牌桌">
             <div class="arena" id="arena">
@@ -533,7 +539,8 @@
             <div>
               <span id="stakes-label">起始盲注</span>
               <p id="stakes-description" class="setting-description">
-                点击小盲修改，大盲为小盲的两倍。<span id="stakes-structure"
+                点击小盲修改，大盲为小盲的两倍。
+                <span id="stakes-structure"
                   >每 10 手升一级，最高 1.5K / 3K，剩 3 人进入决赛圈。</span
                 >
               </p>
@@ -665,6 +672,7 @@
         </div>
         <details class="profile-comparison">
           <summary>查看训练参数对比</summary>
+          <div class="profile-scroll-note" role="note" hidden>左右滑动查看完整参数</div>
           <div id="profile-comparison" class="profile-comparison-scroll"></div>
           <p>
             入池宽度影响起手牌范围；进攻与诈唬影响适合场景的加注概率；跟到底影响边缘跟注；强牌诱导只在安全牌面提高慢打倾向。位置、人数、牌力与合法动作优先于风格。
@@ -1037,7 +1045,7 @@
           </p>
         </div>
         <p>
-          牌桌提示提供当前阶段的简短练习提醒。宽屏在右侧提示卡上开关；窄屏在设置中开关，提醒出现在盲注下方，可左右滑动阅读，几秒后收起。声音也可在设置中开关。所有设置保存在此设备，重打保留原来的对手风格与情绪。
+          牌桌提示提供当前阶段的简短练习提醒。宽屏在右侧提示卡上开关；窄屏在设置中开关，提醒出现在牌桌左上方，可左右滑动阅读，几秒后收起。声音也可在设置中开关。所有设置保存在此设备，重打保留原来的对手风格与情绪。
         </p>
         <details open>
           <summary>认识训练风格</summary>
@@ -1189,7 +1197,8 @@
               <b>CL（筹码领先者）</b
               ><span
                 >chip leader 的缩写，指当前仍在桌上、筹码最多的玩家。CL
-                会随每手结算变化；你输光后补码，补到 CL 筹码的一半。</span
+                会随每手结算变化；决赛圈前，输光后每局最多可补码三次，每次补到当时 CL
+                筹码的一半；决赛圈不可补码。</span
               >
             </div>
             <div>
@@ -1351,7 +1360,12 @@
       <div id="pot-dialog-content"></div>
       <button class="primary-button close-dialog">回到牌桌</button>
     </dialog>
-    <dialog id="review-dialog" class="review-dialog" aria-labelledby="review-dialog-title">
+    <dialog
+      id="review-dialog"
+      class="review-dialog"
+      aria-labelledby="review-dialog-title"
+      data-i18n-chips
+    >
       <div class="dialog-header">
         <span class="eyebrow">HAND REVIEW</span
         ><button class="icon-button close-dialog" aria-label="关闭复盘">

@@ -2,6 +2,7 @@ import { evaluate, seatPosition, currentPots } from '../engine/poker.js';
 import { compactActionAmounts } from '../engine/chip-format.js';
 import { getBotProfile, MOOD_LABELS } from '../engine/bot-profiles.js';
 import {
+  getLocale,
   formatChips,
   setLocalizedText,
   setLocalizedHTML,
@@ -12,6 +13,7 @@ import { renderCard } from './cards.js';
 import { portraitContent } from './portraits.js';
 import { SEAT_ANCHORS } from './seat-geometry.js';
 import { visibleRecentAction } from './recent-action.js';
+import { blindProgressText } from './effect-layouts.js';
 export { visibleRecentAction } from './recent-action.js';
 const escape = (value) =>
   String(value)
@@ -89,7 +91,9 @@ export function renderSeatAction(g, p, { recent = false, dealing = false } = {})
     (match[2] === '跟注'
       ? `本次补入 ${format(amount)}，本轮累计投入 ${format(retained?.bet ?? p.bet)}`
       : `${compactActionAmounts(action)} · 本轮累计投入 ${format(amount)}`);
-  return `<span class="seat-action-label">${label}</span><strong class="seat-action-amount" title="${escape(meaning)}">${format(amount)}</strong>`;
+  const compactBlind = getLocale() === 'en' && (label === '小盲' || label === '大盲');
+  const displayLabel = compactBlind ? (label === '小盲' ? 'SB' : 'BB') : label;
+  return `<span class="seat-action-label"${compactBlind ? ` aria-label="${label}" title="${label}"` : ''}>${displayLabel}</span><strong class="seat-action-amount" title="${escape(meaning)}">${format(amount)}</strong>`;
 }
 
 // Live and archived tables share the complete seat structure and action layout.
@@ -118,7 +122,7 @@ export function renderOpponentSeats(
         [x, y] = SEAT_ANCHORS[count][p.id - 1];
       const rankMarkup =
         rank || winner
-          ? `<div class="hand-rank ${winner ? 'rank-winner winner-indicator' : ''}"${winner ? ` aria-label="${escape(p.name)} 获得底池 ${format(winner.amount)} 筹码" title="${escape(winner.label)} · 获得 ${format(winner.amount)} 筹码"` : ''}>${winner ? winnerIcon : ''}${rank?.label ?? '获胜'}</div>`
+          ? `<div class="hand-rank ${winner ? 'rank-winner winner-indicator' : ''}"${winner ? ` aria-label="${escape(p.name)} 获得底池 ${format(winner.amount)} 筹码" title="${escape(winner.label)} · 获得 ${format(winner.amount)} 筹码"` : ''}>${winner ? winnerIcon : ''}<span class="seat-rank-label">${rank?.label ?? '获胜'}</span></div>`
           : '';
       const profile = getBotProfile(p.botProfile),
         mood = g.emotionMode === 'off' ? 'steady' : p.botMood.kind,
@@ -174,7 +178,10 @@ export function createSnapshotSurface(template, g, { sessionNumber, visible, pee
   query('#street-divider').remove();
   setLocalizedText(query('#blind-values'), `${format(g.smallBlind)} / ${format(g.bigBlind)}`);
   query('#replay-label').hidden = !g.replayAttempt;
-  setLocalizedText(query('#replay-label'), '重打 ' + (g.replayAttempt || 0));
+  setLocalizedText(query('#replay-attempt'), '重打 ' + (g.replayAttempt || 0));
+  const progress = blindProgressText(g, format);
+  query('#blind-progress').hidden = !progress;
+  setLocalizedText(query('#blind-progress'), progress);
   if (query('#coach-content')) query('#coach-content').hidden = true;
   setLocalizedHTML(
     query('.seats'),

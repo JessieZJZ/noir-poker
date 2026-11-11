@@ -215,7 +215,7 @@ test('fraction rounding reads the denomination and display preserves every chip 
     [-15000, '-15K'],
   ])
     assert.equal(compactChips(n), s);
-  assert.equal(compactChips(1100, 'de'), '1,1K');
+  assert.equal(compactChips(1100, 'de'), '1.1K');
   assert.equal(compactActionAmounts('你 2-bet 全下至 15000'), '你 2-bet 全下至 15K');
   assert.equal(
     compactActionAmounts('Kai 小盲 500000 · River 大盲 1000000'),

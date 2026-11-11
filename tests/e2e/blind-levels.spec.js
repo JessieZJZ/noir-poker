@@ -37,10 +37,13 @@ test('a new level and the final table are announced at the centre before the car
   await page.goto('/');
   await page.waitForFunction(() => !!window.qa);
   await page.evaluate(() => window.qa.noticeHand({ count: 7, final: true }));
-  const notice = page.locator('.table-notice-stage');
-  await expect(notice).toHaveCount(1);
-  await expect(notice).toContainText('进入决赛圈');
-  await expect(notice).toContainText('剩余 3 人争夺冠军 · 不能再补码');
+  const notices = page.locator('.table-notice-stage');
+  const finalNotice = notices.filter({ hasText: '进入决赛圈' });
+  const blindNotice = notices.filter({ hasText: '盲注升至 200 / 400' });
+  await expect(notices).toHaveCount(1);
+  await expect(finalNotice).toContainText('进入决赛圈');
+  await expect(finalNotice).toContainText('剩余 3 人争夺冠军 · 不能再补码');
+  await expect(blindNotice).toHaveCount(0);
   // The cards wait under the notice; the blinds already show the new level.
   await expect(page.locator('.game-surface')).toHaveClass(/notice-hold/);
   await expect(page.locator('.hero-cards-wrap')).toHaveCSS('visibility', 'hidden');
@@ -50,11 +53,12 @@ test('a new level and the final table are announced at the centre before the car
     body: await page.screenshot(),
     contentType: 'image/png',
   });
-  await expect(notice).toContainText('盲注升至 200 / 400', { timeout: 3000 });
-  await expect(notice).toContainText('每 10 手升一级');
+  // Both stages can briefly coexist while one fades out and the next fades in.
+  await expect(blindNotice).toContainText('盲注升至 200 / 400', { timeout: 3000 });
+  await expect(blindNotice).toContainText('每 10 手升一级');
   // Nobody acts while the notices play.
   await expect(page.locator('.game-surface')).toHaveAttribute('data-entry-state', 'dealing');
-  await expect(notice).toHaveCount(0, { timeout: 4000 });
+  await expect(notices).toHaveCount(0, { timeout: 4000 });
   await expect(page.locator('.game-surface')).not.toHaveClass(/notice-hold/);
   await expect(page.locator('.hero-cards-wrap')).toHaveCSS('visibility', 'visible');
   await expect(page.locator('.hero-cards-wrap .playing-card.card-deal')).toHaveCount(2);

@@ -21,6 +21,7 @@
 /* The blind values sit level with the 起始盲注 title, like the other
    controls beside their titles, instead of centring on the description. */
 .settings-module .stakes-setting-row {
+  margin-block-start: 8px;
   align-items: flex-start;
 }
 .stakes-setting-row > div:first-child {
@@ -34,8 +35,6 @@
   display: flex;
   align-items: center;
   flex: none;
-  /* Centre the 36px box on the title's line. */
-  margin-top: -6px;
   /* Stays at the right edge with the other controls, also when it wraps, and
      takes the selects' column width so the small blind starts where they do. */
   box-sizing: border-box;

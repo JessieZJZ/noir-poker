@@ -134,6 +134,22 @@
   }
 }
 
+/* Medium landscape keeps a 126px live dock, so the waiting card has 108px
+   beneath the table's 18px gap. Tighten its spacing, not its type, so the
+   card still ends on the first screen. */
+@media (min-width: 901px) and (max-width: 1150px) and (orientation: landscape) {
+  .main > .sidebar > .game-info {
+    gap: 5px;
+    padding-block: 8px 6px;
+  }
+  .game-info .section-title h2 {
+    line-height: 1.15;
+  }
+  .game-info-stats dt {
+    line-height: 1.15;
+  }
+}
+
 /* Every page ends close to the compliance footer. */
 main.main,
 .records-page,

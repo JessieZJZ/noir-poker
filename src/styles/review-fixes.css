@@ -1,0 +1,178 @@
+/* Keep the original inline replay badge beside the hand, before the blinds.
+   Session, street and hand-prefix text may shrink; the number and badge stay visible. */
+.game-surface:not([data-entry-state='waiting']) .surface-top .hand-label {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  white-space: nowrap;
+}
+/* The label box still fills the row so it stays centred on the blinds. Its
+   bottom padding leaves the live flex content one line tall at the waiting
+   first line's top, so centring the parts cannot move the text on joining. */
+.game-surface:not([data-entry-state='waiting']) .surface-top .hand-label:not([data-replay-wrap]) {
+  padding-bottom: max(
+    0px,
+    calc(
+      max(var(--hand-row), var(--entry-hand-row, 0px)) - 1.2em -
+        max(0px, calc((var(--hand-row) - 1.2em) / 2))
+    )
+  );
+}
+.game-surface:not([data-entry-state='waiting']) .hand-label > .hand-suffix,
+.game-surface:not([data-entry-state='waiting']) .hand-label > b,
+.game-surface:not([data-entry-state='waiting']) .hand-label > .replay-label {
+  flex: none;
+}
+.game-surface:not([data-entry-state='waiting']) .hand-label > .session-label,
+.game-surface:not([data-entry-state='waiting']) .hand-label > .hand-prefix,
+.game-surface:not([data-entry-state='waiting']) .hand-label > #street-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.game-surface:not([data-entry-state='waiting']) .hand-label > .session-label {
+  flex: 0 1 auto;
+  margin: 0;
+}
+.game-surface:not([data-entry-state='waiting']) .hand-label > #street-label,
+.game-surface:not([data-entry-state='waiting']) .hand-label > .hand-prefix {
+  flex: 0 1 auto;
+}
+/* Retry keeps all labels readable beside the gold badge. Only the narrowest
+   widths wrap the label group after compact type and spacing are exhausted. */
+html:not([lang^='zh'])
+  .game-surface:not([data-entry-state='waiting'])
+  .hand-label:has(.replay-label:not([hidden])) {
+  font-size: var(--replay-header-size, var(--table-header-font));
+  column-gap: 2px;
+  row-gap: 2px;
+  overflow: visible;
+}
+html:not([lang^='zh'])
+  .game-surface:not([data-entry-state='waiting'])
+  .hand-label:has(.replay-label:not([hidden]))
+  > :is(#street-label, .session-label, .hand-prefix) {
+  flex: none;
+  overflow: visible;
+  text-overflow: clip;
+}
+html:not([lang^='zh']) .game-surface .hand-label[data-replay-wrap] {
+  flex-wrap: wrap;
+}
+html:not([lang^='zh']) .game-surface .hand-label:has(.replay-label:not([hidden])) > .replay-label {
+  margin-inline-start: 4px;
+  font-size: max(10px, 0.75em);
+}
+.main .game-surface > .surface-top:has(.hand-label[data-replay-wrap]) {
+  grid-template-rows: minmax(var(--hand-row), auto) var(--hint-row);
+}
+/* The second row keeps its existing height. Countdown width follows its text;
+   the hint gets every remaining pixel, with just one gap between the two. */
+.surface-bottom {
+  grid-area: 2 / 1 / 3 / -1;
+  display: flex;
+  min-height: 22px;
+  min-width: 0;
+  align-items: center;
+  gap: 6px;
+}
+.game-surface > .surface-top .blind-progress {
+  flex: 0 1 auto;
+  min-width: 0;
+  width: max-content;
+  max-width: 60%;
+  font-size: 10px;
+  line-height: 1.1;
+  color: #bca77c;
+  text-align: right;
+  white-space: normal;
+}
+.table-notices {
+  flex: 1 1 0;
+  display: flex;
+  min-width: 0;
+  align-items: center;
+}
+.table-notices .hint-banner {
+  flex: 1 1 0;
+  width: 0;
+}
+/* Prefer whole words over cramped translated headings. The table advertises
+   horizontal scrolling by keeping a readable minimum column width. */
+.profile-comparison table {
+  min-width: 690px;
+}
+.profile-comparison .profile-scroll-note {
+  color: #9bbdb0;
+  font-size: 12px;
+}
+.profile-comparison th {
+  word-break: normal;
+  overflow-wrap: normal;
+  hyphens: auto;
+}
+html[lang='ja'] .profile-comparison th,
+html[lang='ko'] .profile-comparison th {
+  word-break: keep-all;
+}
+/* Translated controls may use two lines inside their existing hit targets.
+   The measured fallback reduces only labels which still do not fit. */
+.game-surface .action-panel button,
+.header-actions button:not(#rules-button),
+.dialog-actions button,
+.win-rate-actions button,
+.win-rate-picker-actions button {
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: normal;
+  text-wrap: balance;
+  line-height: 1.12;
+}
+.game-surface .action-panel .action {
+  flex-wrap: wrap;
+  row-gap: 0;
+}
+.game-surface .action-panel .action strong {
+  white-space: nowrap;
+}
+.game-surface .next-button.has-mobile-label::after {
+  white-space: normal;
+  line-height: 1.12;
+}
+.game-surface .action-panel button[data-label-fit]:not(.has-mobile-label),
+.header-actions button[data-label-fit],
+.dialog-actions button[data-label-fit],
+.win-rate-actions button[data-label-fit],
+.win-rate-picker-actions button[data-label-fit] {
+  font-size: var(--button-label-font-size);
+}
+.game-surface .action-panel button[data-label-fit] span,
+.game-surface .action-panel button[data-label-fit] strong,
+.game-surface .next-button.has-mobile-label[data-label-fit]::after {
+  font-size: var(--button-label-font-size);
+  line-height: 1.12;
+}
+/* Android WebView can reuse compressed rasters for repositioned hero text.
+   Keep identity, recent action and the settlement rank on their own layers
+   so the glyphs retain their proportions as the table is scaled or moved. */
+.native-android .hero-identity,
+.native-android .hero-identity strong,
+.native-android .hero-identity .hero-stack,
+.native-android .hero-action-slot,
+.native-android .hero-last-action,
+.native-android .hero-last-action > *,
+.native-android .hero-rank-slot,
+.native-android .hero-hand-rank,
+.native-android .hero-hand-rank > * {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+@media (min-width: 601px) {
+  .game-surface > .surface-top .blind-progress {
+    font-size: clamp(13px, 1.4vw, 16px);
+  }
+  .main .game-surface > .surface-top {
+    --hint-row: 34px;
+  }
+}

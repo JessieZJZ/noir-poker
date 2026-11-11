@@ -11,6 +11,7 @@ import {
   heroRebuysLeft,
   needsHeroRebuy,
   MAX_HERO_REBUYS,
+  deckOfCards,
 } from '../../src/engine/poker.js';
 import {
   blindLevels,
@@ -128,25 +129,72 @@ test('the hero may refill before the final table but is eliminated at it', () =>
   startHand(g);
   assert.equal(g.finalTable, false);
   foldOut(g);
+  g.players[1].stack += g.players[0].stack;
   g.players[0].stack = 0;
-  g.players[1].stack += 0;
   assert.ok(needsHeroRebuy(g));
   assert.equal(heroRebuysLeft(g), MAX_HERO_REBUYS);
+  const beforeRefill = g.players.reduce((sum, p) => sum + p.stack, 0);
   rebuyHero(g);
+  assert.equal(g.rebuys, 1);
+  assert.equal(
+    g.players.reduce((sum, p) => sum + p.stack, 0),
+    beforeRefill + g.players[0].stack,
+  );
   // At the final table a hero who loses every chip leaves, refills unused.
   const f = newGame(5);
   for (const p of f.players.slice(2)) Object.assign(p, { out: true, stack: 0, place: 3 });
+  const chips = f.players.reduce((sum, p) => sum + p.stack, 0);
   startHand(f);
   assert.equal(f.finalTable, true);
   assert.throws(() => rebuyHero(f), /决赛圈/);
-  // Shove everything; whoever loses ends the game.
+  // A dry K-9-4-3-Q runout makes the hero's 7-2 lose to aces, never a split.
+  const deck = deckOfCards(),
+    card = (rank, suit) => deck.find((c) => c.rank === rank && c.suit === suit),
+    board = [card(13, 2), card(9, 3), card(4, 0), card(3, 1), card(12, 2)];
+  f.players[0].hole = [card(7, 2), card(2, 3)];
+  f.players[1].hole = [card(14, 0), card(14, 1)];
+  const used = new Set([...f.players.flatMap((p) => p.hole), ...board].map((c) => c.key)),
+    rest = deck.filter((c) => !used.has(c.key)),
+    burns = rest.splice(0, 3);
+  // The engine pops one burn then the street's cards from the end of the deck.
+  f.deck = [
+    ...rest,
+    board[4],
+    burns[2],
+    board[3],
+    burns[1],
+    board[2],
+    board[1],
+    board[0],
+    burns[0],
+  ];
+  const completeDeal = [...f.players.flatMap((p) => p.hole), ...f.deck];
+  assert.equal(completeDeal.length, 52);
+  assert.equal(new Set(completeDeal.map((c) => c.key)).size, 52);
   while (f.phase !== 'done') {
     if (f.phase === 'between') advanceStreet(f);
     else if (f.actor === 0) act(f, 0, 'raise', f.players[0].stack + f.players[0].bet);
     else act(f, f.actor, 'call');
   }
-  assert.ok(f.over);
+  assert.deepEqual(f.board, board);
+  assert.equal(f.showdown, true);
+  assert.equal(f.potAtShowdown, chips);
+  assert.deepEqual(
+    f.winners.map((p) => p.id),
+    [1],
+  );
+  assert.equal(f.players[0].stack, 0);
+  assert.equal(f.players[0].out, true);
+  assert.equal(f.rebuys, 0);
+  assert.equal(heroRebuysLeft(f), 0);
+  assert.equal(needsHeroRebuy(f), false);
+  assert.throws(() => rebuyHero(f), /决赛圈/);
+  assert.deepEqual(f.over, { heroPlace: 2, championId: 1 });
   assert.equal(f.players.filter((p) => !p.out).length, 1);
+  assert.equal(
+    f.players.reduce((sum, p) => sum + p.stack, 0),
+    chips,
+  );
 });
 
 test('stages follow the seats left: bubble one seat before the final table, heads-up last', () => {

@@ -21,6 +21,7 @@ import {
 } from './table-scene.js';
 import {
   localizeText,
+  getLocale,
   formatChips,
   setLocalizedText,
   setLocalizedHTML,
@@ -82,7 +83,12 @@ import {
 } from './bet-sizing.js';
 import { chipUnitOf, legalRaiseTo } from '../engine/bet-sizing.js';
 import { createSettlementLayout } from './settlement-layout.js';
-import { TABLE_NOTICE_MS, tableNoticeText, blindStructureText } from './effect-layouts.js';
+import {
+  TABLE_NOTICE_MS,
+  tableNoticeText,
+  blindStructureText,
+  blindProgressText,
+} from './effect-layouts.js';
 import { createPlayViewport } from './play-viewport.js';
 import { attachRaisePointer } from './raise-pointer.js';
 import { readPlayViewport } from './stable-viewport.js';
@@ -105,9 +111,13 @@ let dealWait = null;
 const $ = (s) => document.querySelector(s);
 const coachContent = $('#coach-content');
 const settlementLayout = createSettlementLayout($('#arena'), { observe: false });
-document.addEventListener('noir:locale-changed', () =>
-  playViewport.update(game, game.phase === 'done'),
-);
+document.addEventListener('noir:locale-changed', () => {
+  // Format the current numeric values again; translated DOM strings retain
+  // the punctuation of the previous locale. No hand/timer/job is restarted.
+  render({ presentationOnly: true });
+  handReview.refreshLocale();
+  if (selectedPotSnapshot) renderPotDetails(currentPots(selectedPotSnapshot), selectedPotSnapshot);
+});
 const playViewport = createPlayViewport($('.game-surface'), {
   layout() {
     settlementLayout.update();
@@ -126,7 +136,9 @@ function fillWaitingInfo() {
   const spare = readPlayViewport().height - 8 - bottom;
   if (spare > 0) info.style.minHeight = `${info.offsetHeight + spare}px`;
 }
-const hintMarquee = createHintMarquee(coachContent, $('#coach-tip'), () => true);
+const hintMarquee = createHintMarquee(coachContent, $('#coach-tip'), () =>
+  document.documentElement.lang.startsWith('zh'),
+);
 const hintNotification = createHintNotification({
   publish({ visible, text, stage }) {
     $('#coach-content').hidden = !visible;
@@ -452,8 +464,8 @@ function celebrate() {
     },
   });
 }
-function render() {
-  if (!tutorial) {
+function render({ presentationOnly = false } = {}) {
+  if (!tutorial && !presentationOnly) {
     playerObservations.capture(game);
     gameRecords.capture(game);
   }
@@ -479,6 +491,9 @@ function render() {
   );
   setLocalizedText($('#table-size-label'), count + ' 人无限注');
   setLocalizedText($('#blind-values'), `${format(game.smallBlind)} / ${format(game.bigBlind)}`);
+  const progress = blindProgressText(game, format);
+  $('#blind-progress').hidden = !progress;
+  setLocalizedText($('#blind-progress'), progress);
   if (waiting) {
     const structure = blindStructureText(game.stakes, count, format);
     setLocalizedText($('#entry-structure-levels'), structure.levels);
@@ -495,7 +510,7 @@ function render() {
   setLocalizedText($('#hand-number'), waiting ? '—' : String(game.hand).padStart(2, '0'));
   setLocalizedText($('#session-number-label'), `第 ${gameRecords.sessionNumber()} 局`);
   $('#replay-label').hidden = !game.replayAttempt;
-  setLocalizedText($('#replay-label'), '重打 ' + game.replayAttempt);
+  setLocalizedText($('#replay-attempt'), '重打 ' + game.replayAttempt);
   setLocalizedText(
     $('#street-label'),
     waiting
@@ -644,17 +659,16 @@ function render() {
     setLocalizedText($('#info-winrate'), winrate);
   }
   const activityText = createActivityFormatter(game);
-  setLocalizedHTML(
-    activityList,
-    game.logs
-      .slice()
-      .reverse()
-      .map(
-        (l, i) =>
-          `<li value="${i + 1}" class="log-${l.type} ${l.player === 0 ? 'log-hero' : ''}">${activityText(l.text)}</li>`,
-      )
-      .join(''),
-  );
+  // The formatter translates each complete log before inserting actor badges.
+  // Its escaped output is already localized; do not translate it a second time.
+  activityList.innerHTML = game.logs
+    .slice()
+    .reverse()
+    .map(
+      (l, i) =>
+        `<li value="${i + 1}" class="log-${l.type} ${l.player === 0 ? 'log-hero' : ''}">${activityText(l.text)}</li>`,
+    )
+    .join('');
   setLocalizedText($('#activity-count'), game.phase === 'done' ? 'FINISHED' : 'LIVE');
   const done = game.phase === 'done';
   $('#arena').classList.toggle('is-done', done);
@@ -747,11 +761,16 @@ function render() {
       `补充至 ${refillAmount}，即当前筹码领先者（CL）的一半，剩余 ${refillsLeft} 次`,
     );
   else $('#next-button').removeAttribute('title');
-  heroTurnCue.update({
-    key: `${game.hand}:${game.replayAttempt || 0}:${game.street}:${game.history?.length || 0}`,
-    enabled: canAct,
-    active: activityClock.active && vibration,
-  });
+  // A short mobile label fits translated actions while the accessible name
+  // still says which hand/game will start. Refills retain their count label.
+  $('#next-button').classList.toggle('has-mobile-label', !refill && !getLocale().startsWith('zh'));
+  setLocalizedAttribute($('#next-button'), 'data-mobile-label', '下一步');
+  if (!presentationOnly)
+    heroTurnCue.update({
+      key: `${game.hand}:${game.replayAttempt || 0}:${game.street}:${game.history?.length || 0}`,
+      enabled: canAct,
+      active: activityClock.active && vibration,
+    });
   syncTurnAttention();
   $('#turn-prompt').hidden = !canAct;
   for (const b of [$('#fold-button'), $('#call-button')]) b.disabled = !canAct;
@@ -820,7 +839,7 @@ function render() {
   lastHand = game.hand;
   lastBoard = displayBoard.length;
   playViewport.update(game, done);
-  celebrate();
+  if (!presentationOnly) celebrate();
 }
 function updateBet() {
   $('#bet-slider').dataset.raiseTo = String(bet);
@@ -1223,7 +1242,7 @@ function renderPotDetails(details, potGame = game) {
       .map((pot) => {
         const participants = pot.eligible
           .map((id) => escapePotText(potGame.players[id].name))
-          .join('、');
+          .join(getLocale().startsWith('zh') || getLocale() === 'ja' ? '、' : ', ');
         if (done) {
           const split = pot.awards.length > 1;
           return `<section class="pot-detail-card settled-pot" data-pot-index="${pot.index}">
@@ -1232,7 +1251,10 @@ function renderPotDetails(details, potGame = game) {
         <details class="pot-distribution" data-pot-index="${pot.index}"${expanded.has(pot.index) ? ' open' : ''}><summary>查看分配详情</summary><div class="pot-distribution-body"><p>${eligibilityLabel(pot)} · 结算资格：${participants}</p><h4>本池投入</h4><ul class="pot-contribution-list">${contributions(pot)}</ul>${split ? '<p class="pot-rounding-note">零头筹码按庄家左侧顺序分配。</p>' : ''}</div></details>
       </section>`;
         }
-        return `<section class="pot-detail-card" data-pot-index="${pot.index}"><div class="pot-detail-heading"><h3>${escapePotText(pot.label)}</h3><strong>${format(pot.amount)}<span>筹码</span></strong></div><div class="pot-eligibility ${pot.eligible.includes(0) ? 'hero-eligible' : ''}">${eligibilityLabel(pot)}<span> · ${pot.eligible.length} 人</span></div><p class="pot-player-list">可争夺：${participants}</p><details class="pot-contributions"><summary>查看本池投入</summary><ul>${contributions(pot)}</ul></details></section>`;
+        const badge = pot.eligible.includes(0)
+          ? `你有资格 · 可争夺人数：${pot.eligible.length}`
+          : `${eligibilityLabel(pot)} · 可争夺人数：${pot.eligible.length}`;
+        return `<section class="pot-detail-card" data-pot-index="${pot.index}"><div class="pot-detail-heading"><h3>${escapePotText(pot.label)}</h3><strong>${format(pot.amount)}<span>筹码</span></strong></div><div class="pot-eligibility ${pot.eligible.includes(0) ? 'hero-eligible' : ''}">${escapePotText(badge)}</div><p class="pot-player-list">可争夺：${participants}</p><details class="pot-contributions"><summary>查看本池投入</summary><ul>${contributions(pot)}</ul></details></section>`;
       })
       .join('') +
       details.refunds

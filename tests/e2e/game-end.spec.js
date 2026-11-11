@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { REBUY_DURATION_MS } from '../../src/ui/effect-layouts.js';
 
 const state = (page) => page.evaluate(() => window.noir.getState());
 // Seek every running animation so frames are checked without waiting on timers.
@@ -279,6 +280,69 @@ test('busting with refills left shows the refill count, deals at once and counts
   await expect(next).toHaveAttribute('aria-label', `补充筹码，${rule}`);
   const amount = rule.match(/^补充至 ([^，]+)，/)[1];
   const hand = view.hand;
+  // Arm before the real click: protocol round trips must not consume the
+  // count-up window before the first sample. Only rAF-visible values count;
+  // the synchronous width-probing values are deliberately not sampled.
+  await page.evaluate((duration) => {
+    const result = { started: false, done: false, reason: '', samples: [] };
+    window.__refillPaintMeasurement = result;
+    let frame, deadline;
+    const finish = (reason) => {
+      result.done = true;
+      result.reason = reason;
+      cancelAnimationFrame(frame);
+      clearTimeout(deadline);
+      observer.disconnect();
+    };
+    const observer = new MutationObserver(() => {
+      if (
+        !result.started &&
+        document.querySelector('#hero-stack').classList.contains('stack-refill')
+      ) {
+        result.started = true;
+        deadline = setTimeout(() => finish('animation-did-not-finish'), duration + 1000);
+      }
+    });
+    observer.observe(document.querySelector('.hero-identity'), {
+      attributes: true,
+      characterData: true,
+      childList: true,
+      subtree: true,
+    });
+    const sample = (time) => {
+      const stack = document.querySelector('#hero-stack');
+      if (result.started && !stack.classList.contains('stack-refill')) {
+        finish('completed');
+        return;
+      }
+      if (stack.classList.contains('stack-refill')) {
+        const anchor = document.querySelector('.hero-identity > strong').getBoundingClientRect();
+        const box = stack.getBoundingClientRect(),
+          style = getComputedStyle(stack);
+        if (
+          !document.hidden &&
+          box.width > 0 &&
+          box.height > 0 &&
+          box.left >= 0 &&
+          box.right <= innerWidth &&
+          box.top >= 0 &&
+          box.bottom <= innerHeight &&
+          style.visibility === 'visible' &&
+          Number(style.opacity) > 0
+        )
+          result.samples.push({
+            time,
+            left: Math.round(anchor.left * 10) / 10,
+            text: stack.textContent,
+            stackRefill: stack.classList.contains('stack-refill'),
+            stackBounds: box.toJSON(),
+            burstText: document.querySelector('.rebuy-burst')?.textContent ?? '',
+          });
+      }
+      frame = requestAnimationFrame(sample);
+    };
+    frame = requestAnimationFrame(sample);
+  }, REBUY_DURATION_MS);
   await next.click();
   // The next hand is dealt immediately; the refill effect plays during it.
   const dealt = await state(page);
@@ -287,26 +351,26 @@ test('busting with refills left shows the refill count, deals at once and counts
   expect(dealt.rebuysLeft).toBe(1);
   expect(dealt.needsRebuy).toBe(false);
   await expect(next).toBeHidden();
-  await expect(page.locator('.rebuy-burst')).toHaveText(`+${amount}`);
   // Blinds may already be posted; the hand's starting stack is the refill.
   const refilled = (await state(page)).players[0];
   expect(refilled.stack + refilled.bet).toBe(refill);
-  await expect(page.locator('#hero-stack')).toHaveClass(/stack-refill/);
-  // The name row stays still while the stack counts up.
-  const samples = [];
-  for (let i = 0; i < 12; i++) {
-    samples.push(
-      await page.evaluate(() => {
-        const name = document.querySelector('.hero-identity > strong').getBoundingClientRect(),
-          stack = document.querySelector('#hero-stack');
-        return { left: Math.round(name.left * 10) / 10, text: stack.textContent };
-      }),
-    );
-    await page.waitForTimeout(80);
-  }
+  // The real animation must paint changing numbers without moving the name.
+  await page.waitForFunction(() => window.__refillPaintMeasurement.done);
+  const measurement = await page.evaluate(() => window.__refillPaintMeasurement);
+  expect(measurement.started).toBe(true);
+  expect(measurement.reason).toBe('completed');
+  const samples = measurement.samples;
+  expect(samples.length).toBeGreaterThan(1);
+  expect(samples.some((sample) => sample.stackRefill && sample.burstText === `+${amount}`)).toBe(
+    true,
+  );
   const lefts = samples.map((sample) => sample.left);
   expect(Math.max(...lefts) - Math.min(...lefts)).toBeLessThan(0.5);
   expect(new Set(samples.map((sample) => sample.text)).size).toBeGreaterThan(1);
+  await test.info().attach('refill-painted-samples', {
+    body: JSON.stringify(measurement, null, 2),
+    contentType: 'application/json',
+  });
   await page.screenshot({ path: test.info().outputPath('refill.png') });
   await expect(page.locator('.rebuy-burst')).toHaveCount(0, { timeout: 3000 });
   await expect(page.locator('#hero-stack')).not.toHaveClass(/stack-refill/);

@@ -56,6 +56,7 @@ export function sourceDigest() {
     'package-lock.json',
     'capacitor.config.json',
     'mobile/release.json',
+    'ios/App/App/SceneDelegate.swift',
   ]) {
     hash.update(name + '\0');
     hash.update(readFileSync(path.join(root, name)));

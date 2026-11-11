@@ -88,6 +88,10 @@ export async function loadLocale(value) {
     }
     const parts = key.split(/(\{\d+\})/);
     const slots = [];
+    const actorLog =
+      /^\{\d+\} (?:\{\d+\}-bet )?(?:弃牌|过牌|跟注|全下|下注|加注|开池|小盲|大盲|模拟状态|获得|补充|未被跟注)/.test(
+        key,
+      );
     const expression = parts
       .map((part, index) => {
         if (!/^\{\d+\}$/.test(part)) {
@@ -97,6 +101,12 @@ export async function loadLocale(value) {
           return head + loose(part) + tail;
         }
         slots.push(part);
+        // An action-log actor is a name/token, not a whole preceding clause.
+        // Otherwise "...5K，3-bet 全下至..." can be stolen by a short log
+        // template before the complete public-snapshot sentence is translated.
+        if (actorLog && index === 1)
+          return '((?:[\uE000\uE200]\\d+[\uE001\uE201]|[A-Za-z][A-Za-z0-9_-]*|你|对手)(?:（[^（）]+）)?)';
+        if (actorLog) return '([^。，；;：:]*?)';
         // A value cannot consume another complete sentence. Otherwise a short
         // amount template can accidentally swallow the following review text.
         // Adjacent final values can contain an optional lead-in and a complete
@@ -147,7 +157,7 @@ function translateCore(text, depth = 0) {
       const values = new Map(
         entry.slots.map((slot, i) => [slot, translate(match[i + 1].trim(), depth + 1)]),
       );
-      return entry.translation.replace(/\{\d+\}/g, (slot) => values.get(slot) ?? slot);
+      return interpolate(entry.translation, values);
     }
   let output = text;
   if (depth < 3)
@@ -157,15 +167,43 @@ function translateCore(text, depth = 0) {
         const values = new Map(
           entry.slots.map((slot, i) => [slot, translate(args[i + 1].trim(), depth + 1)]),
         );
-        return entry.translation.replace(/\{\d+\}/g, (slot) => values.get(slot) ?? slot);
+        return fragmentSpacing(
+          interpolate(entry.translation, values),
+          args.at(-2),
+          args.at(-1),
+          args[0].length,
+        );
       });
     }
   return phrases
-    ? output.replace(
-        phrases,
-        (match) => messages[normalized(match)] ?? spaced.get(unspaced(match)) ?? match,
-      )
+    ? output.replace(phrases, (match, offset, source) => {
+        const value = messages[normalized(match)] ?? spaced.get(unspaced(match)) ?? match;
+        return fragmentSpacing(value, offset, source, match.length);
+      })
     : output;
+}
+function fragmentSpacing(value, offset, source, length) {
+  if (locale.startsWith('zh') || locale === 'ja') return value;
+  // Only add spacing at translated fragment boundaries. Do not rewrite dots
+  // inside decimal amounts, proper names or source URLs.
+  const before = /[.!?]$/.test(source.slice(0, offset)) && /^[\p{L}\p{N}]/u.test(value);
+  const after = /[.!?]$/.test(value) && /^[\p{L}\p{N}]/u.test(source.slice(offset + length));
+  return (before ? ' ' : '') + value + (after ? ' ' : '');
+}
+function interpolate(template, values) {
+  const parts = template.split(/(\{\d+\})/).map((part) => values.get(part) ?? part);
+  return parts.reduce(
+    (text, part) =>
+      text +
+      (!locale.startsWith('zh') &&
+      locale !== 'ja' &&
+      /[.!?]$/.test(text) &&
+      /^[\p{L}\p{N}]/u.test(part)
+        ? ' '
+        : '') +
+      part,
+    '',
+  );
 }
 function translate(text, depth = 0) {
   // A public actor label is one value. Its "在 ... 位" must not be mistaken
@@ -197,7 +235,38 @@ export function localizeText(value) {
   return output;
 }
 export function formatChips(value) {
-  return compactChips(value, locale === 'en' ? 'en-US' : locale);
+  return compactChips(value);
+}
+// Generated game prose carries numeric facts and sentence fragments from the
+// engine. Format them after translation, preserving URLs and identifiers.
+export function localizeGameText(value) {
+  return localizeText(value).replace(
+    /https?:\/\/[^\s<]+|www\.[^\s<]+|(?<![\p{L}\p{N}_+.\-])[+-]?\d+\.\d+(?:[KM%]| ?BB)(?![\p{L}\p{N}_])|。/gu,
+    (token, offset, text) => {
+      if (/^(?:https?:|www\.)/.test(token)) return token;
+      if (token === '。') {
+        if (locale.startsWith('zh') || locale === 'ja') return token;
+        return '.' + (/^[\p{L}\p{N}]/u.test(text.slice(offset + 1)) ? ' ' : '');
+      }
+      // Engine percentages and BB amounts already use a decimal point. Keep
+      // their exact precision and signs when the surrounding language changes.
+      if (/%$|BB$/.test(token)) return token;
+      const unit = token.endsWith('M') ? 1000000 : 1000;
+      const amount = Number(token.slice(0, -1)) * unit;
+      const chips = Math.round(amount);
+      if (!Number.isSafeInteger(chips) || Math.abs(amount - chips) > 1e-6) return token;
+      return (token.startsWith('+') ? '+' : '') + formatChips(chips);
+    },
+  );
+}
+export function formatDecimal(value, digits = 2) {
+  // The game's numeric notation is shared by every language: decimal points
+  // and no digit grouping, so a language change never changes a number's form.
+  return new Intl.NumberFormat('en-US', {
+    useGrouping: false,
+    minimumFractionDigits: digits,
+    maximumFractionDigits: digits,
+  }).format(value);
 }
 const attributes = [
   'aria-label',
@@ -216,7 +285,10 @@ function translatedValue(records, target, key, current) {
   if (!record) records.set(target, (record = new Map()));
   const previous = record.get(key);
   const source = previous?.output === current ? previous.source : current;
-  const output = localizeText(source);
+  const element = target.nodeType === 1 ? target : target.parentElement;
+  const output = element?.closest('[data-i18n-chips]')
+    ? localizeGameText(source)
+    : localizeText(source);
   record.set(key, { source, output });
   return output;
 }

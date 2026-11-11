@@ -17,7 +17,7 @@ test('four actual equal-price limpers share one sentence and the summary omits g
   const text = summary(review);
   assert.match(text, /你在 UTG 位、Mia 在 LJ 位、Alex 在 HJ 位、River 在 CO 位都先跟注 20K 入池/);
   assert.equal(text.match(/先跟注 20K 入池/g)?.length, 1);
-  assert.match(text, /Luna 在 BTN 位 2-bet 开池至 190K/);
+  assert.match(text, /对手最近一次翻前加注：Luna 在 BTN 位 2-bet 开池至 190K/);
   assert.match(text, /小对子、同花牌或连接牌.*藏着强牌/);
   assert.doesNotMatch(text, /明显大于普通开池|不能只根据位置套用|不能只考虑开池者会不会弃牌/);
 });

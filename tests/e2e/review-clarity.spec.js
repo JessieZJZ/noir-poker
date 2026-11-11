@@ -191,6 +191,7 @@ test('new recommendation clauses and key information switch across all locales',
       el.dispatchEvent(new Event('change'));
     }, locale);
     await expect(page.locator('html')).toHaveAttribute('lang', locale);
+    const allInAmount = '1.62M';
     for (const i of [0, 6, 7, 8, 9]) {
       await page.locator(`[data-review-index="${i}"]`).click();
       const text = await page
@@ -206,7 +207,7 @@ test('new recommendation clauses and key information switch across all locales',
       if (!['zh-CN', 'zh-TW', 'ja'].includes(locale))
         expect(text.join('')).not.toMatch(/\p{Script=Han}/u);
       await expect(page.locator('#review-evidence')).toContainText(
-        i === 0 ? '140K' : [6, 9].includes(i) ? '520K' : i === 8 ? '1.62M' : '100K',
+        i === 0 ? '140K' : [6, 9].includes(i) ? '520K' : i === 8 ? allInAmount : '100K',
       );
     }
   }

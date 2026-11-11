@@ -1,4 +1,4 @@
-import { blindCap, finalTableSeats, HANDS_PER_LEVEL } from '../engine/blind-levels.js';
+import { blindCap, blindLevels, finalTableSeats, HANDS_PER_LEVEL } from '../engine/blind-levels.js';
 // Deterministic particle layouts and timings shared by Web, native and WeChat.
 // Every platform renders the same elements with the same CSS custom
 // properties, so the motion is identical without platform-specific physics.
@@ -25,6 +25,18 @@ export function blindStructureText(stakes, playerCount, format) {
     final: `剩 ${seats} 人进入决赛圈`,
     settings: `每 ${HANDS_PER_LEVEL} 手升一级，最高 ${top}，剩 ${seats} 人进入决赛圈。`,
   };
+}
+// levelHands includes this hand already. State the remaining count after it,
+// so retry and a settled hand show the same progress without advancing rules.
+export function blindProgressText(game, format = String) {
+  if (game.phase === 'idle' || game.risingBlinds === false) return '';
+  const levels = blindLevels(game.stakes, game.players.length);
+  if ((game.levelIndex ?? 0) >= levels.length - 1) return '盲注已封顶';
+  const next = levels[(game.levelIndex ?? 0) + 1];
+  const remaining = Math.max(0, (game.levelLength ?? HANDS_PER_LEVEL) - (game.levelHands ?? 0));
+  return remaining
+    ? `再打 ${remaining} 手后涨盲到 ${format(next.smallBlind)} / ${format(next.bigBlind)}`
+    : `下一手涨盲到 ${format(next.smallBlind)} / ${format(next.bigBlind)}`;
 }
 // Text of a hand's table notices, in display order. Callers localize it.
 export function tableNoticeText(notice, format) {

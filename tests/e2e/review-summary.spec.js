@@ -31,7 +31,7 @@ test('reported reviews render coherent causal summaries and preserve them across
   await expect(hero.locator('.review-range-note')).toHaveCount(0);
   // The summary opens with the actual 5-bet, not a generic range reminder.
   await expect(hero.locator('.review-analysis-heading ~ p').first()).toContainText(
-    'Jade（范围纪律）在 MP 位 5-bet 加注至 9.3K',
+    '对手最近一次翻前加注：Jade（范围纪律）在 MP 位 5-bet 加注至 9.3K',
   );
   await expect(hero).not.toContainText('再加注通常比普通开池更集中');
   await expect(hero).toContainText(/再补 8.3K.*弃牌值得保留.*19K/);
@@ -67,7 +67,8 @@ test('reported reviews render coherent causal summaries and preserve them across
       await expect(bot).not.toContainText(/\p{Script=Han}/u);
       await expect(hero).not.toContainText(/\p{Script=Han}/u);
     }
-    await expect(bot).toContainText('6.3K');
+    const callAmount = '6.3K';
+    await expect(bot).toContainText(callAmount);
     await expect(bot).toContainText('7K');
     await expect(bot).not.toContainText(/\{\d+\}/);
   }
