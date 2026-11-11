@@ -210,7 +210,7 @@ test('reduced motion and muted native feedback keep a visible, localized turn st
     await loadLocale('en');
     localizeDocument(document);
   });
-  await expect(page.locator('#turn-prompt')).toHaveText('Your turn,');
+  await expect(page.locator('#turn-prompt')).toHaveText('Your turn.');
   await expect(page.locator('#decision-text')).not.toContainText('轮到');
 });
 
