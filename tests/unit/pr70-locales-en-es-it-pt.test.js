@@ -130,7 +130,7 @@ test('PR70 Portuguese best-five showdown footer uses playing-card terminology af
   assert.equal(localizeText(key), expected, 'effective Portuguese locale');
   assert.equal(localizeText('高牌'), 'Carta alta');
   await loadLocale('en');
-  assert.equal(localizeText(key), 'The Best 5 Cards');
+  assert.equal(localizeText(key), 'Best five cards');
   await loadLocale('pt');
   assert.equal(localizeText(key), expected, 'Portuguese after switching back');
 });

@@ -91,7 +91,9 @@ export function renderSeatAction(g, p, { recent = false, dealing = false } = {})
     (match[2] === '跟注'
       ? `本次补入 ${format(amount)}，本轮累计投入 ${format(retained?.bet ?? p.bet)}`
       : `${compactActionAmounts(action)} · 本轮累计投入 ${format(amount)}`);
-  const compactBlind = getLocale() === 'en' && (label === '小盲' || label === '大盲');
+  // Every non-Chinese locale shows the universal SB / BB seat shorthand, so
+  // the long translated blind name never wraps beneath the seat.
+  const compactBlind = !getLocale().startsWith('zh') && (label === '小盲' || label === '大盲');
   const displayLabel = compactBlind ? (label === '小盲' ? 'SB' : 'BB') : label;
   return `<span class="seat-action-label"${compactBlind ? ` aria-label="${label}" title="${label}"` : ''}>${displayLabel}</span><strong class="seat-action-amount" title="${escape(meaning)}">${format(amount)}</strong>`;
 }

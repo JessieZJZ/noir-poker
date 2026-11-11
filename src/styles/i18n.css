@@ -123,3 +123,9 @@ html:not([lang^='zh']) .game-surface .seat-rank-slot .hand-rank {
 html:not([lang^='zh']) .game-surface .seat-rank-slot .winner-icon {
   flex: none;
 }
+
+/* A translated waiting message that still needs two lines splits evenly, so
+   a single trailing word never sits alone on the second line. */
+html:not([lang^='zh']) .game-surface[data-entry-state='waiting'] .surface-top .hand-label {
+  text-wrap: balance;
+}

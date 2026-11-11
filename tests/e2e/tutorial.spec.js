@@ -272,8 +272,8 @@ test('the coach, table and controls share the first screen without overlapping',
 });
 
 for (const [locale, title, button, primary] of [
-  ['en', 'Beginner tutorial', 'Exit tutorial', 'Continue'],
-  ['ru', 'Обучение для новичков', 'Выйти из обучения', 'Продолжить'],
+  ['en', 'Tutorial', 'Exit tutorial', 'Continue'],
+  ['ru', 'Обучение', 'Выйти из обучения', 'Продолжить'],
   ['ja', '初心者ガイド', 'ガイドを終了', '続ける'],
 ]) {
   test(`coach copy and dynamic amounts are translated in ${locale}`, async ({ page }) => {

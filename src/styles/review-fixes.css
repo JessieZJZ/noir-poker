@@ -9,7 +9,7 @@
 /* The label box still fills the row so it stays centred on the blinds. Its
    bottom padding leaves the live flex content one line tall at the waiting
    first line's top, so centring the parts cannot move the text on joining. */
-.game-surface:not([data-entry-state='waiting']) .surface-top .hand-label:not([data-replay-wrap]) {
+.game-surface:not([data-entry-state='waiting']) .surface-top .hand-label {
   padding-bottom: max(
     0px,
     calc(
@@ -56,15 +56,26 @@ html:not([lang^='zh'])
   overflow: visible;
   text-overflow: clip;
 }
-html:not([lang^='zh']) .game-surface .hand-label[data-replay-wrap] {
-  flex-wrap: wrap;
+/* Below 12px a retry header hides its session label, then ellipsizes the
+   street status. */
+html:not([lang^='zh'])
+  .game-surface:not([data-entry-state='waiting'])
+  .hand-label[data-replay-clip]:has(.replay-label:not([hidden]))
+  > :is(.session-label, .session-label + span) {
+  display: none;
+}
+html:not([lang^='zh'])
+  .game-surface:not([data-entry-state='waiting'])
+  .hand-label[data-replay-clip='street']:has(.replay-label:not([hidden]))
+  > #street-label {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 html:not([lang^='zh']) .game-surface .hand-label:has(.replay-label:not([hidden])) > .replay-label {
   margin-inline-start: 4px;
   font-size: max(10px, 0.75em);
-}
-.main .game-surface > .surface-top:has(.hand-label[data-replay-wrap]) {
-  grid-template-rows: minmax(var(--hand-row), auto) var(--hint-row);
 }
 /* The second row keeps its existing height. Countdown width follows its text;
    the hint gets every remaining pixel, with just one gap between the two. */

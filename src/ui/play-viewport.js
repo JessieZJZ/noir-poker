@@ -67,18 +67,29 @@ export function createPlayViewport(surface, { layout = () => {}, settled = () =>
     });
   }
 
+  // A translated retry header first tightens its type to a readable 12px. If
+  // it still does not fit, labels end in an ellipsis on one line, as in
+  // Chinese, rather than wrapping and pushing the blind countdown down.
   function fitReplayHeader() {
-    delete handLabel.dataset.replayWrap;
+    delete handLabel.dataset.replayClip;
     handLabel.style.removeProperty('--replay-header-size');
     if (!retryBadge || retryBadge.hidden || document.documentElement.lang.startsWith('zh')) return;
     const fits = () => handLabel.scrollWidth <= handLabel.clientWidth;
     if (fits()) return;
     const base = parseFloat(getComputedStyle(handLabel).fontSize);
-    for (let size = base - 0.5; size >= 10; size -= 0.5) {
-      handLabel.style.setProperty('--replay-header-size', `${size}px`);
-      if (fits()) return;
-    }
-    handLabel.dataset.replayWrap = '';
+    const shrink = (from, to) => {
+      for (let size = from; size >= to; size -= 0.5) {
+        handLabel.style.setProperty('--replay-header-size', `${size}px`);
+        if (fits()) return true;
+      }
+      return false;
+    };
+    if (shrink(base - 0.5, 12)) return;
+    // During a retry the badge and hand number already identify the hand, so
+    // the session label yields first; the street status ellipsizes last.
+    handLabel.dataset.replayClip = 'session';
+    if (fits() || shrink(11.5, 10)) return;
+    handLabel.dataset.replayClip = 'street';
   }
 
   function fit() {

@@ -473,14 +473,20 @@ test('translated retry header fits complete words while menus and coaching keep 
             const hint = document.querySelector('#coach-tip');
             const banner = hint.closest('.hint-banner');
             return {
+              // One header line, as in Chinese: only the street status may
+              // yield, and then with an ellipsis; the badge stays whole.
               handFits: visible.every((el) => {
                 const r = el.getBoundingClientRect();
+                const style = getComputedStyle(el);
                 return (
                   r.left >= handRect.left - 1 &&
                   r.right <= handRect.right + 1 &&
                   r.bottom <=
                     document.querySelector('.surface-bottom').getBoundingClientRect().top &&
-                  el.scrollWidth <= el.clientWidth + 1
+                  Math.abs(r.top - visible[0].getBoundingClientRect().top) < r.height &&
+                  parseFloat(style.fontSize) >= 9 &&
+                  (el.scrollWidth <= el.clientWidth + 1 ||
+                    (el.id === 'street-label' && style.textOverflow === 'ellipsis'))
                 );
               }),
               guideCentered:
@@ -567,15 +573,15 @@ test('the dealing frame of a replay shows the complete localized status', async 
   });
 
   for (const [locale, status] of Object.entries({
-    ko: '카드 배분 중',
-    en: 'Dealing cards',
-    ja: 'カード配布中',
-    es: 'Repartiendo cartas',
-    it: 'Distribuzione carte',
-    pt: 'Distribuindo cartas',
-    de: 'Karten werden ausgeteilt',
-    fr: 'Distribution des cartes',
-    ru: 'Раздача карт',
+    ko: '딜링 중',
+    en: 'Dealing',
+    ja: '配札中',
+    es: 'Repartiendo',
+    it: 'Distribuzione',
+    pt: 'Distribuindo',
+    de: 'Austeilen',
+    fr: 'Distribution',
+    ru: 'Сдача',
   })) {
     await switchLocale(page, locale);
     await expect(page.locator('#replay-label')).toBeVisible();
