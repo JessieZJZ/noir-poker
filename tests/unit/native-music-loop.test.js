@@ -3,56 +3,58 @@ import assert from 'node:assert/strict';
 import vm from 'node:vm';
 import { watchNativeMusicLoop } from '../native/music-loop-probe.mjs';
 
+const LOOP_START = 24000 / 48000,
+  LOOP_END = 4519610 / 48000;
+
 function setup() {
-  const listeners = new Map();
-  const audio = {
+  const timers = new Map();
+  let serial = 0;
+  const music = {
     currentTime: 42,
-    duration: 93.66,
+    loopStart: LOOP_START,
+    loopEnd: LOOP_END,
     paused: false,
-    seeking: false,
-    addEventListener: (type, fn) => listeners.set(type, fn),
-    removeEventListener: (type) => listeners.delete(type),
+    seek(time) {
+      this.currentTime = time;
+    },
   };
   const window = {};
   vm.runInNewContext(`(${watchNativeMusicLoop.toString()})()`, {
-    document: { querySelector: () => audio },
+    document: { querySelector: () => ({ backgroundMusic: music }) },
     window,
+    setInterval: (fn) => (timers.set(++serial, fn), serial),
+    clearInterval: (id) => timers.delete(id),
   });
-  return { audio, window, listeners, event: (type) => listeners.get(type)?.() };
+  return { music, window, timers, tick: () => [...timers.values()].forEach((fn) => fn()) };
 }
 
-test('native loop evidence survives driver sampling after the first three seconds', () => {
-  const { audio, window, event } = setup();
-  event('seeked');
-  audio.currentTime = 0.05;
-  event('timeupdate');
-  audio.currentTime = 7;
-  event('timeupdate');
+test('native loop evidence needs the tail and a return to the loop start, kept between polls', () => {
+  const { music, window, tick } = setup();
+  assert.ok(Math.abs(music.currentTime - (LOOP_END - 0.2)) < 1e-9, 'The probe seeks near the end');
   assert.equal(window.__nativeMusicLoop.sawTail, true);
+  music.currentTime = LOOP_START + 0.05;
+  tick();
+  music.currentTime = LOOP_START + 7;
+  tick();
   assert.equal(window.__nativeMusicLoop.wrapped, true);
-  assert.equal(window.__nativeMusicLoop.wrapTime, 0.05);
+  assert.equal(window.__nativeMusicLoop.wrapTime, LOOP_START + 0.05);
 });
 
-test('a low playback position without a witnessed tail cannot prove looping', () => {
-  const { audio, window, event } = setup();
-  audio.currentTime = 0.1;
-  event('timeupdate');
+test('a jump elsewhere in the period is not a loop', () => {
+  const { music, window, tick } = setup();
+  music.currentTime = 40;
+  tick();
   assert.equal(window.__nativeMusicLoop.wrapped, false);
 });
 
-test('paused and unfinished seeks do not count as playback; cleanup removes every observer', () => {
-  const { audio, window, event, listeners } = setup();
-  audio.seeking = true;
-  event('timeupdate');
-  assert.equal(window.__nativeMusicLoop.sawTail, false);
-  audio.seeking = false;
-  event('seeked');
-  audio.paused = true;
-  audio.currentTime = 0.1;
-  event('timeupdate');
+test('paused playback does not count; cleanup removes every observer', () => {
+  const { music, window, timers, tick } = setup();
+  music.paused = true;
+  music.currentTime = LOOP_START + 0.1;
+  tick();
   assert.equal(window.__nativeMusicLoop.wrapped, false);
   window.__stopNativeMusicLoopProbe();
-  assert.equal(listeners.size, 0);
+  assert.equal(timers.size, 0);
   assert.equal(window.__nativeMusicLoop, undefined);
   assert.equal(window.__stopNativeMusicLoopProbe, undefined);
 });

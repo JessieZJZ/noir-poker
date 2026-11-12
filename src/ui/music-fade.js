@@ -1,5 +1,7 @@
 export const MUSIC_ENTRY_FADE_MS = 2400;
 export const MUSIC_RESUME_FADE_MS = 700;
+// Pausing ramps to silence first, so stopping never cuts a waveform.
+export const MUSIC_PAUSE_FADE_MS = 180;
 
 // Fade the audible player, not a loading or gesture-blocked playback request.
 export function createMusicFade({
@@ -45,6 +47,12 @@ export function createMusicFade({
       running = false;
       level = 0;
       apply();
+    },
+    // Stop the timer without touching the volume, for an audio-clock fade out.
+    hold() {
+      cancel();
+      running = false;
+      level = 0;
     },
   };
 }

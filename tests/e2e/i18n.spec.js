@@ -84,7 +84,7 @@ for (const locale of locales) {
     await page.locator('#guide-menu-item').click();
     const guide = page.locator('#rules-dialog');
     await expect(guide).toBeVisible();
-    const raiseExample = ['es', 'it', 'pt', 'de', 'fr', 'ru'].includes(locale) ? '1,2K' : '1.2K';
+    const raiseExample = '1.2K';
     const callExample = guide.locator('.guide-body > p').filter({ hasText: raiseExample });
     await expect(callExample).toBeVisible();
     for (const amount of ['200', '600', '400', raiseExample, '1K'])

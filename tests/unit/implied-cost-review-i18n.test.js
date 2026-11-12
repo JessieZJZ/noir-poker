@@ -7,7 +7,7 @@ import overrides from '../../src/i18n/overrides.json' with { type: 'json' };
 const sources = [
   '按当前范围估计，这次跟注还需要{0}后从较弱牌收取筹码。',
   '{0}后的额外收入取决于较弱牌是否愿意付费。',
-  '当前有{0}，共 {1} 张直接成牌候选；跟注后可看完转牌和河牌，至少出现一张当前候选牌的机会约 {2}，这不是最终获胜概率。',
+  '当前有{0}，共 {1} 张直接成牌候选。跟注后可看完转牌和河牌，至少出现一张当前候选牌的机会约 {2}，这不是最终获胜概率。',
 ];
 // Fixed expected presentation text: regression boundaries, not independent linguistic review.
 const truth = {
@@ -15,7 +15,7 @@ const truth = {
     templates: [
       'Based on the current range estimate, this call still needs to earn chips from weaker hands after {0}.',
       'Extra chips won after {0} depend on whether weaker hands are willing to pay.',
-      'Current draw: {0}, with {1} direct completion cards. Calling lets you see both turn and river; the chance of seeing at least one of these current candidates is about {2}, which is not the final chance of winning.',
+      'Current draw: {0}, with {1} direct outs. Calling lets you see both the turn and the river; the chance that at least one of these outs appears is about {2}, which is not the final chance of winning.',
     ],
     improvements: ['completing the draw', 'hitting a set'],
   },
@@ -23,7 +23,7 @@ const truth = {
     templates: [
       '按目前範圍估計，這次跟注仍需要{0}後從較弱牌收取籌碼。',
       '{0}後的額外收入取決於較弱牌是否願意付費。',
-      '目前有{0}，共 {1} 張直接成牌候選；跟注後可看完轉牌和河牌，至少出現一張目前候選牌的機會約 {2}，這不是最終獲勝機率。',
+      '目前有{0}，共 {1} 張直接成牌候選。跟注後可看完轉牌和河牌，至少出現一張目前候選牌的機會約 {2}，這不是最終獲勝機率。',
     ],
     improvements: ['補中', '擊中暗三條'],
   },
@@ -65,12 +65,12 @@ const truth = {
       'Os ganhos adicionais após {0} dependem de mãos mais fracas dispostas a pagar.',
       'Atualmente há {0}, com {1} cartas candidatas que completam diretamente a mão. Depois do call, é possível ver turn e river; a chance de sair pelo menos uma dessas candidatas atuais é de cerca de {2}, o que não é a probabilidade final de vitória.',
     ],
-    improvements: ['completar o draw', 'Acertar uma trinca com o par de mão'],
+    improvements: ['completar o draw', 'acertar um set'],
   },
   de: {
     templates: [
       'Nach der aktuellen Range-Einschätzung benötigt dieser Call zusätzliche Chips von schwächeren Händen nach {0}.',
-      'Zusätzliche Einnahmen nach {0} hängen davon ab, ob schwächere Hände bereit sind zu bezahlen.',
+      'Zusätzlicher Gewinn nach {0} hängt davon ab, ob schwächere Hände bereit sind zu zahlen.',
       'Aktuell liegt {0} vor, mit {1} Karten, die den Draw direkt vervollständigen. Nach dem Call werden Turn und River aufgedeckt; die Chance, mindestens eine dieser aktuellen Karten zu sehen, beträgt etwa {2}. Das ist nicht die endgültige Gewinnwahrscheinlichkeit.',
     ],
     improvements: ['einem Draw-Treffer', 'einem Set-Treffer'],
@@ -182,7 +182,7 @@ test('closed flop text retains both remaining cards, fixed candidate count and p
       if (locale === 'en')
         assert.match(
           value,
-          /both turn and river.*at least one.*about 35\.0%.*not the final chance of winning/,
+          /both the turn and the river.*at least one.*about 35\.0%.*not the final chance of winning/,
         );
     }
   } finally {
@@ -192,16 +192,16 @@ test('closed flop text retains both remaining cards, fixed candidate count and p
 
 const pairAccuracySources = [
   '{0} 落下时，底牌有机会组成更高的一对，但这些牌也不能全部算成必胜补牌。',
-  '跟注需要对手范围里有足够较弱牌或诈唬；面对更紧范围应弃牌。',
+  '跟注需要对手范围里有足够较弱牌或诈唬。面对更紧范围应弃牌。',
 ];
 const pairAccuracyTruth = {
   en: [
-    'If {0} falls, one of the hole cards may make a higher pair, but these cards cannot all be counted as guaranteed winning outs.',
+    'A {0} could give one of your hole cards a higher pair, but not all of these cards can be counted as sure winning outs.',
     'Calling requires enough weaker hands or bluffs in the opponent’s range; fold against a tighter range.',
   ],
   'zh-TW': [
     '當 {0} 發出時，底牌有機會組成更高的一對，但這些牌也不能全部算成必勝補牌。',
-    '跟注需要對手範圍裡有足夠較弱牌或詐唬；面對更緊範圍應棄牌。',
+    '跟注需要對手範圍裡有足夠較弱牌或詐唬。面對更緊範圍應棄牌。',
   ],
   ja: [
     '{0}が出ると、ホールカードがより高いワンペアになる可能性があります。ただし、これらすべてを確実に勝てるアウツとは数えられません。',
@@ -212,7 +212,7 @@ const pairAccuracyTruth = {
     '콜하려면 상대 범위에 더 약한 패나 블러프가 충분히 있어야 합니다. 더 타이트한 범위에는 폴드해야 합니다.',
   ],
   es: [
-    'Si sale {0}, las cartas de mano pueden formar una pareja más alta, pero no todas estas cartas se pueden contar como outs que aseguren ganar.',
+    'Si sale {0}, tus cartas propias pueden formar una pareja más alta, pero no todas esas cartas cuentan como outs ganadores seguros.',
     'Para pagar, el rango rival debe incluir suficientes manos más débiles o faroles; frente a un rango más cerrado, se debe abandonar la mano.',
   ],
   it: [
@@ -229,7 +229,7 @@ const pairAccuracyTruth = {
   ],
   fr: [
     'Si {0} tombe, les cartes privatives peuvent former une paire plus haute, mais ces cartes ne sont pas toutes des outs garantissant la victoire.',
-    'Pour suivre, le range adverse doit contenir assez de mains plus faibles ou de bluffs ; face à un range plus serré, il faut se coucher.',
+    'Pour suivre, la range adverse doit contenir assez de mains plus faibles ou de bluffs ; face à une range plus serrée, il faut se coucher.',
   ],
   ru: [
     'Если выйдет {0}, карманные карты могут образовать более высокую пару, но не все эти карты можно считать гарантированно победными аутами.',
@@ -276,7 +276,7 @@ test('higher-pair and tighter-range revisions preserve exact facts and rank plac
           if (index === 0) assert.ok(value.includes(rank), `${locale}: rank text lost`);
           if (locale === 'en') {
             if (index === 0) {
-              assert.match(value, /may make a higher pair.*cannot all.*guaranteed winning outs/);
+              assert.match(value, /higher pair.*not all.*sure winning outs/);
               assert.doesNotMatch(value, /top pair|certain to win|guarantees a win/i);
             } else {
               assert.match(
@@ -299,14 +299,14 @@ test('higher-pair and tighter-range revisions preserve exact facts and rank plac
 
 const drawRouteSource = '听牌是主要改善路径，底牌成对或赢过未成牌诈唬也可能获胜。';
 const drawRouteTruth = {
-  en: 'The draw is the main path to improvement, but pairing a hole card or beating an unmade bluff may also win.',
+  en: 'The draw is the main path to improvement, but pairing a hole card or beating a missed bluff may also win.',
   'zh-TW': '聽牌是主要改善路徑，底牌成對或贏過未成牌詐唬也可能獲勝。',
   ja: '主な改善手段はドローですが、ホールカードがペアになったり、未完成のブラフに勝ったりする可能性もあります。',
   ko: '드로가 주된 개선 경로이지만 홀 카드가 페어를 이루거나 미완성 패의 블러프를 이겨 승리할 수도 있습니다.',
   es: 'El proyecto es la principal vía de mejora, pero también se puede ganar formando una pareja con una carta propia o superando faroles sin mano hecha.',
   it: 'Il progetto è la via principale per migliorare, ma si può vincere anche formando una coppia con una carta privata o battendo bluff senza una mano formata.',
-  pt: 'O projeto é o principal caminho de melhora, mas também é possível vencer formando um par com uma carta da mão ou superando blefes sem mão formada.',
-  de: 'Der Draw ist der wichtigste Weg zur Verbesserung. Die Hand kann aber auch durch ein Paar mit einer Holecard oder gegen einen Bluff ohne fertige Hand gewinnen.',
+  pt: 'O draw é o principal caminho de melhora, mas também é possível vencer formando par com uma carta da mão ou superando blefes sem mão feita.',
+  de: 'Der Draw ist der wichtigste Weg zur Verbesserung. Die Hand kann aber auch durch ein Paar mit einer Hole Card oder gegen einen Bluff ohne fertige Hand gewinnen.',
   fr: 'Le tirage est la principale voie d’amélioration, mais former une paire avec une carte privative ou battre un bluff sans main faite peut aussi permettre de gagner.',
   ru: 'Дро — основной путь к усилению, но можно также выиграть, собрав пару с карманной картой или обыграв блеф без готовой руки.',
 };
@@ -331,7 +331,7 @@ test('short draw-path explanation retains pairing and bluff-catching routes with
       if (locale === 'en') {
         assert.match(
           value,
-          /draw.*main path.*pairing a hole card.*beating an unmade bluff.*may also win/,
+          /draw.*main path.*pairing a hole card.*beating a missed bluff.*may also win/,
         );
         assert.doesNotMatch(value, /equity|chance of hitting|not.*winning probability|guarantee/i);
       }

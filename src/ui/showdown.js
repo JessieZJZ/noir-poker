@@ -1,4 +1,4 @@
-import { formatChips, setLocalizedHTML, setLocalizedText } from '../i18n/index.js';
+import { getLocale, formatChips, setLocalizedHTML, setLocalizedText } from '../i18n/index.js';
 import { evaluate, rankText } from '../engine/poker.js';
 import { createActivityFormatter } from './activity.js';
 const escape = (value) =>
@@ -95,9 +95,11 @@ export function showdownScenes(g) {
 export function createShowdownController({ card, root = document, prefix = '', animate = true }) {
   const $ = (s) => root.querySelector(s.replace('#', '#' + prefix)),
     format = (n) => formatChips(n);
-  let key = null;
+  let key = null,
+    renderedLocale = null;
   function reset() {
     key = null;
+    renderedLocale = null;
     $('#showdown-stage').hidden = true;
     setLocalizedHTML($('#showdown-scene'), '');
   }
@@ -108,8 +110,29 @@ export function createShowdownController({ card, root = document, prefix = '', a
         reset();
         return;
       }
-      if (key === nextKey) return;
+      if (key === nextKey) {
+        if (renderedLocale !== getLocale()) {
+          for (const scene of showdownScenes(g)) {
+            const article = $('#showdown-scene').querySelector(`[data-player="${scene.id}"]`);
+            if (!article) continue;
+            setLocalizedText(
+              article.querySelector('.showdown-player-heading > span'),
+              scene.awards.length ? '获胜 +' + format(scene.amount) : '未获底池',
+            );
+            if (scene.awards.length)
+              setLocalizedHTML(
+                article.querySelector('.showdown-awards'),
+                scene.awards
+                  .map((a) => `${escape(a.pot)}${a.split ? ' · 平分' : ''} +${format(a.amount)}`)
+                  .join(' · '),
+              );
+          }
+          renderedLocale = getLocale();
+        }
+        return;
+      }
       key = nextKey;
+      renderedLocale = getLocale();
       const scenes = showdownScenes(g);
       const playerName = createActivityFormatter(g.players);
       $('#showdown-stage').hidden = !scenes.length;

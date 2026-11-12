@@ -51,7 +51,22 @@ const waitElement = (selector) =>
     () => page.$(selector),
     (element) => !!element,
   );
+const viewport = () =>
+  mini.evaluate(
+    () =>
+      new Promise((resolve) =>
+        wx
+          .createSelectorQuery()
+          .selectViewport()
+          .scrollOffset((offset) => resolve(offset))
+          .exec(),
+      ),
+  );
+// The table fits phone screens, so the page often has nothing to scroll.
+// Returns -1 when it cannot scroll; otherwise waits for the page's own record.
 const scrollTo = async (top) => {
+  const { scrollHeight } = await viewport();
+  if (top && scrollHeight <= (await mini.systemInfo()).windowHeight + 1) return -1;
   await mini.pageScrollTo(top);
   return wait(
     `Actual page scroll ${top}`,
@@ -701,6 +716,39 @@ try {
   await assertStack('pages/table/table');
   report.checks.push({
     name: 'full-width-native-record-views-preserve-accessibility-and-disabled-gate',
+  });
+  // Restarting after losing every chip without a refill ends the game at the
+  // place the hero then had, and the new game starts at the top of the page.
+  report.stage = 'restart-without-refill-records-place';
+  await finishWithoutFolding();
+  const bustedSession = (await readRecords())[0];
+  await mini.evaluate(() => {
+    const game = getApp().noirController.getGame();
+    game.players[1].stack += game.players[0].stack;
+    game.players[0].stack = 0;
+  });
+  const expectedPlace = (await readLive()).players.slice(1).filter((p) => !p.out).length + 1;
+  const scrolledBeforeRestart = (await scrollTo(600)) > 0;
+  await tap('.practice-reset');
+  await tap('.reset-sheet .primary');
+  // Read, without scrolling: the page itself must return to the top.
+  await wait(
+    'Page back at the top after restart',
+    async () => (await viewport()).scrollTop,
+    (top) => top <= 1,
+    10000,
+  );
+  await waitHero();
+  const [freshSession, endedSession] = await readRecords();
+  assert.equal(endedSession.id, bustedSession.id);
+  assert.deepEqual(endedSession.result, { place: expectedPlace, champion: false });
+  assert.equal(freshSession.result, null);
+  await capture('08-restart-at-top');
+  report.checks.push({
+    name: 'restart-without-refill-records-the-place-and-returns-to-the-top',
+    place: expectedPlace,
+    // False when the table fits the simulated screen and there was nothing to scroll.
+    scrolledBeforeRestart,
   });
   assert.equal(report.exceptions.length, 0);
   const currentBuild = JSON.parse(

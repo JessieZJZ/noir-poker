@@ -1,6 +1,7 @@
 import UIKit
 import Capacitor
 import WebKit
+import CryptoKit
 
 class NoirBridgeViewController: CAPBridgeViewController, UIGestureRecognizerDelegate {
     private var edgeBackPending = false
@@ -79,6 +80,7 @@ class NoirBridgeViewController: CAPBridgeViewController, UIGestureRecognizerDele
     override func capacitorDidLoad() {
         super.capacitorDidLoad()
         guard let webView = webView else { return }
+        installCapacitorStartupBackport(in: webView)
         // WKWebView can leave a blank frame after the system launch screen.
         // Keep the same local artwork until the complete first hand is ready.
         let cover = UIView()
@@ -91,7 +93,20 @@ class NoirBridgeViewController: CAPBridgeViewController, UIGestureRecognizerDele
         artwork.contentMode = .scaleAspectFit
         artwork.translatesAutoresizingMaskIntoConstraints = false
         cover.addSubview(artwork)
+        // The same "NOIR POKER" wordmark as the system launch screen.
+        let wordmark = UILabel()
+        wordmark.attributedText = NSAttributedString(
+            string: "NOIR POKER",
+            attributes: [
+                .font: UIFont.systemFont(ofSize: 18, weight: .bold),
+                .foregroundColor: UIColor(red: 233 / 255, green: 242 / 255, blue: 239 / 255, alpha: 1),
+                .kern: 6
+            ])
+        wordmark.translatesAutoresizingMaskIntoConstraints = false
+        cover.addSubview(wordmark)
         NSLayoutConstraint.activate([
+            wordmark.centerXAnchor.constraint(equalTo: cover.centerXAnchor, constant: 3),
+            wordmark.topAnchor.constraint(equalTo: artwork.bottomAnchor, constant: 12),
             cover.leadingAnchor.constraint(equalTo: webView.leadingAnchor),
             cover.trailingAnchor.constraint(equalTo: webView.trailingAnchor),
             cover.topAnchor.constraint(equalTo: webView.topAnchor),
@@ -124,6 +139,64 @@ class NoirBridgeViewController: CAPBridgeViewController, UIGestureRecognizerDele
         edgeBack.delegate = self
         view.addGestureRecognizer(edgeBack)
         webView.scrollView.panGestureRecognizer.require(toFail: edgeBack)
+    }
+
+    private func installCapacitorStartupBackport(in webView: WKWebView) {
+        // Backport ionic-team/capacitor#8688 to the actual SwiftPM bridge script.
+        // Capacitor 8.5.3 exports these scripts before capacitorDidLoad, but only
+        // navigates in viewDidLoad. Do not patch node_modules or generated SPM.
+        let controller = webView.configuration.userContentController
+        // Array can retain WebKit's live NSMutableArray bridge. Removing and
+        // re-adding then grows that same collection during enumeration.
+        // ContiguousArray owns a stable snapshot and retains the script objects.
+        let scripts = ContiguousArray(controller.userScripts)
+        let bridgeSHA256 = "44ae55c944c91d5ebeb1ca2374e831d7920d1af6464faef8f0001a96252109bc"
+        let matches = scripts.indices.filter { index in
+            SHA256.hash(data: Data(scripts[index].source.utf8))
+                .map { String(format: "%02x", $0) }.joined() == bridgeSHA256
+        }
+        guard let index = matches.first, matches.count == 1, let bridge = bridge else {
+            fatalError("Review the pinned Capacitor 8.5.3 startup backport before changing its bridge")
+        }
+        let original = scripts[index]
+        let cookiesNeedle = "const isCookiesEnabled = prompt(JSON.stringify(payload));"
+        let httpNeedle = "const isHttpEnabled = prompt(JSON.stringify(payload));"
+        let cookiesReplacement = "const isCookiesEnabled = String(win.CapacitorNativeConfig?.cookiesEnabled === true);"
+        let httpReplacement = "const isHttpEnabled = String(win.CapacitorNativeConfig?.httpEnabled === true);"
+        guard original.injectionTime == .atDocumentStart, original.isForMainFrameOnly,
+              original.source.components(separatedBy: cookiesNeedle).count == 2,
+              original.source.components(separatedBy: httpNeedle).count == 2 else {
+            fatalError("Capacitor startup backport input differs from the reviewed document-start bridge")
+        }
+        // Keep the legacy 'true' comparisons and all dynamic cookie/regular
+        // prompt handling intact; only the two static enabled probes change.
+        let patchedSource = original.source
+            .replacingOccurrences(of: cookiesNeedle, with: cookiesReplacement)
+            .replacingOccurrences(of: httpNeedle, with: httpReplacement)
+        let cookiesEnabled = bridge.config.getPluginConfig("CapacitorCookies").getBoolean("enabled", false)
+        let httpEnabled = bridge.config.getPluginConfig("CapacitorHttp").getBoolean("enabled", false)
+        var startupConfigSource = """
+            window.CapacitorNativeConfig = {
+              cookiesEnabled: \(cookiesEnabled),
+              httpEnabled: \(httpEnabled)
+            };
+            """
+        #if DEBUG
+        startupConfigSource += "\nwindow.__noirCapacitorStartupBackport = 'capacitor-8688-ios-8.5.3-v1';"
+        #endif
+        let configScript = WKUserScript(source: startupConfigSource, injectionTime: .atDocumentStart, forMainFrameOnly: true)
+        // Only this known bridge was exported in the default page world.
+        // WKUserScript has no public contentWorld getter: retain every other
+        // script object, its world, injection properties and relative order.
+        let patchedScript = WKUserScript(source: patchedSource, injectionTime: original.injectionTime, forMainFrameOnly: original.isForMainFrameOnly)
+        controller.removeAllUserScripts()
+        controller.addUserScript(configScript)
+        for (position, script) in scripts.enumerated() {
+            controller.addUserScript(position == index ? patchedScript : script)
+        }
+        #if DEBUG
+        NSLog("[NOIR startup] capacitor backport installed capacitor-8688-ios-8.5.3-v1")
+        #endif
     }
 
     fileprivate func finishLaunch(_ message: WKScriptMessage) {

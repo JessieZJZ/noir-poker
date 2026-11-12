@@ -26,7 +26,7 @@ test('the displayed squeeze review aggregates four real limps and explains suite
   const { game } = groupedPreflopReview();
   const summary = await openOpponent(page, game);
   await expect(summary).toContainText(
-    '你在 UTG 位、Mia在 LJ 位、Alex在 HJ 位、River在 CO 位都先跟注 20K 入池',
+    '你在 UTG 位、Mia 在 LJ 位、Alex 在 HJ 位、River 在 CO 位都先跟注 20K 入池',
   );
   await expect(summary).toContainText('小对子、同花牌或连接牌');
   await expect(summary).toContainText('坚果同花听牌');
@@ -56,7 +56,7 @@ test('the actual K8s limp executes and its displayed review explains the small p
   }
   game.decisions = [];
   const summary = await openOpponent(page, game);
-  await expect(summary).toContainText('Luna在 UTG 位拿 K♥ 8♥');
+  await expect(summary).toContainText('Luna 在 UTG 位拿 K♥ 8♥');
   await expect(summary).toContainText('20K');
   await expect(summary).toContainText('1.53M');
   await expect(summary).toContainText('同花听牌和成花机会');

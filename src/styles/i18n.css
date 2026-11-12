@@ -69,3 +69,63 @@ html[lang='ja'] {
 html[lang='ko'] {
   font-family: Manrope, 'Noto Sans KR', sans-serif;
 }
+
+/* Center the label box. Its text starts at the leading edge when the box
+   reaches the available width, so ellipsis never discards the prefix. */
+html:not([lang^='zh']) .header-actions,
+html:not([lang^='zh']) .guide-menu,
+html:not([lang^='zh']) #rules-button,
+html:not([lang^='zh']) #rules-button .guide-rotating-label {
+  min-width: 0;
+}
+html:not([lang^='zh']) #rules-button {
+  max-width: 100%;
+}
+html:not([lang^='zh']) #rules-button .guide-rotating-label {
+  grid-template-columns: minmax(0, 1fr);
+}
+html:not([lang^='zh']) #rules-button .guide-rotating-label > span {
+  justify-self: center;
+  width: max-content;
+  max-width: 100%;
+  overflow: hidden;
+  text-align: start;
+  text-overflow: ellipsis;
+}
+html:not([lang^='zh']) .table-notices .hint-banner {
+  overflow: clip;
+}
+html:not([lang^='zh']) .table-notices .hint-marquee-track {
+  width: 100%;
+  justify-content: center;
+}
+html:not([lang^='zh']) .table-notices #coach-tip {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+html:not([lang^='zh']) .game-surface .seat-rank-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+html:not([lang^='zh']) .game-surface .seat-rank-slot {
+  justify-items: center;
+}
+html:not([lang^='zh']) .game-surface .seat-rank-slot .hand-rank {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-width: 0;
+  max-width: 100%;
+}
+html:not([lang^='zh']) .game-surface .seat-rank-slot .winner-icon {
+  flex: none;
+}
+
+/* A translated waiting message that still needs two lines splits evenly, so
+   a single trailing word never sits alone on the second line. */
+html:not([lang^='zh']) .game-surface[data-entry-state='waiting'] .surface-top .hand-label {
+  text-wrap: balance;
+}

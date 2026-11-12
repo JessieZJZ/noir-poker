@@ -366,10 +366,11 @@ try {
         assert.ok(tag, `Seat ${seat.id} must show its complete style`);
         const text = (await tag.text()).trim();
         const font = parseFloat(await tag.style('font-size'));
-        const expected =
-          metrics[seat.profileId === 'balanced' ? 'player-persona' : 'player-persona-fit'];
-        assert.equal(text, seat.profileName);
-        assert.equal(font, expected, 'Every style uses its exact shared four-character fit budget');
+        // Chinese seats show the two-character style tag at the full persona size.
+        const expected = metrics['player-persona'];
+        assert.equal(text, seat.profileTag);
+        assert.equal([...text].length, 2);
+        assert.equal(font, expected, 'Every two-character style tag uses the full persona size');
         const whiteSpace = await tag.style('white-space');
         if (whiteSpace !== null) assert.equal(whiteSpace, 'nowrap');
         assert.notEqual(await tag.style('text-overflow'), 'ellipsis');
@@ -709,11 +710,12 @@ try {
   };
   await capture('table', ['.nav', '.game-shell', '.board-row', '.hero-cards', '.action-buttons']);
   const styleSeat = (await page.data()).phoneSeats[0];
-  assert.equal(await (await page.$(`#seat-persona-${styleSeat.id}`)).text(), styleSeat.profileName);
+  assert.equal(await (await page.$(`#seat-persona-${styleSeat.id}`)).text(), styleSeat.profileTag);
   assert.equal(await page.$('.seat-name-tooltip'), null);
   report.styleFullName = {
-    text: styleSeat.profileName,
-    scope: 'Full style always displayed, no long-press overlay',
+    text: styleSeat.profileTag,
+    fullName: styleSeat.profileName,
+    scope: 'Two-character style tag always displayed, no long-press overlay',
   };
   assert.equal((await (await page.$('.nav')).size()).height, 48);
   for (const button of await page.$$('.action-buttons button'))

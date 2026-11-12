@@ -21,10 +21,12 @@ import {
 import { chipUnitOf, fractionRaiseTo, legalRaiseTo } from './bet-sizing.js';
 import { deceptiveAction, isDonkLead } from './bot-deception.js';
 import { publicResponseRisk } from './public-action-context.js';
-import { preflopJamPlan } from './bot-preflop-commitment.js';
+import { preflopJamPlan, shortStackPlan } from './bot-preflop-commitment.js';
+import { survivalPremium } from './push-fold.js';
 import { postflopStyleLine, balancedPriceDefense, limpedPairValueLine } from './bot-style-lines.js';
 import { botOpeningSize, botReraiseSize } from './bot-opening-size.js';
 import { publicStrategyPlan } from './bot-strategy-plan.js';
+import { evActionPlan } from './bot-ev.js';
 
 // Evidence-informed fictional training styles; numeric controls are authored.
 export const BOT_PROFILES = [
@@ -32,6 +34,8 @@ export const BOT_PROFILES = [
     id: 'balanced',
     name: '均衡',
     short: '均衡',
+    // Two-character seat tag at the table; the full name stays elsewhere.
+    abbr: '均衡',
     tag: '稳定的基准对手',
     description: '中等范围、常规尺度，兼顾价值下注与少量诈唬。',
     axes: [50, 50, 40, 50, 20],
@@ -52,6 +56,7 @@ export const BOT_PROFILES = [
     id: 'rook',
     name: '大注强攻',
     short: '大注强攻',
+    abbr: '强攻',
     tag: '宽范围 · 后街大注',
     description: '更宽地参与底池，合适的后街偏向大尺度取值，并保留有依据的诈唬。',
     axes: [85, 96, 88, 62, 8],
@@ -77,6 +82,7 @@ export const BOT_PROFILES = [
     id: 'jett',
     name: '宽松取值',
     short: '宽松取值',
+    abbr: '宽松',
     tag: '宽范围 · 大尺度搏杀',
     description: '更愿意低成本跟入，命中强牌后偏向大尺度价值下注。',
     axes: [96, 35, 25, 84, 8],
@@ -97,6 +103,7 @@ export const BOT_PROFILES = [
     id: 'owen',
     name: '范围纪律',
     short: '范围纪律',
+    abbr: '纪律',
     tag: '范围纪律 · 分街尺度',
     description: '主动挑选适合进攻的起手牌，面对再加注时同时考虑继续成本与剩余筹码。',
     axes: [35, 80, 35, 48, 15],
@@ -122,6 +129,7 @@ export const BOT_PROFILES = [
     id: 'vale',
     name: '跟注诱导',
     short: '跟注诱导',
+    abbr: '诱导',
     tag: '低价跟入 · 选择性诱导',
     description: '更常用跟注进入便宜底池，安全强牌保留诱导，面对高成本仍会退出。',
     axes: [60, 45, 25, 46, 98],
@@ -146,6 +154,7 @@ export const BOT_PROFILES = [
     id: 'nico',
     name: '小注控池',
     short: '小注控池',
+    abbr: '控池',
     tag: '小尺度 · 控池',
     description: '较小尺度争夺底池，中等牌力保留过牌与薄价值。',
     axes: [55, 60, 30, 55, 10],
@@ -174,6 +183,7 @@ export const BOT_PROFILES = [
     id: 'mira',
     name: '听牌施压',
     short: '听牌施压',
+    abbr: '施压',
     tag: '选择性压迫 · 半诈唬',
     description: '有听牌权益时更积极，小翻牌下注之后可用大转牌下注继续施压。',
     axes: [58, 88, 78, 50, 12],
@@ -201,6 +211,7 @@ export const BOT_PROFILES = [
     id: 'iris',
     name: '后位争夺',
     short: '后位争夺',
+    abbr: '后位',
     tag: '位置优先 · 择机争夺',
     description: '前位收紧、后位争夺盲注，有位置时保留小注与延迟进攻。',
     axes: [62, 70, 40, 65, 8],
@@ -654,7 +665,9 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
     smallCbet = false,
     thinValue = false,
     positionProbe = false,
-    linePlan = null;
+    linePlan = null,
+    pushFold = null,
+    survival = 0;
   const floatContinue = context.floatCandidate && roll('float', style.float) < style.float;
   const headsUp = assumedOpponents === 1,
     features = view.features,
@@ -808,7 +821,24 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
     pureBluff = true;
     positionProbe = true;
   }
-  const finish = (action, reason, amount) => ({
+  let evCallOnly = false;
+  const finish = (action, reason, amount) => {
+    if (evCallOnly && action === 'raise') {
+      // The estimated-value step preferred calling to every raise size.
+      sizing = null;
+      deception = null;
+      const continues =
+        value ||
+        drawContinue ||
+        pairContinue ||
+        structuredPriceContinue ||
+        equity + callTolerance >= requiredEquity;
+      value = semiBluff = pureBluff = false;
+      return continues ? record('call', 'price-continue') : record('fold', 'insufficient-equity');
+    }
+    return record(action, reason, amount);
+  };
+  const record = (action, reason, amount) => ({
     action,
     ...(amount === undefined ? {} : { amount }),
     trace: {
@@ -874,6 +904,8 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
       premium,
       admitted,
       callTolerance,
+      pushFold,
+      survivalPremium: survival,
       checks,
       exceptions,
       sizing,
@@ -902,6 +934,23 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
     },
   });
   if (suitedLimp) return finish('call', 'affordable-entry');
+  // Short stacks only move all-in or fold preflop.
+  const short = shortStackPlan(view, profile);
+  if (short) {
+    pushFold = short;
+    if (short.action === 'raise') {
+      value = short.percentile <= short.width * 0.5;
+      sizing = {
+        desired: short.amount,
+        actual: short.amount,
+        minimum: legal.minRaiseTo,
+        maximum: legal.maxRaiseTo,
+        opening: !raises.length,
+        executed: true,
+      };
+    }
+    return finish(short.action, short.reason, short.amount);
+  }
   const jamPlan = preflopJamPlan(view, profile);
   const valueJam = () => {
     if (!jamPlan || equity + callTolerance < requiredEquity) return null;
@@ -938,14 +987,21 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
     // The sampled range already prices the exposed money. Pending responses
     // have their own buffer; adding another fixed margin systematically folds
     // profitable but close strong-hand calls, especially against open shoves.
-    const required = requiredEquity;
+    // Near the final table a call that can end the game needs more.
+    survival = survivalPremium(view);
+    const required = requiredEquity + survival;
     const lockedRiver =
       view.allIn.unbeatableRiver && view.allIn.guaranteedReturn >= view.allIn.cost;
     if (!lockedRiver && equity + callTolerance < required) {
       const close = required - equity - callTolerance <= 0.12;
       const mistake = view.difficulty === 'easy' && close ? 0.025 + callDown * 0.04 : 0;
       if (!mistake || roll('insufficient-equity', mistake) > mistake)
-        return finish('fold', 'insufficient-equity');
+        return finish(
+          'fold',
+          survival && equity + callTolerance >= requiredEquity
+            ? 'survival-fold'
+            : 'insufficient-equity',
+        );
       exceptions.push('insufficient-equity');
     }
     // A large non-all-in raise still leaves an opponent able to pay a value
@@ -954,6 +1010,43 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
     if (jam) return jam;
     return finish('call', exceptions.length ? 'loose-exception' : 'price-continue');
   }
+  // Postflop, the response model's estimated value chooses between checking
+  // or calling and each bet or raise size; fixed rules remain safety limits.
+  const evPlan = evActionPlan(view, profile, axes, () => roll('ev-choice', 1));
+  if (evPlan && evPlan.action !== 'call') {
+    linePlan = { ...evPlan, selected: true, executed: true };
+    if (evPlan.action === 'check') return finish('check', evPlan.reason);
+    // A small value bet in an unraised pot keeps the limped-pot line, so the
+    // review explains it as charging weaker pairs after the checks. The value
+    // judgement is already made; only the public situation is matched here.
+    const limped =
+      evPlan.motive === 'value' && legal.canCheck && limpedPairValueLine(view, style, 1);
+    if (limped) {
+      linePlan.kind = limped.kind;
+      evPlan.reason = 'value-raise';
+    }
+    value = evPlan.motive === 'value';
+    semiBluff = evPlan.motive === 'semi-bluff';
+    pureBluff = evPlan.motive === 'bluff';
+    sizing = {
+      actual: evPlan.amount,
+      executed: true,
+      fraction: evPlan.option.fraction,
+      minimum: legal.minRaiseTo,
+      maximum: legal.maxRaiseTo,
+      opening: false,
+    };
+    if (evPlan.reason === 'donk-lead')
+      deception = {
+        strategy: 'donk-lead',
+        source: 'public-response-model',
+        kind: value ? 'value' : semiBluff ? 'semi-bluff' : 'bluff',
+      };
+    return finish('raise', evPlan.reason, evPlan.amount);
+  }
+  // Calling was worth more than every raise: later steps may still fold on
+  // price, but no longer raise.
+  evCallOnly = !!evPlan;
   const strategic = publicStrategyPlan(view, style, profile, {
     equity,
     required: requiredEquity,
@@ -1075,8 +1168,7 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
       ? (raises.length < 2 || (pair && high >= 12) || (high === 14 && low === 13)) &&
         (premium || percentile <= raiseRange)
       : valueRaiseSupported(view, equity) &&
-        ((support.valueCandidate &&
-          equity > (headsUp ? 0.53 : Math.max(0.62, 1 / (view.rivals + 1) + 0.23))) ||
+        (support.valueCandidate ||
           safeStrongValue(view, equity) ||
           checkedToPairValue(view, equity) ||
           checkedThroughPairValue(view, equity));
@@ -1253,8 +1345,12 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
     ['BTN', 'CO'].includes(view.position)
   )
     attackRate = Math.max(attackRate, style.lateOpenAttack ?? 0);
+  // Leading into the last street's aggressor is an advanced skill. Below
+  // that level only a genuinely strong own hand that passed the value gate
+  // may lead; one pair, draws and bluffs still check to the aggressor.
+  const strongValueLead = value && features.strongMade && !view.playsBoard;
   if (
-    (!isDonkLead(view) || hasBotSkill(view.difficulty, 'donk')) &&
+    (!isDonkLead(view) || hasBotSkill(view.difficulty, 'donk') || strongValueLead) &&
     (value || semiBluff || pureBluff || smallCbet || thinValue) &&
     roll('attack', attackRate) < attackRate
   ) {
@@ -1271,7 +1367,10 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
     if (mode !== 'off' && ['frustrated', 'confident', 'reactive'].includes(mood.kind))
       fraction *= mode === 'lively' ? 1.2 : 1.1;
     if (view.street > 0 && value) fraction = Math.min(fraction, valueBetCap(view));
-    if (pairValue) fraction = Math.min(fraction, view.rivals >= 3 ? 0.35 : 0.4);
+    // A multiway one-pair value bet stays small, so better hands cannot
+    // turn it into a large loss and worse pairs can still call.
+    if (pairValue || (value && view.street > 0 && !headsUp && !features.strongMade))
+      fraction = Math.min(fraction, view.rivals >= 3 ? 0.35 : 0.4);
     let desired = fractionRaiseTo(
       {
         currentBet: view.currentBet,

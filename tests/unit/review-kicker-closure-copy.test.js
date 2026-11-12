@@ -47,6 +47,52 @@ test('kicker control does not override a draw, an explicit trap or a kicker repl
     assert.doesNotMatch(summary(weakTopPair(changes)), /6 踢脚偏弱/);
 });
 
+test('top pair on a paired board explains the shared pair, trips and the weak kicker', async () => {
+  const pairedBoard = (changes = {}) =>
+    weakTopPair({ hole: '5d Ad', board: 'Jc As Js', ...changes });
+  for (const reason of ['free-check', 'pot-control', 'unknown'])
+    for (const board of ['Jc As Js', 'Jc As Js 2h']) {
+      const record = pairedBoard({ reason, board });
+      const before = summary(record);
+      assert.match(
+        before,
+        /公共牌的一对 J 是所有玩家共用的.*底牌这对 A 和 5 踢脚.*一张 J 就是三条.*同样拿 A 的对手另一张只要大于 5 也会领先.*过牌先控制底池/,
+      );
+      assert.doesNotMatch(before, /把较强牌保留在过牌范围|等后位先下注|并不是坚果|仍可向较弱/);
+      for (const player of record.trace.view.opponents)
+        Object.defineProperty(player, 'hole', {
+          get() {
+            throw Error('hidden cards read');
+          },
+        });
+      record.trace.view.deck = [{ rank: 11, suit: 2 }];
+      record.trace.view.winners = [0];
+      assert.equal(summary(record), before);
+    }
+  // A strong kicker, a kicker the board replaced, a full house, two board pairs
+  // and a draw keep their existing explanations.
+  for (const changes of [
+    { hole: 'Kd Ad' },
+    { board: 'Jc As Js 8h' },
+    { hole: 'Jd Ad' },
+    { board: 'Jc As Js 2h 2d' },
+    { hole: '5s Ad', board: 'Jc As Js 2s' },
+  ])
+    assert.doesNotMatch(summary(pairedBoard(changes)), /是所有玩家共用的/);
+  try {
+    for (const locale of SUPPORTED_LOCALES) {
+      await loadLocale(locale);
+      const text = explainOpponent(pairedBoard()).paragraphParts.at(-1).map(localizeText).join('');
+      assert.doesNotMatch(text, /\{\d+\}|[。；，]{2}/u, locale);
+      if (!['zh-CN', 'zh-TW', 'ja'].includes(locale))
+        assert.doesNotMatch(text, /\p{Script=Han}/u, locale);
+      assert.ok(text.includes('J') && text.includes('5'), locale);
+    }
+  } finally {
+    await loadLocale('zh-CN');
+  }
+});
+
 test('call and fold summaries state the required win probability with the exact contestable price', () => {
   for (const [action, reason] of [
     ['call', 'price-continue'],
@@ -65,7 +111,7 @@ test('call and fold summaries state the required win probability with the exact 
         contestable: 4300,
       }),
     );
-    assert.match(text, /继续要补 700，可争夺跟注后的 4.3K 底池，需要至少16.3%的胜率/);
+    assert.match(text, /继续要补 700，可争夺跟注后的 4.3K 底池，需要至少 16.3% 的胜率/);
     assert.doesNotMatch(text, /当前保本门槛/);
   }
 });

@@ -72,7 +72,7 @@
 1. 已注册会员；在 App Store Connect 完成发行主体资料。买断需接受 Paid Apps Agreement，并完成银行和税务信息；会员本身不能替代付费协议。
 2. 确认最终 `io.github.jessiezjz.noirpoker` Bundle ID、SKU、版本和递增构建号；正式发布后不能随意更换应用身份。配置 Team、证书／描述文件，签名材料留在密钥管理或 CI Secrets。
 3. 使用完整 Xcode 26 或以上及适用 SDK。Apple 当前要求自 2026-04-28 起用 Xcode 26+ 和 iOS 26+ SDK 上传；这与最低支持 iOS 版本是两个概念。[提交要求](https://developer.apple.com/news/upcoming-requirements/)。
-4. 按 `docs/mobile-release.md` 运行 `NOIR_APPLE_TEAM_ID=... npm run mobile:ios:archive`；Organizer Validate App、上传到 Connect，再通过 TestFlight 安装真实分发包。模拟器 `.app` 和浏览器通过不能替代 Archive、签名与真机。
+4. 按 `docs/mobile-release.md` 配置 Team ID 后运行 `npm run mobile:ios:upload`（或 `mobile:ios:archive` 后在 Organizer Validate App、上传到 Connect），再通过 TestFlight 安装真实分发包。模拟器 `.app` 和浏览器通过不能替代 Archive、签名与真机。
 5. 配置 11 种适用商店本地化资料、真实截图、App Privacy、年龄问卷、价格、发行地区、支持／隐私 URL、出口合规问卷。当前未增加自研加密，但必须依据实际 SDK 和网络能力回答；不要未经检查就写死 ITSAppUsesNonExemptEncryption。
 6. Review Notes 使用下方说明，不提供不存在的登录账户；建议手动发布以便控制发布时间。先 TestFlight 再提交审核，获批后按地区计划开放。
 

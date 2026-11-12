@@ -530,18 +530,27 @@ test('all retained illustrated styles show behavior guidance and assignments sur
         detail.locator('img').evaluate((el) => el.complete && el.naturalWidth > 0 && !el.hidden),
       )
       .toBe(true);
-    if (await page.locator('[data-close-profile-detail]').isVisible())
+    // The compact reveal clips the panel for 420ms. Its close button can have
+    // a visible box before the reveal can reliably receive the pointer click.
+    await expect(detail).not.toHaveClass(/is-revealing/);
+    if (await page.locator('[data-close-profile-detail]').isVisible()) {
       await page.locator('[data-close-profile-detail]').click();
+      await expect(detail).toBeHidden();
+      await expect(page.locator('#profile-cards')).toBeVisible();
+    }
   }
   const ids = ['rook', 'owen', 'jett', 'rook', 'owen', 'owen', 'rook', 'owen'];
   for (const [i, id] of ids.entries())
     await page.locator(`[data-bot-seat="${i + 1}"]`).selectOption(id);
   await page.locator('[data-profile-preview="owen"]').click();
-  await page
-    .locator('#profile-detail')
-    .screenshot({ path: test.info().outputPath('original-iris.png') });
-  if (await page.locator('[data-close-profile-detail]').isVisible())
+  const assignedDetail = page.locator('#profile-detail');
+  await expect(assignedDetail).not.toHaveClass(/is-revealing/);
+  await assignedDetail.screenshot({ path: test.info().outputPath('original-iris.png') });
+  if (await page.locator('[data-close-profile-detail]').isVisible()) {
     await page.locator('[data-close-profile-detail]').click();
+    await expect(assignedDetail).toBeHidden();
+    await expect(page.locator('#profile-cards')).toBeVisible();
+  }
   await closeSettings(page);
   await page.locator('#next-button').click();
   await page.evaluate(() => window.qa.stop());

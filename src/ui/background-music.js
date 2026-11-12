@@ -2,6 +2,26 @@ export const BACKGROUND_MUSIC_PATH = 'audio/background-music.m4a';
 export const MOBILE_BACKGROUND_MUSIC_PATH = 'audio/background-music-mobile.m4a';
 // Both masters include their own peak headroom for action cues.
 export const BACKGROUND_MUSIC_VOLUME = 1;
+// Each file holds one exact 32-bar period of the master without its drums,
+// starting just before the bar 3 downbeat (the melody enters at bar 5), with half a
+// second of the music before and after it. `audio-studio/.../game-loop.py`
+// renders it, so the loop jump joins two identical continuations.
+export const BACKGROUND_MUSIC_LOOP = Object.freeze({
+  start: 24000 / 48000,
+  end: 4519610 / 48000,
+});
+
+// Position in the file after `position` seconds of uninterrupted playback.
+export function loopPosition(position, loop = BACKGROUND_MUSIC_LOOP) {
+  if (!(position >= loop.end)) return Math.max(0, position || 0);
+  return loop.start + ((position - loop.start) % (loop.end - loop.start));
+}
+
+// Loop points that also fit a shorter decoded buffer. The first play of a
+// session opens at the loop start; later plays resume where they paused.
+export function loopFor(duration, loop = BACKGROUND_MUSIC_LOOP) {
+  return duration > loop.end ? loop : { start: 0, end: duration };
+}
 
 // The sound preference owns music too. Hand changes never recreate this player.
 export function createMusicController({ createPlayer, enabled = true, active = true }) {

@@ -250,11 +250,11 @@ test('the rotating entry always opens both choices and keyboard focus keeps its 
   expect(await trigger.getAttribute('data-label')).toBe(label);
   await page.keyboard.press('ArrowDown');
   await expect(page.locator('#guide-menu')).toBeVisible();
-  await expect(page.locator('#guide-menu-item')).toBeFocused();
+  await expect(page.locator('#records-menu-item')).toBeFocused();
   await page.keyboard.press('ArrowDown');
   await expect(page.locator('#tutorial-menu-item')).toBeFocused();
   await page.keyboard.press('ArrowDown');
-  await expect(page.locator('#records-menu-item')).toBeFocused();
+  await expect(page.locator('#guide-menu-item')).toBeFocused();
   await page.keyboard.press('Escape');
   await expect(page.locator('#guide-menu')).toBeHidden();
   await expect(trigger).toBeFocused();
@@ -920,7 +920,7 @@ test('nine-seat history keeps cards centered, hero identity unclipped and the mo
           const name = rect('#history-table .hero-name');
           const board = rect('#history-table .board');
           const label = document.querySelector(
-            `#rules-button [data-guide-label="${document.querySelector('#rules-button').dataset.label || 'guide'}"]`,
+            `#rules-button [data-guide-label="${document.querySelector('#rules-button').dataset.label || 'records'}"]`,
           );
           const style = getComputedStyle(label);
           return {

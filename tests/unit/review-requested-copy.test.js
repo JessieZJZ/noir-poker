@@ -20,7 +20,7 @@ test('preflop call coaching makes a later weak-hand exit conditional on facing a
     coaching.paragraphs
       .join('')
       .includes(
-        '这条跟注路线的依据是当前价格下保留改善与摊牌机会，仍依赖对手范围较宽；未改善且面对不利下注时可弃牌，能免费过牌则保留机会。',
+        '这条跟注路线的依据是当前价格下保留改善与摊牌机会，仍依赖对手范围较宽。未改善且面对不利下注时可弃牌，能免费过牌则保留机会。',
       ),
   );
   assert.doesNotMatch(coaching.paragraphs.join(''), /不自动跟到底/);

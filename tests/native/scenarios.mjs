@@ -403,16 +403,13 @@ export async function nativeScenarios(app) {
     const music = await app.waitFor(
       () =>
         app.evaluate(() => {
-          const audio = document.querySelector('audio[data-background-music]');
-          return audio &&
-            !audio.paused &&
-            audio.currentTime > 0.1 &&
-            Number(audio.dataset.musicGain) === 1
+          const audio = document.querySelector('[data-background-music]')?.backgroundMusic;
+          return audio && !audio.paused && audio.currentTime > 0.1 && audio.gain === 1
             ? {
                 time: audio.currentTime,
-                gain: Number(audio.dataset.musicGain),
-                source: audio.currentSrc,
-                count: document.querySelectorAll('audio[data-background-music]').length,
+                gain: audio.gain,
+                source: audio.source,
+                count: document.querySelectorAll('[data-background-music]').length,
               }
             : null;
         }),
@@ -420,22 +417,25 @@ export async function nativeScenarios(app) {
       'Music must already play before the first native touch',
     );
     await app.evaluate(() => {
-      const audio = document.querySelector('audio[data-background-music]');
+      const audio = document.querySelector('[data-background-music]')?.backgroundMusic;
       window.__entryMusicAudio = audio;
       window.__entryMusicTimes = [audio.currentTime];
-      window.__entryMusicObserve = () => window.__entryMusicTimes.push(audio.currentTime);
-      audio.addEventListener('timeupdate', window.__entryMusicObserve);
+      window.__entryMusicObserve = setInterval(
+        () => window.__entryMusicTimes.push(audio.currentTime),
+        100,
+      );
     });
     const progress = () =>
       app.evaluate(() => {
-        const audio = document.querySelector('audio[data-background-music]');
+        const audio = document.querySelector('[data-background-music]')?.backgroundMusic;
         const samples = window.__entryMusicTimes;
         return {
           time: audio.currentTime,
-          count: document.querySelectorAll('audio[data-background-music]').length,
+          count: document.querySelectorAll('[data-background-music]').length,
           samePlayer: audio === window.__entryMusicAudio,
           naturalLoop: samples.some(
-            (time, index) => index > 0 && samples[index - 1] > audio.duration - 0.6 && time < 0.6,
+            (time, index) =>
+              index > 0 && samples[index - 1] > audio.loopEnd - 0.6 && time < audio.loopStart + 0.6,
           ),
         };
       });
@@ -557,7 +557,7 @@ export async function nativeScenarios(app) {
     assert.equal(continued.samePlayer, true);
     assert.equal(continued.count, 1);
     await app.evaluate(() => {
-      window.__entryMusicAudio.removeEventListener('timeupdate', window.__entryMusicObserve);
+      clearInterval(window.__entryMusicObserve);
       delete window.__entryMusicAudio;
       delete window.__entryMusicObserve;
       delete window.__entryMusicTimes;
@@ -565,12 +565,12 @@ export async function nativeScenarios(app) {
     await app.evaluate(() => {
       window.__entryMusicLifecycle = [];
       window.__entryMusicListener = ({ detail }) => {
-        const audio = document.querySelector('audio[data-background-music]');
+        const audio = document.querySelector('[data-background-music]')?.backgroundMusic;
         window.__entryMusicLifecycle.push({
           active: detail.active,
           paused: audio.paused,
           time: audio.currentTime,
-          gain: Number(audio.dataset.musicGain),
+          gain: audio.gain,
           at: performance.now(),
         });
       };
@@ -613,9 +613,13 @@ export async function nativeScenarios(app) {
     const resumed = await app.waitFor(
       () =>
         app.evaluate(() => {
-          const audio = document.querySelector('audio[data-background-music]');
-          return !audio.paused && Number(audio.dataset.musicGain) === 1
-            ? { time: audio.currentTime, duration: audio.duration, at: performance.now() }
+          const audio = document.querySelector('[data-background-music]')?.backgroundMusic;
+          return !audio.paused && audio.gain === 1
+            ? {
+                time: audio.currentTime,
+                period: audio.loopEnd - audio.loopStart,
+                at: performance.now(),
+              }
             : null;
         }),
       10000,
@@ -624,15 +628,14 @@ export async function nativeScenarios(app) {
     // The track loops, and a slow runner's sample can arrive long after the
     // resume. Continuing playback advances (around the loop) by at most the
     // page time since foreground; a restart from 0 would advance by far more.
-    // Half a second of backward seek jitter at the pause point is not a wrap.
+    // Half a second of backward jitter at the pause point is not a wrap.
     const advanced =
-      ((((resumed.time - paused.time + 0.5) % resumed.duration) + resumed.duration) %
-        resumed.duration) -
+      ((((resumed.time - paused.time + 0.5) % resumed.period) + resumed.period) % resumed.period) -
       0.5;
     const elapsed = (resumed.at - foreground.at) / 1000;
     assert.ok(
       advanced <= elapsed + 1,
-      `Music resumed at ${resumed.time}s after pausing at ${paused.time}s of ${resumed.duration}s, ${elapsed.toFixed(1)}s after foreground`,
+      `Music resumed at ${resumed.time}s after pausing at ${paused.time}s (period ${resumed.period}s), ${elapsed.toFixed(1)}s after foreground`,
     );
     return {
       before,
@@ -1205,12 +1208,13 @@ export async function nativeScenarios(app) {
         await app.evaluate(() =>
           [...document.querySelectorAll('.seat-style-label')].every((tag) => {
             const fullName = tag.dataset.fullName,
+              shown = tag.dataset.styleTag,
               style = getComputedStyle(tag),
               rect = tag.getBoundingClientRect(),
               profile = tag.closest('.seat-profile').getBoundingClientRect();
             return (
               fullName &&
-              tag.textContent === fullName &&
+              tag.textContent === shown &&
               tag.getAttribute('aria-label')?.includes(fullName) &&
               style.textOverflow !== 'ellipsis' &&
               style.whiteSpace === 'nowrap' &&
@@ -1575,6 +1579,8 @@ export async function nativeScenarios(app) {
         return nativePromise.call(this, plugin, method, ...args);
       };
       AudioBufferSourceNode.prototype.start = function (...args) {
+        // The background music is the one long decoded source, not a cue.
+        if (this.buffer?.duration > 60) return start.apply(this, args);
         window.__feedbackProbe.audio++;
         const samples = this.buffer?.getChannelData(0);
         if (samples?.length) {
@@ -1663,13 +1669,15 @@ export async function nativeScenarios(app) {
       window.__polishCues = [];
       window.__polishStart = AudioBufferSourceNode.prototype.start;
       AudioBufferSourceNode.prototype.start = function (...args) {
+        // The background music is the one long decoded source, not a cue.
+        if (this.buffer.duration > 60) return window.__polishStart.apply(this, args);
         const pcm = this.buffer.getChannelData(0);
         window.__polishCues.push({
           samples: pcm.length,
           rms: Math.sqrt(pcm.reduce((sum, value) => sum + value * value, 0) / pcm.length),
           peak: pcm.reduce((peak, value) => Math.max(peak, Math.abs(value)), 0),
           musicGain: Number(
-            document.querySelector('audio[data-background-music]')?.dataset.musicGain,
+            document.querySelector('[data-background-music]')?.backgroundMusic?.gain,
           ),
         });
         return window.__polishStart.apply(this, args);
@@ -1680,13 +1688,14 @@ export async function nativeScenarios(app) {
       const music = await app.waitFor(
         () =>
           app.evaluate(() => {
-            const audio = document.querySelector('audio[data-background-music]');
-            return audio && !audio.paused && audio.readyState >= 2 && audio.currentTime > 0.1
+            const audio = document.querySelector('[data-background-music]')?.backgroundMusic;
+            return audio && !audio.paused && audio.ready && audio.currentTime > 0.1
               ? {
-                  source: audio.currentSrc,
+                  source: audio.source,
                   time: audio.currentTime,
                   duration: audio.duration,
                   loop: audio.loop,
+                  loopEnd: audio.loopEnd,
                 }
               : null;
           }),
@@ -1695,12 +1704,12 @@ export async function nativeScenarios(app) {
       );
       assert.equal(music.loop, true);
       assert.ok(music.source.endsWith('/audio/background-music-mobile.m4a'));
-      assert.ok(music.duration > 93.6 && music.duration < 93.8);
+      assert.ok(music.duration > music.loopEnd && music.duration < music.loopEnd + 1);
       await app.waitFor(
         () =>
           app.evaluate(
             () =>
-              Number(document.querySelector('audio[data-background-music]')?.dataset.musicGain) ===
+              Number(document.querySelector('[data-background-music]')?.backgroundMusic?.gain) ===
               1,
           ),
         5000,
@@ -1709,15 +1718,16 @@ export async function nativeScenarios(app) {
       await app.click('#opponents-dialog .close-dialog');
       await waitForNativeHeroTurn(app);
       await app.evaluate(() => {
-        const audio = document.querySelector('audio[data-background-music]');
+        const audio = document.querySelector('[data-background-music]')?.backgroundMusic;
         window.__polishCues = [];
         window.__steadyMusic = { audio, started: audio.currentTime, samples: [] };
         window.__steadyMusic.timer = setInterval(
           () =>
             window.__steadyMusic.samples.push({
-              gain: Number(audio.dataset.musicGain),
+              gain: audio.gain,
               paused: audio.paused,
-              samePlayer: document.querySelector('audio[data-background-music]') === audio,
+              samePlayer:
+                document.querySelector('[data-background-music]')?.backgroundMusic === audio,
             }),
           20,
         );
@@ -1780,32 +1790,42 @@ export async function nativeScenarios(app) {
     await app.click('#opponents-button');
     const read = () =>
       app.evaluate(() => {
-        const audio = document.querySelector('audio[data-background-music]');
+        const audio = document.querySelector('[data-background-music]')?.backgroundMusic;
         return audio
           ? {
               paused: audio.paused,
               loop: audio.loop,
               time: audio.currentTime,
               duration: audio.duration,
-              ready: audio.readyState,
-              source: audio.currentSrc,
+              ready: audio.ready,
+              source: audio.source,
+              loopStart: audio.loopStart,
+              loopEnd: audio.loopEnd,
+              mode: audio.mode,
+              reason: audio.reason,
             }
           : null;
       });
     const initial = await app.waitFor(
       async () => {
         const state = await read();
-        return state && !state.paused && state.ready >= 2 && state.time > 0.1 ? state : null;
+        return state && !state.paused && state.ready && state.time > 0.1 ? state : null;
       },
       15000,
       'Local bundled background music must decode and advance',
     );
     assert.equal(initial.loop, true);
-    assert.ok(initial.duration > 93 && initial.duration < 94);
+    assert.ok(initial.duration > initial.loopEnd && initial.duration < initial.loopEnd + 1);
+    assert.equal(initial.loopStart, 0.5, 'Half a second of lead-in before the loop start');
+    assert.equal(
+      initial.mode,
+      'buffer',
+      `Music must loop a decoded buffer, not the element fallback (${initial.reason})`,
+    );
     assert.ok(initial.source.endsWith('/audio/background-music-mobile.m4a'));
     await app.evaluate(watchNativeMusicLoop);
     await app.evaluate(() => {
-      const audio = document.querySelector('audio[data-background-music]');
+      const audio = document.querySelector('[data-background-music]')?.backgroundMusic;
       window.__musicLifecycle = [];
       window.__musicLifecycleListener = ({ detail }) =>
         window.__musicLifecycle.push({
@@ -1858,7 +1878,7 @@ export async function nativeScenarios(app) {
       sound: document.querySelector('#sound-button').getAttribute('aria-checked'),
       music: document.querySelector('#music-button').getAttribute('aria-checked'),
       vibration: document.querySelector('#vibration-button').getAttribute('aria-checked'),
-      musicElements: document.querySelectorAll('audio[data-background-music]').length,
+      musicElements: document.querySelectorAll('[data-background-music]').length,
     }));
     assert.deepEqual(saved, {
       sound: 'false',
@@ -1927,7 +1947,7 @@ export async function nativeScenarios(app) {
         (entry) => entry.textContent,
       ),
     );
-    assert.equal(terms.length, 35);
+    assert.equal(terms.length, 36);
     for (const term of ['范围优势', '弃牌权益', '隐含收益', '坚果听牌', '继续范围'])
       assert.ok(
         terms.some((entry) => entry.includes(term)),
@@ -1994,7 +2014,7 @@ export async function nativeScenarios(app) {
             p = el.closest('.seat-profile').getBoundingClientRect();
           return {
             text: el.textContent,
-            expected: el.dataset.fullName,
+            expected: el.dataset.styleTag,
             visible:
               r.top >= document.querySelector('.header').getBoundingClientRect().bottom - 1 &&
               r.bottom <= innerHeight,
@@ -2191,8 +2211,8 @@ export async function nativeScenarios(app) {
       ),
     }));
     assert.equal(guide.hands, 9);
-    assert.equal(guide.glossaryEntries, 35);
-    assert.equal(Object.keys(guide.glossaryTerms).length, 35, 'Every glossary term is unique');
+    assert.equal(guide.glossaryEntries, 36);
+    assert.equal(Object.keys(guide.glossaryTerms).length, 36, 'Every glossary term is unique');
     assert.match(guide.glossary, /底池赔率／保本胜率.*全下只会结束自己的下注选择/s);
     assert.match(guide.glossary, /主动权.*不改变行动顺序/s);
     assert.match(guide.glossary, /权益把获胜和平分计为底池份额/);
@@ -2314,7 +2334,7 @@ export async function nativeScenarios(app) {
           misfits: tags
             .map((tag) => ({
               text: tag.textContent,
-              fullName: tag.dataset.fullName,
+              styleTag: tag.dataset.styleTag,
               whiteSpace: getComputedStyle(tag).whiteSpace,
               textOverflow: getComputedStyle(tag).textOverflow,
               fontSize: getComputedStyle(tag).fontSize,
@@ -2325,7 +2345,7 @@ export async function nativeScenarios(app) {
             }))
             .filter(
               (tag) =>
-                tag.text !== tag.fullName ||
+                tag.text !== tag.styleTag ||
                 tag.whiteSpace !== 'nowrap' ||
                 tag.textOverflow === 'ellipsis' ||
                 tag.scrollWidth > tag.clientWidth + 1 ||
@@ -4425,6 +4445,19 @@ export async function nativeScenarios(app) {
     if (app.platform === 'android') {
       const beforeMinimize = await app.state();
       await app.preserveForegroundPage();
+      // The first Back at the table only shows the exit prompt; a second Back
+      // inside its two-second window leaves. Record the prompt in the page and
+      // press twice without slow driver reads in between.
+      await app.evaluate(() => {
+        window.__nativeExitPrompts = [];
+        document.addEventListener('noir:exit-prompt', () =>
+          window.__nativeExitPrompts.push({
+            at: performance.now(),
+            records: document.body.dataset.recordsPage || '',
+          }),
+        );
+      });
+      await app.back();
       await app.back();
       const nativeState = await app.waitFor(
         async () => {
@@ -4436,11 +4469,19 @@ export async function nativeScenarios(app) {
       );
       await app.activate();
       await waitGamePage();
+      const exitPrompt = await app.evaluate(() => ({
+        prompts: window.__nativeExitPrompts,
+        toast: document.querySelector('#app-toast').textContent.trim(),
+      }));
+      assert.equal(exitPrompt.prompts.length, 1, 'Only the first Back may show the exit prompt');
+      assert.ok(!['hand', 'list'].includes(exitPrompt.prompts[0].records));
+      assert.equal(exitPrompt.toast, '再按一次退出');
       const afterActivate = await app.state();
       assert.equal(afterActivate.sessionNumber, beforeMinimize.sessionNumber);
       assert.equal(afterActivate.hand, beforeMinimize.hand);
       assert.equal(await app.visible('#records-page'), false);
       returnGameBack = {
+        exitPrompt,
         nativeState,
         session: afterActivate.sessionNumber,
         hand: afterActivate.hand,
@@ -4530,7 +4571,8 @@ export async function nativeScenarios(app) {
     );
     assert.deepEqual((await app.state()).hole, ['10♥', '9♥']);
     let coached = false;
-    for (let step = 0; step < 300; step++) {
+    // Bots wait for each fresh coach message to be read, so waiting steps repeat.
+    for (let step = 0; step < 600; step++) {
       const view = (await app.state()).tutorial;
       if (view.stage === 'summary') break;
       if (view.allowed?.action === 'call' && !coached) {

@@ -15,6 +15,13 @@ import { entryWelcomeCorridor, entryWelcomeScale } from '../../src/ui/entry-welc
 import { heroPlaceStyle, heroTrophy, seatTrophy } from '../../src/ui/trophy-placement.js';
 import * as effectLayouts from '../../src/ui/effect-layouts.js';
 import * as ceremonySounds from '../../src/ui/ceremony-sounds.js';
+import * as soundSynth from '../../src/ui/sound-synth.js';
+// Synthesized table cues are written once into user files; the recorded chip
+// stack and the champions' cheers stay packaged.
+const tableSound = (name) =>
+  name === 'chip'
+    ? '/sounds/chip.wav'
+    : `wxfile://usr/noir-sfx-${name}-v${soundSynth.SOUND_SYNTH_VERSION}.wav`;
 import { createMusicController } from '../../src/ui/background-music.js';
 const pageEffectsSource = readFileSync(
   new URL('../../miniprogram/pages/table/game-effects.js', import.meta.url),
@@ -26,7 +33,12 @@ function loadPageEffects(wx) {
   vm.runInNewContext(pageEffectsSource, {
     module,
     wx,
-    require: (name) => (name.endsWith('/ceremony-sounds.js') ? ceremonySounds : effectLayouts),
+    require: (name) =>
+      name.endsWith('/ceremony-sounds.js')
+        ? ceremonySounds
+        : name.endsWith('/sound-synth.js')
+          ? soundSynth
+          : effectLayouts,
   });
   return module.exports;
 }
@@ -96,6 +108,7 @@ function setup(
     ['noir-wechat-settings-v1', JSON.stringify({ playerCount, hints: false })],
   ]);
   const audios = [];
+  const userFiles = new Map();
   const vibrations = [];
   const toasts = [];
   const clipboard = [];
@@ -153,6 +166,25 @@ function setup(
       return { createWechatController: controllerFactory };
     },
     wx: {
+      env: { USER_DATA_PATH: 'wxfile://usr' },
+      // An in-memory user data folder: sounds and record snapshots.
+      getFileSystemManager: () => ({
+        readdirSync: (dir) =>
+          [...userFiles.keys()]
+            .filter((key) => key.startsWith(dir + '/'))
+            .map((key) => key.slice(dir.length + 1))
+            .filter((name) => !name.includes('/')),
+        mkdirSync() {},
+        unlinkSync: (key) => userFiles.delete(key),
+        accessSync(key) {
+          if (!userFiles.has(key) && !key.endsWith('/noir-records')) throw Error('missing');
+        },
+        readFileSync(key) {
+          if (!userFiles.has(key)) throw Error('missing');
+          return userFiles.get(key);
+        },
+        writeFileSync: (key, bytes) => userFiles.set(key, bytes),
+      }),
       getWindowInfo: () => info,
       ...(menuRect === undefined
         ? {}
@@ -225,6 +257,16 @@ function setup(
       },
     },
   });
+  // The sounds subpackage "downloads" at once: a thenable keeps tests synchronous.
+  context.require.async = (name) => {
+    assert.equal(name, '../../sounds/source.js');
+    const files = {
+      chip: '/sounds/chip.wav',
+      champion: '/sounds/champion-cheer.m4a',
+      crowned: '/sounds/crowned-cheer.m4a',
+    };
+    return { then: (fn) => (fn(files), { catch() {} }) };
+  };
   vm.runInNewContext(
     readFileSync(new URL('../../miniprogram/record-navigation.js', import.meta.url), 'utf8'),
     { module: navigationModule, wx: context.wx, getCurrentPages: () => stack },
@@ -652,9 +694,14 @@ test('secondary pages lock the home scroll and source titles navigate to a separ
   assert.deepEqual(
     audios.map((audio) => audio.src),
     [
-      ...['fold', 'check', 'chip', 'deal', 'win'].map((name) => `/assets/sounds/${name}.wav`),
-      '/assets/sounds/champion-cheer.m4a',
-      '/assets/sounds/crowned-cheer.m4a',
+      ...['fold', 'check', 'deal', 'win'].map(tableSound),
+      ...['farewell', 'levelup', 'finaltable'].map(
+        (name) => `wxfile://usr/noir-${name}-v${ceremonySounds.CEREMONY_SOUND_VERSION}.wav`,
+      ),
+      // Recordings follow once the sounds subpackage has loaded.
+      tableSound('chip'),
+      '/sounds/champion-cheer.m4a',
+      '/sounds/crowned-cheer.m4a',
     ],
     'Each unique local effect is preloaded once on entry',
   );
@@ -971,10 +1018,16 @@ test('WeChat Page presents completed shared review copy and per-decision advice'
   assert.equal('summary' in report, false);
   assert.doesNotMatch(template, /review-summary|reviewData\.summary|reviewData\.title/);
   assert.equal(report.steps.length, 1);
-  for (const field of ['street', 'actual', 'label', 'suggestion', 'reason', 'followUp'])
+  for (const field of ['street', 'actual', 'suggestion', 'reason', 'followUp'])
     text(report.steps[0][field]);
-  assert.match(report.steps[0].label, /^建议(?:弃牌|过牌|跟注|全下|短全下|加注|下注)/);
-  assert.equal(report.steps[0].suggestion, report.steps[0].label);
+  assert.match(report.steps[0].suggestion, /^建议(?:弃牌|过牌|跟注|全下|短全下|加注|下注)/);
+  // A badge names only a different action; an affirmed or repeated one is silent.
+  assert.equal(
+    report.steps[0].label,
+    report.steps[0].keep || report.steps[0].suggestion === '建议' + report.steps[0].actual
+      ? ''
+      : report.steps[0].suggestion,
+  );
   assert.equal(report.steps[0].ev, undefined);
   assert.ok(Array.isArray(report.activity));
   // The hand activity opens by default and still folds.
@@ -1099,11 +1152,11 @@ test('WeChat Page stops and destroys native audio plus pending work when backgro
   page.joinTable();
   page.call('setPreference', 'sound', false);
   page.call('setPreference', 'sound', true);
-  assert.ok(audios.some((audio) => audio.src === '/assets/sounds/deal.wav' && audio.played));
+  assert.ok(audios.some((audio) => audio.src === tableSound('deal') && audio.played));
   page.playSound('check');
   page.playSound('fold');
-  assert.ok(audios.some((audio) => audio.src === '/assets/sounds/check.wav'));
-  assert.ok(audios.some((audio) => audio.src === '/assets/sounds/fold.wav'));
+  assert.ok(audios.some((audio) => audio.src === tableSound('check')));
+  assert.ok(audios.some((audio) => audio.src === tableSound('fold')));
   page.onHide();
   assert.equal(jobs.size, 0);
   assert.equal(page._audio.length, 0);
@@ -1169,7 +1222,7 @@ test('WeChat boosted sound cues keep only the latest context active and respect 
   assert.equal(fold.stopCount, stopped + 1);
   assert.equal(call.playCount, 1);
   assert.equal(call.seekPosition, 0);
-  assert.equal(call.src, '/assets/sounds/chip.wav');
+  assert.equal(call.src, '/sounds/chip.wav');
   page.playSound('raise');
   assert.equal(call.playCount, 2, 'Raise and call reuse the same recorded chip context');
   assert.equal(ducks, 0, 'Playing cues must leave background music volume alone');
@@ -1664,7 +1717,8 @@ test('WeChat entry gesture unlocks the first full deal cue using the short-audio
   page.joinTable();
   assert.equal(unlocks, 1);
   assert.equal(page._soundPool.deal.playCount, 1);
-  assert.ok(audios.slice(0, 5).every((audio) => audio.options.useWebAudioImplement));
+  for (const name of ['fold', 'check', 'chip', 'deal', 'win'])
+    assert.ok(page._soundPool[name].options.useWebAudioImplement, name);
 });
 
 test('a result cannot truncate the second check knock and queued audio is cancelled on hide or a new deal', (t) => {
@@ -1906,16 +1960,27 @@ test('WeChat combined resources menu keeps both choices and rotates only while c
     jobs.delete(page._resourceTimer);
     timer.fn();
   };
-  tick();
   assert.equal(page.data.resourceLabel, '对局记录');
-  assert.equal(page.data.resourcePreviousLabel, '玩法指南');
-  assert.equal(page.data.resourceRolling, true);
-  jobs.get(page._resourceMotionTimer).fn();
-  assert.equal(page.data.resourceRolling, false);
+  const seen = [];
+  for (let i = 0; i < 4; i++) {
+    const previous = page.data.resourceLabel;
+    tick();
+    assert.equal(page.data.resourcePreviousLabel, previous);
+    assert.equal(page.data.resourceRolling, true);
+    jobs.get(page._resourceMotionTimer).fn();
+    assert.equal(page.data.resourceRolling, false);
+    seen.push(page.data.resourceLabel);
+  }
+  assert.deepEqual(seen, ['新手引导', '玩法指南', '胜率计算器', '对局记录']);
   page.toggleResourceMenu();
   assert.equal(page.data.resourceRolling, false);
   tick();
-  assert.equal(page.data.resourceLabel, '对局记录');
+  assert.equal(page.data.resourceLabel, '对局记录', 'An open menu stops the rotation');
+  const menu = template.slice(template.indexOf('class="resource-menu"'));
+  assert.deepEqual(
+    [...menu.matchAll(/bindtap="(open\w+)"/g)].slice(0, 4).map((match) => match[1]),
+    ['openRecords', 'openTutorial', 'openGuide', 'openWinRate'],
+  );
   page.openGuide();
   assert.equal(page.data.resourceMenuOpen, false);
   assert.equal(page.data.guideOpen, true);
@@ -1956,7 +2021,8 @@ test('WeChat reduced motion keeps resource labels static and schedules no auto r
   });
   page.readResourceMotionPreference();
   assert.equal(page.data.resourceReducedMotion, true);
-  assert.equal(page.data.resourceLabel, '玩法指南');
+  assert.equal(page.data.resourceLabel, '对局记录');
+  assert.match(template, /<text class="resource-label-static">对局记录<\/text>/);
   assert.equal(page.data.resourceRolling, false);
   assert.equal(jobs.has(page._resourceTimer), false);
   assert.match(stylesheet, /prefers-reduced-motion: reduce/);
@@ -2056,7 +2122,15 @@ test('WeChat records classify every completed hand including zero folds and zero
       { ...base, id: 'replay-one', hand: 4, attempt: 1, profit: -1025 },
       { ...base, id: 'replay-two', hand: 4, attempt: 2, profit: 1025, refill: true },
       { ...base, id: 'unfinished', hand: 5, attempt: 0, profit: null, status: 'unfinished' },
-      { ...base, id: 'playing', hand: 6, attempt: 0, profit: null, status: 'playing' },
+      {
+        ...base,
+        id: 'playing',
+        hand: 6,
+        attempt: 0,
+        profit: null,
+        status: 'playing',
+        blinds: { smallBlind: 75, bigBlind: 150 },
+      },
     ],
   };
   let revision = 0;
@@ -2113,7 +2187,11 @@ test('WeChat records classify every completed hand including zero folds and zero
   assert.match(markup, /wx:if="{{item.attemptText}}" class="hand-tag hand-replay"/);
   assert.match(markup, /class="hand-outcome">{{item.resultText}}/);
   assert.doesNotMatch(markup, /已被重打替代/);
-  assert.match(markup, /wx:if="{{item.attemptText \|\| item.refill}}"/);
+  // Every hand row shows the blinds it was dealt at, then any retry or refill tag.
+  assert.match(markup, /class="hand-tags"\s*><text class="hand-blinds">{{item.blindText}}<\/text/);
+  // A hand at a later level shows its own blinds; older hands used the start.
+  assert.equal(records.data.sessions[0].attempts[0].blindText, '盲注 75 / 150');
+  assert.equal(records.data.sessions[0].attempts[1].blindText, '盲注 25 / 50');
   // Like Web, replaced and unfinished rows keep full-opacity results.
   assert.doesNotMatch(markup, /'superseded'/);
   assert.doesNotMatch(markup, /浏览记录时/);
@@ -3124,7 +3202,7 @@ test('WeChat displays complete styles without a long-press overlay or handler', 
   assert.match(persona, /height: calc\(var\(--player-persona\) \* 1\.15 \+ 4px\)/);
   assert.doesNotMatch(persona, /text-overflow: ellipsis/);
   const balanced = [
-    ...stylesheet.matchAll(/\.web-phone-layout \.seat \.persona-balanced\s*\{([^}]+)\}/g),
+    ...stylesheet.matchAll(/\.web-phone-layout \.seat \.persona-abbr\s*\{([^}]+)\}/g),
   ].at(-1)[1];
   assert.match(balanced, /font-size: var\(--player-persona\)/);
   {
@@ -3137,6 +3215,23 @@ test('WeChat displays complete styles without a long-press overlay or handler', 
       'Four CJK glyphs, badge padding and both profile borders fit the original column',
     );
   }
+});
+
+test('WeChat confirming a restart unlocks the table at the top of the page', (t) => {
+  const { page, scrolls } = setup(t);
+  page._homeScroll = 600;
+  page.resetPractice();
+  assert.equal(page.data.homeLocked, true);
+  assert.equal(page.data.homeOffset, -600);
+  page.confirmReset();
+  assert.equal(page.data.resetOpen, false);
+  assert.equal(page.data.homeLocked, false);
+  assert.equal(scrolls.at(-1), 0);
+  // Cancelling keeps the place the player was reading.
+  page._homeScroll = 600;
+  page.resetPractice();
+  page.closeReset();
+  assert.equal(scrolls.at(-1), 600);
 });
 
 test('WeChat hand rankings shortcut resets the guide anchor on normal open and can jump again', (t) => {
@@ -3253,7 +3348,7 @@ test('WeChat starting-blind label uses the other settings label size, as on Web'
   );
 });
 
-test('WeChat plays packaged champion cheers and replaces stale cached cues', () => {
+test('WeChat caches only synthesized ceremony cues and replaces stale ones', () => {
   const files = new Map([
     ['wxfile://usr/noir-champion-v1.wav', 'old fanfare'],
     ['wxfile://usr/noir-crowned-v1.wav', 'old bells'],
@@ -3272,23 +3367,68 @@ test('WeChat plays packaged champion cheers and replaces stale cached cues', () 
     env: { USER_DATA_PATH: 'wxfile://usr' },
   });
   const version = ceremonySounds.CEREMONY_SOUND_VERSION;
-  // The champions' cheers play from the packaged recordings; only the
-  // synthesized farewell is cached, and every older cached cue is removed.
+  // The champions' cheers come from the sounds subpackage; only the
+  // synthesized farewell and table-notice cues are cached, and every older
+  // cached cue is removed.
   // The page module runs in its own VM realm; compare plain copies.
   assert.deepEqual(
     { ...effects.ceremonySoundFiles() },
     {
-      champion: '/assets/sounds/champion-cheer.m4a',
-      crowned: '/assets/sounds/crowned-cheer.m4a',
       farewell: `wxfile://usr/noir-farewell-v${version}.wav`,
+      levelup: `wxfile://usr/noir-levelup-v${version}.wav`,
+      finaltable: `wxfile://usr/noir-finaltable-v${version}.wav`,
     },
   );
   assert.deepEqual([...files.keys()].sort(), [
     `wxfile://usr/noir-farewell-v${version}.wav`,
+    `wxfile://usr/noir-finaltable-v${version}.wav`,
+    `wxfile://usr/noir-levelup-v${version}.wav`,
     'wxfile://usr/records/1.json',
   ]);
   assert.equal(
     files.get(`wxfile://usr/noir-farewell-v${version}.wav`).byteLength,
     ceremonySounds.ceremonyWav('farewell').byteLength,
   );
+});
+
+test('WeChat Back during the tutorial returns to the table instead of closing the mini program', (t) => {
+  const { page } = setup(t);
+  // The table is the first page; an empty page container takes Back while
+  // the tutorial (intro card included) is open, and only then.
+  assert.match(
+    template,
+    /<page-container\s+show="\{\{tutorialActive \|\| exitGuard\}\}"\s+overlay="\{\{false\}\}"\s+duration="\{\{0\}\}"[^>]*custom-style="height: 0;[^"]*"\s+bind:beforeleave="pageBack"/,
+  );
+  assert.equal(page.data.tutorialActive, false);
+  const controller = page._controller;
+  let exits = 0;
+  page._controller = { ...controller, exitTutorial: () => ++exits };
+  page.setData({ tutorialActive: true });
+  page.pageBack();
+  page._controller = controller;
+  assert.equal(exits, 1);
+  // The container is reopened so the table guards the next Back.
+  assert.equal(page.data.exitGuard, true);
+});
+
+test('WeChat Back on the live table asks for a second press before leaving', (t) => {
+  const { page, toasts, jobs, clockNow } = setup(t);
+  page.onShow();
+  // The guard scrolls the table inside its own box, since the container
+  // stops the page itself from scrolling.
+  assert.equal(page.data.exitGuard, true);
+  assert.equal(page.data.containedScroll, true);
+  assert.match(
+    template,
+    /\(tutorialActive \|\| containedScroll\) && !historyReadOnly \? 'tutorial-scroll'/,
+  );
+  page.pageBack();
+  assert.deepEqual(copy(toasts.at(-1)), { title: '再按一次退出', icon: 'none', duration: 2000 });
+  // For two seconds Back is not intercepted, so a second press leaves.
+  assert.equal(page.data.exitGuard, false);
+  const rearm = [...jobs].find(([, job]) => job.due - clockNow() === 2000);
+  assert.ok(rearm, 'The guard comes back after two seconds');
+  jobs.delete(rearm[0]);
+  rearm[1].fn();
+  assert.equal(page.data.exitGuard, true);
 });

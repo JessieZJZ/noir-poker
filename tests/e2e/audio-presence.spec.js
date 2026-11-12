@@ -13,12 +13,14 @@ test('actual actions use enhanced phone cues and music enters the shared output 
         to: target.constructor.name,
         gain: this.gain?.value,
       });
-      if (this instanceof MediaElementAudioSourceNode)
+      // The background music is the one long decoded source.
+      if (this instanceof AudioBufferSourceNode && this.buffer?.duration > 60)
         window.audioPresence.musicGains.push(target.gain);
       return connect.call(this, target, ...args);
     };
     const start = AudioBufferSourceNode.prototype.start;
     AudioBufferSourceNode.prototype.start = function (...args) {
+      if (this.buffer.duration > 60) return start.apply(this, args);
       const samples = this.buffer.getChannelData(0);
       window.audioPresence.cues.push({
         samples: samples.length,
@@ -34,18 +36,18 @@ test('actual actions use enhanced phone cues and music enters the shared output 
   await page.evaluate(() => window.qa.heroTurn(7));
   await page.locator('#opponents-button').click();
   await page.waitForFunction(
-    () => Number(document.querySelector('audio[data-background-music]')?.dataset.musicGain) === 1,
+    () => Number(document.querySelector('[data-background-music]')?.dataset.musicGain) === 1,
   );
   await page.locator('#opponents-dialog .close-dialog').click();
   await page.evaluate(() => {
-    const music = document.querySelector('audio[data-background-music]');
-    window.steadyMusic = { music, started: music.currentTime, samples: [] };
+    const music = document.querySelector('[data-background-music]');
+    window.steadyMusic = { music, started: music.backgroundMusic.currentTime, samples: [] };
     window.steadyMusic.timer = setInterval(
       () =>
         window.steadyMusic.samples.push({
           gains: window.audioPresence.musicGains.map((gain) => gain.value),
-          paused: music.paused,
-          samePlayer: document.querySelector('audio[data-background-music]') === music,
+          paused: music.backgroundMusic.paused,
+          samePlayer: document.querySelector('[data-background-music]') === music,
         }),
       20,
     );
@@ -59,7 +61,7 @@ test('actual actions use enhanced phone cues and music enters the shared output 
     clearInterval(window.steadyMusic.timer);
     return {
       started: window.steadyMusic.started,
-      ended: window.steadyMusic.music.currentTime,
+      ended: window.steadyMusic.music.backgroundMusic.currentTime,
       samples: window.steadyMusic.samples,
     };
   });
@@ -103,8 +105,10 @@ test('the shipped AAC reserves phone-mix headroom and Web Audio bounds coinciden
   await page.goto('/');
   const result = await page.evaluate(async () => {
     const { soundSamples, createSoundOutput } = await import('/src/ui/sound-cues.js');
-    const { BACKGROUND_MUSIC_VOLUME } = await import('/src/ui/background-music.js');
-    const context = new OfflineAudioContext(2, 44100, 44100);
+    const { BACKGROUND_MUSIC_VOLUME, BACKGROUND_MUSIC_LOOP } =
+      await import('/src/ui/background-music.js');
+    // The files' own rate, so loop frames need no resampling.
+    const context = new OfflineAudioContext(2, 48000, 48000);
     const bytes = await (await fetch('/audio/background-music-mobile.m4a')).arrayBuffer();
     const music = await context.decodeAudioData(bytes);
     const desktop = await context.decodeAudioData(
@@ -116,11 +120,16 @@ test('the shipped AAC reserves phone-mix headroom and Web Audio bounds coinciden
     };
     let musicPeak = 0,
       seam = 0;
-    for (let channel = 0; channel < music.numberOfChannels; channel++) {
-      const pcm = music.getChannelData(channel);
-      for (const sample of pcm) musicPeak = Math.max(musicPeak, Math.abs(sample));
-      seam = Math.max(seam, Math.abs(pcm[0] - pcm.at(-1)));
-    }
+    const loopStart = Math.round(BACKGROUND_MUSIC_LOOP.start * 48000),
+      loopEnd = Math.round(BACKGROUND_MUSIC_LOOP.end * 48000);
+    for (const buffer of [music, desktop])
+      for (let channel = 0; channel < buffer.numberOfChannels; channel++) {
+        const pcm = buffer.getChannelData(channel);
+        if (buffer === music)
+          for (const sample of pcm) musicPeak = Math.max(musicPeak, Math.abs(sample));
+        // The loop jump lands where the file itself continues the music.
+        seam = Math.max(seam, Math.abs(pcm[loopStart] - pcm[loopEnd]));
+      }
     const output = createSoundOutput(context);
     const source = context.createBufferSource(),
       gain = context.createGain();
@@ -148,12 +157,17 @@ test('the shipped AAC reserves phone-mix headroom and Web Audio bounds coinciden
       mixPeak,
       cuePeak,
       seam,
+      loopEnd: BACKGROUND_MUSIC_LOOP.end,
+      desktopDuration: desktop.duration,
       gain: BACKGROUND_MUSIC_VOLUME,
       loudnessIncreaseDB: 20 * Math.log10(rms(music) / rms(desktop)),
     };
   });
-  expect(result.duration).toBeGreaterThan(93.6);
-  expect(result.duration).toBeLessThan(93.8);
+  // Each decoded file continues the music past the loop end.
+  for (const duration of [result.duration, result.desktopDuration]) {
+    expect(duration).toBeGreaterThan(result.loopEnd);
+    expect(duration).toBeLessThan(result.loopEnd + 1);
+  }
   expect(result.gain).toBe(1);
   expect(result.loudnessIncreaseDB).toBeGreaterThan(4.8);
   expect(result.musicPeak).toBeLessThan(0.58);
