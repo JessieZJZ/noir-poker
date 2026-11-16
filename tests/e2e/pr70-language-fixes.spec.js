@@ -281,7 +281,7 @@ for (const locale of ['en', 'ja'])
   });
 
 for (const locale of ['zh-CN', 'zh-TW', 'en', 'ja', 'ko', 'es', 'it', 'pt', 'de', 'fr', 'ru'])
-  test(`${locale} header preserves the replay row and maximizes the hint through phone tablet PC rotation`, async ({
+  test(`${locale} header displays complete hand, blinds and replay text through phone tablet PC rotation`, async ({
     page,
   }, testInfo) => {
     test.skip(testInfo.project.name !== 'desktop', 'Explicit responsive matrix runs once.');
@@ -382,11 +382,23 @@ for (const locale of ['zh-CN', 'zh-TW', 'en', 'ja', 'ko', 'es', 'it', 'pt', 'de'
                   issues.push('header intrudes into table budget');
                 if (document.documentElement.scrollWidth > innerWidth + 1)
                   issues.push('page overflows');
-                const blindRange = document.createRange();
-                blindRange.selectNodeContents(document.querySelector('#blind-values'));
-                const blindInk = blindRange.getBoundingClientRect();
-                if (blindInk.left < blinds.left || blindInk.right > blinds.right + 1)
-                  issues.push('current blind amounts are clipped');
+                const textRects = (element) => {
+                  const range = document.createRange();
+                  range.selectNodeContents(element);
+                  return [...range.getClientRects()];
+                };
+                for (const [selector, box] of [
+                  ['.hand-label', hand],
+                  ['.blind-info', blinds],
+                  ['#blind-progress', progress],
+                ]) {
+                  if (
+                    textRects(document.querySelector(selector)).some(
+                      (r) => r.width > 0 && (r.left < box.left - 1 || r.right > box.right + 1),
+                    )
+                  )
+                    issues.push(`${selector} has clipped text`);
+                }
                 const range = document.createRange();
                 range.selectNodeContents(document.querySelector('#replay-attempt'));
                 const ink = range.getBoundingClientRect();
@@ -441,72 +453,139 @@ test('review game prose formats chips and punctuation in its rendered locale', a
   expect(lists.join('')).not.toContain('、');
 });
 
-test('translated retry header fits complete words while menus and coaching keep their leading text', async ({
+test('rotating menu labels keep a constant text-to-arrow gap and centered icons', async ({
   page,
-}) => {
-  await page.setViewportSize({ width: 320, height: 844 });
+}, info) => {
+  test.skip(info.project.name !== 'desktop', 'Explicit viewport matrix runs once.');
   await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.goto('/');
+  await expect(page.locator('html')).toHaveAttribute('data-app-ready', 'true');
+  await page.evaluate(() => document.fonts.ready);
+  for (const locale of ['zh-CN', 'zh-TW', 'en', 'ja', 'ko', 'es', 'it', 'pt', 'de', 'fr', 'ru']) {
+    await switchLocale(page, locale);
+    for (const width of [320, 390, 1024, 1366]) {
+      await page.setViewportSize({ width, height: 900 });
+      const geometry = await page.evaluate(() => {
+        const box = (selector) => document.querySelector(selector).getBoundingClientRect();
+        const center = ({ top, bottom }) => (top + bottom) / 2;
+        const arrow = box('.guide-menu-arrow');
+        const trigger = box('#rules-button');
+        const guide = [...document.querySelectorAll('[data-guide-label]')];
+        return {
+          gaps: guide.map((label) => arrow.left - label.getBoundingClientRect().right),
+          arrowCentered: Math.abs(center(arrow) - center(trigger)) < 1,
+          settingsIconCentered:
+            Math.abs(center(box('#opponents-button svg')) - center(box('#opponents-button'))) < 1,
+          labelsAligned:
+            Math.abs(center(box('.guide-rotating-label')) - center(box('#opponents-button span'))) <
+            1,
+        };
+      });
+      expect(geometry, `${locale} at ${width}px`).toEqual({
+        gaps: [3, 3, 3, 3],
+        arrowCentered: true,
+        settingsIconCentered: true,
+        labelsAligned: true,
+      });
+    }
+  }
+});
+
+test('overflowing hints keep their full text and repeat after changing the language', async ({
+  page,
+}, info) => {
+  test.skip(info.project.name !== 'desktop', 'Explicit locale matrix runs once.');
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+  await page.clock.install();
   await page.goto('/');
   await page.waitForFunction(() => !!window.qa);
   await page.evaluate(() => {
-    window.qa.foldWin(5);
     window.qa.stop();
+    return document.fonts.ready;
   });
-  await page.locator('#restart-hand-button').click();
-  await page.evaluate(() => window.qa.stop());
-
-  for (const locale of ['en', 'ja', 'ko', 'es', 'it', 'pt', 'de', 'fr', 'ru']) {
+  await page.clock.pauseAt(await page.evaluate(() => Date.now() + 60_000));
+  await page.evaluate(() => window.qa.heroTurn(9));
+  const banner = page.locator('#coach-content');
+  const tip = page.locator('#coach-tip');
+  const duplicate = banner.locator('.hint-marquee-copy');
+  for (const locale of ['zh-CN', 'zh-TW', 'en', 'ja', 'ko', 'es', 'it', 'pt', 'de', 'fr', 'ru']) {
     await switchLocale(page, locale);
-    await page.evaluate(() => {
-      document.querySelector('#rules-button').dataset.label = 'tutorial';
-    });
-    await expect
-      .poll(
-        () =>
-          page.evaluate(() => {
-            const hand = document.querySelector('.hand-label');
-            const handRect = hand.getBoundingClientRect();
-            const visible = [...hand.children].filter((el) => el.getClientRects().length);
-            const guide = document.querySelector('[data-guide-label="tutorial"]');
-            const guideRect = guide.getBoundingClientRect();
-            const slot = guide.parentElement.getBoundingClientRect();
-            const hint = document.querySelector('#coach-tip');
-            const banner = hint.closest('.hint-banner');
-            return {
-              // One header line, as in Chinese: only the street status may
-              // yield, and then with an ellipsis; the badge stays whole.
-              handFits: visible.every((el) => {
-                const r = el.getBoundingClientRect();
-                const style = getComputedStyle(el);
-                return (
-                  r.left >= handRect.left - 1 &&
-                  r.right <= handRect.right + 1 &&
-                  r.bottom <=
-                    document.querySelector('.surface-bottom').getBoundingClientRect().top &&
-                  Math.abs(r.top - visible[0].getBoundingClientRect().top) < r.height &&
-                  parseFloat(style.fontSize) >= 9 &&
-                  (el.scrollWidth <= el.clientWidth + 1 ||
-                    (el.id === 'street-label' && style.textOverflow === 'ellipsis'))
-                );
-              }),
-              guideCentered:
-                Math.abs(guideRect.left + guideRect.right - slot.left - slot.right) <= 2,
-              guideEllipsis: getComputedStyle(guide).textOverflow,
-              guideStart: getComputedStyle(guide).textAlign,
-              hintEllipsis: getComputedStyle(hint).textOverflow,
-              hintAtStart: banner.scrollLeft === 0 && banner.dataset.scrolling === 'false',
-            };
-          }),
-        locale,
-      )
-      .toEqual({
-        handFits: true,
-        guideCentered: true,
-        guideEllipsis: 'ellipsis',
-        guideStart: 'start',
-        hintEllipsis: 'ellipsis',
-        hintAtStart: true,
-      });
+    await page.clock.runFor(16);
+    await expect(banner).toHaveAttribute('data-scrolling', 'true');
+    await expect(tip).toHaveCSS('text-overflow', 'clip');
+    await expect(duplicate).toHaveText(await tip.textContent());
+    expect(await tip.evaluate((node) => node.scrollWidth - node.clientWidth)).toBeLessThanOrEqual(
+      1,
+    );
+  }
+  // The second copy takes over at the exact same position as the first
+  // copy at the start of the track.
+  await page.evaluate(() => {
+    window.qa.heroTurn(9);
+  });
+  const lap = await duplicate.evaluate((node) => node.offsetLeft - node.previousSibling.offsetLeft);
+  await page.clock.runFor(1200 + Math.ceil(((lap - 15) * 1000) / 35));
+  const before = await banner.evaluate((node) => node.scrollLeft);
+  expect(before).toBeGreaterThan(lap - 20);
+  await page.clock.runFor(900);
+  expect(await banner.evaluate((node) => node.scrollLeft)).toBeLessThan(30);
+});
+
+test('translated opponent wins and showdown ranks remain complete through rotation', async ({
+  page,
+}, info) => {
+  test.skip(info.project.name !== 'desktop', 'Explicit responsive matrix runs once.');
+  await page.goto('/');
+  await page.waitForFunction(() => !!window.qa);
+  for (const locale of ['it', 'pt', 'de', 'fr', 'ru', 'ja', 'ko', 'zh-TW']) {
+    await switchLocale(page, locale);
+    for (const scenario of ['fold', 'showdown']) {
+      await page.evaluate((scenario) => {
+        if (scenario === 'fold') window.qa.foldWin(5);
+        else
+          window.qa.scene('5s 4s', '6s 7s 8s As 2h', {
+            count: 5,
+            otherHoles: { 4: 'Ts 9s' },
+          });
+        window.qa.stop();
+      }, scenario);
+      const badges = page.locator('.seat .hand-rank');
+      await expect(badges.first()).toBeVisible();
+      for (const [width, height] of [
+        [320, 667],
+        [390, 844],
+        [768, 1024],
+        [1024, 768],
+      ]) {
+        await page.setViewportSize({ width, height });
+        await expect
+          .poll(
+            () =>
+              badges.evaluateAll((items) =>
+                items.every((badge) => {
+                  const label = badge.querySelector('.seat-rank-label');
+                  const range = document.createRange();
+                  range.selectNodeContents(label);
+                  const box = badge.getBoundingClientRect();
+                  const arena = badge.closest('.table-viewport').getBoundingClientRect();
+                  return (
+                    getComputedStyle(label).textOverflow === 'clip' &&
+                    [...range.getClientRects()].every(
+                      (rect) =>
+                        rect.left >= Math.max(box.left, arena.left) - 1 &&
+                        rect.right <= Math.min(box.right, arena.right) + 1 &&
+                        rect.top >= Math.max(box.top, arena.top) - 2 &&
+                        rect.bottom <= Math.min(box.bottom, arena.bottom) + 2,
+                    )
+                  );
+                }),
+              ),
+            `${locale} ${scenario} ${width}x${height}`,
+          )
+          .toBe(true);
+      }
+    }
   }
 });
 

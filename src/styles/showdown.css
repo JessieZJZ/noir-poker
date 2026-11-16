@@ -56,6 +56,15 @@
 .seat-rank-slot .hand-rank {
   margin-top: 3px;
 }
+.game-surface .seat-rank-slot .hand-rank {
+  max-width: 100%;
+  text-align: center;
+}
+.seat-rank-label {
+  min-width: 0;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
 .hand-rank.rank-winner {
   background: #483e26;
   color: #ffe0a0;

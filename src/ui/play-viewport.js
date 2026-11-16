@@ -9,7 +9,7 @@ export function createPlayViewport(surface, { layout = () => {}, settled = () =>
     arena = surface.querySelector('.arena'),
     board = arena.querySelector('.board'),
     handLabel = surface.querySelector('.hand-label'),
-    retryBadge = handLabel.querySelector('.replay-label'),
+    blindInfo = surface.querySelector('.blind-info'),
     hero = arena.querySelector('.hero-area'),
     mobile = matchMedia(COMPACT_PLAY_QUERY);
   let frame = null,
@@ -67,29 +67,24 @@ export function createPlayViewport(surface, { layout = () => {}, settled = () =>
     });
   }
 
-  // A translated retry header first tightens its type to a readable 12px. If
-  // it still does not fit, labels end in an ellipsis on one line, as in
-  // Chinese, rather than wrapping and pushing the blind countdown down.
-  function fitReplayHeader() {
-    delete handLabel.dataset.replayClip;
-    handLabel.style.removeProperty('--replay-header-size');
-    if (!retryBadge || retryBadge.hidden || document.documentElement.lang.startsWith('zh')) return;
-    const fits = () => handLabel.scrollWidth <= handLabel.clientWidth;
-    if (fits()) return;
-    const base = parseFloat(getComputedStyle(handLabel).fontSize);
-    const shrink = (from, to) => {
-      for (let size = from; size >= to; size -= 0.5) {
-        handLabel.style.setProperty('--replay-header-size', `${size}px`);
-        if (fits()) return true;
+  function fitHandHeader(waiting) {
+    delete handLabel.dataset.wrap;
+    handLabel.style.removeProperty('--fitted-hand-font');
+    blindInfo.style.removeProperty('--fitted-blind-font');
+    if (waiting || handLabel.scrollWidth <= handLabel.clientWidth) return;
+    const fit = (label, property, minimum) => {
+      const base = parseFloat(getComputedStyle(label).fontSize);
+      for (let size = base - 1; size >= minimum; size--) {
+        label.style.setProperty(property, `${size}px`);
+        if (handLabel.scrollWidth <= handLabel.clientWidth) return true;
       }
       return false;
     };
-    if (shrink(base - 0.5, 12)) return;
-    // During a retry the badge and hand number already identify the hand, so
-    // the session label yields first; the street status ellipsizes last.
-    handLabel.dataset.replayClip = 'session';
-    if (fits() || shrink(11.5, 10)) return;
-    handLabel.dataset.replayClip = 'street';
+    // Keep the hand status at its normal size whenever the blind line can
+    // give it room. Wrap whole labels if compact type still cannot fit.
+    if (fit(blindInfo, '--fitted-blind-font', 10) || fit(handLabel, '--fitted-hand-font', 10))
+      return;
+    handLabel.dataset.wrap = '';
   }
 
   function fit() {
@@ -137,7 +132,7 @@ export function createPlayViewport(surface, { layout = () => {}, settled = () =>
         ? `max(160px, calc(${budget} - var(--live-dock-height) - var(--dock-bottom-inset)))`
         : budget,
     );
-    fitReplayHeader();
+    fitHandHeader(waiting);
     // A translated or long session label may wrap in the waiting header.
     // Retain its footprint when the shorter live label replaces it, so joining
     // cannot move the felt. Re-measure while waiting after width/font changes.

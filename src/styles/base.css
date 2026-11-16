@@ -235,10 +235,6 @@ h1 {
   color: var(--text);
   font-weight: 600;
 }
-.hand-label > span:first-of-type {
-  margin: 0 8px;
-  color: #556976;
-}
 .difficulty-label {
   display: flex;
   align-items: center;

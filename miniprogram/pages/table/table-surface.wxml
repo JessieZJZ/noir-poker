@@ -79,6 +79,7 @@
             ><text>{{hintText}}　　</text><text aria-hidden="true">{{hintText}}　　</text></view
           ></view
         >
+        <text wx:if="{{blindProgress}}" class="blind-progress">{{blindProgress}}</text>
       </view>
       <view
         class="table-area {{done ? 'is-done' : ''}} web-phone-layout {{roomy ? 'roomy-layout' : ''}} {{tablet ? 'tablet-layout' : ''}} {{large ? 'large-layout' : ''}}"

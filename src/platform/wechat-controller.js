@@ -13,6 +13,7 @@ import {
   TABLE_NOTICE_MS,
   tableNoticeText,
   blindStructureText,
+  blindProgressText,
   refillCountValues,
   REFILL_COUNT_STEPS,
 } from '../ui/effect-layouts.js';
@@ -592,6 +593,7 @@ export function createWechatController({
       entryStructure: blindStructureText(game.stakes, game.players.length, format),
       stakesStructure: blindStructureText(settings.stakes, settings.playerCount, format).settings,
       blindText: `${format(game.smallBlind)} / ${format(game.bigBlind)}`,
+      blindProgress: blindProgressText(game, format),
       configuredSmallBlindText: format(settings.stakes.smallBlind),
       configuredBigBlindText: format(settings.stakes.bigBlind),
       requestedStakes: { ...settings.stakes },

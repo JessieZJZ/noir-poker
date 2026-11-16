@@ -1275,6 +1275,10 @@ test('WeChat seats show two-character style tags and keep the full name for sett
 test('WeChat announces the final table and a new level before dealing, and replays them on retry', (t) => {
   const { controller, latest, sounds, timers } = setup(t, { playerCount: 7 });
   const game = controller.getGame();
+  assert.equal(latest().blindProgress, '再打 9 手后涨盲到 50 / 100');
+  game.levelHands = game.levelLength;
+  controller.show();
+  assert.equal(latest().blindProgress, '下一手涨盲到 50 / 100');
   finish(game, 'fold');
   controller.show();
   for (const p of game.players.slice(3)) Object.assign(p, { out: true, stack: 0, place: 4 });
@@ -1301,12 +1305,14 @@ test('WeChat announces the final table and a new level before dealing, and repla
   assert.equal(sounds.at(-1), 'deal');
   assert.equal(latest().rebuysLeft, 0);
   assert.equal(latest().blindText, '50 / 100');
+  assert.equal(latest().blindProgress, '再打 9 手后涨盲到 75 / 150');
   finish(game, 'fold');
   controller.show();
   assert.equal(controller.retry(), true);
   assert.equal(latest().noticeHold, true);
   while (latest().noticeHold) timers.runNext();
   assert.equal(sounds.filter((s) => s === 'levelup').length, 2);
+  assert.equal(latest().blindProgress, '再打 9 手后涨盲到 75 / 150');
 });
 
 test('WeChat shows the blind structure on the ready table and in settings', (t) => {

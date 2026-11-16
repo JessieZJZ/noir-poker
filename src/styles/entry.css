@@ -37,8 +37,13 @@
   color: #b9c7d0;
   font-size: 14px;
   font-weight: 400;
-  line-height: normal;
+  line-height: 1.4;
   white-space: nowrap;
+}
+/* Lower the text to the wordmark baseline while the icons remain centered. */
+.header-actions .settings-button > span,
+#rules-button .guide-rotating-label {
+  translate: 0 0.15em;
 }
 .header-actions .settings-button svg {
   width: 19px;

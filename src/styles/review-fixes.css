@@ -1,81 +1,30 @@
-/* Keep the original inline replay badge beside the hand, before the blinds.
-   Session, street and hand-prefix text may shrink; the number and badge stay visible. */
+/* Fit the translated hand header on one line where possible, with whole
+   labels wrapping together on narrow screens. */
 .game-surface:not([data-entry-state='waiting']) .surface-top .hand-label {
   display: flex;
   align-items: center;
-  gap: 2px;
+  align-content: start;
+  gap: 2px 4px;
   white-space: nowrap;
+  font-size: var(--fitted-hand-font, var(--table-header-font, 14px));
 }
-/* The label box still fills the row so it stays centred on the blinds. Its
-   bottom padding leaves the live flex content one line tall at the waiting
-   first line's top, so centring the parts cannot move the text on joining. */
-.game-surface:not([data-entry-state='waiting']) .surface-top .hand-label {
-  padding-bottom: max(
-    0px,
-    calc(
-      max(var(--hand-row), var(--entry-hand-row, 0px)) - 1.2em -
-        max(0px, calc((var(--hand-row) - 1.2em) / 2))
-    )
-  );
-}
-.game-surface:not([data-entry-state='waiting']) .hand-label > .hand-suffix,
-.game-surface:not([data-entry-state='waiting']) .hand-label > b,
-.game-surface:not([data-entry-state='waiting']) .hand-label > .replay-label {
+.game-surface:not([data-entry-state='waiting']) .hand-label > * {
   flex: none;
 }
-.game-surface:not([data-entry-state='waiting']) .hand-label > .session-label,
-.game-surface:not([data-entry-state='waiting']) .hand-label > .hand-prefix,
-.game-surface:not([data-entry-state='waiting']) .hand-label > #street-label {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
+.game-surface .hand-label .session-label {
+  color: #556976;
 }
-.game-surface:not([data-entry-state='waiting']) .hand-label > .session-label {
-  flex: 0 1 auto;
-  margin: 0;
+.game-surface .hand-label[data-wrap] {
+  flex-wrap: wrap;
 }
-.game-surface:not([data-entry-state='waiting']) .hand-label > #street-label,
-.game-surface:not([data-entry-state='waiting']) .hand-label > .hand-prefix {
-  flex: 0 1 auto;
+.game-surface .hand-label .replay-label {
+  margin-inline-start: 2px;
 }
-/* Retry keeps all labels readable beside the gold badge. Only the narrowest
-   widths wrap the label group after compact type and spacing are exhausted. */
-html:not([lang^='zh'])
-  .game-surface:not([data-entry-state='waiting'])
-  .hand-label:has(.replay-label:not([hidden])) {
-  font-size: var(--replay-header-size, var(--table-header-font));
-  column-gap: 2px;
-  row-gap: 2px;
-  overflow: visible;
+.game-surface .surface-top .blind-info {
+  font-size: var(--fitted-blind-font, var(--table-header-font, 14px));
 }
-html:not([lang^='zh'])
-  .game-surface:not([data-entry-state='waiting'])
-  .hand-label:has(.replay-label:not([hidden]))
-  > :is(#street-label, .session-label, .hand-prefix) {
-  flex: none;
-  overflow: visible;
-  text-overflow: clip;
-}
-/* Below 12px a retry header hides its session label, then ellipsizes the
-   street status. */
-html:not([lang^='zh'])
-  .game-surface:not([data-entry-state='waiting'])
-  .hand-label[data-replay-clip]:has(.replay-label:not([hidden]))
-  > :is(.session-label, .session-label + span) {
-  display: none;
-}
-html:not([lang^='zh'])
-  .game-surface:not([data-entry-state='waiting'])
-  .hand-label[data-replay-clip='street']:has(.replay-label:not([hidden]))
-  > #street-label {
-  flex: 0 1 auto;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-html:not([lang^='zh']) .game-surface .hand-label:has(.replay-label:not([hidden])) > .replay-label {
-  margin-inline-start: 4px;
-  font-size: max(10px, 0.75em);
+.main .game-surface:not([data-entry-state='waiting']) > .surface-top {
+  grid-template-rows: minmax(max(var(--hand-row), var(--entry-hand-row, 0px)), auto) var(--hint-row);
 }
 /* The second row keeps its existing height. Countdown width follows its text;
    the hint gets every remaining pixel, with just one gap between the two. */
@@ -92,8 +41,8 @@ html:not([lang^='zh']) .game-surface .hand-label:has(.replay-label:not([hidden])
   min-width: 0;
   width: max-content;
   max-width: 60%;
-  font-size: 10px;
-  line-height: 1.1;
+  font-size: 12px;
+  line-height: 1;
   color: #bca77c;
   text-align: right;
   white-space: normal;
@@ -179,11 +128,17 @@ html[lang='ko'] .profile-comparison th {
   backface-visibility: hidden;
 }
 
+@media (max-width: 600px) {
+  .main .game-surface > .surface-top {
+    --hint-row: 24px;
+  }
+}
+
 @media (min-width: 601px) {
   .game-surface > .surface-top .blind-progress {
-    font-size: clamp(13px, 1.4vw, 16px);
+    font-size: clamp(14px, 1.5vw, 18px);
   }
   .main .game-surface > .surface-top {
-    --hint-row: 34px;
+    --hint-row: 36px;
   }
 }

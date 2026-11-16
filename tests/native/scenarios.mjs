@@ -1565,6 +1565,81 @@ export async function nativeScenarios(app) {
     await app.screenshot('table-hint-content');
     return observed;
   });
+  await check('localized-table-chrome', async () => {
+    await waitForNativeHeroTurn(app, { advanceSettled: true });
+    const tablet = await app.evaluate(() => document.documentElement.dataset.tablet === 'true');
+    const readings = [];
+    const switchLocale = async (locale) => {
+      await app.click('#opponents-button');
+      await app.select('#language-select', locale);
+      await app.waitFor(
+        () => app.evaluate((expected) => document.documentElement.lang === expected, locale),
+        5000,
+        'The selected locale must load',
+      );
+      await app.click('#opponents-dialog .close-dialog');
+    };
+    const orientations = tablet ? ['PORTRAIT', 'LANDSCAPE', 'PORTRAIT'] : ['PORTRAIT'];
+    try {
+      for (const locale of ['ru', 'ja']) {
+        await switchLocale(locale);
+        for (const orientation of orientations) {
+          if (tablet) await app.rotate(orientation);
+          await app.waitFor(
+            () =>
+              app.evaluate(
+                (portrait) => portrait === innerHeight > innerWidth,
+                orientation === 'PORTRAIT',
+              ),
+            5000,
+            'The requested orientation must settle',
+          );
+          const reading = await app.evaluate(() => {
+            const banner = document.querySelector('#coach-content');
+            const tip = document.querySelector('#coach-tip');
+            const toggle = document.querySelector('#hint-toggle');
+            if (toggle.getAttribute('aria-checked') === 'true') toggle.click();
+            toggle.click();
+            const fits = (target) => {
+              const element = document.querySelector(target);
+              const box = element.getBoundingClientRect();
+              const range = document.createRange();
+              range.selectNodeContents(element);
+              return (
+                box.width > 0 &&
+                [...range.getClientRects()].every(
+                  (r) => !r.width || (r.left >= box.left - 1 && r.right <= box.right + 1),
+                )
+              );
+            };
+            return {
+              handFits: fits('.hand-label'),
+              blindsFit: fits('.blind-info'),
+              countdownFits: fits('#blind-progress'),
+              countdown: document.querySelector('#blind-progress').textContent,
+              hintVisible: !banner.hidden,
+              hintFullWidth: tip.scrollWidth <= tip.clientWidth + 1,
+              scrolling: banner.dataset.scrolling === 'true',
+              overflows: tip.getBoundingClientRect().width > banner.clientWidth + 1,
+              hint: tip.textContent,
+            };
+          });
+          assert.ok(reading.handFits && reading.blindsFit && reading.countdownFits);
+          assert.ok(reading.countdown.length > 0 && reading.hint.length > 0);
+          assert.ok(reading.hintVisible && reading.hintFullWidth);
+          assert.equal(reading.scrolling, reading.overflows);
+          await app.screenshot(
+            `localized-table-${locale}-${orientation.toLowerCase()}-${readings.length}`,
+          );
+          readings.push({ locale, orientation, ...reading });
+        }
+      }
+    } finally {
+      if (tablet) await app.rotate('PORTRAIT');
+      await switchLocale('zh-CN');
+    }
+    return readings;
+  });
   await check('combined-feedback-preference', async () => {
     await app.evaluate(() => {
       const nativePromise = window.Capacitor.nativePromise;

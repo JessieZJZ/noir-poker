@@ -18,6 +18,8 @@
 }
 #rules-button .guide-rotating-label {
   display: grid;
+  grid-template-columns: minmax(0, max-content);
+  min-width: 0;
   height: 1.4em;
   line-height: 1.4;
   overflow: hidden;
@@ -28,7 +30,9 @@
   display: block;
   grid-area: 1 / 1;
   justify-self: end;
-  text-align: right;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
   visibility: hidden;
 }
