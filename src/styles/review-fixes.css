@@ -7,6 +7,14 @@
   gap: 2px 4px;
   white-space: nowrap;
   font-size: var(--fitted-hand-font, var(--table-header-font, 14px));
+  /* Keep the first line at the waiting message's height after joining. */
+  padding-bottom: max(
+    0px,
+    calc(
+      max(var(--hand-row), var(--entry-hand-row, 0px)) - 1.2em -
+        max(0px, calc((var(--hand-row) - 1.2em) / 2))
+    )
+  );
 }
 .game-surface:not([data-entry-state='waiting']) .hand-label > * {
   flex: none;
