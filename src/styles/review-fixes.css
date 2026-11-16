@@ -31,7 +31,7 @@
 .game-surface .surface-top .blind-info {
   font-size: var(--fitted-blind-font, var(--table-header-font, 14px));
 }
-.main .game-surface:not([data-entry-state='waiting']) > .surface-top {
+.main .game-surface > .surface-top:has(.hand-label[data-wrap]) {
   grid-template-rows: minmax(max(var(--hand-row), var(--entry-hand-row, 0px)), auto) var(--hint-row);
 }
 /* The second row keeps its existing height. Countdown width follows its text;
@@ -50,7 +50,7 @@
   width: max-content;
   max-width: 60%;
   font-size: 12px;
-  line-height: 1;
+  line-height: 0.94;
   color: #bca77c;
   text-align: right;
   white-space: normal;
@@ -136,17 +136,11 @@ html[lang='ko'] .profile-comparison th {
   backface-visibility: hidden;
 }
 
-@media (max-width: 600px) {
-  .main .game-surface > .surface-top {
-    --hint-row: 24px;
-  }
-}
-
 @media (min-width: 601px) {
   .game-surface > .surface-top .blind-progress {
     font-size: clamp(14px, 1.5vw, 18px);
   }
   .main .game-surface > .surface-top {
-    --hint-row: 36px;
+    --hint-row: 34px;
   }
 }
