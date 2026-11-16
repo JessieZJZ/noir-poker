@@ -8,6 +8,23 @@ CI 重放分支 `codex/ci-reliability-main` 基于远端 `main@ba2e658`，保留
 
 第一轮调查基于本地 `codex/settlement-caption-polish` 的 `966397b3ab63bfc4598c316217449c19b2a951ef`，包含 #22–#25 布局栈及已提交的结算文案改进。原目录中牌手研究等未提交修改未带入 CI worktree。后续 CI 分支已整合到原分支最新的 `43b3814d69b528ddabeed52c22ff245552e0cbb2`；第一轮 CI 提交 `5e2c54c` 保存在 `codex/ci-reliability-before-integration` 快照分支，整合仅发生在 `/tmp/noir-poker-ci-reliability`。
 
+## CI 失败后自动提出修复
+
+`Codex CI repair` 在 `main` 上启用后监听 `Mobile build` 的失败结果。它处理由仓库所有者发起、仍处在失败提交上的同仓库 PR，以及 `main` 上的推送失败。外部 fork、已推进的提交和自动修复分支会跳过。
+
+生成作业将一段经截取和脱敏的失败日志作为诊断数据交给 Codex。它可以提出源码或测试的文本补丁。中间作业使用只读权限和无密钥的 runner，先校验补丁路径，再执行 `npm run format:check` 和 `npm run check`。检查通过后，发布作业用独立凭据创建 `codex/ci-fix-<失败提交>` 分支并向 `main` 开草稿 PR。同一提交只提一次修复，草稿链接原 PR 和失败日志。原 PR 保持原分支，审查时可采用修复提交或改由草稿 PR 承接。草稿 PR 会触发标准 CI，最终合并由人审查。
+
+在 [仓库 Environments](https://github.com/JessieZJZ/noir-poker/settings/environments) 中配置下面两个环境。分支策略只允许 `main`。
+
+| 环境                  | Environment secret          | 凭据                                                                                                                      |
+| --------------------- | --------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| `ci-autofix-generate` | `CI_AUTOFIX_OPENAI_API_KEY` | 专用于此流程、有可用额度的 OpenAI API 项目密钥                                                                            |
+| `ci-autofix-publish`  | `CI_AUTOFIX_GITHUB_TOKEN`   | 仅选中 `JessieZJZ/noir-poker` 的细粒度 GitHub token，授予 **Contents: Read and write**、**Pull requests: Read and write** |
+
+把值直接放入对应的 **Environment secrets**。密钥缺失时，相应作业提示需要的配置并跳过密钥操作。两个凭据分开，仓库级 GitHub Actions 开 PR 和批准 PR 的通用选项保持原设置。流程文件进入默认分支后，才会收到新的失败事件。
+
+在 [Actions](https://github.com/JessieZJZ/noir-poker/actions) 查看 `Codex CI repair` 的生成、验证及发布结果。依赖下载、runner 或账单故障仍需要处理实际故障。若发布作业失败，可复跑该修复 workflow 的失败作业来重用已验证的补丁。
+
 ## 账户阻塞与执行失败
 
 2026-10-11 核对 GitHub API：#18、#20–#25 的最新运行均为四个 job 失败且 steps 为空，其余浏览器 job 跳过。[#25 run 38116805444](https://github.com/JessieZJZ/noir-poker/actions/runs/38116805444) 的官方 annotation 明确指出最近账户付款失败或需要增加支出上限，runner 没有启动。没有读取账单详情，不能判断具体是哪一种。macOS arm64 容量 notice 是另一条提示，不能替代这个明确原因。
