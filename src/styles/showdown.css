@@ -332,7 +332,7 @@
     filter: brightness(1.12);
   }
   100% {
-    transform: translateY(-5px);
+    transform: none;
   }
 }
 @keyframes pair-heartbeat {

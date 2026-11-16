@@ -104,8 +104,16 @@ window.qa = {
     return publicState();
   },
   // A rigged last hand: seat 1 is the only other seat left, or `rivals` seats
-  // remain. The hero (AA) or seat 1 (AA) wins an all-in on a dry board.
-  finale({ heroWins = true, rivals = 1, rebuysUsed = 3, count = 5, heroStack, rivalStack } = {}) {
+  // remain. The stronger hand wins an all-in on a dry board.
+  finale({
+    heroWins = true,
+    rivals = 1,
+    rebuysUsed = 3,
+    count = 5,
+    heroStack,
+    rivalStack,
+    highCard = false,
+  } = {}) {
     gameRecords.abandon(game);
     fixtureGame(count, true);
     requestedStakes = stakesFromSmallBlind(100);
@@ -128,9 +136,15 @@ window.qa = {
     });
     startHand(game);
     const card = (rank, suit) => ({ rank, suit, symbol: '♠♥♣♦'[suit], key: `${suit}-${rank}` });
-    const strong = [card(14, 0), card(14, 1)],
-      weak = [card(7, 2), card(2, 3)],
-      board = [card(13, 2), card(9, 3), card(4, 0), card(3, 1), card(12, 2)],
+    const strong = [card(14, 0), highCard ? card(13, 3) : card(14, 1)],
+      weak = [card(7, 2), highCard ? card(14, 1) : card(2, 3)],
+      board = [
+        highCard ? card(2, 2) : card(13, 2),
+        card(9, 3),
+        card(4, 0),
+        card(3, 1),
+        card(12, 2),
+      ],
       used = new Set([...strong, ...weak, ...board].map((c) => c.key));
     game.players[0].hole = heroWins ? strong : weak;
     game.players[1].hole = heroWins ? weak : strong;

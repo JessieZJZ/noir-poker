@@ -135,6 +135,15 @@ test('PR70 Portuguese best-five showdown footer uses playing-card terminology af
   assert.equal(localizeText(key), expected, 'Portuguese after switching back');
 });
 
+test('showdown identity fragments translate from their original name and parenthesized style', async () => {
+  await loadLocale('it');
+  assert.equal(localizeText('你'), 'Tu');
+  assert.equal(localizeText('（宽松取值）'), '（Valore largo）');
+  await loadLocale('zh-CN');
+  assert.equal(localizeText('你'), '你');
+  assert.equal(localizeText('（宽松取值）'), '（宽松取值）');
+});
+
 test('PR70 dynamic activity and result templates preserve names, units and amounts', async () => {
   const blinds = {
     en: 'Alex small blind 100 · Mia big blind 200',

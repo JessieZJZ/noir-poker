@@ -161,18 +161,41 @@ test('positive review chips use the same green meaning as records', async ({ pag
   await expect(page.locator('#review-result-change')).toHaveCSS('color', 'rgb(110, 231, 197)');
 });
 
-test('showdown amounts refresh with the locale while winning-card nodes stay alive', async ({
+test('showdown names, styles, and amounts refresh without moving or remounting the best five', async ({
   page,
 }) => {
   await page.goto('/');
   await page.waitForFunction(() => !!window.qa);
+  await page.locator('#opponents-button').click();
+  await page.locator('[data-bot-seat="1"]').selectOption('jett');
+  await page.locator('#opponents-dialog .close-dialog').click();
+  await switchLocale(page, 'it');
   await page.evaluate(() => {
-    window.qa.finale({ heroWins: true });
+    window.qa.finale({ heroWins: false, highCard: true });
     window.qa.finaleShowdown();
     window.qa.stop();
     window.savedWinningCard = document.querySelector('.winning-card');
   });
   await expect(page.locator('#showdown-stage')).toBeVisible();
+  const hero = page.locator('#showdown-scene [data-player="0"] .showdown-player-heading > strong');
+  const rival = page.locator('#showdown-scene [data-player="1"] .showdown-player-heading > strong');
+  await expect(hero).toHaveText('Tu');
+  await expect(rival).toContainText('Valore largo');
+  const winning = page.locator('.showdown-winner .winning-cards');
+  await expect(winning).toHaveClass(/motion-high/);
+  await expect(winning.locator('.rank-match')).toHaveAttribute('data-card', '0-14');
+  const aligned = () =>
+    winning.locator('.playing-card').evaluateAll((cards) => {
+      const tops = cards.map((card) => card.getBoundingClientRect().top);
+      return Math.max(...tops) - Math.min(...tops);
+    });
+  await switchLocale(page, 'zh-CN');
+  await expect(hero).toHaveText('你');
+  await expect(rival).toHaveText('Mia（宽松取值）');
+  await winning.evaluate((row) =>
+    Promise.all(row.getAnimations({ subtree: true }).map((animation) => animation.finished)),
+  );
+  await expect.poll(aligned).toBeLessThan(0.5);
   await switchLocale(page, 'ru');
   const russian = await page.locator('.showdown-awards').allTextContents();
   await switchLocale(page, 'zh-CN');
@@ -183,6 +206,12 @@ test('showdown amounts refresh with the locale while winning-card nodes stay ali
   const losingFooter = page.locator('.showdown-player:not(.showdown-winner) .showdown-awards');
   await expect(losingFooter).toHaveCount(1);
   await expect(losingFooter).toHaveText('As 5 melhores cartas');
+  for (const locale of Object.keys(playerCountLocaleLabels)) {
+    await switchLocale(page, locale);
+    await switchLocale(page, 'zh-CN');
+    await expect(hero).toHaveText('你');
+    await expect(rival).toHaveText('Mia（宽松取值）');
+  }
   expect(
     await page.evaluate(() => window.savedWinningCard === document.querySelector('.winning-card')),
   ).toBe(true);
@@ -195,6 +224,33 @@ test('settings sentences remain separated across the blind-summary span', async 
   await page.locator('#opponents-button').click();
   await expect(page.locator('#stakes-description')).toContainText('Tap the small blind');
   await expect(page.locator('#stakes-description')).toContainText('small blind. Blinds');
+});
+
+test('a visible blind-level notice changes language without restarting the deal', async ({
+  page,
+}) => {
+  await page.clock.install({ time: 0 });
+  await page.clock.pauseAt(1000);
+  await page.goto('/');
+  await page.waitForFunction(() => !!window.qa, null, { polling: 20 });
+  await switchLocale(page, 'it');
+  await page.evaluate(() => window.qa.noticeHand({ count: 5 }));
+  await page.clock.runFor(20);
+
+  const stage = page.locator('.table-notice-stage');
+  const title = stage.locator('.table-notice-title');
+  await expect(title).toHaveText('Bui saliti a 200 / 400');
+  const initial = await stage.elementHandle();
+  const before = await page.evaluate(() => window.noir.getState());
+  await switchLocale(page, 'zh-CN');
+  await expect(title).toHaveText('盲注升至 200 / 400');
+  await expect(stage.locator('.table-notice-caption')).toHaveText('每 10 手升一级');
+  expect(
+    await initial.evaluate((node) => node === document.querySelector('.table-notice-stage')),
+  ).toBe(true);
+  expect(await page.evaluate(() => window.noir.getState())).toEqual(before);
+  await page.clock.runFor(1800);
+  await expect(stage).toHaveCount(0);
 });
 
 test('English blind captions fit one line and retain their full accessible meaning', async ({

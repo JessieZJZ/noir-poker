@@ -4641,6 +4641,21 @@ export async function nativeScenarios(app) {
   await check('beginner-tutorial-guided-hand', async () => {
     const before = await app.state();
     const records = await app.evaluate(() => JSON.stringify(window.noir.getRecords()));
+    const initialLocale = await app.evaluate(() => document.documentElement.lang);
+    const switchLocale = async (locale) => {
+      // The tutorial summary owns modal focus while the showdown is visible.
+      await app.evaluate((value) => {
+        const select = document.querySelector('#language-select');
+        select.value = value;
+        select.dispatchEvent(new Event('change', { bubbles: true }));
+      }, locale);
+      await app.waitFor(
+        () => app.evaluate((value) => document.documentElement.lang === value, locale),
+        5000,
+        'The selected locale must load',
+      );
+    };
+    await switchLocale('it');
     await app.click('#rules-button');
     await app.click('#tutorial-menu-item');
     await app.waitFor(
@@ -4708,6 +4723,12 @@ export async function nativeScenarios(app) {
     assert.equal(finished.tutorial.stage, 'summary');
     assert.equal(finished.phase, 'done');
     assert.ok(finished.result.includes('同花'));
+    const heroName = () =>
+      app.evaluate(() => document.querySelector('#showdown-name-0').textContent.trim());
+    assert.equal(await heroName(), 'Tu');
+    await switchLocale('zh-CN');
+    assert.equal(await heroName(), '你');
+    assert.deepEqual((await app.state()).tutorial, finished.tutorial);
     await app.screenshot('tutorial-lesson-complete');
     // Only Android has a system Back; on iOS it would leave the WebView page.
     if (app.platform === 'android') await app.back();
@@ -4726,6 +4747,7 @@ export async function nativeScenarios(app) {
       before.players.map((player) => player.stack),
     );
     assert.equal(await app.evaluate(() => JSON.stringify(window.noir.getRecords())), records);
+    if (initialLocale !== 'zh-CN') await switchLocale(initialLocale);
     return { hole: finished.hole, result: finished.result, resumedHand: after.hand };
   });
   const unknown = selectedScenarios?.filter((name) => !seenScenarios.has(name));
