@@ -1,10 +1,8 @@
-/* Fit the translated hand header on one line where possible, with whole
-   labels wrapping together on narrow screens. */
+/* Keep the hand, replay badge and blinds on the same line. */
 .game-surface:not([data-entry-state='waiting']) .surface-top .hand-label {
   display: flex;
   align-items: center;
-  align-content: start;
-  gap: 2px 4px;
+  gap: 4px;
   white-space: nowrap;
   font-size: var(--fitted-hand-font, var(--table-header-font, 14px));
   /* Keep the first line at the waiting message's height after joining. */
@@ -22,17 +20,11 @@
 .game-surface .hand-label .session-label {
   color: #556976;
 }
-.game-surface .hand-label[data-wrap] {
-  flex-wrap: wrap;
-}
 .game-surface .hand-label .replay-label {
   margin-inline-start: 2px;
 }
 .game-surface .surface-top .blind-info {
   font-size: var(--fitted-blind-font, var(--table-header-font, 14px));
-}
-.main .game-surface > .surface-top:has(.hand-label[data-wrap]) {
-  grid-template-rows: minmax(max(var(--hand-row), var(--entry-hand-row, 0px)), auto) var(--hint-row);
 }
 /* The second row keeps its existing height. Countdown width follows its text;
    the hint gets every remaining pixel, with just one gap between the two. */
@@ -49,11 +41,11 @@
   min-width: 0;
   width: max-content;
   max-width: 60%;
-  font-size: 12px;
-  line-height: 0.94;
+  font-size: var(--fitted-progress-font, 12px);
+  line-height: 1;
   color: #bca77c;
   text-align: right;
-  white-space: normal;
+  white-space: nowrap;
 }
 .table-notices {
   flex: 1 1 0;
@@ -138,7 +130,7 @@ html[lang='ko'] .profile-comparison th {
 
 @media (min-width: 601px) {
   .game-surface > .surface-top .blind-progress {
-    font-size: clamp(14px, 1.5vw, 18px);
+    font-size: var(--fitted-progress-font, clamp(14px, 1.5vw, 18px));
   }
   .main .game-surface > .surface-top {
     --hint-row: 34px;

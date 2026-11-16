@@ -64,6 +64,10 @@
   column-count: auto;
 }
 @media (max-width: 360px) {
+  .entry-playing .game-header .hand-label,
+  .entry-playing .game-header .blind-info {
+    font-size: 12px;
+  }
   .activity-list {
     grid-template-columns: minmax(0, 1fr);
   }

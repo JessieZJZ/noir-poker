@@ -1604,7 +1604,7 @@
 .hand-label {
   gap: 4px;
   font-size: 13px;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
 }
 .blind-info {
   display: flex;

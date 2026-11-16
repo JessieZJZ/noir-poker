@@ -280,8 +280,85 @@ for (const locale of ['en', 'ja'])
     } else expect(result.text).toContain('pot. Pot equity');
   });
 
+function readHeaderIssues() {
+  const rect = (s) => document.querySelector(s).getBoundingClientRect();
+  const hand = rect('.hand-label'),
+    tag = rect('#replay-label'),
+    blinds = rect('.blind-info'),
+    row = rect('.surface-bottom'),
+    hint = rect('.table-notices'),
+    progress = rect('#blind-progress'),
+    arena = rect('#arena'),
+    felt = rect('.poker-table');
+  const issues = [];
+  if (document.querySelector('#dismiss-replay')) issues.push('unrequested close button');
+  if (
+    tag.width <= 0 ||
+    tag.left < hand.left - 1 ||
+    tag.right > hand.right + 1 ||
+    tag.right > blinds.left - 1
+  )
+    issues.push(
+      'upper replay badge clipped or overlaps blinds: ' +
+        JSON.stringify({
+          hand: hand.toJSON(),
+          tag: tag.toJSON(),
+          blinds: blinds.toJSON(),
+        }),
+    );
+  if (tag.top < hand.top - 1 || tag.bottom > hand.bottom + 1 || tag.bottom > row.top + 1)
+    issues.push('replay leaves original upper hand row');
+  if (
+    progress.top < blinds.bottom - 1 ||
+    progress.bottom > row.bottom + 1 ||
+    progress.right > row.right + 1
+  )
+    issues.push('countdown leaves row below blinds');
+  const handCenters = [...document.querySelector('.hand-label').children]
+    .map((item) => item.getBoundingClientRect())
+    .filter((box) => box.width > 0)
+    .map((box) => (box.top + box.bottom) / 2);
+  if (Math.max(...handCenters) - Math.min(...handCenters) > 1)
+    issues.push('hand labels wrap to more than one line');
+  const countdownStyle = getComputedStyle(document.querySelector('#blind-progress'));
+  if (
+    countdownStyle.whiteSpace !== 'nowrap' ||
+    progress.height > parseFloat(countdownStyle.lineHeight) + 1
+  )
+    issues.push('blind countdown wraps');
+  const gap = progress.left - hint.right;
+  if (hint.width <= 0 || gap < 4 || gap > 7 || hint.left > row.left + 1)
+    issues.push('hint does not use available left width');
+  if (row.bottom > arena.top + 1 || felt.height < 100 || arena.width <= 0 || arena.height <= 0)
+    issues.push('header intrudes into table budget');
+  if (document.documentElement.scrollWidth > innerWidth + 1) issues.push('page overflows');
+  const textRects = (element) => {
+    const range = document.createRange();
+    range.selectNodeContents(element);
+    return [...range.getClientRects()];
+  };
+  for (const [selector, box] of [
+    ['.hand-label', hand],
+    ['.blind-info', blinds],
+    ['#blind-progress', progress],
+  ]) {
+    if (
+      textRects(document.querySelector(selector)).some(
+        (r) => r.width > 0 && (r.left < box.left - 1 || r.right > box.right + 1),
+      )
+    )
+      issues.push(`${selector} has clipped text`);
+  }
+  const range = document.createRange();
+  range.selectNodeContents(document.querySelector('#replay-attempt'));
+  const ink = range.getBoundingClientRect();
+  if (ink.left < tag.left || ink.right > tag.right + 1)
+    issues.push('replay text does not fit original badge');
+  return issues;
+}
+
 for (const locale of ['zh-CN', 'zh-TW', 'en', 'ja', 'ko', 'es', 'it', 'pt', 'de', 'fr', 'ru'])
-  test(`${locale} header displays complete hand, blinds and replay text through phone tablet PC rotation`, async ({
+  test(`${locale} header keeps complete hand, blinds, replay and countdown on single lines through rotation`, async ({
     page,
   }, testInfo) => {
     test.skip(testInfo.project.name !== 'desktop', 'Explicit responsive matrix runs once.');
@@ -330,82 +407,7 @@ for (const locale of ['zh-CN', 'zh-TW', 'en', 'ja', 'ko', 'es', 'it', 'pt', 'de'
         await page.setViewportSize(size);
         await expect
           .poll(
-            () =>
-              page.evaluate(() => {
-                const rect = (s) => document.querySelector(s).getBoundingClientRect();
-                const hand = rect('.hand-label'),
-                  tag = rect('#replay-label'),
-                  blinds = rect('.blind-info'),
-                  row = rect('.surface-bottom'),
-                  hint = rect('.table-notices'),
-                  progress = rect('#blind-progress'),
-                  arena = rect('#arena'),
-                  felt = rect('.poker-table');
-                const issues = [];
-                if (document.querySelector('#dismiss-replay'))
-                  issues.push('unrequested close button');
-                if (
-                  tag.width <= 0 ||
-                  tag.left < hand.left - 1 ||
-                  tag.right > hand.right + 1 ||
-                  tag.right > blinds.left - 1
-                )
-                  issues.push(
-                    'upper replay badge clipped or overlaps blinds: ' +
-                      JSON.stringify({
-                        hand: hand.toJSON(),
-                        tag: tag.toJSON(),
-                        blinds: blinds.toJSON(),
-                      }),
-                  );
-                if (
-                  tag.top < hand.top - 1 ||
-                  tag.bottom > hand.bottom + 1 ||
-                  tag.bottom > row.top + 1
-                )
-                  issues.push('replay leaves original upper hand row');
-                if (
-                  progress.top < blinds.bottom - 1 ||
-                  progress.bottom > row.bottom + 1 ||
-                  progress.right > row.right + 1
-                )
-                  issues.push('countdown leaves row below blinds');
-                const gap = progress.left - hint.right;
-                if (hint.width <= 0 || gap < 4 || gap > 7 || hint.left > row.left + 1)
-                  issues.push('hint does not use available left width');
-                if (
-                  row.bottom > arena.top + 1 ||
-                  felt.height < 100 ||
-                  arena.width <= 0 ||
-                  arena.height <= 0
-                )
-                  issues.push('header intrudes into table budget');
-                if (document.documentElement.scrollWidth > innerWidth + 1)
-                  issues.push('page overflows');
-                const textRects = (element) => {
-                  const range = document.createRange();
-                  range.selectNodeContents(element);
-                  return [...range.getClientRects()];
-                };
-                for (const [selector, box] of [
-                  ['.hand-label', hand],
-                  ['.blind-info', blinds],
-                  ['#blind-progress', progress],
-                ]) {
-                  if (
-                    textRects(document.querySelector(selector)).some(
-                      (r) => r.width > 0 && (r.left < box.left - 1 || r.right > box.right + 1),
-                    )
-                  )
-                    issues.push(`${selector} has clipped text`);
-                }
-                const range = document.createRange();
-                range.selectNodeContents(document.querySelector('#replay-attempt'));
-                const ink = range.getBoundingClientRect();
-                if (ink.left < tag.left || ink.right > tag.right + 1)
-                  issues.push('replay text does not fit original badge');
-                return issues;
-              }),
+            () => page.evaluate(readHeaderIssues),
             `${locale} ${smallBlind}/${smallBlind * 2} ${size.width}x${size.height}`,
           )
           .toEqual([]);
@@ -413,6 +415,16 @@ for (const locale of ['zh-CN', 'zh-TW', 'en', 'ja', 'ko', 'es', 'it', 'pt', 'de'
         expect(await page.evaluate(() => window.qa.snapshot())).toEqual(before);
         expect(await page.evaluate(() => window.noir.getState())).toEqual(publicBefore);
       }
+      // The longer translated settlement status must also fit next to the
+      // replay badge and maximum blind amounts on the smallest phone.
+      await page.setViewportSize({ width: 320, height: 667 });
+      await page.evaluate(() => {
+        window.qa.recordsFinish();
+        window.qa.stop();
+      });
+      await expect
+        .poll(() => page.evaluate(readHeaderIssues), `${locale} ${smallBlind} settled replay`)
+        .toEqual([]);
     }
   });
 

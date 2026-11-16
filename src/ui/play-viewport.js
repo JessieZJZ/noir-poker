@@ -10,6 +10,7 @@ export function createPlayViewport(surface, { layout = () => {}, settled = () =>
     board = arena.querySelector('.board'),
     handLabel = surface.querySelector('.hand-label'),
     blindInfo = surface.querySelector('.blind-info'),
+    blindProgress = surface.querySelector('.blind-progress'),
     hero = arena.querySelector('.hero-area'),
     mobile = matchMedia(COMPACT_PLAY_QUERY);
   let frame = null,
@@ -67,24 +68,38 @@ export function createPlayViewport(surface, { layout = () => {}, settled = () =>
     });
   }
 
+  function shrinkText(element, property, fits, minimum = 1) {
+    if (fits()) return true;
+    const base = parseFloat(getComputedStyle(element).fontSize);
+    for (let size = base - 0.5; size >= minimum; size -= 0.5) {
+      element.style.setProperty(property, `${size}px`);
+      if (fits()) return true;
+    }
+    return false;
+  }
+
   function fitHandHeader(waiting) {
-    delete handLabel.dataset.wrap;
     handLabel.style.removeProperty('--fitted-hand-font');
     blindInfo.style.removeProperty('--fitted-blind-font');
-    if (waiting || handLabel.scrollWidth <= handLabel.clientWidth) return;
-    const fit = (label, property, minimum) => {
-      const base = parseFloat(getComputedStyle(label).fontSize);
-      for (let size = base - 1; size >= minimum; size--) {
-        label.style.setProperty(property, `${size}px`);
-        if (handLabel.scrollWidth <= handLabel.clientWidth) return true;
-      }
-      return false;
-    };
-    // Keep the hand status at its normal size whenever the blind line can
-    // give it room. Wrap whole labels if compact type still cannot fit.
-    if (fit(blindInfo, '--fitted-blind-font', 10) || fit(handLabel, '--fitted-hand-font', 10))
-      return;
-    handLabel.dataset.wrap = '';
+    blindProgress.style.removeProperty('--fitted-progress-font');
+    if (waiting) return;
+
+    const fits = () => handLabel.scrollWidth <= handLabel.clientWidth;
+    // Give the hand label more space first. At the narrowest widths, shrink
+    // the whole label further without letting its replay badge wrap.
+    if (!shrinkText(blindInfo, '--fitted-blind-font', fits, 10))
+      shrinkText(handLabel, '--fitted-hand-font', fits);
+
+    if (blindProgress.hidden) return;
+    const text = document.createRange();
+    text.selectNodeContents(blindProgress);
+    // Right-aligned text can overflow to the left without growing scrollWidth.
+    shrinkText(
+      blindProgress,
+      '--fitted-progress-font',
+      () =>
+        text.getBoundingClientRect().width <= blindProgress.getBoundingClientRect().width + 0.25,
+    );
   }
 
   function fit() {
@@ -242,6 +257,7 @@ export function createPlayViewport(surface, { layout = () => {}, settled = () =>
   window.visualViewport?.addEventListener('resize', resize);
   mobile.addEventListener('change', resize);
   document.fonts.ready.then(schedule);
+  document.fonts.addEventListener('loadingdone', schedule);
   backstop = createLayoutBackstop({
     read: () => [
       window.innerWidth,
@@ -283,6 +299,7 @@ export function createPlayViewport(surface, { layout = () => {}, settled = () =>
       window.removeEventListener('pageshow', resize);
       window.visualViewport?.removeEventListener('resize', resize);
       mobile.removeEventListener('change', resize);
+      document.fonts.removeEventListener('loadingdone', schedule);
       document.removeEventListener('visibilitychange', visibility);
       document.removeEventListener('noir:app-state', appState);
     },

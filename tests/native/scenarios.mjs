@@ -1612,10 +1612,21 @@ export async function nativeScenarios(app) {
                 )
               );
             };
+            const handCenters = [...document.querySelector('.hand-label').children]
+              .map((item) => item.getBoundingClientRect())
+              .filter((box) => box.width > 0)
+              .map((box) => (box.top + box.bottom) / 2);
+            const countdown = document.querySelector('#blind-progress');
+            const countdownStyle = getComputedStyle(countdown);
             return {
-              handFits: fits('.hand-label'),
+              handFits:
+                fits('.hand-label') && Math.max(...handCenters) - Math.min(...handCenters) <= 1,
               blindsFit: fits('.blind-info'),
-              countdownFits: fits('#blind-progress'),
+              countdownFits:
+                fits('#blind-progress') &&
+                countdownStyle.whiteSpace === 'nowrap' &&
+                countdown.getBoundingClientRect().height <=
+                  parseFloat(countdownStyle.lineHeight) + 1,
               countdown: document.querySelector('#blind-progress').textContent,
               hintVisible: !banner.hidden,
               hintFullWidth: tip.scrollWidth <= tip.clientWidth + 1,
