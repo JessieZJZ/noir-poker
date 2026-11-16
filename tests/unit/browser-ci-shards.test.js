@@ -8,7 +8,7 @@ import { fileURLToPath } from 'node:url';
 const run = promisify(execFile);
 const root = fileURLToPath(new URL('../../', import.meta.url));
 
-test('CI desktop shards cover the complete browser suite once without changing the mobile filter', async (t) => {
+test('CI shards cover each browser project once under its original check', async (t) => {
   const workflow = await readFile(
     new URL('../../.github/workflows/mobile-build.yml', import.meta.url),
     'utf8',
@@ -20,33 +20,18 @@ test('CI desktop shards cover the complete browser suite once without changing t
     assert.ok(block, `Missing CI job ${name}`);
     return block[1];
   };
-  const desktop = job('desktop-ui-shard');
-  const mobile = job('browser-ui');
-  const filter = (block) => {
-    const match = block.match(/--grep-invert '([^']+)'/);
-    assert.ok(match, 'Browser jobs must retain their explicit geometry exclusion');
-    return match[1];
-  };
-  assert.equal(filter(desktop), filter(mobile));
-  assert.match(mobile, /project: \[mobile\]/);
-  assert.match(desktop, /shard: \[1, 2\]/);
-  assert.match(desktop, /--project=desktop --shard=\$\{\{ matrix\.shard \}\}\/2 /);
-  const aggregate = job('desktop-ui');
-  assert.match(aggregate, /name: browser-ui \(desktop\)/);
-  assert.match(aggregate, /needs: desktop-ui-shard/);
-  assert.match(aggregate, /if: always\(\)/);
-  assert.match(aggregate, /SHARD_RESULT: \$\{\{ needs\.desktop-ui-shard\.result \}\}/);
-  assert.match(aggregate, /run: test "\$SHARD_RESULT" = success/);
+  const geometryFilter = job('table-geometry').match(/--grep '([^']+)'/)?.[1];
+  assert.ok(geometryFilter, 'The layout job must own the geometry filter');
 
-  const list = async (shard) => {
+  const list = async (project, shard) => {
     const args = [
       'node_modules/@playwright/test/cli.js',
       'test',
       '--list',
       '--reporter=json',
-      '--project=desktop',
+      '--project=' + project,
       '--grep-invert',
-      filter(desktop),
+      geometryFilter,
     ];
     if (shard) args.push(`--shard=${shard}/2`);
     const { stdout } = await run(process.execPath, args, { cwd: root, maxBuffer: 8 * 1024 * 1024 });
@@ -63,15 +48,39 @@ test('CI desktop shards cover the complete browser suite once without changing t
     assert.ok(ids.length > 0, 'An empty shard must not report a coverage pass');
     return ids;
   };
-  const full = await list();
-  const first = await list(1);
-  const second = await list(2);
-  assert.equal(new Set(full).size, full.length, 'Full suite has duplicate test IDs');
-  const combined = [...first, ...second];
-  assert.equal(new Set(combined).size, combined.length, 'Shards repeat a test');
-  assert.deepEqual(combined.sort(), full.sort(), 'Shards omit or add tests');
-  assert.ok(Math.abs(first.length - second.length) <= 1, 'Fully parallel shards must be balanced');
-  t.diagnostic(
-    `Full desktop suite: ${full.length}; shards: ${first.length} + ${second.length}; no missing or repeated tests`,
-  );
+  for (const [project, aggregateJob] of [
+    ['desktop', 'desktop-ui'],
+    ['mobile', 'browser-ui'],
+  ]) {
+    await t.test(project, async (projectTest) => {
+      const shardJob = project + '-ui-shard';
+      const shard = job(shardJob);
+      assert.match(shard, /shard: \[1, 2\]/);
+      assert.ok(shard.includes('--project=' + project + ' --shard=${{ matrix.shard }}/2 '));
+      assert.equal(shard.match(/--grep-invert '([^']+)'/)?.[1], geometryFilter);
+      const aggregate = job(aggregateJob);
+      assert.ok(aggregate.includes(`name: browser-ui (${project})`));
+      assert.ok(aggregate.includes(`needs: ${shardJob}`));
+      assert.match(aggregate, /if: always\(\)/);
+      assert.ok(aggregate.includes('SHARD_RESULT: ${{ needs.' + shardJob + '.result }}'));
+      assert.match(aggregate, /run: test "\$SHARD_RESULT" = success/);
+
+      const [full, first, second] = await Promise.all([
+        list(project),
+        list(project, 1),
+        list(project, 2),
+      ]);
+      assert.equal(new Set(full).size, full.length, 'Full suite has duplicate test IDs');
+      const combined = [...first, ...second];
+      assert.equal(new Set(combined).size, combined.length, 'Shards repeat a test');
+      assert.deepEqual(combined.sort(), full.sort(), 'Shards omit or add tests');
+      assert.ok(
+        Math.abs(first.length - second.length) <= 1,
+        'Fully parallel shards must be balanced',
+      );
+      projectTest.diagnostic(
+        `Full suite: ${full.length}; shards: ${first.length} + ${second.length}`,
+      );
+    });
+  }
 });

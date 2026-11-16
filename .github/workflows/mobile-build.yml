@@ -68,13 +68,14 @@ jobs:
           path: test-results/
           retention-days: 7
 
-  browser-ui:
+  mobile-ui-shard:
+    name: browser-ui mobile shard ${{ matrix.shard }}/2
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
-        project: [mobile]
+        shard: [1, 2]
     steps:
       - uses: actions/checkout@v7.0.1
       - uses: actions/setup-node@v7.1.0
@@ -84,13 +85,25 @@ jobs:
       - run: npm ci
       # WebKit-specific dropdown and long-press checks run in this job too.
       - run: npx playwright install --with-deps chromium webkit
-      - run: npm run test:e2e -- --project=${{ matrix.project }} --grep-invert '(public-area|stable-actions|readability-hints|play-viewport|settlement-layout|hint-banner|platform-parity)\.spec\.js'
+      - run: npm run test:e2e -- --project=mobile --shard=${{ matrix.shard }}/2 --grep-invert '(public-area|stable-actions|readability-hints|play-viewport|settlement-layout|hint-banner|platform-parity)\.spec\.js'
       - uses: actions/upload-artifact@v7.0.2
         if: always()
         with:
-          name: browser-ui-results-${{ matrix.project }}
+          name: browser-ui-results-mobile-${{ matrix.shard }}
           path: test-results/
           retention-days: 7
+
+  browser-ui:
+    name: browser-ui (mobile)
+    needs: mobile-ui-shard
+    if: always()
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Require every mobile shard to pass
+        env:
+          SHARD_RESULT: ${{ needs.mobile-ui-shard.result }}
+        run: test "$SHARD_RESULT" = success
 
   desktop-ui-shard:
     name: browser-ui desktop shard ${{ matrix.shard }}/2
