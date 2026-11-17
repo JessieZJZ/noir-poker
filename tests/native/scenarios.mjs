@@ -3976,6 +3976,7 @@ export async function nativeScenarios(app) {
     });
   if (app.comparePage)
     await check('all-secondary-pages-match-web', async () => {
+      await enterNativeTable(app);
       const comparisons = [];
       await app.click('#rules-button');
       await app.click('#guide-menu-item');
@@ -4034,6 +4035,16 @@ export async function nativeScenarios(app) {
       );
       await app.evaluate(() => window.scrollTo(0, 0));
       await app.click('#native-about-button');
+      const email = 'zhengjianzhou.jessy@gmail.com';
+      const contact = await app.evaluate(() => {
+        const dialog = document.querySelector('#native-about-dialog');
+        return {
+          text: dialog.textContent,
+          mailto: dialog.querySelector('a[href^="mailto:"]').getAttribute('href'),
+        };
+      });
+      assert.ok(contact.text.includes(`noir studio · ${email}`));
+      assert.equal(contact.mailto, `mailto:${email}`);
       comparisons.push(
         await app.comparePage('about', [
           '#native-about-dialog',
@@ -4046,6 +4057,12 @@ export async function nativeScenarios(app) {
         async () => app.evaluate(() => !!document.querySelector('#policy-language')),
         15000,
         'Local privacy policy must load',
+      );
+      assert.equal(
+        await app.evaluate(() =>
+          document.querySelector('article:not([hidden]) a[href^="mailto:"]').getAttribute('href'),
+        ),
+        `mailto:${email}`,
       );
       comparisons.push(
         await app.comparePage('privacy', [

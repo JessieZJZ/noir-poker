@@ -21,3 +21,22 @@ test('the iOS package declares no non-exempt encryption', () => {
     /<key>ITSAppUsesNonExemptEncryption<\/key>\s*<false\/>/,
   );
 });
+
+test('about and each bundled privacy policy use the store contact', () => {
+  const { publisher, supportEmail, locales } = JSON.parse(read('mobile/store-readiness.json'));
+  const about = read('src/platform/native.js');
+  assert.ok(about.includes(`发行者：${publisher} · ${supportEmail}`));
+  assert.ok(about.includes(`mailto:${supportEmail}`));
+
+  const policy = read('public/app-privacy.html');
+  const articles = new Map(
+    [...policy.matchAll(/<article lang="([^"]+)"[^>]*>([\s\S]*?)<\/article>/g)].map(
+      ([, locale, content]) => [locale, content],
+    ),
+  );
+  for (const locale of locales) {
+    const article = articles.get(locale);
+    assert.ok(article?.includes(`${publisher} · ${supportEmail}`), locale);
+    assert.ok(article?.includes(`href="mailto:${supportEmail}">${supportEmail}</a>`), locale);
+  }
+});

@@ -1,6 +1,6 @@
 # NOIR Poker 全球上架指导报告
 
-报告日期：2026-10-10。发行者：郑建宙；公开支持邮箱：958182284@qq.com。用户已确认 Apple Developer 会员注册完成。产品保持免登录、本地单机训练、虚拟筹码和商店买断制。
+报告日期：2026-10-10。发行者：noir studio；公开支持邮箱：zhengjianzhou.jessy@gmail.com。用户已确认 Apple Developer 会员注册完成。产品保持免登录、本地单机训练、虚拟筹码和商店买断制。
 
 ## 当前结论
 
@@ -95,7 +95,7 @@
 
 审核说明初稿：
 
-> This is an offline, single-player Texas Hold'em practice app. All opponents are computer-controlled. Chips are virtual, cannot be purchased or redeemed, and there are no cash prizes, real-money wagering or links promoting gambling services. All features are available after downloading the paid app; there is no login, subscription or in-app purchase. Open Settings to change the language, table size and difficulty. Finish a hand to open Review or Retry. Decision grading uses before-action public snapshots; it does not inspect opponents' hidden cards or the future deck. Core play and review work in airplane mode. Support: 958182284@qq.com.
+> This is an offline, single-player Texas Hold'em practice app. All opponents are computer-controlled. Chips are virtual, cannot be purchased or redeemed, and there are no cash prizes, real-money wagering or links promoting gambling services. All features are available after downloading the paid app; there is no login, subscription or in-app purchase. Open Settings to change the language, table size and difficulty. Finish a hand to open Review or Retry. Decision grading uses before-action public snapshots; it does not inspect opponents' hidden cards or the future deck. Core play and review work in airplane mode. Support: zhengjianzhou.jessy@gmail.com.
 
 截图使用实际发行界面，每种商店本地化资料都与实际可用语言一致。至少准备牌桌、设置、决策复盘三类截图；避免真人照片、未经授权赛事标识、稳赚／专业精确复刻宣传。Google 主图、图标、截图与 Apple 各设备截图按提交当天后台规格制作，不能把浏览器截图直接标成真机发行包验收。[Apple 截图规格](https://developer.apple.com/help/app-store-connect/reference/app-information/screenshot-specifications/)、[Google 图形资料](https://support.google.com/googleplay/android-developer/answer/9866151?hl=en)。
 

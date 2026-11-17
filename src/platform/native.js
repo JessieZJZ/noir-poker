@@ -96,12 +96,12 @@ function installNativeAbout(info) {
     dialog.append(paragraph);
   }
   const link = document.createElement('a');
-  link.href = 'mailto:958182284@qq.com';
+  link.href = 'mailto:zhengjianzhou.jessy@gmail.com';
   link.target = '_blank';
   link.rel = 'noopener noreferrer';
   link.textContent = localizeText('联系与支持');
   const publisher = document.createElement('p');
-  publisher.textContent = localizeText('发行者：郑建宙 · 958182284@qq.com');
+  publisher.textContent = localizeText('发行者：noir studio · zhengjianzhou.jessy@gmail.com');
   const policy = document.createElement('a');
   policy.href = './app-privacy.html';
   policy.textContent = localizeText('隐私政策');
