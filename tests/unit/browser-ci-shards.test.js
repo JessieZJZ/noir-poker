@@ -22,6 +22,12 @@ test('CI shards cover each browser project once under its original check', async
   };
   const geometryFilter = job('table-geometry').match(/--grep '([^']+)'/)?.[1];
   assert.ok(geometryFilter, 'The layout job must own the geometry filter');
+  const lock = JSON.parse(
+    await readFile(new URL('../../package-lock.json', import.meta.url), 'utf8'),
+  );
+  const playwrightImage = `mcr.microsoft.com/playwright:v${lock.packages['node_modules/@playwright/test'].version}-noble`;
+  assert.equal(job('table-geometry').match(/image: (\S+)/)?.[1], playwrightImage);
+  assert.doesNotMatch(job('table-geometry'), /playwright install/);
 
   const list = async (project, shard) => {
     const args = [
@@ -58,11 +64,11 @@ test('CI shards cover each browser project once under its original check', async
       assert.match(shard, /shard: \[1, 2\]/);
       assert.ok(shard.includes('--project=' + project + ' --shard=${{ matrix.shard }}/2 '));
       assert.equal(shard.match(/--grep-invert '([^']+)'/)?.[1], geometryFilter);
-      // The tests keep a 30-minute deadline of their own; a slow apt mirror
-      // during browser installation is bounded separately, not by the tests.
+      // The tests keep a 30-minute deadline of their own. Browsers and their
+      // system packages come from Playwright's image, never the apt mirror.
       assert.match(shard, /--grep-invert '[^']+'\n {8}timeout-minutes: 30\n/);
-      assert.match(shard, /install --with-deps chromium webkit\n {8}timeout-minutes: 28\n/);
-      assert.match(shard, /^ {4}timeout-minutes: 60$/m);
+      assert.equal(shard.match(/image: (\S+)/)?.[1], playwrightImage);
+      assert.doesNotMatch(shard, /playwright install/);
       const aggregate = job(aggregateJob);
       assert.ok(aggregate.includes(`name: browser-ui (${project})`));
       assert.ok(aggregate.includes(`needs: ${shardJob}`));
