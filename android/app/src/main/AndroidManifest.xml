@@ -38,6 +38,11 @@
         </provider>
     </application>
 
+    <!-- The portrait lock is a phone layout choice (tablets rotate freely in
+         MainActivity), not a hardware requirement. Without this, Play infers a
+         required portrait screen and excludes landscape-only devices. -->
+    <uses-feature android:name="android.hardware.screen.portrait" android:required="false" />
+
     <!-- Permissions -->
 
     <uses-permission android:name="android.permission.INTERNET" />

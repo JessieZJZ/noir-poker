@@ -15,6 +15,16 @@ test('the Android package removes the advertising ID permission any SDK might ad
   );
 });
 
+test('the Android portrait lock does not restrict which devices can install', () => {
+  const manifest = read('android/app/src/main/AndroidManifest.xml');
+  assert.match(manifest, /android:screenOrientation="portrait"/);
+  assert.match(
+    manifest,
+    /<uses-feature android:name="android\.hardware\.screen\.portrait" android:required="false" \/>/,
+  );
+  assert.doesNotMatch(manifest, /android\.hardware\.screen\.landscape/);
+});
+
 test('the iOS package declares no non-exempt encryption', () => {
   assert.match(
     read('ios/App/App/Info.plist'),

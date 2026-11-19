@@ -64,6 +64,8 @@ npm run mobile:ios:upload    # 归档后导出 App Store Connect 包并上传
 
 **隐私。** 当前包无账号、广告、追踪、分析和联网复盘，设置留在设备，牌局留在进程内存。包内有“关于与隐私”，`public/app-privacy.html` 提供公开政策页面模板。正式发行者noir studio与支持邮箱 zhengjianzhou.jessy@gmail.com 已填入政策；首次提交前部署长期有效的公开政策 URL，确认政策与最终包及所有 SDK 的实际行为一致，再填写 [Apple App Privacy](https://developer.apple.com/app-store/app-privacy-details/) 与 [Google Data safety](https://support.google.com/googleplay/android-developer/answer/10144311?hl=en)。Play Console 的“广告 ID”声明选“否”（应用不使用广告 ID）；`AndroidManifest.xml` 以 `tools:node="remove"` 移除 `com.google.android.gms.permission.AD_ID`，任何依赖都不能把它合并进发行包，`tests/unit/store-declarations.test.js` 守住这项声明。iOS `PrivacyInfo.xcprivacy` 已声明 Preferences 使用的 UserDefaults 原因 `CA92.1`；增加新 SDK 后需重新核对清单。
 
+**设备范围。** 手机锁定竖屏，平板（最小宽度 ≥ 600dp）在 `MainActivity` 中可自由旋转。竖屏锁定会让 Play 推断应用必需 `android.hardware.screen.portrait`，从而排除仅横屏的设备；`AndroidManifest.xml` 因此声明该功能 `android:required="false"`，`tests/unit/store-declarations.test.js` 守住这项声明。
+
 **模拟赌博与年龄。** 当前筹码无现金价值、无提现、无奖金、无人类对赌，但内容仍是模拟扑克赌博；不要按普通休闲工具隐瞒此内容。按 [Apple 年龄评级定义](https://developer.apple.com/help/app-store-connect/reference/app-information/age-ratings-values-and-definitions/) 如实填写，频繁模拟赌博当前对应 18+。Google 按 [内容评级问卷](https://support.google.com/googleplay/android-developer/answer/9859655?hl=en) 及地区要求申报，部分市场还需要本地评级。若未来加入真钱、可兑换奖励或赌博推广，现有产品边界与发行准备不再适用，需重新核对 [Play 赌博政策](https://support.google.com/googleplay/android-developer/answer/18258653?hl=en&rd=4)。
 
 **应用完整性。** 有完整离线牌局、规则结算、策略对手、设备设置和复盘等功能，但仍需通过商店审核；原生容器本身不保证获批。核对 [Apple 2.5.2 与 4.2](https://developer.apple.com/app-store/review/guidelines/) 和 [Play 功能与用户体验要求](https://support.google.com/googleplay/android-developer/answer/9898783?hl=en)，提供完整可用的产品与准确审核说明。
