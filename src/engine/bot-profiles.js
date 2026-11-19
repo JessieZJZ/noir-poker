@@ -21,6 +21,7 @@ import {
 import { chipUnitOf, fractionRaiseTo, legalRaiseTo } from './bet-sizing.js';
 import { deceptiveAction, isDonkLead } from './bot-deception.js';
 import { publicResponseRisk } from './public-action-context.js';
+import { observedRangeModel } from './public-observations.js';
 import { preflopJamPlan, shortStackPlan } from './bot-preflop-commitment.js';
 import { survivalPremium } from './push-fold.js';
 import { postflopStyleLine, balancedPriceDefense, limpedPairValueLine } from './bot-style-lines.js';
@@ -550,15 +551,25 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
   // A random showdown against every unfurled seat undervalues a priced call:
   // players still to act have not all committed to this pot. This range gate
   // uses public sizing/position and our hand only, never the raiser's cards.
+  // The original opener's limits scale with its own open: a large cash-table
+  // open re-raised to about twice its size is still a small 3-bet. Cold
+  // callers keep the fixed limits, and the price ceiling below still applies.
+  const reopenedOpener = raises.length === 2 && raises[0].id === view.id;
+  const threeBetLimit = reopenedOpener
+    ? Math.max(10 * bigBlind, raises[0].amount * 2.5)
+    : 10 * bigBlind;
+  const threeBetCallLimit = reopenedOpener
+    ? Math.max(7 * bigBlind, raises[0].amount * 1.5)
+    : 7 * bigBlind;
   const affordableThreeBet =
     view.difficulty !== 'easy' &&
     view.street === 0 &&
     raises.length === 2 &&
     Boolean(lastRaiser) &&
     raises[1].id !== view.id &&
-    view.currentBet <= 10 * bigBlind &&
+    view.currentBet <= threeBetLimit &&
     view.currentBet <= raises[0].amount * 3 &&
-    legal.callAmount <= 7 * bigBlind &&
+    legal.callAmount <= threeBetCallLimit &&
     pressure <= 0.1 &&
     odds <= 0.28 &&
     !allInPressure &&
@@ -648,10 +659,48 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
       : 0.75;
   const suitedLimp =
     suitedLimpCandidate && roll('low-cost-suited-entry', suitedLimpRate) < suitedLimpRate;
+  // Offsuit A9/AT/KT/QJ facing a small heads-up 3-bet of its own open is near
+  // break-even: it is ahead of the bluffs, dominated by the value hands and
+  // out of position. Mix the call by style so a tight 3-bettor cannot farm a
+  // fixed fold and a value-heavy one cannot farm a fixed call. Only our cards
+  // and the public sizing decide the candidate; A8o and below still fold.
+  const marginalThreeBetCandidate =
+    affordableThreeBet &&
+    reopenedOpener &&
+    view.rivals === 1 &&
+    view.currentBet <= raises[0].amount * 2.3 &&
+    percentile > range &&
+    !suited &&
+    !pair &&
+    ((high === 14 && low >= 9) || (high === 13 && low === 10) || (high === 12 && low === 11));
+  const marginalStyleRate = Math.max(
+    0.2,
+    Math.min(0.85, 0.5 + (width - 0.5) * 0.6 + (callDown - 0.5) * 0.3),
+  );
+  // The 3-bettor's completed public preflop raising frequency (opens and
+  // re-raises alike; no 3-bet-only count is recorded) widens or narrows the
+  // range we expect. The model's prior and confidence keep a few hands from
+  // swinging the mix; cards, results and the current hand are not inputs.
+  const threeBettorRead = marginalThreeBetCandidate
+    ? observedRangeModel(lastRaiser?.publicRead, { action: 'raise' })
+    : null;
+  const observedThreeBetShift = threeBettorRead
+    ? Math.max(
+        -0.15,
+        Math.min(0.25, (threeBettorRead.width - 0.22) * 1.5 * threeBettorRead.confidence),
+      )
+    : 0;
+  const marginalThreeBetRate = Math.max(
+    0.15,
+    Math.min(0.9, marginalStyleRate + observedThreeBetShift),
+  );
+  const marginalThreeBetCall =
+    marginalThreeBetCandidate &&
+    roll('marginal-three-bet-defense', marginalThreeBetRate) < marginalThreeBetRate;
   // The heuristic percentile ranks small pairs too highly to define a
   // premium stack-off tier. Keep the range ordering and premium tier separate.
   const premium = (pair && high >= 11) || (high === 14 && low === 13),
-    admitted = percentile <= range,
+    admitted = percentile <= range || marginalThreeBetCall,
     openingAdmitted = percentile <= openingRange,
     callTolerance = (callDown - 0.5) * 0.1 + context.publicAdjustment,
     requiredEquity = view.allIn ? odds + view.allIn.pendingBuffer : odds + responseRisk + 0.02,
@@ -889,6 +938,22 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
       cheapRangePassed: cheapEntry && admitted,
       affordableOpen,
       affordableThreeBet,
+      threeBetLimits: { reopenedOpener, threeBetLimit, threeBetCallLimit },
+      marginalThreeBet: {
+        candidate: marginalThreeBetCandidate,
+        styleRate: marginalStyleRate,
+        observed: threeBettorRead
+          ? {
+              hands: threeBettorRead.hands,
+              raises: threeBettorRead.events,
+              width: threeBettorRead.width,
+              confidence: threeBettorRead.confidence,
+              shift: observedThreeBetShift,
+            }
+          : null,
+        rate: marginalThreeBetRate,
+        call: marginalThreeBetCall,
+      },
       affordableRangePassed,
       suitedLimp,
       entryContext: {
