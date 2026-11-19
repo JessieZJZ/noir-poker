@@ -431,7 +431,9 @@ export function explainOpponent(record, identities = []) {
   const matchups = handMatchups({ ...snapshot, reviewPronoun: subject }, c);
   c.matchups = matchups;
   let logic = '',
-    logicParts;
+    logicParts,
+    // Replaces "X 拿 …，选择跟注。" when the action and its reason read as one clause.
+    actionPrefix = null;
   const checkNotes = [];
   switch (usePolicyReason ? t.reason : undefined) {
     case 'implied-continue':
@@ -467,7 +469,7 @@ export function explainOpponent(record, identities = []) {
         break;
       }
       logic = !v.street
-        ? `${subject}拿${hand}继续要补 ${n(cost)}，按当时对加注范围的估计选择退出，没有支付这笔跟注。`
+        ? `按当时对加注范围的估计，${subject}认为${hand}过弱，不足以支撑再补 ${n(cost)} 的跟注。`
         : `继续要补 ${n(cost)}，${subject}没有用${hand}接住这笔下注。${v.street === 3 ? '河牌已发完，当前只有高牌，主要能赢过对手未成牌的诈唬，因此放弃继续投入。' : '当前没有对子，也没有直接顺子或同花听牌托底，因此放弃继续投入。'}`;
       break;
     case 'stack-pressure': {
@@ -511,17 +513,19 @@ export function explainOpponent(record, identities = []) {
     case 'affordable-entry':
     case 'affordable-open':
       if (t.suitedLimp) {
+        // Reasons for this call only; the hand's later risks argue for folding.
         logicParts = [
           `${subject}补 ${n(cost)} 跟注后还留 ${n(v.stack - cost)}，先用小额投入争取看翻牌。`,
           ...preflopPotential(snapshot, subject, true),
-          '击中一对后仍可能被更好的踢脚压住。',
-          v.hole.every((card) => card.rank < 14) ? '这组底牌成花后仍可能落后于更高同花。' : '',
         ].filter(Boolean);
         logic = logicParts.join('');
         break;
       }
+      // One clause: the hand, the wide call and what it costs.
+      if (widePreflopCall)
+        actionPrefix = `${name}拿 ${f.holeText} 选择较宽地跟注，用 ${n(cost)} 保留看翻牌的机会，这笔投入占行动前剩余筹码的 ${pct(cost / Math.max(1, v.stack))}。`;
       logic = widePreflopCall
-        ? `${subject}选择较宽地跟注，用 ${n(cost)} 保留看翻牌的机会，这笔投入占行动前剩余筹码的 ${pct(cost / Math.max(1, v.stack))}。即使击中一对，较低点数或较弱踢脚也可能落后。`
+        ? ''
         : `${subject}只补 ${n(cost)}，还留 ${n(v.stack - cost)}，${v.hole[0].rank === v.hole[1].rank ? (v.hole[0].rank >= 13 ? '这手顶级对子本身已有很强的摊牌价值，平跟保留了牌力隐蔽性，也让其他玩家低成本入池' : '这手对子可以等翻牌中暗三条') : v.hole[0].suit === v.hole[1].suit ? '两张同花底牌保留了翻后买同花的机会' : '这笔小投入保留了翻牌击中底牌的机会'}。这次跟注没有主动加注做大底池。`;
       break;
     case 'small-reraise-continue':
@@ -548,14 +552,13 @@ export function explainOpponent(record, identities = []) {
       } else if (widePreflopCall) {
         // The recorded reason is the price: the bot's own range estimate
         // cleared the break-even share. Name that first, then what the call
-        // commits, and only then the kicker risk, which is its cost.
+        // commits. Risks that would argue for folding are not this call's reason.
         const left = v.stack - cost;
         logicParts = [
           `${subject}要补 ${n(cost)} 去争 ${n(v.contestable)} 的底池，至少需要约 ${pct(cost / Math.max(1, v.contestable))} 的胜率才能持平。${subject}估计${hand}对这次加注的范围仍够这个价格，所以较宽地跟注，这笔投入占行动前剩余筹码的 ${pct(cost / Math.max(1, v.stack))}。`,
           left > 0 && left < v.contestable
             ? `跟完只剩 ${n(left)}，还不到翻牌时的底池，之后再遇下注很难弃牌，相当于被底池套住。`
             : '',
-          '代价是击中一对后仍可能被更好的踢脚或更大对子压住。',
         ].filter(Boolean);
         logic = logicParts.join('');
       } else if (v.street > 0 && !draw.outs) {
@@ -600,10 +603,10 @@ export function explainOpponent(record, identities = []) {
         const support = premium
           ? pocketComparison(v, subject)
           : paired
-            ? `${subject}的${hand}能压过较小对子，也能领先尚未成对的两张高牌，所以选择加注，让这些牌为看翻牌付费，但遇到更大对子仍会明显落后`
+            ? `${subject}的${hand}能压过较小对子，也能领先尚未成对的两张高牌，所以选择加注，让这些牌为看翻牌付费`
             : c.tier >= 2
               ? `${subject}的${hand}有击中顶对的机会，手里的 ${rankText(Math.max(...v.hole.map((card) => card.rank)))} 也减少了对手部分强高牌组合，所以选择再加注施压`
-              : `${subject}的${hand}成牌质量较弱，这次进攻更依赖对手弃牌，被强牌跟注后会较难打`;
+              : `${subject}的${hand}成牌质量较弱，这次进攻主要靠对手弃牌拿下底池`;
         logic = premium
           ? `${support}。这次额外投入 ${n(f.investment)}，希望愿意继续的较小对子、AK 等高牌付出更多筹码，同时提高其他玩家继续入池的成本，争取减少对手人数。即使有人跟注，这手强牌仍足以支持主动争夺底池。`
           : aggression
@@ -882,12 +885,22 @@ export function explainOpponent(record, identities = []) {
   const recorded = usePolicyReason && basisMatches,
     squeeze =
       recorded && t.basis.squeeze ? '前面已有开池和跟注，这次再加注也在挤压两者的继续范围。' : '',
+    actionParts = [
+      actionPrefix ?? prefix,
+      actionPrefix ? '' : actionEnd,
+      ...(logicParts || [logic]),
+      ...checkNotes,
+      squeeze,
+    ].filter(Boolean),
+    rangeParts = (matchups?.rangeNotes || []).map(rangeNoteClauses),
+    // Preflop reads as one passage: the read on the raiser, this hand's
+    // raise and calls, then the reviewed seat's own action.
     paragraphParts = [
       [matchups?.text],
       ['复盘分析总结'],
-      story,
-      ...(matchups?.rangeNotes || []).map(rangeNoteClauses),
-      [prefix, actionEnd, ...(logicParts || [logic]), ...checkNotes, squeeze].filter(Boolean),
+      ...(!v.street
+        ? [[...story, ...rangeParts.flat(), ...actionParts]]
+        : [story, ...rangeParts, actionParts]),
     ].filter((parts) => parts[0]),
     paragraphs = paragraphParts.map((parts) => parts.join(''));
   const enriched = enrichStrategy(

@@ -521,6 +521,28 @@ test('review game prose formats chips and punctuation in its rendered locale', a
   expect(lists.join('')).not.toContain('、');
 });
 
+test('an opponent preflop passage joins its comma clauses with spaces in Latin locales', async ({
+  page,
+}) => {
+  await page.goto('/');
+  await page.waitForFunction(() => !!window.qa);
+  await switchLocale(page, 'en');
+  const text = await page.evaluate(async () => {
+    const { setLocalizedHTML } = await import('/src/i18n/index.js');
+    const { renderReviewParagraphs } = await import('/src/ui/review-matchups.js');
+    const node = document.querySelector('#review-coach-explanation');
+    const parts = [
+      '这次你在 CO 位 2-bet 开池至 600，',
+      'Alex 在 BTN 位拿 Q♣ 7♦ 选择较宽地跟注，用 600 保留看翻牌的机会，这笔投入占行动前剩余筹码的 3.4%。',
+    ];
+    setLocalizedHTML(node, renderReviewParagraphs([parts.join('')], null, 0, [parts]));
+    return node.textContent;
+  });
+  expect(text).toMatch(/This time, .*600, Alex .*calls wide with Q♣ 7♦, putting in 600/);
+  expect(text).not.toMatch(/,\S/);
+  expect(text).not.toMatch(/[\u4e00-\u9fff]/);
+});
+
 test('rotating menu labels keep a constant text-to-arrow gap and centered icons', async ({
   page,
 }, info) => {

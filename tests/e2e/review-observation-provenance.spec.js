@@ -69,8 +69,8 @@ test('rendered review preserves a supported new observation but does not reuse i
     await page.locator('#review-hand-button').click();
     await page.locator('#review-opponents-tab').click();
     const text = page.locator('#review-opponent-detail .review-explanation');
-    if (kind === 'current') await expect(text).toContainText('此前 24 手中 24 手翻前加注');
-    else await expect(text).not.toContainText('此前 24 手中 24 手翻前加注');
+    if (kind === 'current') await expect(text).toContainText('此前 24 手翻前加注');
+    else await expect(text).not.toContainText('此前 24 手翻前加注');
     await expect(text).toContainText(game.botDecisions[0].name);
     await expect(text).toContainText('选择');
     await expect(text).not.toContainText(/机器人|建议|完整范围输入|rangeInputsVersion/);
@@ -112,9 +112,9 @@ test('rendered new and legacy reviews retain their own sizing basis across persi
     await page.locator('#review-opponents-tab').click();
     const text = page.locator('#review-opponent-detail .review-explanation');
     if (kind === 'legacy-sizing') {
-      await expect(text).toContainText('此前 32 手中 32 手翻前加注的记录');
-      await expect(text).not.toContainText('此前 32 手中 32 手翻前大额加注');
-    } else await expect(text).toContainText('此前 32 手中 32 手翻前大额加注');
+      await expect(text).toContainText('此前 32 手翻前加注的记录');
+      await expect(text).not.toContainText('此前 32 手翻前大额加注');
+    } else await expect(text).toContainText('此前 32 手翻前大额加注');
     await expect(text).toContainText(game.botDecisions[0].name);
     await expect(text).toContainText('选择');
     await expect(text).not.toContainText(/机器人|建议|observationSizing|rangeInputsVersion/);

@@ -400,6 +400,9 @@ function responseSamples(view, tables, context, samples, pool, random) {
           ),
         ),
         worseMade: entry.features.ownMade && context.compare(context.own.score, entry.score) > 0,
+        // Already ahead on the current board; the category is that made hand.
+        aheadNow: context.compare(context.own.score, entry.score) < 0,
+        category: entry.score[0],
         draw: entry.features.draw === true,
       });
     }
@@ -416,7 +419,9 @@ function optionModel(fraction, amount, view, actor, sampled, context) {
       calledShare = 0,
       worse = 0,
       draw = 0,
+      ahead = 0,
       contribution = 0;
+    const aheadByCategory = {};
     for (const trial of entries) {
       const response = responses(trial.entry, opponent, descriptor, amount, view, actor, context);
       fold += response.fold;
@@ -425,9 +430,15 @@ function optionModel(fraction, amount, view, actor, sampled, context) {
       calledShare += trial.outcome * response.call;
       if (trial.worseMade) worse += response.call;
       if (trial.draw) draw += response.call;
+      if (trial.aheadNow) {
+        const continued = response.call + response.raise;
+        ahead += continued;
+        aheadByCategory[trial.category] = (aheadByCategory[trial.category] || 0) + continued;
+      }
       contribution += response.pay * response.call;
     }
     const n = entries.length || 1;
+    for (const category of Object.keys(aheadByCategory)) aheadByCategory[category] /= n;
     return {
       id: opponent.id,
       foldProbability: fold / n,
@@ -435,6 +446,10 @@ function optionModel(fraction, amount, view, actor, sampled, context) {
       raiseProbability: raise / n,
       worseMadeCallMass: worse / n,
       drawCallMass: draw / n,
+      // Calls and raises from hands already ahead now, and every continuation.
+      aheadContinueMass: ahead / n,
+      aheadContinueByCategory: aheadByCategory,
+      continueMass: (call + raise) / n,
       calledEquity: call > 0 ? calledShare / call : 0,
       expectedCallContribution: contribution / n,
       samples: entries.length,
@@ -507,6 +522,15 @@ function optionModel(fraction, amount, view, actor, sampled, context) {
       opponents.reduce((sum, o) => sum + o.worseMadeCallMass, 0) / Math.max(1, opponents.length),
     drawCallMass:
       opponents.reduce((sum, o) => sum + o.drawCallMass, 0) / Math.max(1, opponents.length),
+    aheadContinueMass:
+      opponents.reduce((sum, o) => sum + o.aheadContinueMass, 0) / Math.max(1, opponents.length),
+    aheadContinueByCategory: opponents.reduce((total, o) => {
+      for (const [category, mass] of Object.entries(o.aheadContinueByCategory))
+        total[category] = (total[category] || 0) + mass / opponents.length;
+      return total;
+    }, {}),
+    continueMass:
+      opponents.reduce((sum, o) => sum + o.continueMass, 0) / Math.max(1, opponents.length),
     estimatedValue,
     valueModel: 'heuristic-current-pot-with-raise-loss',
     samples,

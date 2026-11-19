@@ -20,7 +20,8 @@ function inlineParts(parts, separator = '') {
           ? separator
           : !getLocale().startsWith('zh') &&
               getLocale() !== 'ja' &&
-              /[.!?]$/.test(previous) &&
+              // A clause ending in a comma continues in the next fragment.
+              /[.!?,;:]$/.test(previous) &&
               /^[\p{L}\p{N}]/u.test(text)
             ? ' '
             : '';

@@ -50,13 +50,19 @@ export function publicObservationNotes(s) {
   const other = actorName(s, last.id),
     subject = s.reviewSubject;
   if (s.street === 0 && observation.events / observation.hands >= 0.5) {
+    // "此前 1 手中 1 手" reads as a stutter; every observed hand raised says it plainly.
+    const every = observation.events === observation.hands;
     if (observation.kind === 'largeRaiseHands')
       return [
-        `${subject}结合${other}此前 ${observation.hands} 手中 ${observation.events} 手翻前大额加注的记录，本次估计中保留了更多非顶级起手牌。`,
+        every
+          ? `${subject}结合${other}此前 ${observation.hands} 手翻前大额加注的记录，本次估计中保留了更多非顶级起手牌。`
+          : `${subject}结合${other}此前 ${observation.hands} 手中 ${observation.events} 手翻前大额加注的记录，本次估计中保留了更多非顶级起手牌。`,
       ];
     if (observation.kind === 'raisingHands')
       return [
-        `${subject}结合${other}此前 ${observation.hands} 手中 ${observation.events} 手翻前加注的记录，本次没有把加注范围限于强牌。`,
+        every
+          ? `${subject}结合${other}此前 ${observation.hands} 手翻前加注的记录，本次没有把加注范围限于强牌。`
+          : `${subject}结合${other}此前 ${observation.hands} 手中 ${observation.events} 手翻前加注的记录，本次没有把加注范围限于强牌。`,
       ];
   }
   const aggression = observedAggressiveLikelihood(range.publicRead, { legacy });

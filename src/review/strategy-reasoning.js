@@ -150,24 +150,73 @@ function payingNote(assessment, f) {
     );
   if (!larger) return null;
   const lostMade = made >= 0.04 && made - mass(larger.worseMadeCallMass) > 0.04;
+  // Name the size first, then who still pays at it.
+  const prefix = f.includeAction
+    ? `${f.label} ${compactChips(f.amount)}，`
+    : `按 ${compactChips(f.amount)} 的尺度，`;
   const main =
     made >= 0.04
       ? draw >= 0.04
-        ? '按这个尺度的继续范围估计，仍有较弱成牌可能付费，也有听牌可能跟注。'
-        : '按这个尺度的继续范围估计，仍有较弱成牌可能付费。'
-      : '按这个尺度的继续范围估计，仍有听牌可能跟注，但这部分跟注并不一定来自更弱的牌。';
+        ? '估计较弱成牌仍会继续付费，听牌也可能跟注。'
+        : '估计较弱成牌仍会继续付费。'
+      : '估计仍有听牌会跟注，但这部分跟注并不一定来自更弱的牌。';
   const moreFolds =
     finite(selected.foldProbability) &&
     finite(larger.foldProbability) &&
     larger.foldProbability > selected.foldProbability;
-  const comparison = lostMade
-    ? `再加大到 ${compactChips(larger.amount)}，会更容易赶走较弱成牌。`
-    : moreFolds
-      ? `再加大到 ${compactChips(larger.amount)}，估计整体弃牌率会上升，继续跟注的听牌会减少。`
-      : `再加大到 ${compactChips(larger.amount)}，估计继续跟注的听牌会减少。`;
-  const prefix = f.includeAction ? `${f.label} ${compactChips(f.amount)}，` : '';
+  const bigger = compactChips(larger.amount);
+  const remaining = lostMade ? remainingAhead(selected, larger) : null;
+  const comparison = remaining
+    ? remaining.majority
+      ? remaining.threat === 'flush-straight'
+        ? `如果加大到 ${bigger}，不仅更容易赶走这些较弱成牌，留下来继续跟注或加注的也多半是领先当前成牌的同花或顺子。`
+        : remaining.threat === 'flush'
+          ? `如果加大到 ${bigger}，不仅更容易赶走这些较弱成牌，留下来继续跟注或加注的也多半是领先当前成牌的同花。`
+          : remaining.threat === 'straight'
+            ? `如果加大到 ${bigger}，不仅更容易赶走这些较弱成牌，留下来继续跟注或加注的也多半是领先当前成牌的顺子。`
+            : `如果加大到 ${bigger}，不仅更容易赶走这些较弱成牌，留下来继续跟注或加注的也多半是领先当前成牌的牌。`
+      : `如果加大到 ${bigger}，不仅更容易赶走这些较弱成牌，留下来继续跟注或加注的牌里，领先当前成牌的比例也会更高。`
+    : lostMade
+      ? `再加大到 ${bigger}，会更容易赶走较弱成牌。`
+      : moreFolds
+        ? `再加大到 ${bigger}，估计整体弃牌率会上升，继续跟注的听牌会减少。`
+        : `再加大到 ${bigger}，估计继续跟注的听牌会减少。`;
   const parts = [prefix, main, comparison].filter(Boolean);
   return { ...note('paying-range', parts.join(''), parts), comparison };
+}
+
+// Flushes and straights are the board threats named elsewhere in the review.
+// Other categories, or no clear majority, keep the general wording.
+const AHEAD_THREATS = { 5: 'flush', 4: 'straight', '5,4': 'flush-straight' };
+
+// What a larger size leaves behind: the share of continuing hands that are
+// already ahead now, from the public range model. Archived assessments that
+// predate these masses give no comparison.
+function remainingAhead(selected, larger) {
+  const share = (o) =>
+    finite(o.aheadContinueMass) && finite(o.continueMass) && o.continueMass > 0
+      ? o.aheadContinueMass / o.continueMass
+      : null;
+  const before = share(selected),
+    after = share(larger);
+  if (before === null || after === null || after - before < 0.05) return null;
+  const majority = after >= 0.5;
+  if (!majority && after - before < 0.08) return null;
+  const categories = Object.entries(larger.aheadContinueByCategory || {})
+    .filter(([, value]) => finite(value) && value > 0)
+    .sort((a, b) => b[1] - a[1]);
+  const named = [];
+  let covered = 0;
+  for (const [category, value] of categories) {
+    if (named.length === 2 || covered >= larger.aheadContinueMass * 0.6) break;
+    named.push(category);
+    covered += value;
+  }
+  const key = named.sort((a, b) => b - a).join(',');
+  return {
+    majority,
+    threat: covered >= larger.aheadContinueMass * 0.6 ? AHEAD_THREATS[key] || '' : '',
+  };
 }
 
 // Checked-through value and size-dependent payment are one causal reason.

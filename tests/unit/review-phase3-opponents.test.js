@@ -165,9 +165,9 @@ test('calling the sole all-in opponent closes betting even when the actor has ch
 });
 
 // The reported Leo spot: K♦6♠ in the BB calling 290K of a 3-bet into 580K
-// with 690K behind. The call is explained by its price first; the stack it
-// commits and the kicker risk follow as consequences, not as the reason.
-test('a priced wide 3-bet call names the break-even share, the committed stack, then its risk', () => {
+// with 690K behind. The call is explained by its price first, then the stack
+// it commits. Risks that would argue for folding are not part of its reason.
+test('a priced wide 3-bet call names the break-even share and the committed stack, not fold reasons', () => {
   const r = record('Kd 6s', '', 'price-continue', {
     cost: 2900,
     stack: 6900,
@@ -179,10 +179,8 @@ test('a priced wide 3-bet call names the break-even share, the committed stack, 
   assert.match(text, /估计 K \/ 6 不同花底牌对这次加注的范围仍够这个价格，所以较宽地跟注/);
   assert.match(text, /剩余筹码的 42.0%/);
   assert.match(text, /跟完只剩 4K，还不到翻牌时的底池，之后再遇下注很难弃牌，相当于被底池套住/);
-  assert.match(text, /代价是击中一对后仍可能被更好的踢脚或更大对子压住/);
-  assert.ok(
-    text.indexOf('持平') < text.indexOf('套住') && text.indexOf('套住') < text.indexOf('代价'),
-  );
+  assert.doesNotMatch(text, /代价是|更好的踢脚|可能落后/);
+  assert.ok(text.indexOf('持平') < text.indexOf('套住'));
 });
 
 test('weak preflop calls describe a wide choice and its price without treating cheapness as proof', () => {
@@ -201,12 +199,16 @@ test('weak preflop calls describe a wide choice and its price without treating c
     assert.equal(review.title, '用边缘牌宽跟');
     assert.match(summary(r), /较宽地/);
     assert.match(summary(r), /剩余筹码的 6.3%/);
-    assert.match(summary(r), /踢脚/);
-    assert.match(summary(r), /击中一对.*(?:踢脚|对子).*可能落后|击中一对.*可能被更好的踢脚/);
+    // Explains the call only; the hand's later kicker risk argues for folding.
+    assert.doesNotMatch(summary(r), /踢脚|可能落后/);
     assert.doesNotMatch(summary(r), /不能只因|通用建议|需要.*重新决定/);
     assert.doesNotMatch(summary(r), /因此选择跟注入池/);
     // A small call leaves plenty behind; it does not commit the stack.
     assert.doesNotMatch(summary(r), /套住/);
+    if (reason !== 'price-continue') {
+      assert.match(summary(r), /拿 9♠ 2♦ 选择较宽地跟注，用 125 保留看翻牌的机会/);
+      assert.doesNotMatch(summary(r), /选择跟注。他选择较宽地跟注/);
+    }
   }
   const premium = record('As Ah', '', 'affordable-entry', {
     cost: 50,
@@ -521,4 +523,51 @@ test('a pair released after repeated bets names the discounted price, not only i
   v.history = v.history.filter((a) => a !== barrels[0]);
   assert.doesNotMatch(summary(record), /打了折扣/);
   assert.match(summary(record), /选择保住后手，没有接这笔大额投入/);
+});
+
+// One passage: this hand's raise, then the reviewed seat's fold and its direct
+// reason, without a separate "most recent raise" paragraph.
+test('a preflop fold reads as one passage and names the hand as too weak for the price', () => {
+  const r = record('9s 2d', '', 'outside-range', {
+    action: 'fold',
+    cost: 125,
+    stack: 2000,
+    pot: 300,
+    opponents: [{ id: 0, name: '你', position: 'HJ', stack: 1875, bet: 125, allin: false }],
+    history: [{ id: 0, street: 0, action: 'raise', amount: 125 }],
+  });
+  const paragraphs = explainOpponent(r).paragraphs;
+  assert.match(
+    paragraphs.at(-1),
+    /^这次你在 HJ 位 2-bet 开池至 125，Kai 在 BTN 位拿 9♠ 2♦，选择弃牌。按当时对加注范围的估计，他认为 9 \/ 2 不同花底牌过弱，不足以支撑再补 125 的跟注。/,
+  );
+  assert.doesNotMatch(paragraphs.join(''), /对手最近一次翻前加注|没有支付这笔跟注/);
+});
+
+// An earlier raise and call that still face the newest raise are told as
+// history, without the decision hint written for the player's own review.
+test('an observer passage tells earlier raises and calls as history before this raise', () => {
+  const r = record('3s 5d', '', 'outside-range', {
+    action: 'fold',
+    cost: 2675,
+    stack: 4975,
+    pot: 4425,
+    pending: [0, 3],
+    opponents: [
+      { id: 0, name: '你', position: 'UTG', stack: 4400, bet: 600, allin: false },
+      { id: 3, name: 'Mia', position: 'CO', stack: 4400, bet: 600, allin: false },
+      { id: 2, name: 'Alex', position: 'BTN', stack: 2300, bet: 2700, allin: false },
+    ],
+    history: [
+      { id: 0, street: 0, action: 'raise', amount: 600 },
+      { id: 3, street: 0, action: 'call', amount: 600 },
+      { id: 2, street: 0, action: 'raise', amount: 2700 },
+    ],
+  });
+  const text = summary(r);
+  assert.match(
+    text,
+    /^此前你在 UTG 位 2-bet 开池至 600，Mia 在 CO 位跟注 600，这次 Alex 在 BTN 位 3-bet 加注至 2\.7K，Kai 在 BTN 位拿/,
+  );
+  assert.doesNotMatch(text, /仍需回应最新加注|先跟注 600 入池/);
 });

@@ -28,7 +28,7 @@ test('an actual observed shove response explains the actor public evidence witho
   const record = observation();
   assert.equal(record.action, 'call');
   const text = explainOpponent(record).detail;
-  assert.match(text, /Mia 结合.*此前 32 手中 32 手翻前大额加注.*保留了更多非顶级起手牌/);
+  assert.match(text, /Mia 结合.*此前 32 手翻前大额加注.*保留了更多非顶级起手牌/);
   assert.doesNotMatch(text, /机器人|应当|建议|需要警惕|不能只凭|并非已经看到/);
   assert.equal(record.trace.view.publicReadModel, PUBLIC_READ_MODEL);
   const contaminated = structuredClone(record);

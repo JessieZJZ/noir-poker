@@ -173,7 +173,7 @@ test('unmade combo-draw pressure separates draw calls from value and only states
   const text = strategyNotes(r.trace.view, assessment, options)
     .map((entry) => entry.text)
     .join('');
-  assert.match(text, /听牌可能跟注.*并不一定来自更弱的牌/);
+  assert.match(text, /估计仍有听牌会跟注.*并不一定来自更弱的牌/);
   assert.match(text, /1.7K.*整体弃牌率会上升.*听牌会减少/);
   assert.doesNotMatch(text, /听牌可能付费|向.*听牌.*取值|更好的牌.*(?:必|一定).*弃/);
   delete assessment.options[1].foldProbability;
