@@ -150,6 +150,58 @@ test('background pauses music, foreground resumes it, and hands/retry/reset do n
   await expect.poll(async () => (await musicState(page)).paused).toBe(false);
 });
 
+// Android's onPause "pause" arrives before inactive (onStop). Music and
+// playing cues fade then, while the WebView still renders audio in the
+// foreground, and the table clock keeps running until the app is inactive.
+test('the native pause signal fades music and cues before the app turns inactive', async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    window.cueRelease = { ramps: [], stops: [] };
+    const ramp = AudioParam.prototype.linearRampToValueAtTime;
+    AudioParam.prototype.linearRampToValueAtTime = function (value, end) {
+      if (value === 0) window.cueRelease.ramps.push({ end });
+      return ramp.call(this, value, end);
+    };
+    const stop = AudioBufferSourceNode.prototype.stop;
+    AudioBufferSourceNode.prototype.stop = function (when = 0) {
+      if (this.buffer && this.buffer.duration < 60) window.cueRelease.stops.push(when);
+      return stop.call(this, when);
+    };
+  });
+  await page.goto('/');
+  await page.waitForFunction(() => !!window.qa);
+  await openSettings(page);
+  await expect.poll(async () => (await musicState(page)).paused).toBe(false);
+  await page.locator('#opponents-dialog .close-dialog').click();
+  // A long cue is playing when the app starts to leave.
+  await page.evaluate(() => {
+    window.qa.heroTurn(5);
+    document.querySelector('#fold-button').click();
+  });
+  await page.evaluate(() => {
+    window.cueRelease.ramps.length = 0;
+    window.cueRelease.stops.length = 0;
+    document.dispatchEvent(new CustomEvent('noir:app-pausing'));
+  });
+  await expect.poll(async () => (await musicState(page)).paused).toBe(true);
+  const release = await page.evaluate(() => window.cueRelease);
+  // Every cue stops on the audio clock just after its bus ramped to silence,
+  // never immediately (a stop time of 0 cuts the waveform).
+  expect(release.stops.length).toBeGreaterThan(0);
+  for (const when of release.stops) {
+    expect(when).toBeGreaterThan(0);
+    expect(
+      release.ramps.some((ramp) => ramp.end < when && when - ramp.end <= 0.02),
+      String(when),
+    ).toBe(true);
+  }
+  await page.evaluate(() =>
+    document.dispatchEvent(new CustomEvent('noir:app-state', { detail: { active: true } })),
+  );
+  await expect.poll(async () => (await musicState(page)).paused).toBe(false);
+});
+
 test('enabling vibration gives one immediate supported-device feedback pulse', async ({ page }) => {
   await page.addInitScript(() => {
     localStorage.setItem('noir-vibration', 'false');

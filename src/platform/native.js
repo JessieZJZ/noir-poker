@@ -57,6 +57,13 @@ export async function preparePlatform() {
     document.dispatchEvent(new CustomEvent('noir:app-state', { detail: { active: isActive } }));
     if (!isActive) void preferenceStorage.flush();
   });
+  // Android reports inactive only at onStop, after the switch animation, when
+  // the WebView is already being backgrounded and audio can underrun. Its
+  // onPause "pause" arrives first, so audio fades while it still plays cleanly.
+  // The next appStateChange(true) on onResume lifts it.
+  await App.addListener('pause', () => {
+    document.dispatchEvent(new CustomEvent('noir:app-pausing'));
+  });
   try {
     appActive = (await App.getState()).isActive;
   } catch {}

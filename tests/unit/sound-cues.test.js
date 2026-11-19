@@ -10,6 +10,11 @@ import {
   createSoundOutput,
 } from '../../src/ui/sound-cues.js';
 import { soundWave } from '../../scripts/wechat.mjs';
+import {
+  SOUND_LIMIT_THRESHOLD_DB,
+  SOUND_SAFETY_KNEE,
+  soundLimiterTrim,
+} from '../../src/ui/sound-synth.js';
 
 const formerRms = {
   fold: 0.03893198712336045,
@@ -211,4 +216,60 @@ test('table-notice cues end within the notice, before the deal stops them', asyn
       (ceremonySamples(cue).length / CEREMONY_SAMPLE_RATE) * 1000 <= TABLE_NOTICE_MS,
       `${cue} fits in ${TABLE_NOTICE_MS} ms`,
     );
+});
+
+// Music and coinciding cues are limited by gain, not by bending the waveform.
+// The compressor's spec makeup gain is undone, so audio below the threshold
+// (every single cue, and the music alone) passes at unity.
+test('the Web mix limits coincident audio smoothly and keeps unlimited audio at unity', () => {
+  const nodes = [];
+  const param = (value = 0) => ({ value });
+  const node = (kind, extra = {}) => {
+    const item = {
+      kind,
+      connect(target) {
+        this.connected = target;
+        return target;
+      },
+      ...extra,
+    };
+    nodes.push(item);
+    return item;
+  };
+  const destination = { kind: 'destination' },
+    context = {
+      destination,
+      createWaveShaper: () => node('shaper'),
+      createGain: () => node('gain', { gain: param(1) }),
+      createDynamicsCompressor: () =>
+        node('limiter', {
+          threshold: param(),
+          knee: param(),
+          ratio: param(),
+          attack: param(),
+          release: param(),
+        }),
+    };
+  const input = createSoundOutput(context);
+  assert.equal(input.kind, 'limiter');
+  assert.equal(input.threshold.value, SOUND_LIMIT_THRESHOLD_DB);
+  assert.equal(input.knee.value, 0);
+  assert.equal(input.ratio.value, 20);
+  assert.ok(input.attack.value <= 0.006 && input.release.value >= 0.2);
+  const trim = input.connected,
+    safety = trim.connected;
+  assert.equal(trim.kind, 'gain');
+  assert.equal(safety.kind, 'shaper');
+  assert.equal(safety.connected, destination);
+  // Spec makeup: (1 / curve(0 dBFS))^0.6 with curve(0) = T - T / ratio.
+  const curveAtFullScale = Math.pow(10, (SOUND_LIMIT_THRESHOLD_DB * (1 - 1 / 20)) / 20);
+  const makeup = Math.pow(1 / curveAtFullScale, 0.6);
+  assert.ok(Math.abs(trim.gain.value * makeup - 1) < 1e-12);
+  assert.equal(trim.gain.value, soundLimiterTrim());
+  // Every mastered cue peaks below the limiter threshold and the safety knee.
+  const threshold = Math.pow(10, SOUND_LIMIT_THRESHOLD_DB / 20);
+  for (const name of SOUND_CUES)
+    for (const sample of soundSamples(name)) assert.ok(Math.abs(sample) < threshold);
+  assert.ok(SOUND_SAFETY_KNEE > threshold && SOUND_SAFETY_KNEE < 0.92);
+  assert.ok(SOUND_PEAK_CEILING < threshold);
 });
