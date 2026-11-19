@@ -58,6 +58,11 @@ test('CI shards cover each browser project once under its original check', async
       assert.match(shard, /shard: \[1, 2\]/);
       assert.ok(shard.includes('--project=' + project + ' --shard=${{ matrix.shard }}/2 '));
       assert.equal(shard.match(/--grep-invert '([^']+)'/)?.[1], geometryFilter);
+      // The tests keep a 30-minute deadline of their own; a slow apt mirror
+      // during browser installation is bounded separately, not by the tests.
+      assert.match(shard, /--grep-invert '[^']+'\n {8}timeout-minutes: 30\n/);
+      assert.match(shard, /install --with-deps chromium webkit\n {8}timeout-minutes: 28\n/);
+      assert.match(shard, /^ {4}timeout-minutes: 60$/m);
       const aggregate = job(aggregateJob);
       assert.ok(aggregate.includes(`name: browser-ui (${project})`));
       assert.ok(aggregate.includes(`needs: ${shardJob}`));
