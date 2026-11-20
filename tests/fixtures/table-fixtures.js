@@ -29,7 +29,8 @@ function fixtureGame(count = 6, heroFirst = false) {
   lastBoard = 0;
 }
 
-window.qa = {
+// Published once the app is ready (see the end of this file).
+const qaFixtures = {
   checkedSeat(count = 9, missingLabel = false) {
     fixtureGame(count);
     game = checkedSeatGame(count);
@@ -751,3 +752,8 @@ window.qa = {
     }));
   },
 };
+// Tests wait for window.qa before driving the table. Publish it only once the
+// app is ready and its launch screen no longer covers an inert page, so real
+// clicks and touches never land during startup.
+if (document.documentElement.dataset.appReady === 'true') window.qa = qaFixtures;
+else document.addEventListener('noir:ready', () => (window.qa = qaFixtures), { once: true });
