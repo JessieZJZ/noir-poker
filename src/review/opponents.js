@@ -521,6 +521,25 @@ export function explainOpponent(record, identities = []) {
         logic = logicParts.join('');
         break;
       }
+      // A hand inside the raising range that called only because the style's
+      // raise roll missed: say so first, with the recorded raise frequency.
+      {
+        const skippedRaise =
+          !v.street &&
+          !widePreflopCall &&
+          Number.isFinite(t.percentile) &&
+          Number.isFinite(t.raiseRange) &&
+          t.percentile <= t.raiseRange &&
+          t.checks?.find((check) => check.code === 'attack' && !check.selected);
+        if (skippedRaise) {
+          logicParts = [
+            `${hand}在${subject}的加注范围内，按其风格约有 ${pct(skippedRaise.threshold)} 的时候会加注；这次没有加注，只补 ${n(cost)} 跟进，还留 ${n(v.stack - cost)}，把这手强牌藏在平跟里。`,
+            ...preflopPotential(snapshot, subject, false),
+          ];
+          logic = logicParts.join('');
+          break;
+        }
+      }
       // One clause: the hand, the wide call and what it costs.
       if (widePreflopCall)
         actionPrefix = `${name}拿 ${f.holeText} 选择较宽地跟注，用 ${n(cost)} 保留看翻牌的机会，这笔投入占行动前剩余筹码的 ${pct(cost / Math.max(1, v.stack))}。`;
@@ -796,39 +815,80 @@ export function explainOpponent(record, identities = []) {
               ? `当前已有${c.handLabel}，仍可能赢过${showdownTargets(c)}，另外还有${drawLabel(draw)}，成牌和补牌共同提供摊牌机会`
               : `当前主要依靠${drawLabel(draw)}改善，而不是只靠${hand}取胜`
             : `${subject}用当前${hand}争取摊牌获胜`;
-    logicParts = [
-      ((usePolicyReason &&
-        t.reason === 'loose-exception' &&
-        !draw.outs &&
-        (v.street ? c.made.score[0] === 0 : c.tier < 2)) ||
-        widePreflopCall) &&
-      allinCall
-        ? '这次是较松的全下跟注，当前牌力支撑有限。'
-        : '',
-      potential,
-      '。',
-      draw.outs ? `${drawText}，补中也不保证获胜。` : '',
-      draw.straightRanks?.length
-        ? `${draw.straightRanks.map(rankText).join(' / ')} 落下时可以补成顺子。`
-        : '',
-      `这次补 ${n(cost)}，可争夺 ${n((usePolicyReason && t.allIn?.contestable) || v.contestable)} 的底池。`,
-      allinCall
-        ? v.street < 3
-          ? '之后不再参与下注决策，可以看完剩余公共牌，无需再支付筹码。'
-          : '之后不再参与下注决策。'
-        : v.street < 3
-          ? '所有对手都已全下，这次跟注后不再有后续下注，可以看完剩余公共牌，无需再支付筹码。'
-          : '所有对手都已全下，这次跟注后不再有后续下注。',
-    ].filter(Boolean);
+    // A priced call records the price and the estimate it cleared. Explain the
+    // call by those, and on the river by the bluffs this line still holds.
+    const priced =
+      usePolicyReason &&
+      ['price-continue', 'story-continue'].includes(t.reason) &&
+      v.street > 0 &&
+      ownMade &&
+      !draw.outs &&
+      Number.isFinite(t.equity) &&
+      Number.isFinite(t.requiredEquity) &&
+      t.equity >= t.requiredEquity;
+    logicParts = priced
+      ? [
+          `${subject}要补 ${n(cost)} 去争 ${n((usePolicyReason && t.allIn?.contestable) || v.contestable)} 的底池，至少需要约 ${pct(t.requiredEquity)} 的胜率。`,
+          `按${f.lastAggression ? actorName(v, f.lastAggression.id) : '对手'}这条行动线估计的范围，${subject}估计${hand}的胜率约 ${pct(t.equity)}，高于这个价格。`,
+          // On the river the estimate is the share of that range this hand beats.
+          v.street === 3
+            ? t.equity >= 0.5
+              ? allinCall
+                ? `这个范围里${hand}能赢的牌多于会输的牌，能赢的包括这条线可能有的诈唬和较弱成牌，所以全下跟注抓诈唬。`
+                : `这个范围里${hand}能赢的牌多于会输的牌，能赢的包括这条线可能有的诈唬和较弱成牌，所以跟注抓诈唬。`
+              : allinCall
+                ? '这条线里仍有足够的诈唬和较弱成牌，这个价格下全下跟注抓诈唬划算。'
+                : '这条线里仍有足够的诈唬和较弱成牌，这个价格下跟注抓诈唬划算。'
+            : '',
+          allinCall
+            ? v.street < 3
+              ? '之后不再参与下注决策，可以看完剩余公共牌，无需再支付筹码。'
+              : '之后不再参与下注决策。'
+            : v.street < 3
+              ? '所有对手都已全下，这次跟注后不再有后续下注，可以看完剩余公共牌，无需再支付筹码。'
+              : '所有对手都已全下，这次跟注后不再有后续下注。',
+        ].filter(Boolean)
+      : [
+          ((usePolicyReason &&
+            t.reason === 'loose-exception' &&
+            !draw.outs &&
+            (v.street ? c.made.score[0] === 0 : c.tier < 2)) ||
+            widePreflopCall) &&
+          allinCall
+            ? '这次是较松的全下跟注，当前牌力支撑有限。'
+            : '',
+          potential,
+          '。',
+          draw.outs ? `${drawText}，补中也不保证获胜。` : '',
+          draw.straightRanks?.length
+            ? `${draw.straightRanks.map(rankText).join(' / ')} 落下时可以补成顺子。`
+            : '',
+          `这次补 ${n(cost)}，可争夺 ${n((usePolicyReason && t.allIn?.contestable) || v.contestable)} 的底池。`,
+          allinCall
+            ? v.street < 3
+              ? '之后不再参与下注决策，可以看完剩余公共牌，无需再支付筹码。'
+              : '之后不再参与下注决策。'
+            : v.street < 3
+              ? '所有对手都已全下，这次跟注后不再有后续下注，可以看完剩余公共牌，无需再支付筹码。'
+              : '所有对手都已全下，这次跟注后不再有后续下注。',
+        ].filter(Boolean);
     logic = logicParts.join('');
     checkNotes.length = 0;
   }
+  // Hands that beat this one are a reason to fold, not to call. List them for
+  // folds only; a call keeps its redraw (a set to a full house), which supports it.
+  if (v.street > 0 && record.action === 'call') {
+    const redraw = madeRedrawReasoning(snapshot, c);
+    if (redraw.length) {
+      logicParts = [...(logicParts || [logic]), ...redraw];
+      logic = logicParts.join('');
+    }
+  }
   if (
     v.street > 0 &&
-    ['call', 'fold'].includes(record.action) &&
+    record.action === 'fold' &&
     !(
       usePolicyReason &&
-      record.action === 'fold' &&
       !draw.outs &&
       !(c.made.score[0] === 3 && v.street < 3) &&
       ['outside-range', 'insufficient-equity', 'stack-pressure'].includes(t.reason)

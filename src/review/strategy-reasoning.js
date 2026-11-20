@@ -450,7 +450,12 @@ function bluffCatchNote(s, assessment, f, observer = false) {
         : `跟注 ${compactChips(f.cost)} 是抓这些诈唬，仍会输给其中的强成牌。`
       : `弃牌放弃抓诈唬，保留还需支付的 ${compactChips(f.cost)}。`;
   if (observer) {
-    const parts = [story, '，', value, '。', route];
+    // An observed call is explained by the bluffs it catches; the strong
+    // hands on the same line are a reason to fold, stated only for folds.
+    const parts =
+      f.action === 'call' && !completed
+        ? [story, '，', '这次跟注就是在抓这些诈唬。']
+        : [story, '，', value, '。', route];
     return note('bluff-catch', parts.join(''), parts);
   }
   return note('bluff-catch', `${story}，${value}。${route}`);

@@ -1450,7 +1450,15 @@
     "按当时对加注范围的估计，{0}认为{1}过弱，不足以支撑再补 {2} 的跟注。": "Based on the raising range estimated at the time, {0} judged the hand ({1}) too weak to justify calling another {2}.",
     "此前{0} {1}，": "Earlier, {0} {1},",
     "{0}跟注 {1}，": "{0} called {1},",
-    "{0}都跟注 {1}，": "{0} all called {1},"
+    "{0}都跟注 {1}，": "{0} all called {1},",
+    "{0}在{1}的加注范围内，按其风格约有 {2} 的时候会加注；这次没有加注，只补 {3} 跟进，还留 {4}，把这手强牌藏在平跟里。": "{0} is a raising hand here: in this style {1} would raise it about {2} of the time. This time there was no raise, only a {3} call, keeping {4} behind and hiding this strong hand in a flat call.",
+    "{0}要补 {1} 去争 {2} 的底池，至少需要约 {3} 的胜率。": "{0} must add {1} to contest a {2} pot, which needs at least about {3} equity.",
+    "这个范围里{0}能赢的牌多于会输的牌，能赢的包括这条线可能有的诈唬和较弱成牌，所以全下跟注抓诈唬。": "In this range, {0} beats more hands than it loses to, including the bluffs and weaker made hands this line can hold, so it calls all-in to catch bluffs.",
+    "这个范围里{0}能赢的牌多于会输的牌，能赢的包括这条线可能有的诈唬和较弱成牌，所以跟注抓诈唬。": "In this range, {0} beats more hands than it loses to, including the bluffs and weaker made hands this line can hold, so it calls to catch bluffs.",
+    "这条线里仍有足够的诈唬和较弱成牌，这个价格下全下跟注抓诈唬划算。": "This line still holds enough bluffs and weaker made hands that an all-in call to catch bluffs pays at this price.",
+    "这条线里仍有足够的诈唬和较弱成牌，这个价格下跟注抓诈唬划算。": "This line still holds enough bluffs and weaker made hands that a call to catch bluffs pays at this price.",
+    "这次跟注就是在抓这些诈唬。": "This call is catching those bluffs.",
+    "按{0}这条行动线估计的范围，{1}估计{2}的胜率约 {3}，高于这个价格。": "Against the range estimated from the bettor's line ({0}), {1} put the equity of {2} at about {3}, above that price."
   },
   "zh-TW": {
     "设置": "設定",
@@ -2345,7 +2353,15 @@
     "按当时对加注范围的估计，{0}认为{1}过弱，不足以支撑再补 {2} 的跟注。": "按當時對加注範圍的估計，{0}認為{1}過弱，不足以支撐再補 {2} 的跟注。",
     "此前{0} {1}，": "此前{0} {1}，",
     "{0}跟注 {1}，": "{0}跟注 {1}，",
-    "{0}都跟注 {1}，": "{0}都跟注 {1}，"
+    "{0}都跟注 {1}，": "{0}都跟注 {1}，",
+    "{0}在{1}的加注范围内，按其风格约有 {2} 的时候会加注；这次没有加注，只补 {3} 跟进，还留 {4}，把这手强牌藏在平跟里。": "{0}在{1}的加注範圍內，按其風格約有 {2} 的時候會加注；這次沒有加注，只補 {3} 跟進，還留 {4}，把這手強牌藏在平跟裡。",
+    "{0}要补 {1} 去争 {2} 的底池，至少需要约 {3} 的胜率。": "{0}要補 {1} 去爭 {2} 的底池，至少需要約 {3} 的勝率。",
+    "这个范围里{0}能赢的牌多于会输的牌，能赢的包括这条线可能有的诈唬和较弱成牌，所以全下跟注抓诈唬。": "這個範圍裡{0}能贏的牌多於會輸的牌，能贏的包括這條線可能有的詐唬和較弱成牌，所以全下跟注抓詐唬。",
+    "这个范围里{0}能赢的牌多于会输的牌，能赢的包括这条线可能有的诈唬和较弱成牌，所以跟注抓诈唬。": "這個範圍裡{0}能贏的牌多於會輸的牌，能贏的包括這條線可能有的詐唬和較弱成牌，所以跟注抓詐唬。",
+    "这条线里仍有足够的诈唬和较弱成牌，这个价格下全下跟注抓诈唬划算。": "這條線裡仍有足夠的詐唬和較弱成牌，這個價格下全下跟注抓詐唬划算。",
+    "这条线里仍有足够的诈唬和较弱成牌，这个价格下跟注抓诈唬划算。": "這條線裡仍有足夠的詐唬和較弱成牌，這個價格下跟注抓詐唬划算。",
+    "这次跟注就是在抓这些诈唬。": "這次跟注就是在抓這些詐唬。",
+    "按{0}这条行动线估计的范围，{1}估计{2}的胜率约 {3}，高于这个价格。": "按{0}這條行動線估計的範圍，{1}估計{2}的勝率約 {3}，高於這個價格。"
   },
   "ja": {
     "设置": "設定",
@@ -3721,7 +3737,15 @@
     "按当时对加注范围的估计，{0}认为{1}过弱，不足以支撑再补 {2} 的跟注。": "その時点のレイズレンジの推定では、{0}は{1}では弱すぎて、さらに {2} を払うコールに見合わないと判断しました。",
     "此前{0} {1}，": "先に{0} {1}、",
     "{0}跟注 {1}，": "{0}は {1} をコール、",
-    "{0}都跟注 {1}，": "{0}はいずれも {1} をコール、"
+    "{0}都跟注 {1}，": "{0}はいずれも {1} をコール、",
+    "{0}在{1}的加注范围内，按其风格约有 {2} 的时候会加注；这次没有加注，只补 {3} 跟进，还留 {4}，把这手强牌藏在平跟里。": "{0}はレイズレンジに入っており、このスタイルでは{1}が約 {2} の確率でレイズします。今回はレイズせず {3} だけコールして {4} を残し、この強いハンドをフラットコールに隠しました。",
+    "{0}要补 {1} 去争 {2} 的底池，至少需要约 {3} 的胜率。": "{0}は {2} のポットを争うために {1} を追加する必要があり、少なくとも約 {3} の勝率が必要です。",
+    "这个范围里{0}能赢的牌多于会输的牌，能赢的包括这条线可能有的诈唬和较弱成牌，所以全下跟注抓诈唬。": "このレンジでは{0}が勝てるハンドの方が負けるハンドより多く、このラインにありうるブラフや弱い完成ハンドにも勝てるため、ブラフキャッチとしてオールインコールしました。",
+    "这个范围里{0}能赢的牌多于会输的牌，能赢的包括这条线可能有的诈唬和较弱成牌，所以跟注抓诈唬。": "このレンジでは{0}が勝てるハンドの方が負けるハンドより多く、このラインにありうるブラフや弱い完成ハンドにも勝てるため、ブラフキャッチとしてコールしました。",
+    "这条线里仍有足够的诈唬和较弱成牌，这个价格下全下跟注抓诈唬划算。": "このラインにはまだ十分なブラフと弱い完成ハンドがあり、この価格ならブラフキャッチのオールインコールが見合います。",
+    "这条线里仍有足够的诈唬和较弱成牌，这个价格下跟注抓诈唬划算。": "このラインにはまだ十分なブラフと弱い完成ハンドがあり、この価格ならブラフキャッチのコールが見合います。",
+    "这次跟注就是在抓这些诈唬。": "今回のコールはまさにそうしたブラフを捕まえるためのものです。",
+    "按{0}这条行动线估计的范围，{1}估计{2}的胜率约 {3}，高于这个价格。": "{0}の行動ラインから推定したレンジに対して、{1}は{2}の勝率を約 {3} と見積もり、この価格を上回りました。"
   },
   "ko": {
     "设置": "설정",
@@ -5426,7 +5450,15 @@
     "按当时对加注范围的估计，{0}认为{1}过弱，不足以支撑再补 {2} 的跟注。": "당시 추정한 레이즈 레인지를 기준으로 {0}은(는) {1} 핸드가 너무 약해 {2}를 더 내는 콜을 감당할 수 없다고 판단했습니다.",
     "此前{0} {1}，": "앞서 {0} {1},",
     "{0}跟注 {1}，": "{0}은(는) {1} 콜,",
-    "{0}都跟注 {1}，": "{0} 모두 {1} 콜,"
+    "{0}都跟注 {1}，": "{0} 모두 {1} 콜,",
+    "{0}在{1}的加注范围内，按其风格约有 {2} 的时候会加注；这次没有加注，只补 {3} 跟进，还留 {4}，把这手强牌藏在平跟里。": "{0}은(는) 레이즈 범위에 들어가며, 이 스타일에서 {1}은(는) 약 {2}의 확률로 레이즈합니다. 이번에는 레이즈하지 않고 {3}만 콜해 {4}를 남기며 이 강한 패를 플랫 콜 속에 숨겼습니다.",
+    "{0}要补 {1} 去争 {2} 的底池，至少需要约 {3} 的胜率。": "{0}은(는) {2} 팟을 두고 {1}를 더 내야 하므로 최소 약 {3}의 승률이 필요합니다.",
+    "这个范围里{0}能赢的牌多于会输的牌，能赢的包括这条线可能有的诈唬和较弱成牌，所以全下跟注抓诈唬。": "이 범위에서 {0}은(는) 지는 패보다 이기는 패가 많고, 이 라인에 있을 수 있는 블러프와 더 약한 완성 패도 이길 수 있어 블러프를 잡기 위해 올인 콜했습니다.",
+    "这个范围里{0}能赢的牌多于会输的牌，能赢的包括这条线可能有的诈唬和较弱成牌，所以跟注抓诈唬。": "이 범위에서 {0}은(는) 지는 패보다 이기는 패가 많고, 이 라인에 있을 수 있는 블러프와 더 약한 완성 패도 이길 수 있어 블러프를 잡기 위해 콜했습니다.",
+    "这条线里仍有足够的诈唬和较弱成牌，这个价格下全下跟注抓诈唬划算。": "이 라인에는 여전히 블러프와 더 약한 완성 패가 충분해, 이 가격에서 블러프를 잡는 올인 콜이 이득입니다.",
+    "这条线里仍有足够的诈唬和较弱成牌，这个价格下跟注抓诈唬划算。": "이 라인에는 여전히 블러프와 더 약한 완성 패가 충분해, 이 가격에서 블러프를 잡는 콜이 이득입니다.",
+    "这次跟注就是在抓这些诈唬。": "이번 콜은 바로 이런 블러프를 잡기 위한 것입니다.",
+    "按{0}这条行动线估计的范围，{1}估计{2}的胜率约 {3}，高于这个价格。": "베팅한 플레이어({0})의 행동 라인으로 추정한 범위에 대해 {1}은(는) {2}의 승률을 약 {3}로 추정했으며, 이는 이 가격보다 높습니다."
   },
   "es": {
     "设置": "Ajustes",
@@ -6887,7 +6919,15 @@
     "按当时对加注范围的估计，{0}认为{1}过弱，不足以支撑再补 {2} 的跟注。": "Según la estimación del rango de subida en ese momento, {0} consideró que su mano ({1}) no bastaba para pagar {2} más.",
     "此前{0} {1}，": "Antes, {0} {1},",
     "{0}跟注 {1}，": "{0} pagó {1},",
-    "{0}都跟注 {1}，": "{0} pagaron {1} cada uno,"
+    "{0}都跟注 {1}，": "{0} pagaron {1} cada uno,",
+    "{0}在{1}的加注范围内，按其风格约有 {2} 的时候会加注；这次没有加注，只补 {3} 跟进，还留 {4}，把这手强牌藏在平跟里。": "{0} está en el rango de subida: con este estilo, {1} la subiría en torno al {2} de las veces. Esta vez no subió: solo pagó {3}, conservó {4} y escondió esta mano fuerte en un call.",
+    "{0}要补 {1} 去争 {2} 的底池，至少需要约 {3} 的胜率。": "{0} debe añadir {1} para disputar un bote de {2}, lo que exige al menos un {3} de equity aproximadamente.",
+    "这个范围里{0}能赢的牌多于会输的牌，能赢的包括这条线可能有的诈唬和较弱成牌，所以全下跟注抓诈唬。": "En este rango, {0} gana a más manos de las que pierde, incluidos los faroles y las manos hechas más débiles que puede tener esta línea; por eso paga all-in para cazar faroles.",
+    "这个范围里{0}能赢的牌多于会输的牌，能赢的包括这条线可能有的诈唬和较弱成牌，所以跟注抓诈唬。": "En este rango, {0} gana a más manos de las que pierde, incluidos los faroles y las manos hechas más débiles que puede tener esta línea; por eso paga para cazar faroles.",
+    "这条线里仍有足够的诈唬和较弱成牌，这个价格下全下跟注抓诈唬划算。": "Esta línea aún tiene suficientes faroles y manos hechas más débiles para que pagar all-in y cazar faroles salga rentable a este precio.",
+    "这条线里仍有足够的诈唬和较弱成牌，这个价格下跟注抓诈唬划算。": "Esta línea aún tiene suficientes faroles y manos hechas más débiles para que pagar y cazar faroles salga rentable a este precio.",
+    "这次跟注就是在抓这些诈唬。": "Este call busca justamente esos faroles.",
+    "按{0}这条行动线估计的范围，{1}估计{2}的胜率约 {3}，高于这个价格。": "Frente al rango estimado a partir de la línea de quien apuesta ({0}), {1} estimó la equity de {2} en torno al {3}, por encima de ese precio."
   },
   "it": {
     "设置": "Impostazioni",
@@ -8320,7 +8360,15 @@
     "按当时对加注范围的估计，{0}认为{1}过弱，不足以支撑再补 {2} 的跟注。": "In base alla stima del range di rilancio fatta in quel momento, {0} ha ritenuto la propria mano ({1}) troppo debole per pagare altri {2}.",
     "此前{0} {1}，": "In precedenza, {0} {1},",
     "{0}跟注 {1}，": "{0} ha chiamato {1},",
-    "{0}都跟注 {1}，": "{0} hanno chiamato {1} ciascuno,"
+    "{0}都跟注 {1}，": "{0} hanno chiamato {1} ciascuno,",
+    "{0}在{1}的加注范围内，按其风格约有 {2} 的时候会加注；这次没有加注，只补 {3} 跟进，还留 {4}，把这手强牌藏在平跟里。": "{0} rientra nel range di rilancio: con questo stile {1} la rilancerebbe circa nel {2} dei casi. Questa volta niente rilancio: solo {3} per chiamare, {4} ancora dietro, nascondendo questa mano forte in un flat call.",
+    "{0}要补 {1} 去争 {2} 的底池，至少需要约 {3} 的胜率。": "{0} deve aggiungere {1} per contendere un piatto di {2}, il che richiede almeno circa il {3} di equity.",
+    "这个范围里{0}能赢的牌多于会输的牌，能赢的包括这条线可能有的诈唬和较弱成牌，所以全下跟注抓诈唬。": "In questo range, {0} batte più mani di quante ne perda, inclusi i bluff e le mani formate più deboli possibili su questa linea; per questo chiama all-in per cogliere i bluff.",
+    "这个范围里{0}能赢的牌多于会输的牌，能赢的包括这条线可能有的诈唬和较弱成牌，所以跟注抓诈唬。": "In questo range, {0} batte più mani di quante ne perda, inclusi i bluff e le mani formate più deboli possibili su questa linea; per questo chiama per cogliere i bluff.",
+    "这条线里仍有足够的诈唬和较弱成牌，这个价格下全下跟注抓诈唬划算。": "Questa linea contiene ancora abbastanza bluff e mani formate più deboli perché un call all-in per cogliere i bluff convenga a questo prezzo.",
+    "这条线里仍有足够的诈唬和较弱成牌，这个价格下跟注抓诈唬划算。": "Questa linea contiene ancora abbastanza bluff e mani formate più deboli perché un call per cogliere i bluff convenga a questo prezzo.",
+    "这次跟注就是在抓这些诈唬。": "Questo call punta proprio a cogliere quei bluff.",
+    "按{0}这条行动线估计的范围，{1}估计{2}的胜率约 {3}，高于这个价格。": "Contro il range stimato dalla linea di chi punta ({0}), {1} ha stimato l’equity di {2} intorno al {3}, sopra questo prezzo."
   },
   "pt": {
     "设置": "Configurações",
@@ -9818,7 +9866,15 @@
     "按当时对加注范围的估计，{0}认为{1}过弱，不足以支撑再补 {2} 的跟注。": "Com base na estimativa do range de aumento naquele momento, {0} considerou que a mão ({1}) não era forte o bastante para pagar mais {2}.",
     "此前{0} {1}，": "Antes, {0} {1},",
     "{0}跟注 {1}，": "{0} pagou {1},",
-    "{0}都跟注 {1}，": "{0} pagaram {1} cada um,"
+    "{0}都跟注 {1}，": "{0} pagaram {1} cada um,",
+    "{0}在{1}的加注范围内，按其风格约有 {2} 的时候会加注；这次没有加注，只补 {3} 跟进，还留 {4}，把这手强牌藏在平跟里。": "{0} está no range de aumento: nesse estilo, {1} aumentaria com ela cerca de {2} das vezes. Desta vez não aumentou: só pagou {3}, manteve {4} e escondeu essa mão forte num call.",
+    "{0}要补 {1} 去争 {2} 的底池，至少需要约 {3} 的胜率。": "{0} precisa pagar mais {1} para disputar um pote de {2}, o que exige pelo menos cerca de {3} de equity.",
+    "这个范围里{0}能赢的牌多于会输的牌，能赢的包括这条线可能有的诈唬和较弱成牌，所以全下跟注抓诈唬。": "Nesse range, {0} vence mais mãos do que perde, incluindo os blefes e as mãos feitas mais fracas possíveis nessa linha; por isso paga all-in para pegar blefes.",
+    "这个范围里{0}能赢的牌多于会输的牌，能赢的包括这条线可能有的诈唬和较弱成牌，所以跟注抓诈唬。": "Nesse range, {0} vence mais mãos do que perde, incluindo os blefes e as mãos feitas mais fracas possíveis nessa linha; por isso paga para pegar blefes.",
+    "这条线里仍有足够的诈唬和较弱成牌，这个价格下全下跟注抓诈唬划算。": "Essa linha ainda tem blefes e mãos feitas mais fracas suficientes para que pagar all-in e pegar blefes compense a esse preço.",
+    "这条线里仍有足够的诈唬和较弱成牌，这个价格下跟注抓诈唬划算。": "Essa linha ainda tem blefes e mãos feitas mais fracas suficientes para que pagar e pegar blefes compense a esse preço.",
+    "这次跟注就是在抓这些诈唬。": "Este call busca justamente esses blefes.",
+    "按{0}这条行动线估计的范围，{1}估计{2}的胜率约 {3}，高于这个价格。": "Contra o range estimado pela linha de quem apostou ({0}), {1} estimou a equity de {2} em cerca de {3}, acima desse preço."
   },
   "de": {
     "设置": "Einstellungen",
@@ -11297,7 +11353,15 @@
     "按当时对加注范围的估计，{0}认为{1}过弱，不足以支撑再补 {2} 的跟注。": "Nach der damaligen Einschätzung der Erhöhungsrange hielt {0} die eigene Hand ({1}) für zu schwach, um weitere {2} zu bezahlen.",
     "此前{0} {1}，": "Zuvor: {0} {1},",
     "{0}跟注 {1}，": "{0} callte {1},",
-    "{0}都跟注 {1}，": "{0} callten jeweils {1},"
+    "{0}都跟注 {1}，": "{0} callten jeweils {1},",
+    "{0}在{1}的加注范围内，按其风格约有 {2} 的时候会加注；这次没有加注，只补 {3} 跟进，还留 {4}，把这手强牌藏在平跟里。": "{0} gehört zur Erhöhungsrange; in diesem Stil würde {1} sie in etwa {2} der Fälle erhöhen. Diesmal blieb die Erhöhung aus: nur {3} gecallt, {4} bleiben übrig, und die starke Hand bleibt im Flatcall verborgen.",
+    "{0}要补 {1} 去争 {2} 的底池，至少需要约 {3} 的胜率。": "{0} muss {1} nachlegen, um einen Pot von {2} zu spielen; dafür braucht es mindestens etwa {3} Equity.",
+    "这个范围里{0}能赢的牌多于会输的牌，能赢的包括这条线可能有的诈唬和较弱成牌，所以全下跟注抓诈唬。": "In dieser Range schlägt {0} mehr Hände, als sie verliert, darunter Bluffs und schwächere fertige Hände, die diese Linie enthalten kann; daher der All-in-Call als Bluffcatcher.",
+    "这个范围里{0}能赢的牌多于会输的牌，能赢的包括这条线可能有的诈唬和较弱成牌，所以跟注抓诈唬。": "In dieser Range schlägt {0} mehr Hände, als sie verliert, darunter Bluffs und schwächere fertige Hände, die diese Linie enthalten kann; daher der Call als Bluffcatcher.",
+    "这条线里仍有足够的诈唬和较弱成牌，这个价格下全下跟注抓诈唬划算。": "Diese Linie enthält noch genug Bluffs und schwächere fertige Hände, dass sich ein All-in-Call als Bluffcatcher zu diesem Preis lohnt.",
+    "这条线里仍有足够的诈唬和较弱成牌，这个价格下跟注抓诈唬划算。": "Diese Linie enthält noch genug Bluffs und schwächere fertige Hände, dass sich ein Call als Bluffcatcher zu diesem Preis lohnt.",
+    "这次跟注就是在抓这些诈唬。": "Dieser Call fängt genau diese Bluffs.",
+    "按{0}这条行动线估计的范围，{1}估计{2}的胜率约 {3}，高于这个价格。": "Gegen die aus der Linie des Setzenden ({0}) geschätzte Range sah {1} die Equity von {2} bei etwa {3}, also über diesem Preis."
   },
   "fr": {
     "设置": "Réglages",
@@ -12962,7 +13026,15 @@
     "按当时对加注范围的估计，{0}认为{1}过弱，不足以支撑再补 {2} 的跟注。": "Selon l’estimation de la range de relance à ce moment-là, {0} a jugé sa main ({1}) trop faible pour payer {2} de plus.",
     "此前{0} {1}，": "Auparavant : {0} {1},",
     "{0}跟注 {1}，": "{0} a suivi pour {1},",
-    "{0}都跟注 {1}，": "{0} ont chacun suivi pour {1},"
+    "{0}都跟注 {1}，": "{0} ont chacun suivi pour {1},",
+    "{0}在{1}的加注范围内，按其风格约有 {2} 的时候会加注；这次没有加注，只补 {3} 跟进，还留 {4}，把这手强牌藏在平跟里。": "{0} fait partie de la range de relance : dans ce style, {1} la relancerait environ {2} du temps. Cette fois, pas de relance : seulement {3} pour suivre, {4} restants, et cette main forte reste cachée dans un call.",
+    "{0}要补 {1} 去争 {2} 的底池，至少需要约 {3} 的胜率。": "{0} doit ajouter {1} pour disputer un pot de {2}, ce qui demande au moins environ {3} d’équité.",
+    "这个范围里{0}能赢的牌多于会输的牌，能赢的包括这条线可能有的诈唬和较弱成牌，所以全下跟注抓诈唬。": "Dans cette range, {0} bat plus de mains qu’elle n’en perd, y compris les bluffs et les mains faites plus faibles possibles sur cette ligne ; d’où le call à tapis pour attraper les bluffs.",
+    "这个范围里{0}能赢的牌多于会输的牌，能赢的包括这条线可能有的诈唬和较弱成牌，所以跟注抓诈唬。": "Dans cette range, {0} bat plus de mains qu’elle n’en perd, y compris les bluffs et les mains faites plus faibles possibles sur cette ligne ; d’où le call pour attraper les bluffs.",
+    "这条线里仍有足够的诈唬和较弱成牌，这个价格下全下跟注抓诈唬划算。": "Cette ligne contient encore assez de bluffs et de mains faites plus faibles pour qu’un call à tapis visant les bluffs soit rentable à ce prix.",
+    "这条线里仍有足够的诈唬和较弱成牌，这个价格下跟注抓诈唬划算。": "Cette ligne contient encore assez de bluffs et de mains faites plus faibles pour qu’un call visant les bluffs soit rentable à ce prix.",
+    "这次跟注就是在抓这些诈唬。": "Ce call vise justement ces bluffs.",
+    "按{0}这条行动线估计的范围，{1}估计{2}的胜率约 {3}，高于这个价格。": "Face à la range estimée d’après la ligne du parieur ({0}), {1} a estimé l’équité de {2} à environ {3}, au-dessus de ce prix."
   },
   "ru": {
     "设置": "Настройки",
@@ -14590,6 +14662,14 @@
     "按当时对加注范围的估计，{0}认为{1}过弱，不足以支撑再补 {2} 的跟注。": "{0}: по тогдашней оценке диапазона рейза рука ({1}) слишком слаба, чтобы доплачивать {2}.",
     "此前{0} {1}，": "Ранее: {0} {1},",
     "{0}跟注 {1}，": "{0}: колл {1},",
-    "{0}都跟注 {1}，": "{0}: колл {1} у каждого,"
+    "{0}都跟注 {1}，": "{0}: колл {1} у каждого,",
+    "{0}在{1}的加注范围内，按其风格约有 {2} 的时候会加注；这次没有加注，只补 {3} 跟进，还留 {4}，把这手强牌藏在平跟里。": "{0} входит в диапазон рейза: в этом стиле рейз с ней делается примерно в {2} случаев ({1}). На этот раз без рейза: только колл {3}, в запасе {4}, сильная рука спрятана в колле.",
+    "{0}要补 {1} 去争 {2} 的底池，至少需要约 {3} 的胜率。": "{0}: нужно доплатить {1}, чтобы побороться за банк {2}; для этого требуется не меньше примерно {3} эквити.",
+    "这个范围里{0}能赢的牌多于会输的牌，能赢的包括这条线可能有的诈唬和较弱成牌，所以全下跟注抓诈唬。": "В этом диапазоне {0} обыгрывает больше рук, чем проигрывает, включая блефы и более слабые готовые руки, возможные на этой линии; поэтому колл олл-ин как ловля блефа.",
+    "这个范围里{0}能赢的牌多于会输的牌，能赢的包括这条线可能有的诈唬和较弱成牌，所以跟注抓诈唬。": "В этом диапазоне {0} обыгрывает больше рук, чем проигрывает, включая блефы и более слабые готовые руки, возможные на этой линии; поэтому колл как ловля блефа.",
+    "这条线里仍有足够的诈唬和较弱成牌，这个价格下全下跟注抓诈唬划算。": "На этой линии всё ещё достаточно блефов и более слабых готовых рук, чтобы колл олл-ин для ловли блефа окупался по такой цене.",
+    "这条线里仍有足够的诈唬和较弱成牌，这个价格下跟注抓诈唬划算。": "На этой линии всё ещё достаточно блефов и более слабых готовых рук, чтобы колл для ловли блефа окупался по такой цене.",
+    "这次跟注就是在抓这些诈唬。": "Этот колл как раз ловит такие блефы.",
+    "按{0}这条行动线估计的范围，{1}估计{2}的胜率约 {3}，高于这个价格。": "{1}: против диапазона, оценённого по линии ставящего ({0}), эквити {2} около {3} — выше этой цены."
   }
 }

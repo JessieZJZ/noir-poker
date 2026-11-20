@@ -130,14 +130,15 @@ test('a no-pair all-in call keeps its real open-ended improvement rather than re
   assert.doesNotMatch(text, /用当前高牌争取摊牌获胜|还留.*下一街|河牌.*转诈唬/);
 });
 
-test('a pair plus flush draw all-in call keeps both sources of showdown support and the flush risk', () => {
+test('a pair plus flush draw all-in call keeps both sources of showdown support, not fold reasons', () => {
   const r = record('Qc 5d', '7c 5c 6d 2c', 'price-continue', { cost: 800, stack: 800, pot: 2650 });
   const text = summary(r);
   assert.match(text, /当前已有非顶对 5.*较弱成牌或未成牌/);
   assert.match(text, /另外还有同花听牌/);
   assert.match(text, /9 张牌可能补成同花/);
   assert.match(text, /补中也不保证获胜/);
-  assert.match(text, /三张同花色.*两张该花色/);
+  // A made flush already ahead would be a reason to fold this call.
+  assert.doesNotMatch(text, /三张同花色.*两张该花色/);
 });
 
 test('the actor cannot make another decision after calling all-in even if another player still responds', () => {
@@ -219,7 +220,7 @@ test('weak preflop calls describe a wide choice and its price without treating c
   assert.doesNotMatch(summary(premium), /较宽地|较弱踢脚/);
 });
 
-test('call and fold on a completed-flush board explain the visible risk and the set redraw', () => {
+test('a call keeps the set redraw and a fold also names the completed-flush risk', () => {
   for (const action of ['call', 'fold']) {
     const r = record(
       '5c 5d',
@@ -232,7 +233,8 @@ test('call and fold on a completed-flush board explain the visible risk and the 
       },
     );
     const text = summary(r);
-    assert.match(text, /四张同花色.*一张该花色.*组成同花/);
+    if (action === 'fold') assert.match(text, /四张同花色.*一张该花色.*组成同花/);
+    else assert.doesNotMatch(text, /四张同花色/);
     assert.match(text, /三条.*改善为葫芦或四条/);
   }
 });
@@ -570,4 +572,26 @@ test('an observer passage tells earlier raises and calls as history before this 
     /^此前你在 UTG 位 2-bet 开池至 600，Mia 在 CO 位跟注 600，这次 Alex 在 BTN 位 3-bet 加注至 2\.7K，Kai 在 BTN 位拿/,
   );
   assert.doesNotMatch(text, /仍需回应最新加注|先跟注 600 入池/);
+});
+
+// The reported Luna hand, from real bot traces. A♥ J♥ sits in the raising
+// range and limped only because the style's raise roll missed; the river
+// all-in call is explained by its price and the bluffs this line holds.
+test('the reported Luna limp and river call give the reasons the bot actually used', async () => {
+  const { lunaBluffCatch } = await import('../fixtures/review-bluff-catch.js');
+  const { preflop, river } = lunaBluffCatch();
+  assert.equal(preflop.trace.reason, 'affordable-entry');
+  const limp = explainOpponent(preflop).paragraphs.at(-1);
+  assert.match(
+    limp,
+    /A \/ J 同花底牌在他的加注范围内，按其风格约有 77\.6% 的时候会加注；这次没有加注，只补 600 跟进，还留 15\.4K，把这手强牌藏在平跟里。/,
+  );
+  assert.match(limp, /坚果同花听牌.*若击中 A，可形成顶对/);
+  assert.equal(river.trace.reason, 'price-continue');
+  const call = explainOpponent(river).paragraphs.at(-1);
+  assert.match(call, /要补 9\.9K 去争 32\.9K 的底池，至少需要约 30\.1% 的胜率。/);
+  assert.match(call, /按你这条行动线估计的范围，他估计顶对 A 的胜率约 \d+\.\d%，高于这个价格。/);
+  assert.match(call, /能赢的包括这条线可能有的诈唬和较弱成牌，所以全下跟注抓诈唬。/);
+  // Hands that beat top pair argue for folding; they are not this call's reason.
+  assert.doesNotMatch(call, /领先当前成牌|可以组成顺子/);
 });
