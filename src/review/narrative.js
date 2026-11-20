@@ -1,7 +1,7 @@
 import { compactChips } from '../engine/chip-format.js';
 import { bigBlindOf } from '../engine/stakes.js';
 import { rankText } from '../engine/poker.js';
-import { actionLabel, historyActionLabel } from '../engine/action-labels.js';
+import { actionLabel, historyActionLabel, reviewActionLabel } from '../engine/action-labels.js';
 import { boardTexture } from './context.js';
 import { spotFacts } from './spot-facts.js';
 import { actorAtPosition } from '../engine/player-identity.js';
@@ -70,7 +70,7 @@ export function investmentText(s, c, price) {
   if (s.action === 'check') return `${before}，这次过牌无需投入，当前底池 ${n(s.pot)}`;
   if (s.action === 'raise') {
     const uncalled = guaranteedUncalledRaise(s, s.amount);
-    return `${before}，${actionLabel(s)}${c.extra !== s.amount ? '，本次追加 ' + n(c.extra) : ''}，行动前底池 ${n(s.pot)}${uncalled ? '。其中至少 ' + n(uncalled) + ' 无法被匹配，会退回。可被匹配的新增投入最多 ' + n(c.extra - uncalled) : ''}`;
+    return `${before}，${reviewActionLabel(s)}${c.extra !== s.amount ? '，本次追加 ' + n(c.extra) : ''}，行动前底池 ${n(s.pot)}${uncalled ? '。其中至少 ' + n(uncalled) + ' 无法被匹配，会退回。可被匹配的新增投入最多 ' + n(c.extra - uncalled) : ''}`;
   }
   return `${before}，这次${s.legal.callAmount === s.stack ? '跟注全下' : '跟注'}拿出 ${n(c.extra)}，跟注前底池 ${n(s.pot)}${price.cost ? '，底池赔率约 ' + ratio.toFixed(2) + ':1' : ''}${price.contestable - price.cost !== s.pot ? '（赔率只计算你可争夺的部分）' : ''}`;
 }
@@ -134,7 +134,7 @@ export function situationEntries(s, c, actorId = 0) {
               ([amount, names]) =>
                 `${names.join('、')}${names.length > 1 ? '均' : ''}跟注 ${n(amount)}`,
             )
-            .join('；') + '。',
+            .join('，') + '。',
           '这些跟注者的范围也会影响获池机会，不能只判断下注者是否在诈唬。',
         ],
       });

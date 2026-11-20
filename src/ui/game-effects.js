@@ -1,4 +1,4 @@
-import { localizeText, formatChips } from '../i18n/index.js';
+import { formatChips, setLocalizedHTML } from '../i18n/index.js';
 import {
   PREMIUM_DELAY_MS,
   PREMIUM_DURATION_MS,
@@ -6,6 +6,7 @@ import {
   CROWN_FLIGHT_MS,
   CONFETTI_DURATION_MS,
   FAREWELL_DURATION_MS,
+  TABLE_NOTICE_MS,
   premiumSparks,
   confettiPieces,
   refillCountValues,
@@ -30,7 +31,7 @@ export function createGameEffects() {
   const mount = (parent, html, className) => {
     const node = document.createElement('div');
     node.className = className;
-    node.innerHTML = html;
+    setLocalizedHTML(node, html);
     parent.append(node);
     nodes.add(node);
     return node;
@@ -46,6 +47,7 @@ export function createGameEffects() {
       for (const node of nodes) node.remove();
       nodes.clear();
       document.querySelector('.hero-cards-wrap')?.classList.remove('premium-start');
+      document.querySelector('.game-surface')?.classList.remove('notice-hold');
       const stack = document.querySelector('#hero-stack');
       stack?.classList.remove('stack-refill');
       stack?.style.removeProperty('--refill-width');
@@ -120,7 +122,7 @@ export function createGameEffects() {
       }
       const stage = mount(
         document.body,
-        `<div class="trophy-stage-rays"></div><div class="trophy-flight" style="--trophy-x:${Math.round(x)}px;--trophy-y:${Math.round(y)}px;--trophy-scale:${scale.toFixed(3)}">${TROPHY_MARKUP}</div><div class="trophy-caption">${localizeText(caption)}</div>`,
+        `<div class="trophy-stage-rays"></div><div class="trophy-flight" style="--trophy-x:${Math.round(x)}px;--trophy-y:${Math.round(y)}px;--trophy-scale:${scale.toFixed(3)}">${TROPHY_MARKUP}</div><div class="trophy-caption">${caption}</div>`,
         'trophy-stage',
       );
       stage.setAttribute('aria-hidden', 'true');
@@ -129,12 +131,29 @@ export function createGameEffects() {
         done();
       }, CROWN_FLIGHT_MS);
     },
+    // A band slides across the screen centre for each of the hand's notices
+    // (final table, new blind level); the hand is dealt once they finish.
+    tableNotices(notices, { shown, done }) {
+      notices.forEach((notice, index) =>
+        later(() => {
+          const stage = mount(
+            document.body,
+            `<div class="table-notice-band table-notice-${notice.kind}"><strong class="table-notice-title">${notice.title}</strong><span class="table-notice-caption">${notice.caption}</span></div>`,
+            'table-notice-stage',
+          );
+          stage.setAttribute('role', 'status');
+          shown?.(notice);
+          later(() => unmount(stage), TABLE_NOTICE_MS);
+        }, index * TABLE_NOTICE_MS),
+      );
+      later(() => done?.(), notices.length * TABLE_NOTICE_MS);
+    },
     // The hero is out and nobody is crowned: a grey card at the table's
-    // centre gives the final place.
-    farewell(parent, place) {
+    // centre gives the final place. At the final table refills were closed.
+    farewell(parent, place, finalTable = false) {
       const stage = mount(
         parent,
-        `<div class="farewell-card"><span class="farewell-ring"></span><span class="farewell-title">${localizeText('很遗憾，本局结束')}</span><strong class="farewell-place">${localizeText(standingLabel(place))}</strong><span class="farewell-note">${localizeText('补码次数已用完')}</span></div>`,
+        `<div class="farewell-card"><span class="farewell-ring"></span><span class="farewell-title">很遗憾，本局结束</span><strong class="farewell-place">${standingLabel(place)}</strong><span class="farewell-note">${finalTable ? '决赛圈不能补码' : '补码次数已用完'}</span></div>`,
         'farewell-stage',
       );
       stage.setAttribute('role', 'status');

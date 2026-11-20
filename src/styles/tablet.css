@@ -40,6 +40,9 @@
   .entry-welcome {
     gap: 14px;
   }
+  .game-surface[data-entry-state='waiting'] .hand-label > #entry-structure {
+    font-size: 13px;
+  }
   .entry-eyebrow,
   .entry-footnote {
     font-size: 14px;

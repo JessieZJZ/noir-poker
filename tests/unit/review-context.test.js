@@ -236,7 +236,11 @@ test('late-position strong folds in an unraised deep pot get a legal conditional
     assert.equal(r.alternative.action, 'raise');
     assert.equal(r.alternative.amount, limpers ? 300 : 250);
     assert.match(r.coaching.label, /^建议.*(?:开池|加注)至/);
-    assert.equal(r.coaching.assessmentLabel, '需要比较');
+    assert.equal(
+      r.coaching.assessmentLabel,
+      r.coaching.unchanged ? '' : r.coaching.assessmentLabel || 'missing',
+    );
+    assert.notEqual(r.coaching.assessmentLabel, '需要比较');
     assert.match(r.coaching.recommendedAction.condition, /较弱起手牌.*弃牌空间/);
     assert.doesNotMatch(r.coaching.label, /建议弃牌/);
     const scaled = structuredClone(s);

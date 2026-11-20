@@ -20,6 +20,7 @@
   align-items: center;
 }
 .win-rate-header,
+.win-rate-dock,
 .win-rate-body,
 .win-rate-actions {
   width: min(640px, 100%);
@@ -33,6 +34,14 @@
   margin: 0;
   font-size: 19px;
   font-weight: 600;
+}
+/* The header and board stay at the top together; only the seats scroll. */
+.win-rate-dock {
+  flex: none;
+  padding: 2px 16px 12px;
+}
+.win-rate-dock + .win-rate-body .win-rate-seats {
+  margin-top: 2px;
 }
 .win-rate-body {
   flex: 1;
@@ -468,6 +477,7 @@
     --win-rate-card-height: 73px;
   }
   .win-rate-header,
+  .win-rate-dock,
   .win-rate-body,
   .win-rate-actions {
     width: min(760px, 100%);

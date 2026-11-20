@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { createRequire } from 'node:module';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
+import { BACKGROUND_MUSIC_LOOP } from '../../src/ui/background-music.js';
 const root = process.cwd();
 const require = createRequire(path.join(root, '.artifacts/wechat-tools/package.json'));
 const output = path.resolve(process.argv[3] || '.artifacts/background-music/wechat');
@@ -37,7 +38,12 @@ const inspect = () =>
       time: p.context?.currentTime,
       contextState: p.context?.state,
       volume: p.gain?.gain.value,
-      nodes: p.nodes.map((node) => ({ loop: node.loop, loopEnd: node.loopEnd })),
+      nodes: p.nodes.map((node) => ({
+        loop: node.loop,
+        loopStart: node.loopStart,
+        loopEnd: node.loopEnd,
+      })),
+      audioClockFade: typeof p.gain?.gain.linearRampToValueAtTime === 'function',
       settings: getCurrentPages().at(-1)?.data.settings,
       fallbacks: p.fallbacks,
     };
@@ -123,8 +129,13 @@ try {
       : null;
   }, 'Real local WebAudio music must decode, play and finish entry fade');
   assert.ok(initial.decoded[0].rms > 0.01);
-  assert.ok(initial.decoded[0].duration > 93 && initial.decoded[0].duration < 94);
+  // Playback opens at the loop start and the source loops one period.
+  assert.ok(initial.decoded[0].duration > BACKGROUND_MUSIC_LOOP.end);
+  assert.ok(initial.decoded[0].duration < BACKGROUND_MUSIC_LOOP.end + 1);
+  assert.ok(Math.abs(initial.starts[0].offset - BACKGROUND_MUSIC_LOOP.start) < 1e-6);
   assert.equal(initial.nodes[0].loop, true);
+  assert.ok(Math.abs(initial.nodes[0].loopStart - BACKGROUND_MUSIC_LOOP.start) < 1e-6);
+  assert.ok(Math.abs(initial.nodes[0].loopEnd - BACKGROUND_MUSIC_LOOP.end) < 1e-6);
   report.checks.push({ name: 'local-decode-and-loop-source', evidence: initial });
   await mini.screenshot({ path: path.join(output, 'music-settings.png') });
   const start = initial.starts[0].at,
@@ -155,7 +166,11 @@ try {
     return s.starts.length === 2 && s.state.playing && s.volume === 1 ? s : null;
   }, 'Resume existing decoded buffer');
   assert.equal(resumed.decoded.length, 1);
-  assert.ok(resumed.starts[1].offset >= 0 && resumed.starts[1].offset < duration);
+  assert.ok(
+    resumed.starts[1].offset >= BACKGROUND_MUSIC_LOOP.start &&
+      resumed.starts[1].offset < BACKGROUND_MUSIC_LOOP.end,
+    'After a full lap the saved position lies inside the loop',
+  );
   report.checks.push({ name: 'hide-resume-retains-loop-position', hidden, resumed });
   await mini.evaluate(() => {
     const p = getCurrentPages().at(-1);

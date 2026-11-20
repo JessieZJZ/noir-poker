@@ -76,7 +76,7 @@ export function enrichStrategy(coaching, s, assessment, options) {
       if (
         options?.audience === 'observer' &&
         action === 'check' &&
-        /过牌[^。]*(?:扩大|做大|控制投入|无需投入|没有增加投入)/.test(flat)
+        /过牌[^。]*(?:扩大|做大|控制投入|控制底池|无需投入|没有增加投入)/.test(flat)
       )
         pieces = pieces.filter((text) => text !== '过牌保留改善机会，也没有主动扩大底池。');
       if (

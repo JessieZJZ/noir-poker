@@ -102,7 +102,9 @@ for (const name of ['kings-fold-allin-call', 'ace-king-fold-allin-call'])
     assert.doesNotMatch(text, /还留有\s*0|后续公共牌调整|你在翻后有位置|这手保留全下跟注/);
     assert.doesNotMatch(text, /向它们取值|控制投入/);
     assert.equal((text.match(/风险和收益才能持平/g) || []).length, 1);
-    assert.equal((text.match(/值得保留的依据/g) || []).length, 1);
+    // The hero folded: the basis is stated for the suggested call, not as kept.
+    assert.equal((text.match(/全下跟注的依据/g) || []).length, 1);
+    assert.doesNotMatch(text, /值得保留的依据/);
   });
 test('an ace all-in call explains kicker risk without future investment choices', () => {
   const r = analyzeDecision(fixtures.heroes['weak-ace-allin-call'], options);

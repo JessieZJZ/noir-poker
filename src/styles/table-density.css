@@ -104,7 +104,7 @@
 }
 @media (min-width: 901px) and (max-width: 1150px) and (orientation: landscape) {
   .game-surface {
-    --live-dock-height: 164px;
+    --live-dock-height: 126px;
   }
 }
 @media (min-width: 901px) and (max-width: 1100px) and (orientation: portrait) and (min-height: 1100px) {

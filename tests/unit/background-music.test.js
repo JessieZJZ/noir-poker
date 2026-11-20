@@ -1,7 +1,18 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { createMusicController, BACKGROUND_MUSIC_VOLUME } from '../../src/ui/background-music.js';
-import { createWebBackgroundMusic } from '../../src/platform/web-background-music.js';
+import {
+  createMusicController,
+  BACKGROUND_MUSIC_LOOP,
+  BACKGROUND_MUSIC_VOLUME,
+  loopFor,
+  loopPosition,
+} from '../../src/ui/background-music.js';
+import {
+  MUSIC_ENTRY_FADE_MS,
+  MUSIC_PAUSE_FADE_MS,
+  MUSIC_RESUME_FADE_MS,
+} from '../../src/ui/music-fade.js';
+import { createWebBackgroundMusic, fetchBytes } from '../../src/platform/web-background-music.js';
 import { createWechatBackgroundMusic } from '../../src/platform/wechat-background-music.js';
 import vm from 'node:vm';
 import { readFileSync } from 'node:fs';
@@ -68,85 +79,216 @@ test('muted/hidden music allocates no player and disposal prevents every later r
   assert.equal(disposed, 1);
 });
 
-test('Web audio loops the same local element, preserves position and rejects a stale play completion', async () => {
-  let finish;
-  const audio = {
-    dataset: {},
-    paused: true,
-    currentTime: 27,
-    volume: 1,
-    play() {
-      this.paused = false;
-      return new Promise((resolve) => {
-        finish = resolve;
-      });
+function audioParam(value = 0) {
+  return {
+    value,
+    events: [],
+    cancelScheduledValues(at) {
+      this.events.push(['cancel', at]);
     },
-    pause() {
-      this.paused = true;
+    setValueAtTime(v, at) {
+      this.value = v;
+      this.events.push(['set', v, at]);
     },
-    removeAttribute() {},
-    load() {},
-    remove() {
-      this.removed = true;
+    linearRampToValueAtTime(v, at) {
+      this.target = v;
+      this.events.push(['ramp', v, at]);
     },
   };
-  let gain;
-  const mixedOutput = {};
+}
+
+function webAudioFixture({ duration = 94.659 } = {}) {
+  const nodes = [],
+    gains = [],
+    jobs = new Map(),
+    loads = [],
+    body = [];
+  let serial = 0,
+    decodes = 0,
+    pendingDecode = null;
   const context = {
+    currentTime: 0,
     state: 'running',
     destination: {},
-    createMediaElementSource: () => ({ connect: (node) => node, disconnect() {} }),
     createGain() {
-      gain = {
-        gain: {},
+      const node = {
+        gain: audioParam(),
         connect(target) {
           this.connected = target;
+          return target;
         },
         disconnect() {},
       };
-      return gain;
+      gains.push(node);
+      return node;
     },
-    async suspend() {
+    createBufferSource() {
+      const node = {
+        connect: (target) => target,
+        disconnect() {},
+        start(when, offset) {
+          this.started = { when, offset };
+        },
+        stop(when) {
+          this.stoppedAt = when ?? context.currentTime;
+        },
+      };
+      nodes.push(node);
+      return node;
+    },
+    decodeAudioData(data, success) {
+      decodes++;
+      pendingDecode = () => success({ duration });
+    },
+    suspend() {
       this.state = 'suspended';
+      return Promise.resolve();
     },
-    async resume() {
+    resume() {
       this.state = 'running';
+      return Promise.resolve();
     },
-    async close() {
+    close() {
       this.state = 'closed';
+      return Promise.resolve();
     },
   };
-  let allocations = 0;
-  const music = createWebBackgroundMusic({
-    document: {
-      baseURI: 'https://example.test/poker/',
-      createElement() {
-        allocations++;
-        return audio;
+  const document = {
+    baseURI: 'https://example.test/poker/',
+    createElement: () => ({
+      dataset: {},
+      remove() {
+        this.removed = true;
       },
-      body: { append() {} },
+    }),
+    body: { append: (node) => body.push(node) },
+  };
+  return {
+    context,
+    nodes,
+    gains,
+    jobs,
+    loads,
+    marker: () => body[0],
+    decodes: () => decodes,
+    decode: () => pendingDecode?.(),
+    flush: () => new Promise((resolve) => setTimeout(resolve, 0)),
+    options: {
+      document,
+      mobile: false,
+      createContext: () => context,
+      getOutput: () => 'mix',
+      loadData: async (url) => {
+        loads.push(url);
+        return new ArrayBuffer(8);
+      },
+      schedule(fn, delay) {
+        jobs.set(++serial, { fn, delay });
+        return serial;
+      },
+      unschedule: (id) => jobs.delete(id),
     },
-    createContext: () => context,
-    getOutput: () => mixedOutput,
-  });
-  assert.equal(audio.src, 'https://example.test/poker/audio/background-music.m4a');
-  assert.equal(audio.loop, true);
-  assert.equal(gain.gain.value, 0, 'Entry starts quietly');
-  assert.equal(gain.connected, mixedOutput, 'Music and cues share the final mix limiter');
+  };
+}
+
+test('Web music decodes once, opens at the loop start, loops the period and fades out before stopping', async () => {
+  const f = webAudioFixture();
+  const music = createWebBackgroundMusic(f.options);
+  await f.flush();
+  f.decode();
+  await f.flush();
+  assert.deepEqual(f.loads, ['https://example.test/poker/audio/background-music.m4a']);
+  const [output, firstLevel] = f.gains;
+  assert.equal(output.connected, 'mix', 'Music and cues share the final mix limiter');
+  assert.equal(output.gain.value, BACKGROUND_MUSIC_VOLUME);
+  const first = f.nodes[0];
+  assert.deepEqual(
+    first.started,
+    { when: 0, offset: BACKGROUND_MUSIC_LOOP.start },
+    'Entry starts at the opening position',
+  );
+  assert.equal(first.loop, true);
+  assert.equal(first.loopStart, BACKGROUND_MUSIC_LOOP.start);
+  assert.equal(first.loopEnd, BACKGROUND_MUSIC_LOOP.end);
+  assert.deepEqual(firstLevel.gain.events.slice(-2), [
+    ['set', 0, 0],
+    ['ramp', 1, MUSIC_ENTRY_FADE_MS / 1000],
+  ]);
+  const api = f.marker().backgroundMusic;
+  assert.equal(f.marker().dataset.backgroundMusic, 'midnight-felt');
+  // 120 s of playback: one full period and part of the next.
+  f.context.currentTime = 120;
+  const expected = loopPosition(BACKGROUND_MUSIC_LOOP.start + 120);
+  assert.ok(expected > BACKGROUND_MUSIC_LOOP.start && expected < 30);
+  assert.ok(Math.abs(api.currentTime - expected) < 1e-9);
+  firstLevel.gain.value = 1;
   music.setActive(false);
-  finish();
-  await Promise.resolve();
-  assert.equal(audio.paused, true);
-  assert.equal(audio.currentTime, 27);
+  assert.equal(api.paused, true);
+  assert.equal(music.getState().playing, false);
+  assert.deepEqual(firstLevel.gain.events.slice(-2), [
+    ['set', 1, 120],
+    ['ramp', 0, 120 + MUSIC_PAUSE_FADE_MS / 1000],
+  ]);
+  assert.ok(first.stoppedAt > 120 + MUSIC_PAUSE_FADE_MS / 1000, 'Stop after the fade ends');
+  assert.equal(f.context.state, 'running', 'The context keeps running through the fade');
+  const suspend = [...f.jobs.values()].find((job) => job.delay === MUSIC_PAUSE_FADE_MS + 60);
+  assert.ok(suspend);
+  // Coming back during the fade cancels the suspend and resumes in place.
   music.setActive(true);
-  await Promise.resolve();
-  assert.equal(audio.paused, false);
-  assert.equal(allocations, 1);
-  music.setEnabled(false);
-  assert.equal(audio.paused, true);
+  assert.equal([...f.jobs.values()].includes(suspend), false);
+  const second = f.nodes[1];
+  assert.ok(Math.abs(second.started.offset - expected) < 1e-9);
+  assert.equal(second.loopStart, BACKGROUND_MUSIC_LOOP.start);
+  assert.deepEqual(f.gains[2].gain.events.slice(-1), [
+    ['ramp', 1, 120 + MUSIC_RESUME_FADE_MS / 1000],
+  ]);
+  assert.equal(f.decodes(), 1);
+  assert.equal(f.loads.length, 1);
+  music.setActive(false);
+  [...f.jobs.values()].find((job) => job.delay === MUSIC_PAUSE_FADE_MS + 60).fn();
+  await f.flush();
+  assert.equal(f.context.state, 'suspended');
   music.dispose();
-  assert.equal(audio.removed, true);
-  assert.equal(context.state, 'closed');
+  assert.equal(f.marker().removed, true);
+  assert.equal(f.context.state, 'closed');
+});
+
+test('Web music decoded after mute, hide or disposal never starts on its own', async () => {
+  for (const action of ['hide', 'mute', 'dispose']) {
+    const f = webAudioFixture();
+    const music = createWebBackgroundMusic(f.options);
+    await f.flush();
+    if (action === 'hide') music.setActive(false);
+    if (action === 'mute') music.setEnabled(false);
+    if (action === 'dispose') music.dispose();
+    f.decode();
+    await f.flush();
+    assert.equal(f.nodes.length, 0, action);
+    if (action !== 'dispose') {
+      music.setEnabled(true);
+      music.setActive(true);
+      assert.equal(f.nodes.length, 1, action);
+      assert.equal(
+        f.nodes[0].started.offset,
+        BACKGROUND_MUSIC_LOOP.start,
+        'The first start still begins at the opening position',
+      );
+    }
+    music.dispose();
+  }
+});
+
+test('loop positions open at the loop start and wrap at one exact 32-bar period', () => {
+  const { start, end } = BACKGROUND_MUSIC_LOOP;
+  assert.equal(start, 0.5, 'Half a second of lead-in before the opening');
+  assert.equal(end - start, 4495610 / 48000, 'Exactly one 32-bar period at 82 BPM');
+  assert.equal(loopPosition(start), start);
+  assert.equal(loopPosition(end - 0.01), end - 0.01);
+  assert.ok(Math.abs(loopPosition(end) - start) < 1e-9);
+  assert.ok(Math.abs(loopPosition(end + 2 * (end - start) + 3) - (start + 3)) < 1e-6);
+  // A shorter decoded file (an older build) loops whole.
+  assert.deepEqual(loopFor(93.6585), { start: 0, end: 93.6585 });
+  assert.equal(loopFor(end + 0.5), BACKGROUND_MUSIC_LOOP);
 });
 
 test('WeChat late subpackage load/canplay cannot resurrect muted, hidden or disposed music', async () => {
@@ -656,4 +798,154 @@ test('WeChat starts a running context and resumes synchronous state changes with
   assert.equal(f.nodes.length, 2);
   assert.equal(music.getState().playing, true);
   music.dispose();
+});
+
+test('WeChat loops the period and fades out on the audio clock before suspending', async () => {
+  const f = loopFixture();
+  const events = [];
+  Object.assign(f.gain.gain, {
+    cancelScheduledValues: (at) => events.push(['cancel', at]),
+    setValueAtTime(value, at) {
+      this.value = value;
+      events.push(['set', value, at]);
+    },
+    linearRampToValueAtTime: (value, at) => events.push(['ramp', value, at]),
+  });
+  let stoppedAt;
+  const createSource = f.context.createBufferSource;
+  f.context.createBufferSource = () => {
+    const node = createSource();
+    node.stop = (when) => {
+      node.stopped = true;
+      stoppedAt = when;
+    };
+    return node;
+  };
+  const music = createWechatBackgroundMusic(f.wx, f.options);
+  await f.flush();
+  f.context.decoded({ duration: BACKGROUND_MUSIC_LOOP.end + 0.5 });
+  await f.flush();
+  f.fadeIn();
+  assert.equal(f.nodes[0].startOffset, BACKGROUND_MUSIC_LOOP.start, 'Opens at the loop start');
+  assert.equal(f.nodes[0].loopStart, BACKGROUND_MUSIC_LOOP.start);
+  assert.equal(f.nodes[0].loopEnd, BACKGROUND_MUSIC_LOOP.end);
+  f.context.currentTime = 150;
+  music.setActive(false);
+  assert.deepEqual(events.slice(-2), [
+    ['set', BACKGROUND_MUSIC_VOLUME, 150],
+    ['ramp', 0, 150 + MUSIC_PAUSE_FADE_MS / 1000],
+  ]);
+  assert.ok(stoppedAt > 150 + MUSIC_PAUSE_FADE_MS / 1000);
+  assert.equal(f.context.state, 'running', 'Suspend waits for the fade');
+  assert.equal(f.jobs.size, 1);
+  const [[id, suspend]] = [...f.jobs];
+  f.jobs.delete(id);
+  suspend();
+  await f.flush();
+  assert.equal(f.context.state, 'suspended');
+  music.setActive(true);
+  await f.flush();
+  assert.ok(
+    Math.abs(f.nodes[1].startOffset - loopPosition(BACKGROUND_MUSIC_LOOP.start + 150)) < 1e-9,
+  );
+  // Hiding and showing within the fade cancels the pending suspend.
+  music.setActive(false);
+  music.setActive(true);
+  await f.flush();
+  assert.equal(f.context.state, 'running');
+  music.dispose();
+  assert.equal(f.jobs.size, 0);
+});
+
+test('WeChat compatibility audio opens at the loop start and jumps back one period at the loop end', async () => {
+  const audio = {
+    duration: BACKGROUND_MUSIC_LOOP.end + 0.5,
+    currentTime: 0,
+    onPlay(fn) {
+      this.played = fn;
+    },
+    onTimeUpdate(fn) {
+      this.tick = fn;
+    },
+    play() {
+      this.played();
+    },
+    seek(time) {
+      this.currentTime = time;
+    },
+    pause() {},
+    stop() {},
+    destroy() {},
+  };
+  const music = createWechatBackgroundMusic(
+    { createInnerAudioContext: () => audio },
+    { loadSource: () => '/music/background-music.m4a', schedule: () => 0, unschedule() {} },
+  );
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  assert.equal(
+    audio.currentTime,
+    BACKGROUND_MUSIC_LOOP.start,
+    'The first play seeks to the opening',
+  );
+  for (const [time, expected] of [
+    [5, 5],
+    [BACKGROUND_MUSIC_LOOP.end - 0.1, BACKGROUND_MUSIC_LOOP.end - 0.1],
+    [BACKGROUND_MUSIC_LOOP.end + 0.2, BACKGROUND_MUSIC_LOOP.start + 0.2],
+  ]) {
+    audio.currentTime = time;
+    audio.tick();
+    assert.ok(Math.abs(audio.currentTime - expected) < 1e-6, String(time));
+  }
+  music.dispose();
+});
+
+test('the shipped music files match the rendered loop points and fingerprints', async () => {
+  const { createHash } = await import('node:crypto');
+  const root = new URL('../../', import.meta.url);
+  const report = JSON.parse(
+    readFileSync(new URL('audio-studio/noir-background-music/game-loop.json', root), 'utf8'),
+  );
+  assert.equal(BACKGROUND_MUSIC_LOOP.start, report.loopStartFrame / report.sampleRate);
+  assert.equal(BACKGROUND_MUSIC_LOOP.end, report.loopEndFrameExclusive / report.sampleRate);
+  assert.equal(report.loopEndFrameExclusive - report.loopStartFrame, report.cycleFrames);
+  assert.equal(
+    report.openingMasterFrame,
+    Math.round(((8 * 60) / 82) * 48000) - 960,
+    '20 ms before the bar 3 downbeat',
+  );
+  assert.ok(report.frames > report.loopEndFrameExclusive, 'The file continues past the loop end');
+  assert.deepEqual(report.mutedBuses, ['drums'], 'The game plays the track without its drums');
+  for (const file of Object.values(report.files)) {
+    const bytes = readFileSync(new URL(file.path, root));
+    assert.equal(bytes.length, file.bytes, file.path);
+    assert.equal(createHash('sha256').update(bytes).digest('hex'), file.sha256, file.path);
+    assert.equal(file.processedSeamMaxDiff, 0, 'The processed loop is exactly periodic');
+    assert.ok(file.encodedLoopJump < 0.01, 'The encoded loop jump stays inaudible');
+  }
+});
+
+test('bundled audio reads accept the iOS scheme handler status 0 but reject missing or empty files', async () => {
+  const original = globalThis.fetch;
+  const respond = (status, size) => async () => ({
+    ok: status >= 200 && status < 300,
+    status,
+    arrayBuffer: async () => new ArrayBuffer(size),
+  });
+  try {
+    for (const [status, size, ok] of [
+      [200, 8, true],
+      [0, 8, true],
+      [0, 0, false],
+      [404, 8, false],
+    ]) {
+      globalThis.fetch = respond(status, size);
+      const result = await fetchBytes('capacitor://localhost/audio/background-music.m4a').then(
+        (bytes) => bytes.byteLength,
+        () => null,
+      );
+      assert.equal(result, ok ? size : null, `${status}/${size}`);
+    }
+  } finally {
+    globalThis.fetch = original;
+  }
 });

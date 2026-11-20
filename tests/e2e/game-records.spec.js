@@ -250,11 +250,11 @@ test('the rotating entry always opens both choices and keyboard focus keeps its 
   expect(await trigger.getAttribute('data-label')).toBe(label);
   await page.keyboard.press('ArrowDown');
   await expect(page.locator('#guide-menu')).toBeVisible();
-  await expect(page.locator('#guide-menu-item')).toBeFocused();
+  await expect(page.locator('#records-menu-item')).toBeFocused();
   await page.keyboard.press('ArrowDown');
   await expect(page.locator('#tutorial-menu-item')).toBeFocused();
   await page.keyboard.press('ArrowDown');
-  await expect(page.locator('#records-menu-item')).toBeFocused();
+  await expect(page.locator('#guide-menu-item')).toBeFocused();
   await page.keyboard.press('Escape');
   await expect(page.locator('#guide-menu')).toBeHidden();
   await expect(trigger).toBeFocused();
@@ -920,7 +920,7 @@ test('nine-seat history keeps cards centered, hero identity unclipped and the mo
           const name = rect('#history-table .hero-name');
           const board = rect('#history-table .board');
           const label = document.querySelector(
-            `#rules-button [data-guide-label="${document.querySelector('#rules-button').dataset.label || 'guide'}"]`,
+            `#rules-button [data-guide-label="${document.querySelector('#rules-button').dataset.label || 'records'}"]`,
           );
           const style = getComputedStyle(label);
           return {
@@ -1056,6 +1056,21 @@ test('historical pot dialogs and showdown stay bound to the saved hand while liv
   await expect(page.locator('#pot-dialog')).toBeVisible();
   const potText = await page.locator('#pot-dialog-content').textContent();
   const showdownText = await page.locator('#history-showdown-scene').textContent();
+  const hero = page.locator('#history-showdown-name-0');
+  const changeLanguage = async (locale) => {
+    await page.locator('#language-select').evaluate((select, value) => {
+      select.value = value;
+      select.dispatchEvent(new Event('change'));
+    }, locale);
+    await expect(page.locator('html')).toHaveAttribute('lang', locale);
+  };
+  await changeLanguage('it');
+  await expect(hero).toHaveText('Tu');
+  await expect(page.locator('#pot-dialog-content')).not.toHaveText(potText);
+  await changeLanguage('zh-CN');
+  await expect(hero).toHaveText('你');
+  await expect(page.locator('#pot-dialog-content')).toHaveText(potText);
+  await expect(page.locator('#history-showdown-scene')).toHaveText(showdownText);
   await page.evaluate(() => {
     window.qa.recordsFinish();
   });

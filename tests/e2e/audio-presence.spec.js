@@ -13,12 +13,14 @@ test('actual actions use enhanced phone cues and music enters the shared output 
         to: target.constructor.name,
         gain: this.gain?.value,
       });
-      if (this instanceof MediaElementAudioSourceNode)
+      // The background music is the one long decoded source.
+      if (this instanceof AudioBufferSourceNode && this.buffer?.duration > 60)
         window.audioPresence.musicGains.push(target.gain);
       return connect.call(this, target, ...args);
     };
     const start = AudioBufferSourceNode.prototype.start;
     AudioBufferSourceNode.prototype.start = function (...args) {
+      if (this.buffer.duration > 60) return start.apply(this, args);
       const samples = this.buffer.getChannelData(0);
       window.audioPresence.cues.push({
         samples: samples.length,
@@ -34,18 +36,18 @@ test('actual actions use enhanced phone cues and music enters the shared output 
   await page.evaluate(() => window.qa.heroTurn(7));
   await page.locator('#opponents-button').click();
   await page.waitForFunction(
-    () => Number(document.querySelector('audio[data-background-music]')?.dataset.musicGain) === 1,
+    () => Number(document.querySelector('[data-background-music]')?.dataset.musicGain) === 1,
   );
   await page.locator('#opponents-dialog .close-dialog').click();
   await page.evaluate(() => {
-    const music = document.querySelector('audio[data-background-music]');
-    window.steadyMusic = { music, started: music.currentTime, samples: [] };
+    const music = document.querySelector('[data-background-music]');
+    window.steadyMusic = { music, started: music.backgroundMusic.currentTime, samples: [] };
     window.steadyMusic.timer = setInterval(
       () =>
         window.steadyMusic.samples.push({
           gains: window.audioPresence.musicGains.map((gain) => gain.value),
-          paused: music.paused,
-          samePlayer: document.querySelector('audio[data-background-music]') === music,
+          paused: music.backgroundMusic.paused,
+          samePlayer: document.querySelector('[data-background-music]') === music,
         }),
       20,
     );
@@ -59,7 +61,7 @@ test('actual actions use enhanced phone cues and music enters the shared output 
     clearInterval(window.steadyMusic.timer);
     return {
       started: window.steadyMusic.started,
-      ended: window.steadyMusic.music.currentTime,
+      ended: window.steadyMusic.music.backgroundMusic.currentTime,
       samples: window.steadyMusic.samples,
     };
   });
@@ -74,16 +76,23 @@ test('actual actions use enhanced phone cues and music enters the shared output 
     connections: window.audioPresence.connections,
     cues: window.audioPresence.cues,
   }));
+  // Music and cue buses meet at the limiter, then its trim and a safety knee.
   const musicGain = actual.connections.find(
-    ({ from, to }) => from === 'GainNode' && to === 'WaveShaperNode',
+    ({ from, to }) => from === 'GainNode' && to === 'DynamicsCompressorNode',
   );
   expect(musicGain).toBeTruthy();
   expect(musicGain.gain).toBeCloseTo(BACKGROUND_MUSIC_VOLUME, 6);
+  for (const [from, to] of [
+    ['DynamicsCompressorNode', 'GainNode'],
+    ['GainNode', 'WaveShaperNode'],
+    ['WaveShaperNode', 'AudioDestinationNode'],
+  ])
+    expect(actual.connections.some((c) => c.from === from && c.to === to)).toBe(true);
   expect(
     actual.connections.some(
-      ({ from, to }) => from === 'WaveShaperNode' && to === 'AudioDestinationNode',
+      ({ from, to }) => from === 'AudioBufferSourceNode' && to === 'WaveShaperNode',
     ),
-  ).toBe(true);
+  ).toBe(false);
   expect(
     actual.cues.every(
       (cue) => cue.musicGains.length === 1 && cue.musicGains[0] === BACKGROUND_MUSIC_VOLUME,
@@ -103,8 +112,10 @@ test('the shipped AAC reserves phone-mix headroom and Web Audio bounds coinciden
   await page.goto('/');
   const result = await page.evaluate(async () => {
     const { soundSamples, createSoundOutput } = await import('/src/ui/sound-cues.js');
-    const { BACKGROUND_MUSIC_VOLUME } = await import('/src/ui/background-music.js');
-    const context = new OfflineAudioContext(2, 44100, 44100);
+    const { BACKGROUND_MUSIC_VOLUME, BACKGROUND_MUSIC_LOOP } =
+      await import('/src/ui/background-music.js');
+    // The files' own rate, so loop frames need no resampling.
+    const context = new OfflineAudioContext(2, 48000, 48000);
     const bytes = await (await fetch('/audio/background-music-mobile.m4a')).arrayBuffer();
     const music = await context.decodeAudioData(bytes);
     const desktop = await context.decodeAudioData(
@@ -116,11 +127,16 @@ test('the shipped AAC reserves phone-mix headroom and Web Audio bounds coinciden
     };
     let musicPeak = 0,
       seam = 0;
-    for (let channel = 0; channel < music.numberOfChannels; channel++) {
-      const pcm = music.getChannelData(channel);
-      for (const sample of pcm) musicPeak = Math.max(musicPeak, Math.abs(sample));
-      seam = Math.max(seam, Math.abs(pcm[0] - pcm.at(-1)));
-    }
+    const loopStart = Math.round(BACKGROUND_MUSIC_LOOP.start * 48000),
+      loopEnd = Math.round(BACKGROUND_MUSIC_LOOP.end * 48000);
+    for (const buffer of [music, desktop])
+      for (let channel = 0; channel < buffer.numberOfChannels; channel++) {
+        const pcm = buffer.getChannelData(channel);
+        if (buffer === music)
+          for (const sample of pcm) musicPeak = Math.max(musicPeak, Math.abs(sample));
+        // The loop jump lands where the file itself continues the music.
+        seam = Math.max(seam, Math.abs(pcm[loopStart] - pcm[loopEnd]));
+      }
     const output = createSoundOutput(context);
     const source = context.createBufferSource(),
       gain = context.createGain();
@@ -142,22 +158,72 @@ test('the shipped AAC reserves phone-mix headroom and Web Audio bounds coinciden
     const rendered = await context.startRendering();
     let mixPeak = 0;
     for (const sample of rendered.getChannelData(0)) mixPeak = Math.max(mixPeak, Math.abs(sample));
+    // A cue over the music: the limited mix must equal a smoothly scaled copy of
+    // the plain sum, with no bent waveform. Compare sample-to-sample slopes after
+    // fitting one gain per 10 ms window and the limiter's 6 ms look-ahead.
+    const crackle = {};
+    for (const name of ['fold', 'win', 'chip']) {
+      const render = async (limited) => {
+        const offline = new OfflineAudioContext(1, 48000 * 1.5, 48000);
+        const out = limited ? createSoundOutput(offline) : offline.destination;
+        const song = offline.createBufferSource();
+        song.buffer = music;
+        song.connect(out);
+        song.start(0, 61);
+        const samples = soundSamples(name),
+          cue = offline.createBuffer(1, samples.length, 44100);
+        cue.getChannelData(0).set(samples);
+        const node = offline.createBufferSource();
+        node.buffer = cue;
+        node.connect(out);
+        node.start(0.5);
+        return (await offline.startRendering()).getChannelData(0);
+      };
+      const plain = await render(false),
+        limited = await render(true),
+        lag = 288;
+      let worst = 0;
+      for (let start = 24000; start < 60000; start += 480) {
+        let xy = 0,
+          xx = 0;
+        for (let i = start; i < start + 480; i++) {
+          xy += limited[i + lag] * plain[i];
+          xx += plain[i] * plain[i];
+        }
+        const g = xx > 1e-9 ? xy / xx : 1;
+        for (let i = start + 1; i < start + 480; i++)
+          worst = Math.max(
+            worst,
+            Math.abs(limited[i + lag] - limited[i + lag - 1] - g * (plain[i] - plain[i - 1])),
+          );
+      }
+      crackle[name] = worst;
+    }
     return {
+      crackle,
       duration: music.duration,
       musicPeak,
       mixPeak,
       cuePeak,
       seam,
+      loopEnd: BACKGROUND_MUSIC_LOOP.end,
+      desktopDuration: desktop.duration,
       gain: BACKGROUND_MUSIC_VOLUME,
       loudnessIncreaseDB: 20 * Math.log10(rms(music) / rms(desktop)),
     };
   });
-  expect(result.duration).toBeGreaterThan(93.6);
-  expect(result.duration).toBeLessThan(93.8);
+  // Each decoded file continues the music past the loop end.
+  for (const duration of [result.duration, result.desktopDuration]) {
+    expect(duration).toBeGreaterThan(result.loopEnd);
+    expect(duration).toBeLessThan(result.loopEnd + 1);
+  }
   expect(result.gain).toBe(1);
   expect(result.loudnessIncreaseDB).toBeGreaterThan(4.8);
   expect(result.musicPeak).toBeLessThan(0.58);
   expect(result.mixPeak).toBeGreaterThan(0.7);
   expect(result.mixPeak).toBeLessThan(0.92);
   expect(result.seam).toBeLessThan(0.015);
+  // The former soft-clip curve bent these by 0.03-0.08 per sample.
+  for (const [name, worst] of Object.entries(result.crackle))
+    expect(worst, name).toBeLessThan(0.015);
 });

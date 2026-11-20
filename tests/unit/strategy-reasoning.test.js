@@ -162,7 +162,7 @@ test('size-specific paying ranges only compare assessed sizes and the customer c
   const s = snapshot({ action: 'raise', amount: 400 });
   const a = assessment({ draw: noDraw });
   const text = prose(strategyNotes(s, a));
-  assert.match(text, /加注至 400.*较弱成牌可能付费，也有听牌可能跟注/);
+  assert.match(text, /加注至 400，估计较弱成牌仍会继续付费，听牌也可能跟注/);
   assert.match(text, /再加大到 800.*赶走较弱成牌/);
   assert.doesNotMatch(text, forbidden);
   assert.equal(
@@ -178,6 +178,51 @@ test('size-specific paying ranges only compare assessed sizes and the customer c
     ],
   });
   assert.doesNotMatch(prose(strategyNotes(s, sameMass)), /再加大到|赶走/);
+});
+
+// A larger size that loses the weaker payers keeps mostly hands already ahead.
+// Name flushes or straights only when they make up that remaining range.
+test('a larger size names what stays in once weaker made hands fold', () => {
+  const s = snapshot({ action: 'raise', amount: 400 });
+  const sizes = (ahead, byCategory, share = 0.6) =>
+    assessment({
+      draw: noDraw,
+      options: [
+        {
+          amount: 400,
+          worseMadeCallMass: 0.3,
+          drawCallMass: 0,
+          aheadContinueMass: 0.1,
+          continueMass: 0.5,
+          aheadContinueByCategory: { 1: 0.1 },
+        },
+        {
+          amount: 800,
+          worseMadeCallMass: 0.05,
+          drawCallMass: 0,
+          aheadContinueMass: ahead,
+          continueMass: ahead / share,
+          aheadContinueByCategory: byCategory,
+        },
+      ],
+    });
+  const text = (a) => prose(strategyNotes(s, a));
+  assert.match(
+    text(sizes(0.24, { 5: 0.12, 4: 0.1, 2: 0.02 })),
+    /加注至 400，估计较弱成牌仍会继续付费。如果加大到 800，不仅更容易赶走这些较弱成牌，留下来继续跟注或加注的也多半是领先当前成牌的同花或顺子。/,
+  );
+  assert.match(text(sizes(0.2, { 5: 0.16, 1: 0.04 })), /多半是领先当前成牌的同花。/);
+  assert.match(text(sizes(0.2, { 4: 0.18, 3: 0.02 })), /多半是领先当前成牌的顺子。/);
+  // Better kickers and two pair are ahead too; no single board threat is named.
+  assert.match(text(sizes(0.2, { 1: 0.1, 2: 0.1 })), /多半是领先当前成牌的牌。/);
+  assert.match(
+    text(sizes(0.15, { 5: 0.15 }, 0.4)),
+    /留下来继续跟注或加注的牌里，领先当前成牌的比例也会更高。/,
+  );
+  // Archived assessments without these masses keep the plain comparison.
+  const legacy = sizes(0.2, { 5: 0.2 });
+  for (const option of legacy.options) delete option.continueMass;
+  assert.match(text(legacy), /再加大到 800，会更容易赶走较弱成牌。/);
 });
 
 test('a confident public range comparison names both public lines and board, not the actual hand equity', () => {

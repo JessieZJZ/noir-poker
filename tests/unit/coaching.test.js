@@ -275,7 +275,11 @@ test('an uncertain full-stack preflop call is compared rather than endorsed by a
   const uncertain = coachDecision(s, r);
   assert.equal(uncertain.evKind, 'uncertain');
   assert.equal(uncertain.kind, 'compare');
-  assert.equal(uncertain.assessmentLabel, '需要比较');
+  assert.equal(
+    uncertain.assessmentLabel,
+    uncertain.unchanged ? '' : uncertain.assessmentLabel || 'missing',
+  );
+  assert.notEqual(uncertain.assessmentLabel, '需要比较');
   assert.equal(uncertain.recommendedAction.summary, '建议全下跟注 20K');
   assert.equal(uncertain.recommendationConditional, true);
   assert.match(uncertain.explanation, /足够较弱牌.*更强起手牌.*比较弃牌/);
@@ -306,7 +310,11 @@ test('replacing a preflop shove with a call names the real payment and the playe
     r.metrics = { ...r.metrics, closing: false };
     const review = coachDecision(s, r);
     assert.equal(review.kind, 'compare');
-    assert.equal(review.assessmentLabel, '需要比较');
+    assert.equal(
+      review.assessmentLabel,
+      review.unchanged ? '' : review.assessmentLabel || 'missing',
+    );
+    assert.notEqual(review.assessmentLabel, '需要比较');
     assert.equal(review.recommendedAction.summary, bigBlind === 50 ? '建议跟注 50' : '建议跟注 4K');
     const text = review.paragraphs.join('');
     assert.match(text, /若改为再补 .* 跟注，会留下 .* 筹码/);

@@ -9,8 +9,16 @@ const tablets = [
   [1032, 1376],
 ];
 
-for (const size of tablets) {
-  for (const [width, height] of [size, [...size].reverse()]) {
+// Medium landscape reserves a shorter live dock (table-density.css), leaving
+// the waiting card the least room beneath the table.
+const mediumLandscape = [
+  [901, 820],
+  [1150, 700],
+];
+
+for (const size of [...tablets, ...mediumLandscape]) {
+  const orientations = tablets.includes(size) ? [size, [...size].reverse()] : [size];
+  for (const [width, height] of orientations) {
     test(`game information uses the card width and readable type at ${width}x${height}`, async ({
       page,
     }, info) => {

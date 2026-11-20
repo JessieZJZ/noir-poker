@@ -133,14 +133,50 @@ function madeHandRisk(c) {
   return threats.length ? `当前成牌仍可能落后于${threats.join('、')}。` : '';
 }
 
+// Top pair on a board that is already paired reads as two pair, but every
+// player shares the board pair. Only the private pair and its kicker compete.
+function pairedBoardTopPairCheckReason(s, c) {
+  const [, high, low, fifth] = c.made.score;
+  const counts = new Map();
+  for (const card of s.board) counts.set(card.rank, (counts.get(card.rank) || 0) + 1);
+  const boardPairs = [...counts].filter(([, count]) => count >= 2);
+  if (boardPairs.length !== 1 || boardPairs[0][1] !== 2) return '';
+  const shared = boardPairs[0][0];
+  const own = high === shared ? low : high;
+  const kicker = s.hole.find((card) => card.rank !== own)?.rank;
+  if (
+    ![high, low].includes(shared) ||
+    s.hole.filter((card) => card.rank === own).length !== 1 ||
+    s.hole.some((card) => card.rank === shared) ||
+    !kicker ||
+    kicker >= 10 ||
+    kicker !== fifth
+  )
+    return '';
+  const subject = s.reviewSubject || '这位玩家';
+  return `公共牌的一对 ${rankText(shared)} 是所有玩家共用的，${subject}的两对真正比较的是底牌这对 ${rankText(own)} 和 ${rankText(kicker)} 踢脚：对手只要有一张 ${rankText(shared)} 就是三条，同样拿 ${rankText(own)} 的对手另一张只要大于 ${rankText(kicker)} 也会领先。${subject}过牌先控制底池，保留摊牌机会。`;
+}
+
 export function weakTopPairCheckReason(s, c) {
-  if (c.handClass !== 'top-pair' || c.made.score[0] !== 1 || c.draw.outs) return '';
+  if (c.handClass !== 'top-pair' || c.draw.outs) return '';
+  if (c.made.score[0] === 2) return pairedBoardTopPairCheckReason(s, c);
+  if (c.made.score[0] !== 1) return '';
   const paired = c.made.score[1];
   const kicker = s.hole.find((card) => card.rank !== paired)?.rank;
   // Only a private kicker still present in the best five can support this
   // explanation. A later high board card may already have replaced it.
   if (!kicker || kicker >= 10 || !c.made.score.slice(2).includes(kicker)) return '';
   return `这手牌的 ${rankText(kicker)} 踢脚偏弱，遇到同样击中顶对但踢脚更好的牌时会落后，${s.reviewSubject || '这位玩家'}过牌先控制底池，保留摊牌机会。`;
+}
+
+// Seat count is public. More players make it likelier that someone is already
+// ahead of one pair or drawing past it, so a bet is mostly called by those.
+export function multiwayPairCheckReason(s, c) {
+  if (!s.street || c.opponents < 2 || c.made.score[0] !== 1) return '';
+  if (['board', 'board-pair'].includes(c.handClass)) return '';
+  return s.street === 3
+    ? `还有 ${c.opponents} 位对手没弃牌。人越多，越可能有人已经领先。一对这时下注，愿意跟的多是更强的牌，所以先过牌控制底池。`
+    : `还有 ${c.opponents} 位对手没弃牌。人越多，越可能有人已经领先或正在听牌。一对这时下注，愿意跟的多是更强的牌或听牌，所以先过牌控制底池。`;
 }
 
 export function checkReasoning(s, c, { trap = false, closingExplained = false } = {}) {
@@ -171,7 +207,9 @@ export function checkReasoning(s, c, { trap = false, closingExplained = false } 
   // next decision. Keep board facts, the cost of checking and recorded traps.
   if (s.reviewAudience === 'observer') {
     const kickerControl = trap ? '' : weakTopPairCheckReason(s, c);
-    if (risks.length && !c.draw.outs) parts.push('过牌避免主动扩大当前底池。');
+    const crowd = trap || kickerControl ? '' : multiwayPairCheckReason(s, c);
+    if (crowd) parts.push(crowd);
+    else if (risks.length && !c.draw.outs) parts.push('过牌避免主动扩大当前底池。');
     else if (trap && c.pendingOthers > 0)
       parts.push('后面还有玩家可以下注，过牌保留了诱导其拿较弱牌继续下注或尝试诈唬的机会。');
     else if (kickerControl) parts.push(kickerControl);
@@ -198,7 +236,7 @@ export function checkReasoning(s, c, { trap = false, closingExplained = false } 
   else if (valueHolding)
     parts.push(
       c.pendingOthers > 0 && s.street < 3
-        ? '若后位会继续下注，可以过牌诱导后再取值；若其常过回，主动下注更容易向较弱成牌或听牌收费。'
+        ? '若后位会继续下注，可以过牌诱导后再取值。若其常过回，主动下注更容易向较弱成牌或听牌收费。'
         : '这手强成牌仍有向较弱成牌收取跟注的空间，过牌可能少收一轮价值。',
     );
   else if (c.made.score[0] === 0 && !c.draw.outs)

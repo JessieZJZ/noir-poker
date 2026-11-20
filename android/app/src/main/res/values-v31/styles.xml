@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Android 12+ shows the "NOIR POKER" wordmark under the launch icon. -->
+    <style name="AppTheme.NoActionBarLaunch" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">#0b1017</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/launch_artwork</item>
+        <item name="windowSplashScreenIconBackgroundColor">@android:color/transparent</item>
+        <item name="postSplashScreenTheme">@style/AppTheme.NoActionBar</item>
+        <item name="android:background">@drawable/splash</item>
+        <item name="android:windowSplashScreenBrandingImage">@drawable/launch_brand</item>
+    </style>
+</resources>

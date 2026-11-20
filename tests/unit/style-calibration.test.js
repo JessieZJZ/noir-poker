@@ -310,6 +310,49 @@ test('repeated expensive aggression can release a weak pair without overriding p
   assert.equal(expensiveWeakPair(v, 0.75), false);
 });
 
+test('a small second barrel into a big pot cannot push top pair off for its stack share alone', async () => {
+  const { expensiveWeakPair, WEAK_PAIR_BARREL_DISCOUNT, weakPairPrice } =
+    await import('../../src/engine/bot-style.js');
+  // The reported hand: K♠J♦ on 10♠3♥K♥4♣ facing 440K into 2.32M with 1.31M
+  // behind; the call is 22% of the starting chips after two postflop bets.
+  const luna = (equity, call = 440000, pot = 2320000) =>
+    deceptiveView('Ks Jd', 'Ts 3h Kh 4c', {
+      bigBlind: 20000,
+      chipUnit: 10000,
+      difficulty: 'hard',
+      equity,
+      stack: 1310000,
+      total: 670000,
+      pot,
+      currentBet: call,
+      contestable: pot + call,
+      history: [
+        { id: 0, street: 1, action: 'raise', amount: 440000 },
+        { id: 0, street: 2, action: 'raise', amount: call },
+      ],
+      legal: {
+        enabled: true,
+        canCheck: false,
+        canRaise: true,
+        toCall: call,
+        callAmount: call,
+        minRaiseTo: call * 2,
+        maxRaiseTo: 1310000,
+      },
+    });
+  const price = weakPairPrice(luna(0.5));
+  assert.ok(Math.abs(price - 440000 / 2760000) < 1e-9);
+  // Boundary: the discounted estimate is compared with the price itself.
+  const edge = price + WEAK_PAIR_BARREL_DISCOUNT;
+  assert.equal(expensiveWeakPair(luna(0), edge - 0.01), true, 'Below the price it still folds');
+  assert.equal(expensiveWeakPair(luna(0), edge + 0.01), false);
+  for (const id of ['balanced', 'rook', 'jett', 'owen', 'vale', 'nico', 'mira', 'iris'])
+    for (let seed = 1; seed <= 40; seed++)
+      assert.notEqual(decide(id, luna(0.45), seed).action, 'fold', `${id} folds top pair to 16%`);
+  // A pot-sized second barrel still releases a 45% estimate.
+  assert.equal(expensiveWeakPair(luna(0.45, 1300000, 3180000), 0.45), true);
+});
+
 test('checked-to dry top pairs can seek moderate value without value raising a bet', async () => {
   const { checkedToPairValue } = await import('../../src/engine/bot-style.js');
   const v = deceptiveView('Ks Qh', 'Kd 7c 2s', {

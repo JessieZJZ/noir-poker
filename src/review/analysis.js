@@ -17,7 +17,7 @@ import { drawLabel, callOddsText, investmentText } from './narrative.js';
 import { cardText } from './spot-facts.js';
 import { reviewActivity } from './activity.js';
 import { handMatchups, sharesPublicPair, valuePlan } from './matchups.js';
-import { actionLabel } from '../engine/action-labels.js';
+import { actionLabel, reviewActionLabel } from '../engine/action-labels.js';
 import { legalRaiseTo } from '../engine/bet-sizing.js';
 import { botOpeningSize } from '../engine/bot-opening-size.js';
 import { gameIdentities } from '../engine/player-identity.js';
@@ -25,6 +25,8 @@ import { checkRisks } from './check-reasoning.js';
 import { flushBoardShove } from './value-targets.js';
 import { guaranteedBoardShare } from './strategy-facts.js';
 import { reviewStrategy, enrichStrategy } from './strategy-context.js';
+import { shortStackSpot, survivalCallSpot } from './tournament.js';
+import { spaceDeep, withoutRepeats, styleTagOnce, styleTagOnceInReview } from './typography.js';
 export { actionLabel } from '../engine/action-labels.js';
 export { callPrice } from './equity.js';
 export { startingTier, drawInfo } from './context.js';
@@ -109,6 +111,15 @@ export function analyzeDecision(
     s.action,
   );
   const estimated = `随机范围与行动加权范围下，底池权益分别约 ${percent(wide.equity)} / ${percent(strong.equity)}。`;
+  // Calling a short all-in that closes the action has no later betting: the
+  // price against the shover's public range is the whole decision. A weak
+  // holding that still clears it conservatively is not a weak defence.
+  const lastRaise = s.history.findLast((a) => a.street === s.street && a.action === 'raise');
+  const pricedShoveCall =
+    s.action === 'call' &&
+    price.closing &&
+    !!s.players?.find((p) => p.id === lastRaise?.id)?.allin &&
+    ctx.callAssessment.conservative >= price.required;
   const strongMade =
     s.street > 0 &&
     !['high', 'underpair', 'middle-pair', 'board', 'board-pair'].includes(handClass) &&
@@ -122,7 +133,8 @@ export function analyzeDecision(
     lesson = '',
     plan = '',
     confidence = '依赖范围假设',
-    alternative = { action: s.legal.canCheck ? 'check' : 'call', amount: s.legal.callAmount };
+    alternative = { action: s.legal.canCheck ? 'check' : 'call', amount: s.legal.callAmount },
+    tournamentSpot = null;
   const raiseTo = () => {
     let target;
     if (s.street === 0) {
@@ -149,6 +161,10 @@ export function analyzeDecision(
     alternative = { action: 'check', amount: 0 };
     lesson = '先免费过牌，面对后续下注再评估价格。';
     plan = '下一步若有人下注，按新的金额和参与人数重新计算，不预先承诺跟到底。';
+  } else if (
+    (tournamentSpot = survivalCallSpot(s, price, low, high, uncertainty) || shortStackSpot(s, ctx))
+  ) {
+    ({ code, status, title, reason, alternative, lesson, plan } = tournamentSpot);
   } else if (ctx.positionedEntry?.eligible && !price.closing) {
     code = 'positioned-entry';
     status = s.action === 'call' ? 'sound' : 'consider';
@@ -298,7 +314,8 @@ export function analyzeDecision(
     pre &&
     pre.raises >= 2 &&
     (pre.weakAce || tier === 0) &&
-    ['call', 'raise'].includes(s.action)
+    ['call', 'raise'].includes(s.action) &&
+    !pricedShoveCall
   ) {
     code = pre.raises >= 3 ? 'weak-fourbet-defense' : 'weak-threebet-defense';
     status = pre.raises >= 3 || price.cost >= s.stack * 0.1 ? 'attention' : 'consider';
@@ -374,7 +391,8 @@ export function analyzeDecision(
     s.street === 0 &&
     tier === 0 &&
     (s.action === 'call' || s.action === 'raise') &&
-    ((pre.raises > 0 && s.currentBet >= 3 * bigBlind) || early)
+    ((pre.raises > 0 && s.currentBet >= 3 * bigBlind) || early) &&
+    !pricedShoveCall
   ) {
     code = 'weak-entry';
     status = early && !pre.raises ? 'attention' : 'consider';
@@ -388,7 +406,7 @@ export function analyzeDecision(
     status = 'consider';
     title = '同花牌面直接全下，先核对较弱牌会不会跟注';
     reason =
-      '对手继续范围可能变强，应比较过牌或较小下注；只有较弱对子或尚未完成的听牌仍愿意支付时，再考虑全下取值。';
+      '对手继续范围可能变强，应比较过牌或较小下注。只有较弱对子或尚未完成的听牌仍愿意支付时，再考虑全下取值。';
     alternative = {
       action: s.legal.canCheck ? 'check' : high + uncertainty < price.required ? 'fold' : 'call',
       amount: s.legal.canCheck || high + uncertainty < price.required ? 0 : s.legal.callAmount,
@@ -769,7 +787,13 @@ export function analyzeDecision(
     `底牌 ${cardText(s.hole)}，当时牌力：${handLabel}${draw.outs ? '，' + drawLabel(draw) : ''}`,
     s.street
       ? `公共牌 ${cardText(s.board)}，${texture.label}`
-      : `翻牌前加注 ${ctx.preflopRaises} 次，本轮还有 ${ctx.pendingOthers} 位对手等待回应`,
+      : ctx.preflopRaises
+        ? ctx.pendingOthers
+          ? `翻牌前加注 ${ctx.preflopRaises} 次，本轮还有 ${ctx.pendingOthers} 位对手等待回应`
+          : `翻牌前加注 ${ctx.preflopRaises} 次，本轮没有对手等待回应`
+        : ctx.pendingOthers
+          ? `翻牌前无人加注，本轮还有 ${ctx.pendingOthers} 位对手等待回应`
+          : '翻牌前无人加注，本轮没有对手等待回应',
     investmentText(s, ctx, price),
   ];
   if (draw.outs)
@@ -785,20 +809,26 @@ export function analyzeDecision(
       const small = value < 0.01 ? '<0.01' : value.toFixed(2);
       evidence.push(
         uncalled
-          ? `实际${actionLabel(s)}，可被匹配的新增投入最多约为当时底池的 ${small}%。`
-          : `实际${actionLabel(s)}，额外投入约为当时底池的 ${small}%。`,
+          ? `实际${reviewActionLabel(s)}，可被匹配的新增投入最多约为当时底池的 ${small}%。`
+          : `实际${reviewActionLabel(s)}，额外投入约为当时底池的 ${small}%。`,
       );
     } else
       evidence.push(
         uncalled
-          ? `实际${actionLabel(s)}，可被匹配的新增投入最多为当时底池的 ${ctx.matchedBetRatio.toFixed(1)} 倍。`
-          : `实际${actionLabel(s)}，额外投入是当时底池的 ${ctx.matchedBetRatio.toFixed(1)} 倍。`,
+          ? `实际${reviewActionLabel(s)}，可被匹配的新增投入最多为当时底池的 ${ctx.matchedBetRatio.toFixed(1)} 倍。`
+          : `实际${reviewActionLabel(s)}，额外投入是当时底池的 ${ctx.matchedBetRatio.toFixed(1)} 倍。`,
       );
   }
-  if (pre) {
-    const level = pre.raises ? `最高 ${pre.raises + 1}-bet` : pre.label;
-    evidence.push(`入池情境：${level}，跛入 ${pre.limpers} 人`);
-  }
+  if (pre)
+    evidence.push(
+      pre.raises
+        ? pre.limpers
+          ? `入池情境：最高 ${pre.raises + 1}-bet，跛入 ${pre.limpers} 人`
+          : `入池情境：最高 ${pre.raises + 1}-bet，无人跛入`
+        : pre.limpers
+          ? `入池情境：未加注，跛入 ${pre.limpers} 人`
+          : '入池情境：无人主动入池',
+    );
   let routes = comparisonRoutes(s, ctx, { code, status, alternative, pre });
   let simulation = null;
   if (
@@ -826,9 +856,14 @@ export function analyzeDecision(
             v.vsActual.informative &&
             v.vsActual.lower > Math.max(0.2 * bigBlindOf(s), s.pot * 0.01),
         ) &&
-      !['free-fold', 'expensive-call', 'weak-threebet-defense', 'weak-fourbet-defense'].includes(
-        code,
-      ) &&
+      ![
+        'free-fold',
+        'expensive-call',
+        'weak-threebet-defense',
+        'weak-fourbet-defense',
+        'short-stack-push-fold',
+        'survival-call',
+      ].includes(code) &&
       (simulation.best.action !== alternative.action ||
         (simulation.best.action === 'raise' && simulation.best.amount !== alternative.amount))
     ) {
@@ -898,10 +933,42 @@ export function analyzeDecision(
     ctx.publicStrategy,
     result.coaching.recommendedAction,
   );
+  result.coaching = withoutRepeats(result.coaching);
+  {
+    const names = (s.players || []).filter((p) => p.id !== 0).map((p) => p.name);
+    const seen = new Set();
+    const tagged = styleTagOnceInReview(
+      result.coaching.paragraphs,
+      result.coaching.paragraphParts,
+      names,
+      seen,
+      ctx.matchups?.text ?? null,
+    );
+    result.coaching = {
+      ...result.coaching,
+      ...tagged,
+      followUp: styleTagOnce([result.coaching.followUp], names, seen)[0],
+    };
+    if (!tagged.paragraphParts) delete result.coaching.paragraphParts;
+  }
+  // Displayed copy only: decisions above read the unspaced source pieces.
+  for (const key of [
+    'title',
+    'reason',
+    'lesson',
+    'plan',
+    'recommendation',
+    'alternativeLabel',
+    'routes',
+    'evidence',
+    'coaching',
+  ])
+    result[key] = spaceDeep(result[key]);
+  ctx.matchups = spaceDeep(ctx.matchups);
   return result;
 }
 export function summarizeReview(input, steps) {
-  const overview = buildOverview(input, steps);
+  const overview = spaceDeep(buildOverview(input, steps));
   return {
     steps,
     priorityIndex: overview.priorityIndex,

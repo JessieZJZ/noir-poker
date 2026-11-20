@@ -1,6 +1,10 @@
 import { expect } from '@playwright/test';
 
 export async function openSettings(page) {
+  // Until the app is ready the launch screen covers the page. Clicking through
+  // it makes Playwright retry with another scroll alignment, which leaves the
+  // document scrolled and breaks later first-screen layout checks.
+  await expect(page.locator('html')).toHaveAttribute('data-app-ready', 'true');
   const dialog = page.locator('#opponents-dialog');
   if (!(await dialog.isVisible())) await page.locator('#opponents-button').click();
   await expect(dialog).toBeVisible();

@@ -73,7 +73,8 @@ try {
 
   let shotTurn = false;
   let shotQuiz = false;
-  for (let step = 0; step < 400; step++) {
+  // Bots wait for each fresh coach message to be read, so waiting steps repeat.
+  for (let step = 0; step < 800; step++) {
     const view = await data();
     const coachView = view.tutorial;
     if (coachView.stage === 'summary') break;
@@ -85,7 +86,9 @@ try {
       await (await page.$$('.tutorial-options button'))[1].tap();
       await wait('Quiz solved', (next) => next.tutorial.canContinue);
       await tap('.tutorial-next');
-    } else if (coachView.canContinue) await tap('.tutorial-next');
+    } else if (coachView.canContinue)
+      // A settled hand moves Continue into the action dock.
+      await tap(coachView.settled ? '.tutorial-dock-next' : '.tutorial-next');
     else if (coachView.allowed?.action === 'call' || coachView.allowed?.action === 'check') {
       if (!shotTurn) {
         shotTurn = true;

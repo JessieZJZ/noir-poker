@@ -41,7 +41,7 @@ test('a real corrected sampled decision records the full-input producer and expl
     'complete-public-weight-inputs-v1',
   );
   const text = explainOpponent(record).detail;
-  assert.match(text, /此前 24 手中 24 手翻前加注/);
+  assert.match(text, /此前 24 手翻前加注/);
   assert.doesNotMatch(text, /机器人|建议|应该|需要警惕|并非已经看到/);
 });
 
@@ -49,7 +49,7 @@ test('an older sampled record cannot acquire a motive that its sampler did not a
   const record = sampledRecord();
   delete record.trace.view.publicEquity.rangeInputsVersion;
   delete record.trace.observationSizing;
-  assert.doesNotMatch(explainOpponent(record).detail, /此前 24 手中 24 手翻前加注/);
+  assert.doesNotMatch(explainOpponent(record).detail, /此前 24 手翻前加注/);
   assert.ok(explainOpponent(record).detail.length > 0);
 });
 
@@ -76,7 +76,7 @@ test('producer metadata cannot grant scripted or mismatched actions an observati
   ]) {
     const changed = structuredClone(record);
     edit(changed);
-    assert.doesNotMatch(explainOpponent(changed).detail, /此前 24 手中 24 手翻前加注/);
+    assert.doesNotMatch(explainOpponent(changed).detail, /此前 24 手翻前加注/);
   }
   const changed = structuredClone(record);
   changed.trace.view.deck = [{ rank: 14, suit: 0 }];

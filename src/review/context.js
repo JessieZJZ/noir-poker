@@ -99,7 +99,13 @@ export function handContext(s) {
     handClass = pocket ? 'pocket' : 'unpaired';
     handLabel = pocket
       ? `口袋 ${rankText(holeRank)}`
-      : `${s.hole.map((c) => rankText(c.rank)).join(' / ')} ${Math.abs(s.hole[0].rank - s.hole[1].rank) === 1 ? (s.hole[0].suit === s.hole[1].suit ? '同花连接牌' : '不同花连接牌') : s.hole[0].suit === s.hole[1].suit ? '同花底牌' : '不同花底牌'}`;
+      : `${s.hole
+          .map((c) => c.rank)
+          .sort((a, b) => b - a)
+          .map(rankText)
+          .join(
+            ' / ',
+          )} ${Math.abs(s.hole[0].rank - s.hole[1].rank) === 1 ? (s.hole[0].suit === s.hole[1].suit ? '同花连接牌' : '不同花连接牌') : s.hole[0].suit === s.hole[1].suit ? '同花底牌' : '不同花底牌'}`;
   } else if (playsBoard) {
     handClass = 'board';
     handLabel = '公共牌成牌，底牌未提高牌力';
