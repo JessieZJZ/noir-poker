@@ -24,6 +24,15 @@ async function assertTabletFrame(page, portrait) {
           range = box('.bet-controls input'),
           presets = box('.bet-presets'),
           actions = box('.action-buttons');
+        // The thumb is wider than the rail; it, not only the rail, must clear
+        // the amount above and the shortcut row below.
+        const half =
+            parseFloat(
+              getComputedStyle(document.querySelector('.bet-controls input')).getPropertyValue(
+                '--raise-thumb-size',
+              ),
+            ) / 2,
+          centre = range.top + range.height / 2;
         return {
           fillsScreen: surface.bottom >= innerHeight - 16 && surface.bottom <= innerHeight + 1,
           tableNotCollapsed: table.height > innerHeight * (portrait ? 0.6 : 0.45),
@@ -34,6 +43,7 @@ async function assertTabletFrame(page, portrait) {
           labelAboveRail:
             portrait || (label.width >= controls.width * 0.9 && label.bottom <= range.top + 1),
           railAbovePresets: range.bottom <= presets.top + 1,
+          thumbClear: label.bottom <= centre - half + 0.5 && centre + half <= presets.top + 0.5,
           fullWidthRail: Math.abs(range.width - presets.width) <= 1,
           alignedBottom: portrait || Math.abs(presets.bottom - actions.bottom) <= 1,
         };
@@ -53,6 +63,7 @@ async function assertTabletFrame(page, portrait) {
       arranged: true,
       labelAboveRail: true,
       railAbovePresets: true,
+      thumbClear: true,
       fullWidthRail: true,
       alignedBottom: true,
       completeRail: true,
@@ -373,5 +384,27 @@ test('iPad mini webkit refits late public and hero card sizes without another vi
   } finally {
     await context.close();
     await browser.close();
+  }
+});
+
+// The compact landscape dock (901-1150px wide) once let the slider thumb sit
+// on the shortcut buttons. Narrow desktop windows share that dock.
+test('compact landscape docks keep the slider thumb clear of the amount and shortcuts', async ({
+  page,
+}, info) => {
+  test.skip(info.project.name === 'mobile', 'Explicit size matrix runs once');
+  await prepare(page, { width: 1001, height: 962 });
+  for (const size of [
+    { width: 1001, height: 962 },
+    { width: 1024, height: 768 },
+    { width: 1133, height: 744 },
+    { width: 905, height: 600 },
+  ]) {
+    await page.setViewportSize(size);
+    await page.evaluate(() => {
+      window.qa.heroTurn(9);
+      window.qa.stop();
+    });
+    await assertTabletFrame(page, false);
   }
 });
