@@ -6,6 +6,8 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import assert from 'node:assert/strict';
 import { fileURLToPath } from 'node:url';
+import { blindLevels } from '../../src/engine/blind-levels.js';
+import { compactChips } from '../../src/engine/chip-format.js';
 
 const root = fileURLToPath(new URL('../../', import.meta.url));
 const require = createRequire(path.join(root, '.artifacts/wechat-tools/package.json'));
@@ -33,7 +35,13 @@ try {
     console.log('PASS', name);
   };
   const ready = await wait((data) => data.tableReady && data.waitingForSeat);
-  assert.match(ready.entryStructure.levels, /^每 10 手涨盲，最高 /);
+  const caps = { 5: 18, 6: 21, 7: 25, 8: 29, 9: 32 };
+  const count = ready.seats.length;
+  const stakes = ready.requestedStakes;
+  const cap = [stakes.smallBlind, stakes.bigBlind]
+    .map((blind) => compactChips(blind * caps[count]))
+    .join(' / ');
+  assert.equal(ready.entryStructure.levels, `每 10 手涨盲，最高 ${cap}`);
   assert.match(ready.entryStructure.final, /^剩 [23] 人进入决赛圈$/);
   assert.equal(ready.stakesStructure, ready.entryStructure.settings);
   const structure = await page.$('.entry-structure');
@@ -44,22 +52,27 @@ try {
   await (await page.$('#join-table-button')).tap();
   await wait((data) => !data.dealing && !data.waitingForSeat);
   // Fold this hand out through the real controller, then leave only the
-  // final table and make the next hand start a new level.
+  // final table and make the next hand start the highest level.
   for (let data = await page.data(); !data.done; data = await page.data()) {
     if (data.canAct) await mini.evaluate(() => getCurrentPages().at(-1)._controller.action('fold'));
     await page.waitFor(200);
   }
-  const setup = await mini.evaluate(() => {
-    const game = getCurrentPages().at(-1)._controller.getGame(),
-      seats = game.players.length <= 6 ? 2 : 3;
-    // Move the out seats' chips to seat 1, keeping the table's chip total.
-    for (const p of game.players.slice(seats)) {
-      game.players[1].stack += p.stack;
-      Object.assign(p, { out: true, stack: 0, place: game.players.length });
-    }
-    game.levelHands = game.levelLength;
-    return { seats, count: game.players.length };
-  });
+  const levels = blindLevels(stakes, count);
+  const setup = await mini.evaluate(
+    (previous, levelIndex) => {
+      const game = getCurrentPages().at(-1)._controller.getGame(),
+        seats = game.players.length <= 6 ? 2 : 3;
+      // Move the out seats' chips to seat 1, keeping the table's chip total.
+      for (const p of game.players.slice(seats)) {
+        game.players[1].stack += p.stack;
+        Object.assign(p, { out: true, stack: 0, place: game.players.length });
+      }
+      Object.assign(game, previous, { levelHands: game.levelLength, levelIndex });
+      return { seats };
+    },
+    levels.at(-2),
+    levels.length - 2,
+  );
   await mini.evaluate(() => getCurrentPages().at(-1)._controller.nextHand());
   const first = await wait((data) => data.tableNotices.length > 0);
   assert.equal(first.noticeHold, true);
@@ -73,11 +86,15 @@ try {
   pass('final-table notice spans the screen before the deal', { width: size.width });
   const level = await wait((data) => data.tableNotices[0]?.title?.startsWith('盲注升至'));
   assert.equal(level.noticeHold, true);
+  assert.equal(level.tableNotices[0].title, `盲注升至 ${cap}`);
+  assert.equal(level.tableNotices[0].caption, '已到最高级别，不再上涨');
+  assert.equal(level.blindProgress, '盲注已封顶');
   await mini.screenshot({ path: path.join(output, 'level-notice.png') });
   pass('the new level follows', { title: level.tableNotices[0].title });
   const dealt = await wait((data) => !data.noticeHold && !data.tableNotices.length, 8000);
   assert.equal(dealt.heroCards.length, 2);
   assert.equal(dealt.rebuysLeft, 0);
+  assert.equal(dealt.blindText, cap);
   await mini.screenshot({ path: path.join(output, 'dealt-after-notice.png') });
   pass('cards are dealt after the notices; refills are closed', {
     blinds: dealt.blindText,

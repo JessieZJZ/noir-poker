@@ -1318,11 +1318,11 @@ test('WeChat announces the final table and a new level before dealing, and repla
 test('WeChat shows the blind structure on the ready table and in settings', (t) => {
   const { latest } = setup(t, { playerCount: 9 });
   assert.deepEqual(latest().entryStructure, {
-    levels: '每 10 手涨盲，最高 375 / 750',
+    levels: '每 10 手涨盲，最高 800 / 1.6K',
     final: '剩 3 人进入决赛圈',
-    settings: '每 10 手升一级，最高 375 / 750，剩 3 人进入决赛圈。',
+    settings: '每 10 手升一级，最高 800 / 1.6K，剩 3 人进入决赛圈。',
   });
-  assert.equal(latest().stakesStructure, '每 10 手升一级，最高 375 / 750，剩 3 人进入决赛圈。');
+  assert.equal(latest().stakesStructure, '每 10 手升一级，最高 800 / 1.6K，剩 3 人进入决赛圈。');
 });
 
 test('WeChat shows the called all-in hands as the runout starts, before the board is dealt', (t) => {

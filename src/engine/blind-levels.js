@@ -1,12 +1,11 @@
 // Rising blinds for one game. Every level is a whole multiple of the starting
 // small blind, so the chip denomination (the starting small blind) never
 // changes and every wager, pot and split stays in whole chips.
-export const BLIND_LEVEL_MULTIPLIERS = Object.freeze([1, 2, 3, 4, 6, 8, 10, 12, 15]);
+const EARLY_MULTIPLIERS = [1, 2, 3, 4, 6, 10];
 // Every level lasts the same number of hands, whatever the seats left.
 export const HANDS_PER_LEVEL = 10;
-// The cap is the highest level that still leaves the final table an average
-// stack of at least this many big blinds.
-export const FINAL_TABLE_AVERAGE_BB = 20;
+// Size the last level for the two players who decide the tournament.
+const HEADS_UP_AVERAGE_BB = 14;
 // Five- and six-seat games play the final for first and second; larger
 // games for the top three.
 export const finalTableSeats = (playerCount) => (playerCount <= 6 ? 2 : 3);
@@ -15,13 +14,21 @@ export const levelLengthFor = () => HANDS_PER_LEVEL;
 // The level ladder for a game's starting stakes and seat count, ending at its cap.
 // The cap uses the chips dealt at the start; refills never move it.
 export function blindLevels(stakes, playerCount) {
-  const average = (stakes.startingStack * playerCount) / finalTableSeats(playerCount),
-    capBigBlind = average / FINAL_TABLE_AVERAGE_BB;
-  const levels = BLIND_LEVEL_MULTIPLIERS.map((multiplier) => ({
+  const cap = Math.round(
+    (stakes.startingStack * playerCount) / (2 * HEADS_UP_AVERAGE_BB * stakes.bigBlind),
+  );
+  // Split the last two increases evenly in percentage terms, rounded to whole chips.
+  const penultimate = Math.round(Math.sqrt(EARLY_MULTIPLIERS.at(-1) * cap));
+  return [...EARLY_MULTIPLIERS, penultimate, cap].map((multiplier) => ({
     smallBlind: stakes.smallBlind * multiplier,
     bigBlind: stakes.bigBlind * multiplier,
-  })).filter((level, index) => index === 0 || level.bigBlind <= capBigBlind);
-  return levels;
+  }));
+}
+
+// Use the hand’s nominal big blind so a restored hand on the previous ladder
+// plays out its level, then joins the new ladder at the first higher blind.
+export function nextBlindLevelIndex(game, levels) {
+  return levels.findIndex((level) => level.bigBlind > game.bigBlind);
 }
 export const blindCap = (stakes, playerCount) => blindLevels(stakes, playerCount).at(-1);
 
@@ -32,15 +39,17 @@ export function advanceTournament(g, seated) {
   const notices = [];
   if (g.risingBlinds === false) return notices;
   const levels = blindLevels(g.stakes, g.players.length);
-  g.levelIndex = Math.min(levels.length - 1, Math.max(0, g.levelIndex ?? 0));
+  const next = nextBlindLevelIndex(g, levels);
+  g.levelIndex ??= 0;
   g.levelHands ??= 0;
   g.levelLength ??= levelLengthFor(g.players.length);
   if (!g.finalTable && seated <= finalTableSeats(g.players.length)) {
     g.finalTable = true;
     notices.push({ kind: 'final-table', seats: seated });
   }
-  if (g.levelHands >= g.levelLength && g.levelIndex < levels.length - 1) {
-    g.levelIndex++;
+  if (g.levelHands >= g.levelLength && next >= 0) {
+    g.levelIndex = next;
+    Object.assign(g, levels[next]);
     g.levelHands = 0;
     g.levelLength = levelLengthFor(seated);
     notices.push({
@@ -51,8 +60,6 @@ export function advanceTournament(g, seated) {
     });
   }
   g.levelHands++;
-  g.smallBlind = levels[g.levelIndex].smallBlind;
-  g.bigBlind = levels[g.levelIndex].bigBlind;
   return notices;
 }
 

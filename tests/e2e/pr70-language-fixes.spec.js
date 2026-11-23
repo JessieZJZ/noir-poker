@@ -89,9 +89,9 @@ test('switching Russian to Chinese redraws current amounts without changing the 
   });
   const before = await page.evaluate(() => window.noir.getState());
   await switchLocale(page, 'ru');
-  await expect(page.locator('#stakes-structure')).toContainText('1.5K');
+  await expect(page.locator('#stakes-structure')).toContainText('3.2K / 6.4K');
   await switchLocale(page, 'zh-CN');
-  await expect(page.locator('#stakes-structure')).toContainText('1.5K');
+  await expect(page.locator('#stakes-structure')).toContainText('3.2K / 6.4K');
   await expect(page.locator('#hero-stack')).not.toContainText(',');
   await expect(page.locator('#pot-value')).not.toContainText(',');
   const after = await page.evaluate(() => window.noir.getState());

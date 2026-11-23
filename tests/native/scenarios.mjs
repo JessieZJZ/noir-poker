@@ -655,6 +655,7 @@ export async function nativeScenarios(app) {
     try {
       await app.evaluate(() => window.noir.requestSmallBlind('10000'));
       await app.relaunch();
+      const { playerCount } = await app.state();
       const layout = await app.evaluate(() => {
         const box = (s) => document.querySelector(s).getBoundingClientRect();
         // Waiting, the game info card replaces the practice card below the table.
@@ -665,6 +666,7 @@ export async function nativeScenarios(app) {
         return {
           waiting: document.querySelector('.game-surface').dataset.entryState,
           blinds: document.querySelector('#info-blinds').textContent,
+          blindStructure: document.querySelector('#entry-structure-levels').textContent,
           stack: document.querySelector('#hero-stack').textContent,
           sameTop: hand.bottom <= blinds.top,
           noOverlap: hand.right <= surface.right && blinds.right <= practice.right,
@@ -674,6 +676,14 @@ export async function nativeScenarios(app) {
       });
       assert.equal(layout.waiting, 'waiting');
       assert.equal(layout.blinds, '10K / 20K');
+      const cap = {
+        5: '180K / 360K',
+        6: '210K / 420K',
+        7: '250K / 500K',
+        8: '290K / 580K',
+        9: '320K / 640K',
+      };
+      assert.equal(layout.blindStructure, `每 10 手涨盲，最高 ${cap[playerCount]}`);
       assert.equal(layout.stack, '2M');
       assert.equal(layout.sameTop, true);
       assert.equal(layout.noOverlap, true);

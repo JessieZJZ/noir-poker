@@ -11,7 +11,7 @@ const game = (patch = {}) => ({
   players: Array.from({ length: 7 }),
   levelHands: 1,
   levelLength: 10,
-  levelIndex: 0,
+  bigBlind: 250,
   ...patch,
 });
 
@@ -24,13 +24,20 @@ test('blind progress counts hands after this hand and names the actual next leve
       '下一手涨盲到 250 / 500',
     );
   assert.equal(
-    blindProgressText(game({ levelIndex: 1, levelHands: 1 })),
+    blindProgressText(game({ bigBlind: 500, levelHands: 1 })),
     '再打 9 手后涨盲到 375 / 750',
   );
-  const cap = blindLevels(game().stakes, 7).length - 1;
-  assert.equal(blindProgressText(game({ levelIndex: cap })), '盲注已封顶');
+  const cap = blindLevels(game().stakes, 7).at(-1).bigBlind;
+  assert.equal(blindProgressText(game({ bigBlind: cap })), '盲注已封顶');
   assert.equal(blindProgressText(game({ risingBlinds: false })), '');
   assert.equal(blindProgressText(game({ phase: 'idle' })), '');
+});
+
+test('a restored hand on the old ladder previews the next higher blind', () => {
+  const restored = game({ levelIndex: 6, bigBlind: 2500 });
+  assert.equal(blindProgressText(restored), '再打 9 手后涨盲到 2000 / 4000');
+  restored.levelHands = 10;
+  assert.equal(blindProgressText(restored), '下一手涨盲到 2000 / 4000');
 });
 
 test('countdown derives non-linear levels and each game cap without changing its state', () => {
@@ -42,7 +49,7 @@ test('countdown derives non-linear levels and each game cap without changing its
       });
       const levels = blindLevels(state.stakes, seats);
       for (let index = 0; index < levels.length; index++) {
-        state.levelIndex = index;
+        state.bigBlind = levels[index].bigBlind;
         const before = structuredClone(state);
         const next = levels[index + 1];
         assert.equal(
@@ -53,7 +60,10 @@ test('countdown derives non-linear levels and each game cap without changing its
       }
     }
   assert.equal(
-    blindProgressText(game({ stakes: stakesFromSmallBlind(500) }), (value) => `${value / 1000}K`),
+    blindProgressText(
+      game({ stakes: stakesFromSmallBlind(500), bigBlind: 1000 }),
+      (value) => `${value / 1000}K`,
+    ),
     '再打 9 手后涨盲到 1K / 2K',
   );
 });

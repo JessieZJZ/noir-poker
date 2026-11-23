@@ -1,6 +1,7 @@
 // Vite injects this file into the table controller ONLY in test mode.
 // It deliberately uses the controller's real rendering, actions and engine.
 import { deckOfCards, settle } from '../engine/poker.js';
+import { blindLevels } from '../engine/blind-levels.js';
 import { deceptiveRecords } from '../../tests/fixtures/deceptive-decisions.js';
 import { checkedSeatGame } from '../../tests/fixtures/checked-actions.js';
 import { pairedFlushReviewGame } from '../../tests/fixtures/paired-flush-review.js';
@@ -169,7 +170,7 @@ const qaFixtures = {
   },
   // Deal the next hand through the real flow with a new blind level due and,
   // with `final`, only the final table left: its notices play first.
-  noticeHand({ count = 7, final = false, level = true } = {}) {
+  noticeHand({ count = 7, final = false, cap = false } = {}) {
     gameRecords.abandon(game);
     fixtureGame(count, true);
     requestedStakes = stakesFromSmallBlind(100);
@@ -180,7 +181,14 @@ const qaFixtures = {
       difficulty: game.difficulty,
       stakes: requestedStakes,
     });
-    if (level) game.levelHands = game.levelLength;
+    game.levelHands = game.levelLength;
+    if (cap) {
+      const levels = blindLevels(game.stakes, count);
+      Object.assign(game, levels.at(-2), {
+        hand: (levels.length - 1) * game.levelLength,
+        levelIndex: levels.length - 2,
+      });
+    }
     if (final) {
       const seats = count <= 6 ? 2 : 3;
       for (const p of game.players.slice(seats))

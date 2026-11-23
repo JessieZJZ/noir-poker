@@ -21,6 +21,8 @@ function arrangedHand({ postflopRaises }) {
     game.emotionMode = 'off';
     game.hand = 22;
     game.levelIndex = 2;
+    game.smallBlind = 300;
+    game.bigBlind = 600;
     game.levelHands = 1;
     game.players[4].stack = 0;
     game.players[4].out = true;
