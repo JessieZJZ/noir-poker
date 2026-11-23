@@ -130,7 +130,15 @@ test('PR70 real rollout note retains eight samples, sunk costs and non-GTO model
   const before = JSON.stringify(game);
   const note = compareCandidateActions(game.decisions[0], [], { trials: 2 }).note;
   const terms = {
-    ja: ['8', 'サンクコスト', 'スプリット', '返却', 'レンジや戦略モデルの誤りは含みません', 'GTO', '最適 EV'],
+    ja: [
+      '8',
+      'サンクコスト',
+      'スプリット',
+      '返却',
+      'レンジや戦略モデルの誤りは含みません',
+      'GTO',
+      '最適 EV',
+    ],
     ko: ['8', '매몰비용', '팟 분배', '반환', '모델의 오류는 포함하지 않습니다', 'GTO', '최적 EV'],
     de: [
       '8',
