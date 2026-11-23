@@ -229,7 +229,7 @@ test('PR70 result summaries describe completed outcomes and keep public-only rev
 
 test('PR70 dynamic logs preserve actors, hand numbers, blind amounts and translated status', async () => {
   const terms = {
-    ja: ['ハンド 12', 'ボタン'],
+    ja: ['第 12 ハンド', 'ボタン'],
     ko: ['12번째 핸드', '버튼'],
     de: ['Hand 12', 'Button'],
   };
@@ -252,7 +252,7 @@ test('PR70 new countdown, local saving and close names identify the intended obj
       count: ['このハンド終了後', 'さらに 4 ハンド'],
       close: ['設定を閉じる'],
       save: ['自動保存', '次のハンド', '元の設定'],
-      cl: ['すべてのチップを失った', '3 回', '半分', 'ファイナルテーブルでは補充できません'],
+      cl: ['チップをすべて失った', '3 回', '半分', 'ファイナルテーブルでは補充できません'],
     },
     ko: {
       count: ['이번 핸드 종료 후', '4핸드를 더'],
