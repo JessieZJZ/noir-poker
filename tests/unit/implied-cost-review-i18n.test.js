@@ -63,7 +63,7 @@ const truth = {
     templates: [
       'Segundo a estimativa atual do range, este call ainda precisa ganhar fichas de mãos mais fracas após {0}.',
       'Os ganhos adicionais após {0} dependem de mãos mais fracas dispostas a pagar.',
-      'Atualmente há {0}, com {1} cartas candidatas que completam diretamente a mão. Depois do call, é possível ver turn e river; a chance de sair pelo menos uma dessas candidatas atuais é de cerca de {2}, o que não é a probabilidade final de vitória.',
+      'Você tem {0}, com {1} cartas que completam diretamente a mão. Depois do call, você vê o turn e o river; a chance de sair pelo menos uma dessas cartas é de cerca de {2}, o que não é a probabilidade final de vitória.',
     ],
     improvements: ['completar o draw', 'acertar um set'],
   },
@@ -220,7 +220,7 @@ const pairAccuracyTruth = {
     'Il call richiede che il range avversario contenga abbastanza mani più deboli o bluff; contro un range più stretto bisogna foldare.',
   ],
   pt: [
-    'Se vier {0}, as cartas da mão podem formar um par mais alto, mas nem todas essas cartas podem ser contadas como outs que garantem a vitória.',
+    'Se vier {0}, as cartas da mão podem formar um par mais alto, mas nem todas essas cartas são outs que garantem a vitória.',
     'Para pagar, o range do adversário precisa ter mãos mais fracas ou blefes em quantidade suficiente; contra um range mais fechado, deve-se desistir.',
   ],
   de: [
