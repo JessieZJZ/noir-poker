@@ -36,7 +36,7 @@ try {
   };
   const ready = await wait((data) => data.tableReady && data.waitingForSeat);
   const caps = { 5: 18, 6: 21, 7: 25, 8: 29, 9: 32 };
-  const count = ready.seats.length;
+  const count = ready.seats.length + 1; // The hero is rendered separately.
   const stakes = ready.requestedStakes;
   const cap = [stakes.smallBlind, stakes.bigBlind]
     .map((blind) => compactChips(blind * caps[count]))
