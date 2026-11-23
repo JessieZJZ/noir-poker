@@ -26,7 +26,7 @@ test('opponent summary describes the A2 fold and its threats, with no future coa
   page,
 }, info) => {
   const detail = await open(page, observerRecord());
-  await expect(detail).toContainText('Alex在 SB 位拿 A♠ 2♦');
+  await expect(detail).toContainText('Alex 在 SB 位拿 A♠ 2♦');
   await expect(detail).toContainText('选择弃牌');
   await expect(detail).toContainText('三张同花色');
   await expect(detail).not.toContainText(/过牌先|再遇下注|要结合金额|应比较|需要按新的价格/);

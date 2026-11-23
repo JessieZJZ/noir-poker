@@ -47,7 +47,7 @@ test('five-bet KQs fold concludes fold with price and domination risk, never enc
     r = analyzeDecision(s, options),
     text = summary(r.coaching);
   assert.equal(r.coaching.suggestedAction, '弃牌');
-  assert.match(text, /Jade（范围纪律）在 MP 位5-bet 加注至 9.3K/);
+  assert.match(text, /对手最近一次翻前加注：Jade（范围纪律）在 MP 位 5-bet 加注至 9.3K/);
   assert.match(text, /当前面对加注至 9.3K，约 46.5 BB/);
   assert.match(text, /击中一对.*踢脚压制/);
   assert.match(text, /再补 8.3K.*弃牌值得保留.*19K/);
@@ -101,9 +101,9 @@ test('range notes preserve caller families while keeping an actual fold focused 
   const s = suitedBroadwayFiveBetFold();
   s.history = [s.history[0]];
   const range = (s) => handMatchups(s, decisionContext(s)).rangeNotes.join('');
-  assert.match(range(s), /Jade（范围纪律）在 MP 位2-bet 开池至 600/);
+  assert.match(range(s), /对手最近一次翻前加注：Jade（范围纪律）在 MP 位 2-bet 开池至 600/);
   s.players[1].position = 'BTN';
-  assert.match(range(s), /Jade（范围纪律）在 BTN 位2-bet 开池至 600/);
+  assert.match(range(s), /对手最近一次翻前加注：Jade（范围纪律）在 BTN 位 2-bet 开池至 600/);
   s.history.push({ id: 2, street: 0, action: 'call', amount: 600 });
   const r = analyzeDecision(s, options),
     text = summary(r.coaching);

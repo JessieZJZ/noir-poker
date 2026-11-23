@@ -1,4 +1,4 @@
-import { formatChips, setLocalizedText, setLocalizedHTML } from '../i18n/index.js';
+import { formatChips, localizeText, setLocalizedText, setLocalizedHTML } from '../i18n/index.js';
 import {
   createReviewInput,
   actionLabel,
@@ -35,15 +35,17 @@ export function createReviewController({ card }) {
     const selection = opponentPerspective
       ? opponentSelection
       : { actorId: 0, sequence: last.input.decisions[selected]?.history.length + 1 };
-    setLocalizedHTML(
-      $('#review-activity-list'),
-      selectedActivity(last.input, selection.actorId, selection.sequence)
-        .map(
-          (event) =>
-            `<li class="${event.emphasized ? 'review-activity-emphasis' : ''} ${event.current ? 'review-activity-current' : ''}" ${event.current ? 'aria-current="step"' : ''}>${event.parts ? renderActivityParts(event.parts) : esc(event.text)}</li>`,
-        )
-        .join(''),
-    );
+    // Actor-aware logs are escaped and translated as complete sentences.
+    $('#review-activity-list').innerHTML = selectedActivity(
+      last.input,
+      selection.actorId,
+      selection.sequence,
+    )
+      .map(
+        (event) =>
+          `<li class="${event.emphasized ? 'review-activity-emphasis' : ''} ${event.current ? 'review-activity-current' : ''}" ${event.current ? 'aria-current="step"' : ''}>${event.parts ? renderActivityParts(event.parts) : esc(localizeText(event.text))}</li>`,
+      )
+      .join('');
   }
   const opponents = createOpponentReview({
     card,
@@ -93,6 +95,8 @@ export function createReviewController({ card }) {
       decision = steps[selected],
       result = analysis?.steps[selected] || last.partial?.[selected];
     setLocalizedText($('#review-dialog-title'), '第 ' + input.hand + ' 手，决策复盘');
+    $('#review-result-change').classList.toggle('positive', input.outcome.profit > 0);
+    $('#review-result-change').classList.toggle('negative', input.outcome.profit < 0);
     setLocalizedText(
       $('#review-result-change'),
       input.outcome.profit < 0
@@ -368,6 +372,9 @@ export function createReviewController({ card }) {
   });
   return {
     openInput,
+    refreshLocale() {
+      if (dialog.open) renderDialog();
+    },
     update(g, token) {
       const key = token + ':' + g.hand;
       if (g.phase === 'done' && key !== seen) {

@@ -72,7 +72,7 @@ test('an uncertain public-range recommendation remains actionable and conditiona
   assert.equal(c.recommendedAction.amount, 520000);
   assert.equal(c.recommendedAction.summary, '建议跟注 520K');
   assert.equal(c.suggestion, '建议跟注 520K');
-  assert.match(c.explanation, /跟注 520K的前提是对手的下注范围.*诈唬/);
+  assert.match(c.explanation, /跟注 520K 的前提是对手的下注范围.*诈唬/);
   assert.equal(coachDecision(s, result).label, c.label);
 });
 

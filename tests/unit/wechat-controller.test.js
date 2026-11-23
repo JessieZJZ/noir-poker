@@ -98,7 +98,7 @@ test('WeChat observer review preserves threats and the actual fold without futur
   assert.equal(report.loading, false);
   const review = controller.reviewOpponent(0);
   assert.equal(review.title, '弃牌');
-  assert.match(review.reason, /Alex在 SB 位.*选择弃牌/);
+  assert.match(review.reason, /Alex 在 SB 位.*选择弃牌/);
   assert.match(review.reason, /三张同花色.*6 和 9/);
   assert.doesNotMatch(review.reason, /过牌先|再遇下注|要结合金额|需要按新的价格/);
   assert.deepEqual(controller.reviewOpponent(0), review);
@@ -1022,6 +1022,22 @@ test('WeChat records mark the first post-refill hand and exclude the virtual buy
   verifyChips(game, 6 * 5000 + refill);
 });
 
+test('WeChat restart with no chips and no refill records the place the hero then had', (t) => {
+  const { controller } = setup(t);
+  const game = reachHero(controller);
+  finish(game);
+  controller.show();
+  game.players[1].stack += game.players[0].stack;
+  game.players[0].stack = 0;
+  assert.equal(controller.getRecords()[0].result, null);
+  controller.reset();
+  const [fresh, ended] = controller.getRecords();
+  // Five seats are still playing, so the hero leaves sixth.
+  assert.deepEqual(ended.result, { place: 6, champion: false });
+  assert.equal(fresh.result, null);
+  assert.equal(controller.getGame().players[0].stack, 5000);
+});
+
 // Settle the current hand with the hero (AA) shoving into seat 1, everyone
 // else folding, so the result is fixed regardless of the shuffled deal.
 // Hero shoves and seat 1 calls; the others fold, or with `allIn` call with
@@ -1259,6 +1275,10 @@ test('WeChat seats show two-character style tags and keep the full name for sett
 test('WeChat announces the final table and a new level before dealing, and replays them on retry', (t) => {
   const { controller, latest, sounds, timers } = setup(t, { playerCount: 7 });
   const game = controller.getGame();
+  assert.equal(latest().blindProgress, '再打 9 手后涨盲到 50 / 100');
+  game.levelHands = game.levelLength;
+  controller.show();
+  assert.equal(latest().blindProgress, '下一手涨盲到 50 / 100');
   finish(game, 'fold');
   controller.show();
   for (const p of game.players.slice(3)) Object.assign(p, { out: true, stack: 0, place: 4 });
@@ -1285,22 +1305,24 @@ test('WeChat announces the final table and a new level before dealing, and repla
   assert.equal(sounds.at(-1), 'deal');
   assert.equal(latest().rebuysLeft, 0);
   assert.equal(latest().blindText, '50 / 100');
+  assert.equal(latest().blindProgress, '再打 9 手后涨盲到 75 / 150');
   finish(game, 'fold');
   controller.show();
   assert.equal(controller.retry(), true);
   assert.equal(latest().noticeHold, true);
   while (latest().noticeHold) timers.runNext();
   assert.equal(sounds.filter((s) => s === 'levelup').length, 2);
+  assert.equal(latest().blindProgress, '再打 9 手后涨盲到 75 / 150');
 });
 
 test('WeChat shows the blind structure on the ready table and in settings', (t) => {
   const { latest } = setup(t, { playerCount: 9 });
   assert.deepEqual(latest().entryStructure, {
-    levels: '每 10 手涨盲，最高 375 / 750',
+    levels: '每 10 手涨盲，最高 800 / 1.6K',
     final: '剩 3 人进入决赛圈',
-    settings: '每 10 手升一级，最高 375 / 750，剩 3 人进入决赛圈。',
+    settings: '每 10 手升一级，最高 800 / 1.6K，剩 3 人进入决赛圈。',
   });
-  assert.equal(latest().stakesStructure, '每 10 手升一级，最高 375 / 750，剩 3 人进入决赛圈。');
+  assert.equal(latest().stakesStructure, '每 10 手升一级，最高 800 / 1.6K，剩 3 人进入决赛圈。');
 });
 
 test('WeChat shows the called all-in hands as the runout starts, before the board is dealt', (t) => {

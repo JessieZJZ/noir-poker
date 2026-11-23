@@ -367,7 +367,7 @@ try {
   await fixture('reported-low-connector', reportedLowConnectorCall(), (step) => {
     assert.match(step.reason, /同花连接牌.*37.0%.*点数仍偏低.*更高同花/);
     const pendingActions =
-      '本轮还有 6 位对手等待回应；若出现加注或者再加注，你需要重新决定是否继续。';
+      '本轮还有 6 位对手等待回应。若出现加注或者再加注，你需要重新决定是否继续。';
     assert.ok(step.reason.includes(pendingActions));
     assert.match(step.reason, /若跟注价格更低、翻后有位置且成牌后能赢到足够筹码/);
     assert.match(step.reason, /不能把连接牌一律当成弃牌/);
@@ -437,9 +437,9 @@ try {
     assert.equal(section.groups.length, 1);
     assert.equal(section.groups[0].label, '对手可能牌组');
     assert.deepEqual(section.rangeNotes, []);
-    assert.match(step.reason, /Luna在 UTG\+1 位2-bet 开池至 4K/);
+    assert.match(step.reason, /Luna 在 UTG\+1 位 2-bet 开池至 4K/);
     assert.deepEqual(section.rangeNotes, []);
-    assert.match(step.reason, /Jade在 LJ 位已跟注这笔加注，补 4K/);
+    assert.match(step.reason, /Jade 在 LJ 位已跟注这笔加注，补 4K/);
     assert.doesNotMatch(step.reason, /结构上较|不代表获胜概率|依据当时记录|旧记录/);
   });
   await fixture('reported-bottom-pair', bottomPairReview(), (step) => {

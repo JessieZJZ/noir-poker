@@ -2,6 +2,12 @@ package io.github.jessiezjz.noirpoker;
 
 import android.content.pm.ActivityInfo;
 import android.content.res.Configuration;
+import android.opengl.EGL14;
+import android.opengl.EGLConfig;
+import android.opengl.EGLContext;
+import android.opengl.EGLDisplay;
+import android.opengl.EGLSurface;
+import android.opengl.GLES20;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -36,12 +42,53 @@ public class MainActivity extends BridgeActivity {
         // WebView alone stops text at 8px, which leaves long localized style
         // tags overflowing their badges. Let the shared fitting shrink them.
         if (getBridge() != null) getBridge().getWebView().getSettings().setMinimumFontSize(1);
-        // The emulator compositor can repeat WebView raster tiles. Use a
-        // software layer on virtual hardware; phones keep hardware acceleration.
-        if (getBridge() != null && ("ranchu".equals(Build.HARDWARE) || "goldfish".equals(Build.HARDWARE))) {
+        // The software layer avoids repeated raster tiles on SwiftShader,
+        // but can distort transformed seats on the Apple host GPU.
+        boolean emulator = "ranchu".equals(Build.HARDWARE) || "goldfish".equals(Build.HARDWARE);
+        if (getBridge() != null && emulator && !usesAppleHostGpu()) {
             getBridge().getWebView().setLayerType(View.LAYER_TYPE_SOFTWARE, null);
         }
         updateOrientation(getResources().getConfiguration());
+    }
+
+    private static boolean usesAppleHostGpu() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.BAKLAVA) return false;
+        EGLDisplay display = EGL14.eglGetDisplay(EGL14.EGL_DEFAULT_DISPLAY);
+        if (display == EGL14.EGL_NO_DISPLAY) return false;
+        int[] version = new int[2];
+        if (!EGL14.eglInitialize(display, version, 0, version, 1)) return false;
+        EGLContext context = EGL14.EGL_NO_CONTEXT;
+        EGLSurface surface = EGL14.EGL_NO_SURFACE;
+        try {
+            int[] configAttributes = {
+                EGL14.EGL_SURFACE_TYPE, EGL14.EGL_PBUFFER_BIT,
+                EGL14.EGL_RENDERABLE_TYPE, EGL14.EGL_OPENGL_ES2_BIT,
+                EGL14.EGL_NONE
+            };
+            EGLConfig[] configs = new EGLConfig[1];
+            int[] count = new int[1];
+            if (!EGL14.eglChooseConfig(display, configAttributes, 0, configs, 0, 1, count, 0)
+                    || count[0] == 0) return false;
+            int[] contextAttributes = {EGL14.EGL_CONTEXT_CLIENT_VERSION, 2, EGL14.EGL_NONE};
+            context = EGL14.eglCreateContext(display, configs[0], EGL14.EGL_NO_CONTEXT,
+                    contextAttributes, 0);
+            if (context == EGL14.EGL_NO_CONTEXT) return false;
+            int[] surfaceAttributes = {EGL14.EGL_WIDTH, 1, EGL14.EGL_HEIGHT, 1, EGL14.EGL_NONE};
+            surface = EGL14.eglCreatePbufferSurface(display, configs[0], surfaceAttributes, 0);
+            if (surface == EGL14.EGL_NO_SURFACE
+                    || !EGL14.eglMakeCurrent(display, surface, surface, context)) return false;
+            String renderer = GLES20.glGetString(GLES20.GL_RENDERER);
+            return renderer != null && renderer.contains("Apple")
+                    && !renderer.contains("SwiftShader");
+        } finally {
+            if (EGL14.eglGetCurrentContext().equals(context) && context != EGL14.EGL_NO_CONTEXT) {
+                EGL14.eglMakeCurrent(display, EGL14.EGL_NO_SURFACE, EGL14.EGL_NO_SURFACE,
+                        EGL14.EGL_NO_CONTEXT);
+            }
+            if (surface != EGL14.EGL_NO_SURFACE) EGL14.eglDestroySurface(display, surface);
+            if (context != EGL14.EGL_NO_CONTEXT) EGL14.eglDestroyContext(display, context);
+            EGL14.eglTerminate(display);
+        }
     }
 
     private void checkLaunchReady() {

@@ -1,5 +1,6 @@
-// Keep every whole chip visible (1,025 -> 1.025K); only presentation changes.
-export function compactChips(value, locale = 'en-US') {
+// Keep every whole chip visible (1025 -> 1.025K); only presentation changes.
+// Decimal points and ungrouped digits are the same in every language.
+export function compactChips(value) {
   const amount = Math.round(Number(value));
   const magnitude = Math.abs(amount);
   const unit = magnitude >= 1000000 ? 1000000 : magnitude >= 1000 ? 1000 : 1;
@@ -14,7 +15,7 @@ export function compactChips(value, locale = 'en-US') {
     return `${amount < 0 || Object.is(amount, -0) ? '-' : ''}${Math.floor(magnitude / unit)}${fraction ? `.${fraction}` : ''}${suffix}`;
   }
   return (
-    new Intl.NumberFormat(locale, { maximumFractionDigits: digits, useGrouping: false }).format(
+    new Intl.NumberFormat('en-US', { maximumFractionDigits: digits, useGrouping: false }).format(
       amount / unit,
     ) + suffix
   );

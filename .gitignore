@@ -12,6 +12,8 @@ test-results/
 *.p12
 *.mobileprovision
 mobile/xcode.env
+# Local Claude Code worktrees and launch configuration.
+.claude/
 # Local WeChat IDE configuration is generated, not application source.
 miniprogram/project.config.json
 miniprogram/project.private.config.json

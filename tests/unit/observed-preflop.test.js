@@ -43,7 +43,7 @@ test('an affordable strong squeeze defense uses observed range evidence instead 
       );
       for (const p of known.players) assert.equal(p.stack % smallBlind, 0);
       const text = explainOpponent(known.botDecisions[0], known.players).detail;
-      assert.match(text, /此前 32 手中 32 手翻前大额加注.*保留了更多非顶级起手牌/);
+      assert.match(text, /此前 32 手翻前大额加注.*保留了更多非顶级起手牌/);
     }
 });
 

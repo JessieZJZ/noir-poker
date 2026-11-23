@@ -77,5 +77,5 @@ export function riverRangeReason(s, c) {
     .map((hand) => hand.text)
     .join(
       '、',
-    )} 取值，也可能用 ${missed.map((hand) => hand.text).join('、')} 等落空听牌诈唬；跟注需要后者或较弱取值的比例足够。`;
+    )} 取值，也可能用 ${missed.map((hand) => hand.text).join('、')} 等落空听牌诈唬。跟注需要后者或较弱取值的比例足够。`;
 }

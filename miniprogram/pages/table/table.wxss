@@ -105,15 +105,27 @@
   margin-left: 3px;
 }
 .hint-slot {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   flex: 0 0 20px;
   height: 20px;
   padding: 0 9px;
 }
 .hint-mask {
+  flex: 1 1 0;
+  min-width: 0;
   height: 18px;
   overflow: hidden;
   color: #a5d1c2;
   font-size: 11px;
+}
+.blind-progress {
+  margin-left: auto;
+  flex: none;
+  color: #bca77c;
+  font-size: 12px;
+  white-space: nowrap;
 }
 .hint-track {
   display: inline-flex;
@@ -1592,7 +1604,7 @@
 .hand-label {
   gap: 4px;
   font-size: 13px;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
 }
 .blind-info {
   display: flex;

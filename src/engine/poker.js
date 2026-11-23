@@ -1010,23 +1010,44 @@ function eliminate(g) {
     heroMayRefill = hero.stack === 0 && heroRebuysLeft(g) > 0,
     leaving = g.players.filter((p) => !p.out && p.stack === 0 && (p.id !== 0 || !heroMayRefill));
   if (!leaving.length) return;
-  // Busting seats end with nothing, so everything they started with is in the pots.
-  const started = (p) => p.total,
-    remaining = g.players.filter((p) => !p.out).length - leaving.length;
-  for (const p of leaving) {
-    p.out = true;
-    p.place = remaining + 1 + leaving.filter((o) => started(o) > started(p)).length;
-  }
+  rankLeaving(g, leaving);
   for (const p of leaving.sort((a, b) => b.place - a.place))
     log(g, `${p.name} 筹码输光，出局 · 第 ${p.place} 名`, p.id, 'result');
-  const left = g.players.filter((p) => !p.out),
-    champion = left.length === 1 ? left[0] : null;
-  if (champion) {
-    champion.place = 1;
-    log(g, `${champion.name} 获得冠军`, champion.id, 'result');
-  }
+  const champion = crownLastSeat(g);
+  if (champion) log(g, `${champion.name} 获得冠军`, champion.id, 'result');
   if (hero.out || champion)
     g.over = { heroPlace: hero.place, championId: champion ? champion.id : null };
+}
+// Busting seats end with nothing, so everything they started the hand with
+// (`total`) is in the pots. Places count down from the seats still playing.
+function rankLeaving(g, leaving) {
+  const remaining = g.players.filter((p) => !p.out && !leaving.includes(p)).length;
+  for (const p of leaving) {
+    p.out = true;
+    p.place = remaining + 1 + leaving.filter((o) => o.total > p.total).length;
+  }
+}
+function crownLastSeat(g) {
+  const left = g.players.filter((p) => !p.out),
+    champion = left.length === 1 ? left[0] : null;
+  if (champion) champion.place = 1;
+  return champion;
+}
+// Ending a game instead of refilling (a restart) leaves
+// a busted hero at the place they would have taken without a refill: seats
+// that busted in the same settled hand still hold its cards and are ranked
+// again together with the hero.
+export function forfeitHero(g) {
+  if (!needsHeroRebuy(g)) return false;
+  const hero = g.players[0],
+    sameHand =
+      g.phase === 'done'
+        ? g.players.filter((p) => p.id !== 0 && p.out && p.stack === 0 && p.hole.length === 2)
+        : [];
+  rankLeaving(g, [hero, ...sameHand]);
+  const champion = crownLastSeat(g);
+  g.over = { heroPlace: hero.place, championId: champion ? champion.id : null };
+  return true;
 }
 export function estimateEquity(hole, board, rivals = 1, trials = 35, random = Math.random) {
   const known = new Set([...hole, ...board].map((c) => c.key)),

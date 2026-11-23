@@ -1,6 +1,6 @@
 # NOIR Poker 全球上架指导报告
 
-报告日期：2026-10-10。发行者：郑建宙；公开支持邮箱：958182284@qq.com。用户已确认 Apple Developer 会员注册完成。产品保持免登录、本地单机训练、虚拟筹码和商店买断制。
+报告日期：2026-10-10。发行者：noir studio；公开支持邮箱：zhengjianzhou.jessy@gmail.com。用户已确认 Apple Developer 会员注册完成。产品保持免登录、本地单机训练、虚拟筹码和商店买断制。
 
 ## 当前结论
 
@@ -72,7 +72,7 @@
 1. 已注册会员；在 App Store Connect 完成发行主体资料。买断需接受 Paid Apps Agreement，并完成银行和税务信息；会员本身不能替代付费协议。
 2. 确认最终 `io.github.jessiezjz.noirpoker` Bundle ID、SKU、版本和递增构建号；正式发布后不能随意更换应用身份。配置 Team、证书／描述文件，签名材料留在密钥管理或 CI Secrets。
 3. 使用完整 Xcode 26 或以上及适用 SDK。Apple 当前要求自 2026-04-28 起用 Xcode 26+ 和 iOS 26+ SDK 上传；这与最低支持 iOS 版本是两个概念。[提交要求](https://developer.apple.com/news/upcoming-requirements/)。
-4. 按 `docs/mobile-release.md` 运行 `NOIR_APPLE_TEAM_ID=... npm run mobile:ios:archive`；Organizer Validate App、上传到 Connect，再通过 TestFlight 安装真实分发包。模拟器 `.app` 和浏览器通过不能替代 Archive、签名与真机。
+4. 按 `docs/mobile-release.md` 配置 Team ID 后运行 `npm run mobile:ios:upload`（或 `mobile:ios:archive` 后在 Organizer Validate App、上传到 Connect），再通过 TestFlight 安装真实分发包。模拟器 `.app` 和浏览器通过不能替代 Archive、签名与真机。
 5. 配置 11 种适用商店本地化资料、真实截图、App Privacy、年龄问卷、价格、发行地区、支持／隐私 URL、出口合规问卷。当前未增加自研加密，但必须依据实际 SDK 和网络能力回答；不要未经检查就写死 ITSAppUsesNonExemptEncryption。
 6. Review Notes 使用下方说明，不提供不存在的登录账户；建议手动发布以便控制发布时间。先 TestFlight 再提交审核，获批后按地区计划开放。
 
@@ -95,7 +95,7 @@
 
 审核说明初稿：
 
-> This is an offline, single-player Texas Hold'em practice app. All opponents are computer-controlled. Chips are virtual, cannot be purchased or redeemed, and there are no cash prizes, real-money wagering or links promoting gambling services. All features are available after downloading the paid app; there is no login, subscription or in-app purchase. Open Settings to change the language, table size and difficulty. Finish a hand to open Review or Retry. Decision grading uses before-action public snapshots; it does not inspect opponents' hidden cards or the future deck. Core play and review work in airplane mode. Support: 958182284@qq.com.
+> This is an offline, single-player Texas Hold'em practice app. All opponents are computer-controlled. Chips are virtual, cannot be purchased or redeemed, and there are no cash prizes, real-money wagering or links promoting gambling services. All features are available after downloading the paid app; there is no login, subscription or in-app purchase. Open Settings to change the language, table size and difficulty. Finish a hand to open Review or Retry. Decision grading uses before-action public snapshots; it does not inspect opponents' hidden cards or the future deck. Core play and review work in airplane mode. Support: zhengjianzhou.jessy@gmail.com.
 
 截图使用实际发行界面，每种商店本地化资料都与实际可用语言一致。至少准备牌桌、设置、决策复盘三类截图；避免真人照片、未经授权赛事标识、稳赚／专业精确复刻宣传。Google 主图、图标、截图与 Apple 各设备截图按提交当天后台规格制作，不能把浏览器截图直接标成真机发行包验收。[Apple 截图规格](https://developer.apple.com/help/app-store-connect/reference/app-information/screenshot-specifications/)、[Google 图形资料](https://support.google.com/googleplay/android-developer/answer/9866151?hl=en)。
 

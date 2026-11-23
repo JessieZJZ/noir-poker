@@ -26,7 +26,7 @@ test('the displayed squeeze review aggregates four real limps and explains suite
   const { game } = groupedPreflopReview();
   const summary = await openOpponent(page, game);
   await expect(summary).toContainText(
-    '你在 UTG 位、Mia在 LJ 位、Alex在 HJ 位、River在 CO 位都先跟注 20K 入池',
+    '你在 UTG 位、Mia 在 LJ 位、Alex 在 HJ 位、River 在 CO 位都先跟注 20K 入池',
   );
   await expect(summary).toContainText('小对子、同花牌或连接牌');
   await expect(summary).toContainText('坚果同花听牌');
@@ -42,7 +42,7 @@ test('the displayed squeeze review aggregates four real limps and explains suite
   });
 });
 
-test('the actual K8s limp executes and its displayed review explains the small price and remaining risks', async ({
+test('the actual K8s limp executes and its displayed review explains the small price without fold reasons', async ({
   page,
 }, info) => {
   const game = lunaCheapEntry();
@@ -56,12 +56,12 @@ test('the actual K8s limp executes and its displayed review explains the small p
   }
   game.decisions = [];
   const summary = await openOpponent(page, game);
-  await expect(summary).toContainText('Luna在 UTG 位拿 K♥ 8♥');
+  await expect(summary).toContainText('Luna 在 UTG 位拿 K♥ 8♥');
   await expect(summary).toContainText('20K');
   await expect(summary).toContainText('1.53M');
   await expect(summary).toContainText('同花听牌和成花机会');
-  await expect(summary).toContainText('击中一对后仍可能被更好的踢脚压住');
-  await expect(summary).toContainText('成花后仍可能落后于更高同花');
+  // The call's reasons only; later kicker and flush risks argue for folding.
+  await expect(summary).not.toContainText(/更好的踢脚压住|落后于更高同花/);
   await expect(summary).not.toContainText(/成花后也要留意|新的价格重新决定/);
   await summary.locator('p').last().scrollIntoViewIfNeeded();
   await mkdir('.artifacts/review-clarity-2026-10-25/web', { recursive: true });

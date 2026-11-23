@@ -584,7 +584,9 @@ try {
     await waitFor(
       () =>
         existsSync(stderrPath) &&
-        iosInitialScreenReady(readFileSync(stderrPath, 'utf8'), processId),
+        iosInitialScreenReady(readFileSync(stderrPath, 'utf8'), processId, {
+          requireBackportMarker: true,
+        }),
       // A fresh CI simulator's first WebView load alone can take ~40s.
       120000,
       'iOS must finish its independent first screen before XCUITest attaches',

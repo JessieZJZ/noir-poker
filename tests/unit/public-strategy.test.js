@@ -170,8 +170,18 @@ test('five legal size estimates have monotonic folds and retain a selective payi
     assert.ok(option.worseMadeCallMass <= option.opponents[0].callProbability);
     assert.ok(option.opponents[0].callProbability < 1);
     if (index) assert.ok(option.foldProbability >= result.options[index - 1].foldProbability);
+    // Hands already ahead are part of the continuing range, split by category.
+    close(option.continueMass, option.callProbability + option.raiseProbability);
+    assert.ok(option.aheadContinueMass > 0 && option.aheadContinueMass <= option.continueMass);
+    close(
+      Object.values(option.aheadContinueByCategory).reduce((sum, mass) => sum + mass, 0),
+      option.aheadContinueMass,
+    );
   }
   assert.ok(result.options[0].worseMadeCallMass > result.options.at(-1).worseMadeCallMass);
+  // A larger size keeps a continuing range more concentrated in hands ahead.
+  const share = (o) => o.aheadContinueMass / o.continueMass;
+  assert.ok(share(result.options.at(-1)) > share(result.options[0]));
   assert.ok(
     result.options[0].calledEquity > result.options.at(-1).calledEquity,
     'larger sizing cannot assume the same weak paying range',

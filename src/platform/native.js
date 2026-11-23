@@ -41,6 +41,8 @@ export async function preparePlatform() {
   if (!Capacitor.isNativePlatform()) return;
   document.documentElement.classList.add('native-app');
   if (Capacitor.getPlatform() === 'ios') document.documentElement.classList.add('native-ios');
+  if (Capacitor.getPlatform() === 'android')
+    document.documentElement.classList.add('native-android');
   const [{ App }, { Preferences }] = await Promise.all([
     import('@capacitor/app'),
     import('@capacitor/preferences'),
@@ -54,6 +56,13 @@ export async function preparePlatform() {
     appActive = isActive;
     document.dispatchEvent(new CustomEvent('noir:app-state', { detail: { active: isActive } }));
     if (!isActive) void preferenceStorage.flush();
+  });
+  // Android reports inactive only at onStop, after the switch animation, when
+  // the WebView is already being backgrounded and audio can underrun. Its
+  // onPause "pause" arrives first, so audio fades while it still plays cleanly.
+  // The next appStateChange(true) on onResume lifts it.
+  await App.addListener('pause', () => {
+    document.dispatchEvent(new CustomEvent('noir:app-pausing'));
   });
   try {
     appActive = (await App.getState()).isActive;
@@ -94,12 +103,12 @@ function installNativeAbout(info) {
     dialog.append(paragraph);
   }
   const link = document.createElement('a');
-  link.href = 'mailto:958182284@qq.com';
+  link.href = 'mailto:zhengjianzhou.jessy@gmail.com';
   link.target = '_blank';
   link.rel = 'noopener noreferrer';
   link.textContent = localizeText('联系与支持');
   const publisher = document.createElement('p');
-  publisher.textContent = localizeText('发行者：郑建宙 · 958182284@qq.com');
+  publisher.textContent = localizeText('发行者：noir studio · zhengjianzhou.jessy@gmail.com');
   const policy = document.createElement('a');
   policy.href = './app-privacy.html';
   policy.textContent = localizeText('隐私政策');

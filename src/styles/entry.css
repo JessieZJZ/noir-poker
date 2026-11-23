@@ -37,8 +37,13 @@
   color: #b9c7d0;
   font-size: 14px;
   font-weight: 400;
-  line-height: normal;
+  line-height: 1.4;
   white-space: nowrap;
+}
+/* Lower the text to the wordmark baseline while the icons remain centered. */
+.header-actions .settings-button > span,
+#rules-button .guide-rotating-label {
+  translate: 0 0.15em;
 }
 .header-actions .settings-button svg {
   width: 19px;
@@ -113,11 +118,12 @@
    at the top of the row, where a single centred line would be, so the first
    line does not move when play starts. */
 .game-surface .surface-top .hand-label {
-  align-self: start;
+  align-self: stretch;
   padding-top: max(0px, calc((var(--hand-row) - 1.2em) / 2));
 }
-/* The blinds box still fills the row, so a retained taller row leaves no gap
-   above the hint line; its text stays at the top. */
+/* Both boxes fill the row, so a retained taller row leaves no gap above the
+   hint line and the two stay centred on each other; their text stays at the
+   top through the padding. */
 .game-surface .surface-top .blind-info {
   align-self: stretch;
   align-items: flex-start;
@@ -174,16 +180,11 @@
   font-size: 10px;
 }
 @media (max-width: 600px) {
-  .header .brand,
-  .header .brand > span:last-child {
-    min-width: 0;
-  }
-  /* Four rotating resource labels can outgrow a phone header in long locales.
-     The wordmark gives way first, the logo keeps its 28px, then a label that
-     still does not fit ends in an ellipsis; the menu shows every full name. */
+  /* Keep the complete wordmark. The rotating tool label gives up width and
+     may end in an ellipsis; opening its menu still shows every full name. */
   .header .brand {
-    min-width: 28px;
-    flex-shrink: 100;
+    min-width: max-content;
+    flex-shrink: 0;
   }
   .header-actions .guide-menu,
   .header-actions #rules-button,
@@ -192,6 +193,14 @@
   }
   .header-actions #rules-button .guide-rotating-label {
     grid-template-columns: minmax(0, 1fr);
+    flex: 1 1 0;
+  }
+  .header-actions .guide-menu {
+    flex: 1 1 0;
+    min-width: 16px;
+  }
+  .header-actions #rules-button {
+    width: 100%;
   }
   .header-actions #rules-button .guide-rotating-label > span {
     overflow: hidden;
@@ -204,8 +213,9 @@
     flex-shrink: 0;
   }
   .header .brand > span:last-child {
-    overflow: hidden;
-    text-overflow: ellipsis;
+    min-width: max-content;
+    overflow: visible;
+    text-overflow: clip;
     white-space: nowrap;
   }
   .header-actions .settings-button {
@@ -213,8 +223,10 @@
   }
   .header-actions {
     left: 0;
+    flex: 1 1 0;
     min-width: 0;
     gap: 10px;
+    justify-content: flex-end;
   }
   .entry-welcome {
     gap: 8px;
@@ -227,6 +239,17 @@
   .header {
     padding-inline: 12px;
     gap: 6px;
+  }
+  .header .brand {
+    gap: 6px;
+    font-size: 17px;
+    letter-spacing: 1.5px;
+  }
+  .header .brand-light {
+    display: inline;
+    font-size: 10px;
+    letter-spacing: 1px;
+    margin-left: 4px;
   }
 }
 @media (prefers-reduced-motion: reduce) {

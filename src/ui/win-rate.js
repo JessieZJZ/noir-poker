@@ -1,6 +1,6 @@
 import { deckOfCards, rankText } from '../engine/poker.js';
 import { createWinRateSession } from '../engine/win-rate-session.js';
-import { getLocale, setLocalizedHTML } from '../i18n/index.js';
+import { formatDecimal, setLocalizedHTML } from '../i18n/index.js';
 import { renderCard } from './cards.js';
 import { createDialogScrollLock } from './dialog-scroll-lock.js';
 import { historyLayers } from './history-layer.js';
@@ -14,7 +14,7 @@ const BOARD_MARKS = ['♠', '♣', '♥', '♦', '♠'];
 const SUIT_ORDER = [0, 1, 2, 3];
 const PICKER_RANKS = [14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2];
 const deck = deckOfCards();
-const percent = (value) => `${(value * 100).toFixed(2)}%`;
+const percent = (value) => `${formatDecimal(value * 100)}%`;
 const cardName = (card) => `${rankText(card.rank)}${card.symbol}`;
 const playerName = (player) => (player.hero ? '你' : `对手 ${player.number}`);
 const samePlace = (a, b) => a?.type === b.type && a?.index === b.index && a?.id === b.id;
@@ -87,10 +87,10 @@ function playersMarkup(view) {
 function statusMarkup(view) {
   if (view.status === 'computing') return '正在计算全部公共牌组合…';
   if (view.status === 'idle') return '';
-  const samples = new Intl.NumberFormat(getLocale()).format(view.samples);
+  const samples = formatDecimal(view.samples, 0);
   return view.method === 'exact'
     ? `已精确计算全部 ${samples} 种公共牌组合。`
-    : `已模拟 ${samples} 次发牌，误差约 ±${(view.margin * 100).toFixed(2)}%。`;
+    : `已模拟 ${samples} 次发牌，误差约 ±${formatDecimal(view.margin * 100)}%。`;
 }
 function pickerTitle(view) {
   const { target } = view;

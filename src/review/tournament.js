@@ -9,8 +9,8 @@ import {
   eliminationPremium,
 } from '../engine/push-fold.js';
 
-// Tournament spots for the hero's review, in plain words: a short stack only
-// moves all-in or folds, and near the final table a call that can end the
+// Tournament spots for the hero's review, in plain words: compare push/fold
+// at short stacks, and near the final table a call that can end the
 // game needs a clear margin. Both are training heuristics from public
 // stacks and seats, never hidden cards or the result.
 const percent = (n) => Math.round(n * 100) + '%';
@@ -90,10 +90,10 @@ export function shortStackSpot(s, ctx) {
   return {
     code: 'short-stack-push-fold',
     status: 'consider',
-    title: '短筹码只在全下和弃牌之间选择',
+    title: '短筹码优先比较全下与弃牌',
     reason: [base, verdict, inRange ? leaderNote : ''].join(''),
     alternative: inRange ? shoveAction : passive,
-    lesson: '短筹码时小额加注或平跟会让你后面无法弃牌，也不能逼走对手。',
+    lesson: '短筹码时，小额加注或平跟可能让后续难以弃牌；仍需结合位置、价格和合法动作比较。',
     plan,
   };
 }

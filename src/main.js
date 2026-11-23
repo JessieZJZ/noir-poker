@@ -25,6 +25,8 @@ try {
   startup.stage('controls');
   const { prepareDropdowns } = await import('./ui/dropdowns.js');
   prepareDropdowns();
+  const { prepareButtonLabels } = await import('./ui/button-label-fit.js');
+  prepareButtonLabels();
   // The controller has prepared the waiting table and its pre-paint fitting.
   // Readiness must also complete while the page's animation clock is paused.
   document.documentElement.dataset.appReady = 'true';

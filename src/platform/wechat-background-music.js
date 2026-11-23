@@ -1,5 +1,10 @@
 import { createWechatLoopPlayer } from './wechat-loop-player.js';
-import { createMusicController, BACKGROUND_MUSIC_VOLUME } from '../ui/background-music.js';
+import {
+  createMusicController,
+  BACKGROUND_MUSIC_VOLUME,
+  loopFor,
+  loopPosition,
+} from '../ui/background-music.js';
 import { createMusicFade } from '../ui/music-fade.js';
 
 const RECOVERY_DELAY_MS = 300;
@@ -26,6 +31,7 @@ export function createWechatBackgroundMusic(
       }));
   function innerPlayer() {
     let audio = null;
+    let positioned = false;
     let loading = null;
     let loaded = false;
     let wanted = false;
@@ -70,9 +76,23 @@ export function createWechatBackgroundMusic(
         audio.obeyMuteSwitch = false;
         audio.onPlay?.(() => {
           if (disposed) return;
+          // The first play opens at the loop start, once.
+          if (!positioned) {
+            positioned = true;
+            const { start } = loopFor(audio.duration);
+            if (start > 0 && !(audio.currentTime >= start)) audio.seek?.(start);
+          }
           playing = wanted && !disposed;
           if (!playing) audio.pause();
           else fade.start();
+        });
+        // The player loops the whole file. A file whose loop starts after an
+        // intro jumps back one period before its end instead; it continues
+        // the period past the loop end, so a late timeupdate lands in place.
+        audio.onTimeUpdate?.(() => {
+          const loop = loopFor(audio.duration);
+          if (loop.start > 0 && audio.currentTime >= loop.end)
+            audio.seek(loopPosition(audio.currentTime, loop));
         });
         audio.onPause?.(recover);
         audio.onStop?.(recover);

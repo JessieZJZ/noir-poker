@@ -24,7 +24,7 @@ test('deep button suited connectors receive a concrete call and conditional sque
   const detail = page.locator('#review-detail');
   await expect(page.locator('#review-selected-status')).toHaveText('建议跟注 500');
   await expect(page.locator('#review-timeline .review-status')).toHaveText(['建议跟注 500']);
-  await expect(detail).toContainText('先比较跟注 500 与有条件的3-bet 加注至 2K');
+  await expect(detail).toContainText('先比较跟注 500 与有条件的 3-bet 加注至 2K');
   await expect(detail).toContainText('若开池者范围较宽、平跟者有足够弃牌空间');
   await expect(detail).toContainText('3-bet 加注至 2K');
   await expect(detail).toContainText('不代表天然拥有范围优势');
@@ -128,7 +128,7 @@ test('review prices, actor references and draw verdicts stay coherent in the exi
     contentType: 'image/png',
   });
   await select(7);
-  await expect(evidence).toContainText('4 / 5 同花连接牌');
+  await expect(evidence).toContainText('5 / 4 同花连接牌');
   await expect(summary).toContainText(
     /同花连接牌.*37.0%.*点数仍偏低.*更高同花.*若出现加注或者再加注.*建议弃牌/,
   );
@@ -165,7 +165,7 @@ test('review prices, actor references and draw verdicts stay coherent in the exi
   const bot = page.locator('#review-opponent-detail .review-explanation');
   // The opponent tab explains his own draw and price, not player coaching.
   await expect(bot).toContainText('当前主要依靠两头顺听牌改善');
-  await expect(bot).toContainText('需要至少24.3%的胜率');
+  await expect(bot).toContainText('需要至少 24.3% 的胜率');
   const paragraphs = await bot.locator('.review-analysis-heading ~ p').allTextContents();
   expect(paragraphs.join('').match(/Kai/g)).toHaveLength(1);
   await expect(bot).not.toContainText('；');
@@ -191,6 +191,7 @@ test('new recommendation clauses and key information switch across all locales',
       el.dispatchEvent(new Event('change'));
     }, locale);
     await expect(page.locator('html')).toHaveAttribute('lang', locale);
+    const allInAmount = '1.62M';
     for (const i of [0, 6, 7, 8, 9]) {
       await page.locator(`[data-review-index="${i}"]`).click();
       const text = await page
@@ -206,7 +207,7 @@ test('new recommendation clauses and key information switch across all locales',
       if (!['zh-CN', 'zh-TW', 'ja'].includes(locale))
         expect(text.join('')).not.toMatch(/\p{Script=Han}/u);
       await expect(page.locator('#review-evidence')).toContainText(
-        i === 0 ? '140K' : [6, 9].includes(i) ? '520K' : i === 8 ? '1.62M' : '100K',
+        i === 0 ? '140K' : [6, 9].includes(i) ? '520K' : i === 8 ? allInAmount : '100K',
       );
     }
   }

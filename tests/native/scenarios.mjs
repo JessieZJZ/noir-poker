@@ -403,16 +403,13 @@ export async function nativeScenarios(app) {
     const music = await app.waitFor(
       () =>
         app.evaluate(() => {
-          const audio = document.querySelector('audio[data-background-music]');
-          return audio &&
-            !audio.paused &&
-            audio.currentTime > 0.1 &&
-            Number(audio.dataset.musicGain) === 1
+          const audio = document.querySelector('[data-background-music]')?.backgroundMusic;
+          return audio && !audio.paused && audio.currentTime > 0.1 && audio.gain === 1
             ? {
                 time: audio.currentTime,
-                gain: Number(audio.dataset.musicGain),
-                source: audio.currentSrc,
-                count: document.querySelectorAll('audio[data-background-music]').length,
+                gain: audio.gain,
+                source: audio.source,
+                count: document.querySelectorAll('[data-background-music]').length,
               }
             : null;
         }),
@@ -420,22 +417,25 @@ export async function nativeScenarios(app) {
       'Music must already play before the first native touch',
     );
     await app.evaluate(() => {
-      const audio = document.querySelector('audio[data-background-music]');
+      const audio = document.querySelector('[data-background-music]')?.backgroundMusic;
       window.__entryMusicAudio = audio;
       window.__entryMusicTimes = [audio.currentTime];
-      window.__entryMusicObserve = () => window.__entryMusicTimes.push(audio.currentTime);
-      audio.addEventListener('timeupdate', window.__entryMusicObserve);
+      window.__entryMusicObserve = setInterval(
+        () => window.__entryMusicTimes.push(audio.currentTime),
+        100,
+      );
     });
     const progress = () =>
       app.evaluate(() => {
-        const audio = document.querySelector('audio[data-background-music]');
+        const audio = document.querySelector('[data-background-music]')?.backgroundMusic;
         const samples = window.__entryMusicTimes;
         return {
           time: audio.currentTime,
-          count: document.querySelectorAll('audio[data-background-music]').length,
+          count: document.querySelectorAll('[data-background-music]').length,
           samePlayer: audio === window.__entryMusicAudio,
           naturalLoop: samples.some(
-            (time, index) => index > 0 && samples[index - 1] > audio.duration - 0.6 && time < 0.6,
+            (time, index) =>
+              index > 0 && samples[index - 1] > audio.loopEnd - 0.6 && time < audio.loopStart + 0.6,
           ),
         };
       });
@@ -557,7 +557,7 @@ export async function nativeScenarios(app) {
     assert.equal(continued.samePlayer, true);
     assert.equal(continued.count, 1);
     await app.evaluate(() => {
-      window.__entryMusicAudio.removeEventListener('timeupdate', window.__entryMusicObserve);
+      clearInterval(window.__entryMusicObserve);
       delete window.__entryMusicAudio;
       delete window.__entryMusicObserve;
       delete window.__entryMusicTimes;
@@ -565,12 +565,12 @@ export async function nativeScenarios(app) {
     await app.evaluate(() => {
       window.__entryMusicLifecycle = [];
       window.__entryMusicListener = ({ detail }) => {
-        const audio = document.querySelector('audio[data-background-music]');
+        const audio = document.querySelector('[data-background-music]')?.backgroundMusic;
         window.__entryMusicLifecycle.push({
           active: detail.active,
           paused: audio.paused,
           time: audio.currentTime,
-          gain: Number(audio.dataset.musicGain),
+          gain: audio.gain,
           at: performance.now(),
         });
       };
@@ -613,9 +613,13 @@ export async function nativeScenarios(app) {
     const resumed = await app.waitFor(
       () =>
         app.evaluate(() => {
-          const audio = document.querySelector('audio[data-background-music]');
-          return !audio.paused && Number(audio.dataset.musicGain) === 1
-            ? { time: audio.currentTime, duration: audio.duration, at: performance.now() }
+          const audio = document.querySelector('[data-background-music]')?.backgroundMusic;
+          return !audio.paused && audio.gain === 1
+            ? {
+                time: audio.currentTime,
+                period: audio.loopEnd - audio.loopStart,
+                at: performance.now(),
+              }
             : null;
         }),
       10000,
@@ -624,15 +628,14 @@ export async function nativeScenarios(app) {
     // The track loops, and a slow runner's sample can arrive long after the
     // resume. Continuing playback advances (around the loop) by at most the
     // page time since foreground; a restart from 0 would advance by far more.
-    // Half a second of backward seek jitter at the pause point is not a wrap.
+    // Half a second of backward jitter at the pause point is not a wrap.
     const advanced =
-      ((((resumed.time - paused.time + 0.5) % resumed.duration) + resumed.duration) %
-        resumed.duration) -
+      ((((resumed.time - paused.time + 0.5) % resumed.period) + resumed.period) % resumed.period) -
       0.5;
     const elapsed = (resumed.at - foreground.at) / 1000;
     assert.ok(
       advanced <= elapsed + 1,
-      `Music resumed at ${resumed.time}s after pausing at ${paused.time}s of ${resumed.duration}s, ${elapsed.toFixed(1)}s after foreground`,
+      `Music resumed at ${resumed.time}s after pausing at ${paused.time}s (period ${resumed.period}s), ${elapsed.toFixed(1)}s after foreground`,
     );
     return {
       before,
@@ -652,6 +655,7 @@ export async function nativeScenarios(app) {
     try {
       await app.evaluate(() => window.noir.requestSmallBlind('10000'));
       await app.relaunch();
+      const { playerCount } = await app.state();
       const layout = await app.evaluate(() => {
         const box = (s) => document.querySelector(s).getBoundingClientRect();
         // Waiting, the game info card replaces the practice card below the table.
@@ -662,6 +666,7 @@ export async function nativeScenarios(app) {
         return {
           waiting: document.querySelector('.game-surface').dataset.entryState,
           blinds: document.querySelector('#info-blinds').textContent,
+          blindStructure: document.querySelector('#entry-structure-levels').textContent,
           stack: document.querySelector('#hero-stack').textContent,
           sameTop: hand.bottom <= blinds.top,
           noOverlap: hand.right <= surface.right && blinds.right <= practice.right,
@@ -671,6 +676,14 @@ export async function nativeScenarios(app) {
       });
       assert.equal(layout.waiting, 'waiting');
       assert.equal(layout.blinds, '10K / 20K');
+      const cap = {
+        5: '180K / 360K',
+        6: '210K / 420K',
+        7: '250K / 500K',
+        8: '290K / 580K',
+        9: '320K / 640K',
+      };
+      assert.ok(layout.blindStructure.includes(cap[playerCount]), layout.blindStructure);
       assert.equal(layout.stack, '2M');
       assert.equal(layout.sameTop, true);
       assert.equal(layout.noOverlap, true);
@@ -1562,6 +1575,92 @@ export async function nativeScenarios(app) {
     await app.screenshot('table-hint-content');
     return observed;
   });
+  await check('localized-table-chrome', async () => {
+    await waitForNativeHeroTurn(app, { advanceSettled: true });
+    const tablet = await app.evaluate(() => document.documentElement.dataset.tablet === 'true');
+    const readings = [];
+    const switchLocale = async (locale) => {
+      await app.click('#opponents-button');
+      await app.select('#language-select', locale);
+      await app.waitFor(
+        () => app.evaluate((expected) => document.documentElement.lang === expected, locale),
+        5000,
+        'The selected locale must load',
+      );
+      await app.click('#opponents-dialog .close-dialog');
+    };
+    const orientations = tablet ? ['PORTRAIT', 'LANDSCAPE', 'PORTRAIT'] : ['PORTRAIT'];
+    try {
+      for (const locale of ['ru', 'ja']) {
+        await switchLocale(locale);
+        for (const orientation of orientations) {
+          if (tablet) await app.rotate(orientation);
+          await app.waitFor(
+            () =>
+              app.evaluate(
+                (portrait) => portrait === innerHeight > innerWidth,
+                orientation === 'PORTRAIT',
+              ),
+            5000,
+            'The requested orientation must settle',
+          );
+          const reading = await app.evaluate(() => {
+            const banner = document.querySelector('#coach-content');
+            const tip = document.querySelector('#coach-tip');
+            const toggle = document.querySelector('#hint-toggle');
+            if (toggle.getAttribute('aria-checked') === 'true') toggle.click();
+            toggle.click();
+            const fits = (target) => {
+              const element = document.querySelector(target);
+              const box = element.getBoundingClientRect();
+              const range = document.createRange();
+              range.selectNodeContents(element);
+              return (
+                box.width > 0 &&
+                [...range.getClientRects()].every(
+                  (r) => !r.width || (r.left >= box.left - 1 && r.right <= box.right + 1),
+                )
+              );
+            };
+            const handCenters = [...document.querySelector('.hand-label').children]
+              .map((item) => item.getBoundingClientRect())
+              .filter((box) => box.width > 0)
+              .map((box) => (box.top + box.bottom) / 2);
+            const countdown = document.querySelector('#blind-progress');
+            const countdownStyle = getComputedStyle(countdown);
+            return {
+              handFits:
+                fits('.hand-label') && Math.max(...handCenters) - Math.min(...handCenters) <= 1,
+              blindsFit: fits('.blind-info'),
+              countdownFits:
+                fits('#blind-progress') &&
+                countdownStyle.whiteSpace === 'nowrap' &&
+                countdown.getBoundingClientRect().height <=
+                  parseFloat(countdownStyle.lineHeight) + 1,
+              countdown: document.querySelector('#blind-progress').textContent,
+              hintVisible: !banner.hidden,
+              hintFullWidth: tip.scrollWidth <= tip.clientWidth + 1,
+              scrolling: banner.dataset.scrolling === 'true',
+              overflows: tip.getBoundingClientRect().width > banner.clientWidth + 1,
+              hint: tip.textContent,
+            };
+          });
+          assert.ok(reading.handFits && reading.blindsFit && reading.countdownFits);
+          assert.ok(reading.countdown.length > 0 && reading.hint.length > 0);
+          assert.ok(reading.hintVisible && reading.hintFullWidth);
+          assert.equal(reading.scrolling, reading.overflows);
+          await app.screenshot(
+            `localized-table-${locale}-${orientation.toLowerCase()}-${readings.length}`,
+          );
+          readings.push({ locale, orientation, ...reading });
+        }
+      }
+    } finally {
+      if (tablet) await app.rotate('PORTRAIT');
+      await switchLocale('zh-CN');
+    }
+    return readings;
+  });
   await check('combined-feedback-preference', async () => {
     await app.evaluate(() => {
       const nativePromise = window.Capacitor.nativePromise;
@@ -1576,6 +1675,8 @@ export async function nativeScenarios(app) {
         return nativePromise.call(this, plugin, method, ...args);
       };
       AudioBufferSourceNode.prototype.start = function (...args) {
+        // The background music is the one long decoded source, not a cue.
+        if (this.buffer?.duration > 60) return start.apply(this, args);
         window.__feedbackProbe.audio++;
         const samples = this.buffer?.getChannelData(0);
         if (samples?.length) {
@@ -1664,13 +1765,15 @@ export async function nativeScenarios(app) {
       window.__polishCues = [];
       window.__polishStart = AudioBufferSourceNode.prototype.start;
       AudioBufferSourceNode.prototype.start = function (...args) {
+        // The background music is the one long decoded source, not a cue.
+        if (this.buffer.duration > 60) return window.__polishStart.apply(this, args);
         const pcm = this.buffer.getChannelData(0);
         window.__polishCues.push({
           samples: pcm.length,
           rms: Math.sqrt(pcm.reduce((sum, value) => sum + value * value, 0) / pcm.length),
           peak: pcm.reduce((peak, value) => Math.max(peak, Math.abs(value)), 0),
           musicGain: Number(
-            document.querySelector('audio[data-background-music]')?.dataset.musicGain,
+            document.querySelector('[data-background-music]')?.backgroundMusic?.gain,
           ),
         });
         return window.__polishStart.apply(this, args);
@@ -1681,13 +1784,14 @@ export async function nativeScenarios(app) {
       const music = await app.waitFor(
         () =>
           app.evaluate(() => {
-            const audio = document.querySelector('audio[data-background-music]');
-            return audio && !audio.paused && audio.readyState >= 2 && audio.currentTime > 0.1
+            const audio = document.querySelector('[data-background-music]')?.backgroundMusic;
+            return audio && !audio.paused && audio.ready && audio.currentTime > 0.1
               ? {
-                  source: audio.currentSrc,
+                  source: audio.source,
                   time: audio.currentTime,
                   duration: audio.duration,
                   loop: audio.loop,
+                  loopEnd: audio.loopEnd,
                 }
               : null;
           }),
@@ -1696,12 +1800,12 @@ export async function nativeScenarios(app) {
       );
       assert.equal(music.loop, true);
       assert.ok(music.source.endsWith('/audio/background-music-mobile.m4a'));
-      assert.ok(music.duration > 93.6 && music.duration < 93.8);
+      assert.ok(music.duration > music.loopEnd && music.duration < music.loopEnd + 1);
       await app.waitFor(
         () =>
           app.evaluate(
             () =>
-              Number(document.querySelector('audio[data-background-music]')?.dataset.musicGain) ===
+              Number(document.querySelector('[data-background-music]')?.backgroundMusic?.gain) ===
               1,
           ),
         5000,
@@ -1710,15 +1814,16 @@ export async function nativeScenarios(app) {
       await app.click('#opponents-dialog .close-dialog');
       await waitForNativeHeroTurn(app);
       await app.evaluate(() => {
-        const audio = document.querySelector('audio[data-background-music]');
+        const audio = document.querySelector('[data-background-music]')?.backgroundMusic;
         window.__polishCues = [];
         window.__steadyMusic = { audio, started: audio.currentTime, samples: [] };
         window.__steadyMusic.timer = setInterval(
           () =>
             window.__steadyMusic.samples.push({
-              gain: Number(audio.dataset.musicGain),
+              gain: audio.gain,
               paused: audio.paused,
-              samePlayer: document.querySelector('audio[data-background-music]') === audio,
+              samePlayer:
+                document.querySelector('[data-background-music]')?.backgroundMusic === audio,
             }),
           20,
         );
@@ -1781,32 +1886,42 @@ export async function nativeScenarios(app) {
     await app.click('#opponents-button');
     const read = () =>
       app.evaluate(() => {
-        const audio = document.querySelector('audio[data-background-music]');
+        const audio = document.querySelector('[data-background-music]')?.backgroundMusic;
         return audio
           ? {
               paused: audio.paused,
               loop: audio.loop,
               time: audio.currentTime,
               duration: audio.duration,
-              ready: audio.readyState,
-              source: audio.currentSrc,
+              ready: audio.ready,
+              source: audio.source,
+              loopStart: audio.loopStart,
+              loopEnd: audio.loopEnd,
+              mode: audio.mode,
+              reason: audio.reason,
             }
           : null;
       });
     const initial = await app.waitFor(
       async () => {
         const state = await read();
-        return state && !state.paused && state.ready >= 2 && state.time > 0.1 ? state : null;
+        return state && !state.paused && state.ready && state.time > 0.1 ? state : null;
       },
       15000,
       'Local bundled background music must decode and advance',
     );
     assert.equal(initial.loop, true);
-    assert.ok(initial.duration > 93 && initial.duration < 94);
+    assert.ok(initial.duration > initial.loopEnd && initial.duration < initial.loopEnd + 1);
+    assert.equal(initial.loopStart, 0.5, 'Half a second of lead-in before the loop start');
+    assert.equal(
+      initial.mode,
+      'buffer',
+      `Music must loop a decoded buffer, not the element fallback (${initial.reason})`,
+    );
     assert.ok(initial.source.endsWith('/audio/background-music-mobile.m4a'));
     await app.evaluate(watchNativeMusicLoop);
     await app.evaluate(() => {
-      const audio = document.querySelector('audio[data-background-music]');
+      const audio = document.querySelector('[data-background-music]')?.backgroundMusic;
       window.__musicLifecycle = [];
       window.__musicLifecycleListener = ({ detail }) =>
         window.__musicLifecycle.push({
@@ -1859,7 +1974,7 @@ export async function nativeScenarios(app) {
       sound: document.querySelector('#sound-button').getAttribute('aria-checked'),
       music: document.querySelector('#music-button').getAttribute('aria-checked'),
       vibration: document.querySelector('#vibration-button').getAttribute('aria-checked'),
-      musicElements: document.querySelectorAll('audio[data-background-music]').length,
+      musicElements: document.querySelectorAll('[data-background-music]').length,
     }));
     assert.deepEqual(saved, {
       sound: 'false',
@@ -3871,6 +3986,7 @@ export async function nativeScenarios(app) {
     });
   if (app.comparePage)
     await check('all-secondary-pages-match-web', async () => {
+      await enterNativeTable(app);
       const comparisons = [];
       await app.click('#rules-button');
       await app.click('#guide-menu-item');
@@ -3929,6 +4045,16 @@ export async function nativeScenarios(app) {
       );
       await app.evaluate(() => window.scrollTo(0, 0));
       await app.click('#native-about-button');
+      const email = 'zhengjianzhou.jessy@gmail.com';
+      const contact = await app.evaluate(() => {
+        const dialog = document.querySelector('#native-about-dialog');
+        return {
+          text: dialog.textContent,
+          mailto: dialog.querySelector('a[href^="mailto:"]').getAttribute('href'),
+        };
+      });
+      assert.ok(contact.text.includes(`noir studio · ${email}`));
+      assert.equal(contact.mailto, `mailto:${email}`);
       comparisons.push(
         await app.comparePage('about', [
           '#native-about-dialog',
@@ -3941,6 +4067,12 @@ export async function nativeScenarios(app) {
         async () => app.evaluate(() => !!document.querySelector('#policy-language')),
         15000,
         'Local privacy policy must load',
+      );
+      assert.equal(
+        await app.evaluate(() =>
+          document.querySelector('article:not([hidden]) a[href^="mailto:"]').getAttribute('href'),
+        ),
+        `mailto:${email}`,
       );
       comparisons.push(
         await app.comparePage('privacy', [
@@ -4536,6 +4668,21 @@ export async function nativeScenarios(app) {
   await check('beginner-tutorial-guided-hand', async () => {
     const before = await app.state();
     const records = await app.evaluate(() => JSON.stringify(window.noir.getRecords()));
+    const initialLocale = await app.evaluate(() => document.documentElement.lang);
+    const switchLocale = async (locale) => {
+      // The tutorial summary owns modal focus while the showdown is visible.
+      await app.evaluate((value) => {
+        const select = document.querySelector('#language-select');
+        select.value = value;
+        select.dispatchEvent(new Event('change', { bubbles: true }));
+      }, locale);
+      await app.waitFor(
+        () => app.evaluate((value) => document.documentElement.lang === value, locale),
+        5000,
+        'The selected locale must load',
+      );
+    };
+    await switchLocale('it');
     await app.click('#rules-button');
     await app.click('#tutorial-menu-item');
     await app.waitFor(
@@ -4603,6 +4750,12 @@ export async function nativeScenarios(app) {
     assert.equal(finished.tutorial.stage, 'summary');
     assert.equal(finished.phase, 'done');
     assert.ok(finished.result.includes('同花'));
+    const heroName = () =>
+      app.evaluate(() => document.querySelector('#showdown-name-0').textContent.trim());
+    assert.equal(await heroName(), 'Tu');
+    await switchLocale('zh-CN');
+    assert.equal(await heroName(), '你');
+    assert.deepEqual((await app.state()).tutorial, finished.tutorial);
     await app.screenshot('tutorial-lesson-complete');
     // Only Android has a system Back; on iOS it would leave the WebView page.
     if (app.platform === 'android') await app.back();
@@ -4621,6 +4774,7 @@ export async function nativeScenarios(app) {
       before.players.map((player) => player.stack),
     );
     assert.equal(await app.evaluate(() => JSON.stringify(window.noir.getRecords())), records);
+    if (initialLocale !== 'zh-CN') await switchLocale(initialLocale);
     return { hole: finished.hole, result: finished.result, resumedHand: after.hand };
   });
   const unknown = selectedScenarios?.filter((name) => !seenScenarios.has(name));

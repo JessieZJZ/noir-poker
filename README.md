@@ -49,7 +49,7 @@ npm run preview       # 本地检查生产构建，先停止同端口开发服�
 
 首次运行浏览器测试若提示缺少浏览器，执行 `npx playwright install chromium`。测试会自动在 **4175** 端口启动自己的服务，不占用日常开发的 4173，也不复用其他检出的服务。并行 worktree 可用 `NOIR_E2E_PORT=4189 npm run test:e2e` 指定独立端口；端口已占用时直接失败。
 
-CI 将桌面交互套件用 `--shard=1/2`、`--shard=2/2` 分片执行，`browser-ui (desktop)` 要求两片全部通过；用例与断言保持完整，单元回归核对无漏项和重复。移动交互与牌桌几何独立运行，报告下载位置见[移动端 CI](docs/mobile.md)。
+CI 将桌面和移动浏览器交互套件各拆成两个并行任务。对应的 `browser-ui (desktop)` 和 `browser-ui (mobile)` 检查要求各自的两片全部通过，牌桌几何独立运行。单元回归核对每片的用例清单，报告下载位置见[移动端 CI](docs/mobile.md)。
 
 ## 项目结构
 
@@ -211,7 +211,7 @@ npm run mobile:test:ios -- --udid TEST_SIMULATOR_ID --port 4735 --driver-port 81
 
 原生 App 保留当前人物头像与已有说明，图片 SHA-256 校验覆盖同步副本以及真实 `.app`/APK/AAB。CI 增加安装运行级别的两端测试，验证启动、设置保存、头像、下注/弃牌、结算/重打/下一手与系统前后台，保留设备截图和报告；环境与覆盖边界见 [原生 E2E](docs/native-e2e.md)，本次两端安装后结果见 [2026-10-11 验收记录](docs/native-validation-2026-10-11.md)。编译、浏览器、模拟器与真机结果分别记录，不能相互替代。
 
-CI 的独立质量检查、浏览器分组、失败证据与账户启动阻塞排查见 [CI 排错](docs/ci.md)。
+CI 的独立质量检查、浏览器分组、失败证据和自动修复配置见 [CI 排错与自动修复](docs/ci.md)。
 
 Web/iOS/Android 的牌点使用固定 Manrope 700 矢量字形，避免 SVG 文字在牌桌缩放与重绘时改变大小。字体版权和许可保留在 `public/licenses/card-ranks-OFL.txt`。浏览器回归检查反复缩放与牌面重建后的像素稳定性；原生 E2E 另比较后台恢复、六次重绘前后的设备截图数字尺寸与墨色像素数。微信使用自己的 WXML 文字牌点，本次没有改动小程序牌面。
 

@@ -121,23 +121,51 @@ export function soundWav(samples, sampleRate = SOUND_SAMPLE_RATE) {
 // Bump whenever a synthesized cue's samples change; cached WeChat files use it.
 export const SOUND_SYNTH_VERSION = 1;
 
-export function limitSoundMix(sample) {
-  const knee = SOUND_PEAK_CEILING,
-    headroom = 0.92 - knee,
+export function limitSoundMix(sample, knee = SOUND_PEAK_CEILING) {
+  const headroom = 0.92 - knee,
     absolute = Math.abs(sample);
   return absolute <= knee
     ? sample
     : Math.sign(sample) * (knee + headroom * Math.tanh((absolute - knee) / headroom));
 }
 
-// Single mastered cues remain at unity. Only overlapping effects reach this
-// soft knee; the bounded curve prevents their mix from reaching digital clip.
+// The limiter starts just above the loudest single cue, so each cue alone and
+// the music alone pass at unity.
+export const SOUND_LIMIT_THRESHOLD_DB = -2;
+const LIMIT_RATIO = 20;
+// Above the limiter's settled output; only its first milliseconds reach it.
+export const SOUND_SAFETY_KNEE = 0.86;
+
+// Web Audio's compressor adds makeup gain of (1 / curve(1.0))^0.6 (spec,
+// DynamicsCompressorNode processing). Undo it so unlimited audio stays at unity.
+export function soundLimiterTrim(thresholdDb = SOUND_LIMIT_THRESHOLD_DB, ratio = LIMIT_RATIO) {
+  const fullRangeDb = thresholdDb + -thresholdDb / ratio;
+  return Math.pow(10, fullRangeDb / 20) ** 0.6;
+}
+
+// Music and cues meet here. When they coincide, a limiter lowers the whole mix
+// smoothly for a moment instead of bending the waveform, which crackles. A soft
+// knee above the limiter's settled level catches only its attack overshoot.
 export function createSoundOutput(context) {
-  const output = context.createWaveShaper(),
+  const safety = context.createWaveShaper(),
     curve = new Float32Array(32769);
-  for (let i = 0; i < curve.length; i++) curve[i] = limitSoundMix((i * 2) / (curve.length - 1) - 1);
-  output.curve = curve;
-  output.oversample = 'none';
-  output.connect(context.destination);
-  return output;
+  for (let i = 0; i < curve.length; i++)
+    curve[i] = limitSoundMix((i * 2) / (curve.length - 1) - 1, SOUND_SAFETY_KNEE);
+  safety.curve = curve;
+  safety.oversample = 'none';
+  safety.connect(context.destination);
+  if (!context.createDynamicsCompressor) return safety;
+  const limiter = context.createDynamicsCompressor(),
+    trim = context.createGain();
+  limiter.threshold.value = SOUND_LIMIT_THRESHOLD_DB;
+  limiter.knee.value = 0;
+  limiter.ratio.value = LIMIT_RATIO;
+  // Within the compressor's 6 ms look-ahead; a slower attack and release keep
+  // the level change itself from becoming audible modulation.
+  limiter.attack.value = 0.006;
+  limiter.release.value = 0.25;
+  trim.gain.value = soundLimiterTrim();
+  limiter.connect(trim);
+  trim.connect(safety);
+  return limiter;
 }

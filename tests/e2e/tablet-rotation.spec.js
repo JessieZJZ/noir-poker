@@ -24,6 +24,15 @@ async function assertTabletFrame(page, portrait) {
           range = box('.bet-controls input'),
           presets = box('.bet-presets'),
           actions = box('.action-buttons');
+        // The thumb is wider than the rail; it, not only the rail, must clear
+        // the amount above and the shortcut row below.
+        const half =
+            parseFloat(
+              getComputedStyle(document.querySelector('.bet-controls input')).getPropertyValue(
+                '--raise-thumb-size',
+              ),
+            ) / 2,
+          centre = range.top + range.height / 2;
         return {
           fillsScreen: surface.bottom >= innerHeight - 16 && surface.bottom <= innerHeight + 1,
           tableNotCollapsed: table.height > innerHeight * (portrait ? 0.6 : 0.45),
@@ -34,6 +43,7 @@ async function assertTabletFrame(page, portrait) {
           labelAboveRail:
             portrait || (label.width >= controls.width * 0.9 && label.bottom <= range.top + 1),
           railAbovePresets: range.bottom <= presets.top + 1,
+          thumbClear: label.bottom <= centre - half + 0.5 && centre + half <= presets.top + 0.5,
           fullWidthRail: Math.abs(range.width - presets.width) <= 1,
           alignedBottom: portrait || Math.abs(presets.bottom - actions.bottom) <= 1,
         };
@@ -53,6 +63,7 @@ async function assertTabletFrame(page, portrait) {
       arranged: true,
       labelAboveRail: true,
       railAbovePresets: true,
+      thumbClear: true,
       fullWidthRail: true,
       alignedBottom: true,
       completeRail: true,
@@ -127,6 +138,109 @@ for (const browserName of ['chromium', 'webkit']) {
         }
       }
       await page.screenshot({ path: info.outputPath('mini-landscape-after-rotation.png') });
+    } finally {
+      await context.close();
+      await browser.close();
+    }
+  });
+
+  test(`iPad mini ${browserName} repairs rotation when viewport notifications are postponed`, async ({
+    playwright,
+    baseURL,
+  }, info) => {
+    test.skip(info.project.name === 'mobile', 'Explicit tablet matrix runs once');
+    const browser = await playwright[browserName].launch();
+    const context = await browser.newContext({
+      baseURL,
+      hasTouch: true,
+      locale: 'zh-CN',
+      timezoneId: 'Asia/Shanghai',
+    });
+    const page = await context.newPage();
+    const errors = [];
+    page.on('pageerror', (error) => errors.push(error.message));
+    try {
+      // Test-only delivery suppression leaves real viewport/CSS changes and
+      // ordinary timers intact. The production build has no suppression flag.
+      await page.addInitScript(() => {
+        window.viewportRuntimeErrors = [];
+        window.addEventListener('error', (event) =>
+          window.viewportRuntimeErrors.push(event.message),
+        );
+        window.suppressedViewportSignals = { resize: 0, media: 0, observer: 0, frame: 0 };
+        window.viewportResizeProbeLeaks = 0;
+        const block = (kind) => (event) => {
+          if (!window.deferViewportSignals) return;
+          window.suppressedViewportSignals[kind]++;
+          event.stopImmediatePropagation();
+        };
+        window.addEventListener('resize', block('resize'), { capture: true });
+        window.addEventListener('resize', () => {
+          if (window.deferViewportSignals) window.viewportResizeProbeLeaks++;
+        });
+        window.visualViewport?.addEventListener('resize', block('resize'), { capture: true });
+        const matchMedia = window.matchMedia.bind(window);
+        window.matchMedia = (query) => {
+          const media = matchMedia(query);
+          media.addEventListener('change', block('media'), { capture: true });
+          return media;
+        };
+        const Observer = window.ResizeObserver;
+        window.ResizeObserver = class extends Observer {
+          constructor(callback) {
+            super((entries, observer) => {
+              if (window.deferViewportSignals) window.suppressedViewportSignals.observer++;
+              else callback(entries, observer);
+            });
+          }
+        };
+        const raf = window.requestAnimationFrame.bind(window);
+        window.requestAnimationFrame = (callback) =>
+          raf((time) => {
+            if (window.deferViewportSignals) window.suppressedViewportSignals.frame++;
+            else callback(time);
+          });
+      });
+      await prepare(page, { width: 768, height: 1024 });
+      for (const count of [5, 9]) {
+        await page.evaluate((count) => {
+          window.deferViewportSignals = false;
+          window.qa.heroTurn(count);
+          window.qa.stop();
+        }, count);
+        await assertTabletFrame(page, true);
+        const before = await page.evaluate(() => window.noir.getState());
+        const blockerProbe = await page.evaluate(() => {
+          window.deferViewportSignals = true;
+          const before = window.suppressedViewportSignals.resize;
+          // Prove interception independently of whether this browser delivers a
+          // natural resize notification during the real viewport rotation.
+          window.dispatchEvent(new Event('resize'));
+          return {
+            blocked: window.suppressedViewportSignals.resize - before,
+            leaked: window.viewportResizeProbeLeaks,
+          };
+        });
+        expect(blockerProbe).toEqual({ blocked: 1, leaked: 0 });
+        for (const [width, height] of [
+          [1024, 768],
+          [768, 1024],
+        ]) {
+          await page.setViewportSize({ width, height });
+          await assertTabletFrame(page, width < height);
+          expect(await page.evaluate(() => window.noir.getState())).toEqual(before);
+        }
+      }
+      const suppressed = await page.evaluate(() => window.suppressedViewportSignals);
+      // Missing notifications are a valid target condition, so natural
+      // delivery counts are diagnostic rather than an acceptance criterion.
+      expect(await page.evaluate(() => window.viewportResizeProbeLeaks)).toBe(0);
+      expect(errors).toEqual([]);
+      expect(await page.evaluate(() => window.viewportRuntimeErrors)).toEqual([]);
+      await info.attach('postponed-viewport-notifications', {
+        body: JSON.stringify({ suppressed, finalLayout: await page.evaluate(readTableLayout) }),
+        contentType: 'application/json',
+      });
     } finally {
       await context.close();
       await browser.close();
@@ -270,5 +384,27 @@ test('iPad mini webkit refits late public and hero card sizes without another vi
   } finally {
     await context.close();
     await browser.close();
+  }
+});
+
+// The compact landscape dock (901-1150px wide) once let the slider thumb sit
+// on the shortcut buttons. Narrow desktop windows share that dock.
+test('compact landscape docks keep the slider thumb clear of the amount and shortcuts', async ({
+  page,
+}, info) => {
+  test.skip(info.project.name === 'mobile', 'Explicit size matrix runs once');
+  await prepare(page, { width: 1001, height: 962 });
+  for (const size of [
+    { width: 1001, height: 962 },
+    { width: 1024, height: 768 },
+    { width: 1133, height: 744 },
+    { width: 905, height: 600 },
+  ]) {
+    await page.setViewportSize(size);
+    await page.evaluate(() => {
+      window.qa.heroTurn(9);
+      window.qa.stop();
+    });
+    await assertTabletFrame(page, false);
   }
 });

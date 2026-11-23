@@ -32,6 +32,14 @@ test('chip amounts format identically on WeChat device engines without Intl', ()
   }
 });
 
+test('legacy language arguments never change chip notation or hide a whole chip', () => {
+  for (const locale of ['zh-CN', 'en', 'zh-TW', 'ja', 'ko', 'es', 'it', 'pt', 'de', 'fr', 'ru']) {
+    assert.equal(compactChips(7400, locale), '7.4K', locale);
+    assert.equal(compactChips(1000025, locale), '1.000025M', locale);
+    assert.equal(compactChips(-999999, locale), '-999.999K', locale);
+  }
+});
+
 test('action presentation formats adjacent and spaced monetary amounts only', () => {
   for (const [source, expected] of [
     ['你 3-bet 加注至1200', '你 3-bet 加注至1.2K'],

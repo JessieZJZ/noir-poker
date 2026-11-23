@@ -99,9 +99,24 @@ try {
     throw Error('Mini-program page did not reach the expected state');
   };
   await wait((data) => data.tableReady && data.waitingForSeat);
+  assert.equal(await page.$('.blind-progress'), null);
   await mini.screenshot({ path: path.join(output, 'waiting-before-entry.png') });
   await (await page.$('#join-table-button')).tap();
   await wait((data) => !data.dealing && !data.waitingForSeat);
+  const countdown = await page.$('.blind-progress');
+  assert.ok(countdown, 'The live table must show the next blind level');
+  assert.equal((await countdown.text()).trim(), '再打 9 手后涨盲到 200 / 400');
+  const countdownBox = await countdown.offset();
+  const blindBox = await (await page.$('.blind-info')).offset();
+  const countdownSize = await countdown.size();
+  const handBox = await (await page.$('.hand-label')).size();
+  const viewport = report.device.windowWidth;
+  assert.ok(handBox.height <= 22, 'Live hand status fits a single line');
+  assert.ok(countdownSize.height <= 20, 'Countdown fits a single line');
+  assert.ok(countdownBox.top > blindBox.top, 'Countdown sits under the current blinds');
+  assert.ok(countdownBox.left + countdownSize.width <= viewport);
+  report.blindProgress = { text: await countdown.text(), ...countdownBox, ...countdownSize };
+  await mini.screenshot({ path: path.join(output, 'blind-countdown.png') });
   const scrollHomeTop = async () => {
     // Native page scrolling and the Page's onPageScroll event are asynchronous.
     // Finish any overlay restoration before opening the next modal at the top.

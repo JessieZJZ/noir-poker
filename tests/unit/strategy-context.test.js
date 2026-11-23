@@ -147,10 +147,11 @@ test('specific observer payment evidence replaces generic value filler while kee
     audience: 'observer',
   });
   assert.match(result.explanation, /K♠ 10♣.*顶对 10.*选择下注至 810K/);
-  assert.match(result.explanation, /按这个尺度.*较弱成牌可能付费，也有听牌可能跟注/);
+  // The paying clause names the size it judges, so the amount appears twice.
+  assert.match(result.explanation, /按 810K 的尺度，估计较弱成牌仍会继续付费，听牌也可能跟注/);
   assert.match(result.explanation, /补出同花时可能落后/);
   assert.doesNotMatch(result.explanation, /这次拿出|追牌的人付出成本/);
-  assert.equal(result.explanation.match(/810K/g)?.length, 1);
+  assert.equal(result.explanation.match(/810K/g)?.length, 2);
   const hero = enrichStrategy(base, s, a, { action: 'raise', amount: s.amount });
   assert.match(hero.explanation, /这是用顶对 10取值/);
 });

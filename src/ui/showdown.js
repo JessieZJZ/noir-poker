@@ -1,6 +1,6 @@
-import { formatChips, setLocalizedHTML, setLocalizedText } from '../i18n/index.js';
+import { getLocale, formatChips, setLocalizedHTML, setLocalizedText } from '../i18n/index.js';
 import { evaluate, rankText } from '../engine/poker.js';
-import { createActivityFormatter } from './activity.js';
+import { actorIdentity } from '../engine/player-identity.js';
 const escape = (value) =>
   String(value)
     .replaceAll('&', '&amp;')
@@ -95,9 +95,11 @@ export function showdownScenes(g) {
 export function createShowdownController({ card, root = document, prefix = '', animate = true }) {
   const $ = (s) => root.querySelector(s.replace('#', '#' + prefix)),
     format = (n) => formatChips(n);
-  let key = null;
+  let key = null,
+    renderedLocale = null;
   function reset() {
     key = null;
+    renderedLocale = null;
     $('#showdown-stage').hidden = true;
     setLocalizedHTML($('#showdown-scene'), '');
   }
@@ -108,10 +110,30 @@ export function createShowdownController({ card, root = document, prefix = '', a
         reset();
         return;
       }
-      if (key === nextKey) return;
+      if (key === nextKey) {
+        if (renderedLocale !== getLocale()) {
+          for (const scene of showdownScenes(g)) {
+            const article = $('#showdown-scene').querySelector(`[data-player="${scene.id}"]`);
+            if (!article) continue;
+            setLocalizedText(
+              article.querySelector('.showdown-player-heading > span'),
+              scene.awards.length ? '获胜 +' + format(scene.amount) : '未获底池',
+            );
+            if (scene.awards.length)
+              setLocalizedHTML(
+                article.querySelector('.showdown-awards'),
+                scene.awards
+                  .map((a) => `${escape(a.pot)}${a.split ? ' · 平分' : ''} +${format(a.amount)}`)
+                  .join(' · '),
+              );
+          }
+          renderedLocale = getLocale();
+        }
+        return;
+      }
       key = nextKey;
+      renderedLocale = getLocale();
       const scenes = showdownScenes(g);
-      const playerName = createActivityFormatter(g.players);
       $('#showdown-stage').hidden = !scenes.length;
       setLocalizedText(
         $('#showdown-context'),
@@ -120,10 +142,19 @@ export function createShowdownController({ card, root = document, prefix = '', a
       setLocalizedHTML(
         $('#showdown-scene'),
         scenes
-          .map(
-            (s) =>
-              `<article class="showdown-player ${s.awards.length ? 'showdown-winner' : ''}" data-player="${s.id}" aria-label="${escape(s.name)} · ${escape(s.label)}"><div class="showdown-player-heading"><strong>${playerName(s.name)}</strong><span>${s.awards.length ? '获胜 +' + format(s.amount) : '未获底池'}</span></div><div class="winning-title"><strong>${s.label}</strong><span>${s.explanation}</span></div><div class="winning-cards ${animate && s.awards.length ? 'motion-' + s.motion : ''}" data-motion="${s.motion}">${s.cards.map((c, i) => `<div class="winning-card ${s.highlights[i] ? 'rank-match' : 'kicker'}" style="--i:${i}" data-card="${c.key}">${card(c)}</div>`).join('')}</div>${s.awards.length ? `<p class="showdown-awards">${s.awards.map((a) => `${escape(a.pot)}${a.split ? ' · 平分' : ''} +${format(a.amount)}`).join(' · ')}</p>` : '<p class="showdown-awards">最佳五张牌</p>'}</article>`,
-          )
+          .map((s) => {
+            // Keep original name and style text for later locale changes on this hand.
+            const { name, profile, position } = actorIdentity(g, s.id);
+            const nameId = `${prefix}showdown-name-${s.id}`,
+              rankId = `${prefix}showdown-rank-${s.id}`;
+            const actor =
+              escape(name) +
+              (profile ? `<span class="activity-persona">（${escape(profile)}）</span>` : '') +
+              (position
+                ? ` <span class="position activity-position">${escape(position)}</span> `
+                : '');
+            return `<article class="showdown-player ${s.awards.length ? 'showdown-winner' : ''}" data-player="${s.id}" aria-labelledby="${nameId} ${rankId}"><div class="showdown-player-heading"><strong id="${nameId}">${actor}</strong><span>${s.awards.length ? '获胜 +' + format(s.amount) : '未获底池'}</span></div><div class="winning-title"><strong id="${rankId}">${s.label}</strong><span>${s.explanation}</span></div><div class="winning-cards ${animate && s.awards.length ? 'motion-' + s.motion : ''}" data-motion="${s.motion}">${s.cards.map((c, i) => `<div class="winning-card ${s.highlights[i] ? 'rank-match' : 'kicker'}" style="--i:${i}" data-card="${c.key}">${card(c)}</div>`).join('')}</div>${s.awards.length ? `<p class="showdown-awards">${s.awards.map((a) => `${escape(a.pot)}${a.split ? ' · 平分' : ''} +${format(a.amount)}`).join(' · ')}</p>` : '<p class="showdown-awards">最佳五张牌</p>'}</article>`;
+          })
           .join(''),
       );
     },

@@ -256,7 +256,7 @@ test('69o three-bet shows real later public responses separately and Mia AQ four
   const hero = page.locator('#review-coach-explanation');
   await expect(hero).toContainText('350');
   await expect(hero).toContainText('200');
-  await expect(hero).not.toContainText(/随后，|你.*后，Mia选择/);
+  await expect(hero).not.toContainText(/随后，|你.*后，Mia 选择/);
   await expect(page.locator('#review-activity')).toHaveAttribute('open', '');
   await expect(page.locator('#review-activity-list')).toContainText(/Mia.*1K/);
   await expect(page.locator('#review-activity-list')).toContainText(/River.*950/);
