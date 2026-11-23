@@ -28,7 +28,11 @@ const put = (name, text) => {
   fs.writeFileSync(name, text + "\n");
 };
 const rows = [];
-for (const c of Object.values(catalog)) {
+for (const c of Object.values(catalog).filter(
+  ({ locale }) =>
+    !process.env.NOIR_STORE_LOCALES ||
+    process.env.NOIR_STORE_LOCALES.split(",").includes(locale),
+)) {
   const dir = path.join(out, c.locale),
     fields = {
       apple: {
@@ -74,7 +78,9 @@ for (const c of Object.values(catalog)) {
     }
   put(
     path.join(dir, "video", "narration.txt"),
-    c.say.map((s, i) => String(i + 1).padStart(2, "0") + " | " + s).join("\n"),
+    (c.closing ? [...c.say, c.closing.caption] : c.say)
+      .map((s, i) => String(i + 1).padStart(2, "0") + " | " + s)
+      .join("\n"),
   );
   put(
     path.join(dir, "captions-and-screenshots.csv"),
@@ -150,7 +156,7 @@ Apple 语言代码：${c.apple}。Google Play 语言代码：${c.google}。
 - video/poster-store-1920x886.png：标准尺寸封面；Apple 后台也可直接从视频选帧。
 - video/youtube-thumbnail-1280x720.png：YouTube 缩略图。
 - video/captions.srt：本语言字幕；视频已有画内字幕，另加字幕时避免重复显示。
-- video/narration.txt：六个分镜的本语言旁白。
+- video/narration.txt：本语言旁白。
 
 Apple 上传视频文件；Google Play 的视频栏填写公开或不公开的 YouTube 视频链接，需要先把本语言视频上传到自己的 YouTube。这里不代为发布。
 

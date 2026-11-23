@@ -3,11 +3,17 @@ import fs from "node:fs";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
 const root = process.cwd(),
-  out = path.join(root, ".artifacts/store-media-v6/edit-plan.json");
+  out = path.join(
+    root,
+    process.env.NOIR_STORE_BASE || ".artifacts/store-media-v6",
+    "edit-plan.json",
+  );
 const locales = ["zh-TW", "ja", "ko", "es", "it", "pt", "de", "fr", "ru"],
   scenes = ["tutorial", "practice", "review", "retry", "records"];
 const plans = {};
-for (const locale of locales) {
+for (const locale of (
+  process.env.NOIR_STORE_LOCALES || locales.join(",")
+).split(",")) {
   const dir = filmSource(locale).dir,
     events = JSON.parse(
       fs.readFileSync(path.join(dir, locale + "--edit-events.json")),

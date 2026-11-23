@@ -13,7 +13,11 @@ const root = path.resolve(
   dir = path.resolve(
     process.argv[2] || path.join(root, ".artifacts/store-media-v6/delivery"),
   ),
-  qa = path.join(root, ".artifacts/store-media-v6/qa");
+  qa = path.resolve(
+    root,
+    process.env.NOIR_STORE_BASE || ".artifacts/store-media-v6",
+    "qa",
+  );
 fs.mkdirSync(qa, { recursive: true });
 const results = [],
   files = [],
@@ -52,7 +56,23 @@ const image = async (
     sha256: hash(file),
   });
 };
-for (const c of Object.values(catalog)) {
+const captureBuild = process.env.NOIR_STORE_BASE
+  ? JSON.parse(
+      fs.readFileSync(
+        path.join(path.dirname(qa), "capture-build.json"),
+        "utf8",
+      ),
+    )
+  : {
+      commit: "94e56b1ef009f0729508491e5f2155fd37d2bf99",
+      sourceDigest:
+        "392adab3981eccbe478c517af67ba17873a7f24c2ef2ba32262c7d2cdf0a2e81",
+    };
+for (const c of Object.values(catalog).filter(
+  ({ locale }) =>
+    !process.env.NOIR_STORE_LOCALES ||
+    process.env.NOIR_STORE_LOCALES.split(",").includes(locale),
+)) {
   const base = path.join(dir, c.locale),
     counts = JSON.parse(
       fs.readFileSync(path.join(base, "field-validation.json")),
@@ -177,11 +197,12 @@ for (const c of Object.values(catalog)) {
   }
   const srt = fs.readFileSync(path.join(base, "video/captions.srt"), "utf8");
   assert(
-    (srt.match(/-->/g) || []).length === 6 &&
-      c.say.every((line) => srt.includes(line)),
+    (srt.match(/-->/g) || []).length === (c.closing ? 7 : 6) &&
+      c.say.every((line) => srt.includes(line)) &&
+      (!c.closing || srt.includes(c.closing.caption)),
     c.locale + " captions match local spoken text",
   );
-  if (!["en", "zh-CN"].includes(c.locale)) {
+  if (process.env.NOIR_STORE_BASE || !["en", "zh-CN"].includes(c.locale)) {
     const source = filmSource(c.locale);
     assert(true, c.locale + " actual matching replay correction", {
       source: path.relative(root, source.dir),
@@ -193,9 +214,8 @@ for (const c of Object.values(catalog)) {
     JSON.stringify(
       {
         locale: c.locale,
-        sourceProductCommit: "94e56b1ef009f0729508491e5f2155fd37d2bf99",
-        sourceDigest:
-          "392adab3981eccbe478c517af67ba17873a7f24c2ef2ba32262c7d2cdf0a2e81",
+        sourceProductCommit: captureBuild.commit,
+        sourceDigest: captureBuild.sourceDigest,
         movieProbe: probe,
         screenshotCount: 56,
         desktopSource: "Production Web, not a verified Play Games PC binary",

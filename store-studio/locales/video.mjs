@@ -7,7 +7,10 @@ import sharp from "sharp";
 import { catalog } from "./catalog.mjs";
 const studio = path.resolve(path.dirname(fileURLToPath(import.meta.url)), ".."),
   root = path.dirname(studio),
-  base = path.join(root, ".artifacts/store-media-v6");
+  base = path.resolve(
+    root,
+    process.env.NOIR_STORE_BASE || ".artifacts/store-media-v6",
+  );
 const output = path.resolve(process.argv[2] || path.join(base, "delivery"));
 const plans = JSON.parse(fs.readFileSync(path.join(base, "edit-plan.json"))),
   board = JSON.parse(fs.readFileSync(path.join(studio, "storyboard.json"))),
@@ -100,15 +103,46 @@ for (const locale of locales) {
     for (const f of files) h.update(fs.readFileSync(f));
     return h.digest("hex");
   };
-  const audioInputs = [
-    path.join(studio, "public/assets/background-music-mobile.m4a"),
-    ...ids.map((id) =>
-      path.join(studio, "public/voice-locales", locale, id + ".wav"),
-    ),
+  const closingStart = 27.15;
+  const closingPanel = c.closing
+    ? path.join(base, "render", locale, "panel-closing.png")
+    : null;
+  const narration = [
+    ...ids.map((id, index) => ({
+      file: path.join(
+        studio,
+        c.closing && index < 5 ? "public/voice-v2" : "public/voice-locales",
+        locale,
+        id + ".wav",
+      ),
+      text: c.say[index],
+      start: board.scenes[index].from + 0.3,
+      end:
+        c.closing && index === 5 ? closingStart : board.scenes[index].to - 0.24,
+    })),
+    ...(c.closing
+      ? [
+          {
+            file: path.join(
+              studio,
+              "public/voice-locales",
+              locale,
+              "closing.wav",
+            ),
+            text: c.closing.caption,
+            start: closingStart + 0.15,
+            end: 29.78,
+          },
+        ]
+      : []),
   ];
+  const music = path.join(studio, "public/assets/background-music-mobile.m4a");
+  const audioInputs = [music, ...narration.map(({ file }) => file)];
   const audioFingerprint = hashFiles(
     audioInputs,
-    JSON.stringify(c.say) + "music.30/voice.30/29.8",
+    JSON.stringify(
+      narration.map(({ text, start, end }) => ({ text, start, end })),
+    ) + "music.30/29.8",
   );
   const audioMeta = path.join(dest, "soundtrack-source.json");
   if (
@@ -116,32 +150,23 @@ for (const locale of locales) {
     !fs.existsSync(audioMeta) ||
     JSON.parse(fs.readFileSync(audioMeta)).fingerprint !== audioFingerprint
   ) {
-    const args = [
-      "-stream_loop",
-      "-1",
-      "-i",
-      path.join(studio, "public/assets/background-music-mobile.m4a"),
-    ];
-    for (const id of ids)
-      args.push(
-        "-i",
-        path.join(studio, "public/voice-locales", locale, id + ".wav"),
-      );
+    const args = ["-stream_loop", "-1", "-i", music];
+    for (const { file } of narration) args.push("-i", file);
     const f = ["[0:a]volume=0.30,afade=t=in:d=1,afade=t=out:st=28.5:d=1.3[m]"];
-    for (let i = 0; i < 6; i++)
+    for (let i = 0; i < narration.length; i++)
       f.push(
         "[" +
           (i + 1) +
           ":a]adelay=" +
-          Math.round((board.scenes[i].from + 0.3) * 1000) +
+          Math.round(narration[i].start * 1000) +
           ":all=1[a" +
           i +
           "]",
       );
     f.push(
       "[m]" +
-        ids.map((_, i) => "[a" + i + "]").join("") +
-        "amix=inputs=7:normalize=0,alimiter=limit=0.89:level=false,atrim=end=29.8[out]",
+        narration.map((_, i) => "[a" + i + "]").join("") +
+        `amix=inputs=${narration.length + 1}:normalize=0,alimiter=limit=0.89:level=false,atrim=end=29.8[out]`,
     );
     run([
       ...args,
@@ -166,7 +191,7 @@ for (const locale of locales) {
           locale,
           fingerprint: audioFingerprint,
           voice: c.voice,
-          text: c.say,
+          text: narration.map(({ text }) => text),
           musicGain: 0.3,
         },
         null,
@@ -179,6 +204,7 @@ for (const locale of locales) {
       ...ids.map((id, i) =>
         path.join(base, "render", locale, "panel-" + i + ".png"),
       ),
+      ...(closingPanel ? [closingPanel] : []),
       ...ids.slice(0, 5).map((id) => path.join(p.source, locale, id + ".mp4")),
       path.join(p.source, locale + "--05-calculator.png"),
       path.join(studio, "locales/video.mjs"),
@@ -312,6 +338,11 @@ for (const locale of locales) {
   // RGB H.264 at CRF 0 is lossless; final store and master encodes remain independent.
   for (let i = 0; i < 6; i++) {
     const file = path.join(work, ids[i] + "-full.mkv");
+    const invite = ids[i] === "calculator" && closingPanel;
+    const closingOffset = closingStart - board.scenes[i].from;
+    const graph = invite
+      ? `[2:v]format=rgba,trim=duration=8,fade=t=in:st=${closingOffset.toFixed(3)}:d=0.28:alpha=1[invite];[0:v][invite]overlay=shortest=1[panel];[panel][1:v]overlay=2590:80:shortest=1,format=rgb24[out]`
+      : "[0:v][1:v]overlay=2590:80:shortest=1,format=rgb24[out]";
     if (!fs.existsSync(file))
       run([
         "-loop",
@@ -322,10 +353,11 @@ for (const locale of locales) {
         path.join(base, "render", locale, "panel-" + i + ".png"),
         "-i",
         path.join(work, ids[i] + ".mkv"),
+        ...(invite ? ["-loop", "1", "-framerate", "30", "-i", invite] : []),
         "-filter_complex_threads",
         "1",
         "-filter_complex",
-        "[0:v][1:v]overlay=2590:80:shortest=1,format=rgb24[out]",
+        graph,
         "-map",
         "[out]",
         "-frames:v",
@@ -448,17 +480,17 @@ for (const locale of locales) {
       .replace(".", ",");
   fs.writeFileSync(
     path.join(dest, "captions.srt"),
-    board.scenes
+    narration
       .map(
-        (s, i) =>
+        ({ start, end, text }, i) =>
           i +
           1 +
           "\n" +
-          stamp(s.from + 0.3) +
+          stamp(start) +
           " --> " +
-          stamp(s.to - 0.24) +
+          stamp(end) +
           "\n" +
-          c.say[i] +
+          text +
           "\n",
       )
       .join("\n"),

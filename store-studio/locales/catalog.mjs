@@ -811,8 +811,12 @@ const films = {
       "Finish a hand. Tap Review. Understand the decision.",
       "Replay the same deal. Try a different decision.",
       "Open your game records. Revisit every hand.",
-      "See your win rate and count your outs.",
+      "Win rate and outs.",
     ],
+    closing: {
+      headline: "Your first hand\nis waiting.",
+      caption: "Come play your first hand.",
+    },
     cards: [
       ["A table for\nyour next decision.", "Offline Hold’em. Your pace."],
       ["Learn at\nthe table.", "Guided hands. Real choices."],
@@ -860,8 +864,12 @@ const films = {
       "打完一手，点开复盘，理解决策。",
       "重新打同一副牌，换一种决策。",
       "打开对局记录，随时回看每手详情。",
-      "看清胜率，也看哪些牌能反超。",
+      "胜率与补牌。",
     ],
+    closing: {
+      headline: "你的第一手，\n等你来打。",
+      caption: "来打你的第一手。",
+    },
     cards: [
       ["每一手，\n练习更好的判断。", "离线德州扑克，按自己的节奏开练"],
       ["跟着实战，\n学会规则。", "从互动引导，到独立完成一手牌"],

@@ -31,6 +31,22 @@ export const RemotionRoot: React.FC = () => (
           height={500}
           defaultProps={{ locale: language as keyof typeof catalog }}
         />,
+        ...("closing" in catalog[language as keyof typeof catalog]
+          ? [
+              <Still
+                key={language + "-closing"}
+                id={"Panel-" + language + "-closing"}
+                component={FilmPanel}
+                width={1920}
+                height={886}
+                defaultProps={{
+                  locale: language as keyof typeof catalog,
+                  scene: 5,
+                  closing: true,
+                }}
+              />,
+            ]
+          : []),
         ...Array.from({ length: 6 }, (_, scene) => (
           <Still
             key={language + scene}

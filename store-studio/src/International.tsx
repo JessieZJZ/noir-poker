@@ -16,12 +16,7 @@ import media from "./locale-media.json";
 
 type Locale = keyof typeof copy;
 export type Format =
-  | "phone"
-  | "tablet7"
-  | "tablet10"
-  | "desktop"
-  | "apple"
-  | "ipad";
+  "phone" | "tablet7" | "tablet10" | "desktop" | "apple" | "ipad";
 export const formats: Record<Format, [number, number]> = {
   phone: [1080, 1920],
   tablet7: [1920, 1080],
@@ -100,12 +95,18 @@ const Picture = ({ src }: { src: string }) => (
 export const FilmPanel = ({
   locale,
   scene,
+  closing = false,
 }: {
   locale: Locale;
   scene: number;
+  closing?: boolean;
 }) => {
   useReady();
   const c = copy[locale];
+  const invitation = closing && "closing" in c ? c.closing : null;
+  const headline = invitation?.headline ?? c.head[scene];
+  const caption = invitation?.caption ?? c.say[scene];
+  const lead = invitation ? c.lead[scene].split("\n")[0] : c.lead[scene];
   return (
     <AbsoluteFill style={{ fontFamily: family(locale), color: "#f2f4ea" }}>
       <Backdrop />
@@ -135,7 +136,7 @@ export const FilmPanel = ({
         </div>
         <h1
           style={{
-            fontSize: fit(c.head[scene], 94, 1060, locale),
+            fontSize: fit(headline, 94, 1060, locale),
             lineHeight: 1.14,
             letterSpacing: -2.5,
             fontWeight: 700,
@@ -143,7 +144,7 @@ export const FilmPanel = ({
             margin: 0,
           }}
         >
-          {c.head[scene]}
+          {headline}
         </h1>
         <div
           style={{
@@ -155,13 +156,13 @@ export const FilmPanel = ({
         />
         <div
           style={{
-            fontSize: fit(c.lead[scene], 34, 1050, locale, 400),
+            fontSize: fit(lead, 34, 1050, locale, 400),
             lineHeight: 1.65,
             whiteSpace: "pre-line",
             color: "#b1c6bd",
           }}
         >
-          {c.lead[scene]}
+          {lead}
         </div>
       </div>
       <div style={{ position: "absolute", left: 1285, top: 32 }}>
@@ -176,7 +177,7 @@ export const FilmPanel = ({
           top: 737,
           width: 1050,
           color: "#e7efe7",
-          fontSize: fit(c.say[scene], 31, 1000, locale, 400),
+          fontSize: fit(caption, 31, 1000, locale, 400),
           lineHeight: 1.45,
           display: "flex",
           alignItems: "center",
@@ -186,7 +187,7 @@ export const FilmPanel = ({
         <span
           style={{ width: 3, height: 30, flexShrink: 0, background: "#9de7cd" }}
         />
-        <span>{c.say[scene]}</span>
+        <span>{caption}</span>
       </div>
       <div
         style={{

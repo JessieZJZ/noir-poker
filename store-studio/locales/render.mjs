@@ -32,14 +32,19 @@ const folder = {
 fs.mkdirSync(out, { recursive: true });
 const renderPublic = path.join(
   studio,
-  "../.artifacts/store-media-v6/public-render",
+  "..",
+  process.env.NOIR_STORE_BASE || ".artifacts/store-media-v6",
+  "public-render",
 );
 fs.mkdirSync(renderPublic, { recursive: true });
-for (const dir of ["assets", "locales"])
-  if (fs.existsSync(path.join(studio, "public", dir)))
-    fs.cpSync(path.join(studio, "public", dir), path.join(renderPublic, dir), {
-      recursive: true,
-    });
+for (const dir of ["assets", "locales"]) {
+  const source =
+    dir === "locales" && process.env.NOIR_STORE_BASE
+      ? path.join(path.resolve(process.env.NOIR_STORE_BASE), "staged/locales")
+      : path.join(studio, "public", dir);
+  if (fs.existsSync(source))
+    fs.cpSync(source, path.join(renderPublic, dir), { recursive: true });
+}
 const serveUrl = await bundle({
   entryPoint: path.join(studio, "src/index.ts"),
   rootDir: studio,
@@ -82,6 +87,12 @@ try {
         );
         console.log(locale + " panel " + i);
       }
+      if (catalog[locale].closing)
+        await render(
+          "Panel-" + locale + "-closing",
+          path.join(out, locale, "panel-closing.png"),
+          2,
+        );
     } else {
       const media = JSON.parse(
         fs.readFileSync(path.join(studio, "src/locale-media.json")),

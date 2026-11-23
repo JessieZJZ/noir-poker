@@ -6,7 +6,10 @@ import { createHash } from "node:crypto";
 import { catalog } from "./catalog.mjs";
 const studio = path.resolve(path.dirname(fileURLToPath(import.meta.url)), ".."),
   root = path.dirname(studio),
-  base = path.join(root, ".artifacts/store-media-v6");
+  base = path.resolve(
+    root,
+    process.env.NOIR_STORE_BASE || ".artifacts/store-media-v6",
+  );
 const keys = [
   "01-practice",
   "02-tutorial",
@@ -22,7 +25,9 @@ const mapping = {},
   missing = [];
 const old = path.join(root, ".artifacts/store-media-v2/raw"),
   raw = path.join(base, "raw");
-for (const locale of Object.keys(catalog)) {
+for (const locale of (
+  process.env.NOIR_STORE_LOCALES || Object.keys(catalog).join(",")
+).split(",")) {
   mapping[locale] = {};
   evidence[locale] = {};
   for (const device of [
@@ -35,20 +40,23 @@ for (const locale of Object.keys(catalog)) {
   ]) {
     let folders = [];
     if (device === "ios")
-      folders =
-        locale === "en"
+      folders = process.env.NOIR_STORE_BASE
+        ? [filmSource(locale).dir]
+        : locale === "en"
           ? [path.join(old, "ios-en-correction")]
           : locale === "zh-CN"
             ? [path.join(old, "ios")]
             : [filmSource(locale).dir];
     else if (device === "ipad")
-      folders = ["zh-CN", "en"].includes(locale)
-        ? [path.join(old, "ipad")]
-        : [
-            path.join(raw, "ipad-warm"),
-            path.join(raw, "ipad-repair"),
-            path.join(raw, "ipad"),
-          ];
+      folders = process.env.NOIR_STORE_BASE
+        ? [path.join(raw, "ipad")]
+        : ["zh-CN", "en"].includes(locale)
+          ? [path.join(old, "ipad")]
+          : [
+              path.join(raw, "ipad-warm"),
+              path.join(raw, "ipad-repair"),
+              path.join(raw, "ipad"),
+            ];
     else if (device === "desktop")
       folders = [path.join(raw, "desktop-repair"), path.join(raw, "desktop")];
     else folders = [path.join(raw, "android-" + device, locale)];
@@ -62,7 +70,12 @@ for (const locale of Object.keys(catalog)) {
         continue;
       }
       const relative = "locales/" + locale + "/" + device + "/" + key + ".png",
-        target = path.join(studio, "public", relative);
+        target = path.join(
+          process.env.NOIR_STORE_BASE
+            ? path.join(base, "staged")
+            : path.join(studio, "public"),
+          relative,
+        );
       fs.mkdirSync(path.dirname(target), { recursive: true });
       fs.copyFileSync(source, target);
       files[key] = relative;
@@ -79,10 +92,12 @@ for (const locale of Object.keys(catalog)) {
     mapping[locale][device] = files;
   }
 }
-fs.writeFileSync(
-  path.join(studio, "src/locale-media.json"),
-  JSON.stringify(mapping, null, 2) + "\n",
-);
+if (missing.length) throw Error("Missing captures: " + missing.join(", "));
+if (!process.env.NOIR_STORE_BASE)
+  fs.writeFileSync(
+    path.join(studio, "src/locale-media.json"),
+    JSON.stringify(mapping, null, 2) + "\n",
+  );
 fs.writeFileSync(
   path.join(base, "capture-provenance.json"),
   JSON.stringify(evidence, null, 2) + "\n",

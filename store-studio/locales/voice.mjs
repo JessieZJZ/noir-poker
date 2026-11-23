@@ -16,8 +16,10 @@ const run = (bin, args) =>
     p.on("error", reject);
     p.on("close", (c) => (c === 0 ? resolve(a) : reject(Error(b))));
   });
-const jobs = Object.values(catalog).filter(
-  (x) => !["en", "zh-CN"].includes(x.locale),
+const jobs = Object.values(catalog).filter((x) =>
+  process.env.NOIR_STORE_LOCALES
+    ? process.env.NOIR_STORE_LOCALES.split(",").includes(x.locale)
+    : !x.closing,
 );
 const evidence = [];
 const checksum = (file) =>
@@ -27,9 +29,14 @@ async function worker() {
     const c = jobs.shift(),
       dir = path.join(root, "public/voice-locales", c.locale);
     fs.mkdirSync(dir, { recursive: true });
-    for (let i = 0; i < 6; i++) {
-      const file = path.join(dir, ids[i]),
-        text = c.say[i];
+    const clips = c.closing
+      ? [
+          ["calculator", c.say[5], 2.2],
+          ["closing", c.closing.caption, 2.45],
+        ]
+      : ids.map((id, i) => [id, c.say[i], limits[i]]);
+    for (const [id, text, limit] of clips) {
+      const file = path.join(dir, id);
       const metadata = file + ".json";
       const previous = fs.existsSync(metadata)
         ? JSON.parse(fs.readFileSync(metadata))
@@ -66,16 +73,16 @@ async function worker() {
             file + ".mp3",
           ]),
         );
-        if (d > limits[i]) {
+        if (d > limit) {
           evidence.push({
             locale: c.locale,
-            id: ids[i],
+            id,
             text,
             duration: d,
-            limit: limits[i],
+            limit,
             status: "too-long",
           });
-          console.log("TOO LONG " + c.locale + "/" + ids[i] + " " + d);
+          console.log("TOO LONG " + c.locale + "/" + id + " " + d);
           continue;
         }
         await run("ffmpeg", [
@@ -108,13 +115,13 @@ async function worker() {
       }
       evidence.push({
         locale: c.locale,
-        id: ids[i],
+        id,
         text,
         voice: c.voice,
         provider: "Microsoft neural TTS via edge-tts 7.3.1",
         status: "prepared",
       });
-      console.log(c.locale + "/" + ids[i] + " ready");
+      console.log(c.locale + "/" + id + " ready");
     }
   }
 }

@@ -5,7 +5,11 @@ const root = path.resolve(
     path.dirname(fileURLToPath(import.meta.url)),
     "../..",
   ),
-  raw = path.join(root, ".artifacts/store-media-v6/raw");
+  raw = path.join(
+    root,
+    process.env.NOIR_STORE_BASE || ".artifacts/store-media-v6",
+    "raw",
+  );
 const actionText = {
   fold: /^弃牌/,
   check: /^过牌/,

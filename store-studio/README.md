@@ -1,3 +1,33 @@
+## 简体中文与英语素材更新
+
+这套素材对应 PR #70 的 `8bc68fe8f9e8e8a1e3cc4924d08c96b823453092`。使用同一个提交的 iOS、Android 调试构建和生产模式 Web 页面重新采集。中英文片尾从约 27.2 秒开始加入本地化邀请，右侧保留真实胜率计算器。标准版和 4K 母版均为 29.8 秒。
+
+使用下列变量，将本次素材与原有 11 语言素材分开。除归档命令的目标目录外，命令从仓库根目录运行。
+
+```sh
+export NOIR_STORE_BASE=.artifacts/store-media-bilingual
+export NOIR_STORE_LOCALES=zh-CN,en
+```
+
+先按下方流程编译并采集到 `$NOIR_STORE_BASE/raw/ios`、`raw/ipad`、`raw/android-*` 和 `raw/desktop`。iOS 手机采集用 `NOIR_STORE_MODE=locales`，iPad 用 `NOIR_STORE_MODE=stills-locales NOIR_STORE_STILLS_ONLY=1`，桌面脚本用 `NOIR_STORE_OUTPUT="$NOIR_STORE_BASE/raw/desktop"`。将产品提交与两端构建验证所得的源码摘要写入 `$NOIR_STORE_BASE/capture-build.json`，字段为 `commit` 和 `sourceDigest`。
+
+```sh
+node store-studio/prepare-brand.mjs
+node store-studio/locales/catalog.mjs
+node store-studio/locales/voice.mjs
+node store-studio/locales/stage.mjs
+node store-studio/locales/render.mjs panels "$NOIR_STORE_BASE/render"
+node store-studio/locales/render.mjs stills "$NOIR_STORE_BASE/delivery"
+node store-studio/locales/edit-plan.mjs
+node store-studio/locales/video.mjs "$NOIR_STORE_BASE/delivery"
+node store-studio/locales/package.mjs "$NOIR_STORE_BASE/delivery"
+node store-studio/locales/gallery.mjs "$NOIR_STORE_BASE/delivery"
+node store-studio/locales/verify.mjs "$NOIR_STORE_BASE/delivery"
+python3 store-studio/locales/archive.py "$NOIR_STORE_BASE/delivery" '/absolute/path/PR70-ZH-EN'
+```
+
+新片尾使用与前五镜相同的 Xiaoxiao 和 Emma 女声。重建时沿用此前保存在 `public/voice-v2/` 的前五镜 WAV，可通过 `node store-studio/prepare-voice.mjs` 补齐。
+
 # 11 种语言上架素材包
 
 ![11 种语言置顶图概览](previews/v6-locales.jpg)

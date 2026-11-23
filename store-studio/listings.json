@@ -29,7 +29,7 @@
     },
     "google": {
       "name": "NOIR Poker",
-      "shortDescription": "Offline Hold'em practice with guided hands, decision reviews and poker odds",
+      "shortDescription": "New to Hold’em? Learn, replay, review, check odds. Virtual chips. No sign-in.",
       "fullDescriptionSource": "apple.description"
     },
     "reviewNotes": "No login or demo account is required. All practice uses virtual chips with no cash value, chip sales, redemption, prizes or real-money betting. The installed app bundles its code, fonts, artwork, music and review logic locally. On first launch, tap Take a seat. The header menu opens Beginner tutorial, How to play, Game records and Win Rate Calculator. Finish a hand to open its decision review or replay the original deal. Settings includes language, table size, starting blinds, difficulty and computer styles. No remote production server URL is configured. The app is a paid upfront purchase without in-app purchases or subscriptions."
@@ -45,7 +45,7 @@
     },
     "google": {
       "name": "NOIR Poker",
-      "shortDescription": "离线德州扑克练习：互动引导、决策复盘、原牌重打与胜率计算，使用虚拟筹码，无需登录",
+      "shortDescription": "面向初学者的德州扑克练习：互动引导、原牌重打、决策复盘、胜率计算。使用虚拟筹码，无需登录。",
       "fullDescriptionSource": "apple.description"
     },
     "reviewNotes": "无需登录或审核账号。所有练习使用无现金价值的虚拟筹码，不出售筹码、不能提现、无奖金或真钱下注。安装包包含本地代码、字体、画面、音乐与复盘逻辑。首次启动点击“入座开练”；顶部菜单可进入新手引导、玩法指南、对局记录与胜率计算器。完成一手牌后可复盘或重打原牌。设置中可调整语言、人数、起始盲注、难度及电脑风格。正式包没有远程 server.url。应用采用商店买断制，无应用内购买或订阅。"

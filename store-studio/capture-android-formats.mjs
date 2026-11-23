@@ -1,13 +1,15 @@
 import { spawnSync, spawn } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
-const root = process.cwd(),
-  sdk = "/Users/zjz/Library/Android/sdk",
+const sdk = "/Users/zjz/Library/Android/sdk",
   adb = path.join(sdk, "platform-tools/adb"),
   serial = "emulator-5584",
   avd = "Noir_Store_Media_API35_PR70";
-const logDir = path.join(root, ".artifacts/store-media-v6/qa");
-fs.mkdirSync(logDir, { recursive: true });
+const base = path.resolve(
+  process.env.NOIR_STORE_BASE || ".artifacts/store-media-v6",
+);
+const logDir = path.join(base, "qa");
+fs.mkdirSync(path.join(logDir, "failed-first-pass"), { recursive: true });
 const run = (args, timeout = 120000) => {
   const r = spawnSync(adb, ["-s", serial, ...args], {
     encoding: "utf8",
@@ -79,11 +81,7 @@ try {
     for (const locale of (
       process.env.NOIR_STORE_LOCALES || "zh-CN,en,zh-TW,ja,ko,es,it,pt,de,fr,ru"
     ).split(",")) {
-      const out = path.join(
-        root,
-        ".artifacts/store-media-v6/raw/android-" + name,
-        locale,
-      );
+      const out = path.join(base, "raw/android-" + name, locale);
       fs.mkdirSync(out, { recursive: true });
       const report = path.join(out, "report.json");
       if (
