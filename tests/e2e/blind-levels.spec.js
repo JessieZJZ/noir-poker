@@ -6,7 +6,7 @@ test('the ready table and settings describe this game’s rising blinds and fina
   page,
 }) => {
   await page.goto('/');
-  await expect(page.locator('html')).toHaveAttribute('data-app-ready', 'true');
+  await page.waitForFunction(() => !!window.qa);
   await expect(page.locator('#entry-structure')).toBeVisible();
   const count = (await state(page)).playerCount;
   const cap = {

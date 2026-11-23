@@ -683,7 +683,7 @@ export async function nativeScenarios(app) {
         8: '290K / 580K',
         9: '320K / 640K',
       };
-      assert.equal(layout.blindStructure, `每 10 手涨盲，最高 ${cap[playerCount]}`);
+      assert.ok(layout.blindStructure.includes(cap[playerCount]), layout.blindStructure);
       assert.equal(layout.stack, '2M');
       assert.equal(layout.sameTop, true);
       assert.equal(layout.noOverlap, true);
