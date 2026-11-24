@@ -103,7 +103,7 @@ for (const locale of locales) {
     for (const f of files) h.update(fs.readFileSync(f));
     return h.digest("hex");
   };
-  const closingStart = 27.15;
+  const closingStart = 26.8;
   const closingPanel = c.closing
     ? path.join(base, "render", locale, "panel-closing.png")
     : null;
@@ -116,7 +116,7 @@ for (const locale of locales) {
         id + ".wav",
       ),
       text: c.say[index],
-      start: board.scenes[index].from + 0.3,
+      start: board.scenes[index].from + (c.closing && index === 5 ? 0.2 : 0.3),
       end:
         c.closing && index === 5 ? closingStart : board.scenes[index].to - 0.24,
     })),
@@ -130,7 +130,7 @@ for (const locale of locales) {
               "closing.wav",
             ),
             text: c.closing.caption,
-            start: closingStart + 0.15,
+            start: closingStart + 0.18,
             end: 29.78,
           },
         ]
@@ -339,10 +339,11 @@ for (const locale of locales) {
   for (let i = 0; i < 6; i++) {
     const file = path.join(work, ids[i] + "-full.mkv");
     const invite = ids[i] === "calculator" && closingPanel;
-    const closingOffset = closingStart - board.scenes[i].from;
+    const fullScene = "[0:v][1:v]overlay=2590:80:shortest=1";
+    const cutFrame = Math.round((closingStart - board.scenes[i].from) * 30);
     const graph = invite
-      ? `[2:v]format=rgba,trim=duration=8,fade=t=in:st=${closingOffset.toFixed(3)}:d=0.28:alpha=1[invite];[0:v][invite]overlay=shortest=1[panel];[panel][1:v]overlay=2590:80:shortest=1,format=rgb24[out]`
-      : "[0:v][1:v]overlay=2590:80:shortest=1,format=rgb24[out]";
+      ? `${fullScene},trim=end_frame=${cutFrame},format=rgb24[odds];[2:v]trim=end_frame=${lengths[i] - cutFrame},format=rgb24[invite];[odds][invite]concat=n=2:v=1:a=0[out]`
+      : `${fullScene},format=rgb24[out]`;
     if (!fs.existsSync(file))
       run([
         "-loop",
@@ -517,6 +518,12 @@ for (const locale of locales) {
         width: 3840,
         height: 1772,
         voice: c.voice,
+        ...(closingPanel
+          ? {
+              closingStart,
+              closingSource: path.join(base, "staged/outro", locale + ".png"),
+            }
+          : {}),
         cuts: p.cuts,
         cues: p.cues,
       },

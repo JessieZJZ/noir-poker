@@ -16,7 +16,12 @@ import media from "./locale-media.json";
 
 type Locale = keyof typeof copy;
 export type Format =
-  "phone" | "tablet7" | "tablet10" | "desktop" | "apple" | "ipad";
+  | "phone"
+  | "tablet7"
+  | "tablet10"
+  | "desktop"
+  | "apple"
+  | "ipad";
 export const formats: Record<Format, [number, number]> = {
   phone: [1080, 1920],
   tablet7: [1920, 1080],
@@ -92,6 +97,27 @@ const Picture = ({ src }: { src: string }) => (
     style={{ width: "100%", height: "100%", objectFit: "contain" }}
   />
 );
+const FilmCaption = ({ locale, text }: { locale: Locale; text: string }) => (
+  <div
+    style={{
+      position: "absolute",
+      left: 118,
+      top: 737,
+      width: 1050,
+      color: "#e7efe7",
+      fontSize: fit(text, 31, 1000, locale, 400),
+      lineHeight: 1.45,
+      display: "flex",
+      alignItems: "center",
+      gap: 20,
+    }}
+  >
+    <span
+      style={{ width: 3, height: 30, flexShrink: 0, background: "#9de7cd" }}
+    />
+    <span>{text}</span>
+  </div>
+);
 export const FilmPanel = ({
   locale,
   scene,
@@ -104,9 +130,51 @@ export const FilmPanel = ({
   useReady();
   const c = copy[locale];
   const invitation = closing && "closing" in c ? c.closing : null;
-  const headline = invitation?.headline ?? c.head[scene];
-  const caption = invitation?.caption ?? c.say[scene];
-  const lead = invitation ? c.lead[scene].split("\n")[0] : c.lead[scene];
+  if (invitation)
+    return (
+      <AbsoluteFill style={{ fontFamily: family(locale), color: "#f2f4ea" }}>
+        <Backdrop />
+        <div style={{ position: "absolute", left: 118, top: 136, width: 1070 }}>
+          <Img
+            src={staticFile("assets/app-icon.png")}
+            style={{
+              display: "block",
+              width: 108,
+              height: 108,
+              borderRadius: 25,
+              boxShadow: "0 18px 50px #030d12b0",
+            }}
+          />
+          <h1
+            style={{
+              fontSize: fit(invitation.headline, 110, 1040, locale),
+              lineHeight: 1.08,
+              letterSpacing: -2,
+              fontWeight: 730,
+              whiteSpace: "pre-line",
+              margin: "35px 0 27px",
+            }}
+          >
+            {invitation.headline}
+          </h1>
+          <p
+            style={{
+              margin: 0,
+              fontSize: fit(invitation.lead, 37, 1040, locale, 400),
+              color: "#b1c6bd",
+            }}
+          >
+            {invitation.lead}
+          </p>
+        </div>
+        <div style={{ position: "absolute", left: 1285, top: 32 }}>
+          <IPhoneFrame width={390} height={822}>
+            <Picture src={`outro/${locale}.png`} />
+          </IPhoneFrame>
+        </div>
+        <FilmCaption locale={locale} text={invitation.caption} />
+      </AbsoluteFill>
+    );
   return (
     <AbsoluteFill style={{ fontFamily: family(locale), color: "#f2f4ea" }}>
       <Backdrop />
@@ -136,7 +204,7 @@ export const FilmPanel = ({
         </div>
         <h1
           style={{
-            fontSize: fit(headline, 94, 1060, locale),
+            fontSize: fit(c.head[scene], 94, 1060, locale),
             lineHeight: 1.14,
             letterSpacing: -2.5,
             fontWeight: 700,
@@ -144,7 +212,7 @@ export const FilmPanel = ({
             margin: 0,
           }}
         >
-          {headline}
+          {c.head[scene]}
         </h1>
         <div
           style={{
@@ -156,13 +224,13 @@ export const FilmPanel = ({
         />
         <div
           style={{
-            fontSize: fit(lead, 34, 1050, locale, 400),
+            fontSize: fit(c.lead[scene], 34, 1050, locale, 400),
             lineHeight: 1.65,
             whiteSpace: "pre-line",
             color: "#b1c6bd",
           }}
         >
-          {lead}
+          {c.lead[scene]}
         </div>
       </div>
       <div style={{ position: "absolute", left: 1285, top: 32 }}>
@@ -170,25 +238,7 @@ export const FilmPanel = ({
           <div />
         </IPhoneFrame>
       </div>
-      <div
-        style={{
-          position: "absolute",
-          left: 118,
-          top: 737,
-          width: 1050,
-          color: "#e7efe7",
-          fontSize: fit(caption, 31, 1000, locale, 400),
-          lineHeight: 1.45,
-          display: "flex",
-          alignItems: "center",
-          gap: 20,
-        }}
-      >
-        <span
-          style={{ width: 3, height: 30, flexShrink: 0, background: "#9de7cd" }}
-        />
-        <span>{caption}</span>
-      </div>
+      <FilmCaption locale={locale} text={c.say[scene]} />
       <div
         style={{
           position: "absolute",

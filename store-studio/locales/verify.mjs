@@ -68,6 +68,10 @@ const captureBuild = process.env.NOIR_STORE_BASE
       sourceDigest:
         "392adab3981eccbe478c517af67ba17873a7f24c2ef2ba32262c7d2cdf0a2e81",
     };
+const outroReportFile = path.join(path.dirname(qa), "raw/outro/report.json");
+const outroCapture = fs.existsSync(outroReportFile)
+  ? JSON.parse(fs.readFileSync(outroReportFile, "utf8"))
+  : null;
 for (const c of Object.values(catalog).filter(
   ({ locale }) =>
     !process.env.NOIR_STORE_LOCALES ||
@@ -202,6 +206,26 @@ for (const c of Object.values(catalog).filter(
       (!c.closing || srt.includes(c.closing.caption)),
     c.locale + " captions match local spoken text",
   );
+  if (c.closing && outroCapture) {
+    const videoEdit = JSON.parse(
+      fs.readFileSync(path.join(base, "video/edit-provenance.json"), "utf8"),
+    );
+    const originalStill = path.join(
+      path.dirname(outroReportFile),
+      c.locale + "--08-invitation.png",
+    );
+    assert(
+      outroCapture.status === "passed" &&
+        outroCapture.build?.appName === "Noir Poker" &&
+        videoEdit.closingStart === 26.8 &&
+        fs.existsSync(originalStill) &&
+        Boolean(videoEdit.closingSource) &&
+        fs.existsSync(videoEdit.closingSource) &&
+        hash(originalStill) === hash(videoEdit.closingSource),
+      c.locale +
+        " final three seconds use the installed iOS invitation capture",
+    );
+  }
   if (process.env.NOIR_STORE_BASE || !["en", "zh-CN"].includes(c.locale)) {
     const source = filmSource(c.locale);
     assert(true, c.locale + " actual matching replay correction", {
@@ -216,6 +240,9 @@ for (const c of Object.values(catalog).filter(
         locale: c.locale,
         sourceProductCommit: captureBuild.commit,
         sourceDigest: captureBuild.sourceDigest,
+        ...(c.closing && outroCapture
+          ? { invitationBuild: outroCapture.build, invitationStartsAt: 26.8 }
+          : {}),
         movieProbe: probe,
         screenshotCount: 56,
         desktopSource: "Production Web, not a verified Play Games PC binary",

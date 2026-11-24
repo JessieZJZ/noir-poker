@@ -1,6 +1,6 @@
 ## 简体中文与英语素材更新
 
-这套素材对应 PR #70 的 `8bc68fe8f9e8e8a1e3cc4924d08c96b823453092`。使用同一个提交的 iOS、Android 调试构建和生产模式 Web 页面重新采集。中英文片尾从约 27.2 秒开始加入本地化邀请，右侧保留真实胜率计算器。标准版和 4K 母版均为 29.8 秒。
+中英文视频在 26.8 秒切到独立邀请画面，显示 Noir Poker 标题及最新 PR #70 iOS 构建的真实入座界面。正片与商店截图来自 `8bc68fe8f9e8e8a1e3cc4924d08c96b823453092`。此次用于补拍的 PR #70 提交 `c493dfa36f7138ac44090ca26cd5a095b0a395fc` 更新了安装名称，牌桌等应用界面源码在两次采集之间保持一致。标准版和 4K 母版均为 29.8 秒。
 
 使用下列变量，将本次素材与原有 11 语言素材分开。除归档命令的目标目录外，命令从仓库根目录运行。
 
@@ -10,6 +10,16 @@ export NOIR_STORE_LOCALES=zh-CN,en
 ```
 
 先按下方流程编译并采集到 `$NOIR_STORE_BASE/raw/ios`、`raw/ipad`、`raw/android-*` 和 `raw/desktop`。iOS 手机采集用 `NOIR_STORE_MODE=locales`，iPad 用 `NOIR_STORE_MODE=stills-locales NOIR_STORE_STILLS_ONLY=1`，桌面脚本用 `NOIR_STORE_OUTPUT="$NOIR_STORE_BASE/raw/desktop"`。将产品提交与两端构建验证所得的源码摘要写入 `$NOIR_STORE_BASE/capture-build.json`，字段为 `commit` 和 `sourceDigest`。
+
+```sh
+NOIR_STORE_MODE=outro node store-studio/capture-native.mjs ios --udid DEDICATED_IOS_UDID --port 4784 --driver-port 8894 --output "$NOIR_STORE_BASE/raw/outro"
+mkdir -p "$NOIR_STORE_BASE/staged/outro"
+for locale in zh-CN en; do
+  cp "$NOIR_STORE_BASE/raw/outro/${locale}--08-invitation.png" "$NOIR_STORE_BASE/staged/outro/${locale}.png"
+done
+```
+
+使用已有正片画面更新片尾时，在原六张分镜面板旁用 `NOIR_RENDER_OVERWRITE=1 node store-studio/locales/render.mjs outro "$NOIR_STORE_BASE/render"` 单独渲染新面板。
 
 ```sh
 node store-studio/prepare-brand.mjs
@@ -26,7 +36,7 @@ node store-studio/locales/verify.mjs "$NOIR_STORE_BASE/delivery"
 python3 store-studio/locales/archive.py "$NOIR_STORE_BASE/delivery" '/absolute/path/PR70-ZH-EN'
 ```
 
-新片尾使用与前五镜相同的 Xiaoxiao 和 Emma 女声。重建时沿用此前保存在 `public/voice-v2/` 的前五镜 WAV，可通过 `node store-studio/prepare-voice.mjs` 补齐。
+新片尾使用与前五镜相同的 Xiaoxiao 和 Emma 女声。问句与邀请分别合成，中间保留短停顿。重建时沿用此前保存在 `public/voice-v2/` 的前五镜 WAV，可通过 `node store-studio/prepare-voice.mjs` 补齐。
 
 # 11 种语言上架素材包
 

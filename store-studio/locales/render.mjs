@@ -37,10 +37,10 @@ const renderPublic = path.join(
   "public-render",
 );
 fs.mkdirSync(renderPublic, { recursive: true });
-for (const dir of ["assets", "locales"]) {
+for (const dir of ["assets", "locales", "outro"]) {
   const source =
-    dir === "locales" && process.env.NOIR_STORE_BASE
-      ? path.join(path.resolve(process.env.NOIR_STORE_BASE), "staged/locales")
+    dir !== "assets" && process.env.NOIR_STORE_BASE
+      ? path.join(path.resolve(process.env.NOIR_STORE_BASE), "staged", dir)
       : path.join(studio, "public", dir);
   if (fs.existsSync(source))
     fs.cpSync(source, path.join(renderPublic, dir), { recursive: true });
@@ -76,10 +76,14 @@ try {
     return buffer;
   };
   for (const locale of locales) {
-    if (mode === "panels") {
-      for (const i of (process.env.NOIR_STORE_SCENES || "0,1,2,3,4,5")
-        .split(",")
-        .map(Number)) {
+    if (mode === "panels" || mode === "outro") {
+      const scenes =
+        mode === "outro"
+          ? []
+          : (process.env.NOIR_STORE_SCENES || "0,1,2,3,4,5")
+              .split(",")
+              .map(Number);
+      for (const i of scenes) {
         await render(
           "Panel-" + locale + "-" + i,
           path.join(out, locale, "panel-" + i + ".png"),
@@ -87,7 +91,14 @@ try {
         );
         console.log(locale + " panel " + i);
       }
-      if (catalog[locale].closing)
+      const closingSource = path.join(renderPublic, "outro", locale + ".png");
+      if (
+        mode === "outro" &&
+        catalog[locale].closing &&
+        !fs.existsSync(closingSource)
+      )
+        throw Error("Missing native invitation capture " + closingSource);
+      if (catalog[locale].closing && fs.existsSync(closingSource))
         await render(
           "Panel-" + locale + "-closing",
           path.join(out, locale, "panel-closing.png"),

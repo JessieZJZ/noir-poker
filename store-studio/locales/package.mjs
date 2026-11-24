@@ -124,7 +124,7 @@ for (const c of Object.values(catalog).filter(
     path.join(dir, "README-填写指南.md"),
     `# NOIR Poker · ${c.label} (${c.locale})
 
-本包的公开文案、海报标题、字幕和旁白均对应本语言。品牌名 NOIR Poker 保持一致。
+本包的公开文案、海报标题、字幕和旁白均对应本语言。
 Apple 语言代码：${c.apple}。Google Play 语言代码：${c.google}。
 
 ## Google Play 表单对应文件
@@ -163,7 +163,7 @@ Apple 上传视频文件；Google Play 的视频栏填写公开或不公开的 Y
 ## 画面顺序
 
 八张截图：离线牌桌、新手引导、复盘、重打、胜率与 Outs、对手风格、对局记录、记录详情。
-视频：新手引导 → 本手动态 → 复盘 → 重打改决策 → 对局记录与详情 → 胜率与 Outs。
+视频：新手引导 → 本手动态 → 复盘 → 重打改决策 → 对局记录与详情 → 胜率与 Outs${c.closing ? " → Noir Poker 入座邀请" : ""}。
 
 实际录制来自 PR70 对应产品代码；没有注入测试牌局或在截图上伪造 App 文案。新增宣传表达作了本地化改写。原有 App 界面仍以实际版本为准；这不等于第三方母语人员已完成人工审校。
 

@@ -20,11 +20,22 @@ shutil.copytree(source, destination, dirs_exist_ok=True, ignore=shutil.ignore_pa
 shutil.copy2(qa, destination / "验收报告.json")
 attachments = destination / "验收附件"
 attachments.mkdir(exist_ok=True)
-for name in ["audio-mix-verification.json", "voice-timing.json", "font-coverage.json", "verified-stories.json", "capture-verification.json"]:
+for name in [
+    "audio-mix-verification.json",
+    "voice-timing.json",
+    "font-coverage.json",
+    "verified-stories.json",
+    "capture-verification.json",
+    "outro-capture-verification.json",
+]:
     evidence = source.parent / "qa" / name
     if evidence.exists():
         shutil.copy2(evidence, attachments / name)
 locales = json.loads((source / "语言与上传索引.json").read_text())
+for locale in locales:
+    ending = source.parent / "qa" / f"{locale['locale']}-ending-preview.mp4"
+    if ending.exists():
+        shutil.copy2(ending, attachments / ending.name)
 
 
 def make_zip(output, entries):

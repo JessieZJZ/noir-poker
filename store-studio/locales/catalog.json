@@ -30,8 +30,21 @@
       "胜率与补牌。"
     ],
     "closing": {
-      "headline": "你的第一手，\n等你来打。",
-      "caption": "来打你的第一手。"
+      "headline": "欢迎体验\nNoir Poker",
+      "lead": "按自己的节奏学德州扑克",
+      "caption": "想学德州扑克？来试试吧！",
+      "phrases": [
+        {
+          "text": "想学德州扑克？",
+          "rate": "+9%",
+          "pitch": "+3Hz"
+        },
+        {
+          "text": "来试试吧！",
+          "rate": "+1%",
+          "pitch": "+7Hz"
+        }
+      ]
     },
     "cards": [
       ["每一手，\n练习更好的判断。", "离线德州扑克，按自己的节奏开练"],
@@ -85,8 +98,21 @@
       "Win rate and outs."
     ],
     "closing": {
-      "headline": "Your first hand\nis waiting.",
-      "caption": "Come play your first hand."
+      "headline": "Discover\nNoir Poker",
+      "lead": "Learn Hold’em at your own pace.",
+      "caption": "Curious about Hold’em? Give it a try!",
+      "phrases": [
+        {
+          "text": "Curious about Hold’em?",
+          "rate": "+5%",
+          "pitch": "+3Hz"
+        },
+        {
+          "text": "Give it a try!",
+          "rate": "+1%",
+          "pitch": "+7Hz"
+        }
+      ]
     },
     "cards": [
       ["A table for\nyour next decision.", "Offline Hold’em. Your pace."],

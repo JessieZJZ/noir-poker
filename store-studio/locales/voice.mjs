@@ -24,6 +24,62 @@ const jobs = Object.values(catalog).filter((x) =>
 const evidence = [];
 const checksum = (file) =>
   createHash("sha256").update(fs.readFileSync(file)).digest("hex");
+async function makeInvitation(file, voice, phrases) {
+  const inputs = [];
+  const filters = [];
+  for (const [index, { text, rate, pitch }] of phrases.entries()) {
+    const part = file + "-" + index + ".mp3";
+    await run("uvx", [
+      "--from",
+      "edge-tts==7.3.1",
+      "edge-tts",
+      "--voice",
+      voice,
+      "--rate=" + rate,
+      "--pitch=" + pitch,
+      "--text",
+      text,
+      "--write-media",
+      part,
+    ]);
+    inputs.push("-i", part);
+    const trim =
+      "silenceremove=start_periods=1:start_threshold=-47dB:start_silence=0.035";
+    filters.push(
+      `[${index}:a]${trim},areverse,${trim},areverse,asetpts=PTS-STARTPTS,apad=pad_dur=${index === 0 ? 0.17 : 0.08}[part${index}]`,
+    );
+  }
+  filters.push(
+    "[part0][part1]concat=n=2:v=0:a=1,highpass=f=70,loudnorm=I=-16:TP=-2:LRA=9[out]",
+  );
+  await run("ffmpeg", [
+    "-v",
+    "error",
+    "-y",
+    ...inputs,
+    "-filter_complex",
+    filters.join(";"),
+    "-map",
+    "[out]",
+    "-ar",
+    "48000",
+    "-ac",
+    "2",
+    file + ".wav",
+  ]);
+}
+const duration = async (file) =>
+  Number(
+    await run("ffprobe", [
+      "-v",
+      "error",
+      "-show_entries",
+      "format=duration",
+      "-of",
+      "csv=p=0",
+      file,
+    ]),
+  );
 async function worker() {
   while (jobs.length) {
     const c = jobs.shift(),
@@ -37,6 +93,8 @@ async function worker() {
       : ids.map((id, i) => [id, c.say[i], limits[i]]);
     for (const [id, text, limit] of clips) {
       const file = path.join(dir, id);
+      const phrases = id === "closing" ? c.closing.phrases : null;
+      const performance = phrases ? JSON.stringify(phrases) : "-4%";
       const metadata = file + ".json";
       const previous = fs.existsSync(metadata)
         ? JSON.parse(fs.readFileSync(metadata))
@@ -45,67 +103,51 @@ async function worker() {
         !fs.existsSync(file + ".wav") ||
         previous?.text !== text ||
         previous?.voice !== c.voice ||
-        previous?.rate !== "-4%" ||
+        previous?.performance !== performance ||
         previous?.wavSha256 !== checksum(file + ".wav")
       ) {
-        await run("uvx", [
-          "--from",
-          "edge-tts==7.3.1",
-          "edge-tts",
-          "--voice",
-          c.voice,
-          "--rate=-4%",
-          "--text",
-          text,
-          "--write-media",
-          file + ".mp3",
-          "--write-subtitles",
-          file + ".srt",
-        ]);
-        const d = Number(
-          await run("ffprobe", [
+        if (phrases) {
+          await makeInvitation(file, c.voice, phrases);
+        } else {
+          await run("uvx", [
+            "--from",
+            "edge-tts==7.3.1",
+            "edge-tts",
+            "--voice",
+            c.voice,
+            "--rate=-4%",
+            "--text",
+            text,
+            "--write-media",
+            file + ".mp3",
+            "--write-subtitles",
+            file + ".srt",
+          ]);
+          await run("ffmpeg", [
             "-v",
             "error",
-            "-show_entries",
-            "format=duration",
-            "-of",
-            "csv=p=0",
+            "-y",
+            "-i",
             file + ".mp3",
-          ]),
-        );
-        if (d > limit) {
-          evidence.push({
-            locale: c.locale,
-            id,
-            text,
-            duration: d,
-            limit,
-            status: "too-long",
-          });
-          console.log("TOO LONG " + c.locale + "/" + id + " " + d);
-          continue;
+            "-af",
+            "highpass=f=70,loudnorm=I=-16:TP=-2:LRA=9",
+            "-ar",
+            "48000",
+            "-ac",
+            "2",
+            file + ".wav",
+          ]);
         }
-        await run("ffmpeg", [
-          "-v",
-          "error",
-          "-y",
-          "-i",
-          file + ".mp3",
-          "-af",
-          "highpass=f=70,loudnorm=I=-16:TP=-2:LRA=9",
-          "-ar",
-          "48000",
-          "-ac",
-          "2",
-          file + ".wav",
-        ]);
+        const seconds = await duration(file + ".wav");
+        if (!Number.isFinite(seconds) || seconds > limit)
+          throw Error(`${c.locale}/${id} is ${seconds}s (limit ${limit}s)`);
         fs.writeFileSync(
           metadata,
           JSON.stringify(
             {
               text,
               voice: c.voice,
-              rate: "-4%",
+              performance,
               wavSha256: checksum(file + ".wav"),
             },
             null,
@@ -119,6 +161,7 @@ async function worker() {
         text,
         voice: c.voice,
         provider: "Microsoft neural TTS via edge-tts 7.3.1",
+        seconds: await duration(file + ".wav"),
         status: "prepared",
       });
       console.log(c.locale + "/" + id + " ready");
@@ -130,5 +173,3 @@ fs.writeFileSync(
   path.join(root, "public/voice-locales/provenance.json"),
   JSON.stringify(evidence, null, 2) + "\n",
 );
-if (evidence.some((item) => item.status === "too-long"))
-  throw Error("Shorten the marked narration before rendering");
