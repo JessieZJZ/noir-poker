@@ -324,7 +324,13 @@ export function continuationNote(s, c, closing) {
     c.effective <= s.legal.callAmount
   )
     return '';
-  return `你在 ${s.position} 有位置，${s.action === 'check' ? '这次过牌没有增加投入，仍留 ' : '本次投入后还留 '}${n(s.stack - c.extra)}。若河牌未补成${drawCompletion(c.draw)}，且对手过牌、牌面支持你代表更强的成牌，可以考虑转诈唬。若对手继续下注，则按新的金额决定是否放弃。`;
+  // One complete template per action: two adjacent values would leave the
+  // lead-in clause untranslated once the plan joins it with a comma.
+  const kept = n(s.stack - c.extra),
+    draw = drawCompletion(c.draw);
+  return s.action === 'check'
+    ? `你在 ${s.position} 有位置，这次过牌没有增加投入，仍留 ${kept}，若河牌未补成${draw}，且对手过牌、牌面支持你代表更强的成牌，可以考虑转诈唬。若对手继续下注，则按新的金额决定是否放弃。`
+    : `你在 ${s.position} 有位置，本次投入后还留 ${kept}，若河牌未补成${draw}，且对手过牌、牌面支持你代表更强的成牌，可以考虑转诈唬。若对手继续下注，则按新的金额决定是否放弃。`;
 }
 
 export function publicHistory(s) {

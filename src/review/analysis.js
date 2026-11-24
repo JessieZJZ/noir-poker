@@ -447,7 +447,7 @@ export function analyzeDecision(
     code = 'dirty-draw-bet';
     status = 'consider';
     title = '四同花面追顺，补成顺子也未必能赢';
-    reason = `当前 ${handLabel} 带${drawLabel(draw)}，但公共牌已有四张同花色，对手底牌只需有一张该花色就已成同花。即使补成顺子，也仍会输给同花，不能把 ${draw.outs} 张顺子改善候选都当作获胜补牌。`;
+    reason = `当前 ${handLabel} 带${drawLabel(draw)}，但公共牌已有四张同花色，对手底牌只需有一张该花色就已成同花，即使补成顺子，也仍会输给同花，不能把 ${draw.outs} 张顺子改善候选都当作获胜补牌。`;
     alternative = { action: 'check', amount: 0 };
     lesson = '半诈唬需要实际获胜潜力与对手弃牌空间，形式上的补牌张数不能单独支持下注。';
     plan = '免费过牌可保留下一张改善机会，只有明确仍能逼走更好牌时，再比较主动施压。';

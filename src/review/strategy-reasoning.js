@@ -374,7 +374,7 @@ function drawNote(s, f) {
         : !f.canFaceCurrentBet
           ? '本轮已无人再行动，过牌可免费见下一张。进入下一街后再按牌面与下注判断。'
           : f.plan?.kind === 'check-for-raise'
-            ? '先过牌。若对手下注，再按价格与弃牌空间比较过牌加注，对手过牌则在下一张后重估。'
+            ? '先过牌，若对手下注，再按价格与弃牌空间比较过牌加注，对手过牌则在下一张后重估。'
             : '先过牌保留改善机会。对手随后下注时，再按金额和继续范围比较跟注、加注或弃牌。';
   else route = '弃牌保留尚未投入的筹码，不因听牌潜力承诺继续付费。';
   if (
@@ -413,7 +413,7 @@ function continuationNote(f) {
   if (f.action === 'raise' && ['range-bet', 'checkraise-followthrough'].includes(f.plan?.kind))
     return note(
       'continuation',
-      '这次下注尝试让更好的牌弃掉。若被跟注，下一张必须重新判断对手留下的范围，不自动继续下注。',
+      '这次下注尝试让更好的牌弃掉，若被跟注，下一张必须重新判断对手留下的范围，不自动继续下注。',
     );
   return null;
 }

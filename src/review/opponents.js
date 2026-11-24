@@ -627,7 +627,7 @@ export function explainOpponent(record, identities = []) {
               ? `${subject}的${hand}有击中顶对的机会，手里的 ${rankText(Math.max(...v.hole.map((card) => card.rank)))} 也减少了对手部分强高牌组合，所以选择再加注施压`
               : `${subject}的${hand}成牌质量较弱，这次进攻主要靠对手弃牌拿下底池`;
         logic = premium
-          ? `${support}。这次额外投入 ${n(f.investment)}，希望愿意继续的较小对子、AK 等高牌付出更多筹码，同时提高其他玩家继续入池的成本，争取减少对手人数。即使有人跟注，这手强牌仍足以支持主动争夺底池。`
+          ? `${support}。这次额外投入 ${n(f.investment)}，希望愿意继续的较小对子、AK 等高牌付出更多筹码，同时提高其他玩家继续入池的成本，争取减少对手人数，即使有人跟注，这手强牌仍足以支持主动争夺底池。`
           : aggression
             ? f.investment === record.amount
               ? `${subject}没有只补 ${n(cost)} 跟注，而是直接加注到 ${n(record.amount)}。${support}。${foldNote || '对手若不愿继续付费，就会放弃当前 ' + n(v.pot) + ' 的底池。'}`
