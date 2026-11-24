@@ -538,7 +538,7 @@ test('an opponent preflop passage joins its comma clauses with spaces in Latin l
     setLocalizedHTML(node, renderReviewParagraphs([parts.join('')], null, 0, [parts]));
     return node.textContent;
   });
-  expect(text).toMatch(/This time, .*600, Alex .*calls wide with Q♣ 7♦, putting in 600/);
+  expect(text).toMatch(/This time, .*600, Alex .*called wide with Q♣ 7♦, putting in 600/);
   expect(text).not.toMatch(/,\S/);
   expect(text).not.toMatch(/[\u4e00-\u9fff]/);
 });
