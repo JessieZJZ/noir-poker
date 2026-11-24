@@ -51,9 +51,9 @@ test('PR70 sizing describes a calculation, denomination and stack limits without
       /más que el bote/,
     ],
     it: [
-      /calcolo include prima il call/,
+      /calcolo aggiunge prima il call/,
       /non devi premere Call prima/,
-      /valore delle fiches/,
+      /fiches intere del taglio attuale/,
       /rilancio minimo/,
       /stack rimasto/,
       /più del piatto/,
@@ -79,7 +79,7 @@ test('PR70 training help keeps the safe-board and rule-priority limits while rem
   const boundaries = {
     en: [/only.*strong hands on safe boards/, /legal actions take priority/],
     es: [/solo.*boards seguros/, /acciones legales tienen prioridad/],
-    it: [/soltanto su board sicuri/, /azioni legali hanno priorità/],
+    it: [/solo su board sicuri/, /azioni consentite contano più dello stile/],
     pt: [/apenas em boards seguros/, /ações legais têm prioridade/],
   };
   for (const locale of locales) {
@@ -188,8 +188,8 @@ test('PR70 short replay labels fit the mobile row and full instructions still di
     it: [
       'Rigioca',
       /carte coperte originali, il bottone, gli stack iniziali e l’ordine del mazzo/,
-      /premi e le statistiche precedenti vengono annullati/,
-      /Mano successiva avvia una nuova distribuzione/,
+      /risultato e le statistiche precedenti vengono annullati/,
+      /Mano successiva» avvia invece una nuova mano/,
     ],
     pt: [
       'Rejogar',
