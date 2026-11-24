@@ -50,20 +50,55 @@ try {
       }),
     );
     wx.removeStorageSync('noir-game-records-v1');
-    app.__entryProbe = { original: wx.createInnerAudioContext, audios: [], samples: [] };
+    const probe = (app.__entryProbe = {
+      original: wx.createInnerAudioContext,
+      originalWeb: wx.createWebAudioContext,
+      audios: [],
+      samples: [],
+      contexts: 0,
+    });
     wx.createInnerAudioContext = function (...args) {
-      const audio = app.__entryProbe.original.apply(this, args);
-      app.__entryProbe.audios.push(audio);
+      const audio = probe.original.apply(this, args);
+      probe.audios.push(audio);
       return audio;
     };
-    app.__entryProbe.timer = setInterval(() => {
-      const audio = app.__entryProbe.audios.find((item) => item.src.includes('/music/'));
-      if (audio && app.__entryProbe.samples.length < 250)
-        app.__entryProbe.samples.push({
-          at: Date.now(),
-          volume: audio.volume,
+    if (probe.originalWeb)
+      wx.createWebAudioContext = function (...args) {
+        const context = probe.originalWeb.apply(this, args);
+        const createGain = context.createGain.bind(context);
+        probe.context = context;
+        probe.contexts++;
+        context.createGain = () => (probe.gain = createGain());
+        return context;
+      };
+    probe.music = () => {
+      const audios = probe.audios.filter((item) => item.src.includes('/music/'));
+      if (audios.length) {
+        const audio = audios[0];
+        return {
           time: audio.currentTime,
+          volume: audio.volume,
           paused: audio.paused,
+          players: audios.length,
+        };
+      }
+      if (probe.gain)
+        return {
+          time: probe.context.currentTime,
+          volume: probe.gain.gain.value,
+          paused: !app.noirMusic?.getState().playing,
+          players: probe.contexts,
+        };
+      return null;
+    };
+    probe.timer = setInterval(() => {
+      const music = probe.music();
+      if (music && probe.samples.length < 250)
+        probe.samples.push({
+          at: Date.now(),
+          volume: music.volume,
+          time: music.time,
+          paused: music.paused,
         });
     }, 40);
     app.onLaunch();
@@ -76,7 +111,7 @@ try {
       const app = getApp(),
         page = getCurrentPages().at(-1),
         game = page._controller.getGame();
-      const audio = app.__entryProbe.audios.find((item) => item.src.includes('/music/'));
+      const music = app.__entryProbe.music();
       return {
         entry: page.data.entryState,
         street: page.data.street,
@@ -86,13 +121,8 @@ try {
         bet: game.players.map((player) => player.bet),
         holeCount: game.players.map((player) => player.hole.length),
         records: page._controller.getRecords().length,
-        music: audio && {
-          time: audio.currentTime,
-          volume: audio.volume,
-          paused: audio.paused,
-          duration: audio.duration,
-        },
-        players: app.__entryProbe.audios.filter((item) => item.src.includes('/music/')).length,
+        music,
+        players: music?.players || 0,
         samples: app.__entryProbe.samples,
       };
     });
@@ -222,7 +252,10 @@ try {
   assert.ok(badgeSize.height < textSize.height, 'Hero badge is shorter than the name line');
   report.checks.push({ name: 'join-once-and-complete-deal-before-actions', during, after });
   await mini.evaluate(() => getApp().onHide());
-  const paused = await inspect();
+  const paused = await wait(async () => {
+    const state = await inspect();
+    return state.music?.paused && state.music.volume === 0 ? state : null;
+  }, 'Music must fade to silence after entering the background');
   assert.equal(paused.music.paused, true);
   assert.equal(paused.music.volume, 0);
   await mini.evaluate(() => getApp().onShow());
@@ -326,6 +359,7 @@ try {
         if (app.__entryProbe) {
           clearInterval(app.__entryProbe.timer);
           wx.createInnerAudioContext = app.__entryProbe.original;
+          if (app.__entryProbe.originalWeb) wx.createWebAudioContext = app.__entryProbe.originalWeb;
           delete app.__entryProbe;
         }
         for (const [key, value] of [
