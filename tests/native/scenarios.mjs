@@ -771,9 +771,23 @@ export async function nativeScenarios(app) {
     return { layout, cancelPreservesHand: true, confirmedResetHands: 0 };
   });
   await check('local-launch-and-no-login', async () => {
-    const { name: appName, id: appId } = await app.evaluate(() =>
-      window.Capacitor.Plugins.App.getInfo(),
+    // The iOS WebView driver does not serialize a returned promise.
+    await app.evaluate(() => {
+      window.Capacitor.Plugins.App.getInfo().then(
+        (info) => (window.noirE2EAppInfo = info),
+        (error) => (window.noirE2EAppInfo = { error: String(error) }),
+      );
+    });
+    const {
+      name: appName,
+      id: appId,
+      error,
+    } = await app.waitFor(
+      () => app.evaluate(() => window.noirE2EAppInfo),
+      10000,
+      'The native App bridge must return the installed app metadata',
     );
+    assert.ok(appId, error);
     assert.equal(appName, appId.endsWith('.qa') ? 'NOIR Poker 测试' : 'Noir Poker');
     const fonts = await app.waitFor(
       () =>
