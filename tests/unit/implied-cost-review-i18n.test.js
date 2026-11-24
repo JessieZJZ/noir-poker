@@ -38,7 +38,7 @@ const truth = {
   ko: {
     templates: [
       '현재 범위 추정에 따르면, 이 콜이 성립하려면 {0} 후 더 약한 패에서 추가 칩을 얻어야 합니다.',
-      '{0} 후 얻을 추가 칩은 더 약한 패가 지불할 의향이 있는지에 달려 있습니다.',
+      '{0} 후 얻을 추가 칩은 더 약한 핸드가 콜해 줄지에 달려 있습니다.',
       '현재 {0}이며 직접 완성 후보는 {1}장입니다. 콜하면 턴과 리버를 모두 볼 수 있고, 현재 후보 중 적어도 한 장이 나올 확률은 약 {2}입니다. 이는 최종 승리 확률이 아닙니다.',
     ],
     improvements: ['드로 완성', '셋 완성'],
@@ -208,8 +208,8 @@ const pairAccuracyTruth = {
     'コールするには、相手のレンジに弱いハンドやブラフが十分含まれている必要があります。よりタイトなレンジが相手ならフォールドすべきです。',
   ],
   ko: [
-    '{0} 카드가 나오면 홀 카드가 더 높은 원페어를 만들 가능성이 있지만, 이 카드들을 모두 승리가 확실한 아웃으로 셀 수는 없습니다.',
-    '콜하려면 상대 범위에 더 약한 패나 블러프가 충분히 있어야 합니다. 더 타이트한 범위에는 폴드해야 합니다.',
+    '{0} 카드가 나오면 홀 카드로 더 높은 원페어를 만들 수 있지만, 이 카드를 모두 확실히 이기는 아웃으로 셀 수는 없습니다.',
+    '콜하려면 상대 레인지에 더 약한 핸드나 블러프가 충분히 있어야 합니다. 더 타이트한 레인지라면 폴드해야 합니다.',
   ],
   es: [
     'Si sale {0}, tus cartas propias pueden formar una pareja más alta, pero no todas esas cartas cuentan como outs ganadores seguros.',
@@ -302,7 +302,7 @@ const drawRouteTruth = {
   en: 'The draw is the main path to improvement, but pairing a hole card or beating a missed bluff may also win.',
   'zh-TW': '聽牌是主要改善路徑，底牌成對或贏過未成牌詐唬也可能獲勝。',
   ja: '主な改善手段はドローですが、ホールカードがペアになったり、未完成のブラフに勝ったりする可能性もあります。',
-  ko: '드로가 주된 개선 경로이지만 홀 카드가 페어를 이루거나 미완성 패의 블러프를 이겨 승리할 수도 있습니다.',
+  ko: '드로가 주된 개선 경로이지만, 홀 카드가 페어가 되거나 아무것도 없는 블러프를 이겨서 이길 수도 있습니다.',
   es: 'El proyecto es la principal vía de mejora, pero también se puede ganar formando una pareja con una carta propia o superando faroles sin mano hecha.',
   it: 'Il progetto è la via principale per migliorare, ma si può vincere anche formando una coppia con una carta privata o battendo bluff senza una mano formata.',
   pt: 'O draw é o principal caminho de melhora, mas também é possível vencer formando par com uma carta da mão ou superando blefes sem mão feita.',
@@ -346,7 +346,7 @@ const riverVisibilityTruth = {
   en: 'Calling this round lets you see the river, the last community card.',
   'zh-TW': '本輪跟注後即可看到最後一張河牌。',
   ja: 'このラウンドでコールすれば、最後のコミュニティカードであるリバーを見ることができます。',
-  ko: '이번 라운드에 콜하면 마지막 공용 카드인 리버를 볼 수 있습니다.',
+  ko: '이번 라운드에 콜하면 마지막 보드 카드인 리버를 볼 수 있습니다.',
   es: 'Al pagar en esta ronda, puedes ver la última carta comunitaria, el river.',
   it: 'Chiamando in questo giro, puoi vedere l’ultima carta comune, il river.',
   pt: 'Ao pagar nesta rodada, você pode ver a última carta comunitária, o river.',

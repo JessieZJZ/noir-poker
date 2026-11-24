@@ -131,7 +131,7 @@ test('PR70 real rollout note retains eight samples, sunk costs and non-GTO model
   const note = compareCandidateActions(game.decisions[0], [], { trials: 2 }).note;
   const terms = {
     ja: ['8', '埋没費用', '分割', '返却', 'レンジ／戦略モデルの誤りは含みません', 'GTO', '最適 EV'],
-    ko: ['8', '매몰비용', '팟 분배', '반환', '모델의 오류는 포함하지 않습니다', 'GTO', '최적 EV'],
+    ko: ['8', '매몰 비용', '팟 분배', '반환', '모델의 오류는 포함하지 않습니다', 'GTO', '최적 EV'],
     de: [
       '8',
       'versunkene Kosten',
@@ -163,7 +163,7 @@ test('PR70 conditional review keeps blocker, outs and expensive-call direction i
     ko: {
       blocker: ['홀 카드의 A', '조합 수를 줄여', '레이트 포지션'],
       outs: ['9장', '19%', '완성해도 승리가 보장되지는 않습니다'],
-      stop: ['더 투자하지 않고', '폴드'],
+      stop: ['더 투입하지 않고', '폴드'],
     },
     de: {
       blocker: ['Ass', 'reduziert', 'später Position'],
@@ -250,7 +250,7 @@ test('PR70 new countdown, local saving and close names identify the intended obj
       count: ['이번 핸드 종료 후', '4핸드를 더'],
       close: ['설정 닫기'],
       save: ['자동 저장', '다음 핸드', '원래 설정'],
-      cl: ['칩을 모두 잃었을 때', '3번', '절반', '파이널 테이블에서는 보충할 수 없습니다'],
+      cl: ['칩을 모두 잃으면', '3번', '절반', '파이널 테이블에서는 보충할 수 없습니다'],
     },
     de: {
       count: ['Nach dieser Hand', 'noch 4 Hände'],

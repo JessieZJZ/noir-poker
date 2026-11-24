@@ -742,7 +742,7 @@ test('the dealing frame of a replay shows the complete localized status', async 
   });
 
   for (const [locale, status] of Object.entries({
-    ko: '딜링 중',
+    ko: '딜하는 중',
     en: 'Dealing',
     ja: '配札中',
     es: 'Repartiendo',

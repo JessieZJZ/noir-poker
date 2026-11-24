@@ -108,7 +108,7 @@ test('the practice heading describes the current session in every supported loca
     en: 'Session practice',
     'zh-TW': '本局練習',
     ja: 'このセッションの練習',
-    ko: '이번 세션 연습',
+    ko: '이번 게임 연습',
     es: 'Práctica de esta sesión',
     it: 'Pratica della sessione',
     pt: 'Prática desta sessão',
