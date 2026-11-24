@@ -225,7 +225,7 @@ const pairAccuracyTruth = {
   ],
   de: [
     'Wenn {0} fällt, können die Hole Cards ein höheres Paar bilden. Diese Karten zählen aber nicht alle als sichere Gewinn-Outs.',
-    'Ein Call setzt genügend schwächere Hände oder Bluffs in der gegnerischen Range voraus; gegen eine engere Range sollte man folden.',
+    'Ein Call setzt genügend schwächere Hände oder Bluffs in der gegnerischen Range voraus; gegen eine engere Range solltest du folden.',
   ],
   fr: [
     'Si {0} tombe, les cartes privatives peuvent former une paire plus haute, mais ces cartes ne sont pas toutes des outs garantissant la victoire.',

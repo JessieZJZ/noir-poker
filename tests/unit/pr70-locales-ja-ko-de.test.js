@@ -167,7 +167,7 @@ test('PR70 conditional review keeps blocker, outs and expensive-call direction i
     },
     de: {
       blocker: ['Ass', 'reduziert', 'später Position'],
-      outs: ['9 Karten', '19%', 'Auch dann ist ein Sieg nicht garantiert'],
+      outs: ['9 direkte Outs', '19%', 'ein Sieg ist damit nicht garantiert'],
       stop: ['eher folden', 'keine weiteren Chips investieren'],
     },
   };
