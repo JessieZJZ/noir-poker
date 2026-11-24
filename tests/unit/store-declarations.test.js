@@ -4,6 +4,20 @@ import { readFileSync } from 'node:fs';
 
 const read = (path) => readFileSync(new URL(`../../${path}`, import.meta.url), 'utf8');
 
+test('the native launchers use the Noir Poker display name', () => {
+  assert.equal(JSON.parse(read('capacitor.config.json')).appName, 'Noir Poker');
+  assert.match(
+    read('ios/App/App/Info.plist'),
+    /<key>CFBundleDisplayName<\/key>\s*<string>Noir Poker<\/string>/,
+  );
+  const manifest = read('android/app/src/main/AndroidManifest.xml');
+  assert.match(manifest, /<application\b[^>]*android:label="@string\/app_name"/);
+  assert.match(manifest, /<activity\b[^>]*android:label="@string\/title_activity_main"/);
+  const strings = read('android/app/src/main/res/values/strings.xml');
+  assert.match(strings, /<string name="app_name">Noir Poker<\/string>/);
+  assert.match(strings, /<string name="title_activity_main">Noir Poker<\/string>/);
+});
+
 // Store answers: no advertising ID on Google Play, no non-exempt encryption on
 // the App Store. The packages must keep matching what was declared.
 test('the Android package removes the advertising ID permission any SDK might add', () => {
