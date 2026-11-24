@@ -103,9 +103,9 @@
 ## 检查
 
 - `npm run i18n:check`：通过（2359 条消息，11 种语言无缺失、占位符未变；研究条目数字与术语保留）。
-- `npm test`、`npm run format:check`：见下方结果。
+- `npm test`：1883/1883 通过；`npm run format:check`：通过。
 - 隐私文本改动后已运行 `npm run i18n:privacy` 重新生成 `public/app-privacy.html` 并格式化；协调者合并后仍需再次生成。
-- 语言 E2E（`NOIR_E2E_PORT=4203`）：见下方结果。
+- 语言 E2E（`NOIR_E2E_PORT=4203`，i18n / locale-layout / pr70-language-fixes / player-research-i18n 四个文件）：首轮 111 通过、17 跳过、4 失败。4 个失败都是 `i18n.spec.js` 中 zh-CN、zh-TW、es 的离线旅程在 5 秒内未出现 `data-app-ready`（启动阶段超时，与日语译文无关；本机同时有多个并行会话在跑）。单独重跑 `i18n.spec.js` 后 zh-TW、es 通过，仅 zh-CN 作为每轮第一个冷启动用例仍超时；以单 worker 重复运行 zh-CN 与 ja 用例各两次，4/4 通过。日语相关用例全部通过。这里只是浏览器检查，没有运行原生 App 或微信小程序。
 
 ### 同步修改的固定断言（只改 ja 行，保留测试意图）
 
