@@ -8,7 +8,7 @@
   style="padding-top: {{topInset + 36}}px; padding-bottom: {{bottomInset}}px; {{homeLocked ? 'top: ' + homeOffset + 'px;' : ''}} {{(tutorialActive || containedScroll) && !historyReadOnly ? 'height: ' + windowHeight + 'px;' : ''}}"
 >
   <view
-    class="nav {{compactNav ? 'nav-compact' : ''}} {{resourceMenuOpen ? 'resource-menu-active' : ''}}"
+    class="nav {{waitingForSeat ? 'practice-home-nav' : ''}} {{compactNav ? 'nav-compact' : ''}} {{resourceMenuOpen ? 'resource-menu-active' : ''}}"
     style="top: {{topInset + 36}}px;"
   >
     <view class="brand"
@@ -17,7 +17,8 @@
         src="/assets/app-icon.png"
         mode="aspectFit"
         aria-hidden="true"
-      /><text>NOIR</text><text wx:if="{{!compactNav}}" class="brand-sub">POKER</text></view
+      /><text>NOIR</text
+      ><text wx:if="{{waitingForSeat || !compactNav}}" class="brand-sub">POKER</text></view
     >
     <view wx:if="{{!historyReadOnly && !tutorialPlaying}}" class="nav-actions"
       ><button
@@ -48,28 +49,26 @@
       </view></view
     >
   </view>
-  <view class="table-panel {{historyReadOnly ? 'history-panel' : ''}}">
+  <block wx:if="{{waitingForSeat && !historyReadOnly}}">
+    <include src="./practice-home.wxml" />
+  </block>
+  <view wx:else class="table-panel {{historyReadOnly ? 'history-panel' : ''}}">
     <view
       class="game-shell entry-{{entryState}} {{historyReadOnly ? 'history-shell' : ''}} {{tutorialSide ? 'tutorial-side' : ''}} {{noticeHold ? 'notice-hold' : ''}}"
       style="height: {{tableHeight + tableHeaderHeight + tutorialCoachHeight + (waitingForSeat ? 0 : historyReadOnly || compactActions ? compactDockHeight : liveDockHeight)}}px;"
     >
       <view class="game-header">
-        <view class="hand-label"
-          ><block wx:if="{{waitingForSeat}}"
-            ><text>{{street}}</text
-            ><text class="entry-structure"
-              >{{entryStructure.levels}} · {{entryStructure.final}}</text
-            ></block
-          ><block wx:else
-            ><block wx:if="{{!tutorialPlaying}}"
-              ><text class="session-label">第 {{sessionNumber}} 局</text
-              ><text class="hand-divider">·</text></block
-            ><text>第 <text class="hand-number">{{hand < 10 ? '0' : ''}}{{hand}}</text> 手</text
-            ><block wx:if="{{!historyReadOnly}}"
-              ><text class="hand-divider">·</text><text>{{street}}</text></block
-            ><text wx:if="{{replay}}" class="replay">重打 {{replay}}</text></block
-          ></view
-        >
+        <view class="hand-label">
+          <block wx:if="{{!tutorialPlaying}}">
+            <text class="session-label">第 {{sessionNumber}} 局</text>
+            <text class="hand-divider">·</text>
+          </block>
+          <text>第 <text class="hand-number">{{hand < 10 ? '0' : ''}}{{hand}}</text> 手</text>
+          <block wx:if="{{!historyReadOnly}}">
+            <text class="hand-divider">·</text><text>{{street}}</text>
+          </block>
+          <text wx:if="{{replay}}" class="replay">重打 {{replay}}</text>
+        </view>
         <view class="blind-info"><text>盲注</text><text class="bright">{{blindText}}</text></view>
       </view>
       <view class="hint-slot">
@@ -240,23 +239,6 @@
                 ><view wx:else class="card-art" style="{{item.artStyle}}"
               /></view>
             </view>
-          </view>
-          <view
-            wx:if="{{waitingForSeat}}"
-            class="entry-welcome"
-            style="left: {{arenaWidth / 2}}px; top: {{arenaHeight * 0.44}}px; --entry-scale: {{entryScale || 1 / arenaScale}};"
-          >
-            <text class="entry-eyebrow">NOIR POKER</text>
-            <text class="entry-title">牌桌已就绪</text>
-            <button
-              id="join-table-button"
-              class="entry-join"
-              hover-class="none"
-              bindtap="joinTable"
-            >
-              入座开练
-            </button>
-            <text class="entry-footnote">虚拟筹码 · 本地练习</text>
           </view>
           <view
             class="hero {{heroFolded ? 'hero-folded' : ''}} {{heroOut ? 'hero-out' : ''}} {{heroRank || heroWinner ? 'has-hero-rank' : ''}}"
@@ -560,31 +542,6 @@
       </view>
     </view>
   </view>
-  <view
-    wx:if="{{!historyReadOnly && waitingForSeat}}"
-    class="game-info"
-    aria-label="本局信息"
-    style="min-height: {{liveDockHeight - 8}}px;"
-    ><text class="game-info-title">本局信息</text
-    ><view class="game-info-stats"
-      ><view class="game-info-chips"
-        ><text class="info-term">当前筹码</text
-        ><text class="info-value"
-          >{{heroStack}}<text class="session-change {{stats.profitTone}}"
-            >{{stats.profitSigned}}</text
-          ></text
-        ></view
-      ><view><text class="info-term">盲注</text><text class="info-value">{{blindText}}</text></view
-      ><view
-        ><text class="info-term">已完成</text><text class="info-value">{{stats.hands}}</text></view
-      ><view
-        ><text class="info-term">获胜手数</text><text class="info-value">{{stats.wins}}</text></view
-      ><view
-        ><text class="info-term">胜率</text
-        ><text class="info-value">{{stats.hands ? winrate + '%' : '—'}}</text></view
-      ></view
-    ></view
-  >
   <view wx:if="{{!historyReadOnly && !waitingForSeat && !tutorialPlaying}}" class="practice-panel"
     ><view class="session-title"
       ><view class="session-heading"
@@ -623,7 +580,7 @@
       ></view
     ></view
   >
-  <text class="compliance-footer">单机练习·虚拟筹码·禁止赌博</text>
+  <text wx:if="{{!waitingForSeat}}" class="compliance-footer">单机练习·虚拟筹码·禁止赌博</text>
 </view>
 
 <view wx:if="{{confetti}}" class="confetti-layer" aria-hidden="true"

@@ -70,7 +70,7 @@ try {
   });
   await mini.reLaunch('/pages/table/table');
   let page = await mini.currentPage();
-  await wait(async () => (await page.data()).waitingForSeat, 'Waiting table must be rendered');
+  await wait(async () => (await page.data()).waitingForSeat, 'Practice home must be rendered');
   const inspect = () =>
     mini.evaluate(() => {
       const app = getApp(),
@@ -133,45 +133,42 @@ try {
   assert.equal((await page.$$('.bottom-links, .practice-info')).length, 0);
   assert.equal((await settings.text()).trim(), '设置');
   assert.equal(await settings.style('border-top-width'), '0px');
-  assert.equal((await (await page.$('#join-table-button')).text()).trim(), '入座开练');
-  assert.equal((await page.$$('.activity-panel')).length, 0);
-  // Waiting, the header keeps the waiting message (its blinds are hidden) and
-  // the game info card replaces the practice panel, as on Web.
-  assert.equal(await (await page.$('.game-header .hand-label')).style('visibility'), 'visible');
-  assert.equal(await (await page.$('.game-header .blind-info')).style('visibility'), 'hidden');
-  assert.equal((await page.$$('.practice-panel')).length, 0);
-  const info = await page.$('.game-info');
-  const infoOffset = await info.offset(),
-    infoSize = await info.size();
-  for (const selector of ['.game-info-stats']) {
-    const part = await page.$(selector);
-    assert.ok(part, `${selector} must exist`);
-    const offset = await part.offset(),
-      size = await part.size();
-    assert.ok(size.height > 0);
-    assert.ok(offset.top >= infoOffset.top, `${selector} must not clip above the card`);
-    assert.ok(
-      offset.top + size.height <= infoOffset.top + infoSize.height,
-      `${selector} must stay inside the card`,
-    );
-  }
-  // The card takes the hidden dock's space and ends 8px above the screen bottom.
-  const waitingView = await page.data();
-  assert.ok(
-    Math.abs(
-      infoOffset.top + infoSize.height - (waitingView.windowHeight - waitingView.bottomInset - 8),
-    ) <= 1,
-    'The top bar, table and game info fill the first screen',
+  const titleText = (selector) => page.$(selector).then((element) => element.text());
+  assert.equal(await titleText('.practice-home-title'), '本地练习');
+  assert.equal(await titleText('.practice-home-note'), '无需登录 · AI对战');
+  assert.equal(await titleText('.practice-home-join > text'), '单机牌桌 · 开始训练');
+  assert.equal(await (await page.$('.brand .app-icon')).attribute('src'), '/assets/app-icon.png');
+  assert.equal(
+    (await page.$$('.table-panel, .game-info, .activity-panel, .practice-panel')).length,
+    0,
   );
-  // The name and position badge share one wrapper beside the stack.
-  const heroName = await page.$('.hero-identity > .hero-name-text'),
-    heroStack = await page.$('.hero-identity .stack');
-  const heroGap =
-    (await heroStack.offset()).left -
-    (await heroName.offset()).left -
-    (await heroName.size()).width;
-  assert.ok(heroGap >= 0 && heroGap <= 7, `Waiting hero gap must be compact, got ${heroGap}`);
-  assert.equal((await page.$$('.hero-identity .position')).length, 0);
+  const join = await page.$('#join-table-button');
+  const joinText = await page.$('.practice-home-join > text');
+  const arrow = await page.$('.practice-home-join-arrow');
+  const [joinBox, labelBox, arrowBox, joinSize, labelSize, arrowSize] = await Promise.all([
+    join.offset(),
+    joinText.offset(),
+    arrow.offset(),
+    join.size(),
+    joinText.size(),
+    arrow.size(),
+  ]);
+  assert.ok(joinSize.height >= 58);
+  assert.equal(joinSize.width, (await (await page.$('.practice-home-tools')).size()).width);
+  assert.ok(arrowSize.width >= 34 && arrowSize.height >= 34);
+  assert.ok(labelBox.left + labelSize.width < arrowBox.left);
+  assert.ok(arrowBox.left + arrowSize.width < joinBox.left + joinSize.width);
+  const homeSize = await (await page.$('.practice-home')).size();
+  assert.ok(homeSize.width <= (await page.data()).windowWidth);
+  await (await page.$('#home-rankings-button')).tap();
+  await wait(
+    async () => (await page.data()).guideScrollTarget === 'hand-rankings',
+    'Home shortcut must open the guide at hand rankings',
+  );
+  await (await page.$('.guide-sheet .close')).tap();
+  await wait(async () => !(await page.data()).guideOpen, 'Rankings must close');
+  assert.equal((await inspect()).hand, 0);
+  report.checks.push({ name: 'practice-home-and-rankings-entry', joinSize, arrowSize, homeSize });
   await menu.tap();
   await wait(async () => (await page.data()).resourceMenuOpen, 'Left menu must open');
   const dropdown = await page.$('.resource-menu'),
@@ -192,6 +189,8 @@ try {
     return state.hand === 1 ? state : null;
   }, 'The real join tap must reach the shared controller');
   assert.equal(during.hand, 1);
+  await wait(async () => await page.$('.table-panel'), 'Play table must replace the home');
+  assert.equal(await page.$('.practice-home'), null);
   assert.equal(during.entry, 'dealing');
   assert.equal((await page.data()).canAct, false);
   await page.waitFor(500);
@@ -246,14 +245,14 @@ try {
     );
     await wait(
       async () => (await page.data()).seats.length === count - 1,
-      'Waiting seats must match settings',
+      'The next table must match settings',
     );
     const data = await page.data();
     assert.equal(data.heroCards.length, 0);
     assert.ok(data.seats.every((seat) => seat.bet === undefined));
-    await mini.screenshot({ path: path.join(output, `waiting-${count}-seats.png`) });
+    assert.equal(await page.$('.table-panel'), null);
   }
-  report.checks.push({ name: 'next-session-hand-and-all-waiting-table-sizes', reentry });
+  report.checks.push({ name: 'next-session-hand-and-table-size-settings', reentry });
   // Waiting for the seat there is nothing to restart yet.
   assert.equal((await page.$$('.practice-reset')).length, 0);
   await (await page.$('#join-table-button')).tap();

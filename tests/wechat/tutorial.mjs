@@ -53,9 +53,7 @@ try {
     return JSON.stringify({ hand: game.hand, stacks: game.players.map((p) => p.stack) });
   });
   const records = await mini.evaluate(() => getApp().noirController.getRecords().length);
-  await tap('#resource-menu-button');
-  await wait('Resource menu', async (view) => view.resourceMenuOpen);
-  await tap('#resource-tutorial');
+  await tap('#home-tutorial-button');
   await wait('Intro', (view) => view.tutorial?.stage === 'intro');
   assert.equal((await page.$$('.tutorial-step')).length, 5);
   await capture('intro');

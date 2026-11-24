@@ -1,4 +1,4 @@
-// WeChat DevTools: the ready table's blind structure, the final-table and
+// WeChat DevTools: the blind structure in Settings, the final-table and
 // new-level notices before the deal, and the closed refill at the final table.
 // node tests/wechat/blind-levels.mjs ws://127.0.0.1:9532 .artifacts/wechat-blind-levels
 import { createRequire } from 'node:module';
@@ -44,10 +44,14 @@ try {
   assert.equal(ready.entryStructure.levels, `每 10 手涨盲，最高 ${cap}`);
   assert.match(ready.entryStructure.final, /^剩 [23] 人进入决赛圈$/);
   assert.equal(ready.stakesStructure, ready.entryStructure.settings);
-  const structure = await page.$('.entry-structure');
-  assert.match(await structure.text(), /每 10 手涨盲/);
-  await mini.screenshot({ path: path.join(output, 'ready-structure.png') });
-  pass('ready table shows the blind structure', ready.entryStructure);
+  await (await page.$('.settings-button')).tap();
+  await wait((data) => data.settingsOpen);
+  const structure = await page.$('.stakes-setting-row .setting-description');
+  assert.ok((await structure.text()).includes(ready.entryStructure.settings));
+  await mini.screenshot({ path: path.join(output, 'settings-structure.png') });
+  await (await page.$('.settings-modal .close')).tap();
+  await wait((data) => !data.settingsOpen);
+  pass('settings show the blind structure', ready.entryStructure);
 
   await (await page.$('#join-table-button')).tap();
   await wait((data) => !data.dealing && !data.waitingForSeat);

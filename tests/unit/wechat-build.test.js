@@ -102,7 +102,7 @@ test('music is budgeted separately while main and subpackage retain exact size l
   );
 });
 test('WXML bindings keep quoted literals on one line for the DevTools compiler', () => {
-  const source = ['table.wxml', 'table-surface.wxml', 'table-templates.wxml']
+  const source = ['table.wxml', 'table-surface.wxml', 'table-templates.wxml', 'practice-home.wxml']
     .map((name) => readFileSync(path.join(root, 'miniprogram/pages/table', name), 'utf8'))
     .join('\n');
   // The glass-easel compiler accepts a quoted newline that DevTools rejects.

@@ -17,14 +17,7 @@ const {
   watchWindow,
   stopWindowWatch,
 } = require('../../device-orientation.js');
-const {
-  entryWelcomeCorridor,
-  entryWelcomeScale,
-} = require('../../shared/ui/entry-welcome-scale.js');
 const { heroPlaceStyle, heroTrophy, seatTrophy } = require('../../shared/ui/trophy-placement.js');
-// The waiting message's natural size, measured in DevTools: its button (150px
-// plus padding) and four stacked lines.
-const ENTRY_WELCOME_SIZE = { width: 184, height: 132 };
 const {
   WECHAT_RECORDS_BUDGET,
   createSnapshotFiles,
@@ -391,7 +384,7 @@ module.exports = {
     }
   },
   joinTable() {
-    this.call('join');
+    if (this.call('join')) wx.pageScrollTo?.({ scrollTop: 0, duration: 0 });
   },
   onShow() {
     const returningFromRecords = Boolean(this._browsingRecords);
@@ -631,31 +624,6 @@ module.exports = {
       // The positioned rows are rendered as phoneSeats. Do not send a third,
       // unused copy of every profile and card over the service/view bridge.
       const { positioned, ...geometry } = fitted;
-      // As on Web, the waiting message keeps its size unless the players beside
-      // it would crowd it; it sits centred at 44% of the arena height.
-      const entrySize = chrome.navHeight > 48 ? { width: 230, height: 168 } : ENTRY_WELCOME_SIZE;
-      const halfHeight = entrySize.height / fitted.arenaScale / 2;
-      const corridor = entryWelcomeCorridor(
-        positioned.map((seat) => {
-          const profile = seat.parts?.[1] ?? {
-            left: 0,
-            top: 0,
-            width: seat.width,
-            height: seat.height,
-          };
-          return {
-            left: seat.left + profile.left,
-            top: seat.top + profile.top,
-            width: profile.width,
-            height: profile.height,
-          };
-        }),
-        {
-          centerX: fitted.arenaWidth / 2,
-          top: fitted.arenaHeight * 0.44 - halfHeight,
-          bottom: fitted.arenaHeight * 0.44 + halfHeight,
-        },
-      );
       // The champion's trophy follows the shared rules on the same layout boxes
       // Web measures, so it rests in the same spot on every platform.
       const box = ({ left, top, width, height }) => ({
@@ -694,11 +662,6 @@ module.exports = {
         heroTrophyStyle: heroPlace
           ? `width:${heroPlace.width}px;height:${heroPlace.height}px;left:calc(50% - ${heroPlace.width / 2}px);bottom:calc(100% + ${heroPlace.gap - heroPlace.drop}px);`
           : '',
-        entryScale: entryWelcomeScale({
-          arenaScale: fitted.arenaScale,
-          contentWidth: entrySize.width,
-          corridorWidth: corridor * fitted.arenaScale,
-        }),
         tableHeight,
         liveDockHeight: chrome.liveDockHeight - coach.dockSaving,
         tutorialCoachHeight: coach.height,

@@ -11,7 +11,6 @@ import { readFileSync } from 'node:fs';
 import { createWechatController } from '../../src/platform/wechat-controller.js';
 import { recordResult, sessionStanding } from '../../src/engine/game-records.js';
 import { numericWidthScale, numericColumnWidth } from '../../src/ui/numeric-width.js';
-import { entryWelcomeCorridor, entryWelcomeScale } from '../../src/ui/entry-welcome-scale.js';
 import { heroPlaceStyle, heroTrophy, seatTrophy } from '../../src/ui/trophy-placement.js';
 import * as effectLayouts from '../../src/ui/effect-layouts.js';
 import * as ceremonySounds from '../../src/ui/ceremony-sounds.js';
@@ -62,7 +61,7 @@ const railStylesheet = readFileSync(
   new URL('../../miniprogram/pages/table/rail.wxss', import.meta.url),
   'utf8',
 );
-const template = ['table.wxml', 'table-surface.wxml', 'table-templates.wxml']
+const template = ['table.wxml', 'table-surface.wxml', 'table-templates.wxml', 'practice-home.wxml']
   .map((name) =>
     readFileSync(new URL('../../miniprogram/pages/table/' + name, import.meta.url), 'utf8'),
   )
@@ -156,8 +155,6 @@ function setup(
       if (name === './presentation.js') return presentationModule.exports;
       if (name === './phone-layout.js') return { phoneLayout: compactTableLayout };
       if (name.endsWith('/numeric-width.js')) return { numericWidthScale, numericColumnWidth };
-      if (name.endsWith('/entry-welcome-scale.js'))
-        return { entryWelcomeCorridor, entryWelcomeScale };
       if (name.endsWith('/trophy-placement.js')) return { heroPlaceStyle, heroTrophy, seatTrophy };
       if (name === './game-effects.js') return loadPageEffects(context.wx);
       if (name === '../../shared/engine/poker.js')
@@ -418,7 +415,7 @@ test('WeChat delayed page paints cannot override the actual App background lifec
   assert.equal(transport.pauses, 1);
 });
 
-test('WeChat publishes the waiting table atomically after the launch artwork', (t) => {
+test('WeChat publishes the practice home atomically after the launch artwork', (t) => {
   const { page, definition } = setup(t, { waiting: true });
   assert.equal(definition.data.tableReady, false);
   assert.equal(page.data.tableReady, true);
@@ -428,6 +425,10 @@ test('WeChat publishes the waiting table atomically after the launch artwork', (
   assert.equal(page.data.seats.length, page.data.settings.playerCount - 1);
   assert.match(template, /wx:if="\{\{!tableReady\}\}" class="launch-screen"/);
   assert.match(template, /<view\s+wx:if="\{\{tableReady\}\}"\s+class="screen /);
+  assert.match(
+    template,
+    /<block wx:if="{{waitingForSeat && !historyReadOnly}}">\s*<include src="\.\/practice-home\.wxml"\s*\/>\s*<\/block>\s*<view wx:else class="table-panel /,
+  );
   assert.match(
     template,
     /<text\s+wx:if="\{\{!waitingForSeat\}\}"\s+class="position"\s*>\s*\{\{heroPosition\}\}\s*<\/text\s*>/,
@@ -2632,7 +2633,7 @@ test('WeChat history removes the extra navigation heading while preserving repla
   );
   assert.match(
     template,
-    /<block wx:if="{{!historyReadOnly}}"\s*><text class="hand-divider">·<\/text><text>{{street}}/,
+    /<block wx:if="{{!historyReadOnly}}"\s*>\s*<text class="hand-divider">·<\/text><text>{{street}}/,
   );
   assert.doesNotMatch(template, /历史结算|历史记录/);
   assert.match(template, /wx:if="{{replay}}" class="replay"/);
@@ -2863,7 +2864,7 @@ test('WeChat final cards retain readable phone dimensions within the unchanged f
   );
 });
 
-test('WeChat practice heading owns reset; game info replaces it only while waiting', () => {
+test('WeChat practice heading owns reset during the hand', () => {
   assert.match(
     template,
     /class="practice-panel"\s*><view class="session-title"\s*><view class="session-heading"\s*><text>{{sessionTitle}}<\/text\s*><text wx:if="{{standingText}}" class="standing-tag {{standingClass}}"\s*>{{standingText}}<\/text\s*><\/view\s*><button wx:if="{{!over}}" class="practice-reset"[^>]*bindtap="resetPractice">\s*重新开局\s*<\/button\s*>/,
@@ -2872,10 +2873,6 @@ test('WeChat practice heading owns reset; game info replaces it only while waiti
     template,
     /wx:if="{{!historyReadOnly && !waitingForSeat && !tutorialPlaying}}" class="practice-panel"/,
   );
-  // The waiting card carries the waiting message, chips, blinds and results.
-  assert.match(template, /wx:if="{{!historyReadOnly && waitingForSeat}}"\s+class="game-info"/);
-  for (const label of ['当前筹码', '盲注', '已完成', '获胜手数', '胜率'])
-    assert.match(template, new RegExp(`<text class="info-term">${label}</text\\s*>`));
   assert.doesNotMatch(
     template,
     /你的练习|本次牌桌|class="bottom-links"|class="practice-info"|本地电脑对手 · 无需登录/,
@@ -2888,23 +2885,6 @@ test('WeChat practice heading owns reset; game info replaces it only while waiti
     readFileSync(new URL('../../miniprogram/pages/table/parity.wxss', import.meta.url), 'utf8'),
     /\.practice-reset\s*\{[^}]*width: 70px;[^}]*min-height: 32px/s,
   );
-  // The waiting card takes the 134px dock space: an 8px gap and 126px card.
-  const info = readFileSync(
-    new URL('../../miniprogram/pages/table/game-info.wxss', import.meta.url),
-    'utf8',
-  );
-  assert.match(
-    info,
-    /\.game-info\s*\{[^}]*box-sizing: border-box;[^}]*min-height: 126px;[^}]*margin-top: 8px/s,
-  );
-  // As on Web, a 本局信息 title heads the card; the stats share its edges.
-  assert.match(
-    template,
-    /class="game-info"\s+aria-label="本局信息"\s+style="min-height: {{liveDockHeight - 8}}px;"\s*><text class="game-info-title">本局信息<\/text\s*><view class="game-info-stats"/,
-  );
-  assert.match(info, /\.game-info-stats\s*\{[^}]*justify-content: space-between;/s);
-  assert.match(info, /\.game-info-stats > view:first-child\s*\{\s*text-align: left;/);
-  assert.match(info, /\.game-info-stats > view:last-child\s*\{\s*text-align: right;/);
   assert.match(template, /本次练习净变化/);
   assert.match(template, /<text>本手动态<\/text><text>{{done \? 'FINISHED' : 'LIVE'}}<\/text>/);
 });
@@ -3268,16 +3248,29 @@ test('a late guide jump cannot move a closed or newly opened normal guide', (t) 
   assert.equal(page.data.guideScrollTarget, '');
 });
 
-test('WeChat waiting table matches play and its message keeps clear of players', (t) => {
-  // The waiting header spans the play header plus the hint row: no jump on deal.
-  assert.match(
-    readFileSync(new URL('../../miniprogram/pages/table/entry.wxss', import.meta.url), 'utf8'),
-    /\.entry-waiting \.game-header\s*\{[^}]*flex-basis: 48px;/s,
+test('WeChat practice home uses the real local routes and starts only one hand', (t) => {
+  const home = readFileSync(
+    new URL('../../miniprogram/pages/table/practice-home.wxml', import.meta.url),
+    'utf8',
   );
-  assert.match(template, /--entry-scale: \{\{entryScale \|\| 1 \/ arenaScale\}\}/);
-  const { page } = setup(t, { waiting: true });
-  assert.ok(page.data.entryScale > 0);
-  assert.ok(page.data.entryScale <= 1 / page.data.arenaScale + 1e-9);
+  for (const [id, handler] of [
+    ['home-tutorial-button', 'openTutorial'],
+    ['home-rankings-button', 'openHandRankings'],
+    ['home-win-rate-button', 'openWinRate'],
+    ['join-table-button', 'joinTable'],
+  ])
+    assert.match(home, new RegExp(`id="${id}"[^>]*bindtap="${handler}"`));
+  assert.match(home, /单机牌桌 · 开始训练/);
+  assert.match(home, /无需登录 · AI对战/);
+  assert.match(template, /src="\/assets\/app-icon\.png"/);
+  assert.doesNotMatch(home, /筹码|盲注|买入|余额/);
+  const { page, scrolls } = setup(t, { waiting: true });
+  assert.equal(page._controller.getGame().hand, 0);
+  page.joinTable();
+  page.joinTable();
+  assert.equal(page._controller.getGame().hand, 1);
+  assert.equal(page.data.waitingForSeat, false);
+  assert.deepEqual(scrolls, [0]);
 });
 
 test('WeChat tablet touch chrome reserves its real height and crossing the breakpoint preserves the hand', (t) => {

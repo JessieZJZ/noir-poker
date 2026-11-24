@@ -338,7 +338,6 @@ export async function buildWechat(output = wechatOutput) {
       'music-fade.js',
       'deal-gate.js',
       'effect-layouts.js',
-      'entry-welcome-scale.js',
       'trophy-placement.js',
       'ceremony-sounds.js',
       'sound-synth.js',
