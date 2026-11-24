@@ -771,6 +771,10 @@ export async function nativeScenarios(app) {
     return { layout, cancelPreservesHand: true, confirmedResetHands: 0 };
   });
   await check('local-launch-and-no-login', async () => {
+    const { name: appName, id: appId } = await app.evaluate(() =>
+      window.Capacitor.Plugins.App.getInfo(),
+    );
+    assert.equal(appName, appId.endsWith('.qa') ? 'NOIR Poker 测试' : 'Noir Poker');
     const fonts = await app.waitFor(
       () =>
         app.evaluate(() =>
@@ -856,6 +860,7 @@ export async function nativeScenarios(app) {
       'The first viewport must contain every action button before any test scroll',
     );
     return {
+      appName,
       origin: info.href,
       playerCount: info.state.playerCount,
       viewport: info.viewport,

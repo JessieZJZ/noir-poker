@@ -38,7 +38,7 @@ Capacitor 8.5.3 在文档开始时通过两个同步 `prompt()` 读取 Cookies/H
 
 源码摘要单独包含 `ios/App/App/SceneDelegate.swift`，不包含其旁的生成 `public/`。上游升级后，先确认实际 SwiftPM 框架已包含官方修复，再撤除此回补、精确脚本校验及对应测试；重新同步、编译并验证独立冷启动。单元中的完整桥脚本执行与资源摘要检查不代表 iOS 安装运行已通过。
 
-独立测试 APK 的桌面名称为“NOIR Poker 测试”，包名为 `io.github.jessiezjz.noirpoker.qa`，可与现有应用并存，练习记录和设置分别保存。它使用调试签名，只供安装验收；正常 Debug 和发行包的名称、包名保持原样。测试流程会重置这个独立应用的数据。真机安装回归必须使用 `--variant qa`，并在安装前检查 APK 中的实际包名；无线连接、指定设备和可选独立 ADB 服务见 [原生 E2E](native-e2e.md#安卓真机与无线连接)。
+独立测试 APK 的桌面名称为“NOIR Poker 测试”，包名为 `io.github.jessiezjz.noirpoker.qa`，可与现有应用并存，练习记录和设置分别保存。它使用调试签名，只供安装验收。测试流程会重置这个独立应用的数据。真机安装回归必须使用 `--variant qa`，并在安装前检查 APK 中的实际包名；无线连接、指定设备和可选独立 ADB 服务见 [原生 E2E](native-e2e.md#安卓真机与无线连接)。
 
 ## Web 迭代如何进入安装包
 
@@ -70,6 +70,8 @@ Capacitor 8.5.3 在文档开始时通过两个同步 `prompt()` 读取 Cookies/H
 - Web 与原生包使用同一组本地字体，风格名称、成熟插画（均衡使用文字头像）和风格说明与 Web 保持一致。全部本地图片随包提供，无需远程字体请求。构建生成图片 SHA-256 清单，同步副本以及实际 `.app`、APK、AAB 均检查图片内容，缺失或过期会阻止交付。
 
 ## 版本与包名
+
+iOS 和 Android 的标准安装包在桌面图标下显示“Noir Poker”。
 
 `package.json` 的 `version` 是两个 App 的公开版本，必须是 `x.y.z`。`mobile/release.json` 的 `buildNumber` 是 iOS 构建号和 Android `versionCode`，每次商店提交应递增。也可在一次 CI/打包中设置 `NOIR_BUILD_NUMBER=27`，同一流程内两端保持一致。
 
