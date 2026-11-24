@@ -185,6 +185,9 @@ jobs:
         with:
           distribution: temurin
           java-version: '21'
+          # Reuse resolved Gradle dependencies so a run does not fetch every
+          # artifact from Maven Central again, which can be rate-limited (429).
+          cache: gradle
       - name: Verify the runner's Android SDK 36
         run: |
           test -f "$ANDROID_HOME/platforms/android-36/android.jar"
